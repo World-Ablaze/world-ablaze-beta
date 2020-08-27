@@ -161,9 +161,9 @@ NDefines.NCountry.SURRENDER_LIMIT_REDUCTION_PER_COLLABORATION = 0.1 				--each p
 
 NDefines.NBuildings.NAVALBASE_REPAIR_MULT = 0.1										-- Each level of navalbase building repairs X strength. The value is spread on all ships needed reparation. Fe Navalbase lvl 5 x 0.5 str repair = 2.5 str repaired over 10 ships, so each ship repair hourly 0.25 str.	
 NDefines.NBuildings.BASE_FACTORY_REPAIR = 0.2										-- Default repair rate before factories are taken into account
-NDefines.NBuildings.BASE_FACTORY_REPAIR_FACTOR = 1.0								-- Factory speed modifier when repairing.
+NDefines.NBuildings.BASE_FACTORY_REPAIR_FACTOR = 1.5								-- Factory speed modifier when repairing.
 
-NDefines.NBuildings.DESTRUCTION_COOLDOWN_IN_WAR = 1095								-- Number of days cooldown between removal of buildings in war times
+NDefines.NBuildings.DESTRUCTION_COOLDOWN_IN_WAR = 180								-- Number of days cooldown between removal of buildings in war times
 
 NDefines.NBuildings.MAX_BUILDING_LEVELS = 40										-- Max levels a building can have.
 NDefines.NBuildings.MAX_SHARED_SLOTS = 50											-- Max slots shared by factories
