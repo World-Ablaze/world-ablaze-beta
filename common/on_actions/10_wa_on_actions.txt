@@ -1,0 +1,159 @@
+on_actions = {
+	on_startup = {
+		effect = {
+			every_country = {
+				country_event = { id = afo_event.1 }
+				set_global_flag = world_ablaze
+			}
+			USA = {
+				add_to_variable = { USA_pacific_control = 50 }
+				add_to_variable = { JAP_pacific_control = 50 }
+			}
+			JAP = {
+				add_to_variable = { USA_pacific_control = 50 }
+				add_to_variable = { JAP_pacific_control = 50 }
+			}
+		}
+	}
+
+	on_civil_war_end = {
+		effect = {
+			# Give back SOV focus tree to STALIN if they win the civil war.
+			if = {
+				limit = {
+					original_tag = SOV
+					has_government = neutrality
+					has_focus_tree = generic_focus
+				}
+				set_politics = { ruling_party = communism elections_allowed = no }
+				add_popularity = { ideology = communism popularity = 1.0 }
+				load_focus_tree = { tree = soviet_focus keep_completed = no }
+				unlock_national_focus = SOV_great_purge
+				add_ideas = home_of_revolution
+			}
+		}
+	}
+
+	on_government_change = {
+		effect = {			
+			if = {
+				limit = {
+					has_government = fascism
+					NOT = { has_idea = primative_economy }
+	   				NOT = { has_idea = agrarian_society }
+				}
+				add_ideas = national_socialism
+			}
+			else_if = {
+				limit = {
+					has_government = communism
+					NOT = { has_idea = primative_economy }
+	   				NOT = { has_idea = agrarian_society }
+				}
+				add_ideas = collectivization
+			}
+			else_if = {
+				limit = {
+					has_government = democratic
+					NOT = { has_idea = primative_economy }
+	   				NOT = { has_idea = agrarian_society }
+				}
+				add_ideas = state_sponsored_economy
+			}
+			else_if = {
+				limit = {
+					has_government = neutrality
+					NOT = { has_idea = primative_economy }
+	   				NOT = { has_idea = agrarian_society }
+				}
+				add_ideas = state_capitalism
+			}
+			else_if = {
+				limit = {
+					NOT = { has_idea = primative_economy }
+				}
+				add_ideas = agrarian_economy
+			}
+			else = {
+				add_ideas = primative_economy
+			}
+		}
+	}
+
+	on_civil_war_end_before_annexation = {
+		effect = {
+			if = { 
+				limit = {
+					FROM = {
+						original_tag = FIN
+					}
+					has_completed_focus = FIN_march_towards_the_capital
+				}
+				set_global_flag = fcw_over
+			}
+		}
+	}
+
+	#ROOT is new controller #FROM is old controller #FROM.FROM is state ID
+	on_state_control_changed = {
+		effect = {
+			if = {
+				limit = {
+					TAG = GER
+					GER = { has_government = fascism }
+					has_war_with = DEN
+					date < 1942.1.1
+			    	DEN = { has_government = democratic }
+			    	DEN = { has_capitulated = no }
+			    	37 = { is_owned_by = DEN }
+			    	37 = { is_controlled_by = GER }
+			    	58 = { is_controlled_by = GER }
+			    	803 = { is_controlled_by = GER }
+			    	59 = { is_controlled_by = GER }
+			    	61 = { is_controlled_by = GER }
+			    	56 = { is_controlled_by = GER }
+			    	62 = { is_controlled_by = GER }
+					OR = {
+						AND = {
+							GER = { has_war_with = POL }
+							POL = { has_capitulated = yes }
+						}
+						AND = {
+							GER = { has_war_with = CZE }
+							CZE = { has_capitulated = yes }
+						}
+						AND = {
+							GER = { has_war_with = HOL }
+							HOL = { has_capitulated = yes }
+						}
+						AND = {
+							GER = { has_war_with = BEL }
+							BEL = { has_capitulated = yes }
+						}
+						AND = {
+							GER = { has_war_with = ROM }
+							ROM = { has_capitulated = yes }
+						}
+						AND = {
+							GER = { has_war_with = FRA }
+							FRA = { has_capitulated = yes }
+						}
+						AND = {
+							GER = { has_war_with = ENG }
+							ENG = { has_capitulated = yes }
+						}
+						AND = {
+							GER = { has_war_with = NOR }
+							NOR = { has_capitulated = yes }
+						}
+						AND = {
+							GER = { has_war_with = SWE }
+							SWE = { has_capitulated = yes }
+						}
+					}
+				}
+				DEN = { country_event = { id = den_armor.5 } }
+			}
+		}
+	}
+}
