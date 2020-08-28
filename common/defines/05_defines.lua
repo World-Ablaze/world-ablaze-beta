@@ -401,7 +401,7 @@ NDefines.NAI.REGION_CONVOY_DANGER_DAILY_DECAY = 5									-- When convoys are su
 
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_MINE_LAYING = 0.15							-- maximum ratio of screens forces to be used in mine laying
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_MINE_SWEEPING = 0.05 						-- maximum ratio of screens forces to be used in mine sweeping
-NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MIN = 0.4						-- maximum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
+NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MIN = 0.3						-- minimum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX = 0.6 					-- maximum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX_CONVOY_THREAT = 500 		-- AI will increase screen assignment for escort missions as threat increases
 
@@ -465,6 +465,9 @@ NDefines.NAI.MAX_MISSION_PER_TASKFORCE = {  -- max mission region/taskforce rati
 
 
 NDefines.NAI.MAX_PATROL_TO_STRIKE_FORCE_RATIO = 10.0	-- maximum patrol/strike force ratio
+
+NDefines.NAI.NAVAL_MISSION_MINES_PLANTING_NEAR_OWNED = 80000
+NDefines.NAI.NAVAL_MISSION_MINES_SWEEPING_NEAR_OWNED = 100000	 -- How likely the AI will do the sweeping missions. The value is scaled by the amount of mines to sweep.
 
 ------------------------------------------------- AIR
 
