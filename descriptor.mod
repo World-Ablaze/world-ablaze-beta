@@ -1,4 +1,4 @@
-name="World Ablaze BETA (5.5)"
+name="World Ablaze BETA (5.8)"
 version="1.9.3"
 tags={
 	"Gameplay"

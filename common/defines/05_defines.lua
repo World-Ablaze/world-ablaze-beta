@@ -106,6 +106,8 @@ NDefines.NMilitary.SUPPLY_GRACE = 672												-- troops always carry 28 days 
 NDefines.NMilitary.ATTRITION_EQUIPMENT_LOSS_CHANCE = 0.03							-- Chance for loosing equipment when suffer attrition. Scaled up the stronger attrition is. Then scaled down by equipment reliability.
 
 NDefines.NMilitary.ARMY_EXP_BASE_LEVEL = 2
+NDefines.NMilitary.FIELD_EXPERIENCE_MAX_PER_DAY = 1									-- Most xp you can gain per day
+
 NDefines.NMilitary.TRAINING_MAX_LEVEL = 3
 NDefines.NMilitary.DEPLOY_TRAINING_MAX_LEVEL = 2
 NDefines.NMilitary.UNIT_EXP_LEVELS = { 0.199, 0.2, 0.4, 0.7, 0.9 }					-- Experience needed to progress to the next level
