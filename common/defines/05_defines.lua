@@ -179,6 +179,8 @@ NDefines.NBuildings.AIRBASE_CAPACITY_MULT = 200										-- Each level of airbas
 NDefines.NProduction.BASE_FACTORY_SPEED = 2.5 										-- Base factory speed multiplier (how much hoi3 style IC each factory gives).
 NDefines.NProduction.BASE_FACTORY_SPEED_MIL = 2.5 									-- Base factory speed multiplier (how much hoi3 style IC each factory gives).
 
+NDefines.LICENSE_EQUIPMENT_BASE_SPEED = -0.75										-- base MIC speed modifier for licensed equipment
+
 NDefines.NProduction.CAPITULATE_STOCKPILES_RATIO = 0.7 								-- How much equipment from deployed divisions will be transferred on capitulation
 
 NDefines.NProduction.MAX_EQUIPMENT_RESOURCES_NEED = 6 								-- Max number of different strategic resources an equipment can be dependent on.
