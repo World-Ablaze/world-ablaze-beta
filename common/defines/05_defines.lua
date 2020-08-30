@@ -638,6 +638,7 @@ NDefines.NAI.DIPLOMACY_SEND_MAX_FACTION = 0.85										-- Country should not se
 NDefines.NAI.DIPLOMACY_IMPROVE_RELATION_COST_FACTOR = 1000.0						-- Desire to boost relations subtracts the cost multiplied by this
 
 NDefines.NAI.GIVE_STATE_CONTROL_MIN_CONTROLLED = 0									-- AI needs to control more than this number of states before considering giving any away
+NDefines.NAI.GIVE_STATE_CONTROL_MIN_CONTROL_DIFF = 1								-- The difference in number of controlled states compared to war participation needs to be bigger than this for the AI to consider giving a state to a country
 
 NDefines.NAI.DIVISION_UPGRADE_MIN_XP = 4900											-- Minimum XP before attempting to upgrade a division template.
 NDefines.NAI.DIVISION_CREATE_MIN_XP = 4950											-- Minimum XP before attempting to create a fresh new division template.
