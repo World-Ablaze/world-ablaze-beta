@@ -106,7 +106,6 @@ NDefines.NMilitary.SUPPLY_GRACE = 672												-- troops always carry 28 days 
 NDefines.NMilitary.ATTRITION_EQUIPMENT_LOSS_CHANCE = 0.03							-- Chance for loosing equipment when suffer attrition. Scaled up the stronger attrition is. Then scaled down by equipment reliability.
 
 NDefines.NMilitary.ARMY_EXP_BASE_LEVEL = 2
-NDefines.NMilitary.FIELD_EXPERIENCE_MAX_PER_DAY = 1									-- Most xp you can gain per day
 
 NDefines.NMilitary.TRAINING_MAX_LEVEL = 3
 NDefines.NMilitary.DEPLOY_TRAINING_MAX_LEVEL = 2
@@ -222,6 +221,8 @@ NDefines.NOperatives.MAX_OPERATIVE_SLOT_FROM_AGENCY_UPGRADES = 2					-- max oper
 
 NDefines.NResistance.GARRISON_MANPOWER_LOST_BY_ATTACK = 0.01 						-- Ratio of manpower lost by garrison at each attack on garrison (this number will be reduced by the hardness of garrison template)
 NDefines.NResistance.MIN_DAMAGE_TO_GARRISONS_MODIFIER = 0.05						-- modifier that applies to losses from resistance attack to garrisons at most can be reduced to this amount
+
+NDefines.NResistance.FOREIGN_MANPOWER_MIN_THRESHOLD = 500000000000		 			-- The minimum number of Manpower that AI will accept to give at once, in order to avoid many weird little transfer.
 
 NDefines.NResistance.RESISTANCE_ACTIVITY_CHANCE_AT_MAX_RESISTANCE = 0.200			-- sabotage
 
