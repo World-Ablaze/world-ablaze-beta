@@ -521,6 +521,8 @@ NDefines.NAI.STR_BOMB_MIN_EXCORT_WINGS = 3											-- Min amount of airwings r
 
 ------------------------------------------------- END
 
+NDefines.NAI.MAX_REQUEST_EXPEDITIONARIES_ARMY_RATIO = 0.1							-- AI will not accept expeditionary requests if its expeditions are above this ratio
+
 NDefines.NAI.REFIT_SHIP_RELUCTANCE = 7												-- How often to consider refitting to new equipment variants for ships in the field
 NDefines.NAI.REFIT_SHIP_PERCENTAGE_OF_FORCES = 1.0									-- How big part of the navy that should be considered for refitting
 
