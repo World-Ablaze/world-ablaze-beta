@@ -46,7 +46,7 @@ NDefines.NTechnology.BASE_YEAR_AHEAD_PENALTY_FACTOR = 4								-- Base year ahea
 
 
 NDefines.NMilitary.BASE_COMBAT_WIDTH = 120											-- base combat width
-NDefines.NMilitary.ADDITIONAL_COMBAT_WIDTH = 60										-- more opened up by support attack
+NDefines.NMilitary.ADDITIONAL_COMBAT_WIDTH = 30										-- more opened up by support attack
 
 NDefines.NMilitary.FRONT_MIN_PATH_TO_REDEPLOY = 12									-- If a units path is at least this long to reach its front location, it will strategically redeploy.
 
@@ -155,6 +155,7 @@ NDefines.NCountry.VICTORY_POINTS_IMPORTANCE_FACTOR = 50.0							-- State victory
 NDefines.NCountry.ATTACHE_XP_SHARE = 0.05											-- Country received xp from attaches
 
 NDefines.NCountry.SURRENDER_LIMIT_REDUCTION_PER_COLLABORATION = 0.1 				--each percent of collaboration will lower surrender limit by this percentage 
+NDefines.NCountry.NUM_DAYS_TO_FULLY_DELETE_STOCKPILED_EQUIPMENT = 365				-- time in days to fully delete equipments from stockpile. when you delete an equipment, they go to a temporary hidden pool which still can be seized 
 
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Buildings
@@ -232,6 +233,8 @@ NDefines.NResistance.RESISTANCE_ACTIVITY_CHANCE_AT_MAX_RESISTANCE = 0.200			-- s
 NDefines.NAir.LEND_LEASED_EQUIPMENT_EXPERIENCE_GAIN = 0.0							-- Value used for equipment
 
 NDefines.NAir.CAPACITY_PENALTY = 10													-- scales penalty of having overcrowded bases.
+
+NDefines.NAir.CLOSE_AIR_SUPPORT_EXPERIENCE_SCALE = 0.00025							-- How much the experinence gained by CAS is scaled
 
 NDefines.NAir.AIR_WING_MAX_STATS_ATTACK = 400										-- Max stats
 NDefines.NAir.AIR_WING_MAX_STATS_DEFENCE = 400
@@ -548,9 +551,9 @@ NDefines.NAI.MAX_UNITS_FACTOR_FRONT_ORDER = 3.0										-- Factor for max numbe
 NDefines.NAI.DESIRED_UNITS_FACTOR_FRONT_ORDER = 3.0									-- Factor for desired number of units to assign to area front orders
 NDefines.NAI.MIN_UNITS_FACTOR_FRONT_ORDER = 2.0										-- Factor for min number of units to assign to area front orders
 
-NDefines.NAI.MAX_UNITS_FACTOR_INVASION_ORDER = 1.2									-- Factor for max number of units to assign to naval invasion orders
-NDefines.NAI.DESIRED_UNITS_FACTOR_INVASION_ORDER = 1.2								-- Factor for desired number of units to assign to naval invasion orders
-NDefines.NAI.MIN_UNITS_FACTOR_INVASION_ORDER = 1.0									-- Factor for min number of units to assign to naval invasion orders
+NDefines.NAI.MAX_UNITS_FACTOR_INVASION_ORDER = 1.4									-- Factor for max number of units to assign to naval invasion orders
+NDefines.NAI.DESIRED_UNITS_FACTOR_INVASION_ORDER = 1.4								-- Factor for desired number of units to assign to naval invasion orders
+NDefines.NAI.MIN_UNITS_FACTOR_INVASION_ORDER = 1.2									-- Factor for min number of units to assign to naval invasion orders
 
 NDefines.NAI.HOUR_BAD_COMBAT_REEVALUATE = 6 										-- if we are in combat for this amount and it goes shitty then try skipping it
 
