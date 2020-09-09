@@ -46,7 +46,7 @@ NDefines.NTechnology.BASE_YEAR_AHEAD_PENALTY_FACTOR = 4								-- Base year ahea
 
 
 NDefines.NMilitary.BASE_COMBAT_WIDTH = 120											-- base combat width
-NDefines.NMilitary.ADDITIONAL_COMBAT_WIDTH = 60										-- more opened up by support attack
+NDefines.NMilitary.ADDITIONAL_COMBAT_WIDTH = 30										-- more opened up by support attack
 
 NDefines.NMilitary.FRONT_MIN_PATH_TO_REDEPLOY = 12									-- If a units path is at least this long to reach its front location, it will strategically redeploy.
 
@@ -106,7 +106,6 @@ NDefines.NMilitary.SUPPLY_GRACE = 672												-- troops always carry 28 days 
 NDefines.NMilitary.ATTRITION_EQUIPMENT_LOSS_CHANCE = 0.03							-- Chance for loosing equipment when suffer attrition. Scaled up the stronger attrition is. Then scaled down by equipment reliability.
 
 NDefines.NMilitary.ARMY_EXP_BASE_LEVEL = 2
-NDefines.NMilitary.FIELD_EXPERIENCE_MAX_PER_DAY = 1									-- Most xp you can gain per day
 
 NDefines.NMilitary.TRAINING_MAX_LEVEL = 3
 NDefines.NMilitary.DEPLOY_TRAINING_MAX_LEVEL = 2
@@ -156,6 +155,7 @@ NDefines.NCountry.VICTORY_POINTS_IMPORTANCE_FACTOR = 50.0							-- State victory
 NDefines.NCountry.ATTACHE_XP_SHARE = 0.05											-- Country received xp from attaches
 
 NDefines.NCountry.SURRENDER_LIMIT_REDUCTION_PER_COLLABORATION = 0.1 				--each percent of collaboration will lower surrender limit by this percentage 
+NDefines.NCountry.NUM_DAYS_TO_FULLY_DELETE_STOCKPILED_EQUIPMENT = 365				-- time in days to fully delete equipments from stockpile. when you delete an equipment, they go to a temporary hidden pool which still can be seized 
 
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Buildings
@@ -178,6 +178,8 @@ NDefines.NBuildings.AIRBASE_CAPACITY_MULT = 200										-- Each level of airbas
 
 NDefines.NProduction.BASE_FACTORY_SPEED = 2.5 										-- Base factory speed multiplier (how much hoi3 style IC each factory gives).
 NDefines.NProduction.BASE_FACTORY_SPEED_MIL = 2.5 									-- Base factory speed multiplier (how much hoi3 style IC each factory gives).
+
+NDefines.LICENSE_EQUIPMENT_BASE_SPEED = -0.75										-- base MIC speed modifier for licensed equipment
 
 NDefines.NProduction.CAPITULATE_STOCKPILES_RATIO = 0.7 								-- How much equipment from deployed divisions will be transferred on capitulation
 
@@ -221,6 +223,8 @@ NDefines.NOperatives.MAX_OPERATIVE_SLOT_FROM_AGENCY_UPGRADES = 2					-- max oper
 NDefines.NResistance.GARRISON_MANPOWER_LOST_BY_ATTACK = 0.01 						-- Ratio of manpower lost by garrison at each attack on garrison (this number will be reduced by the hardness of garrison template)
 NDefines.NResistance.MIN_DAMAGE_TO_GARRISONS_MODIFIER = 0.05						-- modifier that applies to losses from resistance attack to garrisons at most can be reduced to this amount
 
+NDefines.NResistance.FOREIGN_MANPOWER_MIN_THRESHOLD = 500000000000		 			-- The minimum number of Manpower that AI will accept to give at once, in order to avoid many weird little transfer.
+
 NDefines.NResistance.RESISTANCE_ACTIVITY_CHANCE_AT_MAX_RESISTANCE = 0.200			-- sabotage
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Air
@@ -229,6 +233,8 @@ NDefines.NResistance.RESISTANCE_ACTIVITY_CHANCE_AT_MAX_RESISTANCE = 0.200			-- s
 NDefines.NAir.LEND_LEASED_EQUIPMENT_EXPERIENCE_GAIN = 0.0							-- Value used for equipment
 
 NDefines.NAir.CAPACITY_PENALTY = 10													-- scales penalty of having overcrowded bases.
+
+NDefines.NAir.CLOSE_AIR_SUPPORT_EXPERIENCE_SCALE = 0.00025							-- How much the experinence gained by CAS is scaled
 
 NDefines.NAir.AIR_WING_MAX_STATS_ATTACK = 400										-- Max stats
 NDefines.NAir.AIR_WING_MAX_STATS_DEFENCE = 400
@@ -518,6 +524,8 @@ NDefines.NAI.STR_BOMB_MIN_EXCORT_WINGS = 3											-- Min amount of airwings r
 
 ------------------------------------------------- END
 
+NDefines.NAI.MAX_REQUEST_EXPEDITIONARIES_ARMY_RATIO = 0.1							-- AI will not accept expeditionary requests if its expeditions are above this ratio
+
 NDefines.NAI.REFIT_SHIP_RELUCTANCE = 7												-- How often to consider refitting to new equipment variants for ships in the field
 NDefines.NAI.REFIT_SHIP_PERCENTAGE_OF_FORCES = 1.0									-- How big part of the navy that should be considered for refitting
 
@@ -543,9 +551,9 @@ NDefines.NAI.MAX_UNITS_FACTOR_FRONT_ORDER = 3.0										-- Factor for max numbe
 NDefines.NAI.DESIRED_UNITS_FACTOR_FRONT_ORDER = 3.0									-- Factor for desired number of units to assign to area front orders
 NDefines.NAI.MIN_UNITS_FACTOR_FRONT_ORDER = 2.0										-- Factor for min number of units to assign to area front orders
 
-NDefines.NAI.MAX_UNITS_FACTOR_INVASION_ORDER = 1.2									-- Factor for max number of units to assign to naval invasion orders
-NDefines.NAI.DESIRED_UNITS_FACTOR_INVASION_ORDER = 1.2								-- Factor for desired number of units to assign to naval invasion orders
-NDefines.NAI.MIN_UNITS_FACTOR_INVASION_ORDER = 1.0									-- Factor for min number of units to assign to naval invasion orders
+NDefines.NAI.MAX_UNITS_FACTOR_INVASION_ORDER = 1.4									-- Factor for max number of units to assign to naval invasion orders
+NDefines.NAI.DESIRED_UNITS_FACTOR_INVASION_ORDER = 1.4								-- Factor for desired number of units to assign to naval invasion orders
+NDefines.NAI.MIN_UNITS_FACTOR_INVASION_ORDER = 1.2									-- Factor for min number of units to assign to naval invasion orders
 
 NDefines.NAI.HOUR_BAD_COMBAT_REEVALUATE = 6 										-- if we are in combat for this amount and it goes shitty then try skipping it
 
@@ -636,6 +644,7 @@ NDefines.NAI.DIPLOMACY_SEND_MAX_FACTION = 0.85										-- Country should not se
 NDefines.NAI.DIPLOMACY_IMPROVE_RELATION_COST_FACTOR = 1000.0						-- Desire to boost relations subtracts the cost multiplied by this
 
 NDefines.NAI.GIVE_STATE_CONTROL_MIN_CONTROLLED = 0									-- AI needs to control more than this number of states before considering giving any away
+NDefines.NAI.GIVE_STATE_CONTROL_MIN_CONTROL_DIFF = 1								-- The difference in number of controlled states compared to war participation needs to be bigger than this for the AI to consider giving a state to a country
 
 NDefines.NAI.DIVISION_UPGRADE_MIN_XP = 4900											-- Minimum XP before attempting to upgrade a division template.
 NDefines.NAI.DIVISION_CREATE_MIN_XP = 4950											-- Minimum XP before attempting to create a fresh new division template.

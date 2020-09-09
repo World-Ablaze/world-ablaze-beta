@@ -182,6 +182,116 @@ operations = {
 			}
         }
 	}
+
+	Allies_you_cant_handle_supply = {
+
+		icon = generic_operation
+
+        allowed = {
+            always = yes
+        }
+
+        available = {
+            OR = {
+            	original_tag = ENG
+            	original_tag = USA
+            }
+        	is_ai = yes
+            OR = {
+            	has_war_with = GER 
+            	has_war_with = SOV
+            }
+        }
+
+        visible = {
+        	OR = {
+            	original_tag = ENG
+            	original_tag = USA
+            }
+        	is_ai = yes
+            OR = {
+            	has_war_with = GER 
+            	has_war_with = SOV
+            }
+        }
+
+        cost = 0
+        days_remove = 1800
+        fire_only_once = yes
+
+        remove_trigger = {
+            NOT = {has_war_with = GER }
+            NOT = {	has_war_with = SOV }
+        }
+
+        modifier = {
+            supply_consumption_factor = -0.25
+        }
+
+        ai_will_do = {
+			factor = 150
+		}
+
+		complete_effect = {
+        }
+        
+	}
+
+	Allies_minors_you_cant_handle_supply = {
+
+		icon = generic_operation
+
+        allowed = {
+            always = yes
+        }
+
+        available = {
+            OR = {
+            	original_tag = CAN
+            	original_tag = SAF
+            	original_tag = FRA
+            }
+        	is_ai = yes
+            OR = {
+            	has_war_with = GER 
+            	has_war_with = SOV
+            }
+        }
+
+        visible = {
+        	OR = {
+            	original_tag = CAN
+            	original_tag = SAF
+            	original_tag = FRA
+            }
+        	is_ai = yes
+            OR = {
+            	has_war_with = GER 
+            	has_war_with = SOV
+            }
+        }
+
+        cost = 0
+        days_remove = 1800
+        fire_only_once = yes
+
+        remove_trigger = {
+            NOT = {has_war_with = GER }
+            NOT = {	has_war_with = SOV }
+        }
+
+        modifier = {
+            supply_consumption_factor = -0.75
+        }
+
+        ai_will_do = {
+			factor = 150
+		}
+
+		complete_effect = {
+        }
+        
+	}
 }
 
 MTG_naval_treaties = {
@@ -2558,8 +2668,8 @@ USA_aid_britain = {
 
 		complete_effect = {
 			ENG = {
-				add_equipment_to_stockpile = { type = infantry_equipment_0 amount = 20000 producer = USA }
-				add_equipment_to_stockpile = { type = artillery_equipment_1 amount = 300 producer = USA }
+				add_equipment_to_stockpile = { type = usa_infantry_equipment_1 amount = 20000 producer = USA }
+				add_equipment_to_stockpile = { type = usa_artillery_equipment_1 amount = 300 producer = USA }
 				add_equipment_to_stockpile = { type = support_equipment_1 amount = 300 producer = USA }
 				country_event = { id = wtt_britain.30 }
 			}
@@ -2601,6 +2711,640 @@ USA_aid_britain = {
 
 		complete_effect = {
 			news_event = { id = afo_news.9 hours = 6 }
+		}
+	}
+}
+
+USA_aid_soviet_union = {
+    
+    USA_provide_food_SOV = {
+
+		icon = generic_industry
+
+		allowed = {
+			original_tag = USA
+		}
+
+		available = {
+			original_tag = USA
+			has_completed_focus = USA_lend_lease_act
+			SOV = { has_war = yes }
+			NOT = { SOV = { has_war_with = USA } }
+			USA = { has_government = democratic }
+		}
+        
+        modifier = {
+            civilian_factory_use = 40
+        }
+
+		fire_only_once = yes
+
+		cost = 25
+		days_remove = 30
+
+		ai_will_do = {
+			factor = 100
+		}
+
+		remove_effect = {
+            SOV = { country_event = { id = soviet.71 } }
+            SOV = { add_ideas = USA_food_lend_lease }
+		}
+	}
+
+	USA_provide_infrastructure_SOV = {
+
+		icon = generic_construction
+
+		allowed = {
+			original_tag = USA
+		}
+
+		available = {
+			original_tag = USA
+			has_completed_focus = USA_lend_lease_act
+			SOV = { has_war = yes }
+			NOT = { SOV = { has_war_with = USA } }
+			USA = { has_government = democratic }
+			NOT = { has_country_flag = USA_soviet_aid_otw }
+		}
+	
+		fire_only_once = yes
+        
+        modifier = {
+            civilian_factory_use = 40
+        }
+
+		cost = 25
+		days_remove = 90
+
+		ai_will_do = {
+			factor = 100
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				set_country_flag = USA_soviet_aid_otw
+			}
+		}
+
+		remove_effect = {
+            SOV = { country_event = { id = soviet.72 } }
+			clr_country_flag = USA_soviet_aid_otw
+			economy_fatigue_level_up_2 = yes
+            if = {
+				limit = {
+					SOV = { controls_state = 253 }
+				}
+				253 = { #Ivanovo
+					add_extra_state_shared_building_slots = 10
+					add_building_construction = {
+						type = infrastructure
+						level = 2
+						instant_build = yes
+					}
+				}
+            }
+            if = {
+				limit = {
+					SOV = { controls_state = 252 }
+				}
+				252 = { #Gorki
+					add_extra_state_shared_building_slots = 10
+					add_building_construction = {
+						type = infrastructure
+						level = 2
+						instant_build = yes
+					}
+				}
+            }
+            if = {
+				limit = {
+					SOV = { controls_state = 256 }
+				}
+				256 = { #Moscow
+					add_extra_state_shared_building_slots = 10
+					add_building_construction = {
+						type = infrastructure
+						level = 2
+						instant_build = yes
+					}
+				}
+            }
+            if = {
+				limit = {
+					SOV = { controls_state = 249 }
+				}
+				249 = { #Moscow
+					add_extra_state_shared_building_slots = 10
+					add_building_construction = {
+						type = infrastructure
+						level = 2
+						instant_build = yes
+					}
+				}
+            }
+		}
+	}
+    
+    USA_provide_synthetic_refineries_SOV = {
+
+		icon = generic_construction
+
+		allowed = {
+			original_tag = USA
+		}
+
+		available = {
+			original_tag = USA
+			has_completed_focus = USA_lend_lease_act
+			SOV = { has_war = yes }
+			NOT = { SOV = { has_war_with = USA } }
+			USA = { has_government = democratic }
+			NOT = { has_country_flag = USA_soviet_aid_otw }
+		}
+        
+        fire_only_once = yes
+        
+        modifier = {
+            civilian_factory_use = 40
+        }
+
+		cost = 25
+		days_remove = 90
+
+		ai_will_do = {
+			factor = 100
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				set_country_flag = USA_soviet_aid_otw
+			}
+		}
+
+		remove_effect = {
+            SOV = { country_event = { id = soviet.73 } }
+			clr_country_flag = USA_soviet_aid_otw
+			economy_fatigue_level_up_4 = yes
+            if = {
+				limit = {
+					SOV = { controls_state = 590 }
+				}
+				590 = {
+					add_extra_state_shared_building_slots = 2
+					add_building_construction = {
+						type = synthetic_refinery
+						level = 2
+						instant_build = yes
+					}
+				}
+            }
+            if = {
+				limit = {
+					SOV = { controls_state = 571 }
+				}
+				571 = {
+					add_extra_state_shared_building_slots = 2
+					add_building_construction = {
+						type = synthetic_refinery
+						level = 2
+						instant_build = yes
+					}
+				}
+            }
+            if = {
+				limit = {
+					SOV = { controls_state = 570 }
+				}
+				570 = {
+					add_extra_state_shared_building_slots = 2
+					add_building_construction = {
+						type = synthetic_refinery
+						level = 2
+						instant_build = yes
+					}
+				}
+            }
+            if = {
+				limit = {
+					SOV = { controls_state = 40 }
+				}
+				40 = {
+					add_extra_state_shared_building_slots = 2
+					add_building_construction = {
+						type = synthetic_refinery
+						level = 2
+						instant_build = yes
+					}
+				}
+            }
+            if = {
+				limit = {
+					SOV = { controls_state = 588 }
+				}
+				588 = {
+					add_extra_state_shared_building_slots = 2
+					add_building_construction = {
+						type = synthetic_refinery
+						level = 2
+						instant_build = yes
+					}
+				}
+            }
+		}
+	}
+    
+    USA_provide_steel_and_aluminum_SOV = {
+
+		icon = generic_construction
+
+		allowed = {
+			original_tag = USA
+		}
+
+		available = {
+			original_tag = USA
+			has_completed_focus = USA_lend_lease_act
+			SOV = { has_war = yes }
+			NOT = { SOV = { has_war_with = USA } }
+			USA = { has_government = democratic }
+			NOT = { has_country_flag = USA_soviet_aid_otw }
+		}
+        
+        fire_only_once = yes
+        
+        modifier = {
+            civilian_factory_use = 40
+        }
+
+		cost = 25
+		days_remove = 90
+
+		ai_will_do = {
+			factor = 100
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				set_country_flag = USA_soviet_aid_otw
+			}
+		}
+
+		remove_effect = {
+            SOV = { country_event = { id = soviet.74 } }
+			clr_country_flag = USA_soviet_aid_otw
+			economy_fatigue_level_up_4 = yes
+            if = {
+				limit = {
+					SOV = { controls_state = 653 }
+				}
+				653 = {
+					add_extra_state_shared_building_slots = 2
+					add_building_construction = {
+						type = aluminium_refinery
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = steel_refinery
+						level = 1
+						instant_build = yes
+					}
+				}
+            }
+            if = {
+				limit = {
+					SOV = { controls_state = 876 }
+				}
+				876 = {
+					add_extra_state_shared_building_slots = 2
+					add_building_construction = {
+						type = aluminium_refinery
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = steel_refinery
+						level = 1
+						instant_build = yes
+					}
+				}
+            }
+            if = {
+				limit = {
+					SOV = { controls_state = 583 }
+				}
+				583 = {
+					add_extra_state_shared_building_slots = 2
+					add_building_construction = {
+						type = aluminium_refinery
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = steel_refinery
+						level = 1
+						instant_build = yes
+					}
+				}
+            }
+            if = {
+				limit = {
+					SOV = { controls_state = 590 }
+				}
+				590 = {
+					add_extra_state_shared_building_slots = 2
+					add_building_construction = {
+						type = aluminium_refinery
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = steel_refinery
+						level = 1
+						instant_build = yes
+					}
+				}
+            }
+            if = {
+				limit = {
+					SOV = { controls_state = 651 }
+				}
+				651 = {
+					add_extra_state_shared_building_slots = 2
+					add_building_construction = {
+						type = aluminium_refinery
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = steel_refinery
+						level = 1
+						instant_build = yes
+					}
+				}
+            }
+            if = {
+				limit = {
+					SOV = { controls_state = 652 }
+				}
+				652 = {
+					add_extra_state_shared_building_slots = 2
+					add_building_construction = {
+						type = aluminium_refinery
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = steel_refinery
+						level = 1
+						instant_build = yes
+					}
+				}
+            }
+		}
+	}
+    
+    USA_provide_civilian_factories_SOV = {
+
+		icon = generic_industry
+
+		allowed = {
+			original_tag = USA
+		}
+
+		available = {
+			original_tag = USA
+			has_completed_focus = USA_lend_lease_act
+			SOV = { has_war = yes }
+			NOT = { SOV = { has_war_with = USA } }
+			USA = { has_government = democratic }
+			NOT = { has_country_flag = USA_soviet_aid_otw }
+		}
+		
+        fire_only_once = yes
+        
+        modifier = {
+            civilian_factory_use = 40
+        }
+
+		cost = 25
+		days_remove = 90
+
+		ai_will_do = {
+			factor = 100
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				set_country_flag = USA_soviet_aid_otw
+			}
+		}
+
+		remove_effect = {
+            SOV = { country_event = { id = soviet.75 } }
+			clr_country_flag = USA_soviet_aid_otw
+			economy_fatigue_level_up_4 = yes
+            if = {
+				limit = {
+					SOV = { controls_state = 653 }
+				}
+				653 = {
+					add_extra_state_shared_building_slots = 4
+					add_building_construction = {
+						type = industrial_complex
+						level = 4
+						instant_build = yes
+					}
+				}
+            }
+            if = {
+				limit = {
+					SOV = { controls_state = 876 }
+				}
+				876 = {
+					add_extra_state_shared_building_slots = 4
+					add_building_construction = {
+						type = industrial_complex
+						level = 4
+						instant_build = yes
+					}
+				}
+            }
+            if = {
+				limit = {
+					SOV = { controls_state = 583 }
+				}
+				583 = {
+					add_extra_state_shared_building_slots = 4
+					add_building_construction = {
+						type = industrial_complex
+						level = 4
+						instant_build = yes
+					}
+				}
+            }
+            if = {
+				limit = {
+					SOV = { controls_state = 590 }
+				}
+				590 = {
+					add_extra_state_shared_building_slots = 4
+					add_building_construction = {
+						type = industrial_complex
+						level = 4
+						instant_build = yes
+					}
+				}
+            }
+            if = {
+				limit = {
+					SOV = { controls_state = 651 }
+				}
+				651 = {
+					add_extra_state_shared_building_slots = 4
+					add_building_construction = {
+						type = industrial_complex
+						level = 4
+						instant_build = yes
+					}
+				}
+            }
+            if = {
+				limit = {
+					SOV = { controls_state = 652 }
+				}
+				652 = {
+					add_extra_state_shared_building_slots = 4
+					add_building_construction = {
+						type = industrial_complex
+						level = 4
+						instant_build = yes
+					}
+				}
+            }
+		}
+	}
+    
+    USA_provide_military_factories_SOV = {
+
+		icon = ger_military_buildup
+
+		allowed = {
+			original_tag = USA
+		}
+
+		available = {
+			original_tag = USA
+			has_completed_focus = USA_lend_lease_act
+			SOV = { has_war = yes }
+			NOT = { SOV = { has_war_with = USA } }
+			USA = { has_government = democratic }
+			NOT = { has_country_flag = USA_soviet_aid_otw }
+		}
+        
+        fire_only_once = yes
+        
+        modifier = {
+            civilian_factory_use = 40
+        }
+
+		cost = 25
+		days_remove = 90
+
+		ai_will_do = {
+			factor = 100
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				set_country_flag = USA_soviet_aid_otw
+			}
+		}
+
+		remove_effect = {
+            SOV = { country_event = { id = soviet.76 } }
+			clr_country_flag = USA_soviet_aid_otw
+			economy_fatigue_level_up_4 = yes
+            if = {
+				limit = {
+					SOV = { controls_state = 653 }
+				}
+				653 = {
+					add_extra_state_shared_building_slots = 5
+					add_building_construction = {
+						type = arms_factory
+						level = 5
+						instant_build = yes
+					}
+				}
+            }
+            if = {
+				limit = {
+					SOV = { controls_state = 876 }
+				}
+				876 = {
+					add_extra_state_shared_building_slots = 5
+					add_building_construction = {
+						type = arms_factory
+						level = 5
+						instant_build = yes
+					}
+				}
+            }
+            if = {
+				limit = {
+					SOV = { controls_state = 583 }
+				}
+				583 = {
+					add_extra_state_shared_building_slots = 5
+					add_building_construction = {
+						type = arms_factory
+						level = 5
+						instant_build = yes
+					}
+				}
+            }
+            if = {
+				limit = {
+					SOV = { controls_state = 590 }
+				}
+				590 = {
+					add_extra_state_shared_building_slots = 5
+					add_building_construction = {
+						type = arms_factory
+						level = 5
+						instant_build = yes
+					}
+				}
+            }
+            if = {
+				limit = {
+					SOV = { controls_state = 651 }
+				}
+				651 = {
+					add_extra_state_shared_building_slots = 5
+					add_building_construction = {
+						type = arms_factory
+						level = 5
+						instant_build = yes
+					}
+				}
+            }
+            if = {
+				limit = {
+					SOV = { controls_state = 652 }
+				}
+				652 = {
+					add_extra_state_shared_building_slots = 5
+					add_building_construction = {
+						type = arms_factory
+						level = 5
+						instant_build = yes
+					}
+				}
+            }
 		}
 	}
 }

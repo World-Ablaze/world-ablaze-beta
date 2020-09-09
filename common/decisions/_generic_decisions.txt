@@ -345,7 +345,7 @@ political_actions = {
         }
 
         modifier = {
-        	research_speed_factor = 0.5
+        	research_speed_factor = 0.4
         }
 
         ai_will_do = {
@@ -381,7 +381,7 @@ political_actions = {
         }
 
         modifier = {
-        	reassignment_duration_factor = -1
+        	reassignment_duration_factor = -0.5 
         }
 
         ai_will_do = {
@@ -392,7 +392,47 @@ political_actions = {
         }
 	}
 
-	JAP_AI_cant_plan_invasions = {
+	JAP_AI_cant_plan_invasions_CHI = {
+
+		icon = generic_operation
+
+        allowed = {
+            always = yes
+        }
+
+        available = {
+        	tag = JAP
+        	is_ai = yes
+        	has_war_with = CHI
+        }
+
+        visible = {
+        	tag = JAP
+        	is_ai = yes
+        	has_war_with = CHI
+        }
+
+        cost = 0
+        days_remove = 365
+        fire_only_once = yes
+
+        remove_trigger = {
+        	is_ai = no
+        }
+
+        modifier = {
+        	invasion_preparation = -0.5
+        }
+
+        ai_will_do = {
+			factor = 150
+		}
+
+		complete_effect = {
+        }
+	}
+
+	JAP_AI_cant_plan_invasions_USA = {
 
 		icon = generic_operation
 
@@ -413,7 +453,7 @@ political_actions = {
         }
 
         cost = 0
-        days_remove = 180
+        days_remove = 60
         fire_only_once = yes
 
         remove_trigger = {
@@ -1126,8 +1166,14 @@ operations = {
 			has_dlc = "Waking the Tiger"
 		}
 		available = {
-			controls_state = 446
-			controls_state = 453
+			OR = {
+				446 = { CONTROLLER = { is_subject_of = ROOT } }
+				controls_state = 446
+			}
+			OR = {
+				453 = { CONTROLLER = { is_subject_of = ROOT } }
+				controls_state = 453
+			}
 			OR = {
 				NOT = {
 					owns_state = 446
@@ -1149,11 +1195,13 @@ operations = {
 		visible = {
 			has_war = yes
 			NOT = { has_global_flag = SUEZ_CANAL_BLOCKED }
-			any_controlled_state = {
-				OR = {
-					region = 28
-					region = 128
-				}
+			OR = {
+				446 = { CONTROLLER = { is_subject_of = ROOT } }
+				controls_state = 446
+			}
+			OR = {
+				453 = { CONTROLLER = { is_subject_of = ROOT } }
+				controls_state = 453
 			}
 		}
 	
@@ -1191,8 +1239,10 @@ operations = {
 			if = {
 				limit = {
 					OR = {
-						has_full_control_of_state = 446
-						has_full_control_of_state = 453
+						446 = { CONTROLLER = { is_subject_of = ROOT } }
+						controls_state = 446
+						453 = { CONTROLLER = { is_subject_of = ROOT } }
+						controls_state = 453
 					}
 				}
 				set_country_flag = blew_up_suez
@@ -1207,8 +1257,22 @@ operations = {
 							owns_state = 453
 						}
 					}
-					add_war_support = -0.05
-					add_stability = -0.05
+					ENG = {
+						add_war_support = -0.05
+						add_stability = -0.05
+					}
+				}
+				else_if = {
+					limit = {
+						UKE = {
+							owns_state = 446
+							owns_state = 453
+						}
+					}
+					ENG = {
+						add_war_support = -0.05
+						add_stability = -0.05
+					}
 				}
 			}
 		}
