@@ -184,19 +184,7 @@ country_event = {
 		tag = FRA
 		has_war_with = GER
 		has_government = democratic
-		OR = {
-			AND = {
-				785 = { is_controlled_by = GER }
-				855 = { is_controlled_by = GER }
-				18 = { is_controlled_by = GER }
-			}
-			AND = {
-				785 = { is_controlled_by = GER }
-				855 = { is_controlled_by = GER }
-				29 = { is_controlled_by = GER }
-			}
-			surrender_progress > 0.6
-		}
+		surrender_progress > 0.8
 		GER = {
 			OR = {
 				is_faction_leader = yes
@@ -441,7 +429,7 @@ country_event = {
 		}
 		#Set same cosmetic tag they would get on capitulation
 		FRA = {
-			set_cosmetic_tag = FRA_FREE
+			set_country_flag = FRA_capitulate_into_free_france
 		}
 		# German Occupation Zone
 		if = {
@@ -850,9 +838,6 @@ country_event = {
 			}
 			save_event_target_as = vichy_france
 		}
-		hidden_effect =  {
-			FRA = { news_event = { id = france.20 days = 1 } }
-		}
 	}
 
 	option = { # Agree - Neutrality
@@ -865,7 +850,7 @@ country_event = {
 		}
 		#Set same cosmetic tag they would get on capitulation
 		FRA = {
-			set_cosmetic_tag = FRA_FREE
+			set_country_flag = FRA_capitulate_into_free_france
 		}
 		# German Occupation Zone
 		if = {
@@ -1263,9 +1248,6 @@ country_event = {
 			save_event_target_as = vichy_france
 		}
 		news_event = { hours = 6 id = news.34 }
-		hidden_effect =  {
-			FRA = { news_event = { id = france.20 days = 1 } }
-		}
 	}
 
 	option = { # Agree
@@ -1288,9 +1270,8 @@ country_event = {
 			}
 		}
 		FRA = { 
-			set_cosmetic_tag = FRA_FREE 
+			set_country_flag = FRA_capitulate_into_free_france 
 			add_ideas = FRA_defeatism
-			load_focus_tree = free_french_focus
 			if = {
 				limit = {
 					capital_scope = {
@@ -1303,7 +1284,6 @@ country_event = {
 				}
 				set_capital = 635
 			}
-			country_event = france.20
 			every_owned_state = {
 				limit = { 
 					is_controlled_by = ITA 
@@ -1740,12 +1720,25 @@ country_event = {
 	title = france.20.t
 	desc = france.20.d
 	picture = GFX_report_event_degaulle_churchill
+
+	fire_only_once = yes
 	
-	is_triggered_only = yes
+	trigger = {
+		tag = FRA
+		has_government = democratic
+		has_country_flag = FRA_capitulate_into_free_france
+		has_capitulated = yes
+	}
 	
 	option = {
+		name = france.20.a
+		trigger = {
+			NOT = { has_dlc = "La Resistance" }
+		}
 		custom_effect_tooltip = france.20.a_tt
+		set_cosmetic_tag = FRA_FREE 
 		set_country_flag = france_de_gaulle
+
 		hidden_effect =  {
 			create_country_leader = {
 				name = "Charles de Gaulle"
@@ -1767,7 +1760,40 @@ country_event = {
 				activate_mission = economy_fatigue_volunteer_only_mission
 			}
 		}
+	}
+	
+	option = {
 		name = france.20.a
+		trigger = {
+			has_dlc = "La Resistance"
+		}
+		custom_effect_tooltip = france.20.a_tt
+		set_cosmetic_tag = FRA_FREE 
+		set_country_flag = france_de_gaulle
+		load_focus_tree = free_french_focus
+		
+		hidden_effect =  {
+			create_country_leader = {
+				name = "Charles de Gaulle"
+				desc = "POLITICS_CHARLES_DE_GAULLE_DESC"
+				picture = "Portrait_France_Charles_De_Gaulle.dds"
+				expire = "1965.1.1"
+				ideology = conservatism
+				traits = {
+					
+				}
+			}
+			random_other_country = {
+				limit = { 
+					original_tag = FRA 
+					has_government = fascism 
+				}
+				transfer_state = 513
+				activate_mission = economy_fatigue_civilian_economy_mission
+				activate_mission = economy_fatigue_export_focus_mission
+				activate_mission = economy_fatigue_volunteer_only_mission
+			}
+		}
 	}
 }
 
