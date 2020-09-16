@@ -1558,6 +1558,10 @@
 				}
 				remove_ideas = FRA_disjointed_government
 			}
+			swap_ideas = {
+				remove_idea = FRA_fear_of_the_military
+				add_idea = FRA_widespread_fear_of_the_military				
+			}
 			hidden_effect = {
 				news_event = { id = lar_news.9 days = 3 random_days = 5 }
 			}
@@ -1634,6 +1638,15 @@
 
 		completion_reward = {
 			add_political_power = 120
+			if = {
+				limit = {
+					has_idea = FRA_widespread_fear_of_the_military
+				}
+				swap_ideas = {
+					remove_idea = FRA_widespread_fear_of_the_military
+					add_idea = FRA_respect_for_the_military				
+				}
+			}
 		}
 	}
 	focus = {
@@ -2116,6 +2129,15 @@
 			start_civil_war = {
 				size = FRA_rw_support
 				ideology = fascism
+			}
+			if = {
+				limit = {
+					has_idea = FRA_widespread_fear_of_the_military
+				}
+				swap_ideas = {
+					remove_idea = FRA_widespread_fear_of_the_military
+					add_idea = FRA_trust_for_the_military				
+				}
 			}
 		}
 	}
@@ -2964,6 +2986,7 @@
 			NOT = {
 				has_completed_focus = FRA_utilize_the_leagues
 			}
+			has_war_support > 0.20
 		}
 		
 		bypass = {
@@ -2985,6 +3008,10 @@
 				traits = {
 					stout_defender
 				}
+			}
+			swap_ideas = {
+				remove_idea = FRA_fear_of_the_military
+				add_idea = FRA_respect_for_the_military				
 			}
 		}
 	}
@@ -3546,7 +3573,7 @@
 		}
 
 		available = {
-			has_war_support > 0.15
+			has_war_support > 0.25
 		}
 		
 		bypass = {
@@ -6899,6 +6926,10 @@
 				news_event = { id = lar_news.8 days = 3 random_days = 5 }
 			}
 			set_cosmetic_tag = FRA_THIRD_EMPIRE
+			swap_ideas = {
+				remove_idea = FRA_fear_of_the_military
+				add_idea = FRA_trust_for_the_military				
+			}
 		}
 	}
 	focus = {
@@ -7714,11 +7745,11 @@
 			factor = 1
 		}
 		completion_reward = {
-			add_ideas = maurice_gamelin
+			add_stability = 0.05
 		}
 	}
 	focus = {
-		id = FRA_firepower_kills
+		id = FRA_prepare_war_plans
 		icon = GFX_goal_generic_army_artillery
 		x = -2
 		y = 1
@@ -7727,7 +7758,7 @@
 			y = 0
 		}
 		prerequisite = { focus = FRA_defensive_focus }
-		mutually_exclusive = { focus = FRA_methodical_battle }
+		mutually_exclusive = { focus = FRA_border_defense }
 		relative_position_id = FRA_defensive_focus
 		cost = 10
 
@@ -7749,16 +7780,11 @@
 
 		completion_reward = {
 			army_experience = 5
-			add_tech_bonus = {
-				name = FRA_firepower_kills
-				category = cat_artillery_warfare
-				uses = 1
-				bonus = 3.0
-			}
+			unlock_decision_tooltip = { decision = FRA_activate_Dyle_Plan show_effect_tooltip = yes }
 		}
 	}
 	focus = {
-		id = FRA_methodical_battle
+		id = FRA_border_defense
 		icon = GFX_goal_generic_cavalry
 		x = 2
 		y = 1
@@ -7767,7 +7793,7 @@
 			y = 0
 		}
 		prerequisite = { focus = FRA_defensive_focus }
-		mutually_exclusive = { focus = FRA_firepower_kills }
+		mutually_exclusive = { focus = FRA_prepare_war_plans }
 		relative_position_id = FRA_defensive_focus
 		cost = 10
 
@@ -7788,8 +7814,9 @@
 		available_if_capitulated = no
 		search_filters = { FOCUS_FILTER_RESEARCH }
 		completion_reward = {
+			add_war_support = -0.05
 			add_tech_bonus = {
-				name = FRA_methodical_battle
+				name = FRA_border_defense
 				category = land_doctrine
 				uses = 2
 				bonus = 3.0
@@ -7799,10 +7826,10 @@
 	focus = {
 		id = FRA_fortification_focus
 		icon = GFX_goal_generic_construction2
-		prerequisite = { focus = FRA_methodical_battle }
+		prerequisite = { focus = FRA_border_defense }
 		x = 0
 		y = 1
-		relative_position_id = FRA_methodical_battle
+		relative_position_id = FRA_border_defense
 		cost = 5
 
 		available_if_capitulated = yes
@@ -7866,10 +7893,10 @@
 	focus = {
 		id = FRA_infantry_focus
 		icon = GFX_goal_generic_allies_build_infantry
-		prerequisite = { focus = FRA_firepower_kills }
+		prerequisite = { focus = FRA_prepare_war_plans }
 		x = 0
 		y = 1
-		relative_position_id = FRA_firepower_kills
+		relative_position_id = FRA_prepare_war_plans
 		cost = 10
 
 		available_if_capitulated = yes
@@ -7923,12 +7950,6 @@
 
 		completion_reward = {
 			army_experience = 5
-			add_tech_bonus = {
-				name = land_doc_bonus
-				bonus = 3.0
-				uses = 1
-				category = cat_tank_warfare
-			}
 			add_tech_bonus = {
 				name = land_doc_bonus
 				bonus = 3.0
@@ -8038,9 +8059,9 @@
 			x = 0
 			y = 0
 		}
-		prerequisite = { focus = FRA_firepower_kills focus = FRA_methodical_battle }
+		prerequisite = { focus = FRA_prepare_war_plans focus = FRA_border_defense }
 		mutually_exclusive = { }
-		relative_position_id = FRA_firepower_kills
+		relative_position_id = FRA_prepare_war_plans
 		cost = 5
 
 		ai_will_do = {
@@ -8162,9 +8183,24 @@
 		ai_will_do = {
 			factor = 0.2
 		}
+
+		available = {
+			OR = {
+				has_idea = FRA_fear_of_the_military
+				has_idea = FRA_widespread_fear_of_the_military
+			}
+		}
 		completion_reward = {
-			add_ideas = maxime_weygand
 			army_experience = 25
+			if = { 
+				limit = {
+					has_idea = maurice_gamelin
+				}
+				swap_ideas = {
+					remove_idea = maurice_gamelin
+					add_idea = charles_de_gaulle_WA
+				}
+			}
 		}
 	}
 	focus = {
@@ -8199,6 +8235,7 @@
 		completion_reward = {
 			custom_effect_tooltip = available_theorist
 			show_ideas_tooltip = charles_de_gaulle
+			remove_ideas = FRA_static_command
 			add_tech_bonus = {
 				name = land_doc_bonus
 				bonus = 3.0
@@ -8359,11 +8396,17 @@
 		search_filters = { FOCUS_FILTER_RESEARCH }
 		completion_reward = {
 			army_experience = 50
+			if = {
+				limit = {
+					has_idea = FRA_static_command
+				}
+				remove_ideas = FRA_static_command
+			}
 			add_tech_bonus = {
 				name = FRA_army_reform
 				bonus = 3.0
 				uses = 2
-				category = land_doctrine
+				category = cat_tank_warfare
 			}
 			custom_effect_tooltip = available_designer
 			show_ideas_tooltip = FRA_AMX
@@ -8384,7 +8427,6 @@
 		available_if_capitulated = yes
 
 		completion_reward = {
-			remove_ideas = FRA_antiquated_leadership
 			add_tech_bonus = {
 				name = FRA_new_army_beaurau
 				bonus = 3.0
