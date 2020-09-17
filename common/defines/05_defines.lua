@@ -233,6 +233,8 @@ NDefines.NResistance.RESISTANCE_ACTIVITY_CHANCE_AT_MAX_RESISTANCE = 0.200			-- s
 NDefines.NAir.LEND_LEASED_EQUIPMENT_EXPERIENCE_GAIN = 0.0							-- Value used for equipment
 
 NDefines.NAir.CAPACITY_PENALTY = 10													-- scales penalty of having overcrowded bases.
+	
+NDefines.NAir.MISSION_EFFICIENCY_MULT_AT_LACK_OF_FUEL = 0.05		 				-- multiplier for mission efficiency when a base lacks fuel
 
 NDefines.NAir.CLOSE_AIR_SUPPORT_EXPERIENCE_SCALE = 0.00025							-- How much the experinence gained by CAS is scaled
 
@@ -368,6 +370,11 @@ NDefines.NNavy.SPEED_TO_ESCAPE_SPEED = 0.95											-- ratio to converstion fr
 NDefines.NNavy.BASE_ESCAPE_SPEED = 1.0												-- daily base escape speed (gained as percentagE)
 
 NDefines.NNavy.TRAINING_DAILY_COUNTRY_EXP_FACTOR = 0.0008							-- Factor used to scale the Daily Country Navy XP gain
+
+NDefines.NNavy.OUT_OF_FUEL_SPEED_FACTOR = -0.75
+NDefines.NNavy.OUT_OF_FUEL_RANGE_FACTOR = -0.75
+NDefines.NNavy.OUT_OF_FUEL_ATTACK_FACTOR = -0.9
+NDefines.NNavy.OUT_OF_FUEL_TORPEDO_FACTOR = -0.9
 
 NDefines.NNavy.TRAINING_MAX_DAILY_COUNTRY_EXP = 1.75								-- Maximum navy XP daily gain
 NDefines.NNavy.CARRIER_STACK_PENALTY = 12											-- The most efficient is 4 carriers in combat. 5+ brings the penalty to the amount of wings in battle.
