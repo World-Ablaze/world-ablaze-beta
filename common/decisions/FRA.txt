@@ -5,6 +5,7 @@ FRA_vichy_france = {
 		icon = generic_ignite_civil_war
 
 		available = {
+			tag = VIC
 			has_government = fascism
 			NOT = {
 				GER = { divisions_in_state = { state = 21 size > 0 } }
@@ -22,6 +23,7 @@ FRA_vichy_france = {
 		}
 
 		visible = {
+			tag = VIC
 			has_government = fascism
 			has_country_flag = case_anton
 		}
@@ -76,22 +78,25 @@ FRA_vichy_france = {
 		fire_only_once = yes
 
 		activation = {
-			original_tag = FRA
+			original_tag = VIC
 			has_government = fascism
-			OR = {
-				is_subject_of = GER
-				has_focus_tree = vichy_french_focus
-			}
+			NOT = { VIC = { has_war_with = GER } }
 			has_country_flag = case_anton
 		}
 
 		complete_effect = {
+			FRA = {
+				add_legitimacy = 50
+			}
 			custom_effect_tooltip = FRA_case_anton_mission_tt
 		}
 
 		is_good = no
 
 		timeout_effect = {
+			FRA = {
+				add_legitimacy = 50
+			}
 			transfer_navy = { target = GER }
 			if = {
 				limit = {
@@ -186,108 +191,6 @@ FRA_vichy_france = {
 		complete_effect = {
 			set_rule = { can_join_factions = yes }
 			GER = { add_to_faction = ROOT }
-		}
-	}
-}
-category_test_decisions = {
-	test_free_france = {
-		allowed = { original_tag = FRA }
-		cost = 0
-		ai_will_do = {
-			factor = 0
-		}
-		complete_effect = {
-			load_focus_tree = free_french_focus
-		}
-	}
-	test_vichy_france = {
-		allowed = { original_tag = FRA }
-		cost = 0
-		ai_will_do = {
-			factor = 0
-		}
-		complete_effect = {
-			create_dynamic_country = {
-				original_tag = FRA
-				save_event_target_as = france_vichy
-				every_state = {
-					limit = {
-						is_controlled_by = ROOT
-						OR = {
-							is_on_continent = africa
-							is_core_of = VIN
-							is_core_of = CAM
-							is_core_of = LAO
-							is_core_of = LEB
-							is_core_of = SYR
-						}
-					}
-					event_target:france_vichy = { transfer_state = PREV }
-				}
-				every_state = {
-					limit = {
-						is_controlled_by = ROOT
-						OR = {
-							state = 735
-							state = 21
-							state = 32
-							state = 20
-							state = 26
-							state = 22
-							state = 31
-							state = 25
-							state = 33
-						}
-					}
-					add_core_of = PREV
-					event_target:france_vichy = { transfer_state = PREV }
-				}
-				every_state = {
-					limit = {
-						is_controlled_by = ROOT
-						is_core_of = ROOT
-						NOT = {
-							is_controlled_by = event_target:france_vichy
-						}
-					}
-					add_core_of = PREV
-				}
-				set_capital = 26
-				set_politics = {
-					ruling_party = fascism
-					elections_allowed = no
-				}
-				set_popularities = {
-					democratic = 0
-					neutrality = 20
-					fascism = 80
-					communism = 0
-				}
-				set_cosmetic_tag = FRA_VICHY
-				create_country_leader = {
-					name = "Philippe Pétain"
-					desc = "POLITICS_PHILIPPE_PÉTAIN_DESC"
-					picture = "Portrait_France_Philippe_Petain.dds"
-					expire = "1965.1.1"
-					ideology = fascism_ideology
-					traits = {
-						
-					}
-				}
-				add_ideas = FRA_occupation_costs_4
-				load_focus_tree = vichy_french_focus
-				FRA = {
-					transfer_units_fraction = {
-						target = event_target:france_vichy
-						size = 0.9
-						stockpile_ratio = 0.7
-						army_ratio = 0.5
-						navy_ratio = 0.85
-						air_ratio = 1.0
-					}
-				}
-				change_tag_from = FRA
-			}
 		}
 	}
 }
