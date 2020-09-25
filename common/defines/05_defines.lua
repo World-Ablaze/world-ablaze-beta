@@ -32,7 +32,7 @@ NDefines.NPolitics.ARMY_LEADER_COST = 2												-- cost for recruiting new le
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Trade
 
 
-NDefines.NTrade.BASE_TRADE_FACTOR = 50												-- This is the base trade factor
+NDefines.NTrade.BASE_TRADE_FACTOR = 60												-- This is the base trade factor
 NDefines.NTrade.DISTANCE_TRADE_FACTOR = -0.01										-- Trade factor is modified by distance times this
 
 
@@ -99,6 +99,7 @@ NDefines.NMilitary.NUKE_MIN_DAMAGE_PERCENT = 0.7									-- Minimum damage from 
 NDefines.NMilitary.NUKE_MAX_DAMAGE_PERCENT = 0.95									-- Minimum damage from nukes as a percentage of current strength/organisation
 
 NDefines.NMilitary.HOURLY_ORG_MOVEMENT_IMPACT = -0.3								-- how much org is lost every hour while moving an army.
+NDefines.NMilitary.ORG_LOSS_FACTOR_ON_CONQUER = 0.25              					-- percentage of (max) org loss on takign enemy province
 
 NDefines.NMilitary.LEND_LEASE_FIELD_EXPERIENCE_SCALE = 0.000						-- Experience scale for lend leased equipment used in combat.
 NDefines.NMilitary.SUPPLY_GRACE = 672												-- troops always carry 28 days of food and supply
