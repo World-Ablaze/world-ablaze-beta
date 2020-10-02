@@ -90,6 +90,8 @@ NDefines.NMilitary.OUT_OF_SUPPLY_SPEED = -0.4                   					-- max spee
 
 NDefines.NMilitary.INFRA_ORG_IMPACT = 0.25											-- scale factor of infra on org regain.
 
+NDefines.NMilitary.STRATEGIC_REDEPLOY_ORG_RATIO = 0.25								-- Ratio of max org while strategic redeployment
+
 NDefines.NMilitary.PARACHUTE_COMPLETE_ORG = 0.6									    -- Organisation value (in %) after unit being dropped, regardless if failed, disrupted, or successful.
 NDefines.NMilitary.PARACHUTE_ORG_REGAIN_PENALTY_DURATION = 24						-- penalty in org regain after being parachuted. Value is in hours.
 
