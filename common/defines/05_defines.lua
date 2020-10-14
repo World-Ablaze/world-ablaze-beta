@@ -4,6 +4,7 @@
 NDefines.NGame.DECISION_ALERT_TIMEOUT_DAYS = 7										-- Days left when player will be alerted about timing out events or decisions
 NDefines.NGame.LAG_DAYS_FOR_LOWER_SPEED = 300										-- Days of client lag for decrease of gamespeed
 NDefines.NGame.LAG_DAYS_FOR_PAUSE = 100												-- Days of client lag for pause of gamespeed.
+NDefines.NGame.EVENT_TIMEOUT_DEFAULT = 7											-- Default days before an event times out if not scripted
 
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Diplomacy
