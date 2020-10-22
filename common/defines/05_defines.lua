@@ -131,7 +131,7 @@ NDefines.NMilitary.COMBAT_MOVEMENT_SPEED = 0.8										-- speed reduction base 
 NDefines.NMilitary.FUEL_CAPACITY_DEFAULT_HOURS = 672               					-- default capacity if not specified
 
 NDefines.NMilitary.BASE_CAPTURE_EQUIPMENT_RATIO = 0.08								-- after a successful land combat, ratio of the equipments that are being captured/salvaged from enemy's lost equipment
-
+NDefines.NMilitary.PLAYER_ORDER_PLANNING_DECAY = 0                                  -- Amount of planning lost due to player manual order
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Country
 
 
