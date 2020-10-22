@@ -86,6 +86,7 @@ NDefines.NMilitary.PLAN_SPREAD_ATTACK_WEIGHT = 3									-- The higher the value
 NDefines.NMilitary.NON_CORE_SUPPLY_SPEED = -0.7				    					-- we are not running on our own VP supply so need to steal stuff along the way
 NDefines.NMilitary.LAND_COMBAT_COLLATERAL_FACTOR = 0.003							-- Factor to scale collateral damage to infra and forts with.
 
+NDefines.NMilitary.ATTRITION_DAMAGE_ORG = -0.5					   					-- damage from attrition to Organisation
 NDefines.NMilitary.OUT_OF_SUPPLY_MORALE = -0.1                  					-- max org regain reduction from supply
 NDefines.NMilitary.OUT_OF_SUPPLY_SPEED = -0.4                   					-- max speed reduction from supply
 
@@ -105,7 +106,7 @@ NDefines.NMilitary.HOURLY_ORG_MOVEMENT_IMPACT = -0.3								-- how much org is l
 NDefines.NMilitary.ORG_LOSS_FACTOR_ON_CONQUER = 0.25              					-- percentage of (max) org loss on takign enemy province
 
 NDefines.NMilitary.LEND_LEASE_FIELD_EXPERIENCE_SCALE = 0.000						-- Experience scale for lend leased equipment used in combat.
-NDefines.NMilitary.SUPPLY_GRACE = 672												-- troops always carry 28 days of food and supply
+NDefines.NMilitary.SUPPLY_GRACE = 168												-- troops always carry 28 days of food and supply
 
 NDefines.NMilitary.ATTRITION_EQUIPMENT_LOSS_CHANCE = 0.03							-- Chance for loosing equipment when suffer attrition. Scaled up the stronger attrition is. Then scaled down by equipment reliability.
 
@@ -131,7 +132,7 @@ NDefines.NMilitary.COMBAT_MOVEMENT_SPEED = 0.8										-- speed reduction base 
 NDefines.NMilitary.FUEL_CAPACITY_DEFAULT_HOURS = 672               					-- default capacity if not specified
 
 NDefines.NMilitary.BASE_CAPTURE_EQUIPMENT_RATIO = 0.08								-- after a successful land combat, ratio of the equipments that are being captured/salvaged from enemy's lost equipment
-NDefines.NMilitary.PLAYER_ORDER_PLANNING_DECAY = 0                                  -- Amount of planning lost due to player manual order
+
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Country
 
 
@@ -440,7 +441,7 @@ NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX_CONVOY_THREAT = 500 		
 NDefines.NAI.CARRIER_TASKFORCE_MAX_CARRIER_COUNT = 12 								-- optimum carrier count for carrier taskforces
 NDefines.NAI.CAPITAL_TASKFORCE_MAX_CAPITAL_COUNT = 20 								-- optimum capital count for capital taskforces
 NDefines.NAI.SCREEN_TASKFORCE_MAX_SHIP_COUNT = 5									-- optimum screen count for screen taskforces
-NDefines.NAI.SCREENS_TO_CAPITAL_RATIO = 4.0											-- screens to capital/carrier count in carrier & capital taskforces
+NDefines.NAI.SCREENS_TO_CAPITAL_RATIO = 5.0											-- screens to capital/carrier count in carrier & capital taskforces
 
 NDefines.NAI.MAX_CARRIER_OVERFILL = 1.0												-- Carriers will be overfilled to this amount if there are doctrines to justify it
 NDefines.NAI.MIN_CAPITALS_FOR_CARRIER_TASKFORCE = 15								-- carrier fleets will at least have this amount of capitals
