@@ -87,7 +87,7 @@ NDefines.NMilitary.NON_CORE_SUPPLY_SPEED = -0.7				    					-- we are not runnin
 NDefines.NMilitary.LAND_COMBAT_COLLATERAL_FACTOR = 0.003							-- Factor to scale collateral damage to infra and forts with.
 
 NDefines.NMilitary.ATTRITION_DAMAGE_ORG = -0.5					   					-- damage from attrition to Organisation
-NDefines.NMilitary.OUT_OF_SUPPLY_ATTRITION = 4.8                					-- max attrition when out of supply
+NDefines.NMilitary.OUT_OF_SUPPLY_ATTRITION = 2.4                					-- max attrition when out of supply
 NDefines.NMilitary.OUT_OF_SUPPLY_MORALE = -0.1                  					-- max org regain reduction from supply
 NDefines.NMilitary.OUT_OF_SUPPLY_SPEED = -0.4                   					-- max speed reduction from supply
 
