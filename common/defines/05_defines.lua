@@ -86,8 +86,8 @@ NDefines.NMilitary.PLAN_SPREAD_ATTACK_WEIGHT = 3									-- The higher the value
 NDefines.NMilitary.NON_CORE_SUPPLY_SPEED = -0.7				    					-- we are not running on our own VP supply so need to steal stuff along the way
 NDefines.NMilitary.LAND_COMBAT_COLLATERAL_FACTOR = 0.003							-- Factor to scale collateral damage to infra and forts with.
 
-NDefines.NMilitary.ATTRITION_DAMAGE_ORG = -0.5					   					-- damage from attrition to Organisation
-NDefines.NMilitary.OUT_OF_SUPPLY_ATTRITION = 4.8                					-- max attrition when out of supply
+NDefines.NMilitary.ATTRITION_DAMAGE_ORG = -0.15					   					-- damage from attrition to Organisation
+NDefines.NMilitary.OUT_OF_SUPPLY_ATTRITION = 2.4                					-- max attrition when out of supply
 NDefines.NMilitary.OUT_OF_SUPPLY_MORALE = -0.1                  					-- max org regain reduction from supply
 NDefines.NMilitary.OUT_OF_SUPPLY_SPEED = -0.4                   					-- max speed reduction from supply
 
@@ -107,7 +107,7 @@ NDefines.NMilitary.HOURLY_ORG_MOVEMENT_IMPACT = -0.3								-- how much org is l
 NDefines.NMilitary.ORG_LOSS_FACTOR_ON_CONQUER = 0.25              					-- percentage of (max) org loss on takign enemy province
 
 NDefines.NMilitary.LEND_LEASE_FIELD_EXPERIENCE_SCALE = 0.000						-- Experience scale for lend leased equipment used in combat.
-NDefines.NMilitary.SUPPLY_GRACE = 168												-- troops always carry 28 days of food and supply
+NDefines.NMilitary.SUPPLY_GRACE = 336												-- troops always carry 28 days of food and supply
 
 NDefines.NMilitary.ATTRITION_EQUIPMENT_LOSS_CHANCE = 0.03							-- Chance for loosing equipment when suffer attrition. Scaled up the stronger attrition is. Then scaled down by equipment reliability.
 
