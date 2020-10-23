@@ -1,4 +1,4 @@
-﻿add_namespace = tur_armor
+add_namespace = tur_armor
 
 # Greek War
 country_event = {
@@ -13,12 +13,32 @@ country_event = {
 		name = tur_armor.801.a
 		ai_chance = {
 			factor = 50
+			modifier = {
+				factor = 0
+				is_in_faction_with = GRE
+			}
 		}
 		ENG = {
 			diplomatic_relation = {
 				country = GRE
 				relation = guarantee
 				active = no
+			}
+		}
+		if = {
+			limit = {
+				NOT = { ROM = { is_in_faction_with = GRE } }
+				OR = {
+					ROM = { has_government = neutrality }
+					ROM = { has_government = democratic }
+				}
+			}
+			ROM = {
+				diplomatic_relation = {
+					country = GRE
+					relation = guarantee
+					active = no
+				}
 			}
 		}
 		GRE = { country_event = { id = tur_armor.802 } }
@@ -37,10 +57,11 @@ country_event = {
 			modifier = {
 				factor = 0
 				NOT = { TUR = { has_added_tension_amount > 5 } }
+				NOT = { ENG = { is_in_faction_with = GRE } }
 			}
 		}
-		GRE = { country_event = { id = tur_armor.802 } }
-		TUR = { country_event = { id = tur_armor.803 } }
+		GRE = { country_event = { id = tur_armor.804 } }
+		TUR = { country_event = { id = tur_armor.805 } }
 	}
 }
 
@@ -105,5 +126,447 @@ country_event = {
 	
 	option = {
 		name = tur_armor.805.a
+	}
+}
+
+# unite the islamic world
+country_event = {
+	id = tur_armor.806
+	title = tur_armor.806.t
+	desc = tur_armor.806.desc
+
+	is_triggered_only = yes
+	
+	#Accept puppet
+	option = {
+		name = tur_armor.806.a
+		ai_chance = { 
+			base = 10
+		}
+		FROM = {
+			puppet = ROOT
+			country_event = { id = tur_armor.807 }
+		}
+	}
+
+	#Never
+	option = {
+		name = tur_armor.806.b
+		ai_chance = { 
+			base = 0 
+		}
+		FROM = {
+			country_event = { id = tur_armor.808 }
+		}
+	}
+}
+
+# FROM unites (annex)
+country_event = {
+	id = tur_armor.807
+	title = tur_armor.807.t
+	desc = tur_armor.807.d
+	picture = GFX_report_event_chinese_army_training
+
+	is_triggered_only = yes
+	
+	option = {
+		name = tur_armor.807.a
+		annex_country = { target = FROM transfer_troops = yes }
+	}
+}
+
+# FROM rejects unification
+country_event = {
+	id = tur_armor.808
+	title = tur_armor.808.t
+	desc = tur_armor.808.d
+
+	is_triggered_only = yes
+	
+	option = {
+		name = tur_armor.808.a
+		create_wargoal = {
+			type = annex_everything
+			target = FROM
+			expire = 0
+		}
+	}
+}
+
+#British Mandate - ROOT receives demand
+country_event = {
+	id = tur_armor.809
+	title = tur_armor.809.t
+	desc = tur_armor.809.desc
+	picture = GFX_report_event_tur_military_affair
+
+	is_triggered_only = yes
+	
+	option = {
+		name = tur_armor.809.a #the territories are yours
+		ai_chance = { 
+			factor = 10
+		}
+		TUR = {
+			transfer_state = 454
+			transfer_state = 455
+			transfer_state = 656
+			transfer_state = 765
+			transfer_state = 658
+			transfer_state = 883
+			transfer_state = 659
+		}
+		if = {
+			limit = {
+				country_exists = UKM
+			}
+			TUR = { annex_country = { target = UKM } }
+		}
+	}
+	option = {
+		name = tur_armor.809.b #it is time to dismantle the Ottomans permanently this time...
+		ai_chance = { 
+			factor = 90
+		}
+		TUR = { country_event = { id = tur_armor.810 hours = 8 } }
+	}
+}
+
+#British Mandate - ROOT denies us!
+country_event = {
+	id = tur_armor.810
+	title = tur_armor.810.t
+	desc = tur_armor.810.desc
+	picture = GFX_report_event_tur_military_affair
+
+	is_triggered_only = yes
+	
+	option = {
+		name = tur_armor.810.a
+		add_state_claim = 454
+		add_state_claim = 455
+		add_state_claim = 656
+		add_state_claim = 765
+		add_state_claim = 658
+		add_state_claim = 883
+		add_state_claim = 659
+		if = {
+			limit = {
+				UKM = { is_subject_of = FRA }
+				UKM = { controls_state = 677 }
+				UKM = { controls_state = 554 }
+				UKM = { controls_state = 553 }
+				UKM = { controls_state = 680 }
+			}
+			create_wargoal = {
+				target = UKM
+				type = take_state_focus
+			}
+		}
+		else = {
+			create_wargoal = {
+				target = FROM
+				type = take_state_focus
+			}
+		}
+	}
+}
+
+#British Mandate - Our Territories are Ours!
+country_event = {
+	id = tur_armor.811
+	title = tur_armor.811.t
+	desc = tur_armor.811.desc
+	picture = GFX_report_event_tur_sultan_and_pashas
+
+	trigger = {
+		original_tag = TUR
+		has_completed_focus = TUR_the_damascus_diktat
+		controls_state = 454
+		controls_state = 455
+		controls_state = 656
+		controls_state = 765
+		controls_state = 658
+		controls_state = 883
+		controls_state = 659
+	}
+
+	fire_only_once = yes
+
+	option = {
+		name = tur_armor.811.a #welcome back to the Empire!
+		add_war_support = 0.05
+	}
+}
+
+
+
+
+################################################# Victory in the Middle East
+
+
+
+
+
+country_event = {
+	id = tur_armor.812
+	title = tur_armor.812.t
+	desc = tur_armor.812.d
+
+	picture = GFX_report_event_generic_read_write
+	
+	is_triggered_only = yes
+
+	option = {
+		name = tur_armor.812.a
+		every_country = {
+			limit = {
+				OR = {
+					is_in_faction_with = ENG
+					is_puppet_of = ENG
+					tag = ENG
+				}
+			}
+			every_state = {
+				limit = {
+					OR = { 
+						is_core_of = KUR
+						is_core_of = IRQ
+						is_core_of = PER
+						is_core_of = SYR
+						is_core_of = LEB
+						is_core_of = PAL
+						is_core_of = JOR
+						is_core_of = SAU
+						is_core_of = OMA
+						is_core_of = YEM
+						is_core_of = KUW
+						is_core_of = QAT
+						is_core_of = UAE
+						is_core_of = EGY
+						is_core_of = LIB
+						is_core_of = TUN
+						is_core_of = ALG
+						is_core_of = MOR
+						is_core_of = AFG
+						is_core_of = PAK
+						is_core_of = GEO
+						is_core_of = ARM
+						is_core_of = AZR
+						is_core_of = TMS
+					}
+					OWNER = {
+						OR = {
+							original_tag = ENG
+							original_tag = UKM
+							original_tag = UKE
+							original_tag = FRA
+							original_tag = FRS
+							original_tag = FRT
+							original_tag = FRN
+							original_tag = FRM
+						}
+					}
+					CONTROLLER = {
+						OR = {
+							is_in_faction_with = TUR
+							is_puppet_of = TUR
+							tag = TUR
+						}
+					}
+				}
+				CONTROLLER = {
+					transfer_state = PREV
+				}
+			}
+		}
+		every_country = {
+			limit = {
+				has_war_with = TUR
+				OR = {
+					is_in_faction_with = THIS
+					is_puppet_of = THIS
+					tag = THIS
+				}
+			}
+			white_peace = TUR
+		}
+
+		ai_chance = { 
+			base = 1
+		}
+	}
+}
+
+country_event = {
+	id = tur_armor.814
+	title = tur_armor.814.t
+	desc = tur_armor.814.d
+
+	picture = GFX_report_event_generic_read_write
+	
+	is_triggered_only = yes
+
+	option = {
+		name = tur_armor.814.a
+		every_country = {
+			limit = {
+				OR = {
+					is_in_faction_with = ENG
+					is_puppet_of = ENG
+					tag = ENG
+				}
+			}
+			every_state = {
+				limit = {
+					OR = { 
+						is_core_of = KUR
+						is_core_of = IRQ
+						is_core_of = PER
+						is_core_of = SYR
+						is_core_of = LEB
+						is_core_of = PAL
+						is_core_of = JOR
+						is_core_of = SAU
+						is_core_of = OMA
+						is_core_of = YEM
+						is_core_of = KUW
+						is_core_of = QAT
+						is_core_of = UAE
+						is_core_of = EGY
+						is_core_of = LIB
+						is_core_of = TUN
+						is_core_of = ALG
+						is_core_of = MOR
+						is_core_of = AFG
+						is_core_of = PAK
+						is_core_of = GEO
+						is_core_of = ARM
+						is_core_of = AZR
+						is_core_of = TMS
+					}
+					OWNER = {
+						OR = {
+							original_tag = ENG
+							original_tag = UKM
+							original_tag = UKE
+						}
+					}
+					CONTROLLER = {
+						OR = {
+							is_in_faction_with = TUR
+							is_puppet_of = TUR
+							tag = TUR
+						}
+					}
+				}
+				CONTROLLER = {
+					transfer_state = PREV
+				}
+			}
+		}
+		every_country = {
+			limit = {
+				has_war_with = TUR
+				OR = {
+					is_in_faction_with = THIS
+					is_puppet_of = THIS
+					tag = THIS
+				}
+			}
+			white_peace = TUR
+		}
+
+		ai_chance = { 
+			base = 1
+		}
+	}
+}
+
+country_event = {
+	id = tur_armor.816
+	title = tur_armor.816.t
+	desc = tur_armor.816.d
+
+	picture = GFX_report_event_generic_read_write
+	
+	is_triggered_only = yes
+
+	option = {
+		name = tur_armor.816.a
+		every_country = {
+			limit = {
+				OR = {
+					is_in_faction_with = FRA
+					is_puppet_of = FRA
+					tag = FRA
+				}
+			}
+			every_state = {
+				limit = {
+					OR = { 
+						is_core_of = KUR
+						is_core_of = IRQ
+						is_core_of = PER
+						is_core_of = SYR
+						is_core_of = LEB
+						is_core_of = PAL
+						is_core_of = JOR
+						is_core_of = SAU
+						is_core_of = OMA
+						is_core_of = YEM
+						is_core_of = KUW
+						is_core_of = QAT
+						is_core_of = UAE
+						is_core_of = EGY
+						is_core_of = LIB
+						is_core_of = TUN
+						is_core_of = ALG
+						is_core_of = MOR
+						is_core_of = AFG
+						is_core_of = PAK
+						is_core_of = GEO
+						is_core_of = ARM
+						is_core_of = AZR
+						is_core_of = TMS
+					}
+					OWNER = {
+						OR = {
+							original_tag = FRA
+							original_tag = FRS
+							original_tag = FRT
+							original_tag = FRN
+							original_tag = FRM
+						}
+					}
+					CONTROLLER = {
+						OR = {
+							is_in_faction_with = TUR
+							is_puppet_of = TUR
+							tag = TUR
+						}
+					}
+				}
+				CONTROLLER = {
+					transfer_state = PREV
+				}
+			}
+		}
+		every_country = {
+			limit = {
+				has_war_with = TUR
+				OR = {
+					is_in_faction_with = THIS
+					is_puppet_of = THIS
+					tag = THIS
+				}
+			}
+			white_peace = TUR
+		}
+
+		ai_chance = { 
+			base = 1
+		}
 	}
 }
