@@ -35,6 +35,7 @@ NDefines.NPolitics.ARMY_LEADER_COST = 2												-- cost for recruiting new le
 
 NDefines.NTrade.BASE_TRADE_FACTOR = 60												-- This is the base trade factor
 NDefines.NTrade.DISTANCE_TRADE_FACTOR = -0.01										-- Trade factor is modified by distance times this
+NDefines.NTrade.PARTY_SUPPORT_TRADE_FACTOR = 0			-- Trade factor bonus at the other side having 100 % party popularity for my party
 
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Technology
@@ -457,7 +458,9 @@ NDefines.NAI.SUB_TASKFORCE_MAX_SHIP_COUNT = 10 										-- optimum sub count fo
 NDefines.NAI.PRODUCTION_MAX_PROGRESS_TO_SWITCH_NAVAL = 0.01							-- AI will not replace ships being built by newer types if progress is above this
 
 NDefines.NAI.REGION_THREAT_LEVEL_TO_BLOCK_REGION = 25 * 1000							-- How much threat must be generated in region ( by REGION_THREAT_PER_SUNK_CONVOY ) so the AI will decide to mark the region as avoid
-	
+
+NDefines.NAI.NAVAL_MISSION_DISTANCE_BASE = 1500					-- Base value when AI is evaluating distance score to places
+
 NDefines.NAI.MIN_NAVAL_MISSION_PRIO_TO_ASSIGN = {  -- priorities for regions to get assigned to a mission
 		0, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
 		200, -- PATROL		
