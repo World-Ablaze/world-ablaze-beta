@@ -317,7 +317,7 @@ focus_tree = {
 	focus = {
 		id = YUG_limited_self_government
 		icon = GFX_goal_anschluss
-		prerequisite = { focus = YUG_attract_allied_capital }
+		prerequisite = { focus = YUG_attract_allied_capital focus = YUG_attract_axis_capital }
 		mutually_exclusive = { focus = YUG_evolution }
 		x = 0
 		y = 1
@@ -1500,7 +1500,7 @@ focus_tree = {
 	focus = {
 		id = YUG_evolution
 		icon = GFX_goal_anschluss
-		prerequisite = { focus = YUG_attract_axis_capital }
+		prerequisite = { focus = YUG_attract_allied_capital focus = YUG_attract_axis_capital }
 		mutually_exclusive = { focus = YUG_limited_self_government }
 		x = 0
 		y = 1
@@ -1921,21 +1921,46 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_POLITICAL }
 
 		completion_reward = {
-			if = {
-				limit = {
-					GER = {
-						exists = yes
-						has_capitulated = no
-						has_government = fascism
-						is_faction_leader = yes
+			hidden_effect = {
+				if = {
+					limit = {
+						GER = {
+							exists = yes
+							has_capitulated = no
+							has_government = fascism
+							is_faction_leader = yes
+						}
+					}
+					GER = { country_event = DOD_yugoslavia.70 }
+				}
+				else = {
+					get_best_alliance_match_fascism_effect = yes
+					var:best_leader = {
+						country_event = DOD_yugoslavia.70
 					}
 				}
-				GER = { country_event = DOD_yugoslavia.70 }
 			}
-			else = {
-				get_best_alliance_match_fascism_effect = yes
-				var:best_leader = {
-					country_event = DOD_yugoslavia.70
+			effect_tooltip = {
+				if = {
+					limit = {
+						GER = {
+							exists = yes
+							has_capitulated = no
+							has_government = fascism
+							is_faction_leader = yes
+						}
+					}
+					GER = {
+						add_opinion_modifier = { target = YUG modifier = tripartite_pact_opinion }
+						reverse_add_opinion_modifier = { target = YUG modifier = tripartite_pact_opinion }
+					}
+				}
+				else = {
+					get_best_alliance_match_fascism_effect = yes
+					var:best_leader = {
+						add_opinion_modifier = { target = YUG modifier = tripartite_pact_opinion }
+						reverse_add_opinion_modifier = { target = YUG modifier = tripartite_pact_opinion }
+					}
 				}
 			}
 			create_country_leader = {
@@ -3333,7 +3358,13 @@ focus_tree = {
 				ideology = neutrality
 				popularity = -0.2
 			}
-			swap_ideas = { remove_idea = YUG_idea_peasant_councils add_idea = YUG_idea_empowered_peasant_councils }
+			effect_tooltip = {
+				swap_ideas = { remove_idea = YUG_idea_peasant_councils add_idea = YUG_idea_empowered_peasant_councils }
+			}
+			hidden_effect = {
+				remove_ideas = { YUG_idea_peasant_councils }
+				add_ideas = { YUG_idea_empowered_peasant_councils }
+			}
 		}
 	}
 
@@ -4117,18 +4148,66 @@ focus_tree = {
 
 
 		completion_reward = {
-			random_owned_controlled_state = {
-				prioritize = { 105 }
-				add_resource = {
-					type = tungsten
-					amount = 8
+			if = {
+				limit = {
+					105 = {
+						owner = {
+							OR = {
+								tag = ROOT
+								is_subject_of = ROOT
+								AND = {
+									tag = MNT
+									is_in_faction_with = ROOT
+								}
+							}
+						}
+					}
+				}
+				105 = {
+					add_resource = {
+						type = tungsten
+						amount = 8
+					}
 				}
 			}
-			random_owned_controlled_state = {
-				prioritize = { 109 }
-				add_resource = {
-					type = chromium
-					amount = 8
+			else = {
+				random_owned_controlled_state = {
+					prioritize = { 105 }
+					add_resource = {
+						type = tungsten
+						amount = 8
+					}
+				}
+			}
+			if = {
+				limit = {
+					109 = {
+						owner = {
+							OR = {
+								tag = ROOT
+								is_subject_of = ROOT
+								AND = {
+									tag = MNT
+									is_in_faction_with = ROOT
+								}
+							}
+						}
+					}
+				}
+				109 = {
+					add_resource = {
+						type = chromium
+						amount = 8
+					}
+				}
+			}
+			else = {
+				random_owned_controlled_state = {
+					prioritize = { 109 }
+					add_resource = {
+						type = chromium
+						amount = 8
+					}
 				}
 			}
 		}
@@ -4866,20 +4945,51 @@ focus_tree = {
 
 
 		completion_reward = {
-			random_owned_controlled_state = {
-				prioritize = { 104 }
-				limit = {									
-					free_building_slots = {
-						building = arms_factory
-						size > 1
-						include_locked = yes
+			if = {
+				limit = {
+					104 = {
+						owner = {
+							OR = {
+								tag = ROOT
+								is_subject_of = ROOT
+								AND = {
+									tag = BOS
+									is_in_faction_with = ROOT
+								}
+							}
+						}
 					}
 				}
-				add_extra_state_shared_building_slots = 4
-				add_building_construction = {
-					type = arms_factory
-					level = 4
-					instant_build = yes
+				104 = {
+					add_extra_state_shared_building_slots = 6
+					add_building_construction = {
+						type = industrial_complex
+						level = 2
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = arms_factory
+						level = 4
+						instant_build = yes
+					}
+				}
+			}
+			else = {
+				random_owned_controlled_state = {
+					prioritize = { 104 }
+					limit = {									
+						free_building_slots = {
+							building = arms_factory
+							size > 3
+							include_locked = yes
+						}
+					}
+					add_extra_state_shared_building_slots = 4
+					add_building_construction = {
+						type = arms_factory
+						level = 4
+						instant_build = yes
+					}
 				}
 			}
 		}
