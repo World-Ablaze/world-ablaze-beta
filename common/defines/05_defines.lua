@@ -87,9 +87,9 @@ NDefines.NMilitary.PLAN_SPREAD_ATTACK_WEIGHT = 3									-- The higher the value
 NDefines.NMilitary.NON_CORE_SUPPLY_SPEED = -0.7				    					-- we are not running on our own VP supply so need to steal stuff along the way
 NDefines.NMilitary.LAND_COMBAT_COLLATERAL_FACTOR = 0.003							-- Factor to scale collateral damage to infra and forts with.
 
-NDefines.NMilitary.ATTRITION_DAMAGE_ORG = -0.15					   					-- damage from attrition to Organisation
-NDefines.NMilitary.OUT_OF_SUPPLY_ATTRITION = 2.4                					-- max attrition when out of supply
-NDefines.NMilitary.OUT_OF_SUPPLY_MORALE = -0.1                  					-- max org regain reduction from supply
+NDefines.NMilitary.ATTRITION_DAMAGE_ORG = 0					   						-- damage from attrition to Organisation
+--NDefines.NMilitary.OUT_OF_SUPPLY_ATTRITION = 2.4                					-- max attrition when out of supply
+NDefines.NMilitary.OUT_OF_SUPPLY_MORALE = 0                  						-- max org regain reduction from supply
 NDefines.NMilitary.OUT_OF_SUPPLY_SPEED = -0.4                   					-- max speed reduction from supply
 
 NDefines.NMilitary.INFRA_ORG_IMPACT = 0.25											-- scale factor of infra on org regain.
@@ -441,7 +441,7 @@ NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX = 0.6 					-- maximum 
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX_CONVOY_THREAT = 500 		-- AI will increase screen assignment for escort missions as threat increases
 
 NDefines.NAI.CARRIER_TASKFORCE_MAX_CARRIER_COUNT = 12 								-- optimum carrier count for carrier taskforces
-NDefines.NAI.CAPITAL_TASKFORCE_MAX_CAPITAL_COUNT = 20 								-- optimum capital count for capital taskforces
+NDefines.NAI.CAPITAL_TASKFORCE_MAX_CAPITAL_COUNT = 24 								-- optimum capital count for capital taskforces
 NDefines.NAI.SCREEN_TASKFORCE_MAX_SHIP_COUNT = 5									-- optimum screen count for screen taskforces
 NDefines.NAI.SCREENS_TO_CAPITAL_RATIO = 5.0											-- screens to capital/carrier count in carrier & capital taskforces
 
@@ -457,48 +457,46 @@ NDefines.NAI.NAVY_PREFERED_MAX_SIZE = 75											-- AI will generally attempt 
 NDefines.NAI.SUB_TASKFORCE_MAX_SHIP_COUNT = 10 										-- optimum sub count for sub taskforces
 NDefines.NAI.PRODUCTION_MAX_PROGRESS_TO_SWITCH_NAVAL = 0.01							-- AI will not replace ships being built by newer types if progress is above this
 
-NDefines.NAI.REGION_THREAT_LEVEL_TO_BLOCK_REGION = 25 * 1000							-- How much threat must be generated in region ( by REGION_THREAT_PER_SUNK_CONVOY ) so the AI will decide to mark the region as avoid
-
-NDefines.NAI.NAVAL_MISSION_DISTANCE_BASE = 1500					-- Base value when AI is evaluating distance score to places
+NDefines.NAI.REGION_THREAT_LEVEL_TO_BLOCK_REGION = 25 * 1000						-- How much threat must be generated in region ( by REGION_THREAT_PER_SUNK_CONVOY ) so the AI will decide to mark the region as avoid
 
 NDefines.NAI.MIN_NAVAL_MISSION_PRIO_TO_ASSIGN = {  -- priorities for regions to get assigned to a mission
-		0, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
-		200, -- PATROL		
-		2000, -- STRIKE FORCE 
-		200, -- CONVOY RAIDING
-		100, -- CONVOY ESCORT
-		200, -- MINES PLANTING	
-		100, -- MINES SWEEPING	
-		0, -- TRAIN
-		0, -- RESERVE_FLEET
-		100, -- NAVAL INVASION SUPPORT
-	}
-	
+	0, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
+	200, -- PATROL		
+	1000, -- STRIKE FORCE 
+	200, -- CONVOY RAIDING
+	100, -- CONVOY ESCORT
+	200, -- MINES PLANTING	
+	100, -- MINES SWEEPING	
+	0, -- TRAIN
+	0, -- RESERVE_FLEET
+	100, -- NAVAL INVASION SUPPORT
+}
+
 NDefines.NAI.HIGH_PRIO_NAVAL_MISSION_SCORES = {  -- priorities for regions to get assigned to a mission
-		0, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
-		100000, -- PATROL		
-		1000, -- STRIKE FORCE 
-		1500, -- CONVOY RAIDING
-		1000, -- CONVOY ESCORT
-		-1, -- MINES PLANTING	
-		300, -- MINES SWEEPING	
-		0, -- TRAIN
-		0, -- RESERVE_FLEET
-		1000, -- NAVAL INVASION SUPPORT
-	}
-	
+	0, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
+	3800, -- PATROL - 100000	
+	1000, -- STRIKE FORCE 
+	1500, -- CONVOY RAIDING
+	3000, -- CONVOY ESCORT - 1000
+	-1, -- MINES PLANTING	
+	300, -- MINES SWEEPING	
+	0, -- TRAIN
+	0, -- RESERVE_FLEET
+	1000, -- NAVAL INVASION SUPPORT
+}
+
 NDefines.NAI.MAX_MISSION_PER_TASKFORCE = {  -- max mission region/taskforce ratio
-		0, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
-		1.5, -- PATROL		
-		5, -- STRIKE FORCE 
-		1.5, -- CONVOY RAIDING
-		4, -- CONVOY ESCORT
-		2, -- MINES PLANTING
-		2, -- MINES SWEEPING
-		0, -- TRAIN
-		0, -- RESERVE_FLEET
-		10, -- NAVAL INVASION SUPPORT
-	}
+	0, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
+	1.5, -- PATROL		
+	5, -- STRIKE FORCE 
+	1.5, -- CONVOY RAIDING
+	2, -- CONVOY ESCORT
+	2, -- MINES PLANTING
+	2, -- MINES SWEEPING
+	0, -- TRAIN
+	0, -- RESERVE_FLEET
+	10, -- NAVAL INVASION SUPPORT
+}
 
 
 NDefines.NAI.MAX_PATROL_TO_STRIKE_FORCE_RATIO = 10.0	-- maximum patrol/strike force ratio
