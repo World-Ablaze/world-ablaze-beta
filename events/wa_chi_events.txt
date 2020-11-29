@@ -1,8 +1,39 @@
 add_namespace = chi_armor
 
 country_event = {
-	id = chi_armor.10
-	hidden = yes
+	id = chi_armor.1
+	title = chi_armor.1.t
+	desc = chi_armor.1.d
+
+	mean_time_to_happen = { days = 1 }
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = CHI
+		date > 1936.1.1
+	}
+
+	immediate = {
+	}
+
+	option = {
+		name = chi_armor.1.a
+		custom_effect_tooltip = CHI_tank_tt
+		hidden_effect = {
+			load_oob = "CHI_tank"
+			add_equipment_to_stockpile = { type = fra_interwar_equipment_1 amount = 30 producer = CHI }
+			add_equipment_to_stockpile = { type = eng_light_equipment_0 amount = 30 producer = CHI }
+			add_equipment_to_stockpile = { type = ita_light_equipment_1 amount = 20 producer = CHI }
+			add_equipment_to_stockpile = { type = ger_light_equipment_0 amount = 10 producer = CHI }
+		}
+	}
+}
+
+country_event = {
+	id = chi_armor.801
+	title = chi_armor.801.t
+	desc = chi_armor.801.d
 
 	mean_time_to_happen = { days = 2 }
 
@@ -10,16 +41,1171 @@ country_event = {
 
 	trigger = {
 		tag = CHI
-		is_ai = yes
-		has_completed_focus = CHI_military_affairs_commission
+		PRC = { exists = yes }
+		NOT = { PRC = { has_war_with = JAP } }
+		NOT = { CHI = { has_war_with = JAP } }
+		NOT = { 609 = { is_controlled_by = JAP } }
 	}
+
+	option = {
+		name = chi_armor.801.a
+		trigger = {
+			is_in_faction = yes
+		}
+
+		CHI = { 
+			add_ideas = {
+				internal_conflict
+			}
+		}
+	}
+
+	option = {
+		name = chi_armor.801.a
+		trigger = {
+			is_in_faction = no
+		}
+
+		set_rule = { can_create_factions = yes }
+		create_faction = "CHI_the_peoples_front"
+
+		CHI = { 
+			add_ideas = {
+				internal_conflict
+			}
+		}
+	}
+}
+
+##################################### CHI Shanghai Incident
+
+country_event = {
+	id = chi_armor.802
+	title = chi_armor.802.t
+	desc = chi_armor.802.d
+	picture = GFX_report_event_chinese_soldiers_01
+
+	is_triggered_only = yes
+	
+	option = {
+		name = chi_armor.802.a
+		add_war_support = 0.05
+	}
+}
+
+##################################### SIC Leader dies
+
+country_event = {
+	id = chi_armor.803
+	title = chi_armor.803.t
+	desc = {
+		text = chi_armor.803.d
+		trigger = {
+			NOT = {
+				any_other_country = {
+					tag = CHI
+					has_war_with = ROOT
+				}
+			}
+		}
+	}
+	desc = {
+		text = chi_armor.803.d_war
+		trigger = {
+			any_other_country = {
+				tag = CHI
+				has_war_with = ROOT
+			}
+		}
+	}
+	picture = GFX_report_liu_xiang
+	fire_only_once = yes
+
+	trigger = {
+		tag = SIC
+		date > 1937.10.20
+		date < 1939.1.1
+		is_in_faction_with = CHI
+	}
+	immediate = {
+		hidden_effect = {
+			event_target:WTT_current_china_leader = {
+				country_event = chi_armor.809
+			}
+			country_event = { id = chi_armor.804 days = 73 }
+		}
+	}
+	option = {
+		name = chi_armor.803.a
+		ai_chance = {
+			factor = 100
+		}
+		add_ideas = leader_hospitalized
+		effect_tooltip = {
+
+		}
+	}
+}
+
+country_event = {
+	id = chi_armor.804
+	title = chi_armor.804.t
+	desc = chi_armor.804.d
+	picture = GFX_report_liu_xiang
+
+	is_triggered_only = yes
 
 	immediate = {
-		add_political_power = 350
+		hidden_effect = {
+			remove_ideas = leader_hospitalized
+			create_country_leader = {
+				name = "None"
+				desc = ""
+				picture = ""
+				expire = "1965.1.1"
+				ideology = despotism
+				traits = {
+				}
+			}
+			if = {
+				limit = {
+					has_unit_leader = 3050
+				}
+				remove_unit_leader = 3050
+			}
+		}
 	}
-
-	option = {}
+	option = {#submit
+		name = chi_armor.804.a
+		trigger = {
+			TAG = SIC
+		}
+		ai_chance = {
+			factor = 50
+		}
+		event_target:WTT_current_china_leader = {
+			country_event = chi_armor.808
+		}
+		custom_effect_tooltip = GAME_OVER_TT
+	}
+	option = {#request a new leader
+		name = chi_armor.804.b
+		trigger = {
+			TAG = SIC
+			NOT = {
+				event_target:WTT_current_china_leader = {
+					has_war_with = SIC
+				}
+			}
+		}
+		ai_chance = {
+			factor = 0
+		}
+		event_target:WTT_current_china_leader = {
+			country_event = chi_armor.805
+		}
+	}
 }
+
+#SIC request leader (to CHI)
+country_event = {
+	id = chi_armor.805
+	title = chi_armor.805.t
+	desc = chi_armor.805.d
+	picture = GFX_report_event_chinese_officers
+	is_triggered_only = yes
+	option = {#nah annex them
+		name = chi_armor.805.a
+		ai_chance = {
+			factor = 0
+		}
+		SIC = {
+			country_event = { days = 3 id = chi_armor.807 }
+		}
+		custom_effect_tooltip = NDP_unite
+	}
+	option = {#sure
+		name = chi_armor.805.b
+		ai_chance = {
+			factor = 100
+		}
+		SIC = {
+			country_event = { days = 3 id = chi_armor.806 }
+		}
+		effect_tooltip = {
+			set_autonomy = {
+				target = SIC
+				autonomous_state = autonomy_rcm_provincial_government
+				freedom_level = 0.5
+			}
+			create_country_leader = {
+				name = "Zhang Qun"
+				desc = ""
+				picture = "gfx//leaders//Asia//portrait_asia_generic_land_12.dds"
+				expire = "1965.1.1"
+				ideology = despotism
+				traits = {
+					#
+				}
+			}
+		}
+	}
+}
+#SIC get new leader zhang qun
+country_event = {
+	id = chi_armor.806
+	title = chi_armor.806.t
+	desc = chi_armor.806.d
+	picture = GFX_report_zhang_qun
+	is_triggered_only = yes
+	option = {
+		name = chi_armor.806.a
+		#custom_effect_tooltip = NDP_unite
+		FROM = {
+			set_autonomy = {
+				target = SIC
+				autonomous_state = autonomy_rcm_provincial_government
+				freedom_level = 0.65
+			}
+		}
+		hidden_effect = {
+			set_political_party = {
+				ideology = neutrality
+				popularity = 100
+			}
+			set_political_party = {
+				ideology = democratic
+				popularity = 0
+			}
+			set_political_party = {
+				ideology = communism
+				popularity = 0
+			}
+			set_political_party = {
+				ideology = fascism
+				popularity = 0
+			}
+		}
+		create_country_leader = {
+			name = "Zhang Qun"
+			desc = ""
+			picture = "Portrait_Sichuan_Zhang_Qun.dds"
+			expire = "1965.1.1"
+			ideology = despotism
+			traits = {
+				#
+			}
+		}
+	}
+}
+
+# Chi still annex
+country_event = {
+	id = chi_armor.807
+	title = chi_armor.807.t
+	desc = chi_armor.807.d
+	picture = GFX_report_event_chinese_army_training
+	is_triggered_only = yes
+
+	option = {
+		name = chi_armor.807.a
+		ai_chance = { factor = 100 }
+		custom_effect_tooltip = NDP_unite
+		hidden_effect = {
+			annex_country = { target = SIC transfer_troops = yes }
+			set_global_flag = joined_chi_SIC
+		}
+	}
+}
+
+# SIC submit voluntarily
+country_event = {
+	id = chi_armor.808
+	title = {
+		text = chi_armor.808.t
+		trigger = {
+			has_war_with = FROM
+		}
+	}
+	title = {
+		text = chi_armor.808.t_surrender
+		trigger = {
+			NOT = {
+				has_war_with = FROM
+			}
+		}
+	}
+	desc = chi_armor.808.d
+	picture = GFX_report_event_china_flag
+	is_triggered_only = yes
+	option = {
+		name = chi_armor.808.a
+		ai_chance = { factor = 100 }
+		custom_effect_tooltip = NDP_unite
+		hidden_effect = {
+			annex_country = { target = SIC transfer_troops = yes }
+			set_global_flag = joined_chi_SIC
+		}
+	}
+}
+
+country_event = {
+	id = chi_armor.809
+	title = chi_armor.809.t
+	desc = chi_armor.809.d
+	picture = GFX_report_liu_xiang
+	is_triggered_only = yes
+	immediate = {
+	}
+	option = {
+		name = chi_armor.809.a
+	}
+}
+
+##################################### Menjiang wins East Suiyuan
+
+country_event = {
+	id = chi_armor.810
+	title = chi_armor.810.t
+	desc = chi_armor.810.d
+	picture = GFX_report_event_chinese_soldiers_01
+
+	is_triggered_only = yes
+	
+	option = {
+		name = chi_armor.810.a
+		add_war_support = 0.1
+	}
+}
+
+##################################### Menjiang wins East Suiyuan
+
+country_event = {
+	id = chi_armor.811
+	title = chi_armor.811.t
+	desc = chi_armor.811.d
+	picture = GFX_report_event_chinese_soldiers_01
+
+	is_triggered_only = yes
+	
+	option = {
+		name = chi_armor.811.a
+	}
+}
+
+##################################### HPC has fails
+
+country_event = {
+	id = chi_armor.812
+	title = chi_armor.812.t
+	desc = chi_armor.812.d
+	picture = GFX_report_event_chinese_soldiers_01
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = CHI
+		HPC = { has_war_with = JAP }
+		NOT = { has_war_with = HPC }
+		NOT = { 614 = { is_fully_controlled_by = HPC } }
+		NOT = { 608 = { is_controlled_by = HPC } }
+		NOT = { 949 = { is_controlled_by = HPC } }
+	}
+	
+	#annex
+	option = {
+		name = chi_armor.812.a
+		annex_country = { target = HPC transfer_troops = yes }
+	}
+	
+	#last stand
+	option = {
+		name = chi_armor.812.b
+		HPC = { add_timed_idea = { idea = CHI_last_stand days = 30 } }
+	}
+}
+
+##################################### SHA Surrenders
+
+country_event = {
+	id = chi_armor.813
+	title = chi_armor.813.t
+	desc = chi_armor.813.d
+	picture = GFX_report_event_chinese_soldiers_01
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = CHI
+		SHA = { has_war_with = JAP }
+		NOT = { has_war_with = SHA }
+		SHA = { surrender_progress > 0.2 }
+	}
+	
+	#annex
+	option = {
+		name = chi_armor.813.a
+		annex_country = { target = SHA }
+	}
+}
+
+##################################### Liangguang incident
+
+country_event = {
+	id = chi_armor.814
+	title = chi_armor.814.t
+	desc = chi_armor.814.d
+	picture = GFX_report_event_japanese_chinese_surrender
+	is_triggered_only = yes
+
+	option = {
+		name = chi_armor.814.a
+		GUC = {
+			country_event = { days = 10 id = chi_armor.815 }
+		}
+	}
+}
+
+# GUC choose to join liangguang or not
+country_event = {
+	id = chi_armor.815
+	title = chi_armor.815.t
+	desc = chi_armor.815.d
+	picture = GFX_report_event_chinese_officers
+
+	is_triggered_only = yes
+
+	option = {
+		name = chi_armor.815.a #accept
+		ai_chance = {
+			base = 80
+			modifier = {
+				factor = 150
+				is_historical_focus_on = yes
+			}
+		}
+		GXC = {
+			country_event = { days = 5 id = chi_armor.816 }
+		}
+	}
+	option = {
+		name = chi_armor.815.b #refuse
+		ai_chance = {
+			base = 20
+			modifier = {
+				factor = 0
+				is_historical_focus_on = yes
+			}
+		}
+		GXC = {
+			country_event = { days = 5 id = chi_armor.817 }
+		}
+	}
+}
+#GUC accept war chi
+country_event = {
+	id = chi_armor.816
+	title = chi_armor.816.t
+	desc = chi_armor.816.d
+	picture = GFX_report_event_chinese_japanese_handshake
+
+	is_triggered_only = yes
+
+	option = {
+		name = chi_armor.816.a
+		GXC = { country_event = { id = chi_armor.818 days = 5 } }#form anti-jap army
+		CHI = { country_event = { id = chi_armor.818 days = 5 } }
+	}
+}
+
+#GUC refuse war END of incident
+country_event = {
+	id = chi_armor.817
+	title = chi_armor.817.t
+	desc = chi_armor.817.d
+	picture = GFX_report_event_chinese_officers
+
+	is_triggered_only = yes
+
+	option = {
+		name = chi_armor.817.a
+	}
+}
+
+#form anti_jap_salv_army#
+country_event = {
+	id = chi_armor.818
+	title = chi_armor.818.t
+	desc = {
+		text = chi_armor.818.d_chi
+		trigger = { TAG = CHI }
+	}
+	desc = {
+		text = chi_armor.818.d_gxc
+		trigger = { TAG = GXC }
+	}
+	picture = GFX_report_event_chinese_soldiers_02
+
+	is_triggered_only = yes
+
+	option = {
+		name = chi_armor.818.a
+		trigger = { TAG = GXC }
+		set_rule = { can_create_factions = yes }
+		create_faction = "anti_jap_salv_army"
+		add_to_faction = GUC
+		CHI = {
+			country_event = { days = 10 id = chi_armor.819 }
+		}
+	}
+	option = {
+		name = chi_armor.818.b
+		trigger = { TAG = CHI }
+	}
+}
+
+
+#2g GUC rebel
+country_event = {
+	id = chi_armor.819
+	title = chi_armor.819.t
+	desc = chi_armor.819.d
+	picture = GFX_report_event_chinese_soldiers_running
+	is_triggered_only = yes
+	trigger = {
+		NOT = {
+			has_war_with = GUC
+		}
+	}
+	fire_only_once = yes
+	#mean_time_to_happen = {
+		#	days = 10
+		#}
+
+	option = { #buy
+		name = chi_armor.819.a
+		ai_chance = {
+			base = 50
+			modifier = {
+				factor = 30
+				is_historical_focus_on = no
+				has_political_power < 50
+			}
+			modifier = {
+				factor = 100
+				is_historical_focus_on = yes
+			}
+		}
+		set_country_flag = cjt_ed
+		add_political_power = -100
+		custom_effect_tooltip = if_buy_succ
+		effect_tooltip = {
+			if = {
+				limit = { is_historical_focus_on = no }
+				random_list = {
+					75 = {#buy success
+						GUC = { country_event = { days = 4 id = chi_armor.822 } }
+					}
+					25 = {#refuse
+						GUC = { country_event = { days = 4 id = chi_armor.823 } }
+					}
+				}
+				else = {
+					GUC = { country_event = { days = 4 id = chi_armor.822 } }
+				}
+			}
+		}
+		hidden_effect = {
+			if = {
+				limit = { is_historical_focus_on = no }
+				random_list = {
+					75 = {#buy success
+						GUC = { country_event = { days = 4 id = chi_armor.822 } }
+						CHI = { country_event = { days = 4 id = chi_armor.822 } }
+						GXC = { country_event = { days = 4 id = chi_armor.822 } }
+						PRC = { country_event = { days = 4 id = chi_armor.822 } }
+					}
+					25 = {#refuse
+						GUC = { country_event = { days = 4 id = chi_armor.823 } }
+						CHI = { country_event = { days = 4 id = chi_armor.823 } }
+						GXC = { country_event = { days = 4 id = chi_armor.823 } }
+						PRC = { country_event = { days = 4 id = chi_armor.823 } }
+					}
+				}
+			}
+			if = {
+				limit = { is_historical_focus_on = yes }
+				GUC = { country_event = { days = 4 id = chi_armor.822 } }
+				CHI = { country_event = { days = 4 id = chi_armor.822 } }
+				GXC = { country_event = { days = 4 id = chi_armor.822 } }
+				PRC = { country_event = { days = 4 id = chi_armor.822 } }
+			}
+		}
+	}
+	option = { #peace
+		name = chi_armor.819.b
+		ai_chance = {
+			base = 40
+			modifier = {
+				factor = 0
+				is_historical_focus_on = yes
+			}
+			modifier = {
+				factor = 25
+				is_historical_focus_on = no
+				has_political_power < 35
+			}
+		}
+		add_political_power = -75
+		GUC = { country_event = { id = chi_armor.820 } }
+		hidden_effect = {
+			country_event = { days = 8 id = chi_armor.824 }
+		}
+	}
+	option = { #war
+		name = chi_armor.819.c
+		ai_chance = {
+			base = 20
+			modifier = {
+				factor = 0
+				is_historical_focus_on = yes
+			}
+		}
+		GUC = { country_event = { id = chi_armor.821 } }
+		hidden_effect = {
+			country_event = { days = 8 id = chi_armor.824 }
+		}
+	}
+}
+#Chi offer peace
+country_event = {
+	id = chi_armor.820
+	title = chi_armor.820.t
+	desc = chi_armor.820.d
+	picture = GFX_report_event_chinese_officers
+
+	#mean_time_to_happen = {
+	#	days = 10
+	#}
+
+	is_triggered_only = yes
+
+	option = { #accept
+		name = chi_armor.820.a
+		ai_chance = { factor = 50 }
+		CHI = {
+			country_event = { days = 5 id = rcmchina.235 }
+		}
+		add_political_power = 50
+		GXC = {
+			country_event = { id = gxc.8 }
+			remove_from_faction = GUC
+		}
+	}
+	option = { #refuse
+		name = chi_armor.820.b
+		ai_chance = { factor = 50 }
+		CHI = {
+			country_event = { days = 5 id = rcmchina.236 }
+		}
+	}
+}
+
+#chi war
+country_event = {
+	id = chi_armor.821
+	title = chi_armor.821.t
+	desc = chi_armor.821.d
+	picture = GFX_report_event_chinese_soldiers_02
+	is_triggered_only = yes
+	option = {
+		name = chi_armor.821.a
+		if = {
+			limit = { GXC = { has_war_with = CHI } }
+			add_to_war = { targeted_alliance = GXC enemy = CHI }
+			GXC = {
+				if = { limit = { GXC = { is_faction_leader = no } }
+					set_rule = { can_create_factions = yes }
+					create_faction = "anti_jap_salv_army"
+					add_to_faction = GUC
+				}
+				if = { limit = { GXC = { is_faction_leader = yes } }
+					add_to_faction = GUC
+				}
+			}
+		}
+		if = {
+			limit = { GXC = { NOT = { has_war_with = CHI } } }
+			set_global_flag = gud_ready
+		}
+	}
+}
+
+#CHI_buy_guc successful (bribing success)
+country_event = {
+	id = chi_armor.822
+	title = chi_armor.822.t
+	picture = GFX_report_event_huang_2g_bribed
+	desc = {
+		text = chi_armor.822.d_chi
+		trigger = { TAG = CHI }
+	}
+	desc = {
+		text = chi_armor.822.d
+		trigger = { NOT = { TAG = CHI } }
+	}
+	is_triggered_only = yes
+	immediate = {
+		set_global_flag = buy_gud
+	}
+	option = {
+		name = chi_armor.822.a
+		trigger = { original_tag = CHI }
+		annex_country = { target = GUC transfer_troops = yes }
+		add_ideas = CHI_huang_guangrei
+		set_country_flag = haung_guangrei_defects
+		add_timed_idea = { idea = bribe_guc days = 90 }
+	}
+	option = {
+		name = chi_armor.822.b
+		trigger = {
+			NOT = { original_tag = CHI }
+			NOT = { original_tag = GXC }
+		}
+	}
+	option = {
+		name = chi_armor.822.c
+		trigger = {
+			original_tag = GXC
+		}
+		ai_chance = {
+			base = 50
+			modifier = {
+				factor = 100
+				is_historical_focus_on = yes
+			}
+		}
+		CHI = { country_event = { days = 10 id = chi_armor.824 } }
+	}
+	option = {
+		name = chi_armor.822.e
+		trigger = {
+			original_tag = GXC
+		}
+		ai_chance = {
+			base = 50
+			modifier = {
+				factor = 0
+				is_historical_focus_on = yes
+			}
+		}
+		dismantle_faction = yes
+		CHI = { country_event = { days = 5 id = chi_armor.825 } }
+	}
+}
+#CHI_buy_gud fail
+country_event = {
+	id = chi_armor.823
+	title = chi_armor.823.t
+	picture = GFX_report_event_huang_2g_bribed
+	desc = {
+		text = chi_armor.823.d_chi
+		trigger = { original_tag = CHI }
+	}
+	desc = {
+		text = chi_armor.823.d
+		trigger = { NOT = { original_tag = CHI } }
+	}
+	is_triggered_only = yes
+	option = {
+		name = chi_armor.823.a
+		trigger = { TAG = CHI }
+	}
+	option = {
+		name = chi_armor.823.b
+		trigger = {
+			NOT = { original_tag = CHI }
+			NOT = { original_tag = GXC }
+		}
+	}
+	option = {
+		name = chi_armor.823.c
+		trigger = {
+			TAG = GXC
+		}
+		hidden_effect = {
+			CHI = { country_event = { days = 10 id = chi_armor.824 } }
+		}
+	}
+}
+#2g GXC rebel
+country_event = {
+	id = chi_armor.824
+	title = chi_armor.824.t
+	desc = chi_armor.824.d
+	picture = GFX_report_event_chinese_soldiers_running
+	is_triggered_only = yes
+	fire_only_once = yes
+	trigger = {
+		NOT = {
+			has_war_with = GXC
+		}
+	}
+	option = { #peace
+		name = chi_armor.824.b
+		ai_chance = {
+			base = 75
+			modifier = {
+				factor = 200
+				is_historical_focus_on = yes
+			}
+		}
+		add_political_power = -75
+
+		GXC = { country_event = { days = 15 id = chi_armor.826 } }
+	}
+	option = { #buy
+		name = chi_armor.824.a
+		ai_chance = {
+			base = 40
+			modifier = {
+				add = -40
+				has_political_power < 150
+				is_historical_focus_on = no
+			}
+			modifier = {
+				add = -40
+				is_historical_focus_on = yes
+			}
+		}
+		set_country_flag = lzr_ed
+		add_political_power = -200
+		custom_effect_tooltip = if_buy_succ
+		effect_tooltip = {
+			annex_country = { target = GXC transfer_troops = yes }
+			#add_commander = bai
+		}
+		effect_tooltip = {
+			if = {
+				limit = { is_historical_focus_on = no }
+				random_list = {
+					60 = {#buy success
+						GXC = { country_event = { days = 4 id = chi_armor.828 } }
+					}
+					40 = {#refuse
+						GXC = { country_event = { days = 10 id = chi_armor.829 } }
+					}
+				}
+			}
+			if = {
+				limit = { is_historical_focus_on = yes }
+				random_list = {
+					70 = {#buy success
+						GXC = { country_event = { days = 4 id = chi_armor.828 } }
+					}
+					30 = {#refuse
+						GXC = { country_event = { days = 10 id = chi_armor.829 } }
+					}
+				}
+			}
+		}
+		hidden_effect = {
+			if = {
+				limit = { is_historical_focus_on = no }
+				random_list = {
+					60 = {#buy success
+						GUC = { country_event = { days = 4 id = chi_armor.828 } }
+						CHI = { country_event = { days = 4 id = chi_armor.828 } }
+						GXC = { country_event = { days = 4 id = chi_armor.828 } }
+						PRC = { country_event = { days = 4 id = chi_armor.828 } }
+						clr_global_flag = liangguang_incident_flag
+					}
+					40 = {#refuse
+						GUC = { country_event = { days = 4 id = chi_armor.829 } }
+						CHI = { country_event = { days = 4 id = chi_armor.829 } }
+						GXC = { country_event = { days = 10 id = chi_armor.829 } }
+						PRC = { country_event = { days = 4 id = chi_armor.829 } }
+					}
+				}
+			}
+			if = {
+				limit = { is_historical_focus_on = yes }
+				random_list = {
+					70 = {#buy success
+						GUC = { country_event = { days = 4 id = chi_armor.828 } }
+						CHI = { country_event = { days = 4 id = chi_armor.828 } }
+						GXC = { country_event = { days = 4 id = chi_armor.828 } }
+						PRC = { country_event = { days = 4 id = chi_armor.828 } }
+						clr_global_flag = liangguang_incident_flag
+					}
+					30 = {#refuse
+						GUC = { country_event = { days = 4 id = chi_armor.829 } }
+						CHI = { country_event = { days = 4 id = chi_armor.829 } }
+						GXC = { country_event = { days = 10 id = chi_armor.829 } }
+						PRC = { country_event = { days = 4 id = chi_armor.829 } }
+					}
+				}
+			}
+		}
+	}
+	
+	option = { #war
+		name = chi_armor.824.c
+		ai_chance = {
+			base = 20
+			modifier = {
+				factor = 0
+				is_historical_focus_on = yes
+			}
+		}
+		GXC = { country_event = { days = 10 id = chi_armor.827 } }
+	}
+}
+
+#AntiJApdisband
+country_event = {
+	id = chi_armor.825
+	title = chi_armor.825.t
+	desc = chi_armor.825.d
+	picture = GFX_report_event_japanese_chinese_surrender
+	is_triggered_only = yes
+	trigger = {
+		NOT = {
+			has_country_flag = already_notified
+		}
+	}
+	#fire_only_once = yes
+	option = {
+		name = chi_armor.825.a
+		if = {
+			limit = {
+				is_faction_leader = yes
+				OR = {
+					tag = GXC
+					tag = GUC
+				}
+			}
+			dismantle_faction = yes
+		}
+		set_country_flag = already_notified
+	}
+}
+
+#chi offer peace
+country_event = {
+	id = chi_armor.826
+	title = chi_armor.826.t
+	desc = chi_armor.826.d
+	picture = GFX_report_event_chinese_officers
+
+	#mean_time_to_happen = {
+		#	days = 10
+		#}
+
+	is_triggered_only = yes
+	option = { #peace#accept
+		name = chi_armor.826.a
+		ai_chance = {
+			base = 70
+			modifier = {
+				factor = 200
+				is_historical_focus_on = yes
+			}
+		}
+		CHI = {
+			country_event = { days = 5 id = chi_armor.831 }#GXC accept peace
+		}
+		add_political_power = 50
+		GUC = { country_event = { id = chi_armor.830 } }
+		set_country_flag = gxc_accept_peace
+		dismantle_faction = yes
+	}
+	option = { #war
+		name = chi_armor.826.b
+		ai_chance = { factor = 30 }
+		CHI = {
+			country_event = { days = 5 id = chi_armor.832 }
+		}
+	}
+}
+
+#chi war
+country_event = {
+	id = chi_armor.827
+	title = chi_armor.827.t
+	desc = chi_armor.827.d
+	picture = GFX_report_event_chiang_speech
+	is_triggered_only = yes
+	option = {
+		name = chi_armor.827.a
+		effect_tooltip = {
+			create_wargoal = {
+				type = annex_everything
+				target = CHI
+			}
+		}
+		hidden_effect = {
+			if = {
+				limit = {
+					is_ai = yes
+				}
+				declare_war_on = { target = CHI type = annex_everything }
+				else = {
+					create_wargoal = {
+						type = annex_everything
+						target = CHI
+					}
+				}
+			}
+		}
+		if = {
+			limit = {
+				GUC = { is_in_faction_with = GXC }
+				has_global_flag = gud_ready
+			}
+			GUC = { add_to_war = { targeted_alliance = GXC enemy = CHI } }
+		}
+	}
+}
+
+#CHI_buy_gxc succ
+country_event = {
+	id = chi_armor.828
+	title = chi_armor.828.t
+	picture = GFX_report_event_bai_bribed
+	desc = {
+		text = chi_armor.828.d_chi
+		trigger = { TAG = CHI }
+	}
+	desc = {
+		text = chi_armor.828.d
+		trigger = { NOT = { TAG = CHI } }
+	}
+	is_triggered_only = yes
+	immediate = {
+		set_global_flag = buy_gxc
+	}
+	option = {
+		name = chi_armor.828.a
+		trigger = { TAG = CHI }
+		annex_country = { target = GXC transfer_troops = yes }
+		create_field_marshal = {
+			name = "Bai Chongxi"
+			portrait_path = "gfx/leaders/CHI/Portrait_China_Bai.dds"
+			traits = { inspirational_leader }
+			skill = 3
+		}
+		if = {
+			limit = {
+				has_idea = bribe_guc
+			}
+			remove_ideas = bribe_guc
+			add_timed_idea = { idea = bribe_gxc days = 180 }		
+		}
+		else = {
+			add_timed_idea = { idea = bribe_gxc days = 90 }	
+		}
+	}
+	option = {
+		name = chi_armor.828.b
+		trigger = {
+			NOT = { TAG = CHI }
+		}
+		dismantle_faction = yes
+	}
+}
+#CHI_buy_gxc fail
+country_event = {
+	id = chi_armor.829
+	title = chi_armor.829.t
+	picture = GFX_report_event_bai_not_bribed
+	desc = {
+		text = chi_armor.829.d_chi
+		trigger = { original_tag = CHI }
+	}
+	desc = {
+		text = chi_armor.829.d
+		trigger = { NOT = { original_tag = CHI } }
+	}
+	is_triggered_only = yes
+	option = {
+		name = chi_armor.829.a
+		trigger = { original_tag = CHI }
+	}
+	option = {
+		name = chi_armor.829.b
+		trigger = {
+			NOT = { original_tag = CHI }
+		}
+		if = {#war!!!
+			limit = { original_tag = GXC }
+			effect_tooltip = {
+				create_wargoal = {
+					type = annex_everything
+					target = CHI
+				}
+			}
+			hidden_effect = {
+				if = {
+					limit = {
+						is_ai = yes
+					}
+					declare_war_on = { target = CHI type = annex_everything }
+					else = {
+						create_wargoal = {
+							type = annex_everything
+							target = CHI
+						}
+					}
+				}
+			}
+		}
+	}
+}
+#2g GXC accept peace
+country_event = {
+	id = chi_armor.831
+	title = chi_armor.831.t
+	desc = chi_armor.831.d
+	picture = GFX_report_event_japanese_chinese_surrender
+	is_triggered_only = yes
+	immediate = {
+		clr_global_flag = liangguang_incident_flag
+	}
+	#mean_time_to_happen = {
+		#	days = 10
+		#}
+
+	option = {
+		name = chi_armor.831.a
+	}
+}
+#2g GXC ref peace
+country_event = {
+	id = chi_armor.832
+	title = chi_armor.832.t
+	desc = chi_armor.832.d
+	picture = GFX_report_event_chinese_soldiers_02
+	is_triggered_only = yes
+	option = {
+		name = chi_armor.832.a
+		ai_chance = { factor = 100 }
+		GXC = { country_event = { days = 15 id = chi_armor.827 } }
+	}
+}
+#(seen by GUC)gxc accepted chi's peace offer#
+country_event = {
+	id = chi_armor.830
+	title = chi_armor.830.t
+	desc = chi_armor.830.d
+	picture = GFX_report_event_chinese_soldiers_02
+	is_triggered_only = yes
+	option = {
+		name = chi_armor.830.a
+	}
+}
+
+############################################################# Cheats
 
 country_event = {
 	id = chi_armor.11
@@ -36,403 +1222,10 @@ country_event = {
 	}
 
 	immediate = {
-		army_experience = 500
-		add_political_power = 350
-		add_equipment_to_stockpile = { type = support_equipment_1 amount = 5000 producer = CHI }
-		add_equipment_to_stockpile = { type = artillery_equipment_1 amount = 5000 producer = CHI }
+		add_political_power = 225
 	}
 
 	option = {}
-}
-
-country_event = {
-	id = chi_armor.12
-	hidden = yes
-
-	mean_time_to_happen = { days = 2 }
-
-	fire_only_once = yes
-
-	trigger = {
-		tag = CHI
-		is_ai = yes
-		608 = { is_controlled_by = JAP }
-		597 = { is_controlled_by = JAP }
-		OR = {
-			613 = { is_controlled_by = JAP }
-			606 = { is_controlled_by = JAP }
-		}
-		OR = {
-			596 = { is_controlled_by = JAP }
-			749 = { is_controlled_by = JAP }
-		}	
-		OR = {
-			744 = { is_controlled_by = JAP }
-			620 = { is_controlled_by = JAP }
-			602 = { is_controlled_by = JAP }
-			602 = { is_controlled_by = JAP }
-			599 = { is_controlled_by = JAP }
-			date > 1943.1.1
-		}
- 		CHI = { has_war_with = JAP }
-	}
-
-	immediate = {
-		add_political_power = 350
-		add_equipment_to_stockpile = { type = support_equipment_1 amount = 5000 producer = CHI }
-		add_equipment_to_stockpile = { type = artillery_equipment_1 amount = 5000 producer = CHI }
-	}
-
-	option = {}
-}
-
-country_event = {
-	id = chi_armor.13
-	title = chi_armor.13.t
-	desc = chi_armor.13.d
-
-	mean_time_to_happen = { days = 2 }
-
-	fire_only_once = yes
-
-	trigger = {
-		tag = CHI
-		PRC = { exists = yes }
-		NOT = { PRC = { has_war_with = JAP } }
-		NOT = { CHI = { has_war_with = JAP } }
-		NOT = { 609 = { is_controlled_by = JAP } }
-	}
-
-	option = {
-		name = chi_armor.13.a
-		trigger = {
-			is_in_faction = yes
-		}
-
-		CHI = { 
-			add_ideas = {
-				internal_conflict
-			}
-		}
-	}
-
-	option = {
-		name = chi_armor.13.a
-		trigger = {
-			is_in_faction = no
-		}
-
-		set_rule = { can_create_factions = yes }
-		create_faction = "CHI_the_peoples_front"
-
-		CHI = { 
-			add_ideas = {
-				internal_conflict
-			}
-		}
-	}
-}
-
-country_event = {
-	id = chi_armor.14
-	hidden = yes
-
-	mean_time_to_happen = { days = 1 }
-
-	fire_only_once = yes
-
-	trigger = {
-		tag = CHI
-		date > 1936.1.1
-	}
-
-	immediate = {
-		add_equipment_to_stockpile = { type = fra_interwar_equipment_1 amount = 40 producer = CHI }
-		add_equipment_to_stockpile = { type = ger_light_equipment_0 amount = 40 producer = CHI }
-		add_equipment_to_stockpile = { type = sov_light_equipment_1 amount = 40 producer = CHI }
-		add_manpower = 1000000
-	}
-
-	option = {}
-}
-
-country_event = {
-	id = chi_armor.15
-	hidden = yes
-
-	mean_time_to_happen = { days = 2 }
-
-	fire_only_once = yes
-
-	trigger = {
-		tag = CHI
-		is_ai = yes
-		605 = { is_controlled_by = CHI }
-		OR = {
-			622 = { is_controlled_by = JAP }
-			744 = { is_controlled_by = JAP }
-			750 = { is_controlled_by = JAP }
-			602 = { is_controlled_by = JAP }
-			599 = { is_controlled_by = JAP }
-			325 = { is_controlled_by = JAP }
-		}
- 		CHI = { has_war_with = JAP }
-	}
-
-	immediate = {
-		load_oob = "CHI_last_stand"
-		add_equipment_to_stockpile = { type = infantry_equipment_1 amount = 300000 producer = CHI }
-	}
-
-	option = {}
-}
-
-country_event = {
-	id = chi_armor.16
-	hidden = yes
-
-	mean_time_to_happen = { days = 2 }
-
-	fire_only_once = yes
-
-	trigger = {
-		tag = CHI
-		is_ai = yes
-		598 = { is_controlled_by = JAP }
-	}
-
-	immediate = {
-		add_political_power = 500
-	}
-
-	option = {}
-}
-
-country_event = {
-	id = chi_armor.801
-	hidden = yes
-
-	mean_time_to_happen = { days = 1 }
-
-	fire_only_once = yes
-
-	trigger = {
-		tag = CHI
-		NOT = { has_government = fascism }
-		is_ai = yes
-		date > 1938.1.1
-		has_war = yes
-		NOT = { date > 1939.1.1 }
-	}
-
-	immediate = {
-		add_political_power = 3000
-		#add_equipment_to_stockpile = { type = infantry_equipment_0 amount = 100000 producer = CHI }
-		add_equipment_to_stockpile = { type = heavy_infantry_equipment_1 amount = 10000 producer = CHI }
-		add_manpower = 1000000
-	}
-
-	option = {}
-
-}
-
-country_event = {
-	id = chi_armor.802
-	hidden = yes
-
-	mean_time_to_happen = { days = 1 }
-
-	fire_only_once = yes
-
-	trigger = {
-		tag = CHI
-		NOT = { has_government = fascism }
-		is_ai = yes
-		date > 1939.1.1
-		has_war = yes
-		NOT = { date > 1940.1.1 }
-	}
-
-	immediate = {
-		add_political_power = 2000
-		add_equipment_to_stockpile = { type = infantry_equipment_0 amount = 300000 producer = CHI }
-		add_equipment_to_stockpile = { type = heavy_infantry_equipment_1 amount = 10000 producer = CHI }
-		add_manpower = 2000000
-	}
-
-	option = {}
-
-}
-
-country_event = {
-	id = chi_armor.803
-	hidden = yes
-
-	mean_time_to_happen = { days = 1 }
-
-	fire_only_once = yes
-
-	trigger = {
-		tag = CHI
-		NOT = { has_government = fascism }
-		is_ai = yes
-		date > 1940.1.1
-		has_war = yes
-		NOT = { date > 1941.1.1 }
-	}
-
-	immediate = {
-		add_political_power = 2000
-		add_equipment_to_stockpile = { type = infantry_equipment_0 amount = 300000 producer = CHI }
-		add_equipment_to_stockpile = { type = heavy_infantry_equipment_1 amount = 10000 producer = CHI }
-		add_manpower = 2000000
-	}
-
-	option = {}
-
-}
-
-country_event = {
-	id = chi_armor.804
-	hidden = yes
-
-	mean_time_to_happen = { days = 1 }
-
-	fire_only_once = yes
-
-	trigger = {
-		tag = CHI
-		NOT = { has_government = fascism }
-		is_ai = yes
-		date > 1941.1.1
-		has_war = yes
-		NOT = { date > 1942.1.1 }
-	}
-
-	immediate = {
-		add_equipment_to_stockpile = { type = infantry_equipment_0 amount = 200000 producer = CHI }
-		add_manpower = 200000
-	}
-
-	option = {}
-
-}
-
-country_event = {
-	id = chi_armor.805
-	hidden = yes
-
-	mean_time_to_happen = { days = 1 }
-
-	fire_only_once = yes
-
-	trigger = {
-		tag = CHI
-		NOT = { has_government = fascism }
-		is_ai = yes
-		date > 1942.1.1
-		has_war = yes
-		NOT = { date > 1943.1.1 }
-	}
-
-	immediate = {
-		add_equipment_to_stockpile = { type = infantry_equipment_0 amount = 200000 producer = CHI }
-		add_manpower = 200000
-	}
-
-	option = {}
-
-}
-
-country_event = {
-	id = chi_armor.905
-	title = chi_armor.903.t
-	desc = chi_armor.903.d
-	
-	mean_time_to_happen = { days = 2 }
-
-	fire_only_once = yes
-
-	trigger = {
-		tag = SHX
-
-		has_war_with = JAP
-		is_in_faction_with = CHI
-		is_in_faction_with = PRC
-	}
-	
-	option = { # Join CHI
-		name = chi_armor.903.a
-		effect_tooltip = {
-			CHI = { 
-				annex_country = { target = ROOT transfer_troops = yes }
-			}
-		}
-		custom_effect_tooltip = GAME_OVER_TT
-		hidden_effect = {
-			CHI = { country_event = china.103 }
-		}
-		ai_chance = {
-			factor = 1
-
-			modifier = {
-				factor = 0
-				tag = SHX
-			}
-		}
-	}
-	option = { # Join PRC
-		name = chi_armor.903.b
-
-		PRC = {
-			every_unit_leader = {
-				set_nationality = PRC
-			}
-			annex_country = { target = ROOT transfer_troops = yes }
-		}
-		ai_chance = {
-			factor = 1
-
-			modifier = {
-				factor = 0
-				tag = YUN
-			}
-
-			modifier = {
-				factor = 0
-				tag = XSM
-			}
-
-			modifier = {
-				factor = 0
-				tag = GXC
-			}
-			
-            modifier = {
-				factor = 0
-				tag = SIK
-			}
-		}
-	}
-	option = { # Stay Independant
-		name = chi_armor.903.c
-		ai_chance = {
-			factor = 1
-
-			modifier = {
-				factor = 0
-				is_historical_focus_on = yes
-				NOT = {
-				 	tag = SIK
-				}
-			}
-            
-            modifier = {
-				factor = 2000
-				tag = SIK
-			}
-		}
-	}
 }
 
 country_event = {

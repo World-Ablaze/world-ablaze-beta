@@ -16,29 +16,75 @@ country_event = {
 	option = {
 		name = japan.1.a
 		add_war_support = 0.05
-		declare_war_on = {
-			target = SHX
-			type = puppet_wargoal_focus
+		start_border_war = {
+			change_state_after_war = no
+			attacker = {
+				state = 950
+				num_provinces = 3
+				on_win = jap_armor.804
+				on_lose = jap_armor.806
+				on_cancel = jap_armor.808
+			}
+			
+			defender = {
+				state = 608
+				num_provinces = 2
+				on_win = jap_armor.805
+				on_lose = jap_armor.807
+				on_cancel = jap_armor.809
+			}
 		}
-  		declare_war_on = {
-			target = CHI
-			type = puppet_wargoal_focus
+		start_border_war = {
+			change_state_after_war = no
+			attacker = {
+				state = 609
+				num_provinces = 1
+				on_win = jap_armor.804
+				on_lose = jap_armor.806
+				on_cancel = jap_armor.808
+			}
+			
+			defender = {
+				state = 949
+				num_provinces = 1
+				on_win = jap_armor.805
+				on_lose = jap_armor.807
+				on_cancel = jap_armor.809
+			}
 		}
 		hidden_effect = {
 			country_event = { days = 5 id = news.1 }
-			JAP = {
-				load_oob = "JAP_shanghai"
+			country_event = { id = jap_armor.810 days = 36 }
+			CHI = { country_event = { id = jap_armor.811 days = 36 } }
+			set_global_flag = second_sino_japanese_war_has_started
+			608 = {
+				add_province_modifier = {
+					static_modifiers = { unplanned_offensive }
+					province = {
+						all_provinces = yes
+					}
+				}
 			}
-			CHI = {
-				load_oob = "CHI_shanghai"
+			949 = {
+				add_province_modifier = {
+					static_modifiers = { unplanned_offensive }
+					province = {
+						all_provinces = yes
+					}
+				}
 			}
-		}
-		USA = { set_country_flag = { flag = USA_china_window days = 60 value = 1 } }
-		if = {
-			limit = {
-				has_country_leader = { id = 700 ruling_only = yes }
+
+			set_border_war_data = {
+				attacker = 950
+				defender = 608
+				combat_width = 240
 			}
-			remove_country_leader_trait = imperial_sanction
+
+			set_border_war_data = {
+				attacker = 609
+				defender = 949
+				combat_width = 120
+			}
 		}
 	}
 }
@@ -63,7 +109,10 @@ country_event = {
 		if = {
 			limit = {
 				608 = {
-					is_controlled_by = FROM
+					OR = {
+						is_controlled_by = CHI
+						is_controlled_by = HPC
+					}
 				}
 			}
 			JAP = {
@@ -72,45 +121,31 @@ country_event = {
 		}
 		if = {
 			limit = {
+				MEN = { is_subject_of = JAP }
 				597 = {
-					is_controlled_by = FROM
+					OR = {
+						is_controlled_by = CHI
+						is_controlled_by = HPC
+					}
 				}
 			}
-			JAP = {
+			MEN = {
 				transfer_state = 597
 			}
 		}
-		if = {
+		else_if = {
 			limit = {
-				614 = {
-					is_controlled_by = FROM
+				927 = {
+					OR = {
+						is_controlled_by = CHI
+						is_controlled_by = HPC
+					}
 				}
 			}
 			JAP = {
-				transfer_state = 614
+				transfer_state = 927
 			}
 		}
-		if = {
-			limit = {
-				743 = {
-					is_controlled_by = FROM
-				}
-			}
-			JAP = {
-				transfer_state = 743
-			}
-		}
-		if = {
-			limit = {
-				613 = {
-					is_controlled_by = FROM
-				}
-			}
-			JAP = {
-				transfer_state = 613
-			}
-		}
-		613 = { set_demilitarized_zone = no }
 		if = {
 			limit = {
 				has_country_leader = { id = 700 ruling_only = yes }

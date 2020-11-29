@@ -1,0 +1,140 @@
+MEN_border_clashes = {
+
+	WTT_border_conflict_Suiyuan = {
+		icon = border_war
+		allowed = {
+			original_tag = MEN
+		}
+
+		available = {
+			OR = {
+				JAP = { has_completed_focus = JAP_purge_the_kodoha_faction }
+				JAP = { has_completed_focus = JAP_support_the_kodoha_faction }
+			}
+		}
+
+		visible = {
+			OR = {
+				is_in_faction_with = JAP
+				is_subject_of = JAP
+			}
+			NOT = {
+				has_war_with = SHX
+				is_in_faction_with = SHX
+			}
+			621 = {
+				is_controlled_by = SHX
+			}
+		}
+
+		highlight_states = {
+			OR = {
+				state = 611
+				state = 621
+			}
+		}
+		fire_only_once = yes
+		ai_will_do = {
+			factor = 100
+			modifier = {
+				factor = 0
+				is_historical_focus_on = yes
+				date < 1936.10.1
+			}
+		}
+		cost = 20
+
+		war_with_on_remove = SHX
+		complete_effect = {
+			start_border_war = {
+				change_state_after_war = no
+				attacker = {
+					state = 611
+					num_provinces = 4
+					on_win = wtt_border_conflict_won_attacker.1
+					on_lose = wtt_border_conflict_lost_attacker.1
+					on_cancel = wtt_border_conflict_canceled_attacker.1
+				}
+				
+				defender = {
+					state = 621
+					num_provinces = 3
+					on_win = wtt_border_conflict_won_defender.1
+					on_lose = wtt_border_conflict_lost_defender.1
+					on_cancel = wtt_border_conflict_canceled_defender.1
+				}
+			}
+			SHX = {
+				activate_targeted_decision = { target = MEN decision = MEN_border_conflict_time_until_cancelled }
+			}
+			activate_targeted_decision = { target = SHX decision = MEN_border_conflict_time_until_cancelled }
+		}
+	}
+	#Mission for attacker to win border war against FROM in X days
+	MEN_border_conflict_time_until_cancelled = {
+
+		icon = border_war
+
+		allowed = { always = no } #Activated from effect
+
+		available = {
+			621 = { has_border_war = no }
+			611 = { has_border_war = no }
+		}
+		
+		highlight_states = {
+			OR = {
+				state = 621
+				state = 611
+			}
+		}
+
+		ai_will_do = {
+			base = 0
+			modifier = {
+				
+			}
+		}
+
+		days_mission_timeout = 90
+		is_good = no
+
+		fire_only_once = yes #Reactivation handled in effect
+
+		complete_effect = {
+			every_other_country = {
+				limit = {
+					OR = {
+						is_chinese_warlord = yes
+						original_tag = PRC
+						original_tag = CHI
+					}
+					NOT = { is_in_faction_with = ROOT }
+				}
+				country_event = {
+					id = chi_armor.811
+				}
+			}
+		}
+
+		timeout_effect = {
+			cancel_border_war = {
+				defender = 621
+				attacker = 611
+			}
+			every_other_country = {
+				limit = {
+					OR = {
+						is_chinese_warlord = yes
+						original_tag = PRC
+						original_tag = CHI
+					}
+					NOT = { is_in_faction_with = ROOT }
+				}
+				country_event = {
+					id = chi_armor.810
+				}
+			}
+		}
+	}
+}

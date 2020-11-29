@@ -1151,6 +1151,20 @@ country_event = {
 		set_global_flag = japanese_china_showdown
 		if = {
 			limit = {
+				HPC = { #if HPC owns one of these states, CHI gets the event
+					OR = {
+						controls_state = 608
+						controls_state = 597
+						controls_state = 614
+					}
+				}
+			}
+			CHI = {
+				country_event = china.1
+			}
+		}
+		if = {
+			limit = {
 				CHI = { #if CHI owns one of these states, they get the event
 					OR = {
 						controls_state = 608
@@ -1229,42 +1243,6 @@ country_event = {
 	immediate = {
 		set_technology = {
 			jap_heavy_artillery_1 = 1
-		}
-	}
-
-	option = {}
-
-}
-
-country_event = {
-	id = jap_armor.46
-	hidden = yes
-	
-	is_triggered_only = yes
-
-	fire_only_once = yes
-
-	immediate = {
-		declare_war_on = {
-			target = CHI
-			type = annex_everything
-		}
-		declare_war_on = {
-			target = SHX
-			type = annex_everything
-		}
-		JAP = {
-			load_oob = "JAP_shanghai_ai"
-		}
-		CHI = {
-			load_oob = "CHI_shanghai"
-		}
-		country_event = { days = 5 id = news.1 }
-		if = {
-			limit = {
-				has_country_leader = { id = 700 ruling_only = yes }
-			}
-			remove_country_leader_trait = imperial_sanction
 		}
 	}
 
@@ -1415,6 +1393,30 @@ country_event = {
 			}
 			RNC = { annex_country = { target = PRC } }
 		}
+		if = {
+			limit = {
+				country_exists = SIC
+				SIC = { is_subject_of = JAP }
+				JAP = { is_ai = yes }
+			}
+			RNC = { annex_country = { target = SIC } }
+		}
+		if = {
+			limit = {
+				country_exists = XIK
+				XIK = { is_subject_of = JAP }
+				JAP = { is_ai = yes }
+			}
+			RNC = { annex_country = { target = XIK } }
+		}
+		if = {
+			limit = {
+				country_exists = GUC
+				GUC = { is_subject_of = JAP }
+				JAP = { is_ai = yes }
+			}
+			RNC = { annex_country = { target = GUC } }
+		}
 		RNC = {
 			set_capital = 605
 		}
@@ -1450,6 +1452,433 @@ country_event = {
 
 	option = {}
 
+}
+
+##################################### MEN
+
+country_event = {
+	id = jap_armor.804
+	title = wtt_border_conflict_won_attacker.1.t
+	desc = wtt_border_conflict_won_attacker.1.desc
+	
+	picture = GFX_report_event_chinese_soldiers_city_ruin
+
+	is_triggered_only = yes
+
+	immediate = {
+		save_event_target_as = our_country
+		FROM = { save_event_target_as = our_state }
+		FROM.FROM = { save_event_target_as = their_country }
+		FROM.FROM.FROM = { save_event_target_as = their_state }
+		remove_targeted_decision = { target = event_target:their_country decision = WTT_border_conflict_time_until_cancelled }
+	}
+	
+	option = {
+		name = wtt_border_conflict_won_attacker.1.a
+		add_political_power = 100
+		if = {
+			limit = {
+				check_variable = {
+					FROM.FROM.num_owned_states > 1
+				}
+			}
+			transfer_state = FROM.FROM.FROM
+		}
+		else = {
+			FROM.FROM = { ROOT = { annex_country = { target = PREV } } }
+		}
+	}	
+}
+
+country_event = {
+	id = jap_armor.805
+	title = wtt_border_conflict_won_defender.1.t
+	desc = wtt_border_conflict_won_defender.1.desc
+	
+	picture = GFX_report_event_chinese_soldiers_mountain
+
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			save_event_target_as = our_country
+			FROM = {
+				save_event_target_as = our_state
+				clr_state_flag = border_incident_active
+			}
+			FROM.FROM = { save_event_target_as = their_country }
+			FROM.FROM.FROM = {
+				save_event_target_as = their_state
+				clr_state_flag = border_incident_active
+			}
+			set_country_flag = show_effect_tooltips
+			clear_variable = attacker_state_vs_@FROM.FROM
+			clear_variable = defender_state_vs_@FROM.FROM
+			remove_targeted_decision = { target = event_target:their_country decision = WTT_border_conflict_time_until_cancelled }
+		}
+	}
+	
+	#Same effect as attacker. Tooltip for their effects
+	option = {
+		name = wtt_border_conflict_won_defender.1.a
+		add_political_power = 150
+		army_experience = 30
+		add_tech_bonus = {
+			name = defensive_border_conflict_won
+			category = land_doctrine
+			bonus = 1.0
+		}
+		if = {
+			limit = { has_country_flag = show_effect_tooltips }
+			event_target:their_country = {
+				effect_tooltip = {
+					add_political_power = -150
+					army_experience = 10
+				}
+			}
+			clr_country_flag = show_effect_tooltips
+		}
+		if = {
+			limit = {
+				check_variable = {
+					FROM.FROM.num_owned_states > 1
+				}
+			}
+			SHX = { transfer_state = 611 }
+		}
+		else = {
+			SHX = { annex_country = { target = MEN } }
+		}
+	}	
+}
+
+country_event = {
+	id = jap_armor.806
+	title = wtt_border_conflict_lost_attacker.1.t
+	desc = wtt_border_conflict_lost_attacker.1.desc
+	
+	picture = GFX_report_event_dead_soldiers
+
+	is_triggered_only = yes
+
+	immediate = {
+		save_event_target_as = our_country
+		FROM = { save_event_target_as = our_state }
+		FROM.FROM = { save_event_target_as = their_country }
+		FROM.FROM.FROM = { save_event_target_as = their_state }
+		set_country_flag = show_effect_tooltips
+		remove_targeted_decision = { target = event_target:their_country decision = WTT_border_conflict_time_until_cancelled }
+	}
+	
+	#Same effect as defender. Tooltip for their effects	
+	option = {
+		name = wtt_border_conflict_lost_attacker.1.a
+		add_political_power = -150
+		army_experience = 10
+		if = {
+			limit = { has_country_flag = show_effect_tooltips }
+			event_target:their_country = {
+				effect_tooltip = {
+					add_political_power = 150
+					army_experience = 30
+					add_tech_bonus = {
+						name = defensive_border_conflict_won
+						category = land_doctrine
+						bonus = 1.0
+					}
+				}
+			}
+			clr_country_flag = show_effect_tooltips
+		}
+	}	
+}
+
+add_namespace = wtt_border_conflict_lost_defender
+
+country_event = {
+	id = jap_armor.807
+	title = wtt_border_conflict_lost_defender.1.t
+	desc = wtt_border_conflict_lost_defender.1.desc
+	
+	picture = GFX_report_event_dead_soldiers
+
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			save_event_target_as = our_country
+			FROM = {
+				save_event_target_as = our_state
+				clr_state_flag = border_incident_active
+			}
+			FROM.FROM = { save_event_target_as = their_country }
+			FROM.FROM.FROM = {
+				save_event_target_as = their_state
+				clr_state_flag = border_incident_active
+			}
+			set_country_flag = show_effect_tooltips
+			clear_variable = attacker_state_vs_@FROM.FROM
+			clear_variable = defender_state_vs_@FROM.FROM
+			remove_targeted_decision = { target = event_target:their_country decision = WTT_border_conflict_time_until_cancelled }
+		}
+	}
+	
+	#Same effect as attacker. Tooltip for their effects
+	option = {
+		name = wtt_border_conflict_lost_defender.1.a
+		if = {
+			limit = { has_country_flag = show_effect_tooltips }
+			effect_tooltip = {
+				add_political_power = 100
+				if = {
+					limit = {
+						check_variable = {
+							num_owned_states > 1
+						}
+					}
+					FROM.FROM = { transfer_state = FROM }
+				}
+				else = {
+					FROM.FROM = { annex_country = { target = ROOT } }
+				}				
+			}
+			clr_country_flag = show_effect_tooltips
+		}
+	}	
+}
+
+add_namespace = wtt_border_conflict_canceled_attacker
+
+country_event = {
+	id = jap_armor.808
+	title = wtt_border_conflict_canceled_attacker.1.t
+	desc = wtt_border_conflict_canceled_attacker.1.desc
+	
+	picture = GFX_report_event_chinese_soldiers_mountain
+
+	is_triggered_only = yes
+
+	immediate = {
+		save_event_target_as = our_country
+		FROM = { save_event_target_as = our_state }
+		FROM.FROM = { save_event_target_as = their_country }
+		FROM.FROM.FROM = { save_event_target_as = their_state }
+		set_country_flag = show_effect_tooltips
+	}
+	
+	option = {
+		name = wtt_border_conflict_canceled_attacker.1.a
+		army_experience = 15
+		if = {
+			limit = { has_country_flag = show_effect_tooltips }
+			event_target:their_country = {
+				effect_tooltip = {
+					army_experience = 30
+					add_political_power = 50
+				}
+			}
+			clr_country_flag = show_effect_tooltips
+		}
+	}	
+}
+
+add_namespace = wtt_border_conflict_canceled_defender
+
+country_event = {
+	id = jap_armor.809
+	title = wtt_border_conflict_canceled_defender.1.t
+	desc = wtt_border_conflict_canceled_defender.1.desc
+	
+	picture = GFX_report_event_chinese_soldiers_mountain
+
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			save_event_target_as = our_country
+			FROM = {
+				save_event_target_as = our_state
+				clr_state_flag = border_incident_active
+			}
+			FROM.FROM = { save_event_target_as = their_country }
+			FROM.FROM.FROM = {
+				save_event_target_as = their_state
+				clr_state_flag = border_incident_active
+			}
+			set_country_flag = show_effect_tooltips
+			clear_variable = attacker_state_vs_@FROM.FROM
+			clear_variable = defender_state_vs_@FROM.FROM
+		}
+	}
+	
+	option = {
+		name = wtt_border_conflict_canceled_defender.1.a
+		army_experience = 30
+		add_political_power = 50
+		if = {
+			limit = { has_country_flag = show_effect_tooltips }
+			event_target:their_country = {
+				effect_tooltip = {
+					army_experience = 15
+				}
+			}
+			clr_country_flag = show_effect_tooltips
+		}
+	}	
+}
+
+##################################### Shanghai Incident
+
+country_event = {
+	id = jap_armor.810
+	title = jap_armor.810.t
+	desc = jap_armor.810.d
+	picture = GFX_report_event_battle_of_shanghai
+
+	is_triggered_only = yes
+	
+	option = {
+		name = jap_armor.810.a
+		add_war_support = 0.05
+		start_border_war = {
+			change_state_after_war = no
+			attacker = {
+				state = 924
+				num_provinces = 1
+				on_win = jap_armor.804
+				on_lose = jap_armor.806
+				on_cancel = jap_armor.808
+			}
+			
+			defender = {
+				state = 613
+				num_provinces = 1
+				on_win = jap_armor.805
+				on_lose = jap_armor.807
+				on_cancel = jap_armor.809
+			}
+		}
+		hidden_effect = {
+			JAP = { country_event = { days = 3 id = jap_armor.811 } }
+		}
+	}
+}
+
+country_event = {
+	id = jap_armor.811
+	hidden = yes
+
+	is_triggered_only = yes
+	
+	immediate = {
+		hidden_effect = {
+			declare_war_on = {
+				target = HPC
+				type = annex_everything
+			}
+	  		declare_war_on = {
+				target = CHI
+				type = annex_everything
+			}
+			if = {
+				limit = {
+					JAP = { is_ai = yes }
+				}
+				JAP = { add_timed_idea = { idea = JAP_navy_slighted days = 90 } }
+			}
+			else = {
+				JAP = { add_timed_idea = { idea = JAP_navy_slighted days = 120 } }
+			}
+			USA = { set_country_flag = { flag = USA_china_window days = 60 value = 1 } }
+			if = {
+				limit = {
+					has_country_leader = { id = 700 ruling_only = yes }
+				}
+				remove_country_leader_trait = imperial_sanction
+			}
+			608 = {
+				clr_state_flag = SPR_unplanned_offensive_flag
+				remove_province_modifier = {
+					static_modifiers = { unplanned_offensive }
+					province = {
+						all_provinces = yes
+					}
+				}
+			}
+			949 = {
+				clr_state_flag = SPR_unplanned_offensive_flag
+				remove_province_modifier = {
+					static_modifiers = { unplanned_offensive }
+					province = {
+						all_provinces = yes
+					}
+				}
+			}
+			news_event = { id = afo_news.27 }
+		}
+	}
+}
+
+##################################### He Umezu Agreement
+
+country_event = {
+	id = jap_armor.812
+	title = jap_armor.812.t
+	desc = jap_armor.812.d
+	picture = GFX_report_event_battle_of_shanghai
+
+	is_triggered_only = yes
+	
+	option = {
+		name = jap_armor.812.a
+		ai_chance = {
+			factor = 90
+		}
+		add_war_support = 0.05
+  		declare_war_on = {
+			target = CHI
+			type = annex_everything
+		}
+	}
+	
+	option = {
+		name = jap_armor.812.a
+		ai_chance = {
+			factor = 10
+			modifier = {
+				factor = 0
+				is_historical_focus_on = yes
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					has_government = fascism
+					has_government = neutrality
+				}
+			}
+		}
+		add_war_support = -0.3
+		add_political_power = -100
+		if = {
+			limit = {
+				has_government = fascism
+			}
+			random_list = {
+				50 = {
+					declare_war_on = {
+						target = CHI
+						type = annex_everything
+					}
+				}
+				50 = {
+					CHI = { 
+						transfer_state = 609
+						transfer_state = 950
+					}
+				}
+			}
+		}
+	}
 }
 
 #####################################
