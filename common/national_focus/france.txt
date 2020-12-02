@@ -561,7 +561,7 @@ focus_tree = {
 		prerequisite = {focus = FRA_invest_in_the_colonies }
 		mutually_exclusive = { }
 		relative_position_id = FRA_invest_in_the_colonies
-		cost = 5
+		cost = 2
 
 		ai_will_do = {
 			factor = 1
@@ -628,7 +628,7 @@ focus_tree = {
 		prerequisite = { focus = FRA_invest_in_the_colonies }
 		mutually_exclusive = { }
 		relative_position_id = FRA_invest_in_the_colonies
-		cost = 5
+		cost = 2
 
 		ai_will_do = {
 			factor = 1
@@ -686,7 +686,7 @@ focus_tree = {
 		prerequisite = {focus = FRA_invest_in_the_colonies }
 		mutually_exclusive = { }
 		relative_position_id = FRA_invest_in_the_colonies
-		cost = 5
+		cost = 2
 
 		ai_will_do = {
 			factor = 1
@@ -740,7 +740,7 @@ focus_tree = {
 		x = 2
 		y = 1
 		relative_position_id = FRA_algerie_france
-		cost = 10
+		cost = 6
 		ai_will_do = {
 			factor = 1
 		}
@@ -764,9 +764,14 @@ focus_tree = {
 					}
 					has_state_flag = FRA_colonial_industry_target
 				}
+				CONTROLLER = {
+					add_autonomy_ratio = {
+						value = -0.2
+					}
+				}
 				add_building_construction = {
 					type = industrial_complex
-					level = 4
+					level = 6
 					instant_build = yes
 				}
 			}
@@ -3746,7 +3751,12 @@ focus_tree = {
 		#	factor = 1
 		#}
 		completion_reward = {
-			remove_ideas = FRA_disjointed_government
+			if = {
+				limit = {
+					has_idea = FRA_disjointed_government
+				}
+				remove_ideas = FRA_disjointed_government
+			}
 		}
 	}
 	focus = {
@@ -4076,7 +4086,12 @@ focus_tree = {
 		}
 		search_filters = { FOCUS_FILTER_POLITICAL }
 		completion_reward = {
-			remove_ideas = FRA_disjointed_government
+			if = {
+				limit = {
+					has_idea = FRA_disjointed_government
+				}
+				remove_ideas = FRA_disjointed_government
+			}
 			add_ideas = FRA_national_mobilization_focus
 		}
 	}
@@ -4496,7 +4511,7 @@ focus_tree = {
 		prerequisite = {
 			focus = FRA_utilize_the_leagues
 		}
-		mutually_exclusive = { focus = FRA_the_council_of_rambouillet }
+		mutually_exclusive = { focus = FRA_revise_the_constitution }
 		relative_position_id = FRA_utilize_the_leagues
 		cost = 10
 
@@ -4575,6 +4590,42 @@ focus_tree = {
 			add_timed_idea = { idea = FRA_anti_decandence days = 365 }
 		}
 	}
+
+	focus = {
+		id = FRA_french_youth
+		icon = GFX_goal_generic_national_unity
+		x = 4
+		y = 1
+		offset = {
+			x = 0
+			y = 0
+		}
+		prerequisite = {
+			focus = FRA_national_regeneration
+		}
+		relative_position_id = FRA_national_regeneration
+		cost = 10
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+		}
+		
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+		search_filters = { FOCUS_FILTER_MANPOWER }
+		completion_reward = {
+			add_ideas = { FRA_french_youth_idea }
+		}
+	}
+
 	focus = {
 		id = FRA_integralism
 		icon = GFX_focus_generic_diplomatic_treaty
@@ -4624,12 +4675,8 @@ focus_tree = {
 		prerequisite = {
 			focus = FRA_integralism
 		}
-		mutually_exclusive = {
-			focus = FRA_family
-			focus = FRA_fatherland
-		}
 		relative_position_id = FRA_integralism
-		cost = 4
+		cost = 5
 
 		ai_will_do = {
 			factor = 1
@@ -4663,12 +4710,8 @@ focus_tree = {
 		prerequisite = {
 			focus = FRA_integralism
 		}
-		mutually_exclusive = {
-			focus = FRA_work
-			focus = FRA_fatherland
-		}
 		relative_position_id = FRA_integralism
-		cost = 4
+		cost = 5
 
 		ai_will_do = {
 			factor = 1
@@ -4702,12 +4745,8 @@ focus_tree = {
 		prerequisite = {
 			focus = FRA_integralism
 		}
-		mutually_exclusive = {
-			focus = FRA_family
-			focus = FRA_work
-		}
 		relative_position_id = FRA_integralism
-		cost = 4
+		cost = 5
 
 		ai_will_do = {
 			factor = 1
@@ -4730,40 +4769,43 @@ focus_tree = {
 		}
 	}
 	focus = {
-		id = FRA_political_unity
-		icon = GFX_goal_generic_intelligence_exchange
+		id = FRA_purge_the_generals_2
+		icon = GFX_goal_demand_sudetenland
 		x = 2
-		y = 3
+		y = 2
 		offset = {
 			x = 0
 			y = 0
 		}
-		prerequisite = {
+		prerequisite = { 
 			focus = FRA_national_regeneration
-		}
+	    }
+		mutually_exclusive = { }
 		relative_position_id = FRA_national_regeneration
-		cost = 10
+		cost = 5
 
 		ai_will_do = {
 			factor = 1
 		}
 
 		available = {
-			
 		}
 		
 		bypass = {
-
 		}
 
 		cancel_if_invalid = yes
 		continue_if_invalid = no
 		available_if_capitulated = no
-		search_filters = { FOCUS_FILTER_STABILITY }
+
 		completion_reward = {
-			remove_ideas = { FRA_disjointed_government }
-			add_popularity = { ideology = fascism popularity = party_popularity@neutrality }
-			add_popularity = { ideology = neutrality popularity = -1}
+			every_unit_leader = {
+				limit = {
+					NOT = { has_trait = old_guard }
+					skill > 2
+				}
+				retire = yes
+			}
 			if = {
 				limit = {
 					has_idea = FRA_widespread_fear_of_the_military
@@ -4784,6 +4826,49 @@ focus_tree = {
 			}
 		}
 	}
+
+	focus = {
+		id = FRA_political_unity
+		icon = GFX_goal_generic_intelligence_exchange
+		x = 0
+		y = 1
+		offset = {
+			x = 0
+			y = 0
+		}
+		prerequisite = {
+			focus = FRA_purge_the_generals_2
+		}
+		relative_position_id = FRA_purge_the_generals_2
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			
+		}
+		
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+		search_filters = { FOCUS_FILTER_STABILITY }
+		completion_reward = {
+			if = {
+				limit = {
+					has_idea = FRA_disjointed_government
+				}
+				remove_ideas = FRA_disjointed_government
+			}
+			add_popularity = { ideology = fascism popularity = party_popularity@neutrality }
+			add_popularity = { ideology = neutrality popularity = -1}
+		}
+	}
 	focus = {
 		id = FRA_diplomatic_freedom
 		icon = GFX_focus_renounce_the_treaty_of_trianon
@@ -4799,7 +4884,7 @@ focus_tree = {
 			focus = FRA_proclaim_the_third_empire
 		}
 		relative_position_id = FRA_political_unity
-		cost = 10
+		cost = 5
 
 		ai_will_do = {
 			factor = 1
@@ -4869,7 +4954,7 @@ focus_tree = {
 			focus = FRA_towards_a_new_europe
 		}
 		relative_position_id = FRA_diplomatic_freedom
-		cost = 10
+		cost = 5
 
 		ai_will_do = {
 			factor = 1
@@ -4973,6 +5058,10 @@ focus_tree = {
 		}
 		prerequisite = {
 			focus = FRA_reach_out_to_spain
+			focus = FRA_secure_the_crown_of_spain
+		}
+		mutually_exclusive = {
+			focus = FRA_secure_portugal
 		}
 		relative_position_id = FRA_reach_out_to_spain
 		cost = 5
@@ -5065,23 +5154,13 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			if = {
-				limit = {
-					country_exists = SPB
-				}
-				set_rule = { can_create_factions = yes }
-				create_faction = FRA_legitimist_faction
-				SPB = { country_event = generic.5 }
-			}
-			else = {
-				41 = {
-					OWNER = {
-						ROOT = {
-							create_wargoal = {
-								type = annex_everything
-								target = PREV
-								expire = 0
-							}
+			41 = {
+				OWNER = {
+					ROOT = {
+						create_wargoal = {
+							type = annex_everything
+							target = PREV
+							expire = 0
 						}
 					}
 				}
@@ -5099,6 +5178,10 @@ focus_tree = {
 		}
 		prerequisite = {
 			focus = FRA_secure_the_crown_of_spain
+			focus = FRA_reach_out_to_spain
+		}
+		mutually_exclusive = {
+			focus = FRA_invite_portugal
 		}
 		relative_position_id = FRA_secure_the_crown_of_spain
 		cost = 5
@@ -5177,6 +5260,14 @@ focus_tree = {
 		
 		bypass = {
 			is_in_faction_with = ITA
+			856 = {
+				CONTROLLER = {
+					OR = {
+						is_in_faction_with = FRA
+						is_subject_of = FRA
+					}
+				}
+			}
 		}
 
 		cancel_if_invalid = yes
@@ -6139,7 +6230,12 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_POLITICAL }
 		completion_reward = {
 			remove_ideas = FRA_protected_by_the_maginot_line
-			remove_ideas = FRA_disjointed_government
+			if = {
+				limit = {
+					has_idea = FRA_disjointed_government
+				}
+				remove_ideas = FRA_disjointed_government
+			}	
 			add_ideas = FRA_army_of_aggression_focus
 			USA = {
 				set_country_flag = { flag = USA_army_of_aggression_window days = 60 value = 1 }
@@ -6497,9 +6593,48 @@ focus_tree = {
 			GER = { country_event = { id = germany.91 days = 1 } }			
 		}
 	}
+	# focus = {
+	# 	id = FRA_the_council_of_rambouillet
+	# 	icon = GFX_goal_generic_major_alliance
+	# 	x = 5
+	# 	y = 1
+	# 	offset = {
+	# 		x = 0
+	# 		y = 0
+	# 	}
+	# 	prerequisite = {
+	# 		focus = FRA_utilize_the_leagues
+	# 	}
+	# 	mutually_exclusive = { focus = FRA_national_regeneration }
+	# 	relative_position_id = FRA_utilize_the_leagues
+	# 	cost = 10
+
+	# 	ai_will_do = {
+	# 		factor = 1
+	# 	}
+
+	# 	available = {
+	# 		is_subject = no
+	# 	}
+		
+	# 	bypass = {
+
+	# 	}
+
+	# 	cancel_if_invalid = yes
+	# 	continue_if_invalid = no
+	# 	available_if_capitulated = no
+	# 	search_filters = { FOCUS_FILTER_POLITICAL }
+	# 	completion_reward = {
+	# 		add_popularity = {
+	# 			ideology = neutrality
+	# 			popularity = 0.1
+	# 		}
+	# 	}
+	# }
 	focus = {
-		id = FRA_the_council_of_rambouillet
-		icon = GFX_goal_generic_major_alliance
+		id = FRA_revise_the_constitution
+		icon = GFX_focus_generic_treaty
 		x = 5
 		y = 1
 		offset = {
@@ -6509,47 +6644,11 @@ focus_tree = {
 		prerequisite = {
 			focus = FRA_utilize_the_leagues
 		}
+
 		mutually_exclusive = { focus = FRA_national_regeneration }
+
 		relative_position_id = FRA_utilize_the_leagues
-		cost = 10
-
-		ai_will_do = {
-			factor = 1
-		}
-
-		available = {
-			is_subject = no
-		}
-		
-		bypass = {
-
-		}
-
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
-		search_filters = { FOCUS_FILTER_POLITICAL }
-		completion_reward = {
-			add_popularity = {
-				ideology = neutrality
-				popularity = 0.1
-			}
-		}
-	}
-	focus = {
-		id = FRA_revise_the_constitution
-		icon = GFX_focus_generic_treaty
-		x = 0
-		y = 1
-		offset = {
-			x = 0
-			y = 0
-		}
-		prerequisite = {
-			focus = FRA_the_council_of_rambouillet
-		}
-		relative_position_id = FRA_the_council_of_rambouillet
-		cost = 10
+		cost = 5
 
 		ai_will_do = {
 			factor = 1
@@ -6570,13 +6669,179 @@ focus_tree = {
 		completion_reward = {
 			remove_ideas = FRA_victors_of_wwi
 			add_timed_idea = { idea = FRA_constitutional_revision days = 365 }
+			add_popularity = {
+				ideology = neutrality
+				popularity = 0.1
+			}
 		}
 	}
+
+	focus = {
+		id = FRA_an_absolute_monarch
+		icon = GFX_goal_generic_demand_territory
+		x = 2
+		y = 1
+		prerequisite = {
+			focus = FRA_revise_the_constitution
+		}
+		mutually_exclusive = { focus = FRA_a_parliamentary_monarchy }
+		relative_position_id = FRA_revise_the_constitution
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			is_subject = no
+		}
+		
+		bypass = {
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+		search_filters = { FOCUS_FILTER_POLITICAL }
+		completion_reward = {
+			add_stability = -0.1
+		}
+	}
+
+	focus = {
+		id = FRA_military_coup_d_etat
+		icon = GFX_focus_generic_manpower
+		x = 0
+		y = 1
+		prerequisite = {
+			focus = FRA_an_absolute_monarch
+		}
+		relative_position_id = FRA_an_absolute_monarch
+		cost = 2
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			is_subject = no
+			has_completed_focus = FRA_repeal_the_law_of_exile
+		}
+		
+		bypass = {
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+		search_filters = { FOCUS_FILTER_POLITICAL }
+		completion_reward = {
+			add_stability = 0.15
+			hidden_effect = {
+				news_event = { hours = 6 id = news.337 }
+				create_country_leader = {
+					name = "Charles de Gaulle"
+					desc = "POLITICS_CHARLES_DE_GAULLE_DESC"
+					picture = "Portrait_France_Charles_De_Gaulle.dds"
+					expire = "1965.1.1"
+					ideology = conservatism
+					traits = {
+					}
+				}
+			}
+		}
+	}
+
+	focus = {
+		id = FRA_a_parliamentary_monarchy
+		icon = GFX_goal_generic_national_unity
+		x = -2
+		y = 1
+		prerequisite = {
+			focus = FRA_revise_the_constitution
+		}
+		mutually_exclusive = { focus = FRA_an_absolute_monarch }
+		relative_position_id = FRA_revise_the_constitution
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			is_subject = no
+		}
+		
+		bypass = {
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+		search_filters = { FOCUS_FILTER_POLITICAL }
+		completion_reward = {
+			add_stability = 0.1
+			add_popularity = {
+				ideology = neutrality
+				popularity = 0.1	
+			}
+		}
+	}
+
+	focus = {
+		id = FRA_the_army_swears_loyalty
+		icon = GFX_focus_generic_military_mission
+		x = 0
+		y = 1
+		prerequisite = {
+			focus = FRA_a_parliamentary_monarchy
+		}
+		relative_position_id = FRA_a_parliamentary_monarchy
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			is_subject = no
+		}
+		
+		bypass = {
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+		search_filters = { FOCUS_FILTER_POLITICAL }
+		completion_reward = {
+			add_stability = 0.1
+			if = {
+				limit = {
+					has_idea = FRA_widespread_fear_of_the_military
+				}
+				swap_ideas = {
+					remove_idea = FRA_widespread_fear_of_the_military
+					add_idea = FRA_fear_of_the_military				
+				}
+			}
+			if = {
+				limit = {
+					has_idea = FRA_fear_of_the_military
+				}
+				swap_ideas = {
+					remove_idea = FRA_fear_of_the_military
+					add_idea = FRA_respect_for_the_military				
+				}
+			}
+		}
+	}
+
 	focus = {
 		id = FRA_repeal_the_law_of_exile
 		icon = GFX_focus_renounce_the_treaty_of_trianon
 		x = 0
-		y = 1
+		y = 2
 		offset = {
 			x = 0
 			y = 0
@@ -6585,7 +6850,7 @@ focus_tree = {
 			focus = FRA_revise_the_constitution
 		}
 		relative_position_id = FRA_revise_the_constitution
-		cost = 10
+		cost = 5
 
 		ai_will_do = {
 			factor = 1
@@ -6606,7 +6871,6 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_STABILITY }
 		completion_reward = {
 			add_political_power = 120
-			remove_ideas = { FRA_disjointed_government }
 		}
 	}
 	
@@ -6621,6 +6885,9 @@ focus_tree = {
 		}
 		prerequisite = {
 			focus = FRA_repeal_the_law_of_exile
+		}
+		prerequisite = {
+			focus = FRA_the_army_swears_loyalty
 		}
 		mutually_exclusive = {
 			focus = FRA_proclaim_the_third_empire
@@ -6645,6 +6912,12 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+			if = {
+				limit = {
+					has_idea = FRA_disjointed_government
+				}
+				remove_ideas = FRA_disjointed_government
+			}
 			if = {
 				limit = {
 					date < 1941.2.21 #TODO_GABRIEL: coordinate with Drikus for death events
@@ -6680,24 +6953,6 @@ focus_tree = {
 			set_politics = { ruling_party = neutrality }
 			hidden_effect = {
 				news_event = { id = lar_news.8 days = 3 random_days = 5 }
-			}
-			if = {
-				limit = {
-					has_idea = FRA_widespread_fear_of_the_military
-				}
-				swap_ideas = {
-					remove_idea = FRA_widespread_fear_of_the_military
-					add_idea = FRA_fear_of_the_military				
-				}
-			}
-			if = {
-				limit = {
-					has_idea = FRA_fear_of_the_military
-				}
-				swap_ideas = {
-					remove_idea = FRA_fear_of_the_military
-					add_idea = FRA_respect_for_the_military				
-				}
 			}
 		}
 	}
@@ -6786,6 +7041,7 @@ focus_tree = {
 		}
 		prerequisite = {
 			focus = FRA_secure_the_crown_of_spain
+			focus = FRA_reach_out_to_spain
 		}
 		mutually_exclusive = { focus = FRA_unite_the_crowns }
 		relative_position_id = FRA_secure_the_crown_of_spain
@@ -6843,6 +7099,9 @@ focus_tree = {
 		prerequisite = {
 			focus = FRA_repeal_the_law_of_exile
 		}
+		prerequisite = {
+			focus = FRA_military_coup_d_etat
+		}
 		mutually_exclusive = {
 			focus = FRA_the_legitimate_heir
 		}
@@ -6866,6 +7125,12 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+			if = {
+				limit = {
+					has_idea = FRA_disjointed_government
+				}
+				remove_ideas = FRA_disjointed_government
+			}
 			create_country_leader = {
 				name = "Napoléon VI"
 				desc = "POLITICS_ÉDOUARD_DALADIER_DESC"
@@ -6873,7 +7138,7 @@ focus_tree = {
 				expire = "1965.1.1"
 				ideology = despotism
 				traits = {
-					
+					inexperienced_imperialist
 				}
 			}
 			set_party_name = {
@@ -6893,6 +7158,257 @@ focus_tree = {
 				news_event = { id = lar_news.8 days = 3 random_days = 5 }
 			}
 			set_cosmetic_tag = FRA_THIRD_EMPIRE
+		}
+	}
+
+	focus = {
+		id = FRA_revive_the_garde_imperiale
+		icon = GFX_goal_generic_special_forces
+		x = 0
+		y = 1
+		offset = {
+			x = 0
+			y = 0
+		}
+		prerequisite = { focus = FRA_proclaim_the_third_empire }
+		mutually_exclusive = { }
+		relative_position_id = FRA_proclaim_the_third_empire
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+		}
+		
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		completion_reward = {
+			division_template = {
+				name = "Garde Impériale (Infantry)" 	
+				division_names_group = FRA_INF_01
+
+				regiments = {
+					heavy_infantry = { x = 0 y = 0 }
+					heavy_infantry = { x = 0 y = 1 }
+					heavy_infantry = { x = 0 y = 2 }
+					heavy_infantry = { x = 0 y = 3 }
+
+					heavy_infantry = { x = 1 y = 0 }
+					heavy_infantry = { x = 1 y = 1 }
+					heavy_infantry = { x = 1 y = 2 }
+			
+					heavy_infantry = { x = 2 y = 0 }
+					heavy_infantry = { x = 2 y = 1 }
+					heavy_infantry = { x = 2 y = 2 }
+			
+					artillery_brigade = { x = 3 y = 0 }
+					artillery_brigade = { x = 3 y = 1 }
+					artillery_brigade = { x = 3 y = 2 }
+					anti_tank_brigade =  { x = 3 y = 3 }
+				}
+
+				support = {
+					garde_imperiale_officers = { x = 0 y = 0 }
+					engineer = { x = 0 y = 1 }
+					mobile_recon = { x = 0 y = 2 }
+					heavy_artillery = { x = 0 y = 3 }
+					motorized_logistics_company = { x = 0 y = 4 }
+					artillery = { x = 1 y = 0 } 
+					signal_company = { x = 1 y = 1 }
+					field_hospital = { x = 1 y = 2 }
+				}
+			}
+			capital_scope = {
+				create_unit = {
+					division = "name = \"1re Div. Garde Impériale\" division_template = \"Garde Impériale (Infantry)\" start_experience_factor = 1"  
+					owner = ROOT
+				}
+			}
+		}
+	}
+
+	focus = {
+		id = FRA_a_military_training_for_the_emperor
+		icon = GFX_goal_generic_allies_build_infantry
+		x = 2
+		y = 1
+		offset = {
+			x = 0
+			y = 0
+		}
+		prerequisite = { focus = FRA_proclaim_the_third_empire }
+		mutually_exclusive = { focus = FRA_focus_on_politics }
+		relative_position_id = FRA_proclaim_the_third_empire
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+		}
+		
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		completion_reward = {
+			remove_country_leader_trait = inexperienced_imperialist
+			add_timed_idea = { idea = FRA_emperor_military_training_idea days = 180 }
+		}
+	}
+
+	focus = {
+		id = FRA_lead_from_the_front
+		icon = GFX_focus_prc_infiltration
+		x = 0
+		y = 1
+		offset = {
+			x = 0
+			y = 0
+		}
+		prerequisite = { focus = FRA_a_military_training_for_the_emperor }
+		relative_position_id = FRA_a_military_training_for_the_emperor
+		cost = 1
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			NOT = { has_idea = FRA_emperor_military_training_idea }
+		}
+		
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		completion_reward = {
+			add_country_leader_trait = indomitable_perseverance
+			create_field_marshal = {
+				name = "Napoléon VI"
+				picture = "gfx/leaders/FRA/Portrait_France_Generic_land_5.dds"
+				traits = { trait_FRA_emperor_of_the_french inspirational_leader organisational_leader aggressive_assaulter}
+				skill = 2
+				attack_skill = 3
+				defense_skill = 2
+				planning_skill = 2
+				logistics_skill = 2
+			}
+		}
+	}
+
+	focus = {
+		id = FRA_focus_on_politics
+		icon = GFX_goal_generic_major_alliance
+		x = 4
+		y = 1
+		offset = {
+			x = 0
+			y = 0
+		}
+		prerequisite = { focus = FRA_proclaim_the_third_empire }
+		mutually_exclusive = { focus = FRA_a_military_training_for_the_emperor}
+		relative_position_id = FRA_proclaim_the_third_empire
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+		}
+		
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		completion_reward = {
+			add_stability = 0.05
+			remove_country_leader_trait = inexperienced_imperialist
+			add_country_leader_trait = autocratic_imperialist
+			add_country_leader_trait = dictator
+		}
+	}
+
+	focus = {
+		id = FRA_purge_the_generals
+		icon = GFX_goal_demand_sudetenland
+		x = -2
+		y = 1
+		offset = {
+			x = 0
+			y = 0
+		}
+		prerequisite = { 
+			focus = FRA_proclaim_the_third_empire
+			focus = FRA_the_legitimate_heir
+			focus = FRA_political_unity
+	    }
+		mutually_exclusive = { }
+		relative_position_id = FRA_proclaim_the_third_empire
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+		}
+		
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		completion_reward = {
+			if = {
+				limit = {
+					has_completed_focus = FRA_proclaim_the_third_empire
+				}
+				every_unit_leader = {
+					limit = {
+						has_trait = old_guard
+						skill < 3
+					}
+					retire = yes
+				}
+			}
+			else_if = {
+				limit = {
+					has_completed_focus = FRA_the_legitimate_heir
+				}
+				every_unit_leader = {
+					limit = {
+						NOT = { has_trait = old_guard }
+						skill > 2
+					}
+					retire = yes
+				}
+			}
 			if = {
 				limit = {
 					has_idea = FRA_widespread_fear_of_the_military
@@ -6922,28 +7438,29 @@ focus_tree = {
 			}
 		}
 	}
-
+	
 	focus = {
-		id = FRA_revive_the_garde_imperiale
-		icon = GFX_goal_generic_special_forces
+		id = FRA_promote_de_gaulle_and_de_Hauteclocque
+		icon = GFX_goal_generic_army_doctrines
 		x = 0
 		y = 1
 		offset = {
 			x = 0
 			y = 0
 		}
-		prerequisite = { focus = FRA_proclaim_the_third_empire }
+		prerequisite = { 
+			focus = FRA_purge_the_generals
+	    }
 		mutually_exclusive = { }
-		relative_position_id = FRA_proclaim_the_third_empire
-		cost = 10
+		relative_position_id = FRA_purge_the_generals
+		cost = 5
 
 		ai_will_do = {
 			factor = 1
 		}
 
 		available = {
-			has_tech = fra_medium_2
-			has_tech = fra_heavy_1
+			has_completed_focus = FRA_proclaim_the_third_empire
 		}
 		
 		bypass = {
@@ -6955,44 +7472,19 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			if = {
-				division_template = {
-					name = "Garde Impériale (Armored)" 	
-					division_names_group = FRA_ARM_01
-
-					regiments = {
-						heavy_armor = { x = 0 y = 0 }
-						heavy_armor = { x = 0 y = 1 }
-						heavy_armor = { x = 0 y = 2 }
-						heavy_armor = { x = 0 y = 3 }
-
-						heavy_armor = { x = 1 y = 0 }
-						heavy_armor = { x = 1 y = 1 }
-						heavy_armor = { x = 1 y = 2 }
-						heavy_armor = { x = 1 y = 3 }
-						
-						motorized = { x = 2 y = 0 }
-						motorized = { x = 2 y = 1 }
-						motorized = { x = 2 y = 2 }
-						motorized = { x = 2 y = 3 }
-
-						motorized = { x = 3 y = 0 }
-						motorized = { x = 3 y = 1 }
+			every_unit_leader = {
+				limit = {
+					OR = {
+						has_id = 101 #De Gaulle
+						has_id = 103 #Leclerc
 					}
-
-					support = {
-						engineer = { x = 0 y = 0 }
-						mobile_recon = { x = 0 y = 1 }
-						heavy_artillery = { x = 0 y = 2 }
-						motorized_logistics_company = { x = 0 y = 3 }
-					}
+					is_field_marshal = no
 				}
-			}
-			capital_scope = {
-				create_unit = {
-					division = "name = \"1re Div. Garde Impériale\" division_template = \"Garde Impériale (Armored)\" start_experience_factor = 1"  
-					owner = ROOT
-				}
+				promote_leader = yes
+				add_skill_level = 1
+				add_attack = 1
+				add_defense = 1
+				add_planning = 1
 			}
 		}
 	}
@@ -7012,7 +7504,7 @@ focus_tree = {
 			focus = FRA_latin_entente
 		}
 		relative_position_id = FRA_latin_entente
-		cost = 10
+		cost = 5
 
 		ai_will_do = {
 			factor = 1
@@ -7069,6 +7561,50 @@ focus_tree = {
 		}
 	}
 	focus = {
+		id = FRA_no_more_trafalgar
+		icon = GFX_goal_generic_navy_battleship
+		prerequisite = { focus = FRA_avenge_waterloo }
+		available = {
+			is_puppet = no
+		}
+		x = 0
+		y = 1
+		relative_position_id = FRA_avenge_waterloo
+		cost = 10
+		ai_will_do = {
+			factor = 1
+		}
+		
+		completion_reward = {
+			navy_experience = 50
+			23 = {
+				add_extra_state_shared_building_slots = 5
+				add_building_construction = {
+					type = dockyard
+					level = 5
+					instant_build = yes
+				}
+			}
+			add_tech_bonus = {
+				name = bc_bonus
+				bonus = 1.0
+				uses = 1
+				category = bc_tech
+			}
+			add_tech_bonus = {
+				name = bb_bonus
+				bonus = 1.0
+				uses = 1
+				category = bb_tech
+				category = shbb_tech
+			}
+			add_idea = FRA_rebuild_the_royale_idea
+			economy_fatigue_level_up_10 = yes
+			economy_fatigue_level_up_10 = yes
+		}
+	}
+
+	focus = {
 		id = FRA_reorganize_the_dutch
 		icon = GFX_focus_hol_oranje_boven
 		x = -4
@@ -7119,7 +7655,7 @@ focus_tree = {
 	focus = {
 		id = FRA_retribution_for_sedan
 		icon = GFX_focus_attack_germany
-		x = 8
+		x = 5
 		y = 1
 		offset = {
 			x = 0
@@ -7129,7 +7665,7 @@ focus_tree = {
 			focus = FRA_latin_entente
 		}
 		relative_position_id = FRA_latin_entente
-		cost = 10
+		cost = 5
 		will_lead_to_war_with = GER
 		ai_will_do = {
 			factor = 1
@@ -7137,6 +7673,7 @@ focus_tree = {
 
 		available = {
 			is_subject = no
+			has_completed_focus = FRA_proclaim_the_third_empire
 		}
 		
 		bypass = {
@@ -7162,16 +7699,16 @@ focus_tree = {
 	focus = {
 		id = FRA_disunite_germany
 		icon = GFX_goal_generic_occupy_states_ongoing_war
-		x = 0
+		x = 8
 		y = 1
 		offset = {
 			x = 0
 			y = 0
 		}
 		prerequisite = {
-			focus = FRA_retribution_for_sedan
+			focus = FRA_latin_entente
 		}
-		relative_position_id = FRA_retribution_for_sedan
+		relative_position_id = FRA_latin_entente
 		cost = 10
 
 		ai_will_do = {
@@ -7271,6 +7808,10 @@ focus_tree = {
 				SAX = {
 					transfer_state = 65
 					add_state_core = 65
+					transfer_state = 802
+					add_state_core = 802
+					transfer_state = 60
+					add_state_core = 60
 				}
 				puppet = SAX
 			}
@@ -7342,11 +7883,13 @@ focus_tree = {
 				}
 				HAN = {
 					transfer_state = 59
-					transfer_state = 802
 					transfer_state = 56
 					transfer_state = 57
+					transfer_state = 799
+					transfer_state = 55
+					add_state_core = 799
+					add_state_core = 55
 					add_state_core = 59
-					add_state_core = 802
 					add_state_core = 56
 					add_state_core = 57
 				}
@@ -7409,6 +7952,8 @@ focus_tree = {
 				}
 				puppet = PRE
 			}
+			economy_fatigue_level_down_10 = yes
+			economy_fatigue_level_down_10 = yes
 		}
 	}
 	focus = {
@@ -7499,7 +8044,7 @@ focus_tree = {
 				NOT = { has_dlc = "La Resistance" }
 			}
 		}
-		cost = 10
+		cost = 5
 
 		available_if_capitulated = yes
 
@@ -7581,7 +8126,7 @@ focus_tree = {
 		id = FRA_fighter_focus
 		icon = GFX_goal_generic_air_fighter
 	 	prerequisite = { focus = FRA_air_focus }
-		x = -1
+		x = -2
 		y = 1
 		relative_position_id = FRA_air_focus
 		cost = 5
@@ -7623,7 +8168,7 @@ focus_tree = {
 		id = FRA_cas_focus
 		icon = GFX_goal_generic_CAS
 	 	prerequisite = { focus = FRA_air_focus }
-		x = 1
+		x = 0
 		y = 1
 		relative_position_id = FRA_air_focus
 		cost = 5
@@ -7741,12 +8286,66 @@ focus_tree = {
 		}
 	}
 
+	focus = {
+		id = FRA_plan_V
+		prerequisite = { focus = FRA_air_focus }
+		icon = GFX_goal_generic_construct_mil_factory
+		x = 2
+		y = 1
+		relative_position_id = FRA_air_focus
+		cost = 5
+		ai_will_do = {
+			factor = 1
+		}
+
+		available_if_capitulated = yes
+
+		completion_reward = {
+			custom_effect_tooltip = FRA_plan_V_tt
+			add_ideas = plan_V
+		}
+
+		bypass = {
+			OR = {
+				has_idea = extensive_conscription 
+				has_idea = service_by_requirement 
+				has_idea = all_adults_serve 
+				has_idea = scraping_the_barrel 
+			}
+		}
+	}
+
+	focus = {
+		id = FRA_aircraft_production_focus
+		prerequisite = { focus = FRA_plan_V }
+		available = {
+			NOT = {
+				has_completed_focus = FRA_the_old_school
+			}
+		}
+
+		icon = GFX_goal_generic_air_production
+		x = 0
+		y = 3
+		relative_position_id = FRA_plan_V
+		cost = 10
+		ai_will_do = {
+			factor = 1
+		}
+
+		available_if_capitulated = yes
+
+		completion_reward = {
+			add_ideas = french_fighter_discount
+		}
+	}
+
 	#### END ####
 
 	focus = {
 		id = FRA_begin_rearmament
 		icon = GFX_goal_generic_construct_mil_factory
-		x = 23
+		x = 24
 		y = 0
 		offset = {
 			x = -10
@@ -8689,7 +9288,7 @@ focus_tree = {
 		available_if_capitulated = yes
 		search_filters = { FOCUS_FILTER_INDUSTRY }
 		completion_reward = {
-			459 = {
+			14 = {
 				if = {
 					limit = { 
 						OR = {
@@ -8705,23 +9304,7 @@ focus_tree = {
 					set_state_flag = FRA_colonial_dockyards
 				}
 			}
-			272 = {
-				if = {
-					limit = { 
-						OR = {
-							is_controlled_by = ROOT
-							CONTROLLER = { is_subject_of = ROOT }
-						}
-					}
-					add_building_construction = {
-						type = dockyard
-						level = 2
-						instant_build = yes
-					}
-					set_state_flag = FRA_colonial_dockyards
-				}
-			}
-			286 = {
+			21 = {
 				if = {
 					limit = { 
 						OR = {
@@ -8750,6 +9333,12 @@ focus_tree = {
 		relative_position_id = FRA_naval_rearmament
 		cost = 4
 
+		available = {
+			NOT = {
+				has_completed_focus = FRA_aircraft_production_focus
+			}
+		}
+
 		available_if_capitulated = yes
 		search_filters = { FOCUS_FILTER_INDUSTRY }
 		completion_reward = {
@@ -8761,7 +9350,7 @@ focus_tree = {
 				}
 				add_building_construction = {
 					type = dockyard
-					level = 3
+					level = 5
 					instant_build = yes
 				}
 			}
@@ -8959,6 +9548,18 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_INDUSTRY }
 		completion_reward = {
 			add_ideas = FRA_the_young_school
+			random_owned_state = {
+				limit = {
+					is_core_of = ROOT
+					is_coastal = yes
+					is_controlled_by = ROOT
+				}
+				add_building_construction = {
+					type = dockyard
+					level = 2
+					instant_build = yes
+				}
+			}
 		}
 	}
 
@@ -8981,6 +9582,23 @@ focus_tree = {
 				uses = 2
 				category = ss_tech
 			}
+		}
+	}
+
+	focus = {
+		id = FRA_air_based_sea_supremacy
+		icon = GFX_goal_generic_air_naval_bomber
+	 	prerequisite = { focus = FRA_undersea_combat }
+	 	prerequisite = { focus = FRA_surface_combat }
+		x = 0
+		y = 2
+		relative_position_id = FRA_undersea_combat
+		cost = 5
+
+		available_if_capitulated = yes
+
+		completion_reward = {
+			add_ideas = { FRA_air_based_sea_supremacy_idea }
 		}
 	}
 
@@ -9036,7 +9654,8 @@ focus_tree = {
 	 	prerequisite = { 
 	 		focus = FRA_prioritize_the_joffre
 	 		focus = FRA_rush_the_richelieus
-	 		focus = FRA_improved_screen_ships
+			focus = FRA_improved_screen_ships
+			focus = FRA_air_based_sea_supremacy
 	 	}
 		x = 3
 		y = 1
@@ -9050,7 +9669,7 @@ focus_tree = {
 			add_tech_bonus = {
 				name = FRA_naval_doctrine
 				bonus = 1.0
-				uses = 2
+				uses = 3
 				category = naval_doctrine
 			}
 		}
