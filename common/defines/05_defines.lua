@@ -534,6 +534,8 @@ NDefines.NAI.LAND_COMBAT_CAS_PER_ENEMY_ARMY = 40									-- Amount of CAS planes
 NDefines.NAI.LAND_COMBAT_IMPORTANCE_SCALE = 2 
 NDefines.NAI.LAND_COMBAT_BOMBERS_PER_LAND_FORT_LEVEL = 30							-- Amount of bomber planes requested per enemy land fort level
 
+NDefines.NAI.NAVAL_COMBAT_TRANSFER_AIR_IMPORTANCE = 500.0							-- Naval combat involving enemy land units
+
 NDefines.NAI.STR_BOMB_AIR_SUPERIORITY_IMPORTANCE = 2.0								-- Strategic importance of air superiority ( amount of enemy planes in area )
 NDefines.NAI.STR_BOMB_CIVIL_FACTORY_IMPORTANCE = 150								-- Strategic importance of enemy civil factories
 NDefines.NAI.STR_BOMB_MILITARY_FACTORY_IMPORTANCE = 200								-- Strategic importance of enemy military factories
