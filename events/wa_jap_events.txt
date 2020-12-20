@@ -82,9 +82,6 @@ country_event = {
 
 	immediate = {
 		load_oob = "JAP_china"
-		set_technology = {
-			mtg_landing_craft = 1
-		}
 		745 = {
 			add_building_construction = {
 				type = naval_base
@@ -192,166 +189,7 @@ country_event = {
 				}
 			}
 		}
-		645 = {
-			if = {
-				limit = { 
-					OR = {
-						is_controlled_by = JAP
-					}
-				}
-				add_building_construction = {
-					type = anti_air_building
-					level = 2
-					instant_build = yes
-				}
-				add_building_construction = {
-					type = air_base
-					level = 5
-					instant_build = yes
-				}
-				add_building_construction = {
-					type = naval_base
-					level = 5
-					province = 13025
-					instant_build = yes
-				}
-				add_building_construction = {
-					type = infrastructure
-					level = 2
-					instant_build = yes
-				}
-			}
-		}
-		648 = {
-			if = {
-				limit = { 
-					OR = {
-						is_controlled_by = JAP
-					}
-				}
-				add_building_construction = {
-					type = anti_air_building
-					level = 1
-					instant_build = yes
-				}
-				add_building_construction = {
-					type = air_base
-					level = 5
-					instant_build = yes
-				}
-				add_building_construction = {
-					type = naval_base
-					level = 3
-					province = 13026
-					instant_build = yes
-				}
-				add_building_construction = {
-					type = infrastructure
-					level = 1
-					instant_build = yes
-				}
-			}
-		}
-		646 = {
-			if = {
-				limit = { 
-					OR = {
-						is_controlled_by = JAP
-					}
-				}
-				add_building_construction = {
-					type = anti_air_building
-					level = 2
-					instant_build = yes
-				}
-				add_building_construction = {
-					type = air_base
-					level = 2
-					instant_build = yes
-				}
-				add_building_construction = {
-					type = naval_base
-					level = 3
-					province = 3995
-					instant_build = yes
-				}
-				add_building_construction = {
-					type = infrastructure
-					level = 1
-					instant_build = yes
-				}
-			}
-		}
-		863 = {
-			if = {
-				limit = { 
-					OR = {
-						is_controlled_by = JAP
-					}
-				}
-				add_building_construction = {
-					type = anti_air_building
-					level = 2
-					instant_build = yes
-				}
-				add_building_construction = {
-					type = air_base
-					level = 2
-					instant_build = yes
-				}
-				add_building_construction = {
-					type = naval_base
-					level = 3
-					province = 13024
-					instant_build = yes
-				}
-				add_building_construction = {
-					type = infrastructure
-					level = 1
-					instant_build = yes
-				}
-			}
-		}
-		647 = {
-			if = {
-				limit = { 
-					OR = {
-						is_controlled_by = JAP
-					}
-				}
-				add_building_construction = {
-					type = air_base
-					level = 5
-					instant_build = yes
-				}
-				add_building_construction = {
-					type = naval_base
-					level = 5
-					province = 4357
-					instant_build = yes
-				}
-				add_building_construction = {
-					type = infrastructure
-					level = 1
-					instant_build = yes
-				}
-			}
-		}
 		524 = {
-			if = {
-				limit = { 
-					OR = {
-						is_controlled_by = JAP
-					}
-				}
-				add_building_construction = {
-					type = air_base
-					level = 2
-					instant_build = yes
-				}
-			}
-		}
-		633 = {
 			if = {
 				limit = { 
 					OR = {
@@ -516,7 +354,7 @@ country_event = {
 	}
 
 	immediate = {
-		load_oob = "JAP_raj"
+		#load_oob = "JAP_raj"
 	}
 
 	option = {}
@@ -1143,6 +981,7 @@ country_event = {
 		}
 		NOT = { has_completed_focus = JAP_strengthen_civilian_government }
 		NOT = { has_completed_focus = JAP_the_unthinkable_option }
+		NOT = { has_completed_focus = JAP_ensure_military_loyalty }
 	}
 
 	option = {
@@ -1214,11 +1053,31 @@ country_event = {
 	option = {
 		name = jap_armor.44.b
 		add_political_power = -150
+		trigger = {
+			NOT = { has_completed_focus = JAP_showa_restoration }
+		}
 		JAP_interservice_rivalry_towards_navy = yes
 		add_timed_idea = {
 			idea = JAP_ranks_purged
-			days = 365
+			days = 720
 		}
+		remove_ideas = JAP_gekokujo
+		ai_chance = {
+			factor = 0
+		}
+	}
+
+	option = {
+		name = jap_armor.44.b
+		trigger = {
+			has_completed_focus = JAP_showa_restoration
+		}
+		JAP_interservice_rivalry_towards_navy = yes
+		add_timed_idea = {
+			idea = JAP_ranks_purged
+			days = 720
+		}
+		remove_ideas = JAP_gekokujo
 		ai_chance = {
 			factor = 0
 		}
@@ -1242,6 +1101,7 @@ country_event = {
 	immediate = {
 		set_technology = {
 			jap_heavy_artillery_1 = 1
+			improved_airplane_launcher = 1
 		}
 	}
 
@@ -1336,12 +1196,18 @@ country_event = {
 	trigger = {
 		tag = RNC
 		NOT = { has_war_with = CHI }
+		has_completed_focus = JAP_the_china_project
+		OR = {
+			NOT = { country_exists = CHI }
+			CHI = { is_subject_of = JAP }
+		}
 	}
 
 	immediate = {
 		every_state = {
 			limit = {
-				is_core_of = PRC
+				is_core_of = CHI
+				NOT = { is_core_of = MAN }
 			}
 			add_core_of = RNC
 		}
@@ -1416,8 +1282,32 @@ country_event = {
 			}
 			RNC = { annex_country = { target = GUC } }
 		}
+		if = {
+			limit = {
+				country_exists = HPC
+				GUC = { is_subject_of = JAP }
+				JAP = { is_ai = yes }
+			}
+			RNC = { annex_country = { target = HPC } }
+		}
+		if = {
+			limit = {
+				country_exists = SHA
+				GUC = { is_subject_of = JAP }
+				JAP = { is_ai = yes }
+			}
+			RNC = { annex_country = { target = SHA } }
+		}
+		if = {
+			limit = {
+				country_exists = NEA
+				GUC = { is_subject_of = JAP }
+				JAP = { is_ai = yes }
+			}
+			RNC = { annex_country = { target = NEA } }
+		}
 		RNC = {
-			set_capital = 605
+			set_capital = 598
 		}
 		if = {
 			limit = {
@@ -1759,6 +1649,19 @@ country_event = {
 	
 	immediate = {
 		hidden_effect = {
+			MEN = {
+				declare_war_on = {
+					target = SHA
+					type = annex_everything
+				}
+				927 = { add_claim_by = MEN }
+				621 = { add_claim_by = MEN }
+				941 = { add_claim_by = MEN }
+				926 = { add_claim_by = MEN }
+				746 = { add_claim_by = MEN }
+				948 = { add_claim_by = MEN }
+				756 = { add_claim_by = MEN }
+			}
 			declare_war_on = {
 				target = HPC
 				type = annex_everything
@@ -1869,6 +1772,128 @@ country_event = {
 				}
 			}
 		}
+	}
+}
+
+
+
+
+################################################# Victory in Russia
+
+
+
+
+
+country_event = {
+	id = jap_armor.813
+	title = jap_armor.813.t
+	desc = jap_armor.813.d
+
+	picture = GFX_report_event_generic_read_write
+	
+	is_triggered_only = yes
+
+	option = {
+		name = jap_armor.813.a
+		release = IPS
+		IPS = {
+			transfer_state = 564
+			transfer_state = 565
+			transfer_state = 563
+			transfer_state = 561
+			transfer_state = 560
+			transfer_state = 657
+			transfer_state = 409
+			transfer_state = 408
+			transfer_state = 574
+			transfer_state = 644
+			transfer_state = 562
+			transfer_state = 953
+			transfer_state = 854
+			transfer_state = 637
+
+			set_cosmetic_tag = SOV_imperial_protectorate
+				
+			JAP = {
+				if = {
+					limit = {
+						OR = {
+							has_dlc = "Together for Victory"
+							has_dlc = "Man the Guns"
+						}
+					}
+					set_autonomy = { target = IPS autonomy_state = autonomy_wtt_imperial_protectorate }
+				}
+				else = {
+					puppet = IPS
+				}
+				add_manpower = -100000
+			}
+		}
+		JAP = {
+			transfer_state = 655
+		}
+		if = { 
+			limit = {
+				OR = {
+					MEN = { is_in_faction_with = JAP }
+					MEN = { is_subject_of = JAP }
+				}
+				OR = {
+					MON = { is_in_faction_with = SOV }
+					MON = { is_subject_of = SOV }
+				}
+			}
+			MEN = {
+				annex_country = { target = MON }
+				transfer_state = 952
+				transfer_state = 954
+				transfer_state = 330
+				transfer_state = 788
+				transfer_state = 789
+			}
+		}
+		else_if = {
+			limit = {
+				OR = {
+					MON = { is_in_faction_with = SOV }
+					MON = { is_subject_of = SOV }
+				}
+			}
+			JAP = {
+				annex_country = { target = MON }
+				transfer_state = 952
+				transfer_state = 954
+				transfer_state = 330
+				transfer_state = 788
+				transfer_state = 789
+			}
+		}
+		every_country = {
+			limit = {
+				is_in_faction_with = SOV
+			}
+			white_peace = JAP
+		}
+		hidden_effect = { news_event = { id = afo_news.31 hours = 6 } }
+
+		ai_chance = { 
+			base = 1
+		}
+	}
+}
+
+country_event = {
+	id = jap_armor.814
+	title = jap_armor.814.t
+	desc = jap_armor.814.d
+
+	picture = GFX_report_event_generic_read_write
+	
+	is_triggered_only = yes
+
+	option = {
+		name = jap_armor.814.a
 	}
 }
 
