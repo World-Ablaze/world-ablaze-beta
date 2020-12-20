@@ -91,6 +91,7 @@ NDefines.NMilitary.ATTRITION_DAMAGE_ORG = 0					   						-- damage from attritio
 --NDefines.NMilitary.OUT_OF_SUPPLY_ATTRITION = 2.4                					-- max attrition when out of supply
 NDefines.NMilitary.OUT_OF_SUPPLY_MORALE = 0                  						-- max org regain reduction from supply
 NDefines.NMilitary.OUT_OF_SUPPLY_SPEED = -0.4                   					-- max speed reduction from supply
+NDefines.NMilitary.COMBAT_SUPPLY_LACK_IMPACT = -0.6									-- combat penalty if out of supply
 
 NDefines.NMilitary.INFRA_ORG_IMPACT = 0.25											-- scale factor of infra on org regain.
 
@@ -108,7 +109,7 @@ NDefines.NMilitary.HOURLY_ORG_MOVEMENT_IMPACT = -0.3								-- how much org is l
 NDefines.NMilitary.ORG_LOSS_FACTOR_ON_CONQUER = 0.25              					-- percentage of (max) org loss on takign enemy province
 
 NDefines.NMilitary.LEND_LEASE_FIELD_EXPERIENCE_SCALE = 0.000						-- Experience scale for lend leased equipment used in combat.
-NDefines.NMilitary.SUPPLY_GRACE = 336												-- troops always carry 28 days of food and supply
+NDefines.NMilitary.SUPPLY_GRACE = 672												-- troops always carry 28 days of food and supply
 
 NDefines.NMilitary.ATTRITION_EQUIPMENT_LOSS_CHANCE = 0.03							-- Chance for loosing equipment when suffer attrition. Scaled up the stronger attrition is. Then scaled down by equipment reliability.
 
@@ -506,23 +507,26 @@ NDefines.NAI.NAVAL_MISSION_MINES_SWEEPING_NEAR_OWNED = 100000	 -- How likely the
 
 ------------------------------------------------- AIR
 
---NDefines.NAI.NAVAL_AIR_SUPERIORITY_IMPORTANCE = 0.70								-- Strategic importance of air superiority ( amount of enemy planes in area )
---NDefines.NAI.NAVAL_SHIP_AIR_IMPORTANCE = 25.0										-- Naval ship air importance
---NDefines.NAI.NAVAL_SHIP_IN_PORT_AIR_IMPORTANCE = 20.0								-- Naval ship in the port air importance
-NDefines.NAI.NAVAL_COMBAT_AIR_IMPORTANCE = 500.0									-- Naval combat air importance
---NDefines.NAI.NAVAL_TRANSFER_AIR_IMPORTANCE = 25.0									-- Naval transfer air importance
---NDefines.NAI.NAVAL_COMBAT_TRANSFER_AIR_IMPORTANCE = 50.0							-- Naval combat involving enemy land units
-NDefines.NAI.NAVAL_MIN_EXCORT_WINGS = 5												-- Min amount of airwings requested to excort operations
-NDefines.NAI.NAVAL_IMPORTANCE_SCALE = 1.0
-NDefines.NAI.MAX_FUEL_CONSUMPTION_RATIO_FOR_AIR_TRAINING = 0.9						-- ai will use at most this ratio of affordable fuel for air training
-
 NDefines.NAI.AIR_WING_REINFORCEMENT_LIMIT = 100
 
-NDefines.NAI.LAND_DEFENSE_AIR_SUPERIORITY_IMPORTANCE = 0.6							-- Strategic importance of air superiority ( amount of enemy planes in area )
-NDefines.NAI.LAND_DEFENSE_FIGHERS_PER_PLANE = 0.1									-- Amount of air superiority planes requested per enemy plane
-NDefines.NAI.LAND_DEFENSE_INTERSEPTORS_PER_BOMBERS = 1.0							-- Amount of air interceptor planes requested per enemy bomber
+
+NDefines.NAI.NAVAL_COMBAT_AIR_IMPORTANCE = 500.0
+NDefines.NAI.NAVAL_AIR_SUPERIORITY_IMPORTANCE = 1.0                             	-- Strategic importance of air superiority ( amount of enemy planes in area )
+NDefines.NAI.NAVAL_MIN_EXCORT_WINGS = 5												-- Min amount of airwings requested to excort operations
+NDefines.NAI.NAVAL_IMPORTANCE_SCALE = 10.0
+NDefines.NAI.MAX_FUEL_CONSUMPTION_RATIO_FOR_AIR_TRAINING = 0.9						-- ai will use at most this ratio of affordable fuel for air training
+NDefines.NAI.NAVAL_FIGHTERS_PER_PLANE = 1.0                                         -- Amounts of air superiority planes requested per enemy plane
+NDefines.NAI.NAVAL_STRIKE_PLANES_PER_SHIP = 40										-- Amount of bombers requested per enemy ship
+NDefines.NAI.NAVAL_SHIP_IN_PORT_AIR_IMPORTANCE = 20.0                             	-- Naval ship in the port air importance
+NDefines.NAI.PORT_STRIKE_PLANES_PER_SHIP = 20										-- Amount of bombers request per enemy ship in the port
+
+
+NDefines.NAI.LAND_DEFENSE_AIR_SUPERIORITY_IMPORTANCE = 0.8							-- Strategic importance of air superiority ( amount of enemy planes in area )
 NDefines.NAI.LAND_DEFENSE_CIVIL_FACTORY_IMPORTANCE = 150							-- Strategic importance of civil factories
 NDefines.NAI.LAND_DEFENSE_MILITARY_FACTORY_IMPORTANCE = 200							-- Strategic importance of military factories
+NDefines.NAI.LAND_DEFENSE_FIGHERS_PER_PLANE = 0.1									-- Amount of air superiority planes requested per enemy plane
+NDefines.NAI.LAND_DEFENSE_INTERSEPTORS_PER_BOMBERS = 2.0							-- Amount of air interceptor planes requested per enemy bomber
+NDefines.NAI.LAND_DEFENSE_INTERSEPTORS_PER_PLANE = 0								-- Amount of air interceptor planes requested per enemy plane (non bomber)
 
 NDefines.NAI.LAND_COMBAT_AIR_SUPERIORITY_IMPORTANCE = 1.0 
 NDefines.NAI.LAND_COMBAT_FIGHTERS_PER_PLANE = 1.1									-- Amount of air superiority planes requested per enemy plane
