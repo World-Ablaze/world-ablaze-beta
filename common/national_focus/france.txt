@@ -7627,6 +7627,212 @@ focus_tree = {
 			economy_fatigue_level_down_10 = yes
 		}
 	}
+
+	focus = {
+		id = FRA_disunited_kingdom
+		icon = GFX_goal_generic_occupy_states_ongoing_war
+		x = 10
+		y = 1
+		
+		prerequisite = {
+			focus = FRA_latin_entente
+		}
+		relative_position_id = FRA_latin_entente
+		cost = 10
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			is_subject = no
+			has_completed_focus = FRA_proclaim_the_third_empire
+			any_state = { 
+				is_core_of = ENG
+				is_controlled_by = ROOT
+			}
+			ENG = {
+				OR = {
+					exists = no
+					has_capitulated = yes
+				}
+			}
+		}
+		
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		completion_reward = {
+			every_country = {
+				limit = {
+					OR = {
+						is_puppet_of = ENG
+						OR = {
+							tag = UKN
+							tag = UKE
+							tag = UKM
+							tag = UKT
+							tag = UKS
+							tag = UKO
+							tag = UKW
+						}
+					}
+					NOT = {
+						tag = RAJ
+						tag = ENG
+					}
+				}
+				if = {
+					limit = {
+						OR = {
+							tag = UKE
+							tag = UKT
+						}
+						country_exists = ITA
+						ITA = {
+							is_in_faction_with = FRA
+							has_capitulated = no
+						}
+					}
+					end_puppet = ENG
+					ITA = {
+						puppet = PREV
+					}
+					set_cosmetic_tag = ITA_UK_COLONIES
+					remove_from_faction = THIS
+				}
+				else = {
+					set_politics = { ruling_party = neutrality }
+					end_puppet = ENG
+					FRA = {
+						puppet = PREV
+					}
+					set_cosmetic_tag = FRA_UK_COLONIES
+					remove_from_faction = THIS
+				}
+
+			}
+			if = {
+				limit = {
+					country_exists = RAJ
+				}
+				RAJ = {
+					end_puppet = ENG
+				}
+			}
+			if = {
+				limit = {
+					country_exists = UKO
+				}
+				CAN = {
+					annex_country = UKO
+				}
+			}
+			if = { #set up Scotland puppet
+				limit = {
+					121 = { is_owned_or_subject_trigger = yes }
+					133 = { is_owned_or_subject_trigger = yes }
+					136 = { is_owned_or_subject_trigger = yes }
+					120 = { is_owned_or_subject_trigger = yes }
+				}
+				SCO = {
+					set_politics = { ruling_party = neutrality }
+					transfer_state = 121
+					add_state_core = 121
+					transfer_state = 133
+					add_state_core = 133
+					transfer_state = 136
+					add_state_core = 136
+					transfer_state = 120
+					add_state_core = 120
+				}
+				remove_from_faction = SCO
+				puppet = SCO
+			}
+			if = { #set up Wales puppet
+				limit = {
+					122 = {
+						is_owned_or_subject_trigger = yes
+					}
+				}
+				WLS = {
+					set_politics = { ruling_party = neutrality }
+					transfer_state = 122
+					add_state_core = 122
+				}
+				remove_from_faction = WLS
+				puppet = WLS
+			}
+			if = { #set up Northern Ireland puppet
+				limit = {
+					119 = {
+						is_owned_or_subject_trigger = yes
+					}
+				}
+				NIR = {
+					set_politics = { ruling_party = neutrality }
+					transfer_state = 119
+					add_state_core = 119
+				}
+				remove_from_faction = NIR
+				puppet = NIR
+			}
+			every_country = {
+				limit = {
+					has_war_with = ENG
+					OR = {
+						is_in_faction_with = THIS
+						is_puppet_of = THIS
+						tag = THIS
+					}
+				}
+				white_peace = ENG
+			}
+			every_state = {
+				limit = { 
+					is_core_of = ENG 
+					is_owned_or_subject_trigger = yes
+					CONTROLLER = {
+						NOT = {
+							OR = {
+								tag = NIR
+								tag = WLS
+								tag = SCO
+							}
+						}
+					}
+				}
+				ENG = {
+					transfer_state = PREV
+					add_state_core = PREV
+				}
+			}
+			if = {
+				limit = {
+					country_exists = ENG
+				}
+				remove_from_faction = ENG
+				puppet = ENG
+				ENG = {
+					set_politics = { ruling_party = neutrality }
+					add_popularity = {
+						ideology = neutrality
+						popularity = 0.10
+					}
+					set_cosmetic_tag = ENG_NAPOLEON
+				}
+			}
+			economy_fatigue_level_down_10 = yes
+			economy_fatigue_level_down_10 = yes
+		}
+	}
+
+
 	focus = {
 		id = FRA_return_to_borodino
 		icon = GFX_focus_attack_soviet
