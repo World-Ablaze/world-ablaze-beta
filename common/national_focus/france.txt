@@ -6962,7 +6962,25 @@ focus_tree = {
 
 		completion_reward = {
 			remove_country_leader_trait = inexperienced_imperialist
-			add_timed_idea = { idea = FRA_emperor_military_training_idea days = 180 }
+			create_field_marshal = {
+				name = "Napoléon VI"
+				picture = "portrait_fra_napoleon_land.dds"
+				traits = { trait_FRA_emperor_of_the_french inspirational_leader organisational_leader aggressive_assaulter}
+				id = 104
+				skill = 1
+				attack_skill = 1
+				defense_skill = 1
+				planning_skill = 1
+				logistics_skill = 1
+			}
+			add_ideas = { FRA_emperor_military_training_idea }
+			hidden_effect = {
+				set_variable = { 
+					var = trainingpips
+					value = 0
+				}
+			}
+			custom_effect_tooltip = FRA_a_military_training_for_the_emperor_tt
 		}
 	}
 
@@ -6994,18 +7012,6 @@ focus_tree = {
 
 		completion_reward = {
 			add_country_leader_trait = indomitable_perseverance
-			create_field_marshal = {
-				name = "Napoléon VI"
-				picture = "portrait_fra_napoleon_land.dds"
-				traits = { trait_FRA_emperor_of_the_french inspirational_leader organisational_leader aggressive_assaulter}
-				id = 104
-				skill = 2
-				attack_skill = 2
-				defense_skill = 2
-				planning_skill = 2
-				logistics_skill = 2
-			}
-			custom_effect_tooltip = FRA_lead_from_the_front_tt
 		}
 	}
 
@@ -7164,16 +7170,12 @@ focus_tree = {
 					is_field_marshal = no
 				}
 				promote_leader = yes
-				add_skill_level = 1
 				add_attack = 1
-				add_defense = 1
 				add_planning = 1
 				add_logistics = 1
 			}
 		}
 	}
-
-	#GFX_goal_generic_special_forces
 
 	focus = {
 		id = FRA_avenge_waterloo #you now have ABBA stuck in your head for the rest of the day
@@ -7329,6 +7331,81 @@ focus_tree = {
 			}
 		}
 	}
+
+	focus = {
+		id = FRA_reorganize_benelux
+		icon = GFX_goal_generic_occupy_states_ongoing_war
+		x = -2
+		y = 1
+		
+		prerequisite = {
+			focus = FRA_avenge_waterloo
+			focus = FRA_the_natural_borders_of_france
+		}
+		relative_position_id = FRA_avenge_waterloo
+		cost = 10
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			is_subject = no
+			OR = {
+				BEL = {
+					is_subject_of = ROOT
+				}
+				any_state = {
+					is_core_of = BEL
+					is_controlled_by = ROOT
+				}
+			}
+		}
+		
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+		search_filters = { FOCUS_FILTER_POLITICAL }
+		completion_reward = {
+			if = {
+				limit = {
+					35 = {
+						is_owned_or_subject_trigger = yes
+					}
+				}
+				FRA = {
+					transfer_state = 35
+					add_state_core = 35
+				}
+			}
+			if = {
+				limit = {
+					8 = {
+						is_owned_or_subject_trigger = yes
+					}
+				}
+				FRA = {
+					transfer_state = 8
+					add_state_core = 8
+				}
+			}
+			every_state = {
+				limit = {
+					is_core_of = BEL 
+					is_owned_or_subject_trigger = yes
+				}	
+				FRA = {
+					transfer_state = PREV
+					add_state_core = PREV
+				}
+			}
+		}
+	}
+
 	focus = {
 		id = FRA_retribution_for_sedan
 		icon = GFX_focus_attack_germany
@@ -7388,7 +7465,6 @@ focus_tree = {
 
 		available = {
 			is_subject = no
-			has_completed_focus = FRA_proclaim_the_third_empire
 			any_state = { 
 				is_core_of = GER
 				is_controlled_by = ROOT
@@ -7646,7 +7722,6 @@ focus_tree = {
 
 		available = {
 			is_subject = no
-			has_completed_focus = FRA_proclaim_the_third_empire
 			any_state = { 
 				is_core_of = ENG
 				is_controlled_by = ROOT
@@ -7683,8 +7758,10 @@ focus_tree = {
 						}
 					}
 					NOT = {
-						tag = RAJ
-						tag = ENG
+						OR = {
+							tag = RAJ
+							tag = ENG
+						}
 					}
 				}
 				if = {
@@ -7699,11 +7776,64 @@ focus_tree = {
 							has_capitulated = no
 						}
 					}
+					if = {
+						limit = {
+							country_exists = ITE
+							tag = UKT
+						}
+						ITE = {
+							annex_country = { target = UKT }
+						}
+					}
+					else = {
+						end_puppet = ENG
+						ITA = {
+							puppet = PREV
+						}
+						set_cosmetic_tag = ITA_UK_COLONIES
+						remove_from_faction = THIS
+					}
+				}
+				else_if = {
+					limit = {
+						tag = UKN
+						country_exists = FRW
+					}
+					FRW = {
+						annex_country = { target = UKN }
+					}
+				}
+				else_if = {
+					limit = {
+						tag = UKW
+						country_exists = FRI
+					}
+					FRI = {
+						annex_country = { target = UKW }
+					}
+				}
+				else_if = {
+					limit = {
+						tag = UKS
+						country_exists = POA
+						POR = {
+							is_in_faction_with = FRA
+						}
+					}
+					POA = {
+						annex_country = { target = UKS }
+					}
+				}
+				else_if = {
+					limit = {
+						tag = UKM
+					}
+					set_politics = { ruling_party = neutrality }
 					end_puppet = ENG
-					ITA = {
+					FRA = {
 						puppet = PREV
 					}
-					set_cosmetic_tag = ITA_UK_COLONIES
+					set_cosmetic_tag = FRA_UKM_COLONIES
 					remove_from_faction = THIS
 				}
 				else = {
@@ -7715,8 +7845,8 @@ focus_tree = {
 					set_cosmetic_tag = FRA_UK_COLONIES
 					remove_from_faction = THIS
 				}
-
 			}
+
 			if = {
 				limit = {
 					country_exists = RAJ
@@ -7725,14 +7855,31 @@ focus_tree = {
 					end_puppet = ENG
 				}
 			}
+
 			if = {
 				limit = {
 					country_exists = UKO
+					country_exists = CAN
 				}
 				CAN = {
-					annex_country = UKO
+					transfer_state = 331
+					add_state_core = 331
+					transfer_state = 332
+					add_state_core = 332
+				}
+				FRA = {
+					annex_country = { target = UKO }
 				}
 			}
+			else_if = {
+				limit = {
+					country_exists = UKO
+				}
+				FRA = {
+					annex_country = { target = UKO }
+				}
+			}
+
 			if = { #set up Scotland puppet
 				limit = {
 					121 = { is_owned_or_subject_trigger = yes }
@@ -7754,6 +7901,7 @@ focus_tree = {
 				remove_from_faction = SCO
 				puppet = SCO
 			}
+
 			if = { #set up Wales puppet
 				limit = {
 					122 = {
@@ -7768,6 +7916,7 @@ focus_tree = {
 				remove_from_faction = WLS
 				puppet = WLS
 			}
+
 			if = { #set up Northern Ireland puppet
 				limit = {
 					119 = {
@@ -7782,6 +7931,7 @@ focus_tree = {
 				remove_from_faction = NIR
 				puppet = NIR
 			}
+
 			every_country = {
 				limit = {
 					has_war_with = ENG
@@ -7793,6 +7943,7 @@ focus_tree = {
 				}
 				white_peace = ENG
 			}
+
 			every_state = {
 				limit = { 
 					is_core_of = ENG 
@@ -7806,12 +7957,46 @@ focus_tree = {
 							}
 						}
 					}
-				}
+				}	
 				ENG = {
 					transfer_state = PREV
 					add_state_core = PREV
 				}
 			}
+
+			every_state = {
+				limit = { 
+					is_core_of = ENG 
+					is_owned_or_subject_trigger = yes
+					CONTROLLER = {
+						NOT = {
+							OR = {
+								tag = NIR
+								tag = WLS
+								tag = SCO
+							}
+						}
+					}
+				}	
+				ENG = {
+					transfer_state = PREV
+					add_state_core = PREV
+				}
+			}
+
+			if = {
+				limit = {
+					116 = {
+						CONTROLLER = {
+							is_in_faction_with = ITA
+						}
+					}
+				}
+				ITA = {
+					transfer_state = 116
+				}
+			}
+
 			if = {
 				limit = {
 					country_exists = ENG
@@ -7824,9 +8009,10 @@ focus_tree = {
 						ideology = neutrality
 						popularity = 0.10
 					}
-					set_cosmetic_tag = ENG_NAPOLEON
+					set_cosmetic_tag = ENG_england
 				}
 			}
+
 			economy_fatigue_level_down_10 = yes
 			economy_fatigue_level_down_10 = yes
 		}
@@ -7868,6 +8054,7 @@ focus_tree = {
 			}
 		}
 	}
+
 	focus = {
 		id = FRA_je_suis_la_deluge
 		icon = GFX_focus_fra_le_deluge
@@ -7885,7 +8072,7 @@ focus_tree = {
 		}
 
 		available = {
-			
+			has_completed_focus = FRA_proclaim_the_third_empire
 		}
 		
 		bypass = {
