@@ -24,6 +24,9 @@ NDefines.NDiplomacy.JOIN_FACTION_LIMIT_CHANGE_AT_WAR = 0.75							-- if in defen
 NDefines.NDiplomacy.VOLUNTEERS_PER_TARGET_PROVINCE = 0.01							-- Each province owned by the target country contributes this amount of volunteers to the limit.
 NDefines.NDiplomacy.VOLUNTEERS_PER_COUNTRY_ARMY = 0.05								-- Each army unit owned by the source country contributes this amount of volunteers to the limit.
 
+NDefines.NDiplomacy.TROOP_FEAR = 0 													-- Impact on troops on borders when deciding how willing a nation is to trade
+NDefines.NDiplomacy.FLEET_FEAR = 0													-- Impact on troops on borders when deciding how willing a nation is to trade
+
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Politics
 
 
