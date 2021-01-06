@@ -14,3 +14,5 @@ NDefines_Graphics.NGraphics.COUNTRY_COLOR_BRIGHTNESS_MODIFIER = 0.8 -- 0.8
 NDefines_Graphics.NGraphics.CAMERA_ZOOM_SPEED = 50
 NDefines_Graphics.NGraphics.CAMERA_ZOOM_KEY_SCALE = 0.02
 NDefines_Graphics.NGraphics.CAMERA_ZOOM_SPEED_DISTANCE_MULT = 15.0
+
+NDefines_Graphics.NGraphics.MAP_ICONS_STATE_GROUP_CAM_DISTANCE = 450.0 -- camera distance at which the icons begin to group up
