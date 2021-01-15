@@ -22,7 +22,7 @@ NDefines.NDiplomacy.LICENSE_ACCEPTANCE_SAME_FACTION = 50							-- Acceptance mod
 
 NDefines.NDiplomacy.JOIN_FACTION_LIMIT_CHANGE_AT_WAR = 0.75							-- if in defensive war this or your modifier is counted as limit to join factions (so if you have 80% join limit this now means you can join at 50%)
 
-NDefines.NDiplomacy.VOLUNTEERS_PER_TARGET_PROVINCE = 0.01							-- Each province owned by the target country contributes this amount of volunteers to the limit.
+NDefines.NDiplomacy.VOLUNTEERS_PER_TARGET_PROVINCE = 0.005							-- Each province owned by the target country contributes this amount of volunteers to the limit.
 NDefines.NDiplomacy.VOLUNTEERS_PER_COUNTRY_ARMY = 0.05								-- Each army unit owned by the source country contributes this amount of volunteers to the limit.
 
 NDefines.NDiplomacy.TROOP_FEAR = 0 													-- Impact on troops on borders when deciding how willing a nation is to trade
@@ -128,6 +128,11 @@ NDefines.NMilitary.TRAINING_ATTRITION = 0.12
 NDefines.NMilitary.TRAINING_MIN_STRENGTH = 0.95										-- if strength is less than this, the unit will pause training until it's been reinforced
 NDefines.NMilitary.UNIT_EXPERIENCE_SCALE = 0.3
 
+NDefines.NMilitary.RIVER_CROSSING_PENALTY_LARGE = -0.25                					-- small river crossing
+NDefines.NMilitary.RIVER_CROSSING_PENALTY_LARGE = -0.5								-- large river crossing
+NDefines.NMilitary.RIVER_CROSSING_SPEED_PENALTY = -0.25								-- small river crossing
+NDefines.NMilitary.RIVER_CROSSING_SPEED_PENALTY_LARGE = -0.5						-- large river crossing
+
 NDefines.NMilitary.RETREAT_SPEED_FACTOR = 1.2              						    -- speed bonus when retreating
 NDefines.NMilitary.BASE_FORT_PENALTY = -0.15						 					-- fort penalty
 
@@ -168,6 +173,9 @@ NDefines.NCountry.ATTACHE_XP_SHARE = 0.05											-- Country received xp from 
 
 NDefines.NCountry.SURRENDER_LIMIT_REDUCTION_PER_COLLABORATION = 0.1 				--each percent of collaboration will lower surrender limit by this percentage 
 NDefines.NCountry.NUM_DAYS_TO_FULLY_DELETE_STOCKPILED_EQUIPMENT = 365				-- time in days to fully delete equipments from stockpile. when you delete an equipment, they go to a temporary hidden pool which still can be seized 
+
+NDefines.NCountry.SPECIAL_FORCES_CAP_BASE = 0.02									-- Max ammount of special forces battalions is total number of non-special forces battalions multiplied by this and modified by a country modifier
+NDefines.NCountry.SPECIAL_FORCES_CAP_MIN = 10										-- You can have a minimum of this many special forces battalions, regardless of the number of non-special forces battalions you have, this can also be modified by a country modifier
 
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Buildings

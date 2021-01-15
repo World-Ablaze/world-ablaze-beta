@@ -317,10 +317,14 @@ SPR_civil_war_offensives = {
 		}
 
 		ai_will_do = {
-			base = 0.1
+			base = 25
 			modifier = {
 				factor = 0
 				has_full_control_of_state = 796
+			}
+			modifier = {
+				factor = 0
+				tag = SPD
 			}
 			modifier = {
 				factor = 10
@@ -337,27 +341,6 @@ SPR_civil_war_offensives = {
 				}
 				NOT = {
 					has_full_control_of_state = 796
-				}
-			}
-			modifier = {
-				factor = 100
-				tag = SPA
-				NOT = {
-					controls_state = 796
-				}
-				OR = {
-					AND = {
-						is_historical_focus_on = yes
-						has_game_rule = {
-							rule = SPR_ai_behavior 
-							option = DEFAULT
-						}
-					}
-					has_country_flag = SPR_AI_RANDOM_NATIONALIST_HISTORICAL
-					has_game_rule = {
-						rule = SPR_ai_behavior 
-						option = NATIONALIST_HISTORICAL
-					}
 				}
 			}
 		}
@@ -847,10 +830,14 @@ SPR_civil_war_offensives = {
 		}
 
 		ai_will_do = {
-			base = 0.1
+			base = 25
 			modifier = {
 				factor = 0
-				has_full_control_of_state = 864
+				has_full_control_of_state = 796
+			}
+			modifier = {
+				factor = 0
+				tag = SPD
 			}
 			modifier = {
 				factor = 10
@@ -862,32 +849,11 @@ SPR_civil_war_offensives = {
 			modifier = {
 				factor = 10
 				divisions_in_state = {
-					state = 864
+					state = 796
 					size > 0
 				}
 				NOT = {
-					has_full_control_of_state = 864
-				}
-			}
-			modifier = {
-				factor = 200
-				tag = SPA
-				NOT = {
-					controls_state = 864
-				}
-				OR = {
-					AND = {
-						is_historical_focus_on = yes
-						has_game_rule = {
-							rule = SPR_ai_behavior 
-							option = DEFAULT
-						}
-					}
-					has_country_flag = SPR_AI_RANDOM_NATIONALIST_HISTORICAL
-					has_game_rule = {
-						rule = SPR_ai_behavior 
-						option = NATIONALIST_HISTORICAL
-					}
+					has_full_control_of_state = 796
 				}
 			}
 		}
@@ -1418,6 +1384,129 @@ SPR_civil_war_offensives = {
 				}
 				NOT = {
 					has_full_control_of_state = 866
+				}
+			}
+		}
+	}
+
+	SPA_toledo_offensive = {
+
+		icon = hol_draw_up_staff_plans
+
+		allowed = {
+			OR = {	
+				original_tag = SPR
+			}
+		}
+
+		available = {
+			NOT = { has_full_control_of_state = 956 }
+			NOT = { has_active_mission = SPR_preparing_offensive }
+			956 = {
+				has_state_flag = SPR_unplanned_offensive_flag
+				OR = {
+					is_controlled_by = ROOT
+					any_neighbor_state = {
+						is_controlled_by = ROOT
+					}
+				}
+			}
+		}
+
+		highlight_states = { state = 956 }
+
+		highlight_color_before_active = 3
+		highlight_color_while_active = 2
+
+		on_map_mode = map_only
+
+		cost = 0
+
+		fire_only_once = yes
+
+		days_remove = 42
+
+		modifier = {
+			
+		}
+
+		visible = {
+			OR = {	
+				original_tag = SPR
+			}
+			has_global_flag = spanish_civil_war
+			NOT = { has_global_flag = scw_over }
+			956 = { has_state_flag = SPR_unplanned_offensive_flag }
+		}
+
+		complete_effect = {
+			activate_mission = SPR_preparing_offensive
+			set_country_flag = SPR_preparing_offensive_in_progress_flag
+			every_other_country = {
+				limit = {
+					OR = {	
+				original_tag = SPR
+			}
+				}
+				activate_mission = SPA_toledo_offensive_mission
+			}
+		}
+
+		remove_effect = {
+			956 = {
+				clr_state_flag = SPR_unplanned_offensive_flag
+				remove_province_modifier = {
+					static_modifiers = { unplanned_offensive }
+					province = {
+						all_provinces = yes
+					}
+				}
+			}
+			if = {
+				limit = {
+					has_completed_focus = SPA_tackle_the_vulnerable_fronts
+					956 = { is_controlled_by = SPR }
+				}
+				add_timed_idea = { idea = SPA_anti_republican_offensive days = 30 }
+			}
+			if = {
+				limit = {
+					has_completed_focus = SPA_tackle_the_vulnerable_fronts
+					956 = { is_controlled_by = SPC }
+				}
+				add_timed_idea = { idea = SPA_anti_anarchist_offensive days = 30 }
+			}
+			if = {
+				limit = {
+					has_completed_focus = SPA_tackle_the_vulnerable_fronts
+					956 = { is_controlled_by = SPB }
+				}
+				add_timed_idea = { idea = SPA_anti_carlist_offensive days = 30 }
+			}
+		}
+
+		ai_will_do = {
+			base = 200
+			modifier = {
+				factor = 0
+				has_full_control_of_state = 956
+			}
+			modifier = {
+				factor = 0
+				tag = SPD
+			}
+			modifier = {
+				factor = 10
+				tag = SPA
+			}
+			modifier = {
+				factor = 10
+				divisions_in_state ={
+					state = 956
+					size > 0
+				}
+				NOT = {
+					has_full_control_of_state = 956
 				}
 			}
 		}
@@ -3114,6 +3203,60 @@ SPR_civil_war_offensives = {
 		}
 	}
 
+	SPA_toledo_offensive_mission = {
+
+		icon = hol_draw_up_staff_plans
+
+		allowed = {
+			OR = {	
+				original_tag = SPR
+			}
+		}
+
+		available = {
+			hidden_trigger = { always = no }
+		}
+
+		highlight_states = { state = 956 }
+
+		highlight_color_while_active = 1
+
+		on_map_mode = map_and_decisions_view
+
+		fire_only_once = yes
+
+		days_mission_timeout = 42
+
+		is_good = no
+
+		cancel_if_not_visible = yes
+
+		activation = {
+			always = no
+		}
+
+		visible = {
+			OR = {	
+				original_tag = SPR
+			}
+			has_global_flag = spanish_civil_war
+			NOT = { has_global_flag = scw_over }
+			956 = { has_state_flag = SPR_unplanned_offensive_flag }
+		}
+
+		timeout_effect = {
+			956 = {
+				clr_state_flag = SPR_unplanned_offensive_flag
+				remove_province_modifier = {
+					static_modifiers = { unplanned_offensive }
+					province = {
+						all_provinces = yes
+					}
+				}
+			}
+		}
+	}
+
 	SPA_madrid_offensive_mission = {
 
 		icon = hol_draw_up_staff_plans
@@ -4283,6 +4426,76 @@ SPR_civil_war_offensives = {
 			866 = {
 				create_unit = {
 					division = "division_template = \"Fifth Columnist Brigade\"	start_experience_factor = 0	start_equipment_factor = 1"
+					owner = ROOT
+					allow_spawning_on_enemy_provs = yes
+					count = 2
+					country_score = {
+						base = 100
+						modifier = {
+							tag = SPR
+							add = 100
+						}
+						modifier = {
+							tag = SPB
+							add = 100
+						}
+						modifier = {
+							tag = SPC
+							add = 100
+						}
+					}
+				}
+			}
+		}
+	}
+
+	SPA_activate_toledo_fifth_columnists = {
+
+		icon = generic_ignite_civil_war
+
+		allowed = {
+			tag = SPA
+		}
+
+		available = {
+			956 = {
+				NOT = { is_controlled_by = ROOT }
+				any_neighbor_state = {
+					is_controlled_by = ROOT
+				}
+			}
+		}
+
+		highlight_states = { state = 956 }
+
+		on_map_mode = map_only
+
+		cost = 25
+
+		fire_only_once = yes
+
+		days_remove = 30
+
+		modifier = {
+			
+		}
+
+		visible = {
+			tag = SPA
+			has_global_flag = spanish_civil_war
+			NOT = { has_global_flag = scw_over }
+			956 = { NOT = { is_controlled_by = ROOT } }
+			has_completed_focus = SPA_the_fifth_column
+		}
+
+		complete_effect = {
+			
+		}
+
+		remove_effect = {
+			956 = {
+				create_unit = {
+					division = "division_template = \"Fifth Columnist Brigade\" start_experience_factor = 0 start_equipment_factor = 1"
 					owner = ROOT
 					allow_spawning_on_enemy_provs = yes
 					count = 2
@@ -5746,7 +5959,7 @@ SPR_expand_resource_extraction = {
 			41 = { set_state_flag = madrid_aluminium_developed } 
 			41 = {
 				add_resource = {
-					type = aluminium
+					type = bauxite
 					amount = 8
 				}
 			}
@@ -6269,6 +6482,58 @@ SPA_preparing_the_carlist_insurrection = {
 
 		remove_effect = {
 			866 = { set_state_flag = SPA_carlist_cell_flag }
+			clr_country_flag = SPA_already_establishing_carlist_cell_flag
+		}
+
+		ai_will_do = {
+
+		}
+	}
+
+	SPA_establish_toledo_carlist_cell = {
+
+		icon = generic_prepare_civil_war
+
+		available = {
+			controls_state = 956
+			956 = {
+				NOT = { 
+					has_state_flag = SPA_carlist_cell_flag
+				}
+			}
+			956 = {
+				NOT = {
+					has_state_flag = SPA_union_militar_flag
+				}
+			}
+			NOT = { has_country_flag = SPA_already_establishing_carlist_cell_flag }
+		}
+
+		highlight_states = { state = 956 }
+
+		on_map_mode = map_only
+
+		cost = 50
+
+		fire_only_once = no
+
+		days_remove = 90
+
+		visible = {
+			has_global_flag = spanish_civil_war
+			NOT = { has_global_flag = scw_over }
+			has_completed_focus = SPA_prepare_the_carlist_insurrection
+			NOT = { has_global_flag = SPR_carlist_uprising_flag }
+		}
+
+		cancel_if_not_visible = yes
+
+		complete_effect = {
+			set_country_flag = SPA_already_establishing_carlist_cell_flag
+		}
+
+		remove_effect = {
+			956 = { set_state_flag = SPA_carlist_cell_flag }
 			clr_country_flag = SPA_already_establishing_carlist_cell_flag
 		}
 
@@ -7731,6 +7996,7 @@ SPR_the_seeds_of_revolution = {
 						is_owned_by = ROOT
 					}
 					NOT = {
+						state = 956
 						state = 41
 						state = 165
 						state = 166
@@ -7834,6 +8100,7 @@ SPR_the_seeds_of_revolution = {
 						is_owned_by = ROOT
 					}
 					NOT = {
+						state = 956
 						state = 41
 						state = 165
 						state = 166
@@ -8921,7 +9188,7 @@ SPR_recovering_from_civil_war = {
 
 		state_target = yes
 
-		targets = { 41 165 166 167 168 169 170 171 172 173 174 175 865 177 178 866 867 796 176 864 868 794 }
+		targets = { 956 41 165 166 167 168 169 170 171 172 173 174 175 865 177 178 866 867 796 176 864 868 794 }
 
 		target_trigger = {
 			OR = {
