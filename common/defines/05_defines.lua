@@ -65,7 +65,9 @@ NDefines.NMilitary.MAX_DIVISION_SUPPORT_WIDTH = 2									-- Max width of suppor
 NDefines.NMilitary.MAX_DIVISION_SUPPORT_HEIGHT = 4									-- Max height of support in division designer.
 
 NDefines.NMilitary.UNIT_LEADER_ASSIGN_TRAIT_COST = 5								-- cost to assign a new trait to a unit leader
-NDefines.NMilitary.ARMY_STRATEGIC_DEPLOYMENT_FUEL_MULT = 2.0						-- fuel consumption ratio while doing strategic deployment
+NDefines.NMilitary.ARMY_STRATEGIC_DEPLOYMENT_FUEL_MULT = 0.0						-- fuel consumption ratio while doing strategic deployment
+NDefines.NMilitary.STRATEGIC_SPEED_BASE = 2.0                 						-- Speed of strategic redeployment
+NDefines.NMilitary.STRATEGIC_INFRA_SPEED = 18.0                  					 -- Max of additional speed gained trouh=gh level for strategic redeployment per infra
 
 --NDefines.NMilitary.PLAN_EXECUTE_CAREFUL_LIMIT = 10									-- When looking for an attach target, this score limit is required in the battle plan to consider province for attack
 NDefines.NMilitary.PLAN_EXECUTE_CAREFUL_MAX_FORT = 9								-- If execution mode is set to careful, units will not attack provinces with fort levels greater than or equal to this
@@ -117,12 +119,12 @@ NDefines.NMilitary.SUPPLY_GRACE = 672												-- troops always carry 28 days 
 
 NDefines.NMilitary.ATTRITION_EQUIPMENT_LOSS_CHANCE = 0.03							-- Chance for loosing equipment when suffer attrition. Scaled up the stronger attrition is. Then scaled down by equipment reliability.
 
-NDefines.NMilitary.ARMY_EXP_BASE_LEVEL = 2
+NDefines.NMilitary.ARMY_EXP_BASE_LEVEL = 10
 
-NDefines.NMilitary.TRAINING_MAX_LEVEL = 3
-NDefines.NMilitary.DEPLOY_TRAINING_MAX_LEVEL = 2
-NDefines.NMilitary.UNIT_EXP_LEVELS = { 0.199, 0.2, 0.4, 0.7, 0.9 }					-- Experience needed to progress to the next level
-NDefines.NMilitary.EXPERIENCE_COMBAT_FACTOR = 0.25
+NDefines.NMilitary.TRAINING_MAX_LEVEL = 15
+NDefines.NMilitary.DEPLOY_TRAINING_MAX_LEVEL = 10
+NDefines.NMilitary.UNIT_EXP_LEVELS = { 0.10,	0.12,	0.13,	0.14,	0.15,	0.16,	0.17,	0.18,	0.19,	0.2,	0.25,	0.3,	0.35,	0.4,	0.45,	0.5,	0.55,	0.6,	0.65,	0.7,	0.75,	0.8,	0.85,	0.9,	0.95 }		-- Experience needed to progress to the next level
+NDefines.NMilitary.EXPERIENCE_COMBAT_FACTOR = 0.05
 NDefines.NMilitary.TRAINING_EXPERIENCE_SCALE = 30.0
 NDefines.NMilitary.TRAINING_ATTRITION = 0.12			
 NDefines.NMilitary.TRAINING_MIN_STRENGTH = 0.95										-- if strength is less than this, the unit will pause training until it's been reinforced
@@ -549,6 +551,7 @@ NDefines.NAI.LAND_COMBAT_CAS_PER_COMBAT = 150										-- Amount of CAS requeste
 NDefines.NAI.LAND_COMBAT_CAS_PER_ENEMY_ARMY = 40									-- Amount of CAS planes requested per enemy army
 NDefines.NAI.LAND_COMBAT_IMPORTANCE_SCALE = 2 
 NDefines.NAI.LAND_COMBAT_BOMBERS_PER_LAND_FORT_LEVEL = 30							-- Amount of bomber planes requested per enemy land fort level
+NDefines.NAI.LAND_COMBAT_MIN_EXCORT_WINGS = 20										-- Min amount of airwings requested to excort operations
 
 NDefines.NAI.NAVAL_COMBAT_TRANSFER_AIR_IMPORTANCE = 500.0							-- Naval combat involving enemy land units
 
