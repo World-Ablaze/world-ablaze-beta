@@ -1006,7 +1006,7 @@ country_event = {
 			limit = { has_idea = trotskyite_plot }
 			remove_ideas = trotskyite_plot
 		}
-		kill_country_leader = yes
+		retire_country_leader = yes
 		create_country_leader = {
 			name = "Leon Trotsky"
 			desc = "POLITICS_LEON_TROTSKY_DESC"
@@ -1027,11 +1027,8 @@ country_event = {
 		remove_ideas = pavel_zhigarev
 		remove_ideas = stepan_krasovsky
 		remove_ideas = arseniy_golovko
-		remove_unit_leader = 409
 		remove_ideas = georgy_zhukov
-		remove_unit_leader = 410
 		remove_ideas = sergey_gorshkov
-		remove_unit_leader = 411
 		remove_ideas = sergei_rudenko
 		remove_ideas = nikita_khrushchev
 		remove_ideas = konstantin_rodzaevsky
@@ -1044,56 +1041,134 @@ country_event = {
 			remove_ideas = cavalry_army_clique_3
 		}
 		set_capital = 408
-		if = {
-			limit = {
-				SOV = { is_ai = yes }
-			}
-			start_civil_war = {
-				ideology = neutrality
-				size = 0.1
-				capital = 219
-				states = { 219 213 215 216 195 208 244 209 263 264 210 246 247 242 243 205 224 248 253 252 254 255 257 223 222 258 220 240 260 245 265 217 239 218 214 351 256 250 207 206 241 204 194 137 228 }
-				keep_unit_leaders = { 401 402 410 405 406 403 407 404 }
-			}
-		}
-		else = {
-			start_civil_war = {
-				ideology = neutrality
-				size = 0.3
-				capital = 219
-				states = { 219 213 215 216 195 208 244 209 263 264 210 246 247 242 243 205 224 248 253 252 254 255 257 223 222 258 220 240 260 245 265 217 239 218 214 351 256 250 207 206 241 204 194 137 228 }
-				keep_unit_leaders = { 401 402 410 405 406 403 407 404 }
-			}
-		}
+
 		hidden_effect = {
-			random_other_country = {
+			release = SOV
+			every_state = { 
 				limit = {
-					original_tag = SOV
-					has_government = neutrality
+					is_core_of = SOV
 				}
-				set_cosmetic_tag = SOV_Stalin
-				set_rule = { can_create_factions = yes }
-				create_faction = "Comintern"
-				kill_country_leader = yes
-				create_country_leader = {
-					name = "Ivan Konev"
-					desc = "POLITICS_IVAN_KONEV_DESC"
-					picture = "Portrait_Soviet_Ivan_Konev.dds"
-					expire = "1965.1.1"
-					ideology = oligarchism
-					traits = {
-					}
-				}
+				add_core_of = STA
+				SOV = { transfer_state = PREV }
+			}
+			STA = {
+				inherit_technology = SOV
+				transfer_state = 219 
+				transfer_state = 213 
+				transfer_state = 215 
+				transfer_state = 216 
+				transfer_state = 195 
+				transfer_state = 208 
+				transfer_state = 244 
+				transfer_state = 209 
+				transfer_state = 263 
+				transfer_state = 264 
+				transfer_state = 210 
+				transfer_state = 246 
+				transfer_state = 247 
+				transfer_state = 242 
+				transfer_state = 243 
+				transfer_state = 205 
+				transfer_state = 224 
+				transfer_state = 248 
+				transfer_state = 253 
+				transfer_state = 252 
+				transfer_state = 254 
+				transfer_state = 255 
+				transfer_state = 257 
+				transfer_state = 223 
+				transfer_state = 222 
+				transfer_state = 258 
+				transfer_state = 220 
+				transfer_state = 240 
+				transfer_state = 260 
+				transfer_state = 245 
+				transfer_state = 265 
+				transfer_state = 217 
+				transfer_state = 239 
+				transfer_state = 218 
+				transfer_state = 214 
+				transfer_state = 351 
+				transfer_state = 256 
+				transfer_state = 250 
+				transfer_state = 207 
+				transfer_state = 206 
+				transfer_state = 241 
+				transfer_state = 204 
+				transfer_state = 194 
+				transfer_state = 137 
+				transfer_state = 228
 				create_country_leader = {
 					name = "Joseph Stalin"
 					desc = "POLITICS_JOSEPH_STALIN_DESC"
-					picture = "Portrait_Soviet_Joseph_Stalin.dds"
+					picture = "gfx//leaders//SOV//Portrait_Soviet_Joseph_Stalin.dds"
 					expire = "1953.3.1"
 					ideology = stalinism
 					traits = {
 					}
 				}
+				remove_ideas = trotskyite_plot
+				remove_ideas = trotskyite_plot_purged
+				remove_ideas = trotskyite_plot_purged_2
+				remove_ideas = cavalry_army_clique
+				remove_ideas = cavalry_army_clique_2
+				remove_ideas = cavalry_army_clique_3
 			}
+			every_unit_leader = {
+				limit = {
+					OR = {
+						has_id = 401
+						has_id = 402
+						has_id = 410
+						has_id = 405
+						has_id = 406
+						has_id = 403
+						has_id = 407
+						has_id = 404
+					}
+				}
+				set_nationality = STA
+			}
+			SOV = { remove_from_faction = STA }
+			STA = { 
+				create_faction = Comintern_stalin
+				add_to_faction = STA
+			}
+		}
+		SOV = {
+			declare_war_on = {
+			    target = STA
+			    type = civil_war
+			}
+		}
+		if = {
+			limit = {
+				SOV = { is_ai = yes }
+			}
+			SOV = {
+				transfer_units_fraction = {
+					target = STA
+					size = 0.1
+					stockpile_ratio = 0.1
+					army_ratio = 0.1
+					navy_ratio = 0.1
+					air_ratio = 0.1
+				}
+			}
+		}
+		else = {
+			SOV = {
+				transfer_units_fraction = {
+					target = STA
+					size = 0.3
+					stockpile_ratio = 0.3
+					army_ratio = 0.3
+					navy_ratio = 0.3
+					air_ratio = 0.3
+				}
+			}
+		}
+		hidden_effect = {
 			news_event = { hours = 6 id = news.221 }
 		}
 	}
