@@ -181,6 +181,8 @@ NDefines.NCountry.SPECIAL_FORCES_CAP_MIN = 10										-- You can have a minimum
 
 NDefines.NCountry.BASE_MOBILIZATION_SPEED = 0.02									-- Base speed of manpower mobilization  #in 1/1000 of 1 %
 
+NDefines.NCountry.WAR_SUPPORT_TENSION_IMPACT = 0				-- Total impact of world tension
+
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Buildings
 
