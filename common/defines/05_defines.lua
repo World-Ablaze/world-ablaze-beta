@@ -554,7 +554,7 @@ NDefines.NAI.LAND_COMBAT_FIGHTERS_PER_PLANE = 10									-- Amount of air superi
 NDefines.NAI.LAND_COMBAT_CAS_PER_ENEMY_ARMY = 10									-- Amount of CAS planes requested per enemy army
 NDefines.NAI.LAND_COMBAT_CAS_PER_COMBAT = 150										-- Amount of CAS requested per combat
 NDefines.NAI.LAND_COMBAT_BOMBERS_PER_LAND_FORT_LEVEL = 30							-- Amount of bomber planes requested per enemy land fort level
-NDefines.NAI.LAND_COMBAT_MIN_EXCORT_WINGS = 20										-- Min amount of airwings requested to excort operations
+NDefines.NAI.LAND_COMBAT_MIN_EXCORT_WINGS = 3										-- Min amount of airwings requested to excort operations
 NDefines.NAI.LAND_COMBAT_INTERCEPT_PER_PLANE = 0.4									-- Amount of interception planes requested per enemy plane
 
 
