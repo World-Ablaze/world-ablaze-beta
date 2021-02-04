@@ -181,8 +181,11 @@ NDefines.NCountry.SPECIAL_FORCES_CAP_MIN = 10										-- You can have a minimum
 
 NDefines.NCountry.BASE_MOBILIZATION_SPEED = 0.02									-- Base speed of manpower mobilization  #in 1/1000 of 1 %
 
-NDefines.NCountry.WAR_SUPPORT_TENSION_IMPACT = 0				-- Total impact of world tension
-
+NDefines.NCountry.WAR_SUPPORT_TENSION_IMPACT = 0									-- Total impact of world tension
+NDefines.NCountry.BOMBING_WAR_SUPPORT_PENALTY_SCALE = -0.00015	 					-- Scaling of bomber damage to war support impact, will be added weekly as a war support penalty
+NDefines.NCountry.MAX_BOMBING_WEEKLY_WAR_SUPPORT_PENALTY = -0.02					-- Max penalty that will gained per week from bomber's damage
+NDefines.NCountry.BOMBING_WEEKLY_WAR_SUPPORT_PENALTY_DECAY = 0.002					-- Weekly decay of bomber damage war support penalty
+	
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Buildings
 
