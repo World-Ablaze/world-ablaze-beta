@@ -38,7 +38,7 @@ NDefines.NPolitics.ARMY_LEADER_COST = 2												-- cost for recruiting new le
 
 
 NDefines.NTrade.BASE_TRADE_FACTOR = 60												-- This is the base trade factor
-NDefines.NTrade.DISTANCE_TRADE_FACTOR = -0.01										-- Trade factor is modified by distance times this
+NDefines.NTrade.DISTANCE_TRADE_FACTOR = -0.005										-- Trade factor is modified by distance times this
 NDefines.NTrade.PARTY_SUPPORT_TRADE_FACTOR = 0			-- Trade factor bonus at the other side having 100 % party popularity for my party
 
 
@@ -46,6 +46,7 @@ NDefines.NTrade.PARTY_SUPPORT_TRADE_FACTOR = 0			-- Trade factor bonus at the ot
 
 
 NDefines.NTechnology.BASE_YEAR_AHEAD_PENALTY_FACTOR = 4								-- Base year ahead penalty
+NDefines.NTechnology.LICENSE_PRODUCTION_TECH_BONUS = 0								-- License production tech bonus
 
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Military
@@ -340,7 +341,9 @@ NDefines.NNavy.REPAIR_AND_RETURN_AMOUNT_SHIPS_MEDIUM = 0.4							-- % of total d
 NDefines.NNavy.REPAIR_AND_RETURN_AMOUNT_SHIPS_HIGH = 0.7							-- % of total damaged ships, that will be sent for repair-and-return in one call.
 
 NDefines.NNavy.REPAIR_AND_RETURN_UNIT_DYING_STR = 0.2								-- Str below this point is considering a single ship "dying", and a high priority to send to repair.
-	
+
+NDefines.NNavy.MIN_HIT_PROFILE_MULT = 0.25											-- largest hit profile penalty to hitting
+
 NDefines.NNavy.MIN_REPAIR_FOR_JOINING_COMBATS = { 									-- strikeforces/patrol forces will not join combats if they are not repaired enough
 		0.0,	-- do not repair
 		0.5,	-- low
