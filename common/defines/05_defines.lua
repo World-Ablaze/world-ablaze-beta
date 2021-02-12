@@ -243,6 +243,9 @@ NDefines.NProduction.DEFAULT_MAX_NAV_FACTORIES_PER_LINE = 5
 NDefines.NProduction.CAPITAL_SHIP_MAX_NAV_FACTORIES_PER_LINE = 5
 NDefines.NProduction.CONVOY_MAX_NAV_FACTORIES_PER_LINE = 15
 
+NDefines.NProduction.MIN_NAVAL_EQUIPMENT_CONVERSION_IC_COST_FACTOR = 0.05			-- Minimum fraction of an equipment type's base industry capacity cost to use when converting a naval equipment, such as through ship refitting.
+--NDefines.NProduction.MIN_NAVAL_EQUIPMENT_CONVERSION_RESOURCE_COST_FACTOR = 0.2			-- Minimum fraction of an equipment type's base strategic resource cost to use when converting a naval equipment, such as through ship refitting.
+
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Operations
 
 NDefines.NOperatives.AGENCY_CREATION_FACTORIES = 10									-- Number of factories used to create an intelligence agency
