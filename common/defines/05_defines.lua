@@ -37,7 +37,7 @@ NDefines.NPolitics.ARMY_LEADER_COST = 2												-- cost for recruiting new le
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Trade
 
 
-NDefines.NTrade.BASE_TRADE_FACTOR = 60												-- This is the base trade factor
+NDefines.NTrade.BASE_TRADE_FACTOR = 55												-- This is the base trade factor
 NDefines.NTrade.DISTANCE_TRADE_FACTOR = -0.005										-- Trade factor is modified by distance times this
 NDefines.NTrade.PARTY_SUPPORT_TRADE_FACTOR = 0			-- Trade factor bonus at the other side having 100 % party popularity for my party
 
@@ -137,7 +137,7 @@ NDefines.NMilitary.RIVER_CROSSING_SPEED_PENALTY = -0.25								-- small river cr
 NDefines.NMilitary.RIVER_CROSSING_SPEED_PENALTY_LARGE = -0.5						-- large river crossing
 
 NDefines.NMilitary.RETREAT_SPEED_FACTOR = 1.2              						    -- speed bonus when retreating
-NDefines.NMilitary.BASE_FORT_PENALTY = -0.15						 					-- fort penalty
+NDefines.NMilitary.BASE_FORT_PENALTY = -0.16						 				-- fort penalty
 
 NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_IMPACT = -0.4      						-- effect on defense due to enemy air superiorty
 --NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_SPEED_IMPACT = -0.5				   		-- effect on speed due to enemy air superiority
