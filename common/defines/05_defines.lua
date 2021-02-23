@@ -147,6 +147,7 @@ NDefines.NMilitary.COMBAT_MOVEMENT_SPEED = 0.8										-- speed reduction base 
 NDefines.NMilitary.FUEL_CAPACITY_DEFAULT_HOURS = 672               					-- default capacity if not specified
 
 NDefines.NMilitary.BASE_CAPTURE_EQUIPMENT_RATIO = 0.08								-- after a successful land combat, ratio of the equipments that are being captured/salvaged from enemy's lost equipment
+NDefines.NMilitary.REINFORCE_CHANCE = 0.1                	   						-- base chance to join combat from back line when empty
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Country
 
@@ -385,7 +386,7 @@ NDefines.NNavy.AGGRESSION_SETTINGS_VALUES = { 										-- ships will use this v
 NDefines.NNavy.MISSION_SUPREMACY_RATIOS = { 										-- supremacy multipliers for different mission types
         0.0, -- HOLD
         1.0, -- PATROL
-        0.1, -- STRIKE FORCE 
+        0.0, -- STRIKE FORCE 
         0.5, -- CONVOY RAIDING
         0.5, -- CONVOY ESCORT
         0.3, -- MINES PLANTING
