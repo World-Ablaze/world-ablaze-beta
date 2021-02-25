@@ -313,8 +313,6 @@ NDefines.NAir.MISSION_COMMAND_POWER_COSTS = {  										-- command power cost p
 
 NDefines.NAir.NAVAL_STRIKE_CARRIER_MULTIPLIER = 10.0							    -- damage bonus when planes are in naval combat where their carrier is present (and can thus sortie faster and more effectively)
 
-NDefines.NAir.BASE_STRATEGIC_BOMBING_HIT_PLANE_CHANCE = 1.0,		-- Chance to hit a plane in airbase when it is bombed.
-NDefines.NAir.BASE_STRATEGIC_BOMBING_HIT_PLANE_DAMAGE_FACTOR = 1.0,
 
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Navy
