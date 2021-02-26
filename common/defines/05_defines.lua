@@ -418,9 +418,9 @@ NDefines.NNavy.TRAINING_MAX_DAILY_COUNTRY_EXP = 1.75								-- Maximum navy XP d
 NDefines.NNavy.CARRIER_STACK_PENALTY = 12											-- The most efficient is 4 carriers in combat. 5+ brings the penalty to the amount of wings in battle.
 NDefines.NNavy.CARRIER_STACK_PENALTY_EFFECT = 0.9									-- Each carrier above the optimal amount decreases the amount of airplanes being able to takeoff by such %.
 
-NDefines.NNavy.SUPREMACY_PER_SHIP_PER_MANPOWER = 0.05								-- supremacy of a ship is calculated using its IC, manpower and a base define
-NDefines.NNavy.SUPREMACY_PER_SHIP_PER_IC = 0.03
-NDefines.NNavy.SUPREMACY_PER_SHIP_BASE = 40.0
+--NDefines.NNavy.SUPREMACY_PER_SHIP_PER_MANPOWER = 0.15								-- supremacy of a ship is calculated using its IC, manpower and a base define
+--NDefines.NNavy.SUPREMACY_PER_SHIP_PER_IC = 0.1
+--NDefines.NNavy.SUPREMACY_PER_SHIP_BASE = 25.0
 
 NDefines.NAI.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
 		0.8, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
