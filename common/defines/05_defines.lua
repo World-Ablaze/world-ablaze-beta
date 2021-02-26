@@ -137,7 +137,7 @@ NDefines.NMilitary.RIVER_CROSSING_SPEED_PENALTY = -0.25								-- small river cr
 NDefines.NMilitary.RIVER_CROSSING_SPEED_PENALTY_LARGE = -0.5						-- large river crossing
 
 NDefines.NMilitary.RETREAT_SPEED_FACTOR = 1.2              						    -- speed bonus when retreating
-NDefines.NMilitary.BASE_FORT_PENALTY = -0.16						 				-- fort penalty
+NDefines.NMilitary.BASE_FORT_PENALTY = -0.17						 				-- fort penalty
 
 NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_IMPACT = -0.4      						-- effect on defense due to enemy air superiorty
 --NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_SPEED_IMPACT = -0.5				   		-- effect on speed due to enemy air superiority
@@ -147,7 +147,7 @@ NDefines.NMilitary.COMBAT_MOVEMENT_SPEED = 0.8										-- speed reduction base 
 NDefines.NMilitary.FUEL_CAPACITY_DEFAULT_HOURS = 672               					-- default capacity if not specified
 
 NDefines.NMilitary.BASE_CAPTURE_EQUIPMENT_RATIO = 0.08								-- after a successful land combat, ratio of the equipments that are being captured/salvaged from enemy's lost equipment
-NDefines.NMilitary.REINFORCE_CHANCE = 0.1                	   						-- base chance to join combat from back line when empty
+--NDefines.NMilitary.REINFORCE_CHANCE = 0.1                	   						-- base chance to join combat from back line when empty
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Country
 
@@ -416,6 +416,10 @@ NDefines.NNavy.OUT_OF_FUEL_TORPEDO_FACTOR = -0.9
 NDefines.NNavy.TRAINING_MAX_DAILY_COUNTRY_EXP = 1.75								-- Maximum navy XP daily gain
 NDefines.NNavy.CARRIER_STACK_PENALTY = 12											-- The most efficient is 4 carriers in combat. 5+ brings the penalty to the amount of wings in battle.
 NDefines.NNavy.CARRIER_STACK_PENALTY_EFFECT = 0.9									-- Each carrier above the optimal amount decreases the amount of airplanes being able to takeoff by such %.
+
+NDefines.NNavy.SUPREMACY_PER_SHIP_PER_MANPOWER = 0.05								-- supremacy of a ship is calculated using its IC, manpower and a base define
+NDefines.NNavy.SUPREMACY_PER_SHIP_PER_IC = 0.03
+NDefines.NNavy.SUPREMACY_PER_SHIP_BASE = 40.0
 
 NDefines.NAI.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
 		0.8, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
