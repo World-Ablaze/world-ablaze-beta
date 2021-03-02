@@ -37,7 +37,7 @@ NDefines.NPolitics.ARMY_LEADER_COST = 2												-- cost for recruiting new le
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Trade
 
 
-NDefines.NTrade.BASE_TRADE_FACTOR = 60												-- This is the base trade factor
+NDefines.NTrade.BASE_TRADE_FACTOR = 55												-- This is the base trade factor
 NDefines.NTrade.DISTANCE_TRADE_FACTOR = -0.005										-- Trade factor is modified by distance times this
 NDefines.NTrade.PARTY_SUPPORT_TRADE_FACTOR = 0			-- Trade factor bonus at the other side having 100 % party popularity for my party
 
@@ -112,7 +112,7 @@ NDefines.NMilitary.SLOWEST_SPEED = 0.01
 NDefines.NMilitary.NUKE_MIN_DAMAGE_PERCENT = 0.7									-- Minimum damage from nukes as a percentage of current strength/organisation
 NDefines.NMilitary.NUKE_MAX_DAMAGE_PERCENT = 0.95									-- Minimum damage from nukes as a percentage of current strength/organisation
 
-NDefines.NMilitary.HOURLY_ORG_MOVEMENT_IMPACT = -0.3								-- how much org is lost every hour while moving an army.
+NDefines.NMilitary.HOURLY_ORG_MOVEMENT_IMPACT = -0.5								-- how much org is lost every hour while moving an army.
 NDefines.NMilitary.ORG_LOSS_FACTOR_ON_CONQUER = 0.25              					-- percentage of (max) org loss on takign enemy province
 
 NDefines.NMilitary.LEND_LEASE_FIELD_EXPERIENCE_SCALE = 0.000						-- Experience scale for lend leased equipment used in combat.
@@ -137,7 +137,7 @@ NDefines.NMilitary.RIVER_CROSSING_SPEED_PENALTY = -0.25								-- small river cr
 NDefines.NMilitary.RIVER_CROSSING_SPEED_PENALTY_LARGE = -0.5						-- large river crossing
 
 NDefines.NMilitary.RETREAT_SPEED_FACTOR = 1.2              						    -- speed bonus when retreating
-NDefines.NMilitary.BASE_FORT_PENALTY = -0.15						 					-- fort penalty
+NDefines.NMilitary.BASE_FORT_PENALTY = -0.17						 				-- fort penalty
 
 NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_IMPACT = -0.4      						-- effect on defense due to enemy air superiorty
 --NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_SPEED_IMPACT = -0.5				   		-- effect on speed due to enemy air superiority
@@ -147,6 +147,7 @@ NDefines.NMilitary.COMBAT_MOVEMENT_SPEED = 0.8										-- speed reduction base 
 NDefines.NMilitary.FUEL_CAPACITY_DEFAULT_HOURS = 672               					-- default capacity if not specified
 
 NDefines.NMilitary.BASE_CAPTURE_EQUIPMENT_RATIO = 0.08								-- after a successful land combat, ratio of the equipments that are being captured/salvaged from enemy's lost equipment
+--NDefines.NMilitary.REINFORCE_CHANCE = 0.1                	   						-- base chance to join combat from back line when empty
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Country
 
@@ -313,6 +314,7 @@ NDefines.NAir.MISSION_COMMAND_POWER_COSTS = {  										-- command power cost p
 NDefines.NAir.NAVAL_STRIKE_CARRIER_MULTIPLIER = 10.0							    -- damage bonus when planes are in naval combat where their carrier is present (and can thus sortie faster and more effectively)
 
 
+
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Navy
 
 
@@ -385,7 +387,7 @@ NDefines.NNavy.AGGRESSION_SETTINGS_VALUES = { 										-- ships will use this v
 NDefines.NNavy.MISSION_SUPREMACY_RATIOS = { 										-- supremacy multipliers for different mission types
         0.0, -- HOLD
         1.0, -- PATROL
-        0.1, -- STRIKE FORCE 
+        0.0, -- STRIKE FORCE 
         0.5, -- CONVOY RAIDING
         0.5, -- CONVOY ESCORT
         0.3, -- MINES PLANTING
@@ -400,7 +402,7 @@ NDefines.NNavy.CONVOY_EFFICIENCY_REGAIN_AFTER_DAYS = 1								-- Convoy starts r
 NDefines.NNavy.CONVOY_EFFICIENCY_REGAIN_BASE_SPEED = 0.04							-- How much efficiency regains every day.
 NDefines.NNavy.CONVOY_EFFICIENCY_MIN_VALUE = 0.05									-- To avoid complete 0% efficiency, set the lower limit.
 
-NDefines.NNavy.ESCAPE_SPEED_SUB_BASE = 0.08											-- subs get faster escape speed. gets replaced by hidden version below if hidden
+NDefines.NNavy.ESCAPE_SPEED_SUB_BASE = 0.1											-- subs get faster escape speed. gets replaced by hidden version below if hidden
 NDefines.NNavy.ESCAPE_SPEED_HIDDEN_SUB = 0.4										-- hidden subs get faster escape speed
 NDefines.NNavy.SPEED_TO_ESCAPE_SPEED = 0.95											-- ratio to converstion from ship speed to escape speed (divided by hundred)
 NDefines.NNavy.BASE_ESCAPE_SPEED = 1.0												-- daily base escape speed (gained as percentagE)
@@ -415,6 +417,10 @@ NDefines.NNavy.OUT_OF_FUEL_TORPEDO_FACTOR = -0.9
 NDefines.NNavy.TRAINING_MAX_DAILY_COUNTRY_EXP = 1.75								-- Maximum navy XP daily gain
 NDefines.NNavy.CARRIER_STACK_PENALTY = 12											-- The most efficient is 4 carriers in combat. 5+ brings the penalty to the amount of wings in battle.
 NDefines.NNavy.CARRIER_STACK_PENALTY_EFFECT = 0.9									-- Each carrier above the optimal amount decreases the amount of airplanes being able to takeoff by such %.
+
+--NDefines.NNavy.SUPREMACY_PER_SHIP_PER_MANPOWER = 0.15								-- supremacy of a ship is calculated using its IC, manpower and a base define
+--NDefines.NNavy.SUPREMACY_PER_SHIP_PER_IC = 0.1
+--NDefines.NNavy.SUPREMACY_PER_SHIP_BASE = 25.0
 
 NDefines.NAI.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
 		0.8, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
@@ -432,6 +438,8 @@ NDefines.NAI.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- AI
 
 ----------- LEND LEASE
+
+NDefines.NAI.BASE_RELUCTANCE = 10 													-- Base reluctance applied to all diplomatic offers
 
 NDefines.NAI.DIPLOMACY_LEND_LEASE_MONTHS_TO_CANCEL = 6								-- AI will not cancel a lend lease offer until this time has passed
 NDefines.NAI.LENDLEASE_FRACTION_OF_PRODUCTION = 0.5									-- Base fraction AI would send as lendlease
