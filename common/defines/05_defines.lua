@@ -271,7 +271,7 @@ NDefines.NAir.CAPACITY_PENALTY = 10													-- scales penalty of having over
 NDefines.NAir.AIR_WING_MAX_SIZE = 1600 												-- Max amount of airplanes in wing
 NDefines.NAir.MISSION_EFFICIENCY_MULT_AT_LACK_OF_FUEL = 0.05		 				-- multiplier for mission efficiency when a base lacks fuel
 
-NDefines.NAir.CLOSE_AIR_SUPPORT_EXPERIENCE_SCALE = 0.00025							-- How much the experinence gained by CAS is scaled
+NDefines.NAir.CLOSE_AIR_SUPPORT_EXPERIENCE_SCALE = 0.00015							-- How much the experinence gained by CAS is scaled
 
 NDefines.NAir.AIR_WING_MAX_STATS_ATTACK = 400										-- Max stats
 NDefines.NAir.AIR_WING_MAX_STATS_DEFENCE = 400
