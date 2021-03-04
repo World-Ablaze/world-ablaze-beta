@@ -144,6 +144,8 @@ NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_IMPACT = -0.4      						-- effect on d
 
 NDefines.NMilitary.COMBAT_MOVEMENT_SPEED = 0.8										-- speed reduction base modifier in combat
 
+NDefines.NMilitary.TRAINING_ORG = 0
+
 NDefines.NMilitary.FUEL_CAPACITY_DEFAULT_HOURS = 672               					-- default capacity if not specified
 
 NDefines.NMilitary.BASE_CAPTURE_EQUIPMENT_RATIO = 0.08								-- after a successful land combat, ratio of the equipments that are being captured/salvaged from enemy's lost equipment
