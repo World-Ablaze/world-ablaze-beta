@@ -161,7 +161,7 @@ NDefines.NCountry.SUPPLY_CONVOY_FACTOR = 1											-- How many convoys each su
 NDefines.NCountry.SUPPLY_PORT_LEVEL_THROUGHPUT = 3			    					-- supply throughput per level of naval base
 NDefines.NCountry.EVENT_PROCESS_OFFSET = 7											-- Events are checked every X day per country or state (1 is ideal, but CPU heavy)
 
-NDefines.NCountry.AIR_SUPPLY_CONVERSION_SCALE = 0.25								-- Conversion scale for planes to air supply
+NDefines.NCountry.AIR_SUPPLY_CONVERSION_SCALE = 0.15								-- Conversion scale for planes to air supply
 
 NDefines.NCountry.REINFORCEMENT_EQUIPMENT_DELIVERY_SPEED = 0.1						-- Modifier for army equipment reinforcement speed
 
