@@ -929,29 +929,95 @@ economy_decisions = {
 
 propaganda_efforts = {
 	
-	war_propaganda_against_enemy = {
+	war_propaganda_against_enemy_minor = {
 
 		icon = generic_prepare_civil_war
 
 		available = {
 			has_war = yes
+			is_major = no
 			any_enemy_country = {
+				has_war_with = ROOT
 				has_capitulated = no
-				is_major = yes
+				is_subject = no
   			}
 		}
 
 		visible = {
+			is_major = no
 			FROM = {
 				has_war_with = ROOT
 				has_capitulated = no
-				is_major = yes
+				is_subject = no
 			}
 		}
 
 		target_trigger = {
 			FROM = {
 				has_war_with = ROOT
+				has_capitulated = no
+				is_subject = no
+			}
+		}
+
+		days_remove = 70
+		days_re_enable = 140
+
+		fire_only_once = no
+
+		cost = 50
+
+		modifier = {
+			war_support_weekly = 0.005
+		}
+
+		complete_effect = {
+			set_country_flag = war_propaganda_campaign_running
+		}
+		remove_effect = {
+			clr_country_flag = war_propaganda_campaign_running
+		}
+
+		ai_will_do = {
+			factor = 0
+			modifier = {
+				add = 50
+				has_war_support < 0.9
+			}
+		}
+	}
+	
+	war_propaganda_against_enemy_major = {
+
+		icon = generic_prepare_civil_war
+
+		available = {
+			has_war = yes
+			is_major = yes
+			any_enemy_country = {
+				has_war_with = ROOT
+				has_capitulated = no
+				is_major = yes
+				is_subject = no
+  			}
+		}
+
+		visible = {
+			is_major = yes
+			FROM = {
+				has_war_with = ROOT
+				has_capitulated = no
+				is_major = yes
+				is_subject = no
+			}
+		}
+
+		target_trigger = {
+			FROM = {
+				has_war_with = ROOT
+				has_capitulated = no
+				is_major = yes
+				is_subject = no
 			}
 		}
 
@@ -989,7 +1055,7 @@ propaganda_efforts = {
 		available = {
 			NOT = { has_country_flag = war_propaganda_campaign_running }
 			threat > 0.5
-			has_war_support < 0.5
+			has_war_support < 0.25
 			has_offensive_war = no
 			if = {
 				limit = {
@@ -1042,12 +1108,13 @@ propaganda_efforts = {
 	}
 
 	#Propaganda campaign against a country in offensive that has caused a lot of tension and started a war
-	war_propaganda_against_warmonger = {
+	war_propaganda_against_warmonger_minor = {
 
 		icon = generic_prepare_civil_war
 
 		available = {
 			NOT = { has_country_flag = war_propaganda_campaign_running }
+			is_major = no
 			FROM = {
 				OR = {
 					is_justifying_wargoal_against = ROOT
@@ -1077,6 +1144,7 @@ propaganda_efforts = {
 		}
 
 		visible = {
+			is_major = no
 			FROM = {
 				NOT = { is_in_faction_with = ROOT }
 				OR = {
@@ -1110,6 +1178,144 @@ propaganda_efforts = {
 		target_trigger = {
 			FROM = {
 				NOT = { is_in_faction_with = ROOT }
+				is_subject = no
+				OR = {
+					is_justifying_wargoal_against = ROOT
+					AND = {
+						is_neighbor_of = ROOT
+						OR = {
+							has_war_with = ROOT
+							AND = {
+								NOT = { has_government = ROOT }
+								has_offensive_war = yes
+								has_added_tension_amount > 5
+							}
+						}
+					}
+					AND = {
+						NOT = { is_neighbor_of = ROOT }
+						OR = {
+							has_offensive_war_with = ROOT
+							AND = {
+								NOT = { has_government = ROOT }
+								has_offensive_war = yes
+								has_added_tension_amount > 30
+							}
+						}
+					}
+				}
+			}
+			if = {
+				limit = {
+					FROM = {
+						is_neighbor_of = ROOT
+					}
+					set_temp_variable = { war_propaganda_cost = 50 }
+				}
+			}
+		}
+
+		days_remove = 90
+
+		fire_only_once = yes
+
+		cost = var:war_propaganda_cost?75
+
+		modifier = {
+			war_support_weekly = 0.01
+		}
+
+		complete_effect = {
+			log = "[GetDateText]: [Root.GetName]: Decision war_propaganda_against_warmonger"
+			set_country_flag = war_propaganda_campaign_running
+		}
+		remove_effect = {
+			log = "[GetDateText]: [Root.GetName]: Decision remove war_propaganda_against_warmonger"
+			clr_country_flag = war_propaganda_campaign_running
+		}
+
+		ai_will_do = {
+			factor = 1
+			modifier = {
+				factor = 0
+				has_war_support > 0.9
+			}
+		}
+	}
+
+	#Propaganda campaign against a country in offensive that has caused a lot of tension and started a war
+	war_propaganda_against_warmonger_major = {
+
+		icon = generic_prepare_civil_war
+
+		available = {
+			is_major = yes
+			NOT = { has_country_flag = war_propaganda_campaign_running }
+			FROM = {
+				OR = {
+					is_justifying_wargoal_against = ROOT
+					AND = {
+						has_war_with = ROOT
+						is_neighbor_of = ROOT
+					}
+					has_offensive_war = yes
+				}
+			}
+			if = {
+				limit = {
+					tag = SPR
+					has_dlc = "La Resistance"
+				}
+				NOT = {
+					has_idea = SPR_political_violence
+				}
+			}
+			if = {
+				limit = {
+					original_tag = SPR
+					has_dlc = "La Resistance"
+				}
+				has_global_flag = scw_over
+			}
+		}
+
+		visible = {
+			is_major = yes
+			FROM = {
+				NOT = { is_in_faction_with = ROOT }
+				OR = {
+					is_justifying_wargoal_against = ROOT
+					AND = {
+						is_neighbor_of = ROOT
+						OR = {
+							has_war_with = ROOT
+							AND = {
+								NOT = { has_government = ROOT }
+								has_offensive_war = yes
+								has_added_tension_amount > 5
+							}
+						}
+					}
+					AND = {
+						NOT = { is_neighbor_of = ROOT }
+						OR = {
+							has_offensive_war_with = ROOT
+							AND = {
+								NOT = { has_government = ROOT }
+								has_offensive_war = yes
+								has_added_tension_amount > 30
+							}
+						}
+					}
+				}
+			}
+		}
+
+		target_trigger = {
+			FROM = {
+				NOT = { is_in_faction_with = ROOT }
+				is_major = yes
+				is_subject = no
 				OR = {
 					is_justifying_wargoal_against = ROOT
 					AND = {
