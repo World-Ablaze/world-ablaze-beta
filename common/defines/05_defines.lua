@@ -534,8 +534,8 @@ NDefines.NAI.MAX_MISSION_PER_TASKFORCE = {  -- max mission region/taskforce rati
 	0.5, -- PATROL		
 	5, -- STRIKE FORCE 
 	1.5, -- CONVOY RAIDING
-	2, -- CONVOY ESCORT
-	2, -- MINES PLANTING
+	1, -- CONVOY ESCORT
+	0.5, -- MINES PLANTING
 	2, -- MINES SWEEPING
 	0, -- TRAIN
 	0, -- RESERVE_FLEET
