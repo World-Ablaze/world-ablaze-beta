@@ -441,6 +441,10 @@ NDefines.NAI.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
 	}
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- AI
+	
+----------- SUPPLY
+
+--NDefines.NAI.SUPPLY_CRISIS_LIMIT = 1.0												-- If a unit is standing in an area with 
 
 ----------- LEND LEASE
 
