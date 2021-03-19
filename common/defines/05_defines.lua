@@ -57,6 +57,8 @@ NDefines.NMilitary.ADDITIONAL_COMBAT_WIDTH = 30										-- more opened up by su
 
 NDefines.NMilitary.FRONT_MIN_PATH_TO_REDEPLOY = 12									-- If a units path is at least this long to reach its front location, it will strategically redeploy.
 
+NDefines.NMilitary.ZERO_ORG_MOVEMENT_MODIFIER = -0.25								-- speed impact at 0 org.
+
 NDefines.NMilitary.BASE_DIVISION_BRIGADE_GROUP_COST = 20							--Base cost to unlock a regiment slot,
 NDefines.NMilitary.BASE_DIVISION_BRIGADE_CHANGE_COST = 5							--Base cost to change a regiment column.
 NDefines.NMilitary.BASE_DIVISION_SUPPORT_SLOT_COST = 5 								--Base cost to unlock a support slot
