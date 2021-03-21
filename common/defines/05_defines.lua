@@ -38,8 +38,9 @@ NDefines.NPolitics.ARMY_LEADER_COST = 2												-- cost for recruiting new le
 
 
 NDefines.NTrade.BASE_TRADE_FACTOR = 55												-- This is the base trade factor
+NDefines.NTrade.RELATION_TRADE_FACTOR = 2											-- Trade factor is modified by Opinion value times this
 NDefines.NTrade.DISTANCE_TRADE_FACTOR = -0.005										-- Trade factor is modified by distance times this
-NDefines.NTrade.PARTY_SUPPORT_TRADE_FACTOR = 0			-- Trade factor bonus at the other side having 100 % party popularity for my party
+NDefines.NTrade.PARTY_SUPPORT_TRADE_FACTOR = 0										-- Trade factor bonus at the other side having 100 % party popularity for my party
 
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Technology
@@ -58,6 +59,8 @@ NDefines.NMilitary.ADDITIONAL_COMBAT_WIDTH = 30										-- more opened up by su
 NDefines.NMilitary.FRONT_MIN_PATH_TO_REDEPLOY = 12									-- If a units path is at least this long to reach its front location, it will strategically redeploy.
 
 NDefines.NMilitary.ZERO_ORG_MOVEMENT_MODIFIER = -0.25								-- speed impact at 0 org.
+
+NDefines.NMilitary.ACCLIMATIZATION_SPEED_GAIN = 0.05								-- A variable used to balance the overall speed of gaining the acclimatization
 
 NDefines.NMilitary.BASE_DIVISION_BRIGADE_GROUP_COST = 20							--Base cost to unlock a regiment slot,
 NDefines.NMilitary.BASE_DIVISION_BRIGADE_CHANGE_COST = 5							--Base cost to change a regiment column.
@@ -259,6 +262,7 @@ NDefines.NProduction.MIN_NAVAL_EQUIPMENT_CONVERSION_IC_COST_FACTOR = 0.05			-- M
 
 NDefines.NOperatives.AGENCY_CREATION_FACTORIES = 10									-- Number of factories used to create an intelligence agency
 NDefines.NOperatives.MAX_OPERATIVE_SLOT_FROM_AGENCY_UPGRADES = 2					-- max operative slots gained from upgrades
+NDefines.NOperatives.CONTROL_TRADE_MAX_INFLUENCE = 50.0								-- The maximum amount of trade influence that can be gained through the control trade mission
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Operations
 
