@@ -562,6 +562,8 @@ NDefines.NAI.NAVAL_MISSION_MINES_SWEEPING_NEAR_OWNED = 100000	 -- How likely the
 
 NDefines.NAI.AIR_WING_REINFORCEMENT_LIMIT = 100
 
+NDefines.NAI.MINES_SWEEPING_PLANES_PER_MAX_MINES = 1 			-- Amount of air wings request for mines sweeping when there is max amount of mines planted by enemy in certain region
+NDefines.NAI.MINES_PLANTING_PLANES_PER_MAX_DESIRE = 1			-- Amount of air wings request for mines planting when there is max desire for it.
 
 NDefines.NAI.NAVAL_COMBAT_AIR_IMPORTANCE = 500.0
 NDefines.NAI.NAVAL_AIR_SUPERIORITY_IMPORTANCE = 1.0                             	-- Strategic importance of air superiority ( amount of enemy planes in area )
