@@ -284,16 +284,16 @@ NDefines.NAir.MISSION_EFFICIENCY_MULT_AT_LACK_OF_FUEL = 0.05		 				-- multiplier
 
 NDefines.NAir.CLOSE_AIR_SUPPORT_EXPERIENCE_SCALE = 0.00015							-- How much the experinence gained by CAS is scaled
 
-NDefines.NAir.AIR_WING_MAX_STATS_ATTACK = 400										-- Max stats
-NDefines.NAir.AIR_WING_MAX_STATS_DEFENCE = 400
-NDefines.NAir.AIR_WING_MAX_STATS_AGILITY = 400
+NDefines.NAir.AIR_WING_MAX_STATS_ATTACK = 10000										-- Max stats
+NDefines.NAir.AIR_WING_MAX_STATS_DEFENCE = 10000
+NDefines.NAir.AIR_WING_MAX_STATS_AGILITY = 10000
 NDefines.NAir.AIR_WING_MAX_STATS_SPEED = 5000
-NDefines.NAir.AIR_WING_MAX_STATS_BOMBING = 500
+NDefines.NAir.AIR_WING_MAX_STATS_BOMBING = 50000
 NDefines.NAir.COMBAT_DAMAGE_SCALE = 0.14											-- Higher value = more shot down planes
 
 NDefines.NAir.COMBAT_BETTER_AGILITY_DAMAGE_REDUCTION = 0.7 							-- How much the better agility (then opponent's) can reduce their damage to us.
 
-NDefines.NAir.DISRUPTION_FACTOR = 1.0												-- multiplier on disruption damage to scale its effects on planes
+NDefines.NAir.DISRUPTION_FACTOR = 0.5												-- multiplier on disruption damage to scale its effects on planes
 NDefines.NAir.DISRUPTION_FACTOR_CARRIER = 24.0										-- multiplier on disruption damage to scale its effects on carrier vs carrier planes
 NDefines.NAir.CARRIER_HOURS_DELAY_AFTER_EACH_COMBAT = 0								-- how often carrier planes do battle inside naval combat
 NDefines.NAir.ACE_EARN_CHANCE_BASE = 0.005											-- Base chance % for ace pilot to be created. Happens only when successfully kill airplane/ship or damage the buildings.
