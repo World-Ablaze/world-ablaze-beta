@@ -374,6 +374,263 @@ country_event = {
 	}
 }
 
+# Austrian Referendum - event for Austria to allow it
+country_event = {
+	id = pol_armor.801
+	title = pol_armor.801.t
+	desc = pol_armor.801.desc
+	picture = GFX_report_event_election_vote
+	
+	is_triggered_only = yes
+	
+	option = { #sure
+		name = pol_armor.801.a
+		ai_chance = {
+			factor = 80
+			
+			modifier = {
+				is_in_faction = yes
+				factor = 0
+			}
+		}
+		if = {
+			limit = {
+				AND = {
+					NOT = { POL = { has_completed_focus = POL_expansion_of_new_towns } }
+					NOT = { LIT = { has_opinion = { target = POL value > 0 } } }
+				}
+			}
+			random_list = {
+				70 = { LIT = { country_event = { id = pol_armor.802 hours = 24 } } } #country votes yes
+				30 = { LIT = { country_event = { id = pol_armor.803 hours = 24 } } } #country votes no
+			}
+		}
+		if = {
+			limit = {
+				OR = {
+					AND = {
+						POL = { has_completed_focus = POL_expansion_of_new_towns } 
+						NOT = { LIT = { has_opinion = { target = POL value > 0 } } }
+					}
+					AND = {
+						NOT = { POL = { has_completed_focus = POL_expansion_of_new_towns } }
+						LIT = { has_opinion = { target = POL value > 0 } } 
+					}
+				}
+			}
+			random_list = {
+				80 = { LIT = { country_event = { id = pol_armor.802 hours = 24 } } } #country votes yes
+				20 = { LIT = { country_event = { id = pol_armor.803 hours = 24 } } } #country votes no
+			}
+		}
+		if = {
+			limit = {
+				AND = {
+					POL = { has_completed_focus = POL_expansion_of_new_towns } 
+					LIT = { has_opinion = { target = POL value > 0 } } 
+				}
+			}
+			LIT = { country_event = { id = pol_armor.802 hours = 24 } }
+		}
+	}
+
+	option = { #no
+		name = pol_armor.801.b
+		ai_chance = {
+			factor = 20
+			modifier = {
+				has_government = democratic
+				factor = 0
+			}
+			modifier = {
+				is_in_faction = no
+				factor = 0
+			}
+		}
+		POL = { country_event = { id = pol_armor.806 hours = 6 } }
+	}
+
+	option = { #sure, but we'll make sure it gets the right result
+		name = pol_armor.801.c
+		ai_chance = { factor = 160 }
+		trigger = {
+			OR = {
+				has_government = communism
+				has_government = fascism
+			}
+		}
+		add_threat = -2
+		add_political_power = -50
+		LIT = { country_event = { id = pol_armor.807 hours = 24 } }
+		set_global_flag = POL_referendum_shenanigans
+	}
+}
+#country votes yes
+country_event = {
+	id = pol_armor.802 
+	title = pol_armor.802.t
+	desc = pol_armor.802.desc
+	picture = GFX_report_event_election_vote
+	
+	is_triggered_only = yes
+
+	option = {
+		name = pol_armor.802.a
+		custom_effect_tooltip = GAME_OVER_TT
+		POL = { country_event = { id = pol_armor.804 } }
+	}
+
+}
+
+#country votes no
+country_event = {
+	id = pol_armor.803 
+	title = pol_armor.803.t
+	desc = pol_armor.803.desc
+	picture = GFX_report_event_election_vote
+	
+	is_triggered_only = yes
+
+	option = {
+		name = pol_armor.803.a
+		POL = { country_event = { id = pol_armor.805 } }
+	}
+
+}
+#country votes yes - hungary
+country_event = {
+	id = pol_armor.804 
+	title = pol_armor.804.t
+	desc = pol_armor.804.desc
+	picture = GFX_report_event_election_vote
+	
+	is_triggered_only = yes
+
+	option = {
+		name = pol_armor.804.a
+		LIT = {
+			every_unit_leader = {
+				set_nationality = POL
+			}
+		}
+		11 = { add_core_of = ROOT }
+		189 = { add_core_of = ROOT }
+		188 = { add_core_of = ROOT }
+		POL = { annex_country = { target = LIT transfer_troops = yes } }
+		POL = { set_country_flag = LIT_annexed_peacefully } # Used to change division name lists for POL
+		hidden_effect = { news_event = { id = afo_news.37 days = 1 } }
+	}
+
+}
+#country votes no - hungary
+country_event = {
+	id = pol_armor.805 
+	title = pol_armor.805.t
+	desc = pol_armor.805.desc
+	picture = GFX_report_event_election_vote
+	
+	is_triggered_only = yes
+
+	option = { #TO WAR
+		name = pol_armor.805.a
+		ai_chance = {
+			factor = 50
+			modifier = {
+				has_global_flag = POL_referendum_shenanigans
+				factor = 2
+			}
+		}
+		create_wargoal = {
+			type = annex_everything
+			target = LIT
+		}
+	}
+
+	option = { #Let it go
+		name = pol_armor.805.b
+		ai_chance = {
+			factor = 50
+			modifier = {
+				LIT = { is_in_faction = yes }
+				factor = 3
+			}
+		}
+	}
+
+}
+#Austria refuses
+country_event = {
+	id = pol_armor.806 
+	title = pol_armor.806.t
+	desc = pol_armor.806.desc
+	picture = GFX_report_event_election_vote
+	
+	is_triggered_only = yes
+
+	option = { #TO WAR
+		name = pol_armor.806.a
+		ai_chance = {
+			factor = 30
+			modifier = {
+				LIT = {
+					OR = {
+						has_government = communism
+						has_government = fascism
+					}
+				}
+				factor = 3
+			}
+			modifier = {
+				LIT = { is_in_faction = no }
+				factor = 3
+			}
+			modifier = {
+				strength_ratio = { tag = LIT ratio > 1 }
+				factor = 2
+			}
+		}
+		create_wargoal = {
+			type = annex_everything
+			target = LIT
+		}
+	}
+	option = { #Let it go
+		name = pol_armor.806.b
+		ai_chance = {
+			factor = 70
+		}
+	}
+}
+
+#Cheat on the Referendum
+country_event = {
+	id = pol_armor.807 
+	title = pol_armor.807.t
+	desc = pol_armor.807.desc
+	picture = GFX_report_event_election_vote
+	
+	is_triggered_only = yes
+
+	option = { #say no
+		name = pol_armor.807.a
+		ai_chance = {
+			factor = 80
+		}
+		POL = { country_event = { id = pol_armor.805 } }
+		
+	}
+	option = { #say yes
+		name = pol_armor.807.b
+		ai_chance = {
+			factor = 20 #brilliant plan
+		}
+		custom_effect_tooltip = GAME_OVER_TT
+		POL = { country_event = { id = pol_armor.804 } }
+		hidden_effect = { news_event = { id = afo_news.37 days = 1 } }
+	}
+
+}
+
 country_event = {
 	id = pol_armor.901
 	hidden = yes

@@ -41,6 +41,7 @@ NDefines.NTrade.BASE_TRADE_FACTOR = 55												-- This is the base trade fact
 NDefines.NTrade.RELATION_TRADE_FACTOR = 2											-- Trade factor is modified by Opinion value times this
 NDefines.NTrade.DISTANCE_TRADE_FACTOR = -0.005										-- Trade factor is modified by distance times this
 NDefines.NTrade.PARTY_SUPPORT_TRADE_FACTOR = 0										-- Trade factor bonus at the other side having 100 % party popularity for my party
+NDefines.NTrade.ANTI_MONOPOLY_TRADE_FACTOR = -100									-- This is added to the factor value when anti-monopoly threshold is exceeded
 
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Technology
