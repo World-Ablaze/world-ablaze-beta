@@ -2,15 +2,19 @@ ENG_league_of_nations = {
 	ENG_embargo_lon = {
 		icon = generic_decision
 		available = {
+			tag = ENG
 			has_idea = League_of_nations
 			NOT = { is_in_faction_with = FROM }
-			FROM = { has_added_tension_amount > 0 }
+			FROM = { has_added_tension_amount > 3 }
 			FROM = { NOT = { has_government = ROOT } }
+			FROM = { NOT = { has_country_flag = lon_embargo_flag } }
 			FROM = { has_offensive_war = yes }
 		}
 		visible = {
 			tag = ENG
-			FROM = { has_added_tension_amount > 0 }
+			has_idea = League_of_nations
+			NOT = { is_in_faction_with = FROM }
+			FROM = { has_added_tension_amount > 1 }
 			FROM = { NOT = { has_government = ROOT } }
 			FROM = { NOT = { has_country_flag = lon_embargo_flag } }
 			FROM = { has_offensive_war = yes }
@@ -18,10 +22,10 @@ ENG_league_of_nations = {
 		
 		target_trigger = {
 			FROM = { 
-				has_added_tension_amount > 0
+				NOT = { is_in_faction_with = ROOT }
+				has_added_tension_amount > 3
 				NOT = { has_government = ROOT }
-				NOT = { has_country_flag = lon_embargo_flag } 
-				FROM = { NOT = { has_war_with = ROOT } }
+				NOT = { has_country_flag = lon_embargo_flag }
 				FROM = { has_offensive_war = yes }
 			}
 		}
@@ -58,12 +62,13 @@ ENG_league_of_nations = {
 	ENG_lift_embargo_lon = {
 		icon = generic_decision
 		available = {
+			tag = ENG
 			has_idea = League_of_nations
-			has_country_flag = lon_embargo_origin_flag
 			FROM = { has_country_flag = lon_embargo_flag }
 		}
 		visible = {
-			has_country_flag = lon_embargo_origin_flag
+			tag = ENG
+			has_idea = League_of_nations
 			FROM = { has_country_flag = lon_embargo_flag }
 		}
 		
@@ -77,14 +82,20 @@ ENG_league_of_nations = {
 		cost = 0
 
 		ai_will_do = {
-			factor = 100
+			base = 0
 
 			modifier = {
-				factor = 0
-				has_war_with = GER
-				NOT = { has_war_with = SOV }
-				is_historical_focus_on = yes
-				FROM = { tag = SOV }
+				add = 100
+				FROM = { has_added_tension_amount < 1 }
+				NOT = { FROM = { has_government = fascism } }
+			}
+
+			modifier = {
+				add = 100
+				any_enemy_country = {
+					has_war_with = FROM
+				}
+				NOT = { has_war_with = FROM }
 			}
 		}
 
@@ -95,9 +106,111 @@ ENG_league_of_nations = {
 					NOT = { tag = FROM }
 					NOT = { is_in_faction_with = FROM }
 				}
-				remove_opinion_modifier = { target = FROM modifier = embargo }
+				remove_opinion_modifier = { target = FROM modifier = lon_embargo }
 			}
-			FROM = { country_event = { id = eng_armor.828 } }
+			FROM = { country_event = { id = eng_armor.829 } }
+		}
+	}
+
+	ENG_kick_lon_member = {
+		icon = generic_decision
+		available = {
+			tag = ENG
+			has_idea = League_of_nations
+			FROM = { has_idea = League_of_nations }
+			NOT = { is_in_faction_with = FROM }
+			FROM = { has_added_tension_amount > 3 }
+		}
+		visible = {
+			tag = ENG
+			has_idea = League_of_nations
+			FROM = { has_idea = League_of_nations }
+			NOT = { is_in_faction_with = FROM }
+			FROM = { has_added_tension_amount > 3 }
+		}
+		
+		target_trigger = {
+			FROM = { 
+				has_idea = League_of_nations
+				NOT = { is_in_faction_with = ROOT }
+				has_added_tension_amount > 9
+			}
+		}
+
+		fire_only_once = no
+		cost = 25
+
+		ai_will_do = {
+			factor = 100
+		}
+
+		complete_effect = {
+			add_war_support = 0.05
+			FROM = { country_event = { id = eng_armor.830 } }
+			FROM = { remove_ideas = League_of_nations }
+		}
+	}
+
+	ENG_leave_lon = {
+		icon = generic_decision
+		available = {
+			has_idea = League_of_nations
+			ENG = { has_idea = League_of_nations }
+		}
+		visible = {
+			has_idea = League_of_nations
+			ENG = { has_idea = League_of_nations }
+			NOT = { has_war_with = ENG }
+		}
+
+		fire_only_once = no
+		cost = 50
+
+		ai_will_do = {
+			base = 0
+		}
+
+		complete_effect = {
+			remove_ideas = League_of_nations
+		}
+	}
+
+	ENG_left_the_lon = {
+		icon = generic_break_treaty
+		
+		available = {
+			has_idea = League_of_nations
+		}
+
+		days_mission_timeout = 1
+
+		activation = {
+			NOT = { has_idea = League_of_nations }
+			has_country_flag = League_of_nations_member_flag
+		}
+
+		visible = {
+		}
+
+		is_good = no
+
+		complete_effect = {
+			
+		}
+
+		timeout_effect = {
+			every_country = {
+				limit = {
+					OR = {
+						has_idea = League_of_nations
+						NOT = { has_idea = League_of_nations }
+					}
+				}
+				ROOT = {
+					remove_opinion_modifier = { target = PREV modifier = lon_embargo }
+				}
+			}
+			clr_country_flag = League_of_nations_member_flag
 		}
 	}
 }
