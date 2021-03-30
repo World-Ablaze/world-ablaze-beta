@@ -57,6 +57,10 @@ NDefines.NTechnology.LICENSE_PRODUCTION_TECH_BONUS = 0								-- License product
 NDefines.NMilitary.BASE_COMBAT_WIDTH = 120											-- base combat width
 NDefines.NMilitary.ADDITIONAL_COMBAT_WIDTH = 30										-- more opened up by support attack
 
+NDefines.NMilitary.PLANNING_GAIN = 0.01
+NDefines.NMilitary.PLANNING_MAX = 0.03                           					-- can get more from techs
+NDefines.NMilitary.DIG_IN_FACTOR = 0.01						   						-- bonus factor for each dug-in level
+
 NDefines.NMilitary.FRONT_MIN_PATH_TO_REDEPLOY = 12									-- If a units path is at least this long to reach its front location, it will strategically redeploy.
 
 NDefines.NMilitary.ZERO_ORG_MOVEMENT_MODIFIER = -0.25								-- speed impact at 0 org.
