@@ -27,6 +27,7 @@ NDefines.NDiplomacy.VOLUNTEERS_PER_COUNTRY_ARMY = 0.05								-- Each army unit 
 
 NDefines.NDiplomacy.TROOP_FEAR = 0 													-- Impact on troops on borders when deciding how willing a nation is to trade
 NDefines.NDiplomacy.FLEET_FEAR = 0													-- Impact on troops on borders when deciding how willing a nation is to trade
+NDefines.NDiplomacy.BASE_SEND_ATTACHE_COST = 50										-- Political power cost to send attache
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Politics
 
@@ -41,7 +42,7 @@ NDefines.NTrade.BASE_TRADE_FACTOR = 55												-- This is the base trade fact
 NDefines.NTrade.RELATION_TRADE_FACTOR = 2											-- Trade factor is modified by Opinion value times this
 NDefines.NTrade.DISTANCE_TRADE_FACTOR = -0.005										-- Trade factor is modified by distance times this
 NDefines.NTrade.PARTY_SUPPORT_TRADE_FACTOR = 0										-- Trade factor bonus at the other side having 100 % party popularity for my party
-NDefines.NTrade.ANTI_MONOPOLY_TRADE_FACTOR = -100									-- This is added to the factor value when anti-monopoly threshold is exceeded
+NDefines.NTrade.ANTI_MONOPOLY_TRADE_FACTOR = 0										-- This is added to the factor value when anti-monopoly threshold is exceeded
 
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Technology
