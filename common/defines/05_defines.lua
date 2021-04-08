@@ -447,7 +447,7 @@ NDefines.NAI.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
 		1.0, -- CONVOY ESCORT
 		1.0, -- MINES PLANTING	
 		1.0, -- MINES SWEEPING	
-		0.8, -- TRAIN
+		0.4, -- TRAIN
 		0.0, -- RESERVE_FLEET (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
 		1.0, -- NAVAL_INVASION_SUPPORT (does not cost fuel at base, only costs while doing bombardment and escorting units)
 	}
