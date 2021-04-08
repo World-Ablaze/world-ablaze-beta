@@ -55,7 +55,7 @@ NDefines.NTechnology.LICENSE_PRODUCTION_TECH_BONUS = 0								-- License product
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Military
 
 
-NDefines.NMilitary.BASE_COMBAT_WIDTH = 120											-- base combat width
+NDefines.NMilitary.BASE_COMBAT_WIDTH = 90											-- base combat width
 NDefines.NMilitary.ADDITIONAL_COMBAT_WIDTH = 30										-- more opened up by support attack
 
 NDefines.NMilitary.PLANNING_GAIN = 0.01
