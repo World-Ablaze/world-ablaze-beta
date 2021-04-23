@@ -441,9 +441,9 @@ NDefines.NNavy.CARRIER_STACK_PENALTY_EFFECT = 0.9									-- Each carrier above 
 
 NDefines.NAI.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
 		0.8, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
-		1.2, -- PATROL		
+		1.5, -- PATROL		
 		1.2, -- STRIKE FORCE (does not cost fuel at base, and uses IN_COMBAT_FUEL_COST in combat. this is just for the movement in between)	
-		1.2, -- CONVOY RAIDING
+		1.5, -- CONVOY RAIDING
 		1.2, -- CONVOY ESCORT
 		1.2, -- MINES PLANTING	
 		1.2, -- MINES SWEEPING	
