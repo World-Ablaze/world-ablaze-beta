@@ -1855,7 +1855,23 @@ country_event = {
 	option = {
 		name = lar_compensate_italy.1.a #agree
 		ai_chance = {
-			factor = 100
+			factor = 50
+			modifier = {
+				factor = 2
+				any_enemy_country = {
+					has_war_with = FRA
+				}
+			}
+			modifier = {
+				factor = 2
+				FRA = {
+					has_government = ROOT
+				}
+			}
+			modifier = {
+				factor = 0
+				has_government = fascism
+			}
 		}
 		FRA = {
 			country_event = lar_compensate_italy.2
@@ -1869,7 +1885,19 @@ country_event = {
 	option = {
 		name = lar_compensate_italy.1.b #refuse
 		ai_chance = {
-			factor = 0
+			factor = 50
+			modifier = {
+				factor = 0.1
+				any_enemy_country = {
+					has_war_with = FRA
+				}
+			}
+			modifier = {
+				factor = 0.5
+				FRA = {
+					has_government = ROOT
+				}
+			}
 		}
 		FRA = {
 			country_event = lar_compensate_italy.3
@@ -2815,6 +2843,256 @@ country_event = {
 		}
 		FRA = {
 			country_event = lar_ratify_the_stresa_front.3
+		}
+	}
+}
+
+#initial event for Italy
+country_event = {
+	id = lar_ratify_the_stresa_front.5
+	title = lar_ratify_the_stresa_front.5.t
+	desc = lar_ratify_the_stresa_front.5.desc
+	picture = GFX_report_event_generic_sign_treaty1
+	is_triggered_only = yes
+	option = {
+		name = lar_ratify_the_stresa_front.5.a #agree
+		ai_chance = {
+			factor = 80
+		}
+		FRA = {
+			country_event = lar_ratify_the_stresa_front.6
+		}
+		effect_tooltip = { transfer_state = 268 }
+		if = {
+			limit = {
+				has_global_flag = ITA_agrees_ENG_FRA_concessions
+			}
+			effect_tooltip = { transfer_state = 269 }
+		}
+		add_ai_strategy = {
+			type = alliance
+			id = FROM
+			value = 200
+		}
+		if = {
+			limit = {
+				country_exists = AUS
+				AUS = {
+					is_subject = no
+					is_major = no
+					has_war = no
+					NOT = {
+						is_in_faction_with = GER
+					}
+				}
+			}
+			give_guarantee = AUS
+		}
+	}
+
+	option = {
+		name = lar_ratify_the_stresa_front.5.b #refuse
+		ai_chance = {
+			factor = 20
+			modifier = {
+				has_global_flag = ITA_agrees_ENG_FRA_concessions
+				factor = 0
+			}
+		}
+		FRA = {
+			country_event = lar_ratify_the_stresa_front.7
+		}
+		ENG = {
+			country_event = lar_ratify_the_stresa_front.7
+		}
+	}
+}
+
+# event for France - Italy has agreed, do we want to hand over territory in exchange for an alliance?
+country_event = {
+	id = lar_ratify_the_stresa_front.6
+	title = lar_ratify_the_stresa_front.5.t
+	desc = lar_ratify_the_stresa_front.6.desc
+	picture = GFX_report_event_generic_sign_treaty2
+	is_triggered_only = yes
+	option = {
+		name = lar_ratify_the_stresa_front.6.a #agree
+		ai_chance = {
+			factor = 80
+		}
+		if = { 
+			limit = {
+				is_guaranteed_by = SOV
+			}
+			set_country_flag = Franco_soviet_guaarantee 
+		}
+		ITA = {
+			transfer_state = 268
+		}
+		if = {
+			limit = { is_in_faction = yes }
+			if = {
+				limit = { is_faction_leader = yes }
+				add_to_faction = ITA
+				else = {
+					random_other_country = {
+						limit = { 
+							is_faction_leader = yes
+							is_in_faction_with = ROOT
+						}
+						add_to_faction = ITA
+					}
+				}
+			}
+		}
+		else = {
+			create_faction = FRA_stresa_front
+			add_to_faction = ITA
+		}
+		if = {
+			limit = { has_global_flag = ITA_agrees_ENG_FRA_concessions }
+			ENG = {
+				country_event = lar_ratify_the_stresa_front.8
+			}
+		}
+		else = {
+			hidden_effect = { news_event = { id = lar_news.5 days = 3 random_days = 5 } }
+		}
+		if = {
+			limit = {
+				country_exists = AUS
+				AUS = {
+					is_subject = no
+					is_major = no
+					has_war = no
+					NOT = {
+						is_in_faction_with = GER
+					}
+				}
+			}
+			give_guarantee = AUS
+		}
+		if = {
+			limit = {
+				has_country_flag = Franco_soviet_guaarantee
+			}
+			give_guarantee = SOV
+			SOV = { give_guarantee = ROOT }
+		}
+	}
+
+	option = {
+		name = lar_ratify_the_stresa_front.6.b #refuse
+		ai_chance = {
+			factor = 20
+			modifier = {
+				has_global_flag = ITA_agrees_ENG_FRA_concessions
+				factor = 0
+			}
+		}
+		ITA = {
+			country_event = lar_ratify_the_stresa_front.7
+		}
+		ENG = {
+			country_event = lar_ratify_the_stresa_front.7
+		}
+	}
+}
+
+#notification - country has refused to ratify
+country_event = {
+	id = lar_ratify_the_stresa_front.7
+	title = lar_ratify_the_stresa_front.7.t
+	desc = lar_ratify_the_stresa_front.7.desc
+	picture = GFX_report_event_worried_french
+	is_triggered_only = yes
+	option = {
+		name = lar_ratify_the_stresa_front.7.a #agree
+		ai_chance = {
+			factor = 80
+		}
+		
+	}
+}
+
+# event for Britain - Italy has agreed, do we want to hand over territory in exchange for an alliance?
+country_event = {
+	id = lar_ratify_the_stresa_front.8
+	title = lar_ratify_the_stresa_front.5.t
+	desc = lar_ratify_the_stresa_front.8.desc
+	picture = GFX_report_event_generic_sign_treaty2
+	is_triggered_only = yes
+	option = {
+		name = lar_ratify_the_stresa_front.8.a #agree
+		ai_chance = {
+			factor = 80
+		}
+		ITA = {
+			transfer_state = 269
+		}
+		set_global_flag = LaR_Britain_Stresa_Concessions
+		if = {
+			limit = {
+				FRA = { 
+					is_faction_leader = yes 
+					NOT = {
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+			every_other_country = {
+				limit = {
+					is_in_faction_with = ROOT
+					is_subject_of = ROOT
+				}
+				FRA = {
+					add_to_faction = PREV #merge british colonies into new faction
+				}
+			}
+			every_other_country = {
+				limit = {
+					is_in_faction_with = ROOT
+					NOT = { is_subject_of = ROOT }
+				}
+				FRA = {
+					PREV = {
+						country_event = generic.5
+					}
+				}
+			}
+			FRA = { add_to_faction = ROOT }
+		}
+		if = {
+			limit = {
+				country_exists = AUS
+				AUS = {
+					is_subject = no
+					is_major = no
+					has_war = no
+					NOT = {
+						is_in_faction_with = GER
+					}
+				}
+			}
+			give_guarantee = AUS
+		}
+		hidden_effect = { news_event = { id = lar_news.5 days = 3 random_days = 5 } }
+	}
+
+	option = {
+		name = lar_ratify_the_stresa_front.8.b #refuse
+		ai_chance = {
+			factor = 20
+			modifier = {
+				has_global_flag = ITA_agrees_ENG_FRA_concessions
+				factor = 0
+			}
+		}
+		ITA = {
+			country_event = lar_ratify_the_stresa_front.7
+		}
+		FRA = {
+			country_event = lar_ratify_the_stresa_front.7
 		}
 	}
 }

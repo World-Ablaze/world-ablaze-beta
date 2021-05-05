@@ -1021,7 +1021,7 @@ country_event = {
 		ai_chance = { factor = 50 }
 		set_politics = {
 			ruling_party = neutrality
-			elections_allowed = yes
+			elections_allowed = no
 		}
 		create_country_leader = {
 			name = "Victor Emmanuel III"
@@ -1039,9 +1039,13 @@ country_event = {
 				country_exists = ITL
 			}
 			ITL = {
+				add_popularity = {
+					ideology = neutrality
+					popularity = 1
+				}
 				set_politics = {
 					ruling_party = neutrality
-					elections_allowed = yes
+					elections_allowed = no
 				}
 			}
 		}
@@ -1050,9 +1054,13 @@ country_event = {
 				country_exists = ITS
 			}
 			ITS = {
+				add_popularity = {
+					ideology = neutrality
+					popularity = 1
+				}
 				set_politics = {
 					ruling_party = neutrality
-					elections_allowed = yes
+					elections_allowed = no
 				}
 			}
 		}
@@ -1478,6 +1486,7 @@ country_event = {
 		}
 	}
 }
+
 country_event = {
 	id = ita_armor.847
 	title = ita_armor.847.t
@@ -1514,6 +1523,525 @@ country_event = {
 	}
 }
 
+country_event = {
+	id = ita_armor.848
+	title = ita_armor.848.t
+	desc = ita_armor.848.d
+	
+	is_triggered_only = yes
+
+	option = {
+		name = ita_armor.848.a
+		YUG = { country_event = { days = 1 id = ita_armor.849 } }
+	}
+	
+	option = {
+		name = ita_armor.848.a
+	}
+}
+
+country_event = {
+	id = ita_armor.849
+	title = ita_armor.849.t
+	desc = ita_armor.849.d
+	picture = GFX_report_event_generic_read_write
+
+	is_triggered_only = yes
+
+
+	option = { # Accept demands
+		name = ita_armor.849.a
+		ai_chance = {
+			factor = 50
+			modifier = { # Don't accept if in a faction that can protect them
+				factor = 0
+				any_other_country = {
+					is_major = yes
+					NOT = { tag = ITA }
+					OR = {
+						is_in_faction_with = YUG
+						has_guaranteed = YUG
+					}
+				}
+			}
+			modifier = {
+				factor = 0
+				ITA = {
+					has_army_manpower = { size < 500000 }
+				}
+			}
+			modifier = {
+				factor = 2
+				ITA = {
+					has_army_manpower = { size > 749999 }
+				}
+			}
+			modifier = {
+				factor = 2
+				ITA = {
+					has_army_manpower = { size > 999999 }
+				}
+			}
+		}
+		ITA = {
+			country_event = { days = 1 id = ita_armor.850 }
+		}
+		add_stability = -0.2
+	}
+
+	option = { # Refuse
+		name = ita_armor.849.b
+		ai_chance = {
+			base = 50
+			modifier = {
+				factor = 10
+				is_in_faction = yes
+				NOT = { is_in_faction_with = ITA }
+			}
+		}
+		ITA = {
+			country_event = { days = 1 id = ita_armor.851 }
+			effect_tooltip = {
+				create_wargoal = {
+					type = take_state
+					target = YUG
+					generator = { 908 103 }
+				}
+			}
+		}
+	}
+}
+
+# Yugoslavia surrenders Dalmatia
+country_event = {
+	id = ita_armor.850
+	title = ita_armor.850.t
+	desc = ita_armor.850.d
+	picture = GFX_report_event_soldiers_marching
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = ita_armor.850.a
+		ITA = { 
+			transfer_state = 908
+			transfer_state = 103
+		}
+		hidden_effect = {
+			add_named_threat = { threat = 4 name = dalmatia_annexed }
+			USA = {
+				set_country_flag = { flag = USA_yugoslavia_window days = 60 value = 1 }
+			}
+		}
+	}
+}
+
+# Yugoslavia refuses to surrender Dalmatia
+country_event = {
+	id = ita_armor.851
+	title = ita_armor.851.t
+	desc = ita_armor.851.d
+	picture = GFX_report_event_poland_rejects
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = ita_armor.851.a
+		create_wargoal = {
+			type = take_state
+			target = YUG
+			generator = { 908 103 }
+		}
+	}
+}
+
+
+################################################ Carving up of Central Europe
+
+
+country_event = {
+	id = ita_armor.852
+	title = ita_armor.852.t
+	desc = ita_armor.852.d
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = ita_armor.852.a
+		trigger = {
+			OR = {
+				AND = {
+					country_exists = GER
+					NOT = { has_war_with = GER }
+					NOT = { GER = { is_subject_of = ITA } }
+					NOT = { SWI = { is_in_faction_with = GER } }
+					NOT = { AUS = { is_in_faction_with = GER } }
+					NOT = { HUN = { is_in_faction_with = GER } }
+					NOT = { SWI = { is_subject_of = GER } }
+					NOT = { AUS = { is_subject_of = GER } }
+					NOT = { HUN = { is_subject_of = GER } }
+				}
+				AND = {
+					country_exists = FRA
+					NOT = { has_war_with = FRA }
+					NOT = { FRA = { is_subject_of = ITA } }
+					NOT = { SWI = { is_in_faction_with = FRA } }
+					NOT = { AUS = { is_in_faction_with = FRA } }
+					NOT = { HUN = { is_in_faction_with = FRA } }
+					NOT = { SWI = { is_subject_of = FRA } }
+					NOT = { AUS = { is_subject_of = FRA } }
+					NOT = { HUN = { is_subject_of = FRA } }
+				}
+			}
+		}
+		if = {
+			limit = {
+				AND = {
+					country_exists = GER
+					NOT = { has_war_with = GER }
+					NOT = { GER = { is_subject_of = ITA } }
+					NOT = { SWI = { is_in_faction_with = GER } }
+					NOT = { AUS = { is_in_faction_with = GER } }
+					NOT = { HUN = { is_in_faction_with = GER } }
+					NOT = { SWI = { is_subject_of = GER } }
+					NOT = { AUS = { is_subject_of = GER } }
+					NOT = { HUN = { is_subject_of = GER } }
+				}
+			}
+			GER = { country_event = { id = ita_armor.853 days = 1 } }
+			effect_tooltip = {
+				GER = {
+					add_state_claim = 152
+					add_state_claim = 4
+					add_state_claim = 882
+					add_state_claim = 852
+					add_state_claim = 155
+					add_state_claim = 889
+					add_state_claim = 43
+					add_state_claim = 3
+					add_state_claim = 912
+				}
+			}
+			hidden_effect = {
+				set_country_flag = partner_1_carve_up_ce
+			}
+		}
+		if = {
+			limit = {
+				AND = {
+					country_exists = FRA
+					NOT = { has_war_with = FRA }
+					NOT = { FRA = { is_subject_of = ITA } }
+					NOT = { SWI = { is_in_faction_with = FRA } }
+					NOT = { AUS = { is_in_faction_with = FRA } }
+					NOT = { HUN = { is_in_faction_with = FRA } }
+					NOT = { SWI = { is_subject_of = FRA } }
+					NOT = { AUS = { is_subject_of = FRA } }
+					NOT = { HUN = { is_subject_of = FRA } }
+				}
+			}
+			FRA = { country_event = { id = ita_armor.854 days = 1 } }
+			effect_tooltip = {
+				FRA = {
+					add_state_claim = 911
+				}
+			}
+			hidden_effect = {
+				set_country_flag = partner_2_carve_up_ce
+			}
+		}
+		unlock_decision_tooltip = ITA_operazione_martello
+	}
+	
+	option = {
+		name = ita_armor.852.b
+		trigger = {
+			OR = {
+				AND = {
+					country_exists = GER
+					NOT = { has_war_with = GER }
+					NOT = { GER = { is_subject_of = ITA } }
+					NOT = { SWI = { is_in_faction_with = GER } }
+					NOT = { AUS = { is_in_faction_with = GER } }
+					NOT = { HUN = { is_in_faction_with = GER } }
+					NOT = { SWI = { is_subject_of = GER } }
+					NOT = { AUS = { is_subject_of = GER } }
+					NOT = { HUN = { is_subject_of = GER } }
+				}
+				AND = {
+					country_exists = FRA
+					NOT = { has_war_with = FRA }
+					NOT = { FRA = { is_subject_of = ITA } }
+					NOT = { SWI = { is_in_faction_with = FRA } }
+					NOT = { AUS = { is_in_faction_with = FRA } }
+					NOT = { HUN = { is_in_faction_with = FRA } }
+					NOT = { SWI = { is_subject_of = FRA } }
+					NOT = { AUS = { is_subject_of = FRA } }
+					NOT = { HUN = { is_subject_of = FRA } }
+				}
+			}
+		}
+		unlock_decision_tooltip = ITA_operazione_martello
+		hidden_effect = {
+			set_country_flag = no_partners_carve_up_ce
+		}
+	}
+	
+	option = {
+		name = ita_armor.852.c
+		trigger = {
+			OR = {
+				NOT = { country_exists = GER }
+				has_war_with = GER
+				GER = { is_subject_of = ITA }
+				SWI = { is_in_faction_with = GER }
+				AUS = { is_in_faction_with = GER }
+				HUN = { is_in_faction_with = GER }
+				SWI = { is_subject_of = GER }
+				AUS = { is_subject_of = GER }
+				HUN = { is_subject_of = GER }
+			}
+			OR = {
+				NOT = { country_exists = FRA }
+				has_war_with = FRA
+				FRA = { is_subject_of = ITA }
+				SWI = { is_in_faction_with = FRA }
+				AUS = { is_in_faction_with = FRA }
+				HUN = { is_in_faction_with = FRA }
+				SWI = { is_subject_of = FRA }
+				AUS = { is_subject_of = FRA }
+				HUN = { is_subject_of = FRA }
+			}
+		}
+		unlock_decision_tooltip = ITA_operazione_martello
+		hidden_effect = {
+			set_country_flag = no_partners_carve_up_ce
+		}
+	}
+}
+
+country_event = {
+	id = ita_armor.853
+	title = ita_armor.853.t
+	desc = ita_armor.853.d
+	
+	is_triggered_only = yes
+	
+	option = { 
+		name = ita_armor.853.a
+		will_lead_to_war_with = SWI
+		will_lead_to_war_with = AUS
+		will_lead_to_war_with = HUN
+		add_state_claim = 152
+		add_state_claim = 4
+		add_state_claim = 882
+		add_state_claim = 852
+		add_state_claim = 155
+		add_state_claim = 889
+		add_state_claim = 43
+		add_state_claim = 3
+		add_state_claim = 912
+		ITA = { country_event = { id = ita_armor.855 days = 7 } }
+		hidden_effect = {
+			ITA = { set_country_flag = partner_1_confirmed_carve_up_ce }
+			ITA = { set_country_flag = partner_1_yes_carve_up_ce }
+		}
+	}
+	
+	option = { 
+		name = ita_armor.853.b
+		ITA = { country_event = { id = ita_armor.856 days = 1 } }
+		hidden_effect = {
+			ITA = { set_country_flag = partner_1_confirmed_carve_up_ce }
+		}
+	}
+}
+
+country_event = {
+	id = ita_armor.854
+	title = ita_armor.854.t
+	desc = ita_armor.854.d
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = ita_armor.854.a
+		will_lead_to_war_with = SWI
+		will_lead_to_war_with = AUS
+		will_lead_to_war_with = HUN
+		add_state_claim = 911
+		ITA = { country_event = { id = ita_armor.855 days = 7 } }
+		hidden_effect = {
+			ITA = { set_country_flag = partner_2_confirmed_carve_up_ce }
+			ITA = { set_country_flag = partner_2_yes_carve_up_ce }
+		}
+	}
+	
+	option = { 
+		name = ita_armor.854.b
+		ITA = { country_event = { id = ita_armor.856 days = 1 } }
+		hidden_effect = {
+			ITA = { set_country_flag = partner_2_confirmed_carve_up_ce }
+		}
+	}
+}
+
+country_event = {
+	id = ita_armor.855
+	title = ita_armor.855.t
+	desc = ita_armor.855.d
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = ita_armor.855.a
+	}
+}
+
+country_event = {
+	id = ita_armor.856
+	title = ita_armor.856.t
+	desc = ita_armor.856.d
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = ita_armor.856.a
+	}
+}
+
+
+################################################ Carving up of Eastern Europe
+
+
+country_event = {
+	id = ita_armor.857
+	title = ita_armor.857.t
+	desc = ita_armor.857.d
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = ita_armor.857.a
+		trigger = {
+			AND = {
+				country_exists = SOV
+				NOT = { has_war_with = SOV }
+				NOT = { SOV = { is_subject_of = ITA } }
+				NOT = { ROM = { is_in_faction_with = SOV } }
+				NOT = { BUL = { is_in_faction_with = SOV } }
+				NOT = { ROM = { is_subject_of = SOV } }
+				NOT = { BUL = { is_subject_of = SOV } }
+			}
+		}
+		SOV = { country_event = { id = ita_armor.858 days = 1 } }
+		effect_tooltip = {
+			SOV = {
+				add_state_claim = 80
+				add_state_claim = 78
+				add_state_claim = 79
+				add_state_claim = 766
+			}
+		}
+		hidden_effect = {
+			set_country_flag = partner_1_carve_up_ee
+		}
+		unlock_decision_tooltip = ITA_operazione_incudine
+	}
+	
+	option = {
+		name = ita_armor.857.b
+		trigger = {
+			AND = {
+				country_exists = SOV
+				NOT = { has_war_with = SOV }
+				NOT = { SOV = { is_subject_of = ITA } }
+				NOT = { ROM = { is_in_faction_with = SOV } }
+				NOT = { BUL = { is_in_faction_with = SOV } }
+				NOT = { ROM = { is_subject_of = SOV } }
+				NOT = { BUL = { is_subject_of = SOV } }
+			}
+		}
+		unlock_decision_tooltip = ITA_operazione_incudine
+		hidden_effect = {
+			set_country_flag = no_partners_carve_up_ee
+		}
+	}
+	
+	option = {
+		name = ita_armor.857.c
+		trigger = {
+			OR = {
+				NOT = { country_exists = SOV }
+				has_war_with = SOV
+				SOV = { is_subject_of = ITA }
+				ROM = { is_in_faction_with = SOV }
+				BUL = { is_in_faction_with = SOV }
+				ROM = { is_subject_of = SOV }
+				BUL = { is_subject_of = SOV }
+			}
+		}
+		unlock_decision_tooltip = ITA_operazione_incudine
+		hidden_effect = {
+			set_country_flag = no_partners_carve_up_ee
+		}
+	}
+}
+
+country_event = {
+	id = ita_armor.858
+	title = ita_armor.858.t
+	desc = ita_armor.858.d
+	
+	is_triggered_only = yes
+	
+	option = { 
+		name = ita_armor.858.a
+		will_lead_to_war_with = ROM
+		will_lead_to_war_with = BUL
+		add_state_claim = 80
+		add_state_claim = 78
+		add_state_claim = 79
+		add_state_claim = 766
+		ITA = { country_event = { id = ita_armor.859 days = 7 } }
+		hidden_effect = {
+			ITA = { set_country_flag = partner_1_confirmed_carve_up_ee }
+			ITA = { set_country_flag = partner_1_yes_carve_up_ee }
+		}
+	}
+	
+	option = { 
+		name = ita_armor.858.b
+		ITA = { country_event = { id = ita_armor.860 days = 1 } }
+		hidden_effect = {
+			ITA = { set_country_flag = partner_1_confirmed_carve_up_ee }
+		}
+	}
+}
+
+country_event = {
+	id = ita_armor.859
+	title = ita_armor.859.t
+	desc = ita_armor.859.d
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = ita_armor.859.a
+	}
+}
+
+country_event = {
+	id = ita_armor.860
+	title = ita_armor.860.t
+	desc = ita_armor.860.d
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = ita_armor.860.a
+	}
+}
 
 ################################################ Mission Generator simulating other side expanding garrison influence
 
