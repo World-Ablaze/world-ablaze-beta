@@ -643,6 +643,8 @@ NDefines.NAI.MIN_WANTED_MAX_FUEL = 5									   			-- minimum value for wanted f
 --NDefines.NAI.NUM_SILOS_PER_MILITARY_FACTORIES = 0.024								-- ai will try to build a silo per this ratio of mil factories
 --NDefines.NAI.NUM_SILOS_PER_DOCKYARDS = 0.02											-- ai will try to build a silo per this ratio of dockyards
 
+NDefines.NAI.MAX_THREAT_FOR_FIRST_YEAR_CIVILIAN_MODE = 10 							-- above this threshold, ai will leave first year civilian factory mode which bumps it civilian factory scores while building
+
 NDefines.NAI.MAX_FUEL_CONSUMPTION_RATIO_FOR_NAVY_TRAINING = 0.2						-- ai will use at most this ratio of affordable fuel for naval training
 NDefines.NAI.MAX_FULLY_TRAINED_SHIP_RATIO_FOR_TRAINING = 0.8						-- ai will not train a taskforce if fully trained ships are above this ratio
 
