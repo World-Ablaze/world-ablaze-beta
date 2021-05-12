@@ -3766,8 +3766,8 @@ focus_tree = {
 	}
 
 	focus = {
-		id = ITA_support_nationalist_spain
-		icon = GFX_goal_generic_military_deal
+		id = ITA_the_corpo_truppe_volontarie
+		icon = GFX_focus_befriend_nationalist_spain
 		prerequisite = { focus = ITA_mediterranean_dominance }
 		x = -1
 		y = 1
@@ -3791,14 +3791,23 @@ focus_tree = {
 				limit = {
 					has_dlc = "La Resistance"
 				}
-				SPA = {
-					has_volunteers_amount_from = {
-						tag = ITA
-						count > 0
+				OR = {
+					SPA = {
+						has_volunteers_amount_from = {
+							tag = ITA
+							count > 0
+						}
+					}
+					SPC = {
+						has_volunteers_amount_from = {
+							tag = ITA
+							count > 0
+						}
 					}
 				}
 			}
 		}
+
 		cancel = {
 			if = {
 				limit = {
@@ -3815,6 +3824,7 @@ focus_tree = {
 				SPA = { has_civil_war = no }
 			}
 		}
+
 		cancel_if_invalid = no
 
 		cost = 2
@@ -3822,7 +3832,36 @@ focus_tree = {
 			factor = 1
 		}	
 		completion_reward = {
+			add_timed_idea = { idea = SPA_ITA_spanish_civil_war_commitments days = 1095 }
 			if = {
+				limit = {
+					has_dlc = "La Resistance"
+					SPA = {
+						has_volunteers_amount_from = {
+							tag = ITA
+							count > 0
+						}
+					}
+				}
+				SPA = {
+					add_opinion_modifier = { target = ROOT modifier = ita_supported_spain_civil_war }
+				}
+			}
+			else_if = {
+				limit = {
+					has_dlc = "La Resistance"
+					SPC = {
+						has_volunteers_amount_from = {
+							tag = ITA
+							count > 0
+						}
+					}
+				}
+				SPC = {
+					add_opinion_modifier = { target = ROOT modifier = ita_supported_spain_civil_war }
+				}
+			}
+			else = {
 				limit = {
 					NOT = { has_dlc = "La Resistance" }
 				}
@@ -3834,12 +3873,6 @@ focus_tree = {
 					add_opinion_modifier = { target = ITA modifier = ita_supported_spain_civil_war }
 				}
 			}
-			if = {
-				limit = {
-					has_dlc = "La Resistance"
-				}
-				SPA = { add_opinion_modifier = { target = ITA modifier = ita_supported_spain_civil_war } }
-			}
 		}
 	}
 
@@ -3847,10 +3880,10 @@ focus_tree = {
 		id = ITA_conquer_spain
 		icon = GFX_focus_attack_nationalist_spain
 		mutually_exclusive = { focus = ITA_spanish_italian_faction }
-		prerequisite = { focus = ITA_support_nationalist_spain }
+		prerequisite = { focus = ITA_the_corpo_truppe_volontarie }
 		x = 2
 		y = 1
-		relative_position_id = ITA_support_nationalist_spain
+		relative_position_id = ITA_the_corpo_truppe_volontarie
 
 		available = {
 			has_global_flag = scw_over
@@ -3922,12 +3955,12 @@ focus_tree = {
 
 	focus = {
 		id = ITA_spanish_italian_faction
-		icon = GFX_focus_befriend_nationalist_spain
+		icon = GFX_goal_generic_major_alliance
 		mutually_exclusive = { focus = ITA_conquer_spain }
-		prerequisite = { focus = ITA_support_nationalist_spain }
+		prerequisite = { focus = ITA_the_corpo_truppe_volontarie }
 		x = 0
 		y = 1
-		relative_position_id = ITA_support_nationalist_spain
+		relative_position_id = ITA_the_corpo_truppe_volontarie
 
 		available = {
 			is_in_faction = yes
@@ -4665,6 +4698,13 @@ focus_tree = {
 		}	
 		completion_reward = {
 			custom_effect_tooltip = roman_restore_roman_empire_category_tt
+			if = {
+				limit = {
+					country_exists = ALB
+					ALB = { is_subject_of = ITA }
+				}
+				annex_country = { target = ALB } 
+			}
 			if = {
 				limit = {
 					country_exists = ITN
