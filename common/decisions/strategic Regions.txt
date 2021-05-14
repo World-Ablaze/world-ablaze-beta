@@ -25,6 +25,7 @@ STRATEGIC_REGION_pacific = {
 			has_completed_focus = USA_focus_on_asia
 			has_war = no
 			controls_state = 629
+			NOT = { has_country_flag = power_projection }
 			NOT = {
 				ships_in_state_ports = {
 					type = capital_ship
@@ -62,10 +63,9 @@ STRATEGIC_REGION_pacific = {
 		}
 
 		is_good = no
-		fire_only_once = no
-		days_remove = 1
+		fire_only_once = yes
 
-		days_mission_timeout = 14
+		days_mission_timeout = 30
 
 		timeout_effect = {
 			add_war_support = -0.25
@@ -135,6 +135,142 @@ STRATEGIC_REGION_pacific = {
 			hidden_effect = {
 				set_country_flag = power_projection
 			}
+		}
+	}
+
+	USA_power_projection_fail = {
+		icon = generic_naval
+
+		allowed = {
+			tag = USA
+		}
+
+		available = {
+			ships_in_state_ports = {
+				type = capital_ship
+				size > 7
+				state = 629
+			}
+			ships_in_state_ports = {
+				type = screen_ship
+				size > 37
+				state = 629
+			}
+		}
+
+		activation = {
+			is_ai = no
+			has_government = democratic
+			has_completed_focus = USA_focus_on_asia
+			has_war = no
+			controls_state = 629
+			has_country_flag = power_projection
+			NOT = {
+				ships_in_state_ports = {
+					type = capital_ship
+					size > 7
+					state = 629
+				}
+				ships_in_state_ports = {
+					type = screen_ship
+					size > 37
+					state = 629
+				}
+			}
+			OR = {
+				AND = {
+					JAP = { has_added_tension_amount > 24 }
+					threat > 0.5
+				}
+				AND = {
+					JAP = {
+						any_allied_country = {
+							has_added_tension_amount > 24
+						}
+					}
+					threat > 0.5
+				}
+				AND = {
+					JAP = { has_war = yes }
+					JAP = { is_major = yes }
+					NOT = { JAP = { has_government = ROOT } }
+					JAP = { has_added_tension_amount > 10 }
+					threat > 0.8
+				}
+			}
+			NOT = { is_in_faction_with = JAP }
+		}
+
+		is_good = no
+		fire_only_once = no
+
+		days_mission_timeout = 3
+
+		timeout_effect = {
+			add_war_support = -0.25
+			custom_effect_tooltip = USA_power_projection_tt
+			hidden_effect = {
+				clr_country_flag = power_projection
+				if = {
+					limit = {
+						JAP = {
+							has_country_flag = embargoed_by_USA
+						}
+					}
+					JAP = {
+						clr_country_flag = embargoed_by_USA
+					}
+					every_country = {
+						limit = {
+							OR = {
+								tag = ROOT
+								AND = {
+									is_guaranteed_by = USA
+									OR = {
+										tag = BRA
+										tag = ARG
+										tag = CHL
+										tag = BOL
+										tag = URG
+										tag = PRU
+										tag = ECU
+										tag = COL
+										tag = VEN
+										tag = PAR
+										tag = GUA
+										tag = ELS
+										tag = HON
+										tag = NIC
+										tag = COS
+										tag = PAN
+										tag = CUB
+										tag = HAI
+										tag = DOM
+										tag = JAM
+										tag = BAH
+										tag = BLZ
+										tag = TRI
+										tag = BAS
+										tag = CRC
+										tag = GDL
+										tag = PUE
+										tag = GYA
+										tag = SUR
+										tag = CAY
+										tag = MEX
+									}
+								}
+								is_in_faction_with = USA
+							}
+							NOT = { has_war_with = USA }
+						}
+						add_opinion_modifier = { target = JAP modifier = Unembargoed }
+					}
+				}
+			}
+		}
+
+		complete_effect = {
 		}
 	}
 
