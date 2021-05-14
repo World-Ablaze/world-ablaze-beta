@@ -7397,26 +7397,58 @@ focus_tree = {
 		icon = GFX_focus_intervention_spain_nationalists
 		prerequisite = { focus = GER_proclaim_the_axis_powers }
 		available = {
-			AND = {
-				SPA = {	
-					exists = yes
-					OR = {
-						has_government = fascism
-						has_government = neutrality
-					}
+			if = {
+				limit = {
+					NOT = { has_dlc = "La Resistance" }
+				}
+				any_other_country = {
+					original_tag = SPR
+					has_government = fascism
 					has_volunteers_amount_from = {
-						tag = GER
+						tag = ITA
 						count > 0
 					}
+					has_full_control_of_state = 171
+					has_full_control_of_state = 174
 				}
-				SPA = {	has_full_control_of_state = 171 }
-				SPA = {	has_full_control_of_state = 174 }
+			}
+			if = {
+				limit = {
+					has_dlc = "La Resistance"
+				}
+				AND = {
+					SPA = {	
+						exists = yes
+						OR = {
+							has_government = fascism
+							has_government = neutrality
+						}
+						has_volunteers_amount_from = {
+							tag = GER
+							count > 0
+						}
+					}
+					SPA = {	has_full_control_of_state = 171 }
+					SPA = {	has_full_control_of_state = 174 }
+				}
 			}
 			NOT = { has_global_flag = scw_over }
 		}
+		
 		cancel = {
-			SPA = {
-				has_war = no
+			if = {
+				limit = {
+					NOT = { has_dlc = "La Resistance" }
+				}
+				SPR = {
+					has_civil_war = no
+				}
+			}
+			if = {
+				limit = {
+					has_dlc = "La Resistance"
+				}
+				SPA = { has_civil_war = no }
 			}
 		}
 
@@ -7431,8 +7463,27 @@ focus_tree = {
 
 		completion_reward = {
 			add_timed_idea = { idea = SPA_spanish_civil_war_commitments days = 1095 }
-			SPA = {
-				add_opinion_modifier = { target = ROOT modifier = SPA_spanish_civil_war_commitments }
+			if = {
+				limit = {
+					has_dlc = "La Resistance"
+				}
+				SPA = {
+					add_opinion_modifier = { target = GER modifier = ger_spa_friend_focus }
+					add_opinion_modifier = { target = ROOT modifier = SPA_spanish_civil_war_commitments }
+				}
+			}
+			else_if = {
+				limit = {
+					NOT = { has_dlc = "La Resistance" }
+				}
+				random_other_country = {
+					limit = {
+						original_tag = SPR
+						has_government = fascism
+					}
+					add_opinion_modifier = { target = GER modifier = ger_spa_friend_focus }
+					add_opinion_modifier = { target = GER modifier = SPA_spanish_civil_war_commitments }
+				}
 			}
 			171 = {
 				add_extra_state_shared_building_slots = 2
@@ -7448,26 +7499,6 @@ focus_tree = {
 					type = arms_factory
 					level = 2
 					instant_build = yes
-				}
-			}
-			if = {
-				limit = {
-					NOT = { has_dlc = "La Resistance" }
-				}
-				random_other_country = {
-					limit = {
-						original_tag = SPR
-						has_government = fascism
-					}
-					add_opinion_modifier = { target = GER modifier = ger_spa_friend_focus }
-				}
-			}
-			if = {
-				limit = {
-					has_dlc = "La Resistance"
-				}
-				SPA = {
-					add_opinion_modifier = { target = GER modifier = ger_spa_friend_focus }
 				}
 			}
 		}
