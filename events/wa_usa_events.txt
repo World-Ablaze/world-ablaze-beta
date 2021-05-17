@@ -974,7 +974,7 @@ country_event = {#Intro to Judiciary
 	id = usa_armor.806
 	title = usa_armor.806.t
 	desc = usa_armor.806.d
-	picture = GFX_report_event_usa_amelia_earhart_airplane
+	picture = GFX_report_event_generic_usa_treaty
 	
 	is_triggered_only = yes
 	
@@ -982,11 +982,14 @@ country_event = {#Intro to Judiciary
 	} 
 	
 	immediate = {
-		country_event = { id = usa_armor.807 days = 14 }
+		hidden_effect = {
+			country_event = { id = usa_armor.807 days = 14 }
+		}
 	}
 	
 	option = {
 		name = usa_armor.806.a
+		custom_effect_tooltip = USA_selective_service_act_tt
 	}
 }
 
@@ -994,7 +997,7 @@ country_event = {#work with the house
 	id = usa_armor.807
 	title = usa_armor.807.t
 	desc = usa_armor.807.d
-	picture = GFX_report_event_usa_amelia_earhart_airplane
+	picture = GFX_report_event_generic_conference
 	
 	is_triggered_only = yes  
 	
@@ -1002,13 +1005,19 @@ country_event = {#work with the house
 	}
 	
 	immediate = {
-		country_event = { id = usa_armor.808 days = 14 }
+		hidden_effect = {
+			country_event = { id = usa_armor.808 days = 14 }
+		}
 	}
 	
 	option = {
 		name = usa_armor.807.a
 		ai_chance = { 
 			factor = 0
+		}
+		USA_congress_small_opposition = yes
+		hidden_effect = {
+			set_country_flag = USA_judicial_reform_may_pass_difficult
 		}
 	}
 
@@ -1017,6 +1026,7 @@ country_event = {#work with the house
 		ai_chance = { 
 			factor = 25 
 		}
+		USA_congress_medium_opposition = yes
 		hidden_effect = {
 			set_country_flag = USA_judicial_reform_may_pass
 		}
@@ -1026,8 +1036,88 @@ country_event = {#work with the house
 country_event = {#Ninth Fireside Chat
 	id = usa_armor.808
 	title = usa_armor.808.t
-	desc = usa_armor.808.d
-	picture = GFX_report_event_usa_amelia_earhart_airplane
+	desc = { text = usa_armor.808.d_house_not_told			trigger = { has_country_flag = USA_judicial_reform_may_pass_difficult } }
+	desc = { text = usa_armor.808.d_house_told 				trigger = { has_country_flag = USA_judicial_reform_may_pass } }
+	picture = GFX_report_event_journalists_speech
+	
+	is_triggered_only = yes  
+	
+	trigger = {
+	}
+	
+	immediate = {
+		hidden_effect = {
+			country_event = { id = usa_armor.809 days = 14 }
+		}
+	}
+	
+	option = {
+		name = usa_armor.808.a
+		trigger = { has_country_flag = USA_judicial_reform_may_pass_difficult }
+		USA_congress_small_opposition = yes
+	}
+	
+	option = {
+		name = usa_armor.808.b
+		trigger = { has_country_flag = USA_judicial_reform_may_pass_difficult }
+		add_political_power = -150
+	}
+	
+	option = {
+		name = usa_armor.808.c
+		trigger = { has_country_flag = USA_judicial_reform_may_pass }
+	}
+}
+
+country_event = {#debate among democrats
+	id = usa_armor.809
+	title = usa_armor.809.t
+	desc = usa_armor.809.d
+	picture = GFX_report_event_FDR_speech
+	
+	is_triggered_only = yes  
+	
+	trigger = {
+	}
+	
+	
+	immediate = {
+		hidden_effect = {
+			clr_country_flag = USA_judicial_reform_may_pass
+			clr_country_flag = USA_judicial_reform_may_pass_difficult
+		}
+	}
+	
+	option = {
+		name = usa_armor.809.a #Force a Compromise
+		add_stability = -0.02
+		ai_chance = { 
+			factor = 0
+		}
+		hidden_effect = {
+			country_event = { id = usa_armor.810 days = 24 }
+		}
+	}
+	option = {
+		name = usa_armor.809.b #Denonce the Opponents
+		USA_congress_small_opposition = yes
+		ai_chance = { 
+			factor = 25 
+		}
+		hidden_effect = {
+			country_event = { id = usa_armor.810 days = 24 }
+		}
+	}
+}
+
+country_event = {# Bill Result
+	id = usa_armor.810
+	title = { text = usa_armor.810.t_bill_pass				trigger = { congress_high_support_trigger = yes } }
+	title = { text = usa_armor.810.t_bill_fails 			trigger = { NOT = { congress_high_support_trigger = yes } } }
+	desc = { text = usa_armor.810.d_bill_pass				trigger = { congress_high_support_trigger = yes } }
+	desc = { text = usa_armor.810.d_bill_fails 				trigger = { NOT = { congress_high_support_trigger = yes } } }
+	picture = GFX_report_event_generic_communist_congress
+	
 	
 	is_triggered_only = yes  
 	
@@ -1037,126 +1127,28 @@ country_event = {#Ninth Fireside Chat
 	immediate = {
 		if = {
 			limit = {
-				has_country_flag = USA_judicial_reform_may_pass
+				congress_high_support_trigger = yes
 			}
-			country_event = { id = usa_armor.809 days = 14 }
+			hidden_effect = {
+				set_country_flag = USA_judicial_reform_pass
+				set_country_flag = USA_judicial_reform_law
+			}
 		}
 		else = {
-			country_event = { id = usa_armor.812 days = 14 }
+			set_country_flag = USA_judicial_reform_fail
 		}
-	}
-	
-	option = {
-		name = usa_armor.808.a
-	}
-}
-
-country_event = {#debate among democrats
-	id = usa_armor.809
-	title = usa_armor.809.t
-	desc = usa_armor.809.d
-	picture = GFX_report_event_usa_amelia_earhart_airplane
-	
-	is_triggered_only = yes  
-	
-	trigger = {
-	}
-	
-	
-	immediate = {
-		clr_country_flag = USA_judicial_reform_may_pass
-	}
-	
-	option = {
-		name = usa_armor.809.a #Force a Compromise
-		ai_chance = { 
-			factor = 0
-		}
-		hidden_effect = {
-			country_event = { id = usa_armor.810 days = 14 }
-		}
-	}
-	option = {
-		name = usa_armor.809.b #Denonce the Opponents
-		ai_chance = { 
-			factor = 25 
-		}
-		hidden_effect = {
-			country_event = { id = usa_armor.811 days = 14 }
-		}
-	}
-	
-	
-}
-
-country_event = {#Bill Fails house told
-	id = usa_armor.810
-	title = usa_armor.810.t
-	desc = usa_armor.810.d
-	picture = GFX_report_event_usa_amelia_earhart_airplane
-	
-	
-	is_triggered_only = yes  
-	
-	trigger = {
-	}
-	
-	immediate = {
 	}
 	
 	option = {
 		name = usa_armor.810.a
-		USA_congress_small_opposition = yes
-		set_country_flag = USA_judicial_reform_fail
+		trigger = { congress_high_support_trigger = yes }
+		add_to_variable = { democratic_support = -15 }
 	}
-}
 
-country_event = {#Bill Pass
-	id = usa_armor.811
-	title = usa_armor.811.t
-	desc = usa_armor.811.d
-	picture = GFX_report_event_usa_amelia_earhart_airplane
-	
-	is_triggered_only = yes  
-	
-	trigger = {
-	}
-	
-	
-	immediate = {
-		set_country_flag = USA_judicial_reform_passed
-		set_country_flag = USA_judicial_reform_law
-	}
-	
 	option = {
-		name = usa_armor.811.a
-		USA_congress_large_opposition = yes
-		add_to_variable = {democratic_support = -15}
-		set_country_flag = USA_judicial_reform_pass
-	}
-}
-
-country_event = {#Bill fail house not told
-	id = usa_armor.812
-	title = usa_armor.812.t
-	desc = usa_armor.812.d
-	picture = GFX_report_event_usa_amelia_earhart_airplane
-	
-	is_triggered_only = yes  
-	
-	trigger = {
-	}
-	
-	
-	immediate = {
-		set_country_flag = USA_judicial_reform_passed
-		set_country_flag = USA_judicial_reform_law
-	}
-	
-	option = {
-		name = usa_armor.812.a
-		USA_congress_small_opposition = yes
-		set_country_flag = USA_judicial_reform_fail
+		name = usa_armor.810.b
+		trigger = { NOT = { congress_high_support_trigger = yes } }
+		add_stability = -0.05
 	}
 }
 
@@ -1190,7 +1182,6 @@ country_event = {
 	id = usa_armor.814
 	title = usa_armor.814.t
 	desc = usa_armor.814.d
-	picture = GFX_report_event_usa_amelia_earhart_airplane
 
 	fire_only_once = yes
 	
@@ -1211,7 +1202,7 @@ country_event = {#Flint
 	id = usa_armor.815
 	title = usa_armor.815.t
 	desc = usa_armor.815.d
-	picture = GFX_report_event_usa_amelia_earhart_airplane  
+	picture = GFX_report_event_generic_strike
 
 	fire_only_once = yes
 	
