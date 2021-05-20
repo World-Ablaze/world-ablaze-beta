@@ -421,8 +421,8 @@ NDefines.NNavy.CONVOY_EFFICIENCY_REGAIN_AFTER_DAYS = 1								-- Convoy starts r
 NDefines.NNavy.CONVOY_EFFICIENCY_REGAIN_BASE_SPEED = 0.04							-- How much efficiency regains every day.
 NDefines.NNavy.CONVOY_EFFICIENCY_MIN_VALUE = 0.05									-- To avoid complete 0% efficiency, set the lower limit.
 
-NDefines.NNavy.ESCAPE_SPEED_SUB_BASE = 0.1											-- subs get faster escape speed. gets replaced by hidden version below if hidden
-NDefines.NNavy.ESCAPE_SPEED_HIDDEN_SUB = 0.4										-- hidden subs get faster escape speed
+NDefines.NNavy.ESCAPE_SPEED_SUB_BASE = 0.2											-- subs get faster escape speed. gets replaced by hidden version below if hidden
+NDefines.NNavy.ESCAPE_SPEED_HIDDEN_SUB = 0.8										-- hidden subs get faster escape speed
 NDefines.NNavy.SPEED_TO_ESCAPE_SPEED = 0.95											-- ratio to converstion from ship speed to escape speed (divided by hundred)
 NDefines.NNavy.BASE_ESCAPE_SPEED = 1.0												-- daily base escape speed (gained as percentagE)
 
