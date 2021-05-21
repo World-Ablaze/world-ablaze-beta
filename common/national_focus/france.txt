@@ -3694,7 +3694,7 @@ focus_tree = {
 		prerequisite = {
 			focus = FRA_unify_the_government
 		}
-		cost = 5
+		cost = 8
 		ai_will_do = {
 			factor = 1
 		}
@@ -3761,7 +3761,7 @@ focus_tree = {
 	}
 	focus = {
 		id = FRA_les_munitionnettes
-		icon = GFX_goal_new_soviet_woman
+		icon = GFX_goal_munitionnettes
 		prerequisite = { focus = FRA_reform_our_industry }
 		x = 0
 		y = 1
@@ -3772,16 +3772,42 @@ focus_tree = {
 			factor = 1
 		}
 
+		available = {
+			has_war = yes
+		}
+
+		bypass = {
+			OR = { 
+				has_idea = women_in_the_workforce
+				has_idea = women_in_the_frontlines
+				has_idea = women_in_the_army
+			}
+		}
+
 		available_if_capitulated = no
 
 		completion_reward = {
+			if = {
+				limit = {
+					OR = {
+						has_idea = extensive_conscription
+						has_idea = service_by_requirement
+						has_idea = all_adults_serve
+						has_idea = scraping_the_barrel
+					}
+				}
+				add_political_power = 100
+			}
+			else = {
+				add_ideas = extensive_conscription
+			}
 			if = {
 				limit = {
 					has_idea = women_in_the_workforce
 				}
 				add_political_power = 300
 			}
-			else_if = {
+			else = {
 				add_ideas = women_in_the_workforce
 			}
 		}
@@ -3795,11 +3821,9 @@ focus_tree = {
 		x = 2
 		y = 1
 		relative_position_id = FRA_unify_the_government
-		cost = 5
+		cost = 3
 		available = {
-			855 = {
-				is_controlled_by = ROOT
-			}
+			855 = { is_fully_controlled_by = ROOT }
 		}
 		completion_reward = {
 			855 = {
@@ -3836,42 +3860,24 @@ focus_tree = {
 			}
 		}
 	}
-	focus = {
-		id = FRA_ils_ne_passeront_pas
-		icon = GFX_focus_generic_manpower
-		x = 0
-		y = 1
-		prerequisite = {
-			focus = FRA_fortress_paris
-		}
-		relative_position_id = FRA_fortress_paris
-		cost = 5
-		ai_will_do = {
-			factor = 1
-		}
-		available = {
-		}
-		bypass = {
-		}
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
-		search_filters = {
-		}
-		completion_reward = {
-			set_technology = { attritional_warfare = 1 }
-		}
-	}
+
 	focus = {
 		id = FRA_evacuate_our_industries
 		icon = GFX_goal_generic_position_armies
+		prerequisite = { focus = FRA_unify_the_government }
 		x = 4
 		y = 1
-		prerequisite = {
-			focus = FRA_unify_the_government
-		}
 		relative_position_id = FRA_unify_the_government
-		cost = 5
+
+		available = {
+			has_war = yes
+			surrender_progress > 0
+			any_enemy_country = {
+				is_major = yes
+			}
+		}
+
+		cost = 3
 		ai_will_do = {
 			factor = 1
 		}
@@ -3890,6 +3896,45 @@ focus_tree = {
 			unlock_decision_tooltip = FRA_relocate_industry_from_alsace_lorraine_area
 		}
 	}
+	
+	focus = {
+		id = FRA_ils_ne_passeront_pas
+		icon = GFX_focus_generic_support_the_left_right
+		prerequisite = { focus = FRA_fortress_paris focus = FRA_evacuate_our_industries }
+		x = 1
+		y = 1
+		relative_position_id = FRA_fortress_paris
+
+		cost = 4
+		ai_will_do = {
+			factor = 1
+		}
+		available = {
+			has_war = yes
+			any_owned_state = {
+				NOT = {
+					is_controlled_by = FRA
+				}
+			}
+			any_enemy_country = {
+				is_major = yes
+			}
+			casualties > 500000
+		}
+
+		bypass = {
+		}
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+		search_filters = {
+		}
+		completion_reward = {
+			add_ideas = french_perseverance
+			add_war_support = 0.2
+		}
+	}
+
 	focus = {
 		id = FRA_ask_the_us_for_support
 		icon = GFX_focus_usa_reestablish_the_gold_standard
@@ -3918,33 +3963,7 @@ focus_tree = {
 			economy_fatigue_level_down_10 = yes
 		}
 	}
-	focus = {
-		id = FRA_join_the_manhattan_project
-		icon = GFX_focus_wonderweapons
-		prerequisite = {
-			focus = FRA_ask_the_us_for_support
-		}
-		x = 0
-		y = 1
-		relative_position_id = FRA_ask_the_us_for_support
-		cost = 10
-		available = {
-			controls_state = 23
-			has_tech = nukes
-			is_in_faction_with = USA
-		}
-		available_if_capitulated = no
-		completion_reward = {
-			23 = {
-				add_extra_state_shared_building_slots = 1
-				add_building_construction = {
-					type = nuclear_reactor
-					level = 1
-					instant_build = yes
-				}
-			}
-		}
-	}
+	
 	focus = {
 		id = FRA_go_with_britain
 		icon = GFX_focus_chi_british_cooperation
@@ -4021,9 +4040,17 @@ focus_tree = {
 		}
 		available_if_capitulated = yes
 		completion_reward = {
+			ENG = {
+				add_tech_bonus = {
+					name = FRA_project_damocles
+					bonus = 0.5
+					uses = 1
+					category = nuclear
+				}
+			}
 			add_tech_bonus = {
-				name = maud_focus
-				bonus = 1
+				name = FRA_project_damocles
+				bonus = 0.5
 				uses = 1
 				category = nuclear
 			}
@@ -10052,6 +10079,7 @@ focus_tree = {
 		}
 		completion_reward = {
 			army_experience = 50
+			set_technology = { noria_tactics = 1 }
 			if = {
 				limit = {
 					has_idea = FRA_static_command
