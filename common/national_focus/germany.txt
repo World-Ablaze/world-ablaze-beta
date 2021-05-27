@@ -5420,13 +5420,14 @@ focus_tree = {
 			has_army_manpower = { size > 749999 } #ca 80 div
 		}
 		bypass = {
-			OR = {
-				NOT = {
-					YUG = { owns_state = 887 }
+			887 = {
+				OR = {
+					is_controlled_by = ROOT
+					CONTROLLER = { is_subject_of = ROOT }
+					CONTROLLER = { is_in_faction_with = ROOT }
+					CONTROLLER = { has_war_with = ROOT }
+					CONTROLLER = { is_subject = yes }
 				}
-				has_war_with = YUG
-				is_in_faction_with = YUG
-				YUG = { is_subject_of = GER }
 			}
 		}
 		cancel_if_invalid = yes
@@ -5439,30 +5440,37 @@ focus_tree = {
 		}	
 		completion_reward = {
 			add_named_threat = { threat = 2 name = GER_demand_slovenia_threat }
-			YUG = { add_opinion_modifier = { target = GER modifier = GER_demand_slovenia_YUG } }
-			if = {
+			if = { 
 				limit = {
 					NOT = { has_war_with = ENG }
-					YUG = { 
-						is_puppet = no
+					YUG = {
+						is_subject = no
 						NOT = { has_war_with = ENG }
+					}
+					887 = {
+						CONTROLLER = {
+							tag = YUG
+						}
 					}
 				}
 				ENG = {
 					country_event = { id = britain.14 }
 				}
+				YUG = { add_opinion_modifier = { target = GER modifier = GER_demand_slovenia_YUG } }
 			}
-			if = {
+			else_if = {
 				limit = {
-					OR = {
-						YUG = { is_puppet = yes }
-						YUG = { has_war_with = ENG }
-						has_war_with = ENG
+					887 = {
+						CONTROLLER = {
+							is_subject = no
+						}
 					}
 				}
-				create_wargoal = {
-					type = annex_everything
-					target = YUG
+				887 = {
+					CONTROLLER = {
+						country_event = yugoslavia.5
+						add_opinion_modifier = { target = GER modifier = GER_demand_slovenia_YUG }
+					}
 				}
 			}
 		}
