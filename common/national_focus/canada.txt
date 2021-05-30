@@ -522,8 +522,7 @@ focus_tree = {
 		available_if_capitulated = yes
 
 		completion_reward = {
-			economy_fatigue_level_down_10 = yes
-			add_ideas = CAN_war_bonds_1
+			custom_effect_tooltip = war_bonds_available
 		}
 	}
 
@@ -1073,7 +1072,7 @@ focus_tree = {
 					276 = {
 						free_building_slots = {
 							building = synthetic_refinery
-							size < 1
+							size > 0
 							include_locked = yes
 						}
 					}
@@ -1239,10 +1238,8 @@ focus_tree = {
 		available_if_capitulated = yes
 
 		completion_reward = {
-			swap_ideas = {
-				remove_idea = CAN_war_bonds_1
-				add_idea = CAN_war_bonds_2
-			}
+			add_political_power = 100
+			add_war_support = 0.2
 		}
 	}
 
@@ -1565,7 +1562,7 @@ focus_tree = {
 		}
 
 		available = {
-
+			controls_state = 276
 		}
 		
 		bypass = {
@@ -1577,17 +1574,14 @@ focus_tree = {
 		available_if_capitulated = yes
 
 		completion_reward = {
-			add_tech_bonus = {
-				name = CAN_cmp_truck
-				bonus = 3.0
-				uses = 1
-				category = motorized_equipment
-			}
-			add_tech_bonus = {
-				name = CAN_cmp_truck
-				bonus = 3.0
-				uses = 1
-				category = cat_mechanized_equipment
+			add_ideas = cmp_truck
+			276 = {
+				add_extra_state_shared_building_slots = 1
+				add_building_construction = {
+					type = arms_factory
+					level = 1
+					instant_build = yes
+				}
 			}
 		}
 	}
@@ -1701,7 +1695,13 @@ focus_tree = {
 
 		completion_reward = {
 			add_tech_bonus = {
-				name = CAN_a_motorized_army
+				name = CAN_a_motorized_army1
+				bonus = 3.0
+				uses = 1
+				category = cat_mechanized_equipment
+			}
+			add_tech_bonus = {
+				name = CAN_a_motorized_army2
 				bonus = 1.0
 				uses = 2
 				category = motorized_equipment
@@ -1749,12 +1749,74 @@ focus_tree = {
 		available_if_capitulated = yes
 
 		completion_reward = {
-			add_tech_bonus = {
-				name = CAN_the_valentine_tank
-				bonus = 1.0
-				uses = 2
-				technology = eng_support_3
-				technology = eng_support_4
+			if = {
+				limit = {
+					ENG = { has_tech = eng_support_3 }
+					NOT = { has_tech = eng_support_3 }
+				}
+				set_technology = {
+					eng_support_3 = 1
+				}
+				add_equipment_production = {
+					equipment = {
+						type = eng_support_equipment_3
+						creator = "CAN"
+					}
+					requested_factories = 1
+					progress = 0
+					efficiency = 100
+				}
+			}
+			else = {
+				custom_effect_tooltip = CAN_the_valentine_tank_tt
+				add_tech_bonus = {
+					name = CAN_the_valentine_tank
+					bonus = 1.0
+					uses = 1
+					technology = eng_support_3
+				}
+			}
+			custom_effect_tooltip = CAN_the_valentine_tank_division_tt
+			if = {
+				limit = {
+					is_ai = no
+				}
+				hidden_effect = {	
+					division_template = {
+						name = "Armoured Division"
+						division_names_group = ENG_ARM_01
+						priority = 1
+
+						regiments = {
+							support_armor = { x = 0 y = 0}
+							support_armor = { x = 0 y = 1}
+							support_armor = { x = 0 y = 2}
+
+							support_armor = { x = 1 y = 0}
+							support_armor = { x = 1 y = 1}
+							support_armor = { x = 1 y = 2}
+
+							motorized_artillery_brigade = { x = 2 y = 0 }
+							motorized_artillery_brigade = { x = 2 y = 1 }
+							motorized_artillery_brigade = { x = 2 y = 2 }
+
+							motorized = { x = 3 y = 0 }
+							motorized = { x = 3 y = 1 }
+							motorized = { x = 3 y = 2 }
+						}
+
+						support = {
+							engineer = { x = 0 y = 0 }
+							motorized_logistics_company = { x = 0 y = 1 }
+							maintenance_company = { x = 0 y = 2 }
+							signal_company = { x = 0 y = 3 }
+
+							mot_recon = { x = 1 y = 0 }
+			        		field_hospital = { x = 1 y = 1 }
+			        		heavy_artillery = { x = 1 y = 2 }
+						}
+					}
+				}
 			}
 		}
 	}
@@ -1977,30 +2039,6 @@ focus_tree = {
 		}
 		
 		bypass = {
-			custom_trigger_tooltip = {
-				tooltip = arms_effort_tt
-				276 = {
-					free_building_slots = {
-						building = arms_factory
-						size < 2
-						include_locked = yes
-					}
-				}
-				464 = {
-					free_building_slots = {
-						building = arms_factory
-						size < 2
-						include_locked = yes
-					}
-				}
-				465 = {
-					free_building_slots = {
-						building = arms_factory
-						size < 2
-						include_locked = yes
-					}
-				}
-			}
 		}
 		
 		cancel_if_invalid = yes
@@ -2009,31 +2047,9 @@ focus_tree = {
 
 		
 		completion_reward = {
-			economy_fatigue_level_up_4 = yes
-			276 = {
-				add_extra_state_shared_building_slots = 2
-				add_building_construction = {
-					type = arms_factory
-					level = 2
-					instant_build = yes
-				}
-			}
-			468 = {
-				add_extra_state_shared_building_slots = 2
-				add_building_construction = {
-					type = arms_factory
-					level = 2
-					instant_build = yes
-				}
-			}
-			465 = {
-				add_extra_state_shared_building_slots = 2
-				add_building_construction = {
-					type = arms_factory
-					level = 2
-					instant_build = yes
-				}
-			}
+			custom_effect_tooltip = CAN_shadow_scheme_focus_tt
+			add_ideas = shadow_scheme_focus
+			economy_fatigue_level_up_2 = yes
 		}
 	}
 
@@ -2251,18 +2267,26 @@ focus_tree = {
 					amount = 16
 				}
 			}
-			682 = {
-				add_extra_state_shared_building_slots = 2
+			466 = {
+				add_extra_state_shared_building_slots = 3
 				add_building_construction = {
-					type = aluminium_refinery
-					level = 2
+					type = hydro_aluminium_refinery
+					level = 3
+					instant_build = yes
+				}
+			}
+			682 = {
+				add_extra_state_shared_building_slots = 1
+				add_building_construction = {
+					type = hydro_aluminium_refinery
+					level = 1
 					instant_build = yes
 				}
 			}
 			469 = {
 				add_extra_state_shared_building_slots = 1
 				add_building_construction = {
-					type = aluminium_refinery
+					type = hydro_aluminium_refinery
 					level = 1
 					instant_build = yes
 				}
@@ -2270,7 +2294,7 @@ focus_tree = {
 			467 = {
 				add_extra_state_shared_building_slots = 1
 				add_building_construction = {
-					type = aluminium_refinery
+					type = hydro_aluminium_refinery
 					level = 1
 					instant_build = yes
 				}
@@ -2278,7 +2302,7 @@ focus_tree = {
 			468 = {
 				add_extra_state_shared_building_slots = 1
 				add_building_construction = {
-					type = aluminium_refinery
+					type = hydro_aluminium_refinery
 					level = 1
 					instant_build = yes
 				}
@@ -2286,7 +2310,7 @@ focus_tree = {
 			276 = {
 				add_extra_state_shared_building_slots = 1
 				add_building_construction = {
-					type = aluminium_refinery
+					type = hydro_aluminium_refinery
 					level = 1
 					instant_build = yes
 				}
@@ -2294,7 +2318,7 @@ focus_tree = {
 			470 = {
 				add_extra_state_shared_building_slots = 1
 				add_building_construction = {
-					type = aluminium_refinery
+					type = hydro_aluminium_refinery
 					level = 1
 					instant_build = yes
 				}
@@ -3601,7 +3625,7 @@ focus_tree = {
 		completion_reward = {
 			add_tech_bonus = {
 				name = CAN_the_sabre_project
-				ahead_reduction = 2
+				bonus = 2
 				uses = 2
 				category = rocketry
 				category = jet_technology
@@ -3666,7 +3690,8 @@ focus_tree = {
 		}
 		
 		bypass = {
-
+			NOT = { is_in_faction_with = ENG }
+			NOT = { is_subject_of = ENG }
 		}
 
 		cancel_if_invalid = yes
@@ -3678,13 +3703,31 @@ focus_tree = {
 				name = CAN_destroyer_effort
 				bonus = 1.0
 				uses = 4
-				category = dd_tech
+				technoloy = eng_frigate_1
+				technoloy = eng_frigate_2
+				technoloy = eng_frigate_3
+				technoloy = eng_frigate_4
 			}
 			add_tech_bonus = {
 				name = CAN_destroyer_effort
 				bonus = 1.0
-				uses = 4
-				category = de_tech
+				uses = 2
+				technoloy = eng_destroyer_3
+				technoloy = eng_destroyer_4
+			}
+			add_tech_bonus = {
+				name = CAN_destroyer_effort
+				bonus = 1.0
+				uses = 3
+				technoloy = eng_light_cruiser_1
+				technoloy = eng_light_cruiser_2
+				technoloy = eng_light_cruiser_3
+			}
+			add_tech_bonus = {
+				name = CAN_destroyer_effort
+				bonus = 1.0
+				uses = 2
+				category = naval_equipment
 			}
 		}
 	}
@@ -3716,12 +3759,28 @@ focus_tree = {
 		available_if_capitulated = yes
 
 		completion_reward = {
-			add_tech_bonus = {
-				name = CAN_light_cruiser_effort
-				bonus = 1.0
-				ahead_reduction = 2
-				uses = 1
-				category = cl_tech
+			if = {
+				limit = {
+					OR = {
+						is_subject_of = ENG
+						is_in_faction_with = ENG
+					}
+				}
+				add_tech_bonus = {
+					name = CAN_heavy_cruiser_effort
+					bonus = 1.0
+					uses = 1
+					category = cl_tech
+				}
+			}
+			else = {
+				add_tech_bonus = {
+					name = CAN_light_cruiser_effort
+					bonus = 1.0
+					ahead_reduction = 2
+					uses = 1
+					category = cl_tech
+				}
 			}
 		}
 	}
@@ -3753,12 +3812,28 @@ focus_tree = {
 		available_if_capitulated = yes
 
 		completion_reward = {
-			add_tech_bonus = {
-				name = CAN_heavy_cruiser_effort
-				bonus = 1.0
-				ahead_reduction = 2
-				uses = 1
-				category = ca_tech
+			if = {
+				limit = {
+					OR = {
+						is_subject_of = ENG
+						is_in_faction_with = ENG
+					}
+				}
+				add_tech_bonus = {
+					name = CAN_heavy_cruiser_effort
+					bonus = 1.0
+					uses = 1
+					category = ca_tech
+				}
+			}
+			else = {
+				add_tech_bonus = {
+					name = CAN_light_cruiser_effort
+					bonus = 1.0
+					ahead_reduction = 2
+					uses = 1
+					category = ca_tech
+				}
 			}
 		}
 	}
