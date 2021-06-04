@@ -518,6 +518,10 @@ BUL_communists_try_to_form_ff_effect = {
 		if = { #Having war against SOV is significant
 			limit = {
 				has_war_with = SOV
+				OR = {
+					NOT = { has_country_flag = BUL_at_war_with_the_soviets_flag }
+					has_country_flag = { flag = BUL_at_war_with_the_soviets_flag days > 180 }
+				}	
 			}
 			add_to_variable = { BUL_ff_forming_probability = 10 }
 			if = { #Having war against communist SOV is very important
@@ -581,7 +585,6 @@ BUL_communists_try_to_form_ff_effect = {
 
 	if = {
 		limit = {
-			has_dlc = "Battle for the Bosporus"
 			check_variable = {
 				var = BUL_ff_forming_probability
 				value = BUL_random_ff_forming_chance 
@@ -591,7 +594,7 @@ BUL_communists_try_to_form_ff_effect = {
 		country_event = { id = bftb_bulgaria_fatherland_front.1 hours = 16 random_hours = 16 }
 	}
 	log = "Fatherland Front probability: [?BUL.BUL_ff_forming_probability]"
-	log = "Fatherland Frot Random chance: [?BUL.BUL_random_ff_forming_chance]"
+	log = "Fatherland Front Random chance: [?BUL.BUL_random_ff_forming_chance]"
 }
 
 BUL_ff_approaches_a_faction_effect = {
@@ -638,13 +641,17 @@ BUL_ff_tries_to_stage_a_coup_effect = {
 			if = { #Having war against SOV is significant
 				limit = {
 					has_war_with = SOV
+					OR = {
+						NOT = { has_country_flag = BUL_at_war_with_the_soviets_flag }
+						has_country_flag = { flag = BUL_at_war_with_the_soviets_flag days > 180 }
+					}
 				}
 				add_to_variable = { BUL_ff_coup_probability = 10 }
 				if = { #Having war against communist SOV is very important
 					limit = {
 						SOV = { has_government = communism }
 					}
-					add_to_variable = { BUL_ff_coup_probability = 50 }
+					add_to_variable = { BUL_ff_coup_probability = 40 } #Prev 50
 				}
 			}
 		}
@@ -655,12 +662,12 @@ BUL_ff_tries_to_stage_a_coup_effect = {
 					has_war_with = SOV
 				}
 			}
-			add_to_variable = { BUL_ff_coup_probability = 25 }
+			add_to_variable = { BUL_ff_coup_probability = 10 } #Prev 25
 			if = { #If SOV is communist then it becomes very important
 				limit = {
 					SOV = { has_government = communism }
 				}
-				add_to_variable = { BUL_ff_coup_probability = 75 }
+				add_to_variable = { BUL_ff_coup_probability = 15 } #Prev 75
 			}
 		}
 
@@ -669,27 +676,80 @@ BUL_ff_tries_to_stage_a_coup_effect = {
 				any_neighbor_country = {
 					tag = SOV
 				}
-				SOV = { has_government = communism }
+				has_government = communism
+			}
+			add_to_variable = { BUL_ff_coup_probability = 5 }
+			if = { #SOV controls one of our key states
+				limit = {
+					SOV = {
+						any_controlled_state = {
+							has_state_flag = BUL_initial_bulgarian_state_flag
+							is_in_home_area = yes
+						}
+					}
+				}
+				add_to_variable = { BUL_ff_coup_probability = 15 }
+				if= { #Neighbor SOV being at war with Bulgaria or her allies is critical
+					limit = {
+						OR = {
+							any_allied_country = {
+								has_war_with = SOV
+							}
+							has_war_with = SOV
+						}			
+					}
+					add_to_variable = { BUL_ff_coup_probability = 100 }
+				}
+			}
+		}
+
+		if = { #SOV conquering Germany
+			limit = {
+				SOV = {
+					any_controlled_state = {
+						is_core_of = GER
+					}
+				}
+			}
+			add_to_variable = { BUL_ff_coup_probability = 5 }
+			if = { #SOV conquering initial German states
+				limit = {
+					SOV = {
+						any_controlled_state = {
+							is_core_of = GER
+							NOT = {
+								state = 188
+								state = 763
+								state = 5
+								state = 85
+								state = 797
+								state = 798
+								state = 86
+							}
+						}
+					}
+				}
+				add_to_variable = { BUL_ff_coup_probability = 15 }
+			}
+		}
+
+		if = { #BUL losing key territory
+			limit = {
+				any_state = {
+					has_state_flag = BUL_initial_bulgarian_state_flag
+					controller = {
+						has_war_with = ROOT
+					}
+				}
 			}
 			add_to_variable = { BUL_ff_coup_probability = 15 }
-			if= { #Neighbor SOV being at war with Bulgaria or her allies is critical
-				limit = {
-					OR = {
-						any_allied_country = {
-							has_war_with = SOV
-						}
-						has_war_with = SOV
-					}			
-				}
-				add_to_variable = { BUL_ff_coup_probability = 100 }
-			}
 		}
 
 		if = { #SOV being communist is relatively important
 			limit = {
 				SOV = { has_government = communism }
 			}
-			add_to_variable = { BUL_ff_coup_probability = 15 }
+			add_to_variable = { BUL_ff_coup_probability = 10 } #Prev 15
 		}
 
 		randomize_temp_variable = {
@@ -709,8 +769,8 @@ BUL_ff_tries_to_stage_a_coup_effect = {
 			}
 			country_event = { id = bftb_bulgaria_fatherland_front.2 hours = 4 random_hours = 4 }
 		}
-		log = "Fatherland Front probability: [?BUL.BUL_ff_forming_probability]"
-		log = "Fatherland Frot Random chance: [?BUL.BUL_random_ff_forming_chance]"
+		log = "[GetDateText] - Fatherland Front coup probability: [?BUL.BUL_ff_coup_probability]"
+		log = "[GetDateText] - Fatherland Front coup Random chance: [?BUL.BUL_random_ff_coup_chance]"
 	}
 }
 
@@ -1139,6 +1199,7 @@ BUL_start_ff_civil_war = {
 	#FF joins SOV's faction and wars and give Military Access
 	if = {
 		limit = {
+			country_exists = SOV
 			has_war_with = SOV
 			SOV = { has_government = communism }
 		}
@@ -1152,14 +1213,23 @@ BUL_start_ff_civil_war = {
 				}
 			}
 		}
-		every_country = {
+		if = {
 			limit = {
-				has_war_with = SOV
-				is_in_faction_with = BUL
-				NOT = {	has_country_flag = BUL_ff_civil_war_flag }
+				any_country = {
+					has_war_with = SOV
+					is_in_faction_with = BUL
+					NOT = {	has_country_flag = BUL_ff_civil_war_flag }
+				}
 			}
-			BUF = {
-				add_to_war = { targeted_alliance = SOV enemy = PREV hostility_reason = asked_to_join }
+			every_country = {
+				limit = {
+					has_war_with = SOV
+					is_in_faction_with = BUL
+					NOT = {	has_country_flag = BUL_ff_civil_war_flag }
+				}
+				BUF = {
+					add_to_war = { targeted_alliance = SOV enemy = PREV hostility_reason = asked_to_join }
+				}
 			}
 		}
 	}
@@ -1492,9 +1562,9 @@ BUL_set_buz_faction_values = {
 	set_variable = { BUL_faction_low_decrease = -5 }
 	set_variable = { BUL_faction_medium_decrease = -10 }
 	set_variable = { BUL_faction_high_decrease = -15 }
-	set_variable = { BUL_ff_missions_base_days_to_add = 90 } #Base amount of days to be added to Impending FF Coup mission
-	set_variable = { BUL_ff_missions_popularity_factor = 5 } #More popularity means more days to add
-	set_variable = { BUL_ff_missions_loyalty_factor = -2 } #More loyalty means less days to add
+	set_variable = { BUL_ff_missions_base_days_to_add = 60 } #Base amount of days to be added to Impending FF Coup mission
+	set_variable = { BUL_ff_missions_popularity_factor = 1 } #More popularity means more days to add
+	set_variable = { BUL_ff_missions_loyalty_factor = 1 } #More loyalty means less days to add
 	set_variable = { BUL_ff_preventive_actions_against_coup = 0 } #This will be used to reduce the chances of the FF staging the coup after they have planned it
 	set_variable = { BUL_ff_preventive_actions_base_value = 5 } #The value added to the variable above every time a decision to prevent the coup is taken
 	set_variable = { BUL_ff_preventive_actions_cap_value = 50 } #This is a cap to the player's ability to prevent the coup

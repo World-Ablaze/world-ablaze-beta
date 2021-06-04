@@ -7,7 +7,6 @@
 #BUL_is_fascist_axis_ai
 #BUL_is_monarchist_ferdinand_ai
 
-
 #INTERNAL FACTIONS
 BUL_internal_factions = {
 
@@ -3883,7 +3882,17 @@ BUL_internal_factions = {
 		}
 
 		available = {
-			has_country_flag = BUL_zveno_destroyed_flag
+			OR = {
+				has_country_flag = BUL_zveno_destroyed_flag
+				has_country_flag = BUL_zveno_integrated_flag
+				AND = {
+					has_country_flag = BUL_fatherland_front_formed_flag
+					NOT = { has_country_flag = BUL_ff_destroyed_flag }
+				}
+				hidden_trigger = {
+					has_completed_focus = BUL_the_fatherland_front
+				}
+			}
 		}
 
 		activation = {
@@ -3895,10 +3904,7 @@ BUL_internal_factions = {
 		fire_only_once = yes
 
 		visible = {
-			OR = {
-				NOT = { has_country_flag = BUL_fatherland_front_formed_flag }
-				has_country_flag = BUL_ff_destroyed_flag
-			}
+			
 		}
 
 		cancel_if_not_visible = yes
@@ -4288,8 +4294,6 @@ BUL_macedonian_revolutionary_organizations = {
 
 		days_remove = 60
 
-		fire_only_once = yes
-
 		visible = {
 			has_country_flag = { flag = BUL_repress_imro_flag value = 2 }
 			owns_state = 212
@@ -4331,6 +4335,12 @@ BUL_macedonian_revolutionary_organizations = {
 
 		cancel_effect = {
 			clr_country_flag = BUL_macedonian_affairs_ongoing_flag
+			48 = {
+				remove_dynamic_modifier = { modifier = skirmishes_against_imro }
+			}
+			212 = {
+				remove_dynamic_modifier = { modifier = skirmishes_against_imro }
+			}
 		}
 
 		cost = 25
@@ -4516,6 +4526,27 @@ BUL_macedonian_revolutionary_organizations = {
 						controller = {
 							country_event = bftb_bulgaria_imro.1
 							set_country_flag = BUL_imro_awakened_in_country_flag
+						}
+					}
+					if = {
+						limit = {
+							state = 106 #MACEDONIA
+						}
+						controller = {
+							set_country_flag = BUL_imro_awakened_in_macedonia_flag
+						}
+					}
+					else_if = {
+						limit = {
+							state = 731 #CENTRAL MACEDONIA
+						}
+						controller = {
+							set_country_flag = BUL_imro_awakened_in_central_macedonia_flag
+						}
+					}
+					else = { #THRACE
+						controller = {
+							set_country_flag = BUL_imro_awakened_in_thrace_flag
 						}
 					}
 				}
@@ -4896,65 +4927,84 @@ BUL_macedonian_revolutionary_organizations_foreign = {
 
 		days_remove = 90
 
-		fire_only_once = yes
-
 		visible = {
 			has_country_flag = BUL_imro_awakened_in_country_flag
 		}
 
 		cancel_trigger = {
-			106 = {
-				has_dynamic_modifier = { modifier = skirmishes_against_imro }
+			custom_trigger_tooltip = {
+				tooltip = BUL_destroy_imro_foreign_cancel_trigger_tt
+			
 				OR = {
-					NOT = { is_fully_controlled_by = ROOT }	
-					custom_trigger_tooltip = {
-						tooltip = BUL_destroy_imro_divisions_macedonia_foreign_tt
-						ROOT = {
-							divisions_in_state = {
-								type = infantry
-								size < 9
-								state = 106
-							}
+					AND = {
+						has_country_flag = BUL_imro_awakened_in_macedonia_flag
+						106 = {
+							has_dynamic_modifier = { modifier = skirmishes_against_imro }
+							OR = {
+								NOT = { is_fully_controlled_by = ROOT }	
+								custom_trigger_tooltip = {
+									tooltip = BUL_destroy_imro_divisions_macedonia_foreign_tt
+									ROOT = {
+										divisions_in_state = {
+											type = infantry
+											size < 9
+											state = 106
+										}
+									}
+								}
+							}		
 						}
 					}
-				}		
-			}
-			731 = {
-				has_dynamic_modifier = { modifier = skirmishes_against_imro }
-				OR = {
-					NOT = { is_fully_controlled_by = ROOT }	
-					custom_trigger_tooltip = {
-						tooltip = BUL_destroy_imro_divisions_central_macedonia_foreign_tt
-						ROOT = {
-							divisions_in_state = {
-								type = infantry
-								size < 4
-								state = 731
-							}
+					AND = {
+						has_country_flag = BUL_imro_awakened_in_central_macedonia_flag
+						731 = {
+							has_dynamic_modifier = { modifier = skirmishes_against_imro }
+							OR = {
+								NOT = { is_fully_controlled_by = ROOT }	
+								custom_trigger_tooltip = {
+									tooltip = BUL_destroy_imro_divisions_central_macedonia_foreign_tt
+									ROOT = {
+										divisions_in_state = {
+											type = infantry
+											size < 4
+											state = 731
+										}
+									}
+								}
+							}		
 						}
 					}
-				}		
-			}
-			184 = {
-				has_dynamic_modifier = { modifier = skirmishes_against_imro }
-				OR = {
-					NOT = { is_fully_controlled_by = ROOT }	
-					custom_trigger_tooltip = {
-						tooltip = BUL_destroy_imro_divisions_thrace_foreign_tt
-						ROOT = {
-							divisions_in_state = {
-								type = infantry
-								size < 3
-								state = 184
-							}
+					AND = {
+						has_country_flag = BUL_imro_awakened_in_thrace_flag
+						184 = {
+							has_dynamic_modifier = { modifier = skirmishes_against_imro }
+							OR = {
+								NOT = { is_fully_controlled_by = ROOT }	
+								custom_trigger_tooltip = {
+									tooltip = BUL_destroy_imro_divisions_thrace_foreign_tt
+									ROOT = {
+										divisions_in_state = {
+											type = infantry
+											size < 3
+											state = 184
+										}
+									}
+								}
+							}		
 						}
 					}
-				}		
+				}
 			}
 		}
 
 		cancel_effect = {
 			clr_country_flag = BUL_macedonian_affairs_ongoing_flag
+			every_controlled_state = {
+				limit = {
+					has_dynamic_modifier = { modifier = skirmishes_against_imro }
+				}
+				remove_dynamic_modifier = { modifier = skirmishes_against_imro }
+			}
 		}
 
 		cost = 25
@@ -4967,7 +5017,12 @@ BUL_macedonian_revolutionary_organizations_foreign = {
 					BUL_is_macedonian_state = yes
 					is_fully_controlled_by = ROOT
 				}
-				add_dynamic_modifier = { modifier = skirmishes_against_imro }
+				effect_tooltip = {
+					add_dynamic_modifier = { modifier = skirmishes_against_imro }
+				}
+				hidden_effect = {
+					add_dynamic_modifier = { modifier = skirmishes_against_imro days = 91 } #TODO_Manu: This is a fallback with one extra day so that it has time to remove widespread_bulgarian_sentiment
+				}
 			}
 		}
 
@@ -5383,7 +5438,7 @@ BUL_the_fatherland_front_dec_cat = {
 		ai_will_do = {
 			base = 2
 			modifier = {
-				factor = 0
+				factor = 0.5
 				BUL_is_historical_ai = yes
 			}
 		}
@@ -5400,7 +5455,7 @@ BUL_the_fatherland_front_dec_cat = {
 			NOT = { has_country_flag = BUL_ff_civil_war_flag }
 		}
 
-		cost = 50
+		cost = 35
 		days_remove = 30
 		days_re_enable = 15
 
@@ -5451,7 +5506,7 @@ BUL_the_fatherland_front_dec_cat = {
 		ai_will_do = {
 			base = 4
 			modifier = {
-				factor = 0
+				factor = 0.25
 				BUL_is_historical_ai = yes
 			}
 		}
@@ -5534,7 +5589,7 @@ BUL_the_fatherland_front_dec_cat = {
 		ai_will_do = {
 			base = 10
 			modifier = {
-				factor = 0
+				factor = 0.1
 				BUL_is_historical_ai = yes
 			}
 		}
@@ -6178,9 +6233,8 @@ BUL_purchase_equipment = {
 		complete_effect = {
 			set_country_flag = BUL_purchasing_artillery_flag
 			hidden_effect = {
-				FROM = { #This allows to use FROM.FROM in the event
-					BUL = { country_event = bftb_bulgaria_equipment_purchases.1 }
-				}
+				set_variable = { BUL_artillery_seller = FROM }
+				country_event = bftb_bulgaria_equipment_purchases.1
 			}
 
 			FROM = {
@@ -6353,9 +6407,8 @@ BUL_purchase_equipment = {
 		complete_effect = {
 			set_country_flag = BUL_purchasing_military_vehicles_flag
 			hidden_effect = {
-				FROM = { #This allows to use FROM.FROM in the event
-					BUL = { country_event = bftb_bulgaria_equipment_purchases.2 }
-				}
+				set_variable = { BUL_military_vehicles_seller = FROM }
+				country_event = bftb_bulgaria_equipment_purchases.2
 			}
 			FROM = {
 				add_offsite_building = {
@@ -6549,9 +6602,8 @@ BUL_purchase_equipment = {
 		complete_effect = {
 			set_country_flag = BUL_purchasing_armor_flag
 			hidden_effect = {
-				FROM = { #This allows to use FROM.FROM in the event
-					BUL = { country_event = bftb_bulgaria_equipment_purchases.3 }
-				}
+				set_variable = { BUL_armor_seller = FROM }
+				country_event = bftb_bulgaria_equipment_purchases.3
 			}
 			FROM = {
 				add_offsite_building = {
@@ -6746,9 +6798,8 @@ BUL_purchase_equipment = {
 		complete_effect = {
 			set_country_flag = BUL_purchasing_aircraft_flag
 			hidden_effect = {
-				FROM = { #This allows to use FROM.FROM in the event
-					BUL = { country_event = bftb_bulgaria_equipment_purchases.4 }
-				}
+				set_variable = { BUL_aircraft_seller = FROM }
+				country_event = bftb_bulgaria_equipment_purchases.4
 			}
 			FROM = {
 				add_offsite_building = {

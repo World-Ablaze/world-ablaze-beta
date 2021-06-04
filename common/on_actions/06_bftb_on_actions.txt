@@ -293,9 +293,11 @@ on_actions = {
 			if = {
 				limit = {
 					FROM.FROM = { 
-						has_state_flag = TUR_kurdish_state_conquered
-						is_owned_and_controlled_by = TUR
-						TUR_has_former_turkish_state_modifier = yes
+						AND = { 
+							has_state_flag = TUR_kurdish_state_conquered
+							is_owned_and_controlled_by = TUR
+							TUR_has_former_turkish_state_modifier = yes
+						}
 					}
 				}
 				FROM.FROM = {
@@ -305,9 +307,11 @@ on_actions = {
 			if = {
 				limit = {
 					FROM.FROM = { 
-						has_state_flag = TUR_traditionalist_state_conquered 
-						is_owned_and_controlled_by = TUR
-						TUR_has_former_turkish_state_modifier = yes
+						AND = { 
+							has_state_flag = TUR_traditionalist_state_conquered 
+							is_owned_and_controlled_by = TUR
+							TUR_has_former_turkish_state_modifier = yes
+						}
 					}
 				}
 				FROM.FROM = {
@@ -317,9 +321,11 @@ on_actions = {
 			if = {
 				limit = {
 					FROM.FROM = { 
-						has_state_flag = TUR_loyal_kemalist_state_conquered 
-						is_owned_and_controlled_by = TUR
-						TUR_has_former_turkish_state_modifier = yes
+						AND = { 
+							has_state_flag = TUR_loyal_kemalist_state_conquered 
+							is_owned_and_controlled_by = TUR
+							TUR_has_former_turkish_state_modifier = yes
+						}
 					}
 				}
 				FROM.FROM = {
@@ -329,9 +335,11 @@ on_actions = {
 			if = {
 				limit = {
 					FROM.FROM = { 
-						has_state_flag = TUR_turanist_state_conquered 
-						is_owned_and_controlled_by = TUR
-						TUR_has_former_turkish_state_modifier = yes
+						AND = { 
+							has_state_flag = TUR_turanist_state_conquered 
+							is_owned_and_controlled_by = TUR
+							TUR_has_former_turkish_state_modifier = yes
+						}
 					}
 				}
 				FROM.FROM = {
@@ -508,8 +516,10 @@ on_actions = {
 			if = {
 				limit = {
 					any_country = { 
-						has_country_flag = TUR_iraqi_government_flag 
-						exists = yes
+						AND = { 
+							has_country_flag = TUR_iraqi_government_flag 
+							exists = yes
+						}
 					}
 				}
 				TUR = {  
@@ -522,8 +532,10 @@ on_actions = {
 			else_if = {
 				limit = {
 					any_country = { 
-						has_country_flag = TUR_iraqi_fascists_flag 
-						exists = yes
+						AND = { 
+							has_country_flag = TUR_iraqi_fascists_flag 
+							exists = yes
+						}
 					}
 				}
 				ENG = { 
@@ -1510,6 +1522,52 @@ on_actions = {
 	#FROM = defending side
 	#fired when two countries end up at war with each other (on_war is fired when a country goes to war against anyone and is not fired again when it enters war against another country unless it went to peace first)
 	on_war_relation_added = {
+		effect = { #Bulgaria vs SOV -> Cooldown before high chance of FF forming up
+			if = {
+				limit = {
+					OR = {
+						AND = {
+							ROOT = { original_tag = BUL }
+							FROM = { original_tag = SOV }
+						}
+						AND = {
+							ROOT = { original_tag = SOV }
+							FROM = { original_tag = BUL }
+						}
+					}
+					
+					BUL = { NOT = { has_country_flag = BUL_at_war_with_the_soviets_flag } }
+				}
+				BUL = { set_country_flag = BUL_at_war_with_the_soviets_flag }
+			}
+		}
+		effect = {
+			if = {
+				limit = {
+					OR = {
+						AND = {
+							original_tag = ITA
+							FROM = {
+								original_tag = GRE
+							}
+						}
+						AND = {
+							original_tag = GRE
+							FROM = {
+								original_tag = ITA
+							}
+						}
+					}
+					OR = {
+						has_country_flag = GRE_italy_attending_convention
+						FROM = { has_country_flag = GRE_italy_attending_convention }
+					}
+				}
+				GRE = {
+					clr_country_flag = GRE_italy_attending_convention
+				}
+			}
+		}
 		effect = {
 			if = {
 				limit = { 
