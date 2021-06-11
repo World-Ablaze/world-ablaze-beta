@@ -327,9 +327,11 @@ focus_tree = {
 					instant_build = yes
 				}
 			}
-			custom_effect_tooltip = FRA_industrial_expansion_tt
+			custom_effect_tooltip = FRA_Industrialists_Positive_1_tt
 			hidden_effect = {
 				add_to_variable = { var = FRA_French_Industrialists_attitude value = 1 }
+				add_to_variable = { var = FRA_French_Industrialists_factory_output value = 1 }
+				add_to_variable = { var = FRA_French_Industrialists_stability value = 1 }
 				add_to_variable = { var = FRA_French_Industrialists_political_power_gain value = 1 }
 				FRA_political_instability_update_effect = yes
 			}
@@ -377,9 +379,11 @@ focus_tree = {
 					instant_build = yes
 				}
 			}
-			custom_effect_tooltip = FRA_military_factories_tt
+			custom_effect_tooltip = FRA_Industrialists_Positive_1_tt
 			hidden_effect = {
 				add_to_variable = { var = FRA_French_Industrialists_attitude value = 1 }
+				add_to_variable = { var = FRA_French_Industrialists_factory_output value = 1 }
+				add_to_variable = { var = FRA_French_Industrialists_stability value = 1 }
 				add_to_variable = { var = FRA_French_Industrialists_political_power_gain value = 1 }
 				FRA_political_instability_update_effect = yes
 			}
@@ -735,9 +739,11 @@ focus_tree = {
 					instant_build = yes
 				}
 			}
-			custom_effect_tooltip = FRA_colonial_industry_tt
+			custom_effect_tooltip = FRA_Industrialists_Positive_1_tt
 			hidden_effect = {
 				add_to_variable = { var = FRA_French_Industrialists_attitude value = 1 }
+				add_to_variable = { var = FRA_French_Industrialists_factory_output value = 1 }
+				add_to_variable = { var = FRA_French_Industrialists_stability value = 1 }
 				add_to_variable = { var = FRA_French_Industrialists_political_power_gain value = 1 }
 				FRA_political_instability_update_effect = yes
 			}
@@ -1143,6 +1149,9 @@ focus_tree = {
 		}
 		available = {
 			has_war = no
+			NOT = {
+				has_idea = FRA_disjointed_government
+			}
 		}
 		bypass = {
 		}
@@ -1156,7 +1165,13 @@ focus_tree = {
 			}
 			if = {
 				limit = {
-					has_idea = FRA_political_violence
+					AND = {
+						OR = {
+							check_variable = { var = FRA_National_Bloc_attitude value = -4 compare = less_than_or_equals }
+							check_variable = { var = FRA_CGT_attitude value = -4 compare = less_than_or_equals }
+						}
+						has_stability < 70
+					}
 				}
 				country_event = lar_france_political_violence.3
 			}
@@ -1207,8 +1222,8 @@ focus_tree = {
 			}
 			custom_effect_tooltip = FRA_form_the_popular_front_tt
 			hidden_effect = { 
-				set_variable = { FRA_National_bloc_attitude = -4 }
-				set_variable = { FRA_CGT_attitude = -1 }
+				set_variable = { FRA_National_bloc_attitude = -1 }
+				set_variable = { FRA_CGT_attitude = -4 }
 				FRA_political_instability_update_effect = yes
 			}
 		}
@@ -1258,6 +1273,22 @@ focus_tree = {
 				communism_temp = 0.25
 			}
 			add_stability = communism_temp
+			custom_effect_tooltip = FRA_CGT_Positive_1_tt
+			hidden_effect = {
+				add_to_variable = { var = FRA_CGT_attitude value = 1 }
+				add_to_variable = { var = FRA_CGT_factory_output value = 1 }
+				add_to_variable = { var = FRA_CGT_stability value = 1 }
+				add_to_variable = { var = FRA_CGT_political_power_gain value = 1 }
+				FRA_political_instability_update_effect = yes
+			}
+			custom_effect_tooltip = FRA_French_Army_Negative_1_tt
+			hidden_effect = {
+				subtract_from_variable = { var = FRA_French_Army_attitude value = 1 }
+				subtract_from_variable = { var = FRA_French_Army_factory_output value = 1 }
+				subtract_from_variable = { var = FRA_French_Army_stability value = 1 }
+				subtract_from_variable = { var = FRA_French_Army_political_power_gain value = 1 }
+				FRA_political_instability_update_effect = yes
+			}
 		}
 	}
 	focus = {
@@ -1371,6 +1402,14 @@ focus_tree = {
 				ideology = communism
 				popularity = 0.05
 			}
+			custom_effect_tooltip = FRA_CGT_Positive_1_tt
+			hidden_effect = {
+				add_to_variable = { var = FRA_CGT_attitude value = 1 }
+				add_to_variable = { var = FRA_CGT_factory_output value = 1 }
+				add_to_variable = { var = FRA_CGT_stability value = 1 }
+				add_to_variable = { var = FRA_CGT_political_power_gain value = 1 }
+				FRA_political_instability_update_effect = yes
+			}
 		}
 	}
 
@@ -1480,6 +1519,14 @@ focus_tree = {
 					instant_build = yes
 				}
 			}
+			custom_effect_tooltip = FRA_Industrialists_Negative_1_tt
+			hidden_effect = {
+				subtract_from_variable = { var = FRA_French_Industrialists_attitude value = 1 }
+				subtract_from_variable = { var = FRA_French_Industrialists_factory_output value = 1 }
+				subtract_from_variable = { var = FRA_French_Industrialists_stability value = 1 }
+				subtract_from_variable = { var = FRA_French_Industrialists_political_power_gain value = 1 }
+				FRA_political_instability_update_effect = yes
+			}
 		}
 	}
 	focus = {
@@ -1514,19 +1561,13 @@ focus_tree = {
 			add_ideas = {
 				FRA_agricultural_collectivization
 			}
-			if = {
-				limit = {
-					set_temp_variable = {
-						FRA_rw_support = party_popularity@neutrality
-					}
-					add_to_temp_variable = {
-						FRA_rw_support = party_popularity@fascism
-					}
-					check_variable = {
-						FRA_rw_support > 0.4
-					}
-				}
-				add_stability = -0.05
+			custom_effect_tooltip = FRA_National_Bloc_Negative_tt
+			hidden_effect = {
+				subtract_from_variable = { var = FRA_National_Bloc_attitude value = 1 }
+				subtract_from_variable = { var = FRA_National_Bloc_factory_output value = 1 }
+				subtract_from_variable = { var = FRA_National_Bloc_stability value = 1 }
+				subtract_from_variable = { var = FRA_National_Bloc_political_power_gain value = 1 }
+				FRA_political_instability_update_effect = yes
 			}
 		}
 	}
@@ -1557,11 +1598,18 @@ focus_tree = {
 			FOCUS_FILTER_POLITICAL
 		}
 		completion_reward = {
-			add_stability = 0.05
 			FRA_right_wing_riot_effect = yes
 			add_popularity = {
 				ideology = communism
 				popularity = 0.05
+			}
+			custom_effect_tooltip = FRA_CGT_Positive_1_tt
+			hidden_effect = {
+				add_to_variable = { var = FRA_CGT_attitude value = 1 }
+				add_to_variable = { var = FRA_CGT_factory_output value = 1 }
+				add_to_variable = { var = FRA_CGT_stability value = 1 }
+				add_to_variable = { var = FRA_CGT_political_power_gain value = 1 }
+				FRA_political_instability_update_effect = yes
 			}
 		}
 	}
@@ -1613,16 +1661,20 @@ focus_tree = {
 				}
 				remove_ideas = FRA_disjointed_government
 			}
-			swap_ideas = {
-				remove_idea = FRA_fear_of_the_military
-				add_idea = FRA_widespread_fear_of_the_military
-			}
 			hidden_effect = {
 				news_event = {
 					id = lar_news.9
 					days = 3
 					random_days = 5
 				}
+			}
+			custom_effect_tooltip = FRA_French_Army_Negative_1_tt
+			hidden_effect = {
+				subtract_from_variable = { var = FRA_French_Army_attitude value = 1 }
+				subtract_from_variable = { var = FRA_French_Army_factory_output value = 1 }
+				subtract_from_variable = { var = FRA_French_Army_stability value = 1 }
+				subtract_from_variable = { var = FRA_French_Army_political_power_gain value = 1 }
+				FRA_political_instability_update_effect = yes
 			}
 		}
 	}
@@ -1653,12 +1705,19 @@ focus_tree = {
 		continue_if_invalid = no
 		available_if_capitulated = no
 		completion_reward = {
-			add_stability = 0.1
 			if = {
 				limit = {
 					has_idea = FRA_victors_of_wwi
 				}
 				remove_ideas = FRA_victors_of_wwi
+			}
+			custom_effect_tooltip = FRA_National_Bloc_Positive_1_tt
+			hidden_effect = {
+				add_to_variable = { var = FRA_National_Bloc_attitude value = 1 }
+				add_to_variable = { var = FRA_National_Bloc_factory_output value = 1 }
+				add_to_variable = { var = FRA_National_Bloc_stability value = 1 }
+				add_to_variable = { var = FRA_National_Bloc_political_power_gain value = 1 }
+				FRA_political_instability_update_effect = yes
 			}
 		}
 	}
@@ -1684,23 +1743,21 @@ focus_tree = {
 		available_if_capitulated = no
 		completion_reward = {
 			add_political_power = 120
-			if = {
-				limit = {
-					has_idea = FRA_widespread_fear_of_the_military
-				}
-				swap_ideas = {
-					remove_idea = FRA_widespread_fear_of_the_military
-					add_idea = FRA_respect_for_the_military
-				}
+			custom_effect_tooltip = FRA_French_Army_Positive_4_tt
+			hidden_effect = {
+				add_to_variable = { var = FRA_French_Army_attitude value = 4 }
+				add_to_variable = { var = FRA_French_Army_factory_output value = 4 }
+				add_to_variable = { var = FRA_French_Army_stability value = 4 }
+				add_to_variable = { var = FRA_French_Army_political_power_gain value = 4 }
+				FRA_political_instability_update_effect = yes
 			}
-			if = {
-				limit = {
-					has_idea = FRA_fear_of_the_military
-				}
-				swap_ideas = {
-					remove_idea = FRA_fear_of_the_military
-					add_idea = FRA_respect_for_the_military
-				}
+			custom_effect_tooltip = FRA_National_Bloc_Positive_1_tt
+			hidden_effect = {
+				add_to_variable = { var = FRA_National_Bloc_attitude value = 1 }
+				add_to_variable = { var = FRA_National_Bloc_factory_output value = 1 }
+				add_to_variable = { var = FRA_National_Bloc_stability value = 1 }
+				add_to_variable = { var = FRA_National_Bloc_political_power_gain value = 1 }
+				FRA_political_instability_update_effect = yes
 			}
 		}
 	}
@@ -2160,23 +2217,13 @@ focus_tree = {
 					14
 				}
 			}
-			if = {
-				limit = {
-					has_idea = FRA_widespread_fear_of_the_military
-				}
-				swap_ideas = {
-					remove_idea = FRA_widespread_fear_of_the_military
-					add_idea = FRA_trust_in_the_military
-				}
-			}
-			if = {
-				limit = {
-					has_idea = FRA_fear_of_the_military
-				}
-				swap_ideas = {
-					remove_idea = FRA_fear_of_the_military
-					add_idea = FRA_trust_in_the_military
-				}
+			custom_effect_tooltip = FRA_French_Army_Positive_6_tt
+			hidden_effect = {
+				add_to_variable = { var = FRA_French_Army_attitude value = 6 }
+				add_to_variable = { var = FRA_French_Army_factory_output value = 6 }
+				add_to_variable = { var = FRA_French_Army_stability value = 6 }
+				add_to_variable = { var = FRA_French_Army_political_power_gain value = 6 }
+				FRA_political_instability_update_effect = yes
 			}
 		}
 	}
@@ -2553,6 +2600,12 @@ focus_tree = {
 			add_ideas = {
 				FRA_dirigisme
 			}
+			custom_effect_tooltip = FRA_dirigisme_tt
+			hidden_effect = {
+				add_to_variable = { var = FRA_National_Bloc_factory_output value = 1 }
+				add_to_variable = { var = FRA_National_Bloc_stability value = 1 }
+				FRA_political_instability_update_effect = yes
+			}
 		}
 	}
 	focus = {
@@ -2883,7 +2936,10 @@ focus_tree = {
 			factor = 1
 		}
 		available = {
-			has_idea = FRA_political_violence
+			AND = {
+				check_variable = { var = FRA_National_Bloc_attitude value = -4 compare = less_than_or_equals }
+				has_stability < 70
+			}
 		}
 		bypass = {
 		}
@@ -2894,9 +2950,7 @@ focus_tree = {
 			FOCUS_FILTER_FRA_POLITICAL_VIOLENCE
 		}
 		completion_reward = {
-			remove_ideas = {
-				FRA_political_violence
-			}
+			add_to_variable = { var = FRA_National_Bloc_attitude value = 5 }
 			set_temp_variable = {
 				FRA_rw_support = party_popularity@neutrality
 			}
@@ -2933,6 +2987,12 @@ focus_tree = {
 		}
 		completion_reward = {
 			add_country_leader_trait = tenacious_negotiator
+			custom_effect_tooltip = FRA_revive_the_national_bloc_tt
+			hidden_effect = { 
+				set_variable = { FRA_National_bloc_attitude = -1 }
+				set_variable = { FRA_CGT_attitude = -4 }
+				FRA_political_instability_update_effect = yes
+			}
 		}
 	}
 	focus = {
@@ -2968,13 +3028,14 @@ focus_tree = {
 				uses = 3
 				bonus = 1.5
 			}
-			hidden_effect = {
-				country_event = {
-					id = lar_fra_inefficient_economy.1
-					days = 730
-				}
-			}
 			custom_effect_tooltip = FRA_laissez_faire_tt
+			hidden_effect = {
+				add_to_variable = { var = FRA_French_Industrialists_attitude value = 1 }
+				add_to_variable = { var = FRA_French_Industrialists_factory_output value = 1 }
+				add_to_variable = { var = FRA_French_Industrialists_stability value = 1 }
+				add_to_variable = { var = FRA_French_Industrialists_political_power_gain value = 1 }
+				FRA_political_instability_update_effect = yes
+			}
 		}
 	}
 	focus = {
@@ -3025,9 +3086,21 @@ focus_tree = {
 					stout_defender
 				}
 			}
-			swap_ideas = {
-				remove_idea = FRA_fear_of_the_military
-				add_idea = FRA_respect_for_the_military
+			custom_effect_tooltip = FRA_review_foreign_policy_tt
+			hidden_effect = {
+				add_to_variable = { var = FRA_French_Army_attitude value = 1 }
+				add_to_variable = { var = FRA_French_Army_factory_output value = 1 }
+				add_to_variable = { var = FRA_French_Army_stability value = 1 }
+				add_to_variable = { var = FRA_French_Army_political_power_gain value = 1 }
+				FRA_political_instability_update_effect = yes
+			}
+			custom_effect_tooltip = FRA_National_Bloc_Positive_1_tt
+			hidden_effect = {
+				add_to_variable = { var = FRA_National_Bloc_attitude value = 1 }
+				add_to_variable = { var = FRA_National_Bloc_factory_output value = 1 }
+				add_to_variable = { var = FRA_National_Bloc_stability value = 1 }
+				add_to_variable = { var = FRA_National_Bloc_political_power_gain value = 1 }
+				FRA_political_instability_update_effect = yes
 			}
 		}
 	}
@@ -3715,6 +3788,14 @@ focus_tree = {
 					has_idea = FRA_disjointed_government
 				}
 				remove_ideas = FRA_disjointed_government
+			}
+			custom_effect_tooltip = FRA_French_Army_Positive_1_tt
+			hidden_effect = {
+				add_to_variable = { var = FRA_French_Army_attitude value = 1 }
+				add_to_variable = { var = FRA_French_Army_factory_output value = 1 }
+				add_to_variable = { var = FRA_French_Army_stability value = 1 }
+				add_to_variable = { var = FRA_French_Army_political_power_gain value = 1 }
+				FRA_political_instability_update_effect = yes
 			}
 		}
 	}
@@ -4567,7 +4648,14 @@ focus_tree = {
 			FOCUS_FILTER_STABILITY
 		}
 		completion_reward = {
-			add_stability = 0.05
+			custom_effect_tooltip = FRA_CGT_Positive_1_tt
+			hidden_effect = {
+				add_to_variable = { var = FRA_CGT_attitude value = 1 }
+				add_to_variable = { var = FRA_CGT_factory_output value = 1 }
+				add_to_variable = { var = FRA_CGT_stability value = 1 }
+				add_to_variable = { var = FRA_CGT_political_power_gain value = 1 }
+				FRA_political_instability_update_effect = yes
+			}
 		}
 	}
 	focus = {
@@ -4632,6 +4720,14 @@ focus_tree = {
 				}
 			}
 			FRA_communism_riot_effect = yes
+			custom_effect_tooltip = FRA_National_Bloc_Positive_1_tt
+			hidden_effect = {
+				add_to_variable = { var = FRA_National_Bloc_attitude value = 1 }
+				add_to_variable = { var = FRA_National_Bloc_factory_output value = 1 }
+				add_to_variable = { var = FRA_National_Bloc_stability value = 1 }
+				add_to_variable = { var = FRA_National_Bloc_political_power_gain value = 1 }
+				FRA_political_instability_update_effect = yes
+			}
 		}
 	}
 	focus = {
@@ -4665,11 +4761,12 @@ focus_tree = {
 			add_ideas = {
 				FRA_market_dynamism
 			}
-			custom_effect_tooltip = FRA_stimulate_the_dynamic_market_tt
+			custom_effect_tooltip = FRA_National_Bloc_Positive_1_tt
 			hidden_effect = {
-				add_to_variable = { var = FRA_French_Industrialists_attitude value = 1 }
-				add_to_variable = { var = FRA_French_Industrialists_political_power_gain value = 1 }
-				set_variable = { FRA_French_Industrialists_factory_output = 0 }
+				add_to_variable = { var = FRA_National_Bloc_attitude value = 1 }
+				add_to_variable = { var = FRA_National_Bloc_factory_output value = 1 }
+				add_to_variable = { var = FRA_National_Bloc_stability value = 1 }
+				add_to_variable = { var = FRA_National_Bloc_political_power_gain value = 1 }
 				FRA_political_instability_update_effect = yes
 			}
 		}
@@ -4704,6 +4801,14 @@ focus_tree = {
 			add_ideas = {
 				FRA_agricultural_protectionism
 			}
+			custom_effect_tooltip = FRA_National_Bloc_Positive_1_tt
+			hidden_effect = {
+				add_to_variable = { var = FRA_National_Bloc_attitude value = 1 }
+				add_to_variable = { var = FRA_National_Bloc_factory_output value = 1 }
+				add_to_variable = { var = FRA_National_Bloc_stability value = 1 }
+				add_to_variable = { var = FRA_National_Bloc_political_power_gain value = 1 }
+				FRA_political_instability_update_effect = yes
+			}
 		}
 	}
 	focus = {
@@ -4723,29 +4828,11 @@ focus_tree = {
 		available = {
 		}
 		bypass = {
-			if = {
-				limit = {
-					has_idea = FRA_inefficient_economy_1
-				}
-				NOT = {
-					has_idea = FRA_inefficient_economy_1
-				}
-			}
-			if = {
-				limit = {
-					has_idea = FRA_inefficient_economy_2
-				}
-				NOT = {
-					has_idea = FRA_inefficient_economy_2
-				}
-			}
-			if = {
-				limit = {
-					has_idea = FRA_inefficient_economy_3
-				}
-				NOT = {
-					has_idea = FRA_inefficient_economy_3
-				}
+			AND = {
+				check_variable = { var = FRA_French_Industrialists_attitude value = 2 compare = greater_than_or_equals }
+				check_variable = { var = FRA_French_Industrialists_factory_output value = 2 compare = greater_than_or_equals }
+				check_variable = { var = FRA_French_Industrialists_stability value = 2 compare = greater_than_or_equals }
+				check_variable = { var = FRA_French_Industrialists_political_power_gain value = 2 compare = greater_than_or_equals }
 			}
 		}
 		cancel_if_invalid = yes
@@ -4755,31 +4842,13 @@ focus_tree = {
 			FOCUS_FILTER_INDUSTRY
 		}
 		completion_reward = {
-			if = {
-				limit = {
-					has_idea = FRA_inefficient_economy_3
-				}
-				swap_ideas = {
-					remove_idea = FRA_inefficient_economy_3
-					add_idea = FRA_inefficient_economy_2
-				}
-			}
-			else_if = {
-				limit = {
-					has_idea = FRA_inefficient_economy_2
-				}
-				swap_ideas = {
-					remove_idea = FRA_inefficient_economy_2
-					add_idea = FRA_inefficient_economy_1
-				}
-			}
-			else_if = {
-				limit = {
-					has_idea = FRA_inefficient_economy_3
-				}
-				remove_ideas = {
-					FRA_inefficient_economy_3
-				}
+			custom_effect_tooltip = FRA_economic_devolution_tt
+			hidden_effect = {
+				add_to_variable = { var = FRA_French_Industrialists_attitude value = 1 }
+				add_to_variable = { var = FRA_French_Industrialists_factory_output value = 2 }
+				add_to_variable = { var = FRA_French_Industrialists_stability value = 1 }
+				add_to_variable = { var = FRA_French_Industrialists_political_power_gain value = 1 }
+				FRA_political_instability_update_effect = yes
 			}
 		}
 	}
@@ -4810,6 +4879,14 @@ focus_tree = {
 			add_ideas = {
 				FRA_entrepeneurship
 			}
+			custom_effect_tooltip = FRA_promote_entrepeneurship_tt
+			hidden_effect = {
+				add_to_variable = { var = FRA_National_Bloc_attitude value = 1 }
+				add_to_variable = { var = FRA_National_Bloc_factory_output value = 2 }
+				add_to_variable = { var = FRA_National_Bloc_stability value = 1 }
+				add_to_variable = { var = FRA_National_Bloc_political_power_gain value = 1 }
+				FRA_political_instability_update_effect = yes
+			}
 		}
 	}
 	focus = {
@@ -4826,7 +4903,8 @@ focus_tree = {
 			factor = 1
 		}
 		available = {
-			has_idea = FRA_political_violence
+			check_variable = { var = FRA_CGT_attitude value = -4 compare = less_than_or_equals }
+			has_stability < 70
 			NOT = {
 				has_government = communism
 			}
@@ -4850,7 +4928,7 @@ focus_tree = {
 				communism_temp = -0.25
 			}
 			add_stability = communism_temp
-			remove_ideas = FRA_political_violence
+			add_to_variable = { var = FRA_CGT_attitude value = 5 }
 		}
 	}
 	focus = {
@@ -5161,23 +5239,13 @@ focus_tree = {
 				}
 				retire = yes
 			}
-			if = {
-				limit = {
-					has_idea = FRA_widespread_fear_of_the_military
-				}
-				swap_ideas = {
-					remove_idea = FRA_widespread_fear_of_the_military
-					add_idea = FRA_fear_of_the_military
-				}
-			}
-			if = {
-				limit = {
-					has_idea = FRA_fear_of_the_military
-				}
-				swap_ideas = {
-					remove_idea = FRA_fear_of_the_military
-					add_idea = FRA_respect_for_the_military
-				}
+			custom_effect_tooltip = FRA_French_Army_Positive_4_tt
+			hidden_effect = {
+				add_to_variable = { var = FRA_French_Army_attitude value = 4 }
+				add_to_variable = { var = FRA_French_Army_factory_output value = 4 }
+				add_to_variable = { var = FRA_French_Army_stability value = 4 }
+				add_to_variable = { var = FRA_French_Army_political_power_gain value = 4 }
+				FRA_political_instability_update_effect = yes
 			}
 		}
 	}
@@ -7159,24 +7227,6 @@ focus_tree = {
 		}
 		completion_reward = {
 			add_stability = 0.1
-			if = {
-				limit = {
-					has_idea = FRA_widespread_fear_of_the_military
-				}
-				swap_ideas = {
-					remove_idea = FRA_widespread_fear_of_the_military
-					add_idea = FRA_fear_of_the_military
-				}
-			}
-			if = {
-				limit = {
-					has_idea = FRA_fear_of_the_military
-				}
-				swap_ideas = {
-					remove_idea = FRA_fear_of_the_military
-					add_idea = FRA_respect_for_the_military
-				}
-			}
 		}
 	}
 	focus = {
@@ -7773,32 +7823,13 @@ focus_tree = {
 					retire = yes
 				}
 			}
-			if = {
-				limit = {
-					has_idea = FRA_widespread_fear_of_the_military
-				}
-				swap_ideas = {
-					remove_idea = FRA_widespread_fear_of_the_military
-					add_idea = FRA_trust_in_the_military
-				}
-			}
-			if = {
-				limit = {
-					has_idea = FRA_fear_of_the_military
-				}
-				swap_ideas = {
-					remove_idea = FRA_fear_of_the_military
-					add_idea = FRA_trust_in_the_military
-				}
-			}
-			if = {
-				limit = {
-					has_idea = FRA_respect_for_the_military
-				}
-				swap_ideas = {
-					remove_idea = FRA_respect_for_the_military
-					add_idea = FRA_trust_in_the_military
-				}
+			custom_effect_tooltip = FRA_French_Army_Positive_4_tt
+			hidden_effect = {
+				add_to_variable = { var = FRA_French_Army_attitude value = 4 }
+				add_to_variable = { var = FRA_French_Army_factory_output value = 4 }
+				add_to_variable = { var = FRA_French_Army_stability value = 4 }
+				add_to_variable = { var = FRA_French_Army_political_power_gain value = 4 }
+				FRA_political_instability_update_effect = yes
 			}
 		}
 	}
@@ -9916,10 +9947,7 @@ focus_tree = {
 			factor = 0.2
 		}
 		available = {
-			NOT = {
-				has_idea = FRA_fear_of_the_military
-				has_idea = FRA_widespread_fear_of_the_military
-			}
+			check_variable = { var = FRA_French_Army_attitude value = 1 compare = greater_than_or_equals }
 		}
 		completion_reward = {
 			army_experience = 25
