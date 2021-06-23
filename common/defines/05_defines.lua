@@ -371,11 +371,24 @@ NDefines.NNavy.REPAIR_AND_RETURN_UNIT_DYING_STR = 0.2								-- Str below this p
 NDefines.NNavy.MIN_HIT_PROFILE_MULT = 0.25											-- largest hit profile penalty to hitting
 
 NDefines.NNavy.MIN_REPAIR_FOR_JOINING_COMBATS = { 									-- strikeforces/patrol forces will not join combats if they are not repaired enough
-		0.0,	-- do not repair
-		0.5,	-- low
-		0.7,	-- medium
-		0.8,	-- high
-	}
+	0.0,	-- do not repair
+	0.5,	-- low
+	0.7,	-- medium
+	0.8,	-- high
+}
+
+--NDefines.NNavy.ORG_COST_WHILE_MOVING_IN_MISSION_ZONE = { -- org cost while moving in mission zone
+--	0.3, -- HOLD
+--	0.3, -- PATROL
+--	0, -- STRIKE FORCE
+--	0.3, -- CONVOY RAIDING
+--	0.3, -- CONVOY ESCORT
+--	0.3, -- MINES PLANTING
+--	0.3, -- MINES SWEEPING
+--	0.3, -- TRAIN
+--	0.4, -- RESERVE_FLEET
+--	0.3, -- NAVAL_INVASION_SUPPORT
+--}
 
 NDefines.NNavy.BASE_SPOTTING = 1													-- base spotting percentage for navy
 NDefines.NNavy.BASE_SPOTTING_FROM_RADAR = 10										-- base spotting percentage that comes from full radar coverage
