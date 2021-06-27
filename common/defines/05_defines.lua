@@ -243,9 +243,9 @@ NDefines.NProduction.BASE_FACTORY_EFFICIENCY_PARENT_CHANGE_FACTOR = 70				-- Bas
 NDefines.NProduction.BASE_FACTORY_EFFICIENCY_FAMILY_CHANGE_FACTOR = 70				-- Base factor for changing production with same family in %.
 NDefines.NProduction.BASE_FACTORY_EFFICIENCY_ARCHETYPE_CHANGE_FACTOR = 20 			-- Base factor for changing production with same archetype in %.
 
-NDefines.NProduction.EQUIPMENT_MODULE_ADD_XP_COST = 2.0								-- XP cost for adding a new equipment module in an empty slot when creating an equipment variant.
-NDefines.NProduction.EQUIPMENT_MODULE_REPLACE_XP_COST = 2.0							-- XP cost for replacing one equipment module with an unrelated module when creating an equipment variant.
-NDefines.NProduction.EQUIPMENT_MODULE_CONVERT_XP_COST = 1.0							-- XP cost for converting one equipment module to a related module when creating an equipment variant.
+NDefines.NProduction.EQUIPMENT_MODULE_ADD_XP_COST = 10.0							-- XP cost for adding a new equipment module in an empty slot when creating an equipment variant.
+NDefines.NProduction.EQUIPMENT_MODULE_REPLACE_XP_COST = 10.0						-- XP cost for replacing one equipment module with an unrelated module when creating an equipment variant.
+NDefines.NProduction.EQUIPMENT_MODULE_CONVERT_XP_COST = 5.0							-- XP cost for converting one equipment module to a related module when creating an equipment variant.
 NDefines.NProduction.EQUIPMENT_MODULE_REMOVE_XP_COST = 0							-- XP cost for removing an equipment module and leaving the slot empty when creating an equipment variant.
 
 NDefines.NProduction.LICENSE_IC_COST_YEAR_INCREASE = 0.25							-- IC cost equipment for every year of equipment after 1936
@@ -548,7 +548,7 @@ NDefines.NAI.NAVAL_MISSION_PATROL_NEAR_OWNED = 1000									-- Extra patrol miss
 NDefines.NAI.NAVAL_DOCKYARDS_SHIP_FACTOR = 2										-- The extent to which number of dockyards play into amount of sips a nation wants
 NDefines.NAI.NAVY_PREFERED_MAX_SIZE = 75											-- AI will generally attempt to merge fleets into this size, but as a soft limit.
 NDefines.NAI.SUB_TASKFORCE_MAX_SHIP_COUNT = 5 										-- optimum sub count for sub taskforces
-NDefines.NAI.PRODUCTION_MAX_PROGRESS_TO_SWITCH_NAVAL = 0.01							-- AI will not replace ships being built by newer types if progress is above this
+NDefines.NAI.PRODUCTION_MAX_PROGRESS_TO_SWITCH_NAVAL = 0							-- AI will not replace ships being built by newer types if progress is above this
 
 NDefines.NAI.REGION_THREAT_LEVEL_TO_BLOCK_REGION = 25 * 1000						-- How much threat must be generated in region ( by REGION_THREAT_PER_SUNK_CONVOY ) so the AI will decide to mark the region as avoid
 
