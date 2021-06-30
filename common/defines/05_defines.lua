@@ -353,7 +353,7 @@ NDefines.NNavy.SHIP_TO_FLEET_ANTI_AIR_RATIO	= 0.1									-- total sum of fleet'
 
 NDefines.NNavy.NAVAL_INVASION_PREPARE_HOURS = 336									-- base hours needed to prepare an invasion
 
-NDefines.NNavy.ANTI_AIR_TARGETING = 0.6               		                        -- how good ships are at hitting aircraft
+NDefines.NNavy.ANTI_AIR_TARGETING = 1.0               		                        -- how good ships are at hitting aircraft
 
 NDefines.NNavy.REPAIR_AND_RETURN_PRIO_LOW = 0.2										-- % of total Strength. When below, navy will go to home base to repair.
 NDefines.NNavy.REPAIR_AND_RETURN_PRIO_MEDIUM = 0.5									-- % of total Strength. When below, navy will go to home base to repair.
