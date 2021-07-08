@@ -203,6 +203,7 @@ NDefines.NCountry.WAR_SUPPORT_TENSION_IMPACT = 0									-- Total impact of worl
 NDefines.NCountry.BOMBING_WAR_SUPPORT_PENALTY_SCALE = -0.00015	 					-- Scaling of bomber damage to war support impact, will be added weekly as a war support penalty
 NDefines.NCountry.MAX_BOMBING_WEEKLY_WAR_SUPPORT_PENALTY = -0.02					-- Max penalty that will gained per week from bomber's damage
 NDefines.NCountry.BOMBING_WEEKLY_WAR_SUPPORT_PENALTY_DECAY = 0.002					-- Weekly decay of bomber damage war support penalty
+NDefines.NCountry.STATE_VALUE_NON_CORE_STATE_FRACTION = 0.9							-- If a state is not a core we assume we will get 50% of the factory slots
 	
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Buildings
