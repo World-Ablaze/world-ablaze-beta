@@ -538,7 +538,7 @@ NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX_CONVOY_THREAT = 500 		
 
 NDefines.NAI.CARRIER_TASKFORCE_MAX_CARRIER_COUNT = 2 								-- optimum carrier count for carrier taskforces
 NDefines.NAI.CAPITAL_TASKFORCE_MAX_CAPITAL_COUNT = 10 								-- optimum capital count for capital taskforces
-NDefines.NAI.SCREEN_TASKFORCE_MAX_SHIP_COUNT = 5									-- optimum screen count for screen taskforces
+NDefines.NAI.SCREEN_TASKFORCE_MAX_SHIP_COUNT = 3									-- optimum screen count for screen taskforces
 NDefines.NAI.SCREENS_TO_CAPITAL_RATIO = 4.0											-- screens to capital/carrier count in carrier & capital taskforces
 
 NDefines.NAI.MAX_CARRIER_OVERFILL = 1.0												-- Carriers will be overfilled to this amount if there are doctrines to justify it
