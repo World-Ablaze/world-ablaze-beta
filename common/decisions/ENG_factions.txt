@@ -262,7 +262,7 @@ ENG_internal_factions = {
 		}
 
 		modifier = {
-			political_power_gain = 0.1
+			political_power_gain = 0.15
 		}
 
 		complete_effect = {
@@ -598,6 +598,203 @@ ENG_internal_factions = {
 		}
 	}
 
+	ENG_domestic_crackdown = {
+
+		icon = generic_decision
+
+		allowed = {
+			tag = ENG
+		}
+
+		available = {
+			OR = {
+				has_civil_war = yes
+				has_country_flag = crisis_in_progress
+			}
+			OR = {
+				has_idea = strikes_1
+				has_idea = strikes_2
+				has_idea = strikes_3
+			}
+			custom_trigger_tooltip = {
+				tooltip = ENG_domestic_crackdown_tt
+				check_variable = { ENG_British_Radicalists_attitude = 2 compare = greater_than_or_equals }
+				check_variable = { ENG_British_Radicalists_influence = 5 compare = greater_than_or_equals }
+			}
+		}
+
+		cost = 150
+
+		fire_only_once = no
+
+		visible = {
+			tag = ENG
+			OR = {
+				has_completed_focus = ENG_organize_the_blackshirts
+				has_country_flag = Blackshirts_befriended
+			}
+			NOT = { has_country_flag = Radical_parties_banned }
+			check_variable = { ENG_British_Radicalists_attitude = 0 compare = greater_than_or_equals }
+			check_variable = { ENG_British_Radicalists_influence = 0 compare = greater_than_or_equals }
+			OR = {
+				has_idea = strikes_1
+				has_idea = strikes_2
+				has_idea = strikes_3
+			}
+			OR = {
+				has_country_flag = crisis_in_progress
+				has_civil_war = yes
+			}
+			NOT = { has_country_flag = Radical_part_crackdown_4 }
+		}
+
+		modifier = {
+		}
+
+		complete_effect = {
+			if = {
+				limit = {
+					NOT = { has_country_flag = Radical_part_crackdown_1 }
+				}
+				remove_ideas = { 
+					strikes_1 
+					strikes_2
+					strikes_3
+				}
+				clr_country_flag = crisis_in_progress
+				set_country_flag = { flag = strikes_resolved days = 270 }
+				hidden_effect = {
+					set_country_flag = Radical_part_crackdown_1
+				}
+			}
+			else_if = {
+				limit = {
+					NOT = { has_country_flag = Radical_part_crackdown_2 }
+				}
+				remove_ideas = { 
+					strikes_1 
+					strikes_2
+					strikes_3
+				}
+				clr_country_flag = crisis_in_progress
+				set_country_flag = { flag = strikes_resolved days = 180 }
+				hidden_effect = {
+					set_country_flag = Radical_part_crackdown_2
+				}
+			}
+			else_if = {
+				limit = {
+					NOT = { has_country_flag = Radical_part_crackdown_3 }
+				}
+				remove_ideas = { 
+					strikes_1 
+					strikes_2
+					strikes_3
+				}
+				clr_country_flag = crisis_in_progress
+				set_country_flag = { flag = strikes_resolved days = 90 }
+				hidden_effect = {
+					set_country_flag = Radical_part_crackdown_3
+				}
+			}
+			else_if = {
+				limit = {
+					NOT = { has_country_flag = Radical_part_crackdown_4 }
+				}
+				remove_ideas = { 
+					strikes_1 
+					strikes_2
+					strikes_3
+				}
+				clr_country_flag = crisis_in_progress
+				set_country_flag = { flag = strikes_resolved days = 30 }
+				hidden_effect = {
+					set_country_flag = Radical_part_crackdown_4
+				}
+			}
+		}
+
+		ai_will_do = {
+			factor = 10
+		}
+	}
+
+	ENG_work_quotas = {
+
+		icon = generic_decision
+
+		allowed = {
+			tag = ENG
+		}
+
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = ENG_work_quotas_tt
+				check_variable = { ENG_British_Radicalists_attitude = 2 compare = greater_than_or_equals }
+				check_variable = { ENG_British_Radicalists_influence = 4 compare = greater_than_or_equals }
+			}
+		}
+
+		days_remove = RADICAL_INFLUENCE_LEVEL2
+		days_re_enable = 90
+
+		cost = 50
+
+		fire_only_once = no
+
+		visible = {
+			tag = ENG
+			OR = {
+				has_completed_focus = ENG_organize_the_blackshirts
+				has_country_flag = Blackshirts_befriended
+			}
+			check_variable = { ENG_British_Radicalists_attitude = 0 compare = greater_than_or_equals }
+			check_variable = { ENG_British_Radicalists_influence = 0 compare = greater_than_or_equals }
+		}
+
+		modifier = {
+			industrial_capacity_factory = 0.25
+			industrial_capacity_dockyard = 0.25
+		}
+
+		complete_effect = {
+			add_stability = -0.1
+			hidden_effect = {
+				if = {
+					limit = {
+						check_variable = { ENG_British_Radicalists_influence > 4 }
+					}
+					set_variable = { RADICAL_INFLUENCE_LEVEL2 = 70 }
+				}
+				else_if = {
+					limit = {
+						check_variable = { ENG_British_Radicalists_influence > 3 }
+					}
+					set_variable = { RADICAL_INFLUENCE_LEVEL2 = 56 }
+				}
+				else_if = {
+					limit = {
+						check_variable = { ENG_British_Radicalists_influence > 2 }
+					}
+					set_variable = { RADICAL_INFLUENCE_LEVEL2 = 42 }
+				}
+				else_if = {
+					limit = {
+						check_variable = { ENG_British_Radicalists_influence > 1 }
+					}
+					set_variable = { RADICAL_INFLUENCE_LEVEL2 = 28 }
+				}
+				else = {
+					set_variable = { RADICAL_INFLUENCE_LEVEL2 = 14 }
+				}
+			}
+		}
+
+		ai_will_do = {
+			factor = 10
+		}
+	}
+
 	ENG_radicals_radical_propaganda = {
 
 		icon = generic_decision
@@ -609,20 +806,24 @@ ENG_internal_factions = {
 		available = {
 			custom_trigger_tooltip = {
 				tooltip = ENG_radicals_radical_propaganda_tt
-				check_variable = { ENG_British_Radicalists_attitude = 2 compare = greater_than_or_equals }
-				check_variable = { ENG_British_Radicalists_influence = 1 compare = greater_than_or_equals }
+				check_variable = { ENG_British_Radicalists_attitude = 1 compare = greater_than_or_equals }
+				check_variable = { ENG_British_Radicalists_influence = 3 compare = greater_than_or_equals }
 			}
 		}
 
 		days_remove = RADICAL_INFLUENCE_LEVEL
 		days_re_enable = 90
 
-		cost = 20
+		cost = 25
 
 		fire_only_once = no
 
 		visible = {
 			tag = ENG
+			OR = {
+				has_completed_focus = ENG_organize_the_blackshirts
+				has_country_flag = Blackshirts_befriended
+			}
 			check_variable = { ENG_British_Radicalists_attitude = 0 compare = greater_than_or_equals }
 			check_variable = { ENG_British_Radicalists_influence = 0 compare = greater_than_or_equals }
 		}
@@ -633,6 +834,7 @@ ENG_internal_factions = {
 		}
 
 		complete_effect = {
+			add_stability = -0.05
 			hidden_effect = {
 				if = {
 					limit = {
@@ -666,13 +868,6 @@ ENG_internal_factions = {
 
 		ai_will_do = {
 			factor = 10
-
-			modifier = {
-				factor = 0
-				NOT = {
-					has_completed_focus = ENG_organize_the_blackshirts
-				}
-			}
 		}
 	}
 
@@ -700,6 +895,10 @@ ENG_internal_factions = {
 
 		visible = {
 			tag = ENG
+			OR = {
+				has_completed_focus = ENG_organize_the_blackshirts
+				has_country_flag = Blackshirts_befriended
+			}
 			check_variable = { ENG_British_Radicalists_attitude = 0 compare = greater_than_or_equals }
 			check_variable = { ENG_British_Radicalists_influence = 0 compare = greater_than_or_equals }
 		}
@@ -739,13 +938,6 @@ ENG_internal_factions = {
 
 		ai_will_do = {
 			factor = 10
-
-			modifier = {
-				factor = 0
-				NOT = {
-					has_completed_focus = ENG_organize_the_blackshirts
-				}
-			}
 		}
 	}
 
@@ -846,8 +1038,10 @@ ENG_internal_factions = {
 					set_variable = { ENG_British_Radicalists_stability = 1 }
 				}
 				set_country_flag = Blackshirts_befriended
-				subtract_from_variable = { var = ENG_Labour_attitude value = 1 }
-				subtract_from_variable = { var = ENG_Conservative_attitude value = 1 }
+				set_variable = { var = ENG_Labour_attitude value = 0 }
+				set_variable = { var = ENG_Conservative_attitude value = 0 }
+				set_variable = { ENG_Labour_stability = 0 }
+				set_variable = { ENG_Conservative_stability = 0 }
 				ENG_political_instability_update_effect = yes
 			}
 		}
@@ -861,6 +1055,53 @@ ENG_internal_factions = {
 					has_completed_focus = ENG_organize_the_blackshirts
 				}
 			}
+		}
+	}
+
+	ENG_support_the_radical_parties = {
+
+		icon = generic_decision
+
+		allowed = {
+			tag = ENG
+		}
+
+		available = {
+		}
+
+		visible = {
+			tag = ENG
+			OR = {
+				has_completed_focus = ENG_organize_the_blackshirts
+				has_country_flag = Blackshirts_befriended
+			}
+			NOT = { has_country_flag = Radical_parties_banned }
+			check_variable = { ENG_British_Radicalists_attitude = 3 compare = less_than }
+			check_variable = { ENG_British_Radicalists_influence = 6 compare = less_than }
+		}
+
+		cost = 50
+
+		fire_only_once = no
+		days_remove = 90
+
+		is_good = no
+
+		modifier = {
+		}
+
+		remove_effect = {
+			add_stability = -0.05
+			custom_effect_tooltip = ENG_support_the_radical_parties_tt
+			hidden_effect = {
+				add_to_variable = { ENG_British_Radicalists_attitude = 1 }
+				add_to_variable = { ENG_British_Radicalists_influence = 1 }
+				ENG_political_instability_update_effect = yes
+			}
+		}
+
+		ai_will_do = {
+			factor = 10
 		}
 	}
 
