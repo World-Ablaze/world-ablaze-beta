@@ -144,6 +144,7 @@ focus_tree = {
 				amount = 500
 				producer = USA
 			}
+
 		}
 	}
 
@@ -152,7 +153,7 @@ focus_tree = {
 		icon = GFX_goal_generic_construct_naval_large_dockyard
 		prerequisite = { focus = USA_maritime_commission }
 		relative_position_id = USA_maritime_commission
-		x = -1
+		x = 0
 		y = 1
 		cost = 5
 
@@ -173,15 +174,12 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			add_equipment_to_stockpile = {
-				type = convoy_1
-				amount = 500
-				producer = USA
-			}
 			custom_effect_tooltip = USA_Kaiser_Dockyard_Swap_tt
 			hidden_effect = {
-				add_to_variable = { var = USA_Kaiser_dockyard_output value = 4 }
+				add_to_variable = { var = USA_Kaiser_dockyard_output value = 3 }
 				add_to_variable = { var = USA_Kaiser_attitude value = 1 }
+				add_to_variable = { var = USA_Kaiser_influence value = 1 }
+				set_variable = { var = USA_Kaiser_construction_speed value = -2 }
 				USA_political_instability_update_effect = yes
 			}
 		}
@@ -231,12 +229,92 @@ focus_tree = {
 	}
 
 	focus = {
-		id = USA_undistributed_profits_tax
+		id = USA_adjusted_compensation_act
 		icon = GFX_goal_generic_consumer_goods
 		prerequisite = { focus = USA_start }
 		relative_position_id = USA_start
-		mutually_exclusive = { focus = USA_banking_industry_loans }
+		mutually_exclusive = { focus = USA_veteran_employement }
 		x = -8
+		y = 1
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			has_government = democratic
+			has_country_leader = { ruling_only = yes name = "Franklin Delano Roosevelt" }
+			congress_medium_support_trigger = yes
+		}
+		
+		bypass = {
+		}
+
+		available_if_capitulated = no
+		
+		completion_reward = {
+			economy_fatigue_level_down_5 = yes
+			USA_congress_small_support = yes
+			custom_effect_tooltip = USA_Public_positive_1_tt1
+			hidden_effect = {
+				add_to_variable = { var = USA_Public_attitude value = 1 }
+				add_to_variable = { var = USA_Public_political_power_gain value = 1 }
+				add_to_variable = { var = USA_Public_stability value = 1 }
+				USA_political_instability_update_effect = yes
+			}
+		}
+	}
+
+	focus = {
+		id = USA_veteran_employement
+		icon = GFX_goal_generic_production
+		prerequisite = { focus = USA_start }
+		relative_position_id = USA_start
+		mutually_exclusive = { focus = USA_adjusted_compensation_act }
+		x = -6
+		y = 1
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			has_government = democratic
+			has_country_leader = { ruling_only = yes name = "Franklin Delano Roosevelt" }
+			congress_high_support_trigger = yes
+		}
+		
+		bypass = {
+		}
+
+		available_if_capitulated = no
+		
+		completion_reward = {
+			USA_congress_large_opposition = yes
+			custom_effect_tooltip = USA_Public_negative_1_tt1
+			custom_effect_tooltip = USA_Ford_GM_positive_1_tt1
+			hidden_effect = {
+				add_to_variable = { var = USA_Ford_Chrysler_attitude value = -1 }
+				add_to_variable = { var = USA_Ford_Chrysler_civilian_construction_speed value = -1 }
+				add_to_variable = { var = USA_GM_Dupont_attitude value = -1 }
+				add_to_variable = { var = USA_GM_Dupont_civilian_construction_speed value = -1 }
+				add_to_variable = { var = USA_Public_attitude value = -1 }
+				add_to_variable = { var = USA_Public_political_power_gain value = -1 }
+				add_to_variable = { var = USA_Public_stability value = -1 }
+				USA_political_instability_update_effect = yes
+			}
+		}
+	}
+
+	focus = {
+		id = USA_undistributed_profits_tax
+		icon = GFX_focus_usa_reestablish_the_gold_standard
+		relative_position_id = USA_adjusted_compensation_act
+		mutually_exclusive = { focus = USA_banking_industry_loans }
+		prerequisite = { focus = USA_adjusted_compensation_act focus = USA_veteran_employement }
+		x = 0
 		y = 1
 		cost = 5
 
@@ -278,10 +356,10 @@ focus_tree = {
 	focus = {
 		id = USA_banking_industry_loans
 		icon = GFX_goal_generic_trade
-		prerequisite = { focus = USA_start }
-		relative_position_id = USA_start
+		prerequisite = { focus = USA_adjusted_compensation_act focus = USA_veteran_employement }
+		relative_position_id = USA_adjusted_compensation_act
 		mutually_exclusive = { focus = USA_undistributed_profits_tax }
-		x = -6
+		x = 2
 		y = 1
 		cost = 5
 
@@ -315,12 +393,14 @@ focus_tree = {
 		}
 	}
 
+	
+
 	focus = {
 		id = USA_rural_electrification_act
 		icon = GFX_goal_generic_construct_civilian
 		prerequisite = { focus = USA_undistributed_profits_tax focus = USA_banking_industry_loans }
-		relative_position_id = USA_banking_industry_loans
-		x = -1
+		relative_position_id = USA_undistributed_profits_tax
+		x = 1
 		y = 1
 		cost = 5
 
@@ -344,7 +424,7 @@ focus_tree = {
 	
 	focus = {
 		id = USA_WPA_roads
-		icon = GFX_goal_railroads
+		icon = GFX_goal_roads
 		prerequisite = { focus = USA_rural_electrification_act }
 		relative_position_id = USA_rural_electrification_act
 		x = -1
@@ -535,7 +615,7 @@ focus_tree = {
 		relative_position_id = USA_rural_electrification_act
 		x = -3
 		y = 1
-		cost = 10
+		cost = 5
 
 		ai_will_do = {
 			factor = 1
@@ -563,7 +643,7 @@ focus_tree = {
 		relative_position_id = USA_wagner_steagall_act
 		x = 0
 		y = 1
-		cost = 10
+		cost = 5
 
 		ai_will_do = {
 			factor = 1
@@ -763,6 +843,7 @@ focus_tree = {
 		available = {
 			has_government = democratic
 			has_country_flag = USA_flint_strike_breakup
+			congress_high_support_trigger = yes
 		}
 		
 		bypass = {
@@ -805,6 +886,7 @@ focus_tree = {
 
 		available = {
 			has_government = democratic
+			congress_high_support_trigger = yes
 		}
 		
 		bypass = {
@@ -813,7 +895,7 @@ focus_tree = {
 		available_if_capitulated = no
 		
 		completion_reward = {
-			USA_congress_small_support = yes
+			USA_congress_medium_opposition = yes
 			add_to_variable = {democratic_support = 2}
 			custom_effect_tooltip = USA_Titan_positive_1_tt1
 			custom_effect_tooltip = USA_Public_negative_1_tt1
