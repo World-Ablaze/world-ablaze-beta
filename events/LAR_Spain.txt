@@ -4896,6 +4896,7 @@ country_event = {
 		if= { #If Portugal is in faction, Spain will join
 			limit = {
 				is_in_faction = yes
+				is_faction_leader = yes
 				FROM = { is_in_faction = no }
 			}
 			effect_tooltip = {
@@ -4912,6 +4913,7 @@ country_event = {
 			limit = {
 				is_in_faction = no
 				FROM = { is_in_faction = yes }
+				FROM = { is_faction_leader = yes }
 			}
 			random_other_country = {
 				limit = {
@@ -4924,7 +4926,9 @@ country_event = {
 		else_if = { #If Spain and Portugal are in different factions, both will leave their faction
 			limit = {
 				is_in_faction = yes
+				is_faction_leader = yes
 				FROM = { is_in_faction = yes }
+				FROM = { is_faction_leader = yes }
 				NOT = { is_in_faction_with = FROM }
 			}
 			effect_tooltip = {
@@ -4982,6 +4986,7 @@ country_event = {
 		if= { #If Spain is in faction, Portugal will join
 			limit = {
 				is_in_faction = yes
+				is_faction_leader = yes
 				FROM = { is_in_faction = no }
 			}
 			effect_tooltip = {
@@ -4998,6 +5003,7 @@ country_event = {
 			limit = {
 				is_in_faction = no
 				FROM = { is_in_faction = yes }
+				FROM = { is_faction_leader = yes }
 			}
 			random_other_country = {
 				limit = {
@@ -5010,7 +5016,9 @@ country_event = {
 		else_if = { #If Spain and Portugal are in different factions, both will leave their faction
 			limit = {
 				is_in_faction = yes
+				is_faction_leader = yes
 				FROM = { is_in_faction = yes }
+				FROM = { is_faction_leader = yes }
 				NOT = { is_in_faction_with = FROM }
 			}
 			leave_faction = yes
@@ -7674,6 +7682,125 @@ country_event = {
 		
 				}
 			}
+		}
+	}
+}
+
+# Iberian Pact - Other party has joined the war, we must uphold our end of the bargain!
+country_event = {
+	id = lar_spain.100
+	title = lar_spain.28.t
+	desc = lar_spain.29.desc
+	picture = GFX_report_event_generic_parliament
+
+	trigger = {
+		OR = {
+			AND = {
+				original_tag = POR
+				SPA = { has_defensive_war = yes }
+				NOT = { is_in_faction_with = SPA }
+			}
+			AND = {
+				original_tag = SPA
+				POR = { has_defensive_war = yes }
+				NOT = { is_in_faction_with = POR }
+			}
+		}
+		has_country_flag = SPA_iberian_pact
+		has_offensive_war = no
+	}
+
+	fire_only_once = yes
+	
+	option = { # OK
+		name = lar_spain.28.a
+		trigger = { original_tag = POR }
+		if= {
+			limit = {
+				is_in_faction = yes
+				is_faction_leader = yes
+				SPA = { is_in_faction = no }
+			}
+			add_to_faction = SPA
+		}
+		else_if = {
+			limit = {
+				is_in_faction = no
+				SPA = { is_in_faction = yes }
+				SPA = { is_faction_leader = yes }
+			}
+			SPA = {
+				add_to_faction = ROOT
+			}
+		}
+		else_if = {
+			limit = {
+				is_in_faction = yes
+				is_faction_leader = yes
+				SPA = { is_in_faction = yes }
+				SPA = { is_faction_leader = yes }
+				NOT = { is_in_faction_with = SPA }
+			}
+			leave_faction = yes
+			SPA = { add_to_faction = ROOT }
+		}
+		else_if = {
+			limit = {
+				is_in_faction = no
+				SPA = { is_in_faction = no }
+			}
+			SPA = { 
+				set_rule = {
+					can_create_factions = yes
+				}
+				create_faction = SPA_latin_bloc
+			}
+			SPA = { add_to_faction = ROOT }
+		}
+	}
+	
+	option = { # OK
+		name = lar_spain.28.a
+		trigger = { original_tag = SPA }
+		if= {
+			limit = {
+				is_in_faction = yes
+				is_faction_leader = yes
+				POR = { is_in_faction = no }
+			}
+			add_to_faction = POR
+		}
+		else_if = {
+			limit = {
+				is_in_faction = no
+				POR = { is_in_faction = yes }
+				POR = { is_faction_leader = yes }
+			}
+			POR = {
+				add_to_faction = ROOT
+			}
+		}
+		else_if = {
+			limit = {
+				is_in_faction = yes
+				is_faction_leader = yes
+				POR = { is_in_faction = yes }
+				POR = { is_faction_leader = yes }
+				NOT = { is_in_faction_with = POR }
+			}
+			POR = { leave_faction = yes }
+			add_to_faction = POR
+		}
+		else_if = {
+			limit = {
+				is_in_faction = no
+				POR = { is_in_faction = no }
+			}
+			set_rule = {
+				can_create_factions = yes
+			}
+			create_faction = SPA_latin_bloc
+			add_to_faction = POR
 		}
 	}
 }
