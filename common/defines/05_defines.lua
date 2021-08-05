@@ -657,7 +657,7 @@ NDefines.NAI.STR_BOMB_MIN_EXCORT_WINGS = 3											-- Min amount of airwings r
 
 ------------------------------------------------- END
 
-NDefines.NAI.MAX_REQUEST_EXPEDITIONARIES_ARMY_RATIO = 0.5							-- AI will not accept expeditionary requests if its expeditions are above this ratio
+NDefines.NAI.MAX_REQUEST_EXPEDITIONARIES_ARMY_RATIO = 0.1							-- AI will not accept expeditionary requests if its expeditions are above this ratio
 
 NDefines.NAI.REFIT_SHIP_RELUCTANCE = 7												-- How often to consider refitting to new equipment variants for ships in the field
 NDefines.NAI.REFIT_SHIP_PERCENTAGE_OF_FORCES = 1.0									-- How big part of the navy that should be considered for refitting
@@ -771,7 +771,7 @@ NDefines.NAI.TRADEABLE_FACTORIES_FRACTION = 1.0	 									-- Will at most trade 
 
 NDefines.NAI.PRODUCTION_EQUIPMENT_SURPLUS_FACTOR = 0.3								-- Base value for how much of currently used equipment the AI will at least strive to have in stock
 NDefines.NAI.PRODUCTION_LINE_SWITCH_SURPLUS_NEEDED_MODIFIER = 0
-NDefines.NAI.PRODUCTION_CARRIER_PLANE_BUFFER_RATIO = 30							-- in additiona to total deck size of carriers, we want at list this ratio to buffer it
+NDefines.NAI.PRODUCTION_CARRIER_PLANE_BUFFER_RATIO = 15								-- in additional to total deck size of carriers, we want at least this ratio to buffer it
 NDefines.NAI.PRODUCTION_CARRIER_PLANE_PRODUCTION_BOOST_TO_BUFFER = 4.0 				-- production of carrier planes will go up by this ratio if we lack buffers
 
 NDefines.NAI.MAX_SUPPLY_DIVISOR = 0.75												-- To make sure the AI does not overdeploy divisions. Higher number means more supply per unit.
