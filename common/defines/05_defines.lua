@@ -421,6 +421,7 @@ NDefines.NNavy.AA_EFFICIENCY_PENALTY_ON_MINIMUM_POSITIONING = 0.7  					-- AA pe
 
 NDefines.NNavy.AGGRESSION_HEAVY_GUN_EFFICIENCY_ON_LIGHT_SHIPS = 0.5					-- ratio for scoring for different gun types against light ships
 NDefines.NNavy.AGGRESSION_LIGHT_GUN_EFFICIENCY_ON_HEAVY_SHIPS = 0.05				-- ratio for scoring for different gun types against light ships
+NDefines.NNavy.COMBAT_ARMOR_PIERCING_DAMAGE_REDUCTION = -0.25						-- All damage reduction % when target armor is >= then shooter armor piercing.
 
 NDefines.NNavy.TRAINING_EXPERIENCE_FACTOR = 0.1										-- Amount of exp each ship gain every 24h while training (before modifiers)
 
