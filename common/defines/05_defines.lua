@@ -240,7 +240,7 @@ NDefines.NProduction.BASE_FACTORY_MAX_EFFICIENCY_FACTOR = 40 						-- Base max e
 NDefines.NProduction.BASE_FACTORY_START_EFFICIENCY_FACTOR = 1						-- Base start efficiency for factories expressed in %.
 
 NDefines.NProduction.BASE_FACTORY_EFFICIENCY_VARIANT_CHANGE_FACTOR = 95				-- Base factor for changing production variants in %.
-NDefines.NProduction.BASE_FACTORY_EFFICIENCY_PARENT_CHANGE_FACTOR = 70				-- Base factor for changing production parent<->children in %.
+NDefines.NProduction.BASE_FACTORY_EFFICIENCY_PARENT_CHANGE_FACTOR = 80				-- Base factor for changing production parent<->children in %.
 NDefines.NProduction.BASE_FACTORY_EFFICIENCY_FAMILY_CHANGE_FACTOR = 70				-- Base factor for changing production with same family in %.
 NDefines.NProduction.BASE_FACTORY_EFFICIENCY_ARCHETYPE_CHANGE_FACTOR = 20 			-- Base factor for changing production with same archetype in %.
 
@@ -277,7 +277,7 @@ NDefines.NOperatives.CONTROL_TRADE_MAX_INFLUENCE = 50.0								-- The maximum am
 NDefines.NResistance.GARRISON_MANPOWER_LOST_BY_ATTACK = 0.01 						-- Ratio of manpower lost by garrison at each attack on garrison (this number will be reduced by the hardness of garrison template)
 NDefines.NResistance.MIN_DAMAGE_TO_GARRISONS_MODIFIER = 0.05						-- modifier that applies to losses from resistance attack to garrisons at most can be reduced to this amount
 
-NDefines.NResistance.FOREIGN_MANPOWER_MIN_THRESHOLD = 500000000000		 			-- The minimum number of Manpower that AI will accept to give at once, in order to avoid many weird little transfer.
+NDefines.NResistance.FOREIGN_MANPOWER_MIN_THRESHOLD = 500000000			 			-- The minimum number of Manpower that AI will accept to give at once, in order to avoid many weird little transfer.
 
 NDefines.NResistance.RESISTANCE_ACTIVITY_CHANCE_AT_MAX_RESISTANCE = 0.200			-- sabotage
 
@@ -402,8 +402,8 @@ NDefines.NNavy.BASE_SPOTTING_FROM_DECRYPTION = 20									-- base spotting perce
 NDefines.NNavy.RELATIVE_SURFACE_DETECTION_TO_POSITIONING_FACTOR	= 0.01				-- multiples the surface detection difference between two sides. the side with higher detection will get a bonus of this value
 NDefines.NNavy.MAX_POSITIONING_BONUS_FROM_SURFACE_DETECTION	= 0.0 					-- will clamp the bonus that you get from detection
 	
-NDefines.NNavy.HIGHER_SHIP_RATIO_POSITIONING_PENALTY_FACTOR	= 0.49 					-- if one side has more ships than the other, that side will get this penalty for each +100% ship ratio it has
-NDefines.NNavy.MAX_POSITIONING_PENALTY_FROM_HIGHER_SHIP_RATIO = 4.5  				-- maximum penalty to get from larger fleets
+NDefines.NNavy.HIGHER_SHIP_RATIO_POSITIONING_PENALTY_FACTOR	= 0.51 					-- if one side has more ships than the other, that side will get this penalty for each +100% ship ratio it has
+NDefines.NNavy.MAX_POSITIONING_PENALTY_FROM_HIGHER_SHIP_RATIO = 3.0  				-- maximum penalty to get from larger fleets
 
 NDefines.NNavy.HIGHER_CARRIER_RATIO_POSITIONING_PENALTY_FACTOR = 0.45  				-- penalty if other side has stronger carrier air force 
 NDefines.NNavy.MAX_CARRIER_RATIO_POSITIONING_PENALTY_FACTOR = 0.9  					-- max penalty from stronger carrier air force
@@ -469,6 +469,7 @@ NDefines.NNavy.OUT_OF_FUEL_ATTACK_FACTOR = -0.9
 NDefines.NNavy.OUT_OF_FUEL_TORPEDO_FACTOR = -0.9
 
 NDefines.NNavy.SCREEN_RATIO_FOR_FULL_SCREENING_FOR_CAPITALS = 4.0					-- this screen ratio to num capital/carriers is needed for full screening beyond screen line
+NDefines.NNavy.CAPITAL_RATIO_FOR_FULL_SCREENING_FOR_CARRIERS = 4.0					-- this capital ratio to num carriers is needed for full screening beyond screen line
 NDefines.NNavy.BASE_CARRIER_SORTIE_EFFICIENCY = 0.7									-- factor of planes that can sortie by default from a carrier
 
 NDefines.NNavy.TRAINING_MAX_DAILY_COUNTRY_EXP = 1.75								-- Maximum navy XP daily gain
