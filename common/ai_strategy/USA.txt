@@ -981,6 +981,36 @@ USA_smart_pacific_fleet = {
 		id = 222 #
 		value = 2000
 	}
+
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 32 #
+		value = 2000
+	}
+
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 113
+		value = 2000
+	}
+
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 111
+		value = 2000
+	}
+
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 306
+		value = 2000
+	}
+
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 244
+		value = 2000
+	}
 }
 
 USA_smart_america_fleet = {
@@ -1890,49 +1920,6 @@ USA_ask_ENG_FRA_for_access_before_war = {
 
 
 # USA should put some buffer units in africa and ENG to help with invasions
-USA_unit_buffer_for_europe = {
-	allowed = {
-		tag = USA
-	}
-	enable = {
-		tag = USA
-		PHI = { is_subject_of = }
-		OR = {
-			has_war_with = GER
-			ENG = { has_war_with = GER }
-		}
-		
-		should_USA_invade_europe_or_africa = yes
-	}
-	
-	abort_when_not_enabled = yes
-	
-	ai_strategy = {
-		type = put_unit_buffers
-		
-		order_id = 1
-		
-		# south england
-		states = { 
-			123
-			127
-			857
-			125
-			860
-			130
-			131
-			121
-			132
-			859
-		}
-		
-		ratio = 0.4
-		
-		area = britain
-		
-		subtract_invasions_from_need = no
-	}
-}
 
 USA_unit_buffer_for_europe = {
 	allowed = {
@@ -1970,7 +1957,7 @@ USA_unit_buffer_for_europe = {
 			859
 		}
 		
-		ratio = 0.4
+		ratio = 0.3
 		
 		area = britain
 		
@@ -2089,7 +2076,7 @@ USA_garrison_the_pacific = {
 			685
 		}
 		
-		ratio = 0.25
+		ratio = 0.1
 		
 		area = central_america
 		
@@ -2338,7 +2325,19 @@ USA_europe_first = {
 
 	ai_strategy = {
 		type = naval_avoid_region
+		id = 74 #S Indian Ocean
+		value = 2000
+	}
+
+	ai_strategy = {
+		type = naval_avoid_region
 		id = 99 #Far E Indian Ocean
+		value = 2000
+	}
+
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 67
 		value = 2000
 	}
 
@@ -3257,20 +3256,17 @@ USA_war_against_ITA_3 = {
 	}
 }
 
-USA_operation_torch = {
+USA_operation_torch_preparation = {
 	enable = {
 		tag = USA
 		OR = {
 			has_war_with = GER
 			has_war_with = ITA
 		}
-		OR = {
-			has_war_with = VIC
-			VIC = { exists = no }
-		}
+		VIC = { exists = yes }
 		is_in_faction_with = ENG
 		date > 1942.9.1
-		NOT = { ENG = { surrender_progress > 0.2 } }
+		ENG = { surrender_progress < 0.2 }
 		OR = {
 			458 = { is_controlled_by = VIC }
 			665 = { is_controlled_by = VIC }
@@ -3294,6 +3290,77 @@ USA_operation_torch = {
 	}
 	abort_when_not_enabled = yes
 
+	ai_strategy = { type = invade id = "VIC" value = 4000 }
+
+	ai_strategy = {
+		type = front_control
+	
+		#you can define a target in following ways. you can define more than one
+	
+		# tag = VIC 				# target against a specific country
+		# state = 461 				# target on a state
+		# strategic_region = 65	# target on a strategic region
+		area = north_africa			# target on a specific ai area
+		country_trigger = { always = yes } 	# a trigger to check agaisnt a specific country. scope is enemy country from scope is our country
+		# state_trigger = { always = no } 	# a trigger to check agaisnt a state. scope is state. from scope is enemy country from.from scope is our country
+	
+		# ratio = 0.0 # the strategy is enabled only if ratio of the front covered by this strat's targets greater than this ratio
+	
+		# priority = 100 # default 0, higher prio strats will override lower
+		ordertype = invasion # front or invasion. if set this strategy will only apply to that specific order type
+		# execution_type = rush # one of careful balanced rush rush_weak. if set will override the execution type of front (only for front orders)
+		execute_order = no # yes or no. if set will override execute or not decision of front
+	}
+
+	ai_strategy = {
+		# use one of them
+		type = invasion_unit_request
+
+		#invasions will check invasion target, fronts will check provinces at front
+
+		# tag = VIC 				# province of a specific country
+		state = 461 				# province on a state
+		# strategic_region = 65	# province on a strategic region
+		# area = north_africa			# province on a specific ai area
+		country_trigger = { always = yes }	# a trigger to check agaisnt a specific country. scope is enemy country from scope is our country
+		# state_trigger = { always = no } 	# a trigger to check agaisnt a state. scope is state. from scope is enemy country from.from scope is our country
+
+		value = 2000				# will be added as a factor over regular requests
+	}
+
+	ai_strategy = { 
+		type = invade      
+		id = "VIC" 			      
+		value = 1000
+	}
+
+}
+
+USA_operation_torch_landing = {
+	enable = {
+		tag = USA
+		OR = {
+			has_war_with = GER
+			has_war_with = ITA
+		}
+		OR = {
+			has_war_with = VIC
+			VIC = { exists = no }
+			date > 1942.11.1
+		}
+		is_in_faction_with = ENG
+		NOT = { ENG = { surrender_progress > 0.2 } }
+		OR = {
+			458 = { CONTROLLER = { has_war_with = ROOT } }
+			665 = { CONTROLLER = { has_war_with = ROOT } }
+			460 = { CONTROLLER = { has_war_with = ROOT } }
+			459 = { CONTROLLER = { has_war_with = ROOT } }
+			461 = { CONTROLLER = { has_war_with = ROOT } }
+			462 = { CONTROLLER = { has_war_with = ROOT } }
+		}
+	}
+	abort_when_not_enabled = yes
+	
 	ai_strategy = {
 		type = area_priority
 		id = north_africa
@@ -3306,11 +3373,7 @@ USA_operation_torch = {
 		value = 200
 	}
 
-	ai_strategy = { 
-		type = invade      
-		id = "VIC" 			      
-		value = 1000
-	}
+
 
 	ai_strategy = { 
 		type = invade      
@@ -3368,18 +3431,56 @@ USA_operation_torch = {
 
 	ai_strategy = {
 		type = naval_avoid_region
-		id = 18
+		id = 49
 		value = 2000
 	}
+
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 51
+		value = 2000
+	}
+
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 56
+		value = 2000
+	}
+
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 58
+		value = 2000
+	}
+
+	# ai_strategy = {
+	# 	type = naval_avoid_region
+	# 	id = 18
+	# 	value = 2000
+	# }
 
 	ai_strategy = {
 		type = naval_avoid_region
 		id = 173
 		value = 2000
 	}
+
+
+	ai_strategy = {
+		type = front_control
+	
+		#you can define a target in following ways. you can define more than one
+	
+		tag = VIC 				# target against a specific country
+		area = north_africa			# target on a specific ai area
+		priority = 100 # default 0, higher prio strats will override lower
+		ordertype = invasion # front or invasion. if set this strategy will only apply to that specific order type
+		execution_type = rush # one of careful balanced rush rush_weak. if set will override the execution type of front (only for front orders)
+		execute_order = yes # yes or no. if set will override execute or not decision of front
+	}
 }
 
-USA_operation_torch_2 = {
+USA_operation_torch_disable = {
 	enable = {
 		tag = USA
 		OR = {
