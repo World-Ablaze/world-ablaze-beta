@@ -247,7 +247,7 @@ NDefines.NProduction.BASE_FACTORY_EFFICIENCY_ARCHETYPE_CHANGE_FACTOR = 20 			-- 
 NDefines.NProduction.EQUIPMENT_MODULE_ADD_XP_COST = 10.0							-- XP cost for adding a new equipment module in an empty slot when creating an equipment variant.
 NDefines.NProduction.EQUIPMENT_MODULE_REPLACE_XP_COST = 10.0						-- XP cost for replacing one equipment module with an unrelated module when creating an equipment variant.
 NDefines.NProduction.EQUIPMENT_MODULE_CONVERT_XP_COST = 5.0							-- XP cost for converting one equipment module to a related module when creating an equipment variant.
-NDefines.NProduction.EQUIPMENT_MODULE_REMOVE_XP_COST = 0							-- XP cost for removing an equipment module and leaving the slot empty when creating an equipment variant.
+NDefines.NProduction.EQUIPMENT_MODULE_REMOVE_XP_COST = 2.0							-- XP cost for removing an equipment module and leaving the slot empty when creating an equipment variant.
 
 NDefines.NProduction.LICENSE_IC_COST_YEAR_INCREASE = 0.25							-- IC cost equipment for every year of equipment after 1936
 
