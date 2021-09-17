@@ -1,4 +1,4 @@
-﻿focus_tree = {
+focus_tree = {
 	id = belgium_focus
 	
 	country = {
@@ -702,7 +702,7 @@
 
 	focus = {
 		id = BEL_back_the_rexiste_party
-		icon = GFX_
+		icon = GFX_goal_rexiste
 		mutually_exclusive = { focus = BEL_abandon_the_alliance_with_france }
 		prerequisite = {}
 		x = 19
@@ -723,6 +723,10 @@
 		}
 
 		completion_reward = {
+			add_popularity = {
+			    ideology = fascism
+			    popularity = 0.1
+			}
 		}
 	}
 
@@ -742,14 +746,29 @@
 		ai_will_do = {
 			factor = 1
 		}
+		
+		bypass = {
+		}
 
 		completion_reward = {
+			add_ideas = paramilitarism_focus
+			if = {
+				limit = {
+					NOT = {
+						has_idea = offer_better_wages
+						has_idea = mandatory_army_service
+						has_idea = incentivise_employability_oppertunities
+						has_idea = conscript_men_into_the_factories
+					}
+				}
+				add_ideas = mandatory_army_service
+			}
 		}
 	}
 
 	focus = {
 		id = BEL_approach_verdinaso
-		icon = GFX_
+		icon = GFX_goal_approach_verdinaso
 		prerequisite = { focus = BEL_back_the_rexiste_party }
 		x = -1
 		y = 1
@@ -765,6 +784,7 @@
 		}
 
 		completion_reward = {
+			add_timed_idea = { idea = BEL_verdinaso_support days = 360 }
 		}
 	}
 
@@ -780,6 +800,7 @@
 		cost = 6
 
 		available = {
+			fascism > 0.5
 		}
 
 		ai_will_do = {
@@ -787,6 +808,11 @@
 		}
 
 		completion_reward = {
+			set_politics = { ruling_party = fascism }
+			start_civil_war = {	
+				ideology = democratic
+				size = 0.5
+			}
 		}
 	}
 
@@ -808,6 +834,14 @@
 		}
 
 		completion_reward = {
+			add_political_power = 50
+			every_other_country = {
+				limit = {
+					capital_scope = { is_on_continent = europe }
+					has_government = fascism
+				}
+				add_opinion_modifier = { target = BEL modifier = finland_closer_ties }
+			}
 		}
 	}
 
@@ -824,17 +858,39 @@
 		available = {
 		}
 
+		bypass = {
+			OR = {
+				NOT = { country_Exists = LUX }
+				LUX = { is_puppet_of = BEL }
+				has_war_with = LUX
+				LUX = { has_capitulated = yes }
+			}
+		}
+
 		ai_will_do = {
 			factor = 1
 		}
 
 		completion_reward = {
+			if = {
+				limit = {
+					LUX = { is_subject = no }
+				}
+				LUX = {
+					country_event = { id = bel_armor.810 }
+				}
+				else = {
+					LUX = {
+						OVERLORD = { country_event = { id = bel_armor.810 } }
+					}
+				}
+			}
 		}
 	}
 
 	focus = {
 		id = BEL_rexiste_economics
-		icon = GFX_
+		icon = GFX_goal_rexist_economics
 		prerequisite = { focus = BEL_topple_the_feeble_regime }
 		x = 1
 		y = 1
@@ -850,11 +906,23 @@
 		}
 
 		completion_reward = {
+			add_tech_bonus = {
+				name = BEL_rexiste_economics
+				bonus = 0.5	
+				uses = 1
+				category = industry
+			}
+			add_tech_bonus = {
+				name = BEL_rexiste_economics
+				bonus = 0.5	
+				uses = 1
+				category = electronics
+			}
 		}
 	}
 
 	focus = {
-		id = BEL_force_conscription
+		id = BEL_kick_start_a_war_industry
 		icon = GFX_focus_secret_rearmament
 		prerequisite = { focus = BEL_rexiste_economics }
 		x = 0
@@ -871,12 +939,13 @@
 		}
 
 		completion_reward = {
+			add_timed_idea = { idea = rapid_wartime_expansion days = 365 }
 		}
 	}
 
 	focus = {
 		id = BEL_claim_barbant
-		icon = GFX_
+		icon = GFX_goal_attack_netherlands
 		prerequisite = { focus = BEL_demand_luxembourg }
 		x = -1
 		y = 1
@@ -892,6 +961,17 @@
 		}
 
 		completion_reward = {
+			35 = {
+				controller = {
+					BEL = {
+						create_wargoal = {
+							type = take_state_focus
+							target = PREV
+							generator = { 35 }
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -913,12 +993,23 @@
 		}
 
 		completion_reward = {
+			29 = {
+				controller = {
+					BEL = {
+						create_wargoal = {
+							type = take_state_focus
+							target = PREV
+							generator = { 29 }
+						}
+					}
+				}
+			}
 		}
 	}
 
 	focus = {
 		id = BEL_proclaim_the_thiois_empire
-		icon = GFX_
+		icon = GFX_goal_thiois_empire
 		prerequisite = { focus = BEL_demand_luxembourg }
 		x = 0
 		y = 2
@@ -927,6 +1018,11 @@
 		cost = 6
 
 		available = {
+			OR = {
+				controls_state = 35
+				controls_state = 29
+				controls_state = 8
+			}
 		}
 
 		ai_will_do = {
@@ -934,16 +1030,17 @@
 		}
 
 		completion_reward = {
+			custom_effect_tooltip = BEL_proclaim_the_thiois_empire_tt
 		}
 	}
 
 	focus = {
 		id = BEL_militarism
 		icon = GFX_focus_generic_military_mission
-		prerequisite = { focus = BEL_force_conscription }
+		prerequisite = { focus = BEL_kick_start_a_war_industry }
 		x = 0
 		y = 2
-		relative_position_id = BEL_force_conscription
+		relative_position_id = BEL_kick_start_a_war_industry
 		
 		cost = 6
 
@@ -955,6 +1052,7 @@
 		}
 
 		completion_reward = {
+			add_ideas = militarism_focus
 		}
 	}
 
@@ -1451,7 +1549,7 @@
 
 	focus = {
 		id = BEL_the_lions_of_belgium
-		icon = GFX_
+		icon = GFX_goal_lions_of_belgium
 		prerequisite = { focus = BEL_the_belgian_special_forces }
 		prerequisite = { focus = BEL_seek_a_major_sponsor }
 		x = 0
@@ -1627,7 +1725,7 @@
 
 	focus = {
 		id = BEL_COMOPS_Structure
-		icon = GFX_
+		icon = GFX_goal_COMOPS
 		prerequisite = { focus = BEL_the_lions_of_belgium }
 		prerequisite = { focus = BEL_create_our_own_army_research_centre }
 		prerequisite = { focus = BEL_lessons_from_wwi }
