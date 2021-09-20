@@ -15,10 +15,10 @@ NDefines.NDiplomacy.REVOKE_GUARANTEE_COST = 100
 NDefines.NDiplomacy.GUARANTEE_COST = 10												-- Scale with the number of already guaranteed countries.
 
 NDefines.NDiplomacy.LICENSE_ACCEPTANCE_OPINION_FACTOR = 0.1							-- Opinion modifier for acceptance of license production requests.
-NDefines.NDiplomacy.LICENSE_ACCEPTANCE_PUPPET_BASE = 50								-- Acceptance modifier for puppets requesting production licenses.
+NDefines.NDiplomacy.LICENSE_ACCEPTANCE_PUPPET_BASE = 200							-- Acceptance modifier for puppets requesting production licenses.
 NDefines.NDiplomacy.LICENSE_ACCEPTANCE_TECH_DIFFERENCE = 5 							-- Acceptance modifier for each year of technology difference.
-NDefines.NDiplomacy.LICENSE_ACCEPTANCE_TECH_DIFFERENCE_BASE = 30    				-- Acceptance base for tech difference
-NDefines.NDiplomacy.LICENSE_ACCEPTANCE_SAME_FACTION = 50							-- Acceptance modifier for being in the same faction
+NDefines.NDiplomacy.LICENSE_ACCEPTANCE_TECH_DIFFERENCE_BASE = 10    				-- Acceptance base for tech difference
+NDefines.NDiplomacy.LICENSE_ACCEPTANCE_SAME_FACTION = 150							-- Acceptance modifier for being in the same faction
 
 NDefines.NDiplomacy.JOIN_FACTION_LIMIT_CHANGE_AT_WAR = 0.75							-- if in defensive war this or your modifier is counted as limit to join factions (so if you have 80% join limit this now means you can join at 50%)
 
@@ -72,7 +72,7 @@ NDefines.NMilitary.BASE_DIVISION_BRIGADE_GROUP_COST = 20							--Base cost to un
 NDefines.NMilitary.BASE_DIVISION_BRIGADE_CHANGE_COST = 5							--Base cost to change a regiment column.
 NDefines.NMilitary.BASE_DIVISION_SUPPORT_SLOT_COST = 5 								--Base cost to unlock a support slot
 
-NDefines.NMilitary.MAX_DIVISION_BRIGADE_HEIGHT = 4									-- Max height of regiments in division designer.
+NDefines.NMilitary.MAX_DIVISION_BRIGADE_HEIGHT = 5									-- Max height of regiments in division designer.
 NDefines.NMilitary.MAX_DIVISION_SUPPORT_WIDTH = 2									-- Max width of support in division designer.
 NDefines.NMilitary.MAX_DIVISION_SUPPORT_HEIGHT = 4									-- Max height of support in division designer.
 
