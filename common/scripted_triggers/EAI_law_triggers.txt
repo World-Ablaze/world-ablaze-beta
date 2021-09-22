@@ -101,14 +101,6 @@ EAI_can_take_low_economic_mobilisation = {
 		}
 		NOT = { has_idea = HUN_treaty_of_triannon }
 	}
-	# if = {
-	# 	limit = {
-	# 		has_completed_focus = USA_limited_intervention
-	# 		has_defensive_war = no
-	# 	}
-	# 	has_war_support > 0.3
-	# 	congress_high_support_trigger = yes
-	# }
 
 	if = {
 		limit = {
@@ -146,13 +138,6 @@ EAI_can_take_partial_economic_mobilisation = {
 		has_idea = war_economy
 		has_idea = tot_economic_mobilisation
 	}
-
-	# if = { limit = { original_tag = GER }
-	# 	has_completed_focus = GER_german_war_economy
-	# }
-	# if = { limit = { original_tag = JAP }
-	# 	has_completed_focus = JAP_national_mobilization_law
-	# }
 
 	has_war_support > 0.25 # to avoid the AI having to demobilize
 
@@ -422,8 +407,6 @@ EAI_can_take_tot_economic_mobilisation = {
 EAI_can_take_volunteer_only = {
 	########## AI LOGIC
 
-	has_idea = disarmed_nation
-
 	NOT = { original_tag = USA }
 
 	NOT = { conscription_ratio < 0.99 } # wait for mobilization before upgrading again
@@ -431,6 +414,11 @@ EAI_can_take_volunteer_only = {
 	has_manpower < 750000
 
 	NOT = { EAI_pp_advisor_prio = yes }
+
+	OR = {
+		has_idea = disarmed_nation
+		has_war = no
+	}
 
 	########## LAW REQUIREMENTS
 
@@ -458,7 +446,12 @@ EAI_can_take_limited_conscription = {
 
 	NOT = { original_tag = USA }
 
-	has_war_support > 0.15
+	OR = {
+		has_war_support > 0.15
+		has_war = yes
+		has_government = fascism
+		has_government = communism
+	}
 
 	NOT = { conscription_ratio < 0.99 } # wait for mobilization before upgrading again
 
@@ -478,7 +471,6 @@ EAI_can_take_limited_conscription = {
 	### copy from idea file
 	
 	#has_manpower_for_recruit_change_to =  { value = 0.025 group = mobilization_laws }
-	has_war_support > 0.1
 	NOT = { has_idea = undisturbed_isolation }
 	NOT = { has_idea = isolation }
 	if = {
@@ -500,7 +492,26 @@ EAI_can_take_limited_conscription = {
 			original_tag = RAJ
 			has_dlc = "Together for Victory"
 		}
-		is_subject = no
+		OR = {
+			has_completed_focus = RAJ_two_nation_theory
+			country_exists = PAK
+		}
+	}
+	if = {
+		limit = {
+			original_tag = SAF
+			has_dlc = "Together for Victory"
+			has_idea = SAF_history_of_segregation
+		}
+		NOT = { has_idea = SAF_history_of_segregation }
+	}
+	if = {
+		limit = {
+			original_tag = SAF
+			has_dlc = "Together for Victory"
+			has_idea = SAF_history_of_segregation_2
+		}
+		NOT = { has_idea = SAF_history_of_segregation_2 }
 	}
 
 	if = {
@@ -518,14 +529,41 @@ EAI_can_take_limited_conscription = {
 		}
 		NOT = { has_country_flag = ENG_cannot_increase_conscription_law }
 	}
+	if = {
+		limit = {
+			original_tag = SPR
+			has_dlc = "La Resistance"
+		}
+		NOT = { has_completed_focus = SPR_all_must_bear_the_torch }
+	}
+	if = {
+		limit = {
+			original_tag = BUL
+			has_dlc = "Battle for the Bosporus"
+		}
+		NOT = { has_idea = BUL_army_restrictions }
+	}
+	if = {
+		limit = {
+			is_historical_focus_on = yes
+			tag = USA
+		}
+		AND = {
+			has_completed_focus = USA_selective_service_act
+			date > 1943.1.1
+		}
+	}
 }
 EAI_can_take_extensive_conscription = {
 	########## AI LOGIC
 
 	has_idea = limited_conscription
 
-	if = { limit = { NOT = { has_government = communism has_government = fascism } }
-		has_war_support > 0.25
+	OR = {
+		has_government = fascism
+		has_government = communism
+		has_war_support > 0.3
+		has_war = yes				
 	}
 
 	NOT = { conscription_ratio < 0.99 } # wait for mobilization before upgrading again
@@ -544,21 +582,7 @@ EAI_can_take_extensive_conscription = {
 	### copy from idea file
 	
 	#has_manpower_for_recruit_change_to = { value = 0.05 group = mobilization_laws }
-	OR = {
-		has_government = fascism
-		has_government = communism
-		AND = {
-			has_war = yes
-			enemies_strength_ratio > 0.5
-			#any_enemy_country = {
-			#	strength_ratio = {
-			#		tag = ROOT 
-			#		ratio > 0.5
-			#	}
-			#}
-		}					
-	}
-	has_war_support > 0.2
+
 	#Special rules AST in TFV
 	if = {
 		limit = {
@@ -598,6 +622,46 @@ EAI_can_take_extensive_conscription = {
 			has_completed_focus = ENG_concessions_to_the_trade_unions
 		}
 		NOT = { has_country_flag = ENG_cannot_increase_conscription_law }
+	}
+	if = {
+		limit = {
+			original_tag = SPR
+			has_dlc = "La Resistance"
+		}
+		NOT = { has_completed_focus = SPR_all_must_bear_the_torch }
+	}
+	if = {
+		limit = {
+			original_tag = SAF
+			has_dlc = "Together for Victory"
+			has_idea = SAF_history_of_segregation
+		}
+		NOT = { has_idea = SAF_history_of_segregation }
+	}
+	if = {
+		limit = {
+			original_tag = SAF
+			has_dlc = "Together for Victory"
+			has_idea = SAF_history_of_segregation_2
+		}
+		NOT = { has_idea = SAF_history_of_segregation_2 }
+	}
+	if = {
+		limit = {
+			original_tag = BUL
+			has_dlc = "Battle for the Bosporus"
+		}
+		NOT = { has_idea = BUL_army_restrictions }
+	}
+	if = {
+		limit = {
+			NOT = { tag = SOV }
+			NOT = { tag = FRA }
+		}
+		AND = {
+			has_manpower < 1000000
+			has_capitulated = no
+		}
 	}
 }
 EAI_can_take_service_by_requirement = {
