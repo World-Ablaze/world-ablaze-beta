@@ -222,6 +222,8 @@ NDefines.NBuildings.SABOTAGE_FACTORY_DAMAGE = 50.0									-- How much damage ta
 
 NDefines.NBuildings.AIRBASE_CAPACITY_MULT = 100										-- Each level of airbase building multiplied by this, gives capacity (max operational value). Value is int. 1 for each airplane.
 
+NDefines.NBuildings.OWNER_CHANGE_EXTRA_SHARED_SLOTS_FACTOR = 1
+
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Production
 
@@ -404,6 +406,8 @@ NDefines.NNavy.MAX_POSITIONING_BONUS_FROM_SURFACE_DETECTION	= 0.0 					-- will c
 	
 NDefines.NNavy.HIGHER_SHIP_RATIO_POSITIONING_PENALTY_FACTOR	= 0.51 					-- if one side has more ships than the other, that side will get this penalty for each +100% ship ratio it has
 NDefines.NNavy.MAX_POSITIONING_PENALTY_FROM_HIGHER_SHIP_RATIO = 3.0  				-- maximum penalty to get from larger fleets
+
+SNDefines.NNavy.CREENING_EFFICIENCY_PENALTY_ON_MINIMUM_POSITIONING = 1.0  			-- screening efficiency (screen to capital ratio) at 0% positioning
 
 NDefines.NNavy.HIGHER_CARRIER_RATIO_POSITIONING_PENALTY_FACTOR = 0.45  				-- penalty if other side has stronger carrier air force 
 NDefines.NNavy.MAX_CARRIER_RATIO_POSITIONING_PENALTY_FACTOR = 0.9  					-- max penalty from stronger carrier air force
