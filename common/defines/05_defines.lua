@@ -341,36 +341,24 @@ NDefines.NAir.AIR_WING_COUNTRY_XP_FROM_TRAINING_FACTOR = 0.015 						--Factor on
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Navy
 
-
-NDefines.NNavy.REPAIR_AND_RETURN_AMOUNT_SHIPS_LOW = 0.7								-- % of total damaged ships, that will be sent for repair-and-return in one call.
-NDefines.NNavy.REPAIR_AND_RETURN_AMOUNT_SHIPS_MEDIUM = 0.8							-- % of total damaged ships, that will be sent for repair-and-return in one call.
-NDefines.NNavy.REPAIR_AND_RETURN_AMOUNT_SHIPS_HIGH = 0.9							-- % of total damaged ships, that will be sent for repair-and-return in one call.
-NDefines.NNavy.REPAIR_AND_RETURN_PRIO_LOW = 0.7										-- % of total Strength. When below, navy will go to home base to repair.
-NDefines.NNavy.REPAIR_AND_RETURN_PRIO_MEDIUM = 0.8									-- % of total Strength. When below, navy will go to home base to repair.
-NDefines.NNavy.REPAIR_AND_RETURN_PRIO_HIGH = 0.9									-- % of total Strength. When below, navy will go to home base to repair.
-NDefines.NNavy.REPAIR_AND_RETURN_PRIO_LOW_COMBAT = 0.6								-- % of total Strength. When below, navy will go to home base to repair (in combat).
-NDefines.NNavy.REPAIR_AND_RETURN_PRIO_MEDIUM_COMBAT = 0.65							-- % of total Strength. When below, navy will go to home base to repair (in combat).
-NDefines.NNavy.REPAIR_AND_RETURN_PRIO_HIGH_COMBAT = 0.8								-- % of total Strength. When below, navy will go to home base to repair (in combat).
-NDefines.NNavy.REPAIR_AND_RETURN_UNIT_DYING_STR = 0.4								-- Str below this point is considering a single ship "dying", and a high priority to send to repair.
-NDefines.NNavy.SHIP_TO_FLEET_ANTI_AIR_RATIO	= 0.1									-- total sum of fleet's anti air will be multiplied with this ratio and added to calculations anti-air of individual ships while air damage reduction
-
 NDefines.NNavy.NAVAL_INVASION_PREPARE_HOURS = 336									-- base hours needed to prepare an invasion
 
+NDefines.NNavy.SHIP_TO_FLEET_ANTI_AIR_RATIO	= 0.1									-- total sum of fleet's anti air will be multiplied with this ratio and added to calculations anti-air of individual ships while air damage reduction
 NDefines.NNavy.ANTI_AIR_TARGETING = 1.0               		                        -- how good ships are at hitting aircraft
 
 NDefines.NNavy.REPAIR_AND_RETURN_PRIO_LOW = 0.2										-- % of total Strength. When below, navy will go to home base to repair.
 NDefines.NNavy.REPAIR_AND_RETURN_PRIO_MEDIUM = 0.5									-- % of total Strength. When below, navy will go to home base to repair.
 NDefines.NNavy.REPAIR_AND_RETURN_PRIO_HIGH = 0.8									-- % of total Strength. When below, navy will go to home base to repair.
 
-NDefines.NNavy.REPAIR_AND_RETURN_PRIO_LOW_COMBAT = 0.6								-- % of total Strength. When below, navy will go to home base to repair (in combat).
+NDefines.NNavy.REPAIR_AND_RETURN_PRIO_LOW_COMBAT = 0.2								-- % of total Strength. When below, navy will go to home base to repair (in combat).
 NDefines.NNavy.REPAIR_AND_RETURN_PRIO_MEDIUM_COMBAT = 0.3							-- % of total Strength. When below, navy will go to home base to repair (in combat).
-NDefines.NNavy.REPAIR_AND_RETURN_PRIO_HIGH_COMBAT = 0.2								-- % of total Strength. When below, navy will go to home base to repair (in combat).
+NDefines.NNavy.REPAIR_AND_RETURN_PRIO_HIGH_COMBAT = 0.6								-- % of total Strength. When below, navy will go to home base to repair (in combat).
 
 NDefines.NNavy.REPAIR_AND_RETURN_AMOUNT_SHIPS_LOW = 0.2								-- % of total damaged ships, that will be sent for repair-and-return in one call.
 NDefines.NNavy.REPAIR_AND_RETURN_AMOUNT_SHIPS_MEDIUM = 0.4							-- % of total damaged ships, that will be sent for repair-and-return in one call.
 NDefines.NNavy.REPAIR_AND_RETURN_AMOUNT_SHIPS_HIGH = 0.7							-- % of total damaged ships, that will be sent for repair-and-return in one call.
 
-NDefines.NNavy.REPAIR_AND_RETURN_UNIT_DYING_STR = 0.2								-- Str below this point is considering a single ship "dying", and a high priority to send to repair.
+NDefines.NNavy.REPAIR_AND_RETURN_UNIT_DYING_STR = 0.15								-- Str below this point is considering a single ship "dying", and a high priority to send to repair.
 
 NDefines.NNavy.MIN_HIT_PROFILE_MULT = 0.25											-- largest hit profile penalty to hitting
 
@@ -427,7 +415,12 @@ NDefines.NNavy.AGGRESSION_LIGHT_GUN_EFFICIENCY_ON_HEAVY_SHIPS = 0.05				-- ratio
 
 NDefines.NNavy.TRAINING_EXPERIENCE_FACTOR = 0.1										-- Amount of exp each ship gain every 24h while training (before modifiers)
 
-NDefines.NNavy.EXPERIENCE_FACTOR_CARRIER_GAIN = 0.06								-- Xp gain by carrier ships in the combat
+NDefines.NNavy.UNIT_EXPERIENCE_PER_COMBAT_HOUR = 5
+NDefines.NNavy.UNIT_EXPERIENCE_SCALE = 1
+NDefines.NNavy.EXPERIENCE_FACTOR_CONVOY_ATTACK = 0.12
+NDefines.NNavy.EXPERIENCE_FACTOR_NON_CARRIER_GAIN = 0.12							-- Xp gain by non-carrier ships in the combat
+NDefines.NNavy.EXPERIENCE_FACTOR_CARRIER_GAIN = 0.12								-- Xp gain by carrier ships in the combat
+
 NDefines.NNavy.NAVAL_SUPREMACY_CAN_INVADE = 0.5										-- required naval supremacy to perform invasions on an area
 
 NDefines.NNavy.AGGRESSION_SETTINGS_VALUES = { 										-- ships will use this values while deciding to attack enemies
