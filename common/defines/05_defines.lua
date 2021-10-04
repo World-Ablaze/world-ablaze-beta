@@ -400,13 +400,13 @@ NDefines.NNavy.MAX_POSITIONING_PENALTY_FROM_HIGHER_SHIP_RATIO = 3.0  				-- maxi
 NDefines.NNavy.HIGHER_CARRIER_RATIO_POSITIONING_PENALTY_FACTOR = 0.45  				-- penalty if other side has stronger carrier air force 
 NDefines.NNavy.MAX_CARRIER_RATIO_POSITIONING_PENALTY_FACTOR = 0.9  					-- max penalty from stronger carrier air force
 	
-NDefines.NNavy.POSITIONING_PENALTY_FOR_SHIPS_JOINED_COMBAT_AFTER_IT_STARTS = 0.05 	-- each ship that joins the combat will have this penalty to be added into positioning
-NDefines.NNavy.MAX_POSITIONING_PENALTY_FOR_NEWLY_JOINED_SHIPS = 0.5  				-- the accumulated penalty from new ships will be clamped to this value
+NDefines.NNavy.POSITIONING_PENALTY_FOR_SHIPS_JOINED_COMBAT_AFTER_IT_STARTS = 0.005 	-- each ship that joins the combat will have this penalty to be added into positioning
+NDefines.NNavy.MAX_POSITIONING_PENALTY_FOR_NEWLY_JOINED_SHIPS = 0.2  				-- the accumulated penalty from new ships will be clamped to this value
 NDefines.NNavy.POSITIONING_PENALTY_HOURLY_DECAY_FOR_NEWLY_JOINED_SHIPS = 0.002		-- the accumulated penalty from new ships will decay hourly by this value
 
 NDefines.NNavy.DAMAGE_PENALTY_ON_MINIMUM_POSITIONING = 0.75							-- damage penalty at 0% positioning
 NDefines.NNavy.SCREENING_EFFICIENCY_PENALTY_ON_MINIMUM_POSITIONING = 0.0  			-- screening efficiency (screen to capital ratio) at 0% positioning
-NDefines.NNavy.AA_EFFICIENCY_PENALTY_ON_MINIMUM_POSITIONING = 0.7  					-- AA penalty at 0% positioning
+NDefines.NNavy.AA_EFFICIENCY_PENALTY_ON_MINIMUM_POSITIONING = 0  					-- AA penalty at 0% positioning
 
 --NDefines.NNavy.SHORE_BOMBARDMENT_CAP = 0.25
 --NDefines.NNavy.HEAVY_GUN_ATTACK_TO_SHORE_BOMBARDMENT = 0.1  						-- heavy gun attack value is divided by this value * 100 and added to shore bombardment modifier 
@@ -470,7 +470,7 @@ NDefines.NNavy.CAPITAL_RATIO_FOR_FULL_SCREENING_FOR_CARRIERS = 4.0					-- this c
 NDefines.NNavy.BASE_CARRIER_SORTIE_EFFICIENCY = 0.7									-- factor of planes that can sortie by default from a carrier
 
 NDefines.NNavy.TRAINING_MAX_DAILY_COUNTRY_EXP = 1.75								-- Maximum navy XP daily gain
-NDefines.NNavy.CARRIER_STACK_PENALTY = 12											-- The most efficient is 4 carriers in combat. 5+ brings the penalty to the amount of wings in battle.
+NDefines.NNavy.CARRIER_STACK_PENALTY = 10											-- The most efficient is 4 carriers in combat. 5+ brings the penalty to the amount of wings in battle.
 NDefines.NNavy.CARRIER_STACK_PENALTY_EFFECT = 0.6									-- Each carrier above the optimal amount decreases the amount of airplanes being able to takeoff by such %.
 
 --NDefines.NNavy.SUPREMACY_PER_SHIP_PER_MANPOWER = 0.15								-- supremacy of a ship is calculated using its IC, manpower and a base define
@@ -536,13 +536,13 @@ NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MIN = 0.1						-- minimum 
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX = 0.5 					-- maximum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX_CONVOY_THREAT = 500 		-- AI will increase screen assignment for escort missions as threat increases
 
-NDefines.NAI.CARRIER_TASKFORCE_MAX_CARRIER_COUNT = 2 								-- optimum carrier count for carrier taskforces
+NDefines.NAI.CARRIER_TASKFORCE_MAX_CARRIER_COUNT = 4 								-- optimum carrier count for carrier taskforces
 NDefines.NAI.CAPITAL_TASKFORCE_MAX_CAPITAL_COUNT = 10 								-- optimum capital count for capital taskforces
 NDefines.NAI.SCREEN_TASKFORCE_MAX_SHIP_COUNT = 5									-- optimum screen count for screen taskforces
 NDefines.NAI.SCREENS_TO_CAPITAL_RATIO = 4.0											-- screens to capital/carrier count in carrier & capital taskforces
 
 NDefines.NAI.MAX_CARRIER_OVERFILL = 1.0												-- Carriers will be overfilled to this amount if there are doctrines to justify it
-NDefines.NAI.MIN_CAPITALS_FOR_CARRIER_TASKFORCE = 8									-- carrier fleets will at least have this amount of capitals
+NDefines.NAI.MIN_CAPITALS_FOR_CARRIER_TASKFORCE = 6									-- carrier fleets will at least have this amount of capitals
 NDefines.NAI.CAPITALS_TO_CARRIER_RATIO = 4.0										-- capital to carrier count in carrier taskfoces
 
 NDefines.NAI.MAX_PATROL_TO_STRIKE_FORCE_RATIO = 5.0									-- maximum patrol/strike force ratio
