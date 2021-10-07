@@ -238,6 +238,7 @@ EAI_PC_init_project = {
 
 # create a new project
 EAI_PC_start_project = {
+	# set_country_flag = test_start_project
 
 	# is not already building the same type of building here
 	if = { 
@@ -264,23 +265,24 @@ EAI_PC_start_project = {
 			if = { limit = { check_variable = { EAI_PC_ignore_factory_limit = 1 } }
 
 				set_temp_variable = { EAI_PC_project_assigned_factories^-1 = num_of_civilian_factories_available_for_projects }
-				clamp_temp_variable = { var = EAI_PC_project_assigned_factories^-1 min = 0 max = 15 }
+				clamp_temp_variable = { var = EAI_PC_project_assigned_factories^-1 min = 0 max = 20 }
 
 				set_temp_variable = { EAI_PC_ignore_factory_limit = 0 }
 			}
 			else_if = { limit = { check_variable = { min_factories_on_projects < max_factories_on_projects } }
 
 				if = { limit = { has_country_flag = EAI_construction_logging } log = "max_factories_on_projects = [?max_factories_on_projects], min_factories_on_projects = [?min_factories_on_projects], EAI_PC_assigned_factories_total = [?EAI_PC_assigned_factories_total]" }
-
 				set_temp_variable = { EAI_PC_project_assigned_factories^-1 = max_factories_on_projects }
 				subtract_from_temp_variable = { EAI_PC_project_assigned_factories^-1 = EAI_PC_assigned_factories_total }
 				round_temp_variable = EAI_PC_project_assigned_factories^-1
-				clamp_temp_variable = { var = EAI_PC_project_assigned_factories^-1 min = 3 max = 15 }
+				clamp_temp_variable = { var = EAI_PC_project_assigned_factories^-1 min = 3 max = 20 }
 			}
 		}
 
-		if = { limit = { check_variable = { EAI_PC_project_assigned_factories^-1 > 0 } }
 
+
+		if = { limit = { ROOT = {check_variable = { EAI_PC_project_assigned_factories^-1 > 0 }}}
+			
 			ROOT = { EAI_PC_get_available_project = yes }
 
 			if = { limit = { ROOT = { has_variable = EAI_PC_new_project } }
@@ -327,8 +329,12 @@ EAI_PC_start_project = {
 
 					if = { limit = { has_country_flag = EAI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PRIORITY CONSTRUCTION: type = [?ROOT.EAI_PC_project_building_type^-1], civ = [?EAI_PC_project_assigned_factories^-1], loc = [PREV.GetName], days = [?EAI_PC_project_construction_duration^EAI_PC_project]" }
 				}
+			} else {
+				if = { limit = { ROOT = {has_country_flag = EAI_construction_logging }} log = "test" }
 			}
 		}
+		
+		if = { limit = { ROOT = {has_country_flag = EAI_construction_logging }} log = "sortie" }
 	}
 }
 
@@ -394,6 +400,7 @@ EAI_PC_end_project = {
 
 EAI_priority_construction_strategies = {
 
+
 	if = { limit = { check_variable = { ROOT.EAI_PC_active_projects < 5 }  }
 	
 		if = { limit = { EAI_PC_can_afford_project = yes }
@@ -429,12 +436,24 @@ EAI_important_radar_constructions = {
 			any_of_scopes = { array = controlled_states EAI_radar_location_2 = yes EAI_available_RADAR = yes }
 		}
 
+		if = { limit = { has_country_flag = EAI_construction_logging }
+
+			log = "======= START RADAR ======="
+
+		}
+
 		set_variable = { ROOT.EAI_PC_project_building_type^-1 = 4 }
-
+		# set_country_flag = test_radar_state5
 		random_scope_in_array = { array = controlled_states limit = { EAI_radar_location_2 = yes EAI_available_RADAR = yes EAI_PC_can_build_project = yes }
-
 			EAI_PC_start_project = yes
 		}
+		# 810 = {EAI_PC_start_project = yes}
+		if = { limit = { has_country_flag = EAI_construction_logging }
+
+			log = "======= START RADAR2 ======="
+
+		}
+
 	}
 }
 
