@@ -11,8 +11,8 @@ EAI_PC_set_global_variables = {
 	### BUILDING CONSTRUCTION COSTS
 
 	set_variable = { global.EAI_PC_BUILDING_INFRASTRUCTURE_COST   = 3000 }
-	set_variable = { global.EAI_PC_BUILDING_AIRBASE_COST          = 1250 }
-	set_variable = { global.EAI_PC_BUILDING_ANTIAIR_COST          = 2500 }
+	set_variable = { global.EAI_PC_BUILDING_AIRBASE_COST          = 500 }
+	set_variable = { global.EAI_PC_BUILDING_ANTIAIR_COST          = 4000 }
 	set_variable = { global.EAI_PC_BUILDING_RADAR_COST            = 3375 }	
 	set_variable = { global.EAI_PC_BUILDING_MILITARY_FACTORY_COST = 7200 }
 	set_variable = { global.EAI_PC_BUILDING_CIVILIAN_FACTORY_COST = 10800 }
@@ -206,6 +206,32 @@ EAI_PC_init_project = {
 
 		EAI_PC_get_building_values = yes
 
+		### level price effect 
+
+		if = { limit = { check_variable = { EAI_PC_project_building_type^EAI_PC_project_type = 1 } }
+
+			set_temp_variable = { EAI_PC_target_state_infra = PREV.infrastructure_level }
+			# add_to_temp_variable = { EAI_PC_target_state_infra = -1 }
+			multiply_temp_variable = { EAI_PC_target_state_infra = 500 }
+			add_to_temp_variable = { EAI_PC_building_cost = EAI_PC_target_state_infra }
+		}
+
+		if = { limit = { check_variable = { EAI_PC_project_building_type^EAI_PC_project_type = 2 } }
+
+			set_temp_variable = { EAI_PC_target_state_airbase = PREV.building_level@air_base }
+			# add_to_temp_variable = { EAI_PC_target_state_airbase = -1 }
+			multiply_temp_variable = { EAI_PC_target_state_airbase = 250 }
+			add_to_temp_variable = { EAI_PC_building_cost = EAI_PC_target_state_airbase }
+		}
+
+		if = { limit = { check_variable = { EAI_PC_project_building_type^EAI_PC_project_type = 4 } }
+
+			set_temp_variable = { EAI_PC_target_state_radar_station = PREV.building_level@radar_station }
+			# add_to_temp_variable = { EAI_PC_target_state_radar_station = -1 }
+			multiply_temp_variable = { EAI_PC_target_state_radar_station = 500 }
+			add_to_temp_variable = { EAI_PC_building_cost = EAI_PC_target_state_radar_station }
+		}
+
 		### infrastructure effect (5-12 use infrastructure effect)
 
 		if = { limit = { check_variable = { EAI_PC_project_building_type^EAI_PC_project_type > 4 } }
@@ -218,7 +244,7 @@ EAI_PC_init_project = {
 
 		### total factory output
 
-		multiply_temp_variable = { EAI_PC_construction_speed = 5 }
+		multiply_temp_variable = { EAI_PC_construction_speed = 2.5 }
 		multiply_temp_variable = { EAI_PC_construction_speed = EAI_PC_project_assigned_factories^EAI_PC_project_type }
 
 		### days to build
@@ -558,7 +584,7 @@ EAI_resource_extraction = {
 					AND = { has_resources_amount = { resource = tungsten amount > 20 } 		check_variable = { ROOT.EAI_needs_tungsten = 3 } }
 					# AND = { has_resources_amount = { resource = steel amount > 20 } 		check_variable = { ROOT.EAI_needs_steel = 3 } }
 					AND = { has_resources_amount = { resource = chromium amount > 20 } 		check_variable = { ROOT.EAI_needs_chromium = 3 } }
-					AND = { has_resources_amount = { resource = coal amount > 100 } 		    check_variable = { ROOT.EAI_needs_coal = 3 } }
+					AND = { has_resources_amount = { resource = coal amount > 100 } 		check_variable = { ROOT.EAI_needs_coal = 3 } }
 					AND = { has_resources_amount = { resource = bauxite amount > 15 } 		check_variable = { ROOT.EAI_needs_bauxite = 3 } }
 					AND = { has_resources_amount = { resource = iron amount > 20 } 	    	check_variable = { ROOT.EAI_needs_iron = 3 } }
 				}
