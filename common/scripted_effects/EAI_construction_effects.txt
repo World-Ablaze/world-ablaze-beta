@@ -437,9 +437,9 @@ EAI_priority_construction_strategies = {
 
 			EAI_resource_extraction = yes
 
-			EAI_build_refinery_convert_MIC_to_CIC_resource_shortage_steel = yes
+			EAI_build_refinery_resource_shortage_steel = yes
 
-			EAI_build_refinery_convert_MIC_to_CIC_resource_shortage_aluminium = yes
+			EAI_build_refinery_resource_shortage_aluminium = yes
 		}
 
 		# EAI_convert_MIC_to_CIC_industrial_expansion = yes not needed in WA
@@ -578,7 +578,7 @@ EAI_resource_extraction = {
 				EAI_PC_can_build_project = yes
 
 				OR = {
-					AND = { has_resources_amount = { resource = oil amount > 20 } 			ROOT = { has_war = yes fuel_ratio < 0.5 } }
+					AND = { has_resources_amount = { resource = oil amount > 20 } 			ROOT = { has_war = yes fuel_ratio < 0.8 } }
 					# AND = { has_resources_amount = { resource = aluminium amount > 20 } 	check_variable = { ROOT.EAI_needs_aluminium = 3 } }
 					AND = { has_resources_amount = { resource = rubber amount > 20 } 		check_variable = { ROOT.EAI_needs_rubber = 3 } }
 					AND = { has_resources_amount = { resource = tungsten amount > 20 } 		check_variable = { ROOT.EAI_needs_tungsten = 3 } }
@@ -595,7 +595,7 @@ EAI_resource_extraction = {
 	}
 }
 
-EAI_build_refinery_convert_MIC_to_CIC_resource_shortage_rubber = {
+EAI_build_refinery_resource_shortage_rubber = {
 
 	### track rubber shortage
 
@@ -609,10 +609,10 @@ EAI_build_refinery_convert_MIC_to_CIC_resource_shortage_rubber = {
 			multiply_temp_variable = { rubber_needed = -1 }
 			add_to_temp_variable = { rubber_needed = resource@rubber }
 
-			# deficit is >25% of total need
+			# deficit is >5% of total need
 			set_temp_variable = { rubber_deficit = resource@rubber }
 			divide_temp_variable = { rubber_deficit = rubber_needed }
-			check_variable = { rubber_deficit > 0.25 }
+			check_variable = { rubber_deficit > 0.05 }
 		}
 
 		add_to_variable = { EAI_resource_rubber_shortage_months = 1 }
@@ -668,24 +668,35 @@ EAI_build_refinery_convert_MIC_to_CIC_resource_shortage_rubber = {
 
 
 
-EAI_build_refinery_convert_MIC_to_CIC_resource_shortage_steel = {
+EAI_build_refinery_resource_shortage_steel = {
 
 	### track steel shortage
 
 	if = {
 		limit = {
-			# there is a steel deficit
-			check_variable = { resource@steel < 0 }
+			# there is a steel deficit / we have enough industry to invest
+			OR = {
+				check_variable = { resource@steel < 0 }
+				AND = {
+					check_variable = { resource@iron > -1 }
+					check_variable = { resource_imported@steel > 0 }
+				}
+			}
+			OR = {
+				num_of_available_civilian_factories > 19
+				check_variable = { resource_imported@steel > 80 }
+			}
 			
-			# total steel needed for production
-			set_temp_variable = { steel_needed = resource_consumed@steel }
-			multiply_temp_variable = { steel_needed = -1 }
-			add_to_temp_variable = { steel_needed = resource@steel }
+			
+			# # total steel needed for production
+			# set_temp_variable = { steel_needed = resource_consumed@steel }
+			# multiply_temp_variable = { steel_needed = -1 }
+			# add_to_temp_variable = { steel_needed = resource@steel }
 
-			# deficit is >25% of total need
-			set_temp_variable = { steel_deficit = resource@steel }
-			divide_temp_variable = { steel_deficit = steel_needed }
-			check_variable = { steel_deficit > 0.25 }
+			# # deficit is >5% of total need
+			# set_temp_variable = { steel_deficit = resource@steel }
+			# divide_temp_variable = { steel_deficit = steel_needed }
+			# check_variable = { steel_deficit > 0.05 }
 		}
 
 		add_to_variable = { EAI_resource_steel_shortage_months = 1 }
@@ -739,24 +750,34 @@ EAI_build_refinery_convert_MIC_to_CIC_resource_shortage_steel = {
 	}
 }
 
-EAI_build_refinery_convert_MIC_to_CIC_resource_shortage_aluminium = {
+EAI_build_refinery_resource_shortage_aluminium = {
 
 	### track aluminium shortage
 
 	if = {
 		limit = {
-			# there is a steel deficit
-			check_variable = { resource@aluminium < 0 }
+			# there is a aluminium deficit
+			OR = {
+				check_variable = { resource@aluminium < 0 }
+				AND = {
+					check_variable = { resource@bauxite > -1 }
+					check_variable = { resource_imported@aluminium > 0 }
+				}
+			}
+			OR = {
+				num_of_available_civilian_factories > 19
+				check_variable = { resource_imported@aluminium > 80 }
+			}
 			
-			# total steel needed for production
-			set_temp_variable = { aluminium_needed = resource_consumed@aluminium }
-			multiply_temp_variable = { aluminium_needed = -1 }
-			add_to_temp_variable = { aluminium_needed = resource@aluminium }
+			# # total aluminium needed for production
+			# set_temp_variable = { aluminium_needed = resource_consumed@aluminium }
+			# multiply_temp_variable = { aluminium_needed = -1 }
+			# add_to_temp_variable = { aluminium_needed = resource@aluminium }
 
-			# deficit is >25% of total need
-			set_temp_variable = { aluminium_deficit = resource@aluminium }
-			divide_temp_variable = { aluminium_deficit = aluminium_needed }
-			check_variable = { aluminium_deficit > 0.25 }
+			# # deficit is >5% of total need
+			# set_temp_variable = { aluminium_deficit = resource@aluminium }
+			# divide_temp_variable = { aluminium_deficit = aluminium_needed }
+			# check_variable = { aluminium_deficit > 0.05 }
 		}
 
 		add_to_variable = { EAI_resource_aluminium_shortage_months = 1 }
