@@ -437,3 +437,47 @@ country_event = {
 
 	option = {}
 }
+
+country_event = {
+	id = afo_event.12 # The unique id. nuke_dropped is the namespace, which can be used for better organization, and is used in localisation.
+
+	hidden = yes # Optional : if set to "yes" no one will see the event
+	mean_time_to_happen = { days = 2 }
+	trigger = {
+		OR = {
+			has_equipment = {
+				trade_fix_equipment_0 > ROOT.trade_fix_increment?0
+			}
+			AND = {
+				OR = {
+					AND = {
+						
+						check_variable = { resource_imported@iron < 0 }
+						check_variable = { resource@iron < 0 }
+					}
+					AND = {
+						check_variable = { resource_imported@bauxite < 0 }
+						check_variable = { resource@bauxite < 0 }
+					}
+				}
+				num_of_available_civilian_factories > 20
+			}
+		}
+		has_country_flag = trade_fix_ai_strat
+		NOT = {has_idea = trade_fix_delay}
+		date > 1936.1.1
+	}
+
+	immediate = { # Optional : all the following will occur once the event occurs
+		add_to_variable = {ROOT.trade_fix_increment = 1}
+		add_timed_idea = { idea = trade_fix_delay days = 15 }
+		if = {
+			limit = {
+				has_country_flag = trade_fix_ai_strat
+			}
+			clr_country_flag = trade_fix_ai_strat
+		}
+	}
+
+	option = {}
+}
