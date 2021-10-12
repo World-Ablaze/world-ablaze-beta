@@ -234,3 +234,47 @@ country_event = {
 
 }
 
+country_event = {
+	id = wa_debug.9 # The unique id. nuke_dropped is the namespace, which can be used for better organization, and is used in localisation.
+
+	hidden = yes # Optional : if set to "yes" no one will see the event
+
+	is_triggered_only = yes
+
+	immediate = {
+		@AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL = 0.35
+		@AI_MIN_NUM_OF_FACTORIES_TO_ASSIGN_ON_PROJECT = 20
+
+		# check that the ai can afford to assign factories to a new project
+		set_temp_variable = { max_factories_on_projects = ROOT.num_of_civilian_factories_available_for_projects }
+		add_to_temp_variable = { max_factories_on_projects = ROOT.EAI_PC_assigned_factories_total }
+		multiply_temp_variable = { max_factories_on_projects = @AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL }
+
+		set_temp_variable = { min_factories_on_projects = ROOT.EAI_PC_assigned_factories_total }
+		add_to_temp_variable = { min_factories_on_projects = @AI_MIN_NUM_OF_FACTORIES_TO_ASSIGN_ON_PROJECT }
+
+		if = {
+			limit = {
+				tag = SWE
+			}
+			log = "tag = SWE min_factories_on_projects = [?min_factories_on_projects] max_factories_on_projects [?max_factories_on_projects]"
+		}
+
+	}
+
+	option = {
+		trigger = {
+			check_variable = { min_factories_on_projects < max_factories_on_projects }
+		}
+		name = "can invest"
+	}
+
+	option = {
+		trigger = {
+			check_variable = { min_factories_on_projects > max_factories_on_projects }
+		}
+		name = "can't invest"
+	}
+
+}
+
