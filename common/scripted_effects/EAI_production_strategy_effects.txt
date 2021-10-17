@@ -518,6 +518,21 @@ EAI_aircraft_production_strategies = {
 		clr_country_flag = EAI_JET_TAC_aircraft_production_strategy
 	}
 
+	### STRIKE
+
+	if = { limit = { EAI_STRIKE_aircraft_production = yes } 
+
+		set_country_flag = EAI_STRIKE_aircraft_production_strategies
+		EAI_STRIKE_aircraft_production_strategies = yes
+	}
+	else_if = { limit = { has_country_flag = EAI_STRIKE_aircraft_production_strategies } 
+	
+		clr_country_flag = EAI_STRIKE_aircraft_production_strategies
+
+		clr_country_flag = EAI_STRIKE_aircraft_production_strategy
+		clr_country_flag = EAI_JET_TAC_aircraft_production_strategy
+	}
+
 	### NAV
 
 	if = { 
@@ -686,6 +701,41 @@ EAI_TAC_aircraft_production_strategies = {
 		}
 
 		clr_country_flag = EAI_TAC_aircraft_production_strategy
+	}
+
+	# STRIKE
+	if = { 
+		limit = {
+			NOT = { WA_has_jet_strike_bomber_tech = yes }
+		
+			has_deployed_air_force_size = { size < 2000 type = strike_bomber }
+			
+			if = { limit = { EAI_FTR_aircraft_production = yes enemies_strength_ratio > 0.5 }
+				has_deployed_air_force_size = { size > 1250 type = fighter }
+			}
+		} 
+
+		if = { limit = { NOT = { has_country_flag = EAI_STRIKE_aircraft_production_strategy } } 
+		
+			set_country_flag = EAI_STRIKE_aircraft_production_strategy
+		}
+	}
+	else_if = { 
+		limit = {
+			NOT = {
+				AND = {
+					NOT = { EAI_STRIKE_aircraft_production_strategy = yes }
+			
+					has_deployed_air_force_size = { size < 2500 type = strike_bomber }
+					
+					if = { limit = { EAI_FTR_aircraft_production = yes enemies_strength_ratio > 0.5 }
+						has_deployed_air_force_size = { size > 1000 type = fighter }
+					}
+				}
+			}
+		}
+
+		clr_country_flag = EAI_STRIKE_aircraft_production_strategy
 	}
 
 	# JET TAC
