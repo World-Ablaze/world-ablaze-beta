@@ -428,6 +428,21 @@
 
 EAI_aircraft_production_strategies = {
 
+	### FTR MULTI
+
+	if = { limit = { EAI_FTR_MULTI_aircraft_production = yes } 
+
+		set_country_flag = EAI_FTR_aircraft_production_strategies
+		EAI_FTR_aircraft_production_strategies = yes
+	}
+	else_if = { limit = { has_country_flag = EAI_FTR_aircraft_production_strategies } 
+	
+		clr_country_flag = EAI_FTR_aircraft_production_strategies
+
+		clr_country_flag = EAI_FTR_MULTI_aircraft_production_strategy
+		clr_country_flag = EAI_JET_FTR_aircraft_production_strategy
+	}
+
 	### FTR
 
 	if = { limit = { EAI_FTR_aircraft_production = yes } 
@@ -440,6 +455,21 @@ EAI_aircraft_production_strategies = {
 		clr_country_flag = EAI_FTR_aircraft_production_strategies
 
 		clr_country_flag = EAI_FTR_aircraft_production_strategy
+		clr_country_flag = EAI_JET_FTR_aircraft_production_strategy
+	}
+
+	### MULTI
+
+	if = { limit = { EAI_MULTI_aircraft_production = yes } 
+
+		set_country_flag = EAI_FTR_aircraft_production_strategies
+		EAI_FTR_aircraft_production_strategies = yes
+	}
+	else_if = { limit = { has_country_flag = EAI_FTR_aircraft_production_strategies } 
+	
+		clr_country_flag = EAI_FTR_aircraft_production_strategies
+
+		clr_country_flag = EAI_MULTI_aircraft_production_strategy
 		clr_country_flag = EAI_JET_FTR_aircraft_production_strategy
 	}
 
@@ -615,13 +645,43 @@ EAI_FTR_aircraft_production_strategies = {
 	if = { 
 		limit = {
 			NOT = { WA_has_jet_fighter_tech = yes }
+			NOT = { original_tag = SOV }
+			NOT = { has_tech = ger_fighter_multirole_1 }
+			has_deployed_air_force_size = { size < 6000 type = fighter }
+		} 
+
+		if = { limit = { NOT = { has_country_flag = EAI_FTR_MULTI_aircraft_production_strategy } } 
 		
+			set_country_flag = EAI_FTR_MULTI_aircraft_production_strategy
+		}
+	}
+	else_if = { 
+		limit = {
+			NOT = { WA_has_jet_fighter_tech = yes }
+			original_tag = SOV
 			has_deployed_air_force_size = { size < 6000 type = fighter }
 		} 
 
 		if = { limit = { NOT = { has_country_flag = EAI_FTR_aircraft_production_strategy } } 
 		
 			set_country_flag = EAI_FTR_aircraft_production_strategy
+		}
+	}
+	else_if = { 
+		limit = {
+			NOT = { WA_has_jet_fighter_tech = yes }
+			has_tech = ger_fighter_multirole_1
+			has_deployed_air_force_size = { size < 6000 type = fighter }
+		} 
+
+		if = { limit = { has_country_flag = EAI_FTR_aircraft_production_strategy } 
+		
+			clr_country_flag = EAI_FTR_MULTI_aircraft_production_strategy
+		}
+
+		if = { limit = { NOT = { has_country_flag = EAI_MULTI_aircraft_production_strategy } } 
+		
+			set_country_flag = EAI_MULTI_aircraft_production_strategy
 		}
 	}
 	else_if = { 
@@ -635,7 +695,9 @@ EAI_FTR_aircraft_production_strategies = {
 			}
 		}
 
+		clr_country_flag = EAI_FTR_MULTI_aircraft_production_strategy
 		clr_country_flag = EAI_FTR_aircraft_production_strategy
+		clr_country_flag = EAI_MULTI_aircraft_production_strategy
 	}
 
 	# JET FTR
