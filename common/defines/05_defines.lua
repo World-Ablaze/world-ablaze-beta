@@ -184,7 +184,7 @@ NDefines.NCountry.POLITICAL_POWER_CAP = 5000.0
 
 NDefines.NCountry.MAJOR_MIN_FACTORIES = 70											-- need at least these many factories to become a major
 
-NDefines.NCountry.BASE_FUEL_GAIN_PER_OIL = 1.0										-- base amount of fuel gained hourly per excess oil
+NDefines.NCountry.BASE_FUEL_GAIN_PER_OIL = 1.1										-- base amount of fuel gained hourly per excess oil
 NDefines.NCountry.STARTING_FUEL_RATIO = 0.8											-- starting fuel ratio compared to max fuel for countries
 
 NDefines.NCountry.GIE_EXILE_AIR_START_EXPERIENCE = 700	 							--Starting experience for exile airwings
