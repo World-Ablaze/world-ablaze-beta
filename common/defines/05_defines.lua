@@ -226,6 +226,7 @@ NDefines.NBuildings.AIRBASE_CAPACITY_MULT = 100										-- Each level of airbas
 
 NDefines.NBuildings.OWNER_CHANGE_EXTRA_SHARED_SLOTS_FACTOR = 1
 
+--NDefines.NBuildings.INFRASTRUCTURE_RESOURCE_BONUS = 0 								-- multiplactive resource bonus for each level of (non damaged) infrastructure
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Production
 
