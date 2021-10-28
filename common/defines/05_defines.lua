@@ -312,6 +312,8 @@ NDefines.NAir.DISRUPTION_FACTOR_CARRIER = 1.0										-- multiplier on disrupti
 NDefines.NAir.CARRIER_HOURS_DELAY_AFTER_EACH_COMBAT = 0								-- how often carrier planes do battle inside naval combat
 NDefines.NAir.ACE_EARN_CHANCE_BASE = 0.005											-- Base chance % for ace pilot to be created. Happens only when successfully kill airplane/ship or damage the buildings.
 
+NDefines.NAir.ACCIDENT_CHANCE_BASE = 0.1											-- Base chance % (0 - 100) for accident to happen. Reduced with higher reliability stat.
+
 --NDefines.NAir.EFFICIENCY_REGION_CHANGE_DAILY_GAIN_DEFAULT = 0.1						-- Default how much efficiency to regain per day. Gain applied hourly.
 
 NDefines.NAir.CAS_NIGHT_ATTACK_FACTOR = 0.4						                    -- CAS damaged get multiplied by this in land combats at night
