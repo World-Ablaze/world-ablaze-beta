@@ -1180,6 +1180,11 @@ focus_tree = {
 		ai_will_do = {
 			factor = 1
 		}
+
+		available = {
+			NOT = { has_idea = disarmed_nation }
+			NOT = { has_idea = volunteer_only }
+		}
 		
 		completion_reward = {
 			add_popularity = {
@@ -4924,45 +4929,147 @@ focus_tree = {
 
 	focus = {
 		id = GER_subjugate_iraq
-		icon = GFX_goal_bases_in_france
+		icon = GFX_goal_attack_iraq
 		prerequisite = { focus = GER_western_war_plans }
 		x = 2
 		y = 1
 		relative_position_id = GER_western_war_plans
-		cost = 10
+		cost = 4
 
 		available = {
+			OR = {
+				AND = {
+					455 = {
+						CONTROLLER = {
+							OR = {
+								tag = ROOT
+								is_subject_of = ROOT
+								is_in_faction_with = ROOT
+							}
+						}
+					}
+					981 = {
+						CONTROLLER = {
+							OR = {
+								tag = ROOT
+								is_subject_of = ROOT
+								is_in_faction_with = ROOT
+							}
+						}
+					}
+					454 = {
+						CONTROLLER = {
+							OR = {
+								tag = ROOT
+								is_subject_of = ROOT
+								is_in_faction_with = ROOT
+							}
+						}
+					}
+				}
+				IRQ = {
+					is_in_faction_with = GER
+				}
+			}
 		}
 
 		cancel_if_invalid = yes
 		available_if_capitulated = no
+		
+		bypass = {
+			OR = {
+				NOT = { country_exists = IRQ }
+				has_war_with = IRQ
+				IRQ = { has_capitulated = yes }
+				IRQ = { is_subject_of = GER }
+			}
+		}
 
 		ai_will_do = {
 			factor = 1
 		}	
 		completion_reward = {
+			if = {
+				limit = {
+					IRQ = {
+						is_in_faction_with = GER
+					}
+				}
+				IRQ = {
+					country_event = { id = ger_armor.848 hours = 3 }
+				}
+			}
+			else = {
+				country_event = { id = ger_armor.849 }
+			}
 		}
 	}
 
 	focus = {
 		id = GER_pressure_iran
-		icon = GFX_focus_generic_coastal_fort
+		icon = GFX_goal_pressure_iran
 		prerequisite = { focus = GER_subjugate_iraq }
 		x = 0
 		y = 1
 		relative_position_id = GER_subjugate_iraq
 		available = {
-			
+			NOT = { is_in_faction_with = PER }
+			NOT = { PER = { is_subject_of = GER } }
+			676 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+			675 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+			291 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+			656 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+			}
 		}
 
-		cancel_if_invalid = yes
+		cost = 4
 
-		cost = 3
+		cancel_if_invalid = yes
+		bypass = {
+			OR = {
+				NOT = { country_exists = PER }
+				has_war_with = PER
+				PER = { has_capitulated = yes }
+			}
+		}
+
 		ai_will_do = {
 			factor = 1
 		}
 		
 		completion_reward = {
+			country_event = { id = ger_armor.853 }
 		}
 	}
 
@@ -4996,14 +5103,26 @@ focus_tree = {
 
 	focus = {
 		id = GER_prepare_sealion
-		icon = GFX_goal_bases_in_greenland
+		icon = GFX_goal_focus_on_uk
 		prerequisite = { focus = GER_western_war_plans }
 		x = -2
 		y = 1
 		relative_position_id = GER_western_war_plans
-		cost = 10
+		cost = 4
 
 		available = {
+			NOT = {
+				any_home_area_neighbor_country = {
+					has_war_with = ROOT					
+				}		
+			}
+		}
+		
+		bypass = {
+			OR = {
+				ENG = { surrender_progress > 0 }
+				ENG = { has_capitulated = yes }
+			}
 		}
 
 		cancel_if_invalid = yes
@@ -5013,6 +5132,19 @@ focus_tree = {
 			factor = 1
 		}	
 		completion_reward = {
+			add_timed_idea = { idea = prepare_sealion days = 90 }
+			add_tech_bonus = {
+				name = GER_prepare_sealion_bonus
+				bonus = 1.0
+				uses = 1
+				technology = ger_amphibious_1
+			}
+			add_tech_bonus = {
+				name = GER_prepare_sealion_bonus
+				bonus = 3.0
+				uses = 2
+				category = cat_bomber_warfare
+			}
 		}
 	}
 
