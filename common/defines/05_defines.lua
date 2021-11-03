@@ -307,19 +307,23 @@ NDefines.NAir.COMBAT_DAMAGE_SCALE = 0.14											-- Higher value = more shot d
 
 NDefines.NAir.COMBAT_BETTER_AGILITY_DAMAGE_REDUCTION = 0.7 							-- How much the better agility (then opponent's) can reduce their damage to us.
 
-NDefines.NAir.DISRUPTION_FACTOR = 0.5												-- multiplier on disruption damage to scale its effects on planes
+NDefines.NAir.DISRUPTION_FACTOR = 0.1												-- multiplier on disruption damage to scale its effects on planes
 NDefines.NAir.DISRUPTION_FACTOR_CARRIER = 1.0										-- multiplier on disruption damage to scale its effects on carrier vs carrier planes
 NDefines.NAir.CARRIER_HOURS_DELAY_AFTER_EACH_COMBAT = 0								-- how often carrier planes do battle inside naval combat
 NDefines.NAir.ACE_EARN_CHANCE_BASE = 0.005											-- Base chance % for ace pilot to be created. Happens only when successfully kill airplane/ship or damage the buildings.
 
-NDefines.NAir.ACCIDENT_CHANCE_BASE = 0.1											-- Base chance % (0 - 100) for accident to happen. Reduced with higher reliability stat.
+NDefines.NAir.ACCIDENT_CHANCE_BASE = 0.15											-- Base chance % (0 - 100) for accident to happen. Reduced with higher reliability stat.
 
 --NDefines.NAir.EFFICIENCY_REGION_CHANGE_DAILY_GAIN_DEFAULT = 0.1						-- Default how much efficiency to regain per day. Gain applied hourly.
 
 NDefines.NAir.CAS_NIGHT_ATTACK_FACTOR = 0.4						                    -- CAS damaged get multiplied by this in land combats at night
 NDefines.NAir.ANTI_AIR_MAXIMUM_DAMAGE_REDUCTION_FACTOR = 0.50 						-- Maximum damage reduction factor applied to incoming air attacks against units with AA.
 
-NDefines.NAir.BOMBING_TARGETING_RANDOM_FACTOR = 0.15								-- % of picking the wrong target
+NDefines.NAir.BOMBING_TARGETING_RANDOM_FACTOR = 0.25								-- % of picking the wrong target
+NDefines.NAir.AIR_WING_BOMB_DAMAGE_FACTOR = 3										-- Used to balance the damage done while bombing.
+NDefines.NAir.BOMBING_PROV_BUILD_PRIO_SCALE = 2										-- Scale of the selected priority for provincial buildings
+NDefines.NAir.BOMBING_STATE_BUILD_PRIO_SCALE = 2									-- Scale of the selected priority for state buildings
+NDefines.NAir.ANTI_AIR_PLANE_DAMAGE_FACTOR = 0.3									-- Anti Air Gun Damage factor
 
 NDefines.NAir.MISSION_COMMAND_POWER_COSTS = {  										-- command power cost per plane to create a mission
 		0.0, -- AIR_SUPERIORITY
