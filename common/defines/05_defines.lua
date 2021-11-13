@@ -86,6 +86,8 @@ NDefines.NMilitary.STRATEGIC_INFRA_SPEED = 18.0                  					 -- Max of
 --NDefines.NMilitary.PLAN_EXECUTE_CAREFUL_LIMIT = 10									-- When looking for an attach target, this score limit is required in the battle plan to consider province for attack
 --NDefines.NMilitary.PLAN_EXECUTE_CAREFUL_MAX_FORT = 9								-- If execution mode is set to careful, units will not attack provinces with fort levels greater than or equal to this
 
+NDefines.NMilitary.BATALION_CHANGED_EXPERIENCE_DROP = 0.75							-- Division experience drop if unit has different batalion
+
 NDefines.NMilitary.MAX_ARMY_EXPERIENCE = 5000										--Max army experience a country can store
 NDefines.NMilitary.MAX_NAVY_EXPERIENCE = 5000										--Max navy experience a country can store
 NDefines.NMilitary.MAX_AIR_EXPERIENCE = 5000										--Max air experience a country can store
