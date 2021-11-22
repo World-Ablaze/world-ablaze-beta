@@ -275,8 +275,8 @@ NDefines.NProduction.MIN_NAVAL_EQUIPMENT_CONVERSION_IC_COST_FACTOR = 0.05			-- M
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Operations
 
-NDefines.NOperatives.AGENCY_CREATION_FACTORIES = 10									-- Number of factories used to create an intelligence agency
-NDefines.NOperatives.MAX_OPERATIVE_SLOT_FROM_AGENCY_UPGRADES = 3					-- max operative slots gained from upgrades
+NDefines.NOperatives.AGENCY_CREATION_FACTORIES = 20									-- Number of factories used to create an intelligence agency
+NDefines.NOperatives.MAX_OPERATIVE_SLOT_FROM_AGENCY_UPGRADES = 5					-- max operative slots gained from upgrades
 NDefines.NOperatives.CONTROL_TRADE_MAX_INFLUENCE = 50.0								-- The maximum amount of trade influence that can be gained through the control trade mission
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Operations
