@@ -45,6 +45,12 @@ NDefines.NTrade.PARTY_SUPPORT_TRADE_FACTOR = 0										-- Trade factor bonus at
 NDefines.NTrade.ANTI_MONOPOLY_TRADE_FACTOR = 0										-- This is added to the factor value when anti-monopoly threshold is exceeded
 
 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Characters
+
+
+NDefines.NCharacter.OFFICER_CORP_ADVISOR_ENTRIES_IN_MENU = { "high_command", "theorist", "army_theorist", "navy_theorist", "air_theorist", "army_chief", "air_chief", "navy_chief" }
+
+
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Technology
 
 
