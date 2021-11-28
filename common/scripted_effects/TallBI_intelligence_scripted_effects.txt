@@ -1,0 +1,30 @@
+
+add_operation_token_for_FROM = {
+	if = {
+		limit = {
+			NOT = { FROM = { is_in_array = { array = Root.operation_token_array } } }
+		}
+		add_to_array = { operation_token_array = From.id }
+	}
+	meta_effect = {
+		text = {
+			add_operation_token = {
+				tag = FROM
+				token = [TOKEN]
+			}
+			if = {
+				limit = {
+					NOT = { has_country_flag = operation/[TOKEN]@FROM }
+				}
+				set_country_flag = operation_token/[TOKEN]@FROM
+			}
+			else = {
+				modify_country_flag = {
+					flag = operation/[TOKEN]@FROM
+					value = 1 
+				}
+			}
+		}
+		TOKEN = "[?temp.GetTokenKey]"
+	}
+}

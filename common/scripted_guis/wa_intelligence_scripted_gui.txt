@@ -1,0 +1,96 @@
+scripted_gui = {
+	agency_topbar_tab = {
+		context_type = player_context
+		    
+		window_name = "intel_agency_topbar_container"
+		parent_window_name = countryintelligenceagencyview
+        
+		visible = {
+		
+		}
+		                        
+		effects = { 
+			close_button_click = {
+				if = {
+					limit = {
+						NOT = { has_country_flag = show_operation_token }
+					}
+					set_country_flag = show_operation_token
+					every_country = {	
+						limit = { 
+							ROOT = {
+								OR = {
+									has_operation_token = {
+										tag = PREV
+										token = token_army
+									}
+									has_operation_token = {
+										tag = PREV
+										token = token_airforce
+									}
+									has_operation_token = {
+										tag = PREV
+										token = token_navy
+									}
+									has_operation_token = {
+										tag = PREV
+										token = token_civilian
+									}
+									has_operation_token = {
+										tag = PREV
+										token = token_resistance_contacts
+									}
+									has_operation_token = {
+										tag = PREV
+										token = token_prep_sabotage
+									}
+								}
+							}
+						}
+						add_to_array = { Root.operation_token_target = This.id }
+					}
+				}
+				else = {
+					clr_country_flag = show_operation_token
+					clear_array = operation_token_target
+				}
+			}
+		} 
+		
+		triggers = {
+		}
+	}
+	operation_token_gui = {
+		context_type = player_context
+		     
+		window_name = "operation_token_container"
+        
+		visible = {
+			has_country_flag = show_operation_token
+		}
+		
+		dynamic_lists = {
+			operation_token_country_list = {
+				array = Root.operation_token_target  
+				change_scope = yes 
+				entry_container = "operation_token_country_list_container"
+			}
+		}
+		
+		properties = {
+			flag = {
+				image = "[This.GetFlag]"
+			}
+		}
+		                        
+		effects = { 
+			close_button_click = {
+				clr_country_flag = show_operation_token
+				clear_array = operation_token_target
+			}
+		} 
+		
+		triggers = {
+		}
+	}
+}
