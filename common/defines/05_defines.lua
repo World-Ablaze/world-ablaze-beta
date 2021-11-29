@@ -99,6 +99,8 @@ NDefines.NMilitary.MAX_NAVY_EXPERIENCE = 5000										--Max navy experience a c
 NDefines.NMilitary.MAX_AIR_EXPERIENCE = 5000										--Max air experience a country can store
 
 NDefines.NMilitary.UNIT_EXPERIENCE_PER_COMBAT_HOUR = 0.00060
+NDefines.NMilitary.FIELD_EXPERIENCE_SCALE = 0.0005
+NDefines.NMilitary.FIELD_EXPERIENCE_MAX_PER_DAY = 1				-- Most xp you can gain per day
 
 NDefines.NMilitary.LAND_COMBAT_STR_ARMOR_DEFLECTION_FACTOR = 0.5					-- damage reduction if armor outclassing enemy
 NDefines.NMilitary.LAND_COMBAT_ORG_ARMOR_DEFLECTION_FACTOR = 0.5					-- damage reduction if armor outclassing enemy
@@ -511,12 +513,16 @@ NDefines.NAI.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
 		0.0, -- RESERVE_FLEET (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
 		1.2, -- NAVAL_INVASION_SUPPORT (does not cost fuel at base, only costs while doing bombardment and escorting units)
 	}
+	
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- SUPPLY
+
+NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.01									 -- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- AI
 	
 ----------- SUPPLY
 
---NDefines.NAI.SUPPLY_CRISIS_LIMIT = 1.0												-- If a unit is standing in an area with 
+--NDefines.NAI.SUPPLY_CRISIS_LIMIT = 1.0											-- If a unit is standing in an area with 
 
 ----------- LEND LEASE
 
