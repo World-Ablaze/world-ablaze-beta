@@ -184,7 +184,7 @@ NDefines.NCountry.SUPPLY_CONVOY_FACTOR = 1											-- How many convoys each su
 NDefines.NCountry.SUPPLY_PORT_LEVEL_THROUGHPUT = 3			    					-- supply throughput per level of naval base
 NDefines.NCountry.EVENT_PROCESS_OFFSET = 7											-- Events are checked every X day per country or state (1 is ideal, but CPU heavy)
 
---NDefines.NCountry.AIR_SUPPLY_CONVERSION_SCALE = 0.15								-- Conversion scale for planes to air supply
+NDefines.NCountry.AIR_SUPPLY_CONVERSION_SCALE = 0.02								-- Conversion scale for planes to air supply
 
 NDefines.NCountry.REINFORCEMENT_EQUIPMENT_DELIVERY_SPEED = 0.1						-- Modifier for army equipment reinforcement speed
 
@@ -517,6 +517,7 @@ NDefines.NAI.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- SUPPLY
 
 NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.01									 -- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
+NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST = 200						 -- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- AI
 	
