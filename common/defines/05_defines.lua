@@ -51,6 +51,12 @@ NDefines.NTrade.ANTI_MONOPOLY_TRADE_FACTOR = 0										-- This is added to the 
 NDefines.NCharacter.OFFICER_CORP_ADVISOR_ENTRIES_IN_MENU = { "high_command", "theorist", "army_theorist", "navy_theorist", "air_theorist", "army_chief", "air_chief", "navy_chief" }
 
 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Railways
+
+
+NDefines.NRailwayGun.RAILWAY_GUN_RANGE = 15											-- The range of railway guns in pixels
+
+
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Technology
 
 
