@@ -49,6 +49,7 @@ NDefines.NTrade.ANTI_MONOPOLY_TRADE_FACTOR = 0										-- This is added to the 
 
 
 NDefines.NCharacter.OFFICER_CORP_ADVISOR_ENTRIES_IN_MENU = { "high_command", "theorist", "army_theorist", "navy_theorist", "air_theorist", "army_chief", "air_chief", "navy_chief" }
+NDefines.NCharacter.DEFAULT_PP_COST_FOR_POLITICAL_ADVISOR = 100
 
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Railways
@@ -108,8 +109,8 @@ NDefines.NMilitary.MAX_NAVY_EXPERIENCE = 5000										--Max navy experience a c
 NDefines.NMilitary.MAX_AIR_EXPERIENCE = 5000										--Max air experience a country can store
 
 NDefines.NMilitary.UNIT_EXPERIENCE_PER_COMBAT_HOUR = 0.00060
-NDefines.NMilitary.FIELD_EXPERIENCE_SCALE = 0.0005
-NDefines.NMilitary.FIELD_EXPERIENCE_MAX_PER_DAY = 1				-- Most xp you can gain per day
+NDefines.NMilitary.FIELD_EXPERIENCE_SCALE = 0.0015
+NDefines.NMilitary.FIELD_EXPERIENCE_MAX_PER_DAY = 0.75				-- Most xp you can gain per day
 
 NDefines.NMilitary.LAND_COMBAT_STR_ARMOR_DEFLECTION_FACTOR = 0.5					-- damage reduction if armor outclassing enemy
 NDefines.NMilitary.LAND_COMBAT_ORG_ARMOR_DEFLECTION_FACTOR = 0.5					-- damage reduction if armor outclassing enemy
@@ -210,7 +211,7 @@ NDefines.NCountry.GIE_EXILE_AIR_START_EXPERIENCE = 700	 							--Starting experi
 NDefines.NCountry.GIE_ESCAPING_DIVISIONS_XP_BOOST = 0.6
 
 NDefines.NCountry.VICTORY_POINTS_IMPORTANCE_FACTOR = 50.0							-- State victory points importance factor for AI and calculations
-NDefines.NCountry.ATTACHE_XP_SHARE = 0.05											-- Country received xp from attaches
+NDefines.NCountry.ATTACHE_XP_SHARE = 0.15											-- Country received xp from attaches
 
 NDefines.NCountry.SURRENDER_LIMIT_REDUCTION_PER_COLLABORATION = 0.1 				--each percent of collaboration will lower surrender limit by this percentage 
 NDefines.NCountry.NUM_DAYS_TO_FULLY_DELETE_STOCKPILED_EQUIPMENT = 365				-- time in days to fully delete equipments from stockpile. when you delete an equipment, they go to a temporary hidden pool which still can be seized 
