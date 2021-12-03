@@ -338,6 +338,7 @@ NDefines.NAir.ACE_EARN_CHANCE_BASE = 0.005											-- Base chance % for ace pi
 NDefines.NAir.ACCIDENT_CHANCE_BASE = 0.15											-- Base chance % (0 - 100) for accident to happen. Reduced with higher reliability stat.
 
 --NDefines.NAir.EFFICIENCY_REGION_CHANGE_DAILY_GAIN_DEFAULT = 0.1						-- Default how much efficiency to regain per day. Gain applied hourly.
+NDefines.NAir.AIR_WING_ATTACK_LOGISTICS_TRUCK_DAMAGE_FACTOR = 0.15
 
 NDefines.NAir.CAS_NIGHT_ATTACK_FACTOR = 0.4						                    -- CAS damaged get multiplied by this in land combats at night
 NDefines.NAir.ANTI_AIR_MAXIMUM_DAMAGE_REDUCTION_FACTOR = 0.50 						-- Maximum damage reduction factor applied to incoming air attacks against units with AA.
