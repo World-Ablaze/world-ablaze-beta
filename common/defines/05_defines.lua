@@ -71,6 +71,8 @@ NDefines.NTechnology.LICENSE_PRODUCTION_TECH_BONUS = 0								-- License product
 NDefines.NMilitary.BASE_COMBAT_WIDTH = 90											-- base combat width
 NDefines.NMilitary.ADDITIONAL_COMBAT_WIDTH = 30										-- more opened up by support attack
 
+NDefines.NMilitary.MIN_SUPPLY_CONSUMPTION = 0.01									-- minimum value of supply consumption that a unit can get
+
 NDefines.NMilitary.PLANNING_DECAY = 0.001
 NDefines.NMilitary.PLAYER_ORDER_PLANNING_DECAY = 0.003								-- Amount of planning lost due to player manual order
 NDefines.NMilitary.PLANNING_GAIN = 0.01
@@ -529,11 +531,18 @@ NDefines.NAI.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
 NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.01									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
 NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST = 500
 NDefines.NSupply.LOCAL_SUPPLY_PER_AIR_MISSION = 0.2									-- each assigned plane gives this much supply at full efficiency
+--NDefines.NSupply.CAPITAL_SUPPLY_CIVILIAN_FACTORIES = 0 								-- supply from one civilian factory
+--NDefines.NSupply.CAPITAL_SUPPLY_MILITARY_FACTORIES = 0 								-- supply from one military factory
+NDefines.NSupply.AVAILABLE_MANPOWER_STATE_SUPPLY = 0								--Factor for state supply from max manpower (population)
+NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_BONUS = 1.5
+
+NDefines.NSupply.FLOATING_HARBOR_BASE_SUPPLY = 30.0 								-- supply given by a floating harbor
+NDefines.NSupply.FLOATING_HARBOR_BASE_DURATION = 60 								-- duration of a full hp floating harbor
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- AI
 	
 ----------- SUPPLY
-
+	
 --NDefines.NAI.SUPPLY_CRISIS_LIMIT = 1.0											-- If a unit is standing in an area with 
 
 ----------- LEND LEASE
