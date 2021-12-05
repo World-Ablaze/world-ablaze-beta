@@ -338,7 +338,7 @@ NDefines.NAir.ACE_EARN_CHANCE_BASE = 0.005											-- Base chance % for ace pi
 NDefines.NAir.ACCIDENT_CHANCE_BASE = 0.15											-- Base chance % (0 - 100) for accident to happen. Reduced with higher reliability stat.
 
 --NDefines.NAir.EFFICIENCY_REGION_CHANGE_DAILY_GAIN_DEFAULT = 0.1						-- Default how much efficiency to regain per day. Gain applied hourly.
-NDefines.NAir.AIR_WING_ATTACK_LOGISTICS_TRUCK_DAMAGE_FACTOR = 0.15
+NDefines.NAir.AIR_WING_ATTACK_LOGISTICS_TRUCK_DAMAGE_FACTOR = 0.05
 
 NDefines.NAir.CAS_NIGHT_ATTACK_FACTOR = 0.4						                    -- CAS damaged get multiplied by this in land combats at night
 NDefines.NAir.ANTI_AIR_MAXIMUM_DAMAGE_REDUCTION_FACTOR = 0.50 						-- Maximum damage reduction factor applied to incoming air attacks against units with AA.
@@ -530,7 +530,7 @@ NDefines.NAI.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
 	
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- SUPPLY
 
-NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.01									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
+NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.05									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
 NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST = 500
 NDefines.NSupply.LOCAL_SUPPLY_PER_AIR_MISSION = 0.2									-- each assigned plane gives this much supply at full efficiency
 --NDefines.NSupply.CAPITAL_SUPPLY_CIVILIAN_FACTORIES = 0 								-- supply from one civilian factory
@@ -544,7 +544,7 @@ NDefines.NSupply.RAILWAY_FLOW_PER_LEVEL = 10.0 										-- how much additional 
 NDefines.NSupply.RAILWAY_FLOW_PENALTY_PER_DAMAGED = 10.0 							-- penalty to flow per damaged railway
 
 NDefines.NSupply.NODE_INITIAL_SUPPLY_FLOW = 5
-NDefines.NSupply.NODE_STARTING_PENALTY_PER_PROVINCE = 0.78
+NDefines.NSupply.NODE_STARTING_PENALTY_PER_PROVINCE = 1.16
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- AI
 	
