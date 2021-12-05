@@ -536,7 +536,7 @@ NDefines.NSupply.LOCAL_SUPPLY_PER_AIR_MISSION = 0.2									-- each assigned pla
 --NDefines.NSupply.CAPITAL_SUPPLY_CIVILIAN_FACTORIES = 0 								-- supply from one civilian factory
 --NDefines.NSupply.CAPITAL_SUPPLY_MILITARY_FACTORIES = 0 								-- supply from one military factory
 NDefines.NSupply.AVAILABLE_MANPOWER_STATE_SUPPLY = 0								--Factor for state supply from max manpower (population)
-NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_BONUS = 1.5
+NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_BONUS = 1.3
 
 NDefines.NSupply.FLOATING_HARBOR_BASE_SUPPLY = 30.0 								-- supply given by a floating harbor
 NDefines.NSupply.FLOATING_HARBOR_BASE_DURATION = 60 								-- duration of a full hp floating harbor
