@@ -548,6 +548,9 @@ NDefines.NSupply.RAILWAY_FLOW_PENALTY_PER_DAMAGED = 10.0 							-- penalty to fl
 NDefines.NSupply.NODE_INITIAL_SUPPLY_FLOW = 5
 NDefines.NSupply.NODE_STARTING_PENALTY_PER_PROVINCE = 1.16
 
+NDefines.NSupply.SUPPLY_PATH_MAX_DISTANCE = 45										-- max time it can take
+NDefines.NSupply.RAILWAY_DISTANCE_FACTOR_FOR_REINFORCEMENT_SPEED = 0.05 			-- time factor for total railway distance
+
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- AI
 	
 ----------- SUPPLY

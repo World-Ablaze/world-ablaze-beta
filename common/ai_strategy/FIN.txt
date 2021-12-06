@@ -1,73 +1,66 @@
-finland_dont_declare_war_on_sov = {
+FIN_soviets_are_a_big_threat_alone = {
 	enable = {
-		original_tag = FIN
+		tag = FIN
 		NOT = { has_war_with = SOV }
 	}
-	abort = {
-		has_war_with = SOV
-	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = ignore_claim
-		id = "SOV"			
+		id = SOV			
 		value = 1
 	}
 	ai_strategy = {
 		type = ignore
-		id = "SOV"
+		id = SOV
 		value = 1000
 	}
 	ai_strategy = {
 		type = declare_war
-		id = "SOV"
+		id = SOV
 		value = -2000 
 	}
 	ai_strategy = {
 		type = befriend
-		id = "SOV"			
+		id = SOV		
 		value = 50
 	}
 	ai_strategy = {
 		type = alliance
-		id = "SOV"			
+		id = SOV		
 		value = -500
+	}
+	ai_strategy = {
+		type = antagonize
+		id = SOV
+		value = -200
 	}
 }
 
-finland_dont_declare_war_on_sov_if_you_lose_the_winter_war = {
+FIN_trust_nordic_neutrality = {
 	enable = {
-		original_tag = FIN
-		NOT = { has_war_with = SOV }
-		has_country_flag = FIN_winter_War_lost
+		tag = FIN
+		is_historical_focus_on = yes
+		NOT = { has_war_with = NOR }
+		NOT = { has_war_with = SWE }
 	}
+
 	abort = {
-		has_war_with = SOV
+		OR = {
+			has_war_with = NOR
+			has_war_with = SWE
+		}
 	}
 
 	ai_strategy = {
-		type = ignore_claim
-		id = "SOV"			
-		value = 1
+	 	type = front_unit_request
+		tag = NOR
+		value = -200
 	}
 	ai_strategy = {
-		type = ignore
-		id = "SOV"
-		value = 1000
-	}
-	ai_strategy = {
-		type = declare_war
-		id = "SOV"
-		value = -2000 
-	}
-	ai_strategy = {
-		type = befriend
-		id = "SOV"			
-		value = 50
-	}
-	ai_strategy = {
-		type = alliance
-		id = "SOV"			
-		value = -500
+	 	type = front_unit_request
+		tag = SWE
+		value = -200
 	}
 }
 
@@ -101,7 +94,7 @@ finland_ally = {
 	
 	ai_strategy = {
 		type = alliance
-		id = "FIN"			
+		id = FIN		
 		value = 2000
 	}
 }
@@ -118,7 +111,7 @@ finland_ally_2 = {
 	
 	ai_strategy = {
 		type = alliance
-		id = "GER"			
+		id = GER		
 		value = 2000
 	}
 }
@@ -166,5 +159,78 @@ FIN_too_small_for_lendlease = {
 		type = send_lend_lease_desire
 		id = FIN
 		value = -200
+	}
+}
+
+FIN_alone_in_the_north = {
+	enable = {
+		original_tag = FIN
+		is_historical_focus_on = yes
+	}
+
+	abort = {
+		has_global_flag = SOV_winter_war_flag
+		GER = { has_war_with = SOV }
+	}
+
+	ai_strategy = {
+		type = pp_spend_priority
+		id = relation	
+		value = -200
+	}	
+}
+
+FIN_antagonize_soviets = {
+	enable = {
+		tag = FIN
+		is_historical_focus_on = yes
+		SOV = { owns_state = 146 } #Karjala
+		is_subject = no
+		NOT = { has_non_aggression_pact_with = SOV }
+		NOT = { is_in_faction_with = SOV }
+		NOT = { is_guaranteed_by = SOV }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = prepare_for_war
+		id = SOV	
+		value = 200
+	}
+}
+
+FIN_continuation_war_wait = { #Don't attack Soviets until Barbarossa
+	enable = {
+		tag = FIN
+		is_historical_focus_on = yes
+		SOV = {
+			any_owned_state = { is_core_of = FIN }
+			NOT = { has_war_with = GER }
+		}
+		NOT = { has_war_with = GER }
+		NOT = { GER = { is_justifying_wargoal_against = FIN } }
+		NOT = {	GER = { has_non_aggression_pact_with = SOV } }
+	}
+
+	abort = {
+		OR = {
+			ROOT = {
+				has_war_with = SOV
+			}
+			GER = {
+				has_war_with = SOV
+			}
+		}
+	}
+
+	ai_strategy = {
+		type = declare_war
+		id = SOV
+		value = -400
+	}
+	ai_strategy = {
+		type = befriend
+		id = GER
+		value = 100
 	}
 }
