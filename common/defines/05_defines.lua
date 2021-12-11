@@ -360,7 +360,8 @@ NDefines.NAir.MISSION_COMMAND_POWER_COSTS = {  										-- command power cost p
 		0.0, -- DROP_NUKE		
 		0.0, -- PARADROP		
 		0.0, -- NAVAL_KAMIKAZE	
-        0.0, -- PORT_STRIKE		
+        0.0, -- PORT_STRIKE	
+		0.0, -- ATTACK_LOGISTICS		
 		0.1, -- AIR_SUPPLY		
 		0.0, -- TRAINING
 		0.0, -- NAVAL_MINES_PLANTING
