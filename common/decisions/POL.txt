@@ -689,6 +689,8 @@ POL_peasant_strike_category = {
 				} 
 		}
 		
+		on_map_mode = map_and_decisions_view
+		
 		visible = {
 			OR = {
 				has_active_mission = POL_looming_peasants_strike_mission
@@ -2150,7 +2152,7 @@ POL_reopen_the_maritime_and_colonial_league = {
 		on_map_mode = map_and_decisions_view
 
 		custom_cost_trigger = {
-			num_of_civilian_factories > 4
+			num_of_civilian_factories_available_for_projects > 4
 		}
 		custom_cost_text = decision_cost_civ_factory_5
 		
@@ -2212,7 +2214,7 @@ POL_reopen_the_maritime_and_colonial_league = {
 		on_map_mode = map_and_decisions_view
 
 		custom_cost_trigger = {
-			num_of_civilian_factories > 0
+			num_of_civilian_factories_available_for_projects > 0
 		}
 		custom_cost_text = decision_cost_civ_factory_1
 		
@@ -2285,7 +2287,7 @@ POL_reopen_the_maritime_and_colonial_league = {
 		on_map_mode = map_and_decisions_view
 
 		custom_cost_trigger = {
-			num_of_civilian_factories > 2
+			num_of_civilian_factories_available_for_projects > 2
 		}
 		custom_cost_text = decision_cost_civ_factory_3
 		
@@ -2643,7 +2645,7 @@ POL_support_monarchy_in_LIT_cat = {
 		days_remove = 30
 
 		custom_cost_trigger = {
-			num_of_civilian_factories > 2
+			num_of_civilian_factories_available_for_projects > 2
 		}
 		custom_cost_text = decision_cost_civ_factory_3
 		
@@ -2757,70 +2759,13 @@ POL_support_monarchy_in_LIT_cat = {
 }
 
 POL_fight_against_monarchy_in_LIT_cat = {
-	POL_growing_monarchist_sentiment = {
 
-		allowed = {  }
-
-		icon = GFX_decision_revolt
-
-		available = {
-			hidden_trigger = { always = no }
-		}
-
-		days_mission_timeout = 100
-		is_good = no
-		fire_only_once = yes
-
-		cancel_trigger = {
-			
-		}
-		
-		activation = {
-			OR = {
-				AND = {
-					original_tag = LIT
-					POL = {
-						has_completed_focus = POL_support_monarchism_in_LIT
-					}
-					NOT = { has_country_flag = POL_banned_monarchy_flag }
-					exists = yes
-					is_subject = no
-				}
-				AND = {
-					original_tag = ROM
-					POL = {
-						has_completed_focus = POL_internal_romanian_support
-					}
-					NOT = { has_country_flag = POL_banned_monarchy_flag }
-					exists = yes
-					is_subject = no
-				}
-			}
-		}
-
-		visible = {
-			
-		}
-		
-		cancel_effect = {
-		
-		}
-
-		timeout_effect = {
-			
-		}
-
-		ai_will_do = {
-			factor = 200
-		}
-	}
-
-	POL_suppress_monarchist_sentiment = {
+	POL_suppress_monarchist_sentiment = {	
 
 		icon = decision_generic_nationalism
 
 		available = {
-			NOT = { has_active_mission = POL_growing_monarchist_sentiment }
+			#NOT = { has_active_mission = POL_growing_monarchist_sentiment }
 			custom_trigger_tooltip = {
 				tooltip = has_monarchy_support_1_tt
 				check_variable = {
@@ -2830,11 +2775,14 @@ POL_fight_against_monarchy_in_LIT_cat = {
 			hidden_trigger = { is_ai = no }
 		}
 		
-		target_trigger = {
-			POL_is_valid_to_boost_monarchy = yes
+		targets = {
+			LIT POL CZE ROM
 		}
-		
-		
+
+		target_trigger = {
+			POL_is_valid_to_reject_monarchy = yes
+		}
+
 		visible = {
 			
 		}
@@ -2846,7 +2794,7 @@ POL_fight_against_monarchy_in_LIT_cat = {
 
 		remove_effect = {
 			custom_effect_tooltip = remove_10_monarchy_tt
-			FROM = {
+			ROOT = {
 				add_to_variable = {
 					var = monarchist_support
 					value = -10
@@ -2869,7 +2817,6 @@ POL_fight_against_monarchy_in_LIT_cat = {
 		icon = decision_generic_nationalism
 
 		available = {
-			NOT = { has_active_mission = POL_growing_monarchist_sentiment }
 			has_decision = POL_suppress_monarchist_sentiment
 			custom_trigger_tooltip = {
 				tooltip = has_monarchy_support_10_tt
@@ -2880,8 +2827,14 @@ POL_fight_against_monarchy_in_LIT_cat = {
 			hidden_trigger = { is_ai = no }
 		}
 		
+		cancel_trigger = {
+			hidden_trigger ={
+				POL_is_valid_to_reject_monarchy = no
+			}
+		}
+
 		target_trigger = {
-			POL_is_valid_to_boost_monarchy = yes
+			POL_is_valid_to_reject_monarchy = yes
 		}
 		
 		
@@ -2896,7 +2849,6 @@ POL_fight_against_monarchy_in_LIT_cat = {
 
 		remove_effect = {
 			custom_effect_tooltip = remove_10_monarchy_tt
-			FROM = {
 				add_to_variable = {
 					var = monarchist_support
 					value = -10
@@ -2906,7 +2858,6 @@ POL_fight_against_monarchy_in_LIT_cat = {
 					min = 0
 					max = 100
 				}
-			}
 		}
 
 		ai_will_do = {
@@ -2919,7 +2870,6 @@ POL_fight_against_monarchy_in_LIT_cat = {
 		icon = generic_prepare_civil_war
 
 		available = {
-			NOT = { has_active_mission = POL_growing_monarchist_sentiment }
 			custom_trigger_tooltip = {
 				tooltip = has_monarchy_support_25_tt
 				check_variable = {
@@ -2929,9 +2879,14 @@ POL_fight_against_monarchy_in_LIT_cat = {
 		}
 		
 		target_trigger = {
-			POL_is_valid_to_boost_monarchy = yes
+			POL_is_valid_to_reject_monarchy = yes
 		}
-		
+
+		cancel_trigger = {
+			hidden_trigger ={
+				POL_is_valid_to_reject_monarchy = no
+			}
+		}
 		
 		visible = {
 			
@@ -2953,7 +2908,6 @@ POL_fight_against_monarchy_in_LIT_cat = {
 
 		remove_effect = {
 			custom_effect_tooltip = remove_10_monarchy_tt
-			FROM = {
 				add_to_variable = {
 					var = monarchist_support
 					value = -10
@@ -2963,7 +2917,6 @@ POL_fight_against_monarchy_in_LIT_cat = {
 					min = 0
 					max = 100
 				}
-			}
 		}
 
 		ai_will_do = {
@@ -2976,7 +2929,6 @@ POL_fight_against_monarchy_in_LIT_cat = {
 		icon = decision_generic_nationalism
 
 		available = {
-			NOT = { has_active_mission = POL_growing_monarchist_sentiment }
 			custom_trigger_tooltip = {
 				tooltip = has_monarchy_support_25_tt
 				check_variable = {
@@ -2985,8 +2937,14 @@ POL_fight_against_monarchy_in_LIT_cat = {
 			}
 		}
 		
+		cancel_trigger = {
+			hidden_trigger ={
+				POL_is_valid_to_reject_monarchy = no
+			}
+		}
+
 		target_trigger = {
-			POL_is_valid_to_boost_monarchy = yes
+			POL_is_valid_to_reject_monarchy = yes
 		}
 		
 		
@@ -3001,7 +2959,7 @@ POL_fight_against_monarchy_in_LIT_cat = {
 			command_power > 49
 			has_political_power > 24
 		}
-		custom_cost_text = decision_cost_CP_50_pp_25
+		custom_cost_text = decision_cost_CP_50_pp_50
 		
 		complete_effect = {
 			hidden_effect = {
@@ -3012,16 +2970,14 @@ POL_fight_against_monarchy_in_LIT_cat = {
 
 		remove_effect = {
 			custom_effect_tooltip = remove_20_monarchy_tt
-			FROM = {
-				add_to_variable = {
-					var = monarchist_support
-					value = -20
-				}
-				clamp_variable = {
-					var = monarchist_support
-					min = 0
-					max = 100
-				}
+			add_to_variable = {
+				var = monarchist_support
+				value = -20
+			}
+			clamp_variable = {
+				var = monarchist_support
+				min = 0
+				max = 100
 			}
 		}
 
@@ -3035,7 +2991,6 @@ POL_fight_against_monarchy_in_LIT_cat = {
 		icon = generic_break_treaty
 
 		available = {
-			NOT = { has_active_mission = POL_growing_monarchist_sentiment }
 			custom_trigger_tooltip = {
 				tooltip = has_monarchy_support_25_tt
 				check_variable = {
@@ -3044,10 +2999,19 @@ POL_fight_against_monarchy_in_LIT_cat = {
 			}
 		}
 		
-		target_trigger = {
-			POL_is_valid_to_boost_monarchy = yes
+		cancel_trigger = {
+			hidden_trigger ={
+				POL_is_valid_to_reject_monarchy = no
+			}
 		}
-		
+
+		targets = {
+			LIT POL
+		}
+
+		target_trigger = {
+			POL_is_valid_to_reject_monarchy = yes
+		}
 		
 		visible = {
 			
@@ -3059,24 +3023,22 @@ POL_fight_against_monarchy_in_LIT_cat = {
 		custom_cost_trigger = {
 			always = yes
 		}
-		custom_cost_text = decision_cost_CG_5
+		custom_cost_text = decision_cost_civ_factory_3
 		
 		modifier = {
-			consumer_goods_factor = 0.05
+			civilian_factory_use = 3
 		}
 
 		remove_effect = {
 			custom_effect_tooltip = remove_15_monarchy_tt
-			FROM = {
-				add_to_variable = {
-					var = monarchist_support
-					value = -15
-				}
-				clamp_variable = {
-					var = monarchist_support
-					min = 0
-					max = 100
-				}
+			add_to_variable = {
+				var = monarchist_support
+				value = -15
+			}
+			clamp_variable = {
+				var = monarchist_support
+				min = 0
+				max = 100
 			}
 		}
 
@@ -3090,7 +3052,6 @@ POL_fight_against_monarchy_in_LIT_cat = {
 		icon = generic_prepare_civil_war
 
 		available = {
-			NOT = { has_active_mission = POL_growing_monarchist_sentiment }
 			custom_trigger_tooltip = {
 				tooltip = has_monarchy_support_80_tt
 				check_variable = {
@@ -3099,10 +3060,16 @@ POL_fight_against_monarchy_in_LIT_cat = {
 			}
 		}
 		
-		
-		visible = {
+		cancel_trigger = {
+			hidden_trigger ={
+				POL_is_valid_to_reject_monarchy = no
+			}
 		}
 		
+		visible = {
+
+		}
+
 		fire_only_once = no
 		days_remove = 30
 
@@ -3143,7 +3110,6 @@ POL_fight_against_monarchy_in_LIT_cat = {
 		icon = generic_ignite_civil_war
 
 		available = {
-			NOT = { has_active_mission = POL_growing_monarchist_sentiment }
 			custom_trigger_tooltip = {
 				tooltip = has_monarchy_support_lessthan_40_tt
 				check_variable = {
@@ -3154,6 +3120,7 @@ POL_fight_against_monarchy_in_LIT_cat = {
 		
 		
 		visible = {
+
 		}
 		
 		fire_only_once = yes
@@ -3161,9 +3128,6 @@ POL_fight_against_monarchy_in_LIT_cat = {
 		cost = 50
 		
 		complete_effect = {
-		}
-
-		remove_effect = {
 			POL_monarchist_civil_war_effect = yes
 		}
 
@@ -3177,7 +3141,6 @@ POL_fight_against_monarchy_in_LIT_cat = {
 		icon = eng_propaganda_campaigns
 
 		available = {
-			NOT = { has_active_mission = POL_growing_monarchist_sentiment }
 			custom_trigger_tooltip = {
 				tooltip = has_monarchy_support_lessthan_20_tt
 				check_variable = {
@@ -3187,14 +3150,45 @@ POL_fight_against_monarchy_in_LIT_cat = {
 			hidden_trigger = { is_ai = no }
 		}
 		
+		cancel_trigger = {
+			hidden_trigger ={
+				OR = {
+					has_country_flag = POL_banned_monarchy_flag
+					has_completed_focus = POL_support_monarchy_in_CZE
+					has_completed_focus = POL_internal_romanian_support
+					has_completed_focus = LIT_a_king_for_our_people
+					has_completed_focus = LIT_support_monarchism_in_POL
+					has_country_flag = achievement_POL_elected_monarch
+					AND = {
+						original_tag = LIT 
+						POL = { has_country_flag = attempted_royal_takeover_in_LIT }
+					}
+					AND = {
+						original_tag = POL 
+						LIT = { has_country_flag = attempted_royal_takeover_in_POL }
+					}
+					AND = {
+						original_tag = CZE 
+						POL = { has_country_flag = attempted_royal_takeover_in_CZE }
+					}
+					AND = {
+						original_tag = ROM 
+						POL = { has_country_flag = attempted_royal_takeover_in_ROM }
+					}
+				}
+			}
+		}
 		
 		visible = {
+
 		}
 		
 		fire_only_once = yes
 
 		cost = 100
-		
+
+		days_remove = 15
+
 		complete_effect = {
 		}
 
@@ -3210,7 +3204,7 @@ POL_fight_against_monarchy_in_LIT_cat = {
 
 		ai_will_do = {
 			factor = 0
-		}
+		} 
 	}
 }
 
@@ -3233,11 +3227,11 @@ POL_cossack_republic_decisions = {
 		visible = {
 			OR = {
 				has_country_leader = {
-					name = "Pavel Bermondt-Avalov"
+					character = POL_pavel_bermondt_avalov
 					ruling_only = yes
 				}
 				has_country_leader = {
-					name = "Rüdiger von der Goltz"
+					character = POL_rudinger_von_der_goltz
 					ruling_only = yes
 				}
 			}
@@ -3278,11 +3272,11 @@ POL_cossack_republic_decisions = {
 		visible = {
 			OR = {
 				has_country_leader = {
-					name = "Pavel Bermondt-Avalov"
+					character = POL_pavel_bermondt_avalov
 					ruling_only = yes
 				}
 				has_country_leader = {
-					name = "Rüdiger von der Goltz"
+					character = POL_rudinger_von_der_goltz
 					ruling_only = yes
 				}
 			}
