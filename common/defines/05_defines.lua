@@ -336,7 +336,7 @@ NDefines.NAir.DISRUPTION_FACTOR_CARRIER = 1.0										-- multiplier on disrupti
 NDefines.NAir.CARRIER_HOURS_DELAY_AFTER_EACH_COMBAT = 0								-- how often carrier planes do battle inside naval combat
 NDefines.NAir.ACE_EARN_CHANCE_BASE = 0.005											-- Base chance % for ace pilot to be created. Happens only when successfully kill airplane/ship or damage the buildings.
 
-NDefines.NAir.ACCIDENT_CHANCE_BASE = 0.15											-- Base chance % (0 - 100) for accident to happen. Reduced with higher reliability stat.
+NDefines.NAir.ACCIDENT_CHANCE_BASE = 0.25											-- Base chance % (0 - 100) for accident to happen. Reduced with higher reliability stat.
 
 --NDefines.NAir.EFFICIENCY_REGION_CHANGE_DAILY_GAIN_DEFAULT = 0.1						-- Default how much efficiency to regain per day. Gain applied hourly.
 NDefines.NAir.AIR_WING_ATTACK_LOGISTICS_TRUCK_DAMAGE_FACTOR = 0.02
@@ -536,7 +536,7 @@ NDefines.NAI.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
 	
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- SUPPLY
 
-NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.05									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
+NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.1									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
 NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST = 500
 NDefines.NSupply.LOCAL_SUPPLY_PER_AIR_MISSION = 0.2									-- each assigned plane gives this much supply at full efficiency
 --NDefines.NSupply.CAPITAL_SUPPLY_CIVILIAN_FACTORIES = 0 								-- supply from one civilian factory
