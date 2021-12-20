@@ -195,7 +195,7 @@ NDefines.NCountry.CONVOY_RANGE_FACTOR = 1.1                     				    -- how m
 NDefines.NCountry.SUPPLY_PORT_LEVEL_THROUGHPUT = 3			    					-- supply throughput per level of naval base
 NDefines.NCountry.EVENT_PROCESS_OFFSET = 7											-- Events are checked every X day per country or state (1 is ideal, but CPU heavy)
 
-NDefines.NCountry.AIR_SUPPLY_CONVERSION_SCALE = 0.005								-- Conversion scale for planes to air supply
+NDefines.NCountry.AIR_SUPPLY_CONVERSION_SCALE = 0									-- Conversion scale for planes to air supply
 
 NDefines.NCountry.REINFORCEMENT_EQUIPMENT_DELIVERY_SPEED = 0.1						-- Modifier for army equipment reinforcement speed
 
@@ -365,7 +365,7 @@ NDefines.NAir.MISSION_COMMAND_POWER_COSTS = {  										-- command power cost p
 		0.0, -- NAVAL_KAMIKAZE	
         0.0, -- PORT_STRIKE	
 		0.0, -- ATTACK_LOGISTICS		
-		0.1, -- AIR_SUPPLY		
+		1.2, -- AIR_SUPPLY		
 		0.0, -- TRAINING
 		0.0, -- NAVAL_MINES_PLANTING
 		0.0, -- NAVAL_MINES_SWEEPING
