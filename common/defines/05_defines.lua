@@ -184,6 +184,8 @@ NDefines.NMilitary.FUEL_CAPACITY_DEFAULT_HOURS = 672               					-- defau
 NDefines.NMilitary.BASE_CAPTURE_EQUIPMENT_RATIO = 0.08								-- after a successful land combat, ratio of the equipments that are being captured/salvaged from enemy's lost equipment
 --NDefines.NMilitary.REINFORCE_CHANCE = 0.1                	   						-- base chance to join combat from back line when empty
 
+NDefines.NMilitary.NON_CORE_SUPPLY_AIR_SPEED = -0.4			   						-- we are not running on our own VP supply so need to steal stuff along the way, a bit less due to air supply
+
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Country
 
 
@@ -196,6 +198,7 @@ NDefines.NCountry.SUPPLY_PORT_LEVEL_THROUGHPUT = 3			    					-- supply throughp
 NDefines.NCountry.EVENT_PROCESS_OFFSET = 7											-- Events are checked every X day per country or state (1 is ideal, but CPU heavy)
 
 NDefines.NCountry.AIR_SUPPLY_CONVERSION_SCALE = 0									-- Conversion scale for planes to air supply
+NDefines.NCountry.AIR_SUPPLY_DROP_EXPIRATION_HOURS = 24							-- Air drop length after being dropped
 
 NDefines.NCountry.REINFORCEMENT_EQUIPMENT_DELIVERY_SPEED = 0.1						-- Modifier for army equipment reinforcement speed
 
@@ -365,7 +368,7 @@ NDefines.NAir.MISSION_COMMAND_POWER_COSTS = {  										-- command power cost p
 		0.0, -- NAVAL_KAMIKAZE	
         0.0, -- PORT_STRIKE	
 		0.0, -- ATTACK_LOGISTICS		
-		1.6, -- AIR_SUPPLY		
+		5.0, -- AIR_SUPPLY		
 		0.0, -- TRAINING
 		0.0, -- NAVAL_MINES_PLANTING
 		0.0, -- NAVAL_MINES_SWEEPING
