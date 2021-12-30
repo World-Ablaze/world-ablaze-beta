@@ -186,6 +186,9 @@ NDefines.NMilitary.BASE_CAPTURE_EQUIPMENT_RATIO = 0.08								-- after a success
 
 NDefines.NMilitary.NON_CORE_SUPPLY_AIR_SPEED = -0.4			   						-- we are not running on our own VP supply so need to steal stuff along the way, a bit less due to air supply
 
+NDefines.NMilitary.LAND_AIR_COMBAT_STR_DAMAGE_MODIFIER = 0.02    					-- air global damage modifier
+NDefines.NMilitary.LAND_AIR_COMBAT_ORG_DAMAGE_MODIFIER = 0.03    					-- global damage modifier
+
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Country
 
 
@@ -368,7 +371,7 @@ NDefines.NAir.MISSION_COMMAND_POWER_COSTS = {  										-- command power cost p
 		0.0, -- NAVAL_KAMIKAZE	
         0.0, -- PORT_STRIKE	
 		0.0, -- ATTACK_LOGISTICS		
-		5.0, -- AIR_SUPPLY		
+		0.1, -- AIR_SUPPLY		
 		0.0, -- TRAINING
 		0.0, -- NAVAL_MINES_PLANTING
 		0.0, -- NAVAL_MINES_SWEEPING
@@ -557,6 +560,8 @@ NDefines.NSupply.NODE_STARTING_PENALTY_PER_PROVINCE = 1.16
 
 NDefines.NSupply.SUPPLY_PATH_MAX_DISTANCE = 45										-- max time it can take
 NDefines.NSupply.RAILWAY_DISTANCE_FACTOR_FOR_REINFORCEMENT_SPEED = 0.05 			-- time factor for total railway distance
+
+NDefines.NSupply.LOCAL_SUPPLY_PER_AIR_MISSION = 0.01 								-- each assigned plane gives this much supply at full efficiency
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- AI
 	
