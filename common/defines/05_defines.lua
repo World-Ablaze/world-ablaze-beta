@@ -198,13 +198,13 @@ NDefines.NCountry.SUPPLY_PATH_MAX_DISTANCE = 15		    							-- When supply route
 NDefines.NCountry.INVASION_REPORT_EXPERATION_DAYS = 30								-- Invasion experation days
 NDefines.NCountry.SUPPLY_CONVOY_FACTOR = 0.14										-- How many convoys each supply needs
 NDefines.NCountry.CONVOY_RANGE_FACTOR = 1.1                     				    -- how much range affects convoy need
-NDefines.NCountry.FUEL_LEASE_CONVOY_RATIO = 0.00005				-- num convoys needed per fuel land lease
+NDefines.NCountry.FUEL_LEASE_CONVOY_RATIO = 0.00005									-- num convoys needed per fuel land lease
 
 NDefines.NCountry.SUPPLY_PORT_LEVEL_THROUGHPUT = 3			    					-- supply throughput per level of naval base
 NDefines.NCountry.EVENT_PROCESS_OFFSET = 7											-- Events are checked every X day per country or state (1 is ideal, but CPU heavy)
 
 NDefines.NCountry.AIR_SUPPLY_CONVERSION_SCALE = 0									-- Conversion scale for planes to air supply
-NDefines.NCountry.AIR_SUPPLY_DROP_EXPIRATION_HOURS = 24							-- Air drop length after being dropped
+NDefines.NCountry.AIR_SUPPLY_DROP_EXPIRATION_HOURS = 24								-- Air drop length after being dropped
 
 NDefines.NCountry.REINFORCEMENT_EQUIPMENT_DELIVERY_SPEED = 0.1						-- Modifier for army equipment reinforcement speed
 
