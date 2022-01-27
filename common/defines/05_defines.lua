@@ -115,12 +115,12 @@ NDefines.NMilitary.FIELD_EXPERIENCE_MAX_PER_DAY = 1									-- Most xp you can g
 NDefines.NMilitary.LAND_COMBAT_STR_ARMOR_DEFLECTION_FACTOR = 0.5					-- damage reduction if armor outclassing enemy
 NDefines.NMilitary.LAND_COMBAT_ORG_ARMOR_DEFLECTION_FACTOR = 0.5					-- damage reduction if armor outclassing enemy
 
-NDefines.NMilitary.LAND_EQUIPMENT_BASE_COST = 40									-- Cost in XP to upgrade a piece of equipment one level is base + ( total levels * ramp )
-NDefines.NMilitary.LAND_EQUIPMENT_RAMP_COST = 0
-NDefines.NMilitary.NAVAL_EQUIPMENT_BASE_COST = 40
-NDefines.NMilitary.NAVAL_EQUIPMENT_RAMP_COST = 0
-NDefines.NMilitary.AIR_EQUIPMENT_BASE_COST = 40
-NDefines.NMilitary.AIR_EQUIPMENT_RAMP_COST = 0
+NDefines.NMilitary.LAND_EQUIPMENT_BASE_COST = 4									-- Cost in XP to upgrade a piece of equipment one level is base + ( total levels * ramp )
+NDefines.NMilitary.LAND_EQUIPMENT_RAMP_COST = 2
+NDefines.NMilitary.NAVAL_EQUIPMENT_BASE_COST = 4
+NDefines.NMilitary.NAVAL_EQUIPMENT_RAMP_COST = 2
+NDefines.NMilitary.AIR_EQUIPMENT_BASE_COST = 4
+NDefines.NMilitary.AIR_EQUIPMENT_RAMP_COST = 2
 
 NDefines.NMilitary.PLAN_SPREAD_ATTACK_WEIGHT = 3									-- The higher the value, the less it should crowd provinces with multiple attacks.
 
