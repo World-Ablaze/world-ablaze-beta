@@ -4978,9 +4978,9 @@ focus_tree = {
 	}
 
 	focus = {
-		id = SOV_superior_war_machines
+		id = SOV_soviet_artillery
 
-		icon = GFX_focus_generic_tank_production
+		icon = GFX_goal_generic_army_artillery
 		prerequisite = { focus = SOV_pc_of_mechanical_engineering }
 		x = -1
 		y = 1
@@ -4988,114 +4988,34 @@ focus_tree = {
 		cost = 3
 
 		available = {
-		}
-		
-		search_filters = {FOCUS_FILTER_RESEARCH}
-
-		completion_reward = {
-		#	set_variable = { SOV_defense_industry_tank_manufacturer_cost_factor = -0.25 }
-		#	custom_effect_tooltip = SOV_superior_war_machines_ns_tt
-
-			add_tech_bonus = {
-				name = SOV_superior_war_machines
-				bonus = 0.5
-				uses = 2
-				category = armor
-			}
-		}
-	}
-
-	focus = {
-		id = SOV_the_means_to_wage_war
-
-		icon = GFX_goal_generic_military_sphere
-		prerequisite = { focus = SOV_pc_of_mechanical_engineering }
-		x = 1
-		y = 1
-		relative_position_id = SOV_pc_of_mechanical_engineering
-		cost = 3
-
-		available = {
-
-		}
-		
-		search_filters = {FOCUS_FILTER_RESEARCH}
-
-		completion_reward = {
-		#	set_variable = { SOV_defense_industry_materiel_manufacturer_cost_factor = -0.25 }
-		#	custom_effect_tooltip = SOV_the_means_to_wage_war_ns_tt
-
-			add_tech_bonus = {
-				name = SOV_the_means_to_wage_war
-				bonus = 0.5
-				uses = 2
-				category = support_tech
-			}
-		}
-	}
-
-	focus = {
-		id = SOV_soviet_artillery
-
-		icon = GFX_goal_generic_army_artillery
-		prerequisite = { focus = SOV_superior_war_machines }
-		x = 0
-		y = 1
-		relative_position_id = SOV_superior_war_machines
-		cost = 3
-
-		available = {
+			date > 1941.1.1
 		}
 		
 		search_filters = {FOCUS_FILTER_INDUSTRY FOCUS_FILTER_RESEARCH}
 
 		completion_reward = {
-			add_tech_bonus = {
-				name = SOV_pc_of_mortar_armament_name_default
-				bonus = 0.5
-				uses = 2
-				category = artillery
+			set_technology = {
+				sov_anti_tank_3 = 1
+				sov_artillery_3 = 1
 			}
-			if = { # 2 Mils in Chelyabinsk
-				limit = {
-					has_full_control_of_state = 572
-					572 = {
-						free_building_slots = {
-							building = arms_factory
-							size > 0
-							include_locked = yes
-						}
-					}
+			add_equipment_production = {
+				equipment = {
+					type = sov_at_3
+					creator = "SOV"
 				}
-				572 = {
-					add_extra_state_shared_building_slots = 1
-					add_building_construction = {
-						type = arms_factory
-						level = 1
-						instant_build = yes
-					}
-				}
+				requested_factories = 5
+				progress = 0
+				efficiency = 50
 			}
-			else = { # If Chelyabinsk not available, then 1 Mil elsewhere
-				random_owned_state = {
-					limit = {
-						is_fully_controlled_by = ROOT
-						arms_factory > 1
-						free_building_slots = {
-							building = arms_factory
-							size > 0
-							include_locked = yes
-						}
-					}
-					add_extra_state_shared_building_slots = 1
-					add_building_construction = {
-						type = arms_factory
-						level = 1
-						instant_build = yes
-					}
+			add_equipment_production = {
+				equipment = {
+					type = sov_art_3
+					creator = "SOV"
 				}
+				requested_factories = 5
+				progress = 0
+				efficiency = 50
 			}
-
 			add_ideas = SOV_defense_industry_artillery_bonus
 		}
 	}
@@ -5104,10 +5024,10 @@ focus_tree = {
 		id = SOV_pc_of_mortar_armament
 
 		icon = GFX_goal_generic_occupy_start_war
-		prerequisite = { focus = SOV_the_means_to_wage_war }
-		x = 0
+		prerequisite = { focus = SOV_pc_of_mechanical_engineering }
+		x = 1
 		y = 1
-		relative_position_id = SOV_the_means_to_wage_war
+		relative_position_id = SOV_pc_of_mechanical_engineering
 		cost = 3
 
 		available = {
@@ -5140,6 +5060,94 @@ focus_tree = {
 						instant_build = yes
 					}
 				}
+			}
+		}
+	}
+
+	focus = {
+		id = SOV_superior_war_machines
+		icon = GFX_focus_generic_tank_production
+		prerequisite = { focus = SOV_soviet_artillery }
+		x = 0
+		y = 1
+		relative_position_id = SOV_soviet_artillery
+		cost = 3
+
+		available = {
+		}
+		
+		search_filters = {FOCUS_FILTER_RESEARCH}
+
+		completion_reward = {
+			add_tech_bonus = {
+				name = SOV_superior_war_machines
+				bonus = 0.5
+				uses = 2
+				category = armor
+			}
+			if = { # 2 Mils in Chelyabinsk
+				limit = {
+					has_full_control_of_state = 572
+					572 = {
+						free_building_slots = {
+							building = arms_factory
+							size > 1
+							include_locked = yes
+						}
+					}
+				}
+				572 = {
+					add_extra_state_shared_building_slots = 2
+					add_building_construction = {
+						type = arms_factory
+						level = 2
+						instant_build = yes
+					}
+				}
+			}
+			else = { # If Chelyabinsk not available, then 1 Mil elsewhere
+				random_owned_state = {
+					limit = {
+						is_fully_controlled_by = ROOT
+						arms_factory > 1
+						free_building_slots = {
+							building = arms_factory
+							size > 0
+							include_locked = yes
+						}
+					}
+					add_extra_state_shared_building_slots = 1
+					add_building_construction = {
+						type = arms_factory
+						level = 1
+						instant_build = yes
+					}
+				}
+			}
+		}
+	}
+
+	focus = {
+		id = SOV_the_means_to_wage_war
+		icon = GFX_goal_generic_military_sphere
+		prerequisite = { focus = SOV_pc_of_mortar_armament }
+		x = 0
+		y = 1
+		relative_position_id = SOV_pc_of_mortar_armament
+		cost = 3
+
+		available = {
+
+		}
+		
+		search_filters = {FOCUS_FILTER_RESEARCH}
+
+		completion_reward = {
+			add_tech_bonus = {
+				name = SOV_the_means_to_wage_war
+				bonus = 0.5
+				uses = 2
+				category = support_tech
 			}
 		}
 	}
