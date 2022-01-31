@@ -554,7 +554,7 @@ NDefines.NSupply.LOCAL_SUPPLY_PER_AIR_MISSION = 0.2									-- each assigned pla
 NDefines.NSupply.AVAILABLE_MANPOWER_STATE_SUPPLY = 0								--Factor for state supply from max manpower (population)
 NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_BONUS = 1.3
 
-NDefines.NSupply.NAVAL_BASE_FLOW = 0.0 											-- max output/input of a naval node is limited by this base value + additional ratio for each level
+NDefines.NSupply.NAVAL_BASE_FLOW = 0.0 												-- max output/input of a naval node is limited by this base value + additional ratio for each level
 NDefines.NSupply.NAVAL_FLOW_PER_LEVEL = 5.0 										-- max output/input of a naval node is limited by previous base value + this define per its level
 
 NDefines.NSupply.FLOATING_HARBOR_BASE_SUPPLY = 30.0 								-- supply given by a floating harbor
