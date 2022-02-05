@@ -56,7 +56,8 @@ NDefines.NCharacter.OFFICER_CORP_ADVISOR_ENTRIES_IN_MENU = { "high_command", "th
 
 
 NDefines.NRailwayGun.RAILWAY_GUN_RANGE = 15											-- The range of railway guns in pixels
-
+NDefines.NRailwayGun.ATTACK_TO_ENTRENCHMENT_MODIFIER_FACTOR = 0.4					-- Entrenchment modifier is calculated by multiplying railway gun attack value with this and dividing by 100
+NDefines.NRailwayGun.ATTACK_TO_BOMBARDMENT_MODIFIER_FACTOR = 0.2					-- Bombardment modifier is calculated by multiplying railway gun attack value with this and dividing by 100
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Technology
 
