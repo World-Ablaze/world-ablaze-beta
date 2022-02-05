@@ -109,7 +109,7 @@ NDefines.NMilitary.MAX_NAVY_EXPERIENCE = 5000										--Max navy experience a c
 NDefines.NMilitary.MAX_AIR_EXPERIENCE = 5000										--Max air experience a country can store
 
 NDefines.NMilitary.UNIT_EXPERIENCE_PER_COMBAT_HOUR = 0.00060
-NDefines.NMilitary.FIELD_EXPERIENCE_SCALE = 0.002
+NDefines.NMilitary.FIELD_EXPERIENCE_SCALE = 0.001
 NDefines.NMilitary.FIELD_EXPERIENCE_MAX_PER_DAY = 1									-- Most xp you can gain per day
 
 NDefines.NMilitary.LAND_COMBAT_STR_ARMOR_DEFLECTION_FACTOR = 0.5					-- damage reduction if armor outclassing enemy
@@ -221,7 +221,7 @@ NDefines.NCountry.GIE_EXILE_AIR_START_EXPERIENCE = 700	 							--Starting experi
 NDefines.NCountry.GIE_ESCAPING_DIVISIONS_XP_BOOST = 0.6
 
 NDefines.NCountry.VICTORY_POINTS_IMPORTANCE_FACTOR = 50.0							-- State victory points importance factor for AI and calculations
-NDefines.NCountry.ATTACHE_XP_SHARE = 0.15											-- Country received xp from attaches
+NDefines.NCountry.ATTACHE_XP_SHARE = 0.1											-- Country received xp from attaches
 
 NDefines.NCountry.SURRENDER_LIMIT_REDUCTION_PER_COLLABORATION = 0.1 				--each percent of collaboration will lower surrender limit by this percentage 
 NDefines.NCountry.NUM_DAYS_TO_FULLY_DELETE_STOCKPILED_EQUIPMENT = 365				-- time in days to fully delete equipments from stockpile. when you delete an equipment, they go to a temporary hidden pool which still can be seized 
