@@ -735,9 +735,9 @@ NDefines.NAI.STR_BOMB_IMPORTANCE_SCALE = 5.0										-- str bombing total impor
 	
 NDefines.NAI.STR_BOMB_MIN_ENEMY_FIGHTERS_IN_AREA = 2000								-- If amount of enemy fighters is higher than this mission won't perform
 NDefines.NAI.STR_BOMB_FIGHTERS_PER_PLANE = 1.5										-- Amount of air superiority planes requested per enemy plane
-NDefines.NAI.STR_BOMB_PLANES_PER_CIV_FACTORY = 40									-- Amount of planes requested per enemy civ factory
-NDefines.NAI.STR_BOMB_PLANES_PER_MIL_FACTORY = 50									-- Amount of planes requested per enemy military factory
-NDefines.NAI.STR_BOMB_PLANES_PER_NAV_FACTORY = 20									-- Amount of planes requested per enemy naval factory
+NDefines.NAI.STR_BOMB_PLANES_PER_CIV_FACTORY = 5									-- Amount of planes requested per enemy civ factory
+NDefines.NAI.STR_BOMB_PLANES_PER_MIL_FACTORY = 100									-- Amount of planes requested per enemy military factory
+NDefines.NAI.STR_BOMB_PLANES_PER_NAV_FACTORY = 50									-- Amount of planes requested per enemy naval factory
 NDefines.NAI.STR_BOMB_MIN_EXCORT_WINGS = 3											-- Min amount of airwings requested to excort operations
 
 ------------------------------------------------- END
