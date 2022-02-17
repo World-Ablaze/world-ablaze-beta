@@ -17,7 +17,7 @@ NDefines_Graphics.NGraphics.CAMERA_ZOOM_SPEED_DISTANCE_MULT = 15.0
 
 NDefines_Graphics.NGraphics.MAP_ICONS_STATE_GROUP_CAM_DISTANCE = 450.0 -- camera distance at which the icons begin to group up
 NDefines_Graphics.NGraphics.COUNTRY_FLAG_SMALL_TEX_MAX_SIZE = 2048 -- Tweak dependly on amount of countries. Must be power of 2. No more then 2048.
-NDefines_Graphics.NAirGfx.BOMBERS_DIVISION_FACTOR = 120					-- Number of effective bombers in a strategic region will be divided by this factor.
-NDefines_Graphics.NAirGfx.MISSILES_DIVISION_FACTOR = 120					-- Number of missiles shown in a strategic region will be divided by this factor.
-NDefines_Graphics.NAirGfx.FIGHTERS_DIVISION_FACTOR = 120					-- Number of missiles shown in a strategic region will be divided by this factor.
-NDefines_Graphics.NAirGfx.SCOUT_PLANE_DIVISION_FACTOR = 120				-- Number of missiles shown in a strategic region will be divided by this factor.
+NDefines_Graphics.NAirGfx.BOMBERS_DIVISION_FACTOR = 180					-- Number of effective bombers in a strategic region will be divided by this factor.
+NDefines_Graphics.NAirGfx.MISSILES_DIVISION_FACTOR = 180					-- Number of missiles shown in a strategic region will be divided by this factor.
+NDefines_Graphics.NAirGfx.FIGHTERS_DIVISION_FACTOR = 180					-- Number of missiles shown in a strategic region will be divided by this factor.
+NDefines_Graphics.NAirGfx.SCOUT_PLANE_DIVISION_FACTOR = 180				-- Number of missiles shown in a strategic region will be divided by this factor.
