@@ -339,7 +339,8 @@ NDefines.NAir.AIR_WING_MAX_STATS_SPEED = 5000
 NDefines.NAir.AIR_WING_MAX_STATS_BOMBING = 50000
 NDefines.NAir.COMBAT_DAMAGE_SCALE = 0.14											-- Higher value = more shot down planes
 
-NDefines.NAir.COMBAT_BETTER_AGILITY_DAMAGE_REDUCTION = 0.7 							-- How much the better agility (then opponent's) can reduce their damage to us.
+NDefines.NAir.COMBAT_BETTER_AGILITY_DAMAGE_REDUCTION = 0.9 							-- How much the better agility (then opponent's) can reduce their damage to us.
+NDefines.NAir.BIGGEST_AGILITY_FACTOR_DIFF = 2.0										-- biggest factor difference in agility for doing damage (caps to this)
 
 NDefines.NAir.DISRUPTION_FACTOR = 0.1												-- multiplier on disruption damage to scale its effects on planes
 NDefines.NAir.DISRUPTION_FACTOR_CARRIER = 1.0										-- multiplier on disruption damage to scale its effects on carrier vs carrier planes
