@@ -233,11 +233,18 @@ NDefines.NCountry.SPECIAL_FORCES_CAP_MIN = 10										-- You can have a minimum
 NDefines.NCountry.BASE_MOBILIZATION_SPEED = 0.02									-- Base speed of manpower mobilization  #in 1/1000 of 1 %
 
 NDefines.NCountry.WAR_SUPPORT_TENSION_IMPACT = 0									-- Total impact of world tension
-NDefines.NCountry.BOMBING_WAR_SUPPORT_PENALTY_SCALE = -0.00015	 					-- Scaling of bomber damage to war support impact, will be added weekly as a war support penalty
-NDefines.NCountry.MAX_BOMBING_WEEKLY_WAR_SUPPORT_PENALTY = -0.02					-- Max penalty that will gained per week from bomber's damage
-NDefines.NCountry.BOMBING_WEEKLY_WAR_SUPPORT_PENALTY_DECAY = 0.002					-- Weekly decay of bomber damage war support penalty
 NDefines.NCountry.STATE_VALUE_NON_CORE_STATE_FRACTION = 0.9							-- If a state is not a core we assume we will get 50% of the factory slots
-	
+
+NDefines.NCountry.BOMBING_WAR_SUPPORT_PENALTY_SCALE = -0.00015 						-- Scaling of bomber damage to war support impact, will be added weekly as a war support penalty
+NDefines.NCountry.MAX_BOMBING_WEEKLY_WAR_SUPPORT_PENALTY = -0.005					-- Max penalty that will gained per week from bomber's damage
+NDefines.NCountry.BOMBING_WEEKLY_WAR_SUPPORT_PENALTY_DECAY = 0.002					-- Weekly decay of bomber damage war support penalty
+NDefines.NCountry.MAX_BOMBING_WAR_SUPPORT_IMPACT = -0.2								-- Max total penalty from bomber's damage
+
+NDefines.NCountry.CONVOYS_BEING_RAIDED_WAR_SUPPORT_PENALTY_SCALE = -0.05			-- Scaling of trade convoy raided to war support impact, will be added weekly as a war support penalty
+NDefines.NCountry.MAX_CONVOYS_BEING_RAIDED_WEEKLY_WAR_SUPPORT_PENALTY = -0.01		-- Max penalty that will gained per week from trade convoy raided
+NDefines.NCountry.CONVOYS_BEING_RAIDED_WEEKLY_WAR_SUPPORT_PENALTY_DECAY = 0.003		-- Weekly decay of trade convoy raided war support penalty
+NDefines.NCountry.MAX_CONVOYS_BEING_RAIDED_WAR_SUPPORT_IMPACT = -0.3				-- Max total penalty from trade convoy raided
+
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Buildings
 
