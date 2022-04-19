@@ -40,7 +40,7 @@ static const float3 NightAmbientNegZ = float3(0.8, 0.8, 0.8);  // bottom
 // ------------------    Specular       -------------------------
 // --------------------------------------------------------------
 static const float SPECULAR_WIDTH 				= 15.0;
-static const float SPECULAR_MULTIPLIER			= 1.5;
+static const float SPECULAR_MULTIPLIER			= 1.0;
 static const float MAP_SPECULAR_WIDTH			= 15.0;
 
 // --------------------------------------------------------------
