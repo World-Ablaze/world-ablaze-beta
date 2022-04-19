@@ -47,8 +47,8 @@ static const float MAP_SPECULAR_WIDTH			= 15.0;
 // ------------------    TERRAIN        -------------------------
 // --------------------------------------------------------------
 static const float CITY_LIGHTS_TILING 			= 0.09103;
-static const float CITY_LIGHTS_INTENSITY 		= 5.5;
-static const float CITY_LIGHTS_BLOOM_FACTOR 	= 0.3;
+static const float CITY_LIGHTS_INTENSITY 		= 6.5;
+static const float CITY_LIGHTS_BLOOM_FACTOR 	= 0.6;
 
 static const float TERRAIN_TILE_FREQ 			= 128.0f;
 static const float MAP_NUM_TILES 				= 4.0f;
@@ -188,8 +188,8 @@ static const float  SHADOW_WEIGHT_TREE   		= 0.7f;
 // ------------------    GRADIENT BORDERS   ---------------------
 // --------------------------------------------------------------
 
-static const float GB_CAM_MIN = 50.0f;
-static const float GB_CAM_MAX = 350.0f;
+static const float GB_CAM_MIN = 220.0f;
+static const float GB_CAM_MAX = 225.0f;
 static const float GB_CAM_MAX_FILLING_CLAMP = 1.0f; // 0 to 1 value for clamping the fill when camera is at max distance
 static const float GB_THRESHOLD = 0.05f; // interpolation time
 static const float GB_THRESHOLD2 = 0.25f; // interpolation time
@@ -198,11 +198,11 @@ static const float GB_OUTLINE_CUTOFF_SEA = 0.990f; // Magic number to balance cu
 static const float GB_OPACITY_NEAR = 0.7f; // Transparency when camera is near
 static const float GB_OPACITY_FAR = 1.0f;  // Transparency when camera is far
 static const float BORDER_NIGHT_DESATURATION_MAX = 0.2f; // how much border colors can get desaturated at night. 1.0f is full grey
-static const float BORDER_FOW_REMOVAL_FACTOR = 1.0f; // How much of the FOW that is removed from the borders. 1.0f is no FOW
-static const float BORDER_LIGHT_REMOVAL_FACTOR = 0.8f; // How much of the light calculations that are removed from the borders. 1.0f is no light
+static const float BORDER_FOW_REMOVAL_FACTOR = 0.8f; // How much of the FOW that is removed from the borders. 1.0f is no FOW
+static const float BORDER_LIGHT_REMOVAL_FACTOR = 0.4f; // How much of the light calculations that are removed from the borders. 1.0f is no light
 static const float GB_STRENGTH_CH1 = 1.0; // Opacity of bottom layer
-static const float GB_STRENGTH_CH2 = 0.5; // Opacity of top layer
-static const float GB_FIRST_LAYER_PRIORITY = 0.4; // Priority for first/second layer when both are active at the same pixel
+static const float GB_STRENGTH_CH2 = 0.2; // Opacity of top layer
+static const float GB_FIRST_LAYER_PRIORITY = 0.2; // Priority for first/second layer when both are active at the same pixel
 static const float BORDER_MAP_TILE = 18000.0f;
 
 // --------------------------------------------------------------

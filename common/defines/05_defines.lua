@@ -810,11 +810,12 @@ NDefines.NAI.PLAN_FACTION_NORMAL_TO_EXECUTE = 0.65									-- % or more of units
 NDefines.NAI.ORG_UNIT_NORMAL = 0.5													-- Organization % for unit to be considered normal
 NDefines.NAI.STR_UNIT_NORMAL = 0.7													-- Strength (equipment) % for unit to be considered normal
 
-NDefines.NAI.PLAN_FACTION_WEAK_TO_ABORT = 0.1										-- % or more of units in an order to consider executing the plan
+NDefines.NAI.PLAN_FACTION_WEAK_TO_ABORT = 0.3										-- % or more of units in an order to consider executing the plan
 NDefines.NAI.ORG_UNIT_WEAK = 0.3													-- Organization % for unit to be considered weak
 NDefines.NAI.STR_UNIT_WEAK = 0.5													-- Strength (equipment) % for unit to be considered weak
 
 NDefines.NAI.PLAN_AVG_PREPARATION_TO_EXECUTE = 0.5									-- % or more average plan preparation before executing
+NDefines.NAI.AI_FRONT_MOVEMENT_FACTOR_FOR_READY = 0.5			               		-- If less than this fraction of units on a front is moving  AI sees it as ready for action
 
 NDefines.NAI.ORDER_ASSIGNMENT_DISTANCE_FACTOR = 10.0								-- When the AI assigns units to orders, it attempts to calculate the distance.
 NDefines.NAI.RELUCTANCE_TO_CHANGE_FRONT_FACTOR = 0.9								-- Factor for how reluctant the AI is to change a units order group.
