@@ -59,6 +59,7 @@ NDefines.NRailwayGun.RAILWAY_GUN_RANGE = 15											-- The range of railway gu
 NDefines.NRailwayGun.ATTACK_TO_ENTRENCHMENT_MODIFIER_FACTOR = 0.4					-- Entrenchment modifier is calculated by multiplying railway gun attack value with this and dividing by 100
 NDefines.NRailwayGun.ATTACK_TO_BOMBARDMENT_MODIFIER_FACTOR = 0.2					-- Bombardment modifier is calculated by multiplying railway gun attack value with this and dividing by 100
 
+
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Technology
 
 
@@ -582,6 +583,10 @@ NDefines.NSupply.SUPPLY_PATH_MAX_DISTANCE = 45										-- max time it can take
 NDefines.NSupply.RAILWAY_DISTANCE_FACTOR_FOR_REINFORCEMENT_SPEED = 0.05 			-- time factor for total railway distance
 
 NDefines.NSupply.LOCAL_SUPPLY_PER_AIR_MISSION = 0.01 								-- each assigned plane gives this much supply at full efficiency
+
+NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN = 15, -- railways will be put on cooldown when they are captured by enemy and will not be usable during the cooldown
+NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN_CORE = 5,
+NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN_CIVILWAR = 0,
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- AI
 	
