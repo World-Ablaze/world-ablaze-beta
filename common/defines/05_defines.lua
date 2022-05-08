@@ -262,7 +262,7 @@ NDefines.NBuildings.MAX_BUILDING_LEVELS = 40										-- Max levels a building c
 NDefines.NBuildings.MAX_SHARED_SLOTS = 50											-- Max slots shared by factories
 NDefines.NBuildings.SABOTAGE_FACTORY_DAMAGE = 50.0									-- How much damage takes a factory building in sabotage when state is occupied. Damage is mult by (1 + resistance strength), i.e. up to 2 x base value.
 
-NDefines.NBuildings.AIRBASE_CAPACITY_MULT = 100										-- Each level of airbase building multiplied by this, gives capacity (max operational value). Value is int. 1 for each airplane.
+NDefines.NBuildings.AIRBASE_CAPACITY_MULT = 50										-- Each level of airbase building multiplied by this, gives capacity (max operational value). Value is int. 1 for each airplane.
 
 NDefines.NBuildings.OWNER_CHANGE_EXTRA_SHARED_SLOTS_FACTOR = 1
 
