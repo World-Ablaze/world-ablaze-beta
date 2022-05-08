@@ -584,9 +584,9 @@ NDefines.NSupply.RAILWAY_DISTANCE_FACTOR_FOR_REINFORCEMENT_SPEED = 0.05 			-- ti
 
 NDefines.NSupply.LOCAL_SUPPLY_PER_AIR_MISSION = 0.01 								-- each assigned plane gives this much supply at full efficiency
 
-NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN = 15, -- railways will be put on cooldown when they are captured by enemy and will not be usable during the cooldown
-NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN_CORE = 5,
-NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN_CIVILWAR = 0,
+NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN = 15 									-- railways will be put on cooldown when they are captured by enemy and will not be usable during the cooldown
+NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN_CORE = 5
+NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN_CIVILWAR = 0
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- AI
 	
