@@ -76,7 +76,7 @@ NDefines.NMilitary.ADDITIONAL_COMBAT_WIDTH = 30										-- more opened up by su
 
 NDefines.NMilitary.MIN_SUPPLY_CONSUMPTION = 0.01									-- minimum value of supply consumption that a unit can get
 
-NDefines.NMilitary.LAND_AIR_COMBAT_MAX_PLANES_PER_ENEMY_WIDTH = 1 					-- how many CAS/TAC can enter a combat depending on enemy width there
+--NDefines.NMilitary.LAND_AIR_COMBAT_MAX_PLANES_PER_ENEMY_WIDTH = 1 					-- how many CAS/TAC can enter a combat depending on enemy width there
 
 NDefines.NMilitary.PLANNING_DECAY = 0.001
 NDefines.NMilitary.PLAYER_ORDER_PLANNING_DECAY = 0.003								-- Amount of planning lost due to player manual order
