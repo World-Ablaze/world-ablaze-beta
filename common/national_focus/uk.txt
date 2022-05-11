@@ -3237,6 +3237,7 @@ focus_tree = {
 
         available = { 
             is_subject = no
+            threat > 0.03
         }
 
         continue_if_invalid = yes
@@ -3279,8 +3280,895 @@ focus_tree = {
                 }
                 add_opinion_modifier = { target = ENG modifier = ENG_maintaining_the_balance_of_power_bad }
             }
+			if = {
+				limit = {
+					has_idea = civilian_economy
+				}
+				add_ideas = low_economic_mobilisation
+				add_ideas = light_propaganda_effort
+			}
         }
     }
+
+	focus = {
+		id = general_rearmament_focus
+		icon = GFX_goal_rearmament_large
+        prerequisite = { focus = ENG_maintaining_the_balance_of_power }
+        x = 0
+        y = 1
+        relative_position_id = ENG_maintaining_the_balance_of_power
+		
+		available = {
+			if = {
+				limit = {
+					has_dlc = "Man the Guns"
+				}
+				OR = {
+					threat > 0.1 
+					has_war = yes
+					has_idea = ENG_no_further_appeasement_idea
+					NOT = { has_government = democratic }
+				}
+			}
+			if = {
+				limit = {
+					NOT = { has_dlc = "Man the Guns" }
+				}
+				OR = {
+					threat > 0.1
+					has_war = yes
+					NOT = { has_government = democratic }
+				}
+			}
+		}
+
+		cancel_if_invalid = no
+		continue_if_invalid = yes
+
+		cost = 6
+		ai_will_do = {
+			factor = 1
+		}	
+		completion_reward = {
+			if = {
+				limit = {
+					has_idea = low_economic_mobilisation
+				}
+				add_ideas = partial_economic_mobilisation
+			}
+            set_country_flag = USA_the_giant_wakes_added_civ_eco
+            add_war_support = 0.05
+		}
+	}
+	
+    focus = {
+        id = ENG_no_further_appeasement
+        icon = GFX_focus_generic_strike_at_democracy1
+        prerequisite = { focus = general_rearmament_focus }
+        x = 0
+        y = 1
+        relative_position_id = general_rearmament_focus
+
+        available = {
+			any_country = {
+                any_owned_state = {
+                    is_capital = yes
+                    is_on_continent = europe
+                }
+                has_added_tension_amount > 10
+			}
+            if = {
+                limit = {
+                    GER = { has_government = fascism }
+                    is_historical_focus_on = yes
+                    is_ai = yes
+                }
+                date > 1939.6.1
+            }
+        }
+
+        continue_if_invalid = yes
+
+        cost = 4
+        ai_will_do = {
+            factor = 1
+        }	
+        completion_reward = {
+            custom_effect_tooltip = ENG_no_further_appeasement_tt
+            if = {
+                limit = {
+                    threat > 0.29
+                }
+            }
+            else_if = {
+                limit = {
+                    threat > 0.24
+                }
+                custom_effect_tooltip = ENG_no_further_appeasement_tt_1
+                hidden_effect = {
+                    subtract_from_variable = { var  = ENG_Labour_stability value = 1 }
+                    subtract_from_variable = { var  = ENG_Conservative_stability value = 1 }
+                    subtract_from_variable = { var = ENG_Labour_attitude value = 1 }
+                    subtract_from_variable = { var = ENG_Conservative_attitude value = 1 }
+                    ENG_political_instability_update_effect = yes
+                }
+            }
+            else_if = {
+                limit = {
+                    threat > 0.19
+                }
+                custom_effect_tooltip = ENG_no_further_appeasement_tt_2
+                hidden_effect = {
+                    subtract_from_variable = { var  = ENG_Labour_stability value = 2 }
+                    subtract_from_variable = { var  = ENG_Conservative_stability value = 2 }
+                    subtract_from_variable = { var = ENG_Labour_attitude value = 1 }
+                    subtract_from_variable = { var = ENG_Conservative_attitude value = 1 }
+                    ENG_political_instability_update_effect = yes
+                }
+            }
+            else_if = {
+                limit = {
+                    threat > 0.14
+                }
+                custom_effect_tooltip = ENG_no_further_appeasement_tt_3
+                hidden_effect = {
+                    subtract_from_variable = { var  = ENG_Labour_stability value = 3 }
+                    subtract_from_variable = { var  = ENG_Conservative_stability value = 3 }
+                    subtract_from_variable = { var = ENG_Labour_attitude value = 2 }
+                    subtract_from_variable = { var = ENG_Conservative_attitude value = 2 }
+                    ENG_political_instability_update_effect = yes
+                }
+            }
+            else = {
+                custom_effect_tooltip = ENG_no_further_appeasement_tt_4
+                hidden_effect = {
+                    subtract_from_variable = { var  = ENG_Labour_stability value = 5 }
+                    subtract_from_variable = { var  = ENG_Conservative_stability value = 5 }
+                    subtract_from_variable = { var = ENG_Labour_attitude value = 2 }
+                    subtract_from_variable = { var = ENG_Conservative_attitude value = 2 }
+                    ENG_political_instability_update_effect = yes
+                }
+            }
+            hidden_effect = {
+                set_rule = { can_declare_war_on_same_ideology = yes }
+                set_rule = { can_puppet = yes }
+            }
+            add_ideas = ENG_no_further_appeasement_idea
+            hidden_effect = { news_event = { id = mtg_news.16 days = 1 } }
+        }
+    }
+    focus = {
+        id = ENG_military_training_act
+        icon = GFX_focus_generic_commonwealth_build_infantry
+        prerequisite = { focus = ENG_no_further_appeasement }
+        x = -1
+        y = 1
+        relative_position_id = ENG_no_further_appeasement
+
+        available = {
+            threat > 0.1
+        }
+
+        cancel_if_invalid = no
+        continue_if_invalid = yes
+        available_if_capitulated = yes
+        
+        cost = 3
+        ai_will_do = {
+            factor = 1
+        }	
+        completion_reward = {
+            custom_effect_tooltip = ENG_military_training_act_tt
+            if = {
+                limit = {
+                    threat > 0.29
+                }
+                swap_ideas = {
+                    remove_idea = ENG_the_war_to_end_all_wars
+                    add_idea = ENG_the_war_to_end_all_wars_2
+                }
+            }
+            else_if = {
+                limit = {
+                    threat > 0.24
+                }
+                add_stability = -0.05
+                swap_ideas = {
+                    remove_idea = ENG_the_war_to_end_all_wars
+                    add_idea = ENG_the_war_to_end_all_wars_2
+                }
+            }
+            else_if = {
+                limit = {
+                    threat > 0.19
+                }
+                add_stability = -0.1
+                swap_ideas = {
+                    remove_idea = ENG_the_war_to_end_all_wars
+                    add_idea = ENG_the_war_to_end_all_wars_2
+                }
+            }
+            else_if = {
+                limit = {
+                    threat > 0.14
+                }
+                add_stability = -0.15
+                swap_ideas = {
+                    remove_idea = ENG_the_war_to_end_all_wars
+                    add_idea = ENG_the_war_to_end_all_wars_2
+                }
+            }
+            else = {
+                add_stability = -0.2
+                swap_ideas = {
+                    remove_idea = ENG_the_war_to_end_all_wars
+                    add_idea = ENG_the_war_to_end_all_wars_2
+                }
+            }
+            custom_effect_tooltip = home_guard_focus_tt
+            custom_effect_tooltip = recruiting_reserves
+            hidden_effect = {
+                if = {
+                    limit = {
+                        has_country_flag = reserve_total_1
+                    }
+                    clr_country_flag = reserve_total_1
+                    set_country_flag = reserve_total_2
+                }
+                else_if = {
+                    limit = {
+                        has_country_flag = reserve_total_2
+                    }
+                    clr_country_flag = reserve_total_2
+                    set_country_flag = reserve_total_3
+                }
+                else_if = {
+                    limit = {
+                        has_country_flag = reserve_total_3
+                    }
+                    clr_country_flag = reserve_total_3
+                    set_country_flag = reserve_total_4
+                }
+                else_if = {
+                    limit = {
+                        has_country_flag = reserve_total_4
+                    }
+                    clr_country_flag = reserve_total_4
+                    set_country_flag = reserve_total_5
+                }
+                else_if = {
+                    limit = {
+                        has_country_flag = reserve_total_5
+                    }
+                    clr_country_flag = reserve_total_5
+                    set_country_flag = reserve_total_6
+                }
+                else_if = {
+                    limit = {
+                        has_country_flag = reserve_total_6
+                    }
+                    clr_country_flag = reserve_total_6
+                    set_country_flag = reserve_total_7
+                }
+                else_if = {
+                    limit = {
+                        has_country_flag = reserve_total_7
+                    }
+                    clr_country_flag = reserve_total_7
+                    set_country_flag = reserve_total_8
+                }
+                else_if = {
+                    limit = {
+                        has_country_flag = reserve_total_8
+                    }
+                    clr_country_flag = reserve_total_8
+                    set_country_flag = reserve_total_9
+                }
+                else_if = {
+                    limit = {
+                        has_country_flag = reserve_total_9
+                    }
+                    clr_country_flag = reserve_total_9
+                    set_country_flag = reserve_total_10
+                }
+                else = {
+                    set_country_flag = reserve_total_1
+                }
+            }
+        }
+    }
+
+	focus = {
+		id = ENG_issue_gasmasks
+		icon = GFX_goal_issue_gas_masks
+		prerequisite = { focus = ENG_military_training_act }
+		x = -1
+		y = 1
+		relative_position_id = ENG_military_training_act
+
+		available = {
+			OR = {
+				threat > 0.5
+				has_war = yes
+			}
+		}
+
+		available_if_capitulated = yes
+		continue_if_invalid = yes
+		cancel_if_invalid = no
+
+		cost = 3
+		ai_will_do = {
+			factor = 1
+		}	
+		completion_reward = {
+			add_stability = 0.05
+		}
+	}
+
+    focus = {
+        id = ENG_womans_land_army
+        icon = GFX_goal_generic_production
+        prerequisite = { focus = ENG_no_further_appeasement }
+        x = 1
+        y = 1
+        relative_position_id = ENG_no_further_appeasement
+
+        available = {
+        }
+
+        bypass = {
+            OR = { 
+                has_idea = women_in_the_workforce
+                has_idea = women_in_the_frontlines
+                has_idea = women_in_the_army
+            }
+        }
+
+        available_if_capitulated = yes
+
+        cost = 3
+        ai_will_do = {
+            factor = 1
+        }	
+        completion_reward = {
+            if = {
+                limit = {
+                    OR = {
+                        has_idea = extensive_conscription
+                        has_idea = service_by_requirement
+                        has_idea = all_adults_serve
+                        has_idea = scraping_the_barrel
+                    }
+                }
+                add_political_power = 100
+            }
+            else = {
+                add_ideas = extensive_conscription
+            }
+            if = {
+                limit = {
+                    NOT = { has_idea = women_in_the_workforce }
+                }
+                add_ideas = women_in_the_workforce
+            }
+        }
+    }
+    focus = {
+        id = ENG_kickstart_the_war_industry
+        icon = GFX_goal_large_military_economy
+        prerequisite = { focus = ENG_military_training_act focus = ENG_womans_land_army }
+        x = 1
+        y = 1
+        relative_position_id = ENG_military_training_act
+
+        available = { 
+            has_war = yes
+        }
+
+        bypass = {
+            NOT = {
+                has_idea = civilian_economy
+            }
+            NOT = {
+                has_idea = low_economic_mobilisation
+            }
+        }
+
+        continue_if_invalid = yes
+
+        cost = 3
+        ai_will_do = {
+            factor = 1
+        }
+        
+        completion_reward = {
+            custom_effect_tooltip = ENG_kickstart_the_war_industry_tt
+            if = {
+                limit = {
+                    OR = {
+                        has_global_flag = fall_of_france
+                        FRA = { surrender_progress > 0.1 }
+                        HOL = { surrender_progress > 0.1 }
+                        BEL = { surrender_progress > 0.1 }
+                        LUX = { surrender_progress > 0.1 }
+                        DEN = { surrender_progress > 0.1 }
+                        NOR = { surrender_progress > 0.1 }
+                        AND = {
+                            110 = { is_controlled_by = GER }
+                            NOT = { is_in_faction_with = GER }
+                        }
+                        surrender_progress > 0.1
+                        threat > 0.75
+                    }
+                }
+                add_ideas = war_economy
+            }
+            else_if = {
+                limit = {
+                    threat > 0.5
+                    any_allied_country = {
+                        has_capitulated = yes
+                    }
+                }
+                add_stability = -0.1
+                add_ideas = war_economy
+            }
+            else_if = {
+                limit = {
+                    threat > 0.5
+                }
+                add_stability = -0.2
+                add_ideas = war_economy
+            }
+            else = {
+                add_stability = -0.3
+                add_ideas = war_economy
+            }
+        }
+    }
+
+    focus = {
+        id = ENG_motion_of_no_confidence
+        icon = GFX_focus_eng_motion_of_no_confidence
+        prerequisite = { focus = ENG_kickstart_the_war_industry }
+        x = 0
+        y = 1
+        relative_position_id = ENG_kickstart_the_war_industry
+        
+        available = { 
+            has_country_leader =  {
+                name = "Neville Chamberlain"
+                ruling_only = yes
+            }
+            if = {
+                limit ={
+                    is_ai = yes
+                }
+                OR = {
+                    has_global_flag = fall_of_france
+                    FRA = { surrender_progress > 0 }
+                    HOL = { surrender_progress > 0 }
+                    BEL = { surrender_progress > 0 }
+                    LUX = { surrender_progress > 0 }
+                    AND = {
+                        110 = { is_controlled_by = GER }
+                        NOT = { is_in_faction_with = GER }
+                    }
+                    surrender_progress > 0.1
+                    date > 1940.10.1
+                }
+            }
+        }
+        bypass = {
+            OR = {
+                has_country_leader =  {
+                    name = "Winston Churchill"
+                    ruling_only = yes
+                }
+                has_country_leader =  {
+                    name = "Lord Edward Halifax"
+                    ruling_only = yes
+                }
+            }
+        }
+
+        continue_if_invalid = yes
+
+        cost = 2
+        ai_will_do = {
+            factor = 1
+        }	
+        completion_reward = {
+            custom_effect_tooltip = ENG_motion_of_no_confidence_tt
+            if = {
+                limit = {
+                    OR = {
+                        has_global_flag = fall_of_france
+                        FRA = { surrender_progress > 0 }
+                        HOL = { surrender_progress > 0 }
+                        BEL = { surrender_progress > 0 }
+                        LUX = { surrender_progress > 0 }
+                        AND = {
+                            110 = { is_controlled_by = GER }
+                            NOT = { is_in_faction_with = GER }
+                        }
+                        surrender_progress > 0.1
+                    }
+                }
+                country_event = { id = britain.9 }
+            }
+            else_if = {
+                limit = {
+                    POL = { has_capitulated = yes }
+                    OR = {
+                        DEN = { has_capitulated = yes }
+                        NOR = { has_capitulated = yes }
+                    }
+                }
+                add_stability = -0.05
+                country_event = { id = britain.9 }
+            }
+            else_if = {
+                limit = {
+                    POL = { has_capitulated = yes }
+                }
+                add_stability = -0.1
+                country_event = { id = britain.9 }
+            }
+            else_if = {
+                limit = {
+                    OR = {
+                        DEN = { has_capitulated = yes }
+                        NOR = { has_capitulated = yes }
+                    }
+                }
+                add_stability = -0.1
+                country_event = { id = britain.9 }
+            }
+            else_if = {
+                limit = {
+                    has_war = yes
+                }
+                add_stability = -0.15
+                country_event = { id = britain.9 }
+            }
+            else = {
+                add_stability = -0.2
+                country_event = { id = britain.9 }
+            }
+        }
+    }
+	
+	focus = {
+		id = ENG_emergency_powers
+		icon = GFX_focus_generic_diplomatic_treaty
+		prerequisite = { focus = ENG_motion_of_no_confidence }
+		x = 0
+		y = 1
+		relative_position_id = ENG_motion_of_no_confidence
+
+		available = {
+			has_war = yes
+			any_enemy_country = {
+				is_major = yes
+			}
+		}
+
+		bypass = {
+		}
+
+		available_if_capitulated = yes
+
+		cost = 3
+		ai_will_do = {
+			factor = 1
+		}	
+		completion_reward = {
+			add_political_power = 100
+		}
+	}
+
+    focus = {
+        id = ENG_the_sun_shall_never_set
+        icon = GFX_goal_large_military_economy
+        prerequisite = { focus = ENG_emergency_powers }
+        x = 0
+        y = 1
+        relative_position_id = ENG_emergency_powers
+
+        available = { 
+            OR = {
+                surrender_progress > 0.01
+                threat > 0.8
+                FRA = { has_capitulated = yes }
+            }
+        }
+
+        continue_if_invalid = yes
+
+        cost = 3
+        ai_will_do = {
+            factor = 1
+        }
+        
+        completion_reward = {
+            if = {
+				limit = {
+					NOT = { has_idea = tot_economic_mobilisation }
+				}
+				add_ideas = tot_economic_mobilisation
+			}
+        }
+    }
+
+	focus = {
+		id = ENG_enforce_the_naval_treaties
+		icon = GFX_goal_generic_major_war
+		prerequisite = { focus = uk_iran_focus focus = ENG_the_sun_shall_never_set focus = ENG_continental_intervention }
+		x = 0
+		y = 1
+		relative_position_id = ENG_the_sun_shall_never_set
+		available = { 
+			is_subject = no
+		}
+        bypass = {
+            has_war = yes
+        }
+        
+		continue_if_invalid = yes
+
+		cost = 3
+		ai_will_do = {
+			factor = 1
+		}	
+		completion_reward = {
+			unlock_decision_category_tooltip = ENG_enforce_the_naval_treaties
+			custom_effect_tooltip = ENG_enforce_the_naval_treaties_tt
+			hidden_effect = { news_event = { id = mtg_news.17 days = 1 } }
+		}
+	}
+
+    focus = {
+        id = ENG_local_intervention
+        icon = GFX_goal_generic_major_war
+        prerequisite = { focus = ENG_motion_of_no_confidence }
+        x = 2
+        y = 1
+        relative_position_id = ENG_motion_of_no_confidence
+
+        available = { 
+            is_subject = no
+        }
+
+        continue_if_invalid = yes
+
+        cost = 2
+        ai_will_do = {
+            factor = 1
+        }
+        completion_reward = {
+            set_rule = { can_send_volunteers = yes }
+            unlock_decision_tooltip = operation_fork
+            unlock_decision_tooltip = invade_ireland
+            unlock_decision_tooltip = mers_el_kebir_raid
+        }
+    }
+
+    focus = {
+        id = ENG_continental_intervention
+        icon = GFX_goal_generic_major_war
+        prerequisite = { focus = ENG_local_intervention }
+        x = 0
+        y = 1
+        relative_position_id = ENG_local_intervention
+
+        available = { 
+            is_subject = no
+        }
+
+        continue_if_invalid = yes
+
+        cost = 3
+        ai_will_do = {
+            factor = 0
+
+            modifier = {
+                add = 1
+                OR = {
+                    is_historical_focus_on = no
+                    NOT = { has_government = democratic }
+                }
+            }
+        }
+        completion_reward = {
+            custom_effect_tooltip = ENG_continental_intervention_tt
+            every_other_country = {
+                limit = {
+                    any_owned_state = {
+                        is_capital = yes
+                        is_on_continent = europe
+                    }
+                    NOT = { is_in_faction_with = ROOT }
+                    has_added_tension_amount > 0.1
+                    num_of_factories > 50
+                }
+                ENG = {
+                    create_wargoal = {
+                        target = PREV
+                        type = topple_government
+                        expire = 0
+                    }
+                }
+            }
+            hidden_effect = { news_event = { id = mtg_news.18 days = 1 } }
+        }
+    }
+
+    focus = {
+        id = uk_iraq_focus
+        icon = GFX_goal_attack_iraq
+        prerequisite = { focus = ENG_motion_of_no_confidence }
+        x = -2
+        y = 1
+        relative_position_id = ENG_motion_of_no_confidence
+        available = {
+            OR = {	
+                any_enemy_country = {
+                    is_major = yes
+                }
+                IRQ = { communism > 0.2 }
+                IRQ = { fascism > 0.2 }
+            } 
+            
+        } #UK at war with fascist/commie. iraq is fascist/commie
+
+        bypass = {
+            OR = {
+                IRQ = { exists = no }
+                has_war_with = IRQ
+            }
+        }
+
+        will_lead_to_war_with = IRQ
+        cost = 3
+        ai_will_do = {
+            factor = 1
+        }	
+        completion_reward = {
+            create_wargoal = {
+                type = take_state_focus
+                target = IRQ
+                generator = { 291 }
+                expire = 0
+            }
+        }
+    }
+    focus = {
+        id = uk_iran_focus
+        icon = GFX_goal_attack_iran
+        prerequisite = { focus = uk_iraq_focus }
+        x = 0
+        y = 1
+        relative_position_id = uk_iraq_focus
+
+        available = {
+            NOT = { has_war_with = SOV }
+            NOT = { is_in_faction_with = PER }
+            OR = {	
+                AND = {
+                    any_enemy_country = {
+                        is_major = yes
+                        has_war_With = SOV
+                    }
+                    SOV = { has_full_control_of_state = 229 }
+                }
+                PER = { communism > 0.2 }
+                PER = { fascism > 0.2 }
+            }
+            AND = {
+                446 = {
+                    CONTROLLER = {
+                        OR = {
+                            tag = ENG
+                            is_subject_of = ENG
+                            is_in_faction_with = ENG
+                        }
+                    }
+                }
+                447 = {
+                    CONTROLLER = {
+                        OR = {
+                            tag = ENG
+                            is_subject_of = ENG
+                            is_in_faction_with = ENG
+                        }
+                    }
+                }
+                676 = {
+                    CONTROLLER = {
+                        OR = {
+                            tag = ENG
+                            is_subject_of = ENG
+                            is_in_faction_with = ENG
+                        }
+                    }
+                }
+                675 = {
+                    CONTROLLER = {
+                        OR = {
+                            tag = ENG
+                            is_subject_of = ENG
+                            is_in_faction_with = ENG
+                        }
+                    }
+                }
+                291 = {
+                    CONTROLLER = {
+                        OR = {
+                            tag = ENG
+                            is_subject_of = ENG
+                            is_in_faction_with = ENG
+                        }
+                    }
+                }
+            }
+        }
+
+        bypass = {
+            OR = {
+                PER = { exists = no }
+                has_war_with = PER
+            }
+        }
+
+        will_lead_to_war_with = PER
+        cost = 3
+        ai_will_do = {
+            factor = 1
+        }	
+        completion_reward = {
+            SOV = { country_event = { days = 1 id = sov_armor.801 } }
+        }
+    }
+	
+	focus = {
+		id = ENG_reintroduce_elections
+		icon = GFX_focus_generic_diplomatic_treaty
+		prerequisite = { focus = ENG_motion_of_no_confidence }
+		x = 0
+		y = 4
+		relative_position_id = ENG_motion_of_no_confidence
+
+		available = {
+			has_war = no
+            date > 1945.7.1
+		}
+
+		bypass = {
+		}
+
+		available_if_capitulated = yes
+
+		cost = 3
+		ai_will_do = {
+			factor = 1
+		}	
+		completion_reward = {
+			retire_country_leader = yes
+			create_country_leader = {
+				name = "Clement"
+				desc = "POLITICS_CLEMENT_ATTLEE_DESC"
+				picture = "gfx/leaders/ENG/clement_attlee.dds"
+				expire = "1965.1.1"
+				ideology = socialism
+				traits = {
+				}
+			}
+		}
+	}
+
+    ### Home Defence ###
     focus = {
         id = ENG_prepare_for_the_inevitable
         icon = GFX_goal_generic_construction
@@ -3874,7 +4762,7 @@ focus_tree = {
         available_if_capitulated = yes
 
         completion_reward = {
-			add_war_support = 0.25
+			add_war_support = 0.2
         }
     }
 
@@ -3920,912 +4808,6 @@ focus_tree = {
 					custom_effect_tooltip = ENG_vanguard_tt_communism
 				}
 				hidden_effect = { load_oob = "ENG_vanguard_communist" }
-			}
-		}
-	}
-
-	focus = {
-		id = general_rearmament_focus
-		icon = GFX_goal_rearmament_large
-        prerequisite = { focus = ENG_maintaining_the_balance_of_power }
-        x = 0
-        y = 1
-        relative_position_id = ENG_maintaining_the_balance_of_power
-		
-		available = {
-			if = {
-				limit = {
-					has_dlc = "Man the Guns"
-				}
-				OR = {
-					threat > 0.1 
-					has_war = yes
-					has_idea = ENG_no_further_appeasement_idea
-					NOT = { has_government = democratic }
-				}
-			}
-			if = {
-				limit = {
-					NOT = { has_dlc = "Man the Guns" }
-				}
-				OR = {
-					threat > 0.1
-					has_war = yes
-					NOT = { has_government = democratic }
-				}
-			}
-		}
-
-		cancel_if_invalid = no
-		continue_if_invalid = yes
-
-		cost = 6
-		ai_will_do = {
-			factor = 1
-		}	
-		completion_reward = {
-			if = {
-				limit = {
-					has_idea = civilian_economy
-				}
-				add_ideas = low_economic_mobilisation
-				add_ideas = light_propaganda_effort
-				set_country_flag = USA_the_giant_wakes_added_civ_eco
-			}
-            random_owned_controlled_state = {
-                prioritize = { 125 126 128 129 130 }
-                limit = {
-                    is_core_of = ENG
-                }
-                add_extra_state_shared_building_slots = 3
-                add_building_construction = {
-                    type = arms_factory
-                    level = 3
-                    instant_build = yes
-                }
-            }
-            random_owned_controlled_state = {
-                prioritize = { 125 126 128 129 130 }
-                limit = {
-                    is_core_of = ENG
-                }
-                add_extra_state_shared_building_slots = 3
-                add_building_construction = {
-                    type = arms_factory
-                    level = 3
-                    instant_build = yes
-                }
-            }
-		}
-	}
-	
-    focus = {
-        id = ENG_no_further_appeasement
-        icon = GFX_focus_generic_strike_at_democracy1
-        prerequisite = { focus = general_rearmament_focus }
-        x = 0
-        y = 1
-        relative_position_id = general_rearmament_focus
-
-        available = {
-			any_country = {
-                any_owned_state = {
-                    is_capital = yes
-                    is_on_continent = europe
-                }
-                has_added_tension_amount > 10
-			}
-            if = {
-                limit = {
-                    GER = { has_government = fascism }
-                    is_historical_focus_on = yes
-                    is_ai = yes
-                }
-                date > 1939.6.1
-            }
-        }
-
-        continue_if_invalid = yes
-
-        cost = 4
-        ai_will_do = {
-            factor = 1
-        }	
-        completion_reward = {
-            custom_effect_tooltip = ENG_no_further_appeasement_tt
-            if = {
-                limit = {
-                    threat > 0.29
-                }
-            }
-            else_if = {
-                limit = {
-                    threat > 0.24
-                }
-                custom_effect_tooltip = ENG_no_further_appeasement_tt_1
-                hidden_effect = {
-                    subtract_from_variable = { var  = ENG_Labour_stability value = 1 }
-                    subtract_from_variable = { var  = ENG_Conservative_stability value = 1 }
-                    subtract_from_variable = { var = ENG_Labour_attitude value = 1 }
-                    subtract_from_variable = { var = ENG_Conservative_attitude value = 1 }
-                    ENG_political_instability_update_effect = yes
-                }
-            }
-            else_if = {
-                limit = {
-                    threat > 0.19
-                }
-                custom_effect_tooltip = ENG_no_further_appeasement_tt_2
-                hidden_effect = {
-                    subtract_from_variable = { var  = ENG_Labour_stability value = 2 }
-                    subtract_from_variable = { var  = ENG_Conservative_stability value = 2 }
-                    subtract_from_variable = { var = ENG_Labour_attitude value = 1 }
-                    subtract_from_variable = { var = ENG_Conservative_attitude value = 1 }
-                    ENG_political_instability_update_effect = yes
-                }
-            }
-            else_if = {
-                limit = {
-                    threat > 0.14
-                }
-                custom_effect_tooltip = ENG_no_further_appeasement_tt_3
-                hidden_effect = {
-                    subtract_from_variable = { var  = ENG_Labour_stability value = 3 }
-                    subtract_from_variable = { var  = ENG_Conservative_stability value = 3 }
-                    subtract_from_variable = { var = ENG_Labour_attitude value = 2 }
-                    subtract_from_variable = { var = ENG_Conservative_attitude value = 2 }
-                    ENG_political_instability_update_effect = yes
-                }
-            }
-            else = {
-                custom_effect_tooltip = ENG_no_further_appeasement_tt_4
-                hidden_effect = {
-                    subtract_from_variable = { var  = ENG_Labour_stability value = 5 }
-                    subtract_from_variable = { var  = ENG_Conservative_stability value = 5 }
-                    subtract_from_variable = { var = ENG_Labour_attitude value = 2 }
-                    subtract_from_variable = { var = ENG_Conservative_attitude value = 2 }
-                    ENG_political_instability_update_effect = yes
-                }
-            }
-            hidden_effect = {
-                set_rule = { can_declare_war_on_same_ideology = yes }
-                set_rule = { can_puppet = yes }
-            }
-            add_ideas = partial_economic_mobilisation
-            add_ideas = ENG_no_further_appeasement_idea
-            hidden_effect = { news_event = { id = mtg_news.16 days = 1 } }
-        }
-    }
-    focus = {
-        id = ENG_military_training_act
-        icon = GFX_focus_generic_commonwealth_build_infantry
-        prerequisite = { focus = ENG_no_further_appeasement }
-        x = -1
-        y = 1
-        relative_position_id = ENG_no_further_appeasement
-
-        available = {
-            threat > 0.1
-        }
-
-        cancel_if_invalid = no
-        continue_if_invalid = yes
-        available_if_capitulated = yes
-        
-        cost = 3
-        ai_will_do = {
-            factor = 1
-        }	
-        completion_reward = {
-            custom_effect_tooltip = ENG_military_training_act_tt
-            if = {
-                limit = {
-                    threat > 0.29
-                }
-                swap_ideas = {
-                    remove_idea = ENG_the_war_to_end_all_wars
-                    add_idea = ENG_the_war_to_end_all_wars_2
-                }
-            }
-            else_if = {
-                limit = {
-                    threat > 0.24
-                }
-                add_stability = -0.05
-                swap_ideas = {
-                    remove_idea = ENG_the_war_to_end_all_wars
-                    add_idea = ENG_the_war_to_end_all_wars_2
-                }
-            }
-            else_if = {
-                limit = {
-                    threat > 0.19
-                }
-                add_stability = -0.1
-                swap_ideas = {
-                    remove_idea = ENG_the_war_to_end_all_wars
-                    add_idea = ENG_the_war_to_end_all_wars_2
-                }
-            }
-            else_if = {
-                limit = {
-                    threat > 0.14
-                }
-                add_stability = -0.15
-                swap_ideas = {
-                    remove_idea = ENG_the_war_to_end_all_wars
-                    add_idea = ENG_the_war_to_end_all_wars_2
-                }
-            }
-            else = {
-                add_stability = -0.2
-                swap_ideas = {
-                    remove_idea = ENG_the_war_to_end_all_wars
-                    add_idea = ENG_the_war_to_end_all_wars_2
-                }
-            }
-            custom_effect_tooltip = home_guard_focus_tt
-            custom_effect_tooltip = recruiting_reserves
-            hidden_effect = {
-                if = {
-                    limit = {
-                        has_country_flag = reserve_total_1
-                    }
-                    clr_country_flag = reserve_total_1
-                    set_country_flag = reserve_total_2
-                }
-                else_if = {
-                    limit = {
-                        has_country_flag = reserve_total_2
-                    }
-                    clr_country_flag = reserve_total_2
-                    set_country_flag = reserve_total_3
-                }
-                else_if = {
-                    limit = {
-                        has_country_flag = reserve_total_3
-                    }
-                    clr_country_flag = reserve_total_3
-                    set_country_flag = reserve_total_4
-                }
-                else_if = {
-                    limit = {
-                        has_country_flag = reserve_total_4
-                    }
-                    clr_country_flag = reserve_total_4
-                    set_country_flag = reserve_total_5
-                }
-                else_if = {
-                    limit = {
-                        has_country_flag = reserve_total_5
-                    }
-                    clr_country_flag = reserve_total_5
-                    set_country_flag = reserve_total_6
-                }
-                else_if = {
-                    limit = {
-                        has_country_flag = reserve_total_6
-                    }
-                    clr_country_flag = reserve_total_6
-                    set_country_flag = reserve_total_7
-                }
-                else_if = {
-                    limit = {
-                        has_country_flag = reserve_total_7
-                    }
-                    clr_country_flag = reserve_total_7
-                    set_country_flag = reserve_total_8
-                }
-                else_if = {
-                    limit = {
-                        has_country_flag = reserve_total_8
-                    }
-                    clr_country_flag = reserve_total_8
-                    set_country_flag = reserve_total_9
-                }
-                else_if = {
-                    limit = {
-                        has_country_flag = reserve_total_9
-                    }
-                    clr_country_flag = reserve_total_9
-                    set_country_flag = reserve_total_10
-                }
-                else = {
-                    set_country_flag = reserve_total_1
-                }
-            }
-        }
-    }
-
-	focus = {
-		id = ENG_issue_gasmasks
-		icon = GFX_goal_issue_gas_masks
-		prerequisite = { focus = ENG_military_training_act }
-		x = -1
-		y = 1
-		relative_position_id = ENG_military_training_act
-
-		available = {
-			OR = {
-				threat > 0.5
-				has_war = yes
-			}
-		}
-
-		available_if_capitulated = yes
-		continue_if_invalid = yes
-		cancel_if_invalid = no
-
-		cost = 3
-		ai_will_do = {
-			factor = 1
-		}	
-		completion_reward = {
-			add_stability = 0.05
-		}
-	}
-
-    focus = {
-        id = ENG_womans_land_army
-        icon = GFX_goal_generic_production
-        prerequisite = { focus = ENG_no_further_appeasement }
-        x = 1
-        y = 1
-        relative_position_id = ENG_no_further_appeasement
-
-        available = {
-        }
-
-        bypass = {
-            OR = { 
-                has_idea = women_in_the_workforce
-                has_idea = women_in_the_frontlines
-                has_idea = women_in_the_army
-            }
-        }
-
-        available_if_capitulated = yes
-
-        cost = 3
-        ai_will_do = {
-            factor = 1
-        }	
-        completion_reward = {
-            if = {
-                limit = {
-                    OR = {
-                        has_idea = extensive_conscription
-                        has_idea = service_by_requirement
-                        has_idea = all_adults_serve
-                        has_idea = scraping_the_barrel
-                    }
-                }
-                add_political_power = 100
-            }
-            else = {
-                add_ideas = extensive_conscription
-            }
-            if = {
-                limit = {
-                    NOT = { has_idea = women_in_the_workforce }
-                }
-                add_ideas = women_in_the_workforce
-            }
-        }
-    }
-    focus = {
-        id = ENG_kickstart_the_war_industry
-        icon = GFX_goal_large_military_economy
-        prerequisite = { focus = ENG_military_training_act focus = ENG_womans_land_army }
-        x = 1
-        y = 1
-        relative_position_id = ENG_military_training_act
-
-        available = { 
-            has_war = yes
-        }
-
-        bypass = {
-            NOT = {
-                has_idea = civilian_economy
-            }
-            NOT = {
-                has_idea = low_economic_mobilisation
-            }
-        }
-
-        continue_if_invalid = yes
-
-        cost = 3
-        ai_will_do = {
-            factor = 1
-        }
-        
-        completion_reward = {
-            custom_effect_tooltip = ENG_kickstart_the_war_industry_tt
-            if = {
-                limit = {
-                    OR = {
-                        has_global_flag = fall_of_france
-                        FRA = { surrender_progress > 0.1 }
-                        HOL = { surrender_progress > 0.1 }
-                        BEL = { surrender_progress > 0.1 }
-                        LUX = { surrender_progress > 0.1 }
-                        DEN = { surrender_progress > 0.1 }
-                        NOR = { surrender_progress > 0.1 }
-                        AND = {
-                            110 = { is_controlled_by = GER }
-                            NOT = { is_in_faction_with = GER }
-                        }
-                        surrender_progress > 0.1
-                        threat > 0.75
-                    }
-                }
-                add_ideas = war_economy
-            }
-            else_if = {
-                limit = {
-                    threat > 0.5
-                    any_allied_country = {
-                        has_capitulated = yes
-                    }
-                }
-                add_stability = -0.1
-                add_ideas = war_economy
-            }
-            else_if = {
-                limit = {
-                    threat > 0.5
-                }
-                add_stability = -0.2
-                add_ideas = war_economy
-            }
-            else = {
-                add_stability = -0.3
-                add_ideas = war_economy
-            }
-        }
-    }
-
-    focus = {
-        id = ENG_motion_of_no_confidence
-        icon = GFX_focus_eng_motion_of_no_confidence
-        prerequisite = { focus = ENG_kickstart_the_war_industry }
-        x = 0
-        y = 1
-        relative_position_id = ENG_kickstart_the_war_industry
-        
-        available = { 
-            has_country_leader =  {
-                name = "Neville Chamberlain"
-                ruling_only = yes
-            }
-            if = {
-                limit ={
-                    is_ai = yes
-                }
-                OR = {
-                    has_global_flag = fall_of_france
-                    FRA = { surrender_progress > 0 }
-                    HOL = { surrender_progress > 0 }
-                    BEL = { surrender_progress > 0 }
-                    LUX = { surrender_progress > 0 }
-                    AND = {
-                        110 = { is_controlled_by = GER }
-                        NOT = { is_in_faction_with = GER }
-                    }
-                    surrender_progress > 0.1
-                    date > 1940.10.1
-                }
-            }
-        }
-        bypass = {
-            OR = {
-                has_country_leader =  {
-                    name = "Winston Churchill"
-                    ruling_only = yes
-                }
-                has_country_leader =  {
-                    name = "Lord Edward Halifax"
-                    ruling_only = yes
-                }
-            }
-        }
-
-        continue_if_invalid = yes
-
-        cost = 2
-        ai_will_do = {
-            factor = 1
-        }	
-        completion_reward = {
-            custom_effect_tooltip = ENG_motion_of_no_confidence_tt
-            if = {
-                limit = {
-                    OR = {
-                        has_global_flag = fall_of_france
-                        FRA = { surrender_progress > 0 }
-                        HOL = { surrender_progress > 0 }
-                        BEL = { surrender_progress > 0 }
-                        LUX = { surrender_progress > 0 }
-                        AND = {
-                            110 = { is_controlled_by = GER }
-                            NOT = { is_in_faction_with = GER }
-                        }
-                        surrender_progress > 0.1
-                    }
-                }
-                country_event = { id = britain.9 }
-            }
-            else_if = {
-                limit = {
-                    POL = { has_capitulated = yes }
-                    OR = {
-                        DEN = { has_capitulated = yes }
-                        NOR = { has_capitulated = yes }
-                    }
-                }
-                add_stability = -0.05
-                country_event = { id = britain.9 }
-            }
-            else_if = {
-                limit = {
-                    POL = { has_capitulated = yes }
-                }
-                add_stability = -0.1
-                country_event = { id = britain.9 }
-            }
-            else_if = {
-                limit = {
-                    OR = {
-                        DEN = { has_capitulated = yes }
-                        NOR = { has_capitulated = yes }
-                    }
-                }
-                add_stability = -0.1
-                country_event = { id = britain.9 }
-            }
-            else_if = {
-                limit = {
-                    has_war = yes
-                }
-                add_stability = -0.15
-                country_event = { id = britain.9 }
-            }
-            else = {
-                add_stability = -0.2
-                country_event = { id = britain.9 }
-            }
-        }
-    }
-	
-	focus = {
-		id = ENG_emergency_powers
-		icon = GFX_focus_generic_diplomatic_treaty
-		prerequisite = { focus = ENG_motion_of_no_confidence }
-		x = 0
-		y = 1
-		relative_position_id = ENG_motion_of_no_confidence
-
-		available = {
-			has_war = yes
-			any_enemy_country = {
-				is_major = yes
-			}
-		}
-
-		bypass = {
-		}
-
-		available_if_capitulated = yes
-
-		cost = 3
-		ai_will_do = {
-			factor = 1
-		}	
-		completion_reward = {
-			add_political_power = 100
-		}
-	}
-
-    focus = {
-        id = ENG_the_sun_shall_never_set
-        icon = GFX_goal_large_military_economy
-        prerequisite = { focus = ENG_emergency_powers }
-        x = 0
-        y = 1
-        relative_position_id = ENG_emergency_powers
-
-        available = { 
-            OR = {
-                surrender_progress > 0.01
-                threat > 0.8
-                FRA = { has_capitulated = yes }
-            }
-        }
-
-        continue_if_invalid = yes
-
-        cost = 3
-        ai_will_do = {
-            factor = 1
-        }
-        
-        completion_reward = {
-            if = {
-				limit = {
-					NOT = { has_idea = tot_economic_mobilisation }
-				}
-				add_ideas = tot_economic_mobilisation
-			}
-			else = {
-				add_political_power = 150
-			}
-        }
-    }
-
-	focus = {
-		id = ENG_enforce_the_naval_treaties
-		icon = GFX_goal_generic_major_war
-		prerequisite = { focus = uk_iran_focus focus = ENG_the_sun_shall_never_set focus = ENG_continental_intervention }
-		x = 0
-		y = 1
-		relative_position_id = ENG_the_sun_shall_never_set
-		available = { 
-			is_subject = no
-		}
-        bypass = {
-            has_war = yes
-        }
-        
-		continue_if_invalid = yes
-
-		cost = 3
-		ai_will_do = {
-			factor = 1
-		}	
-		completion_reward = {
-			unlock_decision_category_tooltip = ENG_enforce_the_naval_treaties
-			custom_effect_tooltip = ENG_enforce_the_naval_treaties_tt
-			hidden_effect = { news_event = { id = mtg_news.17 days = 1 } }
-		}
-	}
-
-    focus = {
-        id = ENG_local_intervention
-        icon = GFX_goal_generic_major_war
-        prerequisite = { focus = ENG_motion_of_no_confidence }
-        x = 2
-        y = 1
-        relative_position_id = ENG_motion_of_no_confidence
-
-        available = { 
-            is_subject = no
-        }
-
-        continue_if_invalid = yes
-
-        cost = 2
-        ai_will_do = {
-            factor = 1
-        }
-        completion_reward = {
-            set_rule = { can_send_volunteers = yes }
-            unlock_decision_tooltip = operation_fork
-            unlock_decision_tooltip = invade_ireland
-            unlock_decision_tooltip = mers_el_kebir_raid
-        }
-    }
-
-    focus = {
-        id = ENG_continental_intervention
-        icon = GFX_goal_generic_major_war
-        prerequisite = { focus = ENG_local_intervention }
-        x = 0
-        y = 1
-        relative_position_id = ENG_local_intervention
-
-        available = { 
-            is_subject = no
-        }
-
-        continue_if_invalid = yes
-
-        cost = 3
-        ai_will_do = {
-            factor = 0
-
-            modifier = {
-                add = 1
-                OR = {
-                    is_historical_focus_on = no
-                    NOT = { has_government = democratic }
-                }
-            }
-        }
-        completion_reward = {
-            custom_effect_tooltip = ENG_continental_intervention_tt
-            every_other_country = {
-                limit = {
-                    any_owned_state = {
-                        is_capital = yes
-                        is_on_continent = europe
-                    }
-                    NOT = { is_in_faction_with = ROOT }
-                    has_added_tension_amount > 0.1
-                    num_of_factories > 50
-                }
-                ENG = {
-                    create_wargoal = {
-                        target = PREV
-                        type = topple_government
-                        expire = 0
-                    }
-                }
-            }
-            hidden_effect = { news_event = { id = mtg_news.18 days = 1 } }
-        }
-    }
-
-    focus = {
-        id = uk_iraq_focus
-        icon = GFX_goal_attack_iraq
-        prerequisite = { focus = ENG_motion_of_no_confidence }
-        x = -2
-        y = 1
-        relative_position_id = ENG_motion_of_no_confidence
-        available = {
-            OR = {	
-                any_enemy_country = {
-                    is_major = yes
-                }
-                IRQ = { communism > 0.2 }
-                IRQ = { fascism > 0.2 }
-            } 
-            
-        } #UK at war with fascist/commie. iraq is fascist/commie
-
-        bypass = {
-            OR = {
-                IRQ = { exists = no }
-                has_war_with = IRQ
-            }
-        }
-
-        will_lead_to_war_with = IRQ
-        cost = 3
-        ai_will_do = {
-            factor = 1
-        }	
-        completion_reward = {
-            create_wargoal = {
-                type = take_state_focus
-                target = IRQ
-                generator = { 291 }
-                expire = 0
-            }
-        }
-    }
-    focus = {
-        id = uk_iran_focus
-        icon = GFX_goal_attack_iran
-        prerequisite = { focus = uk_iraq_focus }
-        x = 0
-        y = 1
-        relative_position_id = uk_iraq_focus
-
-        available = {
-            NOT = { has_war_with = SOV }
-            NOT = { is_in_faction_with = PER }
-            OR = {	
-                AND = {
-                    any_enemy_country = {
-                        is_major = yes
-                        has_war_With = SOV
-                    }
-                    SOV = { has_full_control_of_state = 229 }
-                }
-                PER = { communism > 0.2 }
-                PER = { fascism > 0.2 }
-            }
-            AND = {
-                446 = {
-                    CONTROLLER = {
-                        OR = {
-                            tag = ENG
-                            is_subject_of = ENG
-                            is_in_faction_with = ENG
-                        }
-                    }
-                }
-                447 = {
-                    CONTROLLER = {
-                        OR = {
-                            tag = ENG
-                            is_subject_of = ENG
-                            is_in_faction_with = ENG
-                        }
-                    }
-                }
-                676 = {
-                    CONTROLLER = {
-                        OR = {
-                            tag = ENG
-                            is_subject_of = ENG
-                            is_in_faction_with = ENG
-                        }
-                    }
-                }
-                675 = {
-                    CONTROLLER = {
-                        OR = {
-                            tag = ENG
-                            is_subject_of = ENG
-                            is_in_faction_with = ENG
-                        }
-                    }
-                }
-                291 = {
-                    CONTROLLER = {
-                        OR = {
-                            tag = ENG
-                            is_subject_of = ENG
-                            is_in_faction_with = ENG
-                        }
-                    }
-                }
-            }
-        }
-
-        bypass = {
-            OR = {
-                PER = { exists = no }
-                has_war_with = PER
-            }
-        }
-
-        will_lead_to_war_with = PER
-        cost = 3
-        ai_will_do = {
-            factor = 1
-        }	
-        completion_reward = {
-            SOV = { country_event = { days = 1 id = sov_armor.801 } }
-        }
-    }
-	
-	focus = {
-		id = ENG_reintroduce_elections
-		icon = GFX_focus_generic_diplomatic_treaty
-		prerequisite = { focus = ENG_motion_of_no_confidence }
-		x = 0
-		y = 4
-		relative_position_id = ENG_motion_of_no_confidence
-
-		available = {
-			has_war = no
-            date > 1945.7.1
-		}
-
-		bypass = {
-		}
-
-		available_if_capitulated = yes
-
-		cost = 3
-		ai_will_do = {
-			factor = 1
-		}	
-		completion_reward = {
-			retire_country_leader = yes
-			create_country_leader = {
-				name = "Clement"
-				desc = "POLITICS_CLEMENT_ATTLEE_DESC"
-				picture = "gfx/leaders/ENG/clement_attlee.dds"
-				expire = "1965.1.1"
-				ideology = socialism
-				traits = {
-				}
 			}
 		}
 	}
