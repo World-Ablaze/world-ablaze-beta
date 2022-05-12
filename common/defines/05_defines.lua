@@ -302,7 +302,7 @@ NDefines.NProduction.EQUIPMENT_MODULE_REMOVE_XP_COST = 2.0							-- XP cost for 
 
 NDefines.NProduction.LICENSE_IC_COST_YEAR_INCREASE = 0.25							-- IC cost equipment for every year of equipment after 1936
 
-NDefines.NProduction.CONVERSION_SPEED_BONUS = 3.0									-- Modifier to the production speed when converting equipment
+NDefines.NProduction.CONVERSION_SPEED_BONUS = 1.0									-- Modifier to the production speed when converting equipment
 
 NDefines.NProduction.MIN_FIELD_TO_TRAINING_MANPOWER_RATIO = 0.15
 NDefines.NProduction.MIN_POSSIBLE_TRAINING_MANPOWER = 30000							-- How many deployment lines minimum can be training
