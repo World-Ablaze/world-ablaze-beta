@@ -315,7 +315,7 @@ NDefines.NProduction.MIN_POSSIBLE_TRAINING_MANPOWER = 30000							-- How many de
 NDefines.NProduction.MAX_CIV_FACTORIES_PER_LINE = 20								-- Max number of factories that can be assigned a single production line.
 NDefines.NProduction.BASE_LICENSE_IC_COST = 0										-- Base IC cost for lended license
 
-NDefines.NProduction.DEFAULT_MAX_NAV_FACTORIES_PER_LINE = 5
+NDefines.NProduction.DEFAULT_MAX_NAV_FACTORIES_PER_LINE = 10
 NDefines.NProduction.CAPITAL_SHIP_MAX_NAV_FACTORIES_PER_LINE = 5
 NDefines.NProduction.CONVOY_MAX_NAV_FACTORIES_PER_LINE = 15
 
