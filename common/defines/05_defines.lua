@@ -343,7 +343,7 @@ NDefines.NResistance.RESISTANCE_ACTIVITY_CHANCE_AT_MAX_RESISTANCE = 0.200			-- s
 NDefines.NAir.LEND_LEASED_EQUIPMENT_EXPERIENCE_GAIN = 0.0							-- Value used for equipment
 
 NDefines.NAir.CAPACITY_PENALTY = 2													-- scales penalty of having overcrowded bases.
-NDefines.NAir.AIR_WING_MAX_SIZE = 1600 												-- Max amount of airplanes in wing
+NDefines.NAir.AIR_WING_MAX_SIZE = 800 												-- Max amount of airplanes in wing
 NDefines.NAir.MISSION_EFFICIENCY_MULT_AT_LACK_OF_FUEL = 0.05		 				-- multiplier for mission efficiency when a base lacks fuel
 
 NDefines.NAir.FIELD_EXPERIENCE_SCALE = 0.0002
