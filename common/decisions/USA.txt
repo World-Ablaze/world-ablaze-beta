@@ -724,27 +724,29 @@ war_measures = {
 		}
 
 		available = {
-			any_state = {
-				is_core_of = USA
-				NOT = {
-					is_controlled_by = USA
+			any_owned_state = {
+				any_neighbor_state = {
+					CONTROLLER = { has_war_with = ROOT }
 				}
 			}
 			has_civil_war = no
-
-		}
-
-		cost = 50
-		fire_only_once = yes
-		ai_will_do = {
-			factor = 200
 		}
 
 		visible = {
-			has_defensive_war = yes
+			any_owned_state = {
+				any_neighbor_state = {
+					CONTROLLER = { has_war_with = ROOT }
+				}
+			}
 			CSA = {
 				exists = no
 			}
+		}
+
+		cost = 0
+		fire_only_once = yes
+		ai_will_do = {
+			factor = 200
 		}
 
 		complete_effect = {
@@ -795,6 +797,133 @@ war_measures = {
 				add_ideas = war_economy
 			}
 			add_ideas = USA_homeland_defense
+		}
+	}
+
+	USA_homeland_militia = {
+
+		icon = generic_prepare_civil_war
+
+		allowed = {
+			original_tag = USA
+		}
+
+		available = {
+			any_owned_state = {
+				any_neighbor_state = {
+					CONTROLLER = { has_war_with = ROOT }
+				}
+			}
+			has_civil_war = no
+			num_divisions < 150
+		}
+
+		visible = {
+			any_owned_state = {
+				any_neighbor_state = {
+					CONTROLLER = { has_war_with = ROOT }
+				}
+			}
+			has_idea = USA_homeland_defense
+			CSA = {
+				exists = no
+			}
+		}
+
+		cost = 0
+		fire_only_once = yes
+		ai_will_do = {
+			factor = 200
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				division_template = {
+					name = "Local Volunteers"
+					division_names_group = USA_GAR_01
+					is_locked = yes
+
+					regiments = {
+						heavy_militia = { x = 0 y = 0 }
+						militia = { x = 0 y = 1 }
+						militia = { x = 0 y = 2 }
+						militia = { x = 0 y = 3 }
+				
+						heavy_militia = { x = 1 y = 0 }
+						militia = { x = 1 y = 1 }
+						militia = { x = 1 y = 2 }
+						militia = { x = 1 y = 3 }
+				
+						heavy_militia = { x = 2 y = 0 }
+						militia = { x = 2 y = 1 }
+						militia = { x = 2 y = 2 }
+						militia = { x = 2 y = 3 }
+					}
+				
+					support = {
+						normal_engineer = { x = 0 y = 0 }
+						recon = { x = 1 y = 0 }
+					}
+				}
+			}
+			every_controlled_state = {
+				limit = {
+					OR = {
+						state = 386
+						state = 808
+						state = 814
+						state = 809
+						state = 843
+						state = 820
+						state = 361
+						state = 834
+						state = 831
+						state = 823
+					}
+					is_controlled_by = ROOT
+				}
+				create_unit = {
+					division = "division_template=\"Local Volunteers\" start_experience_factor=0.2 start_equipment_factor=1.0" 
+					owner = ROOT
+					count = 10
+				}
+			}
+		}
+	}
+
+	USA_disband_homeland_militia = {
+
+		icon = generic_prepare_civil_war
+
+		allowed = {
+			original_tag = USA
+		}
+
+		available = {
+		}
+
+		visible = {
+			has_template = "Local Volunteers"
+			has_civil_war = no
+			CSA = {
+				exists = no
+			}
+		}
+
+		cost = 0
+		fire_only_once = yes
+
+		ai_will_do = {
+			factor = 200
+			modifier = {
+				factor = 0
+				num_divisions < 300
+			}
+		}
+
+		complete_effect = {
+			custom_effect_tooltip = CHI_militia_disbanded_tt
+			delete_unit_template_and_units = { division_template = "Local Volunteers" }
 		}
 	}
 
