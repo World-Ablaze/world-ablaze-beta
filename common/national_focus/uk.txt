@@ -185,7 +185,7 @@ focus_tree = {
 	focus = {
 		id = ENG_new_naval_projections
 		prerequisite = { focus = ENG_britannia_rules_the_waves }
-		icon = GFX_goal_generic_forceful_treaty
+		icon = GFX_goal_ships_Battleships
 		x = -1
 		y = 1
 		relative_position_id = ENG_britannia_rules_the_waves
@@ -1612,7 +1612,7 @@ focus_tree = {
 	focus = {
 		id = ENG_secure_the_imperial_shipping_routes
 		prerequisite = { focus = naval_rearmament_focus }
-		icon = GFX_focus_generic_cruiser2
+		icon = GFX_goal_ships_Light_Cruiser
 		x = 1
 		y = 1
 		relative_position_id = naval_rearmament_focus
@@ -3373,6 +3373,53 @@ focus_tree = {
 	}
 	
     focus = {
+        id = ENG_peace_in_our_time
+        icon = GFX_goal_peace_in_our_time
+        prerequisite = { focus = general_rearmament_focus }
+        x = 2
+        y = 1
+        relative_position_id = general_rearmament_focus
+
+        available = {
+            has_war = no
+         #   GER = { has_completed_focus = GER_demand_sudetenland }
+         #   NOT = { GER = { has_completed_focus = GER_end_of_czechoslovakia } }
+            NOT = {
+                any_country = {
+                    any_owned_state = {
+                        is_capital = yes
+                        is_on_continent = europe
+                    }
+                    has_added_tension_amount > 20
+                }
+            }
+        }
+
+        bypass = {
+            OR = {
+                has_war = yes
+                any_country = {
+                    any_owned_state = {
+                        is_capital = yes
+                        is_on_continent = europe
+                    }
+                    has_added_tension_amount > 20
+                }
+            }
+        }
+
+        continue_if_invalid = yes
+
+        cost = 4
+        ai_will_do = {
+            factor = 1
+        }	
+        completion_reward = {
+            add_political_power = 100
+        }
+    }
+	
+    focus = {
         id = ENG_no_further_appeasement
         icon = GFX_focus_generic_strike_at_democracy1
         prerequisite = { focus = general_rearmament_focus }
@@ -3874,20 +3921,51 @@ focus_tree = {
             }
         }
     }
+
+    focus = {
+        id = ENG_strengthen_the_national_government
+        icon = GFX_goal_strengthen_the_national_government
+        prerequisite = { focus = ENG_motion_of_no_confidence }
+        x = 0
+        y = 1
+        relative_position_id = ENG_motion_of_no_confidence
+
+        available = {
+        }
+
+        continue_if_invalid = yes
+
+        cost = 3
+        ai_will_do = {
+            factor = 1
+        }
+        
+        completion_reward = {
+            custom_effect_tooltip = ENG_strengthen_the_national_government_tt
+            hidden_effect = {
+                add_to_variable = { var  = ENG_Labour_stability value = 1 }
+                add_to_variable = { var  = ENG_Conservative_stability value = 1 }
+                add_to_variable = { var = ENG_Labour_attitude value = 1 }
+                add_to_variable = { var = ENG_Conservative_attitude value = 1 }
+				ENG_political_instability_update_effect = yes
+            }
+        }
+    }
 	
 	focus = {
 		id = ENG_emergency_powers
 		icon = GFX_focus_generic_diplomatic_treaty
-		prerequisite = { focus = ENG_motion_of_no_confidence }
+		prerequisite = { focus = ENG_strengthen_the_national_government }
 		x = 0
 		y = 1
-		relative_position_id = ENG_motion_of_no_confidence
+		relative_position_id = ENG_strengthen_the_national_government
 
 		available = {
 			has_war = yes
 			any_enemy_country = {
 				is_major = yes
 			}
+            has_completed_focus = ENG_chiefs_of_staff_committee
 		}
 
 		bypass = {
@@ -3900,50 +3978,26 @@ focus_tree = {
 			factor = 1
 		}	
 		completion_reward = {
-			add_political_power = 100
+            swap_ideas = {
+                remove_idea = ENG_chiefs_of_staff_committee_idea
+                add_idea = ENG_chiefs_of_staff_committee_idea_2
+            }
+            custom_effect_tooltip = ENG_emergency_powers_tt
+            hidden_effect = {
+                subtract_from_variable = { var  = ENG_Labour_influence value = 1 }
+                subtract_from_variable = { var  = ENG_Conservative_influence value = 1 }
+				ENG_political_instability_update_effect = yes
+            }
 		}
 	}
-
-    focus = {
-        id = ENG_the_sun_shall_never_set
-        icon = GFX_goal_large_military_economy
-        prerequisite = { focus = ENG_emergency_powers }
-        x = 0
-        y = 1
-        relative_position_id = ENG_emergency_powers
-
-        available = { 
-            OR = {
-                surrender_progress > 0.01
-                threat > 0.8
-                FRA = { has_capitulated = yes }
-            }
-        }
-
-        continue_if_invalid = yes
-
-        cost = 3
-        ai_will_do = {
-            factor = 1
-        }
-        
-        completion_reward = {
-            if = {
-				limit = {
-					NOT = { has_idea = tot_economic_mobilisation }
-				}
-				add_ideas = tot_economic_mobilisation
-			}
-        }
-    }
 
 	focus = {
 		id = ENG_enforce_the_naval_treaties
 		icon = GFX_goal_generic_major_war
-		prerequisite = { focus = uk_iran_focus focus = ENG_the_sun_shall_never_set focus = ENG_continental_intervention }
+		prerequisite = { focus = uk_iran_focus focus = ENG_emergency_powers focus = ENG_continental_intervention }
 		x = 0
 		y = 1
-		relative_position_id = ENG_the_sun_shall_never_set
+		relative_position_id = ENG_emergency_powers
 		available = { 
 			is_subject = no
 		}
@@ -4801,13 +4855,49 @@ focus_tree = {
         }
     }
 
+    focus = {
+        id = ENG_the_sun_shall_never_set
+        icon = GFX_focus_eng_the_sun_never_sets
+        prerequisite = { focus = ENG_ministry_of_information }
+        x = 0
+        y = 1
+        relative_position_id = ENG_ministry_of_information
+
+        available = { 
+            OR = {
+                surrender_progress > 0.01
+                threat > 0.8
+                FRA = { has_capitulated = yes }
+            }
+        }
+
+        continue_if_invalid = yes
+
+        cost = 3
+        ai_will_do = {
+            factor = 1
+        }
+        
+        completion_reward = {
+            if = {
+				limit = {
+					NOT = { has_idea = tot_economic_mobilisation }
+				}
+				add_ideas = tot_economic_mobilisation
+			}
+            else = {
+                add_political_power = 150
+            }
+        }
+    }
+
 	focus = {
 		id = ENG_vanguard
-		prerequisite = { focus = ENG_ministry_of_information }
+		prerequisite = { focus = ENG_the_sun_shall_never_set }
 		icon = GFX_focus_generic_navy_battleship2
 		x = 0
 		y = 1
-		relative_position_id = ENG_ministry_of_information
+		relative_position_id = ENG_the_sun_shall_never_set
 		cost = 10
 		ai_will_do = {
 			factor = 1
@@ -5589,8 +5679,13 @@ focus_tree = {
     }
 
     focus = {
-        id = ENG_guide_the_colonies
+        id = ENG_plan_the_next_imperial_conference
+        icon = GFX_goal_arrange_the_imperial_conference
         prerequisite = { focus = ENG_approve_new_construction_projects }
+        x = 4
+        y = 1
+        relative_position_id = ENG_approve_new_construction_projects
+
         available = { 
             is_subject = no
             has_war = no
@@ -5602,10 +5697,37 @@ focus_tree = {
 
         continue_if_invalid = yes
 
-        icon = GFX_focus_chi_british_cooperation
-        x = 4
+        cost = 6
+        ai_will_do = {
+            factor = 1
+        }	
+        completion_reward = {
+            custom_effect_tooltip = ENG_plan_the_next_imperial_conference_tt
+            hidden_effect = {
+                activate_mission = ENG_imperial_conference_timer
+            }
+        }
+    }
+
+    focus = {
+        id = ENG_guide_the_colonies
+        icon = GFX_goal_guide_the_colonies
+        prerequisite = { focus = ENG_plan_the_next_imperial_conference }
+        x = -1
         y = 1
-        relative_position_id = ENG_approve_new_construction_projects
+        relative_position_id = ENG_plan_the_next_imperial_conference
+
+        available = { 
+            is_subject = no
+            has_war = no
+            num_subjects > 0
+        }
+        bypass = {
+            num_subjects < 1
+        }
+
+        continue_if_invalid = yes
+
         cost = 6
         ai_will_do = {
             factor = 1
@@ -5660,11 +5782,11 @@ focus_tree = {
 
     focus = {
         id = ENG_centralize_the_merchant_fleet
-        prerequisite = { focus = ENG_guide_the_colonies }
+        prerequisite = { focus = ENG_plan_the_next_imperial_conference }
         icon = GFX_focus_research2
-        x = 0
+        x = 1
         y = 1
-        relative_position_id = ENG_guide_the_colonies
+        relative_position_id = ENG_plan_the_next_imperial_conference
         cost = 3
 
         available_if_capitulated = yes
@@ -5680,11 +5802,11 @@ focus_tree = {
     
     focus = {
         id = uk_colonial_focus 
-        prerequisite = { focus = ENG_centralize_the_merchant_fleet }
+        prerequisite = { focus = ENG_plan_the_next_imperial_conference }
         icon = GFX_focus_research2
         x = 0
-        y = 1
-        relative_position_id = ENG_centralize_the_merchant_fleet
+        y = 3
+        relative_position_id = ENG_plan_the_next_imperial_conference
         cost = 6
 
         available_if_capitulated = yes
@@ -6197,118 +6319,124 @@ focus_tree = {
         y = 1
         relative_position_id = uk_canada_focus
 		available = {
+            NOT = {
+                has_completed_focus = ENG_a_change_in_course
+            }
 			if = {
 				limit = {
 					has_dlc = "Together for Victory"
 					has_dlc = "Death or Dishonor"
 				}
-				CAN = {
-					OR = {
-						AND = {
-							is_subject_of = ENG
-							OR = {
-								has_autonomy_state = autonomy_integrated_puppet
-								has_autonomy_state = autonomy_reichskommissariat
-							}
-						}
-						AND = {
-							exists = no
-							NOT = {
-								any_state = {
-									is_core_of = CAN
-									NOT = { is_owned_by = ROOT }
-								}
-							}
-						}
-					}
-				}
-				SAF = {
-					OR = {
-						AND = {
-							is_subject_of = ENG
-							OR = {
-								has_autonomy_state = autonomy_integrated_puppet
-								has_autonomy_state = autonomy_reichskommissariat
-							}
-						}
-						AND = {
-							exists = no
-							NOT = {
-								any_state = {
-									is_core_of = SAF
-									NOT = { is_owned_by = ROOT }
-								}
-							}
-						}
-					}
-				}
-				if = {
-					limit = {
-						RAJ = { has_country_flag = ENG_accepted_federation }
-					}
-					RAJ = {
-						OR = {
-							AND = {
-								is_subject_of = ENG
-								OR = {
-									has_autonomy_state = autonomy_integrated_puppet
-									has_autonomy_state = autonomy_reichskommissariat
-								}
-							}
-							AND = {
-								exists = no
-								NOT = {
-									any_state = {
-										is_core_of = RAJ
-										NOT = { state = 320 }
-										NOT = { state = 321 }
-										NOT = { is_owned_by = ROOT }
-									}
-								}
-							}
-						}
-					}
-				}
-				AST = {
-					OR = {
-						AND = {
-							is_subject_of = ENG
-							OR = {
-								has_autonomy_state = autonomy_integrated_puppet
-								has_autonomy_state = autonomy_reichskommissariat
-							}
-						}
-						AND = {
-							exists = no
-							NOT = {
-								any_state = {
-									is_core_of = AST
-									NOT = { is_owned_by = ROOT }
-								}
-							}
-						}
-					}
-				}
-				NZL = {
-					OR = {
-						AND = {
-							is_subject_of = ENG
-							OR = {
-								has_autonomy_state = autonomy_integrated_puppet
-								has_autonomy_state = autonomy_reichskommissariat
-							}
-						}
-						AND = {
-							exists = no
-							NOT = {
-								any_state = {
-									is_core_of = NZL
-									NOT = { is_owned_by = ROOT }
-								}
-							}
-						}
-					}
-				}
+                custom_trigger_tooltip = {
+                    tooltip = ENG_imperial_federation_goal_tt
+                    CAN = {
+                        OR = {
+                            AND = {
+                                is_subject_of = ENG
+                                OR = {
+                                    has_autonomy_state = autonomy_integrated_puppet
+                                    has_autonomy_state = autonomy_reichskommissariat
+                                }
+                            }
+                            AND = {
+                                exists = no
+                                NOT = {
+                                    any_state = {
+                                        is_core_of = CAN
+                                        NOT = { is_owned_by = ROOT }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    SAF = {
+                        OR = {
+                            AND = {
+                                is_subject_of = ENG
+                                OR = {
+                                    has_autonomy_state = autonomy_integrated_puppet
+                                    has_autonomy_state = autonomy_reichskommissariat
+                                }
+                            }
+                            AND = {
+                                exists = no
+                                NOT = {
+                                    any_state = {
+                                        is_core_of = SAF
+                                        NOT = { is_owned_by = ROOT }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if = {
+                        limit = {
+                            RAJ = { has_country_flag = ENG_accepted_federation }
+                        }
+                        RAJ = {
+                            OR = {
+                                AND = {
+                                    is_subject_of = ENG
+                                    OR = {
+                                        has_autonomy_state = autonomy_integrated_puppet
+                                        has_autonomy_state = autonomy_reichskommissariat
+                                    }
+                                }
+                                AND = {
+                                    exists = no
+                                    NOT = {
+                                        any_state = {
+                                            is_core_of = RAJ
+                                            NOT = { state = 320 }
+                                            NOT = { state = 321 }
+                                            NOT = { is_owned_by = ROOT }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    AST = {
+                        OR = {
+                            AND = {
+                                is_subject_of = ENG
+                                OR = {
+                                    has_autonomy_state = autonomy_integrated_puppet
+                                    has_autonomy_state = autonomy_reichskommissariat
+                                }
+                            }
+                            AND = {
+                                exists = no
+                                NOT = {
+                                    any_state = {
+                                        is_core_of = AST
+                                        NOT = { is_owned_by = ROOT }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    NZL = {
+                        OR = {
+                            AND = {
+                                is_subject_of = ENG
+                                OR = {
+                                    has_autonomy_state = autonomy_integrated_puppet
+                                    has_autonomy_state = autonomy_reichskommissariat
+                                }
+                            }
+                            AND = {
+                                exists = no
+                                NOT = {
+                                    any_state = {
+                                        is_core_of = NZL
+                                        NOT = { is_owned_by = ROOT }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 			}
 			else_if = {
 				limit = {
@@ -6689,6 +6817,7 @@ focus_tree = {
 		}
 
 		completion_reward = {
+            custom_effect_tooltip = ENG_imperial_federation_tt
 			if = {
 				limit = {
 					RAJ = {
@@ -9697,6 +9826,7 @@ focus_tree = {
 
         allow_branch = {
             has_dlc = "Man the Guns"
+            NOT = { has_completed_focus = ENG_imperial_federation }
         }
 
         available = {
@@ -9708,6 +9838,7 @@ focus_tree = {
         }	
         completion_reward = {
             add_timed_idea = { idea = ENG_a_change_in_course_idea days = 365 }
+            custom_effect_tooltip = ENG_a_change_in_course_tt
             ENG = {
                 diplomatic_relation = {
                     country = BEL
