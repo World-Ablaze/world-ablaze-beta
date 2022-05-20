@@ -3371,6 +3371,60 @@ focus_tree = {
             set_country_flag = USA_the_giant_wakes_added_civ_eco
 		}
 	}
+
+	focus = {
+		id = ENG_state_visit_to_france
+		icon = GFX_focus_chi_reach_out_to_france
+        prerequisite = { focus = ENG_maintaining_the_balance_of_power }
+        x = -2
+        y = 1
+        relative_position_id = ENG_maintaining_the_balance_of_power
+		
+		available = {
+            FRA = { has_government = ROOT }
+		}
+
+		cancel_if_invalid = no
+		continue_if_invalid = yes
+
+		cost = 2
+		ai_will_do = {
+			factor = 1
+		}	
+		completion_reward = {
+            add_opinion_modifier = { target = FRA modifier = democratic_leanings_good }
+            reverse_add_opinion_modifier = { target = FRA modifier = democratic_leanings_good }
+            add_political_power = 25
+            FRA = { add_political_power = 25 }
+		}
+	}
+
+	focus = {
+		id = ENG_state_visit_to_the_usa
+		icon = GFX_focus_chi_mission_to_the_us
+        prerequisite = { focus = ENG_state_visit_to_france }
+        x = 0
+        y = 1
+        relative_position_id = ENG_state_visit_to_france
+		
+		available = {
+            USA = { has_government = ROOT }
+		}
+
+		cancel_if_invalid = no
+		continue_if_invalid = yes
+
+		cost = 2
+		ai_will_do = {
+			factor = 1
+		}	
+		completion_reward = {
+            add_opinion_modifier = { target = USA modifier = democratic_leanings_good }
+            reverse_add_opinion_modifier = { target = USA modifier = democratic_leanings_good }
+            add_political_power = 25
+            USA = { add_political_power = 25 }
+		}
+	}
 	
     focus = {
         id = ENG_peace_in_our_time
@@ -3415,7 +3469,7 @@ focus_tree = {
             factor = 1
         }	
         completion_reward = {
-            add_political_power = 100
+            add_political_power = 50
             add_stability = 0.05
         }
     }
@@ -4021,7 +4075,7 @@ focus_tree = {
 
     focus = {
         id = ENG_local_intervention
-        icon = GFX_goal_generic_major_war
+        icon = GFX_goal_Intervention_local
         prerequisite = { focus = ENG_motion_of_no_confidence }
         x = 2
         y = 1
@@ -4047,7 +4101,7 @@ focus_tree = {
 
     focus = {
         id = ENG_continental_intervention
-        icon = GFX_goal_generic_major_war
+        icon = GFX_Intervention_continental
         prerequisite = { focus = ENG_local_intervention }
         x = 0
         y = 1
@@ -4263,7 +4317,7 @@ focus_tree = {
         id = ENG_prepare_for_the_inevitable
         icon = GFX_goal_generic_construction
         prerequisite = { focus = ENG_maintaining_the_balance_of_power }
-        x = 4
+        x = 3
         y = 1
         relative_position_id = ENG_maintaining_the_balance_of_power
 
@@ -4289,15 +4343,25 @@ focus_tree = {
     focus = {
         id = ENG_home_defence
         icon = GFX_goal_home_defense
-        prerequisite = { focus = ENG_prepare_for_the_inevitable }
-        x = 0
+        prerequisite = { focus = ENG_prepare_for_the_inevitable focus = ENG_a_change_in_course }
+        x = 2
         y = 1
         relative_position_id = ENG_prepare_for_the_inevitable
+
+        available = {
+            OR = {
+                threat > 0.07
+                has_war = yes
+            }
+        }
 
         cost = 4
         ai_will_do = {
             factor = 1
         }	
+
+        continue_if_invalid = yes
+
         completion_reward = {
             add_war_support = 0.05
 			add_stability = 0.05
@@ -4741,13 +4805,44 @@ focus_tree = {
             }
         }
     }
+
+    focus = {
+        id = ENG_fund_the_secret_service
+        icon = GFX_goal_mi6
+        prerequisite = { focus = crypto_bomb_focus }
+        x = 0
+        y = 2
+        relative_position_id = crypto_bomb_focus
+        available = {
+            has_war = yes
+            agency_upgrade_number > 5
+        }
+        
+        bypass = {
+        }
+        
+        cost = 3
+        ai_will_do = {
+            factor = 1
+        }
+
+        available_if_capitulated = yes
+
+        completion_reward = {
+            swap_ideas = {
+                remove_idea = bletchley_park
+                add_idea = ENG_mi6
+            }
+        }
+    }
+
     focus = {
         id = ENG_civil_defence
         icon = GFX_goal_generic_fortify_city
-        prerequisite = { focus = crypto_bomb_focus focus = chain_home }
-        x = 1
-        y = 1
-        relative_position_id = crypto_bomb_focus
+        prerequisite = { focus = chain_home }
+        x = 0
+        y = 2
+        relative_position_id = chain_home
         available = {
             has_completed_focus = ENG_military_training_act
         }
@@ -4831,12 +4926,37 @@ focus_tree = {
     }
 
     focus = {
+        id = ENG_bbc
+        icon = GFX_goal_generic_fortify_city
+        prerequisite = { focus = crypto_bomb_focus focus = chain_home }
+        x = 1
+        y = 1
+        relative_position_id = crypto_bomb_focus
+        available = {
+            has_completed_focus = ENG_military_training_act
+        }
+        
+        bypass = {
+        }
+        
+        cost = 3
+        ai_will_do = {
+            factor = 1
+        }
+
+        available_if_capitulated = yes
+
+        completion_reward = {
+        }
+    }
+
+    focus = {
         id = ENG_ministry_of_information
         icon = GFX_focus_generic_cryptologic_bomb
-        prerequisite = { focus = ENG_civil_defence }
+        prerequisite = { focus = ENG_bbc }
         x = 0
-        y = 1
-        relative_position_id = ENG_civil_defence
+        y = 2
+        relative_position_id = ENG_bbc
         available = {
             
         }
@@ -5783,8 +5903,8 @@ focus_tree = {
 
     focus = {
         id = ENG_centralize_the_merchant_fleet
+        icon = GFX_goal_ships_Convoys
         prerequisite = { focus = ENG_plan_the_next_imperial_conference }
-        icon = GFX_focus_research2
         x = 1
         y = 1
         relative_position_id = ENG_plan_the_next_imperial_conference
@@ -5802,9 +5922,9 @@ focus_tree = {
     }
     
     focus = {
-        id = uk_colonial_focus 
-        prerequisite = { focus = ENG_plan_the_next_imperial_conference }
+        id = uk_colonial_focus
         icon = GFX_focus_research2
+        prerequisite = { focus = ENG_plan_the_next_imperial_conference }
         x = 0
         y = 3
         relative_position_id = ENG_plan_the_next_imperial_conference
