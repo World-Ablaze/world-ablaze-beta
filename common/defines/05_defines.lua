@@ -906,3 +906,8 @@ NDefines.NAI.DESIRE_USE_XP_TO_UPGRADE_AIR_EQUIPMENT = 0.5   						-- How quickly
 NDefines.NAI.XP_RATIO_REQUIRED_TO_RESEARCH_WITH_XP = 1.0							-- AI will at least need this amount of xp compared to cost of a tech to reserch it with XP
 
 NDefines.NAI.MAX_THREAT_FOR_FIRST_YEAR_CIVILIAN_MODE = 40							-- above this threshold, ai will leave first year civilian factory mode which bumps it civilian factory scores while building
+
+--	NDefines_Graphics.NGraphics.
+	
+NDefines_Graphics.NGraphics.DRAW_FOW_CUTOFF = 0
+NDefines_Graphics.NGraphics.DRAW_FOW_FADE_LENGTH = 0
