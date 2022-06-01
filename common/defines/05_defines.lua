@@ -550,17 +550,17 @@ NDefines.NNavy.CARRIER_STACK_PENALTY_EFFECT = 0.6									-- Each carrier above 
 --NDefines.NNavy.SUPREMACY_PER_SHIP_PER_IC = 0.1
 --NDefines.NNavy.SUPREMACY_PER_SHIP_BASE = 25.0
 
-NDefines.NAI.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
-		0.8, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
-		1.5, -- PATROL		
-		1.2, -- STRIKE FORCE (does not cost fuel at base, and uses IN_COMBAT_FUEL_COST in combat. this is just for the movement in between)	
-		1.5, -- CONVOY RAIDING
-		1.2, -- CONVOY ESCORT
-		1.2, -- MINES PLANTING	
-		1.2, -- MINES SWEEPING	
+NDefines.NNavy.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
+		0, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
+		0.8, -- PATROL		
+		1.0, -- STRIKE FORCE (does not cost fuel at base, and uses IN_COMBAT_FUEL_COST in combat. this is just for the movement in between)	
+		0.8, -- CONVOY RAIDING
+		0.6, -- CONVOY ESCORT
+		1.0, -- MINES PLANTING	
+		1.0, -- MINES SWEEPING	
 		0.4, -- TRAIN
 		0.0, -- RESERVE_FLEET (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
-		1.2, -- NAVAL_INVASION_SUPPORT (does not cost fuel at base, only costs while doing bombardment and escorting units)
+		1.0, -- NAVAL_INVASION_SUPPORT (does not cost fuel at base, only costs while doing bombardment and escorting units)
 	}
 	
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- SUPPLY
