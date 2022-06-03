@@ -2352,10 +2352,7 @@ focus_tree = {
 				AND = {
 					has_idea = League_of_nations
 					JAP = { 
-						has_added_tension_amount > 0
-						NOT = { has_government = ROOT }
-						NOT = { has_war_with = ROOT }
-						has_offensive_war = yes
+                        has_country_flag = lon_embargo_origin_flag
 					}
 				}
 			}
@@ -2375,13 +2372,20 @@ focus_tree = {
 		completion_reward = {
 			every_country = {
 				limit = {
-					is_in_faction_with = ENG
-					NOT = { original_tag = JAP }
+					has_idea = League_of_nations
+					NOT = { tag = JAP }
+					NOT = { tag = SWE }
+					NOT = { tag = POR }
+					NOT = { tag = SOV }
+					NOT = { tag = TUR }
+					NOT = { tag = FIN }
+					NOT = { tag = PER }
+					NOT = { tag = SIA }
 				}
-				add_opinion_modifier = { target = JAP modifier = embargo }
-				add_opinion_modifier = { target = JAP modifier = sanctions_relations }
+				set_country_flag = lon_embargo_origin_flag
+				add_opinion_modifier = { target = JAP modifier = lon_embargo }
 			}
-			JAP = { country_event = { days = 1 id = eng_armor.812 } }
+			JAP = { country_event = { id = eng_armor.828 } }
 		}
 	}
 	focus = {
@@ -3487,6 +3491,9 @@ focus_tree = {
                 limit = {
                     GER = { has_government = fascism }
                 }
+                OR = {
+                    has_completed_focus = GER_demand_sudetenland
+                }
                 NOT = { GER = { has_war = yes } }
                 NOT = { GER = { has_completed_focus = GER_end_of_czechoslovakia } }
             }
@@ -3576,12 +3583,30 @@ focus_tree = {
             custom_effect_tooltip = ENG_no_further_appeasement_tt
             if = {
                 limit = {
-                    threat > 0.29
+                    OR = {
+                        threat > 0.39
+                        any_country = {
+                            any_owned_state = {
+                                is_capital = yes
+                                is_on_continent = europe
+                            }
+                            has_added_tension_amount > 20
+                        }
+                    }
                 }
             }
             else_if = {
                 limit = {
-                    threat > 0.24
+                    OR = {
+                        threat > 0.34
+                        any_country = {
+                            any_owned_state = {
+                                is_capital = yes
+                                is_on_continent = europe
+                            }
+                            has_added_tension_amount > 18
+                        }
+                    }
                 }
                 custom_effect_tooltip = ENG_no_further_appeasement_tt_1
                 hidden_effect = {
@@ -3595,7 +3620,16 @@ focus_tree = {
             }
             else_if = {
                 limit = {
-                    threat > 0.19
+                    OR = {
+                        threat > 0.29
+                        any_country = {
+                            any_owned_state = {
+                                is_capital = yes
+                                is_on_continent = europe
+                            }
+                            has_added_tension_amount > 16
+                        }
+                    }
                 }
                 custom_effect_tooltip = ENG_no_further_appeasement_tt_2
                 hidden_effect = {
@@ -3609,7 +3643,16 @@ focus_tree = {
             }
             else_if = {
                 limit = {
-                    threat > 0.14
+                    OR = {
+                        threat > 0.24
+                        any_country = {
+                            any_owned_state = {
+                                is_capital = yes
+                                is_on_continent = europe
+                            }
+                            has_added_tension_amount > 14
+                        }
+                    }
                 }
                 custom_effect_tooltip = ENG_no_further_appeasement_tt_3
                 hidden_effect = {
@@ -4054,11 +4097,48 @@ focus_tree = {
 		}
 	}
 
+    focus = {
+        id = ENG_the_sun_shall_never_set
+        icon = GFX_focus_eng_the_sun_never_sets
+		prerequisite = { focus = uk_iran_focus focus = ENG_emergency_powers focus = ENG_continental_intervention }
+		x = 1
+		y = 1
+		relative_position_id = ENG_emergency_powers
+
+        available = { 
+            OR = {
+                surrender_progress > 0.01
+                threat > 0.8
+                FRA = { has_capitulated = yes }
+            }
+        }
+
+        continue_if_invalid = yes
+
+        cost = 3
+        ai_will_do = {
+            factor = 1
+        }
+        
+        completion_reward = {
+            if = {
+				limit = {
+					NOT = { has_idea = tot_economic_mobilisation }
+				}
+				add_ideas = tot_economic_mobilisation
+			}
+            else = {
+                add_political_power = 150
+            }
+            add_ideas = ENG_the_sun_never_sets_idea
+        }
+    }
+
 	focus = {
 		id = ENG_enforce_the_naval_treaties
 		icon = GFX_goal_generic_major_war
 		prerequisite = { focus = uk_iran_focus focus = ENG_emergency_powers focus = ENG_continental_intervention }
-		x = 0
+		x = -1
 		y = 1
 		relative_position_id = ENG_emergency_powers
 		available = { 
@@ -5119,49 +5199,13 @@ focus_tree = {
         }
     }
 
-    focus = {
-        id = ENG_the_sun_shall_never_set
-        icon = GFX_focus_eng_the_sun_never_sets
+	focus = {
+		id = ENG_vanguard
+		icon = GFX_focus_generic_navy_battleship2
         prerequisite = { focus = ENG_bbc }
         x = 0
         y = 1
         relative_position_id = ENG_bbc
-
-        available = { 
-            OR = {
-                surrender_progress > 0.01
-                threat > 0.8
-                FRA = { has_capitulated = yes }
-            }
-        }
-
-        continue_if_invalid = yes
-
-        cost = 3
-        ai_will_do = {
-            factor = 1
-        }
-        
-        completion_reward = {
-            if = {
-				limit = {
-					NOT = { has_idea = tot_economic_mobilisation }
-				}
-				add_ideas = tot_economic_mobilisation
-			}
-            else = {
-                add_political_power = 150
-            }
-        }
-    }
-
-	focus = {
-		id = ENG_vanguard
-		prerequisite = { focus = ENG_the_sun_shall_never_set }
-		icon = GFX_focus_generic_navy_battleship2
-		x = 0
-		y = 1
-		relative_position_id = ENG_the_sun_shall_never_set
 		cost = 10
 		ai_will_do = {
 			factor = 1
