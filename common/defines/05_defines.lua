@@ -116,10 +116,12 @@ NDefines.NMilitary.UNIT_EXPERIENCE_PER_COMBAT_HOUR = 0.00060
 NDefines.NMilitary.FIELD_EXPERIENCE_SCALE = 0.002
 NDefines.NMilitary.FIELD_EXPERIENCE_MAX_PER_DAY = 1									-- Most xp you can gain per day
 
+NDefines.NMilitary.ARMOR_VS_AVERAGE = 0.3			                				-- how to weight in highest armor & pen vs the division average
+
 NDefines.NMilitary.LAND_COMBAT_STR_ARMOR_DEFLECTION_FACTOR = 0.5					-- damage reduction if armor outclassing enemy
 NDefines.NMilitary.LAND_COMBAT_ORG_ARMOR_DEFLECTION_FACTOR = 0.5					-- damage reduction if armor outclassing enemy
 
-NDefines.NMilitary.LAND_EQUIPMENT_BASE_COST = 4									-- Cost in XP to upgrade a piece of equipment one level is base + ( total levels * ramp )
+NDefines.NMilitary.LAND_EQUIPMENT_BASE_COST = 4										-- Cost in XP to upgrade a piece of equipment one level is base + ( total levels * ramp )
 NDefines.NMilitary.LAND_EQUIPMENT_RAMP_COST = 2
 NDefines.NMilitary.NAVAL_EQUIPMENT_BASE_COST = 4
 NDefines.NMilitary.NAVAL_EQUIPMENT_RAMP_COST = 2
