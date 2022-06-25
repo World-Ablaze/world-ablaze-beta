@@ -614,6 +614,7 @@ NDefines.NAI.MINIMUM_EQUIPMENT_TO_ASK_LEND_LEASE = -100								-- AI will accept
 NDefines.NAI.MINIMUM_CONVOY_TO_ASK_LEND_LEASE = 200									-- AI will accept to lend lease convoys only if our stockpile is less than that (special case because convoy stockpile can't be negative).
 NDefines.NAI.MINIMUM_FUEL_DAYS_TO_ASK_LEND_LEASE = 60								-- AI will accept to lend lease fuel only if the player have less fuel than this number multiply by his max daily consumption.
 NDefines.NAI.MINIMUM_FUEL_DAYS_TO_ACCEPT_LEND_LEASE = 60					 		-- AI will accept to lend lease fuel only if they have more fuel than this number multiply by their max daily consumption. Note that for a GiE asking to its host, we divide this number by 2.
+NDefines.NAI.DIPLOMACY_FACTION_CIVILWAR_WANTS_HELP = -10000
 
 ----------- NAVY
 
