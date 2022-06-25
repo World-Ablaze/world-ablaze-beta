@@ -208,6 +208,7 @@ NDefines.NResistance.FOREIGN_MANPOWER_MIN_THRESHOLD = 500000000			 			-- The min
 
 NDefines.NResistance.RESISTANCE_ACTIVITY_CHANCE_AT_MAX_RESISTANCE = 0.200			-- sabotage
 
+NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_OCCUPIED_CAPITULATED = 0.0 								-- resistance target modifier when the enemy is capitulated
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Military
 
