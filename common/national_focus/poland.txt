@@ -188,7 +188,7 @@ focus_tree = {
 
 	focus = {
 		id = POL_expansion_of_new_towns
-		icon = GFX_goal_medium_civilian_economy
+		icon = GFX_goal_massive_civilian_economy
 		prerequisite = { focus = POL_central_region_strategy }
 		x = 2
 		y = 1
@@ -1601,7 +1601,7 @@ focus_tree = {
 		id = POL_prepare_for_the_next_war
 		icon = GFX_goal_generic_build_tank
 		
-		x = 23
+		x = 24
 		y = 0
 		cost = 5
 
@@ -1626,12 +1626,12 @@ focus_tree = {
 		id = POL_new_military_academy
 		icon = GFX_focus_generic_military_academy
 		prerequisite = { focus = POL_prepare_for_the_next_war }
+		x = 0
+		y = 2
+		relative_position_id = POL_prepare_for_the_next_war
 		
 		available_if_capitulated = yes
 		search_filters = { FOCUS_FILTER_MANPOWER }
-		x = 0
-		y = 1
-		relative_position_id = POL_prepare_for_the_next_war
 		cost = 6
 
 		ai_will_do = {
@@ -1649,13 +1649,12 @@ focus_tree = {
 		id = POL_standardisation_of_equipment
 		icon = GFX_goal_generic_small_arms
 		prerequisite = { focus = POL_new_military_academy }
-		available = {
-		}
-		
 		x = 0
-		y = 2
+		y = 1
 		relative_position_id = POL_new_military_academy
 		cost = 4
+		available = {
+		}
 
 		ai_will_do = {
 			factor = 4
@@ -1671,6 +1670,60 @@ focus_tree = {
 				category = infantry_weapons
 			}
 			army_experience = 10
+		}
+	}
+
+	focus = {
+		id = POL_artillery_modernisation
+		icon = GFX_goal_generic_army_artillery
+		prerequisite = { focus = POL_standardisation_of_equipment }
+		
+		x = 1
+		y = 1
+		relative_position_id = POL_standardisation_of_equipment
+		cost = 4
+
+		ai_will_do = {
+			factor = 10
+		}
+
+		available_if_capitulated = yes
+		search_filters = { FOCUS_FILTER_RESEARCH }
+		completion_reward = {
+			add_tech_bonus = {
+				name = POL_artillery_modernisation
+				bonus = 0.5
+				uses = 1
+				category = artillery
+			}
+			#1 x 50% for Artillery Equipment
+		}
+	}
+
+	focus = {
+		id = POL_anti_tank_guns
+		icon = GFX_goal_generic_army_artillery2
+		prerequisite = { focus = POL_standardisation_of_equipment }
+		
+		x = -1
+		y = 1
+		relative_position_id = POL_standardisation_of_equipment
+		cost = 4
+
+		ai_will_do = {
+			factor = 10
+		}
+
+		available_if_capitulated = yes
+		search_filters = { FOCUS_FILTER_RESEARCH }
+		completion_reward = {
+			add_tech_bonus = {
+				name = POL_anti_tank_guns
+				bonus = 0.5
+				uses = 1
+				category = cat_anti_tank
+			}
+			#1x 50% bonus for Anti-Tank guns
 		}
 	}
 
@@ -1710,25 +1763,71 @@ focus_tree = {
 		id = POL_modernising_the_cavalry
 		icon = GFX_goal_generic_cavalry
 		prerequisite = { focus = POL_army_modernisation }
-		mutually_exclusive = { focus = POL_attract_foreign_motors }
-		
-		x = -3
+		x = -1
 		y = 1
 		relative_position_id = POL_army_modernisation
 		cost = 4
 
+		available = {
+			has_tech = pol_medium_tank_1
+		}
 		ai_will_do = {
 			factor = 10
 		}
 
-		available_if_capitulated = yes
+		available_if_capitulated = no
 		search_filters = { FOCUS_FILTER_RESEARCH }
 		completion_reward = {
-			add_tech_bonus = {
-				name = POL_modernising_the_cavalry
-				bonus = 3.0
-				uses = 1
-				category = motorized_equipment
+			division_template = {
+				name = "Dywizja Motorowa"
+				division_names_group = POL_MOT_01
+				regiments = {
+					medium_armor = { x = 0 y = 0 }
+					light_armor = { x = 0 y = 1 }
+					light_armor = { x = 0 y = 2 }
+					light_armor = { x = 0 y = 3 }
+	
+					motorized = { x = 1 y = 0 }
+					motorized = { x = 1 y = 1 }
+					motorized = { x = 1 y = 2 }
+	
+					motorized = { x = 2 y = 0 }
+					motorized = { x = 2 y = 1 }
+					motorized = { x = 2 y = 2 }
+	
+					motorized_artillery_brigade = { x = 3 y = 0 }
+					motorized_artillery_brigade = { x = 3 y = 1 }
+					motorized_artillery_brigade = { x = 3 y = 2 }
+					motorized_anti_tank_brigade = { x = 3 y = 2 }
+				}
+	
+				support = {
+					engineer = { x = 0 y = 0 }
+					motorized_logistics_company = { x = 0 y = 1 }
+	
+					mot_recon = { x = 1 y = 0 }
+				}
+			}
+			if = {
+				limit = {
+					is_ai = yes
+				}
+				capital_scope = {
+					create_unit = {
+						division = "division_template = \"Dywizja Motorowa\" start_experience_factor = 0.4 start_equipment_factor = 0.8" 
+						owner = ROOT
+						count = 4
+					}
+				}
+			}
+			else = {
+				capital_scope = {
+					create_unit = {
+						division = "division_template = \"Dywizja Motorowa\" start_experience_factor = 0.4 start_equipment_factor = 0.2" 
+						owner = ROOT
+						count = 4
+					}
+				}
 			}
 		}
 	}
@@ -1737,9 +1836,7 @@ focus_tree = {
 		id = POL_attract_foreign_motors
 		icon = GFX_goal_generic_cavalry
 		prerequisite = { focus = POL_army_modernisation }
-		mutually_exclusive = { focus = POL_modernising_the_cavalry }
-		
-		x = -1
+		x = 1
 		y = 1
 		relative_position_id = POL_army_modernisation
 		cost = 4
@@ -1753,7 +1850,7 @@ focus_tree = {
 		completion_reward = {
 			add_tech_bonus = {
 				name = POL_attract_foreign_motors
-				bonus = 0.5
+				bonus = 3.0
 				uses = 1
 				category = motorized_equipment
 			}
@@ -1808,64 +1905,10 @@ focus_tree = {
 			add_tech_bonus = {
 				name = POL_cruiser_tank_experiments
 				bonus = 0.5
-				uses = 1
+				uses = 2
 				category = cat_medium_armor
 			}
 			#1x 50% reduction on research for medium tanks
-		}
-	}
-
-	focus = {
-		id = POL_artillery_modernisation
-		icon = GFX_goal_generic_army_artillery
-		prerequisite = { focus = POL_army_modernisation }
-		
-		x = 3
-		y = 1
-		relative_position_id = POL_army_modernisation
-		cost = 4
-
-		ai_will_do = {
-			factor = 10
-		}
-
-		available_if_capitulated = yes
-		search_filters = { FOCUS_FILTER_RESEARCH }
-		completion_reward = {
-			add_tech_bonus = {
-				name = POL_artillery_modernisation
-				bonus = 0.5
-				uses = 1
-				category = artillery
-			}
-			#1 x 50% for Artillery Equipment
-		}
-	}
-
-	focus = {
-		id = POL_anti_tank_guns
-		icon = GFX_goal_generic_army_artillery2
-		prerequisite = { focus = POL_army_modernisation }
-		
-		x = 1
-		y = 1
-		relative_position_id = POL_army_modernisation
-		cost = 4
-
-		ai_will_do = {
-			factor = 10
-		}
-
-		available_if_capitulated = yes
-		search_filters = { FOCUS_FILTER_RESEARCH }
-		completion_reward = {
-			add_tech_bonus = {
-				name = POL_anti_tank_guns
-				bonus = 0.5
-				uses = 1
-				category = cat_anti_tank
-			}
-			#1x 50% bonus for Anti-Tank guns
 		}
 	}
 
@@ -1875,7 +1918,7 @@ focus_tree = {
 		prerequisite = { focus = POL_study_foreign_tanks }
 		prerequisite = { focus = POL_anti_tank_guns }
 		
-		x = 4
+		x = 3
 		y = 1
 		relative_position_id = POL_study_foreign_tanks
 		cost = 6
@@ -1966,7 +2009,7 @@ focus_tree = {
 		
 		x = 3
 		y = 1
-		cost = 6
+		cost = 4
 
 		ai_will_do = {
 			factor = 1
@@ -14529,14 +14572,14 @@ focus_tree = {
 				limit = {
 					free_building_slots = {
 						building = dockyard
-						size > 3
+						size > 1
 						include_locked = yes
 					}
 					NOT = { state = 85 }
 				}
 				add_building_construction = {
 					type = dockyard
-					level = 4
+					level = 2
 					instant_build = yes
 				}
 				set_state_flag = POL_develop_polish_ship_building_1
@@ -14752,11 +14795,11 @@ focus_tree = {
 
 	focus = {
 		id = POL_develop_gdansk_ship_building
-		icon = GFX_goal_construct_naval_dockyard
+		icon = GFX_goal_construct_naval_large_dockyard
 		prerequisite = { focus = POL_ban_the_nazi_party }
 		x = 1
 		y = 1
-		cost = 10
+		cost = 8
 		
 		relative_position_id = POL_ban_the_nazi_party
 
@@ -14835,10 +14878,10 @@ focus_tree = {
 				limit = {
 					is_coastal = yes
 				}
-				add_extra_state_shared_building_slots = 2
+				add_extra_state_shared_building_slots = 1
 				add_building_construction = {
 					type = dockyard
-					level = 2
+					level = 1
 					instant_build = yes
 				}
 			}
@@ -14856,12 +14899,12 @@ focus_tree = {
 
 	focus = {
 		id = POL_integrate_gdansk_industries
-		icon = GFX_goal_construct_naval_dockyard
+		icon = GFX_goal_medium_civilian_economy
 		prerequisite = { focus = POL_ban_the_nazi_party }
 		x = -1
 		y = 1
 		relative_position_id = POL_ban_the_nazi_party
-		cost = 10
+		cost = 8
 
 		ai_will_do = {
 			factor = 10
@@ -14906,7 +14949,7 @@ focus_tree = {
 		x = 1
 		y = 1
 		relative_position_id = POL_expand_gdynia_seaport
-		cost = 10
+		cost = 6
 
 		ai_will_do = {
 			factor = 10
@@ -14951,7 +14994,7 @@ focus_tree = {
 		x = -1
 		y = 1
 		relative_position_id = POL_expand_gdynia_seaport
-		cost = 10
+		cost = 4
 
 		ai_will_do = {
 			factor = 10
@@ -14978,7 +15021,7 @@ focus_tree = {
 		x = -1
 		y = 1
 		relative_position_id = POL_the_twin_threats
-		cost = 10
+		cost = 4
 
 		ai_will_do = {
 			factor = 10
@@ -15004,7 +15047,7 @@ focus_tree = {
 		x = 1
 		y = 1
 		relative_position_id = POL_integrate_gdansk_industries
-		cost = 10
+		cost = 4
 
 		ai_will_do = {
 			factor = 10
@@ -15030,7 +15073,7 @@ focus_tree = {
 		x = 1
 		y = 1
 		relative_position_id = POL_import_submarine_technology
-		cost = 10
+		cost = 4
 
 		ai_will_do = {
 			factor = 10
@@ -15058,7 +15101,7 @@ focus_tree = {
 		x = 1
 		y = 1
 		relative_position_id = POL_the_twin_threats
-		cost = 10
+		cost = 4
 
 		ai_will_do = {
 			factor = 10
@@ -15092,7 +15135,7 @@ focus_tree = {
 		x = 3
 		y = 1
 		relative_position_id = POL_the_twin_threats
-		cost = 10
+		cost = 4
 
 		ai_will_do = {
 			factor = 10
@@ -15138,7 +15181,7 @@ focus_tree = {
 		x = -1
 		y = 1
 		relative_position_id = POL_strike_force
-		cost = 10
+		cost = 6
 
 		ai_will_do = {
 			factor = 10
@@ -15150,7 +15193,7 @@ focus_tree = {
 			add_doctrine_cost_reduction = {
 				name = POL_baltic_navy
 				cost_reduction = 0.99
-				uses = 1
+				uses = 3
 				category = naval_doctrine
 			}
 			#1x50% bonus to Naval Doctrine research
