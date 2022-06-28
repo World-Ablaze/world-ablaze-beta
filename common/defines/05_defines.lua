@@ -112,7 +112,7 @@ NDefines.NCountry.SPECIAL_FORCES_CAP_MIN = 10										-- You can have a minimum
 NDefines.NCountry.BASE_MOBILIZATION_SPEED = 0.02									-- Base speed of manpower mobilization  #in 1/1000 of 1 %
 
 NDefines.NCountry.WAR_SUPPORT_TENSION_IMPACT = 0									-- Total impact of world tension
-NDefines.NCountry.STATE_VALUE_NON_CORE_STATE_FRACTION = 0.9							-- If a state is not a core we assume we will get 50% of the factory slots
+NDefines.NCountry.STATE_VALUE_NON_CORE_STATE_FRACTION = 1.0							-- If a state is not a core we assume we will get 50% of the factory slots
 
 NDefines.NCountry.BOMBING_WAR_SUPPORT_PENALTY_SCALE = -0.00015 						-- Scaling of bomber damage to war support impact, will be added weekly as a war support penalty
 NDefines.NCountry.MAX_BOMBING_WEEKLY_WAR_SUPPORT_PENALTY = -0.005					-- Max penalty that will gained per week from bomber's damage
