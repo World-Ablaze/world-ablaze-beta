@@ -6,7 +6,7 @@ NDefines.NGame.DECISION_ALERT_TIMEOUT_DAYS = 7										-- Days left when player
 NDefines.NGame.LAG_DAYS_FOR_LOWER_SPEED = 300										-- Days of client lag for decrease of gamespeed
 NDefines.NGame.LAG_DAYS_FOR_PAUSE = 100												-- Days of client lag for pause of gamespeed.
 NDefines.NGame.EVENT_TIMEOUT_DEFAULT = 7											-- Default days before an event times out if not scripted
-
+NDefines.NGame.GAME_SPEED_SECONDS = { 0.5, 0.2, 0.14, 0.06, 0.0 }					-- Game speed
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Diplomacy
 
@@ -67,132 +67,6 @@ NDefines.NTechnology.BASE_TECH_COST = 85											-- Base cost for a tech. mult
 NDefines.NTechnology.BASE_YEAR_AHEAD_PENALTY_FACTOR = 4								-- Base year ahead penalty
 NDefines.NTechnology.LICENSE_PRODUCTION_TECH_BONUS = 0								-- License production tech bonus
 
-
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ Military
-
-
-NDefines.NMilitary.BASE_COMBAT_WIDTH = 90											-- base combat width
-NDefines.NMilitary.ADDITIONAL_COMBAT_WIDTH = 30										-- more opened up by support attack
-
-NDefines.NMilitary.MIN_SUPPLY_CONSUMPTION = 0.01									-- minimum value of supply consumption that a unit can get
-
---NDefines.NMilitary.LAND_AIR_COMBAT_MAX_PLANES_PER_ENEMY_WIDTH = 1 					-- how many CAS/TAC can enter a combat depending on enemy width there
-
-NDefines.NMilitary.PLANNING_DECAY = 0.001
-NDefines.NMilitary.PLAYER_ORDER_PLANNING_DECAY = 0.003								-- Amount of planning lost due to player manual order
-NDefines.NMilitary.PLANNING_GAIN = 0.01
-NDefines.NMilitary.PLANNING_MAX = 0.1                           					-- can get more from techs
-NDefines.NMilitary.DIG_IN_FACTOR = 0.01						   						-- bonus factor for each dug-in level
-
-NDefines.NMilitary.FRONT_MIN_PATH_TO_REDEPLOY = 12									-- If a units path is at least this long to reach its front location, it will strategically redeploy.
-
-NDefines.NMilitary.ZERO_ORG_MOVEMENT_MODIFIER = -0.25								-- speed impact at 0 org.
-
-NDefines.NMilitary.ACCLIMATIZATION_SPEED_GAIN = 0.05								-- A variable used to balance the overall speed of gaining the acclimatization
-
-NDefines.NMilitary.BASE_DIVISION_BRIGADE_GROUP_COST = 20							--Base cost to unlock a regiment slot,
-NDefines.NMilitary.BASE_DIVISION_BRIGADE_CHANGE_COST = 5							--Base cost to change a regiment column.
-NDefines.NMilitary.BASE_DIVISION_SUPPORT_SLOT_COST = 1 								--Base cost to unlock a support slot
-
-NDefines.NMilitary.MAX_DIVISION_BRIGADE_HEIGHT = 4									-- Max height of regiments in division designer.
-NDefines.NMilitary.MAX_DIVISION_SUPPORT_WIDTH = 2									-- Max width of support in division designer.
-NDefines.NMilitary.MAX_DIVISION_SUPPORT_HEIGHT = 5									-- Max height of support in division designer.
-
-NDefines.NMilitary.UNIT_LEADER_ASSIGN_TRAIT_COST = 5								-- cost to assign a new trait to a unit leader
-NDefines.NMilitary.ARMY_STRATEGIC_DEPLOYMENT_FUEL_MULT = 0.0						-- fuel consumption ratio while doing strategic deployment
-NDefines.NMilitary.STRATEGIC_SPEED_BASE = 2.0                 						-- Speed of strategic redeployment
-NDefines.NMilitary.STRATEGIC_INFRA_SPEED = 18.0                  					 -- Max of additional speed gained trouh=gh level for strategic redeployment per infra
-
---NDefines.NMilitary.PLAN_EXECUTE_CAREFUL_LIMIT = 10									-- When looking for an attach target, this score limit is required in the battle plan to consider province for attack
---NDefines.NMilitary.PLAN_EXECUTE_CAREFUL_MAX_FORT = 9								-- If execution mode is set to careful, units will not attack provinces with fort levels greater than or equal to this
-
-NDefines.NMilitary.BATALION_CHANGED_EXPERIENCE_DROP = 0.75							-- Division experience drop if unit has different batalion
-
-NDefines.NMilitary.MAX_ARMY_EXPERIENCE = 5000										--Max army experience a country can store
-NDefines.NMilitary.MAX_NAVY_EXPERIENCE = 5000										--Max navy experience a country can store
-NDefines.NMilitary.MAX_AIR_EXPERIENCE = 5000										--Max air experience a country can store
-
-NDefines.NMilitary.UNIT_EXPERIENCE_PER_COMBAT_HOUR = 0.00060
-NDefines.NMilitary.FIELD_EXPERIENCE_SCALE = 0.002
-NDefines.NMilitary.FIELD_EXPERIENCE_MAX_PER_DAY = 1									-- Most xp you can gain per day
-
-NDefines.NMilitary.LAND_COMBAT_STR_ARMOR_DEFLECTION_FACTOR = 0.5					-- damage reduction if armor outclassing enemy
-NDefines.NMilitary.LAND_COMBAT_ORG_ARMOR_DEFLECTION_FACTOR = 0.5					-- damage reduction if armor outclassing enemy
-
-NDefines.NMilitary.LAND_EQUIPMENT_BASE_COST = 4									-- Cost in XP to upgrade a piece of equipment one level is base + ( total levels * ramp )
-NDefines.NMilitary.LAND_EQUIPMENT_RAMP_COST = 2
-NDefines.NMilitary.NAVAL_EQUIPMENT_BASE_COST = 4
-NDefines.NMilitary.NAVAL_EQUIPMENT_RAMP_COST = 2
-NDefines.NMilitary.AIR_EQUIPMENT_BASE_COST = 4
-NDefines.NMilitary.AIR_EQUIPMENT_RAMP_COST = 2
-
-NDefines.NMilitary.PLAN_SPREAD_ATTACK_WEIGHT = 3									-- The higher the value, the less it should crowd provinces with multiple attacks.
-
-NDefines.NMilitary.NON_CORE_SUPPLY_SPEED = -0.7				    					-- we are not running on our own VP supply so need to steal stuff along the way
-NDefines.NMilitary.LAND_COMBAT_COLLATERAL_FACTOR = 0.003							-- Factor to scale collateral damage to infra and forts with.
-
-NDefines.NMilitary.ATTRITION_DAMAGE_ORG = 0					   						-- damage from attrition to Organisation
---NDefines.NMilitary.OUT_OF_SUPPLY_ATTRITION = 2.4                					-- max attrition when out of supply
-NDefines.NMilitary.OUT_OF_SUPPLY_MORALE = 0                  						-- max org regain reduction from supply
-NDefines.NMilitary.OUT_OF_SUPPLY_SPEED = -0.4                   					-- max speed reduction from supply
-NDefines.NMilitary.COMBAT_SUPPLY_LACK_IMPACT = -0.6									-- combat penalty if out of supply
-
-NDefines.NMilitary.INFRA_ORG_IMPACT = 0.25											-- scale factor of infra on org regain.
-
-NDefines.NMilitary.STRATEGIC_REDEPLOY_ORG_RATIO = 0.1								-- Ratio of max org while strategic redeployment
-
-NDefines.NMilitary.PARACHUTE_COMPLETE_ORG = 0.6									    -- Organisation value (in %) after unit being dropped, regardless if failed, disrupted, or successful.
-NDefines.NMilitary.PARACHUTE_ORG_REGAIN_PENALTY_DURATION = 24						-- penalty in org regain after being parachuted. Value is in hours.
-
-NDefines.NMilitary.SLOWEST_SPEED = 0.01
-
-NDefines.NMilitary.NUKE_MIN_DAMAGE_PERCENT = 0.7									-- Minimum damage from nukes as a percentage of current strength/organisation
-NDefines.NMilitary.NUKE_MAX_DAMAGE_PERCENT = 0.95									-- Minimum damage from nukes as a percentage of current strength/organisation
-
-NDefines.NMilitary.HOURLY_ORG_MOVEMENT_IMPACT = -0.5								-- how much org is lost every hour while moving an army.
-NDefines.NMilitary.ORG_LOSS_FACTOR_ON_CONQUER = 0.25              					-- percentage of (max) org loss on takign enemy province
-
-NDefines.NMilitary.LEND_LEASE_FIELD_EXPERIENCE_SCALE = 0.000						-- Experience scale for lend leased equipment used in combat.
-NDefines.NMilitary.SUPPLY_GRACE = 240												-- troops always carry 28 days of food and supply
-
-NDefines.NMilitary.ATTRITION_EQUIPMENT_LOSS_CHANCE = 0.03							-- Chance for loosing equipment when suffer attrition. Scaled up the stronger attrition is. Then scaled down by equipment reliability.
-
-NDefines.NMilitary.ARMY_EXP_BASE_LEVEL = 10
-
-NDefines.NMilitary.TRAINING_MAX_LEVEL = 15
-NDefines.NMilitary.DEPLOY_TRAINING_MAX_LEVEL = 10
-NDefines.NMilitary.UNIT_EXP_LEVELS = { 0.10,	0.12,	0.13,	0.14,	0.15,	0.16,	0.17,	0.18,	0.19,	0.2,	0.25,	0.3,	0.35,	0.4,	0.45,	0.5,	0.55,	0.6,	0.65,	0.7,	0.75,	0.8,	0.85,	0.9,	0.95 }		-- Experience needed to progress to the next level
-NDefines.NMilitary.EXPERIENCE_COMBAT_FACTOR = 0.05
-NDefines.NMilitary.TRAINING_EXPERIENCE_SCALE = 30.0
-NDefines.NMilitary.TRAINING_ATTRITION = 0.12			
-NDefines.NMilitary.TRAINING_MIN_STRENGTH = 0.95										-- if strength is less than this, the unit will pause training until it's been reinforced
-NDefines.NMilitary.UNIT_EXPERIENCE_SCALE = 0.3
-
-NDefines.NMilitary.RIVER_CROSSING_PENALTY = -0.25                					-- small river crossing
-NDefines.NMilitary.RIVER_CROSSING_PENALTY_LARGE = -0.5								-- large river crossing
-NDefines.NMilitary.RIVER_CROSSING_SPEED_PENALTY = -0.25								-- small river crossing
-NDefines.NMilitary.RIVER_CROSSING_SPEED_PENALTY_LARGE = -0.5						-- large river crossing
-
-NDefines.NMilitary.RETREAT_SPEED_FACTOR = 1.5              						    -- speed bonus when retreating
-NDefines.NMilitary.BASE_FORT_PENALTY = -0.17						 				-- fort penalty
-
-NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_IMPACT = -0.4      						-- effect on defense due to enemy air superiorty
---NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_SPEED_IMPACT = -0.5				   		-- effect on speed due to enemy air superiority
-
-NDefines.NMilitary.COMBAT_MOVEMENT_SPEED = 0.8										-- speed reduction base modifier in combat
-
-NDefines.NMilitary.TRAINING_ORG = 0
-
-NDefines.NMilitary.FUEL_CAPACITY_DEFAULT_HOURS = 672               					-- default capacity if not specified
-
-NDefines.NMilitary.BASE_CAPTURE_EQUIPMENT_RATIO = 0.08								-- after a successful land combat, ratio of the equipments that are being captured/salvaged from enemy's lost equipment
---NDefines.NMilitary.REINFORCE_CHANCE = 0.1                	   						-- base chance to join combat from back line when empty
-
-NDefines.NMilitary.NON_CORE_SUPPLY_AIR_SPEED = -0.4			   						-- we are not running on our own VP supply so need to steal stuff along the way, a bit less due to air supply
-
-NDefines.NMilitary.LAND_AIR_COMBAT_STR_DAMAGE_MODIFIER = 0.02    					-- air global damage modifier
-NDefines.NMilitary.LAND_AIR_COMBAT_ORG_DAMAGE_MODIFIER = 0.03    					-- global damage modifier
-
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Country
 
 
@@ -238,7 +112,7 @@ NDefines.NCountry.SPECIAL_FORCES_CAP_MIN = 10										-- You can have a minimum
 NDefines.NCountry.BASE_MOBILIZATION_SPEED = 0.02									-- Base speed of manpower mobilization  #in 1/1000 of 1 %
 
 NDefines.NCountry.WAR_SUPPORT_TENSION_IMPACT = 0									-- Total impact of world tension
-NDefines.NCountry.STATE_VALUE_NON_CORE_STATE_FRACTION = 0.9							-- If a state is not a core we assume we will get 50% of the factory slots
+NDefines.NCountry.STATE_VALUE_NON_CORE_STATE_FRACTION = 1.0							-- If a state is not a core we assume we will get 50% of the factory slots
 
 NDefines.NCountry.BOMBING_WAR_SUPPORT_PENALTY_SCALE = -0.00015 						-- Scaling of bomber damage to war support impact, will be added weekly as a war support penalty
 NDefines.NCountry.MAX_BOMBING_WEEKLY_WAR_SUPPORT_PENALTY = -0.005					-- Max penalty that will gained per week from bomber's damage
@@ -291,7 +165,7 @@ NDefines.NProduction.BASE_FACTORY_EFFICIENCY_GAIN = 0.5								-- Base efficienc
 NDefines.NProduction.BASE_FACTORY_MAX_EFFICIENCY_FACTOR = 40 						-- Base max efficiency for factories expressed in %.
 NDefines.NProduction.BASE_FACTORY_START_EFFICIENCY_FACTOR = 1						-- Base start efficiency for factories expressed in %.
 
-NDefines.NProduction.BASE_FACTORY_EFFICIENCY_VARIANT_CHANGE_FACTOR = 95				-- Base factor for changing production variants in %.
+NDefines.NProduction.BASE_FACTORY_EFFICIENCY_VARIANT_CHANGE_FACTOR = 80				-- Base factor for changing production variants in %.
 NDefines.NProduction.BASE_FACTORY_EFFICIENCY_PARENT_CHANGE_FACTOR = 80				-- Base factor for changing production parent<->children in %.
 NDefines.NProduction.BASE_FACTORY_EFFICIENCY_FAMILY_CHANGE_FACTOR = 70				-- Base factor for changing production with same family in %.
 NDefines.NProduction.BASE_FACTORY_EFFICIENCY_ARCHETYPE_CHANGE_FACTOR = 20 			-- Base factor for changing production with same archetype in %.
@@ -334,6 +208,135 @@ NDefines.NResistance.FOREIGN_MANPOWER_MIN_THRESHOLD = 500000000			 			-- The min
 
 NDefines.NResistance.RESISTANCE_ACTIVITY_CHANCE_AT_MAX_RESISTANCE = 0.200			-- sabotage
 
+NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_OCCUPIED_CAPITULATED = 5.0 								-- resistance target modifier when the enemy is capitulated
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Military
+
+
+NDefines.NMilitary.BASE_COMBAT_WIDTH = 90											-- base combat width
+NDefines.NMilitary.ADDITIONAL_COMBAT_WIDTH = 30										-- more opened up by support attack
+
+NDefines.NMilitary.MIN_SUPPLY_CONSUMPTION = 0.01									-- minimum value of supply consumption that a unit can get
+
+--NDefines.NMilitary.LAND_AIR_COMBAT_MAX_PLANES_PER_ENEMY_WIDTH = 1 					-- how many CAS/TAC can enter a combat depending on enemy width there
+
+NDefines.NMilitary.PLANNING_DECAY = 0.001
+NDefines.NMilitary.PLAYER_ORDER_PLANNING_DECAY = 0.003								-- Amount of planning lost due to player manual order
+NDefines.NMilitary.PLANNING_GAIN = 0.01
+NDefines.NMilitary.PLANNING_MAX = 0.1                           					-- can get more from techs
+NDefines.NMilitary.DIG_IN_FACTOR = 0.01						   						-- bonus factor for each dug-in level
+
+NDefines.NMilitary.FRONT_MIN_PATH_TO_REDEPLOY = 12									-- If a units path is at least this long to reach its front location, it will strategically redeploy.
+
+NDefines.NMilitary.ZERO_ORG_MOVEMENT_MODIFIER = -0.25								-- speed impact at 0 org.
+
+NDefines.NMilitary.ACCLIMATIZATION_SPEED_GAIN = 0.05								-- A variable used to balance the overall speed of gaining the acclimatization
+
+NDefines.NMilitary.BASE_DIVISION_BRIGADE_GROUP_COST = 20							--Base cost to unlock a regiment slot,
+NDefines.NMilitary.BASE_DIVISION_BRIGADE_CHANGE_COST = 5							--Base cost to change a regiment column.
+NDefines.NMilitary.BASE_DIVISION_SUPPORT_SLOT_COST = 1 								--Base cost to unlock a support slot
+
+NDefines.NMilitary.MAX_DIVISION_BRIGADE_HEIGHT = 4									-- Max height of regiments in division designer.
+NDefines.NMilitary.MAX_DIVISION_SUPPORT_WIDTH = 2									-- Max width of support in division designer.
+NDefines.NMilitary.MAX_DIVISION_SUPPORT_HEIGHT = 5									-- Max height of support in division designer.
+
+NDefines.NMilitary.UNIT_LEADER_ASSIGN_TRAIT_COST = 5								-- cost to assign a new trait to a unit leader
+NDefines.NMilitary.ARMY_STRATEGIC_DEPLOYMENT_FUEL_MULT = 0.0						-- fuel consumption ratio while doing strategic deployment
+NDefines.NMilitary.STRATEGIC_SPEED_BASE = 2.0                 						-- Speed of strategic redeployment
+NDefines.NMilitary.STRATEGIC_INFRA_SPEED = 18.0                  					 -- Max of additional speed gained trouh=gh level for strategic redeployment per infra
+
+--NDefines.NMilitary.PLAN_EXECUTE_CAREFUL_LIMIT = 10									-- When looking for an attach target, this score limit is required in the battle plan to consider province for attack
+--NDefines.NMilitary.PLAN_EXECUTE_CAREFUL_MAX_FORT = 9								-- If execution mode is set to careful, units will not attack provinces with fort levels greater than or equal to this
+
+NDefines.NMilitary.BATALION_CHANGED_EXPERIENCE_DROP = 0.75							-- Division experience drop if unit has different batalion
+
+NDefines.NMilitary.MAX_ARMY_EXPERIENCE = 5000										--Max army experience a country can store
+NDefines.NMilitary.MAX_NAVY_EXPERIENCE = 5000										--Max navy experience a country can store
+NDefines.NMilitary.MAX_AIR_EXPERIENCE = 5000										--Max air experience a country can store
+
+NDefines.NMilitary.UNIT_EXPERIENCE_PER_COMBAT_HOUR = 0.00060
+NDefines.NMilitary.FIELD_EXPERIENCE_SCALE = 0.002
+NDefines.NMilitary.FIELD_EXPERIENCE_MAX_PER_DAY = 1									-- Most xp you can gain per day
+
+NDefines.NMilitary.ARMOR_VS_AVERAGE = 0.3			                				-- how to weight in highest armor & pen vs the division average
+
+NDefines.NMilitary.LAND_COMBAT_STR_ARMOR_DEFLECTION_FACTOR = 0.5					-- damage reduction if armor outclassing enemy
+NDefines.NMilitary.LAND_COMBAT_ORG_ARMOR_DEFLECTION_FACTOR = 0.5					-- damage reduction if armor outclassing enemy
+
+NDefines.NMilitary.LAND_EQUIPMENT_BASE_COST = 4										-- Cost in XP to upgrade a piece of equipment one level is base + ( total levels * ramp )
+NDefines.NMilitary.LAND_EQUIPMENT_RAMP_COST = 2
+NDefines.NMilitary.NAVAL_EQUIPMENT_BASE_COST = 4
+NDefines.NMilitary.NAVAL_EQUIPMENT_RAMP_COST = 2
+NDefines.NMilitary.AIR_EQUIPMENT_BASE_COST = 4
+NDefines.NMilitary.AIR_EQUIPMENT_RAMP_COST = 2
+
+NDefines.NMilitary.PLAN_SPREAD_ATTACK_WEIGHT = 3									-- The higher the value, the less it should crowd provinces with multiple attacks.
+
+NDefines.NMilitary.NON_CORE_SUPPLY_SPEED = -0.7				    					-- we are not running on our own VP supply so need to steal stuff along the way
+NDefines.NMilitary.LAND_COMBAT_COLLATERAL_FACTOR = 0.003							-- Factor to scale collateral damage to infra and forts with.
+
+NDefines.NMilitary.ATTRITION_DAMAGE_ORG = 0					   						-- damage from attrition to Organisation
+--NDefines.NMilitary.OUT_OF_SUPPLY_ATTRITION = 2.4                					-- max attrition when out of supply
+NDefines.NMilitary.OUT_OF_SUPPLY_MORALE = 0                  						-- max org regain reduction from supply
+NDefines.NMilitary.OUT_OF_SUPPLY_SPEED = -0.4                   					-- max speed reduction from supply
+NDefines.NMilitary.COMBAT_SUPPLY_LACK_IMPACT = -0.6									-- combat penalty if out of supply
+
+NDefines.NMilitary.INFRA_ORG_IMPACT = 0.25											-- scale factor of infra on org regain.
+
+NDefines.NMilitary.STRATEGIC_REDEPLOY_ORG_RATIO = 0.1								-- Ratio of max org while strategic redeployment
+
+NDefines.NMilitary.PARACHUTE_COMPLETE_ORG = 0.6									    -- Organisation value (in %) after unit being dropped, regardless if failed, disrupted, or successful.
+NDefines.NMilitary.PARACHUTE_ORG_REGAIN_PENALTY_DURATION = 24						-- penalty in org regain after being parachuted. Value is in hours.
+
+NDefines.NMilitary.SLOWEST_SPEED = 0.01
+
+NDefines.NMilitary.NUKE_MIN_DAMAGE_PERCENT = 0.7									-- Minimum damage from nukes as a percentage of current strength/organisation
+NDefines.NMilitary.NUKE_MAX_DAMAGE_PERCENT = 0.95									-- Minimum damage from nukes as a percentage of current strength/organisation
+
+NDefines.NMilitary.HOURLY_ORG_MOVEMENT_IMPACT = -0.5								-- how much org is lost every hour while moving an army.
+NDefines.NMilitary.ORG_LOSS_FACTOR_ON_CONQUER = 0.25              					-- percentage of (max) org loss on takign enemy province
+
+NDefines.NMilitary.LEND_LEASE_FIELD_EXPERIENCE_SCALE = 0.000						-- Experience scale for lend leased equipment used in combat.
+NDefines.NMilitary.SUPPLY_GRACE = 240												-- troops always carry 28 days of food and supply
+
+NDefines.NMilitary.ATTRITION_EQUIPMENT_LOSS_CHANCE = 0.03							-- Chance for loosing equipment when suffer attrition. Scaled up the stronger attrition is. Then scaled down by equipment reliability.
+
+NDefines.NMilitary.ARMY_EXP_BASE_LEVEL = 10
+
+NDefines.NMilitary.TRAINING_MAX_LEVEL = 15
+NDefines.NMilitary.DEPLOY_TRAINING_MAX_LEVEL = 10
+NDefines.NMilitary.UNIT_EXP_LEVELS = { 0.10,	0.12,	0.13,	0.14,	0.15,	0.16,	0.17,	0.18,	0.19,	0.2,	0.25,	0.3,	0.35,	0.4,	0.45,	0.5,	0.55,	0.6,	0.65,	0.7,	0.75,	0.8,	0.85,	0.9,	0.95 }		-- Experience needed to progress to the next level
+NDefines.NMilitary.EXPERIENCE_COMBAT_FACTOR = 0.05
+NDefines.NMilitary.TRAINING_EXPERIENCE_SCALE = 30.0
+NDefines.NMilitary.TRAINING_ATTRITION = 0.12			
+NDefines.NMilitary.TRAINING_MIN_STRENGTH = 0.95										-- if strength is less than this, the unit will pause training until it's been reinforced
+NDefines.NMilitary.UNIT_EXPERIENCE_SCALE = 0.3
+
+NDefines.NMilitary.RIVER_CROSSING_PENALTY = -0.3                					-- small river crossing
+NDefines.NMilitary.RIVER_CROSSING_PENALTY_LARGE = -0.5								-- large river crossing
+NDefines.NMilitary.RIVER_CROSSING_SPEED_PENALTY = -0.25								-- small river crossing
+NDefines.NMilitary.RIVER_CROSSING_SPEED_PENALTY_LARGE = -0.5						-- large river crossing
+
+NDefines.NMilitary.RETREAT_SPEED_FACTOR = 1.5              						    -- speed bonus when retreating
+NDefines.NMilitary.BASE_FORT_PENALTY = -0.17						 				-- fort penalty
+
+NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_IMPACT = -0.4      						-- effect on defense due to enemy air superiorty
+--NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_SPEED_IMPACT = -0.5				   		-- effect on speed due to enemy air superiority
+
+NDefines.NMilitary.COMBAT_MOVEMENT_SPEED = 0.8										-- speed reduction base modifier in combat
+
+NDefines.NMilitary.TRAINING_ORG = 0
+
+NDefines.NMilitary.FUEL_CAPACITY_DEFAULT_HOURS = 672               					-- default capacity if not specified
+
+NDefines.NMilitary.BASE_CAPTURE_EQUIPMENT_RATIO = 0.08								-- after a successful land combat, ratio of the equipments that are being captured/salvaged from enemy's lost equipment
+--NDefines.NMilitary.REINFORCE_CHANCE = 0.1                	   						-- base chance to join combat from back line when empty
+
+NDefines.NMilitary.NON_CORE_SUPPLY_AIR_SPEED = -0.4			   						-- we are not running on our own VP supply so need to steal stuff along the way, a bit less due to air supply
+
+NDefines.NMilitary.LAND_AIR_COMBAT_STR_DAMAGE_MODIFIER = 0.015    					-- air global strength damage modifier from CAS
+NDefines.NMilitary.LAND_AIR_COMBAT_ORG_DAMAGE_MODIFIER = 0.025    					-- air global org damage modifier from CAS
+
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Air
 
 
@@ -370,7 +373,7 @@ NDefines.NAir.AIR_WING_ATTACK_LOGISTICS_TRAIN_DAMAGE_DISRUPTION_MITIGATION = 3.0
 NDefines.NAir.AIR_WING_ATTACK_LOGISTICS_RAILWAY_DAMAGE_SPILL_FACTOR = 0.002 		-- Portion of train damage to additionally deal to railways
 NDefines.NAir.AIR_WING_ATTACK_LOGISTICS_INFRA_DAMAGE_SPILL_FACTOR = 0.0005 			-- Portion of truck damage to additionally deal to infrastructure
 
-NDefines.NAir.CAS_NIGHT_ATTACK_FACTOR = 0.4						                    -- CAS damaged get multiplied by this in land combats at night
+NDefines.NAir.CAS_NIGHT_ATTACK_FACTOR = 0.1						                    -- CAS damaged get multiplied by this in land combats at night
 NDefines.NAir.ANTI_AIR_MAXIMUM_DAMAGE_REDUCTION_FACTOR = 0.50 						-- Maximum damage reduction factor applied to incoming air attacks against units with AA.
 
 NDefines.NAir.BOMBING_TARGETING_RANDOM_FACTOR = 0.25								-- % of picking the wrong target
