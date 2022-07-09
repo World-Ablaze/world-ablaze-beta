@@ -101,9 +101,9 @@ static const float 	BORDER_TILE					= 0.4f;
 
 
 
-// Snow color									standardfuncsgfx.fxh   
+// Snow color									standardfuncsgfx.fxh
 // static const float3 SNOW_COLOR = float3( 0.8f, 0.8f, 0.8f );
-// Snow fade									standardfuncsgfx.fxh   
+// Snow fade									standardfuncsgfx.fxh
 // 	float vSnow = saturate( saturate( vNoise - ( 1.0f - vIsSnow ) ) * 5.0f );
 
 static const float 	TREE_SEASON_MIN 			= 0.5f;
@@ -136,7 +136,7 @@ static const float  WATER_HEIGHT_RECP_SQUARED = WATER_HEIGHT_RECP * WATER_HEIGHT
 // --------------------------------------------------------------
 
 //	PORT_SHIP_OFFSET = 2.0,					defines.lua   (reload defines)
-//	SHIP_IN_PORT_SCALE = 0.25,				
+//	SHIP_IN_PORT_SCALE = 0.25,
 //  BUILDING SIZE?
 
 
@@ -148,7 +148,7 @@ static const float  WATER_HEIGHT_RECP_SQUARED = WATER_HEIGHT_RECP * WATER_HEIGHT
 static const float3 FOG_COLOR 					= float3( 0.12, 0.28, 0.6 );
 static const float 	FOG_BEGIN					= 1.0f;
 static const float 	FOG_END 					= 750.0f;
-static const float 	FOG_MAX 					= 0.10f; 
+static const float 	FOG_MAX 					= 0.10f;
 
 //static const float 	FOG_MAX 					= 1000.7f;
 
