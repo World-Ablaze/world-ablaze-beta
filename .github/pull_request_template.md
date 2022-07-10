@@ -1,4 +1,4 @@
-<!--- Provide a general summary of your changes in the Title above. -->
+<!--- Provide a general summary of your changes in the Title ABOVE. -->
 
 
 ## Description
@@ -12,7 +12,7 @@
 
 ## How has this been tested?
 <!--- Please describe in detail how you tested your changes. -->
-<!--- Include details of how you ran the game and ensured your changes work as intended. -->
+<!--- Include details of how you ran the game and ensured your changes work as intended without breaking anything. -->
 
 
 
@@ -31,14 +31,14 @@
 
 
 ## Checklist:
-<!--- Go over all the following points, and put an `x` in all the boxes that apply. -->
+<!--- Go over all the following points, and put an `x` in all the boxes that apply: -->
 <!--- If you're unsure about any of these, don't hesitate to ask. -->
 - [ ] My change requires a change to the roadmap.
-- [ ] I have updated the roadmap.
+- [ ] If the above is true, have updated the roadmap.
 - [ ] My change requires a change to the spreadsheet(s).
-- [ ] I have updated the spreadsheet(s).
-- [ ] My balance change requires approval of the team.
-- [ ] I have received approcal for the balance change.
+- [ ] If the above is true, I have updated the spreadsheet(s).
+- [ ] My change alters the balance of the mod.
+- [ ] If the above is true, I have received approval for the balance change.
 - [ ] My code follows the code style of this project (neat, optimized, readable, etc.)
 - [ ] I HAVE TESTED THESE CHANGES BY RUNNING THE GAME AND VERIFYING THEY WORK AS INTENDED.
 
