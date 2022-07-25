@@ -734,6 +734,175 @@ MTG_naval_treaties = {
 
 war_measures = {
 
+	USA_build_airbasesinUK_ai = {
+		icon = generic_construction
+
+		available = {
+			num_of_civilian_factories_available_for_projects > 119
+			tag = USA
+			is_ai = yes
+			ENG = {
+				is_ai = yes
+			}
+			date > 1943.12.1
+			has_war_with = GER
+			is_in_faction_with = ENG
+			126 = {
+				CONTROLLER = { 
+					tag = ENG 
+				}
+			}
+		}
+		visible = {
+			tag = USA
+			is_ai = yes
+			date > 1943.12.1
+			has_war_with = GER
+			is_in_faction_with = ENG
+		}
+
+		cancel_if_not_visible = yes
+
+		fire_only_once = yes
+
+		cost = 0
+
+		ai_will_do = {
+			factor = 320
+		}
+
+		days_remove = 90
+
+		modifier = {
+			civilian_factory_use = 120
+		}
+
+		remove_effect = {
+			custom_effect_tooltip = USA_fortify_uk_tt
+			hidden_effect = {
+				961 = {
+					add_building_construction = {
+						type = air_base
+						level = 10
+						instant_build = yes
+					}
+				}
+				858 = {
+					add_building_construction = {
+						type = air_base
+						level = 3
+						instant_build = yes
+					}
+				}
+				127 = {
+					add_building_construction = {
+						type = air_base
+						level = 3
+						instant_build = yes
+					}
+				}
+				859 = {
+					add_building_construction = {
+						type = air_base
+						level = 8
+						instant_build = yes
+					}
+				}
+				123 = {
+					add_building_construction = {
+						type = air_base
+						level = 8
+						instant_build = yes
+					}
+				}
+				338 = {
+					add_building_construction = {
+						type = air_base
+						level = 4
+						instant_build = yes
+					}
+				}
+				122 = {
+					add_building_construction = {
+						type = air_base
+						level = 10
+						instant_build = yes
+					}
+				}
+				128 = {
+					add_building_construction = {
+						type = air_base
+						level = 5
+						instant_build = yes
+					}
+				}
+				129 = {
+					add_building_construction = {
+						type = air_base
+						level = 5
+						instant_build = yes
+					}
+				}
+				125 = {
+					add_building_construction = {
+						type = air_base
+						level = 6
+						instant_build = yes
+					}
+				}
+				860 = {
+					add_building_construction = {
+						type = air_base
+						level = 7
+						instant_build = yes
+					}
+				}
+				132 = {
+					add_building_construction = {
+						type = air_base
+						level = 7
+						instant_build = yes
+					}
+				}
+				131 = {
+					add_building_construction = {
+						type = air_base
+						level = 9
+						instant_build = yes
+					}
+				}
+				121 = {
+					add_building_construction = {
+						type = air_base
+						level = 7
+						instant_build = yes
+					}
+				}
+				133 = {
+					add_building_construction = {
+						type = air_base
+						level = 7
+						instant_build = yes
+					}
+				}
+				136 = {
+					add_building_construction = {
+						type = air_base
+						level = 6
+						instant_build = yes
+					}
+				}
+				119 = {
+					add_building_construction = {
+						type = air_base
+						level = 9
+						instant_build = yes
+					}
+				}
+			}
+		}
+	}
+
 	long_island_ship_conversion = {
 
 		allowed = {
@@ -2895,7 +3064,12 @@ USA_aid_britain = {
 		}
 
 		visible = {
-			has_war = no
+			OR = {
+				has_war = no
+				ENG = {
+					has_country_leader = { ruling_only = yes name = "George VI" }
+				}
+			}
 		}
 
 		modifier = {
@@ -2909,7 +3083,66 @@ USA_aid_britain = {
 
 		complete_effect = {
 			news_event = { id = afo_news.9 hours = 6 }
-			play_arsenal_of_democracy_effect = yes
+			play_arsenal_of_democracy_effect = yes		
+		}
+	}
+	
+	USA_alt_hist_earlymob = { #the uk is dead, override EAI and mobilize.
+
+		icon = generic_industry
+
+		allowed = {
+			original_tag = USA
+		}
+
+		available = {
+			date < 1941.12.1
+			has_country_leader = { ruling_only = yes name = "Franklin Delano Roosevelt" }
+			is_ai = yes
+			has_war = yes
+			ENG = {
+				has_country_leader = { ruling_only = yes name = "George VI" }
+			}
+		}
+
+		cost = 0
+		fire_only_once = yes
+		ai_will_do = {
+			factor = 4000
+		}
+
+		visible = {
+			date < 1942.12.1
+			is_ai = yes
+			has_war = yes
+			ENG = {
+				has_country_leader = { ruling_only = yes name = "George VI" }
+			}
+		}
+
+		complete_effect = {
+			if = {
+				limit = {
+					OR = {
+						has_idea = undisturbed_isolation
+						has_idea = isolation
+					}
+				}
+				add_ideas = partial_economic_mobilisation
+				USA_great_depression_level_down = yes
+			}
+			if = {
+				limit = {
+					OR = {
+						has_idea = civilian_economy
+						has_idea = low_economic_mobilisation
+						has_idea = partial_economic_mobilisation
+						has_idea = war_economy
+					}
+				}
+				add_ideas = tot_economic_mobilisation
+				USA_great_depression_level_down = yes
+			}			
 		}
 	}
 }
@@ -4254,6 +4487,736 @@ USA_aid_soviet_union = {
 					producer = USA
 					amount = 1000
 				}
+			}
+		}
+	}
+	
+	######### Lend Lease (AI > AI)
+	
+	USA_provide_support_equipment_ai = {
+
+		icon = generic_industry
+
+		allowed = {
+			original_tag = USA
+		}
+
+		visible = {
+			SOV = {
+				is_ai = yes
+			}
+			is_ai = yes
+			has_completed_focus = USA_lend_lease_act
+			SOV = { has_war_with = GER }
+			date > 1942.1.1
+		}
+
+		available = {
+			SOV = {
+				is_ai = yes
+				has_equipment = { support_equipment < 1 }
+			}
+			date > 1942.1.1
+			is_ai = yes
+			has_equipment = { support_equipment > 19999 }
+			original_tag = USA
+			has_completed_focus = USA_lend_lease_act
+			SOV = { has_war_with = GER }
+			NOT = { SOV = { has_war_with = USA } }
+			OR = {
+				has_government = democratic
+				SOV = { has_government = ROOT }
+				is_in_faction_with = SOV
+			}
+		}
+
+        days_re_enable = 60
+
+        modifier = {
+			civilian_factory_use = 10
+        }
+
+		cost = 0
+		days_remove = 30
+
+		ai_will_do = {
+			factor = 400
+		}
+
+		complete_effect = {
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = support_equipment_1
+				producer = USA
+				amount = -15000
+			}
+			SOV = {
+				add_equipment_to_stockpile = {
+					type = support_equipment_1
+					producer = USA
+					amount = 15000
+				}
+			}
+		}
+	}
+	
+	USA_provide_heavyguns_ai = {
+
+		icon = generic_industry
+
+		allowed = {
+			original_tag = USA
+		}
+
+		visible = {
+			SOV = {
+				is_ai = yes
+			}
+			is_ai = yes
+			has_completed_focus = USA_lend_lease_act
+			SOV = { has_war_with = GER }
+			date > 1942.1.1
+		}
+
+		available = {
+			SOV = {
+				is_ai = yes
+				has_equipment = { heavy_infantry_equipment < 1 }
+			}
+			date > 1942.1.1
+			is_ai = yes
+			has_equipment = { heavy_infantry_equipment > 19999 }
+			original_tag = USA
+			has_completed_focus = USA_lend_lease_act
+			SOV = { has_war_with = GER }
+			NOT = { SOV = { has_war_with = USA } }
+			OR = {
+				has_government = democratic
+				SOV = { has_government = ROOT }
+				is_in_faction_with = SOV
+			}
+		}
+
+        days_re_enable = 60
+
+        modifier = {
+			civilian_factory_use = 10
+        }
+
+		cost = 0
+		days_remove = 30
+
+		ai_will_do = {
+			factor = 400
+		}
+
+		complete_effect = {
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = heavy_infantry_equipment
+				producer = USA
+				amount = -17500
+			}
+			SOV = {
+				if = {
+					limit = {
+						USA = { has_tech = usa_heavy_infantry_weapons_8 }
+					}
+					add_equipment_to_stockpile = { type = usa_hv_inf_8 amount = 17500 producer = USA }
+				}
+				else_if = {
+					limit = {
+						USA = { has_tech = usa_heavy_infantry_weapons_7 }
+					}
+					add_equipment_to_stockpile = { type = usa_hv_inf_7 amount = 17500 producer = USA }
+				}
+				else_if = {
+					limit = {
+						USA = { has_tech = usa_heavy_infantry_weapons_6 }
+					}
+					add_equipment_to_stockpile = { type = usa_hv_inf_6 amount = 17500 producer = USA }
+				}
+				else_if = {
+					limit = {
+						USA = { has_tech = usa_heavy_infantry_weapons_5 }
+					}
+					add_equipment_to_stockpile = { type = usa_hv_inf_5 amount = 17500 producer = USA }
+				}
+				else_if = {
+					limit = {
+						USA = { has_tech = usa_heavy_infantry_weapons_4 }
+					}
+					add_equipment_to_stockpile = { type = usa_hv_inf_4 amount = 17500 producer = USA }
+				}
+				else_if = {
+					limit = {
+						USA = { has_tech = usa_heavy_infantry_weapons_3 }
+					}
+					add_equipment_to_stockpile = { type = usa_hv_inf_3 amount = 17500 producer = USA }
+				}
+				else_if = {
+					limit = {
+						USA = { has_tech = usa_heavy_infantry_weapons_2 }
+					}
+					add_equipment_to_stockpile = { type = usa_hv_inf_2 amount = 17500 producer = USA }
+				}
+				else = {
+					add_equipment_to_stockpile = { type = usa_hv_inf_1 amount = 17500 producer = USA }
+				}
+			}
+		}
+	}
+	
+	USA_provide_smolguns_ai = {
+
+		icon = generic_industry
+
+		allowed = {
+			original_tag = USA
+		}
+
+		visible = {
+			SOV = {
+				is_ai = yes
+			}
+			is_ai = yes
+			has_completed_focus = USA_lend_lease_act
+			SOV = { has_war_with = GER }
+			date > 1942.1.1
+		}
+
+		available = {
+			SOV = {
+				is_ai = yes
+				has_equipment = { infantry_equipment < 1 }
+			}
+			date > 1942.1.1
+			is_ai = yes
+			has_equipment = { infantry_equipment > 39999 }
+			original_tag = USA
+			has_completed_focus = USA_lend_lease_act
+			SOV = { has_war_with = GER }
+			NOT = { SOV = { has_war_with = USA } }
+			OR = {
+				has_government = democratic
+				SOV = { has_government = ROOT }
+				is_in_faction_with = SOV
+			}
+		}
+
+        days_re_enable = 60
+
+        modifier = {
+			civilian_factory_use = 10
+        }
+
+		cost = 0
+		days_remove = 30
+
+		ai_will_do = {
+			factor = 400
+		}
+
+		complete_effect = {
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = infantry_equipment
+				producer = USA
+				amount = -40000
+			}
+			SOV = {
+				if = {
+					limit = {
+						USA = { has_tech = usa_infantry_weapons_8 }
+					}
+					add_equipment_to_stockpile = { type = usa_inf_8 amount = 40000 producer = USA }
+				}
+				else_if = {
+					limit = {
+						USA = { has_tech = usa_infantry_weapons_7 }
+					}
+					add_equipment_to_stockpile = { type = usa_inf_7 amount = 40000 producer = USA }
+				}
+				else_if = {
+					limit = {
+						USA = { has_tech = usa_infantry_weapons_6 }
+					}
+					add_equipment_to_stockpile = { type = usa_inf_6 amount = 40000 producer = USA }
+				}
+				else_if = {
+					limit = {
+						USA = { has_tech = usa_infantry_weapons_4 }
+					}
+					add_equipment_to_stockpile = { type = usa_inf_4 amount = 40000 producer = USA }
+				}
+				else = {
+					add_equipment_to_stockpile = { type = usa_inf_3 amount = 40000 producer = USA }
+				}
+			}
+		}
+	}
+	
+	USA_provide_artillery_ai = {
+
+		icon = generic_industry
+
+		allowed = {
+			original_tag = USA
+		}
+
+		visible = {
+			SOV = {
+				is_ai = yes
+			}
+			is_ai = yes
+			has_completed_focus = USA_lend_lease_act
+			SOV = { has_war_with = GER }
+			date > 1942.1.1
+		}
+
+		available = {
+			SOV = {
+				is_ai = yes
+				has_equipment = { artillery_equipment < 1 }
+			}
+			date > 1942.1.1
+			is_ai = yes
+			has_equipment = { artillery_equipment > 2999 }
+			original_tag = USA
+			has_completed_focus = USA_lend_lease_act
+			SOV = { has_war_with = GER }
+			NOT = { SOV = { has_war_with = USA } }
+			OR = {
+				has_government = democratic
+				SOV = { has_government = ROOT }
+				is_in_faction_with = SOV
+			}
+		}
+
+        days_re_enable = 60
+
+        modifier = {
+			civilian_factory_use = 10
+        }
+
+		cost = 0
+		days_remove = 30
+
+		ai_will_do = {
+			factor = 400
+		}
+
+		complete_effect = {
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = artillery_equipment
+				producer = USA
+				amount = -2000
+			}
+			SOV = {
+				if = {
+					limit = {
+						USA = { has_tech = usa_artillery_4 }
+					}
+					add_equipment_to_stockpile = { type = usa_art_4 amount = 2000 producer = USA }
+				}
+				else_if = {
+					limit = {
+						USA = { has_tech = usa_artillery_3 }
+					}
+					add_equipment_to_stockpile = { type = usa_art_3 amount = 2000 producer = USA }
+				}
+				else_if = {
+					limit = {
+						USA = { has_tech = usa_artillery_2 }
+					}
+					add_equipment_to_stockpile = { type = usa_art_2 amount = 2000 producer = USA }
+				}
+				else = {
+					add_equipment_to_stockpile = { type = usa_art_1 amount = 2000 producer = USA }
+				}
+			}
+		}
+	}
+	
+	USA_provide_mechanized_ai = {
+
+		icon = generic_industry
+
+		allowed = {
+			original_tag = USA
+		}
+
+		visible = {
+			SOV = {
+				is_ai = yes
+			}
+			is_ai = yes
+			has_completed_focus = USA_lend_lease_act
+			SOV = { has_war_with = GER }
+			date > 1942.1.1
+		}
+
+		available = {
+			SOV = {
+				is_ai = yes
+				has_equipment = { mechanized_equipment < 1 }
+			}
+			date > 1942.1.1
+			is_ai = yes
+			has_equipment = { mechanized_equipment > 2999 }
+			original_tag = USA
+			has_completed_focus = USA_lend_lease_act
+			SOV = { has_war_with = GER }
+			NOT = { SOV = { has_war_with = USA } }
+			OR = {
+				has_government = democratic
+				SOV = { has_government = ROOT }
+				is_in_faction_with = SOV
+			}
+		}
+
+        days_re_enable = 60
+
+        modifier = {
+			civilian_factory_use = 10
+        }
+
+		cost = 0
+		days_remove = 30
+
+		ai_will_do = {
+			factor = 400
+		}
+
+		complete_effect = {
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = mechanized_equipment
+				producer = USA
+				amount = -2000
+			}
+			SOV = {
+				if = {
+					limit = {
+						USA = { has_tech = usa_mechanized_infantry_7 }
+					}
+					add_equipment_to_stockpile = { type = usa_mechanized_equipment_7 amount = 2000 producer = USA }
+				}
+				else_if = {
+					limit = {
+						USA = { has_tech = usa_mechanized_infantry_6 }
+					}
+					add_equipment_to_stockpile = { type = usa_mechanized_equipment_6 amount = 2000 producer = USA }
+				}
+				else_if = {
+					limit = {
+						USA = { has_tech = usa_mechanized_infantry_5 }
+					}
+					add_equipment_to_stockpile = { type = usa_mechanized_equipment_5 amount = 2000 producer = USA }
+				}
+				else_if = {
+					limit = {
+						USA = { has_tech = usa_mechanized_infantry_4 }
+					}
+					add_equipment_to_stockpile = { type = usa_mechanized_equipment_4 = 2000 producer = USA }
+				}
+				else_if = {
+					limit = {
+						USA = { has_tech = usa_mechanized_infantry_3 }
+					}
+					add_equipment_to_stockpile = { type = usa_mechanized_equipment_3 amount = 2000 producer = USA }
+				}
+				else_if = {
+					limit = {
+						USA = { has_tech = usa_mechanized_infantry_2 }
+					}
+					add_equipment_to_stockpile = { type = usa_mechanized_equipment_2 amount = 2000 producer = USA }
+				}
+				else = {
+					add_equipment_to_stockpile = { type = usa_mechanized_equipment_1 amount = 2000 producer = USA }
+				}
+			}
+		}
+	}
+	
+	USA_provide_mbts_ai = {
+
+		icon = generic_industry
+
+		allowed = {
+			original_tag = USA
+		}
+
+		visible = {
+			SOV = {
+				is_ai = yes
+			}
+			is_ai = yes
+			has_completed_focus = USA_lend_lease_act
+			SOV = { has_war_with = GER }
+			date > 1942.1.1
+		}
+
+		available = {
+			SOV = {
+				is_ai = yes
+				has_equipment = { modern_tank_chassis < 1 }
+			}
+			date > 1942.1.1
+			is_ai = yes
+			has_equipment = { modern_tank_chassis > 1499 }
+			original_tag = USA
+			has_completed_focus = USA_lend_lease_act
+			SOV = { has_war_with = GER }
+			NOT = { SOV = { has_war_with = USA } }
+			OR = {
+				has_government = democratic
+				SOV = { has_government = ROOT }
+				is_in_faction_with = SOV
+			}
+		}
+
+        days_re_enable = 60
+
+        modifier = {
+			civilian_factory_use = 10
+        }
+
+		cost = 0
+		days_remove = 30
+
+		ai_will_do = {
+			factor = 400
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				set_country_flag = USA_soviet_aid_otw
+			}
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = modern_tank_chassis
+				producer = USA
+				amount = -1000
+			}
+			SOV = {
+				if = {
+					limit = {
+						USA = { has_tech = usa_modern_tank_chassis_6 }
+					}
+					add_equipment_to_stockpile = { type = tank_usa_modern_chassis_6 amount = 1000 producer = USA }
+				}
+				else_if = {
+					limit = {
+						USA = { has_tech = usa_modern_tank_chassis_5 }
+					}
+					add_equipment_to_stockpile = { type = tank_usa_modern_chassis_5 amount = 1000 producer = USA }
+				}
+				else_if = {
+					limit = {
+						USA = { has_tech = usa_modern_tank_chassis_4 }
+					}
+					add_equipment_to_stockpile = { type = tank_usa_modern_chassis_4 = 1000 producer = USA }
+				}
+				else_if = {
+					limit = {
+						USA = { has_tech = usa_modern_tank_chassis_3 }
+					}
+					add_equipment_to_stockpile = { type = tank_usa_modern_chassis_3 amount = 1000 producer = USA }
+				}
+				else_if = {
+					limit = {
+						USA = { has_tech = usa_modern_tank_chassis_2 }
+					}
+					add_equipment_to_stockpile = { type = tank_usa_modern_chassis_2 amount = 1000 producer = USA }
+				}
+				else = {
+					add_equipment_to_stockpile = { type = tank_usa_modern_chassis_1 amount = 1000 producer = USA }
+				}
+			}
+		}
+	}
+	
+	USA_provide_fighterplanes_ai = {
+
+		icon = generic_industry
+
+		allowed = {
+			original_tag = USA
+		}
+
+		visible = {
+			SOV = {
+				is_ai = yes
+			}
+			is_ai = yes
+			has_completed_focus = USA_lend_lease_act
+			SOV = { has_war_with = GER }
+			date > 1942.1.1
+		}
+
+		available = {
+			SOV = {
+				is_ai = yes
+				has_deployed_air_force_size = { size < 5500 type = fighter }
+			}
+			date > 1942.1.1
+			is_ai = yes
+			original_tag = USA
+			has_completed_focus = USA_lend_lease_act
+			SOV = { has_war_with = GER }
+			NOT = { SOV = { has_war_with = USA } }
+			OR = {
+				has_government = democratic
+				SOV = { has_government = ROOT }
+				is_in_faction_with = SOV
+			}
+		}
+
+        days_re_enable = 45
+
+        modifier = {
+			civilian_factory_use = 10
+        }
+
+		cost = 0
+		days_remove = 30
+
+		ai_will_do = {
+			factor = 400
+		}
+
+		complete_effect = {
+		}
+
+		remove_effect = {
+			SOV = {
+				if = {
+					limit = {
+						date < 1945.1.1
+					}
+					if = {
+						limit = {
+							USA = { has_tech = usa_jet_fighter_multirole_1 }
+						}
+						add_equipment_to_stockpile = { type = usa_jet_fighter_multirole_equipment_1 amount = 800 producer = USA }
+					}
+					else_if = {
+						limit = {
+							USA = { has_tech = usa_fighter_5 }
+						}
+						add_equipment_to_stockpile = { type = usa_fighter_equipment_6 amount = 800 producer = USA }
+					}
+					else_if = {
+						limit = {
+							USA = { has_tech = usa_fighter_3 }
+						}
+						add_equipment_to_stockpile = { type = usa_fighter_equipment_4 amount = 800 producer = USA }
+					}
+					else = {
+						add_equipment_to_stockpile = { type = usa_fighter_equipment_3 amount = 800 producer = USA }
+					}
+				}
+				if = {
+					limit = {
+						date > 1945.1.1
+					}
+					if = {
+						limit = {
+							USA = { has_tech = usa_jet_fighter_multirole_1 }
+						}
+						add_equipment_to_stockpile = { type = usa_jet_fighter_multirole_equipment_1 amount = 1200 producer = USA }
+					}
+					else_if = {
+						limit = {
+							USA = { has_tech = usa_fighter_5 }
+						}
+						add_equipment_to_stockpile = { type = usa_fighter_equipment_6 amount = 1200 producer = USA }
+					}
+					else_if = {
+						limit = {
+							USA = { has_tech = usa_fighter_3 }
+						}
+						add_equipment_to_stockpile = { type = usa_fighter_equipment_4 amount = 1200 producer = USA }
+					}
+					else = {
+						add_equipment_to_stockpile = { type = usa_fighter_equipment_3 amount = 1200 producer = USA }
+					}
+				}
+			}
+		}
+	}
+	
+	USA_provide_cas_ai = {
+
+		icon = generic_industry
+
+		allowed = {
+			original_tag = USA
+		}
+
+		visible = {
+			has_tech = usa_fighter_multirole_3
+			SOV = {
+				is_ai = yes
+			}
+			is_ai = yes
+			has_completed_focus = USA_lend_lease_act
+			SOV = { has_war_with = GER }
+			date > 1944.1.1
+		}
+
+		available = {
+			SOV = {
+				is_ai = yes
+				has_deployed_air_force_size = { size < 3000 type = cas }
+			}
+			date > 1944.1.1
+			is_ai = yes
+			original_tag = USA
+			has_completed_focus = USA_lend_lease_act
+			has_tech = usa_fighter_multirole_3
+			SOV = { has_war_with = GER }
+			NOT = { SOV = { has_war_with = USA } }
+			OR = {
+				has_government = democratic
+				SOV = { has_government = ROOT }
+				is_in_faction_with = SOV
+			}
+		}
+
+        days_re_enable = 60
+
+        modifier = {
+			civilian_factory_use = 10
+        }
+
+		cost = 0
+		days_remove = 30
+
+		ai_will_do = {
+			factor = 400
+		}
+
+		complete_effect = {
+		}
+
+		remove_effect = {
+			SOV = {
+				add_equipment_to_stockpile = { type = usa_fighter_multirole_equipment_3 amount = 400 producer = USA }
 			}
 		}
 	}
