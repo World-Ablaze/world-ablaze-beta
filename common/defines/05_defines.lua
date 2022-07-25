@@ -51,22 +51,6 @@ NDefines.NTrade.ANTI_MONOPOLY_TRADE_FACTOR = 0										-- This is added to the 
 NDefines.NCharacter.OFFICER_CORP_ADVISOR_ENTRIES_IN_MENU = { "high_command", "theorist", "army_theorist", "navy_theorist", "air_theorist", "army_chief", "air_chief", "navy_chief" }
 --NDefines.NCharacter.DEFAULT_PP_COST_FOR_POLITICAL_ADVISOR = 100
 
-
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ Railways
-
-
-NDefines.NRailwayGun.RAILWAY_GUN_RANGE = 15											-- The range of railway guns in pixels
-NDefines.NRailwayGun.ATTACK_TO_ENTRENCHMENT_MODIFIER_FACTOR = 0.4					-- Entrenchment modifier is calculated by multiplying railway gun attack value with this and dividing by 100
-NDefines.NRailwayGun.ATTACK_TO_BOMBARDMENT_MODIFIER_FACTOR = 0.2					-- Bombardment modifier is calculated by multiplying railway gun attack value with this and dividing by 100
-
-
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ Technology
-
-
-NDefines.NTechnology.BASE_TECH_COST = 85											-- Base cost for a tech. multiplied with tech cost and ahead of time penalties
-NDefines.NTechnology.BASE_YEAR_AHEAD_PENALTY_FACTOR = 4								-- Base year ahead penalty
-NDefines.NTechnology.LICENSE_PRODUCTION_TECH_BONUS = 0								-- License production tech bonus
-
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Country
 
 
@@ -199,7 +183,7 @@ NDefines.NOperatives.AGENCY_CREATION_FACTORIES = 20									-- Number of factori
 NDefines.NOperatives.MAX_OPERATIVE_SLOT_FROM_AGENCY_UPGRADES = 5					-- max operative slots gained from upgrades
 NDefines.NOperatives.CONTROL_TRADE_MAX_INFLUENCE = 50.0								-- The maximum amount of trade influence that can be gained through the control trade mission
 
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ Operations
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Resistance
 
 NDefines.NResistance.GARRISON_MANPOWER_LOST_BY_ATTACK = 0.01 						-- Ratio of manpower lost by garrison at each attack on garrison (this number will be reduced by the hardness of garrison template)
 NDefines.NResistance.MIN_DAMAGE_TO_GARRISONS_MODIFIER = 0.05						-- modifier that applies to losses from resistance attack to garrisons at most can be reduced to this amount
@@ -208,7 +192,23 @@ NDefines.NResistance.FOREIGN_MANPOWER_MIN_THRESHOLD = 500000000			 			-- The min
 
 NDefines.NResistance.RESISTANCE_ACTIVITY_CHANCE_AT_MAX_RESISTANCE = 0.200			-- sabotage
 
-NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_OCCUPIED_CAPITULATED = 5.0 								-- resistance target modifier when the enemy is capitulated
+NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_OCCUPIED_CAPITULATED = 5.0 			-- resistance target modifier when the enemy is capitulated
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Railways
+
+
+NDefines.NRailwayGun.RAILWAY_GUN_RANGE = 15											-- The range of railway guns in pixels
+NDefines.NRailwayGun.ATTACK_TO_ENTRENCHMENT_MODIFIER_FACTOR = 0.4					-- Entrenchment modifier is calculated by multiplying railway gun attack value with this and dividing by 100
+NDefines.NRailwayGun.ATTACK_TO_BOMBARDMENT_MODIFIER_FACTOR = 0.2					-- Bombardment modifier is calculated by multiplying railway gun attack value with this and dividing by 100
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Technology
+
+
+NDefines.NTechnology.BASE_TECH_COST = 85											-- Base cost for a tech. multiplied with tech cost and ahead of time penalties
+NDefines.NTechnology.BASE_YEAR_AHEAD_PENALTY_FACTOR = 4								-- Base year ahead penalty
+NDefines.NTechnology.LICENSE_PRODUCTION_TECH_BONUS = 0								-- License production tech bonus
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Military
 
@@ -218,7 +218,9 @@ NDefines.NMilitary.ADDITIONAL_COMBAT_WIDTH = 30										-- more opened up by su
 
 NDefines.NMilitary.MIN_SUPPLY_CONSUMPTION = 0.01									-- minimum value of supply consumption that a unit can get
 
---NDefines.NMilitary.LAND_AIR_COMBAT_MAX_PLANES_PER_ENEMY_WIDTH = 1 					-- how many CAS/TAC can enter a combat depending on enemy width there
+NDefines.NMilitary.EQUIPMENT_COMBAT_LOSS_FACTOR = 0.8	 	   						-- % of equipment lost to strength ratio in combat, so some % is returned if below 1
+
+--NDefines.NMilitary.LAND_AIR_COMBAT_MAX_PLANES_PER_ENEMY_WIDTH = 1 				-- how many CAS/TAC can enter a combat depending on enemy width there
 
 NDefines.NMilitary.PLANNING_DECAY = 0.001
 NDefines.NMilitary.PLAYER_ORDER_PLANNING_DECAY = 0.003								-- Amount of planning lost due to player manual order
