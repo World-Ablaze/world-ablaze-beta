@@ -4243,22 +4243,48 @@ war_measures = {
 			original_tag = ENG
 			is_ai = yes
 			has_war = yes
-			has_equipment = {
-				convoy_1 < 300
+			if = {
+				limit = {
+					date < 1943.1.2
+				}
+				has_equipment = {
+					convoy_1 < 300
+				}
+			}
+			if = {
+				limit = {
+					date > 1943.1.1
+				}
+				has_equipment = {
+					convoy_1 < 425
+				}
 			}
 		}
 		visible = {
 			original_tag = ENG
 			is_ai = yes
-			has_equipment = {
-				convoy_1 < 300
+			if = {
+				limit = {
+					date < 1943.1.2
+				}
+				has_equipment = {
+					convoy_1 < 300
+				}
+			}
+			if = {
+				limit = {
+					date > 1943.1.1
+				}
+				has_equipment = {
+					convoy_1 < 425
+				}
 			}
 		}
 		cost = 0
 
 		fire_only_once = no
 
-		days_re_enable = 90
+		days_re_enable = 30
 
 		ai_will_do = {
 			factor = 320
@@ -4341,6 +4367,79 @@ war_measures = {
 			}
 			NZL = {
 				add_equipment_to_stockpile = { type = convoy_1 amount = 15 producer = NZL }
+			}
+		}
+	}
+	
+	####################################Lendlease soviets ai --> ai
+	
+	ENG_provide_fighterplanes_ai = {
+
+		icon = generic_industry
+
+		allowed = {
+			original_tag = ENG
+		}
+
+		visible = {
+			SOV = {
+				is_ai = yes
+			}
+			is_ai = yes
+			SOV = { has_war_with = GER }
+			date > 1944.6.1
+		}
+
+		available = {
+			SOV = {
+				is_ai = yes
+				has_deployed_air_force_size = { size < 5500 type = fighter }
+			}
+			date > 1944.6.1
+			is_ai = yes
+			original_tag = ENG
+			SOV = { has_war_with = GER }
+			NOT = { SOV = { has_war_with = ENG } }
+			OR = {
+				has_government = democratic
+				SOV = { has_government = ROOT }
+				is_in_faction_with = SOV
+			}
+		}
+
+        days_re_enable = 60
+
+        modifier = {
+			civilian_factory_use = 10
+        }
+
+		cost = 0
+		days_remove = 30
+
+		ai_will_do = {
+			factor = 400
+		}
+
+		complete_effect = {
+		}
+
+		remove_effect = {
+			SOV = {
+				if = {
+					limit = {
+						ENG = { has_tech = eng_fighter_6 }
+					}
+					add_equipment_to_stockpile = { type = eng_fighter_equipment_7 amount = 200 producer = ENG }
+				}
+				else_if = {
+					limit = {
+						ENG = { has_tech = eng_fighter_5 }
+					}
+					add_equipment_to_stockpile = { type = eng_fighter_equipment_6 amount = 200 producer = ENG }
+				}
+				else = {
+					add_equipment_to_stockpile = { type = eng_fighter_equipment_5 amount = 200 producer = ENG }
+				}
 			}
 		}
 	}
@@ -4542,7 +4641,10 @@ operations = {
 		}
 
 		available = {
-			has_country_leader = { ruling_only = yes name = "Winston Churchill" }
+			OR = {
+				has_country_leader = { ruling_only = yes name = "Winston Churchill" }
+				has_country_leader = { ruling_only = yes name = "George VI" }
+			}
 			has_government = democratic
 			has_completed_focus = ENG_local_intervention
 			has_war_with = GER
@@ -4562,7 +4664,10 @@ operations = {
 		}
 
 		visible = {
-			has_country_leader = { ruling_only = yes name = "Winston Churchill" }
+			OR = {
+				has_country_leader = { ruling_only = yes name = "Winston Churchill" }
+				has_country_leader = { ruling_only = yes name = "George VI" }
+			}
 			tag = ENG
 			has_government = democratic
 			has_war_with = GER
