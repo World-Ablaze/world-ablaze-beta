@@ -602,9 +602,6 @@ NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN_CIVILWAR = 0
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- AI
 
------------ ATTACHE
-
-NDefines.NAI.DIPLOMACY_ACCEPT_ATTACHE_OPINION_TRASHHOLD = -20						-- Value of opinion that will remove accepting penalty for receiving the attache
 
 ----------- SUPPLY
 
