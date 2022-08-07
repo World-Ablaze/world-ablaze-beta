@@ -602,6 +602,7 @@ NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN_CIVILWAR = 0
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- AI
 
+
 ----------- SUPPLY
 
 --NDefines.NAI.SUPPLY_CRISIS_LIMIT = 1.0											-- If a unit is standing in an area with
