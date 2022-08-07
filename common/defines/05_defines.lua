@@ -140,6 +140,8 @@ NDefines.NProduction.BASE_FACTORY_SPEED_NAV = 4.2					 				-- Base factory speed
 
 NDefines.NProduction.LICENSE_EQUIPMENT_BASE_SPEED = -0.25							-- base MIC speed modifier for licensed equipment
 NDefines.NProduction.LICENSE_EQUIPMENT_SPEED_NOT_FACTION = -0.25					-- MIC speed modifier for licensed equipment for not being in faction
+NDefines.NProduction.LICENSE_EQUIPMENT_TECH_SPEED_PER_YEAR = 0						-- MIC speed modifier for licensed equipment for each year of difference between actual and latest equipment
+NDefines.NProduction.LICENSE_EQUIPMENT_TECH_SPEED_MAX_YEARS = 1						-- Maximum years for MIC speed modifier
 
 NDefines.NProduction.CAPITULATE_STOCKPILES_RATIO = 0.7 								-- How much equipment from deployed divisions will be transferred on capitulation
 
@@ -299,7 +301,7 @@ NDefines.NMilitary.HOURLY_ORG_MOVEMENT_IMPACT = -0.5								-- how much org is l
 NDefines.NMilitary.ORG_LOSS_FACTOR_ON_CONQUER = 0.25              					-- percentage of (max) org loss on takign enemy province
 
 NDefines.NMilitary.LEND_LEASE_FIELD_EXPERIENCE_SCALE = 0.000						-- Experience scale for lend leased equipment used in combat.
-NDefines.NMilitary.SUPPLY_GRACE = 240												-- troops always carry 28 days of food and supply
+NDefines.NMilitary.SUPPLY_GRACE = 240												-- troops always carry 10 days of food and supply
 
 NDefines.NMilitary.ATTRITION_EQUIPMENT_LOSS_CHANCE = 0.03							-- Chance for loosing equipment when suffer attrition. Scaled up the stronger attrition is. Then scaled down by equipment reliability.
 
@@ -329,7 +331,7 @@ NDefines.NMilitary.COMBAT_MOVEMENT_SPEED = 0.8										-- speed reduction base 
 
 NDefines.NMilitary.TRAINING_ORG = 0
 
-NDefines.NMilitary.FUEL_CAPACITY_DEFAULT_HOURS = 672               					-- default capacity if not specified
+NDefines.NMilitary.FUEL_CAPACITY_DEFAULT_HOURS = 240               					-- default capacity if not specified
 
 NDefines.NMilitary.BASE_CAPTURE_EQUIPMENT_RATIO = 0.08								-- after a successful land combat, ratio of the equipments that are being captured/salvaged from enemy's lost equipment
 --NDefines.NMilitary.REINFORCE_CHANCE = 0.1                	   						-- base chance to join combat from back line when empty
@@ -599,6 +601,7 @@ NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN_CORE = 5
 NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN_CIVILWAR = 0
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- AI
+
 
 ----------- SUPPLY
 
