@@ -275,7 +275,7 @@ NDefines.NMilitary.AIR_EQUIPMENT_BASE_COST = 4
 NDefines.NMilitary.AIR_EQUIPMENT_RAMP_COST = 2
 
 NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_ATTACK = 0    						-- attack combat penalty for attacker if out of supply
-NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_DEFEND = 0     						-- defend combat penalty for attacker if out of supply
+NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_DEFEND = 0     						-- breakthrough combat penalty for attacker if out of supply
 
 NDefines.NMilitary.COMBAT_SUPPLY_LACK_DEFENDER_ATTACK = 0     						-- attack combat penalty for defender if out of supply
 NDefines.NMilitary.COMBAT_SUPPLY_LACK_DEFENDER_DEFEND = 0     						-- defend combat penalty for defender if out of supply
