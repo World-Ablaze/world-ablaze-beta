@@ -573,24 +573,29 @@ NDefines.NNavy.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
 NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.1									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
 NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST = 500
 NDefines.NSupply.LOCAL_SUPPLY_PER_AIR_MISSION = 0.2									-- each assigned plane gives this much supply at full efficiency
---NDefines.NSupply.CAPITAL_SUPPLY_CIVILIAN_FACTORIES = 0 								-- supply from one civilian factory
---NDefines.NSupply.CAPITAL_SUPPLY_MILITARY_FACTORIES = 0 								-- supply from one military factory
+--NDefines.NSupply.CAPITAL_SUPPLY_CIVILIAN_FACTORIES = 0 							-- supply from one civilian factory
+--NDefines.NSupply.CAPITAL_SUPPLY_MILITARY_FACTORIES = 0 							-- supply from one military factory
 NDefines.NSupply.AVAILABLE_MANPOWER_STATE_SUPPLY = 0								--Factor for state supply from max manpower (population)
-NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_BONUS = 1.75
 
 NDefines.NSupply.NAVAL_BASE_FLOW = 0.0 												-- max output/input of a naval node is limited by this base value + additional ratio for each level
 NDefines.NSupply.NAVAL_FLOW_PER_LEVEL = 5.0 										-- max output/input of a naval node is limited by previous base value + this define per its level
 
 NDefines.NSupply.RIVER_RAILWAY_LEVEL = 1											-- rivers will transfer in between nodes as if they were this level
 
+---
+
 NDefines.NSupply.FLOATING_HARBOR_BASE_SUPPLY = 30.0 								-- supply given by a floating harbor
 NDefines.NSupply.FLOATING_HARBOR_BASE_DURATION = 60 								-- duration of a full hp floating harbor
+
+NDefines.NSupply.NODE_INITIAL_SUPPLY_FLOW = 5										-- The range bonus added to a fully motorized hub. This supply is added on top of the XXX_INITIAL_SUPPLY_FLOW defined above.
+NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_BONUS = 1.75							-- The range bonus added to a fully motorized hub. This supply is added on top of the XXX_INITIAL_SUPPLY_FLOW defined above.
+NDefines.NSupply.NODE_STARTING_PENALTY_PER_PROVINCE = 0.5
+
 NDefines.NSupply.RAILWAY_BASE_FLOW = 5.0											-- how much base flow railway gives when a node connected to its capital/a naval node by a railway
 NDefines.NSupply.RAILWAY_FLOW_PER_LEVEL = 10.0 										-- how much additional flow a railway level gives
 NDefines.NSupply.RAILWAY_FLOW_PENALTY_PER_DAMAGED = 10.0 							-- penalty to flow per damaged railway
 
-NDefines.NSupply.NODE_INITIAL_SUPPLY_FLOW = 5
-NDefines.NSupply.NODE_STARTING_PENALTY_PER_PROVINCE = 1.16
+---
 
 NDefines.NSupply.SUPPLY_PATH_MAX_DISTANCE = 45										-- max time it can take
 NDefines.NSupply.RAILWAY_DISTANCE_FACTOR_FOR_REINFORCEMENT_SPEED = 0.05 			-- time factor for total railway distance
