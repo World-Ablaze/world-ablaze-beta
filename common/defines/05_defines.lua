@@ -274,6 +274,12 @@ NDefines.NMilitary.NAVAL_EQUIPMENT_RAMP_COST = 2
 NDefines.NMilitary.AIR_EQUIPMENT_BASE_COST = 4
 NDefines.NMilitary.AIR_EQUIPMENT_RAMP_COST = 2
 
+NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_ATTACK = 0    						-- attack combat penalty for attacker if out of supply
+NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_DEFEND = 0     						-- defend combat penalty for attacker if out of supply
+
+NDefines.NMilitary.COMBAT_SUPPLY_LACK_DEFENDER_ATTACK = 0     						-- attack combat penalty for defender if out of supply
+NDefines.NMilitary.COMBAT_SUPPLY_LACK_DEFENDER_DEFEND = 0     						-- defend combat penalty for defender if out of supply
+
 NDefines.NMilitary.PLAN_SPREAD_ATTACK_WEIGHT = 3									-- The higher the value, the less it should crowd provinces with multiple attacks.
 
 NDefines.NMilitary.NON_CORE_SUPPLY_SPEED = -0.7				    					-- we are not running on our own VP supply so need to steal stuff along the way
@@ -589,7 +595,7 @@ NDefines.NSupply.FLOATING_HARBOR_BASE_DURATION = 60 								-- duration of a ful
 
 NDefines.NSupply.NODE_INITIAL_SUPPLY_FLOW = 5										-- The range bonus added to a fully motorized hub. This supply is added on top of the XXX_INITIAL_SUPPLY_FLOW defined above.
 NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_BONUS = 1.75							-- The range bonus added to a fully motorized hub. This supply is added on top of the XXX_INITIAL_SUPPLY_FLOW defined above.
-NDefines.NSupply.NODE_STARTING_PENALTY_PER_PROVINCE = 0.5
+NDefines.NSupply.NODE_STARTING_PENALTY_PER_PROVINCE = 1.16
 
 NDefines.NSupply.RAILWAY_BASE_FLOW = 5.0											-- how much base flow railway gives when a node connected to its capital/a naval node by a railway
 NDefines.NSupply.RAILWAY_FLOW_PER_LEVEL = 10.0 										-- how much additional flow a railway level gives
