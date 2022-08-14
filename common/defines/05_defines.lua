@@ -220,7 +220,7 @@ NDefines.NMilitary.ADDITIONAL_COMBAT_WIDTH = 30										-- more opened up by su
 
 NDefines.NMilitary.MIN_SUPPLY_CONSUMPTION = 0.01									-- minimum value of supply consumption that a unit can get
 
-NDefines.NMilitary.EQUIPMENT_COMBAT_LOSS_FACTOR = 0.8	 	   						-- % of equipment lost to strength ratio in combat, so some % is returned if below 1
+NDefines.NMilitary.EQUIPMENT_COMBAT_LOSS_FACTOR = 1.0	 	   						-- % of equipment lost to strength ratio in combat, so some % is returned if below 1
 
 --NDefines.NMilitary.LAND_AIR_COMBAT_MAX_PLANES_PER_ENEMY_WIDTH = 1 				-- how many CAS/TAC can enter a combat depending on enemy width there
 
@@ -286,7 +286,7 @@ NDefines.NMilitary.NON_CORE_SUPPLY_SPEED = -0.7				    					-- we are not runnin
 NDefines.NMilitary.LAND_COMBAT_COLLATERAL_FACTOR = 0.003							-- Factor to scale collateral damage to infra and forts with.
 
 NDefines.NMilitary.ATTRITION_DAMAGE_ORG = 0					   						-- damage from attrition to Organisation
---NDefines.NMilitary.OUT_OF_SUPPLY_ATTRITION = 2.4                					-- max attrition when out of supply
+NDefines.NMilitary.OUT_OF_SUPPLY_ATTRITION = 0.5                					-- max attrition when out of supply
 NDefines.NMilitary.OUT_OF_SUPPLY_MORALE = 0                  						-- max org regain reduction from supply
 NDefines.NMilitary.OUT_OF_SUPPLY_SPEED = -0.4                   					-- max speed reduction from supply
 NDefines.NMilitary.COMBAT_SUPPLY_LACK_IMPACT = -0.6									-- combat penalty if out of supply
