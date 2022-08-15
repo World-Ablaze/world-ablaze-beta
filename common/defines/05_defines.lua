@@ -225,7 +225,7 @@ NDefines.NMilitary.ADDITIONAL_COMBAT_WIDTH = 30										-- more opened up by su
 
 NDefines.NMilitary.MIN_SUPPLY_CONSUMPTION = 0.01									-- minimum value of supply consumption that a unit can get
 
-NDefines.NMilitary.EQUIPMENT_COMBAT_LOSS_FACTOR = 0.8	 	   						-- % of equipment lost to strength ratio in combat, so some % is returned if below 1
+NDefines.NMilitary.EQUIPMENT_COMBAT_LOSS_FACTOR = 1.0	 	   						-- % of equipment lost to strength ratio in combat, so some % is returned if below 1
 
 --NDefines.NMilitary.LAND_AIR_COMBAT_MAX_PLANES_PER_ENEMY_WIDTH = 1 				-- how many CAS/TAC can enter a combat depending on enemy width there
 
@@ -279,13 +279,19 @@ NDefines.NMilitary.NAVAL_EQUIPMENT_RAMP_COST = 2
 NDefines.NMilitary.AIR_EQUIPMENT_BASE_COST = 4
 NDefines.NMilitary.AIR_EQUIPMENT_RAMP_COST = 2
 
+NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_ATTACK = 0    						-- attack combat penalty for attacker if out of supply
+NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_DEFEND = 0     						-- breakthrough combat penalty for attacker if out of supply
+
+NDefines.NMilitary.COMBAT_SUPPLY_LACK_DEFENDER_ATTACK = 0     						-- attack combat penalty for defender if out of supply
+NDefines.NMilitary.COMBAT_SUPPLY_LACK_DEFENDER_DEFEND = 0     						-- defend combat penalty for defender if out of supply
+
 NDefines.NMilitary.PLAN_SPREAD_ATTACK_WEIGHT = 3									-- The higher the value, the less it should crowd provinces with multiple attacks.
 
 NDefines.NMilitary.NON_CORE_SUPPLY_SPEED = -0.7				    					-- we are not running on our own VP supply so need to steal stuff along the way
 NDefines.NMilitary.LAND_COMBAT_COLLATERAL_FACTOR = 0.003							-- Factor to scale collateral damage to infra and forts with.
 
 NDefines.NMilitary.ATTRITION_DAMAGE_ORG = 0					   						-- damage from attrition to Organisation
---NDefines.NMilitary.OUT_OF_SUPPLY_ATTRITION = 2.4                					-- max attrition when out of supply
+NDefines.NMilitary.OUT_OF_SUPPLY_ATTRITION = 0.5                					-- max attrition when out of supply
 NDefines.NMilitary.OUT_OF_SUPPLY_MORALE = 0                  						-- max org regain reduction from supply
 NDefines.NMilitary.OUT_OF_SUPPLY_SPEED = -0.4                   					-- max speed reduction from supply
 NDefines.NMilitary.COMBAT_SUPPLY_LACK_IMPACT = -0.6									-- combat penalty if out of supply
@@ -306,7 +312,7 @@ NDefines.NMilitary.HOURLY_ORG_MOVEMENT_IMPACT = -0.5								-- how much org is l
 NDefines.NMilitary.ORG_LOSS_FACTOR_ON_CONQUER = 0.25              					-- percentage of (max) org loss on takign enemy province
 
 NDefines.NMilitary.LEND_LEASE_FIELD_EXPERIENCE_SCALE = 0.000						-- Experience scale for lend leased equipment used in combat.
-NDefines.NMilitary.SUPPLY_GRACE = 240												-- troops always carry 10 days of food and supply
+NDefines.NMilitary.SUPPLY_GRACE = 168												-- troops always carry 10 days of food and supply
 
 NDefines.NMilitary.ATTRITION_EQUIPMENT_LOSS_CHANCE = 0.03							-- Chance for loosing equipment when suffer attrition. Scaled up the stronger attrition is. Then scaled down by equipment reliability.
 
@@ -578,24 +584,29 @@ NDefines.NNavy.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
 NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.1									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
 NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST = 500
 NDefines.NSupply.LOCAL_SUPPLY_PER_AIR_MISSION = 0.2									-- each assigned plane gives this much supply at full efficiency
---NDefines.NSupply.CAPITAL_SUPPLY_CIVILIAN_FACTORIES = 0 								-- supply from one civilian factory
---NDefines.NSupply.CAPITAL_SUPPLY_MILITARY_FACTORIES = 0 								-- supply from one military factory
+--NDefines.NSupply.CAPITAL_SUPPLY_CIVILIAN_FACTORIES = 0 							-- supply from one civilian factory
+--NDefines.NSupply.CAPITAL_SUPPLY_MILITARY_FACTORIES = 0 							-- supply from one military factory
 NDefines.NSupply.AVAILABLE_MANPOWER_STATE_SUPPLY = 0								--Factor for state supply from max manpower (population)
-NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_BONUS = 1.75
 
 NDefines.NSupply.NAVAL_BASE_FLOW = 0.0 												-- max output/input of a naval node is limited by this base value + additional ratio for each level
 NDefines.NSupply.NAVAL_FLOW_PER_LEVEL = 5.0 										-- max output/input of a naval node is limited by previous base value + this define per its level
 
 NDefines.NSupply.RIVER_RAILWAY_LEVEL = 1											-- rivers will transfer in between nodes as if they were this level
 
+---
+
 NDefines.NSupply.FLOATING_HARBOR_BASE_SUPPLY = 30.0 								-- supply given by a floating harbor
 NDefines.NSupply.FLOATING_HARBOR_BASE_DURATION = 60 								-- duration of a full hp floating harbor
+
+NDefines.NSupply.NODE_INITIAL_SUPPLY_FLOW = 5										-- The range bonus added to a fully motorized hub. This supply is added on top of the XXX_INITIAL_SUPPLY_FLOW defined above.
+NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_BONUS = 1.75							-- The range bonus added to a fully motorized hub. This supply is added on top of the XXX_INITIAL_SUPPLY_FLOW defined above.
+NDefines.NSupply.NODE_STARTING_PENALTY_PER_PROVINCE = 1.16
+
 NDefines.NSupply.RAILWAY_BASE_FLOW = 5.0											-- how much base flow railway gives when a node connected to its capital/a naval node by a railway
 NDefines.NSupply.RAILWAY_FLOW_PER_LEVEL = 10.0 										-- how much additional flow a railway level gives
 NDefines.NSupply.RAILWAY_FLOW_PENALTY_PER_DAMAGED = 10.0 							-- penalty to flow per damaged railway
 
-NDefines.NSupply.NODE_INITIAL_SUPPLY_FLOW = 5
-NDefines.NSupply.NODE_STARTING_PENALTY_PER_PROVINCE = 1.16
+---
 
 NDefines.NSupply.SUPPLY_PATH_MAX_DISTANCE = 45										-- max time it can take
 NDefines.NSupply.RAILWAY_DISTANCE_FACTOR_FOR_REINFORCEMENT_SPEED = 0.05 			-- time factor for total railway distance
