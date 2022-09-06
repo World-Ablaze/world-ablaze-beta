@@ -279,12 +279,6 @@ NDefines.NMilitary.NAVAL_EQUIPMENT_RAMP_COST = 2
 NDefines.NMilitary.AIR_EQUIPMENT_BASE_COST = 4
 NDefines.NMilitary.AIR_EQUIPMENT_RAMP_COST = 2
 
-NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_ATTACK = 0    						-- attack combat penalty for attacker if out of supply
-NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_DEFEND = 0     						-- breakthrough combat penalty for attacker if out of supply
-
-NDefines.NMilitary.COMBAT_SUPPLY_LACK_DEFENDER_ATTACK = 0     						-- attack combat penalty for defender if out of supply
-NDefines.NMilitary.COMBAT_SUPPLY_LACK_DEFENDER_DEFEND = 0     						-- defend combat penalty for defender if out of supply
-
 NDefines.NMilitary.PLAN_SPREAD_ATTACK_WEIGHT = 3									-- The higher the value, the less it should crowd provinces with multiple attacks.
 
 NDefines.NMilitary.NON_CORE_SUPPLY_SPEED = -0.7				    					-- we are not running on our own VP supply so need to steal stuff along the way
@@ -626,6 +620,8 @@ NDefines.NSupply.LOCAL_SUPPLY_PER_AIR_MISSION = 0.01 								-- each assigned pl
 NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN = 15 									-- railways will be put on cooldown when they are captured by enemy and will not be usable during the cooldown
 NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN_CORE = 5
 NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN_CIVILWAR = 0
+
+NDefines.NSupply.SUPPLY_THRESHOLD_FOR_ARMY_ATTRITION = 0.4 							-- armies will only get attrition below this supply
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- AI
 
