@@ -57,7 +57,7 @@ VertexShader =
 		VS_OUTPUT main(const VS_INPUT v )
 		{
 			VS_OUTPUT Out;
-		   	Out.vPosition  = mul( WorldViewProjectionMatrix, v.vPosition );
+		   	Out.vPosition = mul( WorldViewProjectionMatrix, v.vPosition );
 			Out.vTexCoord0  = v.vTexCoord;
 
 			return Out;

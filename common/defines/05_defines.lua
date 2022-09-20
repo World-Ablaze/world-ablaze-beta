@@ -50,6 +50,10 @@ NDefines.NTrade.ANTI_MONOPOLY_TRADE_FACTOR = 0										-- This is added to the 
 
 NDefines.NCharacter.OFFICER_CORP_ADVISOR_ENTRIES_IN_MENU = { "high_command", "theorist", "army_theorist", "navy_theorist", "air_theorist", "army_chief", "air_chief", "navy_chief" }
 --NDefines.NCharacter.DEFAULT_PP_COST_FOR_POLITICAL_ADVISOR = 100
+NDefines.NCharacter.ADVISOR_PROMOTION_COST = 10	-- Cost to promote someone to advisor
+NDefines.NCharacter.SPECIALIST_ADVISOR_MIN_RANK = 2
+NDefines.NCharacter.EXPERT_ADVISOR_MIN_RANK = 5
+NDefines.NCharacter.GENIUS_ADVISOR_MIN_RANK = 7
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Country
 
@@ -807,7 +811,7 @@ NDefines.NAI.FUEL_CONSUMPTION_MULT_FOR_FUEL_SAVING_MODE = 4.0						-- fuel consu
 NDefines.NAI.FUEL_CONSUMPTION_MULT_REGULAR_FUEL_MODE = 4.0							-- fuel consumptions will be limited by this ratio in regular fuel mode
 NDefines.NAI.FUEL_CONSUMPTION_MULT_AGRESSIVE_FUEL_MODE = 10.0						-- fuel consumptions will be limited by this ratio in aggressive fuel usage mode
 NDefines.NAI.WANTED_MAX_FUEL_BUFFER_IN_DAYS_FOR_ARMY_MAX_CONSUMPTION = 60	  		-- AI will try to buffer at least this amount of days on max consumption, will trade if necesarry and will go into fuel saving mode/aggresive mode using this buffer
-NDefines.NAI.WANTED_MAX_FUEL_BUFFER_IN_DAYS_FOR_AIR_MAX_CONSUMPTION  = 60  			-- AI will try to buffer at least this amount of days on max consumption, will trade if necesarry and will go into fuel saving mode/aggresive mode using this buffer
+NDefines.NAI.WANTED_MAX_FUEL_BUFFER_IN_DAYS_FOR_AIR_MAX_CONSUMPTIOn = 60  			-- AI will try to buffer at least this amount of days on max consumption, will trade if necesarry and will go into fuel saving mode/aggresive mode using this buffer
 NDefines.NAI.WANTED_MAX_FUEL_BUFFER_IN_DAYS_FOR_NAVY_MAX_CONSUMPTION = 60 	 		-- AI will try to buffer at least this amount of days on max consumption, will trade if necesarry and will go into fuel saving mode/aggresive mode using this buffer
 NDefines.NAI.MIN_WANTED_MAX_FUEL = 5									   			-- minimum value for wanted fuel buffers for AI (in thousands)
 
