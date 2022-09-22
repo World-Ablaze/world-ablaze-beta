@@ -607,7 +607,7 @@ NDefines.NSupply.NODE_STARTING_PENALTY_PER_PROVINCE = 0.75
 
 NDefines.NSupply.RAILWAY_BASE_FLOW = 5.0											-- how much base flow railway gives when a node connected to its capital/a naval node by a railway
 NDefines.NSupply.RAILWAY_FLOW_PER_LEVEL = 10.0 										-- how much additional flow a railway level gives
-NDefines.NSupply.RAILWAY_FLOW_PENALTY_PER_DAMAGED = 10.0 							-- penalty to flow per damaged railway
+NDefines.NSupply.RAILWAY_FLOW_PENALTY_PER_DAMAGED = 8.0 							-- penalty to flow per damaged railway
 
 ---
 
