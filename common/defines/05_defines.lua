@@ -502,9 +502,9 @@ NDefines.NNavy.DAMAGE_PENALTY_ON_MINIMUM_POSITIONING = 0.75							-- damage pena
 NDefines.NNavy.SCREENING_EFFICIENCY_PENALTY_ON_MINIMUM_POSITIONING = 0.25  			-- screening efficiency (screen to capital ratio) at 0% positioning
 NDefines.NNavy.AA_EFFICIENCY_PENALTY_ON_MINIMUM_POSITIONING = 0  					-- AA penalty at 0% positioning
 
-NDefines.NNavy.SHORE_BOMBARDMENT_CAP = 0.40
-NDefines.NNavy.HEAVY_GUN_ATTACK_TO_SHORE_BOMBARDMENT = 0.05  						-- heavy gun attack value is divided by this value * 100 and added to shore bombardment modifier
-NDefines.NNavy.LIGHT_GUN_ATTACK_TO_SHORE_BOMBARDMENT = 0.04						    -- light gun attack value is divided by this value * 100 and added to shore bombardment modifier
+NDefines.NNavy.SHORE_BOMBARDMENT_CAP = 0.30
+NDefines.NNavy.HEAVY_GUN_ATTACK_TO_SHORE_BOMBARDMENT = 0.025  						-- heavy gun attack value is divided by this value * 100 and added to shore bombardment modifier
+NDefines.NNavy.LIGHT_GUN_ATTACK_TO_SHORE_BOMBARDMENT = 0.0005						    -- light gun attack value is divided by this value * 100 and added to shore bombardment modifier
 
 
 NDefines.NNavy.AGGRESSION_HEAVY_GUN_EFFICIENCY_ON_LIGHT_SHIPS = 0.5					-- ratio for scoring for different gun types against light ships
