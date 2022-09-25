@@ -226,7 +226,7 @@ NDefines.NMilitary.MIN_SUPPLY_CONSUMPTION = 0.01									-- minimum value of sup
 
 NDefines.NMilitary.EQUIPMENT_COMBAT_LOSS_FACTOR = 1.0	 	   						-- % of equipment lost to strength ratio in combat, so some % is returned if below 1
 
-NDefines.NMilitary.LAND_AIR_COMBAT_MAX_PLANES_PER_ENEMY_WIDTH = 1 				-- how many CAS/TAC can enter a combat depending on enemy width there
+--NDefines.NMilitary.LAND_AIR_COMBAT_MAX_PLANES_PER_ENEMY_WIDTH = 1 				-- how many CAS/TAC can enter a combat depending on enemy width there
 
 NDefines.NMilitary.PLANNING_DECAY = 0.001
 NDefines.NMilitary.PLAYER_ORDER_PLANNING_DECAY = 0.003								-- Amount of planning lost due to player manual order
