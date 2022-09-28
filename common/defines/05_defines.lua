@@ -372,7 +372,7 @@ NDefines.NMilitary.LAND_AIR_COMBAT_ORG_DAMAGE_MODIFIER = 0.025    					-- air gl
 
 NDefines.NAir.LEND_LEASED_EQUIPMENT_EXPERIENCE_GAIN = 0.0							-- Value used for equipment
 
-NDefines.NAir.AIR_WING_XP_LEVELS = { 36, 72, 108, 144, 180, 216, 252, 288, 324, 360, 396, 432, 468, 504, 540, 576, 612, 648, 684, 720, 756, 792, 828, 864, 900 }		--Experience needed to progress to the next level
+--NDefines.NAir.AIR_WING_XP_LEVELS = { 36, 72, 108, 144, 180, 216, 252, 288, 324, 360, 396, 432, 468, 504, 540, 576, 612, 648, 684, 720, 756, 792, 828, 864, 900 }		--Experience needed to progress to the next level
 
 NDefines.NAir.CAPACITY_PENALTY = 2													-- scales penalty of having overcrowded bases.
 NDefines.NAir.AIR_WING_MAX_SIZE = 200 												-- Max amount of airplanes in wing
