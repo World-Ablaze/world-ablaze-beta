@@ -372,6 +372,8 @@ NDefines.NMilitary.LAND_AIR_COMBAT_ORG_DAMAGE_MODIFIER = 0.025    					-- air gl
 
 NDefines.NAir.LEND_LEASED_EQUIPMENT_EXPERIENCE_GAIN = 0.0							-- Value used for equipment
 
+NDefines.NAir.AIR_WING_XP_LEVELS = { 36, 72, 108, 144, 180, 216, 252, 288, 324, 360, 396, 432, 468, 504, 540, 576, 612, 648, 684, 720, 756, 792, 828, 864, 900 }		--Experience needed to progress to the next level
+
 NDefines.NAir.CAPACITY_PENALTY = 2													-- scales penalty of having overcrowded bases.
 NDefines.NAir.AIR_WING_MAX_SIZE = 200 												-- Max amount of airplanes in wing
 NDefines.NAir.MISSION_EFFICIENCY_MULT_AT_LACK_OF_FUEL = 0.05		 				-- multiplier for mission efficiency when a base lacks fuel
@@ -413,22 +415,23 @@ NDefines.NAir.BOMBING_STATE_BUILD_PRIO_SCALE = 2									-- Scale of the selecte
 NDefines.NAir.ANTI_AIR_PLANE_DAMAGE_FACTOR = 0.3									-- Anti Air Gun Damage factor
 
 NDefines.NAir.MISSION_COMMAND_POWER_COSTS = {  										-- command power cost per plane to create a mission
-		0.0, -- AIR_SUPERIORITY
-		0.0, -- CAS
-		0.0, -- INTERCEPTION
-		0.0, -- STRATEGIC_BOMBER
-		0.0, -- NAVAL_BOMBER
-		0.0, -- DROP_NUKE
-		0.0, -- PARADROP
-		0.0, -- NAVAL_KAMIKAZE
-        0.0, -- PORT_STRIKE
-		0.0, -- ATTACK_LOGISTICS
-		0.1, -- AIR_SUPPLY
-		0.0, -- TRAINING
-		0.0, -- NAVAL_MINES_PLANTING
-		0.0, -- NAVAL_MINES_SWEEPING
-		0.0, -- MISSION_RECON
-	}
+	0.0, -- AIR_SUPERIORITY
+	0.0, -- CAS
+	0.0, -- INTERCEPTION
+	0.0, -- STRATEGIC_BOMBER
+	0.0, -- NAVAL_BOMBER
+	0.0, -- DROP_NUKE
+	0.0, -- PARADROP
+	0.0, -- NAVAL_KAMIKAZE
+	0.0, -- PORT_STRIKE
+	0.0, -- ATTACK_LOGISTICS
+	0.1, -- AIR_SUPPLY
+	0.0, -- TRAINING
+	0.0, -- NAVAL_MINES_PLANTING
+	0.0, -- NAVAL_MINES_SWEEPING
+	0.0, -- RECON
+	0.0, -- NAVAL_PATROL
+}
 
 NDefines.NAir.NAVAL_STRIKE_CARRIER_MULTIPLIER = 10.0							    -- damage bonus when planes are in naval combat where their carrier is present (and can thus sortie faster and more effectively)
 NDefines.NAir.NAVAL_STRIKE_DAMAGE_TO_ORG = 0.5										-- Balancing value to convert damage ( naval_strike_attack * hits ) to Organisation reduction.
