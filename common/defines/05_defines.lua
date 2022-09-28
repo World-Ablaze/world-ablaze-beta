@@ -430,6 +430,8 @@ NDefines.NAir.NAVAL_STRIKE_CARRIER_MULTIPLIER = 10.0							    -- damage bonus w
 NDefines.NAir.NAVAL_STRIKE_DAMAGE_TO_ORG = 0.5										-- Balancing value to convert damage ( naval_strike_attack * hits ) to Organisation reduction.
 
 NDefines.NAir.AIR_WING_COUNTRY_XP_FROM_TRAINING_FACTOR = 0.03						--Factor on country Air XP gained from wing training
+NDefines.NAir.INTERCEPTION_DISTANCE_SCALE = 50 										--At this many pixels of path length, full interception efficiency is applied to air missions. Lerp from 0.
+NDefines.NAir.INTERCEPTION_DAMAGE_SCALE = 1											--Multiply the interception damage with this value. Works as a cap when interception distance is at maximum.
 
 
 
