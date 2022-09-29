@@ -33,6 +33,9 @@ NDefines.NDiplomacy.BASE_SEND_ATTACHE_COST = 50										-- Political power cost
 
 
 NDefines.NPolitics.ARMY_LEADER_COST = 2												-- cost for recruiting new leaders, 'this value' * number_of_existing_leaders_of_type
+NDefines.NPolitics.NAVY_LEADER_COST = 2												-- command power cost for recruiting new leaders, 'this value' * number_of_existing_leaders_of_type
+NDefines.NPolitics.ARMY_LEADER_MAX_COST = 80										-- max cost BEFORE modifiers
+NDefines.NPolitics.NAVY_LEADER_MAX_COST = 80										-- max cost BEFORE modifiers
 
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Trade
@@ -370,6 +373,25 @@ NDefines.NMilitary.NON_CORE_SUPPLY_AIR_SPEED = -0.4			   						-- we are not run
 
 NDefines.NMilitary.LAND_AIR_COMBAT_STR_DAMAGE_MODIFIER = 0.015    					-- air global strength damage modifier from CAS
 NDefines.NMilitary.LAND_AIR_COMBAT_ORG_DAMAGE_MODIFIER = 0.025    					-- air global org damage modifier from CAS
+
+NDefines.NMilitary.UNIT_LEADER_INITIAL_TRAIT_SLOT = { 								-- trait slot for 0 level leader
+	1.0, -- field marshal
+	0.0, -- corps commander
+	1.0, -- navy general
+	0.0, -- operative
+}
+NDefines.NMilitary.UNIT_LEADER_TRAIT_SLOT_PER_LEVEL = { 							-- num extra traits on each level
+	0.5, -- field marshal
+	1.0, -- corps commander
+	0.5, -- navy general
+	1.0, -- operative
+}
+NDefines.NMilitary.UNIT_LEADER_USE_NONLINEAR_XP_GAIN = false     				    -- Whether unit leader XP gain is scaled by 1/<nr_of_traits>
+NDefines.NMilitary.DIVISIONAL_COMMANDER_TRAIT_XP_REQUIREMENT = 500.0				--Get a trait if any valid options & xp gained >= this
+NDefines.NMilitary.FIELD_OFFICER_PROMOTION_PENALTY = 0								--Amount of division experience lost when promoting a commander (reduced by modifiers)
+--NDefines.NMilitary.GENERATE_AI_DIV_COMMAND_HISTORY_ENTRIES = false				--Should we generate history entries for the AI (may cause savegame bloat)
+NDefines.NMilitary.NUM_DAYS_FOR_OPERATION_ENTRY = 30								--Number of days that a unit must have been on a particular active order instance to receive a history entry.
+
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Air
 
