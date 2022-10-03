@@ -54,7 +54,6 @@ NDefines.NCharacter.OFFICER_CORP_ADVISOR_ENTRIES_IN_MENU = { "high_command", "th
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Country
 
 
-NDefines.NCountry.GIE_CAPITULATION_WARSCORE_LEGITIMACY_FACTOR = 4.0 				--Multiplies accumulated warscore with this factor for part of starting legitimacy.
 
 NDefines.NCountry.SUPPLY_FROM_DAMAGED_INFRA = 0.01              					-- damaged infrastructure counts as this in supply calcs
 NDefines.NCountry.SUPPLY_PATH_MAX_DISTANCE = 15		    							-- When supply route reach more than X nodes the manpower+equipment delivery speed reach 100% penalty.
@@ -81,8 +80,11 @@ NDefines.NCountry.MAJOR_MIN_FACTORIES = 70											-- need at least these many
 NDefines.NCountry.BASE_FUEL_GAIN_PER_OIL = 1.1										-- base amount of fuel gained hourly per excess oil
 NDefines.NCountry.STARTING_FUEL_RATIO = 0.8											-- starting fuel ratio compared to max fuel for countries
 
+NDefines.NCountry.GIE_CAPITULATION_WARSCORE_LEGITIMACY_FACTOR = 4.0 				--Multiplies accumulated warscore with this factor for part of starting legitimacy.
 NDefines.NCountry.GIE_EXILE_AIR_START_EXPERIENCE = 300	 							--Starting experience for exile airwings
-NDefines.NCountry.GIE_ESCAPING_DIVISIONS_XP_BOOST = 0.6
+NDefines.NCountry.GIE_ESCAPING_DIVISIONS_XP_BOOST = 50.0
+NDefines.NCountry.GIE_ESCAPING_DIVISIONS_EQUIPMENT_RATIO = 0.8 						-- Base equipment ratio on escaped troops.
+NDefines.NCountry.GIE_ESCAPING_DIVISIONS_AMOUNT_RATIO = 0.005 						-- Ratio on amount of divisions that escapes. Scales with starting legitimacy
 
 NDefines.NCountry.VICTORY_POINTS_IMPORTANCE_FACTOR = 50.0							-- State victory points importance factor for AI and calculations
 NDefines.NCountry.ATTACHE_XP_SHARE = 0.15											-- Country received xp from attaches
