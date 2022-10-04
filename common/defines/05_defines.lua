@@ -390,7 +390,7 @@ NDefines.NAir.AIR_WING_MAX_STATS_AGILITY = 10000
 NDefines.NAir.AIR_WING_MAX_STATS_SPEED = 5000
 NDefines.NAir.AIR_WING_MAX_STATS_BOMBING = 50000
 NDefines.NAir.COMBAT_DAMAGE_SCALE = 0.75											-- Higher value = more shot down planes
-NDefines.Nair.DETECT_CHANCE_FROM_RADARS = 0.75, 									-- How much the radars in area affects detection chance.
+NDefines.Nair.DETECT_CHANCE_FROM_RADARS = 0.75 									-- How much the radars in area affects detection chance.
 
 NDefines.NAir.COMBAT_BETTER_AGILITY_DAMAGE_REDUCTION = 0.85							-- How much the better agility (then opponent's) can reduce their damage to us.
 NDefines.NAir.BIGGEST_AGILITY_FACTOR_DIFF = 2.0										-- biggest factor difference in agility for doing damage (caps to this)
