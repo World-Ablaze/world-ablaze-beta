@@ -210,8 +210,9 @@ NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_OCCUPIED_CAPITULATED = 5.0 			--
 
 
 NDefines.NRailwayGun.RAILWAY_GUN_RANGE = 15											-- The range of railway guns in pixels
-NDefines.NRailwayGun.ATTACK_TO_ENTRENCHMENT_MODIFIER_FACTOR = 0.4					-- Entrenchment modifier is calculated by multiplying railway gun attack value with this and dividing by 100
-NDefines.NRailwayGun.ATTACK_TO_BOMBARDMENT_MODIFIER_FACTOR = 0.2					-- Bombardment modifier is calculated by multiplying railway gun attack value with this and dividing by 100
+NDefines.NRailwayGun.ATTACK_TO_FORTS_MODIFIER_FACTOR = 1.0							-- Forts modifier is calculated by multiplying railway gun attack value with this and dividing by 100
+NDefines.NRailwayGun.ATTACK_TO_ENTRENCHMENT_MODIFIER_FACTOR = 1.0					-- Entrenchment modifier is calculated by multiplying railway gun attack value with this and dividing by 100
+NDefines.NRailwayGun.ATTACK_TO_BOMBARDMENT_MODIFIER_FACTOR = 0					-- Bombardment modifier is calculated by multiplying railway gun attack value with this and dividing by 100
 
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Technology
@@ -414,7 +415,8 @@ NDefines.NAir.AIR_WING_MAX_STATS_DEFENCE = 10000
 NDefines.NAir.AIR_WING_MAX_STATS_AGILITY = 10000
 NDefines.NAir.AIR_WING_MAX_STATS_SPEED = 5000
 NDefines.NAir.AIR_WING_MAX_STATS_BOMBING = 50000
-NDefines.NAir.COMBAT_DAMAGE_SCALE = 0.2												-- Higher value = more shot down planes
+NDefines.NAir.COMBAT_DAMAGE_SCALE = 0.75											-- Higher value = more shot down planes
+NDefines.NAir.DETECT_CHANCE_FROM_RADARS = 0.75	 									-- How much the radars in area affects detection chance.
 
 NDefines.NAir.COMBAT_BETTER_AGILITY_DAMAGE_REDUCTION = 0.85							-- How much the better agility (then opponent's) can reduce their damage to us.
 NDefines.NAir.BIGGEST_AGILITY_FACTOR_DIFF = 2.0										-- biggest factor difference in agility for doing damage (caps to this)
