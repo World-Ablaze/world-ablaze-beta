@@ -1609,6 +1609,10 @@ focus_tree = {
 
 		available = {
 			OR = {
+				has_war_with = USA
+				has_war_with = JAP
+			}
+			OR = {
 				is_in_faction_with = NZL
 				NZL = { has_government = ROOT }
 			}
@@ -1762,6 +1766,10 @@ focus_tree = {
 
 		available = {
 			OR = {
+				has_war_with = USA
+				has_war_with = JAP
+			}
+			OR = {
 				is_in_faction_with = MAL
 				is_in_faction_with = INS
 			}
@@ -1871,6 +1879,7 @@ focus_tree = {
 
 	focus = {
 		id = AST_adopt_westminster
+		mutually_exclusive = { focus = AST_never_another_gallipoli }
 		icon = GFX_goal_ENG_adopt_westminster
 		x = 22
 		y = 0
@@ -3834,6 +3843,12 @@ focus_tree = {
 					}
 				}
 			}
+			add_doctrine_cost_reduction = {
+				name = AST_first_armoured_division
+				cost_reduction = 0.99
+				uses = 3
+				category = cat_mobile_warfare
+			}
 		}
 	}
 
@@ -5293,6 +5308,1551 @@ focus_tree = {
 				cost_reduction = 0.99
 				uses = 2
 				category = cat_battlefleet_convoy_support
+			}
+		}
+	}
+
+	####################### ALT HISTORY
+
+	############################
+	#### LEAVE COMMONWEALTH ####
+	############################
+
+	focus = {
+		id = AST_never_another_gallipoli
+		icon = GFX_focus_AST_never_gallipoli
+		mutually_exclusive = { focus = AST_adopt_westminster }
+		x = 33
+		y = 0
+
+		allow_branch = {
+			always = no
+		}
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 0.5
+			modifier = {
+				OR = {
+						fascism > 0.25
+						communism > 0.25
+					}
+				factor = 20
+			}
+			modifier = {
+				OR = {
+						fascism > 0.45
+						communism > 0.45
+					}
+				factor = 30
+			}
+			modifier = {
+				NOT = { ENG = { has_government = democratic } }
+				factor = 5
+			}
+		}
+
+		available = {
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+			NOT = { is_subject_of = ENG }
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = yes
+
+		completion_reward = {
+			set_rule = { can_decline_call_to_war = yes }
+			add_autonomy_ratio = {
+				value = 0.2
+				localization = AST_never_another_gallipoli
+			}
+			hidden_effect = {
+				news_event = { id = news.253 hours = 5 }
+			}
+		}
+	}
+
+	############################
+	#### GO WITH US SECTION ####
+	############################
+
+	focus = {
+		id = AST_protect_the_homeland
+		icon = GFX_goal_generic_fortify_city
+		prerequisite = { focus = AST_never_another_gallipoli }
+		mutually_exclusive = { focus = AST_abandon_the_westminster_system }
+		x = -3
+		y = 1
+		relative_position_id = AST_never_another_gallipoli
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		completion_reward = {
+			custom_effect_tooltip = available_political_advisor
+			show_ideas_tooltip = AST_arthur_calwell
+			custom_effect_tooltip = AST_homeland_defense_tt
+			hidden_effect = {
+				every_owned_state =	{
+					limit = {
+						is_controlled_by = ROOT
+						is_on_continent = australia
+						is_in_home_area = yes
+					}
+					#Fortify entire coastline
+					add_building_construction = {
+						type = bunker
+						province = {
+							all_provinces = yes
+							limit_to_coastal = yes
+						}
+						level = 2
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = coastal_bunker
+						province = {
+							all_provinces = yes
+							limit_to_coastal = yes
+						}
+						level = 2
+						instant_build = yes
+					}
+
+					#Extra fort on naval bases
+					add_building_construction = {
+						type = bunker
+						province = {
+							all_provinces = yes
+							limit_to_naval_base = yes
+						}
+						level = 2
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = coastal_bunker
+						province = {
+							all_provinces = yes
+							limit_to_naval_base = yes
+						}
+						level = 2
+						instant_build = yes
+					}
+				}
+			}
+		}
+	}
+
+	focus = {
+		id = AST_the_swpa_menace
+		icon = GFX_goal_generic_trade
+		prerequisite = { focus = AST_protect_the_homeland }
+		x = -1
+		y = 1
+		relative_position_id = AST_protect_the_homeland
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		completion_reward = {
+			JAP = {
+				add_opinion_modifier = {
+					target = ROOT
+					modifier = AST_the_swpa_menace
+				}
+			}
+			USA = {
+				add_opinion_modifier = {
+					target = JAP
+					modifier = AST_the_swpa_menace_boycot_JAP
+				}
+				add_opinion_modifier = {
+					target = JAP
+					modifier = AST_the_swpa_menace
+				}
+			}
+			add_opinion_modifier = {
+				target = JAP
+				modifier = AST_the_swpa_menace_boycot_JAP
+			}
+			add_opinion_modifier = {
+				target = JAP
+				modifier = AST_the_swpa_menace
+			}
+		}
+	}
+
+	focus = {
+		id = AST_sever_ties_with_uk
+		icon = GFX_goal_tfv_sever_ties_with_uk
+		prerequisite = { focus = AST_protect_the_homeland }
+		x = 1
+		y = 1
+		relative_position_id = AST_protect_the_homeland
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			if = {
+				limit = { NOT = { has_government = fascism } }
+				has_autonomy_state = autonomy_dominion
+			}
+			if = {
+				limit = { has_government = fascism }
+				has_autonomy_state = autonomy_satellite
+			}
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+			has_war_with = ENG
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = yes
+
+		completion_reward = {
+			OVERLORD = {
+				set_autonomy = {
+					target = AST
+					autonomy_state = autonomy_free
+				}
+			}
+			ENG = { remove_from_faction = ROOT }
+			custom_effect_tooltip = available_political_advisor
+			show_ideas_tooltip = AST_arthur_calwell
+			hidden_effect = {
+				news_event = { id = news.286 hours = 6}
+			}
+		}
+	}
+
+	focus = {
+		id = AST_woo_usa
+		icon = GFX_goal_generic_improve_relations
+		prerequisite = { focus = AST_the_swpa_menace }
+		prerequisite = { focus = AST_sever_ties_with_uk }
+		x = -1
+		y = 2
+		relative_position_id = AST_protect_the_homeland
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 1
+			modifier = {
+				is_in_faction = no
+				factor = 10 #we're all alone here!
+			}
+		}
+
+		available = {
+			NOT = {
+				has_war_with = USA
+			}
+			USA = {
+				has_government = ROOT
+				is_puppet = no
+			}
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+			OR = {
+				USA = { exists = no }
+				USA = {
+					AND = {
+						is_in_faction = yes
+						NOT = {
+							is_in_faction_with = AST
+						}
+					}
+				}
+			}
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = yes
+
+		completion_reward = {
+			USA = {
+				add_opinion_modifier = {
+					target = ROOT
+					modifier = AST_woo_usa
+				}
+			}
+			add_opinion_modifier = {
+				target = USA
+				modifier = AST_woo_usa
+			}
+		}
+	}
+
+	focus = {
+		id = AST_protect_the_dutch_colonies
+		icon = GFX_goal_generic_defence
+		prerequisite = { focus = AST_sever_ties_with_uk }
+		x = 1
+		y = 2
+		relative_position_id = AST_protect_the_homeland
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			NOT = { has_war_with = HOL }
+			HOL = { has_capitulated = yes }
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+			INS = {
+				OR = {
+					NOT = { is_puppet_of = HOL }
+					exists = no
+				}
+			}
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		completion_reward = {
+			HOL = {
+				country_event = { id = tfv_australia.10 }
+			}
+		}
+	}
+
+	focus = {
+		id = AST_the_south_west_pacific_initiative
+		icon = GFX_goal_anschluss
+		prerequisite = { focus = AST_woo_usa focus = AST_protect_the_dutch_colonies }
+		x = 0
+		y = 3
+		relative_position_id = AST_protect_the_homeland
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 2
+		}
+
+		available = {
+			is_subject = no
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		completion_reward = {
+			set_rule = { can_create_factions = yes }
+			create_faction = south_west_pacific_initiative
+			if = {
+				limit = {
+					has_completed_focus = AST_protect_the_dutch_colonies
+					INS = { is_puppet_of = AST }
+				}
+				set_country_flag = INS_is_a_puppet
+			}
+			if = {
+				limit = {
+					has_completed_focus = AST_woo_usa
+					USA = {
+						exists = yes
+						has_capitulated = no
+						is_puppet = no
+						has_government = ROOT
+						OR = {
+							is_in_faction = no
+							has_war = no
+						}
+					}
+				}
+				USA = {
+					country_event = { id = tfv_australia.32 } #Ask USA to join faction
+				}
+				else = {
+					country_event = { id = tfv_australia.31 } #Start faction without asking USA
+				}
+			}
+		}
+	}
+
+	focus = {
+		id = AST_usa_research_cooperation
+		icon = GFX_goal_generic_scientific_exchange
+		prerequisite = { focus = AST_the_south_west_pacific_initiative }
+		x = 0
+		y = 4
+		relative_position_id = AST_protect_the_homeland
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 4
+		}
+
+		available = {
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = yes
+
+		completion_reward = {
+		custom_effect_tooltip = AST_swpi_research_tt
+			if = {
+				limit = { AST = { is_in_faction_with = USA } }
+				add_to_tech_sharing_group = us_research
+				USA = { add_to_tech_sharing_group = us_research }
+				else = {
+					AST = { add_to_tech_sharing_group = swpi_research }
+					if = {
+						limit = { all_country = { is_in_faction_with = AST } }
+						add_to_tech_sharing_group = swpi_research
+					}
+				}
+			}
+		}
+	}
+
+	focus = {
+		id = AST_preemptive_intervention
+		icon = GFX_focus_AST_war_japan
+		prerequisite = { focus = AST_usa_research_cooperation }
+		x = 0
+		y = 5
+		relative_position_id = AST_protect_the_homeland
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			NOT = {
+				JAP = { has_government = ROOT }
+			}
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		completion_reward = {
+			create_wargoal = {
+				type = topple_government
+				target = JAP
+			}
+		}
+	}
+
+	############################
+	##### FASCIST/COMMUNIST ####
+	############################
+
+	focus = {
+		id = AST_abandon_the_westminster_system
+		icon = GFX_goal_generic_propaganda
+		prerequisite = { focus = AST_never_another_gallipoli }
+		mutually_exclusive = { focus = AST_protect_the_homeland }
+		x = 3
+		y = 1
+		relative_position_id = AST_never_another_gallipoli
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 0.5
+			modifier = {
+				OR = {
+					communism > 0.2
+					fascism > 0.2
+					}
+				factor = 20
+			}
+			modifier = {
+				OR = {
+					communism > 0.4
+					fascism > 0.4
+					}
+				factor = 20
+			}
+		}
+
+		available = {
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = yes
+
+		complete_tooltip = {
+
+		}
+
+		completion_reward = {
+			add_popularity = {
+				ideology = fascism
+				popularity = 0.05
+			}
+			add_popularity = {
+				ideology = communism
+				popularity = 0.05
+			}
+			add_timed_idea = { days = 1095 idea = AST_abandon_the_westminster_system }
+		}
+	}
+
+	############################
+	#### GO FASCIST SECTION ####
+	############################
+
+	focus = {
+		id = AST_support_the_centre_party
+		icon = GFX_goal_support_fascism
+		prerequisite = { focus = AST_abandon_the_westminster_system }
+		mutually_exclusive = { focus = AST_empower_the_workers }
+		x = -2
+		y = 1
+		relative_position_id = AST_abandon_the_westminster_system
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 0.5
+			modifier = {
+				NOT = { JAP = { has_government = fascism } }
+				factor = 0 #let's not go fascist if Japan isn't
+			}
+			modifier = {
+				fascism > 0.3
+				factor = 20
+			}
+		}
+
+		available = {
+			compare_autonomy_progress_ratio > 0.55
+			if = {
+				limit = { not = { has_government = fascism } }
+				compare_autonomy_state > autonomy_colony
+			}
+			if = {
+				limit = { has_government = fascism }
+				compare_autonomy_state > autonomy_reichsprotectorate
+			}
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = yes
+
+		complete_tooltip = {
+
+		}
+
+		completion_reward = {
+			swap_ideas = {
+				remove_idea = AST_abandon_the_westminster_system
+				add_idea = AST_abandon_the_westminster_system_fascism
+			}
+			custom_effect_tooltip = available_political_advisor
+			show_ideas_tooltip = AST_generic_fascist_demagogue
+		}
+	}
+
+	focus = {
+		id = AST_supply_indonesian_nationalists
+		icon = GFX_goal_generic_small_arms
+		prerequisite = { focus = AST_support_the_centre_party }
+		x = -1
+		y = 1
+		relative_position_id = AST_support_the_centre_party
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			country_exists = INS
+			INS = { is_subject = yes }
+			ROOT = {
+				fascism > 0.15
+			}
+			has_equipment = {
+				infantry_equipment > 199
+			}
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		select_effect = {
+			add_equipment_to_stockpile = {
+				type = infantry_equipment_1
+				amount = -200
+			}
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = no
+		continue_if_invalid = yes
+		available_if_capitulated = no
+
+		complete_tooltip = {
+
+		}
+
+		completion_reward = {
+			#Boosts fascism in Indonesia
+			INS = {
+				add_timed_idea = { days = 730 idea = AST_indonesian_nationalists }
+			}
+			hidden_effect = {
+				INS = { country_event = { id = tfv_australia.95 } }
+				HOL = { country_event = { id = tfv_australia.95 } }
+			}
+		}
+	}
+
+	focus = {
+		id = AST_support_indonesian_uprising
+		icon = GFX_goal_generic_demand_territory
+		prerequisite = { focus = AST_supply_indonesian_nationalists }
+		x = -1
+		y = 2
+		relative_position_id = AST_support_the_centre_party
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			country_exists = INS
+			INS = { is_subject = yes }
+			OR = {
+				is_subject = no
+				AND = {
+					compare_autonomy_progress_ratio > 0.75
+					if = {
+						limit = { not = { has_government = fascism } }
+						has_autonomy_state = autonomy_dominion
+					}
+					if = {
+						limit = { has_government = fascism }
+						has_autonomy_state = autonomy_satellite
+					}
+				}
+			}
+			fascism > 0.3
+			INS = {
+				fascism > 0.3
+			}
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		complete_tooltip = {
+
+		}
+
+		completion_reward = {
+			if = {
+				limit = {
+					INS = { has_civil_war = no }
+				}
+				INS = { country_event = { id = tfv_australia.96 } }
+			}
+			add_ideas = AST_support_indonesian_uprising
+		}
+	}
+
+	focus = {
+		id = AST_demand_new_zealand
+		icon = GFX_goal_generic_occupy_states_ongoing_war
+		prerequisite = { focus = AST_support_the_centre_party }
+		x = 1
+		y = 1
+		relative_position_id = AST_support_the_centre_party
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 1.5
+		}
+
+		available = {
+			has_government = fascism
+			NOT = { has_war_together_with = ENG }
+			NOT = { is_in_faction_with = NZL }
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		complete_tooltip = {
+
+		}
+
+		completion_reward = {
+			if = {
+				limit = { is_in_faction_with = ENG }
+				ENG = { remove_from_faction = ROOT }
+			}
+			OVERLORD = {
+				set_autonomy = {
+					target = AST
+					autonomy_state = autonomy_free
+				}
+			}
+			NZL = {
+				country_event = { id = tfv_australia.20 }
+			}
+		}
+	}
+
+	focus = {
+		id = AST_protect_the_south_west_pacific
+		icon = GFX_goal_generic_defence
+		prerequisite = { focus = AST_support_indonesian_uprising }
+		x = -1
+		y = 3
+		relative_position_id = AST_support_the_centre_party
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			if = {
+				limit = { not = { has_government = fascism } }
+				has_autonomy_state = autonomy_dominion
+			}
+			if = {
+				limit = { has_government = fascism }
+				has_autonomy_state = autonomy_satellite
+			}
+			MAL = {
+				is_puppet_of = ENG
+			}
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+			is_subject = no
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		complete_tooltip = {
+
+		}
+
+		completion_reward = {
+			ENG = {
+				country_event = { id = tfv_australia.70 }
+			}
+		}
+	}
+
+	focus = {
+		id = AST_a_deal_with_japan
+		icon = GFX_goal_generic_dangerous_deal
+		prerequisite = { focus = AST_protect_the_south_west_pacific }
+		mutually_exclusive = { focus = AST_our_own_empire }
+		x = -1
+		y = 4
+		relative_position_id = AST_support_the_centre_party
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 8
+			modifier = {
+				JAP = { has_capitulated = yes }
+				factor = 0
+				}
+		}
+
+		available = {
+			OR = {
+				is_subject = no
+				AND = {
+					if = {
+						limit = { not = { has_government = fascism } }
+						has_autonomy_state = autonomy_dominion
+					}
+					if = {
+						limit = { has_government = fascism }
+						has_autonomy_state = autonomy_satellite
+					}
+					compare_autonomy_progress_ratio > 0.8
+				}
+			}
+			NOT = { has_war_together_with = ENG }
+			JAP = {
+				has_government = ROOT
+				OR = {
+					is_faction_leader = yes
+					is_in_faction = no
+				}
+			}
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = yes
+
+		complete_tooltip = {
+
+		}
+
+		completion_reward = {
+			custom_effect_tooltip = AST_deal_with_japan_tt
+			if = {
+				limit = { is_in_faction_with = ENG }
+				ENG = { remove_from_faction = ROOT }
+			}
+			OVERLORD = {
+				set_autonomy = {
+					target = AST
+					autonomy_state = autonomy_free
+				}
+			}
+			set_rule = { can_create_factions = yes }
+			JAP = {
+				country_event = { id = tfv_australia.80 }
+			}
+		}
+	}
+
+	focus = {
+		id = AST_our_own_empire
+		icon = GFX_goal_generic_secret_weapon
+		prerequisite = { focus = AST_protect_the_south_west_pacific focus = AST_demand_new_zealand }
+		mutually_exclusive = { focus = AST_a_deal_with_japan }
+		x = 1
+		y = 4
+		relative_position_id = AST_support_the_centre_party
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 4
+			modifier = {
+				ENG = { has_capitulated = yes }
+				factor = 10
+			}
+			modifier = { #power vacuum in SouthPac
+				JAP = { has_capitulated = yes }
+				factor = 10
+			}
+		}
+
+		available = {
+			OR = {
+				is_subject = no
+				AND = {
+					if = {
+						limit = { not = { has_government = fascism } }
+						has_autonomy_state = autonomy_dominion
+					}
+					if = {
+						limit = { has_government = fascism }
+						has_autonomy_state = autonomy_satellite
+					}
+					compare_autonomy_progress_ratio > 0.8
+				}
+			}
+			NOT = { has_war_together_with = ENG }
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		complete_tooltip = {
+
+		}
+
+		completion_reward = {
+			ENG = { remove_from_faction = ROOT }
+			OVERLORD = {
+				set_autonomy = {
+					target = AST
+					autonomy_state = autonomy_free
+				}
+			}
+			set_rule = { can_create_factions = yes }
+		}
+	}
+
+	focus = {
+		id = AST_japan_tech_sharing
+		icon = GFX_goal_tfv_generic_tech_sharing
+		prerequisite = { focus = AST_a_deal_with_japan }
+		x = -1
+		y = 5
+		relative_position_id = AST_support_the_centre_party
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 3
+		}
+
+		available = {
+			is_in_faction_with = JAP
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = yes
+
+		complete_tooltip = {
+
+		}
+
+		completion_reward = {
+			add_to_tech_sharing_group = japanese_research
+			JAP = { add_to_tech_sharing_group = japanese_research }
+		}
+	}
+
+	focus = {
+		id = AST_war_on_japan
+		icon = GFX_goal_generic_major_war
+		prerequisite = { focus = AST_our_own_empire }
+		x = 1
+		y = 5
+		relative_position_id = AST_support_the_centre_party
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			NOT = { is_in_faction_with = JAP }
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		completion_reward = {
+			create_wargoal = {
+				type = annex_everything
+				target = JAP
+			}
+		}
+	}
+
+
+	############################
+	### GO COMMUNIST SECTION ###
+	############################
+
+	focus = {
+		id = AST_empower_the_workers
+		icon = GFX_goal_support_communism
+		prerequisite = { focus = AST_abandon_the_westminster_system }
+		mutually_exclusive = { focus = AST_support_the_centre_party }
+		x = 2
+		y = 1
+		relative_position_id = AST_abandon_the_westminster_system
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 0.5
+			modifier = {
+				communism > 0.3
+				factor = 10
+			}
+		}
+
+		available = {
+			compare_autonomy_progress_ratio > 0.55
+			if = {
+				limit = { not = { has_government = fascism } }
+				compare_autonomy_state > autonomy_colony
+			}
+			if = {
+				limit = { has_government = fascism }
+				compare_autonomy_state > autonomy_reichsprotectorate
+			}
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = yes
+
+		completion_reward = {
+			swap_ideas = {
+				remove_idea = AST_abandon_the_westminster_system
+				add_idea = AST_abandon_the_westminster_system_communism
+			}
+			custom_effect_tooltip = available_political_advisor
+			show_ideas_tooltip = AST_lance_sharkey
+		}
+	}
+
+	focus = {
+		id = AST_delegation_to_china
+		icon = GFX_goal_generic_improve_relations
+		prerequisite = { focus = AST_empower_the_workers }
+		x = 0
+		y = 1
+		relative_position_id = AST_empower_the_workers
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			ROOT = {
+				communism > 0.3
+			}
+			event_target:WTT_communist_china = { exists = yes }
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = yes
+
+		completion_reward = {
+			event_target:WTT_communist_china = {
+				add_opinion_modifier = {
+					target = ROOT
+					modifier = AST_delegation_to_china
+				}
+			}
+			add_opinion_modifier = {
+				target = event_target:WTT_communist_china
+				modifier = AST_delegation_to_china
+			}
+			event_target:WTT_communist_china = {
+				ROOT = {
+					add_ai_strategy = {
+						type = support
+						id = PREV
+						value = 100
+					}
+					add_ai_strategy = {
+						type = protect
+						id = PREV
+						value = 100
+					}
+				}
+			}
+		}
+	}
+
+	focus = {
+		id = AST_commitment_to_the_cause
+		icon = GFX_goal_generic_dangerous_deal
+		prerequisite = { focus = AST_delegation_to_china }
+		x = 0
+		y = 2
+		relative_position_id = AST_empower_the_workers
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			NOT = { has_war_together_with = ENG }
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		completion_reward = {
+			ENG = { remove_from_faction = ROOT }
+			OVERLORD = {
+				set_autonomy = {
+					target = AST
+					autonomy_state = autonomy_free
+				}
+			}
+			if = {
+				limit = {
+					NOT = { has_war_with = SOV }
+				}
+				SOV = {
+					add_opinion_modifier = {
+						target = ROOT
+						modifier = AST_commitment_to_the_cause
+					}
+				}
+			}
+			if = {
+				limit = {
+					NOT = { has_war_with = PRC }
+				}
+				add_opinion_modifier = {
+					target = event_target:WTT_communist_china
+					modifier = AST_commitment_to_the_cause
+				}
+			}
+			every_other_country = {
+				limit = {
+					has_government = communism
+				}
+				ROOT = {
+					add_ai_strategy = {
+						type = support
+						id = PREV
+						value = 100
+					}
+				}
+			}
+			event_target:WTT_communist_china = {
+				ROOT = {
+					add_ai_strategy = {
+						type = protect
+						id = PREV
+						value = 100
+					}
+				}
+			}
+			add_ai_strategy = {
+				type = save_equipment
+				id = infantry_equipment
+				value = 501
+			}
+		}
+	}
+
+	focus = {
+		id = AST_indirect_support
+		icon = GFX_goal_generic_small_arms
+		prerequisite = { focus = AST_commitment_to_the_cause }
+		mutually_exclusive = { focus = AST_direct_support }
+		x = -1
+		y = 3
+		relative_position_id = AST_empower_the_workers
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 8
+		}
+
+		available = {
+			has_equipment = {
+				infantry_equipment > 499
+			}
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+			PRC = {
+				OR = {
+					exists = no
+					is_puppet = yes
+				}
+			}
+		}
+		select_effect = {
+			send_equipment = {
+				target = event_target:WTT_communist_china
+				type = infantry_equipment
+				amount = 500
+			}
+		}
+
+		cancel_if_invalid = no
+		continue_if_invalid = yes
+		available_if_capitulated = no
+
+		completion_reward = {
+			add_timed_idea = { idea = AST_arms_for_the_revolution days = 365 }
+		}
+	}
+
+	focus = {
+		id = AST_direct_support
+		icon = GFX_goal_generic_political_pressure
+		prerequisite = { focus = AST_commitment_to_the_cause }
+		mutually_exclusive = { focus = AST_indirect_support }
+		x = 1
+		y = 3
+		relative_position_id = AST_empower_the_workers
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 4
+		}
+
+		available = {
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		completion_reward = {
+			add_ideas = AST_direct_support
+
+		}
+	}
+
+	focus = {
+		id = AST_join_comintern
+		icon = GFX_goal_support_communism
+		prerequisite = { focus = AST_indirect_support focus = AST_direct_support }
+		mutually_exclusive = { focus = AST_workers_paradise }
+		x = 0
+		y = 4
+		relative_position_id = AST_empower_the_workers
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 8
+			modifier = { #let's not tie ourselves to SOV if they are in a bad spot
+				SOV = { surrender_progress > 0.75 }
+				factor = 0
+			}
+		}
+
+		available = {
+			is_subject = no
+			any_other_country = {
+				is_major = yes
+				has_government = communism
+				is_faction_leader = yes
+			}
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+			is_in_faction = yes
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = yes
+
+		completion_reward = {
+
+			set_rule = { can_create_factions = yes }
+			if = {
+				limit = {
+					SOV = {
+						is_faction_leader = yes
+						has_government = communism
+					}
+				}
+				SOV = {
+					country_event = { id = tfv_australia.50 }
+				}
+			}
+			else = {
+                get_best_alliance_match_communism_effect = yes
+                var:best_leader = {
+                    country_event = generic.2
+                }
+            }
+		}
+	}
+
+	focus = {
+		id = AST_workers_paradise
+		icon = GFX_goal_generic_soviet_construction
+		prerequisite = { focus = AST_direct_support }
+		mutually_exclusive = { focus = AST_join_comintern }
+		x = 2
+		y = 4
+		relative_position_id = AST_empower_the_workers
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 4
+		}
+
+		available = {
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		complete_tooltip = {
+
+		}
+
+		completion_reward = {
+			set_rule = { can_create_factions = yes }
+		}
+	}
+
+	focus = {
+		id = AST_research_city_excursions
+		icon = GFX_goal_tfv_generic_tech_sharing
+		prerequisite = { focus = AST_join_comintern }
+		x = -1
+		y = 5
+		relative_position_id = AST_empower_the_workers
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			is_in_faction_with = SOV
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = yes
+
+		complete_tooltip = {
+
+		}
+
+		completion_reward = {
+			SOV = { add_to_tech_sharing_group = comintern_research }
+			add_to_tech_sharing_group = comintern_research
+		}
+	}
+
+	focus = {
+		id = AST_nz_puppet
+		icon = GFX_goal_generic_position_armies
+		prerequisite = { focus = AST_workers_paradise focus = AST_join_comintern }
+		x = 1
+		y = 5
+		relative_position_id = AST_empower_the_workers
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 1
+			modifier = {
+				NZL = { has_government = democratic }
+				factor = 10
+			}
+		}
+
+		available = {
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		complete_tooltip = {
+
+		}
+
+		completion_reward = {
+			NZL = {
+				country_event = { id = tfv_australia.60 }
+			}
+		}
+	}
+
+	focus = {
+		id = AST_the_threat_against_the_people
+		icon = GFX_goal_generic_major_war
+		prerequisite = { focus = AST_workers_paradise }
+		x = 3
+		y = 5
+		relative_position_id = AST_empower_the_workers
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 1
+			modifier = {
+				JAP = { has_government = communism }
+				factor = 0
+			}
+		}
+
+		available = {
+			NOT = { is_in_faction_with = JAP }
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		complete_tooltip = {
+
+		}
+
+		completion_reward = {
+			create_wargoal = {
+				target = JAP
+				type = puppet_wargoal_focus
 			}
 		}
 	}
