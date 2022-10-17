@@ -12,6 +12,7 @@ focus_tree = {
 	}
 
 	default = no
+    continuous_focus_position = { x = 50 y = 1100 }
 
 	############################
 	##### POLITICAL SECTION ####
@@ -48,6 +49,11 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+			add_political_power = 100
+			add_autonomy_ratio = {
+				value = 0.1
+				localization = RAJ_provincial_elections
+			}
 		}
 	}
 
@@ -171,6 +177,1041 @@ focus_tree = {
 		}
 	}
 
+	focus = {
+		id = RAJ_two_nation_theory
+		icon = GFX_focus_RAJ_two_nation_theory
+		prerequisite = { focus = RAJ_quit_india_movement }
+		x = 0
+		y = 1
+		relative_position_id = RAJ_quit_india_movement
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 25
+		}
+
+		available = {
+			OR = {
+				is_subject = yes
+				has_global_flag = ENG_decolonized
+			}
+		}
+
+		bypass = {
+			has_idea = RAJ_marginalized_muslim_community_happy
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+
+		search_filters = { FOCUS_FILTER_POLITICAL }
+		completion_reward = {
+			custom_effect_tooltip = RAJ_two_nation_theory_effect
+			if = {
+				limit = {
+					has_idea = RAJ_desire_for_independance_1
+				}
+				swap_ideas = {
+					remove_idea = RAJ_desire_for_independance_1
+					add_idea = RAJ_desire_for_independance_2
+				}
+			}
+			else_if = {
+				limit = {
+					has_idea = RAJ_desire_for_independance_2
+				}
+				swap_ideas = {
+					remove_idea = RAJ_desire_for_independance_2
+					add_idea = RAJ_desire_for_independance_3
+				}
+			}
+			if = {
+				limit = {
+					has_idea = RAJ_marginalized_muslim_community_angry
+				}
+				swap_ideas = {
+					remove_idea = RAJ_marginalized_muslim_community_angry
+					add_idea = RAJ_marginalized_muslim_community_happy
+				}
+			}
+			else = {
+				swap_ideas = {
+					add_idea = RAJ_marginalized_muslim_community_happy
+					remove_idea = RAJ_marginalized_muslim_community
+				}
+			}
+			every_state = {
+				limit = {
+					has_dynamic_modifier = { modifier = marginalized_muslim_community_state_angry }
+				}
+				remove_dynamic_modifier = { modifier = marginalized_muslim_community_state_angry }
+				add_dynamic_modifier = { modifier = marginalized_muslim_community_state }
+			}
+			every_state = {
+				limit = {
+					has_dynamic_modifier = { modifier = marginalized_muslim_community_state }
+				}
+				remove_dynamic_modifier = { modifier = marginalized_muslim_community_state }
+				add_dynamic_modifier = { modifier = marginalized_muslim_community_state_happy }
+			}
+		}
+	}
+
+	focus = {
+		id = RAJ_quit_india_resolution
+		icon = GFX_focus_hol_the_foundations_of_defense
+		prerequisite = { focus = RAJ_two_nation_theory }
+		x = 0
+		y = 1
+		relative_position_id = RAJ_two_nation_theory
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 25
+		}
+
+		available = {
+			any_home_area_neighbor_country = {
+				has_war_with = ROOT
+			}
+			any_enemy_country = {
+				is_major = yes
+			}
+			if = {
+				limit = { NOT = { has_government = fascism } }
+				compare_autonomy_state > autonomy_integrated_puppet
+			}
+			if = {
+				limit = { has_government = fascism }
+				compare_autonomy_state > autonomy_reichskommissariat
+			}
+			OR = {
+				is_subject = yes
+				has_global_flag = ENG_decolonized
+			}
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		completion_reward = {
+			add_autonomy_ratio = {
+				value = 0.05
+				localization = RAJ_quit_india_resolution
+			}
+			swap_ideas = {
+				add_idea = RAJ_quit_india_resolution
+				remove_idea = RAJ_quit_india_movement
+			}
+			if = {
+				limit = {
+					is_subject_of = ENG
+				}
+				ENG = { country_event = { id = raj_armor.801 } }
+			}
+		}
+	}
+
+	focus = {
+		id = RAJ_all_india_forward_bloc
+		icon = GFX_focus_RAJ_all_india_forward_bloc
+		prerequisite = { focus = RAJ_swaraj }
+		x = -1
+		y = 1
+		relative_position_id = RAJ_swaraj
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 25
+		}
+
+		available = {
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		complete_tooltip = {
+
+		}
+
+		completion_reward = {
+			add_political_power = 120
+			add_ideas = RAJ_all_india_forward_bloc
+			custom_effect_tooltip = available_political_advisor
+			show_ideas_tooltip = RAJ_karam_singh_mann
+			show_ideas_tooltip = RAJ_subhas_chanda_bose
+		}
+	}
+
+
+	############################
+	########## SOVIET ##########
+	############################
+
+	focus = {
+		id = RAJ_seek_help_from_soviet
+		icon = GFX_focus_RAJ_seek_help_from_soviet
+		prerequisite = { focus = RAJ_all_india_forward_bloc }
+		x = -1
+		y = 1
+		relative_position_id = RAJ_all_india_forward_bloc
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 25
+			modifier = {
+				AND = {
+					communism > 0.25
+					fascism < 0.25
+				}
+				factor = 3
+			}
+		}
+
+		available = {
+			if = {
+				limit = {
+					NOT = { has_government = fascism }
+				}
+				compare_autonomy_state < autonomy_dominion
+			}
+			if = {
+				limit = {
+					has_government = fascism
+				}
+				compare_autonomy_state < autonomy_satellite
+			}
+			has_civil_war = no
+			NOT = { has_country_flag = RAJ_seek_help_from_germany_promised }
+			SOV_can_help_against_ENG = yes
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+			is_in_faction_with = SOV
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		complete_tooltip = {
+
+		}
+
+		completion_reward = {
+			SOV = {
+				country_event = { id = tfv_raj.30 hours = 6 }
+			}
+			if = {
+				limit = {
+					has_idea = RAJ_all_india_forward_bloc_fascism
+				}
+				swap_ideas = {
+					add_idea = RAJ_all_india_forward_bloc_communism
+					remove_idea = RAJ_all_india_forward_bloc_fascism
+				}
+				else = {
+					swap_ideas = {
+						add_idea = RAJ_all_india_forward_bloc_communism
+						remove_idea = RAJ_all_india_forward_bloc
+					}
+				}
+			}
+		}
+	}
+
+	focus = {
+		id = RAJ_indian_peoples_army
+		icon = GFX_goal_generic_allies_build_infantry
+		prerequisite = { focus = RAJ_seek_help_from_soviet }
+		mutually_exclusive = { focus = RAJ_indian_national_army }
+		x = 0
+		y = 1
+		relative_position_id = RAJ_seek_help_from_soviet
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 25
+		}
+
+		available = {
+			has_civil_war = no
+			#communism > 0.15
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		complete_tooltip = {
+			custom_effect_tooltip = RAJ_indian_peoples_army_effect
+		}
+
+		completion_reward = {
+			custom_effect_tooltip = RAJ_indian_peoples_army_effect
+			if = {
+				limit = {
+					has_global_flag = RAJ_seek_help_from_soviet_promised
+					SOV_can_help_against_ENG = yes
+				}
+				custom_effect_tooltip = RAJ_indian_peoples_army_support
+			}
+			hidden_effect = {
+				random_owned_controlled_state = {
+					prioritize = { 429 425 }
+					RAJ = { set_capital = { state = PREV } }
+				}
+				set_temp_variable = { ideology_val = party_popularity@communism }
+				scale_var_civil_war_size_by_autonomy_and_var_ideology_val = yes
+				start_civil_war = {
+					ruling_party = communism
+					ideology = neutrality
+					size = civil_war_size
+					capital = 439
+				}
+				#Scaled by autonomy and party support - Don't add these before
+				if = {
+					limit = {
+						has_global_flag = RAJ_seek_help_from_soviet_promised
+						SOV_can_help_against_ENG = yes
+					}
+					SOV = {
+						add_to_faction = RAJ
+						add_popularity = {
+							ideology = communism
+							popularity = 0.35
+						}
+					}
+					create_country_leader = {
+						name = "Subhas Chandra Bose"
+						desc = "POLITICS_SUBHAS_CHANDRA_BOSE_DESC"
+						picture = GFX_RAJ_subhas_chandra_bose
+						expire = "1965.1.1"
+						ideology = stalinism
+						traits = {
+							indomitable_perseverance
+						}
+					}
+					retire_country_leader = yes
+				}
+				random_other_country = {
+					limit = {
+						original_tag = RAJ
+						has_government = neutrality
+					}
+					add_popularity = {
+						ideology = neutrality
+						popularity = 0.15
+					}
+					ENG = { add_to_faction = PREV }
+				}
+			}
+		}
+	}
+
+	focus = {
+		id = RAJ_research_city_excursions
+		icon = GFX_goal_generic_scientific_exchange
+		prerequisite = { focus = RAJ_indian_peoples_army }
+		x = -1
+		y = 2
+		relative_position_id = RAJ_seek_help_from_soviet
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 25
+		}
+
+		available = {
+			is_in_faction_with = SOV
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		complete_tooltip = {
+
+		}
+
+		completion_reward = {
+			SOV = { add_to_tech_sharing_group = comintern_research }
+			add_to_tech_sharing_group = comintern_research
+		}
+	}
+
+	focus = {
+		id = RAJ_combined_arms_academy
+		icon = GFX_goal_generic_army_motorized
+		prerequisite = { focus = RAJ_research_city_excursions }
+		x = -1
+		y = 3
+		relative_position_id = RAJ_seek_help_from_soviet
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 25
+		}
+
+		available = {
+			is_in_faction_with = SOV
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		complete_tooltip = {
+
+		}
+
+		completion_reward = {
+			add_doctrine_cost_reduction = {
+				name = RAJ_combined_arms_academy
+				cost_reduction = 0.99
+				uses = 1
+				category = land_doctrine
+			}
+			add_tech_bonus = {
+				name = RAJ_combined_arms_academy
+				bonus = 0.5
+				uses = 1
+				category = armor
+				category = motorized_equipment
+			}
+			add_tech_bonus = {
+				name = RAJ_combined_arms_academy
+				bonus = 0.5
+				uses = 1
+				category = cat_anti_tank
+			}
+		}
+	}
+
+	############################
+	######### SHARED ###########
+	############################
+
+
+	focus = {
+		id = RAJ_rani_of_jhans
+		icon = GFX_goal_generic_army_doctrines
+		prerequisite = { focus = RAJ_indian_peoples_army focus = RAJ_indian_national_army }
+		x = 0
+		y = 3
+		relative_position_id = RAJ_all_india_forward_bloc
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 25
+		}
+
+		available = {
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		complete_tooltip = {
+
+		}
+
+		completion_reward = {
+		custom_effect_tooltip = RAJ_create_unit_rani_tt
+		custom_effect_tooltip = RAJ_create_general_rani_tt
+			hidden_effect = {
+			create_corps_commander = {
+				name = "Lakshmi Sahgal"
+				gfx = "GFX_RAJ_lakshmi_sahgal"
+				traits = { }
+				skill = 3
+				female = yes
+				attack_skill = 3
+				defense_skill = 2
+				planning_skill = 3
+				logistics_skill = 2
+			}
+			division_template = {
+				name = "Rani of Jhansi Division"
+				division_names_group = RAJ_INF_01
+				regiments = {
+					infantry = { x = 0 y = 0 }
+					infantry = { x = 0 y = 1 }
+					infantry = { x = 0 y = 2 }
+
+		        	infantry = { x = 1 y = 0 }
+					infantry = { x = 1 y = 1 }
+					infantry = { x = 1 y = 2 }
+
+		        	infantry = { x = 2 y = 0 }
+					infantry = { x = 2 y = 1 }
+					infantry = { x = 2 y = 2 }
+				}
+			}
+
+		random_owned_controlled_state = {
+			prioritize = { 439 }
+			create_unit = {
+				division = "name = \"1. Rani of Jhansi Division\" division_template = \"Rani of Jhansi Division\" start_experience_factor = 0.5"
+				owner = RAJ
+				}
+
+		}
+			}
+		}
+	}
+
+	focus = {
+		id = RAJ_rebuilding_the_nation
+		icon = GFX_goal_generic_construct_civilian
+		prerequisite = { focus = RAJ_rani_of_jhans }
+		x = 0
+		y = 4
+		relative_position_id = RAJ_all_india_forward_bloc
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 25
+		}
+
+		available = {
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		complete_tooltip = {
+			economy_fatigue_level_up_4 = yes
+			random_state = {
+				limit = {
+					has_state_flag = RAJ_rebuilding_the_nation_IC1
+				}
+				add_extra_state_shared_building_slots = 4
+				add_building_construction = {
+					type = industrial_complex
+					level = 4
+					instant_build = yes
+				}
+			}
+			random_state = {
+				limit = {
+					has_state_flag = RAJ_rebuilding_the_nation_IC2
+				}
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = industrial_complex
+					level = 2
+					instant_build = yes
+				}
+			}
+			random_state = {
+				limit = {
+					has_state_flag = RAJ_rebuilding_the_nation_AF
+				}
+				add_extra_state_shared_building_slots = 4
+				add_building_construction = {
+					type = arms_factory
+					level = 4
+					instant_build = yes
+				}
+			}
+		}
+
+		completion_reward = {
+			economy_fatigue_level_up_4 = yes
+			random_owned_controlled_state = {
+				prioritize = {  }
+				limit = {
+					free_building_slots = {
+						building = industrial_complex
+						size > 3
+						include_locked = yes
+					}
+				}
+				add_extra_state_shared_building_slots = 4
+				add_building_construction = {
+					type = industrial_complex
+					level = 4
+					instant_build = yes
+				}
+				set_state_flag = RAJ_rebuilding_the_nation_IC1
+			}
+			random_owned_controlled_state = {
+				prioritize = {  }
+				limit = {
+					free_building_slots = {
+						building = industrial_complex
+						size > 1
+						include_locked = yes
+					}
+				}
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = industrial_complex
+					level = 2
+					instant_build = yes
+				}
+				set_state_flag = RAJ_rebuilding_the_nation_IC2
+			}
+			random_owned_controlled_state = {
+				prioritize = {  }
+				limit = {
+					free_building_slots = {
+						building = arms_factory
+						size > 3
+						include_locked = yes
+					}
+				}
+				add_extra_state_shared_building_slots = 4
+				add_building_construction = {
+					type = arms_factory
+					level = 4
+					instant_build = yes
+				}
+				set_state_flag = RAJ_rebuilding_the_nation_AF
+			}
+		}
+	}
+
+
+
+	############################
+	######### GERMANY ##########
+	############################
+
+	focus = {
+		id = RAJ_seek_help_from_germany
+		icon = GFX_focus_RAJ_lions_of_the_great_war
+		prerequisite = { focus = RAJ_all_india_forward_bloc }
+		x = 1
+		y = 1
+		relative_position_id = RAJ_all_india_forward_bloc
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 25
+			modifier = {
+				AND = {
+					communism < 0.25
+					fascism > 0.25
+				}
+				factor = 3
+			}
+		}
+
+		available = {
+			if = {
+				limit = { NOT = { has_government = fascism } }
+				compare_autonomy_state < autonomy_dominion
+			}
+			if = {
+				limit = {
+					has_government = fascism
+				}
+				compare_autonomy_state < autonomy_satellite
+			}
+			has_civil_war = no
+			NOT = { has_global_flag = RAJ_seek_help_from_soviet_promised }
+			GER = {
+				exists = yes
+				has_government = fascism
+			}
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+			is_in_faction_with = GER
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		complete_tooltip = {
+
+		}
+
+		completion_reward = {
+			GER = {
+				country_event = { id = tfv_raj.40 hours = 6 }
+			}
+			if = {
+				limit = {
+					has_idea = RAJ_all_india_forward_bloc_communism
+				}
+				swap_ideas = {
+					add_idea = RAJ_all_india_forward_bloc_fascism
+					remove_idea = RAJ_all_india_forward_bloc_communism
+				}
+				else = {
+					swap_ideas = {
+						add_idea = RAJ_all_india_forward_bloc_fascism
+						remove_idea = RAJ_all_india_forward_bloc
+					}
+				}
+			}
+		}
+	}
+
+	focus = {
+		id = RAJ_indian_national_army
+		icon = GFX_goal_generic_axis_build_infantry
+		prerequisite = { focus = RAJ_seek_help_from_germany }
+		mutually_exclusive = { focus = RAJ_indian_peoples_army }
+		x = 0
+		y = 1
+		relative_position_id = RAJ_seek_help_from_germany
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 25
+		}
+
+		available = {
+			has_civil_war = no
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		complete_tooltip = {
+			custom_effect_tooltip = RAJ_indian_national_army_effect
+		}
+
+		completion_reward = {
+			custom_effect_tooltip = RAJ_indian_national_army_effect
+			if = {
+				limit = {
+					has_global_flag = RAJ_seek_help_from_germany_promised
+					GER_can_help_against_ENG = yes
+				}
+				custom_effect_tooltip = RAJ_indian_national_army_support
+			}
+			hidden_effect = {
+				random_owned_controlled_state = {
+					prioritize = { 429 425 }
+					RAJ = { set_capital = { state = PREV } }
+				}
+				set_temp_variable = { ideology_val = party_popularity@fascism }
+				scale_var_civil_war_size_by_autonomy_and_var_ideology_val = yes
+				start_civil_war = {
+					ruling_party = fascism
+					ideology = neutrality
+					size = civil_war_size
+					capital = 439
+				}
+				#Don't add support before this
+				if = {
+					limit = {
+						has_global_flag = RAJ_seek_help_from_germany_promised
+						GER_can_help_against_ENG = yes
+					}
+					GER = {
+						add_to_faction = RAJ
+						add_popularity = {
+							ideology = fascism
+							popularity = 0.35
+						}
+					}
+					create_country_leader = {
+						name = "Subhas Chandra Bose"
+						desc = "POLITICS_SUBHAS_CHANDRA_BOSE_DESC"
+						picture = GFX_RAJ_subhas_chandra_bose
+						expire = "1965.1.1"
+						ideology = nazism
+						traits = {
+							indomitable_perseverance
+						}
+					}
+				}
+				random_other_country = {
+					limit = {
+						original_tag = RAJ
+						has_government = neutrality
+					}
+					add_popularity = {
+						ideology = neutrality
+						popularity = 0.15
+					}
+					ENG = { add_to_faction = PREV }
+				}
+			}
+		}
+	}
+
+	focus = {
+		id = RAJ_battaglione_azad_hindoustan
+		icon = GFX_goal_generic_build_airforce
+		prerequisite = { focus = RAJ_seek_help_from_germany }
+		x = 2
+		y = 1
+		relative_position_id = RAJ_seek_help_from_germany
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 25
+		}
+
+		available = {
+			ITA = {
+				has_capitulated = no
+				is_in_faction_with = GER
+				has_government = fascism
+			}
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		complete_tooltip = {
+
+		}
+
+		completion_reward = {
+			if = {
+				limit = {
+					has_country_flag = french_technologies_tree_flag
+					NOT = { has_tech = fra_paratroopers }
+				}
+				set_technology = { fra_paratroopers = 1 }
+			}
+			else_if = {
+				limit = {
+					has_country_flag = italian_technologies_tree_flag
+					NOT = { has_tech = ita_paratroopers }
+				}
+				set_technology = { ita_paratroopers = 1 }
+			}
+			else_if = {
+				limit = {
+					has_country_flag = japanese_technologies_tree_flag
+					NOT = { has_tech = jap_paratroopers }
+				}
+				set_technology = { jap_paratroopers = 1 }
+			}
+			else_if = {
+				limit = {
+					has_country_flag = german_technologies_tree_flag
+					NOT = { has_tech = ger_paratroopers }
+				}
+				set_technology = { ger_paratroopers = 1 }
+			}
+			else_if = {
+				limit = {
+					has_country_flag = soviet_technologies_tree_flag
+					NOT = { has_tech = sov_paratroopers }
+				}
+				set_technology = { sov_paratroopers = 1 }
+			}
+			else_if = {
+				limit = {
+					has_country_flag = british_technologies_tree_flag
+					NOT = { has_tech = eng_paratroopers }
+				}
+				set_technology = { eng_paratroopers = 1 }
+			}
+			else_if = {
+				limit = {
+					has_country_flag = unitedstates_technologies_tree_flag
+					NOT = { has_tech = usa_paratroopers }
+				}
+				set_technology = { usa_paratroopers = 1 }
+			}
+
+
+			ITA = {
+				country_event = { id = tfv_raj.201 }
+			}
+
+			if = {
+				limit = {
+					is_ai = no
+				}
+
+				division_template = {
+					name = "Battaglione Azad Hindoustan" #Hindu paratrooper division created for Italy
+					division_names_group = RAJ_PAR_01
+					regiments = {
+						paratrooper = { x = 0 y = 0 }
+						paratrooper = { x = 0 y = 1 }
+						paratrooper = { x = 0 y = 2 }
+
+						paratrooper = { x = 1 y = 0 }
+						paratrooper = { x = 1 y = 1 }
+						paratrooper = { x = 1 y = 2 }
+					}
+				}
+
+				ITA = {
+					random_owned_controlled_state = {
+						prioritize = { 2 }
+
+						custom_effect_tooltip = tfv_raj_focus_paratrooper_tt
+						hidden_effect = {
+							create_unit = {
+								division = "name = \"Battaglione Azad Hindoustan\" division_template = \"Battaglione Azad Hindoustan\" start_experience_factor = 1.0"
+								owner = RAJ
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	focus = {
+		id = RAJ_german_technology
+		icon = GFX_goal_generic_scientific_exchange
+		prerequisite = { focus = RAJ_indian_national_army }
+		x = 1
+		y = 2
+		relative_position_id = RAJ_seek_help_from_germany
+		dynamic = yes
+		cost = 10
+
+		ai_will_do = {
+			factor = 25
+		}
+
+		available = {
+			OR = {
+				is_in_faction_with = GER
+				is_in_faction_with = JAP
+			}
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		complete_tooltip = {
+
+		}
+
+		completion_reward = {
+			GER = { add_to_tech_sharing_group = axis_research }
+			add_to_tech_sharing_group = axis_research
+		}
+	}
+
+	focus = {
+		id = RAJ_japanese_army_air_force_academy
+		icon = GFX_goal_generic_CAS
+		prerequisite = { focus = RAJ_german_technology }
+		x = 1
+		y = 3
+		relative_position_id = RAJ_seek_help_from_germany
+		dynamic = yes
+		cost = 10
+
+		ai_will_do = {
+			factor = 25
+		}
+
+		available = {
+			OR = {
+				is_in_faction_with = GER
+				is_in_faction_with = JAP
+			}
+			NOT = { has_country_flag = britain_enforced_our_loyalty }
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		complete_tooltip = {
+
+		}
+
+		completion_reward = {
+			air_experience = 25
+			add_tech_bonus = {
+				name = RAJ_japanese_army_air_force_academy
+				bonus = 3.0
+				uses = 1
+				category = light_fighter
+				category = cas_bomber
+			}
+			add_doctrine_cost_reduction = {
+				name = RAJ_japanese_army_air_force_academy
+				cost_reduction = 0.99
+				uses = 1
+				category = air_doctrine
+			}
+		}
+	}
 
 	############################
 	######## HISTORICAL ########
@@ -203,6 +1244,10 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+			
+			add_autonomy_ratio = {
+				value = -0.1
+			}
 		}
 	}
 
@@ -232,29 +1277,33 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			ENG = {
-				release = BRM
-				set_autonomy = {
-					target = BRM
-					autonomy_state = autonomy_colony
+            add_stability = 0.05
+			custom_effect_tooltip = RAJ_government_of_india_act_tt
+			hidden_effect = {
+				ENG = {
+					release = BRM
+					set_autonomy = {
+						target = BRM
+						autonomy_state = autonomy_colony
+					}
 				}
-			}
-			BRM = {
-				transfer_state = 640
-				transfer_state = 977
-				transfer_state = 288
-				transfer_state = 975
-				set_politics = {
-					ruling_party = neutrality
-					elections_allowed = no
+				BRM = {
+					transfer_state = 640
+					transfer_state = 977
+					transfer_state = 288
+					transfer_state = 975
+					set_politics = {
+						ruling_party = neutrality
+						elections_allowed = no
+					}
+					set_popularities = {
+						democratic = 12
+						fascism = 2
+						communism = 14
+						neutrality = 72
+					}
+					set_cosmetic_tag = BRM_UK
 				}
-				set_popularities = {
-					democratic = 12
-					fascism = 2
-					communism = 14
-					neutrality = 72
-				}
-				set_cosmetic_tag = BRM_UK
 			}
 		}
 	}
@@ -2582,7 +3631,39 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			army_experience = 30
+			custom_effect_tooltip = RAJ_indian_sandhurst_tt
+			hidden_effect = {
+				create_corps_commander = {
+					name = "Kodandera Madappa Cariappa"
+					gfx = "GFX_RAJ_kodandera_madappa_cariappa"
+					traits = { career_officer skilled_staffer }
+					skill = 4
+					attack_skill = 2
+					defense_skill = 4
+					planning_skill = 3
+					logistics_skill = 4
+				}
+				create_corps_commander = {
+					name = "Kodandera Subayya Thimayya"
+					gfx = "GFX_RAJ_kodendera_subayya_thimayya"
+					traits = { jungle_rat }
+					skill = 3
+					attack_skill = 3
+					defense_skill = 2
+					planning_skill = 1
+					logistics_skill = 4
+				}
+				create_corps_commander = {
+					name = "Jayanto Nath Chaudhuri"
+					gfx = "GFX_RAJ_jayanto_nath_chaudhuri"
+					traits = { panzer_leader }
+					skill = 3
+					attack_skill = 4
+					defense_skill = 1
+					planning_skill = 3
+					logistics_skill = 2
+				}
+			}
 			add_doctrine_cost_reduction = {
 				name = RAJ_address_the_officer_shortage
 				cost_reduction = 0.99
@@ -2798,6 +3879,16 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+			create_corps_commander = {
+				name = "Orde Wingate"
+				gfx = "GFX_RAJ_orde_wingate"
+				traits = { jungle_rat commando }
+				skill = 4
+				attack_skill = 3
+				defense_skill = 3
+				planning_skill = 2
+				logistics_skill = 5
+			}
 			custom_effect_tooltip = RAJ_equip_the_chindits_tt
 		}
 	}
