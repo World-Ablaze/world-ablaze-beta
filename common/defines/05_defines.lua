@@ -29,6 +29,8 @@ NDefines.NDiplomacy.TROOP_FEAR = 0 													-- Impact on troops on borders w
 NDefines.NDiplomacy.FLEET_FEAR = 0													-- Impact on troops on borders when deciding how willing a nation is to trade
 NDefines.NDiplomacy.BASE_SEND_ATTACHE_COST = 50										-- Political power cost to send attache
 
+NDefines.NDiplomacy.EMBARGO_THREAT_THRESHOLD = 100									-- Target-generated threat threshold to allow embargo (affected by modifiers)
+
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Politics
 
 
