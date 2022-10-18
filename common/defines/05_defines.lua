@@ -896,6 +896,8 @@ NDefines.NAI.MIN_UNITS_FACTOR_INVASION_ORDER = 1.2									-- Factor for min num
 
 NDefines.NAI.HOUR_BAD_COMBAT_REEVALUATE = 6 										-- if we are in combat for this amount and it goes shitty then try skipping it
 
+NDefines.NAI.MIN_FRONT_SIZE_TO_CONSIDER_STANDARD_COHESION = 5000					-- How long should fronts be before we consider switching to standard cohesion (under this, standard cohesion fronts will switch back to relaxed)
+
 NDefines.NAI.PLAN_ATTACK_MIN_ORG_FACTOR_LOW = 0.85									-- Minimum org % for a unit to actively attack an enemy unit when executing a plan
 NDefines.NAI.PLAN_ATTACK_MIN_STRENGTH_FACTOR_LOW = 0.85								-- Minimum strength for a unit to actively attack an enemy unit when executing a plan
 
