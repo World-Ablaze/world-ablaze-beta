@@ -4460,6 +4460,251 @@ focus_tree = {
 		}
 	}
 
+    focus = {
+        id = ENG_foundations_for_an_indian_state
+        prerequisite = { focus = ENG_domestic_reforms }
+        icon = GFX_focus_RAJ_all_india_forward_bloc
+        x = 0
+        y = 1
+        relative_position_id = ENG_domestic_reforms
+
+        available = {
+            is_subject = no
+            has_war = no
+            RAJ = { is_subject_of = ENG }
+        }
+        bypass = {
+            RAJ = { is_subject = no }
+        }
+
+        continue_if_invalid = yes
+
+        cost = 4
+        ai_will_do = {
+            factor = 1
+        }
+
+        complete_tooltip = {
+            RAJ = {
+                every_state = {
+                    limit = { has_state_flag = ENG_foundations_for_an_indian_state_2IC }
+                    add_extra_state_shared_building_slots = 4
+                    add_building_construction = {
+                        type = industrial_complex
+                        level = 4
+                        instant_build = yes
+                    }
+                }
+            }
+        }
+
+        completion_reward = {
+            add_political_power = 60
+            RAJ = {
+                if = {
+                    limit = { is_subject_of = ENG }
+                    add_stability = 0.05
+                    add_opinion_modifier = { target = ENG modifier = ENG_guiding_the_colonies }
+                    add_ideas = ENG_guided_by_britain_raj_1
+                    hidden_effect = { country_event = { id = mtg_britain.19 hours = 6 } }
+                    random_owned_controlled_state = {
+                        limit = {
+                            free_building_slots = {
+                                building = industrial_complex
+                                size > 2
+                                include_locked = yes
+                            }
+                            is_core_of = PREV
+                        }
+                        add_extra_state_shared_building_slots = 4
+                        add_building_construction = {
+                            type = industrial_complex
+                            level = 4
+                            instant_build = yes
+                        }
+                        set_state_flag = ENG_foundations_for_an_indian_state_2IC
+                    }
+                    random_owned_controlled_state = {
+                        limit = {
+                            free_building_slots = {
+                                building = industrial_complex
+                                size > 2
+                                include_locked = yes
+                            }
+                            is_core_of = PREV
+                        }
+                        add_extra_state_shared_building_slots = 4
+                        add_building_construction = {
+                            type = industrial_complex
+                            level = 4
+                            instant_build = yes
+                        }
+                        set_state_flag = ENG_foundations_for_an_indian_state_2IC
+                    }
+                }
+
+            }
+        }
+    }
+
+    focus = {
+        id = ENG_indian_autonomy
+        icon = GFX_goal_indian_autonomy
+        prerequisite = { focus = ENG_foundations_for_an_indian_state }
+        x = 0
+        y = 1
+        relative_position_id = ENG_foundations_for_an_indian_state
+
+        allow_branch = {
+            has_dlc = "Man the Guns"
+        }
+
+        available = {
+            RAJ = {
+                is_subject_of = ENG
+            }
+        }
+
+        continue_if_invalid = no
+
+        cost = 3
+        ai_will_do = {
+            factor = 0
+            #modifier = {
+            #	factor = 0
+            #}
+        }
+        completion_reward = {
+            set_autonomy = {
+                target = RAJ
+                autonomy_state = autonomy_dominion
+            }
+			if = {
+				limit = {
+					RAJ = { has_idea = RAJ_desire_for_independance_1 }
+				}
+                RAJ = {
+                    swap_ideas = {
+                        remove_idea = RAJ_desire_for_independance_1
+                        add_idea = RAJ_desire_for_independance_2
+                    }
+				}
+			}
+			else_if = {
+				limit = {
+					RAJ = { has_idea = RAJ_desire_for_independance_2 }
+				}
+                RAJ = {
+                    swap_ideas = {
+                        remove_idea = RAJ_desire_for_independance_2
+                        add_idea = RAJ_desire_for_independance_3
+                    }
+				}
+			}
+            RAJ = { add_timed_idea = { idea = ENG_indian_autonomy_RAJ_idea days = 730 } }
+            custom_effect_tooltip = ENG_indian_autonomy_tt
+        }
+    }
+
+    focus = {
+        id = ENG_the_three_nation_solution
+        prerequisite = { focus = ENG_foundations_for_an_indian_state }
+        icon = GFX_focus_RAJ_two_nation_theory
+        x = -2
+        y = 1
+        relative_position_id = ENG_foundations_for_an_indian_state
+        
+        available = {
+            is_subject = no
+            has_war = no
+            RAJ = { is_subject_of = ENG }
+        }
+        bypass = {
+        }
+
+        continue_if_invalid = yes
+
+        cost = 4
+        ai_will_do = {
+            factor = 1
+        }
+        completion_reward = {
+            RAJ = {
+                if = {
+                    limit = {
+                        has_full_control_of_state = 444
+                        has_full_control_of_state = 443
+                        has_full_control_of_state = 445
+                        has_full_control_of_state = 440
+                        has_full_control_of_state = 442
+                        has_full_control_of_state = 441
+                        has_full_control_of_state = 430
+                    }
+                    effect_tooltip = {
+                        add_opinion_modifier = { target = ENG modifier = ENG_three_nation_solution }
+                        release = BAN
+                        ENG = { set_autonomy = { target = BAN autonomy_state = autonomy_colony } }
+                        BAN = {
+                            add_ideas = ENG_guided_by_britain_raj_1
+                            hidden_effect = {
+                                set_politics = {
+                                    ruling_party = democratic
+                                    last_election = "1936.1.1"
+                                    election_frequency = 48
+                                    elections_allowed = yes
+                                }
+                                set_popularities = {
+                                    democratic = 65
+                                    fascism = 10
+                                    communism =  2
+                                    neutrality = 23
+                                }
+                                every_other_country = {
+                                    limit = {
+                                        has_war_with = ENG
+                                    }
+                                    BAN = {
+                                        add_to_war = { targeted_alliance = ENG enemy = PREV hostility_reason = asked_to_join }
+                                    }
+                                }
+                            }
+                        }
+                        release = PAK
+                        ENG = { set_autonomy = { target = PAK autonomy_state = autonomy_colony } }
+                        PAK = {
+                            add_ideas = ENG_guided_by_britain_raj_1
+                            hidden_effect = {
+                                set_politics = {
+                                    ruling_party = neutrality
+                                    last_election = "1935.11.14"
+                                    election_frequency = 48
+                                    elections_allowed = no
+                                }
+                                set_popularities = {
+                                    democratic = 17
+                                    fascism = 2
+                                    communism = 1
+                                    neutrality = 80
+                                }
+                                every_other_country = {
+                                    limit = {
+                                        has_war_with = ENG
+                                    }
+                                    PAK = {
+                                        add_to_war = { targeted_alliance = ENG enemy = PREV hostility_reason = asked_to_join }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    hidden_effect = {
+                        country_event = { id = mtg_britain.20 hours = 6 }
+                    }
+                }
+            }
+        }
+    }
+
 	focus = {
 		id = ENG_operational_unthinkable
 		icon = GFX_goal_generic_war_with_comintern
@@ -7862,151 +8107,6 @@ focus_tree = {
         }
     }
 
-    focus = {
-        id = ENG_foundations_for_an_indian_state
-        prerequisite = { focus = uk_india_focus }
-        available = {
-            is_subject = no
-            has_war = no
-            RAJ = { is_subject_of = ENG }
-        }
-        bypass = {
-            RAJ = { is_subject = no }
-        }
-
-        continue_if_invalid = yes
-
-        icon = GFX_focus_RAJ_all_india_forward_bloc
-        x = 0
-        y = 1
-        relative_position_id = uk_india_focus
-        cost = 4
-        ai_will_do = {
-            factor = 1
-        }
-
-        complete_tooltip = {
-            RAJ = {
-                every_state = {
-                    limit = { has_state_flag = ENG_foundations_for_an_indian_state_2IC }
-                    add_extra_state_shared_building_slots = 4
-                    add_building_construction = {
-                        type = industrial_complex
-                        level = 4
-                        instant_build = yes
-                    }
-                }
-            }
-        }
-
-        completion_reward = {
-            add_political_power = 60
-            RAJ = {
-                if = {
-                    limit = { is_subject_of = ENG }
-                    add_stability = 0.05
-                    add_opinion_modifier = { target = ENG modifier = ENG_guiding_the_colonies }
-                    add_ideas = ENG_guided_by_britain_raj_1
-                    hidden_effect = { country_event = { id = mtg_britain.19 hours = 6 } }
-                    random_owned_controlled_state = {
-                        limit = {
-                            free_building_slots = {
-                                building = industrial_complex
-                                size > 2
-                                include_locked = yes
-                            }
-                            is_core_of = PREV
-                        }
-                        add_extra_state_shared_building_slots = 4
-                        add_building_construction = {
-                            type = industrial_complex
-                            level = 4
-                            instant_build = yes
-                        }
-                        set_state_flag = ENG_foundations_for_an_indian_state_2IC
-                    }
-                    random_owned_controlled_state = {
-                        limit = {
-                            free_building_slots = {
-                                building = industrial_complex
-                                size > 2
-                                include_locked = yes
-                            }
-                            is_core_of = PREV
-                        }
-                        add_extra_state_shared_building_slots = 4
-                        add_building_construction = {
-                            type = industrial_complex
-                            level = 4
-                            instant_build = yes
-                        }
-                        set_state_flag = ENG_foundations_for_an_indian_state_2IC
-                    }
-                }
-
-            }
-        }
-    }
-
-    focus = {
-        id = ENG_indian_autonomy
-        icon = GFX_goal_indian_autonomy
-        prerequisite = { focus = ENG_foundations_for_an_indian_state }
-        x = 0
-        y = 1
-        relative_position_id = ENG_foundations_for_an_indian_state
-
-        allow_branch = {
-            has_dlc = "Man the Guns"
-        }
-
-        available = {
-            RAJ = {
-                is_subject_of = ENG
-            }
-        }
-
-        continue_if_invalid = no
-
-        cost = 3
-        ai_will_do = {
-            factor = 0
-            #modifier = {
-            #	factor = 0
-            #}
-        }
-        completion_reward = {
-            set_autonomy = {
-                target = RAJ
-                autonomy_state = autonomy_dominion
-            }
-			if = {
-				limit = {
-					RAJ = { has_idea = RAJ_desire_for_independance_1 }
-				}
-                RAJ = {
-                    swap_ideas = {
-                        remove_idea = RAJ_desire_for_independance_1
-                        add_idea = RAJ_desire_for_independance_2
-                    }
-				}
-			}
-			else_if = {
-				limit = {
-					RAJ = { has_idea = RAJ_desire_for_independance_2 }
-				}
-                RAJ = {
-                    swap_ideas = {
-                        remove_idea = RAJ_desire_for_independance_2
-                        add_idea = RAJ_desire_for_independance_3
-                    }
-				}
-			}
-            RAJ = { add_timed_idea = { idea = ENG_indian_autonomy_RAJ_idea days = 730 } }
-            custom_effect_tooltip = ENG_indian_autonomy_tt
-        }
-    }
-
 	focus = {
 		id = ENG_bawdsey_research_centre
 		icon = GFX_focus_research
@@ -8274,105 +8374,6 @@ focus_tree = {
                         has_idea = ENG_guided_by_britain_1
                     }
                     hidden_effect = { country_event = { id =  mtg_britain.18 hours = 6 } }
-                }
-            }
-        }
-    }
-
-
-    focus = {
-        id = ENG_the_three_nation_solution
-        prerequisite = { focus = ENG_foundations_for_an_indian_state }
-        available = {
-            is_subject = no
-            has_war = no
-            RAJ = { is_subject_of = ENG }
-        }
-        bypass = {
-        }
-
-        continue_if_invalid = yes
-
-        icon = GFX_focus_RAJ_two_nation_theory
-        x = -2
-        y = 1
-        relative_position_id = ENG_foundations_for_an_indian_state
-        cost = 4
-        ai_will_do = {
-            factor = 1
-        }
-        completion_reward = {
-            RAJ = {
-                if = {
-                    limit = {
-                        has_full_control_of_state = 444
-                        has_full_control_of_state = 443
-                        has_full_control_of_state = 445
-                        has_full_control_of_state = 440
-                        has_full_control_of_state = 442
-                        has_full_control_of_state = 441
-                        has_full_control_of_state = 430
-                    }
-                    effect_tooltip = {
-                        add_opinion_modifier = { target = ENG modifier = ENG_three_nation_solution }
-                        release = BAN
-                        ENG = { set_autonomy = { target = BAN autonomy_state = autonomy_colony } }
-                        BAN = {
-                            add_ideas = ENG_guided_by_britain_raj_1
-                            hidden_effect = {
-                                set_politics = {
-                                    ruling_party = democratic
-                                    last_election = "1936.1.1"
-                                    election_frequency = 48
-                                    elections_allowed = yes
-                                }
-                                set_popularities = {
-                                    democratic = 65
-                                    fascism = 10
-                                    communism =  2
-                                    neutrality = 23
-                                }
-                                every_other_country = {
-                                    limit = {
-                                        has_war_with = ENG
-                                    }
-                                    BAN = {
-                                        add_to_war = { targeted_alliance = ENG enemy = PREV hostility_reason = asked_to_join }
-                                    }
-                                }
-                            }
-                        }
-                        release = PAK
-                        ENG = { set_autonomy = { target = PAK autonomy_state = autonomy_colony } }
-                        PAK = {
-                            add_ideas = ENG_guided_by_britain_raj_1
-                            hidden_effect = {
-                                set_politics = {
-                                    ruling_party = neutrality
-                                    last_election = "1935.11.14"
-                                    election_frequency = 48
-                                    elections_allowed = no
-                                }
-                                set_popularities = {
-                                    democratic = 17
-                                    fascism = 2
-                                    communism = 1
-                                    neutrality = 80
-                                }
-                                every_other_country = {
-                                    limit = {
-                                        has_war_with = ENG
-                                    }
-                                    PAK = {
-                                        add_to_war = { targeted_alliance = ENG enemy = PREV hostility_reason = asked_to_join }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    hidden_effect = {
-                        country_event = { id = mtg_britain.20 hours = 6 }
-                    }
                 }
             }
         }
