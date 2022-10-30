@@ -277,7 +277,7 @@ NDefines.NMilitary.MAX_NAVY_EXPERIENCE = 5000										--Max navy experience a c
 NDefines.NMilitary.MAX_AIR_EXPERIENCE = 5000										--Max air experience a country can store
 
 NDefines.NMilitary.UNIT_EXPERIENCE_PER_COMBAT_HOUR = 0.00060
-NDefines.NMilitary.FIELD_EXPERIENCE_SCALE = 0.002
+NDefines.NMilitary.FIELD_EXPERIENCE_SCALE = 0.0015
 NDefines.NMilitary.FIELD_EXPERIENCE_MAX_PER_DAY = 1									-- Most xp you can gain per day
 
 NDefines.NMilitary.ARMOR_VS_AVERAGE = 0.3			                				-- how to weight in highest armor & pen vs the division average
