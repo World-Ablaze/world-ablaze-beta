@@ -389,8 +389,8 @@ NDefines.NMilitary.UNIT_LEADER_INITIAL_TRAIT_SLOT = { 								-- trait slot for 
 }
 NDefines.NMilitary.UNIT_LEADER_TRAIT_SLOT_PER_LEVEL = { 							-- num extra traits on each level
 	1.0, -- field marshal
-	0.5, -- corps commander
-	0.5, -- navy general
+	1.0, -- corps commander
+	1.0, -- navy general
 	1.0, -- operative
 }
 NDefines.NMilitary.UNIT_LEADER_USE_NONLINEAR_XP_GAIN = false     				    -- Whether unit leader XP gain is scaled by 1/<nr_of_traits>
