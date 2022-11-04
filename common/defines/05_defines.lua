@@ -56,7 +56,7 @@ NDefines.NTrade.ANTI_MONOPOLY_TRADE_FACTOR = 0										-- This is added to the 
 NDefines.NCharacter.OFFICER_CORP_ADVISOR_ENTRIES_IN_MENU = { "high_command", "theorist", "army_theorist", "navy_theorist", "air_theorist", "army_chief", "air_chief", "navy_chief" }
 --NDefines.NCharacter.DEFAULT_PP_COST_FOR_POLITICAL_ADVISOR = 100
 NDefines.NCharacter.ADVISOR_PROMOTION_COST = 10	-- Cost to promote someone to advisor
-NDefines.NCharacter.SPECIALIST_ADVISOR_MIN_RANK = 2
+NDefines.NCharacter.SPECIALIST_ADVISOR_MIN_RANK = 3
 NDefines.NCharacter.EXPERT_ADVISOR_MIN_RANK = 5
 NDefines.NCharacter.GENIUS_ADVISOR_MIN_RANK = 7
 
@@ -383,13 +383,13 @@ NDefines.NMilitary.LAND_AIR_COMBAT_ORG_DAMAGE_MODIFIER = 0.025    					-- air gl
 
 NDefines.NMilitary.UNIT_LEADER_INITIAL_TRAIT_SLOT = { 								-- trait slot for 0 level leader
 	1.0, -- field marshal
-	0.0, -- corps commander
+	1.0, -- corps commander
 	1.0, -- navy general
 	0.0, -- operative
 }
 NDefines.NMilitary.UNIT_LEADER_TRAIT_SLOT_PER_LEVEL = { 							-- num extra traits on each level
-	0.5, -- field marshal
-	1.0, -- corps commander
+	1.0, -- field marshal
+	0.5, -- corps commander
 	0.5, -- navy general
 	1.0, -- operative
 }
