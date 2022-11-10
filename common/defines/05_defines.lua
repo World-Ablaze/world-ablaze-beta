@@ -268,9 +268,9 @@ NDefines.NMilitary.MAX_DIVISION_SUPPORT_HEIGHT = 5									-- Max height of supp
 NDefines.NMilitary.UNIT_LEADER_ASSIGN_TRAIT_COST = 5								-- cost to assign a new trait to a unit leader
 NDefines.NMilitary.ARMY_STRATEGIC_DEPLOYMENT_FUEL_MULT = 0.0						-- fuel consumption ratio while doing strategic deployment
 NDefines.NMilitary.STRATEGIC_SPEED_BASE = 2.0                 						-- Speed of strategic redeployment
-NDefines.NMilitary.STRATEGIC_INFRA_SPEED = 18.0                  					 -- Max of additional speed gained trouh=gh level for strategic redeployment per infra
+NDefines.NMilitary.STRATEGIC_INFRA_SPEED = 18.0                  					-- Max of additional speed gained trouh=gh level for strategic redeployment per infra
 
---NDefines.NMilitary.PLAN_EXECUTE_CAREFUL_LIMIT = 10									-- When looking for an attach target, this score limit is required in the battle plan to consider province for attack
+--NDefines.NMilitary.PLAN_EXECUTE_CAREFUL_LIMIT = 10								-- When looking for an attach target, this score limit is required in the battle plan to consider province for attack
 --NDefines.NMilitary.PLAN_EXECUTE_CAREFUL_MAX_FORT = 9								-- If execution mode is set to careful, units will not attack provinces with fort levels greater than or equal to this
 
 NDefines.NMilitary.BATALION_CHANGED_EXPERIENCE_DROP = 0.75							-- Division experience drop if unit has different batalion
@@ -288,7 +288,7 @@ NDefines.NMilitary.ARMOR_VS_AVERAGE = 0.3			                				-- how to weight
 NDefines.NMilitary.LAND_COMBAT_STR_ARMOR_DEFLECTION_FACTOR = 0.5					-- damage reduction if armor outclassing enemy
 NDefines.NMilitary.LAND_COMBAT_ORG_ARMOR_DEFLECTION_FACTOR = 0.5					-- damage reduction if armor outclassing enemy
 
-NDefines.NMilitary.PIERCING_THRESHOLDS = {					-- Our piercing / their armor must be this value to deal damage fraction equal to the index in the array below [higher number = higher penetration]. If armor is 0, 1.00 will be returned.
+NDefines.NMilitary.PIERCING_THRESHOLDS = {											-- Our piercing / their armor must be this value to deal damage fraction equal to the index in the array below [higher number = higher penetration]. If armor is 0, 1.00 will be returned.
 	1.25,
 	1.1,
 	1.0,
@@ -296,7 +296,7 @@ NDefines.NMilitary.PIERCING_THRESHOLDS = {					-- Our piercing / their armor mus
 	0.75,
 	0.00, --there isn't much point setting this higher than 0
 }
-NDefines.NMilitary.PIERCING_THRESHOLD_DAMAGE_VALUES = {	-- 0 armor will always receive maximum damage (so add overmatching at your own peril). the system expects at least 2 values, with no upper limit.
+NDefines.NMilitary.PIERCING_THRESHOLD_DAMAGE_VALUES = {								-- 0 armor will always receive maximum damage (so add overmatching at your own peril). the system expects at least 2 values, with no upper limit.
 	1.00,
 	0.90,
 	0.80,
