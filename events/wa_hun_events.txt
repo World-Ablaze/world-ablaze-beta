@@ -558,7 +558,9 @@ country_event = {
 
 
 
-################################################# Dissolve Assembly
+################################################# Hungary Renounces Trianon
+
+
 
 
 
@@ -567,18 +569,51 @@ country_event = {
 country_event = {
 	id = hun_armor.805
 	title = hun_armor.805.t
-	desc = hun_armor.805.d
-	
-	picture = GFX_report_event_generic_rally_3
+	desc = hun_armor.805.desc 
+	picture = GFX_report_event_journalists_speech
 	
 	is_triggered_only = yes
-	
-	immediate = {
+
+	option = {# intervene
+		name = hun_armor.805.a
+		ai_chance = {
+			factor = 10
+			modifier = {
+				HUN = { has_added_tension_amount < 0.05 }
+				factor = 0
+			}
+		}
+		create_wargoal = {
+			type = puppet_wargoal_focus
+			target = HUN
+		}
+		if = {
+			limit = {
+				HUN = {
+					has_added_tension_amount < 0.05
+				}
+			}
+			add_political_power = -200
+			add_stability = -0.15
+			add_threat = 2
+		}
+		effect_tooltip = {
+			add_war_support = 0.1
+		}
+	}
+	option = {# issue a protest
+		name = DOD_hungary.141.b
+		ai_chance = {
+			factor = 45
+		}
+		add_opinion_modifier = { target = HUN modifier = protest_action }
 	}
 
-	option = {
-		name = hun_armor.806.a
-		add_popularity = { ideology = democratic popularity = -0.1 }
+	option = {# accept it
+		name = DOD_hungary.141.c
+		ai_chance = {
+			factor = 45
+		}
 	}
 }
 
@@ -600,11 +635,30 @@ country_event = {
 	desc = hun_armor.806.d 
 	picture = GFX_report_event_hun_horthy_succession
 
+	is_triggered_only = yes
+	
+	option = {
+		name = hun_armor.806.a
+		promote_character = HUN_istvan_horthy
+		retire_character = HUN_miklos_horthy
+		remove_ideas = HUN_kingdom_without_monarch_2
+	}
+}
+
+country_event = {
+	id = hun_armor.810
+	title = hun_armor.806.t 
+	desc = hun_armor.806.d 
+	picture = GFX_report_event_hun_horthy_succession
+
 	trigger = {
 		tag = HUN
-		date > 1945.5.1
+		date > 1945.10.1
 		has_completed_focus = HUN_faith_in_the_regency
 		num_of_controlled_states > 0
+		has_country_leader = {
+			name = "Miklós Horthy"
+		}
 	}
 
 	fire_only_once = yes
