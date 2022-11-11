@@ -225,9 +225,10 @@ NDefines.NTechnology.BASE_YEAR_AHEAD_PENALTY_FACTOR = 4								-- Base year ahea
 NDefines.NTechnology.LICENSE_PRODUCTION_TECH_BONUS = 0								-- License production tech bonus
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Military
-NDefines.NMilitary.FIELD_MARSHAL_DIVISIONS_CAP = 12									-- how many divisions a field marshall is limited to. 0 = inf, < 0 = blocked
-NDefines.NMilitary.CORPS_COMMANDER_DIVISIONS_CAP = 12								-- how many divisions a corps commander is limited to. 0 = inf, < 0 = blocked
+NDefines.NMilitary.FIELD_MARSHAL_DIVISIONS_CAP = 14									-- how many divisions a field marshall is limited to. 0 = inf, < 0 = blocked
+NDefines.NMilitary.CORPS_COMMANDER_DIVISIONS_CAP = 10								-- how many divisions a corps commander is limited to. 0 = inf, < 0 = blocked
 NDefines.NMilitary.FIELD_MARSHAL_ARMIES_CAP = 10									-- how many armies a field marshall is limited to. 0 = inf, < 0 = blocked
+NDefines.GARRISON_ORDER_ARMY_CAP_FACTOR = 2.0										-- armies gets increased cap when they are garrisoned
 
 NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_ATTACK = -0.20    						-- attack combat penalty for attacker if out of supply
 NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_DEFEND = -0.40     						-- defend combat penalty for attacker if out of supply
