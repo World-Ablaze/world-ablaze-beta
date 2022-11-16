@@ -1003,6 +1003,11 @@ NDefines.NAI.RESEARCH_BONUS_FACTOR = 4.0
 NDefines.NAI.MAX_AHEAD_RESEARCH_PENALTY = 2	            							-- max ahead of tiem penalty ai will pick ever
 NDefines.NAI.RESEARCH_AHEAD_OF_TIME_FACTOR = 10.0									-- To which extent AI should care about ahead of time penalties to research
 
+NDefines.NAI.MINIMUM_GOOD_TRADE_RATIO_PER_CIV = 0.015   							-- for each civ factory we have mul with this we are allowed to trade under % of resource on a trade
+NDefines.NAI.EXPORT_RESOURCE_TRADE_NEED_IMPORTANCE = 1.0							-- how important is each lost resource to overexport for trade law selection
+NDefines.NAI.RESOURCE_WANT_PER_MISSING_BALANCE = 1.0								-- negative balance increases the desire on a resource
+NDefines.NAI.RESOURCE_WANT_PER_CONSUMED = 0.2										-- if resource is being used in production, increase the desire
+
 NDefines.NAI.DIPLOMACY_SEND_MAX_FACTION = 0.85										-- Country should not send away more units than this as expeditionaries
 NDefines.NAI.DIPLOMACY_IMPROVE_RELATION_COST_FACTOR = 1000.0						-- Desire to boost relations subtracts the cost multiplied by this
 
