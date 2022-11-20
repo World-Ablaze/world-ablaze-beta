@@ -1493,35 +1493,10 @@ focus_tree = {
 			add_stability = -0.05
 			add_opinion_modifier = { modifier = ROM_appoint_soviet_friendly_government target = SOV }
 			SOV = { add_opinion_modifier = { modifier = ROM_appoint_soviet_friendly_government target = ROOT } }
+			unlock_decision_category_tooltip = ROM_change_sides
 			hidden_effect = {
 				set_country_flag = can_change_sides_com
-				if = {
-					limit = {
-						#has_dlc = "Battle for the Bosporus" #TODO
-						NOT = {
-							is_in_faction_with = TUR
-							TUR = { is_faction_leader = yes }
-						}
-					}
-					remove_opinion_modifier = {
-						target = BUL
-						modifier = BFTB_balkan_pact_enemy
-					}
-					remove_opinion_modifier = {
-						target = HUN
-						modifier = BFTB_balkan_pact_enemy
-					}
-					add_opinion_modifier = {
-						target = BUL
-						modifier = BFTB_incongruous_neighbors
-					}
-					add_opinion_modifier = {
-						target = HUN
-						modifier = BFTB_incongruous_neighbors
-					}
-				}
 			}
-			unlock_decision_category_tooltip = ROM_change_sides
 		}
 	}
 
@@ -1571,67 +1546,10 @@ focus_tree = {
 			add_stability = -0.05
 			add_opinion_modifier = { modifier = ROM_appoint_german_friendly_government target = GER }
 			GER = { add_opinion_modifier = { modifier = ROM_appoint_german_friendly_government target = ROOT } }
-			if = {
-				limit = {
-					has_dlc = "Battle for the Bosporus"
-					NOT = {
-						is_in_faction_with = TUR
-						TUR = { is_faction_leader = yes }
-					}
-				}
-				every_other_country = {
-					limit = {
-						has_opinion_modifier = BFTB_balkan_pact_ally
-					}
-					remove_opinion_modifier = {
-						target = ROM
-						modifier = BFTB_balkan_pact_ally
-					}
-					if = {
-						limit = {
-							is_in_faction_with = TUR
-							TUR = { is_faction_leader = no }
-						}
-						hidden_effect = {
-							ROOT = {
-								remove_opinion_modifier = {
-									target = PREV
-									modifier = BFTB_balkan_pact_ally
-								}
-							}
-						}
-					}
-				}
-			}
+			unlock_decision_category_tooltip = ROM_change_sides
 			hidden_effect = {
 				set_country_flag = can_change_sides_fas
-				if = {
-					limit = {
-						has_dlc = "Battle for the Bosporus"
-						NOT = {
-							is_in_faction_with = TUR
-							TUR = { is_faction_leader = yes }
-						}
-					}
-					remove_opinion_modifier = {
-						target = BUL
-						modifier = BFTB_balkan_pact_enemy
-					}
-					remove_opinion_modifier = {
-						target = HUN
-						modifier = BFTB_balkan_pact_enemy
-					}
-					add_opinion_modifier = {
-						target = BUL
-						modifier = BFTB_incongruous_neighbors
-					}
-					add_opinion_modifier = {
-						target = HUN
-						modifier = BFTB_incongruous_neighbors
-					}
-				}
 			}
-			unlock_decision_category_tooltip = ROM_change_sides
 		}
 	}
 
@@ -1683,12 +1601,14 @@ focus_tree = {
 				ideology = democratic
 			}
 			add_stability = -0.05
-			hidden_effect = { set_country_flag = can_change_sides_dem }
-			unlock_decision_category_tooltip = ROM_change_sides
 			add_opinion_modifier = { modifier = ROM_appoint_allied_friendly_government target = FRA }
 			FRA = { add_opinion_modifier = { modifier = ROM_appoint_allied_friendly_government target = ROOT } }
 			add_opinion_modifier = { modifier = ROM_appoint_allied_friendly_government target = ENG }
 			ENG = { add_opinion_modifier = { modifier = ROM_appoint_allied_friendly_government target = ROOT } }
+			unlock_decision_category_tooltip = ROM_change_sides
+			hidden_effect = {
+				set_country_flag = can_change_sides_dem
+			}
 		}
 	}
 
@@ -2033,7 +1953,7 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			add_timed_idea = ROM_donations_from_the_elite
+            add_timed_idea = { idea = ROM_donations_from_the_elite days = 730 }
 		}
 	}
 
@@ -2064,9 +1984,9 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			swap_ideas = {
-				add_idea = ROM_king_carol_ii_handled
-				remove_idea = ROM_king_carol_ii_hedonist
+			custom_effect_tooltip = ROM_all_parties_must_end_tt
+			hidden_effect = {
+				set_country_flag = ROM_all_parties_must_end_flag
 			}
 		}
 	}
@@ -2099,8 +2019,8 @@ focus_tree = {
 
 		completion_reward = {
 			swap_ideas = {
-				add_idea = ROM_king_carol_ii_handled_2
-				remove_idea = ROM_king_carol_ii_handled
+				add_idea = ROM_king_carol_ii_handled
+				remove_idea = ROM_king_carol_ii_hedonist
 			}
 		}
 	}
@@ -2186,7 +2106,7 @@ focus_tree = {
 		}
 
 		available = {
-
+			NOT = { has_completed_focus = ROM_neutrality_at_all_costs }
 		}
 
 		bypass = {
@@ -2451,7 +2371,7 @@ focus_tree = {
 		}
 
 		available = {
-
+			NOT = { has_completed_focus = ROM_neutrality_at_all_costs }
 		}
 
 		bypass = {
@@ -2463,7 +2383,8 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			
+			add_war_support = 0.1
+			add_political_power = 100
 		}
 	}
 
@@ -2486,7 +2407,13 @@ focus_tree = {
 		}
 
 		bypass = {
-
+			OR = {
+				TUR = { has_government = communism }
+				TUR = { has_government = fascism }
+				TUR = { is_subject = yes }
+				has_war_with = TUR
+				NOT = { country_exists = TUR}
+			}
 		}
 
 		cancel_if_invalid = yes
@@ -2494,13 +2421,50 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			
+			every_other_country = {
+				limit = {
+					has_opinion_modifier = BFTB_balkan_pact_ally
+				}
+				add_opinion_modifier = {
+					target = TUR
+					modifier = BFTB_balkan_pact_ally
+				}
+				reverse_add_opinion_modifier = {
+					target = PREV
+					modifier = BFTB_balkan_pact_ally
+				}
+			}
+			if = {
+				limit = {
+					country_exists = HUN
+				}
+				TUR = {
+					add_opinion_modifier = {
+						target = HUN
+						modifier = BFTB_balkan_pact_enemy
+					}
+				}
+			}
+			if = {
+				limit = {
+					country_exists = BUL
+				}
+				TUR = {
+					add_opinion_modifier = {
+						target = BUL
+						modifier = BFTB_balkan_pact_enemy
+					}
+				}
+			}
 		}
 	}
 
 	focus = {
-		id = ROM_bulgarian_interventionism
-		icon = GFX_focus_generic_attack_bulgaria
+		id = ROM_unite_the_balkan_entente
+		icon = GFX_focus_TUR_reform_the_balkan_pact
+		mutually_exclusive = { focus = ROM_neutrality_at_all_costs }
+		mutually_exclusive = { focus = ROM_unite_the_little_entente }
+		mutually_exclusive = { focus = ROM_alliance_with_france }
 		prerequisite = { focus = ROM_introduce_turkey_into_the_pact }
 		x = 0
 		y = 1
@@ -2513,11 +2477,13 @@ focus_tree = {
 		}
 
 		available = {
-
+			is_in_faction = no
+			is_subject = no
 		}
 
 		bypass = {
-
+			is_in_faction_with = TUR
+			TUR = { is_faction_leader = yes }
 		}
 
 		cancel_if_invalid = yes
@@ -2525,7 +2491,32 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			
+			set_rule = { can_create_factions = yes }
+			create_faction = TUR_balkan_pact
+			every_country = {
+				limit = {
+					AND = {
+						OR = {
+							original_tag = GRE
+							original_tag = HUN
+							original_tag = TUR
+							original_tag = YUG
+						}
+						is_in_faction = no
+					}
+				}
+				country_event = { id = bftb_turkey.41 }
+			}
+			diplomatic_relation = {
+				country = YUG
+				relation = guarantee
+				active = no
+			}
+			diplomatic_relation = {
+				country = CZE
+				relation = guarantee
+				active = no
+			}
 		}
 	}
 
@@ -2558,6 +2549,7 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+            add_timed_idea = { idea = ROM_preserve_greater_romania days = 365 }
 		}
 	}
 
@@ -2919,7 +2911,9 @@ focus_tree = {
 	focus = {
 		id = ROM_unite_the_little_entente
 		icon = GFX_goal_ROM_little_entente
+		mutually_exclusive = { focus = ROM_unite_the_balkan_entente }
 		mutually_exclusive = { focus = ROM_neutrality_at_all_costs }
+		mutually_exclusive = { focus = ROM_alliance_with_france }
 		prerequisite = { focus = ROM_preserve_romania }
 		x = -2
 		y = 3
@@ -2932,7 +2926,8 @@ focus_tree = {
 		}
 
 		available = {
-
+			is_in_faction = no
+			is_subject = no
 		}
 
 		bypass = {
@@ -2971,13 +2966,115 @@ focus_tree = {
 			hidden_effect = {
 				news_event = { id = news.317 days = 1 }
 			}
+			diplomatic_relation = {
+				country = GRE
+				relation = guarantee
+				active = no
+			}
+			diplomatic_relation = {
+				country = TUR
+				relation = guarantee
+				active = no
+			}
+		}
+	}
+
+	focus = {
+		id = ROM_alliance_with_france
+		icon = GFX_goal_generic_befriend_france
+		mutually_exclusive = { focus = ROM_unite_the_balkan_entente }
+		mutually_exclusive = { focus = ROM_unite_the_little_entente }
+		mutually_exclusive = { focus = ROM_neutrality_at_all_costs }
+		prerequisite = { focus = ROM_preserve_romania }
+		x = 0
+		y = 3
+		relative_position_id = ROM_preserve_romania
+
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			is_in_faction = no
+			is_subject = no
+			country_exists = FRA
+			FRA = { is_subject = no }
+			OR = {
+				FRA = { is_faction_leader = yes }
+				AND = {
+					FRA = { is_in_faction_with = ENG }
+					ENG = { is_faction_leader = yes }
+				}
+				AND = {
+					FRA = { is_in_faction_with = USA }
+					USA = { is_faction_leader = yes }
+				}
+			}
+		}
+
+		bypass = {
+			is_in_faction_with = FRA
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		completion_reward = {
+			if = {
+				limit = {
+					has_idea = neutrality_idea
+				}
+				remove_ideas = neutrality_idea
+			}
+			diplomatic_relation = {
+				country = GRE
+				relation = guarantee
+				active = no
+			}
+			diplomatic_relation = {
+				country = TUR
+				relation = guarantee
+				active = no
+			}
+			if = {
+				limit = {
+					FRA = { is_faction_leader = yes }
+				}
+				FRA = { country_event = generic.2 }
+			}
+			else_if = {
+				limit = {
+					FRA = { is_in_faction_with = ENG }
+					ENG = { is_faction_leader = yes }
+				}
+				ENG = { country_event = generic.2 }
+			}
+			else_if = {
+				limit = {
+					FRA = { is_in_faction_with = USA }
+					USA = { is_faction_leader = yes }
+				}
+				USA = { country_event = generic.2 }
+			}
+			#if = {
+			#	limit = { NOT = { has_idea = ROM_flexible_foreign_policy_2 } }
+			#	swap_ideas = {
+			#		remove_idea = ROM_flexible_foreign_policy
+			#		add_idea = ROM_flexible_foreign_policy_2
+			#	}
+			#}
 		}
 	}
 
 	focus = {
 		id = ROM_neutrality_at_all_costs
 		icon = GFX_goal_generic_neutrality_focus
+		mutually_exclusive = { focus = ROM_unite_the_balkan_entente }
 		mutually_exclusive = { focus = ROM_unite_the_little_entente }
+		mutually_exclusive = { focus = ROM_alliance_with_france }
 		prerequisite = { focus = ROM_preserve_romania }
 		x = 2
 		y = 3
@@ -2990,7 +3087,9 @@ focus_tree = {
 		}
 
 		available = {
-
+			is_in_faction = no
+			is_subject = no
+			has_war = no
 		}
 
 		bypass = {
@@ -3023,58 +3122,71 @@ focus_tree = {
 				relation = guarantee
 				active = no
 			}
-		}
-	}
-
-	focus = {
-		id = ROM_alliance_with_france
-		icon = GFX_goal_generic_befriend_france
-		mutually_exclusive = { focus = ROM_failure_of_france }
-		prerequisite = { focus = ROM_unite_the_little_entente }
-		x = 0
-		y = 1
-		relative_position_id = ROM_unite_the_little_entente
-
-		cost = 5
-
-		ai_will_do = {
-			factor = 1
-		}
-
-		available = {
-
-		}
-
-		bypass = {
-
-		}
-
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
-
-		completion_reward = {
 			if = {
 				limit = {
-					has_idea = neutrality_idea
+					has_dlc = "Battle for the Bosporus"
+					NOT = {
+						is_in_faction_with = TUR
+						TUR = { is_faction_leader = yes }
+					}
 				}
-				remove_ideas = neutrality_idea
+				every_other_country = {
+					limit = {
+						has_opinion_modifier = BFTB_balkan_pact_ally
+					}
+					remove_opinion_modifier = {
+						target = ROM
+						modifier = BFTB_balkan_pact_ally
+					}
+					if = {
+						limit = {
+							is_in_faction_with = TUR
+							TUR = { is_faction_leader = no }
+						}
+						hidden_effect = {
+							ROOT = {
+								remove_opinion_modifier = {
+									target = PREV
+									modifier = BFTB_balkan_pact_ally
+								}
+							}
+						}
+					}
+				}
 			}
-			FRA = { country_event = generic.2 }
-			#if = {
-			#	limit = { NOT = { has_idea = ROM_flexible_foreign_policy_2 } }
-			#	swap_ideas = {
-			#		remove_idea = ROM_flexible_foreign_policy
-			#		add_idea = ROM_flexible_foreign_policy_2
-			#	}
-			#}
+			hidden_effect = {
+				if = {
+					limit = {
+						has_dlc = "Battle for the Bosporus"
+						NOT = {
+							is_in_faction_with = TUR
+							TUR = { is_faction_leader = yes }
+						}
+					}
+					remove_opinion_modifier = {
+						target = BUL
+						modifier = BFTB_balkan_pact_enemy
+					}
+					remove_opinion_modifier = {
+						target = HUN
+						modifier = BFTB_balkan_pact_enemy
+					}
+					add_opinion_modifier = {
+						target = BUL
+						modifier = BFTB_incongruous_neighbors
+					}
+					add_opinion_modifier = {
+						target = HUN
+						modifier = BFTB_incongruous_neighbors
+					}
+				}
+			}
 		}
 	}
 
 	focus = {
 		id = ROM_failure_of_france
 		icon = GFX_goal_ROM_failure_of_france
-		mutually_exclusive = { focus = ROM_alliance_with_france }
 		prerequisite = { focus = ROM_neutrality_at_all_costs }
 		x = 0
 		y = 1
@@ -3087,7 +3199,11 @@ focus_tree = {
 		}
 
 		available = {
-
+			OR = {
+				NOT = { country_exists = FRA }
+				FRA = { is_subject = yes }
+				FRA = { has_capitulated = yes }
+			}
 		}
 
 		bypass = {
@@ -3106,10 +3222,10 @@ focus_tree = {
 	###
 
 	focus = {
-		id = ROM_license_french_equipment
-		icon = GFX_goal_generic_license_tanks
+		id = ROM_french_military_sponsor
+		icon = GFX_goal_generic_major_sponsor_france
 		prerequisite = { focus = ROM_alliance_with_france }
-		x = -2
+		x = 0
 		y = 1
 		relative_position_id = ROM_alliance_with_france
 
@@ -3139,10 +3255,10 @@ focus_tree = {
 	focus = {
 		id = ROM_rise_of_the_democrati
 		icon = GFX_goal_ROM_rise_of_the_democrati
-		prerequisite = { focus = ROM_alliance_with_france }
-		x = 0
-		y = 1
-		relative_position_id = ROM_alliance_with_france
+		prerequisite = { focus = ROM_unite_the_balkan_entente focus = ROM_unite_the_little_entente focus = ROM_alliance_with_france }
+		x = -2
+		y = 2
+		relative_position_id = ROM_unite_the_little_entente
 
 		cost = 5
 
@@ -3276,7 +3392,7 @@ focus_tree = {
 		icon = GFX_
 		prerequisite = { focus = ROM_militarize_the_sentinels }
 		x = 0
-		y = 2
+		y = 1
 		relative_position_id = ROM_militarize_the_sentinels
 
 		cost = 5
@@ -3334,7 +3450,7 @@ focus_tree = {
 		}
 
 		available = {
-
+			is_in_faction_with = ENG
 		}
 
 		bypass = {
@@ -3425,15 +3541,19 @@ focus_tree = {
 				limit = {
 					has_idea = ROM_iron_guard
 				}
-				add_ideas = ROM_iron_guard_3
-				remove_ideas = ROM_iron_guard
+				swap_ideas = {
+					remove_idea = ROM_iron_guard
+					add_idea = ROM_iron_guard_3
+				}
 			}
 			if = {
 				limit = {
 					has_idea = ROM_iron_guard_2
 				}
-				add_ideas = ROM_iron_guard_3
-				remove_ideas = ROM_iron_guard_2
+				swap_ideas = {
+					remove_idea = ROM_iron_guard_2
+					add_idea = ROM_iron_guard_3
+				}
 			}
 			add_popularity = {
 				popularity = 0.35
@@ -3458,10 +3578,17 @@ focus_tree = {
 
 		available = {
 			has_idea = ROM_king_carol_ii_hedonist
-			OR = {
-				democratic > 0.35
-				communism > 0.35
-				fascism > 0.35
+			if = {
+				limit = {
+					has_government = neutrality
+				}
+				neutrality < 0.3
+			}
+			if = {
+				limit = {
+					has_government = democratic
+				}
+				democratic < 0.3
 			}
 			is_subject = no
 		}
@@ -3510,7 +3637,12 @@ focus_tree = {
 					}
 				}
 			}
-
+			if = {
+				limit = {
+					has_idea = neutrality_idea
+				}
+				remove_ideas = neutrality_idea
+			}
 			swap_ideas = {
 				add_idea = ROM_figurehead_king_michael
 				remove_idea = ROM_king_carol_ii_hedonist
@@ -3684,7 +3816,7 @@ focus_tree = {
 		icon = GFX_focus_YUG_pan_slavic_congress
 		prerequisite = { focus = ROM_approach_the_comintern }
 		x = 0
-		y = 2
+		y = 1
 		relative_position_id = ROM_approach_the_comintern
 
 		cost = 5
@@ -3760,10 +3892,10 @@ focus_tree = {
 	}
 
 	focus = {
-		id = ROM_license_soviet_equipment
-		icon = GFX_goal_generic_license_tanks
+		id = ROM_soviet_military_sponsor
+		icon = GFX_goal_generic_major_sponsor_soviet_union
 		prerequisite = { focus = ROM_approach_the_comintern }
-		x = -1
+		x = -2
 		y = 1
 		relative_position_id = ROM_approach_the_comintern
 
@@ -3832,7 +3964,7 @@ focus_tree = {
 		icon = GFX_focus_spr_crush_the_revolution
 		prerequisite = { focus = ROM_approach_the_axis }
 		x = 0
-		y = 2
+		y = 1
 		relative_position_id = ROM_approach_the_axis
 
 		cost = 5
@@ -3925,10 +4057,10 @@ focus_tree = {
 	}
 
 	focus = {
-		id = ROM_license_german_equipment
-		icon = GFX_goal_generic_license_tanks
+		id = ROM_german_military_sponsor
+		icon = GFX_goal_generic_major_sponsor_germany
 		prerequisite = { focus = ROM_approach_the_axis }
-		x = 1
+		x = 2
 		y = 1
 		relative_position_id = ROM_approach_the_axis
 
