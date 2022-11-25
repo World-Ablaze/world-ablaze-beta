@@ -153,7 +153,7 @@ NDefines.NProduction.LICENSE_EQUIPMENT_BASE_SPEED = -0.25							-- base MIC spee
 NDefines.NProduction.LICENSE_EQUIPMENT_SPEED_NOT_FACTION = -0.25					-- MIC speed modifier for licensed equipment for not being in faction
 NDefines.NProduction.LICENSE_EQUIPMENT_TECH_SPEED_PER_YEAR = 0						-- MIC speed modifier for licensed equipment for each year of difference between actual and latest equipment
 NDefines.NProduction.LICENSE_EQUIPMENT_TECH_SPEED_MAX_YEARS = 1						-- Maximum years for MIC speed modifier
-
+	
 NDefines.NProduction.CAPITULATE_STOCKPILES_RATIO = 0.7 								-- How much equipment from deployed divisions will be transferred on capitulation
 
 NDefines.NProduction.MAX_EQUIPMENT_RESOURCES_NEED = 6 								-- Max number of different strategic resources an equipment can be dependent on.
@@ -167,9 +167,9 @@ NDefines.NProduction.BASE_FACTORY_EFFICIENCY_PARENT_CHANGE_FACTOR = 80				-- Bas
 NDefines.NProduction.BASE_FACTORY_EFFICIENCY_FAMILY_CHANGE_FACTOR = 70				-- Base factor for changing production with same family in %.
 NDefines.NProduction.BASE_FACTORY_EFFICIENCY_ARCHETYPE_CHANGE_FACTOR = 20 			-- Base factor for changing production with same archetype in %.
 
-NDefines.NProduction.EQUIPMENT_MODULE_ADD_XP_COST = 6.0								-- XP cost for adding a new equipment module in an empty slot when creating an equipment variant.
-NDefines.NProduction.EQUIPMENT_MODULE_REPLACE_XP_COST = 6.0							-- XP cost for replacing one equipment module with an unrelated module when creating an equipment variant.
-NDefines.NProduction.EQUIPMENT_MODULE_CONVERT_XP_COST = 4.0							-- XP cost for converting one equipment module to a related module when creating an equipment variant.
+NDefines.NProduction.EQUIPMENT_MODULE_ADD_XP_COST = 5.0								-- XP cost for adding a new equipment module in an empty slot when creating an equipment variant.
+NDefines.NProduction.EQUIPMENT_MODULE_REPLACE_XP_COST = 5.0							-- XP cost for replacing one equipment module with an unrelated module when creating an equipment variant.
+NDefines.NProduction.EQUIPMENT_MODULE_CONVERT_XP_COST = 3.0							-- XP cost for converting one equipment module to a related module when creating an equipment variant.
 NDefines.NProduction.EQUIPMENT_MODULE_REMOVE_XP_COST = 2.0							-- XP cost for removing an equipment module and leaving the slot empty when creating an equipment variant.
 
 NDefines.NProduction.LICENSE_IC_COST_YEAR_INCREASE = 0.25							-- IC cost equipment for every year of equipment after 1936
