@@ -12367,11 +12367,146 @@ reserve_divisions = {
 		}
 	}
 
-	ENG_deploy_homeguard = {
+	CAN_deploy_homeguard = {
+		icon = generic_nationalism
+		allowed = {
+			original_tag = CAN
+		}
 
+		fire_only_once = yes
+
+		available = {
+			OR = {
+				468 = { is_controlled_by = ROOT }
+				1005 = { is_controlled_by = ROOT }
+				276 = { is_controlled_by = ROOT }
+			}
+			OR = {
+				surrender_progress > 0.05
+				AND = {
+					any_enemy_country = {
+						strength_ratio = {
+							tag = ROOT
+							ratio > 2.0
+						}
+					}
+					is_ai = no
+				}
+			}
+		}
+
+		ai_will_do = {
+			base = 200
+
+			modifier = {
+				factor = 0
+				date > 1944.1.1
+			}
+		}
+
+		visible = {
+			has_completed_focus = CAN_form_the_veterans_guard
+		}
+
+		cost = 0
+
+		complete_effect = {
+			custom_effect_tooltip = home_guard_tt
+			hidden_effect = {
+				set_country_flag = home_guard_deployed
+				division_template = {
+					name = "Home Guard Unit"
+					division_names_group = CAN_GAR_01
+					priority = 0 # garrison
+
+					is_locked = yes
+
+					regiments = {
+						infantry = { x = 0 y = 0 }
+						infantry = { x = 0 y = 1 }
+						infantry = { x = 0 y = 2 }
+
+						infantry = { x = 1 y = 0 }
+						infantry = { x = 1 y = 1 }
+						infantry = { x = 1 y = 2 }
+
+						infantry = { x = 2 y = 0 }
+						infantry = { x = 2 y = 1 }
+						infantry = { x = 2 y = 2 }
+
+						infantry = { x = 3 y = 0 }
+						infantry = { x = 3 y = 1 }
+						infantry = { x = 3 y = 2 }
+
+						infantry = { x = 4 y = 0 }
+						infantry = { x = 4 y = 1 }
+						infantry = { x = 4 y = 2 }
+					}
+
+					support = {
+						normal_engineer = { x = 0 y = 0 }
+						horse_logistics_company = { x = 0 y = 1 }
+
+						recon = { x = 1 y = 0 }
+					}
+				}
+			}
+			if = {
+				limit = {
+					468 = { is_controlled_by = ROOT }
+				}
+				hidden_effect = {
+					468 = {
+						create_unit = {
+							division = "division_template=\"Home Guard Unit\" start_experience_factor=0.2 start_equipment_factor=0.75 force_equipment_variants={eng_inf_1={owner=\"CAN\"}}"
+							owner = ROOT
+							count = 4
+							prioritize_location = 6103
+						}
+					}
+				}
+			}
+			if = {
+				limit = {
+					1005 = { is_controlled_by = ROOT }
+				}
+				hidden_effect = {
+					1005 = {
+						create_unit = {
+							division = "division_template=\"Home Guard Unit\" start_experience_factor=0.2 start_equipment_factor=0.75 force_equipment_variants={eng_inf_1={owner=\"CAN\"}}"
+							owner = ROOT
+							count = 3
+							prioritize_location = 9297
+						}
+					}
+				}
+			}
+			if = {
+				limit = {
+					276 = { is_controlled_by = ROOT }
+				}
+				hidden_effect = {
+					276 = {
+						create_unit = {
+							division = "division_template=\"Home Guard Unit\" start_experience_factor=0.2 start_equipment_factor=0.75 force_equipment_variants={eng_inf_1={owner=\"CAN\"}}"
+							owner = ROOT
+							count = 5
+							prioritize_location = 6384
+						}
+					}
+				}
+			}
+		}
+	}
+
+	ENG_deploy_homeguard = {
 		icon = generic_nationalism
 
 		fire_only_once = yes
+
+		allowed = {
+			original_tag = ENG
+		}
 
 		available = {
 			OR = {
@@ -12404,7 +12539,6 @@ reserve_divisions = {
 		}
 
 		visible = {
-			tag = ENG
 			has_completed_focus = ENG_military_training_act
 		}
 
@@ -12515,10 +12649,13 @@ reserve_divisions = {
 	}
 
 	ENG_deploy_homeguard_late = {
-
 		icon = generic_nationalism
 
 		fire_only_once = yes
+
+		allowed = {
+			original_tag = ENG
+		}
 
 		available = {
 			surrender_progress > 0.01
@@ -12539,7 +12676,6 @@ reserve_divisions = {
 		visible = {
 			is_ai = yes
 			date > 1944.1.1
-			tag = ENG
 			has_completed_focus = ENG_military_training_act
 		}
 
@@ -12655,13 +12791,59 @@ reserve_divisions = {
 		}
 	}
 
-	ENG_disband_the_home_guard = {
+	CAN_disband_the_home_guard = {
 		icon = generic_political_discourse
+
+		allowed = {
+			original_tag = CAN
+		}
+
 		available = {
-			original_tag = ENG
 		}
 		visible = {
+			OR = {
+				has_country_flag = home_guard_late_deployed
+				has_country_flag = home_guard_deployed
+			}
+		}
+
+		days_remove = 90
+		is_good = yes
+		cost = 50
+
+		cancel_if_not_visible = yes
+
+		ai_will_do = {
+			factor = 10
+
+			modifier = {
+				factor = 0
+				has_war = yes
+			}
+		}
+
+		complete_effect = {
+			custom_effect_tooltip = CAN_home_guard_disbanded_tt
+			delete_unit_template_and_units = {
+				division_template = "Home Guard Unit"
+				disband = yes
+			}
+			hidden_effect = {
+				set_country_flag = CAN_home_guard_disbanded
+			}
+		}
+	}
+
+	ENG_disband_the_home_guard = {
+		icon = generic_political_discourse
+
+		allowed = {
 			original_tag = ENG
+		}
+
+		available = {
+		}
+		visible = {
 			OR = {
 				has_country_flag = home_guard_late_deployed
 				has_country_flag = home_guard_deployed
