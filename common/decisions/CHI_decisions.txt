@@ -4796,7 +4796,7 @@ CHI_communist_infiltration = {
 
 foreign_support = {
 
-	CHI_purchase_weapons_from_Czechoslovakia = {
+	CHI_purchase_weapons_from_czechoslovakia = {
 		icon = generic_prepare_civil_war
 
 		allowed = {
@@ -4813,6 +4813,9 @@ foreign_support = {
 			country_exists = CZE
 			NOT = { has_war_with = CZE }
         }
+		cancel_trigger = {
+			has_country_flag = CHI_no_cze_weapon_flag
+		}
 
 		cost = 0
 
@@ -4826,16 +4829,79 @@ foreign_support = {
 			}
 		}
 
-		days_remove = 30
+		days_mission_timeout = 3 #0
+		#days_remove = 30
 		is_good = yes
 
 		modifier = {
 			civilian_factory_use = 5
 		}
 
-		remove_effect = {
+		complete_effect = {
+			if = {
+				limit = {
+					has_country_flag = CHI_no_cze_weapon_flag
+				}
+				hidden_effect = {
+					clr_country_flag = CHI_no_cze_weapon_flag
+					set_country_flag = CHI_cze_weapon_flag
+				}
+			}
+		}
+
+		timeout_effect = {
 			add_equipment_to_stockpile = { type = cze_inf_1 amount = 900 producer = CZE }
 			add_equipment_to_stockpile = { type = cze_hv_inf_1 amount = 300 producer = CZE }
+			if = {
+				limit = {
+					NOT = { has_country_flag = CHI_no_cze_weapon_flag }
+					CZE = { has_war = no }
+					CZE = { has_capitulated = no }
+					country_exists = CZE
+				}
+				hidden_effect = {
+					activate_mission = CHI_purchase_weapons_from_czechoslovakia
+				}
+			}
+		}
+	}
+
+	CHI_stop_weapon_purchases_from_czechoslovakia = {
+		icon = generic_prepare_civil_war
+
+		allowed = {
+			tag = CHI
+		}
+
+		available = {
+        }
+
+        visible = {
+			has_country_flag = CHI_cze_weapon_flag
+			CZE = { has_war = no }
+			CZE = { has_capitulated = no }
+			country_exists = CZE
+        }
+
+		cost = 0
+
+        ai_will_do = {
+			base = 0
+
+			modifier = {
+				add = 500
+				has_equipment = { infantry_equipment > 100000 }
+				has_equipment = { heavy_infantry_equipment > 10000 }
+			}
+		}
+
+		modifier = {
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				set_country_flag = CHI_no_cze_weapon_flag
+			}
 		}
 	}
 
@@ -4909,7 +4975,7 @@ foreign_support = {
 			NOT = { has_war_with = SOV }
         }
 
-		cost = 15
+		cost = 0
 
         ai_will_do = {
 			factor = 500
@@ -4990,12 +5056,12 @@ foreign_support = {
 				limit = {
 					NOT = { has_completed_focus = CHI_expand_the_hanoi_route }
 				}
-				add_equipment_to_stockpile = { type = fra_inf_1 amount = 450 producer = SOV }
-				add_equipment_to_stockpile = { type = fra_hv_inf_2 amount = 150 producer = SOV }
+				add_equipment_to_stockpile = { type = fra_inf_1 amount = 450 producer = FRA }
+				add_equipment_to_stockpile = { type = fra_hv_inf_2 amount = 150 producer = FRA }
 			}
 			else = {
-				add_equipment_to_stockpile = { type = fra_inf_1 amount = 900 producer = SOV }
-				add_equipment_to_stockpile = { type = fra_hv_inf_2 amount = 300 producer = SOV }
+				add_equipment_to_stockpile = { type = fra_inf_1 amount = 900 producer = FRA }
+				add_equipment_to_stockpile = { type = fra_hv_inf_2 amount = 300 producer = FRA }
 			}
 		}
 	}
@@ -5055,12 +5121,12 @@ foreign_support = {
 				limit = {
 					NOT = { has_completed_focus = CHI_expand_the_burma_road }
 				}
-				add_equipment_to_stockpile = { type = eng_inf_1 amount = 450 producer = SOV }
-				add_equipment_to_stockpile = { type = eng_hv_inf_1 amount = 150 producer = SOV }
+				add_equipment_to_stockpile = { type = eng_inf_1 amount = 450 producer = ENG }
+				add_equipment_to_stockpile = { type = eng_hv_inf_1 amount = 150 producer = ENG }
 			}
 			else = {
-				add_equipment_to_stockpile = { type = eng_inf_1 amount = 900 producer = SOV }
-				add_equipment_to_stockpile = { type = eng_hv_inf_1 amount = 300 producer = SOV }
+				add_equipment_to_stockpile = { type = eng_inf_1 amount = 900 producer = ENG }
+				add_equipment_to_stockpile = { type = eng_hv_inf_1 amount = 300 producer = ENG }
 			}
 		}
 	}
@@ -5113,12 +5179,12 @@ foreign_support = {
 				limit = {
 					NOT = { has_completed_focus = CHI_expand_the_hump }
 				}
-				add_equipment_to_stockpile = { type = usa_inf_1 amount = 450 producer = SOV }
-				add_equipment_to_stockpile = { type = usa_hv_inf_1 amount = 150 producer = SOV }
+				add_equipment_to_stockpile = { type = usa_inf_1 amount = 450 producer = USA }
+				add_equipment_to_stockpile = { type = usa_hv_inf_1 amount = 150 producer = USA }
 			}
 			else = {
-				add_equipment_to_stockpile = { type = usa_inf_1 amount = 900 producer = SOV }
-				add_equipment_to_stockpile = { type = usa_hv_inf_1 amount = 300 producer = SOV }
+				add_equipment_to_stockpile = { type = usa_inf_1 amount = 900 producer = USA }
+				add_equipment_to_stockpile = { type = usa_hv_inf_1 amount = 300 producer = USA }
 			}
 		}
 	}
@@ -5776,7 +5842,7 @@ political_actions = {
 		}
 		visible = {
 			tag = CHI
-			has_completed_focus = CHI_anti_communism
+			has_completed_focus = CHI_destroy_the_communists
 			NOT = { is_in_faction_with = PRC }
 			PRC = {
 				has_government = communism
@@ -6056,7 +6122,7 @@ CHI_xian_incident = {
 				NOT = {
 					has_war_with = PRC
 				}
-				CHI = { has_completed_focus = CHI_anti_communism }
+				CHI = { has_completed_focus = CHI_destroy_the_communists }
 			}
 			PRC = {
 				NOT = {
