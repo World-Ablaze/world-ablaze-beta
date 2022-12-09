@@ -5102,3 +5102,147 @@ PRC_peoples_power_struggle = {
 		}
 	}
 }
+
+foreign_support = {
+	PRC_purchase_weapons_from_soviet_union = {
+		icon = generic_prepare_civil_war
+
+		allowed = {
+			tag = PRC
+		}
+
+		available = {
+			SOV = { has_war = no }
+			SOV = { has_capitulated = no }
+			num_of_civilian_factories_available_for_projects > 4
+			has_equipment = { infantry_equipment < 89999 }
+			has_equipment = { heavy_infantry_equipment < 32999 }
+		}
+
+		visible = {
+			country_exists = SOV
+			NOT = { has_war_with = SOV }
+			NOT = { has_country_flag = PRC_sov_weapon_flag }
+		}
+
+		cost = 0
+
+		ai_will_do = {
+			factor = 500
+
+			modifier = {
+				factor = 0
+				has_equipment = { infantry_equipment > 89999 }
+				has_equipment = { heavy_infantry_equipment > 32999 }
+			}
+		}
+
+		complete_effect = {
+			if = {
+				limit = {
+					has_country_flag = PRC_no_sov_weapon_flag
+				}
+				hidden_effect = {
+					clr_country_flag = PRC_no_sov_weapon_flag
+				}
+			}
+			hidden_effect = {
+				set_country_flag = PRC_sov_weapon_flag
+			}
+			activate_mission = PRC_soviet_union_weapon_purchases
+		}
+	}
+
+	PRC_soviet_union_weapon_purchases = {
+		icon = generic_prepare_civil_war
+
+		allowed = {
+			tag = PRC
+		}
+
+		available = {
+			OR = {
+				has_country_flag = PRC_no_sov_weapon_flag
+				SOV = { has_war = yes }
+				SOV = { has_capitulated = yes }
+				NOT = { country_exists = SOV }
+				NOT = { num_of_civilian_factories_available_for_projects > 4 }
+				has_equipment = { infantry_equipment > 89999 }
+				has_equipment = { heavy_infantry_equipment > 32999 }
+			}
+		}
+
+		visible = {
+			has_country_flag = PRC_sov_weapon_flag
+			NOT = { has_country_flag = PRC_no_sov_weapon_flag }
+		}
+
+		days_mission_timeout = 30
+		is_good = yes
+
+		activation = {
+			always = no
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				clr_country_flag = PRC_sov_weapon_flag
+				set_country_flag = PRC_no_sov_weapon_flag
+			}
+		}
+
+		timeout_effect = {
+			add_equipment_to_stockpile = { type = sov_inf_1 amount = 900 producer = SOV }
+			add_equipment_to_stockpile = { type = sov_hv_inf_1 amount = 300 producer = SOV }
+
+			hidden_effect = {
+				activate_mission = PRC_soviet_union_weapon_purchases
+			}
+		}
+	}
+
+	PRC_stop_weapon_purchases_from_soviet_union = {
+		icon = generic_prepare_civil_war
+
+		allowed = {
+			tag = PRC
+		}
+
+		available = {
+		}
+
+		visible = {
+			has_country_flag = PRC_sov_weapon_flag
+			NOT = { has_country_flag = PRC_no_sov_weapon_flag }
+		}
+
+		cost = 0
+
+		ai_will_do = {
+			base = 0
+
+			modifier = {
+				add = 500
+				has_equipment = { infantry_equipment > 89999 }
+				has_equipment = { heavy_infantry_equipment > 32999 }
+			}
+		}
+
+		modifier = {
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				if = {
+					limit = {
+						has_country_flag = PRC_sov_weapon_flag
+					}
+					hidden_effect = {
+						clr_country_flag = PRC_sov_weapon_flag
+					}
+				}
+				set_country_flag = PRC_no_sov_weapon_flag
+			}
+		}
+	}
+}
