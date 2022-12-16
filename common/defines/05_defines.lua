@@ -629,8 +629,6 @@ NDefines.NNavy.BASE_ESCAPE_SPEED = 1.0												-- daily base escape speed (ga
 
 NDefines.NNavy.SUBMARINE_BASE_TORPEDO_REVEAL_CHANCE = 0.5							-- Chance of a submarine being revealed when it fires. 1.0 is 100%. this chance is then multiplied with modifier created by comparing firer's visibiility and target's detection
 
-NDefines.NNavy.TRAINING_DAILY_COUNTRY_EXP_FACTOR = 0.0008							-- Factor used to scale the Daily Country Navy XP gain
-
 NDefines.NNavy.OUT_OF_FUEL_SPEED_FACTOR = -0.75
 NDefines.NNavy.OUT_OF_FUEL_RANGE_FACTOR = -0.75
 NDefines.NNavy.OUT_OF_FUEL_ATTACK_FACTOR = -0.9
@@ -640,7 +638,8 @@ NDefines.NNavy.SCREEN_RATIO_FOR_FULL_SCREENING_FOR_CAPITALS = 4.0					-- this sc
 NDefines.NNavy.CAPITAL_RATIO_FOR_FULL_SCREENING_FOR_CARRIERS = 1.0					-- this capital ratio to num carriers is needed for full screening beyond screen line
 NDefines.NNavy.BASE_CARRIER_SORTIE_EFFICIENCY = 0.7									-- factor of planes that can sortie by default from a carrier
 
-NDefines.NNavy.TRAINING_MAX_DAILY_COUNTRY_EXP = 0.25								-- Maximum navy XP daily gain
+NDefines.NNavy.TRAINING_DAILY_COUNTRY_EXP_FACTOR = 0.0003							-- Factor used to scale the Daily Country Navy XP gain
+NDefines.NNavy.TRAINING_MAX_DAILY_COUNTRY_EXP = 0.15								-- Maximum navy XP daily gain
 NDefines.NNavy.CARRIER_STACK_PENALTY = 10											-- The most efficient is 4 carriers in combat. 5+ brings the penalty to the amount of wings in battle.
 NDefines.NNavy.CARRIER_STACK_PENALTY_EFFECT = 0.6									-- Each carrier above the optimal amount decreases the amount of airplanes being able to takeoff by such %.
 
