@@ -2884,7 +2884,7 @@ focus_tree = {
 
 	focus = {
 		id = HUN_the_nemzetvezeto
-		icon = GFX_goal_generic_territory_or_war
+		icon = GFX_goal_HUN_the_nemzetvezeto
 		prerequisite = { focus = HUN_alliance_with_the_axis focus = HUN_renew_the_rome_protocols focus = HUN_the_hungarian_empire }
 		x = 0
 		y = 2
@@ -4548,7 +4548,10 @@ focus_tree = {
 
 		available = {
 			OR = {
-				is_in_faction = no
+				AND = {
+					has_completed_focus = HUN_faith_in_the_regency
+					is_in_faction = no
+				}
 				is_faction_leader = yes
 			}
 		}
@@ -4562,6 +4565,14 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+			if = {
+				limit = {
+					has_completed_focus = HUN_faith_in_the_regency
+					is_in_faction = no
+				}
+				set_rule = { can_create_factions = yes }
+				create_faction = "Hungarian Empire"
+			}
 			custom_effect_tooltip = HUN_hungarian_irredentism_tt
 		}
 	}
@@ -4727,14 +4738,6 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			if = {
-				limit = {
-					NOT = {
-						has_idea = tot_economic_mobilisation
-					}
-				}
-				add_ideas = tot_economic_mobilisation
-			}
 			random_owned_controlled_state = {
 				prioritize = { 889 }
 				add_extra_state_shared_building_slots = 3
@@ -4768,9 +4771,9 @@ focus_tree = {
 	###
 
 	focus = {
-		id = HUN_demand_slovakia
-		icon = GFX_goal_HUN_demand_slovakia
-		prerequisite = { focus = HUN_the_road_to_war }
+		id = HUN_greater_hungary
+		icon = GFX_goal_HUN_greater_hungary
+		prerequisite = { focus = HUN_commit_to_the_war focus = HUN_the_road_to_war focus = HUN_hungarian_war_machine }
 		x = 0
 		y = 1
 		relative_position_id = HUN_the_road_to_war
@@ -4782,7 +4785,27 @@ focus_tree = {
 		}
 
 		available = {
-
+			custom_trigger_tooltip = {
+				tooltip = HUN_greater_hungary_tt
+				155 = { is_fully_controlled_by = ROOT }
+				890 = { is_fully_controlled_by = ROOT }
+				889 = { is_fully_controlled_by = ROOT }
+				43 = { is_fully_controlled_by = ROOT }
+				891 = { is_fully_controlled_by = ROOT }
+				154 = { is_fully_controlled_by = ROOT }
+				664 = { is_fully_controlled_by = ROOT }
+				73 = { is_fully_controlled_by = ROOT }
+				888 = { is_fully_controlled_by = ROOT }
+				109 = { is_fully_controlled_by = ROOT }
+				999 = { is_fully_controlled_by = ROOT }
+			}
+			997 = { is_core_of = ROOT }
+			76 = { is_core_of = ROOT }
+			84 = { is_core_of = ROOT }
+			83 = { is_core_of = ROOT }
+			82 = { is_core_of = ROOT }
+			45 = { is_core_of = ROOT }
+			764 = { is_core_of = ROOT }
 		}
 
 		bypass = {
@@ -4794,16 +4817,24 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+			custom_effect_tooltip = HUN_GREATER_tt
+			set_cosmetic_tag = HUN_GREATER
+			add_stability = 0.2
+			add_war_support = 0.2
+			hidden_effect = {
+				news_event = { id = news.299 }
+			}
 		}
 	}
+
+	###
 
 	focus = {
 		id = HUN_march_to_the_danube
 		icon = GFX_goal_HUN_march_to_the_danube
-		prerequisite = { focus = HUN_demand_slovakia }
 		x = -2
-		y = 1
-		relative_position_id = HUN_demand_slovakia
+		y = 2
+		relative_position_id = HUN_the_road_to_war
 
 		cost = 5
 
@@ -4812,11 +4843,39 @@ focus_tree = {
 		}
 
 		available = {
-
+			has_army_manpower = { size > 199999 }
+			is_faction_leader = yes
+			is_subject = no
+			OR = {
+				has_completed_focus = HUN_commit_to_the_war
+				has_completed_focus = HUN_the_road_to_war
+				has_completed_focus = HUN_hungarian_war_machine
+			}
 		}
 
 		bypass = {
-
+			OR = {
+				AND = {
+					45 = {
+						OWNER = {
+							has_war_with = ROOT
+						}
+					}
+					764 = {
+						OWNER = {
+							has_war_with = ROOT
+						}
+					}
+				}
+				AND = {
+					controls_state = 45
+					controls_state = 764
+				}
+				SER = { is_subject_of = ROOT }
+				SER = { is_in_faction_with = ROOT }
+				YUG = { is_subject_of = ROOT }
+				YUG = { is_in_faction_with = ROOT }
+			}
 		}
 
 		cancel_if_invalid = yes
@@ -4824,6 +4883,22 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+			if = {
+				limit = {
+					764 = { is_controlled_by = YUG }
+				}
+				YUG = { country_event = hun_armor.823 }
+			}
+			else_if = {
+				limit = {
+					764 = { is_controlled_by = SER }
+				}
+				SER = { country_event = hun_armor.823 }
+			}
+			else = {
+				add_state_claim = 45
+				add_state_claim = 764
+			}
 		}
 	}
 
@@ -4842,11 +4917,34 @@ focus_tree = {
 		}
 
 		available = {
-
+			has_army_manpower = { size > 199999 }
+			is_faction_leader = yes
+			is_subject = no
 		}
 
 		bypass = {
-
+			OR = {
+				AND = {
+					109 = {
+						OWNER = {
+							has_war_with = ROOT
+						}
+					}
+					999 = {
+						OWNER = {
+							has_war_with = ROOT
+						}
+					}
+				}
+				AND = {
+					controls_state = 109
+					controls_state = 999
+				}
+				CRO = { is_subject_of = ROOT }
+				CRO = { is_in_faction_with = ROOT }
+				YUG = { is_subject_of = ROOT }
+				YUG = { is_in_faction_with = ROOT }
+			}
 		}
 
 		cancel_if_invalid = yes
@@ -4854,6 +4952,107 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+			if = {
+				limit = {
+					109 = { is_controlled_by = YUG }
+				}
+				YUG = { country_event = hun_armor.826 }
+			}
+			else_if = {
+				limit = {
+					109 = { is_controlled_by = CRO }
+				}
+				CRO = { country_event = hun_armor.826 }
+			}
+			else = {
+				add_state_claim = 109
+				add_state_claim = 999
+			}
+		}
+	}
+
+	focus = {
+		id = HUN_demand_slovakia
+		icon = GFX_goal_HUN_demand_slovakia
+		x = 0
+		y = 2
+		relative_position_id = HUN_the_road_to_war
+
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			has_army_manpower = { size > 99999 }
+			is_faction_leader = yes
+			is_subject = no
+			OR = {
+				has_completed_focus = HUN_commit_to_the_war
+				has_completed_focus = HUN_the_road_to_war
+				has_completed_focus = HUN_hungarian_war_machine
+			}
+		}
+
+		bypass = {
+			OR = {
+				AND = {
+					70 = {
+						OWNER = {
+							has_war_with = ROOT
+						}
+					}
+					71 = {
+						OWNER = {
+							has_war_with = ROOT
+						}
+					}
+					73 = {
+						OWNER = {
+							has_war_with = ROOT
+						}
+					}
+					664 = {
+						OWNER = {
+							has_war_with = ROOT
+						}
+					}
+				}
+				AND = {
+					controls_state = 70
+					controls_state = 71
+					controls_state = 73
+					controls_state = 664
+				}
+				SLO = { is_subject_of = ROOT }
+				SLO = { is_in_faction_with = ROOT }
+			}
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		completion_reward = {
+			if = {
+				limit = {
+					70 = { is_controlled_by = CZE }
+				}
+				CZE = { country_event = hun_armor.820 }
+			}
+			else_if = {
+				limit = {
+					70 = { is_controlled_by = SLO }
+				}
+				SLO = { country_event = hun_armor.820 }
+			}
+			else = {
+				add_state_claim = 70
+				add_state_claim = 71
+				add_state_claim = 73
+				add_state_claim = 664
+			}
 		}
 	}
 
@@ -4872,11 +5071,26 @@ focus_tree = {
 		}
 
 		available = {
-
+			has_army_manpower = { size > 99999 }
+			is_faction_leader = yes
+			is_subject = no
 		}
 
 		bypass = {
-
+			OR = {
+				AND = {
+					997 = {
+						OWNER = {
+							has_war_with = ROOT
+						}
+					}
+				}
+				AND = {
+					controls_state = 997
+				}
+				AUS = { is_subject_of = ROOT }
+				AUS = { is_in_faction_with = ROOT }
+			}
 		}
 
 		cancel_if_invalid = yes
@@ -4884,16 +5098,30 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+			if = {
+				limit = {
+					109 = { is_controlled_by = GER }
+				}
+				GER = { country_event = hun_armor.829 }
+			}
+			else_if = {
+				limit = {
+					109 = { is_controlled_by = AUS }
+				}
+				AUS = { country_event = hun_armor.829 }
+			}
+			else = {
+				add_state_claim = 997
+			}
 		}
 	}
 
 	focus = {
 		id = HUN_probe_the_romanians
 		icon = GFX_goal_HUN_probe_the_romanians
-		prerequisite = { focus = HUN_demand_slovakia }
 		x = 2
-		y = 1
-		relative_position_id = HUN_demand_slovakia
+		y = 2
+		relative_position_id = HUN_the_road_to_war
 
 		cost = 5
 
@@ -4902,11 +5130,26 @@ focus_tree = {
 		}
 
 		available = {
-
+			is_faction_leader = yes
+			is_subject = no
+			OR = {
+				has_completed_focus = HUN_commit_to_the_war
+				has_completed_focus = HUN_the_road_to_war
+				has_completed_focus = HUN_hungarian_war_machine
+			}
 		}
 
 		bypass = {
-
+			OR = {
+				76 = {
+					OWNER = {
+						has_war_with = ROOT
+					}
+				}
+				controls_state = 76
+				ROM = { is_subject_of = ROOT }
+				ROM = { is_in_faction_with = ROOT }
+			}
 		}
 
 		cancel_if_invalid = yes
@@ -4914,6 +5157,7 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+			country_event = hun_armor.835
 		}
 	}
 
@@ -4932,11 +5176,44 @@ focus_tree = {
 		}
 
 		available = {
-
+			has_army_manpower = { size > 249999 }
+			is_faction_leader = yes
+			is_subject = no
 		}
 
 		bypass = {
-
+			OR = {
+				AND = {
+					76 = {
+						OWNER = {
+							has_war_with = ROOT
+						}
+					}
+					84 = {
+						OWNER = {
+							has_war_with = ROOT
+						}
+					}
+					83 = {
+						OWNER = {
+							has_war_with = ROOT
+						}
+					}
+					82 = {
+						OWNER = {
+							has_war_with = ROOT
+						}
+					}
+				}
+				AND = {
+					controls_state = 76
+					controls_state = 84
+					controls_state = 83
+					controls_state = 82
+				}
+				ROM = { is_subject_of = ROOT }
+				ROM = { is_in_faction_with = ROOT }
+			}
 		}
 
 		cancel_if_invalid = yes
@@ -4944,38 +5221,18 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-		}
-	}
-
-	focus = {
-		id = HUN_greater_hungary
-		icon = GFX_goal_HUN_greater_hungary
-		prerequisite = { focus = HUN_journey_to_the_sea }
-		prerequisite = { focus = HUN_demand_burgenland }
-		prerequisite = { focus = HUN_demand_transylvania }
-		x = 0
-		y = 2
-		relative_position_id = HUN_demand_burgenland
-
-		cost = 5
-
-		ai_will_do = {
-			factor = 1
-		}
-
-		available = {
-
-		}
-
-		bypass = {
-
-		}
-
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
-
-		completion_reward = {
+			if = {
+				limit = {
+					109 = { is_controlled_by = ROM }
+				}
+				ROM = { country_event = hun_armor.832 }
+			}
+			else = {
+				add_state_claim = 76
+				add_state_claim = 84
+				add_state_claim = 83
+				add_state_claim = 82
+			}
 		}
 	}
 
