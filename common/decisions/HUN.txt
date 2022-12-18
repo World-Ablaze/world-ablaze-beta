@@ -949,3 +949,611 @@ political_actions = {
 		}
 	}
 }
+
+operations = {
+	#first border incident
+	HUN_probe_the_romanians = {
+		icon = border_war
+		allowed = {
+			original_tag = HUN
+		}
+
+		available = {
+			has_completed_focus = HUN_probe_the_romanians
+			NOT = {
+				has_war_with = ROM
+				is_in_faction_with = ROM
+				has_non_aggression_pact_with = ROM
+				ROM = { is_puppet_of = HUN }
+			}
+			76 = {
+				any_neighbor_state = {
+					is_controlled_by = ROM
+				}
+			}
+		}
+
+		visible = {
+		}
+
+		highlight_states = {
+	 		highlight_state_targets = {
+				state = 76
+				state = 154
+			} 
+		}
+		
+		fire_only_once = yes
+		ai_will_do = {
+			factor = 1
+		}
+		cost = 50
+		days_remove = 30
+		war_with_on_remove = ROM
+		complete_effect = {
+			154 = {
+				save_event_target_as = HUN_ROM_attacker_state
+				set_state_flag = border_incident_active
+			}
+			76 = {
+				save_event_target_as = HUN_ROM_defender_state
+				set_state_flag = border_incident_active
+			}
+			ROM = {
+				country_event = { id = hun_armor.835 days = 1 }
+				activate_targeted_decision = { target = HUN decision = HUN_border_conflict_warning_ROM }
+			}
+		}
+		remove_effect = {
+			activate_targeted_decision = { target = ROM decision = HUN_border_incident_forgotten }
+			activate_targeted_decision = { target = ROM decision = HUN_escalate_incident_to_border_conflict_ROM }
+		}
+	}
+
+	#Mission for defender warning that a conflict with FROM is coming
+	HUN_border_conflict_warning_ROM = {
+
+		icon = border_war
+
+		allowed = { always = no } #Activated from effect
+
+		available = {
+			hidden_trigger = { always = no }
+		}
+
+		war_with_target_on_timeout = yes
+		ai_will_do = {
+			base = 0
+			modifier = {
+				
+			}
+		}
+
+		days_mission_timeout = 30
+
+		fire_only_once = yes
+
+		is_good = no
+		
+		timeout_effect = {
+			custom_effect_tooltip = escalation_possible_tooltip_for_defender
+			custom_effect_tooltip = effects_if_border_conflict_is_lost
+			effect_tooltip = {
+				HUN = {
+					add_doctrine_cost_reduction = {
+						name = rom_hun_border_conflict_won
+						category = land_doctrine
+						cost_reduction = 0.5
+					}
+					add_tech_bonus = {
+						name = rom_hun_border_conflict_won
+						category = armor
+						bonus = 1.0
+					}
+				}
+			}
+			hidden_effect = {
+				remove_targeted_decision = { target = HUN decision = HUN_border_conflict_warning_ROM }
+				activate_targeted_decision = { target = HUN decision = HUN_border_conflict_escalation_warning_ROM }
+			}
+		}
+	}
+
+	#Mission for defender warning FROM can escalate to war at any point is coming
+	HUN_border_conflict_escalation_warning_ROM = {
+
+		icon = border_war
+
+		allowed = { always = no } #Activated from effect
+		visible = { hidden_trigger = { NOT = { has_border_war_with = HUN } } }
+		cancel_if_not_visible = yes 
+
+		available = {
+			#var:ROOT.defender_state_vs_@FROM = {
+			#	has_ROOT_at_least_1_div_in_current_state_scope = yes
+			#}
+			hidden_trigger = { always = no }
+		}
+
+		war_with_target_on_timeout = yes
+		ai_will_do = {
+			base = 0
+			modifier = {
+				
+			}
+		}
+
+		days_mission_timeout = 30
+
+		fire_only_once = yes
+
+		is_good = no
+
+		timeout_effect = {
+			custom_effect_tooltip = from_cannot_escalate
+			custom_effect_tooltip = effects_if_border_conflict_is_lost
+			effect_tooltip = {
+				HUN = {
+					add_doctrine_cost_reduction = {
+						name = rom_hun_border_conflict_won
+						category = land_doctrine
+						cost_reduction = 0.5
+					}
+					add_tech_bonus = {
+						name = rom_hun_border_conflict_won
+						category = armor
+						bonus = 1.0
+					}
+				}
+			}
+		}		
+	}
+	#Mission for attacker to escalate or incident is forgotten
+	HUN_border_incident_forgotten = {
+
+		icon = border_war
+
+		allowed = { always = no } #Activated from effect
+
+		available = {
+			has_border_war_with = ROM # Japan shouldn't lose war support if they actually use the window of opportunity
+		}
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 154
+				state = 76
+			} 
+		}
+
+		ai_will_do = {
+			base = 0
+			modifier = {
+				
+			}
+		}
+
+		days_mission_timeout = 30
+
+		fire_only_once = yes
+
+		is_good = no
+		
+		timeout_effect = {
+			remove_targeted_decision = { target = ROM decision = HUN_escalate_incident_to_border_conflict_ROM }
+			add_political_power = -100
+			add_war_support = -0.1 #Shameful Display
+			hidden_effect = {
+				ROM = { remove_targeted_decision = { target = HUN decision = HUN_border_conflict_escalation_warning_ROM } }
+				ROM = {
+					154 = {
+						clr_state_flag = border_incident_active
+					}
+					76 = {
+						clr_state_flag = border_incident_active
+					}
+				}
+			}
+		}
+	}
+
+	#Decision to escalate incident on border with ROM to border conflict
+	HUN_escalate_incident_to_border_conflict_ROM = {
+
+		icon = border_war
+
+		allowed = { always = no } #Activated from effect
+
+		available = {
+			154 = {
+				OR = {
+					is_fully_controlled_by = ROOT
+					CONTROLLER = {
+						is_subject_of = ROOT
+					}
+					CONTROLLER = {
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+			divisions_in_border_state = {
+				state = 154
+				border_state = 76
+				size > 0
+			}
+		}
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 154
+				state = 76	
+			} 
+		}
+
+		ai_will_do = {
+			base = 10
+			modifier = { 
+				has_war = no
+				factor = 10
+			}
+		}
+
+		fire_only_once = yes #Reactivation handled in effect
+
+		complete_effect = {
+			remove_targeted_decision = { target = ROM decision = HUN_border_incident_forgotten }
+			start_border_war = {
+				change_state_after_war = no
+				attacker = {
+					state = 154
+					num_provinces = 4
+					on_win = hun_armor.836
+					on_lose = hun_armor.837
+					on_cancel = hun_armor.838
+				}
+				
+				defender = {
+					state = 76
+					num_provinces = 3
+					on_win = hun_armor.837
+					on_lose = hun_armor.836
+					on_cancel = hun_armor.838
+				}
+			}
+			ROM = {
+				activate_targeted_decision = { target = HUN decision = HUN_border_conflict_escalate_conflict }
+				activate_targeted_decision = { target = HUN decision = HUN_border_conflict_time_until_cancelled }
+			}
+			activate_targeted_decision = { target = ROM decision = HUN_border_conflict_escalate_conflict }
+			activate_targeted_decision = { target = ROM decision = HUN_border_conflict_time_until_cancelled }
+		}
+	}
+	#Mission for attacker to win border war against FROM in X days
+	HUN_border_conflict_time_until_cancelled = {
+
+		icon = border_war
+
+		allowed = { always = no } #Activated from effect
+
+		available = {
+			154 = { has_border_war = no }
+			76 = { has_border_war = no }
+		}
+		
+		highlight_states = {
+			highlight_state_targets = {
+				state = 76
+				state = 154
+			} 
+		}
+
+		ai_will_do = {
+			base = 0
+			modifier = {
+				
+			}
+		}
+
+		days_mission_timeout = 90
+		is_good = no
+
+		fire_only_once = yes #Reactivation handled in effect
+
+		complete_effect = {
+
+		}
+
+		timeout_effect = {
+			cancel_border_war = {
+				defender = 76
+				attacker = 154
+			}
+			hidden_effect = {
+				remove_targeted_decision = { target = ROM decision = HUN_border_conflict_escalate_conflict }
+				remove_targeted_decision = { target = HUN decision = HUN_border_conflict_escalate_conflict }
+			}
+		}
+	}
+
+	#Decision to escalate conflict further
+	HUN_border_conflict_escalate_conflict = {
+
+		icon = generic_ignite_civil_war
+
+		allowed = { always = no } #Activated from effect
+
+		visible = {
+			has_border_war_with = FROM
+		}
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 154
+				state = 76
+			} 
+		}
+
+		cost = 200
+
+		ai_will_do = {
+			base = 0
+			modifier = {
+				add = 100 
+				is_historical_focus_on = no 
+			}
+			modifier = {
+				add = 50 
+				AND = {
+					tag = HUN 
+					has_completed_focus = HUN_support_the_kodoha_faction
+				}
+			}
+			modifier = {
+				factor = 0
+				has_war = yes 
+			}
+		}
+
+		fire_only_once = yes #Reactivation handled in effect
+
+		complete_effect = {
+			if = {
+				limit = { original_tag = ROM }
+				set_border_war_data = {
+					attacker = 154
+					defender = 76
+					defender_modifier = 0.15
+					combat_width = 100
+				}
+				HUN = {
+					set_country_flag = {
+						flag = WTT_border_conflict_escalate_to_war_cooldown
+						days = 60
+						value = 1
+					}
+					remove_targeted_decision = { target = ROM decision = HUN_border_conflict_escalate_conflict }
+				}
+				set_country_flag = {
+					flag = WTT_border_conflict_escalate_to_war_cooldown
+					days = 60
+					value = 1
+				}
+				custom_effect_tooltip = in_60_days
+				activate_targeted_decision = { target = HUN decision = HUN_border_conflict_escalate_to_war }
+			}
+			else = {
+				set_border_war_data = {
+					attacker = 154
+					defender = 76
+					attacker_modifier = 0.15
+					combat_width = 100
+				}
+				ROM = {
+					set_country_flag = {
+						flag = WTT_border_conflict_escalate_to_war_cooldown
+						days = 60
+						value = 1
+					}
+					remove_targeted_decision = { target = HUN decision = HUN_border_conflict_escalate_conflict }
+				}
+				set_country_flag = {
+					flag = WTT_border_conflict_escalate_to_war_cooldown
+					days = 60
+					value = 1
+				}
+				custom_effect_tooltip = in_60_days
+				activate_targeted_decision = { target = ROM decision = HUN_border_conflict_escalate_to_war }
+			}
+			
+		}
+	}
+
+	#Decision to escalate conflict further
+	HUN_border_conflict_escalate_to_war = {
+
+		icon = generic_ignite_civil_war
+
+		allowed = { always = no } #Activated from effect
+
+		visible = {
+			NOT = { has_country_flag = WTT_border_conflict_escalate_to_war_cooldown }
+			has_border_war_with = FROM
+		}
+		cancel_trigger = {
+			NOT = { has_border_war = yes }
+		}
+
+		highlight_states = {
+ 			highlight_state_targets = {
+				state = 76
+				state = 154
+			} 
+		}
+
+		cost = 150
+
+		ai_will_do = {
+			base = 0
+			modifier = {
+				add = 100 
+				is_historical_focus_on = no 
+			}
+			modifier = {
+				add = 50 
+				AND = {
+					tag = HUN 
+					has_completed_focus = HUN_support_the_kodoha_faction
+				}
+			}
+			modifier = {
+				factor = 0
+				has_war = yes 
+			}
+		}
+
+		days_remove = 10
+
+		fire_only_once = yes #Reactivation handled in effect
+
+		war_with_target_on_remove = yes
+
+		complete_effect = {
+			if = {
+				limit = { original_tag = ROM }
+				76 = { save_event_target_as = their_state }
+				154 = { save_event_target_as = our_state }
+				HUN = {
+					country_event = { id = hun_armor.840 hours = 1 }
+					hidden_effect = {
+						remove_targeted_decision = { target = ROM decision = HUN_border_conflict_escalate_to_war }
+					}
+			 	}
+			}
+			else = {
+				154 = { save_event_target_as = our_state }
+				76 = { save_event_target_as = their_state }
+				ROM = {
+					country_event = { id = hun_armor.839 hours = 1 }
+					hidden_effect = {
+						remove_targeted_decision = { target = HUN decision = HUN_border_conflict_escalate_to_war }
+					}
+			 	}
+			}
+			
+		}
+
+		remove_effect = {
+			cancel_border_war = {
+				dont_fire_events = yes
+				defender = 76
+				attacker = 154
+			}
+			declare_war_on = { target = FROM type = annex_everything }
+			if = {
+				limit = { original_tag = ROM }
+				154 = {
+					clr_state_flag = border_incident_active
+				}
+				76 = {
+					clr_state_flag = border_incident_active
+				}
+				
+			}
+			else = {
+				FROM = {
+					154 = {
+						clr_state_flag = border_incident_active
+					}
+					76 = {
+						clr_state_flag = border_incident_active
+					}
+				}
+			}
+		}
+	}
+
+	#Decision to back down from conflict
+	HUN_border_conflict_back_out_of_conflict = {
+
+		allowed = { always = no } #Activated from effect
+
+		visible = {
+			has_border_war_with = FROM
+		}
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 154
+				state = 76
+			} 
+		}
+
+		ai_will_do = {
+			base = 0
+			modifier = {
+				
+			}
+		}
+
+		fire_only_once = yes #Reactivation handled in effect
+
+		complete_effect = {
+			if = {
+				limit = { original_tag = ROM }
+				finalize_border_war = {
+					attacker_win = yes
+					attacker = 154
+					defender = 76
+				}
+			}
+			else = {
+				finalize_border_war = {
+					attacker = 154
+					defender = 76
+					defender_win = yes
+				}
+			}
+		}
+	}
+
+	HUN_war_with_romania = {
+
+		icon = generic_ignite_civil_war
+
+		allowed = {
+			original_tag = HUN
+		}
+
+		available = {
+
+		}
+
+		visible = {
+			is_in_faction_with = GER
+			GER = { has_completed_focus = GER_mol_rib_pact }
+			GER = { NOT = { has_war_with = ROM } }
+			NOT = { has_war_with = ROM }
+			has_completed_focus = HUN_preemptive_war
+		}
+
+		fire_only_once = yes
+
+
+		modifier = {
+
+		}
+
+		days_remove = 0
+		days_re_enable = 0
+
+		cost = 25
+
+		ai_will_do = {
+			factor = 0
+		}
+
+		complete_effect = {
+			declare_war_on = { target = ROM type = annex_everything }
+		}		
+	}
+}
