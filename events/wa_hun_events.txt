@@ -1779,6 +1779,344 @@ country_event = {
 
 
 
+################################################# Britain recieves Romania's request to change sides
+
+
+
+
+
+
+country_event = {
+	id = hun_armor.844
+	title = hun_armor.844.t
+	desc = hun_armor.844.d
+	picture = GFX_report_event_german_reichstag_gathering
+
+	is_triggered_only = yes
+
+	immediate = {
+		FROM = { set_country_flag = HUN_switched_sides }
+		FROM = {
+			every_other_country = {
+				limit = {
+					is_in_faction_with = PREV
+					has_capitulated = no
+				}
+				set_country_flag = HUN_former_ally_still_standing #required for achievement
+			}
+		}
+	}
+
+	option = { #End hostilities with Hungary
+		name = hun_armor.844.a
+		ai_chance = {
+			base = 100
+		}
+		hidden_effect = {
+			#ensure Germany doesn't get randomly encircled
+			every_state = {
+				limit = {
+					controller = { tag = FROM }
+					owner = {
+						has_war_with = event_target:hungary_former_ally_target
+						NOT = { has_war_with = event_target:hungary_new_ally_target }
+					}
+				}
+				event_target:hungary_former_ally_target = {
+					set_state_controller = PREV
+				}
+			}
+			FROM = {
+				# move our armies to back home
+				teleport_armies = {
+					to_state_array = owned_controlled_states
+				}
+			}
+		}
+		white_peace = FROM
+		FROM = {
+			leave_faction = yes
+		}
+		hidden_effect = {
+			event_target:hungary_former_ally_target = {
+				country_event = { id = hun_armor.845 days = 1 }
+			}
+			FROM = { #essentially so the Soviets peace out with Hungary, preventing England from being dragged into a war with the Soviets.
+				every_enemy_country = {
+					limit = {
+						NOT = { has_war_with = event_target:hungary_new_ally_target }
+						has_war_with = event_target:hungary_former_ally_target
+						is_faction_leader = yes
+					}
+					save_global_event_target_as = hungary_third_party_target
+					if = { #creates a collab gov out of every Hungary state they occupy
+						limit = {
+							any_controlled_state = {
+								owner = { tag = FROM }
+							}
+						}
+						create_dynamic_country = {
+							original_tag = FROM
+
+							save_event_target_as = released_nation_target
+							every_state = {
+								limit = {
+									is_core_of = FROM
+									controller = { tag = event_target:hungary_third_party_target }
+								}
+								PREV = { transfer_state = PREV }
+							}
+							PREV = {
+								puppet = PREV
+								if = {
+									limit = {
+										has_dlc = "La Resistance"
+									}
+									PREV = { set_variable = { collaboration_formed_by = PREV } }
+									set_autonomy = { target = PREV autonomy_state = autonomy_collaboration_government }
+								}
+								else = {
+									set_autonomy = { target = PREV autonomy_state = autonomy_integrated_puppet }
+								}
+							}
+						}
+					}
+					white_peace = FROM
+				}
+			}
+		}
+	}
+}
+
+#change sides
+country_event = {
+	id = hun_armor.845
+	title = hun_armor.845.t
+	desc = hun_armor.845.d
+	picture = GFX_report_event_german_reichstag_gathering
+
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			FROM.FROM = {
+				leave_faction = yes
+				country_event = { id = hun_armor.846 }
+			}
+		}
+	}
+
+	option = { #time to abandon ship
+		name = hun_armor.845.a
+		ai_chance = {
+			base = 100
+		}
+	}
+}
+
+#change sides
+country_event = {
+	id = hun_armor.846
+	title = hun_armor.846.t
+	desc = hun_armor.846.d
+	picture = GFX_report_event_german_reichstag_gathering
+
+	is_triggered_only = yes
+
+	immediate = {
+
+	}
+
+	option = { #time to abandon ship
+		name = hun_armor.846.a
+		ai_chance = {
+			base = 100
+		}
+		event_target:hungary_new_ally_target = {
+			add_to_faction = ROOT
+			ROOT = {
+				add_to_war = {
+					targeted_alliance = PREV
+					enemy = FROM
+					hostility_reason = asked_to_join
+				}
+			}
+		}
+	}
+}
+
+
+
+
+
+
+################################################# Soviet Union recieves Hungary's request to change sides
+
+
+
+
+
+
+country_event = {
+	id = hun_armor.847
+	title = hun_armor.847.t
+	desc = hun_armor.847.d
+
+	is_triggered_only = yes
+
+	option = {
+		name = hun_armor.847.a
+		if = {
+			limit = { is_in_faction_with = GER }
+			add_opinion_modifier = { target = GER modifier = hungary_betrayed_us }
+			reverse_add_opinion_modifier = { target = GER modifier = hungary_betrayed_us }
+			GER = {
+				remove_from_faction = HUN
+			}
+			GER = {
+				remove_resource_rights = 890
+			}
+		}
+		SOV = {
+			white_peace = {
+				tag = HUN
+				message = HUN_white_peace
+			}
+		}
+		if = {
+			limit = {
+				ENG = { is_faction_leader = yes }
+				has_war_with = ENG
+			}
+			ENG = {
+				white_peace = {
+					tag = HUN
+					message = HUN_white_peace
+				}
+			}
+		}
+		if = {
+			limit = {
+				USA = { is_faction_leader = yes }
+				has_war_with = USA
+			}
+			USA = {
+				white_peace = {
+					tag = HUN
+					message = HUN_white_peace
+				}
+			}
+		}
+		SOV = {
+			add_to_faction = HUN
+		}
+	}
+}
+
+############################################ Soviet Union demand us being their Puppet
+
+country_event = {
+	id = hun_armor.848
+	title = hun_armor.848.t
+	desc = hun_armor.848.d
+
+	is_triggered_only = yes
+
+	option = {
+		name = hun_armor.848.a
+		ai_chance = {
+			factor = 90
+		}
+		if = {
+			limit = { is_in_faction_with = GER }
+			add_opinion_modifier = { target = GER modifier = romania_betrayed_us }
+			reverse_add_opinion_modifier = { target = GER modifier = romania_betrayed_us }
+			GER = {
+				remove_from_faction = ROM
+			}
+			GER = {
+				remove_resource_rights = 890
+			}
+		}
+		SOV = {
+			white_peace = {
+				tag = HUN
+				message = HUN_switches_sides
+			}
+		}
+		if = {
+			limit = {
+				ENG = { is_faction_leader = yes }
+				has_war_with = ENG
+			}
+			ENG = {
+				white_peace = {
+					tag = HUN
+					message = HUN_switches_sides
+				}
+			}
+		}
+		if = {
+			limit = {
+				USA = { is_faction_leader = yes }
+				has_war_with = USA
+			}
+			USA = {
+				white_peace = {
+					tag = HUN
+					message = HUN_switches_sides
+				}
+			}
+		}
+		SOV = {
+			add_to_faction = HUN
+			set_autonomy = { target = HUN autonomy_state = autonomy_puppet }
+			hidden_effect = {
+				HUN = {
+					set_politics = {
+						ruling_party = neutrality
+						elections_allowed = no
+					}
+					set_popularities = {
+						neutrality = 65
+						fascism = 19
+						communism = 14
+						democratic = 2
+					}
+				}
+			}
+		}
+	}
+
+	option = {
+		name = hun_armor.848.b
+		ai_chance = {
+			factor = 10
+		}
+		SOV = { country_event = { days = 1 id = sov_armor.857 } }
+	}
+}
+
+############################################ Soviet Union rejects Peace
+
+
+country_event = {
+	id = hun_armor.849
+	title = hun_armor.849.t
+	desc = hun_armor.849.d
+
+	is_triggered_only = yes
+
+	option = {
+		name = hun_armor.849.a
+	}
+}
+
+
+
+
+
+
 #################################################################################### Cheats
 
 
