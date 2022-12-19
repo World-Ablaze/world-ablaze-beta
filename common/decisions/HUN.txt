@@ -219,6 +219,440 @@ HUN_regency_powers = {
 	}
 }
 
+HUN_change_sides = {
+
+	HUN_change_sides_to_allies = {
+		icon = decision_generic_nationalism
+
+        allowed = { tag = HUN }
+
+		available = {
+			is_faction_leader = no
+			is_subject = no
+			has_capitulated = no
+			any_country = {
+				is_faction_leader = yes
+				has_war_with = HUN
+				OR = {
+					has_government = democratic
+					original_tag = ENG
+					original_tag = USA
+				}
+			}
+			has_completed_focus = HUN_the_national_saviour
+			surrender_progress > 0.01
+			OR = {
+				has_government = neutrality
+				has_government = democratic
+			}
+			NOT = {
+				FACTION_LEADER  = {
+					has_government = democratic
+				}
+			}
+			hidden_trigger = {
+				NOT = { has_country_flag = hungary_has_flipped_sides }
+			}
+		}
+
+		visible = {
+			is_faction_leader = no
+			original_tag = HUN
+			NOT = { has_country_flag = hungary_has_flipped_sides }
+			has_completed_focus = HUN_the_national_saviour
+		}
+
+		cost = 0
+
+		fire_only_once = yes
+
+		cancel_trigger = {
+			is_subject = yes
+		}
+
+		days_remove = 21
+		is_good = yes
+
+		ai_will_do = {
+			factor = 50
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				random_country = {
+					limit = {
+						is_in_faction_with = ROOT
+						is_faction_leader = yes
+					}
+					set_country_flag = hungary_is_flipping_sides
+					save_global_event_target_as = hungary_former_ally_target
+				}
+			}
+		}
+
+		remove_effect = {
+			#save current faction leader for use in the event
+			hidden_effect = {
+				random_country = {
+					limit = {
+						is_in_faction_with = ROOT
+						is_faction_leader = yes
+					}
+					save_global_event_target_as = hungary_former_ally_target
+				}
+			}
+			#top priority is joining the Allies if they still exist
+			if = {
+				limit = {
+					any_country = {
+						is_faction_leader = yes
+						has_war_with = HUN
+						has_government = democratic
+						OR = {
+							original_tag = ENG
+							is_in_faction_with = ENG
+						}
+					}
+				}
+				random_enemy_country = {
+					limit = {
+						is_faction_leader = yes
+						has_war_with = HUN
+						has_government = democratic
+						OR = {
+							original_tag = ENG
+							is_in_faction_with = ENG
+						}
+					}
+					save_event_target_as = hungary_new_ally_target
+				}
+			}
+			#then attempts to join the USA's faction
+			else_if = {
+				limit = {
+					any_country = {
+						is_faction_leader = yes
+						has_war_with = ROM
+						has_government = democratic
+						OR = {
+							original_tag = USA
+							is_in_faction_with = USA
+						}
+					}
+				}
+				random_enemy_country = {
+					limit = {
+						is_faction_leader = yes
+						has_war_with = ROM
+						has_government = democratic
+						OR = {
+							original_tag = USA
+							is_in_faction_with = USA
+						}
+					}
+					save_event_target_as = hungary_new_ally_target
+				}
+			}
+			#then attempts to join any democratic faction
+			else = {
+				random_enemy_country = {
+					limit = {
+						is_faction_leader = yes
+						has_war_with = ROM
+						has_government = democratic
+					}
+					save_event_target_as = hungary_new_ally_target
+				}
+			}
+			event_target:hungary_new_ally_target = {
+				country_event = { id = DOD_romania.16 }
+			}
+			hidden_effect = {
+				set_country_flag = hungary_has_flipped_sides
+			}
+		}
+	}
+
+	# Commintern
+
+	HUN_change_sides_to_commintern = {
+		icon = decision_generic_nationalism
+
+        allowed = { tag = HUN }
+
+		available = {
+			is_faction_leader = no
+			is_subject = no
+			has_capitulated = no
+			any_country = {
+				is_faction_leader = yes
+				has_war_with = HUN
+				OR = {
+					has_government = communism
+					original_tag = SOV
+				}
+			}
+			has_completed_focus = HUN_the_national_saviour
+			surrender_progress > 0.01
+			OR = {
+				has_government = neutrality
+				has_government = communism
+			}
+			NOT = {
+				FACTION_LEADER  = {
+					has_government = communism
+				}
+			}
+			hidden_trigger = {
+				NOT = { has_country_flag = hungary_has_flipped_sides }
+			}
+		}
+
+		visible = {
+			is_faction_leader = no
+			original_tag = HUN
+			NOT = { has_country_flag = hungary_has_flipped_sides }
+			has_completed_focus = HUN_the_national_saviour
+		}
+
+		cost = 0
+
+		fire_only_once = yes
+
+		cancel_trigger = {
+			is_subject = yes
+		}
+
+		days_remove = 21
+		is_good = yes
+
+		ai_will_do = {
+			factor = 50
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				random_country = {
+					limit = {
+						is_in_faction_with = ROOT
+						is_faction_leader = yes
+					}
+					set_country_flag = hungary_is_flipping_sides
+				}
+			}
+		}
+
+		remove_effect = {
+			#save current faction leader for use in the event
+			hidden_effect = {
+				random_country = {
+					limit = {
+						is_in_faction_with = ROOT
+						is_faction_leader = yes
+					}
+					save_global_event_target_as = hungary_former_ally_target
+				}
+			}
+			#top priority is joining the Commintern if they still exist
+			if = {
+				limit = {
+					any_country = {
+						is_faction_leader = yes
+						has_war_with = HUN
+						has_government = communism
+						OR = {
+							original_tag = SOV
+							is_in_faction_with = SOV
+						}
+					}
+				}
+				random_enemy_country = {
+					limit = {
+						is_faction_leader = yes
+						has_war_with = HUN
+						has_government = communism
+						OR = {
+							original_tag = SOV
+							is_in_faction_with = SOV
+						}
+					}
+					save_event_target_as = hungary_new_ally_target
+				}
+			}
+			#then attempts to join any communist faction
+			else = {
+				random_enemy_country = {
+					limit = {
+						is_faction_leader = yes
+						has_war_with = HUN
+						has_government = communism
+					}
+					save_event_target_as = hungary_new_ally_target
+				}
+			}
+			event_target:hungary_new_ally_target = {
+				country_event = { id = sov_armor.856 }
+			}
+			hidden_effect = {
+				set_country_flag = hungary_has_flipped_sides
+			}
+		}
+	}
+
+	# Axis
+
+	HUN_change_sides_to_axis = {
+		icon = decision_generic_nationalism
+
+        allowed = { tag = HUN }
+
+		available = {
+			is_faction_leader = no
+			is_subject = no
+			has_capitulated = no
+			any_country = {
+				is_faction_leader = yes
+				has_war_with = HUN
+				OR = {
+					has_government = fascism
+					original_tag = GER
+					original_tag = ITA
+				}
+			}
+			has_completed_focus = HUN_the_national_saviour
+			surrender_progress > 0.01
+			OR = {
+				has_government = neutrality
+				has_government = fascism
+			}
+			NOT = {
+				FACTION_LEADER  = {
+					has_government = fascism
+				}
+			}
+			hidden_trigger = {
+				NOT = { has_country_flag = hungary_has_flipped_sides }
+			}
+		}
+
+		visible = {
+			is_faction_leader = no
+			original_tag = HUN
+			NOT = { has_country_flag = hungary_has_flipped_sides }
+			has_completed_focus = HUN_the_national_saviour
+		}
+
+		cost = 0
+
+		fire_only_once = yes
+
+		cancel_trigger = {
+			is_subject = yes
+		}
+
+		days_remove = 21
+		is_good = yes
+
+		ai_will_do = {
+			factor = 50
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				random_country = {
+					limit = {
+						is_in_faction_with = ROOT
+						is_faction_leader = yes
+					}
+					set_country_flag = hungary_is_flipping_sides
+				}
+			}
+		}
+
+		remove_effect = {
+			#save current faction leader for use in the event
+			hidden_effect = {
+				random_country = {
+					limit = {
+						is_in_faction_with = ROOT
+						is_faction_leader = yes
+					}
+					save_global_event_target_as = hungary_former_ally_target
+				}
+			}
+			#top priority is joining the Axis if they still exist
+			if = {
+				limit = {
+					any_country = {
+						is_faction_leader = yes
+						has_war_with = HUN
+						has_government = fascism
+						OR = {
+							original_tag = GER
+							is_in_faction_with = GER
+						}
+					}
+				}
+				random_enemy_country = {
+					limit = {
+						is_faction_leader = yes
+						has_war_with = HUN
+						has_government = fascism
+						OR = {
+							original_tag = GER
+							is_in_faction_with = GER
+						}
+					}
+					save_event_target_as = hungary_new_ally_target
+				}
+			}
+			#then attempts to join Italy's faction
+			else_if = {
+				limit = {
+					any_country = {
+						is_faction_leader = yes
+						has_war_with = ROM
+						has_government = fascism
+						OR = {
+							original_tag = ITA
+							is_in_faction_with = ITA
+						}
+					}
+				}
+				random_enemy_country = {
+					limit = {
+						is_faction_leader = yes
+						has_war_with = ROM
+						has_government = fascism
+						OR = {
+							original_tag = ITA
+							is_in_faction_with = ITA
+						}
+					}
+					save_event_target_as = hungary_new_ally_target
+				}
+			}
+			#then attempts to join any fascist faction
+			else = {
+				random_enemy_country = {
+					limit = {
+						is_faction_leader = yes
+						has_war_with = HUN
+						has_government = fascism
+					}
+					save_event_target_as = hungary_new_ally_target
+				}
+			}
+			event_target:hungary_new_ally_target = {
+				country_event = { id = DOD_romania.16 }
+			}
+			hidden_effect = {
+				set_country_flag = hungary_has_flipped_sides
+			}
+		}
+	}
+}
+
 war_measures = {
 
 	HUN_retake_slovak_territory = {
@@ -1297,21 +1731,6 @@ operations = {
 
 		ai_will_do = {
 			base = 0
-			modifier = {
-				add = 100 
-				is_historical_focus_on = no 
-			}
-			modifier = {
-				add = 50 
-				AND = {
-					tag = HUN 
-					has_completed_focus = HUN_support_the_kodoha_faction
-				}
-			}
-			modifier = {
-				factor = 0
-				has_war = yes 
-			}
 		}
 
 		fire_only_once = yes #Reactivation handled in effect
@@ -1394,21 +1813,6 @@ operations = {
 
 		ai_will_do = {
 			base = 0
-			modifier = {
-				add = 100 
-				is_historical_focus_on = no 
-			}
-			modifier = {
-				add = 50 
-				AND = {
-					tag = HUN 
-					has_completed_focus = HUN_support_the_kodoha_faction
-				}
-			}
-			modifier = {
-				factor = 0
-				has_war = yes 
-			}
 		}
 
 		days_remove = 10
@@ -1514,46 +1918,5 @@ operations = {
 				}
 			}
 		}
-	}
-
-	HUN_war_with_romania = {
-
-		icon = generic_ignite_civil_war
-
-		allowed = {
-			original_tag = HUN
-		}
-
-		available = {
-
-		}
-
-		visible = {
-			is_in_faction_with = GER
-			GER = { has_completed_focus = GER_mol_rib_pact }
-			GER = { NOT = { has_war_with = ROM } }
-			NOT = { has_war_with = ROM }
-			has_completed_focus = HUN_preemptive_war
-		}
-
-		fire_only_once = yes
-
-
-		modifier = {
-
-		}
-
-		days_remove = 0
-		days_re_enable = 0
-
-		cost = 25
-
-		ai_will_do = {
-			factor = 0
-		}
-
-		complete_effect = {
-			declare_war_on = { target = ROM type = annex_everything }
-		}		
 	}
 }
