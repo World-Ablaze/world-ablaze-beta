@@ -577,10 +577,19 @@ country_event = {
 	option = {# intervene
 		name = hun_armor.805.a
 		ai_chance = {
-			factor = 10
+			base = 0
 			modifier = {
-				HUN = { has_added_tension_amount < 0.05 }
+				add = 10
+				HUN = { has_added_tension_amount > 0.05 }
+			}
+			modifier = {
 				factor = 0
+				OR = {
+					FRA = { has_capitulated = yes }
+					FRA = { is_subject = yes }
+					FRA = { exists = no }
+					has_war = yes
+				}
 			}
 		}
 		create_wargoal = {
@@ -601,18 +610,19 @@ country_event = {
 			add_war_support = 0.1
 		}
 	}
-	option = {# issue a protest
-		name = DOD_hungary.141.b
-		ai_chance = {
-			factor = 45
-		}
-		add_opinion_modifier = { target = HUN modifier = protest_action }
-	}
 
 	option = {# accept it
-		name = DOD_hungary.141.c
+		name = hun_armor.805.b
 		ai_chance = {
-			factor = 45
+			factor = 10
+			modifier = {
+				factor = 0
+				HUN = { has_added_tension_amount > 0.05 }
+				FRA = { has_capitulated = no }
+				FRA = { is_subject = no }
+				FRA = { exists = yes }
+				has_war = no
+			}
 		}
 	}
 }
@@ -797,6 +807,10 @@ country_event = {
 	picture = GFX_report_event_hungarian_civil_war
 	
 	is_triggered_only = yes
+
+	trigger = {
+		NOT = { has_completed_focus = HUN_faith_in_the_regency }
+	}
 
 	immediate = {
 		hidden_effect = {
