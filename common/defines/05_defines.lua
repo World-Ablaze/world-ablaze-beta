@@ -60,7 +60,7 @@ NDefines.NTrade.ANTI_MONOPOLY_TRADE_FACTOR = 0										-- This is added to the 
 
 NDefines.NCharacter.OFFICER_CORP_ADVISOR_ENTRIES_IN_MENU = { "high_command", "theorist", "army_theorist", "navy_theorist", "air_theorist", "army_chief", "air_chief", "navy_chief" }
 --NDefines.NCharacter.DEFAULT_PP_COST_FOR_POLITICAL_ADVISOR = 100
-NDefines.NCharacter.ADVISOR_PROMOTION_COST = 10	-- Cost to promote someone to advisor
+NDefines.NCharacter.ADVISOR_PROMOTION_COST = 5										-- Cost to promote someone to advisor
 NDefines.NCharacter.SPECIALIST_ADVISOR_MIN_RANK = 3
 NDefines.NCharacter.EXPERT_ADVISOR_MIN_RANK = 5
 NDefines.NCharacter.GENIUS_ADVISOR_MIN_RANK = 7
@@ -233,13 +233,14 @@ NDefines.NTechnology.LICENSE_PRODUCTION_TECH_BONUS = 0								-- License product
 NDefines.NMilitary.FIELD_MARSHAL_DIVISIONS_CAP = 12									-- how many divisions a field marshall is limited to. 0 = inf, < 0 = blocked
 NDefines.NMilitary.CORPS_COMMANDER_DIVISIONS_CAP = 12								-- how many divisions a corps commander is limited to. 0 = inf, < 0 = blocked
 NDefines.NMilitary.FIELD_MARSHAL_ARMIES_CAP = 10									-- how many armies a field marshall is limited to. 0 = inf, < 0 = blocked
-NDefines.GARRISON_ORDER_ARMY_CAP_FACTOR = 2.0										-- armies gets increased cap when they are garrisoned
+NDefines.NMilitary.GARRISON_ORDER_ARMY_CAP_FACTOR = 1.0								-- armies gets increased cap when they are garrisoned
 
+NDefines.NMilitary.PROMOTE_LEADER_CP_COST = 20.0									-- cost of promoting a leader
 
-NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_ATTACK = -0.20    						-- attack combat penalty for attacker if out of supply
-NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_DEFEND = -0.40     						-- defend combat penalty for attacker if out of supply
-NDefines.NMilitary.COMBAT_SUPPLY_LACK_DEFENDER_ATTACK = -0.40     						-- attack combat penalty for defender if out of supply
-NDefines.NMilitary.COMBAT_SUPPLY_LACK_DEFENDER_DEFEND = -0.20     						-- defend combat penalty for defender if out of supply
+NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_ATTACK = -0.20    					-- attack combat penalty for attacker if out of supply
+NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_DEFEND = -0.40     					-- defend combat penalty for attacker if out of supply
+NDefines.NMilitary.COMBAT_SUPPLY_LACK_DEFENDER_ATTACK = -0.40     					-- attack combat penalty for defender if out of supply
+NDefines.NMilitary.COMBAT_SUPPLY_LACK_DEFENDER_DEFEND = -0.20     					-- defend combat penalty for defender if out of supply
 
 NDefines.NMilitary.BASE_COMBAT_WIDTH = 90											-- base combat width
 NDefines.NMilitary.ADDITIONAL_COMBAT_WIDTH = 30										-- more opened up by support attack
