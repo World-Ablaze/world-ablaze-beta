@@ -11,11 +11,11 @@
 # influence
 
 FRA_unit_production = {
-	enable = {
+	allowed = {
 		original_tag = FRA
 	}
-	abort = {
-		always = no
+	enable = {
+		always = yes
 	}
 
 	ai_strategy = {
@@ -175,8 +175,10 @@ FRA_unit_production = {
 }
 
 FRA_armored_production = {
-	enable = {
+	allowed = {
 		original_tag = FRA
+	}
+	enable = {
 		ai_wants_divisions > 12 #Decreasing the amount of tanks the AI wants
 	}
 	abort = {
@@ -191,8 +193,10 @@ FRA_armored_production = {
 }
 
 FRA_highered_armored_production = {
-	enable = {
+	allowed = {
 		original_tag = FRA
+	}
+	enable = {
 		num_of_military_factories > 109
 	}
 	abort = {
@@ -233,8 +237,11 @@ FRA_highered_armored_production = {
 # }
 
 FRA_area_priority = {
-	enable = {
+	allowed = {
 		original_tag = FRA
+	}
+	enable = {
+		always = yes
 	}
 
 	ai_strategy = {
@@ -414,15 +421,14 @@ FRA_naval_role_ratios_historical = {
 #################################################################### AFO ########################################################################
 
 FRA_ignore_british_africa = {
-	enable = {
+	allowed = {
 		tag = FRA
 	}
-	abort = {
-		OR = {
-			date > 1942.1.1
-			FRA = { has_capitulated = yes }
-		}
+	enable = {
+		date < 1942.1.1
+		NOT = { FRA = { has_capitulated = yes } }
 	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = dont_defend_ally_borders
@@ -438,8 +444,10 @@ FRA_ignore_british_africa = {
 }
 
 FRA_north_africa = {
-	enable = {
+	allowed = {
 		tag = FRA
+	}
+	enable = {
 		date > 1939.1.1
 		NOT = { is_in_faction_with = ITA }
 		OR = {
@@ -481,8 +489,10 @@ FRA_north_africa = {
 }
 
 FRA_trying_to_save_the_east_is_a_deathtrap = {
-	enable = {
+	allowed = {
 		tag = FRA
+	}
+	enable = {
 		has_war_with = GER
 		OR = {
 			date < 1942.1.1
@@ -518,14 +528,22 @@ FRA_trying_to_save_the_east_is_a_deathtrap = {
 }
 
 FRA_trying_to_save_benelux_is_deathtrap = {
-	enable = {
+	allowed = {
 		tag = FRA
+	}
+	enable = {
 		has_war_with = GER
 		date < 1941.6.1
 	}
 
 	abort = {
-		date > 1941.6.1
+		OR = {
+			date > 1941.6.1
+			FRA = {
+				has_capitulated = yes
+			}
+		}
+
 	}
 
 	ai_strategy = {
@@ -551,8 +569,10 @@ FRA_trying_to_save_benelux_is_deathtrap = {
 }
 
 FRA_protect_the_homeland = {
-	enable = {
+	allowed = {
 		original_tag = FRA
+	}
+	enable = {
 		NOT = {
 			is_in_faction_with = BEL
 		}
@@ -624,8 +644,10 @@ FRA_protect_the_homeland = {
 }
 
 FRA_protect_the_homeland_2 = {
-	enable = {
+	allowed = {
 		tag = FRA
+	}
+	enable = {
 		country_exists = GER
 		NOT = { is_in_faction_with = GER }
 		NOT = { is_subject_of = GER }
@@ -633,7 +655,13 @@ FRA_protect_the_homeland_2 = {
 	}
 
 	abort = {
-		date > 1942.1.1
+		OR = {
+			date > 1942.1.1
+			FRA = {
+				has_capitulated = yes
+			}
+		}
+
 	}
 
 	ai_strategy = {
@@ -729,8 +757,10 @@ FRA_dont_put_half_your_army_on_congo = {
 }
 
 FRA_protect_our_allies_hol = {
-	enable = {
+	allowed = {
 		original_tag = FRA
+	}
+	enable = {
 		FRA = {
 			is_in_faction_with = HOL
 		}
@@ -751,8 +781,10 @@ FRA_protect_our_allies_hol = {
 }
 
 FRA_protect_our_allies_bel = {
-	enable = {
+	allowed = {
 		original_tag = FRA
+	}
+	enable = {
 		FRA = {
 			is_in_faction_with = BEL
 		}
@@ -769,8 +801,10 @@ FRA_protect_our_allies_bel = {
 }
 
 FRA_protect_our_allies_lux = {
-	enable = {
+	allowed = {
 		original_tag = FRA
+	}
+	enable = {
 		FRA = {
 			is_in_faction_with = LUX
 		}
@@ -787,8 +821,11 @@ FRA_protect_our_allies_lux = {
 }
 
 FRA_defense_of_the_colonies = {
-	enable = {
+	allowed = {
 		original_tag = FRA
+	}
+	enable = {
+		always = yes
 	}
 
 	ai_strategy = {
@@ -926,12 +963,13 @@ FRA_defense_of_the_colonies = {
 FRA_accept_USA_access = {
 	allowed = {
 		tag = FRA
-	}
-	enable = {
-		tag = FRA
-		date > 1940.9.9
 		USA = {
 			is_ai = yes
+		}
+	}
+	enable = {
+		date > 1940.9.9
+		USA = {
 			NOT = {
 				OR = {
 					is_in_faction_with = FRA
@@ -952,6 +990,9 @@ FRA_accept_USA_access = {
 
 
 FRA_protect_vichy = {
+	allowed = {
+		tag = VIC
+	}
 
 	reversed = yes
 
@@ -979,7 +1020,9 @@ FRA_protect_vichy = {
 }
 
 FRA_help_germany_if_vichy = {
-
+	allowed = {
+		tag = VIC
+	}
 	enable = {
 		GER = {
 			has_government = fascism
@@ -996,9 +1039,11 @@ FRA_help_germany_if_vichy = {
 }
 
 FRA_saar_offensive = {
-	enable = {
+	allowed = {
 		tag = FRA
-		has_war_With = GER
+	}
+	enable = {
+		has_war_with = GER
 	#	date < 1940.1.1
 		has_full_control_of_state = 28
 		NOT = { surrender_progress > 0.1 }
@@ -1045,6 +1090,9 @@ FRA_saar_offensive = {
 }
 
 FRA_antagonize_vichy = {
+	allowed = {
+		tag = VIC
+	}
 
 	reversed = yes
 
@@ -1149,10 +1197,8 @@ FRA_puppets_dont_build_divisions  = {
 	}
 
 	enable = {
-		date > 1936.1.1
+		always = yes
 	}
-
-	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = role_ratio
@@ -1167,8 +1213,10 @@ FRA_puppets_dont_build_divisions  = {
 }
 
 FRA_eastern_strategy = {
-	enable = {
+	allowed = {
 		tag = FRA
+	}
+	enable = {
 		has_war_with = GER
 		date < 1943.1.1
 	}
@@ -1214,12 +1262,12 @@ FRA_eastern_strategy = {
 FRA_dont_build_divisions_because_reserves  = {
 	allowed = {
 		tag = FRA
+		is_historical_focus_on = yes
 	}
 
 	enable = {
-		date > 1936.1.1
 		has_war = no
-		is_historical_focus_on = yes
+		date < 1940.1.1
 	}
 
 	abort_when_not_enabled = yes
