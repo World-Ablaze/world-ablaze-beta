@@ -3554,34 +3554,6 @@ GER_protect_our_weak_underbelly = {
 	}
 }
 
-GER_atlantik_wall_north_france = {
-	allowed = {
-		tag = GER
-	}
-	enable = {
-		date > 1941.1.1
-	}
-
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = put_unit_buffers
-
-		order_id = 1
-
-		# north_france
-		states = {
-			29
-		}
-
-		ratio = 0.25
-
-		area = north_france
-
-		subtract_invasions_from_need = no
-	}
-}
-
 GER_fall_gelb = {
 	allowed = {
 		tag = GER
@@ -3610,7 +3582,7 @@ GER_fall_gelb = {
 	}
 }
 
-GER_atlantik_wall_france = {
+GER_atlantik_wall_north_france = {
 	allowed = {
 		tag = GER
 	}
@@ -3632,6 +3604,7 @@ GER_atlantik_wall_france = {
 
 		# france
 		states = {
+			29
 			23
 			30
 			14
@@ -3702,6 +3675,7 @@ GER_atlantik_wall_benelux = {
 			6
 			7
 			35
+			36
 		}
 
 		ratio = 0.25
@@ -3775,8 +3749,10 @@ GER_atlantik_wall_scandinavia = {
 }
 
 GER_dont_sea_lion_until_the_soviets_are_defeated = {
-	enable = {
+	allowed = {
 		tag = GER
+	}
+	enable = {
 		OR = {
 			has_war_with = SOV
 			date < 1942.1.1
@@ -3827,8 +3803,10 @@ GER_dont_sea_lion_until_the_soviets_are_defeated = {
 }
 
 GER_tripoli_is_your_supply_base = {
-	enable = {
+	allowed = {
 		tag = GER
+	}
+	enable = {
 		is_in_faction_with = ITA
 		OR = {
 			448 = { is_controlled_by = ITA }
@@ -3846,13 +3824,13 @@ GER_tripoli_is_your_supply_base = {
 }
 
 GER_dont_pile_on_harstad = {
-	enable = {
+	allowed = {
 		tag = GER
+	}
+	enable = {
 		has_war_with = SOV
 	}
-	abort = {
-		NOT = { has_war_with = SOV }
-	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = naval_avoid_region
@@ -3863,32 +3841,35 @@ GER_dont_pile_on_harstad = {
 
 axis_stay_away_from_the_royal_navy = {
 	enable = {
+		OR = {
+			is_in_faction_with = GER
+			tag = GER
+		}
 		has_war_with = ENG
 		date < 1942.1.1
 
-		OR = {
-			GER = {
-				naval_strength_ratio = {
-					tag = ENG
-					ratio < 0.5
-				}
+		GER = {
+			naval_strength_ratio = {
+				tag = ENG
+				ratio < 0.5
 			}
-
-			# if we manage to get a foothold in UK we must do what we can to exploit it! (checks coastal states)
-			divisions_in_state = { state = 127 size < 1 }
-			divisions_in_state = { state = 126 size < 1 }
-			divisions_in_state = { state = 125 size < 1 }
-			divisions_in_state = { state = 129 size < 1 }
-			divisions_in_state = { state = 130 size < 1 }
-			divisions_in_state = { state = 131 size < 1 }
-			divisions_in_state = { state = 123 size < 1 }
-			divisions_in_state = { state = 122 size < 1 }
-			divisions_in_state = { state = 132 size < 1 }
-			divisions_in_state = { state = 121 size < 1 }
-			divisions_in_state = { state = 136 size < 1 }
-			divisions_in_state = { state = 120 size < 1 }
-			divisions_in_state = { state = 133 size < 1 }
 		}
+
+		# if we manage to get a foothold in UK we must do what we can to exploit it! (checks coastal states)
+		divisions_in_state = { state = 857 size < 1 }
+		divisions_in_state = { state = 859 size < 1 }
+		divisions_in_state = { state = 860 size < 1 }
+		divisions_in_state = { state = 127 size < 1 }
+		divisions_in_state = { state = 123 size < 1 }
+		divisions_in_state = { state = 125 size < 1 }
+		divisions_in_state = { state = 129 size < 1 }
+		divisions_in_state = { state = 130 size < 1 }
+		divisions_in_state = { state = 131 size < 1 }
+		divisions_in_state = { state = 121 size < 1 }
+		divisions_in_state = { state = 136 size < 1 }
+		divisions_in_state = { state = 120 size < 1 }
+		divisions_in_state = { state = 122 size < 1 }
+		divisions_in_state = { state = 961 size < 1 }
 	}
 	abort_when_not_enabled = yes
 
@@ -3965,11 +3946,14 @@ axis_stay_away_from_the_royal_navy = {
 }
 
 army_group_finland_does_not_exist = {
+	allowed = {
+		NOT = { tag = FIN }
+	}
 	enable = {
-		NOT = {
-			tag = FIN
-		}
 		is_in_faction_with = GER
+		FIN = {
+			is_in_faction_with = GER
+		}
 	}
 	abort_when_not_enabled = yes
 
@@ -4001,8 +3985,10 @@ army_group_finland_does_not_exist = {
 }
 
 finland_surrenders = {
-	enable = {
+	allowed = {
 		tag = FIN
+	}
+	enable = {
 		OR = {
 			has_government = democratic
 			has_government = communism
@@ -4037,60 +4023,39 @@ finland_surrenders = {
 }
 
 italy_ally = {
-	enable = {
+	allowed = {
 		tag = GER
+	}
+	enable = {
 		has_completed_focus = GER_pact_of_steel
-		country_exists = ITA
-	}
-	abort = {
-		NOT = { country_exists = ITA }
-	}
-
-	ai_strategy = {
-		type = befriend
-		id = "ITA"
-		value = 200
-	}
-	ai_strategy = {
-		type = alliance
-		id = "ITA"
-		value = 200
-	}
-}
-
-iron_pact_italy = {
-	enable = {
-		tag = GER
 		ITA = {
-			has_completed_focus = ITA_pact_of_steel
 			exists = yes
+			has_completed_focus = ITA_pact_of_steel
 		}
 	}
-	abort = {
-		NOT = { country_exists = ITA }
-	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = befriend
 		id = "ITA"
-		value = 100
+		value = 300
 	}
 	ai_strategy = {
 		type = alliance
 		id = "ITA"
-		value = 100
+		value = 300
 	}
 }
 
 turkey_ally = {
-	enable = {
+	allowed = {
 		tag = GER
+	}
+	enable = {
 		has_completed_focus = GER_the_turkish_ultimatum
 		country_exists = TUR
 	}
-	abort = {
-		NOT = { country_exists = TUR }
-	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = befriend
@@ -4111,12 +4076,12 @@ spain_ally = {
 	}
 	enable = {
 		has_completed_focus = GER_pressure_spain
-		country_exists = SPR
-		SPR = { has_government = fascism } # TODO Find way to detect dynamic revolter tag
+		SPR = {
+			exists = yes
+			has_government = fascism
+		} # TODO Find way to detect dynamic revolter tag
 	}
-	abort = {
-		NOT = { country_exists = SPR }
-	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = befriend
@@ -4137,14 +4102,14 @@ spain_ally_resistance = {
 	}
 	enable = {
 		has_completed_focus = GER_pressure_spain
-		country_exists = SPA
-	}
-	abort = {
-		OR = {
-			NOT = { country_exists = SPA }
-			SPA = { has_completed_focus = SPA_join_the_allies }
+		SPA = {
+			exists = yes
+			NOT = {
+				has_completed_focus = SPA_join_the_allies
+			}
 		}
 	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = befriend
@@ -4159,13 +4124,21 @@ spain_ally_resistance = {
 }
 
 tfv_protect_fascist_south_africa = {
-	enable = {
+	allowed = {
 		original_tag = GER
-		has_country_flag = saf_fascist_uprising # Set from the national focus
+	}
+	enable = {
+		SAF = {
+			has_country_flag = saf_fascist_uprising # Set from the national focus
+		}
 	}
 	abort = {
-		surrender_progress > 0.8
-		SAF = { has_civil_war = no }
+		SAF = {
+			OR = {
+				has_civil_war = no
+				surrender_progress > 0.8
+			}
+		}
 	}
 
 	ai_strategy = {
@@ -4193,16 +4166,14 @@ tfv_protect_fascist_south_africa = {
 less_naval_focused_nation = {
 	allowed = {
 		tag = GER
-		not = {
+		NOT = {
 			has_dlc = "Man the Guns"
 		}
 	}
 	enable = {
-		date > "1936.1.1" #Don't Germany, just dont
+		date < 1943.1.1 #Don't Germany, just dont
 	}
-	abort = {
-		date > "1943.1.1" #Don't Germany, just dont, if you haven't already won
-	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = unit_ratio
@@ -4237,8 +4208,6 @@ GER_naval_role_ratios_historical = {
 	}
 	enable = {
 		always = yes
-	}
-	abort = {
 	}
 
 	ai_strategy = {
@@ -4337,6 +4306,8 @@ GER_naval_role_ratios_ahistorical = {
 		GER_naval_interest_trigger = yes
 	}
 
+	abort_when_not_enabled = yes
+
 	ai_strategy = {
 		type = role_ratio
 		id = naval_capital_bb
@@ -4402,6 +4373,8 @@ GER_naval_role_ratios_maximum_kaiser = {
 		has_completed_focus = GER_rebuild_the_high_seas_fleet
 	}
 
+	abort_when_not_enabled = yes
+
 	ai_strategy = {
 		type = role_ratio
 		id = naval_capital_bb
@@ -4458,8 +4431,11 @@ GER_naval_role_ratios_maximum_kaiser = {
 }
 
 GER_area_priority = {
-	enable = {
+	allowed = {
 		original_tag = GER
+	}
+	enable = {
+		always = yes
 	}
 
 	ai_strategy = {
@@ -4601,17 +4577,17 @@ GER_area_priority = {
 	}
 }
 
-axis_dont_mess_with_volunteers = {
-	enable = {
-		date < 1942.6.1
+axis_no_asian_volunteers = {
+	allowed = {
 		OR = {
 			tag = GER
 			tag = ITA
 		}
 	}
-	abort = {
-		date > 1942.6.1
+	enable = {
+		date < 1942.6.1
 	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = send_volunteers_desire
@@ -4666,21 +4642,12 @@ axis_dont_mess_with_volunteers = {
 #}
 
 Axis_care_less_about_making_friends = {
-
 	enable = {
-		has_government = fascism
-		is_in_faction = yes
+		is_in_faction_with = GER
 		manpower_per_military_factory < 3000
 		has_war = yes
 	}
-	abort = {
-		OR = {
-			NOT = { has_government = fascism }
-			is_in_faction = no
-			manpower_per_military_factory > 3000
-			has_war = no
-		}
-	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = pp_spend_priority
@@ -4739,8 +4706,10 @@ Axis_care_less_about_making_friends = {
 #}
 
 ignore_the_Swiss = {
-	enable = {
+	allowed = {
 		tag = GER
+	}
+	enable = {
 		country_exists = SWI
 		OR = {
 			has_war_with = SOV
@@ -4782,10 +4751,7 @@ ignore_the_Swiss = {
 
 GER_avoid_early_death_traps = {
 	enable = {
-		OR = {
-			is_in_faction_with = GER
-			tag = ITA
-		}
+		is_in_faction_with = GER
 		has_war = yes
 		date < 1941.9.1
 	}
@@ -4838,12 +4804,11 @@ GER_avoid_early_death_traps = {
 }
 
 invasions_are_pointless_if_at_war_with_the_soviets = {
-	enable = {
+	allowed = {
 		NOT = { tag = GER }
-		OR = {
-			is_in_faction_with = GER
-			tag = ITA
-		}
+	}
+	enable = {
+		is_in_faction_with = GER
 		has_war_with = SOV
 	}
 	abort = {
@@ -4891,17 +4856,19 @@ invasions_are_pointless_if_at_war_with_the_soviets = {
 }
 
 GER_sealion_time = {
-	enable = {
+	allowed = {
 		tag = GER
+	}
+	enable = {
 		NOT = { has_war_with = SOV }
 		OR = {
 			AND = {
-				alliance_naval_strength_ratio > 1.0
+				alliance_naval_strength_ratio > 0.5
 				date > 1942.3.1
 				ENG = { is_ai = yes }
 			}
 			AND = {
-				alliance_naval_strength_ratio > 1.0
+				alliance_naval_strength_ratio > 0.75
 				ENG = { is_ai = no }
 			}
 			AND = {
@@ -5041,8 +5008,10 @@ GER_sealion_time = {
 }
 
 GER_not_sealion_time = {
-	enable = {
+	allowed = {
 		tag = GER
+	}
+	enable = {
 		OR = {
 			has_war_with = SOV
 			NOT = { has_war_with = ENG }
@@ -5052,7 +5021,7 @@ GER_not_sealion_time = {
 				FRA = { has_capitulated = no }
 			}
 			AND = {
-				alliance_naval_strength_ratio < 1.0
+				alliance_naval_strength_ratio < 0.5
 				ENG = {
 					divisions_in_state = {
 						type = infantry
@@ -5112,6 +5081,9 @@ GER_not_sealion_time = {
 }
 
 GER_shank_greece = {
+	allowed = {
+		tag = GER
+	}
 	enable = {
 		NOT = {
 			has_war_with = SOV
@@ -5126,7 +5098,6 @@ GER_shank_greece = {
 			}
 		}
 		date < 1941.6.1
-		tag = GER
 		has_war_with = GRE
 		ITA = {
 			has_war_with = GRE
@@ -5155,9 +5126,14 @@ GER_shank_greece = {
 }
 
 GER_stopspamming_lend_lease = {
-	enable = {
-		date > 1940.1.1
+	allowed = {
 		tag = GER
+	}
+	enable = {
+		OR = {
+			date < 1942.1.1
+			has_war = yes
+		}
 	}
 	abort_when_not_enabled = yes
 
@@ -5238,10 +5214,41 @@ GER_stopspamming_lend_lease = {
 		id = "ALB"
 		value = -1000
 	}
+
+	ai_strategy = {
+		type = send_lend_lease_desire
+		id = "MAN"
+		value = -1000
+	}
+	ai_strategy = {
+		type = send_lend_lease_desire
+		id = "CHI"
+		value = -1000
+	}
+	ai_strategy = {
+		type = send_lend_lease_desire
+		id = "YUN"
+		value = -1000
+	}
+	ai_strategy = {
+		type = send_lend_lease_desire
+		id = "SHX"
+		value = -1000
+	}
+	ai_strategy = {
+		type = send_lend_lease_desire
+		id = "XSM"
+		value = -1000
+	}
+	ai_strategy = {
+		type = send_lend_lease_desire
+		id = "SIK"
+		value = -1000
+	}
 }
 
 leave_romania_alone = {
-	enable = {
+	allowed = {
 		OR = {
 			tag = HUN
 			tag = BUL
@@ -5251,8 +5258,10 @@ leave_romania_alone = {
 		}
 		is_historical_focus_on = yes
 	}
-	abort = {
-		is_historical_focus_on = no
+	enable = {
+		NOT = {
+			is_in_faction_with = ROM
+		}
 	}
 
 	ai_strategy = {
@@ -5263,16 +5272,17 @@ leave_romania_alone = {
 }
 
 GER_dont_circle_africa = {
-	enable = {
+	allowed = {
 		tag = GER
+	}
+	enable = {
 		681 = {
 			CONTROLLER = {
-				NOT = { is_in_faction_with = GER }
-			}
-		}
-		681 = {
-			CONTROLLER = {
-				NOT = { tag = GER }
+				OR = {
+					NOT = { is_in_faction_with = GER }
+					NOT = { tag = GER }
+				}
+
 			}
 		}
 	}
@@ -5286,15 +5296,13 @@ GER_dont_circle_africa = {
 }
 
 GER_dont_defend_vichy = {
-	enable = {
+	allowed = {
 		tag = GER
+	}
+	enable = {
 		is_in_faction_with = VIC
 	}
-	abort = {
-		NOT = {
-			is_in_faction_with = VIC
-		}
-	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = naval_avoid_region
@@ -5304,8 +5312,10 @@ GER_dont_defend_vichy = {
 }
 
 GER_ignore_vichy = {
-	enable = {
+	allowed = {
 		tag = GER
+	}
+	enable = {
 		OR = {
 			NOT = { has_war_with = VIC }
 			NOT = {
@@ -5313,12 +5323,7 @@ GER_ignore_vichy = {
 			}
 		}
 	}
-	abort = {
-		OR = {
-			has_war_with = VIC
-			is_in_faction_with = VIC
-		}
-	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = antagonize
@@ -5444,13 +5449,13 @@ GER_ignore_invading_these_countries = {
 }
 
 focus_sub_navy_at_the_atlantic = {
-	enable = {
+	allowed = {
 		tag = GER
-		has_War_With = ENG
 	}
-	abort = {
-		NOT = { has_War_With = ENG }
+	enable = {
+		has_war_with = ENG
 	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = naval_avoid_region
@@ -5512,59 +5517,6 @@ spain_scw_support_GER_resistance = {
 # 		value = -20
 # 	}
 # }
-
-GER_my_precisioussss = {
-	allowed = {
-		tag = GER
-	}
-
-	enable = {
-		tag = GER
-		OR = {
-			date < 1942.6.1
-			has_war = yes
-		}
-	}
-
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = send_lend_lease_desire
-		id = SLO
-		value = -999
-	}
-	ai_strategy = {
-		type = send_lend_lease_desire
-		id = MAN
-		value = -999
-	}
-	ai_strategy = {
-		type = send_lend_lease_desire
-		id = CHI
-		value = -999
-	}
-	ai_strategy = {
-		type = send_lend_lease_desire
-		id = YUN
-		value = -999
-	}
-	ai_strategy = {
-		type = send_lend_lease_desire
-		id = SHX
-		value = -999
-	}
-	ai_strategy = {
-		type = send_lend_lease_desire
-		id = XSM
-		value = -999
-	}
-	ai_strategy = {
-		type = send_lend_lease_desire
-		id = SIK
-		value = -999
-	}
-
-}
 
 GER_ITA_close_up_maginot_line_after_FRA_falls  = {
 	allowed = {
@@ -5652,8 +5604,10 @@ GER_reichskomissariats_dont_build_divisions  = {
 }
 
 hungary_stop_crowding_up_the_soviet_line = {
-	enable = {
+	allowed = {
 		original_tag = HUN
+	}
+	enable = {
 		is_in_faction_with = GER
 		has_war_with = SOV
 	}
@@ -5715,11 +5669,13 @@ hungary_stop_crowding_up_the_soviet_line = {
 }
 
 romania_stop_crowding_up_the_soviet_line = {
+	allowed = {
+		tag = ROM
+	}
 	enable = {
 		NOT = {
 			has_country_flag = support_requested_by_germany
 		}
-		tag = ROM
 		is_in_faction_with = GER
 		has_war_with = SOV
 	}
@@ -5799,9 +5755,11 @@ romania_stop_crowding_up_the_soviet_line = {
 }
 
 romania_help_germany = {
+	allowed = {
+		tag = ROM
+	}
 	enable = {
 		has_country_flag = support_requested_by_germany
-		tag = ROM
 		is_in_faction_with = GER
 		has_war_with = SOV
 	}
@@ -5833,8 +5791,10 @@ romania_help_germany = {
 }
 
 bulgaria_stop_crowding_up_the_soviet_line = {
+	allowed = {
+		tag = BUL
+	}
 	enable = {
-		original_tag = BUL
 		is_in_faction_with = GER
 		has_war_with = SOV
 	}
@@ -5896,8 +5856,10 @@ bulgaria_stop_crowding_up_the_soviet_line = {
 }
 
 italy_stop_crowding_up_the_soviet_line = {
+	allowed = {
+		tag = ITA
+	}
 	enable = {
-		original_tag = ITA
 		is_in_faction_with = GER
 		has_war_with = SOV
 	}
