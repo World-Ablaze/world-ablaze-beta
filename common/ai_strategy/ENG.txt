@@ -14,14 +14,13 @@
 ##########################                    Production                          ##########################
 ############################################################################################################
 
-ENG_roles = {
+ENG_unit_roles = {
 	allowed = {
 		original_tag = ENG
 	}
 	enable = {
 		always = yes
 	}
-	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = role_ratio
@@ -289,7 +288,7 @@ ENG_naval_role_ratios_anti_submarines = {
 	}
 }
 
-Allies_avoid_bombing_Germany = {
+ENG_FRA_allies_avoid_bombing_GER = {
 	allowed = {
 		OR = {
 			original_tag = ENG
@@ -302,6 +301,7 @@ Allies_avoid_bombing_Germany = {
 			is_subject_of = ENG
 		}
 		date < 1942.1.1
+		has_war_with = GER
 	}
 	abort_when_not_enabled = yes
 
@@ -547,16 +547,15 @@ Allies_bomb_germany = {
 ##########################                    Diplomacy                          ###########################
 ############################################################################################################
 
-finland_is_too_far_to_protect = {
+ENG_FIN_is_too_far_to_protect = {
 	allowed = {
 		tag = ENG
 	}
 	enable = {
 		has_government = democratic
 		threat < 0.8
-	}
-	abort = {
-		NOT = { country_exists = FIN }
+		threat > 0.2
+		country_exists = FIN
 	}
 
 	ai_strategy = {
@@ -874,10 +873,8 @@ ENG_protect_home = {
 		original_tag = ENG
 	}
 	enable = {
-		date > 1936.1.1
+		always = yes
 	}
-
-	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = front_unit_request
@@ -1700,7 +1697,7 @@ africa_war_no_RAJ = {
 #	}
 }
 
-africa_war_1 = {
+ENG_africa_war_1 = {
 	allowed = {
 		tag = ENG
 	}
@@ -1832,7 +1829,7 @@ africa_war_1 = {
 	}
 }
 
-africa_war_2 = {
+ENG_africa_war_2 = {
 	allowed = {
 		tag = ENG
 	}
@@ -1878,7 +1875,7 @@ africa_war_2 = {
 	}
 }
 
-africa_war_3 = {
+ENG_africa_war_3 = {
 	allowed = {
 		tag = ENG
 	}
@@ -1898,6 +1895,7 @@ africa_war_3 = {
 			451 = { is_controlled_by = UKE }
 		}
 		surrender_progress < 0.05
+		date > 1939.1.1
 	}
 	abort_when_not_enabled = yes
 
@@ -2198,14 +2196,13 @@ ENG_accept_USA_access = {
 
 ####################################### German theatre
 
-careful_with_early_invasions = {
+ENG_careful_with_early_invasions = {
 	enable = {
 		is_in_faction_with = ENG
 		date < 1942.1.1
+		has_war_with = GER
 	}
-	abort = {
-		date > 1942.1.1
-	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = invade
@@ -2623,6 +2620,7 @@ ENG_dday_hold = {
 		}
 	}
 	enable = {
+		has_war_with = GER
 		is_in_faction_with = ENG
 		OR = {
 			date < 1941.8.1
@@ -3510,11 +3508,9 @@ USA_ENG_sync_invasions_on_europe_3 = {
 dont_do_early_invasions_ITA = {
 	enable = {
 		is_in_faction_with = ENG
-		NOT = { has_war_with = ITA }
-	}
-	abort = {
 		has_war_with = ITA
 	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = invade
@@ -3542,6 +3538,7 @@ ENG_prepare_war_against_ITA = {
 	}
 	enable = {
 		ITA = { has_government = fascism }
+		date > 1938.1.1
 	}
 	abort_when_not_enabled = yes
 
@@ -3572,6 +3569,7 @@ ENG_war_against_ITL = {
 			ITL = { has_government = fascism }
 		}
 		ITL = { has_capitulated = no }
+		date > 1938.1.1
 	}
 	abort = {
 		OR = {
@@ -4327,12 +4325,15 @@ ENG_atlantic_sea_zone_corridors = {
 	}
 }
 
-ENG_war_with_the_soviets = {
+ENG_no_war_with_SOV = {
 	allowed = {
 		tag = ENG
 	}
 	enable = {
 		date < 1944.1.1
+		NOT = {
+			has_war_with = SOV
+		}
 	}
 
 	abort_when_not_enabled = yes
@@ -4773,24 +4774,38 @@ ENG_ignore_japan_until_germany_is_dealt_with = {
 	}
 }
 
-STUPID_AI_ENG_why_invade_turkey = {
+ENG_no_invade_turkey = {
 	enable = {
 		OR = {
 			is_in_faction_with = ENG
 			is_in_faction_with = USA
 		}
 		NOT = { has_war_with = TUR }
+		date > 1938.1.1
 	}
 
-	abort = {
-		has_war_with = TUR
-	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = invade
 		id = "TUR"
 		value = -2000
 	}
+}
+
+ENG_FRA_allied_invasion_spam = {
+	allowed = {
+		OR = { tag = FRA tag = ENG }
+	}
+	enable = {
+		date < 1941.12.1
+		has_war = yes
+	}
+	abort_when_not_enabled = yes
+	ai_strategy = { type = invade id = "GER" value = -1000 }
+	ai_strategy = { type = invade id = "ITA" value = -1000 }
+	ai_strategy = { type = invade id = "D02" value = -1000 }
+	ai_strategy = { type = invade id = "D01" value = -1000 }
 }
 
 ############################################################################################################
@@ -4964,13 +4979,24 @@ CHI_civil_war_volunteers = {
 }
 
 
-ally_with_usa = {
+ENG_ally_with_USA = {
 	allowed = {
 		tag = ENG
 	}
 	enable = {
 		ENG = { has_government = democratic }
 		USA = { has_government = democratic }
+		OR = {
+			ENG = {
+				has_war = yes
+				NOT = {
+					has_war_with = USA
+				}
+			}
+			USA = {
+				has_completed_focus = USA_cash_and_carry_act
+			}
+		}
 	}
 	abort = {
 		OR = {
@@ -4990,6 +5016,7 @@ ally_with_usa = {
 ENG_ignore_south_america = {
 	enable = {
 		is_in_faction_with = ENG
+		date > 1938.1.1
 	}
 	abort = {
 		OR = {

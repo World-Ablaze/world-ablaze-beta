@@ -130,6 +130,7 @@ SOV_wtf_are_you_doing = {
 	}
 	enable = {
 		NOT = { is_in_faction_With = CZE }
+		country_exists = CZE
 	}
 	abort_when_not_enabled = yes
 
@@ -198,6 +199,9 @@ SOV_dying_in_spain_was_enough = {
 	}
 	enable = {
 		date < 1941.6.1
+		CHI = {
+			has_war = yes
+		}
 	}
 	abort_when_not_enabled = yes
 
@@ -282,6 +286,7 @@ SOV_prepare_polish_invasion = {
 		NOT = { POL = { is_in_faction_with = SOV } }
 		NOT = { has_war_with = JAP }
 		country_exists = POL
+		date > 1939.1.1
 #		OR = {
 #			has_completed_focus = SOV_claims_on_poland
 #			AND = {
@@ -463,6 +468,9 @@ SOV_germany_is_the_true_enemy = {
 	enable = {
 		has_government = communism
 		NOT = { GER = { has_government = communism } }
+		NOT = {
+			has_war_with = GER
+		}
 	}
 	abort_when_not_enabled = yes
 
@@ -1148,7 +1156,7 @@ SOV_war_with_germany = {
 		id = south_china
 		value = -2000
 	}
-	
+
 	ai_strategy = {
 		type = front_armor_score
 		id = "FIN"
@@ -1584,6 +1592,7 @@ SOV_poland_is_not_an_ally = {
 				has_government = ROOT
 			}
 		}
+		country_exists = POL
 	}
 
 	abort_when_not_enabled = yes
@@ -1745,6 +1754,7 @@ SOV_this_gun_is_shit = {
 		original_tag = SOV
 	}
 	enable = {
+		has_tech = sov_infantry_weapons_2
 		OR = {
 			date < 1944.1.1 # stock up on lots of rifles, we got the manpower
 			AND = {
@@ -1768,6 +1778,7 @@ SOV_dont_upgrade_weapons_too_early = {
 		original_tag = SOV
 	}
 	enable = {
+		has_tech = sov_infantry_weapons_3
 		OR = {
 			date < 1939.1.1 # stock up on lots of rifles, we got the manpower
 			AND = {
@@ -1791,7 +1802,6 @@ SOV_defense_of_leningrad = {
 		original_tag = SOV
 	}
 	enable = {
-		date > 1936.1.1
 		date < 1942.1.1
 	}
 	abort_when_not_enabled = yes
@@ -1825,7 +1835,6 @@ SOV_defense_of_sevastapol = {
 		original_tag = SOV
 	}
 	enable = {
-		date > 1936.1.1
 		date < 1942.1.1
 	}
 	abort_when_not_enabled = yes
@@ -1864,6 +1873,7 @@ SOV_unit_saving_1 = {
 	enable = {
 		surrender_progress < 0.01
 		date < 1942.8.1
+		date > 1939.1.1
 	}
 	abort_when_not_enabled = yes
 
@@ -1887,7 +1897,7 @@ SOV_unit_saving_1 = {
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = no
 	}
-	
+
 	ai_strategy = {
 		type = front_unit_request
 		tag = FIN
@@ -1902,6 +1912,7 @@ SOV_unit_saving_2 = {
 	enable = {
 		surrender_progress < 0.01
 		date < 1942.8.1
+		date > 1939.1.1
 	}
 	abort_when_not_enabled = yes
 
@@ -1926,7 +1937,7 @@ SOV_unit_saving_2 = {
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = no
 	}
-	
+
 	ai_strategy = {
 		type = front_unit_request
 		tag = FIN
@@ -1943,6 +1954,7 @@ SOV_unit_saving_3 = {
 		date < 1942.8.1
 		controls_state = 966
 		controls_state = 967
+		date > 1939.1.1
 	}
 	abort_when_not_enabled = yes
 
@@ -1989,7 +2001,6 @@ SOV_civs_are_useless = {
 	}
 	enable = {
 		date > 1936.1.13
-		date < 1945.1.1
 	}
 	abort_when_not_enabled = yes
 
@@ -2136,11 +2147,10 @@ SOV_some_more_safe_places_to_build = {
 	}
 	enable = {
 		date > 1939.1.1
+		date < 1945.1.1
 	}
 
-	abort = {
-		date > 1945.1.1
-	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
         type = factory_build_score_factor
@@ -2245,7 +2255,10 @@ SOV_some_more_safe_places_to_build = {
 SOV_dont_mess_with_volunteers_for_european_democratic_nations = { # Reverse strategy
 	reversed = yes
 	allowed = {
-		original_tag = SOV
+		NOT = { original_tag = SOV }
+		capital_scope = {
+			is_on_continent = europe # lets not mess with europe
+		}
 	}
 	enable = {
 		has_government = democratic
@@ -2254,10 +2267,6 @@ SOV_dont_mess_with_volunteers_for_european_democratic_nations = { # Reverse stra
 		}
 		NOT = {
 			original_tag = SPR
-		}
-
-		capital_scope = {
-			is_on_continent = europe # lets not mess with europe
 		}
 	}
 
@@ -2333,92 +2342,6 @@ SIK_focus_on_china = {
 		type = dont_defend_ally_borders
 		id = "SOV"
 		value = 1000
-	}
-}
-
-allies_dont_ask_for_diplo_access_to_SOV = {
-	enable = {
-		is_in_faction_with = ENG
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = diplo_action_desire
-		id = SOV
-		target = military_access
-		value = -5000
-	}
-	ai_strategy = {
-		type = diplo_action_desire
-		id = TAN
-		target = military_access
-		value = -5000
-	}
-	ai_strategy = {
-		type = diplo_action_desire
-		id = MON
-		target = military_access
-		value = -5000
-	}
-	ai_strategy = {
-		type = diplo_action_desire
-		id = POL
-		target = military_access
-		value = -5000
-	}
-	ai_strategy = {
-		type = diplo_action_desire
-		id = CZE
-		target = military_access
-		value = -5000
-	}
-	ai_strategy = {
-		type = diplo_action_desire
-		id = HUN
-		target = military_access
-		value = -5000
-	}
-	ai_strategy = {
-		type = diplo_action_desire
-		id = ROM
-		target = military_access
-		value = -5000
-	}
-	ai_strategy = {
-		type = diplo_action_desire
-		id = BUL
-		target = military_access
-		value = -5000
-	}
-	ai_strategy = {
-		type = diplo_action_desire
-		id = YUG
-		target = military_access
-		value = -5000
-	}
-	ai_strategy = {
-		type = diplo_action_desire
-		id = YUG
-		target = military_access
-		value = -5000
-	}
-	ai_strategy = {
-		type = diplo_action_desire
-		id = SOV
-		target = docking_rights
-		value = -5000
-	}
-	ai_strategy = {
-		type = diplo_action_desire
-		id = TAN
-		target = docking_rights
-		value = -5000
-	}
-	ai_strategy = {
-		type = diplo_action_desire
-		id = MON
-		target = docking_rights
-		value = -5000
 	}
 }
 
@@ -2629,74 +2552,40 @@ SOV_iron_curtain = {
 	}
 }
 
-no_one_helps_china = {
+SOV_lend_lease_prc = {
+	allowed = {
+		tag = SOV
+	}
 	enable = {
-		OR = {
-			is_in_faction_with = SOV
-			is_in_faction_with = ENG
-			is_in_faction_with = USA
+		has_government = communism
+		PRC = {
+			has_government = communism
+			has_war = yes
 		}
+		has_war = no
+		date < 1944.1.1
 	}
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
-		type = dont_defend_ally_borders
-		id = "CHI"
-		value = 1000
-	}
-
-	ai_strategy = {
-		type = dont_defend_ally_borders
+		type = send_lend_lease_desire
 		id = "PRC"
 		value = 1000
 	}
-
 	ai_strategy = {
-		type = dont_defend_ally_borders
-		id = "SHX"
-		value = 1000
+		type = support
+		id = "PRC"
+		value = 500
 	}
-
 	ai_strategy = {
-		type = dont_defend_ally_borders
-		id = "XSM"
-		value = 1000
+		type = send_lend_lease_desire
+		id = "CHI"
+		value = -1000
 	}
-
 	ai_strategy = {
-		type = dont_defend_ally_borders
-		id = "SIK"
-		value = 1000
-	}
-
-	ai_strategy = {
-		type = dont_defend_ally_borders
-		id = "SIC"
-		value = 1000
-	}
-
-	ai_strategy = {
-		type = dont_defend_ally_borders
-		id = "XIK"
-		value = 1000
-	}
-
-	ai_strategy = {
-		type = dont_defend_ally_borders
-		id = "YUN"
-		value = 1000
-	}
-
-	ai_strategy = {
-		type = dont_defend_ally_borders
-		id = "GXC"
-		value = 1000
-	}
-
-	ai_strategy = {
-		type = dont_defend_ally_borders
-		id = "GUC"
-		value = 1000
+		type = support
+		id = "CHI"
+		value = -1000
 	}
 }
 
@@ -3856,5 +3745,71 @@ SOV_puppets_arnt_war_winning = {
 		id = SIK
 		target = join_allies
 		value = -9999
+	}
+}
+
+# we skip some of the minor minors that dont see much frontline
+SOV_dont_waste_volunteers_to_chinese_minors = {
+	allowed = {
+		tag = SOV
+	}
+	enable = {
+		SIK = { is_in_faction_with = CHI }
+		OR = {
+			SIK = {
+				has_war = yes
+			}
+			YUN = {
+				has_war = yes
+			}
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = send_volunteers_desire
+		id = "SIK"
+		value = -100
+	}
+	ai_strategy = {
+		type = send_volunteers_desire
+		id = "YUN"
+		value = -100
+
+	}
+}
+
+SOV_only_bother_with_volunteers_if_chi_losing = {
+	allowed = {
+		tag = SOV
+	}
+	enable = {
+		date < 1941.1.1
+		CHI = { surrender_progress < 0.4 }
+		CHI = {
+			has_war = yes
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = send_volunteers_desire
+		id = "YUN"
+		value = -100
+	}
+	ai_strategy = {
+		type = send_volunteers_desire
+		id = "XSM"
+		value = -100
+	}
+	ai_strategy = {
+		type = send_volunteers_desire
+		id = "SHX"
+		value = -100
+	}
+	ai_strategy = {
+		type = send_volunteers_desire
+		id = "CHI"
+		value = -100
 	}
 }
