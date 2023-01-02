@@ -104,16 +104,16 @@ on_actions = {
 				delete_unit_template_and_units = { division_template = "Loyalist Brigade" }
 				load_focus_tree = { tree = british_focus keep_completed = no }
 				unlock_national_focus = ENG_steady_as_she_goes
-				unlock_national_focus = committee_of_imperial_defence
+				#unlock_national_focus = committee_of_imperial_defence
 				unlock_national_focus = ENG_shadow_scheme
 				unlock_national_focus = ENG_privatize_the_housing_market
-				unlock_national_focus = royal_ordnance_factories
-				if = {
-					limit = {
-						amount_research_slots > 4
-					}
-					unlock_national_focus = uk_extra_tech_slot
-				}
+				#unlock_national_focus = royal_ordnance_factories
+				# if = {
+				# 	limit = {
+				# 		amount_research_slots > 4
+				# 	}
+				# 	unlock_national_focus = uk_extra_tech_slot
+				# }
 			}
 			# Give back ENG focus tree to Communist ENG if they win a civil war.
 			if = {
@@ -458,46 +458,29 @@ on_actions = {
 		effect = {
 			if = {
 				limit = {
-					original_tag = SOV
-					has_government = communism
-					has_country_leader = { name = "Joseph Stalin" }
-					is_puppet_of = MEX
-					MEX = {
-						OR = {
-							has_country_leader = { ruling_only = yes name = "Hernan Laborde" }
-							has_country_leader = { ruling_only = yes name = "Leon Trotsky" }
-							has_country_leader = { ruling_only = yes name = "Valentin Campa" }
-						}
-					}
-				}
-				SOV = { #TODO william check if works as intended or recreate Trotsky independently, also remove Trotsky from Mexico? What about puppet relationship? Look for another Soviet Trotskyist?
-					country_event = soviet.28
-				}
-			}
-			if = {
-				limit = {
 					original_tag = MEX
 					has_government = communism
 					OR = {
-						has_country_leader = { ruling_only = yes name = "Hernan Laborde" }
-						has_country_leader = { ruling_only = yes name = "Leon Trotsky" }
-						has_country_leader = { ruling_only = yes name = "Valentin Campa" }
+						has_country_leader = { ruling_only = yes character = MEX_hernan_laborde }
+						has_country_leader = { ruling_only = yes character = MEX_leon_trotsky }
+						has_country_leader = { ruling_only = yes character = MEX_valentin_campa }
 					}
 					is_puppet_of = SOV
 					MEX = {
-						has_country_leader = { name = "Joseph Stalin" } #change to subideology stalinism when supported
+						has_country_leader = { character = SOV_iosif_stalin } #change to subideology stalinism when supported
 					}
 				}
 				MEX = {
-					create_country_leader = {
-						name = "Dionisio Encina"
-						desc = "POLITICS_DIONISIO_ENCINA_DESC"
-						picture = "GFX_portrait_mex_dionisio_encina"
-						expire = "1965.1.1"
-						ideology = stalinism
-						traits = {
-							staunch_stalinist
+					add_country_leader_role = {
+						character = MEX_dionisio_encina
+						country_leader ={
+							expire = "1965.1.1"
+							ideology = stalinism
+							traits = {
+								staunch_stalinist
+							}
 						}
+						promote_leader = yes
 					}
 				}
 			}
@@ -1616,7 +1599,7 @@ on_actions = {
 					FROM = { original_tag = USA }
 				}
 				load_focus_tree = { tree = usa_focus keep_completed = no }
-				unlock_national_focus = USA_reestablish_the_gold_standard
+				#unlock_national_focus = USA_reestablish_the_gold_standard
 				complete_national_focus = USA_america_first
 				unlock_national_focus = USA_ally_with_the_silver_shirts
 				unlock_national_focus = USA_invite_foreign_support
@@ -1657,64 +1640,35 @@ on_actions = {
 	#ROOT is new controller #FROM is old controller #FROM.FROM is state ID
 	on_state_control_changed = {
 		effect = {
-			if = {
-				limit = {
-					original_tag = HOL
-					has_completed_focus = HOL_wilhelminism
-					FROM = {
-						original_tag = GER
-						has_government = fascism
-						has_civil_war = no
-					}
-					FROM.FROM = {
-						is_core_of = GER
-					}
-				}
-				FROM.FROM = {
-					set_state_flag = HOL_german_states_kaiser
-				}
-				country_event = { id = mtg_netherlands.73 }
-			}
-			if = {
-				limit = {
-					FROM.FROM = {
-						OR = {
-							state = 7
-							state = 35
-							state = 36
-						}
-					}
-				}
-				FROM = {
-					set_country_flag = HOL_lost_starting_state
-				}
-			}
+			# if = {
+			# 	limit = {
+			# 		original_tag = HOL
+			# 		has_completed_focus = HOL_wilhelminism
+			# 		FROM = {
+			# 			original_tag = GER
+			# 			has_government = fascism
+			# 			has_civil_war = no
+			# 		}
+			# 		FROM.FROM = {
+			# 			is_core_of = GER
+			# 		}
+			# 	}
+			# 	FROM.FROM = {
+			# 		set_state_flag = HOL_german_states_kaiser
+			# 	}
+			# 	country_event = { id = mtg_netherlands.73 }
+			# }
 		}
 	}
 
 	on_nuke_drop = {
 		effect = {
-			if = {
-				limit = {
-					tag = USA
-					FROM = {
-						state = 16
-					}
-				}
-				set_country_flag = achievement_team_america
-			}
 		}
 	}
 
 	# FROM is the sinker, ROOT is the owner of the ship being sunk
 	on_pride_of_the_fleet_sunk = {
 		effect = {
-			if = {
-				limit = {
-					tag = ENG
-				}
-				FROM = { set_country_flag = achievements_pride_and_extreme_prejudice }
-			}
 		}
 	}
 
@@ -1739,28 +1693,6 @@ on_actions = {
 	# ROOT is the new faction leader FROM is the old faction leader
 	on_assume_faction_leadership = {
 		effect = {
-			if = {
-				limit = {
-					FROM = {
-						OR = {
-							tag = GER
-							tag = ENG
-							tag = SOV
-						}
-					}
-					NOT = {
-						tag = USA
-						tag = ENG
-						tag = GER
-						tag = ITA
-						tag = FRA
-						tag = SOV
-						tag = JAP
-						tag = CHI
-					}
-				}
-				set_country_flag = assuming_direct_control_achievement_flag
-			}
 		}
 	}
 }
