@@ -2,36 +2,6 @@ on_actions = {
 	#ROOT is new controller #FROM is old controller #FROM.FROM is state ID
 	on_state_control_changed = {
 		effect = {
-			if = {
-				limit = {
-					FROM.FROM = {
-						is_core_of = SOV
-					}
-					FROM = {
-						tag = SOV
-					}
-				}
-				SOV = { set_country_flag = achievement_lost_state }
-			}
-		}
-		effect = {
-			if = {
-				limit = {
-					FROM.FROM = {
-						is_core_of = GER
-						NOT = { #these two cores are given to germany in the Danzig or War event, but the states are not transfered immediately
-							state = 85
-							state = 807
-						}
-					}
-					has_global_flag = achievement_france_surrender
-					NOT = { tag = SOV }
-					NOT = { tag = GER }#in case Germany recaptures a state
-				}
-				set_global_flag = GER_lost_core_state
-			}
-		}
-		effect = {
 			IF = {
 				limit = {
 					FROM.FROM = {
@@ -94,50 +64,6 @@ on_actions = {
 				FROM.FROM = {
 					set_state_flag = poland_state_withdrawn
 					state_event = { id = poland.23 trigger_for = controller }
-				}
-			}
-			if = {
-				limit = {
-					FROM.FROM = { state = 119 }
-				}
-				if = {
-					limit = {
-						ROOT = { original_tag = IRE }
-					}
-					set_province_name = {
-						id = 385
-						name = "Derry"
-					}
-				}
-				if = {
-					limit = {
-						ROOT = { original_tag = ENG }
-					}
-					reset_province_name = 385
-				}
-				if = {
-					limit = {
-						ROOT = { original_tag = NIR }
-					}
-					random_list = { #Difficult to say if an independent Northern Ireland would call it Derry or Londonderry, let's let the dice gods decide.
-						1 = {
-							set_province_name = {
-								id = 385
-								name = "Derry"
-							}
-							modifier = {
-								factor = 0
-								is_subject_of = ENG
-							}
-						}
-						1 = {
-							reset_province_name = 385
-							modifier = {
-								factor = 0
-								is_subject_of = IRE
-							}
-						}
-					}
 				}
 			}
 		}
@@ -561,11 +487,11 @@ on_actions = {
 					has_government = neutrality
 					NOT = {
 						has_country_leader = {
-							name = "Edward Rydz-Śmigły"
+							character = POL_edward_rydzsmigly
 							ruling_only = yes
 						}
 						has_country_leader = {
-							name = "Walery Sławek"
+							character = POL_walery_slawek
 							ruling_only = yes
 						}
 					}
@@ -588,7 +514,7 @@ on_actions = {
 				limit = {
 					original_tag = POL
 					has_country_leader = {
-						name = "Edward Rydz-Śmigły"
+						character = POL_edward_rydzsmigly
 						ruling_only = yes
 					}
 					has_focus_tree = generic_focus
@@ -614,7 +540,7 @@ on_actions = {
 				limit = {
 					original_tag = POL
 					has_country_leader = {
-						name = "Walery Sławek"
+						character = POL_walery_slawek
 						ruling_only = yes
 					}
 					has_focus_tree = generic_focus
@@ -734,6 +660,7 @@ on_actions = {
 				limit = {
 					original_tag = LIT
 					NOT = { has_focus_tree = lithuania_tree }
+					has_dlc = "No Step Back"
 				}
 				load_focus_tree = { tree = lithuania_tree keep_completed = yes }
 				if = { #Give Lithuania their focus tree back if the Iron Wolf win the civil war.
@@ -773,6 +700,7 @@ on_actions = {
 				limit = {
 					original_tag = EST
 					NOT = { has_focus_tree = estonia_tree }
+					has_dlc = "No Step Back"
 				}
 				load_focus_tree = { tree = estonia_tree keep_completed = yes }
 				if = { #Give Estonia their focus tree back if the Vapsid win the civil war.
@@ -835,6 +763,7 @@ on_actions = {
 				limit = {
 					original_tag = LAT
 					NOT = { has_focus_tree = latvia_tree }
+					has_dlc = "No Step Back"
 				}
 				load_focus_tree = { tree = latvia_tree keep_completed = yes }
 				if = { #Give Latvia their focus tree back if the Perkonkrust win the civil war.
@@ -1612,7 +1541,10 @@ on_actions = {
 			}
 			if = {
 				limit = {
-					POL = { is_subject_of = GER }
+					POL = {
+						is_subject_of = GER
+						is_ai = no
+					}
 					GER = { is_ai = yes }
 				}
 				GER = {
@@ -1740,17 +1672,6 @@ on_actions = {
 	#FROM = defending side
 	#fired when two countries end up at war with each other (on_war is fired when a country goes to war against anyone and is not fired again when it enters war against another country unless it went to peace first)
 	on_war_relation_added = { # ---> Fires in 2nd place (1st is on_declare_war) -> This one is triggered ALWAYS
-		effect = {
-			if = {
-				limit = {
-					original_tag = GER
-					FROM = {
-						original_tag = POL
-					}
-				}
-				SOV = { set_country_flag = achievement_GER_attacked_POL_first }
-			}
-		}
 		effect = { #SOV - Great Patriotic War and Third Five Year Plan
 			if = {
 				limit = {
@@ -1803,7 +1724,7 @@ on_actions = {
 							limit = {
 								has_country_flag = SOV_third_five_year_plan_disruptor_flag
 							}
-							log = "The disruptor is [THIS.GetName]"
+							#log = "The disruptor is [THIS.GetName]"
 						}
 
 						country_event = NSB_soviet_five_year_plan.01
@@ -1957,7 +1878,7 @@ on_actions = {
 				}
 				set_temp_variable = { SOV_temp_paranoia_days = SOV_medium_paranoia_days }
 				add_to_temp_variable = { SOV_temp_paranoia_days = SOV_high_paranoia_days }
-				log = "Total Paranoia days = [?SOV_temp_paranoia_days]"
+				#log = "Total Paranoia days = [?SOV_temp_paranoia_days]"
 
 				if = {
 					limit = {
@@ -1977,7 +1898,7 @@ on_actions = {
 								factor = 0.75
 								check_variable = { SOV_paranoia_weekly_bucket > 500 }
 							}
-							log = "Lucky you: No random purge this week"
+							#log = "Lucky you: No random purge this week"
 						}
 
 						100 = { # Regular Purge
@@ -2234,38 +2155,6 @@ on_actions = {
 
 	# ROOT is capitulated country, FROM is winner
 	on_capitulation = {
-		effect = {
-			if = {
-				limit = {
-					original_tag = GER
-					FROM = { tag = SOV }
-					SOV = {
-						NOT = { has_global_flag = GER_lost_core_state }
-						has_global_flag = achievement_france_surrender
-					}
-				}
-				SOV = { set_country_flag = achievement_race_for_germany }
-			}
-		}
-		effect = {
-			if = {
-				limit = {
-					tag = GER
-					FROM = {
-						original_tag = SOV
-					}
-					SOV = {
-						casualties_inflicted_by = {
-							opponent = GER
-							thousands < 1000
-						}
-					}
-				}
-				SOV = {
-					set_country_flag = achievement_no_statistics
-				}
-			}
-		}
 		#Soviet / Anglo-Soviet Invasion of Iran
 		effect = {
 			if = {
@@ -2395,56 +2284,11 @@ on_actions = {
 				}
 			}
 		}
-
-		effect = {
-			if = {
-				limit = {
-					tag = SOV
-					FROM = {
-						tag = GER
-					}
-					FROM = {
-						has_country_flag = achievement_stalingrad_not_taken
-					}
-				}
-				FROM = { set_country_flag = achievement_not_much_fun_in_stalingrad }
-			}
-		}
 	}
 	#ROOT = attacking side
 	#FROM = defending side
 	#fired when two countries end up at war with each other (on_war is fired when a country goes to war against anyone and is not fired again when it enters war against another country unless it went to peace first)
-	on_war_relation_added = {
-		effect = {
-			if = {
-				limit = {
-					tag = GER
-					FROM = { tag = SOV }
-				}
-			}
-			GER = {
-				set_country_flag = achievement_stalingrad_not_taken #will be removed in on_state_control_change if Germany takes Stalingrad
-			}
-		}
-	}
-
-	#ROOT is new controller #FROM is old controller #FROM.FROM is state ID
-	on_state_control_changed = {
-		effect = {
-			if = {
-				limit = {
-					FROM.FROM = {
-						state = 217
-					}
-					tag = GER
-					has_country_flag = achievement_stalingrad_not_taken
-					divisions_in_state = { state = 217 size > 1 } #only happens if Germany has at least one division in the state, because state control changes before on_capitulation fires
-				}
-				clr_country_flag = achievement_stalingrad_not_taken
-			}
-		}
-	}
-
-
+	# on_war_relation_added = {
+	# }
 }
 
