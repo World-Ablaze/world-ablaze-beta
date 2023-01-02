@@ -873,7 +873,7 @@ NDefines.NAI.STR_BOMB_AA_IMPORTANCE_FACTOR = 0.5									-- Factor of AA influen
 NDefines.NAI.STR_BOMB_INFRA_IMPORTANCE_FACTOR = 0.25								-- Factor of infrastructure influence on strategic importance ( 0.0 - 1.0 )
 NDefines.NAI.STR_BOMB_IMPORTANCE_SCALE = 5.0										-- str bombing total importance scale (every str bombing score get's multiplied by it)
 
-NDefines.NAI.STR_BOMB_MIN_ENEMY_FIGHTERS_IN_AREA = 99999								-- If amount of enemy fighters is higher than this mission won't perform
+NDefines.NAI.STR_BOMB_MIN_ENEMY_FIGHTERS_IN_AREA = 4000								-- If amount of enemy fighters is higher than this mission won't perform
 NDefines.NAI.STR_BOMB_FIGHTERS_PER_PLANE = 1.5										-- Amount of air superiority planes requested per enemy plane
 NDefines.NAI.STR_BOMB_PLANES_PER_CIV_FACTORY = 5									-- Amount of planes requested per enemy civ factory
 NDefines.NAI.STR_BOMB_PLANES_PER_MIL_FACTORY = 100									-- Amount of planes requested per enemy military factory
