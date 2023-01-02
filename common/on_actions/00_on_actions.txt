@@ -4,15 +4,6 @@ on_actions = {
 		effect = {
 			every_country = {
 				country_event = { id = afo_event.1 }
-				# I want those variable to initalize globally on launch
-				set_variable = { SAMPLE_count  = 0 }
-				set_variable = { SAMPLE_y_position_green = 7 }
-				set_variable = { SAMPLE_y_position_red = 10 }
-				set_variable = { SAMPLE_y_position_blue = 6 }
-				set_variable = { SAMPLE_y_position_grey = 18 }
-				set_variable = { SAMPLE_y_position_light_blue = 9 }
-				set_variable = { SAMPLE_y_position_light_white = 12 }
-				set_variable = { SAMPLE_y_position_light_red = 8 }
 			}
 			USA = {
 				if = {
@@ -167,33 +158,7 @@ on_actions = {
 				limit = { has_idea = race_for_the_bomb_outclassed }
 				remove_ideas = race_for_the_bomb_outclassed
 			}
-			if = {
-				limit = { NOT = { has_country_flag = achievement_has_dropped_nuke } }
-				goto_state = FROM
-				set_country_flag = achievement_has_dropped_nuke
-			}
-			if = {
-				limit = {
-					FROM = { state = 378 }
-				}
-				set_country_flag = achievement_has_nuked_california
-			}
-			if = {
-				limit = {
-					FROM = { is_core_of = AST }
-				}
-				set_country_flag = achievement_AST_nuke_self
-			}
-			if = {
-				limit = {
-					tag = SWE
-					FROM = {
-						is_owned_by = DEN
-						is_core_of = DEN
-					}
-				}
-				set_country_flag = achievement_med_plutonium
-			}
+			goto_state = FROM
 			if = {
 				limit = {
 					FROM = {
@@ -283,50 +248,12 @@ on_actions = {
 	on_create_faction = {
 		effect = {
 			# Sunset invasion check
-			if = {
-				limit = {
-					FROM = { is_puppet = no }
-					OR = {
-						AND = {
-							tag = MEX
-							FROM = {
-								capital_scope = {
-									NOT = { is_on_continent = south_america }
-								}
-							}
-						}
-						AND = {
-							FROM = {
-								tag = MEX
-							}
-							capital_scope = {
-								NOT = { is_on_continent = south_america }
-							}
-						}
-					}
-				}
-				set_country_flag = achievement_failed_sunset_invasion
-			}
 		}
 	}
 
 	#FROM is country getting invited.
 	on_offer_join_faction = {
 		effect = {
-			#Give achievement to nation joining a faction, but not in one from game start
-			if = {
-				limit = {
-					date > 1936.01.02
-				}
-				FROM = {
-					if = {
-						limit = {
-							is_faction_leader = no
-						}
-						set_country_flag = achievement_has_joined_faction
-					}
-				}
-			}
 			#Remove anti_soviet_pact if joining commie Soviet in faction
 			if = {
 				limit = {
@@ -340,39 +267,12 @@ on_actions = {
 					remove_ideas = anti_soviet_pact
 				}
 			}
-
-			# Sunset invasion check
-			if = {
-				limit = {
-					is_puppet = no
-					OR = {
-						AND = {
-							tag = MEX
-							FROM = {
-								capital_scope = {
-									NOT = { is_on_continent = south_america }
-								}
-							}
-						}
-						AND = {
-							FROM = {
-								tag = MEX
-							}
-							capital_scope = {
-								NOT = { is_on_continent = south_america }
-							}
-						}
-					}
-				}
-				set_country_flag = achievement_failed_sunset_invasion
-			}
 		}
 	}
 
 	#FROM is faction leader on join faction requests. THIS DOES NOT FIRE ON ADD_TO_FACTION EFFECT! USE ON_OFFER_JOIN_FACTION!
 	on_join_faction = {
 		effect = {
-			set_country_flag = achievement_has_joined_faction
 			#Remove anti_soviet_pact if joining commie Soviet in faction
 			if = {
 				limit = {
@@ -383,32 +283,6 @@ on_actions = {
 					}
 				}
 				remove_ideas = anti_soviet_pact
-			}
-
-			# Sunset invasion check
-			if = {
-				limit = {
-					is_puppet = no
-					OR = {
-						AND = {
-							tag = MEX
-							FROM = {
-								capital_scope = {
-									NOT = { is_on_continent = south_america }
-								}
-							}
-						}
-						AND = {
-							FROM = {
-								tag = MEX
-							}
-							capital_scope = {
-								NOT = { is_on_continent = south_america }
-							}
-						}
-					}
-				}
-				set_country_flag = achievement_failed_sunset_invasion
 			}
 
 			# Romania shouldn't declare war on Bulgaria on historical mode, if both are going to join the Axis
@@ -432,17 +306,6 @@ on_actions = {
 	#FROM is war target
 	on_declare_war = {
 		effect = {
-			#make sure Germany doesn't force ideology on France for the achievement
-			if = {
-				limit = {
-					OR = {
-						FROM = { original_tag = POL }
-						FROM = { original_tag = FRA }
-					}
-					tag = GER
-				}
-				set_country_flag = invalid_for_danzig_achievement
-			}
 			#make sure warlords don't use the same guy
 			if = {
 				limit = {
@@ -686,17 +549,6 @@ on_actions = {
 		effect = {
 			if = {
 				limit = {
-					tag = SOV
-					FROM = {
-						tag = FIN
-						is_in_faction = no
-					}
-					NOT = { has_global_flag = finnish_him_achievement_flag }
-				}
-				set_global_flag = finnish_him_achievement_flag
-			}
-			if = {
-				limit = {
 					tag = GER
 					FROM = {
 						tag = SOV
@@ -917,24 +769,6 @@ on_actions = {
 						}
 					}
 					add_ideas = SPA_recovering_from_civil_war #keep the spirit on historical mode, keeping them out of the war
-				}
-			}
-			#End of SCW
-			if = {
-				limit = {
-					FROM = {
-						original_tag = SPR
-					}
-					ROOT = {
-						original_tag = SPR
-						OR = {
-							has_government = democratic
-							has_government = communism
-						}
-					}
-				}
-				ROOT = {
-					set_country_flag = achievement_won_spanish_civil_war
 				}
 			}
 			if = {
@@ -1628,10 +1462,6 @@ on_actions = {
 		}
 	}
 
-	on_unit_leader_created = {
-		effect = {
-		}
-	}
 	#ROOT = country that joined a war
 	on_war = {
 		effect = {
@@ -1640,7 +1470,7 @@ on_actions = {
 					tag = USA
 					has_war_with = JAP
 					NOT = { has_global_flag = day_of_infamy_happened }
-					has_country_leader = { name = "Franklin Delano Roosevelt" ruling_only = yes }
+					has_country_leader = { character = USA_franklin_delano_roosevelt ruling_only = yes }
 				}
 				play_day_of_infamy_effect = yes
 			}
@@ -1648,7 +1478,7 @@ on_actions = {
 				limit = {
 					tag = ENG
 					has_war_with = GER
-					has_country_leader = { name = "Neville Chamberlain" ruling_only = yes }
+					has_country_leader = { character = ENG_neville_chamberlain ruling_only = yes }
 				}
 				play_war_with_germany_effect = yes
 			}
@@ -1787,139 +1617,133 @@ on_actions = {
 				}
 				news_event = news.139
 			}
-			if = {
-				limit = {
-					tag = GER
-					divisions_in_state = { state = FROM.FROM size > 0 }
-					FROM = {
-						original_tag = GER
-						has_government = fascism
-						has_civil_war = yes
-					}
-				}
-				FROM.FROM = {
-					set_state_flag = nazi_state_withdrawn
-					random_list = {
-						20 = {
-							set_state_flag = nazi_state_withdrawn1
-						}
-						20 = {
-							set_state_flag = nazi_state_withdrawn2
-						}
-						20 = {
-							set_state_flag = nazi_state_withdrawn3
-						}
-						20 = {
-							set_state_flag = nazi_state_withdrawn4
-						}
-						20 = {
-							set_state_flag = nazi_state_withdrawn5
-						}
-					}
-					state_event = { id = wtt_germany.49 trigger_for = controller }
-				}
-			}
-			if = {
-				limit = {
-					tag = GER
-					810 = { is_controlled_by = GER }
-					any_other_country = {
-						original_tag = GER
-						has_government = fascism
-						has_civil_war = yes
-						owns_state = 810
-					}
-					NOT = { has_global_flag = fall_of_berlin_civil_war }
-				}
-				set_global_flag = fall_of_berlin_civil_war
-				country_event = { id = wtt_germany.50 days = 1 random_hours = 3 }
-			}
-			if = {
-				limit = {
-					tag = GER
-					has_country_flag = germany_war_return_kaiser
-					has_government = neutrality
-					FROM = {
-						original_tag = HOL
-						has_country_flag = netherlands_refused_return_kaiser
-					}
-					OR = {
-						7 = { is_controlled_by = GER }
-						HOL = { is_subject_of = GER }
-					}
-				}
-				country_event = { id = wtt_germany.6 }
-			}
-			if = {
-				limit = {
-					tag = CSA
-					has_war = yes
-					FROM = {
-						tag = USA
-					}
-					FROM.FROM = {
-						is_core_of = USA
-						not = { has_state_flag = USA_civil_war_state_cooldown }
-					}
-				}
-				FROM.FROM = {
-					save_event_target_as = CSA_liberated_state
-					set_state_flag = {
-						flag = USA_civil_war_state_cooldown
-						days = 180
-						value = 1
-					}
-					state_event = { id = mtg_usa_civil_war_fascists.201 trigger_for = controller }
-				}
-			}
-			if = {
-				limit = {
-					tag = USA
-					has_war_with = CSA
-					FROM = {
-						tag = CSA
-					}
-					FROM.FROM = {
-						OR = {
-							is_core_of = CSA
-							is_claimed_by = USA
-						}
-						not = { has_state_flag = USA_civil_war_state_cooldown }
-					}
-				}
-				FROM.FROM = {
-					save_event_target_as = USA_liberated_state
-					set_state_flag = {
-						flag = USA_civil_war_state_cooldown
-						days = 180
-						value = 1
-					}
-					state_event = { id = mtg_usa_civil_war_fascists.202 trigger_for = controller }
-				}
-			}
-			if = {
-				limit = {
-					original_tag = USA
-					has_civil_war = yes
-					tag = event_target:USA_civil_war_democrats
-					has_country_flag = citizen_militia_spawned
-					FROM.FROM = {
-						is_core_of = USA
-						has_state_flag = USA_citizen_militia
-						not = { has_state_flag = USA_militia_spawned }
-					}
-				}
-				FROM.FROM = {
-					set_state_flag = USA_militia_spawned
-					state_event = { id = mtg_usa_civil_war_fascists.1000 trigger_for = controller }
-				}
-			}
-		}
-	}
-
-	on_unit_leader_level_up = {
-		effect = {
-
+			# if = {
+			# 	limit = {
+			# 		tag = GER
+			# 		divisions_in_state = { state = FROM.FROM size > 0 }
+			# 		FROM = {
+			# 			original_tag = GER
+			# 			has_government = fascism
+			# 			has_civil_war = yes
+			# 		}
+			# 	}
+			# 	FROM.FROM = {
+			# 		set_state_flag = nazi_state_withdrawn
+			# 		random_list = {
+			# 			20 = {
+			# 				set_state_flag = nazi_state_withdrawn1
+			# 			}
+			# 			20 = {
+			# 				set_state_flag = nazi_state_withdrawn2
+			# 			}
+			# 			20 = {
+			# 				set_state_flag = nazi_state_withdrawn3
+			# 			}
+			# 			20 = {
+			# 				set_state_flag = nazi_state_withdrawn4
+			# 			}
+			# 			20 = {
+			# 				set_state_flag = nazi_state_withdrawn5
+			# 			}
+			# 		}
+			# 		state_event = { id = wtt_germany.49 trigger_for = controller }
+			# 	}
+			# }
+			# if = {
+			# 	limit = {
+			# 		tag = GER
+			# 		810 = { is_controlled_by = GER }
+			# 		any_other_country = {
+			# 			original_tag = GER
+			# 			has_government = fascism
+			# 			has_civil_war = yes
+			# 			owns_state = 810
+			# 		}
+			# 		NOT = { has_global_flag = fall_of_berlin_civil_war }
+			# 	}
+			# 	set_global_flag = fall_of_berlin_civil_war
+			# 	country_event = { id = wtt_germany.50 days = 1 random_hours = 3 }
+			# }
+			# if = {
+			# 	limit = {
+			# 		tag = GER
+			# 		has_country_flag = germany_war_return_kaiser
+			# 		has_government = neutrality
+			# 		FROM = {
+			# 			original_tag = HOL
+			# 			has_country_flag = netherlands_refused_return_kaiser
+			# 		}
+			# 		OR = {
+			# 			7 = { is_controlled_by = GER }
+			# 			HOL = { is_subject_of = GER }
+			# 		}
+			# 	}
+			# 	country_event = { id = wtt_germany.6 }
+			# }
+			# if = {
+			# 	limit = {
+			# 		tag = CSA
+			# 		has_war = yes
+			# 		FROM = {
+			# 			tag = USA
+			# 		}
+			# 		FROM.FROM = {
+			# 			is_core_of = USA
+			# 			not = { has_state_flag = USA_civil_war_state_cooldown }
+			# 		}
+			# 	}
+			# 	FROM.FROM = {
+			# 		save_event_target_as = CSA_liberated_state
+			# 		set_state_flag = {
+			# 			flag = USA_civil_war_state_cooldown
+			# 			days = 180
+			# 			value = 1
+			# 		}
+			# 		state_event = { id = mtg_usa_civil_war_fascists.201 trigger_for = controller }
+			# 	}
+			# }
+			# if = {
+			# 	limit = {
+			# 		tag = USA
+			# 		has_war_with = CSA
+			# 		FROM = {
+			# 			tag = CSA
+			# 		}
+			# 		FROM.FROM = {
+			# 			OR = {
+			# 				is_core_of = CSA
+			# 				is_claimed_by = USA
+			# 			}
+			# 			not = { has_state_flag = USA_civil_war_state_cooldown }
+			# 		}
+			# 	}
+			# 	FROM.FROM = {
+			# 		save_event_target_as = USA_liberated_state
+			# 		set_state_flag = {
+			# 			flag = USA_civil_war_state_cooldown
+			# 			days = 180
+			# 			value = 1
+			# 		}
+			# 		state_event = { id = mtg_usa_civil_war_fascists.202 trigger_for = controller }
+			# 	}
+			# }
+			# if = {
+			# 	limit = {
+			# 		original_tag = USA
+			# 		has_civil_war = yes
+			# 		tag = event_target:USA_civil_war_democrats
+			# 		has_country_flag = citizen_militia_spawned
+			# 		FROM.FROM = {
+			# 			is_core_of = USA
+			# 			has_state_flag = USA_citizen_militia
+			# 			not = { has_state_flag = USA_militia_spawned }
+			# 		}
+			# 	}
+			# 	FROM.FROM = {
+			# 		set_state_flag = USA_militia_spawned
+			# 		state_event = { id = mtg_usa_civil_war_fascists.1000 trigger_for = controller }
+			# 	}
+			# }
 		}
 	}
 
@@ -2028,6 +1852,31 @@ on_actions = {
 
 				add_compliance = comp_change
 			}
+		}
+	}
+
+	on_unit_leader_promote_from_ranks_veteran = { #Unit leader scope, FROM is unit
+		effect = {
+			FROM = {
+				add_random_valid_trait_from_unit = {
+					character = ROOT
+				}
+			}
+			set_unit_leader_flag = field_promotion_achievement
+		}
+	}
+
+	on_unit_leader_promote_from_ranks_green = { #Unit leader scope, FROM is unit
+		effect = {
+			set_unit_leader_flag = field_promotion_achievement
+		}
+	}
+
+	on_add_history = { #Unit Scope
+		effect = {
+			#add_unit_medal_to_latest_entry = {
+			#	unit_medals = iron_cross_second_class
+			#} #This would add a unit medal to the history entry you just received
 		}
 	}
 }
