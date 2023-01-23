@@ -373,7 +373,7 @@ NDefines.NMilitary.RIVER_CROSSING_SPEED_PENALTY = -0.25								-- small river cr
 NDefines.NMilitary.RIVER_CROSSING_SPEED_PENALTY_LARGE = -0.5						-- large river crossing
 
 NDefines.NMilitary.RETREAT_SPEED_FACTOR = 1.5              						    -- speed bonus when retreating
-NDefines.NMilitary.BASE_FORT_PENALTY = -0.17						 				-- fort penalty
+NDefines.NMilitary.BASE_FORT_PENALTY = -0.18						 				-- fort penalty
 
 NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_IMPACT = -0.4      						-- effect on defense due to enemy air superiorty
 --NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_SPEED_IMPACT = -0.5				   		-- effect on speed due to enemy air superiority
