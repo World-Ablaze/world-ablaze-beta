@@ -563,7 +563,7 @@ NDefines.NNavy.BASE_SPOTTING_FROM_DECRYPTION = 20									-- base spotting perce
 
 NDefines.NNavy.BASE_GUN_COOLDOWNS = { 												-- number of hours for a gun to be ready after shooting
 		1.0,	-- big guns
-		2.0,	-- torpedoes
+		3.0,	-- torpedoes
 		1.0,	-- small guns
 	}
 
