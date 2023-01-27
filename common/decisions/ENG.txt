@@ -92,8 +92,10 @@ ENG_BEF_category = {
 						states = { 36 7 35 979 6 34 985 29 785 18 790 }
 						exclude = { infantry motorized_light }
 					}
-					FRA = { surrender_progress > 0.06 }
-					GER = { surrender_progress > 0.06 }
+					FRA = { surrender_progress > 0 }
+					GER = { surrender_progress > 0 }
+					surrender_progress > 0
+					casualties > 15000
 					has_war_with = SPR
 				}
 			}
@@ -111,8 +113,10 @@ ENG_BEF_category = {
 					states = { 36 7 35 979 6 34 985 29 785 18 }
 					exclude = { infantry motorized_light }
 				}
-				NOT = { FRA = { surrender_progress > 0.06 } }
-				NOT = { GER = { surrender_progress > 0.06 } }
+				NOT = { FRA = { surrender_progress > 0 } }
+				NOT = { GER = { surrender_progress > 0 } }
+				NOT = { surrender_progress > 0 }
+				NOT = { casualties < 15000 }
 				NOT = {  has_war_with = SPR }
 			}
 		}
@@ -1388,8 +1392,6 @@ political_actions = {
 		}
 	}
 
-
-
 	hold_blood_toil_tears_sweat_speech = {
 
 		icon = generic_political_discourse
@@ -1446,11 +1448,9 @@ political_actions = {
 		available = {
 			has_government = democratic
 			has_country_leader = { ruling_only = yes name = "Winston Churchill" }
-			has_war_with = GER
-			is_in_faction_with = FRA
-			FRA = {
-				surrender_progress > 0.2
-			}
+			15 = { CONTROLLER = { has_war_with = ROOT } }
+			29 = { CONTROLLER = { has_war_with = ROOT } }
+			14 = { CONTROLLER = { has_war_with = ROOT } }
 		}
 
 		cost = 25
@@ -1459,7 +1459,11 @@ political_actions = {
 
 		visible = {
 			has_government = democratic
-			has_war_with = GER
+			OR = {
+				15 = { CONTROLLER = { has_war_with = ROOT } }
+				29 = { CONTROLLER = { has_war_with = ROOT } }
+				14 = { CONTROLLER = { has_war_with = ROOT } }
+			}
 			has_country_flag = blood_toil_tears_sweat_speech
 			has_country_leader = { ruling_only = yes name = "Winston Churchill" }
 		}
@@ -1515,8 +1519,18 @@ political_actions = {
 			has_government = democratic
 			has_country_leader = { ruling_only = yes name = "Winston Churchill" }
 			has_war_with = GER
-			is_in_faction_with = FRA
-			FRA = { has_capitulated = yes }
+			15 = { CONTROLLER = { has_war_with = ROOT } }
+			29 = { CONTROLLER = { has_war_with = ROOT } }
+			14 = { CONTROLLER = { has_war_with = ROOT } }
+			OR = {
+				has_war_with = FRA
+				AND = {
+					is_in_faction_with = FRA
+					FRA = { has_capitulated = yes }
+				}
+				NOT = { country_exists = FRA }
+				country_exists = VIC
+			}
 		}
 
 		cost = 50
@@ -5159,11 +5173,24 @@ operations = {
 			has_government = democratic
 			has_completed_focus = ENG_local_intervention
 			has_war_with = GER
-			is_in_faction_with = FRA
-			FRA = { surrender_progress > 0.2 }
-			country_exists = VIC
-			VIC = { has_government = fascism }
-			VIC = { has_war = no }
+			OR = {
+				AND = {
+					country_exists = VIC
+					NOT = { has_war_with = VIC }
+					NOT = { is_in_faction_with = VIC }
+				}
+				AND = {
+					country_exists = FRA
+					NOT = { has_war_with = FRA }
+					NOT = { is_in_faction_with = FRA }
+				}
+			}
+			if = {
+				limit = {
+					is_in_faction_with = FRA
+				}
+				FRA = { has_capitulated = yes }
+			}
 		}
 
 		cost = 50
@@ -5182,17 +5209,18 @@ operations = {
 			tag = ENG
 			has_government = democratic
 			has_war_with = GER
-			# OR = {
-			# 	AND = {
-			# 		is_in_faction_with = FRA
-			# 		FRA = { surrender_progress > 0.2 }
-			# 	}
-			# 	AND = {
-			# 		country_exists = VIC
-			# 		VIC = { has_government = fascism }
-			# 		VIC = { has_war = no }
-			# 	}
-			# }
+			OR = {
+				AND = {
+					country_exists = VIC
+					NOT = { has_war_with = VIC }
+					NOT = { is_in_faction_with = VIC }
+				}
+				AND = {
+					country_exists = FRA
+					NOT = { has_war_with = FRA }
+					NOT = { is_in_faction_with = FRA }
+				}
+			}
 		}
 
 		complete_effect = {
