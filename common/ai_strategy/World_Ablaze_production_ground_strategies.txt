@@ -415,17 +415,6 @@ WA_SOV_ground_production_strategy_default = {
 		always = yes
 	}
 
-#	ai_strategy = {
-#		type = equipment_variant_production_factor
-#		id = anti_air_equipment
-#		value = 250
-#	}
-#	ai_strategy = {
-#		type = equipment_variant_production_factor
-#		id = anti_tank_equipment
-#		value = 85
-#	}
-
 	ai_strategy = {
 		type = equipment_production_factor
 		id = infantry
@@ -579,6 +568,48 @@ WA_SOV_ground_production_strategy_very_late = {
 	#}
 }
 
+WA_SOV_you_need_aa = {
+	allowed = {
+		original_tag = SOV
+	}
+	enable = {
+		date < 1943.1.1
+	}
+	abort_when_not_enabled = yes
+	
+	ai_strategy = {
+		type = equipment_production_min_factories
+		id = anti_air
+		value = 3
+	}
+}
+
+WA_SOV_you_need_more_infantry_now = {
+	allowed = {
+		original_tag = SOV
+	}
+	enable = {
+		date > 1943.1.1
+	}
+	abort_when_not_enabled = yes
+	
+	ai_strategy = {
+		type = equipment_production_min_factories
+		id = anti_tank
+		value = 15
+	}
+	ai_strategy = {
+		type = equipment_production_min_factories
+		id = artillery
+		value = 7
+	}
+	ai_strategy = {
+		type = equipment_production_min_factories
+		id = infantry
+		value = 5
+	}
+}
+
 #Soviets have been defeated
 SOV_produce_more_mbts = {
 	allowed = {
@@ -715,6 +746,34 @@ WA_ENG_ground_production_strategy_late = {
 		value = 5
 	}
 }
+WA_ENG_lend_lease_production = {
+	allowed = {
+		original_tag = ENG
+	}
+	enable = {
+		126 = {
+			CONTROLLER = {
+				tag = ENG
+			}
+		}
+		NOT = {
+			OR = {
+				has_equipment = { support_equipment > 75000 }
+				has_equipment = { infantry_equipment > 75000 }
+			}
+		}
+		num_of_military_factories > 199
+		SOV = { has_war_with = GER }
+		date > 1941.1.1
+		
+	}
+	abort_when_not_enabled = yes
+	ai_strategy = {
+		type = equipment_production_min_factories
+		id = infantry
+		value = 20
+	}
+}
 
 ### USA
 
@@ -824,15 +883,16 @@ WA_USA_lend_lease_production = {
 	}
 	enable = {
 		NOT = {
-			OR = {
-				has_equipment = { support_equipment > 200000 }
-				has_equipment = { infantry_equipment > 200000 }
+			AND = {
+				has_equipment = { support_equipment > 300000 }
+				has_equipment = { infantry_equipment > 300000 }
 			}
 		}
-		num_of_military_factories > 499
+		num_of_military_factories > 479
+		num_of_military_factories < 800
 		has_completed_focus = USA_lend_lease_act
 		SOV = { has_war_with = GER }
-		date > 1942.1.1
+		date > 1941.11.1
 	}
 	abort_when_not_enabled = yes
 	ai_strategy = {
@@ -848,7 +908,86 @@ WA_USA_lend_lease_production = {
 	ai_strategy = {
 		type = equipment_production_min_factories
 		id = infantry
-		value = 100
+		value = 105
+	}
+	ai_strategy = {
+		type = equipment_production_min_factories
+		id = mechanized
+		value = 25
+	}
+}
+
+WA_USA_lend_lease_production_late = {
+	allowed = {
+		original_tag = USA
+	}
+	enable = {
+		NOT = {
+			AND = {
+				has_equipment = { support_equipment > 300000 }
+				has_equipment = { infantry_equipment > 300000 }
+			}
+		}
+		num_of_military_factories > 799
+		num_of_military_factories < 1000
+		has_completed_focus = USA_lend_lease_act
+		SOV = { has_war_with = GER }
+		date > 1941.11.1
+	}
+	abort_when_not_enabled = yes
+	ai_strategy = {
+		type = equipment_production_min_factories
+		id = artillery
+		value = 30
+	}
+	ai_strategy = {
+		type = equipment_production_min_factories
+		id = anti_tank
+		value = 16
+	}
+	ai_strategy = {
+		type = equipment_production_min_factories
+		id = infantry
+		value = 125
+	}
+	ai_strategy = {
+		type = equipment_production_min_factories
+		id = mechanized
+		value = 25
+	}
+}
+
+WA_USA_lend_lease_production_very_late = {
+	allowed = {
+		original_tag = USA
+	}
+	enable = {
+		NOT = {
+			AND = {
+				has_equipment = { support_equipment > 300000 }
+				has_equipment = { infantry_equipment > 300000 }
+			}
+		}
+		num_of_military_factories > 999
+		has_completed_focus = USA_lend_lease_act
+		SOV = { has_war_with = GER }
+		date > 1941.11.1
+	}
+	abort_when_not_enabled = yes
+	ai_strategy = {
+		type = equipment_production_min_factories
+		id = artillery
+		value = 45
+	}
+	ai_strategy = {
+		type = equipment_production_min_factories
+		id = anti_tank
+		value = 16
+	}
+	ai_strategy = {
+		type = equipment_production_min_factories
+		id = infantry
+		value = 125
 	}
 	ai_strategy = {
 		type = equipment_production_min_factories
@@ -1135,5 +1274,109 @@ default_army_size_snowflakes = {
 		type = build_army
 		id = mountaineers
 		value = -1
+	}
+}
+
+SOV_t26_spam_fix = {
+	allowed = {
+		tag = SOV
+	}
+	enable = {
+		NOT = {
+			has_template = "Soviet Early Medium Tank Division"
+		}
+	}
+
+	abort_when_not_enabled = yes
+
+
+	ai_strategy = {
+		type = build_army
+		id = light_armor
+		value = -100
+	}
+}
+
+SOV_motorized_spam_fix = {
+	allowed = {
+		tag = SOV
+	}
+	enable = {
+		date < 1945.1.1
+	}
+
+	abort_when_not_enabled = yes
+
+
+	ai_strategy = {
+		type = build_army
+		id = motorized
+		value = -100
+	}
+}
+
+SOV_enough_divisions_now_stockpile_and_tanks = { #25 Empty medium tank divisions will be spawned through sov_armor.002
+	allowed = {
+		tag = SOV
+	}
+	enable = {
+		has_army_manpower = { size > 4000000 }
+		date < 1941.7.1
+		NOT = {
+			has_war_with = GER
+		}
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = build_army
+		id = infantry
+		value = -100
+	}
+	ai_strategy = {
+		type = build_army
+		id = garrison
+		value = -100
+	}
+	ai_strategy = {
+		type = build_army
+		id = light_armor
+		value = -100
+	}
+	ai_strategy = {
+		type = build_army
+		id = armor
+		value = -100
+	}
+	ai_strategy = {
+		type = build_army
+		id = heavy_armor
+		value = -100
+	}
+	ai_strategy = {
+		type = equipment_production_min_factories
+		id = infantry
+		value = 50
+	}
+	ai_strategy = {
+		type = equipment_production_min_factories
+		id = armor
+		value = 10
+	}
+	ai_strategy = {
+		type = equipment_production_min_factories
+		id = mechanized
+		value = 15
+	}
+	ai_strategy = {
+		type = equipment_production_min_factories
+		id = artillery
+		value = 12
+	}
+	ai_strategy = {
+		type = equipment_production_min_factories
+		id = anti_tank
+		value = 12
 	}
 }
