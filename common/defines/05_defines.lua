@@ -829,14 +829,14 @@ NDefines.NAI.MAX_MISSION_PER_TASKFORCE = {  -- max mission region/taskforce rati
 
 
 NDefines.NAI.NAVAL_MISSION_MINES_PLANTING_NEAR_OWNED = 80000
-NDefines.NAI.NAVAL_MISSION_MINES_SWEEPING_NEAR_OWNED = 100000	 -- How likely the AI will do the sweeping missions. The value is scaled by the amount of mines to sweep.
+NDefines.NAI.NAVAL_MISSION_MINES_SWEEPING_NEAR_OWNED = 100000	 					-- How likely the AI will do the sweeping missions. The value is scaled by the amount of mines to sweep.
 
 ------------------------------------------------- AIR
 
 NDefines.NAI.AIR_WING_REINFORCEMENT_LIMIT = 100
 
-NDefines.NAI.MINES_SWEEPING_PLANES_PER_MAX_MINES = 1 			-- Amount of air wings request for mines sweeping when there is max amount of mines planted by enemy in certain region
-NDefines.NAI.MINES_PLANTING_PLANES_PER_MAX_DESIRE = 1			-- Amount of air wings request for mines planting when there is max desire for it.
+NDefines.NAI.MINES_SWEEPING_PLANES_PER_MAX_MINES = 1 								-- Amount of air wings request for mines sweeping when there is max amount of mines planted by enemy in certain region
+NDefines.NAI.MINES_PLANTING_PLANES_PER_MAX_DESIRE = 1								-- Amount of air wings request for mines planting when there is max desire for it.
 
 NDefines.NAI.NAVAL_COMBAT_AIR_IMPORTANCE = 500.0
 NDefines.NAI.NAVAL_AIR_SUPERIORITY_IMPORTANCE = 1.0                             	-- Strategic importance of air superiority ( amount of enemy planes in area )
@@ -848,6 +848,12 @@ NDefines.NAI.NAVAL_STRIKE_PLANES_PER_SHIP = 40										-- Amount of bombers req
 NDefines.NAI.NAVAL_SHIP_IN_PORT_AIR_IMPORTANCE = 20.0                             	-- Naval ship in the port air importance
 NDefines.NAI.PORT_STRIKE_PLANES_PER_SHIP = 20										-- Amount of bombers request per enemy ship in the port
 
+NDefines.NAI.FORTIFIED_RATIO_TO_CONSIDER_A_FRONT_FORTIFIED = 0.25 					-- ai will consider a front fortified if this ratio of provinces has fort
+
+NDefines.NAI.AGGRESSIVENESS_CHECK_PARTLY_FORTIFIED = 2.0							-- if front strength balance is at or above this value versus a party fortified enemy, we do a balanced attack
+NDefines.NAI.AGGRESSIVENESS_CHECK_PARTLY_FORTIFIED_WEAK_POINTS = 0.75				-- if front strength balance is at or above this value versus a party fortified enemy, we rush attack weak points; below this value, we are careful
+NDefines.NAI.AGGRESSIVENESS_CHECK_FULLY_FORTIFIED = 10								-- if front strength balance is at or above this value versus a fully fortified enemy with no weak points, we do a balanced attack instead being careful
+NDefines.NAI.AGGRESSIVENESS_CHECK_FULLY_FORTIFIED_POCKET = 6						-- if front strength balance is at or above this value versus a fully fortified enemy in a pocket, we do a balanced attack instead being careful
 
 NDefines.NAI.LAND_DEFENSE_AIR_SUPERIORITY_IMPORTANCE = 0.8							-- Strategic importance of air superiority ( amount of enemy planes in area )
 NDefines.NAI.LAND_DEFENSE_CIVIL_FACTORY_IMPORTANCE = 150							-- Strategic importance of civil factories
