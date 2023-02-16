@@ -67,7 +67,7 @@ focus_tree = {
 	focus = {
 		id = USA_continue_the_new_deal
 		icon = GFX_focus_generic_self_management
-		x = 6
+		x = 8
 		y = 0
 
 		cost = 3
@@ -133,7 +133,7 @@ focus_tree = {
 		relative_position_id = USA_adjusted_compensation_act
 		prerequisite = { focus = USA_adjusted_compensation_act }
 		x = 0
-		y = 1
+		y = 2
 		cost = 3
 
 		ai_will_do = {
@@ -170,9 +170,9 @@ focus_tree = {
 		id = USA_revenue_act_I
 		icon = GFX_focus_usa_reestablish_the_gold_standard
 		relative_position_id = USA_undistributed_profits_tax
-		prerequisite = { focus = USA_undistributed_profits_tax }
+		prerequisite = { focus = USA_undistributed_profits_tax focus = USA_budget_balancing }
 		x = 0
-		y = 3
+		y = 2
 		cost = 3
 
 		ai_will_do = {
@@ -398,8 +398,8 @@ focus_tree = {
 		icon = GFX_focus_eng_concessions_to_the_trade_unions
 		prerequisite = { focus = USA_continue_the_new_deal }
 		relative_position_id = USA_continue_the_new_deal
-		x = -5
-		y = 3
+		x = -6
+		y = 2
 		cost = 3
 
 		ai_will_do = {
@@ -498,7 +498,7 @@ focus_tree = {
 		icon = GFX_focus_usa_reestablish_the_gold_standard
 		relative_position_id = USA_continue_the_new_deal
 		prerequisite = { focus = USA_continue_the_new_deal }
-		x = -6
+		x = -8
 		y = 1
 		cost = 3
 
@@ -563,7 +563,7 @@ focus_tree = {
 		id = USA_flood_control_act_II
 		icon = GFX_focus_usa_reestablish_the_gold_standard
 		relative_position_id = USA_flood_control_act_I
-		prerequisite = { focus = USA_flood_control_act_I }
+		prerequisite = { focus = USA_flood_control_act_I focus = USA_budget_balancing }
 		x = 0
 		y = 4
 		cost = 3
@@ -796,6 +796,151 @@ focus_tree = {
 					instant_build = yes
 				}
 			}
+		}
+	}
+
+	focus = {
+		id = USA_budget_balancing
+		icon = GFX_focus_hol_the_foundations_of_defense
+		prerequisite = { focus = USA_undistributed_profits_tax }
+		relative_position_id = USA_undistributed_profits_tax
+		x = -4
+		y = 1
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			has_government = democratic
+			OR = {
+				has_idea = undisturbed_isolation
+				has_idea = isolation
+			}
+		}
+
+		bypass = {
+			NOT = {
+				has_idea = undisturbed_isolation
+				has_idea = isolation
+			}
+		}
+
+		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_HISTORICAL }
+
+		completion_reward = {
+			add_timed_idea = { idea = USA_budget_balancing days = 360 }
+			custom_effect_tooltip = available_political_advisor
+		    show_ideas_tooltip = USA_henry_morgenthau
+			hidden_effect = {
+				country_event = { id = usa_armor.817 days = 120 }
+			}
+		}
+	}
+
+	focus = {
+		id = USA_hatch_act
+		icon = GFX_focus_chi_mission_to_the_us
+		prerequisite = { focus = USA_budget_balancing }
+		relative_position_id = USA_budget_balancing
+		x = -2
+		y = 1
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			congress_massive_support_trigger = yes
+		}
+
+		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_HISTORICAL }
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		completion_reward = {
+			remove_ideas = USA_political_corruption
+		}
+	}
+
+	focus = {
+		id = USA_keynesian_economics
+		icon = GFX_goal_generic_keynesian_economics
+		prerequisite = { focus = USA_budget_balancing }
+		relative_position_id = USA_budget_balancing
+		x = 0
+		y = 2
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			has_government = democratic
+			has_idea = USA_roosevelt_recession
+			NOT = {
+				has_country_flag = USA_waited_out_roosevelt_recession
+			}
+		}
+
+		select_effect = {
+			add_to_variable = { democratic_support = 5 }
+		}
+
+		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_HISTORICAL FOCUS_FILTER_FATIGUE }
+
+		completion_reward = {
+			remove_ideas = USA_budget_balancing
+			add_ideas = USA_keynesian_economics
+			economy_fatigue_level_down_10 = yes
+			custom_effect_tooltip = USA_Titan_negative_1_tt1
+			#custom_effect_tooltip = USA_Public_positive_1_tt1
+			hidden_effect = {
+				set_country_flag = USA_delt_with_roosevelt_recession
+				add_to_variable = { var = USA_Ford_Chrysler_attitude value = -1 }
+				add_to_variable = { var = USA_GM_Dupont_attitude value = -1 }
+				add_to_variable = { var = USA_JPMorgan_attitude value = -1 }
+				add_to_variable = { var = USA_Ford_Chrysler_civilian_construction_speed value = -1 }
+				add_to_variable = { var = USA_GM_Dupont_civilian_construction_speed value = -1 }
+				add_to_variable = { var = USA_JPMorgan_stability value = -1 }
+				#add_to_variable = { var = USA_Public_attitude value = 1 }
+				#add_to_variable = { var = USA_Public_political_power_gain value = 1 }
+				#add_to_variable = { var = USA_Public_stability value = 1 }
+				USA_political_instability_update_effect = yes
+			}
+		}
+	}
+
+	focus = {
+		id = USA_reorganization_act
+		icon = GFX_focus_chi_mission_to_the_us
+		prerequisite = { focus = USA_keynesian_economics }
+		relative_position_id = USA_keynesian_economics
+		x = 2
+		y = 1
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			congress_massive_support_trigger = yes
+		}
+
+		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_HISTORICAL }
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		completion_reward = {
+			#TODO: all political cabinet cheaper
 		}
 	}
 
