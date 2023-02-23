@@ -44,7 +44,7 @@ focus_tree = {
 	}
 	focus = {
 		id = FRA_autoroutes
-		icon = GFX_goal_railroads
+		icon = GFX_goal_generic_railroads
 		x = 2
 		y = 1
 		prerequisite = {
@@ -138,7 +138,7 @@ focus_tree = {
 		mutually_exclusive = {
 		}
 		relative_position_id = FRA_devalue_the_franc
-		cost = 6
+		cost = 4
 		ai_will_do = {
 			factor = 1
 		}
@@ -319,7 +319,7 @@ focus_tree = {
 	}
 	focus = {
 		id = FRA_military_factories
-		icon = GFX_goal_large_military_economy
+		icon = GFX_goal_generic_military_economy_large
 		available = {
 		}
 		prerequisite = {
@@ -450,7 +450,7 @@ focus_tree = {
 		mutually_exclusive = {
 		}
 		relative_position_id = FRA_devalue_the_franc
-		cost = 4
+		cost = 3
 		ai_will_do = {
 			factor = 1
 		}
@@ -1516,7 +1516,7 @@ focus_tree = {
 
 	focus = {
 		id = FRA_industrial_collectivization
-		icon = GFX_goal_medium_civilian_economy
+		icon = GFX_goal_generic_civilian_economy_medium
 		x = -2
 		y = 1
 		prerequisite = {
@@ -2617,6 +2617,7 @@ focus_tree = {
 			add_ideas = {
 				FRA_matignon_agreements
 			}
+			country_event = { days = 912 id = fra_armor.816 }
 			if = {
 				limit = {
 					has_idea = FRA_factory_strikes
@@ -2627,7 +2628,7 @@ focus_tree = {
 	}
 	focus = {
 		id = FRA_nationalize_key_industry
-		icon = GFX_goal_medium_civilian_economy
+		icon = GFX_goal_generic_civilian_economy_medium
 		x = -2
 		y = 1
 		prerequisite = {
@@ -2763,7 +2764,7 @@ focus_tree = {
 	}
 	focus = {
 		id = FRA_form_the_state_arsenals
-		icon = GFX_goal_large_military_economy
+		icon = GFX_goal_generic_military_economy_large
 		x = 0
 		y = 1
 		prerequisite = {
@@ -3182,15 +3183,16 @@ focus_tree = {
 
 		completion_reward = {
 			add_political_power = 120
-			add_country_leader_role = {
-				character = FRA_edouard_daladier
-				promote_leader = yes
-				country_leader = {
-					ideology = socialism
-					expire = "1965.1.1"
-					traits = { stout_defender }
-				}
-			}
+			promote_character = FRA_edouard_daladier
+			#add_country_leader_role = {
+			#	character = FRA_edouard_daladier
+			#	promote_leader = yes
+			#	country_leader = {
+			#		ideology = socialism
+			#		expire = "1965.1.1"
+			#		traits = { stout_defender }
+			#	}
+			#}
 			custom_effect_tooltip = FRA_review_foreign_policy_tt
 			hidden_effect = {
 				add_to_variable = { var = FRA_French_Army_attitude value = 1 }
@@ -3209,15 +3211,126 @@ focus_tree = {
 			}
 		}
 	}
+
+	focus = {
+		id = FRA_the_hanoi_route
+		icon = GFX_goal_generic_befriend_nationalist_china
+		prerequisite = { focus = FRA_form_the_popular_front focus = FRA_revive_the_national_bloc }
+		x = 7
+		y = 1
+		relative_position_id = FRA_form_the_popular_front
+
+		available = {
+			CHI = {
+				has_completed_focus = CHI_reach_out_to_france
+				has_war_with = JAP
+				NOT = { has_war_with = FRA }
+			}
+			JAP = { NOT = { is_in_faction_with = FRA } }
+		}
+
+		bypass = {
+			CHI = { exists = no }
+		}
+
+		cost = 3
+		ai_will_do = {
+			factor = 1
+		}
+
+		available_if_capitulated = no
+
+		bypass = {
+		}
+
+		completion_reward = {
+            custom_effect_tooltip = FRA_the_hanoi_route_tt
+            671 = {
+				if = {
+					limit = {
+                        CONTROLLER = {
+                            OR = {
+                                tag = FRA
+                                is_subject_of = FRA
+                            }
+                        }
+					}
+					add_building_construction = {
+						type = infrastructure
+						level = 1
+						instant_build = yes
+					}
+				}
+			}
+			976 = {
+				if = {
+					limit = {
+                        CONTROLLER = {
+                            OR = {
+                                tag = FRA
+                                is_subject_of = FRA
+                            }
+                        }
+					}
+					add_building_construction = {
+						type = infrastructure
+						level = 2
+						instant_build = yes
+					}
+				}
+			}
+			286 = {
+				if = {
+					limit = {
+                        CONTROLLER = {
+                            OR = {
+                                tag = FRA
+                                is_subject_of = FRA
+                            }
+                        }
+					}
+					add_building_construction = {
+						type = infrastructure
+						level = 2
+						instant_build = yes
+					}
+				}
+			}
+			594 = {
+				if = {
+					limit = {
+						OR = {
+							CHI = { controls_state = 601 }
+							any_other_country = {
+								is_in_faction_with = CHI
+								controls_state = 601
+							}
+						}
+					}
+					add_building_construction = {
+						type = infrastructure
+						level = 1
+						instant_build = yes
+					}
+				}
+			}
+			add_war_support = 0.05
+			CHI = {
+				add_opinion_modifier = { target = FRA modifier = burma_road_good }
+				country_event = chi_armor.856
+			}
+			JAP = {
+				add_opinion_modifier = { target = FRA modifier = burma_road_bad }
+			}
+		}
+	}
+
 	focus = {
 		id = FRA_intervention_in_spain
 		icon = GFX_focus_focus_fra_intervention_spain
-		x = 8
+		prerequisite = { focus = FRA_form_the_popular_front focus = FRA_revive_the_national_bloc }
+		x = 9
 		y = 1
-		prerequisite = {
-			focus = FRA_form_the_popular_front
-			focus = FRA_revive_the_national_bloc
-		}
 		relative_position_id = FRA_form_the_popular_front
 		cost = 5
 		ai_will_do = {
@@ -3876,7 +3989,7 @@ focus_tree = {
 	}
 	focus = {
 		id = FRA_unify_the_government
-		icon = GFX_goal_assembly
+		icon = GFX_goal_generic_assembly
 		available = {
 			custom_trigger_tooltip = {
 				tooltip = FRA_unify_the_government_tt
@@ -4066,7 +4179,7 @@ focus_tree = {
 
 	focus = {
 		id = FRA_les_munitionnettes
-		icon = GFX_goal_munitionnettes
+		icon = GFX_goal_FRA_munitionnettes
 		prerequisite = { focus = FRA_reform_our_industry }
 		x = 0
 		y = 2
@@ -4168,7 +4281,7 @@ focus_tree = {
 
 	focus = {
 		id = FRA_evacuate_our_industries
-		icon = GFX_goal_generic_position_armies
+		icon = GFX_goal_generic_industry_evacuations_shine
 		prerequisite = { focus = FRA_unify_the_government }
 		x = 4
 		y = 1
@@ -4325,6 +4438,9 @@ focus_tree = {
 		}
 		completion_reward = {
 			ENG = {
+				country_event = {
+					id = eng_armor.855
+				}
 				country_event = {
 					id = britain.13
 				}
@@ -4649,7 +4765,7 @@ focus_tree = {
 	}
 	focus = {
 		id = FRA_national_mobilization
-		icon = GFX_goal_generic_allies_build_infantry
+		icon = GFX_goal_generic_build_army_usa
 		available = {
 			OR = {
 				has_government = communism
@@ -6552,7 +6668,7 @@ focus_tree = {
 	}
 	focus = {
 		id = FRA_secure_oil_regions
-		icon = GFX_goal_synthetic_oil
+		icon = GFX_goal_generic_synthetic_oil
 		x = 0
 		y = 1
 		prerequisite = {
@@ -7635,7 +7751,7 @@ focus_tree = {
 	}
 	focus = {
 		id = FRA_proclaim_the_third_empire
-		icon = GFX_focus_focus_fra_third_empire
+		icon = GFX_focus_focus_FRA_THIRD_EMPIRE
 		x = 2
 		y = 1
 		prerequisite = {
@@ -7693,7 +7809,7 @@ focus_tree = {
 				limit = {
 					is_in_faction = no
 				}
-				create_faction = FRA_third_empire
+				create_faction = FRA_THIRD_EMPIRE
 			}
 			hidden_effect = {
 				news_event = {
@@ -7774,7 +7890,7 @@ focus_tree = {
 	}
 	focus = {
 		id = FRA_a_military_training_for_the_emperor
-		icon = GFX_goal_generic_allies_build_infantry
+		icon = GFX_goal_generic_build_army_usa
 		x = 2
 		y = 1
 		prerequisite = {
@@ -8365,6 +8481,9 @@ focus_tree = {
 					882 = {
 						is_owned_or_subject_trigger = yes
 					}
+					998 = {
+						is_owned_or_subject_trigger = yes
+					}
 					152 = {
 						is_owned_or_subject_trigger = yes
 					}
@@ -8381,6 +8500,8 @@ focus_tree = {
 				AUS = {
 					transfer_state = 4
 					transfer_state = 882
+					transfer_state = 997
+					transfer_state = 998
 					transfer_state = 152
 					transfer_state = 153
 					transfer_state = 852
@@ -8528,6 +8649,12 @@ focus_tree = {
 					882 = {
 						is_owned_or_subject_trigger = yes
 					}
+					997 = {
+						is_owned_or_subject_trigger = yes
+					}
+					998 = {
+						is_owned_or_subject_trigger = yes
+					}
 				}
 				AUS = {
 					transfer_state = 153
@@ -8536,12 +8663,16 @@ focus_tree = {
 					transfer_state = 152
 					transfer_state = 4
 					transfer_state = 882
+					transfer_state = 997
+					transfer_state = 998
 					add_state_core = 153
 					add_state_core = 853
 					add_state_core = 852
 					add_state_core = 152
 					add_state_core = 4
 					add_state_core = 882
+					add_state_core = 997
+					add_state_core = 998
 				}
 				puppet = AUS
 			}
@@ -8654,7 +8785,6 @@ focus_tree = {
 							tag = UKE
 							tag = UKM
 							tag = UKT
-							tag = UKS
 							tag = UKO
 							tag = UKW
 						}
@@ -8717,20 +8847,6 @@ focus_tree = {
 					FRI = {
 						annex_country = {
 							target = UKW
-						}
-					}
-				}
-				else_if = {
-					limit = {
-						tag = UKS
-						country_exists = POA
-						POR = {
-							is_in_faction_with = FRA
-						}
-					}
-					POA = {
-						annex_country = {
-							target = UKS
 						}
 					}
 				}
@@ -9223,7 +9339,7 @@ focus_tree = {
 		prerequisite = {
 			focus = FRA_air_focus
 		}
-		icon = GFX_goal_large_military_economy
+		icon = GFX_goal_generic_military_economy_large
 		x = 2
 		y = 1
 		relative_position_id = FRA_air_focus
@@ -9277,7 +9393,7 @@ focus_tree = {
 	#### END ####
 	focus = {
 		id = FRA_begin_rearmament
-		icon = GFX_goal_rearmament_large
+		icon = GFX_goal_generic_rearmament
 		x = 23
 		y = 0
 		offset = {
@@ -9538,7 +9654,7 @@ focus_tree = {
 	}
 	focus = {
 		id = FRA_infantry_focus
-		icon = GFX_goal_generic_allies_build_infantry
+		icon = GFX_goal_generic_build_army_usa
 		prerequisite = {
 			focus = FRA_prepare_war_plans
 		}
@@ -9571,7 +9687,7 @@ focus_tree = {
 	}
 	focus = {
 		id = FRA_artillery_focus
-		icon = GFX_goal_generic_army_artillery2
+		icon = GFX_goal_generic_artillery
 		prerequisite = {
 			focus = FRA_infantry_focus
 		}
@@ -10257,7 +10373,7 @@ focus_tree = {
 	#### END ####
 	focus = {
 		id = FRA_naval_rearmament
-		icon = GFX_goal_construct_naval_dockyard
+		icon = GFX_goal_generic_construct_naval_dockyard
 		x = 32
 		y = 0
 		offset = {
@@ -10396,7 +10512,7 @@ focus_tree = {
 	}
 	focus = {
 		id = FRA_develop_colonial_dockyards
-		icon = GFX_goal_construct_naval_large_dockyard
+		icon = GFX_goal_generic_construct_naval_dockyard_large
 		prerequisite = {
 			focus = FRA_colonial_naval_bases
 		}
@@ -10561,7 +10677,7 @@ focus_tree = {
 	}
 	focus = {
 		id = FRA_rush_the_richelieus
-		icon = GFX_goal_ships_Super_Battleships
+		icon = GFX_goal_generic_ships_super_battleships
 		prerequisite = {
 			focus = FRA_capital_ship_focus
 		}
@@ -10623,7 +10739,7 @@ focus_tree = {
 	}
 	focus = {
 		id = FRA_prioritize_the_joffre
-		icon = GFX_goal_ships_Carrier
+		icon = GFX_goal_generic_ships_carrier
 		prerequisite = {
 			focus = FRA_carrier_focus
 		}
@@ -10736,7 +10852,7 @@ focus_tree = {
 	}
 	focus = {
 		id = FRA_surface_combat
-		icon = GFX_goal_ships_Destroyer
+		icon = GFX_goal_generic_ships_destroyer
 		prerequisite = {
 			focus = FRA_the_young_school
 		}

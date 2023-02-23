@@ -1,8 +1,181 @@
+ENG_BEF_category = {
+	ENG_commitments_to_france = {
+		icon = hol_exchange_intelligence_data
+
+		allowed = {
+			tag = ENG
+		}
+
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = ENG_commitments_to_france_tt
+				OR = {
+					num_battalions_in_states = {
+						count > 199
+						states = { 36 7 35 979 6 34 985 29 785 18 790 }
+						exclude = { infantry motorized_light }
+					}
+					FRA = { surrender_progress > 0.06 }
+					GER = { surrender_progress > 0.06 }
+					has_war_with = SPR
+				}
+			}
+		}
+
+		activation = {
+			is_ai = no
+			is_in_faction_with = FRA
+			has_war_with = GER
+			NOT = { has_country_flag = ENG_commitments_to_france_flag }
+		}
+
+		is_good = no
+		fire_only_once = yes
+		days_remove = 1
+
+		days_mission_timeout = 90
+
+		complete_effect = {
+			country_event = eng_armor.851
+			hidden_effect = {
+				set_country_flag = ENG_commitments_to_france_flag
+			}
+		}
+
+		timeout_effect = {
+			add_war_support = -0.3
+            add_political_power = -150
+			FRA = { country_event = eng_armor.852 }
+			effect_tooltip = {
+				FRA = {
+					leave_faction = yes
+					set_rule = {
+						can_create_factions = yes
+					}
+					create_faction = FRA_little_entente
+				}
+				every_other_country = {
+					limit = {
+						is_in_faction_with = ENG
+						NOT = {
+							is_subject_of = ENG
+							tag = ENG
+							tag = FRA
+						}
+					}
+					FRA = {
+						add_to_faction = PREV
+					}
+				}
+			}
+			custom_effect_tooltip = ENG_commitments_to_france_tt_2
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+	}
+
+	ENG_commitments_to_france_fail = {
+		icon = hol_exchange_intelligence_data
+
+		allowed = {
+			tag = ENG
+		}
+
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = ENG_commitments_to_france_tt
+				OR = {
+					num_battalions_in_states = {
+						count > 199
+						states = { 36 7 35 979 6 34 985 29 785 18 790 }
+						exclude = { infantry motorized_light }
+					}
+					FRA = { surrender_progress > 0 }
+					GER = { surrender_progress > 0 }
+					surrender_progress > 0
+					casualties > 15000
+					has_war_with = SPR
+				}
+			}
+		}
+
+		activation = {
+			is_ai = no
+			is_in_faction_with = FRA
+			has_war_with = GER
+			has_country_flag = ENG_commitments_to_france_flag
+			NOT = { has_global_flag = fall_of_france }
+			AND = {
+				num_battalions_in_states = {
+					count < 199
+					states = { 36 7 35 979 6 34 985 29 785 18 }
+					exclude = { infantry motorized_light }
+				}
+				NOT = { FRA = { surrender_progress > 0 } }
+				NOT = { GER = { surrender_progress > 0 } }
+				NOT = { surrender_progress > 0 }
+				NOT = { casualties < 15000 }
+				NOT = {  has_war_with = SPR }
+			}
+		}
+
+		is_good = no
+		fire_only_once = no
+		days_remove = 1
+
+		days_mission_timeout = 3
+
+		complete_effect = {
+		}
+
+		timeout_effect = {
+			hidden_effect = {
+				clr_country_flag = ENG_commitments_to_france_flag
+			}
+			add_war_support = -0.3
+            add_political_power = -150
+			FRA = { country_event = eng_armor.852 }
+			effect_tooltip = {
+				FRA = {
+					leave_faction = yes
+					set_rule = {
+						can_create_factions = yes
+					}
+					create_faction = FRA_little_entente
+				}
+				every_other_country = {
+					limit = {
+						is_in_faction_with = ENG
+						NOT = {
+							is_subject_of = ENG
+							tag = ENG
+							tag = FRA
+						}
+					}
+					FRA = {
+						add_to_faction = PREV
+					}
+				}
+			}
+			custom_effect_tooltip = ENG_commitments_to_france_tt_2
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+	}
+}
 ENG_league_of_nations = {
 	ENG_embargo_lon = {
 		icon = generic_decision
-		available = {
+
+		allowed = {
 			tag = ENG
+		}
+
+		available = {
 			has_idea = League_of_nations
 			NOT = { is_in_faction_with = FROM }
 			FROM = { has_added_tension_amount > 3 }
@@ -11,7 +184,6 @@ ENG_league_of_nations = {
 			FROM = { has_offensive_war = yes }
 		}
 		visible = {
-			tag = ENG
 			has_idea = League_of_nations
 			NOT = { is_in_faction_with = FROM }
 			FROM = { has_added_tension_amount > 1 }
@@ -22,6 +194,87 @@ ENG_league_of_nations = {
 
 		target_trigger = {
 			FROM = {
+				NOT = { capital_scope = { is_on_continent = europe } }
+				NOT = { is_in_faction_with = ROOT }
+				has_added_tension_amount > 3
+				NOT = { has_government = ROOT }
+				NOT = { has_country_flag = lon_embargo_flag }
+				FROM = { has_offensive_war = yes }
+			}
+		}
+
+		fire_only_once = no
+		cost = 25
+
+		ai_will_do = {
+			factor = 100
+
+			modifier = {
+				factor = 0
+				FROM = { has_added_tension_amount < 1 }
+				NOT = { FROM = { has_government = fascism } }
+			}
+
+			modifier = {
+				factor = 0
+				any_enemy_country = {
+					has_war_with = FROM
+				}
+				NOT = { has_war_with = FROM }
+			}
+
+			modifier = {
+				factor = 0
+				has_war_with = GER
+				NOT = { has_war_with = SOV }
+				NOT = { SOV = { is_in_faction_with = GER } }
+				FROM = { tag = SOV }
+			}
+		}
+
+		complete_effect = {
+			every_country = {
+				limit = {
+					has_idea = League_of_nations
+					NOT = { tag = FROM }
+					NOT = { tag = SOV }
+					NOT = { tag = TUR }
+					NOT = { tag = PER }
+					NOT = { tag = SIA }
+				}
+				set_country_flag = lon_embargo_origin_flag
+				add_opinion_modifier = { target = FROM modifier = lon_embargo }
+			}
+			FROM = { country_event = { id = eng_armor.828 } }
+		}
+	}
+	ENG_embargo_lon_europe = {
+		icon = generic_decision
+
+		allowed = {
+			tag = ENG
+		}
+
+		available = {
+			has_idea = League_of_nations
+			NOT = { is_in_faction_with = FROM }
+			FROM = { has_added_tension_amount > 3 }
+			FROM = { NOT = { has_government = ROOT } }
+			FROM = { NOT = { has_country_flag = lon_embargo_flag } }
+			FROM = { has_offensive_war = yes }
+		}
+		visible = {
+			has_idea = League_of_nations
+			NOT = { is_in_faction_with = FROM }
+			FROM = { has_added_tension_amount > 1 }
+			FROM = { NOT = { has_government = ROOT } }
+			FROM = { NOT = { has_country_flag = lon_embargo_flag } }
+			FROM = { has_offensive_war = yes }
+		}
+
+		target_trigger = {
+			FROM = {
+				capital_scope = { is_on_continent = europe }
 				NOT = { is_in_faction_with = ROOT }
 				has_added_tension_amount > 3
 				NOT = { has_government = ROOT }
@@ -81,13 +334,16 @@ ENG_league_of_nations = {
 
 	ENG_lift_embargo_lon = {
 		icon = generic_decision
-		available = {
+
+		allowed = {
 			tag = ENG
+		}
+
+		available = {
 			has_idea = League_of_nations
 			FROM = { has_country_flag = lon_embargo_flag }
 		}
 		visible = {
-			tag = ENG
 			has_idea = League_of_nations
 			FROM = { has_country_flag = lon_embargo_flag }
 		}
@@ -134,15 +390,18 @@ ENG_league_of_nations = {
 
 	ENG_kick_lon_member = {
 		icon = generic_decision
-		available = {
+
+		allowed = {
 			tag = ENG
+		}
+
+		available = {
 			has_idea = League_of_nations
 			FROM = { has_idea = League_of_nations }
 			NOT = { is_in_faction_with = FROM }
 			FROM = { has_added_tension_amount > 3 }
 		}
 		visible = {
-			tag = ENG
 			has_idea = League_of_nations
 			FROM = { has_idea = League_of_nations }
 			NOT = { is_in_faction_with = FROM }
@@ -189,6 +448,7 @@ ENG_league_of_nations = {
 
 	ENG_leave_lon = {
 		icon = generic_decision
+
 		available = {
 			has_idea = League_of_nations
 			ENG = { has_idea = League_of_nations }
@@ -466,10 +726,6 @@ ENG_imperial_conference_decision = {
 				SAF = { exists = yes }
 				AST = { exists = yes }
 				NZL = { exists = yes }
-				AND = {
-					RAJ = { is_subject_of = ENG }
-					has_completed_focus = ENG_indian_autonomy
-				}
 			}
 		}
 
@@ -484,12 +740,7 @@ ENG_imperial_conference_decision = {
 		complete_effect = {
 			country_event = { id = mtg_britain.99 hours = 6 }
 			set_country_flag = ENG_imperial_conference_discussion_in_progress
-			if = {
-				limit = {
-					NOT = { has_completed_focus = ENG_indian_autonomy }
-				}
-				custom_effect_tooltip = ENG_indian_autonomy_tt
-			}
+			custom_effect_tooltip = ENG_RAJ_imperial_federation_tt
 		}
 
 		ai_will_do = {
@@ -500,7 +751,7 @@ ENG_imperial_conference_decision = {
 			}
 		}
 	}
-	
+
 	########################AI
 
 	ENG_discuss_imperial_defense_ai = {
@@ -643,14 +894,12 @@ political_actions = {
 		}
 
 		available = {
-			original_tag = ENG
 			is_ai = yes
 		}
 		visible = {
-			original_tag = ENG
 			is_ai = yes
 		}
-		
+
 		cost = 0
 
 		fire_only_once = yes
@@ -660,7 +909,7 @@ political_actions = {
 		ai_will_do = {
 			factor = 4000
 		}
-		
+
 		modifier = {
 			civilian_factory_use = 40
 		}
@@ -694,22 +943,23 @@ political_actions = {
 
 		icon = eng_imperial_federation
 
+		allowed = {
+			original_tag = ENG
+		}
+
 		available = {
 			NOT = {
 				CAN = { is_subject_of = ROOT }
 				SAF = { is_subject_of = ROOT }
-				RAJ = { is_subject_of = ROOT }
 				AST = { is_subject_of = ROOT }
 				NZL = { is_subject_of = ROOT }
 			}
 		}
 
 		visible = {
-			tag = ENG
 			OR = {
 				CAN = { is_subject_of = ROOT }
 				SAF = { is_subject_of = ROOT }
-				RAJ = { is_subject_of = ROOT }
 				AST = { is_subject_of = ROOT }
 				NZL = { is_subject_of = ROOT }
 			}
@@ -745,10 +995,6 @@ political_actions = {
 						}
 						AND = {
 							is_subject_of = ENG
-							tag = RAJ
-						}
-						AND = {
-							is_subject_of = ENG
 							tag = AST
 						}
 						AND = {
@@ -761,7 +1007,7 @@ political_actions = {
 			}
 			hidden_effect = { news_event = { id = mtg_news.13 days = 1 } }
 			custom_effect_tooltip = ENG_imperial_conference_tt
-			custom_effect_tooltip = ENG_indian_autonomy_tt
+			custom_effect_tooltip = ENG_RAJ_imperial_conference_tt
 		}
 
 		ai_will_do = {
@@ -809,8 +1055,9 @@ political_actions = {
 	#}
 
 	ENG_deal_with_ira_police = {
-
 		icon = generic_oppression
+
+        allowed = { tag = ENG }
 
 		available = {
 			134 = {
@@ -930,8 +1177,9 @@ political_actions = {
 	}
 
 	ENG_deal_with_ira_army = {
-
 		icon = generic_oppression
+
+		allowed = { tag = ENG }
 
 		available = {
 			divisions_in_state = {
@@ -1114,43 +1362,43 @@ political_actions = {
 	ENG_take_over_integrated_colonies = {
 
 		allowed = {
-            always = yes
+            original_tag = ENG
         }
+
 
         cost = 0
         fire_only_once = yes
 
         available = {
-            original_tag = ENG
         }
 
         visible = {
-        	original_tag = ENG
         }
 
         complete_effect = {
+			hidden_effect = {
+				set_country_flag = ENG_colonies_annexed
+			}
 			annex_country = { target = UKO }
 			annex_country = { target = UKE }
 			annex_country = { target = UKN }
 			annex_country = { target = UKT }
 			annex_country = { target = UKM }
 			add_equipment_to_stockpile = { type = eng_inf_1 amount = 11800 producer = ENG }
-			add_equipment_to_stockpile = { type = support_equipment_1 amount = 700 producer = ENG } #recalculated
+			add_equipment_to_stockpile = { type = support_equipment_1 amount = 700 producer = ENG }
 		}
 		ai_will_do = {
 			factor = 0
 		}
 	}
 
-
-
 	hold_blood_toil_tears_sweat_speech = {
 
 		icon = generic_political_discourse
 
 		allowed = {
-			tag = ENG
-		}
+            original_tag = ENG
+        }
 
 		available = {
 			has_government = democratic
@@ -1163,7 +1411,6 @@ political_actions = {
 		fire_only_once = yes
 
 		visible = {
-			tag = ENG
 			has_government = democratic
 			has_war_with = GER
 			has_country_leader = { ruling_only = yes name = "Winston Churchill" }
@@ -1195,17 +1442,15 @@ political_actions = {
 		icon = generic_political_discourse
 
 		allowed = {
-			tag = ENG
-		}
+            original_tag = ENG
+        }
 
 		available = {
 			has_government = democratic
 			has_country_leader = { ruling_only = yes name = "Winston Churchill" }
-			has_war_with = GER
-			is_in_faction_with = FRA
-			FRA = {
-				surrender_progress > 0.2
-			}
+			15 = { CONTROLLER = { has_war_with = ROOT } }
+			29 = { CONTROLLER = { has_war_with = ROOT } }
+			14 = { CONTROLLER = { has_war_with = ROOT } }
 		}
 
 		cost = 25
@@ -1213,9 +1458,12 @@ political_actions = {
 		fire_only_once = yes
 
 		visible = {
-			tag = ENG
 			has_government = democratic
-			has_war_with = GER
+			OR = {
+				15 = { CONTROLLER = { has_war_with = ROOT } }
+				29 = { CONTROLLER = { has_war_with = ROOT } }
+				14 = { CONTROLLER = { has_war_with = ROOT } }
+			}
 			has_country_flag = blood_toil_tears_sweat_speech
 			has_country_leader = { ruling_only = yes name = "Winston Churchill" }
 		}
@@ -1264,15 +1512,25 @@ political_actions = {
 		icon = generic_political_discourse
 
 		allowed = {
-			tag = ENG
-		}
+            original_tag = ENG
+        }
 
 		available = {
 			has_government = democratic
 			has_country_leader = { ruling_only = yes name = "Winston Churchill" }
 			has_war_with = GER
-			is_in_faction_with = FRA
-			FRA = { has_capitulated = yes }
+			15 = { CONTROLLER = { has_war_with = ROOT } }
+			29 = { CONTROLLER = { has_war_with = ROOT } }
+			14 = { CONTROLLER = { has_war_with = ROOT } }
+			OR = {
+				has_war_with = FRA
+				AND = {
+					is_in_faction_with = FRA
+					FRA = { has_capitulated = yes }
+				}
+				NOT = { country_exists = FRA }
+				country_exists = VIC
+			}
 		}
 
 		cost = 50
@@ -1280,7 +1538,6 @@ political_actions = {
 		fire_only_once = yes
 
 		visible = {
-			tag = ENG
 			has_government = democratic
 			has_war_with = GER
 			has_country_flag = fight_on_the_beaches_speech
@@ -1351,7 +1608,6 @@ political_actions = {
 			UKM = { is_subject_of = ENG }
 		}
 		visible = {
-			tag = ENG
 			ENG = { has_cosmetic_tag = ENG_canadian_union }
 			NOT = { UKM = { has_country_flag = british_enforcement } }
 			NOT = { UKM = { has_country_flag = lack_of_british_enforcement } }
@@ -1533,68 +1789,6 @@ political_actions = {
 		}
 	}
 
-	UKS_breaking_away = {
-
-		icon = generic_civil_support
-
-		available = {
-			OR = {
-				AND = {
-					divisions_in_state = { state = 545 size > 3 }
-					divisions_in_state = { state = 542 size > 3 }
-				}
-				UKS = { surrender_progress > 0.05 }
-			}
-		}
-
-		days_mission_timeout = 90
-
-		activation = {
-			tag = ENG
-			ENG = { has_cosmetic_tag = ENG_canadian_union }
-			NOT = { UKS = { has_country_flag = british_enforcement } }
-			NOT = { UKS = { has_country_flag = lack_of_british_enforcement } }
-			UKS = { is_subject_of = ENG }
-		}
-		visible = {
-			tag = ENG
-			ENG = { has_cosmetic_tag = ENG_canadian_union }
-			NOT = { UKS = { has_country_flag = british_enforcement } }
-			NOT = { UKS = { has_country_flag = lack_of_british_enforcement } }
-			UKS = { is_subject_of = ENG }
-		}
-		complete_effect = {
-			hidden_effect = {
-				UKS = { set_country_flag = british_enforcement }
-			}
-		}
-
-		timeout_effect = {
-			if = {
-				limit = {
-					UKS = { is_subject_of = ENG }
-				}
-				ENG = {
-					set_autonomy = {
-						target = UKS
-						autonomy_state = autonomy_free
-					}
-				}
-			}
-			hidden_effect = {
-				if = {
-					limit = {
-						country_exists = SAF
-					}
-					SAF = { transfer_state = 542 }
-				}
-				release = ZAM
-				ZAM = { annex_country = { target = UKS } }
-				ZAM = { set_country_flag = lack_of_british_enforcement }
-			}
-		}
-	}
-
 	UKN_breaking_away = {
 
 		icon = generic_civil_support
@@ -1766,6 +1960,7 @@ political_actions = {
 			NOT = { RAJ = { has_country_flag = british_enforcement } }
 			NOT = { RAJ = { has_country_flag = lack_of_british_enforcement } }
 			RAJ = { is_subject_of = ENG }
+			NOT = { RAJ = { has_country_flag = RAJ_quit_india_movement_mission_failed } }
 		}
 		visible = {
 			tag = ENG
@@ -1785,27 +1980,7 @@ political_actions = {
 				limit = {
 					RAJ = { is_subject_of = ENG }
 				}
-				ENG = {
-					set_autonomy = {
-						target = RAJ
-						autonomy_state = autonomy_free
-					}
-				}
-			}
-			if = {
-				limit = {
-					is_in_faction_with = ENG
-				}
-				leave_faction = yes
-			}
-			every_country = {
-				limit = {
-					has_war_with = RAJ
-				}
-				white_peace = RAJ
-			}
-			hidden_effect = {
-				RAJ = { set_country_flag = lack_of_british_enforcement }
+				RAJ = { country_event = { id = raj_armor.816 } }
 			}
 		}
 	}
@@ -1817,7 +1992,6 @@ political_actions = {
 		}
 
 		available = {
-			tag = ENG
 			has_government = democratic
 			has_war_with = GER
 			IRE = { exists = yes }
@@ -1831,7 +2005,6 @@ political_actions = {
 		fire_only_once = yes
 
 		visible = {
-			tag = ENG
 			has_government = democratic
 			has_war_with = GER
 			IRE = { exists = yes }
@@ -1848,50 +2021,50 @@ political_actions = {
 		}
 	}
 
-#	ENG_form_the_nortraship = {
-#
-#		icon = generic_prepare_civil_war
-#
-#		allowed = {
-#			original_tag = ENG
-#		}
-#
-#		available = {
-#			original_tag = ENG
-#			has_government = democratic
-#			NOR = {
-#				is_in_faction_with = ENG
-#				has_capitulated = yes
-#				has_government = democratic
-#			}
-#		}
-#
-#		cost = 50
-#
-#		fire_only_once = yes
-#
-#		visible = {
-#			has_war = yes
-#			has_government = democratic
-#			NOR = {
-#				is_in_faction_with = ENG
-#				has_capitulated = yes
-#				has_government = democratic
-#			}
-#		}
-#
-#		complete_effect = {
-#			add_equipment_to_stockpile = {
-#				type = convoy_1
-#				amount = 500
-#				producer = NOR
-#			}
-#		}
-#
-#		ai_will_do = {
-#			factor = 20
-#		}
-#	}
+	#	ENG_form_the_nortraship = {
+	#
+	#		icon = generic_prepare_civil_war
+	#
+	#		allowed = {
+	#			original_tag = ENG
+	#		}
+	#
+	#		available = {
+	#			original_tag = ENG
+	#			has_government = democratic
+	#			NOR = {
+	#				is_in_faction_with = ENG
+	#				has_capitulated = yes
+	#				has_government = democratic
+	#			}
+	#		}
+	#
+	#		cost = 50
+	#
+	#		fire_only_once = yes
+	#
+	#		visible = {
+	#			has_war = yes
+	#			has_government = democratic
+	#			NOR = {
+	#				is_in_faction_with = ENG
+	#				has_capitulated = yes
+	#				has_government = democratic
+	#			}
+	#		}
+	#
+	#		complete_effect = {
+	#			add_equipment_to_stockpile = {
+	#				type = convoy_1
+	#				amount = 500
+	#				producer = NOR
+	#			}
+	#		}
+	#
+	#		ai_will_do = {
+	#			factor = 20
+	#		}
+	#	}
 
 	ENG_demand_venezuelan_cooperation = {
 
@@ -2557,7 +2730,6 @@ political_actions = {
 		fire_only_once = yes
 
 		activation = {
-			tag = ENG
 			OR = {
 				has_country_flag = ENG_abdication_crisis_normal_marriage
 				has_country_flag = ENG_abdication_crisis_morganatic_marriage
@@ -2565,7 +2737,6 @@ political_actions = {
 		}
 
 		visible = {
-			tag = ENG
 			OR = {
 				has_country_flag = ENG_abdication_crisis_normal_marriage
 				has_country_flag = ENG_abdication_crisis_morganatic_marriage
@@ -2697,6 +2868,8 @@ political_actions = {
 
 		icon = eng_install_government
 
+                allowed = { tag = ENG }
+
 		available = {
 			NOT = {
 				any_of = {
@@ -2762,6 +2935,7 @@ political_actions = {
 		available = {
 			361 = { is_owned_and_controlled_by = USA }
 		}
+                allowed = { tag = ENG }
 
 		fire_only_once = yes
 
@@ -2811,6 +2985,7 @@ political_actions = {
 	ENG_create_pan_north_american_state = {
 
 		icon = eng_install_government
+                allowed = { tag = ENG }
 
 		available = {
 			NOT = {
@@ -2892,15 +3067,9 @@ foreign_politics = {
 
 	give_the_colonies_contol_over_syria_jordon = {
 
-		allowed = {
-            always = yes
-        }
-
-        cost = 0
-        fire_only_once = yes
+		allowed = { tag = ENG }
 
         available = {
-            original_tag = ENG
             UKM = { exists = yes }
             OR = {
             	PER = { has_capitulated = yes }
@@ -2914,10 +3083,12 @@ foreign_politics = {
         }
 
         visible = {
-            original_tag = ENG
             UKM = { exists = yes }
             is_ai = yes
         }
+
+        cost = 0
+        fire_only_once = yes
 
         complete_effect = {
 			UKM = { transfer_State = 677 }
@@ -2931,16 +3102,9 @@ foreign_politics = {
 	}
 
 	give_the_colonies_contol_over_iraq = {
-
-		allowed = {
-            always = yes
-        }
-
-        cost = 0
-        fire_only_once = yes
+        allowed = { tag = ENG }
 
         available = {
-            original_tag = ENG
             UKM = { exists = yes }
             OR = {
             	PER = { has_capitulated = yes }
@@ -2953,10 +3117,12 @@ foreign_politics = {
         }
 
         visible = {
-            original_tag = ENG
             UKM = { exists = yes }
             is_ai = yes
         }
+
+        cost = 0
+        fire_only_once = yes
 
         complete_effect = {
 			UKM = { transfer_State = 676 }
@@ -2970,15 +3136,12 @@ foreign_politics = {
 
 	give_the_colonies_contol_over_kuwait = {
 
-		allowed = {
-            always = yes
-        }
+        allowed = { tag = ENG }
 
         cost = 0
         fire_only_once = yes
 
         available = {
-            original_tag = ENG
             UKM = { exists = yes }
             OR = {
             	PER = { has_capitulated = yes }
@@ -2989,7 +3152,6 @@ foreign_politics = {
         }
 
         visible = {
-            original_tag = ENG
             UKM = { exists = yes }
             is_ai = yes
         }
@@ -3004,15 +3166,12 @@ foreign_politics = {
 
 	give_the_colonies_contol_over_iran = {
 
-		allowed = {
-            always = yes
-        }
+        allowed = { tag = ENG }
 
         cost = 0
         fire_only_once = yes
 
         available = {
-            original_tag = ENG
             UKM = { exists = yes }
             OR = {
             	PER = { has_capitulated = yes }
@@ -3029,7 +3188,6 @@ foreign_politics = {
         }
 
         visible = {
-            original_tag = ENG
             UKM = { exists = yes }
             is_ai = yes
         }
@@ -3047,14 +3205,154 @@ foreign_politics = {
 			factor = 10
 		}
 	}
+
+	allocate_funds_to_the_empire = {
+
+        allowed = { tag = ENG }
+
+        available = {
+            NOT = {
+				custom_trigger_tooltip = {
+					tooltip = more_than_90_economy_fatigue
+					OR = {
+						has_idea = economy_fatigue_90
+						has_idea = economy_fatigue_91
+						has_idea = economy_fatigue_92
+						has_idea = economy_fatigue_93
+						has_idea = economy_fatigue_94
+						has_idea = economy_fatigue_95
+						has_idea = economy_fatigue_96
+						has_idea = economy_fatigue_97
+						has_idea = economy_fatigue_98
+						has_idea = economy_fatigue_99
+					}
+				}
+			}
+        }
+
+        visible = {
+			OR = {
+				has_idea = ENG_empire_bankrupt_1
+				has_idea = ENG_empire_bankrupt_2
+				has_idea = ENG_empire_bankrupt_3
+				has_idea = ENG_empire_bankrupt_4
+				has_idea = ENG_empire_bankrupt_5
+				has_idea = ENG_empire_bankrupt_6
+				has_idea = ENG_empire_bankrupt_7
+				has_idea = ENG_empire_bankrupt_8
+				has_idea = ENG_empire_bankrupt_9
+				has_idea = ENG_empire_bankrupt_10
+			}
+			has_completed_focus = ENG_tighten_the_empire
+        }
+
+        cost = 100
+        fire_only_once = no
+
+        complete_effect = {
+			economy_fatigue_level_up_10 = yes
+			if = {
+				limit = {
+					has_idea = ENG_empire_bankrupt_10
+				}
+				remove_ideas = ENG_empire_bankrupt_10
+				set_country_flag = ENG_empire_survived
+			}
+			else_if = {
+				limit = {
+					has_idea = ENG_empire_bankrupt_9
+				}
+                swap_ideas = {
+                    remove_idea = ENG_empire_bankrupt_9
+                    add_idea = ENG_empire_bankrupt_10
+                }
+			}
+			else_if = {
+				limit = {
+					has_idea = ENG_empire_bankrupt_8
+				}
+                swap_ideas = {
+                    remove_idea = ENG_empire_bankrupt_8
+                    add_idea = ENG_empire_bankrupt_9
+                }
+			}
+			else_if = {
+				limit = {
+					has_idea = ENG_empire_bankrupt_7
+				}
+                swap_ideas = {
+                    remove_idea = ENG_empire_bankrupt_7
+                    add_idea = ENG_empire_bankrupt_8
+                }
+			}
+			else_if = {
+				limit = {
+					has_idea = ENG_empire_bankrupt_6
+				}
+                swap_ideas = {
+                    remove_idea = ENG_empire_bankrupt_6
+                    add_idea = ENG_empire_bankrupt_7
+                }
+			}
+			else_if = {
+				limit = {
+					has_idea = ENG_empire_bankrupt_5
+				}
+                swap_ideas = {
+                    remove_idea = ENG_empire_bankrupt_5
+                    add_idea = ENG_empire_bankrupt_6
+                }
+			}
+			else_if = {
+				limit = {
+					has_idea = ENG_empire_bankrupt_4
+				}
+                swap_ideas = {
+                    remove_idea = ENG_empire_bankrupt_4
+                    add_idea = ENG_empire_bankrupt_5
+                }
+			}
+			else_if = {
+				limit = {
+					has_idea = ENG_empire_bankrupt_3
+				}
+                swap_ideas = {
+                    remove_idea = ENG_empire_bankrupt_3
+                    add_idea = ENG_empire_bankrupt_4
+                }
+			}
+			else_if = {
+				limit = {
+					has_idea = ENG_empire_bankrupt_2
+				}
+                swap_ideas = {
+                    remove_idea = ENG_empire_bankrupt_2
+                    add_idea = ENG_empire_bankrupt_3
+                }
+			}
+			else_if = {
+				limit = {
+					has_idea = ENG_empire_bankrupt_1
+				}
+                swap_ideas = {
+                    remove_idea = ENG_empire_bankrupt_1
+                    add_idea = ENG_empire_bankrupt_2
+                }
+			}
+		}
+		ai_will_do = {
+			factor = 10
+		}
+	}
 }
 
 MTG_naval_treaties = {
 
 	ENG_trigger_article_25 = {
+
 		allowed = {
-			tag = ENG
-		}
+            original_tag = ENG
+        }
 
 		cost = 100
 		fire_only_once = yes
@@ -3064,7 +3362,6 @@ MTG_naval_treaties = {
         }
 
 		visible = {
-            original_tag = ENG
 			has_war = no
         }
 
@@ -3093,19 +3390,17 @@ MTG_naval_treaties = {
 	ENG_surrey = {
 
 		allowed = {
-            tag = ENG
+            original_tag = ENG
         }
 
         cost = 0
         fire_only_once = yes
 
         available = {
-            tag = ENG
             has_tech = eng_heavy_cruiser_4
         }
 
         visible = {
-            original_tag = ENG
             has_tech = eng_heavy_cruiser_3
             OR = {
             	has_idea = MTG_naval_treaty_adherent
@@ -3172,19 +3467,17 @@ MTG_naval_treaties = {
 	ENG_albemarle = {
 
 		allowed = {
-            tag = ENG
+            original_tag = ENG
         }
 
         cost = 0
         fire_only_once = yes
 
         available = {
-            tag = ENG
             has_tech = eng_heavy_cruiser_5
         }
 
         visible = {
-            original_tag = ENG
             has_tech = eng_heavy_cruiser_4
             OR = {
             	has_idea = MTG_naval_treaty_adherent
@@ -3251,19 +3544,17 @@ MTG_naval_treaties = {
 	ENG_illustrious = {
 
 		allowed = {
-            tag = ENG
+            original_tag = ENG
         }
 
         cost = 0
         fire_only_once = yes
 
         available = {
-            tag = ENG
             has_tech = eng_carrier_4
         }
 
         visible = {
-            original_tag = ENG
             has_tech = eng_carrier_3
             OR = {
             	has_idea = MTG_naval_treaty_adherent
@@ -3370,19 +3661,17 @@ MTG_naval_treaties = {
 	ENG_implacable = {
 
 		allowed = {
-            tag = ENG
+            original_tag = ENG
         }
 
         cost = 0
         fire_only_once = yes
 
         available = {
-            original_tag = ENG
             has_tech = eng_carrier_5
         }
 
         visible = {
-            original_tag = ENG
             has_tech = eng_carrier_4
             OR = {
             	has_idea = MTG_naval_treaty_adherent
@@ -3429,19 +3718,17 @@ MTG_naval_treaties = {
 	ENG_king_george = {
 
 		allowed = {
-            tag = ENG
+            original_tag = ENG
         }
 
         cost = 0
         fire_only_once = yes
 
         available = {
-            original_tag = ENG
             has_tech = eng_battleship_4
         }
 
         visible = {
-            original_tag = ENG
             has_tech = eng_battleship_3
             OR = {
             	has_idea = MTG_naval_treaty_adherent
@@ -3568,19 +3855,17 @@ MTG_naval_treaties = {
 	ENG_lion = {
 
 		allowed = {
-            tag = ENG
+            original_tag = ENG
         }
 
         cost = 0
         fire_only_once = yes
 
         available = {
-            original_tag = ENG
             has_tech = eng_battleship_5
         }
 
         visible = {
-            original_tag = ENG
             has_tech = eng_battleship_4
             OR = {
             	has_idea = MTG_naval_treaty_adherent
@@ -3649,17 +3934,20 @@ war_measures = {
 
 	ENG_order_weapons_in_USA = {
 		icon = generic_prepare_civil_war
+
+		allowed = {
+            original_tag = ENG
+        }
+
 		available = {
 			USA = { has_completed_focus = USA_cash_and_carry_act }
 			num_of_civilian_factories_available_for_projects > 19
 			USA = { has_war = no }
-			tag = ENG
 		}
 		visible = {
 			has_war = yes
 			USA = { has_government = ROOT }
 			NOT = { USA = { has_completed_focus = USA_lend_lease_act } }
-			tag = ENG
 		}
 		days_remove = 60
 		cost = 20
@@ -3707,17 +3995,20 @@ war_measures = {
 	}
 	ENG_order_artillery_in_USA = {
 		icon = ger_military_buildup
+
+		allowed = {
+            original_tag = ENG
+        }
+
 		available = {
 			USA = { has_completed_focus = USA_cash_and_carry_act }
 			num_of_civilian_factories_available_for_projects > 19
 			USA = { has_war = no }
-			tag = ENG
 		}
 		visible = {
 			has_war = yes
 			USA = { has_government = ROOT }
 			NOT = { USA = { has_completed_focus = USA_lend_lease_act } }
-			tag = ENG
 		}
 		days_remove = 60
 		cost = 20
@@ -3773,18 +4064,21 @@ war_measures = {
 		}
 	}
 	ENG_order_tanks_in_USA = {
-		icon = generic_air
+		icon = generic_tank
+
+		allowed = {
+            original_tag = ENG
+		}
+
 		available = {
 			USA = { has_completed_focus = USA_cash_and_carry_act }
 			num_of_civilian_factories_available_for_projects > 19
 			USA = { has_war = no }
-			tag = ENG
 		}
 		visible = {
 			has_war = yes
 			USA = { has_government = ROOT }
 			NOT = { USA = { has_completed_focus = USA_lend_lease_act } }
-			tag = ENG
 			NOT = { has_dlc = "No Step Back" }
 		}
 		days_remove = 60
@@ -3844,20 +4138,24 @@ war_measures = {
 		}
 	}
 	ENG_order_tanks_in_USA_nsb = {
-		icon = generic_air
+		icon = generic_tank
+
+		allowed = {
+            original_tag = ENG
+		}
+
 		available = {
 			USA = { has_completed_focus = USA_cash_and_carry_act }
 			num_of_civilian_factories_available_for_projects > 19
 			USA = { has_war = no }
-			tag = ENG
 		}
 		visible = {
 			has_war = yes
 			USA = { has_government = ROOT }
 			NOT = { USA = { has_completed_focus = USA_lend_lease_act } }
-			tag = ENG
 			has_dlc = "No Step Back"
 		}
+
 		days_remove = 60
 		cost = 20
 		ai_will_do = {
@@ -3874,60 +4172,64 @@ war_measures = {
 				limit = {
 					USA = { has_tech = usa_medium_tank_chassis_4 }
 				}
-				add_equipment_to_stockpile = { type = tank_usa_medium_chassis_4 amount = 100 producer = USA variant_name = "M4A2 Sherman" }
+				add_equipment_to_stockpile = { type = tank_usa_medium_chassis_4 amount = 100 producer = USA }
 			}
 			else_if = {
 				limit = {
 					USA = { has_tech = usa_medium_tank_chassis_3 }
 				}
-				add_equipment_to_stockpile = { type = tank_usa_medium_chassis_3 amount = 100 producer = USA variant_name = "M4A1 Sherman" }
+				add_equipment_to_stockpile = { type = tank_usa_medium_chassis_3 amount = 100 producer = USA }
 			}
 			else_if = {
 				limit = {
 					USA = { has_tech = usa_medium_tank_chassis_2 }
 				}
-				add_equipment_to_stockpile = { type = tank_usa_medium_chassis_2 amount = 100 producer = USA variant_name = "M3 Lee" }
+				add_equipment_to_stockpile = { type = tank_usa_medium_chassis_2 amount = 100 producer = USA }
 			}
 			else = {
-				add_equipment_to_stockpile = { type = tank_usa_medium_chassis_1 amount = 100 producer = USA variant_name = "M2 Medium" }
+				add_equipment_to_stockpile = { type = tank_usa_medium_chassis_1 amount = 100 producer = USA }
 			}
 			if = {
 				limit = {
 					USA = { has_tech = usa_light_tank_chassis_4 }
 				}
-				add_equipment_to_stockpile = { type = tank_usa_light_chassis_4 amount = 250 producer = USA variant_name = "M24 Chaffee" }
+				add_equipment_to_stockpile = { type = tank_usa_light_chassis_4 amount = 250 producer = USA }
 			}
 			else_if = {
 				limit = {
 					USA = { has_tech = usa_light_tank_chassis_3 }
 				}
-				add_equipment_to_stockpile = { type = tank_usa_light_chassis_3 amount = 250 producer = USA variant_name = "M5 Stuart" }
+				add_equipment_to_stockpile = { type = tank_usa_light_chassis_3 amount = 250 producer = USA }
 			}
 			else_if = {
 				limit = {
 					USA = { has_tech = usa_light_tank_chassis_2 }
 				}
-				add_equipment_to_stockpile = { type = tank_usa_light_chassis_2 amount = 250 producer = USA variant_name = "M3 Stuart" }
+				add_equipment_to_stockpile = { type = tank_usa_light_chassis_2 amount = 250 producer = USA }
 			}
 			else = {
-				add_equipment_to_stockpile = { type = tank_usa_light_chassis_1 amount = 250 producer = USA variant_name = "M2 Light" }
+				add_equipment_to_stockpile = { type = tank_usa_light_chassis_1 amount = 250 producer = USA }
 			}
 		}
 	}
 	ENG_order_fighters_in_USA = {
 		icon = generic_air
+
+		allowed = {
+            original_tag = ENG
+		}
+
 		available = {
 			USA = { has_completed_focus = USA_cash_and_carry_act }
 			num_of_civilian_factories_available_for_projects > 19
 			USA = { has_war = no }
-			tag = ENG
 		}
 		visible = {
 			has_war = yes
 			USA = { has_government = ROOT }
 			NOT = { USA = { has_completed_focus = USA_lend_lease_act } }
-			tag = ENG
 		}
+
 		days_remove = 60
 		cost = 20
 		ai_will_do = {
@@ -3986,18 +4288,22 @@ war_measures = {
 	}
 	ENG_order_bombers_in_USA = {
 		icon = generic_air
+
+		allowed = {
+            original_tag = ENG
+		}
+
 		available = {
 			USA = { has_completed_focus = USA_cash_and_carry_act }
 			num_of_civilian_factories_available_for_projects > 19
 			USA = { has_war = no }
-			tag = ENG
 		}
 		visible = {
 			has_war = yes
 			USA = { has_government = ROOT }
 			NOT = { USA = { has_completed_focus = USA_lend_lease_act } }
-			tag = ENG
 		}
+
 		days_remove = 60
 		cost = 20
 		ai_will_do = {
@@ -4046,97 +4352,97 @@ war_measures = {
 		}
 	}
 
-#	ENG_partial_reactiviation_of_ww1_equipment = {
-#
-#		icon = generic_prepare_civil_war
-#
-#		allowed = {
-#			tag = ENG
-#		}
-#
-#		available = {
-#			tag = ENG
-#            OR = {
-#            	has_war = yes
-#            	threat > 0.2
-#            }
-#        }
-#
-#        visible = {
-#            OR = {
-#            	has_war = yes
-#            	threat > 0.1
-#            }
-#        }
-#
-#		cost = 0
-#        fire_only_once = yes
-#
-#        ai_will_do = {
-#			factor = 500
-#		}
-#
-#		days_remove = 10
-#		is_good = yes
-#
-#		modifier = {
-#			political_power_cost = 5.0
-#		}
-#
-#		remove_effect = {
-#			add_equipment_to_stockpile = { type = eng_inf_1 amount = 2500 producer = ENG }
-#			add_equipment_to_stockpile = { type = eng_hv_inf_1 amount = 1000 producer = ENG }
-#			add_equipment_to_stockpile = { type = eng_art_1 amount = 180 producer = ENG }
-#			add_equipment_to_stockpile = { type = eng_hv_art_1 amount = 60 producer = ENG }
-#			add_equipment_to_stockpile = { type = support_equipment_1 amount = 1200 producer = ENG }
-#		}
-#	}
-#
-#	ENG_total_reactiviation_of_ww1_equipment = {
-#
-#		icon = generic_prepare_civil_war
-#
-#		allowed = {
-#			tag = ENG
-#		}
-#
-#		available = {
-#			tag = ENG
-#            OR = {
-#            	has_war = yes
-#            	threat > 0.5
-#            }
-#        }
-#
-#        visible = {
-#            OR = {
-#            	has_war = yes
-#            	threat > 0.2
-#            }
-#        }
-#
-#		cost = 0
-#        fire_only_once = yes
-#
-#        ai_will_do = {
-#			factor = 500
-#		}
-#
-#		days_remove = 10
-#		is_good = yes
-#
-#		modifier = {
-#			political_power_cost = 5.0
-#		}
-#
-#		remove_effect = {
-#			add_equipment_to_stockpile = { type = eng_inf_1 amount = 2500 producer = ENG }
-#			add_equipment_to_stockpile = { type = eng_hv_inf_1 amount = 1000 producer = ENG }
-#			add_equipment_to_stockpile = { type = eng_art_1 amount = 180 producer = ENG }
-#			add_equipment_to_stockpile = { type = eng_hv_art_1 amount = 60 producer = ENG }
-#			add_equipment_to_stockpile = { type = support_equipment_1 amount = 1200 producer = ENG }
-#		}
-#	}
+	#	ENG_partial_reactiviation_of_ww1_equipment = {
+	#
+	#		icon = generic_prepare_civil_war
+	#
+	#		allowed = {
+	#			tag = ENG
+	#		}
+	#
+	#		available = {
+	#			tag = ENG
+	#            OR = {
+	#            	has_war = yes
+	#            	threat > 0.2
+	#            }
+	#        }
+	#
+	#        visible = {
+	#            OR = {
+	#            	has_war = yes
+	#            	threat > 0.1
+	#            }
+	#        }
+	#
+	#		cost = 0
+	#        fire_only_once = yes
+	#
+	#        ai_will_do = {
+	#			factor = 500
+	#		}
+	#
+	#		days_remove = 10
+	#		is_good = yes
+	#
+	#		modifier = {
+	#			political_power_cost = 5.0
+	#		}
+	#
+	#		remove_effect = {
+	#			add_equipment_to_stockpile = { type = eng_inf_1 amount = 2500 producer = ENG }
+	#			add_equipment_to_stockpile = { type = eng_hv_inf_1 amount = 1000 producer = ENG }
+	#			add_equipment_to_stockpile = { type = eng_art_1 amount = 180 producer = ENG }
+	#			add_equipment_to_stockpile = { type = eng_hv_art_1 amount = 60 producer = ENG }
+	#			add_equipment_to_stockpile = { type = support_equipment_1 amount = 1200 producer = ENG }
+	#		}
+	#	}
+	#
+	#	ENG_total_reactiviation_of_ww1_equipment = {
+	#
+	#		icon = generic_prepare_civil_war
+	#
+	#		allowed = {
+	#			tag = ENG
+	#		}
+	#
+	#		available = {
+	#			tag = ENG
+	#            OR = {
+	#            	has_war = yes
+	#            	threat > 0.5
+	#            }
+	#        }
+	#
+	#        visible = {
+	#            OR = {
+	#            	has_war = yes
+	#            	threat > 0.2
+	#            }
+	#        }
+	#
+	#		cost = 0
+	#        fire_only_once = yes
+	#
+	#        ai_will_do = {
+	#			factor = 500
+	#		}
+	#
+	#		days_remove = 10
+	#		is_good = yes
+	#
+	#		modifier = {
+	#			political_power_cost = 5.0
+	#		}
+	#
+	#		remove_effect = {
+	#			add_equipment_to_stockpile = { type = eng_inf_1 amount = 2500 producer = ENG }
+	#			add_equipment_to_stockpile = { type = eng_hv_inf_1 amount = 1000 producer = ENG }
+	#			add_equipment_to_stockpile = { type = eng_art_1 amount = 180 producer = ENG }
+	#			add_equipment_to_stockpile = { type = eng_hv_art_1 amount = 60 producer = ENG }
+	#			add_equipment_to_stockpile = { type = support_equipment_1 amount = 1200 producer = ENG }
+	#		}
+	#	}
 
 	audacity_ship_conversion = {
 
@@ -4148,13 +4454,11 @@ war_measures = {
         fire_only_once = yes
 
         available = {
-            tag = ENG
-			has_government = democratic
+	    has_government = democratic
             has_tech = eng_light_carrier_4
         }
 
         visible = {
-            original_tag = ENG
             has_war = yes
         }
 
@@ -4185,12 +4489,10 @@ war_measures = {
         fire_only_once = yes
 
         available = {
-            tag = ENG
             has_tech = eng_light_carrier_5
         }
 
         visible = {
-            original_tag = ENG
             has_war = yes
         }
 
@@ -4240,7 +4542,6 @@ war_measures = {
 		}
 
 		available = {
-			original_tag = ENG
 			is_ai = yes
 			has_war = yes
 			if = {
@@ -4248,7 +4549,7 @@ war_measures = {
 					date < 1943.1.2
 				}
 				has_equipment = {
-					convoy_1 < 350
+					convoy_1 < 400
 				}
 			}
 			if = {
@@ -4256,29 +4557,12 @@ war_measures = {
 					date > 1943.1.1
 				}
 				has_equipment = {
-					convoy_1 < 450
+					convoy_1 < 600
 				}
 			}
 		}
 		visible = {
-			original_tag = ENG
 			is_ai = yes
-			if = {
-				limit = {
-					date < 1943.1.2
-				}
-				has_equipment = {
-					convoy_1 < 350
-				}
-			}
-			if = {
-				limit = {
-					date > 1943.1.1
-				}
-				has_equipment = {
-					convoy_1 < 450
-				}
-			}
 		}
 		cost = 0
 
@@ -4291,47 +4575,8 @@ war_measures = {
 		}
 
 		complete_effect = {
-			add_equipment_to_stockpile = { type = convoy_1 amount = 25 producer = ENG }
+			add_equipment_to_stockpile = { type = convoy_1 amount = 60 producer = ENG }
 		}
-	}
-
-	ENG_AI_cant_minelay = {
-		icon = generic_prepare_civil_war
-
-		allowed = {
-			original_tag = ENG
-		}
-
-		available = {
-        	is_ai = yes
-        	is_major = yes
-			has_war = yes
-        }
-
-        visible = {
-        	is_ai = yes
-        	is_major = yes
-			has_war = yes
-        }
-
-        cost = 0
-        days_remove = 100000
-        fire_only_once = yes
-
-        remove_trigger = {
-        	is_ai = no
-        }
-
-        modifier = {
-        	mines_planting_by_fleets_factor = 6.0
-        }
-
-        ai_will_do = {
-			factor = 150
-		}
-
-		complete_effect = {
-        }
 	}
 
 	ENG_commonwealth_is_greedy = {
@@ -4370,9 +4615,9 @@ war_measures = {
 			}
 		}
 	}
-	
+
 	####################################Lendlease soviets ai --> ai
-	
+
 	ENG_provide_fighterplanes_ai = {
 
 		icon = generic_industry
@@ -4427,13 +4672,13 @@ war_measures = {
 			SOV = {
 				if = {
 					limit = {
-						ENG = { has_tech = eng_fighter_6 }
+						ENG = { has_tech = eng_fighter_7 }
 					}
 					add_equipment_to_stockpile = { type = eng_fighter_equipment_7 amount = 200 producer = ENG }
 				}
 				else_if = {
 					limit = {
-						ENG = { has_tech = eng_fighter_5 }
+						ENG = { has_tech = eng_fighter_6 }
 					}
 					add_equipment_to_stockpile = { type = eng_fighter_equipment_6 amount = 200 producer = ENG }
 				}
@@ -4451,12 +4696,10 @@ operations = {
 
 		icon = generic_operation
 
-        allowed = {
-            always = yes
-        }
+                allowed = { tag = ENG }
+
 
         available = {
-            original_tag = ENG
 			is_in_faction_with = FRA
 			is_in_faction_with = USA
 			USA = { has_government = democratic }
@@ -4500,7 +4743,6 @@ operations = {
 		}
 
 		available = {
-			tag = ENG
 			has_government = democratic
 			has_war_with = GER
 			has_completed_focus = ENG_local_intervention
@@ -4516,7 +4758,6 @@ operations = {
 		}
 
 		visible = {
-			tag = ENG
 			has_war_with = GER
 			ICE = { exists = yes }
 			NOT = { has_war_with = ICE }
@@ -4578,12 +4819,10 @@ operations = {
 
 		icon = generic_operation
 
-		allowed = {
-			tag = ENG
-		}
+                allowed = { tag = ENG }
+
 
 		available = {
-			tag = ENG
 			has_government = democratic
 			has_war_with = GER
 			has_completed_focus = ENG_local_intervention
@@ -4632,6 +4871,237 @@ operations = {
 		}
 	}
 
+	ENG_operation_exporter = {
+		icon = border_war
+		allowed = {
+			original_tag = ENG
+		}
+		available = {
+			has_completed_focus = ENG_secure_iraq
+			NOT = {
+				FRA_controls_syria = yes
+			}
+			any_state = {
+				OR = {
+					state = 680
+					state = 677
+					state = 554
+					state = 553
+				}
+				CONTROLLER = {
+					NOT = {
+						has_war_with = FRA
+					}
+				}
+				any_neighbor_state = {
+					CONTROLLER = {
+						OR = {
+							tag = ROOT
+							is_in_faction_with = FRA
+						}
+					}
+				}
+			}
+		}
+
+		visible = {
+			NOT = {
+				FRA_controls_syria = yes
+			}
+			any_state = {
+				OR = {
+					state = 680
+					state = 677
+					state = 554
+					state = 553
+				}
+				CONTROLLER = {
+					NOT = {
+						has_war_with = FRA
+					}
+				}
+				any_neighbor_state = {
+					CONTROLLER = {
+						OR = {
+							tag = ROOT
+							is_in_faction_with = FRA
+						}
+					}
+				}
+			}
+		}
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 680
+				state = 677
+				state = 554
+				state = 553
+			}
+		}
+
+		fire_only_once = yes
+		cost = 25
+
+		ai_will_do = {
+			base = 0
+			modifier = {
+				is_historical_focus_on = yes
+				date > 1941.6.7
+				factor = 800
+			}
+		}
+
+		complete_effect = {
+			random_state = { #find a neighbouring state of Syria that is controlled by an ally or ourselves
+				limit = {
+					OR = {
+						state = 680
+						state = 677
+						state = 554
+						state = 553
+					}
+					not = { is_controlled_by = ROOT }
+					CONTROLLER = {
+						NOT = { has_war_with = ROOT }
+					}
+					any_neighbor_state = {
+						CONTROLLER = {
+							OR = {
+								tag = ROOT
+								is_in_faction_with = ROOT
+							}
+						}
+					}
+				}
+				save_event_target_as = VIC_defender_state
+				random_neighbor_state = {
+					limit = {
+						CONTROLLER = {
+							OR = {
+								tag = ROOT
+								is_in_faction_with = ROOT
+							}
+						}
+					}
+					save_event_target_as = ENG_attacker_state
+				}
+			}
+			if = {
+				limit = { ENG = { is_ai = yes }
+				}
+				event_target:ENG_attacker_state = {
+					ENG = {
+						division_template = {
+							name = "Syria Invasion Force"
+							division_names_group = ENG_INF_01
+							is_locked = yes
+							regiments = {
+								heavy_infantry = { x = 0 y = 0 }
+								heavy_infantry = { x = 0 y = 1 }
+								heavy_infantry = { x = 0 y = 2 }
+
+								heavy_infantry = { x = 1 y = 0 }
+								heavy_infantry = { x = 1 y = 1 }
+								heavy_infantry = { x = 1 y = 2 }
+
+								heavy_infantry = { x = 2 y = 0 }
+								heavy_infantry = { x = 2 y = 1 }
+								heavy_infantry = { x = 2 y = 2 }
+
+								artillery_brigade = { x = 3 y = 0 }
+								artillery_brigade = { x = 3 y = 1 }
+								artillery_brigade = { x = 3 y = 2 }
+							}
+							support = {
+								engineer = { x = 0 y = 0 }
+								heavy_artillery = {x = 0 y = 1 }
+								signal_company = {x = 0 y = 2 }
+							}
+						}
+						event_target:ENG_attacker_state = { #set up attacker unit(s)
+							create_unit = {
+								division = "name = \"Gentforce 1\" division_template = \"Syria Invasion Force\" start_experience_factor = 0.5"
+								owner = PREV
+							}
+							create_unit = {
+								division = "name = \"Gentforce 2\" division_template = \"Syria Invasion Force\" start_experience_factor = 0.5"
+								owner = PREV
+							}
+							create_unit = {
+								division = "name = \"Gentforce 3\" division_template = \"Syria Invasion Force\" start_experience_factor = 0.5"
+								owner = PREV
+							}
+						}
+					}
+				}
+			}
+
+			event_target:VIC_defender_state = { #set up defender unit(s)
+				CONTROLLER = {
+					division_template = {
+						name = "Syria Defense Force"
+						division_names_group = FRA_INF_01
+						is_locked = yes
+						regiments = {
+							heavy_infantry = { x = 0 y = 0 }
+							infantry = { x = 0 y = 1 }
+							infantry = { x = 0 y = 2 }
+
+							heavy_infantry = { x = 1 y = 0 }
+							infantry = { x = 1 y = 1 }
+							infantry = { x = 1 y = 2 }
+
+							heavy_infantry = { x = 2 y = 0 }
+							infantry = { x = 2 y = 1 }
+							infantry = { x = 2 y = 2 }
+						}
+						support = {
+							engineer = { x = 0 y = 0 }
+							artillery = {x = 0 y = 1 }
+						}
+					}
+					event_target:VIC_defender_state = { #set up defenders
+						create_unit = {
+							division = "name = \"Syria Defense Force 1\" division_template = \"Syria Defense Force\" start_experience_factor = 0.5"
+							owner = PREV
+						}
+						create_unit = {
+							division = "name = \"Syria Defense Force 2\" division_template = \"Syria Defense Force\" start_experience_factor = 0.5"
+							owner = PREV
+						}
+						create_unit = {
+							division = "name = \"Syria Defense Force 3\" division_template = \"Syria Defense Force\" start_experience_factor = 0.5"
+							owner = PREV
+						}
+					}
+				}
+			}
+
+			event_target:ENG_attacker_state = {
+				CONTROLLER = {
+					start_border_war = {
+						change_state_after_war = no
+						attacker = {
+							state = event_target:ENG_attacker_state
+							num_provinces = 4
+							on_win = FRA_syria_intervention.1
+							on_lose = FRA_syria_intervention.2
+							on_cancel = FRA_syria_intervention.3
+						}
+						defender = {
+							state = event_target:VIC_defender_state
+							num_provinces = 3
+							on_win = FRA_syria_intervention.2
+							on_lose = FRA_syria_intervention.1
+							on_cancel = FRA_syria_intervention.3
+						}
+					}
+				}
+			}
+		}
+	}
+
 	mers_el_kebir_raid = {
 
 		icon = generic_naval
@@ -4648,11 +5118,24 @@ operations = {
 			has_government = democratic
 			has_completed_focus = ENG_local_intervention
 			has_war_with = GER
-			is_in_faction_with = FRA
-			FRA = { surrender_progress > 0.2 }
-			country_exists = VIC
-			VIC = { has_government = fascism }
-			VIC = { has_war = no }
+			OR = {
+				AND = {
+					country_exists = VIC
+					NOT = { has_war_with = VIC }
+					NOT = { is_in_faction_with = VIC }
+				}
+				AND = {
+					country_exists = FRA
+					NOT = { has_war_with = FRA }
+					NOT = { is_in_faction_with = FRA }
+				}
+			}
+			if = {
+				limit = {
+					is_in_faction_with = FRA
+				}
+				FRA = { has_capitulated = yes }
+			}
 		}
 
 		cost = 50
@@ -4671,17 +5154,18 @@ operations = {
 			tag = ENG
 			has_government = democratic
 			has_war_with = GER
-			# OR = {
-			# 	AND = {
-			# 		is_in_faction_with = FRA
-			# 		FRA = { surrender_progress > 0.2 }
-			# 	}
-			# 	AND = {
-			# 		country_exists = VIC
-			# 		VIC = { has_government = fascism }
-			# 		VIC = { has_war = no }
-			# 	}
-			# }
+			OR = {
+				AND = {
+					country_exists = VIC
+					NOT = { has_war_with = VIC }
+					NOT = { is_in_faction_with = VIC }
+				}
+				AND = {
+					country_exists = FRA
+					NOT = { has_war_with = FRA }
+					NOT = { is_in_faction_with = FRA }
+				}
+			}
 		}
 
 		complete_effect = {
@@ -4908,8 +5392,9 @@ ENG_enforce_the_naval_treaties = {
 economy_decisions = {
 
 	loans_from_canada = {
-
 		icon = hol_attract_foreign_investors
+
+        allowed = { tag = ENG }
 
 		available = {
 			has_completed_focus = ENG_war_appropriation_act
@@ -4938,7 +5423,7 @@ economy_decisions = {
 		is_good = yes
 
 		remove_effect = {
-			economy_fatigue_level_down_10 = yes
+			economy_fatigue_level_down_5 = yes
 		}
 
 		complete_effect = {
@@ -5030,6 +5515,7 @@ economy_decisions = {
 	sterling_bills = {
 
 		icon = ger_mefo_bills
+                allowed = { tag = ENG }
 
 		available = {
 			has_completed_focus = ENG_the_empires_sterling_reserves
@@ -5140,6 +5626,7 @@ economy_decisions = {
 	loans_from_the_empire = {
 
 		icon = gre_investment_decisions
+                allowed = { tag = ENG }
 
 		available = {
 			has_completed_focus = ENG_the_empires_sterling_reserves
@@ -5232,6 +5719,7 @@ economy_decisions = {
 	empty_the_treasuary = {
 
 		icon = eng_trade_unions_support
+                allowed = { tag = ENG }
 
 		available = {
 			has_completed_focus = ENG_the_empires_sterling_reserves
@@ -5326,6 +5814,7 @@ ENG_organize_the_blackshirts = {
 	ENG_urge_restraint = {
 
 		icon = eng_propaganda_campaigns
+                allowed = { tag = ENG }
 
 		available = {
 			NOT = { has_country_flag = ENG_march_timer_flag }
@@ -5358,6 +5847,7 @@ ENG_organize_the_blackshirts = {
 	ENG_blackshirt_march_in_northern_ireland = {
 
 		icon = eng_blackshirt_march
+                allowed = { tag = ENG }
 
 		available = {
 			NOT = { has_country_flag = ENG_march_timer_flag }
@@ -5428,6 +5918,7 @@ ENG_organize_the_blackshirts = {
 	ENG_blackshirt_march_in_the_highlands = {
 
 		icon = eng_blackshirt_march
+                allowed = { tag = ENG }
 
 		available = {
 			NOT = { has_country_flag = ENG_march_timer_flag }
@@ -5498,6 +5989,7 @@ ENG_organize_the_blackshirts = {
 	ENG_blackshirt_march_in_aberdeenshire = {
 
 		icon = eng_blackshirt_march
+                allowed = { tag = ENG }
 
 		available = {
 			NOT = { has_country_flag = ENG_march_timer_flag }
@@ -5568,6 +6060,7 @@ ENG_organize_the_blackshirts = {
 	ENG_blackshirt_march_in_lanark = {
 
 		icon = eng_blackshirt_march
+                allowed = { tag = ENG }
 
 		available = {
 			NOT = { has_country_flag = ENG_march_timer_flag }
@@ -5638,6 +6131,7 @@ ENG_organize_the_blackshirts = {
 	ENG_blackshirt_march_in_lothian = {
 
 		icon = eng_blackshirt_march
+                allowed = { tag = ENG }
 
 		available = {
 			NOT = { has_country_flag = ENG_march_timer_flag }
@@ -5708,6 +6202,7 @@ ENG_organize_the_blackshirts = {
 	ENG_blackshirt_march_in_northern_england = {
 
 		icon = eng_blackshirt_march
+                allowed = { tag = ENG }
 
 		available = {
 			NOT = { has_country_flag = ENG_march_timer_flag }
@@ -5778,6 +6273,7 @@ ENG_organize_the_blackshirts = {
 	ENG_blackshirt_march_in_yorkshire = {
 
 		icon = eng_blackshirt_march
+                allowed = { tag = ENG }
 
 		available = {
 			NOT = { has_country_flag = ENG_march_timer_flag }
@@ -5848,6 +6344,7 @@ ENG_organize_the_blackshirts = {
 	ENG_blackshirt_march_in_lancashire = {
 
 		icon = eng_blackshirt_march
+                allowed = { tag = ENG }
 
 		available = {
 			NOT = { has_country_flag = ENG_march_timer_flag }
@@ -5918,6 +6415,7 @@ ENG_organize_the_blackshirts = {
 	ENG_blackshirt_march_in_wales = {
 
 		icon = eng_blackshirt_march
+                allowed = { tag = ENG }
 
 		available = {
 			NOT = { has_country_flag = ENG_march_timer_flag }
@@ -5988,6 +6486,7 @@ ENG_organize_the_blackshirts = {
 	ENG_blackshirt_march_in_west_midlands = {
 
 		icon = eng_blackshirt_march
+                allowed = { tag = ENG }
 
 		available = {
 			NOT = { has_country_flag = ENG_march_timer_flag }
@@ -6058,6 +6557,7 @@ ENG_organize_the_blackshirts = {
 	ENG_blackshirt_march_in_east_midlands = {
 
 		icon = eng_blackshirt_march
+                allowed = { tag = ENG }
 
 		available = {
 			NOT = { has_country_flag = ENG_march_timer_flag }
@@ -6128,6 +6628,7 @@ ENG_organize_the_blackshirts = {
 	ENG_blackshirt_march_in_berkshire = {
 
 		icon = eng_blackshirt_march
+                allowed = { tag = ENG }
 
 		available = {
 			NOT = { has_country_flag = ENG_march_timer_flag }
@@ -6198,6 +6699,7 @@ ENG_organize_the_blackshirts = {
 	ENG_blackshirt_march_in_norfolk = {
 
 		icon = eng_blackshirt_march
+                allowed = { tag = ENG }
 
 		available = {
 			NOT = { has_country_flag = ENG_march_timer_flag }
@@ -6268,6 +6770,7 @@ ENG_organize_the_blackshirts = {
 	ENG_blackshirt_march_in_essex = {
 
 		icon = eng_blackshirt_march
+                allowed = { tag = ENG }
 
 		available = {
 			NOT = { has_country_flag = ENG_march_timer_flag }
@@ -6338,6 +6841,7 @@ ENG_organize_the_blackshirts = {
 	ENG_blackshirt_march_in_gloucestershire = {
 
 		icon = eng_blackshirt_march
+                allowed = { tag = ENG }
 
 		available = {
 			NOT = { has_country_flag = ENG_march_timer_flag }
@@ -6408,6 +6912,7 @@ ENG_organize_the_blackshirts = {
 	ENG_blackshirt_march_in_london = {
 
 		icon = eng_blackshirt_march
+                allowed = { tag = ENG }
 
 		available = {
 			NOT = { has_country_flag = ENG_march_timer_flag }
@@ -6478,6 +6983,7 @@ ENG_organize_the_blackshirts = {
 	ENG_blackshirt_march_in_cornwall = {
 
 		icon = eng_blackshirt_march
+                allowed = { tag = ENG }
 
 		available = {
 			NOT = { has_country_flag = ENG_march_timer_flag }
@@ -6548,6 +7054,7 @@ ENG_organize_the_blackshirts = {
 	ENG_blackshirt_march_in_kent = {
 
 		icon = eng_blackshirt_march
+                allowed = { tag = ENG }
 
 		available = {
 			NOT = { has_country_flag = ENG_march_timer_flag }
@@ -6618,6 +7125,7 @@ ENG_organize_the_blackshirts = {
 	ENG_blackshirt_march_in_dorset = {
 
 		icon = eng_blackshirt_march
+                allowed = { tag = ENG }
 
 		available = {
 			NOT = { has_country_flag = ENG_march_timer_flag }
@@ -6688,6 +7196,7 @@ ENG_organize_the_blackshirts = {
 	ENG_blackshirt_march_in_sussex = {
 
 		icon = eng_blackshirt_march
+                allowed = { tag = ENG }
 
 		available = {
 			NOT = { has_country_flag = ENG_march_timer_flag }
@@ -6758,6 +7267,7 @@ ENG_organize_the_blackshirts = {
 	ENG_march_on_downing_street = {
 
 		icon = eng_blackshirt_march
+                allowed = { tag = ENG }
 
 		available = {
 			has_full_control_of_state = 126
@@ -6848,6 +7358,7 @@ ENG_organize_the_blackshirts = {
 	ENG_the_mosley_plan = {
 
 		icon = generic_construction
+                allowed = { tag = ENG }
 
 		available = {
 			has_country_flag = won_british_civil_war
@@ -6983,7 +7494,6 @@ ENG_appeal_to_imperial_loyalists = {
 	ENG_support_imperialist_coup_in_canada_mission_1 = { # warning for Canada
 
 		icon = eng_support_imperialist_coup
-
 		available = {
 			ENG = { has_country_flag = ENG_CAN_suppressed_coup }
 		}
@@ -7114,7 +7624,6 @@ ENG_appeal_to_imperial_loyalists = {
 	ENG_support_imperialist_coup_in_canada_mission_2 = { # warning for Britain
 
 		icon = eng_support_imperialist_coup
-
 		available = {
 			custom_trigger_tooltip = { tooltip = ENG_support_imperialist_coup_in_canada_mission_2_tt }
 			hidden_trigger = { NOT = { has_country_flag = ENG_CAN_suppressed_coup } }
@@ -7358,7 +7867,6 @@ ENG_appeal_to_imperial_loyalists = {
 	ENG_support_imperialist_coup_in_south_africa_mission_1 = { # warning for south_africa
 
 		icon = eng_support_imperialist_coup
-
 		available = {
 			ENG = { has_country_flag = ENG_SAF_suppressed_coup }
 		}
@@ -7489,7 +7997,6 @@ ENG_appeal_to_imperial_loyalists = {
 	ENG_support_imperialist_coup_in_south_africa_mission_2 = { # warning for Britain
 
 		icon = eng_support_imperialist_coup
-
 		available = {
 			custom_trigger_tooltip = { tooltip = ENG_support_imperialist_coup_in_south_africa_mission_2_tt }
 			hidden_trigger = { NOT = { has_country_flag = ENG_SAF_suppressed_coup } }
@@ -7747,7 +8254,6 @@ ENG_appeal_to_imperial_loyalists = {
 	ENG_support_imperialist_coup_in_australia_mission_1 = { # warning for australia
 
 		icon = eng_support_imperialist_coup
-
 		available = {
 			ENG = { has_country_flag = ENG_AST_suppressed_coup }
 		}
@@ -7885,7 +8391,6 @@ ENG_appeal_to_imperial_loyalists = {
 	ENG_support_imperialist_coup_in_australia_mission_2 = { # warning for Britain
 
 		icon = eng_support_imperialist_coup
-
 		available = {
 			custom_trigger_tooltip = { tooltip = ENG_support_imperialist_coup_in_australia_mission_2_tt }
 			hidden_trigger = { NOT = { has_country_flag = ENG_AST_suppressed_coup } }
@@ -8157,7 +8662,6 @@ ENG_appeal_to_imperial_loyalists = {
 	ENG_support_imperialist_coup_in_new_zealand_mission_1 = { # warning for new_zealand
 
 		icon = eng_support_imperialist_coup
-
 		available = {
 			ENG = { has_country_flag = ENG_NZL_suppressed_coup }
 		}
@@ -8288,7 +8792,6 @@ ENG_appeal_to_imperial_loyalists = {
 	ENG_support_imperialist_coup_in_new_zealand_mission_2 = { # warning for Britain
 
 		icon = eng_support_imperialist_coup
-
 		available = {
 			custom_trigger_tooltip = { tooltip = ENG_support_imperialist_coup_in_new_zealand_mission_2_tt }
 			hidden_trigger = { NOT = { has_country_flag = ENG_NZL_suppressed_coup } }
@@ -10365,7 +10868,6 @@ ENG_concessions_to_the_trade_unions = {
 	ENG_trade_unions_demand_minister_appointment_mission = {
 
 		icon = eng_trade_unions_demand
-
 		available = {
 			has_country_flag = ENG_trade_unions_demand_minister_appointment
 		}
@@ -11859,74 +12361,6 @@ ENG_move_to_secure_the_dominions = {
 		}
 	}
 
-	ENG_replace_government_in_canada_communism = {
-
-		icon = eng_install_government
-
-		allowed = {
-			tag = ENG
-		}
-
-		available = {
-			NOT = { army_manpower_in_state = { state = 467 amount < 9600 } }
-			NOT = { army_manpower_in_state = { state = 469 amount < 9600 } }
-			NOT = { army_manpower_in_state = { state = 470 amount < 9600 } }
-			NOT = { army_manpower_in_state = { state = 473 amount < 9600 } }
-			NOT = { army_manpower_in_state = { state = 465 amount < 9600 } }
-			NOT = { army_manpower_in_state = { state = 464 amount < 9600 } }
-			NOT = { army_manpower_in_state = { state = 468 amount < 28800 } }
-			NOT = { army_manpower_in_state = { state = 276 amount < 48000 } }
-			FROM = {
-				has_country_flag = ENG_cannot_leave_faction
-				communism > 0.2
-			}
-		}
-
-		targets = { CAN }
-		targets_dynamic = yes
-
-		target_root_trigger = {
-			has_completed_focus = ENG_move_to_secure_the_dominions
-		}
-
-		target_trigger = {
-			FROM = {
-				original_tag = CAN
-			}
-		}
-
-		cost = 50
-
-		fire_only_once = yes
-
-		visible = {
-			has_government = communism
-			has_completed_focus = ENG_move_to_secure_the_dominions
-			NOT = { has_country_flag = ENG_secure_the_dominions_backed_down_against_USA }
-			FROM = {
-				is_subject_of = ROOT
-				NOT = { has_country_flag = ENG_imperialist_civil_war }
-				NOT = { has_government = ROOT }
-			}
-		}
-
-		complete_effect = {
-			FROM = {
-				custom_effect_tooltip = ENG_replace_government_communism_tt
-				set_politics = { ruling_party = communism elections_allowed = no }
-				add_popularity = { ideology = communism popularity = 0.2 }
-				add_timed_idea = { idea = communist_influence days = 730 }
-				hidden_effect = { set_country_flag = ENG_remain_as_puppet }
-				CAN_enforce_loyalty = yes
-				country_event = { id = mtg_britain.65 }
-			}
-		}
-
-		ai_will_do = {
-			factor = 0
-		}
-	}
-
 	ENG_impose_martial_law_on_south_africa = {
 
 		icon = generic_civil_support
@@ -12128,68 +12562,6 @@ ENG_move_to_secure_the_dominions = {
 				set_politics = { ruling_party = fascism elections_allowed = no }
 				add_popularity = { ideology = fascism popularity = 0.2 }
 				add_timed_idea = { idea = fascist_influence days = 730 }
-				SAF_enforce_loyalty = yes
-				country_event = { id = mtg_britain.65 }
-			}
-		}
-
-		ai_will_do = {
-			factor = 0
-		}
-	}
-
-	ENG_replace_government_in_south_africa_communism = {
-
-		icon = eng_install_government
-
-		allowed = {
-			tag = ENG
-		}
-
-		available = {
-			NOT = { army_manpower_in_state = { state = 681 amount < 19200 } }
-			NOT = { army_manpower_in_state = { state = 719 amount < 48000 } }
-			NOT = { army_manpower_in_state = { state = 275 amount < 48000 } }
-			FROM = {
-				has_country_flag = ENG_cannot_leave_faction
-				communism > 0.2
-			}
-		}
-
-		targets = { SAF }
-		targets_dynamic = yes
-
-		target_root_trigger = {
-			has_completed_focus = ENG_move_to_secure_the_dominions
-		}
-
-		target_trigger = {
-			FROM = {
-				original_tag = SAF
-			}
-		}
-
-		cost = 50
-
-		fire_only_once = yes
-
-		visible = {
-			has_government = communism
-			has_completed_focus = ENG_move_to_secure_the_dominions
-			FROM = {
-				is_subject_of = ROOT
-				NOT = { has_country_flag = ENG_imperialist_civil_war }
-				NOT = { has_government = ROOT }
-			}
-		}
-
-		complete_effect = {
-			FROM = {
-				custom_effect_tooltip = ENG_replace_government_communism_tt
-				set_politics = { ruling_party = communism elections_allowed = no }
-				add_popularity = { ideology = communism popularity = 0.2 }
-				add_timed_idea = { idea = communist_influence days = 730 }
-				hidden_effect = { set_country_flag = ENG_remain_as_puppet }
 				SAF_enforce_loyalty = yes
 				country_event = { id = mtg_britain.65 }
 			}
@@ -12516,103 +12888,6 @@ ENG_move_to_secure_the_dominions = {
 		}
 	}
 
-	ENG_replace_government_in_british_raj_communism = {
-
-		icon = eng_install_government
-
-		allowed = {
-			tag = ENG
-		}
-
-		available = {
-			if = {
-				limit = {
-					NOT = { country_exists = PAK }
-				}
-				NOT = { army_manpower_in_state = { state = 442 amount < 9600 } }
-				NOT = { army_manpower_in_state = { state = 443 amount < 9600 } }
-				NOT = { army_manpower_in_state = { state = 440 amount < 9600 } }
-				NOT = { army_manpower_in_state = { state = 441 amount < 9600 } }
-			}
-			NOT = { army_manpower_in_state = { state = 433 amount < 9600 } }
-			NOT = { army_manpower_in_state = { state = 428 amount < 9600 } }
-			NOT = { army_manpower_in_state = { state = 438 amount < 9600 } }
-			NOT = { army_manpower_in_state = { state = 437 amount < 9600 } }
-			NOT = { army_manpower_in_state = { state = 429 amount < 9600 } }
-			NOT = { army_manpower_in_state = { state = 436 amount < 9600 } }
-			NOT = { army_manpower_in_state = { state = 427 amount < 9600 } }
-			NOT = { army_manpower_in_state = { state = 425 amount < 9600 } }
-			NOT = { army_manpower_in_state = { state = 423 amount < 9600 } }
-			NOT = { army_manpower_in_state = { state = 424 amount < 9600 } }
-			NOT = { army_manpower_in_state = { state = 426 amount < 9600 } }
-			NOT = { army_manpower_in_state = { state = 435 amount < 9600 } }
-			NOT = { army_manpower_in_state = { state = 431 amount < 9600 } }
-			if = {
-				limit = {
-					NOT = { country_exists = BAN }
-				}
-				NOT = { army_manpower_in_state = { state = 430 amount < 9600 } }
-			}
-			NOT = { army_manpower_in_state = { state = 432 amount < 9600 } }
-			NOT = { army_manpower_in_state = { state = 434 amount < 9600 } }
-			if = {
-				limit = {
-					NOT = { country_exists = BRM }
-				}
-				NOT = { army_manpower_in_state = { state = 640 amount < 9600 } }
-				NOT = { army_manpower_in_state = { state = 288 amount < 9600 } }
-			}
-			NOT = { army_manpower_in_state = { state = 439 amount < 96000 } }
-			FROM = {
-				has_country_flag = ENG_cannot_leave_faction
-				communism > 0.2
-			}
-		}
-
-		targets = { RAJ }
-		targets_dynamic = yes
-
-		target_root_trigger = {
-			has_completed_focus = ENG_move_to_secure_the_dominions
-		}
-
-		target_trigger = {
-			FROM = {
-				original_tag = RAJ
-			}
-		}
-
-		cost = 50
-
-		fire_only_once = yes
-
-		visible = {
-			has_government = communism
-			has_completed_focus = ENG_move_to_secure_the_dominions
-			FROM = {
-				is_subject_of = ROOT
-				NOT = { has_country_flag = ENG_imperialist_civil_war }
-				NOT = { has_government = ROOT }
-			}
-		}
-
-		complete_effect = {
-			FROM = {
-				custom_effect_tooltip = ENG_replace_government_communism_tt
-				set_politics = { ruling_party = communism elections_allowed = no }
-				add_popularity = { ideology = communism popularity = 0.2 }
-				add_timed_idea = { idea = communist_influence days = 730 }
-				hidden_effect = { set_country_flag = ENG_remain_as_puppet }
-				RAJ_enforce_loyalty = yes
-				country_event = { id = mtg_britain.65 }
-			}
-		}
-
-		ai_will_do = {
-			factor = 0
-		}
-	}
-
 	ENG_impose_martial_law_on_australia = {
 
 		icon = generic_civil_support
@@ -12827,69 +13102,6 @@ ENG_move_to_secure_the_dominions = {
 		}
 	}
 
-	ENG_replace_government_in_australia_communism = {
-
-		icon = eng_install_government
-
-		allowed = {
-			tag = ENG
-		}
-
-		available = {
-			NOT = { army_manpower_in_state = { state = 522 amount < 9600 } }
-			NOT = { army_manpower_in_state = { state = 521 amount < 19200 } }
-			NOT = { army_manpower_in_state = { state = 517 amount < 38400 } }
-			NOT = { army_manpower_in_state = { state = 285 amount < 48000 } }
-			FROM = {
-				has_country_flag = ENG_cannot_leave_faction
-				communism > 0.2
-			}
-		}
-
-		targets = { AST }
-		targets_dynamic = yes
-
-		target_root_trigger = {
-			has_completed_focus = ENG_move_to_secure_the_dominions
-		}
-
-		target_trigger = {
-			FROM = {
-				original_tag = AST
-			}
-		}
-
-		cost = 50
-
-		fire_only_once = yes
-
-		visible = {
-			has_government = communism
-			has_completed_focus = ENG_move_to_secure_the_dominions
-			FROM = {
-				is_subject_of = ROOT
-				NOT = { has_country_flag = ENG_imperialist_civil_war }
-				NOT = { has_government = ROOT }
-			}
-		}
-
-		complete_effect = {
-			FROM = {
-				custom_effect_tooltip = ENG_replace_government_communism_tt
-				set_politics = { ruling_party = communism elections_allowed = no }
-				add_popularity = { ideology = communism popularity = 0.2 }
-				add_timed_idea = { idea = communist_influence days = 730 }
-				hidden_effect = { set_country_flag = ENG_remain_as_puppet }
-				AST_enforce_loyalty = yes
-				country_event = { id = mtg_britain.65 }
-			}
-		}
-
-		ai_will_do = {
-			factor = 0
-		}
-	}
-
 	ENG_impose_martial_law_on_new_zealand = {
 
 		icon = generic_civil_support
@@ -13088,67 +13300,6 @@ ENG_move_to_secure_the_dominions = {
 				set_politics = { ruling_party = fascism elections_allowed = no }
 				add_popularity = { ideology = fascism popularity = 0.2 }
 				add_timed_idea = { idea = fascist_influence days = 730 }
-				NZL_enforce_loyalty = yes
-				country_event = { id = mtg_britain.65 }
-			}
-		}
-
-		ai_will_do = {
-			factor = 0
-		}
-	}
-
-	ENG_replace_government_in_new_zealand_communism = {
-
-		icon = eng_install_government
-
-		allowed = {
-			tag = ENG
-		}
-
-		available = {
-			NOT = { army_manpower_in_state = { state = 723 amount < 9600 } }
-			NOT = { army_manpower_in_state = { state = 284 amount < 48000 } }
-			FROM = {
-				has_country_flag = ENG_cannot_leave_faction
-				communism > 0.2
-			}
-		}
-
-		targets = { NZL }
-		targets_dynamic = yes
-
-		target_root_trigger = {
-			has_completed_focus = ENG_move_to_secure_the_dominions
-		}
-
-		target_trigger = {
-			FROM = {
-				original_tag = NZL
-			}
-		}
-
-		cost = 50
-
-		fire_only_once = yes
-
-		visible = {
-			has_government = communism
-			has_completed_focus = ENG_move_to_secure_the_dominions
-			FROM = {
-				is_subject_of = ROOT
-				NOT = { has_country_flag = ENG_imperialist_civil_war }
-				NOT = { has_government = ROOT }
-			}
-		}
-
-		complete_effect = {
-			FROM = {
-				custom_effect_tooltip = ENG_replace_government_communism_tt
-				set_politics = { ruling_party = communism elections_allowed = no }
-				add_popularity = { ideology = communism popularity = 0.2 }
-				add_timed_idea = { idea = communist_influence days = 730 }
-				hidden_effect = { set_country_flag = ENG_remain_as_puppet }
 				NZL_enforce_loyalty = yes
 				country_event = { id = mtg_britain.65 }
 			}

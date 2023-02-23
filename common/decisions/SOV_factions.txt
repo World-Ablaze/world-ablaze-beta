@@ -108,7 +108,7 @@ SOV_internal_factions = {
 		}
 
 		modifier = {
-			command_power_gain = 0.25
+			command_power_gain = 0.5
 			political_power_gain = 0.1
 		}
 
@@ -148,6 +148,113 @@ SOV_internal_factions = {
 			factor = 1
 		}
 	}
+
+	SOV_Commissars_raise_nkvd_divisions = {
+
+		icon = generic_decision
+
+		allowed = {
+			tag = SOV
+		}
+
+		available = {
+			has_completed_focus = SOV_nkvd_divisions
+			custom_trigger_tooltip = {
+				tooltip = SOV_Commissars_raise_nkvd_divisions_tt
+				check_variable = { SOV_Commissars_attitude = 1 compare = greater_than_or_equals }
+				check_variable = { SOV_Commissars_influence = 1 compare = greater_than_or_equals }
+			}
+			check_variable = { SOV_nkvd_cap < 63 }
+		}
+
+		days_remove = 30
+		days_re_enable = 15
+
+		cost = 50
+
+		fire_only_once = no
+
+		visible = {
+			tag = SOV
+			check_variable = { SOV_Commissars_attitude = 0 compare = greater_than_or_equals }
+			check_variable = { SOV_Commissars_influence = 0 compare = greater_than_or_equals }
+		}
+
+		remove_effect = {
+			add_to_variable = { SOV_nkvd_cap = 8 }
+			set_division_template_cap = { division_template = "NKVD Strelkovaya Diviziya" division_cap = SOV_nkvd_cap }
+			capital_scope = {
+				create_unit = {
+					division = "division_template = \"NKVD Strelkovaya Diviziya\" start_experience_factor = 0.5 start_equipment_factor = 0.3 start_manpower_factor = 0.5"
+					owner = ROOT
+				}
+				create_unit = {
+					division = "division_template = \"NKVD Strelkovaya Diviziya\" start_experience_factor = 0.5 start_equipment_factor = 0.3 start_manpower_factor = 0.5"
+					owner = ROOT
+				}
+				create_unit = {
+					division = "division_template = \"NKVD Strelkovaya Diviziya\" start_experience_factor = 0.5 start_equipment_factor = 0.3 start_manpower_factor = 0.5"
+					owner = ROOT
+				}
+				create_unit = {
+					division = "division_template = \"NKVD Strelkovaya Diviziya\" start_experience_factor = 0.5 start_equipment_factor = 0.3 start_manpower_factor = 0.5"
+					owner = ROOT
+				}
+				create_unit = {
+					division = "division_template = \"NKVD Strelkovaya Diviziya\" start_experience_factor = 0.5 start_equipment_factor = 0.3 start_manpower_factor = 0.5"
+					owner = ROOT
+				}
+				create_unit = {
+					division = "division_template = \"NKVD Strelkovaya Diviziya\" start_experience_factor = 0.5 start_equipment_factor = 0.3 start_manpower_factor = 0.5"
+					owner = ROOT
+				}
+				create_unit = {
+					division = "division_template = \"NKVD Strelkovaya Diviziya\" start_experience_factor = 0.5 start_equipment_factor = 0.3 start_manpower_factor = 0.5"
+					owner = ROOT
+				}
+				create_unit = {
+					division = "division_template = \"NKVD Strelkovaya Diviziya\" start_experience_factor = 0.5 start_equipment_factor = 0.3 start_manpower_factor = 0.5"
+					owner = ROOT
+				}
+			}
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				if = {
+					limit = {
+						check_variable = { SOV_Commissars_influence > 4 }
+					}
+					set_variable = { COMMISSARS_INFLUENCE_LEVEL2 = 150 }
+				}
+				else_if = {
+					limit = {
+						check_variable = { SOV_Commissars_influence > 3 }
+					}
+					set_variable = { COMMISSARS_INFLUENCE_LEVEL2 = 120 }
+				}
+				else_if = {
+					limit = {
+						check_variable = { SOV_Commissars_influence > 2 }
+					}
+					set_variable = { COMMISSARS_INFLUENCE_LEVEL2 = 90 }
+				}
+				else_if = {
+					limit = {
+						check_variable = { SOV_Commissars_influence > 1 }
+					}
+					set_variable = { COMMISSARS_INFLUENCE_LEVEL2 = 60 }
+				}
+				else = {
+					set_variable = { COMMISSARS_INFLUENCE_LEVEL2 = 30 }
+				}
+			}
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+	}	
 
 	SOV_Army_free_thinking = {
 
@@ -668,18 +775,166 @@ SOV_internal_factions = {
 		}
 
 		ai_will_do = {
-			factor = 1
+			factor = 0
+
+			modifier = {
+				factor = 200
+				has_army_manpower = { size < 4000000 }
+				NOT = {
+					has_idea = soviet_ai_3
+			}
+		}
+	}
+	
+	SOV_agitprop_propaganda_peace = {
+		
+		allowed = {
+			original_tag = SOV
+		}
+
+		available = {
+			has_completed_focus = SOV_expand_the_agitprop
+			custom_trigger_tooltip = {
+				tooltip = SOV_Peasants_lessons_from_russia_tt
+				check_variable = { SOV_Peasants_attitude = 1 compare = greater_than_or_equals }
+				check_variable = { SOV_Peasants_influence = 1 compare = greater_than_or_equals }
+			}
+		}
+	
+		visible = {
+			has_completed_focus = SOV_expand_the_agitprop
+		}
+
+		days_remove = PEASANTS_INFLUENCE_LEVEL3
+		days_re_enable = 90
+	
+		cost = 15
+	
+		modifier = {
+			political_power_factor = -0.2
+			industrial_capacity_factory = 0.05
+			industrial_capacity_dockyard = 0.05
+			production_speed_buildings_factor = 0.05
+		}
+	
+		complete_effect = {
+			add_to_variable = { SOV_propaganda_campaigns_taken = 1 } #Update propaganda campaigns counter
+		}
+	
+		remove_effect = {
+			hidden_effect = {
+				if = {
+					limit = {
+						check_variable = { SOV_Peasants_influence > 4 }
+					}
+					set_variable = { PEASANTS_INFLUENCE_LEVEL3 = 190 }
+				}
+				else_if = {
+					limit = {
+						check_variable = { SOV_Peasants_influence > 3 }
+					}
+					set_variable = { PEASANTS_INFLUENCE_LEVEL3 = 112 }
+				}
+				else_if = {
+					limit = {
+						check_variable = { SOV_Peasants_influence > 2 }
+					}
+					set_variable = { PEASANTS_INFLUENCE_LEVEL3 = 84 }
+				}
+				else_if = {
+					limit = {
+						check_variable = { SOV_Peasants_influence > 1 }
+					}
+					set_variable = { PEASANTS_INFLUENCE_LEVEL3 = 56 }
+				}
+				else = {
+					set_variable = { PEASANTS_INFLUENCE_LEVEL3 = 28 }
+				}
+			}
+		}
+	}
+	
+	SOV_agitprop_propaganda_war = {
+		
+		allowed = {
+			original_tag = SOV
+		}
+
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = SOV_Peasants_lessons_from_russia_tt
+				check_variable = { SOV_Peasants_attitude = 1 compare = greater_than_or_equals }
+				check_variable = { SOV_Peasants_influence = 1 compare = greater_than_or_equals }
+			}
+			OR = {
+				has_idea = great_patriotic_war
+				has_idea = great_patriotic_war_2
+			}
+			any_enemy_country = {
+				is_major = yes
+			}
+		}
+	
+		visible = {
+			has_completed_focus = SOV_expand_the_agitprop
+		}
+
+		days_remove = PEASANTS_INFLUENCE_LEVEL4
+		days_re_enable = 90
+	
+		cost = 15
+	
+		modifier = {
+			weekly_manpower = 500
+			training_time_factor = -0.25
+			war_support_weekly = 0.002
+		}
+	
+		complete_effect = {
+			add_to_variable = { SOV_propaganda_campaigns_taken = 1 } #Update propaganda campaigns counter
+		}
+	
+		remove_effect = {
+			hidden_effect = {
+				if = {
+					limit = {
+						check_variable = { SOV_Peasants_influence > 4 }
+					}
+					set_variable = { PEASANTS_INFLUENCE_LEVEL4 = 70 }
+				}
+				else_if = {
+					limit = {
+						check_variable = { SOV_Peasants_influence > 3 }
+					}
+					set_variable = { PEASANTS_INFLUENCE_LEVEL4 = 56 }
+				}
+				else_if = {
+					limit = {
+						check_variable = { SOV_Peasants_influence > 2 }
+					}
+					set_variable = { PEASANTS_INFLUENCE_LEVEL4 = 42 }
+				}
+				else_if = {
+					limit = {
+						check_variable = { SOV_Peasants_influence > 1 }
+					}
+					set_variable = { PEASANTS_INFLUENCE_LEVEL4 = 28 }
+				}
+				else = {
+					set_variable = { PEASANTS_INFLUENCE_LEVEL4 = 14 }
+				}
+			}
 		}
 	}
 
-	############################################################################################################
-	############################################################################################################
-	############################################################################################################
+	###########################################################################################################
+	###########################################################################################################
+	###########################################################################################################
 
 
-	############################################################################################################
-	############################################################################################################
-	############################################################################################################
+	###########################################################################################################
+	###########################################################################################################
+	###########################################################################################################
 
 	SOV_the_greatest_tank_army = {
 
@@ -688,12 +943,8 @@ SOV_internal_factions = {
 		available = {
 			custom_trigger_tooltip = {
 				tooltip = SOV_the_greatest_tank_army_tt
-
-
 				check_variable = { num_equipment_in_armies@light_tank_chassis > 9999 }
-				check_variable = { num_equipment_in_armies@medium_tank_chassis > 9999 }
-
-
+				check_variable = { num_equipment_in_armies@medium_tank_chassis > 4999 }
 			}
 			has_army_size = {
 				size > 29
@@ -739,17 +990,29 @@ SOV_internal_factions = {
 		available = {
 			custom_trigger_tooltip = {
 				tooltip = SOV_the_greatest_airforce_tt
-				has_deployed_air_force_size = {
-					size > 4999
-					type = fighter
+				OR = {
+					has_deployed_air_force_size = {
+						size > 4999
+						type = fighter
+					}
+					has_deployed_air_force_size = {
+						size > 4999
+						type = fighter
+					}
 				}
 				has_deployed_air_force_size = {
 					size > 4999
 					type = cas
 				}
-				has_deployed_air_force_size = {
-					size > 799
-					type = tactical_bomber
+				OR = {
+					has_deployed_air_force_size = {
+						size > 799
+						type = tactical_bomber
+					}
+					has_deployed_air_force_size = {
+						size > 799
+						type = tactical_bomber
+					}
 				}
 			}
 		}

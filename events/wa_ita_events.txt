@@ -1597,7 +1597,7 @@ country_event = {
 			transfer_state = 908
 		}
 		ITA = {
-			transfer_state = 103
+			transfer_state = 999
 		}
 		ITA = { country_event = { id = ita_armor.839 } }
 	}
@@ -2033,7 +2033,7 @@ country_event = {
 				create_wargoal = {
 					type = take_state
 					target = YUG
-					generator = { 908 103 }
+					generator = { 908 999 }
 					expire = 0
 				}
 			}
@@ -2054,7 +2054,7 @@ country_event = {
 		name = ita_armor.850.a
 		ITA = {
 			transfer_state = 908
-			transfer_state = 103
+			transfer_state = 999
 		}
 		hidden_effect = {
 			add_named_threat = { threat = 4 name = dalmatia_annexed }
@@ -2079,7 +2079,7 @@ country_event = {
 		create_wargoal = {
 			type = take_state
 			target = YUG
-			generator = { 908 103 }
+			generator = { 908 999 }
 			expire = 0
 		}
 	}
@@ -2143,6 +2143,7 @@ country_event = {
 				GER = {
 					add_state_claim = 152
 					add_state_claim = 4
+					add_state_claim = 998
 					add_state_claim = 882
 					add_state_claim = 852
 					add_state_claim = 155
@@ -2291,6 +2292,7 @@ country_event = {
 		add_state_claim = 152
 		add_state_claim = 4
 		add_state_claim = 882
+		add_state_claim = 998
 		add_state_claim = 852
 		add_state_claim = 155
 		add_state_claim = 889
@@ -4593,6 +4595,7 @@ country_event = {
 		trigger = {
 			ITA = { has_capitulated = no }
 			NOT = {	has_global_flag = ww2_has_ended }
+			NOT = {	has_global_flag = ita_rk_fix }
 		}
 		ai_chance = { factor = 1 }
 		news_event = { hours = 6 id = afo_news.15 }
@@ -4656,8 +4659,25 @@ country_event = {
 			transfer_state = 663
 			transfer_state = 273
 		}
-		ENG = {
-			add_to_faction = ITA
+		if = {
+			limit = {
+				USA = {
+					is_faction_leader = yes
+				}
+			}
+			USA = {
+				add_to_faction = ITA
+			}
+		}
+		else_if = {
+			limit = {
+				ENG = {
+					is_faction_leader = yes
+				}
+			}
+			ENG = {
+				add_to_faction = ITA
+			}
 		}
 		if = {
 			limit = {
@@ -5023,4 +5043,130 @@ country_event = {
 	}
 
 	option = {}
+}
+
+country_event = {
+	id = ita_armor.907
+	hidden = yes
+
+	mean_time_to_happen = { days = 1 }
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = ITA
+		is_ai = yes
+		is_subject = no
+		#date > 1939.1.1
+		OR = {
+			451 = { is_controlled_by = ITA }
+			451 = { is_controlled_by = ITL }
+		}
+		OR = {
+			450 = { is_controlled_by = ITA }
+			450 = { is_controlled_by = ITL }
+		}
+		OR = {
+			449 = { is_controlled_by = ITA }
+			449 = { is_controlled_by = ITL }
+		}
+		OR = {
+			448 = { is_controlled_by = ITA }
+			448 = { is_controlled_by = ITL }
+		}
+	}
+
+	immediate = {
+		build_railway = {
+			path = { 9980 1118 1041 4047 10046 10117 12088 4057 1198 1127 4120 13509 }
+		}
+	}
+
+	option = {}
+
+}
+
+country_event = {
+	id = ita_armor.908
+	hidden = yes
+
+	mean_time_to_happen = { days = 1 }
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = ITS
+		ITA = { is_ai = yes }
+		is_subject = yes
+		date > 1940.1.1
+		271 = {
+			CONTROLLER = {
+				OR = {
+					tag = ROOT
+					is_subject_of = ROOT
+					is_in_faction_with = ROOT
+					has_government = ROOT
+				}
+			}
+		}
+	}
+
+	immediate = {
+		army_experience = 600
+		build_railway = {
+			level = 1
+			path = { 5065 2020 4995 13378 10775 }
+		}
+		set_technology = {
+			tech_support = 1
+			tech_engineers = 1
+			tech_recon = 1
+			tech_logistics_company = 1
+			ita_artillery_1 = 1
+			ita_motorised_infantry = 1
+		}
+		add_equipment_to_stockpile = { type = train_equipment_1 amount = 20 }
+		division_template = {
+			name = "Italian Colonial Division"
+			template_counter = 73
+			division_names_group = ITA_INF_01
+			priority = 1
+
+			regiments = {
+				infantry = { x = 0 y = 0 }
+				infantry = { x = 0 y = 1 }
+				infantry = { x = 0 y = 2 }
+
+				infantry = { x = 1 y = 0 }
+				infantry = { x = 1 y = 1 }
+				infantry = { x = 1 y = 2 }
+
+				infantry = { x = 2 y = 0 }
+				infantry = { x = 2 y = 1 }
+				infantry = { x = 2 y = 2 }
+
+				artillery_brigade = { x = 3 y = 0 }
+				artillery_brigade = { x = 3 y = 1 }
+				artillery_brigade = { x = 3 y = 2 }
+			}
+
+			support = {
+				engineer = { x = 0 y = 0 }
+				horse_logistics_company = { x = 0 y = 1 }
+
+				recon = { x = 1 y = 0 }
+			}
+		}
+		271 = {
+			create_unit = {
+				division = "division_template = \"Italian Colonial Division\" start_experience_factor = 0.3"
+				owner = ITS
+				count = 16
+			}
+		}
+		add_ideas = partial_economic_mobilisation
+	}
+
+	option = {}
+
 }
