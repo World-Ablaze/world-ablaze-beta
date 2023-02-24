@@ -3374,28 +3374,6 @@ focus_tree = {
 	}
 
 	focus = {
-		id = USA_dissolve_the_pwa
-		icon = GFX_focus_generic_self_management
-		prerequisite = { focus = USA_halt_government_spending_programs }
-		relative_position_id = USA_halt_government_spending_programs
-		x = 1
-		y = 1
-
-		cost = 3
-
-		ai_will_do = {
-			factor = 1
-		}
-
-		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_AHISTORICAL FOCUS_FILTER_STABILITY }
-
-		completion_reward = {
-			add_stability = -0.05
-			# TODO: NS: -1% CG
-		}
-	}
-
-	focus = {
 		id = USA_dissolve_the_wpa
 		icon = GFX_focus_generic_self_management
 		prerequisite = { focus = USA_dissolve_the_pwa }
@@ -6698,7 +6676,7 @@ focus_tree = {
 		prerequisite = { focus = USA_the_global_super_power }
 		relative_position_id = USA_the_global_super_power
 		x = 0
-		y = 1
+		y = 3
 
 		cost = 3
 
@@ -7013,5 +6991,233 @@ focus_tree = {
 			}
 		}
 	}
+
+	##############################################################################
+	##############################################################################
+	##############################################################################
+	# Mobilization Tree
+	##############################################################################
+	##############################################################################
+	##############################################################################
+
+	focus = {
+		id = USA_the_giant_wakes
+		icon = GFX_goal_USA_the_giant_wakes
+		prerequisite = { focus = USA_cash_and_carry_act }
+		relative_position_id = USA_cash_and_carry_act
+		x = -8
+		y = 2
+
+		available = {
+			OR = {
+				has_completed_focus = USA_cash_and_carry_act
+				has_war = yes
+			}
+			custom_trigger_tooltip = {
+				tooltip = SOV_has_civil_war_no_tt
+				has_civil_war = no
+				NOT = { has_war_with = CSA }
+				NOT = { has_war_with = USA }
+				NOT = { has_war_with = USB }
+				if = {
+					limit = {
+						tag = USA
+					}
+					NOT = { country_exists = CSA }
+					NOT = { country_exists = USB }
+				}
+				if = {
+					limit = {
+						tag = CSA
+					}
+					NOT = { country_exists = USA }
+					NOT = { country_exists = USB }
+				}
+				if = {
+					limit = {
+						tag = USB
+					}
+					NOT = { country_exists = CSA }
+					NOT = { country_exists = USA }
+				}
+			}
+			custom_trigger_tooltip = {
+				tooltip = USA_great_depression_state_no_tt
+				OR = {
+					all_core_state = {
+						NOT = {
+							has_dynamic_modifier = {
+								modifier = great_depression_state
+							}
+						}
+					}
+					is_ai = yes
+				}
+			}
+		}
+
+		cancel_if_invalid = no
+		continue_if_invalid = yes
+		available_if_capitulated = yes
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		completion_reward = {
+			custom_effect_tooltip = USA_depression_fix
+			if = {
+				limit = {
+					is_ai = yes
+				}
+				every_state = {
+					limit = {
+						is_core_of = USA
+					}
+					remove_dynamic_modifier = { modifier = great_depression_state }
+				}
+			}
+			if = {
+				limit = {
+					NOT = { has_idea = undisturbed_isolation }
+					NOT = { has_idea = isolation }
+					NOT = { has_country_flag = USA_the_giant_wakes_added_civ_eco }
+				}
+				add_political_power = 100
+			}
+			if = {
+				limit = {
+					OR = {
+						has_idea = isolation
+						has_idea = undisturbed_isolation
+						has_country_flag = USA_the_giant_wakes_added_civ_eco
+					}
+				}
+				add_ideas = civilian_economy
+			}
+		}
+	}
+
+	focus = {
+		id = USA_appoint_william_knudsen # TODO: possibly rename
+		icon = GFX_goal_USA_appoint_william_knudsen
+		prerequisite = { focus = USA_the_giant_wakes }
+		relative_position_id = USA_the_giant_wakes
+		x = -3
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		completion_reward = {
+			add_political_power = 50
+			custom_effect_tooltip = USA_appoint_william_knudsen_tt
+		}
+	}
+
+	focus = {
+		id = USA_militaristic_wpa
+		icon = GFX_goal_USA_appoint_william_knudsen
+		prerequisite = { focus = USA_appoint_william_knudsen }
+		prerequisite = { focus = USA_keynesian_economics }
+		relative_position_id = USA_appoint_william_knudsen
+		x = -1
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		completion_reward = {
+			swap_ideas = {
+				remove_idea = USA_wpa_idea # TODO: Fix
+				add_idea = USA_militaristic_wpa_idea # TODO: add
+			}
+		}
+	}
+
+	focus = {
+		id = USA_arsenal_of_democracy
+		icon = GFX_goal_generic_civilian_economy_large
+		prerequisite = { focus = USA_militaristic_wpa }
+		relative_position_id = USA_militaristic_wpa
+		x = 0
+		y = 2
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available_if_capitulated = yes
+		continue_if_invalid = yes
+
+		completion_reward = {
+			if = {
+				limit = {
+					OR = {
+						has_government = democratic
+						has_government = neutrality
+					}
+					has_idea = full_privatization
+				}
+				add_ideas = state_sponsored_economy
+			}
+			else = {
+				add_political_power = 300
+			}
+			add_tech_bonus = {
+				name = industry_effort_3
+				bonus = 0.5
+				uses = 10
+				category = industry
+			}
+			add_tech_bonus = {
+				name = industry_effort_4
+				bonus = 0.6
+				uses = 3
+				category = construction_tech
+			}
+		}
+	}
+
+	focus = {
+		id = USA_office_of_price_administration_and_civilian_supply
+		icon = GFX_goal_generic_civilian_economy_large
+		prerequisite = { focus = USA_arsenal_of_democracy }
+		relative_position_id = USA_arsenal_of_democracy
+		x = 0
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available_if_capitulated = yes
+		continue_if_invalid = yes
+
+		completion_reward = {
+			# TODO: NS: cg -5%
+			custom_effect_tooltip = USA_Public_negative_1_tt1
+			hidden_effect = {
+				add_to_variable = { var = USA_Public_attitude value = -1 }
+				add_to_variable = { var = USA_Public_political_power_gain value = -1 }
+				add_to_variable = { var = USA_Public_stability value = -1 }
+				USA_political_instability_update_effect = yes
+			}
+		}
+	}
+
+
 
 }
