@@ -9440,53 +9440,10 @@ focus_tree = {
 	}
 
 	focus = {
-		id = USA_draw_up_the_victory_program
-		icon = GFX_focus_usa_escort_fighters
-		prerequisite = { focus = USA_appoint_george_marshall }
-		relative_position_id = USA_appoint_george_marshall
-		x = 0
-		y = 1
-
-		cost = 3
-
-		ai_will_do = {
-			factor = 1
-		}
-
-		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL FOCUS_FILTER_XP }
-
-		completion_reward = {
-			army_experience = 25
-			# TODO: victory program event
-		}
-	}
-
-	focus = {
 		id = USA_neutral_yet_prepared
 		icon = GFX_focus_usa_escort_fighters
 		prerequisite = { focus = USA_draw_up_the_victory_program }
-		relative_position_id = USA_draw_up_the_victory_program
-		x = -1
-		y = 1
-
-		cost = 3
-
-		ai_will_do = {
-			factor = 1
-		}
-
-		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL FOCUS_FILTER_XP }
-
-		completion_reward = {
-			add_war_support = 0.05
-			# TODO: ?
-		}
-	}
-
-	focus = {
-		id = USA_neutral_yet_prepared
-		icon = GFX_focus_usa_escort_fighters
-		prerequisite = { focus = USA_draw_up_the_victory_program }
+		mutually_exclusive = { focus = USA_warplan_rainbow_5 }
 		relative_position_id = USA_draw_up_the_victory_program
 		x = -1
 		y = 1
@@ -9695,12 +9652,7 @@ focus_tree = {
 				remove_idea = USA_army_segregation
 				add_idea = USA_army_segregation_2
 			}
-			if = {
-				limit = {
-					has_stability < 0.8
-				}
-				add_stability = -0.05
-			}
+			add_stability = -0.05
 			if = {
 				limit = {
 					NOT = { has_government = communism }
@@ -9723,7 +9675,8 @@ focus_tree = {
 		cost = 3
 
 		available = {
-			has_stability > 0.8
+			has_army_manpower = { size > 999999 }
+			NOT = { has_government = fascism }
 		}
 
 		ai_will_do = {
@@ -9739,12 +9692,7 @@ focus_tree = {
 
 		completion_reward = {
 			remove_ideas = USA_army_segregation_2
-			if = {
-				limit = {
-					has_stability < 0.8
-				}
-				add_stability = -0.05
-			}
+			add_stability = -0.05
 			if = {
 				limit = {
 					NOT = { has_government = communism }
@@ -9794,7 +9742,7 @@ focus_tree = {
 	focus = {
 		id = USA_call_up_the_national_guard # TODO: rename
 		icon = GFX_goal_generic_military_sphere
-		prerequisite = { focus = USA_the_90_division_plan }
+		prerequisite = { focus = USA_the_90_division_plan focus = USA_the_265_division_plan }
 		relative_position_id = USA_the_90_division_plan
 		x = 1
 		y = 1
@@ -9836,7 +9784,7 @@ focus_tree = {
 		prerequisite = { focus = USA_the_90_division_plan }
 		relative_position_id = USA_call_up_the_national_guard
 		x = -1
-		y = 1
+		y = 2
 
 		cost = 3
 
@@ -9851,7 +9799,287 @@ focus_tree = {
 		}
 	}
 
+	focus = {
+		id = USA_warplan_rainbow_5
+		icon = GFX_focus_usa_escort_fighters
+		prerequisite = { focus = USA_draw_up_the_victory_program }
+		mutually_exclusive = { focus = USA_neutral_yet_prepared }
+		relative_position_id = USA_draw_up_the_victory_program
+		x = 1
+		y = 1
 
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_AHISTORICAL FOCUS_FILTER_WAR_SUPPORT }
+
+		completion_reward = {
+			add_war_support = -0.05
+			# TODO: ?
+		}
+	}
+
+	focus = {
+		id = USA_the_265_division_plan
+		icon = GFX_focus_usa_escort_fighters
+		prerequisite = { focus = USA_warplan_rainbow_5 }
+		relative_position_id = USA_warplan_rainbow_5
+		x = 0
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_AHISTORICAL FOCUS_FILTER_XP }
+
+		completion_reward = {
+			# TODO: 265 division plan
+		}
+	}
+
+	focus = {
+		id = USA_implement_more_extensive_conscription
+		icon = GFX_focus_usa_escort_fighters
+		prerequisite = { focus = USA_the_265_division_plan }
+		relative_position_id = USA_the_265_division_plan
+		x = 3
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			has_government = democratic
+			congress_high_support_trigger = yes
+			OR = {
+				threat > 0.7
+				FRA = { has_capitulated = yes }
+				ITA = { has_capitulated = yes }
+				JAP = { has_capitulated = yes }
+				GER = { has_capitulated = yes }
+				SOV = { has_capitulated = yes }
+				ENG = { has_capitulated = yes }
+			}
+		}
+
+		bypass = {
+			NOT = {
+				has_idea = disarmed_nation
+			}
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_AHISTORICAL FOCUS_FILTER_MANPOWER FOCUS_FILTER_USA_CONGRESS }
+
+		completion_reward = {
+			USA_congress_large_opposition = yes
+			add_ideas = extensive_conscription
+		}
+	}
+
+	focus = {
+		id = USA_crack_down_on_dodgers
+		icon = GFX_focus_usa_escort_fighters
+		prerequisite = { focus = USA_implement_more_extensive_conscription }
+		prerequisite = { focus = USA_call_up_the_national_guard }
+		relative_position_id = USA_implement_more_extensive_conscription
+		x = 0
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_AHISTORICAL FOCUS_FILTER_STABILITY FOCUS_FILTER_MANPOWER }
+
+		completion_reward = {
+			add_stability = -0.05
+			# TODO: NS: recruitable pop factor +10%
+		}
+	}
+
+	focus = {
+		id = USA_industry_conscriptions
+		icon = GFX_focus_usa_escort_fighters
+		prerequisite = { focus = USA_crack_down_on_dodgers }
+		relative_position_id = USA_crack_down_on_dodgers
+		x = -1
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_AHISTORICAL FOCUS_FILTER_WAR_SUPPORT FOCUS_FILTER_MANPOWER }
+
+		completion_reward = {
+			add_war_support = -0.05
+			# TODO: NS: factory output -10%, recruitable pop +1%
+		}
+	}
+
+	focus = {
+		id = USA_agriculture_conscriptions
+		icon = GFX_focus_usa_escort_fighters
+		prerequisite = { focus = USA_crack_down_on_dodgers }
+		relative_position_id = USA_crack_down_on_dodgers
+		x = 1
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_AHISTORICAL FOCUS_FILTER_STABILITY FOCUS_FILTER_MANPOWER }
+
+		completion_reward = {
+			add_stability = -0.05
+			# TODO: NS: factory output -5%, recruitable pop +1%
+		}
+	}
+
+	focus = {
+		id = USA_spare_no_man
+		icon = GFX_focus_usa_escort_fighters
+		prerequisite = { focus = USA_agriculture_conscriptions }
+		prerequisite = { focus = USA_industry_conscriptions }
+		relative_position_id = USA_agriculture_conscriptions
+		x = -1
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			has_army_manpower = { size > 999999 }
+			NOT = { has_government = fascism }
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_AHISTORICAL FOCUS_FILTER_STABILITY FOCUS_FILTER_MANPOWER }
+
+		completion_reward = {
+			add_stability = -0.05
+			# TODO: NS: factory output -5%, recruitable pop +1%
+			remove_ideas = USA_army_segregation
+			if = {
+				limit = {
+					NOT = { has_government = communism }
+					has_stability < 0.8
+				}
+				USA_congress_large_opposition = yes
+		    	add_popularity = { ideology = fascism popularity = 0.05 }
+			}
+		}
+	}
+
+	focus = {
+		id = USA_spare_no_woman
+		icon = GFX_focus_usa_escort_fighters
+		prerequisite = { focus = USA_spare_no_man }
+		relative_position_id = USA_spare_no_man
+		x = 0
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			has_army_manpower = { size > 999999 }
+			NOT = { has_government = fascism }
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_AHISTORICAL FOCUS_FILTER_STABILITY FOCUS_FILTER_MANPOWER }
+
+		completion_reward = {
+			add_stability = -0.05
+			# TODO: NS: factory output -5%, recruitable pop +1%
+			add_ideas = women_in_the_frontlines
+		}
+	}
+
+	focus = {
+		id = USA_unit_rotation_system
+		icon = GFX_goal_generic_military_sphere
+		prerequisite = { focus = USA_call_up_the_national_guard }
+		prerequisite = { focus = USA_the_265_division_plan }
+		relative_position_id = USA_call_up_the_national_guard
+		x = 1
+		y = 2
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_AHISTORICAL }
+
+		completion_reward = {
+			# TODO: NS: +10% mob speed, +5% reinforce rate, +15% experience lost in combat, org/cohesion loss?
+		}
+	}
+
+	focus = {
+		id = USA_army_ground_forces
+		icon = GFX_goal_generic_military_sphere
+		prerequisite = { focus = USA_individual_replacement_system focus = USA_unit_rotation_system }
+		relative_position_id = USA_individual_replacement_system
+		x = 0
+		y = 2
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL }
+
+		completion_reward = {
+			# TODO: NS: -10% training time. United States Army NS?
+		}
+	}
+
+	focus = {
+		id = USA_army_service_forces
+		icon = GFX_goal_generic_military_sphere
+		prerequisite = { focus = USA_individual_replacement_system focus = USA_unit_rotation_system }
+		relative_position_id = USA_individual_replacement_system
+		x = 2
+		y = 2
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL }
+
+		completion_reward = {
+			# TODO: NS: +20% mobilization speed. United States Army NS?
+		}
+	}
 
 
 
