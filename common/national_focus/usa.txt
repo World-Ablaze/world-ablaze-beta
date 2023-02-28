@@ -7010,7 +7010,7 @@ focus_tree = {
 		prerequisite = { focus = USA_cash_and_carry_act }
 		relative_position_id = USA_cash_and_carry_act
 		x = -8
-		y = 2
+		y = 1
 
 		available = {
 			OR = {
@@ -9155,7 +9155,17 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_AIRFORCE FOCUS_FILTER_AHISTORICAL }
 
 		completion_reward = {
-			add_ideas = continuous_strike_spirit
+			if = {
+				limit = {
+					NOT = {
+						has_idea = continuous_strike_spirit
+					}
+				}
+				add_ideas = continuous_strike_spirit # TODO: check
+			}
+			else = {
+				air_experience = 50
+			}
 			# TODO: +10 max CP?
 		}
 	}
@@ -9400,7 +9410,7 @@ focus_tree = {
 		icon = GFX_focus_usa_escort_fighters
 		prerequisite = { focus = USA_declare_limited_national_emergency }
 		relative_position_id = USA_declare_limited_national_emergency
-		x = 25
+		x = 22
 		y = 1
 
 		cost = 3
@@ -10074,12 +10084,738 @@ focus_tree = {
 			factor = 1
 		}
 
-		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL }
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL FOCUS_FILTER_MANPOWER }
 
 		completion_reward = {
 			# TODO: NS: +20% mobilization speed. United States Army NS?
 		}
 	}
+
+	focus = {
+		id = USA_tank_experiments # TODO: rename Creation of the Armored Force
+		icon = GFX_goal_generic_army_tanks
+		prerequisite = { focus = USA_army_ground_forces }
+		relative_position_id = USA_army_ground_forces
+		x = -4
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL FOCUS_FILTER_RESEARCH FOCUS_FILTER_XP }
+
+		completion_reward = {
+			army_experience = 25
+			add_tech_bonus = {
+				name = USA_tank_experiments
+				uses = 3
+				bonus = 0.5
+				category = armor
+			}
+			add_doctrine_cost_reduction = {
+				name = USA_tank_experiments
+				cost_reduction = 0.99
+				uses = 2
+				category = cat_mobile_warfare
+			}
+		}
+	}
+
+	focus = {
+		id = USA_tank_destroyer_doctrine
+		icon = GFX_focus_usa_tank_destroyer_doctrine
+		prerequisite = { focus = USA_tank_experiments }
+		mutually_exclusive = { focus = USA_heavy_tank_doctrine }
+		relative_position_id = USA_tank_experiments
+		x = -1
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL FOCUS_FILTER_RESEARCH }
+
+		completion_reward = {
+			add_tech_bonus = {
+				name = USA_tank_destroyer_doctrine
+				bonus = 0.5
+				uses = 2
+				technology = usa_medium_2_td
+				technology = usa_medium_3_td
+				technology = usa_medium_td_4
+				technology = usa_medium_5_td
+			}
+			add_doctrine_cost_reduction = {
+				name = USA_tank_destroyer_doctrine
+				cost_reduction = 0.99
+				uses = 1
+				category = cat_mobile_warfare
+			}
+		}
+	}
+
+	focus = {
+		id = USA_heavy_tank_doctrine
+		icon = GFX_goal_USA_heavy_tank_doctrine
+		prerequisite = { focus = USA_tank_experiments }
+		mutually_exclusive = { focus = USA_tank_destroyer_doctrine }
+		relative_position_id = USA_tank_experiments
+		x = 1
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL FOCUS_FILTER_RESEARCH }
+
+		completion_reward = {
+			add_tech_bonus = {
+				name = USA_heavy_tank_doctrine
+				bonus = 0.5
+				uses = 2
+				category = cat_heavy_armor
+			}
+			add_doctrine_cost_reduction = {
+				name = USA_heavy_tank_doctrine
+				cost_reduction = 0.99
+				uses = 1
+				category = cat_mobile_warfare
+			}
+		}
+	}
+
+	focus = {
+		id = USA_armored_infantry
+		icon = GFX_goal_generic_build_tank
+		prerequisite = { focus = USA_tank_destroyer_doctrine focus = USA_heavy_tank_doctrine }
+		relative_position_id = USA_tank_destroyer_doctrine
+		x = 1
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL FOCUS_FILTER_RESEARCH }
+
+		completion_reward = {
+			add_tech_bonus = {
+				name = USA_armored_infantry
+				uses = 2
+				bonus = 0.5
+				category = cat_mechanized_equipment
+			}
+			add_doctrine_cost_reduction = {
+				name = USA_armored_infantry
+				cost_reduction = 0.99
+				uses = 1
+				category = cat_mobile_warfare
+			}
+		}
+	}
+	focus = {
+		id = USA_main_battle_tanks
+		icon = GFX_goal_generic_tanks
+		prerequisite = { focus = USA_armored_infantry }
+		relative_position_id = USA_armored_infantry
+		x = 0
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL FOCUS_FILTER_RESEARCH }
+
+		completion_reward = {
+            if = {
+				limit = {
+					has_dlc = "No Step Back"
+				}
+                add_tech_bonus = {
+                    name = USA_main_battle_tanks
+                    bonus = 0.5
+                    uses = 2
+                    technology = usa_modern_tank_chassis_1
+                    technology = usa_modern_tank_chassis_2
+                }
+            }
+            else = {
+                add_tech_bonus = {
+                    name = USA_main_battle_tanks
+                    bonus = 0.5
+                    uses = 2
+					technology = usa_modern_1
+					technology = usa_modern_3
+
+                }
+            }
+			add_doctrine_cost_reduction = {
+				name = USA_main_battle_tanks
+				cost_reduction = 0.99
+				uses = 1
+				category = cat_mobile_warfare
+			}
+		}
+	}
+
+	focus = {
+		id = USA_support_rock_island # TODO: rename Invest in the Rock Island Arsenal
+		icon = GFX_goal_generic_army_artillery
+		prerequisite = { focus = USA_army_ground_forces }
+		relative_position_id = USA_army_ground_forces
+		x = -1
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL FOCUS_FILTER_RESEARCH }
+
+		completion_reward = {
+			add_tech_bonus = {
+				name = USA_support_rock_island
+				uses = 2
+				bonus = 0.5
+				category = artillery
+			}
+			add_doctrine_cost_reduction = {
+				name = USA_support_rock_island
+				cost_reduction = 0.99
+				uses = 2
+				category = cat_superior_firepower
+			}
+		}
+	}
+
+	focus = {
+		id = USA_focus_on_the_support
+		icon = GFX_goal_generic_army_artillery
+		prerequisite = { focus = USA_support_rock_island }
+		relative_position_id = USA_support_rock_island
+		x = 0
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL FOCUS_FILTER_RESEARCH FOCUS_FILTER_XP }
+
+		completion_reward = {
+			army_experience = 25
+			add_tech_bonus = {
+				name = USA_focus_on_the_support
+				uses = 3
+				bonus = 0.5
+				category = support_tech
+			}
+		}
+	}
+
+	focus = {
+		id = USA_the_future_of_artillery
+		icon = GFX_goal_generic_army_artillery
+		prerequisite = { focus = USA_focus_on_the_support }
+		relative_position_id = USA_focus_on_the_support
+		x = 0
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL FOCUS_FILTER_RESEARCH FOCUS_FILTER_XP }
+
+		completion_reward = {
+			army_experience = 25
+			add_tech_bonus = {
+				name = USA_the_future_of_artillery
+				uses = 2
+				bonus = 0.5
+				category = support_tech # TODO
+			}
+			add_doctrine_cost_reduction = {
+				name = USA_support_rock_island
+				cost_reduction = 0.99
+				uses = 2
+				category = cat_superior_firepower
+			}
+		}
+	}
+
+	focus = {
+		id = USA_overwhelming_firepower
+		icon = GFX_goal_generic_army_artillery
+		prerequisite = { focus = USA_the_future_of_artillery }
+		relative_position_id = USA_the_future_of_artillery
+		x = 0
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL FOCUS_FILTER_XP }
+
+		completion_reward = {
+			if = {
+				limit = {
+					NOT = {
+						has_idea = superior_firepower_army_spirit
+					}
+				}
+				add_ideas = superior_firepower_army_spirit
+			}
+			else = {
+				army_experience = 50
+			}
+		}
+	}
+
+	focus = {
+		id = USA_modernize_the_army_signal_corps
+		icon = GFX_goal_generic_army_artillery
+		prerequisite = { focus = USA_army_service_forces }
+		relative_position_id = USA_army_service_forces
+		x = 1
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL FOCUS_FILTER_RESEARCH }
+
+		completion_reward = {
+			add_tech_bonus = {
+				name = USA_modernize_the_army_signal_corps
+				uses = 2
+				bonus = 0.5
+				technology = tech_signal_company
+				technology = tech_signal_company2
+				technology = tech_signal_company3
+				technology = tech_signal_company4
+			}
+		}
+	}
+
+	focus = {
+		id = USA_signal_security_agency
+		icon = GFX_goal_generic_army_artillery
+		prerequisite = { focus = USA_modernize_the_army_signal_corps }
+		relative_position_id = USA_modernize_the_army_signal_corps
+		x = 0
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL FOCUS_FILTER_AGENCY }
+
+		completion_reward = {
+			# TODO: cipher decryption +15%
+		}
+	}
+
+	focus = {
+		id = USA_found_the_nsa
+		icon = GFX_goal_generic_army_artillery
+		prerequisite = { focus = USA_signal_security_agency }
+		relative_position_id = USA_signal_security_agency
+		x = 0
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL FOCUS_FILTER_AGENCY }
+
+		completion_reward = {
+			# TODO: capture enemy spies +20%
+		}
+	}
+
+	focus = {
+		id = USA_expand_the_USACE
+		icon = GFX_goal_generic_army_artillery
+		prerequisite = { focus = USA_army_service_forces }
+		relative_position_id = USA_army_service_forces
+		x = 3
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL FOCUS_FILTER_RESEARCH }
+
+		completion_reward = {
+			add_tech_bonus = {
+				name = USA_expand_the_USACE
+				uses = 2
+				bonus = 0.5
+				technology = tech_engineers
+				technology = tech_engineers2
+				technology = tech_engineers3
+				technology = tech_engineers4
+			}
+		}
+	}
+
+	focus = {
+		id = USA_the_medical_department
+		icon = GFX_goal_generic_army_artillery
+		prerequisite = { focus = USA_expand_the_USACE }
+		relative_position_id = USA_expand_the_USACE
+		x = 0
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL FOCUS_FILTER_RESEARCH }
+
+		completion_reward = {
+			add_tech_bonus = {
+				name = USA_the_medical_department
+				uses = 2
+				bonus = 0.5
+				technology = tech_field_hospital
+				technology = tech_field_hospital2
+				technology = tech_field_hospital3
+				technology = tech_field_hospital4
+			}
+		}
+	}
+
+	focus = {
+		id = USA_the_quartermaster_corps
+		icon = GFX_goal_generic_army_artillery
+		prerequisite = { focus = USA_army_service_forces }
+		relative_position_id = USA_army_service_forces
+		x = 5
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL FOCUS_FILTER_RESEARCH }
+
+		completion_reward = {
+			add_tech_bonus = {
+				name = USA_the_quartermaster_corps
+				uses = 2
+				bonus = 0.5
+				technology = tech_logistics_company
+				technology = tech_logistics_company2
+				technology = tech_logistics_company3
+				technology = tech_logistics_company4
+			}
+		}
+	}
+
+	focus = {
+		id = USA_the_transportation_corps
+		icon = GFX_goal_generic_army_artillery
+		prerequisite = { focus = USA_the_quartermaster_corps }
+		relative_position_id = USA_the_quartermaster_corps
+		x = 0
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL FOCUS_FILTER_RESEARCH }
+
+		completion_reward = {
+			# TODO: NS: supply consumption -5%, fuel consumption +5%
+		}
+	}
+
+	focus = {
+		id = USA_louisiana_maneuvers
+		icon = GFX_goal_generic_cavalry
+		prerequisite = { focus = USA_army_ground_forces }
+		prerequisite = { focus = USA_army_service_forces }
+		relative_position_id = USA_army_ground_forces
+		x = 1
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			has_tech = usa_mechanized_infantry_1
+			has_tech = usa_medium_tank_chassis_1
+			custom_trigger_tooltip = {
+				tooltip = SOV_has_civil_war_no_tt
+				has_civil_war = no
+				NOT = { has_war_with = CSA }
+				NOT = { has_war_with = USA }
+				NOT = { has_war_with = USB }
+				if = {
+					limit = {
+						tag = USA
+					}
+					NOT = { country_exists = CSA }
+					NOT = { country_exists = USB }
+				}
+				if = {
+					limit = {
+						tag = CSA
+					}
+					NOT = { country_exists = USA }
+					NOT = { country_exists = USB }
+				}
+				if = {
+					limit = {
+						tag = USB
+					}
+					NOT = { country_exists = CSA }
+					NOT = { country_exists = USA }
+				}
+			}
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL FOCUS_FILTER_RESEARCH FOCUS_FILTER_XP }
+
+		completion_reward = {
+			army_experience = 25
+			add_doctrine_cost_reduction = {
+				name = USA_louisiana_maneuvers
+				cost_reduction = 0.99
+				uses = 2
+				category = land_doctrine
+			}
+			add_doctrine_cost_reduction = {
+				name = USA_louisiana_maneuvers_inf
+				cost_reduction = 0.99
+				uses = 2
+				category = cat_grand_battle_plan
+			}
+			custom_effect_tooltip = louisiana_maneuvers_tt
+			if = {
+				limit = {
+					is_ai = no
+				}
+				hidden_effect = {
+					division_template = {
+						name = "Armored Division"
+						division_names_group = USA_ARM_01
+						priority = 1
+
+						regiments = {
+							light_armor = { x = 0 y = 0 }
+							light_armor = { x = 0 y = 1 }
+							light_armor = { x = 0 y = 2 }
+
+							light_armor = { x = 1 y = 0 }
+							light_armor = { x = 1 y = 1 }
+							light_armor = { x = 1 y = 2 }
+
+							medium_armor = { x = 2 y = 0 }
+							medium_armor = { x = 2 y = 1 }
+							medium_armor = { x = 2 y = 2 }
+
+							motorized_artillery_brigade = { x = 3 y = 0 }
+							motorized_artillery_brigade = { x = 3 y = 1 }
+							motorized_artillery_brigade = { x = 3 y = 2 }
+
+							mechanized = { x = 4 y = 0 }
+							mechanized = { x = 4 y = 1 }
+							mechanized = { x = 4 y = 2 }
+						}
+
+						support = {
+							engineer = { x = 0 y = 0 }
+							motorized_logistics_company = { x = 0 y = 1 }
+							mot_maintenance_company = { x = 0 y = 2 }
+							signal_company = { x = 0 y = 3 }
+
+							mot_recon = { x = 1 y = 0 }
+			        		field_hospital = { x = 1 y = 1 }
+			        		heavy_artillery = { x = 1 y = 2 }
+						}
+					}
+				}
+			}
+		}
+	}
+
+	focus = {
+		id = USA_arkansas_maneuvers
+		icon = GFX_goal_generic_cavalry
+		prerequisite = { focus = USA_louisiana_maneuvers }
+		relative_position_id = USA_louisiana_maneuvers
+		x = 0
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = SOV_has_civil_war_no_tt
+				has_civil_war = no
+				NOT = { has_war_with = CSA }
+				NOT = { has_war_with = USA }
+				NOT = { has_war_with = USB }
+				if = {
+					limit = {
+						tag = USA
+					}
+					NOT = { country_exists = CSA }
+					NOT = { country_exists = USB }
+				}
+				if = {
+					limit = {
+						tag = CSA
+					}
+					NOT = { country_exists = USA }
+					NOT = { country_exists = USB }
+				}
+				if = {
+					limit = {
+						tag = USB
+					}
+					NOT = { country_exists = CSA }
+					NOT = { country_exists = USA }
+				}
+			}
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL FOCUS_FILTER_RESEARCH FOCUS_FILTER_XP }
+
+		completion_reward = {
+			army_experience = 25
+			add_doctrine_cost_reduction = {
+				name = USA_arkansas_maneuvers
+				cost_reduction = 0.99
+				uses = 2
+				category = land_doctrine
+			}
+			add_tech_bonus = {
+				name = USA_arkansas_maneuvers
+				uses = 2
+				bonus = 0.5
+				category = infantry_tech
+			}
+		}
+	}
+
+	focus = {
+		id = USA_carolina_maneuvers
+		icon = GFX_goal_generic_cavalry
+		prerequisite = { focus = USA_arkansas_maneuvers }
+		relative_position_id = USA_arkansas_maneuvers
+		x = 0
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = SOV_has_civil_war_no_tt
+				has_civil_war = no
+				NOT = { has_war_with = CSA }
+				NOT = { has_war_with = USA }
+				NOT = { has_war_with = USB }
+				if = {
+					limit = {
+						tag = USA
+					}
+					NOT = { country_exists = CSA }
+					NOT = { country_exists = USB }
+				}
+				if = {
+					limit = {
+						tag = CSA
+					}
+					NOT = { country_exists = USA }
+					NOT = { country_exists = USB }
+				}
+				if = {
+					limit = {
+						tag = USB
+					}
+					NOT = { country_exists = CSA }
+					NOT = { country_exists = USA }
+				}
+			}
+		}
+
+		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_HISTORICAL FOCUS_FILTER_RESEARCH FOCUS_FILTER_XP }
+
+		completion_reward = {
+			army_experience = 25
+			add_doctrine_cost_reduction = {
+				name = USA_arkansas_maneuvers
+				cost_reduction = 0.99
+				uses = 2
+				category = land_doctrine
+			}
+			add_tech_bonus = {
+				name = USA_arkansas_maneuvers
+				uses = 2
+				bonus = 0.5
+				category = infantry_tech
+			}
+		}
+	}
+
+
 
 
 
