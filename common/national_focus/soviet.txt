@@ -3532,6 +3532,568 @@ focus_tree = {
 	######################
 	###### Airforce ######
 	######################
+	focus = {
+		id = SOV_establish_air_armies
+		icon = GFX_goal_generic_air_bomber
+		prerequisite = { focus = SOV_pc_of_defence }
+		relative_position_id = SOV_pc_of_defence
+		x = -6
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+		}
+
+		bypass = {
+		}
+		search_filters = { FOCUS_FILTER_RESEARCH }
+		available_if_capitulated = no
+
+		completion_reward = {
+			add_tech_bonus = {
+				name = SOV_establish_air_armies
+				bonus = 0.5
+				uses = 1
+				category = cat_strategic_bomber
+			}
+			add_tech_bonus = {
+				name = SOV_establish_air_armies
+				bonus = 0.5
+				uses = 1
+				category = tactical_bomber
+			}
+			195 = {
+				add_building_construction = {
+					type = air_base
+					level = 7
+					instant_build = yes
+				}
+			}
+			217 = {
+				add_building_construction = {
+					type = air_base
+					level = 4
+					instant_build = yes
+				}
+			}
+			254 = {
+				add_building_construction = {
+					type = air_base
+					level = 3
+					instant_build = yes
+				}
+			}
+			198 = {
+				add_building_construction = {
+					type = air_base
+					level = 2
+					instant_build = yes
+				}
+			}
+			206 = {
+				add_building_construction = {
+					type = air_base
+					level = 2
+					instant_build = yes
+				}
+			}
+			192 = {
+				add_building_construction = {
+					type = air_base
+					level = 2
+					instant_build = yes
+				}
+			}
+		}
+	}
+	focus = {
+		id = SOV_expand_the_aircraft_industry
+		icon = GFX_goal_generic_military_economy_large
+		prerequisite = { focus = SOV_establish_air_armies }
+		x = 0
+		y = 1
+		relative_position_id = SOV_establish_air_armies
+		cost = 3
+		available = {
+			any_owned_state = {
+				is_fully_controlled_by = ROOT
+				free_building_slots = {
+					building = arms_factory
+					size > 1
+					include_locked = yes
+				}
+			}
+		}
+		search_filters = {
+			FOCUS_FILTER_INDUSTRY
+		}
+		completion_reward = {
+			set_variable = {
+				SOV_soviet_airforce_aircraft_manufacturer_cost_factor = -0.20
+			}
+			hidden_effect = {
+				#This handles the equipment bonus that's not supported by dynamic modifiers
+				add_ideas = SOV_increased_aircraft_production_ns_bonus
+			}
+			custom_effect_tooltip = SOV_expand_the_aircraft_industry_ns_tt
+			random_owned_controlled_state = {
+				limit = {
+					free_building_slots = {
+						building = arms_factory
+						size > 1
+						include_locked = yes
+					}
+				}
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = arms_factory
+					level = 2
+					instant_build = yes
+				}
+				if = {
+					limit = {
+						air_base < 5
+					}
+					add_building_construction = {
+						type = air_base
+						level = 1
+						instant_build = yes
+					}
+				}
+				else = {
+					ROOT = {
+						random_owned_controlled_state = {
+							limit = {
+								air_base < 5
+							}
+							add_building_construction = {
+								type = air_base
+								level = 1
+								instant_build = yes
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	focus = {
+		id = SOV_transpolar_flights
+		icon = GFX_goal_generic_heavy_bomber
+		prerequisite = { focus = SOV_expand_the_aircraft_industry }
+		x = 0
+		y = 1
+		relative_position_id = SOV_expand_the_aircraft_industry
+		cost = 3
+		ai_will_do = {
+			factor = 1
+		}
+		available = {
+		}
+		search_filters = {
+			FOCUS_FILTER_AIR_XP
+			FOCUS_FILTER_STABILITY
+		}
+
+		completion_reward = {
+			add_stability = 0.1
+			air_experience = 25
+
+			add_to_variable = {
+				SOV_soviet_airforce_air_weather_penalty = -0.1
+			}
+			add_tech_bonus = {
+				name = SOV_transpolar_flights
+				bonus = 0.5
+				uses = 1
+				category = tactical_bomber
+			}
+			add_tech_bonus = {
+				name = SOV_transpolar_flights
+				bonus = 0.5
+				uses = 1
+				category = patrol_bomber
+			}
+		}
+	}
+	focus = {
+		id = SOV_foster_flying_clubs
+		icon = GFX_focus_SOV_flying_clubs
+		prerequisite = { focus = SOV_transpolar_flights
+		}
+		x = 0
+		y = 1
+		relative_position_id = SOV_transpolar_flights
+		cost = 3
+		available = {
+		}
+		search_filters = {
+			FOCUS_FILTER_AIR_XP
+		}
+		completion_reward = {
+			air_experience = 25
+
+			add_to_variable = {
+				SOV_soviet_airforce_air_accidents_factor = -0.25
+			}
+			add_to_variable = {
+				SOV_soviet_airforce_air_ace_generation_chance_factor = 0.25
+			}
+			add_to_variable = {
+				SOV_soviet_airforce_air_training_xp_gain_factor = 0.05
+			}
+			custom_effect_tooltip = SOV_foster_flying_clubs_tt
+		}
+	}
+	focus = {
+		id = SOV_reform_the_airforce
+		icon = GFX_goal_generic_air_doctrine
+		prerequisite = { focus = SOV_foster_flying_clubs }
+		prerequisite = { focus = SOV_lessons_of_war }
+		x = 0
+		y = 2
+		relative_position_id = SOV_foster_flying_clubs
+		cost = 3
+		available = {
+		}
+		search_filters = {
+			FOCUS_FILTER_AIR_XP
+			FOCUS_FILTER_XP
+		}
+		completion_reward = {
+			#unlocks first reform
+			add_to_variable = { SOV_soviet_airforce_air_training_xp_gain_factor = 0.05 }
+			add_to_variable = { SOV_soviet_airforce_experience_gain_air = 0.1 }
+		}
+	}
+	focus = {
+		id = SOV_vdv
+		icon = GFX_focus_generic_paratrooper
+		prerequisite = { focus = SOV_reform_the_airforce }
+		x = 0
+		y = 1
+		relative_position_id = SOV_reform_the_airforce
+		cost = 3
+		available = {
+		}
+		search_filters = {
+			FOCUS_FILTER_RESEARCH
+		}
+		completion_reward = {
+			add_tech_bonus = {
+				name = SOV_vdv
+				bonus = 0.5
+				uses = 1
+				category = para_tech
+			}
+			custom_effect_tooltip = SOV_create_unit_vdv_tt
+			hidden_effect = {
+				division_template = {
+					name = "Vozdushno-Desantnaya Diviziya"					#3x Airborne Brigades
+					division_names_group = SOV_PAR_01
+					regiments = {
+						paratrooper = { x = 0 y = 0 }
+						paratrooper = { x = 0 y = 1 }
+						paratrooper = { x = 0 y = 2 }
+
+						paratrooper = { x = 1 y = 0 }
+						paratrooper = { x = 1 y = 1 }
+						paratrooper = { x = 1 y = 2 }
+
+						paratrooper = { x = 2 y = 0 }
+						paratrooper = { x = 2 y = 1 }
+						paratrooper = { x = 2 y = 2 }
+					}
+					support = {
+						recon = { x = 0 y = 0 }
+						signal_company = { x = 0 y = 1 }
+						field_hospital = { x = 0 y = 2 }
+						normal_engineer = { x = 0 y = 3 }
+					}
+				}
+			}
+			capital_scope = {
+				create_unit = {
+					division = "name = \"1ya Vozdushno-Desantnaya Korpus\" division_template = \"Vozdushno-Desantnaya Diviziya\" start_experience_factor = 0.7 start_equipment_factor = 0.1"
+					owner = ROOT
+				}
+				create_unit = {
+					division = "name = \"2ya Vozdushno-Desantnaya Korpus\" division_template = \"Vozdushno-Desantnaya Diviziya\" start_experience_factor = 0.7 start_equipment_factor = 0.1"
+					owner = ROOT
+				}
+				create_unit = {
+					division = "name = \"3ya Vozdushno-Desantnaya Korpus\" division_template = \"Vozdushno-Desantnaya Diviziya\" start_experience_factor = 0.7 start_equipment_factor = 0.1"
+					owner = ROOT
+				}
+				create_unit = {
+					division = "name = \"4ya Vozdushno-Desantnaya Korpus\" division_template = \"Vozdushno-Desantnaya Diviziya\" start_experience_factor = 0.7 start_equipment_factor = 0.1"
+					owner = ROOT
+				}
+				create_unit = {
+					division = "name = \"5ya Vozdushno-Desantnaya Korpus\" division_template = \"Vozdushno-Desantnaya Diviziya\" start_experience_factor = 0.7 start_equipment_factor = 0.1"
+					owner = ROOT
+				}
+			}
+		}
+	}
+	focus = {
+		id = SOV_long_range_bomber_aviation
+		icon = GFX_goal_generic_heavy_bomber
+		prerequisite = { focus = SOV_vdv }
+		x = 0
+		y = 1
+		relative_position_id = SOV_vdv
+		cost = 3
+		available = {
+		}
+		search_filters = {
+			FOCUS_FILTER_RESEARCH
+		}
+
+		completion_reward = {
+			add_tech_bonus = {
+				name = SOV_long_range_bomber_aviation
+				bonus = 0.5
+				uses = 1
+				category = tactical_bomber
+				category = cat_strategic_bomber
+			}
+			add_doctrine_cost_reduction = {
+				name = SOV_long_range_bomber_aviation
+				cost_reduction = 0.99
+				uses = 1
+				category = cat_strategic_destruction
+			}
+		}
+	}
+
+	focus = {
+		id = SOV_utilise_the_civil_air_fleet
+		icon = GFX_focus_SOV_flying_clubs
+		prerequisite = { focus = SOV_long_range_bomber_aviation focus = SOV_form_the_stavka }
+		x = 0
+		y = 1
+		relative_position_id = SOV_long_range_bomber_aviation
+		cost = 2
+
+		available = {
+			OR = {
+				NOT = {
+					has_idea = cavalry_army_clique
+					has_idea = cavalry_army_clique_2
+					has_idea = cavalry_army_clique_3
+				}
+				has_idea = SOV_stavka
+			}
+		}
+		search_filters = {
+			FOCUS_FILTER_EMERGENCY
+			FOCUS_FILTER_XP
+			FOCUS_FILTER_AIR_XP
+		}
+
+		completion_reward = {
+			add_tech_bonus = {
+				name = SOV_long_range_bomber_aviation
+				bonus = 0.5
+				uses = 1
+				category = cat_transport
+			}
+			add_equipment_to_stockpile = {
+				type = sov_transport_plane_equipment_1
+				amount = 200
+			}
+
+			add_to_variable = { SOV_soviet_airforce_experience_gain_air = 0.1 }
+		}
+	}
+	focus = {
+		id = SOV_intensify_pilot_training_program
+		icon = GFX_goal_generic_air_doctrine
+		prerequisite = { focus = SOV_utilise_the_civil_air_fleet }
+		x = -4
+		y = 1
+		relative_position_id = SOV_utilise_the_civil_air_fleet
+		cost = 5
+		available = {
+			
+		}
+		search_filters = {
+			FOCUS_FILTER_XP
+		}
+		completion_reward = {
+			add_to_variable = {
+				SOV_soviet_airforce_air_accidents_factor = -0.25
+			}
+			add_to_variable = {
+				SOV_soviet_airforce_air_wing_xp_loss_when_killed_factor = -0.1
+			}
+			add_to_variable = {
+				SOV_soviet_airforce_air_training_xp_gain_factor = 0.05
+			}
+			custom_effect_tooltip = SOV_intensify_pilot_training_program_tt
+		}
+	}
+	focus = {
+		id = SOV_raskovas_aviation_group
+		icon = GFX_goal_generic_CAS
+		prerequisite = { focus = SOV_intensify_pilot_training_program
+		}
+		x = 0
+		y = 1
+		relative_position_id = SOV_intensify_pilot_training_program
+		cost = 3
+		available = {
+			any_enemy_country = {
+				SOV_is_major_not_original_sov = yes
+			}
+			has_full_control_of_state = 219
+			has_tech = sov_cas_1
+			has_tech = sov_strike_bomber_3
+			has_tech = sov_fighter_3
+		}
+		search_filters = {
+			FOCUS_FILTER_AIR_XP
+		}
+		completion_reward = {
+			#custom_effect_tooltip = SOV_raskovas_aviation_group_tt
+			custom_effect_tooltip = SOV_night_witches_nsb_tt
+			hidden_effect = {
+				if = {
+					#ALT IDEOLOGY
+					limit = {
+						NOT = {
+							has_government = communism
+						}
+					}
+					load_oob = "SOV_night_witches_alt"
+				}
+				else = {
+					#DEFAULT COMMUNISM
+					load_oob = "SOV_night_witches"
+				}
+			}
+		}
+	}
+	focus = {
+		id = SOV_women_in_aviation
+		icon = GFX_focus_SOV_women_in_aviation
+		prerequisite = { focus = SOV_raskovas_aviation_group }
+		x = 0
+		y = 1
+		relative_position_id = SOV_raskovas_aviation_group
+		cost = 3
+		available = {
+			
+		}
+		search_filters = {
+			FOCUS_FILTER_AIR_XP
+		}
+		completion_reward = {
+			add_to_variable = {
+				SOV_soviet_airforce_air_mission_xp_gain_factor = 0.05
+			}
+			add_to_variable = {
+				SOV_soviet_airforce_air_training_xp_gain_factor = 0.05
+			}
+			add_to_variable = {
+				SOV_soviet_airforce_air_accidents_factor = -0.25
+			}
+			custom_effect_tooltip = SOV_women_in_aviation_tt
+			air_experience = 25
+			set_rule = {
+				can_generate_female_aces = yes
+			}
+		}
+	}
+	focus = {
+		id = SOV_ground_support
+		icon = GFX_goal_generic_air_fighter
+		prerequisite = { focus = SOV_utilise_the_civil_air_fleet }
+		x = -2
+		y = 1
+		relative_position_id = SOV_utilise_the_civil_air_fleet
+		cost = 4
+		available = {
+		}
+		search_filters = {
+			FOCUS_FILTER_RESEARCH
+		}
+
+		completion_reward = {
+			add_tech_bonus = {
+				name = SOV_ground_support
+				bonus = 0.5
+				uses = 2
+				category = cas_bomber
+			}
+			add_doctrine_cost_reduction = {
+				name = SOV_ground_support
+				cost_reduction = 0.99
+				uses = 2
+				category = cat_battlefield_support
+			}
+		}
+	}
+	focus = {
+		id = SOV_modern_fighter_designs
+		icon = GFX_goal_generic_air_fighter
+		prerequisite = { focus = SOV_utilise_the_civil_air_fleet }
+		x = 0
+		y = 1
+		relative_position_id = SOV_utilise_the_civil_air_fleet
+		cost = 3
+		ai_will_do = {
+			factor = 1
+		}
+		available_if_capitulated = yes
+
+		completion_reward = {
+			add_tech_bonus = {
+				name = SOV_modern_fighter_designs
+				bonus = 0.5
+				uses = 2
+				category = light_fighter
+			}
+			air_experience = 25
+		}
+	}
+	focus = {
+		id = SOV_long_range_aviation
+		icon = GFX_goal_generic_air_bomber
+		prerequisite = { focus = SOV_modern_fighter_designs focus = SOV_ground_support }
+		x = -1
+		y = 1
+		relative_position_id = SOV_modern_fighter_designs
+		cost = 4
+		available = {
+		}
+		search_filters = {
+			FOCUS_FILTER_RESEARCH
+		}
+
+		completion_reward = {
+			add_tech_bonus = {
+				name = SOV_long_range_aviation
+				bonus = 0.5
+				uses = 1
+				category = cat_heavy_fighter
+				category = tactical_bomber
+				category = cat_strategic_bomber
+			}
+			add_doctrine_cost_reduction = {
+				name = SOV_long_range_aviation
+				cost_reduction = 0.99
+				uses = 2
+				category = cat_strategic_destruction
+			}
+		}
+	}
 
 
 
