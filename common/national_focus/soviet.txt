@@ -95,7 +95,7 @@ focus_tree = {
 			hidden_effect = {
 				add_to_variable = {
 					var = SOV_fyp_political_power_cost
-					value = 0.5
+					value = 0.4
 				}
 				add_to_variable = {
 					var = SOV_fyp_production_speed_industrial_complex_factor
@@ -115,14 +115,131 @@ focus_tree = {
 		relative_position_id = SOV_start_the_second_five_year_plan
 		x = 2
 		y = 0
-		cost = 3
+		cost = 4
 		available = {
 
 		}
 		search_filters = { FOCUS_FILTER_INDUSTRY }
 		available_if_capitulated = no
 		completion_reward = {
-
+			economy_fatigue_level_down_2 = yes
+			add_to_variable = {
+				SOV_the_politburo_good_consumer_goods_factor = -0.02
+			}
+			add_to_variable = {
+				SOV_the_politburo_global_building_slots_factor = 0.1
+			}
+			custom_effect_tooltip = SOV_the_collectivization_process_ns_tt
+			add_stability = -0.05
+			if = {
+				#Target a rural state with no civs
+				limit = {
+					any_owned_state = {
+						OR = {
+							has_state_category = town							#Developed Rural Region
+							has_state_category = rural							#Rural Region
+						}
+						is_fully_controlled_by = ROOT
+						industrial_complex < 1
+						arms_factory < 1
+						dockyard < 1
+						free_building_slots = {
+							building = industrial_complex
+							size > 1
+							include_locked = yes
+						}
+					}
+				}
+				random_owned_state = {
+					limit = {
+						OR = {
+							has_state_category = town							#Developed Rural Region
+							has_state_category = rural							#Rural Region
+						}
+						is_fully_controlled_by = ROOT
+						industrial_complex < 1
+						arms_factory < 1
+						dockyard < 1
+						free_building_slots = {
+							building = industrial_complex
+							size > 1
+							include_locked = yes
+						}
+					}
+					add_extra_state_shared_building_slots = 2
+					add_building_construction = {
+						type = industrial_complex
+						level = 2
+						instant_build = yes
+					}
+				}
+			}
+			else_if = {
+				#Failsafe 1: Target a random rural state
+				limit = {
+					any_owned_state = {
+						OR = {
+							has_state_category = town							#Developed Rural Region
+							has_state_category = rural							#Rural Region
+						}
+						is_fully_controlled_by = ROOT
+						free_building_slots = {
+							building = industrial_complex
+							size > 1
+							include_locked = yes
+						}
+					}
+				}
+				random_owned_state = {
+					limit = {
+						OR = {
+							has_state_category = town							#Developed Rural Region
+							has_state_category = rural							#Rural Region
+						}
+						is_fully_controlled_by = ROOT
+						free_building_slots = {
+							building = industrial_complex
+							size > 1
+							include_locked = yes
+						}
+					}
+					add_extra_state_shared_building_slots = 2
+					add_building_construction = {
+						type = industrial_complex
+						level = 2
+						instant_build = yes
+					}
+				}
+			}
+			else_if = {
+				#Failsafe 2: Target a random state
+				limit = {
+					any_owned_state = {
+						is_fully_controlled_by = ROOT
+						free_building_slots = {
+							building = industrial_complex
+							size > 1
+							include_locked = yes
+						}
+					}
+				}
+				random_owned_state = {
+					limit = {
+						is_fully_controlled_by = ROOT
+						free_building_slots = {
+							building = industrial_complex
+							size > 1
+							include_locked = yes
+						}
+					}
+					add_extra_state_shared_building_slots = 2
+					add_building_construction = {
+						type = industrial_complex
+						level = 2
+						instant_build = yes
+					}
+				}
+			}
 		}
 	}
 
@@ -138,18 +255,12 @@ focus_tree = {
 			factor = 5
 		}
 		available = {
-			NOT = {
-				any_enemy_country = {
-					is_major = yes
-				}
-			}
-			NOT = {
-				has_completed_focus = SOV_finish_the_second_five_year_plan
-			}
 		}
 		search_filters = { FOCUS_FILTER_INDUSTRY }
-		available_if_capitulated = no
 		completion_reward = {
+			hidden_effect = {
+				set_country_flag = SOV_gaz_automobile_plants_dd_flag
+			}
 			add_ideas = gaz_automobile_plants
 			219 = {
 				add_extra_state_shared_building_slots = 4
@@ -176,14 +287,49 @@ focus_tree = {
 		relative_position_id = SOV_gaz_automobile_plants
 		x = 2
 		y = 0
-		cost = 3
-		available = {
-			
-		}
-		search_filters = { FOCUS_FILTER_RESEARCH }
-		available_if_capitulated = no
-		completion_reward = {
+		cost = 5
 
+		search_filters = {
+			FOCUS_FILTER_RESEARCH
+		}
+
+		completion_reward = {
+			add_research_slot = 1
+			if = {
+				limit = {
+					any_country = {
+						SOV_is_valid_academy_of_sciences_target = yes
+					}
+				}
+				if = {
+					#ALT IDEOLOGY
+					limit = {
+						NOT = {
+							has_government = communism
+						}
+					}
+					add_to_tech_sharing_group = SOV_imperial_academies_of_sciences_joint_program
+					every_country = {
+						limit = {
+							SOV_is_valid_academy_of_sciences_target = yes
+						}
+						add_to_tech_sharing_group = SOV_imperial_academies_of_sciences_joint_program
+					}
+				}
+				else = {
+					#DEFAULT COMMUNISM
+					add_to_tech_sharing_group = SOV_soviet_academies_of_sciences_joint_program
+					every_country = {
+						limit = {
+							SOV_is_valid_academy_of_sciences_target = yes
+						}
+						add_to_tech_sharing_group = SOV_soviet_academies_of_sciences_joint_program
+					}
+				}
+			}
+			hidden_effect = {
+				set_country_flag = SOV_the_ussr_academy_of_sciences_dd_flag
+			}
 		}
 	}
 
@@ -195,22 +341,24 @@ focus_tree = {
 		x = 0
 		y = 1
 		relative_position_id = SOV_gaz_automobile_plants
-		cost = 3
+		cost = 4
 		ai_will_do = {
 			factor = 5
 		}
 		search_filters = { FOCUS_FILTER_INDUSTRY }
 		available = {
-			NOT = {
-				any_enemy_country = {
-					is_major = yes
+			has_country_flag = {
+				flag = SOV_gaz_automobile_plants_dd_flag
+				days > 179
+			}
+			custom_trigger_tooltip = {
+				tooltip = SOV_gaz_automobile_plants_dd_tt
+				has_country_flag = {
+					flag = SOV_gaz_automobile_plants_dd_flag
+					days > 179
 				}
 			}
-			NOT = {
-				has_completed_focus = SOV_finish_the_second_five_year_plan
-			}
 		}
-		available_if_capitulated = no
 		bypass = {
 			custom_trigger_tooltip = {
 				tooltip = infrastructure_effort_tt
@@ -223,13 +371,15 @@ focus_tree = {
 			}
 		}
 		completion_reward = {
-			economy_fatigue_level_up_4 = yes
+			hidden_effect = {
+				set_country_flag = SOV_connection_of_the_interior_dd_flag
+			}
 			custom_effect_tooltip = SOV_connection_of_the_interior_tt
 			229 = {
 				hidden_effect = {
 					add_building_construction = {
 						type = infrastructure
-						level = 2
+						level = 1
 						instant_build = yes
 					}
 				}
@@ -414,6 +564,51 @@ focus_tree = {
 					}
 				}
 			}
+			234 = {
+				hidden_effect = {
+					add_building_construction = {
+						type = infrastructure
+						level = 1
+						instant_build = yes
+					}
+				}
+			}
+			192 = {
+				hidden_effect = {
+					add_building_construction = {
+						type = infrastructure
+						level = 1
+						instant_build = yes
+					}
+				}
+			}
+			241 = {
+				hidden_effect = {
+					add_building_construction = {
+						type = infrastructure
+						level = 1
+						instant_build = yes
+					}
+				}
+			}
+			227 = {
+				hidden_effect = {
+					add_building_construction = {
+						type = infrastructure
+						level = 1
+						instant_build = yes
+					}
+				}
+			}
+			221 = {
+				hidden_effect = {
+					add_building_construction = {
+						type = infrastructure
+						level = 1
+						instant_build = yes
+					}
+				}
+			}
 			# Moscow - Rostov on Don
 			build_railway = {
 				path = {
@@ -438,6 +633,97 @@ focus_tree = {
 					9417
 				}
 			}
+			# Moscow - Leningrad
+			build_railway = {
+				path = {
+					6380
+					13228
+					3259
+					3358
+					11250
+					6245
+					333
+					3176
+					3101
+					187
+					9111
+					6086
+					6035
+					3072
+					79
+					13240
+					3151
+				}
+			}
+			# Moscow - Donets - Rostov
+			build_railway = {
+				path = {
+					6380
+					13236
+					9348
+					6290
+					6396
+					6262
+					3292
+					11242
+					11368
+					9355
+					11310
+					11244
+					3580
+					558
+					3492
+					9449
+					418
+					3531
+					3508
+					11452
+					453
+					472
+					3449
+					6776
+					6474
+					6493
+					9430
+					9417
+				}
+			}
+			# Kemerovo - Urals
+			build_railway = {
+				path = {
+					4665
+					10652
+					7274
+					7825
+					1860
+					1733
+					12679
+					10696
+					1709
+					7800
+					4780
+					12521
+					1294
+					1775
+					1292
+					1327
+					9292
+					1233
+					12287
+					10133
+					1821
+					9553
+					1750
+					12696
+					4824
+					7846
+					7774
+					3472
+					10600
+					12652
+					1709
+				}
+			}			
 			# Stalingrad-Rostov on Don
 			build_railway = {
 				path = {
@@ -535,19 +821,50 @@ focus_tree = {
 	}
 	focus = {
 		id = SOV_socialist_science
-		icon = GFX_focus_research
+		icon = GFX_goal_SOV_socialist_science
 		prerequisite = { focus = SOV_connection_of_the_interior }
 		relative_position_id = SOV_connection_of_the_interior
 		x = 2
 		y = 0
 		cost = 3
 		available = {
-			
+			has_country_flag = {
+				flag = SOV_the_ussr_academy_of_sciences_dd_flag
+				days > 119
+			}
+			custom_trigger_tooltip = {
+				tooltip = SOV_the_ussr_academy_of_sciences_dd_tt
+				has_country_flag = {
+					flag = SOV_the_ussr_academy_of_sciences_dd_flag
+					days > 119
+				}
+			}
 		}
-		search_filters = { FOCUS_FILTER_RESEARCH }
-		available_if_capitulated = no
+		ai_will_do = {
+			factor = 1
+		}
+		search_filters = {
+			FOCUS_FILTER_RESEARCH
+		}
+		available_if_capitulated = yes
 		completion_reward = {
-
+			custom_effect_tooltip = SOV_socialist_science_tt
+			hidden_effect = {
+				add_to_variable = {
+					var = SOV_Workers_factory_output
+					value = 4
+				}
+				SOV_political_instability_update_effect = yes
+			}
+			if = {
+				limit = {
+					has_government = communism
+				}
+				add_popularity = {
+					ideology = communism
+					popularity = 0.5
+				}
+			}
 		}
 	}
 
@@ -563,18 +880,23 @@ focus_tree = {
 			factor = 5
 		}
 		available = {
-			NOT = {
-				any_enemy_country = {
-					is_major = yes
-				}
+			has_country_flag = {
+				flag = SOV_connection_of_the_interior_dd_flag
+				days > 179
 			}
-			NOT = {
-				has_completed_focus = SOV_finish_the_second_five_year_plan
+			custom_trigger_tooltip = {
+				tooltip = SOV_connection_of_the_interior_dd_tt
+				has_country_flag = {
+					flag = SOV_connection_of_the_interior_dd_flag
+					days > 179
+				}
 			}
 		}
 		search_filters = { FOCUS_FILTER_INDUSTRY }
-		available_if_capitulated = no
 		completion_reward = {
+			hidden_effect = {
+				set_country_flag = SOV_workers_culture_dd_flag
+			}
 			add_ideas = workers_culture
 			add_tech_bonus = {
 				name = industry_effort
@@ -586,19 +908,63 @@ focus_tree = {
 	}
 	focus = {
 		id = SOV_our_mineral_wealth
-		icon = GFX_goal_generic_construction
+		icon = GFX_goal_generic_build_steel
 		prerequisite = { focus = SOV_workers_culture }
 		relative_position_id = SOV_workers_culture
 		x = 2
 		y = 0
-		cost = 3
+		cost = 5
 		available = {
 			
 		}
 		search_filters = { FOCUS_FILTER_INDUSTRY }
-		available_if_capitulated = no
-		completion_reward = {
 
+		completion_reward = {
+			economy_fatigue_level_up_4 = yes
+			253 = {		#Sverdlovsk
+				add_resource = {
+					type = iron
+					amount = 150
+				}
+				add_building_construction = {
+					type = infrastructure
+					level = 1
+					instant_build = yes
+				}
+				add_building_construction = {
+					type = steel_refinery
+					level = 1
+					instant_build = yes
+				}
+			}
+			572 = {		#Chelyabinsk
+				add_building_construction = {
+					type = steel_refinery
+					level = 2
+					instant_build = yes
+				}
+			}
+			226 = {		#Dnipropertovsk
+				add_building_construction = {
+					type = steel_refinery
+					level = 2
+					instant_build = yes
+				}
+			}
+			200 = {		#Zaporozhe
+				add_building_construction = {
+					type = steel_refinery
+					level = 2
+					instant_build = yes
+				}
+			}
+			200 = {		#Caucasus
+				add_building_construction = {
+					type = infrastructure
+					level = 2
+					instant_build = yes
+				}
+			}
 		}
 	}
 
@@ -620,8 +986,16 @@ focus_tree = {
 					is_major = yes
 				}
 			}
-			NOT = {
-				has_completed_focus = SOV_finish_the_second_five_year_plan
+			has_country_flag = {
+				flag = SOV_workers_culture_dd_flag
+				days > 179
+			}
+			custom_trigger_tooltip = {
+				tooltip = SOV_workers_culture_dd_tt
+				has_country_flag = {
+					flag = SOV_workers_culture_dd_flag
+					days > 179
+				}
 			}
 		}
 		search_filters = { FOCUS_FILTER_INDUSTRY }
@@ -723,19 +1097,41 @@ focus_tree = {
 	}
 	focus = {
 		id = SOV_progress_cult
-		icon = GFX_focus_research
+		icon = GFX_goal_SOV_progress_cult
 		prerequisite = { focus = SOV_evolve_our_urban_centres }
 		relative_position_id = SOV_evolve_our_urban_centres
 		x = 2
 		y = 0
 		cost = 3
 		available = {
-			
+			has_country_flag = {
+				flag = SOV_the_ussr_academy_of_sciences_dd_flag
+				days > 119
+			}
+			custom_trigger_tooltip = {
+				tooltip = SOV_the_ussr_academy_of_sciences_dd_tt
+				has_country_flag = {
+					flag = SOV_the_ussr_academy_of_sciences_dd_flag
+					days > 119
+				}
+			}
 		}
-		search_filters = { FOCUS_FILTER_RESEARCH }
-		available_if_capitulated = no
+		ai_will_do = {
+			factor = 1
+		}
+		available_if_capitulated = yes
+		search_filters = {
+			FOCUS_FILTER_RESEARCH
+		}
 		completion_reward = {
-
+			custom_effect_tooltip = SOV_progress_cult_tt
+			hidden_effect = {
+				add_to_variable = {
+					var = SOV_Army_research_speed
+					value = 4
+				}
+				SOV_political_instability_update_effect = yes
+			}
 		}
 	}
 
@@ -745,23 +1141,19 @@ focus_tree = {
 		x = 0
 		y = 1
 		relative_position_id = SOV_evolve_our_urban_centres
-		cost = 4
+		prerequisite = { focus = SOV_evolve_our_urban_centres }
+		cost = 3
 		ai_will_do = {
 			factor = 5
 		}
-		available_if_capitulated = no
 		bypass = {
 		}
 		available = {
-			OR = {
-				has_completed_focus = SOV_gaz_automobile_plants
-				any_enemy_country = {
-					is_major = yes
-				}
-			}
+			num_of_civilian_factories > 199
 		}
 		search_filters = { FOCUS_FILTER_INDUSTRY }
 		completion_reward = {
+			add_stability = 0.1
 			custom_effect_tooltip = SOV_finish_the_second_five_year_plan_tt
 			hidden_effect = {
 				remove_dynamic_modifier = {
@@ -898,19 +1290,31 @@ focus_tree = {
 	}
 	focus = {
 		id = SOV_the_national_academies_of_sciences
-		icon = GFX_focus_research
+		icon = GFX_focus_research2
 		prerequisite = { focus = SOV_bread_basket_of_the_soviet_union }
 		relative_position_id = SOV_bread_basket_of_the_soviet_union
 		x = 2
 		y = 0
-		cost = 3
+		cost = 6
 		available = {
-			
+			has_country_flag = {
+				flag = SOV_the_ussr_academy_of_sciences_dd_flag
+				days > 70
+			}
+			custom_trigger_tooltip = {
+				tooltip = SOV_the_ussr_academy_of_sciences_dd_tt
+				has_country_flag = {
+					flag = SOV_the_ussr_academy_of_sciences_dd_flag
+					days > 70
+				}
+			}
 		}
-		search_filters = { FOCUS_FILTER_RESEARCH }
-		available_if_capitulated = no
+		search_filters = {
+			FOCUS_FILTER_RESEARCH
+		}
 		completion_reward = {
-
+			add_research_slot = 1
+			custom_effect_tooltip = SOV_national_academies_of_sciences_tt
 		}
 	}
 
@@ -1051,25 +1455,23 @@ focus_tree = {
 		x = 0
 		y = 1
 		relative_position_id = SOV_a_secure_industrial_base
+		prerequisite = {
+			focus = SOV_a_secure_industrial_base
+		}
 		cost = 4
 		ai_will_do = {
 			factor = 5
 		}
 		available = {
-			has_completed_focus = SOV_start_the_third_five_year_plan
-			OR = {
-				has_completed_focus = SOV_bread_basket_of_the_soviet_union
-				any_enemy_country = {
-					is_major = yes
-				}
-			}
+			num_of_military_factories > 599
 		}
-		available_if_capitulated = no
+
 		bypass = {
-		}
-		complete_tooltip = {
+
 		}
 		completion_reward = {
+			add_political_power = 150
+			add_war_support = 0.1
 			custom_effect_tooltip = SOV_finish_the_third_five_year_plan_tt
 			hidden_effect = {
 				remove_dynamic_modifier = {
