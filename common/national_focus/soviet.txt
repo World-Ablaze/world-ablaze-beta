@@ -1196,9 +1196,6 @@ focus_tree = {
 		x = 4
 		y = 0
 		cost = 4
-		available = {
-			has_war = no
-		}
 		ai_will_do = {
 			factor = 1
 		}
@@ -1226,8 +1223,12 @@ focus_tree = {
 					modifier = SOV_third_five_year_plan_23_dynamic_modifier
 				}
 				add_to_variable = {
+					var = SOV_fyp_consumer_goods_factor
+					value = -0.05
+				}
+				add_to_variable = {
 					var = SOV_fyp_political_power_cost
-					value = 0.5
+					value = 0.4
 				}
 				add_to_variable = {
 					var = SOV_fyp_production_speed_arms_factory_factor
@@ -1260,8 +1261,8 @@ focus_tree = {
 			}
 		}
 		search_filters = { FOCUS_FILTER_INDUSTRY }
-		available_if_capitulated = no
 		completion_reward = {
+			economy_fatigue_level_up_2 = yes
 			custom_effect_tooltip = SOV_bread_basket_of_the_soviet_union_tt
 			hidden_effect = {
 				add_to_variable = {
@@ -1289,7 +1290,7 @@ focus_tree = {
 		}
 	}
 	focus = {
-		id = SOV_the_national_academies_of_sciences
+		id = SOV_national_academies_of_sciences
 		icon = GFX_focus_research2
 		prerequisite = { focus = SOV_bread_basket_of_the_soviet_union }
 		relative_position_id = SOV_bread_basket_of_the_soviet_union
@@ -1297,17 +1298,7 @@ focus_tree = {
 		y = 0
 		cost = 6
 		available = {
-			has_country_flag = {
-				flag = SOV_the_ussr_academy_of_sciences_dd_flag
-				days > 70
-			}
-			custom_trigger_tooltip = {
-				tooltip = SOV_the_ussr_academy_of_sciences_dd_tt
-				has_country_flag = {
-					flag = SOV_the_ussr_academy_of_sciences_dd_flag
-					days > 70
-				}
-			}
+			
 		}
 		search_filters = {
 			FOCUS_FILTER_RESEARCH
@@ -1319,7 +1310,7 @@ focus_tree = {
 	}
 
 	focus = {
-		id = SOV_develop_the_interior
+		id = SOV_develop_the_heartland
 		icon = GFX_goal_generic_construction
 		prerequisite = { focus = SOV_bread_basket_of_the_soviet_union }
 		relative_position_id = SOV_bread_basket_of_the_soviet_union
@@ -1330,16 +1321,66 @@ focus_tree = {
 			
 		}
 		search_filters = { FOCUS_FILTER_INDUSTRY }
-		available_if_capitulated = no
 		completion_reward = {
-
+			economy_fatigue_level_up_2 = yes
+			every_core_state = {
+				limit = {
+					region = 136
+					infrastructure < 5
+				}
+				add_extra_state_shared_building_slots = 1
+				add_building_construction = {
+					type = infrastructure
+					level = 1
+					instant_build = yes
+				}
+			}
+			every_core_state = {
+				limit = {
+					is_on_continent = asia
+					OR = {
+						has_resources_amount = {
+							resource = coal
+							amount > 0
+						}
+						has_resources_amount = {
+							resource = bauxite
+							amount > 0
+						}
+						has_resources_amount = {
+							resource = chromium
+							amount > 0
+						}
+						has_resources_amount = {
+							resource = tungsten
+							amount > 0
+						}
+						has_resources_amount = {
+							resource = iron
+							amount > 0
+						}
+					}
+				}
+				add_building_construction = {
+					type = infrastructure
+					level = 1
+					instant_build = yes
+				}
+			}
+			653 = {
+				add_building_construction = {
+					type = aluminium_refinery
+					level = 2
+					instant_build = yes
+				}
+			}
 		}
 	}
 	focus = {
 		id = SOV_pc_of_mechanical_engineering
 		icon = GFX_goal_generic_production2
-		prerequisite = { focus = SOV_develop_the_interior }
-		relative_position_id = SOV_develop_the_interior
+		prerequisite = { focus = SOV_develop_the_heartland }
+		relative_position_id = SOV_develop_the_heartland
 		x = 2
 		y = 0
 		cost = 3
@@ -1347,37 +1388,59 @@ focus_tree = {
 			
 		}
 		search_filters = { FOCUS_FILTER_INDUSTRY FOCUS_FILTER_RESEARCH }
-		available_if_capitulated = no
 		completion_reward = {
-
+			add_to_variable = { SOV_fyp_production_speed_buildings_factor = 0.05 }
+			custom_effect_tooltip = SOV_pc_of_mechanical_engineering_ns_tt
+			hidden_effect = {
+				set_country_flag = SOV_pc_of_mechanical_engineering_dd_flag
+			}
+			if = {
+				#DEFAULT COMMIE
+				limit = {
+					has_government = communism
+				}
+				add_tech_bonus = {
+					name = SOV_pc_of_mechanical_engineering_name_default
+					bonus = 0.5
+					uses = 2
+					category = construction_tech
+					category = electronics
+				}
+			}
+			else = {
+				#ALT IDEOLOGY
+				add_tech_bonus = {
+					name = SOV_pc_of_mechanical_engineering_name_alt
+					bonus = 0.5
+					uses = 2
+					category = construction_tech
+					category = electronics
+				}
+			}
 		}
 	}
 
 	focus = {
 		id = SOV_extend_the_working_week
 		icon = GFX_goal_generic_forceful_treaty
-		prerequisite = { focus = SOV_develop_the_interior
+		prerequisite = { focus = SOV_develop_the_heartland
 		}
 		x = 0
 		y = 1
-		relative_position_id = SOV_develop_the_interior
+		relative_position_id = SOV_develop_the_heartland
 		cost = 3
 		ai_will_do = {
 			factor = 5
 		}
 		available = {
-			NOT = {
-				any_enemy_country = {
-					is_major = yes
-				}
-			}
-			NOT = {
-				has_completed_focus = SOV_finish_the_third_five_year_plan
-			}
+		}
+		bypass = {
+			has_idea = war_economy
 		}
 		search_filters = { FOCUS_FILTER_INDUSTRY }
-		available_if_capitulated = no
+
 		completion_reward = {
+			economy_fatigue_level_up_2 = yes
 			add_timed_idea = {
 				idea = lowered_worker_minimum_wage
 				days = 1095
@@ -1393,12 +1456,47 @@ focus_tree = {
 		y = 0
 		cost = 3
 		available = {
-			
 		}
-		search_filters = { FOCUS_FILTER_INDUSTRY FOCUS_FILTER_RESEARCH }
-		available_if_capitulated = no
-		completion_reward = {
+		search_filters = { FOCUS_FILTER_INDUSTRY }
 
+		completion_reward = {
+			add_tech_bonus = {
+				name = SOV_pc_of_fuel_industry
+				bonus = 0.5
+				uses = 1
+				category = cat_fuel
+			}
+			234 = {
+				add_building_construction = {
+					type = infrastructure
+					level = 1
+					instant_build = yes
+				}
+				add_building_construction = {
+					type = fuel_silo
+					level = 1
+					instant_build = yes
+				}
+			}
+			232 = {
+				add_building_construction = {
+					type = infrastructure
+					level = 1
+					instant_build = yes
+				}
+			}
+			229 = {
+				add_building_construction = {
+					type = infrastructure
+					level = 2
+					instant_build = yes
+				}
+				add_building_construction = {
+					type = fuel_silo
+					level = 3
+					instant_build = yes
+				}
+			}
 		}
 	}
 
@@ -1425,10 +1523,67 @@ focus_tree = {
 			}
 		}
 		search_filters = { FOCUS_FILTER_INDUSTRY }
-		available_if_capitulated = no
 
 		completion_reward = {
-			
+			economy_fatigue_level_up_4 = yes
+			217 = {
+				add_extra_state_shared_building_slots = 4
+				add_building_construction = {
+					type = infrastructure
+					level = 3
+					instant_build = yes
+				}
+			}
+			398 = {
+				add_extra_state_shared_building_slots = 12
+				add_building_construction = {
+					type = infrastructure
+					level = 3
+					instant_build = yes
+				}
+				add_building_construction = {
+					type = synthetic_refinery
+					level = 3
+					instant_build = yes
+				}
+			}
+			651 = {
+				add_extra_state_shared_building_slots = 12
+				add_building_construction = {
+					type = infrastructure
+					level = 3
+					instant_build = yes
+				}
+				add_building_construction = {
+					type = fuel_silo
+					level = 2
+					instant_build = yes
+				}
+			}
+			653 = {
+				add_extra_state_shared_building_slots = 12
+				add_building_construction = {
+					type = infrastructure
+					level = 3
+					instant_build = yes
+				}
+			}
+			572 = {
+				add_extra_state_shared_building_slots = 12
+				add_building_construction = {
+					type = infrastructure
+					level = 3
+					instant_build = yes
+				}
+			}
+			876 = {
+				add_extra_state_shared_building_slots = 12
+				add_building_construction = {
+					type = infrastructure
+					level = 3
+					instant_build = yes
+				}
+			}
 		}
 	}
 	focus = {
@@ -1442,10 +1597,16 @@ focus_tree = {
 		available = {
 			
 		}
-		search_filters = { FOCUS_FILTER_INDUSTRY }
-		available_if_capitulated = no
+		search_filters = {
+			FOCUS_FILTER_INDUSTRY
+			FOCUS_FILTER_RESEARCH
+		}
 		completion_reward = {
-
+			custom_effect_tooltip = SOV_national_specialists_tt
+			SOV_replace_industrial_designer = yes			#"National" Industrial Designers get +5% research bonus
+			hidden_effect = {
+				add_ideas = SOV_national_specialists_ns
+			}
 		}
 	}
 
@@ -1467,10 +1628,13 @@ focus_tree = {
 		}
 
 		bypass = {
-
+			any_enemy_country = {
+				is_major = yes
+			}
+			surrender_progress > 0.05
 		}
 		completion_reward = {
-			add_political_power = 150
+			add_political_power = 200
 			add_war_support = 0.1
 			custom_effect_tooltip = SOV_finish_the_third_five_year_plan_tt
 			hidden_effect = {
@@ -2068,15 +2232,19 @@ focus_tree = {
 	####################################################################################################################
 	focus = {
 		id = SOV_split_the_pc_of_defence_industry
-		icon = GFX_goal_SOV_split_the_pc_of_defence_industry
+		icon = GFX_goal_SOV_peoples_commissariat
 		cost = 3
 		x = 11
 		y = 3
 		search_filters = {
 			FOCUS_FILTER_INDUSTRY
-			FOCUS_FILTER_EMERGENCY
 		}
-		completion_reward = { 
+		available = {
+			has_completed_focus = SOV_start_the_third_five_year_plan
+			threat > 0.3
+		}
+		completion_reward = {
+			remove_ideas = peoples_commissariat_focus
 			if = {
 				limit = {
 					has_idea = partial_economic_mobilisation
@@ -2103,7 +2271,10 @@ focus_tree = {
 			FOCUS_FILTER_EMERGENCY
 		}
 		completion_reward = { 
-
+			swap_ideas = {
+				remove_idea = SOV_centralized_control_rifles
+				add_idea = SOV_centralized_control_rifles1
+			}
 		}
 	}
 	focus = {
@@ -2120,8 +2291,50 @@ focus_tree = {
 			FOCUS_FILTER_INDUSTRY
 			FOCUS_FILTER_EMERGENCY
 		}
-		completion_reward = { 
-
+		completion_reward = {
+			custom_effect_tooltip = available_designer
+			show_ideas_tooltip = tula_arms_plant
+			if = {
+				limit = {
+					223 = {
+						is_controlled_by = SOV
+					}
+				}
+				223 = {
+					add_extra_state_shared_building_slots = 8
+					add_building_construction = {
+						type = arms_factory
+						level = 4
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = industrial_complex
+						level = 4
+						instant_build = yes
+					}
+				}
+				40 = {
+					add_extra_state_shared_building_slots = 4
+					add_building_construction = {
+						type = arms_factory
+						level = 4
+						instant_build = yes
+					}
+				}
+			}
+			else = {
+				40 = {
+					add_extra_state_shared_building_slots = 8
+					add_building_construction = {
+						type = arms_factory
+						level = 8
+						instant_build = yes
+					}
+				}
+			}
+			add_to_variable = {
+				SOV_fyp_industrial_capacity_factory = 0.05
+			}
 		}
 	}
 	focus = {
@@ -2139,7 +2352,49 @@ focus_tree = {
 			FOCUS_FILTER_EMERGENCY
 		}
 		completion_reward = { 
-
+			hidden_effect = {
+				#This handles the equipment bonus that's not supported by dynamic modifiers
+				add_ideas = SOV_increased_aircraft_production_ns_bonus
+			}
+			if = {
+				#DEFAULT COMMIE
+				limit = {
+					NOT = {
+						has_government = communism
+					}
+				}
+				remove_dynamic_modifier = {
+					modifier = SOV_soviet_airforce_dynamic_modifier_alt
+				}
+				add_dynamic_modifier = {
+					modifier = SOV_soviet_airforce_aircraft_production_focus_dynamic_modifier_alt
+				}
+			}
+			custom_effect_tooltip = SOV_increase_aircraft_production_ns_tt
+			219 = {
+				add_extra_state_shared_building_slots = 3
+				add_building_construction = {
+					type = arms_factory
+					level = 3
+					instant_build = yes
+				}
+			}
+			247 = {
+				add_extra_state_shared_building_slots = 3
+				add_building_construction = {
+					type = arms_factory
+					level = 3
+					instant_build = yes
+				}
+			}
+			253 = {
+				add_extra_state_shared_building_slots = 3
+				add_building_construction = {
+					type = arms_factory
+					level = 3
+					instant_build = yes
+				}
+			}
 		}
 	}
 	focus = {
@@ -2157,7 +2412,9 @@ focus_tree = {
 			FOCUS_FILTER_EMERGENCY
 		}
 		completion_reward = { 
-
+			add_to_variable = {
+				SOV_fyp_industrial_capacity_dockyard = 0.05
+			}
 		}
 	}
 	################################# Great Patriotic War ###########################
@@ -2321,7 +2578,7 @@ focus_tree = {
 		}
 
 		completion_reward = {
-
+			add_ideas = SOV_centralized_control_mg
 		}
 	}
 	focus = {
