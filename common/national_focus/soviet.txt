@@ -2308,9 +2308,9 @@ focus_tree = {
 			FOCUS_FILTER_EMERGENCY
 		}
 		completion_reward = { 
-			hidden_effect = {
-				#This handles the equipment bonus that's not supported by dynamic modifiers
-				add_ideas = SOV_increased_aircraft_production_ns_bonus
+			swap_ideas = {
+				remove_idea = SOV_expanded_aircraft_industry_bonus
+				add_idea = SOV_increased_aircraft_production_ns_bonus
 			}
 			if = {
 				#DEFAULT COMMIE
@@ -2400,6 +2400,7 @@ focus_tree = {
 			}
 		}
 		available = {
+			has_idea = SOV_stavka
 			OR = {
 				AND = {
 					casualties > 2000000
@@ -2444,7 +2445,28 @@ focus_tree = {
 			}
 		}
 		completion_reward = {
-			add_ideas = great_patriotic_war
+			deactivate_advisor = SOV_iosif_stalin
+			hidden_effect = {	#Stalin can be replaced in army chief
+				SOV_iosif_stalin = {
+					remove_advisor_role = {
+						slot = army_chief
+					}
+					add_advisor_role = {
+						advisor = {
+							slot = army_chief
+							idea_token = SOV_iosif_stalin
+							ledger = army
+							traits = {
+								supreme_commander
+							}
+						}
+					}
+				}
+			}
+			swap_ideas = {
+				remove_idea = great_patriotic_war
+				add_idea = great_patriotic_war_2
+			}
 			add_ideas = extreme_economic_mobilisation
 			custom_effect_tooltip = SOV_great_patriotic_war_tt
 			hidden_effect = {
@@ -2679,7 +2701,7 @@ focus_tree = {
 	focus = {
 		id = SOV_pc_of_defence
 		icon = GFX_goal_SOV_central_military_commision
-		x = 22
+		x = 21
 		y = 0
 
 		cost = 3
@@ -3009,6 +3031,8 @@ focus_tree = {
 			}
 			custom_effect_tooltip = SOV_reserve_armies_administration_tt
 			add_to_variable = { SOV_the_red_army_minimum_training_level = -0.1 }
+			add_to_variable = { SOV_the_red_army_mobilization_speed = 0.1 }
+
 			if = {
 				limit = { has_idea = limited_conscription }
 				add_political_power = 100
@@ -3029,7 +3053,7 @@ focus_tree = {
 		available = {
 			has_country_flag = SOV_war_since_start
 		}
-		cost = 3
+		cost = 4
 		ai_will_do = {
 			factor = 1
 			modifier = {
@@ -3045,16 +3069,16 @@ focus_tree = {
 		}
 
 		completion_reward = {
+			#unlocks first army reform
 			activate_advisor = semyon_timoshenko
 
-			add_to_variable = {
-				SOV_the_red_army_winter_attrition_factor = -0.1
-			}
-			add_to_variable = {
-				SOV_the_red_army_acclimatization_cold_climate_gain_factor = 1.0
-			}
+			add_to_variable = { SOV_the_red_army_experience_gain_army_factor = 0.1 }
+			add_to_variable = { SOV_the_red_army_winter_attrition_factor = -0.1 }
+			add_to_variable = { SOV_the_red_army_heat_attrition_factor = -0.1 }
+			add_to_variable = { SOV_the_red_army_acclimatization_cold_climate_gain_factor = 0.50 }
+			add_to_variable = { SOV_the_red_army_acclimatization_hot_climate_gain_factor = 0.10 }
+			add_to_variable = { SOV_the_red_army_terrain_penalty_reduction = 0.05 }
 			custom_effect_tooltip = SOV_an_adaptable_army_ns_tt
-			#unlocks first army reform
 
 			add_doctrine_cost_reduction = {
 				name = SOV_lessons_of_war
@@ -3107,13 +3131,16 @@ focus_tree = {
 			else = {
 				add_ideas = mass_assault_army_spirit
 			}
+			if = {
+				limit = {
+					has_idea = mass_assault_corps_spirit
+				}
+				remove_ideas = mass_assault_corps_spirit
+			}
 
-			add_to_variable = {
-				SOV_the_red_army_training_time_factor = -0.3
-			}
-			add_to_variable = {
-				SOV_the_red_army_minimum_training_level = -0.3
-			}
+			add_to_variable = { SOV_the_red_army_experience_gain_army_factor = 0.1 }
+			add_to_variable = { SOV_the_red_army_training_time_factor = -0.3 }
+			add_to_variable = { SOV_the_red_army_minimum_training_level = -0.3 }
 			custom_effect_tooltip = SOV_army_reorganization_ns_tt
 			
 			add_doctrine_cost_reduction = {
@@ -3134,6 +3161,7 @@ focus_tree = {
 				uses = 1
 				category = naval_doctrine
 			}
+
 			custom_effect_tooltip = recruiting_reserves_60
 			country_event = sov_armor.817
 			hidden_effect = {
@@ -3213,7 +3241,7 @@ focus_tree = {
 		x = 0
 		y = 1
 		relative_position_id = SOV_army_reorganization
-		cost = 4
+		cost = 3
 		ai_will_do = {
 			factor = 1
 		}
@@ -3225,6 +3253,11 @@ focus_tree = {
 
 		completion_reward = {
 			add_ideas = SOV_war_heroes_ns
+			add_to_variable = {
+				var = SOV_Army_influence
+				value = 1
+			}
+			SOV_political_instability_update_effect = yes
 			if = {
 				limit = {
 					SOV_georgy_zhukov = {
@@ -3369,15 +3402,9 @@ focus_tree = {
 		relative_position_id = SOV_war_heroes
 		cost = 3
 		ai_will_do = {
-			factor = 10
+			factor = 100
 			modifier = {
-				factor = 0
-				NOT = {
-					has_war_with = GER
-				}
-			}
-			modifier = {
-				factor = 10
+				factor = 100
 				has_war = yes
 			}
 		}
@@ -3397,7 +3424,16 @@ focus_tree = {
 		}
 
 		completion_reward = {
+			#Tooltip purposes (Select Effect)
+			custom_effect_tooltip = SOV_focus_select_effect_tt
+			effect_tooltip = {
+				activate_advisor = SOV_iosif_stalin
+			}
+			custom_effect_tooltip = SOV_desperate_measures_decisions_unlocked_tt
+			#(Complete Effect)
+			custom_effect_tooltip = SOV_focus_complete_effect_tt
 			add_ideas = SOV_stavka
+			add_ideas = great_patriotic_war
 			if = {
 				limit = {
 					OR = {
@@ -3449,7 +3485,6 @@ focus_tree = {
 				uses = 1
 				technology = sov_mechanized_td_1
 			}
-			activate_advisor = SOV_iosif_stalin
 		}
 	}
 	focus = {
@@ -3471,11 +3506,14 @@ focus_tree = {
 
 		bypass = {
 		}
-		search_filters = { FOCUS_FILTER_MANPOWER }
+		search_filters = { FOCUS_FILTER_MANPOWER FOCUS_FILTER_WAR_SUPPORT }
 		available_if_capitulated = yes
 
 		completion_reward = {
-
+			add_stability = 0.05
+			add_war_support = 0.1
+			custom_effect_tooltip = SOV_a_multiethnic_army_tt
+			add_to_variable = { SOV_the_red_army_conscription_factor = 0.05 }
 		}
 	}
 	focus = {
@@ -3485,7 +3523,7 @@ focus_tree = {
 		x = 0
 		y = 1
 		relative_position_id = SOV_a_multiethnic_army
-		cost = 4
+		cost = 5
 		ai_will_do = {
 			factor = 1
 		}
@@ -3494,7 +3532,7 @@ focus_tree = {
 				has_idea = SOV_military_restructuring
 			}
 		}
-		available_if_capitulated = no
+		available_if_capitulated = yes
 
 		completion_reward = {
 			add_tech_bonus = {
@@ -3527,13 +3565,13 @@ focus_tree = {
 		x = 0
 		y = 1
 		relative_position_id = SOV_guards_mortars
-		cost = 5
+		cost = 4
 		ai_will_do = {
 			factor = 1
 		}
 		available = {
 		}
-		available_if_capitulated = no
+		available_if_capitulated = yes
 		completion_reward = {
 			add_tech_bonus = {
 				name = SOV_guards
@@ -3606,7 +3644,7 @@ focus_tree = {
 			add_political_power = 50
 			custom_effect_tooltip = available_military_high_command
 			show_ideas_tooltip = konstantin_rokossovsky
-			custom_effect_tooltip = available_theorist
+			custom_effect_tooltip = available_chief_of_army
 			show_ideas_tooltip = georgy_zhukov
 			custom_effect_tooltip = SOV_positive_heroism_tt
 			hidden_effect = {
@@ -3666,7 +3704,7 @@ focus_tree = {
 		completion_reward = {
 			add_to_variable = { SOV_the_red_army_army_org_factor = 0.05 }
 			add_to_variable = { SOV_the_red_army_experience_gain_army_factor = 0.2 }
-			add_to_variable = { SOV_the_red_army_experience_loss_factor = -0.05 }
+			add_to_variable = { SOV_the_red_army_experience_loss_factor = -0.15 }
 			custom_effect_tooltip = SOV_cohesion_first_tt
 			add_doctrine_cost_reduction = {
 				name = SOV_preserve_veteran_units
@@ -3692,13 +3730,21 @@ focus_tree = {
 		}
 
 		available = {
-			casualties_k > 2000
+			OR = {
+				has_country_flag = SOV_army_reform_2
+				casualties_k > 1500
+			}
 		}
 		available_if_capitulated = yes
 
 		search_filters = { FOCUS_FILTER_EMERGENCY }
 
 		completion_reward = {
+			custom_effect_tooltip = SOV_rebuild_the_army_tt
+			add_timed_idea = {
+				idea = army_rebuilding
+				days = 365
+			}
 			add_to_variable = { SOV_the_red_army_minimum_training_level = -0.2 }
 		}
 	}
@@ -3727,7 +3773,6 @@ focus_tree = {
 
 		completion_reward = {
 			retire_character = SOV_kliment_voroshilov
-			#retire_character = SOV_semyon_budyonny
 			retire_character = SOV_grigory_kulik
 			if = {
 				limit = {
@@ -3756,7 +3801,7 @@ focus_tree = {
 		x = 0
 		y = 1
 		relative_position_id = SOV_disband_the_cavalry_army_clique
-		cost = 3
+		cost = 5
 
 		available = {
 		}
@@ -3770,19 +3815,19 @@ focus_tree = {
 		completion_reward = {
 			if = {
 				limit = {
-					has_idea = SOV_politicized_military
+					has_idea = SOV_politicized_military_keep
 				}
 				swap_ideas = {
-					remove_idea = SOV_politicized_military
+					remove_idea = SOV_politicized_military_keep
 					add_idea = SOV_politicized_military_swap
 				}
 			}
 			else_if = {
 				limit = {
-					has_idea = SOV_politicized_military_humanism
+					has_idea = SOV_politicized_military_keep_humanism
 				}
 				swap_ideas = {
-					remove_idea = SOV_politicized_military_humanism
+					remove_idea = SOV_politicized_military_keep_humanism
 					add_idea = SOV_politicized_military_swap_humanism
 				}
 			}
@@ -4436,7 +4481,7 @@ focus_tree = {
 		icon = GFX_goal_generic_air_bomber
 		prerequisite = { focus = SOV_pc_of_defence }
 		relative_position_id = SOV_pc_of_defence
-		x = -6
+		x = -5
 		y = 1
 
 		cost = 3
@@ -4535,10 +4580,8 @@ focus_tree = {
 			add_to_variable = {
 				SOV_soviet_airforce_aircraft_manufacturer_cost_factor = -0.20
 			}
-			hidden_effect = {
-				#This handles the equipment bonus that's not supported by dynamic modifiers
-				add_ideas = SOV_increased_aircraft_production_ns_bonus
-			}
+			#This handles the equipment bonus that's not supported by dynamic modifiers
+			add_ideas = SOV_expanded_aircraft_industry_bonus
 			custom_effect_tooltip = SOV_expand_the_aircraft_industry_ns_tt
 			random_owned_controlled_state = {
 				limit = {
@@ -4656,7 +4699,7 @@ focus_tree = {
 		icon = GFX_goal_generic_air_doctrine
 		prerequisite = { focus = SOV_foster_flying_clubs }
 		prerequisite = { focus = SOV_lessons_of_war }
-		x = 0
+		x = -1
 		y = 3
 		relative_position_id = SOV_foster_flying_clubs
 		cost = 3
@@ -4677,7 +4720,7 @@ focus_tree = {
 		id = SOV_vdv
 		icon = GFX_focus_generic_paratrooper
 		prerequisite = { focus = SOV_reform_the_airforce }
-		x = 0
+		x = -1
 		y = 1
 		relative_position_id = SOV_reform_the_airforce
 		cost = 3
@@ -4746,10 +4789,10 @@ focus_tree = {
 	focus = {
 		id = SOV_long_range_bomber_aviation
 		icon = GFX_goal_generic_heavy_bomber
-		prerequisite = { focus = SOV_vdv }
+		prerequisite = { focus = SOV_reform_the_airforce }
 		x = 0
-		y = 1
-		relative_position_id = SOV_vdv
+		y = 2
+		relative_position_id = SOV_reform_the_airforce
 		cost = 3
 		available = {
 		}
@@ -4939,7 +4982,7 @@ focus_tree = {
 	}
 	focus = {
 		id = SOV_ground_support
-		icon = GFX_goal_generic_air_fighter
+		icon = GFX_goal_generic_CAS
 		prerequisite = { focus = SOV_utilise_the_civil_air_fleet }
 		x = -2
 		y = 1
@@ -5088,7 +5131,7 @@ focus_tree = {
 					has_government = communism
 				}
 				add_tech_bonus = {
-					name = SOV_the_red_fleet_dynamic_modifier
+					name = SOV_pc_of_the_ussr_navy
 					bonus = 0.5
 					uses = 2
 					category = ship_modules_tech
@@ -5096,7 +5139,7 @@ focus_tree = {
 			}
 			else = {
 				add_tech_bonus = {
-					name = SOV_the_red_fleet_dynamic_modifier_alt
+					name = SOV_pc_of_the_ussr_navy
 					bonus = 0.5
 					uses = 2
 					category = ship_modules_tech
@@ -5931,8 +5974,8 @@ focus_tree = {
 
 		completion_reward = {
 			navy_experience = 25
-
 			#Start Greatest Navy Mission
+			activate_mission = SOV_the_greatest_navy
 		}
 	}
 	focus = {
