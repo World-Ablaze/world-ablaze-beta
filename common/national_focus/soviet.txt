@@ -2306,23 +2306,25 @@ focus_tree = {
 		search_filters = {
 			FOCUS_FILTER_INDUSTRY
 		}
-		completion_reward = { 
-			swap_ideas = {
-				remove_idea = SOV_expanded_aircraft_industry_bonus
-				add_idea = SOV_increased_aircraft_production_ns_bonus
-			}
-			if = {
-				#DEFAULT COMMIE
-				limit = {
-					NOT = {
-						has_government = communism
+		completion_reward = {
+			hidden_effect = {
+				swap_ideas = {
+					remove_idea = SOV_expanded_aircraft_industry_bonus
+					add_idea = SOV_increased_aircraft_production_ns_bonus
+				}
+				if = {
+					#DEFAULT COMMIE
+					limit = {
+						NOT = {
+							has_government = communism
+						}
 					}
-				}
-				remove_dynamic_modifier = {
-					modifier = SOV_soviet_airforce_dynamic_modifier_alt
-				}
-				add_dynamic_modifier = {
-					modifier = SOV_soviet_airforce_aircraft_production_focus_dynamic_modifier_alt
+					remove_dynamic_modifier = {
+						modifier = SOV_soviet_airforce_dynamic_modifier_alt
+					}
+					add_dynamic_modifier = {
+						modifier = SOV_soviet_airforce_aircraft_production_focus_dynamic_modifier_alt
+					}
 				}
 			}
 			custom_effect_tooltip = SOV_increase_aircraft_production_ns_tt
@@ -6818,11 +6820,6 @@ focus_tree = {
 		}
 		available = {
 			has_civil_war = no
-			OR = {
-				has_completed_focus = SOV_the_centre
-				has_completed_focus = SOV_the_left_opposition
-				has_completed_focus = SOV_the_right_opposition
-			}
 			if = {
 				limit = {
 					has_dlc = "La Resistance"
@@ -6884,6 +6881,9 @@ focus_tree = {
 			FOCUS_FILTER_ARMY_XP
 		}
 		completion_reward = {
+			unlock_decision_tooltip = SOV_equipment_shipments_air
+			unlock_decision_tooltip = SOV_equipment_shipments_tank
+			unlock_decision_tooltip = SOV_equipment_shipments_inf
 			add_timed_idea = {
 				idea = SOV_military_advisors_in_spain
 				days = 1095
@@ -7070,16 +7070,31 @@ focus_tree = {
 			NOT = {
 				has_country_flag = SOV_paranoia_system_active_flag
 			}
-			country_exists = GER
-			GER = {
-				SOV_is_valid_subject = yes
-			}
-			NOT = {
-				has_war_with = GER
-			}
-			is_subject = no
-			POL = {
-				has_capitulated = yes
+			OR = {
+				AND = {
+					GER = {
+						exists = yes
+						SOV_is_valid_subject = yes
+					}
+					NOT = {
+						has_war_with = GER
+					}
+					is_subject = no
+					POL = {
+						has_capitulated = yes
+					}
+				}
+				AND = {
+					NOT = { country_exists = GER }
+					FRA = {
+						exists = yes
+						SOV_is_valid_subject = yes
+					}
+					NOT = {
+						has_war_with = FRA
+					}
+					is_subject = no
+				}
 			}
 		}
 		bypass = {
@@ -7087,98 +7102,139 @@ focus_tree = {
 				NOT = {
 					country_exists = GER
 				}
-				date > 1940.3.1
+				NOT = {
+					country_exists = FRA
+				}
 			}
 		}
 		search_filters = {
 			FOCUS_FILTER_DIPLOMACY
 			FOCUS_FILTER_RESEARCH
-			FOCUS_FILTER_INDUSTRY
 		}
 		completion_reward = {
-			GER = {
-				country_event = {
-					id = NSB_soviet_soviet_german_trade_agreement.1
-					hours = 1
-				}
-			}
-			custom_effect_tooltip = if_they_accept			#This will also make GER more likely to take Molotov-Ribbentrop pact and less to take Anti-Soviet Pact
-			effect_tooltip = {
-				if = {
-					limit = {
-						has_dlc = "Man the Guns"
+			if = {
+				limit = {
+					GER = {
+						exists = yes
+						SOV_is_valid_subject = yes
 					}
-					set_technology = {
-						ger_heavy_cruiser_2 = 1
+					NOT = {
+						has_war_with = GER
 					}
-					# CA: Lützow -> Petropavlovsk
-					add_equipment_production = {
-						equipment = {
-							type = ger_heavy_cruiser_hull_2
-							creator = "SOV"
-						}
-						name = "Petropavlovsk"
-						requested_factories = 1
-						progress = 0.7
-						amount = 1
-					}
-					if = {
-						#Default name
-						limit = {
-							has_government = communism
-						}
-						add_tech_bonus = {
-							name = NSB_soviet_soviet_german_trade_agreement_tech_bonus_name
-							bonus = 0.5
-							uses = 3
-							category = ship_modules_tech
-							category = bb_tech
-							category = dd_tech
-						}
-					}
-					else = {
-						#Alt name
-						add_tech_bonus = {
-							name = NSB_soviet_soviet_german_trade_agreement_tech_bonus_name_alt
-							bonus = 0.5
-							uses = 2
-							category = ship_modules_tech
-							category = bb_tech
-							category = dd_tech
-						}
+					is_subject = no
+					POL = {
+						has_capitulated = yes
 					}
 				}
-				else = {
-					#No MTG
+				GER = {
+					country_event = {
+						id = NSB_soviet_soviet_german_trade_agreement.1
+						hours = 1
+					}
+				}
+				custom_effect_tooltip = if_they_accept			#This will also make GER more likely to take Molotov-Ribbentrop pact and less to take Anti-Soviet Pact
+				effect_tooltip = {
 					if = {
 						limit = {
-							NOT = {
-								has_tech = basic_heavy_cruiser
-							}
+							has_dlc = "Man the Guns"
 						}
 						set_technology = {
-							basic_heavy_cruiser = 1
+							ger_heavy_cruiser_2 = 1
+						}
+						# CA: Lützow -> Petropavlovsk
+						add_equipment_production = {
+							equipment = {
+								type = ger_heavy_cruiser_hull_2
+								creator = "SOV"
+							}
+							name = "Petropavlovsk"
+							requested_factories = 1
+							progress = 0.7
+							amount = 1
+						}
+						if = {
+							#Default name
+							limit = {
+								has_government = communism
+							}
+							add_tech_bonus = {
+								name = NSB_soviet_soviet_german_trade_agreement_tech_bonus_name
+								bonus = 0.5
+								uses = 3
+								category = ship_modules_tech
+								category = bb_tech
+								category = dd_tech
+							}
+						}
+						else = {
+							#Alt name
+							add_tech_bonus = {
+								name = NSB_soviet_soviet_german_trade_agreement_tech_bonus_name_alt
+								bonus = 0.5
+								uses = 2
+								category = ship_modules_tech
+								category = bb_tech
+								category = dd_tech
+							}
 						}
 					}
-					create_equipment_variant = {
-						name = "Hipper Class"
-						type = heavy_cruiser_2
-						parent_version = 0
-						upgrades = {
-							ship_reliability_upgrade = 1
-							ship_engine_upgrade = 1
-							ship_armor_upgrade = 2
-							ship_gun_upgrade = 2
+					else = {
+						#No MTG
+						if = {
+							limit = {
+								NOT = {
+									has_tech = basic_heavy_cruiser
+								}
+							}
+							set_technology = {
+								basic_heavy_cruiser = 1
+							}
 						}
-					}
-					add_equipment_production = {
-						equipment = {
+						create_equipment_variant = {
+							name = "Hipper Class"
 							type = heavy_cruiser_2
-							creator = "SOV"
+							parent_version = 0
+							upgrades = {
+								ship_reliability_upgrade = 1
+								ship_engine_upgrade = 1
+								ship_armor_upgrade = 2
+								ship_gun_upgrade = 2
+							}
 						}
-						requested_factories = 1
-						progress = 0.95
-						amount = 1
+						add_equipment_production = {
+							equipment = {
+								type = heavy_cruiser_2
+								creator = "SOV"
+							}
+							requested_factories = 1
+							progress = 0.95
+							amount = 1
+						}
+						if = {
+							#Default name
+							limit = {
+								has_government = communism
+							}
+							add_tech_bonus = {
+								name = NSB_soviet_soviet_german_trade_agreement_tech_bonus_name
+								bonus = 0.5
+								uses = 2
+								category = ca_tech
+								category = bb_tech
+								category = dd_tech
+							}
+						}
+						else = {
+							#Alt name
+							add_tech_bonus = {
+								name = NSB_soviet_soviet_german_trade_agreement_tech_bonus_name_alt
+								bonus = 0.5
+								uses = 2
+								category = ca_tech
+								category = bb_tech
+								category = dd_tech
+							}
+						}
 					}
 					if = {
 						#Default name
@@ -7188,10 +7244,26 @@ focus_tree = {
 						add_tech_bonus = {
 							name = NSB_soviet_soviet_german_trade_agreement_tech_bonus_name
 							bonus = 0.5
+							uses = 1
+							category = air_equipment
+						}
+						add_tech_bonus = {
+							name = NSB_soviet_soviet_german_trade_agreement_tech_bonus_name
+							bonus = 0.5
 							uses = 2
-							category = ca_tech
-							category = bb_tech
-							category = dd_tech
+							category = industry
+						}
+						add_tech_bonus = {
+							name = NSB_soviet_soviet_german_trade_agreement_tech_bonus_name
+							bonus = 0.5
+							uses = 1
+							category = synth_resources
+						}
+						add_tech_bonus = {
+							name = NSB_soviet_soviet_german_trade_agreement_tech_bonus_name
+							bonus = 0.5
+							uses = 1
+							category = armor
 						}
 					}
 					else = {
@@ -7200,68 +7272,77 @@ focus_tree = {
 							name = NSB_soviet_soviet_german_trade_agreement_tech_bonus_name_alt
 							bonus = 0.5
 							uses = 2
-							category = ca_tech
-							category = bb_tech
-							category = dd_tech
+							category = air_equipment
+						}
+						add_tech_bonus = {
+							name = NSB_soviet_soviet_german_trade_agreement_tech_bonus_name_alt
+							bonus = 0.5
+							uses = 2
+							category = industry
+						}
+						add_tech_bonus = {
+							name = NSB_soviet_soviet_german_trade_agreement_tech_bonus_name_alt
+							bonus = 0.5
+							uses = 1
+							category = artillery
+						}
+						add_tech_bonus = {
+							name = NSB_soviet_soviet_german_trade_agreement_tech_bonus_name_alt
+							bonus = 0.5
+							uses = 1
+							category = armor
 						}
 					}
-				}
-				if = {
-					#Default name
-					limit = {
-						has_government = communism
+					SOV = {
+						add_timed_idea = {
+							idea = GER_soviet_german_trade_agreement
+							days = 845
+						}
+						#Should actually last til end of 41
+						economy_fatigue_level_down_4 = yes
 					}
-					add_tech_bonus = {
-						name = NSB_soviet_soviet_german_trade_agreement_tech_bonus_name
-						bonus = 0.5
-						uses = 1
-						category = air_equipment
-					}
-					add_tech_bonus = {
-						name = NSB_soviet_soviet_german_trade_agreement_tech_bonus_name
-						bonus = 0.5
-						uses = 2
-						category = industry
-					}
-					add_tech_bonus = {
-						name = NSB_soviet_soviet_german_trade_agreement_tech_bonus_name
-						bonus = 0.5
-						uses = 1
-						category = synth_resources
-					}
-					add_tech_bonus = {
-						name = NSB_soviet_soviet_german_trade_agreement_tech_bonus_name
-						bonus = 0.5
-						uses = 1
-						category = armor
+					#Effects to Germans
+					GER = {
+						add_timed_idea = {
+							idea = SOV_soviet_german_trade_agreement
+							days = 845
+						}
+						#Should actually last til end of 41
+						capital_scope = {
+							add_dynamic_modifier = {
+								modifier = SOV_soviet_imports
+							}
+						}
+						economy_fatigue_level_down_2 = yes
 					}
 				}
-				else = {
-					#Alt name
-					add_tech_bonus = {
-						name = NSB_soviet_soviet_german_trade_agreement_tech_bonus_name_alt
-						bonus = 0.5
-						uses = 2
-						category = air_equipment
-					}
-					add_tech_bonus = {
-						name = NSB_soviet_soviet_german_trade_agreement_tech_bonus_name_alt
-						bonus = 0.5
-						uses = 2
-						category = industry
-					}
-					add_tech_bonus = {
-						name = NSB_soviet_soviet_german_trade_agreement_tech_bonus_name_alt
-						bonus = 0.5
-						uses = 1
-						category = artillery
-					}
-					add_tech_bonus = {
-						name = NSB_soviet_soviet_german_trade_agreement_tech_bonus_name_alt
-						bonus = 0.5
-						uses = 1
-						category = armor
-					}
+			}
+			else = {
+				add_tech_bonus = {
+					name = SOV_mol_rib_pact
+					bonus = 0.5
+					uses = 3
+					category = ship_modules_tech
+					category = bb_tech
+					category = dd_tech
+				}
+				add_tech_bonus = {
+					name = SOV_mol_rib_pact
+					bonus = 0.5
+					uses = 1
+					category = air_equipment
+				}
+				add_tech_bonus = {
+					name = SOV_mol_rib_pact
+					bonus = 0.5
+					uses = 2
+					category = industry
+				}
+				add_tech_bonus = {
+					name = SOV_mol_rib_pact
+					bonus = 0.5
+					uses = 1
+					category = armor
 				}
 				SOV = {
 					add_timed_idea = {
@@ -7269,10 +7350,9 @@ focus_tree = {
 						days = 845
 					}
 					#Should actually last til end of 41
-					economy_fatigue_level_down_4 = yes
 				}
-				#Effects to Germans
-				GER = {
+				#Effects to FRA
+				FRA = {
 					add_timed_idea = {
 						idea = SOV_soviet_german_trade_agreement
 						days = 845
@@ -7283,8 +7363,7 @@ focus_tree = {
 							modifier = SOV_soviet_imports
 						}
 					}
-					economy_fatigue_level_down_2 = yes
-				}
+				}				
 			}
 		}
 	}
@@ -7716,7 +7795,7 @@ focus_tree = {
 		x = 2
 		y = 0
 		relative_position_id = SOV_mol_rib_pact
-		cost = 3
+		cost = 2
 		ai_will_do = {
 			factor = 1
 			modifier = {
@@ -7735,7 +7814,6 @@ focus_tree = {
 		}
 		bypass = {
 			OR = {
-				has_idea = SOV_molotov_ribbentrop_pact
 				all_state = {
 					OR = {
 						is_core_of = EST
@@ -7762,8 +7840,10 @@ focus_tree = {
 		}
 		search_filters = {
 			FOCUS_FILTER_ANNEXATION
+			FOCUS_FILTER_DIPLOMACY
 		}
 		completion_reward = {
+			add_war_support = 0.05
 			# Estonia
 			custom_effect_tooltip = SOV_estonian_claimed_states_tt
 			hidden_effect = {
@@ -7776,6 +7856,24 @@ focus_tree = {
 							add_state_claim = PREV
 						}
 					}
+				}
+			}
+			if = {
+				limit = {
+					EST = {
+						NOT = {has_war_with = SOV}
+						is_in_faction = no
+					}
+				}
+				diplomatic_relation = {
+					country = EST
+					relation = non_aggression_pact
+					active = yes
+				}
+				diplomatic_relation = {
+					country = EST
+					relation = military_access
+					active = yes
 				}
 			}
 			# Latvia
@@ -7792,6 +7890,24 @@ focus_tree = {
 					}
 				}
 			}
+			if = {
+				limit = {
+					LAT = {
+						NOT = {has_war_with = SOV}
+						is_in_faction = no
+					}
+				}
+				diplomatic_relation = {
+					country = LAT
+					relation = non_aggression_pact
+					active = yes
+				}
+				diplomatic_relation = {
+					country = LAT
+					relation = military_access
+					active = yes
+				}
+			}
 			# Lithuania
 			custom_effect_tooltip = SOV_lithuanian_claimed_states_tt
 			hidden_effect = {
@@ -7804,6 +7920,24 @@ focus_tree = {
 							add_state_claim = PREV
 						}
 					}
+				}
+			}
+			if = {
+				limit = {
+					LIT = {
+						NOT = {has_war_with = SOV}
+						is_in_faction = no
+					}
+				}
+				diplomatic_relation = {
+					country = LIT
+					relation = non_aggression_pact
+					active = yes
+				}
+				diplomatic_relation = {
+					country = LIT
+					relation = military_access
+					active = yes
 				}
 			}
 			unlock_decision_tooltip = SOV_estonian_ultimatum
@@ -7839,7 +7973,6 @@ focus_tree = {
 		}
 		bypass = {
 			OR = {
-				has_idea = SOV_molotov_ribbentrop_pact
 				owns_state = 146
 				146 = {
 					is_claimed_by = ROOT
@@ -11040,15 +11173,8 @@ focus_tree = {
 		}
 		available_if_capitulated = yes
 		completion_reward = {
-			if = {
-				limit = {
-					has_idea = women_in_the_workplace
-				}
-				add_political_power = 300
-			}
-			else = {
-				add_ideas = women_in_the_workplace
-			}
+			add_stability = 0.05
+			add_political_power = 50
 			swap_ideas = {
 				remove_idea = militarized_schools
 				add_idea = militarized_schools_2
