@@ -4067,7 +4067,7 @@ focus_tree = {
 		prerequisite = { focus = USA_reinforce_monroe_doctrine }
 		mutually_exclusive = { focus = USA_western_hemisphere_interventionism }
 		relative_position_id = USA_reinforce_monroe_doctrine
-		x = -1
+		x = -2
 		y = 1
 
 		cost = 3
@@ -4111,7 +4111,7 @@ focus_tree = {
 		icon = GFX_goal_generic_defence
 		prerequisite = { focus = USA_the_good_neighbor_policy }
 		relative_position_id = USA_the_good_neighbor_policy
-		x = -1
+		x = 0
 		y = 1
 
 		cost = 3
@@ -4178,7 +4178,7 @@ focus_tree = {
 		prerequisite = { focus = USA_reinforce_monroe_doctrine }
 		mutually_exclusive = { focus = USA_the_good_neighbor_policy }
 		relative_position_id = USA_reinforce_monroe_doctrine
-		x = 1
+		x = 2
 		y = 1
 
 		cost = 3
@@ -4205,7 +4205,7 @@ focus_tree = {
 		prerequisite = { focus = USA_western_hemisphere_interventionism }
 		relative_position_id = USA_western_hemisphere_interventionism
 		x = 0
-		y = 1
+		y = 2
 
 		cost = 3
 
@@ -4259,7 +4259,7 @@ focus_tree = {
 		prerequisite = { focus = USA_influence_over_north_america focus = USA_influence_over_the_caribbean }
 		relative_position_id = USA_influence_over_north_america
 		x = 0
-		y = 1
+		y = 2
 
 		cost = 3
 
@@ -4494,8 +4494,8 @@ focus_tree = {
 		icon = GFX_goal_generic_occupy_states_ongoing_war
 		prerequisite = { focus = USA_western_hemisphere_interventionism }
 		relative_position_id = USA_western_hemisphere_interventionism
-		x = 2
-		y = 1
+		x = 4
+		y = 2
 
 		cost = 3
 
@@ -4647,7 +4647,7 @@ focus_tree = {
 		prerequisite = { focus = USA_influence_over_the_caribbean focus = USA_influence_over_north_america }
 		relative_position_id = USA_influence_over_the_caribbean
 		x = 0
-		y = 1
+		y = 2
 
 		cost = 3
 
@@ -4770,7 +4770,7 @@ focus_tree = {
 		icon = GFX_goal_generic_occupy_states_ongoing_war
 		prerequisite = { focus = USA_influence_over_south_america focus = USA_influence_over_central_america }
 		relative_position_id = USA_influence_over_south_america
-		x = 1
+		x = 2
 		y = 1
 
 		cost = 3
@@ -5196,7 +5196,7 @@ focus_tree = {
 		mutually_exclusive = { focus = USA_shatter_the_empires }
 		relative_position_id = USA_declare_limited_national_emergency
 		x = -2
-		y = 1
+		y = 2
 		cost = 3
 
 		available = {
@@ -5638,7 +5638,7 @@ focus_tree = {
 		icon = GFX_focus_USA_prepare_asian_intervention
 		prerequisite = { focus = USA_declare_limited_national_emergency }
 		relative_position_id = USA_declare_limited_national_emergency
-		x = -6
+		x = -5
 		y = 1
 
 		cost = 3
@@ -5684,11 +5684,39 @@ focus_tree = {
 	}
 
 	focus = {
+		id = USA_japan_first
+		icon = GFX_focus_USA_prepare_asian_intervention
+		prerequisite = { focus = USA_prepare_asian_intervention }
+		mutually_exclusive = { focus = USA_germany_first }
+		relative_position_id = USA_prepare_asian_intervention
+		x = 0
+		y = 1
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			has_war_with = JAP
+		}
+
+		search_filters = { FOCUS_FILTER_DIPLOMACY FOCUS_FILTER_AHISTORICAL FOCUS_FILTER_WAR_SUPPORT }
+
+		completion_reward = {
+			# TODO: more
+			add_war_support = 0.05
+			add_political_power = 100
+		}
+	}
+
+	focus = {
 		id = USA_defense_of_the_pacific
 		icon = GFX_goal_generic_occupy_states_coastal
-		prerequisite = { focus = USA_prepare_asian_intervention }
-		relative_position_id = USA_prepare_asian_intervention
-		x = 2
+		prerequisite = { focus = USA_japan_first }
+		relative_position_id = USA_japan_first
+		x = 0
 		y = 1
 
 		cost = 3
@@ -5860,11 +5888,10 @@ focus_tree = {
 	}
 
 	focus = {
-		id = USA_japan_first
-		icon = GFX_focus_USA_prepare_asian_intervention
-		prerequisite = { focus = USA_prepare_asian_intervention }
-		mutually_exclusive = { focus = USA_germany_first }
-		relative_position_id = USA_prepare_asian_intervention
+		id = USA_pacific_usace_projects
+		icon = GFX_goal_support_democracy
+		prerequisite = { focus = USA_defense_of_the_pacific }
+		relative_position_id = USA_defense_of_the_pacific
 		x = 0
 		y = 1
 
@@ -5875,41 +5902,426 @@ focus_tree = {
 		}
 
 		available = {
-			has_war_with = JAP
+			has_war = no
 		}
 
-		search_filters = { FOCUS_FILTER_DIPLOMACY FOCUS_FILTER_AHISTORICAL FOCUS_FILTER_WAR_SUPPORT }
-
-		completion_reward = {
-			# TODO: more
-			add_war_support = 0.05
-			add_political_power = 100
-		}
-	}
-
-	focus = {
-		id = USA_war_plan_orange # TODO: change name
-		icon = GFX_focus_attack_japan
-		prerequisite = { focus = USA_japan_first }
-		relative_position_id = USA_japan_first
-		x = 0
-		y = 1
-
-		cost = 3
-
-		available_if_capitulated = yes
-
-		ai_will_do = {
-			factor = 1
+		bypass = {
+			OR = {
+				has_war = yes
+				NOT = {
+					696 = {
+						CONTROLLER = {
+							OR = {
+								tag = USA
+								is_subject_of = USA
+							}
+						}
+					}
+					331 = {
+						CONTROLLER = {
+							OR = {
+								tag = USA
+								is_subject_of = USA
+							}
+						}
+					}
+					308 = {
+						CONTROLLER = {
+							OR = {
+								tag = USA
+								is_subject_of = USA
+							}
+						}
+					}
+					693 = {
+						CONTROLLER = {
+							OR = {
+								tag = USA
+								is_subject_of = USA
+							}
+						}
+					}
+					689 = {
+						CONTROLLER = {
+							OR = {
+								tag = USA
+								is_subject_of = USA
+							}
+						}
+					}
+					691 = {
+						CONTROLLER = {
+							OR = {
+								tag = USA
+								is_subject_of = USA
+							}
+						}
+					}
+					692 = {
+						CONTROLLER = {
+							OR = {
+								tag = USA
+								is_subject_of = USA
+							}
+						}
+					}
+					690 = {
+						CONTROLLER = {
+							OR = {
+								tag = USA
+								is_subject_of = USA
+							}
+						}
+					}
+					687 = {
+						CONTROLLER = {
+							OR = {
+								tag = USA
+								is_subject_of = USA
+								tag = ENG
+								is_subject_of = ENG
+							}
+						}
+					}
+				}
+			}
 		}
 
 		search_filters = { FOCUS_FILTER_DIPLOMACY FOCUS_FILTER_AHISTORICAL }
 
 		completion_reward = {
-			JAP = {
-				add_opinion_modifier = { target = USA modifier = war_plan_orange }
+			if = {
+				limit = {
+					696 = {
+						CONTROLLER = {
+							OR = {
+								tag = USA
+								is_subject_of = USA
+							}
+						}
+					}
+				}
+				696 = {
+					add_building_construction = {
+						type = coastal_bunker
+						province = 13010
+						level = 2
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = naval_base
+						province = 13010
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = infrastructure
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = air_base
+						level = 2
+						instant_build = yes
+					}
+				}
 			}
-			unlock_decision_tooltip = { decision = USA_execute_war_plan_orange show_effect_tooltip = yes show_modifiers = yes } # TODO: check
+			if = {
+				limit = {
+					331 = {
+						CONTROLLER = {
+							OR = {
+								tag = USA
+								is_subject_of = USA
+							}
+						}
+					}
+				}
+				331 = {
+					add_building_construction = {
+						type = coastal_bunker
+						province = 12505
+						level = 2
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = naval_base
+						province = 12505
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = infrastructure
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = air_base
+						level = 2
+						instant_build = yes
+					}
+				}
+			}
+			if = {
+				limit = {
+					308 = {
+						CONTROLLER = {
+							OR = {
+								tag = USA
+								is_subject_of = USA
+							}
+						}
+					}
+				}
+				308 = {
+					add_building_construction = {
+						type = coastal_bunker
+						province = 7123
+						level = 2
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = naval_base
+						province = 7123
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = infrastructure
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = air_base
+						level = 2
+						instant_build = yes
+					}
+				}
+			}
+			if = {
+				limit = {
+					693 = {
+						CONTROLLER = {
+							OR = {
+								tag = USA
+								is_subject_of = USA
+							}
+						}
+					}
+				}
+				693 = {
+					add_building_construction = {
+						type = coastal_bunker
+						province = 1513
+						level = 2
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = naval_base
+						province = 1513
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = infrastructure
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = air_base
+						level = 2
+						instant_build = yes
+					}
+				}
+			}
+			if = {
+				limit = {
+					689 = {
+						CONTROLLER = {
+							OR = {
+								tag = USA
+								is_subject_of = USA
+							}
+						}
+					}
+				}
+				689 = {
+					add_building_construction = {
+						type = coastal_bunker
+						province = 12304
+						level = 2
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = naval_base
+						province = 12304
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = infrastructure
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = air_base
+						level = 2
+						instant_build = yes
+					}
+				}
+			}
+			if = {
+				limit = {
+					691 = {
+						CONTROLLER = {
+							OR = {
+								tag = USA
+								is_subject_of = USA
+							}
+						}
+					}
+				}
+				691 = {
+					add_building_construction = {
+						type = coastal_bunker
+						province = 3284
+						level = 2
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = naval_base
+						province = 3284
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = infrastructure
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = air_base
+						level = 2
+						instant_build = yes
+					}
+				}
+			}
+			if = {
+				limit = {
+					692 = {
+						CONTROLLER = {
+							OR = {
+								tag = USA
+								is_subject_of = USA
+							}
+						}
+					}
+				}
+				692 = {
+					add_building_construction = {
+						type = coastal_bunker
+						province = 11350
+						level = 2
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = naval_base
+						province = 11350
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = infrastructure
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = air_base
+						level = 2
+						instant_build = yes
+					}
+				}
+			}
+			if = {
+				limit = {
+					690 = {
+						CONTROLLER = {
+							OR = {
+								tag = USA
+								is_subject_of = USA
+							}
+						}
+					}
+				}
+				690 = {
+					add_building_construction = {
+						type = coastal_bunker
+						province = 10254
+						level = 2
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = naval_base
+						province = 10254
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = infrastructure
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = air_base
+						level = 2
+						instant_build = yes
+					}
+				}
+			}
+			if = {
+				limit = {
+					687 = {
+						CONTROLLER = {
+							OR = {
+								tag = USA
+								is_subject_of = USA
+								tag = ENG
+								is_subject_of = ENG
+							}
+						}
+					}
+				}
+				687 = {
+					add_building_construction = {
+						type = coastal_bunker
+						province = 4982
+						level = 2
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = bunker
+						province = 4982
+						level = 2
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = naval_base
+						province = 4982
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = infrastructure
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = air_base
+						level = 2
+						instant_build = yes
+					}
+				}
+			}
 		}
 	}
 
@@ -6004,41 +6416,11 @@ focus_tree = {
 	}
 
 	focus = {
-		id = USA_war_plan_black
-		icon = GFX_focus_attack_germany
+		id = USA_destroyers_for_bases
+		icon = GFX_goal_generic_navy_cruiser
 		prerequisite = { focus = USA_germany_first }
 		relative_position_id = USA_germany_first
 		x = 0
-		y = 1
-
-		cost = 3
-
-		available = {
-			has_war_with = GER
-		}
-
-		available_if_capitulated = yes
-
-		ai_will_do = {
-			factor = 1
-		}
-
-		search_filters = { FOCUS_FILTER_DIPLOMACY FOCUS_FILTER_HISTORICAL }
-
-		completion_reward = {
-			GER = {
-				add_opinion_modifier = { target = USA modifier = war_plan_black }
-			}
-			unlock_decision_tooltip = { decision = USA_execute_war_plan_black show_effect_tooltip = yes show_modifiers = yes }
-		}
-	}
-
-	focus = {
-		id = USA_destroyers_for_bases
-		icon = GFX_goal_generic_navy_cruiser
-		prerequisite = { focus = USA_focus_on_europe }
-		relative_position_id = USA_focus_on_europe
-		x = -2
 		y = 1
 
 		cost = 3
@@ -6596,7 +6978,7 @@ focus_tree = {
 		prerequisite = { focus = USA_atlantic_usace_projects }
 		relative_position_id = USA_atlantic_usace_projects
 		x = 0
-		y = 2
+		y = 1
 
 		cost = 3
 
@@ -6785,7 +7167,7 @@ focus_tree = {
 	focus = {
 		id = USA_usace_liberia_projects
 		icon = GFX_goal_support_democracy
-		prerequisite = { focus = USA_atlantic_usace_projects }
+		prerequisite = { focus = USA_atlantic_usace_projects focus = USA_pacific_usace_projects }
 		relative_position_id = USA_atlantic_usace_projects
 		x = 5
 		y = 1
@@ -6847,10 +7229,10 @@ focus_tree = {
 	focus = {
 		id = USA_south_american_rubber_investments
 		icon = GFX_goal_support_democracy
-		prerequisite = { focus = USA_atlantic_usace_projects }
+		prerequisite = { focus = USA_atlantic_usace_projects focus = USA_pacific_usace_projects }
 		prerequisite = { focus = USA_the_good_neighbor_policy }
 		relative_position_id = USA_atlantic_usace_projects
-		x = 12
+		x = 10
 		y = 1
 
 		cost = 3
@@ -7126,9 +7508,9 @@ focus_tree = {
 	focus = {
 		id = USA_global_superpower_potential # TODO: Change name and name of idea
 		icon = GFX_goal_support_democracy
-		prerequisite = { focus = USA_focus_on_europe }
-		relative_position_id = USA_focus_on_europe
-		x = -5
+		prerequisite = { focus = USA_declare_limited_national_emergency }
+		relative_position_id = USA_germany_first
+		x = -4
 		y = 1
 
 		cost = 3
@@ -7154,7 +7536,7 @@ focus_tree = {
 		prerequisite = { focus = USA_global_superpower_potential }
 		relative_position_id = USA_global_superpower_potential
 		x = 0
-		y = 3
+		y = 2
 
 		cost = 3
 
@@ -7266,7 +7648,7 @@ focus_tree = {
 		icon = GFX_focus_renounce_the_treaty_of_trianon
 		prerequisite = { focus = USA_declare_limited_national_emergency }
 		relative_position_id = USA_declare_limited_national_emergency
-		x = -17
+		x = -18
 		y = 1
 		cost = 3
 
@@ -7329,7 +7711,7 @@ focus_tree = {
 		icon = GFX_focus_renounce_the_treaty_of_trianon
 		prerequisite = { focus = USA_north_atlantic_charter }
 		relative_position_id = USA_north_atlantic_charter
-		x = -1
+		x = -2
 		y = 1
 		cost = 3
 
@@ -7360,7 +7742,7 @@ focus_tree = {
 		icon = GFX_focus_renounce_the_treaty_of_trianon
 		prerequisite = { focus = USA_north_atlantic_charter }
 		relative_position_id = USA_north_atlantic_charter
-		x = 1
+		x = 2
 		y = 1
 		cost = 3
 
@@ -7406,7 +7788,7 @@ focus_tree = {
 		prerequisite = { focus = USA_office_of_the_coordinator_of_information }
 		prerequisite = { focus = USA_the_arcadia_conference }
 		relative_position_id = USA_office_of_the_coordinator_of_information
-		x = 0
+		x = -2
 		y = 1
 
 		cost = 3
@@ -7486,7 +7868,7 @@ focus_tree = {
 		icon = GFX_goal_USA_the_giant_wakes
 		prerequisite = { focus = USA_cash_and_carry_act }
 		relative_position_id = USA_cash_and_carry_act
-		x = -6
+		x = -7
 		y = 1
 
 		available = {
@@ -7771,7 +8153,7 @@ focus_tree = {
 		icon = GFX_goal_generic_civilian_economy_large
 		prerequisite = { focus = USA_the_giant_wakes }
 		relative_position_id = USA_the_giant_wakes
-		x = 3
+		x = 2
 		y = 1
 
 		cost = 3
@@ -7845,10 +8227,9 @@ focus_tree = {
 	focus = {
 		id = USA_domestic_usace_projects
 		icon = GFX_goal_generic_construction2
-		prerequisite = { focus = USA_congress_boosts_military_spending }
-		prerequisite = { focus = USA_further_atlantic_usace_projects }
+		prerequisite = { focus = USA_congress_boosts_military_spending focus = USA_further_atlantic_usace_projects }
 		relative_position_id = USA_congress_boosts_military_spending
-		x = 6
+		x = 7
 		y = 1
 
 		available = {
@@ -7971,7 +8352,7 @@ focus_tree = {
 		icon = GFX_goal_generic_civilian_economy_large
 		prerequisite = { focus = USA_congress_boosts_military_spending }
 		relative_position_id = USA_congress_boosts_military_spending
-		x = -3
+		x = -2
 		y = 1
 
 		cost = 3
@@ -8155,53 +8536,11 @@ focus_tree = {
 	}
 
 	focus = {
-		id = USA_plane_production_order
-		icon = GFX_focus_research2
-		prerequisite = { focus = USA_national_defense_advisory_committee }
-		relative_position_id = USA_national_defense_advisory_committee
-		x = 2
-		y = 1
-
-		cost = 3
-
-		ai_will_do = {
-			factor = 1
-		}
-
-		search_filters = { FOCUS_FILTER_INDUSTRY FOCUS_FILTER_HISTORICAL }
-
-		completion_reward = {
-			# TODO: ?
-		}
-	}
-
-	focus = {
-		id = USA_tank_production_order
-		icon = GFX_focus_research2
-		prerequisite = { focus = USA_national_defense_advisory_committee }
-		relative_position_id = USA_national_defense_advisory_committee
-		x = 4
-		y = 1
-
-		cost = 3
-
-		ai_will_do = {
-			factor = 1
-		}
-
-		search_filters = { FOCUS_FILTER_INDUSTRY FOCUS_FILTER_HISTORICAL }
-
-		completion_reward = {
-			# TODO: ?
-		}
-	}
-
-	focus = {
 		id = USA_limited_rearmament
 		icon = GFX_goal_generic_military_economy_medium
 		prerequisite = { focus = USA_national_defense_advisory_committee }
 		relative_position_id = USA_national_defense_advisory_committee
-		x = 0
+		x = 1
 		y = 1
 
 		available = {
@@ -11732,7 +12071,7 @@ focus_tree = {
 		mutually_exclusive = { focus = USA_the_future_of_naval_warfare }
 		relative_position_id = USA_FY40_plan
 		x = 0
-		y = 1
+		y = 3
 
 		cost = 3
 
@@ -11765,7 +12104,7 @@ focus_tree = {
 		mutually_exclusive = { focus = USA_superiority_of_the_battleship }
 		relative_position_id = USA_FY42_plan
 		x = 0
-		y = 1
+		y = 3
 
 		cost = 3
 
@@ -11828,7 +12167,7 @@ focus_tree = {
 		icon = GFX_goal_generic_occupy_states_coastal
 		prerequisite = { focus = USA_advanced_mahanian_doctrine }
 		relative_position_id = USA_advanced_mahanian_doctrine
-		x = 1
+		x = 0
 		y = 1
 
 		cost = 3
@@ -11873,7 +12212,7 @@ focus_tree = {
 		icon = GFX_goal_generic_occupy_states_coastal
 		prerequisite = { focus = USA_advanced_basing }
 		relative_position_id = USA_advanced_basing
-		x = 0
+		x = 1
 		y = 1
 
 		cost = 3
@@ -11904,7 +12243,7 @@ focus_tree = {
 		prerequisite = { focus = USA_superiority_of_the_battleship focus = USA_the_future_of_naval_warfare }
 		relative_position_id = USA_superiority_of_the_battleship
 		x = 2
-		y = 1
+		y = 2
 
 		cost = 3
 
@@ -11930,7 +12269,7 @@ focus_tree = {
 		prerequisite = { focus = USA_role_of_the_heavy_cruiser }
 		relative_position_id = USA_role_of_the_heavy_cruiser
 		x = 0
-		y = 1
+		y = 2
 
 		cost = 3
 
@@ -12069,9 +12408,9 @@ focus_tree = {
 	focus = {
 		id = USA_creation_of_the_radio_division
 		icon = GFX_goal_generic_radar
-		prerequisite = { focus = USA_bureau_of_ships }
-		relative_position_id = USA_bureau_of_ships
-		x = 4
+		prerequisite = { focus = USA_FY40_plan focus = USA_FY42_plan }
+		relative_position_id = USA_FY40_plan
+		x = 2
 		y = 1
 
 		cost = 3
@@ -12500,7 +12839,7 @@ focus_tree = {
 		icon = GFX_goal_generic_air_naval_bomber
 		prerequisite = { focus = USA_bureau_of_ships }
 		relative_position_id = USA_bureau_of_ships
-		x = 7
+		x = 5
 		y = 1
 
 		cost = 3
