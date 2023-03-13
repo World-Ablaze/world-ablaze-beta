@@ -4741,12 +4741,16 @@ foreign_politics = {
 			NOT = { has_global_flag = scw_over }
 		}
 
-		days_remove = 90
+		days_remove = 100	#20 XP
 		cost = 0
 		fire_only_once = yes
 
 		ai_will_do = {
 			factor = 100
+		}
+
+		modifier = {
+			experience_gain_air = 0.2
 		}
 
 		remove_effect = {
@@ -4805,9 +4809,13 @@ foreign_politics = {
 			NOT = { has_global_flag = scw_over }
 		}
 
-		days_remove = 90
+		days_remove = 120	#24 XP
 		cost = 0
 		fire_only_once = yes
+
+		modifier = {
+			experience_gain_army = 0.2
+		}
 
 		ai_will_do = {
 			factor = 100
@@ -4830,6 +4838,12 @@ foreign_politics = {
 		}
 		available = {
 			has_completed_focus = SOV_send_military_advisors_to_spain
+			if = {
+				limit = { is_ai = no }
+				has_equipment = {
+					artillery_equipment > 499
+				}
+			}
 		}
 		visible = {
 			if = {
@@ -4863,12 +4877,16 @@ foreign_politics = {
 			NOT = { has_global_flag = scw_over }
 		}
 
-		days_remove = 60
+		days_remove = 80	#16 XP
 		cost = 0
 		fire_only_once = yes
 
 		ai_will_do = {
 			factor = 100
+		}
+
+		modifier = {
+			experience_gain_army = 0.2
 		}
 
 		complete_effect = {
@@ -15577,7 +15595,7 @@ SOV_great_patriotic_war = {
 			NOT = { has_war_with = STA }
 			NOT = { has_idea = order_227 }
 			OR = {
-				surrender_progress > 0.44
+				surrender_progress > 0.39
 				NOT = { controls_state = 219 }
 				NOT = { controls_state = 217 }
 				NOT = { has_full_control_of_state = 247 }
@@ -15641,16 +15659,6 @@ SOV_great_patriotic_war = {
 					remove_idea = cavalry_army_clique_2
 					add_idea = cavalry_army_clique_3
 				}
-			}
-			if = {
-				limit = {
-					NOT = { has_country_flag = SOV_army_reform_2 }
-				}
-				set_country_flag = SOV_army_reform_2
-				add_to_variable = { SOV_the_red_army_army_attack_factor = 0.1 }
-				add_to_variable = { SOV_the_red_army_army_org_factor = 0.1 }
-				add_to_variable = { SOV_the_red_army_experience_gain_army_factor = 0.1 }
-				custom_effect_tooltip = SOV_army_reform_2_tt
 			}
 		}
 
@@ -20796,37 +20804,54 @@ SOV_military_reform = {
 					NOT = { has_country_flag = SOV_army_reform_1 }
 				}
 				has_army_experience > 199
-			}
-			else_if = {
-				limit = {
-					NOT = { has_country_flag = SOV_army_reform_3 }
-					has_idea = order_227
-				}
-				has_army_experience > 199
-			}
-			else_if = {
-				limit = {
-					NOT = { has_country_flag = SOV_army_reform_3 }
-				}
-				has_army_experience > 299
-			}
-			OR = {
-				NOT = { has_country_flag = SOV_army_reform_1 }
-				AND = {
-					custom_trigger_tooltip = {
-						tooltip = SOV_has_not_officers_purged_tt
-						NOT = { has_idea = officers_purged }
-						NOT = { has_idea = officers_purged_2 }
-						NOT = { has_idea = officers_purged_3 }
-						NOT = { has_idea = officers_purged_4 }
-						NOT = { has_idea = officers_purged_5 }
-						NOT = { has_idea = officers_purged_6 }
-						NOT = { has_idea = officers_purged_7 }
-						NOT = { has_idea = officers_purged_8 }
-						NOT = { has_idea = officers_purged_9 }
-						NOT = { has_idea = officers_purged_10 }
+				OR = {
+					has_completed_focus = SOV_lessons_of_war
+					AND = {
+						custom_trigger_tooltip = {
+							tooltip = SOV_has_not_officers_purged_tt
+							NOT = { has_idea = officers_purged }
+							NOT = { has_idea = officers_purged_2 }
+							NOT = { has_idea = officers_purged_3 }
+							NOT = { has_idea = officers_purged_4 }
+							NOT = { has_idea = officers_purged_5 }
+							NOT = { has_idea = officers_purged_6 }
+							NOT = { has_idea = officers_purged_7 }
+							NOT = { has_idea = officers_purged_8 }
+							NOT = { has_idea = officers_purged_9 }
+							NOT = { has_idea = officers_purged_10 }
+						}
 					}
 				}
+			}
+			else_if = {
+				limit = {
+					NOT = { has_country_flag = SOV_army_reform_2 }
+				}
+				has_army_experience > 149
+				OR = {
+					has_completed_focus = SOV_rebuild_the_army
+					AND = {
+						custom_trigger_tooltip = {
+							tooltip = SOV_has_not_officers_purged_tt
+							NOT = { has_idea = officers_purged }
+							NOT = { has_idea = officers_purged_2 }
+							NOT = { has_idea = officers_purged_3 }
+							NOT = { has_idea = officers_purged_4 }
+							NOT = { has_idea = officers_purged_5 }
+							NOT = { has_idea = officers_purged_6 }
+							NOT = { has_idea = officers_purged_7 }
+							NOT = { has_idea = officers_purged_8 }
+							NOT = { has_idea = officers_purged_9 }
+							NOT = { has_idea = officers_purged_10 }
+						}
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					NOT = { has_country_flag = SOV_army_reform_3 }
+				}
+				has_army_experience > 99
 			}
 		}
 
@@ -20849,11 +20874,30 @@ SOV_military_reform = {
 					set_country_flag = SOV_army_reform_1
 				}
 				add_to_variable = { SOV_the_red_army_army_org_factor = 0.15 }
-				add_to_variable = { SOV_the_red_army_army_speed_factor = 0.2 }
-				add_to_variable = { SOV_the_red_army_army_attack_factor = 0.1 }
+				add_to_variable = { SOV_the_red_army_army_speed_factor = 0.15 }
+				add_to_variable = { SOV_the_red_army_army_attack_factor = 0.05 }
 				add_to_variable = { SOV_the_red_army_experience_loss_factor = -0.25 }
-				add_to_variable = { SOV_the_red_army_land_doctrine_cost_factor = -0.4 }
+				add_to_variable = { SOV_the_red_army_land_doctrine_cost_factor = -0.3 }
 				custom_effect_tooltip = SOV_army_reform_1_tt
+			}
+			else_if = {
+				limit = {
+					has_country_flag = SOV_army_reform_1
+					NOT = { has_country_flag = SOV_army_reform_2 }
+					NOT = { has_country_flag = SOV_army_reform_3 }
+				}
+				hidden_effect = {
+					set_country_flag = SOV_army_reform_2
+				}
+				add_to_variable = { SOV_the_red_army_army_attack_factor = 0.05 }
+				add_to_variable = { SOV_the_red_army_land_reinforce_rate = 0.05 }
+				add_to_variable = { SOV_the_red_army_land_doctrine_cost_factor = -0.3 }
+				custom_effect_tooltip = SOV_army_reform_2_tt
+				every_unit_leader = {
+					remove_trait = {
+						trait = trait_SOV_cowed_by_stalin_army
+					}
+				}
 			}
 			else_if = {
 				limit = {
@@ -20864,31 +20908,12 @@ SOV_military_reform = {
 				hidden_effect = {
 					set_country_flag = SOV_army_reform_3
 				}
-				set_variable = { SOV_the_red_army_army_org_factor = 0 }
-				add_to_variable = { SOV_the_red_army_land_doctrine_cost_factor = -0.6 }
-				custom_effect_tooltip = SOV_army_reform_4_tt
-			}
-			else_if = {
-				limit = {
-					has_country_flag = SOV_army_reform_1
-					NOT = { has_country_flag = SOV_army_reform_2 }
-					NOT = { has_country_flag = SOV_army_reform_3 }
-				}
-				hidden_effect = {
-					set_country_flag = SOV_army_reform_2
-					set_country_flag = SOV_army_reform_3
-				}
-				add_to_variable = { SOV_the_red_army_army_attack_factor = 0.1 }
-				add_to_variable = { SOV_the_red_army_experience_gain_army_factor = 0.1 }
-				set_variable = { SOV_the_red_army_army_org_factor = 0 }
-				add_to_variable = { SOV_the_red_army_land_doctrine_cost_factor = -0.6 }
+				add_to_variable = { SOV_the_red_army_army_attack_factor = 0.05 }
+				add_to_variable = { SOV_the_red_army_army_speed_factor = 0.1 }
+				add_to_variable = { SOV_the_red_army_breakthrough_factor = 0.1 }
+				add_to_variable = { SOV_the_red_army_army_org_factor = 0.1 }
+				add_to_variable = { SOV_the_red_army_land_doctrine_cost_factor = -0.4 }
 				custom_effect_tooltip = SOV_army_reform_3_tt
-			}
-			if = {
-				limit = {
-					has_idea = mass_assault_corps_spirit
-				}
-				remove_ideas = mass_assault_corps_spirit
 			}
 			if = {
 				limit = {
@@ -20912,15 +20937,21 @@ SOV_military_reform = {
 		complete_effect = {
 			if = {
 				limit = {
-					OR = {
-						NOT = { has_country_flag = SOV_army_reform_1 }
-						has_country_flag = SOV_army_reform_2
-					}
+					NOT = { has_country_flag = SOV_army_reform_1 }
 				}
 				army_experience = -200
 			}
-			else = {
-				army_experience = -300
+			else_if = {
+				limit = {
+					NOT = { has_country_flag = SOV_army_reform_2 }
+				}
+				army_experience = -150
+			}
+			else_if = {
+				limit = {
+					NOT = { has_country_flag = SOV_army_reform_3 }
+				}
+				army_experience = -100
 			}
 		}
 	}
