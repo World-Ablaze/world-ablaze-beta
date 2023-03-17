@@ -18106,9 +18106,273 @@ economy_decisions = {
 #Category only allowed for SOV
 SOV_industry_relocation = {
 
-	move_leningrad_aluminium_plant = { #195
+	SOV_relocate_industry_from_moscow_area = {
 
-		icon = aluminium
+		icon = generic_construction
+
+		allowed = {
+			tag = SOV
+		}
+		available = {
+			219 = { #Moscow
+				is_owned_and_controlled_by = SOV
+				arms_factory > 0
+			}
+			653 = { is_owned_and_controlled_by = SOV } #Sverdlovsk
+			572 = { is_owned_and_controlled_by = SOV } #Chelyabinsk
+		}
+		highlight_states = {
+			highlight_state_targets = {
+				state = 219
+			}
+		}
+
+		fire_only_once = yes
+		cost = 25
+
+		ai_will_do = {
+			factor = 0
+			modifier = {
+				factor = 1000
+				NOT = { 
+					controls_state = 207
+					controls_state = 241
+					controls_state = 193
+				}	
+			}	
+		}
+
+		complete_effect = {
+			activate_mission = SOV_relocating_industry_from_moscow_area
+			hidden_effect = {
+				add_equipment_to_stockpile = {
+					type = train_equipment
+					amount = SOV_industrial_relocation_trains_decision_negative
+					producer = SOV
+				}
+			}
+			custom_effect_tooltip = SOV_industry_relocation_trains_tt
+		}
+	}
+	SOV_relocating_industry_from_moscow_area = {
+		icon = generic_construction
+
+		allowed = {
+			tag = SOV
+			always = no
+		}
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 219
+			}
+		}
+		available = {
+			OR = {
+				NOT = {
+					219 = { is_owned_and_controlled_by = SOV }
+				}
+				219 = { #moscow
+					arms_factory < 1
+				}
+			}
+		}
+
+		days_mission_timeout = 1
+		is_good = yes
+		fire_only_once = no
+
+		complete_effect = {
+			hidden_effect = {
+				add_equipment_to_stockpile = {
+					type = train_equipment
+					amount = SOV_industrial_relocation_trains_decision
+					producer = SOV
+				}
+			}
+		}
+		timeout_effect = {
+			random_owned_controlled_state = {
+				prioritize = { 242 246 219 223 }
+				limit = {
+					region = 271
+					is_controlled_by = SOV
+					OR = {
+						arms_factory > 0
+						steel_refinery > 0
+						aluminium_refinery > 0
+					}
+				}
+				if = {	#synth
+					limit = { synthetic_refinery > 0 }
+					remove_building = {
+						type = synthetic_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 653 572 405 586 40 570 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = synthetic_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = synthetic_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								damage_building = { type = synthetic_refinery damage = 0.8 }
+							}
+						}
+					}
+				}
+				if = {	#Mils
+					limit = { arms_factory > 0 }
+					remove_building = {
+						type = arms_factory
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 653 572 405 586 40 570 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = arms_factory
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = arms_factory
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								damage_building = { type = arms_factory damage = 0.8 }
+							}
+						}
+					}
+				}
+				if = {	#Steel
+					limit = { steel_refinery > 0 }
+					remove_building = {
+						type = steel_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 570 40 403 653 405 571 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = steel_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = steel_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								damage_building = { type = steel_refinery damage = 0.8 }
+							}
+						}
+					}
+				}
+				if = {	#Aluminium
+					limit = { aluminium_refinery > 0 }
+					remove_building = {
+						type = aluminium_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 653 570 40 403 405 571 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = aluminium_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = aluminium_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								damage_building = { type = aluminium_refinery damage = 0.8 }
+							}
+						}
+					}
+				}
+			}
+			custom_effect_tooltip = relocate_industry_repair
+			hidden_effect = {
+				activate_mission = SOV_relocating_industry_from_moscow_area
+			}
+		}
+	}
+
+	SOV_relocate_industry_from_leningrad_area = {
+		icon = generic_construction
+		allowed = {
+			tag = SOV
+		}
+
+		available = {
+			195 = { #Leningrad
+				is_owned_and_controlled_by = SOV
+				arms_factory > 0
+			}
+			653 = { is_owned_and_controlled_by = SOV } #Sverdlovsk
+			572 = { is_owned_and_controlled_by = SOV } #Chelyabinsk
+		}
 
 		highlight_states = {
 			highlight_state_targets = {
@@ -18116,150 +18380,11 @@ SOV_industry_relocation = {
 			}
 		}
 
-		allowed = {
-			original_tag = SOV
-		}
-
-		available = {
-			has_full_control_of_state = 195
-			has_full_control_of_state = 569
-			has_equipment = { train_equipment > 19 } #20 trains per factory
-		}
-
-		visible = {
-			has_completed_focus = SOV_move_industry_to_the_urals
-			controls_state = 195
-			controls_state = 569
-			195 = { has_state_flag = leningrad_aluminium_developed }
-			has_civil_war = no
-		}
-
 		fire_only_once = yes
-
-		cost = 15
-		days_remove = SOV_industrial_relocation_days
-
-		modifier = {
-
-		}
-
-		ai_will_do = {
-			factor = 0.5
-			modifier = {
-				factor = 200 # oh shit they are getting close!
-				OR = {
-					AND = {
-						owns_state = 208
-						NOT = { controls_state = 208 }
-					}
-					AND = {
-						owns_state = 209
-						NOT = { controls_state = 209 }
-					}
-					AND = {
-						owns_state = 244
-						NOT = { controls_state = 244 }
-					}
-					AND = {
-						owns_state = 263
-						NOT = { controls_state = 263 }
-					}
-					AND = {
-						owns_state = 191
-						NOT = { controls_state = 191 }
-					}
-					AND = {
-						owns_state = 146
-						NOT = { controls_state = 146 }
-					}
-				}
-			}
-			modifier = {
-				factor = 0
-				SOV_save_pp_for_manpower_trouble = yes
-			}
-		}	
-
-		complete_effect = {
-			hidden_effect = {
-				add_equipment_to_stockpile = {
-					type = train_equipment
-					amount = SOV_industrial_relocation_trains_decision_aluminium_negative
-					producer = SOV
-				}
-			}
-			195 = {
-				add_resource = {
-					type = bauxite
-					amount = -12
-				}
-			}
-			custom_effect_tooltip = SOV_industry_relocation_aluminium_plant_trains_tt
-		}
-
-		remove_effect = {
-			hidden_effect = {
-				add_equipment_to_stockpile = {
-					type = train_equipment
-					amount = SOV_industrial_relocation_trains_decision_aluminium
-					producer = SOV
-				}
-			}
-			if = {
-				limit = {
-					controls_state = 569
-				}
-				569 = {
-					add_resource = {
-						type = bauxite
-						amount = 12
-					}
-				}
-			}
-			custom_effect_tooltip = SOV_relocate_industry_from_leningrad_tt
-		}
-	}
-
-	SOV_relocate_industry_from_moscow_area = {
-
-		icon = generic_construction
-
-		highlight_states = {
-			highlight_state_targets = {
-				state = 219
-			}
-		}
-		allowed = {
-			tag = SOV
-		}
-		available = {
-			is_ai = no
-			219 = { #Moscow
-				is_owned_and_controlled_by = SOV
-			}
-			573 = { is_owned_and_controlled_by = SOV } #Zlatoust
-			876 = { is_owned_and_controlled_by = SOV } #Magnitogorsk
-			has_equipment = { train_equipment > 79 } #20 trains per factory
-		}
-
-		visible = {
-			has_war = yes
-		}
-
-		fire_only_once = yes
-
 		cost = 25
-		days_remove = 21
-
-		modifier = {
-
-		}
-
-		ai_will_do = {
-			factor = 4000
-		}
 
 		complete_effect = {
+			activate_mission = SOV_relocating_industry_from_leningrad_area
 			hidden_effect = {
 				add_equipment_to_stockpile = {
 					type = train_equipment
@@ -18270,7 +18395,49 @@ SOV_industry_relocation = {
 			custom_effect_tooltip = SOV_industry_relocation_trains_tt
 		}
 
-		remove_effect = {
+		ai_will_do = {
+			factor = 0
+			modifier = {
+				factor = 1000
+				NOT = { 
+					controls_state = 146
+					controls_state = 965
+					controls_state = 96
+				}	
+			}
+		}
+	}
+	SOV_relocating_industry_from_leningrad_area = {
+		icon = generic_construction
+
+		allowed = {
+			tag = SOV
+			always = no
+		}
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 195
+			}
+		}
+		available = {
+			OR = {
+				NOT = {
+					195 = { is_owned_and_controlled_by = SOV }
+				}
+				195 = { #Leningrad
+					arms_factory < 1
+				}
+			}
+		}
+
+		days_mission_timeout = 2
+		is_good = yes
+		fire_only_once = no
+
+		modifier = {
+		}
+		complete_effect = {
 			hidden_effect = {
 				add_equipment_to_stockpile = {
 					type = train_equipment
@@ -18278,159 +18445,985 @@ SOV_industry_relocation = {
 					producer = SOV
 				}
 			}
-			if = {
+		}
+		timeout_effect = {
+			random_owned_controlled_state = {
+				prioritize = { 195 208 }
 				limit = {
-					controls_state = 219
+					region = 132
+					is_controlled_by = SOV
+					OR = {
+						arms_factory > 0
+						steel_refinery > 0
+						aluminium_refinery > 0
+					}
 				}
-				219 = { #Moscow
+				if = {	#Mils
+					limit = { arms_factory > 0 }
 					remove_building = {
 						type = arms_factory
-						level = 12
+						level = 1
 					}
-					remove_building = {
-						type = industrial_complex
-						level = 7
+					PREV = {
+						random_core_state = {
+							prioritize = { 572 876 653 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = arms_factory
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = arms_factory
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								damage_building = { type = arms_factory damage = 0.8 }
+							}
+						}
 					}
+				}
+				if = {	#Steel
+					limit = { steel_refinery > 0 }
 					remove_building = {
 						type = steel_refinery
-						level = 4
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 572 653 573 876 398 651 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = steel_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = steel_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								damage_building = { type = steel_refinery damage = 0.8 }
+							}
+						}
 					}
 				}
-				573 = { #Zlatoust
-					add_extra_state_shared_building_slots = 14
-					add_building_construction = {
+				if = {	#Aluminium
+					limit = { aluminium_refinery > 0 }
+					remove_building = {
+						type = aluminium_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 572 403 653 573 876 398 651 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = aluminium_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = aluminium_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								damage_building = { type = aluminium_refinery damage = 0.8 }
+							}
+						}
+					}
+				}
+			}
+			custom_effect_tooltip = relocate_industry_repair
+			hidden_effect = {
+				activate_mission = SOV_relocating_industry_from_leningrad_area
+			}
+		}
+	}
+
+	SOV_relocate_industry_from_stalingrad_area = {
+		icon = generic_construction
+		allowed = {
+			tag = SOV
+		}
+
+		available = {
+			217 = { #Stalingrad
+				is_owned_and_controlled_by = SOV
+				arms_factory > 0
+			}
+			653 = { is_owned_and_controlled_by = SOV } #Sverdlovsk
+			572 = { is_owned_and_controlled_by = SOV } #Chelyabinsk
+		}
+		highlight_states = {
+			highlight_state_targets = {
+				state = 217
+			}
+		}
+
+		fire_only_once = yes
+		cost = 25
+
+		complete_effect = {
+			activate_mission = SOV_relocating_industry_from_stalingrad_area
+			hidden_effect = {
+				add_equipment_to_stockpile = {
+					type = train_equipment
+					amount = SOV_industrial_relocation_trains_decision_negative
+					producer = SOV
+				}
+			}
+			custom_effect_tooltip = SOV_industry_relocation_trains_tt
+		}
+	}
+	SOV_relocating_industry_from_stalingrad_area = {
+		icon = generic_construction
+
+		allowed = {
+			tag = SOV
+			always = no
+		}
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 217
+			}
+		}
+		available = {
+			OR = {
+				NOT = {
+					217 = { is_owned_and_controlled_by = SOV }
+				}
+				217 = { #Leningrad
+					arms_factory < 1
+				}
+			}
+		}
+
+		days_mission_timeout = 2
+		is_good = yes
+		fire_only_once = no
+
+		complete_effect = {
+			hidden_effect = {
+				add_equipment_to_stockpile = {
+					type = train_equipment
+					amount = SOV_industrial_relocation_trains_decision
+					producer = SOV
+				}
+			}
+		}
+		timeout_effect = {
+			random_owned_controlled_state = {
+				prioritize = { 218 245 217 }
+				limit = {
+					region = 257
+					is_controlled_by = SOV
+					OR = {
+						arms_factory > 0
+						steel_refinery > 0
+						aluminium_refinery > 0
+					}
+				}
+				if = {	#Mils
+					limit = { arms_factory > 0 }
+					remove_building = {
 						type = arms_factory
-						level = 6
-						instant_build = yes
+						level = 1
 					}
-					add_building_construction = {
-						type = industrial_complex
-						level = 4
-						instant_build = yes
+					PREV = {
+						random_core_state = {
+							prioritize = { 40 570 405 572 876 653 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = arms_factory
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = arms_factory
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								damage_building = { type = arms_factory damage = 0.8 }
+							}
+						}
 					}
-					add_building_construction = {
+				}
+				if = {	#Steel
+					limit = { steel_refinery > 0 }
+					remove_building = {
 						type = steel_refinery
-						level = 4
-						instant_build = yes
+						level = 1
 					}
-
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.3 }
-						damage_building = { type = industrial_complex damage = 0.1 }
+					PREV = {
+						random_core_state = {
+							prioritize = { 40 570 405 572 876 653 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = steel_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = steel_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								damage_building = { type = steel_refinery damage = 0.8 }
+							}
+						}
 					}
 				}
-				876 = { #Magnitogorsk
-					add_extra_state_shared_building_slots = 9
-					add_building_construction = {
-						type = arms_factory
-						level = 6
-						instant_build = yes
+				if = {	#Aluminium
+					limit = { aluminium_refinery > 0 }
+					remove_building = {
+						type = aluminium_refinery
+						level = 1
 					}
-					add_building_construction = {
-						type = industrial_complex
-						level = 3
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.3 }
-						damage_building = { type = industrial_complex damage = 0.1 }
+					PREV = {
+						random_core_state = {
+							prioritize = { 40 570 405 572 876 653 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = aluminium_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = aluminium_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								damage_building = { type = aluminium_refinery damage = 0.8 }
+							}
+						}
 					}
 				}
-				custom_effect_tooltip = relocate_industry_repair
 			}
-			if = {
+			custom_effect_tooltip = relocate_industry_repair
+			hidden_effect = {
+				activate_mission = SOV_relocating_industry_from_stalingrad_area
+			}
+		}
+	}
+
+	SOV_relocate_industry_from_kharkov_area = {
+
+		icon = generic_construction
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 221
+			}
+		}
+		allowed = {
+			tag = SOV
+		}
+		available = {
+			221 = { #Leningrad
+				is_owned_and_controlled_by = SOV
+				arms_factory > 0
+			}
+			653 = { is_owned_and_controlled_by = SOV } #Sverdlovsk
+			572 = { is_owned_and_controlled_by = SOV } #Chelyabinsk
+		}
+
+		fire_only_once = yes
+		cost = 25
+
+		complete_effect = {
+			activate_mission = SOV_relocate_industry_from_kiev_area
+			hidden_effect = {
+				add_equipment_to_stockpile = {
+					type = train_equipment
+					amount = SOV_industrial_relocation_trains_decision_negative
+					producer = SOV
+				}
+			}
+			custom_effect_tooltip = SOV_industry_relocation_trains_tt
+		}
+
+		ai_will_do = {
+			factor = 0
+			modifier = {
+				factor = 1000
+				NOT = { 
+					controls_state = 197
+					controls_state = 203
+					controls_state = 202
+				}	
+			}
+		}	
+	}
+	SOV_relocating_industry_from_kharkov_area = {
+		icon = generic_construction
+
+		allowed = {
+			tag = SOV
+			always = no
+		}
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 221
+			}
+		}
+		available = {
+			OR = {
+				NOT = {
+					221 = { is_owned_and_controlled_by = SOV }
+					227 = { is_owned_and_controlled_by = SOV }
+				}
+				AND = {
+					221 = { #Kharkov
+						arms_factory = 0
+					}
+					227 = {
+						arms_factory = 0
+						steel_refinery = 0
+					}
+				}
+			}
+		}
+
+		days_mission_timeout = 2
+		is_good = yes
+		fire_only_once = no
+
+		complete_effect = {
+			hidden_effect = {
+				add_equipment_to_stockpile = {
+					type = train_equipment
+					amount = SOV_industrial_relocation_trains_decision
+					producer = SOV
+				}
+			}
+		}
+		timeout_effect = {
+			random_owned_controlled_state = {
+				prioritize = { 226 200 227 221 }
 				limit = {
-					controls_state = 246
+					region = 270
+					is_controlled_by = SOV
+					OR = {
+						arms_factory > 0
+						steel_refinery > 0
+						aluminium_refinery > 0
+					}
 				}
-				246 = { #Rzhev
+				if = {	#Mils
+					limit = { arms_factory > 0 }
 					remove_building = {
 						type = arms_factory
-						level = 4
+						level = 1
 					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 653 572 876 405 586 40 408 564 563 561 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = arms_factory
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = arms_factory
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								damage_building = { type = arms_factory damage = 0.8 }
+							}
+						}
+					}
+				}
+				if = {	#Steel
+					limit = { steel_refinery > 0 }
 					remove_building = {
-						type = industrial_complex
-						level = 2
-					}
-				}
-				573 = { #Zlatoust
-					add_extra_state_shared_building_slots = 3
-					add_building_construction = {
-						type = arms_factory
-						level = 2
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = industrial_complex
+						type = steel_refinery
 						level = 1
-						instant_build = yes
 					}
-
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.3 }
-						damage_building = { type = industrial_complex damage = 0.1 }
+					PREV = {
+						random_core_state = {
+							prioritize = { 653 572 876 405 586 40 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = steel_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = steel_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								damage_building = { type = steel_refinery damage = 0.8 }
+							}
+						}
 					}
 				}
-				876 = { #Magnitogorsk
-					add_extra_state_shared_building_slots = 3
-					add_building_construction = {
-						type = arms_factory
-						level = 2
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = industrial_complex
+				if = {	#Aluminium
+					limit = { aluminium_refinery > 0 }
+					remove_building = {
+						type = aluminium_refinery
 						level = 1
-						instant_build = yes
 					}
-
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.3 }
-						damage_building = { type = industrial_complex damage = 0.1 }
+					PREV = {
+						random_core_state = {
+							prioritize = { 653 572 876 405 586 40 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = aluminium_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = aluminium_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								damage_building = { type = aluminium_refinery damage = 0.8 }
+							}
+						}
 					}
 				}
-				custom_effect_tooltip = relocate_industry_repair
 			}
-			if = {
+			custom_effect_tooltip = relocate_industry_repair
+			hidden_effect = {
+				activate_mission = SOV_relocating_industry_from_kharkov_area
+			}
+		}
+	}
+
+	SOV_relocate_industry_from_kiev_area = {
+		icon = generic_construction
+		allowed = {
+			tag = SOV
+		}
+		
+		available = {
+			202 = { #Leningrad
+				is_owned_and_controlled_by = SOV
+				arms_factory > 0
+			}
+			400 = { is_owned_and_controlled_by = SOV } #Zlatoust
+			399 = { is_owned_and_controlled_by = SOV } #Magnitogorsk
+			250 = { is_owned_and_controlled_by = SOV } #Kuibyshev
+		}
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 202
+			}
+		}
+
+		fire_only_once = yes
+		cost = 25
+
+		complete_effect = {
+			activate_mission = SOV_relocating_industry_from_kiev_area
+			hidden_effect = {
+				add_equipment_to_stockpile = {
+					type = train_equipment
+					amount = SOV_industrial_relocation_trains_decision_negative
+					producer = SOV
+				}
+			}
+			custom_effect_tooltip = SOV_industry_relocation_trains_tt
+		}
+		
+		ai_will_do = {
+			factor = 4000
+		}
+	}
+	SOV_relocating_industry_from_kiev_area = {
+		icon = generic_construction
+
+		allowed = {
+			always = no
+		}
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 202
+			}
+		}
+		available = {
+			OR = {
+				NOT = {
+					202 = { is_owned_and_controlled_by = SOV }
+				}
+				202 = { #Kiev
+					arms_factory < 1
+				}
+			}
+		}
+
+		days_mission_timeout = 2
+		is_good = yes
+		fire_only_once = no
+
+		complete_effect = {
+			hidden_effect = {
+				add_equipment_to_stockpile = {
+					type = train_equipment
+					amount = SOV_industrial_relocation_trains_decision
+					producer = SOV
+				}
+			}
+		}
+		timeout_effect = {
+			random_owned_controlled_state = {
+				prioritize = { 192 202 197 }
 				limit = {
-					controls_state = 242
+					region = 130
+					is_controlled_by = SOV
+					OR = {
+						arms_factory > 0
+						steel_refinery > 0
+						aluminium_refinery > 0
+					}
 				}
-				242 = { #Rzhev
+				if = {	#Mils
+					limit = { arms_factory > 0 }
 					remove_building = {
 						type = arms_factory
 						level = 1
 					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 252 400 399 250 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = arms_factory
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = arms_factory
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								damage_building = { type = arms_factory damage = 0.8 }
+							}
+						}
+					}
+				}
+				if = {	#Steel
+					limit = { steel_refinery > 0 }
 					remove_building = {
-						type = industrial_complex
-						level = 3
-					}
-				}
-				573 = { #Zlatoust
-					add_extra_state_shared_building_slots = 4
-					add_building_construction = {
-						type = arms_factory
+						type = steel_refinery
 						level = 1
-						instant_build = yes
 					}
-					add_building_construction = {
-						type = industrial_complex
-						level = 3
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.3 }
-						damage_building = { type = industrial_complex damage = 0.1 }
+					PREV = {
+						random_core_state = {
+							prioritize = { 252 400 399 250 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = steel_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = steel_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								damage_building = { type = steel_refinery damage = 0.8 }
+							}
+						}
 					}
 				}
-				custom_effect_tooltip = relocate_industry_repair
+				if = {	#Aluminium
+					limit = { aluminium_refinery > 0 }
+					remove_building = {
+						type = aluminium_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 252 400 399 250 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = aluminium_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = aluminium_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								damage_building = { type = aluminium_refinery damage = 0.8 }
+							}
+						}
+					}
+				}
 			}
-			custom_effect_tooltip = SOV_relocate_industry_from_moscow_tt
+			custom_effect_tooltip = relocate_industry_repair
+			hidden_effect = {
+				activate_mission = SOV_relocating_industry_from_kiev_area
+			}
+		}
+	}
+
+	SOV_relocate_industry_from_minsk_area = {
+		icon = generic_construction
+
+		allowed = {
+			tag = SOV
+		}
+		available = {
+			206 = { #Leningrad
+				is_owned_and_controlled_by = SOV
+				arms_factory > 0
+			}
+			398 = { is_owned_and_controlled_by = SOV } 
+			651 = { is_owned_and_controlled_by = SOV } 
+		}
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 206
+			}
+		}
+
+		fire_only_once = yes
+		cost = 25
+
+		ai_will_do = {
+			factor = 4000
+		}
+
+		complete_effect = {
+			activate_mission = SOV_relocating_industry_from_minsk_area
+			hidden_effect = {
+				add_equipment_to_stockpile = {
+					type = train_equipment
+					amount = SOV_industrial_relocation_trains_decision_negative
+					producer = SOV
+				}
+			}
+			custom_effect_tooltip = SOV_industry_relocation_trains_tt
+		}
+	}
+	SOV_relocating_industry_from_minsk_area = {
+		icon = generic_construction
+		allowed = {
+			always = no
+		}
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 206
+			}
+		}
+		available = {
+			OR = {
+				NOT = {
+					206 = { is_owned_and_controlled_by = SOV }
+					224 = { is_owned_and_controlled_by = SOV }
+				}
+				AND = {
+					206 = {
+						arms_factory = 0
+					}
+					224 = {
+						arms_factory = 0
+					}
+				}
+			}
+		}
+
+		days_mission_timeout = 2
+		is_good = yes
+		fire_only_once = no
+
+		complete_effect = {
+			hidden_effect = {
+				add_equipment_to_stockpile = {
+					type = train_equipment
+					amount = SOV_industrial_relocation_trains_decision
+					producer = SOV
+				}
+			}
+		}
+		timeout_effect = {
+			random_owned_controlled_state = {
+				prioritize = { 206 471 }
+				limit = {
+					region = 131
+					is_controlled_by = SOV
+					OR = {
+						arms_factory > 0
+						steel_refinery > 0
+						aluminium_refinery > 0
+					}
+				}
+				if = {	#Mils
+					limit = { arms_factory > 0 }
+					remove_building = {
+						type = arms_factory
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 398 651 250 876 586 405 653 572 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = arms_factory
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = arms_factory
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								damage_building = { type = arms_factory damage = 0.8 }
+							}
+						}
+					}
+				}
+				if = {	#Steel
+					limit = { steel_refinery > 0 }
+					remove_building = {
+						type = steel_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 398 651 250 876 586 405 653 572 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = steel_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = steel_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								damage_building = { type = steel_refinery damage = 0.8 }
+							}
+						}
+					}
+				}
+				if = {	#Aluminium
+					limit = { aluminium_refinery > 0 }
+					remove_building = {
+						type = aluminium_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 398 651 250 876 586 405 653 572 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = aluminium_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = aluminium_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								damage_building = { type = aluminium_refinery damage = 0.8 }
+							}
+						}
+					}
+				}
+			}
+			custom_effect_tooltip = relocate_industry_repair
+			hidden_effect = {
+				activate_mission = SOV_relocating_industry_from_minsk_area
+			}
 		}
 	}
 
 	SOV_relocate_industry_from_ural_area = {
-
 		icon = generic_construction
 
 		highlight_states = {
@@ -18525,1086 +19518,217 @@ SOV_industry_relocation = {
 		}
 
 		visible = {
-			has_war = yes
+			NOT = {
+				219 = { is_owned_and_controlled_by = SOV }
+			} 
 		}
 
 		fire_only_once = yes
-
 		cost = 0
-		days_remove = 30
-
-		modifier = {
-			civilian_factory_use = 40
-		}
 
 		ai_will_do = {
-			factor = 200
+			factor = 100
 		}
 
 		complete_effect = {
-		}
-
-		remove_effect = {
-			if = {
-				limit = {
-					controls_state = 651
-				}
-				651 = { #Ufa
-					remove_building = {
-						type = arms_factory
-						level = 32
-					}
-					remove_building = {
-						type = industrial_complex
-						level = 9
-					}
-					remove_building = {
-						type = steel_refinery
-						level = 6
-					}
-				}
-				580 = { #Tobolsk
-					add_extra_state_shared_building_slots = 50
-					add_building_construction = {
-						type = arms_factory
-						level = 32
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = industrial_complex
-						level = 9
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = steel_refinery
-						level = 6
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = anti_air_building
-						level = 7
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = infrastructure
-						level = 4
-						instant_build = yes
-					}
+			activate_mission = SOV_relocating_industry_from_ural_area
+			hidden_effect = {
+				add_equipment_to_stockpile = {
+					type = train_equipment
+					amount = SOV_industrial_relocation_trains_decision_negative
+					producer = SOV
 				}
 			}
-			if = {
-				limit = {
-					controls_state = 398 #Perm
-				}
-				398 = { #Perm
-					remove_building = {
-						type = arms_factory
-						level = 23
-					}
-					remove_building = {
-						type = industrial_complex
-						level = 8
-					}
-					remove_building = {
-						type = steel_refinery
-						level = 3
-					}
-				}
-				403 = { #Tyumen
-					add_extra_state_shared_building_slots = 3
-					add_building_construction = {
-						type = arms_factory
-						level = 23
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = industrial_complex
-						level = 8
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = steel_refinery
-						level = 3
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = anti_air_building
-						level = 7
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = infrastructure
-						level = 4
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					controls_state = 652
-				}
-				652 = { #Orenburg
-					remove_building = {
-						type = arms_factory
-						level = 25
-					}
-					remove_building = {
-						type = industrial_complex
-						level = 9
-					}
-					remove_building = {
-						type = steel_refinery
-						level = 4
-					}
-				}
-				578 = { #Tomsk
-					add_extra_state_shared_building_slots = 4
-					add_building_construction = {
-						type = arms_factory
-						level = 25
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = industrial_complex
-						level = 9
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = steel_refinery
-						level = 4
-						instant_build = yes
-					}
-				}
-			}
+			custom_effect_tooltip = SOV_industry_relocation_trains_tt
 		}
 	}
-
-	SOV_relocate_industry_from_leningrad_area = {
-
+	SOV_relocating_industry_from_ural_area = {
 		icon = generic_construction
+		allowed = {
+			always = no
+		}
 
 		highlight_states = {
 			highlight_state_targets = {
-				state = 195
+				state = 651
 			}
-		}
-		allowed = {
-			tag = SOV
 		}
 		available = {
-			is_ai = no
-			195 = { #Leningrad
-				is_owned_and_controlled_by = SOV
-				arms_factory > 4
-				industrial_complex > 0
-			}
-			653 = { is_owned_and_controlled_by = SOV } #Zlatoust
-			572 = { is_owned_and_controlled_by = SOV } #Magnitogorsk
-		}
-
-		visible = {
-			has_war = yes
-		}
-
-		fire_only_once = yes
-
-		cost = 25
-		days_remove = 21
-
-		modifier = {
-
-		}
-
-		ai_will_do = {
-			factor = 4000
-		}
-
-		remove_effect = {
-			if = {
-				limit = {
-					controls_state = 195
+			OR = {
+				NOT = {
+					651 = { is_owned_and_controlled_by = SOV }
+					398 = { is_owned_and_controlled_by = SOV }
 				}
-				195 = { #Leningrad
+				AND = {
+					651 = {
+						arms_factory = 0
+					}
+					398 = {
+						arms_factory = 0
+					}
+				}
+			}
+		}
+
+		days_mission_timeout = 1
+		is_good = yes
+		fire_only_once = no
+
+		complete_effect = {
+			hidden_effect = {
+				add_equipment_to_stockpile = {
+					type = train_equipment
+					amount = SOV_industrial_relocation_trains_decision
+					producer = SOV
+				}
+			}
+		}
+		timeout_effect = {
+			random_owned_controlled_state = {
+				limit = {
+					OR = {
+						region = 133
+						region = 275
+						region = 40
+						region = 137
+					}
+					is_controlled_by = SOV
+					OR = {
+						arms_factory > 0
+						steel_refinery > 0
+						aluminium_refinery > 0
+					}
+				}
+				if = {	#Mils
+					limit = { arms_factory > 0 }
 					remove_building = {
 						type = arms_factory
-						level = 6
-					}
-					remove_building = {
-						type = industrial_complex
 						level = 1
 					}
-					remove_building = {
-						type = steel_refinery
-						level = 3
+					PREV = {
+						random_core_state = {
+							limit = {
+								OR = {
+									region = 14
+									region = 136
+									region = 151
+									region = 208
+								}
+								free_building_slots = {
+									building = arms_factory
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = arms_factory
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								damage_building = { type = arms_factory damage = 0.8 }
+							}
+						}
 					}
 				}
-
-				653 = { #Zlatoust
-					add_extra_state_shared_building_slots = 6
-					add_building_construction = {
-						type = arms_factory
-						level = 3
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = steel_refinery
-						level = 3
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.3 }
-					}
-				}
-				572 = { #Magnitogorsk
-					add_extra_state_shared_building_slots = 4
-					add_building_construction = {
-						type = arms_factory
-						level = 3
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = industrial_complex
-						level = 1
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.2 }
-						damage_building = { type = industrial_complex damage = 0.1 }
-					}
-				}
-				custom_effect_tooltip = relocate_industry_repair
-			}
-			if = {
-				limit = {
-					controls_state = 208
-				}
-				208 = { #Leningrad
-					remove_building = {
-						type = industrial_complex
-						level = 5
-					}
-				}
-
-				653 = { #Luga
-					add_extra_state_shared_building_slots = 5
-					add_building_construction = {
-						type = industrial_complex
-						level = 5
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = industrial_complex damage = 0.3 }
-					}
-				}
-				custom_effect_tooltip = relocate_industry_repair
-			}
-			if = {
-				limit = {
-					controls_state = 263
-				}
-				263 = { #Novogrod
-					remove_building = {
-						type = industrial_complex
-						level = 5
-					}
-					remove_building = {
-						type = arms_factory
-						level = 3
-					}
-				}
-
-				256 = { #Cheboksary
-					add_extra_state_shared_building_slots = 8
-					add_building_construction = {
-						type = arms_factory
-						level = 3
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = industrial_complex
-						level = 5
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.1 }
-						damage_building = { type = industrial_complex damage = 0.3 }
-					}
-				}
-				custom_effect_tooltip = relocate_industry_repair
-			}
-			if = {
-				limit = {
-					controls_state = 209
-				}
-				263 = { #Pskov
-					remove_building = {
-						type = arms_factory
-						level = 2
-					}
-				}
-
-				256 = { #Cheboksary
-					add_extra_state_shared_building_slots = 2
-					add_building_construction = {
-						type = arms_factory
-						level = 2
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.1 }
-					}
-				}
-				custom_effect_tooltip = relocate_industry_repair
-			}
-			custom_effect_tooltip = SOV_relocate_industry_from_leningrad_tt
-		}
-	}
-
-	SOV_relocate_industry_from_stalingrad_area = {
-
-		icon = generic_construction
-
-		highlight_states = {
-			highlight_state_targets = {
-			state = 217
-		}
-		}
-		allowed = {
-			tag = SOV
-		}
-		available = {
-			is_ai = no
-			217 = { #Stalingrad
-				is_owned_and_controlled_by = SOV
-				industrial_complex > 1
-			}
-			573 = { is_owned_and_controlled_by = SOV } #Zlatoust
-			876 = { is_owned_and_controlled_by = SOV } #Magnitogorsk
-		}
-
-		fire_only_once = yes
-
-		cost = 25
-		days_remove = 21
-
-		modifier = {
-
-		}
-
-		ai_will_do = {
-			factor = 4000
-		}
-
-		remove_effect = {
-			if = {
-				limit = {
-					controls_state = 217
-				}
-				217 = { #Stalingrad
-					remove_building = {
-						type = arms_factory
-						level = 8
-					}
-					remove_building = {
-						type = industrial_complex
-						level = 6
-					}
+				if = {	#Steel
+					limit = { steel_refinery > 0 }
 					remove_building = {
 						type = steel_refinery
 						level = 1
 					}
-				}
-
-				398 = { #Zlatoust
-					add_extra_state_shared_building_slots = 10
-					add_building_construction = {
-						type = arms_factory
-						level = 6
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = industrial_complex
-						level = 4
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.3 }
-						damage_building = { type = industrial_complex damage = 0.1 }
-					}
-				}
-				651 = { #Magnitogorsk
-					add_extra_state_shared_building_slots = 5
-					add_building_construction = {
-						type = arms_factory
-						level = 2
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = industrial_complex
-						level = 2
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = steel_refinery
-						level = 1
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.2 }
-						damage_building = { type = industrial_complex damage = 0.1 }
+					PREV = {
+						random_core_state = {
+							limit = {
+								OR = {
+									region = 284
+									region = 136
+									region = 151
+									region = 208
+									region = 148
+								}
+								free_building_slots = {
+									building = steel_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = steel_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								damage_building = { type = steel_refinery damage = 0.8 }
+							}
+						}
 					}
 				}
-				custom_effect_tooltip = relocate_industry_repair
-			}
-			if = {
-				limit = {
-					controls_state = 218
-				}
-				218 = { #Rostov
+				if = {	#Aluminium
+					limit = { aluminium_refinery > 0 }
 					remove_building = {
-						type = arms_factory
-						level = 6
-					}
-					remove_building = {
-						type = industrial_complex
+						type = aluminium_refinery
 						level = 1
 					}
-					remove_building = {
-						type = steel_refinery
-						level = 2
+					PREV = {
+						random_core_state = {
+							limit = {
+								OR = {
+									region = 284
+									region = 136
+									region = 151
+									region = 208
+									region = 148
+								}
+								free_building_slots = {
+									building = aluminium_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = aluminium_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								damage_building = { type = aluminium_refinery damage = 0.8 }
+							}
+						}
 					}
 				}
-				651 = { #Magnitogorsk
-					add_extra_state_shared_building_slots = 9
-					add_building_construction = {
-						type = arms_factory
-						level = 6
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = industrial_complex
-						level = 1
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = steel_refinery
-						level = 2
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.2 }
-						damage_building = { type = industrial_complex damage = 0.1 }
-					}
-				}
-				custom_effect_tooltip = relocate_industry_repair
 			}
-			if = {
-				limit = {
-					controls_state = 245
-				}
-				245 = { #Millerovo
-					remove_building = {
-						type = arms_factory
-						level = 2
-					}
-					remove_building = {
-						type = industrial_complex
-						level = 1
-					}
-				}
-				398 = { #Magnitogorsk
-					add_extra_state_shared_building_slots = 3
-					add_building_construction = {
-						type = arms_factory
-						level = 2
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = industrial_complex
-						level = 1
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.2 }
-						damage_building = { type = industrial_complex damage = 0.1 }
-					}
-				}
-				custom_effect_tooltip = relocate_industry_repair
+			custom_effect_tooltip = relocate_industry_repair
+			hidden_effect = {
+				activate_mission = SOV_relocating_industry_from_ural_area
 			}
-			custom_effect_tooltip = SOV_relocate_industry_from_stalingrad_tt
-		}
-	}
-
-	SOV_relocate_industry_from_kharkov_area = {
-
-		icon = generic_construction
-
-		highlight_states = {
-			highlight_state_targets = {
-			state = 220
-			}
-		}
-		allowed = {
-			tag = SOV
-		}
-		available = {
-			is_ai = no
-			220 = {
-				is_owned_and_controlled_by = SOV
-			}
-			221 = {
-				is_owned_and_controlled_by = SOV
-			}
-			652 = { is_owned_and_controlled_by = SOV } #Zlatoust
-			251 = { is_owned_and_controlled_by = SOV } #Magnitogorsk
-		}
-
-		fire_only_once = yes
-
-		cost = 25
-		days_remove = 21
-
-		modifier = {
-
-		}
-
-		ai_will_do = {
-			factor = 4000
-		}
-
-		remove_effect = {
-			if = {
-				limit = {
-					controls_state = 220
-				}
-				220 = { #Kursk
-					remove_building = {
-						type = arms_factory
-						level = 6
-					}
-					remove_building = {
-						type = industrial_complex
-						level = 6
-					}
-				}
-
-				652 = { #Zlatoust
-					add_extra_state_shared_building_slots = 7
-					add_building_construction = {
-						type = arms_factory
-						level = 4
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = industrial_complex
-						level = 3
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.3 }
-						damage_building = { type = industrial_complex damage = 0.1 }
-					}
-				}
-				251 = { #Magnitogorsk
-					add_extra_state_shared_building_slots = 5
-					add_building_construction = {
-						type = arms_factory
-						level = 2
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = industrial_complex
-						level = 3
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.2 }
-						damage_building = { type = industrial_complex damage = 0.1 }
-					}
-				}
-				custom_effect_tooltip = relocate_industry_repair
-			}
-			if = {
-				limit = {
-					controls_state = 221
-				}
-				221 = { #Kharkov
-					remove_building = {
-						type = arms_factory
-						level = 7
-					}
-					remove_building = {
-						type = industrial_complex
-						level = 2
-					}
-					remove_building = {
-						type = steel_refinery
-						level = 6
-					}
-				}
-
-				652 = { #Zlatoust
-					add_extra_state_shared_building_slots = 8
-					add_building_construction = {
-						type = arms_factory
-						level = 4
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = industrial_complex
-						level = 1
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = steel_refinery
-						level = 3
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.3 }
-						damage_building = { type = industrial_complex damage = 0.1 }
-					}
-				}
-				251 = { #Magnitogorsk
-					add_extra_state_shared_building_slots = 7
-					add_building_construction = {
-						type = arms_factory
-						level = 3
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = industrial_complex
-						level = 1
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = steel_refinery
-						level = 3
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.2 }
-						damage_building = { type = industrial_complex damage = 0.1 }
-					}
-				}
-				custom_effect_tooltip = relocate_industry_repair
-			}
-			if = {
-				limit = {
-					controls_state = 227
-				}
-				227 = { #Stalino
-					remove_building = {
-						type = arms_factory
-						level = 5
-					}
-					remove_building = {
-						type = industrial_complex
-						level = 7
-					}
-					remove_building = {
-						type = steel_refinery
-						level = 2
-					}
-				}
-
-				399 = { #Zlatoust
-					add_extra_state_shared_building_slots = 5
-					add_building_construction = {
-						type = industrial_complex
-						level = 4
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = steel_refinery
-						level = 1
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = industrial_complex damage = 0.1 }
-					}
-				}
-				256 = { #Cheboksary
-					add_extra_state_shared_building_slots = 5
-					add_building_construction = {
-						type = arms_factory
-						level = 5
-						instant_build = yes
-					}
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.2 }
-					}
-				}
-				249 = { #Magnitogorsk
-					add_extra_state_shared_building_slots = 4
-					add_building_construction = {
-						type = industrial_complex
-						level = 3
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = steel_refinery
-						level = 1
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = industrial_complex damage = 0.1 }
-					}
-				}
-				custom_effect_tooltip = relocate_industry_repair
-			}
-			if = {
-				limit = {
-					controls_state = 228
-				}
-				228 = { #Voroshilovgrad
-					remove_building = {
-						type = industrial_complex
-						level = 5
-					}
-				}
-
-				399 = { #Zlatoust
-					add_extra_state_shared_building_slots = 2
-					add_building_construction = {
-						type = industrial_complex
-						level = 2
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = industrial_complex damage = 0.1 }
-					}
-				}
-				249 = { #Magnitogorsk
-					add_extra_state_shared_building_slots = 3
-					add_building_construction = {
-						type = industrial_complex
-						level = 3
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = industrial_complex damage = 0.1 }
-					}
-				}
-				custom_effect_tooltip = relocate_industry_repair
-			}
-			custom_effect_tooltip = SOV_relocate_industry_from_kharkov_tt
-		}
-	}
-
-	SOV_relocate_industry_from_kiev_area = {
-
-		icon = generic_construction
-
-		highlight_states = {
-			highlight_state_targets = {
-			state = 202
-			}
-		}
-		allowed = {
-			tag = SOV
-		}
-		available = {
-			is_ai = no
-			202 = {
-				is_owned_and_controlled_by = SOV
-			}
-			400 = { is_owned_and_controlled_by = SOV } #Zlatoust
-			399 = { is_owned_and_controlled_by = SOV } #Magnitogorsk
-			251 = { is_owned_and_controlled_by = SOV } #Kuibyshev
-		}
-
-		fire_only_once = yes
-
-		cost = 25
-		days_remove = 21
-
-		modifier = {
-
-		}
-
-		ai_will_do = {
-			factor = 4000
-		}
-
-		remove_effect = {
-			if = {
-				limit = {
-					controls_state = 202
-				}
-				202 = { #Kiev
-					remove_building = {
-						type = arms_factory
-						level = 7
-					}
-					remove_building = {
-						type = industrial_complex
-						level = 6
-					}
-				}
-
-				400 = { #Zlatoust
-					add_extra_state_shared_building_slots = 7
-					add_building_construction = {
-						type = arms_factory
-						level = 4
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = industrial_complex
-						level = 3
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.3 }
-						damage_building = { type = industrial_complex damage = 0.1 }
-					}
-				}
-				399 = { #Magnitogorsk
-					add_extra_state_shared_building_slots = 6
-					add_building_construction = {
-						type = arms_factory
-						level = 3
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = industrial_complex
-						level = 3
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.2 }
-						damage_building = { type = industrial_complex damage = 0.1 }
-					}
-				}
-				custom_effect_tooltip = relocate_industry_repair
-			}
-			if = {
-				limit = {
-					controls_state = 193
-				}
-				193 = { #Chernigov
-					remove_building = {
-						type = arms_factory
-						level = 2
-					}
-					remove_building = {
-						type = industrial_complex
-						level = 3
-					}
-				}
-
-				400 = { #Zlatoust
-					add_extra_state_shared_building_slots = 5
-					add_building_construction = {
-						type = arms_factory
-						level = 2
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = industrial_complex
-						level = 3
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.3 }
-						damage_building = { type = industrial_complex damage = 0.1 }
-					}
-				}
-				custom_effect_tooltip = relocate_industry_repair
-			}
-			if = {
-				limit = {
-					controls_state = 226
-				}
-				226 = {
-					remove_building = {
-						type = arms_factory
-						level = 4
-					}
-				}
-
-				251 = {
-					add_extra_state_shared_building_slots = 4
-					add_building_construction = {
-						type = arms_factory
-						level = 4
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.3 }
-						damage_building = { type = industrial_complex damage = 0.1 }
-					}
-				}
-				custom_effect_tooltip = relocate_industry_repair
-			}
-			custom_effect_tooltip = SOV_relocate_industry_from_kiev_tt
-		}
-	}
-
-	SOV_relocate_industry_from_minsk_area = {
-
-		icon = generic_construction
-
-		highlight_states = {
-			highlight_state_targets = {
-				state = 206
-			}
-		}
-		allowed = {
-			tag = SOV
-		}
-		available = {
-			is_ai = no
-			206 = {
-				is_owned_and_controlled_by = SOV
-			}
-			249 = { is_owned_and_controlled_by = SOV } #Kazan
-			251 = { is_owned_and_controlled_by = SOV } #Kuibyshev
-			256 = { is_owned_and_controlled_by = SOV } #Cheboksary
-		}
-
-		fire_only_once = yes
-
-		cost = 25
-		days_remove = 21
-
-		modifier = {
-
-		}
-
-		ai_will_do = {
-			factor = 4000
-		}
-
-		remove_effect = {
-			if = {
-				limit = {
-					controls_state = 206
-				}
-				206 = { #Minsk
-					remove_building = {
-						type = arms_factory
-						level = 5
-					}
-					remove_building = {
-						type = industrial_complex
-						level = 2
-					}
-				}
-
-				249 = { #Kazan
-					add_extra_state_shared_building_slots = 7
-					add_building_construction = {
-						type = arms_factory
-						level = 5
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = industrial_complex
-						level = 2
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.3 }
-						damage_building = { type = industrial_complex damage = 0.1 }
-					}
-				}
-				custom_effect_tooltip = relocate_industry_repair
-			}
-			if = {
-				limit = {
-					controls_state = 207
-				}
-				207 = { #
-					remove_building = {
-						type = arms_factory
-						level = 1
-					}
-					remove_building = {
-						type = industrial_complex
-						level = 2
-					}
-				}
-
-				251 = { #Kuibyshev
-					add_extra_state_shared_building_slots = 3
-					add_building_construction = {
-						type = arms_factory
-						level = 1
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = industrial_complex
-						level = 2
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.3 }
-						damage_building = { type = industrial_complex damage = 0.1 }
-					}
-				}
-				custom_effect_tooltip = relocate_industry_repair
-			}
-			if = {
-				limit = {
-					controls_state = 241
-				}
-				241 = {
-					remove_building = {
-						type = arms_factory
-						level = 2
-					}
-					remove_building = {
-						type = industrial_complex
-						level = 2
-					}
-				}
-
-				256 = { #Cheboksary
-					add_extra_state_shared_building_slots = 4
-					add_building_construction = {
-						type = arms_factory
-						level = 2
-						instant_build = yes
-					}
-					add_building_construction = {
-						type = industrial_complex
-						level = 2
-						instant_build = yes
-					}
-
-					hidden_effect = {
-						damage_building = { type = arms_factory damage = 0.3 }
-						damage_building = { type = industrial_complex damage = 0.1 }
-					}
-				}
-				custom_effect_tooltip = relocate_industry_repair
-			}
-			custom_effect_tooltip = SOV_relocate_industry_from_minsk_tt
 		}
 	}
 }
