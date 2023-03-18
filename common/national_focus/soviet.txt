@@ -6285,8 +6285,10 @@ focus_tree = {
 	focus = {
 		id = SOV_raise_naval_infantry
 		icon = GFX_goal_generic_amphibious_assault
+		mutually_exclusive = { focus = SOV_assert_soviet_naval_presence }
+		mutually_exclusive = { focus = SOV_mine_warfare }
 		prerequisite = { focus = SOV_form_the_stavka }
-		x = 7
+		x = 6
 		y = 1
 		relative_position_id = SOV_form_the_stavka
 
@@ -6305,6 +6307,10 @@ focus_tree = {
 		completion_reward = {
 			custom_effect_tooltip = SOV_raise_naval_infantry_tt
 			hidden_effect = {
+				add_to_variable = { SOV_fyp_industrial_capacity_dockyard = -0.5 }
+				add_to_variable = { SOV_red_fleet_navy_refit_ic_cost = 0.1 }
+				add_to_variable = { SOV_red_fleet_repair_speed_factor = -0.1 }
+				add_to_variable = { SOV_red_fleet_naval_coordination = -0.5 }
 				division_template = {
 					name = "Diviziya Morskoi Pekhoty"
 					division_names_group = SOV_MAR_01
@@ -6366,18 +6372,101 @@ focus_tree = {
 					count = 7
 				}
 			}
-			add_to_variable = { SOV_fyp_industrial_capacity_dockyard = -0.5 }
-			add_to_variable = { SOV_red_fleet_navy_refit_ic_cost = 0.1 }
-			add_to_variable = { SOV_red_fleet_repair_speed_factor = -0.1 }
-			add_to_variable = { SOV_red_fleet_naval_coordination = -0.5 }
+		}
+	}
+	focus = {
+		id = SOV_assert_soviet_naval_presence
+		icon = GFX_goal_generic_construct_naval_dockyard_large
+		mutually_exclusive = { focus = SOV_raise_naval_infantry }
+		prerequisite = { focus = SOV_form_the_stavka }
+		x = 8
+		y = 1
+		relative_position_id = SOV_form_the_stavka
+		available = {
+			has_offensive_war = no
+		}
+		cost = 3
+		search_filters = {
+			FOCUS_FILTER_INDUSTRY
+			FOCUS_FILTER_RESEARCH
+		}
+		ai_will_do = {
+			factor = 1
+		}
+		available = {
+			OR = {
+				137 = {
+					is_controlled_by = SOV
+				}
+				195 = {
+					is_controlled_by = SOV
+				}
+				408 = {
+					is_controlled_by = SOV
+				}
+			}
+		}
+		available_if_capitulated = no
+		completion_reward = {
+			add_tech_bonus = {
+				name = SOV_assert_soviet_naval_presence
+				bonus = 0.5
+				uses = 3
+				category = naval_equipment
+			}
+			if = {
+				limit = {
+					195 = {
+						is_controlled_by = SOV
+					}
+				}
+				195 = {
+					add_extra_state_shared_building_slots = 2
+					add_building_construction = {
+						type = dockyard
+						level = 2
+						instant_build = yes
+					}
+				}
+			}
+			if = {
+				limit = {
+					137 = {
+						is_controlled_by = SOV
+					}
+				}
+				137 = {
+					add_extra_state_shared_building_slots = 2
+					add_building_construction = {
+						type = dockyard
+						level = 2
+						instant_build = yes
+					}
+				}
+			}
+			if = {
+				limit = {
+					408 = {
+						is_controlled_by = SOV
+					}
+				}
+				408 = {
+					add_extra_state_shared_building_slots = 2
+					add_building_construction = {
+						type = dockyard
+						level = 2
+						instant_build = yes
+					}
+				}
+			}
 		}
 	}
 
 	focus = {
 		id = SOV_wartime_lessons
 		icon = GFX_goal_generic_navy_submarine
-		prerequisite = { focus = SOV_raise_naval_infantry }
-		x = 0
+		prerequisite = { focus = SOV_raise_naval_infantry focus = SOV_assert_soviet_naval_presence }
+		x = 1
 		y = 1
 		relative_position_id = SOV_raise_naval_infantry
 		cost = 3
@@ -6395,12 +6484,35 @@ focus_tree = {
 			}
 		}
 	}
+
+	focus = {
+		id = SOV_mine_warfare
+		icon = GFX_focus_generic_mine_warfare
+		prerequisite = { focus = SOV_raise_naval_infantry }
+		x = -1
+		y = 1
+		relative_position_id = SOV_wartime_lessons
+		cost = 3
+		available = {
+		}
+		search_filters = {
+			FOCUS_FILTER_RESEARCH
+		}
+		completion_reward = {
+			add_ideas = SOV_mine_warfare_ns
+			add_tech_bonus = {
+				name = SOV_mine_warfare
+				bonus = 0.5
+				uses = 2
+				category = naval_mines
+			}
+		}
+	}
 	
 	focus = {
 		id = SOV_offensive_maritime_strategy
 		icon = GFX_goal_generic_ships_heavy_cruiser
-		mutually_exclusive = { focus = SOV_mine_warfare }
-		prerequisite = { focus = SOV_wartime_lessons }
+		prerequisite = { focus = SOV_assert_soviet_naval_presence }
 		x = 1
 		y = 1
 		relative_position_id = SOV_wartime_lessons
@@ -6431,30 +6543,6 @@ focus_tree = {
 				name = SOV_an_oceangoing_navy
 				uses = 3
 				category = naval_doctrine
-			}
-		}
-	}
-	focus = {
-		id = SOV_mine_warfare
-		icon = GFX_focus_generic_mine_warfare
-		mutually_exclusive = { focus = SOV_offensive_maritime_strategy }
-		prerequisite = { focus = SOV_wartime_lessons }
-		x = -1
-		y = 1
-		relative_position_id = SOV_wartime_lessons
-		cost = 3
-		available = {
-		}
-		search_filters = {
-			FOCUS_FILTER_RESEARCH
-		}
-		completion_reward = {
-			add_ideas = SOV_mine_warfare_ns
-			add_tech_bonus = {
-				name = SOV_mine_warfare
-				bonus = 0.5
-				uses = 2
-				category = naval_mines
 			}
 		}
 	}
@@ -6496,7 +6584,7 @@ focus_tree = {
 	focus = {
 		id = SOV_impregnable_forts
 		icon = GFX_goal_generic_fortify_city
-		prerequisite = { focus = SOV_raise_naval_infantry }
+		prerequisite = { focus = SOV_raise_naval_infantry focus = SOV_assert_soviet_naval_presence }
 		x = 3
 		y = 1
 		relative_position_id = SOV_raise_naval_infantry
