@@ -211,7 +211,14 @@ NDefines.NResistance.FOREIGN_MANPOWER_MIN_THRESHOLD = 500000000			 			-- The min
 
 NDefines.NResistance.RESISTANCE_ACTIVITY_CHANCE_AT_MAX_RESISTANCE = 0.200			-- sabotage
 
-NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_OCCUPIED_CAPITULATED = 5.0 			-- resistance target modifier when the enemy is capitulated
+NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_OCCUPIED_CAPITULATED = 15.0 		-- resistance target modifier when the enemy is capitulated
+
+NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_STATE_VP = {						-- resistance target modifier pairs for vp. first entry is total vp in state and second entry is amount of target modifier that applies for that threshold
+	0,   0.0, -- 0 - 5
+	5,   10.0, -- 5 - 20
+	20,  20.0, -- 20 - 50
+	50,  30.0, -- 50 - ...
+}
 
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Railways
