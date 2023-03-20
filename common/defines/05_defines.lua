@@ -276,7 +276,7 @@ NDefines.NMilitary.MAX_DIVISION_SUPPORT_HEIGHT = 5									-- Max height of supp
 
 NDefines.NMilitary.UNIT_LEADER_ASSIGN_TRAIT_COST = 5								-- cost to assign a new trait to a unit leader
 NDefines.NMilitary.ARMY_STRATEGIC_DEPLOYMENT_FUEL_MULT = 0.0						-- fuel consumption ratio while doing strategic deployment
-NDefines.NMilitary.STRATEGIC_SPEED_INFRA_BASE = 2.0
+NDefines.NMilitary.STRATEGIC_SPEED_INFRA_BASE = 3.0
 NDefines.NMilitary.STRATEGIC_SPEED_INFRA_MAX = 5.0
 NDefines.NMilitary.STRATEGIC_SPEED_RAIL_BASE = 15.0
 NDefines.NMilitary.STRATEGIC_SPEED_RAIL_MAX = 25.0
