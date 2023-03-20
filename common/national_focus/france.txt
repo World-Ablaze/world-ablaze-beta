@@ -230,23 +230,47 @@ focus_tree = {
 	focus = {
 		id = FRA_economic_restoration
 		icon = GFX_focus_FRA_economic_restoration
-		cost = 4
+		cost = 6
 		x = -17
 		y = 0
-		completion_reward = { }
+		completion_reward = { 
+			economy_fatigue_level_down_10 = yes
+		}
 	}
 
 	### Historical ###
 	focus = {
 		id = FRA_reorganize_the_economic_council
 		icon = GFX_focus_FRA_reorganize_the_economic_council
-		cost = 4
+		cost = 6
 		relative_position_id = FRA_economic_restoration
 		x = -4
 		y = 1
 		prerequisite = { focus = FRA_economic_restoration }
-		completion_reward = { }
+		completion_reward = {
+			add_ideas = {
+				FRA_dirigisme
+			}
+			custom_effect_tooltip = FRA_dirigisme_tt
+		}
 	}
+
+	focus = {
+		id = FRA_2_years_military_service_act
+		icon = GFX_focus_FRA_2_years_military_service_act
+		cost = 6
+		relative_position_id = FRA_economic_restoration
+		x = 4
+		y = 1
+		prerequisite = { focus = FRA_economic_restoration }
+		completion_reward = { 
+			# conscription = 0.015
+			custom_effect_tooltip = FRA_2_years_military_service_act_tt
+			add_ideas = extensive_conscription
+			add_to_variable = { FRA_weekly_war_support = 0.001 }
+		}
+	}
+
 	focus = {
 		id = FRA_form_the_popular_front
 		icon = GFX_focus_FRA_form_the_popular_front
@@ -255,27 +279,121 @@ focus_tree = {
 		x = 0
 		y = 1
 		prerequisite = { focus = FRA_reorganize_the_economic_council }
-		completion_reward = { }
+		prerequisite = { focus = FRA_2_years_military_service_act }
+		ai_will_do = {
+			factor = 1
+		}
+		available = {
+		}
+		bypass = {
+		}
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+		search_filters = {
+			FOCUS_FILTER_POLITICAL
+		}
+		completion_reward = {
+			create_country_leader = {
+				name = "Léon Blum"
+				desc = "POLITICS_ÉDOUARD_DALADIER_DESC"
+				picture = GFX_portrait_fra_leon_blum
+				expire = "1965.1.1"
+				ideology = socialism
+				traits = {
+					reluctant_interventionist
+					stout_defender
+				}
+			}
+			custom_effect_tooltip = FRA_form_the_popular_front_tt
+			hidden_effect = {
+				set_variable = { FRA_CGT_attitude = -1 }
+				set_variable = { FRA_National_bloc_attitude = -4 }
+				FRA_political_instability_update_effect = yes
+			}
+		}
 	}
 	focus = {
 		id = FRA_ban_the_leagues
 		icon = GFX_focus_FRA_ban_the_leagues
 		cost = 4
 		relative_position_id = FRA_form_the_popular_front
-		x = -4
+		x = -6
 		y = 1
 		prerequisite = { focus = FRA_form_the_popular_front }
-		completion_reward = { }
+		available = {
+			AND = {
+				custom_trigger_tooltip = {
+					tooltip = FRA_ban_the_leagues_tt
+					check_variable = { var = FRA_National_Bloc_attitude value = -4 compare = less_than_or_equals }
+				}
+
+				has_stability < 0.7
+			}
+		}
+		bypass = {
+		}
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+		search_filters = {
+			FOCUS_FILTER_FRA_POLITICAL_VIOLENCE
+		}
+		completion_reward = {
+			add_to_variable = { var = FRA_National_Bloc_attitude value = 5 }
+			set_temp_variable = {
+				FRA_rw_support = party_popularity@neutrality
+			}
+			add_to_temp_variable = {
+				FRA_rw_support = party_popularity@fascism
+			}
+			multiply_temp_variable = {
+				FRA_rw_support = -0.5
+			}
+			add_stability = FRA_rw_support
+		}
 	}
 	focus = {
 		id = FRA_matignon_agreements
 		icon = GFX_focus_FRA_matignon_agreements
 		cost = 4
 		relative_position_id = FRA_form_the_popular_front
-		x = -2
+		x = -4
 		y = 1
 		prerequisite = { focus = FRA_form_the_popular_front }
-		completion_reward = { }
+		ai_will_do = {
+			factor = 1
+		}
+		available = {
+		}
+		bypass = {
+		}
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+		search_filters = {
+			FOCUS_FILTER_INDUSTRY
+		}
+		completion_reward = {
+			custom_effect_tooltip = FRA_reform_the_labour_laws_tt
+			hidden_effect = {
+				set_variable = { FRA_CGT_attitude = 1 }
+				set_variable = { FRA_CGT_political_power_gain = 0 }
+				set_variable = { FRA_CGT_stability = 1 }
+				subtract_from_variable = { var = FRA_French_Industrialists_attitude value = 1 }
+				FRA_political_instability_update_effect = yes
+			}
+			add_ideas = {
+				FRA_matignon_agreements
+			}
+			country_event = { days = 912 id = fra_armor.816 }
+			if = {
+				limit = {
+					has_idea = FRA_factory_strikes
+				}
+				remove_ideas = FRA_factory_strikes
+			}
+		}
 	}
 	focus = {
 		id = FRA_nationalize_key_industries
@@ -285,7 +403,29 @@ focus_tree = {
 		x = 0
 		y = 1
 		prerequisite = { focus = FRA_form_the_popular_front }
-		completion_reward = { }
+		ai_will_do = {
+			factor = 1
+		}
+		available = {
+		}
+		bypass = {
+		}
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+		search_filters = {
+			FOCUS_FILTER_INDUSTRY
+		}
+		completion_reward = {
+			custom_effect_tooltip = FRA_nationalize_key_industry_tt
+			hidden_effect = {
+				add_to_variable = { var = FRA_CGT_influence value = 1 }
+				subtract_from_variable = { var = FRA_French_Industrialists_influence value = 1 }
+				subtract_from_variable = { var = FRA_French_Industrialists_attitude value = 1 }
+				set_variable = { FRA_French_Industrialists_factory_output = -2 }
+				FRA_political_instability_update_effect = yes
+			}
+		}
 	}
 	focus = {
 		id = FRA_reorganize_the_aviation_industry
@@ -295,19 +435,67 @@ focus_tree = {
 		x = 2
 		y = 1
 		prerequisite = { focus = FRA_form_the_popular_front }
-		completion_reward = { }
+		cost = 5
+		ai_will_do = {
+			factor = 1
+		}
+		available = {
+			OR = {
+				has_country_leader = {
+					ruling_only = yes
+					name = "Léon Blum"
+				}
+				has_government = communism
+			}
+		}
+		bypass = {
+		}
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+		search_filters = {
+			FOCUS_FILTER_INDUSTRY
+		}
+		completion_reward = {
+			unlock_decision_tooltip = {
+				decision = FRA_reorganize_aviation_industry_north
+				show_effect_tooltip = yes
+			}
+			unlock_decision_tooltip = {
+				decision = FRA_reorganize_aviation_industry_west
+				show_effect_tooltip = yes
+			}
+			unlock_decision_tooltip = {
+				decision = FRA_reorganize_aviation_industry_center
+				show_effect_tooltip = yes
+			}
+			unlock_decision_tooltip = {
+				decision = FRA_reorganize_aviation_industry_south_east
+				show_effect_tooltip = yes
+			}
+			unlock_decision_tooltip = {
+				decision = FRA_reorganize_aviation_industry_south_west
+				show_effect_tooltip = yes
+			}
+		}
 	}
 	focus = {
 		id = FRA_invest_in_public_works
 		icon = GFX_focus_FRA_invest_in_public_works
 		cost = 4
 		relative_position_id = FRA_form_the_popular_front
-		x = -6
+		x = -2
 		y = 1
 		prerequisite = { focus = FRA_form_the_popular_front }
-		completion_reward = { }
+		completion_reward = { 
+			hidden_effect = {
+				add_to_variable = { var = FRA_CGT_stability value = 1 }
+				add_to_variable = { var = FRA_National_Bloc_factory_output value = -1 }
+				FRA_political_instability_update_effect = yes
+			}
+			economy_fatigue_level_down_10 = yes
+		}
 	}
-	###
 	focus = {
 		id = FRA_2_weeks_paid_vacation 
 		icon = GFX_focus_FRA_2_weeks_paid_vacation
@@ -315,7 +503,6 @@ focus_tree = {
 		relative_position_id = FRA_matignon_agreements
 		x = -1
 		y = 1
-		prerequisite = { focus = FRA_ban_the_leagues }
 		prerequisite = { focus = FRA_matignon_agreements }
 		completion_reward = { }
 	}
@@ -326,7 +513,6 @@ focus_tree = {
 		relative_position_id = FRA_matignon_agreements
 		x = 1
 		y = 1
-		prerequisite = { focus = FRA_nationalize_key_industries }
 		prerequisite = { focus = FRA_matignon_agreements }
 		completion_reward = { }
 	}
@@ -359,27 +545,221 @@ focus_tree = {
 		x = 0
 		y = 1
 		prerequisite = { focus = FRA_expand_the_citizenship }
-		completion_reward = { }
+		ai_will_do = {
+			factor = 1
+		}
+		available = {
+		}
+		bypass = {
+		}
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+		search_filters = {
+			FOCUS_FILTER_MANPOWER
+			FOCUS_FILTER_INDUSTRY
+		}
+		completion_reward = {
+			remove_worker_shortage_effect = yes
+		}
 	}
 	focus = {
-		id = FRA_france_indivisible
-		icon = GFX_focus_FRA_france_indivisible
+		id = FRA_france_undividable
+		icon = FRA_france_undividable
 		cost = 4
 		relative_position_id = FRA_encourage_immigration
 		x = 0
 		y = 1
 		prerequisite = { focus = FRA_encourage_immigration }
-		completion_reward = { }
+		ai_will_do = {
+			factor = 1
+		}
+		available = {
+			NOT = {
+				has_completed_focus = FRA_utilize_the_leagues
+			}
+		}
+		bypass = {
+		}
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+		search_filters = {
+			FOCUS_FILTER_MANPOWER
+		}
+		select_effect = {
+			if = {
+				limit = {
+					FRT = {
+						exists = yes
+						is_subject_of = ROOT
+					}
+				}
+				annex_country = {
+					target = FRT
+				}
+			}
+			if = {
+				limit = {
+					FRN = {
+						exists = yes
+						is_subject_of = ROOT
+					}
+				}
+				annex_country = {
+					target = FRN
+				}
+			}
+			if = {
+				limit = {
+					FRM = {
+						exists = yes
+						is_subject_of = ROOT
+					}
+				}
+				annex_country = {
+					target = FRM
+				}
+			}
+			if = {
+				limit = {
+					FRS = {
+						exists = yes
+						is_subject_of = ROOT
+					}
+				}
+				annex_country = {
+					target = FRS
+				}
+			}
+			if = {
+				limit = {
+					FRW = {
+						exists = yes
+						is_subject_of = ROOT
+					}
+				}
+				annex_country = {
+					target = FRW
+				}
+			}
+			if = {
+				limit = {
+					FRC = {
+						exists = yes
+						is_subject_of = ROOT
+					}
+				}
+				annex_country = {
+					target = FRC
+				}
+			}
+			if = {
+				limit = {
+					FRP = {
+						exists = yes
+						is_subject_of = ROOT
+					}
+				}
+				annex_country = {
+					target = FRP
+				}
+			}
+			if = {
+				limit = {
+					FRJ = {
+						exists = yes
+						is_subject_of = ROOT
+					}
+				}
+				annex_country = {
+					target = FRJ
+				}
+			}
+			if = {
+				limit = {
+					FRI = {
+						exists = yes
+						is_subject_of = ROOT
+					}
+				}
+				annex_country = {
+					target = FRI
+				}
+			}
+			if = {
+				limit = {
+					FRV = {
+						exists = yes
+						is_subject_of = ROOT
+					}
+				}
+				annex_country = {
+					target = FRV
+				}
+			}
+		}
+		completion_reward = {
+			swap_ideas = {
+				remove_idea = FRA_expanded_citizenship
+				add_idea = FRA_france_undividable
+			}
+			every_state = {
+				limit = {
+					is_controlled_by = ROOT
+					NOT = {
+						is_core_of = ROOT
+					}
+					NOT = {
+						is_on_continent = europe
+					}
+				}
+				add_compliance = 30
+			}
+		}
 	}
 	focus = {
 		id = FRA_french_union
 		icon = GFX_focus_FRA_french_union
 		cost = 4
-		relative_position_id = FRA_france_indivisible
+		relative_position_id = FRA_france_undividable
 		x = 0
 		y = 1
-		prerequisite = { focus = FRA_france_indivisible }
-		completion_reward = { }
+		prerequisite = { focus = FRA_france_undividable }
+		cost = 10
+		ai_will_do = {
+			factor = 1
+		}
+		available = {
+			has_war = no
+			NOT = {
+				has_idea = FRA_disjointed_government
+			}
+		}
+		bypass = {
+		}
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+		completion_reward = {
+			remove_worker_shortage_effect = yes
+			hidden_effect = {
+				country_event = lar_france_french_union.1
+			}
+			if = {
+				limit = {
+					AND = {
+						OR = {
+							check_variable = { var = FRA_National_Bloc_attitude value = -4 compare = less_than_or_equals }
+							check_variable = { var = FRA_CGT_attitude value = -4 compare = less_than_or_equals }
+						}
+						has_stability < 0.7
+					}
+				}
+				country_event = lar_france_political_violence.3
+			}
+			custom_effect_tooltip = FRA_french_union_tt
+		}
 	}
 
 	###
@@ -387,10 +767,12 @@ focus_tree = {
 		id = FRA_rearmament_plan
 		icon = GFX_focus_FRA_rearmament_plan
 		cost = 4
-		relative_position_id = FRA_reorganize_the_aviation_industry
+		relative_position_id = FRA_nationalize_key_industries
 		x = 0
 		y = 1
 		prerequisite = { focus = FRA_reorganize_the_aviation_industry }
+		prerequisite = { focus = FRA_nationalize_key_industries }
+		prerequisite = { focus = FRA_invest_in_public_works }
 		completion_reward = { }
 	}
 	focus = {
@@ -401,7 +783,26 @@ focus_tree = {
 		x = 0
 		y = 1
 		prerequisite = { focus = FRA_rearmament_plan }
-		completion_reward = { }
+		ai_will_do = {
+			factor = 1
+		}
+		available = {
+		}
+		bypass = {
+		}
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+		search_filters = {
+			FOCUS_FILTER_INDUSTRY
+		}
+		completion_reward = {
+			economy_fatigue_level_down_10 = yes
+			add_timed_idea = {
+				idea = FRA_devalue_the_franc
+				days = 365
+			}
+		}
 	}
 	focus = {
 		id = FRA_increase_taxes
@@ -725,38 +1126,18 @@ focus_tree = {
 		completion_reward = { }
 	}
 
-	###
-	focus = {
-		id = FRA_dirigisme
-		icon = GFX_focus_FRA_dirigisme
-		cost = 4
-		relative_position_id = FRA_economic_restoration
-		x = 0
-		y = 5
-		prerequisite = { focus = FRA_rearmament_plan focus = FRA_promote_entrepeneurship }
-		completion_reward = { }
-	}
 
 	### Alt-History ###
-	focus = {
-		id = FRA_2_year_military_service_act
-		icon = GFX_focus_FRA_2_year_military_service_act
-		cost = 4
-		relative_position_id = FRA_economic_restoration
-		x = 4
-		y = 1
-		prerequisite = { focus = FRA_economic_restoration }
-		completion_reward = { }
-	}
+
 
 	focus = {
 		id = FRA_revive_the_national_bloc
 		icon = GFX_focus_FRA_revive_the_national_bloc
 		cost = 4
-		relative_position_id = FRA_2_year_military_service_act
+		relative_position_id = FRA_2_years_military_service_act
 		x = 0
 		y = 1
-		prerequisite = { focus = FRA_2_year_military_service_act }
+		prerequisite = { focus = FRA_2_years_military_service_act }
 		mutually_exclusive = { focus = FRA_form_the_popular_front }
 		completion_reward = { }
 	}
