@@ -658,6 +658,8 @@ NDefines.NNavy.CARRIER_STACK_PENALTY_EFFECT = 0.6									-- Each carrier above 
 --NDefines.NNavy.SUPREMACY_PER_SHIP_PER_IC = 0.1
 --NDefines.NNavy.SUPREMACY_PER_SHIP_BASE = 25.0
 
+NDefines.NNavy.DEPTH_CHARGES_HIT_CHANCE_MULT = 2
+
 NDefines.NNavy.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
 		0, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
 		0.8, -- PATROL
