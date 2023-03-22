@@ -211,7 +211,14 @@ NDefines.NResistance.FOREIGN_MANPOWER_MIN_THRESHOLD = 500000000			 			-- The min
 
 NDefines.NResistance.RESISTANCE_ACTIVITY_CHANCE_AT_MAX_RESISTANCE = 0.200			-- sabotage
 
-NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_OCCUPIED_CAPITULATED = 5.0 			-- resistance target modifier when the enemy is capitulated
+NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_OCCUPIED_CAPITULATED = 15.0 		-- resistance target modifier when the enemy is capitulated
+
+NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_STATE_VP = {						-- resistance target modifier pairs for vp. first entry is total vp in state and second entry is amount of target modifier that applies for that threshold
+	0,   0.0, -- 0 - 5
+	5,   10.0, -- 5 - 20
+	20,  20.0, -- 20 - 50
+	50,  30.0, -- 50 - ...
+}
 
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Railways
@@ -276,9 +283,10 @@ NDefines.NMilitary.MAX_DIVISION_SUPPORT_HEIGHT = 5									-- Max height of supp
 
 NDefines.NMilitary.UNIT_LEADER_ASSIGN_TRAIT_COST = 5								-- cost to assign a new trait to a unit leader
 NDefines.NMilitary.ARMY_STRATEGIC_DEPLOYMENT_FUEL_MULT = 0.0						-- fuel consumption ratio while doing strategic deployment
-NDefines.NMilitary.STRATEGIC_SPEED_BASE = 2.0                 						-- Speed of strategic redeployment
-NDefines.NMilitary.STRATEGIC_INFRA_SPEED = 18.0                  					-- Max of additional speed gained trouh=gh level for strategic redeployment per infra
-
+NDefines.NMilitary.STRATEGIC_SPEED_INFRA_BASE = 3.0
+NDefines.NMilitary.STRATEGIC_SPEED_INFRA_MAX = 5.0
+NDefines.NMilitary.STRATEGIC_SPEED_RAIL_BASE = 15.0
+NDefines.NMilitary.STRATEGIC_SPEED_RAIL_MAX = 25.0
 --NDefines.NMilitary.PLAN_EXECUTE_CAREFUL_LIMIT = 10								-- When looking for an attach target, this score limit is required in the battle plan to consider province for attack
 --NDefines.NMilitary.PLAN_EXECUTE_CAREFUL_MAX_FORT = 9								-- If execution mode is set to careful, units will not attack provinces with fort levels greater than or equal to this
 
@@ -658,6 +666,8 @@ NDefines.NNavy.CARRIER_STACK_PENALTY_EFFECT = 0.6									-- Each carrier above 
 --NDefines.NNavy.SUPREMACY_PER_SHIP_PER_IC = 0.1
 --NDefines.NNavy.SUPREMACY_PER_SHIP_BASE = 25.0
 
+NDefines.NNavy.DEPTH_CHARGES_HIT_CHANCE_MULT = 2
+
 NDefines.NNavy.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
 		0, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
 		0.8, -- PATROL
@@ -842,19 +852,10 @@ NDefines.NAI.LAND_COMBAT_INTERCEPT_PER_PLANE = 0.4									-- Amount of intercep
 NDefines.NAI.NAVAL_COMBAT_TRANSFER_AIR_IMPORTANCE = 500.0							-- Naval combat involving enemy land units
 
 NDefines.NAI.STR_BOMB_AIR_SUPERIORITY_IMPORTANCE = 2.0								-- Strategic importance of air superiority ( amount of enemy planes in area )
-NDefines.NAI.STR_BOMB_CIVIL_FACTORY_IMPORTANCE = 150								-- Strategic importance of enemy civil factories
-NDefines.NAI.STR_BOMB_MILITARY_FACTORY_IMPORTANCE = 200								-- Strategic importance of enemy military factories
-NDefines.NAI.STR_BOMB_NAVAL_FACTORY_IMPORTANCE = 50									-- Strategic importance of enemy naval factories
-NDefines.NAI.STR_BOMB_AA_IMPORTANCE_FACTOR = 0.5									-- Factor of AA influence on strategic importance ( 0.0 - 1.0 )
-NDefines.NAI.STR_BOMB_INFRA_IMPORTANCE_FACTOR = 0.25								-- Factor of infrastructure influence on strategic importance ( 0.0 - 1.0 )
-NDefines.NAI.STR_BOMB_IMPORTANCE_SCALE = 5.0										-- str bombing total importance scale (every str bombing score get's multiplied by it)
 
 NDefines.NAI.STR_BOMB_MIN_ENEMY_FIGHTERS_IN_AREA = 2800								-- If amount of enemy fighters is higher than this mission won't perform
 NDefines.NAI.STR_BOMB_FIGHTERS_PER_PLANE = 1.5										-- Amount of air superiority planes requested per enemy plane
-NDefines.NAI.STR_BOMB_PLANES_PER_CIV_FACTORY = 5									-- Amount of planes requested per enemy civ factory
-NDefines.NAI.STR_BOMB_PLANES_PER_MIL_FACTORY = 100									-- Amount of planes requested per enemy military factory
-NDefines.NAI.STR_BOMB_PLANES_PER_NAV_FACTORY = 50									-- Amount of planes requested per enemy naval factory
-NDefines.NAI.STR_BOMB_MIN_EXCORT_WINGS = 10											-- Min amount of airwings requested to excort operations
+NDefines.NAI.STR_BOMB_MIN_EXCORT_PLANES = 600										-- Min amount of planes requested to excort operations
 
 ------------------------------------------------- END
 
