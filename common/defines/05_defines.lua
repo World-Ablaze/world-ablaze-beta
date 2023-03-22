@@ -852,19 +852,10 @@ NDefines.NAI.LAND_COMBAT_INTERCEPT_PER_PLANE = 0.4									-- Amount of intercep
 NDefines.NAI.NAVAL_COMBAT_TRANSFER_AIR_IMPORTANCE = 500.0							-- Naval combat involving enemy land units
 
 NDefines.NAI.STR_BOMB_AIR_SUPERIORITY_IMPORTANCE = 2.0								-- Strategic importance of air superiority ( amount of enemy planes in area )
-NDefines.NAI.STR_BOMB_CIVIL_FACTORY_IMPORTANCE = 150								-- Strategic importance of enemy civil factories
-NDefines.NAI.STR_BOMB_MILITARY_FACTORY_IMPORTANCE = 200								-- Strategic importance of enemy military factories
-NDefines.NAI.STR_BOMB_NAVAL_FACTORY_IMPORTANCE = 50									-- Strategic importance of enemy naval factories
-NDefines.NAI.STR_BOMB_AA_IMPORTANCE_FACTOR = 0.5									-- Factor of AA influence on strategic importance ( 0.0 - 1.0 )
-NDefines.NAI.STR_BOMB_INFRA_IMPORTANCE_FACTOR = 0.25								-- Factor of infrastructure influence on strategic importance ( 0.0 - 1.0 )
-NDefines.NAI.STR_BOMB_IMPORTANCE_SCALE = 5.0										-- str bombing total importance scale (every str bombing score get's multiplied by it)
 
 NDefines.NAI.STR_BOMB_MIN_ENEMY_FIGHTERS_IN_AREA = 2800								-- If amount of enemy fighters is higher than this mission won't perform
 NDefines.NAI.STR_BOMB_FIGHTERS_PER_PLANE = 1.5										-- Amount of air superiority planes requested per enemy plane
-NDefines.NAI.STR_BOMB_PLANES_PER_CIV_FACTORY = 5									-- Amount of planes requested per enemy civ factory
-NDefines.NAI.STR_BOMB_PLANES_PER_MIL_FACTORY = 100									-- Amount of planes requested per enemy military factory
-NDefines.NAI.STR_BOMB_PLANES_PER_NAV_FACTORY = 50									-- Amount of planes requested per enemy naval factory
-NDefines.NAI.STR_BOMB_MIN_EXCORT_WINGS = 10											-- Min amount of airwings requested to excort operations
+NDefines.NAI.STR_BOMB_MIN_EXCORT_PLANES = 600										-- Min amount of planes requested to excort operations
 
 ------------------------------------------------- END
 
