@@ -1,12 +1,79 @@
+WA_aircraft_production_strategy_fix = {
+
+	if = { 
+		limit = { 
+			check_variable = { aircraft_production_was_adjusted = 1 }
+		}
+
+		add_timed_idea = {
+			idea = AI_production_efficiency_cheat
+			days = 15
+		}
+
+		set_temp_variable = { aircraft_production_was_adjusted = 0 }
+	}
+}
+
 WA_aircraft_production_strategies = {
+
+	set_temp_variable = { aircraft_production_was_adjusted = 0 }
 
 	############# Fighters
 
 	if = {
 		limit = {
-#			NOT = { WA_has_jet_fighter_tech = yes }
 			WA_has_fighter_tech = yes
-			has_deployed_air_force_size = { size < 5000 type = fighter }
+			if = {
+				limit = {
+					OR = {
+						original_tag = SOV
+						original_tag = GER
+					}
+				}
+				has_deployed_air_force_size = { size < 8000 type = fighter }
+			}
+			if = {
+				limit = {
+					NOT = {
+						original_tag = SOV
+						original_tag = GER
+						original_tag = USA
+					}
+				}
+				has_deployed_air_force_size = { size < 5000 type = fighter }
+			}
+			if = {
+				limit = {
+					AND = {
+						original_tag = USA
+						NOT = {
+							has_tech = usa_fighter_multirole_2
+						}
+					}
+				}
+				has_deployed_air_force_size = { size < 1500 type = fighter }
+			}
+			if = {
+				limit = {
+					AND = {
+						original_tag = USA
+						has_tech = usa_fighter_multirole_2
+						NOT = {
+							has_tech = usa_fighter_5
+						}
+					}
+				}
+				has_deployed_air_force_size = { size < 5000 type = fighter }
+			}
+			if = {
+				limit = {
+					AND = {
+						original_tag = USA
+						has_tech = usa_fighter_5
+					}
+				}
+				has_deployed_air_force_size = { size < 9000 type = fighter }
+			}
 			num_of_military_factories > 24
 			NOT = { original_tag = SOV }
 			NOT = { has_tech = ger_fighter_multirole_1 }
@@ -19,19 +86,39 @@ WA_aircraft_production_strategies = {
 				}
 			}
 		}
-
 		set_country_flag = WA_fighter_multirole_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
-	else = {
+	else_if = {
+		limit = {
+			has_country_flag = WA_fighter_multirole_production_flag
+		}
 		clr_country_flag = WA_fighter_multirole_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
 
 	if = {
 		limit = {
-#			NOT = { WA_has_jet_fighter_tech = yes }
 			WA_has_fighter_tech = yes
 			WA_has_multirole_fighter_tech = yes
-			has_deployed_air_force_size = { size < 5000 type = fighter }
+			if = {
+				limit = {
+					OR = {
+						original_tag = SOV
+						original_tag = GER
+					}
+				}
+				has_deployed_air_force_size = { size < 8000 type = fighter }
+			}
+			if = {
+				limit = {
+					NOT = {
+						original_tag = SOV
+						original_tag = GER
+					}
+				}
+				has_deployed_air_force_size = { size < 5000 type = fighter }
+			}
 			num_of_military_factories > 24
 			original_tag = SOV
 			NOT = { has_tech = ger_fighter_multirole_1 }
@@ -47,16 +134,37 @@ WA_aircraft_production_strategies = {
 		}
 
 		set_country_flag = WA_fighter_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
-	else = {
+	else_if = {
+		limit = {
+			has_country_flag = WA_fighter_production_flag
+		}
 		clr_country_flag = WA_fighter_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
 
 	if = {
 		limit = {
-#			NOT = { WA_has_jet_fighter_tech = yes }
 			WA_has_multirole_fighter_tech = yes
-			has_deployed_air_force_size = { size < 5000 type = fighter }
+			if = {
+				limit = {
+					OR = {
+						original_tag = SOV
+						original_tag = GER
+					}
+				}
+				has_deployed_air_force_size = { size < 8000 type = fighter }
+			}
+			if = {
+				limit = {
+					NOT = {
+						original_tag = SOV
+						original_tag = GER
+					}
+				}
+				has_deployed_air_force_size = { size < 5000 type = fighter }
+			}
 			num_of_military_factories > 24
 			NOT = { original_tag = SOV }
 			has_tech = ger_fighter_multirole_1
@@ -71,9 +179,14 @@ WA_aircraft_production_strategies = {
 		}
 
 		set_country_flag = WA_multirole_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
-	else = {
+	else_if = {
+		limit = {
+			has_country_flag = WA_multirole_production_flag
+		}
 		clr_country_flag = WA_multirole_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
 	
 	################################### special case USA
@@ -86,9 +199,14 @@ WA_aircraft_production_strategies = {
 		}
 
 		set_country_flag = WA_usa_jet_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
-	else = {
+	else_if = {
+		limit = {
+			has_country_flag = WA_usa_jet_production_flag
+		}
 		clr_country_flag = WA_usa_jet_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
 	
 	################################### Battle of Britain
@@ -114,39 +232,31 @@ WA_aircraft_production_strategies = {
 		}
 
 		set_country_flag = WA_bob_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
-	else = {
+	else_if = {
+		limit = {
+			has_country_flag = WA_bob_production_flag
+		}
 		clr_country_flag = WA_bob_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
 	
 	############# Jet Fighter
 
-#	if = {
-#		limit = {
-#			WA_has_jet_fighter_tech = yes
-#			has_deployed_air_force_size = { size < 7500 type = fighter }
-#			num_of_military_factories > 49
-#			OR = {
-#				is_major = yes
-#				NOT = {
-#					any_allied_country = {
-#						is_major = yes
-#					}
-#				}
-#			}
-#		}
-#
-#		set_country_flag = WA_jet_fighter_production_flag
-#	}
-#	else = {
-#		clr_country_flag = WA_jet_fighter_production_flag
-#	}
+
 
 	############# CAS
 
 	if = {
 		limit = {
-#			NOT = { WA_has_jet_cas_tech = yes }
+			if = {
+				limit = {
+					tag = SOV
+				}
+				has_tech = sov_cas_3
+			}
+
 			NOT = {
 				has_country_flag = WA_bob_production_flag
 			}
@@ -168,33 +278,19 @@ WA_aircraft_production_strategies = {
 		}
 
 		set_country_flag = WA_cas_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
-	else = {
+	else_if = {
+		limit = {
+			has_country_flag = WA_cas_production_flag
+		}
 		clr_country_flag = WA_cas_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
 
 	############# Jet CAS
 
-#	if = {
-#		limit = {
-#			WA_has_jet_cas_tech = yes
-#			has_deployed_air_force_size = { size < 5000 type = cas }
-#			num_of_military_factories > 74
-#			OR = {
-#				is_major = yes
-#				NOT = {
-#					any_allied_country = {
-#						is_major = yes
-#					}
-#				}
-#			}
-#		}
-#
-#		set_country_flag = WA_jet_cas_production_flag
-#	}
-#	else = {
-#		clr_country_flag = WA_jet_cas_production_flag
-#	}
+
 
 	############# Heavy Fighters
 
@@ -213,14 +309,52 @@ WA_aircraft_production_strategies = {
 			WA_has_heavy_fighter_tech = yes
 			WA_need_heavy_fighters = yes
 			OR = {
-				has_deployed_air_force_size = { size < 6000 type = fighter }
+				if = {
+					limit = {
+						OR = {
+							original_tag = SOV
+							original_tag = GER
+						}
+					}
+					has_deployed_air_force_size = { size < 9000 type = fighter }
+				}
+				if = {
+					limit = {
+						NOT = {
+							original_tag = SOV
+							original_tag = GER
+							original_tag = USA
+						}
+					}
+					has_deployed_air_force_size = { size < 6000 type = fighter }
+				}
+				if = {
+					limit = {
+						original_tag = USA
+						has_tech = usa_heavy_fighter_1
+						NOT = {
+							has_tech = usa_heavy_fighter_2
+						}
+					}
+					has_deployed_air_force_size = { size < 4000 type = fighter }
+				}
+				if = {
+					limit = {
+						original_tag = USA
+						has_tech = usa_heavy_fighter_2
+						NOT = {
+							has_tech = usa_heavy_fighter_3
+						}
+					}
+					has_deployed_air_force_size = { size < 6000 type = fighter }
+				}
 				AND = {
 					NOT = {
 						has_equipment = {
 							heavy_fighter_equipment > 3999
 						}
 					}
-					has_deployed_air_force_size = { size < 10000 type = fighter }
+					has_deployed_air_force_size = { size < 10500 type = fighter }
 					has_tech = usa_heavy_fighter_3
 				}
 			}
@@ -240,11 +374,15 @@ WA_aircraft_production_strategies = {
 				}
 			}
 		}
-
 		set_country_flag = WA_heavy_fighter_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
-	else = {
+	else_if = {
+		limit = {
+			has_country_flag = WA_heavy_fighter_production_flag
+		}
 		clr_country_flag = WA_heavy_fighter_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
 
 	############# Attackers
@@ -254,7 +392,24 @@ WA_aircraft_production_strategies = {
 			NOT = { WA_has_jet_fighter_tech = yes }
 			WA_has_attacker_tech = yes
 			WA_need_heavy_fighters = yes
-			has_deployed_air_force_size = { size < 6500 type = fighter }
+			if = {
+				limit = {
+					OR = {
+						original_tag = SOV
+						original_tag = GER
+					}
+				}
+				has_deployed_air_force_size = { size < 9500 type = fighter }
+			}
+			if = {
+				limit = {
+					NOT = {
+						original_tag = SOV
+						original_tag = GER
+					}
+				}
+				has_deployed_air_force_size = { size < 6500 type = fighter }
+			}
 			num_of_military_factories > 99
 			NOT = {has_country_flag = french_technologies_tree_flag }
 			NOT = {has_country_flag = japanese_technologies_tree_flag }
@@ -276,9 +431,14 @@ WA_aircraft_production_strategies = {
 		}
 
 		set_country_flag = WA_attacker_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
-	else = {
+	else_if = {
+		limit = {
+			has_country_flag = WA_attacker_production_flag
+		}
 		clr_country_flag = WA_attacker_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
 
 	############# Tactical Bombers
@@ -290,7 +450,6 @@ WA_aircraft_production_strategies = {
 			}
 			NOT = { WA_need_strat = yes }
 			WA_need_tac = yes
-#			NOT = { WA_has_jet_tac_bomber_tech = yes }
 			WA_has_tac_bomber_tech = yes
 			has_deployed_air_force_size = { size < 4000 type = tactical_bomber }
 			num_of_military_factories > 99
@@ -345,9 +504,14 @@ WA_aircraft_production_strategies = {
 		}
 
 		set_country_flag = WA_tactical_bomber_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
-	else = {
+	else_if = {
+		limit = {
+			has_country_flag = WA_tactical_bomber_production_flag
+		}
 		clr_country_flag = WA_tactical_bomber_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
 
 	############# Strike Bombers
@@ -381,34 +545,15 @@ WA_aircraft_production_strategies = {
 		}
 
 		set_country_flag = WA_strike_bomber_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
-	else = {
+	else_if = {
+		limit = {
+			has_country_flag = WA_strike_bomber_production_flag
+		}
 		clr_country_flag = WA_strike_bomber_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
-
-	############# Jet Tactical Bombers
-
-#	if = {
-#		limit = {
-#			NOT = { WA_need_strat = yes }
-#			WA_has_jet_tac_bomber_tech = yes
-#			has_deployed_air_force_size = { size < 4000 type = tactical_bomber }
-#			num_of_military_factories > 149
-#			OR = {
-#				is_major = yes
-#				NOT = {
-#					any_allied_country = {
-#						is_major = yes
-#					}
-#				}
-#			}
-#		}
-#
-#		set_country_flag = WA_jet_tactical_bomber_production_flag
-#	}
-#	else = {
-#		clr_country_flag = WA_jet_tactical_bomber_production_flag
-#	}
 
 	############# Naval Bombers
 
@@ -440,35 +585,41 @@ WA_aircraft_production_strategies = {
 		}
 
 		set_country_flag = WA_naval_bomber_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
-	else = {
+	else_if = {
+		limit = {
+			has_country_flag = WA_naval_bomber_production_flag
+		}
 		clr_country_flag = WA_naval_bomber_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
 
 	############# Patrol Bombers
 
-#	if = {
-#		limit = {
-#			WA_has_patrol_tech = yes
-#			WA_has_nav_tech = yes
-#			WA_need_nav = yes
-#			has_deployed_air_force_size = { size < 2000 type = naval_bomber }
-#			num_of_military_factories > 99
-#			OR = {
-#				is_major = yes
-#				NOT = {
-#					any_allied_country = {
-#						is_major = yes
-#					}
-#				}
-#			}
-#		}
-#
-#		set_country_flag = WA_patrol_bomber_production_flag
-#	}
-#	else = {
-#		clr_country_flag = WA_patrol_bomber_production_flag
-#	}
+	#	if = {
+	#		limit = {
+	#			WA_has_patrol_tech = yes
+	#			WA_has_nav_tech = yes
+	#			WA_need_nav = yes
+	#			has_deployed_air_force_size = { size < 2000 type = naval_bomber }
+	#			num_of_military_factories > 99
+	#			OR = {
+	#				is_major = yes
+	#				NOT = {
+	#					any_allied_country = {
+	#						is_major = yes
+	#					}
+	#				}
+	#			}
+	#		}
+	#
+	#		set_country_flag = WA_patrol_bomber_production_flag
+	#		set_temp_variable = { aircraft_production_was_adjusted = 1 }
+	#	}
+	#	else = {
+	#		clr_country_flag = WA_patrol_bomber_production_flag
+	#	}
 
 	############# Strategic Bombers
 
@@ -477,7 +628,6 @@ WA_aircraft_production_strategies = {
 			NOT = {
 				has_country_flag = WA_bob_production_flag
 			}
-#			NOT = { WA_has_jet_strat_bomber_tech = yes }
 			WA_has_strat_tech = yes
 			WA_need_strat = yes
 			if = {
@@ -486,6 +636,7 @@ WA_aircraft_production_strategies = {
 				}
 				NOT = {
 					AND = {
+						has_country_flag = WA_usa_jet_production_flag
 						has_global_flag = soviet_union_defeated
 						ENG = {
 							has_country_flag = WA_bob_production_flag
@@ -521,43 +672,46 @@ WA_aircraft_production_strategies = {
 		}
 
 		set_country_flag = WA_strategic_bomber_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
-	else = {
+	else_if = {
+		limit = {
+			has_country_flag = WA_strategic_bomber_production_flag
+		}
 		clr_country_flag = WA_strategic_bomber_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
 
-	############# Jet Strategic Bombers
+	############# Scout Planes
 
-#	if = {
-#		limit = {
-#			WA_has_jet_strat_bomber_tech = yes
-#			WA_need_strat = yes
-#			OR = {
-#				AND = {
-#					NOT = { original_tag = USA }
-#					has_deployed_air_force_size = { size < 5000 type = strategic_bomber }
-#				}
-#				AND = {
-#					original_tag = USA
-#					has_deployed_air_force_size = { size < 15000 type = strategic_bomber }
-#				}
-#			}
-#			num_of_military_factories > 199
-#			OR = {
-#				is_major = yes
-#				NOT = {
-#					any_allied_country = {
-#						is_major = yes
-#					}
-#				}
-#			}
-#		}
-#
-#		set_country_flag = WA_jet_strategic_production_flag
-#	}
-#	else = {
-#		clr_country_flag = WA_jet_strategic_production_flag
-#	}
+	if = {
+		limit = {
+			NOT = {
+				tag = GER
+			}
+			WA_has_scout_plane_tech = yes
+			has_deployed_air_force_size = { size < 150 type = scout_plane }
+			num_of_military_factories > 149
+			OR = {
+				is_major = yes
+				NOT = {
+					any_allied_country = {
+						is_major = yes
+					}
+				}
+			}
+		}
+
+		set_country_flag = WA_scout_plane_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
+	}
+	else_if = {
+		limit = {
+			has_country_flag = WA_scout_plane_production_flag
+		}
+		clr_country_flag = WA_scout_plane_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
+	}
 
 	############# Carrier Planes
 
@@ -570,6 +724,7 @@ WA_aircraft_production_strategies = {
 				limit = {
 					tag = USA
 				}
+				has_tech = usa_cv_fighter_4
 				NOT = {
 					AND = {
 						has_global_flag = soviet_union_defeated
@@ -587,8 +742,8 @@ WA_aircraft_production_strategies = {
 					tag = ENG
 				}
 				OR = {
+					has_tech = eng_cv_fighter_4
 					has_tech = eng_cv_fighter_3
-					has_tech = eng_cv_fighter_2
 				}
 			}
 			num_of_military_factories > 25
@@ -600,9 +755,14 @@ WA_aircraft_production_strategies = {
 			has_deployed_air_force_size = { size < 2000 type = fighter }
 		}
 		set_country_flag = WA_cv_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
-	else = {
+	else_if = {
+		limit = {
+			has_country_flag = WA_cv_production_flag
+		}
 		clr_country_flag = WA_cv_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
 
 	############# Transport
@@ -611,6 +771,7 @@ WA_aircraft_production_strategies = {
 		limit = {
 			NOT = {
 				has_country_flag = WA_bob_production_flag
+				tag = GER
 			}
 			num_of_military_factories > 99
 			alliance_strength_ratio > 0.5
@@ -625,8 +786,15 @@ WA_aircraft_production_strategies = {
 		}
 
 		set_country_flag = WA_transport_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
-	else = {
+	else_if = {
+		limit = {
+			has_country_flag = WA_transport_production_flag
+		}
 		clr_country_flag = WA_transport_production_flag
+		set_temp_variable = { aircraft_production_was_adjusted = 1 }
 	}
+
+	WA_aircraft_production_strategy_fix = yes
 }
