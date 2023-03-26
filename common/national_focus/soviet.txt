@@ -75,12 +75,8 @@ focus_tree = {
 		}
 		search_filters = { FOCUS_FILTER_INDUSTRY }
 		completion_reward = {
-			add_to_variable = {
-				SOV_the_politburo_good_consumer_goods_factor = -0.02
-			}
-			add_to_variable = {
-				SOV_the_politburo_global_building_slots_factor = 0.1
-			}
+			add_to_variable = { SOV_fyp_consumer_goods_factor = -0.02 }
+			add_to_variable = { SOV_fyp_global_building_slots_factor = 0.1 }
 			custom_effect_tooltip = SOV_the_collectivization_process_ns_tt
 			add_stability = -0.05
 			if = {
@@ -961,7 +957,7 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_INDUSTRY }
 		available_if_capitulated = no
 		completion_reward = {
-			economy_fatigue_level_up_2 = yes
+			economy_fatigue_level_up_4 = yes
 			195 = {
 				add_extra_state_shared_building_slots = 3
 				add_building_construction = {
@@ -1410,7 +1406,7 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_INDUSTRY }
 
 		completion_reward = {
-			economy_fatigue_level_up_2 = yes
+			economy_fatigue_level_up_1 = yes
 			add_tech_bonus = {
 				name = SOV_pc_of_fuel_industry
 				bonus = 0.5
@@ -1432,6 +1428,11 @@ focus_tree = {
 			232 = {
 				add_building_construction = {
 					type = infrastructure
+					level = 1
+					instant_build = yes
+				}
+				add_building_construction = {
+					type = fuel_silo
 					level = 1
 					instant_build = yes
 				}
@@ -2190,7 +2191,9 @@ focus_tree = {
 				idea = disorganised_industry
 				days = 730
 			}
+
 			remove_ideas = peoples_commissariat_focus
+
 			if = {
 				limit = {
 					has_idea = partial_economic_mobilisation
@@ -2297,9 +2300,15 @@ focus_tree = {
 		}
 		completion_reward = {
 			hidden_effect = {
-				swap_ideas = {
-					remove_idea = SOV_expanded_aircraft_industry_bonus
-					add_idea = SOV_increased_aircraft_production_ns_bonus
+				if = {
+					limit = { has_idea = SOV_expanded_aircraft_industry_bonus }
+					swap_ideas = {
+						remove_idea = SOV_expanded_aircraft_industry_bonus
+						add_idea = SOV_increased_aircraft_production_ns_bonus
+					}
+				}
+				else = {
+					add_ideas = SOV_increased_aircraft_production_ns_bonus
 				}
 				if = {
 					#DEFAULT COMMIE
@@ -2357,11 +2366,11 @@ focus_tree = {
 			FOCUS_FILTER_INDUSTRY
 		}
 		completion_reward = {
-			remove_ideas = SOV_centralized_control_ships
 			custom_effect_tooltip = SOV_pc_of_shipbuilding_industry_tt
 			add_to_variable = {
 				SOV_fyp_industrial_capacity_dockyard = 0.05
 			}
+			remove_ideas = SOV_centralized_control_ships
 		}
 	}
 	################################# Great Patriotic War ###########################
@@ -2588,9 +2597,13 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			set_technology = {
-				cutting_corners = 1
-			}
+			custom_effect_tooltip = SOV_pc_of_tank_industry_tt
+			hidden_effect = {
+				set_technology = {
+					cutting_corners = 1
+					popup = no
+				}
+			}			
 		}
 	}
 	focus = {
@@ -2625,10 +2638,6 @@ focus_tree = {
 			FOCUS_FILTER_EMERGENCY
 		}
 		available = {
-			has_war = yes
-			any_enemy_country = {
-				is_major = yes
-			}
 			572 = {
 				is_owned_and_controlled_by = SOV
 			}
@@ -2663,6 +2672,11 @@ focus_tree = {
 		cost = 4
 		x = 1
 		y = 1
+		available = {
+			653 = {
+				is_owned_and_controlled_by = SOV
+			}
+		}
 		search_filters = {
 			FOCUS_FILTER_INDUSTRY
 			FOCUS_FILTER_EMERGENCY
@@ -4787,8 +4801,14 @@ focus_tree = {
 		}
 		completion_reward = {
 			#This handles the equipment bonus that's not supported by dynamic modifiers
-			add_ideas = SOV_expanded_aircraft_industry_bonus
-			custom_effect_tooltip = SOV_expand_the_aircraft_industry_ns_tt
+			if = {
+				limit = { NOT = { has_idea = SOV_increased_aircraft_production_ns_bonus } }
+				hidden_effect = {
+					add_ideas = SOV_expanded_aircraft_industry_bonus
+				}
+				custom_effect_tooltip = SOV_expand_the_aircraft_industry_ns_tt
+			}
+			
 			random_owned_controlled_state = {
 				limit = {
 					region = 271
@@ -12573,7 +12593,7 @@ focus_tree = {
 				}
 				SOV_political_instability_update_effect = yes
 			}
-			economy_fatigue_level_down_3 = yes
+			economy_fatigue_level_down_4 = yes
 			#	custom_effect_tooltip = unlock_propaganda_campaign_tt
 			#	unlock_decision_tooltip = SOV_propaganda_knowledge
 			#	unlock_decision_tooltip = SOV_propaganda_builders_of_communism
