@@ -838,21 +838,26 @@ SOV_reset_specific_random_target_override_effect = {
 ### PHASE 1 ###
 ###############
 # Check for a randomly triggered purge, and set the appropriate severity (regular purge/great purge) [RANDOM PURGE & SIZE]
-SOV_check_for_a_new_purge_effect = { #Useless now. Leaving it just in case
-	if = { # REGULAR PURGE
+SOV_check_for_a_new_purge_effect = {
+	if = {
+		limit = {
+			SOV_paranoia_is_low_level = yes
+		}
+		SOV_low_purge_effect = yes
+	}
+	else_if = {
 		limit = {
 			SOV_paranoia_is_medium_level = yes
 		}
-		SOV_manage_a_regular_purge_effect = yes
+		SOV_medium_purge_effect = yes
 	}
-	else_if = { # GREAT PURGE
+	else_if = {
 		limit = {
 			SOV_paranoia_is_high_level = yes
 		}
-		SOV_manage_a_great_purge_effect = yes
+		SOV_high_purge_effect = yes
 	}
 }
-
 
 ###############
 ### PHASE 2 ###
@@ -860,249 +865,39 @@ SOV_check_for_a_new_purge_effect = { #Useless now. Leaving it just in case
 #Set the Area to be purged (admin, army, navy, airforce) [AREA]
 
 # REGULAR PURGE
-SOV_manage_a_regular_purge_effect = { # Phase 2: Set the Area to be purged (admin, army, navy, airforce), then set the actual targets (people), then trigger event (Phase 3)
-	# Randomly choose an area to purge
+SOV_low_purge_effect = {
+	# Cowed by Stalin
 	random_list = {
-		25 = { # ADMINISTRATION
-			modifier = { #Don't repeat last purge please
-				factor = 0.1
-				check_variable = { SOV_last_regular_purge_area = 1 }
-			}
-			modifier = { #Someone is a potential target
-				factor = 2
-				any_character = {
-					is_character_slot = political_advisor
-					has_character_flag = SOV_potential_target_flag
-				}
-			}
-			modifier = { #Yagoda is in the NKVD -> He shall be purged
-				factor = 1.5
-				has_idea = SOV_genrikh_yagoda
-			}
-			modifier = { #There are no purges available
-				factor = 0
-				NOT = {
-					any_character = {
-						is_character_slot = political_advisor
-						SOV_character_can_be_purged = yes
-					}
-				}
-				has_idea = SOV_understaffed_bureaucracy
-				has_idea = SOV_lavrenty_beriya
-			}
+		25 = {
 			SOV_pick_regular_purge_administration_type_effect = yes
 		}
-		25 = { # ARMY
-			modifier = { #Don't repeat last purge please
-				factor = 0.1
-				check_variable = { SOV_last_regular_purge_area = 2 }
-			}
-			modifier = { #Someone is a potential target
-				factor = 2
-				any_character = {
-					has_character_flag = SOV_potential_target_flag
-					OR = {
-						is_army_leader = yes
-						has_army_ledger = yes
-					}
-				}
-			}
-			modifier = { #There are no purges available
-				factor = 0
-				NOT = {
-					any_army_leader = {
-						SOV_character_can_be_purged = yes
-						NOT = { has_trait = trait_SOV_stalinist }
-					}
-				}
-				has_idea = SOV_anti_soviet_military_thinking_banned_army
-				has_idea = SOV_training_activities_curtailed
-			}
+		25 = {
 			SOV_pick_regular_purge_army_type_effect = yes
 		}
-		25 = { # NAVY
-			modifier = { #Don't repeat last purge please
-				factor = 0.1
-				check_variable = { SOV_last_regular_purge_area = 3 }
-			}
-			modifier = { #Someone is a potential target
-				factor = 2
-				any_navy_leader = {
-					has_character_flag = SOV_potential_target_flag
-				}
-			}
-			modifier = { #There are no purges available
-				factor = 0
-				NOT = {
-					any_navy_leader = {
-						SOV_character_can_be_purged = yes
-						NOT = { has_trait = trait_SOV_stalinist }
-					}
-				}
-				has_idea = SOV_anti_soviet_military_thinking_banned_navy
-				has_idea = SOV_shipyard_staff_purged
-			}
+		25 = 
 			SOV_pick_regular_purge_navy_type_effect = yes
-		}
-		25 = { # AIRFORCE
-			modifier = { #Don't repeat last purge please
-				factor = 0.1
-				check_variable = { SOV_last_regular_purge_area = 4 }
-			}
-			modifier = { #Someone is a potential targets
-				factor = 2
-				any_character = {
-					has_air_ledger = yes
-					has_character_flag = SOV_potential_target_flag
-				}
-			}
-			modifier = { #There are no purges available
-				factor = 0
-				has_idea = SOV_anti_soviet_military_thinking_banned_airforce
-				has_idea = SOV_ground_based_training
-			}
+		
+		25 = {
 			SOV_pick_regular_purge_airforce_type_effect = yes
 		}
 	}
+	# Purge Leadership
 }
 
 # GREAT PURGE
 SOV_manage_a_great_purge_effect = {
 	# Randomly choose an area to purge
 	random_list = {
-		25 = { # ADMINISTRATION
-			modifier = { #Don't repeat last purge please
-				factor = 0
-				check_variable = { SOV_last_great_purge_area = 1 }
-			}
-			modifier = { #Someone is a potential target
-				factor = 2
-				any_character = {
-					is_character_slot = political_advisor
-					has_character_flag = SOV_potential_target_flag
-				}
-			}
-			modifier = { #There are no purges available
-				factor = 0
-				NOT = {
-					any_character = {
-						is_character_slot = political_advisor
-						NOT = { #NKVDs have their own purge
-							is_character = SOV_genrikh_yagoda
-							is_character = SOV_nikolay_yezhov
-							is_character = SOV_lavrenty_beriya
-						}
-						SOV_character_can_be_purged = yes
-					}
-				}
-			}
+		25 = {
 			SOV_pick_great_purge_administration_type_effect = yes
 		}
-		25 = { # ARMY
-			modifier = { #Don't repeat last purge please
-				factor = 0
-				check_variable = { SOV_last_great_purge_area = 2 }
-			}
-			modifier = { #Someone is a potential target
-				factor = 2
-				any_character = {
-					has_character_flag = SOV_potential_target_flag
-					OR = {
-						is_army_leader = yes
-						has_army_ledger	= yes
-					}
-				}
-			}
-			modifier = { #There are no purges available
-				factor = 0
-				has_idea = SOV_purged_junior_army_officers_3
-				NOT = {
-					any_character = {
-						OR = {
-							is_army_leader = yes
-							has_army_ledger = yes
-						}
-						SOV_character_can_be_purged = yes
-						NOT = { has_trait = trait_SOV_stalinist }
-					}
-				}
-			}
+		25 = { 
 			SOV_pick_great_purge_army_type_effect = yes
 		}
-		25 = { # NAVY
-			modifier = { #Don't repeat last purge please
-				factor = 0
-				check_variable = { SOV_last_great_purge_area = 3 }
-			}
-			modifier = { #Someone is a potential target
-				factor = 2
-				any_character = {
-					OR = {
-						is_navy_leader = yes
-						has_navy_ledger = yes
-					}
-					has_character_flag = SOV_potential_target_flag
-				}
-			}
-			modifier = { #There are no purges available
-				factor = 0
-				has_idea = SOV_purged_junior_navy_officers_3
-				NOT = {
-					any_navy_leader = {
-						SOV_character_can_be_purged = yes
-						NOT = { has_trait = trait_SOV_stalinist }
-					}
-				}
-			}
+		25 = {
 			SOV_pick_great_purge_navy_type_effect = yes
 		}
-		25 = { # AIRFORCE
-			modifier = { #Don't repeat last purge please
-				factor = 0
-				check_variable = { SOV_last_great_purge_area = 4 }
-			}
-			modifier = { #Someone is a potential targets
-				factor = 2
-				OR = {
-					NOT = { has_country_flag = SOV_purged_airforce_chiefs_flag } #This purge can only happen "randomly" once, unless some air advisors are forcefully targeted in a focus or something
-					any_character = {
-						has_air_ledger = yes
-						has_character_flag = SOV_potential_target_flag
-					}
-				}
-			}
-			modifier = { #We have closed a lot of designers man
-				factor = 0.5
-				has_country_flag = SOV_purged_airforce_chiefs_flag  #This purge can only happen "randomly" once, unless some air advisors are forcefully targeted in a focus or something
-				NOT = {
-					any_character = {
-						has_air_ledger = yes
-						has_character_flag = SOV_potential_target_flag
-					}
-				}
-				count_triggers = {
-					amount = 2
-					has_country_flag = SOV_mig_design_bureau_dissolved_flag
-					has_country_flag = SOV_ilyushin_design_bureau_dissolved_flag
-					has_country_flag = SOV_tupolev_design_bureau_dissolved_flag
-					has_country_flag = SOV_yakovlev_design_bureau_dissolved_flag
-				}
-			}
-
-			modifier = { #There are no purges available
-				factor = 0
-				has_country_flag = SOV_purged_airforce_chiefs_flag  #This purge can only happen "randomly" once, unless some air advisors are forcefully targeted in a focus or something
-				NOT = {
-					any_character = {
-						has_air_ledger = yes
-						has_character_flag = SOV_potential_target_flag
-					}
-				}
-				has_country_flag = SOV_mig_design_bureau_dissolved_flag
-				has_country_flag = SOV_ilyushin_design_bureau_dissolved_flag
-				has_country_flag = SOV_tupolev_design_bureau_dissolved_flag
-				has_country_flag = SOV_yakovlev_design_bureau_dissolved_flag
-			}
+		25 = {
 			SOV_pick_great_purge_airforce_type_effect = yes
 		}
 	}
@@ -1117,63 +912,19 @@ SOV_manage_a_great_purge_effect = {
 SOV_pick_regular_purge_administration_type_effect = {
 	set_temp_variable = { SOV_random_purge_test = 0 } #Testing purposes (to see if/when all those conditions fail)
 	random_list = {
-		1 = { # ADVISOR PURGED
-			modifier = { #No pastia no comiercio
-				factor = 0
-				NOT = {
-					any_character = {
-						is_character_slot = political_advisor
-						SOV_character_can_be_purged = yes
-					}
-				}
-			}
-			modifier = { #If someone is already suspicious, then it's more likely that a purge to get rid of him happens
-				factor = 3
-				any_character = {
-					is_character_slot = political_advisor
-					has_character_flag = SOV_potential_target_flag
-				}
-			}
+		1 = {
 			SOV_trigger_regular_purge_advisor_accused_effect = yes
-			add_to_temp_variable = { SOV_random_purge_test = 1 } #TEST
 		}
-		1 = { # CIVIL SERVANTS PURGED
-			modifier = {
-				factor = 0
-				has_idea = SOV_understaffed_bureaucracy
-			}
+		1 = { 
 			SOV_trigger_regular_purge_civil_servants_purged_effect = yes
-			add_to_temp_variable = { SOV_random_purge_test = 1 } #TEST
 		}
-		98 = { # NKVD PURGE
-			modifier = { #Beriya is huevo pocho
-				factor = 0
-				has_idea = SOV_lavrenty_beriya
-			}
-			modifier = { #Yagoda is in the NKVD -> He shall be purged
-				factor = 50
-				has_idea = SOV_genrikh_yagoda
-				date > 1938.1.1
-			}
-			modifier = { #Yezhov is in the NKVD -> He should be purged
-				factor = 50
-				has_idea = SOV_nikolay_yezhov
-				date > 1939.1.1
-			}
+		98 = {
 			SOV_trigger_regular_purge_nkvd_effect = yes
-			add_to_temp_variable = { SOV_random_purge_test = 1 } #TEST
 		}
-	}
-	if = { #TEST
-		limit = {
-			check_variable = { SOV_random_purge_test = 0 }
-		}
-		log = "RANDOM PURGE FAILED. NO VALID PURGE AVAILABLE"
 	}
 }
 
 SOV_pick_great_purge_administration_type_effect = {
-	#JUST IN CASE WE ADD AN EXTRA GREAT PURGE. COULD BE DELETED AND THE EXTRA STEP SKIPPED IF NOT
 	if = {
 		limit = { #As long as someone can be purged, go ahead
 			any_character = {
@@ -1188,277 +939,79 @@ SOV_pick_great_purge_administration_type_effect = {
 		}
 		SOV_trigger_great_purge_moscow_trial_effect = yes
 	}
-	else = {
-		log = "What are you doing the Great Purge of administration is not available you madman"
-	}
 }
 
 SOV_pick_regular_purge_army_type_effect = {
 	set_temp_variable = { SOV_random_purge_test = 0 } #Testing purposes (to see if/when all those conditions fail)
 	random_list = {
-		25 = { # GENERAL ACCUSED
-			modifier = { #No pastia no comiercio
-				factor = 0
-				NOT = {
-					any_army_leader = {
-						SOV_character_can_be_purged = yes
-						NOT = { has_trait = trait_SOV_stalinist }
-					}
-				}
-			}
-			modifier = { #Someone is a potential target
-				factor = 2
-				any_army_leader = {
-					is_corps_commander = yes
-					has_character_flag = SOV_potential_target_flag
-				}
-			}
+		25 = {
 			SOV_regular_purge_general_accused_effect = yes
-			add_to_temp_variable = { SOV_random_purge_test = 1 } #TEST
 		}
-		25 = { # CONSPIRACY IN THE ACADEMY - ARMY
-			modifier = {
-				factor = 0
-				has_idea = SOV_anti_soviet_military_thinking_banned_army
-			}
+		25 = {
 			SOV_regular_purge_conspiracy_in_the_academy_effect = yes
-			add_to_temp_variable = { SOV_random_purge_test = 1 } #TEST
 		}
-		25 = { # ANTI-SABOTEUR CAMPAIGN - ARMY
-			modifier = {
-				factor = 0
-				has_idea = SOV_training_activities_curtailed
-			}
+		25 = {
 			SOV_regular_purge_anti_saboteur_campaign_effect = yes
-			add_to_temp_variable = { SOV_random_purge_test = 1 } #TEST
 		}
-		25 = { # GENERAL ACCUSES GENERAL
-			modifier = { #No pastia no comiercio
-				factor = 0
-				NOT = { #TODO_MANU: Need to check for 2 guys fulfilling these conditions here
-					any_army_leader = {
-						SOV_character_can_be_purged = yes
-						NOT = { has_trait = trait_SOV_stalinist }
-					}
-				}
-			}
-			modifier = { #Someone is a potential target
-				factor = 2
-				any_character = {
-					OR = {
-						is_army_leader = yes
-						has_army_ledger = yes
-					}
-					has_character_flag = SOV_potential_target_flag
-				}
-			}
+		25 = {
 			SOV_regular_purge_general_accuses_general_effect = yes
-			add_to_temp_variable = { SOV_random_purge_test = 1 } #TEST
 		}
-	}
-	if = { #TEST
-		limit = {
-			check_variable = { SOV_random_purge_test = 0 }
-		}
-		log = "RANDOM PURGE FAILED. NO VALID PURGE AVAILABLE"
 	}
 }
 
 SOV_pick_great_purge_army_type_effect = {
-#Pick from the different possibilities
-	set_temp_variable = { SOV_random_purge_test = 0 } #Testing purposes (to see if/when all those conditions fail)
 	random_list = {
-		50 = { # JUNIOR ARMY OFFICERS PURGED
-			modifier = {
-				factor = 0
-				has_idea = SOV_purged_junior_army_officers_3
-			}
+		50 = {
 			SOV_great_purge_army_junior_officers_effect = yes
-			add_to_temp_variable = { SOV_random_purge_test = 1 } #TEST
 		}
-		50 = { # TRIAL OF THE GENERALS
-			modifier = { #No pastia no comiercio
-				factor = 0
-				NOT = {
-					any_army_leader = {
-						SOV_character_can_be_purged = yes
-						NOT = { has_trait = trait_SOV_stalinist }
-					}
-				}
-			}
-			modifier = { #Someone is a potential target
-				factor = 2
-				any_character = {
-					OR = {
-						is_army_leader = yes
-						has_army_ledger = yes
-					}
-					has_character_flag = SOV_potential_target_flag
-				}
-			}
+		50 = {
 			SOV_great_purge_army_trial_of_the_generals_effect = yes
-			add_to_temp_variable = { SOV_random_purge_test = 1 } #TEST
 		}
-	}
-	if = { #TEST
-		limit = {
-			check_variable = { SOV_random_purge_test = 0 }
-		}
-		log = "RANDOM PURGE FAILED. NO VALID PURGE AVAILABLE"
 	}
 }
 
 SOV_pick_regular_purge_navy_type_effect = {
-	set_temp_variable = { SOV_random_purge_test = 0 } #Testing purposes (to see if/when all those conditions fail)
 	random_list = {
-		33 = { # ADMIRAL ACCUSED
-			modifier = { #No pastia no comiercio
-				factor = 0
-				NOT = {
-					any_navy_leader = {
-						SOV_character_can_be_purged = yes
-						NOT = { has_trait = trait_SOV_stalinist }
-					}
-				}
-			}
-			modifier = { #Someone is a potential target
-				factor = 2
-				any_navy_leader = {
-					has_character_flag = SOV_potential_target_flag
-				}
-			}
+		33 = {
 			SOV_trigger_regular_purge_admiral_accused_effect = yes
-			add_to_temp_variable = { SOV_random_purge_test = 1 } #TEST
 		}
-		33 = { # CONSPIRACY IN THE ACADEMY - NAVY
-			modifier = {
-				factor = 0
-				has_idea = SOV_anti_soviet_military_thinking_banned_navy
-			}
+		33 = {
 			SOV_trigger_regular_purge_naval_conspiracy_in_the_academy_effect = yes
-			add_to_temp_variable = { SOV_random_purge_test = 1 } #TEST
 		}
-		33 = { # ANTI-SABOTEUR CAMPAIGN - NAVY
-			modifier = {
-				factor = 0
-				has_idea = SOV_shipyard_staff_purged
-			}
+		33 = {
 			SOV_trigger_regular_purge_naval_anti_saboteur_campaign_effect = yes
-			add_to_temp_variable = { SOV_random_purge_test = 1 } #TEST
 		}
-	}
-	if = { #TEST
-		limit = {
-			check_variable = { SOV_random_purge_test = 0 }
-		}
-		log = "RANDOM PURGE FAILED. NO VALID PURGE AVAILABLE"
 	}
 }
 
 SOV_pick_great_purge_navy_type_effect = {
-	set_temp_variable = { SOV_random_purge_test = 0 } #Testing purposes (to see if/when all those conditions fail)
 	random_list = {
-		50 = { # JUNIOR NAVY OFFICERS PURGED
-			modifier = {
-				factor = 0
-				has_idea = SOV_purged_junior_navy_officers_3
-			}
+		50 = {
 			SOV_trigger_great_purge_junior_naval_officers_effect = yes
-			add_to_temp_variable = { SOV_random_purge_test = 1 } #TEST
 		}
-		50 = { # TRIAL OF THE ADMIRALS
-			modifier = { #No pastia no comiercio
-				factor = 0
-				NOT = {
-					any_navy_leader = {
-						SOV_character_can_be_purged = yes
-						NOT = { has_trait = trait_SOV_stalinist }
-					}
-				}
-			}
-			modifier = { #Someone is a potential target
-				factor = 2
-				any_character = {
-					OR = {
-						is_navy_leader = yes
-						has_navy_ledger = yes
-					}
-					has_character_flag = SOV_potential_target_flag
-				}
-			}
+		50 = {
 			SOV_trigger_great_purge_trial_of_the_admirals_effect = yes
-			add_to_temp_variable = { SOV_random_purge_test = 1 } #TEST
 		}
-	}
-	if = { #TEST
-		limit = {
-			check_variable = { SOV_random_purge_test = 0 }
-		}
-		log = "RANDOM PURGE FAILED. NO VALID PURGE AVAILABLE"
 	}
 }
 
 SOV_pick_regular_purge_airforce_type_effect = {
-	set_temp_variable = { SOV_random_purge_test = 0 } #Testing purposes (to see if/when all those conditions fail)
 	random_list = {
-		25 = { # CONSPIRACY IN THE ACADEMY - AIRFORCE
-			modifier = {
-				factor = 0
-				has_idea = SOV_anti_soviet_military_thinking_banned_airforce
-			}
+		25 = {
 			SOV_trigger_regular_purge_airforce_conspiracy_in_the_academy_effect = yes
-			add_to_temp_variable = { SOV_random_purge_test = 1 } #TEST
 		}
-		25 = { # ANTI-SABOTEUR CAMPAIGN - AIRFORCE
-			modifier = {
-				factor = 0
-				has_idea = SOV_ground_based_training
-			}
+		25 = {
 			SOV_trigger_regular_purge_airforce_anti_saboteur_campaign_effect = yes
-			add_to_temp_variable = { SOV_random_purge_test = 1 } #TEST
 		}
-	}
-	if = { #TEST
-		limit = {
-			check_variable = { SOV_random_purge_test = 0 }
-		}
-		log = "RANDOM PURGE FAILED. NO VALID PURGE AVAILABLE"
 	}
 }
 
 SOV_pick_great_purge_airforce_type_effect = {
 	random_list = {
-		50 = { # DISSOLVE DESIGN BUREAU
-			modifier = { #Nothing left to dissolve
-				factor = 0
-				has_country_flag = SOV_mig_design_bureau_dissolved_flag
-				has_country_flag = SOV_ilyushin_design_bureau_dissolved_flag
-				has_country_flag = SOV_tupolev_design_bureau_dissolved_flag
-				has_country_flag = SOV_yakovlev_design_bureau_dissolved_flag
-			}
+		50 = {
 			SOV_trigger_great_purge_design_bureau_dissolved_effect = yes
 		}
-		50 = { # PURGE ARIFORCE CHIEFS
-			modifier = { #No pastia no comiercio
-				factor = 0
-				has_country_flag = SOV_purged_airforce_chiefs_flag  #This purge can only happen "randomly" once, unless some air advisors are forcefully targeted in a focus or something
-				NOT = {
-					any_character = {
-						has_air_ledger = yes
-						has_character_flag = SOV_potential_target_flag
-					}
-				}
-			}
-			modifier = { #Someone is a potential target
-				factor = 2
-				OR = {
-					NOT = { has_country_flag = SOV_purged_airforce_chiefs_flag } #This purge can only happen "randomly" once, unless some air advisors are forcefully targeted in a focus or something
-					any_character = {
-						has_air_ledger = yes
-						has_character_flag = SOV_potential_target_flag
-					}
-				}
-			}
+		50 = {
 			SOV_trigger_great_purge_airforce_chiefs_effect = yes
 		}
 	}
@@ -1531,132 +1084,6 @@ SOV_trigger_regular_purge_nkvd_effect = {
 	country_event = NSB_soviet_paranoia_system_events.13 # TRIGGER EVENT
 
 	set_variable = { SOV_last_regular_purge_area = 1 } #Set area purged to prevent same area from being purged twice in a row
-	set_country_flag = SOV_last_purge_flag
-}
-
-### GREAT PURGE - MOSCOW TRIALS ###
-SOV_trigger_great_purge_moscow_trial_effect = {
-	hidden_effect = {
-		set_temp_variable = { temp_targets_index = 0 } #Targeted chars counter
-
-		#If someone is already TARGETED, prio them first.
-		if = {
-			limit = {
-				any_character = {
-					is_character_slot = political_advisor
-					has_character_flag = SOV_targeted_for_purge_flag
-					SOV_character_can_be_purged = yes
-				}
-			}
-			#These guys will be automatically targeted in the event, so we increase the var and only fill in with random chars if necessary
-			if = {
-				limit = {
-					check_variable = { SOV_specific_random_purge_targets_override = 0 compare = greater_than_or_equals }
-				}
-				#log = "I will purge some random guys" #Debug
-			}
-			else = {
-				#log = "I will use default people to purge" #Debug
-				every_character = {
-					limit = {
-						is_character_slot = political_advisor
-						has_character_flag = SOV_targeted_for_purge_flag
-						SOV_character_can_be_purged = yes
-					}
-					PREV = { add_to_temp_variable = { temp_targets_index = 1 } }
-				}
-			}
-		}
-
-		set_temp_variable = { temp_people_to_purge = 0 } #Number of random people that can be purged
-
-		#log = "VAR OVERRIDE is [?SOV_specific_random_purge_targets_override]" #Debug
-
-		if = { #If a specific amount of random chars to be purged has been set, then use that number
-			limit = {
-				check_variable = { SOV_specific_random_purge_targets_override = 0 compare = greater_than_or_equals }
-			}
-			set_temp_variable = { temp_people_to_purge = SOV_specific_random_purge_targets_override }
-			SOV_reset_specific_random_target_override_effect = yes #Reset this var (value = -1) so that it is not used again until specified otherwise
-			#log = "Using OVERRIDE" #Debug
-		}
-		else = { #If no specific amount of random chars to be purged is set, then use default value
-			set_temp_variable = { temp_people_to_purge = SOV_paranoia_great_purge_administration_number_of_targets }
-			#log = "Using DEFAULT" #Debug
-		}
-
-		#log = " PEOPLE TO PURGE IS [?temp_people_to_purge]" #Debug
-		#log = " INDEX IS = [?temp_targets_index]" #Debug
-		if = {
-			limit = {
-				check_variable = { temp_people_to_purge = 0 compare = greater_than } #Random people to purge is not 0
-				check_variable = { temp_targets_index < temp_people_to_purge } #There is room for random advisors to be purged (for when there are pre-set targets)
-			}
-			#log = "Random people" #Debug
-			while_loop_effect = {
-				limit = {
-					check_variable = { temp_targets_index = temp_people_to_purge compare = less_than }
-				}
-
-				if = { #PRIORITIZE POTENTIAL TARGETS
-					limit = {
-						any_character = {
-							is_character_slot = political_advisor
-							SOV_character_can_be_purged = yes
-							has_character_flag = SOV_potential_target_flag
-							NOT = { has_character_flag = SOV_targeted_for_purge_flag }
-						}
-					}
-					#log ="PRIOING STUFF" #Debug
-					random_character = {
-						limit = {
-							is_character_slot = political_advisor
-							SOV_character_can_be_purged = yes
-							has_character_flag = SOV_potential_target_flag
-							NOT = { has_character_flag = SOV_targeted_for_purge_flag }
-						}
-						set_character_flag = SOV_targeted_for_purge_flag
-						clr_character_flag = SOV_potential_target_flag
-
-						#log = "TARGET FIXED: [THIS.GetName]" #Debug
-					}
-
-				}
-				else_if = { #If no one to prio, then pick a random one
-					limit = {
-						any_character = {
-							is_character_slot = political_advisor
-							SOV_character_can_be_purged = yes
-							NOT = { has_character_flag = SOV_targeted_for_purge_flag }
-						}
-					}
-					#log = "RANDOM STUFF" #Debug
-					random_character = {
-						limit = {
-							is_character_slot = political_advisor
-							SOV_character_can_be_purged = yes
-							NOT = { has_character_flag = SOV_targeted_for_purge_flag }
-						}
-						set_character_flag = SOV_targeted_for_purge_flag
-						#log = "RANDOM ADVISOR PICK: [THIS.GetName]" #Debug
-					}
-
-				}
-				else = {
-					#log = "RAN OUT OF POLITICAL ADVISORS, DAMN!" #Debug
-				}
-				add_to_temp_variable = { temp_targets_index = 1 }
-				#log = "LOOP: temp_targets_index = [?temp_targets_index]" #Debug
-			}
-		}
-		else = {
-			#log = "No Random People" #Debug
-		}
-	}
-
-	country_event = NSB_soviet_paranoia_system_events.19 # TRIGGER EVENT
-
-	set_variable = { SOV_last_great_purge_area = 1 } #Set area purged to prevent same area from being purged twice in a row
 	set_country_flag = SOV_last_purge_flag
 }
 
