@@ -24,7 +24,6 @@ SOV_internal_factions = {
 		fire_only_once = no
 
 		visible = {
-			tag = SOV
 			check_variable = { SOV_Commissars_attitude = 0 compare = greater_than_or_equals }
 			check_variable = { SOV_Commissars_influence = 0 compare = greater_than_or_equals }
 		}
@@ -102,7 +101,6 @@ SOV_internal_factions = {
 		fire_only_once = no
 
 		visible = {
-			tag = SOV
 			check_variable = { SOV_Commissars_attitude = 0 compare = greater_than_or_equals }
 			check_variable = { SOV_Commissars_influence = 0 compare = greater_than_or_equals }
 		}
@@ -175,7 +173,6 @@ SOV_internal_factions = {
 		fire_only_once = no
 
 		visible = {
-			tag = SOV
 			check_variable = { SOV_Commissars_attitude = 0 compare = greater_than_or_equals }
 			check_variable = { SOV_Commissars_influence = 0 compare = greater_than_or_equals }
 		}
@@ -261,7 +258,7 @@ SOV_internal_factions = {
 		icon = generic_decision
 
 		allowed = {
-			tag = SOV
+			original_tag = SOV
 		}
 
 		available = {
@@ -280,7 +277,6 @@ SOV_internal_factions = {
 		fire_only_once = no
 
 		visible = {
-			tag = SOV
 			check_variable = { SOV_Army_attitude = 0 compare = greater_than_or_equals }
 			check_variable = { SOV_Army_influence = 0 compare = greater_than_or_equals }
 		}
@@ -383,7 +379,7 @@ SOV_internal_factions = {
 		icon = generic_decision
 
 		allowed = {
-			tag = SOV
+			original_tag = SOV
 		}
 
 		available = {
@@ -401,12 +397,8 @@ SOV_internal_factions = {
 		fire_only_once = no
 
 		visible = {
-			tag = SOV
 			check_variable = { SOV_Army_attitude = 0 compare = greater_than_or_equals }
 			check_variable = { SOV_Army_influence = 0 compare = greater_than_or_equals }
-		}
-
-		modifier = {
 		}
 
 		complete_effect = {
@@ -494,12 +486,258 @@ SOV_internal_factions = {
 		}
 	}
 
+	SOV_Army_rebuild_the_army = {
+
+		icon = decision_category_military_operation
+
+		allowed = {
+			original_tag = SOV
+		}
+		visible = {
+			has_completed_focus = SOV_rebuild_the_army
+		}
+
+		available = {
+			any_enemy_country = {
+				is_major = yes
+			}
+			has_manpower > 135600
+			has_army_manpower = {
+				size < 4000001
+			}
+		}
+
+		days_remove = 14
+
+		fire_only_once = no
+
+		modifier = {
+			industrial_capacity_factory = -0.1
+		}
+		highlight_states = {
+		}
+
+		remove_effect = {
+			if = {
+				limit = { is_ai = no }
+				random_core_state = {
+					prioritize = { 217 401 251 250 249 399 651 652 256 572 876 653 586 405 }
+					limit = {
+						is_on_continent = asia
+						is_fully_controlled_by = ROOT
+						all_neighbor_state = { is_fully_controlled_by = ROOT }
+					}
+					add_manpower = -135600
+					create_unit = {
+						division = "division_template = \"Prizyvnaya diviziya\" start_experience_factor = 0.45 start_equipment_factor = 0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}}"
+						owner = ROOT
+						count = 12
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					is_ai = yes
+					has_template = "Soviet Reserve Divisíon"
+				}
+				random_core_state = {
+					prioritize = { 217 401 251 250 249 399 651 652 256 572 876 653 586 405 }
+					limit = {
+						is_on_continent = asia
+						is_fully_controlled_by = ROOT
+						all_neighbor_state = { is_fully_controlled_by = ROOT }
+					}
+					add_manpower = -171600
+					create_unit = {
+						division = "division_template = \"Soviet Reserve Divisíon\" start_experience_factor = 0.3 start_equipment_factor = 1 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}}"
+						owner = ROOT
+						count = 12
+					}
+				}
+			}
+		}
+		cancel_trigger = {
+			has_army_manpower = {
+				size > 3999999
+			}
+		}
+
+		ai_will_do = {
+			factor = 10
+		}
+	}
+
+	SOV_the_road_of_life = {
+		icon = decision_category_military_operation
+
+		allowed = {
+			original_tag = SOV
+		}
+		visible = {
+			has_completed_focus = SOV_the_road_of_life
+		}
+		available = {
+			OR = {
+				195 = {
+					#LENINGRAD
+					is_controlled_by = ROOT
+					any_neighbor_state = {
+						NOT = {
+							is_fully_controlled_by = ROOT
+						}
+					}
+				}
+				219 = {
+					#MOSCOW
+					is_controlled_by = ROOT
+					any_neighbor_state = {
+						NOT = {
+							is_fully_controlled_by = ROOT
+						}
+					}
+				}
+				217 = {
+					#STALINGRAD
+					is_controlled_by = ROOT
+					any_neighbor_state = {
+						NOT = {
+							is_fully_controlled_by = ROOT
+						}
+					}
+				}
+				137 = {
+					#SEVASTOPOL
+					is_controlled_by = ROOT
+					any_neighbor_state = {
+						NOT = {
+							is_fully_controlled_by = ROOT
+						}
+					}
+				}
+				202 = {
+					#Kiev
+					is_controlled_by = ROOT
+					any_neighbor_state = {
+						NOT = {
+							is_fully_controlled_by = ROOT
+						}
+					}
+				}
+			}
+		}
+
+		days_remove = 60
+
+		cost = 10
+
+		fire_only_once = no
+
+		complete_effect = {
+			if = {
+				limit = {	#LENINGRAD
+					195 = {
+						is_controlled_by = ROOT
+						any_neighbor_state = {
+							NOT = {
+								is_fully_controlled_by = ROOT
+							}
+						}
+					}
+				}
+				195 = {
+					add_dynamic_modifier = { modifier = SOV_the_road_of_life scope = SOV }
+				}
+			}
+			if = {
+				limit = {	#MOSCOW
+					219 = {
+						is_controlled_by = ROOT
+						any_neighbor_state = {
+							NOT = {
+								is_fully_controlled_by = ROOT
+							}
+						}
+					}
+				}
+				219 = {
+					add_dynamic_modifier = { modifier = SOV_the_road_of_life scope = SOV }
+				}
+			}
+			if = {
+				limit = {
+					217 = {
+						#STALINGRAD
+						is_controlled_by = ROOT
+						any_neighbor_state = {
+							NOT = {
+								is_fully_controlled_by = ROOT
+							}
+						}
+					}
+				}
+				217 = {
+					add_dynamic_modifier = { modifier = SOV_the_road_of_life scope = SOV }
+				}
+			}
+			if = {
+				limit = {
+					137 = {
+						#SEVASTOPOL
+						is_controlled_by = ROOT
+						any_neighbor_state = {
+							NOT = {
+								is_fully_controlled_by = ROOT
+							}
+						}
+					}
+				}
+				137 = {
+					add_dynamic_modifier = { modifier = SOV_the_road_of_life scope = SOV }
+				}
+			}
+			if = {
+				limit = {	#Kiev
+					202 = {
+						is_controlled_by = ROOT
+						any_neighbor_state = {
+							NOT = {
+								is_fully_controlled_by = ROOT
+							}
+						}
+					}
+				}
+				202 = {
+					add_dynamic_modifier = { modifier = SOV_the_road_of_life scope = SOV }
+				}
+			}
+		}
+
+		remove_effect = {
+			hidden_effect = {
+				every_core_state = {
+					limit = {
+						has_dynamic_modifier = {
+							modifier = SOV_the_road_of_life
+						}
+					}
+					remove_dynamic_modifier = {
+						modifier = SOV_the_road_of_life
+					}
+				}
+			}
+		}
+
+		ai_will_do = {
+			factor = 100
+		}
+	}
+
 	SOV_Workers_fabricate_new_structures = {
 
 		icon = generic_decision
 
 		allowed = {
-			tag = SOV
+			original_tag = SOV
 		}
 
 		available = {
@@ -519,7 +757,6 @@ SOV_internal_factions = {
 		fire_only_once = no
 
 		visible = {
-			tag = SOV
 			check_variable = { SOV_Workers_attitude = 0 compare = greater_than_or_equals }
 			check_variable = { SOV_Workers_influence = 0 compare = greater_than_or_equals }
 		}
@@ -571,7 +808,7 @@ SOV_internal_factions = {
 		icon = generic_decision
 
 		allowed = {
-			tag = SOV
+			original_tag = SOV
 		}
 
 		available = {
@@ -591,7 +828,6 @@ SOV_internal_factions = {
 		fire_only_once = no
 
 		visible = {
-			tag = SOV
 			check_variable = { SOV_Workers_attitude = 0 compare = greater_than_or_equals }
 			check_variable = { SOV_Workers_influence = 0 compare = greater_than_or_equals }
 		}
@@ -642,7 +878,7 @@ SOV_internal_factions = {
 		icon = generic_decision
 
 		allowed = {
-			tag = SOV
+			original_tag = SOV
 		}
 
 		available = {
@@ -662,7 +898,6 @@ SOV_internal_factions = {
 		fire_only_once = no
 
 		visible = {
-			tag = SOV
 			check_variable = { SOV_Peasants_attitude = 0 compare = greater_than_or_equals }
 			check_variable = { SOV_Peasants_influence = 0 compare = greater_than_or_equals }
 		}
@@ -713,7 +948,7 @@ SOV_internal_factions = {
 		icon = generic_decision
 
 		allowed = {
-			tag = SOV
+			original_tag = SOV
 		}
 
 		available = {
@@ -733,7 +968,6 @@ SOV_internal_factions = {
 		fire_only_once = no
 
 		visible = {
-			tag = SOV
 			check_variable = { SOV_Peasants_attitude = 0 compare = greater_than_or_equals }
 			check_variable = { SOV_Peasants_influence = 0 compare = greater_than_or_equals }
 		}
@@ -953,7 +1187,7 @@ SOV_internal_factions = {
 			}
 		}
 
-		visible = {
+		allowed = {
 			tag = SOV
 		}
 
@@ -992,33 +1226,21 @@ SOV_internal_factions = {
 			custom_trigger_tooltip = {
 				tooltip = SOV_the_greatest_airforce_tt
 				OR = {
-					has_deployed_air_force_size = {
-						size > 4999
-						type = fighter
-					}
-					has_deployed_air_force_size = {
-						size > 4999
-						type = fighter
-					}
+					check_variable = { num_deployed_planes_with_type@fighter_equipment > 5999 }
+					check_variable = { num_deployed_planes_with_type@fighter_multirole_equipment > 5999 }
 				}
 				has_deployed_air_force_size = {
-					size > 4999
+					size > 999
 					type = cas
 				}
 				OR = {
-					has_deployed_air_force_size = {
-						size > 799
-						type = tactical_bomber
-					}
-					has_deployed_air_force_size = {
-						size > 799
-						type = tactical_bomber
-					}
+					check_variable = { num_deployed_planes_with_type@strike_bomber_equipment > 4999 }
+					check_variable = { num_deployed_planes_with_type@tac_bomber_equipment > 4999 }
 				}
 			}
 		}
 
-		visible = {
+		allowed = {
 			tag = SOV
 		}
 
@@ -1051,46 +1273,74 @@ SOV_internal_factions = {
 	SOV_the_greatest_navy = {
 
 		icon = generic_naval
-
+		allowed = {
+			tag = SOV
+		}
 		available = {
+			has_tech = sov_battle_cruiser_1
 			has_tech = sov_battleship_2
+			has_tech = sov_carrier_1
 			has_tech = sov_destroyer_7
+			has_tech = sov_frigate_2
 			custom_trigger_tooltip = {
 				tooltip = SOV_the_greatest_navy_tt
 				has_navy_size = {
-					size > 6
+					size > 1
+					archetype = ship_hull_carrier
+				}
+				has_navy_size = {
+					size > 14
 					archetype = ship_hull_heavy_battleship
 				}
 				has_navy_size = {
-					size > 29
+					size > 7
+					archetype = ship_hull_heavy
+				}
+				has_navy_size = {
+					size > 7
+					archetype = ship_hull_heavy_cruiser
+				}
+				has_navy_size = {
+					size > 27
+					archetype = ship_hull_cruiser
+				}
+				has_navy_size = {
+					size > 163
 					archetype = ship_hull_light
+				}
+				has_navy_size = {
+					size > 211
+					archetype = ship_hull_very_light
+				}
+				has_navy_size = {
+					size > 224
+					archetype = ship_hull_cruiser_submarine
+				}
+				has_navy_size = {
+					size > 119
+					archetype = ship_hull_submarine
 				}
 			}
 		}
 
-		visible = {
-			tag = SOV
-		}
-
-		days_mission_timeout = 2190
+		days_mission_timeout = 2920
 		is_good = no
 		fire_only_once = yes
 		activation = {
-			tag = SOV
+			always = no
 		}
 
 		complete_effect = {
+			add_stability = 0.1
+			add_war_support = 0.1
 			add_political_power = 300
-			navy_experience = 50
+			navy_experience = 100
 			add_doctrine_cost_reduction = {
 				name = SOV_the_greatest_navy
 				cost_reduction = 0.99
-				uses = 2
+				uses = 3
 				category = naval_doctrine
 			}
-		}
-
-		timeout_effect = {
 		}
 
 		ai_will_do = {
@@ -1101,15 +1351,11 @@ SOV_internal_factions = {
 	SOV_pay_for_new_agricultural_equipment = {
 
 		icon = generic_industry
-
-		available = {
+		allowed = {
 			tag = SOV
-			num_of_civilian_factories_available_for_projects > 4
 		}
-
-		visible = {
-			tag = SOV
-			has_completed_focus = SOV_start_the_second_five_year_plan
+		available = {
+			num_of_civilian_factories_available_for_projects > 4
 		}
 
 		ai_will_do = {
