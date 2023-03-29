@@ -924,23 +924,6 @@ SOV_pick_regular_purge_administration_type_effect = {
 	}
 }
 
-SOV_pick_great_purge_administration_type_effect = {
-	if = {
-		limit = { #As long as someone can be purged, go ahead
-			any_character = {
-				is_character_slot = political_advisor
-				NOT = { #NKVDs have their own purge
-					is_character = SOV_genrikh_yagoda
-					is_character = SOV_nikolay_yezhov
-					is_character = SOV_lavrenty_beriya
-				}
-				SOV_character_can_be_purged = yes
-			}
-		}
-		SOV_trigger_great_purge_moscow_trial_effect = yes
-	}
-}
-
 SOV_pick_regular_purge_army_type_effect = {
 	set_temp_variable = { SOV_random_purge_test = 0 } #Testing purposes (to see if/when all those conditions fail)
 	random_list = {
@@ -1021,71 +1004,6 @@ SOV_pick_great_purge_airforce_type_effect = {
 ### PHASE 4 ###
 ###############
 #Set the actual targets (people) [TARGETS] then trigger the appropriate event (Phase 5)
-
-### ADVISOR ACCUSED OF TREASON ###
-SOV_trigger_regular_purge_advisor_accused_effect = {
-	hidden_effect = {
-		if = { #PRIORITIZE FORCED TARGETS
-			limit = {
-				any_character = {
-					is_character_slot = political_advisor
-					SOV_character_can_be_purged = yes
-					has_character_flag = SOV_potential_target_flag
-				}
-			}
-			random_character = {
-				limit = {
-					is_character_slot = political_advisor
-					SOV_character_can_be_purged = yes
-					has_character_flag = SOV_potential_target_flag
-				}
-				set_character_flag = SOV_targeted_for_purge_flag
-				clr_character_flag = SOV_potential_target_flag
-				ROOT = { set_variable = { SOV_purged_character_for_loc = PREV } }
-				#ROOT = { log = "I am [THIS.GetName] // var is [?ROOT.SOV_purged_character_for_loc.GetName]" } #Debug
-			}
-		}
-		else_if = { #If no one to prio, then pick a random one
-			limit = {
-				any_character = {
-					is_character_slot = political_advisor
-					SOV_character_can_be_purged = yes
-				}
-			}
-			random_character = {
-				limit = {
-					is_character_slot = political_advisor
-					SOV_character_can_be_purged = yes
-				}
-				set_character_flag = SOV_targeted_for_purge_flag
-				ROOT = { set_variable = { SOV_purged_character_for_loc = PREV } }
-				#ROOT = { log = "This is [THIS.GetName] // PREV is [PREV.GetName] // ROOT is [ROOT.GetName] // VAR is [?ROOT.SOV_purged_character_for_loc.GetName]" } #Debug
-			}
-		}
-		#log = "Person is [?SOV_purged_character_for_loc.GetName]" #Debug
-	}
-
-	country_event = NSB_soviet_paranoia_system_events.11 # TRIGGER EVENT
-
-	set_variable = { SOV_last_regular_purge_area = 1 } #Set area purged to prevent same area from being purged twice in a row
-	set_country_flag = SOV_last_purge_flag
-}
-
-### CIVIL SERVANTS PURGED
-SOV_trigger_regular_purge_civil_servants_purged_effect = {
-	country_event = NSB_soviet_paranoia_system_events.12 # TRIGGER EVENT
-
-	set_variable = { SOV_last_regular_purge_area = 1 } #Set area purged to prevent same area from being purged twice in a row
-	set_country_flag = SOV_last_purge_flag
-}
-
-### PURGE THE NKVD ###
-SOV_trigger_regular_purge_nkvd_effect = {
-	country_event = NSB_soviet_paranoia_system_events.13 # TRIGGER EVENT
-
-	set_variable = { SOV_last_regular_purge_area = 1 } #Set area purged to prevent same area from being purged twice in a row
-	set_country_flag = SOV_last_purge_flag
-}
 
 ### GENERAL ACCUSED OF TREASON ###
 SOV_regular_purge_general_accused_effect = {
