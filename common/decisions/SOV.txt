@@ -49,19 +49,63 @@ SOV_paranoia_system = {
 
 		days_re_enable = 180
 
-		days_remove = 90
+		days_remove = 10
 
-		modifier = {
-			#consumer_goods_factor = 0.02
-		}
+		#modifier = {
+		#	consumer_goods_factor = 0.02
+		#}
 
-		complete_effect = {
+		remove_effect = {
 			SOV_paranoia_medium_decrease_effect = yes
 
 			custom_effect_tooltip = SOV_paranoia_calm_down_stalin_cd_tt
 		}
 	}
+	SOV_inspection_in_the_academy = { #Repeatable decision to reduce Paranoia // Target Academy
+		priority = 309
 
+		icon = GFX_decision_generic_political_discourse
+
+		ai_will_do = {
+			base = 0
+		}
+
+		allowed = {
+			original_tag = SOV
+		}
+
+		available = {
+			has_country_flag = SOV_paranoia_system_active_flag
+			NOT = { has_country_flag = SOV_paranoia_conducting_inspection_flag }
+		}
+
+		visible = {
+			has_country_flag = SOV_paranoia_system_active_flag
+			has_idea = SOV_academy_purged
+			SOV_is_stalinist = yes
+		}
+
+		cost = 25
+
+		days_remove = 7
+
+		days_re_enable = 180
+
+		complete_effect = {
+			set_country_flag = SOV_paranoia_conducting_inspection_flag #Used to prevent random purges from popping up while this is active
+		}
+
+		remove_effect = {
+			clr_country_flag = SOV_paranoia_conducting_inspection_flag
+			set_country_flag = { flag = SOV_paranoia_random_purge_cooldown_from_decision_flag days = 15 } #Used to prevent random purges from popping up immediately after this is completed
+
+			SOV_paranoia_low_decrease_effect = yes
+
+			remove_ideas = SOV_academy_purged
+
+			custom_effect_tooltip = SOV_paranoia_inspection_cd_tt
+		}
+	}
 	SOV_inspection_in_the_administration = { #Repeatable decision to reduce Paranoia // Target Administration
 		priority = 309
 
@@ -77,34 +121,16 @@ SOV_paranoia_system = {
 
 		available = {
 			has_country_flag = SOV_paranoia_system_active_flag
-			custom_trigger_tooltip = {
-				tooltip = SOV_paranoia_administration_purgeable_tt
-				OR = {
-					any_character = {
-						is_character_slot = political_advisor
-						SOV_character_can_be_purged = yes
-					}
-					NOT = { has_idea = SOV_administration_purged }
-					NOT = { has_idea = SOV_lavrenty_beriya }
-				}
-			}
 			NOT = { has_country_flag = SOV_paranoia_conducting_inspection_flag }
 		}
 
 		visible = {
 			has_country_flag = SOV_paranoia_system_active_flag
-			OR = {
-				any_character = {
-					is_character_slot = political_advisor
-					SOV_character_can_be_purged = yes
-				}
-				NOT = { has_idea = SOV_administration_purged }
-				NOT = { has_idea = SOV_lavrenty_beriya }
-			}
+			has_idea = SOV_administration_purged
 			SOV_is_stalinist = yes
 		}
 
-		cost = 10
+		cost = 25
 
 		days_remove = 7
 
@@ -119,6 +145,8 @@ SOV_paranoia_system = {
 			set_country_flag = { flag = SOV_paranoia_random_purge_cooldown_from_decision_flag days = 15 } #Used to prevent random purges from popping up immediately after this is completed
 
 			SOV_paranoia_low_decrease_effect = yes
+
+			remove_ideas = SOV_administration_purged
 
 			custom_effect_tooltip = SOV_paranoia_inspection_cd_tt
 		}
@@ -145,8 +173,6 @@ SOV_paranoia_system = {
 					any_army_leader = {
 						SOV_character_can_be_purged = yes
 					}
-					NOT = { has_idea = SOV_anti_soviet_military_thinking_banned_army }
-					NOT = { has_idea = SOV_training_activities_curtailed }
 				}
 			}
 			NOT = { has_country_flag = SOV_paranoia_conducting_inspection_flag }
@@ -158,13 +184,12 @@ SOV_paranoia_system = {
 				any_army_leader = {
 					SOV_character_can_be_purged = yes
 				}
-				NOT = { has_idea = SOV_anti_soviet_military_thinking_banned_army }
-				NOT = { has_idea = SOV_training_activities_curtailed }
+				has_idea = SOV_young_officers_purged
 			}
 			SOV_is_stalinist = yes
 		}
 
-		cost = 20
+		cost = 25
 
 		days_remove = 7
 
@@ -183,6 +208,7 @@ SOV_paranoia_system = {
 				limit = { SOV_is_opposition = yes }
 				SOV_decrease_all_opposition_army = yes
 			}
+			remove_ideas = SOV_young_officers_purged
 
 			custom_effect_tooltip = SOV_paranoia_inspection_cd_tt
 		}
@@ -4467,8 +4493,8 @@ SOV_merge_designers_dec_cat = {
 		visible = {
 			OR = {
 				has_completed_focus = SOV_merge_evacuated_plants
-				has_completed_focus = SOV_merge_naval_plants
-				has_completed_focus = SOV_merge_aircraft_plants
+				#has_completed_focus = SOV_merge_naval_plants
+				#hhas_completed_focus = SOV_merge_aircraft_plants
 			}
 			NOT = {
 				has_country_flag = SOV_debug_fast_merge_desingers_flag
@@ -4505,8 +4531,8 @@ SOV_merge_designers_dec_cat = {
 		visible = {
 			OR = {
 				has_completed_focus = SOV_merge_evacuated_plants
-				has_completed_focus = SOV_merge_naval_plants
-				has_completed_focus = SOV_merge_aircraft_plants
+				#has_completed_focus = SOV_merge_naval_plants
+				#hhas_completed_focus = SOV_merge_aircraft_plants
 			}
 			has_country_flag = SOV_debug_fast_merge_desingers_flag
 			is_debug = yes
@@ -11148,7 +11174,6 @@ SOV_great_patriotic_war = {
 		}
 
 		days_remove = 90
-		is_good = yes
 		cost = 50
 
 		fire_only_once = no
@@ -12742,7 +12767,7 @@ economy_decisions = {
 
 		visible = {
 			tag = SOV
-			has_completed_focus = SOV_tranformation_of_nature
+			has_completed_focus = SOV_transformation_of_nature
 			has_war = no
 			#has_country_leader = { ruling_only = yes name = "Joseph Stalin" }
 		}
@@ -12835,7 +12860,7 @@ economy_decisions = {
 
 		visible = {
 			tag = SOV
-			has_completed_focus = SOV_tranformation_of_nature
+			has_completed_focus = SOV_transformation_of_nature
 			has_war = no
 			#has_country_leader = { ruling_only = yes name = "Joseph Stalin" }
 		}
@@ -12949,7 +12974,7 @@ economy_decisions = {
 
 		visible = {
 			tag = SOV
-			has_completed_focus = SOV_tranformation_of_nature
+			has_completed_focus = SOV_transformation_of_nature
 			has_war = no
 			#has_country_leader = { ruling_only = yes name = "Joseph Stalin" }
 		}
@@ -13037,7 +13062,7 @@ economy_decisions = {
 
 		visible = {
 			tag = SOV
-			has_completed_focus = SOV_tranformation_of_nature
+			has_completed_focus = SOV_transformation_of_nature
 			has_war = no
 			#has_country_leader = { ruling_only = yes name = "Joseph Stalin" }
 		}
@@ -13142,7 +13167,7 @@ economy_decisions = {
 
 		visible = {
 			tag = SOV
-			has_completed_focus = SOV_tranformation_of_nature
+			has_completed_focus = SOV_transformation_of_nature
 			has_war = no
 			#has_country_leader = { ruling_only = yes name = "Joseph Stalin" }
 		}
@@ -13219,7 +13244,7 @@ economy_decisions = {
 
 		visible = {
 			tag = SOV
-			has_completed_focus = SOV_tranformation_of_nature
+			has_completed_focus = SOV_transformation_of_nature
 			has_war = no
 			#has_country_leader = { ruling_only = yes name = "Joseph Stalin" }
 		}
@@ -13315,7 +13340,7 @@ economy_decisions = {
 
 		visible = {
 			tag = SOV
-			has_completed_focus = SOV_tranformation_of_nature
+			has_completed_focus = SOV_transformation_of_nature
 			has_war = no
 			#has_country_leader = { ruling_only = yes name = "Joseph Stalin" }
 		}
@@ -13387,7 +13412,7 @@ economy_decisions = {
 
 		visible = {
 			tag = SOV
-			has_completed_focus = SOV_tranformation_of_nature
+			has_completed_focus = SOV_transformation_of_nature
 			has_war = no
 			#has_country_leader = { ruling_only = yes name = "Joseph Stalin" }
 		}
@@ -13474,7 +13499,7 @@ economy_decisions = {
 
 		visible = {
 			tag = SOV
-			has_completed_focus = SOV_tranformation_of_nature
+			has_completed_focus = SOV_transformation_of_nature
 			has_war = no
 			#has_country_leader = { ruling_only = yes name = "Joseph Stalin" }
 		}
@@ -13541,7 +13566,7 @@ economy_decisions = {
 
 		visible = {
 			tag = SOV
-			has_completed_focus = SOV_tranformation_of_nature
+			has_completed_focus = SOV_transformation_of_nature
 			has_war = no
 			#has_country_leader = { ruling_only = yes name = "Joseph Stalin" }
 		}
@@ -15868,7 +15893,6 @@ war_measures = {
 		}
 
 		days_remove = 14
-		is_good = yes
 		cost = 25
 
 		cancel_if_not_visible = yes
@@ -15896,7 +15920,6 @@ war_measures = {
 		}
 
 		days_remove = 14
-		is_good = yes
 		cost = 25
 
 		cancel_if_not_visible = yes
@@ -16844,8 +16867,17 @@ SOV_military_reform = {
 				add_to_variable = { SOV_the_red_army_land_doctrine_cost_factor = -0.3 }
 				custom_effect_tooltip = SOV_army_reform_2_tt
 				every_unit_leader = {
+					limit = {
+						OR = {
+							has_trait = trait_SOV_cowed_by_stalin_army
+							has_trait = trait_SOV_cowed_by_stalin_navy
+						}
+					}
 					remove_trait = {
 						trait = trait_SOV_cowed_by_stalin_army
+					}
+					remove_trait = {
+						trait = trait_SOV_cowed_by_stalin_navy
 					}
 				}
 			}
