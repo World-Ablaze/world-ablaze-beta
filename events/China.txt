@@ -934,6 +934,76 @@ country_event = {
 	}
 }
 
+# Soviet Proposal for an SIK SSR
+country_event = {
+	id = china.205
+	title = china.205.t
+	desc = china.205.d
+	picture = GFX_report_event_chinese_officers
+
+	is_triggered_only = yes
+
+	option = {	#Refuse Soviets -> SIK gets event to leave USSR
+		name = china.205.a
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 50
+				SOV = {
+					has_war_with = GER
+				}
+				CHI = {
+					has_war_with = JAP
+					surrender_progress < 0.5
+				}
+			}
+			modifier = {
+				add = 2
+				is_historical_focus_on = yes
+			}
+		}
+		effect_tooltip = {
+			CHI = {
+				annex_country = { target = ROOT transfer_troops = yes }
+			}
+		}
+		hidden_effect = {
+			SIK = { country_event = china.102 }
+			SOV = { country_event = soviet.83 }
+		}
+	}
+	option = {	#Agree with Soviets
+		name = china.205.b
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 50
+				CHI = {
+					has_war_with = JAP
+					surrender_progress > 0.5
+				}
+			}
+			modifier = {
+				add = 2
+				is_historical_focus_on = no
+			}
+		}
+		SOV = {
+			add_state_core = 618
+			add_state_core = 760
+			add_state_core = 617
+			add_state_core = 759
+			add_state_core = 287
+			add_state_core = 619
+			add_state_core = 947
+			annex_country = { target = SIK }
+		}
+		CHI = {
+			economy_fatigue_level_down_5 = yes
+		}
+	}
+}
+
 # FROM joins China (annex)
 country_event = {
 	id = china.103
@@ -946,6 +1016,24 @@ country_event = {
 	option = {
 		name = china.103.a
 		set_global_flag = CHI_unite_PRC
+		if = {
+			limit = {
+				JAP = {
+					controls_state = 615
+					NOT = { has_country_flag = upper_shanxi_control_flag }
+				}
+			}
+			JAP = { set_country_flag = upper_shanxi_control_flag }
+		}
+		if = {
+			limit = {
+				JAP = {
+					controls_state = 1012
+					NOT = { has_country_flag = lower_shanxi_control_flag }
+				}
+			}
+			JAP = { set_country_flag = lower_shanxi_control_flag }
+		}
 		CHI = {
 			if = {
 				limit = {
@@ -962,6 +1050,22 @@ country_event = {
 			}
 			else = {
 				puppet = FROM
+			}
+		}
+		if = {
+			limit = {
+				JAP = { has_country_flag = upper_shanxi_control_flag }
+			}
+			JAP = {
+				set_state_controller = 615
+			}
+		}
+		if = {
+			limit = {
+				JAP = { has_country_flag = lower_shanxi_control_flag }
+			}
+			JAP = {
+				set_state_controller = 1012
 			}
 		}
 	}

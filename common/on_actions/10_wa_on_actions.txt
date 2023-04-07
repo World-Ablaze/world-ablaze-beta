@@ -2,13 +2,6 @@ on_actions = {
 	on_startup = {
 		effect = {
 			every_country = {
-				limit = { is_ai = yes }
-				add_timed_idea = {
-					idea = AI_production_efficiency_cheat
-					days = 30
-				}
-			}
-			every_country = {
 				country_event = { id = afo_event.1 }
 				set_global_flag = world_ablaze
 				if = {
@@ -484,6 +477,62 @@ on_actions = {
 			}
 		}
 	}
+
+	on_war = {
+		effect = {
+			if = {
+				limit = {
+					tag = SOV
+					SOV = {
+						has_global_flag = sov_yes_pact
+						any_enemy_country = {
+							NOT = { has_war_with = GER }
+						}
+						NOT = { has_country_flag = SOV_war_since_start }
+					}
+				}
+				set_country_flag = SOV_war_since_start
+			}
+			if = {
+				limit = {
+					tag = SOV
+					SOV = {
+						NOT = { has_global_flag = sov_yes_pact }
+						NOT = { has_country_flag = SOV_war_since_start }
+					}
+				}
+				set_country_flag = SOV_war_since_start
+			}
+		}
+		effect = {
+			if = {
+				limit = {
+					tag = FIN
+				}
+				set_country_flag = FIN_war_since_start
+			}
+		}
+	}
+
+	on_peace = {
+		effect = {
+			if = {
+				limit = {
+					has_country_flag = FIN_war_since_start
+				}
+				set_country_flag = FIN_lessons_of_war_check_flag
+			}
+		}
+		effect = {
+			if = {
+				limit = {
+					has_country_flag = SOV_war_since_start
+				}
+				set_country_flag = SOV_lessons_of_war_check_flag
+			}
+		}
+	}
+
 	on_capitulation = {
 		effect = {
 			if = {
@@ -588,6 +637,19 @@ on_actions = {
 					}
 					clr_country_flag = trade_fix_ai_strat
 					add_offsite_building = { type = dockyard level = -1 }
+				}
+			}
+		}
+		effect = {
+			ROOT = {
+				if = {
+					limit = {
+						is_ai = no
+					}
+					every_unit_leader = {
+						limit = { has_trait = ai_reassignment }
+						remove_trait = { trait = ai_reassignment }
+					}
 				}
 			}
 		}
@@ -1410,7 +1472,26 @@ on_actions = {
 		}
 	}
 
-	on_daily_USA = {
+	on_weekly_SOV  = {
+		effect = {
+			if = {
+				limit = { NOT = { has_country_flag = greatest_airforce_fulfilled } }
+				add_to_variable = { greatest_airforce_fighters = num_deployed_planes_with_type@fighter_multirole_equipment }
+				add_to_variable = { greatest_airforce_tac = num_deployed_planes_with_type@strike_bomber_equipment }
+			}
+		}
+	}
+	on_weekly_GER  = {
+		effect = {
+			if = {
+				limit = { NOT = { has_country_flag = creation_of_the_panzer_core_fulfilled } }
+				add_to_variable = { creation_of_the_panzer_core_tanks = num_equipment_in_armies@medium_tank_chassis }
+				add_to_variable = { creation_of_the_panzer_core_tanks = num_equipment_in_armies@medium_tank_infantry_support_chassis }
+			}
+		}
+	}
+
+	on_weekly_USA = {
 		effect = {
 			if = {
 				limit = {

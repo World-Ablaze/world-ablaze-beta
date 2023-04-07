@@ -405,6 +405,23 @@ AI_stopspammingtrains = {
 	}
 }
 
+AI_FRA_stopspammingtrains = {
+	allowed = {
+		original_tag = FRA
+	}
+	enable = {
+		date > 1936.1.1
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = equipment_variant_production_factor
+		id = train_equipment
+		value = -75
+	}
+}
+
 ### SOVIET UNION
 
 WA_SOV_ground_production_strategy_default = {
@@ -430,7 +447,7 @@ WA_SOV_ground_production_strategy_default = {
 	ai_strategy = {
 		type = equipment_production_factor
 		id = artillery
-		value = 36
+		value = 40
 	}
 
 	ai_strategy = {
@@ -519,7 +536,7 @@ WA_SOV_ground_production_strategy_late = {
 	ai_strategy = {
 		type = equipment_production_min_factories
 		id = armor
-		value = 10
+		value = 3
 	}
 
 	ai_strategy = {
@@ -599,12 +616,12 @@ WA_SOV_you_need_more_infantry_now = {
 	ai_strategy = {
 		type = equipment_production_min_factories
 		id = anti_tank
-		value = 15
+		value = 8
 	}
 	ai_strategy = {
 		type = equipment_production_min_factories
 		id = artillery
-		value = 7
+		value = 8
 	}
 	ai_strategy = {
 		type = equipment_production_min_factories
@@ -700,7 +717,7 @@ WA_ENG_ground_production_strategy_early = {
 		original_tag = ENG
 	}
 	enable = {
-		num_divisions < 120
+		num_divisions < 100
 	}
 	abort_when_not_enabled = yes
 
@@ -712,32 +729,137 @@ WA_ENG_ground_production_strategy_early = {
 	}
 }
 
-WA_ENG_ground_production_strategy_late = {
+eng_mech_limit = {
 	allowed = {
-		original_tag = ENG
+		tag = ENG
 	}
 	enable = {
-		num_of_military_factories > 114
-		num_divisions < 120
+		has_army_size = {
+			size > 11
+			type = mechanized
+		}
 	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = build_army
+		id = mechanized
+		value = -1
+	}
+}
+
+eng_tank_spam_fix = {
+	allowed = {
+		tag = ENG
+	}
+	enable = {
+		if = {
+			limit = {
+				date < 1941.1.1
+			}
+			has_army_size = {
+				size > 5
+				type = armor
+			}
+		}
+		if = {
+			limit = {
+				date > 1941.1.1
+				date < 1942.1.1
+			}
+			has_army_size = {
+				size > 7
+				type = armor
+			}
+		}
+		if = {
+			limit = {
+				date > 1942.1.1
+				date < 1943.1.1
+			}
+			has_army_size = {
+				size > 9
+				type = armor
+			}
+		}
+		if = {
+			limit = {
+				date > 1943.1.1
+				date < 1944.1.1
+			}
+			has_army_size = {
+				size > 11
+				type = armor
+			}
+		}
+		if = {
+			limit = {
+				date > 1944.1.1
+				date < 1945.1.1
+			}
+			has_army_size = {
+				size > 13
+				type = armor
+			}
+		}
+		if = {
+			limit = {
+				date > 1945.1.1
+			}
+			has_army_size = {
+				size > 14
+				type = armor
+			}
+		}
+	}
+
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = build_army
 		id = armor
-		value = 200
+		value = -1
 	}
 	ai_strategy = {
 		type = build_army
 		id = heavy_armor
-		value = 200
+		value = -1
 	}
 	ai_strategy = {
-		type = equipment_production_min_factories
-		id = artillery
-		value = 5
+		type = build_army
+		id = light_armor
+		value = -1
 	}
 }
+
+#WA_ENG_ground_production_strategy_late = {
+#	allowed = {
+#		original_tag = ENG
+#	}
+#	enable = {
+#		num_of_military_factories > 114
+#		num_divisions < 120
+#	}
+#	abort_when_not_enabled = yes
+#
+#	ai_strategy = {
+#		type = build_army
+#		id = armor
+#		value = 200
+#	}
+#	ai_strategy = {
+#		type = build_army
+#		id = heavy_armor
+#		value = 200
+#	}
+#	ai_strategy = {
+#		type = equipment_production_min_factories
+#		id = artillery
+#		value = 5
+#	}
+#}
+
 WA_ENG_lend_lease_production = {
 	allowed = {
 		original_tag = ENG
@@ -766,7 +888,38 @@ WA_ENG_lend_lease_production = {
 	ai_strategy = {
 		type = equipment_production_min_factories
 		id = infantry
-		value = 20
+		value = 15
+	}
+}
+
+WA_CAN_lend_lease_production = {
+	allowed = {
+		tag = CAN
+	}
+	enable = {
+		126 = {
+			CONTROLLER = {
+				tag = ENG
+			}
+		}
+		NOT = {
+			OR = {
+				has_equipment = { support_equipment > 75000 }
+				has_equipment = { infantry_equipment > 75000 }
+			}
+		}
+		NOT = {
+			has_war_with = SOV
+		}
+		SOV = { has_war_with = GER }
+		date > 1941.6.1
+		
+	}
+	abort_when_not_enabled = yes
+	ai_strategy = {
+		type = equipment_production_min_factories
+		id = infantry
+		value = 30
 	}
 }
 
@@ -888,17 +1041,17 @@ WA_USA_stop_spamming_tanks = {
 	ai_strategy = {
 		type = build_army
 		id = light_armor
-		value = -100
+		value = -1
 	}
 	ai_strategy = {
 		type = build_army
 		id = armor
-		value = -100
+		value = -1
 	}
 	ai_strategy = {
 		type = build_army
 		id = heavy_armor
-		value = -100
+		value = -1
 	}
 }
 
@@ -927,7 +1080,7 @@ WA_USA_lend_lease_production = {
 	ai_strategy = {
 		type = equipment_production_min_factories
 		id = artillery
-		value = 25
+		value = 30
 	}
 	ai_strategy = {
 		type = equipment_production_min_factories
@@ -970,7 +1123,7 @@ WA_USA_lend_lease_production_late = {
 	ai_strategy = {
 		type = equipment_production_min_factories
 		id = artillery
-		value = 30
+		value = 35
 	}
 	ai_strategy = {
 		type = equipment_production_min_factories
@@ -1128,12 +1281,12 @@ WA_CZE_ground_production_strategy_default = {
 
 ##################### DEFAULT ARMY SIZES
 
-default_army_size_too_many_garrisons = {
+default_army_size_usa = {
 	allowed = {
 		tag = USA
 	}
 	enable = {
-		num_divisions > 219
+		num_divisions > 199
 	}
 
 	abort_when_not_enabled = yes
@@ -1164,6 +1317,82 @@ default_army_size_too_many_garrisons = {
 
 	ai_strategy = {
 		type = build_army
+		id = mountaineers
+		value = -1
+	}
+}
+
+default_army_size_eng = {
+	allowed = {
+		tag = ENG
+	}
+	enable = {
+		num_divisions > 99
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = build_army
+		id = infantry
+		value = -1
+	}
+
+	ai_strategy = {
+		type = build_army
+		id = motorized
+		value = -1
+	}
+
+	ai_strategy = {
+		type = build_army
+		id = garrison
+		value = -1
+	}
+
+	ai_strategy = {
+		type = build_army
+		id = mountaineers
+		value = -1
+	}
+}
+
+default_army_size_ita = {
+	allowed = {
+		tag = ITA
+	}
+	enable = {
+		num_divisions > 104
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = build_army
+		id = infantry
+		value = -1
+	}
+
+	ai_strategy = {
+		type = build_army
+		id = motorized
+		value = -1
+	}
+
+	ai_strategy = {
+		type = build_army
+		id = garrison
+		value = -1
+	}
+
+	ai_strategy = {
+		type = build_army
+		id = mountaineers
+		value = -1
+	}
+	
+	ai_strategy = {
+		type = build_army
 		id = light_armor
 		value = -1
 	}
@@ -1179,12 +1408,6 @@ default_army_size_too_many_garrisons = {
 		id = heavy_armor
 		value = -1
 	}
-
-	ai_strategy = {
-		type = build_army
-		id = mountaineers
-		value = -1
-	}
 }
 
 default_army_size = {
@@ -1193,6 +1416,8 @@ default_army_size = {
 			tag = SOV
 			tag = CHI
 			tag = USA
+			tag = ENG
+			tag = ITA
 		}
 	}
 	enable = {
@@ -1250,12 +1475,9 @@ default_army_size = {
 	}
 }
 
-default_army_size_snowflakes = {
+default_army_size_chi = {
 	allowed = {
-		OR = {
-			tag = SOV
-			tag = CHI
-		}
+		tag = CHI
 	}
 	enable = {
 		num_divisions > 349
@@ -1312,6 +1534,35 @@ default_army_size_snowflakes = {
 	}
 }
 
+default_army_size_sov = {
+	allowed = {
+		tag = SOV
+	}
+	enable = {
+		num_divisions > 299
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = build_army
+		id = infantry
+		value = -1
+	}
+
+	ai_strategy = {
+		type = build_army
+		id = garrison
+		value = -1
+	}
+
+	ai_strategy = {
+		type = build_army
+		id = mountaineers
+		value = -1
+	}
+}
+
 SOV_tank_spam_fix = {
 	allowed = {
 		tag = SOV
@@ -1342,17 +1593,17 @@ SOV_tank_spam_fix = {
 	ai_strategy = {
 		type = build_army
 		id = light_armor
-		value = -100
+		value = -1
 	}
 	ai_strategy = {
 		type = build_army
 		id = armor
-		value = -100
+		value = -1
 	}
 	ai_strategy = {
 		type = build_army
 		id = heavy_armor
-		value = -100
+		value = -1
 	}
 }
 
@@ -1361,7 +1612,7 @@ SOV_motorized_spam_fix = {
 		tag = SOV
 	}
 	enable = {
-		date < 1948.1.1
+		always = yes
 	}
 
 	abort_when_not_enabled = yes
@@ -1370,12 +1621,12 @@ SOV_motorized_spam_fix = {
 	ai_strategy = {
 		type = build_army
 		id = motorized
-		value = -100
+		value = -1
 	}
 	ai_strategy = {
 		type = build_army
 		id = mechanized
-		value = -100
+		value = -1
 	}
 }
 
@@ -1396,12 +1647,12 @@ SOV_enough_divisions_now_stockpile_and_tanks = { #28 Empty medium tank divisions
 	ai_strategy = {
 		type = build_army
 		id = infantry
-		value = -100
+		value = -1
 	}
 	ai_strategy = {
 		type = build_army
 		id = garrison
-		value = -100
+		value = -1
 	}
 	ai_strategy = {
 		type = equipment_production_min_factories

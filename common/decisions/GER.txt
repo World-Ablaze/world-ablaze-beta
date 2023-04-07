@@ -1289,6 +1289,26 @@ operations = {
 			tag = FRA
 			attack_bonus_against = 0.1
 		}
+		complete_effect = {
+			if = {
+				limit = {
+					country_exists = FRA
+					NOT = {
+						FRA = {
+							is_in_faction_with = GER
+						}
+					}
+					NOT = {
+						has_war_with = FRA
+					}
+				}
+				declare_war_on = {
+					target = FRA
+					type = annex_everything
+				}
+			}
+		}
+
 		ai_will_do = {
 			factor = 150
 			modifier = {
@@ -1343,6 +1363,26 @@ operations = {
 			tag = FRA
 			attack_bonus_against = 0.25
 		}
+		complete_effect = {
+			if = {
+				limit = {
+					country_exists = FRA
+					NOT = {
+						FRA = {
+							is_in_faction_with = GER
+						}
+					}
+					NOT = {
+						has_war_with = FRA
+					}
+				}
+				declare_war_on = {
+					target = FRA
+					type = annex_everything
+				}
+			}
+		}
+
 		ai_will_do = {
 			factor = 150
 			modifier = {
@@ -1552,7 +1592,7 @@ operations = {
 			attack_bonus_against = 0.1
 		}
 		modifier = {
-			supply_consumption_factor = -0.4
+			supply_consumption_factor = -0.2
 			army_morale_factor = 0.1
 			org_loss_when_moving = -0.2
 			ground_attack_factor = 0.2
@@ -1883,6 +1923,62 @@ operations = {
 				}
 				declare_war_on = {
 					target = SOV
+					type = annex_everything
+				}
+			}
+			if = {
+				limit = {
+					NOT = {
+						11 = { CONTROLLER = { tag = SOV } }
+						LIT = {
+							is_in_faction_with = GER
+						}
+					}
+				}
+				declare_war_on = {
+					target = LIT
+					type = annex_everything
+				}
+			}
+			if = {
+				limit = {
+					NOT = {
+						966 = { CONTROLLER = { tag = SOV } }
+						LAT = {
+							is_in_faction_with = GER
+						}
+					}
+				}
+				declare_war_on = {
+					target = LAT
+					type = annex_everything
+				}
+			}
+			if = {
+				limit = {
+					NOT = {
+						13 = { CONTROLLER = { tag = SOV } }
+						EST = {
+							is_in_faction_with = GER
+						}
+					}
+				}
+				declare_war_on = {
+					target = EST
+					type = annex_everything
+				}
+			}
+			if = {
+				limit = {
+					FIN = {
+						OR = {
+							is_in_faction_with = SOV
+							is_puppet_of = SOV
+						}
+					}
+				}
+				declare_war_on = {
+					target = FIN
 					type = annex_everything
 				}
 			}
@@ -3130,8 +3226,8 @@ war_measures = {
 		}
 	}
 
-	GER_request_romanian_support = {
-		icon = generic_assasination
+	GER_request_romanian_frontline_support = {
+		icon = generic_military
 
 		allowed = {
 			original_tag = GER
@@ -3156,7 +3252,7 @@ war_measures = {
 			}
 		}
 
-		cost = 10
+		cost = 0
 		fire_only_once = no
 
 		complete_effect = {
@@ -3166,8 +3262,8 @@ war_measures = {
 		}
 	}
 
-	GER_piss_off_romania = {
-		icon = generic_assasination
+	GER_decline_romanian_frontline_support = {
+		icon = generic_military
 
 		allowed = {
 			original_tag = GER
@@ -3195,6 +3291,76 @@ war_measures = {
 
 		complete_effect = {
 			ROM = {
+				clr_country_flag = support_requested_by_germany
+			}
+		}
+	}
+
+	GER_request_hungarian_frontline_support = {
+		icon = generic_military
+
+		allowed = {
+			original_tag = GER
+		}
+
+		available = {
+			is_in_faction_with = HUN
+			has_war_with = SOV
+			HUN = {
+				is_ai = yes
+			}
+		}
+
+		visible = {
+			is_in_faction_with = HUN
+			has_war_with = SOV
+			HUN = {
+				is_ai = yes
+				NOT = {
+					has_country_flag = support_requested_by_germany
+				}
+			}
+		}
+
+		cost = 0
+		fire_only_once = no
+
+		complete_effect = {
+			HUN = {
+				set_country_flag = support_requested_by_germany
+			}
+		}
+	}
+
+	GER_decline_hungarian_frontline_support = {
+		icon = generic_military
+
+		allowed = {
+			original_tag = GER
+		}
+
+		available = {
+			is_in_faction_with = HUN
+			has_war_with = SOV
+			HUN = {
+				is_ai = yes
+			}
+		}
+
+		visible = {
+			is_in_faction_with = HUN
+			has_war_with = SOV
+			HUN = {
+				is_ai = yes
+				has_country_flag = support_requested_by_germany
+			}
+		}
+
+		cost = 10
+		fire_only_once = no
+
+		complete_effect = {
+			HUN = {
 				clr_country_flag = support_requested_by_germany
 			}
 		}
@@ -3873,13 +4039,15 @@ war_measures = {
 		allowed = {
 			tag = GER
 		}
-		cost = 150
+		cost = 200
 		fire_only_once = yes
 		available = {
 			has_war = no
 			has_government = fascism
+			has_air_experience > 99
 			has_army_experience > 99
 			command_power > 99
+			has_army_manpower = { size > 1599999 }
 		}
 		visible = {
 			has_war = no
@@ -3890,6 +4058,18 @@ war_measures = {
 			}
 		}
 		complete_effect = {
+			custom_effect_tooltip = GER_prepare_for_a_european_war_stab_tt
+			#if = {
+			#	limit = {
+			#		NOT = {
+			#			has_army_manpower = { size > 1599999 }
+			#		}
+			#	}
+			#	set_variable = { var = GER_Wehrmacht_stability value = -5 }
+			#	set_variable = { var = GER_Wehrmacht_attitude value = 45 }
+			#	GER_political_instability_update_effect = yes
+			#}
+			air_experience = -100
 			army_experience = -100
 			add_command_power = -100
 			custom_effect_tooltip = prepare_for_a_european_war_tt
@@ -4803,6 +4983,9 @@ GER_reichskommissariats = {
 					add_manpower = -10000
 				}
 				hidden_effect = {
+					RDE = {
+						set_fuel_ratio = 0.0
+					}
 					add_ideas = GER_reichkommissariats_governments
 					add_stability = 0.3
 					add_manpower = 10000
@@ -5002,6 +5185,9 @@ GER_reichskommissariats = {
 					add_manpower = -25000
 				}
 				hidden_effect = {
+					RNO = {
+						set_fuel_ratio = 0.0
+					}
 					add_ideas = GER_reichkommissariats_governments
 					add_stability = 0.3
 					add_manpower = 100000
@@ -5189,6 +5375,9 @@ GER_reichskommissariats = {
 					add_manpower = -25000
 				}
 				hidden_effect = {
+					RSW = {
+						set_fuel_ratio = 0.0
+					}
 					add_ideas = GER_reichkommissariats_governments
 					add_stability = 0.3
 					add_manpower = 75000
@@ -5426,6 +5615,9 @@ GER_reichskommissariats = {
 						add_manpower = -75000
 					}
 					hidden_effect = {
+						RFI = {
+							set_fuel_ratio = 0.0
+						}
 						add_ideas = GER_reichkommissariats_governments
 						add_stability = 0.3
 						add_manpower = 100000
@@ -5534,6 +5726,9 @@ GER_reichskommissariats = {
 						add_manpower = -100000
 					}
 					hidden_effect = {
+						RFI = {
+							set_fuel_ratio = 0.0
+						}
 						add_ideas = GER_reichkommissariats_governments
 						add_stability = 0.3
 						add_manpower = 100000
@@ -5667,6 +5862,9 @@ GER_reichskommissariats = {
 					add_manpower = -20000
 				}
 				hidden_effect = {
+					RHO = {
+						set_fuel_ratio = 0.0
+					}
 					add_ideas = GER_reichkommissariats_governments
 					add_stability = 0.3
 					add_manpower = 100000
@@ -5839,6 +6037,9 @@ GER_reichskommissariats = {
 					add_manpower = -20000
 				}
 				hidden_effect = {
+					RBE = {
+						set_fuel_ratio = 0.0
+					}
 					add_ideas = GER_reichkommissariats_governments
 					add_stability = 0.3
 					add_manpower = 100000
@@ -5881,130 +6082,136 @@ GER_reichskommissariats = {
 		available = {
 			has_completed_focus = GER_form_the_reichskommissariats
 			has_completed_focus = GER_endsieg
+			NOT = {
+				country_exists = VIC
+			}
 			has_government = fascism
-			19 = {
-				CONTROLLER = {
-					OR = {
-						tag = GER
-						is_subject_of = GER
-						is_in_faction_with = GER
+			custom_trigger_tooltip = {
+				tooltip = GER_reichskommissariat_frankreich_tt
+				19 = {
+					CONTROLLER = {
+						OR = {
+							tag = GER
+							is_subject_of = GER
+							is_in_faction_with = GER
+						}
 					}
 				}
-			}
-			23 = {
-				CONTROLLER = {
-					OR = {
-						tag = GER
-						is_subject_of = GER
-						is_in_faction_with = GER
+				23 = {
+					CONTROLLER = {
+						OR = {
+							tag = GER
+							is_subject_of = GER
+							is_in_faction_with = GER
+						}
 					}
 				}
-			}
-			30 = {
-				CONTROLLER = {
-					OR = {
-						tag = GER
-						is_subject_of = GER
-						is_in_faction_with = GER
+				30 = {
+					CONTROLLER = {
+						OR = {
+							tag = GER
+							is_subject_of = GER
+							is_in_faction_with = GER
+						}
 					}
 				}
-			}
-			14 = {
-				CONTROLLER = {
-					OR = {
-						tag = GER
-						is_subject_of = GER
-						is_in_faction_with = GER
+				14 = {
+					CONTROLLER = {
+						OR = {
+							tag = GER
+							is_subject_of = GER
+							is_in_faction_with = GER
+						}
 					}
 				}
-			}
-			24 = {
-				CONTROLLER = {
-					OR = {
-						tag = GER
-						is_subject_of = GER
-						is_in_faction_with = GER
+				24 = {
+					CONTROLLER = {
+						OR = {
+							tag = GER
+							is_subject_of = GER
+							is_in_faction_with = GER
+						}
 					}
 				}
-			}
-			15 = {
-				CONTROLLER = {
-					OR = {
-						tag = GER
-						is_subject_of = GER
-						is_in_faction_with = GER
+				15 = {
+					CONTROLLER = {
+						OR = {
+							tag = GER
+							is_subject_of = GER
+							is_in_faction_with = GER
+						}
 					}
 				}
-			}
-			16 = {
-				CONTROLLER = {
-					OR = {
-						tag = GER
-						is_subject_of = GER
-						is_in_faction_with = GER
+				16 = {
+					CONTROLLER = {
+						OR = {
+							tag = GER
+							is_subject_of = GER
+							is_in_faction_with = GER
+						}
 					}
 				}
-			}
-			27 = {
-				CONTROLLER = {
-					OR = {
-						tag = GER
-						is_subject_of = GER
-						is_in_faction_with = GER
+				27 = {
+					CONTROLLER = {
+						OR = {
+							tag = GER
+							is_subject_of = GER
+							is_in_faction_with = GER
+						}
 					}
 				}
-			}
-			18 = {
-				CONTROLLER = {
-					OR = {
-						tag = GER
-						is_subject_of = GER
-						is_in_faction_with = GER
+				18 = {
+					CONTROLLER = {
+						OR = {
+							tag = GER
+							is_subject_of = GER
+							is_in_faction_with = GER
+						}
 					}
 				}
-			}
-			17 = {
-				CONTROLLER = {
-					OR = {
-						tag = GER
-						is_subject_of = GER
-						is_in_faction_with = GER
+				17 = {
+					CONTROLLER = {
+						OR = {
+							tag = GER
+							is_subject_of = GER
+							is_in_faction_with = GER
+						}
 					}
 				}
-			}
-			785 = {
-				CONTROLLER = {
-					OR = {
-						tag = GER
-						is_subject_of = GER
-						is_in_faction_with = GER
+				785 = {
+					CONTROLLER = {
+						OR = {
+							tag = GER
+							is_subject_of = GER
+							is_in_faction_with = GER
+						}
 					}
 				}
-			}
-			855 = {
-				CONTROLLER = {
-					OR = {
-						tag = GER
-						is_subject_of = GER
-						is_in_faction_with = GER
+				855 = {
+					CONTROLLER = {
+						OR = {
+							tag = GER
+							is_subject_of = GER
+							is_in_faction_with = GER
+						}
 					}
 				}
-			}
-			21 = {
-				CONTROLLER = {
-					OR = {
-						tag = GER
-						is_subject_of = GER
-						is_in_faction_with = GER
+				21 = {
+					CONTROLLER = {
+						OR = {
+							tag = GER
+							is_subject_of = GER
+							is_in_faction_with = GER
+						}
 					}
 				}
-			}
-			31 = {
-				CONTROLLER = {
-					OR = {
-						tag = GER
-						is_subject_of = GER
-						is_in_faction_with = GER
+				31 = {
+					CONTROLLER = {
+						OR = {
+							tag = GER
+							is_subject_of = GER
+							is_in_faction_with = GER
+						}
 					}
 				}
 			}
@@ -6014,7 +6221,7 @@ GER_reichskommissariats = {
 			has_equipment = {
 				support_equipment > 199
 			}
-			has_manpower > 100000
+			has_manpower > 80000
 		}
 		cost = 50
 		fire_only_once = yes
@@ -6222,6 +6429,9 @@ GER_reichskommissariats = {
 						add_manpower = -100000
 					}
 					hidden_effect = {
+						RFR = {
+							set_fuel_ratio = 0.0
+						}
 						add_ideas = GER_reichkommissariats_governments
 						add_stability = 0.3
 						add_manpower = 500000
@@ -6473,10 +6683,13 @@ GER_reichskommissariats = {
 					add_manpower = -100000
 				}
 				hidden_effect = {
+					REN = {
+						set_fuel_ratio = 0.0
+					}
 					add_ideas = GER_reichkommissariats_governments
 					add_ideas = ENG_king_edward_nazi
 					add_stability = 0.3
-					add_manpower = 400000
+					add_manpower = 200000
 					add_equipment_to_stockpile = {
 						type = ger_inf_0
 						amount = 25000
@@ -6609,6 +6822,9 @@ GER_reichskommissariats = {
 					add_manpower = -20000
 				}
 				hidden_effect = {
+					RIR = {
+						set_fuel_ratio = 0.0
+					}
 					add_ideas = GER_reichkommissariats_governments
 					add_stability = 0.3
 					add_manpower = 50000
@@ -6776,6 +6992,9 @@ GER_reichskommissariats = {
 					add_manpower = -20000
 				}
 				hidden_effect = {
+					RSI = {
+						set_fuel_ratio = 0.0
+					}
 					add_ideas = GER_reichkommissariats_governments
 					add_stability = 0.3
 					add_manpower = 75000
@@ -6922,6 +7141,9 @@ GER_reichskommissariats = {
 					add_manpower = -80000
 				}
 				hidden_effect = {
+					RPO = {
+						set_fuel_ratio = 0.0
+					}
 					add_ideas = GER_reichkommissariats_governments
 					add_stability = 0.3
 					add_manpower = 200000
@@ -7253,6 +7475,9 @@ GER_reichskommissariats = {
 						add_manpower = -150000
 					}
 					hidden_effect = {
+						RBL = {
+							set_fuel_ratio = 0.0
+						}
 						add_ideas = GER_reichkommissariats_governments
 						add_stability = 0.3
 						add_manpower = 200000
@@ -7407,6 +7632,9 @@ GER_reichskommissariats = {
 						add_manpower = -200000
 					}
 					hidden_effect = {
+						RBL = {
+							set_fuel_ratio = 0.0
+						}
 						add_ideas = GER_reichkommissariats_governments
 						add_stability = 0.3
 						add_manpower = 200000
@@ -7891,6 +8119,9 @@ GER_reichskommissariats = {
 						add_manpower = -200000
 					}
 					hidden_effect = {
+						RUK = {
+							set_fuel_ratio = 0.0
+						}
 						add_ideas = GER_reichkommissariats_governments
 						add_stability = 0.3
 						add_manpower = 200000
@@ -8006,6 +8237,9 @@ GER_reichskommissariats = {
 						add_manpower = -200000
 					}
 					hidden_effect = {
+						RUK = {
+							set_fuel_ratio = 0.0
+						}
 						add_ideas = GER_reichkommissariats_governments
 						add_stability = 0.3
 						add_manpower = 200000
@@ -8812,6 +9046,9 @@ GER_reichskommissariats = {
 						add_manpower = -250000
 					}
 					hidden_effect = {
+						RSO = {
+							set_fuel_ratio = 0.0
+						}
 						add_ideas = GER_reichkommissariats_governments
 						add_ideas = RSO_partisans
 						add_stability = 0.3
@@ -9021,6 +9258,9 @@ GER_reichskommissariats = {
 						add_manpower = -200000
 					}
 					hidden_effect = {
+						RSO = {
+							set_fuel_ratio = 0.0
+						}
 						add_ideas = GER_reichkommissariats_governments
 						add_ideas = RSO_partisans
 						add_stability = 0.3
@@ -9269,6 +9509,9 @@ GER_reichskommissariats = {
 					}
 					add_manpower = 100000
 					hidden_effect = {
+						RKA = {
+							set_fuel_ratio = 0.0
+						}
 						add_ideas = GER_reichkommissariats_governments
 						add_stability = 0.3
 						add_equipment_to_stockpile = {
@@ -9759,6 +10002,9 @@ GER_reichskommissariats = {
 					add_manpower = -75000
 				}
 				hidden_effect = {
+					RTU = {
+						set_fuel_ratio = 0.0
+					}
 					add_ideas = GER_reichkommissariats_governments
 					add_stability = 0.3
 					add_manpower = 75000
@@ -23340,12 +23586,10 @@ GER_military_buildup = {
         fire_only_once = yes
 
         available = {
-            tag = GER
             has_tech = ger_light_cruiser_4
         }
 
         visible = {
-            original_tag = GER
 			has_completed_focus = GER_plan_z
         }
 
@@ -23378,12 +23622,10 @@ GER_military_buildup = {
         fire_only_once = yes
 
         available = {
-            tag = GER
             has_tech = ger_light_cruiser_5
         }
 
         visible = {
-            original_tag = GER
 			has_completed_focus = GER_plan_z
         }
 
@@ -23466,12 +23708,10 @@ GER_military_buildup = {
         fire_only_once = yes
 
         available = {
-            tag = GER
             has_tech = ger_heavy_cruiser_1
         }
 
         visible = {
-            original_tag = GER
 			has_completed_focus = GER_plan_z
         }
 
@@ -23604,12 +23844,10 @@ GER_military_buildup = {
         fire_only_once = yes
 
         available = {
-            tag = GER
             has_tech = ger_heavy_cruiser_2
         }
 
         visible = {
-            original_tag = GER
 			has_completed_focus = GER_plan_z
         }
 
@@ -23672,12 +23910,10 @@ GER_military_buildup = {
         fire_only_once = yes
 
         available = {
-            tag = GER
             has_tech = ger_battleship_4
         }
 
         visible = {
-            original_tag = GER
 			has_completed_focus = GER_plan_z
         }
 
@@ -23730,12 +23966,10 @@ GER_military_buildup = {
         fire_only_once = yes
 
         available = {
-            tag = GER
             has_tech = ger_battleship_5
         }
 
         visible = {
-            original_tag = GER
 			has_completed_focus = GER_plan_z
         }
 
@@ -23788,12 +24022,10 @@ GER_military_buildup = {
         fire_only_once = yes
 
         available = {
-            tag = GER
             has_tech = ger_battle_cruiser_1
         }
 
         visible = {
-            original_tag = GER
 			has_completed_focus = GER_plan_z
         }
 
@@ -23846,12 +24078,10 @@ GER_military_buildup = {
         fire_only_once = yes
 
         available = {
-            tag = GER
             has_tech = ger_carrier_1
         }
 
         visible = {
-            original_tag = GER
 			has_completed_focus = GER_plan_z
         }
 
@@ -23894,12 +24124,10 @@ GER_military_buildup = {
         fire_only_once = yes
 
         available = {
-            tag = GER
             has_tech = ger_carrier_2
         }
 
         visible = {
-            original_tag = GER
 			has_completed_focus = GER_plan_z
         }
 
@@ -23939,7 +24167,6 @@ GER_military_buildup = {
 		}
 
 		available = {
-
 		}
 		visible = {
 			has_country_flag = GER_jagernotprogram_flag
@@ -24010,7 +24237,6 @@ GER_military_buildup = {
 		}
 
 		available = {
-
 		}
 		visible = {
 			has_country_flag = GER_panzerprogramm_flag
