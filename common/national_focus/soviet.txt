@@ -1671,18 +1671,10 @@ focus_tree = {
 		completion_reward = {
 			custom_effect_tooltip = SOV_start_the_fourth_five_year_plan_tt
 			hidden_effect = {
-				add_to_variable = {
-					var = SOV_fyp_political_power_cost
-					value = 0.5
-				}
-				add_to_variable = {
-					var = SOV_fyp_industrial_capacity_factory
-					value = -0.3
-				}
-				add_to_variable = {
-					var = SOV_fyp_industry_repair_factor
-					value = 0.4
-				}
+				add_to_variable = { SOV_fyp_political_power_cost = 0.5 }
+				add_to_variable = { SOV_fyp_industrial_capacity_factory = -0.3 }
+				add_to_variable = { SOV_fyp_industry_repair_factor = 0.4 }
+				add_to_variable = { SOV_fyp_consumer_goods_factor = 0.06 }
 			}
 		}
 	}
@@ -1695,7 +1687,7 @@ focus_tree = {
 		x = -1
 		y = 1
 		relative_position_id = SOV_start_the_fourth_five_year_plan
-		cost = 3
+		cost = 4
 		cancel_if_invalid = no
 		available = {
 		}
@@ -1703,24 +1695,106 @@ focus_tree = {
 			FOCUS_FILTER_INDUSTRY
 		}
 		completion_reward = {
-			economy_fatigue_level_down_10 = yes
+			economy_fatigue_level_down_20 = yes
 		}
 	}
 	focus = {
 		id = SOV_steel_casting_industry
-		icon = GFX_goal_generic_construction
+		icon = GFX_goal_generic_build_steel
 		prerequisite = { focus = SOV_start_the_fourth_five_year_plan }
 		relative_position_id = SOV_restoration_and_development
 		x = 2
 		y = 0
-		cost = 3
+		cost = 5
 		available = {
-			
+			any_owned_state = {
+				has_resources_amount = {
+					resource = steel
+					amount > 0
+				}
+				free_building_slots = {
+					building = industrial_complex
+					size > 1
+					include_locked = yes
+				}
+			}
+			NOT = {
+				has_completed_focus = SOV_curtailment_of_the_collective_farms
+			}
 		}
-		search_filters = { FOCUS_FILTER_INDUSTRY }
-		available_if_capitulated = no
+		search_filters = {
+			FOCUS_FILTER_INDUSTRY
+		}
 		completion_reward = {
-
+			random_owned_controlled_state = {
+				limit = {
+					has_resources_amount = {
+						resource = iron
+						amount > 0
+					}
+					free_building_slots = {
+						building = steel_refinery
+						size > 0
+						include_locked = yes
+					}
+				}
+				add_extra_state_shared_building_slots = 3
+				add_building_construction = {
+					type = steel_refinery
+					level = 3
+					instant_build = yes
+				}
+				add_resource = {
+					type = iron
+					amount = 5
+				}
+				set_state_flag = SOV_steel_casting_industry_flag
+			}
+			if = {
+				limit = {
+					any_owned_state = {
+						has_resources_amount = {
+							resource = steel
+							amount > 0
+						}
+						free_building_slots = {
+							building = steel_refinery
+							size > 1
+							include_locked = yes
+						}
+						NOT = {
+							has_state_flag = SOV_steel_casting_industry_flag
+						}
+					}
+				}
+				random_owned_controlled_state = {
+					limit = {
+						has_resources_amount = {
+							resource = iron
+							amount > 0
+						}
+						free_building_slots = {
+							building = steel_refinery
+							size > 0
+							include_locked = yes
+						}
+						NOT = {
+							has_state_flag = SOV_steel_casting_industry_flag
+						}
+					}
+					add_extra_state_shared_building_slots = 3
+					add_building_construction = {
+						type = steel_refinery
+						level = 3
+						instant_build = yes
+					}
+					add_resource = {
+						type = iron
+						amount = 5
+					}
+					set_state_flag = SOV_steel_casting_industry_flag
+				}
+			}
 		}
 	}
 
@@ -1846,51 +1920,6 @@ focus_tree = {
 				uses = 3
 				category = industry
 			}
-			if = {
-				limit = {
-					571 = {
-						is_controlled_by = SOV
-					}
-				}
-				571 = {
-					add_extra_state_shared_building_slots = 2
-					add_building_construction = {
-						type = synthetic_refinery
-						level = 2
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					219 = {
-						is_controlled_by = SOV
-					}
-				}
-				219 = {
-					add_extra_state_shared_building_slots = 2
-					add_building_construction = {
-						type = synthetic_refinery
-						level = 2
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					195 = {
-						is_controlled_by = SOV
-					}
-				}
-				195 = {
-					add_extra_state_shared_building_slots = 2
-					add_building_construction = {
-						type = synthetic_refinery
-						level = 2
-						instant_build = yes
-					}
-				}
-			}
 			add_resource = {
 				type = rubber
 				amount = 6
@@ -1900,7 +1929,7 @@ focus_tree = {
 	}
 	focus = {
 		id = SOV_ballistic_missiles
-		icon = GFX_focus_research
+		icon = GFX_focus_rocketry
 		prerequisite = { focus = SOV_the_greatest_industrial_power }
 		relative_position_id = SOV_transformation_of_nature
 		x = 2
@@ -1912,7 +1941,12 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_RESEARCH }
 		available_if_capitulated = no
 		completion_reward = {
-
+			add_tech_bonus = {
+				name = SOV_ballistic_missiles
+				bonus = 1
+				uses = 2
+				category = rocketry
+			}
 		}
 	}
 
@@ -1985,13 +2019,7 @@ focus_tree = {
 			factor = 5
 		}
 		available = {
-			has_completed_focus = SOV_start_the_fourth_five_year_plan
-			OR = {
-				has_completed_focus = SOV_bread_basket_of_the_soviet_union
-				any_enemy_country = {
-					is_major = yes
-				}
-			}
+			date > 1946.1.1
 		}
 		search_filters = {
 			FOCUS_FILTER_INDUSTRY
@@ -2002,25 +2030,12 @@ focus_tree = {
 		completion_reward = {
 			custom_effect_tooltip = SOV_finish_the_fourth_five_year_plan_tt
 			hidden_effect = {
-				subtract_from_variable = {
-					var = SOV_fyp_political_power_cost
-					value = 0.5
-				}
-				subtract_from_variable = {
-					var = SOV_fyp_industrial_capacity_factory
-					value = -0.3
-				}
-				subtract_from_variable = {
-					var = SOV_fyp_industry_repair_factor
-					value = 0.35
-				}
+				subtract_from_variable = { SOV_fyp_political_power_cost = 0.5 }
+				subtract_from_variable = { SOV_fyp_industrial_capacity_factory = -0.3 }
+				subtract_from_variable = { SOV_fyp_industry_repair_factor = 0.35 }
+				subtract_from_variable = { SOV_fyp_consumer_goods_factor = 0.06 }
 			}
-			add_tech_bonus = {
-				name = SOV_synth_rubber
-				bonus = 3
-				uses = 1
-				category = synth_resources
-			}
+			add_stability = 0.15
 		}
 	}
 	###
@@ -2046,17 +2061,23 @@ focus_tree = {
 		bypass = {
 		}
 		completion_reward = {
-			
+			custom_effect_tooltip = SOV_start_the_fifth_five_year_plan_tt
+			hidden_effect = {
+				add_to_variable = { SOV_fyp_political_power_cost = 0.5 }
+				add_to_variable = { SOV_fyp_industrial_capacity_factory = 0.1 }
+				add_to_variable = { SOV_fyp_production_speed_arms_factory_factor = 0.2 }
+				add_to_variable = { SOV_fyp_consumer_goods_factor = -0.04 }
+			}
 		}
 	}
 	focus = {
 		id = SOV_expand_the_heavy_industry
-		icon = GFX_goal_generic_production
+		icon = GFX_goal_generic_build_aluminium
 		prerequisite = { focus = SOV_start_the_fifth_five_year_plan }
 		x = -1
 		y = 1
 		relative_position_id = SOV_start_the_fifth_five_year_plan
-		cost = 3
+		cost = 5
 		cancel_if_invalid = no
 		available = {
 		}
@@ -2064,11 +2085,55 @@ focus_tree = {
 			FOCUS_FILTER_INDUSTRY
 		}
 		completion_reward = {
-
+			random_owned_controlled_state = {
+				limit = {
+					free_building_slots = {
+						building = steel_refinery
+						size > 0
+						include_locked = yes
+					}
+				}
+				add_extra_state_shared_building_slots = 3
+				add_building_construction = {
+					type = steel_refinery
+					level = 3
+					instant_build = yes
+				}
+			}
+			random_owned_controlled_state = {
+				limit = {
+					free_building_slots = {
+						building = aluminium_refinery
+						size > 0
+						include_locked = yes
+					}
+				}
+				add_extra_state_shared_building_slots = 3
+				add_building_construction = {
+					type = aluminium_refinery
+					level = 3
+					instant_build = yes
+				}
+			}
+			random_owned_controlled_state = {
+				limit = {
+					free_building_slots = {
+						building = industrial_complex
+						size > 0
+						include_locked = yes
+					}
+				}
+				add_extra_state_shared_building_slots = 3
+				add_building_construction = {
+					type = industrial_complex
+					level = 3
+					instant_build = yes
+				}
+			}
 		}
 	}
 	focus = {
-		id = SOV_synthetic_rubber_program
+		id = SOV_synthetic_rubber_programme
 		icon = GFX_goal_generic_synthetic_rubber
 		prerequisite = { focus = SOV_start_the_fifth_five_year_plan }
 		relative_position_id = SOV_expand_the_heavy_industry
@@ -2081,7 +2146,56 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_INDUSTRY }
 		available_if_capitulated = no
 		completion_reward = {
-
+			if = {
+				limit = {
+					571 = {
+						is_controlled_by = SOV
+					}
+				}
+				571 = {
+					add_extra_state_shared_building_slots = 2
+					add_building_construction = {
+						type = synthetic_refinery
+						level = 2
+						instant_build = yes
+					}
+				}
+			}
+			if = {
+				limit = {
+					219 = {
+						is_controlled_by = SOV
+					}
+				}
+				219 = {
+					add_extra_state_shared_building_slots = 2
+					add_building_construction = {
+						type = synthetic_refinery
+						level = 2
+						instant_build = yes
+					}
+				}
+			}
+			if = {
+				limit = {
+					195 = {
+						is_controlled_by = SOV
+					}
+				}
+				195 = {
+					add_extra_state_shared_building_slots = 2
+					add_building_construction = {
+						type = synthetic_refinery
+						level = 2
+						instant_build = yes
+					}
+				}
+			}
+			add_resource = {
+				type = rubber
+				amount = 6
+				state = 404
+			}
 		}
 	}
 
@@ -2100,7 +2214,13 @@ focus_tree = {
 			FOCUS_FILTER_INDUSTRY
 		}
 		completion_reward = {
-			
+			every_core_state = {
+				add_building_construction = {
+					type = infrastructure
+					level = 1
+				}
+			}
+			economy_fatigue_level_down_4 = yes
 		}
 	}
 	focus = {
@@ -2117,13 +2237,84 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_INDUSTRY }
 		available_if_capitulated = no
 		completion_reward = {
+			set_variable = { SOV_fyp_fuel_gain_factor_from_states = 0.05 }
+			set_variable = { SOV_fyp_production_oil_factor = 0.05 }
+			custom_effect_tooltip = SOV_oil_production_ns_tt
 
+			set_temp_variable = { SOV_silos_from_focus = 0 }
+			every_owned_state = {
+				limit = {
+					is_fully_controlled_by = ROOT
+					has_resources_amount = {
+						resource = oil
+						amount > 0
+					}
+					infrastructure < 3
+				}
+				add_building_construction = {
+					type = infrastructure
+					level = 1
+					instant_build = yes
+				}
+				hidden_effect = {
+					if = {
+						limit = {
+							check_variable = { SOV_silos_from_focus = 2 compare = less_than_or_equals }
+						}
+						add_building_construction = {
+							type = fuel_silo
+							level = 1
+							instant_build = yes
+						}
+						add_to_temp_variable = { SOV_silos_from_focus = 1 }
+					}
+				}
+				custom_effect_tooltip = SOV_oil_production_silo_tt
+			}
+			#Build Railways in Caucasus
+			if = {
+				limit = {
+					has_full_control_of_state = 229					#Azerbaijan
+					has_full_control_of_state = 230					#ARMENIA
+					has_full_control_of_state = 231					#GEORGIA
+				}
+				# Baku - Tbilisi
+				build_railway = {
+					path = {
+						7661
+						1536
+						4614
+						4477
+						11645
+						11674
+						1539
+						11708
+						1599
+					}
+				}
+			}
+			if = {
+				limit = {
+					has_full_control_of_state = 232					#DAGESTAN
+					has_full_control_of_state = 233					#CHECHNYA-INGUSHETIA
+				}
+				# Makhachkala (Hub province) - Grozny
+				build_railway = {
+					path = {
+						6701
+						3682
+						3672
+						670
+						9628
+					}
+				}
+			}
 		}
 	}
 
 	focus = {
 		id = SOV_arsenal_of_communism
-		icon = GFX_goal_generic_construction
+		icon = GFX_goal_generic_commit_to_the_war
 		prerequisite = { focus = SOV_improve_transportation }
 		x = 0
 		y = 1
@@ -2136,7 +2327,10 @@ focus_tree = {
 			FOCUS_FILTER_INDUSTRY
 		}
 		completion_reward = {
-			
+			custom_effect_tooltip = SOV_arsenal_of_communism_tt
+			hidden_effect = {
+				add_to_variable = { SOV_fyp_industrial_capacity_factory = 0.1 }
+			}
 		}
 	}
 	focus = {
@@ -2146,20 +2340,28 @@ focus_tree = {
 		relative_position_id = SOV_arsenal_of_communism
 		x = 2
 		y = 0
-		cost = 3
+		cost = 6
 		available = {
-			
+			OR = {
+				num_of_factories > 899
+				has_tech = expanded_industry6
+			}
 		}
-		search_filters = { FOCUS_FILTER_RESEARCH }
-		available_if_capitulated = no
+		ai_will_do = {
+			factor = 1
+		}
+		available_if_capitulated = yes
+		search_filters = {
+			FOCUS_FILTER_RESEARCH
+		}
 		completion_reward = {
-
+			add_research_slot = 1
 		}
 	}
 
 	focus = {
 		id = SOV_revise_the_five_year_plan
-		icon = GFX_goal_generic_construction
+		icon = GFX_goal_generic_forceful_treaty
 		prerequisite = { focus = SOV_arsenal_of_communism }
 		x = 1
 		y = 1
@@ -2172,13 +2374,19 @@ focus_tree = {
 			FOCUS_FILTER_INDUSTRY
 		}
 		completion_reward = {
-			
+			custom_effect_tooltip = SOV_revise_the_five_year_plan_tt
+			hidden_effect = {
+				add_to_variable = { SOV_fyp_production_speed_arms_factory_factor = -0.2 }
+				add_to_variable = { SOV_fyp_consumer_goods_factor = 0.02 }
+				add_to_variable = { SOV_fyp_production_speed_industrial_complex_factor = 0.2 }
+			}
+			economy_fatigue_level_down_4 = yes
 		}
 	}
 
 	focus = {
 		id = SOV_finish_the_fifth_five_year_plan
-		icon = GFX_goal_SOV_fourth_five_year_plan
+		icon = GFX_goal_SOV_finish_the_fifth_five_year_plan
 		x = 0
 		y = 1
 		relative_position_id = SOV_revise_the_five_year_plan
@@ -2187,13 +2395,11 @@ focus_tree = {
 			factor = 5
 		}
 		available = {
-			has_completed_focus = SOV_start_the_fourth_five_year_plan
 			OR = {
-				has_completed_focus = SOV_bread_basket_of_the_soviet_union
-				any_enemy_country = {
-					is_major = yes
-				}
+				has_completed_focus = SOV_arsenal_of_communism
+				has_completed_focus = SOV_revise_the_five_year_plan
 			}
+			date > 1955.1.1
 		}
 		search_filters = {
 			FOCUS_FILTER_INDUSTRY
@@ -2202,7 +2408,11 @@ focus_tree = {
 		bypass = {
 		}
 		completion_reward = {
-
+			custom_effect_tooltip = SOV_finish_the_fifth_five_year_plan_tt
+			add_to_variable = { SOV_fyp_political_power_cost = -0.5 }
+			add_to_variable = { SOV_fyp_industrial_capacity_factory = -0.1 }
+			add_to_variable = { SOV_fyp_consumer_goods_factor = 0.02 }
+			add_to_variable = { SOV_fyp_production_speed_industrial_complex_factor = -0.2 }
 		}
 	}
 	
@@ -2260,6 +2470,16 @@ focus_tree = {
 			swap_ideas = {
 				remove_idea = SOV_centralized_control_rifles
 				add_idea = SOV_centralized_control_rifles1
+			}
+			hidden_effect = {
+				if = {
+					#DEFAULT COMMIE
+					limit = {
+						has_dynamic_modifier = { modifier = SOV_soviet_industry_dynamic_modifier }
+					}
+					remove_dynamic_modifier = { modifier = SOV_soviet_industry_dynamic_modifier }
+					add_dynamic_modifier = { modifier = SOV_soviet_industry_dynamic_modifier_munitions_production }
+				}
 			}
 		}
 	}
@@ -2349,10 +2569,16 @@ focus_tree = {
 				if = {
 					#DEFAULT COMMIE
 					limit = {
-						NOT = {
-							has_government = communism
-						}
+						has_government = communism
 					}
+					remove_dynamic_modifier = {
+						modifier = SOV_soviet_airforce_dynamic_modifier
+					}
+					add_dynamic_modifier = {
+						modifier = SOV_soviet_airforce_aircraft_production_focus_dynamic_modifier
+					}
+				}
+				else = {
 					remove_dynamic_modifier = {
 						modifier = SOV_soviet_airforce_dynamic_modifier_alt
 					}
@@ -2542,21 +2768,25 @@ focus_tree = {
 			OR = {
 				any_enemy_country = { is_major = yes }
 				NOT = {
-					has_idea = cavalry_army_clique
-					has_idea = cavalry_army_clique_2
-					has_idea = cavalry_army_clique_3
+					if = {
+						limit = { has_idea = cavalry_army_clique }
+						has_idea = cavalry_army_clique
+					}
+					else_if = {
+						limit = { has_idea = cavalry_army_clique_2 }
+						has_idea = cavalry_army_clique_2
+					}
+					else = {
+						has_idea = cavalry_army_clique_3
+					}
 				}
 			}
 		}
 
 		completion_reward = {
 			custom_effect_tooltip = SOV_glavvoenstroi_tt
-			add_to_variable = {
-				SOV_fyp_consumer_goods_factor = -0.1
-			}
-			add_to_variable = {
-				SOV_fyp_production_speed_buildings_factor = 0.05
-			}
+			add_to_variable = { SOV_fyp_consumer_goods_factor = -0.1 }
+			add_to_variable = { SOV_fyp_production_speed_buildings_factor = 0.05 }
 		}
 	}
 	focus = {
@@ -2582,15 +2812,48 @@ focus_tree = {
 			OR = {
 				any_enemy_country = { is_major = yes }
 				NOT = {
-					has_idea = cavalry_army_clique
-					has_idea = cavalry_army_clique_2
-					has_idea = cavalry_army_clique_3
+					if = {
+						limit = { has_idea = cavalry_army_clique }
+						has_idea = cavalry_army_clique
+					}
+					else_if = {
+						limit = { has_idea = cavalry_army_clique_2 }
+						has_idea = cavalry_army_clique_2
+					}
+					else = {
+						has_idea = cavalry_army_clique_3
+					}
 				}
 			}
 		}
 
 		completion_reward = {
 			add_ideas = SOV_centralized_control_mg
+			hidden_effect = {
+				if = {
+					#DEFAULT COMMIE
+					limit = {
+						has_dynamic_modifier = { modifier = SOV_soviet_industry_dynamic_modifier }
+					}
+					remove_dynamic_modifier = {
+						modifier = SOV_soviet_industry_dynamic_modifier
+					}
+					add_dynamic_modifier = {
+						modifier = SOV_soviet_industry_dynamic_modifier_mortar_production
+					}
+				}
+				if = {
+					limit = {
+						has_dynamic_modifier = { modifier = SOV_soviet_industry_dynamic_modifier_munitions_production }
+					}
+					remove_dynamic_modifier = {
+						modifier = SOV_soviet_industry_dynamic_modifier_munitions_production
+					}
+					add_dynamic_modifier = {
+						modifier = SOV_soviet_industry_dynamic_modifier_mortar_production
+					}
+				}
+			}
 		}
 	}
 	focus = {
@@ -2612,9 +2875,17 @@ focus_tree = {
 			OR = {
 				any_enemy_country = { is_major = yes }
 				NOT = {
-					has_idea = cavalry_army_clique
-					has_idea = cavalry_army_clique_2
-					has_idea = cavalry_army_clique_3
+					if = {
+						limit = { has_idea = cavalry_army_clique }
+						has_idea = cavalry_army_clique
+					}
+					else_if = {
+						limit = { has_idea = cavalry_army_clique_2 }
+						has_idea = cavalry_army_clique_2
+					}
+					else = {
+						has_idea = cavalry_army_clique_3
+					}
 				}
 			}
 		}
