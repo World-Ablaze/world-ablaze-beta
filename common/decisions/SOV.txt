@@ -20982,6 +20982,151 @@ war_measures = {
 
 operations = {
 
+	SOV_danger_of_border_friction = {
+		icon = border_war
+		allowed = {
+			original_tag = SOV
+		}
+		available = {
+			hidden_trigger = {
+				always = no
+			}
+		}
+		highlight_states = {
+			highlight_state_targets = {
+				state = 408
+			}
+		}
+		war_with_target_on_timeout = yes
+		days_mission_timeout = 400
+		fire_only_once = yes
+		is_good = no
+		activation = {
+			always = no
+		}
+		timeout_effect = {
+			custom_effect_tooltip = escalation_possible_tooltip_for_defender
+			custom_effect_tooltip = effects_if_border_conflict_is_lost
+			effect_tooltip = {
+				JAP = {
+					army_experience = 15
+					add_political_power = 25
+				}
+			}
+			846 = {
+				save_event_target_as = JAP_SOV_attacker_state
+				set_state_flag = border_incident_active
+			}
+			408 = {
+				save_event_target_as = JAP_SOV_defender_state
+				set_state_flag = border_incident_active
+			}
+			hidden_effect = {
+				country_event = {
+					id = japan_border_conflict.1
+					days = 1
+				}				
+				if = {
+					limit = {
+						JAP = { is_ai = yes }
+					}
+					JAP = {
+						846 = {
+							create_unit = {
+								division = "division_template = \"Japanese Infantry Division\" start_experience_factor = 0.3"
+								owner = JAP
+								count = 1
+								prioritize_location = 6944
+							}
+						}
+					}
+				}
+				if = {
+					limit = {
+						SOV = { is_ai = yes }
+					}
+					SOV = {
+						408 = {
+							create_unit = {
+								division = "division_template = \"Soviet Rifle Division\" start_experience_factor = 0.3"
+								owner = SOV
+								count = 2
+								prioritize_location = 11879
+							}
+						}
+					}
+				}
+				event_target:JAP_SOV_attacker_state = {
+					CONTROLLER = {
+						start_border_war = {
+							change_state_after_war = no
+							attacker = {
+								state = event_target:JAP_SOV_attacker_state
+								num_provinces = 1
+								on_win = japan_border_conflict.7
+								on_lose = japan_border_conflict.8
+								on_cancel = japan_border_conflict.4
+							}
+							defender = {
+								state = event_target:JAP_SOV_defender_state
+								num_provinces = 1
+								on_win = japan_border_conflict.8
+								on_lose = japan_border_conflict.7
+								on_cancel = japan_border_conflict.4
+							}
+						}
+					}
+				}
+				set_border_war_data = {
+					attacker = 846
+					defender = 408
+					combat_width = 60
+				}
+			}
+		}		
+	}
+	SOV_border_conflict_warning_JAP = {
+		icon = border_war
+		allowed = {
+			always = no
+		}
+		highlight_states = {
+			highlight_state_targets = {
+				state = 846
+			}
+		}
+		#Activated from effect
+		available = {
+			hidden_trigger = {
+				always = no
+			}
+		}
+		war_with_target_on_timeout = yes
+		days_mission_timeout = 400
+		fire_only_once = yes
+		is_good = no
+		timeout_effect = {
+			custom_effect_tooltip = escalation_possible_tooltip_for_defender
+			custom_effect_tooltip = effects_if_border_conflict_is_lost
+			effect_tooltip = {
+				SOV = {
+					add_tech_bonus = {
+						name = sov_jap_border_conflict_won
+						category = support_tech
+						bonus = 0.5
+					}
+					army_experience = 15
+				}
+			}
+			hidden_effect = {
+				remove_targeted_decision = {
+					target = JAP
+					decision = SOV_border_conflict_warning_JAP
+				}
+			}
+		}
+	}
+
 	SOV_ww3 = {
 		icon = generic_operation
 		allowed = {
