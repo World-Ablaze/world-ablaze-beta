@@ -1850,7 +1850,15 @@ focus_tree = {
 		ai_will_do = {
 			factor = 1
 		}
-		available_if_capitulated = yes
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = SOV_national_academies_of_sciences_available_tt
+				set_temp_variable = { SOV_current_academies = SOV_academy_of_sciences_research_speed_factor } #This is a factor (0.X value)
+				multiply_temp_variable = { SOV_current_academies = 100 } #Now it is possible to track the current number of civs
+				check_variable = { SOV_current_academies = SOV_academies_required_for_atomic_bomb_project compare = greater_than_or_equals }
+			}
+			is_subject = no
+		}
 		completion_reward = {
 			add_tech_bonus = {
 				name = SOV_soviet_atomic_bomb_project_tech_bonus_name
@@ -4965,6 +4973,13 @@ focus_tree = {
 		completion_reward = {
 			add_tech_bonus = {
 				name = SOV_modernization_of_the_rifle_corps
+				bonus = 1
+				uses = 1
+				technology = sov_mechanized_infantry_1
+				technology = sov_mechanized_infantry_2
+			}
+			add_tech_bonus = {
+				name = SOV_modernization_of_the_rifle_corps
 				bonus = 0.5
 				uses = 1
 				category = infantry_weapons
@@ -4997,13 +5012,13 @@ focus_tree = {
 
 		completion_reward = {
 			add_tech_bonus = {
-				name = SOV_modernization_of_the_rifle_corps
+				name = SOV_mechanization_of_the_red_army
 				bonus = 0.5
 				uses = 1
 				category = cat_medium_armor
 			}
 			add_tech_bonus = {
-				name = SOV_modernization_of_the_rifle_corps
+				name = SOV_mechanization_of_the_red_army
 				bonus = 0.5
 				uses = 2
 				category = cat_light_armor
@@ -5030,7 +5045,7 @@ focus_tree = {
 			custom_effect_tooltip = SOV_god_of_war_tt
 			add_to_variable = { SOV_the_red_army_army_artillery_attack_factor = 0.15 }
 			add_tech_bonus = {
-				name = SOV_modernization_of_the_rifle_corps
+				name = SOV_god_of_war
 				bonus = 0.5
 				uses = 2
 				category = artillery
@@ -5058,19 +5073,19 @@ focus_tree = {
 
 		completion_reward = {
 			add_tech_bonus = {
-				name = SOV_modernization_of_the_rifle_corps
+				name = SOV_heavy_weapons_modernization
 				bonus = 0.5
 				uses = 2
 				category = heavy_infantry_weapons
 			}
 			add_tech_bonus = {
-				name = SOV_modernization_of_the_rifle_corps
+				name = SOV_heavy_weapons_modernization
 				bonus = 0.5
 				uses = 2
 				category = cat_anti_air
 			}
 			add_tech_bonus = {
-				name = SOV_modernization_of_the_rifle_corps
+				name = SOV_heavy_weapons_modernization
 				bonus = 0.5
 				uses = 1
 				category = cat_anti_tank
@@ -9842,6 +9857,7 @@ focus_tree = {
 			any_other_country = {
 				BUL_is_balkan_nation = yes
 			}
+			has_country_flag = SOV_army_reform_3
 			is_subject = no
 		}
 		search_filters = {
@@ -10632,15 +10648,19 @@ focus_tree = {
 		icon = GFX_focus_attack_japan
 		mutually_exclusive = { focus = SOV_reconcile_japan }
 		prerequisite = { focus = SOV_far_east_fortification }
+		relative_position_id = SOV_far_east_fortification
 		x = 1
 		y = 1
-		relative_position_id = SOV_far_east_fortification
 		cost = 1
 		ai_will_do = {
 			factor = 1
 			modifier = {
 				factor = 0
 				has_civil_war = yes
+			}
+			modifier = {
+				factor = 10
+				is_historical_focus_on = yes
 			}
 		}
 		available = {
@@ -10710,7 +10730,7 @@ focus_tree = {
 		icon = GFX_goal_generic_befriend_japan
 		mutually_exclusive = { focus = SOV_the_threat_from_the_land_of_the_rising_sun }
 		prerequisite = { focus = SOV_far_east_fortification }
-		x = 3
+		x = 4
 		y = 1
 		relative_position_id = SOV_far_east_fortification
 		cost = 2
@@ -10755,6 +10775,360 @@ focus_tree = {
 						country = SOV
 						relation = non_aggression_pact
 						active = yes
+					}
+				}
+			}
+		}
+	}
+	focus = {
+		id = SOV_soviet_japanese_pact_against_usa_focus
+		icon = GFX_goal_generic_military_deal
+		prerequisite = { focus = SOV_reconcile_japan
+		}
+		x = 0
+		y = 2
+		relative_position_id = SOV_reconcile_japan
+		cost = 10
+		ai_will_do = {
+			factor = 1
+			modifier = {
+				factor = 0
+				has_civil_war = yes
+			}
+		}
+		available = {
+			NOT = {
+				has_country_flag = SOV_paranoia_system_active_flag
+			}
+			country_exists = JAP
+			NOT = {
+				has_war_with = JAP
+			}
+			is_subject = no
+			JAP = {
+				SOV_is_valid_subject = yes
+			}
+		}
+		search_filters = {
+		}
+		completion_reward = {
+			#Event
+			JAP = {
+				country_event = {
+					id = NSB_soviet_foreign_politics_events.263
+					hours = 8
+					random_hours = 4
+				}
+			}
+			#Potential effects
+			custom_effect_tooltip = if_they_accept
+			effect_tooltip = {
+				#War
+				if = {
+					limit = {
+						JAP = {
+							has_war_with = USA
+						}
+						NOT = {
+							SOV = {
+								has_war_with = USA
+							}
+						}
+					}
+					SOV = {
+						add_to_war = {
+							targeted_alliance = JAP
+							enemy = USA
+							hostility_reason = asked_to_join
+						}
+					}
+				}
+				else_if = {
+					limit = {
+						SOV = {
+							has_war_with = USA
+						}
+						NOT = {
+							JAP = {
+								has_war_with = USA
+							}
+						}
+					}
+					JAP = {
+						add_to_war = {
+							targeted_alliance = SOV
+							enemy = USA
+							hostility_reason = asked_to_join
+						}
+					}
+				}
+				else_if = {
+					limit = {
+						NOT = {
+							SOV = {
+								has_war_with = USA
+							}
+						}
+						NOT = {
+							JAP = {
+								has_war_with = USA
+							}
+						}
+					}
+					SOV = {
+						declare_war_on = {
+							target = USA
+							type = annex_everything
+						}
+					}
+					JAP = {
+						add_to_war = {
+							targeted_alliance = SOV
+							enemy = USA
+							hostility_reason = asked_to_join
+						}
+					}
+				}
+				#Diplo stuff
+				JAP = {
+					if = {
+						limit = {
+							NOT = {
+								has_non_aggression_pact_with = SOV
+							}
+						}
+						diplomatic_relation = {
+							country = SOV
+							relation = non_aggression_pact
+							active = yes
+						}
+					}
+				}
+				#Claims
+				463 = {
+					add_claim_by = SOV
+				}
+				#Alaska
+				650 = {
+					add_claim_by = SOV
+				}
+				#Atu Island
+				632 = {
+					add_claim_by = JAP
+				}
+				#Wake Island
+				631 = {
+					add_claim_by = JAP
+				}
+				#Midway Island
+				629 = {
+					add_claim_by = JAP
+				}
+				#Hawaii
+				630 = {
+					add_claim_by = JAP
+				}
+				#Johnston Atoll
+				727 = {
+					add_claim_by = JAP
+				}
+				#Line Islands
+				642 = {
+					add_claim_by = JAP
+				}
+				#Phoenix Island
+				638 = {
+					add_claim_by = JAP
+				}
+				#Guam
+				#Relations stuff
+				JAP = {
+					add_opinion_modifier = {
+						target = SOV
+						modifier = SOV_soviet_japanese_pact_against_usa
+					}
+				}
+				#Targeted NS
+				SOV = {
+					add_timed_idea = {
+						idea = SOV_soviet_japanese_anti_usa_pact
+						days = 365
+					}
+				}
+				JAP = {
+					add_timed_idea = {
+						idea = SOV_soviet_japanese_anti_usa_pact
+						days = 365
+					}
+				}
+			}
+		}
+	}
+	focus = {
+		id = SOV_recover_alaska
+		icon = GFX_focus_SOV_recover_alaska
+		prerequisite = { focus = SOV_soviet_japanese_pact_against_usa_focus
+		}
+		x = 0
+		y = 2
+		relative_position_id = SOV_soviet_japanese_pact_against_usa_focus
+		cost = 10
+		ai_will_do = {
+			factor = 1
+			modifier = {
+				factor = 0
+				has_civil_war = yes
+			}
+			modifier = {
+				factor = 0
+				is_historical_focus_on = yes
+			}
+		}
+		available = {
+			NOT = {
+				has_country_flag = SOV_paranoia_system_active_flag
+			}
+			is_subject = no
+		}
+		bypass = {
+			463 = {
+				is_owned_by = ROOT
+			}
+			650 = {
+				is_owned_by = ROOT
+			}
+		}
+		search_filters = {
+			FOCUS_FILTER_ANNEXATION
+		}
+		completion_reward = {
+			if = {
+				limit = {
+					463 = {
+						NOT = {
+							is_claimed_by = ROOT
+						}
+					}
+				}
+				add_state_claim = 463
+			}
+			if = {
+				limit = {
+					650 = {
+						NOT = {
+							is_claimed_by = ROOT
+						}
+					}
+				}
+				add_state_claim = 650
+			}
+			if = {
+				#ONE CONTROLLER
+				limit = {
+					463 = {
+						controller = {
+							controls_state = 650
+						}
+					}
+				}
+				if = {
+					limit = {
+						463 = {
+							controller = {
+								NOT = {
+									has_war_with = ROOT
+								}
+							}
+						}
+					}
+					463 = {
+						controller = {
+							country_event = {
+								id = NSB_soviet_foreign_politics_events.30
+								hours = 4
+								random_hours = 2
+							}
+							custom_effect_tooltip = if_they_accept
+							effect_tooltip = {
+								ROOT = {
+									transfer_state = 463
+								}
+								#ALASKA
+								ROOT = {
+									transfer_state = 650
+								}
+								#ATTU ISLAND
+								add_opinion_modifier = {
+									target = ROOT
+									modifier = SOV_pressured_our_government
+								}
+							}
+						}
+					}
+				}
+			}
+			else = {
+				#TWO DIFFERENT CONTROLLERS
+				if = {
+					limit = {
+						463 = {
+							controller = {
+								NOT = {
+									has_war_with = ROOT
+								}
+							}
+						}
+					}
+					463 = {
+						controller = {
+							country_event = {
+								id = NSB_soviet_foreign_politics_events.30
+								hours = 4
+								random_hours = 2
+							}
+							custom_effect_tooltip = if_they_accept
+							effect_tooltip = {
+								ROOT = {
+									transfer_state = 463
+								}
+								#ALASKA
+								add_opinion_modifier = {
+									target = ROOT
+									modifier = SOV_pressured_our_government
+								}
+							}
+						}
+					}
+				}
+				if = {
+					limit = {
+						650 = {
+							controller = {
+								NOT = {
+									has_war_with = ROOT
+								}
+							}
+						}
+					}
+					650 = {
+						controller = {
+							country_event = {
+								id = NSB_soviet_foreign_politics_events.30
+								hours = 4
+								random_hours = 2
+							}
+							custom_effect_tooltip = if_they_accept
+							effect_tooltip = {
+								ROOT = {
+									transfer_state = 650
+								}
+								#ATTU ISLAND
+								add_opinion_modifier = {
+									target = ROOT
+									modifier = SOV_pressured_our_government
+								}
+							}
+						}
 					}
 				}
 			}
@@ -10956,6 +11330,10 @@ focus_tree = {
 			modifier = {
 				factor = 0
 				has_civil_war = yes
+			}
+			modifier = {
+				factor = 10
+				is_historical_focus_on = yes
 			}
 		}
 		bypass = {
@@ -12342,7 +12720,7 @@ focus_tree = {
 		id = SOV_socialism_in_one_country
 		icon = GFX_focus_SOV_socialism_in_one_country
 		mutually_exclusive = { focus = SOV_the_path_of_marxism_leninism focus = SOV_beaten_but_not_defeated  }
-		x = 61
+		x = 62
 		y = 0
 		cost = 4
 		available = {
