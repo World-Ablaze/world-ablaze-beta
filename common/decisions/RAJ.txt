@@ -2792,6 +2792,1040 @@ political_actions = {
 
 war_measures = {
 
+	RAJ_relocate_industry_from_bengal = {
+		
+		icon = generic_construction
+
+		allowed = {
+			tag = RAJ
+		}
+		available = {
+			431 = { #West Bengal
+				is_owned_and_controlled_by = RAJ
+				OR = {
+					industrial_complex > 0
+					arms_factory > 0
+				}	
+			}
+			439 = { is_owned_and_controlled_by = RAJ } #Delhi
+			443 = { is_owned_and_controlled_by = RAJ } #Sind
+		}
+		visible = {
+			has_completed_focus = RAJ_industrial_relocation
+		}
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 431
+			}
+		}
+
+		fire_only_once = yes
+
+		ai_will_do = {
+			base = 0
+			
+			modifier = {
+				factor = 4000
+				OR = {
+					NOT = { 430 = { is_fully_controlled_by = RAJ } }
+					NOT = { 432 = { is_fully_controlled_by = RAJ } }
+				}
+			}	
+		}
+
+		complete_effect = {
+			activate_mission = RAJ_relocating_industry_from_bengal
+		}
+	}
+	RAJ_relocating_industry_from_bengal = {
+		icon = generic_construction
+
+		allowed = {
+			tag = RAJ
+			always = no
+		}
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 431
+			}
+		}
+		available = {
+			OR = {
+				NOT = {
+					439 = { is_owned_and_controlled_by = RAJ } #Delhi
+					443 = { is_owned_and_controlled_by = RAJ } #Sind
+				}	
+				431 = {	#West Bengal
+					AND = {
+						arms_factory > 0
+						industrial_complex > 0
+					}	
+				}
+			}
+		}
+
+		days_mission_timeout = 1
+		is_good = yes
+		fire_only_once = no
+
+		complete_effect = {
+		}
+		timeout_effect = {
+			random_owned_controlled_state = {
+				prioritize = { 430 432 434 }
+				limit = {
+					region = 141
+					is_controlled_by = RAJ
+					OR = {
+						arms_factory > 0
+						steel_refinery > 0
+						aluminium_refinery > 0
+						synthetic_refinery > 0
+						industrial_complex > 0
+					}
+				}
+				if = {	#synth
+					limit = { synthetic_refinery > 0 }
+					remove_building = {
+						type = synthetic_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 439 991 992 443 440 433 990 428 }
+							limit = {
+								free_building_slots = {
+									building = synthetic_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = RAJ }
+										}
+										is_controlled_by = RAJ
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = synthetic_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = synthetic_refinery damage = 0.8 }
+								}
+							}
+						}
+					}
+				}
+				if = {	#Mils
+					limit = { arms_factory > 0 }
+					remove_building = {
+						type = arms_factory
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 439 991 992 443 440 433 990 428 }
+							limit = {
+								free_building_slots = {
+									building = arms_factory
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = RAJ }
+										}
+										is_controlled_by = RAJ
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = arms_factory
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = arms_factory damage = 0.8 }
+								}
+							}
+						}
+					}
+				}
+				if = {	#Steel
+					limit = { steel_refinery > 0 }
+					remove_building = {
+						type = steel_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 439 991 992 443 440 433 990 428 }
+							limit = {
+								free_building_slots = {
+									building = steel_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = RAJ }
+										}
+										is_controlled_by = RAJ
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = steel_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = steel_refinery damage = 0.8 }
+								}
+							}
+						}
+					}
+				}
+				if = {	#Aluminium
+					limit = { aluminium_refinery > 0 }
+					remove_building = {
+						type = aluminium_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 439 991 992 443 440 433 990 428 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = aluminium_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = RAJ }
+										}
+										is_controlled_by = RAJ
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = aluminium_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = aluminium_refinery damage = 0.8 }
+								}
+							}
+						}
+					}
+				}
+				if = {	#Civs
+					limit = { industrial_complex > 0 }
+					remove_building = {
+						type = industrial_complex
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 439 991 992 443 440 433 990 428 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = industrial_complex
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = RAJ }
+										}
+										is_controlled_by = RAJ
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = industrial_complex
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = industrial_complex damage = 0.4 }
+								}
+							}
+						}
+					}
+				}
+			}
+			random_owned_controlled_state = {
+				prioritize = { 432 430 434 }
+				limit = {
+					region = 141
+					is_controlled_by = RAJ
+					OR = {
+						arms_factory > 0
+						steel_refinery > 0
+						aluminium_refinery > 0
+						synthetic_refinery > 0
+						industrial_complex > 0
+					}
+				}
+				if = {	#synth
+					limit = { synthetic_refinery > 0 }
+					remove_building = {
+						type = synthetic_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 439 991 992 443 440 433 990 428 }
+							limit = {
+								free_building_slots = {
+									building = synthetic_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = RAJ }
+										}
+										is_controlled_by = RAJ
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = synthetic_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = synthetic_refinery damage = 0.8 }
+								}
+							}
+						}
+					}
+				}
+				if = {	#Mils
+					limit = { arms_factory > 0 }
+					remove_building = {
+						type = arms_factory
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 439 991 992 443 440 433 990 428 }
+							limit = {
+								free_building_slots = {
+									building = arms_factory
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = RAJ }
+										}
+										is_controlled_by = RAJ
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = arms_factory
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = arms_factory damage = 0.8 }
+								}
+							}
+						}
+					}
+				}
+				if = {	#Steel
+					limit = { steel_refinery > 0 }
+					remove_building = {
+						type = steel_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 439 991 992 443 440 433 990 428 }
+							limit = {
+								free_building_slots = {
+									building = steel_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = RAJ }
+										}
+										is_controlled_by = RAJ
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = steel_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = steel_refinery damage = 0.8 }
+								}
+							}
+						}
+					}
+				}
+				if = {	#Aluminium
+					limit = { aluminium_refinery > 0 }
+					remove_building = {
+						type = aluminium_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 439 991 992 443 440 433 990 428 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = aluminium_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = RAJ }
+										}
+										is_controlled_by = RAJ
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = aluminium_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = aluminium_refinery damage = 0.8 }
+								}
+							}
+						}
+					}
+				}
+				if = {	#Civs
+					limit = { industrial_complex > 0 }
+					remove_building = {
+						type = industrial_complex
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 439 991 992 443 440 433 990 428 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = industrial_complex
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = RAJ }
+										}
+										is_controlled_by = RAJ
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = industrial_complex
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = industrial_complex damage = 0.4 }
+								}
+							}
+						}
+					}
+				}
+			}
+			custom_effect_tooltip = relocate_industry_repair
+			hidden_effect = {
+				activate_mission = RAJ_relocating_industry_from_bengal
+			}
+		}
+	}
+
+	RAJ_relocate_industry_from_odisha = {
+		
+		icon = generic_construction
+
+		allowed = {
+			tag = RAJ
+		}
+		available = {
+			426 = { #Odisha
+				is_owned_and_controlled_by = RAJ
+				OR = {
+					industrial_complex > 0
+					arms_factory > 0
+				}	
+			}
+			439 = { is_owned_and_controlled_by = RAJ } #Delhi
+			443 = { is_owned_and_controlled_by = RAJ } #Sind
+		}
+		visible = {
+			has_completed_focus = RAJ_industrial_relocation
+		}
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 426
+			}
+		}
+
+		fire_only_once = yes
+
+		ai_will_do = {
+			base = 0
+			
+			modifier = {
+				factor = 4000
+				OR = {
+					NOT = { 426 = { is_fully_controlled_by = RAJ } }
+					NOT = { 430 = { is_fully_controlled_by = RAJ } }
+					NOT = { 424 = { is_fully_controlled_by = RAJ } }
+				}
+			}	
+		}
+
+		complete_effect = {
+			activate_mission = RAJ_relocating_industry_from_odisha
+		}
+	}
+	RAJ_relocating_industry_from_odisha = {
+		icon = generic_construction
+
+		allowed = {
+			tag = RAJ
+			always = no
+		}
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 426
+			}
+		}
+		available = {
+			OR = {
+				NOT = {
+					439 = { is_owned_and_controlled_by = RAJ } #Delhi
+					443 = { is_owned_and_controlled_by = RAJ } #Sind
+				}
+				AND = {
+					426 = {	#Odisha
+						AND = {
+							arms_factory > 0
+							industrial_complex > 0
+						}	
+					}
+					424 = {	#Madras
+						AND = {
+							arms_factory > 0
+							industrial_complex > 0
+						}	
+					}
+					423 = {	#Madras
+						AND = {
+							arms_factory > 0
+							industrial_complex > 0
+						}	
+					}
+				}
+			}
+		}
+
+		days_mission_timeout = 1
+		is_good = yes
+		fire_only_once = no
+
+		complete_effect = {
+		}
+		timeout_effect = {
+			random_owned_controlled_state = {
+				prioritize = { 993 426 424 423 427 320 422 }
+				limit = {
+					is_controlled_by = RAJ
+					OR = {
+						arms_factory > 0
+						steel_refinery > 0
+						aluminium_refinery > 0
+						synthetic_refinery > 0
+						industrial_complex > 0
+					}
+				}
+				if = {	#synth
+					limit = { synthetic_refinery > 0 }
+					remove_building = {
+						type = synthetic_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 439 991 992 443 440 433 990 428 }
+							limit = {
+								free_building_slots = {
+									building = synthetic_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = RAJ }
+										}
+										is_controlled_by = RAJ
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = synthetic_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = synthetic_refinery damage = 0.8 }
+								}
+							}
+						}
+					}
+				}
+				if = {	#Mils
+					limit = { arms_factory > 0 }
+					remove_building = {
+						type = arms_factory
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 439 991 992 443 440 433 990 428 }
+							limit = {
+								free_building_slots = {
+									building = arms_factory
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = RAJ }
+										}
+										is_controlled_by = RAJ
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = arms_factory
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = arms_factory damage = 0.8 }
+								}
+							}
+						}
+					}
+				}
+				if = {	#Steel
+					limit = { steel_refinery > 0 }
+					remove_building = {
+						type = steel_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 439 991 992 443 440 433 990 428 }
+							limit = {
+								free_building_slots = {
+									building = steel_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = RAJ }
+										}
+										is_controlled_by = RAJ
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = steel_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = steel_refinery damage = 0.8 }
+								}
+							}
+						}
+					}
+				}
+				if = {	#Aluminium
+					limit = { aluminium_refinery > 0 }
+					remove_building = {
+						type = aluminium_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 439 991 992 443 440 433 990 428 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = aluminium_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = RAJ }
+										}
+										is_controlled_by = RAJ
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = aluminium_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = aluminium_refinery damage = 0.8 }
+								}
+							}
+						}
+					}
+				}
+				if = {	#Civs
+					limit = { industrial_complex > 0 }
+					remove_building = {
+						type = industrial_complex
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 439 991 992 443 440 433 990 428 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = industrial_complex
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = RAJ }
+										}
+										is_controlled_by = RAJ
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = industrial_complex
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = industrial_complex damage = 0.4 }
+								}
+							}
+						}
+					}
+				}
+			}
+			random_owned_controlled_state = {
+				prioritize = { 993 426 424 423 427 320 422 }
+				limit = {
+					region = 141
+					is_controlled_by = RAJ
+					OR = {
+						arms_factory > 0
+						steel_refinery > 0
+						aluminium_refinery > 0
+						synthetic_refinery > 0
+						industrial_complex > 0
+					}
+				}
+				if = {	#synth
+					limit = { synthetic_refinery > 0 }
+					remove_building = {
+						type = synthetic_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 439 991 992 443 440 433 990 428 }
+							limit = {
+								free_building_slots = {
+									building = synthetic_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = RAJ }
+										}
+										is_controlled_by = RAJ
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = synthetic_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = synthetic_refinery damage = 0.8 }
+								}
+							}
+						}
+					}
+				}
+				if = {	#Mils
+					limit = { arms_factory > 0 }
+					remove_building = {
+						type = arms_factory
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 439 991 992 443 440 433 990 428 }
+							limit = {
+								free_building_slots = {
+									building = arms_factory
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = RAJ }
+										}
+										is_controlled_by = RAJ
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = arms_factory
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = arms_factory damage = 0.8 }
+								}
+							}
+						}
+					}
+				}
+				if = {	#Steel
+					limit = { steel_refinery > 0 }
+					remove_building = {
+						type = steel_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 439 991 992 443 440 433 990 428 }
+							limit = {
+								free_building_slots = {
+									building = steel_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = RAJ }
+										}
+										is_controlled_by = RAJ
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = steel_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = steel_refinery damage = 0.8 }
+								}
+							}
+						}
+					}
+				}
+				if = {	#Aluminium
+					limit = { aluminium_refinery > 0 }
+					remove_building = {
+						type = aluminium_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 439 991 992 443 440 433 990 428 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = aluminium_refinery
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = RAJ }
+										}
+										is_controlled_by = RAJ
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = aluminium_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = aluminium_refinery damage = 0.8 }
+								}
+							}
+						}
+					}
+				}
+				if = {	#Civs
+					limit = { industrial_complex > 0 }
+					remove_building = {
+						type = industrial_complex
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 439 991 992 443 440 433 990 428 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = industrial_complex
+									size > 0
+									include_locked = yes
+								}
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = RAJ }
+										}
+										is_controlled_by = RAJ
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = industrial_complex
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = industrial_complex damage = 0.4 }
+								}
+							}
+						}
+					}
+				}
+			}
+			custom_effect_tooltip = relocate_industry_repair
+			hidden_effect = {
+				activate_mission = RAJ_relocating_industry_from_odisha
+			}
+		}
+	}
+
 	RAJ_burma_chindits_operation = {
 		icon = revolt
 
@@ -2819,8 +3853,6 @@ war_measures = {
 
 		days_remove = 30
 		days_re_enable = 150
-
-		is_good = yes
 
 		cost = 0
 		custom_cost_text = custom_cost_25_cp
@@ -2879,8 +3911,6 @@ war_measures = {
 		days_remove = 30
 		days_re_enable = 150
 
-		is_good = yes
-
 		cost = 0
 		custom_cost_text = custom_cost_25_cp
 		custom_cost_trigger = {
@@ -2934,8 +3964,6 @@ war_measures = {
 
 		days_remove = 30
 		days_re_enable = 150
-
-		is_good = yes
 
 		cost = 0
 		custom_cost_text = custom_cost_25_cp
@@ -2991,8 +4019,6 @@ war_measures = {
 		days_remove = 30
 		days_re_enable = 150
 
-		is_good = yes
-
 		cost = 0
 		custom_cost_text = custom_cost_25_cp
 		custom_cost_trigger = {
@@ -3046,8 +4072,6 @@ war_measures = {
 
 		days_remove = 30
 		days_re_enable = 150
-
-		is_good = yes
 
 		cost = 0
 		custom_cost_text = custom_cost_25_cp
@@ -3103,8 +4127,6 @@ war_measures = {
 		days_remove = 30
 		days_re_enable = 150
 
-		is_good = yes
-
 		cost = 0
 		custom_cost_text = custom_cost_25_cp
 		custom_cost_trigger = {
@@ -3158,8 +4180,6 @@ war_measures = {
 
 		days_remove = 30
 		days_re_enable = 150
-
-		is_good = yes
 
 		cost = 0
 		custom_cost_text = custom_cost_25_cp
@@ -3215,8 +4235,6 @@ war_measures = {
 		days_remove = 30
 		days_re_enable = 150
 
-		is_good = yes
-
 		cost = 0
 		custom_cost_text = custom_cost_25_cp
 		custom_cost_trigger = {
@@ -3270,8 +4288,6 @@ war_measures = {
 
 		days_remove = 30
 		days_re_enable = 150
-
-		is_good = yes
 
 		cost = 0
 		custom_cost_text = custom_cost_25_cp
