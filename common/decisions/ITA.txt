@@ -1,3 +1,2098 @@
+
+
+
+ETH_second_italo_ethiopian_war_category = {
+	ITA_withdraw_from_ethiopia = {
+		priority = -10
+		icon = GFX_decision_eng_trade_unions_support
+
+		allowed = {
+			original_tag = ITA
+		}
+
+		visible = {
+			has_global_flag = second_italo_ethiopian_war_flag
+		}
+
+		available = {
+			OR = {
+				date > 1937.01.01
+				NOT = { has_full_control_of_state = 550 } #ERITREA
+				NOT = { has_full_control_of_state = 559 } #SOMALILAND
+				NOT = { has_full_control_of_state = 844 } #JUBALAND
+			}
+		}
+
+		cost = 15
+
+		fire_only_once = yes
+
+		complete_effect = {
+			ETH = {
+				country_event = { id = BBA_italy_second_italo_ethiopian_war.1 hours = 1 }
+			}
+			custom_effect_tooltip = if_they_accept_tt
+			effect_tooltip = {
+				custom_effect_tooltip = ITA_transfer_lost_states_tt
+				white_peace = ETH
+
+				ITA_manage_italian_defeat_in_ethiopia_effect = yes
+			}
+		}
+
+		ai_will_do = {
+			base = 0
+			modifier = {
+				add = 10
+				NOT = { has_full_control_of_state = 550 } #ERITREA
+			}
+			modifier = {
+				add = 10
+				NOT = { has_full_control_of_state = 559 } #SOMALILAND
+			}
+			modifier = {
+				add = 5
+				NOT = { has_full_control_of_state = 844 } #JUBALAND
+			}
+			modifier = {
+				factor = 100
+				NOT = { has_full_control_of_state = 550 } #ERITREA
+				NOT = { has_full_control_of_state = 559 } #SOMALILAND
+				NOT = { has_full_control_of_state = 844 } #JUBALAND
+			}
+			modifier = {
+				factor = 0.5
+				any_controlled_state = {
+					is_core_of = ETH
+				}
+			}
+			modifier = {
+				factor = 0
+				date < 1937.03.01
+			}
+		}
+	}
+}
+
+
+##     ## ####  ######   ######  ####  #######  ##       #### ##    ## ####  ######
+###   ###  ##  ##    ## ##    ##  ##  ##     ## ##        ##  ###   ##  ##  ##    ##
+#### ####  ##  ##       ##        ##  ##     ## ##        ##  ####  ##  ##  ##
+## ### ##  ##   ######   ######   ##  ##     ## ##        ##  ## ## ##  ##   ######
+##     ##  ##        ##       ##  ##  ##     ## ##        ##  ##  ####  ##        ##
+##     ##  ##  ##    ## ##    ##  ##  ##     ## ##        ##  ##   ###  ##  ##    ##
+##     ## ####  ######   ######  ####  #######  ######## #### ##    ## ####  ######
+
+
+### MISSIOLINIS
+ITA_missiolinis = {
+	DEBUG_MISSIOLINIS_FASTER_TACK = {
+		priority = 100
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			is_debug = yes
+			NOT = { has_country_flag = ITA_missiolinis_faster_missions_flag }
+		}
+
+		complete_effect = {
+			set_country_flag = ITA_missiolinis_faster_missions_flag
+
+			set_variable = { ITA_missiolinis_conquer_ethiopia_days = 3 }
+			set_variable = { ITA_missiolinis_pacify_ethiopia_days = 3 }
+			set_variable = { ITA_missiolinis_default_days = 3 }
+		}
+	}
+
+	DEBUG_MISSIOLINIS_BACK_TO_NORMAL = {
+		priority = 100
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			is_debug = yes
+			has_country_flag = ITA_missiolinis_faster_missions_flag
+		}
+
+		complete_effect = {
+			clr_country_flag = ITA_missiolinis_faster_missions_flag
+
+			set_variable = { ITA_missiolinis_conquer_ethiopia_days = 170 }
+			set_variable = { ITA_missiolinis_pacify_ethiopia_days = 720 }
+			set_variable = { ITA_missiolinis_default_days = 350 }
+		}
+	}
+
+	# Hold the north "dummy" mission for Italy
+	ITA_conquer_the_north_mission = {
+		icon = GFX_decision_generic_operation
+
+		allowed = {
+			tag = ITA
+		}
+
+		available = { #GOAL
+			OR = {
+				has_country_flag = ITA_victory_in_ethiopia_flag
+				count_triggers = {
+					amount = 2
+					# 841 = { is_controlled_by = ROOT }
+					# 842 = { is_controlled_by = ROOT }
+					# 843 = { is_controlled_by = ROOT }
+					controls_province = 1984
+					controls_province = 7944
+					controls_province = 5097
+				}
+			}
+		}
+
+		activation = {
+			always = no
+		}
+
+		visible = {
+			ITA_missiolinis_system_available = yes
+			has_global_flag = second_italo_ethiopian_war_flag
+			NOT = { has_country_flag = ITA_victory_in_ethiopia_flag } #If Italy peaces out with ETH, the mission just cancels instead of failing
+		}
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 271
+				state = 910
+			}
+			#highlight_provinces = {
+			#	1984
+			#	#7944
+			#	#5097
+			#}
+			highlight_color_while_active = 3
+			highlight_color_before_active = 2
+		}
+
+		#highlight_states = {
+		#	highlight_states_trigger = {
+		#		OR = {
+		#			state = 841 #BEGEMDER
+		#			state = 842 #TIGRAY
+		#			state = 843 #WELLO
+		#		}
+		#	}
+		#	highlight_color_while_active = 2
+		#}
+
+		cancel_if_not_visible = yes
+		is_good = no #Tooltip purposes
+		fire_only_once = yes
+		selectable_mission = no
+		days_mission_timeout = ETH.ETH_hold_the_north_time
+
+		cancel_effect = {
+			if = { #MISSION SUCCEEDED
+				limit = {
+					OR = {
+						has_country_flag = ITA_victory_in_ethiopia_flag
+						count_triggers = {
+							amount = 2
+							# 841 = { is_controlled_by = ROOT }
+							# 842 = { is_controlled_by = ROOT }
+							# 843 = { is_controlled_by = ROOT }
+							controls_province = 1984
+							controls_province = 7944
+							controls_province = 5097
+						}
+						hidden_trigger = {
+							NOT = { has_global_flag = second_italo_ethiopian_war_flag }
+							hidden_trigger = { NOT = { has_country_flag = ITA_defeat_in_ethiopia_flag } }
+						}
+					}
+				}
+				country_event = { id = BBA_italy_missiolinis.03_north hours = 1 }
+			}
+			else = { #MISSION FAILED
+				#Prepare next mission
+				if = {
+					limit = {
+						NOT = { has_active_mission = ITA_conquer_the_south_mission }
+						ITA_missiolinis_system_available = yes
+					}
+					ITA_missiolinis_manage_next_mission = yes
+				}
+
+				if = {
+					limit = {
+						NOT = { has_country_flag = ITA_missiolini_conquer_the_south_failed_flag }
+					}
+					set_country_flag = ITA_missiolini_conquer_the_north_failed_flag
+					#log = "Adding North flag"
+				}
+
+				country_event = { id = BBA_italy_missiolinis.02_north hours = 1 }
+			}
+		}
+
+		timeout_effect = { #MISSION FAILS
+			effect_tooltip = {
+				ITA_missiolini_progress_in_ethiopia_failure_effect = yes
+			}
+
+			hidden_effect = {
+				#Prepare next mission
+				if = {
+					limit = {
+						NOT = { has_active_mission = ITA_conquer_the_south_mission }
+						ITA_missiolinis_system_available = yes
+					}
+					ITA_missiolinis_manage_next_mission = yes
+				}
+
+				if = {
+					limit = {
+						NOT = { has_country_flag = ITA_missiolini_conquer_the_south_failed_flag }
+					}
+					set_country_flag = ITA_missiolini_conquer_the_north_failed_flag
+					#log = "Adding North flag"
+				}
+
+				country_event = { id = BBA_italy_missiolinis.02_north hours = 1 }
+			}
+		}
+
+		complete_effect = { #MISSION SUCCEEDS
+			effect_tooltip = {
+				ITA_missiolini_progress_in_ethiopia_success_effect = yes
+			}
+
+			hidden_effect = {
+				#Prepare next mission
+				if = {
+					limit = {
+						NOT = { has_active_mission = ITA_conquer_the_south_mission }
+						ITA_missiolinis_system_available = yes
+					}
+					ITA_missiolinis_manage_next_mission = yes
+				}
+
+				if = {
+					limit = {
+						NOT = { has_country_flag = ITA_missiolini_conquer_the_south_succeeded_flag }
+					}
+					set_country_flag = ITA_missiolini_conquer_the_north_succeeded_flag
+				}
+
+				country_event = { id = BBA_italy_missiolinis.03_north hours = 1 }
+			}
+		}
+	}
+
+	# Hold the south "dummy" mission for Italy
+	ITA_conquer_the_south_mission = {
+		icon = GFX_decision_generic_operation
+		allowed = { tag = ITA }
+
+		available = { #GOAL
+			OR = {
+				has_country_flag = ITA_victory_in_ethiopia_flag
+				count_triggers = {
+					amount = 2
+					controls_province = 12812
+					controls_province = 12757
+					controls_province = 13378
+					controls_province = 10775
+				}
+			}
+		}
+
+		activation = {
+			always = no
+		}
+
+		visible = {
+			ITA_missiolinis_system_available = yes
+			has_global_flag = second_italo_ethiopian_war_flag
+			NOT = { has_country_flag = ITA_victory_in_ethiopia_flag } #If Italy peaces out with ETH, the mission just cancels instead of failing
+		}
+
+		highlight_states = {
+			highlight_states_trigger = {
+				OR = {
+					state = 271
+					state = 909
+				}
+			}
+			highlight_color_while_active = 2
+		}
+
+		cancel_if_not_visible = yes
+		is_good = no #Tooltip purposes
+		fire_only_once = yes
+		selectable_mission = no
+		days_mission_timeout = ETH.ETH_hold_the_south_time
+
+		cancel_effect = {
+			if = { #MISSION SUCCEEDED
+				limit = {
+					OR = {
+						has_country_flag = ITA_victory_in_ethiopia_flag
+						count_triggers = {
+							amount = 2
+							controls_province = 12812
+							controls_province = 12757
+							controls_province = 13378
+							controls_province = 10775
+						}
+						hidden_trigger = {
+							NOT = { has_global_flag = second_italo_ethiopian_war_flag }
+							hidden_trigger = { NOT = { has_country_flag = ITA_defeat_in_ethiopia_flag } }
+						}
+					}
+				}
+				country_event = { id = BBA_italy_missiolinis.05_south hours = 1 }
+			}
+			else = { #MISSION FAILED
+				if = {
+					limit = {
+						NOT = { has_country_flag = ITA_missiolini_conquer_the_north_failed_flag }
+					}
+					set_country_flag = ITA_missiolini_conquer_the_south_failed_flag
+					#log = "Adding South flag"
+				}
+
+				country_event = { id = BBA_italy_missiolinis.04_south hours = 1 }
+			}
+		}
+
+		timeout_effect = { #MISSION FAILS
+			effect_tooltip = {
+				ITA_missiolini_progress_in_ethiopia_failure_effect = yes
+			}
+
+			hidden_effect = {
+				#Prepare next mission
+				if = {
+					limit = {
+						NOT = { has_active_mission = ITA_conquer_the_south_mission }
+						ITA_missiolinis_system_available = yes
+					}
+					ITA_missiolinis_manage_next_mission = yes
+				}
+
+				if = {
+					limit = {
+						NOT = { has_country_flag = ITA_missiolini_conquer_the_north_failed_flag }
+					}
+					set_country_flag = ITA_missiolini_conquer_the_south_failed_flag
+					#log = "Adding South flag"
+				}
+				country_event = { id = BBA_italy_missiolinis.04_south hours = 1 } #Triggered one hour later for event options purposes
+			}
+		}
+
+		complete_effect = { #MISSION SUCCEEDS
+			effect_tooltip = {
+				ITA_missiolini_progress_in_ethiopia_success_effect = yes
+			}
+
+			hidden_effect = {
+				#Prepare next mission
+				if = {
+					limit = {
+						NOT = { has_active_mission = ITA_conquer_the_south_mission }
+						ITA_missiolinis_system_available = yes
+					}
+					ITA_missiolinis_manage_next_mission = yes
+				}
+
+				if = {
+					limit = {
+						NOT = { has_country_flag = ITA_missiolini_conquer_the_north_succeeded_flag }
+					}
+					set_country_flag = ITA_missiolini_conquer_the_south_succeeded_flag
+				}
+
+				country_event = { id = BBA_italy_missiolinis.05_south hours = 1 }
+			}
+		}
+	}
+
+	# Conquer Ethiopia
+	ITA_missiolini_conquer_ethiopia = {
+		icon = GFX_decision_generic_prepare_civil_war
+		allowed = { tag = ITA }
+
+		visible = {
+			ITA_missiolinis_system_available = yes
+			hidden_trigger = { NOT = { has_country_flag = ITA_defeat_in_ethiopia_flag } }
+		}
+
+		available = { #GOAL
+			NOT = { has_global_flag = second_italo_ethiopian_war_flag }
+			hidden_trigger = { NOT = { has_country_flag = ITA_defeat_in_ethiopia_flag } }
+		}
+
+		activation = {
+			always = no
+		}
+
+		cancel_if_not_visible = yes
+		is_good = no #Tooltip purposes
+		fire_only_once = yes
+		selectable_mission = no
+		days_mission_timeout = ITA_missiolinis_conquer_ethiopia_days
+
+		cancel_effect = {
+			if = { #Succeeded
+				limit = {
+					NOT = { has_country_flag = ITA_defeat_in_ethiopia_flag }
+				}
+				country_event = { id = BBA_italy_missiolinis.13 hours = 1 }
+			}
+			else = { #Failed
+				country_event = { id = BBA_italy_missiolinis.12 hours = 1 }
+			}
+		}
+
+		timeout_effect = { #MISSION FAILS
+			effect_tooltip = {
+				ITA_missiolini_conquer_ethiopia_failure_effect = yes
+			}
+
+			hidden_effect = {
+				#Prepare next mission
+				ITA_missiolinis_manage_next_mission = yes
+
+				country_event = { id = BBA_italy_missiolinis.12 hours = 1 }
+			}
+		}
+
+		complete_effect = { #MISSION SUCCEEDS
+			effect_tooltip = {
+				ITA_missiolini_conquer_ethiopia_success_effect = yes
+			}
+
+			hidden_effect = {
+				#Prepare next mission
+				ITA_missiolinis_manage_next_mission = yes
+
+				country_event = { id = BBA_italy_missiolinis.13 hours = 1 }
+			}
+		}
+	}
+
+	# Pacify Ethiopia - BBA
+	ITA_missiolini_pacify_ethiopia = {
+		icon = GFX_decision_generic_police_action
+		allowed = {
+			tag = ITA
+			has_dlc = "By Blood Alone"
+		}
+
+		available = { #GOAL
+			custom_trigger_tooltip = {
+				tooltip = ITA_pacify_ethiopia_goal_tt
+				all_of_scopes = {
+					array = ITA_initial_ethiopian_states
+					OR = {
+						compliance > 60 #WARNING THIS VALUE NEEDS TO MATCH THE ONE IN EVENT TRIGGER
+						controller = { is_subject_of = ROOT }
+					}
+				}
+			}
+		}
+
+		activation = {
+			always = no
+		}
+
+		visible = {
+			has_global_flag = second_italo_ethiopian_war_flag
+		}
+
+		#cancel_if_not_visible = yes
+		is_good = no #Tooltip purposes
+		fire_only_once = yes
+		selectable_mission = no
+		days_mission_timeout = ITA_missiolinis_pacify_ethiopia_days
+
+		cancel_trigger = {
+			hidden_trigger = { ITA_missiolinis_system_available = no }
+		}
+
+		cancel_effect = {
+			if = { #Succeeded
+				limit = {
+					all_of_scopes = {
+						array = ITA_initial_ethiopian_states
+						is_owned_by = ROOT
+					}
+				}
+				country_event = { id = BBA_italy_missiolinis.23 hours = 1 }
+			}
+			else = { #Failed
+				country_event = { id = BBA_italy_missiolinis.22 hours = 1 }
+			}
+		}
+
+		timeout_effect = { #MISSION FAILS
+			effect_tooltip = {
+				ITA_missiolini_pacify_ethiopia_failure_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.22 hours = 1 }
+			}
+		}
+
+		complete_effect = { #MISSION SUCCEEDS
+			effect_tooltip = {
+				ITA_missiolini_pacify_ethiopia_success_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.23 hours = 1 }
+			}
+		}
+	}
+
+	# Pacify Ethiopia - NO BBA
+	ITA_missiolini_pacify_ethiopia_vanilla = {
+		icon = GFX_decision_generic_police_action
+		allowed = {
+			tag = ITA
+			NOT = { has_dlc = "By Blood Alone"}
+		}
+
+		available = { #GOAL
+			custom_trigger_tooltip = {
+				tooltip = ITA_pacify_ethiopia_goal_tt
+				all_of_scopes = {
+					array = ITA_initial_ethiopian_states
+					OR = {
+						compliance > 60 #WARNING THIS VALUE NEEDS TO MATCH THE ONE IN EVENT TRIGGER
+						controller = { is_subject_of = ROOT }
+					}
+				}
+			}
+		}
+
+		activation = {
+			always = no
+		}
+
+		visible = {
+			has_global_flag = second_italo_ethiopian_war_flag
+		}
+
+		#cancel_if_not_visible = yes
+		is_good = no #Tooltip purposes
+		fire_only_once = yes
+		selectable_mission = no
+		days_mission_timeout = ITA_missiolinis_pacify_ethiopia_days
+
+		cancel_trigger = {
+			hidden_trigger = { ITA_missiolinis_system_available = no }
+		}
+
+		cancel_effect = {
+			if = { #Succeeded
+				limit = {
+					all_of_scopes = {
+						array = ITA_initial_ethiopian_states
+						compliance > 60
+					}
+				}
+				log = "Success"
+				country_event = { id = BBA_italy_missiolinis.23 hours = 1 }
+			}
+			else = { #Failed
+				log = "Failure"
+				country_event = { id = BBA_italy_missiolinis.22 hours = 1 }
+			}
+		}
+
+		timeout_effect = { #MISSION FAILS
+			effect_tooltip = {
+				ITA_missiolini_pacify_ethiopia_failure_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.22 hours = 1 }
+			}
+		}
+
+		complete_effect = { #MISSION SUCCEEDS
+			effect_tooltip = {
+				ITA_missiolini_pacify_ethiopia_success_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.23 hours = 1 }
+			}
+		}
+	}
+
+	# Strengthen Heavy Industry
+	ITA_missiolini_strengthen_heavy_industry = {
+		icon = GFX_decision_generic_merge_plant_materiel
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			ITA_missiolinis_system_available = yes
+		}
+
+		available = { #GOAL
+			custom_trigger_tooltip = { #TODO_Manu: This should be replaced by the appropriate check once Red king merges stuff (Factories BUILD check)
+				tooltip = ITA_missiolini_strengthen_heavy_industry_trigger_tt
+				num_of_civilian_factories > ROOT.ITA_missiolinis_required_civs
+			}
+		}
+
+		activation = {
+			always = no
+		}
+
+		cancel_if_not_visible = yes
+		is_good = no #Tooltip purposes
+		selectable_mission = no
+		days_mission_timeout = ITA_missiolinis_default_days
+
+		timeout_effect = { #MISSION FAILS
+			effect_tooltip = {
+				ITA_missiolini_strengthen_heavy_industry_failure_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.32 hours = 1 }
+			}
+		}
+
+		complete_effect = { #MISSION SUCCEEDS
+			effect_tooltip = {
+				ITA_missiolini_strengthen_heavy_industry_success_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.33 hours = 1 }
+			}
+		}
+	}
+
+	# Strengthen the Army
+	ITA_missiolini_strengthen_the_army = {
+		icon = GFX_decision_generic_military
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			ITA_missiolinis_system_available = yes
+		}
+
+		available = { #GOAL
+			#has_army_manpower = { size > ROOT.ITA_missiolinis_fielded_manpower_goal } #1kk #TODO_Manu: Code support to use vars in has_army_manpower
+			#if = { #FIRST TIME - FIXED AMOUNT #TODO_Manu: NEED CODE SUPPORT (see line above)
+			#	limit = {
+			#		NOT = { has_country_flag = ITA_missiolini_strengthen_the_army_repeatable_flag } #First time it's a fixed amopunt. Then if the mission is repeated it will require +500k MP in the field (compare to current)
+			#	}
+				if = {
+					limit = {
+						ITA_has_missiolini_easier_goals = yes
+					}
+					has_army_manpower = { size > 650000 } #650k
+				}
+				else = {
+					has_army_manpower = { size > 750000 } #750k
+				}
+			#}
+			#else = { #IF REPEATING
+			#	has_army_manpower = { size > 1000000 } #TODO_Manu: Current MP + 500 -> Code Support for this (has_army_manpower does not take vars)
+			#}
+		}
+
+		activation = {
+			always = no
+		}
+
+		cancel_if_not_visible = yes
+		is_good = no #Tooltip purposes
+		selectable_mission = no
+		days_mission_timeout = ITA_missiolinis_default_days
+
+		timeout_effect = { #MISSION FAILS
+			effect_tooltip = {
+				ITA_missiolini_strengthen_the_army_failure_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.42 hours = 1 }
+			}
+		}
+
+		complete_effect = { #MISSION SUCCEEDS
+			effect_tooltip = {
+				ITA_missiolini_strengthen_the_army_success_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.43 hours = 1 }
+			}
+		}
+	}
+
+	# Stockpile Trucks
+	ITA_missiolini_stockpile_trucks = {
+		icon = GFX_decision_generic_trucks
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			ITA_missiolinis_system_available = yes
+		}
+
+		available = { #GOAL
+			has_equipment = { #TODO_Manu: Code Support to also get the trucks in the field // Alternatively, check for trucks produced (Code support too!)
+				motorized_equipment_1 > ROOT.ITA_missiolinis_trucks_to_produce
+			}
+		}
+
+		activation = {
+			always = no
+		}
+
+		cancel_if_not_visible = yes
+		is_good = no #Tooltip purposes
+		selectable_mission = no
+		days_mission_timeout = ITA_missiolinis_default_days
+
+		timeout_effect = { #MISSION FAILS
+			effect_tooltip = {
+				ITA_missiolini_stockpile_trucks_failure_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.52 hours = 1 }
+			}
+		}
+
+		complete_effect = { #MISSION SUCCEEDS
+			effect_tooltip = {
+				ITA_missiolini_stockpile_trucks_success_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.53 hours = 1 }
+			}
+		}
+	}
+
+	# Stockpile fuel
+	ITA_missiolini_stockpile_fuel = {
+		icon = GFX_decision_oil
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			ITA_missiolinis_system_available = yes
+		}
+
+		available = { #GOAL
+			has_fuel > 500000
+		}
+
+		activation = {
+			always = no
+		}
+
+		cancel_if_not_visible = yes
+		is_good = no #Tooltip purposes
+		selectable_mission = no
+		days_mission_timeout = ITA_missiolinis_default_days
+
+		timeout_effect = { #MISSION FAILS
+			effect_tooltip = {
+				ITA_missiolini_stockpile_fuel_failure_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.62 hours = 1 }
+			}
+		}
+
+		complete_effect = { #MISSION SUCCEEDS
+			effect_tooltip = {
+				ITA_missiolini_stockpile_fuel_success_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.63 hours = 1 }
+			}
+		}
+	}
+
+	# Strengthen the Airforce
+	ITA_missiolini_strengthen_the_airforce = {
+		icon = GFX_decision_generic_merge_plant_aircraft
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			ITA_missiolinis_system_available = yes
+		}
+
+		available = { #GOAL
+			#Fighters
+			custom_trigger_tooltip = {
+				tooltip = ITA_missiolini_strengthen_the_airforce_fighters_goal_tt
+				#Fighters
+				set_temp_variable = { current_fighters = num_equipment@fighter_equipment }
+				add_to_temp_variable = { current_fighters = num_deployed_planes_with_type@fighter_equipment }
+				
+				
+
+				check_variable = { current_fighters = ITA_missiolinis_fighters_goal compare = greater_than_or_equals }
+			}
+			#Bombers
+			custom_trigger_tooltip = {
+				tooltip = ITA_missiolini_strengthen_the_airforce_bombers_goal_tt
+				#CAS
+				set_temp_variable = { current_cas = num_equipment@CAS_equipment }
+				add_to_temp_variable = { current_cas = num_deployed_planes_with_type@CAS_equipment }
+				#Naval Bombers
+				set_temp_variable = { current_naval_bombers = num_equipment@cv_nav_bomber_equipment }
+				add_to_temp_variable = { current_naval_bombers = num_deployed_planes_with_type@cv_nav_bomber_equipment }
+				#Tactical Bombers
+				set_temp_variable = { current_tactical_bombers = num_equipment@tac_bomber_equipment }
+				add_to_temp_variable = { current_tactical_bombers = num_deployed_planes_with_type@tac_bomber_equipment }
+				OR = {
+					#CAS
+					check_variable = { current_cas = ITA_missiolinis_cas_goal compare = greater_than_or_equals }
+					#Naval Bombers
+					check_variable = { current_naval_bombers = ITA_missiolinis_naval_bombers_goal compare = greater_than_or_equals }
+					#Tactical Bombers
+					check_variable = { current_tactical_bombers = ITA_missiolinis_tactical_bombers_goal compare = greater_than_or_equals }
+				}
+			}
+		}
+
+		activation = {
+			always = no
+		}
+
+		cancel_if_not_visible = yes
+		is_good = no #Tooltip purposes
+		selectable_mission = no
+		days_mission_timeout = ITA_missiolinis_default_days
+
+		timeout_effect = { #MISSION FAILS
+			effect_tooltip = {
+				ITA_missiolini_strengthen_the_airforce_failure_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.72 hours = 1 }
+			}
+		}
+
+		complete_effect = { #MISSION SUCCEEDS
+			effect_tooltip = {
+				ITA_missiolini_strengthen_the_airforce_success_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.73 hours = 1 }
+			}
+		}
+	}
+
+	# Industrial Research
+	ITA_missiolini_industrial_research = {
+		icon = GFX_decision_generic_wreckers
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			ITA_missiolinis_system_available = yes
+		}
+
+		available = { #GOAL
+			#ASSIGN TECH GOAL
+			if = { #Production - Advanced Machine Tools
+				limit = {
+					has_country_flag = { flag = ITA_missiolini_research_production_flag value = 1 }
+				}
+				has_tech = advanced_machine_tools
+			}
+			else_if = { #Production - Assembly Line Production
+				limit = {
+					has_country_flag = { flag = ITA_missiolini_research_production_flag value = 2 }
+				}
+				has_tech = assembly_line_production
+			}
+			else_if = { #Production - Flexible Line / Streamlined Line
+				limit = {
+					has_country_flag = { flag = ITA_missiolini_research_production_flag value = 3 }
+				}
+				OR = {
+					has_tech = flexible_line
+					has_tech = streamlined_line
+				}
+			}
+			else_if = { #Industry - Concentrated Industry 3 / Dispersed Industry 3
+				limit = {
+					has_country_flag = { flag = ITA_missiolini_research_industry_flag value = 1 }
+				}
+				has_tech = expanded_industry3
+			}
+			else_if = { #Industry - Concentrated Industry 4 / Dispersed Industry 4
+				limit = {
+					has_country_flag = { flag = ITA_missiolini_research_industry_flag value = 2 }
+				}
+				has_tech = expanded_industry4
+			}
+			else_if = { #Industry - Concentrated Industry 5 / Dispersed Industry 5
+				limit = {
+					has_country_flag = { flag = ITA_missiolini_research_industry_flag value = 3 }
+				}
+				has_tech = expanded_industry5
+			}
+			else_if = { #Construction - Construction 3
+				limit = {
+					has_country_flag = { flag = ITA_missiolini_research_construction_flag value = 1 }
+				}
+				has_tech = construction3
+			}
+			else_if = { #Construction - Construction 4
+				limit = {
+					has_country_flag = { flag = ITA_missiolini_research_construction_flag value = 2 }
+				}
+				has_tech = construction4
+			}
+			else_if = { #Construction - Construction 5
+				limit = {
+					has_country_flag = { flag = ITA_missiolini_research_construction_flag value = 3 }
+				}
+				has_tech = construction5
+			}
+			else = { #Absurd fallback just in case
+				has_tech = atomic_research
+			}
+		}
+
+		activation = {
+			always = no
+		}
+
+		cancel_if_not_visible = yes
+		is_good = no #Tooltip purposes
+		selectable_mission = no
+		days_mission_timeout = ITA_missiolinis_default_days
+
+		timeout_effect = { #MISSION FAILS
+			effect_tooltip = {
+				ITA_missiolini_industrial_research_failure_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.82 hours = 1 }
+			}
+		}
+
+		complete_effect = { #MISSION SUCCEEDS
+			effect_tooltip = {
+				ITA_missiolini_industrial_research_success_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.83 hours = 1 }
+			}
+		}
+	}
+
+	# Expand Intelligence Agency
+	ITA_missiolini_expand_intelligence_agency = {
+		icon = GFX_decision_onmap_recruit_operative
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			ITA_missiolinis_system_available = yes
+		}
+
+		available = { #GOAL
+			#ASSIGN INTEL AGENCY GOAL
+			if = { #Create Intel Agency
+				limit = {
+					has_country_flag = { flag = ITA_missiolini_upgrade_agency_goal_flag value = 1 }
+				}
+				has_intelligence_agency = yes
+			}
+			else_if = { #Upgrade - Form Cryptology Department
+				limit = {
+					has_country_flag = { flag = ITA_missiolini_upgrade_agency_goal_flag value = 2 }
+				}
+				has_done_agency_upgrade = upgrade_form_department
+			}
+			else_if = { #Production - Form Army Department
+				limit = {
+					has_country_flag = { flag = ITA_missiolini_upgrade_agency_goal_flag value = 3 }
+				}
+				has_done_agency_upgrade = upgrade_army_department
+			}
+			else_if = { #Production - Anti-Partisan
+				limit = {
+					has_country_flag = { flag = ITA_missiolini_upgrade_agency_goal_flag value = 4 }
+				}
+				has_done_agency_upgrade = upgrade_anti_partisan
+			}
+			else_if = { #Production - Passive Defense
+				limit = {
+					has_country_flag = { flag = ITA_missiolini_upgrade_agency_goal_flag value = 5 }
+				}
+				has_done_agency_upgrade = upgrade_passive_defense
+			}
+			else = { #Absurd fallback just in case
+				agency_upgrade_number > 30 #31 is max
+			}
+		}
+
+		activation = {
+			always = no
+		}
+
+		cancel_if_not_visible = yes
+		is_good = no #Tooltip purposes
+		selectable_mission = no
+		days_mission_timeout = ITA_missiolinis_default_days
+
+		timeout_effect = { #MISSION FAILS
+			effect_tooltip = {
+				ITA_missiolini_expand_intelligence_service_failure_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.92 hours = 1 }
+			}
+		}
+
+		complete_effect = { #MISSION SUCCEEDS
+			effect_tooltip = {
+				ITA_missiolini_expand_intelligence_service_success_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.93 hours = 1 }
+			}
+		}
+	}
+
+	# Occupy Albania
+	ITA_missiolini_occupy_albania = {
+		icon = GFX_decision_infiltrate_state
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			ITA_missiolinis_system_available = yes
+		}
+
+		available = { #GOAL
+			44 = { #ALBANIA
+				OR = {
+					is_fully_controlled_by = ROOT
+					controller = {
+						is_subject_of = ROOT
+						hidden_trigger = { #To prevent unnecessary overcrowding
+							has_full_control_of_state = PREV
+						}
+					}
+				}
+			}
+			805 = { #NORTHERN EPIRUS
+				OR = {
+					is_fully_controlled_by = ROOT
+					controller = {
+						is_subject_of = ROOT
+						hidden_trigger = { #To prevent unnecessary overcrowding
+							has_full_control_of_state = PREV
+						}
+					}
+				}
+			}
+		}
+
+		activation = {
+			always = no
+		}
+
+		cancel_if_not_visible = yes
+		is_good = no #Tooltip purposes
+		selectable_mission = no
+		days_mission_timeout = ITA_missiolinis_default_days
+
+		cosmetic_tag = ALB
+		cosmetic_ideology = neutrality
+
+		timeout_effect = { #MISSION FAILS
+			effect_tooltip = {
+				ITA_missiolini_occupy_albania_failure_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.102 hours = 1 }
+			}
+		}
+
+		complete_effect = { #MISSION SUCCEEDS
+			effect_tooltip = {
+				ITA_missiolini_occupy_albania_success_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.103 hours = 1 }
+			}
+		}
+	}
+
+	# Occupy Dalmatia
+	ITA_missiolini_occupy_dalmatia = {
+		icon = GFX_decision_infiltrate_state
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			ITA_missiolinis_system_available = yes
+		}
+
+		available = { #GOAL
+			103 = { #DALMATIA
+				OR = {
+					is_fully_controlled_by = ROOT
+					controller = {
+						is_subject_of = ROOT
+						hidden_trigger = { #To prevent unnecessary overcrowding
+							has_full_control_of_state = PREV
+						}
+					}
+				}
+			}
+		}
+
+		activation = {
+			always = no
+		}
+
+		cancel_if_not_visible = yes
+		is_good = no #Tooltip purposes
+		selectable_mission = no
+		days_mission_timeout = ITA_missiolinis_default_days
+
+		cosmetic_tag = YUG
+		cosmetic_ideology = neutrality
+
+		timeout_effect = { #MISSION FAILS
+			effect_tooltip = {
+				ITA_missiolini_occupy_dalmatia_failure_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.112 hours = 1 }
+			}
+		}
+
+		complete_effect = { #MISSION SUCCEEDS
+			effect_tooltip = {
+				ITA_missiolini_occupy_dalmatia_success_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.113 hours = 1 }
+			}
+		}
+	}
+
+	# Occupy Greece
+	ITA_missiolini_occupy_greece = {
+		icon = GFX_decision_infiltrate_state
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			ITA_missiolinis_system_available = yes
+		}
+
+		available = { #GOAL
+			185 = { #EPIRUS
+				OR = {
+					is_fully_controlled_by = ROOT
+					controller = {
+						is_subject_of = ROOT
+						hidden_trigger = { #To prevent unnecessary overcrowding
+							has_full_control_of_state = PREV
+						}
+					}
+				}
+			}
+			47 = { #ATTICA
+				OR = {
+					is_fully_controlled_by = ROOT
+					controller = {
+						is_subject_of = ROOT
+						hidden_trigger = { #To prevent unnecessary overcrowding
+							has_full_control_of_state = PREV
+						}
+					}
+				}
+			}
+			186 = { #PELOPONNESE
+				OR = {
+					is_fully_controlled_by = ROOT
+					controller = {
+						is_subject_of = ROOT
+						hidden_trigger = { #To prevent unnecessary overcrowding
+							has_full_control_of_state = PREV
+						}
+					}
+				}
+			}
+		}
+
+		activation = {
+			always = no
+		}
+
+		cancel_if_not_visible = yes
+		is_good = no #Tooltip purposes
+		selectable_mission = no
+		days_mission_timeout = ITA_missiolinis_default_days
+
+		cosmetic_tag = GRE
+		cosmetic_ideology = neutrality
+
+		timeout_effect = { #MISSION FAILS
+			effect_tooltip = {
+				ITA_missiolini_occupy_greece_failure_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.122 hours = 1 }
+			}
+		}
+
+		complete_effect = { #MISSION SUCCEEDS
+			effect_tooltip = {
+				ITA_missiolini_occupy_greece_success_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.123 hours = 1 }
+			}
+		}
+	}
+
+	# Occupy Ticino
+	ITA_missiolini_occupy_ticino = {
+		icon = GFX_decision_infiltrate_state
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			ITA_missiolinis_system_available = yes
+		}
+
+		available = { #GOAL
+			846 = { #TICINO
+				OR = {
+					is_fully_controlled_by = ROOT
+					controller = {
+						is_subject_of = ROOT
+						hidden_trigger = { #To prevent unnecessary overcrowding
+							has_full_control_of_state = PREV
+						}
+					}
+				}
+			}
+		}
+
+		activation = {
+			always = no
+		}
+
+		cancel_if_not_visible = yes
+		is_good = no #Tooltip purposes
+		selectable_mission = no
+		days_mission_timeout = ITA_missiolinis_default_days
+
+		cosmetic_tag = SWI
+		cosmetic_ideology = democratic
+
+		timeout_effect = { #MISSION FAILS
+			effect_tooltip = {
+				ITA_missiolini_occupy_ticino_failure_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.132 hours = 1 }
+			}
+		}
+
+		complete_effect = { #MISSION SUCCEEDS
+			effect_tooltip = {
+				ITA_missiolini_occupy_ticino_success_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.133 hours = 1 }
+			}
+		}
+	}
+
+
+
+
+
+
+	# Bolster Political Cabinet
+	ITA_missiolini_bolster_political_cabinet = {
+		icon = GFX_decision_generic_political_discourse
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			ITA_missiolinis_system_available = yes
+		}
+
+		available = { #GOAL
+			custom_trigger_tooltip = {
+				tooltip = ITA_missiolini_bolster_political_cabinet_trigger_tt
+				amount_taken_ideas = {
+					amount > 2
+					slots = { political_advisor }
+				}
+				OR = {
+					has_idea = ITA_gian_galeazzo_ciano
+					has_idea = ITA_dino_grandi
+					has_idea = ITA_giuseppe_bottai
+					has_idea = ITA_renato_ricci
+				}
+			}
+		}
+
+		activation = {
+			always = no
+		}
+
+		cancel_if_not_visible = yes
+		is_good = no #Tooltip purposes
+		selectable_mission = no
+		days_mission_timeout = ITA_missiolinis_default_days
+
+		timeout_effect = { #MISSION FAILS
+			effect_tooltip = {
+				ITA_missiolini_bolster_political_cabinet_failure_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.202 hours = 1 }
+			}
+		}
+
+		complete_effect = { #MISSION SUCCEEDS
+			effect_tooltip = {
+				ITA_missiolini_bolster_political_cabinet_success_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.203 hours = 1 }
+			}
+		}
+	}
+
+	# Bolster Military High Command
+	ITA_missiolini_bolster_military_high_command = {
+		icon = GFX_decision_generic_army_support
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			ITA_missiolinis_system_available = yes
+		}
+
+		available = { #GOAL
+			custom_trigger_tooltip = {
+				tooltip = ITA_missiolini_bolster_military_high_command_trigger_tt
+				amount_taken_ideas = {
+					amount > 2
+					#category = { military_staff }
+					slots = { high_command }
+				}
+			}
+		}
+
+		activation = {
+			always = no
+		}
+
+		cancel_if_not_visible = yes
+		is_good = no #Tooltip purposes
+		selectable_mission = no
+		days_mission_timeout = ITA_missiolinis_default_days
+
+		timeout_effect = { #MISSION FAILS
+			effect_tooltip = {
+				ITA_missiolini_bolster_military_high_command_failure_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.212 hours = 1 }
+			}
+		}
+
+		complete_effect = { #MISSION SUCCEEDS
+			effect_tooltip = {
+				ITA_missiolini_bolster_military_high_command_success_effect = yes
+			}
+
+			hidden_effect = {
+				country_event = { id = BBA_italy_missiolinis.213 hours = 1 }
+			}
+		}
+	}
+}
+
+
+
+ ######   #######  ##        #######  ##    ## ####    ###    ##          ##     ##    ###    ##    ##    ###     ######   ######## ##     ## ######## ##    ## ########
+##    ## ##     ## ##       ##     ## ###   ##  ##    ## ##   ##          ###   ###   ## ##   ###   ##   ## ##   ##    ##  ##       ###   ### ##       ###   ##    ##
+##       ##     ## ##       ##     ## ####  ##  ##   ##   ##  ##          #### ####  ##   ##  ####  ##  ##   ##  ##        ##       #### #### ##       ####  ##    ##
+##       ##     ## ##       ##     ## ## ## ##  ##  ##     ## ##          ## ### ## ##     ## ## ## ## ##     ## ##   #### ######   ## ### ## ######   ## ## ##    ##
+##       ##     ## ##       ##     ## ##  ####  ##  ######### ##          ##     ## ######### ##  #### ######### ##    ##  ##       ##     ## ##       ##  ####    ##
+##    ## ##     ## ##       ##     ## ##   ###  ##  ##     ## ##          ##     ## ##     ## ##   ### ##     ## ##    ##  ##       ##     ## ##       ##   ###    ##
+ ######   #######  ########  #######  ##    ## #### ##     ## ########    ##     ## ##     ## ##    ## ##     ##  ######   ######## ##     ## ######## ##    ##    ##
+
+
+ ITA_colonial_management_dec_cat = {
+	# Train Irregulars
+	ITA_train_irregulars = {
+		icon = GFX_decision_generic_prepare_civil_war
+		allowed = {
+			tag = ITA
+		}
+
+		available = {
+			has_war = yes
+			NOT = { has_global_flag = second_italo_ethiopian_war_flag }
+			any_controlled_state = {
+				OR = {
+					is_core_of = LBA
+					is_core_of = ERI
+					is_core_of = SOM
+					is_core_of = ETH
+				}
+			}
+		}
+
+		visible = {
+			has_completed_focus = ITA_ministry_of_italian_africa
+		}
+
+		ai_hint_pp_cost = 50
+		custom_cost_trigger = {
+			command_power > 49
+			has_political_power > 49
+		}
+		custom_cost_text = decision_cost_CP_50_pp_50
+
+		days_remove = ITA_colonial_management_days
+
+		days_re_enable = ITA_colonial_management_cd
+
+		complete_effect = {
+			hidden_effect = {
+				add_command_power = -50
+				add_political_power = -50
+			}
+		}
+
+		remove_effect = {
+			if = {
+				limit = {
+					NOT = { has_template = "Truppe Irregolari a Cavallo" }
+				}
+				if = {
+					limit = {
+						NOT = { has_country_flag = ITA_improved_irregular_templates_flag }
+					}
+					division_template = { #Improve Irregular template
+						name = "Truppe Irregolari a Cavallo"
+						division_names_group = ITA_CAV_05
+						is_locked = yes
+						regiments = {
+							cavalry = { x = 0 y = 0 }
+							cavalry = { x = 0 y = 1 }
+							cavalry = { x = 1 y = 0 }
+							cavalry = { x = 1 y = 1 }
+						}
+						priority = 0
+					}
+				}
+				else = {
+					division_template = { #Basic irregular template
+						name = "Truppe Irregolari a Cavallo"
+						division_names_group = ITA_CAV_05
+						is_locked = yes
+						regiments = {
+							cavalry = { x = 0 y = 0 }
+							cavalry = { x = 0 y = 1 }
+							cavalry = { x = 1 y = 0 }
+							cavalry = { x = 1 y = 1 }
+							cavalry = { x = 2 y = 0 }
+							cavalry = { x = 2 y = 1 }
+						}
+						support = {
+							recon = { x = 0 y = 0 }
+						}
+						priority = 0
+					}
+				}
+			}
+
+			if = {
+				limit = {
+					NOT = { has_template = "Truppe Irregolari di Cammelli" }
+				}
+				if = {
+					limit = {
+						NOT = { has_country_flag = ITA_improved_irregular_templates_flag }
+					}
+					division_template = { #Improve Irregular template
+						name = "Truppe Irregolari di Cammelli"
+						division_names_group = ITA_CAM_02
+						is_locked = yes
+						regiments = {
+							camelry = { x = 0 y = 0 }
+							camelry = { x = 0 y = 1 }
+							camelry = { x = 1 y = 0 }
+							camelry = { x = 1 y = 1 }
+						}
+						priority = 0
+					}
+				}
+				else = {
+					division_template = { #Basic irregular template
+						name = "Truppe Irregolari di Cammelli"
+						division_names_group = ITA_CAM_02
+						is_locked = yes
+						regiments = {
+							camelry = { x = 0 y = 0 }
+							camelry = { x = 0 y = 1 }
+							camelry = { x = 1 y = 0 }
+							camelry = { x = 1 y = 1 }
+							camelry = { x = 2 y = 0 }
+							camelry = { x = 2 y = 1 }
+						}
+						support = {
+							recon = { x = 0 y = 0 }
+						}
+						priority = 0
+					}
+				}
+			}
+
+			custom_effect_tooltip = ITA_train_irregulars_create_units_tt
+
+			#ERITREA
+			if = {
+				limit = {
+					any_owned_state = {
+						is_core_of = ERI
+						is_fully_controlled_by = ROOT
+					}
+				}
+				random_owned_controlled_state = {
+					limit = {
+						is_core_of = ERI
+						is_fully_controlled_by = ROOT
+					}
+					prioritize = { 550 } # ERITREA (In case at some point this gets split or tag gets more cores)
+					custom_effect_tooltip = ITA_train_irregulars_eritrea_tt
+					hidden_effect = {
+						create_unit = {
+							division = "division_template = \"Banda Irregolare Libica\" start_experience_factor = 0.1 start_equipment_factor = 1.0"
+							owner = ROOT
+							count = 1
+						}
+						create_unit = {
+							division = "division_template = \"Truppe Irregolari a Cavallo\" start_experience_factor = 0.1 start_equipment_factor = 1.0"
+							owner = ROOT
+							count = 1
+						}
+					}
+				}
+			}
+
+			#LIBYA
+			if = {
+				limit = {
+					any_owned_state = {
+						is_core_of = LBA
+						is_fully_controlled_by = ROOT
+					}
+				}
+				random_owned_controlled_state = {
+					limit = {
+						is_core_of = LBA
+						is_fully_controlled_by = ROOT
+					}
+					prioritize = { 448 } # TRIPOLI (In case at some point this gets split or tag gets more cores)
+					custom_effect_tooltip = ITA_train_irregulars_libya_tt
+					hidden_effect = {
+						create_unit = {
+							division = "division_template = \"Truppe Irregolari a Cavallo\" start_experience_factor = 0.15 start_equipment_factor = 1.0"
+							owner = ROOT
+							count = 1
+						}
+						create_unit = {
+							division = "division_template = \"Truppe Irregolari di Cammelli\" start_experience_factor = 0.15 start_equipment_factor = 1.0"
+							owner = ROOT
+							count = 1
+						}
+					}
+				}
+			}
+
+			#SOMALIA
+			if = {
+				limit = {
+					any_owned_state = {
+						is_core_of = SOM
+						is_fully_controlled_by = ROOT
+					}
+				}
+				random_owned_controlled_state = {
+					limit = {
+						is_core_of = SOM
+						is_fully_controlled_by = ROOT
+					}
+					prioritize = { 559 } # SOMALILAND (In case at some point this gets split or tag gets more cores)
+					custom_effect_tooltip = ITA_train_irregulars_somalia_tt
+					hidden_effect = {
+						create_unit = {
+							division = "division_template = \"Banda Irregolare Somala\" start_experience_factor = 0.1 start_equipment_factor = 1.0"
+							owner = ROOT
+							count = 2
+						}
+						create_unit = {
+							division = "division_template = \"Truppe Irregolari a Cavallo\" start_experience_factor = 0.1 start_equipment_factor = 1.0"
+							owner = ROOT
+							count = 1
+						}
+					}
+				}
+			}
+
+			#ETHIOPIA
+			if = {
+				limit = {
+					any_owned_state = {
+						is_core_of = ETH
+						is_fully_controlled_by = ROOT
+					}
+				}
+				random_owned_controlled_state = {
+					limit = {
+						is_core_of = ETH
+						is_fully_controlled_by = ROOT
+					}
+					prioritize = { 271 } # ADDIS ABABA (In case at some point this gets split or tag gets more cores)
+					custom_effect_tooltip = ITA_train_irregulars_ethiopia_tt
+					hidden_effect = {
+						create_unit = {
+							division = "division_template = \"Banda Irregolare Eritrea\" start_experience_factor = 0.1 start_equipment_factor = 1.0"
+							owner = ROOT
+							count = 1
+						}
+						create_unit = {
+							division = "division_template = \"Truppe Irregolari di Cammelli\" start_experience_factor = 0.1 start_equipment_factor = 1.0"
+							owner = ROOT
+							count = 1
+						}
+					}
+				}
+			}
+
+			custom_effect_tooltip = ITA_train_irregulars_cd_tt
+		}
+
+		ai_will_do = {
+			base = 0.05
+		}
+	}
+
+	#Re-organize Ascari
+	ITA_reorganize_ascari = {
+		icon = GFX_decision_ITA_reorganize_ascari
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_completed_focus = ITA_strengthen_ascari_corps
+			NOT = { has_country_flag = ITA_improved_ascari_templates_flag }
+		}
+
+		available = {
+			has_tech = tech_recon
+		}
+
+		ai_hint_pp_cost = 50
+		custom_cost_trigger = {
+			command_power > 49
+			has_political_power > 49
+			has_army_experience > 14
+		}
+		custom_cost_text = decision_cost_CP_50_pp_50_ArmXP_15
+
+		days_remove = ITA_reorganize_ascari_days
+
+		complete_effect = {
+			hidden_effect = {
+				add_command_power = -50
+				add_political_power = -50
+				army_experience = -15
+			}
+		}
+
+		remove_effect = {
+			set_country_flag = ITA_improved_ascari_templates_flag
+
+			custom_effect_tooltip = ITA_reorganize_ascari_tt
+
+			hidden_effect = {
+				if = {
+					limit = {
+						NOT = { has_template = "Divisione Coloniale" }
+					}
+					division_template = {
+						name = "Divisione Coloniale"
+						division_names_group = ITA_COL_01
+						template_counter = 67
+
+						# Represents lesser-equipped colonial units
+						regiments = {
+							infantry = { x = 0 y = 0 }
+							infantry = { x = 0 y = 1 }
+							infantry = { x = 0 y = 2 }
+							infantry = { x = 1 y = 0 }
+						}
+
+						priority = 0
+					}
+				}
+				if = {
+					limit = {
+						has_dlc = "La Resistance"
+					}
+					add_units_to_division_template = {
+						template_name = "Divisione Coloniale"
+						support = {
+							armored_car_recon = 0
+							artillery = 0
+						}
+					}
+				}
+				else = {
+					add_units_to_division_template = {
+						template_name = "Divisione Coloniale"
+						support = {
+							artillery = 0
+						}
+					}
+				}
+
+				if = {
+					limit = {
+						NOT = { has_template = "Cavalleria Coloniale" }
+					}
+					division_template = {
+						name = "Cavalleria Coloniale"
+						division_names_group = ITA_CAV_03
+						override_model = ITA_cavalry_alt_1_entity
+						is_locked = yes
+
+						# Represents lesser-equipped colonial units
+						regiments = {
+							cavalry = { x = 0 y = 0 }
+							cavalry = { x = 0 y = 1 }
+							cavalry = { x = 1 y = 0 }
+							cavalry = { x = 1 y = 1 }
+						}
+
+						priority = 0
+					}
+				}
+				add_units_to_division_template = {
+					template_name = "Cavalleria Coloniale"
+					regiments = {
+						cavalry = 0
+						cavalry = 1
+					}
+					support = {
+						recon = 0
+					}
+				}
+
+				if = {
+					limit = {
+						NOT = { has_template = "Reggimento Meharista" }
+					}
+					division_template = {
+						name = "Reggimento Meharista"
+						division_names_group = ITA_CAM_01
+						override_model = ITA_camelry_alt_1_entity
+						regiments = {
+							camelry = { x = 0 y = 0 }
+							camelry = { x = 0 y = 1 }
+							camelry = { x = 1 y = 0 }
+							camelry = { x = 1 y = 1 }
+						}
+					}
+				}
+				add_units_to_division_template = {
+					template_name = "Reggimento Meharista"
+					regiments = {
+						camelry = 0
+						camelry = 1
+					}
+					support = {
+						recon = 0
+					}
+				}
+
+				if = {
+					limit = {
+						NOT = { has_template = "Divisione Ascari Libica" }
+					}
+					division_template = {
+						name = "Divisione Ascari Libica"
+						division_names_group = ITA_COL_01
+						override_model = ITA_infantry_alt_0_entity
+						template_counter = 67
+						#is_locked = yes
+						obsolete = yes
+
+						# Represents lesser-equipped colonial units
+						regiments = {
+							infantry = { x = 0 y = 0 }
+							infantry = { x = 0 y = 1 }
+							infantry = { x = 0 y = 2 }
+							infantry = { x = 1 y = 0 }
+						}
+
+						priority = 0
+					}
+				}
+				if = {
+					limit = {
+						has_dlc = "La Resistance"
+					}
+					add_units_to_division_template = {
+						template_name = "Divisione Ascari Libica"
+						support = {
+							armored_car_recon = 0
+							artillery = 0
+						}
+					}
+				}
+				else = {
+					add_units_to_division_template = {
+						template_name = "Divisione Ascari Libica"
+						support = {
+							artillery = 0
+						}
+					}
+				}
+
+				if = {
+					limit = {
+						NOT = { has_template = "Divisione Ascari Eritrea" }
+					}
+					division_template = {
+						name = "Divisione Ascari Eritrea"
+						division_names_group = ITA_COL_01
+						template_counter = 67
+						#is_locked = yes
+						obsolete = yes
+
+						# Represents lesser-equipped colonial units
+						regiments = {
+							infantry = { x = 0 y = 0 }
+							infantry = { x = 0 y = 1 }
+							infantry = { x = 0 y = 2 }
+							infantry = { x = 1 y = 0 }
+						}
+
+						priority = 0
+					}
+				}
+				if = {
+					limit = {
+						has_dlc = "La Resistance"
+					}
+					add_units_to_division_template = {
+						template_name = "Divisione Ascari Eritrea"
+						support = {
+							armored_car_recon = 0
+							artillery = 0
+						}
+					}
+				}
+				else = {
+					add_units_to_division_template = {
+						template_name = "Divisione Ascari Eritrea"
+						support = {
+							artillery = 0
+						}
+					}
+				}
+				
+				if = {
+					limit = {
+						NOT = { has_template = "Divisione Ascari Somala" }
+					}
+					division_template = {
+						name = "Divisione Ascari Somala"
+						division_names_group = ITA_COL_01
+						override_model = ITA_infantry_alt_1_entity
+						template_counter = 67
+						#is_locked = yes
+						obsolete = yes
+
+						# Represents lesser-equipped colonial units
+						regiments = {
+							infantry = { x = 0 y = 0 }
+							infantry = { x = 0 y = 1 }
+							infantry = { x = 0 y = 2 }
+							infantry = { x = 1 y = 0 }
+						}
+
+						priority = 0
+					}
+				}
+				if = {
+					limit = {
+						has_dlc = "La Resistance"
+					}
+					add_units_to_division_template = {
+						template_name = "Divisione Ascari Somala"
+						support = {
+							armored_car_recon = 0
+							artillery = 0
+						}
+					}
+				}
+				else = {
+					add_units_to_division_template = {
+						template_name = "Divisione Ascari Somala"
+						support = {
+							artillery = 0
+						}
+					}
+				}
+			}
+		}
+
+		ai_will_do = {
+			base = 1
+			modifier = {
+				factor = 3
+				has_completed_focus = ITA_strengthen_ascari_corps
+			}
+		}
+	}
+
+	#Infrastructure Program in State
+	ITA_regional_development_in_state = {
+		icon = GFX_decision_generic_construction
+		allowed = {
+			tag = ITA
+		}
+
+		available = {
+			has_tech = construction3
+			num_of_civilian_factories_available_for_projects > 0
+		}
+
+		state_target = yes
+
+		target_array = ROOT.owned_states
+
+		target_trigger = {
+			FROM = {
+				is_fully_controlled_by = ROOT
+				ITA_is_italian_colony = yes
+				OR = {
+					has_state_category = wasteland
+					has_state_category = pastoral
+				}
+				impassable = no
+			}
+		}
+
+		target_root_trigger = {
+			original_tag = ITA
+			has_completed_focus = ITA_regional_development
+			has_civil_war = no
+		}
+
+		cost = ITA_infrastructure_program_in_state_cost
+
+		days_remove = ITA_infrastructure_program_in_state_days
+
+		modifier = {
+			civilian_factory_use = 1
+		}
+
+		remove_effect = {
+			FROM = {
+				add_compliance = 5
+				add_extra_state_shared_building_slots = 1
+				if = {
+					limit = {
+						has_state_category = wasteland
+					}
+					set_state_category = pastoral
+				}
+				else_if = {
+					limit = {
+						has_state_category = pastoral
+					}
+					set_state_category = rural
+				}
+			}
+		}
+
+		ai_will_do = {
+			base = 0
+		}
+	}
+}
+
 ITA_the_inevitable_civil_war = {
 
 	ITA_military_plot = {
@@ -23,7 +2118,7 @@ ITA_the_inevitable_civil_war = {
 
 		visible = {
 			tag = ITA
-			has_completed_focus = ITA_dismiss_mussolini
+			has_completed_focus = ITA_depose_mussolini
 			has_country_flag = ITA_civil_war_imminent_flag
 			NOT = { has_global_flag = italian_civil_war }
 		}
@@ -73,7 +2168,7 @@ ITA_the_inevitable_civil_war = {
 			visible = {
 				tag = ITA
 				has_country_flag = ITA_civil_war_imminent_flag
-				has_completed_focus = ITA_dismiss_mussolini
+				has_completed_focus = ITA_depose_mussolini
 				NOT = { has_global_flag = italian_civil_war }
 			}
 
@@ -125,7 +2220,7 @@ ITA_the_inevitable_civil_war = {
 			visible = {
 				tag = ITA
 				has_country_flag = ITA_civil_war_imminent_flag
-				has_completed_focus = ITA_dismiss_mussolini
+				has_completed_focus = ITA_depose_mussolini
 				NOT = { has_global_flag = italian_civil_war }
 			}
 
@@ -179,7 +2274,7 @@ ITA_the_inevitable_civil_war = {
 			visible = {
 				tag = ITA
 				has_country_flag = ITA_civil_war_imminent_flag
-				has_completed_focus = ITA_dismiss_mussolini
+				has_completed_focus = ITA_depose_mussolini
 				NOT = { has_global_flag = italian_civil_war }
 			}
 
@@ -228,7 +2323,7 @@ ITA_the_inevitable_civil_war = {
 			visible = {
 				tag = ITA
 				has_country_flag = ITA_civil_war_imminent_flag
-				has_completed_focus = ITA_dismiss_mussolini
+				has_completed_focus = ITA_depose_mussolini
 				NOT = { has_global_flag = italian_civil_war }
 			}
 
@@ -4715,7 +6810,7 @@ colonial_managment = {
 							autonomous_state = autonomy_reichskommissariat
 						}
 						ITN = {
-							add_ideas = GER_reichkommissariats_governments
+							add_ideas = ITA_colonial_government
 						}
 					}
 					else_if = {
@@ -4736,7 +6831,7 @@ colonial_managment = {
 					else = {
 						puppet = ITN
 						ITN = {
-							add_ideas = GER_reichkommissariats_governments
+							add_ideas = ITA_colonial_government
 						}
 					}
 					send_equipment = {
@@ -4867,7 +6962,7 @@ colonial_managment = {
 							autonomous_state = autonomy_reichskommissariat
 						}
 						ITC = {
-							add_ideas = GER_reichkommissariats_governments
+							add_ideas = ITA_colonial_government
 						}
 					}
 					else_if = {
@@ -4888,7 +6983,7 @@ colonial_managment = {
 					else = {
 						puppet = ITC
 						ITC = {
-							add_ideas = GER_reichkommissariats_governments
+							add_ideas = ITA_colonial_government
 						}
 					}
 					send_equipment = {
@@ -4998,7 +7093,7 @@ colonial_managment = {
 
 					hidden_effect = {
 						add_manpower = 20000
-						add_ideas = GER_reichkommissariats_governments
+						add_ideas = ITA_colonial_government
 					}
 				}
 				ITA = {
@@ -5251,7 +7346,7 @@ colonial_managment = {
 							autonomous_state = autonomy_reichskommissariat
 						}
 						ITW = {
-							add_ideas = GER_reichkommissariats_governments
+							add_ideas = ITA_colonial_government
 						}
 					}
 					else_if = {
@@ -5272,7 +7367,7 @@ colonial_managment = {
 					else = {
 						puppet = ITW
 						ITW = {
-							add_ideas = GER_reichkommissariats_governments
+							add_ideas = ITA_colonial_government
 						}
 					}
 					send_equipment = {
@@ -5468,7 +7563,7 @@ colonial_managment = {
 							autonomous_state = autonomy_reichskommissariat
 						}
 						ITE = {
-							add_ideas = GER_reichkommissariats_governments
+							add_ideas = ITA_colonial_government
 						}
 					}
 					else_if = {
@@ -5489,7 +7584,7 @@ colonial_managment = {
 					else = {
 						puppet = ITE
 						ITE = {
-							add_ideas = GER_reichkommissariats_governments
+							add_ideas = ITA_colonial_government
 						}
 					}
 					send_equipment = {
@@ -5623,7 +7718,6 @@ colonial_managment = {
 			tag = ITA
 			has_completed_focus = ITA_plan_new_colonies
 			NOT = { has_completed_focus = ITA_novus_imperium_romanum }
-			NOT = { has_completed_focus = ITA_sword_of_italy }
 			NOT = { country_exists = ITM }
 		}
 
@@ -5655,7 +7749,7 @@ colonial_managment = {
 							autonomous_state = autonomy_reichskommissariat
 						}
 						ITM = {
-							add_ideas = GER_reichkommissariats_governments
+							add_ideas = ITA_colonial_government
 						}
 					}
 					else_if = {
@@ -5676,7 +7770,7 @@ colonial_managment = {
 					else = {
 						puppet = ITM
 						ITM = {
-							add_ideas = GER_reichkommissariats_governments
+							add_ideas = ITA_colonial_government
 						}
 					}
 					send_equipment = {
@@ -5794,7 +7888,7 @@ colonial_managment = {
 							autonomous_state = autonomy_reichskommissariat
 						}
 						ITO = {
-							add_ideas = GER_reichkommissariats_governments
+							add_ideas = ITA_colonial_government
 						}
 					}
 					else_if = {
@@ -5815,7 +7909,7 @@ colonial_managment = {
 					else = {
 						puppet = ITO
 						ITO = {
-							add_ideas = GER_reichkommissariats_governments
+							add_ideas = ITA_colonial_government
 						}
 					}
 					send_equipment = {
@@ -5957,7 +8051,7 @@ colonial_managment = {
 							autonomous_state = autonomy_reichskommissariat
 						}
 						ITU = {
-							add_ideas = GER_reichkommissariats_governments
+							add_ideas = ITA_colonial_government
 						}
 					}
 					else_if = {
@@ -5978,7 +8072,7 @@ colonial_managment = {
 					else = {
 						puppet = ITU
 						ITU = {
-							add_ideas = GER_reichkommissariats_governments
+							add_ideas = ITA_colonial_government
 						}
 					}
 					send_equipment = {
@@ -6100,7 +8194,7 @@ colonial_managment = {
 							autonomous_state = autonomy_reichskommissariat
 						}
 						ITT = {
-							add_ideas = GER_reichkommissariats_governments
+							add_ideas = ITA_colonial_government
 						}
 					}
 					else_if = {
@@ -6121,7 +8215,7 @@ colonial_managment = {
 					else = {
 						puppet = ITT
 						ITT = {
-							add_ideas = GER_reichkommissariats_governments
+							add_ideas = ITA_colonial_government
 						}
 					}
 					send_equipment = {
@@ -6156,6 +8250,109 @@ colonial_managment = {
 				set_compliance = 25
 				set_garrison_strength = 1.0
 			}
+		}
+	}
+
+	give_somaliland_to_the_ITS = {
+		icon = GFX_decision_infiltrate_state
+
+		allowed = {
+			original_tag = ITA # Italy
+		}
+
+		available = {
+			ITS = {
+				exists = yes
+			}
+			OR = {
+				ITA = {
+					controls_state = 269 # British Somaliland
+				}
+				any_country = {
+					is_subject_of = ITA
+					controls_state = 269 # British Somaliland
+				}
+			}
+		}
+
+		visible = {
+			has_completed_focus = ITA_ministry_of_italian_africa
+			original_tag = ITA # Italy
+			has_global_flag = italian_east_africa_flag
+			NOT = {
+				has_global_flag = italian_east_africa_has_somaliland_flag
+			}
+		}
+
+		cost = 25
+
+		fire_only_once = yes
+
+		complete_effect = {
+			# British Somaliland
+			ITS = {
+				transfer_state = 269
+			}
+
+			hidden_effect = {
+				set_global_flag = italian_east_africa_has_somaliland_flag
+			}
+		}
+
+		ai_will_do = {
+			factor = 400
+		}
+	}
+
+	give_djibouti_to_the_ITS = {
+		icon = GFX_decision_infiltrate_state
+
+		allowed = {
+			original_tag = ITA # Italy
+		}
+
+		available = {
+			ITS = {
+				exists = yes
+			}
+			OR = {
+				ITA = {
+					controls_state = 268 # French Somaliland
+				}
+				any_country = {
+					is_subject_of = ITA
+					controls_state = 268 # French Somaliland
+				}
+			}
+		}
+
+		visible = {
+			has_completed_focus = ITA_ministry_of_italian_africa
+			original_tag = ITA # Italy
+			has_global_flag = italian_east_africa_flag
+			NOT = {
+				has_global_flag = italian_east_africa_has_djibouti_flag
+			}
+		}
+
+		cost = 25
+
+		fire_only_once = yes
+
+		complete_effect = {
+
+			# French Somaliland
+			ITS = {
+				transfer_state = 268
+			}
+
+			hidden_effect = {
+				set_global_flag = italian_east_africa_has_djibouti_flag
+			}
+		}
+
+		ai_will_do = {
+			factor = 400
 		}
 	}
 
@@ -6477,6 +8674,83 @@ economy_decisions = {
 }
 
 political_actions = {
+
+	#Discredit Haile Selassie
+	ITA_discredit_haile_selassie = {
+		icon = GFX_decision_generic_speech
+		allowed = {
+			tag = ITA
+		}
+
+		available = {
+			has_completed_focus = ITA_the_new_emperor_of_ethiopia
+		}
+
+		visible = {
+			any_controlled_state = {
+				is_owned_by = ETH
+			}
+		}
+
+		days_re_enable = 180 #Changing this requires changing the custom tooltip below
+		cost = 35
+
+		complete_effect = {
+			ETH = {
+				add_legitimacy = -10
+			}
+
+			hidden_effect = {
+				ETH = { country_event = { id = BBA_italo_ethiopian_war_events.510 hours = 1 } }
+			}
+
+			every_controlled_state = {
+				limit = {
+					is_owned_by = ETH
+				}
+				add_compliance = 5
+			}
+
+			custom_effect_tooltip = ITA_discredit_haile_selassie_cd_tt
+		}
+
+		ai_will_do = {
+			base = 0.8
+		}
+	}
+
+	ITA_vittorio_abdicate = {
+		priority = 10
+
+		icon = GFX_decision_generic_monarchy
+
+		ai_will_do = {
+			base = 0
+		}
+
+		allowed = {
+			original_tag = ITA
+		}
+
+		visible = {
+			has_completed_focus = ITA_power_to_the_king
+			has_country_leader = {
+				character = ITA_vittorio_emanuele_iii
+				ruling_only = yes
+			}
+		}
+
+		available = {
+			has_country_leader = {
+				character = ITA_vittorio_emanuele_iii
+				ruling_only = yes
+			}
+		}
+
+		complete_effect = {
+			ITA_promote_umberto_to_country_leader = yes #This effect also retires Vittorio
+		}
+	}
 
 	ITA_join_the_axis = {
 

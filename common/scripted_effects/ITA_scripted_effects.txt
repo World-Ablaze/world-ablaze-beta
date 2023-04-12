@@ -1,29 +1,1372 @@
+ITA_end_the_italo_ethiopian_war = {
+	clr_global_flag = second_italo_ethiopian_war_flag
+	# check if Italian victory
+	IF = {
+		limit = {
+			any_country = {
+				OR = {
+					original_tag = ITA
+					is_subject_of = ITA
+				}
+				controls_state = 271
+			}
+		}
+		ITA = {
+			set_country_flag = ITA_victory_in_ethiopia_flag
+		}
+	}
+	ELSE = {
+		ITA = {
+			set_country_flag = ITA_defeat_in_ethiopia_flag
+		}
+	}
+}
+
+
+ITA_manage_italian_defeat_in_ethiopia_effect = {
+	#First missiolini focus (Struggle in ETH, AByssinian Fiasco and Solid Progress) are handled before this effect
+	unlock_national_focus = ITA_triumph_in_africa_bba
+
+}
+
+
+##     ## ####  ######   ######  ####  #######  ##       #### ##    ## ####  ######
+###   ###  ##  ##    ## ##    ##  ##  ##     ## ##        ##  ###   ##  ##  ##    ##
+#### ####  ##  ##       ##        ##  ##     ## ##        ##  ####  ##  ##  ##
+## ### ##  ##   ######   ######   ##  ##     ## ##        ##  ## ## ##  ##   ######
+##     ##  ##        ##       ##  ##  ##     ## ##        ##  ##  ####  ##        ##
+##     ##  ##  ##    ## ##    ##  ##  ##     ## ##        ##  ##   ###  ##  ##    ##
+##     ## ####  ######   ######  ####  #######  ######## #### ##    ## ####  ######
+
+
+ITA_missiolinis_initialize_missiolinis_system = {
+	set_country_flag = ITA_missiolinis_system_active_flag
+}
+
+ITA_missiolinis_manage_next_mission = {
+	#log = "Managing next Mussolini, please hang on. Tack!"
+
+	#Check for pre-scripted vs randomized missions
+	if = {
+		limit = {
+			check_variable = { ITA_missiolinis_number_of_missions_triggered = 5 } # WARNING: 5 is the number of pre-scripted missions. If more pre-scripted missions are added or removed, adjust this value
+		}
+		set_country_flag = ITA_randomize_missiolinis_flag
+	}
+
+	if = { #PRE-SCRIPTED MISSIOLINIS
+		limit = {
+			NOT = {	has_country_flag = ITA_randomize_missiolinis_flag }
+		}
+		if = {
+			limit = {
+				check_variable = { ITA_missiolinis_number_of_missions_triggered = 1 } # WARNING: 5 is the number of pre-scripted missions. If more pre-scripted missions are added or removed, adjust this value
+			}
+
+
+			add_to_variable = { ITA_missiolinis_number_of_missions_triggered = 1 }
+		}
+
+
+	}
+	else = { #RANDOM MISSIOLINIS TIME
+
+	}
+}
+
+ITA_missiolinis_initialize_new_mission_effect = { #Sets flags and everything necessary to keep track of ongoing missions, last time a mission was issued, etc.
+	set_country_flag = { flag = ITA_missiolini_activated_recently_flag days = 30 } #WARNING THIS IS NOT SYNC WITH THE REST OF STUFF USING THE VAR ITA_missiolinis_min_cd_between_missions
+
+	add_to_variable = { ITA_missiolinis_active_missions = 1 }
+	add_to_variable = { ITA_missiolinis_number_of_missions_triggered = 1 }
+}
+
+ITA_missiolinis_revert_new_mission_initialization_effect = { #For when player chooses to re-roll for a new mission
+	clr_country_flag = ITA_missiolini_activated_recently_flag
+
+	add_to_variable = { ITA_missiolinis_active_missions = -1 }
+	add_to_variable = { ITA_missiolinis_number_of_missions_triggered = -1 }
+}
+
+ITA_missiolinis_finalize_mission_effect = { #Sets flags and everything necessary to end a mission and keep track of ongoing missions, etc.
+	add_to_variable = { ITA_missiolinis_active_missions = -1 }
+	add_to_variable = { ITA_missiolinis_number_of_missions_resolved = 1 }
+}
+
+ITA_missiolinis_add_to_successful_missions = {
+	add_to_variable = { ITA_missiolinis_successful_missions = 1 }
+	career_profile_step_missiolini = yes
+}
+
+ITA_missiolinis_add_to_failed_missions = {
+	add_to_variable = { ITA_missiolinis_failed_missions = 1 }
+}
+
+ITA_missiolinis_reroll_cost = {
+	add_political_power = -25
+
+	custom_effect_tooltip = ITA_missiolinis_reroll_tt
+}
+
+ITA_mussolinis_reroll_cleanup_if_necessary = {
+	if = {
+		limit = {
+			has_country_flag = ITA_missiolinis_rerolling_flag
+		}
+		clr_country_flag = ITA_missiolinis_rerolling_flag
+	}
+}
+
+
+### PROGRESS IN ETHIOPIA ###
+ITA_missiolini_progress_in_ethiopia_failure_effect = {
+	add_war_support = -0.03
+	add_political_power = -15
+	if = {
+		limit = {
+			has_dlc = "By Blood Alone"
+		}
+		custom_effect_tooltip = ITA_war_escalation_inc_tt
+	}
+}
+
+ITA_missiolini_progress_in_ethiopia_success_effect = {
+	add_stability = 0.03
+	add_war_support = 0.03
+	army_experience = 15
+	add_command_power = 15
+
+	#Effects in Ethiopia
+	if = {
+		limit = {
+			has_dlc = "By Blood Alone"
+		}
+		effect_tooltip = { #With BBA this is handled in Ethiopian decisions
+			ETH = { add_war_support = -0.1 }
+		}
+	}
+
+	if = { #First mission to succeed
+		limit = {
+			NOT = { has_country_flag = ITA_missiolini_progress_in_ethiopia_one_mission_successful_flag }
+		}
+		set_country_flag = ITA_missiolini_progress_in_ethiopia_one_mission_successful_flag
+	}
+	else_if = { #Second mission to succeed
+		limit = {
+			NOT = { has_completed_focus = ITA_the_abyssinian_fiasco }
+			NOT = { has_completed_focus = ITA_struggle_in_ethiopia }
+		}
+		complete_national_focus = ITA_solid_progress
+	}
+}
+
+### CONQUER ETHIOPIA ###
+ITA_missiolini_conquer_ethiopia_failure_effect = {
+	add_political_power = -25
+	add_war_support = -0.05
+	add_stability = -0.05
+	every_controlled_state = {
+		limit = {
+			NOT = { is_owned_by = ROOT }
+			is_core_of = ETH
+		}
+		add_compliance = -5
+	}
+}
+
+ITA_missiolini_conquer_ethiopia_success_effect = {
+	add_political_power = 50
+	add_stability = 0.05
+	add_war_support = 0.05
+	army_experience = 25
+	add_command_power = 25
+}
+
+### PACIFY ETHIOPIA ###
+ITA_missiolini_pacify_ethiopia_failure_effect = {
+	add_political_power = -25
+	every_controlled_state = {
+		limit = {
+			NOT = { is_owned_by = ROOT }
+			is_core_of = ETH
+		}
+		add_compliance = -5
+	}
+}
+
+ITA_missiolini_pacify_ethiopia_success_effect = {
+	add_political_power = 75
+	add_stability = 0.05
+	add_command_power = 35
+	every_owned_state = {
+		limit = {
+			OR = {
+				is_core_of = ETH
+				is_core_of = ERI
+				is_core_of = SOM
+			}
+			is_fully_controlled_by = ROOT
+		}
+		add_dynamic_modifier = { modifier = ITA_pacified_italian_east_africa_modifier days = 730 }
+
+		if = {
+			limit = {
+				has_resistance = yes
+			}
+			add_resistance_target = -10
+		}
+	}
+}
+
+### STRENGTHEN HEAVY INDUSTRY ###
+ITA_missiolini_strengthen_heavy_industry_failure_effect = {
+	add_political_power = -25
+	add_stability = -0.03
+}
+
+ITA_missiolini_strengthen_heavy_industry_success_effect = {
+	add_political_power = 50
+	add_stability = 0.03
+
+	add_timed_idea = {
+		idea = ITA_strengthened_heavy_industry
+		days = 365
+	}
+}
+
+### STRENGTHEN THE ARMY ###
+ITA_missiolini_strengthen_the_army_failure_effect = {
+	add_political_power = -25
+	add_war_support = -0.03
+	add_timed_idea = {
+		idea = ITA_disgruntlement_in_the_army
+		days = 180
+	}
+}
+
+ITA_missiolini_strengthen_the_army_success_effect = {
+	army_experience = 50
+	add_command_power = 25
+	add_war_support = 0.03
+	add_timed_idea = {
+		idea = ITA_strengthened_the_army
+		days = 365
+	}
+}
+
+### STOCKPILE TRUCKS ###
+ITA_missiolini_stockpile_trucks_failure_effect = {
+	add_political_power = -25
+	add_war_support = -0.03
+}
+
+ITA_missiolini_stockpile_trucks_success_effect = {
+	if = { #DEFAULT
+		limit = {
+			NOT = { has_completed_focus = ITA_to_live_as_a_lion }
+		}
+		add_political_power = 50
+		add_war_support = 0.03
+		add_timed_idea = {
+			idea = ITA_efficient_supply_lines
+			days = 365
+		}
+	}
+	else = { # GREATER REWARD (from To Live as a Lion focus)
+		add_political_power = 75
+		add_war_support = 0.05
+		add_timed_idea = {
+			idea = ITA_efficient_supply_lines_lion_version
+			days = 365
+		}
+	}
+}
+
+### STOCKPILE FUEL ###
+ITA_missiolini_stockpile_fuel_failure_effect = {
+	add_political_power = -25
+	add_war_support = -0.03
+}
+
+ITA_missiolini_stockpile_fuel_success_effect = {
+	if = { #DEFAULT
+		limit = {
+			NOT = { has_completed_focus = ITA_to_live_as_a_lion }
+		}
+		army_experience = 25
+		navy_experience = 25
+		air_experience = 25
+		add_war_support = 0.03
+		random_owned_controlled_state = {
+			limit = {
+				is_core_of = ROOT
+				is_fully_controlled_by = ROOT
+			}
+			add_extra_state_shared_building_slots = 1
+			add_building_construction = {
+				type = fuel_silo
+				level = 1
+				instant_build = yes
+			}
+		}
+	}
+	else = { # GREATER REWARD (from To Live as a Lion focus)
+		army_experience = 30
+		navy_experience = 30
+		air_experience = 30
+		add_war_support = 0.05
+		random_owned_controlled_state = {
+			limit = {
+				is_core_of = ROOT
+				is_fully_controlled_by = ROOT
+			}
+			add_extra_state_shared_building_slots = 2
+			add_building_construction = {
+				type = fuel_silo
+				level = 2
+				instant_build = yes
+			}
+		}
+	}
+}
+
+ITA_promote_umberto_to_country_leader = {
+	if = {
+		limit = {
+			ITA_prince_umberto = {
+				can_be_country_leader = yes
+			}
+		}
+		if = {
+			limit = {
+				ITA_prince_umberto = {
+					has_ideology_group = neutrality
+				}
+			}
+			ITA_prince_umberto = { promote_character = { ideology = despotism } }
+		}
+		else_if = {
+			limit = {
+				ITA_prince_umberto = {
+					has_ideology_group = democratic
+				}
+			}
+			ITA_prince_umberto = { promote_character = { ideology = conservatism } }
+		}
+	}
+	else = {
+		add_country_leader_role = {
+			character =  ITA_prince_umberto
+			promote_leader = yes
+			country_leader = {
+				ideology = despotism
+				traits = { inexperienced_monarch eager_commander }
+				expire = "1965.1.1.1"
+				id = -1
+			}
+		}
+		set_character_name = {
+			character = ITA_prince_umberto
+			name = ITA_prince_umberto_king
+		}
+	}
+
+	if = {
+		limit = {
+			has_character = ITA_victor_emmanuel_iii
+		}
+		retire_character = ITA_victor_emmanuel_iii
+	}
+}
+
+### STRENGTHEN THE AIRFORCE ###
+ITA_missiolini_strengthen_the_airforce_failure_effect = {
+	add_political_power = -25
+	add_war_support = -0.03
+	add_timed_idea = {
+		idea = ITA_disgruntlement_in_the_airforce
+		days = 365
+	}
+}
+
+ITA_missiolini_strengthen_the_airforce_success_effect = {
+	if = { #DEFAULT
+		limit = {
+			NOT = { has_completed_focus = ITA_to_live_as_a_lion }
+		}
+		air_experience = 50
+		add_command_power = 25
+		add_war_support = 0.03
+		add_timed_idea = {
+			idea = ITA_strengthened_the_airforce
+			days = 365
+		}
+	}
+	else = { # GREATER REWARD (from To Live as a Lion focus)
+		air_experience = 60
+		add_command_power = 35
+		add_war_support = 0.05
+		add_timed_idea = {
+			idea = ITA_strengthened_the_airforce_lion_Version
+			days = 365
+		}
+	}
+}
+
+### INDUSTRIAL RESEARCH ###
+ITA_missiolini_industrial_research_failure_effect = {
+	add_political_power = -25
+	add_popularity = {
+		ideology = ROOT
+		popularity = -0.05
+	}
+
+	#CLEAR FLAGS FOR NEXT TIME
+	if = {
+		limit = {
+			has_country_flag = ITA_missiolini_research_production_flag
+		}
+		clr_country_flag = ITA_missiolini_research_production_flag
+	}
+	if = {
+		limit = {
+			has_country_flag = ITA_missiolini_research_industry_flag
+		}
+		clr_country_flag = ITA_missiolini_research_industry_flag
+	}
+	if = {
+		limit = {
+			has_country_flag = ITA_missiolini_research_construction_flag
+		}
+		clr_country_flag = ITA_missiolini_research_construction_flag
+	}
+}
+
+ITA_missiolini_industrial_research_success_effect = {
+	if = { #DEFAULT
+		limit = {
+			NOT = { has_completed_focus = ITA_to_live_as_a_lion }
+		}
+		add_political_power = 25
+		add_tech_bonus = {
+			name = ITA_missiolini_industrial_research
+			bonus = 0.5
+			uses = 2
+			category = industry
+			category = air_equipment
+			category = naval_equipment
+			category = artillery
+			category = armor
+			category = motorized_equipment
+		}
+	}
+	else = { # GREATER REWARD (from To Live as a Lion focus)
+		add_political_power = 35
+		add_tech_bonus = {
+			name = ITA_missiolini_industrial_research
+			bonus = 0.75
+			uses = 2
+			category = industry
+			category = air_equipment
+			category = naval_equipment
+			category = artillery
+			category = armor
+			category = motorized_equipment
+		}
+	}
+
+	#CLEAR FLAGS FOR NEXT TIME
+	if = {
+		limit = {
+			has_country_flag = ITA_missiolini_research_production_flag
+		}
+		clr_country_flag = ITA_missiolini_research_production_flag
+	}
+	if = {
+		limit = {
+			has_country_flag = ITA_missiolini_research_industry_flag
+		}
+		clr_country_flag = ITA_missiolini_research_industry_flag
+	}
+	if = {
+		limit = {
+			has_country_flag = ITA_missiolini_research_construction_flag
+		}
+		clr_country_flag = ITA_missiolini_research_construction_flag
+	}
+}
+
+### EXPAND INTELLIGENCE SERVICE ###
+ITA_missiolini_expand_intelligence_service_failure_effect = {
+	add_political_power = -25
+	add_popularity = {
+		ideology = ROOT
+		popularity = -0.05
+	}
+
+	#CLEAR FLAG FOR NEXT TIME
+	clr_country_flag = ITA_missiolini_upgrade_agency_goal_flag
+}
+
+ITA_missiolini_expand_intelligence_service_success_effect = {
+	if = { #DEFAULT
+		limit = {
+			NOT = { has_completed_focus = ITA_to_live_as_a_lion }
+		}
+		add_political_power = 25
+		#ASSIGN APPROPRIATE REWARD
+		if = { #Upgrade - Passive Defense
+			limit = {
+				has_country_flag = { flag = ITA_missiolini_upgrade_agency_goal_flag value = 5 } #Need to do checks in inverted order (ie. if value = 5, checking for value = 1 also returns true apparently)
+			}
+			add_timed_idea = {
+				idea = ITA_expanded_intelligence_service_passive_defense
+				days = 365
+			}
+		}
+		else_if = { #Upgrade - Anti-Partisan
+			limit = {
+				has_country_flag = { flag = ITA_missiolini_research_production_flag value = 4 }
+			}
+			add_timed_idea = {
+				idea = ITA_expanded_intelligence_service_anti_partisan
+				days = 365
+			}
+		}
+		else_if = { #Upgrade - Form Army Department
+			limit = {
+				has_country_flag = { flag = ITA_missiolini_research_production_flag value = 3 }
+			}
+			add_timed_idea = {
+				idea = ITA_expanded_intelligence_service_army_department
+				days = 365
+			}
+		}
+		else_if = { #Upgrade - Form Cryptology Department
+			limit = {
+				has_country_flag = { flag = ITA_missiolini_research_production_flag value = 2 }
+			}
+			add_timed_idea = {
+				idea = ITA_expanded_intelligence_service_cryptology_department
+				days = 365
+			}
+		}
+		else = { #Create Intel Agency + Fallback
+			add_timed_idea = {
+				idea = ITA_expanded_intelligence_service_basic
+				days = 365
+			}
+		}
+	}
+	else = { # GREATER REWARD (from To Live as a Lion focus)
+		add_political_power = 25
+		#ASSIGN APPROPRIATE REWARD
+		if = { #Upgrade - Passive Defense
+			limit = {
+				has_country_flag = { flag = ITA_missiolini_upgrade_agency_goal_flag value = 5 } #Need to do checks in inverted order (ie. if value = 5, checking for value = 1 also returns true apparently)
+			}
+			add_timed_idea = {
+				idea = ITA_expanded_intelligence_service_passive_defense_lion_version
+				days = 365
+			}
+		}
+		else_if = { #Upgrade - Anti-Partisan
+			limit = {
+				has_country_flag = { flag = ITA_missiolini_research_production_flag value = 4 }
+			}
+			add_timed_idea = {
+				idea = ITA_expanded_intelligence_service_anti_partisan_lion_version
+				days = 365
+			}
+		}
+		else_if = { #Upgrade - Form Army Department
+			limit = {
+				has_country_flag = { flag = ITA_missiolini_research_production_flag value = 3 }
+			}
+			add_timed_idea = {
+				idea = ITA_expanded_intelligence_service_army_department_lion_version
+				days = 365
+			}
+		}
+		else_if = { #Upgrade - Form Cryptology Department
+			limit = {
+				has_country_flag = { flag = ITA_missiolini_research_production_flag value = 2 }
+			}
+			add_timed_idea = {
+				idea = ITA_expanded_intelligence_service_cryptology_department_lion_version
+				days = 365
+			}
+		}
+		else = { #Create Intel Agency + Fallback
+			add_timed_idea = {
+				idea = ITA_expanded_intelligence_service_basic_lion_version
+				days = 365
+			}
+		}
+	}
+
+	#CLEAR FLAG FOR NEXT TIME
+	clr_country_flag = ITA_missiolini_upgrade_agency_goal_flag
+}
+
+
+### OCCUPY ALBANIA ###
+ITA_missiolini_occupy_albania_failure_effect = {
+	add_political_power = -25
+	add_popularity = {
+		ideology = ROOT
+		popularity = -0.05
+	}
+}
+
+ITA_missiolini_occupy_albania_success_effect = {
+	if = { #DEFAULT
+		limit = {
+			NOT = { has_completed_focus = ITA_to_live_as_a_lion }
+		}
+		add_political_power = 50
+		add_popularity = {
+			ideology = ROOT
+			popularity = 0.05
+		}
+		custom_effect_tooltip = ITA_missiolini_occupy_albania_occupation_effects
+		effect_tooltip = {
+			44 = { #ALBANIA
+				add_compliance = 5
+				add_resistance = -5
+			}
+			805 = { #NORTHERN EPIRUS
+				add_compliance = 5
+				add_resistance = -5
+			}
+		}
+
+		custom_effect_tooltip = ITA_missiolini_occupy_albania_subject_effects
+		effect_tooltip = {
+			ALB = {
+				add_autonomy_score = {
+					value = -35
+					localization = ITA_missiolini_firmly_established_italian_administration_autonomy_text
+				}
+			}
+		}
+
+		hidden_effect = {
+			if = {
+				limit = {
+					44 = {
+						is_fully_controlled_by = ROOT
+						has_resistance = yes
+					}
+				}
+				44 = { #ALBANIA
+					add_compliance = 5
+					add_resistance = -5
+				}
+			}
+			if = {
+				limit = {
+					805 = {
+						is_fully_controlled_by = ROOT
+						has_resistance = yes
+					}
+				}
+				805 = { #NORTHERN EPIRUS
+					add_compliance = 5
+					add_resistance = -5
+				}
+			}
+			if = {
+				limit = {
+					has_subject_autonomy_feature = yes
+					any_other_country = {
+						original_tag = ALB
+						is_subject_of = ROOT
+					}
+				}
+				random_subject_country = {
+					limit = {
+						original_tag = ALB
+						is_subject_of = ROOT
+					}
+					add_autonomy_score = {
+						value = -35
+						localization = ITA_missiolini_firmly_established_italian_administration_autonomy_text
+					}
+				}
+			}
+		}
+	}
+	else = { # GREATER REWARD (from To Live as a Lion focus)
+		add_political_power = 65
+		add_popularity = {
+			ideology = ROOT
+			popularity = 0.1
+		}
+		custom_effect_tooltip = ITA_missiolini_occupy_albania_occupation_effects
+		effect_tooltip = {
+			44 = { #ALBANIA
+				add_compliance = 5
+				add_resistance = -5
+			}
+			805 = { #NORTHERN EPIRUS
+				add_compliance = 5
+				add_resistance = -5
+			}
+		}
+
+		custom_effect_tooltip = ITA_missiolini_occupy_albania_subject_effects
+		effect_tooltip = {
+			ALB = {
+				add_autonomy_score = {
+					value = -50
+					localization = ITA_missiolini_firmly_established_italian_administration_autonomy_text
+				}
+			}
+		}
+
+		hidden_effect = {
+			if = {
+				limit = {
+					44 = {
+						is_fully_controlled_by = ROOT
+						has_resistance = yes
+					}
+				}
+				44 = { #ALBANIA
+					add_compliance = 5
+					add_resistance = -5
+				}
+			}
+			if = {
+				limit = {
+					805 = {
+						is_fully_controlled_by = ROOT
+						has_resistance = yes
+					}
+				}
+				805 = { #NORTHERN EPIRUS
+					add_compliance = 5
+					add_resistance = -5
+				}
+			}
+			if = {
+				limit = {
+					has_subject_autonomy_feature = yes
+					any_other_country = {
+						original_tag = ALB
+						is_subject_of = ROOT
+					}
+				}
+				random_subject_country = {
+					limit = {
+						original_tag = ALB
+						is_subject_of = ROOT
+					}
+					add_autonomy_score = {
+						value = -50
+						localization = ITA_missiolini_firmly_established_italian_administration_autonomy_text
+					}
+				}
+			}
+		}
+	}
+}
+
+
+### OCCUPY DALMATIA ###
+ITA_missiolini_occupy_dalmatia_failure_effect = {
+	add_political_power = -25
+	add_war_support = -0.03
+	add_popularity = {
+		ideology = ROOT
+		popularity = -0.05
+	}
+}
+
+ITA_missiolini_occupy_dalmatia_success_effect = {
+	if = { #DEFAULT
+		limit = {
+			NOT = { has_completed_focus = ITA_to_live_as_a_lion }
+		}
+		add_political_power = 50
+		add_war_support = 0.03
+		add_popularity = {
+			ideology = ROOT
+			popularity = 0.05
+		}
+		if = {
+			limit = {
+				103 = {
+					is_fully_controlled_by = ROOT
+					has_resistance = yes
+				}
+			}
+			103 = { #DALMATIA
+				add_compliance = 5 #WARNING CHANGING THESE NUMBERS REQUIRES CHANGING THE TOOLTIPS
+				add_resistance = -5
+			}
+			every_controlled_state = {
+				limit = {
+					is_core_of = YUG
+					is_fully_controlled_by = ROOT
+					NOT = { state = 103 } #Dalmatia goes first above
+					has_resistance = yes
+				}
+				add_compliance = 5
+				add_resistance = -5
+			}
+		}
+		else = {
+			custom_effect_tooltip = ITA_missiolini_occupy_dalmatia_occupation_effects
+		}
+
+		if = {
+			limit = {
+				has_subject_autonomy_feature = yes
+			}
+			if = {
+				limit = {
+					103 = {
+						controller = {
+							has_full_control_of_state = PREV
+							is_subject_of = ROOT
+						}
+					}
+				}
+				103 = { #DALMATIA
+					controller = {
+						add_autonomy_score = {
+							value = -35
+							localization = ITA_missiolini_firmly_established_italian_administration_autonomy_text
+						}
+						every_other_country = { #Also apply effects to any other Italian puppets formerly Yugoslavian
+							limit = {
+								is_subject_of = ROOT
+								capital_scope = {
+									is_core_of = YUG
+									is_fully_controlled_by = PREV
+								}
+							}
+							add_autonomy_score = {
+								value = -35
+								localization = ITA_missiolini_firmly_established_italian_administration_autonomy_text
+							}
+						}
+					}
+				}
+			}
+			else = {
+				custom_effect_tooltip = ITA_missiolini_occupy_dalmatia_subject_effects
+				effect_tooltip = {
+					add_autonomy_score = {
+						value = -35
+						localization = ITA_missiolini_firmly_established_italian_administration_autonomy_text
+					}
+				}
+			}
+		}
+	}
+	else = { # GREATER REWARD (from To Live as a Lion focus)
+		add_political_power = 65
+		add_war_support = 0.05
+		add_popularity = {
+			ideology = ROOT
+			popularity = 0.1
+		}
+		if = {
+			limit = {
+				103 = {
+					is_fully_controlled_by = ROOT
+					has_resistance = yes
+				}
+			}
+			103 = { #DALMATIA
+				add_compliance = 5 #WARNING CHANGING THESE NUMBERS REQUIRES CHANGING THE TOOLTIPS
+				add_resistance = -5
+			}
+			every_controlled_state = {
+				limit = {
+					is_core_of = YUG
+					is_fully_controlled_by = ROOT
+					NOT = { state = 103 } #Dalmatia goes first above
+					has_resistance = yes
+				}
+				add_compliance = 5
+				add_resistance = -5
+			}
+		}
+		else = {
+			custom_effect_tooltip = ITA_missiolini_occupy_dalmatia_occupation_effects
+		}
+
+		if = {
+			limit = {
+				has_subject_autonomy_feature = yes
+			}
+			if = {
+				limit = {
+					103 = {
+						controller = {
+							has_full_control_of_state = PREV
+							is_subject_of = ROOT
+						}
+					}
+				}
+				103 = { #DALMATIA
+					controller = {
+						add_autonomy_score = {
+							value = -50
+							localization = ITA_missiolini_firmly_established_italian_administration_autonomy_text
+						}
+						every_other_country = { #Also apply effects to any other Italian puppets formerly Yugoslavian
+							limit = {
+								is_subject_of = ROOT
+								capital_scope = {
+									is_core_of = YUG
+									is_fully_controlled_by = PREV
+								}
+							}
+							add_autonomy_score = {
+								value = -50
+								localization = ITA_missiolini_firmly_established_italian_administration_autonomy_text
+							}
+						}
+					}
+				}
+			}
+			else = {
+				custom_effect_tooltip = ITA_missiolini_occupy_dalmatia_subject_effects
+				effect_tooltip = {
+					add_autonomy_score = {
+						value = -50
+						localization = ITA_missiolini_firmly_established_italian_administration_autonomy_text
+					}
+				}
+			}
+		}
+	}
+}
+
+### OCCUPY GREECE ###
+ITA_missiolini_occupy_greece_failure_effect = {
+	add_political_power = -25
+	add_war_support = -0.03
+	add_popularity = {
+		ideology = ROOT
+		popularity = -0.05
+	}
+}
+
+ITA_missiolini_occupy_greece_success_effect = {
+	if = { #DEFAULT
+		limit = {
+			NOT = { has_completed_focus = ITA_to_live_as_a_lion }
+		}
+		add_political_power = 50
+		add_war_support = 0.03
+		add_popularity = {
+			ideology = ROOT
+			popularity = 0.05
+		}
+
+		custom_effect_tooltip = ITA_missiolini_occupy_greece_occupation_effects
+		every_controlled_state = {
+			limit = {
+				is_core_of = GRE
+				is_fully_controlled_by = ROOT
+				has_resistance = yes
+			}
+			add_compliance = 5 #WARNING CHANGING THESE NUMBERS REQUIRES CHANGING THE TOOLTIPS
+			add_resistance = -5
+		}
+
+		if = {
+			limit = {
+				has_subject_autonomy_feature = yes
+			}
+			if = {
+				limit = {
+					GRE = {
+						is_subject_of = ROOT
+					}
+				}
+				GRE = {
+					add_autonomy_score = {
+						value = -35
+						localization = ITA_missiolini_firmly_established_italian_administration_autonomy_text
+					}
+				}
+			}
+			else = {
+				custom_effect_tooltip = ITA_missiolini_occupy_greece_subject_effects
+				effect_tooltip = {
+					GRE = {
+						add_autonomy_score = {
+							value = -35
+							localization = ITA_missiolini_firmly_established_italian_administration_autonomy_text
+						}
+					}
+				}
+			}
+		}
+	}
+	else = { # GREATER REWARD (from To Live as a Lion focus)
+		add_political_power = 65
+		add_war_support = 0.05
+		add_popularity = {
+			ideology = ROOT
+			popularity = 0.1
+		}
+
+		custom_effect_tooltip = ITA_missiolini_occupy_greece_occupation_effects
+		every_controlled_state = {
+			limit = {
+				is_core_of = GRE
+				is_fully_controlled_by = ROOT
+				has_resistance = yes
+			}
+			add_compliance = 5 #WARNING CHANGING THESE NUMBERS REQUIRES CHANGING THE TOOLTIPS
+			add_resistance = -5
+		}
+
+		if = {
+			limit = {
+				has_subject_autonomy_feature = yes
+			}
+			if = {
+				limit = {
+					GRE = {
+						is_subject_of = ROOT
+					}
+				}
+				GRE = {
+					add_autonomy_score = {
+						value = -50
+						localization = ITA_missiolini_firmly_established_italian_administration_autonomy_text
+					}
+				}
+			}
+			else = {
+				custom_effect_tooltip = ITA_missiolini_occupy_greece_subject_effects
+				effect_tooltip = {
+					GRE = {
+						add_autonomy_score = {
+							value = -50
+							localization = ITA_missiolini_firmly_established_italian_administration_autonomy_text
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+
+### OCCUPY TICINO ###
+ITA_missiolini_occupy_ticino_failure_effect = {
+	add_political_power = -25
+	add_war_support = -0.03
+	add_popularity = {
+		ideology = ROOT
+		popularity = -0.05
+	}
+}
+
+ITA_missiolini_occupy_ticino_success_effect = {
+	if = { #DEFAULT
+		limit = {
+			NOT = { has_completed_focus = ITA_to_live_as_a_lion }
+		}
+		add_political_power = 50
+		add_war_support = 0.03
+		add_popularity = {
+			ideology = ROOT
+			popularity = 0.05
+		}
+
+		custom_effect_tooltip = ITA_missiolini_occupy_ticino_occupation_effects
+		every_controlled_state = {
+			limit = {
+				is_core_of = SWI
+				is_fully_controlled_by = ROOT
+				has_resistance = yes
+			}
+			add_compliance = 5 #WARNING CHANGING THESE NUMBERS REQUIRES CHANGING THE TOOLTIPS
+			add_resistance = -5
+		}
+
+		if = {
+			limit = {
+				has_subject_autonomy_feature = yes
+			}
+			if = {
+				limit = {
+					SWI = {
+						is_subject_of = ROOT
+					}
+				}
+				SWI = {
+					add_autonomy_score = {
+						value = -35
+						localization = ITA_missiolini_firmly_established_italian_administration_autonomy_text
+					}
+				}
+			}
+			else = {
+				custom_effect_tooltip = ITA_missiolini_occupy_ticino_subject_effects
+				effect_tooltip = {
+					SWI = {
+						add_autonomy_score = {
+							value = -35
+							localization = ITA_missiolini_firmly_established_italian_administration_autonomy_text
+						}
+					}
+				}
+			}
+		}
+	}
+	else = { # GREATER REWARD (from To Live as a Lion focus)
+		add_political_power = 65
+		add_war_support = 0.05
+		add_popularity = {
+			ideology = ROOT
+			popularity = 0.1
+		}
+
+		custom_effect_tooltip = ITA_missiolini_occupy_ticino_occupation_effects
+		every_controlled_state = {
+			limit = {
+				is_core_of = SWI
+				is_fully_controlled_by = ROOT
+				has_resistance = yes
+			}
+			add_compliance = 5 #WARNING CHANGING THESE NUMBERS REQUIRES CHANGING THE TOOLTIPS
+			add_resistance = -5
+		}
+
+		if = {
+			limit = {
+				has_subject_autonomy_feature = yes
+			}
+			if = {
+				limit = {
+					SWI = {
+						is_subject_of = ROOT
+					}
+				}
+				SWI = {
+					add_autonomy_score = {
+						value = -50
+						localization = ITA_missiolini_firmly_established_italian_administration_autonomy_text
+					}
+				}
+			}
+			else = {
+				custom_effect_tooltip = ITA_missiolini_occupy_ticino_subject_effects
+				effect_tooltip = {
+					SWI = {
+						add_autonomy_score = {
+							value = -50
+							localization = ITA_missiolini_firmly_established_italian_administration_autonomy_text
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+### BOLSTER POLITICAL CABINET ###
+ITA_missiolini_bolster_political_cabinet_failure_effect = {
+	add_political_power = -25
+	add_stability = -0.03
+	add_popularity = {
+		ideology = ROOT
+		popularity = -0.05
+	}
+}
+
+ITA_missiolini_bolster_political_cabinet_success_effect = {
+	if = { #DEFAULT
+		limit = {
+			NOT = { has_completed_focus = ITA_to_live_as_a_lion }
+		}
+		add_political_power = 50
+		add_stability = 0.03
+		add_popularity = {
+			ideology = ROOT
+			popularity = 0.05
+		}
+		add_timed_idea = {
+			idea = ITA_bolstered_political_cabinet
+			days = 365
+		}
+	}
+	else = { # GREATER REWARD (from To Live as a Lion focus)
+		add_political_power = 65
+		add_stability = 0.05
+		add_popularity = {
+			ideology = ROOT
+			popularity = 0.1
+		}
+		add_timed_idea = {
+			idea = ITA_bolstered_political_cabinet_lion_version
+			days = 365
+		}
+	}
+}
+
+### BOLSTER MILITARY HIGH COMMAND ###
+ITA_missiolini_bolster_military_high_command_failure_effect = {
+	add_political_power = -25
+	add_war_support = -0.03
+	add_popularity = {
+		ideology = ROOT
+		popularity = -0.05
+	}
+}
+
+ITA_missiolini_bolster_military_high_command_success_effect = {
+	if = { #DEFAULT
+		limit = {
+			NOT = { has_completed_focus = ITA_to_live_as_a_lion }
+		}
+		add_political_power = 25
+		add_command_power = 25
+		add_war_support = 0.03
+		add_popularity = {
+			ideology = ROOT
+			popularity = 0.05
+		}
+		add_timed_idea = { #First so that CP doesn't stack in case it's maxed out
+			idea = ITA_bolstered_political_cabinet
+			days = 365
+		}
+	}
+	else = { # GREATER REWARD (from To Live as a Lion focus)
+		add_political_power = 35
+		add_command_power = 35
+		add_war_support = 0.05
+		add_popularity = {
+			ideology = ROOT
+			popularity = 0.1
+		}
+		add_timed_idea = { #First so that CP doesn't stack in case it's maxed out
+			idea = ITA_bolstered_political_cabinet_lion_version
+			days = 365
+		}
+	}
+}
+
+ITA_remove_king_victor_emmanuel_as_idea = {
+	if = {
+		limit = {
+			has_idea = victor_emmanuel
+		}
+		remove_ideas = victor_emmanuel
+	}
+	else_if = {
+		limit = {
+			has_idea = victor_emmanuel_emperor_of_ethiopia
+		}
+		remove_ideas = victor_emmanuel_emperor_of_ethiopia
+	}
+	else_if = {
+		limit = {
+			has_idea = victor_emmanuel_king_of_albania
+		}
+		remove_ideas = victor_emmanuel_king_of_albania
+	}
+	else_if = {
+		limit = {
+			has_idea = victor_emmanuel_albania_ethiopia
+		}
+		remove_ideas = victor_emmanuel_albania_ethiopia
+	}
+	set_country_flag = ITA_deposed_the_king
+}
+
+ITA_add_king_victor_emmanuel_back_as_idea = { #After having removed him
+	if = {
+		limit = {
+			has_completed_focus = ITA_the_new_emperor_of_ethiopia
+			ITA_victor_emmanuel_iii = { has_character_flag = ITA_king_of_albania_flag }
+		}
+		add_ideas = victor_emmanuel_albania_ethiopia
+
+	}
+	else_if = {
+		limit = {
+			ITA_victor_emmanuel_iii = { has_character_flag = ITA_king_of_albania_flag }
+		}
+		add_ideas = victor_emmanuel_king_of_albania
+	}
+	else_if = {
+		limit = {
+			has_completed_focus = ITA_the_new_emperor_of_ethiopia
+		}
+		add_ideas = victor_emmanuel_emperor_of_ethiopia
+	}
+	else = {
+		add_ideas = victor_emmanuel
+	}
+	if = {
+		limit = {
+			has_country_flag = ITA_deposed_the_king
+		}
+		clr_country_flag = ITA_deposed_the_king
+	}
+}
+ITA_mobilize_railway_guns = {
+	custom_effect_tooltip = ITA_mobilize_railway_guns_tt
+	hidden_effect = {
+		create_railway_gun = {
+			equipment = railway_gun_equipment_1
+			name = "1o Cannone da 381/40"
+		}
+		create_railway_gun = {
+			equipment = railway_gun_equipment_1
+			name = "2o Cannone da 381/40"
+		}
+		create_railway_gun = {
+			equipment = railway_gun_equipment_1
+			name = "3o Cannone da 381/40"
+		}
+		create_railway_gun = {
+			equipment = railway_gun_equipment_1
+			name = "4o Cannone da 381/40"
+		}
+	}
+}
+
 ITA_garrison_control_tooltip = {
 	if = {
 		limit = {
 			check_variable = { var = ITA_garrison_control value = 1 compare = equals }
-			ROOT = { has_completed_focus = ITA_dismiss_mussolini }
+			ROOT = { has_completed_focus = ITA_depose_mussolini }
 		}
 		custom_effect_tooltip = ITA_garrison_control_none_tt
 	}
 	if = {
 		limit = {
 			check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-			ROOT = { has_completed_focus = ITA_dismiss_mussolini }
+			ROOT = { has_completed_focus = ITA_depose_mussolini }
 		}
 		custom_effect_tooltip = ITA_garrison_control_weak_tt
 	}
 	if = {
 		limit = {
 			check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-			ROOT = { has_completed_focus = ITA_dismiss_mussolini }
+			ROOT = { has_completed_focus = ITA_depose_mussolini }
 		}
 		custom_effect_tooltip = ITA_garrison_control_strong_tt
 	}
 	if = {
 		limit = {
 			check_variable = { var = ITA_garrison_control value = 4 compare = equals }
-			ROOT = { has_completed_focus = ITA_dismiss_mussolini }
+			ROOT = { has_completed_focus = ITA_depose_mussolini }
 		}
 		custom_effect_tooltip = ITA_garrison_control_total_tt
 	}
@@ -3039,6 +4382,281 @@ ITA_political_instability_update_effect = {
 					has_idea = ITA_Communists_stability_1
 				}
 				remove_ideas = ITA_Communists_stability_1
+			}
+		}
+	}
+}
+
+### OPERATIVES
+ITA_create_francesco_de_martini_operative = { #INITIAL
+	create_operative_leader = {
+		name = "Francesco de Martini"
+		GFX = GFX_portrait_ITA_francesco_de_martini
+		traits = { operative_commando operative_demolition_expert operative_linguist }
+		bypass_recruitment = no
+		available_to_spy_master = yes
+		nationalities = { ITA SYR ETH }
+	}
+}
+
+ITA_create_paolo_caccia_dominioni_operative = { #INITIAL
+	create_operative_leader = {
+		name = "Paolo Caccia Dominioni"
+		GFX = GFX_portrait_ITA_paolo_caccia_dominioni
+		traits = { operative_safe_cracker operative_tough operative_escape_artist }
+		bypass_recruitment = no
+		available_to_spy_master = yes
+		nationalities = { ITA EGY }
+	}
+}
+
+ITA_create_rosa_dainelli_operative = { #SIM
+	create_operative_leader = {
+		name = "Rosa Dainelli"
+		GFX = GFX_portrait_ITA_rosa_dainelli
+		traits = { operative_commando operative_demolition_expert }
+		bypass_recruitment = no
+		available_to_spy_master = yes
+		nationalities = { ITA ETH }
+	}
+}
+
+ITA_create_padre_ildefonso_operative = { #FASCIST
+	create_operative_leader = {
+		name = "Padre Ildefonso" #Alfredo Epaminonda Troya
+		GFX = GFX_portrait_ITA_epaminonda_troya
+		traits = { operative_master_interrogator operative_natural_orator }
+		bypass_recruitment = no
+		available_to_spy_master = yes
+		nationalities = { ITA }
+	}
+}
+
+ITA_create_pietro_koch_operative = { #FASCIST
+	create_operative_leader = {
+		name = "Pietro Koch"
+		GFX = GFX_portrait_ITA_pietro_koch
+		traits = { operative_master_interrogator operative_tough operative_well_groomed }
+		bypass_recruitment = no
+		available_to_spy_master = yes
+		nationalities = { ITA GER }
+	}
+}
+
+ITA_create_carmelo_borg_pisani_operative = { #FASCIST/MONARCHIST
+	create_operative_leader = {
+		name = "Carmelo Borg Pisani"
+		GFX = GFX_portrait_ITA_carmelo_borg_pisani
+		traits = { operative_natural_orator operative_well_groomed }
+		bypass_recruitment = no
+		available_to_spy_master = yes
+		nationalities = { ITA ENG }
+	}
+}
+
+ITA_create_hugh_o_flaherty_operative = { #MONARCHIST (PAPAL)
+	create_operative_leader = {
+		name = "Hugh O'Flaherty" #"The Scarlet Pimpernel of the Vatican"
+		GFX = GFX_portrait_ITA_hugh_o_flaherty
+		traits = { operative_escape_artist operative_natural_orator operative_linguist }
+		bypass_recruitment = no
+		available_to_spy_master = yes
+		nationalities = { ITA IRE }
+	}
+}
+
+ITA_create_maurizio_giglio_operative = { #DEMOCRATIC
+	create_operative_leader = { #This guy worked for the allies
+		name = "Maurizio Giglio"
+		GFX = GFX_portrait_ITA_maurizio_giglio
+		traits = { operative_infiltrator operative_tough operative_double_agent }
+		bypass_recruitment = no
+		available_to_spy_master = yes
+		nationalities = { ITA }
+	}
+}
+
+ITA_create_emilio_faldella_operative = { #DEMOCRATIC
+	create_operative_leader = { #This guy worked for the allies
+		name = "Emilio Faldella"
+		GFX = GFX_portrait_ITA_emilio_faldella
+		traits = { operative_well_groomed operative_commando operative_double_agent }
+		bypass_recruitment = no
+		available_to_spy_master = yes
+		nationalities = { ITA SPR }
+	}
+}
+
+ITA_create_edgardo_sogno_operative = { #DEMOCRATIC (Liberal)
+	create_operative_leader = {
+		name = "Edgardo Sogno"
+		GFX = GFX_portrait_ITA_edgardo_sogno
+		traits = { operative_linguist operative_natural_orator }
+		bypass_recruitment = no
+		available_to_spy_master = yes
+		nationalities = { ITA }
+	}
+}
+
+ITA_create_laura_garroni_operative = { #COMMUNIST (Gappisti)
+	create_operative_leader = {
+		name = "Laura Garroni"
+		GFX = GFX_portrait_ITA_laura_garroni
+		traits = { operative_demolition_expert operative_commando }
+		bypass_recruitment = no
+		available_to_spy_master = yes
+		nationalities = { ITA }
+	}
+}
+
+ITA_create_stefanina_moro_operative = { #COMMUNIST
+	create_operative_leader = {
+		name = "Stefanina Moro"
+		GFX = GFX_portrait_ITA_stefanina_moro
+		traits = { operative_infiltrator operative_tough }
+		bypass_recruitment = no
+		available_to_spy_master = yes
+		nationalities = { ITA }
+	}
+}
+
+ITA_forced_italo_ethiopian_peace_deal = {
+	if = {
+		limit = {
+			OR = {
+				AND = {
+					ETH = {
+						any_core_state = {
+							is_controlled_by = ITA
+						}
+					}
+					ITA = {
+						any_owned_state = {
+							is_controlled_by = ETH
+						}
+					}
+				}
+				AND = {
+					ITA = { surrender_progress < 0.01 }
+					ETH = { surrender_progress < 0.01 }
+				}
+			}
+		}
+		ETH = {
+			white_peace = ITA
+		}
+	}
+	else_if = {
+		limit = {
+			ETH = {
+				all_core_state = {
+					is_controlled_by = ITA
+				}
+			}
+		}
+		ITA = {
+			start_peace_conference = {
+				tag = ETH
+				score_factor = 0.25
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			ETH = { surrender_progress > 0.74 }
+		}
+		ITA = {
+			start_peace_conference = {
+				tag = ETH
+				score_factor = 0.20
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			ETH = { surrender_progress > 0.49 }
+		}
+		ITA = {
+			start_peace_conference = {
+				tag = ETH
+				score_factor = 0.15
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			ETH = { surrender_progress > 0.19 }
+		}
+		ITA = {
+			start_peace_conference = {
+				tag = ETH
+				score_factor = 0.1
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			ETH = { surrender_progress > 0 }
+		}
+		ITA = {
+			start_peace_conference = {
+				tag = ETH
+				score_factor = 0.05
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			ITA = { surrender_progress > 0.74 }
+		}
+		ETH = {
+			start_peace_conference = {
+				tag = ITA
+				score_factor = 0.125
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			ITA = { surrender_progress > 0.49 }
+		}
+		ETH = {
+			start_peace_conference = {
+				tag = ITA
+				score_factor = 0.1
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			ITA = { surrender_progress > 0.19 }
+		}
+		ETH = {
+			start_peace_conference = {
+				tag = ITA
+				score_factor = 0.075
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			ITA = { surrender_progress > 0 }
+		}
+		ETH = {
+			start_peace_conference = {
+				tag = ITA
+				score_factor = 0.05
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			ITA = { surrender_progress < 0.01 }
+		}
+		ETH = {
+			start_peace_conference = {
+				tag = ITA
+				score_factor = 0.025
 			}
 		}
 	}
