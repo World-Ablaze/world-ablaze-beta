@@ -80,7 +80,7 @@ NDefines.NCountry.FUEL_LEASE_CONVOY_RATIO = 0.00005									-- num convoys neede
 NDefines.NCountry.SUPPLY_PORT_LEVEL_THROUGHPUT = 3			    					-- supply throughput per level of naval base
 NDefines.NCountry.EVENT_PROCESS_OFFSET = 7											-- Events are checked every X day per country or state (1 is ideal, but CPU heavy)
 
-NDefines.NCountry.AIR_SUPPLY_CONVERSION_SCALE = 0									-- Conversion scale for planes to air supply
+NDefines.NCountry.AIR_SUPPLY_CONVERSION_SCALE = 0.01								-- Conversion scale for planes to air supply
 NDefines.NCountry.AIR_SUPPLY_DROP_EXPIRATION_HOURS = 24								-- Air drop length after being dropped
 
 NDefines.NCountry.REINFORCEMENT_EQUIPMENT_DELIVERY_SPEED = 0.1						-- Modifier for army equipment reinforcement speed
@@ -686,11 +686,10 @@ NDefines.NNavy.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
 
 NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.1									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
 NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST = 500
-NDefines.NSupply.LOCAL_SUPPLY_PER_AIR_MISSION = 0.2									-- each assigned plane gives this much supply at full efficiency  #AIR_SUPPLY AIR SUPPLY
 NDefines.NSupply.CAPITAL_SUPPLY_CIVILIAN_FACTORIES = 0.3 							-- supply from one civilian factory
 NDefines.NSupply.CAPITAL_SUPPLY_MILITARY_FACTORIES = 0.6 							-- supply from one military factory
 NDefines.NSupply.AVAILABLE_MANPOWER_STATE_SUPPLY = 0.18								--Factor for state supply from max manpower (population)
-NDefines.NSupply.NON_CORE_MANPOWER_STATE_SUPPLY = 0.05						--Factor for population sttate supply when controlled by an occupier (NO TAKE FOOD)
+NDefines.NSupply.NON_CORE_MANPOWER_STATE_SUPPLY = 0.05								--Factor for population sttate supply when controlled by an occupier (NO TAKE FOOD)
 
 NDefines.NSupply.NAVAL_BASE_FLOW = 0.0 												-- max output/input of a naval node is limited by this base value + additional ratio for each level
 NDefines.NSupply.NAVAL_FLOW_PER_LEVEL = 5.0 										-- max output/input of a naval node is limited by previous base value + this define per its level
@@ -716,14 +715,13 @@ NDefines.NSupply.RAILWAY_FLOW_PENALTY_PER_DAMAGED = 8.0 							-- penalty to flo
 NDefines.NSupply.SUPPLY_PATH_MAX_DISTANCE = 45										-- max time it can take
 NDefines.NSupply.RAILWAY_DISTANCE_FACTOR_FOR_REINFORCEMENT_SPEED = 0.05 			-- time factor for total railway distance
 
-NDefines.NSupply.LOCAL_SUPPLY_PER_AIR_MISSION = 0.01 								-- each assigned plane gives this much supply at full efficiency
 
 NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN = 15 									-- railways will be put on cooldown when they are captured by enemy and will not be usable during the cooldown
 NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN_CORE = 5
 NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN_CIVILWAR = 0
 
 NDefines.NSupply.SUPPLY_THRESHOLD_FOR_ARMY_ATTRITION = 0.4 							-- armies will only get attrition below this supply
-NDefines.NSupply.STORED_SUPPLY_CONSUMPTION_RATE_FACTOR = 1						    --Multiplies consumption rate of stored supply (more/less easement)
+NDefines.NSupply.STORED_SUPPLY_CONSUMPTION_RATE_FACTOR = 1						    -- Multiplies consumption rate of stored supply (more/less easement)
 
 -- armies slowly gains and buffers supply above >100% up to their supply grace if they have efficent supply flow
 -- otherwuse they will lose up to 100% supply every day depending on how bad supply flow is
