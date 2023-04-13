@@ -541,7 +541,7 @@ NDefines.NNavy.MIN_HIT_PROFILE_MULT = 0.25											-- largest hit profile pena
 
 NDefines.NNavy.COMBAT_EVASION_TO_HIT_CHANCE_TORPEDO_MULT = 0						-- the above evasion hit chance is multiplied by 400% if shooting with torpedoes. Torpedoes are slow, so evasion matters more.
 NDefines.NNavy.COMBAT_TORPEDO_CRITICAL_CHANCE = 0.2									-- chance for critical hit from torpedo.
-NDefines.NNavy.HIT_PROFILE_SPEED_FACTOR = 1.2											-- factors speed value when determining it profile (Vis * HIT_PROFILE_MULT * Ship Hit Profile Mult)
+NDefines.NNavy.HIT_PROFILE_SPEED_FACTOR = 1.2										-- factors speed value when determining it profile (Vis * HIT_PROFILE_MULT * Ship Hit Profile Mult)
 
 NDefines.NNavy.MIN_REPAIR_FOR_JOINING_COMBATS = { 									-- strikeforces/patrol forces will not join combats if they are not repaired enough
 	0.0,	-- do not repair
