@@ -214,19 +214,19 @@ on_actions = {
 				set_variable = { var  = ITA_Bourgeoisie_attitude value = -2 }
 				set_variable = { var  = ITA_Proletariat_attitude value = 1 }
 				set_variable = { var  = ITA_Vatican_attitude value = 0 }
-				set_variable = { var  = ITA_Communists_attitude value = -3 }
+				set_variable = { var  = ITA_pci_attitude value = -3 }
 				set_variable = { var  = ITA_Bourgeoisie_influence value = 1 }
 				set_variable = { var  = ITA_Proletariat_influence value = 4 }
 				set_variable = { var  = ITA_Vatican_influence value = 3 }
-				set_variable = { var  = ITA_Communists_influence value = 1 }
+				set_variable = { var  = ITA_pci_influence value = 1 }
 				set_variable = { var  = ITA_Bourgeoisie_political_power_gain value = -1 }
 				set_variable = { var  = ITA_Proletariat_political_power_gain value = 0 }
 				set_variable = { var  = ITA_Vatican_political_power_gain value = 0 }
-				set_variable = { var  = ITA_Communists_political_power_gain value = -1 }
+				set_variable = { var  = ITA_pci_political_power_gain value = -1 }
 				set_variable = { var  = ITA_Bourgeoisie_stability value = -1 }
 				set_variable = { var  = ITA_Proletariat_stability value = 1 }
 				set_variable = { var  = ITA_Vatican_stability value = 2 }
-				set_variable = { var  = ITA_Communists_stability value = 0 }
+				set_variable = { var  = ITA_pci_stability value = -1 }
 				ITA_political_instability_update_effect = yes
 			}
 			#Japan faction set-up
@@ -512,9 +512,29 @@ on_actions = {
 				set_country_flag = FIN_war_since_start
 			}
 		}
+		effect = {
+			if = {
+				limit = {
+					tag = JAP
+					has_war_with = CHI
+				}
+				set_country_flag = { flag = JAP_CHI_war_since_start days = 360 }
+			}
+		}
 	}
 
 	on_peace = {
+		effect = {
+			if = {
+				limit = {
+					OR = {
+						ETH = { exists = no }
+						NOT = { ETH = { has_war_with = ITA } }
+					}
+				}
+				clr_global_flag = second_italo_ethiopian_war_flag
+			}
+		}
 		effect = {
 			if = {
 				limit = {
@@ -692,6 +712,8 @@ on_actions = {
 					set_rule = { can_join_factions = no }
 				}
 			}
+		}
+		effect = {
 		}
 	}
 
@@ -1475,18 +1497,58 @@ on_actions = {
 	on_weekly_SOV  = {
 		effect = {
 			if = {
-				limit = { NOT = { has_country_flag = greatest_airforce_fulfilled } }
-				add_to_variable = { greatest_airforce_fighters = num_deployed_planes_with_type@fighter_multirole_equipment }
-				add_to_variable = { greatest_airforce_tac = num_deployed_planes_with_type@strike_bomber_equipment }
+				limit = { has_variable = greatest_airforce_tac }
+
+				set_variable = { sov_cur_tac = num_deployed_planes_with_type@tac_bomber_equipment }
+				set_variable = { greatest_airforce_tac = sov_cur_tac }
+
+				set_variable = { sov_cur_str = num_deployed_planes_with_type@strike_bomber_equipment }
+				add_to_variable = { greatest_airforce_tac = sov_cur_str }
 			}
 		}
 	}
 	on_weekly_GER  = {
 		effect = {
 			if = {
-				limit = { NOT = { has_country_flag = creation_of_the_panzer_core_fulfilled } }
-				add_to_variable = { creation_of_the_panzer_core_tanks = num_equipment_in_armies@medium_tank_chassis }
-				add_to_variable = { creation_of_the_panzer_core_tanks = num_equipment_in_armies@medium_tank_infantry_support_chassis }
+				limit = { has_variable = creation_of_the_panzer_core_tanks }
+
+				set_variable = { ger_cur_lt = num_equipment_in_armies@light_tank_chassis }
+				set_variable = { creation_of_the_panzer_core_tanks = ger_cur_lt }
+
+				set_variable = { ger_cur_mt = num_equipment_in_armies@medium_tank_chassis }
+				add_to_variable = { creation_of_the_panzer_core_tanks = ger_cur_mt }
+
+				set_variable = { ger_cur_ist = num_equipment_in_armies@medium_tank_infantry_support_chassis }
+				add_to_variable = { creation_of_the_panzer_core_tanks = ger_cur_ist }
+			}
+		}
+	}
+	on_weekly_ENG  = {
+		effect = {
+			if = {
+				limit = { has_variable = creation_of_the_armoured_corps_tanks }
+
+				set_variable = { eng_cur_ht = num_equipment_in_armies@heavy_tank_chassis }
+				set_variable = { creation_of_the_armoured_corps_tanks = eng_cur_ht }
+
+				set_variable = { eng_cur_mt = num_equipment_in_armies@medium_tank_chassis }
+				add_to_variable = { creation_of_the_armoured_corps_tanks = eng_cur_mt }
+
+				set_variable = { eng_cur_hts = num_equipment_in_armies@heavy_tank_support_chassis }
+				add_to_variable = { creation_of_the_armoured_corps_tanks = eng_cur_hts }
+			}
+		}
+	}
+	on_weekly_ITA  = {
+		effect = {
+			if = {
+				limit = { has_variable = modernization_of_the_Regio_esercito_tanks }
+
+				set_variable = { ita_cur_lt = num_equipment_in_armies@light_tank_chassis }
+				set_variable = { modernization_of_the_Regio_esercito_tanks = ita_cur_lt }
+
+				set_variable = { ita_cur_mt = num_equipment_in_armies@medium_tank_chassis }
+				add_to_variable = { modernization_of_the_Regio_esercito_tanks = ita_cur_mt }
 			}
 		}
 	}

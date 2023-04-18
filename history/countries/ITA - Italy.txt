@@ -160,14 +160,17 @@ if = {
 starting_train_buffer = 2
 
 set_research_slots = 6
-set_stability = 0.4
-set_war_support = 0.7
+set_stability = 0.45
+set_war_support = 0.55
 activate_mission = economy_fatigue_partial_economic_mobilisation_mission
 activate_mission = economy_fatigue_limited_exports_mission
 activate_mission = economy_fatigue_volunteer_only_mission
 
+###### Mission Variables ######
+set_variable = { modernization_of_the_Regio_esercito_tanks = 0 }
+
 add_ideas = {
-	economy_fatigue_30
+	economy_fatigue_35
 	vittoria_mutilata
 	limited_exports
 	volunteer_only
@@ -181,20 +184,27 @@ add_ideas = {
 
 
 #INADEQUATE MILITARY
-set_variable = { ITA_inadequate_military_army_org_factor = -0.2 }
-set_variable = { ITA_inadequate_military_army_morale_factor = -0.2 }
-set_variable = { ITA_inadequate_military_training_time_factor = 0.4 }
-set_variable = { ITA_inadequate_military_planning_speed = -0.4 }
-set_variable = { ITA_inadequate_military_experience_gain_army_factor = -0.2 }
-set_variable = { ITA_inadequate_military_air_ace_generation_chance_factor = -0.4 }
-set_variable = { ITA_inadequate_military_air_night_penalty = 0.28 }
-set_variable = { ITA_inadequate_military_air_weather_penalty = 0.28 }
-set_variable = { ITA_inadequate_military_air_mission_efficiency = -0.2 }
-set_variable = { ITA_inadequate_military_naval_coordination = -0.12 }
-set_variable = { ITA_inadequate_military_positioning = -0.12 }
-set_variable = { ITA_inadequate_military_naval_speed_factor = -0.2 }
+set_variable = { ITA_inadequate_army_army_org_factor = -0.2 }
+set_variable = { ITA_inadequate_army_army_morale_factor = -0.2 }
+set_variable = { ITA_inadequate_army_training_time_factor = 0.4 }
+set_variable = { ITA_inadequate_army_planning_speed = -0.8 }
+set_variable = { ITA_inadequate_army_max_planning = -0.8 }
+set_variable = { ITA_inadequate_army_experience_gain_army_factor = -0.4 }
 
-add_dynamic_modifier = { modifier = ITA_inadequate_military_dynamic_modifier }
+add_dynamic_modifier = { modifier = ITA_inadequate_army_dynamic_modifier }
+
+set_variable = { ITA_inadequate_airforce_air_ace_generation_chance_factor = -0.4 }
+set_variable = { ITA_inadequate_airforce_air_night_penalty = 0.28 }
+set_variable = { ITA_inadequate_airforce_air_weather_penalty = 0.28 }
+set_variable = { ITA_inadequate_airforce_air_mission_efficiency = -0.2 }
+
+add_dynamic_modifier = { modifier = ITA_inadequate_airforce_dynamic_modifier }
+
+set_variable = { ITA_inadequate_navy_naval_coordination = -0.12 }
+set_variable = { ITA_inadequate_navy_positioning = -0.12 }
+set_variable = { ITA_inadequate_navy_naval_speed_factor = -0.2 }
+
+add_dynamic_modifier = { modifier = ITA_inadequate_navy_dynamic_modifier }
 
 set_country_flag = League_of_nations_member_flag
 set_country_flag = lon_embargo_flag
@@ -451,6 +461,33 @@ if = {
 		nationalities = { ITA }
 	}
 }
+
+################
+### BBA vars ###
+################
+
+#set_variable = { ITA_cores_lost_for_modifiers = 0 } #TODO_Manu: This will be killed once there is code support for has_bop_modifier or something like that
+set_variable = { ITA_bop_take_over_ministry_cost = 25 }
+set_variable = { ITA_bop_resign_ministry_cost = 15 }
+set_variable = { ITA_bop_liturgical_reforms_cd = 365 }
+
+set_variable = { ITA_bop_concesions_to_the_bourgeoisie_cost = 100 } # Changes if going democratic
+set_variable = { ITA_bop_concesions_to_the_bourgeoisie_days = 180 } # Changes if going democratic
+
+
+set_variable = { ITA_bop_generic_council_cost = 25 }
+
+#Naval Cooperation Programs
+set_variable = { ITA_export_midget_submarines_days = 90 }
+
+# ETHIOPIAN STATES ARRAY
+every_state = {
+	limit = {
+		is_initial_ethiopian_state = yes
+	}
+	add_to_array = { ROOT.ITA_initial_ethiopian_states = THIS }
+}
+
 ########################################
 ##### MISSIOLINIS - TRIGGER EVENTS #####
 ########################################
@@ -460,15 +497,48 @@ if = {
 	limit = {
 		NOT = { has_dlc = "By Blood Alone" }
 	}
-	ITA_benito_mussolini = { unit_leader_event = { id = BBA_italo_ethiopian_war_events.01 days = 14 } }  # JAN 36 - Conquer Ethiopia  - APR/JUNE 36 - (120-170 days)
+	country_event = {
+		id = BBA_italo_ethiopian_war_events.01
+		days = 14
+	}
 }
 
-ITA_benito_mussolini = { unit_leader_event = { id = BBA_italy_missiolinis.11 days = 185 random_days = 5 } } # JUN 36 - Conquer Ethiopia  - DEC 36 - (170 days)
-#ITA_benito_mussolini = { unit_leader_event = { id = BBA_italy_missiolinis.21 days = 370 random_days = 5 } } # JAN 37 - Pacify Ethiopia - DEC 39 - (720 days) #TODO_Manu: This is now triggered after war with MTTH
-ITA_benito_mussolini = { unit_leader_event = { id = BBA_italy_missiolinis.31 days = 370 random_days = 5 } } # JAN 37 - Industrialization - DEC 37 - (350 days)
-ITA_benito_mussolini = { unit_leader_event = { id = BBA_italy_missiolinis.41 days = 735 random_days = 5 } } # JAN 38 - Increase Army - DEC 38 (350 days)
-ITA_benito_mussolini = { unit_leader_event = { id = BBA_italy_missiolinis.00 days = 1105 random_days = 5 } } # JAN 39 - Random mission dispatcher (350 days) - This event auto-triggers itself every 6 months
+country_event = { id = BBA_italy_missiolinis.11 days = 185 random_days = 5 } # JUN 36 - Conquer Ethiopia  - DEC 36 - (170 days)
+country_event = { id = BBA_italy_missiolinis.21 days = 370 random_days = 5 } # JAN 37 - Pacify Ethiopia - DEC 39 - (720 days) #TODO_Manu: This is now triggered after war with MTTH
+country_event = { id = BBA_italy_missiolinis.31 days = 370 random_days = 5 } # JAN 37 - Industrialization - DEC 37 - (350 days)
+country_event = { id = BBA_italy_missiolinis.41 days = 735 random_days = 5 } # JAN 38 - Increase Army - DEC 38 (350 days)
+country_event = { id = BBA_italy_missiolinis.00 days = 1105 random_days = 5 } # JAN 39 - Random mission dispatcher (350 days) - This event auto-triggers itself every 6 months
 # Next Missiolini is random and comes in JUN 39, next one in JUN 40.
+
+
+
+#######################################
+############ MISSIOLINIS ##############
+#######################################
+
+set_variable = { ITA_missiolinis_number_of_missions_triggered = 0 }
+set_variable = { ITA_missiolinis_number_of_missions_resolved = 0 }
+set_variable = { ITA_missiolinis_active_missions = 0 }
+set_variable = { ITA_missiolinis_successful_missions = 0 }
+set_variable = { ITA_missiolinis_failed_missions = 0 }
+
+set_variable = { ITA_missiolinis_min_cd_between_missions = 30 } #WARNING: IF THIS CHANGES IT*S NECESSARY TO UPDATE THE VALUE IN THE FLAG USED IN ITA_missiolinis_initialize_new_mission_effect
+
+set_country_flag = { flag = ITA_missiolinis_level_flag value = 1 } #Basic level - Default missions
+
+#DECISIONS values
+#ETH_hold_the_north_time initialized in ETH scope inside the ETH history file
+set_variable = { ITA_missiolinis_conquer_ethiopia_days = 170 }
+set_variable = { ITA_missiolinis_pacify_ethiopia_days = 720 }
+set_variable = { ITA_missiolinis_default_days = 350 }
+
+set_variable = { ITA_missiolinis_number_of_mills_goal = 10 } #Used by Strengthen Heavy Industry Missiolini
+set_variable = { ITA_missiolinis_fielded_manpower_goal = 1000000 } # (1kk) Used by Strengthen the Army Missiolini
+set_variable = { ITA_missiolinis_fielded_manpower_goal_repeatable = 500000 } # (500k) Used by Strengthen the Army Missiolini
+set_variable = { ITA_missiolinis_trucks_to_produce = 500 } #Used by Stockpile Trucks Missiolini
+set_variable = { ITA_missiolinis_fighters_to_produce = 300 } #Used by Strengthened the Airforce Missiolini
+set_variable = { ITA_missiolinis_bombers_to_produce = 300 } #Used by Strengthened the Airforce Missiolini
+set_variable = { ITA_missiolinis_aircraft_to_produce = 300 } #Unused yet. Might be used in the future by Strengthened the Airforce Missiolini
 
 ### VARIANTS ###
 # 1936 Start #

@@ -1,4 +1,161 @@
 JAP_intervene_in_china = {
+	JAP_military_offensive = {
+		priority = 30
+		icon = GFX_decision_generic_operation
+
+		ai_will_do = {
+			base = 0.5
+		}
+
+		state_target = yes
+
+		target_trigger = {
+			FROM = {
+				JAP_is_military_offensive_main_objective = yes
+			}
+		}
+
+		target_root_trigger = {
+			has_war_with = CHI
+		}
+
+		on_map_mode = map_and_decisions_view
+
+		allowed = {
+			original_tag = JAP
+		}
+
+		available = {
+			NOT = { has_country_flag = JAP_military_offensive_in_progress_flag }
+			command_power > 49
+		}
+
+		visible = {
+			CHI = {
+				has_completed_focus = CHI_expand_guerilla_operations
+			}
+			FROM = {
+			 	controller = {
+			 		has_war_with = ROOT
+			 	}
+			 	any_neighbor_state = {
+			 		is_controlled_by = ROOT
+			 	}
+			}
+		}
+
+		cancel_if_not_visible = yes
+
+		cancel_effect = {
+			hidden_effect = {
+				JAP_clean_military_offensive_effect = yes
+			}
+		}
+
+		custom_cost_trigger = {
+			command_power > 49
+		}
+		custom_cost_text = decision_cost_CP_50
+
+		days_remove = 14
+
+		modifier = {
+			command_power_gain_mult = -0.2
+		}
+
+		complete_effect = {
+			set_country_flag = JAP_military_offensive_in_progress_flag
+		}
+
+		remove_effect = {
+			custom_effect_tooltip = JAP_military_offensive_scope_tt
+
+			hidden_effect = {
+				set_variable = { JAP_offensive_main_objective = FROM } #This variable exists because trying to scope to the element 0 of an array causes an error :D (!)
+				FROM = {
+					ROOT = { add_to_array = { JAP_military_offensive_states = PREV } }
+				}
+				JAP_set_military_offensive_effect = yes
+
+				activate_mission = JAP_military_offensive_ongoing
+			}
+			custom_effect_tooltip = JAP_military_offensive_activate_decision_tt
+		}
+	}
+
+	JAP_military_offensive_ongoing = {
+		icon = hol_draw_up_staff_plans
+		allowed = {
+			original_tag = JAP
+		}
+
+		fire_only_once = yes
+		days_mission_timeout = 30
+
+		is_good = no
+
+		activation = {
+			always = no
+		}
+
+		cancel_trigger = {
+			hidden_trigger = {
+				has_war = no
+			}
+		}
+
+		cancel_effect = {
+			hidden_effect = {
+				JAP_clean_military_offensive_effect = yes
+			}
+		}
+
+		visible = {
+			has_war_with = CHI
+			has_country_flag = JAP_military_offensive_in_progress_flag
+		}
+
+		available = { #Conditions to succeed in the offensive
+			custom_trigger_tooltip = {
+				tooltip = JAP_military_offensive_ongoing_trigger_tt
+				all_of_scopes = {
+					array = JAP_military_offensive_states
+					is_controlled_by = ROOT
+				}
+			}
+		}
+
+		timeout_effect = { #FAIL
+			if = {
+				limit = {
+					var:JAP_offensive_main_objective = {
+						is_controlled_by = ROOT
+					}
+				}
+				custom_effect_tooltip = SOV_military_offensive_ongoing_holding_main_objective_tt
+			}
+			else = {
+				custom_effect_tooltip = SOV_military_offensive_ongoing_not_holding_main_objective_tt
+				hidden_effect = {
+					add_political_power = -25
+				}
+			}
+
+			custom_effect_tooltip = JAP_military_offensive_ongoing_failing_main_objective_tt
+			effect_tooltip = {
+				add_political_power = -25
+			}
+			JAP_clean_military_offensive_effect = yes
+		}
+
+		complete_effect = { #SUCCESS
+			JAP_clean_military_offensive_effect = yes
+
+			add_war_support = 0.05
+			add_political_power = 25
+		}
+	}
+
 	JAP_conquer_shandong = {
 		icon = jap_conquer_china
 		allowed = {
@@ -38,6 +195,9 @@ JAP_intervene_in_china = {
 			add_war_support = 0.1
 			add_political_power = 150
 			CHI = { country_event = { id = chi_armor.870 days = 1 } }
+			hidden_effect = {
+				set_country_flag = JAP_shandong_taken_flag
+			}
 			if = {
 				limit = {
 					has_completed_focus = JAP_purge_the_kodoha_faction
@@ -100,6 +260,9 @@ JAP_intervene_in_china = {
 			add_war_support = 0.1
 			add_political_power = 150
 			CHI = { country_event = { id = chi_armor.871 days = 1 } }
+			hidden_effect = {
+				set_country_flag = JAP_nanjing_taken_flag
+			}
 			if = {
 				limit = {
 					has_completed_focus = JAP_purge_the_kodoha_faction
@@ -178,6 +341,9 @@ JAP_intervene_in_china = {
 			add_war_support = 0.1
 			add_political_power = 150
 			CHI = { country_event = { id = chi_armor.872 days = 1 } }
+			hidden_effect = {
+				set_country_flag = JAP_wuhan_taken_flag
+			}
 			if = {
 				limit = {
 					has_completed_focus = JAP_purge_the_kodoha_faction
@@ -314,6 +480,9 @@ JAP_intervene_in_china = {
 			add_war_support = 0.1
 			add_political_power = 150
 			CHI = { country_event = { id = chi_armor.873 days = 1 } }
+			hidden_effect = {
+				set_country_flag = JAP_port_cities_taken_flag
+			}
 			if = {
 				limit = {
 					has_completed_focus = JAP_purge_the_kodoha_faction
@@ -335,6 +504,567 @@ JAP_intervene_in_china = {
 					JAP_political_instability_update_effect = yes
 				}
 			}
+		}
+	}
+
+	### Losing ground
+
+	JAP_retake_shandong = {
+		icon = jap_conquer_china
+		allowed = {
+			tag = JAP
+		}
+		available = {
+			597 = {
+				CONTROLLER = {
+					OR = {
+						tag = JAP
+						is_subject_of = JAP
+					}
+				}
+			}
+		}
+		visible = {
+			597 = {
+				CONTROLLER = {
+					has_war_with = ROOT
+				}
+			}
+		}
+		activation = {
+			has_country_flag = JAP_shandong_taken_flag
+			597 = {
+				CONTROLLER = {
+					has_war_with = ROOT
+				}
+			}
+		}
+		fire_only_once = yes
+		is_good = no
+		days_mission_timeout = 90
+
+		timeout_effect = {
+			add_war_support = -0.1
+			add_political_power = -150
+			CHI = { add_stability = 0.1 }
+			if = {
+				limit = {
+					has_completed_focus = JAP_purge_the_kodoha_faction
+					check_variable = { var = JAP_toseiha_factory_output value = -5 compare = greater_than }
+				}
+				custom_effect_tooltip = JAP_war_with_china_toseiha_loss_tt
+				hidden_effect = {
+					subtract_from_variable = { var = JAP_toseiha_factory_output value = 1 }
+					JAP_political_instability_update_effect = yes
+				}
+			}
+			else_if = {
+				limit = {
+					check_variable = { var = JAP_Kodoha_factory_output value = -5 compare = greater_than }
+				}
+				custom_effect_tooltip = JAP_war_with_china_kodoha_loss_tt
+				hidden_effect = {
+					subtract_from_variable = { var = JAP_Kodoha_factory_output value = 1 }
+					JAP_political_instability_update_effect = yes
+				}
+			}
+		}
+		complete_effect = {
+		}
+	}
+	JAP_retake_nanjing = {
+		icon = jap_conquer_china
+		allowed = {
+			tag = JAP
+		}
+		available = {
+			598 = {
+				CONTROLLER = {
+					OR = {
+						tag = JAP
+						is_subject_of = JAP
+					}
+				}
+			}
+		}
+		visible = {
+			598 = {
+				CONTROLLER = {
+					has_war_with = ROOT
+				}
+			}
+		}
+		activation = {
+			has_country_flag = JAP_nanjing_taken_flag
+			598 = {
+				CONTROLLER = {
+					has_war_with = ROOT
+				}
+			}
+		}
+		fire_only_once = yes
+		is_good = no
+		days_mission_timeout = 90
+
+		timeout_effect = {
+			add_war_support = -0.1
+			add_political_power = -150
+			CHI = { add_stability = 0.1 }
+			CHI = { country_event = { id = chi_armor.871 days = 1 } }
+			if = {
+				limit = {
+					has_completed_focus = JAP_purge_the_kodoha_faction
+					check_variable = { var = JAP_toseiha_factory_output value = -5 compare = greater_than }
+				}
+				custom_effect_tooltip = JAP_war_with_china_toseiha_loss_tt
+				hidden_effect = {
+					subtract_from_variable = { var = JAP_toseiha_factory_output value = 1 }
+					JAP_political_instability_update_effect = yes
+				}
+			}
+			else_if = {
+				limit = {
+					check_variable = { var = JAP_Kodoha_factory_output value = -5 compare = greater_than }
+				}
+				custom_effect_tooltip = JAP_war_with_china_kodoha_loss_tt
+				hidden_effect = {
+					subtract_from_variable = { var = JAP_Kodoha_factory_output value = 1 }
+					JAP_political_instability_update_effect = yes
+				}
+			}
+		}
+		complete_effect = {
+		}
+	}
+	JAP_retake_wuhan = {
+		icon = jap_conquer_china
+		allowed = {
+			tag = JAP
+		}
+		available = {
+			620 = {
+				CONTROLLER = {
+					OR = {
+						tag = JAP
+						is_subject_of = JAP
+					}
+				}
+			}
+		}
+		visible = {
+			598 = {
+				CONTROLLER = {
+					OR = {
+						tag = JAP
+						is_subject_of = JAP
+					}
+				}
+			}
+			620 = {
+				CONTROLLER = {
+					has_war_with = ROOT
+				}
+			}
+		}
+		activation = {
+			has_country_flag = JAP_wuhan_taken_flag
+			598 = {
+				CONTROLLER = {
+					OR = {
+						tag = JAP
+						is_subject_of = JAP
+					}
+				}
+			}
+			620 = {
+				CONTROLLER = {
+					has_war_with = ROOT
+				}
+			}
+		}
+		fire_only_once = yes
+		is_good = no
+		days_mission_timeout = 180
+
+		timeout_effect = {
+			add_war_support = -0.1
+			add_political_power = -150
+			CHI = { add_stability = 0.1 }
+			if = {
+				limit = {
+					has_completed_focus = JAP_purge_the_kodoha_faction
+					check_variable = { var = JAP_toseiha_factory_output value = -5 compare = greater_than }
+				}
+				custom_effect_tooltip = JAP_war_with_china_toseiha_loss_tt
+				hidden_effect = {
+					subtract_from_variable = { var = JAP_toseiha_factory_output value = 1 }
+					JAP_political_instability_update_effect = yes
+				}
+			}
+			else_if = {
+				limit = {
+					check_variable = { var = JAP_Kodoha_factory_output value = -5 compare = greater_than }
+				}
+				custom_effect_tooltip = JAP_war_with_china_kodoha_loss_tt
+				hidden_effect = {
+					subtract_from_variable = { var = JAP_Kodoha_factory_output value = 1 }
+					JAP_political_instability_update_effect = yes
+				}
+			}
+		}
+		complete_effect = {
+		}
+	}
+	JAP_retake_port_cities = {
+		icon = jap_conquer_china
+		allowed = {
+			tag = JAP
+		}
+		available = {
+			596 = {
+				CONTROLLER = {
+					OR = {
+						tag = JAP
+						is_subject_of = JAP
+					}
+				}
+			}
+			595 = {
+				CONTROLLER = {
+					OR = {
+						tag = JAP
+						is_subject_of = JAP
+					}
+				}
+			}
+			592 = {
+				CONTROLLER = {
+					OR = {
+						tag = JAP
+						is_subject_of = JAP
+					}
+				}
+			}
+			591 = {
+				CONTROLLER = {
+					OR = {
+						tag = JAP
+						is_subject_of = JAP
+					}
+				}
+			}
+		}
+		visible = {
+			598 = {
+				CONTROLLER = {
+					OR = {
+						tag = JAP
+						is_subject_of = JAP
+					}
+				}
+			}
+			OR = {
+				596 = {
+					CONTROLLER = {
+						has_war_with = ROOT
+					}
+				}
+				595 = {
+					CONTROLLER = {
+						has_war_with = ROOT
+					}
+				}
+				592 = {
+					CONTROLLER = {
+						has_war_with = ROOT
+					}
+				}
+				591 = {
+					CONTROLLER = {
+						has_war_with = ROOT
+					}
+				}
+			}
+		}
+		activation = {
+			has_country_flag = JAP_port_cities_taken_flag
+			598 = {
+				CONTROLLER = {
+					OR = {
+						tag = JAP
+						is_subject_of = JAP
+					}
+				}
+			}
+			OR = {
+				596 = {
+					CONTROLLER = {
+						has_war_with = ROOT
+					}
+				}
+				595 = {
+					CONTROLLER = {
+						has_war_with = ROOT
+					}
+				}
+				592 = {
+					CONTROLLER = {
+						has_war_with = ROOT
+					}
+				}
+				591 = {
+					CONTROLLER = {
+						has_war_with = ROOT
+					}
+				}
+			}
+		}
+		fire_only_once = yes
+		is_good = no
+		days_mission_timeout = 360
+
+		timeout_effect = {
+			add_war_support = -0.1
+			add_political_power = -150
+			CHI = { add_stability = 0.1 }
+			if = {
+				limit = {
+					has_completed_focus = JAP_purge_the_kodoha_faction
+					check_variable = { var = JAP_toseiha_factory_output value = -5 compare = greater_than }
+				}
+				custom_effect_tooltip = JAP_war_with_china_toseiha_loss_tt
+				hidden_effect = {
+					subtract_from_variable = { var = JAP_toseiha_factory_output value = 1 }
+					JAP_political_instability_update_effect = yes
+				}
+			}
+			else_if = {
+				limit = {
+					check_variable = { var = JAP_Kodoha_factory_output value = -5 compare = greater_than }
+				}
+				custom_effect_tooltip = JAP_war_with_china_kodoha_loss_tt
+				hidden_effect = {
+					subtract_from_variable = { var = JAP_Kodoha_factory_output value = 1 }
+					JAP_political_instability_update_effect = yes
+				}
+			}
+		}
+		complete_effect = {
+		}
+	}
+
+	### Collapse of the Chinese front
+	JAP_collapse_of_the_chinese_Front = {
+		icon = jap_conquer_china
+		allowed = {
+			tag = JAP
+		}
+		available = {
+			OR = {
+				AND = {
+					614 = {
+						CONTROLLER = {
+							OR = {
+								tag = JAP
+								is_subject_of = JAP
+							}
+						}
+					}
+					597 = {
+						CONTROLLER = {
+							OR = {
+								tag = JAP
+								is_subject_of = JAP
+							}
+						}
+					}
+				}
+				AND = {
+					598 = {
+						CONTROLLER = {
+							OR = {
+								tag = JAP
+								is_subject_of = JAP
+							}
+						}
+					}
+					613 = {
+						CONTROLLER = {
+							OR = {
+								tag = JAP
+								is_subject_of = JAP
+							}
+						}
+					}
+					924 = {
+						CONTROLLER = {
+							OR = {
+								tag = JAP
+								is_subject_of = JAP
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		visible = {
+			NOT = { has_country_flag = JAP_CHI_war_since_start }
+			has_war_with = CHI
+			OR = {
+				CHI = { is_faction_leader = yes }
+				PRC = { is_faction_leader = yes }
+			}
+			620 = {
+				CONTROLLER = {
+					OR = {
+						has_war_with = ROOT
+					}
+				}
+			}
+			750 = {
+				CONTROLLER = {
+					OR = {
+						has_war_with = ROOT
+					}
+				}
+			}
+			602 = {
+				CONTROLLER = {
+					OR = {
+						has_war_with = ROOT
+					}
+				}
+			}
+			OR = {
+				AND = {
+					597 = { # Pushed far north
+						CONTROLLER = {
+							OR = {
+								tag = JAP
+								is_subject_of = JAP
+							}
+						}
+					}
+					614 = {
+						CONTROLLER = {
+							OR = {
+								tag = JAP
+								is_subject_of = JAP
+							}
+						}
+					}
+				}
+				AND = {
+					598 = { # Pushed out of Shanghai
+						CONTROLLER = {
+							OR = {
+								has_war_with = ROOT
+							}
+						}
+					}
+					613 = {
+						CONTROLLER = {
+							OR = {
+								has_war_with = ROOT
+							}
+						}
+					}
+					924 = {
+						CONTROLLER = {
+							OR = {
+								has_war_with = ROOT
+							}
+						}
+					}
+				}
+			}
+		}
+
+		activation = {
+			NOT = { has_country_flag = JAP_CHI_war_since_start }
+			has_war_with = CHI
+			OR = {
+				CHI = { is_faction_leader = yes }
+				PRC = { is_faction_leader = yes }
+			}
+			620 = {
+				CONTROLLER = {
+					OR = {
+						has_war_with = ROOT
+					}
+				}
+			}
+			750 = {
+				CONTROLLER = {
+					OR = {
+						has_war_with = ROOT
+					}
+				}
+			}
+			602 = {
+				CONTROLLER = {
+					OR = {
+						has_war_with = ROOT
+					}
+				}
+			}
+			OR = {
+				AND = {
+					597 = { # Pushed far north
+						CONTROLLER = {
+							OR = {
+								tag = JAP
+								is_subject_of = JAP
+							}
+						}
+					}
+					614 = {
+						CONTROLLER = {
+							OR = {
+								tag = JAP
+								is_subject_of = JAP
+							}
+						}
+					}
+				}
+				AND = {
+					598 = { # Pushed out of Shanghai
+						CONTROLLER = {
+							OR = {
+								has_war_with = ROOT
+							}
+						}
+					}
+					613 = {
+						CONTROLLER = {
+							OR = {
+								has_war_with = ROOT
+							}
+						}
+					}
+					924 = {
+						CONTROLLER = {
+							OR = {
+								has_war_with = ROOT
+							}
+						}
+					}
+				}
+			}
+		}
+
+		fire_only_once = yes
+		is_good = no
+		days_mission_timeout = 180
+
+		timeout_effect = {
+			CHI = { country_event = { id = chi_armor.874 } }
+			add_stability = -0.3
+			add_war_support = -0.6
+			add_political_power = -150
+		}
+		complete_effect = {
 		}
 	}
 }
@@ -7158,10 +7888,11 @@ operations = {
 	}
 
 	JAP_tora_tora_tora = {
+		icon = decision_generic_naval
 		allowed = {
 			original_tag = JAP
 		}
-		icon = decision_generic_naval
+
 		available = {
 			OR = {
 				has_war_with = HOL
@@ -7170,15 +7901,21 @@ operations = {
 				has_war_with = FRA
 			}
 		}
+
 		visible = {
 			has_completed_focus = JAP_strike_south
 		}
-		is_good = yes
+		
+		is_good = no
+
 		fire_only_once = yes
+
 		days_mission_timeout = 240
+
 		activation = {
 			has_completed_focus = JAP_strike_south
 		}
+
 		complete_effect = {
 			add_timed_idea = { idea = JAP_tora_tora_tora_idea days = 240 }
 		}
@@ -8631,7 +9368,6 @@ PRC_counter_guerilla_warfare = {
 		}
 		days_remove = 180
 		fire_only_once = no
-		is_good = yes
 		cost = 25
 		cancel_if_not_visible = yes
 		remove_effect = {
