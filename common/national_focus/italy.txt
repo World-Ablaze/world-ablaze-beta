@@ -4479,7 +4479,7 @@ focus_tree = {
 
 	focus = {
 		id = ITA_push_towards_the_middle_east
-		icon = GFX_
+		icon = GFX_focus_generic_balkans_focus
 		prerequisite = { focus = ITA_war_with_france }
 		x = 0
 		y = 1
@@ -8252,8 +8252,7 @@ focus_tree = {
 		completion_reward = {
 			custom_effect_tooltip = ITA_legge_bottai_tt
 			hidden_effect = {
-				set_variable = { var = ITA_Bourgeoisie_stability value = 0 }
-				set_variable = { var = ITA_Bourgeoisie_political_power_gain value = 0 }
+				add_to_variable = { var = ITA_Proletariat_influence value = 1 }
 				ITA_political_instability_update_effect = yes
 			}
 			add_popularity = {
@@ -8312,7 +8311,7 @@ focus_tree = {
 
 	focus = {
 		id = ITA_reclassify_the_bourgeoisie
-		icon = GFX_
+		icon = GFX_goal_ITA_reclassify_the_bourgeoisie
 		prerequisite = { focus = ITA_8_million_bayonetts }
 		prerequisite = { focus = ITA_la_battaglia_per_le_nascite }
 		x = 1
@@ -8336,7 +8335,7 @@ focus_tree = {
 
 	focus = {
 		id = ITA_strengthen_the_regime
-		icon = GFX_goal_generic_political_pressure
+		icon = GFX_goal_ITA_strengthen_the_regime
 		prerequisite = { focus = ITA_reclassify_the_bourgeoisie }
 		x = 0
 		y = 1
@@ -9439,7 +9438,10 @@ focus_tree = {
 	
 		available = {
 			has_government = fascism
-			has_global_flag = greater_italy_flag
+			OR = {
+				has_global_flag = greater_italy_flag
+				has_global_flag = form_roman_empire_flag
+			}
 		}
 	
 		bypass = {
@@ -9526,8 +9528,53 @@ focus_tree = {
 	}
 
 	focus = {
-		id = ITA_move_towards_the_jewel_of_the_east
-		icon = GFX_
+		id = ITA_all_roads_lead_to_rome
+		icon = GFX_focus_generic_spread_fascism
+		prerequisite = { focus = ITA_integrate_the_empire }
+		x = -1
+		y = 1
+		relative_position_id = ITA_integrate_the_empire
+
+		cost = 3
+		available = {
+			has_full_control_of_state = 2
+		}
+
+		search_filters = {FOCUS_FILTER_INDUSTRY}
+
+		completion_reward = {
+			every_owned_state = { #Compensating for ideology swap auto-eating half compliance
+				limit = {
+					OR = {
+						state = 158
+						state = 162
+						state = 2
+						state = 856
+						state = 161
+						state = 159
+						state = 160
+						state = 885
+						state = 886
+						state = 39
+					}
+					free_building_slots = {
+						building = infrastructure
+						size > 0
+						include_locked = yes
+					}
+				}
+				add_building_construction = {
+					type = infrastructure
+					level = 1
+					instant_build = yes
+				}
+			}
+		}
+	}
+
+	focus = {
+		id = ITA_roma_invicta
+		icon = GFX_goal_ITA_roma_invicta
 		prerequisite = { focus = ITA_novus_imperium_romanum }
 		x = -1
 		y = 1
@@ -9557,78 +9604,9 @@ focus_tree = {
 			factor = 10
 		}
 		completion_reward = {
-			554 = {
-				OWNER = {
-					ROOT = {
-						create_wargoal = {
-							type = annex_everything
-							target = PREV
-							expire = 0
-						}
-					}
-				}
-			}
-		}
-	}
-
-	focus = {
-		id = ITA_all_roads_lead_to_rome
-		icon = GFX_focus_generic_spread_fascism
-		prerequisite = { focus = ITA_integrate_the_empire }
-		x = -1
-		y = 1
-		relative_position_id = ITA_integrate_the_empire
-
-		cost = 3
-		available = {
-			has_full_control_of_state = 2
-		}
-
-		search_filters = {FOCUS_FILTER_INDUSTRY}
-
-		completion_reward = {
-			custom_effect_tooltip = ITA_all_roads_lead_to_rome_iri_tt
-			add_to_variable = { ITA_iri_production_speed_infrastructure_factor = 0.1 }
-
-			custom_effect_tooltip = ITA_all_roads_lead_to_rome_re_tt
-			add_to_variable = { ITA_re_supply_node_range = 0.1 }
-
-			custom_effect_tooltip = ITA_all_roads_lead_to_rome_wargoals_tt
-			if = {
-				limit = {
-					any_other_country = {
-						capital_scope = { is_on_continent = europe }
-						NOT = {
-							is_in_faction_with = ROOT
-							has_guaranteed = ROOT
-							is_guaranteed_by = ROOT
-							has_non_aggression_pact_with = ROOT
-							has_war_with = ROOT
-						}
-					}
-				}
-				custom_effect_tooltip = generic_current_effects
-				custom_effect_tooltip = generic_ROOT_gains_wargoal_tt
-				every_neighbor_country = {
-					limit = {
-						capital_scope = { is_on_continent = europe }
-						NOT = {
-							is_in_faction_with = ROOT
-							has_guaranteed = ROOT
-							is_guaranteed_by = ROOT
-							has_non_aggression_pact_with = ROOT
-							has_war_with = ROOT
-						}
-					}
-					hidden_effect = {
-						ROOT = {
-							create_wargoal = {
-								type = annex_everything
-								target = PREV
-							}
-						}
-					}
-				}
+			swap_ideas = {
+				remove_idea = vittoria_mutilata
+				add_idea = ITA_roma_invicta
 			}
 		}
 	}
