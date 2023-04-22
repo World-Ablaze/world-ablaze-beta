@@ -1784,7 +1784,6 @@ country_event = {
 	option = {
 		name = jap_armor.800.b
 		add_political_power = -300
-		add_stability = -0.4
 		trigger = {
 			NOT = { has_completed_focus = JAP_showa_restoration }
 		}
@@ -2086,10 +2085,9 @@ country_event = {
 			JAP_political_instability_update_effect = yes
 		}
 		add_timed_idea = {
-			idea = JAP_ranks_purged
+			idea = JAP_army_slighted
 			days = 720
 		}
-		remove_ideas = JAP_gekokujo
 		ai_chance = {
 			factor = 0
 		}
@@ -2398,10 +2396,9 @@ country_event = {
 			JAP_political_instability_update_effect = yes
 		}
 		add_timed_idea = {
-			idea = JAP_ranks_purged
+			idea = JAP_army_slighted
 			days = 720
 		}
-		remove_ideas = JAP_gekokujo
 		ai_chance = {
 			factor = 0
 		}
@@ -2917,6 +2914,7 @@ country_event = {
 					has_country_leader = { id = 700 ruling_only = yes }
 				}
 				remove_country_leader_trait = imperial_sanction
+				add_country_leader_trait = imperial_sanction_regular
 			}
 			608 = {
 				clr_state_flag = SPR_unplanned_offensive_flag
@@ -3023,39 +3021,32 @@ country_event = {
 
 	option = {
 		name = jap_armor.813.a
-		release = IPS
-		IPS = {
-			transfer_state = 564
-			transfer_state = 565
-			transfer_state = 563
-			transfer_state = 561
-			transfer_state = 560
-			transfer_state = 657
-			transfer_state = 409
-			transfer_state = 408
-			transfer_state = 574
-			transfer_state = 644
-			transfer_state = 562
-			transfer_state = 953
-			transfer_state = 854
-			transfer_state = 637
-
-			set_cosmetic_tag = SOV_imperial_protectorate
-
+		if = {
+			limit = {
+				NOT = { country_exists = IPS }
+			}
 			JAP = {
-				if = {
-					limit = {
-						OR = {
-							has_dlc = "Together for Victory"
-							has_dlc = "Man the Guns"
-						}
-					}
-					set_autonomy = { target = IPS autonomy_state = autonomy_wtt_imperial_protectorate }
-				}
-				else = {
-					puppet = IPS
-				}
-				add_manpower = -100000
+				transfer_State = 564
+				transfer_State = 565
+				transfer_State = 563
+				transfer_State = 574
+				transfer_State = 644
+				transfer_State = 562
+				transfer_State = 953
+				transfer_State = 854
+				transfer_State = 637
+			}
+		}
+		if = {
+			limit = {
+				NOT = { has_country_flag = greater_manchukuo_flag }
+			}
+			JAP = {
+				transfer_State = 561
+				transfer_State = 560
+				transfer_State = 657
+				transfer_State = 409
+				transfer_State = 408
 			}
 		}
 		JAP = {
@@ -3097,11 +3088,10 @@ country_event = {
 				transfer_state = 789
 			}
 		}
-		every_country = {
-			limit = {
-				is_in_faction_with = SOV
+		SOV = {
+			white_peace = {
+				tag = JAP
 			}
-			white_peace = JAP
 		}
 		hidden_effect = { news_event = { id = afo_news.31 hours = 6 } }
 
@@ -3924,7 +3914,7 @@ country_event = {
 			expire = "1965.1.1"
 			ideology = fascism_ideology
 			traits = {
-				warrior_code
+				warrior_code imperial_sanction_regular
 			}
 		}
 	}
@@ -3984,6 +3974,214 @@ country_event = {
 				type = annex_everything
 				target = SIA
 			}
+		}
+	}
+}
+
+################################################################################### Placate the Allies
+
+country_event = {
+	id = jap_armor.837
+	title = jap_armor.837.t
+	desc = jap_armor.837.d
+
+	is_triggered_only = yes
+
+	option = {
+		name = jap_armor.837.a
+		custom_effect_tooltip = JAP_placate_the_allies_a
+		FROM = { country_event = { id = jap_armor.838 hours = 4 } }
+		ai_chance = {
+			factor = 10
+		}
+	}
+
+	option = {
+		name = jap_armor.837.b
+		custom_effect_tooltip = JAP_placate_the_allies_b
+		add_political_power = -150
+		add_war_support = -0.3
+		FROM = { country_event = { id = jap_armor.839 hours = 4 } }
+		ai_chance = {
+			factor = 10
+		}
+	}
+}
+
+country_event = {
+	id = jap_armor.838
+	title = jap_armor.838.t
+	desc = jap_armor.838.d
+
+	is_triggered_only = yes
+
+	option = {
+		name = jap_armor.838.a
+		USA = { country_event = { id = jap_armor.840 hours = 4 } }
+		white_peace = CHI
+		JAP = {
+			transfer_state = 613
+		}
+		if = {
+			limit = {
+				NOT = { country_exists = RNC }
+				NOT = { country_exists = PGC }
+			}
+			JAP = {
+				transfer_State = 608
+				transfer_State = 949
+				transfer_State = 1011
+				transfer_State = 614
+				transfer_State = 597
+				transfer_State = 743
+				transfer_State = 937
+			}
+		}
+		if = {
+			limit = {
+				NOT = { country_exists = RNC }
+				NOT = { country_exists = REF }
+			}
+			JAP = {
+				transfer_State = 598
+				transfer_State = 925
+			}
+		}
+		CHI = {
+			transfer_State = 606
+		}
+		if = {
+			limit = {
+				controls_state = 286
+				country_exists = FRV
+			}
+			FRV = { transfer_state = 286 }
+		}
+		if = {
+			limit = {
+				owns_state = 973
+				owns_state = 974
+				owns_state = 289
+				owns_state = 724
+				NOT = { country_exists = SIA }
+			}
+			release = SIA
+		}
+		else_if = {
+			limit = {
+				SIA = { is_subject_of = ROOT }
+			}
+			set_autonomy = {
+				target = SIA
+				autonomy_state = autonomy_free
+			}
+		}
+		ai_chance = {
+			factor = 10
+		}
+	}
+}
+
+country_event = {
+	id = jap_armor.839
+	title = jap_armor.839.t
+	desc = jap_armor.839.d
+
+	is_triggered_only = yes
+
+	option = {
+		name = jap_armor.839.a
+		USA = { country_event = { id = jap_armor.841 hours = 4 } }
+		ai_chance = {
+			factor = 10
+		}
+	}
+
+	option = {
+		name = jap_armor.838.a
+		USA = { country_event = { id = jap_armor.840 hours = 4 } }
+		white_peace = CHI
+		JAP = {
+			transfer_state = 608
+			transfer_state = 949
+			transfer_state = 613
+		}
+		if = {
+			limit = {
+				country_exists = PGC
+			}
+			CHI = { annex_country = { target = PGC } }
+		}
+		if = {
+			limit = {
+				country_exists = REF
+			}
+			CHI = { annex_country = { target = REF } }
+		}
+		if = {
+			limit = {
+				country_exists = RNC
+			}
+			CHI = { annex_country = { target = RNC } }
+		}
+		if = {
+			limit = {
+				controls_state = 286
+				country_exists = FRV
+			}
+			FRV = { transfer_state = 286 }
+		}
+		if = {
+			limit = {
+				owns_state = 973
+				owns_state = 974
+				owns_state = 289
+				owns_state = 724
+				NOT = { country_exists = SIA }
+			}
+			release = SIA
+		}
+		else_if = {
+			limit = {
+				SIA = { is_subject_of = ROOT }
+			}
+			set_autonomy = {
+				target = SIA
+				autonomy_state = autonomy_free
+			}
+		}
+		ai_chance = {
+			factor = 1
+		}
+	}
+}
+
+country_event = {
+	id = jap_armor.840
+	title = jap_armor.840.t
+	desc = jap_armor.840.d
+
+	is_triggered_only = yes
+
+	option = {
+		name = jap_armor.840.a
+		ai_chance = {
+			factor = 10
+		}
+	}
+}
+
+country_event = {
+	id = jap_armor.841
+	title = jap_armor.841.t
+	desc = jap_armor.841.d
+
+	is_triggered_only = yes
+
+	option = {
+		name = jap_armor.841.a
+		ai_chance = {
+			factor = 10
 		}
 	}
 }
