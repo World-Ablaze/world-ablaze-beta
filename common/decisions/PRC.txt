@@ -100,6 +100,7 @@ PRC_peoples_power_struggle = {
 						950 = { PRC_infiltration_uprising_PREV_will_spawn_troops_in_state = yes }
 						608 = { PRC_infiltration_uprising_PREV_will_spawn_troops_in_state = yes }
 						949 = { PRC_infiltration_uprising_PREV_will_spawn_troops_in_state = yes }
+						1011 = { PRC_infiltration_uprising_PREV_will_spawn_troops_in_state = yes }
 						614 = { PRC_infiltration_uprising_PREV_will_spawn_troops_in_state = yes }
 						597 = { PRC_infiltration_uprising_PREV_will_spawn_troops_in_state = yes }
 						937 = { PRC_infiltration_uprising_PREV_will_spawn_troops_in_state = yes }
@@ -138,6 +139,10 @@ PRC_peoples_power_struggle = {
 			modifier = {
 				add = 10
 				949 = { PRC_infiltration_uprising_PREV_will_spawn_troops_in_state = yes }
+			}
+			modifier = {
+				add = 10
+				1011 = { PRC_infiltration_uprising_PREV_will_spawn_troops_in_state = yes }
 			}
 			modifier = {
 				add = 10
@@ -192,6 +197,10 @@ PRC_peoples_power_struggle = {
 			modifier = {
 				add = 3
 				949 = { PRC_infiltration_uprising_PREV_will_sabotage_state = yes }
+			}
+			modifier = {
+				add = 3
+				1011 = { PRC_infiltration_uprising_PREV_will_sabotage_state = yes }
 			}
 			modifier = {
 				add = 3
@@ -510,6 +519,49 @@ PRC_peoples_power_struggle = {
 					PRC_execute_infiltration_effects_for_PREV = yes
 				}
 			}
+			1011 = {
+				if = {
+					limit = {
+						CONTROLLER = { tag = event_target:WTT_current_china_leader }
+						PRC_is_infiltrated_by_PREV = yes
+					}
+					PRC_execute_infiltration_effects_for_PREV = yes
+					if = {
+						limit = {
+							has_state_flag = {
+								flag = PRC_infiltration_@PREV
+								value = 3
+							}
+						}
+						custom_effect_tooltip = PRC_infiltrate_uprising_effect_3
+						hidden_effect = {
+							create_unit = {
+								division = "name = \"Communist Militia\" division_template = \"Renmin Jundui\" start_experience_factor = 0 start_equipment_factor = 1"
+								owner = PREV
+								allow_spawning_on_enemy_provs = yes
+								prioritize_location = 10119
+							}
+						}
+					}
+					if = {
+						limit = {
+							has_state_flag = {
+								flag = PRC_infiltration_@PREV
+								value = 4
+							}
+						}
+						custom_effect_tooltip = PRC_infiltrate_uprising_effect_4
+						hidden_effect = {
+							create_unit = {
+								division = "name = \"Communist Militia\" division_template = \"Renmin Jundui\" start_experience_factor = 0.2 start_equipment_factor = 1"
+								owner = PREV
+								allow_spawning_on_enemy_provs = yes
+								prioritize_location = 10119
+							}
+						}
+					}
+				}
+			}
 			614 = {
 				if = {
 					limit = {
@@ -554,12 +606,6 @@ PRC_peoples_power_struggle = {
 								division = "name = \"Communist Militia\" division_template = \"Renmin Jundui\" start_experience_factor = 0 start_equipment_factor = 1"
 								owner = PREV
 								allow_spawning_on_enemy_provs = yes
-								prioritize_location = 10119
-							}
-							create_unit = {
-								division = "name = \"Communist Militia\" division_template = \"Renmin Jundui\" start_experience_factor = 0 start_equipment_factor = 1"
-								owner = PREV
-								allow_spawning_on_enemy_provs = yes
 								prioritize_location = 7092
 							}
 						}
@@ -596,12 +642,6 @@ PRC_peoples_power_struggle = {
 								owner = PREV
 								allow_spawning_on_enemy_provs = yes
 								prioritize_location = 4058
-							}
-							create_unit = {
-								division = "name = \"Communist Militia\" division_template = \"Renmin Jundui\" start_experience_factor = 0.2 start_equipment_factor = 1"
-								owner = PREV
-								allow_spawning_on_enemy_provs = yes
-								prioritize_location = 10119
 							}
 							create_unit = {
 								division = "name = \"Communist Militia\" division_template = \"Renmin Jundui\" start_experience_factor = 0.2 start_equipment_factor = 1"
@@ -1764,6 +1804,80 @@ PRC_infiltrate_nationalist_areas = {
 		}
 	}
 
+	PRC_infiltrate_northern_hebei = {
+
+		icon = infiltrate_state
+		allowed = {
+			tag = PRC
+		}
+		visible = {
+			has_government = communism
+			has_completed_focus = PRC_and_the_traitors
+			1011 = {
+				CONTROLLER = {
+					OR = {
+						tag = CHI
+						is_chinese_warlord = yes
+					}
+				}
+			}
+		}
+
+		available = {
+			NOT = { has_war_with = event_target:WTT_current_china_leader }
+			1011 = {
+				PRC_can_increase_infiltration_in_state = yes
+			}
+		}
+
+		highlight_states = { highlight_state_targets = { state = 1011 } }
+
+		cost = 0
+		custom_cost_text = custom_cost_5_cp
+		custom_cost_trigger = {
+			command_power > 4
+		}
+
+		cancel_if_not_visible = yes
+
+		complete_effect = {
+			hidden_effect = {
+				add_command_power = -5
+			}
+		}
+
+		ai_will_do = {
+			base = 120
+		}
+
+		days_remove = @DAYS_REMOVE_INFILTRATE_STATE
+		days_re_enable = 0
+
+		complete_effect = {
+			1011 = {
+				if = {
+					limit = {
+						NOT = { has_state_flag = PRC_infiltration_@ROOT }
+					}
+					set_state_flag = {
+						flag = PRC_infiltration_@ROOT
+						value = 0
+					}
+				}
+			}
+		}
+
+		remove_effect = {
+			1011 = {
+				PRC_infiltration_succesful_show_uprising_effect = yes
+				modify_state_flag = {
+					flag = PRC_infiltration_@ROOT
+					value = 1
+				}
+			}
+		}
+	}
+
 	PRC_infiltrate_hebei = {
 
 		icon = infiltrate_state
@@ -2313,25 +2427,52 @@ PRC_anti_japanese_expedition = {
 		}
 
 		remove_effect = {
-			621 = {
-				add_resistance = 20
-				damage_building = {
-					type = infrastructure
-					damage = 1
+			if = {
+				limit = {
+					621 = {
+						CONTROLLER = {
+							NOT = { tag = MEN }
+						}
+					}
+				}
+				621 = {
+					add_resistance = 20
+					damage_building = {
+						type = infrastructure
+						damage = 1
+					}
 				}
 			}
-			926 = {
-				add_resistance = 20
-				damage_building = {
-					type = infrastructure
-					damage = 1
+			if = {
+				limit = {
+					926 = {
+						CONTROLLER = {
+							NOT = { tag = MEN }
+						}
+					}
+				}
+				926 = {
+					add_resistance = 20
+					damage_building = {
+						type = infrastructure
+						damage = 1
+					}
 				}
 			}
-			941 = {
-				add_resistance = 20
-				damage_building = {
-					type = infrastructure
-					damage = 1
+			if = {
+				limit = {
+					941 = {
+						CONTROLLER = {
+							NOT = { tag = MEN }
+						}
+					}
+				}
+				941 = {
+					add_resistance = 20
+					damage_building = {
+						type = infrastructure
+						damage = 1
+					}
 				}
 			}
 			615 = {
@@ -2380,6 +2521,12 @@ PRC_anti_japanese_expedition = {
 					is_chinese_warlord = no
 				}
 			}
+			1011 = {
+				CONTROLLER = {
+					has_war_with = ROOT
+					is_chinese_warlord = no
+				}
+			}
 			614 = {
 				CONTROLLER = {
 					has_war_with = ROOT
@@ -2415,6 +2562,12 @@ PRC_anti_japanese_expedition = {
 						is_chinese_warlord = no
 					}
 				}
+				1011 = {
+					CONTROLLER = {
+						has_war_with = ROOT
+						is_chinese_warlord = no
+					}
+				}
 				614 = {
 					CONTROLLER = {
 						has_war_with = ROOT
@@ -2430,6 +2583,7 @@ PRC_anti_japanese_expedition = {
 				state = 927
 				state = 608
 				state = 949
+				state = 1011
 				state = 614
 			}
 		}
@@ -2461,11 +2615,20 @@ PRC_anti_japanese_expedition = {
 					damage = 1
 				}
 			}
-			927 = {
-				add_resistance = 20
-				damage_building = {
-					type = infrastructure
-					damage = 1
+			if = {
+				limit = {
+					926 = {
+						CONTROLLER = {
+							NOT = { tag = MEN }
+						}
+					}
+				}
+				927 = {
+					add_resistance = 20
+					damage_building = {
+						type = infrastructure
+						damage = 1
+					}
 				}
 			}
 			608 = {
@@ -2476,6 +2639,13 @@ PRC_anti_japanese_expedition = {
 				}
 			}
 			949 = {
+				add_resistance = 20
+				damage_building = {
+					type = infrastructure
+					damage = 1
+				}
+			}
+			1011 = {
 				add_resistance = 20
 				damage_building = {
 					type = infrastructure
@@ -4022,6 +4192,7 @@ PRC_peoples_power_struggle = {
 				state = 614
 				state = 608
 				state = 949
+				state = 1011
 				state = 927
 				state = 950
 				state = 609
@@ -4072,6 +4243,9 @@ PRC_peoples_power_struggle = {
 				add_core_of = PRC
 			}
 			949 = {
+				add_core_of = PRC
+			}
+			1011 = {
 				add_core_of = PRC
 			}
 			927 = {
