@@ -1,6 +1,8 @@
 
 add_namespace = BBA_italy_missiolinis
 add_namespace = BBA_italy_second_italo_ethiopian_war
+add_namespace = BBA_italy_interaction_events
+add_namespace = BBA_italy_interaction_events_news
 
 
 # Italy offer for peace - Event for ETH
@@ -3089,5 +3091,1423 @@ country_event = {
 		name = BBA_italy_missiolinis.213.a
 		
 		ITA_missiolini_bolster_military_high_command_success_effect = yes
+	}
+}
+
+
+
+#### ##    ## ######## ######## ########  ########    ###     ######  ######## ####  #######  ##    ##    ######## ##     ## ######## ##    ## ########  ######  
+ ##  ###   ##    ##    ##       ##     ## ##         ## ##   ##    ##    ##     ##  ##     ## ###   ##    ##       ##     ## ##       ###   ##    ##    ##    ## 
+ ##  ####  ##    ##    ##       ##     ## ##        ##   ##  ##          ##     ##  ##     ## ####  ##    ##       ##     ## ##       ####  ##    ##    ##       
+ ##  ## ## ##    ##    ######   ########  ######   ##     ## ##          ##     ##  ##     ## ## ## ##    ######   ##     ## ######   ## ## ##    ##     ######  
+ ##  ##  ####    ##    ##       ##   ##   ##       ######### ##          ##     ##  ##     ## ##  ####    ##        ##   ##  ##       ##  ####    ##          ## 
+ ##  ##   ###    ##    ##       ##    ##  ##       ##     ## ##    ##    ##     ##  ##     ## ##   ###    ##         ## ##   ##       ##   ###    ##    ##    ## 
+#### ##    ##    ##    ######## ##     ## ######## ##     ##  ######     ##    ####  #######  ##    ##    ########    ###    ######## ##    ##    ##     ######  
+
+
+# the Italians are demanding Ticino!
+country_event = {
+	id = BBA_italy_interaction_events.1
+	title = BBA_italy_interaction_events.1.t 
+	desc = BBA_italy_interaction_events.1.desc
+	picture = GFX_report_event_generic_read_write
+	
+	is_triggered_only = yes
+
+	# It is hard to defend it anyway - One less weakpoint for us
+	option = { 
+		name = BBA_italy_interaction_events.1.a
+
+		ai_chance = {
+			base = 80
+			modifier = {
+				factor = 0
+				OR = {
+					FROM = {
+						has_war_with = ROOT
+					}
+					ROOT = {
+						OR = {
+							AND = {
+								has_war = yes
+								any_enemy_country = {
+									is_in_faction_with = FROM
+								}
+							}
+							surrender_progress > 0.02
+						}
+					}
+				}
+			}
+
+		}
+
+		ITA = {
+			country_event = {
+			    id = BBA_italy_interaction_events.2
+			    days = 2
+			    random = 6
+			}
+		}
+	}
+
+	# How about no?
+	option = { 
+		name = BBA_italy_interaction_events.1.b
+
+		ai_chance = {
+			base = 20
+		}
+
+		ITA = {
+			country_event = {
+			    id = BBA_italy_interaction_events.3
+			    days = 2
+			    random = 6
+			}
+		}
+	}
+}
+
+# The Swiss fold
+country_event = {
+	id = BBA_italy_interaction_events.2
+	title = BBA_italy_interaction_events.2.t 
+	desc = BBA_italy_interaction_events.2.desc
+	picture = GFX_report_event_generic_sign_treaty2 
+	
+	is_triggered_only = yes
+
+	# Perfetto!
+	option = { 
+		name = BBA_italy_interaction_events.2.a
+
+		ITA = {
+			transfer_state = 846
+		}
+		846 = {
+			add_core_of = ITA
+			remove_core_of = SWI
+		}
+	}
+}
+
+# The Swiss stand fast
+country_event = {
+	id = BBA_italy_interaction_events.3
+	title = BBA_italy_interaction_events.3.t 
+	desc = BBA_italy_interaction_events.3.desc
+	picture = GFX_report_event_generic_sign_treaty2 
+	
+	is_triggered_only = yes
+
+	# How DARE you?
+	option = { 
+		name = BBA_italy_interaction_events.3.a
+
+		846 = {
+			add_claim_by = ITA
+		}
+		ITA = {
+			create_wargoal = {
+				type = take_state_focus
+				target = SWI
+				generator = { 846 }
+			}
+		}	
+	}
+}
+
+# Italy wants to negotiate their claims to British Somalia
+country_event = {
+	id = BBA_italy_interaction_events.31
+	title = BBA_italy_interaction_events.31.t 
+	desc = BBA_italy_interaction_events.31.desc
+	picture = GFX_report_event_generic_read_write
+	
+	is_triggered_only = yes
+
+	# We can give it to them
+	option = { 
+		name = BBA_italy_interaction_events.31.a 
+
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = 10
+				has_opinion = {
+					target = ITA
+					value > 70
+				}
+			}
+			modifier = {
+				add = 25
+				ITA = {
+					has_completed_focus = ITA_anglo_italian_pact
+				}
+			}
+			modifier = {
+				add = 15
+				ITA = {
+					has_country_leader = {
+						character = ITA_dino_grandi
+						ruling_only = yes
+					}
+				}
+			}
+			modifier = {
+				add = 40
+				ITA = {
+					has_same_ideology = yes
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				ETH = {
+					has_country_flag = ETH_refused_forced_peace_flag
+				}
+			}
+			if = {
+				limit = {
+					ETH = { is_in_faction_with = ENG }
+				}
+				effect_tooltip = {
+					ETH = { leave_faction = yes}
+				}
+			}
+			effect_tooltip = {
+				set_truce = {
+					target = ETH
+				}
+			}
+		}
+
+		effect_tooltip = {
+			ITA = {
+				transfer_state = 269
+				transfer_state = 903
+			}
+			ENG = {
+				add_offsite_building = { type = industrial_complex level = 2 }
+			}
+		}
+
+		if = { #Only send this event if France controls the necessary state(s)
+			limit = {
+				FRA = {
+					controls_state = 268
+				}
+			}
+			FRA = {
+				country_event = {
+				    id = BBA_italy_interaction_events.32
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+
+		hidden_effect = {
+			set_global_flag = ITA_will_get_british_somalia
+			if = {
+				limit = {	
+					has_country_flag = ITA_italy_suing_for_peace_flag
+				}
+				clr_country_flag = ITA_italy_suing_for_peace_flag
+			}
+			else_if = { #If France didn't have the necessary state(s), send this event
+				limit = {
+					ENG = {
+						controls_state = 906
+					}
+				}
+				if = {
+					limit = {
+						has_global_flag = second_italo_ethiopian_war_flag
+					}
+					if = {
+						limit = {
+							has_global_flag = end_of_second_italo_ethiopian_war_flag
+						}
+						clr_global_flag = end_of_second_italo_ethiopian_war_flag
+					}
+					clr_global_flag = second_italo_ethiopian_war_flag
+				}
+				ENG = {
+					country_event = {
+					    id = BBA_italy_interaction_events.33
+					    days = 3
+					    random = 6
+					}
+				}
+			}
+			else_if = { #If Britain didn't have the necessary state(s), send this event
+				limit = {
+					FRA = {
+						controls_state = 458
+						controls_state = 665
+					}
+				}
+				FRA = {
+					country_event = {
+					    id = BBA_italy_interaction_events.34
+					    days = 3
+					    random = 6
+					}
+				}
+			}
+			else_if = { #If France didn't have the necessary state(s), send this event
+				limit = {
+					ENG = {
+						controls_state = 116
+					}
+				}
+				ENG = {
+					country_event = {
+					    id = BBA_italy_interaction_events.35
+					    days = 3
+					    random = 6
+					}
+				}
+			}
+			else = { #If Britain didn't have the necessary state(s), send this event
+				FRA = {
+					country_event = { #Balkan claims event
+					    id = BBA_italy_interaction_events.36
+					    days = 3
+					    random = 6
+					}
+				}
+			}
+			set_country_flag = ITA_italy_has_started_negotiations_flag
+		}
+	}
+
+	# They will not get it
+	option = { 
+		name = BBA_italy_interaction_events.31.b
+
+		ai_chance = {
+			base = 50
+		}
+
+		if = {
+			limit = {
+				ETH = {
+					has_country_flag = ETH_refused_forced_peace_flag
+				}
+			}
+			if = {
+				limit = {
+					ETH = { is_in_faction_with = ENG }
+				}
+				effect_tooltip = {
+					ETH = { leave_faction = yes}
+				}
+			}
+			effect_tooltip = {
+				set_truce = {
+					target = ETH
+				}
+			}
+		}
+
+		if = { #Send this event if France controls the necessary state(s)
+			limit = {
+				FRA = {
+					controls_state= 268
+				}
+			}
+			FRA = {
+				country_event = {
+				    id = BBA_italy_interaction_events.32
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else_if = { #If France didn't have the necessary state(s), send this event
+			limit = {
+				ENG = {
+					controls_state = 906
+				}
+			}
+			ENG = {
+				country_event = {
+				    id = BBA_italy_interaction_events.33
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else_if = { #If Britain didn't have the necessary state(s), send this event
+			limit = {
+				FRA = {
+					controls_state = 458
+					controls_state = 665
+				}
+			}
+			FRA = {
+				country_event = {
+				    id = BBA_italy_interaction_events.34
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else_if = { #If France didn't have the necessary state(s), send this event
+			limit = {
+				ENG = {
+					controls_state = 116
+				}
+			}
+			ENG = {
+				country_event = {
+				    id = BBA_italy_interaction_events.35
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else = { #If Britain didn't have the necessary state(s), send this event
+			FRA = {
+				country_event = { #Balkan claims event
+				    id = BBA_italy_interaction_events.36
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+
+		hidden_effect = {
+			set_country_flag = ITA_italy_has_started_negotiations_flag
+			if = {
+				limit = {	
+					has_country_flag = ITA_italy_suing_for_peace_flag
+				}
+				clr_country_flag = ITA_italy_suing_for_peace_flag
+			}
+			if = {
+				limit = {
+					has_global_flag = second_italo_ethiopian_war_flag
+				}
+				if = {
+					limit = {
+						has_global_flag = end_of_second_italo_ethiopian_war_flag
+					}
+					clr_global_flag = end_of_second_italo_ethiopian_war_flag
+				}
+				clr_global_flag = second_italo_ethiopian_war_flag
+			}
+		}
+	}
+}
+
+# Italy wants to negotiate their claims to djibouti
+country_event = {
+	id = BBA_italy_interaction_events.32
+	title = BBA_italy_interaction_events.32.t 
+	desc = BBA_italy_interaction_events.32.desc
+	picture = GFX_report_event_generic_read_write
+	
+	is_triggered_only = yes
+
+	# Pour la Paix
+	option = { 
+		name = BBA_italy_interaction_events.32.a 
+
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = 10
+				has_opinion = {
+					target = ITA
+					value > 70
+				}
+			}
+			modifier = {
+				add = 25
+				ITA = {
+					has_completed_focus = ITA_franco_italian_pact
+				}
+			}
+			modifier = {
+				add = 15
+				ITA = {
+					has_country_leader = {
+						character = ITA_dino_grandi
+						ruling_only = yes
+					}
+				}
+			}
+			modifier = {
+				add = 40
+				ITA = {
+					has_same_ideology = yes
+				}
+			}
+		}
+
+		effect_tooltip = {
+			ITA = {
+				transfer_state = 268
+			}
+			FRA = {
+				add_offsite_building = { type = industrial_complex level = 1 }
+			}
+		}
+
+		hidden_effect = {
+			set_global_flag = ITA_will_get_french_somaliland
+		}
+
+		if = { #Send this event if Britain controls the necessary state(s)
+			limit = {
+				ENG = {
+					controls_state = 906
+				}
+			}
+			ENG = {
+				country_event = {
+				    id = BBA_italy_interaction_events.33
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else_if = { #If Britain didn't have the necessary state(s), send this event
+			limit = {
+				FRA = {
+					controls_state = 458
+					controls_state = 665
+				}
+			}
+			FRA = {
+				country_event = {
+				    id = BBA_italy_interaction_events.34
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else_if = { #If France didn't have the necessary state(s), send this event
+			limit = {
+				ENG = {
+					controls_state = 116
+				}
+			}
+			ENG = {
+				country_event = {
+				    id = BBA_italy_interaction_events.35
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else = { #If Britain didn't have the necessary state(s), send this event
+			FRA = {
+				country_event = { #Balkan claims event
+				    id = BBA_italy_interaction_events.36
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+
+		hidden_effect = {
+			set_country_flag = ITA_italy_has_started_negotiations_flag
+		}
+	}
+
+	# Non!
+	option = { 
+		name = BBA_italy_interaction_events.32.b
+
+		ai_chance = {
+			base = 50
+		}
+
+		if = { #Send this event if Britain controls the necessary state(s)
+			limit = {
+				ENG = {
+					controls_state = 906
+				}
+			}
+			ENG = {
+				country_event = {
+				    id = BBA_italy_interaction_events.33
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else_if = { #If Britain didn't have the necessary state(s), send this event
+			limit = {
+				FRA = {
+					controls_state = 458
+					controls_state = 665
+				}
+			}
+			FRA = {
+				country_event = {
+				    id = BBA_italy_interaction_events.34
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else_if = { #If France didn't have the necessary state(s), send this event
+			limit = {
+				ENG = {
+					controls_state = 116
+				}
+			}
+			ENG = {
+				country_event = {
+				    id = BBA_italy_interaction_events.35
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else = { #If Britain didn't have the necessary state(s), send this event
+			FRA = {
+				country_event = { #Balkan claims event
+				    id = BBA_italy_interaction_events.36
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+
+		hidden_effect = {
+			set_country_flag = ITA_italy_has_started_negotiations_flag
+		}
+	}
+}
+
+# Italy wants to negotiate their claims to Socotra
+country_event = {
+	id = BBA_italy_interaction_events.33
+	title = BBA_italy_interaction_events.33.t 
+	desc = BBA_italy_interaction_events.33.desc
+	picture = GFX_report_event_generic_read_write
+	
+	is_triggered_only = yes
+
+	# We can give it to them
+	option = { 
+		name = BBA_italy_interaction_events.33.a 
+
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = 10
+				has_opinion = {
+					target = ITA
+					value > 70
+				}
+			}
+			modifier = {
+				add = 25
+				ITA = {
+					has_completed_focus = ITA_anglo_italian_pact
+				}
+			}
+			modifier = {
+				add = 15
+				ITA = {
+					has_country_leader = {
+						character = ITA_dino_grandi
+						ruling_only = yes
+					}
+				}
+			}
+			modifier = {
+				add = 40
+				ITA = {
+					has_same_ideology = yes
+				}
+			}
+		}
+
+		effect_tooltip = {
+			ITA = {
+				transfer_state = 906
+			}
+			ENG = {
+				add_offsite_building = { type = industrial_complex level = 1 }
+			}
+		}
+
+		hidden_effect = {
+			set_global_flag = ITA_will_get_socotra
+		}
+
+		if = { #Send this event if Britain controls the necessary state(s)
+			limit = {
+				FRA = {
+					controls_state = 458
+					controls_state = 665
+				}
+			}
+			FRA = {
+				country_event = {
+				    id = BBA_italy_interaction_events.34
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else_if = { #If France didn't have the necessary state(s), send this event
+			limit = {
+				ENG = {
+					controls_state = 116
+				}
+			}
+			ENG = {
+				country_event = {
+				    id = BBA_italy_interaction_events.35
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else = { #If Britain didn't have the necessary state(s), send this event
+			FRA = {
+				country_event = { #Balkan claims event
+				    id = BBA_italy_interaction_events.36
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+
+		hidden_effect = {
+			if = {
+				limit = {
+					NOT = {
+						has_country_flag = ITA_italy_has_started_negotiations_flag
+					}
+				}
+				set_country_flag = ITA_italy_has_started_negotiations_flag
+			}
+		}
+	}
+
+	# They will not get it
+	option = { 
+		name = BBA_italy_interaction_events.33.b
+
+		ai_chance = {
+			base = 50
+		}
+
+		if = { #Send this event if Britain controls the necessary state(s)
+			limit = {
+				FRA = {
+					controls_state = 458
+					controls_state = 665
+				}
+			}
+			FRA = {
+				country_event = {
+				    id = BBA_italy_interaction_events.34
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else_if = { #If France didn't have the necessary state(s), send this event
+			limit = {
+				ENG = {
+					controls_state = 116
+				}
+			}
+			ENG = {
+				country_event = {
+				    id = BBA_italy_interaction_events.35
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else = { #If Britain didn't have the necessary state(s), send this event
+			FRA = {
+				country_event = { #Balkan claims event
+				    id = BBA_italy_interaction_events.36
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+
+		hidden_effect = {
+			if = {
+				limit = {
+					NOT = {
+						has_country_flag = ITA_italy_has_started_negotiations_flag
+					}
+				}
+				set_country_flag = ITA_italy_has_started_negotiations_flag
+			}
+		}
+	}
+}
+
+# Italy wants to negotiate their claims to Tunisia
+country_event = {
+	id = BBA_italy_interaction_events.34
+	title = BBA_italy_interaction_events.34.t 
+	desc = BBA_italy_interaction_events.34.desc
+	picture = GFX_report_event_generic_read_write
+	
+	is_triggered_only = yes
+
+	# Pour la Paix
+	option = { 
+		name = BBA_italy_interaction_events.34.a 
+
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = 10
+				has_opinion = {
+					target = ITA
+					value > 70
+				}
+			}
+			modifier = {
+				add = 25
+				ITA = {
+					has_completed_focus = ITA_franco_italian_pact
+				}
+			}
+			modifier = {
+				add = 15
+				ITA = {
+					has_country_leader = {
+						character = ITA_dino_grandi
+						ruling_only = yes
+					}
+				}
+			}
+			modifier = {
+				add = 40
+				ITA = {
+					has_same_ideology = yes
+				}
+			}
+		}
+
+		effect_tooltip = {
+			ITA = {
+				transfer_state = 458
+				transfer_state = 665
+			}
+			FRA = {
+				add_offsite_building = { type = industrial_complex level = 2 }
+			}
+		}
+
+		hidden_effect = {
+			set_global_flag = ITA_will_get_tunisia
+		}
+		
+		if = { #Send this event if Britain controls the necessary state(s)
+			limit = {
+				ENG = {
+					controls_state = 116
+				}
+			}
+			ENG = {
+				country_event = {
+				    id = BBA_italy_interaction_events.35
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else = { #If Britain didn't have the necessary state(s), send this event
+			FRA = {
+				country_event = { #Balkan claims event
+				    id = BBA_italy_interaction_events.36
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+
+		hidden_effect = {
+			if = {
+				limit = {
+					NOT = {
+						has_country_flag = ITA_italy_has_started_negotiations_flag
+					}
+				}
+				set_country_flag = ITA_italy_has_started_negotiations_flag
+			}
+		}
+	}
+
+	# Non!
+	option = { 
+		name = BBA_italy_interaction_events.34.b
+
+		ai_chance = {
+			base = 50
+		}
+
+		if = { #Send this event if Britain controls the necessary state(s)
+			limit = {
+				ENG = {
+					controls_state = 116
+				}
+			}
+			ENG = {
+				country_event = {
+				    id = BBA_italy_interaction_events.35
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else = { #If Britain didn't have the necessary state(s), send this event
+			FRA = {
+				country_event = { #Balkan claims event
+				    id = BBA_italy_interaction_events.36
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+
+		hidden_effect = {
+			if = {
+				limit = {
+					NOT = {
+						has_country_flag = ITA_italy_has_started_negotiations_flag
+					}
+				}
+				set_country_flag = ITA_italy_has_started_negotiations_flag
+			}
+		}
+	}
+}
+
+# Italy wants to negotiate their claims to malta
+country_event = {
+	id = BBA_italy_interaction_events.35
+	title = BBA_italy_interaction_events.35.t 
+	desc = BBA_italy_interaction_events.35.desc
+	picture = GFX_report_event_generic_read_write
+	
+	is_triggered_only = yes
+
+	# We can give it to them
+	option = { 
+		name = BBA_italy_interaction_events.35.a 
+
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = 10
+				has_opinion = {
+					target = ITA
+					value > 70
+				}
+			}
+			modifier = {
+				add = 25
+				ITA = {
+					has_completed_focus = ITA_anglo_italian_pact
+				}
+			}
+			modifier = {
+				add = 15
+				ITA = {
+					has_country_leader = {
+						character = ITA_dino_grandi
+						ruling_only = yes
+					}
+				}
+			}
+			modifier = {
+				add = 40
+				ITA = {
+					has_same_ideology = yes
+				}
+			}
+		}
+
+		effect_tooltip = {
+			ITA = {
+				transfer_state = 116
+			}
+			ENG = {
+				add_offsite_building = { type = industrial_complex level = 1 }
+			}
+		}
+
+		hidden_effect = {
+			set_global_flag = ITA_will_get_malta
+		}
+
+		FRA = {
+			country_event = {
+			    id = BBA_italy_interaction_events.36
+			    days = 3
+			    random = 6
+			}
+		}
+
+		hidden_effect = {
+			if = {
+				limit = {
+					NOT = {
+						has_country_flag = ITA_italy_has_started_negotiations_flag
+					}
+				}
+				set_country_flag = ITA_italy_has_started_negotiations_flag
+			}
+		}
+	}
+
+	# They will not get it
+	option = { 
+		name = BBA_italy_interaction_events.35.b
+
+		ai_chance = {
+			base = 50
+		}
+
+		FRA = {
+			country_event = {
+			    id = BBA_italy_interaction_events.36
+			    days = 3
+			    random = 6
+			}
+		}
+
+		hidden_effect = {
+			if = {
+				limit = {
+					NOT = {
+						has_country_flag = ITA_italy_has_started_negotiations_flag
+					}
+				}
+				set_country_flag = ITA_italy_has_started_negotiations_flag
+			}
+		}
+	}
+}
+
+# Italy wants to negotiate their claims to the balkans
+country_event = {
+	id = BBA_italy_interaction_events.36
+	title = BBA_italy_interaction_events.36.t 
+	desc = BBA_italy_interaction_events.36.desc
+	picture = GFX_report_event_generic_read_write
+	
+	is_triggered_only = yes
+
+	immediate = { #For Loc purposes
+		hidden_effect = {
+			if = {
+				limit = {
+					NOT = {
+						has_country_flag = ITA_italy_has_started_negotiations_flag
+					}
+				}
+				set_country_flag = ITA_italy_has_started_negotiations_flag
+			}
+			else = {
+				set_country_flag = ITA_italy_has_started_negotiations_flag
+			}
+		}
+	}
+
+	#No use arguing
+	option = { 
+		name = BBA_italy_interaction_events.36.a 
+
+		hidden_effect = {
+			set_global_flag = ITA_will_get_balkans
+		}
+
+		effect_tooltip = {
+			103 = {
+				add_claim_by = ITA
+			}
+			853 = {
+				add_claim_by = ITA
+			}
+			102 = {
+				add_claim_by = ITA
+			}
+			109 = {
+				add_claim_by = ITA
+			}
+			104 = {
+				add_claim_by = ITA
+			}
+			804 = {
+				add_claim_by = ITA
+			}
+			105 = {
+				add_claim_by = ITA
+			}
+			802 = {
+				add_claim_by = ITA
+			}
+			106 = {
+				add_claim_by = ITA
+			}
+			185 = {
+				add_claim_by = ITA
+			}
+			47 = {
+				add_claim_by = ITA
+			}
+			186 = {
+				add_claim_by = ITA
+			}
+			187 = {
+				add_claim_by = ITA
+			}
+			182 = {
+				add_claim_by = ITA
+			}
+		}
+
+		ITA = {
+			country_event = {
+			    id = BBA_italy_interaction_events.37
+			    days = 3
+			    random = 6
+			}
+		}
+	}
+}
+
+
+# (ITA) Treaty-terms concluded 
+country_event = {
+	id = BBA_italy_interaction_events.37
+	title = BBA_italy_interaction_events.37.t 
+	desc = BBA_italy_interaction_events.37.desc
+	picture = GFX_report_event_generic_read_write
+	
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			ENG = {
+				clr_country_flag = ITA_italy_has_started_negotiations_flag
+			}
+			FRA = {
+				clr_country_flag = ITA_italy_has_started_negotiations_flag
+			}
+		}
+	}
+
+	# Not all we wanted, but we can't complain
+	option = { 
+		name = BBA_italy_interaction_events.37.a 
+		
+		ai_chance = {
+			base = 100
+		}
+		
+		trigger = {
+			NOT = {
+				AND = {
+					has_global_flag = ITA_will_get_british_somalia
+					has_global_flag = ITA_will_get_french_somaliland
+					has_global_flag = ITA_will_get_socotra
+					has_global_flag = ITA_will_get_tunisia
+					has_global_flag = ITA_will_get_malta
+					has_global_flag = ITA_will_get_balkans
+				}
+			}
+		}
+
+		IF = {
+			limit = {
+				has_global_flag = ITA_will_get_british_somalia
+				ENG = {
+					controls_state = 269
+				}
+			}
+			ITA = {
+				transfer_state = 269
+				transfer_state = 903
+			}
+			ENG = {
+				add_offsite_building = { type = industrial_complex level = 2 }
+			}
+		}
+
+		IF = {
+			limit = {
+				has_global_flag = ITA_will_get_french_somaliland
+				FRA = {
+					controls_state = 268
+				}
+			}
+			ITA = {
+				transfer_state = 268
+			}
+			FRA = {
+				add_offsite_building = { type = industrial_complex level = 1 }
+			}
+		}
+
+		IF = {
+			limit = {
+				has_global_flag = ITA_will_get_socotra
+				ENG = {
+					controls_state = 906
+				}
+			}
+			ITA = {
+				transfer_state = 906
+			}
+			ENG = {
+				add_offsite_building = { type = industrial_complex level = 1 }
+			}
+		}
+
+		IF = {
+			limit = {
+				has_global_flag = ITA_will_get_tunisia
+				FRA = {
+					controls_state = 458
+					controls_state = 665
+				}
+			}
+			ITA = {
+				transfer_state = 458
+				transfer_state = 665
+			}
+			FRA = {
+				add_offsite_building = { type = industrial_complex level = 2 }
+			}
+		}
+
+		IF = {
+			limit = {
+				has_global_flag = ITA_will_get_malta
+				ENG = {
+					controls_state = 116
+				}
+			}
+			ITA = {
+				transfer_state = 116
+			}
+			ENG = {
+				add_offsite_building = { type = industrial_complex level = 1 }
+			}
+		}
+
+		IF = {
+			limit = {
+				has_global_flag = ITA_will_get_balkans
+			}
+			
+			103 = {
+				add_claim_by = ITA
+			}
+			853 = {
+				add_claim_by = ITA
+			}
+			102 = {
+				add_claim_by = ITA
+			}
+			109 = {
+				add_claim_by = ITA
+			}
+			104 = {
+				add_claim_by = ITA
+			}
+			804 = {
+				add_claim_by = ITA
+			}
+			105 = {
+				add_claim_by = ITA
+			}
+			802 = {
+				add_claim_by = ITA
+			}
+			106 = {
+				add_claim_by = ITA
+			}
+			185 = {
+				add_claim_by = ITA
+			}
+			47 = {
+				add_claim_by = ITA
+			}
+			186 = {
+				add_claim_by = ITA
+			}
+			187 = {
+				add_claim_by = ITA
+			}
+			182 = {
+				add_claim_by = ITA
+			}
+		}
+
+		hidden_effect = {
+			ITA = {
+				country_event = {
+				    id = BBA_italy_interaction_events.39
+				    days = 360
+				}
+			}
+		}
+	}
+
+	# Splendido!
+	option = { 
+		name = BBA_italy_interaction_events.37.b 
+		
+		ai_chance = {
+			base = 100
+		}
+		
+		trigger = {
+			AND = {
+				has_global_flag = ITA_will_get_british_somalia
+				has_global_flag = ITA_will_get_french_somaliland
+				has_global_flag = ITA_will_get_socotra
+				has_global_flag = ITA_will_get_tunisia
+				has_global_flag = ITA_will_get_malta
+				has_global_flag = ITA_will_get_balkans
+			}
+		}
+
+		IF = {
+			limit = {
+				has_global_flag = ITA_will_get_british_somalia
+			}
+			ITA = {
+				transfer_state = 269
+				transfer_state = 903
+			}
+			ENG = {
+				add_offsite_building = { type = industrial_complex level = 2 }
+			}
+		}
+
+		IF = {
+			limit = {
+				has_global_flag = ITA_will_get_french_somaliland
+			}
+			ITA = {
+				transfer_state = 268
+			}
+			FRA = {
+				add_offsite_building = { type = industrial_complex level = 1 }
+			}
+		}
+
+		IF = {
+			limit = {
+				has_global_flag = ITA_will_get_socotra
+			}
+			ITA = {
+				transfer_state = 906
+			}
+			ENG = {
+				add_offsite_building = { type = industrial_complex level = 1 }
+			}
+		}
+
+		IF = {
+			limit = {
+				has_global_flag = ITA_will_get_tunisia
+			}
+			ITA = {
+				transfer_state = 458
+				transfer_state = 665
+			}
+			FRA = {
+				add_offsite_building = { type = industrial_complex level = 2 }
+			}
+		}
+
+		IF = {
+			limit = {
+				has_global_flag = ITA_will_get_malta
+			}
+			ITA = {
+				transfer_state = 116
+			}
+			ENG = {
+				add_offsite_building = { type = industrial_complex level = 1 }
+			}
+		}
+
+		IF = {
+			limit = {
+				has_global_flag = ITA_will_get_balkans
+			}
+			
+			103 = {
+				add_claim_by = ITA
+			}
+			853 = {
+				add_claim_by = ITA
+			}
+			102 = {
+				add_claim_by = ITA
+			}
+			109 = {
+				add_claim_by = ITA
+			}
+			104 = {
+				add_claim_by = ITA
+			}
+			804 = {
+				add_claim_by = ITA
+			}
+			105 = {
+				add_claim_by = ITA
+			}
+			802 = {
+				add_claim_by = ITA
+			}
+			106 = {
+				add_claim_by = ITA
+			}
+			185 = {
+				add_claim_by = ITA
+			}
+			47 = {
+				add_claim_by = ITA
+			}
+			186 = {
+				add_claim_by = ITA
+			}
+			187 = {
+				add_claim_by = ITA
+			}
+			182 = {
+				add_claim_by = ITA
+			}
+		}
+
+		hidden_effect = {
+			ITA = {
+				country_event = {
+				    id = BBA_italy_interaction_events.39
+				    days = 360
+				}
+			}
+		}
 	}
 }
