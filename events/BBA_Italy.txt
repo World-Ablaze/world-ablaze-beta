@@ -1,0 +1,4523 @@
+
+add_namespace = BBA_italy_missiolinis
+add_namespace = BBA_italy_second_italo_ethiopian_war
+add_namespace = BBA_italy_interaction_events
+add_namespace = BBA_italy_interaction_events_news
+
+
+# Italy offer for peace - Event for ETH
+country_event = {
+	id = BBA_italy_second_italo_ethiopian_war.1
+	title = BBA_italy_second_italo_ethiopian_war.1.t
+	desc = BBA_italy_second_italo_ethiopian_war.1.desc
+	picture = GFX_report_event_african_soldiers
+	
+	is_triggered_only = yes
+	
+	#ACCEPT
+	option = {
+		name = BBA_italy_second_italo_ethiopian_war.1.a
+		ai_chance = {
+			base = 10
+			modifier = { #If they're stronger than ITA then never accept
+				factor = 0
+				strength_ratio = {
+					tag = FROM
+					ratio > 1
+				}
+			}
+		}
+		effect_tooltip = {
+			if = { #ERITREA
+				limit = {
+					has_full_control_of_state = 550
+				}
+				transfer_state = 550
+				550 = { add_compliance = 50 }
+			}
+			if = { #SOMALILAND
+				limit = {
+					has_full_control_of_state = 559
+				}
+				transfer_state = 559
+				559 = { add_compliance = 50 }
+			}
+			if = { #JUBALAND
+				limit = {
+					has_full_control_of_state = 844
+				}
+				transfer_state = 844
+				844 = { add_compliance = 50 }
+			}
+			if = {
+				limit = {
+					908 = {
+						is_owned_by = FROM
+					}
+				}
+				#AFAR always goes to ETH if owned by ITA
+				transfer_state = 908 
+				908 = { add_compliance = 50 }
+			}
+			white_peace = FROM
+		}
+
+		hidden_effect = {
+			FROM = {
+				country_event = { id = BBA_italy_second_italo_ethiopian_war.2 days = 1 }
+			}
+			if = {
+				limit = {
+					is_in_faction = no
+				}
+				set_country_flag = ETH_forced_ITA_peace_achievement
+			}
+		}
+	}
+	
+	option = {
+		name = BBA_italy_second_italo_ethiopian_war.1.b
+		ai_chance = {
+			base = 1
+			modifier = { #Usually they should accept
+				factor = 0
+				strength_ratio = {
+					tag = FROM
+					ratio < 1
+				}
+			}
+		}
+		FROM = {
+			country_event = { id = BBA_italy_second_italo_ethiopian_war.3 days = 1 }
+		}
+	}
+}
+
+# ETH accepts ITA peace offer - Event for ITA
+country_event = {
+	id = BBA_italy_second_italo_ethiopian_war.2
+	title = BBA_italy_second_italo_ethiopian_war.2.t
+	desc = BBA_italy_second_italo_ethiopian_war.2.desc
+	picture = GFX_report_event_african_soldiers
+	
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			ITA_end_the_italo_ethiopian_war = yes
+		}
+	}
+	
+	#Ok - Already completed initial missiolini focus
+	option = {
+		name = BBA_italy_second_italo_ethiopian_war.2.a
+
+		trigger = {
+			OR = {
+				has_completed_focus = ITA_solid_progress
+				has_completed_focus = ITA_the_abyssinian_fiasco
+				has_completed_focus = ITA_struggle_in_ethiopia
+			}
+		}
+		add_stability = -0.5
+
+		if = { #ERITREA
+			limit = {
+				FROM = { has_full_control_of_state = 550 }
+			}
+			FROM = {
+				transfer_state = 550
+				550 = { add_compliance = 50 }
+			}
+		}
+		if = { #SOMALILAND
+			limit = {
+				FROM = { has_full_control_of_state = 559 }
+			}
+			FROM = {
+				transfer_state = 559
+				559 = { add_compliance = 50 }
+			}
+		}
+		if = { #JUBALAND
+			limit = {
+				FROM = { has_full_control_of_state = 844 }
+			}
+			FROM = {
+				transfer_state = 844
+				844 = { add_compliance = 50 }
+			}
+		}
+		if = { #AFAR always goes to ETH if owned by ITA
+			limit = {
+				owns_state = 908
+			}
+			FROM = {
+				transfer_state = 908 
+				908 = { add_compliance = 50 }
+			}
+		}
+		white_peace = FROM
+		hidden_effect = {
+			if = {
+				limit = {
+					any_country = {
+						is_in_faction_with = ROOT
+						has_war_with = FROM
+					}
+				}
+				every_other_country = {
+					limit = {
+						is_in_faction_with = ROOT
+						has_war_with = FROM
+					}
+					white_peace = FROM
+				}
+			}
+		}
+
+		ITA_manage_italian_defeat_in_ethiopia_effect = yes
+
+		hidden_effect = {
+			news_event = {
+				id = news.337
+				days = 1
+			}
+		}
+	}
+
+	# Ok - Abyssinian Fiasco
+	option = { 
+		name = BBA_italy_missiolinis.02_north.b
+
+		trigger = {
+			has_dlc = "By Blood Alone" #Abyssinian Fiasco focus not available without BBA
+			NOT = {
+				has_completed_focus = ITA_solid_progress
+				has_completed_focus = ITA_the_abyssinian_fiasco
+				has_completed_focus = ITA_struggle_in_ethiopia
+			}
+		}
+
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 100
+				OR = {
+					ITA_is_christian_democracy_ai = yes
+					ITA_is_communist_ai = yes
+				}
+			}
+		}
+
+		if = { #ERITREA
+			limit = {
+				FROM = { has_full_control_of_state = 550 }
+			}
+			FROM = {
+				transfer_state = 550
+				550 = { add_compliance = 50 }
+			}
+		}
+		if = { #SOMALILAND
+			limit = {
+				FROM = { has_full_control_of_state = 559 }
+			}
+			FROM = {
+				transfer_state = 559
+				559 = { add_compliance = 50 }
+			}
+		}
+		if = { #JUBALAND
+			limit = {
+				FROM = { has_full_control_of_state = 844 }
+			}
+			FROM = {
+				transfer_state = 844
+				844 = { add_compliance = 50 }
+			}
+		}
+		if = { #AFAR always goes to ETH if owned by ITA
+			limit = {
+				owns_state = 908
+			}
+			FROM = {
+				transfer_state = 908 
+				908 = { add_compliance = 50 }
+			}
+		}
+		white_peace = FROM
+
+		if = {
+			limit = {
+				NOT = { has_completed_focus = ITA_struggle_in_ethiopia }
+				NOT = { has_completed_focus = ITA_solid_progress }
+			}
+			complete_national_focus = ITA_the_abyssinian_fiasco
+		}
+
+		ITA_manage_italian_defeat_in_ethiopia_effect = yes
+
+		hidden_effect = {
+			news_event = {
+				id = news.337
+				days = 1
+			}
+		}
+	}
+
+	# Ok - Struggle in Ethiopia
+	option = { 
+		name = BBA_italy_missiolinis.02_north.c
+
+		trigger = {
+			NOT = {
+				has_completed_focus = ITA_solid_progress
+				has_completed_focus = ITA_the_abyssinian_fiasco
+				has_completed_focus = ITA_struggle_in_ethiopia
+			}
+		}
+
+		ai_chance = {
+			base = 10
+		}
+
+		if = { #ERITREA
+			limit = {
+				FROM = { has_full_control_of_state = 550 }
+			}
+			FROM = {
+				transfer_state = 550
+				550 = { add_compliance = 50 }
+			}
+		}
+		if = { #SOMALILAND
+			limit = {
+				FROM = { has_full_control_of_state = 559 }
+			}
+			FROM = {
+				transfer_state = 559
+				559 = { add_compliance = 50 }
+			}
+		}
+		if = { #JUBALAND
+			limit = {
+				FROM = { has_full_control_of_state = 844 }
+			}
+			FROM = {
+				transfer_state = 844
+				844 = { add_compliance = 50 }
+			}
+		}
+		if = { #AFAR always goes to ETH if owned by ITA
+			limit = {
+				owns_state = 908
+			}
+			FROM = {
+				transfer_state = 908 
+				908 = { add_compliance = 50 }
+			}
+		}
+		white_peace = FROM
+
+		if = {
+			limit = {
+				NOT = { has_completed_focus = ITA_the_abyssinian_fiasco }
+				NOT = { has_completed_focus = ITA_solid_progress }
+			}
+			complete_national_focus = ITA_struggle_in_ethiopia
+		}
+
+		ITA_manage_italian_defeat_in_ethiopia_effect = yes
+
+		hidden_effect = {
+			news_event = {
+				id = news.337
+				days = 1
+			}
+		}
+
+	}
+}
+
+# ETH refects ITA peace offer - Event for ITA
+country_event = {
+	id = BBA_italy_second_italo_ethiopian_war.3
+	title = BBA_italy_second_italo_ethiopian_war.3.t
+	desc = BBA_italy_second_italo_ethiopian_war.3.desc
+	picture = GFX_report_event_african_soldiers
+	
+	is_triggered_only = yes
+	
+	#Ok
+	option = {
+		name = BBA_italy_second_italo_ethiopian_war.3.a
+
+	}
+}
+
+#########################
+###### MISSIOLINIS ######
+#########################
+
+### RANDOM MISSION DISPATCHER ###
+country_event = {
+	id = BBA_italy_missiolinis.00
+	hidden = yes
+
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			if = { #IF NO OTHER MISSIOLINI HAS BEEN ACTIVATED RECENTLY AND NOT TOO MANY MISSIONS ACTIVE, GO AHEAD
+				limit = {
+					ITA_missiolinis_cd_ready = yes
+					ITA_missiolinis_can_have_a_new_mission = yes
+				}
+				#Trigger a random missiolini
+				random_list = {
+					#10 = { #STRENGTHEN HEAVY INDUSTRY - #For now only triggered once as a fixed mission
+					#	country_event = BBA_italy_missiolinis.31
+					#}
+					#10 = { #STRENGTHEN THE ARMY - #For now only triggered once as a fixed mission
+					#	country_event = BBA_italy_missiolinis.41
+					#}
+					10 = { #STOCKPILE TRUCKS
+						modifier = {
+							factor = 10
+							has_equipment = {
+								motorized_equipment_1 < 50
+							}
+						}
+						modifier = { #Trigger only once
+							factor = 0
+							has_country_flag = ITA_missiolini_stockpile_trucks_triggered_flag
+						}
+						modifier = { #Do not re-roll same missiolini
+							factor = 0
+							check_variable = { ITA_missiolini_reroll_from = 1 } #STOCKPILE TRUCKS
+						}
+						country_event = BBA_italy_missiolinis.51
+					}
+					10 = { #STOCKPILE FUEL
+						modifier = {
+							factor = 10
+							has_fuel < 60000
+						}
+						modifier = { #Trigger only once
+							factor = 0
+							has_country_flag = ITA_missiolini_stockpile_fuel_triggered_flag
+						}
+						modifier = { #Do not re-roll same missiolini
+							factor = 0
+							check_variable = { ITA_missiolini_reroll_from = 2 } #STOCKPILE FUEL
+						}
+						country_event = BBA_italy_missiolinis.61
+					}
+					10 = { #STRENGTHEN THE AIRFORCE
+						modifier = {
+							factor = 10
+							has_equipment = {
+								fighter_equipment < 100
+							}
+						}
+						modifier = {
+							factor = 5
+							has_equipment = {
+								attacker_equipment < 100
+							}
+							has_equipment = {
+								CAS_equipment < 100
+							}
+							has_equipment = {
+								cv_nav_bomber_equipment < 100
+							}
+						}
+						modifier = { #Rare to have it twice
+							factor = 0.1
+							has_country_flag = ITA_missiolini_strengthen_the_airforce_triggered_flag
+						}
+						modifier = { #Do not re-roll same missiolini
+							factor = 0
+							check_variable = { ITA_missiolini_reroll_from = 3 } #STRENGTHEN THE AIRFORCE
+						}
+						country_event = BBA_italy_missiolinis.71
+					}
+					10 = { #INDUSTRIAL RESEARCH
+						modifier = {
+							factor = 0
+							OR = {
+								#date < 1939.1.1 #MM: Shouldn't be necessary (and makes it harder to test)
+								AND = { #Potentially 1943+
+									OR = {
+										has_tech = flexible_line
+										has_tech = streamlined_line
+										is_researching_technology = flexible_line
+										is_researching_technology = streamlined_line
+									}
+									OR = {
+										has_tech = expanded_industry5
+										is_researching_technology = expanded_industry5
+									}
+									OR = {
+										has_tech = construction5
+										is_researching_technology = construction5
+									}
+								}
+								AND = { #1941-1943
+									date < 1943.1.1
+									OR = {
+										has_tech = assembly_line_production
+										is_researching_technology = assembly_line_production
+									}
+									OR = {
+										has_tech = expanded_industry4
+										is_researching_technology = expanded_industry4
+									}
+									OR = {
+										has_tech = construction4
+										is_researching_technology = construction4
+									}
+								}
+								AND = { #1939-1941
+									date < 1941.1.1
+									OR = {
+										has_tech = advanced_machine_tools
+										is_researching_technology = advanced_machine_tools
+									}
+									OR = {
+										has_tech = expanded_industry3
+										is_researching_technology = expanded_industry3
+									}
+									OR = {
+										has_tech = construction3
+										is_researching_technology = construction3
+									}
+								}
+							}
+						}
+						modifier = {
+							factor = 10
+							OR = {
+								AND = {
+									date > 1940.1.1
+									OR = {
+										NOT = { has_tech = advanced_machine_tools }
+										AND = {
+											NOT = { has_tech = expanded_industry3 }
+										}
+										NOT = { has_tech = construction3 }
+									}
+								}
+								AND = {
+									date > 1942.1.1
+									OR = {
+										NOT = { has_tech = assembly_line_production }
+										AND = {
+											NOT = { has_tech = expanded_industry4 }
+										}
+										NOT = { has_tech = construction4 }
+									}
+								}
+								AND = {
+									date > 1944.1.1
+									OR = {
+										AND = {
+											NOT = { has_tech = flexible_line }
+											NOT = { has_tech = streamlined_line }
+										}
+										AND = {
+											NOT = { has_tech = expanded_industry5 }
+										}
+										NOT = { has_tech = construction5 }
+									}
+								}
+							}
+						}
+						modifier = { #Less probable to have it twice
+							factor = 0.5
+							has_country_flag = ITA_missiolini_industrial_research_triggered_flag
+						}
+						modifier = { #Do not re-roll same missiolini
+							factor = 0
+							check_variable = { ITA_missiolini_reroll_from = 4 } #INDUSTRIAL RESEARCH
+						}
+						country_event = BBA_italy_missiolinis.81
+					}
+					10 = { #EXPAND INTELLIGENCE SERVICE
+						modifier = {
+							factor = 0
+							OR = {
+								NOT = { has_dlc = "La Resistance" }
+								AND = {
+									has_done_agency_upgrade = upgrade_form_department
+									has_done_agency_upgrade = upgrade_army_department
+									OR = {
+										has_done_agency_upgrade = upgrade_anti_partisan
+										NOT = {
+											any_controlled_state = {
+												has_resistance = yes
+											}
+										}
+									}
+									has_done_agency_upgrade = upgrade_passive_defense
+								}
+							}
+						}
+						modifier = {
+							factor = 10
+							date > 1939.6.1
+							OR = {
+								NOT = { has_done_agency_upgrade = upgrade_form_department }
+								NOT = { has_done_agency_upgrade = upgrade_army_department }
+								AND = {
+									NOT = { has_done_agency_upgrade = upgrade_anti_partisan }
+									any_controlled_state = {
+										NOT = { is_owned_by = ROOT }
+									}
+								}
+							}
+						}
+						modifier = { #Less probable to have it twice
+							factor = 0.5
+							has_country_flag = ITA_missiolini_expand_intelligence_service_triggered_flag
+						}
+						modifier = { #Do not re-roll same missiolini
+							factor = 0
+							check_variable = { ITA_missiolini_reroll_from = 5 } #EXPAND INTELLIGENCE SERVICE
+						}
+						country_event = BBA_italy_missiolinis.91
+					}
+					10 = { #OCCUPY ALBANIA
+						modifier = {
+							factor = 0
+							OR = {
+								NOT = { country_exists = ALB }
+								has_country_flag = ITA_missiolini_occupy_albania_triggered_flag #Trigger only once
+								focus_progress = {
+									focus = ITA_albanian_occupation
+									progress > 0
+								}
+								AND = {
+									44 = { #ALBANIA
+										OR = {
+											is_fully_controlled_by = ROOT
+											controller = {
+												is_subject_of = ROOT
+												hidden_trigger = { #To prevent unnecessary overcrowding
+													has_full_control_of_state = PREV
+												}
+											}
+										}
+									}
+									805 = { #NORTHERN EPIRUS
+										OR = {
+											is_fully_controlled_by = ROOT
+											controller = {
+												is_subject_of = ROOT
+												hidden_trigger = { #To prevent unnecessary overcrowding
+													has_full_control_of_state = PREV
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+						modifier = {
+							factor = 10
+							date > 1938.6.1 #MM: If this makes ppl rush Albania for no real reason, it can be triggered in 1939.1.1
+						}
+						modifier = {
+							factor = 100
+							date > 1938.6.1 #MM: If this makes ppl rush Albania for no real reason, it can be triggered in 1939.1.1
+							is_historical_focus_on = yes
+						}
+						modifier = { #NOT AVAILABLE WHEN RE-ROLLING MISSIOLINI
+							factor = 0
+							has_country_flag = ITA_missiolinis_rerolling_flag
+						}
+						country_event = BBA_italy_missiolinis.101
+					}
+					10 = { #OCCUPY DALMATIA
+						modifier = {
+							factor = 0
+							OR = {
+								date < 1940.6.1
+								NOT = { country_exists = YUG }
+								has_country_flag = ITA_missiolini_occupy_dalmatia_triggered_flag #Trigger only once
+								103 = { #DALMATIA
+									OR = {
+										is_fully_controlled_by = ROOT
+										controller = {
+											is_subject_of = ROOT
+											hidden_trigger = { #To prevent unnecessary overcrowding
+												has_full_control_of_state = PREV
+											}
+										}
+									}
+								}
+							}
+						}
+						modifier = {
+							factor = 10
+							date > 1940.6.1 #This first just because it's easier to go for YUG first.
+						}
+						modifier = {
+							factor = 100
+							date > 1940.6.1 #This first just because it's easier to go for YUG first.
+							is_historical_focus_on = yes
+						}
+						modifier = {
+							factor = 10
+							ITA_missiolinis_weigh_mussolini_feels_invincible = yes
+						}
+						modifier = {
+							factor = 10
+							ITA_missiolinis_weigh_mussolini_feels_safe = yes
+						}
+						modifier = { #NOT AVAILABLE WHEN RE-ROLLING MISSIOLINI
+							factor = 0
+							has_country_flag = ITA_missiolinis_rerolling_flag
+						}
+						country_event = BBA_italy_missiolinis.111
+					}
+					10 = { #OCCUPY GREECE
+						modifier = {
+							factor = 0
+							OR = {
+								date < 1941.1.1
+								NOT = { country_exists = GRE }
+								has_country_flag = ITA_missiolini_occupy_greece_triggered_flag #Trigger only once
+								AND = {
+									185 = { #EPIRUS
+										OR = {
+											is_fully_controlled_by = ROOT
+											controller = {
+												is_subject_of = ROOT
+												hidden_trigger = { #To prevent unnecessary overcrowding
+													has_full_control_of_state = PREV
+												}
+											}
+										}
+									}
+									47 = { #ATTICA
+										OR = {
+											is_fully_controlled_by = ROOT
+											controller = {
+												is_subject_of = ROOT
+												hidden_trigger = { #To prevent unnecessary overcrowding
+													has_full_control_of_state = PREV
+												}
+											}
+										}
+									}
+									186 = { #PELOPONNESE
+										OR = {
+											is_fully_controlled_by = ROOT
+											controller = {
+												is_subject_of = ROOT
+												hidden_trigger = { #To prevent unnecessary overcrowding
+													has_full_control_of_state = PREV
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+						modifier = {
+							factor = 10
+							date > 1941.1.1
+						}
+						modifier = {
+							factor = 100
+							date > 1941.1.1
+							is_historical_focus_on = yes
+						}
+						modifier = {
+							factor = 10
+							ITA_missiolinis_weigh_mussolini_feels_invincible = yes
+						}
+						modifier = {
+							factor = 10
+							ITA_missiolinis_weigh_mussolini_feels_safe = yes
+						}
+						modifier = { #NOT AVAILABLE WHEN RE-ROLLING MISSIOLINI
+							factor = 0
+							has_country_flag = ITA_missiolinis_rerolling_flag
+						}
+						country_event = BBA_italy_missiolinis.121
+					}
+					10 = { #OCCUPY TICINO
+						modifier = {
+							factor = 0
+							OR = {
+								has_country_flag = { flag = ITA_missiolinis_level_flag value < 3 } #Mad stuff
+								NOT = { country_exists = SWI }
+								has_country_flag = ITA_missiolini_occupy_ticino_triggered_flag #Trigger only once
+								846 = { #TICINO
+									OR = {
+										is_fully_controlled_by = ROOT
+										controller = {
+											is_subject_of = ROOT
+											hidden_trigger = { #To prevent unnecessary overcrowding
+												has_full_control_of_state = PREV
+											}
+										}
+									}
+								}
+							}
+						}
+						modifier = {
+							factor = 10
+							ITA_missiolinis_weigh_mussolini_esta_flipado = yes
+						}
+						modifier = {
+							factor = 10
+							ITA_missiolinis_weigh_mussolini_feels_invincible = yes
+						}
+						modifier = {
+							factor = 10
+							ITA_missiolinis_weigh_mussolini_feels_safe = yes
+						}
+						modifier = { #NOT AVAILABLE WHEN RE-ROLLING MISSIOLINI
+							factor = 0
+							has_country_flag = ITA_missiolinis_rerolling_flag
+						}
+						country_event = BBA_italy_missiolinis.131
+					}
+					10 = { #BOLSTER POLITICAL CABINET
+						modifier = {
+							factor = 0
+							OR = {
+								amount_taken_ideas = {
+									amount > 2
+									slots = { political_advisor }
+								}
+								has_country_flag = ITA_missiolini_bolster_political_cabinet_triggered_flag #Trigger only once
+							}
+						}
+						modifier = {
+							factor = 10
+							date > 1942.1.1
+							amount_taken_ideas = {
+								amount < 2
+								slots = { political_advisor }
+							}
+						}
+						modifier = { #Do not re-roll same missiolini
+							factor = 0
+							check_variable = { ITA_missiolini_reroll_from = 6 } #BOLSTER POLITICAL CABINET
+						}
+						country_event = BBA_italy_missiolinis.201
+					}
+					10 = { #BOLSTER MILITARY CABINET
+						modifier = {
+							factor = 0
+							OR = {
+								amount_taken_ideas = {
+									amount > 2
+									slots = { high_command }
+								}
+								has_country_flag = ITA_missiolini_bolster_military_high_command_triggered_flag #Trigger only once
+							}
+						}
+						modifier = {
+							factor = 10
+							date > 1942.1.1
+							amount_taken_ideas = {
+								amount < 2
+								slots = { high_command }
+							}
+						}
+						modifier = { #Do not re-roll same missiolini
+							factor = 0
+							check_variable = { ITA_missiolini_reroll_from = 7 } #BOLSTER MILITARY CABINET
+						}
+						country_event = BBA_italy_missiolinis.211
+					}
+				}
+			}
+			else = {
+				log = "NO MISSIOLINI PER TE BAMBINO"
+			}
+			country_event = { id = BBA_italy_missiolinis.00 days = 180 }
+
+			#Re-set vars and flags if re-rolling
+			if = {
+				limit = {
+					has_country_flag = ITA_missiolinis_rerolling_flag
+				}
+				#clr_country_flag = ITA_missiolinis_rerolling_flag #Clearing this flag in the actual new missiolini so that option to re-roll again doesn't show up
+				set_variable = { ITA_missiolini_reroll_from = 0 }
+			}
+		}
+	}
+}
+
+### PROGRESS IN ETHIOPIA ###
+
+# Progress in Ethiopia - FAILURE (North)
+country_event = {
+	id = BBA_italy_missiolinis.02_north #First Missiolini is in the Italo-Ethiopian War file
+	title = BBA_italy_missiolinis.02_north.t
+	desc = BBA_italy_missiolinis.02_north.desc
+	picture = GFX_report_event_generic_soldiers_surrendering
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	fire_only_once = yes
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_failed_missions = yes
+		}
+	}
+
+	# Oops (No focus to complete)
+	option = { 
+		name = BBA_italy_missiolinis.02_north.a
+		
+		trigger = {
+			OR = {
+				has_completed_focus = ITA_the_abyssinian_fiasco
+				has_completed_focus = ITA_struggle_in_ethiopia
+				NOT = { has_country_flag = ITA_missiolini_conquer_the_north_failed_flag }
+			}
+		}
+
+		ai_chance = {
+			base = 10
+		}
+
+		ITA_missiolini_progress_in_ethiopia_failure_effect = yes
+	}
+
+	# Oops (Complete The Abyssinian Fiasco)
+	option = { 
+		name = BBA_italy_missiolinis.02_north.b
+
+		trigger = {
+			has_dlc = "By Blood Alone" #Abyssinian Fiasco focus not available without BBA
+			NOT = {
+				has_completed_focus = ITA_the_abyssinian_fiasco
+				has_completed_focus = ITA_struggle_in_ethiopia
+				has_country_flag = ITA_missiolini_conquer_the_south_failed_flag
+			}
+		}
+
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 1000
+				OR = {
+					ITA_is_christian_democracy_ai = yes
+					ITA_is_communist_ai = yes
+				}
+			}
+		}
+
+		ITA_missiolini_progress_in_ethiopia_failure_effect = yes
+
+		if = {
+			limit = {
+				NOT = { has_completed_focus = ITA_struggle_in_ethiopia }
+				NOT = { has_completed_focus = ITA_solid_progress }
+			}
+			complete_national_focus = ITA_the_abyssinian_fiasco
+		}
+	}
+
+	# Oops (Complete Struggle in Ethiopia)
+	option = { 
+		name = BBA_italy_missiolinis.02_north.c
+
+		trigger = {
+			NOT = {
+				has_completed_focus = ITA_the_abyssinian_fiasco
+				has_completed_focus = ITA_struggle_in_ethiopia
+				has_country_flag = ITA_missiolini_conquer_the_south_failed_flag
+			}
+		}
+
+		ai_chance = {
+			base = 10
+			modifier = {
+				factor = 0
+				OR = {
+					ITA_is_christian_democracy_ai = yes
+					ITA_is_communist_ai = yes
+				}
+			}
+		}
+
+		ITA_missiolini_progress_in_ethiopia_failure_effect = yes
+		
+		if = {
+			limit = {
+				NOT = { has_completed_focus = ITA_the_abyssinian_fiasco }
+				NOT = { has_completed_focus = ITA_solid_progress }
+			}
+			complete_national_focus = ITA_struggle_in_ethiopia
+		}
+	}
+}
+
+# Progress in Ethiopia - FAILURE (South)
+country_event = {
+	id = BBA_italy_missiolinis.04_south #First Missiolini is in the Italo-Ethiopian War file
+	title = BBA_italy_missiolinis.04_south.t
+	desc = BBA_italy_missiolinis.04_south.desc
+	picture = GFX_report_event_generic_soldiers_surrendering
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	fire_only_once = yes
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_failed_missions = yes
+		}
+	}
+
+	# Oops (No focus to complete)
+	option = { 
+		name = BBA_italy_missiolinis.04_south.a
+		
+		trigger = {
+			OR = {
+				has_completed_focus = ITA_the_abyssinian_fiasco
+				has_completed_focus = ITA_struggle_in_ethiopia
+				NOT = { has_country_flag = ITA_missiolini_conquer_the_south_failed_flag }
+			}
+		}
+
+		ai_chance = {
+			base = 10
+		}
+
+		ITA_missiolini_progress_in_ethiopia_failure_effect = yes
+	}
+
+	# Oops (Complete The Abyssinian Fiasco)
+	option = { 
+		name = BBA_italy_missiolinis.04_south.b
+
+		trigger = {
+			has_dlc = "By Blood Alone"  #Abyssinian Fiasco focus not available without BBA
+			NOT = {
+				has_completed_focus = ITA_the_abyssinian_fiasco
+				has_completed_focus = ITA_struggle_in_ethiopia
+				has_country_flag = ITA_missiolini_conquer_the_north_failed_flag
+			}
+		}
+
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 1000
+				OR = {
+					ITA_is_christian_democracy_ai = yes
+					ITA_is_communist_ai = yes
+				}
+			}
+		}
+
+		ITA_missiolini_progress_in_ethiopia_failure_effect = yes
+		
+		if = {
+			limit = {
+				NOT = { has_completed_focus = ITA_struggle_in_ethiopia }
+				NOT = { has_completed_focus = ITA_solid_progress }
+			}
+			complete_national_focus = ITA_the_abyssinian_fiasco
+		}
+	}
+
+	# Oops (Complete Struggle in Ethiopia)
+	option = { 
+		name = BBA_italy_missiolinis.04_south.c
+
+		trigger = {
+			NOT = {
+				has_completed_focus = ITA_the_abyssinian_fiasco
+				has_completed_focus = ITA_struggle_in_ethiopia
+				has_country_flag = ITA_missiolini_conquer_the_north_failed_flag
+			}
+		}
+
+		ai_chance = {
+			base = 10
+			modifier = {
+				factor = 0
+				OR = {
+					ITA_is_christian_democracy_ai = yes
+					ITA_is_communist_ai = yes
+				}
+			}
+		}
+
+		ITA_missiolini_progress_in_ethiopia_failure_effect = yes
+		
+		if = {
+			limit = {
+				NOT = { has_completed_focus = ITA_the_abyssinian_fiasco }
+				NOT = { has_completed_focus = ITA_solid_progress }
+			}
+			complete_national_focus = ITA_struggle_in_ethiopia
+		}
+	}
+}
+
+# Progress in Ethiopia - SUCCESS (North)
+country_event = {
+	id = BBA_italy_missiolinis.03_north
+	title = BBA_italy_missiolinis.03_north.t
+	desc = BBA_italy_missiolinis.03_north.desc
+	picture = GFX_report_event_generic_military_parade
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	fire_only_once = yes
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_successful_missions = yes
+		}
+	}
+
+	# Nice
+	option = { 
+		name = BBA_italy_missiolinis.03_north.a
+		ai_chance = {
+			base = 10
+		}
+
+		ITA_missiolini_progress_in_ethiopia_success_effect = yes
+	}
+}
+
+# Progress in Ethiopia - SUCCESS (South)
+country_event = {
+	id = BBA_italy_missiolinis.05_south
+	title = BBA_italy_missiolinis.05_south.t
+	desc = BBA_italy_missiolinis.05_south.desc
+	picture = GFX_report_event_generic_military_parade
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	fire_only_once = yes
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_successful_missions = yes
+		}
+	}
+
+	# Nice
+	option = { 
+		name = BBA_italy_missiolinis.05_south.a
+		ai_chance = {
+			base = 10
+		}
+		
+		ITA_missiolini_progress_in_ethiopia_success_effect = yes
+	}
+}
+
+
+### CONQUER ETHIOPIA ###
+# Conquer Ethiopia - Missiolini
+country_event = {
+	id = BBA_italy_missiolinis.11
+	title = BBA_italy_missiolinis.11.t
+	desc = BBA_italy_missiolinis.11.desc
+	picture = GFX_report_event_generic_mussolini
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	fire_only_once = yes
+
+	trigger = {
+		ITA_missiolinis_cd_ready = yes #IF NO OTHER MISSIOLINI HAS BEEN ACTIVATED RECENTLY, GO AHEAD
+		has_global_flag = second_italo_ethiopian_war_flag
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_initialize_new_mission_effect = yes
+		}
+	}
+
+	# OK dude
+	option = { 
+		name = BBA_italy_missiolinis.11.a
+		ai_chance = {
+			base = 10
+		}
+
+		activate_mission = ITA_missiolini_conquer_ethiopia
+	}
+}
+
+# Conquer Ethiopia - FAILURE 
+country_event = {
+	id = BBA_italy_missiolinis.12
+	title = BBA_italy_missiolinis.12.t
+	desc = BBA_italy_missiolinis.12.desc
+	picture = GFX_report_event_generic_destroyed_vehicles
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	fire_only_once = yes
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_failed_missions = yes
+		}
+	}
+
+	# Ooops
+	option = { 
+		name = BBA_italy_missiolinis.12.a
+		ai_chance = {
+			base = 10
+		}
+
+		ITA_missiolini_conquer_ethiopia_failure_effect = yes
+	}
+}
+
+# Conquer Ethiopia - SUCCESS 
+country_event = {
+	id = BBA_italy_missiolinis.13
+	title = BBA_italy_missiolinis.13.t
+	desc = BBA_italy_missiolinis.13.desc
+	picture = GFX_report_event_generic_italian_celebration
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	fire_only_once = yes
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_successful_missions = yes
+		}
+	}
+
+	# Nice
+	option = { 
+		name = BBA_italy_missiolinis.13.a
+		ai_chance = {
+			base = 10
+		}
+
+		ITA_missiolini_conquer_ethiopia_success_effect = yes
+	}
+}
+
+
+### PACIFY ETHIOPIA ###
+# Pacify Ethiopia - Dispatcher
+country_event = {
+	id = BBA_italy_missiolinis.20
+	hidden = yes
+
+	fire_only_once = yes
+
+	immediate = {
+		hidden_effect = {
+			if = { #IF NO OTHER MISSIOLINI HAS BEEN ACTIVATED RECENTLY, GO AHEAD
+				limit = {
+					ITA_missiolinis_cd_ready = yes
+				}
+				ITA = {
+					country_event = { id = BBA_italy_missiolinis.21 }
+				}
+			}
+			else = { #OTHERWISE RE-TRIGGER EVENT AFTER MIN CD TIME
+				country_event = { id = BBA_italy_missiolinis.20 days = ITA_missiolinis_min_cd_between_missions }
+			}
+		}
+	}
+
+	trigger = {
+		original_tag = ITA
+		date > 1936.01.01
+		NOT = { has_global_flag = second_italo_ethiopian_war_flag }
+		OR = {
+			AND = { #ETH in exile - conditions
+				has_dlc = "By Blood Alone"
+				ETH_is_in_exile = yes
+				any_controlled_state = {
+					is_core_of = ETH
+					NOT = { is_owned_by = ROOT }
+				}
+			}
+			any_owned_state = {
+				is_core_of = ETH
+				compliance < 70 #WARNING THIS VALUE NEEDS TO MATCH THE ONE IN DECISION GOAL
+			}
+		}
+		ITA_missiolinis_system_available = yes
+	}
+
+	mean_time_to_happen = {
+		days = 15
+	}
+}
+
+# Pacify Ethiopia - Missiolini
+country_event = {
+	id = BBA_italy_missiolinis.21
+	title = BBA_italy_missiolinis.21.t
+	desc = BBA_italy_missiolinis.21.desc
+	picture = GFX_report_event_generic_mussolini
+	
+	fire_only_once = yes
+
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_cd_ready = yes #IF NO OTHER MISSIOLINI HAS BEEN ACTIVATED RECENTLY, GO AHEAD
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_initialize_new_mission_effect = yes
+		}
+	}
+
+	# OK dude
+	option = { 
+		name = BBA_italy_missiolinis.21.a
+		ai_chance = {
+			base = 10
+		}
+
+		if = { # BBA
+			limit = {
+				has_dlc = "By Blood Alone"
+				ETH_is_in_exile = yes
+			}
+			activate_mission = ITA_missiolini_pacify_ethiopia
+		}
+		else = { # NO BBA
+			activate_mission = ITA_missiolini_pacify_ethiopia_vanilla
+		}
+	}
+}
+
+# Pacify Ethiopia - FAILURE 
+country_event = {
+	id = BBA_italy_missiolinis.22
+	title = BBA_italy_missiolinis.22.t
+	desc = BBA_italy_missiolinis.22.desc
+	picture = GFX_report_event_ETH_ethiopian_warriors
+	
+	is_triggered_only = yes
+
+	fire_only_once = yes
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_failed_missions = yes
+		}
+	}
+
+	# Ooops
+	option = { 
+		name = BBA_italy_missiolinis.22.a
+
+		ITA_missiolini_pacify_ethiopia_failure_effect = yes
+	}
+}
+
+# Pacify Ethiopia - SUCCESS 
+country_event = {
+	id = BBA_italy_missiolinis.23
+	title = BBA_italy_missiolinis.23.t
+	desc = BBA_italy_missiolinis.23.desc
+	picture = GFX_report_event_fascist_speech
+	
+	is_triggered_only = yes
+
+	fire_only_once = yes
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_successful_missions = yes
+		}
+	}
+
+	# Nice
+	option = { 
+		name = BBA_italy_missiolinis.23.a
+
+		ITA_missiolini_pacify_ethiopia_success_effect = yes
+	}
+}
+
+
+### INDUSTRIALIZATION ###
+# Industrialization - Missiolini
+country_event = {
+	id = BBA_italy_missiolinis.31
+	title = BBA_italy_missiolinis.31.t
+	desc = BBA_italy_missiolinis.31.desc
+	picture = GFX_report_event_generic_mussolini
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_cd_ready = yes #IF NO OTHER MISSIOLINI HAS BEEN ACTIVATED RECENTLY, GO AHEAD
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_initialize_new_mission_effect = yes
+
+			#Get number of civs to build
+			set_variable = { ITA_missiolinis_required_mills = ROOT.num_of_military_factories }
+			add_to_variable = { ITA_missiolinis_required_mills = ITA_missiolinis_number_of_mills_goal }
+			add_to_variable = { ITA_missiolinis_required_mills = -1 } #So that the trigger in the mission works properly (can only use >, and not >=)
+			#TODO_Manu: Probably this will be a fixed amount of civs in the future. Then we'll have a generic randomly-triggered mission for building factories in general.
+		}
+	}
+
+	# OK dude
+	option = { 
+		name = BBA_italy_missiolinis.31.a
+		ai_chance = {
+			base = 10
+		}
+
+		activate_mission = ITA_missiolini_strengthen_heavy_industry
+	}
+}
+
+# Industrialization - FAILURE 
+country_event = {
+	id = BBA_italy_missiolinis.32
+	title = BBA_italy_missiolinis.32.t
+	desc = BBA_italy_missiolinis.32.desc
+	picture = GFX_report_event_generic_factory
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_failed_missions = yes
+		}
+	}
+
+	# Ooops
+	option = { 
+		name = BBA_italy_missiolinis.32.a
+
+		ITA_missiolini_strengthen_heavy_industry_failure_effect = yes
+	}
+}
+
+# Industrialization - SUCCESS 
+country_event = {
+	id = BBA_italy_missiolinis.33
+	title = BBA_italy_missiolinis.33.t
+	desc = BBA_italy_missiolinis.33.desc
+	picture = GFX_report_event_generic_factory
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_successful_missions = yes
+		}
+	}
+
+	# Nice
+	option = { 
+		name = BBA_italy_missiolinis.33.a
+
+		ITA_missiolini_strengthen_heavy_industry_success_effect = yes
+	}
+}
+
+
+### STRENGTHEN THE ARMY ###
+# Strengthen the army - Missiolini
+country_event = {
+	id = BBA_italy_missiolinis.41
+	title = BBA_italy_missiolinis.41.t
+	desc = BBA_italy_missiolinis.41.desc
+	picture = GFX_report_event_generic_mussolini
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_cd_ready = yes #IF NO OTHER MISSIOLINI HAS BEEN ACTIVATED RECENTLY, GO AHEAD
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_initialize_new_mission_effect = yes
+		}
+	}
+
+	# OK dude
+	option = { 
+		name = BBA_italy_missiolinis.41.a
+		ai_chance = {
+			base = 10
+		}
+
+		activate_mission = ITA_missiolini_strengthen_the_army
+	}
+}
+
+# Strengthen the army - FAILURE 
+country_event = {
+	id = BBA_italy_missiolinis.42
+	title = BBA_italy_missiolinis.42.t
+	desc = BBA_italy_missiolinis.42.desc
+	picture = GFX_report_event_soldiers_marching
+	
+	is_triggered_only = yes
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_failed_missions = yes
+		}
+	}
+
+	# Ooops
+	option = { 
+		name = BBA_italy_missiolinis.42.a
+		
+		ITA_missiolini_strengthen_the_army_failure_effect = yes		
+	}
+}
+
+# Strengthen the army - SUCCESS 
+country_event = {
+	id = BBA_italy_missiolinis.43
+	title = BBA_italy_missiolinis.43.t
+	desc = BBA_italy_missiolinis.43.desc
+	picture = GFX_report_event_soldiers_marching
+	
+	is_triggered_only = yes
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_successful_missions = yes
+		}
+	}
+
+	# Nice
+	option = { 
+		name = BBA_italy_missiolinis.43.a
+		
+		ITA_missiolini_strengthen_the_army_success_effect = yes
+	}
+}
+
+### STOCKPILE TRUCKS ###
+# Stockpile Trucks - Missiolini
+country_event = {
+	id = BBA_italy_missiolinis.51
+	title = BBA_italy_missiolinis.51.t
+	desc = BBA_italy_missiolinis.51.desc
+	picture = GFX_report_event_generic_mussolini
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_cd_ready = yes #IF NO OTHER MISSIOLINI HAS BEEN ACTIVATED RECENTLY, GO AHEAD
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_initialize_new_mission_effect = yes
+			set_country_flag = ITA_missiolini_stockpile_trucks_triggered_flag #Trigger only once
+			#Establish goal
+			set_variable = { ITA_missiolinis_stockpile_trucks_goal = num_equipment@motorized_equipment_1 }
+			add_to_variable = { ITA_missiolinis_stockpile_trucks_goal = ITA_missiolinis_trucks_to_produce }
+			add_to_variable = { ITA_missiolinis_stockpile_trucks_goal = -1 } #So that the trigger in the mission works properly (can only use >, and not >=)
+		}
+	}
+
+	# OK dude
+	option = { 
+		name = BBA_italy_missiolinis.51.a
+		ai_chance = {
+			base = 10
+		}
+
+		activate_mission = ITA_missiolini_stockpile_trucks
+
+		ITA_mussolinis_reroll_cleanup_if_necessary = yes #To clear stuff if coming from a reroll
+	}
+
+
+	# Re-roll
+	option = { 
+		name = BBA_italy_missiolinis.council
+
+		ai_chance = {
+			base = 0
+		}
+
+		trigger = {
+			has_idea = ITA_grand_council_of_fascism
+			has_completed_focus = ITA_boost_the_grand_council_of_fascism
+			NOT = { has_country_flag = ITA_missiolinis_rerolling_flag }
+		}
+
+		ITA_missiolinis_reroll_cost = yes
+
+		hidden_effect = {
+			#Revert mission initialization from immediate effect
+			ITA_missiolinis_revert_new_mission_initialization_effect = yes
+
+			#Revert other stuff in the immediate effect
+			clr_country_flag = ITA_missiolini_stockpile_trucks_triggered_flag
+			set_variable = { ITA_missiolinis_stockpile_trucks_goal = 0 }
+
+			#Re-roll
+			set_variable = { ITA_missiolini_reroll_from = 1 } #STOCKPILE TRUCKS
+			country_event = { id = BBA_italy_missiolinis.00 hours = 20 }
+		}
+	}
+}
+
+# Stockpile Trucks - FAILURE 
+country_event = {
+	id = BBA_italy_missiolinis.52
+	title = BBA_italy_missiolinis.52.t
+	desc = BBA_italy_missiolinis.52.desc
+	picture = GFX_report_event_generic_truck
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_failed_missions = yes
+		}
+	}
+
+	# Ooops
+	option = { 
+		name = BBA_italy_missiolinis.52.a
+		
+		ITA_missiolini_stockpile_trucks_failure_effect = yes		
+	}
+}
+
+# Stockpile Trucks - SUCCESS 
+country_event = {
+	id = BBA_italy_missiolinis.53
+	title = BBA_italy_missiolinis.53.t
+	desc = BBA_italy_missiolinis.53.desc
+	picture = GFX_report_event_generic_truck
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_successful_missions = yes
+		}
+	}
+
+	# Nice
+	option = { 
+		name = BBA_italy_missiolinis.53.a
+		
+		ITA_missiolini_stockpile_trucks_success_effect = yes
+	}
+}
+
+
+### STOCKPILE FUEL ###
+# Stockpile Fuel - Missiolini
+country_event = {
+	id = BBA_italy_missiolinis.61
+	title = BBA_italy_missiolinis.61.t
+	desc = BBA_italy_missiolinis.61.desc
+	picture = GFX_report_event_generic_mussolini
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_cd_ready = yes #IF NO OTHER MISSIOLINI HAS BEEN ACTIVATED RECENTLY, GO AHEAD
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_initialize_new_mission_effect = yes
+			set_country_flag = ITA_missiolini_stockpile_fuel_triggered_flag #Trigger only once
+		}
+	}
+
+	# OK dude
+	option = { 
+		name = BBA_italy_missiolinis.61.a
+		ai_chance = {
+			base = 10
+		}
+
+		activate_mission = ITA_missiolini_stockpile_fuel
+
+		ITA_mussolinis_reroll_cleanup_if_necessary = yes #To clear stuff if coming from a reroll
+	}
+
+	# Re-roll
+	option = { 
+		name = BBA_italy_missiolinis.council
+
+		ai_chance = {
+			base = 0
+		}
+
+		trigger = {
+			has_idea = ITA_grand_council_of_fascism
+			has_completed_focus = ITA_boost_the_grand_council_of_fascism
+			NOT = { has_country_flag = ITA_missiolinis_rerolling_flag }
+		}
+
+		ITA_missiolinis_reroll_cost = yes
+
+		hidden_effect = {
+			#Revert mission initialization from immediate effect
+			ITA_missiolinis_revert_new_mission_initialization_effect = yes
+
+			#Revert other stuff in the immediate effect
+			clr_country_flag = ITA_missiolini_stockpile_fuel_triggered_flag
+
+			#Re-roll
+			set_variable = { ITA_missiolini_reroll_from = 2 } #STOCKPILE FUEL
+			country_event = { id = BBA_italy_missiolinis.00 hours = 20 }
+		}
+	}
+}
+
+# Stockpile Fuel - FAILURE 
+country_event = {
+	id = BBA_italy_missiolinis.62
+	title = BBA_italy_missiolinis.62.t
+	desc = BBA_italy_missiolinis.62.desc
+	picture = GFX_report_event_tank_factory
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_failed_missions = yes
+		}
+	}
+
+	# Ooops
+	option = { 
+		name = BBA_italy_missiolinis.62.a
+		
+		ITA_missiolini_stockpile_fuel_failure_effect = yes		
+	}
+}
+
+# Stockpile Fuel - SUCCESS 
+country_event = {
+	id = BBA_italy_missiolinis.63
+	title = BBA_italy_missiolinis.63.t
+	desc = BBA_italy_missiolinis.63.desc
+	picture = GFX_report_event_tank_factory
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_successful_missions = yes
+		}
+	}
+
+	# Nice
+	option = { 
+		name = BBA_italy_missiolinis.63.a
+		
+		ITA_missiolini_stockpile_fuel_success_effect = yes
+	}
+}
+
+
+### STRENGTHEN THE AIRFORCE ###
+# Strengthen the Airforce - Missiolini
+country_event = {
+	id = BBA_italy_missiolinis.71
+	title = BBA_italy_missiolinis.71.t
+	desc = BBA_italy_missiolinis.71.desc
+	picture = GFX_report_event_generic_mussolini
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_cd_ready = yes #IF NO OTHER MISSIOLINI HAS BEEN ACTIVATED RECENTLY, GO AHEAD
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_initialize_new_mission_effect = yes
+			set_country_flag = ITA_missiolini_strengthen_the_airforce_triggered_flag #Less probable to have this more than once
+			#Establish goal - Figthers
+			#log = "Fighters in stockpile = [?ROOT.num_equipment@fighter_equipment]"
+			set_variable = { ITA_missiolinis_fighters_goal = num_equipment@fighter_equipment }
+			#log = "Fighters deployed = [?ROOT.num_deployed_planes_with_type@fighter_equipment]"
+			add_to_variable = { ITA_missiolinis_fighters_goal = num_deployed_planes_with_type@fighter_equipment }
+			#log = "Total figthers in country = [?ROOT.ITA_missiolinis_fighters_goal]"
+			
+			add_to_variable = { ITA_missiolinis_fighters_goal = ITA_missiolinis_fighters_to_produce }
+			#log = "Total figthers to produce = [?ROOT.ITA_missiolinis_fighters_goal]"
+
+
+
+			#Establish goal - Bombers (CAS)
+			#log = "CAS in stockpile = [?ROOT.num_equipment@CAS_equipment]"
+			set_variable = { ITA_missiolinis_cas_goal = num_equipment@CAS_equipment }
+			#log = "CAS deployed = [?ROOT.num_deployed_planes_with_type@CAS_equipment]"
+			add_to_variable = { ITA_missiolinis_cas_goal = num_deployed_planes_with_type@CAS_equipment }
+			#log = "Total CAS in country = [?ROOT.ITA_missiolinis_cas_goal]"
+			add_to_variable = { ITA_missiolinis_cas_goal = ITA_missiolinis_bombers_to_produce }
+			#log = "Total CAS to produce = [?ROOT.ITA_missiolinis_cas_goal]"
+
+			#Establish goal - Bombers (Nav)
+			#log = "Naval Bombers in stockpile = [?ROOT.num_equipment@nav_bomber_equipment]"
+			set_variable = { ITA_missiolinis_naval_bombers_goal = num_equipment@nav_bomber_equipment }
+			#log = "Naval Bombers deployed = [?ROOT.num_deployed_planes_with_type@nav_bomber_equipment]"
+			add_to_variable = { ITA_missiolinis_naval_bombers_goal = num_deployed_planes_with_type@nav_bomber_equipment }
+			#Add to goal - Bombers (CV Nav)
+			#log = "Naval Bombers in stockpile = [?ROOT.num_equipment@nav_bomber_equipment]"
+			#add_to_variable = { ITA_missiolinis_naval_bombers_goal = num_equipment@nav_bomber_equipment }
+			#log = "Naval Bombers deployed = [?ROOT.num_deployed_planes_with_type@nav_bomber_equipment]"
+			#add_to_variable = { ITA_missiolinis_naval_bombers_goal = num_deployed_planes_with_type@nav_bomber_equipment }
+			#log = "Total naval bombers in country = [?ROOT.ITA_missiolinis_naval_bombers_goal]"
+			add_to_variable = { ITA_missiolinis_naval_bombers_goal = ITA_missiolinis_bombers_to_produce }
+			#log = "Total naval bombers to produce = [?ROOT.ITA_missiolinis_naval_bombers_goal]"
+
+			#Establish goal - Bombers (Tac)
+			#log = "Tactical Bombers in stockpile = [?ROOT.num_equipment@tac_bomber_equipment]"
+			set_variable = { ITA_missiolinis_tactical_bombers_goal = num_equipment@tac_bomber_equipment }
+			#log = "Tactical Bombers deployed = [?ROOT.num_deployed_planes_with_type@tac_bomber_equipment]"
+			add_to_variable = { ITA_missiolinis_tactical_bombers_goal = num_deployed_planes_with_type@tac_bomber_equipment }
+			#log = "Total tactical bombers in country = [?ROOT.ITA_missiolinis_tactical_bombers_goal]"
+			add_to_variable = { ITA_missiolinis_tactical_bombers_goal = ITA_missiolinis_bombers_to_produce }
+			#log = "Total tactical bombers to produce = [?ROOT.ITA_missiolinis_tactical_bombers_goal]"
+		}
+	}
+
+	# OK dude
+	option = { 
+		name = BBA_italy_missiolinis.71.a
+		ai_chance = {
+			base = 10
+		}
+
+		activate_mission = ITA_missiolini_strengthen_the_airforce
+
+		ITA_mussolinis_reroll_cleanup_if_necessary = yes #To clear stuff if coming from a reroll
+	}
+
+	# Re-roll
+	option = { 
+		name = BBA_italy_missiolinis.council
+
+		ai_chance = {
+			base = 0
+		}
+
+		trigger = {
+			has_idea = ITA_grand_council_of_fascism
+			has_completed_focus = ITA_boost_the_grand_council_of_fascism
+			NOT = { has_country_flag = ITA_missiolinis_rerolling_flag }
+		}
+
+		ITA_missiolinis_reroll_cost = yes
+
+		hidden_effect = {
+			#Revert mission initialization from immediate effect
+			ITA_missiolinis_revert_new_mission_initialization_effect = yes
+
+			#Revert other stuff in the immediate effect
+			clr_country_flag = ITA_missiolini_strengthen_the_airforce_triggered_flag
+			set_variable = { ITA_missiolinis_fighters_goal = 0 }
+			set_variable = { ITA_missiolinis_cas_goal = 0 }
+			set_variable = { ITA_missiolinis_naval_bombers_goal = 0 }
+			set_variable = { ITA_missiolinis_tactical_bombers_goal = 0 }
+
+
+			#Re-roll
+			set_variable = { ITA_missiolini_reroll_from = 3 } #STRENGTHEN THE AIRFORCE
+			country_event = { id = BBA_italy_missiolinis.00 hours = 20 }
+		}
+	}
+}
+
+# Strengthen the Airforce - FAILURE 
+country_event = {
+	id = BBA_italy_missiolinis.72
+	title = BBA_italy_missiolinis.72.t
+	desc = BBA_italy_missiolinis.72.desc
+	picture = GFX_report_event_fighters
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_failed_missions = yes
+		}
+	}
+
+	# Ooops
+	option = { 
+		name = BBA_italy_missiolinis.72.a
+		
+		ITA_missiolini_strengthen_the_airforce_failure_effect = yes		
+	}
+}
+
+# Strengthen the Airforce - SUCCESS 
+country_event = {
+	id = BBA_italy_missiolinis.73
+	title = BBA_italy_missiolinis.73.t
+	desc = BBA_italy_missiolinis.73.desc
+	picture = GFX_report_event_fighters
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_successful_missions = yes
+		}
+	}
+
+	# Nice
+	option = { 
+		name = BBA_italy_missiolinis.73.a
+		
+		ITA_missiolini_strengthen_the_airforce_success_effect = yes
+	}
+}
+
+
+### INDUSTRIAL RESEARCH ###
+# Industrial Research - Missiolini
+country_event = {
+	id = BBA_italy_missiolinis.81
+	title = BBA_italy_missiolinis.81.t
+	desc = BBA_italy_missiolinis.81.desc
+	picture = GFX_report_event_generic_mussolini
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_cd_ready = yes #IF NO OTHER MISSIOLINI HAS BEEN ACTIVATED RECENTLY, GO AHEAD
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_initialize_new_mission_effect = yes
+			set_country_flag = ITA_missiolini_industrial_research_triggered_flag #Less probable to have this more than once
+
+			if = {
+				limit = {
+					date > 1943.1.1
+				}
+				random_list = {
+					30 = { #PORDUCTION BRANCH
+						modifier = { #If tech is already researched then this makes no sense
+							factor = 0
+							OR = {
+								has_tech = flexible_line
+								has_tech = streamlined_line
+								is_researching_technology = flexible_line
+								is_researching_technology = streamlined_line
+							}
+						}
+						modifier = { #If lagging behind, then it's more likely
+							factor = 1.5
+							NOT = { has_tech = assembly_line_production }
+						}
+
+						set_country_flag = { flag = ITA_missiolini_research_production_flag value = 3 }
+					}
+					20 = { #INDUSTRY BRANCH
+						modifier = { #If tech is already researched then this makes no sense
+							factor = 0
+							OR = {
+								has_tech = expanded_industry5
+								is_researching_technology = expanded_industry5
+							}
+						}
+						modifier = { #If lagging behind, then it's more likely
+							factor = 1.5
+							NOT = { has_tech = expanded_industry4 }
+						}
+
+						set_country_flag = { flag = ITA_missiolini_research_industry_flag value = 3 }
+					}
+					10 = { #CONSTRUCTION BRANCH
+						modifier = { #If tech is already researched then this makes no sense
+							factor = 0
+							OR = {
+								has_tech = construction5
+								is_researching_technology = construction5
+							}
+						}
+						modifier = { #If lagging behind, then it's more likely
+							factor = 1.5
+							NOT = { has_tech = construction4 }
+						}
+
+						set_country_flag = { flag = ITA_missiolini_research_construction_flag value = 3 }
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					date > 1941.1.1
+				}
+				random_list = {
+					30 = { #PORDUCTION BRANCH
+						modifier = { #If tech is already researched then this makes no sense
+							factor = 0
+							OR = {
+								has_tech = assembly_line_production
+								is_researching_technology = assembly_line_production
+							}
+						}
+						modifier = { #If lagging behind, then it's more likely
+							factor = 1.5
+							NOT = { has_tech = advanced_machine_tools }
+						}
+
+						set_country_flag = { flag = ITA_missiolini_research_production_flag value = 2 }
+					}
+					20 = { #INDUSTRY BRANCH
+						modifier = { #If tech is already researched then this makes no sense
+							factor = 0
+							OR = {
+								has_tech = expanded_industry4
+								is_researching_technology = expanded_industry4
+							}
+						}
+						modifier = { #If lagging behind, then it's more likely
+							factor = 1.5
+							NOT = { has_tech = expanded_industry3 }
+						}
+
+						set_country_flag = { flag = ITA_missiolini_research_industry_flag value = 2 }
+					}
+					10 = { #CONSTRUCTION BRANCH
+						modifier = { #If tech is already researched then this makes no sense
+							factor = 0
+							OR = {
+								has_tech = construction4
+								is_researching_technology = construction4
+							}
+						}
+						modifier = { #If lagging behind, then it's more likely
+							factor = 1.5
+							NOT = { has_tech = construction3 }
+						}
+
+						set_country_flag = { flag = ITA_missiolini_research_construction_flag value = 2 }
+					}
+				}
+			}
+			else = { #Safe to assume that it's date > 1939.1.1
+				random_list = {
+					30 = { #PORDUCTION BRANCH
+						modifier = { #If tech is already researched then this makes no sense
+							factor = 0
+							OR = {
+								has_tech = advanced_machine_tools
+								is_researching_technology = advanced_machine_tools
+							}
+						}
+						modifier = { #If lagging behind, then it's more likely
+							factor = 1.5
+							NOT = { has_tech = improved_machine_tools }
+						}
+
+						set_country_flag = { flag = ITA_missiolini_research_production_flag value = 1 }
+					}
+					20 = { #INDUSTRY BRANCH
+						modifier = { #If tech is already researched then this makes no sense
+							factor = 0
+							OR = {
+								has_tech = expanded_industry3
+								is_researching_technology = expanded_industry3
+							}
+						}
+						modifier = { #If lagging behind, then it's more likely
+							factor = 1.5
+							NOT = { has_tech = expanded_industry2 }
+						}
+
+						set_country_flag = { flag = ITA_missiolini_research_industry_flag value = 1 }
+					}
+					10 = { #CONSTRUCTION BRANCH
+						modifier = { #If tech is already researched then this makes no sense
+							factor = 0
+							OR = {
+								has_tech = construction3
+								is_researching_technology = construction3
+							}
+						}
+						modifier = { #If lagging behind, then it's more likely
+							factor = 1.5
+							NOT = { has_tech = construction2 }
+						}
+
+						set_country_flag = { flag = ITA_missiolini_research_construction_flag value = 1 }
+					}
+				}
+			}
+		}
+	}
+
+	# OK dude
+	option = { 
+		name = BBA_italy_missiolinis.81.a
+		ai_chance = {
+			base = 10
+		}
+
+		activate_mission = ITA_missiolini_industrial_research
+
+		ITA_mussolinis_reroll_cleanup_if_necessary = yes #To clear stuff if coming from a reroll
+	}
+
+	# Re-roll
+	option = { 
+		name = BBA_italy_missiolinis.council
+
+		ai_chance = {
+			base = 0
+		}
+
+		trigger = {
+			has_idea = ITA_grand_council_of_fascism
+			has_completed_focus = ITA_boost_the_grand_council_of_fascism
+			NOT = { has_country_flag = ITA_missiolinis_rerolling_flag }
+		}
+
+		ITA_missiolinis_reroll_cost = yes
+
+		hidden_effect = {
+			#Revert mission initialization from immediate effect
+			ITA_missiolinis_revert_new_mission_initialization_effect = yes
+
+			#Revert other stuff in the immediate effect
+			if = {
+				limit = {
+					has_country_flag = ITA_missiolini_research_production_flag
+				}
+				clr_country_flag = ITA_missiolini_research_production_flag
+			}
+			if = {
+				limit = {
+					has_country_flag = ITA_missiolini_research_industry_flag
+				}
+				clr_country_flag = ITA_missiolini_research_industry_flag
+			}
+			if = {
+				limit = {
+					has_country_flag = ITA_missiolini_research_construction_flag
+				}
+				clr_country_flag = ITA_missiolini_research_construction_flag
+			}
+
+			#Re-roll
+			set_variable = { ITA_missiolini_reroll_from = 4 } #INDUSTRIAL RESEARCH
+			country_event = { id = BBA_italy_missiolinis.00 hours = 20 }
+		}
+	}
+}
+
+# Industrial Research - FAILURE 
+country_event = {
+	id = BBA_italy_missiolinis.82
+	title = BBA_italy_missiolinis.82.t
+	desc = BBA_italy_missiolinis.82.desc
+	picture = GFX_report_event_generic_research_lab
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_failed_missions = yes
+		}
+	}
+
+	# Ooops
+	option = { 
+		name = BBA_italy_missiolinis.82.a
+		
+		ITA_missiolini_industrial_research_failure_effect = yes		
+	}
+}
+
+# Industrial Research - SUCCESS 
+country_event = {
+	id = BBA_italy_missiolinis.83
+	title = BBA_italy_missiolinis.83.t
+	desc = BBA_italy_missiolinis.83.desc
+	picture = GFX_report_event_generic_research_lab
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_successful_missions = yes
+		}
+	}
+
+	# Nice
+	option = { 
+		name = BBA_italy_missiolinis.83.a
+		
+		ITA_missiolini_industrial_research_success_effect = yes
+	}
+}
+
+
+
+### EXPAND INTELLIGENCE SERVICE ###
+# Expand Intelligence Service - Missiolini
+country_event = {
+	id = BBA_italy_missiolinis.91
+	title = BBA_italy_missiolinis.91.t
+	desc = BBA_italy_missiolinis.91.desc
+	picture = GFX_report_event_generic_mussolini
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_cd_ready = yes #IF NO OTHER MISSIOLINI HAS BEEN ACTIVATED RECENTLY, GO AHEAD
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_initialize_new_mission_effect = yes
+			set_country_flag = ITA_missiolini_expand_intelligence_service_triggered_flag #Less probable to have this more than once
+
+			if = { #Create Intelligence Agency
+				limit = {
+					has_intelligence_agency = no 
+				}
+				set_country_flag = { flag = ITA_missiolini_upgrade_agency_goal_flag value = 1 }
+			}
+			else = { #Upgrade Intelligence Agency
+				random_list = {
+					30 = { #Form Cryptology Department
+						modifier = {
+							factor = 0
+							has_done_agency_upgrade = upgrade_form_department
+						}
+
+						set_country_flag = { flag = ITA_missiolini_upgrade_agency_goal_flag value = 2 }
+					}
+					20 = { #Army Department
+						modifier = {
+							factor = 0
+							has_done_agency_upgrade = upgrade_army_department
+						}
+
+						set_country_flag = { flag = ITA_missiolini_upgrade_agency_goal_flag value = 3 }
+					}
+					10 = { #Anti-Partisan
+						modifier = {
+							factor = 0
+							OR = {
+								has_done_agency_upgrade = upgrade_anti_partisan
+								NOT = {
+									any_controlled_state = {
+										has_resistance = yes
+									}
+								}
+							}
+						}
+						modifier = {
+							factor = 5
+							any_controlled_state = {
+								resistance > 50
+							}
+						}
+
+						set_country_flag = { flag = ITA_missiolini_upgrade_agency_goal_flag value = 4 }
+					}
+					0 = { #Passive Defense
+						modifier = {
+							factor = 0
+							has_done_agency_upgrade = upgrade_passive_defense
+						}
+						modifier = {
+							add = 1
+							has_done_agency_upgrade = upgrade_form_department
+							has_done_agency_upgrade = upgrade_army_department
+							OR = {
+								has_done_agency_upgrade = upgrade_anti_partisan
+								NOT = {
+									any_controlled_state = {
+										has_resistance = yes
+									}
+								}
+							}
+						}
+
+						set_country_flag = { flag = ITA_missiolini_upgrade_agency_goal_flag value = 5 }
+					}
+				}
+			}
+		}
+	}
+
+	# OK dude
+	option = { 
+		name = BBA_italy_missiolinis.91.a
+		ai_chance = {
+			base = 10
+		}
+
+		activate_mission = ITA_missiolini_expand_intelligence_agency
+
+		ITA_mussolinis_reroll_cleanup_if_necessary = yes #To clear stuff if coming from a reroll
+	}
+
+	# Re-roll
+	option = { 
+		name = BBA_italy_missiolinis.council
+
+		ai_chance = {
+			base = 0
+		}
+
+		trigger = {
+			has_idea = ITA_grand_council_of_fascism
+			has_completed_focus = ITA_boost_the_grand_council_of_fascism
+			NOT = { has_country_flag = ITA_missiolinis_rerolling_flag }
+		}
+
+		ITA_missiolinis_reroll_cost = yes
+
+		hidden_effect = {
+			#Revert mission initialization from immediate effect
+			ITA_missiolinis_revert_new_mission_initialization_effect = yes
+
+			#Revert other stuff in the immediate effect
+			clr_country_flag = ITA_missiolini_expand_intelligence_service_triggered_flag
+			clr_country_flag = ITA_missiolini_upgrade_agency_goal_flag
+
+			#Re-roll
+			set_variable = { ITA_missiolini_reroll_from = 5 } #EXPAND INTELLIGENCE SERVICE
+			country_event = { id = BBA_italy_missiolinis.00 hours = 20 }
+		}
+	}
+}
+
+# Expand Intelligence Service - FAILURE 
+country_event = {
+	id = BBA_italy_missiolinis.92
+	title = BBA_italy_missiolinis.92.t
+	desc = BBA_italy_missiolinis.92.desc
+	picture = GFX_report_event_hitler_handshake
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_failed_missions = yes
+		}
+	}
+
+	# Ooops
+	option = { 
+		name = BBA_italy_missiolinis.92.a
+		
+		ITA_missiolini_expand_intelligence_service_failure_effect = yes		
+	}
+}
+
+# Expand Intelligence Service - SUCCESS 
+country_event = {
+	id = BBA_italy_missiolinis.93
+	title = BBA_italy_missiolinis.93.t
+	desc = BBA_italy_missiolinis.93.desc
+	picture = GFX_report_event_hitler_handshake
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_successful_missions = yes
+		}
+	}
+
+	# Nice
+	option = { 
+		name = BBA_italy_missiolinis.93.a
+		
+		ITA_missiolini_expand_intelligence_service_success_effect = yes
+	}
+}
+
+
+
+### OCCUPY ALBANIA ###
+# Occupy Albania - Missiolini
+country_event = {
+	id = BBA_italy_missiolinis.101
+	title = BBA_italy_missiolinis.101.t
+	desc = BBA_italy_missiolinis.101.desc
+	picture = GFX_report_event_generic_mussolini
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_cd_ready = yes #IF NO OTHER MISSIOLINI HAS BEEN ACTIVATED RECENTLY, GO AHEAD
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_initialize_new_mission_effect = yes
+			set_country_flag = ITA_missiolini_occupy_albania_triggered_flag #Trigger only once
+		}
+	}
+
+	# OK dude
+	option = { 
+		name = BBA_italy_missiolinis.101.a
+		ai_chance = {
+			base = 10
+		}
+
+		activate_mission = ITA_missiolini_occupy_albania
+
+		ITA_mussolinis_reroll_cleanup_if_necessary = yes #To clear stuff if coming from a reroll
+	}
+}
+
+# Occupy Albania - FAILURE 
+country_event = {
+	id = BBA_italy_missiolinis.102
+	title = BBA_italy_missiolinis.102.t
+	desc = BBA_italy_missiolinis.102.desc
+	picture = GFX_report_event_soldiers_marching
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_failed_missions = yes
+		}
+	}
+
+	# Ooops
+	option = { 
+		name = BBA_italy_missiolinis.102.a
+		
+		ITA_missiolini_occupy_albania_failure_effect = yes		
+	}
+}
+
+# Occupy Albania - SUCCESS 
+country_event = {
+	id = BBA_italy_missiolinis.103
+	title = BBA_italy_missiolinis.103.t
+	desc = BBA_italy_missiolinis.103.desc
+	picture = GFX_report_event_soldiers_marching
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_successful_missions = yes
+		}
+	}
+
+	# Nice
+	option = { 
+		name = BBA_italy_missiolinis.103.a
+		
+		ITA_missiolini_occupy_albania_success_effect = yes
+	}
+}
+
+
+### OCCUPY DALMATIA ###
+# Occupy Dalmatia - Missiolini
+country_event = {
+	id = BBA_italy_missiolinis.111
+	title = BBA_italy_missiolinis.111.t
+	desc = BBA_italy_missiolinis.111.desc
+	picture = GFX_report_event_generic_mussolini
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_cd_ready = yes #IF NO OTHER MISSIOLINI HAS BEEN ACTIVATED RECENTLY, GO AHEAD
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_initialize_new_mission_effect = yes
+			set_country_flag = ITA_missiolini_occupy_dalmatia_triggered_flag #Trigger only once
+		}
+	}
+
+	# OK dude
+	option = { 
+		name = BBA_italy_missiolinis.111.a
+		ai_chance = {
+			base = 10
+		}
+
+		activate_mission = ITA_missiolini_occupy_dalmatia
+
+		ITA_mussolinis_reroll_cleanup_if_necessary = yes #To clear stuff if coming from a reroll
+	}
+}
+
+# Occupy Dalmatia - FAILURE 
+country_event = {
+	id = BBA_italy_missiolinis.112
+	title = BBA_italy_missiolinis.112.t
+	desc = BBA_italy_missiolinis.112.desc
+	picture = GFX_report_event_soldiers_marching
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_failed_missions = yes
+		}
+	}
+
+	# Ooops
+	option = { 
+		name = BBA_italy_missiolinis.112.a
+		
+		ITA_missiolini_occupy_dalmatia_failure_effect = yes		
+	}
+}
+
+# Occupy Dalmatia - SUCCESS 
+country_event = {
+	id = BBA_italy_missiolinis.113
+	title = BBA_italy_missiolinis.113.t
+	desc = BBA_italy_missiolinis.113.desc
+	picture = GFX_report_event_soldiers_marching
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_successful_missions = yes
+		}
+	}
+
+	# Nice
+	option = { 
+		name = BBA_italy_missiolinis.113.a
+		
+		ITA_missiolini_occupy_dalmatia_success_effect = yes
+	}
+}
+
+
+### OCCUPY GREECE ###
+# Occupy Greece - Missiolini
+country_event = {
+	id = BBA_italy_missiolinis.121
+	title = BBA_italy_missiolinis.121.t
+	desc = BBA_italy_missiolinis.121.desc
+	picture = GFX_report_event_generic_mussolini
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_cd_ready = yes #IF NO OTHER MISSIOLINI HAS BEEN ACTIVATED RECENTLY, GO AHEAD
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_initialize_new_mission_effect = yes
+			set_country_flag = ITA_missiolini_occupy_greece_triggered_flag #Trigger only once
+		}
+	}
+
+	# OK dude
+	option = { 
+		name = BBA_italy_missiolinis.121.a
+		ai_chance = {
+			base = 10
+		}
+
+		activate_mission = ITA_missiolini_occupy_greece
+
+		ITA_mussolinis_reroll_cleanup_if_necessary = yes #To clear stuff if coming from a reroll
+	}
+}
+
+# Occupy Greece - FAILURE 
+country_event = {
+	id = BBA_italy_missiolinis.122
+	title = BBA_italy_missiolinis.122.t
+	desc = BBA_italy_missiolinis.122.desc
+	picture = GFX_report_event_soldiers_marching
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_failed_missions = yes
+		}
+	}
+
+	# Ooops
+	option = { 
+		name = BBA_italy_missiolinis.122.a
+		
+		ITA_missiolini_occupy_greece_failure_effect = yes		
+	}
+}
+
+# Occupy Greece - SUCCESS 
+country_event = {
+	id = BBA_italy_missiolinis.123
+	title = BBA_italy_missiolinis.123.t
+	desc = BBA_italy_missiolinis.123.desc
+	picture = GFX_report_event_soldiers_marching
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_successful_missions = yes
+		}
+	}
+
+	# Nice
+	option = { 
+		name = BBA_italy_missiolinis.123.a
+		
+		ITA_missiolini_occupy_greece_success_effect = yes
+	}
+}
+
+
+### OCCUPY TICINO ###
+# Occupy Ticino - Missiolini
+country_event = {
+	id = BBA_italy_missiolinis.131
+	title = BBA_italy_missiolinis.131.t
+	desc = BBA_italy_missiolinis.131.desc
+	picture = GFX_report_event_generic_mussolini
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_cd_ready = yes #IF NO OTHER MISSIOLINI HAS BEEN ACTIVATED RECENTLY, GO AHEAD
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_initialize_new_mission_effect = yes
+			set_country_flag = ITA_missiolini_occupy_ticino_triggered_flag #Trigger only once
+		}
+	}
+
+	# OK dude
+	option = { 
+		name = BBA_italy_missiolinis.131.a
+		ai_chance = {
+			base = 10
+		}
+
+		activate_mission = ITA_missiolini_occupy_ticino
+
+		ITA_mussolinis_reroll_cleanup_if_necessary = yes #To clear stuff if coming from a reroll
+	}
+}
+
+# Occupy Ticino - FAILURE 
+country_event = {
+	id = BBA_italy_missiolinis.132
+	title = BBA_italy_missiolinis.132.t
+	desc = BBA_italy_missiolinis.132.desc
+	picture = GFX_report_event_soldiers_marching
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_failed_missions = yes
+		}
+	}
+
+	# Ooops
+	option = { 
+		name = BBA_italy_missiolinis.132.a
+		
+		ITA_missiolini_occupy_ticino_failure_effect = yes		
+	}
+}
+
+# Occupy Ticino - SUCCESS 
+country_event = {
+	id = BBA_italy_missiolinis.133
+	title = BBA_italy_missiolinis.133.t
+	desc = BBA_italy_missiolinis.133.desc
+	picture = GFX_report_event_soldiers_marching
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_successful_missions = yes
+		}
+	}
+
+	# Nice
+	option = { 
+		name = BBA_italy_missiolinis.133.a
+		
+		ITA_missiolini_occupy_ticino_success_effect = yes
+	}
+}
+
+### BOLSTER POLITICAL CABINET ###
+# Bolster Political Cabinet - Missiolini
+country_event = {
+	id = BBA_italy_missiolinis.201
+	title = BBA_italy_missiolinis.201.t
+	desc = BBA_italy_missiolinis.201.desc
+	picture = GFX_report_event_generic_mussolini
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_cd_ready = yes #IF NO OTHER MISSIOLINI HAS BEEN ACTIVATED RECENTLY, GO AHEAD
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_initialize_new_mission_effect = yes
+			set_country_flag = ITA_missiolini_bolster_political_cabinet_triggered_flag #Trigger only once
+		}
+	}
+
+	# OK dude
+	option = { 
+		name = BBA_italy_missiolinis.201.a
+		ai_chance = {
+			base = 10
+		}
+
+		activate_mission = ITA_missiolini_bolster_political_cabinet
+
+		ITA_mussolinis_reroll_cleanup_if_necessary = yes #To clear stuff if coming from a reroll
+	}
+
+	# Re-roll
+	option = { 
+		name = BBA_italy_missiolinis.council
+
+		ai_chance = {
+			base = 0
+		}
+
+		trigger = {
+			has_idea = ITA_grand_council_of_fascism
+			has_completed_focus = ITA_boost_the_grand_council_of_fascism
+			NOT = { has_country_flag = ITA_missiolinis_rerolling_flag }
+		}
+
+		ITA_missiolinis_reroll_cost = yes
+
+		hidden_effect = {
+			#Revert mission initialization from immediate effect
+			ITA_missiolinis_revert_new_mission_initialization_effect = yes
+
+			#Revert other stuff in the immediate effect
+			clr_country_flag = ITA_missiolini_bolster_political_cabinet_triggered_flag
+
+			#Re-roll
+			set_variable = { ITA_missiolini_reroll_from = 6 } #BOLSTER POLITICAL CABINET
+			country_event = { id = BBA_italy_missiolinis.00 hours = 20 }
+		}
+	}
+}
+
+# Bolster Political Cabinet - FAILURE 
+country_event = {
+	id = BBA_italy_missiolinis.202
+	title = BBA_italy_missiolinis.202.t
+	desc = BBA_italy_missiolinis.202.desc
+	picture = GFX_report_event_ITA_grand_council
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_failed_missions = yes
+		}
+	}
+
+	# Ooops
+	option = { 
+		name = BBA_italy_missiolinis.202.a
+		
+		ITA_missiolini_bolster_political_cabinet_failure_effect = yes		
+	}
+}
+
+# Bolster Political Cabinet - SUCCESS 
+country_event = {
+	id = BBA_italy_missiolinis.203
+	title = BBA_italy_missiolinis.203.t
+	desc = BBA_italy_missiolinis.203.desc
+	picture = GFX_report_event_ITA_grand_council
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_successful_missions = yes
+		}
+	}
+
+	# Nice
+	option = { 
+		name = BBA_italy_missiolinis.203.a
+		
+		ITA_missiolini_bolster_political_cabinet_success_effect = yes
+	}
+}
+
+
+### BOLSTER MILITARY HIGH COMMAND ###
+# Bolster Military High Command- Missiolini
+country_event = {
+	id = BBA_italy_missiolinis.211
+	title = BBA_italy_missiolinis.211.t
+	desc = BBA_italy_missiolinis.211.desc
+	picture = GFX_report_event_generic_mussolini
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_cd_ready = yes #IF NO OTHER MISSIOLINI HAS BEEN ACTIVATED RECENTLY, GO AHEAD
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_initialize_new_mission_effect = yes
+			set_country_flag = ITA_missiolini_bolster_military_high_command_triggered_flag #Trigger only once
+		}
+	}
+
+	# OK dude
+	option = { 
+		name = BBA_italy_missiolinis.211.a
+		ai_chance = {
+			base = 10
+		}
+
+		activate_mission = ITA_missiolini_bolster_military_high_command
+
+		ITA_mussolinis_reroll_cleanup_if_necessary = yes #To clear stuff if coming from a reroll
+	}
+
+	# Re-roll
+	option = { 
+		name = BBA_italy_missiolinis.council
+
+		ai_chance = {
+			base = 0
+		}
+
+		trigger = {
+			has_idea = ITA_grand_council_of_fascism
+			has_completed_focus = ITA_boost_the_grand_council_of_fascism
+			NOT = { has_country_flag = ITA_missiolinis_rerolling_flag }
+		}
+
+		ITA_missiolinis_reroll_cost = yes
+
+		hidden_effect = {
+		#Revert mission initialization from immediate effect
+			ITA_missiolinis_revert_new_mission_initialization_effect = yes
+
+			#Revert other stuff in the immediate effect
+			clr_country_flag = ITA_missiolini_bolster_military_high_command_triggered_flag
+
+			#Re-roll
+			set_variable = { ITA_missiolini_reroll_from = 7 } #BOLSTER MILITARY CABINET
+			country_event = { id = BBA_italy_missiolinis.00 hours = 20 }
+		}
+	}
+}
+
+# Bolster Military High Command- FAILURE 
+country_event = {
+	id = BBA_italy_missiolinis.212
+	title = BBA_italy_missiolinis.212.t
+	desc = BBA_italy_missiolinis.212.desc
+	picture = GFX_report_event_military_planning
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_failed_missions = yes
+		}
+	}
+
+	# Ooops
+	option = { 
+		name = BBA_italy_missiolinis.212.a
+
+		ITA_missiolini_bolster_military_high_command_failure_effect = yes		
+	}
+}
+
+# Bolster Military High Command- SUCCESS 
+country_event = {
+	id = BBA_italy_missiolinis.213
+	title = BBA_italy_missiolinis.213.t
+	desc = BBA_italy_missiolinis.213.desc
+	picture = GFX_report_event_military_planning
+	
+	is_triggered_only = yes
+
+	trigger = {
+		ITA_missiolinis_system_available = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			ITA_missiolinis_finalize_mission_effect = yes
+			ITA_missiolinis_add_to_successful_missions = yes
+		}
+	}
+
+	# Nice
+	option = { 
+		name = BBA_italy_missiolinis.213.a
+		
+		ITA_missiolini_bolster_military_high_command_success_effect = yes
+	}
+}
+
+
+
+#### ##    ## ######## ######## ########  ########    ###     ######  ######## ####  #######  ##    ##    ######## ##     ## ######## ##    ## ########  ######  
+ ##  ###   ##    ##    ##       ##     ## ##         ## ##   ##    ##    ##     ##  ##     ## ###   ##    ##       ##     ## ##       ###   ##    ##    ##    ## 
+ ##  ####  ##    ##    ##       ##     ## ##        ##   ##  ##          ##     ##  ##     ## ####  ##    ##       ##     ## ##       ####  ##    ##    ##       
+ ##  ## ## ##    ##    ######   ########  ######   ##     ## ##          ##     ##  ##     ## ## ## ##    ######   ##     ## ######   ## ## ##    ##     ######  
+ ##  ##  ####    ##    ##       ##   ##   ##       ######### ##          ##     ##  ##     ## ##  ####    ##        ##   ##  ##       ##  ####    ##          ## 
+ ##  ##   ###    ##    ##       ##    ##  ##       ##     ## ##    ##    ##     ##  ##     ## ##   ###    ##         ## ##   ##       ##   ###    ##    ##    ## 
+#### ##    ##    ##    ######## ##     ## ######## ##     ##  ######     ##    ####  #######  ##    ##    ########    ###    ######## ##    ##    ##     ######  
+
+
+# the Italians are demanding Ticino!
+country_event = {
+	id = BBA_italy_interaction_events.1
+	title = BBA_italy_interaction_events.1.t 
+	desc = BBA_italy_interaction_events.1.desc
+	picture = GFX_report_event_generic_read_write
+	
+	is_triggered_only = yes
+
+	# It is hard to defend it anyway - One less weakpoint for us
+	option = { 
+		name = BBA_italy_interaction_events.1.a
+
+		ai_chance = {
+			base = 80
+			modifier = {
+				factor = 0
+				OR = {
+					FROM = {
+						has_war_with = ROOT
+					}
+					ROOT = {
+						OR = {
+							AND = {
+								has_war = yes
+								any_enemy_country = {
+									is_in_faction_with = FROM
+								}
+							}
+							surrender_progress > 0.02
+						}
+					}
+				}
+			}
+
+		}
+
+		ITA = {
+			country_event = {
+			    id = BBA_italy_interaction_events.2
+			    days = 2
+			    random = 6
+			}
+		}
+	}
+
+	# How about no?
+	option = { 
+		name = BBA_italy_interaction_events.1.b
+
+		ai_chance = {
+			base = 20
+		}
+
+		ITA = {
+			country_event = {
+			    id = BBA_italy_interaction_events.3
+			    days = 2
+			    random = 6
+			}
+		}
+	}
+}
+
+# The Swiss fold
+country_event = {
+	id = BBA_italy_interaction_events.2
+	title = BBA_italy_interaction_events.2.t 
+	desc = BBA_italy_interaction_events.2.desc
+	picture = GFX_report_event_generic_sign_treaty2 
+	
+	is_triggered_only = yes
+
+	# Perfetto!
+	option = { 
+		name = BBA_italy_interaction_events.2.a
+
+		ITA = {
+			transfer_state = 846
+		}
+		846 = {
+			add_core_of = ITA
+			remove_core_of = SWI
+		}
+	}
+}
+
+# The Swiss stand fast
+country_event = {
+	id = BBA_italy_interaction_events.3
+	title = BBA_italy_interaction_events.3.t 
+	desc = BBA_italy_interaction_events.3.desc
+	picture = GFX_report_event_generic_sign_treaty2 
+	
+	is_triggered_only = yes
+
+	# How DARE you?
+	option = { 
+		name = BBA_italy_interaction_events.3.a
+
+		846 = {
+			add_claim_by = ITA
+		}
+		ITA = {
+			create_wargoal = {
+				type = take_state_focus
+				target = SWI
+				generator = { 846 }
+			}
+		}	
+	}
+}
+
+# Italy wants to negotiate their claims to British Somalia
+country_event = {
+	id = BBA_italy_interaction_events.31
+	title = BBA_italy_interaction_events.31.t 
+	desc = BBA_italy_interaction_events.31.desc
+	picture = GFX_report_event_generic_read_write
+	
+	is_triggered_only = yes
+
+	# We can give it to them
+	option = { 
+		name = BBA_italy_interaction_events.31.a 
+
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = 10
+				has_opinion = {
+					target = ITA
+					value > 70
+				}
+			}
+			modifier = {
+				add = 25
+				ITA = { has_government = neutrality }
+			}
+			modifier = {
+				add = 50
+				ITA = { has_government = democratic }
+			}
+			modifier = {
+				add = 15
+				ITA = {
+					has_country_leader = {
+						character = ITA_dino_grandi
+						ruling_only = yes
+					}
+				}
+			}
+			modifier = {
+				add = 40
+				ITA = {
+					has_same_ideology = yes
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				ETH = {
+					has_country_flag = ETH_refused_forced_peace_flag
+				}
+			}
+			if = {
+				limit = {
+					ETH = { is_in_faction_with = ENG }
+				}
+				effect_tooltip = {
+					ETH = { leave_faction = yes}
+				}
+			}
+			effect_tooltip = {
+				set_truce = {
+					target = ETH
+				}
+			}
+		}
+
+		effect_tooltip = {
+			ITA = {
+				transfer_state = 269
+				transfer_state = 903
+			}
+			ENG = {
+				add_offsite_building = { type = industrial_complex level = 2 }
+			}
+		}
+
+		if = { #Only send this event if France controls the necessary state(s)
+			limit = {
+				FRA = {
+					controls_state = 268
+				}
+			}
+			FRA = {
+				country_event = {
+				    id = BBA_italy_interaction_events.32
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+
+		hidden_effect = {
+			set_global_flag = ITA_will_get_british_somalia
+			if = {
+				limit = {	
+					has_country_flag = ITA_italy_suing_for_peace_flag
+				}
+				clr_country_flag = ITA_italy_suing_for_peace_flag
+			}
+			else_if = { #If France didn't have the necessary state(s), send this event
+				limit = {
+					ENG = {
+						controls_state = 906
+					}
+				}
+				if = {
+					limit = {
+						has_global_flag = second_italo_ethiopian_war_flag
+					}
+					if = {
+						limit = {
+							has_global_flag = end_of_second_italo_ethiopian_war_flag
+						}
+						clr_global_flag = end_of_second_italo_ethiopian_war_flag
+					}
+					clr_global_flag = second_italo_ethiopian_war_flag
+				}
+				ENG = {
+					country_event = {
+					    id = BBA_italy_interaction_events.33
+					    days = 3
+					    random = 6
+					}
+				}
+			}
+			else_if = { #If Britain didn't have the necessary state(s), send this event
+				limit = {
+					FRA = {
+						controls_state = 458
+						controls_state = 665
+					}
+				}
+				FRA = {
+					country_event = {
+					    id = BBA_italy_interaction_events.34
+					    days = 3
+					    random = 6
+					}
+				}
+			}
+			else_if = { #If France didn't have the necessary state(s), send this event
+				limit = {
+					ENG = {
+						controls_state = 116
+					}
+				}
+				ENG = {
+					country_event = {
+					    id = BBA_italy_interaction_events.35
+					    days = 3
+					    random = 6
+					}
+				}
+			}
+			else = { #If Britain didn't have the necessary state(s), send this event
+				FRA = {
+					country_event = { #Balkan claims event
+					    id = BBA_italy_interaction_events.36
+					    days = 3
+					    random = 6
+					}
+				}
+			}
+			set_country_flag = ITA_italy_has_started_negotiations_flag
+		}
+	}
+
+	# They will not get it
+	option = { 
+		name = BBA_italy_interaction_events.31.b
+
+		ai_chance = {
+			base = 50
+		}
+
+		if = {
+			limit = {
+				ETH = {
+					has_country_flag = ETH_refused_forced_peace_flag
+				}
+			}
+			if = {
+				limit = {
+					ETH = { is_in_faction_with = ENG }
+				}
+				effect_tooltip = {
+					ETH = { leave_faction = yes}
+				}
+			}
+			effect_tooltip = {
+				set_truce = {
+					target = ETH
+				}
+			}
+		}
+
+		if = { #Send this event if France controls the necessary state(s)
+			limit = {
+				FRA = {
+					controls_state= 268
+				}
+			}
+			FRA = {
+				country_event = {
+				    id = BBA_italy_interaction_events.32
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else_if = { #If France didn't have the necessary state(s), send this event
+			limit = {
+				ENG = {
+					controls_state = 906
+				}
+			}
+			ENG = {
+				country_event = {
+				    id = BBA_italy_interaction_events.33
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else_if = { #If Britain didn't have the necessary state(s), send this event
+			limit = {
+				FRA = {
+					controls_state = 458
+					controls_state = 665
+				}
+			}
+			FRA = {
+				country_event = {
+				    id = BBA_italy_interaction_events.34
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else_if = { #If France didn't have the necessary state(s), send this event
+			limit = {
+				ENG = {
+					controls_state = 116
+				}
+			}
+			ENG = {
+				country_event = {
+				    id = BBA_italy_interaction_events.35
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else = { #If Britain didn't have the necessary state(s), send this event
+			FRA = {
+				country_event = { #Balkan claims event
+				    id = BBA_italy_interaction_events.36
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+
+		hidden_effect = {
+			set_country_flag = ITA_italy_has_started_negotiations_flag
+			if = {
+				limit = {	
+					has_country_flag = ITA_italy_suing_for_peace_flag
+				}
+				clr_country_flag = ITA_italy_suing_for_peace_flag
+			}
+			if = {
+				limit = {
+					has_global_flag = second_italo_ethiopian_war_flag
+				}
+				if = {
+					limit = {
+						has_global_flag = end_of_second_italo_ethiopian_war_flag
+					}
+					clr_global_flag = end_of_second_italo_ethiopian_war_flag
+				}
+				clr_global_flag = second_italo_ethiopian_war_flag
+			}
+		}
+	}
+}
+
+# Italy wants to negotiate their claims to djibouti
+country_event = {
+	id = BBA_italy_interaction_events.32
+	title = BBA_italy_interaction_events.32.t 
+	desc = BBA_italy_interaction_events.32.desc
+	picture = GFX_report_event_generic_read_write
+	
+	is_triggered_only = yes
+
+	# Pour la Paix
+	option = { 
+		name = BBA_italy_interaction_events.32.a 
+
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = 10
+				has_opinion = {
+					target = ITA
+					value > 70
+				}
+			}
+			modifier = {
+				add = 25
+				ITA = { has_government = neutrality }
+			}
+			modifier = {
+				add = 50
+				ITA = { has_government = democratic }
+			}
+			modifier = {
+				add = 15
+				ITA = {
+					has_country_leader = {
+						character = ITA_dino_grandi
+						ruling_only = yes
+					}
+				}
+			}
+			modifier = {
+				add = 40
+				ITA = {
+					has_same_ideology = yes
+				}
+			}
+		}
+
+		effect_tooltip = {
+			ITA = {
+				transfer_state = 268
+			}
+			FRA = {
+				add_offsite_building = { type = industrial_complex level = 1 }
+			}
+		}
+
+		hidden_effect = {
+			set_global_flag = ITA_will_get_french_somaliland
+		}
+
+		if = { #Send this event if Britain controls the necessary state(s)
+			limit = {
+				ENG = {
+					controls_state = 906
+				}
+			}
+			ENG = {
+				country_event = {
+				    id = BBA_italy_interaction_events.33
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else_if = { #If Britain didn't have the necessary state(s), send this event
+			limit = {
+				FRA = {
+					controls_state = 458
+					controls_state = 665
+				}
+			}
+			FRA = {
+				country_event = {
+				    id = BBA_italy_interaction_events.34
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else_if = { #If France didn't have the necessary state(s), send this event
+			limit = {
+				ENG = {
+					controls_state = 116
+				}
+			}
+			ENG = {
+				country_event = {
+				    id = BBA_italy_interaction_events.35
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else = { #If Britain didn't have the necessary state(s), send this event
+			FRA = {
+				country_event = { #Balkan claims event
+				    id = BBA_italy_interaction_events.36
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+
+		hidden_effect = {
+			set_country_flag = ITA_italy_has_started_negotiations_flag
+		}
+	}
+
+	# Non!
+	option = { 
+		name = BBA_italy_interaction_events.32.b
+
+		ai_chance = {
+			base = 50
+		}
+
+		if = { #Send this event if Britain controls the necessary state(s)
+			limit = {
+				ENG = {
+					controls_state = 906
+				}
+			}
+			ENG = {
+				country_event = {
+				    id = BBA_italy_interaction_events.33
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else_if = { #If Britain didn't have the necessary state(s), send this event
+			limit = {
+				FRA = {
+					controls_state = 458
+					controls_state = 665
+				}
+			}
+			FRA = {
+				country_event = {
+				    id = BBA_italy_interaction_events.34
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else_if = { #If France didn't have the necessary state(s), send this event
+			limit = {
+				ENG = {
+					controls_state = 116
+				}
+			}
+			ENG = {
+				country_event = {
+				    id = BBA_italy_interaction_events.35
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else = { #If Britain didn't have the necessary state(s), send this event
+			FRA = {
+				country_event = { #Balkan claims event
+				    id = BBA_italy_interaction_events.36
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+
+		hidden_effect = {
+			set_country_flag = ITA_italy_has_started_negotiations_flag
+		}
+	}
+}
+
+# Italy wants to negotiate their claims to Socotra
+country_event = {
+	id = BBA_italy_interaction_events.33
+	title = BBA_italy_interaction_events.33.t 
+	desc = BBA_italy_interaction_events.33.desc
+	picture = GFX_report_event_generic_read_write
+	
+	is_triggered_only = yes
+
+	# We can give it to them
+	option = { 
+		name = BBA_italy_interaction_events.33.a 
+
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = 10
+				has_opinion = {
+					target = ITA
+					value > 70
+				}
+			}
+			modifier = {
+				add = 25
+				ITA = { has_government = neutrality }
+			}
+			modifier = {
+				add = 50
+				ITA = { has_government = democratic }
+			}
+			modifier = {
+				add = 15
+				ITA = {
+					has_country_leader = {
+						character = ITA_dino_grandi
+						ruling_only = yes
+					}
+				}
+			}
+			modifier = {
+				add = 40
+				ITA = {
+					has_same_ideology = yes
+				}
+			}
+		}
+
+		effect_tooltip = {
+			ITA = {
+				transfer_state = 906
+			}
+			ENG = {
+				add_offsite_building = { type = industrial_complex level = 1 }
+			}
+		}
+
+		hidden_effect = {
+			set_global_flag = ITA_will_get_socotra
+		}
+
+		if = { #Send this event if Britain controls the necessary state(s)
+			limit = {
+				FRA = {
+					controls_state = 458
+					controls_state = 665
+				}
+			}
+			FRA = {
+				country_event = {
+				    id = BBA_italy_interaction_events.34
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else_if = { #If France didn't have the necessary state(s), send this event
+			limit = {
+				ENG = {
+					controls_state = 116
+				}
+			}
+			ENG = {
+				country_event = {
+				    id = BBA_italy_interaction_events.35
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else = { #If Britain didn't have the necessary state(s), send this event
+			FRA = {
+				country_event = { #Balkan claims event
+				    id = BBA_italy_interaction_events.36
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+
+		hidden_effect = {
+			if = {
+				limit = {
+					NOT = {
+						has_country_flag = ITA_italy_has_started_negotiations_flag
+					}
+				}
+				set_country_flag = ITA_italy_has_started_negotiations_flag
+			}
+		}
+	}
+
+	# They will not get it
+	option = { 
+		name = BBA_italy_interaction_events.33.b
+
+		ai_chance = {
+			base = 50
+		}
+
+		if = { #Send this event if Britain controls the necessary state(s)
+			limit = {
+				FRA = {
+					controls_state = 458
+					controls_state = 665
+				}
+			}
+			FRA = {
+				country_event = {
+				    id = BBA_italy_interaction_events.34
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else_if = { #If France didn't have the necessary state(s), send this event
+			limit = {
+				ENG = {
+					controls_state = 116
+				}
+			}
+			ENG = {
+				country_event = {
+				    id = BBA_italy_interaction_events.35
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else = { #If Britain didn't have the necessary state(s), send this event
+			FRA = {
+				country_event = { #Balkan claims event
+				    id = BBA_italy_interaction_events.36
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+
+		hidden_effect = {
+			if = {
+				limit = {
+					NOT = {
+						has_country_flag = ITA_italy_has_started_negotiations_flag
+					}
+				}
+				set_country_flag = ITA_italy_has_started_negotiations_flag
+			}
+		}
+	}
+}
+
+# Italy wants to negotiate their claims to Tunisia
+country_event = {
+	id = BBA_italy_interaction_events.34
+	title = BBA_italy_interaction_events.34.t 
+	desc = BBA_italy_interaction_events.34.desc
+	picture = GFX_report_event_generic_read_write
+	
+	is_triggered_only = yes
+
+	# Pour la Paix
+	option = { 
+		name = BBA_italy_interaction_events.34.a 
+
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = 10
+				has_opinion = {
+					target = ITA
+					value > 70
+				}
+			}
+			modifier = {
+				add = 25
+				ITA = { has_government = neutrality }
+			}
+			modifier = {
+				add = 50
+				ITA = { has_government = democratic }
+			}
+			modifier = {
+				add = 15
+				ITA = {
+					has_country_leader = {
+						character = ITA_dino_grandi
+						ruling_only = yes
+					}
+				}
+			}
+			modifier = {
+				add = 40
+				ITA = {
+					has_same_ideology = yes
+				}
+			}
+		}
+
+		effect_tooltip = {
+			ITA = {
+				transfer_state = 458
+				transfer_state = 665
+			}
+			FRA = {
+				add_offsite_building = { type = industrial_complex level = 2 }
+			}
+		}
+
+		hidden_effect = {
+			set_global_flag = ITA_will_get_tunisia
+		}
+		
+		if = { #Send this event if Britain controls the necessary state(s)
+			limit = {
+				ENG = {
+					controls_state = 116
+				}
+			}
+			ENG = {
+				country_event = {
+				    id = BBA_italy_interaction_events.35
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else = { #If Britain didn't have the necessary state(s), send this event
+			FRA = {
+				country_event = { #Balkan claims event
+				    id = BBA_italy_interaction_events.36
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+
+		hidden_effect = {
+			if = {
+				limit = {
+					NOT = {
+						has_country_flag = ITA_italy_has_started_negotiations_flag
+					}
+				}
+				set_country_flag = ITA_italy_has_started_negotiations_flag
+			}
+		}
+	}
+
+	# Non!
+	option = { 
+		name = BBA_italy_interaction_events.34.b
+
+		ai_chance = {
+			base = 50
+		}
+
+		if = { #Send this event if Britain controls the necessary state(s)
+			limit = {
+				ENG = {
+					controls_state = 116
+				}
+			}
+			ENG = {
+				country_event = {
+				    id = BBA_italy_interaction_events.35
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+		else = { #If Britain didn't have the necessary state(s), send this event
+			FRA = {
+				country_event = { #Balkan claims event
+				    id = BBA_italy_interaction_events.36
+				    days = 3
+				    random = 6
+				}
+			}
+		}
+
+		hidden_effect = {
+			if = {
+				limit = {
+					NOT = {
+						has_country_flag = ITA_italy_has_started_negotiations_flag
+					}
+				}
+				set_country_flag = ITA_italy_has_started_negotiations_flag
+			}
+		}
+	}
+}
+
+# Italy wants to negotiate their claims to malta
+country_event = {
+	id = BBA_italy_interaction_events.35
+	title = BBA_italy_interaction_events.35.t 
+	desc = BBA_italy_interaction_events.35.desc
+	picture = GFX_report_event_generic_read_write
+	
+	is_triggered_only = yes
+
+	# We can give it to them
+	option = { 
+		name = BBA_italy_interaction_events.35.a 
+
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = 10
+				has_opinion = {
+					target = ITA
+					value > 70
+				}
+			}
+			modifier = {
+				add = 25
+				ITA = { has_government = neutrality }
+			}
+			modifier = {
+				add = 50
+				ITA = { has_government = democratic }
+			}
+			modifier = {
+				add = 15
+				ITA = {
+					has_country_leader = {
+						character = ITA_dino_grandi
+						ruling_only = yes
+					}
+				}
+			}
+			modifier = {
+				add = 40
+				ITA = {
+					has_same_ideology = yes
+				}
+			}
+		}
+
+		effect_tooltip = {
+			ITA = {
+				transfer_state = 116
+			}
+			ENG = {
+				add_offsite_building = { type = industrial_complex level = 1 }
+			}
+		}
+
+		hidden_effect = {
+			set_global_flag = ITA_will_get_malta
+		}
+
+		FRA = {
+			country_event = {
+			    id = BBA_italy_interaction_events.36
+			    days = 3
+			    random = 6
+			}
+		}
+
+		hidden_effect = {
+			if = {
+				limit = {
+					NOT = {
+						has_country_flag = ITA_italy_has_started_negotiations_flag
+					}
+				}
+				set_country_flag = ITA_italy_has_started_negotiations_flag
+			}
+		}
+	}
+
+	# They will not get it
+	option = { 
+		name = BBA_italy_interaction_events.35.b
+
+		ai_chance = {
+			base = 50
+		}
+
+		FRA = {
+			country_event = {
+			    id = BBA_italy_interaction_events.36
+			    days = 3
+			    random = 6
+			}
+		}
+
+		hidden_effect = {
+			if = {
+				limit = {
+					NOT = {
+						has_country_flag = ITA_italy_has_started_negotiations_flag
+					}
+				}
+				set_country_flag = ITA_italy_has_started_negotiations_flag
+			}
+		}
+	}
+}
+
+# Italy wants to negotiate their claims to the balkans
+country_event = {
+	id = BBA_italy_interaction_events.36
+	title = BBA_italy_interaction_events.36.t 
+	desc = BBA_italy_interaction_events.36.desc
+	picture = GFX_report_event_generic_read_write
+	
+	is_triggered_only = yes
+
+	immediate = { #For Loc purposes
+		hidden_effect = {
+			if = {
+				limit = {
+					NOT = {
+						has_country_flag = ITA_italy_has_started_negotiations_flag
+					}
+				}
+				set_country_flag = ITA_italy_has_started_negotiations_flag
+			}
+			else = {
+				set_country_flag = ITA_italy_has_started_negotiations_flag
+			}
+		}
+	}
+
+	#No use arguing
+	option = { 
+		name = BBA_italy_interaction_events.36.a 
+
+		hidden_effect = {
+			set_global_flag = ITA_will_get_balkans
+		}
+
+		effect_tooltip = {
+			103 = {
+				add_claim_by = ITA
+			}
+			853 = {
+				add_claim_by = ITA
+			}
+			102 = {
+				add_claim_by = ITA
+			}
+			109 = {
+				add_claim_by = ITA
+			}
+			104 = {
+				add_claim_by = ITA
+			}
+			804 = {
+				add_claim_by = ITA
+			}
+			105 = {
+				add_claim_by = ITA
+			}
+			802 = {
+				add_claim_by = ITA
+			}
+			106 = {
+				add_claim_by = ITA
+			}
+			185 = {
+				add_claim_by = ITA
+			}
+			47 = {
+				add_claim_by = ITA
+			}
+			186 = {
+				add_claim_by = ITA
+			}
+			187 = {
+				add_claim_by = ITA
+			}
+			182 = {
+				add_claim_by = ITA
+			}
+		}
+
+		ITA = {
+			country_event = {
+			    id = BBA_italy_interaction_events.37
+			    days = 3
+			    random = 6
+			}
+		}
+	}
+}
+
+
+# (ITA) Treaty-terms concluded 
+country_event = {
+	id = BBA_italy_interaction_events.37
+	title = BBA_italy_interaction_events.37.t 
+	desc = BBA_italy_interaction_events.37.desc
+	picture = GFX_report_event_generic_read_write
+	
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			ENG = {
+				clr_country_flag = ITA_italy_has_started_negotiations_flag
+			}
+			FRA = {
+				clr_country_flag = ITA_italy_has_started_negotiations_flag
+			}
+		}
+	}
+
+	# Not all we wanted, but we can't complain
+	option = { 
+		name = BBA_italy_interaction_events.37.a 
+		
+		ai_chance = {
+			base = 100
+		}
+		
+		trigger = {
+			NOT = {
+				AND = {
+					has_global_flag = ITA_will_get_british_somalia
+					has_global_flag = ITA_will_get_french_somaliland
+					has_global_flag = ITA_will_get_socotra
+					has_global_flag = ITA_will_get_tunisia
+					has_global_flag = ITA_will_get_malta
+					has_global_flag = ITA_will_get_balkans
+				}
+			}
+		}
+
+		IF = {
+			limit = {
+				has_global_flag = ITA_will_get_british_somalia
+				ENG = {
+					controls_state = 269
+				}
+			}
+			ITA = {
+				transfer_state = 269
+				transfer_state = 903
+			}
+			ENG = {
+				add_offsite_building = { type = industrial_complex level = 2 }
+			}
+		}
+
+		IF = {
+			limit = {
+				has_global_flag = ITA_will_get_french_somaliland
+				FRA = {
+					controls_state = 268
+				}
+			}
+			ITA = {
+				transfer_state = 268
+			}
+			FRA = {
+				add_offsite_building = { type = industrial_complex level = 1 }
+			}
+		}
+
+		IF = {
+			limit = {
+				has_global_flag = ITA_will_get_socotra
+				ENG = {
+					controls_state = 906
+				}
+			}
+			ITA = {
+				transfer_state = 906
+			}
+			ENG = {
+				add_offsite_building = { type = industrial_complex level = 1 }
+			}
+		}
+
+		IF = {
+			limit = {
+				has_global_flag = ITA_will_get_tunisia
+				FRA = {
+					controls_state = 458
+					controls_state = 665
+				}
+			}
+			ITA = {
+				transfer_state = 458
+				transfer_state = 665
+			}
+			FRA = {
+				add_offsite_building = { type = industrial_complex level = 2 }
+			}
+		}
+
+		IF = {
+			limit = {
+				has_global_flag = ITA_will_get_malta
+				ENG = {
+					controls_state = 116
+				}
+			}
+			ITA = {
+				transfer_state = 116
+			}
+			ENG = {
+				add_offsite_building = { type = industrial_complex level = 1 }
+			}
+		}
+
+		IF = {
+			limit = {
+				has_global_flag = ITA_will_get_balkans
+			}
+			
+			103 = {
+				add_claim_by = ITA
+			}
+			853 = {
+				add_claim_by = ITA
+			}
+			102 = {
+				add_claim_by = ITA
+			}
+			109 = {
+				add_claim_by = ITA
+			}
+			104 = {
+				add_claim_by = ITA
+			}
+			804 = {
+				add_claim_by = ITA
+			}
+			105 = {
+				add_claim_by = ITA
+			}
+			802 = {
+				add_claim_by = ITA
+			}
+			106 = {
+				add_claim_by = ITA
+			}
+			185 = {
+				add_claim_by = ITA
+			}
+			47 = {
+				add_claim_by = ITA
+			}
+			186 = {
+				add_claim_by = ITA
+			}
+			187 = {
+				add_claim_by = ITA
+			}
+			182 = {
+				add_claim_by = ITA
+			}
+		}
+
+		hidden_effect = {
+			ITA = {
+				country_event = {
+				    id = BBA_italy_interaction_events.39
+				    days = 360
+				}
+			}
+		}
+	}
+
+	# Splendido!
+	option = { 
+		name = BBA_italy_interaction_events.37.b 
+		
+		ai_chance = {
+			base = 100
+		}
+		
+		trigger = {
+			AND = {
+				has_global_flag = ITA_will_get_british_somalia
+				has_global_flag = ITA_will_get_french_somaliland
+				has_global_flag = ITA_will_get_socotra
+				has_global_flag = ITA_will_get_tunisia
+				has_global_flag = ITA_will_get_malta
+				has_global_flag = ITA_will_get_balkans
+			}
+		}
+
+		IF = {
+			limit = {
+				has_global_flag = ITA_will_get_british_somalia
+			}
+			ITA = {
+				transfer_state = 269
+				transfer_state = 903
+			}
+			ENG = {
+				add_offsite_building = { type = industrial_complex level = 2 }
+			}
+		}
+
+		IF = {
+			limit = {
+				has_global_flag = ITA_will_get_french_somaliland
+			}
+			ITA = {
+				transfer_state = 268
+			}
+			FRA = {
+				add_offsite_building = { type = industrial_complex level = 1 }
+			}
+		}
+
+		IF = {
+			limit = {
+				has_global_flag = ITA_will_get_socotra
+			}
+			ITA = {
+				transfer_state = 906
+			}
+			ENG = {
+				add_offsite_building = { type = industrial_complex level = 1 }
+			}
+		}
+
+		IF = {
+			limit = {
+				has_global_flag = ITA_will_get_tunisia
+			}
+			ITA = {
+				transfer_state = 458
+				transfer_state = 665
+			}
+			FRA = {
+				add_offsite_building = { type = industrial_complex level = 2 }
+			}
+		}
+
+		IF = {
+			limit = {
+				has_global_flag = ITA_will_get_malta
+			}
+			ITA = {
+				transfer_state = 116
+			}
+			ENG = {
+				add_offsite_building = { type = industrial_complex level = 1 }
+			}
+		}
+
+		IF = {
+			limit = {
+				has_global_flag = ITA_will_get_balkans
+			}
+			
+			103 = {
+				add_claim_by = ITA
+			}
+			853 = {
+				add_claim_by = ITA
+			}
+			102 = {
+				add_claim_by = ITA
+			}
+			109 = {
+				add_claim_by = ITA
+			}
+			104 = {
+				add_claim_by = ITA
+			}
+			804 = {
+				add_claim_by = ITA
+			}
+			105 = {
+				add_claim_by = ITA
+			}
+			802 = {
+				add_claim_by = ITA
+			}
+			106 = {
+				add_claim_by = ITA
+			}
+			185 = {
+				add_claim_by = ITA
+			}
+			47 = {
+				add_claim_by = ITA
+			}
+			186 = {
+				add_claim_by = ITA
+			}
+			187 = {
+				add_claim_by = ITA
+			}
+			182 = {
+				add_claim_by = ITA
+			}
+		}
+
+		hidden_effect = {
+			ITA = {
+				country_event = {
+				    id = BBA_italy_interaction_events.39
+				    days = 360
+				}
+			}
+		}
+	}
+}
