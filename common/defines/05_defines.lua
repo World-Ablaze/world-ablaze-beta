@@ -654,7 +654,7 @@ NDefines.NNavy.ESCAPE_SPEED_HIDDEN_SUB = 1.0										-- hidden subs get faster 
 NDefines.NNavy.SPEED_TO_ESCAPE_SPEED = 0.95											-- ratio to converstion from ship speed to escape speed (divided by hundred)
 NDefines.NNavy.BASE_ESCAPE_SPEED = 1.0												-- daily base escape speed (gained as percentagE)
 
-NDefines.NNavy.SUBMARINE_BASE_TORPEDO_REVEAL_CHANCE = 0.5							-- Chance of a submarine being revealed when it fires. 1.0 is 100%. this chance is then multiplied with modifier created by comparing firer's visibiility and target's detection
+NDefines.NNavy.SUBMARINE_BASE_TORPEDO_REVEAL_CHANCE = 0.05							-- Chance of a submarine being revealed when it fires. 1.0 is 100%. this chance is then multiplied with modifier created by comparing firer's visibiility and target's detection
 
 NDefines.NNavy.OUT_OF_FUEL_SPEED_FACTOR = -0.75
 NDefines.NNavy.OUT_OF_FUEL_RANGE_FACTOR = -0.75
