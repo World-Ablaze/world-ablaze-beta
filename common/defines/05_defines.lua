@@ -865,7 +865,9 @@ NDefines.NAI.STR_BOMB_MIN_EXCORT_PLANES = 1200										-- Min amount of planes 
 
 ------------------------------------------------- END
 
-NDefines.NAI.MAX_REQUEST_EXPEDITIONARIES_ARMY_RATIO = 0.1							-- AI will not accept expeditionary requests if its expeditions are above this ratio
+NDefines.NAI.MAX_REQUEST_EXPEDITIONARIES_ARMY_RATIO = 0.5							-- AI will not accept expeditionary requests if its expeditions are above this ratio
+NDefines.NAI.CASUALTY_RATIO_TO_PULL_EXPEDITIONARIES_BACK = 0.25						-- AI will pull expeditioniries back if its casualties is aboce this ratio compared to their total deployed manpower
+NDefines.NAI.CASUALTY_RATIO_TO_NOT_SEND_EXPEDITIONARIES = 0.1						-- AI will not send expeditioniries if its casualties is aboce this ratio compared to their total deployed manpower
 
 NDefines.NAI.REFIT_SHIP_RELUCTANCE = 7												-- How often to consider refitting to new equipment variants for ships in the field
 NDefines.NAI.REFIT_SHIP_PERCENTAGE_OF_FORCES = 1.0									-- How big part of the navy that should be considered for refitting
