@@ -808,7 +808,7 @@ NDefines.NAI.SCREENS_TO_CAPITAL_RATIO = 4.0											-- screens to capital/carr
 
 NDefines.NAI.MAX_CARRIER_OVERFILL = 1.0												-- Carriers will be overfilled to this amount if there are doctrines to justify it
 NDefines.NAI.MIN_CAPITALS_FOR_CARRIER_TASKFORCE = 6									-- carrier fleets will at least have this amount of capitals
-NDefines.NAI.CAPITALS_TO_CARRIER_RATIO = 4.0										-- capital to carrier count in carrier taskfoces
+NDefines.NAI.CAPITALS_TO_CARRIER_RATIO = 3.0										-- capital to carrier count in carrier taskfoces
 
 NDefines.NAI.MAX_PATROL_TO_STRIKE_FORCE_RATIO = 5.0									-- maximum patrol/strike force ratio
 
