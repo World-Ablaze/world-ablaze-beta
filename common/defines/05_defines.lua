@@ -1017,7 +1017,7 @@ NDefines.NAI.MINIMUM_GOOD_TRADE_RATIO_PER_CIV = 0.5   							-- for each civ fac
 NDefines.NAI.RESOURCE_WANT_PER_MISSING_BALANCE = 10.0								-- negative balance increases the desire on a resource
 NDefines.NAI.RESOURCE_WANT_PER_CONSUMED = 0.2										-- if resource is being used in production, increase the desire
 
-NDefines.NAI.DIPLOMACY_SEND_MAX_FACTION = 0.85										-- Country should not send away more units than this as expeditionaries
+NDefines.NAI.DIPLOMACY_SEND_MAX_FACTION = 0.1										-- Country should not send away more units than this as expeditionaries
 NDefines.NAI.DIPLOMACY_IMPROVE_RELATION_COST_FACTOR = 1000.0						-- Desire to boost relations subtracts the cost multiplied by this
 
 NDefines.NAI.GIVE_STATE_CONTROL_MIN_CONTROLLED = 0									-- AI needs to control more than this number of states before considering giving any away
