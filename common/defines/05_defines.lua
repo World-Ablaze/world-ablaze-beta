@@ -808,7 +808,7 @@ NDefines.NAI.SCREENS_TO_CAPITAL_RATIO = 4.0											-- screens to capital/carr
 
 NDefines.NAI.MAX_CARRIER_OVERFILL = 1.0												-- Carriers will be overfilled to this amount if there are doctrines to justify it
 NDefines.NAI.MIN_CAPITALS_FOR_CARRIER_TASKFORCE = 6									-- carrier fleets will at least have this amount of capitals
-NDefines.NAI.CAPITALS_TO_CARRIER_RATIO = 4.0										-- capital to carrier count in carrier taskfoces
+NDefines.NAI.CAPITALS_TO_CARRIER_RATIO = 3.0										-- capital to carrier count in carrier taskfoces
 
 NDefines.NAI.MAX_PATROL_TO_STRIKE_FORCE_RATIO = 5.0									-- maximum patrol/strike force ratio
 
@@ -1017,7 +1017,7 @@ NDefines.NAI.MINIMUM_GOOD_TRADE_RATIO_PER_CIV = 0.5   							-- for each civ fac
 NDefines.NAI.RESOURCE_WANT_PER_MISSING_BALANCE = 10.0								-- negative balance increases the desire on a resource
 NDefines.NAI.RESOURCE_WANT_PER_CONSUMED = 0.2										-- if resource is being used in production, increase the desire
 
-NDefines.NAI.DIPLOMACY_SEND_MAX_FACTION = 0.85										-- Country should not send away more units than this as expeditionaries
+NDefines.NAI.DIPLOMACY_SEND_MAX_FACTION = 0.1										-- Country should not send away more units than this as expeditionaries
 NDefines.NAI.DIPLOMACY_IMPROVE_RELATION_COST_FACTOR = 1000.0						-- Desire to boost relations subtracts the cost multiplied by this
 
 NDefines.NAI.GIVE_STATE_CONTROL_MIN_CONTROLLED = 0									-- AI needs to control more than this number of states before considering giving any away
