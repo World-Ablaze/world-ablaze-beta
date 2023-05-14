@@ -3792,3 +3792,157 @@ FRA_colonial_management_dec_cat = {
 		}
 	}
 }
+
+FRA_export_equipment_dec_cat = {
+	
+
+	FRA_sell_to_minor_countries = {
+		icon = generic_prepare_civil_war
+
+		allowed = {
+			original_tag = FRA
+		}
+		targets = {BEL HOL LUX YUG ROM HUN CZE BUL GRE POL}
+
+		available = {
+			hidden_trigger = {
+				has_country_flag = stockpiled_equipment
+			}
+			has_equipment = {
+				light_tank_chassis > 49
+			}
+			has_equipment = {
+				light_tank_support_chassis > 49
+			}
+		}
+
+		visible = {
+			has_country_flag = stockpiled_equipment
+		}
+
+		target_root_trigger = {
+			has_completed_focus = FRA_scaledown_mechanization
+		}
+
+		target_trigger = {
+			FROM = {
+				has_army_manpower = {
+				size > 50000
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		complete_effect = {
+			FROM = {
+				country_event = fra_armor.1010
+			}
+			custom_effect_tooltip = FRA_sell_to_minor_countries_tt
+		}
+	}	
+}
+
+FRA_the_french_army_dec_cat = {
+	FRA_stockpile_equipment_mission = {
+		allowed = {
+			original_tag = FRA
+		}
+
+		available = {
+			has_equipment = {
+				motorized_equipment > 999
+			}
+			has_equipment = {
+				light_tank_chassis > 249
+			}
+			has_equipment = {
+				light_tank_support_chassis > 249
+			}
+		}
+
+		visible = {
+			has_completed_focus = FRA_scaledown_mechanization
+		}
+
+		days_mission_timeout = 250
+
+		fire_only_once = yes
+
+		activation = {
+			always = no
+		}
+
+		complete_effect = {
+			add_political_power = 25
+			add_timed_idea = {
+				idea = FRA_scaled_down
+				days = 365
+			}
+			hidden_effect = {
+				set_country_flag = stockpiled_equipment
+			}
+			custom_effect_tooltip = FRA_stockpile_equipment_mission_tt
+		}
+
+		timeout_effect = {
+			add_political_power = -50
+			add_timed_idea = {
+				idea = FRA_failed_to_scaledown_mechanization
+				days = 365
+			}
+		}
+	}
+
+	FRA_promote_tanks_mission = {
+		icon = generic_tank
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = FRA_promote_tanks_mission_tt
+				check_variable = { num_equipment_in_armies@medium_tank_chassis > 999 }
+				check_variable = { num_equipment_in_armies@heavy_tank_chassis > 999 }
+			}
+			has_army_size = {
+				size > 9
+				type = armor
+			}
+		}
+
+		visible = {
+			tag = FRA
+			has_completed_focus = FRA_promote_tanks
+		}
+
+		activation = {
+			always = no
+		}
+
+		days_mission_timeout = 1460
+		is_good = no
+		fire_only_once = yes
+
+		complete_effect = {
+			add_political_power = 50
+			army_experience = 25
+			add_doctrine_cost_reduction = {
+				name = FRA_promote_tanks
+				cost_reduction = 1
+				uses = 1
+				category = cat_mobile_warfare
+			}
+		}
+
+		timeout_effect = {
+			add_political_power = -50
+			custom_effect_tooltip = FRA_promote_tanks_mission_tt2
+			hidden_effect = {
+				subtract_from_variable = { var = FRA_French_Industrialists_influence value = 1 }
+				subtract_from_variable = { var = FRA_French_Industrialists_attitude value = 1 }
+			}
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+	}
+}
