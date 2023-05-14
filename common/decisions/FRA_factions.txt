@@ -773,6 +773,132 @@ FRA_internal_factions = {
 		}
 	}
 
+	FRA_Industrialists_contracts_FAMH_steel = {
+		icon = generic_factory
+
+		allowed = {
+			tag = FRA
+		}
+
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = FRA_Industrialists_contracts_tt
+				check_variable = { FRA_French_Industrialists_attitude = -3 compare = greater_than_or_equals }
+			}
+			NOT = { has_country_flag = Industrial_contract_flag }
+			20 = {
+				free_building_slots = {
+					building = steel_refinery
+					size > 3
+					include_locked = yes
+				}
+			}
+			27 = {
+				free_building_slots = {
+					building = steel_refinery
+					size > 3
+					include_locked = yes
+				}
+			}
+		}
+
+		visible = {
+			check_variable = { FRA_French_Industrialists_attitude = -3 compare = greater_than_or_equals }
+		}
+
+		fire_only_once = yes
+		cost = 0
+
+		complete_effect = {
+			custom_effect_tooltip = FRA_Industrialists_contracts_FAMH_steel_tt
+			add_timed_idea = { idea = french_steel_contract days = 120 }
+			hidden_effect = {
+				activate_mission = FRA_Industrialists_contracts_FAMH_steel_mission
+				20 = {
+					set_variable = { factory_goal = building_level@steel_refinery}
+					add_to_variable = { factory_goal = 2 }
+				}
+				27 = {
+					set_variable = { factory_goal = building_level@steel_refinery}
+					add_to_variable = { factory_goal = 2 }
+				}
+				set_country_flag = Industrial_contract_flag
+			}
+		}
+
+		ai_will_do = {
+			factor = 10
+		}
+	}
+
+	FRA_Industrialists_contracts_FAMH_steel_mission = {
+		icon = generic_factory
+
+		allowed = {
+			tag = FRA
+		}
+
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = FRA_Industrialists_contracts_FAMH_steel_mission_tt
+				20 = {
+					check_variable = { factory_goal < building_level@steel_refinery}
+				}
+			}
+			custom_trigger_tooltip = {
+				tooltip = FRA_Industrialists_contracts_FAMH_steel_mission_tt2
+				27 = {
+					check_variable = {factory_goal < building_level@steel_refinery}
+				}
+			}
+		}
+
+		visible = {
+			check_variable = { FRA_French_Industrialists_attitude = -3 compare = greater_than_or_equals }
+		}
+
+		days_mission_timeout = 120
+
+		fire_only_once = yes
+
+		activation = {
+			always = no
+		}
+
+		modifier = {
+		}
+
+		complete_effect = {
+			add_political_power = 100
+			31 = {
+				add_resource = {
+					type = iron
+					amount = 150
+				}
+			}
+			hidden_effect = {
+				clr_country_flag = Industrial_contract_flag
+				set_country_flag = FRA_steel_project_1
+			}
+		}
+
+		timeout_effect = {
+			custom_effect_tooltip = FRA_Industrialists_contracts_fail_tt
+			hidden_effect = {
+				subtract_from_variable = { var = FRA_French_Industrialists_attitude value = 1 }
+				subtract_from_variable = { var = FRA_French_Industrialists_factory_output value = 1 }
+				subtract_from_variable = { var = FRA_French_Industrialists_dockyard_output value = 1 }
+				FRA_political_instability_update_effect = yes
+				clr_country_flag = Industrial_contract_flag
+				set_country_flag = FRA_steel_project_1
+			}
+		}
+
+		ai_will_do = {
+			factor = 10
+		}
+	}
+
 	FRA_Industrialists_contracts_colas_civilian_roads = {
 		icon = generic_factory
 
