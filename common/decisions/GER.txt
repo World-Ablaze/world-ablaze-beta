@@ -26587,6 +26587,113 @@ GER_austro_hungarian_empire = {
 ######################################################################################################################################
 ######################################################################################################################################
 economy_decisions = {
+	exploitation_decision = {
+
+		icon = generic_assasination
+
+		# allowed = {
+		# 	original_tag = ITA
+		# }
+
+		# available = {
+
+		# }
+
+		# targets = { ITC ITE ITL ITM ITN ITO ITS ITT ITU ITW }
+
+		target_root_trigger = {
+			OR = {
+				has_idea = national_socialism
+				has_government = communism
+			}
+			if = {
+				limit = {
+					tag = GER
+				}
+				has_completed_focus = GER_exploitation_of_acquired_resources
+			}
+			if = {
+				limit = {
+					tag = JAP
+				}
+				OR = {
+					has_completed_focus = JAP_exploit_china
+					has_completed_focus = JAP_exploit_the_south
+				}
+			}
+		}
+
+		# target_non_existing = yes
+
+		target_trigger = {
+			FROM = {
+				# OR = {
+				# 	has_capitulated = yes
+				# 	exists = no
+				# }
+				check_variable = {
+					num_core_states > 0
+				}
+				any_core_state = {
+					is_controlled_by = ROOT
+					NOT = { has_state_flag = state_exploited_by_@ROOT}
+					check_variable = { industrial_complex_level > 0 }
+				}
+			}
+		}
+
+		fire_only_once = no
+
+		cost = 25
+
+		ai_will_do = {
+			factor = 4000
+		}
+
+		complete_effect = {
+			FROM = {
+				every_core_state = {
+					limit = {
+						CONTROLLER = {
+							tag = ROOT
+						}
+						NOT = { has_state_flag = state_exploited_by_@ROOT}
+					}
+					set_state_flag = state_exploited_by_@ROOT
+					damage_building = {
+						type = industrial_complex
+						damage = 10
+					}
+					add_to_variable = { FROM.exploit_state_civ = industrial_complex_level }
+				}
+				every_core_state = {
+					limit = {
+						CONTROLLER = {
+							is_subject_of = ROOT
+						}
+						NOT = { has_state_flag = state_exploited_by_@ROOT}
+					}
+					set_state_flag = state_exploited_by_@ROOT
+					damage_building = {
+						type = industrial_complex
+						damage = 4
+					}
+					add_to_variable = { FROM.exploit_state_civ = industrial_complex_level }
+				}
+			}
+			if = {
+				limit = {
+					check_variable = { FROM.exploit_state_civ < 35 }
+				}
+				economy_fatigue_level_down_5 = yes
+			}
+			else = {
+				economy_fatigue_level_down_10 = yes
+			}
+			clear_variable = FROM.exploit_state_civ
+		}
+	}
+
 	GER_exploitation_of_uk = {
 		icon = generic_assasination
 		allowed = {
