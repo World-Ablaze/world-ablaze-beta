@@ -1843,6 +1843,112 @@ operation_coordinated_strike = { ### 11 2/70
 		}
 	}
 }
+operation_barbarossa = { ### 11 1/0
+	icon = GFX_operations_coordinated_strike
+	map_icon = GFX_operations_coordinated_strike_map
+	name = operation_barbarossa
+	desc = operation_coordinated_strike_desc
+	priority = 0
+
+	days = 7
+	network_strength = 0
+	operatives = 1
+
+	allowed = {
+		original_tag = GER
+	}
+
+	visible = {
+		is_neighbor_of = SOV
+		from = {
+			original_tag = SOV
+		}
+		has_non_aggression_pact_with = SOV
+		has_completed_focus = GER_prepare_barbarossa
+	}
+
+	equipment = {
+		support_equipment = 500
+	}
+
+	available = {
+		has_completed_focus = GER_eastern_lebensraum
+	}
+
+	target_type = strategic_region
+
+	selection_target = {
+		targets = { FROM }
+	}
+
+	# Coordinated Strike will lead to a war with the target
+	will_lead_to_war_with = yes
+	risk_chance = 0.05
+	experience = 4
+	outcome_execute = { # SCOPE_OPERATION
+		ROOT = {
+			declare_war_on = { target = FROM type = annex_everything }
+			activate_decision = GER_barbarossa
+		}
+
+		execute_operation_coordinated_strike = {
+			# Amount determines how often the mission simulation is run
+			amount = 28 #1 attack per 6 hours --> 28 attacks = 7 days
+		}
+	}
+
+	outcome_potential = {
+		custom_effect_tooltip = coordinated_strike_tt
+	}
+
+	phases = { #infiltration
+		infiltration_border = { base = 25 }
+		infiltration_submarine = { base = 25 }
+		infiltration_paradrop = {
+			base = 25
+			modifier = {
+				ROOT = {
+					has_equipment = {
+						transport_plane_equipment < 1
+					}
+				}
+				factor = 0.1 #less likely if we have no transports
+			}
+		}
+		infiltration_diplomatic = {
+			base = 25
+			modifier = {
+				factor = 20
+				ROOT = { has_war = no }
+				FROM = {
+					has_war = no
+				}
+			}
+		}
+	}
+	phases = { #preparing
+		coordinated_strike_scout_target = { base = 50 }
+		coordinate_strike_mark_targets = { base = 50 }
+	}
+
+	phases = { #execution
+		coordinated_strike_sabotage_communications = { base = 34 }
+		coordinated_strike_direct_units = { base = 34 }
+		coordinated_strike_occupy_bridges = {
+			base = 34
+			modifier = {
+				NOT = {
+					FROM = {
+						any_neighbor_country = {
+							tag = ROOT #no land connection between FROM and ROOT
+						}
+					}
+				}
+				factor = 0
+			}
+		}
+	}
+}
 
 operation_steal_tech_civilian = { ### 12 3/35
 	icon = GFX_operations_steal_blueprints
