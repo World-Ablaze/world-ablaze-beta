@@ -756,6 +756,14 @@ NDefines.NSupply.ARMY_MAX_SUPPLY_RATIO_GAIN_PER_HOUR = 0.33
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- AI
 
+----------- Which settings will AI use for area defense by default
+
+NDefines.NAI.AREA_DEFENSE_SETTING_VP = false
+NDefines.NAI.AREA_DEFENSE_SETTING_PORTS = true
+NDefines.NAI.AREA_DEFENSE_SETTING_AIRBASES = false
+NDefines.NAI.AREA_DEFENSE_SETTING_FORTS = true
+NDefines.NAI.AREA_DEFENSE_SETTING_COASTLINES = true
+NDefines.NAI.AREA_DEFENSE_SETTING_RAILWAYS = false
 
 ----------- SUPPLY
 
