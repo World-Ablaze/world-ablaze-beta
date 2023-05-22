@@ -633,7 +633,7 @@ NDefines.NNavy.FIELD_EXPERIENCE_SCALE = 0.3
 
 NDefines.NNavy.UNIT_EXPERIENCE_PER_COMBAT_HOUR = 5
 NDefines.NNavy.UNIT_EXPERIENCE_SCALE = 1
-NDefines.NNavy.EXPERIENCE_FACTOR_CONVOY_ATTACK = 0.24
+NDefines.NNavy.EXPERIENCE_FACTOR_CONVOY_ATTACK = 0.12
 NDefines.NNavy.EXPERIENCE_FACTOR_NON_CARRIER_GAIN = 0.24							-- Xp gain by non-carrier ships in the combat
 NDefines.NNavy.EXPERIENCE_FACTOR_CARRIER_GAIN = 0.24								-- Xp gain by carrier ships in the combat
 
@@ -756,6 +756,14 @@ NDefines.NSupply.ARMY_MAX_SUPPLY_RATIO_GAIN_PER_HOUR = 0.33
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- AI
 
+----------- Which settings will AI use for area defense by default
+
+NDefines.NAI.AREA_DEFENSE_SETTING_VP = false
+NDefines.NAI.AREA_DEFENSE_SETTING_PORTS = true
+NDefines.NAI.AREA_DEFENSE_SETTING_AIRBASES = false
+NDefines.NAI.AREA_DEFENSE_SETTING_FORTS = true
+NDefines.NAI.AREA_DEFENSE_SETTING_COASTLINES = true
+NDefines.NAI.AREA_DEFENSE_SETTING_RAILWAYS = false
 
 ----------- SUPPLY
 
