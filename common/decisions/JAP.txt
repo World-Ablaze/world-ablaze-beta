@@ -558,8 +558,16 @@ JAP_intervene_in_china = {
 				has_completed_focus = CHI_expand_guerilla_operations
 			}
 			FROM = {
-			 	controller = {
-			 		has_war_with = ROOT
+				OR = {
+					controller = {
+						is_literally_china = yes
+					}
+					NOT = {
+						is_fully_controlled_by = controller
+					}
+				}
+			 	owner = {
+					is_literally_china = yes
 			 	}
 			 	any_neighbor_state = {
 			 		is_controlled_by = ROOT
@@ -643,7 +651,13 @@ JAP_intervene_in_china = {
 				tooltip = JAP_military_offensive_ongoing_trigger_tt
 				all_of_scopes = {
 					array = JAP_military_offensive_states
-					is_fully_controlled_by = ROOT
+					is_fully_controlled_by = controller
+					OR = {
+						is_controlled_by = ROOT
+						CONTROLLER = {
+							is_subject_of = ROOT
+						}
+					}
 				}
 			}
 		}
@@ -652,7 +666,12 @@ JAP_intervene_in_china = {
 			if = {
 				limit = {
 					var:JAP_offensive_main_objective = {
-						is_fully_controlled_by = ROOT
+						OR = {
+							is_controlled_by = ROOT
+							CONTROLLER = {
+								is_subject_of = ROOT
+							}
+						}
 					}
 				}
 				custom_effect_tooltip = SOV_military_offensive_ongoing_holding_main_objective_tt
@@ -673,9 +692,21 @@ JAP_intervene_in_china = {
 
 		complete_effect = { #SUCCESS
 			JAP_clean_military_offensive_effect = yes
-
-			add_war_support = 0.05
-			add_political_power = 25
+			if = {
+				limit = {
+					var:JAP_offensive_main_objective = {
+						is_fully_controlled_by = controller
+						OR = {
+							is_controlled_by = ROOT
+							CONTROLLER = {
+								is_subject_of = ROOT
+							}
+						}
+					}
+				}
+				add_war_support = 0.05
+				add_political_power = 25
+			}
 		}
 	}
 
