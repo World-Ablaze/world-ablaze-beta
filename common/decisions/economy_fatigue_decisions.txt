@@ -3166,18 +3166,23 @@ economy_decisions = {
 
 		icon = generic_political_rally
 
-		visible = {
-			always = yes
-		}
-
 		available = {
-			always = yes
 			has_war = no
 			OR = {
 				has_idea = civilian_economy
 				has_idea = low_economic_mobilisation
 			}
 			NOT = { has_stability > 0.95 }
+		}
+
+		visible = {
+			has_war = no
+			if = {
+				limit = {
+					has_variable = rebalance_the_industry
+				}
+				check_variable = { var = rebalance_the_industry value = 3 compare = less_than_or_equals }
+			}
 		}
 
 		cost = 25
@@ -3187,11 +3192,47 @@ economy_decisions = {
 		is_good = yes
 
 		remove_effect = {
-			economy_fatigue_level_up_4 = yes
+			custom_effect_tooltip = economy_fatigue_increase_workers_wages_tt
+			if = {
+				limit = {
+					NOT = { has_variable = increase_workers_wages }
+				}
+				hidden_effect = {
+					set_variable = { increase_workers_wages = 0 }
+				}
+				economy_fatigue_level_up_1 = yes
+			}
+			else_if ={
+				limit = {
+					check_variable = { var = increase_workers_wages value = 0 compare = equals }
+				}
+				hidden_effect = {
+					add_to_variable = { increase_workers_wages = 1 }
+				}
+				economy_fatigue_level_up_2 = yes
+			}
+			else_if ={
+				limit = {
+					check_variable = { var = increase_workers_wages value = 1 compare = equals }
+				}
+				hidden_effect = {
+					add_to_variable = { increase_workers_wages = 1 }
+				}
+				economy_fatigue_level_up_3 = yes
+			}
+			else_if ={
+				limit = {
+					check_variable = { var = increase_workers_wages value = 2 compare = equals }
+				}
+				hidden_effect = {
+					add_to_variable = { increase_workers_wages = 1 }
+				}
+				economy_fatigue_level_up_4 = yes
+			}
 		}
 
 		complete_effect = {
-			add_stability = 0.05
+			add_stability = 0.02
 		}
 
 		ai_will_do = {
@@ -5378,7 +5419,7 @@ economy_decisions = {
 			always = no
 		}
 
-		days_mission_timeout = 30
+		days_mission_timeout = 90
 		is_good = yes
 
 
