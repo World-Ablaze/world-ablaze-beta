@@ -2830,6 +2830,7 @@ focus_tree = {
 
 		completion_reward = {
 			create_faction = "Paris-Rome-Pact"
+			custom_effect_tooltip = FRA_lavel_ciano_pact_tt
 			add_opinion_modifier = {
 				target = ITA
 				modifier = FRA_Lavel_Ciano
@@ -2859,6 +2860,9 @@ focus_tree = {
 		}
 
 		available = {
+			SWI = {
+				exists = yes
+			}
 		}
 
 		bypass = {
@@ -2871,6 +2875,7 @@ focus_tree = {
 		}
 
 		completion_reward = {
+			SWI = { country_event = fra_armor.1610 }
 		}
 	}
 
@@ -2889,6 +2894,13 @@ focus_tree = {
 		}
 
 		available = {
+			OR = {
+				has_global_flag = scw_over
+				AND = {
+					SPR_scw_in_progress = yes
+					has_global_flag = SPR_carlist_uprising_flag
+				}
+			}
 		}
 
 		bypass = {
@@ -2901,6 +2913,92 @@ focus_tree = {
 		}
 
 		completion_reward = {
+			If = {
+				limit = {
+					SPR_scw_in_progress = yes
+				}
+				if = {
+					limit = { 
+						any_country = {
+							original_tag = SPR
+							has_government = neutrality
+						}
+					}
+					every_country = {
+						limit = {
+							original_tag = SPR
+							has_government = neutrality
+						}
+						FRA = {
+							puppet = {
+								target = prev
+								end_wars = no
+								end_civil_wars = no
+							}
+							add_to_war = {
+								targeted_alliance = PREV
+								enemy = SPR
+								hostility_reason = asked_to_join
+							}
+						}
+					}
+				}
+				
+			}
+			else_if = {
+				limit = {
+					NOT = {
+						has_global_flag = SPR_carlists_won
+					}
+				}
+				SPR = {
+					start_civil_war = {
+						ideology = neutrality
+						size = 0.2
+						capital = 165
+						states = {
+							165 166 172 864
+						}
+					}
+				}
+				D05 = {
+					FRA = {
+						puppet = {
+							target = prev
+							end_wars = no
+							end_civil_wars = no
+						}
+					}
+					set_popularities = {
+						neutrality = 100
+					}
+					set_politics = {
+						ruling_party = neutrality
+						elections_allowed = no
+					}
+					FRA = {
+						add_to_war = {
+							targeted_alliance = PREV
+							enemy = SPR
+							hostility_reason = asked_to_join
+						}
+					}
+				}
+			}
+			else = {
+				every_country = {
+					limit = {
+						original_tag = SPR
+					}
+					FRA = {
+						puppet = {
+							target = prev
+							end_wars = no
+							end_civil_wars = no
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -2931,6 +3029,10 @@ focus_tree = {
 		}
 
 		completion_reward = {
+			create_wargoal = {
+				target = ENG
+				type = annex_everything
+			}
 		}
 	}
 
@@ -2961,6 +3063,7 @@ focus_tree = {
 		}
 
 		completion_reward = {
+			BEL = { country_event = fra_armor.1210 }
 		}
 	}
 
@@ -2979,6 +3082,7 @@ focus_tree = {
 		}
 
 		available = {
+			country_exists = HOL
 		}
 
 		bypass = {
@@ -2991,6 +3095,50 @@ focus_tree = {
 		}
 
 		completion_reward = {
+			if = {
+				limit = { 
+					HOL = {
+						is_subject = no
+						has_capitulated = no
+						any_owned_state = {
+							is_fully_controlled_by = HOL
+							is_on_continent = europe
+						}
+					}
+				}
+				HOL = { country_event = fra_armor.1710 }
+			}
+			else = {
+				if = {
+					limit = {
+						DWI = {
+							exists = yes
+							is_subject_of = HOL
+						}
+					}
+					if = {
+						limit = {
+							country_exists = FRI
+						}
+						FRI = {
+							annex_country = {
+								target = DWI
+							}
+						}
+					}
+					else = {
+						FRA = {
+							annex_country = {
+								target = DWI
+							}
+						}
+					}
+				}
+				create_wargoal = {
+					target = INS
+					type = puppet_wargoal_focus
+				}
+			}
 		}
 	}
 
