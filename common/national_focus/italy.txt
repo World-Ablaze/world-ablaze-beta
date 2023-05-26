@@ -1846,14 +1846,30 @@ focus_tree = {
 		search_filters = {FOCUS_FILTER_MANPOWER}
 
 		completion_reward = {
-			every_country = {
+			if = {
 				limit = {
-					is_subject_of = ROOT
-					has_idea = ITA_colonial_government
+					NOT = {
+						has_country_flag = ITA_colonies_annexed
+					}
 				}
+				every_country = {
+					limit = {
+						OR = {
+							is_subject_of = ROOT
+							original_tag = ITA
+						}
+						has_idea = ITA_colonial_government
+					}
+					swap_ideas = {
+						remove_idea = ITA_colonial_government
+						add_idea = ITA_colonial_government_2
+					}
+				}
+			}
+			else = {
 				swap_ideas = {
-					remove_idea = ITA_colonial_government
-					add_idea = ITA_colonial_government_2
+					remove_idea = ITA_empire
+					add_idea = ITA_empire_2
 				}
 			}
 		}
@@ -1870,8 +1886,14 @@ focus_tree = {
 		relative_position_id = ITA_regional_development
 		cost = 4
 		available = {
-			ITL = { exists = yes }
-			ITS = { exists = yes }
+			OR = {
+				AND = {
+					ITL = { exists = yes }
+					ITS = { exists = yes }
+				}
+				has_country_flag = ITA_colonies_annexed
+			}
+			
 			any_state = {
 				OR = {
 					is_core_of = LBA
@@ -1891,7 +1913,154 @@ focus_tree = {
 			custom_effect_tooltip = ITA_strengthen_ascari_corps_libya_tt
 			custom_effect_tooltip = ITA_strengthen_ascari_corps_ethiopia_tt
 			hidden_effect = {
-				ITL = {
+				if = {
+					limit = {
+						NOT = { has_country_flag = ITA_colonies_annexed }
+					}
+					ITL = {
+						division_template = {
+							name = "Divisione Ascari Libica"
+							division_names_group = ITA_COL_01
+							#override_model = ITA_infantry_alt_0_entity
+							#template_counter = 67
+							#is_locked = yes
+							#obsolete = yes
+	
+							# Represents lesser-equipped colonial units
+							regiments = {
+								heavy_infantry = { x = 0 y = 0 }
+								infantry = { x = 0 y = 1 }
+	
+								heavy_infantry = { x = 1 y = 0 }
+								infantry = { x = 1 y = 1 }
+	
+								heavy_infantry = { x = 2 y = 0 }
+								infantry = { x = 2 y = 1 }
+							}
+	
+							priority = 0
+						}
+						division_template = {
+							name = "Cavalleria Coloniale"
+							division_names_group = ITA_CAV_03
+							#override_model = ITA_cavalry_alt_1_entity
+							#is_locked = yes
+	
+							priority = 0
+	
+							# Represents lesser-equipped colonial units
+							regiments = {
+								cavalry = { x = 0 y = 0 }
+								cavalry = { x = 0 y = 1 }
+								cavalry = { x = 0 y = 2 }
+	
+								cavalry = { x = 1 y = 0 }
+								cavalry = { x = 1 y = 1 }
+								cavalry = { x = 1 y = 2 }
+							}
+						}
+						division_template = {
+							name = "Reggimento Meharista"
+							division_names_group = ITA_CAM_01
+							#override_model = ITA_camelry_alt_2_entity
+							regiments = {
+								camelry = { x = 0 y = 0 }
+								camelry = { x = 0 y = 1 }
+	
+								camelry = { x = 1 y = 0 }
+								camelry = { x = 1 y = 1 }
+								camelry = { x = 1 y = 1 }
+							}
+						}
+						random_owned_controlled_state = {
+							limit = {
+								is_core_of = LBA
+								is_fully_controlled_by = ITL
+							}
+							prioritize = { 448 }
+							hidden_effect = {
+								create_unit = {
+									division = "division_template = \"Divisione Ascari Libica\" start_experience_factor = 0.1 start_equipment_factor = 1.0"
+									owner = ITL
+									count = 3
+								}
+								create_unit = {
+									division = "division_template = \"Cavalleria Coloniale\" start_experience_factor = 0.1 start_equipment_factor = 1.0"
+									owner = ITL
+									count = 1
+								}
+								create_unit = {
+									division = "division_template = \"Reggimento Meharista\" start_experience_factor = 0.1 start_equipment_factor = 1.0"
+									owner = ITL
+									count = 2
+								}
+							}
+						}
+					}
+					ITS = {
+						division_template = {
+							name = "Divisione Ascari Etiopia"
+							division_names_group = ITA_COL_01
+							override_model = ITA_infantry_alt_0_entity
+							template_counter = 67
+							#is_locked = yes
+							obsolete = yes
+	
+							# Represents lesser-equipped colonial units
+							regiments = {
+								heavy_infantry = { x = 0 y = 0 }
+								infantry = { x = 0 y = 1 }
+	
+								heavy_infantry = { x = 1 y = 0 }
+								infantry = { x = 1 y = 1 }
+	
+								heavy_infantry = { x = 2 y = 0 }
+								infantry = { x = 2 y = 1 }
+							}
+	
+							priority = 0
+						}
+						division_template = {
+							name = "Cavalleria Coloniale"
+							division_names_group = ITA_CAV_03
+							override_model = ITA_cavalry_alt_1_entity
+							is_locked = yes
+	
+							priority = 0
+	
+							# Represents lesser-equipped colonial units
+							regiments = {
+								cavalry = { x = 0 y = 0 }
+								cavalry = { x = 0 y = 1 }
+								cavalry = { x = 0 y = 2 }
+	
+								cavalry = { x = 1 y = 0 }
+								cavalry = { x = 1 y = 1 }
+								cavalry = { x = 1 y = 2 }
+							}
+						}
+						random_owned_controlled_state = {
+							limit = {
+								is_core_of = ETH
+								is_fully_controlled_by = ITS
+							}
+							prioritize = { 271 }
+							hidden_effect = {
+								create_unit = {
+									division = "division_template = \"Divisione Ascari Etiopia\" start_experience_factor = 0.1 start_equipment_factor = 1.0"
+									owner = ITS
+									count = 3
+								}
+								create_unit = {
+									division = "division_template = \"Cavalleria Coloniale\" start_experience_factor = 0.1 start_equipment_factor = 1.0"
+									owner = ITS
+									count = 2
+								}
+							}
+						}
+					}
+				}
+				else = {
 					division_template = {
 						name = "Divisione Ascari Libica"
 						division_names_group = ITA_COL_01
@@ -1949,7 +2118,7 @@ focus_tree = {
 					random_owned_controlled_state = {
 						limit = {
 							is_core_of = LBA
-							is_fully_controlled_by = ITL
+							is_fully_controlled_by = ITA
 						}
 						prioritize = { 448 }
 						hidden_effect = {
@@ -1970,8 +2139,6 @@ focus_tree = {
 							}
 						}
 					}
-				}
-				ITS = {
 					division_template = {
 						name = "Divisione Ascari Etiopia"
 						division_names_group = ITA_COL_01
@@ -2016,7 +2183,7 @@ focus_tree = {
 					random_owned_controlled_state = {
 						limit = {
 							is_core_of = ETH
-							is_fully_controlled_by = ITS
+							is_fully_controlled_by = ITA
 						}
 						prioritize = { 271 }
 						hidden_effect = {
@@ -2057,7 +2224,10 @@ focus_tree = {
 		relative_position_id = ITA_strengthen_ascari_corps
 		cost = 3
 		available = {
-			ITS = { exists = yes }
+			OR = {
+				ITS = { exists = yes }
+				has_country_flag = ITA_colonies_annexed
+			}
 			any_state = {
 				OR = {
 					is_core_of = LBA
