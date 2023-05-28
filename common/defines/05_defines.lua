@@ -1,6 +1,5 @@
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Game
 
-
 NDefines.NGame.END_DATE = "1952.1.1.1"
 NDefines.NGame.DECISION_ALERT_TIMEOUT_DAYS = 7										-- Days left when player will be alerted about timing out events or decisions
 NDefines.NGame.LAG_DAYS_FOR_LOWER_SPEED = 300										-- Days of client lag for decrease of gamespeed
