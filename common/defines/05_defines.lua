@@ -1,6 +1,5 @@
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Game
 
-
 NDefines.NGame.END_DATE = "1952.1.1.1"
 NDefines.NGame.DECISION_ALERT_TIMEOUT_DAYS = 7										-- Days left when player will be alerted about timing out events or decisions
 NDefines.NGame.LAG_DAYS_FOR_LOWER_SPEED = 300										-- Days of client lag for decrease of gamespeed
@@ -694,6 +693,8 @@ NDefines.NNavy.CARRIER_STACK_PENALTY_EFFECT = 0.6									-- Each carrier above 
 
 NDefines.NNavy.DEPTH_CHARGES_HIT_CHANCE_MULT = 2
 
+NDefines.NNavy.SUPPLY_NEED_FACTOR = 0										   		-- multiplies supply usage
+
 NDefines.NNavy.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
 		0, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
 		0.8, -- PATROL
@@ -720,8 +721,6 @@ NDefines.NSupply.NAVAL_BASE_FLOW = 0.0 												-- max output/input of a nava
 NDefines.NSupply.NAVAL_FLOW_PER_LEVEL = 5.0 										-- max output/input of a naval node is limited by previous base value + this define per its level
 
 NDefines.NSupply.RIVER_RAILWAY_LEVEL = 1											-- rivers will transfer in between nodes as if they were this level
-
----
 
 NDefines.NSupply.FLOATING_HARBOR_BASE_SUPPLY = 30.0 								-- supply given by a floating harbor
 NDefines.NSupply.FLOATING_HARBOR_BASE_DURATION = 60 								-- duration of a full hp floating harbor
