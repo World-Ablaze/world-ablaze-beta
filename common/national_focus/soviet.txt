@@ -4087,9 +4087,15 @@ focus_tree = {
 			}
 		}
 		available = {
-			has_war = yes
-			any_enemy_country = {
-				is_major = yes
+			if = {
+				limit = { has_completed_focus = SOV_the_left_opposition }
+				has_country_leader = { character = SOV_lev_trotsky }
+			}
+			else = {
+				has_war = yes
+				any_enemy_country = {
+					is_major = yes
+				}
 			}
 		}
 		search_filters = {
@@ -4097,15 +4103,21 @@ focus_tree = {
 		}
 
 		select_effect = {
-			activate_advisor = SOV_iosif_stalin
+			if = {
+				limit = { has_completed_focus = SOV_socialism_in_one_country }
+				activate_advisor = SOV_iosif_stalin
+			}
 			###Industry relocation + scorched earth###
 		}
 
 		completion_reward = {
 			#Tooltip purposes (Select Effect)
 			custom_effect_tooltip = SOV_focus_select_effect_tt
-			effect_tooltip = {
-				activate_advisor = SOV_iosif_stalin
+			if = {
+				limit = { has_completed_focus = SOV_socialism_in_one_country }
+				effect_tooltip = {
+					activate_advisor = SOV_iosif_stalin
+				}
 			}
 			custom_effect_tooltip = SOV_desperate_measures_decisions_unlocked_tt
 			#(Complete Effect)
@@ -14033,7 +14045,7 @@ focus_tree = {
 	focus = {
 		id = SOV_nkvd_primacy
 		icon = GFX_goal_SOV_nkvd_primacy
-		prerequisite = { focus = SOV_great_purge }
+		prerequisite = { focus = SOV_great_purge focus = SOV_the_path_of_marxism_leninism }
 		x = -4
 		y = 1
 		relative_position_id = SOV_great_purge
@@ -14046,18 +14058,9 @@ focus_tree = {
 		completion_reward = {
 			custom_effect_tooltip = SOV_formation_of_the_nkvd_tt
 			hidden_effect = {
-				add_to_variable = {
-					var = SOV_Commissars_attitude
-					value = 1
-				}
-				add_to_variable = {
-					var = SOV_Commissars_political_power_gain
-					value = 4
-				}
-				add_to_variable = {
-					var = SOV_Commissars_stability
-					value = 2
-				}
+				add_to_variable = { SOV_Commissars_attitude = 1 }
+				add_to_variable = { SOV_Commissars_political_power_gain = 4 }
+				add_to_variable = { SOV_Commissars_stability = 2 }
 				SOV_political_instability_update_effect = yes
 			}
 			add_ideas = nkvd
@@ -14689,10 +14692,7 @@ focus_tree = {
 			}
 		}
 		bypass = {
-			OR = {
-				has_completed_focus = SOV_the_left_opposition
-				has_completed_focus = SOV_the_right_opposition
-			}
+			has_completed_focus = SOV_the_path_of_marxism_leninism
 		}
 		search_filters = {
 			FOCUS_FILTER_STABILITY
@@ -15519,7 +15519,7 @@ focus_tree = {
 					is_ai = yes
 					has_war = yes
 				}
-				date > 1940.1.1				#Some event spawned wars need to be given a chance to breathe for a bit, if they've happened by the time we get here. Beyond a certain date, we stop caring.
+				date > 1940.1.1	#Some event spawned wars need to be given a chance to breathe for a bit, if they've happened by the time we get here. Beyond a certain date, we stop caring.
 			}
 		}
 		bypass = {
@@ -19058,15 +19058,45 @@ focus_tree = {
 		}
 	}
 	focus = {
-		id = SOV_eradicate_stalinism
-		icon = GFX_focus_SOV_behead_the_snake
-		prerequisite = { focus = SOV_return_democracy_to_the_party }
+		id = SOV_marsh_of_the_proletariat
+		icon = GFX_goal_generic_war_with_comintern
+		prerequisite = { focus = SOV_return_democracy_to_the_party focus = SOV_left_purges focus = SOV_right_purges }
 		cost = 3
 		x = 0
 		y = 1
 		relative_position_id = SOV_return_democracy_to_the_party
-		completion_reward = { }
+		completion_reward = {
+			add_to_variable = { SOV_fyp_consumer_goods_factor = -0.04 }
+			hidden_effect = {
+				add_to_variable = { SOV_Peasants_attitude = 1 }
+				add_to_variable = { SOV_Peasants_influence = 1 }
+				SOV_political_instability_update_effect = yes
+			}
+			custom_effect_tooltip = SOV_the_kulak_operation_tt
+
+			add_to_variable = { SOV_the_politburo_political_power_factor = 0.1 }
+			add_to_variable = { SOV_the_politburo_max_surrender_limit_offset = 0.1 }
+			hidden_effect = {
+				add_to_variable = { SOV_Peasants_attitude = 1 }
+				add_to_variable = { SOV_Peasants_influence = 1 }
+				SOV_political_instability_update_effect = yes
+			}
+			custom_effect_tooltip = SOV_the_polish_operation_tt
+		}
 	}
+	focus = {
+		id = SOV_eradicate_stalinism
+		icon = GFX_focus_SOV_behead_the_snake
+		prerequisite = { focus = SOV_marsh_of_the_proletariat}
+		cost = 3
+		x = 0
+		y = 1
+		relative_position_id = SOV_marsh_of_the_proletariat
+		completion_reward = {
+			#stab + pp + ideology?
+		}
+	}
+
 	focus = {
 		id = SOV_strengthen_the_trade_unions
 		icon = GFX_focus_generic_treaty
