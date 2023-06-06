@@ -80,7 +80,6 @@ SOV_paranoia_system = {
 		}
 
 		available = {
-			has_country_flag = SOV_paranoia_system_active_flag
 			NOT = { has_country_flag = SOV_paranoia_conducting_inspection_flag }
 		}
 
@@ -135,7 +134,6 @@ SOV_paranoia_system = {
 		}
 
 		available = {
-			has_country_flag = SOV_paranoia_system_active_flag
 			NOT = { has_country_flag = SOV_paranoia_conducting_inspection_flag }
 		}
 
@@ -190,7 +188,6 @@ SOV_paranoia_system = {
 		}
 
 		available = {
-			has_country_flag = SOV_paranoia_system_active_flag
 			has_idea = SOV_young_army_officers_purged
 			NOT = { has_country_flag = SOV_paranoia_conducting_inspection_flag }
 		}
@@ -251,7 +248,6 @@ SOV_paranoia_system = {
 		}
 
 		available = {
-			has_country_flag = SOV_paranoia_system_active_flag
 			has_idea = SOV_young_navy_officers_purged
 			NOT = { has_country_flag = SOV_paranoia_conducting_inspection_flag }
 		}
@@ -312,7 +308,6 @@ SOV_paranoia_system = {
 		}
 
 		available = {
-			has_country_flag = SOV_paranoia_system_active_flag
 			has_idea = SOV_young_air_officers_purged
 			NOT = { has_country_flag = SOV_paranoia_conducting_inspection_flag }
 		}
@@ -24744,6 +24739,47 @@ political_actions = {
 
 SOV_soviet_civil_war_dec_cat = {
 
+	SOV_coverup_the_trails = {
+		icon = generic_police_action
+		available = {
+			SOV_soviet_civil_war_not_started = yes
+		}
+		visible = {
+			has_country_flag = SOV_paranoia_system_active_flag
+			hidden_trigger = {
+				OR = {
+					SOV_is_left_opposition = yes
+					SOV_is_right_opposition = yes
+				}
+			}
+		}
+		cost = 15
+		fire_only_once = no
+		days_remove = 7
+		days_re_enable = 21
+		ai_will_do = {
+			base = 0
+			modifier = { # Do if paranoia is above "totally safe level" but not as keen as for the army version
+				add = 50
+				check_variable = { ROOT.SOV_paranoia > 25 }
+			}
+			modifier = { # Prio if paranoia is at dangerous level
+				add = 150
+				check_variable = { ROOT.SOV_paranoia > 70 }
+			}
+			modifier = { # Save pp for NKVD Chief and Stalin Assassination
+				factor = 0
+				has_completed_focus = SOV_organize_uprisings_in_the_country
+				NOT = { has_completed_focus = SOV_the_plan_for_the_coup }
+			}
+		}
+		complete_effect = {
+		}
+		remove_effect = {
+			SOV_paranoia_medium_decrease_effect = yes
+		}
+	}
+
 	SOV_the_head_of_the_nkvd_yezhov = {
 
 		icon = GFX_decision_generic_political_discourse # TODO set right image
@@ -25346,6 +25382,7 @@ SOV_soviet_civil_war_dec_cat = {
 			add_to_variable = { SOV_army_framejob_decision_re_enable_days = 30 }
 			add_to_variable = { SOV_army_framejob_decision_re_enable_days_display = 30 }
 			add_to_variable = { SOV_army_framejob_decision_cost = 25 }
+			SOV_paranoia_medium_decrease_effect = yes
 		}
 	}
 	SOV_navy_framejob = {
@@ -25424,6 +25461,7 @@ SOV_soviet_civil_war_dec_cat = {
 			add_to_variable = { SOV_navy_framejob_decision_re_enable_days = 30 }
 			add_to_variable = { SOV_navy_framejob_decision_re_enable_days_display = 30 }
 			add_to_variable = { SOV_navy_framejob_decision_cost = 25 }
+			SOV_paranoia_medium_decrease_effect = yes
 		}
 	}
 
@@ -25723,12 +25761,7 @@ SOV_soviet_civil_war_dec_cat = {
 		}
 		visible = {
 			hidden_trigger = {
-				OR = {
-					has_completed_focus = SOV_military_support
-					# has_completed_focus = SOV_the_eyes_fear
-				}
-
-
+				has_completed_focus = SOV_military_support
 			}
 			NOT = { has_global_flag = SOV_soviet_civil_war }
 		}
@@ -27995,8 +28028,10 @@ SOV_soviet_civil_war_dec_cat = {
 
 		visible = {
 			any_owned_state = {
-				region = 130
-				region = 270
+				OR = {
+					region = 130
+					region = 270
+				}
 				SOV_is_unaligned_state = yes
 			}
 		}
@@ -28047,9 +28082,11 @@ SOV_soviet_civil_war_dec_cat = {
 
 		visible = {
 			any_owned_state = {
-				region = 136
-				region = 137
-				region = 257
+				OR = {
+					region = 136
+					region = 137
+					region = 257
+				}
 				SOV_is_unaligned_state = yes
 			}
 		}
