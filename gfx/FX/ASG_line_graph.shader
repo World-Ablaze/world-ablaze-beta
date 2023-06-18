@@ -1,10 +1,8 @@
 Includes = {
 }
 
-PixelShader =
-{
-	Samplers =
-	{
+PixelShader = {
+	Samplers = {
 		TextureOne =
 		{
 			Index = 0
@@ -49,8 +47,7 @@ ConstantBuffer( 0, 0 )
 };
 
 
-VertexShader =
-{
+VertexShader = {
 	MainCode VertexShader
 	[[
 		
@@ -66,8 +63,7 @@ VertexShader =
 	]]
 }
 
-PixelShader =
-{
+PixelShader = {
 	MainCode PixelColor
 	[[
 		
