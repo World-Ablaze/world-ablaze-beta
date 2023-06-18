@@ -893,6 +893,8 @@ NDefines.NAI.STR_BOMB_MIN_EXCORT_PLANES = 1200										-- Min amount of planes 
 
 ------------------------------------------------- END
 
+NDefines.NAI.FORT_LEVEL_TO_CONSIDER_HIGHLY_FORTIFIED = 7
+
 NDefines.NAI.MAX_REQUEST_EXPEDITIONARIES_ARMY_RATIO = 0.5							-- AI will not accept expeditionary requests if its expeditions are above this ratio
 NDefines.NAI.CASUALTY_RATIO_TO_PULL_EXPEDITIONARIES_BACK = 0.25						-- AI will pull expeditioniries back if its casualties is aboce this ratio compared to their total deployed manpower
 NDefines.NAI.CASUALTY_RATIO_TO_NOT_SEND_EXPEDITIONARIES = 0.1						-- AI will not send expeditioniries if its casualties is aboce this ratio compared to their total deployed manpower
