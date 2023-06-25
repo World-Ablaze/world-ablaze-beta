@@ -434,7 +434,9 @@ NDefines.NAir.CAPACITY_PENALTY = 2													-- scales penalty of having overc
 NDefines.NAir.AIR_WING_MAX_SIZE = 200 												-- Max amount of airplanes in wing
 NDefines.NAir.MISSION_EFFICIENCY_MULT_AT_LACK_OF_FUEL = 0.05		 				-- multiplier for mission efficiency when a base lacks fuel
 
-NDefines.NAir.FIELD_EXPERIENCE_SCALE = 0.0002
+NDefines.NAir.FIELD_EXPERIENCE_SCALE = 0.0001
+NDefines.NAir.AIR_WING_COUNTRY_XP_FROM_TRAINING_FACTOR = 0.002 						--Factor on country Air XP gained from wing training
+NDefines.NAir.FIELD_EXPERIENCE_MAX_PER_DAY = 1.0									-- Most xp you can gain per day
 NDefines.NAir.CLOSE_AIR_SUPPORT_EXPERIENCE_SCALE = 0.0005							-- How much the experinence gained by CAS is scaled
 
 NDefines.NAir.AIR_WING_MAX_STATS_ATTACK = 10000										-- Max stats
