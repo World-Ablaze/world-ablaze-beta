@@ -474,18 +474,18 @@ country_event = {
 		}
 		custom_effect_tooltip = establishing_vichy_tt
 		hidden_effect = {
-			FRA = {
-				delete_unit_template_and_units = { division_template = "Division Légère Mécanique" disband = yes}
-				delete_unit_template_and_units = { division_template = "Division Légère Mécanique" disband = yes}
-				delete_unit_template_and_units = { division_template = "Brigade de Chars de Combat" disband = yes}
-				delete_unit_template_and_units = { division_template = "French Motorized Division" disband = yes}
-				delete_unit_template_and_units = { division_template = "Division Cuirassée" disband = yes}
-				delete_unit_template_and_units = { division_template = "H35 Division" disband = yes}
-				delete_unit_template_and_units = { division_template = "French Medium Tank Division" disband = yes}
-				delete_unit_template_and_units = { division_template = "Division d'Infanterie Motorisée" disband = yes}
-				delete_unit_template_and_units = { division_template = "Division de Cavalerie" disband = yes}
-				delete_unit_template_and_units = { division_template = "French Infantry Division" disband = yes}
-			}
+			#FRA = {
+			#	delete_unit_template_and_units = { division_template = "Division Légère Mécanique" disband = yes}
+			#	delete_unit_template_and_units = { division_template = "Division Légère Mécanique" disband = yes}
+			#	delete_unit_template_and_units = { division_template = "Brigade de Chars de Combat" disband = yes}
+			#	delete_unit_template_and_units = { division_template = "French Motorized Division" disband = yes}
+			#	delete_unit_template_and_units = { division_template = "Division Cuirassée" disband = yes}
+			#	delete_unit_template_and_units = { division_template = "H35 Division" disband = yes}
+			#	delete_unit_template_and_units = { division_template = "French Medium Tank Division" disband = yes}
+			#	delete_unit_template_and_units = { division_template = "Division d'Infanterie Motorisée" disband = yes}
+			#	delete_unit_template_and_units = { division_template = "Division de Cavalerie" disband = yes}
+			#	delete_unit_template_and_units = { division_template = "French Infantry Division" disband = yes}
+			#}
 			release = VIC
 			every_state = { #transfer French colonial empire
 				limit = {
@@ -502,10 +502,24 @@ country_event = {
 				}
 				VIC = { transfer_state = PREV }
 			}
+			if = {
+				limit = { ITA = { has_war_with = FRA } }
+				every_state = { #Italy gets there claimed lands
+					limit = {
+						OR = {
+							state = 1
+							state = 735
+							state = 458
+							state = 665
+						}
+						has_state_flag = vichy_italian_conquest
+					}
+					ITA = { transfer_state = PREV }
+				}
+			}
 			every_state = {
 				limit = { #set up Vichy continental holdings
 					OR = {
-						state = 735
 						state = 21
 						state = 32
 						state = 20
@@ -514,17 +528,20 @@ country_event = {
 						state = 31
 						state = 25
 						state = 33
-						state = 1
 						state = 460
 						state = 459
 						state = 513
+						state = 1
+						state = 735
+						state = 458
+						state = 665
 					}
 					CONTROLLER = {
 						OR = {
 							original_tag = FRA
 							has_war_with = FRA
 						}
-					} #failsafe for weird shit (tm)
+					}
 				}
 				add_core_of = VIC
 				VIC = { transfer_state = PREV }
@@ -535,25 +552,7 @@ country_event = {
 				}
 				add_core_of = VIC
 			}
-			if = {
-				limit = { ITA = { has_war_with = FRA } }
-				every_state = {
-					limit = {
-						OR = {
-							state = 1
-							state = 735
-						}
-						has_state_flag = vichy_italian_conquest
-					}
-					ITA = { transfer_state = PREV }
-				}
-			}
 			VIC = {
-				set_rule = {
-					can_join_factions = no
-					can_create_factions = no
-					can_not_declare_war = yes
-				}
 				set_capital = { state = 26 }
 				create_country_leader = {
 					name = "Philippe Pétain"
@@ -565,19 +564,9 @@ country_event = {
 
 					}
 				}
+				add_ideas = VIC_depowered_government
 				add_ideas = national_syndicalism
 				inherit_technology = FRA
-			}
-			hidden_effect = {
-				FRA = { add_manpower = -1000000 }
-			}
-			FRA = {
-				delete_unit = {
-					#template = template_name # can be filtered a specific template
-					#id = 42 # can be filtered to a given id in create unit effect
-					#state = 64 # can be filtered by a given state
-					disband = yes # default is no. if set to yes the game will refund equipment/manpower
-				}
 			}
 			FRA = {
 				every_unit_leader = {
@@ -596,6 +585,8 @@ country_event = {
 					set_nationality = VIC
 				}
 			}
+
+			#Vichy gets the merchant Fleet
 			FRA = {
 				if = {
 					limit = {
@@ -922,49 +913,207 @@ country_event = {
 					}
 				}
 			}
+			if = {
+				limit = {
+					FRA = {
+						check_variable = { FRA_Army_national_unity > 2 }
+					}
+				}
+				FRA = {
+					transfer_units_fraction = {
+						target = VIC
+						army_ratio = 0.7
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					FRA = {
+						check_variable = { FRA_Army_national_unity > 1 }
+					}
+				}
+				FRA = {
+					transfer_units_fraction = {
+						target = VIC
+						army_ratio = 0.8
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					FRA = {
+						check_variable = { FRA_Army_national_unity > 0 }
+					}
+				}
+				FRA = {
+					transfer_units_fraction = {
+						target = VIC
+						army_ratio = 0.9
+					}
+				}
+			}
+			if = {
+				limit = {
+					FRA = {
+						check_variable = { FRA_Airforce_national_unity > 2 }
+					}
+				}
+				FRA = {
+					transfer_units_fraction = {
+						target = VIC
+						air_ratio = 0.8
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					FRA = {
+						check_variable = { FRA_Airforce_national_unity > 1 }
+					}
+				}
+				FRA = {
+					transfer_units_fraction = {
+						target = VIC
+						air_ratio = 0.9
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					FRA = {
+						check_variable = { FRA_Airforce_national_unity > 0 }
+					}
+				}
+				FRA = {
+					transfer_units_fraction = {
+						target = VIC
+						air_ratio = 1.0
+					}
+				}
+			}
+			if = {
+				limit = {
+					FRA = {
+						check_variable = { FRA_Navy_national_unity > 2 }
+					}
+				}
+				FRA = {
+					transfer_units_fraction = {
+						target = VIC
+						navy_ratio = 0.8
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					FRA = {
+						check_variable = { FRA_Navy_national_unity > 1 }
+					}
+				}
+				FRA = {
+					transfer_units_fraction = {
+						target = VIC
+						navy_ratio = 0.9
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					FRA = {
+						check_variable = { FRA_Navy_national_unity > 0 }
+					}
+				}
+				FRA = {
+					transfer_units_fraction = {
+						target = VIC
+						navy_ratio = 1.0
+					}
+				}
+			}
+
 			FRA = {
 				transfer_units_fraction = {
 					target = VIC
-					size = 1.0
-					stockpile_ratio = 0.2
-					army_ratio = 0.8
-					navy_ratio = 1.0
-					air_ratio = 1.0
+					stockpile_ratio = 1.0
 				}
 			}
-			FRA = {
+
+			#Vichy is Disarmed
+			VIC = {
+				delete_unit = {
+					disband = yes
+				}
 				transfer_units_fraction = {
 					target = GER
 					size = 1.0
-					stockpile_ratio = 0.8
+					stockpile_ratio = 1.0
 					army_ratio = 0
 					navy_ratio = 0
 					air_ratio = 0
 				}
 			}
-			GER = {
-				every_controlled_state = {
-					limit = {
-						is_core_of = FRA
+
+			if = {
+				limit = {
+					FRA = {
+						check_variable = { FRA_People_national_unity > 2 }
 					}
-					add_compliance = 40
 				}
-				every_unit_leader = {
-					limit = {
-						OR = {
-							has_id = 101 #de Gaulle
-							has_id = 103
-							has_id = 9979
-							has_id = 9980
-							has_id = 9988
-							has_id = 9989
-							has_id = 9903
-							has_id = 9901
+				GER = {
+					every_controlled_state = {
+						limit = {
+							is_core_of = FRA
 						}
+						add_compliance = 10
+						add_resistance = 1
 					}
-					set_nationality = FRA
 				}
 			}
+			else_if = {
+				limit = {
+					FRA = {
+						check_variable = { FRA_People_national_unity > 1 }
+					}
+				}
+				GER = {
+					every_controlled_state = {
+						limit = {
+							is_core_of = FRA
+						}
+						add_compliance = 20
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					FRA = {
+						check_variable = { FRA_People_national_unity > 0 }
+					}
+				}
+				GER = {
+					every_controlled_state = {
+						limit = {
+							is_core_of = FRA
+						}
+						add_compliance = 40
+					}
+				}
+			}
+			#every_unit_leader = {
+			#	limit = {
+			#		OR = {
+			#			has_id = 101 #de Gaulle
+			#			has_id = 103
+			#			has_id = 9979
+			#			has_id = 9980
+			#			has_id = 9988
+			#			has_id = 9989
+			#			has_id = 9903
+			#			has_id = 9901
+			#		}
+			#	}
+			#	set_nationality = FRA
+			#}
 		}
 
         if = {
@@ -973,7 +1122,7 @@ country_event = {
             }
             FRA = { add_ideas = FRA_defeatism }
 			VIC = {
-				add_ideas = FRA_occupation_costs_4
+				add_ideas = VIC_occupation_costs_4
 				load_focus_tree = vichy_french_focus
 				reverse_add_opinion_modifier = {
 					target = GER
@@ -983,7 +1132,7 @@ country_event = {
         }
         else = {
             FRA = { add_timed_idea = { idea = FRA_defeatism days = 365 } }
-            VIC = { add_timed_idea = { idea = FRA_occupation_costs_4 days = 1095 } }
+            VIC = { add_timed_idea = { idea = VIC_occupation_costs_4 days = 1095 } }
         }
 
 		VIC = {
