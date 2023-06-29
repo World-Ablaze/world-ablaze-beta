@@ -462,18 +462,7 @@ country_event = {
 		}
 		custom_effect_tooltip = establishing_vichy_tt
 		hidden_effect = {
-			#FRA = {
-			#	delete_unit_template_and_units = { division_template = "Division Légère Mécanique" disband = yes}
-			#	delete_unit_template_and_units = { division_template = "Division Légère Mécanique" disband = yes}
-			#	delete_unit_template_and_units = { division_template = "Brigade de Chars de Combat" disband = yes}
-			#	delete_unit_template_and_units = { division_template = "French Motorized Division" disband = yes}
-			#	delete_unit_template_and_units = { division_template = "Division Cuirassée" disband = yes}
-			#	delete_unit_template_and_units = { division_template = "H35 Division" disband = yes}
-			#	delete_unit_template_and_units = { division_template = "French Medium Tank Division" disband = yes}
-			#	delete_unit_template_and_units = { division_template = "Division d'Infanterie Motorisée" disband = yes}
-			#	delete_unit_template_and_units = { division_template = "Division de Cavalerie" disband = yes}
-			#	delete_unit_template_and_units = { division_template = "French Infantry Division" disband = yes}
-			#}
+			set_global_flag = the_fall_of_france_global_flag
 			release = VIC
 			every_state = { #transfer French colonial empire
 				limit = {
@@ -481,6 +470,7 @@ country_event = {
 					is_owned_by = FRA
 					OR = {
 						is_on_continent = africa
+						is_on_continent = asia
 						is_core_of = VIN
 						is_core_of = CAM
 						is_core_of = LAO
@@ -982,7 +972,8 @@ country_event = {
 				}
 			}
 			
-			FRA = { country_event = {
+			FRA = { 
+				country_event = {
 					id = france.20 
 					days = 2
 				} 
@@ -1820,151 +1811,22 @@ country_event = {
 
 	is_triggered_only = yes
 
-	option = {
-		name = france.20.a
-		trigger = {
-			NOT = { has_dlc = "La Resistance" }
+	immediate = {
+		if = {
+			limit = {
+				NOT = {
+					has_country_flag = FRA_annexed_overseas
+				}
+			}
+			annex_country = {
+				target = FRO
+			}
 		}
-		custom_effect_tooltip = france.20.a_tt
-		set_cosmetic_tag = FRA_FREE
-		set_country_flag = france_de_gaulle
-
-		hidden_effect = {
-			if = {
-				limit = {
-					NOT = {
-						has_country_flag = FRA_annexed_overseas
-					}
-				}
-				annex_country = {
-					target = FRO
-				}
-			}
-			else = {
-				transfer_state = 635
-				transfer_state = 734
-				transfer_state = 641
-			}
-			set_capital = {
-				state = 635
-			}
-			if = {
-				limit = {
-					NOT = {
-						has_country_flag = FRA_annexed_overseas
-					}
-				}
-				annex_country = {
-					target = FRO
-				}
-			}
-			else = {
-				transfer_state = 635
-				transfer_state = 734
-				transfer_state = 641
-			}
-			set_capital = {
-				state = 635
-			}
-			if = {
-				limit = {
-					FRA = {
-						check_variable = { FRA_Army_national_unity > 2 }
-					}
-				}
-				set_variable = { free_army = 0.3 }
-			}
-			else_if = {
-				limit = {
-					FRA = {
-						check_variable = { FRA_Army_national_unity > 1 }
-					}
-				}
-				set_variable = { free_army = 0.2 }
-			}
-			else = {
-				set_variable = { free_army = 0.1 }
-			}
-			if = {
-				limit = {
-					FRA = {
-						check_variable = { FRA_Airforce_national_unity > 2 }
-					}
-				}
-				set_variable = { free_air = 0.2 }
-			}
-			else_if = {
-				limit = {
-					FRA = {
-						check_variable = { FRA_Airforce_national_unity > 1 }
-					}
-				}
-				set_variable = { free_air = 0.1 }
-			}
-			else = {
-				set_variable = { free_air = 0 }
-			}
-			if = {
-				limit = {
-					FRA = {
-						check_variable = { FRA_Navy_national_unity > 2 }
-					}
-				}
-				set_variable = { free_navy = 0.2 }
-			}
-			else_if = {
-				limit = {
-					FRA = {
-						check_variable = { FRA_Navy_national_unity > 1 }
-					}
-				}
-				set_variable = { free_navy = 0.1 }
-			}
-			else = {
-				set_variable = { free_navy = 0 }
-			}
-
-			VIC = {
-				transfer_units_fraction = {
-					target = FRA
-					size = 1
-					army_ratio = free_army
-					air_ratio = free_air
-					navy_ratio = free_navy
-				}
-			}
-
-			#Vichy is Disarmed
-			# VIC = {
-			# 	delete_unit = {
-			# 		disband = yes
-			# 	}
-			# 	transfer_units_fraction = {
-			# 		target = GER
-			# 		size = 1.0
-			# 		stockpile_ratio = 1.0
-			# 		army_ratio = 0
-			# 		navy_ratio = 0
-			# 		air_ratio = 0
-			# 	}
-			# }
-			add_country_leader_role = {
-				character = FRA_charles_de_gaulle
-				country_leader = {
-					expire = "1965.1.1"
-					ideology = conservatism
-					traits = { }
-			 	}
-			}
-			random_other_country = {
-				limit = {
-					original_tag = FRA
-					has_government = fascism
-				}
-				activate_mission = economy_fatigue_civilian_economy_mission
-				activate_mission = economy_fatigue_export_focus_mission
-				activate_mission = economy_fatigue_volunteer_only_mission
-			}
+		transfer_state = 635
+		transfer_state = 734
+		transfer_state = 641
+		set_capital = {
+			state = 635
 		}
 	}
 
@@ -1981,104 +1843,121 @@ country_event = {
 		hidden_effect =  {
 			if = {
 				limit = {
-					NOT = {
-						has_country_flag = FRA_annexed_overseas
+					check_variable = { FRA_Army_national_unity = 3 compare = equals }
+				}
+				VIC = {
+					transfer_units_fraction = {
+						target = FRA
+						size = 0.3
+						stockpile_ratio = 0
+						army_ratio = 0.3
+						navy_ratio = 0
+						air_ratio = 0
 					}
 				}
-				annex_country = {
-					target = FRO
-				}
-			}
-			else = {
-				transfer_state = 635
-				transfer_state = 734
-				transfer_state = 641
-			}
-			set_capital = {
-				state = 635
-			}
-			if = {
-				limit = {
-					FRA = {
-						check_variable = { FRA_Army_national_unity > 2 }
-					}
-				}
-				set_variable = { free_army = 0.3 }
 			}
 			else_if = {
 				limit = {
-					FRA = {
-						check_variable = { FRA_Army_national_unity > 1 }
+					check_variable = { FRA_Army_national_unity = 2 compare = equals }
+				}
+				VIC = {
+					transfer_units_fraction = {
+						target = FRA
+						size = 0.2
+						stockpile_ratio = 0
+						army_ratio = 0.2
+						navy_ratio = 0
+						air_ratio = 0
 					}
 				}
-				set_variable = { free_army = 0.2 }
 			}
 			else = {
-				set_variable = { free_army = 0.1 }
+				VIC = {
+					transfer_units_fraction = {
+						target = FRA
+						size = 0.1
+						stockpile_ratio = 0
+						army_ratio = 0.1
+						navy_ratio = 0
+						air_ratio = 0
+					}
+				}
 			}
 			if = {
 				limit = {
-					FRA = {
-						check_variable = { FRA_Airforce_national_unity > 2 }
+					check_variable = { FRA_Airforce_national_unity = 3 compare = equals }
+				}
+				VIC = {
+					transfer_units_fraction = {
+						target = FRA
+						size = 0.2
+						stockpile_ratio = 0
+						army_ratio = 0
+						air_ratio = 0.2
+						navy_ratio = 0
 					}
 				}
-				set_variable = { free_air = 0.2 }
 			}
 			else_if = {
 				limit = {
-					FRA = {
-						check_variable = { FRA_Airforce_national_unity > 1 }
+					check_variable = { FRA_Airforce_national_unity = 2 compare = equals }
+				}
+				VIC = {
+					transfer_units_fraction = {
+						target = FRA
+						size = 0.1
+						stockpile_ratio = 0
+						army_ratio = 0
+						air_ratio = 0.1
+						navy_ratio = 0
 					}
 				}
-				set_variable = { free_air = 0.1 }
-			}
-			else = {
-				set_variable = { free_air = 0 }
 			}
 			if = {
 				limit = {
-					FRA = {
-						check_variable = { FRA_Navy_national_unity > 2 }
+					check_variable = { FRA_Navy_national_unity = 3 compare = equals }
+				}
+				VIC = {
+					transfer_units_fraction = {
+						target = FRA
+						size = 0.2
+						stockpile_ratio = 0
+						army_ratio = 0
+						air_ratio = 0
+						navy_ratio = 0.2
 					}
 				}
-				set_variable = { free_navy = 0.2 }
 			}
 			else_if = {
 				limit = {
-					FRA = {
-						check_variable = { FRA_Navy_national_unity > 1 }
-					}
+					check_variable = { FRA_Navy_national_unity = 2 compare = equals }
 				}
-				set_variable = { free_navy = 0.1 }
-			}
-			else = {
-				set_variable = { free_navy = 0 }
-			}
-
-			VIC = {
-				transfer_units_fraction = {
-					target = FRA
-					size = 1
-					army_ratio = free_army
-					air_ratio = free_air
-					navy_ratio = free_navy
+				VIC = {
+					transfer_units_fraction = {
+						target = FRA
+						size = 0.1
+						stockpile_ratio = 0
+						army_ratio = 0
+						air_ratio = 0
+						navy_ratio = 0.1
+					}
 				}
 			}
 
 			#Vichy is Disarmed
-			# VIC = {
-			# 	delete_unit = {
-			# 		disband = yes
-			# 	}
-			# 	transfer_units_fraction = {
-			# 		target = GER
-			# 		size = 1.0
-			# 		stockpile_ratio = 1.0
-			# 		army_ratio = 0
-			# 		navy_ratio = 0
-			# 		air_ratio = 0
-			# 	}
-			# }
+			VIC = {
+				delete_unit = {
+					disband = yes
+				}
+				transfer_units_fraction = {
+					target = GER
+					size = 1.0
+					stockpile_ratio = 1.0
+					army_ratio = 0
+					navy_ratio = 0
+					air_ratio = 0
+				}
+			}
 			add_country_leader_role = {
 				character = FRA_charles_de_gaulle
 				country_leader = {
@@ -2093,6 +1972,165 @@ country_event = {
 					has_government = fascism
 				}
 				transfer_state = 513
+				activate_mission = economy_fatigue_civilian_economy_mission
+				activate_mission = economy_fatigue_export_focus_mission
+				activate_mission = economy_fatigue_volunteer_only_mission
+			}
+		}
+	}
+
+	option = {
+		name = france.20.a
+		trigger = {
+			NOT = { has_dlc = "La Resistance" }
+		}
+		custom_effect_tooltip = france.20.a_tt
+		set_cosmetic_tag = FRA_FREE
+		set_country_flag = france_de_gaulle
+
+		hidden_effect = {
+			if = {
+				limit = {
+					FRA = {
+						check_variable = { FRA_Army_national_unity > 2 }
+					}
+				}
+				VIC = {
+					transfer_units_fraction = {
+						target = FRA
+						size = 0.3
+						stockpile_ratio = 0
+						army_ratio = 0.3
+						navy_ratio = 0
+						air_ratio = 0
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					FRA = {
+						check_variable = { FRA_Army_national_unity > 1 }
+					}
+				}
+				VIC = {
+					transfer_units_fraction = {
+						target = FRA
+						size = 0.2
+						stockpile_ratio = 0
+						army_ratio = 0.2
+						navy_ratio = 0
+						air_ratio = 0
+					}
+				}
+			}
+			else = {
+				VIC = {
+					transfer_units_fraction = {
+						target = FRA
+						size = 0.1
+						stockpile_ratio = 0
+						army_ratio = 0.1
+						navy_ratio = 0
+						air_ratio = 0
+					}
+				}
+			}
+			if = {
+				limit = {
+					FRA = {
+						check_variable = { FRA_Airforce_national_unity > 2 }
+					}
+				}
+				VIC = {
+					transfer_units_fraction = {
+						target = FRA
+						size = 0.2
+						stockpile_ratio = 0
+						army_ratio = 0
+						air_ratio = 0.2
+						navy_ratio = 0
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					FRA = {
+						check_variable = { FRA_Airforce_national_unity > 1 }
+					}
+				}
+				VIC = {
+					transfer_units_fraction = {
+						target = FRA
+						size = 0.1
+						stockpile_ratio = 0
+						army_ratio = 0
+						air_ratio = 0.1
+						navy_ratio = 0
+					}
+				}
+			}
+			if = {
+				limit = {
+					FRA = {
+						check_variable = { FRA_Navy_national_unity > 2 }
+					}
+				}
+				VIC = {
+					transfer_units_fraction = {
+						target = FRA
+						size = 0.2
+						stockpile_ratio = 0
+						army_ratio = 0
+						air_ratio = 0
+						navy_ratio = 0.2
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					FRA = {
+						check_variable = { FRA_Navy_national_unity > 1 }
+					}
+				}
+				VIC = {
+					transfer_units_fraction = {
+						target = FRA
+						size = 0.1
+						stockpile_ratio = 0
+						army_ratio = 0
+						air_ratio = 0
+						navy_ratio = 0.1
+					}
+				}
+			}
+
+			#Vichy is Disarmed
+			VIC = {
+				delete_unit = {
+					disband = yes
+				}
+				transfer_units_fraction = {
+					target = GER
+					size = 1.0
+					stockpile_ratio = 1.0
+					army_ratio = 0
+					navy_ratio = 0
+					air_ratio = 0
+				}
+			}
+			add_country_leader_role = {
+				character = FRA_charles_de_gaulle
+				country_leader = {
+					expire = "1965.1.1"
+					ideology = conservatism
+					traits = { }
+			 	}
+			}
+			random_other_country = {
+				limit = {
+					original_tag = FRA
+					has_government = fascism
+				}
 				activate_mission = economy_fatigue_civilian_economy_mission
 				activate_mission = economy_fatigue_export_focus_mission
 				activate_mission = economy_fatigue_volunteer_only_mission
