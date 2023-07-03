@@ -434,7 +434,10 @@ NDefines.NAir.CAPACITY_PENALTY = 2													-- scales penalty of having overc
 NDefines.NAir.AIR_WING_MAX_SIZE = 200 												-- Max amount of airplanes in wing
 NDefines.NAir.MISSION_EFFICIENCY_MULT_AT_LACK_OF_FUEL = 0.05		 				-- multiplier for mission efficiency when a base lacks fuel
 
-NDefines.NAir.FIELD_EXPERIENCE_SCALE = 0.0002
+NDefines.NAir.AIR_WING_COUNTRY_XP_FROM_TRAINING_FACTOR = 0.01						-- Factor on country Air XP gained from wing training
+NDefines.NAir.FIELD_EXPERIENCE_MAX_PER_DAY = 2.0									-- Most xp you can gain per day
+
+NDefines.NAir.FIELD_EXPERIENCE_SCALE = 0.0001
 NDefines.NAir.CLOSE_AIR_SUPPORT_EXPERIENCE_SCALE = 0.0005							-- How much the experinence gained by CAS is scaled
 
 NDefines.NAir.AIR_WING_MAX_STATS_ATTACK = 10000										-- Max stats
@@ -501,7 +504,6 @@ NDefines.NAir.NAVAL_STRIKE_CARRIER_MULTIPLIER = 10.0							    -- damage bonus w
 NDefines.NAir.NAVAL_STRIKE_DAMAGE_TO_STR = 2.0										-- Balancing value to convert damage ( naval_strike_attack * hits ) to Strength reduction.
 NDefines.NAir.NAVAL_STRIKE_DAMAGE_TO_ORG = 0.5										-- Balancing value to convert damage ( naval_strike_attack * hits ) to Organisation reduction.
 
-NDefines.NAir.AIR_WING_COUNTRY_XP_FROM_TRAINING_FACTOR = 0.03						-- Factor on country Air XP gained from wing training
 NDefines.NAir.INTERCEPTION_DISTANCE_SCALE = 100 									-- At this many pixels of path length, full interception efficiency is applied to air missions. Lerp from 0.
 NDefines.NAir.INTERCEPTION_DAMAGE_SCALE = 1											-- Multiply the interception damage with this value. Works as a cap when interception distance is at maximum.
 
