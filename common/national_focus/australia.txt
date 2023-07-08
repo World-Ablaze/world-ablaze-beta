@@ -1290,23 +1290,24 @@ focus_tree = {
 						regiments = {
 							heavy_infantry = { x = 0 y = 0 }
 							heavy_infantry = { x = 0 y = 1 }
-							artillery_brigade = { x = 0 y = 2 }
+							heavy_infantry = { x = 0 y = 2 }
+							heavy_infantry = { x = 0 y = 3 }
 			
 							heavy_infantry = { x = 1 y = 0 }
 							heavy_infantry = { x = 1 y = 1 }
-							artillery_brigade = { x = 1 y = 2 }
+							heavy_infantry = { x = 1 y = 2 }
+							heavy_infantry = { x = 1 y = 3 }
 			
 							heavy_infantry = { x = 2 y = 0 }
 							heavy_infantry = { x = 2 y = 1 }
 							heavy_infantry = { x = 2 y = 2 }
-			
-							heavy_infantry = { x = 3 y = 0 }
-							heavy_infantry = { x = 3 y = 1 }
-							anti_tank_brigade = { x = 3 y = 2 }
-			
-							heavy_infantry = { x = 4 y = 0 }
-							heavy_infantry = { x = 4 y = 1 }
-							anti_tank_brigade = { x = 4 y = 2 }
+
+							artillery_brigade = { x = 3 y = 0 }
+							artillery_brigade = { x = 3 y = 1 }
+							artillery_brigade = { x = 3 y = 2 }
+
+							anti_tank_brigade = { x = 4 y = 0 }
+							anti_tank_brigade = { x = 4 y = 1 }
 						}
 			
 						support = {
@@ -1512,6 +1513,12 @@ focus_tree = {
 				relation = docking_rights
 				active = yes
             }
+			add_doctrine_cost_reduction = {
+				name = AST_working_with_the_rnn
+				cost_reduction = 0.99
+				uses = 1
+				category = naval_doctrine
+			}
 		}
 	}
 
@@ -1526,8 +1533,13 @@ focus_tree = {
 		cost = 3
 
 		available = {
-			HOL = { has_government = ROOT }
-			is_in_faction_with = HOL
+			OR = {
+				AND = {
+					NOT = { has_war_with = HOL }
+					HOL = { has_government = ROOT }
+				}
+				is_in_faction_with = HOL
+			}
 		}
 
 		ai_will_do = {
@@ -1675,7 +1687,7 @@ focus_tree = {
 		completion_reward = {
 			add_tech_bonus = {
 				name = AST_secure_lend_lease
-				bonus = 2.0
+				bonus = 1.0
 				uses = 2
 				category = industry
 			}
@@ -3432,7 +3444,6 @@ focus_tree = {
 		cost = 3
 
 		available = {
-			has_manpower > 30900
 			OR = {
 				has_war = yes
 				threat > 0.04
@@ -3452,9 +3463,6 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			hidden_effect = {
-				add_manpower = -30900
-			}
 			set_division_template_lock = {
 				division_template = "Infantry Division"
 				is_locked = no
@@ -4178,7 +4186,7 @@ focus_tree = {
 			add_tech_bonus = {
 				name = AST_sentinal_tank_project
 				bonus = 0.5
-				uses = 3
+				uses = 2
 				category = armor
 			}
 			if = {
@@ -4212,6 +4220,15 @@ focus_tree = {
 		cost = 3
 
 		available = {
+			if = {
+				limit = {
+					NOT = { has_dlc = "No Step Back" }
+				}
+				has_tech = ast_medium_1
+			}
+			else = {
+				has_tech = ast_medium_tank_chassis_1
+			}
 		}
 
 		ai_will_do = {
