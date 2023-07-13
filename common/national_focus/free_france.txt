@@ -949,12 +949,12 @@
 		continue_if_invalid = no
 		available_if_capitulated = yes
 		completion_reward = {
-			add_war_support = 0.1
+			add_war_support = 0.2
 			every_state = {
 				limit = {
 					is_core_of = FRA
 				}
-				add_resistance = 20
+				add_compliance = -20
 			}
 		}
 	}
@@ -991,16 +991,23 @@
 				bonus = 3
 				uses = 1
 			}
-			every_state = {
-				limit = {
-					is_core_of = FRA
-					is_on_continent = europe
-					is_coastal = yes
-				}
-				add_dynamic_modifier = {
-					modifier = Allied_supply
-				}
+			unlock_decision_tooltip = FRA_operation_overlord
+			ENG = {
+				unlock_decision_tooltip = ENG_operation_overlord
 			}
+			USA = {
+				unlock_decision_tooltip = USA_operation_overlord
+			}
+			#every_state = {
+			#	limit = {
+			#		is_core_of = FRA
+			#		is_on_continent = europe
+			#		is_coastal = yes
+			#	}
+			#	add_dynamic_modifier = {
+			#		modifier = Allied_supply
+			#	}
+			#}
 		}
 	}
 
@@ -1039,7 +1046,31 @@
 		continue_if_invalid = no
 		available_if_capitulated = yes
 		completion_reward = {
-			
+			delete_unit_template_and_units = {
+				division_template = "FFI Demi-Brigade"
+				disband = yes
+			}
+			hidden_effect = {
+				FRA = { add_manpower = 1000000 }
+			}
+			if = {
+				limit = {
+					has_cosmetic_tag = FRA_FREE
+				}
+				drop_cosmetic_tag = yes
+			}
+			if = {
+				limit = {
+					country_exists = FRV
+					NOT = { has_war_With = FRV }
+				}
+				set_autonomy = {
+					target = FRV
+					autonomous_state = autonomy_integrated_puppet
+					freedom_level = 0.1
+				}
+			}
+			load_focus_tree = french_focus
 		}
 	}
 
@@ -1222,6 +1253,68 @@
 		cancel_if_invalid = yes
 		continue_if_invalid = no
 		available_if_capitulated = yes
+		completion_reward = {
+			custom_effect_tooltip = FRA_create_unit_legion_tt
+			hidden_effect = {
+				if = {
+					limit = {
+						NOT = { has_template = "Légion étrangère" }
+					}
+					division_template = {
+						name = "Légion étrangère"
+						division_names_group = FRA_LEG_01
+						template_counter = 67
+
+						# Elite French Mountaineer
+						regiments = {
+							mountaineers = { x = 0 y = 0}
+							mountaineers = { x = 0 y = 1}
+							mountaineers = { x = 0 y = 2}
+
+							mountaineers = { x = 1 y = 0}
+							mountaineers = { x = 1 y = 1}
+							mountaineers = { x = 1 y = 2}
+
+							mountaineers = { x = 2 y = 0}
+							mountaineers = { x = 2 y = 1}
+							mountaineers = { x = 2 y = 2}
+
+							artillery_brigade = { x = 3 y = 0 }
+							artillery_brigade = { x = 3 y = 1 }
+							anti_tank_brigade = { x = 3 y = 2 }
+						}
+
+						support = {
+							engineer = { x = 0 y = 0 }
+							horse_field_hospital = { x = 0 y = 1 }
+							horse_logistics_company = { x = 0 y = 2 }
+
+							recon = { x = 1 y = 0 }
+							anti_air = { x = 1 y = 1 }
+						}
+					}
+				}
+				if = {
+					limit = {
+						any_controlled_state = {
+							is_fully_controlled_by = ROOT
+							is_core_of = ROOT
+						}
+					}
+					random_controlled_state = {
+						limit = {
+							is_fully_controlled_by = ROOT
+						}
+						prioritize = { 855 }
+							create_unit = {
+								division = "division_template = \"Légion étrangère\" start_experience_factor = 1.0 start_equipment_factor = 1.0"
+								owner = ROOT
+								count = 1
+							}
+					}
+				}
+			}
+		}
 	}
 
 	focus = {
@@ -1348,16 +1441,12 @@
 		continue_if_invalid = no
 		available_if_capitulated = yes
 		completion_reward = {
+			custom_effect_tooltip = FRA_reach_out_to_the_trade_unions_tt
 			hidden_effect = {
-				add_to_variable = { FRA_CGT_attitude = 5 }
-				add_to_variable = { FRA_CGT_political_power_gain = 5 }
-				add_to_variable = { FRA_CGT_stability  = 5 }
-			}
-			every_state = {
-				limit = {
-					is_core_of = FRA
-				}
-				add_compliance = -20
+				set_variable = { FRA_CGT_attitude = 1 }
+				add_to_variable = { FRA_CGT_influence = 2 }
+				add_to_variable = { FRA_CGT_political_power_gain = 2 }
+				add_to_variable = { FRA_CGT_stability = 2 }
 			}
 		}
 	}
@@ -1487,16 +1576,12 @@
 		continue_if_invalid = no
 		available_if_capitulated = yes
 		completion_reward = {
+			custom_effect_tooltip = FRA_connections_within_the_industrialists_tt
 			hidden_effect = {
-				add_to_variable = { FRA_French_Industrialists_attitude = 5 }
-				add_to_variable = { FRA_French_Industrialists_stability = 5 }
-			}
-			every_state = {
-				limit = {
-					is_core_of = FRA
-					is_on_continent = europe
-				}
-				add_compliance = -20
+				add_to_variable = { FRA_French_Industrialists_attitude = 1 }
+				add_to_variable = { FRA_French_Industrialists_influence = 1 }
+				add_to_variable = { FRA_French_Industrialists_factory_output = 2 }
+				add_to_variable = { FRA_French_Industrialists_dockyard_output = 2 }
 			}
 		}
 	}
@@ -1525,10 +1610,13 @@
 		continue_if_invalid = no
 		available_if_capitulated = yes
 		completion_reward = {
+			custom_effect_tooltip = FRA_the_civil_and_military_organization_tt
 			hidden_effect = {
-				add_to_variable = { FRA_National_Bloc_attitude = 5 }
-				add_to_variable = { FRA_National_bloc_political_power_gain = 5 }
-				add_to_variable = { FRA_National_Bloc_stability = 5 }
+				add_to_variable = { FRA_National_Bloc_attitude = 1 }
+				add_to_variable = { FRA_National_Bloc_influence = 1 }
+				add_to_variable = { FRA_National_bloc_factory_output = 1 }
+				add_to_variable = { FRA_National_bloc_political_power_gain = 1 }
+				add_to_variable = { FRA_National_Bloc_stability = 1 }
 			}
 		}
 	}
