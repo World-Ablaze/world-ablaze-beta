@@ -6586,6 +6586,9 @@
 		}
 
 		completion_reward = {
+			economy_fatigue_level_down_5 = yes
+			add_ideas = FRA_protect_the_rights_of_man_idea
+			add_ideas = women_at_home
 		}
 	}
 
@@ -6616,6 +6619,9 @@
 		}
 
 		completion_reward = {
+			economy_fatigue_level_down_5 = yes
+			add_stability = 0.05
+			custom_effect_tooltip = FRA_economic_devolution_tt
 		}
 	}
 
@@ -6627,7 +6633,7 @@
 		y = 1
 		relative_position_id = FRA_revive_the_national_bloc
 
-		cost = 3
+		cost = 1
 
 		ai_will_do = {
 			factor = 1
@@ -6646,7 +6652,22 @@
 		}
 
 		completion_reward = {
+			economy_fatigue_level_down_5 = yes
 			remove_ideas = FRA_factory_strikes
+			custom_effect_tooltip = fra_cgt_riots_tt
+			custom_effect_tooltip = FRA_outlaw_strikes_tt
+			hidden_effect = {
+				country_event = {
+					id = fra_armor.820
+					days = 20
+					random_days = 20
+				}
+				add_to_variable = { var  = FRA_CGT_attitude value = -1 }
+				add_to_variable = { var  = FRA_CGT_stability value = -1 }
+				add_to_variable = { var  = FRA_CGT_factory_output value = -1 }
+				add_to_variable = { var  = FRA_CGT_political_power_gain value = -1 }
+				FRA_political_instability_update_effect = yes
+			}
 		}
 	}
 
@@ -6790,13 +6811,21 @@
 		y = 1
 		relative_position_id = FRA_revive_the_national_bloc
 
-		cost = 3
+		cost = 1
 
 		ai_will_do = {
 			factor = 1
 		}
 
 		available = {
+			custom_trigger_tooltip = {
+				tooltip = FRA_ban_the_cgt_tt
+					check_variable = {
+					var = FRA_CGT_attitude
+					value = -5
+					compare = equals
+				}
+			}
 		}
 
 		bypass = {
@@ -6810,6 +6839,7 @@
 
 		completion_reward = {
 			custom_effect_tooltip = FRA_crush_the_CGT_tt
+			custom_effect_tooltip = FRA_ban_the_cgt_tt2
 			hidden_effect = {
 				set_variable = { FRA_CGT_attitude = -6 }
 				set_variable = { FRA_CGT_influence = 0 }
@@ -6817,6 +6847,11 @@
 				set_variable = { FRA_CGT_political_power_gain = 0 }
 				set_variable = { FRA_CGT_stability = 0 }
 				FRA_political_instability_update_effect = yes
+				country_event = {
+					id = fra_armor.821
+					days = 4
+				}
+				set_country_flag = fra_riots_out_of_control
 			}
 		}
 	}
@@ -6826,8 +6861,7 @@
 	focus = {
 		id = FRA_promote_entrepeneurship
 		icon = GFX_goal_generic_improve_relations_industrialists
-		prerequisite = { focus = FRA_outlaw_strikes }
-		prerequisite = { focus = FRA_economic_devolution }
+		prerequisite = { focus = FRA_stimulate_the_dynamic_market }
 		x = -4
 		y = 1
 		relative_position_id = FRA_economic_devolution
@@ -6851,6 +6885,11 @@
 		}
 
 		completion_reward = {
+			economy_fatigue_level_down_4 = yes
+			custom_effect_tooltip = FRA_promote_entrepeneurship_tt
+			add_to_variable = { FRA_French_Industrialists_factory_output = 1 }
+			add_to_variable = { FRA_French_Industrialists_dockyard_output = 1 }
+			FRA_political_instability_update_effect = yes
 		}
 	}
 
@@ -6859,7 +6898,7 @@
 	focus = {
 		id = FRA_laissez_faire
 		icon = GFX_goal_generic_contract_break
-		prerequisite = { focus = FRA_protect_the_rights_of_man }
+		prerequisite = { focus = FRA_outlaw_strikes }
 		prerequisite = { focus = FRA_economic_devolution }
 		x = 0
 		y = 1
@@ -6885,6 +6924,14 @@
 
 		completion_reward = {
 			add_ideas = full_privatization
+			custom_effect_tooltip = FRA_laissez_faire_tt
+			swap_ideas = {
+				remove_idea = FRA_disjointed_government
+				add_idea = FRA_disjointed_government_bloc_path
+			}
+			set_variable = { FRA_French_Industrialists_influence = 2 }
+			set_variable = { FRA_French_Industrialists_political_power_gain = 5 }
+			FRA_political_instability_update_effect = yes
 		}
 	}
 
@@ -6916,6 +6963,12 @@
 		}
 
 		completion_reward = {
+			economy_fatigue_level_up_2 = yes
+			custom_effect_tooltip = FRA_promote_entrepeneurship_tt
+			add_to_variable = { FRA_French_Industrialists_factory_output = 1 }
+			add_to_variable = { FRA_French_Industrialists_dockyard_output = 1 }
+			FRA_political_instability_update_effect = yes
+			add_ideas = FRA_agricultural_protectionism
 		}
 	}
 
@@ -6949,6 +7002,11 @@
 		}
 
 		completion_reward = {
+			economy_fatigue_level_down_8 = yes
+			custom_effect_tooltip = FRA_laissez_faire_tt
+			add_to_variable = { FRA_French_Industrialists_factory_output = 2 }
+			add_to_variable = { FRA_French_Industrialists_dockyard_output = 2 }
+			FRA_political_instability_update_effect = yes
 		}
 	}
 
@@ -7154,43 +7212,13 @@
 			FOCUS_FILTER_POLITICAL
 		}
 		completion_reward = {
-			add_ideas = marcel_bucard
-			every_other_country = {
-				limit = {
-					has_government = fascism
-					num_of_factories > 30
-				}
-				add_opinion_modifier = {
-					target = ROOT
-					modifier = FRA_right_wing_rhetoric_fascism
-				}
-			}
-			every_other_country = {
-				limit = {
-					has_government = democratic
-					num_of_factories > 30
-				}
-				add_opinion_modifier = {
-					target = ROOT
-					modifier = FRA_right_wing_rhetoric_democratic
-				}
-			}
-			every_other_country = {
-				limit = {
-					has_government = communism
-					num_of_factories > 30
-				}
-				add_opinion_modifier = {
-					target = ROOT
-					modifier = FRA_right_wing_rhetoric_communism
-				}
-			}
+			add_ideas = FRA_brewing_terror
 		}
 	}
 
 	focus = {
-		id = FRA_infiltrate_the_army
-		icon = GFX_goal_generic_military_deal
+		id = FRA_prepare_the_cells
+		icon = GFX_focus_ITA_generic_fascist_workers
 		prerequisite = { focus = FRA_the_revolutionary_action }
 		x = -1
 		y = 1
@@ -7215,12 +7243,20 @@
 		}
 
 		completion_reward = {
+			if = {
+				limit = {
+					NOT = {
+						has_active_mission = FRA_police_discovery_timer
+					}
+				}
+				activate_mission = FRA_police_discovery_timer
+			}
 		}
 	}
 
 	focus = {
-		id = FRA_prepare_the_cells
-		icon = GFX_focus_ITA_generic_fascist_workers
+		id = FRA_infiltrate_the_army
+		icon = GFX_goal_generic_military_deal
 		prerequisite = { focus = FRA_the_revolutionary_action }
 		x = 1
 		y = 1
@@ -7245,6 +7281,14 @@
 		}
 
 		completion_reward = {
+			if = {
+				limit = {
+					NOT = {
+						has_active_mission = FRA_police_discovery_timer
+					}
+				}
+				activate_mission = FRA_police_discovery_timer
+			}
 		}
 	}
 
@@ -7252,7 +7296,7 @@
 		id = FRA_ally_the_parti_populaire_francais
 		icon = GFX_goal_FRA_ally_the_parti_populaire_francais
 		prerequisite = { focus = FRA_prepare_the_cells }
-		x = 1
+		x = 3
 		y = 1
 		relative_position_id = FRA_prepare_the_cells
 
@@ -7317,7 +7361,7 @@
 		prerequisite = { focus = FRA_prepare_the_cells }
 		x = 1
 		y = 1
-		relative_position_id = FRA_infiltrate_the_army
+		relative_position_id = FRA_prepare_the_cells
 
 		cost = 3
 
@@ -7375,7 +7419,7 @@
 		id = FRA_the_reign_of_terror
 		icon = GFX_goal_
 		prerequisite = { focus = FRA_supreme_leader_of_the_french }
-		x = 1
+		x = -1
 		y = 1
 		relative_position_id = FRA_supreme_leader_of_the_french
 
@@ -7467,7 +7511,7 @@
 		id = FRA_integralism
 		icon = GFX_goal_generic_propaganda_fascism
 		prerequisite = { focus = FRA_supreme_leader_of_the_french }
-		x = -1
+		x = 1
 		y = 1
 		relative_position_id = FRA_supreme_leader_of_the_french
 
@@ -7547,7 +7591,7 @@
 		id = FRA_offensive_strategems
 		icon = GFX_goal_
 		prerequisite = { focus = FRA_a_radical_foreign_policy focus = FRA_nationalize_the_arms_industries }
-		x = 1
+		x = -1
 		y = 1
 		relative_position_id = FRA_nationalize_the_arms_industries
 
