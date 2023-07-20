@@ -281,45 +281,55 @@ country_event = {
 
 	is_triggered_only = yes
 
-	option = { #Agree to join the Empire
-		name = DOD_hungary.10.a
-		ai_chance = {
-			factor = 20
-			modifier = {
-				threat > 20
-				factor = 2
-			}
-			modifier = {
-				is_in_faction = no
-				factor = 2
-			}
-			modifier = {
-				GER = {
-					OR = {
-						focus_progress = { focus = GER_demand_sudetenland progress > 0}
-						focus_progress = { focus = GER_end_of_czechoslovakia progress > 0}
-					}
-				}
-				factor = 50 #oh shit
-			}
-			modifier = {
-				is_in_faction = yes
-				factor = 0.5
-			}
-		}
-		custom_effect_tooltip =  GAME_OVER_TT
-		HUN = { country_event = { id = DOD_hungary.11 hours = 6 } }
-
-	}
+	# option = { #Agree to join the Empire
+	# 	name = DOD_hungary.10.a
+	# 	ai_chance = {
+	# 		factor = 20
+	# 		modifier = {
+	# 			threat > 20
+	# 			factor = 2
+	# 		}
+	# 		modifier = {
+	# 			is_in_faction = no
+	# 			factor = 2
+	# 		}
+	# 		modifier = {
+	# 			GER = {
+	# 				OR = {
+	# 					focus_progress = { focus = GER_demand_sudetenland progress > 0}
+	# 					focus_progress = { focus = GER_end_of_czechoslovakia progress > 0}
+	# 				}
+	# 			}
+	# 			factor = 50 #oh shit
+	# 		}
+	# 		modifier = {
+	# 			is_in_faction = yes
+	# 			factor = 0.5
+	# 		}
+	# 	}
+	# 	custom_effect_tooltip =  GAME_OVER_TT
+	# 	HUN = { country_event = { id = DOD_hungary.11 hours = 6 } }
+	# }
 	option = { #A close association status
 		name = DOD_hungary.10.b
 		ai_chance = {
-			factor = 50
+			factor = 40
 			modifier = {
 				HUN = {
 					is_ai = yes
 				}
-				factor = 0
+				factor = 100
+			}
+			modifier = {
+				has_opinion = {
+					target = HUN
+					value > 75
+				}
+				factor = 10
+			}
+			modifier = {
+				is_guaranteed_by = HUN
+				factor = 10
 			}
 			modifier = {
 				GER = {
@@ -328,7 +338,7 @@ country_event = {
 						focus_progress = { focus = GER_end_of_czechoslovakia progress > 0}
 					}
 				}
-				factor = 0 #holy shit
+				factor = 10 #holy shit
 			}
 		}
 		HUN = { country_event = { id = DOD_hungary.12 hours = 6 } }
@@ -336,10 +346,10 @@ country_event = {
 	option = { #Refuse
 		name = DOD_hungary.10.c
 		ai_chance = {
-			factor = 30
+			factor = 40
 			modifier = {
 				is_in_faction = yes
-				factor = 2 #we're good thanks
+				factor = 10 #we're good thanks
 			}
 			modifier = {
 				HUN = {
@@ -348,13 +358,24 @@ country_event = {
 				factor = 0
 			}
 			modifier = {
+				has_opinion = {
+					target = HUN
+					value < 75
+				}
+				factor = 10
+			}
+			modifier = {
+				NOT = { is_guaranteed_by = HUN }
+				factor = 10
+			}
+			modifier = {
 				GER = {
 					OR = {
-						focus_progress = { focus = GER_demand_sudetenland progress > 0}
-						focus_progress = { focus = GER_end_of_czechoslovakia progress > 0}
+						focus_progress = { focus = GER_demand_sudetenland progress = 0}
+						focus_progress = { focus = GER_end_of_czechoslovakia progress = 0}
 					}
 				}
-				factor = 0 #son of a bitc-
+				factor = 10 #son of a bitc-
 			}
 		}
 		HUN = { country_event = { id = DOD_hungary.13 hours = 6 } }
@@ -382,7 +403,6 @@ country_event = {
 		annex_country = { target = CZE transfer_troops = yes }
 		HUN = { set_country_flag = CZE_annexed_peacefully } # Used to change division name lists for HUN
 	}
-
 }
 
 #Puppet CZE
@@ -396,8 +416,6 @@ country_event = {
 
 	option = {
 		name = DOD_hungary.12.a
-		puppet = CZE
-		set_autonomy = { target = CZE autonomy_state = autonomy_dominion }
 		if = {
 			limit = {
 				is_in_faction = yes
@@ -425,20 +443,35 @@ country_event = {
 
 	option = { #say no
 		name = DOD_hungary.13.a
-			add_state_claim = 69
-			add_state_claim = 9
-			add_state_claim = 75
-			add_state_claim = 70
-			add_state_claim = 74
-			add_state_claim = 71
-			add_state_claim = 73
-			add_state_claim = 72
-			add_state_claim = 664
-			add_state_claim = 881
-			add_state_claim = 880
+		add_state_claim = 73
+		add_state_claim = 71
+		add_state_claim = 664
+		add_state_claim = 70
+		add_state_claim = 72
+		add_state_claim = 75
+		add_state_claim = 74
+		add_state_claim = 69
+		add_state_claim = 881
+		add_state_claim = 880
+		add_state_claim = 9
+		add_ai_strategy = {
+			type = conquer
+			id = CZE
+			value = 200
+		}
+		add_ai_strategy = {
+			type = declare_war
+			id = CZE
+			value = 200
+		}
+		add_ai_strategy = {
+			type = alliance
+			id = CZE
+			value = -200
+		}
 	}
-
 }
+
 #Hungary at war, Sweden gets offer to support
 country_event = {
 	id = DOD_hungary.20
@@ -885,7 +918,7 @@ country_event = {
 			is_locked = no
 		}
 		set_division_template_lock = {
-			division_template = "Vegyesdandár" 
+			division_template = "Vegyesdandár"
 			is_locked = no
 		}
 		set_division_template_lock = {
@@ -1190,7 +1223,7 @@ country_event = {
 			is_locked = no
 		}
 		set_division_template_lock = {
-			division_template = "Vegyesdandár" 
+			division_template = "Vegyesdandár"
 			is_locked = no
 		}
 		set_division_template_lock = {
@@ -1499,6 +1532,7 @@ country_event = {
 		remove_state_claim = 76
 		remove_state_claim = 83
 		remove_state_claim = 84
+		remove_state_claim = 82
 		add_threat = -1
 	}
 
@@ -5057,7 +5091,7 @@ country_event = {
 				is_locked = no
 			}
 			set_division_template_lock = {
-				division_template = "Vegyesdandár" 
+				division_template = "Vegyesdandár"
 				is_locked = no
 			}
 			set_division_template_lock = {
@@ -5359,7 +5393,7 @@ country_event = {
 			is_locked = no
 		}
 		set_division_template_lock = {
-			division_template = "Vegyesdandár" 
+			division_template = "Vegyesdandár"
 			is_locked = no
 		}
 		set_division_template_lock = {
@@ -7266,7 +7300,7 @@ country_event = {
 				is_locked = no
 			}
 			set_division_template_lock = {
-				division_template = "Vegyesdandár" 
+				division_template = "Vegyesdandár"
 				is_locked = no
 			}
 			set_division_template_lock = {
