@@ -5623,16 +5623,60 @@ FRA_civil_war_dec_cat = {
 
 		cancel_if_not_visible = yes
 
-		days_remove = 15
+		days_remove = 30
 
 		remove_effect = {
-			set_variable_to_random = {
-				var = random_num
-				min = 1
-				max = 4
+			add_to_variable = { FRA_civil_var_army_support = 1 }
+		}
+	}
+
+	FRA_prepare_facist_cell = {
+		allowed = {
+			tag = FRA
+		}
+
+		state_target = yes
+
+		on_map_mode = map_only
+
+		target_array = FRA.core_states
+    	target_trigger = {
+			FROM = {
+				NOT = {
+					state = 1
+				}
+				is_controlled_by = ROOT
+				check_variable = {
+					FRA_civil_war_cells_var < 3
+				}
 			}
-			add_to_variable = { FRA_civil_var_army_support = random_num }
-			clear_variable = random_num
+		}
+
+		cost = 10
+
+		days_remove = 15
+
+		icon = gfx_
+
+		visible = {
+			has_completed_focus = FRA_prepare_the_cells
+			has_civil_war = no
+		}
+
+		complete_effect = {
+			FROM = {
+				add_to_variable = {
+					FRA_civil_war_cells_var = 1
+				}
+				if = {
+					limit = {
+						check_variable = {
+							FRA_civil_war_cells_var = 2
+						}
+					}
+					set_state_flag = FRA_facist_state_flag
+				}
+			}	
 		}
 	}
 }

@@ -7356,8 +7356,23 @@
 				activate_mission = FRA_police_discovery_timer
 				hidden_effect = {
 					set_variable = { FRA_civil_var_army_support = 0 }
+					every_state = {
+						limit = {
+							is_core_of = FRA
+						}
+						set_variable = {
+							FRA_civil_war_cells_var = 0
+						}
+					}
+					16 = {
+						set_state_flag = FRA_facist_state_flag
+						set_variable = {
+							FRA_civil_war_cells_var = 3
+						}
+					}
 				}
 			}
+			unlock_decision_tooltip = FRA_prepare_facist_cell
 		}
 	}
 
@@ -7397,9 +7412,25 @@
 				activate_mission = FRA_police_discovery_timer
 				hidden_effect = {
 					set_variable = { FRA_civil_var_army_support = 0 }
+					every_state = {
+						limit = {
+							is_core_of = FRA
+						}
+						set_variable = {
+							FRA_civil_war_cells_var = 0
+						}
+					}
+					16 = {
+						set_state_flag = FRA_facist_state_flag
+						set_variable = {
+							FRA_civil_war_cells_var = 3
+						}
+					}
 				}
 			}
 			unlock_decision_tooltip = FRA_convince_the_army_to_stand_down
+			custom_effect_tooltip = FRA_infiltrate_the_army
+			add_to_variable = { FRA_civil_var_army_support = 2 }
 		}
 	}
 
@@ -7460,6 +7491,16 @@
 		}
 
 		completion_reward = {
+			custom_effect_tooltip = FRA_utilize_the_leagues_tt
+			set_variable = { FRA_Far_Right_Leagues_attitude = 1 }
+			set_variable = { FRA_Far_Right_Leagues_political_power_gain = 1 }
+			set_variable = { FRA_Far_Right_Leagues_stability  = 1 }
+			FRA_political_instability_update_effect = yes
+			if = {
+				limit = {
+					has_completed_focus = FRA_the_revolutionary_action
+				}
+			}
 		}
 	}
 
@@ -7493,6 +7534,7 @@
 		}
 
 		completion_reward = {
+			custom_effect_tooltip = FRA_coup_detat_from_la_cagoule_tt
 			hidden_effect = {
 				if = {
 					limit = {
@@ -7527,17 +7569,37 @@
 					}
 				}
 				else = {
-
+					clamp_variable = {
+						var = FRA_civil_var_army_support
+						min = 0
+						max = 9
+					}
+					divide_variable = {
+						var = FRA_civil_var_army_support
+						value = 10
+					}
+					set_variable = {
+						fre_army_support_helper_var = 1
+					}
+					subtract_from_variable = {
+						fre_army_support_helper_var = FRA_civil_var_army_support
+					}
 				}
 				start_civil_war = {
 					ideology = democratic
 					ruling_party = fascism
 					size = 0.1
+					army_ratio = fre_army_support_helper_var
 					states = all
 					states_filter = {
 						NOT = { has_state_flag = FRA_facist_state_flag }
 					}
-					
+					FRA_civil_war_police_setup_effect = yes
+				}
+				FRA_civil_war_la_cagoule_setup_effect = yes
+				add_popularity = {
+					ideology = fascism
+					popularity = 0.4
 				}
 			}
 			
