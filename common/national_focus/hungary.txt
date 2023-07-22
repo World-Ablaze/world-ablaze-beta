@@ -3006,16 +3006,12 @@ focus_tree = {
 		}
 
 		available = {
-			neutrality > 0.5
+			neutrality > 0.4
 		}
 
 		bypass = {
 
 		}
-
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = yes
 
 		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_STABILITY }
 
@@ -3050,6 +3046,11 @@ focus_tree = {
 		completion_reward = {
 			add_political_power = 150
 			add_stability = 0.05
+			set_party_name = {
+				ideology = neutrality
+				long_name = HUN_legitimists_party_long
+				name = HUN_legitimists_party
+			}
 		}
 	}
 
@@ -3253,13 +3254,13 @@ focus_tree = {
 		}
 
 		available = {
-			has_political_power > 149
+
 		}
 
 		search_filters = {  }
 
 		completion_reward = {
-			add_political_power = -150
+			add_political_power = -100
 			if = {
 				limit = {
 					has_dynamic_modifier = {
@@ -3271,6 +3272,7 @@ focus_tree = {
 			else = {
 				add_ideas = HUN_diet_of_hungary
 			}
+			add_ideas = HUN_minority_oppression
 		}
 	}
 
@@ -3312,11 +3314,203 @@ focus_tree = {
 	}
 
 	focus = {
-		id = HUN_rip_up_the_treaty_of_trianon
-		icon = GFX_focus_generic_monarchy_1
+		id = HUN_call_on_the_rome_protocol
+		icon = GFX_focus_HUN_call_on_the_rome_protocol
 		prerequisite = { focus = HUN_assemble_a_new_ministry }
 		relative_position_id = HUN_assemble_a_new_ministry
 		x = -1
+		y = 1
+
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			ITA = {
+				exists = yes
+				NOT = {
+					has_war_with = HUN
+				}
+			}
+		}
+
+		bypass = {
+			has_completed_focus = HUN_bled_agreement
+		}
+
+		search_filters = { }
+
+		completion_reward = {
+			ITA = { country_event = { id = hun_armor.786 } }
+			custom_effect_tooltip = HUN_call_on_the_rome_protocol_tt_2
+			custom_effect_tooltip = HUN_call_on_the_rome_protocol_tt
+		}
+	}
+
+	focus = {
+		id = HUN_counter_the_fatherland_front
+		icon = GFX_focus_focus_fra_fascist_threat
+		prerequisite = { focus = HUN_call_on_the_rome_protocol }
+		relative_position_id = HUN_call_on_the_rome_protocol
+		x = -1
+		y = 1
+
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			has_intelligence_agency = yes
+			AUS = {
+				exists = yes
+				has_idea = AUS_fatherland_Front
+			}
+		}
+
+		search_filters = {  }
+
+		completion_reward = {
+			add_ideas = HUN_counter_the_fatherland_front
+			create_intelligence_agency = {
+				name = "Információs Hivatal"
+				icon = GFX_intelligence_agency_logo_hun_ih
+			}
+			custom_effect_tooltip = HUN_counter_the_fatherland_front_tt
+		}
+	}
+
+	focus = {
+		id = HUN_demand_a_referendum
+		icon = GFX_goal_HUN_demand_a_referendum
+		prerequisite = { focus = HUN_counter_the_fatherland_front }
+		mutually_exclusive = { focus = HUN_take_austria_by_force }
+		relative_position_id = HUN_counter_the_fatherland_front
+		x = 0
+		y = 1
+
+		cost = 7
+
+		ai_will_do = {
+			factor = 40
+		}
+
+		available = {
+			NOT = { has_war_with = AUS }
+			is_subject = no
+			AUS = {
+				exists = yes
+				is_subject = no
+				neutrality > .75
+			}
+		}
+
+		bypass = {
+			OR = {
+				AND = {
+					owns_state = 852
+					owns_state = 853
+					owns_state = 152
+					owns_state = 153
+					owns_state = 882
+					owns_state = 4
+					owns_state = 997
+					owns_state = 998
+				}
+				has_global_flag = GER_reformed_austro_hungarian_empire
+			}
+		}
+
+		search_filters = { FOCUS_FILTER_ANNEXATION }
+
+		completion_reward = {
+			AUS = { country_event = { id = DOD_hungary.1 } }
+			custom_effect_tooltip = HUN_demand_a_referendum_tt
+			add_state_claim = 852
+			add_state_claim = 853
+			add_state_claim = 152
+			add_state_claim = 153
+			add_state_claim = 882
+			add_state_claim = 4
+			add_state_claim = 997
+			add_state_claim = 998
+		}
+	}
+
+	focus = {
+		id = HUN_take_austria_by_force
+		icon = GFX_goal_HUN_take_austria_by_force
+		prerequisite = { focus = HUN_call_on_the_rome_protocol }
+		mutually_exclusive = { focus = HUN_demand_a_referendum }
+		relative_position_id = HUN_counter_the_fatherland_front
+		x = 2
+		y = 1
+
+		will_lead_to_war_with = AUS
+		will_lead_to_war_with = GER #if after Anschluss
+
+		cost = 7
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			882 = {
+				OWNER = {
+					NOT = {
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+			is_subject = no
+		}
+
+		bypass = {
+			controls_state = 882
+		}
+
+		search_filters = { FOCUS_FILTER_ANNEXATION }
+		completion_reward = {
+			random_country = {
+				limit = {
+					owns_state = 882
+				}
+				HUN = {
+					create_wargoal = {
+						type = take_state_focus
+						target = PREV
+						expire = 0
+						generator = { 882 4 997 998 852 853 152 153 }
+					}
+					add_ai_strategy = {
+						type = declare_war
+						id = PREV
+						value = 200
+					}
+				}
+			}
+			add_state_claim = 852
+			add_state_claim = 853
+			add_state_claim = 152
+			add_state_claim = 153
+			add_state_claim = 882
+			add_state_claim = 4
+			add_state_claim = 997
+			add_state_claim = 998
+		}
+	}
+
+	focus = {
+		id = HUN_rip_up_the_treaty_of_trianon
+		icon = GFX_focus_generic_monarchy_1
+		prerequisite = { focus = HUN_demand_a_referendum focus = HUN_take_austria_by_force }
+		prerequisite = { focus = HUN_redirect_the_MOVE focus = HUN_dissolve_the_MOVE }
+		relative_position_id = HUN_take_austria_by_force
+		x = 2
 		y = 1
 
 		cost = 5
@@ -3597,157 +3791,6 @@ focus_tree = {
 	}
 
 	focus = {
-		id = HUN_counter_the_fatherland_front
-		icon = GFX_focus_focus_fra_fascist_threat
-		prerequisite = { focus = HUN_rip_up_the_treaty_of_trianon }
-		relative_position_id = HUN_rip_up_the_treaty_of_trianon
-		x = -1
-		y = 1
-
-		cost = 5
-
-		ai_will_do = {
-			factor = 1
-		}
-
-		available = {
-			has_intelligence_agency = yes
-			AUS = {
-				exists = yes
-				has_idea = AUS_fatherland_Front
-			}
-		}
-
-		search_filters = {  }
-
-		completion_reward = {
-			add_ideas = HUN_counter_the_fatherland_front
-			custom_effect_tooltip = HUN_counter_the_fatherland_front_tt
-		}
-	}
-
-	focus = {
-		id = HUN_demand_a_referendum
-		icon = GFX_goal_HUN_demand_a_referendum
-		prerequisite = { focus = HUN_counter_the_fatherland_front }
-		mutually_exclusive = { focus = HUN_take_austria_by_force }
-		relative_position_id = HUN_counter_the_fatherland_front
-		x = 0
-		y = 1
-
-		cost = 7
-
-		ai_will_do = {
-			factor = 40
-		}
-
-		available = {
-			NOT = { has_war_with = AUS }
-			is_subject = no
-			AUS = {
-				exists = yes
-				is_subject = no
-				neutrality > .75
-			}
-		}
-
-		bypass = {
-			OR = {
-				AND = {
-					owns_state = 852
-					owns_state = 853
-					owns_state = 152
-					owns_state = 153
-					owns_state = 882
-					owns_state = 4
-					owns_state = 997
-					owns_state = 998
-				}
-				has_global_flag = GER_reformed_austro_hungarian_empire
-			}
-		}
-
-		search_filters = { FOCUS_FILTER_ANNEXATION }
-
-		completion_reward = {
-			AUS = { country_event = { id = DOD_hungary.1 } }
-			custom_effect_tooltip = HUN_demand_a_referendum_tt
-			add_state_claim = 852
-			add_state_claim = 853
-			add_state_claim = 152
-			add_state_claim = 153
-			add_state_claim = 882
-			add_state_claim = 4
-			add_state_claim = 997
-			add_state_claim = 998
-		}
-	}
-
-	focus = {
-		id = HUN_take_austria_by_force
-		icon = GFX_goal_HUN_take_austria_by_force
-		prerequisite = { focus = HUN_rip_up_the_treaty_of_trianon }
-		mutually_exclusive = { focus = HUN_demand_a_referendum }
-		relative_position_id = HUN_counter_the_fatherland_front
-		x = 2
-		y = 1
-
-		will_lead_to_war_with = AUS
-		will_lead_to_war_with = GER #if after Anschluss
-
-		cost = 7
-
-		ai_will_do = {
-			factor = 1
-		}
-
-		available = {
-			882 = {
-				OWNER = {
-					NOT = {
-						is_in_faction_with = ROOT
-					}
-				}
-			}
-			is_subject = no
-		}
-
-		bypass = {
-			controls_state = 882
-		}
-
-		search_filters = { FOCUS_FILTER_ANNEXATION }
-		completion_reward = {
-			random_country = {
-				limit = {
-					owns_state = 882
-				}
-				HUN = {
-					create_wargoal = {
-						type = take_state_focus
-						target = PREV
-						expire = 0
-						generator = { 882 4 997 998 852 853 152 153 }
-					}
-					add_ai_strategy = {
-						type = declare_war
-						id = PREV
-						value = 200
-					}
-				}
-			}
-			add_state_claim = 852
-			add_state_claim = 853
-			add_state_claim = 152
-			add_state_claim = 153
-			add_state_claim = 882
-			add_state_claim = 4
-			add_state_claim = 997
-			add_state_claim = 998
-		}
-	}
-
-	focus = {
 		id = HUN_proclaim_the_restoration_of_austria_hungary
 		icon = GFX_focus_proclaim_the_restauration_of_Austria_Hungary
 		prerequisite = { focus = HUN_demand_a_referendum focus = HUN_take_austria_by_force }
@@ -3847,6 +3890,32 @@ focus_tree = {
 			ROM = {
 				send_embargo = HUN
 			}
+		}
+	}
+
+	focus = {
+		id = HUN_negotiate_with_the_entente
+		icon = GFX_focus_HUN_negotiate_with_the_entente
+		prerequisite = { focus = HUN_reclaim_the_empire }
+		relative_position_id = HUN_reclaim_the_empire
+		x = 0
+		y = 1
+
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			has_war = no
+			is_subject = no
+		}
+
+		search_filters = {  }
+
+		completion_reward = {
+			FRA = { country_event = { id = hun_armor.789 } }
 		}
 	}
 
@@ -4652,6 +4721,7 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_ANNEXATION }
 
 		completion_reward = {
+			set_major = yes
 			add_research_slot = 1
 			add_stability = 0.2
 			set_global_flag = reintegrate_the_empire_flag
@@ -4767,6 +4837,61 @@ focus_tree = {
 	}
 
 	focus = {
+		id = HUN_hydroelectric_expansion
+		icon = GFX_goal_generic_civilian_economy_medium
+		prerequisite = { focus = HUN_hungarian_eliteism }
+		relative_position_id = HUN_hungarian_eliteism
+		x = -2
+		y = 1
+
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			controls_state = 891
+			controls_state = 43
+			controls_state = 155
+		}
+
+		search_filters = {  }
+
+		completion_reward = {
+			155 = {
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = hydro_aluminium_refinery
+					level = 2
+					instant_build = yes
+				}
+			}
+			891 = {
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = hydro_aluminium_refinery
+					level = 1
+					instant_build = yes
+				}
+				add_building_construction = {
+					type = hydro_steel_refinery
+					level = 1
+					instant_build = yes
+				}
+			}
+			43 = {
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = hydro_steel_refinery
+					level = 2
+					instant_build = yes
+				}
+			}
+		}
+	}
+
+	focus = {
 		id = HUN_repeal_minority_laws
 		icon = GFX_goal_generic_economic_balancing
 		prerequisite = { focus = HUN_banking_industry_regulation }
@@ -4788,18 +4913,7 @@ focus_tree = {
 		search_filters = {  }
 
 		completion_reward = {
-			if = {
-				limit = {
-					has_idea = HUN_societal_inequality
-				}
-				remove_ideas = HUN_societal_inequality
-			}
-			else_if = {
-				limit = {
-					has_idea = HUN_societal_inequality_2
-				}
-				remove_ideas = HUN_societal_inequality_2
-			}
+			remove_ideas = HUN_minority_oppression
 		}
 	}
 
@@ -7013,7 +7127,15 @@ focus_tree = {
 		}
 
 		available = {
-			threat > 0.15
+			if = {
+				limit = {
+					has_completed_focus = HUN_call_on_the_rome_protocol
+				}
+				threat > 0.05
+			}
+			else = {
+				threat > 0.15
+			}
 			NOT = { has_completed_focus = HUN_legacy_of_gombos }
 		}
 
