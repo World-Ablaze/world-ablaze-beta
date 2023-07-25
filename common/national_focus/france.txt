@@ -4514,6 +4514,7 @@
 				set_variable = { FRA_threat_coup_political_var = 0 }
 				set_variable = { FRA_threat_coup_manpower_var = 0 }
 				activate_mission = FRA_increase_preperation_timer
+				#subtract_from_variable = { FRA_French_Industrialists_attitude = 2 }
 			}
 		}
 	}
@@ -4524,7 +4525,7 @@
 		x = -2
 		y = 1
 		relative_position_id = FRA_invite_communist_ministers
-		cost = 8
+		cost = 3
 		ai_will_do = {
 			factor = 1
 		}
@@ -4547,9 +4548,11 @@
 			hidden_effect = {
 				add_to_variable = { var = FRA_CGT_influence value = 1 }
 				subtract_from_variable = { var = FRA_French_Industrialists_influence value = 2 }
-				subtract_from_variable = { var = FRA_French_Industrialists_attitude value = 1 }
+				subtract_from_variable = { var = FRA_French_Industrialists_attitude value = 2 }
 				set_variable = { FRA_French_Industrialists_factory_output = 0 }
+				set_variable = { FRA_French_Industrialists_dockyard_output = 0 }
 				FRA_political_instability_update_effect = yes
+				set_country_flag = fra_industrialists_no_influence
 			}
 			add_days_mission_timeout = {
 				mission = FRA_brewing_troubles_timer
@@ -4564,7 +4567,7 @@
 		x = 2
 		y = 1
 		relative_position_id = FRA_invite_communist_ministers
-		cost = 8
+		cost = 3
 		ai_will_do = {
 			factor = 1
 		}
@@ -4597,7 +4600,7 @@
 		x = 0
 		y = 1
 		relative_position_id = FRA_invite_communist_ministers
-		cost = 8
+		cost = 5
 		ai_will_do = {
 			factor = 1
 		}
@@ -4617,7 +4620,8 @@
 				ideology = democratic
 				popularity = -0.2
 			}
-			custom_effect_tooltip =  FRA_push_out_the_radicals_tt
+			add_stability = -0.1
+			custom_effect_tooltip = FRA_push_out_the_radicals_tt
 			subtract_from_variable = { FRA_National_bloc_attitude  = 1 }
 			set_variable = { FRA_National_bloc_influence = 0 }
 			set_variable = { FRA_National_bloc_political_power_gain = -1 }
@@ -4637,7 +4641,7 @@
 		x = -1
 		y = 1
 		relative_position_id = FRA_push_out_the_radicals
-		cost = 8
+		cost = 3
 		ai_will_do = {
 			factor = 1
 		}
@@ -4666,6 +4670,10 @@
 				ideology = marxism
 			}
 			FRA_remove_disjointed_government = yes
+			add_days_mission_timeout = {
+				mission = FRA_brewing_troubles_timer
+				days = -20
+			}
 		}
 	}
 	focus = {
@@ -4677,7 +4685,7 @@
 		x = 1
 		y = 1
 		relative_position_id = FRA_push_out_the_radicals
-		cost = 8
+		cost = 3
 		ai_will_do = {
 			factor = 1
 		}
@@ -4708,7 +4716,7 @@
 			FRA_remove_disjointed_government = yes
 			add_days_mission_timeout = {
 				mission = FRA_brewing_troubles_timer
-				days = -20
+				days = -60
 			}
 		}
 	}
@@ -4825,6 +4833,7 @@
 			factor = 1
 		}
 		available = {
+			has_completed_focus = FRA_womens_suffrage
 		}
 		bypass = {
 		}
@@ -4835,9 +4844,13 @@
 
 		}
 		completion_reward = {
+			swap_ideas = {
+				remove_idea = FRA_womens_suffrage
+				add_idea = FRA_legal_equality_idea
+			}
 			add_days_mission_timeout = {
 				mission = FRA_brewing_troubles_timer
-				days = -15
+				days = -25
 			}
 		}
 	}
@@ -5018,6 +5031,14 @@
 				mission = FRA_brewing_troubles_timer
 				days = -75
 			}
+			custom_effect_tooltip = FRA_industrial_collectivization_tt
+			hidden_effect = {
+				set_variable = { FRA_French_Industrialists_attitude = -6 }
+				set_variable = { FRA_French_Industrialists_influence = 0 }
+				set_variable = { FRA_French_Industrialists_factory_output = 0 }
+				set_variable = { FRA_French_Industrialists_political_power_gain = 0 }
+				set_variable = { FRA_French_Industrialists_dockyard_output = 0 }
+			}
 		}
 	}	
 	focus = {
@@ -5027,7 +5048,7 @@
 		x = 1
 		y = 1
 		relative_position_id = FRA_general_work_council
-		cost = 3
+		cost = 10
 		ai_will_do = {
 			factor = 1
 		}
@@ -5106,8 +5127,8 @@
 		available_if_capitulated = no
 		completion_reward = {
 			unlock_decision_tooltip = FRA_police_infiltration
-			unlock_decision_tooltip = FRA_police_infiltration
-			unlock_decision_tooltip = FRA_police_infiltration
+			unlock_decision_tooltip = FRA_police_crackdown
+			unlock_decision_tooltip = FRA_break_up_smuggeling
 		}
 	}
 	focus = {
@@ -6869,6 +6890,9 @@
 			custom_effect_tooltip = FRA_revive_the_national_bloc_tt
 			hidden_effect = {
 				set_variable = { FRA_National_bloc_attitude = 1 }
+				set_variable = { FRA_National_bloc_political_power_gain = 1 }
+				set_variable = { FRA_National_bloc_influence = 1 }
+				set_variable = { FRA_National_bloc_stability = 1 }
 				FRA_political_instability_update_effect = yes
 			}
 			add_popularity = { ideology = democratic popularity = 0.1 }
@@ -7005,19 +7029,26 @@
 		completion_reward = {
 			economy_fatigue_level_down_5 = yes
 			remove_ideas = FRA_factory_strikes
-			custom_effect_tooltip = fra_cgt_riots_tt
+			#custom_effect_tooltip = fra_cgt_riots_tt
 			custom_effect_tooltip = FRA_outlaw_strikes_tt
 			hidden_effect = {
 				country_event = {
 					id = fra_armor.820
 					days = 20
-					random_days = 20
+					random_days = 10
 				}
-				add_to_variable = { var  = FRA_CGT_attitude value = -1 }
-				add_to_variable = { var  = FRA_CGT_stability value = -1 }
-				add_to_variable = { var  = FRA_CGT_factory_output value = -1 }
-				add_to_variable = { var  = FRA_CGT_political_power_gain value = -1 }
-				FRA_political_instability_update_effect = yes
+				# if = {
+				# 	limit = {
+				# 		check_variable = {
+				# 			FRA_CGT_attitude > -5
+				# 		}
+				# 	}
+				# 	subtract_from_variable = { var  = FRA_CGT_attitude value = 1 }
+				# }
+				# add_to_variable = { var  = FRA_CGT_stability value = -1 }
+				# add_to_variable = { var  = FRA_CGT_factory_output value = -1 }
+				# add_to_variable = { var  = FRA_CGT_political_power_gain value = -1 }
+				# FRA_political_instability_update_effect = yes
 			}
 		}
 	}
@@ -7336,7 +7367,7 @@
 				remove_idea = FRA_disjointed_government
 				add_idea = FRA_disjointed_government_bloc_path
 			}
-			set_variable = { FRA_French_Industrialists_influence = 2 }
+			set_variable = { FRA_French_Industrialists_influence = 6 }
 			set_variable = { FRA_French_Industrialists_political_power_gain = 5 }
 			FRA_political_instability_update_effect = yes
 		}
@@ -7421,7 +7452,7 @@
 
 		completion_reward = {
 			economy_fatigue_level_down_8 = yes
-			custom_effect_tooltip = FRA_laissez_faire_tt
+			custom_effect_tooltip = FRA_national_regeneration_tt
 			add_to_variable = { FRA_French_Industrialists_factory_output = 2 }
 			add_to_variable = { FRA_French_Industrialists_dockyard_output = 2 }
 			FRA_political_instability_update_effect = yes
@@ -7624,6 +7655,9 @@
 		relative_position_id = FRA_fatherland
 		cost = 3
 		available_if_capitulated = yes
+		available = {
+			has_country_flag = fra_riots_out_of_control
+		}
 		ai_will_do = {
 			factor = 1
 		}
