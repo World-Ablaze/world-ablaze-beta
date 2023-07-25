@@ -4682,236 +4682,236 @@ operations = {
 		}
 	}
 
-	ENG_operation_exporter = {
-		icon = border_war
-		allowed = {
-			original_tag = ENG
-		}
-		available = {
-			has_completed_focus = ENG_secure_iraq
-			NOT = {
-				FRA_controls_syria = yes
-			}
-			any_state = {
-				OR = {
-					state = 680
-					state = 677
-					state = 554
-					state = 553
-				}
-				CONTROLLER = {
-					NOT = {
-						has_war_with = FRA
-					}
-				}
-				any_neighbor_state = {
-					CONTROLLER = {
-						OR = {
-							tag = ROOT
-							is_in_faction_with = FRA
-						}
-					}
-				}
-			}
-		}
-
-		visible = {
-			NOT = {
-				FRA_controls_syria = yes
-			}
-			any_state = {
-				OR = {
-					state = 680
-					state = 677
-					state = 554
-					state = 553
-				}
-				CONTROLLER = {
-					NOT = {
-						has_war_with = FRA
-					}
-				}
-				any_neighbor_state = {
-					CONTROLLER = {
-						OR = {
-							tag = ROOT
-							is_in_faction_with = FRA
-						}
-					}
-				}
-			}
-		}
-
-		highlight_states = {
-			highlight_state_targets = {
-				state = 680
-				state = 677
-				state = 554
-				state = 553
-			}
-		}
-
-		fire_only_once = yes
-		cost = 25
-
-		ai_will_do = {
-			base = 0
-			modifier = {
-				is_historical_focus_on = yes
-				date > 1941.6.7
-				factor = 800
-			}
-		}
-
-		complete_effect = {
-			random_state = { #find a neighbouring state of Syria that is controlled by an ally or ourselves
-				limit = {
-					OR = {
-						state = 680
-						state = 677
-						state = 554
-						state = 553
-					}
-					not = { is_controlled_by = ROOT }
-					CONTROLLER = {
-						NOT = { has_war_with = ROOT }
-					}
-					any_neighbor_state = {
-						CONTROLLER = {
-							OR = {
-								tag = ROOT
-								is_in_faction_with = ROOT
-							}
-						}
-					}
-				}
-				save_event_target_as = VIC_defender_state
-				random_neighbor_state = {
-					limit = {
-						CONTROLLER = {
-							OR = {
-								tag = ROOT
-								is_in_faction_with = ROOT
-							}
-						}
-					}
-					save_event_target_as = ENG_attacker_state
-				}
-			}
-			if = {
-				limit = { ENG = { is_ai = yes }
-				}
-				event_target:ENG_attacker_state = {
-					ENG = {
-						division_template = {
-							name = "Syria Invasion Force"
-							division_names_group = ENG_INF_01
-							is_locked = yes
-							regiments = {
-								heavy_infantry = { x = 0 y = 0 }
-								heavy_infantry = { x = 0 y = 1 }
-								heavy_infantry = { x = 0 y = 2 }
-
-								heavy_infantry = { x = 1 y = 0 }
-								heavy_infantry = { x = 1 y = 1 }
-								heavy_infantry = { x = 1 y = 2 }
-
-								heavy_infantry = { x = 2 y = 0 }
-								heavy_infantry = { x = 2 y = 1 }
-								heavy_infantry = { x = 2 y = 2 }
-
-								artillery_brigade = { x = 3 y = 0 }
-								artillery_brigade = { x = 3 y = 1 }
-								artillery_brigade = { x = 3 y = 2 }
-							}
-							support = {
-								engineer = { x = 0 y = 0 }
-								heavy_artillery = {x = 0 y = 1 }
-								signal_company = {x = 0 y = 2 }
-							}
-						}
-						event_target:ENG_attacker_state = { #set up attacker unit(s)
-							create_unit = {
-								division = "name = \"Gentforce 1\" division_template = \"Syria Invasion Force\" start_experience_factor = 0.5"
-								owner = PREV
-							}
-							create_unit = {
-								division = "name = \"Gentforce 2\" division_template = \"Syria Invasion Force\" start_experience_factor = 0.5"
-								owner = PREV
-							}
-							create_unit = {
-								division = "name = \"Gentforce 3\" division_template = \"Syria Invasion Force\" start_experience_factor = 0.5"
-								owner = PREV
-							}
-						}
-					}
-				}
-			}
-
-			event_target:VIC_defender_state = { #set up defender unit(s)
-				CONTROLLER = {
-					division_template = {
-						name = "Syria Defense Force"
-						division_names_group = FRA_INF_01
-						is_locked = yes
-						regiments = {
-							heavy_infantry = { x = 0 y = 0 }
-							infantry = { x = 0 y = 1 }
-							infantry = { x = 0 y = 2 }
-
-							heavy_infantry = { x = 1 y = 0 }
-							infantry = { x = 1 y = 1 }
-							infantry = { x = 1 y = 2 }
-
-							heavy_infantry = { x = 2 y = 0 }
-							infantry = { x = 2 y = 1 }
-							infantry = { x = 2 y = 2 }
-						}
-						support = {
-							engineer = { x = 0 y = 0 }
-							artillery = {x = 0 y = 1 }
-						}
-					}
-					event_target:VIC_defender_state = { #set up defenders
-						create_unit = {
-							division = "name = \"Syria Defense Force 1\" division_template = \"Syria Defense Force\" start_experience_factor = 0.5"
-							owner = PREV
-						}
-						create_unit = {
-							division = "name = \"Syria Defense Force 2\" division_template = \"Syria Defense Force\" start_experience_factor = 0.5"
-							owner = PREV
-						}
-						create_unit = {
-							division = "name = \"Syria Defense Force 3\" division_template = \"Syria Defense Force\" start_experience_factor = 0.5"
-							owner = PREV
-						}
-					}
-				}
-			}
-
-			event_target:ENG_attacker_state = {
-				CONTROLLER = {
-					start_border_war = {
-						change_state_after_war = no
-						attacker = {
-							state = event_target:ENG_attacker_state
-							num_provinces = 4
-							on_win = FRA_syria_intervention.1
-							on_lose = FRA_syria_intervention.2
-							on_cancel = FRA_syria_intervention.3
-						}
-						defender = {
-							state = event_target:VIC_defender_state
-							num_provinces = 3
-							on_win = FRA_syria_intervention.2
-							on_lose = FRA_syria_intervention.1
-							on_cancel = FRA_syria_intervention.3
-						}
-					}
-				}
-			}
-		}
-	}
+	#ENG_operation_exporter = {
+	#	icon = border_war
+	#	allowed = {
+	#		original_tag = ENG
+	#	}
+	#	available = {
+	#		has_completed_focus = ENG_secure_iraq
+	#		NOT = {
+	#			FRA_controls_syria = yes
+	#		}
+	#		any_state = {
+	#			OR = {
+	#				state = 680
+	#				state = 677
+	#				state = 554
+	#				state = 553
+	#			}
+	#			CONTROLLER = {
+	#				NOT = {
+	#					has_war_with = FRA
+	#				}
+	#			}
+	#			any_neighbor_state = {
+	#				CONTROLLER = {
+	#					OR = {
+	#						tag = ROOT
+	#						is_in_faction_with = FRA
+	#					}
+	#				}
+	#			}
+	#		}
+	#	}
+#
+	#	visible = {
+	#		NOT = {
+	#			FRA_controls_syria = yes
+	#		}
+	#		any_state = {
+	#			OR = {
+	#				state = 680
+	#				state = 677
+	#				state = 554
+	#				state = 553
+	#			}
+	#			CONTROLLER = {
+	#				NOT = {
+	#					has_war_with = FRA
+	#				}
+	#			}
+	#			any_neighbor_state = {
+	#				CONTROLLER = {
+	#					OR = {
+	#						tag = ROOT
+	#						is_in_faction_with = FRA
+	#					}
+	#				}
+	#			}
+	#		}
+	#	}
+#
+	#	highlight_states = {
+	#		highlight_state_targets = {
+	#			state = 680
+	#			state = 677
+	#			state = 554
+	#			state = 553
+	#		}
+	#	}
+#
+	#	fire_only_once = yes
+	#	cost = 25
+#
+	#	ai_will_do = {
+	#		base = 0
+	#		modifier = {
+	#			is_historical_focus_on = yes
+	#			date > 1941.6.7
+	#			factor = 800
+	#		}
+	#	}
+#
+	#	complete_effect = {
+	#		random_state = { #find a neighbouring state of Syria that is controlled by an ally or ourselves
+	#			limit = {
+	#				OR = {
+	#					state = 680
+	#					state = 677
+	#					state = 554
+	#					state = 553
+	#				}
+	#				not = { is_controlled_by = ROOT }
+	#				CONTROLLER = {
+	#					NOT = { has_war_with = ROOT }
+	#				}
+	#				any_neighbor_state = {
+	#					CONTROLLER = {
+	#						OR = {
+	#							tag = ROOT
+	#							is_in_faction_with = ROOT
+	#						}
+	#					}
+	#				}
+	#			}
+	#			save_event_target_as = VIC_defender_state
+	#			random_neighbor_state = {
+	#				limit = {
+	#					CONTROLLER = {
+	#						OR = {
+	#							tag = ROOT
+	#							is_in_faction_with = ROOT
+	#						}
+	#					}
+	#				}
+	#				save_event_target_as = ENG_attacker_state
+	#			}
+	#		}
+	#		if = {
+	#			limit = { ENG = { is_ai = yes }
+	#			}
+	#			event_target:ENG_attacker_state = {
+	#				ENG = {
+	#					division_template = {
+	#						name = "Syria Invasion Force"
+	#						division_names_group = ENG_INF_01
+	#						is_locked = yes
+	#						regiments = {
+	#							heavy_infantry = { x = 0 y = 0 }
+	#							heavy_infantry = { x = 0 y = 1 }
+	#							heavy_infantry = { x = 0 y = 2 }
+#
+	#							heavy_infantry = { x = 1 y = 0 }
+	#							heavy_infantry = { x = 1 y = 1 }
+	#							heavy_infantry = { x = 1 y = 2 }
+#
+	#							heavy_infantry = { x = 2 y = 0 }
+	#							heavy_infantry = { x = 2 y = 1 }
+	#							heavy_infantry = { x = 2 y = 2 }
+#
+	#							artillery_brigade = { x = 3 y = 0 }
+	#							artillery_brigade = { x = 3 y = 1 }
+	#							artillery_brigade = { x = 3 y = 2 }
+	#						}
+	#						support = {
+	#							engineer = { x = 0 y = 0 }
+	#							heavy_artillery = {x = 0 y = 1 }
+	#							signal_company = {x = 0 y = 2 }
+	#						}
+	#					}
+	#					event_target:ENG_attacker_state = { #set up attacker unit(s)
+	#						create_unit = {
+	#							division = "name = \"Gentforce 1\" division_template = \"Syria Invasion Force\" start_experience_factor = 0.5"
+	#							owner = PREV
+	#						}
+	#						create_unit = {
+	#							division = "name = \"Gentforce 2\" division_template = \"Syria Invasion Force\" start_experience_factor = 0.5"
+	#							owner = PREV
+	#						}
+	#						create_unit = {
+	#							division = "name = \"Gentforce 3\" division_template = \"Syria Invasion Force\" start_experience_factor = 0.5"
+	#							owner = PREV
+	#						}
+	#					}
+	#				}
+	#			}
+	#		}
+#
+	#		event_target:VIC_defender_state = { #set up defender unit(s)
+	#			CONTROLLER = {
+	#				division_template = {
+	#					name = "Syria Defense Force"
+	#					division_names_group = FRA_INF_01
+	#					is_locked = yes
+	#					regiments = {
+	#						heavy_infantry = { x = 0 y = 0 }
+	#						infantry = { x = 0 y = 1 }
+	#						infantry = { x = 0 y = 2 }
+#
+	#						heavy_infantry = { x = 1 y = 0 }
+	#						infantry = { x = 1 y = 1 }
+	#						infantry = { x = 1 y = 2 }
+#
+	#						heavy_infantry = { x = 2 y = 0 }
+	#						infantry = { x = 2 y = 1 }
+	#						infantry = { x = 2 y = 2 }
+	#					}
+	#					support = {
+	#						engineer = { x = 0 y = 0 }
+	#						artillery = {x = 0 y = 1 }
+	#					}
+	#				}
+	#				event_target:VIC_defender_state = { #set up defenders
+	#					create_unit = {
+	#						division = "name = \"Syria Defense Force 1\" division_template = \"Syria Defense Force\" start_experience_factor = 0.5"
+	#						owner = PREV
+	#					}
+	#					create_unit = {
+	#						division = "name = \"Syria Defense Force 2\" division_template = \"Syria Defense Force\" start_experience_factor = 0.5"
+	#						owner = PREV
+	#					}
+	#					create_unit = {
+	#						division = "name = \"Syria Defense Force 3\" division_template = \"Syria Defense Force\" start_experience_factor = 0.5"
+	#						owner = PREV
+	#					}
+	#				}
+	#			}
+	#		}
+#
+	#		event_target:ENG_attacker_state = {
+	#			CONTROLLER = {
+	#				start_border_war = {
+	#					change_state_after_war = no
+	#					attacker = {
+	#						state = event_target:ENG_attacker_state
+	#						num_provinces = 4
+	#						on_win = FRA_syria_intervention.1
+	#						on_lose = FRA_syria_intervention.2
+	#						on_cancel = FRA_syria_intervention.3
+	#					}
+	#					defender = {
+	#						state = event_target:VIC_defender_state
+	#						num_provinces = 3
+	#						on_win = FRA_syria_intervention.2
+	#						on_lose = FRA_syria_intervention.1
+	#						on_cancel = FRA_syria_intervention.3
+	#					}
+	#				}
+	#			}
+	#		}
+	#	}
+	#}
 
 	mers_el_kebir_raid = {
 		icon = generic_naval
