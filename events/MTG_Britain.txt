@@ -1109,16 +1109,29 @@ country_event = {
 	# Ok
 	option = {
 		name = mtg_britain.27.a
-		effect_tooltip = {
-			add_to_faction = FROM
+		ai_chance = {
+			base = 1
 		}
 		if = {
-			limit = {
-				NOT = { is_in_faction = yes }
+			limit = { ENG = { is_in_faction = no } }
+			effect_tooltip = {
+				add_to_faction = FROM
 			}
-			create_faction = GER_central_powers_faction
+			if = {
+				limit = {
+					NOT = { is_in_faction = yes }
+				}
+				create_faction = GER_central_powers_faction
+			}
+			FROM = { country_event = { id = mtg_britain.28 hours = 6 } }
 		}
-		FROM = { country_event = { id = mtg_britain.28 hours = 6 } }
+		else = {
+			diplomatic_relation = {
+				country = ENG
+				relation = non_aggression_pact
+			}
+			FROM = { country_event = { id = mtg_britain.28 hours = 6 } }
+		}
 	}
 	# Reject
 	option = {
@@ -1142,43 +1155,71 @@ country_event = {
 	# Ok
 	option = {
 		name = excellent
-		FROM = {
-			add_to_faction = ROOT
+		if = {
+			limit = { ENG = { is_in_faction = no } }
+			FROM = {
+				add_to_faction = ROOT
+				hidden_effect = {
+					add_ai_strategy = {
+						type = alliance
+						id = ROOT
+						value = 200
+					}
+					add_ai_strategy = {
+						type = befriend
+						id = ROOT
+						value = 200
+					}
+					add_ai_strategy = {
+						type = antagonize
+						id = ROOT
+						value = -200
+					}
+				}
+			}
 			hidden_effect = {
 				add_ai_strategy = {
 					type = alliance
-					id = ROOT
+					id = FROM
 					value = 200
 				}
 				add_ai_strategy = {
 					type = befriend
-					id = ROOT
+					id = FROM
 					value = 200
 				}
 				add_ai_strategy = {
 					type = antagonize
-					id = ROOT
+					id = FROM
 					value = -200
 				}
+				news_event = { id = mtg_news.21 days = 1 }
 			}
 		}
-		hidden_effect = {
-			add_ai_strategy = {
-				type = alliance
-				id = FROM
-				value = 200
+		else = {
+			FROM = {
+				diplomatic_relation = {
+					country = ENG
+					relation = non_aggression_pact
+				}
+				hidden_effect = {
+					add_ai_strategy = {
+						type = alliance
+						id = ROOT
+						value = 200
+					}
+					add_ai_strategy = {
+						type = befriend
+						id = ROOT
+						value = 200
+					}
+					add_ai_strategy = {
+						type = antagonize
+						id = ROOT
+						value = -200
+					}
+				}
 			}
-			add_ai_strategy = {
-				type = befriend
-				id = FROM
-				value = 200
-			}
-			add_ai_strategy = {
-				type = antagonize
-				id = FROM
-				value = -200
-			}
-			news_event = { id = mtg_news.21 days = 1 }
 		}
 	}
 }
