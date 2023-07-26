@@ -661,6 +661,8 @@ NDefines.NNavy.MISSION_SUPREMACY_RATIOS = { 										-- supremacy multipliers f
         0.4, -- NAVAL_INVASION_SUPPORT
     }
 
+NDefines.NNavy.NAVAL_MINES_NAVAL_SUPREMACY_FACTOR = 0.5								-- Factor for max amount of mines increasing naval supremacy
+
 NDefines.NNavy.CONVOY_EFFICIENCY_LOSS_MODIFIER = 1.1								-- How much efficiency drops when losing convoys. If modifier is 0.5, then losing 100% of convoys in short period, the efficiency will drop by 50%.
 NDefines.NNavy.CONVOY_EFFICIENCY_REGAIN_AFTER_DAYS = 1								-- Convoy starts regaining it's efficiency after X days without any convoys being sink.
 NDefines.NNavy.CONVOY_EFFICIENCY_REGAIN_BASE_SPEED = 0.04							-- How much efficiency regains every day.

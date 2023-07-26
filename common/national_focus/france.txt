@@ -4454,20 +4454,11 @@
 		x = -3
 		y = 1
 		relative_position_id = FRA_devalue_the_franc
+
 		allow_branch = {
 			has_dlc = "La Resistance"
-			if = {
-				limit = {
-					has_game_rule = {
-						rule = obsolete_focus_branches_visibility
-						option = HIDE
-					}
-				}
-				NOT = {
-					has_completed_focus = FRA_revive_the_national_bloc
-				}
-			}
 		}
+
 		cost = 5
 
 		ai_will_do = {
@@ -5291,6 +5282,69 @@
 		}
 		completion_reward = {
 			add_ideas = FRA_the_legacy_of_the_paris_commune
+			add_dynamic_modifier = {
+				modifier = FRA_the_commune
+			}
+			custom_effect_tooltip = FRA_celebrate_the_commune_tt
+			set_variable = { FRA_commune_output_var = 0 }
+			set_variable = { FRA_commune_dockyard_var = 0 }
+			set_variable = { FRA_commune_drift_var = 0 }
+			set_variable = { FRA_commune_stability_var = 0 }
+			set_variable = { FRA_commune_war_var = 0 }
+			set_variable = { FRA_commune_political_var = 0 }
+			if = {
+				limit = {
+					check_variable = { FRA_Army_national_unity > 2 }
+				}
+				add_to_variable = { FRA_commune_output_var = 0.1 }
+			}
+			else_if = {
+				limit = {
+					check_variable = { FRA_Army_national_unity > 1 }
+				}
+				add_to_variable = { FRA_commune_output_var = 0.05 }
+			}
+			##
+			if = {
+				limit = {
+					check_variable = { FRA_Airforce_national_unity > 2 }
+				}
+				add_to_variable = { FRA_commune_war_var = 0.1 }
+			}
+			else_if = {
+				limit = {
+					check_variable = { FRA_Airforce_national_unity > 1 }
+				}
+				add_to_variable = { FRA_commune_war_var = 0.05 }
+			}
+			##
+			if = {
+				limit = {
+					check_variable = { FRA_Navy_national_unity  > 2 }
+				}
+				add_to_variable = { FRA_commune_dockyard_var = 0.1 }
+			}
+			else_if = {
+				limit = {
+					check_variable = { FRA_Navy_national_unity > 1 }
+				}
+				add_to_variable = { FRA_commune_dockyard_var = 0.05 }
+			}
+			##
+			if = {
+				limit = {
+					check_variable = { FRA_People_national_unity > 2 }
+				}
+				add_to_variable = { FRA_commune_political_var = 0.1 }
+				add_to_variable = { FRA_commune_drift_var = -0.1 }
+			}
+			else_if = {
+				limit = {
+					check_variable = { FRA_People_national_unity > 1 }
+				}
+				add_to_variable = { FRA_commune_political_var = 0.05 }
+				add_to_variable = { FRA_commune_drift_var = -0.05 }
+			}
 		}
 	}
 
@@ -5318,7 +5372,12 @@
 
 		}
 		completion_reward = {
-			
+			add_to_variable = { FRA_commune_stability_var = 0.1 }
+			add_doctrine_cost_reduction = {
+				cost_reduction = 0.99
+				name = FRA_the_veterans_sacrifice
+				category = land_doctrine
+			}
 		}
 	}
 	focus = {
@@ -5345,7 +5404,7 @@
 
 		}
 		completion_reward = {
-		
+			add_to_variable = { FRA_commune_stability_var = 0.05 }
 		}
 	}
 	focus = {
@@ -5372,7 +5431,7 @@
 
 		}
 		completion_reward = {
-			
+			add_to_variable = { FRA_commune_war_var = 0.1 }
 		}
 	}
 	focus = {
@@ -6864,6 +6923,10 @@
 		y = 1
 		relative_position_id = FRA_2_years_military_service_act
 
+		allow_branch = {
+			has_dlc = "La Resistance"
+		}
+
 		cost = 6
 
 		ai_will_do = {
@@ -6915,7 +6978,7 @@
 
 		available = {
 		}
-
+		
 		bypass = {
 		}
 
@@ -7420,19 +7483,7 @@
 		x = 1
 		y = 1
 		relative_position_id = FRA_agricultural_protectionism
-		allow_branch = {
-			has_dlc = "La Resistance"
-			if = {
-				limit = {
-					has_game_rule = {
-						rule = obsolete_focus_branches_visibility
-						option = HIDE
-					}
-				}
-				NOT = { has_completed_focus = FRA_form_the_popular_front }
-				NOT = {	has_completed_focus = FRA_the_council_of_rambouillet }
-			}
-		}
+
 		cost = 3
 
 		ai_will_do = {
@@ -7627,6 +7678,10 @@
 		}
 
 		available = {
+			or = {
+				has_government = fascism
+				has_government = neutrality
+			}
 		}
 
 		bypass = {
@@ -7814,20 +7869,7 @@
 		relative_position_id = FRA_the_revolutionary_action
 
 		cost = 3
-		allow_branch = {
-			has_dlc = "La Resistance"
-			if = {
-				limit = {
-					has_game_rule = {
-						rule = obsolete_focus_branches_visibility
-						option = HIDE
-					}
-				}
-				NOT = {
-					has_completed_focus = FRA_form_the_popular_front
-				}
-			}
-		}
+		
 		ai_will_do = {
 			factor = 1
 		}
@@ -7963,6 +8005,7 @@
 					character = FRA_la_cagoule
 					ideology = falangism
 				}
+				add_ideas = FRA_death_before_surrender
 			}
 
 		}
@@ -8047,6 +8090,7 @@
 		}
 
 		available = {
+			has_civil_war = yes
 		}
 
 		bypass = {
@@ -8059,6 +8103,7 @@
 		}
 
 		completion_reward = {
+			add_stability = -0.2
 			set_country_flag = fra_all_strikes_have_ended
 			add_timed_idea = {
 				idea = FRA_the_reign_of_terror_idea
@@ -8149,7 +8194,9 @@
 		relative_position_id = FRA_supreme_leader_of_the_french
 
 		cost = 3
-		available_if_capitulated = yes
+		available = {
+			has_civil_war = no
+		}
 		ai_will_do = {
 			factor = 1
 		}
@@ -8567,32 +8614,7 @@
 		x = 0
 		y = 1
 		relative_position_id = FRA_counter_revolution
-		offset = {
-			x = -14
-			y = 0
-			trigger = {
-				has_dlc = "La Resistance"
-				has_game_rule = {
-					rule = obsolete_focus_branches_visibility
-					option = HIDE
-				}
-				has_completed_focus = FRA_the_council_of_rambouillet
-			}
-		}
-
-		allow_branch = {
-			has_dlc = "La Resistance"
-			if = {
-				limit = {
-					has_game_rule = {
-						rule = obsolete_focus_branches_visibility
-						option = HIDE
-					}
-				}
-				NOT = {	has_completed_focus = FRA_form_the_popular_front }
-				NOT = {	has_completed_focus = FRA_national_regeneration }
-			}
-		}
+		
 		cost = 4
 		ai_will_do = {
 			factor = 1
@@ -8642,6 +8664,23 @@
 		}
 
 		completion_reward = {
+			every_country = {
+				limit = {
+					original_tag = fra
+					has_government = neutrality
+				}
+				ROOT = {
+					annex_country = {
+						target = prev
+					}
+				}
+			}
+			add_doctrine_cost_reduction = {
+				cost_reduction = 0.99
+				name = FRA_army_swears_loyalty
+				uses = 3
+				category = land_doctrine
+			}
 		}
 	}
 
