@@ -1,0 +1,332 @@
+on_actions = {
+	on_startup = {
+		effect = {
+			if = {
+				limit = {
+					has_dlc = "By Blood Alone"
+				}
+
+				SWI = {
+					SWI_update_neighbor_opinion_balance = yes
+					SWI_find_biggest_fascist_neighbor = yes
+					SWI_find_best_democratic_ally = yes
+					SWI_find_democratic_planes_seller = yes
+				}
+			}
+		}
+	}
+
+	on_monthly = {
+		effect = {
+			if = {
+				limit = {
+					SWI_bba = yes
+				}
+				SWI = {
+					SWI_find_democratic_planes_seller = yes
+					SWI_find_biggest_fascist_neighbor = yes
+					SWI_update_neighbor_opinion_balance = yes
+				}
+			}
+		}
+	}
+
+	on_peace = {
+		effect = {
+			if = { #For when Switzerland wants to go back to the Good Old Times
+				limit = {
+					SWI_bba = yes
+					has_idea = SWI_old_switzerland_idea
+				}
+				add_ideas = {
+					SWI_swiss_neutrality
+					SWI_citizen_militia_1
+				}
+				remove_ideas = { SWI_old_switzerland_idea }
+				retire_character = SWI_henri_guisan
+			}
+		}
+		effect = {
+			if = {
+				limit = {
+					SWI_bba = yes
+				}
+				SWI_make_helvetia_peace = yes
+			}
+		}
+	}
+	#ROOT = country that joined a war
+	#on_war is fired when a country goes to war against anyone and is not fired again when it enters war against another country unless it went to peace first
+	on_war = {
+		effect = {
+			if = {
+				limit = {
+					original_tag = SWI
+					has_country_flag = SWI_in_secret_pact_with_allies
+				}
+				var:SWI.SWI_secret_ally = {
+					if = {
+						limit = { is_faction_leader = yes }
+						add_to_faction = SWI
+					}
+					else_if = {
+						limit = {
+							is_in_faction = yes
+						}
+						random_other_country = {
+							limit = {
+								is_in_faction_with = PREV
+								is_faction_leader = yes
+							}
+							add_to_faction = SWI
+						}
+					}
+				}
+			}
+		}
+		effect = {
+			if = {
+				limit = {
+					SWI_bba = yes
+					SWI_has_any_spirit_of_helvetia = yes
+				}
+				SWI_make_helvetia_war = yes
+			}
+		}
+	}
+	#ROOT = attacking side
+	#FROM = defending side
+	#fired when two countries end up at war with each other (on_war is fired when a country goes to war against anyone and is not fired again when it enters war against another country unless it went to peace first)
+	on_declare_war = {
+		# Disable LoN if more members go to war with each other
+		effect = {
+			IF = {
+				limit = {
+					NOT = { has_global_flag = LoN_disbanded_flag }
+					FROM = {
+						has_idea = league_of_nations
+					}
+					ROOT = {
+						is_major = yes
+						has_idea = league_of_nations
+					}
+				}
+				set_global_flag = LoN_disbanded_flag
+				set_variable = { global.LoN_attacker_country = ROOT }
+				set_variable = { global.LoN_defender_country = FROM }
+				news_event = { id = bba_news.0 hours = 4 random_hours = 8}
+			}
+		}
+	}
+	#ROOT = attacking side
+	#FROM = defending side
+	#fired when two countries end up at war with each other ()
+	on_war_relation_added = {
+		effect = {
+			if = {
+				limit = {
+					SWI_bba = yes
+					has_dynamic_modifier = { modifier = SWI_swiss_gold_market}
+				}
+				every_enemy_country = {
+					limit = {
+						has_dynamic_modifier = { modifier = SWI_gold_trade_with_switzerland }
+					}
+					SWI_seize_gold = yes
+				}
+			}
+		}
+	}
+	#ROOT is winner #FROM is loser
+	on_peaceconference_ended = {
+		effect = {
+			if = {
+				limit = {
+					tag = SWI
+					has_country_flag = swi_declared_war_on_GER_achievement_flag
+					FROM = {
+						original_tag = GER
+					}
+				}
+				set_country_flag = swi_won_war_on_GER_achievement_flag
+			}
+		}
+		effect = { #You Shall Not Pass Achievement
+			if = {
+				limit = {
+					tag = SWI
+					has_country_flag = { flag = SWI_won_defensive_war_flag days < 1 }
+					NOT = {
+						has_country_flag = swi_lost_state_achievement
+					}
+				}
+				if = {
+					limit = {
+						has_defensive_war = yes
+					}
+					set_country_flag = swi_you_shall_not_pass_achievement
+				}
+			}
+		}
+		effect = {
+			if = {
+				limit = {
+					tag = ETH
+					FROM = {
+						original_tag = ITA
+					}
+					is_in_faction = no
+				}
+				set_country_flag = ETH_forced_ITA_peace_achievement
+			}
+		}
+		effect = {
+			SWI = {
+				set_variable = { cheese_states = 0 }
+				every_owned_state = {
+					limit = {
+						NOT = {
+							any_neighbor_state = {
+								is_owned_by = SWI
+							}
+						}
+					}
+					SWI = { add_to_variable = { cheese_states = 1 } }
+				}
+			}
+		}
+	}
+
+	#ROOT is winner, FROM is loser (called for all winners against all losers)
+	on_peaceconference_started = {
+		#Check for SWI winning a defensive war for You Shall Not Pass achievement
+		effect = {
+			if = {
+				limit = {
+					tag = SWI
+					NOT = {
+						has_country_flag = swi_lost_state_achievement
+					}
+					has_defensive_war = yes
+				}
+				set_country_flag = SWI_won_defensive_war_flag
+			}
+		}
+	}
+
+	#ROOT is new controller #FROM is old controller #FROM.FROM is state ID
+	on_state_control_changed = {
+
+		#FOR SWITZERLAND!!! AVANTI!
+		effect = {
+			if = {
+				limit = { #Losing a core State
+					FROM = { original_tag = SWI }
+					FROM.FROM = { is_core_of = SWI }
+				}
+				FROM.FROM = {
+					if = {
+						limit = { #Destroys infra and railways on lost states
+					 		has_dynamic_modifier = { modifier = SWI_infrastructure_rigged_to_blow }
+						}
+						damage_building = {
+							type = rail_way
+							damage = 5
+						}
+						damage_building = {
+							type = infrastructure
+							damage = 5
+						}
+						damage_building = {
+							type = arms_factory
+							damage = 2
+						}
+						damage_building = {
+							type = industrial_complex
+							damage = 2
+						}
+						damage_building = {
+							type = bunker
+							damage = 10
+						}
+						damage_building = {
+							type = supply_node
+							damage = 1
+						}
+						remove_dynamic_modifier = { modifier = SWI_infrastructure_rigged_to_blow }
+					}
+				}
+			}
+		}
+
+		#RENAME STATES/VPs
+		effect = {
+			if = {
+				limit = {
+					ITA_state_or_vp_name_should_change = yes
+				}
+				ITA_change_name_of_state_or_vp = yes
+			}
+		}
+		effect = {
+			if = {
+				limit = { #SWI loses a state
+					FROM = {
+						original_tag = SWI
+						NOT = {
+							has_country_flag = swi_lost_state_achievement
+						}
+					}
+					FROM.FROM = {
+						OR = {
+							state = 911
+							state = 912
+ 							state = 151
+							state = 3
+						}
+					}
+				}
+				FROM = {
+					set_country_flag = swi_lost_state_achievement
+				}
+			}
+		}
+	}
+	#used when puppeting in a peace conference
+  	#ROOT = nation being puppeted, FROM = overlord
+	#used when puppeting through the occupied territories menu during peace time (or when releasing from non-core but owned territory, f.e. Britain releasing Egypt)
+	#ROOT = nation being released, FROM = overlord
+
+	on_release_as_puppet = {
+		effect = {
+			SWI_on_action_puppet_selection = yes #If it's SWI, it will check which Cosmetic Tag will apply
+		}
+	}
+	on_puppet = { #ROOT = nation being puppeted, FROM = overlord
+
+		effect = {
+			SWI_on_action_puppet_selection = yes #If it's SWI, it will check which Cosmetic Tag will apply
+		}
+	}
+
+	on_government_change = {
+		effect = { #This is so Switzerland can keep its SWI_biggest_fascist and SWI_best_dem_ally updated.
+			if ={
+				limit = {
+					has_dlc = "By Blood Alone"
+					SWI = { exists = yes }
+					OR = {
+						THIS.capital_scope = { is_on_continent = europe }
+						tag = USA
+					}
+				}
+				SWI = {
+					SWI_update_neighbor_opinion_balance = yes
+					SWI_find_biggest_fascist_neighbor = yes
+					SWI_find_best_democratic_ally = yes
+					SWI_find_democratic_planes_seller = yes
+				}
+			}
+		}
+	}
+}
