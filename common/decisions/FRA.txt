@@ -5606,11 +5606,10 @@ FRA_civil_war_dec_cat = {
 
 		cancel_trigger = {
 			OR = {
-				and = {
-					has_civil_war = yes
-					not = { has_completed_focus = FRA_our_comrades_to_the_south }
-				}
+				has_civil_war = yes
 				has_completed_focus = FRA_force_the_issue
+				has_completed_focus = FRA_our_comrades_to_the_south
+				has_country_flag = FRA_coup_averted_flag
 			}
 			
 		}
@@ -5619,14 +5618,20 @@ FRA_civil_war_dec_cat = {
 			
 		}
 
-		days_mission_timeout = 500
+		days_mission_timeout = 480
 
 		complete_effect = {
-			complete_national_focus = FRA_force_the_issue
+			custom_effect_tooltip = Start_civil_war_tt
+			hidden_effect = {
+				complete_national_focus = FRA_force_the_issue
+			}
 		}
 
 		timeout_effect = {
-			complete_national_focus = FRA_force_the_issue
+			custom_effect_tooltip = Start_civil_war_tt
+			hidden_effect = {
+				complete_national_focus = FRA_force_the_issue
+			}
 		}
 	}
 
@@ -5922,6 +5927,7 @@ FRA_civil_war_dec_cat = {
 
 		visible = {
 			has_completed_focus = FRA_invite_communist_ministers
+			not = { has_completed_focus = FRA_force_the_issue }
 		}
 
 		modifier = {
@@ -5958,6 +5964,7 @@ FRA_civil_war_dec_cat = {
 
 		visible = {
 			has_completed_focus = FRA_invite_communist_ministers
+			not = { has_completed_focus = FRA_force_the_issue }
 		}
 
 		modifier = {
@@ -5985,18 +5992,26 @@ FRA_civil_war_dec_cat = {
 		}
 
 
-		cost = 10
+		cost = 50
 
-		days_remove = 15
+		days_remove = 30
 
 		icon = gfx_
 
 		visible = {
-			has_completed_focus = FRA_destroy_the_counter_revolution
+			has_completed_focus = FRA_invite_communist_ministers
+			not = { has_completed_focus = FRA_force_the_issue }
+		}
+
+		modifier = {
+			communism_drift = 0.1
 		}
 
 		complete_effect = {
-				
+			add_days_mission_timeout = {
+				mission = FRA_brewing_troubles_timer
+				days = -30
+			}
 		}
 
 		remove_effect = {
@@ -6010,24 +6025,43 @@ FRA_civil_war_dec_cat = {
 		}
 
 		available = {
+			has_equipment = {
+				infantry_equipment > 9999
+			}
+			has_equipment = {
+				support_equipment  > 999
+			}
 		}
 
 
-		cost = 10
+		cost = 100
 
-		days_remove = 15
+		days_remove = 300
 
 		icon = gfx_
 
 		visible = {
-			has_completed_focus = FRA_destroy_the_counter_revolution
+			has_completed_focus = FRA_destroy_the_enemies_of_the_revolution
+			not = { has_completed_focus = FRA_force_the_issue }
 		}
 
 		complete_effect = {
-				
+			add_equipment_to_stockpile = {
+				type = infantry_equipment
+				amount = -10000
+			}
+			add_equipment_to_stockpile = {
+				type = support_equipment
+				amount = -1000
+			}
 		}
 
 		remove_effect = {
+			custom_effect_tooltip =  FRA_police_infiltration_tt
+			hidden_effect = {
+				set_country_flag = FRA_coup_averted_flag
+				unlock_national_focus = FRA_force_the_issue
+			}
 		}
 	}
 	FRA_police_crackdown = {
@@ -6037,24 +6071,40 @@ FRA_civil_war_dec_cat = {
 		}
 
 		available = {
+			has_equipment = {
+				infantry_equipment > 1499
+			}
+			has_equipment = {
+				support_equipment  > 199
+			}
 		}
 
 
-		cost = 10
+		cost = 50
 
-		days_remove = 15
+
+		days_re_enable = 40
 
 		icon = gfx_
 
 		visible = {
-			has_completed_focus = FRA_destroy_the_counter_revolution
+			has_completed_focus = FRA_destroy_the_enemies_of_the_revolution
+			not = { has_completed_focus = FRA_force_the_issue }
 		}
 
 		complete_effect = {
-				
-		}
-
-		remove_effect = {
+			add_days_mission_timeout = {
+				mission = FRA_brewing_troubles_timer
+				days = 30
+			}
+			add_equipment_to_stockpile = {
+				type = infantry_equipment
+				amount = -1500
+			}
+			add_equipment_to_stockpile = {
+				type = support_equipment
+				amount = -200
+			}
 		}
 	}
 	FRA_break_up_smuggeling = {
@@ -6064,24 +6114,479 @@ FRA_civil_war_dec_cat = {
 		}
 
 		available = {
+			has_equipment = {
+				infantry_equipment > 999
+			}
+			has_army_experience > 39
 		}
 
 
-		cost = 10
+		cost = 50
 
 		days_remove = 15
+
+		days_re_enable = 25
 
 		icon = gfx_
 
 		visible = {
-			has_completed_focus = FRA_destroy_the_counter_revolution
+			has_completed_focus = FRA_destroy_the_enemies_of_the_revolution
+			not = { has_completed_focus = FRA_force_the_issue }
 		}
 
 		complete_effect = {
-				
+			add_equipment_to_stockpile = {
+				type = infantry_equipment
+				amount = -1000
+			}
+			army_experience = -40
 		}
 
 		remove_effect = {
+			add_days_mission_timeout = {
+				mission = FRA_brewing_troubles_timer
+				days = 30
+			}
+		}
+	}
+}
+
+FRA_communist_support_dec_cat = {
+	FRA_soviet_support_guns = {
+		icon = generic_prepare_civil_war
+
+		available = {
+			num_of_civilian_factories_available_for_projects > 9
+		}
+		visible = {
+		}
+		days_remove = 60
+		cost = 0
+		ai_will_do = {
+			factor = 40
+
+			modifier = {
+				AND = {
+					stockpile_ratio = {
+						archetype = infantry_equipment
+						ratio > 0.90
+					}
+					stockpile_ratio = {
+						archetype = heavy_infantry_equipment
+						ratio > 0.90
+					}
+				}
+				factor = 0
+			}
+
+			modifier = {
+				num_of_civilian_factories_available_for_projects < 21
+				factor = 0
+			}
+		}
+		modifier = {
+			civilian_factory_use = 10
+		}
+		complete_effect = {
+			SOV = {
+				add_offsite_building = {
+					type = industrial_complex
+					level = 10
+				}
+			}
+		}
+		remove_effect = {
+			SOV = {
+				add_offsite_building = {
+					type = industrial_complex
+					level = -10
+				}
+			}
+			add_equipment_to_stockpile = { type = sov_inf_1 amount = 3000 producer = SOV }
+			add_equipment_to_stockpile = { type = sov_hv_inf_1 amount = 1000 producer = SOV }
+		}
+	}
+	FRA_soviet_support_support = {
+		icon = generic_prepare_civil_war
+
+		available = {
+			num_of_civilian_factories_available_for_projects > 9
+		}
+		visible = {
+		}
+		days_remove = 60
+		cost = 0
+		ai_will_do = {
+			factor = 40
+
+			modifier = {
+				stockpile_ratio = {
+					archetype = support_equipment
+					ratio > 0.90
+				}
+
+				factor = 0
+			}
+
+			modifier = {
+				num_of_civilian_factories_available_for_projects < 21
+				factor = 0
+			}
+		}
+		modifier = {
+			civilian_factory_use = 10
+		}
+		complete_effect = {
+			SOV = {
+				add_offsite_building = {
+					type = industrial_complex
+					level = 10
+				}
+			}
+		}
+		remove_effect = {
+			SOV = {
+				add_offsite_building = {
+					type = industrial_complex
+					level = -10
+				}
+			}
+			add_equipment_to_stockpile = { type = support_equipment_1 amount = 100 producer = SOV }
+		}
+	}
+	FRA_soviet_support_artilery = {
+		icon = ger_military_buildup
+
+		available = {
+			num_of_civilian_factories_available_for_projects > 9
+		}
+		visible = {
+		}
+		days_remove = 60
+		cost = 0
+		ai_will_do = {
+			factor = 40
+
+			modifier = {
+				AND = {
+					stockpile_ratio = {
+						archetype = artillery_equipment
+						ratio > 0.90
+					}
+					stockpile_ratio = {
+						archetype = heavy_artillery_equipment
+						ratio > 0.90
+					}
+					stockpile_ratio = {
+						archetype = anti_tank_equipment
+						ratio > 0.90
+					}
+				}
+
+				factor = 0
+			}
+
+			modifier = {
+				num_of_civilian_factories_available_for_projects < 21
+				factor = 0
+			}
+		}
+		modifier = {
+			civilian_factory_use = 10
+		}
+		complete_effect = {
+			SOV = {
+				add_offsite_building = {
+					type = industrial_complex
+					level = 10
+				}
+			}
+		}
+		remove_effect = {
+			SOV = {
+				add_offsite_building = {
+					type = industrial_complex
+					level = -10
+				}
+			}
+			if = {
+				limit = {
+					SOV = { has_tech = sov_artillery_3 }
+				}
+				add_equipment_to_stockpile = { type = sov_art_3 amount = 250 producer = SOV }
+			}
+			else_if = {
+				limit = {
+					SOV = { has_tech = sov_artillery_2 }
+				}
+				add_equipment_to_stockpile = { type = sov_art_2 amount = 250 producer = SOV }
+			}
+			else = {
+				add_equipment_to_stockpile = { type = sov_art_1 amount = 250 producer = SOV }
+			}
+			if = {
+				limit = {
+					SOV = { has_tech = sov_heavy_artillery_2 }
+				}
+				add_equipment_to_stockpile = { type = sov_hv_art_2 amount = 150 producer = SOV }
+			}
+			else = {
+				add_equipment_to_stockpile = { type = sov_hv_art_1 amount = 150 producer = SOV }
+			}
+			if = {
+				limit = {
+					SOV = { has_tech = sov_anti_tank_3 }
+				}
+				add_equipment_to_stockpile = { type = sov_at_3 amount = 250 producer = SOV }
+			}
+			else_if = {
+				limit = {
+					SOV = { has_tech = sov_anti_tank_2 }
+				}
+				add_equipment_to_stockpile = { type = sov_at_2 amount = 250 producer = SOV }
+			}
+			else = {
+				add_equipment_to_stockpile = { type = sov_at_1 amount = 250 producer = SOV }
+			}
+		}
+	}
+	FRA_soviet_support_trucks = {
+		icon = generic_tank
+
+		available = {
+			num_of_civilian_factories_available_for_projects > 14
+		}
+		visible = {
+		}
+		days_remove = 60
+		cost = 0
+		ai_will_do = {
+			factor = 40
+
+			modifier = {
+				stockpile_ratio = {
+					archetype = motorized_equipment
+					ratio > 0.90
+				}
+
+				factor = 0
+			}
+
+			modifier = {
+				num_of_civilian_factories_available_for_projects < 21
+				factor = 0
+			}
+		}
+		modifier = {
+			civilian_factory_use = 15
+		}
+		complete_effect = {
+			SOV = {
+				add_offsite_building = {
+					type = industrial_complex
+					level = 15
+				}
+			}
+		}
+		remove_effect = {
+			SOV = {
+				add_offsite_building = {
+					type = industrial_complex
+					level = -15
+				}
+			}
+			add_equipment_to_stockpile = { type = sov_motorized_equipment_1 amount = 400 producer = SOV }
+		}
+	}
+	FRA_soviet_support_tanks = {
+		icon = generic_tank
+
+		allowed = {
+			NOT = { has_dlc = "No Step Back" }
+		}
+
+		available = {
+			num_of_civilian_factories_available_for_projects > 14
+		}
+		visible = {
+		}
+		days_remove = 60
+		cost = 0
+		ai_will_do = {
+			factor = 40
+
+			modifier = {
+				AND = {
+					stockpile_ratio = {
+						archetype = medium_tank_chassis
+						ratio > 0.90
+					}
+					stockpile_ratio = {
+						archetype = light_tank_chassis
+						ratio > 0.90
+					}
+				}
+				factor = 0
+			}
+
+			modifier = {
+				num_of_civilian_factories_available_for_projects < 21
+				factor = 0
+			}
+		}
+		modifier = {
+			civilian_factory_use = 15
+		}
+		complete_effect = {
+			SOV = {
+				add_offsite_building = {
+					type = industrial_complex
+					level = 15
+				}
+			}
+		}
+		remove_effect = {
+			SOV = {
+				add_offsite_building = {
+					type = industrial_complex
+					level = -15
+				}
+			}
+			if = {
+				limit = {
+					SOV = { has_tech = sov_medium_5 }
+				}
+				add_equipment_to_stockpile = { type = sov_medium_equipment_4 amount = 150 producer = SOV }
+			}
+			else_if = {
+				limit = {
+					SOV = { has_tech = sov_medium_4 }
+				}
+				add_equipment_to_stockpile = { type = sov_medium_equipment_3 amount = 150 producer = SOV }
+			}
+			else_if = {
+				limit = {
+					SOV = { has_tech = sov_medium_3 }
+				}
+				add_equipment_to_stockpile = { type = sov_medium_equipment_2 amount = 150 producer = SOV }
+			}
+			else_if = {
+				limit = {
+					SOV = { has_tech = sov_medium_2 }
+				}
+				add_equipment_to_stockpile = { type = sov_medium_equipment_1 amount = 150 producer = SOV }
+			}
+			if = {
+				limit = {
+					SOV = { has_tech = sov_light_3 }
+				}
+				add_equipment_to_stockpile = { type = sov_light_equipment_2 amount = 250 producer = SOV }
+			}
+			if = {
+				limit = {
+					SOV = { has_tech = sov_light_2 }
+				}
+				add_equipment_to_stockpile = { type = sov_light_equipment_1 amount = 250 producer = SOV }
+			}
+		}
+	}
+	FRA_soviet_support_tanks_nsb = {
+		icon = generic_tank
+
+		allowed = {
+			has_dlc = "No Step Back"
+		}
+
+		available = {
+			num_of_civilian_factories_available_for_projects > 14
+		}
+		visible = {
+		}
+
+		days_remove = 60
+		cost = 0
+		ai_will_do = {
+			factor = 40
+
+			modifier = {
+				AND = {
+					stockpile_ratio = {
+						archetype = medium_tank_chassis
+						ratio > 0.90
+					}
+					stockpile_ratio = {
+						archetype = light_tank_chassis
+						ratio > 0.90
+					}
+				}
+				factor = 0
+			}
+
+			modifier = {
+				num_of_civilian_factories_available_for_projects < 21
+				factor = 0
+			}
+		}
+		modifier = {
+			civilian_factory_use = 15
+		}
+		complete_effect = {
+			SOV = {
+				add_offsite_building = {
+					type = industrial_complex
+					level = 15
+				}
+			}
+		}
+		remove_effect = {
+			SOV = {
+				add_offsite_building = {
+					type = industrial_complex
+					level = -15
+				}
+			}
+			if = {
+				limit = {
+					SOV = { has_tech = sov_medium_tank_chassis_3_3 }
+				}
+				add_equipment_to_stockpile = { type = tank_sov_medium_chassis_3_2 amount = 150 producer = SOV }
+			}
+			else_if = {
+				limit = {
+					SOV = { has_tech = sov_medium_tank_chassis_3_2 }
+				}
+				add_equipment_to_stockpile = { type = tank_sov_medium_chassis_3 amount = 150 producer = SOV }
+			}
+			else_if = {
+				limit = {
+					SOV = { has_tech = sov_medium_tank_chassis_3 }
+				}
+				add_equipment_to_stockpile = { type = tank_sov_medium_chassis_2_3 amount = 150 producer = SOV }
+			}
+			else_if = {
+				limit = {
+					SOV = { has_tech = sov_medium_tank_chassis_2_3 }
+				}
+				add_equipment_to_stockpile = { type = tank_sov_medium_chassis_2_2 amount = 150 producer = SOV }
+			}
+			else_if = {
+				limit = {
+					SOV = { has_tech = sov_medium_tank_chassis_2_2 }
+				}
+				add_equipment_to_stockpile = { type = tank_sov_medium_chassis_2 amount = 150 producer = SOV }
+			}
+			if = {
+				limit = {
+					SOV = { has_tech = sov_light_tank_chassis_3 }
+				}
+				add_equipment_to_stockpile = { type = tank_sov_light_chassis_1_2 amount = 250 producer = SOV }
+			}
+			else_if = {
+				limit = {
+					SOV = { has_tech = sov_light_tank_chassis_1_2 }
+				}
+				add_equipment_to_stockpile = { type = tank_sov_light_chassis_1 amount = 250 producer = SOV }
+			}
 		}
 	}
 }
