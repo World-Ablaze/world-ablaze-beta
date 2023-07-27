@@ -16060,8 +16060,7 @@ SOV_industry_relocation = {
 		is_good = yes
 		fire_only_once = no
 
-		modifier = {
-		}
+
 		complete_effect = {
 			hidden_effect = {
 				add_equipment_to_stockpile = {
@@ -16536,7 +16535,560 @@ SOV_industry_relocation = {
 			}
 		}
 	}
+	SOV_relocate_industry_from_voronezh_area = {
+		icon = generic_construction
+		allowed = {
+			original_tag = SOV
+		}
 
+		available = {
+			260 = { #Voronezh
+				is_owned_and_controlled_by = SOV
+				arms_factory > 0
+			}
+			653 = { is_owned_and_controlled_by = SOV } #Sverdlovsk
+			572 = { is_owned_and_controlled_by = SOV } #Chelyabinsk
+		}
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 260 #Voronezh
+			}
+		}
+
+		fire_only_once = yes
+		#cost = 25
+
+		ai_will_do = {
+			factor = 1000
+		}
+
+		complete_effect = {
+			activate_mission = SOV_relocating_industry_from_voronezh_area
+			hidden_effect = {
+				add_equipment_to_stockpile = {
+					type = train_equipment
+					amount = SOV_industrial_relocation_trains_decision_negative
+					producer = SOV
+				}
+			}
+			custom_effect_tooltip = SOV_industry_relocation_trains_tt
+			economy_fatigue_level_up_2 = yes
+		}
+	}
+	SOV_relocating_industry_from_voronezh_area = {
+		icon = generic_construction
+
+		allowed = {
+			tag = SOV
+			always = no
+		}
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 260
+			}
+		}
+		available = {
+			OR = {
+				NOT = {
+					260 = { is_owned_and_controlled_by = SOV }
+					258 = { is_owned_and_controlled_by = SOV }
+				}
+				AND = {
+					260 = { #Voronezh
+						arms_factory < 1
+						steel_refinery < 1
+						aluminium_refinery < 1
+						industrial_complex < 1
+					}
+					220 = { #Kursk
+						arms_factory < 1
+						steel_refinery < 1
+						aluminium_refinery < 1
+						industrial_complex < 1
+					}
+				}
+			}
+		}
+
+		days_mission_timeout = 4
+		is_good = yes
+		fire_only_once = no
+
+		complete_effect = {
+			hidden_effect = {
+				add_equipment_to_stockpile = {
+					type = train_equipment
+					amount = SOV_industrial_relocation_trains_decision
+					producer = SOV
+				}
+			}
+		}
+		timeout_effect = {
+			random_owned_controlled_state = {
+				prioritize = { 220 }
+				limit = {
+					region = 272
+					is_controlled_by = SOV
+					OR = {
+						arms_factory > 0
+						steel_refinery > 0
+						aluminium_refinery > 0
+						industrial_complex > 0
+						synthetic_refinery > 0
+					}
+				}
+				if = {	#Mils
+					limit = { arms_factory > 0 }
+					remove_building = {
+						type = arms_factory
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 572 876 653 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = arms_factory
+									size > 0
+									include_locked = yes
+								}
+								arms_factory < 21
+								industrial_complex < 11
+								infrastructure > 2
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = arms_factory
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = arms_factory damage = 0.8 }
+								}
+							}
+						}
+					}
+				}
+				if = {	#synth
+					limit = { synthetic_refinery > 0 }
+					remove_building = {
+						type = synthetic_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 572 876 653 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = synthetic_refinery
+									size > 0
+									include_locked = yes
+								}
+								arms_factory < 21
+								industrial_complex < 11
+								infrastructure > 2
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = synthetic_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = synthetic_refinery damage = 0.8 }
+								}
+							}
+						}
+					}
+				}
+				if = {	#Steel
+					limit = { steel_refinery > 0 }
+					remove_building = {
+						type = steel_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 572 653 573 876 398 651 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = steel_refinery
+									size > 0
+									include_locked = yes
+								}
+								arms_factory < 21
+								industrial_complex < 11
+								infrastructure > 2
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = steel_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = steel_refinery damage = 0.8 }
+								}
+							}
+						}
+					}
+				}
+				if = {	#Aluminium
+					limit = { aluminium_refinery > 0 }
+					remove_building = {
+						type = aluminium_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 572 403 653 573 876 398 651 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = aluminium_refinery
+									size > 0
+									include_locked = yes
+								}
+								arms_factory < 21
+								industrial_complex < 11
+								infrastructure > 2
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = aluminium_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = aluminium_refinery damage = 0.8 }
+								}
+							}
+						}
+					}
+				}
+				if = {	#Civs
+					limit = { industrial_complex > 0 }
+					remove_building = {
+						type = industrial_complex
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 572 403 653 573 876 398 651 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = industrial_complex
+									size > 0
+									include_locked = yes
+								}
+								arms_factory < 21
+								industrial_complex < 11
+								infrastructure > 2
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = industrial_complex
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = industrial_complex damage = 0.4 }
+								}
+							}
+						}
+					}
+				}
+			}
+			random_owned_controlled_state = {
+				limit = {
+					region = 272
+					is_controlled_by = SOV
+					OR = {
+						arms_factory > 0
+						steel_refinery > 0
+						aluminium_refinery > 0
+						industrial_complex > 0
+						synthetic_refinery > 0
+					}
+				}
+				if = {	#Mils
+					limit = { arms_factory > 0 }
+					remove_building = {
+						type = arms_factory
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 572 876 653 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = arms_factory
+									size > 0
+									include_locked = yes
+								}
+								arms_factory < 21
+								industrial_complex < 11
+								infrastructure > 2
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = arms_factory
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = arms_factory damage = 0.8 }
+								}
+							}
+						}
+					}
+				}
+				if = {	#synth
+					limit = { synthetic_refinery > 0 }
+					remove_building = {
+						type = synthetic_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 572 876 653 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = synthetic_refinery
+									size > 0
+									include_locked = yes
+								}
+								arms_factory < 21
+								industrial_complex < 11
+								infrastructure > 2
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = synthetic_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = synthetic_refinery damage = 0.8 }
+								}
+							}
+						}
+					}
+				}
+				if = {	#Steel
+					limit = { steel_refinery > 0 }
+					remove_building = {
+						type = steel_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 572 653 573 876 398 651 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = steel_refinery
+									size > 0
+									include_locked = yes
+								}
+								arms_factory < 21
+								industrial_complex < 11
+								infrastructure > 2
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = steel_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = steel_refinery damage = 0.8 }
+								}
+							}
+						}
+					}
+				}
+				if = {	#Aluminium
+					limit = { aluminium_refinery > 0 }
+					remove_building = {
+						type = aluminium_refinery
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 572 403 653 573 876 398 651 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = aluminium_refinery
+									size > 0
+									include_locked = yes
+								}
+								arms_factory < 21
+								industrial_complex < 11
+								infrastructure > 2
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = aluminium_refinery
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = aluminium_refinery damage = 0.8 }
+								}
+							}
+						}
+					}
+				}
+				if = {	#Civs
+					limit = { industrial_complex > 0 }
+					remove_building = {
+						type = industrial_complex
+						level = 1
+					}
+					PREV = {
+						random_core_state = {
+							prioritize = { 572 403 653 573 876 398 651 }
+							limit = {
+								is_on_continent = asia
+								free_building_slots = {
+									building = industrial_complex
+									size > 0
+									include_locked = yes
+								}
+								arms_factory < 21
+								industrial_complex < 11
+								infrastructure > 2
+								all_neighbor_state = {
+									OR = {
+										controller = {
+											NOT = { has_war_with = SOV }
+										}
+										is_controlled_by = SOV
+									}
+								}
+							}
+							add_extra_state_shared_building_slots = 1
+							add_building_construction = {
+								type = industrial_complex
+								level = 1
+								instant_build = yes
+							}
+							hidden_effect = {
+								if = {
+									limit = { ROOT = { is_ai = no } }
+									damage_building = { type = industrial_complex damage = 0.4 }
+								}
+							}
+						}
+					}
+				}
+			}
+			custom_effect_tooltip = relocate_industry_repair
+			hidden_effect = {
+				activate_mission = SOV_relocating_industry_from_voronezh_area
+			}
+		}
+	}
 	SOV_relocate_industry_from_stalingrad_area = {
 		icon = generic_construction
 		allowed = {
@@ -17391,9 +17943,7 @@ SOV_industry_relocation = {
 				}
 			}
 		}
-		visible = {
 
-		}
 		days_mission_timeout = 4
 		is_good = yes
 		fire_only_once = no
