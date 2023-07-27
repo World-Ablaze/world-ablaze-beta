@@ -36704,7 +36704,7 @@ GER_opposition_to_hitler = {
 		}
 	}
 
-	GER_sway_leader_loyalty_mission = {
+	GER_sway_army_leader_loyalty_mission = {
 		icon = generic_army_support
 
 		allowed = {
@@ -36739,7 +36739,50 @@ GER_opposition_to_hitler = {
 					NOT = { has_trait = trait_GER_wehrmacht }
 				}
 				add_unit_leader_trait = trait_GER_wehrmacht
-				set_unit_leader_flag = SPA_swayed_leader_loyalty_flag
+				set_unit_leader_flag = GER_swayed_leader_loyalty_flag
+			}
+			#hidden_effect = {
+			#	country_event = { id = lar_spain.4 }
+			#}
+		}
+	}
+
+	GER_sway_navy_leader_loyalty_mission = {
+		icon = generic_army_support
+
+		allowed = {
+			tag = GER
+		}
+
+		available = {
+		}
+
+		visible = {
+			has_completed_focus = GER_connections_within_the_wehrmacht
+			NOT = { has_global_flag = GER_civil_war }
+			NOT = { has_global_flag = GER_civil_war_end }
+		}
+
+		fire_only_once = no
+
+		days_remove = 35
+
+		cost = 50
+
+		cancel_if_not_visible = yes
+
+		remove_effect = {
+			add_days_mission_timeout = {
+				mission = GER_hitler_suspicion
+				days = -14
+			}
+			random_navy_leader = {
+				limit = {
+					NOT = { has_trait = trait_GER_fascist }
+					NOT = { has_trait = trait_GER_wehrmacht }
+				}
+				add_unit_leader_trait = trait_GER_wehrmacht
+				set_unit_leader_flag = GER_swayed_leader_loyalty_flag
 			}
 			#hidden_effect = {
 			#	country_event = { id = lar_spain.4 }
@@ -36857,6 +36900,7 @@ GER_opposition_to_hitler = {
 			hidden_effect = {
 				subtract_from_variable = {	var = ger_civil_war_luftwaffe_counter_var value = 10 }
 				add_to_variable = { var = opp_civil_war_luftwaffe_counter_var value = 10 }
+				add_to_variable = { var = opp_civil_war_luftwaffe_actual_counter_var value = 0.1 }
 			}	
 		}
 	}
@@ -36895,6 +36939,7 @@ GER_opposition_to_hitler = {
 			hidden_effect = {
 				subtract_from_variable = {	var = ger_civil_war_kriegsmarine_counter_var value = 10 }
 				add_to_variable = { var = opp_civil_war_kriegsmarine_counter_var value = 10 }
+				add_to_variable = { var = opp_civil_war_kriegsmarine_actual_var value = 0.1 }
 			}	
 		}
 	}
@@ -37079,7 +37124,7 @@ GER_opposition_to_hitler = {
 				limit = {
 					has_country_flag = ger_civil_war_anschluss
 				}
-				country_event = { id = ger_armor.210 }
+				unlock_national_focus = 
 			}
 			else = {
 				if = {
@@ -37281,7 +37326,7 @@ GER_opposition_to_hitler = {
 				limit = {
 					has_country_flag = ger_civil_war_anschluss
 				}
-				country_event = { id = ger_armor.210 }
+				unlock_national_focus = GER_stoke_the_fire_of_rebellion
 			}
 		}
 	}
@@ -37321,19 +37366,31 @@ GER_opposition_to_hitler = {
 		days_mission_timeout = 90
 		
 		timeout_effect = {
-			country_event = { id = ger_armor.210 }
+			unlock_national_focus = GER_stoke_the_fire_of_rebellion
 		}
 		
 		complete_effect = {
-			country_event = { id = ger_armor.210 }
+			unlock_national_focus = GER_stoke_the_fire_of_rebellion
 		}
 	}
 	
 	GER_prepare_opposition_cell = {
 		icon = {
+			key = ger_garrison_control_4
+			trigger = {
+				FROM = { 
+					check_variable = { var = GER_garrison_control value = 0 compare = equals }
+					has_state_flag = GER_fascist_stronghold
+				}
+			}
+		}
+		icon = {
 			key = ger_garrison_control_1
 			trigger = {
-				FROM = { check_variable = { var = GER_garrison_control value = 0 compare = equals } }
+				FROM = { 
+					check_variable = { var = GER_garrison_control value = 0 compare = equals }
+					NOT = { has_state_flag = GER_fascist_stronghold }
+				}
 			}
 		}
 		icon = {
@@ -37341,6 +37398,7 @@ GER_opposition_to_hitler = {
 			trigger = {
 				FROM = {
 					check_variable = { var = GER_garrison_control value = 1 compare = equals }
+					NOT = { has_state_flag = GER_fascist_stronghold }
 				}
 			}
 		}
@@ -37349,13 +37407,17 @@ GER_opposition_to_hitler = {
 			trigger = {
 				FROM = {
 					check_variable = { var = GER_garrison_control value = 2 compare = equals }
+					NOT = { has_state_flag = GER_fascist_stronghold }
 				}
 			}
 		}
 		icon = {
 			key = opp_garrison_control_4
 			trigger = {
-				FROM = { check_variable = { var = GER_garrison_control value = 3 compare = greater_than_or_equals } }
+				FROM = { 
+					check_variable = { var = GER_garrison_control value = 3 compare = greater_than_or_equals }
+					NOT = { has_state_flag = GER_fascist_stronghold }
+				}
 			}
 		}
 
@@ -37375,6 +37437,7 @@ GER_opposition_to_hitler = {
 							GER_garrison_control > 2
 						}
 					}
+					NOT = { has_state_flag = GER_fascist_stronghold }
 				}
 			}
 		}
@@ -37424,6 +37487,49 @@ GER_opposition_to_hitler = {
 				mission = GER_hitler_suspicion
 				days = -7
 			}
+		}
+	}
+
+	GER_hitler_stronghold = {
+		icon = GFX_decision_generic_operation
+
+		allowed = { original_tag = GER }
+
+		available = {
+			OR = {
+				CZE = { is_in_faction_with = GER }
+				CZE = { is_puppet_of = GER }
+				69 = {
+					CONTROLLER = {
+						has_war_with = GER
+					}
+				}
+				GER = { controls_state = 69 }
+			}
+		}
+
+		activation = {
+			always = no
+		}
+
+		visible = { 
+			NOT = { has_global_flag = GER_civil_war }
+			NOT = { has_global_flag = GER_civil_war_end }
+		}
+		cancel_if_not_visible = yes
+
+		is_good = no
+		fire_only_once = yes
+		selectable_mission = no
+
+		days_mission_timeout = 90
+		
+		timeout_effect = {
+			unlock_national_focus = GER_stoke_the_fire_of_rebellion
+		}
+		
+		complete_effect = {
+			unlock_national_focus = GER_stoke_the_fire_of_rebellion
 		}
 	}
 }
