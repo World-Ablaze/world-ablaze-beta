@@ -3157,32 +3157,71 @@ focus_tree = {
 			}
 			custom_effect_tooltip = GER_create_unit_fallschirmjager_tt
 			hidden_effect = {
-				division_template = {
-					name = "Fallschirmjäger Brigade"
-					template_counter = 148
-					priority = 1
+				if = {
+					limit = { is_ai = yes }
 
-					regiments = {
-						paratrooper = { x = 0 y = 0 }
-						paratrooper = { x = 0 y = 1 }
-						paratrooper = { x = 0 y = 2 }
+					division_template = {
+						name = "Fallschirmjäger Division"
+						template_counter = 148
+						priority = 2
 
-						paratrooper = { x = 1 y = 0 }
-						paratrooper = { x = 1 y = 1 }
-						paratrooper = { x = 1 y = 2 }
+						regiments = {
+							paratrooper = { x = 0 y = 0 }
+							paratrooper = { x = 0 y = 1 }
+							paratrooper = { x = 0 y = 2 }
 
-						paratrooper = { x = 2 y = 0 }
-						paratrooper = { x = 2 y = 1 }
-						paratrooper = { x = 2 y = 2 }
+							paratrooper = { x = 1 y = 0 }
+							paratrooper = { x = 1 y = 1 }
+							paratrooper = { x = 1 y = 2 }
 
-						paratrooper = { x = 3 y = 0 }
-						paratrooper = { x = 3 y = 1 }
-						paratrooper = { x = 3 y = 2 }
+							paratrooper = { x = 2 y = 0 }
+							paratrooper = { x = 2 y = 1 }
+							paratrooper = { x = 2 y = 2 }
+
+							paratrooper = { x = 3 y = 0 }
+							paratrooper = { x = 3 y = 1 }
+							paratrooper = { x = 3 y = 2 }
+
+							paratrooper = { x = 4 y = 0 }
+							paratrooper = { x = 4 y = 1 }
+							paratrooper = { x = 4 y = 2 }
+						}
+
+						support = {
+							engineer = { x = 0 y = 0 }
+							recon = { x = 0 y = 1 }
+							signal_company = { x = 0 y = 2 }
+						}
 					}
+				}
+				else = {
+					division_template = {
+						name = "Fallschirmjäger Division"
+						template_counter = 148
+						priority = 2
 
-					support = {
-						engineer = { x = 0 y = 0 }
-						recon = { x = 0 y = 1 }
+						regiments = {
+							paratrooper = { x = 0 y = 0 }
+							paratrooper = { x = 0 y = 1 }
+							paratrooper = { x = 0 y = 2 }
+
+							paratrooper = { x = 1 y = 0 }
+							paratrooper = { x = 1 y = 1 }
+							paratrooper = { x = 1 y = 2 }
+
+							paratrooper = { x = 2 y = 0 }
+							paratrooper = { x = 2 y = 1 }
+							paratrooper = { x = 2 y = 2 }
+
+							paratrooper = { x = 3 y = 0 }
+							paratrooper = { x = 3 y = 1 }
+							paratrooper = { x = 3 y = 2 }
+						}
+
+						support = {
+							engineer = { x = 0 y = 0 }
+							recon = { x = 0 y = 1 }
+						}
 					}
 				}
 			}
@@ -3744,13 +3783,25 @@ focus_tree = {
 			remove_ideas = GER_okh
 			deactivate_advisor = GER_werner_von_fritsch
 			country_event = { id = ger_armor.865 }
-			#army becomes more loyal
 			if = {
-				limit = {
-					NOT = {
-						has_completed_focus = GER_prepare_the_opposition
+				limit = { has_completed_focus = GER_prepare_the_opposition }
+				random_unit_leader = {
+					limit = {
+						NOT = { has_trait = trait_GER_fascist }
+						NOT = { has_trait = trait_GER_wehrmacht }
 					}
+					add_unit_leader_trait = trait_GER_wehrmacht
+					set_unit_leader_flag = GER_swayed_leader_loyalty_flag
 				}
+				custom_effect_tooltip = GER_sway_infantry_division_loyalty_tt
+				custom_effect_tooltip = GER_sway_infantry_division_loyalty_tt
+				hidden_effect = {
+					subtract_from_variable = {	var = ger_civil_war_infantry_divisions_counter_var value = 2 }
+					add_to_variable = { var = opp_civil_war_infantry_divisions_counter_var value = 2 }
+				}
+			}
+			else = {
+				#army becomes more loyal but reduce stability
 				custom_effect_tooltip = GER_Wehrmacht_Stability_tt
 				subtract_from_variable = {	var = GER_Wehrmacht_stability value = 1 }
 			}
