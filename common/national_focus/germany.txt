@@ -12320,7 +12320,7 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			promote_character = GER_oskar_adolf
+			promote_character = GER_oskar_karl
 		}
 	}
 
@@ -12402,6 +12402,7 @@ focus_tree = {
 
 		completion_reward = {
 			ENG = { country_event = { id = ger_armor.798 } }
+			custom_effect_tooltip = GER_attempt_familial_reconcilliation_tt
 		}
 	}
 
@@ -13797,11 +13798,15 @@ focus_tree = {
 		}
 
 		cost = 3
+
 		ai_will_do = {
 			factor = 1
 		}
 
 		completion_reward = {
+			set_party_name = { ideology = neutrality long_name = GER_neutrality_party_military_junta_long name = GER_neutrality_party_military_junta }
+			set_rule = { can_send_volunteers = yes }
+			add_named_threat = { threat = 5 name = GER_military_junta }
 		}
 	}
 
@@ -13935,27 +13940,6 @@ focus_tree = {
 	}
 
 	focus = {
-		id = GER_reintegrate_imperial_territories
-		icon = GFX_goal_GER_reintegrate_imperial_territories
-		prerequisite = { focus = GER_keep_austria }
-		x = -1
-		y = 1
-		relative_position_id = GER_keep_austria
-
-		available = {
-			is_subject = no
-		}
-
-		cost = 3
-		ai_will_do = {
-			factor = 1
-		}
-
-		completion_reward = {
-		}
-	}
-
-	focus = {
 		id = GER_return_austria
 		icon = GFX_goal_generic_befriend_austria
 		mutually_exclusive = { focus = GER_keep_austria }
@@ -13977,7 +13961,60 @@ focus_tree = {
 			add_stability = -0.05
 			add_war_support = -0.05
 			release = AUS
+			AUS = {
+				every_core_state = {
+					remove_core_of = GER
+				}
+			}
 			custom_effect_tooltip = GER_return_austria_tt
+			hidden_effect = {
+				ENG = {
+					if = {
+						limit = {
+							has_guaranteed = POL
+						}
+						diplomatic_relation = {
+							country = POL
+							relation = guarantee
+							active = no
+						}
+					}
+					add_ai_strategy = {
+						type = alliance
+						id = POL
+						value = -100
+					}
+					# add_ai_strategy = {
+					# 	type = diplo_action_desire
+					# 	id = POL
+					# 	value = -100
+					# 	target = guarantee
+					# }
+				}
+				FRA = {
+					if = {
+						limit = {
+							has_guaranteed = POL
+						}
+						diplomatic_relation = {
+							country = POL
+							relation = guarantee
+							active = no
+						}
+					}
+					add_ai_strategy = {
+						type = alliance
+						id = POL
+						value = -100
+					}
+					# add_ai_strategy = {
+					# 	type = diplo_action_desire
+					# 	id = POL
+					# 	value = -100
+					# 	target = guarantee
+					# }
+				}
+			}
 		}
 	}
 
@@ -13994,6 +14031,7 @@ focus_tree = {
 		}
 
 		cost = 3
+
 		ai_will_do = {
 			factor = 1
 		}
@@ -14015,11 +14053,90 @@ focus_tree = {
 		}
 
 		cost = 3
+
 		ai_will_do = {
 			factor = 1
 		}
 
 		completion_reward = {
+			add_state_claim = 85
+			add_state_claim = 798
+			add_state_claim = 797
+			add_state_claim = 86
+			add_state_claim = 762
+			add_state_claim = 188
+			85 = {
+				OWNER = {
+					GER = {
+						create_wargoal = {
+							type = take_claimed_state
+							target = PREV
+						}
+					}
+				}
+			}
+			188 = {
+				OWNER = {
+					GER = {
+						create_wargoal = {
+							type = take_claimed_state
+							target = PREV
+						}
+					}
+				}
+			}
+		}
+	}
+
+	focus = {
+		id = GER_reintegrate_imperial_territories
+		icon = GFX_goal_GER_reintegrate_imperial_territories
+		prerequisite = { focus = GER_reunification_with_east_prussia }
+		x = -2
+		y = 1
+		relative_position_id = GER_reunification_with_east_prussia
+
+		available = {
+			is_subject = no
+			85 = {
+				is_controlled_by = ROOT
+				compliance > 79
+			}
+			798 = {
+				is_controlled_by = ROOT
+				compliance > 79
+			}
+			797 = {
+				is_controlled_by = ROOT
+				compliance > 79
+			}
+			86 = {
+				is_controlled_by = ROOT
+				compliance > 79
+			}
+			762 = {
+				is_controlled_by = ROOT
+				compliance > 79
+			}
+			188 = {
+				is_controlled_by = ROOT
+				compliance > 79
+			}
+		}
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		completion_reward = {
+			add_state_core = 85
+			add_state_core = 798
+			add_state_core = 797
+			add_state_core = 86
+			add_state_core = 762
+			add_state_core = 188
 		}
 	}
 
@@ -14041,6 +14158,43 @@ focus_tree = {
 		}
 
 		completion_reward = {
+			set_rule = { can_create_factions = yes }
+			if = {
+				limit = {
+					NOT = { is_in_faction = yes }
+				}
+				create_faction = "GER_anti_communist_bloc"
+			}
+			SOV = { add_opinion_modifier = { target = ROOT modifier = pact_against_us } }
+			add_named_threat = { threat = 2 name = GER_anti_comintern_pact_unaligned }
+			every_other_country = {
+				limit = {
+					NOT = { tag = GER }
+					NOT = { has_war_with = GER }
+					NOT = { is_in_faction_with = SOV }
+					is_subject = no
+					OR = {
+						capital_scope = {
+								is_on_continent = europe
+						}
+						AND = {
+							capital_scope = {
+									is_on_continent = asia
+							}
+							is_neighbor_of = SOV
+						}
+						num_of_factories > 30
+					}
+					OR = {
+						has_government = neutrality
+						AND = {
+							is_neighbor_of = SOV
+							NOT = { has_government = communism }
+						}
+					}
+				}
+				country_event = germany.5
+			}
 		}
 	}
 
@@ -14058,12 +14212,36 @@ focus_tree = {
 			is_subject = no
 		}
 
+		bypass = {
+			OR = {
+				is_in_faction = no
+				NOT = { country_exists = POL }
+			}
+
+		}
+
 		cost = 3
 		ai_will_do = {
 			factor = 1
 		}
 
 		completion_reward = {
+			if = {
+				limit = {
+					POL = {
+						has_idea = GER_anti_comintern_pact
+					}
+				}
+				POL = {
+					country_event = { id = generic.5 }
+				}
+			}
+			else = {
+				create_wargoal = {
+					type = puppet_wargoal_focus
+					target = POL
+				}
+			}
 		}
 	}
 
@@ -14079,12 +14257,73 @@ focus_tree = {
 			is_subject = no
 		}
 
+		bypass = {
+			OR = {
+				is_in_faction = no
+				NOT = {
+					country_exists = LIT
+					country_exists = LAT
+					country_exists = EST
+				}
+			}
+
+		}
+
 		cost = 3
+
 		ai_will_do = {
 			factor = 1
 		}
 
 		completion_reward = {
+			if = {
+				limit = {
+					LIT = {
+						has_idea = GER_anti_comintern_pact
+					}
+				}
+				LIT = {
+					country_event = { id = generic.5 }
+				}
+			}
+			else = {
+				create_wargoal = {
+					type = puppet_wargoal_focus
+					target = LIT
+				}
+			}
+			if = {
+				limit = {
+					LAT = {
+						has_idea = GER_anti_comintern_pact
+					}
+				}
+				LAT = {
+					country_event = { id = generic.5 }
+				}
+			}
+			else = {
+				create_wargoal = {
+					type = puppet_wargoal_focus
+					target = LAT
+				}
+			}
+			if = {
+				limit = {
+					EST = {
+						has_idea = GER_anti_comintern_pact
+					}
+				}
+				EST = {
+					country_event = { id = generic.5 }
+				}
+			}
+			else = {
+				create_wargoal = {
+					type = puppet_wargoal_focus
+					target = EST
+				}
+			}
 		}
 	}
 
@@ -14100,12 +14339,81 @@ focus_tree = {
 			is_subject = no
 		}
 
+		bypass = {
+			is_in_faction = no
+		}
+
 		cost = 3
+
 		ai_will_do = {
 			factor = 1
 		}
 
 		completion_reward = {
+			if = {
+				limit = {
+					ROM = {
+						has_idea = GER_anti_comintern_pact
+					}
+				}
+				ROM = {
+					country_event = { id = generic.5 }
+				}
+			}
+			else = {
+				create_wargoal = {
+					type = puppet_wargoal_focus
+					target = ROM
+				}
+			}
+			if = {
+				limit = {
+					YUG = {
+						has_idea = GER_anti_comintern_pact
+					}
+				}
+				YUG = {
+					country_event = { id = generic.5 }
+				}
+			}
+			else = {
+				create_wargoal = {
+					type = puppet_wargoal_focus
+					target = YUG
+				}
+			}
+			if = {
+				limit = {
+					BUL = {
+						has_idea = GER_anti_comintern_pact
+					}
+				}
+				BUL = {
+					country_event = { id = generic.5 }
+				}
+			}
+			else = {
+				create_wargoal = {
+					type = puppet_wargoal_focus
+					target = BUL
+				}
+			}
+			if = {
+				limit = {
+					HUN = {
+						has_idea = GER_anti_comintern_pact
+					}
+				}
+				HUN = {
+					country_event = { id = generic.5 }
+				}
+			}
+			else = {
+				create_wargoal = {
+					type = puppet_wargoal_focus
+					target = HUN
+				}
+			}
 		}
 	}
 
@@ -14123,11 +14431,16 @@ focus_tree = {
 		}
 
 		cost = 3
+
 		ai_will_do = {
 			factor = 1
 		}
 
 		completion_reward = {
+			create_wargoal = {
+				type = topple_government
+				target = SOV
+			}
 		}
 	}
 
@@ -14142,14 +14455,267 @@ focus_tree = {
 
 		available = {
 			is_subject = no
+			OR = {
+				AND = {
+					96 = {
+						is_controlled_by_ROOT_or_ally = yes
+					}
+					95 = {
+						is_controlled_by_ROOT_or_ally = yes
+					}
+					94 = {
+						is_controlled_by_ROOT_or_ally = yes
+					}
+					93 = {
+						is_controlled_by_ROOT_or_ally = yes
+					}
+					91 = {
+						is_controlled_by_ROOT_or_ally = yes
+					}
+				}
+				967 = {
+					is_controlled_by_ROOT_or_ally = yes
+				}
+				191 = {
+					is_controlled_by_ROOT_or_ally = yes
+				}
+				964 = {
+					is_controlled_by_ROOT_or_ally = yes
+				}
+				AND = {
+					78 = {
+						is_controlled_by_ROOT_or_ally = yes
+					}
+					766 = {
+						is_controlled_by_ROOT_or_ally = yes
+					}
+				}
+			}
 		}
 
 		cost = 3
+
 		ai_will_do = {
 			factor = 1
 		}
 
 		completion_reward = {
+			if = {
+				limit = {
+					96 = {
+						is_controlled_by_ROOT_or_ally = yes
+					}
+					95 = {
+						is_controlled_by_ROOT_or_ally = yes
+					}
+					94 = {
+						is_controlled_by_ROOT_or_ally = yes
+					}
+					93 = {
+						is_controlled_by_ROOT_or_ally = yes
+					}
+					91 = {
+						is_controlled_by_ROOT_or_ally = yes
+					}
+				}
+				96 = {
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 358
+					}
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 9341
+					}
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 406
+					}
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 277
+					}
+				}
+				95 = {
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 9236
+					}
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 9304
+					}
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 11341
+					}
+				}
+				94 = {
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 11285
+					}
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 6579
+					}
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 535
+					}
+				}
+				93 = {
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 6520
+					}
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 11543
+					}
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 6557
+					}
+				}
+				91 = {
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 3483
+					}
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 438
+					}
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 3562
+					}
+				}
+			}
+			if = {
+				limit = {
+					967 = {
+						is_controlled_by_ROOT_or_ally = yes
+					}
+				}
+				967 = {
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 319
+					}
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 222
+					}
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 9275
+					}
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 6459
+					}
+				}
+			}
+			if = {
+				limit = {
+					191 = {
+						is_controlled_by_ROOT_or_ally = yes
+					}
+				}
+				191 = {
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 592
+					}
+				}
+			}
+			if = {
+				limit = {
+					964 = {
+						is_controlled_by_ROOT_or_ally = yes
+					}
+				}
+				964 = {
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 4640
+					}
+				}
+			}
+			if = {
+				limit = {
+					78 = {
+						is_controlled_by_ROOT_or_ally = yes
+					}
+					766 = {
+						is_controlled_by_ROOT_or_ally = yes
+					}
+				}
+				78 = {
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 3407
+					}
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 414
+					}
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 6600
+					}
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 11705
+					}
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 11686
+					}
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 9683
+					}
+				}
+				766 = {
+					add_building_construction = {
+						type = bunker
+						level = 2
+						province = 6727
+					}
+				}
+			}
+			economy_fatigue_level_up_4 = yes
 		}
 	}
 
@@ -14163,14 +14729,20 @@ focus_tree = {
 
 		available = {
 			is_subject = no
+			202 = {
+				is_controlled_by_ROOT_or_ally = yes
+			}
 		}
 
 		cost = 3
+
 		ai_will_do = {
 			factor = 1
 		}
 
 		completion_reward = {
+			release = UKR
+			add_to_faction = UKR
 		}
 	}
 
@@ -14184,14 +14756,20 @@ focus_tree = {
 
 		available = {
 			is_subject = no
+			206 = {
+				is_controlled_by_ROOT_or_ally = yes
+			}
 		}
 
 		cost = 3
+
 		ai_will_do = {
 			factor = 1
 		}
 
 		completion_reward = {
+			release = BLR
+			add_to_faction = BLR
 		}
 	}
 
