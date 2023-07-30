@@ -3094,6 +3094,1062 @@ country_event = {
 	}
 }
 
+################################################# Poland asked to return East Prussia
+#
+
+country_event = {
+	id = ger_armor.211
+	title = ger_armor.211.t
+	desc = ger_armor.211.d
+	picture = GFX_report_event_german_speech
+
+	is_triggered_only = yes
+
+	option = { #disagree
+		name = ger_armor.211.a
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 0.8
+				strength_ratio = { tag = GER ratio < 0.5 }
+			}
+			modifier = {
+				factor = 0.8
+				has_opinion = { target = GER value > 99 }
+			}
+			modifier = {
+				factor = 0.8
+				strength_ratio = { tag = GER ratio < 0.3 }
+			}
+			modifier = {
+				factor = 0.8
+				strength_ratio = { tag = GER ratio < 0.2 }
+			}
+			modifier = {
+				factor = 0.5
+				strength_ratio = { tag = GER ratio < 0.1 }
+			}
+		}
+		if = {
+			limit = {
+				is_in_faction_with = GER
+				is_subject = no
+			}
+			remove_from_faction = POL #kicked from faction
+		}
+
+		effect_tooltip = {
+			GER = {
+				add_state_claim = 85
+				add_state_claim = 798
+				add_state_claim = 797
+				add_state_claim = 86
+				add_state_claim = 762
+				create_wargoal = {
+					type = take_state_focus
+					target = POL
+					generator = { 85 798 797 86 762 }
+				}
+			}
+		}
+		hidden_effect = {
+			GER = {
+				country_event = { id = ger_armor.212 days = 1 }
+			}
+		}
+	}
+
+	option = { #agree
+		name = ger_armor.211.b
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 0
+				FRA = { has_completed_focus = FRA_ratify_the_entente }
+			}
+			modifier = {
+				factor = 0
+				any_other_country = {
+					is_major = yes
+					NOT = { original_tag = FRA }
+					has_guaranteed = POL
+				}
+			}
+			modifier = {
+				factor = 0
+				any_other_country = {
+					is_major = yes
+					is_in_faction_with = POL
+				}
+			}
+			modifier = {
+				factor = 0.8
+				any_other_country = {
+					is_major = no
+					has_guaranteed = POL
+				}
+			}
+			modifier = {
+				factor = 0.8
+				is_in_faction = yes
+				NOT = {
+					any_other_country = {
+						is_major = yes
+						is_in_faction_with = POL
+					}
+				}
+			}
+		}
+		effect_tooltip = {
+			GER = {
+				transfer_state = 85
+				transfer_state = 798
+				transfer_state = 797
+				transfer_state = 86
+				transfer_state = 762
+			}
+		}
+		hidden_effect = {
+			GER = {
+				country_event = {
+					id = ger_armor.213 days = 1
+				}
+			}
+		}
+	}
+}
+#Events in case of weirdness with German Poland focus
+country_event = {
+	id = ger_armor.212
+	title = ger_armor.212.t
+	desc = ger_armor.212.d
+	picture = GFX_report_event_czech_soldiers_02
+
+	is_triggered_only = yes
+
+	option = {
+		name = ger_armor.212.a
+		add_state_claim = 85
+		add_state_claim = 798
+		add_state_claim = 797
+		add_state_claim = 86
+		add_state_claim = 762
+		if = {
+			limit = {
+				POL = { is_subject_of = FROM }
+				FROM = {
+					is_in_faction_with = GER
+					is_faction_leader = no
+				}
+			}
+			remove_from_faction = POL
+			remove_from_faction = FROM
+		}
+		86 = {
+			controller = {
+				GER = {
+					create_wargoal = {
+						type = take_state_focus
+						target = PREV
+						generator = { 85 798 797 86 762 }
+					}
+				}
+			}
+		}
+	}
+}
+
+
+#Events in case of weirdness with German Poland focus
+country_event = {
+	id = ger_armor.213
+	title = ger_armor.213.t
+	desc = ger_armor.213.d
+	picture = GFX_report_event_german_reichstag_gathering
+
+	is_triggered_only = yes
+
+	option = {
+		name = ger_armor.213.a
+		transfer_state = 85
+		transfer_state = 798
+		transfer_state = 797
+		transfer_state = 86
+		transfer_state = 762
+		set_country_flag = GER_east_prussia_acquired_flag
+	}
+}
+
+### Warsaw Conference
+
+# Britain
+country_event = {
+	id = ger_armor.214
+	title = ger_armor.214.t
+	desc = {
+		text = ger_armor.214.d
+		trigger = { NOT = { has_war_with = GER } }
+	}
+	desc = {
+		text = ger_armor.214.d_2
+		trigger = { has_war_with = GER }
+	}
+	desc = {
+		text = ger_armor.214.d_3
+		trigger = {
+			NOT = { has_war_with = GER }
+			tag = HOL
+		}
+	}
+	picture = GFX_report_event_german_politician_speech
+
+	is_triggered_only = yes
+
+	option = { # Abandon the Poles
+		name = ger_armor.214.a
+		ai_chance = {
+			factor = 90
+			modifier = {
+				factor = 0.3
+				has_government = communism
+				POL = { has_government = communism }
+			}
+			modifier = {
+				has_global_flag = GER_has_started_war
+				NOT = { is_in_faction_with = GER }
+				factor = 0
+			}
+		}
+		trigger = {
+			NOT = { has_war_with = GER }
+			is_puppet = no # can't do anything if puppet
+		}
+		if = {
+			limit = {
+				has_completed_focus = ENG_no_further_appeasement
+			}
+			add_political_power = -200
+		}
+		if = {
+			limit = {
+				tag = HOL
+			}
+			ENG = { country_event = ger_armor.214 }
+		}
+		if = {
+			limit = {
+				tag = ENG
+			}
+			FRA = { country_event = ger_armor.215 }
+		}
+		POL = {
+			add_opinion_modifier = { target = ROOT modifier = western_betrayal }
+		}
+		if = {
+			limit = {
+				tag = HOL
+				POL = { is_guaranteed_by = HOL }
+			}
+			HOL = {
+				diplomatic_relation = {
+   					country = POL
+   					relation = guarantee
+   					active = no
+  				}
+  				add_ai_strategy = {
+					type = ignore
+					id = "POL"
+					value = 100
+				}
+			}
+		}
+		if = {
+			limit = {
+				tag = ENG
+				POL = { is_guaranteed_by = ENG }
+			}
+			ENG = {
+				diplomatic_relation = {
+   					country = POL
+   					relation = guarantee
+   					active = no
+  				}
+  				add_ai_strategy = {
+					type = ignore
+					id = "POL"
+					value = 100
+				}
+			}
+		}
+		if = {
+			limit = {
+				POL = { is_in_faction_with = ROOT }
+				is_faction_leader = yes
+			}
+			remove_from_faction = POL
+		}
+	}
+	option = { # Support the Poles
+		name = ger_armor.214.b
+		trigger = {
+			OR = {
+				NOT = {
+					tag = ENG
+				}
+				has_completed_focus = ENG_no_further_appeasement
+			}
+		}
+		ai_chance = {
+			factor = 10
+			modifier = {
+				factor = 3
+				has_government = communism
+				POL = { has_government = communism }
+			}
+			modifier = {
+				factor = 0
+				NOT = {
+					OR = {
+						is_in_faction_with = POL
+						has_war_with = GER
+					}
+				}
+				OR = {
+					AND = {
+						has_country_flag = GER_return_austria_flag
+						NOT = { has_global_flag = GER_has_started_war }
+					}
+					is_in_faction_with = GER
+				}
+			}
+		}
+		if = {
+			limit = {
+				is_in_faction_with = GER
+				is_faction_leader = yes
+			}
+			remove_from_faction = GER
+		}
+		if = {
+			limit = {
+				is_in_faction_with = GER
+				is_faction_leader = no
+			}
+			GER = { remove_from_faction = ENG }
+		}
+		if = {
+			limit = {
+				NOT = { has_completed_focus = ENG_no_further_appeasement }
+			}
+			add_political_power = -200
+		}
+		add_opinion_modifier = { target = GER modifier = condemn_aggression }
+		effect_tooltip = {
+			GER = {
+				create_wargoal = {
+					type = take_state_focus
+					target = POL
+					generator = { 85 798 797 86 762 188 }
+				}
+			}
+		}
+		if = {
+			limit = {
+				is_in_faction = yes
+				POL = { is_in_faction = no }
+			}
+			random_country = {
+				limit = {
+					is_faction_leader = yes
+					is_in_faction_with = ROOT #this may in fact be ROOT, since countries are in a faction with themselves!
+				}
+				add_to_faction = POL
+			}
+		}
+		if = {
+			limit = {
+				tag = HOL
+			}
+			POL = {
+				add_ai_strategy = {
+					type = alliance
+					id = "HOL"
+					value = 200
+				}
+			}
+		}
+		if = {
+			limit = {
+				tag = HOL
+			}
+			POL = {
+				add_ai_strategy = {
+					type = alliance
+					id = "ENG"
+					value = 200
+				}
+			}
+		}
+		if = {
+			limit = {
+				NOT = { tag = HOL }
+				FRA = {
+					NOT = { has_war_with = POL }
+				}
+			}
+			FRA = { country_event = ger_armor.216 }
+		}
+		POL = {
+			add_opinion_modifier = { target = ROOT modifier = offered_support }
+		}
+	}
+}
+
+# France (Britain Backs Down)
+country_event = {
+	id = ger_armor.215
+	title = ger_armor.214.t
+	desc = ger_armor.215.d
+	picture = GFX_report_event_chamberlain_announce
+
+	is_triggered_only = yes
+
+	option = { # Follow Britain's lead
+		name = ger_armor.215.a
+		trigger = {
+			NOT = { has_completed_focus = FRA_the_pcf_direction }
+		}
+		ai_chance = {
+			factor = 90
+			modifier = {
+				factor = 0
+				is_in_faction_with = POL
+			}
+			modifier = {
+				factor = 0.3
+				has_government = communism
+				POL = { has_government = communism }
+			}
+			modifier = {
+				has_global_flag = GER_has_started_war
+				factor = 0
+			}
+		}
+		POL = {
+			country_event = ger_armor.220
+			add_opinion_modifier = { target = FRA modifier = western_betrayal }
+		}
+		add_war_support = 0.1
+		if = {
+			limit = {
+				is_in_faction_with = POL
+				is_faction_leader = yes
+			}
+			if = {
+				limit = {
+					NOT = {
+						any_other_country = { #check if POL and FRA are the only countries in this faction
+							NOT = { original_tag = POL }
+							is_in_faction_with = ROOT
+						}
+					}
+				}
+				dismantle_faction = yes
+			}
+		}
+		if = {
+			limit = {
+				is_in_faction_with = POL
+				is_faction_leader = no
+			}
+			random_other_country = {
+				limit = {
+					is_in_faction_with = FRA
+					is_faction_leader = yes
+				}
+				remove_from_faction = FRA
+			}
+		}
+		if = {
+			limit = {
+				POL = { is_guaranteed_by = FRA }
+			}
+			FRA = {
+				diplomatic_relation = {
+   					country = POL
+   					relation = guarantee
+   					active = no
+  				}
+  				add_ai_strategy = {
+					type = ignore
+					id = "POL"
+					value = 100
+				}
+			}
+		}
+	}
+	option = { # Support the POLchs alone
+		name = ger_armor.215.b
+		trigger = { is_puppet = no }
+		ai_chance = {
+			factor = 5
+			modifier = {
+				factor = 0
+				OR = {
+					AND = {
+						has_country_flag = GER_return_austria_flag
+						NOT = { has_global_flag = GER_has_started_war }
+					}
+					is_in_faction_with = GER
+				}
+			}
+			modifier = {
+				factor = 6
+				has_government = communism
+				POL = { has_government = communism }
+			}
+		}
+		add_war_support = 0.05
+		if = {
+			limit = {
+				is_in_faction_with = POL
+				has_completed_focus = FRA_ratify_the_entente
+				NOT = { has_completed_focus = FRA_the_pcf_direction }
+			}
+			add_political_power = -100
+		}
+		if = {
+			limit = {
+				OR = {
+					NOT = { has_completed_focus = FRA_ratify_the_entente }
+					NOT = { is_in_faction_with = POL }
+					NOT = { has_completed_focus = FRA_the_pcf_direction }
+				}
+			}
+			add_political_power = -200
+		}
+		add_opinion_modifier = { target = GER modifier = condemn_aggression }
+		POL = {
+			country_event = ger_armor.219
+			add_opinion_modifier = { target = FRA modifier = offered_support }
+		}
+		GER = {
+			country_event = ger_armor.222
+			effect_tooltip = {
+				create_wargoal = {
+					type = take_state_focus
+					target = POL
+					generator = { 85 798 797 86 762 188 }
+				}
+			}
+		}
+		if = {
+			limit = { is_in_faction_with = ENG }
+			ENG = {
+				country_event = ger_armor.217
+				if = {
+					limit = {
+						is_faction_leader = yes
+					}
+					remove_from_faction = FRA
+					else = {
+						FRA = { remove_from_faction = ENG }
+					}
+				}
+			}
+		}
+		if = {
+			limit = { is_in_faction_with = GER }
+			if = {
+				limit = { GER = { is_faction_leader = yes } }
+				GER = {
+					remove_from_faction = FRA
+				}
+				else = {
+					remove_from_faction = GER
+				}
+			}
+		}
+		if = {
+			limit = {
+				is_in_faction = yes
+				is_faction_leader = yes
+				NOT = { is_in_faction_with = ENG }
+				NOT = { is_in_faction_with = GER }
+				NOT = { is_in_faction_with = POL }
+				POL = { is_in_faction = no }
+			}
+			add_to_faction = POL
+			POL = {
+				add_ai_strategy = {
+					type = alliance
+					id = "FRA"
+					value = 200
+				}
+			}
+		}
+		if = {
+			limit = {
+				OR = {
+					is_in_faction = no
+					AND = {
+						is_faction_leader = no
+						is_in_faction_with = ENG
+					}
+					is_in_faction_with = GER
+				}
+				POL = { is_in_faction = no }
+			}
+			create_faction = "french_alliance"
+			set_rule = { can_create_factions = yes }
+			add_to_faction = POL
+			POL = {
+				add_ai_strategy = {
+					type = alliance
+					id = "FRA"
+					value = 200
+				}
+			}
+		}
+		if = {
+			limit = {
+				is_in_faction = no
+				POL = {
+					is_faction_leader = yes
+					has_completed_focus = POL_an_entente_of_our_own
+				}
+			}
+			POL = { add_to_faction = FRA }
+			FRA = {
+				add_ai_strategy = {
+					type = alliance
+					id = "POL"
+					value = 200
+				}
+			}
+		}
+		if = {
+			limit = { NOT = { has_completed_focus = FRA_ratify_the_entente } }
+			add_stability = 0.05
+		}
+	}
+}
+
+# France (Britain Supports the Polish)
+country_event = {
+	id = ger_armor.216
+	title = ger_armor.214.t
+	desc = ger_armor.216.d
+	picture = GFX_report_event_POLch_soldiers_01
+
+	is_triggered_only = yes
+
+	#Support
+	option = {
+		name = ger_armor.216.a
+		trigger = {
+			is_subject = no
+		}
+		ai_chance = {
+			factor = 90
+			modifier = {
+				factor = 0
+				is_in_faction_with = GER
+			}
+		}
+		if = {
+			limit = {
+				is_in_faction = yes
+				NOT = { is_in_faction_with = ENG }
+				NOT = { is_in_faction_with = POL }
+				NOT = { has_guaranteed = POL }
+			}
+			give_guarantee = POL
+		}
+		if = {
+			limit = {
+				is_in_faction = no
+			}
+			ENG = { add_to_faction = FRA }
+			add_ai_strategy = {
+				type = alliance
+				id = "ENG"
+				value = 200
+			}
+		}
+		if = {
+			limit = {
+				is_in_faction_with = POL
+				has_completed_focus = FRA_ratify_the_entente
+				is_faction_leader = yes
+				NOT = { is_in_faction_with = ENG }
+			}
+			add_to_faction = ENG #Britain joins the little entente
+			every_other_country = {
+				limit = { is_subject_of = ENG }
+				ROOT = { add_to_faction = PREV }
+			}
+		}
+		add_opinion_modifier = { target = GER modifier = condemn_aggression }
+		POL = {
+			country_event = ger_armor.218
+			add_opinion_modifier = { target = FRA modifier = offered_support }
+		}
+		GER = {
+			country_event = ger_armor.221
+			effect_tooltip = {
+				create_wargoal = {
+					type = take_state_focus
+					target = POL
+					generator = { 85 798 797 86 762 188 }
+				}
+			}
+		}
+	}
+
+	#Abandon
+	option = {
+		name = ger_armor.216.b
+		trigger = {
+			NOT = { is_in_faction_with = ENG }
+			NOT = { is_in_faction_with = POL }
+			NOT = { has_completed_focus = FRA_the_pcf_direction }
+		}
+		ai_chance = {
+			factor = 10
+			modifier = {
+				has_global_flag = GER_has_started_war
+				OR = {
+					POL = { exists = no }
+					POL = { is_puppet_of = GER }
+					DEN = { exists = no }
+					DEN = { is_puppet_of = GER }
+					HOL = { exists = no }
+					HOL = { is_puppet_of = GER }
+					BEL = { exists = no }
+					BEL = { is_puppet_of = GER }
+					NOT = { is_in_faction_with = GER } #FRA doesn't care if in faction
+				}
+				factor = 0
+			}
+		}
+		if = {
+			limit = {
+				POL = { is_guaranteed_by = FRA }
+			}
+			FRA = {
+				diplomatic_relation = {
+   					country = POL
+   					relation = guarantee
+   					active = no
+  				}
+  				add_ai_strategy = {
+					type = ignore
+					id = "POL"
+					value = 100
+				}
+			}
+		}
+		POL = {
+			country_event = ger_armor.218
+			add_opinion_modifier = { target = FRA modifier = western_betrayal }
+		}
+		GER = {
+			country_event = ger_armor.221
+			effect_tooltip = {
+				create_wargoal = {
+					type = take_state_focus
+					target = POL
+					generator = { 85 798 797 86 762 188 }
+				}
+			}
+		}
+	}
+}
+
+# France leaves the Allies
+country_event = {
+	id = ger_armor.217
+	title = ger_armor.217.t
+	desc = ger_armor.217.d
+	picture = GFX_report_event_french_british_officers
+
+	is_triggered_only = yes
+
+	option = {
+		name = ger_armor.217.a
+		FRA = {
+			add_opinion_modifier = { target = ENG modifier = abandoned_poles }
+		}
+	}
+}
+
+# Poland (British and (possibly) French Support)
+country_event = {
+	id = ger_armor.218
+	title = ger_armor.214.t
+	desc = ger_armor.218.d
+	picture = GFX_report_event_german_inspect_troops
+
+	is_triggered_only = yes
+
+	option = {
+		name = ger_armor.218.a
+		effect_tooltip = {
+			GER = {
+				create_wargoal = {
+					type = take_state_focus
+					target = POL
+					generator = { 85 798 797 86 762 188 }
+				}
+			}
+		}
+	}
+}
+
+# Poland (French Support)
+country_event = {
+	id = ger_armor.219
+	title = ger_armor.214.t
+	desc = ger_armor.219.d
+	picture = GFX_report_event_chamberlain_announce
+
+	is_triggered_only = yes
+
+	option = {
+		name = ger_armor.219.a
+		effect_tooltip = {
+			GER = {
+				create_wargoal = {
+					type = take_state_focus
+					target = POL
+					generator = { 85 798 797 86 762 188 }
+				}
+			}
+		}
+	}
+}
+
+# Poland (Abandoned)
+country_event = {
+	id = ger_armor.220
+	title = ger_armor.220.t
+	desc = ger_armor.220.d
+	picture = GFX_report_event_czech_soldiers_01
+
+	is_triggered_only = yes
+
+	option = { # Surrender East Prussia
+		name = ger_armor.220.a
+		ai_chance = {
+			factor = 90
+			modifier = { # Decrease chance POL resists if AUS isn't taken
+				AUS = { exists = yes }
+				factor = 0.5
+			}
+			modifier = { # If they stand a chance they will fight
+				factor = 0
+				strength_ratio = {
+					tag = GER
+					ratio > 0.75
+				}
+				NOT = {
+					any_neighbor_country = {
+						NOT = { tag = GER }
+						is_in_faction_with = GER
+					}
+				}
+			}
+			modifier = {
+				factor = 0 #if you lead a faction, fight
+				is_faction_leader = yes
+			}
+			modifier = {
+				factor = 0.5 #if you are in a faction, maybe fight
+				is_faction_leader = no
+				is_in_faction = yes
+			}
+			modifier = {
+				factor = 0.05 #if you are in a faction with a major, probably fight
+				is_faction_leader = no
+				is_in_faction = yes
+				any_allied_country = {
+					is_major = yes
+				}
+			}
+			modifier = {
+				factor = 0
+				is_puppet = yes
+				NOT = { is_puppet_of = GER } #puppeted POL wouldn't surrender Sudetenland otherwise
+			}
+			modifier = { # Increase it again if other bordering nations are in Axis
+				any_neighbor_country = {
+					NOT = { tag = GER }
+					is_in_faction_with = GER
+				}
+				factor = 2.0
+			}
+		}
+		GER = { country_event = ger_armor.224 }
+	}
+	option = { # Refuse anyway
+		name = ger_armor.220.b
+		ai_chance = {
+			factor = 10
+			modifier = {
+				factor = 0.5
+				strength_ratio = {
+					tag = GER
+					ratio < 0.5
+				}
+			}
+			modifier = {
+				factor = 0.1
+				strength_ratio = {
+					tag = GER
+					ratio < 0.3
+				}
+			}
+		}
+		GER = {
+			add_opinion_modifier = { target = ROOT modifier = GER_demand_sudetenland_rejected }
+			set_global_flag = POL_refused_sudetenland
+			country_event = ger_armor.223
+			effect_tooltip = {
+				if = {
+					limit = {
+						POL = {
+							is_in_faction_with = GER
+						}
+					}
+					GER = { remove_from_faction = POL }
+				}
+				create_wargoal = {
+					type = take_state_focus
+					target = POL
+					generator = { 85 798 797 86 762 188 }
+				}
+			}
+		}
+	}
+}
+
+# Germany (British and (possibly) French Support for Poland)
+country_event = {
+	id = ger_armor.221
+	title = ger_armor.214.t
+	desc = ger_armor.221.d
+	picture = GFX_report_event_german_inspect_troops
+
+	is_triggered_only = yes
+
+	option = {
+		name = ger_armor.221.a
+		create_wargoal = {
+			type = take_state_focus
+			target = POL
+			generator = { 85 798 797 86 762 188 }
+		}
+		hidden_effect = {
+			news_event = { hours = 6 id = news.57 }
+		}
+		set_country_flag = allies_support_czechs
+	}
+}
+
+# Germany (French Support for Poland)
+country_event = {
+	id = ger_armor.222
+	title = ger_armor.214.t
+	desc = ger_armor.222.d
+	picture = GFX_report_event_chamberlain_announce
+
+	is_triggered_only = yes
+
+	option = {
+		name = ger_armor.222.a
+		create_wargoal = {
+			type = take_state_focus
+			target = POL
+			generator = { 85 798 797 86 762 188 }
+		}
+		hidden_effect = {
+			country_event = { hours = 6 id = news.58 }
+		}
+	}
+}
+
+# Germany (Poland Refuses Demands)
+country_event = {
+	id = ger_armor.223
+	title = ger_armor.214.t
+	desc = ger_armor.223.d
+	picture = GFX_report_event_czech_soldiers_02
+
+	is_triggered_only = yes
+
+	option = {
+		name = ger_armor.223.a
+		create_wargoal = {
+			type = take_state_focus
+			target = POL
+			generator = { 85 798 797 86 762 188 }
+		}
+		if = {
+			limit = {
+				CZE = {
+					is_in_faction_with = GER
+				}
+			}
+			GER = { remove_from_faction = CZE }
+		}
+		hidden_effect = {
+			country_event = { hours = 6 id = news.59 }
+		}
+	}
+}
+
+# Germany (Poland Surrenders Sudetenland)
+country_event = {
+	id = ger_armor.224
+	title = ger_armor.214.t
+	desc = ger_armor.224.d
+	picture = GFX_report_event_german_politician_speech
+
+	is_triggered_only = yes
+
+	option = {
+		name = ger_armor.224.a
+		GER = {
+			transfer_state = 85
+			transfer_state = 798
+			transfer_state = 797
+			transfer_state = 86
+			transfer_state = 762
+		}
+		set_country_flag = GER_sudetenland_acquired_flag
+		add_stability = 0.05
+		play_peace_in_our_time_effect = yes
+		USA = {
+			set_country_flag = { flag = USA_munich_window days = 60 value = 1 }
+		}
+		GER = {
+			add_war_support = 0.1
+		}
+		if = {
+			limit = {
+				88 = { is_owned_by = POL }
+			}
+			POL = {
+				country_event = { hours = 6 id = germany.52 }
+			}
+		}
+		hidden_effect = {
+			#country_event = { hours = 6 id = news.56 }
+		}
+	}
+}
+
 country_event = {
 	id = ger_armor.290
 	hidden = yes
@@ -5231,6 +6287,16 @@ country_event = {
 		}
 		if = {
 			limit = {
+				GER_werner_von_fritsch = {
+					has_trait = trait_GER_fascist
+				}
+			}
+			GER_werner_von_fritsch = {
+				remove_trait = { trait = trait_GER_fascist }
+			}
+		}
+		if = {
+			limit = {
 				NOT = { GER_werner_von_fritsch = { is_hired_as_advisor = yes } }
 			}
 			activate_advisor = GER_werner_von_fritsch
@@ -5255,6 +6321,16 @@ country_event = {
 			}
 			GER_walther_von_brauchitsch = {
 				clr_character_flag = imprisoned_flag
+			}
+		}
+		if = {
+			limit = {
+				GER_walther_von_brauchitsch = {
+					has_trait = trait_GER_fascist
+				}
+			}
+			GER_walther_von_brauchitsch = {
+				remove_trait = { trait = trait_GER_fascist }
 			}
 		}
 		if = {
@@ -5301,6 +6377,16 @@ country_event = {
 		}
 		if = {
 			limit = {
+				GER_albert_kesselring = {
+					has_trait = trait_GER_fascist
+				}
+			}
+			GER_albert_kesselring = {
+				remove_trait = { trait = trait_GER_fascist }
+			}
+		}
+		if = {
+			limit = {
 				NOT = { GER_albert_kesselring = { is_hired_as_advisor = yes } }
 			}
 			activate_advisor = albert_kesselring
@@ -5325,6 +6411,16 @@ country_event = {
 			}
 			GER_ritter_von_greim = {
 				clr_character_flag = imprisoned_flag
+			}
+		}
+		if = {
+			limit = {
+				GER_ritter_von_greim = {
+					has_trait = trait_GER_fascist
+				}
+			}
+			GER_ritter_von_greim = {
+				remove_trait = { trait = trait_GER_fascist }
 			}
 		}
 		if = {
@@ -5365,6 +6461,16 @@ country_event = {
 		}
 		if = {
 			limit = {
+				GER_erich_raeder = {
+					has_trait = trait_GER_fascist
+				}
+			}
+			GER_erich_raeder = {
+				remove_trait = { trait = trait_GER_fascist }
+			}
+		}
+		if = {
+			limit = {
 				NOT = { GER_erich_raeder = { is_hired_as_advisor = yes } }
 			}
 			activate_advisor = erich_raeder
@@ -5389,6 +6495,16 @@ country_event = {
 			}
 			GER_gunther_lutjens = {
 				clr_character_flag = imprisoned_flag
+			}
+		}
+		if = {
+			limit = {
+				GER_gunther_lutjens = {
+					has_trait = trait_GER_fascist
+				}
+			}
+			GER_gunther_lutjens = {
+				remove_trait = { trait = trait_GER_fascist }
 			}
 		}
 		add_advisor_role = {
