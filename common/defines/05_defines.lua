@@ -428,7 +428,10 @@ NDefines.NMilitary.NUM_DAYS_FOR_OPERATION_ENTRY = 30								--Number of days tha
 
 NDefines.NAir.LEND_LEASED_EQUIPMENT_EXPERIENCE_GAIN = 0.0							-- Value used for equipment
 
---NDefines.NAir.AIR_WING_XP_LEVELS = { 36, 72, 108, 144, 180, 216, 252, 288, 324, 360, 396, 432, 468, 504, 540, 576, 612, 648, 684, 720, 756, 792, 828, 864, 900 }		--Experience needed to progress to the next level
+NDefines.NAir.AIR_WING_XP_MAX = 1000.0				 											--Per plane XP.
+NDefines.NAir.AIR_WING_XP_LEVELS = { 100, 300, 700, 900 }							--Experience needed to progress to the next level
+NDefines.NAir.AIR_WING_XP_TRAINING_MAX = 300.0		 									--Max average XP achieved with training.
+NDefines.NAir.AIR_WING_XP_TRAINING_MISSION_GAIN_DAILY = 2.0		 						--Daily gain when running training exercise mission
 
 NDefines.NAir.CAPACITY_PENALTY = 2													-- scales penalty of having overcrowded bases.
 NDefines.NAir.AIR_WING_MAX_SIZE = 200 												-- Max amount of airplanes in wing
