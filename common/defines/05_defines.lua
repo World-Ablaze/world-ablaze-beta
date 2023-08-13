@@ -525,7 +525,7 @@ NDefines.NAir.NAVAL_STRIKE_CARRIER_MULTIPLIER = 10.0							    -- damage bonus w
 NDefines.NAir.NAVAL_STRIKE_DAMAGE_TO_STR = 2.0										-- Balancing value to convert damage ( naval_strike_attack * hits ) to Strength reduction.
 NDefines.NAir.NAVAL_STRIKE_DAMAGE_TO_ORG = 0.5										-- Balancing value to convert damage ( naval_strike_attack * hits ) to Organisation reduction.
 
-NDefines.NAir.INTERCEPTION_DISTANCE_SCALE = 100 									-- At this many pixels of path length, full interception efficiency is applied to air missions. Lerp from 0.
+NDefines.NAir.INTERCEPTION_DISTANCE_SCALE = 10 									-- At this many pixels of path length, full interception efficiency is applied to air missions. Lerp from 0.
 NDefines.NAir.INTERCEPTION_DAMAGE_SCALE = 1											-- Multiply the interception damage with this value. Works as a cap when interception distance is at maximum.
 
 NDefines.NAir.NAVAL_COMBAT_EXTERNAL_PLANES_JOIN_RATIO = 0.1							-- Max planes that can join a combat comparing to the total strength of the ships
