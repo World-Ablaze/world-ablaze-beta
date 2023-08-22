@@ -11,7 +11,7 @@ country_event = {
 	title = DOD_yugoslavia.1.t
 	desc = DOD_yugoslavia.1.desc
 	picture = GFX_report_event_yugoslavian_king_peter
-
+	
 	fire_only_once = yes
 
 	trigger = {
@@ -26,13 +26,13 @@ country_event = {
 	}
 
 	mean_time_to_happen = { days = 2 }
-
+	
 	immediate = {
 		hidden_effect = {
 			set_country_flag = has_already_decided_yugo_coup_flag
 		}
 	}
-
+	
 	option = { #welp
 		name = DOD_yugoslavia.1.a
 		ai_chance = {
@@ -42,54 +42,89 @@ country_event = {
 				factor = 0
 			}
 		}
-		retire_country_leader = yes
+		IF = {
+			limit = { 
+				NOT = {
+					has_country_leader = {
+						ruling_only = yes
+						character = YUG_peter_ii
+					}
+				}
+			}
+			retire_country_leader = yes
+		}
 		if = {
 			limit = {
 				date < 1941.09.06
 			}
-			create_country_leader = {
-				name = "Peter II"
-				desc = "POLITICS_PETER_II_DESC"
-				picture = "portrait_YUG_peter_II_young.dds"
-				expire = "1965.1.1"
-				ideology = despotism
-				traits = {
-					underage_monarch
+			custom_effect_tooltip = DOD_yugoslavia.1.a.tt
+			
+			hidden_effect = {
+				YUG_peter_ii = {
+					promote_character = { ideology = despotism }
+					promote_character = { ideology = conservatism }
 				}
-			}
-			create_country_leader = {
-				name = "Peter II"
-				desc = "POLITICS_PETER_II_DESC"
-				picture = "portrait_YUG_peter_II_young.dds"
-				expire = "1965.1.1"
-				ideology = conservatism
-				traits = {
-					underage_monarch
-				}
+				retire_character = YUG_prince_paul
+				retire_character = YUG_milan_grol
 			}
 		}
 		else = {
-			create_country_leader = {
-				name = "Peter II"
-				desc = "POLITICS_PETER_II_DESC"
-				picture = "Portrait_Yugoslavia_Peter_II.dds"
-				expire = "1965.1.1"
-				ideology = despotism
-				traits = {
-					legitimate_heir
+			custom_effect_tooltip = DOD_yugoslavia.1.a.tt
+			swap_ruler_traits = { remove = underage_monarch add = legitimate_heir }
+			
+			hidden_effect = {
+				YUG_peter_ii = {
+					promote_character = { ideology = despotism }
+					promote_character = { ideology = conservatism }
 				}
+				retire_character = YUG_prince_paul
+				retire_character = YUG_milan_grol
 			}
-			create_country_leader = {
-				name = "Peter II"
-				desc = "POLITICS_PETER_II_DESC"
-				picture = "Portrait_Yugoslavia_Peter_II.dds"
-				expire = "1965.1.1"
-				ideology = conservatism
-				traits = {
-					legitimate_heir
+			set_party_name = { 
+				ideology = neutrality 
+				long_name = YUG_royal_party
+				name = YUG_royal_party
+			}
+			hidden_effect = {
+				YUG_peter_ii = {
+					set_portraits = {
+						civilian = {
+					    	large="GFX_portrait_yugoslavia_peter_ii_old"
+						}
+					}
 				}
+				if = {
+					limit = {
+						has_government = neutrality
+					}
+					remove_trait = {
+						character = YUG_peter_ii
+						ideology = conservatism
+						trait = underage_monarch
+					}
+					add_trait = {
+						character = YUG_peter_ii
+						ideology = conservatism
+						trait = legitimate_heir
+					}
+				}
+				if = {
+					limit = {
+						has_government = democratic
+					}
+					remove_trait = {
+						character = YUG_peter_ii
+						ideology = despotism
+						trait = underage_monarch
+					}
+					add_trait = {
+						character = YUG_peter_ii
+						ideology = despotism
+						trait = legitimate_heir
+					}
+				}
+				set_country_flag = peter_is_of_age
 			}
-			hidden_effect = { set_country_flag = peter_is_of_age }
 		}
 		GER = { country_event = DOD_yugoslavia.2 }
 		if = {
@@ -102,9 +137,11 @@ country_event = {
 			limit = {
 				is_puppet_of = GER
 			}
-			set_autonomy = {
-				target = YUG
-				autonomy_state = autonomy_free
+			GER = {
+				set_autonomy = {
+					target = YUG
+					autonomy_state = autonomy_free
+				}
 			}
 		}
 		if = {
@@ -115,13 +152,12 @@ country_event = {
 			add_popularity = { ideology = neutrality popularity = 0.5 }
 			set_party_name = { ideology = neutrality long_name = YUG_royal_party name = YUG_royal_party }
 		}
-		hidden_effect = { set_country_flag = german_friendship_destroyed }
 	}
 	option = { #resistance to the coup, call on Germans for support
 		name = DOD_yugoslavia.1.b
 		ai_chance = {
 			factor = 30
-		}
+		}	
 		GER = { country_event = DOD_yugoslavia.3 }
 		YUG_start_peters_coup = yes
 	}
@@ -2709,33 +2745,44 @@ country_event = {
 			swap_ruler_traits = { remove = underage_monarch add = legitimate_heir }
 		}
 		hidden_effect = {
-			retire_country_leader = yes
-			set_party_name = {
-				ideology = neutrality
-				long_name = YUG_royal_party
-				name = YUG_royal_party
-			}
-			create_country_leader = {
-				name = "Peter II"
-				desc = "POLITICS_PETER_II_DESC"
-				picture = "Portrait_Yugoslavia_Peter_II.dds"
-				expire = "1965.1.1"
-				ideology = despotism
-				traits = {
-					legitimate_heir
+			YUG_peter_ii = {
+				set_portraits = {
+					civilian = {
+				    	large="GFX_portrait_yugoslavia_peter_ii_old"
+					}
 				}
 			}
-			create_country_leader = {
-				name = "Peter II"
-				desc = "POLITICS_PETER_II_DESC"
-				picture = "Portrait_Yugoslavia_Peter_II.dds"
-				expire = "1965.1.1"
-				ideology = conservatism
-				traits = {
-					legitimate_heir
+			if = {
+				limit = {
+					has_government = neutrality
+				}
+				remove_trait = {
+					character = YUG_peter_ii
+					ideology = conservatism
+					trait = underage_monarch
+				}
+				add_trait = {
+					character = YUG_peter_ii
+					ideology = conservatism
+					trait = legitimate_heir
 				}
 			}
-			hidden_effect = { set_country_flag = peter_is_of_age }
+			if = {
+				limit = {
+					has_government = democratic
+				}
+				remove_trait = {
+					character = YUG_peter_ii
+					ideology = despotism
+					trait = underage_monarch
+				}
+				add_trait = {
+					character = YUG_peter_ii
+					ideology = despotism
+					trait = legitimate_heir
+				}
+			}
+			set_country_flag = peter_is_of_age
 		}
 	}
 }
@@ -3024,18 +3071,20 @@ country_event = {
 		if = {
 			limit = {
 				has_country_leader = {
-					name = "Prince Paul"
+					character = YUG_prince_paul
 					ruling_only = yes
 				}
 			}
-			create_country_leader = {
-				name = "Paul I"
-				desc = "POLITICS_PRINCE_PAUL_DESC"
-				picture = "Portrait_Yugoslavia_Prince_Paul.dds"
-				expire = "1965.1.1"
-				ideology = fascism_ideology
-				traits = {
-					collaborator_king
+			YUG_prince_paul = {
+				add_country_leader_role = {
+					country_leader = {
+						expire = "1965.1.1"
+						ideology = fascism_ideology
+						traits = {
+							collaborator_king
+						}
+					}
+				promote_leader = yes
 				}
 			}
 			set_party_name = {
@@ -3075,31 +3124,21 @@ country_event = {
 			hidden_effect = {
 				if = {
 					limit = {
-						date < 1941.09.06
+						date > 1941.09.06
 					}
-					create_country_leader = {
-						name = "Peter II"
-						desc = "POLITICS_PETER_II_DESC"
-						picture = "portrait_YUG_peter_II_young.dds"
-						expire = "1965.1.1"
-						ideology = despotism
-						traits = {
-							underage_monarch
+					YUG_peter_ii = {
+						swap_country_leader_traits = { remove = underage_monarch add = legitimate_heir }
+					}
+					hidden_effect = { 
+						YUG_peter_ii = {
+							set_portraits = {
+								civilian = {
+							    	large="GFX_portrait_yugoslavia_peter_ii_old"
+								}
+							}					
 						}
+						set_country_flag = peter_is_of_age 
 					}
-				}
-				else = {
-					create_country_leader = {
-						name = "Peter II"
-						desc = "POLITICS_PETER_II_DESC"
-						picture = "Portrait_Yugoslavia_Peter_II.dds"
-						expire = "1965.1.1"
-						ideology = despotism
-						traits = {
-							legitimate_heir
-						}
-					}
-					hidden_effect = { set_country_flag = peter_is_of_age }
 				}
 			}
 			if = {
