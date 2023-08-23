@@ -813,6 +813,7 @@ NDefines.NAI.AREA_DEFENSE_SETTING_RAILWAYS = false
 ----------- SUPPLY
 
 --NDefines.NAI.SUPPLY_CRISIS_LIMIT = 1.0											-- If a unit is standing in an area with
+NDefines.NAI.MIN_INVASION_AREA_SIZE_FOR_FLOATING_HARBORS = 5  				    	-- AI will consider using floating harbors for naval invasion if invasion area is larger than this many provinces
 
 ----------- LEND LEASE
 
