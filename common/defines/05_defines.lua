@@ -431,7 +431,7 @@ NDefines.NAir.LEND_LEASED_EQUIPMENT_EXPERIENCE_GAIN = 0.0							-- Value used fo
 NDefines.NAir.AIR_WING_XP_MAX = 1000.0				 								-- Per plane XP.
 NDefines.NAir.AIR_WING_XP_LEVELS = { 100, 300, 700, 900 }							-- Experience needed to progress to the next level
 NDefines.NAir.AIR_WING_XP_TRAINING_MAX = 300.0		 								-- Max average XP achieved with training.
-NDefines.NAir.AIR_WING_XP_TRAINING_MISSION_GAIN_DAILY = 2.0		 					-- Daily gain when running training exercise mission
+NDefines.NAir.AIR_WING_XP_TRAINING_MISSION_GAIN_DAILY = 3.0		 					-- Daily gain when running training exercise mission
 NDefines.NAir.AIR_WING_XP_TRAINING_MISSION_ACCIDENT_FACTOR = 0.75	 				-- Training exercises cause more accidents
 
 NDefines.NAir.CAPACITY_PENALTY = 2													-- scales penalty of having overcrowded bases.
@@ -478,7 +478,7 @@ NDefines.NAir.CAS_NIGHT_ATTACK_FACTOR = 0.1						                    -- CAS dama
 NDefines.NAir.ANTI_AIR_MAXIMUM_DAMAGE_REDUCTION_FACTOR = 0.50 						-- Maximum damage reduction factor applied to incoming air attacks against units with AA.
 NDefines.NAir.AA_INDUSTRY_AIR_DAMAGE_FACTOR = -0.036									-- 5x levels = 60% defense from bombing
 
-NDefines.NAir.BOMBING_TARGETING_RANDOM_FACTOR = 0.01								-- % of picking the wrong target
+NDefines.NAir.BOMBING_TARGETING_RANDOM_FACTOR = 0.8									-- % of picking the wrong target
 NDefines.NAir.AIR_WING_BOMB_DAMAGE_FACTOR = 3										-- Used to balance the damage done while bombing.
 NDefines.NAir.BOMBING_PROV_BUILD_PRIO_SCALE = 2										-- Scale of the selected priority for provincial buildings
 NDefines.NAir.BOMBING_STATE_BUILD_PRIO_SCALE = 2									-- Scale of the selected priority for state buildings
