@@ -430,7 +430,7 @@ NDefines.NAir.LEND_LEASED_EQUIPMENT_EXPERIENCE_GAIN = 0.0							-- Value used fo
 NDefines.NAir.AIR_WING_XP_MAX = 1000.0				 								-- Per plane XP.
 NDefines.NAir.AIR_WING_XP_LEVELS = { 100, 300, 700, 900 }							-- Experience needed to progress to the next level
 NDefines.NAir.AIR_WING_XP_TRAINING_MAX = 300.0		 								-- Max average XP achieved with training.
-NDefines.NAir.AIR_WING_XP_TRAINING_MISSION_GAIN_DAILY = 2.0		 					-- Daily gain when running training exercise mission
+NDefines.NAir.AIR_WING_XP_TRAINING_MISSION_GAIN_DAILY = 3.0		 					-- Daily gain when running training exercise mission
 NDefines.NAir.AIR_WING_XP_TRAINING_MISSION_ACCIDENT_FACTOR = 0.75	 				-- Training exercises cause more accidents
 
 NDefines.NAir.CAPACITY_PENALTY = 2													-- scales penalty of having overcrowded bases.
