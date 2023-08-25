@@ -480,7 +480,7 @@ NDefines.NAir.AA_INDUSTRY_AIR_DAMAGE_FACTOR = -0.036									-- 5x levels = 60% 
 
 NDefines.NAir.BOMBING_TARGETING_RANDOM_FACTOR = 0.8									-- % of picking the wrong target
 NDefines.NAir.AIR_WING_BOMB_DAMAGE_FACTOR = 3										-- Used to balance the damage done while bombing.
-NDefines.NAir.BOMBING_PROV_BUILD_PRIO_SCALE = 1.5									-- Scale of the selected priority for provincial buildings
+NDefines.NAir.BOMBING_PROV_BUILD_PRIO_SCALE = 0.7									-- Scale of the selected priority for provincial buildings
 NDefines.NAir.BOMBING_STATE_BUILD_PRIO_SCALE = 1.5									-- Scale of the selected priority for state buildings
 NDefines.NAir.ANTI_AIR_PLANE_DAMAGE_FACTOR = 0.3									-- Anti Air Gun Damage factor
 NDefines.NAir.BOMBING_INFRA_PRIO_SCALE = 0.7										-- Scale of the selected priority for infastryctyre
@@ -916,11 +916,13 @@ NDefines.NAI.LAND_DEFENSE_INFRA_IMPORTANCE_FACTOR = 70								-- Factor of infra
 
 NDefines.NAI.LAND_COMBAT_AIR_SUPERIORITY_IMPORTANCE = 2.0 							-- Strategic importance of air superiority ( amount of enemy planes in area )
 NDefines.NAI.LAND_COMBAT_OUR_ARMIES_AIR_IMPORTANCE = 12 							-- Strategic importance of our armies
-NDefines.NAI.LAND_COMBAT_OUR_COMBATS_AIR_IMPORTANCE = 55							-- Strategic importance of our armies in the combats
+NDefines.NAI.LAND_COMBAT_OUR_COMBATS_AIR_IMPORTANCE = 100							-- Strategic importance of our armies in the combats
 NDefines.NAI.LAND_COMBAT_IMPORTANCE_SCALE = 5 										-- Lend combat total importance scale (every land combat score get's multiplied by it)
 NDefines.NAI.LAND_COMBAT_FIGHTERS_PER_PLANE = 1.1									-- Amount of air superiority planes requested per enemy plane
-NDefines.NAI.LAND_COMBAT_CAS_PER_ENEMY_ARMY = 10									-- Amount of CAS planes requested per enemy army
-NDefines.NAI.LAND_COMBAT_ANTI_LOGISTICS_PER_ENEMY_ARMY = 3     						-- Amount of CAS planes requested per enemy army for anti-logistics
+NDefines.NAI.LAND_COMBAT_CAS_PER_ENEMY_ARMY = 50									-- Amount of CAS planes requested per enemy army
+NDefines.NAI.AIR_SUPERIORITY_FOR_FRIENDLY_CAS_RATIO = 0.5							-- Demand at least this proportion of our cas planes as air superiority regardless of other needs
+NDefines.NAI.LAND_COMBAT_CAS_PLANES_PER_ENEMY_ARMY_LIMIT = 1500						-- Limit of CAS planes requested by enemy armies
+NDefines.NAI.LAND_COMBAT_ANTI_LOGISTICS_PER_ENEMY_ARMY = 0     						-- Amount of CAS planes requested per enemy army for anti-logistics
 NDefines.NAI.LAND_COMBAT_CAS_PER_COMBAT = 150										-- Amount of CAS requested per combat
 NDefines.NAI.LAND_COMBAT_BOMBERS_PER_LAND_FORT_LEVEL = 30							-- Amount of bomber planes requested per enemy land fort level
 NDefines.NAI.LAND_COMBAT_MIN_EXCORT_WINGS = 3										-- Min amount of airwings requested to excort operations
@@ -932,7 +934,7 @@ NDefines.NAI.STR_BOMB_AIR_SUPERIORITY_IMPORTANCE = 0.0								-- Strategic impor
 	
 NDefines.NAI.STR_BOMB_MIN_ENEMY_FIGHTERS_IN_AREA = 2800								-- If amount of enemy fighters is higher than this mission won't perform
 NDefines.NAI.STR_BOMB_FIGHTERS_PER_PLANE = 50.0										-- Amount of air superiority planes requested per enemy plane
-NDefines.NAI.STR_BOMB_MIN_EXCORT_PLANES = 1500										-- Min amount of planes requested to excort operations
+NDefines.NAI.STR_BOMB_MIN_EXCORT_PLANES = 1000										-- Min amount of planes requested to excort operations
 
 NDefines.NAI.AI_FRACTION_OF_FIGHTERS_RESERVED_FOR_INTERCEPTION = 0.0				-- Percentage of fighters we reserve for interception vs AS
 
