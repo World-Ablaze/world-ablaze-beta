@@ -535,6 +535,8 @@ NDefines.NAir.DAY_NIGHT_COVERAGE_FACTOR = 0.02 										-- The max night covera
 NDefines.NNavy.NAVAL_COMBAT_AIR_SUB_DETECTION_MAX = 2
 NDefines.NNavy.NAVAL_COMBAT_AIR_PLANE_COUNT_TO_SUB_DETECTION = 0.2					-- Factor applied to the number of active plane in a naval combat to deduce their contribution to sub detection
 
+NDefines.NNavy.EXPERIENCE_LOSS_FACTOR = 0.5                 						-- percentage of experienced solders who die when manpower is removed
+
 NDefines.NNavy.SUB_DETECTION_CHANCE_BASE = 1										-- to start spotting a submarine, a dice is rolled and checked if it succeeds this percentage. if not, that enemy sub force won't be spotted on this tick
 NDefines.NNavy.SUB_DETECTION_CHANCE_BASE_SPOTTING_EFFECT = 0.5						-- effect of base spotting for initial spotting of pure submarine forces. this along with next value is added together and rolled against a random to start spotting
 NDefines.NNavy.SUB_DETECTION_CHANCE_SPOTTING_SPEED_EFFECT = 1.0						-- effect of spotting speed for initial spotting of pure submarine forces. this along with prev value is added together and rolled against a random to start spotting
