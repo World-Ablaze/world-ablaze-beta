@@ -912,49 +912,6 @@ JAP_chinese_war_2 = {
 	}
 }
 
-JAP_stop_abandoning_the_front = {
-	allowed = {
-		tag = JAP
-	}
-	enable = {
-		has_war_with = CHI
-		date > 1940.1.1
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = front_unit_request
-
-		area = east_china
-		value = 10
-	}
-
-	ai_strategy = {
-		type = front_unit_request
-
-		area = shanghai_china
-		value = 10
-	}
-}
-
-JAP_stop_abandoning_the_front_2 = {
-	allowed = {
-		tag = JAP
-	}
-	enable = {
-		has_war_with = USA
-		has_war_with = CHI
-		date > 1940.1.1
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = front_unit_request
-		tag = CHI
-		value = 50
-	}
-}
-
 JAP_chinese_war_4 = {
 	allowed = {
 		tag = JAP
@@ -1287,23 +1244,34 @@ JAP_first_southern_expansion = {
 	}
 	enable = {
 		has_completed_focus = JAP_strike_south_doctrine
-		NOT = { is_in_faction_with = PHI }
-		PHI = { has_capitulated = no }
+		NOT = {
+			AND = {
+				country_exists = IPI
+				country_exists = IPM
+				country_exists = IPP
+			}
+		}
 	}
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = invade
 		id = "CHI"
+		value = -4000
+	}
+	
+	ai_strategy = {
+		type = invade
+		id = "ENG"
 		value = -1000
 	}
 
-	ai_strategy = {
-		type = front_unit_request
-
-		area = philippines
-		value = 150
-	}
+	#ai_strategy = {
+	#	type = front_unit_request
+	#
+	#	area = philippines
+	#	value = 150
+	#}
 
 	ai_strategy = {
 		type = conquer
@@ -1447,8 +1415,19 @@ Japan_phillipines_fire = {
 				NOT = {
 					is_in_faction_with = JAP
 				}
+				has_war_with = JAP
 			}
-			controls_state = 327
+			has_full_control_of_state = 623
+		}
+		any_country = {
+			OR = {
+				tag = PHI
+				NOT = {
+					is_in_faction_with = JAP
+				}
+				has_war_with = JAP
+			}
+			has_full_control_of_state = 327
 		}
 	}
 	abort_when_not_enabled = yes
@@ -1505,55 +1484,13 @@ Japan_phillipines_fire = {
 	}
 }
 
-Japan_phillipines_push = {
-	allowed = {
-		tag = JAP
-	}
-	enable = {
-		has_war_with = PHI
-		PHI = {
-			has_capitulated = no
-		}
-	}
-	abort_when_not_enabled = yes
-	
-	ai_strategy = {
-		type = front_control
-		priority = 50
-		tag = PHI
-		ordertype = front
-		execution_type = rush
-		execute_order = yes
-		manual_attack = yes
-	}
-}
-
-Japan_phillipines_done = {
-	allowed = {
-		tag = JAP
-	}
-	enable = {
-		PHI = {
-			has_capitulated = yes
-		}
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = invade
-		id = "PHI"
-		value = -1000
-	}
-}
-
-############################################################
-
-Japan_malaya_prep = {
+Japan_indonesia_prep = {
 	allowed = {
 		tag = JAP
 	}
 	enable = {
 		has_war_with = MAL
+		has_war_with = INS
 		NOT = {
 			surrender_progress > 0
 		}
@@ -1583,20 +1520,29 @@ Japan_malaya_prep = {
 				}
 				controls_state = 862
 			}
+			any_country = {
+				OR = {
+					tag = INS
+					NOT = {
+						is_in_faction_with = JAP
+					}
+				}
+				controls_state = 672
+			}
 		}
 	}
 	abort_when_not_enabled = yes
 
-	ai_strategy = {
-		type = invade
-		id = "MAL"
-		value = -2000
-	}
+	#ai_strategy = {
+	#	type = invade
+	#	id = "MAL"
+	#	value = 4000
+	#}
 	
 	ai_strategy = {
 		type = invade
 		id = "INS"
-		value = 2000
+		value = 4000
 	}
 	
 	ai_strategy = {
@@ -1631,38 +1577,37 @@ Japan_malaya_prep = {
 	
 	ai_strategy = {
 		type = front_control
-		priority = 100
-		state = 334
+		tag = INS
 		ordertype = invasion
 		execution_type = careful
 	}
 	
-	#ai_strategy = {
-	#	type = invasion_unit_request
-	#	state = 334
-	#	value = 200
-	#}
-	
 	ai_strategy = {
-		type = front_control
-		state = 623
-		ratio = 0.0
-		ordertype = invasion
-		execute_order = yes
+		type = invasion_unit_request
+		tag = INS
+		value = 5000
 	}
 }
 
-Japan_indonesia_fire = {
+Japan_indonesia_malaya_fire = {
 	allowed = {
 		tag = JAP
 	}
 	enable = {
 		has_war_with = INS
+		has_war_with = MAL
 		NOT = {
 			surrender_progress > 0
 		}
 		date > 1942.2.15
-		date < 1942.3.1
+		OR = {
+			INS = {
+				has_capitulated = no
+			}
+			MAL = {
+				has_capitulated = no
+			}
+		}
 		NOT = {
 			has_completed_focus = JAP_consolidate_around_yonai
 		}
@@ -1685,91 +1630,24 @@ Japan_indonesia_fire = {
 				}
 				controls_state = 862
 			}
+			any_country = {
+				OR = {
+					tag = INS
+					NOT = {
+						is_in_faction_with = JAP
+					}
+				}
+				controls_state = 672
+			}
 		}
 	}
 	abort_when_not_enabled = yes
 
-	ai_strategy = {
-		type = invade
-		id = "MAL"
-		value = -2000
-	}
-	
-	ai_strategy = {
-		type = invade
-		id = "INS"
-		value = 2000
-	}
-	
-	ai_strategy = {
-		type = invade
-		id = "PHI"
-		value = -1000
-	}
-	
-	ai_strategy = {
-		type = invade
-		id = "AST"
-		value = -2000
-	}
-	
-	ai_strategy = {
-		type = invade
-		id = "USA"
-		value = -2000
-	}
-	
-	ai_strategy = {
-		type = invade
-		id = "NZL"
-		value = -2000
-	}
-	
-	ai_strategy = {
-		type = invade
-		id = "RAJ"
-		value = -2000
-	}
-	
-	ai_strategy = {
-		type = front_control
-		priority = 100
-		state = 334
-		ordertype = invasion
-		execution_type = careful
-		execute_order = yes
-	}
-	
 	#ai_strategy = {
-	#	type = invasion_unit_request
-	#	state = 334
-	#	value = 200
+	#	type = invade
+	#	id = "MAL"
+	#	value = -2000
 	#}
-}
-
-Japan_indonesia_fire_2 = {
-	allowed = {
-		tag = JAP
-	}
-	enable = {
-		INS = {	has_capitulated = no }
-		has_war_with = INS
-		NOT = {
-			surrender_progress > 0
-		}
-		date > 1942.3.1
-		date < 1942.4.1
-		NOT = {
-			has_completed_focus = JAP_consolidate_around_yonai
-		}
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = invade
-		id = "MAL"
-		value = -2000
-	}
 	
 	ai_strategy = {
 		type = invade
@@ -1809,81 +1687,45 @@ Japan_indonesia_fire_2 = {
 	
 	ai_strategy = {
 		type = front_control
-		priority = 100
-		state = 672
+		tag = INS
 		ordertype = invasion
 		execution_type = careful
 		execute_order = yes
-	}
-}
-
-Japan_indonesia_fire_3 = {
-	allowed = {
-		tag = JAP
-	}
-	enable = {
-		INS = {	has_capitulated = no }
-		has_war_with = INS
-		NOT = {
-			surrender_progress > 0
-		}
-		date > 1942.4.1
-		date < 1942.5.1
-		NOT = {
-			has_completed_focus = JAP_consolidate_around_yonai
-		}
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = invade
-		id = "MAL"
-		value = -2000
-	}
-	
-	ai_strategy = {
-		type = invade
-		id = "INS"
-		value = 4000
-	}
-	
-	ai_strategy = {
-		type = invade
-		id = "PHI"
-		value = -1000
-	}
-	
-	ai_strategy = {
-		type = invade
-		id = "AST"
-		value = -2000
-	}
-	
-	ai_strategy = {
-		type = invade
-		id = "USA"
-		value = -2000
-	}
-	
-	ai_strategy = {
-		type = invade
-		id = "NZL"
-		value = -2000
-	}
-	
-	ai_strategy = {
-		type = invade
-		id = "RAJ"
-		value = -2000
 	}
 	
 	ai_strategy = {
 		type = front_control
-		priority = 100
-		state = 1002
+		tag = MAL
 		ordertype = invasion
-		execution_type = careful
 		execute_order = yes
+	}
+	
+	ai_strategy = {
+		type = invasion_unit_request
+		tag = INS
+		value = 5000
+	}
+}
+
+Japan_phillipines_push = {
+	allowed = {
+		tag = JAP
+	}
+	enable = {
+		has_war_with = PHI
+		PHI = {
+			has_capitulated = no
+		}
+	}
+	abort_when_not_enabled = yes
+	
+	ai_strategy = {
+		type = front_control
+		tag = PHI
+		ordertype = front
+		execution_type = rush
+		execute_order = yes
+		manual_attack = yes
 	}
 }
 
@@ -1941,15 +1783,26 @@ Japan_malaya_done = {
 		tag = JAP
 	}
 	enable = {
-		MAL = {
-			has_capitulated = yes
-		}
+		country_exists = IPI
+		country_exists = IPM
 	}
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = invade
 		id = "MAL"
+		value = -1000
+	}
+	
+	ai_strategy = {
+		type = invasion_unit_request
+		tag = MAL
+		value = -1000
+	}
+	
+	ai_strategy = {
+		type = invasion_unit_request
+		tag = IPM
 		value = -1000
 	}
 }
@@ -1959,24 +1812,42 @@ Japan_indonesia_done = {
 		tag = JAP
 	}
 	enable = {
-		INS = {
-			has_capitulated = yes
-		}
 		country_exists = IPI
-		1002 = {
-			CONTROLLER = {
-				OR = {
-					tag = JAP
-					is_subject_of = JAP
-				}
-			}
-		}
+		country_exists = IPM
 	}
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = invade
 		id = "INS"
+		value = -1000
+	}
+	
+	ai_strategy = {
+		type = invasion_unit_request
+		tag = INS
+		value = -1000
+	}
+	
+	ai_strategy = {
+		type = invasion_unit_request
+		tag = IPI
+		value = -1000
+	}
+}
+
+Japan_phillipines_done = {
+	allowed = {
+		tag = JAP
+	}
+	enable = {
+		country_exists = IPP
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = invade
+		id = "PHI"
 		value = -1000
 	}
 }
@@ -3047,17 +2918,17 @@ JAP_push_burma_and_malaya = {
 		target = east_asia
 	}
 
-	ai_strategy = {
-		type = front_unit_request
-		area = east_asia
-		value = 150
-	}
+	#ai_strategy = {
+	#	type = front_unit_request
+	#	area = east_asia
+	#	value = 150
+	##}
 	
-	ai_strategy = {
-		type = front_unit_request
-		area = thailand
-		value = 100
-	}
+	#ai_strategy = {
+	#	type = front_unit_request
+	#	area = thailand
+	#	value = 100
+	#}
 
 	ai_strategy = {
 		type = area_priority
@@ -3123,13 +2994,13 @@ JAP_push_burma_and_malaya_2 = {
 	ai_strategy = {
 		type = front_unit_request
 		tag = BRM
-		value = 1000
+		value = 700
 	}
 	
 	ai_strategy = {
 		type = front_unit_request
 		strategic_region = 188
-		value = 2000
+		value = 5000
 	}
 }
 
