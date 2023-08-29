@@ -424,6 +424,7 @@ NDefines.NMilitary.NUM_DAYS_FOR_OPERATION_ENTRY = 30								--Number of days tha
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Air
 
+NDefines.NAir.AI_ALLOWED_PLANES_KEPT_IN_RESERVE = 0.1								--AI allowed planes is reduced by this percentage. Overflow will be distributed to the next valid order. Worst case, this will result in this % of planes no being assigned any order.
 
 NDefines.NAir.LEND_LEASED_EQUIPMENT_EXPERIENCE_GAIN = 0.0							-- Value used for equipment
 
@@ -479,10 +480,10 @@ NDefines.NAir.AA_INDUSTRY_AIR_DAMAGE_FACTOR = -0.036									-- 5x levels = 60% 
 
 NDefines.NAir.BOMBING_TARGETING_RANDOM_FACTOR = 0.8									-- % of picking the wrong target
 NDefines.NAir.AIR_WING_BOMB_DAMAGE_FACTOR = 3										-- Used to balance the damage done while bombing.
-NDefines.NAir.BOMBING_PROV_BUILD_PRIO_SCALE = 2										-- Scale of the selected priority for provincial buildings
-NDefines.NAir.BOMBING_STATE_BUILD_PRIO_SCALE = 2									-- Scale of the selected priority for state buildings
+NDefines.NAir.BOMBING_PROV_BUILD_PRIO_SCALE = 0.7									-- Scale of the selected priority for provincial buildings
+NDefines.NAir.BOMBING_STATE_BUILD_PRIO_SCALE = 1.5									-- Scale of the selected priority for state buildings
 NDefines.NAir.ANTI_AIR_PLANE_DAMAGE_FACTOR = 0.3									-- Anti Air Gun Damage factor
-NDefines.NAir.BOMBING_INFRA_PRIO_SCALE = 1.0										-- Scale of the selected priority for infastryctyre
+NDefines.NAir.BOMBING_INFRA_PRIO_SCALE = 0.7										-- Scale of the selected priority for infastryctyre
 
 NDefines.NAir.MISSION_COMMAND_POWER_COSTS = {  										-- command power cost per plane to create a mission
 	0.0, -- AIR_SUPERIORITY
@@ -814,6 +815,7 @@ NDefines.NAI.AREA_DEFENSE_SETTING_RAILWAYS = false
 ----------- SUPPLY
 
 --NDefines.NAI.SUPPLY_CRISIS_LIMIT = 1.0											-- If a unit is standing in an area with
+NDefines.NAI.MIN_INVASION_AREA_SIZE_FOR_FLOATING_HARBORS = 5  				    	-- AI will consider using floating harbors for naval invasion if invasion area is larger than this many provinces
 
 ----------- LEND LEASE
 
@@ -852,7 +854,7 @@ NDefines.NAI.REGION_CONVOY_DANGER_DAILY_DECAY = 5									-- When convoys are su
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_MINE_LAYING = 0.15							-- maximum ratio of screens forces to be used in mine laying
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_MINE_SWEEPING = 0.05 						-- maximum ratio of screens forces to be used in mine sweeping
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MIN = 0.1						-- minimum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
-NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX = 0.5 					-- maximum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
+NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX = 0.75 					-- maximum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX_CONVOY_THREAT = 500 		-- AI will increase screen assignment for escort missions as threat increases
 
 NDefines.NAI.CARRIER_TASKFORCE_MAX_CARRIER_COUNT = 4 								-- optimum carrier count for carrier taskforces
@@ -867,22 +869,22 @@ NDefines.NAI.CAPITALS_TO_CARRIER_RATIO = 3.0										-- capital to carrier coun
 NDefines.NAI.MAX_PATROL_TO_STRIKE_FORCE_RATIO = 5.0									-- maximum patrol/strike force ratio
 
 --NDefines.NAI.NAVAL_MISSION_AGGRESSIVE_PATROL_DIVISOR = 3							-- Divides patrol score when not defending
-NDefines.NAI.NAVAL_MISSION_PATROL_NEAR_OWNED = 1000									-- Extra patrol mission score near owned provinces
+NDefines.NAI.NAVAL_MISSION_PATROL_NEAR_OWNED = 0									-- Extra patrol mission score near owned provinces
 
 NDefines.NAI.NAVAL_DOCKYARDS_SHIP_FACTOR = 2										-- The extent to which number of dockyards play into amount of sips a nation wants
 NDefines.NAI.NAVY_PREFERED_MAX_SIZE = 75											-- AI will generally attempt to merge fleets into this size, but as a soft limit.
 NDefines.NAI.SUB_TASKFORCE_MAX_SHIP_COUNT = 5 										-- optimum sub count for sub taskforces
-NDefines.NAI.PRODUCTION_MAX_PROGRESS_TO_SWITCH_NAVAL = 0							-- AI will not replace ships being built by newer types if progress is above this
+NDefines.NAI.PRODUCTION_MAX_PROGRESS_TO_SWITCH_NAVAL = 0.0							-- AI will not replace ships being built by newer types if progress is above this
 
 NDefines.NAI.REGION_THREAT_LEVEL_TO_BLOCK_REGION = 25 * 1000						-- How much threat must be generated in region ( by REGION_THREAT_PER_SUNK_CONVOY ) so the AI will decide to mark the region as avoid
 
 
-NDefines.NAI.NAVAL_MISSION_MINES_PLANTING_NEAR_OWNED = 80000
+NDefines.NAI.NAVAL_MISSION_MINES_PLANTING_NEAR_OWNED = 100000
 NDefines.NAI.NAVAL_MISSION_MINES_SWEEPING_NEAR_OWNED = 100000	 					-- How likely the AI will do the sweeping missions. The value is scaled by the amount of mines to sweep.
 
 ------------------------------------------------- AIR
 
-NDefines.NAI.AIR_WING_REINFORCEMENT_LIMIT = 100
+--NDefines.NAI.AIR_WING_REINFORCEMENT_LIMIT = 100									-- Doesnt exist anymore
 
 NDefines.NAI.MINES_SWEEPING_PLANES_PER_MAX_MINES = 1 								-- Amount of air wings request for mines sweeping when there is max amount of mines planted by enemy in certain region
 NDefines.NAI.MINES_PLANTING_PLANES_PER_MAX_DESIRE = 1								-- Amount of air wings request for mines planting when there is max desire for it.
@@ -916,12 +918,14 @@ NDefines.NAI.LAND_DEFENSE_AA_IMPORTANCE_FACTOR = 1.0								-- Factor of AA infl
 NDefines.NAI.LAND_DEFENSE_INFRA_IMPORTANCE_FACTOR = 70								-- Factor of infrastructure influence on strategic importance ( 0.0 - 1.0 )
 
 NDefines.NAI.LAND_COMBAT_AIR_SUPERIORITY_IMPORTANCE = 2.0 							-- Strategic importance of air superiority ( amount of enemy planes in area )
-NDefines.NAI.LAND_COMBAT_OUR_ARMIES_AIR_IMPORTANCE = 12 							-- Strategic importance of our armies
-NDefines.NAI.LAND_COMBAT_OUR_COMBATS_AIR_IMPORTANCE = 55							-- Strategic importance of our armies in the combats
+NDefines.NAI.LAND_COMBAT_OUR_ARMIES_AIR_IMPORTANCE = 25 							-- Strategic importance of our armies
+NDefines.NAI.LAND_COMBAT_OUR_COMBATS_AIR_IMPORTANCE = 100							-- Strategic importance of our armies in the combats
 NDefines.NAI.LAND_COMBAT_IMPORTANCE_SCALE = 5 										-- Lend combat total importance scale (every land combat score get's multiplied by it)
-NDefines.NAI.LAND_COMBAT_FIGHTERS_PER_PLANE = 1.1										-- Amount of air superiority planes requested per enemy plane
-NDefines.NAI.LAND_COMBAT_CAS_PER_ENEMY_ARMY = 10									-- Amount of CAS planes requested per enemy army
-NDefines.NAI.LAND_COMBAT_ANTI_LOGISTICS_PER_ENEMY_ARMY = 0     						-- Amount of CAS planes requested per enemy army for anti-logistics
+NDefines.NAI.LAND_COMBAT_FIGHTERS_PER_PLANE = 1.1									-- Amount of air superiority planes requested per enemy plane
+NDefines.NAI.LAND_COMBAT_CAS_PER_ENEMY_ARMY = 50									-- Amount of CAS planes requested per enemy army
+NDefines.NAI.AIR_SUPERIORITY_FOR_FRIENDLY_CAS_RATIO = 0.0							-- Demand at least this proportion of our cas planes as air superiority regardless of other needs
+NDefines.NAI.LAND_COMBAT_CAS_PLANES_PER_ENEMY_ARMY_LIMIT = 1500						-- Limit of CAS planes requested by enemy armies
+NDefines.NAI.LAND_COMBAT_ANTI_LOGISTICS_PER_ENEMY_ARMY = 1    						-- Amount of CAS planes requested per enemy army for anti-logistics
 NDefines.NAI.LAND_COMBAT_CAS_PER_COMBAT = 150										-- Amount of CAS requested per combat
 NDefines.NAI.LAND_COMBAT_BOMBERS_PER_LAND_FORT_LEVEL = 30							-- Amount of bomber planes requested per enemy land fort level
 NDefines.NAI.LAND_COMBAT_MIN_EXCORT_WINGS = 3										-- Min amount of airwings requested to excort operations
@@ -929,11 +933,15 @@ NDefines.NAI.LAND_COMBAT_INTERCEPT_PER_PLANE = 0									-- Amount of intercepti
 
 NDefines.NAI.NAVAL_COMBAT_TRANSFER_AIR_IMPORTANCE = 500.0							-- Naval combat involving enemy land units
 
-NDefines.NAI.STR_BOMB_AIR_SUPERIORITY_IMPORTANCE = 2.0								-- Strategic importance of air superiority ( amount of enemy planes in area )
-
+NDefines.NAI.STR_BOMB_AIR_SUPERIORITY_IMPORTANCE = 0.0								-- Strategic importance of air superiority ( amount of enemy planes in area )
+	
 NDefines.NAI.STR_BOMB_MIN_ENEMY_FIGHTERS_IN_AREA = 2800								-- If amount of enemy fighters is higher than this mission won't perform
-NDefines.NAI.STR_BOMB_FIGHTERS_PER_PLANE = 1.5										-- Amount of air superiority planes requested per enemy plane
-NDefines.NAI.STR_BOMB_MIN_EXCORT_PLANES = 1200										-- Min amount of planes requested to excort operations
+NDefines.NAI.STR_BOMB_FIGHTERS_PER_PLANE = 1.1										-- Amount of air superiority planes requested per enemy plane
+NDefines.NAI.STR_BOMB_MIN_EXCORT_PLANES = 100										-- Min amount of planes requested to excort operations
+
+NDefines.NAI.AI_FRACTION_OF_FIGHTERS_RESERVED_FOR_INTERCEPTION = 0.0				-- Percentage of fighters we reserve for interception vs AS
+
+NDefines.NAI.DAYS_BETWEEN_AIR_PRIORITIES_UPDATE = 2									-- Amount of days between air ai updates priorities for air wings ( from 1 to N )
 
 ------------------------------------------------- END
 
