@@ -54,7 +54,7 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			#idea
+			add_ideas = SIA_media_centres
 		}
 	}
 
@@ -94,18 +94,33 @@ focus_tree = {
 		}
 
 		available = {
-            #current party is fascist
+            fascism > 0.5
 		}
 
 		completion_reward = {
+			set_politics = {
+				ruling_party = fascism
+			}
+			add_country_leader_role = {
+				character = SIA_plaek_phibunsongkhram
+				country_leader = {
+					expire = "1957.9.16"
+					ideology = fascism_ideology
+					traits = {
+						dictator
+					}
+				}
+				promote_leader = yes
+			}
+			add_stability = 0.05
 		}
 	}
 
 	focus = {
 		id = SIA_glory_of_thailand
-		icon = GFX_goal_generic_cooperate_with_the_fascists
+		icon = GFX_focus_generic_fascist_propaganda
 		prerequisite = { focus = SIA_power_to_phibunsongkhram }
-		x = -1
+		x = -2
 		y = 1
 		relative_position_id = SIA_power_to_phibunsongkhram
 		cost = 6
@@ -118,8 +133,36 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			add_political_power = 100;
-			#rename
+			set_cosmetic_tag = SIA_proclaimed
+            add_political_power = 50
+			swap_ideas = {
+				remove_idea = SIA_cultural_divide
+				add_idea = SIA_cultural_divide_2
+			}
+		}
+	}
+
+	focus = {
+		id = SIA_cult_of_personality
+		icon = GFX_goal_generic_cooperate_with_the_fascists
+		prerequisite = { focus = SIA_power_to_phibunsongkhram }
+		x = 0
+		y = 1
+		relative_position_id = SIA_power_to_phibunsongkhram
+		cost = 6
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			has_country_leader = {
+				character = SIA_plaek_phibunsongkhram
+				ruling_only = yes
+			}
+		}
+
+		completion_reward = {
+			add_country_leader_trait = personality_cult
 		}
 	}
 
@@ -127,7 +170,7 @@ focus_tree = {
 		id = SIA_thai_militarism
 		icon = GFX_focus_generic_fascist_troops
 		prerequisite = { focus = SIA_power_to_phibunsongkhram }
-		x = 1
+		x = 2
 		y = 1
 		relative_position_id = SIA_power_to_phibunsongkhram
 		cost = 6
@@ -140,8 +183,16 @@ focus_tree = {
 		}
 
 		completion_reward = {
-		   add_war_support = 0.10
-		   #mils
+			add_war_support = 0.1
+			random_owned_controlled_state = {
+				prioritize = { 289 }
+				add_extra_state_shared_building_slots = 3
+				add_building_construction = {
+					type = arms_factory
+					level = 3
+					instant_build = yes
+				}
+			}
 		}
 	}
 
@@ -149,11 +200,11 @@ focus_tree = {
 		id = SIA_towards_a_greater_thailand
 		icon = GFX_goal_SIA_towards_a_greater_thailand
 		prerequisite = { focus = SIA_glory_of_thailand }
+		prerequisite = { focus = SIA_cult_of_personality }
 		prerequisite = { focus = SIA_thai_militarism }
-
-		x = -1
+		x = 0
 		y = 1
-		relative_position_id = SIA_thai_militarism
+		relative_position_id = SIA_cult_of_personality
 		cost = 6
 		ai_will_do = {
 			factor = 1
@@ -162,7 +213,17 @@ focus_tree = {
 		available = {
 		}
 
-
+		completion_reward = {
+			add_tech_bonus = {
+				name = SIA_towards_a_greater_thailand
+				bonus = 0.5
+				uses = 2
+				category = industry
+			}
+			add_dynamic_modifier = { modifier = SIA_cultural_mandate_dynamic_modifier }
+			custom_effect_tooltip = available_economic_minister
+			show_ideas_tooltip = SIA_sindhu_kamalanavin
+		}
 	}
 
 	focus = {
@@ -175,6 +236,9 @@ focus_tree = {
 		cost = 4
 		ai_will_do = {
 			factor = 1
+		}
+
+		completion_reward = {
 		}
 	}
 
@@ -195,8 +259,9 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			add_stability = -0.2
-			#remove idea
+			custom_effect_tooltip = SIA_mandate_of_country_tt
+			add_to_variable = { SIA_cultural_mandate_party_popularity_stability_factor = 0.15 }
+			remove_ideas = SIA_cultural_divide_2
 		}
 	}
 
@@ -538,7 +603,23 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			
+			random_owned_controlled_state = {
+				prioritize = { 973 }
+				add_extra_state_shared_building_slots = 3
+			}
+			random_owned_controlled_state = {
+				prioritize = { 974 }
+				add_extra_state_shared_building_slots = 3
+			}
+			random_owned_controlled_state = {
+				prioritize = { 289 }
+				add_extra_state_shared_building_slots = 3
+			}
+			random_owned_controlled_state = {
+				prioritize = { 724 }
+				add_extra_state_shared_building_slots = 3
+			}
+			add_political_power = 50
 		}
 	}
 
@@ -572,7 +653,7 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			#Add idea
+			add_timed_idea = { idea = SIA_commercial_loans days = 730 }
 		}
 	}
 
@@ -609,8 +690,11 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			#bunch of effects
-			
+			custom_effect_tooltip = available_industrial_concern
+			show_ideas_tooltip = SIA_songkla_engineering
+			custom_effect_tooltip = available_industrial_concern
+			show_ideas_tooltip = SIA_rajamangala_technology
+			remove_ideas = SIA_disorganized_industry
 		}
 	}
 
@@ -626,7 +710,19 @@ focus_tree = {
 			factor = 1
 		}
 
+		available = {
+			controls_state = 289
+		}
+
 		completion_reward = {
+			289 = {
+				add_extra_state_shared_building_slots = 3
+				add_building_construction = {
+					type = infrastructure
+					level = 2
+					instant_build = yes
+				}
+			}
 		}
 	}
 
@@ -644,8 +740,25 @@ focus_tree = {
 			factor = 1
 		}
 
-		completion_reward = {
+		available = {
+			controls_state = 289
+		}
 
+		completion_reward = {
+			289 = {
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = industrial_complex
+					level = 2
+					instant_build = yes
+				}
+				add_building_construction = {
+					type = naval_base
+					province = 7408
+					level = 4
+					instant_build = yes
+				}
+			}
 		}
 	}
 
@@ -664,6 +777,36 @@ focus_tree = {
 		}
 
 		completion_reward = {
+			economy_fatigue_level_up_2 = yes
+			custom_effect_tooltip = available_designer
+			show_ideas_tooltip = SIA_chaiseri
+			random_owned_controlled_state = {
+				prioritize = { 973 }
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = arms_factory
+					level = 2
+					instant_build = yes
+				}
+			}
+			random_owned_controlled_state = {
+				prioritize = { 974 }
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = arms_factory
+					level = 2
+					instant_build = yes
+				}
+			}
+			random_owned_controlled_state = {
+				prioritize = { 289 }
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = arms_factory
+					level = 2
+					instant_build = yes
+				}
+			}
 		}
 	}
 
@@ -684,6 +827,43 @@ focus_tree = {
 
 
 		completion_reward = {
+			economy_fatigue_level_down_2 = yes
+			random_owned_controlled_state = {
+				prioritize = { 973 }
+				free_building_slots = {
+					building = infrastructure
+					size > 0
+				}
+				add_building_construction = {
+					type = infrastructure
+					level = 1
+					instant_build = yes
+				}
+			}
+			random_owned_controlled_state = {
+				prioritize = { 974 }
+				free_building_slots = {
+					building = infrastructure
+					size > 0
+				}
+				add_building_construction = {
+					type = infrastructure
+					level = 1
+					instant_build = yes
+				}
+			}
+			random_owned_controlled_state = {
+				prioritize = { 724 }
+				free_building_slots = {
+					building = infrastructure
+					size > 0
+				}
+				add_building_construction = {
+					type = infrastructure
+					level = 1
+					instant_build = yes
+				}
+			}
 		}
 	}
 
@@ -704,6 +884,12 @@ focus_tree = {
 
 
 		completion_reward = {
+			add_tech_bonus = {
+				name = SIA_synthetic_endeavours
+				bonus = 1.0
+				uses = 2
+				category = synth_resources
+			}
 		}
     }
 	
@@ -724,6 +910,29 @@ focus_tree = {
 		}
 
 		completion_reward = {
+			build_railway = {
+				path = {
+					7408
+					10250
+					10221
+					12173
+					10411
+					10398
+					12345
+					7531
+					7492
+					1488
+				}
+			}
+			build_railway = {
+				path = {
+					10250
+					12195
+					10438
+					12431
+					12417
+				}
+			}
 		}
 	}
 
@@ -760,7 +969,17 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			
+			economy_fatigue_level_up_1 = yes
+			974 = {
+				add_resource = {
+					type = tungsten
+					amount = 15
+				}
+				add_resource = {
+					type = rubber
+					amount = 50
+				}
+			}
 		}
 	}
 
@@ -783,13 +1002,26 @@ focus_tree = {
 		}
 
 		completion_reward = {
-
+			economy_fatigue_level_up_1 = yes
+			random_owned_controlled_state = {
+				prioritize = { 289 }
+				limit = {
+					is_core_of = ROOT
+				}
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = steel_refinery
+					level = 2
+					instant_build = yes
+				}
+			}
 		}
 	}
 
 	focus = {
 		id = SIA_urbanize_town_centers
 		icon = GFX_goal_generic_urbanization
+		prerequisite = { focus = SIA_the_ubon_line }
 		prerequisite = { focus = SIA_establish_kasetsart_university }
 		prerequisite = { focus = SIA_expand_the_mines }
 		x = 0
@@ -814,6 +1046,33 @@ focus_tree = {
 		}
 
 		completion_reward = {
+			random_owned_controlled_state = {
+				prioritize = { 973 }
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = industrial_complex
+					level = 2
+					instant_build = yes
+				}
+			}
+			random_owned_controlled_state = {
+				prioritize = { 974 }
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = industrial_complex
+					level = 2
+					instant_build = yes
+				}
+			}
+			random_owned_controlled_state = {
+				prioritize = { 724 }
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = industrial_complex
+					level = 2
+					instant_build = yes
+				}
+			}
 			agrarian_society_removal = yes
 		}
 	}
@@ -835,7 +1094,20 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			
+			random_owned_controlled_state = {
+				prioritize = { 289 }
+				add_extra_state_shared_building_slots = 5
+				add_building_construction = {
+					type = arms_factory
+					level = 5
+					instant_build = yes
+				}
+				add_building_construction = {
+					type = dockyard
+					level = 2
+					instant_build = yes
+				}
+			}
 		}
 	}
 
@@ -860,6 +1132,15 @@ focus_tree = {
 
 		}
 		completion_reward = {
+			random_owned_controlled_state = {
+				prioritize = { 289 }
+				add_extra_state_shared_building_slots = 6
+				add_building_construction = {
+					type = industrial_complex
+					level = 6
+					instant_build = yes
+				}
+			}
 		}
 	}
 
@@ -1470,7 +1751,7 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			#idea
+			add_ideas = SIA_supreme_armed_forces_command
 		}
 	}
 
