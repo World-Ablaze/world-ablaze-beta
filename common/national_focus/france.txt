@@ -3602,6 +3602,109 @@
 		}
 	}
 
+	focus = {
+		id = FRA_triumph_over_old_enemies
+		icon = GFX_goal_generic_cooperate_with_the_democrats
+		prerequisite = { focus = FRA_egalite_liberte_solidarite }
+		x = 0
+		y = 1
+		relative_position_id = FRA_egalite_liberte_solidarite
+
+		cost = 10
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			GER = { 
+				OR = {
+					is_subject_of = ROOT
+					is_in_faction_with = ROOT
+					exists = no
+				}
+			}
+			controls_state = 28
+			if = {
+				limit = {
+					FRA = { has_completed_focus = FRA_extend_the_maginot_line }
+				}
+				controls_state = 18
+				controls_state = 29
+			}
+		}
+
+		bypass = {
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		completion_reward = {
+			if = {
+				limit = { has_idea = FRA_protected_by_the_maginot_line_1 }
+				remove_ideas = FRA_protected_by_the_maginot_line_1
+			}
+			else = {
+				remove_ideas = FRA_protected_by_the_maginot_line
+			}
+			add_ideas = FRA_triumph_over_old_enemies
+			if = {
+				limit = {
+					FRA = {
+						has_completed_focus = FRA_extend_the_maginot_line
+					}
+				}
+				add_timed_idea = {
+					idea = dismantled_fort_line
+					days = 270
+				}
+			}
+			else = {
+				add_timed_idea = {
+					idea = dismantled_fort_line
+					days = 180
+				}
+			}
+        	economy_fatigue_level_down_2 = yes
+			28 = {
+				set_building_level = {
+					type = bunker
+					level = 2
+					province = {
+						all_provinces = yes
+						level > 2
+					}
+				}
+			}
+			if = {
+				limit = {
+					FRA = { has_completed_focus = FRA_extend_the_maginot_line }
+				}
+				18 = {
+					set_building_level = {
+						type = bunker
+						level = 2
+						province = {
+							all_provinces = yes
+							level > 2
+						}
+					}
+				}
+				29 = {
+					set_building_level = {
+						type = bunker
+						level = 2
+						province = {
+							all_provinces = yes
+							level > 2
+						}
+					}
+				}
+			}
+		}
+	}
+
 	############################
 	######### POLITICS #########
 	############################
@@ -4941,6 +5044,21 @@
 					instant_build = yes
 				}
 			}
+			random_owned_state = {
+				limit = {
+					is_core_of = root
+					free_building_slots = {
+						building = arms_factory
+						size > 3
+					}
+				}
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = arms_factory
+					level = 4
+					instant_build = yes
+				}
+			}
 			add_days_mission_timeout = {
 				mission = FRA_brewing_troubles_timer
 				days = -50
@@ -4990,13 +5108,13 @@
 					is_core_of = root
 					free_building_slots = {
 						building = arms_factory
-						size > 1
+						size > 3
 					}
 				}
 				add_extra_state_shared_building_slots = 2
 				add_building_construction = {
 					type = arms_factory
-					level = 2
+					level = 4
 					instant_build = yes
 				}
 			}
@@ -5005,13 +5123,13 @@
 					is_core_of = root
 					free_building_slots = {
 						building = arms_factory
-						size > 1
+						size > 3
 					}
 				}
 				add_extra_state_shared_building_slots = 2
 				add_building_construction = {
 					type = arms_factory
-					level = 2
+					level = 4
 					instant_build = yes
 				}
 			}
@@ -5020,13 +5138,13 @@
 					is_core_of = root
 					free_building_slots = {
 						building = arms_factory
-						size > 1
+						size > 3
 					}
 				}
 				add_extra_state_shared_building_slots = 2
 				add_building_construction = {
 					type = arms_factory
-					level = 2
+					level = 4
 					instant_build = yes
 				}
 			}
@@ -5035,13 +5153,13 @@
 					is_core_of = root
 					free_building_slots = {
 						building = arms_factory
-						size > 1
+						size > 3
 					}
 				}
 				add_extra_state_shared_building_slots = 2
 				add_building_construction = {
 					type = arms_factory
-					level = 2
+					level = 4
 					instant_build = yes
 				}
 			}
@@ -6327,11 +6445,6 @@
 
 		completion_reward = {
 			activate_advisor = francois_darlan_2
-			custom_effect_tooltip = FRA_appoint_darlan_tt
-			hidden_effect = {
-				add_to_variable = { var = FRA_Airforce_national_unity value = 1 }
-				add_to_variable = { var = FRA_Navy_national_unity value = 1 }
-			}
 		}
 	}
 
@@ -6561,10 +6674,6 @@
 			activate_advisor = charles_de_gaulle_theory
 		    FRA_charles_de_gaulle = {
 				promote_leader = yes
-			}
-			custom_effect_tooltip = FRA_promote_de_gaulle_tt
-			hidden_effect = {
-				add_to_variable = { var = FRA_Army_national_unity value = 1 }
 			}
 		}
 	}
@@ -7177,22 +7286,26 @@
 		}
 
 		available = {
-			custom_trigger_tooltip = {
-				tooltip = less_than_10_economy_fatigue
-				OR = {
-					has_idea = economy_fatigue_0
-					has_idea = economy_fatigue_1
-					has_idea = economy_fatigue_2
-					has_idea = economy_fatigue_3
-					has_idea = economy_fatigue_4
-					has_idea = economy_fatigue_5
-					has_idea = economy_fatigue_6
-					has_idea = economy_fatigue_7
-					has_idea = economy_fatigue_8
-					has_idea = economy_fatigue_9
-					has_idea = economy_fatigue_10
+			OR = {
+				custom_trigger_tooltip = {
+					tooltip = less_than_10_economy_fatigue
+					OR = {
+						has_idea = economy_fatigue_0
+						has_idea = economy_fatigue_1
+						has_idea = economy_fatigue_2
+						has_idea = economy_fatigue_3
+						has_idea = economy_fatigue_4
+						has_idea = economy_fatigue_5
+						has_idea = economy_fatigue_6
+						has_idea = economy_fatigue_7
+						has_idea = economy_fatigue_8
+						has_idea = economy_fatigue_9
+						has_idea = economy_fatigue_10
+					}
 				}
+				has_completed_focus = FRA_nationalize_the_arms_industries
 			}
+			
 		}
 
 		bypass = {
@@ -7220,6 +7333,36 @@
 			
 			economy_fatigue_level_up_3 = yes
 
+			random_owned_controlled_state = {
+				limit = {
+					is_core_of = root
+					free_building_slots = {
+						building = arms_factory
+						size > 1
+						include_locked = yes
+					}
+				}
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = arms_factory
+					level = 2
+				}
+			}
+			random_owned_controlled_state = {
+				limit = {
+					is_core_of = root
+					free_building_slots = {
+						building = arms_factory
+						size > 1
+						include_locked = yes
+					}
+				}
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = arms_factory
+					level = 2
+				}
+			}
 		}
 	}
 
@@ -8355,14 +8498,14 @@
 					is_core_of = root
 					free_building_slots = {
 						building = arms_factory
-						size > 2
+						size > 3
 						include_locked = yes
 					}
 				}
-				add_extra_state_shared_building_slots = 3
+				add_extra_state_shared_building_slots = 4
 				add_building_construction = {
 					type = arms_factory
-					level = 3
+					level = 4
 				}
 			}
 			random_owned_controlled_state = {
@@ -8370,14 +8513,14 @@
 					is_core_of = root
 					free_building_slots = {
 						building = arms_factory
-						size > 2
+						size > 3
 						include_locked = yes
 					}
 				}
-				add_extra_state_shared_building_slots = 3
+				add_extra_state_shared_building_slots = 4
 				add_building_construction = {
 					type = arms_factory
-					level = 3
+					level = 4
 				}
 			}
 			random_owned_controlled_state = {
@@ -8385,14 +8528,14 @@
 					is_core_of = root
 					free_building_slots = {
 						building = arms_factory
-						size > 2
+						size > 3
 						include_locked = yes
 					}
 				}
-				add_extra_state_shared_building_slots = 3
+				add_extra_state_shared_building_slots = 4
 				add_building_construction = {
 					type = arms_factory
-					level = 3
+					level = 4
 				}
 			}
 			random_owned_controlled_state = {
@@ -8400,14 +8543,14 @@
 					is_core_of = root
 					free_building_slots = {
 						building = arms_factory
-						size > 2
+						size > 3
 						include_locked = yes
 					}
 				}
-				add_extra_state_shared_building_slots = 3
+				add_extra_state_shared_building_slots = 4
 				add_building_construction = {
 					type = arms_factory
-					level = 3
+					level = 4
 				}
 			}
 			random_owned_controlled_state = {
@@ -8415,16 +8558,17 @@
 					is_core_of = root
 					free_building_slots = {
 						building = arms_factory
-						size > 2
+						size > 3
 						include_locked = yes
 					}
 				}
-				add_extra_state_shared_building_slots = 3
+				add_extra_state_shared_building_slots = 4
 				add_building_construction = {
 					type = arms_factory
-					level = 3
+					level = 4
 				}
 			}
+			custom_effect_tooltip = FRA_lower_requirement_war_eco_tt
 		}
 	}
 
@@ -10052,7 +10196,15 @@
 		}
 
 		available = {
-			num_of_military_factories > 199
+			if = {
+				limit = {
+					has_completed_focus = FRA_nationalize_the_arms_industries
+				}
+				num_of_military_factories > 179
+			}
+			else = {
+				num_of_military_factories > 199
+			}
 			doesnt_have_disjointed_government = yes
 		}
 

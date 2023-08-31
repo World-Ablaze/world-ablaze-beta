@@ -908,12 +908,8 @@ economy_decisions = {
 						state = 16
 					}
 					is_fully_controlled_by = ROOT
-					free_building_slots = {
-						building = arms_factory
-						size > 1
-						include_locked = yes
-					}
 				}
+				add_extra_state_shared_building_slots = 2
 				add_building_construction = {
 					type = arms_factory
 					level = 2
@@ -954,12 +950,8 @@ economy_decisions = {
 						state = 23
 					}
 					is_fully_controlled_by = ROOT
-					free_building_slots = {
-						building = arms_factory
-						size > 1
-						include_locked = yes
-					}
 				}
+				add_extra_state_shared_building_slots = 2
 				add_building_construction = {
 					type = arms_factory
 					level = 2
@@ -1000,12 +992,8 @@ economy_decisions = {
 						state = 25
 					}
 					is_fully_controlled_by = ROOT
-					free_building_slots = {
-						building = arms_factory
-						size > 1
-						include_locked = yes
-					}
 				}
+				add_extra_state_shared_building_slots = 2
 				add_building_construction = {
 					type = arms_factory
 					level = 2
@@ -1045,12 +1033,8 @@ economy_decisions = {
 						state = 21
 					}
 					is_fully_controlled_by = ROOT
-					free_building_slots = {
-						building = arms_factory
-						size > 1
-						include_locked = yes
-					}
 				}
+				add_extra_state_shared_building_slots = 2
 				add_building_construction = {
 					type = arms_factory
 					level = 2
@@ -1090,12 +1074,8 @@ economy_decisions = {
 						state = 25
 					}
 					is_fully_controlled_by = ROOT
-					free_building_slots = {
-						building = arms_factory
-						size > 1
-						include_locked = yes
-					}
 				}
+				add_extra_state_shared_building_slots = 2
 				add_building_construction = {
 					type = arms_factory
 					level = 2
@@ -1118,7 +1098,50 @@ economy_decisions = {
 	}
 }
 political_actions = {
+	FRA_unify_the_war_spirit = {
+		icon = generic_nationalism
 
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = FRA_war_since_start_tt
+				has_country_flag = {
+					flag = FRA_war_since_start
+					days > 359
+				}
+			}
+			has_war_support > 0.8
+			NOT = { has_global_flag = fall_of_france }
+		}
+
+		visible = {
+			has_country_flag = FRA_war_since_start
+			NOT = { has_global_flag = fall_of_france }
+		}
+
+		ai_will_do = {
+			factor = 100
+		}
+
+		cost = 0
+		fire_only_once = yes
+
+		complete_effect = {
+			custom_effect_tooltip = FRA_unify_the_war_spirit_tt
+			hidden_effect = {
+				add_to_variable = { var = FRA_Army_national_unity value = 1 }
+				add_to_variable = { var = FRA_Airforce_national_unity value = 1 }
+				add_to_variable = { var = FRA_Navy_national_unity value = 1 }
+				set_country_flag = FRA_unify_the_war_spirit_flag
+			}
+			if = {
+				limit = {
+					has_country_flag = FRA_invasion_flag
+				}
+				add_war_support = 0.1
+				add_stability = 0.3
+			}
+		}
+	}
 	FRA_professional_army_decision = {
 
 		allowed = {
@@ -3656,18 +3679,21 @@ colonial_managment = {
 	FRA_attack_madagascar = {
 
 		allowed = {
-			tag = FRA
+			OR = {
+				tag = FRA
+				tag = SAF
+			}
 		}
 		
 		available = {
 			any_state = {
-				or = {
+				OR = {
 					is_controlled_by = ROOT
 					controller = {
 						is_in_faction_with = root
 					}
 				}		
-				or = {
+				OR = {
 					state = 681
 					state = 1010
 					state = 719
@@ -3675,6 +3701,9 @@ colonial_managment = {
 					state = 546
 				}
 			}
+			country_exists = FRJ
+			NOT = { is_in_faction_with = FRJ }
+			NOT = { has_war_with = FRJ }
 		}
 		visible = {
 			OR = {
@@ -6670,7 +6699,7 @@ FRA_communist_support_dec_cat = {
 					level = -10
 				}
 			}
-			add_equipment_to_stockpile = { type = support_equipment_1 amount = 100 producer = SOV }
+			add_equipment_to_stockpile = { type = support_equipment_1 amount = 1000 producer = SOV }
 		}
 	}
 	FRA_soviet_support_artilery = {
@@ -6797,13 +6826,13 @@ FRA_communist_support_dec_cat = {
 			}
 		}
 		modifier = {
-			civilian_factory_use = 15
+			civilian_factory_use = 10
 		}
 		complete_effect = {
 			SOV = {
 				add_offsite_building = {
 					type = industrial_complex
-					level = 15
+					level = 10
 				}
 			}
 		}
@@ -6811,7 +6840,7 @@ FRA_communist_support_dec_cat = {
 			SOV = {
 				add_offsite_building = {
 					type = industrial_complex
-					level = -15
+					level = -10
 				}
 			}
 			add_equipment_to_stockpile = { type = sov_motorized_equipment_1 amount = 400 producer = SOV }
@@ -6854,13 +6883,13 @@ FRA_communist_support_dec_cat = {
 			}
 		}
 		modifier = {
-			civilian_factory_use = 15
+			civilian_factory_use = 10
 		}
 		complete_effect = {
 			SOV = {
 				add_offsite_building = {
 					type = industrial_complex
-					level = 15
+					level = 10
 				}
 			}
 		}
@@ -6868,7 +6897,7 @@ FRA_communist_support_dec_cat = {
 			SOV = {
 				add_offsite_building = {
 					type = industrial_complex
-					level = -15
+					level = -10
 				}
 			}
 			if = {
@@ -6901,10 +6930,7 @@ FRA_communist_support_dec_cat = {
 				}
 				add_equipment_to_stockpile = { type = sov_light_equipment_2 amount = 250 producer = SOV }
 			}
-			if = {
-				limit = {
-					SOV = { has_tech = sov_light_2 }
-				}
+			else = {
 				add_equipment_to_stockpile = { type = sov_light_equipment_1 amount = 250 producer = SOV }
 			}
 		}
@@ -6947,13 +6973,13 @@ FRA_communist_support_dec_cat = {
 			}
 		}
 		modifier = {
-			civilian_factory_use = 15
+			civilian_factory_use = 10
 		}
 		complete_effect = {
 			SOV = {
 				add_offsite_building = {
 					type = industrial_complex
-					level = 15
+					level = 10
 				}
 			}
 		}
@@ -6961,7 +6987,7 @@ FRA_communist_support_dec_cat = {
 			SOV = {
 				add_offsite_building = {
 					type = industrial_complex
-					level = -15
+					level = -10
 				}
 			}
 			if = {
@@ -7000,10 +7026,7 @@ FRA_communist_support_dec_cat = {
 				}
 				add_equipment_to_stockpile = { type = tank_sov_light_chassis_1_2 amount = 250 producer = SOV }
 			}
-			else_if = {
-				limit = {
-					SOV = { has_tech = sov_light_tank_chassis_1_2 }
-				}
+			else = {
 				add_equipment_to_stockpile = { type = tank_sov_light_chassis_1 amount = 250 producer = SOV }
 			}
 		}
