@@ -813,7 +813,7 @@ NDefines.NAI.AREA_DEFENSE_SETTING_RAILWAYS = false
 --NDefines.NAI.MIN_FRONT_SIZE_TO_CONSIDER_STANDARD_COHESION = 1000					-- How long should fronts be before we consider switching to standard cohesion (under this, standard cohesion fronts will switch back to relaxed)
 
 NDefines.NAI.ARMY_LEADER_ASSIGN_FIELD_MARSHAL_TO_ARMY = -2000            			-- Score for assigning a field marshal to a normal army (want to use them for army groups)
-NDefines.NAI.ARMY_LEADER_ASSIGN_EMPTYNESS_MALUS = 0.0                  				-- Factor for avoiding assigning leaders that can lead large armies to small armies (a value of 0.2 reduces the score by max 20 %)
+NDefines.NAI.ARMY_LEADER_ASSIGN_EMPTYNESS_MALUS = 0.9                  				-- Factor for avoiding assigning leaders that can lead large armies to small armies (a value of 0.2 reduces the score by max 20 %)
 
 ----------- SUPPLY
 
