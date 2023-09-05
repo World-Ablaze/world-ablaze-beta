@@ -939,8 +939,8 @@ NDefines.NAI.NAVAL_COMBAT_TRANSFER_AIR_IMPORTANCE = 500.0							-- Naval combat 
 NDefines.NAI.STR_BOMB_AIR_SUPERIORITY_IMPORTANCE = 0.0								-- Strategic importance of air superiority ( amount of enemy planes in area )
 	
 NDefines.NAI.STR_BOMB_MIN_ENEMY_FIGHTERS_IN_AREA = 2800								-- If amount of enemy fighters is higher than this mission won't perform
-NDefines.NAI.STR_BOMB_FIGHTERS_PER_PLANE = 20.0										-- Amount of air superiority planes requested per enemy plane
-NDefines.NAI.STR_BOMB_MIN_EXCORT_PLANES = 100										-- Min amount of planes requested to excort operations
+NDefines.NAI.STR_BOMB_FIGHTERS_PER_PLANE = 50.0										-- Amount of air superiority planes requested per enemy plane
+NDefines.NAI.STR_BOMB_MIN_EXCORT_PLANES = 0											-- Min amount of planes requested to excort operations
 
 NDefines.NAI.AI_FRACTION_OF_FIGHTERS_RESERVED_FOR_INTERCEPTION = 0.0				-- Percentage of fighters we reserve for interception vs AS
 
