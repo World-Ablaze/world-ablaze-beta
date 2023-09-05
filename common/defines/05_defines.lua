@@ -424,7 +424,7 @@ NDefines.NMilitary.NUM_DAYS_FOR_OPERATION_ENTRY = 30								--Number of days tha
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Air
 
-NDefines.NAir.AI_ALLOWED_PLANES_KEPT_IN_RESERVE = 0.1								--AI allowed planes is reduced by this percentage. Overflow will be distributed to the next valid order. Worst case, this will result in this % of planes no being assigned any order.
+NDefines.NAir.AI_ALLOWED_PLANES_KEPT_IN_RESERVE = 0.0								--AI allowed planes is reduced by this percentage. Overflow will be distributed to the next valid order. Worst case, this will result in this % of planes no being assigned any order.
 
 NDefines.NAir.LEND_LEASED_EQUIPMENT_EXPERIENCE_GAIN = 0.0							-- Value used for equipment
 
@@ -939,7 +939,7 @@ NDefines.NAI.NAVAL_COMBAT_TRANSFER_AIR_IMPORTANCE = 500.0							-- Naval combat 
 NDefines.NAI.STR_BOMB_AIR_SUPERIORITY_IMPORTANCE = 0.0								-- Strategic importance of air superiority ( amount of enemy planes in area )
 	
 NDefines.NAI.STR_BOMB_MIN_ENEMY_FIGHTERS_IN_AREA = 2800								-- If amount of enemy fighters is higher than this mission won't perform
-NDefines.NAI.STR_BOMB_FIGHTERS_PER_PLANE = 1.1										-- Amount of air superiority planes requested per enemy plane
+NDefines.NAI.STR_BOMB_FIGHTERS_PER_PLANE = 20.0										-- Amount of air superiority planes requested per enemy plane
 NDefines.NAI.STR_BOMB_MIN_EXCORT_PLANES = 100										-- Min amount of planes requested to excort operations
 
 NDefines.NAI.AI_FRACTION_OF_FIGHTERS_RESERVED_FOR_INTERCEPTION = 0.0				-- Percentage of fighters we reserve for interception vs AS
