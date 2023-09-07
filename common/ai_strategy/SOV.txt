@@ -1413,11 +1413,17 @@ SOV_war_with_germany = {
 		id = "RUK"
 		value = 100
 	}
+	#ai_strategy = {
+	#	type = front_unit_request
+	#
+	#	area = karelia
+	#	value = 35
+	#}
+	
 	ai_strategy = {
 		type = front_unit_request
-
-		area = karelia
-		value = 35
+		strategic_region = 13
+		value = -10
 	}
 
 	ai_strategy = {
@@ -1435,32 +1441,6 @@ SOV_war_with_germany = {
 		type = front_unit_request
 		tag = PER
 		value = -50
-	}
-}
-
-SOV_war_with_germany_air = {
-	allowed = {
-		tag = SOV
-	}
-	enable = {
-		has_war_with = GER
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = strategic_air_importance
-		id = 271
-		value = 100000 #value of stocked main front in active combat is usually around 35,000
-	}
-	ai_strategy = {
-		type = strategic_air_importance
-		id = 257
-		value = 100000 #value of stocked main front in active combat is usually around 35,000
-	}
-	ai_strategy = {
-		type = strategic_air_importance
-		id = 132
-		value = 100000 #value of stocked main front in active combat is usually around 35,000
 	}
 }
 
@@ -1563,6 +1543,24 @@ SOV_japan_tehran = {
 		type = front_unit_request
 		tag = MAN
 		value = 500
+	}
+}
+
+SOV_japan_no_threat = {
+	allowed = {
+		tag = SOV
+	}
+	enable = {
+		NOT = { has_war_with = JAP }
+		has_war_with = GER
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		tag = MAN
+		value = -500
 	}
 }
 
@@ -2095,14 +2093,12 @@ SOV_history_dictates_our_low_prepardness = {
 	}
 }
 
-SOV_dont_upgrade_weapons_too_early_3 = { ###mosin and smg
+SOV_dont_upgrade_weapons_too_early_3 = {
 	allowed = {
 		original_tag = SOV
 	}
 	enable = {
-		NOT = {
-			has_tech = sov_infantry_weapons_10
-		}
+		date < 1942.8.1
 	}
 
 	abort_when_not_enabled = yes
@@ -2110,6 +2106,11 @@ SOV_dont_upgrade_weapons_too_early_3 = { ###mosin and smg
 	ai_strategy = {
 		type = production_upgrade_desire_offset
 		id = sov_inf_9
+		value = -100
+	}
+	ai_strategy = {
+		type = production_upgrade_desire_offset
+		id = sov_inf_10
 		value = -100
 	}
 }
@@ -2290,6 +2291,15 @@ SOV_defense_of_leningrad = {
 	}
 	enable = {
 		date < 1944.1.1
+		OR = {
+			AND = {
+				has_war_with = FIN
+				NOT = {
+					has_war_with = GER
+				}
+			}
+			surrender_progress > 0.12
+		}
 	}
 	abort_when_not_enabled = yes
 
