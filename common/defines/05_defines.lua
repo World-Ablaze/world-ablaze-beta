@@ -35,6 +35,7 @@ NDefines.NDiplomacy.LL_TO_OVERLORD_AUTONOMY_DAILY_FACTOR = 0.0						-- If puppet
 NDefines.NDiplomacy.LL_TO_PUPPET_AUTONOMY_DAILY_BASE = 0.0							-- If overlord lend leases equipment to puppet of higher tech level as they have, puppet losses autonomy
 NDefines.NDiplomacy.LL_TO_PUPPET_AUTONOMY_DAILY_FACTOR = 0.0						-- If overlord lend leases equipment to puppet of higher tech level as they have, puppet losses autonomy
 
+NDefines.NDiplomacy.TENSION_JOIN_ATTACKER = 0										-- scale of the amount of tension added when country joins attacker side
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Politics
 
 
