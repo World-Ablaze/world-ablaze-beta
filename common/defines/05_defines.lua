@@ -1034,7 +1034,7 @@ NDefines.NAI.RELUCTANCE_TO_CHANGE_FRONT_FACTOR = 0.9								-- Factor for how re
 NDefines.NAI.REVISITED_PROV_PENALTY_FACTOR = 1.8									-- When the AI picks units for a front, it tries to spread out a bit which units it grabs.
 
 NDefines.NAI.FRONT_EVAL_UNIT_ACCURACY = 0.95										-- scale how stupid ai will act on fronts. 0 is potato
-NDefines.NAI.GARRISON_FRACTION = 0.0												-- How large part of a front should always be holding the line rather than advancing at the enemy
+NDefines.NAI.GARRISON_FRACTION = 0.05												-- How large part of a front should always be holding the line rather than advancing at the enemy
 
 NDefines.NAI.FRONT_TERRAIN_DEFENSE_FACTOR = 1.0										-- Multiplier applied to unit defense modifier for terrain on front province multiplied by terrain importance
 NDefines.NAI.FRONT_TERRAIN_ATTACK_FACTOR = 2.0										-- Multiplier applied to unit attack modifier for terrain on enemy front province multiplied by terrain importance
