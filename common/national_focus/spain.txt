@@ -1598,8 +1598,8 @@ focus_tree = {
 		available_if_capitulated = yes
 		search_filters = {FOCUS_FILTER_STABILITY}
 		completion_reward = {
-			custom_effect_tooltip = SPR_recovering_from_civil_war_focus_tt
 			add_stability = 0.1
+			remove_ideas = SPA_fallen_government
 			every_owned_state = {
 				limit = {
 					OR = {
@@ -2881,6 +2881,7 @@ focus_tree = {
 
 		available = {
 			fascism > 0.5
+			has_global_flag = scw_over
 		}
 		bypass = {
 		}
@@ -2890,6 +2891,10 @@ focus_tree = {
 		available_if_capitulated = yes
 
 		completion_reward = {
+			set_politics = {
+				ruling_party = fascism
+			}
+			add_political_power = 100
 		}
 	}
 
@@ -3071,6 +3076,8 @@ focus_tree = {
 		available_if_capitulated = yes
 
 		completion_reward = {
+			add_ideas = SPA_neutral_policy
+			add_stability = 0.25
 		}
 	}
 
@@ -3162,13 +3169,37 @@ focus_tree = {
 		available_if_capitulated = yes
 
 		completion_reward = {
-			random_other_country = {
+			if = {
 				limit = {
-					original_tag = FRA
-					owns_state = 461
-					owns_state = 462
+					OR = {
+						FRA = { owns_state = 461 }
+						AND = {
+							FRM = { owns_state = 461 }
+							FRM = { is_subject_of = FRA }
+						}
+					}
 				}
-				country_event = { id = lar_spain.39 hours = 6 random_hours = 18 }
+				FRA = { country_event = { id = lar_spain.39 hours = 6 } }
+			}
+			else_if = {
+				limit = {
+					OR = {
+						VIC = { owns_state = 461 }
+						AND = {
+							FRM = { owns_state = 461 }
+							FRM = { is_subject_of = VIC }
+						}
+					}
+				}
+				VIC = { country_event = { id = lar_spain.39 hours = 6 } }
+			}
+			else = {
+				random_neighbor_country = {
+					limit = {
+						owns_state = 461
+					}
+					country_event = { id = lar_spain.39 hours = 6 }
+				}
 			}
 		}
 	}
@@ -3233,6 +3264,19 @@ focus_tree = {
 		available_if_capitulated = yes
 
 		completion_reward = {
+			swap_ideas = {
+				remove_idea = SPA_neutral_policy
+				add_idea = SPA_non_belligerence
+			}
+			if = {
+				limit = {
+					OR = {
+						has_idea = civilian_economy
+						has_idea = low_economic_mobilisation
+					}
+				}
+				add_ideas = partial_economic_mobilisation
+			}
 		}
 	}
 
@@ -3292,6 +3336,8 @@ focus_tree = {
 		available_if_capitulated = yes
 
 		completion_reward = {
+			add_stability = 0.1
+			add_political_power = 100
 		}
 	}
 
@@ -3317,6 +3363,7 @@ focus_tree = {
 		available_if_capitulated = yes
 
 		completion_reward = {
+			add_ideas = SPA_policia_armada
 		}
 	}
 
@@ -3342,6 +3389,8 @@ focus_tree = {
 		available_if_capitulated = yes
 
 		completion_reward = {
+			add_stability = 0.1
+			add_war_support = 0.05
 		}
 	}
 
@@ -3354,6 +3403,52 @@ focus_tree = {
 		relative_position_id = SPA_unitary_national_identity
 
 		available = {
+			if = {
+				limit = {
+					has_country_flag = french_technologies_tree_flag
+				}
+				has_tech = fra_motorised_infantry
+			}
+			else_if = {
+				limit = {
+					has_country_flag = italian_technologies_tree_flag
+				}
+				has_tech = ita_motorised_infantry
+			}
+			else_if = {
+				limit = {
+					has_country_flag = japanese_technologies_tree_flag
+				}
+				has_tech = jap_motorised_infantry
+			}
+			else_if = {
+				limit = {
+					has_country_flag = german_technologies_tree_flag
+				}
+				has_tech = ger_motorised_infantry
+			}
+			else_if = {
+				limit = {
+					has_country_flag = soviet_technologies_tree_flag
+				}
+				has_tech = sov_motorised_infantry
+			}
+			else_if = {
+				limit = {
+					has_country_flag = british_technologies_tree_flag
+				}
+				has_tech = eng_motorised_infantry
+			}
+			else_if = {
+				limit = {
+					has_country_flag = unitedstates_technologies_tree_flag
+				}
+				has_tech = usa_motorised_infantry
+			}
+			else = {
+				has_tech = motorised_infantry
+			}
+			controls_state = 41
 		}
 		bypass = {
 		}
@@ -3367,6 +3462,52 @@ focus_tree = {
 		available_if_capitulated = yes
 
 		completion_reward = {
+			add_war_support = 0.1
+			add_popularity = {
+			    ideology = fascism
+			    popularity = 0.1
+			}
+			custom_effect_tooltip = SPA_the_guardia_mora_tt
+			hidden_effect = {
+				division_template = {
+					name = "Guardia Mora"
+					priority = 2
+					is_locked = no
+					division_names_group = SPR_MOT_01
+
+					regiments = {
+						motorized = { x = 0 y = 0 }
+						motorized = { x = 0 y = 1 }
+						motorized = { x = 0 y = 2 }
+				
+						motorized = { x = 1 y = 0 }
+						motorized = { x = 1 y = 1 }
+						motorized = { x = 1 y = 2 }
+				
+						motorized = { x = 2 y = 0 }
+						motorized = { x = 2 y = 1 }
+						motorized = { x = 2 y = 2 }
+				
+						motorized_artillery_brigade = { x = 3 y = 0 }
+						motorized_artillery_brigade = { x = 3 y = 1 }
+						motorized_artillery_brigade = { x = 3 y = 2 }
+					}
+					support = {
+						engineer = { x = 0 y = 0 }
+						motorized_logistics_company = { x = 0 y = 1 }
+				
+						mot_recon = { x = 1 y = 0 }
+						 field_hospital = { x = 1 y = 1 }
+					}
+				}
+				capital_scope = {
+					create_unit = {
+						division = "name = \"1st Guardia Mora\" division_template = \"Guardia Mora\" start_equipment_factor = 1.0 start_experience_factor = 0.7"
+						owner = ROOT
+						count = 1
+					}
+				}
+			}
 		}
 	}
 
@@ -3394,6 +3535,10 @@ focus_tree = {
 		available_if_capitulated = yes
 
 		completion_reward = {
+			add_country_leader_trait = dictator
+			hidden_effect = {
+				set_country_flag = SPA_national_council_of_the_movement_dd_flag
+			}
 		}
 	}
 
@@ -3406,6 +3551,17 @@ focus_tree = {
 		relative_position_id = SPA_law_of_the_head_of_state
 
 		available = {
+			has_country_flag = {
+				flag = SPA_national_council_of_the_movement_dd_flag
+				days > 365
+			}
+			custom_trigger_tooltip = {
+				tooltip = SPA_national_council_of_the_movement_dd_tt
+				has_country_flag = {
+					flag = SPA_national_council_of_the_movement_dd_flag
+					days > 365
+				}
+			}
 		}
 		bypass = {
 		}
@@ -3419,6 +3575,7 @@ focus_tree = {
 		available_if_capitulated = yes
 
 		completion_reward = {
+			remove_ideas = SPA_fallen_government
 		}
 	}
 
@@ -3444,6 +3601,7 @@ focus_tree = {
 		available_if_capitulated = yes
 
 		completion_reward = {
+			add_political_power = 150
 		}
 	}
 
@@ -3467,30 +3625,18 @@ focus_tree = {
 		available_if_capitulated = yes
 		search_filters = {FOCUS_FILTER_POLITICAL}
 		completion_reward = {
-			add_popularity = {
-			    ideology = fascism
-			    popularity = 0.1
-			}
-			if = {
-				limit = {
-					NOT = {
-						has_idea = war_economy
-						has_idea = tot_economic_mobilisation
-					}
-				}
-				add_ideas = war_economy
-			}
-			if = {
-				limit = {
-					has_idea = limited_conscription
-				}
-				add_ideas = extensive_conscription
-			}
+			add_war_support = 0.1
 			if = {
 				limit = {
 					has_idea = volunteer_only
 				}
 				add_ideas = limited_conscription
+			}
+			if = {
+				limit = {
+					has_idea = civilian_economy
+				}
+				add_ideas = low_economic_mobilisation
 			}
 			every_owned_state = {
 				limit = {
@@ -3656,7 +3802,7 @@ focus_tree = {
 		available_if_capitulated = yes
 
 		completion_reward = {
-			custom_effect_tooltip = SPR_recovering_from_civil_war_focus_tt
+			unlock_decision_tooltip = SPR_eliminate_guerrillas
 		}
 	}
 
@@ -3670,6 +3816,13 @@ focus_tree = {
 		relative_position_id = SPA_the_guardia_mora
 
 		available = {
+			all_core_state = {
+				NOT = {
+					has_dynamic_modifier = {
+						modifier = SPA_spanish_maquis
+					}
+				}
+			}
 		}
 		bypass = {
 		}
@@ -4434,6 +4587,7 @@ focus_tree = {
 		completion_reward = {
 			add_stability = 0.05
 			add_war_support = 0.05
+			remove_ideas = SPA_fallen_government
 		}
 	}
 
@@ -5663,7 +5817,15 @@ focus_tree = {
 		available_if_capitulated = yes
 		search_filters = {FOCUS_FILTER_RESEARCH}
 		completion_reward = {
-			remove_ideas = SPR_disbanded_army_2
+			if = {
+				limit = {
+					has_idea = SPR_disbanded_army_3
+				}
+				remove_ideas = SPR_disbanded_army_3
+			}
+			else = {
+				remove_ideas = SPR_disbanded_army_2
+			}
 			custom_effect_tooltip = available_political_advisor
 			show_ideas_tooltip = SPR_council_of_theorists
 		}
@@ -5739,7 +5901,6 @@ focus_tree = {
 		available_if_capitulated = yes
 		search_filters = {FOCUS_FILTER_WAR_SUPPORT FOCUS_FILTER_POLITICAL}
 		completion_reward = {
-			custom_effect_tooltip = SPR_recovering_from_civil_war_focus_tt
 			add_ideas = SPR_the_inevitable_counterblow
 			add_country_leader_trait = anarchist_zeal
 			hidden_effect = {
@@ -6006,7 +6167,7 @@ focus_tree = {
 	focus = {
 		id = SPR_strengthen_the_euzko_gudarostea
 		available = {
-			has_full_control_of_state = 864
+			controls_state = 864
 			NOT = { has_global_flag = scw_over }
 		}
 		bypass = {
@@ -6017,7 +6178,7 @@ focus_tree = {
 		x = 6
 		y = 1
 		relative_position_id = SPR_the_anti_fascist_workers_revolution
-		cost = 5
+		cost = 2
 
 		available_if_capitulated = yes
 		search_filters = {FOCUS_FILTER_SPA_CIVIL_WAR}
@@ -6066,7 +6227,7 @@ focus_tree = {
 	}
 
 	focus = {
-		id = SPR_petition_for_soviet_aid
+		id = SPR_soviet_equipment_shipments
 		available = {
 			NOT = { has_global_flag = scw_over }
 		}
@@ -6083,9 +6244,13 @@ focus_tree = {
 		available_if_capitulated = yes
 
 		completion_reward = {
+			unlock_decision_tooltip = SPR_soviet_equipment_shipments
+			SOV = {
+				add_timed_idea = { idea = SPR_equipment_shipments days = 730 }
+			}
+			add_timed_idea = { idea = SPR_equipment_shipments_spain days = 730 }
 			add_opinion_modifier = { target = SOV modifier = SPA_spanish_civil_war_commitments }
 			reverse_add_opinion_modifier = { target = SOV modifier = SPA_spanish_civil_war_commitments }
-			add_equipment_to_stockpile = { type = sov_inf_1 amount = 10000 producer = SOV }
 		}
 	}
 
@@ -6103,7 +6268,7 @@ focus_tree = {
 		x = 0
 		y = 1
 		relative_position_id = SPR_strengthen_the_euzko_gudarostea
-		cost = 5
+		cost = 3
 
 		available_if_capitulated = yes
 
@@ -6869,7 +7034,21 @@ focus_tree = {
 		search_filters = {FOCUS_FILTER_RESEARCH}
 		completion_reward = {
 			army_experience = 25
-			remove_ideas = SPR_disbanded_army_2
+			if = {
+				limit = {
+					has_idea = SPR_disbanded_army_3
+				}
+				remove_ideas = SPR_disbanded_army_3
+			}
+			else_if = {
+				limit = {
+					has_idea = SPR_disbanded_army_2
+				}
+				remove_ideas = SPR_disbanded_army_2
+			}
+			else = {
+				remove_ideas = SPR_disbanded_army_1
+			}
 			add_tech_bonus = {
 				name = SPR_the_spanish_red_army
 				bonus = 1
@@ -6950,110 +7129,28 @@ focus_tree = {
 			    ideology = communism
 			    popularity = 0.05
 			}
-			SOV = {
-				add_timed_idea = { idea = SPA_spanish_civil_war_commitments days = 1095 }
+			add_equipment_to_stockpile = {
+				type = sov_inf_1
+				amount = 10000
+				producer = SOV
+			}
+			add_equipment_to_stockpile = {
+				type = sov_hv_inf_1
+				amount = 5000
+				producer = SOV
 			}
 			custom_effect_tooltip = SPR_expand_soviet_aid_tt
 		}
 	}
 
 	focus = {
-		id = SPR_soviet_equipment_shipments
-		available = {
-			NOT = { has_war_with = SOV }
-			SOV = { has_government = communism }
-		}
-		bypass = {
-			has_global_flag = scw_over
-		}
-		prerequisite = { focus = SPR_expand_soviet_aid }
-
-		icon = GFX_goal_generic_build_tank
-		x = -1
-		y = 1
-		relative_position_id = SPR_expand_soviet_aid
-		cost = 5
-
-		available_if_capitulated = yes
-
-		complete_tooltip = {
-			every_state = {
-				limit = { has_state_flag = SPR_soviet_equipment_shipments_1mil }
-				add_extra_state_shared_building_slots = 1
-				add_building_construction = {
-					type = arms_factory
-					level = 1
-					instant_build = yes
-				}
-			}
-		}
-		search_filters = {FOCUS_FILTER_INDUSTRY}
-
-		completion_reward = {
-			add_popularity = {
-			    ideology = communism
-			    popularity = 0.05
-			}
-			unlock_decision_tooltip = SPR_soviet_equipment_shipments
-			SOV = {
-				add_timed_idea = { idea = SPR_equipment_shipments days = 730 }
-			}
-			add_timed_idea = { idea = SPR_equipment_shipments_spain days = 730 }
-			random_owned_controlled_state = {
-				limit = {
-					free_building_slots = {
-						building = arms_factory
-						size > 0
-					}
-					is_core_of = ROOT
-				}
-				set_state_flag = SPR_soviet_equipment_shipments_1mil
-				add_extra_state_shared_building_slots = 1
-				add_building_construction = {
-					type = arms_factory
-					level = 1
-					instant_build = yes
-				}
-			}
-			random_owned_controlled_state = {
-				limit = {
-					free_building_slots = {
-						building = arms_factory
-						size > 0
-					}
-					is_core_of = ROOT
-					NOT = { has_state_flag = SPR_soviet_equipment_shipments_1mil }
-				}
-				set_state_flag = SPR_soviet_equipment_shipments_1mil
-				add_extra_state_shared_building_slots = 1
-				add_building_construction = {
-					type = arms_factory
-					level = 1
-					instant_build = yes
-				}
-			}
-			random_owned_controlled_state = {
-				limit = {
-					free_building_slots = {
-						building = arms_factory
-						size > 0
-					}
-					is_core_of = ROOT
-					NOT = { has_state_flag = SPR_soviet_equipment_shipments_1mil }
-				}
-				set_state_flag = SPR_soviet_equipment_shipments_1mil
-				add_extra_state_shared_building_slots = 1
-				add_building_construction = {
-					type = arms_factory
-					level = 1
-					instant_build = yes
-				}
-			}
-		}
-	}
-
-	focus = {
 		id = SPR_soviet_military_advisors
+		icon = GFX_focus_generic_military_mission
+		prerequisite = { focus = SPR_expand_soviet_aid }
+		x = 0
+		y = 1
+		relative_position_id = SPR_expand_soviet_aid
+
 		available = {
 			NOT = { has_war_with = SOV }
 			SOV = { has_government = communism }
@@ -7061,12 +7158,7 @@ focus_tree = {
 		bypass = {
 			has_global_flag = scw_over
 		}
-		prerequisite = { focus = SPR_expand_soviet_aid }
 
-		icon = GFX_focus_generic_military_mission
-		x = 1
-		y = 1
-		relative_position_id = SPR_expand_soviet_aid
 		cost = 5
 
 		available_if_capitulated = yes
@@ -7081,6 +7173,12 @@ focus_tree = {
 
 	focus = {
 		id = SPR_soviet_industrial_aid
+		icon = GFX_focus_generic_join_comintern
+		prerequisite = { focus = SPR_soviet_military_advisors }
+		x = -1
+		y = 1
+		relative_position_id = SPR_soviet_military_advisors
+
 		available = {
 			NOT = { has_war_with = SOV }
 			SOV = { has_government = communism }
@@ -7088,27 +7186,10 @@ focus_tree = {
 		bypass = {
 			has_global_flag = scw_over
 		}
-		prerequisite = { focus = SPR_soviet_equipment_shipments focus = SPR_soviet_military_advisors }
 
-		icon = GFX_focus_generic_join_comintern
-		x = 0
-		y = 1
-		relative_position_id = SPR_soviet_equipment_shipments
 		cost = 5
 
 		available_if_capitulated = yes
-
-		complete_tooltip = {
-			every_state = {
-				limit = { has_state_flag = SPR_soviet_industrial_aid_2civ }
-				add_extra_state_shared_building_slots = 2
-				add_building_construction = {
-					type = industrial_complex
-					level = 2
-					instant_build = yes
-				}
-			}
-		}
 
 		search_filters = {FOCUS_FILTER_RESEARCH FOCUS_FILTER_POLITICAL FOCUS_FILTER_INDUSTRY}
 		completion_reward = {
@@ -7135,6 +7216,56 @@ focus_tree = {
 					instant_build = yes
 				}
 			}
+			random_owned_controlled_state = {
+				limit = {
+					free_building_slots = {
+						building = arms_factory
+						size > 0
+					}
+					is_core_of = ROOT
+				}
+				set_state_flag = SPR_soviet_equipment_shipments_1mil
+				add_extra_state_shared_building_slots = 1
+				add_building_construction = {
+					type = arms_factory
+					level = 1
+					instant_build = yes
+				}
+			}
+			random_owned_controlled_state = {
+				limit = {
+					free_building_slots = {
+						building = arms_factory
+						size > 0
+					}
+					is_core_of = ROOT
+					NOT = { has_state_flag = SPR_soviet_equipment_shipments_1mil }
+				}
+				set_state_flag = SPR_soviet_equipment_shipments_1mil
+				add_extra_state_shared_building_slots = 1
+				add_building_construction = {
+					type = arms_factory
+					level = 1
+					instant_build = yes
+				}
+			}
+			random_owned_controlled_state = {
+				limit = {
+					free_building_slots = {
+						building = arms_factory
+						size > 0
+					}
+					is_core_of = ROOT
+					NOT = { has_state_flag = SPR_soviet_equipment_shipments_1mil }
+				}
+				set_state_flag = SPR_soviet_equipment_shipments_1mil
+				add_extra_state_shared_building_slots = 1
+				add_building_construction = {
+					type = arms_factory
+					level = 1
+					instant_build = yes
+				}
+			}
 		}
 	}
 
@@ -7147,12 +7278,12 @@ focus_tree = {
 		bypass = {
 			has_global_flag = scw_over
 		}
-		prerequisite = { focus = SPR_soviet_equipment_shipments focus = SPR_soviet_military_advisors }
+		prerequisite = { focus = SPR_soviet_military_advisors }
 
 		icon = GFX_focus_generic_socialist_science
-		x = 2
+		x = 1
 		y = 1
-		relative_position_id = SPR_soviet_equipment_shipments
+		relative_position_id = SPR_soviet_military_advisors
 		cost = 5
 
 		available_if_capitulated = yes
@@ -7197,7 +7328,6 @@ focus_tree = {
 		available_if_capitulated = yes
 		search_filters = {FOCUS_FILTER_INDUSTRY}
 		completion_reward = {
-			custom_effect_tooltip = SPR_recovering_from_civil_war_focus_tt
 			swap_ideas = {
 				remove_idea = SPR_class_war_1
 				add_idea = SPR_class_war_2
@@ -7639,7 +7769,6 @@ focus_tree = {
 		available_if_capitulated = yes
 
 		completion_reward = {
-			custom_effect_tooltip = SPR_recovering_from_civil_war_focus_tt
 			custom_effect_tooltip = SPA_prepare_the_pyrenees_defenses_tt
 			hidden_effect = {
 				864 = {
@@ -8007,18 +8136,55 @@ focus_tree = {
 	}
 
 	focus = {
-		id = SPR_the_future_of_the_republic
+		id = SPR_fortify_madrid
+		icon = GFX_goal_generic_fortify_city
+		prerequisite = { focus = SPR_new_leadership }
+		x = 0
+		y = 1
+		relative_position_id = SPR_new_leadership
+
 		available = {
 		}
 		bypass = {
 			has_global_flag = scw_over
 		}
-		prerequisite = { focus = SPR_new_leadership }
 
+		cost = 3
+
+		available_if_capitulated = yes
+		search_filters = {FOCUS_FILTER_POLITICAL}
+		completion_reward = {
+			41 = {
+				add_building_construction = {
+					type = bunker
+					province = {
+						id = 13229
+						id = 13231
+						id = 13228
+						id = 3938
+						id = 3858
+					}
+					level = 3
+					instant_build = yes
+				}
+			}
+		}
+	}
+
+	focus = {
+		id = SPR_the_future_of_the_republic
 		icon = GFX_goal_support_democracy
+		prerequisite = { focus = SPR_new_leadership }
 		x = 0
 		y = 1
 		relative_position_id = SPR_new_leadership
+
+		available = {
+		}
+		bypass = {
+			has_global_flag = scw_over
+		}
+
 		cost = 10
 
 		available_if_capitulated = yes
@@ -8030,6 +8196,12 @@ focus_tree = {
 
 	focus = {
 		id = SPR_petition_for_french_aid
+		icon = GFX_focus_chi_reach_out_to_france
+		prerequisite = { focus = SPR_the_future_of_the_republic }
+		x = 0
+		y = 1
+		relative_position_id = SPR_the_future_of_the_republic
+
 		available = {
 			NOT = { has_war_with = FRA }
 			NOT = { has_global_flag = scw_over }
@@ -8042,12 +8214,7 @@ focus_tree = {
 		}
 		bypass = {
 		}
-		prerequisite = { focus = SPR_the_future_of_the_republic }
 
-		icon = GFX_focus_chi_reach_out_to_france
-		x = 0
-		y = 1
-		relative_position_id = SPR_the_future_of_the_republic
 		cost = 10
 
 		available_if_capitulated = yes
@@ -8069,18 +8236,19 @@ focus_tree = {
 
 	focus = {
 		id = SPR_ensure_loyalty
+		icon = GFX_goal_generic_political_pressure
+		prerequisite = { focus = SPR_maintain_the_second_republic }
+		x = 1
+		y = 1
+		relative_position_id = SPR_maintain_the_second_republic
+		
 		available = {
 		}
 		bypass = {
 			has_global_flag = scw_over
 		}
-		prerequisite = { focus = SPR_maintain_the_second_republic }
 
-		icon = GFX_goal_generic_political_pressure
-		x = 1
-		y = 1
-		relative_position_id = SPR_maintain_the_second_republic
-		cost = 10
+		cost = 5
 
 		available_if_capitulated = yes
 		search_filters = {FOCUS_FILTER_STABILITY}
@@ -8410,6 +8578,7 @@ focus_tree = {
 		relative_position_id = SPR_strengthen_the_anti_fascist_coalition
 
 		available = {
+			
 		}
 		bypass = {
 		}
@@ -8909,7 +9078,6 @@ focus_tree = {
 		available_if_capitulated = yes
 		search_filters = {FOCUS_FILTER_STABILITY}
 		completion_reward = {
-			custom_effect_tooltip = SPR_recovering_from_civil_war_focus_tt
 			add_stability = 0.2
 		}
 	}
@@ -8945,22 +9113,34 @@ focus_tree = {
 
 	focus = {
 		id = SPR_reprofessionalize_the_military
+		icon = GFX_goal_generic_artillery
+		prerequisite = { focus = SPR_strengthen_the_anti_fascist_coalition }
+		x = 3
+		y = 1
+		relative_position_id = SPR_strengthen_the_anti_fascist_coalition
+
 		available = {
 		}
 		bypass = {
 		}
-		prerequisite = { focus = SPR_strengthen_the_anti_fascist_coalition }
 
-		icon = GFX_goal_generic_artillery
-		x = 3
-		y = 1
-		relative_position_id = SPR_strengthen_the_anti_fascist_coalition
-		cost = 10
+		cost = 5
 
 		available_if_capitulated = yes
 		search_filters = {FOCUS_FILTER_MANPOWER}
 		completion_reward = {
-			add_ideas = SPR_professional_military_1
+			if = {
+				limit = {
+					has_idea = SPR_disbanded_army_1
+				}
+				swap_ideas = {
+					remove_idea = SPR_disbanded_army_1
+					add_idea = SPR_disbanded_army_2
+				}
+			}
+			else = {
+				remove_ideas = SPR_disbanded_army_3
+			}
 		}
 	}
 
@@ -8977,76 +9157,22 @@ focus_tree = {
 		bypass = {
 		}
 
-		cost = 10
+		cost = 5
 
 		available_if_capitulated = yes
 
-		complete_tooltip = {
-			every_state = {
-				limit = { has_state_flag = SPR_revive_the_republican_navy_1DY }
-				add_extra_state_shared_building_slots = 1
-				add_building_construction = {
-					type = dockyard
-					level = 1
-					instant_build = yes
-				}
-			}
-		}
-
 		completion_reward = {
-			navy_experience = 25
-			random_owned_controlled_state = {
+			if = {
 				limit = {
-					free_building_slots = {
-						building = dockyard
-						size > 0
-						include_locked = yes
-					}
-					is_core_of = ROOT
+					has_idea = SPR_disbanded_army_1
 				}
-				add_extra_state_shared_building_slots = 1
-				add_building_construction = {
-					type = dockyard
-					level = 1
-					instant_build = yes
+				swap_ideas = {
+					remove_idea = SPR_disbanded_army_1
+					add_idea = SPR_disbanded_army_3
 				}
-				set_state_flag = SPR_revive_the_republican_navy_1DY
 			}
-			random_owned_controlled_state = {
-				limit = {
-					free_building_slots = {
-						building = dockyard
-						size > 0
-						include_locked = yes
-					}
-					is_core_of = ROOT
-					NOT = { has_state_flag = SPR_revive_the_republican_navy_1DY }
-				}
-				add_extra_state_shared_building_slots = 1
-				add_building_construction = {
-					type = dockyard
-					level = 1
-					instant_build = yes
-				}
-				set_state_flag = SPR_revive_the_republican_navy_1DY
-			}
-			random_owned_controlled_state = {
-				limit = {
-					free_building_slots = {
-						building = dockyard
-						size > 0
-						include_locked = yes
-					}
-					is_core_of = ROOT
-					NOT = { has_state_flag = SPR_revive_the_republican_navy_1DY }
-				}
-				add_extra_state_shared_building_slots = 1
-				add_building_construction = {
-					type = dockyard
-					level = 1
-					instant_build = yes
-				}
-				set_state_flag = SPR_revive_the_republican_navy_1DY
+			else = {
+				remove_ideas = SPR_disbanded_army_2
 			}
 		}
 	}
@@ -9067,7 +9193,7 @@ focus_tree = {
 		bypass = {
 		}
 
-		cost = 10
+		cost = 6
 
 		available_if_capitulated = yes
 		search_filters = {FOCUS_FILTER_RESEARCH}
@@ -9090,16 +9216,12 @@ focus_tree = {
 		x = 0
 		y = 2
 		relative_position_id = SPR_reprofessionalize_the_military
-		cost = 10
+		cost = 3
 
 		available_if_capitulated = yes
 
 		completion_reward = {
-			army_experience = 25
-			swap_ideas = {
-				remove_idea = SPR_professional_military_1
-				add_idea = SPR_professional_military_2
-			}
+			army_experience = 35
 		}
 	}
 
@@ -9117,60 +9239,50 @@ focus_tree = {
 		bypass = {
 		}
 
-		cost = 10
+		cost = 3
 
 		available_if_capitulated = yes
 		search_filters = {FOCUS_FILTER_RESEARCH}
 
 		completion_reward = {
-			navy_experience = 50
-			add_doctrine_cost_reduction = {
-				name = SPR_expand_the_naval_academy
-				cost_reduction = 0.99
-				uses = 3
-				category = naval_doctrine
-			}
+			navy_experience = 35
 		}
 	}
 
 	focus = {
 		id = SPR_prepare_for_the_next_war
-		available = {
-		}
-		bypass = {
-		}
+		icon = GFX_goal_generic_build_tank
 		prerequisite = { focus = SPR_a_new_military_academy }
 		prerequisite = { focus = SPR_expand_the_naval_academy }
-
-		icon = GFX_goal_generic_build_tank
 		x = 1
 		y = 1
 		relative_position_id = SPR_a_new_military_academy
-		cost = 10
+
+		available = {
+			has_global_flag = scw_over
+		}
+		bypass = {
+		}
+
+		cost = 6
 
 		available_if_capitulated = yes
-
-		complete_tooltip = {
-			every_state = {
-				limit = { has_state_flag = SPR_prepare_for_the_next_war_2mil }
-				add_extra_state_shared_building_slots = 1
-				add_building_construction = {
-					type = arms_factory
-					level = 1
-					instant_build = yes
-				}
-			}
-		}
 
 		search_filters = {FOCUS_FILTER_WAR_SUPPORT FOCUS_FILTER_RESEARCH FOCUS_FILTER_INDUSTRY}
 
 		completion_reward = {
 			add_war_support = 0.1
 			add_doctrine_cost_reduction = {
-				name = SPR_engineering_advances
+				name = SPR_prepare_for_the_next_war
 				cost_reduction = 0.99
 				uses = 1
 				category = land_doctrine
+			}
+			add_doctrine_cost_reduction = {
+				name = SPR_prepare_for_the_next_war
+				cost_reduction = 0.99
+				uses = 1
+				category = naval_doctrine
 			}
 			random_owned_controlled_state = {
 				limit = {
@@ -9188,6 +9300,93 @@ focus_tree = {
 					instant_build = yes
 				}
 				set_state_flag = SPR_prepare_for_the_next_war_2mil
+			}
+			random_owned_controlled_state = {
+				limit = {
+					free_building_slots = {
+						building = arms_factory
+						size > 1
+						include_locked = yes
+					}
+					is_core_of = ROOT
+				}
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = arms_factory
+					level = 2
+					instant_build = yes
+				}
+				set_state_flag = SPR_prepare_for_the_next_war_2mil
+			}
+			random_owned_controlled_state = {
+				limit = {
+					free_building_slots = {
+						building = arms_factory
+						size > 1
+						include_locked = yes
+					}
+					is_core_of = ROOT
+				}
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = arms_factory
+					level = 2
+					instant_build = yes
+				}
+				set_state_flag = SPR_prepare_for_the_next_war_2mil
+			}
+			random_owned_controlled_state = {
+				limit = {
+					free_building_slots = {
+						building = dockyard
+						size > 0
+						include_locked = yes
+					}
+					is_core_of = ROOT
+				}
+				add_extra_state_shared_building_slots = 1
+				add_building_construction = {
+					type = dockyard
+					level = 1
+					instant_build = yes
+				}
+				set_state_flag = SPR_revive_the_republican_navy_1DY
+			}
+			random_owned_controlled_state = {
+				limit = {
+					free_building_slots = {
+						building = dockyard
+						size > 0
+						include_locked = yes
+					}
+					is_core_of = ROOT
+					NOT = { has_state_flag = SPR_revive_the_republican_navy_1DY }
+				}
+				add_extra_state_shared_building_slots = 1
+				add_building_construction = {
+					type = dockyard
+					level = 1
+					instant_build = yes
+				}
+				set_state_flag = SPR_revive_the_republican_navy_1DY
+			}
+			random_owned_controlled_state = {
+				limit = {
+					free_building_slots = {
+						building = dockyard
+						size > 0
+						include_locked = yes
+					}
+					is_core_of = ROOT
+					NOT = { has_state_flag = SPR_revive_the_republican_navy_1DY }
+				}
+				add_extra_state_shared_building_slots = 1
+				add_building_construction = {
+					type = dockyard
+					level = 1
+					instant_build = yes
+				}
+				set_state_flag = SPR_revive_the_republican_navy_1DY
 			}
 		}
 	}
@@ -10316,7 +10515,7 @@ focus_tree = {
 		search_filters = {FOCUS_FILTER_ARMY}
 
 		completion_reward = {
-			add_idas = SPR_general_staff
+			add_ideas = SPR_general_staff
 		}
 	}
 
