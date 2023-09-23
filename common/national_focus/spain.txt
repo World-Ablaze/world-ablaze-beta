@@ -6987,7 +6987,17 @@ focus_tree = {
 			}
 			add_equipment_to_stockpile = {
 				type = sov_hv_inf_1
-				amount = 5000
+				amount = 3000
+				producer = SOV
+			}
+			add_equipment_to_stockpile = {
+				type = sov_art_1
+				amount = 300
+				producer = SOV
+			}
+			add_equipment_to_stockpile = {
+				type = support_equipment_1
+				amount = 3000
 				producer = SOV
 			}
 			custom_effect_tooltip = SPR_expand_soviet_aid_tt
@@ -8097,27 +8107,66 @@ focus_tree = {
 	}
 
 	focus = {
-		id = SPR_ensure_loyalty
-		icon = GFX_goal_generic_political_pressure
+		id = SPR_reinforce_the_front
+		icon = GFX_focus_ETH_freedom_at_gunpoint
 		prerequisite = { focus = SPR_maintain_the_second_republic }
 		x = 1
 		y = 1
 		relative_position_id = SPR_maintain_the_second_republic
-		
+
 		available = {
+			OR = {
+				controls_state = 167
+				controls_state = 168
+				controls_state = 175
+			}
+			has_template = "División de Infantería"
 		}
 		bypass = {
-			has_global_flag = scw_over
 		}
 
 		cost = 5
 
 		available_if_capitulated = yes
-		search_filters = {FOCUS_FILTER_STABILITY}
+		search_filters = {FOCUS_FILTER_RESEARCH}
 
 		completion_reward = {
-			add_political_power = 150
-			add_stability = 0.1
+			if = {
+				limit = {
+					controls_state = 175
+				}
+				175 = {
+					create_unit = {
+						division = "division_template = \"División de Infantería\" start_experience_factor = 0.5 start_equipment_factor=0.7"
+						owner = ROOT
+						count = 12
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					controls_state = 168
+				}
+				168 = {
+					create_unit = {
+						division = "division_template = \"División de Infantería\" start_experience_factor = 0.5 start_equipment_factor=0.7"
+						owner = ROOT
+						count = 12
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					controls_state = 167
+				}
+				167 = {
+					create_unit = {
+						division = "division_template = \"División de Infantería\" start_experience_factor = 0.5 start_equipment_factor=0.7"
+						owner = ROOT
+						count = 12
+					}
+				}
+			}
 		}
 	}
 
@@ -8211,18 +8260,20 @@ focus_tree = {
 	}
 
 	focus = {
-		id = SPR_the_popular_army
+		id = SPR_reform_the_army
+		icon = GFX_goal_generic_military_liason
+		x = 1
+		y = 1
+		relative_position_id = SPR_reinforce_the_front
+
 		available = {
 		}
 		bypass = {
 		}
-		prerequisite = { focus = SPR_ensure_loyalty }
+
+		prerequisite = { focus = SPR_reinforce_the_front }
 		prerequisite = { focus = SPR_enlist_the_carabineros }
 
-		icon = GFX_focus_generic_support_the_left_right
-		x = 1
-		y = 1
-		relative_position_id = SPR_ensure_loyalty
 		cost = 5
 
 		available_if_capitulated = yes
@@ -8230,18 +8281,17 @@ focus_tree = {
 		search_filters = {FOCUS_FILTER_RESEARCH}
 
 		completion_reward = {
-			remove_ideas = SPR_disbanded_army_1
 			add_tech_bonus = {
-				name = SPR_the_popular_army
-				bonus = 1
+				name = SPR_reform_the_army
+				bonus = 1.0
 				uses = 1
 				category = infantry_weapons
 			}
 			add_doctrine_cost_reduction = {
-				name = SPR_the_popular_army
+				name = SPR_reform_the_army
 				cost_reduction = 0.99
-				uses = 1
-				category = land_doctrine
+				uses = 2
+				category = cat_grand_battle_plan
 			}
 		}
 	}
@@ -8249,10 +8299,10 @@ focus_tree = {
 	focus = {
 		id = SPR_take_the_initiative
 		icon = GFX_goal_generic_major_war
-		prerequisite = { focus = SPR_the_popular_army }
+		prerequisite = { focus = SPR_reform_the_army }
 		x = -1
 		y = 1
-		relative_position_id = SPR_the_popular_army
+		relative_position_id = SPR_reform_the_army
 		
 		available = {
 			NOT = { has_global_flag = scw_over }
@@ -8270,76 +8320,37 @@ focus_tree = {
 	}
 
 	focus = {
-		id = SPR_reinforce_the_front
-		icon = GFX_focus_ETH_freedom_at_gunpoint
-		prerequisite = { focus = SPR_the_popular_army }
+		id = SPR_ensure_loyalty
+		icon = GFX_goal_generic_political_pressure
+		prerequisite = { focus = SPR_reform_the_army }
 		x = 1
 		y = 1
-		relative_position_id = SPR_the_popular_army
-
+		relative_position_id = SPR_reform_the_army
+		
 		available = {
-			OR = {
-				controls_state = 167
-				controls_state = 168
-				controls_state = 175
-			}
-			has_template = "División de Infantería"
 		}
 		bypass = {
+			has_global_flag = scw_over
 		}
 
 		cost = 5
 
 		available_if_capitulated = yes
-		search_filters = {FOCUS_FILTER_RESEARCH}
+		search_filters = {FOCUS_FILTER_STABILITY}
 
 		completion_reward = {
-			if = {
-				limit = {
-					controls_state = 175
-				}
-				175 = {
-					create_unit = {
-						division = "division_template = \"División de Infantería\" start_experience_factor = 0.5 start_equipment_factor=0.7"
-						owner = ROOT
-						count = 12
-					}
-				}
-			}
-			else_if = {
-				limit = {
-					controls_state = 168
-				}
-				168 = {
-					create_unit = {
-						division = "division_template = \"División de Infantería\" start_experience_factor = 0.5 start_equipment_factor=0.7"
-						owner = ROOT
-						count = 12
-					}
-				}
-			}
-			else_if = {
-				limit = {
-					controls_state = 167
-				}
-				167 = {
-					create_unit = {
-						division = "division_template = \"División de Infantería\" start_experience_factor = 0.5 start_equipment_factor=0.7"
-						owner = ROOT
-						count = 12
-					}
-				}
-			}
+			add_political_power = 150
+			add_stability = 0.1
 		}
 	}
 
 	focus = {
 		id = SPR_no_pasaran
 		icon = GFX_focus_spr_no_pasaran
-		prerequisite = { focus = SPR_reinforce_the_front }
+		prerequisite = { focus = SPR_ensure_loyalty }
 		x = 0
 		y = 1
-		relative_position_id = SPR_reinforce_the_front
+		relative_position_id = SPR_ensure_loyalty
 		
 		available = {
 			SPR_scw_in_progress = yes
@@ -9122,7 +9133,7 @@ focus_tree = {
 		bypass = {
 		}
 
-		cost = 6
+		cost = 10
 
 		available_if_capitulated = yes
 		search_filters = {FOCUS_FILTER_RESEARCH}
@@ -9193,7 +9204,7 @@ focus_tree = {
 		bypass = {
 		}
 
-		cost = 6
+		cost = 10
 
 		available_if_capitulated = yes
 
