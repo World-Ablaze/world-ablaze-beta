@@ -13,7 +13,7 @@
 
 	default = no
 
-	continuous_focus_position = { x = 50 y = 1500 }
+	continuous_focus_position = { x = 50 y = 1700 }
 
 
 
@@ -27,7 +27,7 @@
 		id = GRE_hold_the_1936_elections
 		icon = GFX_
 		#mutually_exclusive = { focus = GRE_bring_home_the_exiled_republicans }
-		x = 17
+		x = 5
 		y = 0
 		
 		cost = 5
@@ -54,8 +54,23 @@
 			custom_effect_tooltip = GRE_king_influence_down_tt
 			hidden_effect = {
 				set_country_flag = GRE_had_elections
+				
+			}
+			if = {
+				limit = { 
+					check_variable = { GRE_King_influence > 0 }
+				}
 				subtract_from_variable = { GRE_King_influence = 1 }
-				subtract_from_variable = { GRE_Army_attitude = 2 }
+				add_to_variable = { GRE_king_stability_factor = 0.025 }
+				custom_effect_tooltip = GRE_king_influence_down_tt
+			}
+			if = {
+				limit = { 
+					check_variable = { GRE_Army_influence > 0 }
+				}
+				subtract_from_variable = { GRE_Army_influence = 1 }
+				subtract_from_variable = { GRE_army_pp_factor = 0.05 }
+				custom_effect_tooltip = GRE_army_influence_down_tt
 			}
 		}
 	}
@@ -84,9 +99,13 @@
 		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_STABILITY }
 
 		completion_reward = {
-			custom_effect_tooltip = GRE_army_attitude_down_tt
-			hidden_effect = {
+			if = {
+				limit = {
+					check_variable = { GRE_Army_attitude > -2 }
+				}
 				subtract_from_variable = { GRE_Army_attitude = 1 }
+				subtract_from_variable = { GRE_army_stability_factor = 0.025 }
+				custom_effect_tooltip = GRE_Army_negative_tt
 			}
 		}
 	}
@@ -116,6 +135,8 @@
 
 		completion_reward = {
 			activate_advisor = GRE_ioannis_metaxas
+			custom_effect_tooltip = GRE_Army_effective_tt
+			add_to_variable = { GRE_army_stats = 0.025 }
 		}
 	}
 
@@ -184,7 +205,15 @@
 				remove_country_leader_trait = appointed_government
 			}
 			hidden_effect = {
-				country_event = gre_armor.601
+				country_event = gre_focus.001
+			}
+			if = {
+				limit = { 
+					check_variable = { GRE_King_influence > 0 }
+				}
+				subtract_from_variable = { GRE_King_influence = 1 }
+				add_to_variable = { GRE_king_stability_factor = 0.025 }
+				custom_effect_tooltip = GRE_king_influence_down_tt
 			}
 		}
 	}
@@ -254,6 +283,14 @@
 		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_STABILITY }
 
 		completion_reward = {
+			if = {
+				limit = { 
+					check_variable = { GRE_Army_influence < 7 }
+				}
+				add_to_variable = { GRE_Army_influence = 1 }
+				add_to_variable = { GRE_army_pp_factor = 0.05 }
+				custom_effect_tooltip = GRE_army_influence_up_tt
+			}
 		}
 	}
 
@@ -349,6 +386,8 @@
 
 		completion_reward = {
 			add_ideas = GRE_the_new_greek_man_idea
+			custom_effect_tooltip = GRE_public_recruit_tt
+			add_to_variable = { GRE_public_recruit_factor = 0.1 }
 		}
 	}
 
@@ -467,6 +506,7 @@
 		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_STABILITY }
 
 		completion_reward = {
+			economy_fatigue_level_up_1 = yes
 			add_ideas = GRE_eon
 		}
 	}
@@ -501,33 +541,6 @@
 	}
 
 	focus = {
-		id = GRE_british_gurantees
-		icon = GFX_
-		prerequisite = { focus = GRE_armed_neutrality }
-		x = -3
-		y = 1
-		relative_position_id = GRE_armed_neutrality 
-		
-		cost = 3
-
-		ai_will_do = {
-			base = 1
-		}
-
-		available = {
-		}
-
-		bypass = {
-
-		}
-
-		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_STABILITY }
-
-		completion_reward = {
-		}
-	}
-
-	focus = {
 		id = GRE_ask_for_german_protection
 		icon = GFX_
 		prerequisite = { focus = GRE_third_hellenic_civilization }
@@ -556,6 +569,33 @@
 	}
 
 	focus = {
+		id = GRE_british_gurantees
+		icon = GFX_
+		prerequisite = { focus = GRE_armed_neutrality }
+		x = -3
+		y = 1
+		relative_position_id = GRE_armed_neutrality 
+		
+		cost = 3
+
+		ai_will_do = {
+			base = 1
+		}
+
+		available = {
+		}
+
+		bypass = {
+
+		}
+
+		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_STABILITY }
+
+		completion_reward = {
+		}
+	}
+
+	focus = {
 		id = GRE_build_the_metaxas_line
 		icon = GFX_
 		prerequisite = { focus = GRE_armed_neutrality focus = GRE_ask_for_german_protection }
@@ -563,7 +603,7 @@
 		y = 1
 		relative_position_id = GRE_armed_neutrality 
 		
-		cost = 3
+		cost = 10
 
 		ai_will_do = {
 			base = 1
@@ -634,6 +674,7 @@
 		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_STABILITY }
 
 		completion_reward = {
+			economy_fatigue_level_up_5 = yes
 			182 = {
 				add_building_construction = {
 					type = coastal_bunker
@@ -689,13 +730,19 @@
 		y = 1
 		relative_position_id = GRE_build_the_metaxas_line 
 		
-		cost = 3
+		cost = 6
 
 		ai_will_do = {
 			base = 1
 		}
 
 		available = {
+			any_neighbor_country = {
+				is_major = yes
+				overlord = {
+					is_major = yes
+				}
+			}
 		}
 
 		bypass = {
@@ -705,6 +752,7 @@
 		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_STABILITY }
 
 		completion_reward = {
+			economy_fatigue_level_up_3 = yes
 			185 = {
 				add_building_construction = {
 					type = bunker
@@ -761,6 +809,9 @@
 				uses = 3
 				category = land_doctrine
 			}
+			custom_effect_tooltip = GRE_Army_effective_tt
+			add_to_variable = { GRE_army_stats = 0.025 }
+			add_ideas = mandatory_army_service
 		}
 	}
 
@@ -779,6 +830,12 @@
 		}
 
 		available = {
+			any_neighbor_country = {
+				is_major = yes
+				overlord = {
+					is_major = yes
+				}
+			}
 		}
 
 		bypass = {
@@ -856,6 +913,7 @@
 		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_STABILITY }
 
 		completion_reward = {
+			activate_mission = GRE_spanish_arms_sales
 		}
 	}
 
@@ -883,6 +941,7 @@
 		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_STABILITY }
 
 		completion_reward = {
+			activate_mission = GRE_chinese_arms_sales
 		}
 	}
 
@@ -1044,6 +1103,7 @@
 		}
 
 		available = {
+			has_idea = civilian_economy
 		}
 
 		bypass = {
@@ -1057,6 +1117,7 @@
 				idea = GRE_modernization_efforts
 				days = 1800
 			}
+			activate_mission = GRE_modernization_efforts_mission
 		}
 	}
 
@@ -1122,7 +1183,7 @@
 				subtract_from_variable = { GRE_high_unemployment_consumer_goods = 0.1 }
 				subtract_from_variable = { GRE_high_unemployment_pp = 0.2 }
 				subtract_from_variable = { GRE_high_unemployment_output = -0.2 }
-				custom_effect_tooltip = GRE_Unemployment_tt_2
+				custom_effect_tooltip = GRE_Unemployment_tt
 			}
 			else_if = {
 				limit = {
@@ -1174,6 +1235,49 @@
 					has_dynamic_modifier = { modifier =  GRE_high_unemployment }
 				}
 				remove_dynamic_modifier = { modifier = GRE_high_unemployment }
+			}
+			build_railway = {
+				level = 1
+				build_only_on_allied = yes
+				fallback = yes
+				start_province  = 13525
+				target_province = 11965
+			}
+			build_railway = {
+				level = 1
+				build_only_on_allied = yes
+				fallback = yes
+				start_province  = 7211
+				target_province = 4078
+			}
+			build_railway = {
+				level = 1
+				build_only_on_allied = yes
+				fallback = yes
+				start_province  = 13525
+				target_province = 13526
+			}
+			build_railway = {
+				level = 1
+				build_only_on_allied = yes
+				fallback = yes
+				path = { 976 1205 12001 9916 9805 10203 }
+				start_province  = 976
+				target_province = 10203
+			}
+			build_railway = {
+				level = 1
+				build_only_on_allied = yes
+				fallback = yes
+				start_province  = 9805
+				target_province = 3914
+			}
+			build_railway = {
+				level = 1
+				build_only_on_allied = yes
+				fallback = yes
+				start_province  = 4109
+				target_province = 11818
 			}
 		}
 	}
@@ -1260,6 +1364,22 @@
 		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_STABILITY }
 
 		completion_reward = {
+			random_owned_controlled_state = {
+				prioritize = { 47 }
+				limit = {
+					free_building_slots = {
+						building = industrial_complex
+						size > 1
+						include_locked = yes
+					}
+				}
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = industrial_complex
+					level = 2
+					instant_build = yes
+				}
+			}
 			add_tech_bonus = {
 				name = GRE_telecomunication_initiative
 				category = electronics
@@ -1293,7 +1413,46 @@
 		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_STABILITY }
 
 		completion_reward = {
-			add_ideas = state_sponsored_economy
+			if = {
+				limit = {
+					has_idea = no_economic_policy
+				}
+				add_ideas = state_sponsored_economy
+			}
+			else = {
+				add_political_power = 60
+			}
+			random_owned_controlled_state = {
+				prioritize = { 47 }
+				limit = {
+					free_building_slots = {
+						building = industrial_complex
+						size > 1
+						include_locked = yes
+					}
+				}
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = industrial_complex
+					level = 2
+					instant_build = yes
+				}
+			}
+			random_owned_controlled_state = {
+				limit = {
+					free_building_slots = {
+						building = industrial_complex
+						size > 1
+						include_locked = yes
+					}
+				}
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = industrial_complex
+					level = 2
+					instant_build = yes
+				}
+			}
 		}
 	}
 
@@ -1407,7 +1566,7 @@
 		y = 1
 		relative_position_id = GRE_railroad_expansion
 		
-		cost = 3
+		cost = 6
 
 		ai_will_do = {
 			base = 1
@@ -1415,7 +1574,26 @@
 
 		available = {
 			NOT = {
-				has_dynamic_modifier = { modifier =  GRE_high_unemployment }
+				custom_trigger_tooltip = {
+					tooltip = GRE_high_unemployment_tt
+					has_dynamic_modifier = { modifier =  GRE_high_unemployment }
+				}
+			}
+			custom_trigger_tooltip = {
+				tooltip = less_than_10_economy_fatigue
+				OR = {
+					has_idea = economy_fatigue_0
+					has_idea = economy_fatigue_1
+					has_idea = economy_fatigue_2
+					has_idea = economy_fatigue_3
+					has_idea = economy_fatigue_4
+					has_idea = economy_fatigue_5
+					has_idea = economy_fatigue_6
+					has_idea = economy_fatigue_7
+					has_idea = economy_fatigue_8
+					has_idea = economy_fatigue_9
+					has_idea = economy_fatigue_10
+				}
 			}
 		}
 
@@ -1471,7 +1649,7 @@
 					instant_build = yes
 				}
 			}
-			economy_fatigue_level_up_10 = yes
+			economy_fatigue_level_down_10 = yes
 			IF = {
 				limit = {
 					has_idea = GRE_budget_deficit_2
@@ -1481,6 +1659,8 @@
 			else = {
 				remove_ideas = GRE_budget_deficit
 			}
+			add_to_variable = { GRE_Public_attitude = 1 }
+			add_to_variable = { GRE_Public_influence = 2 }
 		}
 	}
 
@@ -1606,11 +1786,15 @@
 	focus = {
 		id = GRE_hellenic_armed_forces
 		icon = GFX_focus_GRE_hellenic_armed_forces
-		x = 36
+		x = 24
 		y = 0
-		cost = 21
+		cost = 3
 		ai_will_do = {
 			base = 1
+		}
+
+		available = {
+			has_completed_focus = GRE_vote_of_confidence
 		}
 
 		completion_reward = {
@@ -1838,6 +2022,7 @@
 		}
 
 		completion_reward = {
+			custom_effect_tooltip = GRE_plane_purchases_tt
 		}
 	}
 
@@ -1945,6 +2130,7 @@
 		}
 
 		completion_reward = {
+			custom_effect_tooltip = GRE_aquire_foreign_tanks_tt
 		}
 	}
 
@@ -2379,7 +2565,7 @@
 		x = -1
 		y = 1
 		relative_position_id = GRE_improve_officer_schools
-		cost = 3
+		cost = 4
 		ai_will_do = {
 			base = 1
 		}
@@ -2405,7 +2591,7 @@
 		x = 1
 		y = 1
 		relative_position_id = GRE_improve_officer_schools
-		cost = 3
+		cost = 2
 		ai_will_do = {
 			base = 1
 		}
@@ -2432,12 +2618,50 @@
 		x = 0
 		y = 2
 		relative_position_id = GRE_improve_officer_schools
-		cost = 3
+		cost = 4
 		ai_will_do = {
 			base = 1
 		}
 
+		available = {
+			OR = {
+				FRA = {
+					has_opinion = {
+						target = GRE
+						value > 75
+					}
+				}
+				GER = {
+					has_opinion = {
+						target = GRE
+						value > 75
+					}
+				}
+				USA = {
+					has_opinion = {
+						target = GRE
+						value > 75
+					}
+				}
+				ENG = {
+					has_opinion = {
+						target = GRE
+						value > 75
+					}
+				}
+			}
+		}
+
 		completion_reward = {
+			country_event = gre_focus.003
+			economy_fatigue_level_up_5 = yes
+			186 = {
+				add_extra_state_shared_building_slots = 3
+				add_building_construction = {
+					type = dockyard
+					level = 1
+				}
+			}
 		}
 	}
 
@@ -2454,7 +2678,8 @@
 		}
 
 		completion_reward = {
-			#unlock a character
+			custom_effect_tooltip = available_navy_theorist
+			show_ideas_tooltip = GRE_charles_edward_turle
 		}
 	}
 
@@ -2472,7 +2697,7 @@
 		}
 
 		completion_reward = {
-			add_ideas = jeune_ecole_spirit
+			#add_ideas = jeune_ecole_spirit
 			add_doctrine_cost_reduction = {
 				cost_reduction = 0.99
 				name = GRE_continue_british_advice
@@ -2496,7 +2721,7 @@
 		}
 
 		completion_reward = {
-			add_ideas = capital_focus_navy_spirit
+			#add_ideas = capital_focus_navy_spirit
 			add_doctrine_cost_reduction = {
 				cost_reduction = 0.99
 				name = GRE_continue_british_advice
@@ -2513,7 +2738,7 @@
 		x = 1
 		y = 1
 		relative_position_id = GRE_continue_british_advice
-		cost = 3
+		cost = 6
 		ai_will_do = {
 			base = 1
 		}

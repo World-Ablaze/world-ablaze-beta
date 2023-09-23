@@ -4,6 +4,53 @@
 # }
 
 political_actions = {
+	GRE_modernization_efforts_mission = {
+		allowed = {
+			original_tag = GRE
+		}
+
+		activation = {
+			always = no
+		}
+
+		available = {
+			industrial_complex > 40
+			731 = {
+				infrastructure > 5
+			}
+			47 = {
+				infrastructure > 7
+			}
+			186 = {
+				infrastructure > 5
+			}
+		}
+
+		cancel_trigger = {
+			NOT = {
+				has_idea = civilian_economy
+			}
+		}
+
+		is_good = yes
+
+		days_mission_timeout = 360
+
+		complete_effect = {
+			economy_fatigue_level_down_10 = yes
+			add_stability = 0.1
+		}
+
+		timeout_effect = {
+			economy_fatigue_level_up_10 = yes
+			add_stability = -0.15
+		}
+
+		cancel_effect = {
+			economy_fatigue_level_up_10 = yes
+			add_stability = -0.15
+		}
+	}
 }
 
 propaganda_efforts = {
@@ -47,6 +94,894 @@ propaganda_efforts = {
 
 		complete_effect = {
 			add_country_leader_trait = the_first_peaseant
+		}
+	}
+}
+
+war_measures = {
+	GRE_expand_shipyard_size = {
+		allowed = {
+			original_tag = GRE
+		}
+
+		available = {
+			num_of_civilian_factories_available_for_projects > 9
+			If = {
+				limit = {
+					has_idea = GRE_no_capital_shipyards_2
+				}
+				dockyard > 9
+			}
+			else_if = {
+				limit = {
+					has_idea = GRE_no_capital_shipyards_3
+				}
+				dockyard > 12
+			}
+			else_if = {
+				limit = {
+					has_idea = GRE_no_capital_shipyards_4
+				}
+				dockyard > 15
+			}
+			else_if = {
+				limit = {
+					has_idea = GRE_no_capital_shipyards_5
+				}
+				dockyard > 18
+			}
+		}
+
+		visible = {
+			has_completed_focus = GRE_expand_scramage_naval_yard
+			OR = {
+				has_idea = GRE_no_capital_shipyards_2
+				has_idea = GRE_no_capital_shipyards_3
+				has_idea = GRE_no_capital_shipyards_4
+				has_idea = GRE_no_capital_shipyards_5
+			}
+		}
+
+		cost = 50
+
+		days_remove = 50
+
+		modifier = {
+			civilian_factory_use = 10
+		}
+
+		remove_effect = {
+			If = {
+				limit = {
+					has_idea = GRE_no_capital_shipyards_2
+				}
+				swap_ideas = {
+					remove_idea = GRE_no_capital_shipyards_2
+					add_idea = GRE_no_capital_shipyards_3
+				}
+			}
+			else_if = {
+				limit = {
+					has_idea = GRE_no_capital_shipyards_3
+				}
+				swap_ideas = {
+					remove_idea = GRE_no_capital_shipyards_3
+					add_idea = GRE_no_capital_shipyards_4
+				}
+			}
+			else_if = {
+				limit = {
+					has_idea = GRE_no_capital_shipyards_4
+				}
+				swap_ideas = {
+					remove_idea = GRE_no_capital_shipyards_4
+					add_idea = GRE_no_capital_shipyards_5
+				}
+			}
+			else = {
+				remove_ideas = GRE_no_capital_shipyards_5
+			}
+		}
+	}
+}
+
+economy_decisions = {
+	GRE_spanish_arms_sales = {
+		icon = economy_fatigue
+
+		allowed = {
+			always = no
+		}
+
+		available = {
+			NOT = {
+				any_country = {
+					is_literally_china = yes
+					has_war = yes
+				}
+			}
+			has_war = yes
+		}
+
+		activation = {
+		}
+
+		visible = {
+
+		}
+
+		days_mission_timeout = 30
+		is_good = yes
+
+		timeout_effect = {
+			activate_mission = GRE_spanish_arms_sales
+			every_other_country = {
+				limit = {
+					original_tag = SPR
+				}
+				add_equipment_to_stockpile = {
+					type = ger_inf_1
+					amount = 100
+					producer = GER
+				}
+			}
+			economy_fatigue_level_down_1 = yes
+		}
+
+		complete_effect = {
+			
+		}
+		
+	}
+	GRE_chinese_arms_sales = {
+		icon = economy_fatigue
+
+		allowed = {
+			always = no
+		}
+
+		available = {
+			NOT = {
+				any_country = {
+					original_tag = SPR
+					has_civil_war = yes
+				}
+			}
+			has_war = yes
+		}
+
+		activation = {
+		}
+
+		visible = {
+
+		}
+
+		days_mission_timeout = 70
+		is_good = yes
+
+		timeout_effect = {
+			activate_mission = GRE_chinese_arms_sales
+			every_other_country = {
+				limit = {
+					is_literally_china = yes
+				}
+				add_equipment_to_stockpile = {
+					type = ger_inf_1
+					amount = 200
+					producer = GER
+				}
+			}
+			economy_fatigue_level_down_1 = yes
+		}
+
+		complete_effect = {
+			
+		}
+	}
+}
+
+
+GRE_equipment_purchases = {
+	purchase_planes_pol_1 = {
+		allowed = {
+			original_tag = GRE
+		}
+
+		available = {
+			POL = {
+				has_tech = pol_fighter_2
+			}
+		}
+
+		visible = {
+			has_completed_focus = GRE_plane_purchases
+		}
+
+		cancel_trigger = {
+			POL = {
+				OR = {
+					has_war_with = ROOT
+					has_capitulated = yes
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 2
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				set_country_flag = GRE_purchased_plz24
+			}
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = pol_fighter_equipment_2
+				amount = 24
+			}
+		}
+	}
+
+	purchase_planes_pol_2 = {
+		allowed = {
+			original_tag = GRE
+		}
+
+		available = {
+			has_country_flag = {
+				flag = GRE_purchased_plz24
+				days > 420
+			}
+			POL = {
+				has_tech = pol_fighter_2
+			}
+			has_completed_focus = GRE_continue_purchasing_foreign_planes
+		}
+
+		visible = {
+			has_completed_focus = GRE_plane_purchases
+			has_country_flag = GRE_purchased_plz24
+		}
+
+		cancel_trigger = {
+			POL = {
+				OR = {
+					has_war_with = ROOT
+					has_capitulated = yes
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 5
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				clr_country_flag = GRE_purchased_plz24
+			}
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = pol_fighter_equipment_2
+				amount = 70
+			}
+		}
+	}
+
+	purchase_planes_eng_1 = {
+		allowed = {
+			original_tag = GRE
+		}
+
+		available = {
+			ENG = {
+				has_tech = eng_fighter_2
+			}
+		}
+
+		visible = {
+			has_completed_focus = GRE_plane_purchases
+		}
+
+		cancel_trigger = {
+			ENG = {
+				OR = {
+					has_war_with = ROOT
+					has_capitulated = yes
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 2
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				set_country_flag = GRE_purchased_gladiator
+			}
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = eng_fighter_equipment_2
+				amount = 24
+			}
+		}
+	}
+
+	purchase_planes_eng_2 = {
+		allowed = {
+			original_tag = GRE
+		}
+
+		available = {
+			has_country_flag = {
+				flag = GRE_purchased_gladiator
+				days > 420
+			}
+			ENG = {
+				has_tech = eng_fighter_2
+			}
+			has_completed_focus = GRE_continue_purchasing_foreign_planes
+		}
+
+		visible = {
+			has_country_flag = GRE_purchased_gladiator
+			has_completed_focus = GRE_plane_purchases
+		}
+
+		cancel_trigger = {
+			ENG = {
+				OR = {
+					has_war_with = ROOT
+					has_capitulated = yes
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 5
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				clr_country_flag = GRE_purchased_gladiator
+			}
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = eng_fighter_equipment_2
+				amount = 90
+			}
+		}
+	}
+
+	purchase_planes_eng_3 = {
+		allowed = {
+			original_tag = GRE
+		}
+
+		available = {
+			any_country = {
+				has_tech = eng_fighter_multirole_1
+			}
+		}
+
+		visible = {
+			has_completed_focus = GRE_plane_purchases
+		}
+
+		cancel_trigger = {
+			ENG = {
+				OR = {
+					has_war_with = ROOT
+					has_capitulated = yes
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 2
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				set_country_flag = GRE_purchased_hurrican
+			}
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = eng_fighter_multirole_equipment_1
+				amount = 10
+			}
+		}
+	}
+
+	purchase_planes_eng_4 = {
+		allowed = {
+			original_tag = GRE
+		}
+
+		available = {
+			has_country_flag = {
+				flag = GRE_purchased_hurrican
+				days > 420
+			}
+			any_country = {
+				has_tech = eng_fighter_multirole_1
+			}
+			has_completed_focus = GRE_continue_purchasing_foreign_planes
+		}
+
+		visible = {
+			has_country_flag = GRE_purchased_hurrican
+			has_completed_focus = GRE_plane_purchases
+		}
+
+		cancel_trigger = {
+			ENG = {
+				OR = {
+					has_war_with = ROOT
+					has_capitulated = yes
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 7
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				clr_country_flag = GRE_purchased_hurrican
+			}
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = eng_fighter_multirole_equipment_1
+				amount = 70
+			}
+		}
+	}
+
+	purchase_planes_fra_1 = {
+		allowed = {
+			original_tag = GRE
+		}
+
+		available = {
+			FRA = {
+				has_tech = fra_fighter_3
+			}
+		}
+
+		visible = {
+			has_completed_focus = GRE_plane_purchases
+		}
+
+		cancel_trigger = {
+			FRA = {
+				OR = {
+					has_war_with = ROOT
+					has_capitulated = yes
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 4
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				set_country_flag = GRE_purchased_406
+			}
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = fra_fighter_equipment_3
+				amount = 24
+			}
+		}
+	}
+
+	purchase_planes_fra_2 = {
+		allowed = {
+			original_tag = GRE
+		}
+
+		available = {
+			has_country_flag = {
+				flag = GRE_purchased_406
+				days > 420
+			}
+			FRA = {
+				has_tech = fra_fighter_3
+			}
+		}
+
+		visible = {
+			has_country_flag = GRE_purchased_406
+			has_completed_focus = GRE_plane_purchases
+			has_completed_focus = GRE_continue_purchasing_foreign_planes
+		}
+
+		cancel_trigger = {
+			FRA = {
+				OR = {
+					has_war_with = ROOT
+					has_capitulated = yes
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 7
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				clr_country_flag = GRE_purchased_406
+			}
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = fra_fighter_equipment_3
+				amount = 70
+			}
+		}
+	}
+
+	purchase_planes_eng_5 = {
+		allowed = {
+			original_tag = GRE
+		}
+
+		available = {
+			ENG = {
+				has_tech = eng_naval_bomber_1
+			}
+		}
+
+		visible = {
+			has_completed_focus = GRE_plane_purchases
+		}
+
+		cancel_trigger = {
+			ENG = {
+				OR = {
+					has_war_with = ROOT
+					has_capitulated = yes
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 2
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = eng_nav_bomber_equipment_1
+				amount = 20
+			}
+		}
+	}
+
+	purchase_planes_ger_1 = {
+		allowed = {
+			original_tag = GRE
+		}
+
+		available = {
+			GER = {
+				has_tech = ger_fighter_1
+			}
+		}
+
+		visible = {
+			has_completed_focus = GRE_plane_purchases
+		}
+
+		cancel_trigger = {
+			GER = {
+				OR = {
+					has_war_with = ROOT
+					has_capitulated = yes
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 2
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				set_country_flag = GRE_purchased_he51
+			}
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = ger_fighter_equipment_1
+				amount = 24
+			}
+		}
+	}
+
+	purchase_planes_ger_2 = {
+		allowed = {
+			original_tag = GRE
+		}
+
+		available = {
+			has_country_flag = {
+				flag = GRE_purchased_he51
+				days > 420
+			}
+			GER = {
+				has_tech = ger_fighter_1
+			}
+			has_completed_focus = GRE_continue_purchasing_foreign_planes
+		}
+
+		visible = {
+			has_country_flag = GRE_purchased_he51
+			has_completed_focus = GRE_plane_purchases
+		}
+
+		cancel_trigger = {
+			GER = {
+				OR = {
+					has_war_with = ROOT
+					has_capitulated = yes
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 5
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				clr_country_flag = GRE_purchased_he51
+			}
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = ger_fighter_equipment_1
+				amount = 70
+			}
+		}
+	}
+
+	purchase_tanks_ger_1 = {
+		allowed = {
+			original_tag = GRE
+		}
+
+		available = {
+			GER = {
+				has_tech = ger_light_tank_chassis_1
+			}
+		}
+
+		visible = {
+			has_completed_focus = GRE_aquire_foreign_tanks
+		}
+
+		cancel_trigger = {
+			GER = {
+				OR = {
+					has_war_with = ROOT
+					has_capitulated = yes
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 2
+		}
+
+		complete_effect = {
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = tank_ger_light_chassis_1
+				amount = 70
+			}
+		}
+	}
+
+	purchase_tanks_bel_1 = {
+		allowed = {
+			original_tag = GRE
+		}
+
+		available = {
+			BEL = {
+				has_tech = bel_light_tank_chassis_1
+			}
+		}
+
+		visible = {
+			has_completed_focus = GRE_aquire_foreign_tanks
+		}
+
+		cancel_trigger = {
+			BEL = {
+				OR = {
+					has_war_with = ROOT
+					has_capitulated = yes
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 2
+		}
+
+		complete_effect = {
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = tank_bel_light_chassis_1
+				amount = 70
+			}
+		}
+	}
+
+	purchase_tanks_ita_1 = {
+		allowed = {
+			original_tag = GRE
+		}
+
+		available = {
+			ITA = {
+				has_tech = ita_light_tank_chassis_1
+			}
+		}
+
+		visible = {
+			has_completed_focus = GRE_aquire_foreign_tanks
+		}
+
+		cancel_trigger = {
+			ITA = {
+				OR = {
+					has_war_with = ROOT
+					has_capitulated = yes
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 2
+		}
+
+		complete_effect = {
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = tank_ita_light_chassis_2
+				amount = 70
+			}
+		}
+	}
+
+	purchase_tanks_eng_1 = {
+		allowed = {
+			original_tag = GRE
+		}
+
+		available = {
+			ENG = {
+				has_tech = eng_light_tank_chassis_1
+			}
+		}
+
+		visible = {
+			has_completed_focus = GRE_aquire_foreign_tanks
+		}
+
+		cancel_trigger = {
+			BEL = {
+				OR = {
+					has_war_with = ROOT
+					has_capitulated = yes
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 2
+		}
+
+		complete_effect = {
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = tank_eng_light_chassis_2
+				amount = 70
+			}
 		}
 	}
 }
