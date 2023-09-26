@@ -134,7 +134,9 @@ NDefines.NBuildings.BASE_FACTORY_REPAIR = 0.3										-- Default repair rate be
 NDefines.NBuildings.BASE_FACTORY_REPAIR_FACTOR = 2.0								-- Factory speed modifier when repairing.
 
 NDefines.NBuildings.DESTRUCTION_COOLDOWN_IN_WAR = 180								-- Number of days cooldown between removal of buildings in war times
-
+NDefines.NBuildings.RADAR_RANGE_BASE = 10											-- Radar range base, first level radar will be this + min, best radar will be this + max
+NDefines.NBuildings.RADAR_RANGE_MIN = 10												-- Radar range (from state center to province center) in measure of map pixels. Exluding techs.
+NDefines.NBuildings.RADAR_RANGE_MAX = 100											-- Range is interpolated between building levels 1-15.
 NDefines.NBuildings.ANTI_AIR_SUPERIORITY_MULT = 2.0									-- How much air superiority reduction to the enemy does our AA guns? Normally each building level = -1 reduction. With this a 5.0 multiplier.
 NDefines.NBuildings.MAX_SHARED_SLOTS = 50											-- Max slots shared by factories
 NDefines.NBuildings.SABOTAGE_FACTORY_DAMAGE = 50.0									-- How much damage takes a factory building in sabotage when state is occupied. Damage is mult by (1 + resistance strength), i.e. up to 2 x base value.
@@ -663,7 +665,7 @@ NDefines.NNavy.UNIT_EXPERIENCE_PER_COMBAT_HOUR = 5
 NDefines.NNavy.UNIT_EXPERIENCE_SCALE = 1
 NDefines.NNavy.EXPERIENCE_FACTOR_CONVOY_ATTACK = 0.12
 NDefines.NNavy.EXPERIENCE_FACTOR_NON_CARRIER_GAIN = 0.24							-- Xp gain by non-carrier ships in the combat
-NDefines.NNavy.EXPERIENCE_FACTOR_CARRIER_GAIN = 0.24								-- Xp gain by carrier ships in the combat
+NDefines.NNavy.EXPERIENCE_FACTOR_CARRIER_GAIN = 0.06								-- Xp gain by carrier ships in the combat
 
 NDefines.NNavy.NAVAL_SUPREMACY_CAN_INVADE = 0.5										-- required naval supremacy to perform invasions on an area
 
@@ -743,7 +745,7 @@ NDefines.NNavy.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- SUPPLY
 
-NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.1									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
+NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.12									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
 NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST = 500
 NDefines.NSupply.CAPITAL_SUPPLY_CIVILIAN_FACTORIES = 0.3 							-- supply from one civilian factory
 NDefines.NSupply.CAPITAL_SUPPLY_MILITARY_FACTORIES = 0.6 							-- supply from one military factory

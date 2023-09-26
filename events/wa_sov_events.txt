@@ -4823,45 +4823,130 @@ country_event = {
 
 ####################################### Winter War failed
 
-#country_event = {
-#	id = sov_armor.849
-#	hidden = yes
-#
-#	mean_time_to_happen = { days = 2 }
-#
-#	fire_only_once = yes
-#
-#	trigger = {
-#		tag = SOV
-#		has_war_with = FIN
-#		146 = { is_owned_by = FIN }
-#		NOT = {
-#			any_enemy_country = {
-#				is_major = yes
-#			}
-#		}
-#	}
-#
-#	immediate = {
-#		SOV = { country_event = { id = sov_armor.850 days = 240 } }
-#	}
-#
-#	option = {}
-#}
-#
-#country_event = {
-#	id = sov_armor.850
-#	hidden = yes
-#
-#	is_triggered_only = yes
-#
-#	immediate = {
-#		set_country_flag = SOV_winter_war_time_passed
-#	}
-#
-#	option = {}
-#}
+country_event = {
+	id = sov_armor.849
+	title = sov_armor.849.t
+	desc = {
+		text = sov_armor.849.da
+		trigger = {
+			has_country_flag = SOV_karjala_is_ours
+		}
+	}
+	desc = {
+		text = sov_armor.849.db
+		trigger = {
+			NOT = { has_country_flag = SOV_karjala_is_ours }
+		}
+	}
 
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			set_global_flag = SOV_ww_over
+		}
+	}
+
+	#partial failure
+	option = {
+		name = sov_armor.849.a
+		trigger = {
+			has_country_flag = SOV_karjala_is_ours
+		}
+		ai_chance = {
+			factor = 1
+		}
+		effect_tooltip = {
+			transfer_state = 146
+			white_peace = FIN
+			add_war_support = -0.1
+			add_stability = -0.05
+			army_experience = 25
+			FIN = {
+				add_stability = 0.1
+			}
+		}
+		FIN = { country_event = { id = sov_armor.850 hours = 6 } }
+	}
+
+	#complete failure
+	option = {
+		name = sov_armor.849.b
+		trigger = {
+			NOT = { has_country_flag = SOV_karjala_is_ours }
+		}
+		ai_chance = {
+			factor = 1
+		}
+		effect_tooltip = {
+			white_peace = FIN
+			add_war_support = -0.2
+			add_stability = -0.1
+			FIN = {
+				add_stability = 0.2
+			}
+		}
+		FIN = { country_event = { id = sov_armor.850 hours = 6 } }
+	}
+
+	#War goes on
+	option = {
+		name = sov_armor.849.c
+		ai_chance = {
+			factor = 0
+		}
+		add_political_power = -150
+		add_war_support = -0.4
+		effect_tooltip = {
+			FIN = {
+				add_war_support = 0.2
+			}
+		}
+		FIN = { country_event = { id = sov_armor.851 hours = 6 } }
+	}
+}
+
+#SU wants peace
+country_event = {
+	id = sov_armor.850
+	title = sov_armor.850.t
+	desc = sov_armor.850.d
+
+	is_triggered_only = yes
+
+	immediate = {
+	}
+
+	option = {
+		name = sov_armor.850.a
+		trigger = {
+			SOV = { has_country_flag = SOV_karjala_is_ours }
+		}
+		add_stability = 0.1
+		SOV = {
+			transfer_state = 146
+			army_experience = 25
+			white_peace = FIN
+			add_war_support = -0.1
+			add_stability = -0.05
+		}
+	}
+
+	option = {
+		name = sov_armor.850.b
+		trigger = {
+			NOT = { SOV = { has_country_flag = SOV_karjala_is_ours } }
+		}
+		add_stability = 0.2
+		SOV = {
+			white_peace = FIN
+			add_war_support = -0.2
+			add_stability = -0.1
+		}
+	}
+}
+
+#SU doesnt want peace
 country_event = {
 	id = sov_armor.851
 	title = sov_armor.851.t
@@ -4874,14 +4959,7 @@ country_event = {
 
 	option = {
 		name = sov_armor.851.a
-		add_stability = 0.2
-		if = {
-			limit = {
-				has_country_flag = SOV_karjala_is_ours
-			}
-			SOV = { transfer_state = 146 }
-		}
-		white_peace = SOV
+		add_war_support = 0.2
 	}
 }
 
