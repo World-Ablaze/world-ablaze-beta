@@ -832,6 +832,7 @@ focus_tree = {
 		}
 
 		available = {
+			has_completed_focus = MAN_obedience_to_japan
 			OR = {
 				is_in_faction_with = JAP
 				is_subject_of = JAP
@@ -1097,7 +1098,7 @@ focus_tree = {
 		icon = GFX_goal_generic_loans
 		prerequisite = { focus = MAN_Tenko }
 		relative_position_id = MAN_Tenko
-		x = 1
+		x = 2
 		y = 1
 
 		cost = 3
@@ -1120,7 +1121,7 @@ focus_tree = {
 		icon = GFX_goal_generic_agrarian_reform
 		prerequisite = { focus = MAN_Tenko }
 		relative_position_id = MAN_Tenko
-		x = 3
+		x = 4
 		y = 1
 
 		cost = 3
@@ -1181,7 +1182,7 @@ focus_tree = {
 		id = MAN_obedience_to_japan
 		icon = GFX_focus_CZE_german_puppet
 		prerequisite = { focus = MAN_encourage_the_free_thinkers }
-		mutually_exclusive = { focus = MAN_assert_our_independance }
+		mutually_exclusive = { focus = MAN_quest_for_independance }
 		x = 0
 		y = 2
 		relative_position_id = MAN_encourage_the_free_thinkers
@@ -1961,8 +1962,8 @@ focus_tree = {
 	############################
 
 	focus = {
-		id = MAN_assert_our_independance
-		icon = GFX_goal_generic_demand_territory
+		id = MAN_quest_for_independance
+		icon = GFX_
 		prerequisite = { focus = MAN_societal_reform }
 		mutually_exclusive = { focus = MAN_obedience_to_japan }
 		x = 0
@@ -1975,80 +1976,118 @@ focus_tree = {
 			factor = 4
 		}
 
-		available = {
-			always = no #Remove later
-		}
-
 		bypass = {
 			is_subject = no
 		}
 		available_if_capitulated = yes
 
 		completion_reward = {
-			custom_effect_tooltip = focus_tree_coming_in_78 #Remove later
-			#MAN_low_legitimacy_level_down = yes
-			#set_country_flag = MAN_assert_our_independance
-			#JAP = {
-			#	set_autonomy = {
-			#		target = MAN
-			#		autonomy_state = autonomy_wtt_imperial_subject
-			#	}
-			#}
+
+			add_ideas = MAN_quest_for_independance
+
+			add_popularity = {
+				ideology = neutrality
+				popularity = 0.1
+			}
 		}
 	}
 
 	focus = {
 		id = MAN_approach_the_communists
-		icon = GFX_goal_generic_demand_territory
-		prerequisite = { focus = MAN_assert_our_independance }
-		relative_position_id = MAN_assert_our_independance
+		icon = GFX_
+		prerequisite = { focus = MAN_quest_for_independance }
+		relative_position_id = MAN_quest_for_independance
 		x = -1
 		y = 1
-		cost = 3
+		cost = 6
 
-		allow_branch = {
-			always = no #Remove later
+		available_if_capitulated = yes
+
+		completion_reward = {
+			add_stability = -0.1
+			add_popularity = {
+				ideology = communism
+				popularity = 0.1
+			}
+			add_equipment_to_stockpile = { type = sov_inf_1 amount = 2500 producer = SOV }
+			add_equipment_to_stockpile = { type = support_equipment_1 amount = 500 producer = SOV }
 		}
+	}
+
+	focus = {
+		id = MAN_the_mukden_capital
+		icon = GFX_
+		prerequisite = { focus = MAN_quest_for_independance }
+		relative_position_id = MAN_quest_for_independance
+		x = 1
+		y = 1
+		cost = 6
+
+		ai_will_do = {
+			factor = 10
+		}
+
+		available = {
+			716 = { is_fully_controlled_by = ROOT }
+		}
+
+		completion_reward = {
+			ROOT = { set_capital = { state = 716 } }
+			MAN_low_legitimacy_level_down = yes
+			add_popularity = {
+				ideology = neutrality
+				popularity = 0.02
+			}
+			add_stability = 0.05
+		}
+	}
+
+	focus = {
+		id = MAN_expand_the_police_force
+		icon = GFX_
+		prerequisite = { focus = MAN_the_mukden_capital }
+		x = 2
+		y = 1
+		relative_position_id = MAN_the_mukden_capital
+
+		cost = 4
 
 		ai_will_do = {
 			factor = 1
 		}
-		available_if_capitulated = yes
 
 		completion_reward = {
-			
+			add_popularity = {
+				ideology = neutrality
+				popularity = 0.03
+			}
+			add_ideas = MAN_local_police
+			add_autonomy_ratio = {
+                value = 0.1
+                localization = MAN_expand_the_police_force
+             }
 		}
 	}
 
 	focus = {
 		id = MAN_fund_the_black_market
-		icon = GFX_goal_generic_construct_mil_factory
-		prerequisite = { focus = MAN_approach_the_communists }
+		icon = GFX_
+		prerequisite = { focus = MAN_expand_the_police_force }
 		x = 0
-		y = 2
-		relative_position_id = MAN_approach_the_communists
+		y = 1
+		relative_position_id = MAN_expand_the_police_force
 
-		cost = 10
+		cost = 5
 
 		ai_will_do = {
 			factor = 6
 		}
 
-		available = {
-
-		}
-
-		bypass = {
-
-		}
-
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
-
 		search_filters = { FOCUS_FILTER_INDUSTRY }
 
 		completion_reward = {
+			add_stability = -0.05
+			economy_fatigue_level_up_5 = yes
 			unlock_decision_tooltip = MAN_fund_underground_gun_shops
 			random_owned_controlled_state = {
 				limit = {
@@ -2089,41 +2128,16 @@ focus_tree = {
 		}
 	}
 
-	focus = {
-		id = MAN_the_mukden_capital
-		icon = GFX_goal_generic_demand_territory
-		prerequisite = { focus = MAN_assert_our_independance }
-		relative_position_id = MAN_assert_our_independance
-		x = 1
-		y = 1
-		cost = 3
 
-		ai_will_do = {
-			factor = 10
-		}
-
-		allow_branch = {
-			always = no #Remove later
-		}
-
-		available = {
-			608 = { is_fully_controlled_by = ROOT }
-		}
-
-		completion_reward = {
-			ROOT = { set_capital = { state = 608 } }
-			MAN_low_legitimacy_level_down = yes
-		}
-	}
 	focus = {
 		id = MAN_legislate_worker_rights
-		icon = GFX_goal_generic_intelligence_exchange
+		icon = GFX_
 		prerequisite = { focus = MAN_approach_the_communists }
-		x = -1
+		x = -2
 		y = 1
 		relative_position_id = MAN_approach_the_communists
 
-		cost = 3
+		cost = 5
 
 		ai_will_do = {
 			factor = 1
@@ -2132,12 +2146,36 @@ focus_tree = {
 
 
 		completion_reward = {
-			add_stability = 0.1
+			add_stability = 0.05
+			add_ideas = MAN_worker_rights
 		}
 	}
+
 	focus = {
-		id = MAN_five_equal_peoples
-		icon = GFX_goal_generic_national_unity
+		id = MAN_protect_the_intellectuals
+		icon = GFX_
+		prerequisite = { focus = MAN_legislate_worker_rights }
+		x = 0
+		y = 1
+		relative_position_id = MAN_legislate_worker_rights
+
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+		available_if_capitulated = yes
+
+
+		completion_reward = {
+			add_ideas = MAN_intellectuals
+		}
+	}
+
+
+	focus = {
+		id = MAN_chinese_citizen
+		icon = GFX_
 		prerequisite = { focus = MAN_approach_the_communists }
 		prerequisite = { focus = MAN_the_mukden_capital }
 		x = 1
@@ -2150,14 +2188,6 @@ focus_tree = {
 			factor = 1
 		}
 
-		available = {
-
-		}
-
-		bypass = {
-
-		}
-
 		cancel_if_invalid = yes
 		continue_if_invalid = no
 		available_if_capitulated = no
@@ -2167,51 +2197,22 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			add_war_support = 0.1
-		}
-	}
-	focus = {
-		id = MAN_expand_the_police_force
-		icon = GFX_goal_generic_national_unity
-		prerequisite = { focus = MAN_the_mukden_capital }
-		x = 1
-		y = 1
-		relative_position_id = MAN_the_mukden_capital
-
-		cost = 3
-
-		ai_will_do = {
-			factor = 1
-		}
-
-		available = {
-
-		}
-
-		bypass = {
-
-		}
-
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
-
-		complete_tooltip = {
-
-		}
-
-		completion_reward = {
-			add_war_support = 0.1
+			add_popularity = {
+				ideology = neutrality
+				popularity = 0.1
+			}
+			add_stability = 0.1
+			
 		}
 	}
 
 	focus = {
 		id = MAN_appeal_to_the_legislative_yuan
-		icon = GFX_goal_generic_demand_territory
-		prerequisite = { focus = MAN_five_equal_peoples }
-		x = 0
-		y = 2
-		relative_position_id = MAN_five_equal_peoples
+		icon = GFX_
+		prerequisite = { focus = MAN_chinese_citizen }
+		x = 1
+		y = 1
+		relative_position_id = MAN_chinese_citizen
 
 		cost = 3
 
@@ -2220,14 +2221,34 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			
+				CHI = {country_event = {id = man_armor.817 hours = 6 } }
+		}
+	}
+
+		focus = {
+		id = MAN_reach_out_to_Zheng_Xiaoxu
+		icon = GFX_
+		prerequisite = { focus = MAN_chinese_citizen }
+		x = -1
+		y = 1
+		relative_position_id = MAN_chinese_citizen
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		completion_reward = {
+			country_event = { id = man_armor.818 } 
 		}
 	}
 	focus = {
 		id = MAN_five_people_armies
-		icon = GFX_goal_generic_occupy_states_ongoing_war
+		icon = GFX_
 		prerequisite = { focus = MAN_appeal_to_the_legislative_yuan }
-		x = 0
+		prerequisite = { focus = MAN_reach_out_to_Zheng_Xiaoxu }
+		x = -1
 		y = 1
 		relative_position_id = MAN_appeal_to_the_legislative_yuan
 
@@ -2240,51 +2261,59 @@ focus_tree = {
 		completion_reward = {
 			add_ideas = MAN_chinese_dragons
 			unlock_decision_tooltip = MAN_raise_manchu_banner
-			custom_effect_tooltip = MAN_five_people_armies_tt
+			custom_effect_tooltip = MAN_wa_five_people_armies_tt
 			hidden_effect = {
 				division_template = {
 					name = "People's Volunteers Division"
 					priority = 2
 					division_names_group = MAN_INF_01
 					regiments = {
-						heavy_infantry = { x = 0 y = 0 }
+						infantry = { x = 0 y = 0 }
 						infantry = { x = 0 y = 1 }
 						infantry = { x = 0 y = 2 }
+						infantry = { x = 0 y = 3 }
+
 
 						infantry = { x = 1 y = 0 }
 						infantry = { x = 1 y = 1 }
 						infantry = { x = 1 y = 2 }
+						infantry = { x = 1 y = 3 }
+
+						infantry = { x = 2 y = 0 }
+						infantry = { x = 2 y = 1 }
+						infantry = { x = 2 y = 2 }
+						infantry = { x = 2 y = 3 }
 					}
 				}
 				random_owned_controlled_state = {
 					limit = { ROOT = { has_full_control_of_state = PREV } }
 					prioritize = { 328 }
 					create_unit = {
-						division = "name = \"People's Volunteers Division\" division_template = \"People's Volunteers Division\" start_experience_factor = 1.0"
+						division = "name = \"People's Volunteers Division\" division_template = \"People's Volunteers Division\" start_experience_factor = 0.2"
 						owner = MAN
 					}
 					create_unit = {
-						division = "name = \"People's Volunteers Division\" division_template = \"People's Volunteers Division\" start_experience_factor = 1.0"
+						division = "name = \"People's Volunteers Division\" division_template = \"People's Volunteers Division\" start_experience_factor = 0.2"
 						owner = MAN
 					}
 					create_unit = {
-						division = "name = \"People's Volunteers Division\" division_template = \"People's Volunteers Division\" start_experience_factor = 1.0"
+						division = "name = \"People's Volunteers Division\" division_template = \"People's Volunteers Division\" start_experience_factor = 0.2"
 						owner = MAN
 					}
 					create_unit = {
-						division = "name = \"People's Volunteers Division\" division_template = \"People's Volunteers Division\" start_experience_factor = 1.0"
+						division = "name = \"People's Volunteers Division\" division_template = \"People's Volunteers Division\" start_experience_factor = 0.2"
 						owner = MAN
 					}
 					create_unit = {
-						division = "name = \"People's Volunteers Division\" division_template = \"People's Volunteers Division\" start_experience_factor = 1.0"
+						division = "name = \"People's Volunteers Division\" division_template = \"People's Volunteers Division\" start_experience_factor = 0.2"
 						owner = MAN
 					}
 					create_unit = {
-						division = "name = \"People's Volunteers Division\" division_template = \"People's Volunteers Division\" start_experience_factor = 1.0"
+						division = "name = \"People's Volunteers Division\" division_template = \"People's Volunteers Division\" start_experience_factor = 0.2"
 						owner = MAN
 					}
 					create_unit = {
-						division = "name = \"People's Volunteers Division\" division_template = \"People's Volunteers Division\" start_experience_factor = 1.0"
+						division = "name = \"People's Volunteers Division\" division_template = \"People's Volunteers Division\" start_experience_factor = 0.2"
 						owner = MAN
 					}
 				}
@@ -2293,9 +2322,9 @@ focus_tree = {
 	}
 	focus = {
 		id = MAN_bolster_nationalism
-		icon = GFX_goal_generic_political_pressure
+		icon = GFX_
 		prerequisite = { focus = MAN_five_people_armies }
-		x = -1
+		x = -2
 		y = 1
 		relative_position_id = MAN_five_people_armies
 
@@ -2310,15 +2339,23 @@ focus_tree = {
 		available_if_capitulated = yes
 
 		completion_reward = {
-			MAN_low_legitimacy_level_down = yes
-			add_ideas = MAN_bolster_nationalism
+
+			add_autonomy_ratio = {
+                value = 0.1
+                localization = MAN_bolster_nationalism
+             }
+
+			add_timed_idea = {
+				idea = MAN_bolster_nationalism
+				days = 360
+			}
 		}
 	}
 	focus = {
 		id = MAN_staff_the_court_with_manchus
-		icon = GFX_goal_generic_intelligence_exchange
+		icon = GFX_
 		prerequisite = { focus = MAN_five_people_armies }
-		x = 1
+		x = 0
 		y = 1
 		relative_position_id = MAN_five_people_armies
 
@@ -2328,43 +2365,72 @@ focus_tree = {
 			factor = 1
 		}
 
-		available = {
-
-		}
-
-		bypass = {
-
-		}
-
 		cancel_if_invalid = yes
 		continue_if_invalid = no
-		available_if_capitulated = yes
-
 
 		completion_reward = {
 			if = {
 				limit = {
 					is_subject_of = JAP
 				}
-				unlock_decision_tooltip = MAN_divert_machine_tools
-				unlock_decision_tooltip = MAN_prepare_to_seize_arms
+
+				add_autonomy_ratio = {
+                value = 0.25
+                localization = MAN_staff_the_court_with_manchus
+             }
 			}
-			add_stability = 0.1
+			unlock_decision_tooltip = MAN_divert_machine_tools
+			add_stability = 0.05
 		}
 	}
+
 	focus = {
-		id = MAN_overthrow_the_kumantang
-		icon = GFX_goal_generic_territory_or_war
-		prerequisite = { focus = MAN_bolster_nationalism }
-		prerequisite = { focus = MAN_staff_the_court_with_manchus }
-		x = -1
+		id = MAN_form_the_peasants
+		icon = GFX_
+		prerequisite = { focus = MAN_five_people_armies }
+		x = 2
 		y = 1
-		relative_position_id = MAN_staff_the_court_with_manchus
+		relative_position_id = MAN_five_people_armies
 
 		cost = 3
 
 		ai_will_do = {
 			factor = 1
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+
+		completion_reward = {
+			add_ideas = MAN_form_the_peasants
+			add_war_support = 0.05
+		}
+	}
+
+
+	focus = {
+		id = MAN_overthrow_the_kwantung
+		icon = GFX_
+		prerequisite = { focus = MAN_bolster_nationalism }
+		prerequisite = { focus = MAN_staff_the_court_with_manchus }
+		prerequisite = { focus = MAN_form_the_peasants }
+		x = 0
+		y = 1
+		relative_position_id = MAN_staff_the_court_with_manchus
+
+		cost = 6
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			is_subject_of = JAP
+			JAP = {has_war_with = CHI}
+		}
+
+		bypass = {
+			is_subject = no
 		}
 
 		cancel_if_invalid = no
@@ -2388,86 +2454,150 @@ focus_tree = {
 			}
 			hidden_effect = {
 				news_event = { id = wtt_news.48 days = 2 }
+				white_peace = CHI
+				kill_country_leader = yes
 			}
-
-			add_country_leader_trait = nationalist_symbol
+			add_ideas = war_economy
+			
+            set_politics = { ruling_party = neutrality elections_allowed = no }
+			create_country_leader = {
+                name = "Aisin Gioro Puyi"
+                desc = "aisin_gioro_puyi_desc"
+                picture = "gfx/leaders/MAN/Portrait_Manchuria_Henry_Pu_Yi.dds"
+                expire = "1965.1.1"
+                ideology = monarchism
+                traits = {
+                    inexperienced_imperialist
+                }
+            }
 		}
 	}
 	focus = {
-		id = MAN_the_imperial_guards
-		icon = GFX_focus_generic_little_entente
-		prerequisite = { focus = MAN_overthrow_the_kumantang }
+		id = MAN_eight_banners
+		icon = GFX_
+		prerequisite = { focus = MAN_overthrow_the_kwantung }
 		x = -2
 		y = 1
-		relative_position_id = MAN_overthrow_the_kumantang
+		relative_position_id = MAN_overthrow_the_kwantung
 
 		cost = 3
 
 		ai_will_do = {
 			factor = 3
 		}
-
+		
+		available = {
+			has_tech = tech_engineers
+			has_tech = tech_recon
+		}
 		cancel_if_invalid = yes
-		continue_if_invalid = no
 		available_if_capitulated = no
 
 
 		completion_reward = {
-			custom_effect_tooltip = MAN_expand_the_imperial_guards_tt
+			custom_effect_tooltip = MAN_eight_banners_tt
 			hidden_effect = {
-				if = {
-					limit = {
-						is_ai = no
-					}
-					division_template = {
-						name = "Imperial Guards Division"
-						priority = 2
-						division_names_group = MAN_INF_01
-						regiments = {
-							infantry = { x = 0 y = 0 }
-							infantry = { x = 0 y = 1 }
-							infantry = { x = 0 y = 2 }
+				division_template = {
+					name = "Imperial Guards Division"
+					priority = 2
+					division_names_group = MAN_INF_01
+					regiments = {
+						heavy_infantry = { x = 0 y = 0 }
+						heavy_infantry = { x = 0 y = 1 }
 
-							infantry = { x = 1 y = 0 }
-							infantry = { x = 1 y = 1 }
-							infantry = { x = 1 y = 2 }
+	    	   		 	heavy_infantry = { x = 1 y = 0 }
+						heavy_infantry = { x = 1 y = 1 }
 
-							infantry = { x = 2 y = 0 }
-							artillery_brigade = { x = 2 y = 1 }
-							artillery_brigade = { x = 2 y = 2 }
-						}
+	    	   		 	heavy_infantry = { x = 2 y = 0 }
+						heavy_infantry = { x = 2 y = 1 }
+
+						artillery_brigade = { x = 3 y = 0 }
+						artillery_brigade = { x = 3 y = 1 }
 					}
-					random_owned_controlled_state = {
-						limit = { ROOT = { has_full_control_of_state = PREV } }
-						prioritize = { 328 }
-						create_unit = {
-							division = "name = \"1. Imperial Guards Division\" division_template = \"Imperial Guards Division\" start_experience_factor = 1.0"
-							owner = MAN
-						}
-						create_unit = {
-							division = "name = \"2. Imperial Guards Division\" division_template = \"Imperial Guards Division\" start_experience_factor = 1.0"
-							owner = MAN
-						}
-						create_unit = {
-							division = "name = \"3. Imperial Guards Division\" division_template = \"Imperial Guards Division\" start_experience_factor = 1.0"
-							owner = MAN
-						}
-						create_unit = {
-							division = "name = \"4. Imperial Guards Division\" division_template = \"Imperial Guards Division\" start_experience_factor = 1.0"
-							owner = MAN
-						}
+
+					support = {
+						engineer = { x = 0 y = 0 }
+						recon = {x = 0 y = 1}
+						artillery = { x = 0 y = 2}
+					}
+				}
+				random_owned_controlled_state = {
+					limit = { ROOT = { has_full_control_of_state = PREV } }
+					prioritize = { 328 }
+					create_unit = {
+						division = "name = \" Bordered Yellow Banner\" division_template = \"Imperial Guards Division\" start_experience_factor = 1.0"
+						owner = MAN
+					}
+					create_unit = {
+						division = "name = \"Plain Yellow Banner\" division_template = \"Imperial Guards Division\" start_experience_factor = 1.0"
+						owner = MAN
+					}
+					create_unit = {
+						division = "name = \"Plain White Banner\" division_template = \"Imperial Guards Division\" start_experience_factor = 1.0"
+						owner = MAN
+					}
+					create_unit = {
+						division = "name = \"Plain Red Banner\" division_template = \"Imperial Guards Division\" start_experience_factor = 1.0"
+						owner = MAN
+					}
+					create_unit = {
+						division = "name = \"Bordered White Banner \" division_template = \"Imperial Guards Division\" start_experience_factor = 1.0"
+						owner = MAN
+					}
+					create_unit = {
+						division = "name = \"Bordered Red Banner\" division_template = \"Imperial Guards Division\" start_experience_factor = 1.0"
+						owner = MAN
+					}
+					create_unit = {
+						division = "name = \"Plain Blue Banner\" division_template = \"Imperial Guards Division\" start_experience_factor = 1.0"
+						owner = MAN
+					}
+					create_unit = {
+						division = "name = \"Bordered Blue Banner\" division_template = \"Imperial Guards Division\" start_experience_factor = 1.0"
+						owner = MAN
 					}
 				}
 			}
 		}
 	}
+
 	focus = {
-		id = MAN_imperial_divinity
-		icon = GFX_goal_generic_secret_weapon
-		prerequisite = { focus = MAN_overthrow_the_kumantang }
+		id = MAN_imp_army
+		icon = GFX_
+		prerequisite = { focus = MAN_eight_banners }
 		x = 0
 		y = 1
-		relative_position_id = MAN_overthrow_the_kumantang
+		relative_position_id = MAN_eight_banners
+
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+		available_if_capitulated = no
+
+		available = {
+			has_completed_Focus = MAN_expand_the_police_force
+		}
+
+
+		completion_reward = {
+			army_experience = 20
+			swap_ideas = {
+				remove_idea = MAN_local_police
+				add_idea = MAN_Imperial_army
+			}
+		}
+	}
+
+
+	focus = {
+		id = MAN_imperial_divinity
+		icon = GFX_
+		prerequisite = { focus = MAN_overthrow_the_kwantung }
+		x = 0
+		y = 1
+		relative_position_id = MAN_overthrow_the_kwantung
 
 		cost = 3
 
@@ -2483,32 +2613,10 @@ focus_tree = {
 			MAN_low_legitimacy_level_down = yes
 		}
 	}
-	focus = {
-		id = MAN_reclaim_the_empire
-		icon = GFX_focus_generic_strike_at_democracy1
-		prerequisite = { focus = MAN_overthrow_the_kumantang }
-		x = 2
-		y = 1
-		relative_position_id = MAN_overthrow_the_kumantang
 
-		cost = 3
-
-		ai_will_do = {
-			factor = 1
-		}
-
-		completion_reward = {
-			add_war_support = 0.1
-			set_rule = { can_create_factions = yes }
-			every_state = {
-				limit = { is_core_of = CHI }
-				add_core_of = ROOT
-			}
-		}
-	}
-	focus = {
+		focus = {
 		id = MAN_claim_the_mandate_of_heaven
-		icon = GFX_focus_man_claim_the_mandate_of_heaven
+		icon = GFX_
 		prerequisite = { focus = MAN_imperial_divinity }
 		x = 0
 		y = 1
@@ -2521,17 +2629,18 @@ focus_tree = {
 		}
 
 		available = {
-			all_state = {
-				OR = {
-					NOT = { is_core_of = ROOT }
-					state = 729
-					state = 326
-					state = 728
-					state = 524
-					is_controlled_by = ROOT
-				}
-
-			}
+			NOT = { CHI = { exists = yes} }
+			controls_state = 716
+			controls_state = 608
+			controls_state = 605
+			controls_state = 620
+			controls_state = 598
+			controls_state = 613
+			controls_state = 592
+			controls_state = 604
+			controls_state = 750
+			controls_state = 325
+			controls_state = 594
 		}
 
 		bypass = {
@@ -2593,6 +2702,443 @@ focus_tree = {
 		}
 	}
 
+	focus = {
+		id = MAN_qing_society
+		icon = GFX_
+		prerequisite = { focus = MAN_overthrow_the_kwantung }
+		x = 2
+		y = 1
+		relative_position_id = MAN_overthrow_the_kwantung
+
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+		available_if_capitulated = no
+
+		available = {
+			has_completed_Focus = MAN_protect_the_intellectuals
+		}
+
+
+		completion_reward = {
+			add_research_slot = 1
+		}
+	}
+
+	focus = {
+		id = MAN_reform_Jinyiwei 
+
+		icon = GFX_
+		prerequisite = { focus = MAN_qing_society }
+		x = 0
+		y = 1
+		relative_position_id = MAN_qing_society
+
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+		available_if_capitulated = no
+
+		available = {
+		}
+
+
+		completion_reward = {
+			create_intelligence_agency = {
+				name = "Hoankyoku"
+				icon = GFX_intelligence_agency_logo_man
+			}
+			upgrade_intelligence_agency = upgrade_passive_defense
+			upgrade_intelligence_agency = upgrade_interrogation_techniques
+		}
+	}
+
+	focus = {
+		id = MAN_reinstate_imperial_court
+
+		icon = GFX_
+		prerequisite = { focus = MAN_reform_Jinyiwei }
+		prerequisite = { focus = MAN_imp_army }
+		prerequisite = { focus = MAN_claim_the_mandate_of_heaven }
+
+		x = 0
+		y = 1
+		relative_position_id = MAN_claim_the_mandate_of_heaven
+
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+		available_if_capitulated = no
+
+		available = {
+		}
+
+
+		completion_reward = {
+			add_popularity = {
+				ideology = neutrality
+				popularity = 0.2
+			}
+			add_ideas = MAN_imperial_court
+		}
+	}
+
+	focus = {
+		id = MAN_focus_on_prosperity
+		icon = GFX_
+		prerequisite = { focus = MAN_reinstate_imperial_court }
+		
+		x = 0
+		y = 1
+		relative_position_id = MAN_reinstate_imperial_court
+
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+		available_if_capitulated = no
+
+		available = {
+			has_war = no
+		}
+
+
+		completion_reward = {
+			economy_fatigue_level_down_10 = yes
+			add_ideas = MAN_prosperity
+		}
+	}
+
+
+	focus = {
+		id = MAN_reclaim_the_empire_afo
+		icon = GFX_
+		x = 23
+		y = 7
+
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			has_completed_Focus = MAN_overthrow_the_kwantung
+			has_war = no
+		}
+
+		completion_reward = {
+			add_war_support = 0.1
+			add_political_power = 150
+			every_state = {
+				limit = { is_core_of = CHI }
+				add_claim_by = ROOT
+			}
+		}
+	}
+	focus = {
+		id = MAN_integrate_mengjiang
+		icon = GFX_
+		prerequisite = { focus = MAN_reclaim_the_empire_afo }
+		x = -3
+		y = 1
+		relative_position_id = MAN_reclaim_the_empire_afo
+
+		cost = 4
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			OR = {
+				AND = {
+					611 = { is_fully_controlled_by = ROOT }
+					612 = { is_fully_controlled_by = ROOT }
+				}
+				MEN = { is_subject_of = MAN }
+			}
+
+		}
+
+		completion_reward = {
+			annex_country = { target = MEN transfer_troops = yes }
+			611 = { add_core_of = MAN }
+			612 = { add_core_of = MAN }
+		}
+	}
+
+	focus = {
+		id = MAN_subjugate_sinkiang
+		icon = GFX_
+		prerequisite = { focus = MAN_integrate_mengjiang }
+		x = 0
+		y = 1
+		relative_position_id = MAN_integrate_mengjiang
+
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		bypass = {
+			SIK = { exists = no}
+		}
+
+		available = {
+			has_completed_Focus = MAN_claim_the_mandate_of_heaven
+		}
+
+		completion_reward = {
+			create_wargoal = {
+				type = annex_everything
+				target = SIK
+			}
+		}
+	}
+
+
+	focus = {
+		id = MAN_revive_imperial_heritage
+		icon = GFX_
+		prerequisite = { focus = MAN_reclaim_the_empire_afo }
+		x = 0
+		y = 1
+		relative_position_id = MAN_reclaim_the_empire_afo
+
+		cost = 4
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		completion_reward = {
+			custom_effect_tooltip = MAN_revive_imperial_heritage_tt
+		}
+	}
+
+
+	focus = {
+		id = MAN_appeal_to_the_warlords
+		icon = GFX_
+		prerequisite = { focus = MAN_revive_imperial_heritage }
+		x = -1
+		y = 1
+		relative_position_id = MAN_revive_imperial_heritage
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		completion_reward = {
+			custom_effect_tooltip = MAN_appeal_to_warlords_tt
+		}
+	}
+
+	focus = {
+		id = MAN_secure_manchu
+		icon = GFX_
+		prerequisite = { focus = MAN_revive_imperial_heritage }
+		x = 1
+		y = 1
+		relative_position_id = MAN_revive_imperial_heritage
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		completion_reward = {
+			diplomatic_relation = {
+				country = SOV
+				relation = non_aggression_pact
+				active = yes
+			}		
+			custom_effect_tooltip = MAN_secure_manchu_tt
+
+		}
+	}
+
+
+	focus = {
+		id = MAN_send_delegations_abroad
+		icon = GFX_
+		prerequisite = { focus = MAN_reclaim_the_empire_afo }
+		x = 3
+		y = 1
+		relative_position_id = MAN_reclaim_the_empire_afo
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		completion_reward = {
+			add_opinion_modifier = { target = FRA modifier = MAN_reach_out_to_abroad }
+			reverse_add_opinion_modifier = { target = FRA modifier = MAN_reach_out_to_abroad }
+
+			add_opinion_modifier = { target = ENG modifier = MAN_reach_out_to_abroad }
+			reverse_add_opinion_modifier = { target = ENG modifier = MAN_reach_out_to_abroad }
+
+			add_opinion_modifier = { target = USA modifier = MAN_reach_out_to_abroad }
+			reverse_add_opinion_modifier = { target = USA modifier = MAN_reach_out_to_abroad }
+
+			add_opinion_modifier = { target = GER modifier = MAN_reach_out_to_abroad }
+			reverse_add_opinion_modifier = { target = GER modifier = MAN_reach_out_to_abroad }
+		}
+	}
+
+	focus = {
+		id = MAN_seek_a_major_sponsor
+		icon = GFX_
+		prerequisite = { focus = MAN_send_delegations_abroad }
+		x = 0
+		y = 1
+		relative_position_id = MAN_send_delegations_abroad
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			OR = {
+				is_in_faction = no
+				is_faction_leader = yes
+			}
+			OR = {
+				AND = {
+					country_exists = FRA
+					NOT = { has_war_with = FRA }
+				}
+				AND = {
+					country_exists = ITA
+					NOT = { has_war_with = ITA }
+				}
+				AND = {
+					country_exists = JAP
+					NOT = { has_war_with = JAP }
+				}
+				AND = {
+					country_exists = GER
+					NOT = { has_war_with = GER }
+					NOT = {
+						has_country_flag = Germany_withdraws_support
+					}
+				}
+				AND = {
+					country_exists = SOV
+					NOT = { has_war_with = SOV }
+				}
+				AND = {
+					country_exists = ENG
+					NOT = { has_war_with = ENG }
+				}
+				AND = {
+					country_exists = USA
+					NOT = { has_war_with = USA }
+				}
+			}
+			if = {
+				limit = {
+					has_idea = agrarian_society_1
+				}
+				NOT = { has_idea = agrarian_society_1 }
+			}
+			if = {
+				limit = {
+					has_idea = agrarian_society_2
+				}
+				NOT = { has_idea = agrarian_society_2 }
+			}
+			if = {
+				limit = {
+					has_idea = agrarian_society_3
+				}
+				NOT = { has_idea = agrarian_society_3 }
+			}
+			if = {
+				limit = {
+					has_idea = agrarian_society_4
+				}
+				NOT = { has_idea = agrarian_society_4 }
+			}
+			if = {
+				limit = {
+					has_idea = agrarian_society_5
+				}
+				NOT = { has_idea = agrarian_society_5 }
+			}
+		}
+
+		bypass = {
+			is_in_faction = yes
+			is_faction_leader = no
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		completion_reward = {
+			custom_effect_tooltip = FRA_unlock_technologies
+			custom_effect_tooltip = ITA_unlock_technologies
+			custom_effect_tooltip = JAP_unlock_technologies
+			custom_effect_tooltip = GER_unlock_technologies
+			custom_effect_tooltip = SOV_unlock_technologies
+			custom_effect_tooltip = ENG_unlock_technologies
+			custom_effect_tooltip = USA_unlock_technologies
+		}
+	}
+
+	focus = {
+		id = MAN_war_of_unification
+		icon = GFX_
+		prerequisite = { focus = MAN_appeal_to_the_warlords }
+		prerequisite = { focus = MAN_secure_manchu }
+
+		x = 0
+		y = 2
+		relative_position_id = MAN_revive_imperial_heritage
+
+		cost = 10
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		bypass = {
+			AND = {
+			NOT = { 
+				CHI = { exists = yes }
+			}
+			NOT = { 
+				PRC = { exists = yes }
+			}
+		  }
+		}
+
+		completion_reward = {
+				unlock_decision_tooltip = MAN_unification_war
+	    }
+	}
+	
+
+
+
 
 
 
@@ -2602,6 +3148,10 @@ focus_tree = {
 	###### COMMUNIST PATH ######
 	############################
 
+
+	# Wow so empty! ask about this later
+
+	
 	############################
 	######### MILITARY #########
 	############################
@@ -2609,7 +3159,7 @@ focus_tree = {
 	focus = {
 		id = MAN_the_manchukuo_imperial_army
 		icon = GFX_goal_generic_small_arms
-		x = 21
+		x = 23
 		y = 0
 
 		cost = 3
@@ -2626,11 +3176,45 @@ focus_tree = {
 			army_experience = 40
 		}
 	}
+
+	focus = {
+		id = MAN_reorganize_the_army
+		icon = GFX_
+		prerequisite = { focus = MAN_the_manchukuo_imperial_army }
+		mutually_exclusive = { focus = MAN_exercises_with_the_kwantung_army }
+
+		x = -3
+		y = 1
+		relative_position_id = MAN_the_manchukuo_imperial_army
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			has_completed_focus = MAN_quest_for_independance
+		}
+
+		available_if_capitulated = yes
+
+		completion_reward = {
+			add_doctrine_cost_reduction = {
+				name = MAN_reorganize_the_army
+				cost_reduction = 0.99
+				uses = 1
+				category = wwi_doctrine
+			}
+		    army_experience = 75
+		}
+	}
 	
 	focus = {
 		id = MAN_exercises_with_the_kwantung_army
 		icon = GFX_goal_generic_occupy_states_ongoing_war
 		prerequisite = { focus = MAN_the_manchukuo_imperial_army }
+		mutually_exclusive = { focus = MAN_reorganize_the_army }
 		x = -1
 		y = 1
 		relative_position_id = MAN_the_manchukuo_imperial_army
@@ -2666,10 +3250,10 @@ focus_tree = {
 	focus = {
 		id = MAN_infantry_modernization
 		icon = GFX_goal_generic_small_arms
-		prerequisite = { focus = MAN_exercises_with_the_kwantung_army }
-		x = -2
+		prerequisite = { focus = MAN_reorganize_the_army }
+		x = 0
 		y = 1
-		relative_position_id = MAN_exercises_with_the_kwantung_army
+		relative_position_id = MAN_reorganize_the_army
 
 		cost = 3
 
@@ -2810,8 +3394,7 @@ focus_tree = {
 	focus = {
 		id = MAN_introduction_of_artillery
 		icon = GFX_goal_generic_artillery
-		prerequisite = { focus = MAN_accept_japanese_recruits }
-		prerequisite = { focus = MAN_infantry_modernization }
+		prerequisite = { focus = MAN_accept_japanese_recruits focus = MAN_infantry_modernization }
 		x = -1
 		y = 1
 		relative_position_id = MAN_accept_japanese_recruits
@@ -3026,25 +3609,25 @@ focus_tree = {
 							}
 						}
 					}
-					random_owned_controlled_state = {
-						limit = { ROOT = { has_full_control_of_state = PREV } }
-						prioritize = { 328 }
-						create_unit = {
-							division = "name = \"1. Imperial Guards Division\" division_template = \"Imperial Guards Division\" start_experience_factor = 1.0"
-							owner = MAN
-						}
-						create_unit = {
-							division = "name = \"2. Imperial Guards Division\" division_template = \"Imperial Guards Division\" start_experience_factor = 1.0"
-							owner = MAN
-						}
-						create_unit = {
-							division = "name = \"3. Imperial Guards Division\" division_template = \"Imperial Guards Division\" start_experience_factor = 1.0"
-							owner = MAN
-						}
-						create_unit = {
-							division = "name = \"4. Imperial Guards Division\" division_template = \"Imperial Guards Division\" start_experience_factor = 1.0"
-							owner = MAN
-						}
+				}
+				random_owned_controlled_state = {
+					limit = { ROOT = { has_full_control_of_state = PREV } }
+					prioritize = { 328 }
+					create_unit = {
+						division = "name = \"1. Imperial Guards Division\" division_template = \"Imperial Guards Division\" start_experience_factor = 1.0"
+						owner = MAN
+					}
+					create_unit = {
+						division = "name = \"2. Imperial Guards Division\" division_template = \"Imperial Guards Division\" start_experience_factor = 1.0"
+						owner = MAN
+					}
+					create_unit = {
+						division = "name = \"3. Imperial Guards Division\" division_template = \"Imperial Guards Division\" start_experience_factor = 1.0"
+						owner = MAN
+					}
+					create_unit = {
+						division = "name = \"4. Imperial Guards Division\" division_template = \"Imperial Guards Division\" start_experience_factor = 1.0"
+						owner = MAN
 					}
 				}
 			}

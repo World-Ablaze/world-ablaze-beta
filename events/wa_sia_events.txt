@@ -1,32 +1,570 @@
 ﻿add_namespace = sia_armor
 
 country_event = {
-	id = sia_armor.1
-	title = sia_armor.1.t
-	desc = sia_armor.1.d
+	id = sia_armor.401
+	hidden = yes
 
-	picture = GFX_report_event_japanese_reply
+	is_triggered_only = yes
 
-	mean_time_to_happen = { days = 2 }
-
-	fire_only_once = yes
-
-	trigger = {
-		tag = SIA
-		is_subject = no
-		date > 1939.6.20
+	immediate = {
+		random_owned_controlled_state = {
+			prioritize = { 973 }
+			add_extra_state_shared_building_slots = 2
+			add_building_construction = {
+				type = industrial_complex
+				level = 2
+				instant_build = yes
+			}
+		}
+		random_owned_controlled_state = {
+			prioritize = { 974 }
+			add_extra_state_shared_building_slots = 2
+			add_building_construction = {
+				type = industrial_complex
+				level = 2
+				instant_build = yes
+			}
+		}
+		random_owned_controlled_state = {
+			prioritize = { 724 }
+			add_extra_state_shared_building_slots = 2
+			add_building_construction = {
+				type = industrial_complex
+				level = 2
+				instant_build = yes
+			}
+		}
 	}
+
+	option = {
+	}
+}
+
+############################## Demand Subjugation
+
+#Cambodia
+country_event = {
+	id = sia_armor.801
+	title = sia_armor.801.t
+	desc = sia_armor.801.d
+
+	is_triggered_only = yes
 
 	immediate = {
 	}
 
 	option = {
-		name = sia_armor.1.a
-		add_war_support = 0.1
-		add_stability = 0.05
-		set_cosmetic_tag = SIA_proclaimed
+		name = sia_armor.801.a
+		FROM = { country_event = { days = 1 id = sia_armor.802 } }
+		custom_effect_tooltip = GAME_OVER_TT
+		effect_tooltip = {
+			FROM = {
+				annex_country = { target = ROOT }
+			}
+		}
+	}
+
+	option = {
+		name = sia_armor.801.b
+		FROM = { country_event = { days = 1 id = sia_armor.803 } }
+		effect_tooltip = {
+			FROM = {
+				create_wargoal = {
+					target = ROOT
+					type = annex_everything
+					expire = 0
+				}
+			}
+		}
 	}
 }
+
+country_event = {
+	id = sia_armor.802
+	title = sia_armor.802.t
+	desc = sia_armor.802.d
+
+	is_triggered_only = yes
+
+	immediate = {
+	}
+
+	option = {
+		name = sia_armor.802.a
+		annex_country = { target = CAM }
+	}
+}
+
+country_event = {
+	id = sia_armor.803
+	title = sia_armor.803.t
+	desc = sia_armor.803.d
+
+	is_triggered_only = yes
+
+	immediate = {
+	}
+
+	option = {
+		name = sia_armor.803.a
+		create_wargoal = {
+			target = CAM
+			type = annex_everything
+			expire = 0
+		}
+	}
+}
+
+#Laos
+
+country_event = {
+	id = sia_armor.804
+	title = sia_armor.804.t
+	desc = sia_armor.804.d
+
+	is_triggered_only = yes
+
+	immediate = {
+	}
+
+	option = {
+		name = sia_armor.804.a
+		FROM = { country_event = { days = 1 id = sia_armor.805 } }
+		effect_tooltip = {
+			FROM = {
+				annex_country = { target = ROOT }
+			}
+		}
+	}
+
+	option = {
+		name = sia_armor.804.b
+		FROM = { country_event = { days = 1 id = sia_armor.806 } }
+		effect_tooltip = {
+			FROM = {
+				create_wargoal = {
+					target = ROOT
+					type = annex_everything
+					expire = 0
+				}
+			}
+		}
+	}
+}
+
+country_event = {
+	id = sia_armor.805
+	title = sia_armor.805.t
+	desc = sia_armor.805.d
+
+	is_triggered_only = yes
+
+	immediate = {
+	}
+
+	option = {
+		name = sia_armor.805.a
+		annex_country = { target = LAO }
+	}
+}
+
+country_event = {
+	id = sia_armor.806
+	title = sia_armor.806.t
+	desc = sia_armor.806.d
+
+	is_triggered_only = yes
+
+	immediate = {
+	}
+
+	option = {
+		name = sia_armor.806.a
+		create_wargoal = {
+			target = LAO
+			type = annex_everything
+			expire = 0
+		}
+	}
+}
+
+############################## Border Wars
+
+# add_namespace = wtt_border_conflict_canceled_defender
+# add_namespace = wtt_border_conflict_canceled_attacker
+# add_namespace = wtt_border_conflict_lost_attacker
+# add_namespace = wtt_border_conflict_lost_defender
+# add_namespace = wtt_border_conflict_won_attacker
+# add_namespace = wtt_border_conflict_won_defender
+
+country_event = {
+	id = sia_armor.807
+	title = wtt_border_conflict_won_attacker.1.t
+	desc = wtt_border_conflict_won_attacker.1.desc
+
+	picture = GFX_report_event_chinese_soldiers_city_ruin
+
+	is_triggered_only = yes
+
+	immediate = {
+		save_event_target_as = our_country
+		FROM = { save_event_target_as = our_state }
+		FROM.FROM = { save_event_target_as = their_country }
+		FROM.FROM.FROM = { save_event_target_as = their_state }
+		remove_targeted_decision = { target = event_target:their_country decision = WTT_border_conflict_time_until_cancelled }
+	}
+
+	option = {
+		name = sia_armor.807.a
+		ai_chance = {
+			factor = 100
+
+			modifier = {
+				factor = 0
+				NOT = { has_global_flag = fall_of_france }
+			}
+		}
+		army_experience = 30
+		add_doctrine_cost_reduction = {
+			cost_reduction = 0.5
+			uses = 1
+			category = land_doctrine
+		}
+		if = {
+			limit = {
+				check_variable = {
+					FROM.FROM.num_owned_states > 1
+				}
+			}
+			transfer_state = FROM.FROM.FROM
+		}
+		else = {
+			FROM.FROM = { ROOT = { annex_country = { target = PREV } } }
+		}
+		
+		custom_effect_tooltip = SIA_border_conflict_tt_2
+		event_target:their_country = {
+			if = {
+				limit = {
+					this = {
+						OR = {
+							is_subject_of = FRA
+							is_subject_of = VIC
+							is_subject_of = ENG
+						}
+					}
+				}
+				this = {
+					overlord = {
+						country_event = { id = sia_armor.813 days = 1 }
+					}
+				}
+			}
+		}
+	}
+
+	option = {
+		name = wtt_border_conflict_won_attacker.1.a
+		ai_chance = {
+			factor = 100
+
+			modifier = {
+				factor = 0
+				has_global_flag = fall_of_france
+			}
+		}
+		#add_political_power = 100
+		army_experience = 30
+		add_doctrine_cost_reduction = {
+			cost_reduction = 0.5
+			uses = 1
+			category = land_doctrine
+		}
+	}
+}
+
+country_event = {
+	id = sia_armor.808
+	title = wtt_border_conflict_won_defender.1.t
+	desc = wtt_border_conflict_won_defender.1.desc
+
+	picture = GFX_report_event_chinese_soldiers_mountain
+
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			save_event_target_as = our_country
+			FROM = {
+				save_event_target_as = our_state
+				clr_state_flag = border_incident_active
+			}
+			FROM.FROM = { save_event_target_as = their_country }
+			FROM.FROM.FROM = {
+				save_event_target_as = their_state
+				clr_state_flag = border_incident_active
+			}
+			set_country_flag = show_effect_tooltips
+			clear_variable = attacker_state_vs_@FROM.FROM
+			clear_variable = defender_state_vs_@FROM.FROM
+			remove_targeted_decision = { target = event_target:their_country decision = WTT_border_conflict_time_until_cancelled }
+		}
+	}
+
+	#Same effect as attacker. Tooltip for their effects
+	option = {
+		name = wtt_border_conflict_won_defender.1.a
+		#add_political_power = 150
+		army_experience = 30
+		add_doctrine_cost_reduction = {
+			name = defensive_border_conflict_won
+			cost_reduction = 0.99
+			uses = 1
+			category = land_doctrine
+		}
+		if = {
+			limit = { has_country_flag = show_effect_tooltips }
+			event_target:their_country = {
+				effect_tooltip = {
+					#add_political_power = -150
+					army_experience = 10
+				}
+			}
+			clr_country_flag = show_effect_tooltips
+		}
+	}
+}
+
+country_event = {
+	id = sia_armor.809
+	title = wtt_border_conflict_lost_attacker.1.t
+	desc = wtt_border_conflict_lost_attacker.1.desc
+
+	picture = GFX_report_event_dead_soldiers
+
+	is_triggered_only = yes
+
+	immediate = {
+		save_event_target_as = our_country
+		FROM = { save_event_target_as = our_state }
+		FROM.FROM = { save_event_target_as = their_country }
+		FROM.FROM.FROM = { save_event_target_as = their_state }
+		set_country_flag = show_effect_tooltips
+		remove_targeted_decision = { target = event_target:their_country decision = WTT_border_conflict_time_until_cancelled }
+	}
+
+	#Same effect as defender. Tooltip for their effects
+	option = {
+		name = wtt_border_conflict_lost_attacker.1.a
+		#add_political_power = -150
+		army_experience = 10
+		if = {
+			limit = { has_country_flag = show_effect_tooltips }
+			event_target:their_country = {
+				effect_tooltip = {
+					#add_political_power = 150
+					army_experience = 30
+					add_doctrine_cost_reduction = {
+						name = defensive_border_conflict_won
+						cost_reduction = 0.99
+						uses = 1
+						category = land_doctrine
+					}
+				}
+			}
+			clr_country_flag = show_effect_tooltips
+		}
+	}
+}
+
+
+
+country_event = {
+	id = sia_armor.810
+	title = wtt_border_conflict_lost_defender.1.t
+	desc = wtt_border_conflict_lost_defender.1.desc
+
+	picture = GFX_report_event_dead_soldiers
+
+	is_triggered_only = yes
+
+	#Same effect as attacker. Tooltip for their effects
+	immediate = {
+		hidden_effect = {
+			save_event_target_as = our_country
+			FROM = {
+				save_event_target_as = our_state
+				clr_state_flag = border_incident_active
+			}
+			FROM.FROM = { save_event_target_as = their_country }
+			FROM.FROM.FROM = {
+				save_event_target_as = their_state
+				clr_state_flag = border_incident_active
+			}
+			set_country_flag = show_effect_tooltips
+			clear_variable = attacker_state_vs_@FROM.FROM
+			clear_variable = defender_state_vs_@FROM.FROM
+			remove_targeted_decision = { target = event_target:their_country decision = WTT_border_conflict_time_until_cancelled }
+		}
+	}
+
+	#Same effect as attacker. Tooltip for their effects
+	option = {
+		name = border_conflict_lost_defender_siam.1.a
+		if = {
+			limit = { has_country_flag = show_effect_tooltips }
+			effect_tooltip = {
+				#add_political_power = 100
+				if = {
+					limit = {
+						check_variable = {
+							num_owned_states > 1
+						}
+					}
+					FROM.FROM = { transfer_state = FROM }
+				}
+				else = {
+					FROM.FROM = { annex_country = { target = ROOT } }
+				}
+			}
+			clr_country_flag = show_effect_tooltips
+		}
+	}
+}
+
+
+
+country_event = {
+	id = sia_armor.811
+	title = wtt_border_conflict_canceled_attacker.1.t
+	desc = wtt_border_conflict_canceled_attacker.1.desc
+
+	picture = GFX_report_event_chinese_soldiers_mountain
+
+	is_triggered_only = yes
+
+	immediate = {
+		save_event_target_as = our_country
+		FROM = { save_event_target_as = our_state }
+		FROM.FROM = { save_event_target_as = their_country }
+		FROM.FROM.FROM = { save_event_target_as = their_state }
+		set_country_flag = show_effect_tooltips
+	}
+
+	option = {
+		name = wtt_border_conflict_canceled_attacker.1.a
+		army_experience = 15
+		if = {
+			limit = { has_country_flag = show_effect_tooltips }
+			event_target:their_country = {
+				effect_tooltip = {
+					army_experience = 30
+					#add_political_power = 50
+				}
+			}
+			clr_country_flag = show_effect_tooltips
+		}
+	}
+}
+
+
+
+country_event = {
+	id = sia_armor.812
+	title = wtt_border_conflict_canceled_defender.1.t
+	desc = wtt_border_conflict_canceled_defender.1.desc
+
+	picture = GFX_report_event_chinese_soldiers_mountain
+
+	is_triggered_only = yes
+
+
+	immediate = {
+		hidden_effect = {
+			save_event_target_as = our_country
+			FROM = {
+				save_event_target_as = our_state
+				clr_state_flag = border_incident_active
+			}
+			FROM.FROM = { save_event_target_as = their_country }
+			FROM.FROM.FROM = {
+				save_event_target_as = their_state
+				clr_state_flag = border_incident_active
+			}
+			set_country_flag = show_effect_tooltips
+			clear_variable = attacker_state_vs_@FROM.FROM
+			clear_variable = defender_state_vs_@FROM.FROM
+		}
+	}
+
+	option = {
+		name = wtt_border_conflict_canceled_defender.1.a
+		army_experience = 30
+		#add_political_power = 50
+		if = {
+			limit = { has_country_flag = show_effect_tooltips }
+			event_target:their_country = {
+				effect_tooltip = {
+					army_experience = 15
+				}
+			}
+			clr_country_flag = show_effect_tooltips
+		}
+	}
+}
+
+country_event = { #
+	id = sia_armor.813
+	title = sia_armor.813.t
+	desc = sia_armor.813.d
+
+	is_triggered_only = yes
+
+	option = {
+		trigger = {
+			if = {
+				limit = {
+					original_tag = FRA
+				}
+				NOT = {
+					has_global_flag = fall_of_france
+				}
+			}
+			if = {
+				limit = {
+					original_tag = ENG
+				}
+				NOT = {
+					has_global_flag = ENG_fall_of_the_uk
+				}
+			}
+			if = {
+				limit = {
+					original_tag = VIC
+				}
+				NOT = {
+					has_idea = VIC_depowered_government
+				}
+			}
+		}
+		name = sia_armor.813.a
+		declare_war_on = {
+			target = SIA
+			type = topple_government
+		}
+		ai_chance = {
+			base = 1
+		}
+	}
+	option = {
+		name = sia_armor.813.b
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+##############################
 
 country_event = {
 	id = sia_armor.901
@@ -49,12 +587,12 @@ country_event = {
 		289 = {
 			add_building_construction = {
 				type = air_base
-				level = 4
+				level = 2
 				instant_build = yes
 			}
 			add_building_construction = {
 				type = naval_base
-				level = 5
+				level = 1
 				province = 7408
 				instant_build = yes
 			}
@@ -62,21 +600,21 @@ country_event = {
 		724 = {
 			add_building_construction = {
 				type = air_base
-				level = 4
+				level = 2
 				instant_build = yes
 			}
 		}
 		973 = {
 			add_building_construction = {
 				type = air_base
-				level = 4
+				level = 2
 				instant_build = yes
 			}
 		}
 		974 = {
 			add_building_construction = {
 				type = air_base
-				level = 4
+				level = 2
 				instant_build = yes
 			}
 		}
