@@ -855,7 +855,6 @@ NDefines.NAI.NAVAL_INVADED_AREA_PRIO_DURATION = 270									-- after successful 
 NDefines.NAI.NAVAL_INVADED_AREA_PRIO_MULT = 2.0										-- fronts that belongs to recent invasions gets more prio
 NDefines.NAI.MIN_NUM_CONQUERED_PROVINCES_TO_DEPRIO_NAVAL_INVADED_FRONTS = 30		-- if you conquer this amount of provinces after a naval invasion, it will lose its prio status and will act as a regular front
 NDefines.NAI.MAX_INVASION_SIZE = 24													-- max invasion group size
---NDefines.NAI.NAVAL_MISSION_INVASION_BASE = 10000									-- Base score for region with naval invasion (modified dynamically by prioritizing orders)
 NDefines.NAI.MAX_UNITS_FACTOR_INVASION_ORDER = 1.4									-- Factor for max number of units to assign to naval invasion orders
 NDefines.NAI.DESIRED_UNITS_FACTOR_INVASION_ORDER = 1.4								-- Factor for desired number of units to assign to naval invasion orders
 NDefines.NAI.MIN_UNITS_FACTOR_INVASION_ORDER = 1.2									-- Factor for min number of units to assign to naval invasion orders
