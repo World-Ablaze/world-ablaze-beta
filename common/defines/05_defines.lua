@@ -280,6 +280,7 @@ NDefines.NMilitary.ACCLIMATIZATION_SPEED_GAIN = 0.05								-- A variable used t
 
 NDefines.NMilitary.MAX_DIVISION_BRIGADE_WIDTH = 5									-- Max width of regiments in division designer.
 NDefines.NMilitary.MAX_DIVISION_BRIGADE_HEIGHT = 5									-- Max height of regiments in division designer.
+NDefines.NMilitary.MIN_DIVISION_BRIGADE_HEIGHT = 5									-- Min height of regiments in division designer.
 NDefines.NMilitary.MAX_DIVISION_SUPPORT_WIDTH = 2									-- Max width of support in division designer.
 NDefines.NMilitary.MAX_DIVISION_SUPPORT_HEIGHT = 5									-- Max height of support in division designer.
 
@@ -298,9 +299,9 @@ NDefines.NMilitary.STRATEGIC_SPEED_RAIL_MAX = 25.0
 
 NDefines.NMilitary.BATALION_CHANGED_EXPERIENCE_DROP = 0.75							-- Division experience drop if unit has different batalion
 
-NDefines.NMilitary.MAX_ARMY_EXPERIENCE = 5000										--Max army experience a country can store
-NDefines.NMilitary.MAX_NAVY_EXPERIENCE = 5000										--Max navy experience a country can store
-NDefines.NMilitary.MAX_AIR_EXPERIENCE = 5000										--Max air experience a country can store
+NDefines.NMilitary.MAX_ARMY_EXPERIENCE = 999										--Max army experience a country can store
+NDefines.NMilitary.MAX_NAVY_EXPERIENCE = 999										--Max navy experience a country can store
+NDefines.NMilitary.MAX_AIR_EXPERIENCE = 999										--Max air experience a country can store
 
 NDefines.NMilitary.UNIT_EXPERIENCE_PER_COMBAT_HOUR = 0.00060
 NDefines.NMilitary.FIELD_EXPERIENCE_SCALE = 0.0015
@@ -1110,3 +1111,17 @@ NDefines.NAI.MAX_THREAT_FOR_FIRST_YEAR_CIVILIAN_MODE = 40							-- above this th
 NDefines_Graphics.NGraphics.DRAW_FOW_CUTOFF = 0
 NDefines_Graphics.NGraphics.DRAW_FOW_FADE_LENGTH = 0
 
+--	NIndustrialOrganisation -----
+
+NDefines.NIndustrialOrganisation.ASSIGN_DESIGN_TEAM_PP_COST_PER_DAY = 0.1			-- Cost in Political Power daily generation when one MIO is assigned to a research slot
+NDefines.NIndustrialOrganisation.ASSIGN_INDUSTRIAL_MANUFACTURER_PP_COST_PER_DAY = 0.0		-- Cost in Political Power daily generation when one MIO is assigned to a production line
+-- NDefines.NIndustrialOrganisation.FUNDS_FOR_SIZE_UP = 1000							-- Funds needed for a MIO to increment its size and get points to unlock traits
+-- NDefines.NIndustrialOrganisation.FUNDS_FOR_SIZE_UP_LEVEL_FACTOR = 0.8 				-- How much each level mutliplies the funds for size up
+NDefines.NIndustrialOrganisation.DESIGN_TEAM_CHANGE_XP_COST = 10					-- Flat cost added to the XP cost of a new equipment design
+NDefines.NIndustrialOrganisation.FUNDS_FOR_RESEARCH_COMPLETION_PER_RESEARCH_COST = 200     -- Funds added to MIO when the Design Team has completed a research, multiplied by research_cost in technology template
+NDefines.NIndustrialOrganisation.FUNDS_FOR_CREATING_EQUIPMENT_VARIANT = 100			-- Funds added to MIO when a new variant is created with the Design Team assigned to it
+NDefines.NIndustrialOrganisation.MAX_FUNDS_FROM_MANUFACTURER_PER_DAY = 80			-- Max funds generated per manufacturer per day. Set to 0 for no Maximum.
+-- NDefines.NIndustrialOrganisation.ENABLE_TASK_CAPACITY = true						-- Enable limited task capacity for MIOs
+-- NDefines.NIndustrialOrganisation.DEFAULT_INITIAL_TASK_CAPACITY = 2					-- Default start task capacity for each MIO (may be overriden in DB)
+NDefines.NIndustrialOrganisation.DEFAULT_INITIAL_POLICY_ATTACH_COST = 50			-- Default start attach cost in PP for policies
+NDefines.NIndustrialOrganisation.DEFAULT_INITIAL_ATTACH_POLICY_COOLDOWN = 182		-- Default start cooldown in days after attaching a policy
