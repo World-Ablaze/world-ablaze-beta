@@ -12,9 +12,9 @@
 @tank_3_X = 9
 @tank_3_Y = 4
 #BONUSES
-@tank_max_speed = 0.05
+@tank_build_cost_ic = -0.02
 @tank_production_capacity_factor = 0.05
-@tank_soft_attack = 0.05
+@tank_production_efficiency_gain_factor = 0.02
 
 
 ### SHIPS
@@ -33,6 +33,7 @@
 @ship_mines_sweeping = 0.1
 @ship_mines_planting = 0.1
 
+
 ### AIRCRAFT
 #POSITION
 @aircraft_1_X = 9
@@ -48,6 +49,7 @@
 @aircraft_surface_detection = 0.15
 @aircraft_sub_detection = 0.15
 
+
 ### MATERIEL
 #POSITION
 @materiel_1_X = 9
@@ -57,11 +59,13 @@
 @materiel_3_X = 9
 @materiel_3_Y = 4
 #BONUSES
-@artillery_production_cost_factor = -0.1
-@infantry_equipment_production_cost_factor = -0.1
-@motorized_production_cost_factor = -0.1
-@materiel_production_efficiency_cap_factor = 0.1
-@materiel_production_capacity_factor = 0.1
+@artillery_production_cost_factor = -0.03
+@infantry_equipment_production_cost_factor = -0.02
+@infantry_equipment_production_efficiency_gain_factor = 0.02
+@motorized_production_cost_factor = -0.02
+@materiel_production_efficiency_cap_factor = 0.5
+@materiel_production_capacity_factor = 0.05
+@materiel_production_resource_penalty_factor = -0.1
 
 
 ########    ###    ##    ## ##    ##  ######
@@ -81,52 +85,38 @@ SOV_morozov_design_bureau_organization = {
 		original_tag = SOV
 	}
 
-	add_trait = {
-		token = SOV_mio_trait_merge_plant_no_174
-		name = SOV_merge_tank_plant
-		#icon = GFX_generic_mio_department_icon_facilities
-		icon = GFX_generic_mio_trait_icon_maximum_speed
+	add_trait = {	# Plant 183 T34
+		token = SOV_mio_trait_merge_plant_no_183
+		name = SOV_mio_trait_merge_plant_no_183
+		icon = GFX_generic_mio_department_icon_facilities
 		special_trait_background = yes
 
 		position = { x=@tank_1_X y=@tank_1_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
-
 		available = { #Two owner blocs to provide two different check marks in the UI
 			FROM = {
-				has_full_control_of_state = 195 #LENINGRAD
+				has_full_control_of_state = 653 #SVERDLOVSK
 			}
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
 			}
+			#Only exists in this MIO
 		}
 
-		on_complete = {
-			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
-			FROM = {
-				set_country_flag = SOV_merge_plant_no_174_flag
-			}
-		}
+		limit_to_equipment_type = { tank_sov_medium_chassis_3_2 tank_sov_medium_chassis_3_3 }
 
-		equipment_bonus = {
-			maximum_speed = @tank_max_speed
+		production_bonus = {
+			production_capacity_factor = @tank_production_capacity_factor
 		}
 	}
 
-	add_trait = {
+	add_trait = {	# PLant 112 T34 85
 		token = SOV_mio_trait_merge_plant_no_112
 		name = SOV_merge_tank_plant_2
-		#icon = GFX_generic_mio_department_icon_facilities
 		icon = GFX_generic_mio_trait_icon_production_capacity
 		special_trait_background = yes
 
 		position = { x=@tank_2_X y=@tank_2_Y }
-
-		visible = {
-			owner = { original_tag = SOV }
-		}
 
 		available = {
 			FROM = {
@@ -135,32 +125,26 @@ SOV_morozov_design_bureau_organization = {
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
 			}
-		}
-
-		on_complete = {
-			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
 			FROM = {
-				set_country_flag = SOV_merge_plant_no_112_flag
+				has_country_flag = tank_plant_ready2
 			}
+			#Only exists in this MIO
 		}
 
-		production_bonus = {
-			production_capacity_factor = @tank_production_capacity_factor
+		limit_to_equipment_type = { tank_sov_medium_chassis_3_3 tank_sov_medium_chassis_3_4 }
+
+		equipment_bonus = {
+			build_cost_ic = @tank_build_cost_ic
 		}
 	}
 
-	add_trait = {
+	add_trait = {	# Ural Heavy Machine Building Plant SU 85 100 122
 		token = SOV_mio_trait_merge_ural_heavy_machine_building_plant
 		name = SOV_merge_tank_plant_3
-		#icon = GFX_generic_mio_department_icon_facilities
 		icon = GFX_generic_mio_trait_icon_soft_attack
 		special_trait_background = yes
 
 		position = { x=@tank_3_X y=@tank_3_Y }
-
-		visible = {
-			owner = { original_tag = SOV }
-		}
 
 		available = {
 			FROM = {
@@ -169,6 +153,10 @@ SOV_morozov_design_bureau_organization = {
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
 			}
+			FROM = {
+				has_country_flag = tank_plant_ready3
+			}
+			#Only exists in this MIO
 		}
 
 		on_complete = {
@@ -178,8 +166,10 @@ SOV_morozov_design_bureau_organization = {
 			}
 		}
 
-		equipment_bonus = {
-			soft_attack = @tank_soft_attack
+		limit_to_equipment_type = { tank_sov_medium_chassis_assault_3 tank_sov_medium_chassis_td_3_2 tank_sov_medium_chassis_td_3_3 }
+
+		production_bonus = {
+			production_efficiency_gain_factor = @tank_production_efficiency_gain_factor
 		}
 	}
 }
@@ -308,7 +298,7 @@ SOV_astrov_design_bureau_organization = {
 		}
 	}
 
-	add_trait = {
+	add_trait = {	# Plant 174 T 50 mediums
 		token = SOV_mio_trait_merge_plant_no_174
 		name = SOV_merge_tank_plant
 		#icon = GFX_generic_mio_department_icon_facilities
@@ -317,16 +307,22 @@ SOV_astrov_design_bureau_organization = {
 
 		position = { x=@tank_1_X y=@tank_1_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
+
 
 		available = { #Two owner blocs to provide two different check marks in the UI
 			FROM = {
-				has_full_control_of_state = 195 #LENINGRAD
+				has_full_control_of_state = 571 #OMSK
 			}
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
+			}
+			FROM = {
+				has_country_flag = tank_plant_ready
+			}
+			hidden_trigger = {
+				FROM = {
+					NOT = { has_country_flag = SOV_merge_plant_no_174_flag2 }
+				}
 			}
 		}
 
@@ -337,57 +333,20 @@ SOV_astrov_design_bureau_organization = {
 			}
 		}
 
-		equipment_bonus = {
-			maximum_speed = @tank_max_speed
-		}
-	}
-
-	add_trait = {
-		token = SOV_mio_trait_merge_plant_no_112
-		name = SOV_merge_tank_plant_2
-		#icon = GFX_generic_mio_department_icon_facilities
-		icon = GFX_generic_mio_trait_icon_production_capacity
-		special_trait_background = yes
-
-		position = { x=@tank_2_X y=@tank_2_Y }
-
-		visible = {
-			owner = { original_tag = SOV }
-		}
-
-		available = {
-			FROM = {
-				has_full_control_of_state = 252 #GORKY
-			}
-			FROM = {
-				has_completed_focus = SOV_merge_evacuated_plants
-			}
-		}
-
-		on_complete = {
-			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
-			FROM = {
-				set_country_flag = SOV_merge_plant_no_112_flag
-			}
-		}
+		limit_to_equipment_type = { tank_sov_light_chassis_3 mio_cat_eq_all_medium_tank }
 
 		production_bonus = {
 			production_capacity_factor = @tank_production_capacity_factor
 		}
 	}
 
-	add_trait = {
-		token = SOV_mio_trait_merge_ural_heavy_machine_building_plant
-		name = SOV_merge_tank_plant_3
-		#icon = GFX_generic_mio_department_icon_facilities
-		icon = GFX_generic_mio_trait_icon_soft_attack
+	add_trait = {	# PLant 37 Light Tanks
+		token = SOV_mio_trait_merge_plant_no_37
+		name = SOV_mio_trait_merge_plant_no_37
+		icon = GFX_generic_mio_department_icon_facilities
 		special_trait_background = yes
 
-		position = { x=@tank_3_X y=@tank_3_Y }
-
-		visible = {
-			owner = { original_tag = SOV }
-		}
+		position = { x=@tank_2_X y=@tank_2_Y }
 
 		available = {
 			FROM = {
@@ -396,17 +355,13 @@ SOV_astrov_design_bureau_organization = {
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
 			}
+			#Only exists in this MIO
 		}
 
-		on_complete = {
-			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
-			FROM = {
-				set_country_flag = SOV_merge_ural_heavy_machine_building_plant_flag
-			}
-		}
+		limit_to_equipment_type = { light_tank_chassis }
 
-		equipment_bonus = {
-			soft_attack = @tank_soft_attack
+		production_bonus = {
+			production_capacity_factor = @tank_production_capacity_factor
 		}
 	}
 }
@@ -432,105 +387,101 @@ SOV_okmo_organization = {
 		limit_to_equipment_type = { light_tank_infantry_support_chassis medium_tank_infantry_support_chassis }
 	}
 
-	add_trait = {
+	add_trait = {	# Plant 174 T 50 mediums
 		token = SOV_mio_trait_merge_plant_no_174
 		name = SOV_merge_tank_plant
-		#icon = GFX_generic_mio_department_icon_facilities
 		icon = GFX_generic_mio_trait_icon_maximum_speed
 		special_trait_background = yes
 
 		position = { x=@tank_1_X y=@tank_1_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
-
 		available = { #Two owner blocs to provide two different check marks in the UI
 			FROM = {
-				has_full_control_of_state = 195 #LENINGRAD
+				has_full_control_of_state = 571 #OMSK
 			}
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
+				has_country_flag = tank_plant_ready
+			}
+			hidden_trigger = {
+				FROM = {
+					NOT = { has_country_flag = SOV_merge_plant_no_174_flag }
+				}
 			}
 		}
 
 		on_complete = {
 			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
 			FROM = {
-				set_country_flag = SOV_merge_plant_no_174_flag
+				set_country_flag = SOV_merge_plant_no_174_flag2
 			}
 		}
 
-		equipment_bonus = {
-			maximum_speed = @tank_max_speed
-		}
-	}
-
-	add_trait = {
-		token = SOV_mio_trait_merge_plant_no_112
-		name = SOV_merge_tank_plant_2
-		#icon = GFX_generic_mio_department_icon_facilities
-		icon = GFX_generic_mio_trait_icon_production_capacity
-		special_trait_background = yes
-
-		position = { x=@tank_2_X y=@tank_2_Y }
-
-		visible = {
-			owner = { original_tag = SOV }
-		}
-
-		available = {
-			FROM = {
-				has_full_control_of_state = 252 #GORKY
-			}
-			FROM = {
-				has_completed_focus = SOV_merge_evacuated_plants
-			}
-		}
-
-		on_complete = {
-			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
-			FROM = {
-				set_country_flag = SOV_merge_plant_no_112_flag
-			}
-		}
+		limit_to_equipment_type = { tank_sov_light_chassis_3 mio_cat_eq_all_medium_tank }
 
 		production_bonus = {
 			production_capacity_factor = @tank_production_capacity_factor
 		}
 	}
 
-	add_trait = {
-		token = SOV_mio_trait_merge_ural_heavy_machine_building_plant
-		name = SOV_merge_tank_plant_3
-		#icon = GFX_generic_mio_department_icon_facilities
-		icon = GFX_generic_mio_trait_icon_soft_attack
+	add_trait = {	#Plant 185 Heavy Tanks
+		token = SOV_mio_trait_merge_plant_no_185
+		name = SOV_mio_trait_merge_plant_no_185
+		icon = GFX_generic_mio_department_icon_facilities
+		special_trait_background = yes
+
+		position = { x=@tank_2_X y=@tank_2_Y }
+
+		available = {
+			FROM = {
+				has_full_control_of_state = 572 #Chelyabinsk
+			}
+			FROM = {
+				has_completed_focus = SOV_merge_evacuated_plants
+			}
+			#Only exists in this MIO
+		}
+
+		limit_to_equipment_type = { mio_cat_eq_all_heavy_tank }
+
+		production_bonus = {
+			production_capacity_factor = @tank_production_capacity_factor
+		}
+	}
+
+	add_trait = {	# Plant 75 Heavy Tanks
+		token = SOV_mio_trait_merge_plant_no_75
+		name = SOV_mio_trait_merge_plant_no_75
+		icon = GFX_generic_mio_department_icon_facilities
 		special_trait_background = yes
 
 		position = { x=@tank_3_X y=@tank_3_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
-
 		available = {
 			FROM = {
-				has_full_control_of_state = 653 #SVERDLOVSK
+				has_full_control_of_state = 572 #Chelyabinsk
 			}
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
+			}
+			hidden_trigger = {
+				FROM = {
+					NOT = { has_country_flag = SOV_merge_plant_no_75_flag2 }
+				}
 			}
 		}
 
 		on_complete = {
 			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
 			FROM = {
-				set_country_flag = SOV_merge_ural_heavy_machine_building_plant_flag
+				set_country_flag = SOV_merge_plant_no_75_flag
 			}
 		}
 
+		limit_to_equipment_type = { mio_cat_eq_all_heavy_tank }
+
 		equipment_bonus = {
-			soft_attack = @tank_soft_attack
+			build_cost_ic = @tank_build_cost_ic
 		}
 	}
 }
@@ -543,22 +494,59 @@ SOV_mytishchy_machine_building_plant_organization = {
 		tag = SOV
 	}
 
-	add_trait = {
-		token = SOV_mio_trait_merge_plant_no_174
-		name = SOV_merge_tank_plant
+	add_trait = {	# NKMZ heavy arty armoured trains
+		token = SOV_mio_trait_merge_nkmz_plant
+		name = SOV_merge_materiel_plant_2
 		#icon = GFX_generic_mio_department_icon_facilities
-		icon = GFX_generic_mio_trait_icon_maximum_speed
+		icon = GFX_generic_mio_trait_icon_efficiency_cap
+		special_trait_background = yes
+
+		position = { x=0 y=-1 }
+		relative_position_id = SOV_mio_trait_merge_plant_no_78
+
+
+		available = {
+			FROM = {
+				has_full_control_of_state = 582 #Orsk
+			}
+			FROM = {
+				has_completed_focus = SOV_merge_evacuated_plants
+			}
+			FROM = {
+				has_country_flag = materiel_plant2_ready
+			}
+			hidden_trigger = {
+				FROM = {
+					NOT = { has_country_flag = SOV_merge_nkmz_plant_flag }
+				}
+			}
+		}
+
+		on_complete = {
+			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
+			FROM = {
+				set_country_flag = SOV_merge_nkmz_plant_flag2
+			}
+		}
+
+		limit_to_equipment_type = { train_equipment_3 }
+
+		production_bonus = {
+			production_efficiency_cap_factor = @materiel_production_efficiency_cap_factor
+		}
+	}
+
+	add_trait = {	# PLant 78
+		token = SOV_mio_trait_merge_plant_no_78
+		name = SOV_mio_trait_merge_plant_no_78
+		icon = GFX_generic_mio_department_icon_facilities
 		special_trait_background = yes
 
 		position = { x=@tank_1_X y=@tank_1_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
-
 		available = { #Two owner blocs to provide two different check marks in the UI
 			FROM = {
-				has_full_control_of_state = 195 #LENINGRAD
+				has_full_control_of_state = 572 #Chelyabinsk
 			}
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
@@ -568,27 +556,23 @@ SOV_mytishchy_machine_building_plant_organization = {
 		on_complete = {
 			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
 			FROM = {
-				set_country_flag = SOV_merge_plant_no_174_flag
+				set_country_flag = SOV_meerge_plant_no_78_flag
 			}
 		}
 
-		equipment_bonus = {
-			maximum_speed = @tank_max_speed
+		production_bonus = {
+			production_resource_need_factor = -0.05
 		}
 	}
 
-	add_trait = {
-		token = SOV_mio_trait_merge_plant_no_112
-		name = SOV_merge_tank_plant_2
+	add_trait = {	# Ust-Katav Wagon Plant
+		token = SOV_mio_trait_merge_ust_katav_wagon_plant
+		name = SOV_mio_trait_merge_ust_katav_wagon_plant
 		#icon = GFX_generic_mio_department_icon_facilities
 		icon = GFX_generic_mio_trait_icon_production_capacity
 		special_trait_background = yes
 
 		position = { x=@tank_2_X y=@tank_2_Y }
-
-		visible = {
-			owner = { original_tag = SOV }
-		}
 
 		available = {
 			FROM = {
@@ -597,32 +581,23 @@ SOV_mytishchy_machine_building_plant_organization = {
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
 			}
+			#Only exists in this MIO
 		}
 
-		on_complete = {
-			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
-			FROM = {
-				set_country_flag = SOV_merge_plant_no_112_flag
-			}
-		}
+		limit_to_equipment_type = { train_equipment }
 
 		production_bonus = {
 			production_capacity_factor = @tank_production_capacity_factor
 		}
 	}
 
-	add_trait = {
-		token = SOV_mio_trait_merge_ural_heavy_machine_building_plant
-		name = SOV_merge_tank_plant_3
-		#icon = GFX_generic_mio_department_icon_facilities
+	add_trait = {	# Kharkov Locomotive Plant
+		token = SOV_mio_trait_merge_kharkov_locomotive_plant
+		name = SOV_mio_trait_merge_kharkov_locomotive_plant
 		icon = GFX_generic_mio_trait_icon_soft_attack
 		special_trait_background = yes
 
 		position = { x=@tank_3_X y=@tank_3_Y }
-
-		visible = {
-			owner = { original_tag = SOV }
-		}
 
 		available = {
 			FROM = {
@@ -631,17 +606,13 @@ SOV_mytishchy_machine_building_plant_organization = {
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
 			}
+			#Only exists in this MIO
 		}
 
-		on_complete = {
-			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
-			FROM = {
-				set_country_flag = SOV_merge_ural_heavy_machine_building_plant_flag
-			}
-		}
+		limit_to_equipment_type = { train_equipment }
 
 		equipment_bonus = {
-			soft_attack = @tank_soft_attack
+			build_cost_ic = @tank_build_cost_ic
 		}
 	}
 }
@@ -654,105 +625,101 @@ SOV_kirov_organization = {
 		original_tag = SOV
 	}
 
-	add_trait = {
-		token = SOV_mio_trait_merge_plant_no_174
-		name = SOV_merge_tank_plant
-		#icon = GFX_generic_mio_department_icon_facilities
-		icon = GFX_generic_mio_trait_icon_maximum_speed
+
+	add_trait = {	# Plant 100 SU 152 ISU 122 ISU 152
+		token = SOV_mio_trait_merge_plant_no_100
+		name = SOV_mio_trait_merge_plant_no_100
+		icon = GFX_generic_mio_department_icon_facilities
 		special_trait_background = yes
 
 		position = { x=@tank_1_X y=@tank_1_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
-
-		available = { #Two owner blocs to provide two different check marks in the UI
+		available = {
 			FROM = {
-				has_full_control_of_state = 195 #LENINGRAD
+				has_full_control_of_state = 572 #Chelyabinsk
 			}
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
 			}
 		}
 
-		on_complete = {
-			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
-			FROM = {
-				set_country_flag = SOV_merge_plant_no_174_flag
-			}
-		}
+		limit_to_equipment_type = { tank_sov_heavy_chassis_assault_3 tank_sov_heavy_chassis_td_4 tank_sov_heavy_chassis_assault_4 }
 
-		equipment_bonus = {
-			maximum_speed = @tank_max_speed
+		production_bonus = {
+			production_efficiency_gain_factor = @tank_production_efficiency_gain_factor
 		}
 	}
 
-	add_trait = {
-		token = SOV_mio_trait_merge_plant_no_112
-		name = SOV_merge_tank_plant_2
-		#icon = GFX_generic_mio_department_icon_facilities
-		icon = GFX_generic_mio_trait_icon_production_capacity
+	add_trait = {	# Plant 75 Heavy Tanks
+		token = SOV_mio_trait_merge_plant_no_75
+		name = SOV_mio_trait_merge_plant_no_75
+		icon = GFX_generic_mio_department_icon_facilities
 		special_trait_background = yes
 
 		position = { x=@tank_2_X y=@tank_2_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
-
 		available = {
 			FROM = {
-				has_full_control_of_state = 252 #GORKY
+				has_full_control_of_state = 572 #Chelyabinsk
 			}
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
+			}
+			hidden_trigger = {
+				FROM = {
+					NOT = { has_country_flag = SOV_merge_plant_no_75_flag }
+				}
 			}
 		}
 
 		on_complete = {
 			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
 			FROM = {
-				set_country_flag = SOV_merge_plant_no_112_flag
+				set_country_flag = SOV_merge_plant_no_75_flag2
 			}
 		}
 
-		production_bonus = {
-			production_capacity_factor = @tank_production_capacity_factor
+		limit_to_equipment_type = { mio_cat_eq_all_heavy_tank }
+
+		equipment_bonus = {
+			build_cost_ic = @tank_build_cost_ic
 		}
 	}
 
-	add_trait = {
-		token = SOV_mio_trait_merge_ural_heavy_machine_building_plant
-		name = SOV_merge_tank_plant_3
-		#icon = GFX_generic_mio_department_icon_facilities
-		icon = GFX_generic_mio_trait_icon_soft_attack
+	add_trait = {	# Magnitogorsk Metallurgical Plant Support Equipment - Steel
+		token = SOV_mio_trait_merge_magnitogorsk_metallurgical_plant
+		name = SOV_merge_materiel_plant_3
+		icon = GFX_generic_mio_trait_icon_resources
 		special_trait_background = yes
 
 		position = { x=@tank_3_X y=@tank_3_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
-
 		available = {
 			FROM = {
-				has_full_control_of_state = 653 #SVERDLOVSK
+				has_full_control_of_state = 876 #MAGNITOGORSK
 			}
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
+			}
+			FROM = {
+				has_country_flag = materiel_plant3_ready
+			}
+			hidden_trigger = {
+				FROM = {
+					NOT = { has_country_flag = SOV_merge_magnitogorsk_metallurgical_plant_flag2 }
+				}
 			}
 		}
 
 		on_complete = {
 			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
 			FROM = {
-				set_country_flag = SOV_merge_ural_heavy_machine_building_plant_flag
+				set_country_flag = SOV_merge_magnitogorsk_metallurgical_plant_flag
 			}
 		}
 
-		equipment_bonus = {
-			soft_attack = @tank_soft_attack
+		production_bonus = {
+			production_resource_penalty_factor = @materiel_production_resource_penalty_factor
 		}
 	}
 }
@@ -800,9 +767,7 @@ SOV_nevskoye_design_bureau_organization = {
 
 		position = { x=@ship_1_X y=@ship_1_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
+
 
 		available = {
 			FROM = {
@@ -852,9 +817,7 @@ SOV_nevskoye_design_bureau_organization = {
 
 		position = { x=@ship_2_X y=@ship_2_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
+
 
 		available = {
 			FROM = {
@@ -904,9 +867,7 @@ SOV_rubin_design_bureau_organization = {
 
 		position = { x=@ship_1_X y=1 }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
+
 
 		available = {
 			FROM = {
@@ -958,9 +919,7 @@ SOV_rubin_design_bureau_organization = {
 
 		mutually_exclusive = { SOV_mio_trait_merge_plant_no_190 }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
+
 
 		available = {
 			FROM = {
@@ -991,9 +950,7 @@ SOV_rubin_design_bureau_organization = {
 
 		mutually_exclusive = { SOV_mio_trait_merge_plant_no_363 }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
+
 
 		available = {
 			FROM = {
@@ -1060,9 +1017,7 @@ SOV_black_sea_shipyard_organization = {
 
 		position = { x=@ship_1_X y=@ship_1_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
+
 
 		available = {
 			FROM = {
@@ -1114,9 +1069,7 @@ SOV_black_sea_shipyard_organization = {
 
 		mutually_exclusive = { SOV_mio_trait_merge_plant_no_340 }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
+
 
 		available = {
 			FROM = {
@@ -1147,9 +1100,7 @@ SOV_black_sea_shipyard_organization = {
 
 		mutually_exclusive = { SOV_mio_trait_merge_leninskaya_kuznitsa_plant }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
+
 
 		available = {
 			FROM = {
@@ -1225,9 +1176,7 @@ SOV_sevastopol_marine_plant_organization = {
 
 		position = { x=@ship_1_X y=@ship_1_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
+
 
 		available = {
 			FROM = {
@@ -1277,9 +1226,7 @@ SOV_sevastopol_marine_plant_organization = {
 
 		position = { x=@ship_2_X y=@ship_2_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
+
 
 		available = {
 			FROM = {
@@ -1385,9 +1332,7 @@ SOV_mig_design_bureau_organization = {
 
 		position = { x=@aircraft_1_X y=@aircraft_1_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
+
 
 		available = {
 			FROM = {
@@ -1419,9 +1364,7 @@ SOV_mig_design_bureau_organization = {
 
 		position = { x=@aircraft_2_X y=@aircraft_2_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
+
 
 		available = {
 			FROM = {
@@ -1458,9 +1401,7 @@ SOV_mig_design_bureau_organization = {
 
 		position = { x=@aircraft_3_X y=@aircraft_3_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
+
 
 		available = {
 			FROM = {
@@ -1553,9 +1494,7 @@ SOV_ilyushin_design_bureau_organization = {
 
 		position = { x=@aircraft_1_X y=@aircraft_1_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
+
 
 		available = {
 			FROM = {
@@ -1587,9 +1526,7 @@ SOV_ilyushin_design_bureau_organization = {
 
 		position = { x=@aircraft_2_X y=@aircraft_2_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
+
 
 		available = {
 			FROM = {
@@ -1626,9 +1563,7 @@ SOV_ilyushin_design_bureau_organization = {
 
 		position = { x=@aircraft_3_X y=@aircraft_3_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
+
 
 		available = {
 			FROM = {
@@ -1711,9 +1646,7 @@ SOV_yakovlev_design_bureau_organization = {
 
 		position = { x=@aircraft_1_X y=@aircraft_1_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
+
 
 		available = {
 			FROM = {
@@ -1745,9 +1678,7 @@ SOV_yakovlev_design_bureau_organization = {
 
 		position = { x=@aircraft_2_X y=@aircraft_2_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
+
 
 		available = {
 			FROM = {
@@ -1784,9 +1715,7 @@ SOV_yakovlev_design_bureau_organization = {
 
 		position = { x=@aircraft_3_X y=@aircraft_3_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
+
 
 		available = {
 			FROM = {
@@ -1897,9 +1826,7 @@ SOV_tupolev_design_bureau_organization = {
 
 		position = { x=@aircraft_1_X y=@aircraft_1_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
+
 
 		available = {
 			FROM = {
@@ -1931,9 +1858,7 @@ SOV_tupolev_design_bureau_organization = {
 
 		position = { x=@aircraft_2_X y=@aircraft_2_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
+
 
 		available = {
 			FROM = {
@@ -1970,9 +1895,7 @@ SOV_tupolev_design_bureau_organization = {
 
 		position = { x=@aircraft_3_X y=@aircraft_3_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
+
 
 		available = {
 			FROM = {
@@ -2025,18 +1948,20 @@ SOV_grabin_design_bureau_organization = {
 		original_tag = SOV
 	}
 
-	add_trait = {
+	equipment_type = {
+		mio_cat_eq_all_artillery
+		mio_cat_eq_all_antitank
+		mio_cat_eq_all_antiair
+		mio_cat_eq_all_rocket_artillery
+	}
+
+	add_trait = {	# Plant 172 AT
 		token = SOV_mio_trait_merge_plant_no_172
 		name = SOV_merge_materiel_plant_1_artillery
-		#icon = GFX_generic_mio_department_icon_facilities
 		icon = GFX_generic_mio_department_icon_artillery_production
 		special_trait_background = yes
 
 		position = { x=@materiel_1_X y=@materiel_1_Y }
-
-		visible = {
-			owner = { original_tag = SOV }
-		}
 
 		available = {
 			FROM = {
@@ -2045,15 +1970,20 @@ SOV_grabin_design_bureau_organization = {
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
 			}
+			FROM = {
+				has_country_flag = artillery_plant_ready
+			}
 			#Only exists in this MIO
 		}
+
+		limit_to_equipment_type = { mio_cat_eq_all_antitank }
 
 		production_bonus = {
 			production_cost_factor = @artillery_production_cost_factor
 		}
 	}
 
-	add_trait = {
+	add_trait = {	# NKMZ heavy arty armoured trains
 		token = SOV_mio_trait_merge_nkmz_plant
 		name = SOV_merge_materiel_plant_2
 		#icon = GFX_generic_mio_department_icon_facilities
@@ -2062,16 +1992,21 @@ SOV_grabin_design_bureau_organization = {
 
 		position = { x=@materiel_2_X y=@materiel_2_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
 
 		available = {
 			FROM = {
-				has_full_control_of_state = 227 #STALINO
+				has_full_control_of_state = 582 #Orsk
 			}
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
+			}
+			FROM = {
+				has_country_flag = materiel_plant2_ready
+			}
+			hidden_trigger = {
+				FROM = {
+					NOT = { has_country_flag = SOV_merge_nkmz_plant_flag2 }
+				}
 			}
 		}
 
@@ -2082,39 +2017,42 @@ SOV_grabin_design_bureau_organization = {
 			}
 		}
 
+		limit_to_equipment_type = { heavy_artillery_equipment }
 		production_bonus = {
 			production_efficiency_cap_factor = @materiel_production_efficiency_cap_factor
 		}
 	}
 
-	add_trait = {
-		token = SOV_mio_trait_merge_magnitogorsk_metallurgical_plant
-		name = SOV_merge_materiel_plant_3
-		#icon = GFX_generic_mio_department_icon_facilities
+	add_trait = {	# Kirov Plant 98 rocket arty
+		token = SOV_mio_trait_merge_kirov_plant_no_98
+		name = SOV_mio_trait_merge_kirov_plant_no_98
 		icon = GFX_generic_mio_trait_icon_production_capacity
 		special_trait_background = yes
 
 		position = { x=@materiel_3_X y=@materiel_3_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
-
 		available = {
 			FROM = {
-				has_full_control_of_state = 876 #MAGNITOGORSK
+				has_full_control_of_state = 398 #Perm
 			}
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
+			}
+			hidden_trigger = {
+				FROM = {
+					NOT = { has_country_flag = SOV_merge_kirov_plant_no_98_flag2 }
+				}
 			}
 		}
 
 		on_complete = {
 			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
 			FROM = {
-				set_country_flag = SOV_merge_magnitogorsk_metallurgical_plant_flag
+				set_country_flag = SOV_merge_kirov_plant_no_98_flag
 			}
 		}
+
+		limit_to_equipment_type = { mio_cat_eq_all_rocket_artillery }
 
 		production_bonus = {
 			production_capacity_factor = @materiel_production_capacity_factor
@@ -2134,6 +2072,11 @@ SOV_tula_arms_plant_organization = {
 		FROM = {
 			has_completed_focus = SOV_pc_of_armament
 		}
+	}
+
+	equipment_type = {
+		mio_cat_eq_all_infantry_equipment
+		support_equipment
 	}
 
 	tree_header_text = {
@@ -2167,18 +2110,15 @@ SOV_tula_arms_plant_organization = {
 		relative_position_id = generic_mio_trait_drum_pattern_sights
 	}
 
-	add_trait = {
+	add_trait = {	# Plant 622 all heavy arms
 		token = SOV_mio_trait_merge_plant_no_622
 		name = SOV_merge_materiel_plant_1_infantry
-		#icon = GFX_generic_mio_department_icon_facilities
 		icon = GFX_generic_mio_department_icon_infantry_production
 		special_trait_background = yes
 
 		position = { x=@materiel_1_X y=@materiel_1_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
+
 
 		available = {
 			FROM = {
@@ -2187,60 +2127,54 @@ SOV_tula_arms_plant_organization = {
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
 			}
+			FROM = {
+				has_country_flag = infantry_plant_ready
+			}
 			#Only exists in this MIO
 		}
+
+		limit_to_equipment_type = { heavy_infantry_equipment }
+
+		production_bonus = {
+			production_efficiency_gain_factor = @infantry_equipment_production_efficiency_gain_factor
+		}
+	}
+
+	add_trait = { # Plant 74 small arms
+		token = SOV_mio_trait_merge_plant_no_74
+		name = SOV_mio_trait_merge_plant_no_74
+		icon = GFX_generic_mio_department_icon_infantry_production
+		special_trait_background = yes
+
+		position = { x=@materiel_2_X y=@materiel_2_Y }
+
+		available = {
+			FROM = {
+				has_full_control_of_state = 399 #UDMURTIA (Izhevsk)
+			}
+			FROM = {
+				has_completed_focus = SOV_merge_evacuated_plants
+			}
+			FROM = {
+				has_country_flag = infantry_plant_ready
+			}
+			#Only exists in this MIO
+		}
+
+		limit_to_equipment_type = { infantry_equipment }
 
 		production_bonus = {
 			production_cost_factor = @infantry_equipment_production_cost_factor
 		}
 	}
 
-	add_trait = {
-		token = SOV_mio_trait_merge_nkmz_plant
-		name = SOV_merge_materiel_plant_2
-		#icon = GFX_generic_mio_department_icon_facilities
-		icon = GFX_generic_mio_trait_icon_efficiency_cap
-		special_trait_background = yes
-
-		position = { x=@materiel_2_X y=@materiel_2_Y }
-
-		visible = {
-			owner = { original_tag = SOV }
-		}
-
-		available = {
-			FROM = {
-				has_full_control_of_state = 227 #STALINO
-			}
-			FROM = {
-				has_completed_focus = SOV_merge_evacuated_plants
-			}
-		}
-
-		on_complete = {
-			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
-			FROM = {
-				set_country_flag = SOV_merge_nkmz_plant_flag
-			}
-		}
-
-		production_bonus = {
-			production_efficiency_cap_factor = @materiel_production_efficiency_cap_factor
-		}
-	}
-
-	add_trait = {
+	add_trait = {	# Magnitogorsk Metallurgical Plant Support Equipment - Steel
 		token = SOV_mio_trait_merge_magnitogorsk_metallurgical_plant
 		name = SOV_merge_materiel_plant_3
-		#icon = GFX_generic_mio_department_icon_facilities
-		icon = GFX_generic_mio_trait_icon_production_capacity
+		icon = GFX_generic_mio_trait_icon_resources
 		special_trait_background = yes
 
 		position = { x=@materiel_3_X y=@materiel_3_Y }
-
-		visible = {
-			owner = { original_tag = SOV }
-		}
 
 		available = {
 			FROM = {
@@ -2249,17 +2183,27 @@ SOV_tula_arms_plant_organization = {
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
 			}
+			FROM = {
+				has_country_flag = materiel_plant3_ready
+			}
+			hidden_trigger = {
+				FROM = {
+					NOT = { has_country_flag = SOV_merge_magnitogorsk_metallurgical_plant_flag }
+				}
+			}
 		}
 
 		on_complete = {
 			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
 			FROM = {
-				set_country_flag = SOV_merge_magnitogorsk_metallurgical_plant_flag
+				set_country_flag = SOV_merge_magnitogorsk_metallurgical_plant_flag2
 			}
 		}
 
+		limit_to_equipment_type = { support_equipment }
+
 		production_bonus = {
-			production_capacity_factor = @materiel_production_capacity_factor
+			production_resource_penalty_factor = @materiel_production_resource_penalty_factor
 		}
 	}
 }
@@ -2278,7 +2222,14 @@ SOV_gaz_organization = {
 		}
 	}
 
-	add_trait = {
+	equipment_type = {
+		motorized_equipment
+		mechanized
+		motorized_rocket_equipment
+		scout_car_equipment
+	}
+
+	add_trait = {	# Automobile Tool Plant trucks
 		token = SOV_mio_trait_merge_automobile_tool_plant
 		name = SOV_merge_materiel_plant_1_motorized
 		#icon = GFX_generic_mio_department_icon_facilities
@@ -2287,9 +2238,33 @@ SOV_gaz_organization = {
 
 		position = { x=@materiel_1_X y=@materiel_1_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
+		available = {
+			FROM = {
+				has_full_control_of_state = 252 #GORKY
+			}
+			FROM = {
+				has_completed_focus = SOV_merge_evacuated_plants
+			}
+			FROM = {
+				has_country_flag = motorized_plant_ready
+			}
+			#Only exists in this MIO
 		}
+
+		limit_to_equipment_type = { motorized_equipment }
+
+		production_bonus = {
+			production_cost_factor = @motorized_production_cost_factor
+		}
+	}
+
+	add_trait = {	# PLant 177 scout car
+		token = SOV_mio_trait_merge_plant_no_177
+		name = SOV_mio_trait_merge_plant_no_177
+		icon = GFX_generic_mio_department_icon_facilities
+		special_trait_background = yes
+
+		position = { x=@materiel_2_X y=@materiel_2_Y }
 
 		available = {
 			FROM = {
@@ -2301,73 +2276,43 @@ SOV_gaz_organization = {
 			#Only exists in this MIO
 		}
 
+		limit_to_equipment_type = { scout_car_equipment }
+
 		production_bonus = {
-			production_cost_factor = @motorized_production_cost_factor
+			production_capacity_factor = @materiel_production_capacity_factor
 		}
 	}
 
-	add_trait = {
-		token = SOV_mio_trait_merge_nkmz_plant
-		name = SOV_merge_materiel_plant_2
-		#icon = GFX_generic_mio_department_icon_facilities
-		icon = GFX_generic_mio_trait_icon_efficiency_cap
-		special_trait_background = yes
-
-		position = { x=@materiel_2_X y=@materiel_2_Y }
-
-		visible = {
-			owner = { original_tag = SOV }
-		}
-
-		available = {
-			FROM = {
-				has_full_control_of_state = 227 #STALINO
-			}
-			FROM = {
-				has_completed_focus = SOV_merge_evacuated_plants
-			}
-		}
-
-		on_complete = {
-			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
-			FROM = {
-				set_country_flag = SOV_merge_nkmz_plant_flag
-			}
-		}
-
-		production_bonus = {
-			production_efficiency_cap_factor = @materiel_production_efficiency_cap_factor
-		}
-	}
-
-	add_trait = {
-		token = SOV_mio_trait_merge_magnitogorsk_metallurgical_plant
-		name = SOV_merge_materiel_plant_3
-		#icon = GFX_generic_mio_department_icon_facilities
+	add_trait = {	# Kirov Plant 98 rocket arty
+		token = SOV_mio_trait_merge_kirov_plant_no_98
+		name = SOV_mio_trait_merge_kirov_plant_no_98
 		icon = GFX_generic_mio_trait_icon_production_capacity
 		special_trait_background = yes
 
 		position = { x=@materiel_3_X y=@materiel_3_Y }
 
-		visible = {
-			owner = { original_tag = SOV }
-		}
-
 		available = {
 			FROM = {
-				has_full_control_of_state = 876 #MAGNITOGORSK
+				has_full_control_of_state = 398 #Perm
 			}
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
+			}
+			hidden_trigger = {
+				FROM = {
+					NOT = { has_country_flag = SOV_merge_kirov_plant_no_98_flag }
+				}
 			}
 		}
 
 		on_complete = {
 			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
 			FROM = {
-				set_country_flag = SOV_merge_magnitogorsk_metallurgical_plant_flag
+				set_country_flag = SOV_merge_kirov_plant_no_98_flag2
 			}
 		}
+
+		limit_to_equipment_type = { motorized_rocket_equipment }
 
 		production_bonus = {
 			production_capacity_factor = @materiel_production_capacity_factor
