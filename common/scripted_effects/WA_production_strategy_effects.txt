@@ -19,12 +19,6 @@ WA_aircraft_production_strategies = {
 			}
 			if = {
 				limit = {
-					original_tag = SOV
-				}
-				has_deployed_air_force_size = { size < 8000 type = fighter }
-			}
-			if = {
-				limit = {
 					original_tag = GER
 				}
 				has_deployed_air_force_size = { size < 4000 type = fighter }
@@ -106,7 +100,6 @@ WA_aircraft_production_strategies = {
 			}
 			if = {
 				limit = {
-					original_tag = SOV
 					NOT  = {
 						has_tech = sov_fighter_3
 					}
@@ -115,19 +108,13 @@ WA_aircraft_production_strategies = {
 			}
 			if = {
 				limit = {
-					original_tag = SOV
 					has_tech = sov_fighter_3
 				}
-				has_deployed_air_force_size = { size < 6500 type = fighter }
-			}
-			if = {
-				limit = {
-					NOT = {
-						original_tag = SOV
-						original_tag = GER
-					}
+				OR = {
+					check_variable = { num_deployed_planes_with_type@fighter_equipment < 3000 }
+					check_variable = { num_deployed_planes_with_type@fighter_multirole_equipment < 3000 }
 				}
-				has_deployed_air_force_size = { size < 5000 type = fighter }
+				has_deployed_air_force_size = { size < 15000 type = fighter }
 			}
 			num_of_military_factories > 24
 			original_tag = SOV
@@ -334,7 +321,7 @@ WA_aircraft_production_strategies = {
 			}
 			tag = SOV
 			WA_has_cas_tech = yes
-			num_of_military_factories > 49
+			num_of_military_factories > 50000 ###temporarily disabled
 		}
 
 		set_country_flag = WA_sov_cas_production_flag
@@ -403,16 +390,17 @@ WA_aircraft_production_strategies = {
 			NOT = { WA_has_jet_fighter_tech = yes }
 			WA_has_attacker_tech = yes
 			WA_need_heavy_fighters = yes
-			check_variable = { num_deployed_planes_with_type@attacker_equipment < 2000 }
+			check_variable = { num_deployed_planes_with_type@attacker_equipment < 2500 }
 			num_of_military_factories > 99
 			NOT = {has_country_flag = french_technologies_tree_flag }
 			NOT = {has_country_flag = japanese_technologies_tree_flag }
 			NOT = {has_country_flag = british_technologies_tree_flag }
 			NOT = {has_country_flag = unitedstates_technologies_tree_flag }
+			NOT = {has_country_flag = WA_heavy_fighter_production_flag }
 			NOT = { original_tag = FRA }
 			NOT = { original_tag = JAP }
 			NOT = { original_tag = ENG }
-			NOT = { original_tag = USA }
+			NOT = { original_tag = SOV }
 			OR = {
 				is_major = yes
 				tag = AST
@@ -432,6 +420,27 @@ WA_aircraft_production_strategies = {
 			has_country_flag = WA_attacker_production_flag
 		}
 		clr_country_flag = WA_attacker_production_flag
+		
+	}
+	
+	############# Attackers SOV
+
+	if = {
+		limit = {
+			WA_has_attacker_tech = yes
+			tag = SOV
+			check_variable = { num_deployed_planes_with_type@attacker_equipment < 8000 }
+			num_of_military_factories > 99
+		}
+
+		set_country_flag = WA_SOV_attacker_production_flag
+		
+	}
+	else_if = {
+		limit = {
+			has_country_flag = WA_SOV_attacker_production_flag
+		}
+		clr_country_flag = WA_SOV_attacker_production_flag
 		
 	}
 
@@ -579,7 +588,30 @@ WA_aircraft_production_strategies = {
 			}
 			WA_has_nav_tech = yes
 			WA_need_nav = yes
-			has_deployed_air_force_size = { size < 1600 type = naval_bomber }
+			if = {
+				limit = {
+					NOT = {
+						tag = USA
+					}
+				}
+				has_deployed_air_force_size = { size < 1600 type = naval_bomber }
+			}
+			if = {
+				limit = {
+					tag = USA
+					NOT = {
+						has_tech = usa_cv_naval_bomber_3
+					}
+				}
+				has_deployed_air_force_size = { size < 1800 type = naval_bomber }
+			}
+			if = {
+				limit = {
+					tag = USA
+					has_tech = usa_cv_naval_bomber_3
+				}
+				has_deployed_air_force_size = { size < 3500 type = naval_bomber }
+			}
 			num_of_military_factories > 34
 			if = {
 				limit = {
@@ -654,6 +686,12 @@ WA_aircraft_production_strategies = {
 			}
 			if = {
 				limit = {
+					tag = CAN
+				}
+				has_tech = eng_strategic_bomber_3
+			}
+			if = {
+				limit = {
 					tag = USA
 				}
 				NOT = {
@@ -682,8 +720,8 @@ WA_aircraft_production_strategies = {
 					NOT = { has_global_flag = soviet_union_defeated }
 				}
 			}
-			num_of_military_factories > 190
 			OR = {
+				tag = CAN
 				is_major = yes
 				NOT = {
 					any_allied_country = {
@@ -713,7 +751,6 @@ WA_aircraft_production_strategies = {
 			}
 			WA_has_scout_plane_tech = yes
 			has_deployed_air_force_size = { size < 150 type = scout_plane }
-			num_of_military_factories > 149999 ###temporarily disabled
 			OR = {
 				is_major = yes
 				NOT = {
