@@ -43,11 +43,10 @@
 @aircraft_3_X = 9
 @aircraft_3_Y = 4
 #BONUSES
-@aircraft_production_cost_factor = -0.05
-@aircraft_air_agility = 0.05
-@aircraft_air_defence = 0.1
-@aircraft_surface_detection = 0.15
-@aircraft_sub_detection = 0.15
+@aircraft_production_cost_factor = -0.02
+@aircraft_production_capacity_factor = 0.05
+@aircraft_production_efficiency_gain_factor = 0.02
+@aircraft_production_efficiency_cap_factor = 0.1
 
 
 ### MATERIEL
@@ -1323,11 +1322,10 @@ SOV_mig_design_bureau_organization = {
 		limit_to_equipment_type = { CAS_equipment }
 	}
 
-	add_trait = {
-		token = SOV_mio_trait_merge_plant_no_28
-		name = SOV_merge_aircraft_plant_1
-		#icon = GFX_generic_mio_department_icon_facilities
-		icon = GFX_generic_mio_trait_icon_build_cost_ic
+	add_trait = {	# Plant 1 CAS - MIGs
+		token = SOV_mio_trait_merge_plant_no_1
+		name = SOV_mio_trait_merge_plant_no_1
+		icon = GFX_generic_mio_department_icon_facilities
 		special_trait_background = yes
 
 		position = { x=@aircraft_1_X y=@aircraft_1_Y }
@@ -1341,25 +1339,34 @@ SOV_mig_design_bureau_organization = {
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
 			}
+			FROM = {
+				has_country_flag = aircraft_plant_ready
+			}
+			hidden_trigger = {
+				FROM = {
+					NOT = { has_country_flag = SOV_merge_plant_no_1_flag2 }
+				}
+			}
 		}
 
 		on_complete = {
 			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
 			FROM = {
-				set_country_flag = SOV_merge_plant_no_28_flag
+				set_country_flag = SOV_merge_plant_no_1_flag
 			}
 		}
+
+		limit_to_equipment_type = { CAS_equipment }
 
 		production_bonus = {
 			production_cost_factor = @aircraft_production_cost_factor
 		}
 	}
 
-	add_trait = {
-		token = SOV_mio_trait_merge_plant_no_150
-		name = SOV_merge_aircraft_plant_2
-		#icon = GFX_generic_mio_department_icon_facilities
-		icon = GFX_generic_mio_trait_icon_air_agility
+	add_trait = {	# Plant 18 tactical strategic CAS
+		token = SOV_mio_trait_merge_plant_no_18
+		name = SOV_mio_trait_merge_plant_no_18
+		icon = GFX_generic_mio_department_icon_facilities
 		special_trait_background = yes
 
 		position = { x=@aircraft_2_X y=@aircraft_2_Y }
@@ -1368,10 +1375,58 @@ SOV_mig_design_bureau_organization = {
 
 		available = {
 			FROM = {
+				has_full_control_of_state = 251 #KUYBYSHEV
+			}
+			FROM = {
+				has_completed_focus = SOV_merge_evacuated_plants
+			}
+			FROM = {
+				has_country_flag = aircraft_plant_ready
+			}
+			hidden_trigger = {
+				FROM = {
+					OR = {
+						NOT = { has_country_flag = SOV_merge_plant_no_18_flag2 }
+						NOT = { has_country_flag = SOV_merge_plant_no_18_flag3 }
+					}
+				}
+			}
+		}
+
+		on_complete = {
+			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
+			FROM = {
+				set_country_flag = SOV_merge_plant_no_18_flag
+			}
+		}
+
+		production_bonus = {
+			production_capacity_factor = @aircraft_production_capacity_factor
+		}
+	}
+
+	add_trait = {	# Plant 150 general Planes
+		token = SOV_mio_trait_merge_plant_no_150
+		name = SOV_merge_aircraft_plant_2
+		icon = GFX_generic_mio_trait_icon_air_agility
+		special_trait_background = yes
+
+		position = { x=@aircraft_3_X y=@aircraft_3_Y }
+
+		available = {
+			FROM = {
 				has_full_control_of_state = 219 #MOSCOW
 			}
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
+			}
+			FROM = {
+				has_country_flag = aircraft_plant_ready2
+			}
+			hidden_trigger = {
+				FROM = {
+					NOT = { has_country_flag = SOV_merge_plant_no_150_flag2 }
+				}
 			}
 		}
 
@@ -1379,56 +1434,11 @@ SOV_mig_design_bureau_organization = {
 			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
 			FROM = {
 				set_country_flag = SOV_merge_plant_no_150_flag
-				add_resource = {
-					type = aluminium
-					amount = 3
-					state = 219
-				}
 			}
 		}
 
-		equipment_bonus = {
-			air_agility = @aircraft_air_agility
-		}
-	}
-
-	add_trait = {
-		token = SOV_mio_trait_merge_vef_plant
-		name = SOV_merge_aircraft_plant_3
-		#icon = GFX_generic_mio_department_icon_facilities
-		icon = GFX_generic_mio_trait_icon_detection
-		special_trait_background = yes
-
-		position = { x=@aircraft_3_X y=@aircraft_3_Y }
-
-
-
-		available = {
-			FROM = {
-				has_full_control_of_state = 966 #RIGA
-			}
-			FROM = {
-				has_completed_focus = SOV_merge_evacuated_plants
-			}
-		}
-
-		on_complete = {
-			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
-			FROM = {
-				set_country_flag = SOV_merge_vef_plant_flag
-				add_tech_bonus = {
-					name = SOV_mio_trait_merge_vef_plant
-					bonus = 1
-					uses = 1
-					category = radar_tech
-				}
-			}
-		}
-
-		equipment_bonus = {
-			air_defence = @aircraft_air_defence
-			surface_detection = @aircraft_surface_detection
-			sub_detection = @aircraft_sub_detection
+		production_bonus = {
+			production_efficiency_cap_factor = @aircraft_production_efficiency_cap_factor
 		}
 	}
 }
@@ -1485,16 +1495,14 @@ SOV_ilyushin_design_bureau_organization = {
 		limit_to_equipment_type = { CAS_equipment tactical_bomber }
 	}
 
-	add_trait = {
-		token = SOV_mio_trait_merge_plant_no_28
-		name = SOV_merge_aircraft_plant_1
-		#icon = GFX_generic_mio_department_icon_facilities
+	add_trait = {	# Plant 1 CAS - MIGs
+		token = SOV_mio_trait_merge_plant_no_1
+		name = SOV_mio_trait_merge_plant_no_1
 		icon = GFX_generic_mio_trait_icon_build_cost_ic
 		special_trait_background = yes
 
-		position = { x=@aircraft_1_X y=@aircraft_1_Y }
-
-
+		position = { x=0 y=-1 }
+		relative_position_id = SOV_mio_trait_merge_plant_no_18
 
 		available = {
 			FROM = {
@@ -1503,30 +1511,79 @@ SOV_ilyushin_design_bureau_organization = {
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
 			}
+			FROM = {
+				has_country_flag = aircraft_plant_ready
+			}
+			hidden_trigger = {
+				FROM = {
+					NOT = { has_country_flag = SOV_merge_plant_no_1_flag }
+				}
+			}
 		}
 
 		on_complete = {
 			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
 			FROM = {
-				set_country_flag = SOV_merge_plant_no_28_flag
+				set_country_flag = SOV_merge_plant_no_1_flag2
 			}
 		}
+
+		limit_to_equipment_type = { CAS_equipment }
 
 		production_bonus = {
 			production_cost_factor = @aircraft_production_cost_factor
 		}
 	}
 
-	add_trait = {
-		token = SOV_mio_trait_merge_plant_no_150
-		name = SOV_merge_aircraft_plant_2
+	add_trait = {	# Plant 18 tactical strategic CAS
+		token = SOV_mio_trait_merge_plant_no_18
+		name = SOV_mio_trait_merge_plant_no_18
+		#icon = GFX_generic_mio_department_icon_facilities
+		icon = GFX_generic_mio_trait_icon_build_cost_ic
+		special_trait_background = yes
+
+		position = { x=@aircraft_1_X y=@aircraft_1_Y }
+
+		available = {
+			FROM = {
+				has_full_control_of_state = 251 #KUYBYSHEV
+			}
+			FROM = {
+				has_completed_focus = SOV_merge_evacuated_plants
+			}
+			FROM = {
+				has_country_flag = aircraft_plant_ready
+			}
+			hidden_trigger = {
+				FROM = {
+					OR = {
+						NOT = { has_country_flag = SOV_merge_plant_no_18_flag }
+						NOT = { has_country_flag = SOV_merge_plant_no_18_flag3 }
+					}
+				}
+			}
+		}
+
+		on_complete = {
+			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
+			FROM = {
+				set_country_flag = SOV_merge_plant_no_18_flag2
+			}
+		}
+
+		production_bonus = {
+			production_capacity_factor = @aircraft_production_capacity_factor
+		}
+	}
+
+	add_trait = {	# Plant 35 CAS
+		token = SOV_mio_trait_merge_plant_no_35
+		name = SOV_mio_trait_merge_plant_no_35
 		#icon = GFX_generic_mio_department_icon_facilities
 		icon = GFX_generic_mio_trait_icon_air_agility
 		special_trait_background = yes
 
 		position = { x=@aircraft_2_X y=@aircraft_2_Y }
-
-
 
 		available = {
 			FROM = {
@@ -1535,62 +1592,66 @@ SOV_ilyushin_design_bureau_organization = {
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
 			}
+			FROM = {
+				has_country_flag = aircraft_plant_ready2
+			}
 		}
 
 		on_complete = {
 			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
 			FROM = {
 				set_country_flag = SOV_merge_plant_no_150_flag
-				add_resource = {
-					type = aluminium
-					amount = 3
-					state = 219
+				219 = {
+					add_building_construction = {
+						type = aluminium_refinery
+						level = 1
+						instant_build = yes
+					}
 				}
 			}
 		}
 
-		equipment_bonus = {
-			air_agility = @aircraft_air_agility
+		limit_to_equipment_type = { CAS_equipment }
+
+		production_bonus = {
+			production_efficiency_gain_factor = @aircraft_production_efficiency_gain_factor
 		}
 	}
 
-	add_trait = {
-		token = SOV_mio_trait_merge_vef_plant
-		name = SOV_merge_aircraft_plant_3
-		#icon = GFX_generic_mio_department_icon_facilities
-		icon = GFX_generic_mio_trait_icon_detection
+	add_trait = {	# Plant 150 general Planes
+		token = SOV_mio_trait_merge_plant_no_150
+		name = SOV_merge_aircraft_plant_2
+		icon = GFX_generic_mio_trait_icon_air_agility
 		special_trait_background = yes
 
 		position = { x=@aircraft_3_X y=@aircraft_3_Y }
 
-
-
 		available = {
 			FROM = {
-				has_full_control_of_state = 966 #RIGA
+				has_full_control_of_state = 219 #MOSCOW
 			}
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
+			}
+			FROM = {
+				has_country_flag = aircraft_plant_ready2
+			}
+			hidden_trigger = {
+				FROM = {
+					NOT = { has_country_flag = SOV_merge_plant_no_150_flag }
+				}
 			}
 		}
 
 		on_complete = {
 			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
 			FROM = {
-				set_country_flag = SOV_merge_vef_plant_flag
-				add_tech_bonus = {
-					name = SOV_mio_trait_merge_vef_plant
-					bonus = 1
-					uses = 1
-					category = radar_tech
-				}
+				set_country_flag = SOV_merge_plant_no_150_flag2
 			}
 		}
 
-		equipment_bonus = {
-			air_defence = @aircraft_air_defence
-			surface_detection = @aircraft_surface_detection
-			sub_detection = @aircraft_sub_detection
+		production_bonus = {
+			production_efficiency_cap_factor = @aircraft_production_efficiency_cap_factor
 		}
 	}
 }
@@ -1637,48 +1698,37 @@ SOV_yakovlev_design_bureau_organization = {
 		limit_to_equipment_type = { attacker_equipment }
 	}
 
-	add_trait = {
-		token = SOV_mio_trait_merge_plant_no_28
-		name = SOV_merge_aircraft_plant_1
-		#icon = GFX_generic_mio_department_icon_facilities
-		icon = GFX_generic_mio_trait_icon_build_cost_ic
+	add_trait = {	# Plant 153 YaKs
+		token = SOV_mio_trait_merge_plant_no_153
+		name = SOV_mio_trait_merge_plant_no_153
+		icon = GFX_generic_mio_department_icon_facilities
 		special_trait_background = yes
 
 		position = { x=@aircraft_1_X y=@aircraft_1_Y }
 
-
-
 		available = {
 			FROM = {
-				has_full_control_of_state = 251 #KUYBYSHEV
+				has_full_control_of_state = 570 #Novosibirsk
 			}
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
 			}
 		}
 
-		on_complete = {
-			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
-			FROM = {
-				set_country_flag = SOV_merge_plant_no_28_flag
-			}
-		}
+		limit_to_equipment_type = { fighter_equipment }
 
 		production_bonus = {
 			production_cost_factor = @aircraft_production_cost_factor
 		}
 	}
 
-	add_trait = {
-		token = SOV_mio_trait_merge_plant_no_150
-		name = SOV_merge_aircraft_plant_2
-		#icon = GFX_generic_mio_department_icon_facilities
-		icon = GFX_generic_mio_trait_icon_air_agility
+	add_trait = {	# Plant 82 Yaks
+		token = SOV_mio_trait_merge_plant_no_82
+		name = SOV_mio_trait_merge_plant_no_82
+		icon = GFX_generic_mio_department_icon_facilities
 		special_trait_background = yes
 
 		position = { x=@aircraft_2_X y=@aircraft_2_Y }
-
-
 
 		available = {
 			FROM = {
@@ -1687,62 +1737,66 @@ SOV_yakovlev_design_bureau_organization = {
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
 			}
+			FROM = {
+				has_country_flag = aircraft_plant_ready2
+			}
 		}
 
 		on_complete = {
-			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
 			FROM = {
-				set_country_flag = SOV_merge_plant_no_150_flag
-				add_resource = {
-					type = aluminium
-					amount = 3
-					state = 219
+				219 = {
+					add_building_construction = {
+						type = aluminium_refinery
+						level = 1
+						instant_build = yes
+					}
 				}
 			}
 		}
 
-		equipment_bonus = {
-			air_agility = @aircraft_air_agility
+		limit_to_equipment_type = { fighter_equipment }
+
+		production_bonus = {
+			production_capacity_factor = @aircraft_production_capacity_factor
 		}
 	}
 
-	add_trait = {
-		token = SOV_mio_trait_merge_vef_plant
-		name = SOV_merge_aircraft_plant_3
-		#icon = GFX_generic_mio_department_icon_facilities
-		icon = GFX_generic_mio_trait_icon_detection
+	add_trait = {	# Plant 166 YaKs - Tu strike and jet bombers
+		token = SOV_mio_trait_merge_plant_no_166
+		name = SOV_mio_trait_merge_plant_no_166
+		icon = GFX_generic_mio_department_icon_facilities
 		special_trait_background = yes
 
 		position = { x=@aircraft_3_X y=@aircraft_3_Y }
 
-
-
 		available = {
 			FROM = {
-				has_full_control_of_state = 966 #RIGA
+				has_full_control_of_state = 571 #OMSK
 			}
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
+			}
+			FROM = {
+				has_country_flag = aircraft_plant_ready3
+			}
+			hidden_trigger = {
+				FROM = {
+					NOT = { has_country_flag = SOV_merge_plant_no_166_flag2 }
+				}
 			}
 		}
 
 		on_complete = {
 			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
 			FROM = {
-				set_country_flag = SOV_merge_vef_plant_flag
-				add_tech_bonus = {
-					name = SOV_mio_trait_merge_vef_plant
-					bonus = 1
-					uses = 1
-					category = radar_tech
-				}
+				set_country_flag = SOV_merge_plant_no_166_flag
 			}
 		}
 
-		equipment_bonus = {
-			air_defence = @aircraft_air_defence
-			surface_detection = @aircraft_surface_detection
-			sub_detection = @aircraft_sub_detection
+		limit_to_equipment_type = { fighter_equipment }
+
+		production_bonus = {
+			production_efficiency_gain_factor = @aircraft_production_efficiency_gain_factor
 		}
 	}
 }
@@ -1817,16 +1871,13 @@ SOV_tupolev_design_bureau_organization = {
 		}
 	}
 
-	add_trait = {
-		token = SOV_mio_trait_merge_plant_no_28
-		name = SOV_merge_aircraft_plant_1
-		#icon = GFX_generic_mio_department_icon_facilities
-		icon = GFX_generic_mio_trait_icon_build_cost_ic
+	add_trait = {	# Plant 18 tactical strategic CAS
+		token = SOV_mio_trait_merge_plant_no_18
+		name = SOV_mio_trait_merge_plant_no_18
+		icon = GFX_generic_mio_department_icon_facilities
 		special_trait_background = yes
 
 		position = { x=@aircraft_1_X y=@aircraft_1_Y }
-
-
 
 		available = {
 			FROM = {
@@ -1835,30 +1886,38 @@ SOV_tupolev_design_bureau_organization = {
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
 			}
+			FROM = {
+				has_country_flag = aircraft_plant_ready
+			}
+			hidden_trigger = {
+				FROM = {
+					OR = {
+						NOT = { has_country_flag = SOV_merge_plant_no_18_flag }
+						NOT = { has_country_flag = SOV_merge_plant_no_18_flag2 }
+					}
+				}
+			}
 		}
 
 		on_complete = {
 			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
 			FROM = {
-				set_country_flag = SOV_merge_plant_no_28_flag
+				set_country_flag = SOV_merge_plant_no_18_flag3
 			}
 		}
 
 		production_bonus = {
-			production_cost_factor = @aircraft_production_cost_factor
+			production_capacity_factor = @aircraft_production_capacity_factor
 		}
 	}
 
-	add_trait = {
-		token = SOV_mio_trait_merge_plant_no_150
-		name = SOV_merge_aircraft_plant_2
-		#icon = GFX_generic_mio_department_icon_facilities
-		icon = GFX_generic_mio_trait_icon_air_agility
+	add_trait = {	# Plant 23 strike planes
+		token = SOV_mio_trait_merge_plant_no_23
+		name = SOV_mio_trait_merge_plant_no_23
+		icon = GFX_generic_mio_department_icon_facilities
 		special_trait_background = yes
 
 		position = { x=@aircraft_2_X y=@aircraft_2_Y }
-
-
 
 		available = {
 			FROM = {
@@ -1867,62 +1926,66 @@ SOV_tupolev_design_bureau_organization = {
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
 			}
+			FROM = {
+				has_country_flag = aircraft_plant_ready2
+			}
 		}
 
 		on_complete = {
-			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
 			FROM = {
-				set_country_flag = SOV_merge_plant_no_150_flag
-				add_resource = {
-					type = aluminium
-					amount = 3
-					state = 219
+				219 = {
+					add_building_construction = {
+						type = aluminium_refinery
+						level = 1
+						instant_build = yes
+					}
 				}
 			}
 		}
 
-		equipment_bonus = {
-			air_agility = @aircraft_air_agility
+		limit_to_equipment_type = { strike_bomber_equipment }
+
+		production_bonus = {
+			production_efficiency_cap_factor = @aircraft_production_efficiency_cap_factor
 		}
 	}
 
-	add_trait = {
-		token = SOV_mio_trait_merge_vef_plant
-		name = SOV_merge_aircraft_plant_3
-		#icon = GFX_generic_mio_department_icon_facilities
-		icon = GFX_generic_mio_trait_icon_detection
+	add_trait = {	# Plant 166 YaKs - Tu strike and jet bombers
+		token = SOV_mio_trait_merge_plant_no_166
+		name = SOV_mio_trait_merge_plant_no_166
+		icon = GFX_generic_mio_department_icon_facilities
 		special_trait_background = yes
 
 		position = { x=@aircraft_3_X y=@aircraft_3_Y }
 
-
-
 		available = {
 			FROM = {
-				has_full_control_of_state = 966 #RIGA
+				has_full_control_of_state = 571 #OMSK
 			}
 			FROM = {
 				has_completed_focus = SOV_merge_evacuated_plants
+			}
+			FROM = {
+				has_country_flag = aircraft_plant_ready3
+			}
+			hidden_trigger = {
+				FROM = {
+					NOT = { has_country_flag = SOV_merge_plant_no_166_flag }
+				}
 			}
 		}
 
 		on_complete = {
 			custom_effect_tooltip = SOV_trait_will_not_be_available_in_other_organizations
 			FROM = {
-				set_country_flag = SOV_merge_vef_plant_flag
-				add_tech_bonus = {
-					name = SOV_mio_trait_merge_vef_plant
-					bonus = 1
-					uses = 1
-					category = radar_tech
-				}
+				set_country_flag = SOV_merge_plant_no_166_flag2
 			}
 		}
 
-		equipment_bonus = {
-			air_defence = @aircraft_air_defence
-			surface_detection = @aircraft_surface_detection
-			sub_detection = @aircraft_sub_detection
+		limit_to_equipment_type = { strat_bomber_equipment mio_cat_eq_only_tactical_bomber }
+
+		production_bonus = {
+			production_efficiency_gain_factor = @aircraft_production_efficiency_gain_factor
 		}
 	}
 }
