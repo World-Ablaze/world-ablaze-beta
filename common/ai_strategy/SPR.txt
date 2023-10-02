@@ -58,39 +58,6 @@ spanish_civil_war_GER_expatriate_resistance = {
 	}
 }
 
-# make italy and germany want to send stuff to the fascist side of SCW
-ITA_and_GER_help_SPA_win_civil_war = {
-	reversed = yes
-	allowed = {
-		NOT = { has_dlc = "La Resistance" }
-	}
-	enable = {
-		date < 1939.1.1
-		country_exists = SPR
-		SPR = {
-			has_government = fascism
-		}
-		has_government = fascism
-		SPR = { has_civil_war = yes }
-		NOT = { has_global_flag = scw_over }
-	}
-	abort = {
-		OR = {
-			date > 1939.1.1
-			NOT = { has_government = fascism }
-			SPR = { has_civil_war = no }
-			has_global_flag = scw_over
-		}
-	}
-
-	ai_strategy = {
-		type = send_volunteers_desire
-		id = SPR
-		value = 50
-	}
-
-}
-
 # Make nobody want to ally Spain during the civil war.
 spanish_civil_war_ally_nobody = {
 	allowed = {
@@ -559,175 +526,6 @@ SPR_dont_attack_at_startup_of_civil_war = {
 	}
 }
 
-# Prevent Nationalist Spain to join any faction on historical mode
-nationalist_spain_allies_nobody_on_historical = {
-	allowed = {
-		has_dlc = "La Resistance"
-		tag = SPA
-		OR = {
-			AND = {
-				is_historical_focus_on = yes
-				has_game_rule = {
-					rule = SPR_ai_behavior
-					option = DEFAULT
-				}
-			}
-			has_country_flag = SPR_AI_RANDOM_NATIONALIST_HISTORICAL
-			has_game_rule = {
-				rule = SPR_ai_behavior
-				option = NATIONALIST_HISTORICAL
-			}
-		}
-	}
-	enable = {
-		has_global_flag = scw_over
-	}
-	abort = {
-		OR = {
-			SPA = { has_war = yes }
-			SPA = { is_in_faction = yes }
-			GER = { NOT = { has_government = fascism } }
-			ENG = { NOT = { has_government = democratic } }
-		}
-	}
-
-	ai_strategy = {
-		type = alliance
-		id = JAP
-		value = -200
-	}
-
-	ai_strategy = {
-		type = alliance
-		id = ENG
-		value = -200
-	}
-}
-
-nationalist_spain_axis_nobody_on_historical = {
-	allowed = {
-		has_dlc = "La Resistance"
-		tag = SPA
-		OR = {
-			AND = {
-				is_historical_focus_on = yes
-				has_game_rule = {
-					rule = SPR_ai_behavior
-					option = DEFAULT
-				}
-			}
-			has_country_flag = SPR_AI_RANDOM_NATIONALIST_HISTORICAL
-			has_game_rule = {
-				rule = SPR_ai_behavior
-				option = NATIONALIST_HISTORICAL
-			}
-		}
-	}
-	enable = {
-		has_global_flag = scw_over
-		NOT = { GER = { has_completed_focus = GER_pressure_spain } }
-	}
-	abort = {
-		OR = {
-			SPA = { has_war = yes }
-			SPA = { is_in_faction = yes }
-			GER = { NOT = { has_government = fascism } }
-			ENG = { NOT = { has_government = democratic } }
-			GER = { has_completed_focus = GER_pressure_spain }
-		}
-	}
-
-	ai_strategy = {
-		type = alliance
-		id = GER
-		value = -200
-	}
-}
-
-#nationalist_spain_join_axis = {
-#	allowed = {
-#		has_dlc = "La Resistance"
-#		tag = SPA
-#	}
-#	enable = {
-#		has_global_flag = scw_over
-#		OR = {
-#			has_government = neutrality
-#			has_government = fascism
-#		}
-#		GER = { has_completed_focus = GER_pressure_spain }
-#	}
-#	abort_when_not_enabled = yes
-#
-#	ai_strategy = {
-#		type = alliance
-#		id = GER
-#		value = 2400
-#	}
-#}
-
-nationalist_all_out_push = {
-	enable = {
-		OR = {
-			tag = SPA
-			tag = SPR
-		}
-		date > 1938.10.1
-		OR = {
-			has_government = fascism
-			has_government = neutrality
-		}
-		NOT = {
-			has_global_flag = scw_over
-		}
-	}
-
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = front_control
-		strategic_region = 216
-		ordertype = front
-		execution_type = rush
-		execute_order = yes
-	}
-	
-	ai_strategy = {
-		type = front_control
-		strategic_region = 289
-		ordertype = front
-		execution_type = rush
-		execute_order = yes
-	}
-	
-	ai_strategy = {
-		type = front_control
-		strategic_region = 41
-		ordertype = front
-		execution_type = rush
-		execute_order = yes
-	}
-	
-	ai_strategy = {
-		type = front_control
-		area = spain
-		ordertype = front
-		execution_type = rush
-		execute_order = yes
-	}
-	ai_strategy = {
-		type = front_control
-
-		country_trigger = {
-			original_tag = SPR
-		}
-
-		execute_order = yes
-		manual_attack = yes
-		execution_type = rush
-	}
-}
-
 republicans_no_suicide_attacks = {
 	enable = {
 		has_completed_focus = SPR_maintain_the_second_republic
@@ -741,9 +539,98 @@ republicans_no_suicide_attacks = {
 
 	ai_strategy = {
 		type = front_control
-		tag = SPA
+		strategic_region = 289
 		ordertype = front
 		execution_type = careful
 		manual_attack = yes
+	}
+
+	ai_strategy = {
+		type = front_control
+		strategic_region = 41
+		ordertype = front
+		execution_type = careful
+		manual_attack = yes
+	}
+}
+
+republicans_kill_the_anarchists = {
+	enable = {
+		has_completed_focus = SPR_maintain_the_second_republic
+		has_completed_focus = SPR_crush_the_revolution
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_control
+		state = 165
+		ordertype = front
+		execution_type = rush
+		execute_order = yes
+	}
+}
+
+republicans_defend_bilbao = {
+	enable = {
+		has_country_flag = SPR_republican_spain_flag
+		NOT = {
+			has_global_flag = scw_over
+		}
+		controls_state = 864
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 289
+		value = 35
+	}
+}
+
+SPR_defense_of_madrid = {
+	enable = {
+		has_country_flag = SPR_republican_spain_flag
+		NOT = {
+			has_global_flag = scw_over
+		}
+	}
+	
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+
+		order_id = 2
+
+		states = {
+			41
+		}
+
+		ratio = 0.08
+
+		subtract_invasions_from_need = no
+		subtract_fronts_from_need = yes
+	}
+	
+	#ai_strategy = {
+	#	type = put_unit_buffers
+	#
+	#	order_id = 3
+	#
+	#	states = {
+	#		868
+	#	}
+	#
+	#	ratio = 0.015
+	#
+	#	subtract_invasions_from_need = no
+	#	subtract_fronts_from_need = yes
+	#}
+	
+	ai_strategy = {
+		type = garrison
+		value = -5000
 	}
 }
