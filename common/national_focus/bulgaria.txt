@@ -205,35 +205,13 @@ focus_tree = {
 	}
 
 	focus = {
-		id = BUL_declare_rearmament
-		icon = GFX_goal_generic_rearmament
-		prerequisite = { focus = BUL_start_military_exchange_programs focus = BUL_grow_closer_to_germany focus = BUL_grow_closer_to_soviet_union }
-		x = -2
-		y = 1
-		relative_position_id = BUL_start_military_exchange_programs
-		
-		cost = 3
-		completion_reward = {
-			if = {
-				limit = { has_idea = volunteer_only }
-				add_ideas = limited_conscription
-			}
-			if = {
-				limit = { has_idea = civilian_economy }
-				add_ideas = partial_mobilisation
-			}
-			add_political_power = 50
-		}
-    }
-
-	focus = {
 		id = BUL_power_to_the_tsar
 		icon = GFX_focus_BUL_power_to_the_tsar
 		mutually_exclusive = { focus = BUL_consolidate_power_in_the_cabinet }
-		prerequisite = { focus = BUL_declare_rearmament }
+		prerequisite = { focus = BUL_start_military_exchange_programs focus = BUL_grow_closer_to_germany focus = BUL_grow_closer_to_soviet_union }
 		x = -1
 		y = 1
-		relative_position_id = BUL_declare_rearmament
+		relative_position_id = BUL_grow_closer_to_germany
 		
 		cost = 3
 		completion_reward = {
@@ -260,7 +238,7 @@ focus_tree = {
 		id = BUL_restore_the_tarnovo_constitution
 		icon = GFX_focus_generic_treaty
 		prerequisite = { focus = BUL_continue_funding_royal_institutions }
-		x = -1
+		x = 0
 		y = 1
 		relative_position_id = BUL_continue_funding_royal_institutions
 		
@@ -277,10 +255,10 @@ focus_tree = {
 		id = BUL_consolidate_power_in_the_cabinet
 		icon = GFX_focus_BUL_plot_against_boris
 		mutually_exclusive = { focus = BUL_power_to_the_tsar }
-		prerequisite = { focus = BUL_declare_rearmament }
+		prerequisite = { focus = BUL_start_military_exchange_programs focus = BUL_grow_closer_to_germany focus = BUL_grow_closer_to_soviet_union }
 		x = 1
 		y = 1
-		relative_position_id = BUL_declare_rearmament
+		relative_position_id = BUL_grow_closer_to_germany
 		
 		cost = 3
 		completion_reward = {
@@ -306,7 +284,7 @@ focus_tree = {
 		id = BUL_lift_the_ban_on_the_nsm
 		icon = GFX_goal_generic_cooperate_with_the_fascists
 		prerequisite = { focus = BUL_encourage_fascist_youth_groups }
-		x = 1
+		x = 0
 		y = 1
 		relative_position_id = BUL_encourage_fascist_youth_groups
 		
@@ -315,28 +293,69 @@ focus_tree = {
 		}
 	}
 
+	###
+
 	focus = {
-		id = BUL_crush_the_socialists
-		icon = GFX_goal_generic_war_with_comintern
-		prerequisite = { focus = BUL_encourage_fascist_youth_groups focus = BUL_continue_funding_royal_institutions }
+		id = BUL_policy_of_neutrality
+		icon = GFX_goal_generic_neutrality_focus
+		mutually_exclusive = { focus = BUL_join_the_axis focus = BUL_the_third_bulgarian_empire }
+		prerequisite = { focus = BUL_restore_the_tarnovo_constitution }
 		x = 0
-		y = 3
-		relative_position_id = BUL_declare_rearmament
+		y = 1
+		relative_position_id = BUL_restore_the_tarnovo_constitution
+		
+		cost = 3
+
+		bypass = {
+			OR = {
+				is_subject = yes
+				is_in_faction = yes
+			}
+		}
+
+		completion_reward = {
+			add_stability = 0.1
+			add_ideas = neutrality_idea
+		}
+	}
+
+	focus = {
+		id = BUL_join_the_axis
+		icon = GFX_goal_support_fascism
+		mutually_exclusive = { focus = BUL_policy_of_neutrality focus = BUL_the_third_bulgarian_empire }
+		prerequisite = { focus = BUL_lift_the_ban_on_the_nsm }
+		x = 0
+		y = 1
+		relative_position_id = BUL_lift_the_ban_on_the_nsm
+
+		available = {
+			any_other_country = {
+				is_faction_leader = yes
+				has_government = fascism
+				original_tag = GER
+			}
+		}
 		
 		cost = 3
 		completion_reward = {
-
+			random_other_country = {
+				limit = {
+					is_faction_leader = yes
+					has_government = fascism
+					original_tag = GER
+				}
+				country_event = generic.2
+			}
 		}
 	}
 
 	focus = {
 		id = BUL_join_the_tripartite_pact
-		icon = GFX_goal_support_fascism
-		mutually_exclusive = { focus = BUL_the_third_bulgarian_empire }
-		prerequisite = { focus = BUL_crush_the_socialists }
-		x = 0
+		icon = GFX_goal_generic_forceful_treaty
+		prerequisite = { focus = BUL_policy_of_neutrality focus = BUL_join_the_axis }
+		x = 1
 		y = 1
-		relative_position_id = BUL_crush_the_socialists
+		relative_position_id = BUL_policy_of_neutrality
 		
 		cost = 4
 		bypass = {
@@ -570,6 +589,40 @@ focus_tree = {
 		}
 	}
 
+	focus = {
+		id = BUL_tackle_the_fatherland_front
+		icon = GFX_focus_BUL_the_fatherland_front
+		prerequisite = { focus = BUL_expand_the_occupation focus = BUL_take_over_soviet_factories }
+		x = 1
+		y = 1
+		relative_position_id = BUL_expand_the_occupation
+		
+		cost = 3
+
+		completion_reward = {
+
+		}
+	}
+
+	focus = {
+		id = BUL_crush_the_socialists
+		icon = GFX_goal_generic_war_with_comintern
+		prerequisite = { focus = BUL_tackle_the_fatherland_front }
+		x = 0
+		y = 1
+		relative_position_id = BUL_tackle_the_fatherland_front
+
+		available = {
+			has_war = no
+		}
+		
+		cost = 3
+
+		completion_reward = {
+
+		}
+	}
+
 	############################
 	##### FOREIGN POLITICS #####
 	############################
@@ -652,6 +705,32 @@ focus_tree = {
 			unlock_decision_category_tooltip = BUL_rearmament
 		}
     }
+
+	focus = {
+		id = BUL_declare_rearmament
+		icon = GFX_goal_generic_rearmament
+		prerequisite = { focus = BUL_start_military_exchange_programs }
+		prerequisite = { focus = BUL_sign_the_salonkia_pact }
+		x = 1
+		y = 1
+		relative_position_id = BUL_start_military_exchange_programs
+		
+		cost = 3
+
+		completion_reward = {
+			if = {
+				limit = { has_idea = volunteer_only }
+				add_ideas = limited_conscription
+			}
+			if = {
+				limit = { has_idea = civilian_economy }
+				add_ideas = partial_mobilisation
+			}
+			add_political_power = 50
+		}
+    }
+
+	###
 
 	focus = {
 		id = BUL_support_macedonian_organizations
@@ -803,43 +882,13 @@ focus_tree = {
 	}
 
 	focus = {
-		id = BUL_vasil_levsky_national_military_university
-		icon = GFX_goal_generic_research
+		id = BUL_the_third_bulgarian_empire
+		icon = GFX_focus_BUL_the_third_bulgarian_empire
+		mutually_exclusive = { focus = BUL_policy_of_neutrality  focus = BUL_join_the_axis }
 		prerequisite = { focus = BUL_bulgarianisation_in_dobrudja focus = BUL_bulgarianisation_in_macedonia focus = BUL_bulgarianisation_in_thrace }
 		x = 0
 		y = 3
 		relative_position_id = BUL_balkan_ambitions
-		cost = 10
-
-		available = {
-
-		}
-
-		search_filters = {FOCUS_FILTER_RESEARCH}
-		completion_reward = {
-			army_experience = 15
-			navy_experience = 15
-			air_experience = 15
-			add_doctrine_cost_reduction = {
-				name = BUL_vasil_levsky_national_military_university
-				cost_reduction = 0.99
-				uses = 1
-				category = land_doctrine
-				category = naval_doctrine
-				category = air_doctrine
-			}
-			add_research_slot = 1
-		}
-	}
-
-	focus = {
-		id = BUL_the_third_bulgarian_empire
-		icon = GFX_focus_BUL_the_third_bulgarian_empire
-		mutually_exclusive = { focus = BUL_join_the_tripartite_pact }
-		prerequisite = { focus = BUL_vasil_levsky_national_military_university }
-		x = 0
-		y = 1
-		relative_position_id = BUL_vasil_levsky_national_military_university
 		
 		cost = 4
 
@@ -2142,27 +2191,42 @@ focus_tree = {
    	}
 
 	focus = {
-		id = BUL_experiment_with_an_armoured_core
-		icon = GFX_goal_generic_tanks
+		id = BUL_vasil_levsky_national_military_university
+		icon = GFX_goal_generic_research
 		prerequisite = { focus = BUL_reform_the_general_staff }
 		x = 0
 		y = 1
 		relative_position_id = BUL_reform_the_general_staff
-		
-		cost = 3
-		
-	 	completion_reward = {
+		cost = 10
 
+		available = {
+
+		}
+
+		search_filters = {FOCUS_FILTER_RESEARCH}
+		completion_reward = {
+			army_experience = 15
+			navy_experience = 15
+			air_experience = 15
+			add_doctrine_cost_reduction = {
+				name = BUL_vasil_levsky_national_military_university
+				cost_reduction = 0.99
+				uses = 1
+				category = land_doctrine
+				category = naval_doctrine
+				category = air_doctrine
+			}
+			add_research_slot = 1
 		}
 	}
 
 	focus = {
 		id = BUL_improve_the_infantry_core
 		icon = GFX_goal_generic_small_arms
-		prerequisite = { focus = BUL_experiment_with_an_armoured_core }
+		prerequisite = { focus = BUL_vasil_levsky_national_military_university }
 		x = 0
 		y = 1
-		relative_position_id = BUL_experiment_with_an_armoured_core
+		relative_position_id = BUL_vasil_levsky_national_military_university
 		
 		cost = 3
 		
@@ -2189,10 +2253,10 @@ focus_tree = {
 	focus = {
 		id = BUL_form_a_pure_armoured_core
 		icon = GFX_goal_generic_army_tanks
-		prerequisite = { focus = BUL_experiment_with_an_armoured_core }
+		prerequisite = { focus = BUL_vasil_levsky_national_military_university }
 		x = -2
 		y = 1
-		relative_position_id = BUL_experiment_with_an_armoured_core
+		relative_position_id = BUL_vasil_levsky_national_military_university
 		
 		cost = 3
 		
@@ -2219,10 +2283,10 @@ focus_tree = {
 	focus = {
 		id = BUL_mechanise_the_armoured_core
 		icon = GFX_goal_USA_armored_infantry
-		prerequisite = { focus = BUL_experiment_with_an_armoured_core }
+		prerequisite = { focus = BUL_vasil_levsky_national_military_university }
 		x = 2
 		y = 1
-		relative_position_id = BUL_experiment_with_an_armoured_core
+		relative_position_id = BUL_vasil_levsky_national_military_university
 		
 		cost = 3
 		
