@@ -61,7 +61,7 @@ focus_tree = {
 		y = 1
 		relative_position_id = BUL_golden_age_of_the_third_kingdom
 		
-		cost = 5
+		cost = 3
 		ai_will_do = { factor = 100 }
 		completion_reward = {
 			add_political_power = 150
@@ -89,7 +89,7 @@ focus_tree = {
 	 	completion_reward = {
 			add_opinion_modifier = {
 				target = SOV
-				modifier = secured_trade_routes
+				modifier = trade_treaty
 			}
 		}
    	}
@@ -102,11 +102,16 @@ focus_tree = {
 		y = 1
 		relative_position_id = BUL_open_trade_discussions_with_soviet_union
 		
-		cost = 4
+		cost = 3
 	 	ai_will_do = { factor = 100 }
 		
 	 	completion_reward = {
-			add_ideas = BUL_domestic_extraction
+			add_tech_bonus = {
+				name = BUL_exploit_domestic_reasources
+				bonus = 1.0
+				uses = 1
+				category = excavation_tech
+			}
 		}
    	}
 
@@ -131,24 +136,51 @@ focus_tree = {
 	 	completion_reward = {
 			add_opinion_modifier = {
 				target = GER
-				modifier = secured_trade_routes
+				modifier = trade_treaty
 			}
 		}
     }
 
    	focus = {
-		id = BUL_draw_closer_to_german_steel_barons
+		id = BUL_deal_with_the_german_steel_barons
 		icon = GFX_goal_generic_build_steel
 		prerequisite = { focus = BUL_open_trade_discussions_with_germany }
 		x = 0
 		y = 1
 		relative_position_id = BUL_open_trade_discussions_with_germany
 		
-		cost = 4
+		cost = 3
 	 	ai_will_do = { factor = 100 }
+
+		bypass = {
+			OR = {
+				has_War_With = GER
+				NOT = { country_exists = GER }
+			}
+		}
 		
 	 	completion_reward = {
-			add_ideas = BUL_steel_2
+			custom_effect_tooltip = BUL_deal_with_the_german_steel_barons_tt
+			hidden_effect = {
+				add_to_variable = { BUL_nsm_attitude = 3 }
+				set_variable = { BUL_nsm_political_power_gain = 0 }
+				set_variable = { BUL_nsm_stability = 0 }
+			}
+			add_tech_bonus = {
+				name = BUL_deal_with_the_german_steel_barons
+				bonus = 0.5
+				uses = 1
+				category = industry
+			}
+			random_owned_controlled_state = {
+				prioritize = { 905 }
+				add_extra_state_shared_building_slots = 1
+				add_building_construction = {
+					type = steel_refinery
+					level = 1
+					instant_build = yes
+				}
+			}
 		}
    	}
 
@@ -163,10 +195,18 @@ focus_tree = {
 		
 		cost = 3
 		completion_reward = {
+			custom_effect_tooltip = BUL_grow_closer_to_soviet_union_tt
+			hidden_effect = {
+				add_to_variable = { BUL_zveno_attitude = 1 }
+				add_to_variable = { BUL_zveno_stability = 0.05 }
+			}
 			add_opinion_modifier = {
-				target = GER
-				modifier = BUL_closer_relations
-				trade = yes
+				target = SOV
+				modifier = diplomatic_envoys
+			}
+			add_popularity = {
+				ideology = communism
+				popularity = 0.05
 			}
 		}
 	}
@@ -175,17 +215,25 @@ focus_tree = {
 		id = BUL_grow_closer_to_germany
 		icon = GFX_focus_chi_mission_to_germany
 		mutually_exclusive = { focus = BUL_grow_closer_to_soviet_union }
-		prerequisite = { focus = BUL_draw_closer_to_german_steel_barons }
+		prerequisite = { focus = BUL_deal_with_the_german_steel_barons }
 		x = 1
 		y = 1
 		relative_position_id = BUL_exploit_domestic_reasources
 		
 		cost = 3
 		completion_reward = {
+			custom_effect_tooltip = BUL_grow_closer_to_germany_tt
+			hidden_effect = {
+				add_to_variable = { BUL_nsm_attitude = 1 }
+				add_to_variable = { BUL_zveno_influence = 1 }
+			}
 			add_opinion_modifier = {
 				target = GER
-				modifier = BUL_closer_relations
-				trade = yes
+				modifier = diplomatic_envoys
+			}
+			add_popularity = {
+				ideology = fascism
+				popularity = 0.05
 			}
 		}
 	}
@@ -193,24 +241,14 @@ focus_tree = {
 	focus = {
 		id = BUL_start_military_exchange_programs
 		icon = GFX_goal_generic_cavalry
-		prerequisite = { focus = BUL_draw_closer_to_german_steel_barons }
+		prerequisite = { focus = BUL_deal_with_the_german_steel_barons }
 		x = 1
 		y = 1
-		relative_position_id = BUL_draw_closer_to_german_steel_barons
+		relative_position_id = BUL_deal_with_the_german_steel_barons
 		
 		cost = 3
 		completion_reward = {
-			add_opinion_modifier = {
-				target = ITA
-				modifier = BUL_closer_relations
-				trade = yes
-			}
-			add_doctrine_cost_reduction = {
-				name = BUL_start_military_exchange_programs
-				cost_reduction = 0.99
-				uses = 1
-				category = land_doctrine
-			}
+			BUL_great_war_leadership_improve = yes
 		}
 	}
 
@@ -238,7 +276,7 @@ focus_tree = {
 		y = 1
 		relative_position_id = BUL_power_to_the_tsar
 		
-		cost = 4
+		cost = 10
 		completion_reward = {
 			add_research_slot = 1
 		}
@@ -367,7 +405,7 @@ focus_tree = {
 		y = 1
 		relative_position_id = BUL_policy_of_neutrality
 		
-		cost = 4
+		cost = 3
 		bypass = {
 			OR = {
 				is_subject = yes
@@ -635,7 +673,7 @@ focus_tree = {
 		y = 1
 		relative_position_id = BUL_reopen_relations_with_Yugoslavia
 		
-		cost = 4
+		cost = 3
 		ai_will_do = { factor = 100 }
 		completion_reward = {
 			diplomatic_relation = {
@@ -655,7 +693,7 @@ focus_tree = {
 		y = 1
 		relative_position_id = BUL_reopen_relations_with_Yugoslavia
 		
-		cost = 4
+		cost = 3
 		ai_will_do = { factor = 100 }
 		completion_reward = {
 			diplomatic_relation = {
@@ -674,7 +712,7 @@ focus_tree = {
 	 	x = 0
 	 	y = 2
 	 	relative_position_id = BUL_reopen_relations_with_Yugoslavia
-	 	cost = 4
+	 	cost = 3
 		 ai_will_do = { factor = 100 }
 		
 	 	completion_reward = {
@@ -834,7 +872,7 @@ focus_tree = {
 		y = 3
 		relative_position_id = BUL_sign_the_salonkia_pact
 		
-		cost = 4
+		cost = 3
 		completion_reward = {
 			add_ideas = BUL_bulgarian_irredentism
 		}
@@ -848,7 +886,7 @@ focus_tree = {
 		y = 1
 		relative_position_id = BUL_balkan_ambitions
 		
-		cost = 4
+		cost = 3
 
 		available = {
 			77 = { is_fully_controlled_by = ROOT }
@@ -881,7 +919,7 @@ focus_tree = {
 		y = 2
 		relative_position_id = BUL_balkan_ambitions
 		
-		cost = 4
+		cost = 3
 
 		available = {
 			184 = { is_fully_controlled_by = ROOT }
@@ -914,7 +952,7 @@ focus_tree = {
 		y = 2
 		relative_position_id = BUL_balkan_ambitions
 		
-		cost = 4
+		cost = 3
 
 		available = {
 			851 = { is_fully_controlled_by = ROOT }
@@ -951,7 +989,7 @@ focus_tree = {
 		y = 3
 		relative_position_id = BUL_balkan_ambitions
 		
-		cost = 4
+		cost = 3
 
 		available = {
 			OR = {
@@ -1197,36 +1235,6 @@ focus_tree = {
    	}
 
    	focus = {
-		id = BUL_continue_land_reforms
-		icon = GFX_focus_generic_court
-		prerequisite = { focus = BUL_expand_the_tobacco_industry }
-		x = 1
-		y = 1
-		relative_position_id = BUL_expand_the_tobacco_industry
-		
-		cost = 3
-		
-	 	completion_reward = {
-
-		}
-   	}
-
-   	focus = {
-		id = BUL_improve_railways
-		icon = GFX_goal_generic_railroads
-		prerequisite = { focus = BUL_continue_land_reforms }
-		x = 0
-		y = 1
-		relative_position_id = BUL_continue_land_reforms
-		
-		cost = 3
-		
-	 	completion_reward = {
-
-		}
-   	}
-
-   	focus = {
 		id = BUL_attempt_to_kickstart_urban_industries
 		icon = GFX_goal_generic_improve_relations_industrialists
 		prerequisite = { focus = BUL_expand_the_tobacco_industry }
@@ -1257,6 +1265,38 @@ focus_tree = {
    	}
 
    	focus = {
+		id = BUL_continue_land_reforms
+		icon = GFX_focus_generic_court
+		prerequisite = { focus = BUL_expand_the_tobacco_industry }
+		x = 2
+		y = 1
+		relative_position_id = BUL_expand_the_tobacco_industry
+		
+		cost = 3
+		
+	 	completion_reward = {
+
+		}
+   	}
+
+   	focus = {
+		id = BUL_improve_railways
+		icon = GFX_goal_generic_railroads
+		prerequisite = { focus = BUL_continue_land_reforms }
+		x = 0
+		y = 1
+		relative_position_id = BUL_continue_land_reforms
+		
+		cost = 3
+		
+	 	completion_reward = {
+
+		}
+   	}
+
+	###
+
+   	focus = {
 		id = BUL_begin_industrial_rearmament
 		icon = GFX_goal_generic_civilian_economy_large
 		prerequisite = { focus = BUL_expand_textile_factories focus = BUL_improve_railways }
@@ -1271,48 +1311,67 @@ focus_tree = {
 		}
    	}
 
-	   focus = {
-		   id = BUL_darzhavna_aeroplanna_rabotilnitsa
-		   icon = GFX_goal_generic_air_fighter
-		   prerequisite = { focus = BUL_begin_industrial_rearmament }
-		   x = -1
-		   y = 1
-		   relative_position_id = BUL_begin_industrial_rearmament
+	focus = {
+		id = BUL_darzhavna_aeroplanna_rabotilnitsa
+		icon = GFX_goal_generic_air_fighter
+		prerequisite = { focus = BUL_begin_industrial_rearmament }
+		x = -2
+		y = 1
+		relative_position_id = BUL_begin_industrial_rearmament
 
-		   cost = 5
-   
-		   available = {
-			   48 = {
-				   is_owned_by = BUL
-			   }
-		   }
-   
-		   search_filters = {FOCUS_FILTER_INDUSTRY FOCUS_FILTER_RESEARCH}
-		   completion_reward = {
-			   48 = {
-				   add_extra_state_shared_building_slots = 1
-				   add_building_construction = {
-					   type = arms_factory
-					   level = 1
-					   instant_build = yes
-				   }
-			   }
-			   add_tech_bonus = {
-				   name = BUL_darzhavna_aeroplanna_rabotilnitsa
-				   bonus = 0.5
-				   uses = 1
-				   category = light_air
-			   }
-			   custom_effect_tooltip = available_designer
-			   show_ideas_tooltip = BUL_dar
-		   }
-	   }
+		cost = 3
+
+		available = {
+			48 = {
+				is_owned_by = BUL
+			}
+		}
+
+		search_filters = {FOCUS_FILTER_INDUSTRY FOCUS_FILTER_RESEARCH}
+		completion_reward = {
+			48 = {
+				add_extra_state_shared_building_slots = 1
+				add_building_construction = {
+					type = arms_factory
+					level = 1
+					instant_build = yes
+				}
+			}
+			add_tech_bonus = {
+				name = BUL_darzhavna_aeroplanna_rabotilnitsa
+				bonus = 0.5
+				uses = 1
+				category = light_air
+			}
+			custom_effect_tooltip = available_designer
+			show_ideas_tooltip = BUL_dar
+		}
+	}
+
+	focus = {
+		id = BUL_expand_sofia_university
+		icon = GFX_goal_generic_research
+		prerequisite = { focus = BUL_begin_industrial_rearmament }
+		x = 0
+		y = 1
+		relative_position_id = BUL_begin_industrial_rearmament
+		cost = 10
+
+		available = {
+
+		}
+
+		search_filters = {FOCUS_FILTER_RESEARCH}
+		completion_reward = {
+			add_research_slot = 1
+		}
+	}
 
    	focus = {
 		id = BUL_begin_exploring_new_mines
 		icon = GFX_goal_generic_construction2
 		prerequisite = { focus = BUL_begin_industrial_rearmament }
-		x = 1
+		x = 2
 		y = 1
 		relative_position_id = BUL_begin_industrial_rearmament
 		
@@ -1326,6 +1385,7 @@ focus_tree = {
    	focus = {
 		id = BUL_make_use_of_new_resources
 		icon = GFX_goal_generic_quarry
+		prerequisite = { focus = BUL_expand_sofia_university }
 		prerequisite = { focus = BUL_darzhavna_aeroplanna_rabotilnitsa focus = BUL_begin_exploring_new_mines }
 		x = 1
 		y = 1
@@ -1691,7 +1751,7 @@ focus_tree = {
 		x = 23
 		y = 0
 		
-		cost = 4
+		cost = 3
 		
 	 	completion_reward = {
 
@@ -2207,7 +2267,7 @@ focus_tree = {
 		y = 1
 		relative_position_id = BUL_begin_army_reforms
 		
-		cost = 4
+		cost = 3
 		
 	 	completion_reward = {
 			swap_ideas = {
@@ -2258,7 +2318,7 @@ focus_tree = {
 		x = 0
 		y = 1
 		relative_position_id = BUL_reform_the_general_staff
-		cost = 10
+		cost = 3
 
 		available = {
 
@@ -2462,10 +2522,10 @@ focus_tree = {
 			add_stability = -0.05
 			add_ideas = BUL_tsar_boris_negative_01
 
-			BUL_zveno_low_loyalty_increase_effect = yes
-			BUL_bs_low_loyalty_increase_effect = yes
-			BUL_bzns_low_loyalty_increase_effect = yes
-			BUL_nsm_low_loyalty_decrease_effect = yes
+			#BUL_zveno_low_loyalty_increase_effect = yes
+			#BUL_bs_low_loyalty_increase_effect = yes
+			#BUL_bzns_low_loyalty_increase_effect = yes
+			#BUL_nsm_low_loyalty_decrease_effect = yes
 			custom_effect_tooltip = BUL_oppose_the_royal_dictatorship_tt
 			custom_effect_tooltip = remove_political_advisor
 			show_ideas_tooltip = BUL_ivan_dochev
@@ -2499,8 +2559,8 @@ focus_tree = {
 			custom_effect_tooltip = available_political_advisor
 			show_ideas_tooltip = BUL_valko_chervenkov
 
-			BUL_bs_low_loyalty_increase_effect = yes
-			BUL_nsm_low_loyalty_decrease_effect = yes
+			#BUL_bs_low_loyalty_increase_effect = yes
+			#BUL_nsm_low_loyalty_decrease_effect = yes
 			custom_effect_tooltip = BUL_appoint_communist_ministers_tt
 		}
 	}
@@ -2514,7 +2574,7 @@ focus_tree = {
 		x = -2
 		y = 1
 		
-		cost = 5
+		cost = 3
 
 		available = {
 			has_civil_war = no
@@ -2762,10 +2822,10 @@ focus_tree = {
 				}
 			}
 
-			BUL_zveno_low_loyalty_increase_effect = yes
-			BUL_bs_low_loyalty_increase_effect = yes
-			BUL_bzns_low_loyalty_increase_effect = yes
-			BUL_nsm_low_loyalty_decrease_effect = yes
+			#BUL_zveno_low_loyalty_increase_effect = yes
+			#BUL_bs_low_loyalty_increase_effect = yes
+			#BUL_bzns_low_loyalty_increase_effect = yes
+			#BUL_nsm_low_loyalty_decrease_effect = yes
 
 			custom_effect_tooltip = BUL_potential_civil_war_low_requirement_tt
 		}
@@ -2793,7 +2853,7 @@ focus_tree = {
 			divide_variable = { BUL_faction_interaction_cost_standard = 2 }
 			divide_variable = { BUL_broad_socialist_opression_cost_standard = 2 }
 
-			BUL_zveno_low_loyalty_increase_effect = yes
+			#BUL_zveno_low_loyalty_increase_effect = yes
 			custom_effect_tooltip = BUL_reduced_faction_interaction_cost_tt
 		}
 	}
@@ -2821,7 +2881,7 @@ focus_tree = {
 				ideology = communism
 				popularity = 0.05
 			}
-			BUL_bs_low_loyalty_increase_effect = yes
+			#BUL_bs_low_loyalty_increase_effect = yes
 		}
 	}
 
@@ -2849,9 +2909,9 @@ focus_tree = {
 				popularity = -0.1
 			}
 
-			BUL_bs_low_loyalty_increase_effect = yes
-			BUL_bzns_low_loyalty_increase_effect = yes
-			BUL_nsm_low_loyalty_decrease_effect = yes
+			#BUL_bs_low_loyalty_increase_effect = yes
+			#BUL_bzns_low_loyalty_increase_effect = yes
+			#BUL_nsm_low_loyalty_decrease_effect = yes
 		}
 	}
 
@@ -2949,9 +3009,9 @@ focus_tree = {
 				set_country_flag = BUL_player_formed_fatherland_front_flag
 			}
 
-			BUL_zveno_medium_loyalty_increase_effect = yes
-			BUL_bs_medium_loyalty_increase_effect = yes
-			BUL_bzns_medium_loyalty_increase_effect = yes
+			#BUL_zveno_medium_loyalty_increase_effect = yes
+			#BUL_bs_medium_loyalty_increase_effect = yes
+			#BUL_bzns_medium_loyalty_increase_effect = yes
 
 			country_event = bftb_bulgaria_fatherland_front.1
 		}
@@ -3238,7 +3298,7 @@ focus_tree = {
 		x = 0
 		y = 3
 		
-		cost = 5
+		cost = 3
 		mutually_exclusive = { focus = BUL_balkan_federation_of_socialist_republics }
 
 		bypass = {
@@ -4187,10 +4247,10 @@ focus_tree = {
 				days = 365
 			}
 
-			BUL_zveno_low_loyalty_decrease_effect = yes
-			BUL_bs_low_loyalty_decrease_effect = yes
-			BUL_bzns_low_loyalty_decrease_effect = yes
-			BUL_nsm_low_loyalty_decrease_effect = yes
+			#BUL_zveno_low_loyalty_decrease_effect = yes
+			#BUL_bs_low_loyalty_decrease_effect = yes
+			#BUL_bzns_low_loyalty_decrease_effect = yes
+			#BUL_nsm_low_loyalty_decrease_effect = yes
 		}
 	}
 
@@ -4415,7 +4475,7 @@ focus_tree = {
 		x = 0
 		y = 3
 		
-		cost = 5
+		cost = 3
 		mutually_exclusive = { focus = BUL_follow_the_stalinist_doctrine }
 
 		available = {
@@ -4797,10 +4857,10 @@ focus_tree = {
 			show_ideas_tooltip = BUL_stefan_stefanov
 			show_ideas_tooltip = BUL_konstantin_muraviev_bftb
 
-			BUL_zveno_low_loyalty_decrease_effect = yes
-			BUL_bs_low_loyalty_increase_effect = yes
-			BUL_bzns_low_loyalty_increase_effect = yes
-			BUL_nsm_low_loyalty_decrease_effect = yes
+			#BUL_zveno_low_loyalty_decrease_effect = yes
+			#BUL_bs_low_loyalty_increase_effect = yes
+			#BUL_bzns_low_loyalty_increase_effect = yes
+			#BUL_nsm_low_loyalty_decrease_effect = yes
 		}
 	}
 
@@ -4835,8 +4895,8 @@ focus_tree = {
 				popularity = 0.05
 			}
 
-			BUL_bzns_medium_loyalty_increase_effect = yes
-			BUL_bzns_medium_popularity_increase_effect = yes
+			#BUL_bzns_medium_loyalty_increase_effect = yes
+			#BUL_bzns_medium_popularity_increase_effect = yes
 			if = {
 				limit = {
 					NOT = { has_country_flag = BUL_bzns_legalized_flag }
@@ -4885,8 +4945,8 @@ focus_tree = {
 			divide_variable = { BUL_broad_socialist_opression_cost_standard = 2 }
 			custom_effect_tooltip = BUL_reduced_faction_interaction_cost_tt
 
-			BUL_bs_low_loyalty_increase_effect = yes
-			BUL_nsm_low_loyalty_decrease_effect = yes
+			#BUL_bs_low_loyalty_increase_effect = yes
+			#BUL_nsm_low_loyalty_decrease_effect = yes
 		}
 	}
 
@@ -5031,10 +5091,10 @@ focus_tree = {
 				}
 			}
 
-			BUL_zveno_low_loyalty_increase_effect = yes
-			BUL_bs_low_loyalty_increase_effect = yes
-			BUL_bzns_low_loyalty_increase_effect = yes
-			BUL_nsm_low_loyalty_decrease_effect = yes
+			#BUL_zveno_low_loyalty_increase_effect = yes
+			#BUL_bs_low_loyalty_increase_effect = yes
+			#BUL_bzns_low_loyalty_increase_effect = yes
+			#BUL_nsm_low_loyalty_decrease_effect = yes
 
 			custom_effect_tooltip = BUL_potential_civil_war_low_requirement_tt
 
@@ -5131,8 +5191,8 @@ focus_tree = {
 				}
 			}
 
-			BUL_bs_low_loyalty_increase_effect = yes
-			BUL_bzns_low_loyalty_increase_effect = yes
+			#BUL_bs_low_loyalty_increase_effect = yes
+			#BUL_bzns_low_loyalty_increase_effect = yes
 		}
 	}
 
@@ -5194,7 +5254,7 @@ focus_tree = {
 			add_war_support = 0.1
 			add_ideas = BUL_government_reforms_democratic_01
 
-			BUL_bzns_low_loyalty_increase_effect = yes
+			#BUL_bzns_low_loyalty_increase_effect = yes
 		}
 	}
 
@@ -5226,7 +5286,7 @@ focus_tree = {
 		completion_reward = {
 			add_ideas = BUL_government_reforms_democratic_02
 
-			BUL_bs_low_loyalty_increase_effect = yes
+			#BUL_bs_low_loyalty_increase_effect = yes
 		}
 	}
 
@@ -5324,7 +5384,7 @@ focus_tree = {
 		x = 0
 		y = 3
 		
-		cost = 5
+		cost = 3
 		mutually_exclusive = { focus = BUL_join_the_allies focus = BUL_the_fate_of_the_balkans }
 
 		available = {
@@ -5501,7 +5561,7 @@ focus_tree = {
 		x = 0
 		y = 3
 		
-		cost = 5
+		cost = 3
 		mutually_exclusive = { focus = BUL_a_balkan_confederation focus = BUL_the_fate_of_the_balkans  }
 
 		bypass = {
@@ -6546,7 +6606,7 @@ focus_tree = {
 		x = 0
 		y = 2
 		
-		cost = 5
+		cost = 3
 		mutually_exclusive = { focus = BUL_join_the_allies focus = BUL_a_balkan_confederation }
 
 		available = {
