@@ -485,13 +485,12 @@ focus_tree = {
 		
 		cost = 3
 		completion_reward = {
-
+			unlock_decision_tooltip = BUL_enforce_compliance
 		}
-
 	}
 
 	focus = {
-		id = BUL_supply_german_garrisons
+		id = BUL_supply_garrisons
 		icon = GFX_goal_generic_equip_troops
 		prerequisite = { focus = BUL_contribute_to_the_occupation }
 		x = 0
@@ -500,21 +499,39 @@ focus_tree = {
 		
 		cost = 3
 		completion_reward = {
-
+			random_owned_controlled_state = {
+				prioritize = { 905 }
+				add_extra_state_shared_building_slots = 4
+				add_building_construction = {
+					type = arms_factory
+					level = 4
+					instant_build = yes
+				}
+			}
 		}
 	}
 
 	focus = {
-		id = BUL_send_labourers_to_germany
-		icon = GFX_goal_generic_dangerous_deal
-		prerequisite = { focus = BUL_supply_german_garrisons }
+		id = BUL_restore_the_bulgarian_patriarchate
+		icon = GFX_focus_BUL_restore_the_bulgarian_patriarchate
+		relative_position_id = BUL_supply_garrisons
 		x = 0
 		y = 1
-		relative_position_id = BUL_supply_german_garrisons
-		
-		cost = 3
-		completion_reward = {
+		prerequisite = { focus = BUL_supply_garrisons }
 
+		cost = 3
+
+		available = {
+			has_stability > 0.50
+		}
+
+		search_filters = {FOCUS_FILTER_POLITICAL FOCUS_FILTER_STABILITY}
+		completion_reward = {
+			add_ideas = BUL_bulgarian_patriarchate_restored
+
+			hidden_effect = {
+				news_event = { id = bftb_news.6 hours = 8 random_hours = 4 }
+			}
 		}
 	}
 
@@ -528,46 +545,97 @@ focus_tree = {
 		relative_position_id = BUL_join_the_tripartite_pact
 		
 		cost = 3
-		completion_reward ={
 
+		available = {
+			GER = {
+				has_war_with = SOV
+			}
+		}
+
+		bypass = {
+			has_war_with = SOV
+		}
+
+		completion_reward ={
+			add_war_support = 0.1
+			add_to_war = {
+				targeted_alliance = GER
+				enemy = SOV
+				hostility_reason = asked_to_join
+			}
+			add_ideas = BUL_total_war
 		}
 	}
 
 	focus = {
-		id = BUL_ask_for_german_equipment
-		icon = GFX_goal_generic_license_tanks
+		id = BUL_military_secrets_sharing
+		icon = GFX_goal_generic_research_shared
 		prerequisite = { focus = BUL_join_the_war_in_the_east }
 		x = 0
 		y = 1
 		relative_position_id = BUL_join_the_war_in_the_east
-		
-		cost = 3
-		completion_reward = {
 
+		cost = 3
+
+		available = {
+			has_country_flag = german_technologies_tree_flag
+		}
+
+		search_filters = {FOCUS_FILTER_RESEARCH}
+		
+		completion_reward = {
+			add_to_tech_sharing_group = BUL_axis_research
+			GER = {add_to_tech_sharing_group = BUL_axis_research}
+			if = {
+				limit = { is_faction_leader = yes }
+				every_country = {
+					limit = {
+						is_in_faction_with = BUL
+					}
+					add_to_tech_sharing_group = BUL_axis_research
+				}
+			}
+			else = {
+				every_country = {
+					limit = {
+						is_in_faction_with = BUL
+						OR = {
+							is_major = yes
+							is_faction_leader = yes
+						}
+					}
+					add_to_tech_sharing_group = BUL_axis_research
+				}
+			}
 		}
 	}
 
 	focus = {
 		id = BUL_allow_limited_german_command
 		icon = GFX_focus_generic_strike_at_democracy1
-		prerequisite = { focus = BUL_ask_for_german_equipment }
+		prerequisite = { focus = BUL_military_secrets_sharing }
 		x = 0
 		y = 1
-		relative_position_id = BUL_ask_for_german_equipment
+		relative_position_id = BUL_military_secrets_sharing
 		
 		cost = 3
 		completion_reward = {
-
+			add_doctrine_cost_reduction = {
+				name = BUL_allow_limited_german_command
+				cost_reduction = 0.99
+				uses = 2
+				category = land_doctrine
+			}
 		}
 	}
 
 	focus = {
 		id = BUL_tackle_the_fatherland_front
 		icon = GFX_focus_BUL_the_fatherland_front
-		prerequisite = { focus = BUL_send_labourers_to_germany focus = BUL_allow_limited_german_command }
+		prerequisite = { focus = BUL_restore_the_bulgarian_patriarchate focus = BUL_allow_limited_german_command }
 		x = 1
 		y = 1
-		relative_position_id = BUL_send_labourers_to_germany
+		relative_position_id = BUL_restore_the_bulgarian_patriarchate
 		
 		cost = 3
 
