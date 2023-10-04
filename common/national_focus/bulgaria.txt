@@ -71,8 +71,7 @@ focus_tree = {
 		search_filters = {FOCUS_FILTER_STABILITY FOCUS_FILTER_POLITICAL FOCUS_FILTER_INTERNAL_AFFAIRS}
 		completion_reward = {
 			add_political_power = 150
-			divide_variable = { BUL_faction_interaction_cost_standard = 2 }
-			divide_variable = { BUL_broad_socialist_opression_cost_standard = 2 }
+			divide_variable = { BUL_faction_decision_cost = 2 }
 			custom_effect_tooltip = BUL_reduced_faction_interaction_cost_tt
 		}
 	}
@@ -296,7 +295,18 @@ focus_tree = {
 		
 		cost = 10
 		completion_reward = {
-			add_research_slot = 1
+			add_tech_bonus = {
+				name = BUL_continue_funding_royal_institutions
+				bonus = 0.5
+				uses = 3
+				category = industry
+			}
+			add_tech_bonus = {
+				name = BUL_continue_funding_royal_institutions
+				bonus = 0.5
+				uses = 2
+				category = electronics
+			}
 		}
 	}
 
@@ -310,6 +320,11 @@ focus_tree = {
 		
 		cost = 3
 		completion_reward = {
+			custom_effect_tooltip = BUL_restore_the_tarnovo_constitution_tt
+			hidden_effect = {
+				add_to_variable = { BUL_socialist_attitude = 1 }
+				add_to_variable = { BUL_socialist_industrial_capacity_factory_and_dockyard = 0.1 }
+			}
 			add_popularity = {
 				ideology = neutrality
 				popularity = 0.1
@@ -418,6 +433,18 @@ focus_tree = {
 				}
 				country_event = generic.2
 			}
+			if = {
+				limit = {
+					OR = {
+						has_government = fascism
+						GER = { has_government = fascism }
+					}
+				}
+				effect_tooltip = {
+					retire_character = BUL_nikola_hadzipetkov
+					retire_character = BUL_vasil_boydev
+				}
+			}
 		}
 	}
 
@@ -431,117 +458,18 @@ focus_tree = {
 		
 		cost = 3
 		bypass = {
-			OR = {
-				is_subject = yes
-				AND = {
-					is_in_faction_with = GER
-					OR = {
-						has_government = fascism
-						has_government = neutrality
-					}
-				}
-			}
+			is_subject = yes
 		}
 
 		available = {
-			threat > 0.5
-			OR = {
-				AND = {
-					GER = { is_faction_leader = yes }
-					NOT = { is_justifying_wargoal_against = ROOT }
-					NOT = { has_war_with = ROOT }
-				}
-				AND = {
-					ITA = {
-						is_faction_leader = yes
-						is_in_faction_with = GER
-						NOT = { is_justifying_wargoal_against = ROOT }
-						NOT = { has_war_with = ROOT }
-					}
-				}
-			}
-			OR = {
-				AND = {
-					OR = {
-						has_government = fascism
-						has_government = neutrality
-					}
-					GER = { has_government = fascism }
-				}
-				AND = {
-					has_government = neutrality
-					GER = { has_government = neutrality }
-				}
-			}
-			is_in_faction = no
-			is_subject = no
+			is_in_faction_with = GER
 		}
+		
 		completion_reward = {
-			if = {
-				limit = {
-					OR = {
-						has_government = fascism
-						GER = { has_government = fascism }
-					}
-				}
-				#Using separate scopes for tooltip reasons
-				if = {
-					limit = {
-						has_unit_leader = 1203
-					}
-					random_unit_leader = {
-						limit = {
-							has_id = 1203 #Hadzhipetkov
-						}
-						retire = yes
-					}
-				}
-				if = {
-					limit = {
-						has_unit_leader = 1204
-					}
-					random_unit_leader = {
-						limit = {
-							has_id = 1204 #Boydev
-						}
-						retire = yes
-					}
-				}
-			}
-			GER = { country_event = { id = generic.2 hours = 4 random_hours = 2 } }
-			custom_effect_tooltip = BUL_join_the_tripartite_pact_tt
-			if = {
-				limit = {
-					any_state = {
-						BUL_is_balkan_state = yes
-						has_state_flag = BUL_bulgarian_claim_warranted_flag
-					}
-				}
-				custom_effect_tooltip = BUL_join_the_tripartite_pact_warranted_claims_tt
-				every_state = {
-					limit = {
-						BUL_is_balkan_state = yes
-						has_state_flag = BUL_bulgarian_claim_warranted_flag
-					}
-				}
-			}
-
+			add_political_power = 150
 			GER = {
-				add_ai_strategy = {
-					type = befriend
-					id = ROOT
-					value = 100
-				}
-			}
-			add_ai_strategy = {
-				type = befriend
-				id = GER
-				value = 100
-			}
-
-			add_ai_strategy = { #We want to garrison our potentially newly-acquired territorial claims
-				type = garrison
-				value = 25
+				add_opinion_modifier = { target = YUG modifier = tripartite_pact_opinion }
+				reverse_add_opinion_modifier = { target = YUG modifier = tripartite_pact_opinion }
 			}
 		}
 	}
@@ -1407,7 +1335,7 @@ focus_tree = {
 
 	focus = {
 		id = BUL_expand_sofia_university
-		icon = GFX_goal_generic_research
+		icon = GFX_goal_generic_research2
 		prerequisite = { focus = BUL_begin_industrial_rearmament }
 		x = 0
 		y = 1
@@ -1420,7 +1348,7 @@ focus_tree = {
 
 		search_filters = {FOCUS_FILTER_RESEARCH}
 		completion_reward = {
-			add_research_slot = 1
+			add_research_slot = 2
 		}
 	}
 
