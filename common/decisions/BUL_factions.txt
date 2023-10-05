@@ -10,6 +10,9 @@
 #INTERNAL FACTIONS
 BUL_internal_factions = {
 
+
+	# Other
+
 	BUL_a_royal_visit = {
 		icon = eng_ally_imperialist_coup
 		priority = 50
@@ -77,6 +80,665 @@ BUL_internal_factions = {
 			}
 			country_event = { id = bftb_bulgaria_tsar_boris.1 }
 			clr_country_flag = BUL_internal_affairs_ongoing_flag
+		}
+	}
+
+	BUL_opression_discredit_zveno_leaders  = { # Discredit ZVENO Leaders
+		icon = GFX_decision_bul_discredit_zveno
+
+		allowed = {
+			original_tag = BUL
+		}
+
+		available = {
+		}
+
+		visible = {
+			has_country_flag = BUL_impending_zveno_coup_flag
+			check_variable = { BUL_zveno_influence = 1 compare = greater_than_or_equals }
+		}
+
+		days_remove = 60
+
+		cost = 100
+
+		cancel_if_not_visible = yes
+
+		ai_will_do = {
+			base = 5
+			modifier = {
+				factor = 1000
+				has_country_flag = BUL_impending_zveno_coup
+			}
+		}
+
+		complete_effect = {
+		}
+
+		remove_effect = {
+			custom_effect_tooltip = BUL_opression_discredit_zveno_leaders_tt
+			hidden_effect = {
+				add_to_variable = { BUL_zveno_influence = -1 }
+			}
+		}
+	}
+
+	BUL_impending_zveno_coup  = { #The ZVENO is preparing a coup
+
+		priority = 100
+
+		icon = GFX_decision_generic_civil_support
+
+		allowed = {
+			original_tag = BUL
+		}
+
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = BUL_impending_zveno_coup_tt
+				hidden_trigger = {
+					OR = {
+						any_allied_country = {
+							divisions_in_state = {
+								size > 0
+								state = 900
+							}
+						}
+						any_allied_country = {
+							divisions_in_state = {
+								size > 0
+								state = 77
+							}
+						}
+						any_allied_country = {
+							divisions_in_state = {
+								size > 0
+								state = 81
+							}
+						}
+						any_allied_country = {
+							divisions_in_state = {
+								size > 0
+								state = 108
+							}
+						}
+						any_allied_country = {
+							divisions_in_state = {
+								size > 0
+								state = 851
+							}
+						}
+						any_allied_country = {
+							divisions_in_state = {
+								size > 0
+								state = 106
+							}
+						}
+						any_allied_country = {
+							divisions_in_state = {
+								size > 0
+								state = 731
+							}
+						}
+						any_allied_country = {
+							divisions_in_state = {
+								size > 0
+								state = 184
+							}
+						}
+						any_allied_country = {
+							divisions_in_state = {
+								size > 0
+								state = 898
+							}
+						}
+						any_allied_country = {
+							divisions_in_state = {
+								size > 0
+								state = 211
+							}
+						}
+					}
+				}
+			}
+		}
+
+		activation = {
+			has_country_flag = BUL_impending_zveno_coup_flag
+		}
+
+		days_mission_timeout = 180
+
+		fire_only_once = yes
+
+		visible = {
+
+		}
+
+		cancel_if_not_visible = yes
+
+		is_good = no
+
+		complete_effect = {
+			set_variable = { BUL_zveno_coup_size = 0.25 }
+			#CIVIL WAR
+			if = {
+				limit = {
+					check_variable = { BUL_zveno_influence = 5 compare = greater_than_or_equals }
+				}
+				add_to_variable = { BUL_zveno_coup_size = 0.5 }
+			}
+			else_if = {
+				limit = {
+					check_variable = { BUL_zveno_influence = 4 compare = greater_than_or_equals }
+				}
+				add_to_variable = { BUL_zveno_coup_size = 0.4 }
+			}
+			else_if = {
+				limit = {
+					check_variable = { BUL_zveno_influence = 3 compare = greater_than_or_equals }
+				}
+				add_to_variable = { BUL_zveno_coup_size = 0.3 }
+			}
+			else_if = {
+				limit = {
+					check_variable = { BUL_zveno_influence = 2 compare = greater_than_or_equals }
+				}
+				add_to_variable = { BUL_zveno_coup_size = 0.2 }
+			}
+			else_if = {
+				limit = {
+					check_variable = { BUL_zveno_influence = 1 compare = greater_than_or_equals }
+				}
+				add_to_variable = { BUL_zveno_coup_size = 0.1 }
+			}
+
+			#log = "Zveno coup size: [?BUL.BUL_zveno_coup_size]"
+
+			hidden_effect = {
+				#Store ideology support values to fix the mess after the split
+				set_variable = { BUL_communist_support_before_zveno_coup = party_popularity_100@communism }
+				set_variable = { BUL_democratic_support_before_zveno_coup = party_popularity_100@democratic }
+				set_variable = { BUL_fascist_support_before_zveno_coup = party_popularity_100@fascism }
+				set_variable = { BUL_neutrality_support_before_zveno_coup = party_popularity_100@neutrality }
+
+				#START CIVIL WAR
+				start_civil_war = {
+					ideology = neutrality
+					size = BUL_zveno_coup_size
+					capital = 211
+					states = { 212 }
+					keep_political_leader = yes
+					keep_unit_leaders_trigger = {
+						always = yes
+					}
+				}
+			}
+
+			custom_effect_tooltip = BUL_impending_zveno_coup_size_tt
+
+			hidden_effect = {
+				#Reset ideology support
+				set_popularities = {
+					communism = BUL_communist_support_before_zveno_coup
+					democratic = BUL_democratic_support_before_zveno_coup
+					fascism = BUL_fascist_support_before_zveno_coup
+					neutrality = BUL_neutrality_support_before_zveno_coup
+				}
+
+				random_country = {
+					limit = {
+						original_tag = BUL
+						controls_state = 211
+					}
+					set_cosmetic_tag = BUL_zveno_bulgaria
+					set_country_flag = BUL_zveno_bulgaria_flag
+					set_country_flag = BUL_zveno_bolstered_flag
+					if = {
+						limit = {
+							NOT = { has_government = neutrality }
+						}
+						set_politics = { ruling_party = neutrality }
+					}
+					every_other_country = {
+						limit = {
+							PREV = { #Zveno Bul
+								has_volunteers_amount_from = {
+								    tag = PREV
+								    count > 0
+								}
+							}
+						}
+						recall_volunteers_from = PREV
+					}
+
+					#REMOVE Tsar Boris NS
+					if = {
+						limit = {
+							has_idea = BUL_tsar_boris_positive_01
+						}
+						remove_ideas = BUL_tsar_boris_positive_01
+					}
+					else_if = {
+						limit = {
+							has_idea = BUL_tsar_boris_positive_02
+						}
+						remove_ideas = BUL_tsar_boris_positive_02
+					}
+					else_if = {
+						limit = {
+							has_idea = BUL_tsar_boris_positive_03
+						}
+						remove_ideas = BUL_tsar_boris_positive_03
+					}
+					else_if = {
+						limit = {
+							has_idea = BUL_tsar_boris_negative_01
+						}
+						remove_ideas = BUL_tsar_boris_negative_01
+					}
+					else_if = {
+						limit = {
+							has_idea = BUL_tsar_boris_negative_02
+						}
+						remove_ideas = BUL_tsar_boris_negative_02
+					}
+
+					if = {
+						limit = {
+							has_idea = BUL_treaty_of_neuilly_sur_seine
+						}
+						set_rule = {
+							can_not_declare_war = yes
+						}
+						country_lock_all_division_template = yes
+					}
+
+					set_popularities = {
+						democratic = 10
+						neutrality = 55
+						communism = 35
+						fascism = 0
+					}
+					set_party_name = {
+						ideology = neutrality
+						long_name = BUL_zveno_bulgaria_neutrality_party_long
+						name = BUL_zveno_bulgaria_neutrality_party
+					}
+					if = {
+						limit = {
+							BUL = {
+								has_country_leader = {
+									character = BUL_kimon_georgiev
+									ruling_only = yes
+								}
+							}
+						}
+						retire_ideology_leader = neutrality #Retire whoever is the non-aligned country leader and replace by a generic guy
+					}
+					BUL = {
+						set_nationality = {
+							target_country = BUZ
+							character = BUL_kimon_georgiev
+						}
+					}
+					add_country_leader_role = {
+						character = BUL_kimon_georgiev
+						promote_leader = yes
+						country_leader = {
+							ideology = despotism
+							expire = "1965.1.1.1"
+							traits = { old_coup_maker hardened_officer }
+						}
+					}
+
+					division_template = {
+						name = "Zveno Opŭlchenie"
+						template_counter = 6
+						division_names_group = BUL_INF_01
+						regiments = {
+							militia = { x = 0 y = 0 }
+							militia = { x = 0 y = 1 }
+							militia = { x = 0 y = 2 }
+						}
+					}
+					211 = {
+						create_unit = {
+							division = "division_template = \"Zveno Opŭlchenie\" start_experience_factor = 0.3"
+							owner = BUZ
+							allow_spawning_on_enemy_provs = yes
+							count = 2
+						}
+					}
+					212 = {
+						create_unit = {
+							division = "division_template = \"Zveno Opŭlchenie\" start_experience_factor = 0.3"
+							owner = BUZ
+							allow_spawning_on_enemy_provs = yes
+							count = 2
+						}
+					}
+					delete_unit_template_and_units = {
+						division_template = "IMRO Militia"
+					}
+
+					every_unit_leader = {
+						limit = {
+							NOT = { has_trait = trait_BUL_zveno_member }
+						}
+						set_nationality = ROOT
+					}
+					every_character = {
+						limit = {
+							NOT = { has_character_flag = BUL_zveno_member_flag }
+						}
+						set_nationality = ROOT 
+					}
+					if = {
+						limit = {
+							has_dlc = "La Resistance"
+						}
+						every_operative = {
+							limit = {
+								has_trait = trait_BUL_tsar_loyalist
+							}
+							set_nationality = BUL
+						}
+					}
+				}
+				every_unit_leader = {
+					limit = {
+						has_trait = trait_BUL_zveno_member
+					}
+					set_nationality = BUZ
+				}
+				every_character = {
+					limit = {
+						has_character_flag = BUL_zveno_member_flag
+					}
+					set_nationality = BUZ 
+				}
+				if = {
+					limit = {
+						has_dlc = "La Resistance"
+					}
+					every_operative = {
+						limit = {
+							OR = {
+								has_trait = trait_BUL_ff_sympathizer
+								has_trait = trait_BUL_zveno_member
+							}
+						}
+						set_nationality = BUZ
+					}
+				}
+				set_variable = { BUL_zveno_attitude = -5 }
+				set_variable = { BUL_zveno_influence = 0 }
+				set_variable = { BUL_zveno_political_power_gain = 0 }
+				set_variable = { BUL_zveno_army_xp = 0 }
+				set_variable = { BUL_zveno_stability = 0 }
+			}
+		}
+
+		timeout_effect = {
+			set_variable = { BUL_zveno_coup_size = 0.25 }
+			#CIVIL WAR
+			if = {
+				limit = {
+					check_variable = { BUL_zveno_influence = 5 compare = greater_than_or_equals }
+				}
+				add_to_variable = { BUL_zveno_coup_size = 0.5 }
+			}
+			else_if = {
+				limit = {
+					check_variable = { BUL_zveno_influence = 4 compare = greater_than_or_equals }
+				}
+				add_to_variable = { BUL_zveno_coup_size = 0.4 }
+			}
+			else_if = {
+				limit = {
+					check_variable = { BUL_zveno_influence = 3 compare = greater_than_or_equals }
+				}
+				add_to_variable = { BUL_zveno_coup_size = 0.3 }
+			}
+			else_if = {
+				limit = {
+					check_variable = { BUL_zveno_influence = 2 compare = greater_than_or_equals }
+				}
+				add_to_variable = { BUL_zveno_coup_size = 0.2 }
+			}
+			else_if = {
+				limit = {
+					check_variable = { BUL_zveno_influence = 1 compare = greater_than_or_equals }
+				}
+				add_to_variable = { BUL_zveno_coup_size = 0.1 }
+			}
+
+			#log = "Zveno coup size: [?BUL.BUL_zveno_coup_size]"
+
+			hidden_effect = {
+				#Store ideology support values to fix the mess after the split
+				set_variable = { BUL_communist_support_before_zveno_coup = party_popularity_100@communism }
+				set_variable = { BUL_democratic_support_before_zveno_coup = party_popularity_100@democratic }
+				set_variable = { BUL_fascist_support_before_zveno_coup = party_popularity_100@fascism }
+				set_variable = { BUL_neutrality_support_before_zveno_coup = party_popularity_100@neutrality }
+
+				#START CIVIL WAR
+				start_civil_war = {
+					ideology = neutrality
+					size = BUL_zveno_coup_size
+					capital = 211
+					states = { 212 }
+					keep_political_leader = yes
+					keep_unit_leaders_trigger = {
+						always = yes
+					}
+				}
+			}
+
+			custom_effect_tooltip = BUL_impending_zveno_coup_size_tt
+
+			hidden_effect = {
+				#Reset ideology support
+				set_popularities = {
+					communism = BUL_communist_support_before_zveno_coup
+					democratic = BUL_democratic_support_before_zveno_coup
+					fascism = BUL_fascist_support_before_zveno_coup
+					neutrality = BUL_neutrality_support_before_zveno_coup
+				}
+
+				random_country = {
+					limit = {
+						original_tag = BUL
+						controls_state = 211
+					}
+					set_cosmetic_tag = BUL_zveno_bulgaria
+					set_country_flag = BUL_zveno_bulgaria_flag
+					set_country_flag = BUL_zveno_bolstered_flag
+					if = {
+						limit = {
+							NOT = { has_government = neutrality }
+						}
+						set_politics = { ruling_party = neutrality }
+					}
+					every_other_country = {
+						limit = {
+							PREV = { #Zveno Bul
+								has_volunteers_amount_from = {
+								    tag = PREV
+								    count > 0
+								}
+							}
+						}
+						recall_volunteers_from = PREV
+					}
+
+					#REMOVE Tsar Boris NS
+					if = {
+						limit = {
+							has_idea = BUL_tsar_boris_positive_01
+						}
+						remove_ideas = BUL_tsar_boris_positive_01
+					}
+					else_if = {
+						limit = {
+							has_idea = BUL_tsar_boris_positive_02
+						}
+						remove_ideas = BUL_tsar_boris_positive_02
+					}
+					else_if = {
+						limit = {
+							has_idea = BUL_tsar_boris_positive_03
+						}
+						remove_ideas = BUL_tsar_boris_positive_03
+					}
+					else_if = {
+						limit = {
+							has_idea = BUL_tsar_boris_negative_01
+						}
+						remove_ideas = BUL_tsar_boris_negative_01
+					}
+					else_if = {
+						limit = {
+							has_idea = BUL_tsar_boris_negative_02
+						}
+						remove_ideas = BUL_tsar_boris_negative_02
+					}
+
+					if = {
+						limit = {
+							has_idea = BUL_treaty_of_neuilly_sur_seine
+						}
+						set_rule = {
+							can_not_declare_war = yes
+						}
+						country_lock_all_division_template = yes
+					}
+
+					set_popularities = {
+						democratic = 10
+						neutrality = 55
+						communism = 35
+						fascism = 0
+					}
+					set_party_name = {
+						ideology = neutrality
+						long_name = BUL_zveno_bulgaria_neutrality_party_long
+						name = BUL_zveno_bulgaria_neutrality_party
+					}
+					if = {
+						limit = {
+							BUL = {
+								has_country_leader = {
+									character = BUL_kimon_georgiev
+									ruling_only = yes
+								}
+							}
+						}
+						retire_ideology_leader = neutrality #Retire whoever is the non-aligned country leader and replace by a generic guy
+					}
+					BUL = {
+						set_nationality = {
+							target_country = BUZ
+							character = BUL_kimon_georgiev
+						}
+					}
+					add_country_leader_role = {
+						character = BUL_kimon_georgiev
+						promote_leader = yes
+						country_leader = {
+							ideology = despotism
+							expire = "1965.1.1.1"
+							traits = { old_coup_maker hardened_officer }
+						}
+					}
+
+					division_template = {
+						name = "Zveno Opŭlchenie"
+						template_counter = 6
+						division_names_group = BUL_INF_01
+						regiments = {
+							militia = { x = 0 y = 0 }
+							militia = { x = 0 y = 1 }
+							militia = { x = 0 y = 2 }
+						}
+					}
+					211 = {
+						create_unit = {
+							division = "division_template = \"Zveno Opŭlchenie\" start_experience_factor = 0.3"
+							owner = BUZ
+							allow_spawning_on_enemy_provs = yes
+							count = 2
+						}
+					}
+					212 = {
+						create_unit = {
+							division = "division_template = \"Zveno Opŭlchenie\" start_experience_factor = 0.3"
+							owner = BUZ
+							allow_spawning_on_enemy_provs = yes
+							count = 2
+						}
+					}
+					delete_unit_template_and_units = {
+						division_template = "IMRO Militia"
+					}
+
+					every_unit_leader = {
+						limit = {
+							NOT = { has_trait = trait_BUL_zveno_member }
+						}
+						set_nationality = ROOT
+					}
+					every_character = {
+						limit = {
+							NOT = { has_character_flag = BUL_zveno_member_flag }
+						}
+						set_nationality = ROOT 
+					}
+					if = {
+						limit = {
+							has_dlc = "La Resistance"
+						}
+						every_operative = {
+							limit = {
+								has_trait = trait_BUL_tsar_loyalist
+							}
+							set_nationality = BUL
+						}
+					}
+				}
+				every_unit_leader = {
+					limit = {
+						has_trait = trait_BUL_zveno_member
+					}
+					set_nationality = BUZ
+				}
+				every_character = {
+					limit = {
+						has_character_flag = BUL_zveno_member_flag
+					}
+					set_nationality = BUZ 
+				}
+				if = {
+					limit = {
+						has_dlc = "La Resistance"
+					}
+					every_operative = {
+						limit = {
+							OR = {
+								has_trait = trait_BUL_ff_sympathizer
+								has_trait = trait_BUL_zveno_member
+							}
+						}
+						set_nationality = BUZ
+					}
+				}
+				set_variable = { BUL_zveno_attitude = -5 }
+				set_variable = { BUL_zveno_influence = 0 }
+				set_variable = { BUL_zveno_political_power_gain = 0 }
+				set_variable = { BUL_zveno_army_xp = 0 }
+				set_variable = { BUL_zveno_stability = 0 }
+			}
 		}
 	}
 }
