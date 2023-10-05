@@ -18,7 +18,7 @@ focus_tree = {
 		}
 	}
 
-	continuous_focus_position = { x = 600 y = 1850 }
+	continuous_focus_position = { x = 550 y = 1750 }
 
 
 	############################
@@ -1682,6 +1682,14 @@ focus_tree = {
 					instant_build = yes
 				}
 			}
+			build_railway = {
+				level = 1
+				path = { 949 3908 3937 6923 }
+			}
+			build_railway = {
+				level = 1
+				path = { 6923 6952 6814 6842 9612 }
+			}
 		}
    	}
 
@@ -1876,6 +1884,7 @@ focus_tree = {
 		cost = 3
 		
 	 	completion_reward = {
+			economy_fatigue_level_down_2 = yes
 			random_owned_controlled_state = {
 				prioritize = { 48 }
 				limit = {
@@ -1950,30 +1959,6 @@ focus_tree = {
 		cost = 3
 		
 	 	completion_reward = {
-			custom_effect_tooltip = BUL_attract_foreign_capitals_dynamic_modifier_tt
-
-			effect_tooltip = {
-				if = {
-					limit = {
-						country_exists = GER
-						NOT = { has_war_with = GER }
-						GER = { BUL_is_valid_subject = yes }
-					}
-					activate_targeted_decision = { target = GER decision = BUL_german_industrial_agreements }
-				}
-				if = {
-					limit = {
-						country_exists = SOV
-						NOT = { has_war_with = SOV }
-						SOV = { BUL_is_valid_subject = yes }
-					}
-					activate_targeted_decision = { target = SOV decision = BUL_soviet_industrial_agreements }
-				}
-			}
-			hidden_effect = {
-				activate_targeted_decision = { target = GER decision = BUL_german_industrial_agreements }
-				activate_targeted_decision = { target = SOV decision = BUL_soviet_industrial_agreements }
-			}
 		}
    	}
 
@@ -1995,6 +1980,7 @@ focus_tree = {
 
 		search_filters = {FOCUS_FILTER_INDUSTRY FOCUS_FILTER_RESEARCH}
 		completion_reward = {
+			economy_fatigue_level_up_1 = yes
 			212 = {
 				add_extra_state_shared_building_slots = 4
 				add_building_construction = {
@@ -2089,7 +2075,7 @@ focus_tree = {
 
    	focus = {
 		id = BUL_fuel_refining
-		icon = GFX_goal_generic_oil_contract
+		icon = GFX_goal_generic_fuel_silo
 		prerequisite = { focus = BUL_invest_back_into_the_economy }
 		x = 0
 		y = 1
@@ -2103,6 +2089,15 @@ focus_tree = {
 				bonus = 0.5
 				uses = 2
 				category = cat_fuel
+			}
+			random_owned_controlled_state = {
+				prioritize = { 212 }
+				add_extra_state_shared_building_slots = 1
+				add_building_construction = {
+					type = fuel_silo
+					level = 1
+					instant_build = yes
+				}
 			}
 		}
    	}
@@ -2127,13 +2122,80 @@ focus_tree = {
 		icon = GFX_focus_mex_privatisation
 		prerequisite = { focus = BUL_synthetic_resource_investment focus = BUL_fuel_refining focus = BUL_train_purchases }
 		x = 0
-		y = 3
+		y = 2
 		relative_position_id = BUL_invest_back_into_the_economy
 		
 		cost = 3
 		
-	 	completion_reward = {
+		completion_reward = {
+			random_owned_state = {
+				prioritize = { 48 }
+				limit = {
+					free_building_slots = {
+						building = industrial_complex
+						size > 2
+						include_locked = yes
+					}
+				}
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = industrial_complex
+					level = 2
+					instant_build = yes
+				}
+			}
+			random_owned_state = {
+				prioritize = { 212 }
+				limit = {
+					free_building_slots = {
+						building = industrial_complex
+						size > 2
+						include_locked = yes
+					}
+				}
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = industrial_complex
+					level = 2
+					instant_build = yes
+				}
+			}
+			hidden_effect = {
+				add_dynamic_modifier = { modifier = BUL_foreign_industry_dynamic_modifier }
+			}
+			custom_effect_tooltip = BUL_attract_foreign_capitals_dynamic_modifier_tt
 
+			effect_tooltip = { #This way player always reads a comprehensive tooltip, but all decisions
+				if = {
+					limit = {
+						country_exists = GER
+						NOT = { has_war_with = GER }
+						GER = { BUL_is_valid_subject = yes }
+					}
+					activate_targeted_decision = { target = GER decision = BUL_german_industrial_agreements }
+				}
+				if = {
+					limit = {
+						country_exists = ENG
+						NOT = { has_war_with = ENG }
+						ENG = { BUL_is_valid_subject = yes }
+					}
+					activate_targeted_decision = { target = ENG decision = BUL_british_industrial_agreements }
+				}
+				if = {
+					limit = {
+						country_exists = SOV
+						NOT = { has_war_with = SOV }
+						SOV = { BUL_is_valid_subject = yes }
+					}
+					activate_targeted_decision = { target = SOV decision = BUL_soviet_industrial_agreements }
+				}
+			}
+			hidden_effect = {
+				activate_targeted_decision = { target = GER decision = BUL_german_industrial_agreements }
+				activate_targeted_decision = { target = ENG decision = BUL_british_industrial_agreements }
+				activate_targeted_decision = { target = SOV decision = BUL_soviet_industrial_agreements }
+			}
 		}
    	}
 
@@ -2148,7 +2210,12 @@ focus_tree = {
 		cost = 3
 		
 	 	completion_reward = {
-
+			add_tech_bonus = {
+				name = BUL_make_use_of_excavation_experience
+				bonus = 1.5
+				uses = 1
+				category = excavation_tech
+			}
 		}
    	}
 
@@ -2160,11 +2227,23 @@ focus_tree = {
 		x = 1
 		y = 1
 		relative_position_id = BUL_ask_for_more_investment
+
+		available = {
+			is_in_faction = yes
+			is_faction_leader = no
+		}
 		
 		cost = 3
 		
 	 	completion_reward = {
-
+            add_timed_idea = { idea = BUL_gold_sales days = 365 }
+			random_other_country = {
+				limit = {
+					is_faction_leader = yes
+					is_in_Faction_with = ROOT
+				}
+				economy_fatigue_level_down_2 = yes
+			}
 		}
    	}
 
@@ -2180,7 +2259,7 @@ focus_tree = {
 		cost = 3
 		
 	 	completion_reward = {
-
+            add_timed_idea = { idea = ENG_empty_the_gold_reserves_idea days = 365 }
 		}
    	}
 
