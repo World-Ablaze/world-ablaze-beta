@@ -8,7 +8,7 @@
 ### search_filters = {FOCUS_FILTER_INTERNAL_AFFAIRS}
 
 focus_tree = {
-    id = bulgaria
+    id = bulgarian_focus
 	country = {
 		base = 0
 		modifier = {
@@ -755,14 +755,299 @@ focus_tree = {
 		cost = 3
 
 		completion_reward = {
-			custom_effect_tooltip = BUL_crush_the_socialists_tt
+			if = {
+				limit = {
+					has_country_flag = BUL_ff_coup_planned_flag
+				}
+				hidden_effect = {
+					set_global_flag = BUL_fatherland_front_coup_flag
+					set_country_flag = BUL_ff_civil_war_flag
+					set_variable = { BUL_communist_support_before_cw = party_popularity@communism }
+					set_variable = { BUL_ff_coup_size = 0.1 }
+					#Default state
+					if = {
+						limit = {
+							controls_state = 211
+						}
+						211 = { set_state_flag = BUL_ff_state_flag }
+					}
+					if = {
+						limit = {
+							controls_state = 212
+						}
+						212 = { set_state_flag = BUL_ff_state_flag }
+					}
+					#Bonuses from ZVENO
+					if = {
+						limit = {
+							check_variable = { BUL_zveno_attitude = -4 }
+						}
+						set_temp_variable = { a = BUL_zveno_influence }
+						multiply_temp_variable = { a = 0.05 }
+						add_to_temp_variable = { BUL_ff_coup_size = a }
+					}
+					#Bonuses from BS
+					if = {
+						limit = {
+							check_variable = { BUL_socialist_attitude = -4 }
+						}
+						set_temp_variable = { a = BUL_socialist_influence }
+						multiply_temp_variable = { a = 0.05 }
+						add_to_temp_variable = { BUL_ff_coup_size = a }
+					}
+					#Bonuses from Agrarian Union
+					if = {
+						limit = {
+							check_variable = { BUL_agrarian_attitude = -4 }
+						}
+						set_temp_variable = { a = BUL_agrarian_influence }
+						multiply_temp_variable = { a = 0.05 }
+						add_to_temp_variable = { BUL_ff_coup_size = a }
+					}
+					
+					if = {
+						limit = {
+							check_variable = { BUL_zveno_attitude = -4 }
+						}
+						#Manage capital for original BUL
+						if = {
+							limit = {
+								any_owned_state = {
+									is_core_of = ROOT
+									NOT = { has_state_flag = BUL_ff_state_flag }
+								}
+							}
+							random_owned_state = {
+								limit = {
+									is_core_of = ROOT
+									NOT = { has_state_flag = BUL_ff_state_flag }
+								}
+								ROOT = { set_capital = { state = PREV } }
+							}
+						}
+						else = {
+							random_controlled_state = {
+								limit = {
+									NOT = { has_state_flag = BUL_ff_state_flag }
+								}
+								ROOT = { set_capital = { state = PREV } }
+							}
+						}
+					}
+					#START CIVIL WAR
+					start_civil_war = {
+						ideology = communism
+						size = BUL_ff_coup_size
+						capital = 211
+						states = all
+						states_filter = {
+							has_state_flag = BUL_ff_state_flag
+						}
+					}
+				
+					random_country = {
+						limit = {
+							original_tag = BUL
+							has_government = communism
+							NOT = { has_country_flag = BUL_ff_civil_war_flag }
+						}
+						set_country_flag = BUL_fatherland_front_flag
+						set_cosmetic_tag = BUL_ff_bulgaria
+				
+						division_template = {
+							name = "Fatherland Front Militia"
+							priority = 1
+							is_locked = yes
+							division_names_group = BUL_INF_04
+							regiments = {
+								infantry = { x = 0 y = 0 }
+								infantry = { x = 0 y = 1 }
+								infantry = { x = 0 y = 2 }
+							}
+						}
+				
+						division_template = {
+							name = "Fatherland Front Partisans"
+							priority = 1
+							is_locked = yes
+							division_names_group = BUL_INF_06
+							regiments = {
+								infantry = { x = 0 y = 0 }
+								infantry = { x = 0 y = 1 }
+								infantry = { x = 0 y = 1 }
+							}
+						}
+				
+						#Spawn FATHERLAND FRONT MILITIAS
+						#Cored states
+						every_owned_state = {
+							limit = {
+								OR = {
+									has_state_flag = BUL_initial_bulgarian_state_flag
+									state = 803 #Southern Serbia
+									state = 77 #Dobrudja
+								}
+							}
+							create_unit = {
+								division = "division_template = \"Fatherland Front Militia\" start_experience_factor = 0.25"
+								owner = PREV
+							}
+						}
+						if = {
+							limit = {
+								check_variable = { BUL_communist_support_before_cw = 15 compare = greater_than_or_equals }
+							}
+							every_owned_state = {
+								limit = {
+									has_state_flag = BUL_initial_bulgarian_state_flag
+								}
+								create_unit = {
+									division = "division_template = \"Fatherland Front Militia\" start_experience_factor = 0.15"
+									owner = PREV
+								}
+							}
+							if = {
+								limit = {
+									check_variable = { BUL_communist_support_before_cw = 30 compare = greater_than_or_equals }
+								}
+								every_owned_state = {
+									limit = {
+										has_state_flag = BUL_initial_bulgarian_state_flag
+									}
+									create_unit = {
+										division = "division_template = \"Fatherland Front Militia\" start_experience_factor = 0.1"
+										owner = PREV
+									}
+								}
+							}
+						}
+						#Bonus from BS in the FF
+						if = {
+							limit = {
+								has_country_flag = BUL_bs_joined_ff_flag
+								owns_state = 212
+							}
+							212 = {
+								create_unit = {
+									division = "division_template = \"Fatherland Front Militia\" start_experience_factor = 0.15"
+									owner = PREV
+								}
+								create_unit = {
+									division = "division_template = \"Fatherland Front Militia\" start_experience_factor = 0.15"
+									owner = PREV
+								}
+							}
+						}
+						#Bonus from BZNS in the FF
+						if = {
+							limit = {
+								has_country_flag = BUL_bs_joined_ff_flag
+								owns_state = 801
+							}
+							801 = {
+								create_unit = {
+									division = "division_template = \"Fatherland Front Militia\" start_experience_factor = 0.1"
+									owner = PREV
+								}
+								create_unit = {
+									division = "division_template = \"Fatherland Front Militia\" start_experience_factor = 0.1"
+									owner = PREV
+								}
+							}
+						}
+				
+						BUL = {
+							set_nationality = {
+								target_country = BUF
+								character = BUL_georgi_dimitrov
+							}
+						}
+						BUL_georgi_dimitrov = {
+							promote_leader = yes
+						}
+						#Generals
+						every_unit_leader = {
+							limit = {
+								NOT = { has_trait = trait_BUL_ff_sympathizer }
+							}
+							set_nationality = ROOT
+						}
+						ROOT = {
+							every_unit_leader = {
+								limit = {
+									has_trait = trait_BUL_ff_sympathizer
+								}
+								set_nationality = PREV.PREV
+							}
+						}
+				
+						#Operatives in the FF
+						if = {
+							limit = {
+								has_dlc = "La Resistance"
+							}
+							every_operative = {
+								limit = {
+									has_trait = trait_BUL_tsar_loyalist
+								}
+								set_nationality = BUL
+							}
+						}
+					}
+					#Operatives in original BUL
+					if = {
+						limit = {
+							has_dlc = "La Resistance"
+						}
+						every_operative = {
+							limit = {
+								has_trait = trait_BUL_ff_sympathizer
+							}
+							set_nationality = BUF
+						}
+						if = {
+							limit = {
+								has_country_flag = BUL_zveno_joined_ff_flag
+							}
+							every_operative = {
+								limit = {
+									has_trait = trait_BUL_zveno_member
+								}
+								set_nationality = BUF
+							}
+						}
+					}
+				}
+				effect_tooltip = {
+					start_civil_war = {
+						ideology = communism
+					}
+				}
+			}
+			else = {
+				custom_effect_tooltip = BUL_crush_the_socialists_tt
+				hidden_effect = {
+					set_country_flag = BUL_ff_destroyed_flag
+				}
+			}
+			custom_effect_tooltip = BUL_crush_the_socialists_tt_2
 			hidden_effect = {
 				set_variable = { BUL_zveno_attitude = -5 }
 				set_variable = { BUL_zveno_influence = 0 }
 				set_variable = { BUL_zveno_political_power_gain = 0 }
 				set_variable = { BUL_zveno_army_xp = 0 }
 				set_variable = { BUL_zveno_stability = 0 }
+				set_variable = { BUL_socialist_attitude = -5 }
+				set_variable = { BUL_socialist_influence = 0 }
+				set_variable = { BUL_socialist_industrial_capacity_factory_and_dockyard = 0 }
+				set_variable = { BUL_socialist_stability = 0 }
+				set_variable = { BUL_agrarian_attitude = -5 }
+				set_variable = { BUL_agrarian_influence = 0 }
+				set_variable = { BUL_agrarian_consumer_goods_factor = 0 }
+				set_variable = { BUL_agrarian_communist_gain = 0 }
+				set_variable = { BUL_agrarian_stability = 0 }
 			}
+			add_ideas = BUL_nationalized_industry
 		}
 	}
 
@@ -3927,7 +4212,6 @@ focus_tree = {
 				}
 				custom_effect_tooltip = BUL_depose_the_tsar_cw_tt
 
-				clr_country_flag = BUL_factions_unlocked_flag
 				create_country_leader = {
 					name = "Georgi Kyoseivanov"
 					desc = "POLITICS_GEORGI_KYOSEIVANOV_DESC"
@@ -4362,7 +4646,7 @@ focus_tree = {
 
 			if = {
 				limit = {
-					has_completed_focus = BUL_attract_foreign_capitals
+					has_completed_focus = BUL_ask_for_more_investment
 				}
 				custom_effect_tooltip = BUL_approach_soviet_foreign_industry_tt
 			}
@@ -6146,8 +6430,6 @@ focus_tree = {
 				}
 			}
 
-
-
 			if = { #Low Stability triggers a Civil War
 				limit = {
 					has_stability < 0.3
@@ -6197,7 +6479,6 @@ focus_tree = {
 					}
 				}
 				custom_effect_tooltip = BUL_depose_the_tsar_cw_tt
-				clr_country_flag = BUL_factions_unlocked_flag
 				create_country_leader = {
 					name = "Georgi Kyoseivanov"
 					desc = "POLITICS_GEORGI_KYOSEIVANOV_DESC"
@@ -6662,7 +6943,7 @@ focus_tree = {
 
 			if = {
 				limit = {
-					has_completed_focus = BUL_attract_foreign_capitals
+					has_completed_focus = BUL_ask_for_more_investment
 				}
 				custom_effect_tooltip = BUL_approach_british_foreign_industry_tt
 			}
