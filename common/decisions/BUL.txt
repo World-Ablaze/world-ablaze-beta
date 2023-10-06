@@ -121,7 +121,7 @@ political_actions = {
 		days_re_enable = 90
 
 		state_target = yes
-		
+
 		on_map_mode = map_and_decisions_view
 
 		modifier = {
@@ -1662,6 +1662,103 @@ BUL_purchase_equipment = {
 					level = 1
 				}
 				country_event = { id = bftb_bulgaria_equipment_purchases.11 hours = 1 }
+			}
+		}
+	}
+
+	BUL_italian_destroyer_purchase = {
+		priority = 1
+
+		icon = GFX_decision_generic_naval
+
+		allowed = { always = no } #Activated from effect
+
+		available = {
+			FROM = {
+				has_opinion = {
+					target = ROOT
+					value > 0
+				}
+				BUL_is_valid_subject = yes
+				if = {
+					limit = {
+						has_dlc = "Man the Guns"
+					}
+					OR = {
+						has_tech = generic_destroyer_1
+					}
+				}
+				else = {
+					has_tech = generic_destroyer_1
+				}
+				NOT = { has_country_flag = BUL_producing_bulgarian_ships_flag }
+				NOT = { has_country_flag = BUL_ships_purchase_rejected_flag }
+			}
+
+			NOT = { has_war_with = FROM }
+			NOT = { is_justifying_wargoal_against = FROM }
+			if = {
+				limit = {
+					FROM = { tag = GER }
+				}
+				OR = {
+					is_in_faction_with = GER
+				}
+			}
+		}
+
+		visible = {
+			country_exists = FROM
+			NOT = { has_war_with = FROM }
+			hidden_trigger = {
+				NOT = { has_country_flag = BUL_ships_purchase_rejected_flag }
+			}
+			FROM = { BUL_is_valid_subject = yes }
+		}
+
+		cancel_if_not_visible = yes
+
+		cancel_effect = {
+			FROM = {
+				add_offsite_building = {
+					type = industrial_complex
+					level = -1
+				}
+				clr_country_flag = BUL_producing_bulgarian_ships_flag
+			}
+		}
+
+		cost = BUL_purchase_equipment_cost
+		days_remove = 120
+		days_re_enable = 1
+		fire_only_once = no
+
+		ai_will_do = {
+			factor = 0.1
+			modifier = {
+				OR = {
+					num_of_civilian_factories < 5
+					num_of_naval_factories < 2
+				}
+				factor = 0
+			}
+			modifier = {
+				has_war = yes
+				factor = 2
+			}
+		}
+		modifier = {
+			civilian_factory_use = 1
+		}
+
+		complete_effect = {
+			FROM = {
+				set_country_flag = BUL_producing_bulgarian_ships_flag
+				add_offsite_building = {
+					type = industrial_complex
+					level = 1
+				}
+				country_event = { id = bftb_bulgaria_equipment_purchases.12 hours = 1 }
 			}
 		}
 	}
