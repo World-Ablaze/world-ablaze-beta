@@ -318,13 +318,6 @@ on_actions = {
 					}
 					set_capital = { state = 48 }
 				}
-				if = { #Unlock faction interaction
-					limit = {
-						NOT = { has_country_flag = BUL_factions_unlocked_flag }
-						NOT = { has_focus_tree = generic_focus }
-					}
-					set_country_flag = BUL_factions_unlocked_flag
-				}
 				if = { #ZVENO Bulgaria won the CW
 					limit = {
 						has_cosmetic_tag = BUL_zveno_bulgaria
@@ -365,7 +358,6 @@ on_actions = {
 						unlock_national_focus = BUL_dissolve_the_military_union
 					}
 					set_country_flag = BUL_zveno_destroyed_flag
-					set_country_flag = BUL_factions_unlocked_flag
 					clr_country_flag = BUL_zveno_coup_flag
 				}
 				else_if = { #FATHERLAND FRONT won the CW
@@ -387,12 +379,6 @@ on_actions = {
 					unlock_national_focus = BUL_acquire_modern_tools
 					unlock_national_focus = BUL_negotiate_bulgarian_rearmament
 
-					if = { #Lock faction interaction
-						limit = {
-							has_country_flag = BUL_factions_unlocked_flag
-						}
-						clr_country_flag = BUL_factions_unlocked_flag
-					}
 					#SET Faction flags
 					if = {
 						limit = {
@@ -1097,7 +1083,8 @@ on_actions = {
 				limit = {
 					NOT = { has_country_flag = BUL_fatherland_front_formed_flag }
 					NOT = { has_completed_focus = BUL_the_fatherland_front }
-					date > 1941.6.1 #Previously date > 1940.1.1 but it felt too punishing
+					is_subject = no
+					date > 1942.7.1 #Previously date > 1940.1.1 but it felt too punishing
 				}
 				BUL_communists_try_to_form_ff_effect = yes
 			}
@@ -1105,102 +1092,117 @@ on_actions = {
 				limit = {
 					NOT = { has_country_flag = BUL_ff_civil_war_flag }
 					NOT = { has_country_flag = BUL_ff_destroyed_flag }
-					has_country_flag = { flag = BUL_fatherland_front_formed_flag days > 60 } #Give the player some time after FF formation
-					OR = {
-						NOT = { has_country_flag = BUL_ff_approaching_faction_flag }
-						has_country_flag = { flag = BUL_ff_approaching_faction_flag days > 30 }
-					}
+					NOT = { has_country_flag = BUL_ff_approaching_faction_flag }
 				}
-				log = "checking if FF approaches someone"
-				# CHECK IF FF APPROACHES ANY BULARIAN INTERNAL FACTION
-				BUL_ff_approaches_a_faction_effect = yes #Random chance
-
-				if = { # Check if FF approaches BROAD SOCIALISTS
-					limit = {
-						NOT = { has_country_flag = BUL_bs_joined_ff_flag }
-						NOT = { has_country_flag = BUL_bs_destroyed_flag }
-						NOT = { has_country_flag = BUL_bs_integrated_flag }
-					}
-					set_temp_variable = { BUL_bs_loyalty_factor = 100 }
-					subtract_from_temp_variable = { BUL_bs_loyalty_factor = BUL_bs_loyalty }
-					if = {
-						limit = {
-							check_variable = { BUL_bs_loyalty_factor = BUL_random_ff_approaching_faction_chance compare = greater_than_or_equals }
+				random_list = {
+					33 = { #ZVENO
+						modifier = {
+							factor = 0
+							OR = {
+								check_variable = { var = BUL_zveno_attitude value = -4 compare = less_than_or_equals }
+								check_variable = { var = BUL_zveno_influence value = 0 compare = less_than_or_equals }
+							}
 						}
-						if = {
-							limit = { has_country_flag = BUL_ff_approaching_faction_flag }
-							clr_country_flag = BUL_ff_approaching_faction_flag
-						}
-						set_country_flag = BUL_bs_joined_ff_flag
-						set_country_flag = BUL_ff_approaching_faction_flag
-						activate_mission = BUL_ff_approaching_bs_mission
-
-						log = "FF approaches BS: [?BUL.BUL_bs_loyalty_factor] is greater than [?BUL.BUL_random_ff_approaching_faction_chance]"
-					}
-					else = {
-						log = "FF DOES NOT approach BS: [?BUL.BUL_bs_loyalty_factor] is lower than [?BUL.BUL_random_ff_approaching_faction_chance]"
-					}
-				}
-				else_if = { # Check if FF approaches AGRARIAN NATIONAL UNION
-					limit = {
-						NOT = { has_country_flag = BUL_bzns_joined_ff_flag }
-						NOT = { has_country_flag = BUL_bzns_destroyed_flag }
-						NOT = { has_country_flag = BUL_bzns_integrated_flag }
-					}
-					set_temp_variable = { BUL_bzns_loyalty_factor = 100 }
-					subtract_from_temp_variable = { BUL_bzns_loyalty_factor = BUL_bs_loyalty }
-					if = {
-						limit = {
-							check_variable = { BUL_bzns_loyalty_factor = BUL_random_ff_approaching_faction_chance compare = greater_than_or_equals }
-						}
-						if = {
-							limit = { has_country_flag = BUL_ff_approaching_faction_flag }
-							clr_country_flag = BUL_ff_approaching_faction_flag
-						}
-						set_country_flag = BUL_bzns_joined_ff_flag
-						set_country_flag = BUL_ff_approaching_faction_flag
-						activate_mission = BUL_ff_approaching_bzns_mission
-
-						log = "FF approaches BZN: [?BUL.BUL_bzns_loyalty_factor] is greater than [?BUL.BUL_random_ff_approaching_faction_chance]"
-					}
-					else = {
-						log = "FF DOES NOT approach BZNS: [?BUL.BUL_bzns_loyalty_factor] is lower than [?BUL.BUL_random_ff_approaching_faction_chance]"
-					}
-				}
-				else_if = { # Check if FF approaches ZVENO
-					limit = {
-						NOT = { has_country_flag = BUL_zveno_joined_ff_flag }
-						NOT = { has_country_flag = BUL_zveno_coup_flag }
-						NOT = { has_country_flag = BUL_zveno_destroyed_flag }
-						NOT = { has_country_flag = BUL_zveno_integrated_flag }
-					}
-					set_temp_variable = { BUL_zveno_loyalty_factor = 100 }
-					subtract_from_temp_variable = { BUL_zveno_loyalty_factor = BUL_zveno_loyalty }
-					if = {
-						limit = {
-							check_variable = { BUL_zveno_loyalty_factor = BUL_random_ff_approaching_faction_chance compare = greater_than_or_equals }
-						}
-						if = {
-							limit = { has_country_flag = BUL_ff_approaching_faction_flag }
-							clr_country_flag = BUL_ff_approaching_faction_flag
-						}
-						set_country_flag = BUL_zveno_joined_ff_flag
-						set_country_flag = BUL_ff_approaching_faction_flag
 						activate_mission = BUL_ff_approaching_zveno_mission
-
-						log = "FF approaches ZVENO: [?BUL.BUL_zveno_loyalty_factor] is greater than [?BUL.BUL_random_ff_approaching_faction_chance]"
+						set_country_flag = BUL_ff_approaching_faction_flag
 					}
-					else = {
-						log = "FF DOES NOT approach ZVENO: [?BUL.BUL_zveno_loyalty_factor] is lower than [?BUL.BUL_random_ff_approaching_faction_chance]"
+					33 = { #BROAD SOCIALISTS
+						modifier = {
+							factor = 0
+							OR = {
+								check_variable = { var = BUL_socialist_attitude value = -4 compare = less_than_or_equals }
+								check_variable = { var = BUL_socialist_influence value = 0 compare = less_than_or_equals }
+							}
+						}
+						activate_mission = BUL_ff_approaching_bs_mission
+						set_country_flag = BUL_ff_approaching_faction_flag
+					}
+					34 = { #AGRARIAN UNION
+						modifier = {
+							factor = 0
+							OR = {
+								check_variable = { var = BUL_agrarian_attitude value = -4 compare = less_than_or_equals }
+								check_variable = { var = BUL_agrarian_influence value = 0 compare = less_than_or_equals }
+							}
+						}
+						activate_mission = BUL_ff_approaching_bzns_mission
+						set_country_flag = BUL_ff_approaching_faction_flag
 					}
 				}
-				if = {
-					limit = {
-						has_country_flag = BUL_ff_coup_planned_flag
-						date > 1943.1.1
+			}
+			if = {
+				limit = {
+					has_country_flag = BUL_ff_coup_planned_flag
+					OR = {
+						any_enemy_country = {
+							divisions_in_state = {
+								size > 0
+								state = 900
+							}
+						}
+						any_enemy_country = {
+							divisions_in_state = {
+								size > 0
+								state = 77
+							}
+						}
+						any_enemy_country = {
+							divisions_in_state = {
+								size > 0
+								state = 81
+							}
+						}
+						any_enemy_country = {
+							divisions_in_state = {
+								size > 0
+								state = 108
+							}
+						}
+						any_enemy_country = {
+							divisions_in_state = {
+								size > 0
+								state = 851
+							}
+						}
+						any_enemy_country = {
+							divisions_in_state = {
+								size > 0
+								state = 106
+							}
+						}
+						any_enemy_country = {
+							divisions_in_state = {
+								size > 0
+								state = 731
+							}
+						}
+						any_enemy_country = {
+							divisions_in_state = {
+								size > 0
+								state = 184
+							}
+						}
+						any_enemy_country = {
+							divisions_in_state = {
+								size > 0
+								state = 898
+							}
+						}
+						any_enemy_country = {
+							divisions_in_state = {
+								size > 0
+								state = 211
+							}
+						}
 					}
-					BUL_ff_tries_to_stage_a_coup_effect = yes #Check if the FF starts the CW
+					OR = {
+						any_neighbor_state = {
+							CONTROLLER = { has_war_with = ROOT }
+						}
+						surrender_progress > 0
+					}
 				}
+				BUL_ff_tries_to_stage_a_coup_effect = yes #Check if the FF starts the CW
 			}
 
 			# BULGARIAN CLAIMS IN THE BALKANS
@@ -1542,8 +1544,6 @@ on_actions = {
 		effect = { #Tsar Boris Dies
 			if = { #Force Boris's death in historical
 				limit = {
-					is_historical_focus_on = yes
-					NOT = { has_completed_focus	= BUL_strengthen_the_royal_dictatorship }
 					BUL_has_abolished_monarchy = no
 					date > 1943.7.30 #Historical date of death is 1943.8.28
 					NOT = { has_country_flag = BUL_tsar_boris_is_dead_flag }
@@ -1554,7 +1554,6 @@ on_actions = {
 			else_if = { #Attempt to make Boris die if not historical
 				limit = {
 					is_historical_focus_on = no
-					NOT = { has_completed_focus	= BUL_strengthen_the_royal_dictatorship }
 					BUL_has_abolished_monarchy = no
 					date > 1943.1.1 #Historical date of death is 1943.8.28
 					NOT = { has_country_flag = BUL_tsar_boris_is_dead_flag }
