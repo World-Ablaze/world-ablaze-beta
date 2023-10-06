@@ -1,144 +1,183 @@
 ﻿add_namespace = bul_armor
 
-############################################ Soviet Union accepts Peace
+############################################ Ask for Italian Tanks
 
 country_event = {
-	id = bul_armor.1
-	title = bul_armor.1.t
-	desc = bul_armor.1.d
+	id = bul_armor.4
+	title = bul_armor.4.t
+	desc = bul_armor.4.d
 
 	is_triggered_only = yes
 
-	option = {
-		name = bul_armor.1.a
-		if = {
-			limit = { is_in_faction_with = GER }
-			add_opinion_modifier = { target = GER modifier = bulgaria_betrayed_us }
-			reverse_add_opinion_modifier = { target = GER modifier = bulgaria_betrayed_us }
-			GER = {
-				remove_from_faction = BUL
-			}
+	option = { #ask for only tanks
+		name = bul_armor.4.a
+		ITA = {
+			country_event = { id = bul_armor.5 }
 		}
-		SOV = {
-			white_peace = {
-				tag = BUL
-				message = BUL_white_peace
-			}
-		}
-		if = {
-			limit = {
-				ENG = { is_faction_leader = yes}
-				has_war_With = ENG
-			}
-			ENG = {
-				white_peace = {
-					tag = BUL
-					message = BUL_white_peace
-				}
-			}
-		}
-		if = {
-			limit = {
-				USA = { is_faction_leader = yes}
-				has_war_With = USA
-			}
-			USA = {
-				white_peace = {
-					tag = BUL
-					message = BUL_white_peace
-				}
-			}
-		}
-		SOV = {
-			add_to_faction = BUL
+	}
+
+	option = { #ask for a licence
+		name = bul_armor.4.b
+		set_country_flag = BUL_ask_for_license
+		ITA = {
+			country_event = { id = bul_armor.5 }
 		}
 	}
 }
 
-############################################ Soviet Union demand us being their Puppet
-
-country_event = {
-	id = bul_armor.2
-	title = bul_armor.2.t
-	desc = bul_armor.2.d
+country_event = { 
+	id = bul_armor.5
+	title = bul_armor.5.t
+	desc = bul_armor.5.d
 
 	is_triggered_only = yes
 
-	option = {
-		name = bul_armor.2.a
+	option = { # give them tanks and license
+		name = bul_armor.5.a
+		trigger = {
+			BUL = {
+				has_country_flag = BUL_ask_for_license
+			}
+		}
+		BUL = {
+			add_equipment_to_stockpile = {
+				type = tank_ita_light_chassis_2
+				amount = 100
+				producer = ITA
+			}
+			create_production_license = {
+				target = THIS
+				cost_factor = 0
+				equipment = {
+					type = tank_ita_light_chassis_2
+        			version = 0
+				}
+			}
+			clr_country_flag = BUL_ask_for_license
+		}
 		ai_chance = {
-			factor = 90
-		}
-		if = {
-			limit = { is_in_faction_with = GER }
-			add_opinion_modifier = { target = GER modifier = bulgaria_betrayed_us }
-			reverse_add_opinion_modifier = { target = GER modifier = bulgaria_betrayed_us }
-			GER = {
-				remove_from_faction = BUL
-			}
-		}
-		SOV = {
-			white_peace = {
-				tag = BUL
-				message = BUL_switches_sides
-			}
-		}
-		if = {
-			limit = {
-				ENG = { is_faction_leader = yes}
-				has_war_With = ENG
-			}
-			ENG = {
-				white_peace = {
-					tag = BUL
-					message = BUL_switches_sides
+			factor = 0
+			modifier = {
+				add = 100
+				has_opinion = {
+					target = BUL
+					value > 79
 				}
 			}
-		}
-		if = {
-			limit = {
-				USA = { is_faction_leader = yes}
-				has_war_With = USA
-			}
-			USA = {
-				white_peace = {
-					tag = BUL
-					message = BUL_switches_sides
-				}
-			}
-		}
-		SOV = {
-			add_to_faction = BUL
-			set_autonomy = { target = BUL autonomy_state = autonomy_puppet }
 		}
 	}
 
-	option = {
-		name = bul_armor.2.b
-		ai_chance = {
-			factor = 10
+	option = { # give them only tanks
+		name = bul_armor.5.b
+		add_equipment_to_stockpile = {
+			type = tank_ita_light_chassis_2
+			amount = 100
+			producer = ITA
 		}
-		SOV = { country_event = { days = 1 id = sov_armor.808 } }
+		BUL = {
+			clr_country_flag = BUL_ask_for_license
+		}
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = { # give them nothing
+		name = bul_armor.5.c
+		BUL = {
+			clr_country_flag = BUL_ask_for_license
+		}
+		ai_chance = {
+			factor = 0
+		}
 	}
 }
 
-############################################ Soviet Union rejects Peace
+############################################ Plane Purchase event
 
-
-country_event = {
-	id = bul_armor.3
-	title = bul_armor.3.t
-	desc = bul_armor.3.d
+country_event = { 
+	id = bul_armor.6
+	title = bul_armor.6.t
+	desc = bul_armor.6.d
 
 	is_triggered_only = yes
 
-	option = {
-		name = bul_armor.3.a
+	option = { # give them tanks and license
+		name = bul_armor.6.a
+		trigger = {
+			is_in_faction_with = GER
+		}
+		if = {
+			limit = {
+				GER  = {
+					has_tech = ger_fighter_8
+				}
+			}
+			add_equipment_to_stockpile = {
+				type = ger_fighter_equipment_8
+				amount = 300
+			}
+		}
+		else_if = {
+			limit = {
+				GER  = {
+					has_tech = ger_fighter_7
+				}
+			}
+			add_equipment_to_stockpile = {
+				type = ger_fighter_equipment_7
+				amount = 300
+			}
+		}
+		else_if = {
+			limit = {
+				GER  = {
+					has_tech = ger_fighter_6
+				}
+			}
+			add_equipment_to_stockpile = {
+				type = ger_fighter_equipment_6
+				amount = 300
+			}
+		}
+		else_if = {
+			limit = {
+				GER  = {
+					has_tech = ger_fighter_5
+				}
+			}
+			add_equipment_to_stockpile = {
+				type = ger_fighter_equipment_5
+				amount = 300
+			}
+		}
+		else = {
+			add_equipment_to_stockpile = {
+				type = ger_fighter_equipment_4
+				amount = 300
+			}
+		}
+	}
+
+	option = { # give them tanks and license
+		name = bul_armor.6.b
+		trigger = {
+			is_in_faction_with = SOV
+		}
+		
+	}
+
+
+	option = { # give them nothing
+		name = bul_armor.5.a
+		trigger = {
+			is_in_faction_with = ITA
+		}
 	}
 }
 
 country_event = {
-	id = bul_armor.10
+	id = bul_armor.8020
 	hidden = yes
 
 	mean_time_to_happen = { days = 2 }
@@ -198,7 +237,7 @@ country_event = {
 }
 
 country_event = {
-	id = bul_armor.11
+	id = bul_armor.8021
 	hidden = yes
 
 	mean_time_to_happen = { days = 2 }
@@ -226,7 +265,7 @@ country_event = {
 }
 
 country_event = {
-	id = bul_armor.12
+	id = bul_armor.8022
 	hidden = yes
 
 	mean_time_to_happen = { days = 2 }
@@ -249,6 +288,174 @@ country_event = {
 	option = {
 	}
 }
+
+################################# Event to replace kyoseivanov
+
+country_event = {
+	id = bul_armor.801
+	title = bul_armor.801.t
+	desc = bul_armor.801.d
+	picture = GFX_report_event_generic_sign_treaty2
+
+	mean_time_to_happen = { days = 2 }
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = BUL
+		date > 1940.2.1
+		has_dlc = "Battle for the Bosporus"
+		has_idea = BUL_georgi_ivanov_kyoseivanov_bftb
+	}
+
+	immediate = {
+	}
+
+	option = {
+		name = bul_armor.801.a
+		remove_ideas = BUL_georgi_ivanov_kyoseivanov_bftb
+		add_ideas = BUL_bogdan_filov
+	}
+}
+
+############################################ Soviet Union accepts Peace
+
+country_event = {
+	id = bul_armor.802
+	title = bul_armor.802.t
+	desc = bul_armor.802.d
+
+	is_triggered_only = yes
+
+	option = {
+		name = bul_armor.802.a
+		if = {
+			limit = { is_in_faction_with = GER }
+			add_opinion_modifier = { target = GER modifier = bulgaria_betrayed_us }
+			reverse_add_opinion_modifier = { target = GER modifier = bulgaria_betrayed_us }
+			GER = {
+				remove_from_faction = BUL
+			}
+		}
+		SOV = {
+			white_peace = {
+				tag = BUL
+				message = BUL_white_peace
+			}
+		}
+		if = {
+			limit = {
+				ENG = { is_faction_leader = yes}
+				has_war_With = ENG
+			}
+			ENG = {
+				white_peace = {
+					tag = BUL
+					message = BUL_white_peace
+				}
+			}
+		}
+		if = {
+			limit = {
+				USA = { is_faction_leader = yes}
+				has_war_With = USA
+			}
+			USA = {
+				white_peace = {
+					tag = BUL
+					message = BUL_white_peace
+				}
+			}
+		}
+		SOV = {
+			add_to_faction = BUL
+		}
+	}
+}
+
+############################################ Soviet Union demand us being their Puppet
+
+country_event = {
+	id = bul_armor.803
+	title = bul_armor.803.t
+	desc = bul_armor.803.d
+
+	is_triggered_only = yes
+
+	option = {
+		name = bul_armor.803.a
+		ai_chance = {
+			factor = 90
+		}
+		if = {
+			limit = { is_in_faction_with = GER }
+			add_opinion_modifier = { target = GER modifier = bulgaria_betrayed_us }
+			reverse_add_opinion_modifier = { target = GER modifier = bulgaria_betrayed_us }
+			GER = {
+				remove_from_faction = BUL
+			}
+		}
+		SOV = {
+			white_peace = {
+				tag = BUL
+				message = BUL_switches_sides
+			}
+		}
+		if = {
+			limit = {
+				ENG = { is_faction_leader = yes}
+				has_war_With = ENG
+			}
+			ENG = {
+				white_peace = {
+					tag = BUL
+					message = BUL_switches_sides
+				}
+			}
+		}
+		if = {
+			limit = {
+				USA = { is_faction_leader = yes}
+				has_war_With = USA
+			}
+			USA = {
+				white_peace = {
+					tag = BUL
+					message = BUL_switches_sides
+				}
+			}
+		}
+		SOV = {
+			add_to_faction = BUL
+			set_autonomy = { target = BUL autonomy_state = autonomy_puppet }
+		}
+	}
+
+	option = {
+		name = bul_armor.803.b
+		ai_chance = {
+			factor = 10
+		}
+		SOV = { country_event = { days = 1 id = sov_armor.808 } }
+	}
+}
+
+############################################ Soviet Union rejects Peace
+
+
+country_event = {
+	id = bul_armor.804
+	title = bul_armor.804.t
+	desc = bul_armor.804.d
+
+	is_triggered_only = yes
+
+	option = {
+		name = bul_armor.804.a
+	}
+}
+
+### Cheats
 
 country_event = {
 	id = bul_armor.901

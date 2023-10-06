@@ -6,6 +6,7 @@ NDefines.NGame.LAG_DAYS_FOR_LOWER_SPEED = 300										-- Days of client lag for
 NDefines.NGame.LAG_DAYS_FOR_PAUSE = 100												-- Days of client lag for pause of gamespeed.
 NDefines.NGame.EVENT_TIMEOUT_DEFAULT = 7											-- Default days before an event times out if not scripted
 NDefines.NGame.GAME_SPEED_SECONDS = { 0.5, 0.2, 0.14, 0.06, 0.0 }					-- Game speed
+NDefines.NGame.HANDS_OFF_START_TAG = "BHU"
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Diplomacy
 
