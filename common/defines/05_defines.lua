@@ -6,6 +6,7 @@ NDefines.NGame.LAG_DAYS_FOR_LOWER_SPEED = 300										-- Days of client lag for
 NDefines.NGame.LAG_DAYS_FOR_PAUSE = 100												-- Days of client lag for pause of gamespeed.
 NDefines.NGame.EVENT_TIMEOUT_DEFAULT = 7											-- Default days before an event times out if not scripted
 NDefines.NGame.GAME_SPEED_SECONDS = { 0.5, 0.2, 0.14, 0.06, 0.0 }					-- Game speed
+NDefines.NGame.HANDS_OFF_START_TAG = "BHU"
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Diplomacy
 
@@ -947,7 +948,7 @@ NDefines.NAI.LAND_COMBAT_INTERCEPT_PER_PLANE = 0									-- Amount of intercepti
 NDefines.NAI.NAVAL_COMBAT_TRANSFER_AIR_IMPORTANCE = 500.0							-- Naval combat involving enemy land units
 
 NDefines.NAI.STR_BOMB_AIR_SUPERIORITY_IMPORTANCE = 0.0								-- Strategic importance of air superiority ( amount of enemy planes in area )
-	
+
 NDefines.NAI.STR_BOMB_MIN_ENEMY_FIGHTERS_IN_AREA = 2800								-- If amount of enemy fighters is higher than this mission won't perform
 NDefines.NAI.STR_BOMB_FIGHTERS_PER_PLANE = 50.0										-- Amount of air superiority planes requested per enemy plane
 NDefines.NAI.STR_BOMB_MIN_EXCORT_PLANES = 0											-- Min amount of planes requested to excort operations
