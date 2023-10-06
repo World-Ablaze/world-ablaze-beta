@@ -363,56 +363,56 @@ BUL_rearmament = {
 			ENG = { country_event = bftb_bulgaria_rearmament.1 }
 			custom_effect_tooltip = BUL_rearmament_main_factors_tt
 		}
-	}
-
-	BUL_pressure_to_lift_army_restrictions = {
-		icon = GFX_decision_eng_trade_unions_support
-
-		allowed = {
-			original_tag = BUL
 		}
 
-		available = {
-			has_war = no
-			NOT = { has_country_flag = BUL_rearmament_negotiations_ongoing_flag }
-			custom_trigger_tooltip = {
-				tooltip = BUL_not_justifying_wargoals_tt
-				NOT = {
-					any_country = {
-						BUL = {
-							is_justifying_wargoal_against = PREV
-						}
-					}
-				}
-			}
-		}
-
-		visible = {
-			has_idea = BUL_treaty_of_neuilly_sur_seine
-			has_country_flag = { flag = BUL_rearmament_flag value = 2 }
-		}
-
-		fire_only_once = yes
-
-		cost = 50
-
-		ai_will_do = {
-			base = 100
-			modifier = {
-				factor = 100
-				is_historical_focus_on = yes
-			}
-			modifier = {
-				factor = 0.5
-				has_government = fascism
-			}
-		}
-
-		complete_effect = {
-			ENG = { country_event = { id = bftb_bulgaria_rearmament.7 hours = 1 } }
-			custom_effect_tooltip = BUL_rearmament_main_factors_tt
-		}
-	}
+	#	BUL_pressure_to_lift_army_restrictions = {
+	#		icon = GFX_decision_eng_trade_unions_support
+	#
+	#		allowed = {
+	#			original_tag = BUL
+	#		}
+	#
+	#		available = {
+	#			has_war = no
+	#			NOT = { has_country_flag = BUL_rearmament_negotiations_ongoing_flag }
+	#			custom_trigger_tooltip = {
+	#				tooltip = BUL_not_justifying_wargoals_tt
+	#				NOT = {
+	#					any_country = {
+	#						BUL = {
+	#							is_justifying_wargoal_against = PREV
+	#						}
+	#					}
+	#				}
+	#			}
+	#		}
+	#
+	#		visible = {
+	#			has_idea = BUL_treaty_of_neuilly_sur_seine
+	#			has_country_flag = { flag = BUL_rearmament_flag value = 2 }
+	#		}
+	#
+	#		fire_only_once = yes
+	#
+	#		cost = 50
+	#
+	#		ai_will_do = {
+	#			base = 100
+	#			modifier = {
+	#				factor = 100
+	#				is_historical_focus_on = yes
+	#			}
+	#			modifier = {
+	#				factor = 0.5
+	#				has_government = fascism
+	#			}
+	#		}
+	#
+	#		complete_effect = {
+	#			ENG = { country_event = { id = bftb_bulgaria_rearmament.7 hours = 1 } }
+	#			custom_effect_tooltip = BUL_rearmament_main_factors_tt
+	#		}
+	#	}
 }
 
 
@@ -1394,106 +1394,141 @@ BUL_purchase_equipment = {
 		}
 
 		complete_effect = {
-			country_event = { id = bul_armor.6 }
+			country_event = { id = bul_armor.807 }
 		}
 
 		remove_effect = {
 		}
 	}
 
-	BUL_purchase_ships = {
+	BUL_purchase_destroyers = {
 
 		priority = 1
 
 		icon = GFX_decision_generic_naval
 
-		allowed = { always = no } #Activated from effect
+		targets = { ITA SOV ENG }
 
-		available = {
+		target_root_trigger = {
+			has_completed_focus = BUL_look_for_new_surface_designs
+		}
+
+		target_trigger = {
 			FROM = {
 				has_opinion = {
-					target = ROOT
+					target = BUL
 					value > 0
 				}
 				BUL_is_valid_subject = yes
-				if = {
-					limit = {
-						has_dlc = "Man the Guns"
-					}
-					OR = {
-						has_tech = generic_submarine_1
-						has_tech = generic_destroyer_1
-						has_tech = generic_light_cruiser_1
-					}
-				}
-				else = {
-					has_tech = generic_frigate_1
-					has_tech = generic_destroyer_1
-					has_tech = generic_submarine_1
-				}
-				NOT = { has_country_flag = BUL_producing_bulgarian_ships_flag }
-				NOT = { has_country_flag = BUL_ships_purchase_rejected_flag }
+				NOT = { has_war_with = BUL }
+				NOT = { is_justifying_wargoal_against = BUL }
 			}
+		}
 
-			NOT = { has_war_with = FROM }
-			NOT = { is_justifying_wargoal_against = FROM }
-			if = {
-				limit = {
-					FROM = { tag = ITA }
-				}
+		cost = BUL_purchase_equipment_cost
+		days_remove = 120
+		days_re_enable = 1
+		fire_only_once = no
+
+		ai_will_do = {
+			factor = 1
+			modifier = {
 				OR = {
-					is_in_faction_with = ITA
+					num_of_civilian_factories < 10
+					num_of_naval_factories < 2
+				}
+				factor = 0
+			}
+			modifier = {
+				has_war = yes
+				factor = 2
+			}
+		}
+
+		modifier = {
+			civilian_factory_use = 5
+		}
+
+		complete_effect = {
+			FROM = {
+				add_offsite_building = {
+					type = industrial_complex
+					level = 5
 				}
 			}
-			else_if = {
+		}
+
+		remove_effect = {
+			FROM = {
+				add_offsite_building = {
+					type = industrial_complex
+					level = -5
+				}
+			}
+			country_event = { id = bftb_bulgaria_equipment_purchases.12 hours = 1 }
+			if = {
 				limit = {
 					FROM = { tag = ENG }
 				}
-				OR = {
-					is_in_faction_with = ENG
+				set_technology = { eng_destroyer_1 = 1 }
+				create_ship = { type = eng_destroyer_hull_1 equipment_variant = "V/W Class" creator = FROM }
+				create_ship = { type = eng_destroyer_hull_1 equipment_variant = "V/W Class" creator = FROM }
+				create_ship = { type = eng_destroyer_hull_1 equipment_variant = "V/W Class" creator = FROM }
+			}
+			else_if = {
+				limit = {
+					FROM = { tag = ITA }
 				}
+				set_technology = { ita_destroyer_1 = 1 }
+				create_ship = { type = ita_destroyer_hull_1 equipment_variant = "Mirabello Class" creator = FROM }
+				create_ship = { type = ita_destroyer_hull_1 equipment_variant = "Mirabello Class" creator = FROM }
+				create_ship = { type = ita_destroyer_hull_1 equipment_variant = "Mirabello Class" creator = FROM }
 			}
 			else_if = {
 				limit = {
 					FROM = { tag = SOV }
 				}
-				OR = {
-					is_in_faction_with = SOV
-				}
+				set_technology = { sov_destroyer_1 = 1 }
+				create_ship = { type = sov_destroyer_hull_1 equipment_variant = "Orfey Class" creator = FROM }
+				create_ship = { type = sov_destroyer_hull_1 equipment_variant = "Orfey Class" creator = FROM }
+				create_ship = { type = sov_destroyer_hull_1 equipment_variant = "Orfey Class" creator = FROM }
 			}
 		}
+	}
+	BUL_purchase_submarines = {
 
-		visible = {
-			country_exists = FROM
-			NOT = { has_war_with = FROM }
-			hidden_trigger = {
-				NOT = { has_country_flag = BUL_ships_purchase_rejected_flag }
-			}
-			FROM = { BUL_is_valid_subject = yes }
+		priority = 1
+
+		icon = GFX_decision_generic_naval
+
+		targets = { GER SOV ENG }
+
+		target_root_trigger = {
+			has_completed_focus = BUL_look_for_new_undersea_designs
 		}
 
-		cancel_if_not_visible = yes
-
-		cancel_effect = {
+		target_trigger = {
 			FROM = {
-				add_offsite_building = {
-					type = industrial_complex
-					level = -1
+				has_opinion = {
+					target = BUL
+					value > 24
 				}
-				clr_country_flag = BUL_producing_bulgarian_ships_flag
+				BUL_is_valid_subject = yes
+				NOT = { has_war_with = BUL }
+				NOT = { is_justifying_wargoal_against = BUL }
 			}
 		}
 
 		cost = BUL_purchase_equipment_cost
-		days_remove = 365
+		days_remove = 5
 		days_re_enable = 1
 		fire_only_once = no
 
 		ai_will_do = {
-			factor = 0.1
+			factor = 1
 			modifier = {
 				OR = {
-					num_of_civilian_factories < 5
+					num_of_civilian_factories < 10
 					num_of_naval_factories < 2
 				}
 				factor = 0
@@ -1503,262 +1538,54 @@ BUL_purchase_equipment = {
 				factor = 2
 			}
 		}
+
 		modifier = {
-			civilian_factory_use = 1
+			civilian_factory_use = 5
 		}
 
 		complete_effect = {
 			FROM = {
-				set_country_flag = BUL_producing_bulgarian_ships_flag
 				add_offsite_building = {
 					type = industrial_complex
-					level = 1
+					level = 5
 				}
-				country_event = { id = bftb_bulgaria_equipment_purchases.5 hours = 1 }
 			}
 		}
 
 		remove_effect = {
-			add_opinion_modifier = {
-				target = FROM
-				modifier = BUL_built_ships
-			}
-			add_opinion_modifier = {
-				target = FROM
-				modifier = BUL_arms_trade
-			}
 			FROM = {
 				add_offsite_building = {
 					type = industrial_complex
-					level = -1
+					level = -5
 				}
-				clr_country_flag = BUL_producing_bulgarian_ships_flag
 			}
+			country_event = { id = bftb_bulgaria_equipment_purchases.11 hours = 1 }
 			if = {
 				limit = {
-					FROM = { has_country_flag = BUL_building_submarines_flag }
+					FROM = { tag = ENG }
 				}
-				hidden_effect = {
-					country_event = bftb_bulgaria_equipment_purchases.8
-				}
-				custom_effect_tooltip = BUL_purchase_ships_submarines_tt
-				FROM = { clr_country_flag = BUL_building_submarines_flag }
+				set_technology = { eng_submarine_1 = 1 }
+				create_ship = { type = eng_submarine_hull_1 equipment_variant = "H Class" creator = FROM }
+				create_ship = { type = eng_submarine_hull_1 equipment_variant = "H Class" creator = FROM }
+				create_ship = { type = eng_submarine_hull_1 equipment_variant = "H Class" creator = FROM }
 			}
 			else_if = {
 				limit = {
-					FROM = { has_country_flag = BUL_building_destroyers_flag }
+					FROM = { tag = GER }
 				}
-				hidden_effect = {
-					country_event = bftb_bulgaria_equipment_purchases.9
-				}
-				custom_effect_tooltip = BUL_purchase_ships_destroyers_tt
-				FROM = { clr_country_flag = BUL_building_destroyers_flag }
+				set_technology = { ger_submarine_1 = 1 }
+				create_ship = { type = ger_submarine_hull_1 equipment_variant = "Type II Class" creator = FROM }
+				create_ship = { type = ger_submarine_hull_1 equipment_variant = "Type II Class" creator = FROM }
+				create_ship = { type = ger_submarine_hull_1 equipment_variant = "Type II Class" creator = FROM }
 			}
 			else_if = {
 				limit = {
-					FROM = { has_country_flag = BUL_building_light_cruiser_flag }
+					FROM = { tag = SOV }
 				}
-				hidden_effect = {
-					country_event = bftb_bulgaria_equipment_purchases.10
-				}
-				custom_effect_tooltip = BUL_purchase_ships_light_cruiser_tt
-				FROM = { clr_country_flag = BUL_building_light_cruiser_flag }
-			}
-			else = {
-				custom_effect_tooltip = BUL_purchase_ships_undetermined_tt
-			}
-		}
-	}
-	BUL_german_submarine_purchase = {
-		priority = 1
-
-		icon = GFX_decision_generic_naval
-
-		allowed = { always = no } #Activated from effect
-
-		available = {
-			FROM = {
-				has_opinion = {
-					target = ROOT
-					value > 0
-				}
-				BUL_is_valid_subject = yes
-				if = {
-					limit = {
-						has_dlc = "Man the Guns"
-					}
-					OR = {
-						has_tech = generic_submarine_1
-					}
-				}
-				else = {
-					has_tech = generic_submarine_1
-				}
-				NOT = { has_country_flag = BUL_producing_bulgarian_ships_flag }
-				NOT = { has_country_flag = BUL_ships_purchase_rejected_flag }
-			}
-
-			NOT = { has_war_with = FROM }
-			NOT = { is_justifying_wargoal_against = FROM }
-			if = {
-				limit = {
-					FROM = { tag = GER }
-				}
-				OR = {
-					is_in_faction_with = GER
-				}
-			}
-		}
-
-		visible = {
-			country_exists = FROM
-			NOT = { has_war_with = FROM }
-			hidden_trigger = {
-				NOT = { has_country_flag = BUL_ships_purchase_rejected_flag }
-			}
-			FROM = { BUL_is_valid_subject = yes }
-		}
-
-		cancel_if_not_visible = yes
-
-		cancel_effect = {
-			FROM = {
-				add_offsite_building = {
-					type = industrial_complex
-					level = -1
-				}
-				clr_country_flag = BUL_producing_bulgarian_ships_flag
-			}
-		}
-
-		cost = BUL_purchase_equipment_cost
-		days_remove = 120
-		days_re_enable = 1
-		fire_only_once = no
-
-		ai_will_do = {
-			factor = 0.1
-			modifier = {
-				OR = {
-					num_of_civilian_factories < 5
-					num_of_naval_factories < 2
-				}
-				factor = 0
-			}
-			modifier = {
-				has_war = yes
-				factor = 2
-			}
-		}
-		modifier = {
-			civilian_factory_use = 1
-		}
-
-		complete_effect = {
-			FROM = {
-				set_country_flag = BUL_producing_bulgarian_ships_flag
-				add_offsite_building = {
-					type = industrial_complex
-					level = 1
-				}
-				country_event = { id = bftb_bulgaria_equipment_purchases.11 hours = 1 }
-			}
-		}
-	}
-
-	BUL_italian_destroyer_purchase = {
-		priority = 1
-
-		icon = GFX_decision_generic_naval
-
-		allowed = { always = no } #Activated from effect
-
-		available = {
-			FROM = {
-				has_opinion = {
-					target = ROOT
-					value > 0
-				}
-				BUL_is_valid_subject = yes
-				if = {
-					limit = {
-						has_dlc = "Man the Guns"
-					}
-					OR = {
-						has_tech = generic_destroyer_1
-					}
-				}
-				else = {
-					has_tech = generic_destroyer_1
-				}
-				NOT = { has_country_flag = BUL_producing_bulgarian_ships_flag }
-				NOT = { has_country_flag = BUL_ships_purchase_rejected_flag }
-			}
-
-			NOT = { has_war_with = FROM }
-			NOT = { is_justifying_wargoal_against = FROM }
-			if = {
-				limit = {
-					FROM = { tag = GER }
-				}
-				OR = {
-					is_in_faction_with = GER
-				}
-			}
-		}
-
-		visible = {
-			country_exists = FROM
-			NOT = { has_war_with = FROM }
-			hidden_trigger = {
-				NOT = { has_country_flag = BUL_ships_purchase_rejected_flag }
-			}
-			FROM = { BUL_is_valid_subject = yes }
-		}
-
-		cancel_if_not_visible = yes
-
-		cancel_effect = {
-			FROM = {
-				add_offsite_building = {
-					type = industrial_complex
-					level = -1
-				}
-				clr_country_flag = BUL_producing_bulgarian_ships_flag
-			}
-		}
-
-		cost = BUL_purchase_equipment_cost
-		days_remove = 120
-		days_re_enable = 1
-		fire_only_once = no
-
-		ai_will_do = {
-			factor = 0.1
-			modifier = {
-				OR = {
-					num_of_civilian_factories < 5
-					num_of_naval_factories < 2
-				}
-				factor = 0
-			}
-			modifier = {
-				has_war = yes
-				factor = 2
-			}
-		}
-		modifier = {
-			civilian_factory_use = 1
-		}
-
-		complete_effect = {
-			FROM = {
-				set_country_flag = BUL_producing_bulgarian_ships_flag
-				add_offsite_building = {
-					type = industrial_complex
-					level = 1
-				}
-				country_event = { id = bftb_bulgaria_equipment_purchases.12 hours = 1 }
+				set_technology = { sov_submarine_1 = 1 }
+				create_ship = { type = sov_submarine_hull_1 equipment_variant = "Shchuka Class" creator = FROM }
+				create_ship = { type = sov_submarine_hull_1 equipment_variant = "Shchuka Class" creator = FROM }
+				create_ship = { type = sov_submarine_hull_1 equipment_variant = "Shchuka Class" creator = FROM }
 			}
 		}
 	}
