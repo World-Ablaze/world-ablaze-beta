@@ -132,6 +132,12 @@ country_event = {
 			SPR_indalecio_prieto = {
 				set_character_flag = SPA_nationalist
 			}
+			SPR_manuel_fal_conde = {
+				set_character_flag = SPA_carlist
+			}
+			SPR_anarchist_commune = {
+				set_character_flag = SPR_anarchist
+			}
 		}
 	}
 
@@ -256,7 +262,10 @@ country_event = {
 				}
 				every_character = {
 					limit = {
-						has_character_flag = SPR_republican
+						OR = {
+							has_character_flag = SPR_republican
+							has_character_flag = SPR_anarchist
+						}
 					}
 					set_nationality = SPD
 				}
@@ -468,11 +477,13 @@ country_event = {
 							artillery_brigade = { x = 3 y = 1 }
 						}
 						support = {
-							normal_engineer = { x = 0 y = 0 }
-					        horse_logistics_company = { x = 0 y = 1 }
-							heavy_artillery = { x = 0 y = 2 }
-							
+							engineer = { x = 0 y = 0 }
+							horse_logistics_company = { x = 0 y = 1 }
+							horse_field_hospital = { x = 0 y = 2 }
+
 							recon = { x = 1 y = 0 }
+							heavy_artillery = { x = 1 y = 1 }
+							anti_tank = { x = 1 y = 2 }
 						}
 					}
 					set_variable = { SPA_airlift_var = 3 }
@@ -996,9 +1007,11 @@ country_event = {
 							support = {
 								engineer = { x = 0 y = 0 }
 						        horse_logistics_company = { x = 0 y = 1 }
-								heavy_artillery = { x = 0 y = 2 }
+								horse_field_hospital = { x = 0 y = 2 }
 
 								recon = { x = 1 y = 0 }
+								heavy_artillery = { x = 1 y = 1 }
+								anti_tank = { x = 1 y = 2 }
 							}
 						}
 						set_variable = { SPA_airlift_var = 3 }
@@ -2546,7 +2559,25 @@ country_event = {
 					}
 				}
 			}
+			every_character = {
+				limit = {
+					has_character_flag = SPA_carlist
+				}
+				set_nationality = SPB
+			}
 			SPB = {
+				add_country_leader_role = {
+					character = SPR_manuel_fal_conde
+					country_leader = { 
+						desc = "POLITICS_MANUEL_AZANA_DESC"
+						expire = "1965.1.1"
+						ideology = conservatism
+						traits = {
+							jefe
+						}
+					}
+					promote_leader = yes
+				}
 				random_owned_state = {
 					limit = {
 						is_controlled_by = SPB
@@ -3423,18 +3454,6 @@ country_event = {
 					democratic = 2
 					neutrality = 58
 				}
-				add_country_leader_role = {
-					character = SPR_anarchist_commune
-					country_leader = {
-						desc = "POLITICS_ANARCHIST_COMMUNE_DESC"
-						expire = "1965.1.1"
-						ideology = anarchism
-						traits = {
-							our_right_to_survive
-						}
-					}
-					promote_leader = yes
-				}
 			}
 			if = {
 				limit = {
@@ -3553,8 +3572,26 @@ country_event = {
 					}
 				}
 			}
+			every_character = {
+				limit = {
+					has_character_flag = SPR_anarchist
+				}
+				set_nationality = SPC
+			}
 			SPC = {
 				inherit_technology = SPD
+				add_country_leader_role = {
+					character = SPR_anarchist_commune
+					country_leader = {
+						desc = "POLITICS_ANARCHIST_COMMUNE_DESC"
+						expire = "1965.1.1"
+						ideology = anarchism
+						traits = {
+							our_right_to_survive
+						}
+					}
+					promote_leader = yes
+				}
 				set_politics = {
 					ruling_party = neutrality
 					last_election = "1933.4.26"
@@ -3637,10 +3674,10 @@ country_event = {
 				}
 				transfer_units_fraction = {
 					target = SPC
-					stockpile_ratio = 0.1
-					army_ratio = 0.05
+					stockpile_ratio = 0.05
+					army_ratio = 0.03
 					navy_ratio = 0
-					air_ratio = 0.05
+					air_ratio = 0
 					keep_unit_leaders = {
 	
 					}
