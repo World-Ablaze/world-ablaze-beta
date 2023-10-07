@@ -8,7 +8,135 @@
 #BUL_is_monarchist_ferdinand_ai
 
 political_actions = {
+	BUL_german_industrial_agreements_GER = {
+		name = BUL_german_industrial_agreements
+	
+		priority = 58
 
+		icon = generic_factory
+
+		allowed = { always = no }
+
+		ai_will_do = {
+			base = 10
+		}
+
+		available = {
+		}
+
+		visible = {
+		}
+
+		days_remove = 365
+
+		fire_only_once = yes
+
+		cost = 25
+
+		complete_effect = {
+			add_offsite_building = {
+				type = industrial_complex
+				level = 4
+			}
+			BUL = {
+				activate_decision = BUL_german_industrial_agreements
+			}
+		}
+
+		remove_effect = {
+			add_offsite_building = {
+				type = industrial_complex
+				level = -4
+			}
+		}
+	}
+
+	BUL_british_industrial_agreements_ENG = {
+		name = BUL_british_industrial_agreements
+		
+		priority = 58
+
+		icon = generic_factory
+
+		allowed = { always = no }
+
+		ai_will_do = {
+			base = 10
+		}
+
+		available = {
+		}
+
+		visible = {
+			country_exists = BUL
+			BUL = {
+				has_completed_focus = BUL_invest_back_into_the_economy
+			}
+		}
+
+		days_remove = 365
+
+		fire_only_once = yes
+
+		cost = 25
+
+		complete_effect = {
+			add_offsite_building = {
+				type = industrial_complex
+				level = 4
+			}
+			BUL = {
+				activate_decision = BUL_british_industrial_agreements
+			}
+		}
+
+		remove_effect = {
+			add_offsite_building = {
+				type = industrial_complex
+				level = -4
+			}
+		}
+	}
+
+	BUL_soviet_industrial_agreements_SOV = {
+		name = BUL_soviet_industrial_agreements
+
+		priority = 58
+
+		icon = generic_factory
+
+		allowed = { always = no }
+
+		ai_will_do = {
+			base = 10
+		}
+
+		available = {
+		}
+
+		visible = {
+		}
+
+		days_remove = 365
+
+		fire_only_once = yes
+
+		cost = 25
+
+		complete_effect = {
+			add_offsite_building = {
+				type = industrial_complex
+				level = 4
+			}
+		}
+
+		remove_effect = {
+			add_offsite_building = {
+				type = industrial_complex
+				level = -4
+			}
+		}
+	}
 	BUL_tackle_civil_unrest = {
 		icon = generic_police_action
 		allowed = {
@@ -1260,10 +1388,8 @@ BUL_purchase_equipment = {
 		}
 
 		available = {
-			sov = {
-				has_tech = sov_fighter_1
-				has_tech = sov_fighter_multirole_1
-			}
+			SOV = { has_tech = sov_fighter_1 }
+			SOV = { has_tech = sov_fighter_multirole_1 }
 			num_of_civilian_factories_available_for_projects > 4
 		}
 
@@ -1311,9 +1437,7 @@ BUL_purchase_equipment = {
 		}
 
 		available = {
-			ger = {
-				has_tech = ger_fighter_1
-			}
+			GER = { has_tech = ger_fighter_1 }
 			num_of_civilian_factories_available_for_projects > 4
 		}
 
@@ -1604,132 +1728,43 @@ BUL_foreign_agreements = {
 
 	BUL_german_industrial_agreements = {
 
-		priority = 59
+	
+		priority = 58
 
 		icon = generic_factory
+
+		allowed = { original_tag = BUL }
 
 		ai_will_do = {
 			base = 10
 		}
 
-		allowed = { always = no } #Activated from effect
-
 		available = {
-			GER = {
-				has_opinion = {
-					target = ROOT
-					value > 14
-				}
-				BUL_is_valid_subject = yes
-			}
-			#Manage Cap
-			if = { # Being in faction grants 10 civs cap
-				limit = {
-					is_in_faction_with = GER
-					has_completed_focus = BUL_approach_germany
-				}
-				custom_trigger_tooltip = {
-					tooltip = BUL_german_industrial_agreements_cap_faction_tt
-					check_variable = { BUL_german_industrial_investments < BUL_industrial_investments_max_cap }
-				}
-			}
-			else_if = { # Approaching country grants 5 civs cap
-				limit = {
-					has_completed_focus = BUL_approach_germany
-				}
-				custom_trigger_tooltip = {
-					tooltip = BUL_german_industrial_agreements_cap_approach_tt
-					check_variable = { BUL_german_industrial_investments < BUL_industrial_investments_medium_cap }
-				}
-			}
-			else = { #Basic Cap
-				custom_trigger_tooltip = {
-					tooltip = BUL_german_industrial_agreements_cap_basic_tt
-					check_variable = { BUL_german_industrial_investments < BUL_industrial_investments_basic_cap }
-				}
-			}
-			NOT = { has_war_with = GER }
-			NOT = { is_justifying_wargoal_against = GER }
-			OR = {
-				is_in_faction_with = GER
-				AND = {
-					BUL_foreign_agreements_in_faction_with_eng = yes
-					BUL_foreign_agreements_in_faction_with_sov = yes
-				}
-			}
-			if = {
-				limit = {
-					has_country_flag = BUL_british_military_agreements_flag
-				}
-				NOT = { ENG = { has_war_with = GER } }
-			}
-			if = {
-				limit = {
-					has_country_flag = BUL_soviet_military_agreements_flag
-				}
-				NOT = { SOV = { has_war_with = GER } }
-			}
 		}
 
 		visible = {
 			country_exists = GER
-			check_variable = { BUL_german_industrial_investments < BUL_industrial_investments_max_cap }
 			has_completed_focus = BUL_ask_for_more_investment
+			not = {
+				has_country_flag = BUL_refused_GER
+			}
 		}
 
-		#cancel_trigger = {
-		#	has_completed_focus = BUL_nationalization
-		#}
+		fire_only_once = yes
 
-		cost = BUL_german_civ_industries_cost
-		days_remove = 70
-		days_re_enable = 1
+		days_remove = 365
 
 		modifier = {
-			civilian_factory_use = 1
+			production_speed_arms_factory_factor = 0.2
 		}
 
 		complete_effect = {
 			GER = {
-				add_opinion_modifier = {
-					target = BUL
-					modifier = BUL_industrial_investments_in_bulgaria
-				}
-			}
-			add_opinion_modifier = {
-				target = GER
-				modifier = BUL_industrial_investments_in_bulgaria
+				country_event = bul_armor.808
 			}
 		}
 
 		remove_effect = {
-			if = {
-				limit = {
-					NOT = { GER = { has_country_flag = BUL_industrial_investments_in_bulgaria_flag } }
-				}
-				GER = { set_country_flag = BUL_industrial_investments_in_bulgaria_flag }
-			}
-
-			add_to_variable = { BUL_german_industrial_investments = 1 }
-
-			random_owned_controlled_state = {
-				limit = {
-					ROOT = { has_full_control_of_state = PREV }
-					free_building_slots = {
-						building = industrial_complex
-						size > 1
-						include_locked = yes
-					}
-				}
-				add_extra_state_shared_building_slots = 1
-				add_building_construction = {
-					type = industrial_complex
-					level = 1
-					instant_build = yes
-				}
-			}
-			add_to_variable = { BUL_foreign_industry_consumer_goods_modifier = 0.005 }
-			custom_effect_tooltip = BUL_increase_foreign_industry_ns_tt
 		}
 	}
 
@@ -1739,259 +1774,83 @@ BUL_foreign_agreements = {
 
 		icon = generic_factory
 
-		allowed = { always = no } #Activated from effect
+		allowed = { original_tag = BUL } #Activated from effect
 
 		ai_will_do = {
 			base = 10
 		}
 
 		available = {
-			ENG = {
-				has_opinion = {
-					target = ROOT
-					value > 14
-				}
-				BUL_is_valid_subject = yes
-			}
-			#Manage Cap
-			if = { # Being in faction grants 10 civs cap
-				limit = {
-					is_in_faction_with = ENG
-					has_completed_focus = BUL_approach_the_united_kingdom
-				}
-				custom_trigger_tooltip = {
-					tooltip = BUL_british_industrial_agreements_cap_faction_tt
-					check_variable = { BUL_british_industrial_investments < BUL_industrial_investments_max_cap }
-				}
-			}
-			else_if = { # Approaching country grants 5 civs cap
-				limit = {
-					has_completed_focus = BUL_approach_the_united_kingdom
-				}
-				custom_trigger_tooltip = {
-					tooltip = BUL_british_industrial_agreements_cap_approach_tt
-					check_variable = { BUL_british_industrial_investments < BUL_industrial_investments_medium_cap }
-				}
-			}
-			else = { #Basic Cap
-				custom_trigger_tooltip = {
-					tooltip = BUL_british_industrial_agreements_cap_basic_tt
-					check_variable = { BUL_british_industrial_investments < BUL_industrial_investments_basic_cap }
-				}
-			}
-			NOT = { has_war_with = ENG }
-			NOT = { is_justifying_wargoal_against = ENG }
-			OR = {
-				is_in_faction_with = ENG
-				AND = {
-					BUL_foreign_agreements_in_faction_with_ger = yes
-					BUL_foreign_agreements_in_faction_with_sov = yes
-				}
-			}
-			if = {
-				limit = {
-					has_country_flag = BUL_german_military_agreements_flag
-				}
-				NOT = { GER = { has_war_with = ENG } }
-			}
-			if = {
-				limit = {
-					has_country_flag = BUL_soviet_military_agreements_flag
-				}
-				NOT = { SOV = { has_war_with = ENG } }
-			}
+			
 		}
 
 		visible = {
 			country_exists = ENG
-			check_variable = { BUL_british_industrial_investments < BUL_industrial_investments_max_cap }
 			has_completed_focus = BUL_ask_for_more_investment
+			not = {
+				has_country_flag = BUL_refused_ENG
+			}
 		}
 
-		#cancel_trigger = {
-		#	has_completed_focus = BUL_nationalization
-		#}
+		fire_only_once = yes
 
-		cost = BUL_british_civ_industries_cost
-		days_remove = 70
-		days_re_enable = 1
+		days_remove = 365
 
 		modifier = {
-			civilian_factory_use = 1
+			production_speed_steel_refinery_factor = 0.2
+			production_speed_aluminium_refinery_factor = 0.2
 		}
 
 		complete_effect = {
 			ENG = {
-				add_opinion_modifier = {
-					target = BUL
-					modifier = BUL_industrial_investments_in_bulgaria
-				}
-			}
-			add_opinion_modifier = {
-				target = ENG
-				modifier = BUL_industrial_investments_in_bulgaria
+				country_event = bul_armor.808
 			}
 		}
 
 		remove_effect = {
-			if = {
-				limit = {
-					NOT = { ENG = { has_country_flag = BUL_industrial_investments_in_bulgaria_flag } }
-				}
-				ENG = { set_country_flag = BUL_industrial_investments_in_bulgaria_flag }
-			}
-
-			add_to_variable = { BUL_british_industrial_investments = 1 }
-
-			random_owned_controlled_state = {
-				limit = {
-					ROOT = { has_full_control_of_state = PREV }
-					free_building_slots = {
-						building = industrial_complex
-						size > 1
-						include_locked = yes
-					}
-				}
-				add_extra_state_shared_building_slots = 1
-				add_building_construction = {
-					type = industrial_complex
-					level = 1
-					instant_build = yes
-				}
-			}
-			add_to_variable = { BUL_foreign_industry_consumer_goods_modifier = 0.005 }
-			custom_effect_tooltip = BUL_increase_foreign_industry_ns_tt
 		}
 	}
 
 	BUL_soviet_industrial_agreements = {
 
-		priority = 57
+	
+		priority = 58
 
 		icon = generic_factory
+
+		allowed = { original_tag = BUL } #Activated from effect
 
 		ai_will_do = {
 			base = 10
 		}
 
-		allowed = { always = no } #Activated from effect
-
 		available = {
-			SOV = {
-				has_opinion = {
-					target = ROOT
-					value > 14
-				}
-				BUL_is_valid_subject = yes
-			}
-			#Manage Cap
-			if = { # Being in faction grants 10 civs cap
-				limit = {
-					is_in_faction_with = SOV
-					has_completed_focus = BUL_soviet_bulgarian_treaty_of_mutual_assistance
-				}
-				custom_trigger_tooltip = {
-					tooltip = BUL_soviet_industrial_agreements_cap_faction_tt
-					check_variable = { BUL_soviet_industrial_investments < BUL_industrial_investments_max_cap }
-				}
-			}
-			else_if = { # Approaching country grants 5 civs cap
-				limit = {
-					has_completed_focus = BUL_soviet_bulgarian_treaty_of_mutual_assistance
-				}
-				custom_trigger_tooltip = {
-					tooltip = BUL_soviet_industrial_agreements_cap_approach_tt
-					check_variable = { BUL_soviet_industrial_investments < BUL_industrial_investments_medium_cap }
-				}
-			}
-			else = { #Basic Cap
-				custom_trigger_tooltip = {
-					tooltip = BUL_soviet_industrial_agreements_cap_basic_tt
-					check_variable = { BUL_soviet_industrial_investments < BUL_industrial_investments_basic_cap }
-				}
-			}
-			NOT = { has_war_with = SOV }
-			NOT = { is_justifying_wargoal_against = SOV }
-			OR = {
-				is_in_faction_with = SOV
-				AND = {
-					BUL_foreign_agreements_in_faction_with_ger = yes
-					BUL_foreign_agreements_in_faction_with_eng = yes
-				}
-			}
-			if = {
-				limit = {
-					has_country_flag = BUL_british_military_agreements_flag
-				}
-				NOT = { ENG = { has_war_with = SOV } }
-			}
-			if = {
-				limit = {
-					has_country_flag = BUL_german_military_agreements_flag
-				}
-				NOT = { GER = { has_war_with = SOV } }
-			}
+			
 		}
 
 		visible = {
 			country_exists = SOV
-			check_variable = { BUL_soviet_industrial_investments < BUL_industrial_investments_max_cap }
 			has_completed_focus = BUL_ask_for_more_investment
+			not = {
+				has_country_flag = BUL_refused_SOV
+			}
 		}
 
-		#cancel_trigger = {
-		#	has_completed_focus = BUL_nationalization
-		#}
+		fire_only_once = yes
 
-		cost = BUL_soviet_civ_industries_cost
-		days_remove = 70
-		days_re_enable = 1
+		days_remove = 365
 
 		modifier = {
-			civilian_factory_use = 1
+			production_speed_industrial_complex_factor = 0.2
 		}
 
 		complete_effect = {
 			SOV = {
-				add_opinion_modifier = {
-					target = BUL
-					modifier = BUL_industrial_investments_in_bulgaria
-				}
-			}
-			add_opinion_modifier = {
-				target = SOV
-				modifier = BUL_industrial_investments_in_bulgaria
+				country_event = bul_armor.808
 			}
 		}
 
 		remove_effect = {
-			if = {
-				limit = {
-					NOT = { SOV = { has_country_flag = BUL_industrial_investments_in_bulgaria_flag } }
-				}
-				SOV = { set_country_flag = BUL_industrial_investments_in_bulgaria_flag }
-			}
-
-			add_to_variable = { BUL_soviet_industrial_investments = 1 }
-
-			random_owned_controlled_state = {
-				limit = {
-					ROOT = { has_full_control_of_state = PREV }
-					free_building_slots = {
-						building = industrial_complex
-						size > 1
-						include_locked = yes
-					}
-				}
-				add_extra_state_shared_building_slots = 1
-				add_building_construction = {
-					type = industrial_complex
-					level = 1
-					instant_build = yes
-				}
-			}
-			add_to_variable = { BUL_foreign_industry_consumer_goods_modifier = 0.005 }
-			custom_effect_tooltip = BUL_increase_foreign_industry_ns_tt
 		}
 	}
 
@@ -2379,6 +2238,929 @@ BUL_foreign_agreements = {
 }
 
 
+#### ##     ## ########   #######  
+ ##  ###   ### ##     ## ##     ## 
+ ##  #### #### ##     ## ##     ## 
+ ##  ## ### ## ########  ##     ## 
+ ##  ##     ## ##   ##   ##     ## 
+ ##  ##     ## ##    ##  ##     ## 
+#### ##     ## ##     ##  #######  
+
+
+BUL_macedonian_revolutionary_organizations = {
+	BUL_repress_imro_propaganda  = {
+
+		priority = 10
+
+		icon = GFX_decision_eng_propaganda_campaigns
+
+		ai_will_do = {
+			base = 10
+		}
+
+		allowed = { 
+			original_tag = BUL
+		}
+
+		available = {
+			NOT = { has_country_flag = BUL_macedonian_affairs_ongoing_flag }
+		}
+
+		days_remove = 60
+
+		fire_only_once = yes
+
+		visible = {
+			has_completed_focus = BUL_condemn_macedonian_organizations
+			has_civil_war = no
+		}
+
+		cost = 50
+
+		complete_effect = {
+			set_country_flag = BUL_macedonian_affairs_ongoing_flag
+			set_country_flag = { flag = BUL_repress_imro_flag value = 1 }
+		}
+
+		remove_effect = {
+			add_stability = 0.05
+			clr_country_flag = BUL_macedonian_affairs_ongoing_flag
+		}
+	}
+
+	BUL_repress_imro_persecute_activists  = {
+
+		priority = 9
+
+		icon = GFX_decision_generic_police_action
+
+		ai_will_do = {
+			base = 10
+		}
+
+		allowed = { 
+			original_tag = BUL
+		}
+
+		available = {
+			NOT = { has_country_flag = BUL_macedonian_affairs_ongoing_flag }
+			has_manpower > 2000
+			has_equipment = { support_equipment > 199 }
+			has_equipment = { infantry_equipment > 799 }
+		}
+
+		days_remove = 60
+
+		fire_only_once = yes
+
+		visible = {
+			has_country_flag = { flag = BUL_repress_imro_flag value = 1 }
+			has_civil_war = no
+		}
+
+		cost = 25
+
+		complete_effect = {
+			set_country_flag = BUL_macedonian_affairs_ongoing_flag
+			set_country_flag = { flag = BUL_repress_imro_flag value = 2 }
+			add_manpower = -2000
+			add_equipment_to_stockpile = {
+				type = support_equipment
+				amount = -200
+				producer = BUL
+			}
+			add_equipment_to_stockpile = {
+				type = infantry_equipment
+				amount = -800
+				producer = BUL
+			}
+		}
+
+		remove_effect = {
+			add_political_power = 50
+			add_stability = 0.05
+			clr_country_flag = BUL_macedonian_affairs_ongoing_flag
+		}
+	}
+
+	BUL_repress_imro_destroy_organization  = {
+
+		priority = 8
+
+		icon = GFX_decision_oppression
+
+		ai_will_do = {
+			base = 1
+			modifier = {
+				factor = 0
+				BUL_is_historical_ai = yes
+			}
+			modifier = {
+				factor = 2
+				OR = {
+					has_government = communism
+					has_government = democratic
+				}
+			}
+		}
+
+		allowed = { 
+			original_tag = BUL
+		}
+
+		available = {
+			has_completed_focus = BUL_arrest_leaders
+			NOT = { has_country_flag = BUL_macedonian_affairs_ongoing_flag }
+			has_war = no
+			divisions_in_border_state = { #SOFIA - Macedonia
+				size > 1
+				state = 48
+				border_state = 851
+			}
+			divisions_in_border_state = { #PLOVDIV - Central Macedonia
+				size > 3
+				state = 905
+				border_state = 106
+			}
+			divisions_in_border_state = { #PLOVDIV - Thrace
+				size > 3
+				state = 905
+				border_state = 184
+			}		
+		}
+
+		days_remove = 60
+
+		visible = {
+			has_country_flag = { flag = BUL_repress_imro_flag value = 2 }
+			owns_state = 212
+			owns_state = 48
+		}
+
+		cancel_trigger = {
+			OR = {
+				custom_trigger_tooltip = { #SOFIA - Macedonia
+					tooltip = BUL_destroy_imro_divisions_macedonia_tt
+					divisions_in_border_state = {
+						size < 2
+						state = 48
+						border_state = 851
+					}
+				}
+				custom_trigger_tooltip = { #PLOVDIV - Central Macedonia
+					tooltip = BUL_destroy_imro_divisions_central_macedonia_tt
+					divisions_in_border_state = {
+						size < 4
+						state = 905
+						border_state = 106
+					}
+				}
+				custom_trigger_tooltip = { #PLOVDIV - Thrace
+					tooltip = BUL_destroy_imro_divisions_thrace_tt
+					divisions_in_border_state = {
+						size < 4
+						state = 905
+						border_state = 184
+					}
+				}
+			}
+		}
+
+		cancel_effect = {
+			clr_country_flag = BUL_macedonian_affairs_ongoing_flag
+			48 = {
+				remove_dynamic_modifier = { modifier = skirmishes_against_imro }
+			}
+			212 = {
+				remove_dynamic_modifier = { modifier = skirmishes_against_imro }
+			}
+		}
+
+		cost = 25
+
+		complete_effect = {
+			set_country_flag = BUL_macedonian_affairs_ongoing_flag
+
+			48 = {
+				add_dynamic_modifier = { modifier = skirmishes_against_imro }
+			}
+			212 = {
+				add_dynamic_modifier = { modifier = skirmishes_against_imro }
+			}
+		}
+
+		remove_effect = {
+			clr_country_flag = BUL_macedonian_affairs_ongoing_flag
+			set_country_flag = { flag = BUL_repress_imro_flag value = 3 }
+			remove_ideas = BUL_imro_02
+			add_political_power = 100
+
+			48 = {
+				remove_dynamic_modifier = { modifier = skirmishes_against_imro }
+			}
+			212 = {
+				remove_dynamic_modifier = { modifier = skirmishes_against_imro }
+			}
+		}
+	}
+
+	BUL_support_imro_make_contacts = {
+
+		priority = 10
+
+		icon = GFX_decision_generic_political_discourse
+
+		ai_will_do = {
+			base = 10
+		}
+
+		allowed = { 
+			original_tag = BUL
+		}
+
+		available = {
+			NOT = { has_country_flag = BUL_macedonian_affairs_ongoing_flag }
+		}
+
+		days_remove = 30
+
+		fire_only_once = yes
+
+		visible = {
+			has_completed_focus = BUL_support_macedonian_organizations
+			has_civil_war = no
+			NOT = { has_country_flag = BUL_support_imro_flag }
+		}
+
+		cost = 50
+
+		complete_effect = {
+			set_country_flag = BUL_macedonian_affairs_ongoing_flag
+			set_country_flag = { flag = BUL_support_imro_flag value = 1 }
+		}
+
+		remove_effect = {
+			swap_ideas = {
+				remove_idea = BUL_imro_01
+				add_idea = BUL_imro_04
+			}
+			clr_country_flag = BUL_macedonian_affairs_ongoing_flag
+		}
+	}
+
+	BUL_support_imro_supply_activists = {
+
+		priority = 9
+
+		icon = GFX_decision_generic_industry
+
+		ai_will_do = {
+			base = 5
+		}
+
+		allowed = { 
+			original_tag = BUL
+		}
+
+		available = {
+			NOT = { has_country_flag = BUL_macedonian_affairs_ongoing_flag }
+			has_equipment = { support_equipment > 99 }
+			has_equipment = { infantry_equipment > 999 }
+		}
+
+		days_remove = 60
+
+		fire_only_once = yes
+
+		visible = {
+			has_country_flag = { flag = BUL_support_imro_flag value = 1 }
+			has_civil_war = no
+		}
+
+		cost = 50
+
+		complete_effect = {
+			set_country_flag = BUL_macedonian_affairs_ongoing_flag
+			set_country_flag = { flag = BUL_support_imro_flag value = 2 }
+			add_equipment_to_stockpile = {
+				type = infantry_equipment
+				amount = -1000
+				producer = BUL
+			}
+			add_equipment_to_stockpile = {
+				type = support_equipment
+				amount = -100
+				producer = BUL
+			}
+		}
+
+		remove_effect = {
+			swap_ideas = {
+				remove_idea = BUL_imro_04
+				add_idea = BUL_imro_05
+			}
+			if = {
+				limit = {
+					any_country = {
+						has_opinion_modifier = BUL_supported_imro
+					}			
+				}
+				every_country = {
+					limit = {
+						has_opinion_modifier = BUL_supported_imro
+					}
+					remove_opinion_modifier = { 
+						target = BUL
+						modifier = BUL_supported_imro
+					}
+				}
+			}
+			every_country = {
+				limit = {
+					BUL_country_seeks_macedonian_stability = yes
+				}
+				add_opinion_modifier = { 
+					target = BUL
+					modifier = BUL_supplied_imro
+				}
+			}
+
+			#Set resistance
+			every_state = {
+				limit = {
+					BUL_is_macedonian_state = yes
+					NOT = { is_controlled_by = ROOT }
+				}
+				if = {
+					limit = {
+						NOT = { is_core_of = BUL }
+					}
+					add_core_of = BUL
+				}
+				remove_core_of = controller
+				start_resistance = BUL
+				hidden_effect = {
+					if = {
+						limit = { state = 106 }
+						set_compliance = 15
+						set_resistance = 15
+					}
+					else = {
+						set_compliance = 25
+						set_resistance = 10
+					}
+					if = {
+						limit = {
+							controller = { 
+								NOT = { has_country_flag = BUL_imro_awakened_in_country_flag }
+							}
+						}
+						controller = {
+							country_event = bftb_bulgaria_imro.1
+							set_country_flag = BUL_imro_awakened_in_country_flag
+						}
+					}
+					if = {
+						limit = {
+							state = 106 #MACEDONIA
+						}
+						controller = {
+							set_country_flag = BUL_imro_awakened_in_macedonia_flag
+						}
+					}
+					else_if = {
+						limit = {
+							state = 731 #CENTRAL MACEDONIA
+						}
+						controller = {
+							set_country_flag = BUL_imro_awakened_in_central_macedonia_flag
+						}
+					}
+					else = { #THRACE
+						controller = {
+							set_country_flag = BUL_imro_awakened_in_thrace_flag
+						}
+					}
+				}
+				custom_effect_tooltip = BUL_support_imro_supply_activists_resistance_tt
+			}
+			clr_country_flag = BUL_macedonian_affairs_ongoing_flag
+		}
+	}
+
+	BUL_support_imro_prepare_bulgarian_occupation = {
+
+		priority = 8
+
+		icon = GFX_decision_generic_nationalism
+
+		ai_will_do = {
+			base = 10
+		}
+
+		allowed = { 
+			original_tag = BUL
+		}
+
+		available = {
+			NOT = { has_country_flag = BUL_macedonian_affairs_ongoing_flag }
+		}
+
+		days_remove = 180
+
+		fire_only_once = yes
+
+		visible = {
+			has_country_flag = { flag = BUL_support_imro_flag value = 2 }
+			has_civil_war = no
+		}
+
+		cost = 50
+
+		complete_effect = {
+			set_country_flag = { flag = BUL_support_imro_flag value = 3 }
+			set_country_flag = BUL_macedonian_affairs_ongoing_flag
+		}
+
+		remove_effect = {
+			every_state = {
+				limit = {
+					BUL_is_macedonian_state = yes
+					is_controlled_by = ROOT
+				}
+				add_dynamic_modifier = { modifier = widespread_bulgarian_sentiment_02 }
+			}
+			every_state = {
+				limit = {
+					BUL_is_macedonian_state = yes
+					NOT = { is_controlled_by = ROOT }
+				}
+				add_dynamic_modifier = { modifier = widespread_bulgarian_sentiment_01 }
+				hidden_effect = {
+					controller = { country_event = bftb_bulgaria_imro.2 }
+				}
+			}
+
+			custom_effect_tooltip = BUL_widespread_bulgarian_sentiment_tt
+			clr_country_flag = BUL_macedonian_affairs_ongoing_flag
+		}
+	}
+
+	BUL_support_imro_militias = {
+
+		priority = 7
+
+		icon = GFX_decision_generic_military
+
+		ai_will_do = { #AI should use the IMRO as garrison instead
+			base = 0
+		}
+
+		allowed = { 
+			original_tag = BUL
+		}
+
+		available = {
+			NOT = { has_country_flag = BUL_macedonian_affairs_ongoing_flag }
+			has_war = yes
+			any_state = {
+				BUL_is_macedonian_state = yes
+				is_fully_controlled_by = ROOT
+			}
+		}
+
+		days_remove = 7
+
+		fire_only_once = yes
+
+		visible = {
+			has_country_flag = { flag = BUL_support_imro_flag value = 3 }
+			has_civil_war = no
+		}
+
+		cancel_effect = {
+			clr_country_flag = BUL_macedonian_affairs_ongoing_flag
+		}
+
+		cancel_trigger = {
+			NOT = {
+				any_state = {
+					BUL_is_macedonian_state = yes
+					is_fully_controlled_by = ROOT
+				}
+			}
+		}
+
+		cost = 50
+
+		complete_effect = {
+			set_country_flag = { flag = BUL_support_imro_flag value = 4 }
+		}
+
+		remove_effect = {
+			division_template = {
+				name = "Makedonska Revolyutsionna Militsiya"
+				is_locked = yes
+				template_counter = 6
+				division_names_group = BUL_INF_05
+				regiments = {
+					infantry = { x = 0 y = 0 }
+					infantry = { x = 0 y = 1 }
+					infantry = { x = 0 y = 2 }
+					infantry = { x = 1 y = 0 }
+					infantry = { x = 1 y = 1 }
+					infantry = { x = 1 y = 2 }
+				}
+			}
+			if = {
+				limit = {
+					106 = {	is_fully_controlled_by = ROOT }
+				}
+				106 = {
+					create_unit = {
+						division = "division_template = \"Makedonska Revolyutsionna Militsiya\" start_experience_factor = 0.4" 
+						owner = ROOT
+					}
+					create_unit = {
+						division = "division_template = \"Makedonska Revolyutsionna Militsiya\" start_experience_factor = 0.4" 
+						owner = ROOT
+					}
+					create_unit = {
+						division = "division_template = \"Makedonska Revolyutsionna Militsiya\" start_experience_factor = 0.4" 
+						owner = ROOT
+					}
+				}
+				every_state = {
+					limit = {
+						BUL_is_macedonian_state = yes
+						is_fully_controlled_by = BUL
+						NOT = { state = 106 }
+					}
+					create_unit = {
+						division = "division_template = \"Makedonska Revolyutsionna Militsiya\" start_experience_factor = 0.4" 
+						owner = ROOT
+					}
+				}
+			}
+			else = {
+				random_state = {
+					limit = {
+						BUL_is_macedonian_state = yes
+						is_fully_controlled_by = ROOT
+					}
+					create_unit = {
+						division = "division_template = \"Makedonska Revolyutsionna Militsiya\" start_experience_factor = 0.4" 
+						owner = ROOT
+					}
+					create_unit = {
+						division = "division_template = \"Makedonska Revolyutsionna Militsiya\" start_experience_factor = 0.4" 
+						owner = ROOT
+					}
+					create_unit = {
+						division = "division_template = \"Makedonska Revolyutsionna Militsiya\" start_experience_factor = 0.4" 
+						owner = ROOT
+					}
+					random_state = {
+						limit = {
+							BUL_is_macedonian_state = yes
+							is_fully_controlled_by = ROOT
+							NOT = { state = PREV }
+						}
+						create_unit = {
+							division = "division_template = \"Makedonska Revolyutsionna Militsiya\" start_experience_factor = 0.4" 
+							owner = ROOT
+						}
+					}
+				}
+			}
+			if = {
+				limit = {
+					NOT = {
+						any_state = {
+							BUL_is_macedonian_state = yes
+							is_fully_controlled_by = ROOT
+						}
+					}
+				}
+				custom_effect_tooltip = BUL_support_imro_militias_tt
+			}
+			clr_country_flag = BUL_macedonian_affairs_ongoing_flag
+		}
+	}
+
+	BUL_support_imro_garrisons = {
+
+		priority = 7
+
+		icon = GFX_decision_generic_prepare_civil_war
+
+		ai_will_do = {
+			base = 1
+		}
+
+		allowed = { 
+			original_tag = BUL
+		}
+
+		available = {
+			NOT = { has_country_flag = BUL_macedonian_affairs_ongoing_flag }
+			any_state = {
+				BUL_is_macedonian_state = yes
+				is_fully_controlled_by = ROOT
+			}
+		}
+
+		days_remove = 7
+
+		fire_only_once = yes
+
+		visible = {
+			has_country_flag = { flag = BUL_support_imro_flag value = 3 }
+			has_civil_war = no
+		}
+
+		cost = 50
+
+		complete_effect = {
+			hidden_effect = {
+				set_country_flag = { flag = BUL_support_imro_flag value = 4 }
+				set_variable = { BUL_total_mp_from_macedonian_states = 0 }
+				every_state = {
+					limit = {
+						BUL_is_macedonian_state = yes
+						is_fully_controlled_by = ROOT
+					}
+					BUL = {
+						add_to_variable = { BUL_total_mp_from_macedonian_states = BUL_imro_garrisons_mp_value  }
+					}
+				}
+			}
+		}
+
+		remove_effect = {
+			custom_effect_tooltip = BUL_support_imro_garrisons_tt
+			if = {
+				limit = {
+					check_variable = { BUL_total_mp_from_macedonian_states = 0 }
+				}
+				hidden_effect = {
+					add_manpower = BUL_total_mp_from_macedonian_states
+				}
+			}
+			else = {
+				add_manpower = BUL_total_mp_from_macedonian_states
+			}
+			clr_country_flag = BUL_macedonian_affairs_ongoing_flag
+			clear_variable = BUL_total_mp_from_macedonian_states 
+		}
+	}
+}
+
+BUL_macedonian_revolutionary_organizations_foreign = {
+	BUL_repress_imro_foreign = {
+
+		priority = 9
+
+		icon = GFX_decision_generic_police_action
+
+		ai_will_do = {
+			base = 0.01
+			modifier = {
+				factor = 10
+				difficulty > 1
+			}
+			modifier = {
+				factor = 10
+				difficulty > 2
+			}
+		}
+
+		available = {
+			NOT = { has_country_flag = BUL_macedonian_affairs_ongoing_flag }
+			has_manpower > 2000
+			has_equipment = { support_equipment > 249 }
+			has_equipment = { infantry_equipment > 999 }
+		}
+
+		days_remove = 60
+
+		fire_only_once = yes
+
+		visible = {
+			has_country_flag = BUL_imro_awakened_in_country_flag
+		}
+
+		cost = 25
+
+		complete_effect = {
+			set_country_flag = BUL_macedonian_affairs_ongoing_flag
+			set_country_flag = BUL_repress_imro_flag
+			add_manpower = -2000
+			add_equipment_to_stockpile = {
+				type = support_equipment
+				amount = -250
+				producer = ROOT
+			}
+			add_equipment_to_stockpile = {
+				type = infantry_equipment
+				amount = -1000
+				producer = ROOT
+			}
+		}
+
+		remove_effect = {
+			unlock_decision_tooltip = BUL_destroy_imro_foreign
+			clr_country_flag = BUL_macedonian_affairs_ongoing_flag
+		}
+	}
+
+	BUL_destroy_imro_foreign = {
+
+		priority = 8
+
+		icon = GFX_decision_oppression
+
+		ai_will_do = {
+			base = 0.1
+			modifier = {
+				factor = 10
+				difficulty > 1
+			}
+			modifier = {
+				factor = 10
+				difficulty > 2
+			}
+		}
+
+		available = {
+			has_country_flag = BUL_repress_imro_flag
+			NOT = { has_country_flag = BUL_macedonian_affairs_ongoing_flag }
+			OR = {
+				has_full_control_of_state = 106
+				has_full_control_of_state = 731
+				has_full_control_of_state = 184
+			}
+			OR = {
+				NOT = { has_full_control_of_state = 106 }
+				divisions_in_state = {
+					type = infantry
+					size > 8
+					state = 106
+				}
+			}
+			OR = {
+				NOT = { has_full_control_of_state = 731 }
+				divisions_in_state = {
+					type = infantry
+					size > 3
+					state = 731
+				}
+			}
+			OR = {
+				NOT = { has_full_control_of_state = 184 }
+				divisions_in_state = {
+					type = infantry
+					size > 2
+					state = 184
+				}
+			}
+		}
+
+		days_remove = 90
+
+		visible = {
+			has_country_flag = BUL_imro_awakened_in_country_flag
+		}
+
+		cancel_trigger = {
+			custom_trigger_tooltip = {
+				tooltip = BUL_destroy_imro_foreign_cancel_trigger_tt
+			
+				OR = {
+					AND = {
+						has_country_flag = BUL_imro_awakened_in_macedonia_flag
+						106 = {
+							has_dynamic_modifier = { modifier = skirmishes_against_imro }
+							OR = {
+								NOT = { is_fully_controlled_by = ROOT }	
+								custom_trigger_tooltip = {
+									tooltip = BUL_destroy_imro_divisions_macedonia_foreign_tt
+									ROOT = {
+										divisions_in_state = {
+											type = infantry
+											size < 9
+											state = 106
+										}
+									}
+								}
+							}		
+						}
+					}
+					AND = {
+						has_country_flag = BUL_imro_awakened_in_central_macedonia_flag
+						731 = {
+							has_dynamic_modifier = { modifier = skirmishes_against_imro }
+							OR = {
+								NOT = { is_fully_controlled_by = ROOT }	
+								custom_trigger_tooltip = {
+									tooltip = BUL_destroy_imro_divisions_central_macedonia_foreign_tt
+									ROOT = {
+										divisions_in_state = {
+											type = infantry
+											size < 4
+											state = 731
+										}
+									}
+								}
+							}		
+						}
+					}
+					AND = {
+						has_country_flag = BUL_imro_awakened_in_thrace_flag
+						184 = {
+							has_dynamic_modifier = { modifier = skirmishes_against_imro }
+							OR = {
+								NOT = { is_fully_controlled_by = ROOT }	
+								custom_trigger_tooltip = {
+									tooltip = BUL_destroy_imro_divisions_thrace_foreign_tt
+									ROOT = {
+										divisions_in_state = {
+											type = infantry
+											size < 3
+											state = 184
+										}
+									}
+								}
+							}		
+						}
+					}
+				}
+			}
+		}
+
+		cancel_effect = {
+			clr_country_flag = BUL_macedonian_affairs_ongoing_flag
+			every_controlled_state = {
+				limit = {
+					has_dynamic_modifier = { modifier = skirmishes_against_imro }
+				}
+				remove_dynamic_modifier = { modifier = skirmishes_against_imro }
+			}
+		}
+
+		cost = 25
+
+		complete_effect = {
+			set_country_flag = BUL_macedonian_affairs_ongoing_flag
+
+			every_controlled_state = {
+				limit = {
+					BUL_is_macedonian_state = yes
+					is_fully_controlled_by = ROOT
+				}
+				effect_tooltip = {
+					add_dynamic_modifier = { modifier = skirmishes_against_imro }
+				}
+				hidden_effect = {
+					add_dynamic_modifier = { modifier = skirmishes_against_imro days = 91 } #This is a fallback with one extra day so that it has time to remove widespread_bulgarian_sentiment
+				}
+			}
+		}
+
+		remove_effect = {
+			clr_country_flag = BUL_macedonian_affairs_ongoing_flag
+			clr_country_flag = BUL_repress_imro_flag
+			clr_country_flag = BUL_imro_awakened_in_country_flag
+			add_stability = 0.1
+			if = {
+				limit = {
+					NOT = {
+						any_state = {
+							has_dynamic_modifier = { modifier = skirmishes_against_imro }
+						}
+					}
+				}
+				custom_effect_tooltip = BUL_destroy_imro_foreign_tt
+			}
+			every_controlled_state = {
+				limit = {
+					has_dynamic_modifier = { modifier = skirmishes_against_imro }
+				}
+				remove_dynamic_modifier = { modifier = skirmishes_against_imro }
+				if = {
+					limit = {
+						has_dynamic_modifier = { modifier = widespread_bulgarian_sentiment_01 }
+					}
+					remove_dynamic_modifier = { modifier = widespread_bulgarian_sentiment_01 }
+				}
+				remove_core_of = BUL
+				add_core_of = ROOT
+			}
+		}
+	}
+}
+
+
  #######  ######## ##     ## ######## ########
 ##     ##    ##    ##     ## ##       ##     ##
 ##     ##    ##    ##     ## ##       ##     ##
@@ -2408,13 +3190,14 @@ prospect_for_resources = {
 		}
 
 		available = {
-			has_tech = construction3
+			has_tech = excavation3
 			num_of_civilian_factories_available_for_projects > 1
 		}
 
 		visible = {
 			owns_state = 212
 			controls_state = 212
+			has_tech = excavation2
 			212 = {
 				NOT = {
 					has_state_flag = {
@@ -2423,7 +3206,6 @@ prospect_for_resources = {
 					}
 				}
 			}
-			has_completed_focus = BUL_mineral_extraction_in_the_rhodopes
 		}
 
 		cost = 25

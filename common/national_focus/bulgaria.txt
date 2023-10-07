@@ -500,9 +500,14 @@ focus_tree = {
 				has_government = fascism
 				original_tag = GER
 			}
+			has_war = no
 		}
 
 		cost = 5
+
+		bypass = {
+			is_in_faction = yes
+		}
 
 		completion_reward = {
 			random_other_country = {
@@ -700,7 +705,6 @@ focus_tree = {
 			}
 		}
 	}
-
 	focus = {
 		id = BUL_allow_limited_german_command
 		icon = GFX_focus_generic_strike_at_democracy1
@@ -718,6 +722,29 @@ focus_tree = {
 				uses = 2
 				category = land_doctrine
 			}
+		}
+	}
+
+	focus = {
+		id = BUL_integrate_the_ratniks
+		icon = GFX_focus_secret_rearmament
+		prerequisite = { focus = BUL_join_the_war_in_the_east }
+		x = 2
+		y = 1
+		relative_position_id = BUL_join_the_war_in_the_east
+
+		cost = 3
+
+		available = {
+
+		}
+
+		search_filters = {FOCUS_FILTER_MANPOWER FOCUS_FILTER_POLITICAL FOCUS_FILTER_INTERNAL_AFFAIRS}
+		completion_reward = {
+			add_ideas = BUL_ratniks
+			#BUL_bs_low_loyalty_decrease_effect = yes
+			#BUL_bzns_low_loyalty_decrease_effect = yes
+			#BUL_nsm_low_loyalty_increase_effect = yes
 		}
 	}
 
@@ -1109,8 +1136,8 @@ focus_tree = {
 		relative_position_id = BUL_condemn_macedonian_organizations
 
 		cost = 3
+
 		completion_reward = {
-			remove_ideas = BUL_imro_02
 			add_war_support = -0.1
 			add_stability = 0.05
 		}
@@ -2495,39 +2522,7 @@ focus_tree = {
 			hidden_effect = {
 				add_dynamic_modifier = { modifier = BUL_foreign_industry_dynamic_modifier }
 			}
-			custom_effect_tooltip = BUL_attract_foreign_capitals_dynamic_modifier_tt
-
-			effect_tooltip = { #This way player always reads a comprehensive tooltip, but all decisions
-				if = {
-					limit = {
-						country_exists = GER
-						NOT = { has_war_with = GER }
-						GER = { BUL_is_valid_subject = yes }
-					}
-					activate_targeted_decision = { target = GER decision = BUL_german_industrial_agreements }
-				}
-				if = {
-					limit = {
-						country_exists = ENG
-						NOT = { has_war_with = ENG }
-						ENG = { BUL_is_valid_subject = yes }
-					}
-					activate_targeted_decision = { target = ENG decision = BUL_british_industrial_agreements }
-				}
-				if = {
-					limit = {
-						country_exists = SOV
-						NOT = { has_war_with = SOV }
-						SOV = { BUL_is_valid_subject = yes }
-					}
-					activate_targeted_decision = { target = SOV decision = BUL_soviet_industrial_agreements }
-				}
-			}
-			hidden_effect = {
-				activate_targeted_decision = { target = GER decision = BUL_german_industrial_agreements }
-				activate_targeted_decision = { target = ENG decision = BUL_british_industrial_agreements }
-				activate_targeted_decision = { target = SOV decision = BUL_soviet_industrial_agreements }
-			}
+			
 		}
    	}
 
@@ -2789,8 +2784,6 @@ focus_tree = {
 		id = BUL_build_new_coastal_bases
 		icon = GFX_goal_generic_airbases
 		prerequisite = { focus = BUL_restart_training_programs }
-
-		cost = 3
 		x = 0
 		y = 1
 		relative_position_id = BUL_restart_training_programs
@@ -2823,7 +2816,7 @@ focus_tree = {
 	focus = {
 		id = BUL_build_our_own_planes
 		icon = GFX_goal_generic_plane_specialization
-		mutually_exclusive = { focus = BUL_buy_more_planes }
+		mutually_exclusive = { focus = BUL_buy_modern_planes }
 		prerequisite = { focus = BUL_build_new_coastal_bases }
 		x = -1
 		y = 1
@@ -6344,6 +6337,85 @@ focus_tree = {
 	}
 
 	focus = {
+		id = BUL_limited_womens_suffrage
+
+		prerequisite = { focus = BUL_democratic_principles }
+
+		icon = GFX_focus_generic_concessions
+		relative_position_id = BUL_democratic_principles
+		x = 4
+		y = 1
+		cost = 10
+
+		available = {
+
+		}
+		
+		search_filters = {FOCUS_FILTER_POLITICAL FOCUS_FILTER_STABILITY}
+		completion_reward = {
+			add_popularity = {
+				ideology = ROOT
+				popularity = 0.15
+			}
+			if = {
+				limit = {
+					has_government = neutrality
+				}
+				add_popularity = {
+					ideology = fascism
+					popularity = 0.05
+				}
+			}
+			else = {
+				add_popularity = {
+					ideology = neutrality
+					popularity = 0.05
+				}
+			}
+			add_stability = 0.05
+			custom_effect_tooltip = available_political_advisor
+			show_ideas_tooltip = BUL_dimitrana_ivanova
+		}
+	}
+
+	focus = {
+		id = BUL_freedom_of_press
+
+		prerequisite = { focus = BUL_democratic_principles }
+		icon = GFX_focus_generic_treaty
+		relative_position_id = BUL_democratic_principles
+		x = 0
+		y = 1
+		cost = 10
+
+		available = {
+			BUL_has_freedom_of_press = yes
+			BUL_has_banned_faction_media = no
+		}
+
+		search_filters = {FOCUS_FILTER_POLITICAL FOCUS_FILTER_STABILITY FOCUS_FILTER_INTERNAL_AFFAIRS}
+		completion_reward = {
+			set_country_flag = BUL_freedom_of_press_flag
+			add_popularity = {
+				ideology = democratic
+				popularity = 0.05
+			}
+			add_political_power = 120
+			add_stability = 0.1
+			#BUL_bs_low_loyalty_increase_effect = yes
+			#BUL_bzns_low_loyalty_increase_effect = yes
+			#BUL_nsm_low_loyalty_increase_effect = yes
+			if = {
+				limit = {
+					NOT = { has_country_flag = BUL_bs_destroyed_flag }
+				}
+				custom_effect_tooltip = BUL_freedom_of_press_tt
+			}
+			custom_effect_tooltip = BUL_freedom_of_press_ban_faction_media_tt
+		}
+	}
+
+	focus = {
 		id = BUL_legalize_the_agrarian_party
 
 		prerequisite = { focus = BUL_democratic_principles }
@@ -6998,19 +7070,19 @@ focus_tree = {
 				hidden_effect = {
 					activate_targeted_decision = { target = ENG decision = BUL_purchase_artillery }
 					activate_targeted_decision = { target = ENG decision = BUL_purchase_military_vehicles }
-					activate_targeted_decision = { target = ENG decision = BUL_purchase_aircraft }
+				#	activate_targeted_decision = { target = ENG decision = BUL_purchase_aircraft }
 					activate_targeted_decision = { target = ENG decision = BUL_purchase_infantry_equipment }
 					activate_targeted_decision = { target = ENG decision = BUL_purchase_armor }
-					activate_targeted_decision = { target = ENG decision = BUL_purchase_ships }
+				#	activate_targeted_decision = { target = ENG decision = BUL_purchase_ships }
 				}
 			}
 			else = {
 				activate_targeted_decision = { target = ENG decision = BUL_purchase_artillery }
 				activate_targeted_decision = { target = ENG decision = BUL_purchase_military_vehicles }
-				activate_targeted_decision = { target = ENG decision = BUL_purchase_aircraft }
+			#	activate_targeted_decision = { target = ENG decision = BUL_purchase_aircraft }
 				activate_targeted_decision = { target = ENG decision = BUL_purchase_infantry_equipment }
 				activate_targeted_decision = { target = ENG decision = BUL_purchase_armor }
-				activate_targeted_decision = { target = ENG decision = BUL_purchase_ships }
+			#	activate_targeted_decision = { target = ENG decision = BUL_purchase_ships }
 			}
 
 			ENG = {
