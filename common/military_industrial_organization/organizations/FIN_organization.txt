@@ -1,116 +1,135 @@
 
 #####################
 
-###  ##  #  # # #  ## 
- #  #  # ## # # # #   
- #  #### # ## ##   #  
- #  #  # #  # # #   # 
- #  #  # #  # # # ## 
+###  ##  #  # # #  ##
+ #  #  # ## # # # #
+ #  #### # ## ##   #
+ #  #  # #  # # #   #
+ #  #  # #  # # # ##
 
- #################### 
+ ####################
 
-FIN_valtion_panssaritehdas_organization = {
-	include = generic_infantry_tank_organization
+ FIN_valtion_panssaritehdas_organization = {
+	include = generic_tank_refurbishment_plant_organization
 	icon = GFX_idea_FIN_valtion_panssaritehdas
-	allowed = {	
+	allowed = {
 		tag = FIN
 		has_dlc = "Arms Against Tyranny"
 	}
 
-	tree_header_text = {
-		text = mio_header_light_tank_department
-		x = 0.1
+	available = {
+		FROM = {
+			has_completed_focus = FIN_salvaged_and_retooled
+		}
 	}
 
 	tree_header_text = {
-		text = mio_header_medium_tank_department
+		text = mio_header_armor
+		x = 1
+	}
+
+	tree_header_text = {
+		text = mio_header_weapons
 		x = 4
 	}
 
 	tree_header_text = {
 		text = mio_header_production_department
-		x = 8.5
+		x = 7
 	}
 
-	remove_trait = { generic_mio_trait_heavy_tank_improvements generic_mio_trait_heavy_tank_specialization }
+	equipment_type = {
+		light_tank_chassis
+		medium_tank_chassis
+	}
+
+	research_categories = {
+		armor
+	}
+
+	remove_trait = { generic_mio_trait_long_distance_escort generic_mio_trait_barrels_of_hell }
 
 	override_trait = {
-		token = generic_mio_trait_modular_construction
-
-		position = { x=3 y=1 }
-		relative_position_id = generic_mio_trait_medium_tank_improvements
+		token = generic_mio_trait_enemy_tank_refitting
+		limit_to_equipment_type = { light_tank_chassis medium_tank_chassis }
 	}
 
 	override_trait = {
-		token = generic_mio_trait_light_tank_specialization
-
-		position = { x=-1 y=3 }
-		relative_position_id = generic_mio_trait_modular_construction
-		mutually_exclusive= { generic_mio_trait_medium_tank_specialization }
+		token = generic_mio_trait_24h_rotation_shifts
+		delete_included_values = { limit_to_equipment_type }
 	}
-	
+
 	override_trait = {
-		token = generic_mio_trait_medium_tank_specialization
-
-		position = { x=1 y=3 }
-		relative_position_id = generic_mio_trait_modular_construction
-		mutually_exclusive= { generic_mio_trait_light_tank_specialization }
+		name = generic_mio_trait_mass_production
+		token = generic_mio_trait_mass_small_arms_ammunition_production
+		delete_included_values = { limit_to_equipment_type }
 	}
 
-	add_trait = { 
+	override_trait = {
+		token = generic_mio_trait_dual_plant_main_armament_production
+		delete_included_values = { limit_to_equipment_type }
+		equipment_bonus = {
+			build_cost_ic = -0.02
+		}
+	}
+
+	add_trait = {
 		token = FIN_mio_trait_salvaged_and_retooled
 		name = FIN_mio_trait_salvaged_and_retooled
 		icon = GFX_generic_mio_department_icon_tank_general_materials
 		special_trait_background = yes
 
 		position = { x=8 y=0 }
-		
+
 		available = {
-			owner = {
+			FROM = {
 				has_completed_focus = FIN_salvaged_and_retooled
 			}
 		}
 
 		production_bonus = {
-			production_capacity_factor = 0.05
+			production_capacity_factor = 0.02
 			production_resource_need_factor = -0.1
 		}
 	}
 
-	add_trait = { 
+	add_trait = {
 		token = FIN_mio_trait_wartsila_engine_production
 		name = FIN_mio_trait_wartsila_engine_production
 		icon = GFX_generic_mio_department_icon_tank_general_line_efficiency
 		special_trait_background = yes
 
-		position = { x=0 y=1 }
-		relative_position_id = generic_mio_trait_modular_construction
-		
-		any_parent = { generic_mio_trait_modular_construction }
-		
+		position = { x=0 y=2 }
+		relative_position_id = FIN_mio_trait_salvaged_and_retooled
+
+		any_parent = { FIN_mio_trait_salvaged_and_retooled }
+
 		available = {
-			owner = {
+			FROM = {
 				has_completed_focus = FIN_wartsila_engine_production
 			}
 		}
 
+		limit_to_equipment_type = { light_tank_chassis medium_tank_chassis }
 		production_bonus = {
-			production_capacity_factor = 0.05
-			production_efficiency_gain_factor = 0.05
+			production_capacity_factor = 0.02
+			production_efficiency_gain_factor = 0.02
 		}
 	}
 
-	add_trait = { 
+	add_trait = {
 		token = FIN_mio_trait_modernization_program
 		name = FIN_mio_trait_modernization_program
 		icon = GFX_generic_mio_department_icon_tank_general_production
 		special_trait_background = yes
 
-		position = { x=1 y=0 }
-		relative_position_id = FIN_mio_trait_salvaged_and_retooled
-		
+		position = { x=0 y=2 }
+		relative_position_id = FIN_mio_trait_wartsila_engine_production
+
+		any_parent = { FIN_mio_trait_wartsila_engine_production }
+
 		available = {
-			owner = {
+			FROM = {
 				has_completed_focus = FIN_modernize_the_industry
 			}
 		}
@@ -124,99 +143,121 @@ FIN_valtion_panssaritehdas_organization = {
 
 #####################
 
- ## #  # ### ###   ## 
-#   #  #  #  #  # #   
- #  ####  #  ###   #  
-  # #  #  #  #      # 
-##  #  # ### #    ##  
- 
+ ## #  # ### ###   ##
+#   #  #  #  #  # #
+ #  ####  #  ###   #
+  # #  #  #  #      #
+##  #  # ### #    ##
+
 #####################
 
 FIN_crichton_vulcan_organization = { #Coastal Defense Ships & Subs
-	include = generic_raider_ship_organization
+	include = generic_black_sea_fleet_organization
 	icon = GFX_idea_FIN_crichton_vulcan
-	allowed = {	
+	allowed = {
 		tag = FIN
 		has_dlc = "Arms Against Tyranny"
 	}
 
-	tree_header_text = {
-		text = mio_header_long_range_focus
-		x = 2
+	# tree_header_text = {
+	# 	text = mio_header_long_range_focus
+	# 	x = 2
+	# }
+
+	# tree_header_text = {
+	# 	text = mio_header_high_speed_focus
+	# 	x = 8
+	# }
+
+	# override_trait = {
+	# 	token = generic_mio_trait_long_range_raiding
+
+	# 	position = { x=2 y=0 }
+	# }
+
+	equipment_type = {
+		ship_hull_heavy_cruiser
+		screen_ship
+		mio_cat_eq_all_submarine
 	}
 
-	tree_header_text = {
-		text = mio_header_high_speed_focus
-		x = 8
+	research_categories = {
+		ss_tech
+		ff_tech
+		dd_tech
+		cl_tech
 	}
 
-	override_trait = {
-		token = generic_mio_trait_long_range_raiding
+	initial_trait = {
+		name = generic_mio_initial_trait_raiding_fleet
 
-		position = { x=2 y=0 }
+		organization_modifier = {
+			military_industrial_organization_funds_gain = 0.1
+		}
 	}
 
-	add_trait = { 
+	add_trait = {
 		token = FIN_mio_trait_andros_engines
 		name = FIN_mio_trait_andros_engines
 		icon = GFX_generic_mio_department_icon_ship_general_engine
 		special_trait_background = yes
 
-		position = { x=2 y=1 }
-		relative_position_id = generic_mio_trait_long_range_raiding
+		position = { x=1 y=1 }
+		relative_position_id = generic_mio_trait_submarine_hunters_black_sea
 
-		any_parent = { generic_mio_trait_long_range_raiding generic_mio_trait_high_speed_raiding }
-		
+		any_parent = { generic_mio_trait_submarine_hunters_black_sea }
+
 		available = {
-			owner = {
+			FROM = {
 				has_completed_focus = FIN_acquire_andros_dockyards
 			}
 		}
 
 		equipment_bonus = {
-			naval_range = 0.05
 			naval_speed = 0.05
 			fuel_consumption = -0.05
 		}
 	}
 
-	add_trait = { 
+	add_trait = {
 		token = FIN_mio_trait_wartsila_engine_production
 		name = FIN_mio_trait_wartsila_engine_production
 		icon = GFX_generic_mio_department_icon_ship_general_production
 		special_trait_background = yes
 
-		position = { x=-2 y=1 }
-		relative_position_id = generic_mio_trait_high_speed_raiding
+		position = { x=0 y=1 }
+		relative_position_id = generic_mio_advanced_periscope
 
-		any_parent = { generic_mio_trait_long_range_raiding generic_mio_trait_high_speed_raiding }
-		
+		any_parent = { generic_mio_advanced_periscope }
+
 		available = {
-			owner = {
+			FROM = {
 				has_completed_focus = FIN_wartsila_engine_production
 			}
 		}
 
+		limit_to_equipment_type = { submarine }
 		production_bonus = {
-			production_capacity_factor = 0.05
-			production_efficiency_gain_factor = 0.05
+			production_capacity_factor = 0.02
+			production_efficiency_gain_factor = 0.02
 		}
 	}
 
-	add_trait = { 
+	add_trait = {
 		token = FIN_mio_trait_rapid_raiders
 		name = FIN_mio_trait_rapid_raiders
 		icon = GFX_generic_mio_department_icon_ship_general_offense
 		special_trait_background = yes
 
-		position = { x=-2 y=0 }
-		relative_position_id = generic_mio_trait_long_range_raiding
-		
+		position = { x=-1 y=1 }
+		relative_position_id = FIN_mio_trait_wartsila_engine_production
+
 		mutually_exclusive = { FIN_mio_trait_deep_sea_raiders }
+		any_parent = { generic_mio_trait_base_defense }
 
 		available = {
-			owner = {
-				has_completed_focus = FIN_rapid_raiders
+			FROM = {
+				has_completed_focus = FIN_coastal_patrol_ships
 			}
 		}
 
@@ -224,13 +265,12 @@ FIN_crichton_vulcan_organization = { #Coastal Defense Ships & Subs
 
 		equipment_bonus = {
 			naval_speed = 0.05
-			lg_attack = 0.05
-			surface_detection = 0.05
+			surface_visibility = -0.05
 			sub_detection = 0.05
 		}
 	}
 
-	add_trait = { 
+	add_trait = {
 		token = FIN_mio_trait_deep_sea_raiders
 		name = FIN_mio_trait_deep_sea_raiders
 		icon = GFX_generic_mio_department_icon_ship_submarine_survivability
@@ -240,10 +280,11 @@ FIN_crichton_vulcan_organization = { #Coastal Defense Ships & Subs
 		relative_position_id = FIN_mio_trait_rapid_raiders
 
 		mutually_exclusive = { FIN_mio_trait_rapid_raiders }
-		
+		any_parent = { FIN_mio_trait_wartsila_engine_production }
+
 		available = {
-			owner = {
-				has_completed_focus = FIN_deep_sea_raiders
+			FROM = {
+				has_completed_focus = FIN_modernize_the_under_Sea_fleet
 			}
 		}
 
@@ -253,21 +294,19 @@ FIN_crichton_vulcan_organization = { #Coastal Defense Ships & Subs
 			naval_speed = 0.05
 			surface_detection = 0.05
 			sub_visibility = -0.05
-			torpedo_attack = 0.05
 		}
 	}
 
-	add_trait = { 
+	add_trait = {
 		token = FIN_mio_trait_modernization_program
 		name = FIN_mio_trait_modernization_program
 		icon = GFX_generic_mio_department_icon_ship_general_production
 		special_trait_background = yes
 
-		position = { x=1 y=0 }
-		relative_position_id = generic_mio_trait_high_speed_raiding
-		
+		position = { x=9 y=0 }
+
 		available = {
-			owner = {
+			FROM = {
 				has_completed_focus = FIN_modernize_the_industry
 			}
 		}
@@ -281,53 +320,58 @@ FIN_crichton_vulcan_organization = { #Coastal Defense Ships & Subs
 
 ###########################
 
-###  #    ##  #  # ###  ## 
-#  # #   #  # ## # #   #   
-###  #   #### # ## ##   #  
-#    #   #  # #  # #     # 
-#    ### #  # #  # ### ##  
+###  #    ##  #  # ###  ##
+#  # #   #  # ## # #   #
+###  #   #### # ## ##   #
+#    #   #  # #  # #     #
+#    ### #  # #  # ### ##
 
 ###########################
 
-FIN_valtion_lentokonetehdas_organization = { #Light Aircraft
-	include = generic_general_aircraft_organization
+FIN_valtion_lentokonetehdas_organization = {
+	include = generic_cas_aircraft_organization
 	icon = GFX_idea_FIN_valtion_lentokonetehdas
-	allowed = {	
+	allowed = {
 		tag = FIN
 		has_dlc = "Arms Against Tyranny"
 	}
-
-	tree_header_text = {
-		text = mio_header_fighter_aircraft
-		x = 1
+	available = {
+		FROM = {
+			has_completed_focus = FIN_domestic_plane_designs
+		}
 	}
 
-	tree_header_text = {
-		text = mio_header_bomber_aircraft
-		x = 4
+	equipment_type = {
+		CAS_equipment
+		mio_cat_eq_all_cv_aircraft
+		mio_cat_eq_only_tactical_bomber
+		fighter_multirole_equipment
+	}
+	remove_trait = { generic_mio_trait_extra_cargo_doors generic_mio_trait_glider_hook_modifications }
+	research_categories = {	air_equipment }
+
+	initial_trait = {
+		name = generic_mio_initial_trait_cas_aircraft_designer
+
+		organization_modifier = {
+			military_industrial_organization_research_bonus = 0.02
+		}
+		production_bonus = {
+			production_capacity_factor = -0.1
+		}
 	}
 
-	tree_header_text = {
-		text = mio_header_naval_aircraft
-		x = 7
-	}
-
-	tree_header_text = {
-		text = mio_header_production
-		x = 9
-	}
-
-	add_trait = { 
+	add_trait = {
 		token = FIN_mio_trait_modernization_program
 		name = FIN_mio_trait_modernization_program
 		icon = GFX_generic_mio_department_icon_plane_general_production
 		special_trait_background = yes
 
-		position = { x=5 y=0 }
-		relative_position_id = generic_mio_trait_conservative_designs
-		
+		position = { x=1 y=1 }
+		relative_position_id = generic_mio_trait_low_altitude_attacks
+
 		available = {
-			owner = {
+			FROM = {
 				has_completed_focus = FIN_modernize_the_industry
 			}
 		}
@@ -337,37 +381,37 @@ FIN_valtion_lentokonetehdas_organization = { #Light Aircraft
 		}
 	}
 
-		add_trait = { 
+		add_trait = {
 		token = FIN_mio_trait_wartsila_engine_production
 		name = FIN_mio_trait_wartsila_engine_production
 		icon = GFX_generic_mio_department_icon_plane_general_line_efficiency
 		special_trait_background = yes
 
-		position = { x=5 y=1 }
-		relative_position_id = generic_mio_trait_conservative_designs
-		
-		any_parent = { generic_mio_trait_conservative_designs }
-		
+		position = { x=0 y=2 }
+		relative_position_id = generic_mio_trait_selectional_construction
+
+		any_parent = { generic_mio_trait_selectional_construction }
+
 		available = {
-			owner = {
+			FROM = {
 				has_completed_focus = FIN_wartsila_engine_production
 			}
 		}
 
 		production_bonus = {
 			production_capacity_factor = 0.05
-			production_efficiency_gain_factor = 0.05
+			production_efficiency_gain_factor = 0.02
 		}
 	}
 }
 
-################################### 
+###################################
 
-#   #  ##  ### ### ###  ### ### #   
-## ## #  #  #  #   #  #  #  #   #   
-# # # ####  #  ##  ###   #  ##  #   
-#   # #  #  #  #   #  #  #  #   #   
-#   # #  #  #  ### #  # ### ### ### 
+#   #  ##  ### ### ###  ### ### #
+## ## #  #  #  #   #  #  #  #   #
+# # # ####  #  ##  ###   #  ##  #
+#   # #  #  #  #   #  #  #  #   #
+#   # #  #  #  ### #  # ### ### ###
 
 
 ###################################
@@ -379,85 +423,42 @@ FIN_valtion_lentokonetehdas_organization = { #Light Aircraft
 FIN_valtion_kivaaritehdas_organization = { #Infantry Equipment
 	include = generic_infantry_equipment_organization
 	icon = GFX_idea_FIN_valtion_kivaaritehdas
-	allowed = {	
+	allowed = {
 		tag = FIN
 		has_dlc = "Arms Against Tyranny"
 	}
 
-	tree_header_text = {
-		text = mio_header_systems
-		x = 1
-	}
-
-	tree_header_text = {
-		text = mio_header_weapons
-		x = 5.5
-	}
-
-	tree_header_text = {
-		text = mio_header_production
-		x = 8.5
-	}
-
-	override_trait = {
-		token = generic_mio_trait_reinforced_stocks
-
-		position = { x=3 y=0 }
-		relative_position_id = generic_mio_trait_drum_pattern_sights
-	}
-
-	override_trait = {
-		token = generic_mio_trait_bolt_action
-
-		position = { x=0 y=2 }
-		relative_position_id = generic_mio_trait_reinforced_stocks
-	}
-
-	override_trait = {
-		token = generic_mio_trait_rubber_cushioned_buttpad
-
-		position = { x=0 y=2 }
-		relative_position_id = generic_mio_trait_heavy_anti_armor_ammunition
-	}
-
-	override_trait = {
-		token = generic_mio_trait_anti_vechicle_land_mines
-
-		position = { x=0 y=2 }
-		relative_position_id = generic_mio_trait_vehicle_mounted_capabilities
-	}
-
-	add_trait = { 
+	add_trait = {
 		token = FIN_mio_trait_salvaged_and_retooled
 		name = FIN_mio_trait_salvaged_and_retooled
 		icon = GFX_generic_mio_department_icon_infantry_materials
 		special_trait_background = yes
 
-		position = { x=8 y=0 }
-		
+		position = { x=7 y=0 }
+
 		available = {
-			owner = {
+			FROM = {
 				has_completed_focus = FIN_salvaged_and_retooled
 			}
 		}
 
 		production_bonus = {
-			production_capacity_factor = 0.05
+			production_capacity_factor = 0.02
 			production_resource_need_factor = -0.1
 		}
 	}
 
-	add_trait = { 
+	add_trait = {
 		token = FIN_mio_trait_modernization_program
 		name = FIN_mio_trait_modernization_program
 		icon = GFX_generic_mio_department_icon_infantry_production
 		special_trait_background = yes
 
-		position = { x=1 y=0 }
+		position = { x=2 y=0 }
 		relative_position_id = FIN_mio_trait_salvaged_and_retooled
-		
+
 		available = {
-			owner = {
+			FROM = {
 				has_completed_focus = FIN_modernize_the_industry
 			}
 		}
@@ -467,26 +468,26 @@ FIN_valtion_kivaaritehdas_organization = { #Infantry Equipment
 		}
 	}
 
-	add_trait = { 
+	add_trait = {
 		token = FIN_mio_trait_oy_tikkakoski
 		name = FIN_mio_trait_oy_tikkakoski
 		icon = GFX_generic_mio_department_icon_infantry_line_efficiency
 		special_trait_background = yes
 
-		position = { x=0 y=1 }
-		relative_position_id = FIN_mio_trait_salvaged_and_retooled
+		position = { x=1 y=1 }
+		relative_position_id = generic_mio_trait_heavy_anti_armor_ammunition
 
-		any_parent = { generic_mio_trait_heavy_anti_armor_ammunition }
-		
+		any_parent = { generic_mio_trait_heavy_anti_armor_ammunition generic_mio_trait_rubber_cushioned_buttpad }
+
 		available = {
-			owner = {
-				has_completed_focus = FIN_integrate_oy_tikkakoski
+			FROM = {
+				has_completed_focus = FIN_expand_the_tikkakoski_arsenal
 			}
 		}
 
 		production_bonus = {
 			production_capacity_factor = 0.05
-			production_efficiency_gain_factor = 0.1
+			production_efficiency_gain_factor = 0.05
 		}
 	}
 }
@@ -499,7 +500,7 @@ FIN_valtion_kivaaritehdas_organization = { #Infantry Equipment
 FIN_valtion_tykkitehdas_organization = { #AT (Artillery)
 	include = generic_artillery_organization
 	icon = GFX_idea_FIN_valtion_tykkitehdas
-	allowed = {	
+	allowed = {
 		tag = FIN
 		has_dlc = "Arms Against Tyranny"
 	}
@@ -525,27 +526,27 @@ FIN_valtion_tykkitehdas_organization = { #AT (Artillery)
 		position = { x=3 y=0 }
 	}
 
-	add_trait = { 
+	add_trait = {
 		token = FIN_mio_trait_salvaged_and_retooled
 		name = FIN_mio_trait_salvaged_and_retooled
 		icon = GFX_generic_mio_trait_icon_resources
 		special_trait_background = yes
 
 		position = { x=8 y=0 }
-		
+
 		available = {
-			owner = {
+			FROM = {
 				has_completed_focus = FIN_salvaged_and_retooled
 			}
 		}
 
 		production_bonus = {
-			production_capacity_factor = 0.05
+			production_capacity_factor = 0.02
 			production_resource_need_factor = -0.1
 		}
 	}
 
-	add_trait = { 
+	add_trait = {
 		token = FIN_mio_trait_modernization_program
 		name = FIN_mio_trait_modernization_program
 		icon = GFX_generic_mio_trait_icon_production_capacity
@@ -553,9 +554,9 @@ FIN_valtion_tykkitehdas_organization = { #AT (Artillery)
 
 		position = { x=1 y=0 }
 		relative_position_id = FIN_mio_trait_salvaged_and_retooled
-		
+
 		available = {
-			owner = {
+			FROM = {
 				has_completed_focus = FIN_modernize_the_industry
 			}
 		}
@@ -575,7 +576,7 @@ FIN_valtion_tykkitehdas_organization = { #AT (Artillery)
 FIN_sisu_auto_organization = { #Motorized
 	include = generic_motorized_mechanized_organization
 	icon = GFX_idea_FIN_sisu_auto
-	allowed = {	
+	allowed = {
 		tag = FIN
 		has_dlc = "Arms Against Tyranny"
 	}
@@ -587,63 +588,18 @@ FIN_sisu_auto_organization = { #Motorized
 
 	tree_header_text = {
 		text = mio_header_mechanized
-		x = 6
+		x = 7
 	}
 
 	tree_header_text = {
 		text = mio_header_production
-		x = 8.5
+		x = 9
 	}
-
-	override_trait = {
-		token = generic_mio_trait_steel_cargo_bed
-
-		position = { x=1 y=0 }
-		relative_position_id = generic_mio_trait_composite_cargo_bed
-	}
-
-	override_trait = {
-		token = generic_mio_trait_high_powered_engine
-
-		position = { x=1 y=0 }
-		relative_position_id = generic_mio_trait_attached_wood_gas_generator
-	}
-
-	override_trait = {
-		token = generic_mio_trait_medium_machinegun_mounts
-
-		position = { x=1 y=0 }
-		relative_position_id = generic_mio_trait_steel_cargo_bed
-	}
-
-	override_trait = {
-		token = generic_mio_trait_advanced_artillery_racks
-
-		position = { x=0 y=2 }
-		relative_position_id = generic_mio_trait_armored_pulpit_mount
-	}
-
-	override_trait = {
-		token = generic_mio_trait_heavy_machinegun_mount
-
-		position = { x=1 y=0 }
-		relative_position_id = generic_mio_trait_advanced_artillery_racks
-	}
-
-	override_trait = {
-		token = generic_mio_trait_open_chassi
-
-		position = { x=3 y=0 }
-		relative_position_id = generic_mio_trait_medium_machinegun_mounts
-	}
-	
 	override_trait = {
 		token = generic_mio_trait_land_mine_racks
-
 		mutually_exclusive = { FIN_mio_trait_repurposed_equipment }
 	}
-
-	add_trait = { 
+	add_trait = {
 		token = FIN_mio_trait_wartsila_engine_production
 		name = FIN_mio_trait_wartsila_engine_production
 		icon = GFX_generic_mio_department_icon_motorized_mechanized_line_efficiency
@@ -651,32 +607,32 @@ FIN_sisu_auto_organization = { #Motorized
 
 		position = { x=0 y=1 }
 		relative_position_id = generic_mio_trait_composite_cargo_bed
-		
+
 		any_parent = { generic_mio_trait_composite_cargo_bed generic_mio_trait_steel_cargo_bed }
-		
+
 		available = {
-			owner = {
+			FROM = {
 				has_completed_focus = FIN_wartsila_engine_production
 			}
 		}
 
 		production_bonus = {
-			production_capacity_factor = 0.05
-			production_efficiency_gain_factor = 0.05
+			production_capacity_factor = 0.02
+			production_efficiency_gain_factor = 0.02
 		}
 	}
 
-	add_trait = { 
+	add_trait = {
 		token = FIN_mio_trait_recycled_materials
 		name = FIN_mio_trait_recycled_materials
 		icon = GFX_generic_mio_department_icon_motorized_materials
 		special_trait_background = yes
 
-		position = { x=1 y=0 }
+		position = { x=-1 y=0 }
 		relative_position_id = generic_mio_trait_medium_machinegun_mounts
-				
+
 		available = {
-			owner = {
+			FROM = {
 				has_completed_focus = FIN_tire_factory_at_nokia
 			}
 		}
@@ -684,12 +640,12 @@ FIN_sisu_auto_organization = { #Motorized
 		limit_to_equipment_type = { motorized_equipment }
 
 		production_bonus = {
-			production_capacity_factor = 0.05
+			production_capacity_factor = 0.02
 			production_resource_need_factor = -0.1
 		}
 	}
 
-	add_trait = { 
+	add_trait = {
 		token = FIN_mio_trait_yhteissisus_modern_premises
 		name = FIN_mio_trait_yhteissisus_modern_premises
 		icon = GFX_generic_mio_department_icon_motorized_technology
@@ -699,9 +655,9 @@ FIN_sisu_auto_organization = { #Motorized
 		relative_position_id = FIN_mio_trait_recycled_materials
 
 		all_parents = { FIN_mio_trait_recycled_materials }
-	
+
 		available = {
-			owner = {
+			FROM = {
 				has_completed_focus = FIN_contract_with_yhteissisu
 			}
 		}
@@ -709,12 +665,12 @@ FIN_sisu_auto_organization = { #Motorized
 		limit_to_equipment_type = { motorized_equipment }
 
 		production_bonus = {
-			production_efficiency_gain_factor = 0.05
-			production_efficiency_cap_factor = 0.1
+			production_efficiency_gain_factor = 0.02
+			production_efficiency_cap_factor = 0.05
 		}
 	}
 
-	add_trait = { 
+	add_trait = {
 		token = FIN_mio_trait_repurposed_equipment
 		name = FIN_mio_trait_repurposed_equipment
 		icon = GFX_generic_mio_department_icon_motorized_line_efficiency
@@ -726,9 +682,9 @@ FIN_sisu_auto_organization = { #Motorized
 		all_parents = { FIN_mio_trait_salvaged_and_retooled generic_mio_trait_bulletproof_panels }
 
 		mutually_exclusive = { generic_mio_trait_land_mine_racks }
-	
+
 		available = {
-			owner = {
+			FROM = {
 				custom_trigger_tooltip = {
 					tooltip = FIN_mio_trait_repurposed_equipment_trigger_tt
 					has_tech = mechanised_infantry3
@@ -740,41 +696,41 @@ FIN_sisu_auto_organization = { #Motorized
 		limit_to_equipment_type = { motorized_equipment }
 
 		production_bonus = {
-			production_efficiency_gain_factor = 0.1
+			production_efficiency_gain_factor = 0.05
 		}
 	}
 
-	add_trait = { 
+	add_trait = {
 		token = FIN_mio_trait_salvaged_and_retooled
 		name = FIN_mio_trait_salvaged_and_retooled
 		icon = GFX_generic_mio_department_icon_motorized_mechanized_materials
 		special_trait_background = yes
 
-		position = { x=8 y=0 }
-		
+		position = { x=9 y=0 }
+
 		available = {
-			owner = {
+			FROM = {
 				has_completed_focus = FIN_salvaged_and_retooled
 			}
 		}
 
 		production_bonus = {
-			production_capacity_factor = 0.05
+			production_capacity_factor = 0.02
 			production_resource_need_factor = -0.1
 		}
 	}
 
-	add_trait = { 
+	add_trait = {
 		token = FIN_mio_trait_modernization_program
 		name = FIN_mio_trait_modernization_program
 		icon = GFX_generic_mio_department_icon_motorized_mechanized_production
 		special_trait_background = yes
 
-		position = { x=1 y=0 }
-		relative_position_id = FIN_mio_trait_salvaged_and_retooled
-		
+		position = { x=2 y=0 }
+		relative_position_id = FIN_mio_trait_wartsila_engine_production
+
 		available = {
-			owner = {
+			FROM = {
 				has_completed_focus = FIN_modernize_the_industry
 			}
 		}
@@ -801,11 +757,11 @@ FIN_sisu_auto_organization = { #Motorized
 ### EQUIPMENT STATS ###
 
 
-###  ##  #  # # #  ## 
- #  #  # ## # # # #   
- #  #### # ## ##   #  
- #  #  # #  # # #   # 
- #  #  # #  # # # ##  
+###  ##  #  # # #  ##
+ #  #  # ## # # # #
+ #  #### # ## ##   #
+ #  #  # #  # # #   #
+ #  #  # #  # # # ##
 
 #maximum_speed
 #reliability
@@ -826,11 +782,11 @@ FIN_sisu_auto_organization = { #Motorized
 
 
 
- ## #  # ### ###   ## 
-#   #  #  #  #  # #   
- #  ####  #  ###   #  
-  # #  #  #  #      # 
-##  #  # ### #    ##  
+ ## #  # ### ###   ##
+#   #  #  #  #  # #
+ #  ####  #  ###   #
+  # #  #  #  #      #
+##  #  # ### #    ##
 
 #lg_armor_piercing (requires modules)
 #lg_attack (requires modules)
@@ -840,11 +796,11 @@ FIN_sisu_auto_organization = { #Motorized
 #sub_attack (requires modules)
 #anti_air_attack (requires modules)
 #armor_value (requires modules)
-#surface_detection 
+#surface_detection
 #sub_detection (requires modules)
 #sub_visibility (sub only)
 #surface_visibility (surface only)
-#naval_speed 
+#naval_speed
 #reliability
 #naval_range
 #max_strength
@@ -863,11 +819,11 @@ FIN_sisu_auto_organization = { #Motorized
 
 
 
-###  #    ##  #  # ###  ## 
-#  # #   #  # ## # #   #   
-###  #   #### # ## ##   #  
-#    #   #  # #  # #     # 
-#    ### #  # #  # ### ##  
+###  #    ##  #  # ###  ##
+#  # #   #  # ## # #   #
+###  #   #### # ## ##   #
+#    #   #  # #  # #     #
+#    ### #  # #  # ### ##
 
 #air_superiority
 #reliability
@@ -890,15 +846,15 @@ FIN_sisu_auto_organization = { #Motorized
 #air_bombing
 #mines_planting - if you have MtG and BBA
 #mines_sweeping - if you have MtG and BBA
-#night_penalty - only if you have BBA DLC (you need to have module because base value is 0 - radio navigatio
+#night_penalty - only if you have BBA DLC (you need to have module because base value is 0 - radio navigation
 
 
 
-#   #  ##  ### ### ###  ### ### #   
-## ## #  #  #  #   #  #  #  #   #   
-# # # ####  #  ##  ###   #  ##  #   
-#   # #  #  #  #   #  #  #  #   #   
-#   # #  #  #  ### #  # ### ### ### 
+#   #  ##  ### ### ###  ### ### #
+## ## #  #  #  #   #  #  #  #   #
+# # # ####  #  ##  ###   #  ##  #
+#   # #  #  #  #   #  #  #  #   #
+#   # #  #  #  ### #  # ### ### ###
 
 ##############################
 ##### INFANTRY EQUIPMENT #####
