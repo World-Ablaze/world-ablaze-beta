@@ -603,7 +603,7 @@ focus_tree = {
 
 	focus = {
 		id = JAP_hi_convoys
-		icon = GFX_goal_generic_ships_convoys
+		icon = GFX_focus_generic_merchant_fleet
 		prerequisite = { focus = JAP_nationalize_fujinagata_shipyards }
 		x = 0
 		y = 1
@@ -806,10 +806,21 @@ focus_tree = {
 
 		completion_reward = {
 			custom_effect_tooltip = JAP_expand_the_maizuru_naval_arsenal_tt
-			hidden_effect = {
-				add_to_variable = { var = JAP_Kantaiha_dockyard_output value = 4 }
-				subtract_from_variable = { var = JAP_Kantaiha_factory_output value = 2 }
-				JAP_political_instability_update_effect = yes
+			if = {
+				limit = {
+					has_completed_focus = JAP_purge_the_kodoha_faction
+				}
+				hidden_effect = {
+					add_to_variable = { JAP_kantaiha_industrial_capacity_dockyard = 0.2 }
+					add_to_variable = { JAP_toseiha_industrial_capacity_factory = -0.1 }
+				}
+			}
+			else = {
+				hidden_effect = {
+					add_to_variable = { JAP_kantaiha_industrial_capacity_dockyard = 0.2 }
+					add_to_variable = { JAP_toseiha_industrial_capacity_factory = -0.05 }
+					add_to_variable = { JAP_kodoha_industrial_capacity_factory = -0.05 }
+				}
 			}
 		}
 	}
@@ -829,15 +840,9 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			if = {
-				limit = {
-					check_variable = { var = JAP_Kantaiha_dockyard_output value = 6 compare = less_than }
-				}
-				custom_effect_tooltip = JAP_develop_the_naval_ports_tt
-				hidden_effect = {
-					add_to_variable = { var = JAP_Kantaiha_dockyard_output value = 2 }
-					JAP_political_instability_update_effect = yes
-				}
+			custom_effect_tooltip = JAP_develop_the_naval_ports_tt
+			hidden_effect = {
+				add_to_variable = { JAP_kantaiha_industrial_capacity_dockyard = 0.1 }
 			}
 			282 = {
 				if = {
@@ -1433,7 +1438,10 @@ focus_tree = {
 			    value > 80
 			}
 			CHI = {
-				has_capitulated = yes
+				OR = {
+					has_capitulated = yes
+					exists = no
+				}
 			}
 			controls_state = 846
 			controls_state = 845
@@ -1496,12 +1504,10 @@ focus_tree = {
 			remove_unit_leader_role = JAP_shigeru_honjo
 			custom_effect_tooltip = JAP_purge_the_kodoha_faction_tt
 			hidden_effect = {
-				set_variable = { JAP_Kodoha_influence = 0 }
-				set_variable = { JAP_Kodoha_construction_speed_military = 0 }
-				set_variable = { JAP_Kodoha_construction_speed_dockyard = 0 }
-				set_variable = { JAP_Kodoha_factory_output = 0 }
-				set_variable = { JAP_Kodoha_dockyard_output = 0 }
-				set_variable = { JAP_Kodoha_stability = 0 }
+				set_variable = { JAP_kodoha_influence = 0 }
+				set_variable = { JAP_kodoha_production_speed_arms_factory_factor = 0 }
+				set_variable = { JAP_kodoha_industrial_capacity_factory = 0 }
+				set_variable = { JAP_kodoha_stability_factor = 0 }
 				country_event = { id = jap_armor.830 days = 9 }
 			}
 		}
@@ -1567,18 +1573,19 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			retire_country_leader = yes
 			add_political_power = 150
-			create_country_leader = {
-				name = "Fumimaro Konoe"
-				desc = "POLITICS_FUMIMARO_KONOE_DESC"
-				picture = "gfx/leaders/JAP/Portrait_Japan_Fumimaro_Konoe.dds"
-				expire = "1965.1.1"
-				ideology = fascism_ideology
-				traits = {
-					warrior_code
-					nationalist_symbol
+			add_country_leader_role = {
+				character = JAP_fumimaro_konoe
+				country_leader = {
+					expire = "1965.1.1"
+					ideology = fascism_ideology
+					traits = {
+						warrior_code
+						nationalist_symbol
+					}
+					desc = "POLITICS_FUMIMARO_KONOE_DESC"
 				}
+				promote_leader = yes
 			}
 		}
 	}
@@ -1624,9 +1631,8 @@ focus_tree = {
 			}
 			custom_effect_tooltip = JAP_guide_the_zaibatsus_tt
 			hidden_effect = {
-				add_to_variable = { var = JAP_Zaibatsus_influence value = 1 }
-				add_to_variable = { var = JAP_Zaibatsus_construction_speed_civilian value = 2 }
-				JAP_political_instability_update_effect = yes
+				add_to_variable = { JAP_zaibatsus_influence = 1 }
+				add_to_variable = { JAP_zaibatsus_production_speed_factory_factor = 0.08 }
 			}
 		}
 	}
@@ -1697,7 +1703,7 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			custom_effect_tooltip = focus_tree_coming_in_79 #Remove later
+			custom_effect_tooltip = focus_tree_coming_in_93 #Remove later
 			#remove_unit_leader_role = JAP_hisaichi_terauchi
 			#add_political_power = 100
 			#country_event = { id = wtt_japan.108 }
@@ -1708,12 +1714,10 @@ focus_tree = {
 			#}
 			#custom_effect_tooltip = JAP_support_the_kodoha_faction_tt
 			#hidden_effect = {
-			#	set_variable = { JAP_Toseiha_influence = 0 }
-			#	set_variable = { JAP_Toseiha_construction_speed_military = 0 }
-			#	set_variable = { JAP_Toseiha_construction_speed_dockyard = 0 }
-			#	set_variable = { JAP_Toseiha_factory_output = 0 }
-			#	set_variable = { JAP_Toseiha_dockyard_output = 0 }
-			#	set_variable = { JAP_Toseiha_stability = 0 }
+			#	set_variable = { JAP_toseiha_influence = 0 }
+			#	set_variable = { JAP_toseiha_production_speed_arms_factory_factor = 0 }
+			#	set_variable = { JAP_toseiha_industrial_capacity_factory = 0 }
+			#	set_variable = { JAP_toseiha_stability_factor = 0 }
 			#}
 		}
 	}
@@ -1797,18 +1801,19 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			retire_country_leader = yes
 			add_political_power = 150
-			create_country_leader = {
-				name = "Kingoro Hashimoto"
-				desc = "POLITICS_KINGORO_HASHIMOTO_DESC"
-				picture = "gfx/leaders/JAP/Portrait_Japan_Hashimoto_Kingoro.dds"
-				expire = "1965.1.1"
-				ideology = fascism_ideology
-				traits = {
-					warrior_code
-					radicalist
+			add_country_leader_role = {
+				character = JAP_kingoro_hashimoto
+				country_leader = {
+					expire = "1965.1.1"
+					ideology = fascism_ideology
+					traits = {
+						warrior_code
+						radicalist
+					}
+					desc = "POLITICS_KINGORO_HASHIMOTO_DESC"
 				}
+				promote_leader = yes
 			}
 		}
 	}
@@ -1831,11 +1836,10 @@ focus_tree = {
 			add_stability = -0.1
 			custom_effect_tooltip = JAP_nationalize_the_zaibatsus_tt
 			hidden_effect = {
-				set_variable = { var = JAP_Zaibatsus_influence value = 0 }
-				set_variable = { var = JAP_Zaibatsus_construction_speed_civilian value = 0 }
-				set_variable = { var = JAP_Zaibatsus_consumer_goods value = 0 }
-				set_variable = { var = JAP_Zaibatsus_political_power_gain value = 0 }
-				JAP_political_instability_update_effect = yes
+				set_variable = { JAP_zaibatsus_influence = 0 }
+				set_variable = { JAP_zaibatsus_production_speed_factory_factor = 0 }
+				set_variable = { JAP_zaibatsus_consumer_goods_factor = 0 }
+				set_variable = { JAP_zaibatsus_political_power_gain = 0 }
 			}
 			random_owned_controlled_state = {
 				prioritize = { 528 }
@@ -2658,18 +2662,35 @@ focus_tree = {
 			else = {
 				remove_ideas = JAP_political_turmoil
 			}
-			retire_country_leader = yes
-			create_country_leader = {
-				name = "Fumimaro Konoe"
-				desc = "POLITICS_BOGDAN_KONOE_DESC"
-				picture = "gfx/leaders/JAP/Portrait_Japan_Fumimaro_Konoe.dds"
-				expire = "1965.1.1"
-				ideology = fascism_ideology
-				traits = {
-					warrior_code
-					nationalist_symbol
+			if = {
+				limit = {
+					JAP_fumimaro_konoe = {
+						can_be_country_leader = yes
+					}
+				}
+				promote_character = {
+					character = JAP_fumimaro_konoe
+					ideology = fascism_ideology
 				}
 			}
+			else = {
+				effect_tooltip = {
+					add_country_leader_role = {
+						character = JAP_fumimaro_konoe
+						country_leader = {
+							expire = "1965.1.1"
+							ideology = fascism_ideology
+							traits = {
+								warrior_code
+								nationalist_symbol
+							}
+							desc = "POLITICS_FUMIMARO_KONOE_DESC"
+						}
+						promote_leader = yes
+					}
+				}
+			}
+
 		}
 	}
 
@@ -3357,19 +3378,20 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			retire_country_leader = yes
-			create_country_leader = {
-				name = "Hideki Tojo"
-				desc = ""
-				picture = "gfx/leaders/JAP/Portrait_Japan_Generic_land_2.dds"
-				expire = "1965.1.1"
-				ideology = fascism_ideology
-				traits = {
-					warrior_code
-					prince_of_terror
-					war_hawk
-					imperial_sanction_regular
+			add_country_leader_role = {
+				character = JAP_hideki_tojo
+				country_leader = {
+					expire = "1965.1.1"
+					ideology = fascism_ideology
+					traits = {
+						warrior_code
+						prince_of_terror
+						war_hawk
+						imperial_sanction_regular
+					}
+					desc = "POLITICS_HIDEKI_TOJO_DESC"
 				}
+				promote_leader = yes
 			}
 			custom_effect_tooltip = available_interior_minister
 			show_ideas_tooltip = JAP_michio_yuzawa
@@ -4020,6 +4042,11 @@ focus_tree = {
 
 		ai_will_do = {
 			factor = 1
+
+			modifier = {
+				factor = 0
+				has_war_with = USA
+			}
 		}
 
 		available = {
@@ -4134,15 +4161,17 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			create_country_leader = {
-				name = "Emperor Hirohito"
-				desc = "POLITICS_EMPEROR_HIROHITO_DESC"
-				picture = "gfx/leaders/JAP/Portrait_Japan_Hirohito.dds"
-				expire = "1989.1.1"
-				ideology = monarchism
-				traits = {
-					warrior_code emperor_showa
+			add_country_leader_role = {
+				character = JAP_emperor_hirohito
+				country_leader = {
+					expire = "1989.1.1"
+					ideology = monarchism
+					traits = {
+						warrior_code emperor_showa
+					}
+					desc = "POLITICS_EMPEROR_HIROHITO_DESC"
 				}
+				promote_leader = yes
 			}
 			if = {
 				limit = {
@@ -5663,7 +5692,7 @@ focus_tree = {
 				name = JAP_develop_the_auxillery_fleet
 				bonus = 0.5
 				uses = 4
-				category = de_tech
+				category = ff_tech
 				category = cvl_tech
 			}
 		}
@@ -6189,22 +6218,20 @@ focus_tree = {
 				custom_effect_tooltip = JAP_toseiha_influence_up_tt
 				custom_effect_tooltip = JAP_kantaiha_influence_down_tt
 				hidden_effect = {
-					add_to_variable = { var = JAP_toseiha_influence value = 1 }
-					add_to_variable = { var = JAP_Toseiha_construction_speed_military value = 1 }
-					subtract_from_variable = { var = JAP_Kantaiha_influence value = 1 }
-					subtract_from_variable = { var = JAP_Kantaiha_construction_speed_dockyard value = 1 }
-					JAP_political_instability_update_effect = yes
+					add_to_variable = { JAP_toseiha_influence = 1 }
+					add_to_variable = { JAP_toseiha_production_speed_arms_factory_factor = 0.04 }
+					add_to_variable = { JAP_kantaiha_influence = -1 }
+					add_to_variable = { JAP_kantaiha_production_speed_dockyard_factor = -0.04 }
 				}
 			}
 			else = {
 				custom_effect_tooltip = JAP_kodoha_influence_up_tt
 				custom_effect_tooltip = JAP_kantaiha_influence_down_tt
 				hidden_effect = {
-					add_to_variable = { var = JAP_Kodoha_influence value = 1 }
-					add_to_variable = { var = JAP_Kodoha_construction_speed_military value = 1 }
-					subtract_from_variable = { var = JAP_Kantaiha_influence value = 1 }
-					subtract_from_variable = { var = JAP_Kantaiha_construction_speed_dockyard value = 1 }
-					JAP_political_instability_update_effect = yes
+					add_to_variable = { JAP_kodoha_influence = 1 }
+					add_to_variable = { JAP_kodoha_production_speed_arms_factory_factor = 0.04 }
+					add_to_variable = { JAP_kantaiha_influence = -1 }
+					add_to_variable = { JAP_kantaiha_production_speed_dockyard_factor = -0.04 }
 				}
 			}
 		}
@@ -6294,22 +6321,20 @@ focus_tree = {
 				custom_effect_tooltip = JAP_kantaiha_influence_up_tt
 				custom_effect_tooltip = JAP_toseiha_influence_down_tt
 				hidden_effect = {
-					add_to_variable = { var = JAP_Kantaiha_influence value = 1 }
-					add_to_variable = { var = JAP_Kantaiha_construction_speed_dockyard value = 1 }
-					subtract_from_variable = { var = JAP_toseiha_influence value = 1 }
-					subtract_from_variable = { var = JAP_Toseiha_construction_speed_military value = 1 }
-					JAP_political_instability_update_effect = yes
+					add_to_variable = { JAP_kantaiha_influence = 1 }
+					add_to_variable = { JAP_kantaiha_production_speed_dockyard_factor = 0.04 }
+					add_to_variable = { JAP_toseiha_influence = -1 }
+					add_to_variable = { JAP_toseiha_production_speed_arms_factory_factor = -0.04 }
 				}
 			}
 			else = {
 				custom_effect_tooltip = JAP_kantaiha_influence_up_tt
 				custom_effect_tooltip = JAP_kodoha_influence_down_tt
 				hidden_effect = {
-					add_to_variable = { var = JAP_Kantaiha_influence value = 1 }
-					add_to_variable = { var = JAP_Kantaiha_construction_speed_dockyard value = 1 }
-					subtract_from_variable = { var = JAP_Kodoha_influence value = 1 }
-					subtract_from_variable = { var = JAP_Kodoha_construction_speed_military value = 1 }
-					JAP_political_instability_update_effect = yes
+					add_to_variable = { JAP_kantaiha_influence = 1 }
+					add_to_variable = { JAP_kantaiha_production_speed_dockyard_factor = 0.04 }
+					add_to_variable = { JAP_kodoha_influence = -1 }
+					add_to_variable = { JAP_kodoha_production_speed_arms_factory_factor = -0.04 }
 				}
 			}
 		}
@@ -6343,22 +6368,20 @@ focus_tree = {
 				custom_effect_tooltip = JAP_toseiha_influence_up_tt
 				custom_effect_tooltip = JAP_kantaiha_influence_down_tt
 				hidden_effect = {
-					add_to_variable = { var = JAP_toseiha_influence value = 1 }
-					add_to_variable = { var = JAP_Toseiha_construction_speed_military value = 1 }
-					subtract_from_variable = { var = JAP_Kantaiha_influence value = 1 }
-					subtract_from_variable = { var = JAP_Kantaiha_construction_speed_dockyard value = 1 }
-					JAP_political_instability_update_effect = yes
+					add_to_variable = { JAP_toseiha_influence = 1 }
+					add_to_variable = { JAP_toseiha_production_speed_arms_factory_factor = 0.04 }
+					add_to_variable = { JAP_kantaiha_influence = -1 }
+					add_to_variable = { JAP_kantaiha_production_speed_dockyard_factor = -0.04 }
 				}
 			}
 			else = {
 				custom_effect_tooltip = JAP_kodoha_influence_up_tt
 				custom_effect_tooltip = JAP_kantaiha_influence_down_tt
 				hidden_effect = {
-					add_to_variable = { var = JAP_Kodoha_influence value = 1 }
-					add_to_variable = { var = JAP_Kodoha_construction_speed_military value = 1 }
-					subtract_from_variable = { var = JAP_Kantaiha_influence value = 1 }
-					subtract_from_variable = { var = JAP_Kantaiha_construction_speed_dockyard value = 1 }
-					JAP_political_instability_update_effect = yes
+					add_to_variable = { JAP_kodoha_influence = 1 }
+					add_to_variable = { JAP_kodoha_production_speed_arms_factory_factor = 0.04 }
+					add_to_variable = { JAP_kantaiha_influence = -1 }
+					add_to_variable = { JAP_kantaiha_production_speed_dockyard_factor = -0.04 }
 				}
 			}
 		}
@@ -6412,22 +6435,20 @@ focus_tree = {
 				custom_effect_tooltip = JAP_kantaiha_influence_up_tt
 				custom_effect_tooltip = JAP_toseiha_influence_down_tt
 				hidden_effect = {
-					add_to_variable = { var = JAP_Kantaiha_influence value = 1 }
-					add_to_variable = { var = JAP_Kantaiha_construction_speed_dockyard value = 1 }
-					subtract_from_variable = { var = JAP_toseiha_influence value = 1 }
-					subtract_from_variable = { var = JAP_Toseiha_construction_speed_military value = 1 }
-					JAP_political_instability_update_effect = yes
+					add_to_variable = { JAP_kantaiha_influence = 1 }
+					add_to_variable = { JAP_kantaiha_production_speed_dockyard_factor = 0.04 }
+					add_to_variable = { JAP_toseiha_influence = -1 }
+					add_to_variable = { JAP_toseiha_production_speed_arms_factory_factor = -0.04 }
 				}
 			}
 			else = {
 				custom_effect_tooltip = JAP_kantaiha_influence_up_tt
 				custom_effect_tooltip = JAP_kodoha_influence_down_tt
 				hidden_effect = {
-					add_to_variable = { var = JAP_Kantaiha_influence value = 1 }
-					add_to_variable = { var = JAP_Kantaiha_construction_speed_dockyard value = 1 }
-					subtract_from_variable = { var = JAP_Kodoha_influence value = 1 }
-					subtract_from_variable = { var = JAP_Kodoha_construction_speed_military value = 1 }
-					JAP_political_instability_update_effect = yes
+					add_to_variable = { JAP_kantaiha_influence = 1 }
+					add_to_variable = { JAP_kantaiha_production_speed_dockyard_factor = 0.04 }
+					add_to_variable = { JAP_kodoha_influence = -1 }
+					add_to_variable = { JAP_kodoha_production_speed_arms_factory_factor = -0.04 }
 				}
 			}
 		}
@@ -6448,7 +6469,7 @@ focus_tree = {
 		cost = 3
 
 		ai_will_do = {
-			factor = 1
+			factor = 10
 		}
 
 		available = {
@@ -6467,22 +6488,20 @@ focus_tree = {
 				custom_effect_tooltip = JAP_toseiha_influence_up_tt
 				custom_effect_tooltip = JAP_kantaiha_influence_down_tt
 				hidden_effect = {
-					add_to_variable = { var = JAP_toseiha_influence value = 1 }
-					add_to_variable = { var = JAP_Toseiha_construction_speed_military value = 1 }
-					subtract_from_variable = { var = JAP_Kantaiha_influence value = 1 }
-					subtract_from_variable = { var = JAP_Kantaiha_construction_speed_dockyard value = 1 }
-					JAP_political_instability_update_effect = yes
+					add_to_variable = { JAP_toseiha_influence = 1 }
+					add_to_variable = { JAP_toseiha_production_speed_arms_factory_factor = 0.04 }
+					add_to_variable = { JAP_kantaiha_influence = -1 }
+					add_to_variable = { JAP_kantaiha_production_speed_dockyard_factor = -0.04 }
 				}
 			}
 			else = {
 				custom_effect_tooltip = JAP_kodoha_influence_up_tt
 				custom_effect_tooltip = JAP_kantaiha_influence_down_tt
 				hidden_effect = {
-					add_to_variable = { var = JAP_Kodoha_influence value = 1 }
-					add_to_variable = { var = JAP_Kodoha_construction_speed_military value = 1 }
-					subtract_from_variable = { var = JAP_Kantaiha_influence value = 1 }
-					subtract_from_variable = { var = JAP_Kantaiha_construction_speed_dockyard value = 1 }
-					JAP_political_instability_update_effect = yes
+					add_to_variable = { JAP_kodoha_influence = 1 }
+					add_to_variable = { JAP_kodoha_production_speed_arms_factory_factor = 0.04 }
+					add_to_variable = { JAP_kantaiha_influence = -1 }
+					add_to_variable = { JAP_kantaiha_production_speed_dockyard_factor = -0.04 }
 				}
 			}
 		}
@@ -6501,7 +6520,7 @@ focus_tree = {
 		cost = 3
 
 		ai_will_do = {
-			factor = 1
+			factor = 0
 		}
 
 
@@ -6523,7 +6542,7 @@ focus_tree = {
 		cost = 3
 
 		ai_will_do = {
-			factor = 1
+			factor = 0
 		}
 
 
@@ -6536,22 +6555,20 @@ focus_tree = {
 				custom_effect_tooltip = JAP_kantaiha_influence_up_tt
 				custom_effect_tooltip = JAP_toseiha_influence_down_tt
 				hidden_effect = {
-					add_to_variable = { var = JAP_Kantaiha_influence value = 1 }
-					add_to_variable = { var = JAP_Kantaiha_construction_speed_dockyard value = 1 }
-					subtract_from_variable = { var = JAP_toseiha_influence value = 1 }
-					subtract_from_variable = { var = JAP_Toseiha_construction_speed_military value = 1 }
-					JAP_political_instability_update_effect = yes
+					add_to_variable = { JAP_kantaiha_influence = 1 }
+					add_to_variable = { JAP_kantaiha_production_speed_dockyard_factor = 0.04 }
+					add_to_variable = { JAP_toseiha_influence = -1 }
+					add_to_variable = { JAP_toseiha_production_speed_arms_factory_factor = -0.04 }
 				}
 			}
 			else = {
 				custom_effect_tooltip = JAP_kantaiha_influence_up_tt
 				custom_effect_tooltip = JAP_kodoha_influence_down_tt
 				hidden_effect = {
-					add_to_variable = { var = JAP_Kantaiha_influence value = 1 }
-					add_to_variable = { var = JAP_Kantaiha_construction_speed_dockyard value = 1 }
-					subtract_from_variable = { var = JAP_Kodoha_influence value = 1 }
-					subtract_from_variable = { var = JAP_Kodoha_construction_speed_military value = 1 }
-					JAP_political_instability_update_effect = yes
+					add_to_variable = { JAP_kantaiha_influence = 1 }
+					add_to_variable = { JAP_kantaiha_production_speed_dockyard_factor = 0.04 }
+					add_to_variable = { JAP_kodoha_influence = -1 }
+					add_to_variable = { JAP_kodoha_production_speed_arms_factory_factor = -0.04 }
 				}
 			}
 		}

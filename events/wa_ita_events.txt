@@ -65,23 +65,23 @@ country_event = {
 			regiments = {
 				heavy_infantry = { x = 0 y = 0 }
 				heavy_infantry = { x = 0 y = 1 }
-				artillery_brigade = { x = 0 y = 2 }
+				heavy_infantry = { x = 0 y = 2 }
 
 				heavy_infantry = { x = 1 y = 0 }
 				heavy_infantry = { x = 1 y = 1 }
-				artillery_brigade = { x = 1 y = 2 }
+				heavy_infantry = { x = 1 y = 2 }
 
 				heavy_infantry = { x = 2 y = 0 }
 				heavy_infantry = { x = 2 y = 1 }
-				artillery_brigade = { x = 2 y = 2 }
 
 				heavy_infantry = { x = 3 y = 0 }
 				heavy_infantry = { x = 3 y = 1 }
-				anti_tank_brigade = { x = 3 y = 2 }
 
-				heavy_infantry = { x = 4 y = 0 }
-				heavy_infantry = { x = 4 y = 1 }
-				anti_air_brigade = { x = 4 y = 2 }
+				artillery_brigade = { x = 4 y = 0 }
+				artillery_brigade = { x = 4 y = 1 }
+				artillery_brigade = { x = 4 y = 2 }
+				anti_tank_brigade = { x = 4 y = 3 }
+				anti_tank_brigade = { x = 4 y = 4 }
 			}
 
 			support = {
@@ -92,6 +92,7 @@ country_event = {
 
 				recon = { x = 1 y = 0 }
 				heavy_artillery = { x = 1 y = 1 }
+				anti_air = { x = 1 y = 2 }
 			}
 		}
 		set_country_flag = infantry_template_ita
@@ -935,6 +936,7 @@ country_event = {
 		ITA = { has_war_with = ENG }
 		NOT = {
 			115 = { is_controlled_by = ITA }
+			1032 = { is_controlled_by = ITA }
 			271 = { is_controlled_by = ITA }
 			909 = { is_controlled_by = ITA }
 			910 = { is_controlled_by = ITA }
@@ -1354,15 +1356,20 @@ country_event = {
 			ruling_party = neutrality
 			elections_allowed = yes
 		}
-		create_country_leader = {
-			name = "Victor Emmanuel III"
-			desc = "POLITICS_VICTOR_EMMANUEL_III_DESC"
-			picture = "gfx/leaders/ITA/Portrait_Italy_Victor_Emmanuel_III.dds"
-			expire = "1965.1.1"
+		remove_country_leader_role = {
+			character = ITA_victor_emmanuel_iii
 			ideology = despotism
-			traits = {
-				popular_figurehead2
-				human_rights_activist
+		}
+		add_country_leader_role = {
+			character = ITA_victor_emmanuel_iii
+			country_leader = {
+				expire = "1965.1.1"
+				ideology = despotism
+				traits = {
+					popular_figurehead2
+					human_rights_activist
+				}
+				desc = "POLITICS_VICTOR_EMMANUEL_III_DESC"
 			}
 		}
 		if = {
@@ -1399,7 +1406,7 @@ country_event = {
 		}
 		custom_effect_tooltip = Vatican_attitude_tt
 		hidden_effect = {
-			add_to_variable = { var = ITA_Vatican_attitude value = 1 }
+			add_to_variable = { var = ITA_vatican_attitude value = 1 }
 			ITA = { country_event = { id = ita_armor.832 days = 3 } }
 		}
 	}
@@ -1411,16 +1418,22 @@ country_event = {
 			ruling_party = neutrality
 			elections_allowed = no
 		}
-		create_country_leader = {
-			name = "Victor Emmanuel III"
-			desc = "POLITICS_VICTOR_EMMANUEL_III_DESC"
-			picture = "gfx/leaders/ITA/Portrait_Italy_Victor_Emmanuel_III.dds"
-			expire = "1965.1.1"
+		remove_country_leader_role = {
+			character = ITA_victor_emmanuel_iii
 			ideology = despotism
-			traits = {
-				popular_figurehead2
-				human_rights_activist
+		}
+		add_country_leader_role = {
+			character = ITA_victor_emmanuel_iii
+			country_leader = {
+				expire = "1965.1.1"
+				ideology = despotism
+				traits = {
+					popular_figurehead2
+					human_rights_activist
+				}
+				desc = "POLITICS_VICTOR_EMMANUEL_III_DESC"
 			}
+			promote_leader = yes
 		}
 		if = {
 			limit = {
@@ -1464,7 +1477,7 @@ country_event = {
 		}
 		custom_effect_tooltip = Vatican_attitude_tt
 		hidden_effect = {
-			add_to_variable = { var = ITA_Vatican_attitude value = 1 }
+			add_to_variable = { var = ITA_vatican_attitude value = 1 }
 			ITA = { country_event = { id = ita_armor.832 days = 3 } }
 		}
 	}
@@ -1994,18 +2007,19 @@ country_event = {
 	option = {
 		name = ita_armor.847.a
         retire_country_leader = yes
-        create_country_leader = {
-			name = "Ferdinando Adalberto"
-			desc = ""
-			picture = "gfx/leaders/ITA/portrait_ITA_ferdinando_adalberto.dds"
-			expire = "1965.1.1"
-			ideology = despotism
-			traits = {
-				popular_figurehead2
-				headstrong
-				humble
+		add_country_leader_role = {
+			character = ITA_ferdinando_umberto_filippo_adalberto
+			country_leader = {
+				expire = "1965.1.1"
+				ideology = despotism
+				traits = {
+					popular_figurehead2
+					headstrong
+					humble
+				}
+				desc = ""
 			}
-        }
+		}
 		create_navy_leader = {
 			name = "Ferdinando Umberto Filippo Adalberto"
 			gfx = "GFX_portrait_ITA_ferdinando_adalberto"
@@ -3627,6 +3641,21 @@ country_event = {
 			20 = {
 				modifier = {
 					factor = 0
+					1032 = { check_variable = { var = ITA_garrison_control value = 4 compare = equals } }
+				}
+				modifier = {
+					factor = 10
+					1032 = { has_state_flag = ITA_ai_recently_expanded_influence_flag }
+				}
+				modifier = {
+					factor = 0.1
+					has_completed_focus = ITA_depose_mussolini
+				}
+				activate_mission = ITA_expand_influence_in_the_southern_sicily_garrison_mission
+			}
+			20 = {
+				modifier = {
+					factor = 0
 					156 = { check_variable = { var = ITA_garrison_control value = 4 compare = equals } }
 				}
 				modifier = {
@@ -3890,21 +3919,27 @@ country_event = {
 				ideology = fascism
 				popularity = -0.3
 			}
+			set_nationality = {
+				target_country = ITF
+				character = ITA_benito_mussolini
+			}
 			ITF = {
-				retire_ideology_leader = democratic
-				retire_ideology_leader = neutrality
-				retire_ideology_leader = communism
-				kill_country_leader = yes
-				create_country_leader = {
-					name = "Benito Mussolini"
-					desc = "POLITICS_BENITO_MUSSOLINI_DESC"
-					picture = "Portrait_Italy_Benito_Mussolini.dds"
-					expire = "1965.1.1"
-					ideology = fascism_ideology
-					traits = {
-						opportunist
-						ambitious
-						dictator
+				ITA_benito_mussolini = {
+					remove_country_leader_role = {
+						ideology = fascism_ideology
+					}
+					add_country_leader_role = {
+						country_leader = {
+							expire = "1965.1.1"
+							ideology = fascism_ideology
+							traits = {
+								opportunist
+								ambitious
+								dictator
+							}
+							desc = "POLITICS_BENITO_MUSSOLINI_DESC"
+						}
+						promote_leader = yes
 					}
 				}
 				set_popularities = {
@@ -3956,12 +3991,15 @@ country_event = {
 							infantry = { x = 0 y = 0 }
 							infantry = { x = 0 y = 1 }
 							infantry = { x = 0 y = 2 }
+
 							infantry = { x = 1 y = 0 }
 							infantry = { x = 1 y = 1 }
 							infantry = { x = 1 y = 2 }
+
 							infantry = { x = 2 y = 0 }
-							artillery_brigade = { x = 2 y = 1 }
-							artillery_brigade = { x = 2 y = 2 }
+
+							artillery_brigade = { x = 3 y = 0 }
+							artillery_brigade = { x = 3 y = 1 }
 						}
 						support = {
 							recon = { x = 0 y = 0 }
@@ -4214,14 +4252,15 @@ country_event = {
 			retire_country_leader = yes
 			set_country_flag = italy_switching_sides
 		}
-		create_country_leader = {
-			name = "Pietro Badoglio"
-			desc = ""
-			picture = "Portrait_Italy_Pietro_Badoglio.dds"
-			expire = "1965.1.1"
-			ideology = fascism_ideology
-			traits = {
+		add_country_leader_role = {
+			character = ITA_pietro_badoglio
+			country_leader = {
+				expire = "1965.1.1"
+				ideology = fascism_ideology
+				traits = {
+				}
 			}
+			promote_leader = yes
 		}
 
 		add_popularity = {
@@ -4312,16 +4351,19 @@ country_event = {
 				set_cosmetic_tag = ITA_REP
 				add_stability = 0.50
 				add_war_support = 0.80
-				create_country_leader = {
-					name = "Victor Emmanuel III"
-					desc = ""
-					picture = "gfx/leaders/ITA/Portrait_Italy_Victor_Emmanuel_III.dds"
-					expire = "1965.1.1"
-					ideology = despotism
-					traits = {
-						popular_figurehead2
-						human_rights_activist
+
+				add_country_leader_role = {
+					character = ITA_victor_emmanuel_iii
+					country_leader = {
+						expire = "1965.1.1"
+						ideology = despotism
+						traits = {
+							popular_figurehead2
+							human_rights_activist
+						}
+						desc = "POLITICS_VICTOR_EMMANUEL_III_DESC"
 					}
+					promote_leader = yes
 				}
 				set_politics = {
 					ruling_party = democratic
@@ -4419,7 +4461,7 @@ country_event = {
 		ai_chance = { factor = 1 }
 		name = ita_armor.895.a
 		if = {
-			limit = { 
+			limit = {
 				any_state = {
 					is_core_of = ITA
 					or = {
@@ -4614,14 +4656,16 @@ country_event = {
 						}
 					}
 					retire_country_leader = yes
-					create_country_leader = {
-						name = "Victor Emmanuel III"
-						desc = ""
-						picture = "gfx/leaders/ITA/Portrait_Italy_Victor_Emmanuel_III.dds"
-						expire = "1965.1.1"
-						ideology = conservatism
-						traits = {
+					add_country_leader_role = {
+						character = ITA_victor_emmanuel_iii
+						country_leader = {
+							expire = "1965.1.1"
+							ideology = conservatism
+							traits = {
+							}
+							desc = "POLITICS_VICTOR_EMMANUEL_III_DESC"
 						}
+						promote_leader = yes
 					}
 					set_politics = {
 						ruling_party = democratic
@@ -4786,14 +4830,16 @@ country_event = {
 			add_to_faction = ITA
 		}
 		effect_tooltip = {
-			create_country_leader = {
-				name = "Victor Emmanuel III"
-				desc = ""
-				picture = "gfx/leaders/ITA/Portrait_Italy_Victor_Emmanuel_III.dds"
-				expire = "1965.1.1"
-				ideology = conservatism
-				traits = {
+			add_country_leader_role = {
+				character = ITA_victor_emmanuel_iii
+				country_leader = {
+					expire = "1965.1.1"
+					ideology = conservatism
+					traits = {
+					}
+					desc = "POLITICS_VICTOR_EMMANUEL_III_DESC"
 				}
+				promote_leader = yes
 			}
 			set_politics = {
 				ruling_party = democratic
