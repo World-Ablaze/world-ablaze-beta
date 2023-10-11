@@ -37,6 +37,8 @@ set_war_support = 0.5
 # Starting tech
 set_technology = {
 	#direct_fire = 1
+	#sov_armoured_car_1 = 1
+	#sov_scout_car_1 = 1
 	concentrated_industry = 1
 	basic_train = 1
 	sov_infantry_weapons_1 = 1
@@ -218,6 +220,7 @@ add_ideas = {
 	SOV_centralized_control_ships
 	SOV_red_fleet_surface_bonus_4
 }
+set_variable = { economic_fatigue = 5 }
 
 set_country_flag = League_of_nations_member_flag
 
@@ -253,6 +256,8 @@ recruit_character = SOV_lavrenty_beriya
 recruit_character = SOV_vsevolod_merkulov
 recruit_character = SOV_vyacheslav_molotov
 recruit_character = SOV_maksim_litvinov
+recruit_character = SOV_viktor_abakumov
+recruit_character = SOV_pavel_sudoplatov
 
 recruit_character = SOV_lev_trotsky
 recruit_character = SOV_ivan_smirnov
@@ -613,7 +618,7 @@ SOV_martemyan_ryutin = {
 }
 
 ############# DIVISION CAP ###############
-set_variable = { SOV_nkvd_cap = 7 } #WARNING THIS VALUE NEEDS TOP MATCH THE division_cap value for the template in the OOB
+set_variable = { SOV_nkvd_cap = 7 } #WARNING THIS NEEDS TOP MATCH THE division_cap for the template in the OOB
 
 ############# Faction Variables ###############
 set_variable = { COMMISSARS_INFLUENCE_LEVEL = 7 }
@@ -686,7 +691,7 @@ set_variable = { SOV_paranoia_medium_decrease = -20 } #Paranoia medium decrement
 set_variable = { SOV_paranoia_high_decrease = -30 } #Paranoia high decrement --------> (prev -15)
 set_variable = { SOV_paranoia_very_high_decrease = -50 } #Paranoia very high decrement --------> (prev -25)
 set_variable = { SOV_paranoia_modifier_increase = 1 } #Paranoia weekly increase via modifiers (Stalin's Paranoid leader trait) // WARNING: CUSTOM TOOLTIP DOES NOT WORK WITH VARS so needs to be updated
-set_variable = { SOV_paranoia_weekly_modifiers_amount = 1 } #Number of Weekly Paranoia Modifiers currently active (Stalin's trait, Heads of NKVD, etc.). This value will be mulptiplied by SOV_paranoia_modifier_increase in order to apply the final weekly modifier
+set_variable = { SOV_paranoia_weekly_modifiers_amount = 1 } #Number of Weekly Paranoia Modifiers currently active (Stalin's trait, Heads of NKVD, etc.). This will be mulptiplied by SOV_paranoia_modifier_increase in order to apply the final weekly modifier
 SOV_paranoia_modifier_update_gui_tooltip = yes #Used in the Paranoia GUI to show total weekly increase/decrease of Paranoia
 set_country_flag = SOV_paranoia_modifier_active_flag
 set_variable = { SOV_paranoia_great_purge_administration_number_of_targets = 4 } #Max amount of targets to be purged by the appropriate Great Purge (so that it can be changed if necessary)
@@ -795,7 +800,7 @@ set_variable = { SOV_fyp_production_speed_buildings_factor = -0.2 }
 set_variable = { SOV_fyp_production_speed_arms_factory_factor = 0.0 }
 set_variable = { SOV_fyp_industry_repair_factor = 0.0 }
 set_variable = { SOV_fyp_local_resources_factor = -0.2 }
-set_variable = { SOV_fyp_consumer_goods_factor = 0.0 }
+set_variable = { SOV_fyp_consumer_goods_expected_value = 0.0 }
 set_variable = { SOV_fyp_industrial_capacity_dockyard = 0.0 }
 set_variable = { SOV_fyp_fuel_gain_factor_from_states = 0.0 }
 set_variable = { SOV_fyp_production_oil_factor = 0.0 }
@@ -923,7 +928,7 @@ set_variable = { SOV_the_politburo_political_power_factor = 0 } #0.05 -> The Sta
 set_variable = { SOV_the_politburo_economy_cost_factor = 0 } # -> Secure the Administration
 set_variable = { SOV_the_politburo_trade_laws_cost_factor = 0 } # -> Secure the Administration
 set_variable = { SOV_the_politburo_mobilization_laws_cost_factor = 0 } # -> Secure the Administration
-set_variable = { SOV_the_politburo_good_consumer_goods_factor = 0 } # -> Collectivization Process
+set_variable = { SOV_the_politburo_good_consumer_goods_expected_value = 0 } # -> Collectivization Process
 set_variable = { SOV_the_politburo_production_speed_buildings_factor = 0 } # -> Collectivization Process
 set_variable = { SOV_the_politburo_global_building_slots_factor = 0 } # -> Collectivization Process
 set_variable = { SOV_the_politburo_max_surrender_limit_offset = 0 } # -> The Workers Dictatorship
@@ -1006,9 +1011,47 @@ set_variable = { SOV_planned_economy_production_lack_of_resource_penalty_factor_
 set_variable = { SOV_planned_economy_party_popularity_stability_factor = 0 } #Victory Over Devastation
 set_variable = { SOV_planned_economy_max_surrender_limit_offset = 0 } #Victory Over Devastation
 set_variable = { SOV_planned_economy_industry_repair_factor = 0 } #Victory Over Devastation
-set_variable = { SOV_planned_economy_consumer_goods_factor = 0 } #Victory Over Devastation
+set_variable = { SOV_planned_economy_consumer_goods_expected_value = 0 } #Victory Over Devastation
 
-starting_train_buffer = 3.4
+# Faction Modifiers
+# Non-modifiers
+set_variable = { SOV_commissars_attitude = 1 }
+set_variable = { SOV_army_attitude = 0 }
+set_variable = { SOV_workers_attitude = 1 }
+set_variable = { SOV_peasants_attitude = -1 }
+set_variable = { SOV_commissars_influence = 3 }
+set_variable = { SOV_army_influence = 4 }
+set_variable = { SOV_workers_influence = 0 }
+set_variable = { SOV_peasants_influence = 0 }
+
+# Modifiers
+# Commissars
+set_variable = { SOV_commissars_political_power_gain = -0.1 }
+set_variable = { SOV_commissars_stability_factor = 0 }
+
+add_dynamic_modifier = { modifier = SOV_commissars }
+
+# Army
+set_variable = { SOV_army_political_power_gain = -0.1 }
+set_variable = { SOV_army_research_speed_factor = 0 }
+set_variable = { SOV_army_stability_factor = 0 }
+
+add_dynamic_modifier = { modifier = SOV_army }
+
+# Workers
+set_variable = { SOV_workers_industrial_capacity_factory = 0 }
+# set_variable = { SOV_workers_industrial_capacity_dockyard = 0 }
+set_variable = { SOV_workers_stability_factor = 0.05 }
+
+add_dynamic_modifier = { modifier = SOV_workers }
+
+# Peasants
+set_variable = { SOV_peasants_consumer_goods_factor = 0.01 }
+set_variable = { SOV_peasants_stability_factor = -0.05 }
+
+add_dynamic_modifier = { modifier = SOV_peasants }
+
+starting_train_buffer = 4
 
 if = {
 	limit = {

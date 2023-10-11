@@ -65,23 +65,23 @@ country_event = {
 			regiments = {
 				heavy_infantry = { x = 0 y = 0 }
 				heavy_infantry = { x = 0 y = 1 }
-				artillery_brigade = { x = 0 y = 2 }
+				heavy_infantry = { x = 0 y = 2 }
 
 				heavy_infantry = { x = 1 y = 0 }
 				heavy_infantry = { x = 1 y = 1 }
-				artillery_brigade = { x = 1 y = 2 }
+				heavy_infantry = { x = 1 y = 2 }
 
 				heavy_infantry = { x = 2 y = 0 }
 				heavy_infantry = { x = 2 y = 1 }
-				artillery_brigade = { x = 2 y = 2 }
 
 				heavy_infantry = { x = 3 y = 0 }
 				heavy_infantry = { x = 3 y = 1 }
-				anti_tank_brigade = { x = 3 y = 2 }
 
-				heavy_infantry = { x = 4 y = 0 }
-				heavy_infantry = { x = 4 y = 1 }
-				anti_air_brigade = { x = 4 y = 2 }
+				artillery_brigade = { x = 4 y = 0 }
+				artillery_brigade = { x = 4 y = 1 }
+				artillery_brigade = { x = 4 y = 2 }
+				anti_tank_brigade = { x = 4 y = 3 }
+				anti_tank_brigade = { x = 4 y = 4 }
 			}
 
 			support = {
@@ -92,6 +92,7 @@ country_event = {
 
 				recon = { x = 1 y = 0 }
 				heavy_artillery = { x = 1 y = 1 }
+				anti_air = { x = 1 y = 2 }
 			}
 		}
 		set_country_flag = infantry_template_ita
@@ -935,6 +936,7 @@ country_event = {
 		ITA = { has_war_with = ENG }
 		NOT = {
 			115 = { is_controlled_by = ITA }
+			1032 = { is_controlled_by = ITA }
 			271 = { is_controlled_by = ITA }
 			909 = { is_controlled_by = ITA }
 			910 = { is_controlled_by = ITA }
@@ -1404,7 +1406,7 @@ country_event = {
 		}
 		custom_effect_tooltip = Vatican_attitude_tt
 		hidden_effect = {
-			add_to_variable = { var = ITA_Vatican_attitude value = 1 }
+			add_to_variable = { var = ITA_vatican_attitude value = 1 }
 			ITA = { country_event = { id = ita_armor.832 days = 3 } }
 		}
 	}
@@ -1475,7 +1477,7 @@ country_event = {
 		}
 		custom_effect_tooltip = Vatican_attitude_tt
 		hidden_effect = {
-			add_to_variable = { var = ITA_Vatican_attitude value = 1 }
+			add_to_variable = { var = ITA_vatican_attitude value = 1 }
 			ITA = { country_event = { id = ita_armor.832 days = 3 } }
 		}
 	}
@@ -2007,7 +2009,7 @@ country_event = {
         retire_country_leader = yes
 		add_country_leader_role = {
 			character = ITA_ferdinando_umberto_filippo_adalberto
-			country_leader = { 
+			country_leader = {
 				expire = "1965.1.1"
 				ideology = despotism
 				traits = {
@@ -3639,6 +3641,21 @@ country_event = {
 			20 = {
 				modifier = {
 					factor = 0
+					1032 = { check_variable = { var = ITA_garrison_control value = 4 compare = equals } }
+				}
+				modifier = {
+					factor = 10
+					1032 = { has_state_flag = ITA_ai_recently_expanded_influence_flag }
+				}
+				modifier = {
+					factor = 0.1
+					has_completed_focus = ITA_depose_mussolini
+				}
+				activate_mission = ITA_expand_influence_in_the_southern_sicily_garrison_mission
+			}
+			20 = {
+				modifier = {
+					factor = 0
 					156 = { check_variable = { var = ITA_garrison_control value = 4 compare = equals } }
 				}
 				modifier = {
@@ -3912,7 +3929,7 @@ country_event = {
 						ideology = fascism_ideology
 					}
 					add_country_leader_role = {
-						country_leader = { 
+						country_leader = {
 							expire = "1965.1.1"
 							ideology = fascism_ideology
 							traits = {
@@ -3974,12 +3991,15 @@ country_event = {
 							infantry = { x = 0 y = 0 }
 							infantry = { x = 0 y = 1 }
 							infantry = { x = 0 y = 2 }
+
 							infantry = { x = 1 y = 0 }
 							infantry = { x = 1 y = 1 }
 							infantry = { x = 1 y = 2 }
+
 							infantry = { x = 2 y = 0 }
-							artillery_brigade = { x = 2 y = 1 }
-							artillery_brigade = { x = 2 y = 2 }
+
+							artillery_brigade = { x = 3 y = 0 }
+							artillery_brigade = { x = 3 y = 1 }
 						}
 						support = {
 							recon = { x = 0 y = 0 }
@@ -4234,7 +4254,7 @@ country_event = {
 		}
 		add_country_leader_role = {
 			character = ITA_pietro_badoglio
-			country_leader = { 
+			country_leader = {
 				expire = "1965.1.1"
 				ideology = fascism_ideology
 				traits = {
@@ -4249,6 +4269,44 @@ country_event = {
 		}
 
 		activate_mission = ITA_armistice_mission
+		hidden_effect = {
+			if = {
+				limit = {
+					any_enemy_country = {
+						is_faction_leader = yes
+						is_major = yes
+						OR = {
+							has_government = democratic
+							has_government = neutrality
+						}
+					}
+				}
+				random_enemy_country = {
+					limit = {
+						is_faction_leader = yes
+						is_major = yes
+						OR = {
+							has_government = democratic
+							has_government = neutrality
+						}
+					}
+					activate_mission = ITA_armistice_mission_allies_timer
+				}
+			}
+			else = {
+				random_enemy_country = {
+					limit = {
+						is_faction_leader = yes
+						is_major = yes
+						OR = {
+							has_government = fascism
+							has_government = communism
+						}
+					}
+					activate_mission = ITA_armistice_mission_allies_timer
+				}
+			}
+		}
 
 		if = {
 			limit = {
@@ -4402,8 +4460,32 @@ country_event = {
 	option = {
 		ai_chance = { factor = 1 }
 		name = ita_armor.895.a
-		ITA = {
-			country_event = { id = ita_armor.897 days = 1 }
+		if = {
+			limit = {
+				any_state = {
+					is_core_of = ITA
+					or = {
+						region = 21
+						region = 23
+						region = 238
+					}
+					not = {
+						is_fully_controlled_by = ITA
+						state = 115
+					}
+				}
+			}
+			ITA = {
+				country_event = { id = ita_armor.897 days = 1 }
+			}
+		}
+		else = {
+			custom_effect_tooltip = italy_armistice_tt
+			hidden_effect = {
+				ITA = {
+					set_country_flag = allies_accept_peace_flag
+				}
+			}
 		}
 	}
 

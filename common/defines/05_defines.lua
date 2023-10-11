@@ -6,6 +6,7 @@ NDefines.NGame.LAG_DAYS_FOR_LOWER_SPEED = 300										-- Days of client lag for
 NDefines.NGame.LAG_DAYS_FOR_PAUSE = 100												-- Days of client lag for pause of gamespeed.
 NDefines.NGame.EVENT_TIMEOUT_DEFAULT = 7											-- Default days before an event times out if not scripted
 NDefines.NGame.GAME_SPEED_SECONDS = { 0.5, 0.2, 0.14, 0.06, 0.0 }					-- Game speed
+NDefines.NGame.HANDS_OFF_START_TAG = "BHU"
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Diplomacy
 
@@ -35,6 +36,7 @@ NDefines.NDiplomacy.LL_TO_OVERLORD_AUTONOMY_DAILY_FACTOR = 0.0						-- If puppet
 NDefines.NDiplomacy.LL_TO_PUPPET_AUTONOMY_DAILY_BASE = 0.0							-- If overlord lend leases equipment to puppet of higher tech level as they have, puppet losses autonomy
 NDefines.NDiplomacy.LL_TO_PUPPET_AUTONOMY_DAILY_FACTOR = 0.0						-- If overlord lend leases equipment to puppet of higher tech level as they have, puppet losses autonomy
 
+NDefines.NDiplomacy.TENSION_JOIN_ATTACKER = 0										-- scale of the amount of tension added when country joins attacker side
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Politics
 
 
@@ -129,11 +131,13 @@ NDefines.NCountry.MIN_FOCUSES_FOR_CONTINUOUS = 60									-- Focuses needed to u
 
 
 NDefines.NBuildings.NAVALBASE_REPAIR_MULT = 0.1										-- Each level of navalbase building repairs X strength. The value is spread on all ships needed reparation. Fe Navalbase lvl 5 x 0.5 str repair = 2.5 str repaired over 10 ships, so each ship repair hourly 0.25 str.
-NDefines.NBuildings.BASE_FACTORY_REPAIR = 0.3										-- Default repair rate before factories are taken into account
+NDefines.NBuildings.BASE_FACTORY_REPAIR = 1.0										-- Default repair rate in percentage before factories are taken into account (1.0 equals 1%).
 NDefines.NBuildings.BASE_FACTORY_REPAIR_FACTOR = 2.0								-- Factory speed modifier when repairing.
 
 NDefines.NBuildings.DESTRUCTION_COOLDOWN_IN_WAR = 180								-- Number of days cooldown between removal of buildings in war times
-
+NDefines.NBuildings.RADAR_RANGE_BASE = 10											-- Radar range base, first level radar will be this + min, best radar will be this + max
+NDefines.NBuildings.RADAR_RANGE_MIN = 10												-- Radar range (from state center to province center) in measure of map pixels. Exluding techs.
+NDefines.NBuildings.RADAR_RANGE_MAX = 100											-- Range is interpolated between building levels 1-15.
 NDefines.NBuildings.ANTI_AIR_SUPERIORITY_MULT = 2.0									-- How much air superiority reduction to the enemy does our AA guns? Normally each building level = -1 reduction. With this a 5.0 multiplier.
 NDefines.NBuildings.MAX_SHARED_SLOTS = 50											-- Max slots shared by factories
 NDefines.NBuildings.SABOTAGE_FACTORY_DAMAGE = 50.0									-- How much damage takes a factory building in sabotage when state is occupied. Damage is mult by (1 + resistance strength), i.e. up to 2 x base value.
@@ -193,6 +197,14 @@ NDefines.NProduction.BASE_LICENSE_IC_COST = 0										-- Base IC cost for lende
 NDefines.NProduction.DEFAULT_MAX_NAV_FACTORIES_PER_LINE = 10
 NDefines.NProduction.CAPITAL_SHIP_MAX_NAV_FACTORIES_PER_LINE = 5
 NDefines.NProduction.CONVOY_MAX_NAV_FACTORIES_PER_LINE = 15
+
+NDefines.NProduction.MINIMUM_NUMBER_OF_FACTORIES_TAKEN_BY_CONSUMER_GOODS_PERCENT = 0.05	-- The minimum number of factories we have to put on consumer goods, in percent.
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Market
+NDefines.NMarket.IC_TO_CIC_FACTOR = 1.5												-- The factor for mapping IC cost to CIC cost. Should be a positive number.
+NDefines.NMarket.MAX_CIV_FACTORIES_PER_CONTRACT = 20								-- Max number of factories that can be assigned for paying single contract.
+NDefines.NMarket.LOW_PRICE_LEVEL_FACTOR = 0.83										-- The factor of base equipment price for low price level. Should be in range (0,1]
+NDefines.NMarket.HIGH_PRICE_LEVEL_FACTOR = 1.17										-- The factor of base equipment price for high price level. Should be more than 1.
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Operations
 
@@ -275,13 +287,15 @@ NDefines.NMilitary.ZERO_ORG_MOVEMENT_MODIFIER = -0.25								-- speed impact at 
 
 NDefines.NMilitary.ACCLIMATIZATION_SPEED_GAIN = 0.05								-- A variable used to balance the overall speed of gaining the acclimatization
 
+NDefines.NMilitary.MAX_DIVISION_BRIGADE_WIDTH = 5									-- Max width of regiments in division designer.
+NDefines.NMilitary.MAX_DIVISION_BRIGADE_HEIGHT = 5									-- Max height of regiments in division designer.
+NDefines.NMilitary.MIN_DIVISION_BRIGADE_HEIGHT = 5									-- Min height of regiments in division designer.
+NDefines.NMilitary.MAX_DIVISION_SUPPORT_WIDTH = 2									-- Max width of support in division designer.
+NDefines.NMilitary.MAX_DIVISION_SUPPORT_HEIGHT = 5									-- Max height of support in division designer.
+
 NDefines.NMilitary.BASE_DIVISION_BRIGADE_GROUP_COST = 20							--Base cost to unlock a regiment slot,
 NDefines.NMilitary.BASE_DIVISION_BRIGADE_CHANGE_COST = 5							--Base cost to change a regiment column.
 NDefines.NMilitary.BASE_DIVISION_SUPPORT_SLOT_COST = 1 								--Base cost to unlock a support slot
-
-NDefines.NMilitary.MAX_DIVISION_BRIGADE_HEIGHT = 4									-- Max height of regiments in division designer.
-NDefines.NMilitary.MAX_DIVISION_SUPPORT_WIDTH = 2									-- Max width of support in division designer.
-NDefines.NMilitary.MAX_DIVISION_SUPPORT_HEIGHT = 5									-- Max height of support in division designer.
 
 NDefines.NMilitary.UNIT_LEADER_ASSIGN_TRAIT_COST = 5								-- cost to assign a new trait to a unit leader
 NDefines.NMilitary.ARMY_STRATEGIC_DEPLOYMENT_FUEL_MULT = 0.0						-- fuel consumption ratio while doing strategic deployment
@@ -294,9 +308,9 @@ NDefines.NMilitary.STRATEGIC_SPEED_RAIL_MAX = 25.0
 
 NDefines.NMilitary.BATALION_CHANGED_EXPERIENCE_DROP = 0.75							-- Division experience drop if unit has different batalion
 
-NDefines.NMilitary.MAX_ARMY_EXPERIENCE = 5000										--Max army experience a country can store
-NDefines.NMilitary.MAX_NAVY_EXPERIENCE = 5000										--Max navy experience a country can store
-NDefines.NMilitary.MAX_AIR_EXPERIENCE = 5000										--Max air experience a country can store
+NDefines.NMilitary.MAX_ARMY_EXPERIENCE = 999										--Max army experience a country can store
+NDefines.NMilitary.MAX_NAVY_EXPERIENCE = 999										--Max navy experience a country can store
+NDefines.NMilitary.MAX_AIR_EXPERIENCE = 999										--Max air experience a country can store
 
 NDefines.NMilitary.UNIT_EXPERIENCE_PER_COMBAT_HOUR = 0.00060
 NDefines.NMilitary.FIELD_EXPERIENCE_SCALE = 0.0015
@@ -424,7 +438,7 @@ NDefines.NMilitary.NUM_DAYS_FOR_OPERATION_ENTRY = 30								--Number of days tha
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Air
 
-NDefines.NAir.AI_ALLOWED_PLANES_KEPT_IN_RESERVE = 0.1								--AI allowed planes is reduced by this percentage. Overflow will be distributed to the next valid order. Worst case, this will result in this % of planes no being assigned any order.
+NDefines.NAir.AI_ALLOWED_PLANES_KEPT_IN_RESERVE = 0.0								--AI allowed planes is reduced by this percentage. Overflow will be distributed to the next valid order. Worst case, this will result in this % of planes no being assigned any order.
 
 NDefines.NAir.LEND_LEASED_EQUIPMENT_EXPERIENCE_GAIN = 0.0							-- Value used for equipment
 
@@ -437,7 +451,7 @@ NDefines.NAir.AIR_WING_XP_TRAINING_MISSION_ACCIDENT_FACTOR = 0.75	 				-- Traini
 NDefines.NAir.CAPACITY_PENALTY = 2													-- scales penalty of having overcrowded bases.
 NDefines.NAir.AIR_WING_MAX_SIZE = 200 												-- Max amount of airplanes in wing
 NDefines.NAir.MISSION_EFFICIENCY_MULT_AT_LACK_OF_FUEL = 0.05		 				-- multiplier for mission efficiency when a base lacks fuel
-
+NDefines.NAir.AIR_DEPLOYMENT_DAYS = 7												-- Days to deploy one air wing
 NDefines.NAir.AIR_WING_COUNTRY_XP_FROM_TRAINING_FACTOR = 0.01						-- Factor on country Air XP gained from wing training
 NDefines.NAir.FIELD_EXPERIENCE_MAX_PER_DAY = 2.0									-- Most xp you can gain per day
 
@@ -478,7 +492,7 @@ NDefines.NAir.CAS_NIGHT_ATTACK_FACTOR = 0.1						                    -- CAS dama
 NDefines.NAir.ANTI_AIR_MAXIMUM_DAMAGE_REDUCTION_FACTOR = 0.50 						-- Maximum damage reduction factor applied to incoming air attacks against units with AA.
 NDefines.NAir.AA_INDUSTRY_AIR_DAMAGE_FACTOR = -0.036									-- 5x levels = 60% defense from bombing
 
-NDefines.NAir.BOMBING_TARGETING_RANDOM_FACTOR = 0.8									-- % of picking the wrong target
+NDefines.NAir.BOMBING_TARGETING_RANDOM_FACTOR = 0.4									-- % of picking the wrong target
 NDefines.NAir.AIR_WING_BOMB_DAMAGE_FACTOR = 3										-- Used to balance the damage done while bombing.
 NDefines.NAir.BOMBING_PROV_BUILD_PRIO_SCALE = 0.7									-- Scale of the selected priority for provincial buildings
 NDefines.NAir.BOMBING_STATE_BUILD_PRIO_SCALE = 1.5									-- Scale of the selected priority for state buildings
@@ -526,11 +540,14 @@ NDefines.NAir.NAVAL_STRIKE_CARRIER_MULTIPLIER = 10.0							    -- damage bonus w
 NDefines.NAir.NAVAL_STRIKE_DAMAGE_TO_STR = 2.0										-- Balancing value to convert damage ( naval_strike_attack * hits ) to Strength reduction.
 NDefines.NAir.NAVAL_STRIKE_DAMAGE_TO_ORG = 0.5										-- Balancing value to convert damage ( naval_strike_attack * hits ) to Organisation reduction.
 
-NDefines.NAir.INTERCEPTION_DISTANCE_SCALE = 10 									-- At this many pixels of path length, full interception efficiency is applied to air missions. Lerp from 0.
+NDefines.NAir.INTERCEPTION_DISTANCE_SCALE = 10 										-- At this many pixels of path length, full interception efficiency is applied to air missions. Lerp from 0.
 NDefines.NAir.INTERCEPTION_DAMAGE_SCALE = 1											-- Multiply the interception damage with this value. Works as a cap when interception distance is at maximum.
 
 NDefines.NAir.NAVAL_COMBAT_EXTERNAL_PLANES_JOIN_RATIO = 0.1							-- Max planes that can join a combat comparing to the total strength of the ships
 NDefines.NAir.DAY_NIGHT_COVERAGE_FACTOR = 0.02 										-- The max night coverage in a region that is still considered to be day-time when determining if day/night air missions shall run.
+
+NDefines.NAir.PORT_STRIKE_DAMAGE_FACTOR = 0.1										-- How much damage is dealt to ports during a port strike (per plane damage [complex number] * num flying planes * define)
+
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Navy
 
 NDefines.NNavy.NAVAL_COMBAT_AIR_SUB_DETECTION_MAX = 2
@@ -661,7 +678,7 @@ NDefines.NNavy.UNIT_EXPERIENCE_PER_COMBAT_HOUR = 5
 NDefines.NNavy.UNIT_EXPERIENCE_SCALE = 1
 NDefines.NNavy.EXPERIENCE_FACTOR_CONVOY_ATTACK = 0.12
 NDefines.NNavy.EXPERIENCE_FACTOR_NON_CARRIER_GAIN = 0.24							-- Xp gain by non-carrier ships in the combat
-NDefines.NNavy.EXPERIENCE_FACTOR_CARRIER_GAIN = 0.24								-- Xp gain by carrier ships in the combat
+NDefines.NNavy.EXPERIENCE_FACTOR_CARRIER_GAIN = 0.06								-- Xp gain by carrier ships in the combat
 
 NDefines.NNavy.NAVAL_SUPREMACY_CAN_INVADE = 0.5										-- required naval supremacy to perform invasions on an area
 
@@ -708,6 +725,7 @@ NDefines.NNavy.OUT_OF_FUEL_ATTACK_FACTOR = -0.9
 NDefines.NNavy.OUT_OF_FUEL_TORPEDO_FACTOR = -0.9
 
 NDefines.NNavy.SCREEN_RATIO_FOR_FULL_SCREENING_FOR_CAPITALS = 4.0					-- this screen ratio to num capital/carriers is needed for full screening beyond screen line
+NDefines.NNavy.SCREEN_RATIO_FOR_FULL_SCREENING_FOR_CONVOYS = 2.0					-- this screen ratio to num convoys is needed for full screening beyond screen line
 NDefines.NNavy.CAPITAL_RATIO_FOR_FULL_SCREENING_FOR_CARRIERS = 1.0					-- this capital ratio to num carriers is needed for full screening beyond screen line
 NDefines.NNavy.BASE_CARRIER_SORTIE_EFFICIENCY = 0.5 								-- factor of planes that can sortie by default from a carrier
 
@@ -740,7 +758,7 @@ NDefines.NNavy.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- SUPPLY
 
-NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.1									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
+NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.12									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
 NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST = 500
 NDefines.NSupply.CAPITAL_SUPPLY_CIVILIAN_FACTORIES = 0.3 							-- supply from one civilian factory
 NDefines.NSupply.CAPITAL_SUPPLY_MILITARY_FACTORIES = 0.6 							-- supply from one military factory
@@ -809,13 +827,25 @@ NDefines.NAI.AREA_DEFENSE_SETTING_RAILWAYS = false
 
 ----------- COHESION
 
---NDefines.NAI.MIN_AI_UNITS_PER_TILE_FOR_STANDARD_COHESION = 20.0					-- How many units should we have for each tile along a front in order to switch to standard cohesion (less moving around)
---NDefines.NAI.MIN_FRONT_SIZE_TO_CONSIDER_STANDARD_COHESION = 1000					-- How long should fronts be before we consider switching to standard cohesion (under this, standard cohesion fronts will switch back to relaxed)
+NDefines.NAI.MIN_AI_UNITS_PER_TILE_FOR_STANDARD_COHESION = 20.0						-- How many units should we have for each tile along a front in order to switch to standard cohesion (less moving around)
+NDefines.NAI.MIN_FRONT_SIZE_TO_CONSIDER_STANDARD_COHESION = 1000					-- How long should fronts be before we consider switching to standard cohesion (under this, standard cohesion fronts will switch back to relaxed)
+
+NDefines.NAI.ARMY_LEADER_ASSIGN_FIELD_MARSHAL_TO_ARMY = -100000            			-- Score for assigning a field marshal to a normal army (want to use them for army groups)
+NDefines.NAI.ARMY_LEADER_ASSIGN_EMPTYNESS_MALUS = 0.0                  				-- Factor for avoiding assigning leaders that can lead large armies to small armies (a value of 0.2 reduces the score by max 20 %)
+NDefines.NAI.ARMY_LEADER_ASSIGN_OVERCAPACITY = 0                     				-- Score for assigning leader to a too large army
+NDefines.NAI.ARMY_LEADER_ASSIGN_OVERALL_SKILL_FACTOR = 1000               			-- This times general's overall skill is added to score
+NDefines.NAI.ARMY_LEADER_ASSIGN_KEEP_LEADER = 0                       				-- Score for keeping the leader if already assigned
+NDefines.NAI.ARMY_LEADER_ASSIGN_ATTACK_SKILL_FACTOR = 250               			-- This times general's attack skill is added to score
+NDefines.NAI.ARMY_LEADER_ASSIGN_DEFENSE_SKILL_FACTOR = 250              			-- This times general's defense skill is added to score
+NDefines.NAI.ARMY_LEADER_ASSIGN_NR_TRAITS = 100                          		 	-- This times general's nr of active traits is added to score
 
 ----------- SUPPLY
 
 --NDefines.NAI.SUPPLY_CRISIS_LIMIT = 1.0											-- If a unit is standing in an area with
 NDefines.NAI.MIN_INVASION_AREA_SIZE_FOR_FLOATING_HARBORS = 5  				    	-- AI will consider using floating harbors for naval invasion if invasion area is larger than this many provinces
+NDefines.NAI.DEFAULT_SUPPLY_TRUCK_BUFFER_RATIO = 1.0								-- ai will set to truck buffer ratio to this. can be modified by wanted_supply_trucks min_wanted_supply_trucks ai strats
+NDefines.NAI.DEFAULT_SUPPLY_TRAIN_NEED_FACTOR = 1.2     							-- AI multiplies current train usage by this to determine desired nr of wanted trains. Can be modified by wanted_supply_train min_wanted_supply_trains ai strats.
+NDefines.NAI.DIVISION_SUPPLY_RATIO_TO_MOTORIZE = 0.8								-- If supply ratio is less than this, consider motorizing any applicable nearby supply hub
 
 ----------- LEND LEASE
 
@@ -834,7 +864,7 @@ NDefines.NAI.MINIMUM_FUEL_DAYS_TO_ACCEPT_LEND_LEASE = 60					 		-- AI will accep
 
 ----------- NAVY
 
-NDefines.NAI.MISSING_CONVOYS_BOOST_FACTOR = 44.0									-- The more convoys a country is missing, the more resources it diverts to cover this.
+NDefines.NAI.MISSING_CONVOYS_BOOST_FACTOR = 0.0										-- The more convoys a country is missing, the more resources it diverts to cover this.
 
 NDefines.NAI.MAX_DISTANCE_NALAV_INVASION = 180.0									-- AI is extremely unwilling to plan naval invasions above this naval distance limit.
 NDefines.NAI.MAX_UNIT_RATIO_FOR_INVASIONS = 0.35									-- countries won't use armies more than this ratio of total units for invasions
@@ -845,7 +875,10 @@ NDefines.NAI.INVASION_COASTAL_PROVS_PER_ORDER = 28									-- AI will consider o
 NDefines.NAI.NAVAL_INVADED_AREA_PRIO_DURATION = 270									-- after successful invasion, AI will prio the enemy area for this number of days
 NDefines.NAI.NAVAL_INVADED_AREA_PRIO_MULT = 2.0										-- fronts that belongs to recent invasions gets more prio
 NDefines.NAI.MIN_NUM_CONQUERED_PROVINCES_TO_DEPRIO_NAVAL_INVADED_FRONTS = 30		-- if you conquer this amount of provinces after a naval invasion, it will lose its prio status and will act as a regular front
-NDefines.NAI.MAX_INVASION_SIZE = 18													-- max invasion group size
+NDefines.NAI.MAX_INVASION_SIZE = 24													-- max invasion group size
+NDefines.NAI.MAX_UNITS_FACTOR_INVASION_ORDER = 1.4									-- Factor for max number of units to assign to naval invasion orders
+NDefines.NAI.DESIRED_UNITS_FACTOR_INVASION_ORDER = 1.4								-- Factor for desired number of units to assign to naval invasion orders
+NDefines.NAI.MIN_UNITS_FACTOR_INVASION_ORDER = 1.2									-- Factor for min number of units to assign to naval invasion orders
 
 NDefines.NAI.CONVOY_ESCORT_MUL_FROM_NO_CONVOYS = 0 									-- score multiplier when no convoys are around
 NDefines.NAI.CONVOY_ESCORT_SCORE_FROM_CONVOYS = 1             				        -- score for each convoy you have in area
@@ -875,6 +908,8 @@ NDefines.NAI.NAVAL_DOCKYARDS_SHIP_FACTOR = 2										-- The extent to which num
 NDefines.NAI.NAVY_PREFERED_MAX_SIZE = 75											-- AI will generally attempt to merge fleets into this size, but as a soft limit.
 NDefines.NAI.SUB_TASKFORCE_MAX_SHIP_COUNT = 5 										-- optimum sub count for sub taskforces
 NDefines.NAI.PRODUCTION_MAX_PROGRESS_TO_SWITCH_NAVAL = 0.0							-- AI will not replace ships being built by newer types if progress is above this
+NDefines.NAI.PRODUCTION_WAIT_TO_FINISH_IF_EXPENSIVE = 0.1      						-- If produced item is expensive (producing less than one/week), wait to finish item if progress is above this
+--NDefines.NAI.PRODUCTION_WAIT_TO_FINISH_IF_CHEAP = 0.0         			 		-- If produced item is cheap (producing more than one/week), wait to finish item if progress is above this
 
 NDefines.NAI.REGION_THREAT_LEVEL_TO_BLOCK_REGION = 25 * 1000						-- How much threat must be generated in region ( by REGION_THREAT_PER_SUNK_CONVOY ) so the AI will decide to mark the region as avoid
 
@@ -906,10 +941,9 @@ NDefines.NAI.AGGRESSIVENESS_CHECK_PARTLY_FORTIFIED_WEAK_POINTS = 0.75				-- if f
 NDefines.NAI.AGGRESSIVENESS_CHECK_FULLY_FORTIFIED = 10								-- if front strength balance is at or above this value versus a fully fortified enemy with no weak points, we do a balanced attack instead being careful
 NDefines.NAI.AGGRESSIVENESS_CHECK_FULLY_FORTIFIED_POCKET = 6						-- if front strength balance is at or above this value versus a fully fortified enemy in a pocket, we do a balanced attack instead being careful
 
-NDefines.NAI.LAND_DEFENSE_AIR_SUPERIORITY_IMPORTANCE = 0.8							-- Strategic importance of air superiority ( amount of enemy planes in area )
+NDefines.NAI.LAND_DEFENSE_AIR_SUPERIORITY_IMPORTANCE = 2.0							-- Strategic importance of air superiority ( amount of enemy planes in area )
 NDefines.NAI.LAND_DEFENSE_CIVIL_FACTORY_IMPORTANCE = 150							-- Strategic importance of civil factories
 NDefines.NAI.LAND_DEFENSE_MILITARY_FACTORY_IMPORTANCE = 200							-- Strategic importance of military factories
-NDefines.NAI.LAND_DEFENSE_FIGHERS_PER_PLANE = 0.1									-- Amount of air superiority planes requested per enemy plane
 NDefines.NAI.LAND_DEFENSE_FIGHERS_PER_PLANE = 2.0									-- Amount of air superiority planes requested per enemy plane
 NDefines.NAI.LAND_DEFENSE_INTERSEPTORS_PER_BOMBERS = 2.0							-- Amount of air interceptor planes requested per enemy bomber
 NDefines.NAI.LAND_DEFENSE_INTERSEPTORS_PER_PLANE = 0								-- Amount of air interceptor planes requested per enemy plane (non bomber)
@@ -921,11 +955,11 @@ NDefines.NAI.LAND_COMBAT_AIR_SUPERIORITY_IMPORTANCE = 2.0 							-- Strategic im
 NDefines.NAI.LAND_COMBAT_OUR_ARMIES_AIR_IMPORTANCE = 25 							-- Strategic importance of our armies
 NDefines.NAI.LAND_COMBAT_OUR_COMBATS_AIR_IMPORTANCE = 100							-- Strategic importance of our armies in the combats
 NDefines.NAI.LAND_COMBAT_IMPORTANCE_SCALE = 5 										-- Lend combat total importance scale (every land combat score get's multiplied by it)
-NDefines.NAI.LAND_COMBAT_FIGHTERS_PER_PLANE = 1.1									-- Amount of air superiority planes requested per enemy plane
+NDefines.NAI.LAND_COMBAT_FIGHTERS_PER_PLANE = 1.2									-- Amount of air superiority planes requested per enemy plane
 NDefines.NAI.LAND_COMBAT_CAS_PER_ENEMY_ARMY = 50									-- Amount of CAS planes requested per enemy army
 NDefines.NAI.AIR_SUPERIORITY_FOR_FRIENDLY_CAS_RATIO = 0.0							-- Demand at least this proportion of our cas planes as air superiority regardless of other needs
 NDefines.NAI.LAND_COMBAT_CAS_PLANES_PER_ENEMY_ARMY_LIMIT = 1500						-- Limit of CAS planes requested by enemy armies
-NDefines.NAI.LAND_COMBAT_ANTI_LOGISTICS_PER_ENEMY_ARMY = 1    						-- Amount of CAS planes requested per enemy army for anti-logistics
+NDefines.NAI.LAND_COMBAT_ANTI_LOGISTICS_PER_ENEMY_ARMY = 0    						-- Amount of CAS planes requested per enemy army for anti-logistics
 NDefines.NAI.LAND_COMBAT_CAS_PER_COMBAT = 150										-- Amount of CAS requested per combat
 NDefines.NAI.LAND_COMBAT_BOMBERS_PER_LAND_FORT_LEVEL = 30							-- Amount of bomber planes requested per enemy land fort level
 NDefines.NAI.LAND_COMBAT_MIN_EXCORT_WINGS = 3										-- Min amount of airwings requested to excort operations
@@ -934,14 +968,19 @@ NDefines.NAI.LAND_COMBAT_INTERCEPT_PER_PLANE = 0									-- Amount of intercepti
 NDefines.NAI.NAVAL_COMBAT_TRANSFER_AIR_IMPORTANCE = 500.0							-- Naval combat involving enemy land units
 
 NDefines.NAI.STR_BOMB_AIR_SUPERIORITY_IMPORTANCE = 0.0								-- Strategic importance of air superiority ( amount of enemy planes in area )
-	
+
 NDefines.NAI.STR_BOMB_MIN_ENEMY_FIGHTERS_IN_AREA = 2800								-- If amount of enemy fighters is higher than this mission won't perform
-NDefines.NAI.STR_BOMB_FIGHTERS_PER_PLANE = 1.1										-- Amount of air superiority planes requested per enemy plane
-NDefines.NAI.STR_BOMB_MIN_EXCORT_PLANES = 100										-- Min amount of planes requested to excort operations
+NDefines.NAI.STR_BOMB_FIGHTERS_PER_PLANE = 50.0										-- Amount of air superiority planes requested per enemy plane
+NDefines.NAI.STR_BOMB_MIN_EXCORT_PLANES = 100											-- Min amount of planes requested to excort operations
+NDefines.NAI.RECON_PLANES_NAVAL = 500                           					-- scale on recon for naval areas
+NDefines.NAI.RECON_PLANES_LAND_COMBAT = 25                   	 					-- scale on recon for land combat areas
+NDefines.NAI.RECON_PLANES_STRATEGIC = 50                     	 					-- scale on recon for strategic areas
 
 NDefines.NAI.AI_FRACTION_OF_FIGHTERS_RESERVED_FOR_INTERCEPTION = 0.0				-- Percentage of fighters we reserve for interception vs AS
 
 NDefines.NAI.DAYS_BETWEEN_AIR_PRIORITIES_UPDATE = 2									-- Amount of days between air ai updates priorities for air wings ( from 1 to N )
+
+NDefines.NAI.LAND_COMBAT_GUIDE_DISTANCE = 0.0										-- Distance within whch we'll care a bit more about sending planes regardless of whether our boiz are dying
 
 ------------------------------------------------- END
 
@@ -977,10 +1016,6 @@ NDefines.NAI.MAX_FULLY_TRAINED_SHIP_RATIO_FOR_TRAINING = 0.8						-- ai will not
 NDefines.NAI.MAX_UNITS_FACTOR_FRONT_ORDER = 3.0										-- Factor for max number of units to assign to area front orders
 NDefines.NAI.DESIRED_UNITS_FACTOR_FRONT_ORDER = 3.0									-- Factor for desired number of units to assign to area front orders
 NDefines.NAI.MIN_UNITS_FACTOR_FRONT_ORDER = 2.0										-- Factor for min number of units to assign to area front orders
-
-NDefines.NAI.MAX_UNITS_FACTOR_INVASION_ORDER = 1.4									-- Factor for max number of units to assign to naval invasion orders
-NDefines.NAI.DESIRED_UNITS_FACTOR_INVASION_ORDER = 1.4								-- Factor for desired number of units to assign to naval invasion orders
-NDefines.NAI.MIN_UNITS_FACTOR_INVASION_ORDER = 1.2									-- Factor for min number of units to assign to naval invasion orders
 
 NDefines.NAI.HOUR_BAD_COMBAT_REEVALUATE = 6 										-- if we are in combat for this amount and it goes shitty then try skipping it
 
@@ -1102,3 +1137,17 @@ NDefines.NAI.MAX_THREAT_FOR_FIRST_YEAR_CIVILIAN_MODE = 40							-- above this th
 NDefines_Graphics.NGraphics.DRAW_FOW_CUTOFF = 0
 NDefines_Graphics.NGraphics.DRAW_FOW_FADE_LENGTH = 0
 
+--	NIndustrialOrganisation -----
+
+NDefines.NIndustrialOrganisation.ASSIGN_DESIGN_TEAM_PP_COST_PER_DAY = 0.1			-- Cost in Political Power daily generation when one MIO is assigned to a research slot
+NDefines.NIndustrialOrganisation.ASSIGN_INDUSTRIAL_MANUFACTURER_PP_COST_PER_DAY = 0.0		-- Cost in Political Power daily generation when one MIO is assigned to a production line
+-- NDefines.NIndustrialOrganisation.FUNDS_FOR_SIZE_UP = 1000							-- Funds needed for a MIO to increment its size and get points to unlock traits
+-- NDefines.NIndustrialOrganisation.FUNDS_FOR_SIZE_UP_LEVEL_FACTOR = 0.8 				-- How much each level mutliplies the funds for size up
+NDefines.NIndustrialOrganisation.DESIGN_TEAM_CHANGE_XP_COST = 10					-- Flat cost added to the XP cost of a new equipment design
+NDefines.NIndustrialOrganisation.FUNDS_FOR_RESEARCH_COMPLETION_PER_RESEARCH_COST = 200     -- Funds added to MIO when the Design Team has completed a research, multiplied by research_cost in technology template
+NDefines.NIndustrialOrganisation.FUNDS_FOR_CREATING_EQUIPMENT_VARIANT = 100			-- Funds added to MIO when a new variant is created with the Design Team assigned to it
+NDefines.NIndustrialOrganisation.MAX_FUNDS_FROM_MANUFACTURER_PER_DAY = 80			-- Max funds generated per manufacturer per day. Set to 0 for no Maximum.
+-- NDefines.NIndustrialOrganisation.ENABLE_TASK_CAPACITY = true						-- Enable limited task capacity for MIOs
+-- NDefines.NIndustrialOrganisation.DEFAULT_INITIAL_TASK_CAPACITY = 2					-- Default start task capacity for each MIO (may be overriden in DB)
+NDefines.NIndustrialOrganisation.DEFAULT_INITIAL_POLICY_ATTACH_COST = 50			-- Default start attach cost in PP for policies
+NDefines.NIndustrialOrganisation.DEFAULT_INITIAL_ATTACH_POLICY_COOLDOWN = 182		-- Default start cooldown in days after attaching a policy
