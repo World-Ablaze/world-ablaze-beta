@@ -680,21 +680,22 @@
 							mountaineers = { x = 0 y = 0 }
 							mountaineers = { x = 0 y = 1 }
 							mountaineers = { x = 0 y = 2 }
-							anti_tank_brigade = { x = 0 y = 3 }
 
 							mountaineers = { x = 1 y = 0 }
 							mountaineers = { x = 1 y = 1 }
 							mountaineers = { x = 1 y = 2 }
-							anti_tank_brigade = { x = 1 y = 3 }
 
 							mountaineers = { x = 2 y = 0 }
 							mountaineers = { x = 2 y = 1 }
 							mountaineers = { x = 2 y = 2 }
-							anti_air_brigade = { x = 2 y = 3 }
 
 							artillery_brigade = { x = 3 y = 0 }
 							artillery_brigade = { x = 3 y = 1 }
 							artillery_brigade = { x = 3 y = 2 }
+
+							anti_tank_brigade = { x = 4 y = 0 }
+							anti_tank_brigade = { x = 4 y = 1 }
+							anti_air_brigade = { x = 4 y = 2 }
 						}
 
 						support = {
@@ -3616,7 +3617,7 @@
 		}
 
 		available = {
-			GER = { 
+			GER = {
 				OR = {
 					is_subject_of = ROOT
 					is_in_faction_with = ROOT
@@ -3774,9 +3775,8 @@
 			}
 			custom_effect_tooltip = FRA_dirigisme_tt
 			hidden_effect = {
-				add_to_variable = { var = FRA_National_Bloc_factory_output value = 1 }
-				add_to_variable = { var = FRA_National_Bloc_stability value = 1 }
-				FRA_political_instability_update_effect = yes
+				add_to_variable = { FRA_national_bloc_consumer_goods_factor = -0.02 }
+				add_to_variable = { FRA_national_bloc_stability_factor = 0.05 }
 			}
 		}
 	}
@@ -3850,22 +3850,23 @@
 		}
 
 		completion_reward = {
-			create_country_leader = {
-				name = "Léon Blum"
-				desc = "POLITICS_ÉDOUARD_DALADIER_DESC"
-				picture = GFX_portrait_fra_leon_blum
-				expire = "1965.1.1"
-				ideology = socialism
-				traits = {
-					idealist
-					reluctant_interventionist
-					stout_defender
+			add_country_leader_role = {
+				character = FRA_leon_blum
+				country_leader = {
+					expire = "1965.1.1"
+					ideology = socialism
+					traits = {
+						idealist
+						reluctant_interventionist
+						stout_defender
+					}
+					desc = "POLITICS_LEON_BLUM_DESC"
 				}
+				promote_leader = yes
 			}
 			custom_effect_tooltip = FRA_form_the_popular_front_tt
 			hidden_effect = {
 				set_variable = { FRA_CGT_attitude = 0 }
-				FRA_political_instability_update_effect = yes
 				set_country_flag = FRA_form_the_popular_front_dd_flag
 			}
 			add_popularity = { ideology = communism popularity = 0.1 }
@@ -3890,7 +3891,7 @@
 			AND = {
 				custom_trigger_tooltip = {
 					tooltip = FRA_ban_the_leagues_tt
-					check_variable = { var = FRA_Far_Right_Leagues_attitude value = -4 compare = less_than_or_equals }
+					check_variable = { FRA_far_right_attitude < -3 }
 				}
 			}
 		}
@@ -3907,12 +3908,11 @@
 		}
 		completion_reward = {
 			hidden_effect = {
-				set_variable = { var = FRA_Far_Right_Leagues_attitude value = -6 }
-				set_variable = { var = FRA_Far_Right_Leagues_influence value = 0 }
-				set_variable = { var = FRA_Far_Right_Leagues_political_power_gain value = 0 }
-				set_variable = { var = FRA_far_right_leagues_war_support value = 0 }
-				set_variable = { var = FRA_Far_Right_Leagues_stability value = 0 }
-				FRA_political_instability_update_effect = yes
+				set_variable = { FRA_far_right_attitude = -6 }
+				set_variable = { FRA_far_right_influence = 0 }
+				set_variable = { FRA_far_right_political_power_gain = 0 }
+				set_variable = { FRA_far_right_war_support_factor = 0 }
+				set_variable = { FRA_far_right_stability_factor = 0 }
 			}
 			custom_effect_tooltip = FRA_ban_the_leagues_effect_tt
 			set_temp_variable = {
@@ -3968,11 +3968,10 @@
 			custom_effect_tooltip = FRA_reform_the_labour_laws_tt
 			hidden_effect = {
 				add_to_variable = { FRA_CGT_attitude = 1 }
-				add_to_variable = { FRA_CGT_political_power_gain = 3 }
-				add_to_variable = { FRA_CGT_factory_output = 2 }
-				add_to_variable = { FRA_CGT_stability = 3 }
-				subtract_from_variable = { var = FRA_French_Industrialists_attitude value = 1 }
-				FRA_political_instability_update_effect = yes
+				add_to_variable = { FRA_CGT_political_power_gain = 0.15 }
+				add_to_variable = { FRA_CGT_industrial_capacity_factory = 0.1 }
+				add_to_variable = { FRA_CGT_stability_factor = 0.15 }
+				add_to_variable = { FRA_industrialists_attitude = -1 }
 			}
 			add_ideas = FRA_matignon_agreements
 			remove_ideas = FRA_factory_strikes
@@ -4014,8 +4013,7 @@
 		completion_reward = {
 			custom_effect_tooltip = FRA_nationalize_key_industry_tt
 			hidden_effect = {
-				subtract_from_variable = { var = FRA_French_Industrialists_influence value = 1 }
-				FRA_political_instability_update_effect = yes
+				add_to_variable = { FRA_industrialists_influence = -1 }
 			}
 			FRA_disjointed_government_level_down = yes
 		}
@@ -4081,8 +4079,7 @@
 		completion_reward = {
 			custom_effect_tooltip = FRA_invest_in_public_works_tt
 			hidden_effect = {
-				subtract_from_variable = { var = FRA_National_Bloc_factory_output value = 1 }
-				FRA_political_instability_update_effect = yes
+				add_to_variable = { FRA_national_bloc_consumer_goods_factor = 0.02 }
 			}
 			economy_fatigue_level_down_10 = yes
 		}
@@ -4118,11 +4115,10 @@
 		completion_reward = {
 			custom_effect_tooltip = FRA_2_weeks_paid_vacation_tt
 			hidden_effect = {
-				add_to_variable = { var = FRA_CGT_attitude value = 1 }
-				add_to_variable = { var = FRA_CGT_political_power_gain value = 1 }
-				add_to_variable = { var = FRA_CGT_stability value = 1 }
-				subtract_from_variable = { var = FRA_National_Bloc_factory_output value = 1 }
-				FRA_political_instability_update_effect = yes
+				add_to_variable = { FRA_CGT_attitude = 1 }
+				add_to_variable = { FRA_CGT_political_power_gain = 0.05 }
+				add_to_variable = { FRA_CGT_stability_factor = 0.05 }
+				add_to_variable = { FRA_national_bloc_consumer_goods_factor = 0.02 }
 			}
 		}
 	}
@@ -4157,11 +4153,10 @@
 		completion_reward = {
 			custom_effect_tooltip = FRA_better_retirement_plans_tt
 			hidden_effect = {
-				add_to_variable = { var = FRA_CGT_attitude value = 1 }
-				add_to_variable = { var = FRA_CGT_political_power_gain value = 1 }
-				add_to_variable = { var = FRA_CGT_stability value = 1 }
-				subtract_from_variable = { var = FRA_National_Bloc_factory_output value = 1 }
-				FRA_political_instability_update_effect = yes
+				add_to_variable = { FRA_CGT_attitude = 1 }
+				add_to_variable = { FRA_CGT_political_power_gain = 0.05 }
+				add_to_variable = { FRA_CGT_stability_factor = 0.05 }
+				add_to_variable = { FRA_national_bloc_consumer_goods_factor = 0.02 }
 			}
 		}
 	}
@@ -4233,9 +4228,8 @@
 		completion_reward = {
 			custom_effect_tooltip = FRA_blum_violette_proposal_tt
 			hidden_effect = {
-				subtract_from_variable = { var = FRA_National_Bloc_attitude value = 1 }
-				subtract_from_variable = { var = FRA_National_Bloc_stability value = 1 }
-				FRA_political_instability_update_effect = yes
+				add_to_variable = { FRA_National_Bloc_attitude = -1 }
+				add_to_variable = { FRA_national_bloc_stability_factor = -0.05 }
 			}
 			if = {
 				limit = {
@@ -4456,8 +4450,8 @@
 			#	limit = {
 			#		AND = {
 			#			OR = {
-			#				check_variable = { var = FRA_National_Bloc_attitude value = -4 compare = less_than_or_equals }
-			#				check_variable = { var = FRA_CGT_attitude value = -4 compare = less_than_or_equals }
+			#				check_variable = { FRA_National_Bloc_attitude < -3 }
+			#				check_variable = { FRA_CGT_attitude < -3 }
 			#			}
 			#			has_stability < 0.7
 			#		}
@@ -4628,7 +4622,7 @@
 				set_variable = { FRA_threat_coup_political_var = 0 }
 				set_variable = { FRA_threat_coup_manpower_var = 0 }
 				activate_mission = FRA_increase_preperation_timer
-				#subtract_from_variable = { FRA_French_Industrialists_attitude = 2 }
+				#add_to_variable = { FRA_industrialists_attitude = -2 }
 				set_country_flag = coalition_with_communists
 			}
 		}
@@ -4661,12 +4655,11 @@
 			}
 			custom_effect_tooltip = FRA_strengthen_the_unions_tt
 			hidden_effect = {
-				add_to_variable = { var = FRA_CGT_influence value = 1 }
-				subtract_from_variable = { var = FRA_French_Industrialists_influence value = 2 }
-				subtract_from_variable = { var = FRA_French_Industrialists_attitude value = 2 }
-				set_variable = { FRA_French_Industrialists_factory_output = 0 }
-				set_variable = { FRA_French_Industrialists_dockyard_output = 0 }
-				FRA_political_instability_update_effect = yes
+				add_to_variable = { FRA_CGT_influence = 1 }
+				add_to_variable = { FRA_industrialists_influence = -2 }
+				add_to_variable = { FRA_industrialists_attitude = -2 }
+				set_variable = { FRA_industrialists_industrial_capacity_factory = 0 }
+				set_variable = { FRA_industrialists_industrial_capacity_dockyard = 0 }
 				set_country_flag = fra_industrialists_no_influence
 			}
 			add_days_mission_timeout = {
@@ -4737,12 +4730,11 @@
 			}
 			add_stability = -0.1
 			custom_effect_tooltip = FRA_push_out_the_radicals_tt
-			subtract_from_variable = { FRA_National_bloc_attitude  = 1 }
-			set_variable = { FRA_National_bloc_influence = 0 }
-			set_variable = { FRA_National_bloc_political_power_gain = -1 }
-			set_variable = { FRA_National_bloc_factory_output = 0 }
-			add_to_variable = { FRA_National_bloc_stability = -1 }
-			FRA_political_instability_update_effect = yes
+			add_to_variable = { FRA_national_bloc_attitude = -1 }
+			set_variable = { FRA_national_bloc_influence = 0 }
+			set_variable = { FRA_national_bloc_political_power_gain = -0.05 }
+			set_variable = { FRA_national_bloc_consumer_goods_factor = 0 }
+			add_to_variable = { FRA_national_bloc_stability_factor = -0.05 }
 			add_days_mission_timeout = {
 				mission = FRA_brewing_troubles_timer
 				days = -200
@@ -4929,11 +4921,10 @@
 			add_ideas = market_socialism
 			# custom_effect_tooltip = FRA_CGT_Positive_1_tt
 			# hidden_effect = {
-			# 	add_to_variable = { var = FRA_CGT_attitude value = 1 }
-			# 	add_to_variable = { var = FRA_CGT_factory_output value = 1 }
-			# 	add_to_variable = { var = FRA_CGT_stability value = 1 }
-			# 	add_to_variable = { var = FRA_CGT_political_power_gain value = 1 }
-			# 	FRA_political_instability_update_effect = yes
+			# 	add_to_variable = { FRA_CGT_attitude = 1 }
+			# 	add_to_variable = { FRA_CGT_industrial_capacity_factory = 0.05 }
+			# 	add_to_variable = { FRA_CGT_stability_factor = 0.05 }
+			# 	add_to_variable = { FRA_CGT_political_power_gain = 0.05 }
 			# }
 			add_days_mission_timeout = {
 				mission = FRA_brewing_troubles_timer
@@ -5168,11 +5159,11 @@
 			}
 			custom_effect_tooltip = FRA_industrial_collectivization_tt
 			hidden_effect = {
-				set_variable = { FRA_French_Industrialists_attitude = -6 }
-				set_variable = { FRA_French_Industrialists_influence = 0 }
-				set_variable = { FRA_French_Industrialists_factory_output = 0 }
-				set_variable = { FRA_French_Industrialists_political_power_gain = 0 }
-				set_variable = { FRA_French_Industrialists_dockyard_output = 0 }
+				set_variable = { FRA_industrialists_attitude = -6 }
+				set_variable = { FRA_industrialists_influence = 0 }
+				set_variable = { FRA_industrialists_industrial_capacity_factory = 0 }
+				set_variable = { FRA_industrialists_political_power_gain = 0 }
+				set_variable = { FRA_industrialists_industrial_capacity_dockyard = 0 }
 			}
 		}
 	}
@@ -5205,11 +5196,10 @@
 			}
 			# custom_effect_tooltip = FRA_CGT_Positive_1_tt
 			# hidden_effect = {
-			# 	add_to_variable = { var = FRA_CGT_attitude value = 1 }
-			# 	add_to_variable = { var = FRA_CGT_factory_output value = 1 }
-			# 	add_to_variable = { var = FRA_CGT_stability value = 1 }
-			# 	add_to_variable = { var = FRA_CGT_political_power_gain value = 1 }
-			# 	FRA_political_instability_update_effect = yes
+			# 	add_to_variable = { FRA_CGT_attitude = 1 }
+			# 	add_to_variable = { FRA_CGT_industrial_capacity_factory = 0.05 }
+			# 	add_to_variable = { FRA_CGT_stability_factor = 0.05 }
+			# 	add_to_variable = { FRA_CGT_political_power_gain = 0.05 }
 			# }
 			add_ideas = FRA_national_champions_idea
 		}
@@ -5700,16 +5690,18 @@
 		}
 
 		completion_reward = {
-			create_country_leader = {
-				name = "Camille Chautemps"
-				desc = "POLITICS_CAMILLE_CHAUTEMPS_DESC"
-				picture = "gfx/leaders/FRA/portrait_fra_camille_chautemps.dds"
-				expire = "1965.1.1"
-				ideology = socialism
-				traits = {
-					progressionist
-					stout_defender
+			add_country_leader_role = {
+				character = FRA_camille_chautemps
+				country_leader = {
+					expire = "1965.1.1"
+					ideology = socialism
+					traits = {
+						progressionist
+						stout_defender
+					}
+					desc = "POLITICS_CAMILLE_CHAUTEMPS_DESC"
 				}
+				promote_leader = yes
 			}
 			add_popularity = { ideology = democratic popularity = 0.05 }
 		}
@@ -5901,14 +5893,13 @@
 			promote_character = FRA_edouard_daladier
 			custom_effect_tooltip = FRA_the_fall_of_the_popular_front_tt
 			hidden_effect = {
-				set_variable = { var = FRA_CGT_attitude value = -3 }
-				subtract_from_variable = { var = FRA_CGT_political_power_gain value = 5 }
-				subtract_from_variable = { var = FRA_CGT_factory_output value = 6 }
-				subtract_from_variable = { var = FRA_CGT_stability value = 2 }
-				set_variable = { var = FRA_National_bloc_attitude value = 1 }
-				set_variable = { var = FRA_National_bloc_political_power_gain value = 0 }
-				add_to_variable = { var = FRA_National_bloc_stability value = 3 }
-				FRA_political_instability_update_effect = yes
+				set_variable = { FRA_CGT_attitude = -3 }
+				add_to_variable = { FRA_CGT_political_power_gain = -0.25 }
+				add_to_variable = { FRA_CGT_industrial_capacity_factory = -0.3 }
+				add_to_variable = { FRA_CGT_stability_factor = -0.1 }
+				set_variable = { FRA_national_bloc_attitude = 1 }
+				set_variable = { FRA_national_bloc_political_power_gain = 0 }
+				add_to_variable = { FRA_national_bloc_stability_factor = 0.15 }
 			}
 			custom_effect_tooltip = available_intelligence_minister
 			show_ideas_tooltip = FRA_felix_gouin
@@ -6184,16 +6175,17 @@
 		}
 
 		completion_reward = {
-			retire_country_leader = yes
-			create_country_leader = {
-				name = "Paul Reynaud"
-				desc = "POLITICS_FUMIMARO_KONOE_DESC"
-				picture = "gfx/leaders/FRA/Portrait_France_Paul_Reynaud.dds"
-				expire = "1965.1.1"
-				ideology = liberalism
-				traits = {
-					republican_nationalist
+			add_country_leader_role = {
+				character = FRA_paul_reynaud
+				country_leader = {
+					expire = "1965.1.1"
+					ideology = liberalism
+					traits = {
+						republican_nationalist
+					}
+					desc = "POLITICS_PAUL_REYNAUD_DESC"
 				}
+				promote_leader = yes
 			}
 			hidden_effect = {
 				country_event = fra_armor.814
@@ -6328,10 +6320,9 @@
 			hidden_effect = {
 				set_variable = { FRA_CGT_attitude = -6 }
 				set_variable = { FRA_CGT_influence = 0 }
-				set_variable = { FRA_CGT_factory_output = 0 }
+				set_variable = { FRA_CGT_industrial_capacity_factory = 0 }
 				set_variable = { FRA_CGT_political_power_gain = 0 }
-				set_variable = { FRA_CGT_stability = 0 }
-				FRA_political_instability_update_effect = yes
+				set_variable = { FRA_CGT_stability_factor = 0 }
 			}
 		}
 	}
@@ -6588,8 +6579,7 @@
 		completion_reward = {
 			custom_effect_tooltip = FRA_stimulate_the_free_market_tt
 			hidden_effect = {
-				set_variable = { var = FRA_National_bloc_factory_output value = 0 }
-				FRA_political_instability_update_effect = yes
+				set_variable = { FRA_national_bloc_consumer_goods_factor = 0 }
 			}
 		}
 	}
@@ -6986,11 +6976,10 @@
 		completion_reward = {
 			custom_effect_tooltip = FRA_Industrialists_Positive_1_tt
 			hidden_effect = {
-				set_variable = { var = FRA_French_Industrialists_attitude value = 1 }
-				add_to_variable = { var = FRA_French_Industrialists_influence value = 1 }
-				set_variable = { var = FRA_French_Industrialists_factory_output value = 1 }
-				add_to_variable = { var = FRA_French_Industrialists_political_power_gain value = 1 }
-				FRA_political_instability_update_effect = yes
+				set_variable = { FRA_industrialists_attitude = 1 }
+				add_to_variable = { FRA_industrialists_influence = 1 }
+				set_variable = { FRA_industrialists_industrial_capacity_factory = 0.05 }
+				add_to_variable = { FRA_industrialists_political_power_gain = 0.05 }
 			}
 		}
 	}
@@ -7056,9 +7045,8 @@
 		completion_reward = {
 			custom_effect_tooltip = FRA_interventionist_policies_tt
 			hidden_effect = {
-				add_to_variable = { var = FRA_National_Bloc_attitude value = 1 }
-				add_to_variable = { var = FRA_National_bloc_factory_output value = 2 }
-				FRA_political_instability_update_effect = yes
+				add_to_variable = { FRA_National_Bloc_attitude = 1 }
+				add_to_variable = { FRA_national_bloc_consumer_goods_factor = -0.04 }
 			}
 		}
 	}
@@ -7106,11 +7094,10 @@
 			}
 			custom_effect_tooltip = FRA_revive_the_national_bloc_tt
 			hidden_effect = {
-				set_variable = { FRA_National_bloc_attitude = 1 }
-				set_variable = { FRA_National_bloc_political_power_gain = 1 }
-				set_variable = { FRA_National_bloc_influence = 1 }
-				set_variable = { FRA_National_bloc_stability = 1 }
-				FRA_political_instability_update_effect = yes
+				set_variable = { FRA_national_bloc_attitude = 1 }
+				set_variable = { FRA_national_bloc_political_power_gain = 0.05 }
+				set_variable = { FRA_national_bloc_influence = 1 }
+				set_variable = { FRA_national_bloc_stability_factor = 0.05 }
 			}
 			add_popularity = { ideology = democratic popularity = 0.1 }
 		}
@@ -7256,16 +7243,13 @@
 				}
 				# if = {
 				# 	limit = {
-				# 		check_variable = {
-				# 			FRA_CGT_attitude > -5
-				# 		}
+				# 		check_variable = { FRA_CGT_attitude > -5 }
 				# 	}
-				# 	subtract_from_variable = { var  = FRA_CGT_attitude value = 1 }
+				# 	add_to_variable = { var  = FRA_CGT_attitude = -1 }
 				# }
-				# add_to_variable = { var  = FRA_CGT_stability value = -1 }
-				# add_to_variable = { var  = FRA_CGT_factory_output value = -1 }
-				# add_to_variable = { var  = FRA_CGT_political_power_gain value = -1 }
-				# FRA_political_instability_update_effect = yes
+				# add_to_variable = { var  = FRA_CGT_stability_factor = -0.05 }
+				# add_to_variable = { var  = FRA_CGT_industrial_capacity_factory = -0.05 }
+				# add_to_variable = { var  = FRA_CGT_political_power_gain = -0.05 }
 			}
 		}
 	}
@@ -7288,23 +7272,11 @@
 			OR = {
 				custom_trigger_tooltip = {
 					tooltip = less_than_10_economy_fatigue
-					OR = {
-						has_idea = economy_fatigue_0
-						has_idea = economy_fatigue_1
-						has_idea = economy_fatigue_2
-						has_idea = economy_fatigue_3
-						has_idea = economy_fatigue_4
-						has_idea = economy_fatigue_5
-						has_idea = economy_fatigue_6
-						has_idea = economy_fatigue_7
-						has_idea = economy_fatigue_8
-						has_idea = economy_fatigue_9
-						has_idea = economy_fatigue_10
-					}
+					check_variable = { economic_fatigue < 10 }
 				}
 				has_completed_focus = FRA_nationalize_the_arms_industries
 			}
-			
+
 		}
 
 		bypass = {
@@ -7329,7 +7301,7 @@
 				}
 				add_ideas = partial_economic_mobilisation
 			}
-			
+
 			economy_fatigue_level_up_3 = yes
 
 			random_owned_controlled_state = {
@@ -7521,11 +7493,7 @@
 		available = {
 			custom_trigger_tooltip = {
 				tooltip = FRA_ban_the_cgt_tt
-					check_variable = {
-					var = FRA_CGT_attitude
-					value = -5
-					compare = equals
-				}
+					check_variable = { FRA_CGT_attitude = -5 }
 			}
 		}
 
@@ -7544,10 +7512,9 @@
 			hidden_effect = {
 				set_variable = { FRA_CGT_attitude = -6 }
 				set_variable = { FRA_CGT_influence = 0 }
-				set_variable = { FRA_CGT_factory_output = 0 }
+				set_variable = { FRA_CGT_industrial_capacity_factory = 0 }
 				set_variable = { FRA_CGT_political_power_gain = 0 }
-				set_variable = { FRA_CGT_stability = 0 }
-				FRA_political_instability_update_effect = yes
+				set_variable = { FRA_CGT_stability_factor = 0 }
 				country_event = {
 					id = fra_armor.821
 					days = 4
@@ -7588,9 +7555,8 @@
 		completion_reward = {
 			economy_fatigue_level_down_4 = yes
 			custom_effect_tooltip = FRA_promote_entrepeneurship_tt
-			add_to_variable = { FRA_French_Industrialists_factory_output = 1 }
-			add_to_variable = { FRA_French_Industrialists_dockyard_output = 1 }
-			FRA_political_instability_update_effect = yes
+			add_to_variable = { FRA_industrialists_industrial_capacity_factory = 0.05 }
+			add_to_variable = { FRA_industrialists_industrial_capacity_dockyard = 0.05 }
 		}
 	}
 
@@ -7630,9 +7596,8 @@
 				remove_idea = FRA_disjointed_government
 				add_idea = FRA_disjointed_government_bloc_path
 			}
-			set_variable = { FRA_French_Industrialists_influence = 6 }
-			set_variable = { FRA_French_Industrialists_political_power_gain = 5 }
-			FRA_political_instability_update_effect = yes
+			set_variable = { FRA_industrialists_influence = 6 }
+			set_variable = { FRA_industrialists_political_power_gain = 0.25 }
 		}
 	}
 
@@ -7666,9 +7631,8 @@
 		completion_reward = {
 			economy_fatigue_level_up_2 = yes
 			custom_effect_tooltip = FRA_promote_entrepeneurship_tt
-			add_to_variable = { FRA_French_Industrialists_factory_output = 1 }
-			add_to_variable = { FRA_French_Industrialists_dockyard_output = 1 }
-			FRA_political_instability_update_effect = yes
+			add_to_variable = { FRA_industrialists_industrial_capacity_factory = 0.05 }
+			add_to_variable = { FRA_industrialists_industrial_capacity_dockyard = 0.05 }
 			add_ideas = FRA_agricultural_protectionism
 		}
 	}
@@ -7704,9 +7668,8 @@
 		completion_reward = {
 			economy_fatigue_level_down_8 = yes
 			custom_effect_tooltip = FRA_national_regeneration_tt
-			add_to_variable = { FRA_French_Industrialists_factory_output = 2 }
-			add_to_variable = { FRA_French_Industrialists_dockyard_output = 2 }
-			FRA_political_instability_update_effect = yes
+			add_to_variable = { FRA_industrialists_industrial_capacity_factory = 0.1 }
+			add_to_variable = { FRA_industrialists_industrial_capacity_dockyard = 0.1 }
 		}
 	}
 
@@ -8093,11 +8056,10 @@
 
 		completion_reward = {
 			custom_effect_tooltip = FRA_utilize_the_leagues_tt
-			set_variable = { FRA_Far_Right_Leagues_attitude = 1 }
-			set_variable = { FRA_Far_Right_Leagues_political_power_gain = 1 }
-			set_variable = { FRA_Far_Right_Leagues_stability = 1 }
-			set_variable = { FRA_far_right_leagues_war_support = 1 }
-			FRA_political_instability_update_effect = yes
+			set_variable = { FRA_far_right_attitude = 1 }
+			set_variable = { FRA_far_right_political_power_gain = 0.05 }
+			set_variable = { FRA_far_right_stability_factor = 0.05 }
+			set_variable = { FRA_far_right_war_support_factor = 0.05 }
 			if = {
 				limit = {
 					OR = {
@@ -8176,10 +8138,19 @@
 						set_cosmetic_tag = FRA_ARMY
 						set_country_flag = FRA
 						retire_country_leader = yes
-						create_country_leader = {
-							name = FRA_maurice_gamelin
-							ideology = despotism
-							picture = "gfx/leaders/FRA/Portrait_France_Maurice_Gamelin.dds"
+						FRA = {
+							set_nationality = {
+								target_country = prev
+								character = FRA_maurice_gamelin
+							}
+						}
+						add_country_leader_role = {
+							character = FRA_maurice_gamelin
+							country_leader = {
+								ideology = despotism
+								expire = "1965.1.1"
+								desc = "POLITICS_MAURICE_GAMELIN_DESC"
+							}
 						}
 					}
 				}
@@ -8189,10 +8160,7 @@
 						min = 0
 						max = 9
 					}
-					divide_variable = {
-						var = FRA_civil_var_army_support
-						value = 10
-					}
+					divide_variable = {  FRA_civil_var_army_support = 10 }
 					set_variable = {
 						fre_army_support_helper_var = 1
 					}
@@ -8558,7 +8526,7 @@
 					level = 4
 				}
 			}
-			custom_effect_tooltip = FRA_lower_requirement_war_eco_tt
+			#custom_effect_tooltip = FRA_lower_requirement_war_eco_tt
 		}
 	}
 
@@ -8715,6 +8683,7 @@
 		bypass = {
 		}
 
+
 		cancel_if_invalid = yes
 		continue_if_invalid = no
 		available_if_capitulated = no
@@ -8723,21 +8692,9 @@
 			FOCUS_FILTER_STABILITY
 		}
 		completion_reward = {
-			custom_effect_tooltip = focus_tree_coming_in_79 #Remove later
-			#if = {
-			#	limit = {
-			#		has_idea = FRA_victors_of_wwi
-			#	}
-			#	remove_ideas = FRA_victors_of_wwi
-			#}
-			#add_timed_idea = {
-			#	idea = FRA_constitutional_revision
-			#	days = 365
-			#}
-			#add_popularity = {
-			#	ideology = neutrality
-			#	popularity = 0.1
-			#}
+			custom_effect_tooltip = focus_tree_coming_in_80 #Remove later
+			add_ideas = FRA_action_francaise_idea
+			country_event = fra_armor.830
 		}
 	}
 
@@ -8772,6 +8729,19 @@
 		}
 
 		completion_reward = {
+			unlock_decision_tooltip = FRA_infiltrate_state_monarchists
+			1 = {
+				set_state_flag = FRA_state_orleanist
+			}
+			21 = {
+				set_state_flag = FRA_state_orleanist
+			}
+			19 = {
+				set_state_flag = FRA_state_legitimist
+			}
+			29 = {
+				set_state_flag = FRA_state_bonapart
+			}
 		}
 	}
 
@@ -8806,6 +8776,15 @@
 		}
 
 		completion_reward = {
+			add_popularity = {
+				ideology = communism
+				popularity = -0.5
+			}
+			add_popularity = {
+				ideology = democratic
+				popularity = -0.2
+			}
+			add_stability = -0.3
 		}
 	}
 
@@ -8853,6 +8832,7 @@
 		}
 		available = {
 			is_subject = no
+			has_civil_war = no
 		}
 		bypass = {
 		}
@@ -8865,6 +8845,7 @@
 				ideology = neutrality
 				popularity = 0.1
 			}
+			add_stability = 0.1
 			custom_effect_tooltip = available_political_advisor
 			show_ideas_tooltip = FRA_council_of_rambouillet
 		}
@@ -8945,6 +8926,7 @@
 		}
 
 		available = {
+			has_country_leader = { character = FRA_alphonse_georges ruling_only = yes }
 		}
 
 		bypass = {
@@ -8957,6 +8939,7 @@
 		}
 
 		completion_reward = {
+			add_war_support = 0.2
 		}
 	}
 	focus = {
@@ -9099,6 +9082,7 @@
 		}
 
 		available = {
+			has_country_leader = { character = FRA_jean_III ruling_only = yes }
 		}
 
 		bypass = {
@@ -9154,6 +9138,7 @@
 		}
 
 		available = {
+			has_country_leader = { character = FRA_napoleon_vi ruling_only = yes }
 		}
 
 		bypass = {
@@ -9166,6 +9151,67 @@
 		}
 
 		completion_reward = {
+			division_template = {
+				name = "Garde Impériale"
+				is_locked = yes
+				regiments = {
+					mechanized = { x = 0 y = 0 }
+					mechanized = { x = 0 y = 1 }
+					mechanized = { x = 0 y = 2 }
+
+					mechanized = { x = 1 y = 0 }
+					mechanized = { x = 1 y = 1 }
+					mechanized = { x = 1 y = 2 }
+
+					mechanized = { x = 2 y = 0 }
+					mechanized = { x = 2 y = 1 }
+					mechanized = { x = 2 y = 2 }
+
+					motorized_artillery_brigade = { x = 3 y = 0 }
+					motorized_artillery_brigade = { x = 3 y = 1 }
+					motorized_artillery_brigade = { x = 3 y = 2 }
+					motorized_artillery_brigade = { x = 3 y = 2 }
+
+					motorized_anti_tank_brigade = { x = 3 y = 0 }
+					motorized_anti_tank_brigade = { x = 3 y = 1 }
+					motorized_anti_tank_brigade = { x = 3 y = 2 }
+					motorized_anti_tank_brigade = { x = 3 y = 2 }
+				}
+				support = {
+					armored_engineer = { x = 0 y = 0 }
+					anti_air = { x = 0 y = 1 }
+					armoured_recon = { x = 0 y = 2 }
+					heavy_maintenance_company = { x = 0 y = 3 }
+					motorized_logistics_company = { x = 0 y = 4 }
+					field_hospital = { x = 1 y = 0 }
+					artillery = { x = 1 y = 1 }
+					military_police = { x = 1 y = 2 }
+					signal_company = { x = 1 y = 3 }
+					anti_tank = { x = 1 y = 4 }
+				}
+			}
+			855 = {
+				create_unit = {
+					division = "name = \"1er Régiment de Grenadiers-blindée de la Garde Impériale\" division_template = \"Garde Impériale\" start_experience_factor = 1 start_equipment_factor = 0"
+					owner = FRA
+				}
+				create_unit = {
+					division = "name = \"2e Régiment de Grenadiers-blindée de la Garde Impériale\" division_template = \"Garde Impériale\" start_experience_factor = 1 start_equipment_factor = 0"
+					owner = FRA
+				}
+				create_unit = {
+					division = "name = \"3e Régiment de Grenadiers-blindée de la Garde Impériale\" division_template = \"Garde Impériale\" start_experience_factor = 1 start_equipment_factor = 0"
+					owner = FRA
+				}
+				create_unit = {
+					division = "name = \"4e Régiment de Grenadiers-blindée de la Garde Impériale\" division_template = \"Garde Impériale\" start_experience_factor = 1 start_equipment_factor = 0"
+					owner = FRA
+				}
+				create_unit = {
+					division = "name = \"5e Régiment de Grenadiers-blindée de la Garde Impériale\" division_template = \"Garde Impériale\" start_experience_factor = 1 start_equipment_factor = 0"
+					owner = FRA
+				}
+			}
 		}
 	}
 	focus = {
@@ -9187,31 +9233,27 @@
 		continue_if_invalid = no
 		available_if_capitulated = no
 		completion_reward = {
-			remove_country_leader_trait = inexperienced_imperialist
-			create_field_marshal = {
-				name = "Napoléon VI"
-				picture = "portrait_fra_napoleon_land.dds"
-				traits = {
-					FRA_emperor_of_the_french
-					inspirational_leader
-					organisational_leader
-					aggressive_assaulter
+			FRA_napoleon_vi = {
+				remove_country_leader_trait = inexperienced_imperialist
+				add_field_marshal_role = {
+					traits = {
+						FRA_emperor_of_the_french
+						inspirational_leader
+						organisational_leader
+						aggressive_assaulter
+					}
+					skill = 1
+					attack_skill = 1
+					defense_skill = 1
+					planning_skill = 1
+					logistics_skill = 1
 				}
-				id = 104
-				skill = 1
-				attack_skill = 1
-				defense_skill = 1
-				planning_skill = 1
-				logistics_skill = 1
 			}
 			add_ideas = {
 				FRA_emperor_military_training_idea
 			}
 			hidden_effect = {
-				set_variable = {
-					var = trainingpips
-					value = 0
-				}
+				set_variable = { trainingpips = 0 }
 			}
 			custom_effect_tooltip = FRA_a_military_training_for_the_emperor_tt
 		}
@@ -9246,6 +9288,54 @@
 		}
 
 		completion_reward = {
+			custom_effect_tooltip = FRA_industrialists_total_tt
+			set_variable = { FRA_French_Industrialists_attitude = 2 }
+			set_variable = { FRA_French_Industrialists_influence = 6 }
+			random_owned_controlled_state = {
+				limit = {
+					free_building_slots = {
+						building = industrial_complex
+						size > 4
+						include_locked = yes
+					}
+				}
+				add_extra_state_shared_building_slots = 5
+				add_building_construction = {
+					type = industrial_complex
+					level = 5
+					instant_build = yes
+				}
+			}
+			random_owned_controlled_state = {
+				limit = {
+					free_building_slots = {
+						building = arms_factory
+						size > 5
+						include_locked = yes
+					}
+				}
+				add_extra_state_shared_building_slots = 6
+				add_building_construction = {
+					type = arms_factory
+					level = 6
+					instant_build = yes
+				}
+			}
+			random_owned_controlled_state = {
+				limit = {
+					free_building_slots = {
+						building = industrial_complex
+						size > 4
+						include_locked = yes
+					}
+				}
+				add_extra_state_shared_building_slots = 5
+				add_building_construction = {
+					type = industrial_complex
+					level = 5
+					instant_build = yes
+				}
+			}
 		}
 	}
 
@@ -9276,6 +9366,10 @@
 		}
 
 		completion_reward = {
+			swap_ideas = {
+				remove_idea = FRA_action_francaise_idea
+				add_idea = FRA_action_francaise_idea_2
+			}
 		}
 	}
 
@@ -9306,6 +9400,83 @@
 		}
 
 		completion_reward = {
+			economy_fatigue_level_up_5 = yes
+			random_owned_controlled_state = {
+				limit = {
+					is_core_of = root
+					free_building_slots = {
+						building = arms_factory
+						size > 3
+						include_locked = yes
+					}
+				}
+				add_extra_state_shared_building_slots = 4
+				add_building_construction = {
+					type = arms_factory
+					level = 4
+				}
+			}
+			random_owned_controlled_state = {
+				limit = {
+					is_core_of = root
+					free_building_slots = {
+						building = arms_factory
+						size > 3
+						include_locked = yes
+					}
+				}
+				add_extra_state_shared_building_slots = 4
+				add_building_construction = {
+					type = arms_factory
+					level = 4
+				}
+			}
+			random_owned_controlled_state = {
+				limit = {
+					is_core_of = root
+					free_building_slots = {
+						building = arms_factory
+						size > 3
+						include_locked = yes
+					}
+				}
+				add_extra_state_shared_building_slots = 4
+				add_building_construction = {
+					type = arms_factory
+					level = 4
+				}
+			}
+			random_owned_controlled_state = {
+				limit = {
+					is_core_of = root
+					free_building_slots = {
+						building = arms_factory
+						size > 3
+						include_locked = yes
+					}
+				}
+				add_extra_state_shared_building_slots = 4
+				add_building_construction = {
+					type = arms_factory
+					level = 4
+				}
+			}
+			random_owned_controlled_state = {
+				limit = {
+					is_core_of = root
+					free_building_slots = {
+						building = arms_factory
+						size > 3
+						include_locked = yes
+					}
+				}
+				add_extra_state_shared_building_slots = 4
+				add_building_construction = {
+					type = arms_factory
+					level = 4
+				}
+			}
+			#custom_effect_tooltip = FRA_lower_requirement_war_eco_tt
 		}
 	}
 
@@ -9336,6 +9507,11 @@
 		}
 
 		completion_reward = {
+			add_political_power = 300
+			add_popularity = {
+				ideology = democratic
+				popularity = -0.3
+			}
 		}
 	}
 
@@ -9444,7 +9620,6 @@
 			add_ideas = FRA_la_deluge
 		}
 	}
-
 
 	############################
 	######### INDUSTRY #########
@@ -10201,7 +10376,18 @@
 		}
 
 		available = {
-			num_of_military_factories > 179
+			if = {
+				limit = {
+					OR = {
+						has_completed_focus = FRA_nationalize_the_arms_industries
+						has_completed_focus = FRA_increase_the_army_budget
+					}
+				}
+				num_of_military_factories > 159
+			}
+			else = {
+				num_of_military_factories > 179
+			}
 		}
 
 		bypass = {
@@ -10764,7 +10950,7 @@
 				name = FRA_new_air_contracts
 				bonus = 1
 				uses = 1
-				technology = fra_fighter_3
+				technology = fra_fighter_4
 			}
 			add_tech_bonus = {
 				name = FRA_new_air_contracts
@@ -12143,7 +12329,7 @@
 			add_tech_Bonus = {
 				bonus = 1
 				uses = 1
-				technology = fra_fighter_5
+				technology = fra_fighter_6
 				technology = fra_cv_fighter_3
 				technology = fra_jet_fighter_1
 				technology = fra_jet_fighter_2

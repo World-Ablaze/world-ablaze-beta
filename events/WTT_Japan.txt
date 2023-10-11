@@ -687,17 +687,29 @@ country_event = {
 		set_politics = { ruling_party = neutrality elections_allowed = no }
 		add_popularity = { ideology = neutrality popularity = 0.9 }
 		add_timed_idea = { idea = JAP_military_purges days = 90 }
-		create_country_leader = {
-			name = "Hirohito"
-			desc = "POLITICS_Hirohito_DESC"
-			picture = "Portrait_Japan_Hirohito.dds"
-			expire = "1989.1.1"
-			ideology = despotism
-			traits = {
-				warrior_code
-				emperor_showa
+		if = { #MM: I honestly have no idea about how this works, so checking just in case
+			limit = {
+				JAP_emperor_hirohito = {
+					is_country_leader = yes
+				}
 			}
-			id = 700 #Hirohito
+			remove_country_leader_role = {
+				character = JAP_emperor_hirohito
+				ideology = fascism_ideology
+			}
+		}
+		add_country_leader_role = {
+			character = JAP_emperor_hirohito
+			country_leader = {
+				expire = "1989.1.1"
+				ideology = despotism
+				traits = {
+					warrior_code
+					emperor_showa
+				}
+				id = 700 #Hirohito
+			}
+			promote_leader = yes
 		}
 		hidden_effect = { news_event = { id = wtt_news.27 hours = 6 } }
 	}
@@ -1090,9 +1102,10 @@ country_event = {
 				infantry = { x = 3 y = 2 }
 			}
 			support = {
-				recon = { x = 0 y = 0 }
-				engineer = { x = 0 y = 1 }
-				artillery = { x = 0 y = 2 }
+				engineer = { x = 0 y = 0 }
+				artillery = { x = 0 y = 1 }
+
+				recon = { x = 1 y = 0 }
 			}
 		}
 		random_owned_controlled_state = {
@@ -1410,10 +1423,20 @@ country_event = {
 			country_event = { id = wtt_japan.127 }
 		}
 		set_country_flag = achievement_JAP_sue_for_peace_CHI_completed
+		dismantle_faction = yes
 
 		ai_chance = {
 			factor = 90
 		}
+
+		MAN = {
+				country_event = {
+					id = wtt_japan.131
+					days = 10
+				}
+	   }
+
+
 	}
 
 	# No surrender! We want total victory!
@@ -1699,6 +1722,10 @@ country_event = {
 								is_owned_by = MEN
 								MEN = { is_subject_of = JAP }
 							}
+							AND = {
+								is_owned_by = RNC
+								RNC = { is_subject_of = JAP }
+							}
 						}
 						NOT = {
 							state = 525
@@ -1782,6 +1809,10 @@ country_event = {
 							is_owned_by = MEN
 							MEN = { is_subject_of = JAP }
 						}
+						AND = {
+								is_owned_by = RNC
+								RNC = { is_subject_of = JAP }
+						}
 					}
 				}
 				MAN = {
@@ -1791,6 +1822,44 @@ country_event = {
 			white_peace = ROOT
 		}
 	}
+}
+
+#Chinese demand territory from Qing
+country_event = {
+	id = wtt_japan.131
+	title = wtt_japan.131.t
+	desc = wtt_japan.131.desc
+	picture = GFX_report_event_japanese_chinese_surrender
+
+	is_triggered_only = yes
+
+	# We must concede for now
+	option = {
+		name = wtt_japan.131.a
+
+		MAN = {
+			every_controlled_state = {
+				limit = {
+					AND = {
+						is_owned_by = MAN
+						is_core_of = CHI
+						NOT = {
+							is_core_of = MAN
+						}
+					}
+				}
+				CHI = {
+					transfer_state = PREV
+				}
+			}
+		}
+	}
+	#This land is rightfully ours!
+	option = {
+		name = wtt_japan.131.b
+		CHI = { create_wargoal = { type = annex_everything  target = MAN } }
+	}
+	
 }
 
 ###   ##  ###  ###  ### ###       ##   ##  #  # ### #   ###  ##  ###  ##
