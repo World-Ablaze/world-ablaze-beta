@@ -467,7 +467,8 @@ NDefines.NAir.COMBAT_DAMAGE_SCALE = 0.75											-- Higher value = more shot d
 NDefines.NAir.DETECT_CHANCE_FROM_RADARS = 0.75	 									-- How much the radars in area affects detection chance.
 
 NDefines.NAir.AIR_WING_XP_LOSS_WHEN_KILLED = 240									-- if a plane dies, the game assumes that a pilot with this amount of xp died and recalcs average.
-NDefines.NAir.AIR_WING_XP_AIR_VS_AIR_COMBAT_GAIN = 1.0 								-- Wings in combat gain extra XP
+NDefines.NAir.AIR_WING_XP_AIR_VS_AIR_COMBAT_GAIN = 0.8 								-- Wings in combat gain extra XP
+NDefines.NAir.AIR_WING_XP_RECON_MISSION_COMPLETED_GAIN = 0.1 						-- Recon mission
 
 NDefines.NAir.COMBAT_BETTER_AGILITY_DAMAGE_REDUCTION = 1.60							-- How much the better agility (then opponent's) can reduce their damage to us.
 NDefines.NAir.BIGGEST_AGILITY_FACTOR_DIFF = 3.0										-- biggest factor difference in agility for doing damage (caps to this)
