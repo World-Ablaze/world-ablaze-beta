@@ -322,7 +322,7 @@ NDefines.NMilitary.LAND_COMBAT_STR_ARMOR_DEFLECTION_FACTOR = 0.5					-- damage r
 NDefines.NMilitary.LAND_COMBAT_ORG_ARMOR_DEFLECTION_FACTOR = 0.5					-- damage reduction if armor outclassing enemy
 
 NDefines.NMilitary.PIERCING_THRESHOLDS = {											-- Our piercing / their armor must be this value to deal damage fraction equal to the index in the array below [higher number = higher penetration]. If armor is 0, 1.00 will be returned.
-	1.25,
+	1.30,
 	1.1,
 	1.0,
 	0.9,
