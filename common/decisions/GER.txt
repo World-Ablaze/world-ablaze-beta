@@ -4759,6 +4759,7 @@ GER_reichskommissariats = {
 			tag = GER
 		}
 		available = {
+			country_exists = RUK
 			has_manpower > 10000
 			num_of_civilian_factories_available_for_projects > 20
 		}
@@ -4772,7 +4773,7 @@ GER_reichskommissariats = {
 		cancel_if_not_visible = yes
 
 		ai_will_do = {
-			factor = 0
+			factor = 40
 		}
 
 		modifier = {
@@ -4782,7 +4783,12 @@ GER_reichskommissariats = {
 		visible = {
 			has_completed_focus = GER_form_the_reichskommissariats
 			has_government = fascism
-			country_exists = RUK
+			OR = {
+				has_war_with = SOV
+				any_controlled_state = {
+					is_core_of = UKR
+				}
+			}
 		}
 
 		complete_effect = {
@@ -4792,7 +4798,16 @@ GER_reichskommissariats = {
 		}
 
 		remove_effect = {
-			GER = {
+			if = {
+				limit = {
+					has_idea = GER_famine_payments
+				}
+				swap_ideas = {
+					remove_idea = GER_famine_payments
+					add_idea = GER_famine_payments_ukraine
+				}
+			}
+			else = {
 				add_ideas = GER_ruk_grain
 			}
 			RUK = {
@@ -18151,6 +18166,217 @@ GER_reichskommissariats = {
 }
 
 political_actions = {
+
+	GER_pay_for_spanish_food = {
+		icon = generic_naval
+
+		allowed = {
+			tag = GER
+		}
+
+		available = {
+			if = {
+				limit = {
+					NOT = { has_dlc = "La Resistance" }
+				}
+				any_other_country = {
+					original_tag = SPR
+					NOT = { has_idea = SPR_usa_food_imports }
+					NOT = { has_idea = SPR_sov_food_imports }
+				}
+			}
+			if = {
+				limit = {
+					has_dlc = "La Resistance"
+				}
+				SPA = {
+					NOT = { has_idea = SPR_usa_food_imports }
+					NOT = { has_idea = SPR_sov_food_imports }
+				}
+			}
+		}
+
+		visible = {
+			if = {
+				limit = {
+					NOT = { has_dlc = "La Resistance" }
+				}
+				any_other_country = {
+					original_tag = SPR
+					has_government = fascism
+					is_in_faction_with = ROOT
+					has_idea = SPR_agricultural_mishandlement_2
+				}
+			}
+			if = {
+				limit = {
+					has_dlc = "La Resistance"
+				}
+				AND = {
+					SPA = {
+						OR = {
+							has_government = fascism
+							has_government = neutrality
+						}
+						is_in_faction_with = ROOT
+						has_idea = SPR_agricultural_mishandlement_2
+					}
+				}
+			}
+		}
+
+		cost = 25
+
+		fire_only_once = yes
+
+		ai_will_do = {
+			factor = 40
+		}
+
+		complete_effect = {
+			custom_effect_tooltip = GER_pay_for_spanish_food_tt
+			if = {
+				limit = {
+					NOT = { has_dlc = "La Resistance" }
+				}
+				random_other_country = {
+					limit = {
+						original_tag = SPR
+						OR = {
+							has_government = fascism
+							has_government = neutrality
+						}
+					}
+					add_ideas = SPR_ger_food_imports
+				}
+			}
+			if = {
+				limit = {
+					has_dlc = "La Resistance"
+				}
+				SPA = {
+					add_ideas = SPR_ger_food_imports
+				}
+			}
+			if = {
+				limit = {
+					has_idea = GER_ruk_grain
+				}
+				remove_ideas = GER_ruk_grain
+				add_ideas = GER_famine_payments_ukraine
+			}
+			else = {
+				add_ideas = GER_famine_payments
+			}
+		}
+
+		remove_effect = {
+			
+		}
+	}
+
+	GER_pay_for_spanish_food_stop = {
+		icon = generic_naval
+
+		allowed = {
+			tag = GER
+		}
+
+
+		available = {
+		}
+
+		visible = {
+			OR = {
+				has_idea = GER_famine_payments_ukraine
+				has_idea = GER_famine_payments
+			}
+		}
+
+		cost = 0
+
+		fire_only_once = yes
+		
+		ai_will_do = {
+			base = 0
+			modifier = {
+				add = 400
+				if = {
+					limit = {
+						NOT = { has_dlc = "La Resistance" }
+					}
+					any_other_country = {
+						original_tag = SPR
+						has_government = fascism
+						NOT = { is_in_faction_with = ROOT }
+					}
+				}
+				if = {
+					limit = {
+						has_dlc = "La Resistance"
+					}
+					AND = {
+						SPA = {
+							OR = {
+								has_government = fascism
+								has_government = neutrality
+							}
+							NOT = { is_in_faction_with = ROOT }
+						}
+					}
+				}
+			}
+		}
+
+		complete_effect = {
+			if = {
+				limit = {
+					NOT = { has_dlc = "La Resistance" }
+				}
+				random_other_country = {
+					limit = {
+						original_tag = SPR
+						OR = {
+							has_government = fascism
+							has_government = neutrality
+						}
+						has_idea = SPR_ger_food_imports
+					}
+					remove_ideas = SPR_ger_food_imports
+				}
+			}
+			if = {
+				limit = {
+					has_dlc = "La Resistance"
+					SPA = {
+						has_idea = SPR_ger_food_imports
+					}
+				}
+				SPA = {
+					remove_ideas = SPR_ger_food_imports
+				}
+			}
+			if = {
+				limit = {
+					has_idea = GER_famine_payments
+				}
+				remove_ideas = GER_famine_payments
+			}
+			if = {
+				limit = {
+					has_idea = GER_famine_payments_ukraine
+				}
+				swap_ideas = {
+					remove_idea = GER_famine_payments_ukraine
+					add_idea = GER_ruk_grain
+				}
+			}
+		}
+
+		remove_effect = {
+			
+		}
+	}
 
 	GER_de_nazify_the_navy = {
 		icon = generic_naval

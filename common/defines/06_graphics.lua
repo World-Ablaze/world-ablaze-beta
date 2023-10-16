@@ -25,8 +25,12 @@ NDefines_Graphics.NGraphics.MAP_ICONS_STATE_GROUP_CAM_DISTANCE = 450.0          
 
 NDefines_Graphics.NGraphics.COUNTRY_FLAG_SMALL_TEX_MAX_SIZE = 2048                  -- Tweak dependly on amount of countries. Must be power of 2. No more then 2048.
 
-NDefines_Graphics.NGraphics.VICTORY_POINT_MAP_ICON_TEXT_CUTOFF = { 200, 300, 500 }  -- At what camera distance the VP name text disappears.
-NDefines_Graphics.NGraphics.VICTORY_POINT_MAP_ICON_TEXT_CUTOFF_MIN = 150.0          -- Min range for victory point text
+NDefines_Graphics.NGraphics.VICTORY_POINT_MAP_ICON_TEXT_CUTOFF = { 250, 300, 500 }  -- At what camera distance the VP name text disappears.
+
+NDefines_Graphics.NGraphics.VICTORY_POINT_MAP_ICON_TEXT_CUTOFF_MIN = 200.0          -- Min range for victory point text
+NDefines_Graphics.NGraphics.VICTORY_POINT_MAP_ICON_TEXT_CUTOFF_MAX = 800.0          -- Max range for victory point text
+NDefines_Graphics.NGraphics.VICTORY_POINT_MAP_ICON_DOT_CUTOFF_MIN = 250.0           -- Min range for victory point dot
+NDefines_Graphics.NGraphics.VICTORY_POINT_MAP_ICON_DOT_CUTOFF_MAX = 1000.0          -- Max range for victory point text
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Air
 
