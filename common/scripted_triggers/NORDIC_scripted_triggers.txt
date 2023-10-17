@@ -1,0 +1,303 @@
+#	Example:
+# 
+#	example_trigger = {
+#		tag = GER
+#		is_ai = no
+#	}
+#
+#
+#	In a script file:
+#
+#	trigger = {
+#		exampel_trigger = yes
+#	}
+# 
+NORDIC_rename_faction = {
+	NOT = { has_completed_focus = SWE_decentralized_nordic_army_command }
+	NOT = { has_completed_focus = FIN_united_under_the_north_star }
+	NOT = { has_completed_focus = FIN_northern_defense_front }
+}
+NORDIC_is_nordic = {
+	OR = {
+		original_tag = SWE
+		original_tag = NOR
+		original_tag = FIN
+		original_tag = DEN
+		original_tag = ICE
+	}
+}
+NORDIC_is_democratic = {
+	OR = {
+		original_tag = SWE
+		original_tag = NOR
+		original_tag = FIN
+		original_tag = DEN
+		original_tag = ICE
+	}
+	OR = {
+		has_government = democratic
+		has_government = neutrality
+	}
+	NOT = { has_completed_focus = SWE_undermine_the_fascists }
+	NOT = { has_completed_focus = FIN_the_finnish_throne }
+	NOT = { has_completed_focus = NOR_the_kingdom_of_norway }
+	NOT = { has_completed_focus = DEN_king_assumes_power }
+	NOT = { has_cosmetic_tag = ICE_independent_kingdom }
+}
+NORDIC_is_monarchist = {
+	OR = {
+		original_tag = SWE
+		original_tag = NOR
+		original_tag = FIN
+		original_tag = DEN
+		original_tag = ICE
+	}
+	OR = {
+		has_government = democratic
+		has_government = neutrality
+	}
+	OR = {
+		has_completed_focus = SWE_undermine_the_fascists 
+		has_completed_focus = FIN_the_finnish_throne 
+		has_completed_focus = NOR_the_kingdom_of_norway 
+		has_completed_focus = DEN_king_assumes_power 
+		has_cosmetic_tag = ICE_independent_kingdom
+	}
+}
+NORDIC_is_communist = {
+	OR = {
+		original_tag = SWE
+		original_tag = NOR
+		original_tag = FIN
+		original_tag = DEN
+		original_tag = ICE
+	}
+	has_government = communism
+	# Add more triggers if needed
+}
+NORDIC_is_fascist = {
+	OR = {
+		original_tag = SWE
+		original_tag = NOR
+		original_tag = FIN
+		original_tag = DEN
+		original_tag = ICE
+	}
+	has_government = fascism
+	# Add more triggers if needed
+}
+
+
+NORDIC_alliance_created_already = { # Checks if any of the Nordic Alliances has been formed.  
+	custom_trigger_tooltip = {
+		tooltip = NORDIC_alliance_created_already_TT
+		OR = {
+			has_global_flag = NORDIC_democratic_alliance_formed
+			has_global_flag = NORDIC_communist_alliance_formed
+			has_global_flag = NORDIC_monarchist_alliance_formed
+		}
+	}
+}
+
+NORDIC_democratic_alliance_viable = {
+	ROOT = {
+		OR = {
+			has_global_flag = NORDIC_democratic_alliance_formed
+			has_dynamic_modifier = { modifier = NORDIC_democratic_alliance_leader_dmod }
+			has_dynamic_modifier = { modifier = NORDIC_democratic_alliance_member_dmod }
+			AND = {
+				NORDIC_is_democratic = yes 
+				NORDIC_alliance_created_already = no 
+				NORDIC_has_started_communist_focus_tree = no
+				NORDIC_has_started_monarchist_focus_tree = no
+			}
+			AND = {
+				NORDIC_has_started_democratic_focus_tree = yes 
+				NORDIC_alliance_created_already = no 
+			}
+		}
+	}
+}
+
+NORDIC_communist_alliance_viable = {
+	ROOT = {
+		OR = {
+			has_global_flag = NORDIC_communist_alliance_formed
+			has_dynamic_modifier = { modifier = NORDIC_communist_alliance_leader_dmod }
+			has_dynamic_modifier = { modifier = NORDIC_communist_alliance_member_dmod }
+			AND = {
+				NORDIC_is_communist = yes 
+				NORDIC_alliance_created_already = no 
+				NORDIC_has_started_democratic_focus_tree = no
+				NORDIC_has_started_monarchist_focus_tree = no
+			}
+			AND = {
+				NORDIC_has_started_communist_focus_tree = yes
+				NORDIC_alliance_created_already = no 
+			} 
+		}
+	}
+}
+
+NORDIC_monarchist_alliance_viable = {
+	ROOT = {
+		OR = {
+			has_global_flag = NORDIC_monarchist_alliance_formed
+			has_dynamic_modifier = { modifier = NORDIC_monarchist_alliance_leader_dmod }
+			has_dynamic_modifier = { modifier = NORDIC_monarchist_alliance_member_dmod }
+			AND = {
+				has_government = fascism 
+				NORDIC_alliance_created_already = no
+				NORDIC_has_started_democratic_focus_tree = no
+				NORDIC_has_started_communist_focus_tree = no 
+			}
+			AND = {
+				NORDIC_is_monarchist = yes 
+				NORDIC_alliance_created_already = no 
+				NORDIC_has_started_democratic_focus_tree = no
+				NORDIC_has_started_communist_focus_tree = no
+			}
+			AND = {
+				NORDIC_has_started_monarchist_focus_tree = yes 
+				NORDIC_alliance_created_already = no
+			}
+		}
+	}
+}
+
+NORDIC_has_started_democratic_focus_tree = {
+	OR = {
+		has_completed_focus = NOR_continue_nygaardsvold_government
+		has_completed_focus = NOR_vote_of_no_confidence
+		has_completed_focus = SWE_coalition_war_cabinet
+		has_completed_focus = FIN_social_democracy
+		has_completed_focus = FIN_finnish_neutrality
+		has_completed_focus = SWE_the_nordic_defense_council
+	}
+} 
+
+NORDIC_has_started_communist_focus_tree = {
+	OR = {
+		has_completed_focus = NOR_a_resurgent_labor_movement
+		has_completed_focus = SWE_align_more_closely_with_the_landsorganisationen
+		has_completed_focus = FIN_towards_a_red_government
+	}
+}
+
+NORDIC_has_started_monarchist_focus_tree = {
+	OR = {
+		has_completed_focus = NOR_the_chamberlains_overture
+		has_completed_focus = NOR_lurk_in_the_shadows
+		has_completed_focus = SWE_prevent_a_red_dictatorship
+		has_completed_focus = FIN_finnish_neutrality
+		has_completed_focus = DEN_unify_the_right
+	}	
+}
+
+
+NORDIC_basic_joint_trigger = {
+	custom_trigger_tooltip = {
+		tooltip = NORDIC_is_joint_focus_member_TT
+		is_in_faction = yes  
+		OR = {
+			has_country_flag = NORDIC_council_leader
+			has_country_flag = NORDIC_union_leader
+			has_country_flag = NORDIC_league_leader
+			AND = {
+				has_variable = global.NORDIC_alliance_leader
+				NORDIC_is_nordic = yes
+				is_subject = no  
+				is_in_faction_with = var:global.NORDIC_alliance_leader 
+			}	
+		}
+	}
+	
+}
+
+NORDIC_basic_available_trigger = {
+	is_subject = no 
+	NORDIC_basic_joint_trigger = yes	
+	any_allied_country = {
+		NORDIC_basic_joint_trigger = yes
+	}
+}
+
+NORDIC_at_war = {
+	any_other_country = {
+		NORDIC_is_nordic = yes 
+		has_defensive_war = yes 
+	}	
+}
+
+NORDIC_at_peace = { #checks that all the other nordics are at peace 
+	NOT = {
+		any_other_country = {
+			NORDIC_is_nordic = yes 
+			has_defensive_war = yes 
+		}
+	}	
+}
+
+NORDIC_valid_support_recipient = {
+	NORDIC_is_nordic = yes 
+	has_war = yes 
+	all_enemy_country = {
+		NORDIC_is_nordic = no 
+	} 
+}
+
+# Triggers to check in which rank the conflict scale is at. 
+NORDIC_conflict_scale_is_border_war = {
+	custom_trigger_tooltip = {
+		check_variable = {
+			var = GLOBAL.NORDIC_conflict_scale
+			value = GLOBAL.NORDIC_conflict_scale_border_war_th
+			compare = greater_than
+		}
+		check_variable = {
+			var = GLOBAL.NORDIC_conflict_scale
+			value = GLOBAL.NORDIC_conflict_scale_regional_war_th
+			compare = less_than
+		}	
+		tooltip = NORDIC_conflict_scale_border_war_TT
+	}
+}
+
+NORDIC_conflict_scale_is_regional_war = {
+	custom_trigger_tooltip = {
+		check_variable = {
+			var = GLOBAL.NORDIC_conflict_scale
+			value = GLOBAL.NORDIC_conflict_scale_regional_war_th
+			compare = greater_than_or_equals
+		}
+		check_variable = {
+			var = GLOBAL.NORDIC_conflict_scale
+			value = GLOBAL.NORDIC_conflict_scale_total_war_th
+			compare = less_than
+		}	
+		tooltip = NORDIC_conflict_scale_regional_war_TT
+	}
+}
+
+NORDIC_conflict_scale_is_total_war = {
+	custom_trigger_tooltip = { 
+		check_variable = {
+			var = GLOBAL.NORDIC_conflict_scale
+			value = GLOBAL.NORDIC_conflict_scale_total_war_th
+			compare = greater_than_or_equals
+		}
+		tooltip = NORDIC_conflict_scale_total_war_TT 
+	}
+}
+
+
+NORDIC_valid_decision_target = {
+	hidden_trigger = {
+		NORDIC_is_nordic = yes 
+	}
+	exists = yes
+	is_subject = no
+	NOT = {
+		has_war_with = ROOT 
+	}
+}
