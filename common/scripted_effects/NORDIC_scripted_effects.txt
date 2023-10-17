@@ -1,0 +1,552 @@
+NORDIC_create_nordic_array = {
+	clear_array = NORDIC_scandinavia_array
+	every_country = {
+		limit = {
+			NORDIC_is_nordic = yes 
+		}
+		add_to_array = {
+			array = PREV.NORDIC_array 	
+		}
+	}
+	for_each_scope_loop = {
+		array = NORDIC_array
+		log = "[THIS.GetName] is part of Scandinavia"
+	}
+}
+
+###################################################################################################
+###################################################################################################
+###################################################################################################
+
+      ##  #######  #### ##    ## ########       ##  
+      ## ##     ##  ##  ###   ##    ##         ##   
+      ## ##     ##  ##  ####  ##    ##        ##    
+      ## ##     ##  ##  ## ## ##    ##       ##     
+##    ## ##     ##  ##  ##  ####    ##      ##      
+##    ## ##     ##  ##  ##   ###    ##     ##       
+ ######   #######  #### ##    ##    ##    ##        
+
+   ###    ##       ##       ####    ###    ##    ##  ######  ########
+  ## ##   ##       ##        ##    ## ##   ###   ## ##    ## ##      
+ ##   ##  ##       ##        ##   ##   ##  ####  ## ##       ##      
+##     ## ##       ##        ##  ##     ## ## ## ## ##       ######  
+######### ##       ##        ##  ######### ##  #### ##       ##      	
+##     ## ##       ##        ##  ##     ## ##   ### ##    ## ##      
+##     ## ######## ######## #### ##     ## ##    ##  ######  ########
+
+###################################################################################################
+###################################################################################################
+###################################################################################################
+
+NORDIC_create_nordic_alliance = {
+	#if = {
+	#	limit = {
+	#		NOT = { has_rule = can_create_factions }
+ 	#	}
+ 	#	set_rule = { 
+ 	#		can_create_factions = yes
+ 	#	}
+	#}
+	set_variable = {global.nordic_faction_creator = ROOT }
+	if = {
+		limit = { # Nordic Council 
+			#NORDIC_has_started_democratic_focus_tree = yes
+			NORDIC_is_democratic = yes 
+		}
+		set_global_flag = NORDIC_democratic_alliance_formed
+		set_country_flag = NORDIC_council_leader 
+		IF = {
+			limit = { NORDIC_rename_faction = yes }
+			set_faction_name = NORDIC_alliance_democratic
+		}
+		
+		
+		set_variable = { NORDIC_democratic_alliance_leader_dmod_research = 0 }
+		set_variable = { NORDIC_democratic_alliance_leader_dmod_training_time = 0 }
+		set_variable = { NORDIC_democratic_alliance_leader_dmod_prod_eff_start = 0 }
+		set_variable = { NORDIC_democratic_alliance_leader_dmod_war_support = 0 }
+		set_variable = { NORDIC_democratic_alliance_member_dmod_research = 0 }
+		set_variable = { NORDIC_democratic_alliance_member_dmod_training_time = 0 }
+		set_variable = { NORDIC_democratic_alliance_member_dmod_prod_eff_start = 0 }
+		set_variable = { NORDIC_democratic_alliance_member_dmod_war_support = 0 }
+
+		add_dynamic_modifier = { modifier = NORDIC_democratic_alliance_leader_dmod }
+		every_other_country = {
+			limit = {
+				NORDIC_has_started_democratic_focus_tree = yes
+				is_in_faction_with = ROOT 
+				is_subject = no
+			}
+			NORDIC_add_to_nordic_alliance = yes 
+		}
+	}
+	else_if = {
+		limit = {
+			#NORDIC_has_started_communist_focus_tree = yes 
+			NORDIC_is_communist = yes 
+		}
+		set_global_flag = NORDIC_communist_alliance_formed 
+		set_country_flag = NORDIC_union_leader
+		set_faction_name = NORDIC_alliance_communist
+		
+		set_variable = { NORDIC_communist_alliance_leader_dmod_max_eff = 0 }
+		set_variable = { NORDIC_communist_alliance_leader_dmod_max_planning = 0 }
+		set_variable = { NORDIC_communist_alliance_leader_dmod_research = 0 }
+		set_variable = { NORDIC_communist_alliance_leader_dmod_resource_penalty = 0 }
+		set_variable = { NORDIC_democratic_alliance_member_dmod_max_eff = 0 }
+		set_variable = { NORDIC_communist_alliance_member_dmod_max_planning = 0 }
+		set_variable = { NORDIC_communist_alliance_member_dmod_research = 0 }
+		set_variable = { NORDIC_communist_alliance_member_dmod_resource_penalty = 0 }
+
+		add_dynamic_modifier = { modifier = NORDIC_communist_alliance_leader_dmod }
+
+		every_other_country = {
+			limit = {
+				NORDIC_is_communist = yes
+				is_in_faction_with = ROOT 
+				is_subject = no 
+			}
+			NORDIC_add_to_nordic_alliance = yes 
+		}
+	}
+	else = {
+		set_global_flag = NORDIC_monarchist_alliance_formed
+		set_country_flag = NORDIC_league_leader  
+		set_faction_name = NORDIC_alliance_monarchist
+
+		add_dynamic_modifier = { modifier = NORDIC_monarchist_alliance_leader_dmod }
+
+		set_variable = { NORDIC_monarchist_alliance_leader_dmod_prod_eff_gain = 0 }
+		set_variable = { NORDIC_monarchist_alliance_leader_dmod_construction = 0 }
+		set_variable = { NORDIC_monarchist_alliance_leader_dmod_max_org = 0 }
+		set_variable = { NORDIC_monarchist_alliance_leader_dmod_drift_defense = 0 }
+		set_variable = { NORDIC_monarchist_alliance_member_dmod_prod_eff_gain = 0 }
+		set_variable = { NORDIC_monarchist_alliance_member_dmod_construction = 0 }
+		set_variable = { NORDIC_monarchist_alliance_member_dmod_max_org = 0 }
+		set_variable = { NORDIC_monarchist_alliance_member_dmod_drift_defense = 0 }
+
+		every_other_country = {
+			limit = {
+				OR = {
+					NORDIC_has_started_monarchist_focus_tree = yes 
+					NORDIC_is_fascist = yes 					
+				}
+				is_in_faction_with = ROOT 
+				is_subject = no
+			}
+			NORDIC_add_to_nordic_alliance = yes 
+		}
+	}  
+	set_variable = { global.NORDIC_alliance_leader = ROOT } # Setting the alliance leader regardless of ideology 
+}
+
+NORDIC_add_to_nordic_alliance = {  
+	if = {
+		limit = {
+			NOT = { has_completed_focus = NORDIC_form_joint_alliance }
+		}
+		complete_national_focus = NORDIC_form_joint_alliance
+	}
+	if = {
+		limit = {
+			has_global_flag = NORDIC_democratic_alliance_formed
+		}
+
+		set_variable = { NORDIC_democratic_alliance_leader_dmod_research = 0 }
+		set_variable = { NORDIC_democratic_alliance_leader_dmod_training_time = 0 }
+		set_variable = { NORDIC_democratic_alliance_leader_dmod_prod_eff_start = 0 }
+		set_variable = { NORDIC_democratic_alliance_leader_dmod_war_support = 0 }
+		set_variable = { NORDIC_democratic_alliance_member_dmod_research = 0 }
+		set_variable = { NORDIC_democratic_alliance_member_dmod_training_time = 0 }
+		set_variable = { NORDIC_democratic_alliance_member_dmod_prod_eff_start = 0 }
+		set_variable = { NORDIC_democratic_alliance_member_dmod_war_support = 0 }
+
+		add_dynamic_modifier = { modifier = NORDIC_democratic_alliance_member_dmod }
+
+	}
+	else_if = {
+		limit = {
+			has_global_flag = NORDIC_communist_alliance_formed
+		}		
+
+		set_variable = { NORDIC_communist_alliance_leader_dmod_max_eff = 0 }
+		set_variable = { NORDIC_communist_alliance_leader_dmod_max_planning = 0 }
+		set_variable = { NORDIC_communist_alliance_leader_dmod_research = 0 }
+		set_variable = { NORDIC_communist_alliance_leader_dmod_resource_penalty = 0 }
+		set_variable = { NORDIC_democratic_alliance_member_dmod_max_eff = 0 }
+		set_variable = { NORDIC_communist_alliance_member_dmod_max_planning = 0 }
+		set_variable = { NORDIC_communist_alliance_member_dmod_research = 0 }
+		set_variable = { NORDIC_communist_alliance_member_dmod_resource_penalty = 0 }
+
+		add_dynamic_modifier = { modifier = NORDIC_communist_alliance_member_dmod }
+	}
+	else_if = {
+		limit = {
+			has_global_flag = NORDIC_monarchist_alliance_formed
+		}		
+
+		set_variable = { NORDIC_monarchist_alliance_leader_dmod_prod_eff_gain = 0 }
+		set_variable = { NORDIC_monarchist_alliance_leader_dmod_construction = 0 }
+		set_variable = { NORDIC_monarchist_alliance_leader_dmod_max_org = 0 }
+		set_variable = { NORDIC_monarchist_alliance_leader_dmod_drift_defense = 0 }
+		set_variable = { NORDIC_monarchist_alliance_member_dmod_prod_eff_gain = 0 }
+		set_variable = { NORDIC_monarchist_alliance_member_dmod_construction = 0 }
+		set_variable = { NORDIC_monarchist_alliance_member_dmod_max_org = 0 }
+		set_variable = { NORDIC_monarchist_alliance_member_dmod_drift_defense = 0 }
+
+		add_dynamic_modifier = { modifier = NORDIC_monarchist_alliance_member_dmod }
+	}
+}
+
+trotsky_tracker = { #Scripted effect to check where Trotsky is 
+	if = {
+		limit = {
+			has_variable = 	GLOBAL.trotskys_whereabouts
+		}
+		clear_variable = GLOBAL.trotskys_whereabouts
+	}
+	if = {
+		limit = {
+			MEX = {
+				has_character = MEX_leon_trotsky
+			}
+			OR = {
+				has_global_flag = flag_mexico_invited_trotsky_to_government 
+				has_global_flag = trotsky_exile_mexico	
+			}
+			NOT = { has_global_flag = flag_trotsky_dead }
+		}
+		set_variable = { GLOBAL.trotskys_whereabouts = MEX }
+	}
+	if = {
+		limit = {
+			SOV = {
+				has_character = SOV_lev_trotsky 
+				SOV_lev_trotsky = {
+					NOT = { has_character_flag = SOV_exiled_flag }	
+				}
+				NOt = {
+					has_global_flag = flag_mexico_invited_trotsky_to_government 
+					has_global_flag = trotsky_exile_mexico	
+					has_global_flag = flag_trotsky_dead
+				}
+			}
+		}
+		if = {
+			limit = {
+				NOT = { has_variable = 	GLOBAL.trotskys_whereabouts } 
+			}
+			set_variable = { GLOBAL.trotskys_whereabouts = SOV }		
+		}
+		else = {
+			log = "Mr president a second trotsky has hit the queen"
+		}
+	}
+	log = "Trotsky is in [?GLOBAL.trotskys_whereabouts.GetName]"
+}
+
+NORDIC_airforce_member_to_originator = { # Effect for upgrading the Airforce Member Dynamic Modifier to the Originator one (only after thye production ideas are added) 
+	if = {
+		limit = {
+			has_dynamic_modifier = { modifier = NORDIC_airforces_member_dmod }
+		}
+		custom_effect_tooltip = NORDIC_becomes_airforce_leader_tooltip
+		hidden_effect = {
+			remove_dynamic_modifier = { modifier = NORDIC_airforces_member_dmod }
+			add_dynamic_modifier = { modifier = NORDIC_airforces_originator_dmod }
+			swap_ideas = {
+				remove_idea = NORDIC_hidden_airforces_member_dmod
+				add_idea = NORDIC_hidden_airforces_originator_dmod
+			}
+			swap_ideas = {
+				remove_idea = NORDIC_hidden_airforces_naval_member_dmod
+				add_idea = NORDIC_hidden_airforces_naval_originator_dmod
+			}	
+		}
+	}
+}
+
+NORDIC_airforce_originator_to_member = { # Effect for downgrading the Airforce Originator Dynamic Modifier to the Member one (only after thye production ideas are added)
+		if = {
+			limit = {
+				has_dynamic_modifier = { modifier = NORDIC_airforces_originator_dmod }
+			}
+			custom_effect_tooltip = NORDIC_becomes_airforce_member_tooltip
+			hidden_effect = {
+				remove_dynamic_modifier = { modifier = NORDIC_airforces_originator_dmod }
+				add_dynamic_modifier = { modifier = NORDIC_airforces_member_dmod }
+				swap_ideas = {
+					remove_idea = NORDIC_hidden_airforces_originator_dmod
+					add_idea = NORDIC_hidden_airforces_member_dmod
+				}
+				swap_ideas = {
+					remove_idea = NORDIC_hidden_airforces_naval_originator_dmod
+					add_idea = NORDIC_hidden_airforces_naval_member_dmod
+				}
+			}
+		}
+}
+
+NORDIC_navy_member_to_originator = { # Effect for upgrading the Naval Member Dynamic Modifier to the Originator one  
+	if = {
+		limit = {
+			has_dynamic_modifier = { modifier = NORDIC_navy_member_dmod }
+		}
+		custom_effect_tooltip = NORDIC_becomes_navy_leader_tooltip
+		hidden_effect = {
+			remove_dynamic_modifier = { modifier = NORDIC_navy_member_dmod }
+			add_dynamic_modifier = { modifier = NORDIC_navy_originator_dmod }	
+		}
+	}
+}
+
+NORDIC_navy_originator_to_member = { # Effect for downgrading the Navy Originator Dynamic Modifier to the Member one 
+		if = {
+			limit = {
+				has_dynamic_modifier = { modifier = NORDIC_navy_originator_dmod }
+			}
+			custom_effect_tooltip = NORDIC_becomes_navy_member_tooltip
+			hidden_effect = {
+				remove_dynamic_modifier = { modifier = NORDIC_navy_originator_dmod }
+				add_dynamic_modifier = { modifier = NORDIC_navy_member_dmod }
+			}
+		}
+}
+
+NORDIC_mil_industry_member_to_originator = { # Effect for upgrading the Military Industry Member Dynamic Modifier to the Originator one  
+	if = {
+		limit = {
+			has_dynamic_modifier = { modifier = NORDIC_mil_industry_member_dmod }
+		}
+		custom_effect_tooltip = NORDIC_becomes_military_industry_leader_tooltip
+		hidden_effect = {
+			remove_dynamic_modifier = { modifier = NORDIC_mil_industry_member_dmod }
+			add_dynamic_modifier = { modifier = NORDIC_mil_industry_originator_dmod }	
+		}
+	}
+}
+
+NORDIC_mil_industry_originator_to_member = { # Effect for downgrading the Military Industry Originator Dynamic Modifier to the Member one 
+		if = {
+			limit = {
+				has_dynamic_modifier = { modifier = NORDIC_mil_industry_originator_dmod }
+			}
+			custom_effect_tooltip = NORDIC_becomes_military_industry_member_tooltip
+			hidden_effect = {
+				remove_dynamic_modifier = { modifier = NORDIC_mil_industry_originator_dmod }
+				add_dynamic_modifier = { modifier = NORDIC_mil_industry_member_dmod }
+			}
+		}
+}
+
+NORDIC_remove_all_mods = {
+	if = {
+		limit = {
+			has_dynamic_modifier = { modifier = NORDIC_democratic_alliance_leader_dmod }
+		}
+		remove_dynamic_modifier = {	modifier = NORDIC_democratic_alliance_leader_dmod }
+	}
+	if = {
+		limit = {
+			has_dynamic_modifier = { modifier = NORDIC_democratic_alliance_member_dmod }
+		}
+		remove_dynamic_modifier = {	modifier = NORDIC_democratic_alliance_member_dmod }
+	}
+	if = {
+		limit = {
+			has_dynamic_modifier = { modifier = NORDIC_communist_alliance_leader_dmod }
+		}
+		remove_dynamic_modifier = {	modifier = NORDIC_communist_alliance_leader_dmod }
+	}
+	if = {
+		limit = {
+			has_dynamic_modifier = { modifier = NORDIC_communist_alliance_member_dmod }
+		}
+		remove_dynamic_modifier = {	modifier = NORDIC_communist_alliance_member_dmod }
+	}
+	if = {
+		limit = {
+			has_dynamic_modifier = { modifier = NORDIC_monarchist_alliance_leader_dmod }
+		}
+		remove_dynamic_modifier = {	modifier = NORDIC_monarchist_alliance_leader_dmod	}
+	}
+	if = {
+		limit = {
+			has_dynamic_modifier = { modifier = NORDIC_monarchist_alliance_member_dmod }
+		}
+		remove_dynamic_modifier = {	modifier = NORDIC_monarchist_alliance_member_dmod	}
+	}
+}
+###################################################################################################
+###################################################################################################
+###################################################################################################
+
+##    ##  #######  ########  ########  ####  ######     
+###   ## ##     ## ##     ## ##     ##  ##  ##    ##    
+####  ## ##     ## ##     ## ##     ##  ##  ##          
+## ## ## ##     ## ########  ##     ##  ##  ##          
+##  #### ##     ## ##   ##   ##     ##  ##  ##          
+##   ### ##     ## ##    ##  ##     ##  ##  ##    ##    
+##    ##  #######  ##     ## ########  ####  ######     
+
+
+ ######   #######   #######  ########  ######## ########     ###    ######## ####  #######  ##    ## 
+##    ## ##     ## ##     ## ##     ## ##       ##     ##   ## ##      ##     ##  ##     ## ###   ## 
+##       ##     ## ##     ## ##     ## ##       ##     ##  ##   ##     ##     ##  ##     ## ####  ## 
+##       ##     ## ##     ## ########  ######   ########  ##     ##    ##     ##  ##     ## ## ## ## 
+##       ##     ## ##     ## ##        ##       ##   ##   #########    ##     ##  ##     ## ##  #### 
+##    ## ##     ## ##     ## ##        ##       ##    ##  ##     ##    ##     ##  ##     ## ##   ### 
+ ######   #######   #######  ##        ######## ##     ## ##     ##    ##    ####  #######  ##    ## 
+
+###################################################################################################
+###################################################################################################
+###################################################################################################
+
+NORDIC_cooperation_initial_setup = {
+	set_variable = { GLOBAL.NORDIC_war_threshold = 3 } # The maximium War Participation level before the country is dragged into the nordic war.  		
+	set_variable = { GLOBAL.NORDIC_conflict_scale = 0 } #This is the variable to measure the scale of War in the nordics  
+	set_variable = { GLOBAL.NORDIC_conflict_scale_max = 100 }
+	set_variable = { GLOBAL.NORDIC_conflict_scale_base_increase = 5 }
+
+	# Thresholds for Conflict SCale  
+	set_variable = { GLOBAL.NORDIC_conflict_scale_border_war_th = 0 }
+	set_variable = { GLOBAL.NORDIC_conflict_scale_regional_war_th = 40 }
+	set_variable = { GLOBAL.NORDIC_conflict_scale_total_war_th = 90 }
+
+	# Percentage Chances for increasing the participation based on Conflict Scale 
+	set_variable = { GLOBAL.NORDIC_risk_percentage_border_war = 25 }
+	set_variable = { GLOBAL.NORDIC_risk_percentage_regional_war = 55 }
+	set_variable = { GLOBAL.NORDIC_risk_percentage_total_war = 90 }
+	set_variable = { GLOBAL.NORDIC_current_risk = 25 }	 
+	NORDIC_update_conflict_risk = yes 
+}
+
+NORDIC_update_conflict_risk = {
+	if = { # Checking the current level of War Conflict
+		limit = {
+			NORDIC_conflict_scale_is_total_war = yes 
+		}
+		set_variable = { GLOBAL.NORDIC_current_risk = GLOBAL.NORDIC_risk_percentage_total_war }
+	}
+	else_if = {
+		limit = {
+			NORDIC_conflict_scale_is_regional_war = yes 
+		}
+		set_variable = { GLOBAL.NORDIC_current_risk = GLOBAL.NORDIC_risk_percentage_regional_war }
+	}
+	else_if = {
+		limit = {
+			NORDIC_conflict_scale_is_border_war = yes 
+		}
+		set_variable = { GLOBAL.NORDIC_current_risk = GLOBAL.NORDIC_risk_percentage_border_war }
+	}
+	else = {
+		log = "Something went wrong with the Conflict Risk stuff"
+	}
+}
+
+NORDIC_increase_war_participation = { # Increases the country's War Participation in Nordic wars, or starts the mission if it wasn't already.  
+	if = {
+		limit = {
+			NOT = { has_variable = NORDIC_war_participation_level }
+		}
+		set_variable = { NORDIC_war_participation_level = 0 }
+	}
+	else = {
+		add_to_variable = { NORDIC_war_participation_level = 1 }
+		custom_effect_tooltip = NORDIC_war_participation_increase_TT
+	}
+	if = {
+		limit = {
+			check_variable = {
+				NORDIC_war_participation_level > NORDIC_war_threshold
+			}
+		}
+		NORDIC_full_war_participation = yes 
+	}
+}
+
+NORDIC_decrease_war_participation = {
+	if = {
+		limit = {
+			check_variable = { NORDIC_war_participation_level > 0 }
+		}
+		add_to_variable = { NORDIC_war_participation_level = -1 }
+	}
+}
+
+NORDIC_war_started = { # To be called in the on_war_relation_added on_action so all the variables needed for the Nordic collaboration war are setup
+	FROM = { 
+		NORDIC_add_to_war_array = yes
+		set_variable = { NORDIC_attacker = ROOT }
+		every_other_country = {
+			limit = {
+				NORDIC_is_nordic = yes 
+				NOT = {
+					is_in_faction_with = FROM  
+				}
+				NOT = { has_variable = NORDIC_war_participation_level }
+			}
+			NORDIC_increase_war_participation = yes 
+		}
+	}
+}
+
+NORDIC_add_to_war_array = {
+	add_to_array = {
+		array = GLOBAL.NORDIC_at_defensive_war
+		value = THIS
+	}
+}
+
+NORDIC_remove_first_attacked = {
+	set_temp_variable = { 
+		NORDIC_temp_first_in_array = GLOBAL.NORDIC_at_defensive_war^0
+	}
+	 var:GLOBAL.NORDIC_at_defensive_war^0 = {
+		log = "[?THIS.GetName] was removed from the Array" 
+	}
+	remove_from_array = {
+		array = GLOBAL.NORDIC_at_defensive_war
+		index = 0
+	}
+}
+
+NORDIC_full_war_participation = { #Triggers once a Nordic is too involved as a third party in a nordic war. 
+	set_variable = { NORDIC_country_to_defend = GLOBAL.NORDIC_at_defensive_war^0 }
+	var:NORDIC_country_to_defend = {
+		set_variable = { PREV.NORDIC_attacking_country = NORDIC_attacker }
+	}
+	log = "sending event to [?NORDIC_attacking_country.GetName]"
+	var:NORDIC_attacking_country = {
+		country_event = {
+			id = AAT_nordic_cooperation.1
+			hours = 4
+		}
+	}
+}
+
+NORDIC_increase_conflict_scale = { # This increases the scale of the conflict 
+	add_to_variable = {
+		GLOBAL.NORDIC_conflict_scale = GLOBAL.NORDIC_conflict_scale_base_increase
+		tooltip = NORDIC_conflict_scale_increase_tooltip
+	}
+	clamp_variable = {
+		var = GLOBAL.NORDIC_conflict_scale
+		min = 0
+		max = GLOBAL.NORDIC_conflict_scale_max
+	}
+}
+
+NORDIC_roll_for_participation_increase = { # This rolls a die with a chance to increase participation based on the current risk
+	random = {
+		chance = GLOBAL.NORDIC_current_risk
+		NORDIC_increase_war_participation = yes 
+	}
+}
+
+NORDIC_basic_nordic_cooperation_effects = { # This combines the effect to increase the conflict scale and to roll the die for increasing participation. All wartime cooperation decisions should have this
+	NORDIC_increase_conflict_scale = yes
+	NORDIC_roll_for_participation_increase = yes  
+}
+
