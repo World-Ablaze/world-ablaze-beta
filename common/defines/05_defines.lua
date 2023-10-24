@@ -527,8 +527,8 @@ NDefines.NAir.MISSION_FUEL_COSTS = {												-- fuel cost per plane for each 
 	1.0, -- DROP_NUKE
 	1.0, -- PARADROP
 	0.75, -- NAVAL_KAMIKAZE
-	1.2, -- PORT_STRIKE
-	1.2, -- ATTACK_LOGISTICS
+	1.0, -- PORT_STRIKE
+	1.0, -- ATTACK_LOGISTICS
 	1.0, -- AIR_SUPPLY
 	0.2, -- TRAINING
 	1.0, -- NAVAL_MINES_PLANTING
