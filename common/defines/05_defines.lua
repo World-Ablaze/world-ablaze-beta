@@ -549,6 +549,8 @@ NDefines.NAir.DAY_NIGHT_COVERAGE_FACTOR = 0.02 										-- The max night covera
 
 NDefines.NAir.PORT_STRIKE_DAMAGE_FACTOR = 0.1										-- How much damage is dealt to ports during a port strike (per plane damage [complex number] * num flying planes * define)
 
+NDefines.NAir.THRUST_WEIGHT_AGILITY_FACTOR = 2									-- For plane designs, additive agility bonus per point of thrust exceeding weight
+
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Navy
 
 NDefines.NNavy.NAVAL_COMBAT_AIR_SUB_DETECTION_MAX = 2
