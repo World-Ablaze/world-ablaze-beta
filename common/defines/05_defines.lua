@@ -316,6 +316,8 @@ NDefines.NMilitary.UNIT_EXPERIENCE_PER_COMBAT_HOUR = 0.00060
 NDefines.NMilitary.FIELD_EXPERIENCE_SCALE = 0.0015
 NDefines.NMilitary.FIELD_EXPERIENCE_MAX_PER_DAY = 1									-- Most xp you can gain per day
 
+NDefines.NMilitary.XP_DECAY_RATE_PER_HOUR_IN_COMBAT = 0.00125				-- you get reduced XP as combat drags
+
 NDefines.NMilitary.ARMOR_VS_AVERAGE = 0.4			                				-- how to weight in highest armor & pen vs the division average
 
 NDefines.NMilitary.LAND_COMBAT_STR_ARMOR_DEFLECTION_FACTOR = 0.5					-- damage reduction if armor outclassing enemy
@@ -527,8 +529,8 @@ NDefines.NAir.MISSION_FUEL_COSTS = {												-- fuel cost per plane for each 
 	1.0, -- DROP_NUKE
 	1.0, -- PARADROP
 	0.75, -- NAVAL_KAMIKAZE
-	1.2, -- PORT_STRIKE
-	1.2, -- ATTACK_LOGISTICS
+	1.0, -- PORT_STRIKE
+	1.0, -- ATTACK_LOGISTICS
 	1.0, -- AIR_SUPPLY
 	0.2, -- TRAINING
 	1.0, -- NAVAL_MINES_PLANTING
