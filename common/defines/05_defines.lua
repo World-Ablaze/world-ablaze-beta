@@ -407,7 +407,7 @@ NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_IMPACT = -0.4      						-- effect on d
 NDefines.NMilitary.COMBAT_MOVEMENT_SPEED = 0.8										-- speed reduction base modifier in combat
 
 NDefines.NMilitary.TRAINING_ORG = 0
-
+NDefines.NMilitary.TRAINING_MAX_DAILY_COUNTRY_EXP = 0.05
 NDefines.NMilitary.FUEL_CAPACITY_DEFAULT_HOURS = 240               					-- default capacity if not specified
 NDefines.NMilitary.ARMY_COMBAT_FUEL_MULT = 0										-- fuel consumption ratio in combat (plus ARMY_MOVEMENT_FUEL_MULT if you are also moving. ie offensive combat)
 
