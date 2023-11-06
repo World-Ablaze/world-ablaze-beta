@@ -790,16 +790,14 @@ focus_tree = {
 				add_ideas = socialist_science_focus
 			}
 			#if = {
-			#	limit = { check_variable = { SOV_Workers_factory_output > 4 } }
-			#	add_to_variable = { SOV_Workers_factory_output = 4 }
-			#	SOV_political_instability_update_effect = yes
+			#	limit = { check_variable = { SOV_workers_industrial_capacity_factory < 0.2 } }
+			#	add_to_variable = { SOV_workers_industrial_capacity_factory = 0.2 }
 			#	custom_effect_tooltip = SOV_socialist_science_tt
 			#}
 			#else = {
 			#	custom_effect_tooltip = SOV_expand_komsomol_memebership_tt
-			#	add_to_variable = { SOV_Workers_influence = 2 }
-			#	add_to_variable = { SOV_Workers_attitude = 2 }
-			#	SOV_political_instability_update_effect = yes
+			#	add_to_variable = { SOV_workers_influence = 2 }
+			#	add_to_variable = { SOV_workers_attitude = 2 }
 			#}
 		}
 	}
@@ -835,11 +833,7 @@ focus_tree = {
 		completion_reward = {
 			custom_effect_tooltip = SOV_progress_cult_tt
 			hidden_effect = {
-				add_to_variable = {
-					var = SOV_Army_research_speed
-					value = 4
-				}
-				SOV_political_instability_update_effect = yes
+				add_to_variable = { SOV_army_research_speed_factor = 0.08 }
 			}
 		}
 	}
@@ -1179,11 +1173,7 @@ focus_tree = {
 			economy_fatigue_level_down_2 = yes
 			custom_effect_tooltip = SOV_bread_basket_of_the_soviet_union_tt
 			hidden_effect = {
-				add_to_variable = {
-					var = SOV_Peasants_consumer_goods
-					value = 4
-				}
-				SOV_political_instability_update_effect = yes
+				add_to_variable = { SOV_peasants_consumer_goods_factor = -0.04 }
 			}
 			202 = {
 				add_extra_state_shared_building_slots = 4
@@ -2689,64 +2679,15 @@ focus_tree = {
 				remove_idea = great_patriotic_war
 				add_idea = great_patriotic_war_2
 			}
-			add_ideas = extreme_economic_mobilisation
 			custom_effect_tooltip = SOV_great_patriotic_war_tt
 			hidden_effect = {
-				add_to_variable = {
-					var = SOV_Army_attitude
-					value = 1
-				}
-				add_to_variable = {
-					var = SOV_Army_influence
-					value = 1
-				}
-				SOV_political_instability_update_effect = yes
+				add_to_variable = { SOV_army_attitude = 1 }
+				add_to_variable = { SOV_army_influence = 1 }
 				set_country_flag = great_patriotic_war_flag
 			}
 		}
 	}
-	focus = {
-		id = SOV_glavvoenstroi
-		icon = GFX_goal_SOV_glavvoenstroi
-		prerequisite = { focus = SOV_great_patriotic_war }
-		relative_position_id = SOV_great_patriotic_war
-		x = 3
-		y = 1
-		cost = 3
-		search_filters = {
-			FOCUS_FILTER_INDUSTRY
-			FOCUS_FILTER_EMERGENCY
-		}
 
-		ai_will_do = {
-			factor = 1
-		}
-
-		available = {
-			OR = {
-				any_enemy_country = { is_major = yes }
-				NOT = {
-					if = {
-						limit = { has_idea = cavalry_army_clique }
-						has_idea = cavalry_army_clique
-					}
-					else_if = {
-						limit = { has_idea = cavalry_army_clique_2 }
-						has_idea = cavalry_army_clique_2
-					}
-					else = {
-						has_idea = cavalry_army_clique_3
-					}
-				}
-			}
-		}
-
-		completion_reward = {
-			custom_effect_tooltip = SOV_glavvoenstroi_tt
-			add_to_variable = { SOV_fyp_consumer_goods_factor = -0.02 }
-			add_to_variable = { SOV_fyp_production_speed_buildings_factor = 0.05 }
-		}
-	}
 	focus = {
 		id = SOV_pc_of_mortar_armament
 		icon = GFX_goal_SOV_pc_of_mortar_armament
@@ -2814,6 +2755,7 @@ focus_tree = {
 			}
 		}
 	}
+
 	focus = {
 		id = SOV_pc_of_tank_industry
 		icon = GFX_goal_SOV_pc_of_tank_industry
@@ -2867,13 +2809,81 @@ focus_tree = {
 			}
 		}
 	}
+
+	focus = {
+		id = SOV_merge_evacuated_plants
+		icon = GFX_focus_SOV_merge_plants
+		prerequisite = { focus = SOV_great_patriotic_war }
+		relative_position_id = SOV_great_patriotic_war
+		x = -1
+		y = 1
+		cost = 1
+		search_filters = {
+			FOCUS_FILTER_INDUSTRY
+			FOCUS_FILTER_EMERGENCY
+		}
+		completion_reward = {
+			add_timed_idea = {
+				idea = SOV_merge_evacuated_plants
+				days = 182
+			}
+			custom_effect_tooltip = SOV_merge_evacuated_plants_wa_tt
+		}
+	}
+	
+	focus = {
+		id = SOV_glavvoenstroi
+		icon = GFX_goal_SOV_glavvoenstroi
+		prerequisite = { focus = SOV_great_patriotic_war }
+		x = 1
+		y = 1
+		relative_position_id = SOV_great_patriotic_war
+		
+		cost = 1
+
+		search_filters = {
+			FOCUS_FILTER_INDUSTRY
+			FOCUS_FILTER_EMERGENCY
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			OR = {
+				any_enemy_country = { is_major = yes }
+				NOT = {
+					if = {
+						limit = { has_idea = cavalry_army_clique }
+						has_idea = cavalry_army_clique
+					}
+					else_if = {
+						limit = { has_idea = cavalry_army_clique_2 }
+						has_idea = cavalry_army_clique_2
+					}
+					else = {
+						has_idea = cavalry_army_clique_3
+					}
+				}
+			}
+		}
+
+		completion_reward = {
+			custom_effect_tooltip = SOV_glavvoenstroi_tt
+			add_to_variable = { SOV_fyp_consumer_goods_factor = -0.02 }
+			add_to_variable = { SOV_fyp_production_speed_buildings_factor = 0.05 }
+		}
+	}
+
 	focus = {
 		id = SOV_defense_of_the_motherland
 		icon = GFX_focus_SOV_the_defense_of_moscow
-		prerequisite = { focus = SOV_glavvoenstroi }
-		relative_position_id = SOV_glavvoenstroi
-		x = 0
+		prerequisite = { focus = SOV_great_patriotic_war }
+		x = 3
 		y = 1
+		relative_position_id = SOV_great_patriotic_war
+
 		available = {
 			OR = {
 				219 = {
@@ -3268,33 +3278,15 @@ focus_tree = {
 			custom_effect_tooltip = SOV_defense_of_the_motherland_tt
 		}
 	}
-	focus = {
-		id = SOV_merge_evacuated_plants
-		icon = GFX_focus_SOV_merge_plants
-		prerequisite = { focus = SOV_great_patriotic_war }
-		relative_position_id = SOV_great_patriotic_war
-		x = -1
-		y = 1
-		cost = 1
-		search_filters = {
-			FOCUS_FILTER_INDUSTRY
-			FOCUS_FILTER_EMERGENCY
-		}
-		completion_reward = {
-			add_timed_idea = {
-				idea = SOV_merge_evacuated_plants
-				days = 182
-			}
-			custom_effect_tooltip = SOV_merge_evacuated_plants_wa_tt
-		}
-	}
+	
 	focus = {
 		id = SOV_women_in_the_army
 		icon = GFX_focus_generic_women_in_military
-		prerequisite = { focus = SOV_great_patriotic_war }
-		relative_position_id = SOV_great_patriotic_war
-		x = 1
+		prerequisite = { focus = SOV_defense_of_the_motherland }
+		x = 0
 		y = 1
+		relative_position_id = SOV_defense_of_the_motherland
+		
 		cost = 1
 		search_filters = {
 			FOCUS_FILTER_INDUSTRY
@@ -3321,7 +3313,8 @@ focus_tree = {
 		icon = GFX_goal_SOV_tankograd
 		relative_position_id = SOV_merge_evacuated_plants
 		prerequisite = { focus = SOV_merge_evacuated_plants }
-		cost = 3
+		prerequisite = { focus = SOV_glavvoenstroi }
+		cost = 2
 		x = 0
 		y = 1
 		search_filters = {
@@ -3334,6 +3327,7 @@ focus_tree = {
 			}
 		}
 		completion_reward = {
+			custom_effect_tooltip = SOV_extreme_economic_mobilisation_tt
 			572 = {
 				add_extra_state_shared_building_slots = 25
 				add_building_construction = {
@@ -3361,7 +3355,8 @@ focus_tree = {
 		icon = GFX_goal_SOV_uralvagonzavod
 		relative_position_id = SOV_merge_evacuated_plants
 		prerequisite = { focus = SOV_merge_evacuated_plants }
-		cost = 3
+		prerequisite = { focus = SOV_glavvoenstroi }
+		cost = 2
 		x = 2
 		y = 1
 		available = {
@@ -3374,6 +3369,7 @@ focus_tree = {
 			FOCUS_FILTER_EMERGENCY
 		}
 		completion_reward = {
+			custom_effect_tooltip = SOV_extreme_economic_mobilisation_tt
 			653 = {
 				add_extra_state_shared_building_slots = 30
 				add_building_construction = {
@@ -3402,7 +3398,7 @@ focus_tree = {
 		relative_position_id = SOV_tankograd
 		prerequisite = { focus = SOV_tankograd }
 		prerequisite = { focus = SOV_uralvagonzavod }
-		cost = 4
+		cost = 3
 		x = 1
 		y = 1
 		search_filters = {
@@ -3822,11 +3818,7 @@ focus_tree = {
 
 		completion_reward = {
 			add_ideas = SOV_war_heroes_ns
-			add_to_variable = {
-				var = SOV_Army_influence
-				value = 1
-			}
-			SOV_political_instability_update_effect = yes
+			add_to_variable = { SOV_army_influence = 1 }
 			if = {
 				limit = {
 					is_ai = no
@@ -4019,7 +4011,7 @@ focus_tree = {
 				}
 				has_civil_war = no
 			}
-			
+
 			if = { #remove this check for 7.9
 				limit = {
 					has_completed_focus = SOV_lessons_of_war
@@ -4099,10 +4091,9 @@ focus_tree = {
 			}
 			custom_effect_tooltip = SOV_form_the_stavka_tt
 			hidden_effect = {
-				add_to_variable = { SOV_Army_attitude = 1 }
-				add_to_variable = { SOV_Army_influence = -1 }
-				add_to_variable = { SOV_Commissars_influence = 2 }
-				SOV_political_instability_update_effect = yes
+				add_to_variable = { SOV_army_attitude = 1 }
+				add_to_variable = { SOV_army_influence = -1 }
+				add_to_variable = { SOV_commissars_influence = 2 }
 			}
 
 			add_tech_bonus = {
@@ -4147,7 +4138,7 @@ focus_tree = {
 		x = 1
 		y = 1
 		relative_position_id = SOV_a_multiethnic_army
-		cost = 3
+		cost = 6
 		ai_will_do = {
 			factor = 1
 		}
@@ -4184,7 +4175,7 @@ focus_tree = {
 		x = 0
 		y = 2
 		relative_position_id = SOV_a_multiethnic_army
-		cost = 4
+		cost = 3
 		ai_will_do = {
 			factor = 1
 		}
@@ -4255,7 +4246,7 @@ focus_tree = {
 		x = 0
 		y = 1
 		relative_position_id = SOV_guards_units
-		cost = 4
+		cost = 6
 		ai_will_do = {
 			factor = 1
 		}
@@ -4309,15 +4300,8 @@ focus_tree = {
 				activate_advisor = georgy_zhukov
 			}
 			hidden_effect = {
-				add_to_variable = {
-					var = SOV_Army_attitude
-					value = 1
-				}
-				add_to_variable = {
-					var = SOV_Army_influence
-					value = 1
-				}
-				SOV_political_instability_update_effect = yes
+				add_to_variable = { SOV_army_attitude = 1 }
+				add_to_variable = { SOV_army_influence = 1 }
 			}
 		}
 	}
@@ -4329,7 +4313,7 @@ focus_tree = {
 		x = -1
 		y = 1
 		relative_position_id = SOV_positive_heroism
-		cost = 3
+		cost = 6
 
 		search_filters = {
 		}
@@ -4401,7 +4385,7 @@ focus_tree = {
 		x = 0
 		y = 1
 		relative_position_id = SOV_preserve_veteran_units
-		cost = 3
+		cost = 6
 
 		ai_will_do = {
 			factor = 100
@@ -4576,8 +4560,8 @@ focus_tree = {
 		x = 0
 		y = 1
 		relative_position_id = SOV_disband_the_cavalry_army_clique
-		cost = 3
-
+		
+		cost = 6
 
 		bypass = {
 			has_completed_focus = SOV_depoliticize_the_military
@@ -4621,7 +4605,8 @@ focus_tree = {
 		x = 1
 		y = 1
 		relative_position_id = SOV_swap_to_political_advisors
-		cost = 3
+		
+		cost = 6
 
 		available = {
 			OR = {
@@ -4648,7 +4633,9 @@ focus_tree = {
 		x = -1
 		y = 1
 		relative_position_id = SOV_swap_to_political_advisors
-		cost = 3
+		
+		cost = 6
+
 		ai_will_do = {
 			factor = 1
 		}
@@ -4984,7 +4971,7 @@ focus_tree = {
 		x = 0
 		y = 1
 		relative_position_id = SOV_tank_armies
-		cost = 3
+		cost = 6
 		ai_will_do = {
 			factor = 1
 		}
@@ -5000,12 +4987,12 @@ focus_tree = {
 			set_technology = {
 				deep_battle = 1
 			}
-			add_doctrine_cost_reduction = {
-				name = SOV_deep_battle
-				cost_reduction = 0.99
-				uses = 2
-				category = cat_mobile_warfare
-			}
+			#add_doctrine_cost_reduction = {
+			#	name = SOV_deep_battle
+			#	cost_reduction = 0.99
+			#	uses = 2
+			#	category = cat_mobile_warfare
+			#}
 			hidden_effect = {
 				if = {
 					limit = {
@@ -5028,7 +5015,7 @@ focus_tree = {
 		x = 0
 		y = 1
 		relative_position_id = SOV_deep_battle
-		cost = 5
+		cost = 6
 		ai_will_do = {
 			factor = 1
 		}
@@ -5393,7 +5380,7 @@ focus_tree = {
 		x = 0
 		y = 1
 		relative_position_id = SOV_breakthrough_tanks
-		cost = 5
+		cost = 6
 		ai_will_do = {
 			factor = 1
 		}
@@ -5954,7 +5941,7 @@ focus_tree = {
 		x = -1
 		y = 1
 		relative_position_id = SOV_utilise_the_civil_air_fleet
-		cost = 3
+		cost = 4
 
 		search_filters = {
 			FOCUS_FILTER_RESEARCH
@@ -5999,7 +5986,7 @@ focus_tree = {
 		x = 1
 		y = 1
 		relative_position_id = SOV_utilise_the_civil_air_fleet
-		cost = 3
+		cost = 4
 		ai_will_do = {
 			factor = 1
 		}
@@ -6063,7 +6050,7 @@ focus_tree = {
 		x = 0
 		y = 1
 
-		cost = 5
+		cost = 6
 
 		ai_will_do = {
 			factor = 1
@@ -8661,6 +8648,29 @@ focus_tree = {
 		}
 		completion_reward = {
 			add_stability = 0.05
+			every_state = {
+				limit = {
+					is_fully_controlled_by = ROOT
+					OR = {
+						state = 208
+						state = 209
+						state = 210
+						state = 207
+						state = 206
+						state = 204
+						state = 194
+						state = 201
+						state = 199
+						state = 198
+						state = 192
+						state = 202
+					}
+				}
+				add_dynamic_modifier = {
+					modifier = SOV_fortified_state
+					scope = SOV
+				}
+			}
 			209 = {
 				if = {
 					limit = {
@@ -9706,6 +9716,33 @@ focus_tree = {
 			add_political_power = 100
 			add_stability = 0.05
 			custom_effect_tooltip = SOV_the_molotov_line_tt
+			every_state = {
+				limit = {
+					is_fully_controlled_by = ROOT
+					OR = {
+						state = 188
+						state = 189
+						state = 11
+						state = 968
+						state = 969
+						state = 784
+						state = 95
+						state = 96
+						state = 97
+						state = 94
+						state = 93
+						state = 91
+						state = 89
+						state = 80
+						state = 78
+						state = 766
+					}
+				}
+				add_dynamic_modifier = {
+					modifier = SOV_fortified_state
+					scope = SOV
+				}
+			}
 			### LITHUANIA ###
 			if = {
 				#If Memel is controlled, then add forts in Memel, if not, then go to Zemaitija
@@ -9753,6 +9790,10 @@ focus_tree = {
 						}
 						#custom_effect_tooltip = SOV_molotov_line_forts_3
 
+						add_dynamic_modifier = {
+							modifier = SOV_fortified_state
+							scope = SOV
+						}
 						add_building_construction = {
 							type = bunker
 							level = 3
@@ -9914,6 +9955,7 @@ focus_tree = {
 					}
 				}
 			}
+			### Romania ###
 		}
 	}
 	focus = {
@@ -13656,15 +13698,8 @@ focus_tree = {
 			add_to_variable = { SOV_academy_of_sciences_research_speed_factor = -0.05 }
 
 			hidden_effect = {
-				subtract_from_variable = {
-					var = SOV_Army_political_power_gain
-					value = 3
-				}
-				subtract_from_variable = {
-					var = SOV_Army_influence
-					value = 3
-				}
-				SOV_political_instability_update_effect = yes
+				subtract_from_variable = { SOV_army_political_power_gain = 0.15 }
+				subtract_from_variable = { SOV_army_influence = 3 }
 			}
 		}
 	}
@@ -13999,9 +14034,8 @@ focus_tree = {
 		completion_reward = {
 			add_to_variable = { SOV_fyp_consumer_goods_factor = -0.04 }
 			hidden_effect = {
-				add_to_variable = { SOV_Peasants_attitude = 1 }
-				add_to_variable = { SOV_Peasants_influence = 1 }
-				SOV_political_instability_update_effect = yes
+				add_to_variable = { SOV_peasants_attitude = 1 }
+				add_to_variable = { SOV_peasants_influence = 1 }
 			}
 			custom_effect_tooltip = SOV_the_kulak_operation_tt
 			add_stability = -0.05
@@ -14025,9 +14059,8 @@ focus_tree = {
 			add_to_variable = { SOV_the_politburo_political_power_factor = 0.1 }
 			add_to_variable = { SOV_the_politburo_max_surrender_limit_offset = 0.1 }
 			hidden_effect = {
-				add_to_variable = { SOV_Peasants_attitude = 1 }
-				add_to_variable = { SOV_Peasants_influence = 1 }
-				SOV_political_instability_update_effect = yes
+				add_to_variable = { SOV_peasants_attitude = 1 }
+				add_to_variable = { SOV_peasants_influence = 1 }
 			}
 			custom_effect_tooltip = SOV_the_polish_operation_tt
 			SOV_konstantin_rokossovsky = {
@@ -14068,9 +14101,8 @@ focus_tree = {
 		completion_reward = {
 			custom_effect_tooltip = SOV_end_the_terror_tt
 			hidden_effect = {
-				add_to_variable = { SOV_Peasants_attitude = 1 }
-				add_to_variable = { SOV_Peasants_influence = 2 }
-				SOV_political_instability_update_effect = yes
+				add_to_variable = { SOV_peasants_attitude = 1 }
+				add_to_variable = { SOV_peasants_influence = 2 }
 			}
 			unlock_decision_tooltip = SOV_release_generals_from_gulag
 			add_stability = 0.1
@@ -14176,10 +14208,9 @@ focus_tree = {
 		completion_reward = {
 			custom_effect_tooltip = SOV_formation_of_the_nkvd_tt
 			hidden_effect = {
-				add_to_variable = { SOV_Commissars_attitude = 1 }
-				add_to_variable = { SOV_Commissars_political_power_gain = 4 }
-				add_to_variable = { SOV_Commissars_stability = 2 }
-				SOV_political_instability_update_effect = yes
+				add_to_variable = { SOV_commissars_attitude = 1 }
+				add_to_variable = { SOV_commissars_political_power_gain = 0.2 }
+				add_to_variable = { SOV_commissars_stability_factor = 0.1 }
 			}
 			add_ideas = nkvd
 			SOV_paranoia_medium_increase_effect = yes
@@ -14210,11 +14241,7 @@ focus_tree = {
 			custom_effect_tooltip = SOV_nkvd_divisions_tt
 			custom_effect_tooltip = SOV_nkvd_upgrade_tooltip
 			hidden_effect = {
-				add_to_variable = {
-					var = SOV_Commissars_influence
-					value = 2
-				}
-				SOV_political_instability_update_effect = yes
+				add_to_variable = { SOV_commissars_influence = 2 }
 			}
 			add_units_to_division_template = {
 				template_name = "NKVD Strelkovaya Diviziya"
@@ -14622,8 +14649,7 @@ focus_tree = {
 
 			custom_effect_tooltip = SOV_new_soviet_person_tt
 			hidden_effect = {
-				subtract_from_variable = { SOV_Peasants_influence = 1 }
-				SOV_political_instability_update_effect = yes
+				subtract_from_variable = { SOV_peasants_influence = 1 }
 			}
 		}
 	}
@@ -14842,9 +14868,8 @@ focus_tree = {
 			}
 			custom_effect_tooltip = SOV_expand_komsomol_memebership_tt
 			hidden_effect = {
-				add_to_variable = { SOV_Workers_influence = 3 }
-				add_to_variable = { SOV_Workers_attitude = 1 }
-				SOV_political_instability_update_effect = yes
+				add_to_variable = { SOV_workers_influence = 3 }
+				add_to_variable = { SOV_workers_attitude = 1 }
 			}
 			economy_fatigue_level_down_4 = yes
 		}
@@ -14880,10 +14905,9 @@ focus_tree = {
 			}
 			custom_effect_tooltip = SOV_reestablish_the_Patriarchate_tt
 			hidden_effect = {
-				set_variable = { SOV_Peasants_stability = 3 }
-				set_variable = { SOV_Peasants_attitude = 3 }
-				add_to_variable = { SOV_Peasants_influence = 2 }
-				SOV_political_instability_update_effect = yes
+				set_variable = { SOV_peasants_stability_factor = 0.15 }
+				set_variable = { SOV_peasants_attitude = 3 }
+				add_to_variable = { SOV_peasants_influence = 2 }
 			}
 			custom_effect_tooltip = available_political_advisor
 			show_ideas_tooltip = SOV_patriarch_sergy
@@ -19182,17 +19206,15 @@ focus_tree = {
 			custom_effect_tooltip = SOV_marsh_of_the_proletariat_tt
 
 			if = {
-				limit = { check_variable = { SOV_Workers_factory_output > 4 } }
-				add_to_variable = { SOV_Workers_factory_output = 4 }
+				limit = { check_variable = { SOV_workers_industrial_capacity_factory < 0.2 } }
+				add_to_variable = { SOV_workers_industrial_capacity_factory = 0.2 }
 				custom_effect_tooltip = SOV_socialist_science_tt
 			}
-			add_to_variable = { SOV_Workers_influence = 1 }
-			add_to_variable = { SOV_Workers_attitude = 1 }
+			add_to_variable = { SOV_workers_influence = 1 }
+			add_to_variable = { SOV_workers_attitude = 1 }
 
-			add_to_variable = { SOV_Peasants_attitude = 2 }
-			add_to_variable = { SOV_Peasants_influence = 2 }
-			SOV_political_instability_update_effect = yes
-
+			add_to_variable = { SOV_peasants_attitude = 2 }
+			add_to_variable = { SOV_peasants_influence = 2 }
 		}
 	}
 	focus = {
@@ -19207,10 +19229,9 @@ focus_tree = {
 			custom_effect_tooltip = SOV_end_the_terror_tt
 			custom_effect_tooltip = SOV_reestablish_the_Patriarchate_tt
 			hidden_effect = {
-				set_variable = { SOV_Peasants_stability = 3 }
-				set_variable = { SOV_Peasants_attitude = 3 }
-				add_to_variable = { SOV_Peasants_influence = 2 }
-				SOV_political_instability_update_effect = yes
+				set_variable = { SOV_peasants_stability_factor = 0.1 }
+				set_variable = { SOV_peasants_attitude = 3 }
+				add_to_variable = { SOV_peasants_influence = 2 }
 			}
 			add_to_variable = { SOV_the_politburo_political_power_factor = 0.05 }
 		}

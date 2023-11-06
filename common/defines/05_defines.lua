@@ -6,6 +6,7 @@ NDefines.NGame.LAG_DAYS_FOR_LOWER_SPEED = 300										-- Days of client lag for
 NDefines.NGame.LAG_DAYS_FOR_PAUSE = 100												-- Days of client lag for pause of gamespeed.
 NDefines.NGame.EVENT_TIMEOUT_DEFAULT = 7											-- Default days before an event times out if not scripted
 NDefines.NGame.GAME_SPEED_SECONDS = { 0.5, 0.2, 0.14, 0.06, 0.0 }					-- Game speed
+NDefines.NGame.HANDS_OFF_START_TAG = "BHU"
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Diplomacy
 
@@ -813,11 +814,13 @@ NDefines.NAI.AREA_DEFENSE_SETTING_RAILWAYS = false
 
 ----------- COHESION
 
---NDefines.NAI.MIN_AI_UNITS_PER_TILE_FOR_STANDARD_COHESION = 20.0					-- How many units should we have for each tile along a front in order to switch to standard cohesion (less moving around)
---NDefines.NAI.MIN_FRONT_SIZE_TO_CONSIDER_STANDARD_COHESION = 1000					-- How long should fronts be before we consider switching to standard cohesion (under this, standard cohesion fronts will switch back to relaxed)
+NDefines.NAI.MIN_AI_UNITS_PER_TILE_FOR_STANDARD_COHESION = 20.0						-- How many units should we have for each tile along a front in order to switch to standard cohesion (less moving around)
+NDefines.NAI.MIN_FRONT_SIZE_TO_CONSIDER_STANDARD_COHESION = 1000					-- How long should fronts be before we consider switching to standard cohesion (under this, standard cohesion fronts will switch back to relaxed)
 
 NDefines.NAI.ARMY_LEADER_ASSIGN_FIELD_MARSHAL_TO_ARMY = -2000            			-- Score for assigning a field marshal to a normal army (want to use them for army groups)
-NDefines.NAI.ARMY_LEADER_ASSIGN_EMPTYNESS_MALUS = 0.9                  				-- Factor for avoiding assigning leaders that can lead large armies to small armies (a value of 0.2 reduces the score by max 20 %)
+NDefines.NAI.ARMY_LEADER_ASSIGN_EMPTYNESS_MALUS = 0.0                  				-- Factor for avoiding assigning leaders that can lead large armies to small armies (a value of 0.2 reduces the score by max 20 %)
+NDefines.NAI.ARMY_LEADER_ASSIGN_OVERCAPACITY = 0                     				-- Score for assigning leader to a too large army
+--NDefines.NAI.ARMY_LEADER_ASSIGN_KEEP_LEADER = 100                       			-- Score for keeping the leader if already assigned
 
 ----------- SUPPLY
 
@@ -841,7 +844,7 @@ NDefines.NAI.MINIMUM_FUEL_DAYS_TO_ACCEPT_LEND_LEASE = 60					 		-- AI will accep
 
 ----------- NAVY
 
-NDefines.NAI.MISSING_CONVOYS_BOOST_FACTOR = 44.0									-- The more convoys a country is missing, the more resources it diverts to cover this.
+NDefines.NAI.MISSING_CONVOYS_BOOST_FACTOR = 0.0										-- The more convoys a country is missing, the more resources it diverts to cover this.
 
 NDefines.NAI.MAX_DISTANCE_NALAV_INVASION = 180.0									-- AI is extremely unwilling to plan naval invasions above this naval distance limit.
 NDefines.NAI.MAX_UNIT_RATIO_FOR_INVASIONS = 0.35									-- countries won't use armies more than this ratio of total units for invasions
@@ -852,7 +855,10 @@ NDefines.NAI.INVASION_COASTAL_PROVS_PER_ORDER = 28									-- AI will consider o
 NDefines.NAI.NAVAL_INVADED_AREA_PRIO_DURATION = 270									-- after successful invasion, AI will prio the enemy area for this number of days
 NDefines.NAI.NAVAL_INVADED_AREA_PRIO_MULT = 2.0										-- fronts that belongs to recent invasions gets more prio
 NDefines.NAI.MIN_NUM_CONQUERED_PROVINCES_TO_DEPRIO_NAVAL_INVADED_FRONTS = 30		-- if you conquer this amount of provinces after a naval invasion, it will lose its prio status and will act as a regular front
-NDefines.NAI.MAX_INVASION_SIZE = 18													-- max invasion group size
+NDefines.NAI.MAX_INVASION_SIZE = 24													-- max invasion group size
+NDefines.NAI.MAX_UNITS_FACTOR_INVASION_ORDER = 1.4									-- Factor for max number of units to assign to naval invasion orders
+NDefines.NAI.DESIRED_UNITS_FACTOR_INVASION_ORDER = 1.4								-- Factor for desired number of units to assign to naval invasion orders
+NDefines.NAI.MIN_UNITS_FACTOR_INVASION_ORDER = 1.2									-- Factor for min number of units to assign to naval invasion orders
 
 NDefines.NAI.CONVOY_ESCORT_MUL_FROM_NO_CONVOYS = 0 									-- score multiplier when no convoys are around
 NDefines.NAI.CONVOY_ESCORT_SCORE_FROM_CONVOYS = 1             				        -- score for each convoy you have in area
@@ -882,6 +888,8 @@ NDefines.NAI.NAVAL_DOCKYARDS_SHIP_FACTOR = 2										-- The extent to which num
 NDefines.NAI.NAVY_PREFERED_MAX_SIZE = 75											-- AI will generally attempt to merge fleets into this size, but as a soft limit.
 NDefines.NAI.SUB_TASKFORCE_MAX_SHIP_COUNT = 5 										-- optimum sub count for sub taskforces
 NDefines.NAI.PRODUCTION_MAX_PROGRESS_TO_SWITCH_NAVAL = 0.0							-- AI will not replace ships being built by newer types if progress is above this
+NDefines.NAI.PRODUCTION_WAIT_TO_FINISH_IF_EXPENSIVE = 0.1      						-- If produced item is expensive (producing less than one/week), wait to finish item if progress is above this
+--NDefines.NAI.PRODUCTION_WAIT_TO_FINISH_IF_CHEAP = 0.0         			 		-- If produced item is cheap (producing more than one/week), wait to finish item if progress is above this
 
 NDefines.NAI.REGION_THREAT_LEVEL_TO_BLOCK_REGION = 25 * 1000						-- How much threat must be generated in region ( by REGION_THREAT_PER_SUNK_CONVOY ) so the AI will decide to mark the region as avoid
 
@@ -913,10 +921,9 @@ NDefines.NAI.AGGRESSIVENESS_CHECK_PARTLY_FORTIFIED_WEAK_POINTS = 0.75				-- if f
 NDefines.NAI.AGGRESSIVENESS_CHECK_FULLY_FORTIFIED = 10								-- if front strength balance is at or above this value versus a fully fortified enemy with no weak points, we do a balanced attack instead being careful
 NDefines.NAI.AGGRESSIVENESS_CHECK_FULLY_FORTIFIED_POCKET = 6						-- if front strength balance is at or above this value versus a fully fortified enemy in a pocket, we do a balanced attack instead being careful
 
-NDefines.NAI.LAND_DEFENSE_AIR_SUPERIORITY_IMPORTANCE = 0.8							-- Strategic importance of air superiority ( amount of enemy planes in area )
+NDefines.NAI.LAND_DEFENSE_AIR_SUPERIORITY_IMPORTANCE = 2.0							-- Strategic importance of air superiority ( amount of enemy planes in area )
 NDefines.NAI.LAND_DEFENSE_CIVIL_FACTORY_IMPORTANCE = 150							-- Strategic importance of civil factories
 NDefines.NAI.LAND_DEFENSE_MILITARY_FACTORY_IMPORTANCE = 200							-- Strategic importance of military factories
-NDefines.NAI.LAND_DEFENSE_FIGHERS_PER_PLANE = 0.1									-- Amount of air superiority planes requested per enemy plane
 NDefines.NAI.LAND_DEFENSE_FIGHERS_PER_PLANE = 2.0									-- Amount of air superiority planes requested per enemy plane
 NDefines.NAI.LAND_DEFENSE_INTERSEPTORS_PER_BOMBERS = 2.0							-- Amount of air interceptor planes requested per enemy bomber
 NDefines.NAI.LAND_DEFENSE_INTERSEPTORS_PER_PLANE = 0								-- Amount of air interceptor planes requested per enemy plane (non bomber)
@@ -928,7 +935,7 @@ NDefines.NAI.LAND_COMBAT_AIR_SUPERIORITY_IMPORTANCE = 2.0 							-- Strategic im
 NDefines.NAI.LAND_COMBAT_OUR_ARMIES_AIR_IMPORTANCE = 25 							-- Strategic importance of our armies
 NDefines.NAI.LAND_COMBAT_OUR_COMBATS_AIR_IMPORTANCE = 100							-- Strategic importance of our armies in the combats
 NDefines.NAI.LAND_COMBAT_IMPORTANCE_SCALE = 5 										-- Lend combat total importance scale (every land combat score get's multiplied by it)
-NDefines.NAI.LAND_COMBAT_FIGHTERS_PER_PLANE = 1.1									-- Amount of air superiority planes requested per enemy plane
+NDefines.NAI.LAND_COMBAT_FIGHTERS_PER_PLANE = 1.2									-- Amount of air superiority planes requested per enemy plane
 NDefines.NAI.LAND_COMBAT_CAS_PER_ENEMY_ARMY = 50									-- Amount of CAS planes requested per enemy army
 NDefines.NAI.AIR_SUPERIORITY_FOR_FRIENDLY_CAS_RATIO = 0.0							-- Demand at least this proportion of our cas planes as air superiority regardless of other needs
 NDefines.NAI.LAND_COMBAT_CAS_PLANES_PER_ENEMY_ARMY_LIMIT = 1500						-- Limit of CAS planes requested by enemy armies
@@ -941,14 +948,19 @@ NDefines.NAI.LAND_COMBAT_INTERCEPT_PER_PLANE = 0									-- Amount of intercepti
 NDefines.NAI.NAVAL_COMBAT_TRANSFER_AIR_IMPORTANCE = 500.0							-- Naval combat involving enemy land units
 
 NDefines.NAI.STR_BOMB_AIR_SUPERIORITY_IMPORTANCE = 0.0								-- Strategic importance of air superiority ( amount of enemy planes in area )
-	
+
 NDefines.NAI.STR_BOMB_MIN_ENEMY_FIGHTERS_IN_AREA = 2800								-- If amount of enemy fighters is higher than this mission won't perform
 NDefines.NAI.STR_BOMB_FIGHTERS_PER_PLANE = 50.0										-- Amount of air superiority planes requested per enemy plane
 NDefines.NAI.STR_BOMB_MIN_EXCORT_PLANES = 0											-- Min amount of planes requested to excort operations
+NDefines.NAI.RECON_PLANES_NAVAL = 500                           					-- scale on recon for naval areas
+NDefines.NAI.RECON_PLANES_LAND_COMBAT = 25                   	 					-- scale on recon for land combat areas
+NDefines.NAI.RECON_PLANES_STRATEGIC = 50                     	 					-- scale on recon for strategic areas
 
 NDefines.NAI.AI_FRACTION_OF_FIGHTERS_RESERVED_FOR_INTERCEPTION = 0.0				-- Percentage of fighters we reserve for interception vs AS
 
 NDefines.NAI.DAYS_BETWEEN_AIR_PRIORITIES_UPDATE = 2									-- Amount of days between air ai updates priorities for air wings ( from 1 to N )
+
+NDefines.NAI.LAND_COMBAT_GUIDE_DISTANCE = 0.0										-- Distance within whch we'll care a bit more about sending planes regardless of whether our boiz are dying
 
 ------------------------------------------------- END
 
@@ -984,10 +996,6 @@ NDefines.NAI.MAX_FULLY_TRAINED_SHIP_RATIO_FOR_TRAINING = 0.8						-- ai will not
 NDefines.NAI.MAX_UNITS_FACTOR_FRONT_ORDER = 3.0										-- Factor for max number of units to assign to area front orders
 NDefines.NAI.DESIRED_UNITS_FACTOR_FRONT_ORDER = 3.0									-- Factor for desired number of units to assign to area front orders
 NDefines.NAI.MIN_UNITS_FACTOR_FRONT_ORDER = 2.0										-- Factor for min number of units to assign to area front orders
-
-NDefines.NAI.MAX_UNITS_FACTOR_INVASION_ORDER = 1.4									-- Factor for max number of units to assign to naval invasion orders
-NDefines.NAI.DESIRED_UNITS_FACTOR_INVASION_ORDER = 1.4								-- Factor for desired number of units to assign to naval invasion orders
-NDefines.NAI.MIN_UNITS_FACTOR_INVASION_ORDER = 1.2									-- Factor for min number of units to assign to naval invasion orders
 
 NDefines.NAI.HOUR_BAD_COMBAT_REEVALUATE = 6 										-- if we are in combat for this amount and it goes shitty then try skipping it
 
