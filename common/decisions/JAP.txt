@@ -766,7 +766,7 @@ JAP_intervene_in_china = {
 				}
 				custom_effect_tooltip = JAP_war_with_china_toseiha_tt
 				hidden_effect = {
-					add_to_variable = { JAP_toseiha_factory_output = 1 }
+					add_to_variable = { JAP_toseiha_industrial_capacity_factory = 0.05 }
 				}
 			}
 			else = {
@@ -847,7 +847,7 @@ JAP_intervene_in_china = {
 				}
 				custom_effect_tooltip = JAP_war_with_china_toseiha_tt
 				hidden_effect = {
-					add_to_variable = { JAP_toseiha_factory_output = 0.05 }
+					add_to_variable = { JAP_toseiha_industrial_capacity_factory = 0.05 }
 				}
 			}
 			else = {
@@ -905,7 +905,7 @@ JAP_intervene_in_china = {
 		}
 		fire_only_once = yes
 		is_good = no
-		days_mission_timeout = 360
+		days_mission_timeout = 450
 
 		timeout_effect = {
 		}
@@ -922,7 +922,7 @@ JAP_intervene_in_china = {
 				}
 				custom_effect_tooltip = JAP_war_with_china_toseiha_tt
 				hidden_effect = {
-					add_to_variable = { JAP_toseiha_factory_output = 0.05 }
+					add_to_variable = { JAP_toseiha_industrial_capacity_factory = 0.05 }
 				}
 			}
 			else = {
@@ -1055,7 +1055,7 @@ JAP_intervene_in_china = {
 				}
 				custom_effect_tooltip = JAP_war_with_china_toseiha_tt
 				hidden_effect = {
-					add_to_variable = { JAP_toseiha_factory_output = 0.05 }
+					add_to_variable = { JAP_toseiha_industrial_capacity_factory = 0.05 }
 				}
 			}
 			else = {
@@ -1113,7 +1113,7 @@ JAP_intervene_in_china = {
 				}
 				custom_effect_tooltip = JAP_war_with_china_toseiha_loss_tt
 				hidden_effect = {
-					add_to_variable = { JAP_toseiha_factory_output = -0.05 }
+					add_to_variable = { JAP_toseiha_industrial_capacity_factory = -0.05 }
 				}
 			}
 			else = {
@@ -1171,7 +1171,7 @@ JAP_intervene_in_china = {
 				}
 				custom_effect_tooltip = JAP_war_with_china_toseiha_loss_tt
 				hidden_effect = {
-					add_to_variable = { JAP_toseiha_factory_output = -0.05 }
+					add_to_variable = { JAP_toseiha_industrial_capacity_factory = -0.05 }
 				}
 			}
 			else = {
@@ -1244,7 +1244,7 @@ JAP_intervene_in_china = {
 				}
 				custom_effect_tooltip = JAP_war_with_china_toseiha_loss_tt
 				hidden_effect = {
-					add_to_variable = { JAP_toseiha_factory_output = -0.05 }
+					add_to_variable = { JAP_toseiha_industrial_capacity_factory = -0.05 }
 				}
 			}
 			else = {
@@ -1375,7 +1375,7 @@ JAP_intervene_in_china = {
 				}
 				custom_effect_tooltip = JAP_war_with_china_toseiha_loss_tt
 				hidden_effect = {
-					add_to_variable = { JAP_toseiha_factory_output = -0.05 }
+					add_to_variable = { JAP_toseiha_industrial_capacity_factory = -0.05 }
 				}
 			}
 			else = {
@@ -4850,51 +4850,42 @@ JAP_southern_expansion = {
 			tag = JAP
 		}
 		available = {
-			OR = {
-				RNC = {
-					is_subject_of = JAP
+			if = {
+				limit = {
+					FROM = {
+						has_equipment = {
+							infantry_equipment < 4999
+						}
+					}
 				}
-				IPP = {
-					is_subject_of = JAP
-				}
-				IPM = {
-					is_subject_of = JAP
-				}
-				IPI = {
-					is_subject_of = JAP
-				}
-				IPS = {
-					is_subject_of = JAP
+				has_equipment = {
+					infantry_equipment > 4999
 				}
 			}
-			has_equipment = {
-				infantry_equipment > 4999
+			if = {
+				limit = {
+					FROM = {
+						has_equipment = {
+							support_equipment < 3499
+						}
+					}
+				}
+				has_equipment = {
+					support_equipment > 4999
+				}
 			}
 		}
 		visible = {
-			original_tag = JAP
 			has_capitulated = no
-			OR = {
-				RNC = {
-					is_subject_of = JAP
-				}
-				IPP = {
-					is_subject_of = JAP
-				}
-				IPM = {
-					is_subject_of = JAP
-				}
-				IPI = {
-					is_subject_of = JAP
-				}
-				IPS = {
-					is_subject_of = JAP
-				}
-			}
 			FROM = {
 				is_subject_of = JAP
-				has_equipment = {
-					infantry_equipment < 4999
+				OR = {
+					has_equipment = {
+						infantry_equipment < 4999
+					}
+					has_equipment = {
+						support_equipment < 3499
+					}
 				}
 			}
 		}
@@ -4903,24 +4894,55 @@ JAP_southern_expansion = {
 		target_trigger = {
 			FROM = {
 				OR = {
+					tag = PGC
+					tag = REF
 					tag = RNC
 					tag = IPP
 					tag = IPM
 					tag = IPI
 					tag = IPS
 				}
-				has_equipment = {
-					infantry_equipment < 4999
+				OR = {
+					has_equipment = {
+						infantry_equipment < 4999
+					}
+					has_equipment = {
+						support_equipment < 3499
+					}
 				}
 				has_capitulated = no
 			}
 		}
 		complete_effect = {
-			send_equipment = {
-				target = FROM
-				type = infantry_equipment
-				amount = 5000
-				old_prioritised = yes
+			if = {
+				limit = {
+					FROM = {
+						has_equipment = {
+							infantry_equipment < 4999
+						}
+					}
+				}
+				send_equipment = {
+					target = FROM
+					type = infantry_equipment
+					amount = 5000
+					old_prioritised = yes
+				}
+			}
+			if = {
+				limit = {
+					FROM = {
+						has_equipment = {
+							support_equipment < 3499
+						}
+					}
+				}
+				send_equipment = {
+					target = FROM
+					type = support_equipment
+					amount = 3500
+					old_prioritised = yes
+				}
 			}
 		}
 		ai_will_do = {
@@ -5550,6 +5572,11 @@ JAP_southern_expansion = {
 							amount = 10000
 							producer = JAP
 						}
+						add_equipment_to_stockpile = {
+							type = support_equipment_1
+							amount = 1250
+							producer = JAP
+						}
 					}
 				}
 				JAP = {
@@ -5612,6 +5639,11 @@ JAP_southern_expansion = {
 						add_equipment_to_stockpile = {
 							type = jap_inf_1
 							amount = 10000
+							producer = JAP
+						}
+						add_equipment_to_stockpile = {
+							type = support_equipment_1
+							amount = 1250
 							producer = JAP
 						}
 					}
@@ -5686,6 +5718,11 @@ JAP_southern_expansion = {
 						add_equipment_to_stockpile = {
 							type = jap_inf_1
 							amount = 10000
+							producer = JAP
+						}
+						add_equipment_to_stockpile = {
+							type = support_equipment_1
+							amount = 1250
 							producer = JAP
 						}
 					}
@@ -5789,6 +5826,11 @@ JAP_southern_expansion = {
 							amount = 10000
 							producer = JAP
 						}
+						add_equipment_to_stockpile = {
+							type = support_equipment_1
+							amount = 1250
+							producer = JAP
+						}
 					}
 				}
 				JAP = {
@@ -5827,6 +5869,11 @@ JAP_southern_expansion = {
 						add_equipment_to_stockpile = {
 							type = jap_inf_1
 							amount = 10000
+							producer = JAP
+						}
+						add_equipment_to_stockpile = {
+							type = support_equipment_1
+							amount = 1250
 							producer = JAP
 						}
 					}
@@ -5881,6 +5928,11 @@ JAP_southern_expansion = {
 						add_equipment_to_stockpile = {
 							type = jap_inf_1
 							amount = 10000
+							producer = JAP
+						}
+						add_equipment_to_stockpile = {
+							type = support_equipment_1
+							amount = 1250
 							producer = JAP
 						}
 					}
@@ -6036,6 +6088,11 @@ JAP_southern_expansion = {
 							amount = 10000
 							producer = JAP
 						}
+						add_equipment_to_stockpile = {
+							type = support_equipment_1
+							amount = 1250
+							producer = JAP
+						}
 					}
 				}
 				JAP = {
@@ -6083,6 +6140,11 @@ JAP_southern_expansion = {
 						add_equipment_to_stockpile = {
 							type = jap_inf_1
 							amount = 10000
+							producer = JAP
+						}
+						add_equipment_to_stockpile = {
+							type = support_equipment_1
+							amount = 1250
 							producer = JAP
 						}
 					}
@@ -6157,6 +6219,11 @@ JAP_southern_expansion = {
 						add_equipment_to_stockpile = {
 							type = jap_inf_1
 							amount = 10000
+							producer = JAP
+						}
+						add_equipment_to_stockpile = {
+							type = support_equipment_1
+							amount = 1250
 							producer = JAP
 						}
 					}
@@ -7903,14 +7970,14 @@ operations = {
 				}
 				hidden_effect = {
 					SOV = {
-						952 = {
-							create_unit = {
-								division = "division_template = \"Soviet Rifle Division\" start_experience_factor = 0.3"
-								owner = SOV
-								count = 6
-								prioritize_location = 1743
-							}
-						}
+					 	952 = {
+					 		create_unit = {
+					 			division = "division_template = \"Soviet Rifle Division\" start_experience_factor = 0.3"
+					 			owner = SOV
+					 			count = 4
+					 			#prioritize_location = 1743
+					 		}
+					 	}
 					}
 				}
 			}
@@ -7955,6 +8022,80 @@ operations = {
 			}
 		}
 	}
+
+	# TODO delete these if no further issues with the border war occure
+	# test_desicion = {
+	# 	allowed = {
+	# 		tag = SOV
+	# 	}
+
+	# 	complete_effect = {
+	# 		SOV = {
+	# 			584 = {
+	# 				create_unit = {
+	# 					division = "division_template = \"Soviet Rifle Division\" start_experience_factor = 0.3"
+	# 					owner = SOV
+	# 					count = 6
+	# 					#prioritize_location = 7560
+	# 				}
+	# 			}
+	# 	   }
+	# 	   start_border_war = {
+	# 		change_state_after_war = no
+	# 		attacker = {
+	# 			state = 416
+	# 			num_provinces = 4
+	# 			on_win = japan_border_conflict.2
+	# 			on_lose = japan_border_conflict.3
+	# 			on_cancel = japan_border_conflict.4
+	# 		}
+	# 		defender = {
+	# 			state = 584
+	# 			num_provinces = 6
+	# 			on_win = japan_border_conflict.3
+	# 			on_lose = japan_border_conflict.2
+	# 			on_cancel = japan_border_conflict.4
+	# 		}
+	# 	}
+	# 	}
+	# }
+	# test_desicion_2 = {
+	# 	allowed = {
+	# 		tag = SOV
+	# 	}
+
+	# 	complete_effect = {
+	# 		SOV = {
+	# 			952 = {
+	# 				create_unit = {
+	# 					division = "division_template = \"Soviet Rifle Division\" start_experience_factor = 0.3"
+	# 					owner = SOV
+	# 					count = 1
+	# 					#prioritize_location = 7560
+	# 				}
+	# 			}
+	# 	   }
+	# 	   start_border_war = {
+	# 		change_state_after_war = no
+	# 		attacker = {
+	# 			state = 761
+	# 			num_provinces = 2
+	# 			on_win = japan_border_conflict.2
+	# 			on_lose = japan_border_conflict.3
+	# 			on_cancel = japan_border_conflict.4
+	# 		}
+	# 		defender = {
+	# 			state = 952
+	# 			num_provinces = 1
+	# 			on_win = japan_border_conflict.3
+	# 			on_lose = japan_border_conflict.2
+	# 			on_cancel = japan_border_conflict.4
+	# 		}
+	# 	}
+	# 	}
+	# }
+
+
 	#Mission for attacker to win border war against FROM in X days
 	JAP_border_conflict_time_until_cancelled = {
 		icon = border_war

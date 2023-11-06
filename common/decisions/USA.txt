@@ -784,37 +784,6 @@ MTG_naval_treaties = {
 }
 
 war_measures = {
-	trucks_are_scuffed_usa = {
-		icon = generic_prepare_civil_war
-
-		allowed = {
-			original_tag = USA
-		}
-
-		available = {
-			is_ai = yes
-			date > 1940.1.1
-		}
-		visible = {
-			is_ai = yes
-		}
-		cost = 0
-
-		fire_only_once = yes
-
-		ai_will_do = {
-			factor = 320
-		}
-
-		complete_effect = {
-			add_equipment_to_stockpile = {
-				type = USA_motorized_equipment_1
-				producer = USA
-				amount = 250000
-			}
-		}
-	}
-
 	why_areu_disarmed = {
 		icon = generic_prepare_civil_war
 
@@ -842,37 +811,6 @@ war_measures = {
 
 		complete_effect = {
 			add_ideas = volunteer_only
-		}
-	}
-
-	trains_are_scuffed_usa = {
-		icon = generic_prepare_civil_war
-
-		allowed = {
-			original_tag = USA
-		}
-
-		available = {
-			is_ai = yes
-			date > 1937.1.1
-		}
-		visible = {
-			is_ai = yes
-		}
-		cost = 0
-
-		fire_only_once = yes
-
-		ai_will_do = {
-			factor = 320
-		}
-
-		complete_effect = {
-			add_equipment_to_stockpile = {
-				type = train_equipment_1
-				producer = USA
-				amount = 1500
-			}
 		}
 	}
 
@@ -1607,7 +1545,7 @@ USA_aid_britain = {
 
 	# 	modifier = {
 	# 		war_support_weekly = 0.005
-	# 		consumer_goods_factor = -0.02
+	# 		consumer_goods_expected_value = -0.02
 	# 	}
 
 	# 	days_remove = 60
@@ -1662,7 +1600,7 @@ USA_aid_britain = {
 			war_support_weekly = 0.001
 			industrial_capacity_factory = 0.02
 			industrial_capacity_dockyard = 0.02
-			consumer_goods_factor = -0.02
+			consumer_goods_expected_value = -0.02
 		}
 
 		days_remove = 360
@@ -2300,7 +2238,7 @@ USA_aid_soviet_union = {
 		days_remove = 30
 
 		modifier = {
-			consumer_goods_factor = 0.01
+			consumer_goods_expected_value = 0.01
 		}
 		complete_effect = {
 			add_equipment_to_stockpile = {
@@ -2375,7 +2313,7 @@ USA_aid_soviet_union = {
 		}
 
 		modifier = {
-			consumer_goods_factor = 0.01
+			consumer_goods_expected_value = 0.01
         }
 
 		complete_effect = {
@@ -5894,59 +5832,83 @@ USA_war_plans = {
 		}
 
 		complete_effect = {
+			custom_effect_tooltip = USA_embargo_japan_tt2
 			hidden_effect = {
 				JAP = {
 					set_country_flag = embargoed_by_USA
 				}
-			}
-			every_country = {
-				limit = {
-					OR = {
-						tag = ROOT
-						AND = {
-							is_guaranteed_by = USA
-							OR = {
-								tag = BRA
-								tag = ARG
-								tag = CHL
-								tag = BOL
-								tag = URG
-								tag = PRU
-								tag = ECU
-								tag = COL
-								tag = VEN
-								tag = PAR
-								tag = GUA
-								tag = ELS
-								tag = HON
-								tag = NIC
-								tag = COS
-								tag = PAN
-								tag = CUB
-								tag = HAI
-								tag = DOM
-								tag = JAM
-								tag = BAH
-								tag = BLZ
-								tag = TRI
-								tag = BAS
-								tag = CRC
-								tag = GDL
-								tag = PUE
-								tag = GYA
-								tag = SUR
-								tag = CAY
-								tag = MEX
-							}
+				every_country = {
+					limit = {
+						OR = {
+							tag = JAP
+							is_in_faction_with = JAP
+							is_puppet_of = JAP
 						}
-						is_in_faction_with = USA
 					}
-					NOT = { has_war_with = USA }
+					add_to_temp_array = {
+						temp_JAP_faction = THIS
+					}
 				}
-				add_opinion_modifier = { target = JAP modifier = embargo }
+				every_country = {
+					limit = {
+						OR = {
+							tag = ROOT
+							AND = {
+								is_guaranteed_by = USA
+								OR = {
+									tag = BRA
+									tag = ARG
+									tag = CHL
+									tag = BOL
+									tag = URG
+									tag = PRU
+									tag = ECU
+									tag = COL
+									tag = VEN
+									tag = PAR
+									tag = GUA
+									tag = ELS
+									tag = HON
+									tag = NIC
+									tag = COS
+									tag = PAN
+									tag = CUB
+									tag = HAI
+									tag = DOM
+									tag = JAM
+									tag = BAH
+									tag = BLZ
+									tag = TRI
+									tag = BAS
+									tag = CRC
+									tag = GDL
+									tag = PUE
+									tag = GYA
+									tag = SUR
+									tag = CAY
+									tag = MEX
+								}
+							}
+							is_in_faction_with = USA
+						}
+						NOT = { has_war_with = USA }
+					}
+					# for_each_scope_loop = {
+					# 	array = temp_JAP_faction
+					# 	PREV.PREV = {
+					# 		add_opinion_modifier = { target = PREV modifier = embargo }
+					# 	}
+					# }
+					add_opinion_modifier = { target = JAP modifier = embargo }
+					add_opinion_modifier = { target = MAN modifier = embargo }
+					add_opinion_modifier = { target = MEN modifier = embargo }
+				}
+				for_each_scope_loop = {
+					array = temp_JAP_faction
+					country_event = { days = 1 id = usa_armor.805 }
+				}
+				remove_opinion_modifier = { target = JAP modifier = strong_trade_relations }
 			}
-			remove_opinion_modifier = { target = JAP modifier = strong_trade_relations }
-			JAP = { country_event = { days = 1 id = usa_armor.805 } }
 		}
 	}
 	USA_execute_war_plan_orange = {
