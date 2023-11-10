@@ -281,7 +281,7 @@ NDefines.NMilitary.PLANNING_GAIN = 0.01
 NDefines.NMilitary.PLANNING_MAX = 0.1                           					-- can get more from techs
 NDefines.NMilitary.DIG_IN_FACTOR = 0.01						   						-- bonus factor for each dug-in level
 
-NDefines.NMilitary.FRONT_MIN_PATH_TO_REDEPLOY = 12									-- If a units path is at least this long to reach its front location, it will strategically redeploy.
+NDefines.NMilitary.FRONT_MIN_PATH_TO_REDEPLOY = 2									-- If a units path is at least this long to reach its front location, it will strategically redeploy.
 
 NDefines.NMilitary.ZERO_ORG_MOVEMENT_MODIFIER = -0.25								-- speed impact at 0 org.
 
@@ -1143,7 +1143,7 @@ NDefines.NAI.MAX_THREAT_FOR_FIRST_YEAR_CIVILIAN_MODE = 40							-- above this th
 NDefines.NAI.CONSTRUCTION_PRIO_INFRASTRUCTURE = 0.20                                -- base prio for infrastructure in the construction queue
 NDefines.NAI.CONSTRUCTION_PRIO_CIV_FACTORY = 0.0                                  	-- base prio for civilian factories in the construction queue
 NDefines.NAI.CONSTRUCTION_PRIO_MIL_FACTORY = 0.70                                   -- base prio for military factories in the construction queue
-NDefines.NAI.CONSTRUCTION_PRIO_RAILWAY = 4.00                                       -- base prio for railways in the construction queue
+NDefines.NAI.CONSTRUCTION_PRIO_RAILWAY = 100.00                                     -- base prio for railways in the construction queue
 NDefines.NAI.CONSTRUCTION_PRIO_RAILWAY_GUN_REPAIR = 15.00                           -- base prio for railway gun repairs in the construction queue
 NDefines.NAI.CONSTRUCTION_PRIO_UNSPECIFIED = 0.50                                   -- base prio for unspecified buildings (none of the categories above) in the construction queue
 NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_OCCUPIED_TERRITORY = 1.00                     -- factor prio with this if occupied territory
