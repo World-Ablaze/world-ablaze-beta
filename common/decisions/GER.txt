@@ -463,7 +463,7 @@ MTG_naval_treaties = {
 		}
 
 		available = {
-			has_war = no
+			#has_war = no
 			controls_state = 763
 		}
 
@@ -472,10 +472,10 @@ MTG_naval_treaties = {
 		fire_only_once = yes
 
 		visible = {
-			has_war = no
+			#has_war = no
 			is_subject = no
 			owns_state = 763
-			date < 1941.1.1
+			#date < 1941.1.1
 		}
 
 		cancel_if_not_visible = yes
@@ -806,6 +806,10 @@ operations = {
 			}
 			has_government = fascism
 			has_completed_focus = GER_western_war_plans
+			OR = {
+				country_exists = NOR
+				country_exists = DEN
+			}
 		}
 		visible = {
 			GER = {
@@ -924,6 +928,10 @@ operations = {
 			has_government = fascism
 			has_completed_focus = GER_western_war_plans
 			is_ai = yes
+			OR = {
+				country_exists = NOR
+				country_exists = DEN
+			}
 		}
 		visible = {
 			GER = {
@@ -4579,19 +4587,43 @@ GER_reichskommissariats = {
 			tag = GER
 		}
 		available = {
-			has_equipment = {
-				infantry_equipment > 4999
+			if = {
+				limit = {
+					FROM = {
+						has_equipment = {
+							infantry_equipment < 4999
+						}
+					}
+				}
+				has_equipment = {
+					infantry_equipment > 4999
+				}
+			}
+			if = {
+				limit = {
+					FROM = {
+						has_equipment = {
+							support_equipment < 3499
+						}
+					}
+				}
+				has_equipment = {
+					support_equipment > 4999
+				}
 			}
 		}
 		visible = {
 			has_capitulated = no
 			has_completed_focus = GER_form_the_reichskommissariats
-			has_government = fascism
 			FROM = {
-				has_government = fascism
 				is_subject_of = GER
-				has_equipment = {
-					infantry_equipment < 4999
+				OR = {
+					has_equipment = {
+						infantry_equipment < 4999
+					}
+					has_equipment = {
+						support_equipment < 3499
+					}
 				}
 			}
 		}
@@ -4637,18 +4669,47 @@ GER_reichskommissariats = {
 					tag = CRO
 					tag = RBA
 				}
-				has_equipment = {
-					infantry_equipment < 4999
+				OR = {
+					has_equipment = {
+						infantry_equipment < 4999
+					}
+					has_equipment = {
+						support_equipment < 3499
+					}
 				}
 				has_capitulated = no
 			}
 		}
 		complete_effect = {
-			send_equipment = {
-				target = FROM
-				type = infantry_equipment
-				amount = 5000
-				old_prioritised = yes
+			if = {
+				limit = {
+					FROM = {
+						has_equipment = {
+							infantry_equipment < 4999
+						}
+					}
+				}
+				send_equipment = {
+					target = FROM
+					type = infantry_equipment
+					amount = 5000
+					old_prioritised = yes
+				}
+			}
+			if = {
+				limit = {
+					FROM = {
+						has_equipment = {
+							support_equipment < 3499
+						}
+					}
+				}
+				send_equipment = {
+					target = FROM
+					type = support_equipment
+					amount = 3500
+					old_prioritised = yes
+				}
 			}
 		}
 		ai_will_do = {
@@ -4751,6 +4812,7 @@ GER_reichskommissariats = {
 			tag = GER
 		}
 		available = {
+			country_exists = RUK
 			has_manpower > 10000
 			num_of_civilian_factories_available_for_projects > 20
 		}
@@ -4764,7 +4826,7 @@ GER_reichskommissariats = {
 		cancel_if_not_visible = yes
 
 		ai_will_do = {
-			factor = 0
+			factor = 40
 		}
 
 		modifier = {
@@ -4774,7 +4836,12 @@ GER_reichskommissariats = {
 		visible = {
 			has_completed_focus = GER_form_the_reichskommissariats
 			has_government = fascism
-			country_exists = RUK
+			OR = {
+				has_war_with = SOV
+				any_controlled_state = {
+					is_core_of = UKR
+				}
+			}
 		}
 
 		complete_effect = {
@@ -4784,7 +4851,16 @@ GER_reichskommissariats = {
 		}
 
 		remove_effect = {
-			GER = {
+			if = {
+				limit = {
+					has_idea = GER_famine_payments
+				}
+				swap_ideas = {
+					remove_idea = GER_famine_payments
+					add_idea = GER_famine_payments_ukraine
+				}
+			}
+			else = {
 				add_ideas = GER_ruk_grain
 			}
 			RUK = {
@@ -4801,6 +4877,7 @@ GER_reichskommissariats = {
 		available = {
 			has_manpower > 15000
 			num_of_civilian_factories_available_for_projects > 30
+			229 = { is_fully_controlled_by = RKA }
 		}
 
 		days_remove = 180
@@ -4832,8 +4909,15 @@ GER_reichskommissariats = {
 		}
 
 		remove_effect = {
+			229 = {
+				add_resource = {
+					type = oil
+					amount = 15
+				}
+			}
 			RKA = {
-				add_ideas = GER_rka_exploitation
+				add_stability = -0.1
+				#add_ideas = GER_rka_exploitation
 			}
 		}
 	}
@@ -5315,7 +5399,7 @@ GER_reichskommissariats = {
 					}
 					add_equipment_to_stockpile = {
 						type = support_equipment_1
-						amount = 600
+						amount = 1250
 						producer = GER
 					}
 					load_oob = "ITA_Military_Police"
@@ -5439,6 +5523,11 @@ GER_reichskommissariats = {
 					add_equipment_to_stockpile = {
 						type = ger_inf_0
 						amount = 10000
+						producer = GER
+					}
+					add_equipment_to_stockpile = {
+						type = support_equipment_1
+						amount = 2500
 						producer = GER
 					}
 					delete_unit_template_and_units = {
@@ -5632,6 +5721,11 @@ GER_reichskommissariats = {
 					add_equipment_to_stockpile = {
 						type = ger_inf_0
 						amount = 10000
+						producer = GER
+					}
+					add_equipment_to_stockpile = {
+						type = support_equipment_1
+						amount = 2500
 						producer = GER
 					}
 					load_oob = "RNO_Military_Police"
@@ -5854,6 +5948,11 @@ GER_reichskommissariats = {
 					add_equipment_to_stockpile = {
 						type = ger_inf_0
 						amount = 10000
+						producer = GER
+					}
+					add_equipment_to_stockpile = {
+						type = support_equipment_1
+						amount = 2500
 						producer = GER
 					}
 					load_oob = "RSW_Military_Police"
@@ -6105,6 +6204,11 @@ GER_reichskommissariats = {
 							amount = 10000
 							producer = GER
 						}
+						add_equipment_to_stockpile = {
+							type = support_equipment_1
+							amount = 2500
+							producer = GER
+						}
 						load_oob = "RFI_Military_Police"
 					}
 				}
@@ -6216,6 +6320,11 @@ GER_reichskommissariats = {
 						add_equipment_to_stockpile = {
 							type = ger_inf_0
 							amount = 10000
+							producer = GER
+						}
+						add_equipment_to_stockpile = {
+							type = support_equipment_1
+							amount = 2500
 							producer = GER
 						}
 						load_oob = "RFI_Military_Police"
@@ -6394,6 +6503,11 @@ GER_reichskommissariats = {
 					add_equipment_to_stockpile = {
 						type = ger_inf_0
 						amount = 10000
+						producer = GER
+					}
+					add_equipment_to_stockpile = {
+						type = support_equipment_1
+						amount = 2500
 						producer = GER
 					}
 					delete_unit_template_and_units = {
@@ -6618,6 +6732,11 @@ GER_reichskommissariats = {
 					add_equipment_to_stockpile = {
 						type = ger_inf_0
 						amount = 10000
+						producer = GER
+					}
+					add_equipment_to_stockpile = {
+						type = support_equipment_1
+						amount = 2500
 						producer = GER
 					}
 					load_oob = "RBE_Military_Police"
@@ -6999,6 +7118,11 @@ GER_reichskommissariats = {
 							amount = 50000
 							producer = GER
 						}
+						add_equipment_to_stockpile = {
+							type = support_equipment_1
+							amount = 12500
+							producer = GER
+						}
 						load_oob = "RFR_Military_Police"
 					}
 					every_controlled_state = {
@@ -7259,6 +7383,11 @@ GER_reichskommissariats = {
 					}
 					add_equipment_to_stockpile = {
 						type = support_equipment_1
+						amount = 6250
+						producer = GER
+					}
+					add_equipment_to_stockpile = {
+						type = support_equipment_1
 						amount = 600
 						producer = GER
 					}
@@ -7386,6 +7515,11 @@ GER_reichskommissariats = {
 					add_equipment_to_stockpile = {
 						type = ger_inf_0
 						amount = 10000
+						producer = GER
+					}
+					add_equipment_to_stockpile = {
+						type = support_equipment_1
+						amount = 2500
 						producer = GER
 					}
 					load_oob = "RIR_Military_Police"
@@ -7552,6 +7686,11 @@ GER_reichskommissariats = {
 						amount = 10000
 						producer = GER
 					}
+					add_equipment_to_stockpile = {
+						type = support_equipment_1
+						amount = 2500
+						producer = GER
+					}
 					load_oob = "RSI_Military_Police"
 				}
 				every_controlled_state = {
@@ -7702,6 +7841,11 @@ GER_reichskommissariats = {
 					add_equipment_to_stockpile = {
 						type = ger_inf_0
 						amount = 25000
+						producer = GER
+					}
+					add_equipment_to_stockpile = {
+						type = support_equipment_1
+						amount = 6250
 						producer = GER
 					}
 					add_equipment_to_stockpile = {
@@ -8038,6 +8182,11 @@ GER_reichskommissariats = {
 							amount = 10000
 							producer = GER
 						}
+						add_equipment_to_stockpile = {
+							type = support_equipment_1
+							amount = 2500
+							producer = GER
+						}
 						load_oob = "RBL_Military_Police"
 					}
 					every_controlled_state = {
@@ -8208,6 +8357,11 @@ GER_reichskommissariats = {
 						add_equipment_to_stockpile = {
 							type = ger_inf_0
 							amount = 10000
+							producer = GER
+						}
+						add_equipment_to_stockpile = {
+							type = support_equipment_1
+							amount = 2500
 							producer = GER
 						}
 						load_oob = "RBL_Military_Police"
@@ -8699,6 +8853,11 @@ GER_reichskommissariats = {
 							amount = 10000
 							producer = GER
 						}
+						add_equipment_to_stockpile = {
+							type = support_equipment_1
+							amount = 2500
+							producer = GER
+						}
 						load_oob = "RUK_Military_Police"
 					}
 				}
@@ -8817,6 +8976,11 @@ GER_reichskommissariats = {
 						add_equipment_to_stockpile = {
 							type = ger_inf_0
 							amount = 10000
+							producer = GER
+						}
+						add_equipment_to_stockpile = {
+							type = support_equipment_1
+							amount = 2500
 							producer = GER
 						}
 						load_oob = "RUK_Military_Police"
@@ -9636,7 +9800,7 @@ GER_reichskommissariats = {
 						}
 						add_equipment_to_stockpile = {
 							type = support_equipment_1
-							amount = 1000
+							amount = 12500
 							producer = GER
 						}
 						load_oob = "RSO_Military_Police"
@@ -9854,7 +10018,7 @@ GER_reichskommissariats = {
 						}
 						add_equipment_to_stockpile = {
 							type = support_equipment_1
-							amount = 1000
+							amount = 12500
 							producer = GER
 						}
 						load_oob = "RSO_Military_Police"
@@ -10104,6 +10268,11 @@ GER_reichskommissariats = {
 							amount = 10000
 							producer = GER
 						}
+						add_equipment_to_stockpile = {
+							type = support_equipment_1
+							amount = 2500
+							producer = GER
+						}
 						load_oob = "RKA_Military_Police"
 					}
 				}
@@ -10188,6 +10357,11 @@ GER_reichskommissariats = {
 						add_equipment_to_stockpile = {
 							type = ger_inf_0
 							amount = 10000
+							producer = GER
+						}
+						add_equipment_to_stockpile = {
+							type = support_equipment_1
+							amount = 2500
 							producer = GER
 						}
 						load_oob = "RKA_Military_Police"
@@ -10618,6 +10792,11 @@ GER_reichskommissariats = {
 						amount = 10000
 						producer = GER
 					}
+					add_equipment_to_stockpile = {
+						type = support_equipment_1
+						amount = 2500
+						producer = GER
+					}
 					load_oob = "RTU_Military_Police"
 				}
 				every_controlled_state = {
@@ -11022,6 +11201,11 @@ GER_reichskommissariats = {
 					add_equipment_to_stockpile = {
 						type = ger_inf_0
 						amount = 10000
+						producer = GER
+					}
+					add_equipment_to_stockpile = {
+						type = support_equipment_1
+						amount = 2500
 						producer = GER
 					}
 					load_oob = "RBE_Military_Police"
@@ -11497,6 +11681,11 @@ GER_reichskommissariats = {
 						amount = 10000
 						producer = GER
 					}
+					add_equipment_to_stockpile = {
+						type = support_equipment_1
+						amount = 2500
+						producer = GER
+					}
 					load_oob = "RBE_Military_Police"
 				}
 				every_controlled_state = {
@@ -11852,6 +12041,11 @@ GER_reichskommissariats = {
 						amount = 10000
 						producer = GER
 					}
+					add_equipment_to_stockpile = {
+						type = support_equipment_1
+						amount = 2500
+						producer = GER
+					}
 					load_oob = "RBE_Military_Police"
 				}
 				every_controlled_state = {
@@ -11991,6 +12185,11 @@ GER_reichskommissariats = {
 						amount = 5000
 						producer = GER
 					}
+					add_equipment_to_stockpile = {
+						type = support_equipment_1
+						amount = 1250
+						producer = GER
+					}
 					load_oob = "RBE_Military_Police"
 				}
 				every_controlled_state = {
@@ -12098,6 +12297,11 @@ GER_reichskommissariats = {
 					add_equipment_to_stockpile = {
 						type = ger_inf_0
 						amount = 1000
+						producer = GER
+					}
+					add_equipment_to_stockpile = {
+						type = support_equipment_1
+						amount = 250
 						producer = GER
 					}
 					load_oob = "RBE_Military_Police"
@@ -12457,6 +12661,11 @@ GER_reichskommissariats = {
 						amount = 5000
 						producer = GER
 					}
+					add_equipment_to_stockpile = {
+						type = support_equipment_1
+						amount = 1250
+						producer = GER
+					}
 					load_oob = "RBE_Military_Police"
 				}
 				every_controlled_state = {
@@ -12592,7 +12801,7 @@ GER_reichskommissariats = {
 					}
 					add_equipment_to_stockpile = {
 						type = support_equipment_1
-						amount = 600
+						amount = 6250
 						producer = GER
 					}
 					load_oob = "REN_Military_Police"
@@ -12761,7 +12970,7 @@ GER_reichskommissariats = {
 					}
 					add_equipment_to_stockpile = {
 						type = support_equipment_1
-						amount = 600
+						amount = 6250
 						producer = GER
 					}
 					load_oob = "REN_Military_Police"
@@ -13531,7 +13740,7 @@ GER_reichskommissariats = {
 					}
 					add_equipment_to_stockpile = {
 						type = support_equipment_1
-						amount = 600
+						amount = 5000
 						producer = GER
 					}
 				}
@@ -13832,7 +14041,7 @@ GER_reichskommissariats = {
 					}
 					add_equipment_to_stockpile = {
 						type = support_equipment_1
-						amount = 800
+						amount = 6250
 						producer = GER
 					}
 				}
@@ -14220,7 +14429,7 @@ GER_reichskommissariats = {
 					}
 					add_equipment_to_stockpile = {
 						type = support_equipment_1
-						amount = 800
+						amount = 6250
 						producer = GER
 					}
 				}
@@ -14473,7 +14682,7 @@ GER_reichskommissariats = {
 					}
 					add_equipment_to_stockpile = {
 						type = support_equipment_1
-						amount = 800
+						amount = 6250
 						producer = GER
 					}
 				}
@@ -14827,7 +15036,7 @@ GER_reichskommissariats = {
 					}
 					add_equipment_to_stockpile = {
 						type = support_equipment_1
-						amount = 800
+						amount = 6250
 						producer = GER
 					}
 				}
@@ -15135,7 +15344,7 @@ GER_reichskommissariats = {
 					}
 					add_equipment_to_stockpile = {
 						type = support_equipment_1
-						amount = 800
+						amount = 6250
 						producer = GER
 					}
 				}
@@ -15322,7 +15531,7 @@ GER_reichskommissariats = {
 					}
 					add_equipment_to_stockpile = {
 						type = support_equipment_1
-						amount = 800
+						amount = 6250
 						producer = GER
 					}
 				}
@@ -15985,7 +16194,7 @@ GER_reichskommissariats = {
 					}
 					add_equipment_to_stockpile = {
 						type = support_equipment_1
-						amount = 800
+						amount = 6250
 						producer = GER
 					}
 				}
@@ -16111,6 +16320,11 @@ GER_reichskommissariats = {
 					add_equipment_to_stockpile = {
 						type = ger_inf_0
 						amount = 2500
+						producer = GER
+					}
+					add_equipment_to_stockpile = {
+						type = support_equipment_1
+						amount = 625
 						producer = GER
 					}
 				}
@@ -18143,6 +18357,217 @@ GER_reichskommissariats = {
 }
 
 political_actions = {
+
+	GER_pay_for_spanish_food = {
+		icon = generic_consumer_goods
+
+		allowed = {
+			tag = GER
+		}
+
+		available = {
+			if = {
+				limit = {
+					NOT = { has_dlc = "La Resistance" }
+				}
+				any_other_country = {
+					original_tag = SPR
+					NOT = { has_idea = SPR_usa_food_imports }
+					NOT = { has_idea = SPR_sov_food_imports }
+				}
+			}
+			if = {
+				limit = {
+					has_dlc = "La Resistance"
+				}
+				SPA = {
+					NOT = { has_idea = SPR_usa_food_imports }
+					NOT = { has_idea = SPR_sov_food_imports }
+				}
+			}
+		}
+
+		visible = {
+			if = {
+				limit = {
+					NOT = { has_dlc = "La Resistance" }
+				}
+				any_other_country = {
+					original_tag = SPR
+					has_government = fascism
+					is_in_faction_with = ROOT
+					has_idea = SPR_agricultural_mishandlement_2
+				}
+			}
+			if = {
+				limit = {
+					has_dlc = "La Resistance"
+				}
+				AND = {
+					SPA = {
+						OR = {
+							has_government = fascism
+							has_government = neutrality
+						}
+						is_in_faction_with = ROOT
+						has_idea = SPR_agricultural_mishandlement_2
+					}
+				}
+			}
+		}
+
+		cost = 25
+
+		fire_only_once = yes
+
+		ai_will_do = {
+			factor = 40
+		}
+
+		complete_effect = {
+			custom_effect_tooltip = GER_pay_for_spanish_food_tt
+			if = {
+				limit = {
+					NOT = { has_dlc = "La Resistance" }
+				}
+				random_other_country = {
+					limit = {
+						original_tag = SPR
+						OR = {
+							has_government = fascism
+							has_government = neutrality
+						}
+					}
+					add_ideas = SPR_ger_food_imports
+				}
+			}
+			if = {
+				limit = {
+					has_dlc = "La Resistance"
+				}
+				SPA = {
+					add_ideas = SPR_ger_food_imports
+				}
+			}
+			if = {
+				limit = {
+					has_idea = GER_ruk_grain
+				}
+				remove_ideas = GER_ruk_grain
+				add_ideas = GER_famine_payments_ukraine
+			}
+			else = {
+				add_ideas = GER_famine_payments
+			}
+		}
+
+		remove_effect = {
+			
+		}
+	}
+
+	GER_pay_for_spanish_food_stop = {
+		icon = generic_consumer_goods
+
+		allowed = {
+			tag = GER
+		}
+
+
+		available = {
+		}
+
+		visible = {
+			OR = {
+				has_idea = GER_famine_payments_ukraine
+				has_idea = GER_famine_payments
+			}
+		}
+
+		cost = 0
+
+		fire_only_once = yes
+		
+		ai_will_do = {
+			base = 0
+			modifier = {
+				add = 400
+				if = {
+					limit = {
+						NOT = { has_dlc = "La Resistance" }
+					}
+					any_other_country = {
+						original_tag = SPR
+						has_government = fascism
+						NOT = { is_in_faction_with = ROOT }
+					}
+				}
+				if = {
+					limit = {
+						has_dlc = "La Resistance"
+					}
+					AND = {
+						SPA = {
+							OR = {
+								has_government = fascism
+								has_government = neutrality
+							}
+							NOT = { is_in_faction_with = ROOT }
+						}
+					}
+				}
+			}
+		}
+
+		complete_effect = {
+			if = {
+				limit = {
+					NOT = { has_dlc = "La Resistance" }
+				}
+				random_other_country = {
+					limit = {
+						original_tag = SPR
+						OR = {
+							has_government = fascism
+							has_government = neutrality
+						}
+						has_idea = SPR_ger_food_imports
+					}
+					remove_ideas = SPR_ger_food_imports
+				}
+			}
+			if = {
+				limit = {
+					has_dlc = "La Resistance"
+					SPA = {
+						has_idea = SPR_ger_food_imports
+					}
+				}
+				SPA = {
+					remove_ideas = SPR_ger_food_imports
+				}
+			}
+			if = {
+				limit = {
+					has_idea = GER_famine_payments
+				}
+				remove_ideas = GER_famine_payments
+			}
+			if = {
+				limit = {
+					has_idea = GER_famine_payments_ukraine
+				}
+				swap_ideas = {
+					remove_idea = GER_famine_payments_ukraine
+					add_idea = GER_ruk_grain
+				}
+			}
+		}
+
+		remove_effect = {
+			
+		}
+	}
 
 	GER_de_nazify_the_navy = {
 		icon = generic_naval
@@ -25738,14 +26163,14 @@ special_projects = {
 		remove_effect = {
 			if = {
 				limit = {
-					58 = {
+					803 = {
 						free_building_slots = {
 							building = anti_air_building
 							size > 9
 						}
 					}
 				}
-				58 = {
+				803 = {
 					add_building_construction = {
 						type = anti_air_building
 						level = 10
@@ -25755,14 +26180,14 @@ special_projects = {
 			}
 			else_if = {
 				limit = {
-					58 = {
+					803 = {
 						free_building_slots = {
 							building = anti_air_building
 							size > 6
 						}
 					}
 				}
-				58 = {
+				803 = {
 					add_building_construction = {
 						type = anti_air_building
 						level = 7
@@ -25772,14 +26197,14 @@ special_projects = {
 			}
 			else_if = {
 				limit = {
-					58 = {
+					803 = {
 						free_building_slots = {
 							building = anti_air_building
 							size > 3
 						}
 					}
 				}
-				58 = {
+				803 = {
 					add_building_construction = {
 						type = anti_air_building
 						level = 4
@@ -25890,14 +26315,14 @@ special_projects = {
 		remove_effect = {
 			if = {
 				limit = {
-					64 = {
+					804 = {
 						free_building_slots = {
 							building = anti_air_building
 							size > 9
 						}
 					}
 				}
-				64 = {
+				804 = {
 					add_building_construction = {
 						type = anti_air_building
 						level = 10
@@ -25907,14 +26332,14 @@ special_projects = {
 			}
 			else_if = {
 				limit = {
-					64 = {
+					804 = {
 						free_building_slots = {
 							building = anti_air_building
 							size > 6
 						}
 					}
 				}
-				64 = {
+				804 = {
 					add_building_construction = {
 						type = anti_air_building
 						level = 7
@@ -25924,14 +26349,14 @@ special_projects = {
 			}
 			else_if = {
 				limit = {
-					64 = {
+					804 = {
 						free_building_slots = {
 							building = anti_air_building
 							size > 3
 						}
 					}
 				}
-				64 = {
+				804 = {
 					add_building_construction = {
 						type = anti_air_building
 						level = 4
@@ -25966,14 +26391,14 @@ special_projects = {
 		remove_effect = {
 			if = {
 				limit = {
-					4 = {
+					882 = {
 						free_building_slots = {
 							building = anti_air_building
 							size > 9
 						}
 					}
 				}
-				4 = {
+				882 = {
 					add_building_construction = {
 						type = anti_air_building
 						level = 10
@@ -25983,14 +26408,14 @@ special_projects = {
 			}
 			else_if = {
 				limit = {
-					4 = {
+					882 = {
 						free_building_slots = {
 							building = anti_air_building
 							size > 6
 						}
 					}
 				}
-				4 = {
+				882 = {
 					add_building_construction = {
 						type = anti_air_building
 						level = 7
@@ -26000,14 +26425,14 @@ special_projects = {
 			}
 			else_if = {
 				limit = {
-					4 = {
+					882 = {
 						free_building_slots = {
 							building = anti_air_building
 							size > 3
 						}
 					}
 				}
-				4 = {
+				882 = {
 					add_building_construction = {
 						type = anti_air_building
 						level = 4
