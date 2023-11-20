@@ -495,12 +495,12 @@ NDefines.NAir.CAS_NIGHT_ATTACK_FACTOR = 0.1						                    -- CAS dama
 NDefines.NAir.ANTI_AIR_MAXIMUM_DAMAGE_REDUCTION_FACTOR = 0.50 						-- Maximum damage reduction factor applied to incoming air attacks against units with AA.
 NDefines.NAir.AA_INDUSTRY_AIR_DAMAGE_FACTOR = -0.036									-- 5x levels = 60% defense from bombing
 
-NDefines.NAir.BOMBING_TARGETING_RANDOM_FACTOR = 0.25									-- % of picking the wrong target
-NDefines.NAir.AIR_WING_BOMB_DAMAGE_FACTOR = 3										-- Used to balance the damage done while bombing.
-NDefines.NAir.BOMBING_PROV_BUILD_PRIO_SCALE = 0.7									-- Scale of the selected priority for provincial buildings
-NDefines.NAir.BOMBING_STATE_BUILD_PRIO_SCALE = 1.5									-- Scale of the selected priority for state buildings
+--NDefines.NAir.BOMBING_TARGETING_RANDOM_FACTOR = 0.9									-- % of picking the wrong target #DOESENT WORK (UNCHARTED)
+--NDefines.NAir.AIR_WING_BOMB_DAMAGE_FACTOR = 3										-- Used to balance the damage done while bombing.
+--NDefines.NAir.BOMBING_PROV_BUILD_PRIO_SCALE = 1.0									-- Scale of the selected priority for provincial buildings
+--NDefines.NAir.BOMBING_STATE_BUILD_PRIO_SCALE = 1.5									-- Scale of the selected priority for state buildings
 NDefines.NAir.ANTI_AIR_PLANE_DAMAGE_FACTOR = 0.3									-- Anti Air Gun Damage factor
-NDefines.NAir.BOMBING_INFRA_PRIO_SCALE = 0.7										-- Scale of the selected priority for infastryctyre
+--NDefines.NAir.BOMBING_INFRA_PRIO_SCALE = 0.7										-- Scale of the selected priority for infastructure
 
 NDefines.NAir.MISSION_COMMAND_POWER_COSTS = {  										-- command power cost per plane to create a mission
 	0.0, -- AIR_SUPERIORITY
