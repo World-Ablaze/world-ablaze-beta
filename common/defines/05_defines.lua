@@ -166,11 +166,11 @@ NDefines.NProduction.CAPITULATE_STOCKPILES_RATIO = 0.7 								-- How much equip
 
 NDefines.NProduction.MAX_EQUIPMENT_RESOURCES_NEED = 6 								-- Max number of different strategic resources an equipment can be dependent on.
 
-NDefines.NProduction.BASE_FACTORY_EFFICIENCY_GAIN = 0.5								-- Base efficiency factor.
-NDefines.NProduction.BASE_FACTORY_MAX_EFFICIENCY_FACTOR = 40 						-- Base max efficiency for factories expressed in %.
 NDefines.NProduction.BASE_FACTORY_START_EFFICIENCY_FACTOR = 1						-- Base start efficiency for factories expressed in %.
+NDefines.NProduction.BASE_FACTORY_MAX_EFFICIENCY_FACTOR = 40 						-- Base max efficiency for factories expressed in %.
+NDefines.NProduction.BASE_FACTORY_EFFICIENCY_GAIN = 0.35							-- Base efficiency factor.
 
-NDefines.NProduction.BASE_FACTORY_EFFICIENCY_VARIANT_CHANGE_FACTOR = 80				-- Base factor for changing production variants in %.
+NDefines.NProduction.BASE_FACTORY_EFFICIENCY_VARIANT_CHANGE_FACTOR = 90				-- Base factor for changing production variants in %.
 NDefines.NProduction.BASE_FACTORY_EFFICIENCY_PARENT_CHANGE_FACTOR = 80				-- Base factor for changing production parent<->children in %.
 NDefines.NProduction.BASE_FACTORY_EFFICIENCY_FAMILY_CHANGE_FACTOR = 70				-- Base factor for changing production with same family in %.
 NDefines.NProduction.BASE_FACTORY_EFFICIENCY_ARCHETYPE_CHANGE_FACTOR = 20 			-- Base factor for changing production with same archetype in %.
