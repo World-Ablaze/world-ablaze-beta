@@ -407,7 +407,7 @@ NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_IMPACT = -0.4      						-- effect on d
 NDefines.NMilitary.COMBAT_MOVEMENT_SPEED = 0.8										-- speed reduction base modifier in combat
 
 NDefines.NMilitary.TRAINING_ORG = 0
-
+NDefines.NMilitary.TRAINING_MAX_DAILY_COUNTRY_EXP = 0.05
 NDefines.NMilitary.FUEL_CAPACITY_DEFAULT_HOURS = 240               					-- default capacity if not specified
 NDefines.NMilitary.ARMY_COMBAT_FUEL_MULT = 0										-- fuel consumption ratio in combat (plus ARMY_MOVEMENT_FUEL_MULT if you are also moving. ie offensive combat)
 
@@ -495,12 +495,12 @@ NDefines.NAir.CAS_NIGHT_ATTACK_FACTOR = 0.1						                    -- CAS dama
 NDefines.NAir.ANTI_AIR_MAXIMUM_DAMAGE_REDUCTION_FACTOR = 0.50 						-- Maximum damage reduction factor applied to incoming air attacks against units with AA.
 NDefines.NAir.AA_INDUSTRY_AIR_DAMAGE_FACTOR = -0.036									-- 5x levels = 60% defense from bombing
 
-NDefines.NAir.BOMBING_TARGETING_RANDOM_FACTOR = 0.25									-- % of picking the wrong target
-NDefines.NAir.AIR_WING_BOMB_DAMAGE_FACTOR = 3										-- Used to balance the damage done while bombing.
-NDefines.NAir.BOMBING_PROV_BUILD_PRIO_SCALE = 0.7									-- Scale of the selected priority for provincial buildings
-NDefines.NAir.BOMBING_STATE_BUILD_PRIO_SCALE = 1.5									-- Scale of the selected priority for state buildings
+--NDefines.NAir.BOMBING_TARGETING_RANDOM_FACTOR = 0.9									-- % of picking the wrong target #DOESENT WORK (UNCHARTED)
+--NDefines.NAir.AIR_WING_BOMB_DAMAGE_FACTOR = 3										-- Used to balance the damage done while bombing.
+--NDefines.NAir.BOMBING_PROV_BUILD_PRIO_SCALE = 1.0									-- Scale of the selected priority for provincial buildings
+--NDefines.NAir.BOMBING_STATE_BUILD_PRIO_SCALE = 1.5									-- Scale of the selected priority for state buildings
 NDefines.NAir.ANTI_AIR_PLANE_DAMAGE_FACTOR = 0.3									-- Anti Air Gun Damage factor
-NDefines.NAir.BOMBING_INFRA_PRIO_SCALE = 0.7										-- Scale of the selected priority for infastryctyre
+--NDefines.NAir.BOMBING_INFRA_PRIO_SCALE = 0.7										-- Scale of the selected priority for infastructure
 
 NDefines.NAir.MISSION_COMMAND_POWER_COSTS = {  										-- command power cost per plane to create a mission
 	0.0, -- AIR_SUPERIORITY
@@ -788,6 +788,9 @@ NDefines.NSupply.NODE_STARTING_PENALTY_PER_PROVINCE = 0.75
 NDefines.NSupply.RAILWAY_BASE_FLOW = 5.0											-- how much base flow railway gives when a node connected to its capital/a naval node by a railway
 NDefines.NSupply.RAILWAY_FLOW_PER_LEVEL = 10.0 										-- how much additional flow a railway level gives
 NDefines.NSupply.RAILWAY_FLOW_PENALTY_PER_DAMAGED = 8.0 							-- penalty to flow per damaged railway
+NDefines.NSupply.DAYS_TO_START_GIVING_SUPPLY_AFTER_MOVING_SUPPLY_CAPITAL = 1  -- the country will start gaining supply after this many days moving its capital
+NDefines.NSupply.DAYS_TO_START_GIVING_FULL_SUPPLY_AFTER_MOVING_SUPPLY_CAPITAL =  7 -- the country will reach max supply after this many days moving its capital
+NDefines.NSupply.COOLDOWN_DAYS_AFTER_MOVING_SUPPLY_CAPITAL = 14 -- cooldown for moving supply again after last move
 
 ---
 
@@ -1146,7 +1149,7 @@ NDefines_Graphics.NGraphics.DRAW_FOW_FADE_LENGTH = 0
 
 --	NIndustrialOrganisation -----
 
-NDefines.NIndustrialOrganisation.ASSIGN_DESIGN_TEAM_PP_COST_PER_DAY = 0.1			-- Cost in Political Power daily generation when one MIO is assigned to a research slot
+NDefines.NIndustrialOrganisation.ASSIGN_DESIGN_TEAM_PP_COST_PER_DAY = 0.07			-- Cost in Political Power daily generation when one MIO is assigned to a research slot
 NDefines.NIndustrialOrganisation.ASSIGN_INDUSTRIAL_MANUFACTURER_PP_COST_PER_DAY = 0.0		-- Cost in Political Power daily generation when one MIO is assigned to a production line
 -- NDefines.NIndustrialOrganisation.FUNDS_FOR_SIZE_UP = 1000							-- Funds needed for a MIO to increment its size and get points to unlock traits
 -- NDefines.NIndustrialOrganisation.FUNDS_FOR_SIZE_UP_LEVEL_FACTOR = 0.8 				-- How much each level mutliplies the funds for size up
