@@ -5,7 +5,7 @@ NDefines.NGame.DECISION_ALERT_TIMEOUT_DAYS = 7										-- Days left when player
 NDefines.NGame.LAG_DAYS_FOR_LOWER_SPEED = 300										-- Days of client lag for decrease of gamespeed
 NDefines.NGame.LAG_DAYS_FOR_PAUSE = 100												-- Days of client lag for pause of gamespeed.
 NDefines.NGame.EVENT_TIMEOUT_DEFAULT = 7											-- Default days before an event times out if not scripted
-NDefines.NGame.GAME_SPEED_SECONDS = { 0.5, 0.25, 0.2, 0.08, 0.0 }					-- Game speed
+NDefines.NGame.GAME_SPEED_SECONDS = { 0.5, 0.24, 0.20, 0.08, 0.0 }					-- Game speed
 NDefines.NGame.HANDS_OFF_START_TAG = "BHU"
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Diplomacy
@@ -495,12 +495,12 @@ NDefines.NAir.CAS_NIGHT_ATTACK_FACTOR = 0.1						                    -- CAS dama
 NDefines.NAir.ANTI_AIR_MAXIMUM_DAMAGE_REDUCTION_FACTOR = 0.50 						-- Maximum damage reduction factor applied to incoming air attacks against units with AA.
 NDefines.NAir.AA_INDUSTRY_AIR_DAMAGE_FACTOR = -0.036									-- 5x levels = 60% defense from bombing
 
-NDefines.NAir.BOMBING_TARGETING_RANDOM_FACTOR = 0.25									-- % of picking the wrong target
-NDefines.NAir.AIR_WING_BOMB_DAMAGE_FACTOR = 3										-- Used to balance the damage done while bombing.
-NDefines.NAir.BOMBING_PROV_BUILD_PRIO_SCALE = 0.7									-- Scale of the selected priority for provincial buildings
-NDefines.NAir.BOMBING_STATE_BUILD_PRIO_SCALE = 1.5									-- Scale of the selected priority for state buildings
+--NDefines.NAir.BOMBING_TARGETING_RANDOM_FACTOR = 0.9									-- % of picking the wrong target #DOESENT WORK (UNCHARTED)
+--NDefines.NAir.AIR_WING_BOMB_DAMAGE_FACTOR = 3										-- Used to balance the damage done while bombing.
+--NDefines.NAir.BOMBING_PROV_BUILD_PRIO_SCALE = 1.0									-- Scale of the selected priority for provincial buildings
+--NDefines.NAir.BOMBING_STATE_BUILD_PRIO_SCALE = 1.5									-- Scale of the selected priority for state buildings
 NDefines.NAir.ANTI_AIR_PLANE_DAMAGE_FACTOR = 0.3									-- Anti Air Gun Damage factor
-NDefines.NAir.BOMBING_INFRA_PRIO_SCALE = 0.7										-- Scale of the selected priority for infastryctyre
+--NDefines.NAir.BOMBING_INFRA_PRIO_SCALE = 0.7										-- Scale of the selected priority for infastructure
 
 NDefines.NAir.MISSION_COMMAND_POWER_COSTS = {  										-- command power cost per plane to create a mission
 	0.0, -- AIR_SUPERIORITY
@@ -788,6 +788,9 @@ NDefines.NSupply.NODE_STARTING_PENALTY_PER_PROVINCE = 0.75
 NDefines.NSupply.RAILWAY_BASE_FLOW = 5.0											-- how much base flow railway gives when a node connected to its capital/a naval node by a railway
 NDefines.NSupply.RAILWAY_FLOW_PER_LEVEL = 10.0 										-- how much additional flow a railway level gives
 NDefines.NSupply.RAILWAY_FLOW_PENALTY_PER_DAMAGED = 8.0 							-- penalty to flow per damaged railway
+NDefines.NSupply.DAYS_TO_START_GIVING_SUPPLY_AFTER_MOVING_SUPPLY_CAPITAL = 1  -- the country will start gaining supply after this many days moving its capital
+NDefines.NSupply.DAYS_TO_START_GIVING_FULL_SUPPLY_AFTER_MOVING_SUPPLY_CAPITAL =  7 -- the country will reach max supply after this many days moving its capital
+NDefines.NSupply.COOLDOWN_DAYS_AFTER_MOVING_SUPPLY_CAPITAL = 14 -- cooldown for moving supply again after last move
 
 ---
 
