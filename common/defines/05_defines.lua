@@ -219,9 +219,25 @@ NDefines.NOperatives.MIN_NATIONAL_COVERAGE_FOR_BOOST_IDEOLOGY = 0.01				-- Minim
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Resistance
 
 NDefines.NResistance.GARRISON_MANPOWER_LOST_BY_ATTACK = 0.01 						-- Ratio of manpower lost by garrison at each attack on garrison (this number will be reduced by the hardness of garrison template)
-NDefines.NResistance.MIN_DAMAGE_TO_GARRISONS_MODIFIER = 0.05						-- modifier that applies to losses from resistance attack to garrisons at most can be reduced to this amount
+NDefines.NResistance.MIN_DAMAGE_TO_GARRISONS_MODIFIER = 0.25						-- modifier that applies to losses from resistance attack to garrisons at most can be reduced to this amount
 
 NDefines.NResistance.FOREIGN_MANPOWER_MIN_THRESHOLD = 500000000			 			-- The minimum number of Manpower that AI will accept to give at once, in order to avoid many weird little transfer.
+NDefines.NResistance.RESISTANCE_TARGET_BASE = 20.0
+
+NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_POP_LOW = -5.0			-- how much we reduce the resistance target
+NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_POP_VERY_LOW = -10.0			-- resistance target modifier in % for states we have claim
+
+NDefines.NResistance.RESISTANCE_POP_LOW_CUTOFF = 500000
+NDefines.NResistance.RESISTANCE_POP_VERY_LOW_CUTOFF = 200000
+
+NDefines.NResistance.SUPPRESSION_NEEDED_BY_RESISTANCE_POINT = 0.75 -- Number of suppression point we need for each 1% of resistance
+NDefines.NResistance.SUPPRESSION_NEEDED_LOWER_CAP = 15.0	-- if resistance is lower than this value then we always act as though it is at the define for the purpose of suppresion requirements
+NDefines.NResistance.SUPPRESSION_NEEDED_UPPER_CAP = 40.0 -- if resistance is greater than this value then we always act as though it is at the define for the purpose of suppresion requirements
+
+NDefines.NResistance.GARRISON_STR_POW_MANPOWER = 1.4	--Scales impact of manpower deficiency by raising that deficiency to the number here. Formula: efficiency = 1.0 - manpower_deficiency^GARRISON_STR_POW_MANPOWER
+NDefines.NResistance.GARRISON_STR_POW_EQUIPMENT = 1.4	--Scales impact of euqipment deficiency by raising that deficiency to the number here. Formula: efficiency = 1.0 - equipment_deficiency^GARRISON_STR_POW_EQUIPMENT
+
+
 
 NDefines.NResistance.RESISTANCE_ACTIVITY_CHANCE_AT_MAX_RESISTANCE = 0.200			-- sabotage
 
@@ -765,7 +781,7 @@ NDefines.NNavy.NAVAL_MINES_ACCIDENT_STRENGTH_LOSS = 20.0						-- Amount of stren
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- SUPPLY
 
-NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.12									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
+NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.16									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
 NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST = 500
 NDefines.NSupply.CAPITAL_SUPPLY_CIVILIAN_FACTORIES = 0.3 							-- supply from one civilian factory
 NDefines.NSupply.CAPITAL_SUPPLY_MILITARY_FACTORIES = 0.6 							-- supply from one military factory
