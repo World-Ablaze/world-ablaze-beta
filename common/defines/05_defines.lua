@@ -551,8 +551,8 @@ NDefines.NAir.MISSION_FUEL_COSTS = {												-- fuel cost per plane for each 
 	0.2, -- TRAINING
 	1.0, -- NAVAL_MINES_PLANTING
 	1.0, -- NAVAL_MINES_SWEEPING
-	1.0, -- RECON
-	1.0, -- NAVAL_PATROL
+	0.1, -- RECON
+	0.3, -- NAVAL_PATROL
 }
 NDefines.NAir.NAVAL_STRIKE_CARRIER_MULTIPLIER = 10.0							    -- damage bonus when planes are in naval combat where their carrier is present (and can thus sortie faster and more effectively)
 
