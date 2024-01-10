@@ -5,7 +5,7 @@ NDefines.NGame.DECISION_ALERT_TIMEOUT_DAYS = 7										-- Days left when player
 NDefines.NGame.LAG_DAYS_FOR_LOWER_SPEED = 300										-- Days of client lag for decrease of gamespeed
 NDefines.NGame.LAG_DAYS_FOR_PAUSE = 100												-- Days of client lag for pause of gamespeed.
 NDefines.NGame.EVENT_TIMEOUT_DEFAULT = 7											-- Default days before an event times out if not scripted
-NDefines.NGame.GAME_SPEED_SECONDS = { 0.5, 0.25, 0.2, 0.08, 0.0 }					-- Game speed
+NDefines.NGame.GAME_SPEED_SECONDS = { 0.5, 0.24, 0.20, 0.08, 0.0 }					-- Game speed
 NDefines.NGame.HANDS_OFF_START_TAG = "BHU"
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Diplomacy
@@ -219,9 +219,25 @@ NDefines.NOperatives.MIN_NATIONAL_COVERAGE_FOR_BOOST_IDEOLOGY = 0.01				-- Minim
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Resistance
 
 NDefines.NResistance.GARRISON_MANPOWER_LOST_BY_ATTACK = 0.01 						-- Ratio of manpower lost by garrison at each attack on garrison (this number will be reduced by the hardness of garrison template)
-NDefines.NResistance.MIN_DAMAGE_TO_GARRISONS_MODIFIER = 0.05						-- modifier that applies to losses from resistance attack to garrisons at most can be reduced to this amount
+NDefines.NResistance.MIN_DAMAGE_TO_GARRISONS_MODIFIER = 0.25						-- modifier that applies to losses from resistance attack to garrisons at most can be reduced to this amount
 
 NDefines.NResistance.FOREIGN_MANPOWER_MIN_THRESHOLD = 500000000			 			-- The minimum number of Manpower that AI will accept to give at once, in order to avoid many weird little transfer.
+NDefines.NResistance.RESISTANCE_TARGET_BASE = 20.0
+
+NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_POP_LOW = -5.0			-- how much we reduce the resistance target
+NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_POP_VERY_LOW = -10.0			-- resistance target modifier in % for states we have claim
+
+NDefines.NResistance.RESISTANCE_POP_LOW_CUTOFF = 500000
+NDefines.NResistance.RESISTANCE_POP_VERY_LOW_CUTOFF = 200000
+
+NDefines.NResistance.SUPPRESSION_NEEDED_BY_RESISTANCE_POINT = 0.75 -- Number of suppression point we need for each 1% of resistance
+NDefines.NResistance.SUPPRESSION_NEEDED_LOWER_CAP = 15.0	-- if resistance is lower than this value then we always act as though it is at the define for the purpose of suppresion requirements
+NDefines.NResistance.SUPPRESSION_NEEDED_UPPER_CAP = 40.0 -- if resistance is greater than this value then we always act as though it is at the define for the purpose of suppresion requirements
+
+NDefines.NResistance.GARRISON_STR_POW_MANPOWER = 1.4	--Scales impact of manpower deficiency by raising that deficiency to the number here. Formula: efficiency = 1.0 - manpower_deficiency^GARRISON_STR_POW_MANPOWER
+NDefines.NResistance.GARRISON_STR_POW_EQUIPMENT = 1.4	--Scales impact of euqipment deficiency by raising that deficiency to the number here. Formula: efficiency = 1.0 - equipment_deficiency^GARRISON_STR_POW_EQUIPMENT
+
+
 
 NDefines.NResistance.RESISTANCE_ACTIVITY_CHANCE_AT_MAX_RESISTANCE = 0.200			-- sabotage
 
@@ -495,12 +511,12 @@ NDefines.NAir.CAS_NIGHT_ATTACK_FACTOR = 0.1						                    -- CAS dama
 NDefines.NAir.ANTI_AIR_MAXIMUM_DAMAGE_REDUCTION_FACTOR = 0.50 						-- Maximum damage reduction factor applied to incoming air attacks against units with AA.
 NDefines.NAir.AA_INDUSTRY_AIR_DAMAGE_FACTOR = -0.036									-- 5x levels = 60% defense from bombing
 
-NDefines.NAir.BOMBING_TARGETING_RANDOM_FACTOR = 0.25									-- % of picking the wrong target
-NDefines.NAir.AIR_WING_BOMB_DAMAGE_FACTOR = 3										-- Used to balance the damage done while bombing.
-NDefines.NAir.BOMBING_PROV_BUILD_PRIO_SCALE = 0.7									-- Scale of the selected priority for provincial buildings
-NDefines.NAir.BOMBING_STATE_BUILD_PRIO_SCALE = 1.5									-- Scale of the selected priority for state buildings
+--NDefines.NAir.BOMBING_TARGETING_RANDOM_FACTOR = 0.9									-- % of picking the wrong target #DOESENT WORK (UNCHARTED)
+--NDefines.NAir.AIR_WING_BOMB_DAMAGE_FACTOR = 3										-- Used to balance the damage done while bombing.
+--NDefines.NAir.BOMBING_PROV_BUILD_PRIO_SCALE = 1.0									-- Scale of the selected priority for provincial buildings
+--NDefines.NAir.BOMBING_STATE_BUILD_PRIO_SCALE = 1.5									-- Scale of the selected priority for state buildings
 NDefines.NAir.ANTI_AIR_PLANE_DAMAGE_FACTOR = 0.3									-- Anti Air Gun Damage factor
-NDefines.NAir.BOMBING_INFRA_PRIO_SCALE = 0.7										-- Scale of the selected priority for infastryctyre
+--NDefines.NAir.BOMBING_INFRA_PRIO_SCALE = 0.7										-- Scale of the selected priority for infastructure
 
 NDefines.NAir.MISSION_COMMAND_POWER_COSTS = {  										-- command power cost per plane to create a mission
 	0.0, -- AIR_SUPERIORITY
@@ -535,8 +551,8 @@ NDefines.NAir.MISSION_FUEL_COSTS = {												-- fuel cost per plane for each 
 	0.2, -- TRAINING
 	1.0, -- NAVAL_MINES_PLANTING
 	1.0, -- NAVAL_MINES_SWEEPING
-	1.0, -- RECON
-	1.0, -- NAVAL_PATROL
+	0.1, -- RECON
+	0.3, -- NAVAL_PATROL
 }
 NDefines.NAir.NAVAL_STRIKE_CARRIER_MULTIPLIER = 10.0							    -- damage bonus when planes are in naval combat where their carrier is present (and can thus sortie faster and more effectively)
 
@@ -765,7 +781,7 @@ NDefines.NNavy.NAVAL_MINES_ACCIDENT_STRENGTH_LOSS = 20.0						-- Amount of stren
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- SUPPLY
 
-NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.12									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
+NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.16									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
 NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST = 500
 NDefines.NSupply.CAPITAL_SUPPLY_CIVILIAN_FACTORIES = 0.3 							-- supply from one civilian factory
 NDefines.NSupply.CAPITAL_SUPPLY_MILITARY_FACTORIES = 0.6 							-- supply from one military factory
@@ -788,6 +804,9 @@ NDefines.NSupply.NODE_STARTING_PENALTY_PER_PROVINCE = 0.75
 NDefines.NSupply.RAILWAY_BASE_FLOW = 5.0											-- how much base flow railway gives when a node connected to its capital/a naval node by a railway
 NDefines.NSupply.RAILWAY_FLOW_PER_LEVEL = 10.0 										-- how much additional flow a railway level gives
 NDefines.NSupply.RAILWAY_FLOW_PENALTY_PER_DAMAGED = 8.0 							-- penalty to flow per damaged railway
+NDefines.NSupply.DAYS_TO_START_GIVING_SUPPLY_AFTER_MOVING_SUPPLY_CAPITAL = 1  -- the country will start gaining supply after this many days moving its capital
+NDefines.NSupply.DAYS_TO_START_GIVING_FULL_SUPPLY_AFTER_MOVING_SUPPLY_CAPITAL =  7 -- the country will reach max supply after this many days moving its capital
+NDefines.NSupply.COOLDOWN_DAYS_AFTER_MOVING_SUPPLY_CAPITAL = 14 -- cooldown for moving supply again after last move
 
 ---
 
