@@ -53,6 +53,18 @@ political_actions = {
 				NOT = {
 					is_character = SOV_andrey_yeryomenko
 				}
+				NOT = {
+					is_character = SOV_mikhail_tukhachevsky
+				}
+				NOT = {
+					is_character = SOV_mikhail_tukhachevsky_ai
+				}
+				NOT = {
+					is_character = SOV_konstantin_rokossovsky_ai
+				}
+				NOT = {
+					is_character = SOV_georgy_zhukov_ai
+				}
 			}
 		}
 		visible = {
@@ -97,6 +109,18 @@ political_actions = {
 					}
 					NOT = {
 						is_character = SOV_andrey_yeryomenko
+					}
+					NOT = {
+						is_character = SOV_mikhail_tukhachevsky
+					}
+					NOT = {
+						is_character = SOV_mikhail_tukhachevsky_ai
+					}
+					NOT = {
+						is_character = SOV_konstantin_rokossovsky_ai
+					}
+					NOT = {
+						is_character = SOV_georgy_zhukov_ai
 					}
 				}
 				demote_leader = yes
@@ -192,6 +216,104 @@ political_actions = {
 		}
 
 		complete_effect = {
+        }
+	}
+	
+	SOV_ai_training_fix_2 = {
+
+		icon = generic_operation
+
+        allowed = {
+			tag = SOV
+        }
+
+        available = {
+			is_ai = yes
+        }
+
+        visible = {
+        	is_ai = yes
+			has_game_rule = {
+				rule = SOV_ai_behavior
+				option = LEFT_OPPOSITION
+			}
+			has_idea = mandatory_army_service
+        }
+
+        fire_only_once = yes
+
+        ai_will_do = {
+			factor = 1000
+		}
+
+		complete_effect = {
+			remove_ideas = mandatory_army_service
+        }
+	}
+	
+	SOV_ai_civil_war_repair = {
+
+		icon = generic_operation
+
+        allowed = {
+			tag = SOV
+        }
+
+        available = {
+			has_global_flag = SOV_soviet_civil_war_over
+        }
+
+        visible = {
+        	is_ai = yes
+        }
+
+        cost = 0
+        days_remove = 120
+        fire_only_once = yes
+
+        modifier = {
+        	industry_free_repair_factor = 0.5
+        }
+
+        ai_will_do = {
+			factor = 1000
+		}
+
+		complete_effect = {
+        }
+	}
+	
+	SOV_ai_capital_fix = {
+
+		icon = generic_operation
+
+        allowed = {
+			tag = SOV
+        }
+
+        available = {
+			is_ai = yes
+        }
+
+        visible = {
+        	is_ai = yes
+			has_game_rule = {
+				rule = SOV_ai_behavior
+				option = LEFT_OPPOSITION
+			}
+			219 = { is_capital = no }
+			has_full_control_of_state = 219
+			surrender_progress < 0.15
+        }
+
+        fire_only_once = no
+
+        ai_will_do = {
+			factor = 1000
+		}
+
+		complete_effect = {
+			set_capital = { state = 219 }
         }
 	}
 }
@@ -915,7 +1037,14 @@ war_measures = {
 		complete_effect = {
 			set_country_flag = army_is_reformed
 			add_ideas = bold_attack_spirit
+			add_ideas = quick_improvisation_spirit
 			add_ideas = operational_reserve_spirit
+			if = {
+				limit = {
+					has_completed_focus = SOV_approach_tukhachevsky
+				}	
+				add_ideas = strategic_reserve_spirit
+			}
 			activate_advisor = konstantin_rokossovsky
 		}
 	}

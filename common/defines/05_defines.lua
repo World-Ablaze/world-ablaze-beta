@@ -856,14 +856,14 @@ NDefines.NAI.AREA_DEFENSE_SETTING_RAILWAYS = false
 
 ----------- COHESION
 
-NDefines.NAI.MIN_AI_UNITS_PER_TILE_FOR_STANDARD_COHESION = 20.0						-- How many units should we have for each tile along a front in order to switch to standard cohesion (less moving around)
-NDefines.NAI.MIN_FRONT_SIZE_TO_CONSIDER_STANDARD_COHESION = 1000					-- How long should fronts be before we consider switching to standard cohesion (under this, standard cohesion fronts will switch back to relaxed)
+--NDefines.NAI.MIN_AI_UNITS_PER_TILE_FOR_STANDARD_COHESION = 20.0						-- How many units should we have for each tile along a front in order to switch to standard cohesion (less moving around)
+--NDefines.NAI.MIN_FRONT_SIZE_TO_CONSIDER_STANDARD_COHESION = 1000					-- How long should fronts be before we consider switching to standard cohesion (under this, standard cohesion fronts will switch back to relaxed)
 
 NDefines.NAI.ARMY_LEADER_ASSIGN_FIELD_MARSHAL_TO_ARMY = -100000            			-- Score for assigning a field marshal to a normal army (want to use them for army groups)
 NDefines.NAI.ARMY_LEADER_ASSIGN_EMPTYNESS_MALUS = 0.0                  				-- Factor for avoiding assigning leaders that can lead large armies to small armies (a value of 0.2 reduces the score by max 20 %)
 NDefines.NAI.ARMY_LEADER_ASSIGN_OVERCAPACITY = 0                     				-- Score for assigning leader to a too large army
 NDefines.NAI.ARMY_LEADER_ASSIGN_OVERALL_SKILL_FACTOR = 1000               			-- This times general's overall skill is added to score
-NDefines.NAI.ARMY_LEADER_ASSIGN_KEEP_LEADER = 0                       				-- Score for keeping the leader if already assigned
+NDefines.NAI.ARMY_LEADER_ASSIGN_KEEP_LEADER = 50                       				-- Score for keeping the leader if already assigned
 NDefines.NAI.ARMY_LEADER_ASSIGN_ATTACK_SKILL_FACTOR = 250               			-- This times general's attack skill is added to score
 NDefines.NAI.ARMY_LEADER_ASSIGN_DEFENSE_SKILL_FACTOR = 250              			-- This times general's defense skill is added to score
 NDefines.NAI.ARMY_LEADER_ASSIGN_NR_TRAITS = 100                          		 	-- This times general's nr of active traits is added to score
@@ -895,11 +895,11 @@ NDefines.NAI.MINIMUM_FUEL_DAYS_TO_ACCEPT_LEND_LEASE = 60					 		-- AI will accep
 
 NDefines.NAI.MISSING_CONVOYS_BOOST_FACTOR = 0.0										-- The more convoys a country is missing, the more resources it diverts to cover this.
 
-NDefines.NAI.MAX_DISTANCE_NALAV_INVASION = 180.0									-- AI is extremely unwilling to plan naval invasions above this naval distance limit.
+NDefines.NAI.MAX_DISTANCE_NALAV_INVASION = 200.0									-- AI is extremely unwilling to plan naval invasions above this naval distance limit.
 NDefines.NAI.MAX_UNIT_RATIO_FOR_INVASIONS = 0.35									-- countries won't use armies more than this ratio of total units for invasions
 NDefines.NAI.MAX_INVASION_FRONT_SCORE = 2400										-- max score for naval invasion front scores
 NDefines.NAI.MIN_FRONT_SCORE_FOR_AFTER_INVASION_AREAS = 1800						-- min score for army fronts that are created on recently invaded regions
-NDefines.NAI.INVASION_DISTANCE_RANDOMNESS = 3										-- This higher the value, the more unpredictable the invasions. Compares to actual map distance in pixels.
+NDefines.NAI.INVASION_DISTANCE_RANDOMNESS = 0										-- This higher the value, the more unpredictable the invasions. Compares to actual map distance in pixels.
 NDefines.NAI.INVASION_COASTAL_PROVS_PER_ORDER = 28									-- AI will consider one extra invasion per number of provinces stated here (num orders = total coast / this)
 NDefines.NAI.NAVAL_INVADED_AREA_PRIO_DURATION = 270									-- after successful invasion, AI will prio the enemy area for this number of days
 NDefines.NAI.NAVAL_INVADED_AREA_PRIO_MULT = 2.0										-- fronts that belongs to recent invasions gets more prio
@@ -908,6 +908,7 @@ NDefines.NAI.MAX_INVASION_SIZE = 24													-- max invasion group size
 NDefines.NAI.MAX_UNITS_FACTOR_INVASION_ORDER = 1.4									-- Factor for max number of units to assign to naval invasion orders
 NDefines.NAI.DESIRED_UNITS_FACTOR_INVASION_ORDER = 1.4								-- Factor for desired number of units to assign to naval invasion orders
 NDefines.NAI.MIN_UNITS_FACTOR_INVASION_ORDER = 1.2									-- Factor for min number of units to assign to naval invasion orders
+NDefines.NAI.ENEMY_NAVY_STRENGTH_DONT_BOTHER = 5.0									-- If the enemy has a navy at least these many times stronger that the own, don't bother invading
 
 NDefines.NAI.CONVOY_ESCORT_MUL_FROM_NO_CONVOYS = 0 									-- score multiplier when no convoys are around
 NDefines.NAI.CONVOY_ESCORT_SCORE_FROM_CONVOYS = 1             				        -- score for each convoy you have in area
@@ -1160,6 +1161,18 @@ NDefines.NAI.DESIRE_USE_XP_TO_UPGRADE_AIR_EQUIPMENT = 0.5   						-- How quickly
 NDefines.NAI.XP_RATIO_REQUIRED_TO_RESEARCH_WITH_XP = 1.0							-- AI will at least need this amount of xp compared to cost of a tech to reserch it with XP
 
 NDefines.NAI.MAX_THREAT_FOR_FIRST_YEAR_CIVILIAN_MODE = 40							-- above this threshold, ai will leave first year civilian factory mode which bumps it civilian factory scores while building
+
+NDefines.NAI.CONSTRUCTION_PRIO_INFRASTRUCTURE = 0.20                                -- base prio for infrastructure in the construction queue
+NDefines.NAI.CONSTRUCTION_PRIO_CIV_FACTORY = 0.75                                  	-- base prio for civilian factories in the construction queue
+NDefines.NAI.CONSTRUCTION_PRIO_MIL_FACTORY = 0.70                                   -- base prio for military factories in the construction queue
+NDefines.NAI.CONSTRUCTION_PRIO_RAILWAY = 100.00                                     -- base prio for railways in the construction queue
+NDefines.NAI.CONSTRUCTION_PRIO_RAILWAY_GUN_REPAIR = 15.00                           -- base prio for railway gun repairs in the construction queue
+NDefines.NAI.CONSTRUCTION_PRIO_UNSPECIFIED = 0.50                                   -- base prio for unspecified buildings (none of the categories above) in the construction queue
+NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_OCCUPIED_TERRITORY = 1.00                     -- factor prio with this if occupied territory
+NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_OWNED_NONCORE = 1.50                          -- factor prio with this if owned non-core territory
+NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_OWNED_CORE = 2.00                             -- factor prio with this if owned core territory
+NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_REPAIRING = 0.30                              -- factor prio with this if building is being repaired
+
 
 --	NDefines_Graphics.NGraphics.
 
