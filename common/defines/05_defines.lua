@@ -222,7 +222,7 @@ NDefines.NResistance.GARRISON_MANPOWER_LOST_BY_ATTACK = 0.01 						-- Ratio of m
 NDefines.NResistance.MIN_DAMAGE_TO_GARRISONS_MODIFIER = 0.25						-- modifier that applies to losses from resistance attack to garrisons at most can be reduced to this amount
 
 NDefines.NResistance.FOREIGN_MANPOWER_MIN_THRESHOLD = 500000000			 			-- The minimum number of Manpower that AI will accept to give at once, in order to avoid many weird little transfer.
-NDefines.NResistance.RESISTANCE_TARGET_BASE = 20.0
+NDefines.NResistance.RESISTANCE_TARGET_BASE = 40.0
 
 NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_POP_LOW = -5.0			-- how much we reduce the resistance target
 NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_POP_VERY_LOW = -10.0			-- resistance target modifier in % for states we have claim
@@ -237,11 +237,11 @@ NDefines.NResistance.SUPPRESSION_NEEDED_UPPER_CAP = 40.0 -- if resistance is gre
 NDefines.NResistance.GARRISON_STR_POW_MANPOWER = 1.4	--Scales impact of manpower deficiency by raising that deficiency to the number here. Formula: efficiency = 1.0 - manpower_deficiency^GARRISON_STR_POW_MANPOWER
 NDefines.NResistance.GARRISON_STR_POW_EQUIPMENT = 1.4	--Scales impact of euqipment deficiency by raising that deficiency to the number here. Formula: efficiency = 1.0 - equipment_deficiency^GARRISON_STR_POW_EQUIPMENT
 
-
-
 NDefines.NResistance.RESISTANCE_ACTIVITY_CHANCE_AT_MAX_RESISTANCE = 0.200			-- sabotage
 
-NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_OCCUPIED_CAPITULATED = 15.0 		-- resistance target modifier when the enemy is capitulated
+NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_OCCUPIED_CAPITULATED = 5.0 		-- resistance target modifier when the enemy is capitulated
+NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_OCCUPIED_IS_EXILE_MIN = 2.0   -- min & max resistance target modifier resistance target modifier for exile countries. interpolated using legitimacy
+NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_OCCUPIED_IS_EXILE_MAX = 5.0
 
 NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_STATE_VP = {						-- resistance target modifier pairs for vp. first entry is total vp in state and second entry is amount of target modifier that applies for that threshold
 	0,   0.0, -- 0 - 5
