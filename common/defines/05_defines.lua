@@ -551,8 +551,8 @@ NDefines.NAir.MISSION_FUEL_COSTS = {												-- fuel cost per plane for each 
 	0.2, -- TRAINING
 	1.0, -- NAVAL_MINES_PLANTING
 	1.0, -- NAVAL_MINES_SWEEPING
-	1.0, -- RECON
-	1.0, -- NAVAL_PATROL
+	0.1, -- RECON
+	0.3, -- NAVAL_PATROL
 }
 NDefines.NAir.NAVAL_STRIKE_CARRIER_MULTIPLIER = 10.0							    -- damage bonus when planes are in naval combat where their carrier is present (and can thus sortie faster and more effectively)
 
@@ -744,8 +744,9 @@ NDefines.NNavy.OUT_OF_FUEL_ATTACK_FACTOR = -0.9
 NDefines.NNavy.OUT_OF_FUEL_TORPEDO_FACTOR = -0.9
 
 NDefines.NNavy.SCREEN_RATIO_FOR_FULL_SCREENING_FOR_CAPITALS = 4.0					-- this screen ratio to num capital/carriers is needed for full screening beyond screen line
-NDefines.NNavy.SCREEN_RATIO_FOR_FULL_SCREENING_FOR_CONVOYS = 2.0					-- this screen ratio to num convoys is needed for full screening beyond screen line
+NDefines.NNavy.SCREEN_RATIO_FOR_FULL_SCREENING_FOR_CONVOYS = 15.0					-- this screen ratio to num convoys is needed for full screening beyond screen line
 NDefines.NNavy.CAPITAL_RATIO_FOR_FULL_SCREENING_FOR_CARRIERS = 1.0					-- this capital ratio to num carriers is needed for full screening beyond screen line
+NDefines.NNavy.CAPITAL_RATIO_FOR_FULL_SCREENING_FOR_CONVOYS = 1.0  					-- this capital ratio to num convoys is needed for full screening beyond screen line
 NDefines.NNavy.BASE_CARRIER_SORTIE_EFFICIENCY = 0.5 								-- factor of planes that can sortie by default from a carrier
 
 NDefines.NNavy.TRAINING_DAILY_COUNTRY_EXP_FACTOR = 0.0003							-- Factor used to scale the Daily Country Navy XP gain
@@ -781,7 +782,9 @@ NDefines.NNavy.NAVAL_MINES_ACCIDENT_STRENGTH_LOSS = 20.0						-- Amount of stren
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- SUPPLY
 
-NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.16									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
+NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.24									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
+NDefines.NSupply.MIN_TRAIN_SUPPLY_FACTOR = 0 										-- Having 0 trains in stockpile only applies this penalty factor, scaling up to 1.0 when need is met
+
 NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST = 500
 NDefines.NSupply.CAPITAL_SUPPLY_CIVILIAN_FACTORIES = 0.3 							-- supply from one civilian factory
 NDefines.NSupply.CAPITAL_SUPPLY_MILITARY_FACTORIES = 0.6 							-- supply from one military factory
