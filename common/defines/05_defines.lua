@@ -782,7 +782,7 @@ NDefines.NNavy.NAVAL_MINES_ACCIDENT_STRENGTH_LOSS = 20.0						-- Amount of stren
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- SUPPLY
 
-NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.24									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
+NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.50									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
 NDefines.NSupply.MIN_TRAIN_SUPPLY_FACTOR = 0 										-- Having 0 trains in stockpile only applies this penalty factor, scaling up to 1.0 when need is met
 
 NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST = 500
