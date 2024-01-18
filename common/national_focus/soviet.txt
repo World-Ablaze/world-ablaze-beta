@@ -1109,7 +1109,18 @@ focus_tree = {
 			has_country_flag = SOV_great_patriotic_war_flag
 		}
 		available = {
-			num_of_civilian_factories > 299
+			if = {
+				limit = {
+					is_ai = no
+				}
+				num_of_civilian_factories > 299
+			}
+			if = {
+				limit = {
+					is_ai = yes
+				}
+				num_of_civilian_factories > 297
+			}
 		}
 		search_filters = { FOCUS_FILTER_INDUSTRY }
 		completion_reward = {
@@ -1603,6 +1614,7 @@ focus_tree = {
 						state = 265
 						state = 1025
 						state = 248
+						state = 253
 						state = 254
 						state = 257
 						state = 264
@@ -1674,7 +1686,7 @@ focus_tree = {
 		}
 		completion_reward = {
 			add_political_power = 200
-			add_war_support = 0.1
+			add_war_support = 0.05
 			custom_effect_tooltip = SOV_finish_the_third_five_year_plan_tt
 			hidden_effect = {
 				subtract_from_variable = { SOV_fyp_political_power_cost = 0.3 }
@@ -3713,6 +3725,7 @@ focus_tree = {
 			OR = {
 				has_completed_focus = SOV_left_opposition_coup
 				has_completed_focus = SOV_coup_detat
+				has_completed_focus = SOV_depoliticize_the_military
 			}
 		}
 
@@ -3806,7 +3819,18 @@ focus_tree = {
 
 		completion_reward = {
 			#unlocks first army reform
-			activate_advisor = semyon_timoshenko
+			if = {
+				limit = {
+					is_ai = yes
+					NOT = {
+						has_game_rule = {
+							rule = SOV_ai_behavior
+							option = LEFT_OPPOSITION
+						}
+					}
+				}
+				activate_advisor = semyon_timoshenko
+			}
 
 			add_to_variable = { SOV_the_red_army_army_infantry_defence_factor = 0.15 }
 			add_to_variable = { SOV_the_red_army_experience_gain_army_unit_factor = 0.1 }
@@ -4117,23 +4141,27 @@ focus_tree = {
 				}
 				has_civil_war = no
 			}
-
-			if = { #remove this check for 7.9
+			if = {
 				limit = {
-					has_completed_focus = SOV_lessons_of_war
-					NOT = { has_country_flag = SOV_lessons_of_war_flag }
+					is_ai = no
 				}
-			}
-			else = {
-				has_country_flag = {
-					flag = SOV_lessons_of_war_flag
-					days > 364
+				if = { #remove this check for 7.9
+					limit = {
+						has_completed_focus = SOV_lessons_of_war
+						NOT = { has_country_flag = SOV_lessons_of_war_flag }
+					}
 				}
-				custom_trigger_tooltip = {
-					tooltip = SOV_lessons_of_war_flag_tt
+				else = {
 					has_country_flag = {
 						flag = SOV_lessons_of_war_flag
 						days > 364
+					}
+					custom_trigger_tooltip = {
+						tooltip = SOV_lessons_of_war_flag_tt
+						has_country_flag = {
+							flag = SOV_lessons_of_war_flag
+							days > 364
+						}
 					}
 				}
 			}
@@ -7810,6 +7838,12 @@ focus_tree = {
 				is_major = yes
 				is_subject = no
 			}
+			if = {
+				limit = {
+					is_ai = yes
+				}
+				has_global_flag = ww2_has_ended
+			}
 		}
 		search_filters = {
 
@@ -10130,7 +10164,7 @@ focus_tree = {
 			FOCUS_FILTER_DIPLOMACY
 		}
 		completion_reward = {
-			add_war_support = 0.05
+			#add_war_support = 0.05
 			# Estonia
 			custom_effect_tooltip = SOV_estonian_claimed_states_tt
 			hidden_effect = {
@@ -12430,7 +12464,7 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_STABILITY FOCUS_FILTER_WAR_SUPPORT }
 
 		completion_reward = {
-			add_war_support = 0.1
+			add_war_support = 0.05
 			add_stability = 0.05
 			custom_effect_tooltip = siberia_secured
 			set_global_flag = siberia_secured
@@ -14989,7 +15023,7 @@ focus_tree = {
 		relative_position_id = SOV_expand_komsomol_memebership
 		cost = 3
 		available = {
-			has_completed_focus = SOV_socialism_in_one_country
+			#has_completed_focus = SOV_socialism_in_one_country
 			surrender_progress > 0.24
 			any_enemy_country = {
 				is_major = yes
@@ -16171,6 +16205,12 @@ focus_tree = {
 		cost = 3
 		available = {
 			surrender_progress < 0.15
+			if = {
+				limit = {
+					is_ai = yes
+				}
+				has_global_flag = ww2_has_ended
+			}
 		}
 		search_filters = {
 		}
@@ -19445,6 +19485,17 @@ focus_tree = {
 		cost = 3
 		available = {
 			has_government = communism
+			if = {
+				limit = {
+					is_ai = yes
+				}
+				NOT = {
+					has_game_rule = {
+						rule = SOV_ai_behavior
+						option = LEFT_OPPOSITION
+					}
+				}
+			}
 		}
 		search_filters = {
 			FOCUS_FILTER_STABILITY

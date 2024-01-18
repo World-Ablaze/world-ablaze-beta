@@ -222,7 +222,7 @@ NDefines.NResistance.GARRISON_MANPOWER_LOST_BY_ATTACK = 0.01 						-- Ratio of m
 NDefines.NResistance.MIN_DAMAGE_TO_GARRISONS_MODIFIER = 0.25						-- modifier that applies to losses from resistance attack to garrisons at most can be reduced to this amount
 
 NDefines.NResistance.FOREIGN_MANPOWER_MIN_THRESHOLD = 500000000			 			-- The minimum number of Manpower that AI will accept to give at once, in order to avoid many weird little transfer.
-NDefines.NResistance.RESISTANCE_TARGET_BASE = 20.0
+NDefines.NResistance.RESISTANCE_TARGET_BASE = 40.0
 
 NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_POP_LOW = -5.0			-- how much we reduce the resistance target
 NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_POP_VERY_LOW = -10.0			-- resistance target modifier in % for states we have claim
@@ -237,11 +237,11 @@ NDefines.NResistance.SUPPRESSION_NEEDED_UPPER_CAP = 40.0 -- if resistance is gre
 NDefines.NResistance.GARRISON_STR_POW_MANPOWER = 1.4	--Scales impact of manpower deficiency by raising that deficiency to the number here. Formula: efficiency = 1.0 - manpower_deficiency^GARRISON_STR_POW_MANPOWER
 NDefines.NResistance.GARRISON_STR_POW_EQUIPMENT = 1.4	--Scales impact of euqipment deficiency by raising that deficiency to the number here. Formula: efficiency = 1.0 - equipment_deficiency^GARRISON_STR_POW_EQUIPMENT
 
-
-
 NDefines.NResistance.RESISTANCE_ACTIVITY_CHANCE_AT_MAX_RESISTANCE = 0.200			-- sabotage
 
-NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_OCCUPIED_CAPITULATED = 15.0 		-- resistance target modifier when the enemy is capitulated
+NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_OCCUPIED_CAPITULATED = 5.0 		-- resistance target modifier when the enemy is capitulated
+NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_OCCUPIED_IS_EXILE_MIN = 2.0   -- min & max resistance target modifier resistance target modifier for exile countries. interpolated using legitimacy
+NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_OCCUPIED_IS_EXILE_MAX = 5.0
 
 NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_STATE_VP = {						-- resistance target modifier pairs for vp. first entry is total vp in state and second entry is amount of target modifier that applies for that threshold
 	0,   0.0, -- 0 - 5
@@ -275,8 +275,8 @@ NDefines.NMilitary.GARRISON_ORDER_ARMY_CAP_FACTOR = 1.0								-- armies gets in
 
 NDefines.NMilitary.PROMOTE_LEADER_CP_COST = 20.0									-- cost of promoting a leader
 
-NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_ATTACK = -0.20    					-- attack combat penalty for attacker if out of supply
-NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_DEFEND = -0.40     					-- defend combat penalty for attacker if out of supply
+NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_ATTACK = -0.50    					-- attack combat penalty for attacker if out of supply
+NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_DEFEND = -0.80     					-- defend combat penalty for attacker if out of supply
 NDefines.NMilitary.COMBAT_SUPPLY_LACK_DEFENDER_ATTACK = -0.40     					-- attack combat penalty for defender if out of supply
 NDefines.NMilitary.COMBAT_SUPPLY_LACK_DEFENDER_DEFEND = -0.20     					-- defend combat penalty for defender if out of supply
 
@@ -372,7 +372,7 @@ NDefines.NMilitary.ATTRITION_DAMAGE_ORG = 0.08					   					-- damage from attrit
 NDefines.NMilitary.MAX_OUT_OF_SUPPLY_DAYS = 7 				   						-- how many days of shitty supply until max penalty achieved
 NDefines.NMilitary.OUT_OF_SUPPLY_ATTRITION = 2.0                					-- max attrition when out of supply
 NDefines.NMilitary.OUT_OF_SUPPLY_MORALE = 0                  						-- max org regain reduction from supply
-NDefines.NMilitary.OUT_OF_SUPPLY_SPEED = -0.4                   					-- max speed reduction from supply
+NDefines.NMilitary.OUT_OF_SUPPLY_SPEED = -1.0                   					-- max speed reduction from supply
 NDefines.NMilitary.COMBAT_SUPPLY_LACK_IMPACT = -0.6									-- combat penalty if out of supply
 
 NDefines.NMilitary.INFRA_ORG_IMPACT = 0.25											-- scale factor of infra on org regain.
@@ -782,7 +782,7 @@ NDefines.NNavy.NAVAL_MINES_ACCIDENT_STRENGTH_LOSS = 20.0						-- Amount of stren
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- SUPPLY
 
-NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.24									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
+NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.50									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
 NDefines.NSupply.MIN_TRAIN_SUPPLY_FACTOR = 0 										-- Having 0 trains in stockpile only applies this penalty factor, scaling up to 1.0 when need is met
 
 NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST = 500
@@ -856,14 +856,14 @@ NDefines.NAI.AREA_DEFENSE_SETTING_RAILWAYS = false
 
 ----------- COHESION
 
-NDefines.NAI.MIN_AI_UNITS_PER_TILE_FOR_STANDARD_COHESION = 20.0						-- How many units should we have for each tile along a front in order to switch to standard cohesion (less moving around)
-NDefines.NAI.MIN_FRONT_SIZE_TO_CONSIDER_STANDARD_COHESION = 1000					-- How long should fronts be before we consider switching to standard cohesion (under this, standard cohesion fronts will switch back to relaxed)
+--NDefines.NAI.MIN_AI_UNITS_PER_TILE_FOR_STANDARD_COHESION = 20.0						-- How many units should we have for each tile along a front in order to switch to standard cohesion (less moving around)
+--NDefines.NAI.MIN_FRONT_SIZE_TO_CONSIDER_STANDARD_COHESION = 1000					-- How long should fronts be before we consider switching to standard cohesion (under this, standard cohesion fronts will switch back to relaxed)
 
 NDefines.NAI.ARMY_LEADER_ASSIGN_FIELD_MARSHAL_TO_ARMY = -100000            			-- Score for assigning a field marshal to a normal army (want to use them for army groups)
 NDefines.NAI.ARMY_LEADER_ASSIGN_EMPTYNESS_MALUS = 0.0                  				-- Factor for avoiding assigning leaders that can lead large armies to small armies (a value of 0.2 reduces the score by max 20 %)
 NDefines.NAI.ARMY_LEADER_ASSIGN_OVERCAPACITY = 0                     				-- Score for assigning leader to a too large army
 NDefines.NAI.ARMY_LEADER_ASSIGN_OVERALL_SKILL_FACTOR = 1000               			-- This times general's overall skill is added to score
-NDefines.NAI.ARMY_LEADER_ASSIGN_KEEP_LEADER = 0                       				-- Score for keeping the leader if already assigned
+NDefines.NAI.ARMY_LEADER_ASSIGN_KEEP_LEADER = 50                       				-- Score for keeping the leader if already assigned
 NDefines.NAI.ARMY_LEADER_ASSIGN_ATTACK_SKILL_FACTOR = 250               			-- This times general's attack skill is added to score
 NDefines.NAI.ARMY_LEADER_ASSIGN_DEFENSE_SKILL_FACTOR = 250              			-- This times general's defense skill is added to score
 NDefines.NAI.ARMY_LEADER_ASSIGN_NR_TRAITS = 100                          		 	-- This times general's nr of active traits is added to score
@@ -895,11 +895,11 @@ NDefines.NAI.MINIMUM_FUEL_DAYS_TO_ACCEPT_LEND_LEASE = 60					 		-- AI will accep
 
 NDefines.NAI.MISSING_CONVOYS_BOOST_FACTOR = 0.0										-- The more convoys a country is missing, the more resources it diverts to cover this.
 
-NDefines.NAI.MAX_DISTANCE_NALAV_INVASION = 180.0									-- AI is extremely unwilling to plan naval invasions above this naval distance limit.
+NDefines.NAI.MAX_DISTANCE_NALAV_INVASION = 200.0									-- AI is extremely unwilling to plan naval invasions above this naval distance limit.
 NDefines.NAI.MAX_UNIT_RATIO_FOR_INVASIONS = 0.35									-- countries won't use armies more than this ratio of total units for invasions
 NDefines.NAI.MAX_INVASION_FRONT_SCORE = 2400										-- max score for naval invasion front scores
 NDefines.NAI.MIN_FRONT_SCORE_FOR_AFTER_INVASION_AREAS = 1800						-- min score for army fronts that are created on recently invaded regions
-NDefines.NAI.INVASION_DISTANCE_RANDOMNESS = 3										-- This higher the value, the more unpredictable the invasions. Compares to actual map distance in pixels.
+NDefines.NAI.INVASION_DISTANCE_RANDOMNESS = 0										-- This higher the value, the more unpredictable the invasions. Compares to actual map distance in pixels.
 NDefines.NAI.INVASION_COASTAL_PROVS_PER_ORDER = 28									-- AI will consider one extra invasion per number of provinces stated here (num orders = total coast / this)
 NDefines.NAI.NAVAL_INVADED_AREA_PRIO_DURATION = 270									-- after successful invasion, AI will prio the enemy area for this number of days
 NDefines.NAI.NAVAL_INVADED_AREA_PRIO_MULT = 2.0										-- fronts that belongs to recent invasions gets more prio
@@ -908,6 +908,7 @@ NDefines.NAI.MAX_INVASION_SIZE = 24													-- max invasion group size
 NDefines.NAI.MAX_UNITS_FACTOR_INVASION_ORDER = 1.4									-- Factor for max number of units to assign to naval invasion orders
 NDefines.NAI.DESIRED_UNITS_FACTOR_INVASION_ORDER = 1.4								-- Factor for desired number of units to assign to naval invasion orders
 NDefines.NAI.MIN_UNITS_FACTOR_INVASION_ORDER = 1.2									-- Factor for min number of units to assign to naval invasion orders
+NDefines.NAI.ENEMY_NAVY_STRENGTH_DONT_BOTHER = 5.0									-- If the enemy has a navy at least these many times stronger that the own, don't bother invading
 
 NDefines.NAI.CONVOY_ESCORT_MUL_FROM_NO_CONVOYS = 0 									-- score multiplier when no convoys are around
 NDefines.NAI.CONVOY_ESCORT_SCORE_FROM_CONVOYS = 1             				        -- score for each convoy you have in area
@@ -1160,6 +1161,18 @@ NDefines.NAI.DESIRE_USE_XP_TO_UPGRADE_AIR_EQUIPMENT = 0.5   						-- How quickly
 NDefines.NAI.XP_RATIO_REQUIRED_TO_RESEARCH_WITH_XP = 1.0							-- AI will at least need this amount of xp compared to cost of a tech to reserch it with XP
 
 NDefines.NAI.MAX_THREAT_FOR_FIRST_YEAR_CIVILIAN_MODE = 40							-- above this threshold, ai will leave first year civilian factory mode which bumps it civilian factory scores while building
+
+NDefines.NAI.CONSTRUCTION_PRIO_INFRASTRUCTURE = 0.20                                -- base prio for infrastructure in the construction queue
+NDefines.NAI.CONSTRUCTION_PRIO_CIV_FACTORY = 0.75                                  	-- base prio for civilian factories in the construction queue
+NDefines.NAI.CONSTRUCTION_PRIO_MIL_FACTORY = 0.70                                   -- base prio for military factories in the construction queue
+NDefines.NAI.CONSTRUCTION_PRIO_RAILWAY = 100.00                                     -- base prio for railways in the construction queue
+NDefines.NAI.CONSTRUCTION_PRIO_RAILWAY_GUN_REPAIR = 15.00                           -- base prio for railway gun repairs in the construction queue
+NDefines.NAI.CONSTRUCTION_PRIO_UNSPECIFIED = 0.50                                   -- base prio for unspecified buildings (none of the categories above) in the construction queue
+NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_OCCUPIED_TERRITORY = 0.50                     -- factor prio with this if occupied territory
+NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_OWNED_NONCORE = 0.50                          -- factor prio with this if owned non-core territory
+NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_OWNED_CORE = 2.00                             -- factor prio with this if owned core territory
+NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_REPAIRING = 0.30                              -- factor prio with this if building is being repaired
+
 
 --	NDefines_Graphics.NGraphics.
 
