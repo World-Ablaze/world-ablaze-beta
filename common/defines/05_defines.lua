@@ -369,10 +369,10 @@ NDefines.NMilitary.NON_CORE_SUPPLY_SPEED = -0.7				    					-- we are not runnin
 NDefines.NMilitary.LAND_COMBAT_COLLATERAL_FACTOR = 0.003							-- Factor to scale collateral damage to infra and forts with.
 
 NDefines.NMilitary.ATTRITION_DAMAGE_ORG = 0.08					   					-- damage from attrition to Organisation
-NDefines.NMilitary.MAX_OUT_OF_SUPPLY_DAYS = 7 				   						-- how many days of shitty supply until max penalty achieved
+NDefines.NMilitary.MAX_OUT_OF_SUPPLY_DAYS = 4 				   						-- how many days of shitty supply until max penalty achieved
 NDefines.NMilitary.OUT_OF_SUPPLY_ATTRITION = 2.0                					-- max attrition when out of supply
 NDefines.NMilitary.OUT_OF_SUPPLY_MORALE = 0                  						-- max org regain reduction from supply
-NDefines.NMilitary.OUT_OF_SUPPLY_SPEED = -0.4                   					-- max speed reduction from supply
+NDefines.NMilitary.OUT_OF_SUPPLY_SPEED = -1.0                   					-- max speed reduction from supply
 NDefines.NMilitary.COMBAT_SUPPLY_LACK_IMPACT = -0.6									-- combat penalty if out of supply
 
 NDefines.NMilitary.INFRA_ORG_IMPACT = 0.25											-- scale factor of infra on org regain.
@@ -418,7 +418,7 @@ NDefines.NMilitary.RETREAT_SPEED_FACTOR = 1.5              						    -- speed bo
 NDefines.NMilitary.BASE_FORT_PENALTY = -0.18						 				-- fort penalty
 
 NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_IMPACT = -0.4      						-- effect on defense due to enemy air superiorty
---NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_SPEED_IMPACT = -0.5				   		-- effect on speed due to enemy air superiority
+NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_SPEED_IMPACT = -0.15				   		-- effect on speed due to enemy air superiority
 
 NDefines.NMilitary.COMBAT_MOVEMENT_SPEED = 0.8										-- speed reduction base modifier in combat
 
@@ -782,7 +782,7 @@ NDefines.NNavy.NAVAL_MINES_ACCIDENT_STRENGTH_LOSS = 20.0						-- Amount of stren
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- SUPPLY
 
-NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.24									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
+NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.50									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
 NDefines.NSupply.MIN_TRAIN_SUPPLY_FACTOR = 0 										-- Having 0 trains in stockpile only applies this penalty factor, scaling up to 1.0 when need is met
 
 NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST = 500
@@ -1168,8 +1168,8 @@ NDefines.NAI.CONSTRUCTION_PRIO_MIL_FACTORY = 0.70                               
 NDefines.NAI.CONSTRUCTION_PRIO_RAILWAY = 100.00                                     -- base prio for railways in the construction queue
 NDefines.NAI.CONSTRUCTION_PRIO_RAILWAY_GUN_REPAIR = 15.00                           -- base prio for railway gun repairs in the construction queue
 NDefines.NAI.CONSTRUCTION_PRIO_UNSPECIFIED = 0.50                                   -- base prio for unspecified buildings (none of the categories above) in the construction queue
-NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_OCCUPIED_TERRITORY = 1.00                     -- factor prio with this if occupied territory
-NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_OWNED_NONCORE = 1.50                          -- factor prio with this if owned non-core territory
+NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_OCCUPIED_TERRITORY = 0.50                     -- factor prio with this if occupied territory
+NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_OWNED_NONCORE = 0.50                          -- factor prio with this if owned non-core territory
 NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_OWNED_CORE = 2.00                             -- factor prio with this if owned core territory
 NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_REPAIRING = 0.30                              -- factor prio with this if building is being repaired
 
