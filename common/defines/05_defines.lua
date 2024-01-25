@@ -252,6 +252,7 @@ NDefines.NTechnology.BASE_YEAR_AHEAD_PENALTY_FACTOR = 4								-- Base year ahea
 NDefines.NTechnology.LICENSE_PRODUCTION_TECH_BONUS = 0								-- License production tech bonus
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Military
+NDefines.NMilitary.ARMY_FUEL_COST_MULT = 1.0										-- fuel cost multiplier for all army related stuff
 NDefines.NMilitary.FIELD_MARSHAL_DIVISIONS_CAP = 12									-- how many divisions a field marshall is limited to. 0 = inf, < 0 = blocked
 NDefines.NMilitary.CORPS_COMMANDER_DIVISIONS_CAP = 12								-- how many divisions a corps commander is limited to. 0 = inf, < 0 = blocked
 NDefines.NMilitary.FIELD_MARSHAL_ARMIES_CAP = 10									-- how many armies a field marshall is limited to. 0 = inf, < 0 = blocked
@@ -439,6 +440,7 @@ NDefines.NMilitary.NUM_DAYS_FOR_OPERATION_ENTRY = 30								--Number of days tha
 
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Air
+NDefines.NAir.FUEL_COST_MULT = 1.0												--fuel cost multiplier for all AIR related stuff
 
 NDefines.NAir.AI_ALLOWED_PLANES_KEPT_IN_RESERVE = 0.0								--AI allowed planes is reduced by this percentage. Overflow will be distributed to the next valid order. Worst case, this will result in this % of planes no being assigned any order.
 
@@ -552,6 +554,7 @@ NDefines.NAir.DAY_NIGHT_COVERAGE_FACTOR = 0.02 										-- The max night covera
 NDefines.NAir.PORT_STRIKE_DAMAGE_FACTOR = 0.1										-- How much damage is dealt to ports during a port strike (per plane damage [complex number] * num flying planes * define)
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Navy
+NDefines.NNavy.FUEL_COST_MULT = 1.0													-- fuel cost multiplier for all Navy related stuff
 
 NDefines.NNavy.NAVAL_COMBAT_AIR_SUB_DETECTION_MAX = 2
 NDefines.NNavy.NAVAL_COMBAT_AIR_PLANE_COUNT_TO_SUB_DETECTION = 0.2					-- Factor applied to the number of active plane in a naval combat to deduce their contribution to sub detection
