@@ -222,7 +222,7 @@ NDefines.NResistance.GARRISON_MANPOWER_LOST_BY_ATTACK = 0.01 						-- Ratio of m
 NDefines.NResistance.MIN_DAMAGE_TO_GARRISONS_MODIFIER = 0.25						-- modifier that applies to losses from resistance attack to garrisons at most can be reduced to this amount
 
 NDefines.NResistance.FOREIGN_MANPOWER_MIN_THRESHOLD = 500000000			 			-- The minimum number of Manpower that AI will accept to give at once, in order to avoid many weird little transfer.
-NDefines.NResistance.RESISTANCE_TARGET_BASE = 40.0
+NDefines.NResistance.RESISTANCE_TARGET_BASE = 50.0
 
 NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_POP_LOW = -5.0			-- how much we reduce the resistance target
 NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_POP_VERY_LOW = -10.0			-- resistance target modifier in % for states we have claim
@@ -245,9 +245,9 @@ NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_OCCUPIED_IS_EXILE_MAX = 5.0
 
 NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_STATE_VP = {						-- resistance target modifier pairs for vp. first entry is total vp in state and second entry is amount of target modifier that applies for that threshold
 	0,   0.0, -- 0 - 5
-	5,   10.0, -- 5 - 20
-	20,  20.0, -- 20 - 50
-	50,  30.0, -- 50 - ...
+	5,   5.0, -- 5 - 20
+	20,  10.0, -- 20 - 50
+	50,  15.0, -- 50 - ...
 }
 
 
