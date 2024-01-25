@@ -24,7 +24,7 @@ focus_tree = {
 
 	focus = {
         id = NZL_governor_general_of_new_zealand
-        icon = GFX_
+        icon = GFX_goal_NZL_governor_general_of_new_zealand
 
         x = 4
         y = 0
@@ -821,7 +821,7 @@ focus_tree = {
     }
 
     focus = {
-        id = NZL_boost_arms_production
+        id = NZL_domestic_arms_production
         icon = GFX
         prerequisite = { focus = NZL_bring_the_economy_on_a_war_footing }
         x = 0
@@ -850,6 +850,13 @@ focus_tree = {
         }
         completion_reward = {
             1040 = {
+                add_building_construction = {
+                    type = arms_factory
+                    level = 2
+                    instant_build = yes
+                }
+            }
+            1039 = {
                 add_building_construction = {
                     type = arms_factory
                     level = 2
@@ -1367,11 +1374,91 @@ focus_tree = {
     }
 
 	focus = {
-        id = NZL_emergency_conscription_program
+        id = NZL_defence_of_new_zealand
         icon = GFX_
         
         x = 12
         y = 0
+
+        available = {
+            has_war = yes
+            523 = {
+                is_controlled_by = JAP
+            }
+            1004 = {
+                is_controlled_by = JAP
+            }
+        }
+
+        bypass = {
+        }
+
+        cost = 5
+
+        ai_will_do = {
+            factor = 1
+        }
+
+        cancel_if_invalid = yes
+        continue_if_invalid = no
+        available_if_capitulated = no
+        search_filters = {
+        }
+        completion_reward = {
+			set_division_template_lock = {
+				division_template = "District Force"
+				is_locked = no
+			}
+            284 = {   
+                add_building_construction = {
+                    type = bunker
+                    level = 2
+                    province = {
+                        all_provinces = yes
+                        limit_to_victory_point = yes
+                    }
+                }
+            }
+            1039 = {
+                add_building_construction = {
+                    type = bunker
+                    level = 1
+                    province = {
+                        all_provinces = yes
+                        limit_to_supply_node = yes
+                    } 
+                }
+            }
+            723 = {
+                add_building_construction = {
+                    type = bunker
+                    level = 1
+                    province = {
+                        all_provinces = yes
+                        limit_to_supply_node = yes
+                    }
+                }
+            }
+            1040 = {
+                add_building_construction = {
+                    type = bunker
+                    level = 1
+                    province = {
+                        all_provinces = yes
+                        limit_to_supply_node = yes
+                    }
+                }
+           	}
+        }
+    }
+
+	focus = {
+        id = NZL_emergency_conscription_program
+        icon = GFX_
+        prerequisite = { focus = NZL_defence_of_new_zealand }
+        x = 0
+        y = 1
+        relative_position_id = NZL_defence_of_new_zealand
 
         available = {
             has_war = yes
@@ -1405,7 +1492,7 @@ focus_tree = {
 
     focus = {
         id = NZL_emergency_fortifications
-        icon = GFX_goal_generic_construct_naval_dockyard
+        icon = GFX_goal_NZL_emergency_fortifications
         prerequisite = { focus = NZL_emergency_conscription_program }
         x = 0
         y = 1
@@ -2240,23 +2327,28 @@ focus_tree = {
             FOCUS_FILTER_NAVY
         }
         completion_reward = {
-            army_experience = 15
-            add_doctrine_cost_reduction = {
-                cost_reduction = 0.5
-                name = NZL_reform_the_military_districts
-                uses = 1
-                category = special_forces_doctrine
-            }
+			add_doctrine_cost_reduction = {
+				name = NZL_reform_the_military_districts
+				cost_reduction = 0.99
+				uses = 1
+				category = land_doctrine
+			}
+			add_units_to_division_template = {
+				template_name = "District Force"
+				support = {
+					normal_engineer = 0
+					recon = 0
+				}
+			}
         }
     }
     focus = {
-        id = NZL_start_recruiting_maori_detatchments
+        id = NZL_prepare_an_expeditionary_force
         icon = GFX_
-        
+        prerequisite = { focus = NZL_reform_the_military_districts }
         x = 0  
         y = 1
         relative_position_id = NZL_reform_the_military_districts
-        prerequisite = { focus = NZL_reform_the_military_districts }
 
         available = {
         }
@@ -2277,23 +2369,63 @@ focus_tree = {
             FOCUS_FILTER_ARMY
         }
         completion_reward = {
-            army_experience = 10
-            add_manpower = 600
-            add_tech_bonus = {
-                name = NZL_maori
-                uses = 1
-                bonus = 0.5
-                category = heavy_infantry_weapons
+			random_owned_controlled_state = {
+				prioritize = { 1040 }
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = arms_factory
+					level = 2
+					instant_build = yes
+				}
+			}
+            swap_ideas = {
+                remove_idea = NZL_under_funded_army
+                add_idea = NZL_under_funded_army_1
             }
+			set_division_template_lock = {
+				division_template = "Infantry Division"
+				is_locked = no
+			}
+        }
+    }
+    focus = {
+        id = NZL_start_recruiting_maori_detatchments
+        icon = GFX_
+        prerequisite = { focus = NZL_prepare_an_expeditionary_force }
+        x = 1
+        y = 1
+        relative_position_id = NZL_prepare_an_expeditionary_force
+
+        available = {
+        }
+
+        bypass = {
+        }
+
+        cost = 5
+
+        ai_will_do = {
+            factor = 1 
+        }
+    
+        cancel_if_invalid = yes
+        continue_if_invalid = no
+        available_if_capitulated = no
+        search_filters = {
+            FOCUS_FILTER_ARMY
+        }
+        completion_reward = {
+            army_experience = 15
+            add_manpower = 600
         }
     }
     focus = {
         id = NZL_expand_support_battalions
         icon = GFX_
-        prerequisite = { focus = NZL_start_recruiting_maori_detatchments }
-        x = 0
-        y = 2
-        relative_position_id = NZL_reform_the_military_districts
+        prerequisite = { focus = NZL_prepare_an_expeditionary_force }
+        x = -1
+        y = 1
+        relative_position_id = NZL_prepare_an_expeditionary_force
 
         available = {
         }
@@ -2316,21 +2448,67 @@ focus_tree = {
         completion_reward = {
             add_tech_bonus = {
                 name = NZL_expand_support_battalions
-                uses = 2
-                bonus = 0.75
+                uses = 3
+                bonus = 1.0
                 category = support_tech
             }
-            army_experience = 15
+        }
+    }
+    focus = {
+        id = NZL_artillery_orders
+        icon = GFX_
+        prerequisite = { focus = NZL_expand_support_battalions }
+        x = 0
+        y = 1
+        relative_position_id = NZL_expand_support_battalions
+
+        available = {
+        }
+
+        bypass = {
+        }
+
+        cost = 5
+
+        ai_will_do = {
+            factor = 1 
+        }
+    
+        cancel_if_invalid = yes
+        continue_if_invalid = no
+        available_if_capitulated = no
+        search_filters = {
+            FOCUS_FILTER_ARMY
+        }
+        completion_reward = {
+            add_tech_bonus = {
+                name = NZL_order_artillery
+                bonus = 0.5
+                uses = 1
+                category = artillery
+            }
+            add_tech_bonus = {
+                name = NZL_order_artillery
+                bonus = 0.5
+                uses = 1
+                category = cat_anti_air
+            }
+            add_tech_bonus = {
+                name = NZL_order_artillery
+                bonus = 0.5
+                uses = 1
+                category = cat_anti_tank
+            }
         }
     }
 
     focus = {
-        id = NZL_order_more_rifles
+        id = NZL_rifle_orders
         icon = GFX_
         prerequisite = { focus = NZL_expand_support_battalions }
-        x = 0
-        y = 3
-        relative_position_id = NZL_reform_the_military_districts
+        x = 2
+        y = 1
+        relative_position_id = NZL_expand_support_battalions
 
         available = {
         }
@@ -2359,13 +2537,15 @@ focus_tree = {
 			}
         }
     }
+
     focus = {
-        id = NZL_order_armour_plate_samples_from_australia
+        id = NZL_new_zealand_knights
         icon = GFX_
-        prerequisite = { focus = NZL_order_more_rifles }
-        x = 0
-        y = 4
-        relative_position_id = NZL_reform_the_military_districts
+        prerequisite = { focus = NZL_artillery_orders }
+        prerequisite = { focus = NZL_rifle_orders }
+        x = 1
+        y = 1
+        relative_position_id = NZL_artillery_orders
 
         available = {
         }
@@ -2387,10 +2567,22 @@ focus_tree = {
         }
         completion_reward = {
             add_tech_bonus = {
-                name = NZL_order_more_rifles
+                name = NZL_order_artillery
                 bonus = 0.5
-                uses = 2
+                uses = 1
                 category = artillery
+            }
+            add_tech_bonus = {
+                name = NZL_order_artillery
+                bonus = 0.5
+                uses = 1
+                category = cat_anti_air
+            }
+            add_tech_bonus = {
+                name = NZL_order_artillery
+                bonus = 0.5
+                uses = 1
+                category = cat_anti_tank
             }
         }
     }
@@ -2398,124 +2590,10 @@ focus_tree = {
     focus = {
         id = NZL_continue_officer_exchanges
         icon = GFX_
-        prerequisite = { focus = NZL_order_armour_plate_samples_from_australia }
+        prerequisite = { focus = NZL_new_zealand_knights }
         x = 0
-        y = 5
-        relative_position_id = NZL_reform_the_military_districts
-
-        available = {
-        }
-
-        bypass = {
-        }
-
-        cost = 5
-
-        ai_will_do = {
-            factor = 1 
-        }
-    
-        cancel_if_invalid = yes
-        continue_if_invalid = no
-        available_if_capitulated = no
-        search_filters = {
-            FOCUS_FILTER_ARMY
-        }
-        completion_reward = {
-            swap_ideas = {
-                remove_idea = NZL_under_funded_army
-                add_idea = NZL_under_funded_army_1
-            }
-        }
-    }
-
-    focus = {
-        id = NZL_look_at_commonwealth_tank_designs
-        icon = GFX_
-        prerequisite = { focus = NZL_continue_officer_exchanges }
-        x = 0
-        y = 6
-        relative_position_id = NZL_reform_the_military_districts
-
-        available = {
-        }
-
-        bypass = {
-        }
-
-        cost = 5
-
-        ai_will_do = {
-            factor = 1 
-        }
-    
-        cancel_if_invalid = yes
-        continue_if_invalid = no
-        available_if_capitulated = no
-        search_filters = {
-            FOCUS_FILTER_ARMY
-        }
-        completion_reward = {
-            add_doctrine_cost_reduction = {
-                cost_reduction = 0.55
-                name = NZL_look_at_commonwealth_tank_designs
-                category = land_doctrine
-                uses = 2
-            }
-        }
-    }
-
-    focus = {
-        id = NZL_expand_arms_factories
-        icon = GFX_
-        prerequisite = { focus = NZL_look_at_commonwealth_tank_designs }
-        x = 0
-        y = 7
-        relative_position_id = NZL_reform_the_military_districts
-
-        available = {
-        }
-
-        bypass = {
-        }
-
-        cost = 5
-
-        ai_will_do = {
-            factor = 1 
-        }
-    
-        cancel_if_invalid = yes
-        continue_if_invalid = no
-        available_if_capitulated = no
-        search_filters = {
-            FOCUS_FILTER_ARMY
-        }
-        completion_reward = {
-            1040 = {
-                add_building_construction = {
-                    type = arms_factory
-                    level = 2
-                    instant_build = yes
-                }
-            }
-            1039 = {
-                add_building_construction = {
-                    type = arms_factory
-                    level = 2
-                    instant_build = yes
-                }
-            }
-        }
-    }
-
-    focus = {
-        id = NZL_expand_staff_academy
-        icon = GFX_
-        prerequisite = { focus = NZL_look_at_commonwealth_tank_designs }
-        x = -2
-        y = 7
-        relative_position_id = NZL_reform_the_military_districts
+        y = 1
+        relative_position_id = NZL_new_zealand_knights
 
         available = {
         }
@@ -2544,122 +2622,13 @@ focus_tree = {
     }
 
     focus = {
-        id = NZL_modernise_artilery_battalions
+        id = NZL_expand_staff_academy
         icon = GFX_
-        prerequisite = { focus = NZL_look_at_commonwealth_tank_designs }
-        x = 2
-        y = 7
-        relative_position_id = NZL_reform_the_military_districts
+        prerequisite = { focus = NZL_continue_officer_exchanges }
+        x = -1
+        y = 1
+        relative_position_id = NZL_continue_officer_exchanges
 
-        available = {
-        }
-
-        bypass = {
-        }
-
-        cost = 5
-
-        ai_will_do = {
-            factor = 1 
-        }
-    
-        cancel_if_invalid = yes
-        continue_if_invalid = no
-        available_if_capitulated = no
-        search_filters = {
-            FOCUS_FILTER_ARMY
-        }
-        completion_reward = {
-            add_tech_bonus = {
-                name = NZL_modernise_artilery_battalions
-                uses = 2
-                bonus = 0.5
-                category = artillery
-            }
-        }
-    }
-
-    focus = {
-        id = NZL_build_landward_defences
-        icon = GFX_
-        prerequisite = { focus = NZL_expand_staff_academy }
-        prerequisite = { focus = NZL_modernise_artilery_battalions }
-        prerequisite = { focus = NZL_expand_arms_factories }
-        cost = 7
-        x = 0
-        y = 8
-        relative_position_id = NZL_reform_the_military_districts
-
-        available = {
-        }
-
-        bypass = {
-        }
-
-        cost = 5
-
-        ai_will_do = {
-            factor = 1 
-        }
-    
-        cancel_if_invalid = yes
-        continue_if_invalid = no
-        available_if_capitulated = no
-        search_filters = {
-            FOCUS_FILTER_ARMY
-        }
-        completion_reward = {  
-                284 = {   
-                add_building_construction = {
-                    type = bunker
-                    level = 2
-                    province = {
-                        all_provinces = yes
-                        limit_to_victory_point = yes
-                    }
-                }
-            }
-            1039 = {
-                add_building_construction = {
-                    type = bunker
-                    level = 1
-                    province = {
-                        all_provinces = yes
-                        limit_to_supply_node = yes
-                    } 
-                }
-            }
-            723 = {
-                add_building_construction = {
-                    type = bunker
-                    level = 1
-                    province = {
-                        all_provinces = yes
-                        limit_to_supply_node = yes
-                    }
-                }
-            }
-            1040 = {
-                add_building_construction = {
-                    type = bunker
-                    level = 1
-                    province = {
-                        all_provinces = yes
-                        limit_to_supply_node = yes
-                    }
-                }
-           	}
-        }
-    }
-
-    focus = {
-        id = NZL_make_preparations_for_an_expeditionary_force
-        icon = GFX_
-        prerequisite = { focus = NZL_build_landward_defences }
-        x = 0
-        y = 9
-        relative_position_id = NZL_reform_the_military_districts
-    
         available = {
         }
 
@@ -2680,17 +2649,159 @@ focus_tree = {
         }
         completion_reward = {
             remove_ideas = NZL_under_funded_army_2
-            army_experience = 50
         }
-    }   
+    }
 
     focus = {
-		id = NZL_look_at_the_bob_semple_tank
+        id = NZL_trentham_army_school
+        icon = GFX_
+        prerequisite = { focus = NZL_expand_staff_academy }
+        x = -1
+        y = 1
+        relative_position_id = NZL_expand_staff_academy
+
+        available = {
+        }
+
+        bypass = {
+        }
+
+        cost = 5
+
+        ai_will_do = {
+            factor = 1 
+        }
+    
+        cancel_if_invalid = yes
+        continue_if_invalid = no
+        available_if_capitulated = no
+        search_filters = {
+            FOCUS_FILTER_ARMY
+        }
+        completion_reward = {
+			add_doctrine_cost_reduction = {
+				name = NZL_trentham_army_school
+				cost_reduction = 0.99
+				uses = 6
+				category = land_doctrine
+			}
+        }
+    }
+
+    focus = {
+        id = NZL_new_zealand_defence_council
+        icon = GFX_
+        prerequisite = { focus = NZL_trentham_army_school }
+        x = 0
+        y = 1
+        relative_position_id = NZL_trentham_army_school
+
+        available = {
+        }
+
+        bypass = {
+        }
+
+        cost = 5
+
+        ai_will_do = {
+            factor = 1 
+        }
+    
+        cancel_if_invalid = yes
+        continue_if_invalid = no
+        available_if_capitulated = no
+        search_filters = {
+            FOCUS_FILTER_ARMY
+        }
+        completion_reward = {
+        }
+    }
+
+    focus = {
+        id = NZL_modernization_efforts
+        icon = GFX_
+        prerequisite = { focus = NZL_continue_officer_exchanges }
+        x = 1
+        y = 1
+        relative_position_id = NZL_continue_officer_exchanges
+
+        available = {
+        }
+
+        bypass = {
+        }
+
+        cost = 5
+
+        ai_will_do = {
+            factor = 1 
+        }
+    
+        cancel_if_invalid = yes
+        continue_if_invalid = no
+        available_if_capitulated = no
+        search_filters = {
+            FOCUS_FILTER_ARMY
+        }
+        completion_reward = {
+            add_research_slot = 1
+            add_tech_bonus = {
+                name = NZL_modernization_efforts
+                uses = 2
+                bonus = 0.5
+                category = artillery
+            }
+            add_equipment_to_stockpile = {
+                type = eng_motorized_equipment_1
+                amount = 50
+            }
+        }
+    }
+
+    focus = {
+        id = NZL_look_at_commonwealth_tank_designs
+        icon = GFX_
+        prerequisite = { focus = NZL_modernization_efforts }
+        x = -1
+        y = 1
+        relative_position_id = NZL_modernization_efforts
+
+        available = {
+        }
+
+        bypass = {
+        }
+
+        cost = 5
+
+        ai_will_do = {
+            factor = 1 
+        }
+    
+        cancel_if_invalid = yes
+        continue_if_invalid = no
+        available_if_capitulated = no
+        search_filters = {
+            FOCUS_FILTER_ARMY
+        }
+        completion_reward = {
+            add_doctrine_cost_reduction = {
+                cost_reduction = 0.55
+                name = NZL_look_at_commonwealth_tank_designs
+                category = land_doctrine
+                uses = 2
+            }
+        }
+    }  
+
+    focus = {
+		id = NZL_the_bob_semple_tank
 		icon = GFX_focus_NZL_bob_semple_tank #VEHICLE OF GLORIOUS DESIGN BOB SEMPLE TANK MUST HAVE UNIQUE ICON
-		prerequisite = { focus = NZL_make_preparations_for_an_expeditionary_force }
+		prerequisite = { focus = NZL_look_at_commonwealth_tank_designs }
 		x = 0
-		y = 10
-		relative_position_id = NZL_reform_the_military_districts
+		y = 1
+		relative_position_id = NZL_look_at_commonwealth_tank_designs
 
 		available = {
 
@@ -2727,10 +2838,10 @@ focus_tree = {
     focus = {
         id = NZL_continue_working_on_domestic_designs
         icon = GFX_
-        prerequisite = { focus = NZL_make_preparations_for_an_expeditionary_force }
-        x = 2
-        y = 10
-        relative_position_id = NZL_reform_the_military_districts
+        prerequisite = { focus = NZL_modernization_efforts }
+        x = 1
+        y = 1
+        relative_position_id = NZL_modernization_efforts
 
         available = {
         }
@@ -2759,10 +2870,10 @@ focus_tree = {
     focus = {
         id = NZL_produce_armoured_cars
         icon = GFX_
-        prerequisite = { focus = NZL_make_preparations_for_an_expeditionary_force }
-        x = -2
-        y = 10
-        relative_position_id = NZL_reform_the_military_districts
+        prerequisite = { focus = NZL_continue_working_on_domestic_designs }
+        x = 0
+        y = 1
+        relative_position_id = NZL_continue_working_on_domestic_designs
         
         available = {
         }
@@ -2795,12 +2906,10 @@ focus_tree = {
     focus = {
         id = NZL_upgrade_the_bob_semple
         icon = GFX_
-        prerequisite = { focus = NZL_look_at_the_bob_semple_tank }
-        prerequisite = { focus = NZL_continue_working_on_domestic_designs }
-        prerequisite = { focus = NZL_produce_armoured_cars }
+        prerequisite = { focus = NZL_the_bob_semple_tank }
         x = 0
-        y = 11
-        relative_position_id = NZL_reform_the_military_districts
+        y = 1
+        relative_position_id = NZL_the_bob_semple_tank
 
         available = {
             has_tech = nzl_light_1
