@@ -1494,7 +1494,7 @@ focus_tree = {
         id = NZL_emergency_fortifications
         icon = GFX_goal_NZL_emergency_fortifications
         prerequisite = { focus = NZL_emergency_conscription_program }
-        x = 0
+        x = -1
         y = 1
         relative_position_id = NZL_emergency_conscription_program
 
@@ -1534,12 +1534,82 @@ focus_tree = {
     }
 
     focus = {
+        id = NZL_build_up_coastal_defences
+        icon = GFX_
+        prerequisite = { focus = NZL_emergency_conscription_program }
+        x = 1
+        y = 1
+        relative_position_id = NZL_emergency_conscription_program
+
+        available = {
+        }
+
+        bypass = {
+        }
+
+        cost = 5
+
+        ai_will_do = {
+            factor = 1 
+        }
+    
+        cancel_if_invalid = yes
+        continue_if_invalid = no
+        available_if_capitulated = no
+        search_filters = {
+            FOCUS_FILTER_NAVY
+        }
+        completion_reward = {
+            every_owned_state = {
+				limit = {
+					is_controlled_by = ROOT
+					OR = {
+						state = 284
+						state = 723
+                        state = 1039
+                        state = 1040
+					}
+				}
+				add_building_construction = {
+					type = coastal_bunker
+					province = {
+						all_provinces = yes
+						limit_to_coastal = yes
+					}
+					level = 2
+					instant_build = yes
+				}
+
+				#Extra fort on naval bases
+				add_building_construction = {
+					type = bunker
+					province = {
+						all_provinces = yes
+						limit_to_naval_base = yes
+					}
+					level = 2
+					instant_build = yes
+				}
+				add_building_construction = {
+					type = coastal_bunker
+					province = {
+						all_provinces = yes
+						limit_to_naval_base = yes
+					}
+					level = 2
+					instant_build = yes
+				}
+			}
+        }
+    }
+
+    focus = {
         id = NZL_ask_for_reinforcements
         icon = GFX
-        prerequisite = { focus = NZL_emergency_fortifications }
-        x = 0
-        y = 2
-        relative_position_id = NZL_emergency_conscription_program
+        prerequisite = { focus = NZL_emergency_fortifications focus = NZL_build_up_coastal_defences }
+        x = 1
+        y = 1
+        relative_position_id = NZL_emergency_fortifications
 
         available = {
             tag = NZL
@@ -2944,12 +3014,40 @@ focus_tree = {
 	### Navy
 
     focus = {
-        id = NZL_transfer_the_new_zealand_division_cruisers
-        icon = GFX_goal_generic_navy_doctrines_tactics
+        id = NZL_creation_of_the_new_zealand_navy
+        icon = GFX_
         prerequisite = { focus = NZL_reverse_cuts_to_the_armed_forces }
         x = 5
         y = 1
         relative_position_id = NZL_reverse_cuts_to_the_armed_forces
+
+        available = {
+        }
+
+        bypass = {
+        }
+        
+        cost = 7
+
+        ai_will_do = {
+            factor = 2 
+        }
+
+        cancel_if_invalid = yes
+        continue_if_invalid = no
+        available_if_capitulated = no
+
+        completion_reward = {
+        }
+    }
+
+    focus = {
+        id = NZL_new_ship_transfers
+        icon = GFX_goal_generic_ships_light_cruiser
+        prerequisite = { focus = NZL_creation_of_the_new_zealand_navy }
+        x = -1
+        y = 1
+        relative_position_id = NZL_creation_of_the_new_zealand_navy
 
         available = {
         }
@@ -2970,12 +3068,8 @@ focus_tree = {
 
         completion_reward = {
             custom_effect_tooltip = NZL_transfer_ships_tt
+            create_ship = { type = eng_frigate_hull_5 creator = ENG name = "HMNZS Auckland" }
             ENG = {
-                transfer_ship = {
-                    prefer_name = "HMS Achilles"
-                    type = light_cruiser
-                    target = NZL
-                }
                 transfer_ship = {
                     prefer_name = "HMS Leander"
                     type = light_cruiser
@@ -2986,12 +3080,12 @@ focus_tree = {
     }
    
     focus = {
-        id = NZL_formalise_the_RNZN
+        id = NZL_formalize_the_RNZN
         icon = GFX_goal_generic_build_navy
-        prerequisite = { focus = NZL_transfer_the_new_zealand_division_cruisers }
+        prerequisite = { focus = NZL_creation_of_the_new_zealand_navy }
         x = 1
         y = 1
-        relative_position_id = NZL_transfer_the_new_zealand_division_cruisers
+        relative_position_id = NZL_creation_of_the_new_zealand_navy
 
         ai_will_do = {
             factor = 25
@@ -3025,16 +3119,62 @@ focus_tree = {
                 category = naval_doctrine
             }
         }
-    }  
-
+    }
    
-   focus = {
+    focus = {
         id = NZL_expand_devonport_naval_base_facilities
-        icon = GFX_goal_generic_construct_naval_dockyard
-        prerequisite = { focus = NZL_transfer_the_new_zealand_division_cruisers }
-        x = -1
+        icon = GFX_goal_generic_construct_naval_shipyard
+        prerequisite = { focus = NZL_new_ship_transfers }
+        prerequisite = { focus = NZL_formalize_the_RNZN }
+        x = 0
         y = 1
-        relative_position_id = NZL_transfer_the_new_zealand_division_cruisers
+        relative_position_id = NZL_new_ship_transfers
+
+        available = {
+			647 = { is_fully_controlled_by = ROOT }
+        }
+
+        bypass = {
+        }
+
+        cost = 5
+
+        ai_will_do = {
+            factor = 1
+        }
+
+        cancel_if_invalid = yes
+        continue_if_invalid = no
+        available_if_capitulated = no
+        search_filters = {
+            FOCUS_FILTER_NAVY
+        }
+
+        completion_reward = {
+            1039 = {
+                add_building_construction = {
+                    type = naval_base
+                    province = 4543
+                    level = 3
+                    instant_build = yes
+                }
+                add_building_construction = {
+                    type = dockyard
+                    level = 1
+                    instant_build = yes
+                }
+            }
+        }
+    }
+   
+    focus = {
+        id = NZL_develop_wellington_ship_building_facilities
+        icon = GFX_goal_generic_construct_naval_dockyard
+        prerequisite = { focus = NZL_new_ship_transfers }
+        prerequisite = { focus = NZL_formalize_the_RNZN }
+        x = 0
+        y = 1
+        relative_position_id = NZL_formalize_the_RNZN
 
         available = {
         }
@@ -3060,170 +3200,14 @@ focus_tree = {
                 add_building_construction = {
                     type = naval_base
                     province = 4543
-                    level = 3
+                    level = 2
                     instant_build = yes
                 }
-            }
-        }
-    }
-    
-   
-
-    focus = {
-        id = NZL_expand_domestic_shipbuilding
-        icon = GFX_
-        prerequisite = { focus = NZL_expand_devonport_naval_base_facilities focus = NZL_formalise_the_RNZN }
-        x = 0
-        y = 2
-        relative_position_id = NZL_transfer_the_new_zealand_division_cruisers
-
-        available = {
-        }
-
-        bypass = {
-        }
-
-        cost = 5
-
-        ai_will_do = {
-            factor = 1 
-        }
-    
-        cancel_if_invalid = yes
-        continue_if_invalid = no
-        available_if_capitulated = no
-        search_filters = {
-            FOCUS_FILTER_NAVY
-        }
-        completion_reward = {
-            723 = {
-                add_extra_state_shared_building_slots = 2
                 add_building_construction = {
                     type = dockyard
                     level = 2
                     instant_build = yes
                 }
-                add_building_construction = {
-                    type = naval_base
-                    level = 1
-                    instant_build = yes
-                }
-            }
-        }
-    }  
-
-    focus = {
-        id = NZL_conduct_training_with_the_royal_navy
-        icon = GFX_
-        prerequisite = { focus = NZL_expand_domestic_shipbuilding }
-        x = -1
-        y = 1
-        relative_position_id = NZL_expand_domestic_shipbuilding
-
-        available = {
-        }
-
-        bypass = {
-        }
-
-        cost = 5
-
-        ai_will_do = {
-            factor = 1 
-        }
-    
-        cancel_if_invalid = yes
-        continue_if_invalid = no
-        available_if_capitulated = no
-        search_filters = {
-            FOCUS_FILTER_NAVY
-        }
-        completion_reward = {
-            swap_ideas = {
-                remove_idea = NZL_fledgling_navy
-                add_idea = NZL_fledgling_navy_1
-            }
-            navy_experience = 15
-        }
-    }   
-
-    focus = {
-        id = NZL_place_orders_for_new_cruisers
-        icon = GFX_
-        prerequisite = { focus = NZL_expand_domestic_shipbuilding }
-        x = 1
-        y = 1
-        relative_position_id = NZL_expand_domestic_shipbuilding
-
-        available = {
-        }
-
-        bypass = {
-        }
-
-        cost = 5
-
-        ai_will_do = {
-            factor = 1 
-        }
-    
-        cancel_if_invalid = yes
-        continue_if_invalid = no
-        available_if_capitulated = no
-        search_filters = {
-        }
-        completion_reward = {
-            add_equipment_production = {
-                equipment = {
-                    type = eng_light_cruiser_hull_4
-                    creator = "NZL"
-                }
-                name = "HMNZS Neptune"
-                requested_factories = 1
-                progress = 0.35
-                amount = 1
-            }
-            if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				mio:NZL_port_chalmers_shipbuilding_organization = {
-					add_mio_size = 1
-				}
-			}
-        }
-    }
-    focus = {
-        id = NZL_focus_on_new_frigate_doctrines
-        icon = GFX_
-        prerequisite = { focus = NZL_conduct_training_with_the_royal_navy focus = NZL_place_orders_for_new_cruisers }
-        x = 1
-        y = 1
-        relative_position_id = NZL_conduct_training_with_the_royal_navy
-
-        available = {
-        }
-
-        bypass = {
-        }
-
-        cost = 5
-
-        ai_will_do = {
-            factor = 1 
-        }
-    
-        cancel_if_invalid = yes
-        continue_if_invalid = no
-        available_if_capitulated = no
-        search_filters = {
-        }
-        completion_reward = {
-            add_doctrine_cost_reduction = {
-                cost_reduction = 0.99
-                name = NZL_focus_on_new_frigate_doctrines
-                uses = 2
-                category = convoy_defense_tree
             }
         }
     }
@@ -3231,10 +3215,11 @@ focus_tree = {
     focus = {
         id = NZL_refit_the_training_fleet
         icon = GFX_
-        prerequisite = { focus = NZL_focus_on_new_frigate_doctrines }
-        x = 0
-        y = 1
-        relative_position_id = NZL_focus_on_new_frigate_doctrines
+        prerequisite = { focus = NZL_new_ship_transfers }
+        prerequisite = { focus = NZL_formalize_the_RNZN }
+        x = 1
+        y = 2
+        relative_position_id = NZL_new_ship_transfers
 
         available = {
         }
@@ -3261,12 +3246,12 @@ focus_tree = {
     }
 
     focus = {
-        id = NZL_look_at_building_our_own_minesweepers
-        icon = GFX_
-        prerequisite = { focus = NZL_focus_on_new_frigate_doctrines }
-        x = -2
+        id = NZL_conduct_training_with_the_royal_navy
+        icon = GFX_goal_generic_navy_doctrines_tactics
+        prerequisite = { focus = NZL_refit_the_training_fleet }
+        x = 0
         y = 1
-        relative_position_id = NZL_focus_on_new_frigate_doctrines
+        relative_position_id = NZL_refit_the_training_fleet
 
         available = {
         }
@@ -3287,29 +3272,21 @@ focus_tree = {
             FOCUS_FILTER_NAVY
         }
         completion_reward = {
-            1040 = {
-                add_building_construction = {
-                    type = dockyard
-                    level = 2
-                    instant_build = yes
-                }
+            swap_ideas = {
+                remove_idea = NZL_fledgling_navy
+                add_idea = NZL_fledgling_navy_1
             }
-            add_tech_bonus = {
-                name = NZL_look_at_building_our_own_minesweepers
-                bonus = 0.5
-                uses = 1
-                category = ff_tech
-            }
+            navy_experience = 15
         }
     }
 
     focus = {
-        id = NZL_build_up_coastal_defences
+        id = NZL_look_into_destroyer_support
         icon = GFX_
-        prerequisite = { focus = NZL_focus_on_new_frigate_doctrines }
-        x = 2
+        prerequisite = { focus = NZL_conduct_training_with_the_royal_navy }
+        x = 1
         y = 1
-        relative_position_id = NZL_focus_on_new_frigate_doctrines
+        relative_position_id = NZL_conduct_training_with_the_royal_navy
 
         available = {
         }
@@ -3330,44 +3307,63 @@ focus_tree = {
             FOCUS_FILTER_NAVY
         }
         completion_reward = {
-            every_owned_state = {
-				limit = {
-					is_controlled_by = ROOT
-					OR = {
-						state = 284
-						state = 723
-                        state = 1039
-                        state = 1040
-					}
-				}
-				add_building_construction = {
-					type = coastal_bunker
-					province = {
-						all_provinces = yes
-						limit_to_coastal = yes
-					}
-					level = 2
-					instant_build = yes
-				}
+			add_tech_bonus = {
+				name = NZL_look_into_destroyer_support
+				bonus = 0.5
+				uses = 4
+				technology = eng_destroyer_1
+				technology = eng_destroyer_2
+				technology = eng_destroyer_3
+				technology = eng_destroyer_4
+			}
+        }
+    }
 
-				#Extra fort on naval bases
-				add_building_construction = {
-					type = bunker
-					province = {
-						all_provinces = yes
-						limit_to_naval_base = yes
-					}
-					level = 2
-					instant_build = yes
+    focus = {
+        id = NZL_modernize_the_navy
+        icon = GFX_
+        prerequisite = { focus = NZL_look_into_destroyer_support }
+        x = 0
+        y = 1
+        relative_position_id = NZL_look_into_destroyer_support
+
+        available = {
+        }
+
+        bypass = {
+        }
+
+        cost = 5
+
+        ai_will_do = {
+            factor = 1 
+        }
+    
+        cancel_if_invalid = yes
+        continue_if_invalid = no
+        available_if_capitulated = no
+        search_filters = {
+            FOCUS_FILTER_NAVY
+        }
+        completion_reward = {
+            add_tech_bonus = {
+                name = NZL_look_into_destroyer_support
+                uses = 2
+                bonus = 1.0
+                category = cl_tech
+            }
+            add_tech_bonus = {
+                name = NZL_look_into_destroyer_support
+                uses = 2
+                bonus = 1.0
+                category = ff_tech
+            }
+            if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
 				}
-				add_building_construction = {
-					type = coastal_bunker
-					province = {
-						all_provinces = yes
-						limit_to_naval_base = yes
-					}
-					level = 2
-					instant_build = yes
+				mio:NZL_port_chalmers_shipbuilding_organization = {
+					add_mio_size = 1
 				}
 			}
         }
@@ -3376,12 +3372,10 @@ focus_tree = {
     focus = {
         id = NZL_form_escort_groups
         icon = GFX_
-        prerequisite = { focus = NZL_refit_the_training_fleet }
-        prerequisite = { focus = NZL_build_up_coastal_defences }
-        prerequisite = { focus = NZL_look_at_building_our_own_minesweepers }
-        x = 0
+        prerequisite = { focus = NZL_conduct_training_with_the_royal_navy }
+        x = -1
         y = 1
-        relative_position_id = NZL_refit_the_training_fleet
+        relative_position_id = NZL_conduct_training_with_the_royal_navy
 
         available = {
         }
@@ -3441,205 +3435,21 @@ focus_tree = {
             set_technology = {
 				ast_frigate_1 = 1
 			}
-            1040 ={
-            add_building_construction = {
-                type = dockyard
-                level = 1
-                instant_build = yes
-            }
-           }
-           navy_experience = 15
-           if = {
-            limit = {
-                has_dlc = "Arms Against Tyranny"
-            }
-            mio:NZL_st_mary_bay_ship_organization = {
-              add_mio_size = 1  
-            } 
-            
-           }
-        }
-    }
-
-    focus = {
-        id = NZL_continue_shipyard_defence_expansion
-        icon = GFX_
-        prerequisite = { focus = NZL_buy_bathhurst_frigates }
-        x = 0
-        y = 1
-        relative_position_id = NZL_buy_bathhurst_frigates
-
-        available = {
-        }
-
-        bypass = {
-        }
-
-        cost = 5
-
-        ai_will_do = {
-            factor = 1 
-        }
-    
-        cancel_if_invalid = yes
-        continue_if_invalid = no
-        available_if_capitulated = no
-        search_filters = {
-            FOCUS_FILTER_NAVY
-        }
-        completion_reward = {
-            every_owned_state = {
-				limit = {
-					is_controlled_by = ROOT
-					OR = {
-						state = 284
-						state = 723
-                        state = 1039
-                        state = 1040
-					}
-				}
-				
-				add_building_construction = {
-					type = bunker
-					province = {
-						all_provinces = yes
-						limit_to_naval_base = yes
-					}
-					level = 2
-					instant_build = yes
-				}
-				add_building_construction = {
-					type = coastal_bunker
-					province = {
-						all_provinces = yes
-						limit_to_naval_base = yes
-					}
-					level = 2
-					instant_build = yes
-				}
-			}
-		
-        }
-    }
-
-    focus = {
-        id = NZL_order_a_second_batch_of_cruisers
-        icon = GFX_
-        prerequisite = { focus = NZL_continue_shipyard_defence_expansion }
-        x = 0
-        y = 1
-        relative_position_id = NZL_continue_shipyard_defence_expansion
-
-        available = {
-            has_tech = eng_light_cruiser_8
-        }
-
-        bypass = {
-        }
-
-        cost = 6
-
-        ai_will_do = {
-            factor = 1 
-        }
-    
-        cancel_if_invalid = yes
-        continue_if_invalid = no
-        available_if_capitulated = no
-        search_filters = {
-            FOCUS_FILTER_NAVY
-        }
-        completion_reward = {
-            add_equipment_production = {
-                equipment = {
-                    type = eng_light_cruiser_hull_8
-                    creator = "NZL"
+            1040 = {
+                add_building_construction = {
+                    type = dockyard
+                    level = 1
+                    instant_build = yes
                 }
-                name = "HMNZS Gambia"
-                requested_factories = 1
-                progress = 0.65
-                amount = 1
             }
+            navy_experience = 15
             if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				
-				mio:NZL_port_chalmers_shipbuilding_organization = {
-					add_mio_size = 2
-				}
-			}
-        }
-    }
-
-    focus = {
-        id = NZL_look_into_destroyer_support
-        icon = GFX_
-        prerequisite = { focus = NZL_continue_shipyard_defence_expansion }
-        x = 2
-        y = 1
-        relative_position_id = NZL_continue_shipyard_defence_expansion
-
-        available = {
-        }
-
-        bypass = {
-        }
-
-        cost = 5
-
-        ai_will_do = {
-            factor = 1 
-        }
-    
-        cancel_if_invalid = yes
-        continue_if_invalid = no
-        available_if_capitulated = no
-        search_filters = {
-            FOCUS_FILTER_NAVY
-        }
-        completion_reward = {
-            add_tech_bonus = {
-                name = NZL_look_into_destroyer_support
-                uses = 1
-                bonus = 1.0
-                category = dd_tech
-            }
-        }
-    }
-
-    focus = {
-        id = NZL_improve_the_marine_corps
-        icon = GFX_
-        prerequisite = { focus = NZL_continue_shipyard_defence_expansion }
-        x = -2
-        y = 1
-        relative_position_id = NZL_continue_shipyard_defence_expansion
-
-        available = {
-        }
-
-        bypass = {
-        }
-
-        cost = 5
-
-        ai_will_do = {
-            factor = 1 
-        }
-
-        cancel_if_invalid = yes
-        continue_if_invalid = no
-        available_if_capitulated = no
-        search_filters = {
-            FOCUS_FILTER_NAVY
-        }
-        completion_reward = {
-            add_doctrine_cost_reduction = {
-                cost_reduction = 0.99
-                category = marines_doctrine
-                name = NZL_improve_the_marine_corps
-                uses = 2
+                limit = {
+                    has_dlc = "Arms Against Tyranny"
+                }
+                mio:NZL_st_mary_bay_ship_organization = {
+                    add_mio_size = 1  
+                }
             }
         }
     }
@@ -3647,12 +3457,11 @@ focus_tree = {
     focus = {
         id = NZL_work_closely_with_the_american_navy
         icon = GFX_
-        prerequisite = { focus = NZL_improve_the_marine_corps }
-        prerequisite = { focus = NZL_order_a_second_batch_of_cruisers }
-        prerequisite = { focus = NZL_look_into_destroyer_support }
-        x = 0
+        prerequisite = { focus = NZL_modernize_the_navy }
+        prerequisite = { focus = NZL_buy_bathhurst_frigates }
+        x = 1
         y = 1
-        relative_position_id = NZL_order_a_second_batch_of_cruisers
+        relative_position_id = NZL_buy_bathhurst_frigates
 
         available = {
         }
@@ -3687,4 +3496,3 @@ focus_tree = {
             }
         }
     }
-}    
