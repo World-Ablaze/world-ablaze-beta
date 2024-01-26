@@ -1557,18 +1557,19 @@ focus_tree = {
 
         available = {
             has_war = yes
-            523 = {
-                is_controlled_by = JAP
-            }
-            1004 = {
-                is_controlled_by = JAP
-            }
+			OR = {
+				has_war_with = JAP
+				has_war_with = ENG
+				has_war_with = USA
+				surrender_progress > 0
+				date > 1941.10.1
+			}
         }
 
         bypass = {
         }
 
-        cost = 5
+        cost = 3
 
         ai_will_do = {
             factor = 1
@@ -1584,46 +1585,7 @@ focus_tree = {
 				division_template = "District Force"
 				is_locked = no
 			}
-            284 = {   
-                add_building_construction = {
-                    type = bunker
-                    level = 2
-                    province = {
-                        all_provinces = yes
-                        limit_to_victory_point = yes
-                    }
-                }
-            }
-            1039 = {
-                add_building_construction = {
-                    type = bunker
-                    level = 1
-                    province = {
-                        all_provinces = yes
-                        limit_to_supply_node = yes
-                    } 
-                }
-            }
-            723 = {
-                add_building_construction = {
-                    type = bunker
-                    level = 1
-                    province = {
-                        all_provinces = yes
-                        limit_to_supply_node = yes
-                    }
-                }
-            }
-            1040 = {
-                add_building_construction = {
-                    type = bunker
-                    level = 1
-                    province = {
-                        all_provinces = yes
-                        limit_to_supply_node = yes
-                    }
-                }
-           	}
+            add_war_support = 0.1
         }
     }
 
@@ -1636,19 +1598,23 @@ focus_tree = {
         relative_position_id = NZL_defence_of_new_zealand
 
         available = {
-            has_war = yes
-            523 = {
-                is_controlled_by = JAP
-            }
-            1004 = {
-                is_controlled_by = JAP
+            OR = {
+                285 = { CONTROLLER = { has_war_with = ROOT } }
+                989 = { CONTROLLER = { has_war_with = ROOT } }
+                521 = { CONTROLLER = { has_war_with = ROOT } }
+                523 = { CONTROLLER = { has_war_with = ROOT } }
+                635 = { CONTROLLER = { has_war_with = ROOT } }
+                634 = { CONTROLLER = { has_war_with = ROOT } }
+                636 = { CONTROLLER = { has_war_with = ROOT } }
+                726 = { CONTROLLER = { has_war_with = ROOT } }
+                surrender_progress > 0
             }
         }
 
         bypass = {
         }
 
-        cost = 5
+        cost = 1
 
         ai_will_do = {
             factor = 1
@@ -1680,28 +1646,41 @@ focus_tree = {
         
         }
 
-        cost = 4
+        cost = 2
 
         ai_will_do = {
             factor = 1
         }
         
         completion_reward = {
-            1040 = {
-                add_building_construction = {
-                    type = bunker
-                    level = 2
-                    province = {
-                        all_provinces = yes
-                        limit_to_victory_point = yes
+            custom_effect_tooltip = NZL_emergency_fortifications_tt
+            hidden_effect = {
+                every_owned_state = {
+                    limit = {
+                        is_controlled_by = ROOT
+                        OR = {
+                            state = 284
+                            state = 723
+                            state = 1039
+                            state = 1040
+                        }
+                    }
+                    add_building_construction = {
+                        type = bunker
+                        level = 2
+                        province = {
+                            all_provinces = yes
+                            limit_to_victory_point = yes
+                        }
+                        instant_build = yes
                     }
                 }
-                add_building_construction = {
-                    type = coastal_bunker
-                    level = 1
-                    province = {
-                        all_provinces = yes
-                        limit_to_naval_base = yes
+                284 = {
+                    add_building_construction = {
+                        type = bunker
+                        level = 1
+                        province = 1814
+                        instant_build = yes
                     }
                 }
             }
@@ -1722,7 +1701,7 @@ focus_tree = {
         bypass = {
         }
 
-        cost = 5
+        cost = 2
 
         ai_will_do = {
             factor = 1 
@@ -1735,6 +1714,7 @@ focus_tree = {
             FOCUS_FILTER_NAVY
         }
         completion_reward = {
+            custom_effect_tooltip = NZL_build_up_coastal_defences_tt
             every_owned_state = {
 				limit = {
 					is_controlled_by = ROOT
@@ -1749,29 +1729,9 @@ focus_tree = {
 					type = coastal_bunker
 					province = {
 						all_provinces = yes
-						limit_to_coastal = yes
-					}
-					level = 2
-					instant_build = yes
-				}
-
-				#Extra fort on naval bases
-				add_building_construction = {
-					type = bunker
-					province = {
-						all_provinces = yes
 						limit_to_naval_base = yes
 					}
-					level = 2
-					instant_build = yes
-				}
-				add_building_construction = {
-					type = coastal_bunker
-					province = {
-						all_provinces = yes
-						limit_to_naval_base = yes
-					}
-					level = 2
+					level = 3
 					instant_build = yes
 				}
 			}
@@ -1779,7 +1739,7 @@ focus_tree = {
     }
 
     focus = {
-        id = NZL_ask_for_reinforcements
+        id = NZL_bring_up_reinforcements
         icon = GFX_focus_generic_little_entente
         prerequisite = { focus = NZL_emergency_fortifications focus = NZL_build_up_coastal_defences }
         x = 1
@@ -1788,13 +1748,18 @@ focus_tree = {
 
         available = {
             tag = NZL
-            controls_state = 284 
+            OR = {
+                controls_state = 1039
+                controls_state = 284
+                controls_state = 723
+                controls_state = 1040
+            }
         }
         bypass = {
         
         }
 
-        cost = 2
+        cost = 1
 
         ai_will_do = {
             factor = 1
@@ -1806,17 +1771,104 @@ focus_tree = {
         search_filters = {}
         
         completion_reward = {
-            
+			custom_effect_tooltip = NZL_bring_up_reinforcements_tt
+			hidden_effect = {
+				set_country_flag = home_guard_deployed
+				division_template = {
+					name = "Home Guard Unit"
+					division_names_group = NZL_GAR_01
+					priority = 0 # garrison
+
+					is_locked = yes
+
+					regiments = {
+						heavy_militia = { x = 0 y = 0 }
+						militia = { x = 0 y = 1 }
+						militia = { x = 0 y = 2 }
+
+						heavy_militia = { x = 1 y = 0 }
+						militia = { x = 1 y = 1 }
+						militia = { x = 1 y = 2 }
+					}
+
+					support = {
+						normal_engineer = { x = 0 y = 0 }
+						horse_logistics_company = { x = 0 y = 1 }
+
+						recon = { x = 1 y = 0 }
+					}
+				}
+                if = {
+                    limit = {
+                        284 = { is_controlled_by = ROOT }
+                    }
+                    hidden_effect = {
+                        284 = {
+                            create_unit = {
+                                division = "division_template=\"Home Guard Unit\" start_experience_factor=0.3 start_equipment_factor=0.75 force_equipment_variants={eng_inf_1={owner=\"NZL\"}}"
+                                owner = ROOT
+                                count = 1
+                                prioritize_location = 1814
+                            }
+                        }
+                    }
+                }
+                if = {
+                    limit = {
+                        1039 = { is_controlled_by = ROOT }
+                    }
+                    hidden_effect = {
+                        1039 = {
+                            create_unit = {
+                                division = "division_template=\"Home Guard Unit\" start_experience_factor=0.3 start_equipment_factor=0.75 force_equipment_variants={eng_inf_1={owner=\"NZL\"}}"
+                                owner = ROOT
+                                count = 1
+                                prioritize_location = 4543
+                            }
+                        }
+                    }
+                }
+                if = {
+                    limit = {
+                        723 = { is_controlled_by = ROOT }
+                    }
+                    hidden_effect = {
+                        723 = {
+                            create_unit = {
+                                division = "division_template=\"Home Guard Unit\" start_experience_factor=0.3 start_equipment_factor=0.75 force_equipment_variants={eng_inf_1={owner=\"NZL\"}}"
+                                owner = ROOT
+                                count = 1
+                                prioritize_location = 12632
+                            }
+                        }
+                    }
+                }
+                if = {
+                    limit = {
+                        1040 = { is_controlled_by = ROOT }
+                    }
+                    hidden_effect = {
+                        1040 = {
+                            create_unit = {
+                                division = "division_template=\"Home Guard Unit\" start_experience_factor=0.3 start_equipment_factor=0.75 force_equipment_variants={eng_inf_1={owner=\"NZL\"}}"
+                                owner = ROOT
+                                count = 1
+                                prioritize_location = 2211
+                            }
+                        }
+                    }
+                }
+			}
         }
     }
 
     focus = {
-        id = NZL_scorch_earth
+        id = NZL_scorch_earth_tactics
         icon = GFX_goal_generic_scorch_earth
-        prerequisite = { focus = NZL_ask_for_reinforcements }
+        prerequisite = { focus = NZL_bring_up_reinforcements }
         x = 0
         y = 1
-        relative_position_id = NZL_ask_for_reinforcements
+        relative_position_id = NZL_bring_up_reinforcements
 
         available = {
             
@@ -1825,51 +1877,27 @@ focus_tree = {
            
         }
 
-        cost = 4
+        cost = 1
 
         ai_will_do = {
             factor = 1
         }
 
         completion_reward = {
-            284 = {
-                damage_building = {
-                    type = infrastructure
-                    damage = 2
-                }
-                damage_building = {
-                    type = industrial_complex
-                    damage = 3
-                }
-                damage_building = {
-                    type = naval_base
-                    damage = 4
-                }
-            }
-            1039 = {
-                damage_building = {
-                    type = infrastructure
-                    damage = 2
-                }
-                damage_building = {
-                    type = naval_base
-                    damage = 2
-                }
-                damage_building = {
-                    type = industrial_complex
-                    damage = 1
-                }
-            }
+            unlock_decision_tooltip = NZL_scorch_earth_auckland
+            unlock_decision_tooltip = NZL_scorch_earth_wellington
+            unlock_decision_tooltip = NZL_scorch_earth_nelson
+            unlock_decision_tooltip = NZL_scorch_earth_otago
         }
     }
 
     focus = {
         id = NZL_retreat_to_the_south_island
         icon = GFX_focus_generic_strike_at_democracy1
-        prerequisite = { focus = NZL_scorch_earth }
+        prerequisite = { focus = NZL_scorch_earth_tactics }
         x = 0
         y = 1
-        relative_position_id = NZL_scorch_earth
+        relative_position_id = NZL_scorch_earth_tactics
 
         available = {
             tag = NZL
@@ -1879,7 +1907,7 @@ focus_tree = {
            
         }
 
-        cost = 3
+        cost = 1
 
         ai_will_do = {
             factor = 1
@@ -1924,27 +1952,20 @@ focus_tree = {
             FOCUS_FILTER_ARMY
         }
         completion_reward = {
-            1040 = {
-                add_building_construction = {
-                    type = arms_factory
-                    level = 2
-                    instant_build = yes
-                }
-            }
-            1039 = {
+			random_owned_controlled_state = {
+				prioritize = { 1039 }
+				add_extra_state_shared_building_slots = 3
+				add_building_construction = {
+					type = arms_factory
+					level = 2
+					instant_build = yes
+				}
                 add_building_construction = {
                     type = dockyard
-                    level = 2
+                    level = 1
                     instant_build = yes
                 }
-            }
-            284 = {
-                add_building_construction = {
-                    type = air_base
-                    level = 2
-                    instant_build = yes
-                }
-            }
+			}
         }
     }
 
@@ -2011,6 +2032,7 @@ focus_tree = {
         relative_position_id = NZL_establish_the_rnzaf
     
         available = {
+            ENG = { has_tech = eng_fighter_1 }
         }
     
         bypass = {
@@ -2029,7 +2051,7 @@ focus_tree = {
             FOCUS_FILTER_AIRFORCE
         }      
         completion_reward = {
-            #nimrods
+			add_equipment_to_stockpile = { type = eng_fighter_equipment_1 amount = 30 producer = ENG }
         }
     }
     
@@ -2042,6 +2064,8 @@ focus_tree = {
         relative_position_id = NZL_establish_the_rnzaf
     
         available = {
+            ENG = { has_tech = eng_cas_1 }
+            ENG = { has_tech = eng_tactical_bomber_3 }
         }
     
         bypass = {
@@ -2060,7 +2084,8 @@ focus_tree = {
             FOCUS_FILTER_AIRFORCE
         } 
         completion_reward = {
-            #wellington and gordon
+			add_equipment_to_stockpile = { type = eng_cas_equipment_1 amount = 30 producer = ENG }
+			add_equipment_to_stockpile = { type = eng_tac_bomber_equipment_3 amount = 30 producer = ENG }
         }
     }
 
@@ -2073,6 +2098,8 @@ focus_tree = {
         relative_position_id = NZL_establish_the_rnzaf
     
         available = {
+            ENG = { has_tech = eng_naval_bomber_1 }
+            ENG = { has_tech = eng_patrol_1 }
         }
     
         bypass = {
@@ -2091,16 +2118,15 @@ focus_tree = {
             FOCUS_FILTER_AIRFORCE
         }      
         completion_reward = {
-            #patrol planes
+			add_equipment_to_stockpile = { type = eng_nav_bomber_equipment_1 amount = 30 producer = ENG }
+			add_equipment_to_stockpile = { type = eng_patrol_equipment_1 amount = 25 producer = ENG }
         }
     }
 
     focus = {
         id = NZL_establish_new_training_bases
         icon = GFX_focus_generic_air_bases
-        prerequisite = { focus = NZL_order_fighters }
-        prerequisite = { focus = NZL_order_bombers }
-        prerequisite = { focus = NZL_form_a_coastal_wing }
+        prerequisite = { focus = NZL_order_fighters focus = NZL_order_bombers focus = NZL_form_a_coastal_wing }
         x = 0
         y = 2
         relative_position_id = NZL_establish_the_rnzaf
@@ -2130,14 +2156,36 @@ focus_tree = {
                 uses = 2
                 category = air_doctrine
             }
-    
-            284 = {
-                add_building_construction = {
-                    type = air_base
-                    level = 2
-                    instant_build = yes
+			random_owned_controlled_state = {
+				prioritize = { 1039 }
+                284 = {
+                    add_building_construction = {
+                        type = air_base
+                        level = 2
+                        instant_build = yes
+                    }
                 }
-            }
+			}
+			random_owned_controlled_state = {
+				prioritize = { 284 }
+                284 = {
+                    add_building_construction = {
+                        type = air_base
+                        level = 2
+                        instant_build = yes
+                    }
+                }
+			}
+			random_owned_controlled_state = {
+				prioritize = { 723 }
+                284 = {
+                    add_building_construction = {
+                        type = air_base
+                        level = 2
+                        instant_build = yes
+                    }
+                }
+			}
         }
     }
 
@@ -2358,6 +2406,7 @@ focus_tree = {
         relative_position_id = NZL_new_air_budget
     
         available = {
+            has_Tech = radio_detection
         }
     
         bypass = {
@@ -2376,34 +2425,54 @@ focus_tree = {
             FOCUS_FILTER_AIRFORCE
         }
         completion_reward = {
-            1040 = {
-                add_building_construction = {
-                    type = radar_station
-                    level = 1
-                    instant_build = yes
-                }
-            }
-            1039 = {
-                add_building_construction = {
-                    type = radar_station
-                    level = 1
-                    instant_build = yes
-                }
-            }
-            284 = {
-                add_building_construction = {
-                    type = radar_station
-                    level = 1
-                    instant_build = yes
-                }
-            }
-            723 = {
-                add_building_construction = {
-                    type = radar_station
-                    level = 1
-                    instant_build = yes
-                }
-            }
+			add_tech_bonus = {
+				name = NZL_new_zealand_radar_program
+				bonus = 0.5
+				uses = 2
+				category = radar_tech
+			}
+			if = {
+				limit = {
+					1039 = {
+						radar_station < 5
+					}
+				}
+				1039 = {
+					add_building_construction = {
+						type = radar_station
+						level = 1
+						instant_build = yes
+					}
+				}
+			}
+			if = {
+				limit = {
+					284 = {
+						radar_station < 5
+					}
+				}
+				284 = {
+					add_building_construction = {
+						type = radar_station
+						level = 1
+						instant_build = yes
+					}
+				}
+			}
+			if = {
+				limit = {
+					723 = {
+						radar_station < 5
+					}
+				}
+				723 = {
+					add_building_construction = {
+						type = radar_station
+						level = 1
+						instant_build = yes
+					}
+				}
+			}
         }
     }
 
@@ -2443,6 +2512,7 @@ focus_tree = {
                         state = 1039
                         state = 1040
                     }
+                    anti_air_building < 11
                 }
                 add_building_construction = {
                     type = anti_air_building
