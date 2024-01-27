@@ -70,7 +70,7 @@ NDefines.NCharacter.GENIUS_ADVISOR_MIN_RANK = 7
 
 
 
-NCountry.NCountry.BASE_RESEARCH_SLOTS = 1											
+NDefines.NCountry.BASE_RESEARCH_SLOTS = 1											
 NDefines.NCountry.SUPPLY_FROM_DAMAGED_INFRA = 0.01              					-- damaged infrastructure counts as this in supply calcs
 NDefines.NCountry.SUPPLY_PATH_MAX_DISTANCE = 15		    							-- When supply route reach more than X nodes the manpower+equipment delivery speed reach 100% penalty.
 
