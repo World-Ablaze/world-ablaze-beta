@@ -484,6 +484,7 @@ focus_tree = {
 		completion_reward = {
 			add_stability = 0.1
 			add_ideas = neutrality_idea
+			custom_effect_tooltip = BUL_policy_of_neutrality_tt
 		}
 	}
 
@@ -799,7 +800,7 @@ focus_tree = {
 					set_global_flag = BUL_fatherland_front_coup_flag
 					set_country_flag = BUL_ff_civil_war_flag
 					set_variable = { BUL_communist_support_before_cw = party_popularity@communism }
-					set_variable = { BUL_ff_coup_size = 0.1 }
+					set_variable = { BUL_ff_coup_size = 1 }
 					#Default state
 					if = {
 						limit = {
@@ -818,27 +819,27 @@ focus_tree = {
 						limit = {
 							check_variable = { BUL_zveno_attitude = -4 }
 						}
-						set_temp_variable = { a = BUL_zveno_influence }
-						multiply_temp_variable = { a = 0.05 }
-						add_to_temp_variable = { BUL_ff_coup_size = a }
+						add_to_variable = { BUL_ff_coup_size = 1 }
+						48 = { set_state_flag = BUL_ff_state_flag }
+						set_country_flag = BUL_zveno_joined_ff_flag
 					}
 					#Bonuses from BS
 					if = {
 						limit = {
 							check_variable = { BUL_socialist_attitude = -4 }
 						}
-						set_temp_variable = { a = BUL_socialist_influence }
-						multiply_temp_variable = { a = 0.05 }
-						add_to_temp_variable = { BUL_ff_coup_size = a }
+						add_to_variable = { BUL_ff_coup_size = 1 }
+						212 = { set_state_flag = BUL_ff_state_flag }
+						set_country_flag = BUL_bs_joined_ff_flag
 					}
 					#Bonuses from Agrarian Union
 					if = {
 						limit = {
 							check_variable = { BUL_agrarian_attitude = -4 }
 						}
-						set_temp_variable = { a = BUL_agrarian_influence }
-						multiply_temp_variable = { a = 0.05 }
-						add_to_temp_variable = { BUL_ff_coup_size = a }
+						add_to_variable = { BUL_ff_coup_size = 1 }
+						875 = { set_state_flag = BUL_ff_state_flag }
+						set_country_flag = BUL_bzns_joined_ff_flag
 					}
 
 					if = {
@@ -870,14 +871,56 @@ focus_tree = {
 							}
 						}
 					}
-					#START CIVIL WAR
-					start_civil_war = {
-						ideology = communism
-						size = BUL_ff_coup_size
-						capital = 211
-						states = all
-						states_filter = {
-							has_state_flag = BUL_ff_state_flag
+					#Set FF capital based on the states they get in the split
+					if = {
+						limit = {
+							48 = { has_state_flag = BUL_ff_state_flag } #Sofia is FF's capital
+						}
+						#START CIVIL WAR
+						start_civil_war = {
+							ideology = communism
+							size = 0.1
+							army_ratio = 0
+							air_ratio = 0
+							navy_ratio = 0
+							capital = 48
+							states = all
+							states_filter = {
+								has_state_flag = BUL_ff_state_flag
+							}
+						}
+					}
+					else_if = {
+						limit = {
+							212 = { has_state_flag = BUL_ff_state_flag } #Plovdiv is FF's capital
+						}
+						#START CIVIL WAR
+						start_civil_war = {
+							ideology = communism
+							size = 0.1
+							army_ratio = 0
+							air_ratio = 0
+							navy_ratio = 0
+							capital = 212
+							states = all
+							states_filter = {
+								has_state_flag = BUL_ff_state_flag
+							}
+						}
+					}
+					else = {	#Varna is FF's capital
+						#START CIVIL WAR
+						start_civil_war = {
+							ideology = communism
+							size = 0.1
+							army_ratio = 0
+							air_ratio = 0
+							navy_ratio = 0
+							capital = 211
+							states = all
+							states_filter = {
+								has_state_flag = BUL_ff_state_flag
+							}
 						}
 					}
 
@@ -889,28 +932,37 @@ focus_tree = {
 						}
 						set_country_flag = BUL_fatherland_front_flag
 						set_cosmetic_tag = BUL_ff_bulgaria
+	
+						division_template = {
+							name = "Fatherland Front Infantry"
+							priority = 1
+							is_locked = yes
+							division_names_group = BUL_INF_04
+							regiments = {
+								heavy_infantry = { x = 0 y = 0 }
+								infantry = { x = 0 y = 1 }
+								infantry = { x = 0 y = 2 }
 
+								heavy_infantry = { x = 1 y = 0 }
+								infantry = { x = 1 y = 1 }
+								infantry = { x = 1 y = 2 }
+							}
+
+							support = {
+								normal_engineer = { x = 0 y = 0 }
+								horse_logistics_company = { x = 0 y = 1 }
+							}
+						}
+	
 						division_template = {
 							name = "Fatherland Front Militia"
 							priority = 1
 							is_locked = yes
 							division_names_group = BUL_INF_04
 							regiments = {
-								infantry = { x = 0 y = 0 }
-								infantry = { x = 0 y = 1 }
-								infantry = { x = 0 y = 2 }
-							}
-						}
-
-						division_template = {
-							name = "Fatherland Front Partisans"
-							priority = 1
-							is_locked = yes
-							division_names_group = BUL_INF_06
-							regiments = {
-								infantry = { x = 0 y = 0 }
-								infantry = { x = 0 y = 1 }
-								infantry = { x = 0 y = 1 }
+								militia = { x = 0 y = 0 }
+								militia = { x = 0 y = 1 }
+								militia = { x = 0 y = 1 }
 							}
 						}
 
@@ -957,37 +1009,27 @@ focus_tree = {
 								}
 							}
 						}
-						#Bonus from BS in the FF
 						if = {
 							limit = {
-								has_country_flag = BUL_bs_joined_ff_flag
 								owns_state = 212
 							}
 							212 = {
 								create_unit = {
-									division = "division_template = \"Fatherland Front Militia\" start_experience_factor = 0.15"
-									owner = PREV
-								}
-								create_unit = {
-									division = "division_template = \"Fatherland Front Militia\" start_experience_factor = 0.15"
-									owner = PREV
+									division = "division_template = \"Fatherland Front Infantry\" start_experience_factor = 0.15 start_equipment_factor = 1.0"
+									owner = ROOT
+									count = BUL_ff_coup_size
 								}
 							}
 						}
-						#Bonus from BZNS in the FF
-						if = {
+						else_if = {
 							limit = {
-								has_country_flag = BUL_bs_joined_ff_flag
-								owns_state = 801
+								owns_state = 211
 							}
-							801 = {
+							211 = {
 								create_unit = {
-									division = "division_template = \"Fatherland Front Militia\" start_experience_factor = 0.1"
-									owner = PREV
-								}
-								create_unit = {
-									division = "division_template = \"Fatherland Front Militia\" start_experience_factor = 0.1"
-									owner = PREV
+									division = "division_template = \"Fatherland Front Infantry\" start_experience_factor = 0.15 start_equipment_factor = 1.0"
+									owner = ROOT
+									count = BUL_ff_coup_size
 								}
 							}
 						}
@@ -1281,6 +1323,7 @@ focus_tree = {
 		y = 1
 		relative_position_id = BUL_arrest_leaders
 		available = {
+
 			threat > 0.15
 		}
 
@@ -1614,6 +1657,7 @@ focus_tree = {
 		completion_reward = {
 			add_state_core = 851
 			add_state_core = 106
+			add_state_core = 731
 			add_war_support = 0.05
 			if = {
 				limit = {
@@ -2822,6 +2866,7 @@ focus_tree = {
 		completion_reward = {
 			army_experience = 25
 			add_political_power = 50
+			add_manpower = 2000
 		}
 	}
 

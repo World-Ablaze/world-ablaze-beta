@@ -82,7 +82,6 @@ reserve_divisions = {
 					has_dlc = "No Step Back"
 				}
 				GER = {
-					add_equipment_to_stockpile = { type = ger_inf_0 amount = 20000 producer = GER }
 					add_equipment_to_stockpile = { type = tank_ger_light_chassis_1 amount = 1000 producer = GER }
 				}
 			}
@@ -91,12 +90,45 @@ reserve_divisions = {
 					tag = GER
 				}
 				GER = {
-					add_equipment_to_stockpile = { type = ger_inf_0 amount = 20000 producer = GER }
 					add_equipment_to_stockpile = { type = ger_light_equipment_0 amount = 1000 producer = GER }
 				}
 			}
 		}
 		remove_effect = {
+		}
+	}
+
+	USA_activate_wwi_stockpiles = {
+		icon = generic_break_treaty
+
+		allowed = {
+			tag = USA
+		}
+
+		available = {
+			has_completed_focus = USA_cash_and_carry_act
+			check_variable = { ROOT.reserves_equipment > 0 }
+		}
+
+		visible = {
+			has_completed_focus = USA_declare_limited_national_emergency
+			check_variable = { ROOT.reserves_equipment > 0 }
+		}
+
+		cost = 50
+
+		ai_will_do = {
+			base = 400
+		}
+
+		fire_only_once = no
+
+		complete_effect = {
+			add_equipment_to_stockpile = { type = usa_inf_1 amount = 4000 producer = USA }
+			add_equipment_to_stockpile = { type = support_equipment amount = 1000 producer = USA }
+			add_equipment_to_stockpile = { type = usa_art_1 amount = 300 producer = USA }
+			custom_effect_tooltip = activate_wwi_stockpiles_tt
+			add_to_variable = { ROOT.reserves_equipment = -0.05 }
 		}
 	}
 
@@ -428,6 +460,7 @@ reserve_divisions = {
 					}
 				}
 				custom_effect_tooltip = recruiting_reserves_special
+				set_variable = { ROOT.reserves_equipment = 0.5 }
 			}
 			else = {
 				custom_effect_tooltip = recruiting_reserves
@@ -2635,12 +2668,43 @@ reserve_divisions = {
 							NOT = { has_country_flag = infantry_template_usa }
 						}
 					}
-					capital_scope = {
-						create_unit = {
-							division = "division_template=\"US Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.1 force_equipment_variants={usa_inf_1={owner=\"USA\"}usa_hv_inf_1={owner=\"USA\"}usa_art_1={owner=\"USA\"}usa_hv_art_1={owner=\"USA\"}usa_at_1={owner=\"USA\"}}"
-							owner = ROOT
-							count = 10
-							prioritize_location = 3957
+					if = {
+						limit = {
+							check_variable = { ROOT.reserves_equipment = 0.1 }
+						}
+						capital_scope = {
+							create_unit = {
+								division = "division_template=\"US Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.1 force_equipment_variants={usa_inf_1={owner=\"USA\"}usa_hv_inf_1={owner=\"USA\"}usa_art_1={owner=\"USA\"}usa_hv_art_1={owner=\"USA\"}usa_at_1={owner=\"USA\"}}"
+								owner = ROOT
+								count = 10
+								prioritize_location = 3957
+							}
+						}
+					}
+					else_if = {
+						limit = {
+							check_variable = { ROOT.reserves_equipment = 0.05 }
+						}
+						capital_scope = {
+							create_unit = {
+								division = "division_template=\"US Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.05 force_equipment_variants={usa_inf_1={owner=\"USA\"}usa_hv_inf_1={owner=\"USA\"}usa_art_1={owner=\"USA\"}usa_hv_art_1={owner=\"USA\"}usa_at_1={owner=\"USA\"}}"
+								owner = ROOT
+								count = 10
+								prioritize_location = 3957
+							}
+						}
+					}
+					else_if = {
+						limit = {
+							check_variable = { ROOT.reserves_equipment = 0 }
+						}
+						capital_scope = {
+							create_unit = {
+								division = "division_template=\"US Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.01 force_equipment_variants={usa_inf_1={owner=\"USA\"}usa_hv_inf_1={owner=\"USA\"}usa_art_1={owner=\"USA\"}usa_hv_art_1={owner=\"USA\"}usa_at_1={owner=\"USA\"}}"
+								owner = ROOT
+								count = 10
+								prioritize_location = 3957
+							}
 						}
 					}
 				}
@@ -3924,19 +3988,21 @@ reserve_divisions = {
 		}
 		available = {
 			OR = {
-				has_war = yes
+				AND = {
+					has_war = yes
+					any_enemy_country = {
+						OR = {
+							ic_ratio = {
+								tag = ROOT
+								ratio > 0.25
+							}
+							is_major = yes
+						}
+					}
+				}
 				has_country_flag = early_reserve_mobilization_flag
 			}
 			has_manpower > 150499
-			any_enemy_country = {
-				OR = {
-					ic_ratio = {
-						tag = ROOT
-						ratio > 0.25
-					}
-					is_major = yes
-				}
-			}
 			if = {
 				limit = {
 					original_tag = SOV
@@ -6208,6 +6274,47 @@ reserve_divisions = {
 			}
 			hidden_effect = {
 				set_country_flag = ENG_home_guard_disbanded
+			}
+		}
+	}
+
+	NZL_disband_the_home_guard = {
+		icon = generic_political_discourse
+
+		allowed = {
+			original_tag = ENG
+		}
+
+		available = {
+		}
+		visible = {
+			has_country_flag = home_guard_deployed
+			has_war = no
+		}
+
+		days_remove = 90
+		is_good = yes
+		cost = 50
+
+		cancel_if_not_visible = yes
+
+		ai_will_do = {
+			factor = 10
+
+			modifier = {
+				factor = 0
+				has_war = yes
+			}
+		}
+
+		complete_effect = {
+			custom_effect_tooltip = NZL_home_guard_disbanded_tt
+			delete_unit_template_and_units = {
+				division_template = "Home Guard Unit"
+				disband = yes
+			}
+			hidden_effect = {
+				set_country_flag = NZL_home_guard_disbanded
 			}
 		}
 	}
