@@ -276,7 +276,7 @@ NDefines.NMilitary.GARRISON_ORDER_ARMY_CAP_FACTOR = 1.0								-- armies gets in
 
 NDefines.NMilitary.PROMOTE_LEADER_CP_COST = 20.0									-- cost of promoting a leader
 
-NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_ATTACK = -0.50    					-- attack combat penalty for attacker if out of supply
+NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_ATTACK = -1.0    					-- attack combat penalty for attacker if out of supply
 NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_DEFEND = -0.80     					-- defend combat penalty for attacker if out of supply
 NDefines.NMilitary.COMBAT_SUPPLY_LACK_DEFENDER_ATTACK = -0.40     					-- attack combat penalty for defender if out of supply
 NDefines.NMilitary.COMBAT_SUPPLY_LACK_DEFENDER_DEFEND = -0.20     					-- defend combat penalty for defender if out of supply
