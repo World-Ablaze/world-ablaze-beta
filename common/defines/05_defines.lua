@@ -233,7 +233,7 @@ NDefines.NResistance.RESISTANCE_POP_VERY_LOW_CUTOFF = 200000
 
 NDefines.NResistance.SUPPRESSION_NEEDED_BY_RESISTANCE_POINT = 0.75 -- Number of suppression point we need for each 1% of resistance
 NDefines.NResistance.SUPPRESSION_NEEDED_LOWER_CAP = 15.0	-- if resistance is lower than this value then we always act as though it is at the define for the purpose of suppresion requirements
-NDefines.NResistance.SUPPRESSION_NEEDED_UPPER_CAP = 40.0 -- if resistance is greater than this value then we always act as though it is at the define for the purpose of suppresion requirements
+NDefines.NResistance.SUPPRESSION_NEEDED_UPPER_CAP = 30.0 -- if resistance is greater than this value then we always act as though it is at the define for the purpose of suppresion requirements
 
 NDefines.NResistance.GARRISON_STR_POW_MANPOWER = 1.4	--Scales impact of manpower deficiency by raising that deficiency to the number here. Formula: efficiency = 1.0 - manpower_deficiency^GARRISON_STR_POW_MANPOWER
 NDefines.NResistance.GARRISON_STR_POW_EQUIPMENT = 1.4	--Scales impact of euqipment deficiency by raising that deficiency to the number here. Formula: efficiency = 1.0 - equipment_deficiency^GARRISON_STR_POW_EQUIPMENT
@@ -503,8 +503,8 @@ NDefines.NAir.ACCIDENT_EFFECT_MULT = 0.0005											-- Multiplier for balancin
 
 --NDefines.NAir.EFFICIENCY_REGION_CHANGE_DAILY_GAIN_DEFAULT = 0.1					-- Default how much efficiency to regain per day. Gain applied hourly.
 NDefines.NAir.AIR_WING_ATTACK_LOGISTICS_TRUCK_DAMAGE_FACTOR = 0.017
-NDefines.NAir.AIR_WING_ATTACK_LOGISTICS_TRAIN_DAMAGE_FACTOR = 0.007
-NDefines.NAir.AIR_WING_ATTACK_LOGISTICS_TRAIN_DAMAGE_DISRUPTION_MITIGATION = 3.0 	-- Multiply Train Damage by (Smooth / (Smooth + (Disruption * Mitigation)))
+NDefines.NAir.AIR_WING_ATTACK_LOGISTICS_TRAIN_DAMAGE_FACTOR = 0.005
+NDefines.NAir.AIR_WING_ATTACK_LOGISTICS_TRAIN_DAMAGE_DISRUPTION_MITIGATION = 20.0 	-- Multiply Train Damage by (Smooth / (Smooth + (Disruption * Mitigation)))
 NDefines.NAir.AIR_WING_ATTACK_LOGISTICS_RAILWAY_DAMAGE_SPILL_FACTOR = 0.002 		-- Portion of train damage to additionally deal to railways
 NDefines.NAir.AIR_WING_ATTACK_LOGISTICS_INFRA_DAMAGE_SPILL_FACTOR = 0.0 			-- Portion of truck damage to additionally deal to infrastructure
 
