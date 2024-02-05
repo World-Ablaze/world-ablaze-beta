@@ -898,7 +898,7 @@ focus_tree = {
 		completion_reward = {
 			if = {
 				limit = { has_aat = yes }
-				unlock_military_industrial_organization_tooltip = mio:AAST_tugan_aircraft_organization
+				unlock_military_industrial_organization_tooltip = mio:AST_tugan_aircraft_organization
 			}
 			else = {
 				custom_effect_tooltip = available_designer
@@ -1530,21 +1530,6 @@ focus_tree = {
 				uses = 2
 				category = industry
 			}
-			if = {
-				limit = {
-					USA = { has_tech = usa_fighter_multirole_3 }
-				}
-				add_equipment_to_stockpile = { type = usa_fighter_multirole_equipment_3 amount = 250 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_fighter_multirole_2 }
-				}
-				add_equipment_to_stockpile = { type = usa_fighter_multirole_equipment_2 amount = 250 producer = USA }
-			}
-			else = {
-				add_equipment_to_stockpile = { type = usa_fighter_multirole_equipment_1 amount = 250 producer = USA }
-			}
 		}
 	}
 
@@ -1653,7 +1638,6 @@ focus_tree = {
 
 		completion_reward = {
 			AST = {
-				army_experience = 10
 				add_doctrine_cost_reduction = {
 					name = AST_cooperation_with_new_zealand
 					cost_reduction = 0.99
@@ -1663,7 +1647,6 @@ focus_tree = {
 			}
 			effect_tooltip = {
 				NZL = {
-					army_experience = 10
 					add_doctrine_cost_reduction = {
 						name = AST_cooperation_with_new_zealand
 						cost_reduction = 0.99
@@ -1755,8 +1738,14 @@ focus_tree = {
 
 
 		completion_reward = {
+			army_experience = 35
+			air_experience = 35
+			navy_experience = 35
 			NZL = {
-				country_event = { id = ast_armor.804 }
+			#	country_event = { id = ast_armor.804 }
+				army_experience = 35
+				air_experience = 35
+				navy_experience = 35
 			}
 		}
 	}
@@ -3857,9 +3846,11 @@ focus_tree = {
 
 
 		completion_reward = {
+			custom_effect_tooltip = AST_expand_the_air_fleet_tt
 			unlock_decision_tooltip = AST_purchase_the_buffalo
-			unlock_decision_tooltip = AST_purchase_the_kittyhawk
-			unlock_decision_tooltip = AST_purchase_the_aircobra
+			unlock_decision_tooltip = AST_purchase_the_hawk
+			unlock_decision_tooltip = AST_purchase_the_nomad
+			unlock_decision_tooltip = AST_purchase_the_lexington
 		}
 	}
 
@@ -4053,7 +4044,7 @@ focus_tree = {
 				mio:AST_com_aircraft_corporation_organization = {
 					complete_mio_trait = AST_mio_trait_recruit_lawrence_wackett
 				}
-				mio:AAST_tugan_aircraft_organization = {
+				mio:AST_tugan_aircraft_organization = {
 					complete_mio_trait = AST_mio_trait_recruit_lawrence_wackett
 				}
 			}
@@ -5614,7 +5605,7 @@ focus_tree = {
 				has_war_with = ENG
 				has_war_with = USA
 			}
-			always = no
+			#always = no
         }
 
         bypass = {
@@ -5643,7 +5634,7 @@ focus_tree = {
         prerequisite = { focus = AST_defence_of_australia }
         x = 0
         y = 1
-        relative_position_id = AST_defence_of_new_zealand
+        relative_position_id = AST_defence_of_australia
 
         available = {
             OR = {
@@ -5701,7 +5692,7 @@ focus_tree = {
         
         }
 
-        cost = 2
+        cost = 1
 
         ai_will_do = {
             factor = 1
@@ -5726,7 +5717,7 @@ focus_tree = {
         bypass = {
         }
 
-        cost = 2
+        cost = 4
 
         ai_will_do = {
             factor = 1 
@@ -5739,7 +5730,20 @@ focus_tree = {
             FOCUS_FILTER_NAVY
         }
         completion_reward = {
-            unlock_decision_category_tooltip = AST_build_up_coastal_defences_fake_decisions_cat
+            every_state = {
+				limit = {
+					is_core_of = ROOT
+					is_controlled_by = ROOT
+				}
+				add_building_construction = {
+					type = coastal_bunker
+					level = 2
+					province = {
+						all_provinces = yes
+						limit_to_naval_base = yes
+					}
+				}
+			}
         }
     }
 
@@ -5769,7 +5773,50 @@ focus_tree = {
         search_filters = {}
         
         completion_reward = {
+			custom_effect_tooltip = NZL_call_up_reinforcements_tt
+			hidden_effect = {
+				set_country_flag = home_guard_deployed
+				division_template = {
+					name = "Home Guard Unit"
+					division_names_group = AST_GAR_01
+					priority = 0 # garrison
 
+					is_locked = yes
+
+					regiments = {
+						heavy_militia = { x = 0 y = 0 }
+						militia = { x = 0 y = 1 }
+						militia = { x = 0 y = 2 }
+
+						heavy_militia = { x = 1 y = 0 }
+						militia = { x = 1 y = 1 }
+						militia = { x = 1 y = 2 }
+					}
+
+					support = {
+						normal_engineer = { x = 0 y = 0 }
+						horse_logistics_company = { x = 0 y = 1 }
+
+						recon = { x = 1 y = 0 }
+					}
+				}
+				every_state = {
+					limit = {
+						is_core_of = ROOT
+						is_controlled_by = ROOT
+						not = {
+							state = 520
+							state = 955
+						}
+					}
+					create_unit = {
+						division = "division_template=\"Home Guard Unit\" start_experience_factor=0.3 start_equipment_factor=0.75 force_equipment_variants={eng_inf_1={owner=\"AST\"}}"
+						owner = ROOT
+						count = 1
+						#prioritize_location = 12632
+					}
+				}
+			}
         }
     }
 
