@@ -797,8 +797,8 @@ NDefines.NSupply.NAVAL_FLOW_PER_LEVEL = 5.0 										-- max output/input of a n
 
 NDefines.NSupply.RIVER_RAILWAY_LEVEL = 1											-- rivers will transfer in between nodes as if they were this level
 
-NDefines.NSupply.FLOATING_HARBOR_BASE_SUPPLY = 30.0 								-- supply given by a floating harbor
-NDefines.NSupply.FLOATING_HARBOR_BASE_DURATION = 60 								-- duration of a full hp floating harbor
+NDefines.NSupply.FLOATING_HARBOR_BASE_SUPPLY = 50.0 								-- supply given by a floating harbor
+NDefines.NSupply.FLOATING_HARBOR_BASE_DURATION = 180 								-- duration of a full hp floating harbor
 
 NDefines.NSupply.NODE_INITIAL_SUPPLY_FLOW = 5.0										-- Base range of supply hubs
 NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_BONUS = 10.0							-- The range bonus added to a fully motorized hub. This supply is added on top of the XXX_INITIAL_SUPPLY_FLOW defined above.
