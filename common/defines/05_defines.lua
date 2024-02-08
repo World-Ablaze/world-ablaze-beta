@@ -233,7 +233,7 @@ NDefines.NResistance.RESISTANCE_POP_VERY_LOW_CUTOFF = 200000
 
 NDefines.NResistance.SUPPRESSION_NEEDED_BY_RESISTANCE_POINT = 0.75 -- Number of suppression point we need for each 1% of resistance
 NDefines.NResistance.SUPPRESSION_NEEDED_LOWER_CAP = 15.0	-- if resistance is lower than this value then we always act as though it is at the define for the purpose of suppresion requirements
-NDefines.NResistance.SUPPRESSION_NEEDED_UPPER_CAP = 40.0 -- if resistance is greater than this value then we always act as though it is at the define for the purpose of suppresion requirements
+NDefines.NResistance.SUPPRESSION_NEEDED_UPPER_CAP = 30.0 -- if resistance is greater than this value then we always act as though it is at the define for the purpose of suppresion requirements
 
 NDefines.NResistance.GARRISON_STR_POW_MANPOWER = 1.4	--Scales impact of manpower deficiency by raising that deficiency to the number here. Formula: efficiency = 1.0 - manpower_deficiency^GARRISON_STR_POW_MANPOWER
 NDefines.NResistance.GARRISON_STR_POW_EQUIPMENT = 1.4	--Scales impact of euqipment deficiency by raising that deficiency to the number here. Formula: efficiency = 1.0 - equipment_deficiency^GARRISON_STR_POW_EQUIPMENT
@@ -789,7 +789,7 @@ NDefines.NSupply.MIN_TRAIN_SUPPLY_FACTOR = 0 										-- Having 0 trains in sto
 NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST = 500
 NDefines.NSupply.CAPITAL_SUPPLY_CIVILIAN_FACTORIES = 0.3 							-- supply from one civilian factory
 NDefines.NSupply.CAPITAL_SUPPLY_MILITARY_FACTORIES = 0.6 							-- supply from one military factory
-NDefines.NSupply.AVAILABLE_MANPOWER_STATE_SUPPLY = 0.18								--Factor for state supply from max manpower (population)
+NDefines.NSupply.AVAILABLE_MANPOWER_STATE_SUPPLY = 3.0								--Factor for state supply from max manpower (population)
 NDefines.NSupply.NON_CORE_MANPOWER_STATE_SUPPLY = 0.05								--Factor for population sttate supply when controlled by an occupier (NO TAKE FOOD)
 
 NDefines.NSupply.NAVAL_BASE_FLOW = 0.0 												-- max output/input of a naval node is limited by this base value + additional ratio for each level
@@ -797,8 +797,8 @@ NDefines.NSupply.NAVAL_FLOW_PER_LEVEL = 5.0 										-- max output/input of a n
 
 NDefines.NSupply.RIVER_RAILWAY_LEVEL = 1											-- rivers will transfer in between nodes as if they were this level
 
-NDefines.NSupply.FLOATING_HARBOR_BASE_SUPPLY = 30.0 								-- supply given by a floating harbor
-NDefines.NSupply.FLOATING_HARBOR_BASE_DURATION = 60 								-- duration of a full hp floating harbor
+NDefines.NSupply.FLOATING_HARBOR_BASE_SUPPLY = 50.0 								-- supply given by a floating harbor
+NDefines.NSupply.FLOATING_HARBOR_BASE_DURATION = 180 								-- duration of a full hp floating harbor
 
 NDefines.NSupply.NODE_INITIAL_SUPPLY_FLOW = 5.0										-- Base range of supply hubs
 NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_BONUS = 10.0							-- The range bonus added to a fully motorized hub. This supply is added on top of the XXX_INITIAL_SUPPLY_FLOW defined above.
