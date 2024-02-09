@@ -765,7 +765,7 @@ NDefines.NNavy.NAVAL_COMBAT_AIR_CARRIER_TARGET_SCORE = 1000
 NDefines.NNavy.SUPPLY_NEED_FACTOR = 0										   		-- multiplies supply usage
 
 NDefines.NNavy.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
-	0, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
+	0.5, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
 	0.8, -- PATROL
 	1.0, -- STRIKE FORCE (does not cost fuel at base, and uses IN_COMBAT_FUEL_COST in combat. this is just for the movement in between)
 	0.6, -- CONVOY RAIDING
@@ -842,6 +842,8 @@ NDefines.NIntel.DYNAMIC_INTEL_SOURCE_CAPTURED_OPERATIVE_AGGREGAT_LOG_FACTOR = 1
 NDefines.NIntel.DYNAMIC_INTEL_SOURCE_CAPTURED_OPERATIVE_AGGREGAT_DIVISOR = 2
 NDefines.NIntel.DYNAMIC_INTEL_SOURCE_CAPTURED_OPERATIVE_MAXIMUMS = { 10, 10, 10, 5 }
 NDefines.NIntel.DYNAMIC_INTEL_SOURCE_CAPTURED_OPERATIVE_ABSOLUTE_MAXIMUMS = { 10, 10, 10, 5 }
+
+NDefines.NIntel.NAVY_MAPICON_SHOW_ALL_NAVAL_PORTS = 1.0  -- min intel to show all naval ports (otherwise you will only see nearby ones)
 
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- AI
