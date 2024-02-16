@@ -82,7 +82,6 @@ reserve_divisions = {
 					has_dlc = "No Step Back"
 				}
 				GER = {
-					add_equipment_to_stockpile = { type = ger_inf_0 amount = 20000 producer = GER }
 					add_equipment_to_stockpile = { type = tank_ger_light_chassis_1 amount = 1000 producer = GER }
 				}
 			}
@@ -91,12 +90,45 @@ reserve_divisions = {
 					tag = GER
 				}
 				GER = {
-					add_equipment_to_stockpile = { type = ger_inf_0 amount = 20000 producer = GER }
 					add_equipment_to_stockpile = { type = ger_light_equipment_0 amount = 1000 producer = GER }
 				}
 			}
 		}
 		remove_effect = {
+		}
+	}
+
+	USA_activate_wwi_stockpiles = {
+		icon = generic_break_treaty
+
+		allowed = {
+			tag = USA
+		}
+
+		available = {
+			has_completed_focus = USA_cash_and_carry_act
+			check_variable = { ROOT.reserves_equipment > 0 }
+		}
+
+		visible = {
+			has_completed_focus = USA_declare_limited_national_emergency
+			check_variable = { ROOT.reserves_equipment > 0 }
+		}
+
+		cost = 50
+
+		ai_will_do = {
+			base = 400
+		}
+
+		fire_only_once = no
+
+		complete_effect = {
+			add_equipment_to_stockpile = { type = usa_inf_1 amount = 4000 producer = USA }
+			add_equipment_to_stockpile = { type = support_equipment amount = 1000 producer = USA }
+			add_equipment_to_stockpile = { type = usa_art_1 amount = 300 producer = USA }
+			custom_effect_tooltip = activate_wwi_stockpiles_tt
+			add_to_variable = { ROOT.reserves_equipment = -0.05 }
 		}
 	}
 
@@ -428,6 +460,7 @@ reserve_divisions = {
 					}
 				}
 				custom_effect_tooltip = recruiting_reserves_special
+				set_variable = { ROOT.reserves_equipment = 0.5 }
 			}
 			else = {
 				custom_effect_tooltip = recruiting_reserves
@@ -2203,7 +2236,7 @@ reserve_divisions = {
 					}
 					division_template = {
 						name = "French Reserve Divisíon"
-						template_counter = 74
+						template_counter = 86
 						division_names_group = FRA_INF_01
 						is_locked = yes
 
@@ -2282,7 +2315,7 @@ reserve_divisions = {
 					}
 					division_template = {
 						name = "Italian Reserve Divisíon"
-						template_counter = 72
+						template_counter = 98
 						division_names_group = ITA_INF_01
 						is_locked = yes
 
@@ -2341,6 +2374,7 @@ reserve_divisions = {
 					}
 					division_template = {
 						name = "Japanese Reserve Divisíon"
+						template_counter = 110
 						division_names_group = JAP_INF_01
 						is_locked = yes
 
@@ -2399,7 +2433,7 @@ reserve_divisions = {
 					}
 					division_template = {
 						name = "German Reserve Divisíon"
-						template_counter = 76
+						template_counter = 122
 						division_names_group = GER_INF_01
 						is_locked = yes
 
@@ -2459,6 +2493,7 @@ reserve_divisions = {
 					}
 					division_template = {
 						name = "Soviet Reserve Divisíon"
+						template_counter = 134
 						division_names_group = SOV_INF_01
 						is_locked = yes
 
@@ -2498,11 +2533,113 @@ reserve_divisions = {
 						tag = SOV
 						is_ai = no
 					}
-					capital_scope = {
-						create_unit = {
-							division = "division_template=\"Soviet Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}sov_art_1={owner=\"SOV\"}sov_hv_art_1={owner=\"SOV\"}sov_at_1={owner=\"SOV\"}}"
-							owner = ROOT
-							count = 10
+					if = {
+						limit = {
+							controls_state = 219
+							has_full_control_of_state = 252
+						}
+						252 = {
+							create_unit = {
+								division = "division_template=\"Soviet Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}sov_art_1={owner=\"SOV\"}sov_hv_art_1={owner=\"SOV\"}sov_at_1={owner=\"SOV\"}}"
+								owner = ROOT
+								count = 5
+							}
+						}
+					}
+					else_if = {
+						limit = {
+							controls_state = 252
+							has_full_control_of_state = 249
+						}
+						249 = {
+							create_unit = {
+								division = "division_template=\"Soviet Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}sov_art_1={owner=\"SOV\"}sov_hv_art_1={owner=\"SOV\"}sov_at_1={owner=\"SOV\"}}"
+								owner = ROOT
+								count = 5
+							}
+						}
+					}
+					else_if = {
+						limit = {
+							controls_state = 249
+							has_full_control_of_state = 572
+						}
+						249 = {
+							create_unit = {
+								division = "division_template=\"Soviet Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}sov_art_1={owner=\"SOV\"}sov_hv_art_1={owner=\"SOV\"}sov_at_1={owner=\"SOV\"}}"
+								owner = ROOT
+								count = 5
+							}
+						}
+					}
+					else = {
+						random_core_state = {
+							prioritize = { 217 401 251 250 249 399 651 652 256 572 876 653 586 405 }
+							limit = {
+								is_on_continent = asia
+								is_fully_controlled_by = ROOT
+								all_neighbor_state = { is_fully_controlled_by = ROOT }
+							}
+							create_unit = {
+								division = "division_template=\"Soviet Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}sov_art_1={owner=\"SOV\"}sov_hv_art_1={owner=\"SOV\"}sov_at_1={owner=\"SOV\"}}"
+								owner = ROOT
+								count = 5
+							}
+						}
+					}
+
+					if = {
+						limit = {
+							controls_state = 218
+							has_full_control_of_state = 217
+						}
+						217 = {
+							create_unit = {
+								division = "division_template=\"Soviet Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}sov_art_1={owner=\"SOV\"}sov_hv_art_1={owner=\"SOV\"}sov_at_1={owner=\"SOV\"}}"
+								owner = ROOT
+								count = 5
+							}
+						}
+					}
+					else_if = {
+						limit = {
+							controls_state = 217
+							has_full_control_of_state = 251
+						}
+						251 = {
+							create_unit = {
+								division = "division_template=\"Soviet Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}sov_art_1={owner=\"SOV\"}sov_hv_art_1={owner=\"SOV\"}sov_at_1={owner=\"SOV\"}}"
+								owner = ROOT
+								count = 5
+							}
+						}
+					}
+					else_if = {
+						limit = {
+							controls_state = 251
+							has_full_control_of_state = 876
+						}
+						876 = {
+							create_unit = {
+								division = "division_template=\"Soviet Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}sov_art_1={owner=\"SOV\"}sov_hv_art_1={owner=\"SOV\"}sov_at_1={owner=\"SOV\"}}"
+								owner = ROOT
+								count = 5
+							}
+						}
+					}
+					else = {
+						random_core_state = {
+							prioritize = { 217 401 251 250 249 399 651 652 256 572 876 653 586 405 }
+							limit = {
+								is_on_continent = asia
+								is_fully_controlled_by = ROOT
+								all_neighbor_state = { is_fully_controlled_by = ROOT }
+							}
+							create_unit = {
+								division = "division_template=\"Soviet Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}sov_art_1={owner=\"SOV\"}sov_hv_art_1={owner=\"SOV\"}sov_at_1={owner=\"SOV\"}}"
+								owner = ROOT
+								count = 5
+							}
 						}
 					}
 				}
@@ -2531,7 +2668,7 @@ reserve_divisions = {
 					}
 					division_template = {
 						name = "British Reserve Divisíon"
-						template_counter = 80
+						template_counter = 146
 						division_names_group = ENG_INF_01
 						is_locked = yes
 
@@ -2593,6 +2730,7 @@ reserve_divisions = {
 					division_template = {
 						name = "US Reserve Divisíon"
 						division_names_group = USA_INF_01
+						template_counter = 158
 						is_locked = yes
 
 						regiments = {
@@ -2632,12 +2770,43 @@ reserve_divisions = {
 							NOT = { has_country_flag = infantry_template_usa }
 						}
 					}
-					capital_scope = {
-						create_unit = {
-							division = "division_template=\"US Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.1 force_equipment_variants={usa_inf_1={owner=\"USA\"}usa_hv_inf_1={owner=\"USA\"}usa_art_1={owner=\"USA\"}usa_hv_art_1={owner=\"USA\"}usa_at_1={owner=\"USA\"}}"
-							owner = ROOT
-							count = 10
-							prioritize_location = 3957
+					if = {
+						limit = {
+							check_variable = { ROOT.reserves_equipment = 0.1 }
+						}
+						capital_scope = {
+							create_unit = {
+								division = "division_template=\"US Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.1 force_equipment_variants={usa_inf_1={owner=\"USA\"}usa_hv_inf_1={owner=\"USA\"}usa_art_1={owner=\"USA\"}usa_hv_art_1={owner=\"USA\"}usa_at_1={owner=\"USA\"}}"
+								owner = ROOT
+								count = 10
+								prioritize_location = 3957
+							}
+						}
+					}
+					else_if = {
+						limit = {
+							check_variable = { ROOT.reserves_equipment = 0.05 }
+						}
+						capital_scope = {
+							create_unit = {
+								division = "division_template=\"US Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.05 force_equipment_variants={usa_inf_1={owner=\"USA\"}usa_hv_inf_1={owner=\"USA\"}usa_art_1={owner=\"USA\"}usa_hv_art_1={owner=\"USA\"}usa_at_1={owner=\"USA\"}}"
+								owner = ROOT
+								count = 10
+								prioritize_location = 3957
+							}
+						}
+					}
+					else_if = {
+						limit = {
+							check_variable = { ROOT.reserves_equipment = 0 }
+						}
+						capital_scope = {
+							create_unit = {
+								division = "division_template=\"US Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.01 force_equipment_variants={usa_inf_1={owner=\"USA\"}usa_hv_inf_1={owner=\"USA\"}usa_art_1={owner=\"USA\"}usa_hv_art_1={owner=\"USA\"}usa_at_1={owner=\"USA\"}}"
+								owner = ROOT
+								count = 10
+								prioritize_location = 3957
+							}
 						}
 					}
 				}
@@ -2826,7 +2995,7 @@ reserve_divisions = {
 					}
 					division_template = {
 						name = "Canadian Reserve Divisíon"
-						template_counter = 80
+						template_counter = 146
 						division_names_group = CAN_INF_01
 						is_locked = yes
 
@@ -2885,7 +3054,7 @@ reserve_divisions = {
 					}
 					division_template = {
 						name = "Australian Reserve Divisíon"
-						template_counter = 80
+						template_counter = 146
 						division_names_group = AST_INF_01
 						is_locked = yes
 
@@ -2944,7 +3113,7 @@ reserve_divisions = {
 					}
 					division_template = {
 						name = "Indian Reserve Divisíon"
-						template_counter = 80
+						template_counter = 146
 						division_names_group = RAJ_INF_01
 						is_locked = yes
 
@@ -3003,7 +3172,7 @@ reserve_divisions = {
 					}
 					division_template = {
 						name = "South African Reserve Divisíon"
-						template_counter = 80
+						template_counter = 146
 						division_names_group = SAF_INF_01
 						is_locked = yes
 
@@ -3571,7 +3740,7 @@ reserve_divisions = {
 					}
 					capital_scope = {
 						create_unit = {
-							division = "division_template=\"German Grenadier Infantry\" start_experience_factor=0.3 start_equipment_factor=0.75 force_equipment_variants={ger_inf_0={owner=\"GER\"}ger_hv_inf_1={owner=\"GER\"}ger_art_1={owner=\"GER\"}ger_hv_art_1={owner=\"GER\"}ger_at_1={owner=\"GER\"}}"
+							division = "division_template=\"German Infantry Division\" start_experience_factor=0.3 start_equipment_factor=0.75 force_equipment_variants={ger_inf_0={owner=\"GER\"}ger_hv_inf_1={owner=\"GER\"}ger_art_1={owner=\"GER\"}ger_hv_art_1={owner=\"GER\"}ger_at_1={owner=\"GER\"}}"
 							owner = ROOT
 							count = 10
 							prioritize_location = 6521
@@ -3921,19 +4090,21 @@ reserve_divisions = {
 		}
 		available = {
 			OR = {
-				has_war = yes
+				AND = {
+					has_war = yes
+					any_enemy_country = {
+						OR = {
+							ic_ratio = {
+								tag = ROOT
+								ratio > 0.25
+							}
+							is_major = yes
+						}
+					}
+				}
 				has_country_flag = early_reserve_mobilization_flag
 			}
 			has_manpower > 150499
-			any_enemy_country = {
-				OR = {
-					ic_ratio = {
-						tag = ROOT
-						ratio > 0.25
-					}
-					is_major = yes
-				}
-			}
 			if = {
 				limit = {
 					original_tag = SOV
@@ -4013,7 +4184,7 @@ reserve_divisions = {
 					}
 					division_template = {
 						name = "French 2nd Reserve Divisíon"
-						template_counter = 74
+						template_counter = 86
 						division_names_group = FRA_INF_01
 						is_locked = yes
 
@@ -4092,7 +4263,7 @@ reserve_divisions = {
 					}
 					division_template = {
 						name = "Italian 2nd Reserve Divisíon"
-						template_counter = 72
+						template_counter = 98
 						division_names_group = ITA_INF_01
 						is_locked = yes
 
@@ -4151,6 +4322,7 @@ reserve_divisions = {
 					}
 					division_template = {
 						name = "Japanese 2nd Reserve Divisíon"
+						template_counter = 110
 						division_names_group = JAP_INF_01
 						is_locked = yes
 
@@ -4209,7 +4381,7 @@ reserve_divisions = {
 					}
 					division_template = {
 						name = "German 2nd Reserve Divisíon"
-						template_counter = 76
+						template_counter = 122
 						division_names_group = GER_INF_01
 						is_locked = yes
 
@@ -4269,6 +4441,7 @@ reserve_divisions = {
 					}
 					division_template = {
 						name = "Soviet 2nd Reserve Divisíon"
+						template_counter = 134
 						division_names_group = SOV_INF_01
 						is_locked = yes
 
@@ -4330,7 +4503,7 @@ reserve_divisions = {
 					}
 					division_template = {
 						name = "British 2nd Reserve Divisíon"
-						template_counter = 80
+						template_counter = 146
 						division_names_group = ENG_INF_01
 						is_locked = yes
 
@@ -4391,6 +4564,7 @@ reserve_divisions = {
 					}
 					division_template = {
 						name = "US 2nd Reserve Divisíon"
+						template_counter = 158
 						division_names_group = USA_INF_01
 						is_locked = yes
 
@@ -4625,7 +4799,7 @@ reserve_divisions = {
 					}
 					division_template = {
 						name = "Canadian 2nd Reserve Divisíon"
-						template_counter = 80
+						template_counter = 146
 						division_names_group = CAN_INF_01
 						is_locked = yes
 
@@ -4684,7 +4858,7 @@ reserve_divisions = {
 					}
 					division_template = {
 						name = "Australian 2nd Reserve Divisíon"
-						template_counter = 80
+						template_counter = 146
 						division_names_group = AST_INF_01
 						is_locked = yes
 
@@ -4743,7 +4917,7 @@ reserve_divisions = {
 					}
 					division_template = {
 						name = "Indian 2nd Reserve Divisíon"
-						template_counter = 80
+						template_counter = 146
 						division_names_group = RAJ_INF_01
 						is_locked = yes
 
@@ -4802,7 +4976,7 @@ reserve_divisions = {
 					}
 					division_template = {
 						name = "South African 2nd Reserve Divisíon"
-						template_counter = 80
+						template_counter = 146
 						division_names_group = SAF_INF_01
 						is_locked = yes
 
@@ -5370,7 +5544,7 @@ reserve_divisions = {
 					}
 					capital_scope = {
 						create_unit = {
-							division = "division_template=\"German Grenadier Infantry\" start_experience_factor=0.3 start_equipment_factor=0.75 force_equipment_variants={ger_inf_0={owner=\"GER\"}ger_hv_inf_1={owner=\"GER\"}ger_art_1={owner=\"GER\"}ger_hv_art_1={owner=\"GER\"}ger_at_1={owner=\"GER\"}}"
+							division = "division_template=\"German Infantry Division\" start_experience_factor=0.3 start_equipment_factor=0.75 force_equipment_variants={ger_inf_0={owner=\"GER\"}ger_hv_inf_1={owner=\"GER\"}ger_art_1={owner=\"GER\"}ger_hv_art_1={owner=\"GER\"}ger_at_1={owner=\"GER\"}}"
 							owner = ROOT
 							count = 10
 							prioritize_location = 6521
@@ -5734,7 +5908,7 @@ reserve_divisions = {
 		cost = 0
 
 		complete_effect = {
-			custom_effect_tooltip = home_guard_tt
+			custom_effect_tooltip = CAN_home_guard_tt
 			hidden_effect = {
 				set_country_flag = home_guard_deployed
 				division_template = {
@@ -5868,7 +6042,7 @@ reserve_divisions = {
 		cost = 0
 
 		complete_effect = {
-			custom_effect_tooltip = home_guard_tt
+			custom_effect_tooltip = ENG_home_guard_tt
 			hidden_effect = {
 				set_country_flag = home_guard_deployed
 				division_template = {
@@ -6202,6 +6376,47 @@ reserve_divisions = {
 			}
 			hidden_effect = {
 				set_country_flag = ENG_home_guard_disbanded
+			}
+		}
+	}
+
+	NZL_disband_the_home_guard = {
+		icon = generic_political_discourse
+
+		allowed = {
+			original_tag = ENG
+		}
+
+		available = {
+		}
+		visible = {
+			has_country_flag = home_guard_deployed
+			has_war = no
+		}
+
+		days_remove = 90
+		is_good = yes
+		cost = 50
+
+		cancel_if_not_visible = yes
+
+		ai_will_do = {
+			factor = 10
+
+			modifier = {
+				factor = 0
+				has_war = yes
+			}
+		}
+
+		complete_effect = {
+			custom_effect_tooltip = NZL_home_guard_disbanded_tt
+			delete_unit_template_and_units = {
+				division_template = "Home Guard Unit"
+				disband = yes
+			}
+			hidden_effect = {
+				set_country_flag = NZL_home_guard_disbanded
 			}
 		}
 	}

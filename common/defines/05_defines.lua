@@ -70,8 +70,8 @@ NDefines.NCharacter.GENIUS_ADVISOR_MIN_RANK = 7
 
 
 
+NDefines.NCountry.BASE_RESEARCH_SLOTS = 1											
 NDefines.NCountry.SUPPLY_FROM_DAMAGED_INFRA = 0.01              					-- damaged infrastructure counts as this in supply calcs
-NDefines.NCountry.SUPPLY_PATH_MAX_DISTANCE = 15		    							-- When supply route reach more than X nodes the manpower+equipment delivery speed reach 100% penalty.
 
 NDefines.NCountry.INVASION_REPORT_EXPERATION_DAYS = 30								-- Invasion experation days
 NDefines.NCountry.SUPPLY_CONVOY_FACTOR = 0.15										-- How many convoys each supply needs
@@ -201,10 +201,10 @@ NDefines.NProduction.CONVOY_MAX_NAV_FACTORIES_PER_LINE = 15
 NDefines.NProduction.MINIMUM_NUMBER_OF_FACTORIES_TAKEN_BY_CONSUMER_GOODS_PERCENT = 0.05	-- The minimum number of factories we have to put on consumer goods, in percent.
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Market
-NDefines.NMarket.IC_TO_CIC_FACTOR = 1.5												-- The factor for mapping IC cost to CIC cost. Should be a positive number.
+NDefines.NMarket.IC_TO_CIC_FACTOR = 0.75												-- The factor for mapping IC cost to CIC cost. Should be a positive number.
 NDefines.NMarket.MAX_CIV_FACTORIES_PER_CONTRACT = 20								-- Max number of factories that can be assigned for paying single contract.
-NDefines.NMarket.LOW_PRICE_LEVEL_FACTOR = 0.83										-- The factor of base equipment price for low price level. Should be in range (0,1]
-NDefines.NMarket.HIGH_PRICE_LEVEL_FACTOR = 1.17										-- The factor of base equipment price for high price level. Should be more than 1.
+NDefines.NMarket.LOW_PRICE_LEVEL_FACTOR = 0.67										-- The factor of base equipment price for low price level. Should be in range (0,1]
+NDefines.NMarket.HIGH_PRICE_LEVEL_FACTOR = 1.33										-- The factor of base equipment price for high price level. Should be more than 1.
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Operations
 
@@ -216,22 +216,40 @@ NDefines.NOperatives.BOOST_IDEOLOGY_MAX_DRIFT_BY_OPERATIVE = 0.08					-- the max
 NDefines.NOperatives.MIN_NATIONAL_COVERAGE_FOR_BOOST_IDEOLOGY = 0.01				-- Minimum network coverage required to start the mission (the code ensures that a network exists at all)
 --NDefines.NOperatives.BOOST_IDEOLOGY_DEFENSE_FACTOR = 0.8							-- multiplied to the target's defense to get the amount of drift to remove from each operative's drift
 
+NDefines.NOperatives.OPERATIVE_BASE_INTEL_NETWORK_GAIN = 0.2						-- Base amount of network strength gain per day provided by an operative
+NDefines.NOperatives.INTEL_NETWORK_OPERATIVE_GAIN_STACKING_FACTOR = 0.9				-- When multiple operative are present in the same location, this factor is applied for each operative with a lower gain than the max. So if operatives have the gain [ 3, 1, 2 ] in the same location, it is sorted to [ 1, 2, 3 ] then converted to [ 1*D^2, 2*D^1, 3 ], with D being this define, so if D=0.5 we have [ 0.25, 1, 3 ] and the final gain from operative at this location will be 4.25. Putting this define to 0 is equivalent to considering the maximum value only.
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Resistance
 
 NDefines.NResistance.GARRISON_MANPOWER_LOST_BY_ATTACK = 0.01 						-- Ratio of manpower lost by garrison at each attack on garrison (this number will be reduced by the hardness of garrison template)
-NDefines.NResistance.MIN_DAMAGE_TO_GARRISONS_MODIFIER = 0.05						-- modifier that applies to losses from resistance attack to garrisons at most can be reduced to this amount
+NDefines.NResistance.MIN_DAMAGE_TO_GARRISONS_MODIFIER = 0.25						-- modifier that applies to losses from resistance attack to garrisons at most can be reduced to this amount
 
 NDefines.NResistance.FOREIGN_MANPOWER_MIN_THRESHOLD = 500000000			 			-- The minimum number of Manpower that AI will accept to give at once, in order to avoid many weird little transfer.
+NDefines.NResistance.RESISTANCE_TARGET_BASE = 50.0
+
+NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_POP_LOW = -5.0			-- how much we reduce the resistance target
+NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_POP_VERY_LOW = -10.0			-- resistance target modifier in % for states we have claim
+
+NDefines.NResistance.RESISTANCE_POP_LOW_CUTOFF = 500000
+NDefines.NResistance.RESISTANCE_POP_VERY_LOW_CUTOFF = 200000
+
+NDefines.NResistance.SUPPRESSION_NEEDED_BY_RESISTANCE_POINT = 0.75 -- Number of suppression point we need for each 1% of resistance
+NDefines.NResistance.SUPPRESSION_NEEDED_LOWER_CAP = 15.0	-- if resistance is lower than this value then we always act as though it is at the define for the purpose of suppresion requirements
+NDefines.NResistance.SUPPRESSION_NEEDED_UPPER_CAP = 30.0 -- if resistance is greater than this value then we always act as though it is at the define for the purpose of suppresion requirements
+
+NDefines.NResistance.GARRISON_STR_POW_MANPOWER = 1.4	--Scales impact of manpower deficiency by raising that deficiency to the number here. Formula: efficiency = 1.0 - manpower_deficiency^GARRISON_STR_POW_MANPOWER
+NDefines.NResistance.GARRISON_STR_POW_EQUIPMENT = 1.4	--Scales impact of euqipment deficiency by raising that deficiency to the number here. Formula: efficiency = 1.0 - equipment_deficiency^GARRISON_STR_POW_EQUIPMENT
 
 NDefines.NResistance.RESISTANCE_ACTIVITY_CHANCE_AT_MAX_RESISTANCE = 0.200			-- sabotage
 
-NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_OCCUPIED_CAPITULATED = 15.0 		-- resistance target modifier when the enemy is capitulated
+NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_OCCUPIED_CAPITULATED = -10.0 		-- resistance target modifier when the enemy is capitulated
+NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_OCCUPIED_IS_EXILE_MIN = 2.0   -- min & max resistance target modifier resistance target modifier for exile countries. interpolated using legitimacy
+NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_OCCUPIED_IS_EXILE_MAX = 5.0
 
 NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_STATE_VP = {						-- resistance target modifier pairs for vp. first entry is total vp in state and second entry is amount of target modifier that applies for that threshold
 	0,   0.0, -- 0 - 5
-	5,   10.0, -- 5 - 20
-	20,  20.0, -- 20 - 50
-	50,  30.0, -- 50 - ...
+	5,   5.0, -- 5 - 20
+	20,  10.0, -- 20 - 50
+	50,  15.0, -- 50 - ...
 }
 
 
@@ -259,8 +277,8 @@ NDefines.NMilitary.GARRISON_ORDER_ARMY_CAP_FACTOR = 1.0								-- armies gets in
 
 NDefines.NMilitary.PROMOTE_LEADER_CP_COST = 20.0									-- cost of promoting a leader
 
-NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_ATTACK = -0.20    					-- attack combat penalty for attacker if out of supply
-NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_DEFEND = -0.40     					-- defend combat penalty for attacker if out of supply
+NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_ATTACK = -1.00    					-- attack combat penalty for attacker if out of supply
+NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_DEFEND = -0.80     					-- defend combat penalty for attacker if out of supply
 NDefines.NMilitary.COMBAT_SUPPLY_LACK_DEFENDER_ATTACK = -0.40     					-- attack combat penalty for defender if out of supply
 NDefines.NMilitary.COMBAT_SUPPLY_LACK_DEFENDER_DEFEND = -0.20     					-- defend combat penalty for defender if out of supply
 
@@ -353,10 +371,10 @@ NDefines.NMilitary.NON_CORE_SUPPLY_SPEED = -0.7				    					-- we are not runnin
 NDefines.NMilitary.LAND_COMBAT_COLLATERAL_FACTOR = 0.003							-- Factor to scale collateral damage to infra and forts with.
 
 NDefines.NMilitary.ATTRITION_DAMAGE_ORG = 0.08					   					-- damage from attrition to Organisation
-NDefines.NMilitary.MAX_OUT_OF_SUPPLY_DAYS = 7 				   						-- how many days of shitty supply until max penalty achieved
+NDefines.NMilitary.MAX_OUT_OF_SUPPLY_DAYS = 4 				   						-- how many days of shitty supply until max penalty achieved
 NDefines.NMilitary.OUT_OF_SUPPLY_ATTRITION = 2.0                					-- max attrition when out of supply
 NDefines.NMilitary.OUT_OF_SUPPLY_MORALE = 0                  						-- max org regain reduction from supply
-NDefines.NMilitary.OUT_OF_SUPPLY_SPEED = -0.4                   					-- max speed reduction from supply
+NDefines.NMilitary.OUT_OF_SUPPLY_SPEED = -1.0                   					-- max speed reduction from supply
 NDefines.NMilitary.COMBAT_SUPPLY_LACK_IMPACT = -0.6									-- combat penalty if out of supply
 
 NDefines.NMilitary.INFRA_ORG_IMPACT = 0.25											-- scale factor of infra on org regain.
@@ -485,9 +503,9 @@ NDefines.NAir.ACCIDENT_CHANCE_BALANCE_MULT = 0.5									-- Multiplier for balan
 NDefines.NAir.ACCIDENT_EFFECT_MULT = 0.0005											-- Multiplier for balancing the effect of accidents
 
 --NDefines.NAir.EFFICIENCY_REGION_CHANGE_DAILY_GAIN_DEFAULT = 0.1					-- Default how much efficiency to regain per day. Gain applied hourly.
-NDefines.NAir.AIR_WING_ATTACK_LOGISTICS_TRUCK_DAMAGE_FACTOR = 0.02
-NDefines.NAir.AIR_WING_ATTACK_LOGISTICS_TRAIN_DAMAGE_FACTOR = 0.008
-NDefines.NAir.AIR_WING_ATTACK_LOGISTICS_TRAIN_DAMAGE_DISRUPTION_MITIGATION = 3.0 	-- Multiply Train Damage by (Smooth / (Smooth + (Disruption * Mitigation)))
+NDefines.NAir.AIR_WING_ATTACK_LOGISTICS_TRUCK_DAMAGE_FACTOR = 0.017
+NDefines.NAir.AIR_WING_ATTACK_LOGISTICS_TRAIN_DAMAGE_FACTOR = 0.005
+NDefines.NAir.AIR_WING_ATTACK_LOGISTICS_TRAIN_DAMAGE_DISRUPTION_MITIGATION = 20.0 	-- Multiply Train Damage by (Smooth / (Smooth + (Disruption * Mitigation)))
 NDefines.NAir.AIR_WING_ATTACK_LOGISTICS_RAILWAY_DAMAGE_SPILL_FACTOR = 0.002 		-- Portion of train damage to additionally deal to railways
 NDefines.NAir.AIR_WING_ATTACK_LOGISTICS_INFRA_DAMAGE_SPILL_FACTOR = 0.0 			-- Portion of truck damage to additionally deal to infrastructure
 
@@ -513,7 +531,7 @@ NDefines.NAir.MISSION_COMMAND_POWER_COSTS = {  										-- command power cost p
 	0.0, -- NAVAL_KAMIKAZE
 	0.0, -- PORT_STRIKE
 	0.0, -- ATTACK_LOGISTICS
-	0.1, -- AIR_SUPPLY
+	0.0, -- AIR_SUPPLY
 	0.0, -- TRAINING
 	0.0, -- NAVAL_MINES_PLANTING
 	0.0, -- NAVAL_MINES_SWEEPING
@@ -535,8 +553,8 @@ NDefines.NAir.MISSION_FUEL_COSTS = {												-- fuel cost per plane for each 
 	0.2, -- TRAINING
 	1.0, -- NAVAL_MINES_PLANTING
 	1.0, -- NAVAL_MINES_SWEEPING
-	1.0, -- RECON
-	1.0, -- NAVAL_PATROL
+	0.1, -- RECON
+	0.3, -- NAVAL_PATROL
 }
 NDefines.NAir.NAVAL_STRIKE_CARRIER_MULTIPLIER = 10.0							    -- damage bonus when planes are in naval combat where their carrier is present (and can thus sortie faster and more effectively)
 
@@ -670,14 +688,14 @@ NDefines.NNavy.HEAVY_GUN_ATTACK_TO_SHORE_BOMBARDMENT = 0.025  						-- heavy gun
 NDefines.NNavy.LIGHT_GUN_ATTACK_TO_SHORE_BOMBARDMENT = 0.0005						    -- light gun attack value is divided by this value * 100 and added to shore bombardment modifier
 
 
-NDefines.NNavy.AGGRESSION_HEAVY_GUN_EFFICIENCY_ON_LIGHT_SHIPS = 0.2					-- ratio for scoring for different gun types against light ships
+NDefines.NNavy.AGGRESSION_HEAVY_GUN_EFFICIENCY_ON_LIGHT_SHIPS = 0.4					-- ratio for scoring for different gun types against light ships
 NDefines.NNavy.AGGRESSION_LIGHT_GUN_EFFICIENCY_ON_HEAVY_SHIPS = 0.05				-- ratio for scoring for different gun types against light ships
 --NDefines.NNavy.COMBAT_ARMOR_PIERCING_DAMAGE_REDUCTION = -0.25						-- All damage reduction % when target armor is >= then shooter armor piercing.
 
 NDefines.NNavy.TRAINING_EXPERIENCE_FACTOR = 0.25									-- Amount of exp each ship gain every 24h while training (before modifiers)
 NDefines.NNavy.FIELD_EXPERIENCE_SCALE = 0.3
 
-NDefines.NNavy.UNIT_EXPERIENCE_PER_COMBAT_HOUR = 5
+NDefines.NNavy.UNIT_EXPERIENCE_PER_COMBAT_HOUR = 4
 NDefines.NNavy.UNIT_EXPERIENCE_SCALE = 1
 NDefines.NNavy.EXPERIENCE_FACTOR_CONVOY_ATTACK = 0.12
 NDefines.NNavy.EXPERIENCE_FACTOR_NON_CARRIER_GAIN = 0.24							-- Xp gain by non-carrier ships in the combat
@@ -748,7 +766,7 @@ NDefines.NNavy.NAVAL_COMBAT_AIR_CARRIER_TARGET_SCORE = 1000
 NDefines.NNavy.SUPPLY_NEED_FACTOR = 0										   		-- multiplies supply usage
 
 NDefines.NNavy.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
-	0, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
+	0.5, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
 	0.8, -- PATROL
 	1.0, -- STRIKE FORCE (does not cost fuel at base, and uses IN_COMBAT_FUEL_COST in combat. this is just for the movement in between)
 	0.6, -- CONVOY RAIDING
@@ -766,11 +784,13 @@ NDefines.NNavy.NAVAL_MINES_ACCIDENT_STRENGTH_LOSS = 20.0						-- Amount of stren
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- SUPPLY
 
-NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.12									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
+NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.50									-- the train usage is scaled by railway distance between the supply node and the capital multiplied by this factor
+NDefines.NSupply.MIN_TRAIN_SUPPLY_FACTOR = 0 										-- Having 0 trains in stockpile only applies this penalty factor, scaling up to 1.0 when need is met
+
 NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST = 500
 NDefines.NSupply.CAPITAL_SUPPLY_CIVILIAN_FACTORIES = 0.3 							-- supply from one civilian factory
 NDefines.NSupply.CAPITAL_SUPPLY_MILITARY_FACTORIES = 0.6 							-- supply from one military factory
-NDefines.NSupply.AVAILABLE_MANPOWER_STATE_SUPPLY = 0.18								--Factor for state supply from max manpower (population)
+NDefines.NSupply.AVAILABLE_MANPOWER_STATE_SUPPLY = 3.0								--Factor for state supply from max manpower (population)
 NDefines.NSupply.NON_CORE_MANPOWER_STATE_SUPPLY = 0.05								--Factor for population sttate supply when controlled by an occupier (NO TAKE FOOD)
 
 NDefines.NSupply.NAVAL_BASE_FLOW = 0.0 												-- max output/input of a naval node is limited by this base value + additional ratio for each level
@@ -778,8 +798,8 @@ NDefines.NSupply.NAVAL_FLOW_PER_LEVEL = 5.0 										-- max output/input of a n
 
 NDefines.NSupply.RIVER_RAILWAY_LEVEL = 1											-- rivers will transfer in between nodes as if they were this level
 
-NDefines.NSupply.FLOATING_HARBOR_BASE_SUPPLY = 30.0 								-- supply given by a floating harbor
-NDefines.NSupply.FLOATING_HARBOR_BASE_DURATION = 60 								-- duration of a full hp floating harbor
+NDefines.NSupply.FLOATING_HARBOR_BASE_SUPPLY = 50.0 								-- supply given by a floating harbor
+NDefines.NSupply.FLOATING_HARBOR_BASE_DURATION = 180 								-- duration of a full hp floating harbor
 
 NDefines.NSupply.NODE_INITIAL_SUPPLY_FLOW = 5.0										-- Base range of supply hubs
 NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_BONUS = 10.0							-- The range bonus added to a fully motorized hub. This supply is added on top of the XXX_INITIAL_SUPPLY_FLOW defined above.
@@ -795,8 +815,10 @@ NDefines.NSupply.COOLDOWN_DAYS_AFTER_MOVING_SUPPLY_CAPITAL = 14 -- cooldown for 
 
 ---
 
-NDefines.NSupply.SUPPLY_PATH_MAX_DISTANCE = 45										-- max time it can take
-NDefines.NSupply.RAILWAY_DISTANCE_FACTOR_FOR_REINFORCEMENT_SPEED = 0.05 			-- time factor for total railway distance
+NDefines.NSupply.SUPPLY_PATH_MAX_DISTANCE = 15										-- max time it can take for manpower and equipment to take
+NDefines.NSupply.RAILWAY_DISTANCE_FACTOR_FOR_REINFORCEMENT_SPEED = 0.3 				-- time factor for total railway distance
+NDefines.NSupply.TRUCK_DISTANCE_FACTOR_FOR_REINFORCEMENT_SPEED = 0.01 				-- time factor for total truck distance
+NDefines.NSupply.NAVAL_DISTANCE_FACTOR_FOR_REINFORCEMENT_SPEED = 0.08 				-- time factor for total naval distance
 
 
 NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN = 15 									-- railways will be put on cooldown when they are captured by enemy and will not be usable during the cooldown
@@ -824,6 +846,8 @@ NDefines.NIntel.DYNAMIC_INTEL_SOURCE_CAPTURED_OPERATIVE_AGGREGAT_DIVISOR = 2
 NDefines.NIntel.DYNAMIC_INTEL_SOURCE_CAPTURED_OPERATIVE_MAXIMUMS = { 10, 10, 10, 5 }
 NDefines.NIntel.DYNAMIC_INTEL_SOURCE_CAPTURED_OPERATIVE_ABSOLUTE_MAXIMUMS = { 10, 10, 10, 5 }
 
+NDefines.NIntel.NAVY_MAPICON_SHOW_ALL_NAVAL_PORTS = 1.0  -- min intel to show all naval ports (otherwise you will only see nearby ones)
+
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- AI
 
@@ -845,7 +869,7 @@ NDefines.NAI.ARMY_LEADER_ASSIGN_FIELD_MARSHAL_TO_ARMY = -100000            			--
 NDefines.NAI.ARMY_LEADER_ASSIGN_EMPTYNESS_MALUS = 0.0                  				-- Factor for avoiding assigning leaders that can lead large armies to small armies (a value of 0.2 reduces the score by max 20 %)
 NDefines.NAI.ARMY_LEADER_ASSIGN_OVERCAPACITY = 0                     				-- Score for assigning leader to a too large army
 NDefines.NAI.ARMY_LEADER_ASSIGN_OVERALL_SKILL_FACTOR = 1000               			-- This times general's overall skill is added to score
-NDefines.NAI.ARMY_LEADER_ASSIGN_KEEP_LEADER = 0                       				-- Score for keeping the leader if already assigned
+NDefines.NAI.ARMY_LEADER_ASSIGN_KEEP_LEADER = 50                       				-- Score for keeping the leader if already assigned
 NDefines.NAI.ARMY_LEADER_ASSIGN_ATTACK_SKILL_FACTOR = 250               			-- This times general's attack skill is added to score
 NDefines.NAI.ARMY_LEADER_ASSIGN_DEFENSE_SKILL_FACTOR = 250              			-- This times general's defense skill is added to score
 NDefines.NAI.ARMY_LEADER_ASSIGN_NR_TRAITS = 100                          		 	-- This times general's nr of active traits is added to score
@@ -854,9 +878,9 @@ NDefines.NAI.ARMY_LEADER_ASSIGN_NR_TRAITS = 100                          		 	-- 
 
 --NDefines.NAI.SUPPLY_CRISIS_LIMIT = 1.0											-- If a unit is standing in an area with
 NDefines.NAI.MIN_INVASION_AREA_SIZE_FOR_FLOATING_HARBORS = 5  				    	-- AI will consider using floating harbors for naval invasion if invasion area is larger than this many provinces
-NDefines.NAI.DEFAULT_SUPPLY_TRUCK_BUFFER_RATIO = 1.0								-- ai will set to truck buffer ratio to this. can be modified by wanted_supply_trucks min_wanted_supply_trucks ai strats
+NDefines.NAI.DEFAULT_SUPPLY_TRUCK_BUFFER_RATIO = 1.0								-- This modifies the amount of trucks taken from the stockpile by the set factor for the AI, if set to for example 1.2 the need is multiplied by 1.2, that way the AI can be made to produce a buffer of trucks. can be modified by wanted_supply_trucks min_wanted_supply_trucks ai strats
 NDefines.NAI.DEFAULT_SUPPLY_TRAIN_NEED_FACTOR = 1.2     							-- AI multiplies current train usage by this to determine desired nr of wanted trains. Can be modified by wanted_supply_train min_wanted_supply_trains ai strats.
-NDefines.NAI.DIVISION_SUPPLY_RATIO_TO_MOTORIZE = 0.8								-- If supply ratio is less than this, consider motorizing any applicable nearby supply hub
+NDefines.NAI.DIVISION_SUPPLY_RATIO_TO_MOTORIZE = 0.75								-- If supply ratio is less than this, consider motorizing any applicable nearby supply hub
 
 ----------- LEND LEASE
 
@@ -877,11 +901,11 @@ NDefines.NAI.MINIMUM_FUEL_DAYS_TO_ACCEPT_LEND_LEASE = 60					 		-- AI will accep
 
 NDefines.NAI.MISSING_CONVOYS_BOOST_FACTOR = 0.0										-- The more convoys a country is missing, the more resources it diverts to cover this.
 
-NDefines.NAI.MAX_DISTANCE_NALAV_INVASION = 180.0									-- AI is extremely unwilling to plan naval invasions above this naval distance limit.
+NDefines.NAI.MAX_DISTANCE_NALAV_INVASION = 200.0									-- AI is extremely unwilling to plan naval invasions above this naval distance limit.
 NDefines.NAI.MAX_UNIT_RATIO_FOR_INVASIONS = 0.35									-- countries won't use armies more than this ratio of total units for invasions
 NDefines.NAI.MAX_INVASION_FRONT_SCORE = 2400										-- max score for naval invasion front scores
 NDefines.NAI.MIN_FRONT_SCORE_FOR_AFTER_INVASION_AREAS = 1800						-- min score for army fronts that are created on recently invaded regions
-NDefines.NAI.INVASION_DISTANCE_RANDOMNESS = 3										-- This higher the value, the more unpredictable the invasions. Compares to actual map distance in pixels.
+NDefines.NAI.INVASION_DISTANCE_RANDOMNESS = 0										-- This higher the value, the more unpredictable the invasions. Compares to actual map distance in pixels.
 NDefines.NAI.INVASION_COASTAL_PROVS_PER_ORDER = 28									-- AI will consider one extra invasion per number of provinces stated here (num orders = total coast / this)
 NDefines.NAI.NAVAL_INVADED_AREA_PRIO_DURATION = 270									-- after successful invasion, AI will prio the enemy area for this number of days
 NDefines.NAI.NAVAL_INVADED_AREA_PRIO_MULT = 2.0										-- fronts that belongs to recent invasions gets more prio
@@ -890,6 +914,7 @@ NDefines.NAI.MAX_INVASION_SIZE = 24													-- max invasion group size
 NDefines.NAI.MAX_UNITS_FACTOR_INVASION_ORDER = 1.4									-- Factor for max number of units to assign to naval invasion orders
 NDefines.NAI.DESIRED_UNITS_FACTOR_INVASION_ORDER = 1.4								-- Factor for desired number of units to assign to naval invasion orders
 NDefines.NAI.MIN_UNITS_FACTOR_INVASION_ORDER = 1.2									-- Factor for min number of units to assign to naval invasion orders
+NDefines.NAI.ENEMY_NAVY_STRENGTH_DONT_BOTHER = 5.0									-- If the enemy has a navy at least these many times stronger that the own, don't bother invading
 
 NDefines.NAI.CONVOY_ESCORT_MUL_FROM_NO_CONVOYS = 0 									-- score multiplier when no convoys are around
 NDefines.NAI.CONVOY_ESCORT_SCORE_FROM_CONVOYS = 1             				        -- score for each convoy you have in area
@@ -1030,8 +1055,6 @@ NDefines.NAI.MIN_UNITS_FACTOR_FRONT_ORDER = 2.0										-- Factor for min numbe
 
 NDefines.NAI.HOUR_BAD_COMBAT_REEVALUATE = 6 										-- if we are in combat for this amount and it goes shitty then try skipping it
 
---NDefines.NAI.MIN_FRONT_SIZE_TO_CONSIDER_STANDARD_COHESION = 5000					-- How long should fronts be before we consider switching to standard cohesion (under this, standard cohesion fronts will switch back to relaxed)
-
 NDefines.NAI.PLAN_ATTACK_MIN_ORG_FACTOR_LOW = 0.85									-- Minimum org % for a unit to actively attack an enemy unit when executing a plan
 NDefines.NAI.PLAN_ATTACK_MIN_STRENGTH_FACTOR_LOW = 0.85								-- Minimum strength for a unit to actively attack an enemy unit when executing a plan
 
@@ -1142,6 +1165,18 @@ NDefines.NAI.DESIRE_USE_XP_TO_UPGRADE_AIR_EQUIPMENT = 0.5   						-- How quickly
 NDefines.NAI.XP_RATIO_REQUIRED_TO_RESEARCH_WITH_XP = 1.0							-- AI will at least need this amount of xp compared to cost of a tech to reserch it with XP
 
 NDefines.NAI.MAX_THREAT_FOR_FIRST_YEAR_CIVILIAN_MODE = 40							-- above this threshold, ai will leave first year civilian factory mode which bumps it civilian factory scores while building
+
+NDefines.NAI.CONSTRUCTION_PRIO_INFRASTRUCTURE = 0.20                                -- base prio for infrastructure in the construction queue
+NDefines.NAI.CONSTRUCTION_PRIO_CIV_FACTORY = 0.75                                  	-- base prio for civilian factories in the construction queue
+NDefines.NAI.CONSTRUCTION_PRIO_MIL_FACTORY = 0.70                                   -- base prio for military factories in the construction queue
+NDefines.NAI.CONSTRUCTION_PRIO_RAILWAY = 100.00                                     -- base prio for railways in the construction queue
+NDefines.NAI.CONSTRUCTION_PRIO_RAILWAY_GUN_REPAIR = 15.00                           -- base prio for railway gun repairs in the construction queue
+NDefines.NAI.CONSTRUCTION_PRIO_UNSPECIFIED = 0.50                                   -- base prio for unspecified buildings (none of the categories above) in the construction queue
+NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_OCCUPIED_TERRITORY = 0.50                     -- factor prio with this if occupied territory
+NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_OWNED_NONCORE = 0.50                          -- factor prio with this if owned non-core territory
+NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_OWNED_CORE = 2.00                             -- factor prio with this if owned core territory
+NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_REPAIRING = 0.30                              -- factor prio with this if building is being repaired
+
 
 --	NDefines_Graphics.NGraphics.
 
