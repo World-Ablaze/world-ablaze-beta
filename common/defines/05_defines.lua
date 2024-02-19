@@ -455,7 +455,7 @@ NDefines.NMilitary.FIELD_OFFICER_PROMOTION_PENALTY = 0								--Amount of divisi
 --NDefines.NMilitary.GENERATE_AI_DIV_COMMAND_HISTORY_ENTRIES = false				--Should we generate history entries for the AI (may cause savegame bloat)
 NDefines.NMilitary.NUM_DAYS_FOR_OPERATION_ENTRY = 30								--Number of days that a unit must have been on a particular active order instance to receive a history entry.
 
-NDefines.NMilitary.LAND_COMBAT_COLLATERAL_FORT_FACTOR = 0.05						-- Factor to scale collateral damage to forts with.
+NDefines.NMilitary.LAND_COMBAT_COLLATERAL_FORT_FACTOR = 0.03						-- Factor to scale collateral damage to forts with.
 
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Air
