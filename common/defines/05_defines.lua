@@ -455,6 +455,8 @@ NDefines.NMilitary.FIELD_OFFICER_PROMOTION_PENALTY = 0								--Amount of divisi
 --NDefines.NMilitary.GENERATE_AI_DIV_COMMAND_HISTORY_ENTRIES = false				--Should we generate history entries for the AI (may cause savegame bloat)
 NDefines.NMilitary.NUM_DAYS_FOR_OPERATION_ENTRY = 30								--Number of days that a unit must have been on a particular active order instance to receive a history entry.
 
+NDefines.NMilitary.LAND_COMBAT_COLLATERAL_FORT_FACTOR = 0.03						-- Factor to scale collateral damage to forts with.
+
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Air
 
@@ -746,7 +748,7 @@ NDefines.NNavy.OUT_OF_FUEL_ATTACK_FACTOR = -0.9
 NDefines.NNavy.OUT_OF_FUEL_TORPEDO_FACTOR = -0.9
 
 NDefines.NNavy.SCREEN_RATIO_FOR_FULL_SCREENING_FOR_CAPITALS = 4.0					-- this screen ratio to num capital/carriers is needed for full screening beyond screen line
-NDefines.NNavy.SCREEN_RATIO_FOR_FULL_SCREENING_FOR_CONVOYS = 15.0					-- this screen ratio to num convoys is needed for full screening beyond screen line
+NDefines.NNavy.SCREEN_RATIO_FOR_FULL_SCREENING_FOR_CONVOYS = 6.0					-- this screen ratio to num convoys is needed for full screening beyond screen line
 NDefines.NNavy.CAPITAL_RATIO_FOR_FULL_SCREENING_FOR_CARRIERS = 1.0					-- this capital ratio to num carriers is needed for full screening beyond screen line
 NDefines.NNavy.CAPITAL_RATIO_FOR_FULL_SCREENING_FOR_CONVOYS = 1.0  					-- this capital ratio to num convoys is needed for full screening beyond screen line
 NDefines.NNavy.BASE_CARRIER_SORTIE_EFFICIENCY = 0.5 								-- factor of planes that can sortie by default from a carrier
