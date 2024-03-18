@@ -70,7 +70,7 @@ NDefines.NCharacter.GENIUS_ADVISOR_MIN_RANK = 7
 
 
 
-NDefines.NCountry.BASE_RESEARCH_SLOTS = 1											
+NDefines.NCountry.BASE_RESEARCH_SLOTS = 1
 NDefines.NCountry.SUPPLY_FROM_DAMAGED_INFRA = 0.01              					-- damaged infrastructure counts as this in supply calcs
 
 NDefines.NCountry.INVASION_REPORT_EXPERATION_DAYS = 30								-- Invasion experation days
@@ -157,7 +157,7 @@ NDefines.NProduction.BASE_FACTORY_SPEED = 2.5 										-- Base factory speed mu
 NDefines.NProduction.BASE_FACTORY_SPEED_MIL = 2.5 									-- Base factory speed multiplier (how much hoi3 style IC each factory gives).
 NDefines.NProduction.BASE_FACTORY_SPEED_NAV = 4.2					 				-- Base factory speed multiplier (how much hoi3 style IC each factory gives).
 
-NDefines.NProduction.LICENSE_EQUIPMENT_BASE_SPEED = -0.25							-- base MIC speed modifier for licensed equipment
+NDefines.NProduction.LICENSE_EQUIPMENT_BASE_SPEED = -0.35							-- base MIC speed modifier for licensed equipment
 NDefines.NProduction.LICENSE_EQUIPMENT_SPEED_NOT_FACTION = -0.25					-- MIC speed modifier for licensed equipment for not being in faction
 NDefines.NProduction.LICENSE_EQUIPMENT_TECH_SPEED_PER_YEAR = 0						-- MIC speed modifier for licensed equipment for each year of difference between actual and latest equipment
 NDefines.NProduction.LICENSE_EQUIPMENT_TECH_SPEED_MAX_YEARS = 1						-- Maximum years for MIC speed modifier
