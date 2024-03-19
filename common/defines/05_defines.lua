@@ -74,7 +74,7 @@ NDefines.NCountry.BASE_RESEARCH_SLOTS = 1
 NDefines.NCountry.SUPPLY_FROM_DAMAGED_INFRA = 0.01              					-- damaged infrastructure counts as this in supply calcs
 
 NDefines.NCountry.INVASION_REPORT_EXPERATION_DAYS = 30								-- Invasion experation days
-NDefines.NCountry.SUPPLY_CONVOY_FACTOR = 0.15										-- How many convoys each supply needs
+NDefines.NCountry.SUPPLY_CONVOY_FACTOR = 0.3										-- How many convoys each supply needs
 NDefines.NCountry.CONVOY_RANGE_FACTOR = 1.1                     				    -- how much range affects convoy need
 NDefines.NCountry.FUEL_LEASE_CONVOY_RATIO = 0.00005									-- num convoys needed per fuel land lease
 
