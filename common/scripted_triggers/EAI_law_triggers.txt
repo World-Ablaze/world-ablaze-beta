@@ -55,6 +55,28 @@ EAI_can_take_civilian_economy = {
 		tag = GUA
 		tag = DOM
 		tag = HAI
+		AND = {
+			tag = FIN
+			NOT = {
+				OR = {
+					surrender_progress > 0
+					has_war_with = SOV
+					GER = {
+						surrender_progress > 0
+					}
+				}
+			}
+			is_in_faction_with = GER
+			OR = {
+				has_global_flag = GER_SOV_ceasefire
+				SOV = {
+					OR = {
+						has_capitulated = yes
+						exists = no
+					}
+				}
+			}
+		}
 	}
 
 	NOT = { original_tag = USA }
@@ -581,6 +603,9 @@ EAI_can_take_tot_economic_mobilisation = {
 		EAI_major_country = yes
 		tag = CHI
 		tag = CAN
+		tag = TUR
+		tag = GRE
+		tag = RAJ
 		AND = {
 			tag = ROM
 			date > 1942.1.1
@@ -597,7 +622,9 @@ EAI_can_take_tot_economic_mobilisation = {
 	OR = {
 		date > 1940.1.1
 		tag = CHI
-		tag = JAP
+		tag = CAN
+		tag = TUR
+		tag = GRE
 	}
 	has_capitulated = no
 
@@ -1150,6 +1177,8 @@ EAI_can_take_service_by_requirement = {
 		tag = JAP
 		tag = FRA
 		tag = SOV
+		tag = ENG
+		tag = ITA
 		date > 1941.1.1
 	}
 	has_manpower < 500000
@@ -1561,6 +1590,10 @@ EAI_can_take_free_trade = {
 			}
 		}
 	}
+	
+	NOT = {
+		EAI_can_take_closed_economy = yes
+	}
 
 	NOT = { has_idea = planned_economy }
 
@@ -1622,6 +1655,12 @@ EAI_can_take_export_focus = {
 		}
 		has_completed_focus = USA_declare_unlimited_national_emergency
 	}
+	if = {
+		limit = {
+			tag = USA
+		}
+		surrender_progress < 0.11
+	}
 	NOT = {
 		has_autonomy_state = autonomy_integrated_puppet
 	}
@@ -1633,6 +1672,9 @@ EAI_can_take_export_focus = {
 	}
 	NOT = {
 		has_autonomy_state = autonomy_reichskommissariat
+	}
+	NOT = {
+		EAI_can_take_closed_economy = yes
 	}
 	NOT = { has_idea = planned_economy }
 	NOT = { original_tag = SPR }
@@ -1770,6 +1812,9 @@ EAI_can_take_limited_exports = {
 		has_autonomy_state = autonomy_reichskommissariat
 	}
 	NOT = {
+		EAI_can_take_closed_economy = yes
+	}
+	NOT = {
 		is_major = no
 		is_in_faction = yes
 		has_war = yes
@@ -1867,7 +1912,10 @@ EAI_can_take_limited_exports = {
 EAI_can_take_closed_economy = {
 	########## AI LOGIC
 
-	always = no # dont take this ever
+	OR = {
+		original_tag = USA
+		original_tag = GER
+	}
 
 	########## LAW REQUIREMENTS
 
@@ -1878,10 +1926,22 @@ EAI_can_take_closed_economy = {
 		has_war = yes
 		is_major = yes
 	}
-
-	AND = {
-		is_in_faction = no
-		has_war = yes
+	if = {
+		limit = {
+			tag = USA
+		}
+		AND = {
+			has_completed_focus = USA_victory_at_all_costs
+			has_idea = USA_homeland_defense
+			surrender_progress > 0.1
+		}
+	}
+	if = {
+		limit = {
+			tag = GER
+		}
+		has_completed_focus = GER_death_before_defeat
+		surrender_progress > 0
 	}
 	NOT = {
 		has_autonomy_state = autonomy_integrated_puppet
@@ -1895,39 +1955,4 @@ EAI_can_take_closed_economy = {
 	NOT = {
 		has_autonomy_state = autonomy_reichskommissariat
 	}
-	NOT = { tag = ENG }
-	NOT = {	tag = CAN }
-	NOT = {	tag = IRQ }
-	NOT = { has_idea = USA_marshall_plan_aid }
-	NOT = { has_idea = planned_economy }
-
-	OR = {
-		has_government = fascism
-		has_government = communism
-		has_idea = protectionism
-	}
-	OR = {
-		has_idea = war_economy
-		has_idea = tot_economic_mobilisation
-		has_idea = protectionism
-	}
-	OR = {
-		NOT = {	tag = SOV }
-		NOT = { has_opinion_modifier = MR_pact }
-	}
-
-	if = {
-		limit = {
-			original_tag = CHI
-			has_dlc = "Waking the Tiger"
-		}
-		NOT = { has_idea = CHI_nine_power_treaty }
-	}
-	if = {
-		limit = {
-			is_subject = yes
-		}
-		NOT = { OVERLORD = { has_completed_focus = ENG_new_imperial_parliament } }
-	}
-
 }
