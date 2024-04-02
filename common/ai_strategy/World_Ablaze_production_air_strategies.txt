@@ -85,6 +85,37 @@ WA_sov_cas_strategy = {
 	ai_strategy = { type = equipment_production_min_factories  id = cas		         		 	 value = 1 }
 }
 
+# close air support usa
+WA_usa_cas_strategy = {
+	enable = {
+		has_country_flag = WA_usa_cv_cas_production_flag
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_variant_production_factor id = cv_CAS_equipment             value = 140 }
+
+	ai_strategy = { type = unit_ratio id = cas												 	 value = 80 }
+	ai_strategy = { type = equipment_production_factor id = cas					 				 value = 100 }
+	ai_strategy = { type = equipment_production_min_factories  id = cas		         		 	 value = 1 }
+	ai_strategy = { type = unit_ratio id = cv_cas												 value = 80 }
+	ai_strategy = { type = equipment_production_factor id = cv_cas			 				 	 value = 100 }
+	ai_strategy = { type = equipment_production_min_factories  id = cv_cas		         		 value = 1 }
+}
+
+WA_usa_cas_strategy_fix = {
+	enable = {
+		tag = USA
+		NOT = {
+			has_country_flag = WA_usa_cv_cas_production_flag
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_variant_production_factor id = cv_CAS_equipment             value = -1000 }
+	ai_strategy = { type = equipment_production_factor id = cas					 				 value = -1000 }
+	ai_strategy = { type = equipment_production_factor id = cv_cas			 				 	 value = -1000 }
+}
+
 # heavy fighter
 WA_heavy_fighter_strategy = {
 	enable = {
@@ -209,7 +240,7 @@ WA_naval_bomber_strategy = {
 
 	ai_strategy = { type = equipment_variant_production_factor id = cv_small_plane_naval_bomber_airframe      value = 120 }
 
-	ai_strategy = { type = unit_ratio id = naval_bomber										 	 value = 10 }
+	ai_strategy = { type = unit_ratio id = naval_bomber										 	 value = 40 }
 	ai_strategy = { type = equipment_production_factor id = naval_bomber						 value = 100 }
 	ai_strategy = { type = equipment_production_min_factories  id = naval_bomber         	 	 value = 3 }
 }
@@ -291,7 +322,7 @@ GER_air_industry_ramp_up_for_war = {
 
 	ai_strategy = {
 		type = air_factory_balance
-		value = 90
+		value = 70
 	}
 }
 
@@ -374,7 +405,7 @@ ENG_growing_confidence_in_the_air = {
 
 	ai_strategy = {
 		type = air_factory_balance
-		value = 120
+		value = 130
 	}
 }
 
@@ -417,7 +448,7 @@ ENG_no_battle_of_britain_early = {
 
 	ai_strategy = {
 		type = air_factory_balance
-		value = 160
+		value = 150
 	}
 }
 
@@ -437,7 +468,7 @@ ENG_no_battle_of_britain_late = { ###bomb germany to shit
 
 	ai_strategy = {
 		type = air_factory_balance
-		value = 175
+		value = 150
 	}
 }
 
@@ -452,32 +483,8 @@ ENG_home_guard_needs_equipment = {
 
 	ai_strategy = {
 		type = air_factory_balance
-		value = -100
+		value = -10000
 	}
-}
-
-ENG_highered_bomber_production = {
-	allowed = {
-		original_tag = ENG
-	}
- 	enable = {
-		NOT = {
-			OR = {
-				has_country_flag = WA_bob_production_flag
-				surrender_progress > 0
-			}
-		}
- 		num_of_military_factories > 199
-		date > 1942.1.1
-		has_war = yes
- 	}
-	abort_when_not_enabled = yes
-
-#	ai_strategy = {
-#		type = equipment_production_min_factories
-# 		id = strategic_bomber
-#		value = 50
-# 	}
 }
 
 ENG_bomber_harris_on_vacation = {
@@ -534,6 +541,7 @@ USA_america_fuck_yea = {
 		original_tag = USA
 	}
 	enable = {
+		has_completed_focus = USA_synthetic_rubber_program
 		num_of_military_factories > 799
 	}
 	abort = {
@@ -542,38 +550,27 @@ USA_america_fuck_yea = {
 
 	ai_strategy = {
 		type = air_factory_balance
-		value = 55 #80 before
+		value = 55
 	}
 }
 
-#USA_america_1_bomber_an_hour = {
-#	allowed = {
-#		original_tag = USA
-#	}
-#	enable = {
-#		num_of_military_factories > 799
-#		has_country_flag = WA_strategic_bomber_production_flag
-#		NOT = {
-#			has_country_flag = WA_fighter_multirole_production_flag
-#			has_country_flag = WA_usa_jet_production_flag
-#		}
-#	}
-#	abort = {
-#		OR = {
-#			has_country_flag = WA_fighter_multirole_production_flag
-#			has_country_flag = WA_usa_jet_production_flag
-#			NOT = {
-#				has_country_flag = WA_strategic_bomber_production_flag
-#			}
-#		}
-#	}
-#
-#	ai_strategy = {
-#		type = equipment_production_min_factories
-#		id = strategic_bomber
-#		value = 200
-#	}
-#}
+USA_need_rubber_first = {
+	allowed = {
+		original_tag = USA
+	}
+	enable = {
+		NOT = {
+			has_completed_focus = USA_synthetic_rubber_program
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = air_factory_balance
+		value = 25
+	}
+}
+
 
 USA_carrier_planes_arnt_that_useful_1 = {
 	allowed = {
@@ -680,7 +677,6 @@ SOV_barb = {
 	enable = {
 		num_of_military_factories < 600
 		has_war_with_major = yes
-		#date > 1941.1.1
 	}
 	abort_when_not_enabled = yes
 
@@ -697,13 +693,29 @@ SOV_barb_2 = {
 	enable = {
 		num_of_military_factories > 599
 		has_war_with_major = yes
-		#date > 1941.1.1
 	}
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = air_factory_balance
 		value = 55
+	}
+}
+
+SOV_stockpile_air = {
+	allowed = {
+		tag = SOV
+	}
+	enable = {
+		has_war = no
+		has_tech = sov_fighter_3
+		date < 1942.1.1
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = air_factory_balance
+		value = 65
 	}
 }
 

@@ -66,19 +66,19 @@ SOV_unit_production = {
 	ai_strategy = {
 		type = role_ratio
 		id = armor
-		value = 18							#Komrade
+		value = 18
 	}
 
 	ai_strategy = {
 		type = role_ratio
 		id = heavy_armor
-		value = 6							#Komrade
+		value = 6
 	}
 
 	ai_strategy = {
 		type = role_ratio
 		id = infantry
-		value = 50 #because doctrine 80					#Komrade
+		value = 80
 	}
 
 	# Naval unit factors
@@ -1029,7 +1029,7 @@ SOV_dont_justify_finland_after_whitepeace = {
 			has_war_with = FIN
 			146 = { is_controlled_by = SOV }
 		}
-		has_country_flag = SOV_karjala_is_ours
+		has_country_flag = SOV_winter_war_phyrric_victory
 		date < 1943.1.1
 	}
 
@@ -1419,6 +1419,12 @@ SOV_war_with_germany = {
 		state = 146
 		value = -50
 	}
+	
+	ai_strategy = {
+		type = front_unit_request
+		state = 1044
+		value = -50
+	}
 }
 
 SOV_war_with_germany_2 = {
@@ -1706,22 +1712,14 @@ SOV_finland_wont_be_defended_in_time_if_you_use_eastern_troops = {
 	}
 }
 
-SOV_be_defensive = {
+SOV_counterattack = {
 	allowed = {
 		tag = SOV
 	}
 
 	enable = {
 		has_war_with = GER
-		surrender_progress > 0
-		NOT = {
-			AND = {
-				date > 1941.11.1
-				date < 1942.4.1
-			}
-		}
-		date < 1942.9.1
-		NOT = { GER = { surrender_progress > 0.2 } }
+		has_country_flag = ai_barb_timer
 	}
 
 	abort_when_not_enabled = yes
@@ -1740,19 +1738,18 @@ SOV_be_defensive = {
 	}
 }
 
-SOV_be_defensive_winter = {
+SOV_be_defensive = {
 	allowed = {
 		tag = SOV
 	}
 
 	enable = {
 		has_war_with = GER
-		surrender_progress > 0
-		AND = {
-			date > 1941.11.1
-			date < 1942.4.1
-		}
+		date < 1942.9.1
 		NOT = { GER = { surrender_progress > 0.2 } }
+		NOT = {
+			has_country_flag = ai_barb_timer
+		}
 	}
 
 	abort_when_not_enabled = yes
@@ -1771,17 +1768,18 @@ SOV_be_defensive_winter = {
 	}
 }
 
-SOV_dont_be_aggressive = {
+SOV_balanced_plan = {
 	allowed = {
 		tag = SOV
 	}
 
 	enable = {
 		has_war_with = GER
-		surrender_progress > 0
 		date > 1942.9.1
-		date < 1944.8.1
 		NOT = { GER = { surrender_progress > 0.2 } }
+		NOT = {
+			has_country_flag = ai_barb_timer
+		}
 	}
 
 	abort_when_not_enabled = yes
@@ -1800,15 +1798,17 @@ SOV_dont_be_aggressive = {
 	}
 }
 
-SOV_bagration = {
+SOV_rush = {
 	allowed = {
 		tag = SOV
 	}
 
 	enable = {
 		has_war_with = GER
-		date > 1944.8.1
-		date < 1945.1.1
+		GER = { surrender_progress > 0.2 }
+		NOT = {
+			has_country_flag = ai_barb_timer
+		}
 	}
 
 	abort_when_not_enabled = yes
@@ -1822,7 +1822,7 @@ SOV_bagration = {
 			}
 		}
 		ordertype = front
-		execution_type = balanced
+		execution_type = rush
 		manual_attack = yes
 	}
 }
@@ -2219,57 +2219,18 @@ SOV_history_dictates_our_low_prepardness = {
 }
 
 ############Soviet city garrisons, keep them separate to avoid shuffling
-SOV_defense_of_donetsk = {
-	allowed = {
-		original_tag = SOV
-	}
-	enable = {
-		NOT = {
-			has_offensive_war_with = GER
-		}
-		any_enemy_country = { controls_state = 202 }
-		date < 1942.10.1
-		NOT = {
-			AND = {
-				OR = {
-					has_completed_focus = SOV_secure_leningrad
-					focus_progress = {
-						focus = SOV_secure_leningrad
-						progress > 0.1
-					}
-				}
-				date < 1940.5.1
-				NOT = {
-					has_war_with = GER
-				}
-			}
-		}
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = put_unit_buffers
-
-		order_id = 1
-
-		# north_russia
-		states = {
-			227
-		}
-
-		ratio = 0.15
-
-		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
-	}
-}
 
 SOV_defense_of_stalingrad = {
 	allowed = {
 		original_tag = SOV
 	}
 	enable = {
-		surrender_progress > 0.2
+		OR = {
+			surrender_progress > 0.2
+			NOT = {
+				controls_state = 218
+			}
+		}
 		date < 1942.10.1
 		NOT = {
 			AND = {
@@ -2299,10 +2260,10 @@ SOV_defense_of_stalingrad = {
 			217
 		}
 
-		ratio = 0.15
+		ratio = 0.12
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = yes
 	}
 }
 
@@ -2311,7 +2272,8 @@ SOV_defense_of_kiev = {
 		original_tag = SOV
 	}
 	enable = {
-		surrender_progress < 0.09
+		#has_full_control_of_state = 202
+		surrender_progress < 0.06
 		NOT = {
 			AND = {
 				surrender_progress > 0.1
@@ -2353,7 +2315,7 @@ SOV_defense_of_kiev = {
 			202
 		}
 
-		ratio = 0.325
+		ratio = 0.12
 
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = yes
@@ -2365,7 +2327,8 @@ SOV_defense_of_minsk = {
 		original_tag = SOV
 	}
 	enable = {
-		surrender_progress < 0.09
+		#has_full_control_of_state = 206
+		surrender_progress < 0.06
 		NOT = {
 			AND = {
 				surrender_progress > 0.1
@@ -2407,7 +2370,7 @@ SOV_defense_of_minsk = {
 			206
 		}
 
-		ratio = 0.2
+		ratio = 0.1
 
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = yes
@@ -2453,7 +2416,7 @@ SOV_defense_of_leningrad = {
 		ratio = 0.1
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = yes
 	}
 }
 
@@ -2499,10 +2462,10 @@ SOV_defense_of_sevastapol = {
 			137
 		}
 
-		ratio = 0.075
+		ratio = 0.1
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = yes
 	}
 }
 
@@ -2547,167 +2510,7 @@ SOV_defense_of_rostov = {
 		ratio = 0.1
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
-	}
-}
-
-SOV_defense_of_zaporozhe = {
-	allowed = {
-		original_tag = SOV
-	}
-	enable = {
-		NOT = {
-			AND = {
-				surrender_progress > 0.1
-				has_game_rule = {
-					rule = SOV_ai_behavior
-					option = LEFT_OPPOSITION
-				}
-			}
-		}
-		date < 1942.10.1
-		NOT = {
-			has_offensive_war_with = GER
-		}
-		NOT = {
-			AND = {
-				OR = {
-					has_completed_focus = SOV_secure_leningrad
-					focus_progress = {
-						focus = SOV_secure_leningrad
-						progress > 0.1
-					}
-				}
-				date < 1940.5.1
-				NOT = {
-					has_war_with = GER
-				}
-			}
-		}
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = put_unit_buffers
-
-		order_id = 11
-
-		# north_russia
-		states = {
-			200
-		}
-
-		ratio = 0.05
-
-		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
-	}
-}
-
-SOV_defense_of_dnipropetrovsk = {
-	allowed = {
-		original_tag = SOV
-	}
-	enable = {
-		NOT = {
-			AND = {
-				surrender_progress > 0.1
-				has_game_rule = {
-					rule = SOV_ai_behavior
-					option = LEFT_OPPOSITION
-				}
-			}
-		}
-		date < 1942.10.1
-		NOT = {
-			has_offensive_war_with = GER
-		}
-		NOT = {
-			AND = {
-				OR = {
-					has_completed_focus = SOV_secure_leningrad
-					focus_progress = {
-						focus = SOV_secure_leningrad
-						progress > 0.1
-					}
-				}
-				date < 1940.5.1
-				NOT = {
-					has_war_with = GER
-				}
-			}
-		}
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = put_unit_buffers
-
-		order_id = 12
-
-		# north_russia
-		states = {
-			226
-		}
-
-		ratio = 0.15
-
-		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
-	}
-}
-
-SOV_defense_of_gomel = {
-	allowed = {
-		original_tag = SOV
-	}
-	enable = {
-		NOT = {
-			AND = {
-				surrender_progress > 0.1
-				has_game_rule = {
-					rule = SOV_ai_behavior
-					option = LEFT_OPPOSITION
-				}
-			}
-		}
-		surrender_progress < 0.15
-		date < 1942.10.1
-		NOT = {
-			has_offensive_war_with = GER
-		}
-		NOT = {
-			AND = {
-				OR = {
-					has_completed_focus = SOV_secure_leningrad
-					focus_progress = {
-						focus = SOV_secure_leningrad
-						progress > 0.1
-					}
-				}
-				date < 1940.5.1
-				NOT = {
-					has_war_with = GER
-				}
-			}
-		}
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = put_unit_buffers
-
-		order_id = 13
-
-		# north_russia
-		states = {
-			241
-		}
-
-		ratio = 0.05
-
-		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = yes
 	}
 }
 
@@ -2716,6 +2519,7 @@ SOV_defense_of_smolensk = {
 		original_tag = SOV
 	}
 	enable = {
+		has_full_control_of_state = 242
 		NOT = {
 			AND = {
 				surrender_progress > 0.1
@@ -2757,10 +2561,10 @@ SOV_defense_of_smolensk = {
 			242
 		}
 
-		ratio = 0.05
+		ratio = 0.025
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = yes
 	}
 }
 
@@ -2769,8 +2573,24 @@ SOV_defense_of_moscow = {
 		original_tag = SOV
 	}
 	enable = {
-		has_completed_focus = SOV_defense_of_the_motherland
-		date < 1942.3.1
+		date < 1942.9.1
+		NOT = {
+			has_offensive_war_with = GER
+		}
+		OR = {
+			AND = {
+				has_war_with = FIN
+				NOT = {
+					has_war_with = GER
+				}
+			}
+			surrender_progress > 0.05
+		}
+		NOT = {
+			GER = {
+				controls_state = 219
+			}
+		}
 	}
 	abort_when_not_enabled = yes
 
@@ -2784,10 +2604,10 @@ SOV_defense_of_moscow = {
 			219
 		}
 
-		ratio = 0.18
+		ratio = 0.1
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = yes
 	}
 }
 
@@ -2796,7 +2616,13 @@ SOV_defense_of_stalin_line = {
 		original_tag = SOV
 	}
 	enable = {
-		surrender_progress < 0.09
+		has_full_control_of_state = 11
+		has_full_control_of_state = 784
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
 		date < 1942.10.1
 		NOT = {
 			has_offensive_war_with = GER
@@ -2830,10 +2656,10 @@ SOV_defense_of_stalin_line = {
 			784
 		}
 
-		ratio = 0.15
+		ratio = 0.1
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = yes
 	}
 }
 
@@ -2842,7 +2668,12 @@ SOV_defense_of_stalin_line_2 = {
 		original_tag = SOV
 	}
 	enable = {
-		surrender_progress < 0.09
+		has_full_control_of_state = 199
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
 		date < 1942.10.1
 		NOT = {
 			has_offensive_war_with = GER
@@ -2875,10 +2706,10 @@ SOV_defense_of_stalin_line_2 = {
 			199
 		}
 
-		ratio = 0.15
+		ratio = 0.1
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = yes
 	}
 }
 
@@ -2887,7 +2718,12 @@ SOV_defense_of_stalin_line_3 = {
 		original_tag = SOV
 	}
 	enable = {
-		surrender_progress < 0.09
+		has_full_control_of_state = 194
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
 		date < 1942.10.1
 		NOT = {
 			has_offensive_war_with = GER
@@ -2920,10 +2756,10 @@ SOV_defense_of_stalin_line_3 = {
 			194
 		}
 
-		ratio = 0.1
+		ratio = 0.05
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = yes
 	}
 }
 
@@ -2932,8 +2768,13 @@ SOV_defense_of_stalin_line_4 = {
 		original_tag = SOV
 	}
 	enable = {
-		controls_state = 202
-		surrender_progress < 0.09
+		has_full_control_of_state = 94
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
+		surrender_progress < 0.06
 		date < 1942.10.1
 		NOT = {
 			has_offensive_war_with = GER
@@ -2969,7 +2810,7 @@ SOV_defense_of_stalin_line_4 = {
 		ratio = 0.1
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = yes
 	}
 }
 
@@ -2978,7 +2819,12 @@ SOV_defense_of_stalin_line_5 = {
 		original_tag = SOV
 	}
 	enable = {
-		surrender_progress < 0.09
+		has_full_control_of_state = 204
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
 		date < 1942.10.1
 		NOT = {
 			has_offensive_war_with = GER
@@ -3014,7 +2860,7 @@ SOV_defense_of_stalin_line_5 = {
 		ratio = 0.1
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = yes
 	}
 }
 
@@ -3023,7 +2869,12 @@ SOV_defense_of_stalin_line_6 = {
 		original_tag = SOV
 	}
 	enable = {
-		surrender_progress < 0.09
+		has_full_control_of_state = 966
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
 		date < 1942.10.1
 		NOT = {
 			has_offensive_war_with = GER
@@ -3057,10 +2908,10 @@ SOV_defense_of_stalin_line_6 = {
 			966
 		}
 
-		ratio = 0.225
+		ratio = 0.1
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = yes
 	}
 }
 
@@ -3069,7 +2920,12 @@ SOV_defense_of_stalin_line_7 = {
 		original_tag = SOV
 	}
 	enable = {
-		surrender_progress < 0.09
+		has_full_control_of_state = 93
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
 		date < 1942.10.1
 		NOT = {
 			has_offensive_war_with = GER
@@ -3105,7 +2961,7 @@ SOV_defense_of_stalin_line_7 = {
 		ratio = 0.1
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = yes
 	}
 }
 
@@ -3115,7 +2971,12 @@ SOV_defense_of_stalin_line_8 = {
 		original_tag = SOV
 	}
 	enable = {
-		surrender_progress < 0.09
+		has_full_control_of_state = 95
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
 		date < 1942.10.1
 		NOT = {
 			has_offensive_war_with = GER
@@ -3151,7 +3012,7 @@ SOV_defense_of_stalin_line_8 = {
 		ratio = 0.1
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = yes
 	}
 }
 
@@ -3160,7 +3021,12 @@ SOV_defense_of_stalin_line_9 = {
 		original_tag = SOV
 	}
 	enable = {
-		surrender_progress < 0.09
+		has_full_control_of_state = 96
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
 		date < 1942.10.1
 		NOT = {
 			has_offensive_war_with = GER
@@ -3193,10 +3059,10 @@ SOV_defense_of_stalin_line_9 = {
 			96
 		}
 
-		ratio = 0.12
+		ratio = 0.1
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = yes
 	}
 }
 
@@ -3205,7 +3071,12 @@ SOV_defense_of_stalin_line_10 = {
 		original_tag = SOV
 	}
 	enable = {
-		surrender_progress < 0.09
+		has_full_control_of_state = 203
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
 		date < 1942.10.1
 		NOT = {
 			has_offensive_war_with = GER
@@ -3238,10 +3109,10 @@ SOV_defense_of_stalin_line_10 = {
 			203
 		}
 
-		ratio = 0.15
+		ratio = 0.1
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = yes
 	}
 }
 
@@ -3250,7 +3121,12 @@ SOV_defense_of_stalin_line_11 = {
 		original_tag = SOV
 	}
 	enable = {
-		surrender_progress < 0.09
+		has_full_control_of_state = 12
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
 		date < 1942.10.1
 		NOT = {
 			has_offensive_war_with = GER
@@ -3286,7 +3162,7 @@ SOV_defense_of_stalin_line_11 = {
 		ratio = 0.1
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = yes
 	}
 }
 
@@ -3295,7 +3171,12 @@ SOV_defense_of_stalin_line_12 = {
 		original_tag = SOV
 	}
 	enable = {
-		surrender_progress < 0.09
+		has_full_control_of_state = 198
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
 		date < 1942.10.1
 		NOT = {
 			has_offensive_war_with = GER
@@ -3328,10 +3209,10 @@ SOV_defense_of_stalin_line_12 = {
 			198
 		}
 
-		ratio = 0.2
+		ratio = 0.1
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = yes
 	}
 }
 
@@ -3340,7 +3221,12 @@ SOV_defense_of_stalin_line_13 = {
 		original_tag = SOV
 	}
 	enable = {
-		surrender_progress < 0.09
+		has_full_control_of_state = 965
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
 		date < 1942.10.1
 		NOT = {
 			has_offensive_war_with = GER
@@ -3376,7 +3262,557 @@ SOV_defense_of_stalin_line_13 = {
 		ratio = 0.1
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = yes
+	}
+}
+
+SOV_defense_of_stalin_line_14 = {
+	allowed = {
+		original_tag = SOV
+	}
+	enable = {
+		has_full_control_of_state = 201
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
+		date < 1942.10.1
+		NOT = {
+			has_offensive_war_with = GER
+		}
+		NOT = {
+			AND = {
+				OR = {
+					has_completed_focus = SOV_secure_leningrad
+					focus_progress = {
+						focus = SOV_secure_leningrad
+						progress > 0.1
+					}
+				}
+				date < 1940.5.1
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+
+		order_id = 32
+
+		# west russia
+		states = {
+			201
+		}
+
+		ratio = 0.1
+
+		subtract_invasions_from_need = no
+		subtract_fronts_from_need = yes
+	}
+}
+
+SOV_defense_of_stalin_line_15 = {
+	allowed = {
+		original_tag = SOV
+	}
+	enable = {
+		has_full_control_of_state = 197
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
+		date < 1942.10.1
+		NOT = {
+			has_offensive_war_with = GER
+		}
+		NOT = {
+			AND = {
+				OR = {
+					has_completed_focus = SOV_secure_leningrad
+					focus_progress = {
+						focus = SOV_secure_leningrad
+						progress > 0.1
+					}
+				}
+				date < 1940.5.1
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+
+		order_id = 33
+
+		# west russia
+		states = {
+			197
+		}
+
+		ratio = 0.1
+
+		subtract_invasions_from_need = no
+		subtract_fronts_from_need = yes
+	}
+}
+
+SOV_defense_of_stalin_line_16 = {
+	allowed = {
+		original_tag = SOV
+	}
+	enable = {
+		has_full_control_of_state = 207
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
+		date < 1942.10.1
+		NOT = {
+			has_offensive_war_with = GER
+		}
+		NOT = {
+			AND = {
+				OR = {
+					has_completed_focus = SOV_secure_leningrad
+					focus_progress = {
+						focus = SOV_secure_leningrad
+						progress > 0.1
+					}
+				}
+				date < 1940.5.1
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+
+		order_id = 34
+
+		# west russia
+		states = {
+			207
+		}
+
+		ratio = 0.1
+
+		subtract_invasions_from_need = no
+		subtract_fronts_from_need = yes
+	}
+}
+
+SOV_defense_of_stalin_line_17 = {
+	allowed = {
+		original_tag = SOV
+	}
+	enable = {
+		has_full_control_of_state = 210
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
+		date < 1942.10.1
+		NOT = {
+			has_offensive_war_with = GER
+		}
+		NOT = {
+			AND = {
+				OR = {
+					has_completed_focus = SOV_secure_leningrad
+					focus_progress = {
+						focus = SOV_secure_leningrad
+						progress > 0.1
+					}
+				}
+				date < 1940.5.1
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+
+		order_id = 35
+
+		# west russia
+		states = {
+			210
+		}
+
+		ratio = 0.1
+
+		subtract_invasions_from_need = no
+		subtract_fronts_from_need = yes
+	}
+}
+
+SOV_defense_of_stalin_line_18 = {
+	allowed = {
+		original_tag = SOV
+	}
+	enable = {
+		has_full_control_of_state = 208
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
+		date < 1942.10.1
+		NOT = {
+			has_offensive_war_with = GER
+		}
+		NOT = {
+			AND = {
+				OR = {
+					has_completed_focus = SOV_secure_leningrad
+					focus_progress = {
+						focus = SOV_secure_leningrad
+						progress > 0.1
+					}
+				}
+				date < 1940.5.1
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+
+		order_id = 36
+
+		# west russia
+		states = {
+			208
+		}
+
+		ratio = 0.1
+
+		subtract_invasions_from_need = no
+		subtract_fronts_from_need = yes
+	}
+}
+
+SOV_defense_of_stalin_line_19 = {
+	allowed = {
+		original_tag = SOV
+	}
+	enable = {
+		has_full_control_of_state = 241
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
+		date < 1942.10.1
+		NOT = {
+			has_offensive_war_with = GER
+		}
+		NOT = {
+			AND = {
+				OR = {
+					has_completed_focus = SOV_secure_leningrad
+					focus_progress = {
+						focus = SOV_secure_leningrad
+						progress > 0.1
+					}
+				}
+				date < 1940.5.1
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+
+		order_id = 37
+
+		# west russia
+		states = {
+			241
+		}
+
+		ratio = 0.1
+
+		subtract_invasions_from_need = no
+		subtract_fronts_from_need = yes
+	}
+}
+
+SOV_defense_of_stalin_line_20 = {
+	allowed = {
+		original_tag = SOV
+	}
+	enable = {
+		has_full_control_of_state = 193
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
+		date < 1942.10.1
+		NOT = {
+			has_offensive_war_with = GER
+		}
+		NOT = {
+			AND = {
+				OR = {
+					has_completed_focus = SOV_secure_leningrad
+					focus_progress = {
+						focus = SOV_secure_leningrad
+						progress > 0.1
+					}
+				}
+				date < 1940.5.1
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+
+		order_id = 38
+
+		# west russia
+		states = {
+			193
+		}
+
+		ratio = 0.1
+
+		subtract_invasions_from_need = no
+		subtract_fronts_from_need = yes
+	}
+}
+
+SOV_defense_of_stalin_line_21 = {
+	allowed = {
+		original_tag = SOV
+	}
+	enable = {
+		has_full_control_of_state = 259
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
+		date < 1942.10.1
+		NOT = {
+			has_offensive_war_with = GER
+		}
+		NOT = {
+			AND = {
+				OR = {
+					has_completed_focus = SOV_secure_leningrad
+					focus_progress = {
+						focus = SOV_secure_leningrad
+						progress > 0.1
+					}
+				}
+				date < 1940.5.1
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+
+		order_id = 39
+
+		# west russia
+		states = {
+			259
+		}
+
+		ratio = 0.1
+
+		subtract_invasions_from_need = no
+		subtract_fronts_from_need = yes
+	}
+}
+
+SOV_defense_of_stalin_line_22 = {
+	allowed = {
+		original_tag = SOV
+	}
+	enable = {
+		has_full_control_of_state = 226
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
+		date < 1942.10.1
+		NOT = {
+			has_offensive_war_with = GER
+		}
+		NOT = {
+			AND = {
+				OR = {
+					has_completed_focus = SOV_secure_leningrad
+					focus_progress = {
+						focus = SOV_secure_leningrad
+						progress > 0.1
+					}
+				}
+				date < 1940.5.1
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+
+		order_id = 40
+
+		# west russia
+		states = {
+			226
+		}
+
+		ratio = 0.1
+
+		subtract_invasions_from_need = no
+		subtract_fronts_from_need = yes
+	}
+}
+
+SOV_defense_of_stalin_line_23 = {
+	allowed = {
+		original_tag = SOV
+	}
+	enable = {
+		has_full_control_of_state = 200
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
+		date < 1942.10.1
+		NOT = {
+			has_offensive_war_with = GER
+		}
+		NOT = {
+			AND = {
+				OR = {
+					has_completed_focus = SOV_secure_leningrad
+					focus_progress = {
+						focus = SOV_secure_leningrad
+						progress > 0.1
+					}
+				}
+				date < 1940.5.1
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+
+		order_id = 41
+
+		# west russia
+		states = {
+			200
+		}
+
+		ratio = 0.1
+
+		subtract_invasions_from_need = no
+		subtract_fronts_from_need = yes
+	}
+}
+
+SOV_defense_of_stalin_line_24 = {
+	allowed = {
+		original_tag = SOV
+	}
+	enable = {
+		has_full_control_of_state = 227
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
+		date < 1942.10.1
+		NOT = {
+			has_offensive_war_with = GER
+		}
+		NOT = {
+			AND = {
+				OR = {
+					has_completed_focus = SOV_secure_leningrad
+					focus_progress = {
+						focus = SOV_secure_leningrad
+						progress > 0.1
+					}
+				}
+				date < 1940.5.1
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+
+		order_id = 42
+
+		# west russia
+		states = {
+			227
+		}
+
+		ratio = 0.1
+
+		subtract_invasions_from_need = no
+		subtract_fronts_from_need = yes
 	}
 }
 
@@ -3385,7 +3821,11 @@ SOV_defense_of_odessa = {
 		original_tag = SOV
 	}
 	enable = {
-		surrender_progress < 0.09
+		AND = {
+			controls_state = 206
+			controls_state = 202
+			surrender_progress < 0.06
+		}
 		date < 1942.10.1
 		NOT = {
 			has_offensive_war_with = GER
@@ -3418,10 +3858,10 @@ SOV_defense_of_odessa = {
 			192
 		}
 
-		ratio = 0.15
+		ratio = 0.1
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = yes
 	}
 }
 
@@ -3463,6 +3903,68 @@ SOV_better_unit_distribution = {
 	}
 }
 
+SOV_better_unit_distribution_2 = {
+	allowed = {
+		original_tag = SOV
+	}
+	enable = {
+		date < 1942.10.1
+		has_war = no
+	}
+	abort_when_not_enabled = yes
+
+
+	ai_strategy = {
+		type = front_unit_request
+		tag = PER
+		value = -1000
+	}
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 27
+		value = -1000
+	}
+	ai_strategy = {
+		type = front_unit_request
+		state = 23
+		value = -1000
+	}
+	ai_strategy = {
+		type = garrison
+		value = -1000
+	}
+}
+
+SOV_better_unit_distribution_3 = {
+	allowed = {
+		original_tag = SOV
+	}
+	enable = {
+		has_war_with = GER
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_armor_score
+		id = "JAP"
+		value = -1000
+	}
+	ai_strategy = {
+		type = front_armor_score
+		id = "MAN"
+		value = -1000
+	}
+	ai_strategy = {
+		type = front_armor_score
+		id = "GER"
+		value = 1000
+	}
+	ai_strategy = {
+		type = front_unit_request
+		tag = MAN
+		value = -75
+	}
+}
 
 SOV_civs_are_great = {
 	allowed = {
@@ -5146,7 +5648,7 @@ SAU_khakimov_proposal_sau = {
 #			AND = {
 #				has_war = yes
 #				date < 1942.5.1
-#				surrender_progress < 0.05
+#				surrender_progress < 0.06
 #			}
 #		}
 #	}
@@ -5429,7 +5931,7 @@ SOV_poland_frontline_fix = {
 	}
 }
 
-SOV_no_avs = {
+SOV_dont_build_shit_guns = {
 	allowed = {
 		original_tag = SOV
 	}
@@ -5442,6 +5944,12 @@ SOV_no_avs = {
 	ai_strategy = {
 		type = production_upgrade_desire_offset
 		id = sov_inf_2
+		value = -100
+	}
+	
+	ai_strategy = {
+		type = production_upgrade_desire_offset
+		id = sov_inf_3
 		value = -100
 	}
 	

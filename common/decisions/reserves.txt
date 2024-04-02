@@ -108,11 +108,13 @@ reserve_divisions = {
 		available = {
 			has_completed_focus = USA_cash_and_carry_act
 			check_variable = { ROOT.reserves_equipment > 0 }
+			NOT = { has_country_flag = reserves_deployed_flag }
 		}
 
 		visible = {
 			has_completed_focus = USA_declare_limited_national_emergency
 			check_variable = { ROOT.reserves_equipment > 0 }
+			NOT = { has_country_flag = reserves_deployed_flag }
 		}
 
 		cost = 50
@@ -171,7 +173,12 @@ reserve_divisions = {
 			if = {
 				limit = {
 					has_idea = disarmed_nation
-					NOT = { has_country_flag = USA_selective_service_act_flag }
+					NOT = {
+						OR = {
+							has_country_flag = USA_selective_service_act_flag
+							has_country_flag = USA_265_plan_flag
+						}
+					}
 				}
 				NOT = { has_idea = disarmed_nation }
 			}
@@ -187,6 +194,7 @@ reserve_divisions = {
 					}
 					OR = {
 						has_country_flag = USA_selective_service_act_flag
+						has_country_flag = USA_265_plan_flag
 						has_army_manpower = { size > 399999 }
 					}
 				}
@@ -206,6 +214,7 @@ reserve_divisions = {
 					}
 					OR = {
 						has_country_flag = USA_selective_service_act_flag
+						has_country_flag = USA_265_plan_flag
 						has_army_manpower = { size > 599999 }
 					}
 				}
@@ -224,7 +233,7 @@ reserve_divisions = {
 						tag = USA
 					}
 					OR = {
-						has_country_flag = USA_selective_service_act_flag
+						has_country_flag = USA_265_plan_flag
 						has_army_manpower = { size > 799999 }
 					}
 				}
@@ -238,7 +247,18 @@ reserve_divisions = {
 					NOT = { has_completed_focus = SOV_reserve_armies_administration }
 				}
 				check_variable = { ROOT.reserves = 40 }
-				has_army_manpower = { size > 999999 }
+				if = {
+					limit = {
+						tag = USA
+					}
+					OR = {
+						has_country_flag = USA_265_plan_flag
+						has_army_manpower = { size > 999999 }
+					}
+				}
+				else = {
+					has_army_manpower = { size > 999999 }
+				}
 			}
 			if = {
 				limit = {
@@ -364,6 +384,7 @@ reserve_divisions = {
 					}
 					OR = {
 						has_country_flag = USA_selective_service_act_flag
+						has_country_flag = USA_265_plan_flag
 						has_army_manpower = { size > 199999 }
 					}
 				}
@@ -2225,6 +2246,7 @@ reserve_divisions = {
 			add_to_variable = { ROOT.reserves = -10 }
 			custom_effect_tooltip = deploying_reserves_infantry
 			hidden_effect = {
+				set_country_flag = reserves_deployed_flag
 				if = {
 					limit = {
 						tag = FRA
@@ -2533,11 +2555,113 @@ reserve_divisions = {
 						tag = SOV
 						is_ai = no
 					}
-					capital_scope = {
-						create_unit = {
-							division = "division_template=\"Soviet Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}sov_art_1={owner=\"SOV\"}sov_hv_art_1={owner=\"SOV\"}sov_at_1={owner=\"SOV\"}}"
-							owner = ROOT
-							count = 10
+					if = {
+						limit = {
+							controls_state = 219
+							has_full_control_of_state = 252
+						}
+						252 = {
+							create_unit = {
+								division = "division_template=\"Soviet Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}sov_art_1={owner=\"SOV\"}sov_hv_art_1={owner=\"SOV\"}sov_at_1={owner=\"SOV\"}}"
+								owner = ROOT
+								count = 5
+							}
+						}
+					}
+					else_if = {
+						limit = {
+							controls_state = 252
+							has_full_control_of_state = 249
+						}
+						249 = {
+							create_unit = {
+								division = "division_template=\"Soviet Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}sov_art_1={owner=\"SOV\"}sov_hv_art_1={owner=\"SOV\"}sov_at_1={owner=\"SOV\"}}"
+								owner = ROOT
+								count = 5
+							}
+						}
+					}
+					else_if = {
+						limit = {
+							controls_state = 249
+							has_full_control_of_state = 572
+						}
+						249 = {
+							create_unit = {
+								division = "division_template=\"Soviet Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}sov_art_1={owner=\"SOV\"}sov_hv_art_1={owner=\"SOV\"}sov_at_1={owner=\"SOV\"}}"
+								owner = ROOT
+								count = 5
+							}
+						}
+					}
+					else = {
+						random_core_state = {
+							prioritize = { 217 401 251 250 249 399 651 652 256 572 876 653 586 405 }
+							limit = {
+								is_on_continent = asia
+								is_fully_controlled_by = ROOT
+								all_neighbor_state = { is_fully_controlled_by = ROOT }
+							}
+							create_unit = {
+								division = "division_template=\"Soviet Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}sov_art_1={owner=\"SOV\"}sov_hv_art_1={owner=\"SOV\"}sov_at_1={owner=\"SOV\"}}"
+								owner = ROOT
+								count = 5
+							}
+						}
+					}
+
+					if = {
+						limit = {
+							controls_state = 218
+							has_full_control_of_state = 217
+						}
+						217 = {
+							create_unit = {
+								division = "division_template=\"Soviet Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}sov_art_1={owner=\"SOV\"}sov_hv_art_1={owner=\"SOV\"}sov_at_1={owner=\"SOV\"}}"
+								owner = ROOT
+								count = 5
+							}
+						}
+					}
+					else_if = {
+						limit = {
+							controls_state = 217
+							has_full_control_of_state = 251
+						}
+						251 = {
+							create_unit = {
+								division = "division_template=\"Soviet Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}sov_art_1={owner=\"SOV\"}sov_hv_art_1={owner=\"SOV\"}sov_at_1={owner=\"SOV\"}}"
+								owner = ROOT
+								count = 5
+							}
+						}
+					}
+					else_if = {
+						limit = {
+							controls_state = 251
+							has_full_control_of_state = 876
+						}
+						876 = {
+							create_unit = {
+								division = "division_template=\"Soviet Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}sov_art_1={owner=\"SOV\"}sov_hv_art_1={owner=\"SOV\"}sov_at_1={owner=\"SOV\"}}"
+								owner = ROOT
+								count = 5
+							}
+						}
+					}
+					else = {
+						random_core_state = {
+							prioritize = { 217 401 251 250 249 399 651 652 256 572 876 653 586 405 }
+							limit = {
+								is_on_continent = asia
+								is_fully_controlled_by = ROOT
+								all_neighbor_state = { is_fully_controlled_by = ROOT }
+							}
+							create_unit = {
+								division = "division_template=\"Soviet Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}sov_art_1={owner=\"SOV\"}sov_hv_art_1={owner=\"SOV\"}sov_at_1={owner=\"SOV\"}}"
+								owner = ROOT
+								count = 5
+							}
 						}
 					}
 				}
@@ -3838,7 +3962,7 @@ reserve_divisions = {
 			base = 0
 
 			modifier = {
-				add = 200
+				add = 500
 				NOT = { tag = SOV }
 				NOT = { tag = USA }
 				NOT = { tag = JAP }
@@ -3894,10 +4018,7 @@ reserve_divisions = {
 				add = 200
 				tag = USA
 				OR = {
-					has_army_size = {
-						size < 20
-						type = mechanized
-					}
+					num_divisions < 90
 					surrender_progress > 0
 				}
 			}
@@ -3907,7 +4028,7 @@ reserve_divisions = {
 				tag = ENG
 				OR = {
 					has_army_size = {
-						size < 30
+						size < 50
 						type = infantry
 					}
 					surrender_progress > 0
@@ -3944,10 +4065,18 @@ reserve_divisions = {
 						GER = {
 							is_ai = no
 						}
-						date < 1941.10.1
 						OR = {
 							NOT = {	SOV = { has_full_control_of_state = 217 }} ###Stalingrad
 							NOT = {	SOV = { has_full_control_of_state = 219 }} ###Moscow
+							GER = { controls_state = 242 } ###Smolensk
+							AND = {
+								check_variable = { ROOT.reserves > 50 }
+								GER = { controls_state = 202 } ###Kiev
+							}
+							AND = {
+								check_variable = { ROOT.reserves > 50 }
+								GER = { controls_state = 206 } ###Minsk
+							}
 						}
 					}
 				}
@@ -3960,7 +4089,7 @@ reserve_divisions = {
 	deploy_reserves_infantry_2 = {
 
 		icon = generic_nationalism
-       allowed = {
+        allowed = {
 			OR = {
 				tag = FRA
 				tag = ITA
@@ -5643,120 +5772,122 @@ reserve_divisions = {
 
 			modifier = {
 				add = 200
-				NOT = { tag = ROM }
 				NOT = { tag = SOV }
+				NOT = { tag = USA }
+				NOT = { tag = JAP }
+				NOT = { tag = ROM }
+				NOT = { tag = HUN }
+				NOT = { tag = GER }
+				NOT = { tag = ENG }
+				NOT = { tag = SPA }
+				NOT = { tag = SPR }
+				num_divisions < 200
 				date > 1937.1.1
+			}
+
+			modifier = {
+				add = 200
+				has_civil_war = no
+				OR = {
+					tag = SPA
+					tag = SPR
+				}
+				OR = {
+					surrender_progress > 0
+					num_divisions < 32
+				}
+			}
+
+			modifier = {
+				add = 5000
+				tag = GER
+				OR = {
+					surrender_progress > 0
+					num_divisions < 160
+					has_army_manpower = { size < 2300000 }
+				}
+				date > 1942.1.1
 			}
 
 			modifier = {
 				add = 200
 				tag = ROM
 				date > 1937.1.1
-				num_divisions < 40
+				num_divisions < 35
 			}
-
-			#modifier = {
-			#	add = 200
-			#	NOT = { tag = SOV }
-			#	NOT = { tag = USA }
-			#	date > 1937.1.1
-			#}
-
-			#modifier = {
-			#	add = 200
-			#	tag = ENG
-			#	NOT = { check_variable = { ROOT.reserves = 30 } }
-			#	NOT = { check_variable = { ROOT.reserves = 20 } }
-			#}
-
-			#modifier = {
-			#	add = 200
-			#	tag = USA
-			#	date < 1940.1.1
-			#}
 
 			modifier = {
 				add = 200
-				tag = SOV
-				date > 1942.1.1
-				GER = { is_ai = no }
-				num_divisions < 300
+				tag = HUN
+				date > 1937.1.1
+				num_divisions < 30
+			}
+
+			modifier = {
+				add = 200
+				tag = USA
 				OR = {
-					NOT = {	SOV = { has_full_control_of_state = 195 }}
-					NOT = {	SOV = { has_full_control_of_state = 217 }}
-					NOT = {	SOV = { has_full_control_of_state = 219 }}
+					num_divisions < 90
+					surrender_progress > 0
 				}
 			}
 
 			modifier = {
 				add = 200
-				tag = SOV
-				date > 1942.1.1
-				GER = { is_ai = no }
-				num_divisions < 275
+				tag = ENG
 				OR = {
-					NOT = {	SOV = { has_full_control_of_state = 209 }}
-					NOT = {	SOV = { has_full_control_of_state = 210 }}
-					NOT = {	SOV = { has_full_control_of_state = 242 }}
-					NOT = {	SOV = { has_full_control_of_state = 243 }}
-					NOT = {	SOV = { has_full_control_of_state = 224 }}
-					NOT = {	SOV = { has_full_control_of_state = 222 }}
-					NOT = {	SOV = { has_full_control_of_state = 260 }}
-					NOT = {	SOV = { has_full_control_of_state = 245 }}
-					NOT = {	SOV = { has_full_control_of_state = 238 }}
-					NOT = {	SOV = { has_full_control_of_state = 234 }}
-					NOT = {	SOV = { has_full_control_of_state = 218 }}
-					NOT = {	SOV = { has_full_control_of_state = 228 }}
-					NOT = {	SOV = { has_full_control_of_state = 220 }}
+					has_army_size = {
+						size < 50
+						type = infantry
+					}
+					surrender_progress > 0
 				}
 			}
 
 			modifier = {
 				add = 200
-				tag = SOV
-				date < 1942.1.1
-				GER = { is_ai = no }
-				num_divisions < 250
+				tag = JAP
 				OR = {
-					NOT = {	SOV = { has_full_control_of_state = 209 }}
-					NOT = {	SOV = { has_full_control_of_state = 210 }}
-					NOT = {	SOV = { has_full_control_of_state = 242 }}
-					NOT = {	SOV = { has_full_control_of_state = 243 }}
-					NOT = {	SOV = { has_full_control_of_state = 224 }}
-					NOT = {	SOV = { has_full_control_of_state = 222 }}
-					NOT = {	SOV = { has_full_control_of_state = 260 }}
-					NOT = {	SOV = { has_full_control_of_state = 245 }}
-					NOT = {	SOV = { has_full_control_of_state = 238 }}
-					NOT = {	SOV = { has_full_control_of_state = 234 }}
-					NOT = {	SOV = { has_full_control_of_state = 218 }}
-					NOT = {	SOV = { has_full_control_of_state = 228 }}
-					NOT = {	SOV = { has_full_control_of_state = 220 }}
+					has_army_size = {
+						size < 130
+						type = infantry
+					}
+					surrender_progress > 0
 				}
 			}
 
 			modifier = {
-				add = 200
+				add = 5000
 				tag = SOV
-
-				num_divisions < 200
-			}
-
-			modifier = {
-				add = 200
-				tag = SOV
-				GER = { is_ai = yes }
-				num_divisions < 250
+				has_war_with_major = yes
 				OR = {
-					NOT = {	SOV = { has_full_control_of_state = 208 }}
-					NOT = {	SOV = { has_full_control_of_state = 263 }}
-					NOT = {	SOV = { has_full_control_of_state = 246 }}
-					NOT = {	SOV = { has_full_control_of_state = 205 }}
-					NOT = {	SOV = { has_full_control_of_state = 222 }}
-					NOT = {	SOV = { has_full_control_of_state = 258 }}
-					NOT = {	SOV = { has_full_control_of_state = 260 }}
-					NOT = {	SOV = { has_full_control_of_state = 245 }}
-					NOT = {	SOV = { has_full_control_of_state = 238 }}
-					NOT = {	SOV = { has_full_control_of_state = 235 }}
+					num_divisions < 250
+					has_army_size = {
+						size < 220
+						type = infantry
+					}
+					AND = {
+						has_war_with = GER
+						has_war_with = JAP
+					}
+					AND = {
+						GER = {
+							is_ai = no
+						}
+						OR = {
+							NOT = {	SOV = { has_full_control_of_state = 217 }} ###Stalingrad
+							NOT = {	SOV = { has_full_control_of_state = 219 }} ###Moscow
+							GER = { controls_state = 242 } ###Smolensk
+							AND = {
+								check_variable = { ROOT.reserves > 50 }
+								GER = { controls_state = 202 } ###Kiev
+							}
+							AND = {
+								check_variable = { ROOT.reserves > 50 }
+								GER = { controls_state = 206 } ###Minsk
+							}
+						}
+					}
 				}
 			}
 		}
@@ -5806,7 +5937,7 @@ reserve_divisions = {
 		cost = 0
 
 		complete_effect = {
-			custom_effect_tooltip = home_guard_tt
+			custom_effect_tooltip = CAN_home_guard_tt
 			hidden_effect = {
 				set_country_flag = home_guard_deployed
 				division_template = {
@@ -5934,49 +6065,100 @@ reserve_divisions = {
 		}
 
 		visible = {
-			has_completed_focus = ENG_military_training_act
+			if = {
+				limit = {
+					is_ai = no
+				}
+				has_completed_focus = ENG_military_training_act
+			}
 		}
 
 		cost = 0
 
 		complete_effect = {
-			custom_effect_tooltip = home_guard_tt
+			custom_effect_tooltip = ENG_home_guard_tt
 			hidden_effect = {
 				set_country_flag = home_guard_deployed
-				division_template = {
-					name = "Home Guard Unit"
-					division_names_group = ENG_GAR_01
-					priority = 0 # garrison
-
-					is_locked = yes
-
-					regiments = {
-						heavy_militia = { x = 0 y = 0 }
-						heavy_militia = { x = 0 y = 1 }
-						heavy_militia = { x = 0 y = 2 }
-
-						heavy_militia = { x = 1 y = 0 }
-						heavy_militia = { x = 1 y = 1 }
-						heavy_militia = { x = 1 y = 2 }
-
-						militia = { x = 2 y = 0 }
-						militia = { x = 2 y = 1 }
-						militia = { x = 2 y = 2 }
-
-						militia = { x = 3 y = 0 }
-						militia = { x = 3 y = 1 }
-						militia = { x = 3 y = 2 }
-
-						militia = { x = 4 y = 0 }
-						militia = { x = 4 y = 1 }
-						militia = { x = 4 y = 2 }
+				if = {
+					limit = {
+						is_ai = no
 					}
+					division_template = {
+						name = "Home Guard Unit"
+						division_names_group = ENG_GAR_01
+						priority = 0 # garrison
 
-					support = {
-						normal_engineer = { x = 0 y = 0 }
-						horse_logistics_company = { x = 0 y = 1 }
+						is_locked = yes
 
-						recon = { x = 1 y = 0 }
+						regiments = {
+							heavy_militia = { x = 0 y = 0 }
+							heavy_militia = { x = 0 y = 1 }
+							heavy_militia = { x = 0 y = 2 }
+
+							heavy_militia = { x = 1 y = 0 }
+							heavy_militia = { x = 1 y = 1 }
+							heavy_militia = { x = 1 y = 2 }
+
+							militia = { x = 2 y = 0 }
+							militia = { x = 2 y = 1 }
+							militia = { x = 2 y = 2 }
+
+							militia = { x = 3 y = 0 }
+							militia = { x = 3 y = 1 }
+							militia = { x = 3 y = 2 }
+
+							militia = { x = 4 y = 0 }
+							militia = { x = 4 y = 1 }
+							militia = { x = 4 y = 2 }
+						}
+
+						support = {
+							normal_engineer = { x = 0 y = 0 }
+							horse_logistics_company = { x = 0 y = 1 }
+
+							recon = { x = 1 y = 0 }
+						}
+					}
+				}
+				if = {
+					limit = {
+						is_ai = yes
+					}
+					division_template = {
+						name = "Home Guard Unit"
+						division_names_group = ENG_GAR_01
+						priority = 0 # garrison
+
+						is_locked = yes
+
+						regiments = {
+							heavy_militia = { x = 0 y = 0 }
+							heavy_militia = { x = 0 y = 1 }
+							heavy_militia = { x = 0 y = 2 }
+
+							heavy_militia = { x = 1 y = 0 }
+							heavy_militia = { x = 1 y = 1 }
+							heavy_militia = { x = 1 y = 2 }
+
+							heavy_militia = { x = 2 y = 0 }
+							heavy_militia = { x = 2 y = 1 }
+							heavy_militia = { x = 2 y = 2 }
+
+							heavy_militia = { x = 3 y = 0 }
+							heavy_militia = { x = 3 y = 1 }
+							heavy_militia = { x = 3 y = 2 }
+
+							heavy_militia = { x = 4 y = 0 }
+							heavy_militia = { x = 4 y = 1 }
+							heavy_militia = { x = 4 y = 2 }
+						}
+
+						support = {
+							normal_engineer = { x = 0 y = 0 }
+							horse_logistics_company = { x = 0 y = 1 }
+
+							recon = { x = 1 y = 0 }
+						}
 					}
 				}
 			}

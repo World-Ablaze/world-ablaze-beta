@@ -2187,6 +2187,7 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_HISTORICAL }
 
 		completion_reward = {
+			add_political_power = 50
 			add_ideas = USA_foreign_agents_registration_act
 		}
 	}
@@ -2211,6 +2212,7 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_HISTORICAL }
 
 		completion_reward = {
+			add_political_power = 50
 			add_ideas = USA_alien_registration_act
 		}
 	}
@@ -5170,12 +5172,21 @@ focus_tree = {
 		}
 
 		available = {
-			surrender_progress > 0.02
+			any_owned_state = {
+				is_core_of = USA
+				is_on_continent = north_america
+				any_neighbor_state = {
+					CONTROLLER = { has_war_with = ROOT }
+				}
+			}
+			surrender_progress > 0.01
+			has_civil_war = no
 		}
 
 		search_filters = { FOCUS_FILTER_DIPLOMACY FOCUS_FILTER_AHISTORICAL }
 
 		completion_reward = {
+			custom_effect_tooltip = USA_victory_at_all_costs_tt
 			add_war_support = 0.3
 			if = {
 				limit = {
@@ -5212,7 +5223,15 @@ focus_tree = {
 		}
 
 		available = {
-			surrender_progress > 0.1
+			any_owned_state = {
+				is_core_of = USA
+				is_on_continent = north_america
+				any_neighbor_state = {
+					CONTROLLER = { has_war_with = ROOT }
+				}
+			}
+			surrender_progress > 0.01
+			has_civil_war = no
 		}
 
 		search_filters = { FOCUS_FILTER_DIPLOMACY FOCUS_FILTER_AHISTORICAL }
@@ -5231,7 +5250,7 @@ focus_tree = {
 					}
 				}
 				add_province_modifier = {
-					static_modifiers = { guerilla_operations }
+					static_modifiers = { guerilla_operations_usa }
 					province = {
 						all_provinces = yes
 					}
@@ -6047,6 +6066,24 @@ focus_tree = {
 						type = radar_station
 						level = 2
 					}
+					add_building_construction = {
+						type = coastal_bunker
+						province = 4180
+						level = 4
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = coastal_bunker
+						province = 13367
+						level = 4
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = bunker
+						province = 13367
+						level = 2
+						instant_build = yes
+					}
 				}
 			}
 			custom_effect_tooltip = USA_intervention_mandate_tt
@@ -6189,20 +6226,8 @@ focus_tree = {
 			629 = {
 				#Fortify naval bases
 				add_building_construction = {
-					type = coastal_bunker
-					province = 13367
-					level = 4
-					instant_build = yes
-				}
-				add_building_construction = {
 					type = infrastructure
 					level = 3
-					instant_build = yes
-				}
-				add_building_construction = {
-					type = bunker
-					province = 13367
-					level = 2
 					instant_build = yes
 				}
 				add_building_construction = {
@@ -6288,7 +6313,7 @@ focus_tree = {
 
 		bypass = {
 			OR = {
-				has_war = yes
+				#has_war = yes
 				NOT = {
 					862 = {
 						CONTROLLER = {
@@ -6985,6 +7010,14 @@ focus_tree = {
 				transfer_state = 691
 				transfer_state = 692
 				transfer_state = 690
+				ENG = { 
+					economy_fatigue_level_down_5 = yes
+					diplomatic_relation = {
+						country = USA
+						relation = docking_rights
+						active = yes
+					}
+				}
 			}
 		}
 	}
@@ -7020,6 +7053,8 @@ focus_tree = {
 			}
 			army_experience = 25
 			add_political_power = 25
+			unlock_decision_tooltip = USA_operation_overlord
+			unlock_decision_tooltip = USA_operation_husky
 		}
 	}
 
@@ -7039,7 +7074,7 @@ focus_tree = {
 
 		bypass = {
 			OR = {
-				has_war = yes
+				#has_war = yes
 				NOT = {
 					696 = {
 						CONTROLLER = {
@@ -7832,6 +7867,29 @@ focus_tree = {
 				add_idea = USA_cash_and_carry_act
 			}
 			custom_effect_tooltip = USA_cash_and_carry_act_tt
+			hidden_effect = {
+				every_other_country = {
+					limit = {
+						OR = {
+							AND = {
+								has_government = democratic
+								has_war_with = GER
+							}
+							is_in_faction_with = ENG
+						}
+						OR = {
+							is_ai = yes
+							USA = {
+								is_ai = yes
+							}
+						}
+					}
+					reverse_add_opinion_modifier = {
+						target = USA
+						modifier = USA_cash_and_carry_opinion
+					}
+				}
+			}
 		}
 	}
 
@@ -7896,6 +7954,7 @@ focus_tree = {
 			navy_experience = 25
 			army_experience = 25
 			air_experience = 25
+			add_political_power = 50
 		}
 	}
 
@@ -7941,6 +8000,7 @@ focus_tree = {
 				}
 				add_opinion_modifier = { target = USA modifier = north_atlantic_charter }
 			}
+			add_political_power = 50
 		}
 	}
 
@@ -10901,6 +10961,24 @@ focus_tree = {
 		}
 
 		available = {
+			if = {
+				limit = {
+					is_ai = yes
+				}
+				OR = {
+					has_war = no
+					AND = {
+						any_owned_state = {
+							is_core_of = USA
+							is_on_continent = north_america
+							any_neighbor_state = {
+								CONTROLLER = { has_war_with = ROOT }
+							}
+						}
+						surrender_progress > 0.01
+					}
+				}
+			}
 			has_army_manpower = { size > 999999 }
 			NOT = { has_government = fascism }
 		}
@@ -10937,15 +11015,28 @@ focus_tree = {
 		available = {
 			has_army_manpower = { size > 999999 }
 			NOT = { has_government = fascism }
+			if = {
+				limit = {
+					is_ai = yes
+				}
+				OR = {
+					is_historical_focus_on = no
+					AND = {
+						any_owned_state = {
+							is_core_of = USA
+							is_on_continent = north_america
+							any_neighbor_state = {
+								CONTROLLER = { has_war_with = ROOT }
+							}
+						}
+						surrender_progress > 0.01
+					}
+				}
+			}
 		}
 
 		ai_will_do = {
 			factor = 1
-
-			modifier = {
-				factor = 0
-				is_historical_focus_on = yes
-			}
 		}
 
 		search_filters = { FOCUS_FILTER_ARMY FOCUS_FILTER_AHISTORICAL FOCUS_FILTER_STABILITY }
@@ -11132,6 +11223,10 @@ focus_tree = {
 					is_ai = no
 				}
 				activate_mission = USA_the_265_division_plan
+			}
+			custom_effect_tooltip = USA_265_plan_tt
+			hidden_effect = {
+				set_country_flag = USA_265_plan_flag
 			}
 		}
 	}

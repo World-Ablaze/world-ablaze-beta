@@ -3691,6 +3691,15 @@ focus_tree = {
 
 
 		completion_reward = {
+			AST_horace_robertson = {
+				add_skill_level = 1
+			}
+			AST_john_northcott = {
+				add_trait = {
+					trait = organizer
+				}
+				add_skill_level = 1
+			}
 			custom_effect_tooltip = AST_first_armoured_division_tt
 			if = {
 				limit = {
@@ -5273,6 +5282,12 @@ focus_tree = {
 				uses = 1
 				category = cat_fleet_in_being
 			}
+			add_doctrine_cost_reduction = {
+				name = AST_protect_oversea_commerce
+				cost_reduction = 0.99
+				uses = 1
+				category = convoy_defense_tree
+			}
 		}
 	}
 
@@ -5593,7 +5608,7 @@ focus_tree = {
 
 	focus = {
         id = AST_defence_of_australia
-        icon = GFX_goal_NZL_defence_of_new_zealand
+        icon = GFX_goal_AST_defence_of_australia
         
         x = 11
         y = 5
@@ -5605,7 +5620,7 @@ focus_tree = {
 				has_war_with = ENG
 				has_war_with = USA
 			}
-			always = no
+			#always = no
         }
 
         bypass = {
@@ -5692,7 +5707,7 @@ focus_tree = {
         
         }
 
-        cost = 2
+        cost = 1
 
         ai_will_do = {
             factor = 1
@@ -5717,7 +5732,7 @@ focus_tree = {
         bypass = {
         }
 
-        cost = 2
+        cost = 4
 
         ai_will_do = {
             factor = 1 
@@ -5730,7 +5745,20 @@ focus_tree = {
             FOCUS_FILTER_NAVY
         }
         completion_reward = {
-            unlock_decision_category_tooltip = AST_build_up_coastal_defences_fake_decisions_cat
+            every_state = {
+				limit = {
+					is_core_of = ROOT
+					is_controlled_by = ROOT
+				}
+				add_building_construction = {
+					type = coastal_bunker
+					level = 2
+					province = {
+						all_provinces = yes
+						limit_to_naval_base = yes
+					}
+				}
+			}
         }
     }
 
@@ -5760,7 +5788,50 @@ focus_tree = {
         search_filters = {}
         
         completion_reward = {
+			custom_effect_tooltip = NZL_call_up_reinforcements_tt
+			hidden_effect = {
+				set_country_flag = home_guard_deployed
+				division_template = {
+					name = "Home Guard Unit"
+					division_names_group = AST_GAR_01
+					priority = 0 # garrison
 
+					is_locked = yes
+
+					regiments = {
+						heavy_militia = { x = 0 y = 0 }
+						militia = { x = 0 y = 1 }
+						militia = { x = 0 y = 2 }
+
+						heavy_militia = { x = 1 y = 0 }
+						militia = { x = 1 y = 1 }
+						militia = { x = 1 y = 2 }
+					}
+
+					support = {
+						normal_engineer = { x = 0 y = 0 }
+						horse_logistics_company = { x = 0 y = 1 }
+
+						recon = { x = 1 y = 0 }
+					}
+				}
+				every_state = {
+					limit = {
+						is_core_of = ROOT
+						is_controlled_by = ROOT
+						not = {
+							state = 520
+							state = 955
+						}
+					}
+					create_unit = {
+						division = "division_template=\"Home Guard Unit\" start_experience_factor=0.3 start_equipment_factor=0.75 force_equipment_variants={eng_inf_1={owner=\"AST\"}}"
+						owner = ROOT
+						count = 1
+						#prioritize_location = 12632
+					}
+				}
+			}
         }
     }
 

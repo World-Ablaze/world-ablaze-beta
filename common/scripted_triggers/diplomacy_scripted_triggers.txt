@@ -593,6 +593,25 @@ DIPLOMACY_MILACC_ENABLE_TRIGGER = {
 			always = no
 		}
 	}
+	if = {
+		limit = {
+			OR = {
+				FROM = {
+					has_idea = VIC_depowered_government
+				}
+				AND = {
+					FROM = {
+						is_subject_of = VIC
+						VIC = { has_idea = VIC_depowered_government }
+					}
+				}
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_REQUEST_MILITARY_ACCESS_BLOCKED_TT
+			always = no
+		}
+	}
 }
 DIPLOMACY_OFFER_MILACC_ENABLE_TRIGGER = {
 	if = {
@@ -628,6 +647,21 @@ DIPLOMACY_OFFER_MILACC_ENABLE_TRIGGER = {
 			always = no
 		}
 	}
+	if = {
+		limit = {
+			OR = {
+				has_idea = VIC_depowered_government
+				AND = {
+					is_subject_of = VIC
+					VIC = { has_idea = VIC_depowered_government }
+				}
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_OFFER_MILITARY_ACCESS_BLOCKED_TT
+			always = no
+		}
+	}
 }
 DIPLOMACY_REVOKE_OFFER_MILACC_ENABLE_TRIGGER = {
 	if = {
@@ -652,12 +686,6 @@ DIPLOMACY_DOCKING_RIGHTS_ENABLE_TRIGGER = {
 	}
 	if = {
 		limit = {
-			has_idea = VIC_depowered_government
-		}
-		always = no
-	}
-	if = {
-		limit = {
 			has_game_rule = {
 				rule = allow_access
 				option = SAME_IDEOLOGY
@@ -677,6 +705,25 @@ DIPLOMACY_DOCKING_RIGHTS_ENABLE_TRIGGER = {
 		}
 		custom_trigger_tooltip = {
 			tooltip = RULE_ALLOW_MILITARY_ACCESS_BLOCKED_TT
+			always = no
+		}
+	}
+	if = {
+		limit = {
+			OR = {
+				FROM = {
+					has_idea = VIC_depowered_government
+				}
+				AND = {
+					FROM = {
+						is_subject_of = VIC
+						VIC = { has_idea = VIC_depowered_government }
+					}
+				}
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_REQUEST_DOCKING_RIGHTS_BLOCKED_TT
 			always = no
 		}
 	}
@@ -712,6 +759,21 @@ DIPLOMACY_OFFER_DOCKING_RIGHTS_ENABLE_TRIGGER = {
 		}
 		custom_trigger_tooltip = {
 			tooltip = RULE_ALLOW_MILITARY_ACCESS_BLOCKED_TT
+			always = no
+		}
+	}
+	if = {
+		limit = {
+			OR = {
+				has_idea = VIC_depowered_government
+				AND = {
+					is_subject_of = VIC
+					VIC = { has_idea = VIC_depowered_government }
+				}
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_OFFER_DOCKING_RIGHTS_BLOCKED_TT
 			always = no
 		}
 	}
@@ -1229,6 +1291,24 @@ DIPLOMACY_SEND_VOLUNTEERS_ENABLE_TRIGGER = {
 				option = LIMITED
 			}
 		}
+		if = { #No Japanese volunteers
+			limit = {
+				FROM = { tag = JAP }
+			}
+			NOT = {
+				custom_trigger_tooltip = {
+					tooltip = RULE_VOLUNTEERS_JAP_MILITARISM_TT
+					FROM = {
+						OR = {	
+							has_idea = JAP_militarism
+							has_idea = JAP_militarism_shogunate
+							has_idea = JAP_militarism_showa
+							is_subject_of = JAP
+						}
+					}
+				}
+			}
+		}
 		if = {
 			limit = {
 				NOT = { tag = SPC }
@@ -1242,7 +1322,20 @@ DIPLOMACY_SEND_VOLUNTEERS_ENABLE_TRIGGER = {
 				NOT = { FROM = { tag = SPC } }
 			}
 		}
-		else_if = {
+		if = {
+			limit = {
+				NOT = { tag = SPC }
+				FROM = {
+					tag = SPC
+					has_completed_focus = SPR_regional_defense_council_of_aragon
+				}
+			}
+			custom_trigger_tooltip = {
+				tooltip = RULE_VOLUNTEERS_NOT_ANARCHISTS_TT
+				NOT = { FROM = { tag = SPC } }
+			}
+		}
+		if = {
 			limit = {
 				has_dlc = "La Resistance"
 				tag = POR
@@ -1271,7 +1364,30 @@ DIPLOMACY_SEND_VOLUNTEERS_ENABLE_TRIGGER = {
 				}
 			}
 		}
-		else_if = { #Soviet volunteers to China (Communist Soviet -> Only to the supported China)
+		#if = { #Soviet no volunteers if stalin
+		#	limit = {
+		#		original_tag = SOV
+		#		has_government = communism
+		#		OR = {
+		#			has_idea = trotskyite_plot
+		#			has_idea = trotskyite_plot_nsb
+		#			has_idea = trotskyite_plot_purged
+		#			has_idea = trotskyite_plot_purged_2
+		#			has_completed_focus = SOV_socialism_in_one_country
+		#		}
+		#	}
+		#	custom_trigger_tooltip = {
+		#		tooltip = RULE_VOLUNTEERS_SOV_SOCIALISM_IN_ONE_COUNTRY_TT
+		#		NOT = {
+		#			has_idea = trotskyite_plot
+		#			has_idea = trotskyite_plot_nsb
+		#			has_idea = trotskyite_plot_purged
+		#			has_idea = trotskyite_plot_purged_2
+		#			has_completed_focus = SOV_socialism_in_one_country
+		#		}
+		#	}
+		#}
+		if = { #Soviet volunteers to China (Communist Soviet -> Only to the supported China)
 			limit = {
 				original_tag = SOV
 				has_government = communism
@@ -1299,24 +1415,6 @@ DIPLOMACY_SEND_VOLUNTEERS_ENABLE_TRIGGER = {
 						has_completed_focus = SOV_operation_zet
 						JAP = { has_war_with = CHI }
 						FROM = { tag = CHI }
-					}
-				}
-			}
-		}
-		else_if = { #Soviet volunteers to China (Communist Soviet -> Only to the supported China)
-			limit = {
-				NOT = { tag = JAP }
-			}
-			NOT = {
-				custom_trigger_tooltip = {
-					tooltip = RULE_VOLUNTEERS_JAP_MILITARISM_TT
-					FROM = {
-						OR = {	
-							has_idea = JAP_militarism
-							has_idea = JAP_militarism_shogunate
-							has_idea = JAP_militarism_showa
-							is_subject_of = JAP
-						}
 					}
 				}
 			}
@@ -1496,7 +1594,7 @@ DIPLOMACY_SEND_VOLUNTEERS_ENABLE_TRIGGER = {
 				FROM = {
 					tag = SPC
 					has_completed_focus = SPR_regional_defense_council_of_aragon
-	}
+				}
 			}
 			custom_trigger_tooltip = {
 				tooltip = RULE_VOLUNTEERS_NOT_ANARCHISTS_TT
