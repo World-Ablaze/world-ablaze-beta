@@ -1230,6 +1230,7 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+			
 			economy_fatigue_level_down_2 = yes
 			76 = {
 				add_building_construction = {
@@ -1636,20 +1637,21 @@ focus_tree = {
 
 		completion_reward = {
 			add_popularity = {
-				ideology = fascist
-				popularity = 0.05
+				popularity = 0.1
+				ideology = fascism
 			}
 			add_political_power = -25
+
+			#event that codreanu changed his mind?
 		}
 	}
 	focus = {
 		id = ROM_rescue_codreanu
 		icon = GFX_goal_ROM_greater_romania
-		prerequisite = {
-			popularity
-		}
+		#custom codreanu gfx
+		
 		prerequisite = { focus = ROM_continue_the_violence }
-		x = 0
+		x = -2
 		y = 1
 		relative_position_id = ROM_continue_the_violence
 		
@@ -1668,7 +1670,13 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			#event
+			#event codreanu rescued
+		
+			add_popularity = {
+				popularity = 0.1
+				ideology = fascism
+			}
+			add_political_power = -25
 		}
 	}
 
@@ -1699,8 +1707,8 @@ focus_tree = {
 			#event
 
 			add_popularity = {
-				ideology = fascist
-				popularity = 0.05
+				popularity = 0.1
+				ideology = fascism
 			}
 			add_political_power = -25	
 		}
@@ -1711,13 +1719,14 @@ focus_tree = {
 		icon = GFX_goal_ROM_greater_romania
 		
 		prerequisite = { focus = ROM_appeal_peasants }
+		prerequisite = { focus = ROM_rescue_codreanu }
 		x = 0
 		y = 1
 		relative_position_id = ROM_appeal_peasants
 		
 		available = {
 			
-			fascist > 0.50
+			fascism > 0.50
 
 			is_subject = no
 		}
@@ -1737,13 +1746,21 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			
+			#change party
+			#add codreanu
+
+			set_politics = {
+				ruling_party = fascism
+				elections_allowed = yes
+			}
+			set_party_name = { ideology = fascism long_name = ROM_ion_antonescu_party_long name = ROM_ion_antonescu_party }
+			promote_character = ROM_corneliu_codreanu
 		}
 	}
 
 	focus = {
 		id = ROM_abolish_monarchy
-		icon = GFX_goal_ROM_greater_romania
+		icon = GFX_focus_rom_abdicate
 		
 		prerequisite = { focus = ROM_government_takeover }
 		x = 0
@@ -1765,13 +1782,16 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			
+
+			remove_ideas = ROM_king_carol_ii_hedonist
+			add_timed_idea = { idea = ROM_king_carol_emptied_accounts days = 180 }
+			#event
 		}
 	}
 
 	focus = {
 		id = ROM_national_legionary_state
-		icon = GFX_goal_ROM_greater_romania
+		icon = GFX_goal_ROM_rise_of_the_iron_guard
 		
 		prerequisite = { focus = ROM_abolish_monarchy }
 		x = 0
@@ -1793,13 +1813,17 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			#Replace  
+			#Replace
+			swap_ideas = {
+				remove_idea = ROM_iron_guard
+				add_idea = ROM_iron_guard_reformed
+			}  
 		}
 	}
 
 	focus = {
 		id = ROM_prepare_national_defense
-		icon = GFX_goal_ROM_greater_romania
+		icon = GFX_focus_generic_full_social_mobilization
 		
 		prerequisite = { focus = ROM_national_legionary_state }
 		x = 0
@@ -1818,9 +1842,62 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			#add 2 mils 5 random states
-			#add 3% fatigue
+			#add 2 mils in each 5 random states
+			random_owned_controlled_state = {
+				prioritize = { 81 }
+				limit = {
+					ROOT = { has_full_control_of_state = PREV }
+				}
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = arms_factory
+					level = 2
+					instant_build = yes
+				}
+			}
 
+			random_owned_controlled_state = {
+				prioritize = { 83 }
+				limit = {
+					ROOT = { has_full_control_of_state = PREV }
+				}
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = arms_factory
+					level = 2
+					instant_build = yes
+				}
+			}
+
+			random_owned_controlled_state = {
+				prioritize = { 76 }
+				limit = {
+					ROOT = { has_full_control_of_state = PREV }
+				}
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = arms_factory
+					level = 2
+					instant_build = yes
+				}
+			}
+
+			random_owned_controlled_state = { #more in besserabia to encourage fighting for it
+				prioritize = { 78 }
+				limit = {
+					ROOT = { has_full_control_of_state = PREV }
+				}
+				add_extra_state_shared_building_slots = 4
+				add_building_construction = {
+					type = arms_factory
+					level = 4
+					instant_build = yes
+				}
+			}
+
+
+			#add 3% fatigue
+			economy_fatigue_level_up_5 = yes
 		}
 	}
 
@@ -1848,9 +1925,90 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+			#remove modifiers??
+			
+			diplomatic_relation = {
+				country = YUG
+				relation = guarantee
+				active = no
+			}
+			diplomatic_relation = {
+				country = CZE
+				relation = guarantee
+				active = no
+			}
+			diplomatic_relation = {
+				country = GRE
+				relation = guarantee
+				active = no
+			}
+			diplomatic_relation = {
+				country = TUR
+				relation = guarantee
+				active = no
+			}
+			if = {
+				limit = {
+					has_dlc = "Battle for the Bosporus"
+					NOT = {
+						is_in_faction_with = TUR
+						TUR = { is_faction_leader = yes }
+					}
+				}
+				every_other_country = {
+					limit = {
+						has_opinion_modifier = BFTB_balkan_pact_ally
+					}
+					remove_opinion_modifier = {
+						target = ROM
+						modifier = BFTB_balkan_pact_ally
+					}
+					if = {
+						limit = {
+							is_in_faction_with = TUR
+							TUR = { is_faction_leader = no }
+						}
+						hidden_effect = {
+							ROOT = {
+								remove_opinion_modifier = {
+									target = PREV
+									modifier = BFTB_balkan_pact_ally
+								}
+							}
+						}
+					}
+				}
+			}
+			hidden_effect = {
+				if = {
+					limit = {
+						has_dlc = "Battle for the Bosporus"
+						NOT = {
+							is_in_faction_with = TUR
+							TUR = { is_faction_leader = yes }
+						}
+					}
+					remove_opinion_modifier = {
+						target = BUL
+						modifier = BFTB_balkan_pact_enemy
+					}
+					remove_opinion_modifier = {
+						target = HUN
+						modifier = BFTB_balkan_pact_enemy
+					}
+					add_opinion_modifier = {
+						target = BUL
+						modifier = BFTB_incongruous_neighbors
+					}
+					add_opinion_modifier = {
+						target = HUN
+						modifier = BFTB_incongruous_neighbors
+					}
+				}
+			}
 			
 		}
-	}
+	}	
 
 
 
@@ -4731,7 +4889,8 @@ focus_tree = {
 	focus = {
 		id = ROM_german_military_sponsor
 		icon = GFX_goal_generic_major_sponsor_germany
-		prerequisite = { focus = ROM_approach_the_axis OR focus = ROM_go_with_germany }
+		prerequisite = { focus = ROM_approach_the_axis  focus = ROM_go_with_germany}
+
 		x = 2
 		y = 1
 		relative_position_id = ROM_approach_the_axis
@@ -4902,7 +5061,7 @@ focus_tree = {
 
 	focus = {
 		id = ROM_go_with_germany
-		icon = GFX_goal_ROM_greater_romania
+		icon = GFX_goal_GER_align_romania
 		mutually_exclusive = { focus = ROM_unite_the_balkan_entente }
 		mutually_exclusive = { focus = ROM_unite_the_little_entente }
 		mutually_exclusive = { focus = ROM_alliance_with_france }
@@ -4913,7 +5072,9 @@ focus_tree = {
 		relative_position_id = ROM_preserve_romania
 		
 		cost = 5
-
+		available = {
+			#CZE does not exist
+		}
 		search_filters = {
 			
 		}
@@ -4926,7 +5087,7 @@ focus_tree = {
 			#add opinion for germany
 			add_opinion_modifier = {
 				target = GER
-				modifier = alliance
+				modifier = GER_align_romania
 			}
 
 		}
@@ -4935,7 +5096,7 @@ focus_tree = {
 
 	focus = {
 		id = ROM_intro_nat_soc
-		icon = GFX_goal_ROM_greater_romania
+		icon = GFX_goal_GER_nazi_economics
 	
 		prerequisite = { focus = ROM_go_with_germany }
 		x = 0
@@ -4958,18 +5119,22 @@ focus_tree = {
 
 		completion_reward = {
 			#add National Socialism Economic Policy
-			#swap_ideas{
-			#	remove_idea = idk this one yet
+			
 			add_ideas = national_socialism
-			#}
+			
 		}
 	}
 
 	focus = {
 		id = ROM_fight_national_survival
-		icon = GFX_goal_ROM_greater_romania
+		icon = GFX_goal_generic_war_with_comintern
 	
 		prerequisite = { focus = ROM_intro_nat_soc }
+
+		available = {
+			has_war_with = SOV
+
+		}
 		x = 0
 		y = 1
 		relative_position_id = ROM_intro_nat_soc
@@ -4986,7 +5151,7 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			
+			#idk what to put here
 		}
 	}
 
@@ -5025,14 +5190,14 @@ focus_tree = {
 				name = ROM_joint_military_excercises
 				cost_reduction = 0.50
 				uses = 2
-				category = cat_grand_battle_plan
+				category = cat_superior_firepower
 			}
 		}
 	}
 
 	focus = {
 		id = ROM_copy_german_tanks
-		icon = GFX_goal_ROM_greater_romania
+		icon = GFX_goal_GER_achtung_panzer
 	
 		prerequisite = { focus = ROM_joint_military_excercises }
 		x = 0
@@ -5054,7 +5219,7 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			#P3 and stuff
+			#P3 and stuff play game to see how much to give
 
 			army_experience = 25
 			add_doctrine_cost_reduction = {
@@ -5068,7 +5233,7 @@ focus_tree = {
 
 	focus = {
 		id = ROM_reform_iron_guard
-		icon = GFX_goal_ROM_greater_romania
+		icon = GFX_goal_ROM_abolish_the_national_legionary_state
 	
 		prerequisite = { focus = ROM_copy_german_tanks }
 		x = 0
@@ -5091,12 +5256,16 @@ focus_tree = {
 
 		completion_reward = {
 			#swap iron guard reformed with iron guard emboldened
+			swap_ideas = {
+				remove_idea = ROM_iron_guard_emboldened
+				add_idea = ROM_iron_guard_reformed
+			}
 		}
 	}
 
 	focus = {
 		id = ROM_create_MTR
-		icon = GFX_goal_ROM_greater_romania
+		icon = GFX_goal_GER_wehrmachtshelferinnen
 	
 		prerequisite = { focus = ROM_reform_iron_guard }
 		x = 0
