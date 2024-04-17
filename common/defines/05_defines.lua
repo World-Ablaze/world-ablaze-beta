@@ -793,7 +793,7 @@ NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST = 500
 NDefines.NSupply.CAPITAL_SUPPLY_CIVILIAN_FACTORIES = 0.3 							-- supply from one civilian factory
 NDefines.NSupply.CAPITAL_SUPPLY_MILITARY_FACTORIES = 0.6 							-- supply from one military factory
 NDefines.NSupply.AVAILABLE_MANPOWER_STATE_SUPPLY = 3.0								--Factor for state supply from max manpower (population)
-NDefines.NSupply.NON_CORE_MANPOWER_STATE_SUPPLY = 0.05								--Factor for population sttate supply when controlled by an occupier (NO TAKE FOOD)
+NDefines.NSupply.NON_CORE_MANPOWER_STATE_SUPPLY = 0.025								--Factor for population sttate supply when controlled by an occupier (NO TAKE FOOD)
 
 NDefines.NSupply.NAVAL_BASE_FLOW = 0.0 												-- max output/input of a naval node is limited by this base value + additional ratio for each level
 NDefines.NSupply.NAVAL_FLOW_PER_LEVEL = 5.0 										-- max output/input of a naval node is limited by previous base value + this define per its level
