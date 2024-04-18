@@ -1520,6 +1520,98 @@ political_actions = {
 		}
 	}
 
+	ENG_change_asian_resource_rights = {
+
+		allowed = {
+            original_tag = ENG
+        }
+
+        cost = 0
+
+        available = {
+			OR = {
+				862 = {
+					is_controlled_by_ROOT_or_subject = yes
+				}
+				333 = {
+					is_controlled_by_ROOT_or_subject = yes
+				}
+			}
+        }
+
+        complete_effect = {
+			if = {
+				limit = {
+					862 = {
+						is_controlled_by_ROOT_or_subject = yes
+					}
+				}
+				if = {
+					limit = {
+						862 = {
+							has_resources_rights = {
+								receiver = ENG
+							}
+						}
+					}
+					remove_resource_rights = 862
+				}
+				else_if = {
+					limit = {
+						862 = {
+							is_controlled_by_ROOT_or_subject = yes
+							NOT = { is_controlled_by = ENG }
+						}
+					}
+					862 = {
+						CONTROLLER = {
+							give_resource_rights = {
+								receiver = ENG
+								state = 862
+							}
+						}
+					}
+				}
+			}
+			if = {
+				limit = {
+					333 = {
+						is_controlled_by_ROOT_or_subject = yes
+					}
+				}
+				if = {
+					limit = {
+						333 = {
+							has_resources_rights = {
+								receiver = ENG
+							}
+						}
+					}
+					remove_resource_rights = 333
+				}
+				else_if = {
+					limit = {
+						333 = {
+							is_controlled_by_ROOT_or_subject = yes
+							NOT = { is_controlled_by = ENG }
+						}
+					}
+					333 = {
+						CONTROLLER = {
+							give_resource_rights = {
+								receiver = ENG
+								state = 333
+							}
+						}
+					}
+				}
+			}
+		}
+		ai_will_do = {
+			factor = 0
+		}
+	}
+
 	hold_blood_toil_tears_sweat_speech = {
 		icon = generic_political_discourse
 
@@ -1856,6 +1948,7 @@ political_actions = {
 			}
 			hidden_effect = {
 				EGY = { set_country_flag = lack_of_british_enforcement }
+				release = SUD
 				release = EGY
 				EGY = { annex_country = { target = UKE } }
 			}
@@ -1924,11 +2017,24 @@ political_actions = {
 					ETH = { transfer_state = 269 }
 					ETH = { set_country_flag = lack_of_british_enforcement }
 				}
-				release = SUD
+				if = {
+					limit = {
+						country_exists = SUD
+					}
+					SUD = { transfer_state = 549 }
+				}
 				release = UGA
 				release = KEN
 				release = TZN
-				release = SOM
+				if = {
+					limit = {
+						country_exists = SOM
+					}
+					SOM = { transfer_state = 559 }
+				}
+				else = {
+					release = SOM
+				}
 				release = ZAM
 				release = MLW
 				release = ZIM
@@ -2528,330 +2634,38 @@ political_actions = {
 			ENG = {
 				country_event = { id = eng_armor.842 }
 			}
-			if = {
-				limit = {
-					has_equipment = {
-						convoy_1 > 180
+			custom_effect_tooltip = ENG_evacuate_the_merchant_fleet_tt
+			hidden_effect = {
+				ROOT = {
+					set_variable = { ROOT.EVAC_stockpile_convoy_equipment = 0 }
+					while_loop_effect = {
+						limit = {
+							meta_trigger = {
+								text = { stockpile_ratio = { archetype = convoy ratio > [x] } }
+								x = "[?ROOT.EVAC_stockpile_convoy_equipment]"
+							}
+						}
+						add_to_variable = { ROOT.EVAC_stockpile_convoy_equipment = 1 }
 					}
 				}
-				add_equipment_to_stockpile = {
-					type = convoy_1
-					amount = -180
-				}
+
 				ENG = {
 					add_equipment_to_stockpile = {
 						type = convoy_1
-						amount = 180
+						amount = ROOT.EVAC_stockpile_convoy_equipment
 						producer = ROOT
 					}
 				}
-			}
-			else_if = {
-				limit = {
-					has_equipment = {
-						convoy_1 > 170
-					}
+				multiply_variable = {
+					var = ROOT.EVAC_stockpile_convoy_equipment
+					value = -1
 				}
 				add_equipment_to_stockpile = {
 					type = convoy_1
-					amount = -170
-				}
-				ENG = {
-					add_equipment_to_stockpile = {
-						type = convoy_1
-						amount = 170
-						producer = ROOT
-					}
+					amount = ROOT.EVAC_stockpile_convoy_equipment
 				}
 			}
-			else_if = {
-				limit = {
-					has_equipment = {
-						convoy_1 > 160
-					}
-				}
-				add_equipment_to_stockpile = {
-					type = convoy_1
-					amount = -160
-				}
-				ENG = {
-					add_equipment_to_stockpile = {
-						type = convoy_1
-						amount = 160
-						producer = ROOT
-					}
-				}
-			}
-			else_if = {
-				limit = {
-					has_equipment = {
-						convoy_1 > 150
-					}
-				}
-				add_equipment_to_stockpile = {
-					type = convoy_1
-					amount = -150
-				}
-				ENG = {
-					add_equipment_to_stockpile = {
-						type = convoy_1
-						amount = 150
-						producer = ROOT
-					}
-				}
-			}
-			else_if = {
-				limit = {
-					has_equipment = {
-						convoy_1 > 140
-					}
-				}
-				add_equipment_to_stockpile = {
-					type = convoy_1
-					amount = -140
-				}
-				ENG = {
-					add_equipment_to_stockpile = {
-						type = convoy_1
-						amount = 140
-						producer = ROOT
-					}
-				}
-			}
-			else_if = {
-				limit = {
-					has_equipment = {
-						convoy_1 > 130
-					}
-				}
-				add_equipment_to_stockpile = {
-					type = convoy_1
-					amount = -130
-				}
-				ENG = {
-					add_equipment_to_stockpile = {
-						type = convoy_1
-						amount = 130
-						producer = ROOT
-					}
-				}
-			}
-			else_if = {
-				limit = {
-					has_equipment = {
-						convoy_1 > 120
-					}
-				}
-				add_equipment_to_stockpile = {
-					type = convoy_1
-					amount = -120
-				}
-				ENG = {
-					add_equipment_to_stockpile = {
-						type = convoy_1
-						amount = 120
-						producer = ROOT
-					}
-				}
-			}
-			else_if = {
-				limit = {
-					has_equipment = {
-						convoy_1 > 110
-					}
-				}
-				add_equipment_to_stockpile = {
-					type = convoy_1
-					amount = -110
-				}
-				ENG = {
-					add_equipment_to_stockpile = {
-						type = convoy_1
-						amount = 110
-						producer = ROOT
-					}
-				}
-			}
-			else_if = {
-				limit = {
-					has_equipment = {
-						convoy_1 > 100
-					}
-				}
-				add_equipment_to_stockpile = {
-					type = convoy_1
-					amount = -100
-				}
-				ENG = {
-					add_equipment_to_stockpile = {
-						type = convoy_1
-						amount = 100
-						producer = ROOT
-					}
-				}
-			}
-			else_if = {
-				limit = {
-					has_equipment = {
-						convoy_1 > 90
-					}
-				}
-				add_equipment_to_stockpile = {
-					type = convoy_1
-					amount = -90
-				}
-				ENG = {
-					add_equipment_to_stockpile = {
-						type = convoy_1
-						amount = 90
-						producer = ROOT
-					}
-				}
-			}
-			else_if = {
-				limit = {
-					has_equipment = {
-						convoy_1 > 80
-					}
-				}
-				add_equipment_to_stockpile = {
-					type = convoy_1
-					amount = -80
-				}
-				ENG = {
-					add_equipment_to_stockpile = {
-						type = convoy_1
-						amount = 80
-						producer = ROOT
-					}
-				}
-			}
-			else_if = {
-				limit = {
-					has_equipment = {
-						convoy_1 > 70
-					}
-				}
-				add_equipment_to_stockpile = {
-					type = convoy_1
-					amount = -70
-				}
-				ENG = {
-					add_equipment_to_stockpile = {
-						type = convoy_1
-						amount = 70
-						producer = ROOT
-					}
-				}
-			}
-			else_if = {
-				limit = {
-					has_equipment = {
-						convoy_1 > 60
-					}
-				}
-				add_equipment_to_stockpile = {
-					type = convoy_1
-					amount = -60
-				}
-				ENG = {
-					add_equipment_to_stockpile = {
-						type = convoy_1
-						amount = 60
-						producer = ROOT
-					}
-				}
-			}
-			else_if = {
-				limit = {
-					has_equipment = {
-						convoy_1 > 50
-					}
-				}
-				add_equipment_to_stockpile = {
-					type = convoy_1
-					amount = -50
-				}
-				ENG = {
-					add_equipment_to_stockpile = {
-						type = convoy_1
-						amount = 50
-						producer = ROOT
-					}
-				}
-			}
-			else_if = {
-				limit = {
-					has_equipment = {
-						convoy_1 > 40
-					}
-				}
-				add_equipment_to_stockpile = {
-					type = convoy_1
-					amount = -40
-				}
-				ENG = {
-					add_equipment_to_stockpile = {
-						type = convoy_1
-						amount = 40
-						producer = ROOT
-					}
-				}
-			}
-			else_if = {
-				limit = {
-					has_equipment = {
-						convoy_1 > 30
-					}
-				}
-				add_equipment_to_stockpile = {
-					type = convoy_1
-					amount = -30
-				}
-				ENG = {
-					add_equipment_to_stockpile = {
-						type = convoy_1
-						amount = 30
-						producer = ROOT
-					}
-				}
-			}
-			else_if = {
-				limit = {
-					has_equipment = {
-						convoy_1 > 20
-					}
-				}
-				add_equipment_to_stockpile = {
-					type = convoy_1
-					amount = -20
-				}
-				ENG = {
-					add_equipment_to_stockpile = {
-						type = convoy_1
-						amount = 20
-						producer = ROOT
-					}
-				}
-			}
-			else_if = {
-				limit = {
-					has_equipment = {
-						convoy_1 > 10
-					}
-				}
-				add_equipment_to_stockpile = {
-					type = convoy_1
-					amount = -10
-				}
-				ENG = {
-					add_equipment_to_stockpile = {
-						type = convoy_1
-						amount = 10
-						producer = ROOT
-					}
-				}
-			}
+
 		}
 
 		ai_will_do = {
@@ -3532,11 +3346,22 @@ MTG_naval_treaties = {
             original_tag = ENG
         }
 
-		cost = 100
+		cost = 150
 		fire_only_once = yes
 
 		available = {
 			NOT = { GER = { has_idea = MTG_anglo_german_naval_agreement } }
+			OR = {
+				any_country = {
+					any_owned_state = {
+						is_capital = yes
+						is_on_continent = europe
+					}
+					has_added_tension_amount > 10
+				}
+				threat > 0.25
+			}
+			parliament_medium_support_trigger = yes
         }
 
 		visible = {
@@ -3544,19 +3369,21 @@ MTG_naval_treaties = {
         }
 
 		complete_effect = {
-			every_country = {
-				limit = {
-					not = { tag = ENG }
+			hidden_effect = {
+				every_country = {
+					limit = {
+						not = { tag = ENG }
+					}
+					country_event = MTG_naval_treaty.13
 				}
-				country_event = MTG_naval_treaty.13
-			}
-			every_country = {
-				limit = {
-					has_naval_treaty_trigger = yes
+				every_country = {
+					limit = {
+						has_naval_treaty_trigger = yes
+					}
+					remove_naval_treaty_effect = yes
 				}
-				remove_naval_treaty_effect = yes
 			}
-			add_war_support = 0.10
+            ENG_parliament_large_opposition = yes
 		}
 
 		ai_will_do = {
@@ -3638,7 +3465,7 @@ MTG_naval_treaties = {
 		}
 
 		ai_will_do = {
-			factor = 1
+			factor = 0
 		}
 	}
 
@@ -4564,7 +4391,7 @@ war_measures = {
             tag = ENG
         }
 
-        cost = 50
+        cost = 10
         fire_only_once = yes
 
         available = {
@@ -4599,7 +4426,7 @@ war_measures = {
             tag = ENG
         }
 
-        cost = 50
+        cost = 10
         fire_only_once = yes
 
         available = {
@@ -4658,21 +4485,8 @@ war_measures = {
 		available = {
 			is_ai = yes
 			has_war = yes
-			if = {
-				limit = {
-					date < 1943.1.2
-				}
-				has_equipment = {
-					convoy_1 < 400
-				}
-			}
-			if = {
-				limit = {
-					date > 1943.1.1
-				}
-				has_equipment = {
-					convoy_1 < 600
-				}
+			has_equipment = {
+				convoy_1 < 1300
 			}
 		}
 		visible = {
@@ -4685,11 +4499,43 @@ war_measures = {
 		days_re_enable = 30
 
 		ai_will_do = {
-			factor = 320
+			factor = 800
 		}
 
 		complete_effect = {
-			add_equipment_to_stockpile = { type = convoy_1 amount = 60 producer = ENG }
+			add_equipment_to_stockpile = { type = convoy_1 amount = 30 producer = ENG }
+		}
+	}
+
+	ENG_AI_cant_build_convoys_2 = {
+		icon = generic_prepare_civil_war
+
+		allowed = {
+			original_tag = ENG
+		}
+
+		available = {
+			is_ai = yes
+			has_war = yes
+			has_equipment = {
+				convoy_1 < 2
+			}
+		}
+		visible = {
+			is_ai = yes
+		}
+		cost = 0
+
+		fire_only_once = no
+
+		days_re_enable = 30
+
+		ai_will_do = {
+			factor = 800
+		}
+
+		complete_effect = {
+			add_equipment_to_stockpile = { type = convoy_1 amount = 10 producer = ENG }
 		}
 	}
 
@@ -4729,81 +4575,157 @@ war_measures = {
 			}
 		}
 	}
-
-	####################################Lendlease soviets ai --> ai
-
-	ENG_provide_fighterplanes_ai = {
-		icon = generic_industry
-
-		allowed = {
-			original_tag = ENG
-		}
-
-		visible = {
-			SOV = {
-				is_ai = yes
-			}
-			is_ai = yes
-			SOV = { has_war_with = GER }
-			date > 1944.6.1
-		}
-
-		available = {
-			SOV = {
-				is_ai = yes
-				has_deployed_air_force_size = { size < 5500 type = fighter }
-			}
-			date > 1944.6.1
-			is_ai = yes
-			original_tag = ENG
-			SOV = { has_war_with = GER }
-			NOT = { SOV = { has_war_with = ENG } }
-			OR = {
-				has_government = democratic
-				SOV = { has_government = ROOT }
-				is_in_faction_with = SOV
-			}
-		}
-
-        days_re_enable = 60
-
-        modifier = {
-			civilian_factory_use = 10
-        }
-
-		cost = 0
-		days_remove = 30
-
-		ai_will_do = {
-			factor = 400
-		}
-
-		complete_effect = {
-		}
-
-		remove_effect = {
-			SOV = {
-				if = {
-					limit = {
-						ENG = { has_tech = eng_fighter_7 }
-					}
-					add_equipment_to_stockpile = { type = eng_fighter_equipment_7 amount = 200 producer = ENG }
-				}
-				else_if = {
-					limit = {
-						ENG = { has_tech = eng_fighter_6 }
-					}
-					add_equipment_to_stockpile = { type = eng_fighter_equipment_6 amount = 200 producer = ENG }
-				}
-				else = {
-					add_equipment_to_stockpile = { type = eng_fighter_equipment_5 amount = 200 producer = ENG }
-				}
-			}
-		}
-	}
 }
 
 operations = {
+
+	ENG_operation_compass = {
+		icon = generic_operation
+		allowed = {
+			original_tag = ENG
+		}
+		available = {
+			has_war_with = ITA
+			OR = {
+				has_full_control_of_state = 452
+				any_allied_country = {
+					has_full_control_of_state = 452
+				}
+			}
+			OR = {
+				has_full_control_of_state = 960
+				any_allied_country = {
+					has_full_control_of_state = 960
+				}
+			}
+			451 = {
+				CONTROLLER = {
+					has_War_With = ROOT
+				}
+			}
+			663 = {
+				CONTROLLER = {
+					has_War_With = ROOT
+				}
+			}
+		}
+
+		visible = {
+			is_ai = no
+			has_war = yes
+			ITA = { has_capitulated = no }
+			NOT = {
+				controls_state = 448
+				any_allied_country = {
+					controls_state = 448
+				}
+			}
+			has_completed_focus = ENG_local_intervention
+		}
+
+		cancel_trigger = {
+			NOT = {
+				has_full_control_of_state = 452
+				any_allied_country = {
+					has_full_control_of_state = 452
+				}
+			}
+			NOT = {
+				has_full_control_of_state = 960
+				any_allied_country = {
+					has_full_control_of_state = 960
+				}
+			}
+		}
+
+		cost = 25
+		fire_only_once = yes
+		days_remove = 30
+		targeted_modifier = {
+			tag = ITA
+			attack_bonus_against = 0.1
+		}
+		complete_effect = {
+		}
+
+		ai_will_do = {
+			factor = 150
+		}
+	}
+
+	ENG_operation_compass_ai = {
+		icon = generic_operation
+		allowed = {
+			original_tag = ENG
+		}
+		available = {
+			has_war_with = ITA
+			OR = {
+				has_full_control_of_state = 452
+				any_allied_country = {
+					has_full_control_of_state = 452
+				}
+			}
+			OR = {
+				has_full_control_of_state = 960
+				any_allied_country = {
+					has_full_control_of_state = 960
+				}
+			}
+			451 = {
+				CONTROLLER = {
+					has_War_With = ROOT
+				}
+			}
+			663 = {
+				CONTROLLER = {
+					has_War_With = ROOT
+				}
+			}
+		}
+
+		visible = {
+			is_ai = yes
+			has_war = yes
+			ITA = { has_capitulated = no }
+			NOT = {
+				controls_state = 448
+				any_allied_country = {
+					controls_state = 448
+				}
+			}
+			has_completed_focus = ENG_local_intervention
+		}
+
+		cancel_trigger = {
+			NOT = {
+				has_full_control_of_state = 452
+				any_allied_country = {
+					has_full_control_of_state = 452
+				}
+			}
+			NOT = {
+				has_full_control_of_state = 960
+				any_allied_country = {
+					has_full_control_of_state = 960
+				}
+			}
+		}
+
+		cost = 0
+		fire_only_once = yes
+		days_remove = 30
+		targeted_modifier = {
+			tag = ITA
+			attack_bonus_against = 0.1
+		}
+		complete_effect = {
+		}
+
+		ai_will_do = {
+			factor = 150
+		}
+	}
 
 	ENG_operation_overlord = {
 		icon = generic_operation
@@ -5585,6 +5507,58 @@ ENG_enforce_the_naval_treaties = {
 
 economy_decisions = {
 
+	loans_from_usa = {
+		icon = hol_attract_foreign_investors
+
+        allowed = { tag = ENG }
+
+		available = {
+			has_completed_focus = ENG_war_appropriation_act
+			OR = {
+				is_in_faction_with = USA
+				USA = { is_subject_of = ENG }
+				AND = {
+					USA = { has_government = ROOT }
+					USA = { has_completed_focus = USA_cash_and_carry_act }
+				}
+			}
+		}
+
+		visible = {
+			has_war = yes
+			has_completed_focus = ENG_war_appropriation_act
+			NOT = { has_war_with = USA }
+			country_exists = USA
+		}
+
+		cost = 25
+
+		fire_only_once = yes
+
+		remove_effect = {
+		}
+
+		complete_effect = {
+			USA = {
+				country_event = { id = usa_armor.825 }
+				custom_effect_tooltip = needs_approval
+			}
+			effect_tooltip = {
+				economy_fatigue_level_down_5 = yes
+				USA = { economy_fatigue_level_up_1 = yes }
+			}
+		}
+
+		ai_will_do = {
+			base = 0
+
+			modifier = {
+				add = 500
+				check_variable = { economic_fatigue > 29 }
+			}
+		}
+	}
+
 	loans_from_canada = {
 		icon = hol_attract_foreign_investors
 
@@ -5609,7 +5583,7 @@ economy_decisions = {
 			}
 		}
 
-		cost = 50
+		cost = 25
 
 		fire_only_once = yes
 
@@ -9280,7 +9254,7 @@ ENG_appeal_to_imperial_loyalists = {
 							has_dlc = "Together for Victory"
 						}
 						load_focus_tree = { tree = new_zealander_focus keep_completed = yes }
-						NZL_enforce_loyalty = yes
+						#NZL_enforce_loyalty = yes
 					}
 				}
 				hidden_effect = { country_event = { id = mtg_britain.112 days = 1 } }
@@ -11463,7 +11437,7 @@ ENG_move_to_secure_the_dominions = {
 				set_politics = { ruling_party = fascism elections_allowed = no }
 				add_popularity = { ideology = fascism popularity = 0.2 }
 				add_timed_idea = { idea = fascist_influence days = 730 }
-				NZL_enforce_loyalty = yes
+				#NZL_enforce_loyalty = yes
 				country_event = { id = mtg_britain.65 }
 			}
 		}

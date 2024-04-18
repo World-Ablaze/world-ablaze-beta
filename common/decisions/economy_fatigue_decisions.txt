@@ -20,7 +20,7 @@ economy_decisions = {
 				NOT = {
 					OR = {
 						has_idea = tot_economic_mobilisation
-						has_idea = extreme_economic_mobilisation
+						has_idea = over_mobilisation
 					}
 				}
 			}
@@ -111,7 +111,7 @@ economy_decisions = {
 				NOT = {
 					OR = {
 						has_idea = tot_economic_mobilisation
-						has_idea = extreme_economic_mobilisation
+						has_idea = over_mobilisation
 					}
 				}
 			}
@@ -183,7 +183,7 @@ economy_decisions = {
 				NOT = {
 					OR = {
 						has_idea = tot_economic_mobilisation
-						has_idea = extreme_economic_mobilisation
+						has_idea = over_mobilisation
 					}
 				}
 			}
@@ -1791,6 +1791,23 @@ economy_decisions = {
 		ai_will_do = {
 			base = 0
 			modifier = {
+				NOT = {
+					AND = {
+						tag = GER
+						NOR = { 
+							OR = {
+								has_capitulated = yes
+								exists = no
+							}
+						}
+						NOT = {
+							OR = {
+								has_war_with = SWE
+								surrender_progress > 0
+							}
+						}
+					}
+				}
 				AND = {
 					check_variable = { resource@steel > 24 }
 					check_variable = { resource_imported@iron > 0 }
@@ -2019,6 +2036,18 @@ economy_decisions = {
 		ai_will_do = {
 			base = 0
 			modifier = {
+				NOT = {
+					AND = {
+						tag = GER
+						has_war = yes
+						NOT = {
+							OR = {
+								has_war_with = HUN
+								surrender_progress > 0
+							}
+						}
+					}
+				}
 				check_variable = { resource@aluminium > 30 }
 				check_variable = { resource_imported@bauxite > 0 }
 				OR = {
@@ -2284,6 +2313,31 @@ economy_decisions = {
 				check_variable = { resource_imported@steel > 0 }
 				check_variable = { resource@steel < -1}
 				tag = USA
+				AND = {
+					tag = GER
+					NOR = { 
+						OR = {
+							has_capitulated = yes
+							exists = no
+						}
+					}
+					NOT = {
+						OR = {
+							has_war_with = SWE
+							surrender_progress > 0
+						}
+					}
+					OR = {
+						any_controlled_state = {
+							steel_refinery_inactive > 0
+							is_core_of = ROOT
+						}
+						any_controlled_state = {
+							hydro_steel_refinery_inactive > 0
+							is_core_of = ROOT
+						}
+					}
+				}
 			}
 			if = {
 				limit = {
@@ -2316,6 +2370,42 @@ economy_decisions = {
 				}
 			}
 			IF = {
+				limit = {
+					any_controlled_state = {
+						hydro_steel_refinery_inactive > 0
+						is_core_of = ROOT
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						hydro_steel_refinery_inactive > 0
+						is_core_of = ROOT
+					}
+					custom_effect_tooltip = closed_steel_mill_reopens
+					hidden_effect= {
+						enable_hydro_steel_mill = yes
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						steel_refinery_inactive > 0
+						is_core_of = ROOT
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						steel_refinery_inactive > 0
+						is_core_of = ROOT
+					}
+					custom_effect_tooltip = closed_steel_mill_reopens
+					hidden_effect= {
+						enable_steel_mill = yes
+					}
+				}
+			}
+			else_if = {
 				limit = {
 					any_controlled_state = {
 						hydro_steel_refinery_inactive > 0
@@ -2369,6 +2459,27 @@ economy_decisions = {
 				check_variable = { resource_imported@aluminium > 0 }
 				check_variable = { resource@aluminium < -1}
 				tag = USA
+				tag = CAN
+				AND = {
+					tag = GER
+					has_war = yes
+					NOT = {
+						OR = {
+							has_war_with = HUN
+							surrender_progress > 0
+						}
+					}
+					OR = {
+						any_controlled_state = {
+							aluminium_refinery_inactive > 0
+							is_core_of = ROOT
+						}
+						any_controlled_state = {
+							hydro_aluminium_refinery_inactive > 0
+							is_core_of = ROOT
+						}
+					}
+				}
 			}
 		}
 
@@ -2393,6 +2504,42 @@ economy_decisions = {
 				limit = {
 					any_controlled_state = {
 						hydro_aluminium_refinery_inactive > 0
+						is_core_of = ROOT
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						hydro_aluminium_refinery_inactive > 0
+						is_core_of = ROOT
+					}
+					custom_effect_tooltip = closed_aluminium_smelter_reopens
+					hidden_effect= {
+						enable_hydro_aluminium_mill = yes
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						aluminium_refinery_inactive > 0
+						is_core_of = ROOT
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						aluminium_refinery_inactive > 0
+						is_core_of = ROOT
+					}
+					custom_effect_tooltip = closed_aluminium_smelter_reopens
+					hidden_effect= {
+						enable_aluminium_mill = yes
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						hydro_aluminium_refinery_inactive > 0
 					}
 				}
 				random_controlled_state = {
@@ -2410,7 +2557,7 @@ economy_decisions = {
 					limit = {
 						aluminium_refinery_inactive > 0
 					}
-					custom_effect_tooltip=closed_aluminium_smelter_reopens
+					custom_effect_tooltip = closed_aluminium_smelter_reopens
 					hidden_effect= {
 						enable_aluminium_mill = yes
 					}
@@ -2658,7 +2805,7 @@ economy_decisions = {
 #			has_war = yes
 #			OR = {
 #				has_idea = tot_economic_mobilisation
-#				has_idea = extreme_economic_mobilisation
+#				has_idea = over_mobilisation
 #			}
 #			NOT = { has_idea = economy_fatigue_0 }
 #		}
@@ -3405,14 +3552,16 @@ economy_decisions = {
 		available = {
 			NOT = {
 				has_idea_with_trait = industry_vampire
-				has_idea_with_trait = reichswirtschaftsminister
+				has_idea_with_trait = adept_rearmer
+				has_idea_with_trait = national_socialist_economist
 			}
 		}
 
 		activation = {
 			OR = {
 				has_idea_with_trait = industry_vampire
-				has_idea_with_trait = reichswirtschaftsminister
+				has_idea_with_trait = adept_rearmer
+				has_idea_with_trait = national_socialist_economist
 			}
 
 		}
@@ -3476,6 +3625,36 @@ economy_decisions = {
 		complete_effect = {
 		}
 	}
+
+	#economy_fatigue_economic_vampire_mission = {
+	#	icon = economy_fatigue
+	#
+	#	allowed = {
+	#		always = yes
+	#	}
+	#
+	#	available = {
+	#		NOT = { has_idea_with_trait = economic_vampire }
+	#	}
+	#
+	#	activation = {
+	#		has_idea_with_trait = economic_vampire
+	#	}
+	#
+	#	days_mission_timeout = 180
+	#	is_good = yes
+	#
+	#
+	#	timeout_effect = {
+	#		economy_fatigue_level_up_1 = yes
+	#		hidden_effect = {
+	#			activate_mission = economy_fatigue_economic_vampire_mission
+	#		}
+	#	}
+	#
+	#	complete_effect = {
+	#	}
+	#}
 
 	###
 
@@ -3541,10 +3720,10 @@ economy_decisions = {
 			else_if = {
 				limit = {
 					OR = {
-						has_idea = extreme_economic_mobilisation
+						has_idea = over_mobilisation
 					}
 				}
-				activate_mission = economy_fatigue_extreme_economic_mobilisation_mission
+				activate_mission = economy_fatigue_over_mobilisation_mission
 			}
 		}
 	}
@@ -3615,10 +3794,10 @@ economy_decisions = {
 			else_if = {
 				limit = {
 					OR = {
-						has_idea = extreme_economic_mobilisation
+						has_idea = over_mobilisation
 					}
 				}
-				activate_mission = economy_fatigue_extreme_economic_mobilisation_mission
+				activate_mission = economy_fatigue_over_mobilisation_mission
 			}
 		}
 	}
@@ -3686,10 +3865,10 @@ economy_decisions = {
 			else_if = {
 				limit = {
 					OR = {
-						has_idea = extreme_economic_mobilisation
+						has_idea = over_mobilisation
 					}
 				}
-				activate_mission = economy_fatigue_extreme_economic_mobilisation_mission
+				activate_mission = economy_fatigue_over_mobilisation_mission
 			}
 		}
 	}
@@ -3766,10 +3945,10 @@ economy_decisions = {
 			else_if = {
 				limit = {
 					OR = {
-						has_idea = extreme_economic_mobilisation
+						has_idea = over_mobilisation
 					}
 				}
-				activate_mission = economy_fatigue_extreme_economic_mobilisation_mission
+				activate_mission = economy_fatigue_over_mobilisation_mission
 			}
 		}
 	}
@@ -3846,10 +4025,10 @@ economy_decisions = {
 			else_if = {
 				limit = {
 					OR = {
-						has_idea = extreme_economic_mobilisation
+						has_idea = over_mobilisation
 					}
 				}
-				activate_mission = economy_fatigue_extreme_economic_mobilisation_mission
+				activate_mission = economy_fatigue_over_mobilisation_mission
 			}
 		}
 	}
@@ -3926,16 +4105,16 @@ economy_decisions = {
 			else_if = {
 				limit = {
 					OR = {
-						has_idea = extreme_economic_mobilisation
+						has_idea = over_mobilisation
 					}
 				}
-				activate_mission = economy_fatigue_extreme_economic_mobilisation_mission
+				activate_mission = economy_fatigue_over_mobilisation_mission
 			}
 		}
 	}
 
 
-	economy_fatigue_extreme_economic_mobilisation_mission = {
+	economy_fatigue_over_mobilisation_mission = {
 
 		icon = economy_fatigue
 
@@ -3945,7 +4124,7 @@ economy_decisions = {
 
 		available = {
 			NOT = {
-				has_idea = extreme_economic_mobilisation
+				has_idea = over_mobilisation
 			}
 		}
 
@@ -3954,7 +4133,7 @@ economy_decisions = {
 		}
 
 		visible = {
-			has_idea = extreme_economic_mobilisation
+			has_idea = over_mobilisation
 		}
 
 		days_mission_timeout = 21
@@ -3971,7 +4150,7 @@ economy_decisions = {
 				economy_fatigue_level_up_1 = yes
 			}
 			hidden_effect = {
-				activate_mission = economy_fatigue_extreme_economic_mobilisation_mission
+				activate_mission = economy_fatigue_over_mobilisation_mission
 			}
 		}
 
@@ -5091,6 +5270,72 @@ economy_decisions = {
 		icon = GFX_decision_generic_operation
 
 		available = {
+			num_of_civilian_factories_available_for_projects > 4
+			FROM = {
+				infrastructure > 4
+				industrial_complex > 0
+				OR = {
+					compliance > 30
+					is_core_of = ROOT
+				}
+			}
+			if = {
+				limit = {
+					original_tag = SOV
+				}
+				SOV = { has_completed_focus = SOV_a_secure_industrial_base }
+			}
+		}
+
+		ai_will_do = {
+			factor = 200
+		}
+
+		on_map_mode = map_only
+
+		state_target = yes
+
+		target_array = controlled_states
+
+		target_trigger = {
+			FROM = {
+				is_fully_controlled_by = ROOT
+				has_dynamic_modifier = { modifier = underdeveloped_state }
+				infrastructure > 0
+			}
+		}
+
+		visible = {
+			FROM = {
+				is_fully_controlled_by = ROOT
+				has_dynamic_modifier = { modifier = underdeveloped_state }
+				infrastructure > 0
+			}
+		}
+
+		cost = 25
+
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 5
+		}
+
+		complete_effect = {
+		}
+
+		remove_effect = {
+			FROM = {
+				remove_dynamic_modifier = { modifier = underdeveloped_state }
+			}
+		}
+	}
+
+	economy_integrate_state = {
+
+		icon = GFX_decision_generic_operation
+
+		available = {
 			FROM = {
 				infrastructure > 4
 				OR = {
@@ -5114,7 +5359,7 @@ economy_decisions = {
 			FROM = {
 				is_fully_controlled_by = ROOT
 				has_dynamic_modifier = { modifier = agrarian_state }
-				infrastructure > 2
+				infrastructure > 0
 			}
 		}
 
@@ -5122,7 +5367,7 @@ economy_decisions = {
 			FROM = {
 				is_fully_controlled_by = ROOT
 				has_dynamic_modifier = { modifier = agrarian_state }
-				infrastructure > 2
+				infrastructure > 0
 			}
 		}
 
