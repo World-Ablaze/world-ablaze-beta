@@ -1187,6 +1187,46 @@ on_actions = {
 				}
 			}
 		}
+		effect = {
+			if = {
+				limit = {
+					ROOT = {
+						is_subject_of = GER
+						has_autonomy_state = autonomy_reichskommissariat
+					}
+				}
+				GER = {
+					add_to_variable = { GER_rk_production_speed_buildings_factor = 0.025 }
+					if = {
+						limit = {
+							check_variable = { GER_rk_production_speed_buildings_factor = 0 compare = greater_than_or_equals }
+						}
+						remove_dynamic_modifier = {
+							modifier = GER_rk_obligations
+						}
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					ROOT = {
+						is_subject_of = GER
+						has_autonomy_state = autonomy_reichsprotectorate
+					}
+				}
+				GER = {
+					add_to_variable = { GER_rk_production_speed_buildings_factor = 0.05 }
+					if = {
+						limit = {
+							check_variable = { GER_rk_production_speed_buildings_factor = 0 compare = greater_than_or_equals }
+						}
+						remove_dynamic_modifier = {
+							modifier = GER_rk_obligations
+						}
+					}
+				}
+			}
+		}
 	}
 	on_capitulation_immediate = {
 		effect = {
@@ -1299,6 +1339,24 @@ on_actions = {
 							hours = 6
 						}
 					}
+				}
+				else_if = { # effect to set global flag if yalta is rejected
+					limit = {
+						NOT = {
+							ENG = {
+								has_war_with = SOV
+							}
+						}
+						NOT = {
+							USA = {
+								has_war_with = SOV
+							}
+						}
+						country_exists = SOV
+						country_exists = ENG
+						country_exists = USA
+					}
+					set_global_flag = ww2_has_ended
 				}
 			}
 		}
@@ -3165,6 +3223,15 @@ on_actions = {
 
 				set_variable = { eng_cur_st = num_equipment_in_armies@medium_tank_support_chassis }
 				add_to_variable = { creation_of_the_armoured_corps_tanks = eng_cur_st }
+
+				set_variable = { eng_cur_lt = num_equipment_in_armies@light_tank_chassis }
+				add_to_variable = { creation_of_the_armoured_corps_tanks = eng_cur_lt }
+
+				set_variable = { eng_cur_mist = num_equipment_in_armies@medium_tank_infantry_support_chassis }
+				add_to_variable = { creation_of_the_armoured_corps_tanks = eng_cur_mist }
+
+				set_variable = { eng_cur_hist = num_equipment_in_armies@heavy_tank_infantry_support_chassis }
+				add_to_variable = { creation_of_the_armoured_corps_tanks = eng_cur_hist }
 			}
 		}
 		effect = {
@@ -3176,6 +3243,9 @@ on_actions = {
 
 				set_variable = { eng_mod_str = num_deployed_planes_with_type@strike_bomber_equipment }
 				add_to_variable = { ENG_modernization_of_the_royal_airforce_bombers = eng_mod_str }
+
+				set_variable = { eng_mod_pat = num_deployed_planes_with_type@patrol_equipment }
+				add_to_variable = { ENG_modernization_of_the_royal_airforce_bombers = eng_mod_pat }
 			}
 		}
 	}
@@ -3620,9 +3690,23 @@ on_actions = {
 						}
 					}
 				}
-			}
-			SOV = {
-				send_embargo = ROOT
+				SOV = {
+					send_embargo = ROOT
+					if = {
+						limit = {
+							has_idea = SOV_molotov_ribbentrop_pact
+						}
+					}
+					remove_ideas = SOV_molotov_ribbentrop_pact
+				}
+				ROOT = {
+					if = {
+						limit = {
+							has_idea = SOV_soviet_german_trade_agreement
+						}
+						remove_ideas = SOV_soviet_german_trade_agreement
+					}
+				}
 			}
 		}
 	}
@@ -3642,6 +3726,72 @@ on_actions = {
 					remove_opinion_modifier = {
 						target = ROOT
 						modifier = embargo
+					}
+				}
+			}
+		}
+	}
+
+	on_unit_leader_created = {
+		effect = {
+			if = {
+				limit = {
+					FROM = {
+						tag = ITA
+					}
+				}
+				ROOT = {
+					if = {
+						limit = {
+							NOT = {
+								has_trait = incompetent
+							}
+						}
+						add_unit_leader_trait = inadequate_army_trait
+					}
+				}
+			}
+		}
+	}
+
+	on_unit_leader_promote_from_ranks_veteran = {
+		effect = {
+			if = {
+				limit = {
+					FROM = {
+						tag = ITA
+					}
+				}
+				ROOT = {
+					if = {
+						limit = {
+							NOT = {
+								has_trait = incompetent
+							}
+						}
+						add_unit_leader_trait = inadequate_army_trait
+					}
+				}
+			}
+		}
+	}
+
+	on_unit_leader_promote_from_ranks_green = {
+		effect = {
+			if = {
+				limit = {
+					FROM = {
+						tag = ITA
+					}
+				}
+				ROOT = {
+					if = {
+						limit = {
+							NOT = {
+								has_trait = incompetent
+							}
+						}
+						add_unit_leader_trait = inadequate_army_trait
 					}
 				}
 			}
