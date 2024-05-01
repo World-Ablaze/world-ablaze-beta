@@ -685,7 +685,7 @@ NDefines.NNavy.SCREENING_EFFICIENCY_PENALTY_ON_MINIMUM_POSITIONING = 0.25  			--
 NDefines.NNavy.AA_EFFICIENCY_PENALTY_ON_MINIMUM_POSITIONING = 0  					-- AA penalty at 0% positioning
 NDefines.NNavy.SUBMARINE_REVEAL_ON_MINIMUM_POSITIONING = 10.0  						-- submarine reveal change on 0% positioning
 
-NDefines.NNavy.SHORE_BOMBARDMENT_CAP = 0.30
+NDefines.NNavy.SHORE_BOMBARDMENT_CAP = 0.40
 NDefines.NNavy.HEAVY_GUN_ATTACK_TO_SHORE_BOMBARDMENT = 0.025  						-- heavy gun attack value is divided by this value * 100 and added to shore bombardment modifier
 NDefines.NNavy.LIGHT_GUN_ATTACK_TO_SHORE_BOMBARDMENT = 0.0005						    -- light gun attack value is divided by this value * 100 and added to shore bombardment modifier
 
