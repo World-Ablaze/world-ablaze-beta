@@ -616,6 +616,9 @@ NDefines.NNavy.COMBAT_TORPEDO_CRITICAL_CHANCE = 0.9									-- chance for critic
 NDefines.NNavy.COMBAT_TORPEDO_CRITICAL_DAMAGE_MULT = 6.0							-- multiplier to damage when got critical hit from torpedo. (Critical hits are devastating as usualy torpedo_attack are pretty high base values).
 NDefines.NNavy.HIT_PROFILE_SPEED_FACTOR = 1.2										-- factors speed value when determining it profile (Vis * HIT_PROFILE_MULT * Ship Hit Profile Mult)
 
+COMBAT_DAMAGE_TO_STR_FACTOR = 0.3,													-- casting damage value to ship strength multiplier. Use it ot balance the game difficulty.
+COMBAT_DAMAGE_TO_ORG_FACTOR = 1.0,													-- casting damage value to ship organisation multiplier. Use it to balance the game difficulty.
+
 NDefines.NNavy.MIN_REPAIR_FOR_JOINING_COMBATS = { 									-- strikeforces/patrol forces will not join combats if they are not repaired enough
 	0.0,	-- do not repair
 	0.5,	-- low
