@@ -560,7 +560,7 @@ NDefines.NAir.MISSION_FUEL_COSTS = {												-- fuel cost per plane for each 
 }
 NDefines.NAir.NAVAL_STRIKE_CARRIER_MULTIPLIER = 10.0							    -- damage bonus when planes are in naval combat where their carrier is present (and can thus sortie faster and more effectively)
 
-NDefines.NAir.NAVAL_STRIKE_DAMAGE_TO_STR = 2.0										-- Balancing value to convert damage ( naval_strike_attack * hits ) to Strength reduction.
+NDefines.NAir.NAVAL_STRIKE_DAMAGE_TO_STR = 1.0										-- Balancing value to convert damage ( naval_strike_attack * hits ) to Strength reduction.
 NDefines.NAir.NAVAL_STRIKE_DAMAGE_TO_ORG = 0.5										-- Balancing value to convert damage ( naval_strike_attack * hits ) to Organisation reduction.
 
 NDefines.NAir.INTERCEPTION_DISTANCE_SCALE = 10 										-- At this many pixels of path length, full interception efficiency is applied to air missions. Lerp from 0.
