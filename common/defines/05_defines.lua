@@ -309,9 +309,9 @@ NDefines.NMilitary.MIN_DIVISION_BRIGADE_HEIGHT = 5									-- Min height of regi
 NDefines.NMilitary.MAX_DIVISION_SUPPORT_WIDTH = 2									-- Max width of support in division designer.
 NDefines.NMilitary.MAX_DIVISION_SUPPORT_HEIGHT = 5									-- Max height of support in division designer.
 
-NDefines.NMilitary.BASE_DIVISION_BRIGADE_GROUP_COST = 20							--Base cost to unlock a regiment slot,
-NDefines.NMilitary.BASE_DIVISION_BRIGADE_CHANGE_COST = 5							--Base cost to change a regiment column.
-NDefines.NMilitary.BASE_DIVISION_SUPPORT_SLOT_COST = 1 								--Base cost to unlock a support slot
+NDefines.NMilitary.BASE_DIVISION_BRIGADE_GROUP_COST = 10							--Base XP cost to unlock a regiment slot,
+NDefines.NMilitary.BASE_DIVISION_BRIGADE_CHANGE_COST = 5							--Base XP cost to change a regiment column.
+NDefines.NMilitary.BASE_DIVISION_SUPPORT_SLOT_COST = 1 								--Base XP cost to unlock a support slot
 
 NDefines.NMilitary.UNIT_LEADER_ASSIGN_TRAIT_COST = 5								-- cost to assign a new trait to a unit leader
 NDefines.NMilitary.ARMY_STRATEGIC_DEPLOYMENT_FUEL_MULT = 0.0						-- fuel consumption ratio while doing strategic deployment
