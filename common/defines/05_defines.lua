@@ -432,8 +432,8 @@ NDefines.NMilitary.BASE_CAPTURE_EQUIPMENT_RATIO = 0.04								-- after a success
 
 NDefines.NMilitary.NON_CORE_SUPPLY_AIR_SPEED = -0.4			   						-- we are not running on our own VP supply so need to steal stuff along the way, a bit less due to air supply
 
-NDefines.NMilitary.LAND_AIR_COMBAT_STR_DAMAGE_MODIFIER = 0.02    					-- air global strength damage modifier from CAS
-NDefines.NMilitary.LAND_AIR_COMBAT_ORG_DAMAGE_MODIFIER = 0.03    					-- air global org damage modifier from CAS
+NDefines.NMilitary.LAND_AIR_COMBAT_STR_DAMAGE_MODIFIER = 0.015    					-- air global strength damage modifier from CAS
+NDefines.NMilitary.LAND_AIR_COMBAT_ORG_DAMAGE_MODIFIER = 0.025    					-- air global org damage modifier from CAS
 NDefines.NMilitary.LAND_AIR_COMBAT_MAX_PLANES_PER_ENEMY_WIDTH = 4 					-- how many CAS/TAC can enter a combat depending on enemy width there
 
 NDefines.NMilitary.UNIT_LEADER_INITIAL_TRAIT_SLOT = { 								-- trait slot for 0 level leader
