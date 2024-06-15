@@ -345,6 +345,7 @@ NDefines.NMilitary.PIERCING_THRESHOLDS = {											-- Our piercing / their arm
 	1.0,
 	0.9,
 	0.75,
+	0.5,
 	0.00, --there isn't much point setting this higher than 0
 }
 NDefines.NMilitary.PIERCING_THRESHOLD_DAMAGE_VALUES = {								-- 0 armor will always receive maximum damage (so add overmatching at your own peril). the system expects at least 2 values, with no upper limit.
@@ -353,6 +354,7 @@ NDefines.NMilitary.PIERCING_THRESHOLD_DAMAGE_VALUES = {								-- 0 armor will a
 	0.80,
 	0.70,
 	0.60,
+	0.55,
 	0.50,
 }
 
