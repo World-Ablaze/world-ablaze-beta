@@ -495,6 +495,8 @@ NDefines.NAir.AIR_WING_XP_RECON_MISSION_COMPLETED_GAIN = 0.1 						-- Recon miss
 NDefines.NAir.COMBAT_BETTER_AGILITY_DAMAGE_REDUCTION = 1.60							-- How much the better agility (then opponent's) can reduce their damage to us.
 NDefines.NAir.BIGGEST_AGILITY_FACTOR_DIFF = 3.0										-- biggest factor difference in agility for doing damage (caps to this)
 
+NDefines.NAir.AIR_AGILITY_TO_NAVAL_STRIKE_AGILITY = 0.03         					-- conversion factor to bring agility in line with ship AA
+
 NDefines.NAir.DISRUPTION_FACTOR = 0.5												-- multiplier on disruption damage to scale its effects on planes
 NDefines.NAir.DISRUPTION_FACTOR_CARRIER = 2.0										-- multiplier on disruption damage to scale its effects on carrier vs carrier planes
 NDefines.NAir.CARRIER_HOURS_DELAY_AFTER_EACH_COMBAT = 0								-- how often carrier planes do battle inside naval combat
