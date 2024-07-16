@@ -500,6 +500,22 @@ recalculate_alu_mills = {
 	}
 }
 
+recalculate_synth = {
+	set_variable = {this.current_synth = 0 }
+	set_variable = {this.total_synth = 0 }
+	every_controlled_state = {
+		add_to_variable = {
+			prev.current_synth = building_level@synthetic_refinery
+		}
+		add_to_variable = {
+			prev.total_synth = building_level@synthetic_refinery_inactive
+		}
+	}
+	add_to_variable = {
+		this.total_alu_mill = this.current_synth
+	}
+}
+
 enable_steel_mill = {
 	remove_building = {
 		type = steel_refinery_inactive
@@ -1250,6 +1266,173 @@ manage_alu_mills = {
 				}
 				subtract_from_variable = {
 					current_alu_mills = 1
+				}
+			}
+		}
+	}
+}
+
+manage_synth = {
+	# close refineries from lack of resources
+	if = {
+		limit = {
+			check_variable = { resource@coal < 0 }
+			any_controlled_state = {
+				synthetic_refinery > 0
+			}
+		}
+		set_temp_variable = { tempCoal = resource@coal }
+		while_loop_effect = {
+			limit = {
+				check_variable = { tempCoal < 0 }
+			}
+			add_to_temp_variable = {
+				var = tempCoal
+				value = 60
+			}
+			if = {
+				limit = {
+					any_controlled_state = {
+						not = {
+							is_core_of = root
+						}
+						synthetic_refinery > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						synthetic_refinery > 0
+						not = {
+							is_core_of = root
+						}
+					}
+					disable_synth = yes
+				}
+				subtract_from_variable = {
+					current_synth = 1
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						synthetic_refinery > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						synthetic_refinery > 0
+					}
+					disable_synth = yes
+				}
+				subtract_from_variable = {
+					current_synth = 1
+				}
+			}
+		}
+	}
+	# open refineries to match player target
+	else_if = {
+		limit = {
+			check_variable = {open_synth_target > current_synth}
+			check_variable = { resource@coal > 59 }
+			any_controlled_state = {
+				synthetic_refinery_inactive > 0
+			}
+		}
+		set_temp_variable = { tempCoal = resource@coal }
+		while_loop_effect = {
+			limit = {
+				check_variable = {open_synth_target > current_synth}
+				check_variable = {tempCoal > 59}
+			}
+			subtract_from_temp_variable = {
+				var = tempCoal
+				value = 60
+			}
+			if = {
+				limit = {
+					any_controlled_state = {
+						synthetic_refinery_inactive > 0
+						is_core_of = root
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						synthetic_refinery_inactive > 0
+						is_core_of = root
+					}
+					enable_synth = yes
+				}
+				add_to_variable = {
+					current_synth = 1
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						synthetic_refinery_inactive > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						synthetic_refinery_inactive > 0
+					}
+					enable_synth = yes
+				}
+				add_to_variable = {
+					current_synth = 1
+				}
+			}
+		}
+	}
+	# close refineries to match player target
+	if = {
+		limit = {
+			check_variable = {open_synth_target < current_synth}
+		}
+		while_loop_effect = {
+			limit = { 
+				check_variable = {open_synth_target < current_synth}
+				any_controlled_state = {
+					synthetic_refinery > 0	
+				}
+			}
+			if = {
+				limit = {
+					any_controlled_state = {
+						not = {
+							is_core_of = root
+						}
+						synthetic_refinery > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						not = {
+							is_core_of = root
+						}
+						synthetic_refinery > 0
+					}
+					disable_synth = yes
+				}
+				subtract_from_variable = {
+					current_synth = 1
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						synthetic_refinery > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						synthetic_refinery > 0
+					}
+					disable_synth = yes
+				}
+				subtract_from_variable = {
+					current_synth = 1
 				}
 			}
 		}
