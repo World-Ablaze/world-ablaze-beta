@@ -7,6 +7,7 @@ on_actions = {
 		}
 		effect = {
 			every_country = {
+				## Steel ##
 				set_variable = {this.open_steel_mill_target = 0 }
 				set_variable = {this.total_steel_mill = 0 }
 				every_owned_state = {
@@ -26,7 +27,29 @@ on_actions = {
 				add_to_variable = {
 					this.total_steel_mill = this.open_steel_mill_target
 				}
-				set_variable = {this.current_steel_mills = this.open_steel_mill_target } 
+				set_variable = {this.current_steel_mills = this.open_steel_mill_target }
+
+				## Aluminum ##
+				set_variable = {this.open_alu_mill_target = 0 }
+				set_variable = {this.total_alu_mill = 0 }
+				every_owned_state = {
+					add_to_variable = {
+						prev.open_alu_mill_target = building_level@aluminium_refinery
+					}
+					add_to_variable = {
+						prev.open_alu_mill_target = building_level@hydro_aluminium_refinery
+					}
+					add_to_variable = {
+						prev.total_alu_mill = building_level@aluminium_refinery_inactive
+					}
+					add_to_variable = {
+						prev.total_alu_mill = building_level@hydro_aluminium_refinery_inactive
+					}
+				}
+				add_to_variable = {
+					this.total_alu_mill = this.open_alu_mill_target
+				}
+				set_variable = {this.current_alu_mills = this.open_alu_mill_target } 
 			}
 		}
 		effect = {
@@ -2725,323 +2748,8 @@ on_actions = {
 				limit = {
 					is_ai = no
 				}
-				# close refineries from lack of resources
-				if = {
-					limit = {
-						or = {
-							check_variable = { resource@iron < 0 }
-							check_variable = { resource@coal < 0 }
-						}
-						any_controlled_state = {
-							or = {
-								hydro_steel_refinery > 0
-								steel_refinery > 0
-							}
-						}
-					}
-					set_temp_variable = { tempIron = resource@iron }
-					set_temp_variable = { tempCoal = resource@coal }
-					while_loop_effect = {
-						limit = {
-							OR = {
-								check_variable = { tempIron < 0 }
-								check_variable = { tempCoal < 0 }
-							}
-						}
-						add_to_temp_variable = {
-							var = tempIron
-							value = 25
-						}
-						add_to_temp_variable = {
-							var = tempCoal
-							value = 20
-						}
-						if = {
-							limit = {
-								any_controlled_state = {
-									not = {
-										is_core_of = root
-									}
-									steel_refinery > 0
-								}
-							}
-							random_controlled_state = {
-								limit = {
-									steel_refinery > 0
-									not = {
-										is_core_of = root
-									}
-								}
-								disable_steel_mill = yes
-							}
-							subtract_from_variable = {
-								current_steel_mills = 1
-							}
-						}
-						else_if = {
-							limit = {
-								any_controlled_state = {
-									not = {
-										is_core_of = root
-									}
-									hydro_steel_refinery > 0
-								}
-							}
-							random_controlled_state = {
-								limit = {
-									hydro_steel_refinery > 0
-									not = {
-										is_core_of = root
-									}
-								}
-								disable_hydro_steel_mill = yes
-							}
-							subtract_from_temp_variable = {
-								var = tempCoal
-								value = 15
-							}
-							subtract_from_variable = {
-								current_steel_mills = 1
-							}
-						}
-						else_if = {
-							limit = {
-								any_controlled_state = {
-									steel_refinery > 0
-								}
-							}
-							random_controlled_state = {
-								limit = {
-									steel_refinery > 0
-								}
-								disable_steel_mill = yes
-							}
-							subtract_from_variable = {
-								current_steel_mills = 1
-							}
-						}
-						else_if = {
-							limit = {
-								any_controlled_state = {
-									hydro_steel_refinery > 0
-								}
-							}
-							random_controlled_state = {
-								limit = {
-									hydro_steel_refinery > 0
-								}
-								disable_hydro_steel_mill = yes
-							}
-							subtract_from_temp_variable = {
-								var = tempCoal
-								value = 15
-							}
-							subtract_from_variable = {
-								current_steel_mills = 1
-							}
-						}
-					}
-				}
-				# open refineries to match player target
-				else_if = {
-					limit = {
-						check_variable = {open_steel_mill_target > current_steel_mills}
-						check_variable = { resource@iron > 24 }
-						check_variable = { resource@coal > 19 }
-						any_controlled_state = {
-							or = {
-								hydro_steel_refinery > 0
-								steel_refinery > 0
-							}
-						}
-					}
-					set_temp_variable = { tempIron = resource@iron }
-					set_temp_variable = { tempCoal = resource@coal }
-					while_loop_effect = {
-						limit = {
-							check_variable = {open_steel_mill_target > current_steel_mills}
-							check_variable = {tempIron > 24}
-							check_variable = {tempCoal > 19}
-						}
-						subtract_from_temp_variable = {
-							var = tempIron
-							value = 25
-						}
-						subtract_from_temp_variable = {
-							var = tempCoal
-							value = 5
-						}
-						if = {
-							limit = {
-								any_controlled_state = {
-									hydro_steel_refinery_inactive > 0
-									is_core_of = root
-								}
-							}
-							random_controlled_state = {
-								limit = {
-									hydro_steel_refinery_inactive > 0
-									is_core_of = root
-								}
-								enable_hydro_steel_mill = yes
-							}
-							add_to_variable = {
-								current_steel_mills = 1
-							}
-						}
-						else_if = {
-							limit = {
-								any_controlled_state = {
-									steel_refinery_inactive > 0
-									is_core_of = root
-								}
-							}
-							random_controlled_state = {
-								limit = {
-									steel_refinery_inactive > 0
-									is_core_of = root
-								}
-								enable_steel_mill = yes
-							}
-							subtract_from_temp_variable = {
-								var = tempCoal
-								value = 15
-							}
-							add_to_variable = {
-								current_steel_mills = 1
-							}
-						}
-						else_if = {
-							limit = {
-								any_controlled_state = {
-									hydro_steel_refinery_inactive > 0
-								}
-							}
-							random_controlled_state = {
-								limit = {
-									hydro_steel_refinery_inactive > 0
-								}
-								enable_hydro_steel_mill = yes
-							}
-							add_to_variable = {
-								current_steel_mills = 1
-							}
-						}
-						else_if = {
-							limit = {
-								any_controlled_state = {
-									steel_refinery_inactive > 0
-								}
-							}
-							random_controlled_state = {
-								limit = {
-									steel_refinery_inactive > 0
-								}
-								enable_steel_mill = yes
-							}
-							subtract_from_temp_variable = {
-								var = tempCoal
-								value = 15
-							}
-							add_to_variable = {
-								current_steel_mills = 1
-							}
-						}
-					}
-				}
-				# close refineries to match player target
-				if = {
-					limit = {
-						check_variable = {open_steel_mill_target < current_steel_mills}
-					}
-					while_loop_effect = {
-						limit = { 
-							check_variable = {open_steel_mill_target < current_steel_mills}
-							any_controlled_state = {
-								or = {
-									hydro_steel_refinery > 0
-									steel_refinery > 0	
-								}
-							}
-						}
-						if = {
-							limit = {
-								any_controlled_state = {
-									not = {
-										is_core_of = root
-									}
-									steel_refinery > 0
-								}
-							}
-							random_controlled_state = {
-								limit = {
-									not = {
-										is_core_of = root
-									}
-									steel_refinery > 0
-								}
-								disable_steel_mill = yes
-							}
-							subtract_from_variable = {
-								current_steel_mills = 1
-							}
-						}
-						else_if = {
-							limit = {
-								any_controlled_state = {
-									not = {
-										is_core_of = root
-									}
-									hydro_steel_refinery > 0
-								}
-							}
-							random_controlled_state = {
-								limit = {
-									not = {
-										is_core_of = root
-									}
-									hydro_steel_refinery > 0
-								}
-								disable_hydro_steel_mill = yes
-							}
-							subtract_from_variable = {
-								current_steel_mills = 1
-							}
-						}
-						else_if = {
-							limit = {
-								any_controlled_state = {
-									steel_refinery > 0
-								}
-							}
-							random_controlled_state = {
-								limit = {
-									steel_refinery > 0
-								}
-								disable_steel_mill = yes
-							}
-							subtract_from_variable = {
-								current_steel_mills = 1
-							}
-						}
-						else_if = {
-							limit = {
-								any_controlled_state = {
-									hydro_steel_refinery > 0
-								}
-							}
-							random_controlled_state = {
-								limit = {
-									hydro_steel_refinery > 0
-								}
-								disable_hydro_steel_mill = yes
-							}
-							subtract_from_variable = {
-								current_steel_mills = 1
-							}
-						}
-					}
-				}
+				manage_steel_mills = yes
+				manage_alu_mills = yes
 			}
 		}
 	}
@@ -3796,6 +3504,7 @@ on_actions = {
 					is_ai = no
 				}
 				recalculate_steel_mills = yes
+				recalculate_alu_mills = yes
 			}
 		}
 	}
