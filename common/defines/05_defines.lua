@@ -761,7 +761,7 @@ NDefines.NNavy.CAPITAL_RATIO_FOR_FULL_SCREENING_FOR_CONVOYS = 1.0  					-- this 
 NDefines.NNavy.BASE_CARRIER_SORTIE_EFFICIENCY = 0.5 								-- factor of planes that can sortie by default from a carrier
 
 NDefines.NNavy.NAVAL_SPEED_MODIFIER = 0.032	                    					-- basic speed control
-NDefines.NNavy.NAVAL_TRANSFER_BASE_SPEED = 30                                  		-- base speed of units on water being transported
+NDefines.NNavy.NAVAL_TRANSFER_BASE_SPEED = 27                                  		-- base speed of units on water being transported
 NDefines.NNavy.AMPHIBIOUS_INVADE_SPEED_BASE = 0.5 									-- every hour movement progress on amphibious invasion
 
 NDefines.NNavy.TRAINING_DAILY_COUNTRY_EXP_FACTOR = 0.0003							-- Factor used to scale the Daily Country Navy XP gain
