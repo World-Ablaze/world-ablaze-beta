@@ -456,6 +456,150 @@ copy_laws_effect = {
 	}
 }
 
+recalculate_steel_mills = {
+	set_variable = {this.current_steel_mills = 0 }
+	set_variable = {this.total_steel_mill = 0 }
+	set_variable = {this.total_steel_mill_core = 0 }
+	set_variable = {this.current_steel_mill_core = 0 }
+	every_controlled_state = {
+		if = {
+			limit = {
+				is_core_of = prev
+			}
+			add_to_variable = {
+				prev.current_steel_mill_core = building_level@steel_refinery
+			}
+			add_to_variable = {
+				prev.current_steel_mill_core = building_level@hydro_steel_refinery
+			}
+			add_to_variable = {
+				prev.total_steel_mill_core = building_level@steel_refinery_inactive
+			}
+			add_to_variable = {
+				prev.total_steel_mill_core = building_level@hydro_steel_refinery_inactive
+			}
+		}
+		else = {
+			add_to_variable = {
+				prev.current_steel_mills = building_level@steel_refinery
+			}
+			add_to_variable = {
+				prev.current_steel_mills = building_level@hydro_steel_refinery
+			}
+			add_to_variable = {
+				prev.total_steel_mill = building_level@steel_refinery_inactive
+			}
+			add_to_variable = {
+				prev.total_steel_mill = building_level@hydro_steel_refinery_inactive
+			}
+		}
+	}
+	add_to_variable = {
+		this.total_steel_mill_core = this.current_steel_mill_core
+	}
+	add_to_variable = {
+		this.total_steel_mill = this.current_steel_mills
+	}
+	add_to_variable = {
+		this.total_steel_mill = this.total_steel_mill_core
+	}
+	add_to_variable = {
+		this.current_steel_mills = this.current_steel_mill_core
+	}
+}
+
+recalculate_alu_mills = {
+	set_variable = {this.current_alu_mills = 0 }
+	set_variable = {this.total_alu_mill = 0 }
+	set_variable = {this.total_alu_mill_core = 0 }
+	set_variable = {this.current_alu_mill_core = 0 }
+	every_controlled_state = {
+		if = {
+			limit = {
+				is_core_of = prev
+			}
+			add_to_variable = {
+				prev.current_alu_mill_core = building_level@aluminium_refinery
+			}
+			add_to_variable = {
+				prev.current_alu_mill_core = building_level@hydro_aluminium_refinery
+			}
+			add_to_variable = {
+				prev.total_alu_mill_core = building_level@aluminium_refinery_inactive
+			}
+			add_to_variable = {
+				prev.total_alu_mill_core = building_level@hydro_aluminium_refinery_inactive
+			}
+		}
+		else = {
+			add_to_variable = {
+				prev.current_alu_mills = building_level@aluminium_refinery
+			}
+			add_to_variable = {
+				prev.current_alu_mills = building_level@hydro_aluminium_refinery
+			}
+			add_to_variable = {
+				prev.total_alu_mill = building_level@aluminium_refinery_inactive
+			}
+			add_to_variable = {
+				prev.total_alu_mill = building_level@hydro_aluminium_refinery_inactive
+			}
+		}
+	}
+	add_to_variable = {
+		this.total_alu_mill_core = this.current_alu_mill_core
+	}
+	add_to_variable = {
+		this.total_alu_mill = this.current_alu_mills
+	}
+	add_to_variable = {
+		this.total_alu_mill = this.total_alu_mill_core
+	}
+	add_to_variable = {
+		this.current_alu_mills = this.current_alu_mill_core
+	}
+}
+
+recalculate_synth = {
+	set_variable = {this.current_synth = 0 }
+	set_variable = {this.total_synth = 0 }
+	set_variable = {this.total_synth_core = 0 }
+	set_variable = {this.current_synth_core = 0 }
+	every_controlled_state = {
+		if = {
+			limit = {
+				is_core_of = prev
+			}
+			add_to_variable = {
+				prev.current_synth_core = building_level@synthetic_refinery
+			}
+			add_to_variable = {
+				prev.total_synth_core = building_level@synthetic_refinery_inactive
+			}
+		}
+		else = {
+			add_to_variable = {
+				prev.current_synth = building_level@synthetic_refinery
+			}
+			add_to_variable = {
+				prev.total_synth = building_level@synthetic_refinery_inactive
+			}
+		}
+	}
+	add_to_variable = {
+		this.total_synth_core = this.current_synth_core
+	}
+	add_to_variable = {
+		this.total_synth = this.current_synth
+	}
+	add_to_variable = {
+		this.total_synth = this.total_synth_core
+	}
+	add_to_variable = {
+		this.current_synth = this.current_synth_core
+	}
+}
+
 enable_steel_mill = {
 	remove_building = {
 		type = steel_refinery_inactive
@@ -573,5 +717,853 @@ disable_synth = {
 		type = synthetic_refinery_inactive
 		level = 1
 		instant_build = yes
+	}
+}
+
+manage_steel_mills = {
+	# close refineries from lack of resources
+	if = {
+		limit = {
+			or = {
+				check_variable = { resource@iron < 0 }
+				check_variable = { resource@coal < 0 }
+			}
+			any_controlled_state = {
+				or = {
+					hydro_steel_refinery > 0
+					steel_refinery > 0
+				}
+			}
+		}
+		set_temp_variable = { tempIron = resource@iron }
+		set_temp_variable = { tempCoal = resource@coal }
+		while_loop_effect = {
+			limit = {
+				OR = {
+					check_variable = { tempIron < 0 }
+					check_variable = { tempCoal < 0 }
+				}
+			}
+			add_to_temp_variable = {
+				var = tempIron
+				value = 25
+			}
+			add_to_temp_variable = {
+				var = tempCoal
+				value = 20
+			}
+			if = {
+				limit = {
+					any_controlled_state = {
+						not = {
+							is_core_of = root
+						}
+						steel_refinery > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						steel_refinery > 0
+						not = {
+							is_core_of = root
+						}
+					}
+					disable_steel_mill = yes
+				}
+				subtract_from_variable = {
+					current_steel_mills = 1
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						not = {
+							is_core_of = root
+						}
+						hydro_steel_refinery > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						hydro_steel_refinery > 0
+						not = {
+							is_core_of = root
+						}
+					}
+					disable_hydro_steel_mill = yes
+				}
+				subtract_from_temp_variable = {
+					var = tempCoal
+					value = 15
+				}
+				subtract_from_variable = {
+					current_steel_mills = 1
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						steel_refinery > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						steel_refinery > 0
+					}
+					disable_steel_mill = yes
+				}
+				subtract_from_variable = {
+					current_steel_mills = 1
+				}
+				subtract_from_variable = {
+					current_steel_mill_core = 1
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						hydro_steel_refinery > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						hydro_steel_refinery > 0
+					}
+					disable_hydro_steel_mill = yes
+				}
+				subtract_from_temp_variable = {
+					var = tempCoal
+					value = 15
+				}
+				subtract_from_variable = {
+					current_steel_mills = 1
+				}
+				subtract_from_variable = {
+					current_steel_mill_core = 1
+				}
+			}
+		}
+	}
+	# open refineries to match player target
+	else_if = {
+		limit = {
+			check_variable = {open_steel_mill_target > current_steel_mills}
+			check_variable = { resource@iron > 24 }
+			check_variable = { resource@coal > 19 }
+			any_controlled_state = {
+				or = {
+					hydro_steel_refinery_inactive > 0
+					steel_refinery_inactive > 0
+				}
+			}
+		}
+		set_temp_variable = { tempIron = resource@iron }
+		set_temp_variable = { tempCoal = resource@coal }
+		while_loop_effect = {
+			limit = {
+				check_variable = {open_steel_mill_target > current_steel_mills}
+				check_variable = {tempIron > 24}
+				check_variable = {tempCoal > 19}
+			}
+			subtract_from_temp_variable = {
+				var = tempIron
+				value = 25
+			}
+			subtract_from_temp_variable = {
+				var = tempCoal
+				value = 5
+			}
+			if = {
+				limit = {
+					any_controlled_state = {
+						hydro_steel_refinery_inactive > 0
+						is_core_of = root
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						hydro_steel_refinery_inactive > 0
+						is_core_of = root
+					}
+					enable_hydro_steel_mill = yes
+				}
+				add_to_variable = {
+					current_steel_mills = 1
+				}
+				add_to_variable = {
+					current_steel_mill_core = 1
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						steel_refinery_inactive > 0
+						is_core_of = root
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						steel_refinery_inactive > 0
+						is_core_of = root
+					}
+					enable_steel_mill = yes
+				}
+				subtract_from_temp_variable = {
+					var = tempCoal
+					value = 15
+				}
+				add_to_variable = {
+					current_steel_mills = 1
+				}
+				add_to_variable = {
+					current_steel_mill_core = 1
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						hydro_steel_refinery_inactive > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						hydro_steel_refinery_inactive > 0
+					}
+					enable_hydro_steel_mill = yes
+				}
+				add_to_variable = {
+					current_steel_mills = 1
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						steel_refinery_inactive > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						steel_refinery_inactive > 0
+					}
+					enable_steel_mill = yes
+				}
+				subtract_from_temp_variable = {
+					var = tempCoal
+					value = 15
+				}
+				add_to_variable = {
+					current_steel_mills = 1
+				}
+			}
+		}
+	}
+	# close refineries to match player target
+	if = {
+		limit = {
+			check_variable = {open_steel_mill_target < current_steel_mills}
+		}
+		while_loop_effect = {
+			limit = { 
+				check_variable = {open_steel_mill_target < current_steel_mills}
+				any_controlled_state = {
+					or = {
+						hydro_steel_refinery > 0
+						steel_refinery > 0	
+					}
+				}
+			}
+			if = {
+				limit = {
+					any_controlled_state = {
+						not = {
+							is_core_of = root
+						}
+						steel_refinery > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						not = {
+							is_core_of = root
+						}
+						steel_refinery > 0
+					}
+					disable_steel_mill = yes
+				}
+				subtract_from_variable = {
+					current_steel_mills = 1
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						not = {
+							is_core_of = root
+						}
+						hydro_steel_refinery > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						not = {
+							is_core_of = root
+						}
+						hydro_steel_refinery > 0
+					}
+					disable_hydro_steel_mill = yes
+				}
+				subtract_from_variable = {
+					current_steel_mills = 1
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						steel_refinery > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						steel_refinery > 0
+					}
+					disable_steel_mill = yes
+				}
+				subtract_from_variable = {
+					current_steel_mills = 1
+				}
+				subtract_from_variable = {
+					current_steel_mill_core = 1
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						hydro_steel_refinery > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						hydro_steel_refinery > 0
+					}
+					disable_hydro_steel_mill = yes
+				}
+				subtract_from_variable = {
+					current_steel_mills = 1
+				}
+				subtract_from_variable = {
+					current_steel_mill_core = 1
+				}
+			}
+		}
+	}
+}
+
+manage_alu_mills = {
+	# close refineries from lack of resources
+	if = {
+		limit = {
+			or = {
+				check_variable = { resource@bauxite < 0 }
+				check_variable = { resource@coal < 0 }
+			}
+			any_controlled_state = {
+				or = {
+					hydro_aluminium_refinery > 0
+					aluminium_refinery > 0
+				}
+			}
+		}
+		set_temp_variable = { tempBauxite = resource@bauxite }
+		set_temp_variable = { tempCoal = resource@coal }
+		while_loop_effect = {
+			limit = {
+				OR = {
+					check_variable = { tempBauxite < 0 }
+					check_variable = { tempCoal < 0 }
+				}
+			}
+			add_to_temp_variable = {
+				var = tempBauxite
+				value = 35
+			}
+			add_to_temp_variable = {
+				var = tempCoal
+				value = 20
+			}
+			if = {
+				limit = {
+					any_controlled_state = {
+						not = {
+							is_core_of = root
+						}
+						aluminium_refinery > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						aluminium_refinery > 0
+						not = {
+							is_core_of = root
+						}
+					}
+					disable_aluminium_mill = yes
+				}
+				subtract_from_variable = {
+					current_alu_mills = 1
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						not = {
+							is_core_of = root
+						}
+						hydro_aluminium_refinery > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						hydro_aluminium_refinery > 0
+						not = {
+							is_core_of = root
+						}
+					}
+					disable_hydro_aluminium_mill = yes
+				}
+				subtract_from_temp_variable = {
+					var = tempCoal
+					value = 15
+				}
+				subtract_from_variable = {
+					current_alu_mills = 1
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						aluminium_refinery > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						aluminium_refinery > 0
+					}
+					disable_aluminium_mill = yes
+				}
+				subtract_from_variable = {
+					current_alu_mills = 1
+				}
+				subtract_from_variable = {
+					current_alu_mill_core = 1
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						hydro_aluminium_refinery > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						hydro_aluminium_refinery > 0
+					}
+					disable_hydro_aluminium_mill = yes
+				}
+				subtract_from_temp_variable = {
+					var = tempCoal
+					value = 15
+				}
+				subtract_from_variable = {
+					current_alu_mills = 1
+				}
+				subtract_from_variable = {
+					current_alu_mill_core = 1
+				}
+			}
+		}
+	}
+	# open refineries to match player target
+	else_if = {
+		limit = {
+			check_variable = {open_alu_mill_target > current_alu_mills}
+			check_variable = { resource@bauxite > 34 }
+			check_variable = { resource@coal > 19 }
+			any_controlled_state = {
+				or = {
+					hydro_aluminium_refinery_inactive > 0
+					aluminium_refinery_inactive > 0
+				}
+			}
+		}
+		set_temp_variable = { tempBauxite = resource@bauxite }
+		set_temp_variable = { tempCoal = resource@coal }
+		while_loop_effect = {
+			limit = {
+				check_variable = {open_alu_mill_target > current_alu_mills}
+				check_variable = {tempBauxite > 34}
+				check_variable = {tempCoal > 19}
+			}
+			subtract_from_temp_variable = {
+				var = tempBauxite
+				value = 35
+			}
+			if = {
+				limit = {
+					any_controlled_state = {
+						hydro_aluminium_refinery_inactive > 0
+						is_core_of = root
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						hydro_aluminium_refinery_inactive > 0
+						is_core_of = root
+					}
+					enable_hydro_aluminium_mill = yes
+				}
+				add_to_variable = {
+					current_alu_mills = 1
+				}
+				add_to_variable = {
+					current_alu_mill_core = 1
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						aluminium_refinery_inactive > 0
+						is_core_of = root
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						aluminium_refinery_inactive > 0
+						is_core_of = root
+					}
+					enable_aluminium_mill = yes
+				}
+				subtract_from_temp_variable = {
+					var = tempCoal
+					value = 20
+				}
+				add_to_variable = {
+					current_alu_mills = 1
+				}
+				add_to_variable = {
+					current_alu_mill_core = 1
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						hydro_aluminium_refinery_inactive > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						hydro_aluminium_refinery_inactive > 0
+					}
+					enable_hydro_aluminium_mill = yes
+				}
+				add_to_variable = {
+					current_alu_mills = 1
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						aluminium_refinery_inactive > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						aluminium_refinery_inactive > 0
+					}
+					enable_aluminium_mill = yes
+				}
+				subtract_from_temp_variable = {
+					var = tempCoal
+					value = 20
+				}
+				add_to_variable = {
+					current_alu_mills = 1
+				}
+			}
+		}
+	}
+	# close refineries to match player target
+	if = {
+		limit = {
+			check_variable = {open_alu_mill_target < current_alu_mills}
+		}
+		while_loop_effect = {
+			limit = { 
+				check_variable = {open_alu_mill_target < current_alu_mills}
+				any_controlled_state = {
+					or = {
+						hydro_aluminium_refinery > 0
+						aluminium_refinery > 0	
+					}
+				}
+			}
+			if = {
+				limit = {
+					any_controlled_state = {
+						not = {
+							is_core_of = root
+						}
+						aluminium_refinery > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						not = {
+							is_core_of = root
+						}
+						aluminium_refinery > 0
+					}
+					disable_aluminium_mill = yes
+				}
+				subtract_from_variable = {
+					current_alu_mills = 1
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						not = {
+							is_core_of = root
+						}
+						hydro_aluminium_refinery > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						not = {
+							is_core_of = root
+						}
+						hydro_aluminium_refinery > 0
+					}
+					disable_hydro_aluminium_mill = yes
+				}
+				subtract_from_variable = {
+					current_alu_mills = 1
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						aluminium_refinery > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						aluminium_refinery > 0
+					}
+					disable_aluminium_mill = yes
+				}
+				subtract_from_variable = {
+					current_alu_mills = 1
+				}
+				subtract_from_variable = {
+					current_alu_mill_core = 1
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						hydro_aluminium_refinery > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						hydro_aluminium_refinery > 0
+					}
+					disable_hydro_aluminium_mill = yes
+				}
+				subtract_from_variable = {
+					current_alu_mills = 1
+				}
+				subtract_from_variable = {
+					current_alu_mill_core = 1
+				}
+			}
+		}
+	}
+}
+
+manage_synth = {
+	# close refineries from lack of resources
+	if = {
+		limit = {
+			check_variable = { resource@coal < 0 }
+			any_controlled_state = {
+				synthetic_refinery > 0
+			}
+		}
+		set_temp_variable = { tempCoal = resource@coal }
+		while_loop_effect = {
+			limit = {
+				check_variable = { tempCoal < 0 }
+			}
+			add_to_temp_variable = {
+				var = tempCoal
+				value = 60
+			}
+			if = {
+				limit = {
+					any_controlled_state = {
+						not = {
+							is_core_of = root
+						}
+						synthetic_refinery > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						synthetic_refinery > 0
+						not = {
+							is_core_of = root
+						}
+					}
+					disable_synth = yes
+				}
+				subtract_from_variable = {
+					current_synth = 1
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						synthetic_refinery > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						synthetic_refinery > 0
+					}
+					disable_synth = yes
+				}
+				subtract_from_variable = {
+					current_synth = 1
+				}
+				subtract_from_variable = {
+					current_synth_core = 1
+				}
+			}
+		}
+	}
+	# open refineries to match player target
+	else_if = {
+		limit = {
+			check_variable = {open_synth_target > current_synth}
+			check_variable = { resource@coal > 59 }
+			any_controlled_state = {
+				synthetic_refinery_inactive > 0
+			}
+		}
+		set_temp_variable = { tempCoal = resource@coal }
+		while_loop_effect = {
+			limit = {
+				check_variable = {open_synth_target > current_synth}
+				check_variable = {tempCoal > 59}
+			}
+			subtract_from_temp_variable = {
+				var = tempCoal
+				value = 60
+			}
+			if = {
+				limit = {
+					any_controlled_state = {
+						synthetic_refinery_inactive > 0
+						is_core_of = root
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						synthetic_refinery_inactive > 0
+						is_core_of = root
+					}
+					enable_synth = yes
+				}
+				add_to_variable = {
+					current_synth = 1
+				}
+				add_to_variable = {
+					current_synth_core = 1
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						synthetic_refinery_inactive > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						synthetic_refinery_inactive > 0
+					}
+					enable_synth = yes
+				}
+				add_to_variable = {
+					current_synth = 1
+				}
+			}
+		}
+	}
+	# close refineries to match player target
+	if = {
+		limit = {
+			check_variable = {open_synth_target < current_synth}
+		}
+		while_loop_effect = {
+			limit = { 
+				check_variable = {open_synth_target < current_synth}
+				any_controlled_state = {
+					synthetic_refinery > 0	
+				}
+			}
+			if = {
+				limit = {
+					any_controlled_state = {
+						not = {
+							is_core_of = root
+						}
+						synthetic_refinery > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						not = {
+							is_core_of = root
+						}
+						synthetic_refinery > 0
+					}
+					disable_synth = yes
+				}
+				subtract_from_variable = {
+					current_synth = 1
+				}
+			}
+			else_if = {
+				limit = {
+					any_controlled_state = {
+						synthetic_refinery > 0
+					}
+				}
+				random_controlled_state = {
+					limit = {
+						synthetic_refinery > 0
+					}
+					disable_synth = yes
+				}
+				subtract_from_variable = {
+					current_synth = 1
+				}
+				subtract_from_variable = {
+					current_synth_core = 1
+				}
+			}
+		}
 	}
 }

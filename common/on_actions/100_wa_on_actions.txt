@@ -7,6 +7,129 @@ on_actions = {
 		}
 		effect = {
 			every_country = {
+				## Steel ##
+				set_variable = {this.open_steel_mill_target = 0 }
+				set_variable = {this.total_steel_mill = 0 }
+				set_variable = {this.total_steel_mill_core = 0 }
+				set_variable = {this.current_steel_mill_core = 0 }
+				every_controlled_state = {
+					add_to_variable = {
+						prev.open_steel_mill_target = building_level@steel_refinery
+					}
+					add_to_variable = {
+						prev.open_steel_mill_target = building_level@hydro_steel_refinery
+					}
+					add_to_variable = {
+						prev.total_steel_mill = building_level@steel_refinery_inactive
+					}
+					add_to_variable = {
+						prev.total_steel_mill = building_level@hydro_steel_refinery_inactive
+					}
+				}
+				every_controlled_state = {
+					limit = {
+						is_core_of = prev
+					}
+					add_to_variable = {
+						prev.current_steel_mill_core = building_level@steel_refinery
+					}
+					add_to_variable = {
+						prev.current_steel_mill_core = building_level@hydro_steel_refinery
+					}
+					add_to_variable = {
+						prev.total_steel_mill_core = building_level@steel_refinery_inactive
+					}
+					add_to_variable = {
+						prev.total_steel_mill_core = building_level@hydro_steel_refinery_inactive
+					}
+				}
+				add_to_variable = {
+					this.total_steel_mill = this.open_steel_mill_target
+				}
+				add_to_variable = {
+					this.total_steel_mill_core = this.current_steel_mill_core
+				}
+				set_variable = {this.current_steel_mills = this.open_steel_mill_target }
+
+				## Aluminum ##
+				set_variable = {this.open_alu_mill_target = 0 }
+				set_variable = {this.total_alu_mill = 0 }
+				set_variable = {this.total_alu_mill_core = 0 }
+				set_variable = {this.current_alu_mill_core = 0 }
+				every_controlled_state = {
+					add_to_variable = {
+						prev.open_alu_mill_target = building_level@aluminium_refinery
+					}
+					add_to_variable = {
+						prev.open_alu_mill_target = building_level@hydro_aluminium_refinery
+					}
+					add_to_variable = {
+						prev.total_alu_mill = building_level@aluminium_refinery_inactive
+					}
+					add_to_variable = {
+						prev.total_alu_mill = building_level@hydro_aluminium_refinery_inactive
+					}
+				}
+				every_controlled_state = {
+					limit = {
+						is_core_of = prev
+					}
+					add_to_variable = {
+						prev.current_alu_mill_core = building_level@aluminium_refinery
+					}
+					add_to_variable = {
+						prev.current_alu_mill_core = building_level@hydro_aluminium_refinery
+					}
+					add_to_variable = {
+						prev.total_alu_mill_core = building_level@aluminium_refinery_inactive
+					}
+					add_to_variable = {
+						prev.total_alu_mill_core = building_level@hydro_aluminium_refinery_inactive
+					}
+				}
+				add_to_variable = {
+					this.total_alu_mill = this.open_alu_mill_target
+				}
+				add_to_variable = {
+					this.total_alu_mill_core = this.current_alu_mill_core
+				}
+				set_variable = {this.current_alu_mills = this.open_alu_mill_target }
+
+				## Synths ##
+				set_variable = {this.open_synth_target = 0 }
+				set_variable = {this.total_synth = 0 }
+				set_variable = {this.total_synth_core = 0 }
+				set_variable = {this.current_synth_core = 0 }
+				every_controlled_state = {
+					add_to_variable = {
+						prev.open_synth_target = building_level@synthetic_refinery
+					}
+					add_to_variable = {
+						prev.total_synth = building_level@synthetic_refinery_inactive
+					}
+				}
+				every_controlled_state = {
+					limit = {
+						is_core_of = prev
+					}
+					add_to_variable = {
+						prev.current_synth_core = building_level@synthetic_refinery
+					}
+					add_to_variable = {
+						prev.total_synth_core = building_level@synthetic_refinery_inactive
+					}
+				}
+				add_to_variable = {
+					this.total_synth = this.open_synth_target
+				}
+				add_to_variable = {
+					this.total_synth_core = this.current_synth_core
+				}
+				set_variable = {this.current_synth = this.open_synth_target }
+			}
+		}
+		effect = {
+			every_country = {
 				limit = {
 					exists = yes
 					check_variable = { num_core_states > 0 }
@@ -160,12 +283,6 @@ on_actions = {
 				give_resource_rights = {
 					receiver = JAP
     				state = 655
-    				resources = { oil }
-				}
-				give_resource_rights = {
-					receiver = JAP
-    				state = 655
-    				resources = { coal }
 				}
 			}
 			ENG = {
@@ -1187,6 +1304,46 @@ on_actions = {
 				}
 			}
 		}
+		effect = {
+			if = {
+				limit = {
+					ROOT = {
+						is_subject_of = GER
+						has_autonomy_state = autonomy_reichskommissariat
+					}
+				}
+				GER = {
+					add_to_variable = { GER_rk_production_speed_buildings_factor = 0.025 }
+					if = {
+						limit = {
+							check_variable = { GER_rk_production_speed_buildings_factor = 0 compare = greater_than_or_equals }
+						}
+						remove_dynamic_modifier = {
+							modifier = GER_rk_obligations
+						}
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					ROOT = {
+						is_subject_of = GER
+						has_autonomy_state = autonomy_reichsprotectorate
+					}
+				}
+				GER = {
+					add_to_variable = { GER_rk_production_speed_buildings_factor = 0.05 }
+					if = {
+						limit = {
+							check_variable = { GER_rk_production_speed_buildings_factor = 0 compare = greater_than_or_equals }
+						}
+						remove_dynamic_modifier = {
+							modifier = GER_rk_obligations
+						}
+					}
+				}
+			}
+		}
 	}
 	on_capitulation_immediate = {
 		effect = {
@@ -1299,6 +1456,24 @@ on_actions = {
 							hours = 6
 						}
 					}
+				}
+				else_if = { # effect to set global flag if yalta is rejected
+					limit = {
+						NOT = {
+							ENG = {
+								has_war_with = SOV
+							}
+						}
+						NOT = {
+							USA = {
+								has_war_with = SOV
+							}
+						}
+						country_exists = SOV
+						country_exists = ENG
+						country_exists = USA
+					}
+					set_global_flag = ww2_has_ended
 				}
 			}
 		}
@@ -2642,6 +2817,21 @@ on_actions = {
 				add_offsite_building = { type = dockyard level = 1 }
 			}
 		}
+
+		#player resource managment
+		effect = {
+			if = {
+				limit = {
+					is_ai = no
+				}
+				recalculate_steel_mills = yes
+				recalculate_alu_mills = yes
+				recalculate_synth = yes
+				manage_steel_mills = yes
+				manage_alu_mills = yes
+				manage_synth = yes
+			}
+		}
 	}
 	on_weekly_SOV = {
 		effect = {
@@ -3165,6 +3355,15 @@ on_actions = {
 
 				set_variable = { eng_cur_st = num_equipment_in_armies@medium_tank_support_chassis }
 				add_to_variable = { creation_of_the_armoured_corps_tanks = eng_cur_st }
+
+				set_variable = { eng_cur_lt = num_equipment_in_armies@light_tank_chassis }
+				add_to_variable = { creation_of_the_armoured_corps_tanks = eng_cur_lt }
+
+				set_variable = { eng_cur_mist = num_equipment_in_armies@medium_tank_infantry_support_chassis }
+				add_to_variable = { creation_of_the_armoured_corps_tanks = eng_cur_mist }
+
+				set_variable = { eng_cur_hist = num_equipment_in_armies@heavy_tank_infantry_support_chassis }
+				add_to_variable = { creation_of_the_armoured_corps_tanks = eng_cur_hist }
 			}
 		}
 		effect = {
@@ -3176,6 +3375,9 @@ on_actions = {
 
 				set_variable = { eng_mod_str = num_deployed_planes_with_type@strike_bomber_equipment }
 				add_to_variable = { ENG_modernization_of_the_royal_airforce_bombers = eng_mod_str }
+
+				set_variable = { eng_mod_pat = num_deployed_planes_with_type@patrol_equipment }
+				add_to_variable = { ENG_modernization_of_the_royal_airforce_bombers = eng_mod_pat }
 			}
 		}
 	}
@@ -3200,6 +3402,14 @@ on_actions = {
 
 				set_variable = { ita_cur_str = num_deployed_planes_with_type@strike_bomber_equipment }
 				add_to_variable = { ITA_modernization_of_the_regio_aeronautica = ita_cur_str }
+			}
+		}
+		effect = {
+			if = {
+				limit = { has_variable = ITA_modernization_of_the_regio_marina }
+
+				set_variable = { ITA_modernization_of_the_regio_marina = num_ships_with_type@submarine }
+				subtract_from_variable = { ITA_modernization_of_the_regio_marina = num_ships_with_type@cruiser_submarine }
 			}
 		}
 		effect = {
@@ -3360,6 +3570,22 @@ on_actions = {
 				}
 			}
 		}
+	#	effect = {
+	#		if = {
+	#			limit = { has_active_mission = USA_revitalize_the_airforce }
+	#
+	#			set_variable = { usa_rev_tac = num_deployed_planes_with_type@tac_bomber_equipment }
+	#			set_variable = { USA_revitalize_the_airforce_bombers = usa_rev_tac }
+	#
+	#			set_variable = { usa_rev_str = num_deployed_planes_with_type@strike_bomber_equipment }
+	#			add_to_variable = { USA_revitalize_the_airforce_bombers = usa_rev_str }
+	#
+	#			set_variable = { usa_rev_pat = num_deployed_planes_with_type@patrol_equipment }
+	#			add_to_variable = { USA_revitalize_the_airforce_bombers = usa_rev_pat }
+	#		}
+	#	}
+	}
+	on_monthly = {
 	}
 
 	on_declare_war = {
@@ -3594,6 +3820,51 @@ on_actions = {
 				}
 			}
 		}
+		effect = {
+			if = {
+				limit = {
+					ROOT = {
+						tag = GER
+						NOT = {
+							is_embargoed_by = SOV
+						}
+					}
+					FROM = {
+						tag = TUR
+					}
+					SOV = {
+						exists = yes
+						has_capitulated = no
+						NOT = {
+							has_war_with = FROM
+						}
+						NOT = {
+							has_war_with = ROOT
+						}
+						NOT = {
+							is_in_faction_with = ROOT
+						}
+					}
+				}
+				SOV = {
+					send_embargo = ROOT
+					if = {
+						limit = {
+							has_idea = SOV_molotov_ribbentrop_pact
+						}
+					}
+					remove_ideas = SOV_molotov_ribbentrop_pact
+				}
+				ROOT = {
+					if = {
+						limit = {
+							has_idea = SOV_soviet_german_trade_agreement
+						}
+						remove_ideas = SOV_soviet_german_trade_agreement
+					}
+				}
+			}
+		}
 	}
 
 	on_join_faction = {
@@ -3611,6 +3882,133 @@ on_actions = {
 					remove_opinion_modifier = {
 						target = ROOT
 						modifier = embargo
+					}
+				}
+			}
+		}
+		effect = {
+			if = {
+				limit = {
+					ROOT = {
+						original_tag = TUR
+					}
+				}
+				every_country = {
+					limit = {
+						is_in_faction_with = TUR
+					}
+					TUR = {
+						remove_opinion_modifier = {
+							target = PREV
+							modifier = embargo
+						}
+					}
+				}
+			}
+		}
+	}
+
+	on_offer_join_faction = {
+		effect = {
+			if = {
+				limit = {
+					ROOT = {
+						original_tag = GER
+					}
+					SWE = {
+						has_opinion_modifier = strongarm_swedish
+					}
+				}
+				SWE = {
+					remove_opinion_modifier = {
+						target = FROM
+						modifier = embargo
+					}
+				}
+			}
+		}
+		effect = {
+			if = {
+				limit = {
+					FROM = {
+						original_tag = TUR
+					}
+				}
+				every_country = {
+					limit = {
+						is_in_faction_with = TUR
+					}
+					TUR = {
+						remove_opinion_modifier = {
+							target = PREV
+							modifier = embargo
+						}
+					}
+				}
+			}
+		}
+	}
+
+	on_unit_leader_created = {
+		effect = {
+			if = {
+				limit = {
+					FROM = {
+						tag = ITA
+					}
+				}
+				ROOT = {
+					if = {
+						limit = {
+							NOT = {
+								has_trait = incompetent
+							}
+						}
+						add_unit_leader_trait = inadequate_army_trait
+					}
+				}
+			}
+		}
+	}
+
+	on_unit_leader_promote_from_ranks_veteran = {
+		effect = {
+			if = {
+				limit = {
+					FROM = {
+						tag = ITA
+					}
+				}
+				ROOT = {
+					if = {
+						limit = {
+							NOT = {
+								has_trait = incompetent
+							}
+						}
+						add_unit_leader_trait = inadequate_army_trait
+					}
+				}
+			}
+		}
+	}
+
+	on_unit_leader_promote_from_ranks_green = {
+		effect = {
+			if = {
+				limit = {
+					FROM = {
+						tag = ITA
+					}
+				}
+				ROOT = {
+					if = {
+						limit = {
+							NOT = {
+								has_trait = incompetent
+							}
+						}
+						add_unit_leader_trait = inadequate_army_trait
 					}
 				}
 			}
