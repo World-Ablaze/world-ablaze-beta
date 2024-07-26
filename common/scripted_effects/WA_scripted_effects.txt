@@ -1567,3 +1567,70 @@ manage_synth = {
 		}
 	}
 }
+
+calculate_resource_deficite = {
+	set_variable = { current_iron = resource@iron }
+	set_variable = { current_bauxite = resource@bauxite }
+	set_variable = { current_coal = resource@coal }
+	set_variable = { need_iron = 0 }
+	set_variable = { need_bauxite = 0 }
+	set_variable = { need_coal = 0 }
+
+	if = {
+		limit = {
+			check_variable = {
+				current_steel_mills < open_steel_mill_target
+			}
+		}
+		# need_iron = (open_steel_mill_target - current_steel_mills) * 25
+		set_temp_variable = { tempIron = open_steel_mill_target }
+		subtract_from_temp_variable = { tempIron = current_steel_mills }
+		set_variable = { tempCoal = tempIron }
+		multiply_temp_variable = { tempIron = 25 }
+		multiply_temp_variable = { tempCoal = 20 }
+		set_variable = { need_iron = tempIron }
+		set_variable = { need_coal = tempCoal }
+		subtract_from_variable = { need_iron = current_iron }
+		clamp_variable = {
+			var = need_iron
+			min = 0
+		}
+	}
+
+	if = {
+		limit = {
+			check_variable = {
+				current_alu_mills < open_alu_mill_target
+			}
+		}
+		set_temp_variable = { tempBauxite = open_alu_mill_target }
+		subtract_from_temp_variable = { tempBauxite = current_alu_mills }
+		set_variable = { tempCoal = tempBauxite }
+		multiply_temp_variable = { tempBauxite = 35 }
+		multiply_temp_variable = { tempCoal = 20 }
+		set_variable = { need_bauxite = tempBauxite }
+		add_to_variable = { need_coal = tempCoal }
+		subtract_from_variable = { need_bauxite = current_bauxite}
+		clamp_variable = {
+			var = need_bauxite
+			min = 0
+		}
+	}
+
+	if = {
+		limit = {
+			check_variable = {
+				current_synth < open_synth_target
+			}
+		}
+		set_temp_variable = { tempCoal = open_synth_target }
+		subtract_from_temp_variable = { tempCoal = current_synth }
+		multiply_temp_variable = { tempCoal = 60 }
+		add_to_variable = { need_coal = tempCoal }
+		subtract_from_variable = { need_coal = current_coal }
+		clamp_variable = {
+			var = need_coal
+			min = 0
+		}
+	}
+}
