@@ -457,6 +457,7 @@ copy_laws_effect = {
 }
 
 recalculate_steel_mills = {
+	set_variable = {this.previous_steel_mills_core = this.current_steel_mill_core}
 	set_variable = {this.current_steel_mills = 0 }
 	set_variable = {this.total_steel_mill = 0 }
 	set_variable = {this.total_steel_mill_core = 0 }
@@ -509,6 +510,7 @@ recalculate_steel_mills = {
 }
 
 recalculate_alu_mills = {
+	set_variable = {this.previous_alu_mills_core = this.current_alu_mill_core}
 	set_variable = {this.current_alu_mills = 0 }
 	set_variable = {this.total_alu_mill = 0 }
 	set_variable = {this.total_alu_mill_core = 0 }
@@ -561,6 +563,7 @@ recalculate_alu_mills = {
 }
 
 recalculate_synth = {
+	set_variable = {this.previous_synth_core = this.current_synth_core}
 	set_variable = {this.current_synth = 0 }
 	set_variable = {this.total_synth = 0 }
 	set_variable = {this.total_synth_core = 0 }
@@ -721,6 +724,16 @@ disable_synth = {
 }
 
 manage_steel_mills = {
+	# Automatically turn on new mills built since last update
+	if = {
+		limit = {
+			check_variable = { current_steel_mill_core > previous_steel_mills_core }
+			check_variable = { open_steel_mill_target = previous_open_steel_mill_target }
+		}
+		set_temp_variable = { tempMillDifference = current_steel_mill_core }
+		subtract_from_temp_variable = { tempMillDifference = previous_steel_mills_core }
+		add_to_variable = { open_steel_mill_target = tempMillDifference }
+	}
 	# close refineries from lack of resources
 	if = {
 		limit = {
@@ -963,12 +976,12 @@ manage_steel_mills = {
 			check_variable = {open_steel_mill_target < current_steel_mills}
 		}
 		while_loop_effect = {
-			limit = { 
+			limit = {
 				check_variable = {open_steel_mill_target < current_steel_mills}
 				any_controlled_state = {
 					or = {
 						hydro_steel_refinery > 0
-						steel_refinery > 0	
+						steel_refinery > 0
 					}
 				}
 			}
@@ -1056,9 +1069,20 @@ manage_steel_mills = {
 			}
 		}
 	}
+	set_variable = { previous_open_steel_mill_target = open_steel_mill_target }
 }
 
 manage_alu_mills = {
+	# Automatically turn on new mills built since last update
+	if = {
+		limit = {
+			check_variable = { current_alu_mill_core > previous_alu_mills_core }
+			check_variable = { open_alu_mill_target = previous_open_alu_mill_target }
+		}
+		set_temp_variable = { tempMillDifference = current_alu_mill_core }
+		subtract_from_temp_variable = { tempMillDifference = previous_alu_mills_core }
+		add_to_variable = { open_alu_mill_target = tempMillDifference }
+	}
 	# close refineries from lack of resources
 	if = {
 		limit = {
@@ -1297,12 +1321,12 @@ manage_alu_mills = {
 			check_variable = {open_alu_mill_target < current_alu_mills}
 		}
 		while_loop_effect = {
-			limit = { 
+			limit = {
 				check_variable = {open_alu_mill_target < current_alu_mills}
 				any_controlled_state = {
 					or = {
 						hydro_aluminium_refinery > 0
-						aluminium_refinery > 0	
+						aluminium_refinery > 0
 					}
 				}
 			}
@@ -1390,9 +1414,20 @@ manage_alu_mills = {
 			}
 		}
 	}
+	set_variable = { previous_open_alu_mill_target = open_alu_mill_target }
 }
 
 manage_synth = {
+	# Automatically turn on new mills built since last update
+	if = {
+		limit = {
+			check_variable = { current_synth_core > previous_synth_core }
+			check_variable = { open_synth_target = previous_open_synth_target }
+		}
+		set_temp_variable = { tempMillDifference = current_synth_core }
+		subtract_from_temp_variable = { tempMillDifference = previous_synth_core }
+		add_to_variable = { open_synth_target = tempMillDifference }
+	}
 	# close refineries from lack of resources
 	if = {
 		limit = {
@@ -1517,10 +1552,10 @@ manage_synth = {
 			check_variable = {open_synth_target < current_synth}
 		}
 		while_loop_effect = {
-			limit = { 
+			limit = {
 				check_variable = {open_synth_target < current_synth}
 				any_controlled_state = {
-					synthetic_refinery > 0	
+					synthetic_refinery > 0
 				}
 			}
 			if = {
@@ -1566,6 +1601,7 @@ manage_synth = {
 			}
 		}
 	}
+	set_variable = { previous_open_synth_target = open_synth_target }
 }
 
 calculate_resource_deficite = {
