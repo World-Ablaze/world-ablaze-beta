@@ -209,6 +209,8 @@ NDefines.NMarket.HIGH_PRICE_LEVEL_FACTOR = 1.33										-- The factor of base e
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Operations
 
 NDefines.NOperatives.AGENCY_CREATION_FACTORIES = 20									-- Number of factories used to create an intelligence agency
+NDefines.NOperatives.AGENCY_UPGRADE_DAYS = 60										-- Number of days needed to upgrade an intelligence agency
+
 NDefines.NOperatives.MAX_OPERATIVE_SLOT_FROM_AGENCY_UPGRADES = 5					-- max operative slots gained from upgrades
 NDefines.NOperatives.CONTROL_TRADE_MAX_INFLUENCE = 50.0								-- The maximum amount of trade influence that can be gained through the control trade mission
 NDefines.NOperatives.BOOST_IDEOLOGY_MAX_DRIFT_BY_OPERATIVE = 0.08					-- the maximum drift an operative can cause, a negative value means no maximum
