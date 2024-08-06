@@ -906,6 +906,7 @@ on_actions = {
 	#FROMFROM - original owner for exiled leaders
 	on_unit_leader_level_up = {
 		effect = {
+			# First check army spirits, since they are mutually exclusive, we can use else_if for added performance!
 			if = {
 				limit = {
 					FROM = {
@@ -923,7 +924,7 @@ on_actions = {
 					}
 				}
 			}
-			else_if = { #since these spirits are mutually exclusive, we can use else_if for added performance!
+			else_if = { 
 				limit = {
 					FROM = { has_idea = tenacious_defense_spirit }
 				}
@@ -938,7 +939,7 @@ on_actions = {
 					}
 				}
 			}
-			else_if = { #since these spirits are mutually exclusive, we can use else_if for added performance!
+			else_if = {
 				limit = {
 					FROM = { has_idea = great_war_legacy_spirit }
 				}
@@ -1005,29 +1006,30 @@ on_actions = {
 					}
 				}
 			}
-			else_if = {
-				limit = {
-					character = {
+
+			# Then check for specific skills to remove, they are NOT mutually exclusive so we must use different if.
+			character = {
+				if = {
+					limit = {
 						skill > 4
-						has_trait = new_blood
+					}
+					if = {
+						limit = {
+							has_trait = new_blood
+						}
+						remove_unit_leader_trait = new_blood
 					}
 				}
-				character = {
-					remove_trait = {
-						trait = new_blood
-					}
-				}
-			}
-			else_if = {
-				limit = {
-					character = {
+				
+				if = {
+					limit = {
 						skill > 5
-						has_trait = incompetent
 					}
-				}
-				character = {
-					remove_trait = {
-						trait = incompetent
+					if = {
+						limit = {
+							has_trait = incompetent_unit_leader
+						}
+						remove_unit_leader_trait = incompetent_unit_leader
 					}
 				}
 			}
@@ -1149,7 +1151,7 @@ on_actions = {
 											add_unit_leader_trait = harsh_leader
 										}
 										33 = {
-											add_unit_leader_trait = incompetent
+											add_unit_leader_trait = incompetent_unit_leader
 										}
 										33 = {
 											add_unit_leader_trait = war_hero

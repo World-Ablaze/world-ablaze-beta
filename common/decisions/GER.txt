@@ -656,6 +656,9 @@ operations = {
 				exists = yes
 			}
 			is_ai = no
+			NOT = {
+				has_country_flag = GER_fall_weiss
+			}
 		}
 		cost = 25
 		fire_only_once = yes
@@ -711,6 +714,9 @@ operations = {
 					days = 90
 				}
 			}
+			hidden_effect = {
+				set_country_flag = GER_fall_weiss
+			}
 		}
 	}
 	GER_fall_weiss_ai = {
@@ -724,6 +730,7 @@ operations = {
 				has_war_with = POL
 			}
 			POL = {
+				is_ai = no
 				exists = yes
 			}
 			is_ai = yes
@@ -735,9 +742,13 @@ operations = {
 				has_war_with = POL
 			}
 			POL = {
+				is_ai = no
 				exists = yes
 			}
 			is_ai = yes
+			NOT = {
+				has_country_flag = GER_fall_weiss
+			}
 		}
 		cost = 0
 		fire_only_once = yes
@@ -792,6 +803,99 @@ operations = {
 					idea = planned_offensives
 					days = 90
 				}
+			}
+			hidden_effect = {
+				set_country_flag = GER_fall_weiss
+			}
+		}
+	}
+	GER_fall_weiss_ai_ai = {
+		icon = generic_operation
+		allowed = {
+			original_tag = GER
+		}
+		available = {
+			has_completed_focus = GER_danzig_or_war
+			NOT = {
+				has_war_with = POL
+			}
+			POL = {
+				is_ai = yes
+				exists = yes
+			}
+			is_ai = yes
+		}
+		visible = {
+			has_completed_focus = GER_danzig_or_war
+			has_country_flag = poland_refuses_to_cede_danzig
+			NOT = {
+				has_war_with = POL
+			}
+			POL = {
+				is_ai = yes
+				exists = yes
+			}
+			is_ai = yes
+			NOT = {
+				has_country_flag = GER_fall_weiss
+			}
+		}
+		cost = 0
+		fire_only_once = yes
+		days_remove = 45
+		ai_will_do = {
+			factor = 5000
+			modifier = {
+				factor = 0
+				is_historical_focus_on = yes
+				date < "1939.9.1"
+			}
+		}
+		targeted_modifier = {
+			tag = POL
+			attack_bonus_against = 0.9
+		}
+		complete_effect = {
+			declare_war_on = {
+				target = POL
+				type = annex_everything
+			}
+			# if = {
+			# 	limit = {
+			# 		DNZ = {
+			# 			exists = yes
+			# 		}
+			# 	}
+			# 	annex_country = {
+			# 		target = DNZ
+			# 		transfer_troops = no
+			# 	}
+			# 	85 = { remove_core_of = DNZ }
+			# }
+			if = {
+				limit = {
+					NOT = {
+						has_country_flag = GER_planned_offensives
+					}
+				}
+				hidden_effect = {
+					add_timed_idea = {
+						idea = GER_lack_of_offensive_plans_initial
+						days = 7
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					has_country_flag = GER_planned_offensives
+				}
+				add_timed_idea = {
+					idea = planned_offensives
+					days = 90
+				}
+			}
+			hidden_effect = {
+				set_country_flag = GER_fall_weiss
 			}
 		}
 	}
@@ -3303,17 +3407,6 @@ GER_case_anton_category = {
 					has_country_flag = case_anton
 				}
 			}
-			custom_trigger_tooltip = {
-				tooltip = GER_case_anton_wa_tt
-				OR = {
-					461 = { CONTROLLER = { has_war_with = ROOT } }
-					462 = { CONTROLLER = { has_war_with = ROOT } }
-					459 = { CONTROLLER = { has_war_with = ROOT } }
-					460 = { CONTROLLER = { has_war_with = ROOT } }
-					458 = { CONTROLLER = { has_war_with = ROOT } }
-					665 = { CONTROLLER = { has_war_with = ROOT } }
-				}
-			}
 			divisions_in_state = {
 				state = 31
 				size < 1
@@ -3358,6 +3451,22 @@ GER_case_anton_category = {
 					state = 735
 					size < 1
 				}
+			}	
+			OR = {
+				ENG = { has_capitulated = yes }
+				has_global_flag = ENG_fall_of_the_uk
+				NOT = { has_war_with = ENG }
+				custom_trigger_tooltip = {
+					tooltip = GER_case_anton_wa_tt
+					OR = {
+						461 = { CONTROLLER = { has_war_with = ROOT } }
+						462 = { CONTROLLER = { has_war_with = ROOT } }
+						459 = { CONTROLLER = { has_war_with = ROOT } }
+						460 = { CONTROLLER = { has_war_with = ROOT } }
+						458 = { CONTROLLER = { has_war_with = ROOT } }
+						665 = { CONTROLLER = { has_war_with = ROOT } }
+					}
+				}
 			}
 		}
 		cost = 0
@@ -3400,6 +3509,22 @@ GER_case_anton_category = {
 					}
 					GER = { transfer_state = PREV }
 				}
+			}
+			VIC = {
+				give_military_access = GER
+				give_military_access = ITA
+			}
+			FRM = {
+				give_military_access = GER
+				give_military_access = ITA
+			}
+			FRN = {
+				give_military_access = GER
+				give_military_access = ITA
+			}
+			FRT = {
+				give_military_access = GER
+				give_military_access = ITA
 			}
 		}
 	}
@@ -5137,6 +5262,7 @@ GER_reichskommissariats = {
 				}
 				RIT = {
 					add_ideas = german_military_administration
+					add_ideas = national_socialism
 					set_capital = { state = 159 }
 					set_politics = {
 						ruling_party = fascism
@@ -5580,6 +5706,7 @@ GER_reichskommissariats = {
 		}
 		available = {
 			controls_state = 37
+			controls_state = 1051
 			controls_state = 99
 			has_equipment = {
 				infantry_equipment > 4999
@@ -5607,6 +5734,7 @@ GER_reichskommissariats = {
 			}
 			OR = {
 				controls_state = 37
+				controls_state = 1051
 				controls_state = 99
 			}
 		}
@@ -5628,9 +5756,11 @@ GER_reichskommissariats = {
 			RDE = {
 				transfer_state = 99
 				transfer_state = 37
+				transfer_state = 1051
 				transfer_state = 957
 				set_state_controller = 99
 				set_state_controller = 37
+				set_state_controller = 1051
 				set_state_controller = 957
 				set_cosmetic_tag = DEN_rk
 				inherit_technology = ROOT
@@ -21327,6 +21457,7 @@ foreign_politics = {
 					}
 					DEN = {
 						transfer_state = 37
+						transfer_state = 1051
 						transfer_state = 99
 						transfer_state = 871
 						transfer_state = 100
@@ -23705,6 +23836,15 @@ foreign_politics = {
 						}
 					}
 				}
+				1051 = {
+					CONTROLLER = {
+						OR = {
+							tag = GER
+							is_subject_of = GER
+							is_in_faction_with = GER
+						}
+					}
+				}
 				99 = {
 					CONTROLLER = {
 						OR = {
@@ -24525,6 +24665,15 @@ foreign_politics = {
 				}
 				# Denmark
 				37 = {
+					CONTROLLER = {
+						OR = {
+							tag = GER
+							is_subject_of = GER
+							is_in_faction_with = GER
+						}
+					}
+				}
+				1051 = {
 					CONTROLLER = {
 						OR = {
 							tag = GER
