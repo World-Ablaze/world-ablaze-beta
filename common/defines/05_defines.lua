@@ -289,8 +289,6 @@ NDefines.NMilitary.ADDITIONAL_COMBAT_WIDTH = 30										-- more opened up by su
 
 --NDefines.NMilitary.PLAN_COHESION_WEIGHTS = { 1.0, 20.0, 40.0 } 					-- for each cohesion setting, how keen on relocating from distance should we be? (default 1.0), higher weight = shorter max distance
 
-NDefines.NMilitary.PLAN_AREA_DEFENSE_ENEMY_UNIT_FACTOR = -100.0						-- Factor applied to province score in area defense order per enemy unit in that province, stops ai from shuffling defense orders
-
 NDefines.NMilitary.MIN_SUPPLY_CONSUMPTION = 0.01									-- minimum value of supply consumption that a unit can get
 
 NDefines.NMilitary.EQUIPMENT_COMBAT_LOSS_FACTOR = 1.0	 	   						-- % of equipment lost to strength ratio in combat, so some % is returned if below 1
@@ -369,7 +367,15 @@ NDefines.NMilitary.NAVAL_EQUIPMENT_RAMP_COST = 2
 NDefines.NMilitary.AIR_EQUIPMENT_BASE_COST = 4
 NDefines.NMilitary.AIR_EQUIPMENT_RAMP_COST = 2
 
-NDefines.NMilitary.PLAN_SPREAD_ATTACK_WEIGHT = 3									-- The higher the value, the less it should crowd provinces with multiple attacks.
+----------- NMilitary but relevant for AI, makes attacks more human like
+
+NDefines.NMilitary.PLAN_SPREAD_ATTACK_WEIGHT = 0.5									-- The higher the value, the less it should crowd provinces with multiple attacks. Minimum Value is 0.5, lower values cause crashes.
+
+--NDefines.NMilitary.PLAN_MAX_PROGRESS_TO_JOIN = 1000000.0							--  "Progress" refers to the sum of organization of all divisions. Only if that sum is below the threshold (0.5 vanilla) will certain support attacks be executed
+
+NDefines.NMilitary.PLAN_AREA_DEFENSE_ENEMY_UNIT_FACTOR = -100.0						-- Factor applied to province score in area defense order per enemy unit in that province, stops ai from shuffling defense orders
+
+-----------
 
 NDefines.NMilitary.NON_CORE_SUPPLY_SPEED = -0.7				    					-- we are not running on our own VP supply so need to steal stuff along the way
 NDefines.NMilitary.LAND_COMBAT_COLLATERAL_FACTOR = 0.003							-- Factor to scale collateral damage to infra and forts with.
@@ -880,10 +886,13 @@ NDefines.NAI.AREA_DEFENSE_SETTING_FORTS = true
 NDefines.NAI.AREA_DEFENSE_SETTING_COASTLINES = true
 NDefines.NAI.AREA_DEFENSE_SETTING_RAILWAYS = false
 
------------ COHESION
+----------- COHESION/FRONTS
+
 
 NDefines.NAI.MIN_AI_UNITS_PER_TILE_FOR_STANDARD_COHESION = 20.0						-- How many units should we have for each tile along a front in order to switch to standard cohesion (less moving around)
 NDefines.NAI.MIN_FRONT_SIZE_TO_CONSIDER_STANDARD_COHESION = 1000					-- How long should fronts be before we consider switching to standard cohesion (under this, standard cohesion fronts will switch back to relaxed)
+
+NDefines.NAI.RESERVE_TO_COMMITTED_BALANCE = 1.0										-- How many reserve divisions in combat compared to number of committed divisions in a combat (1.0 = as many as reserves as committed), if ratio is not fulfilled ai will support attack.
 
 NDefines.NAI.ARMY_LEADER_ASSIGN_FIELD_MARSHAL_TO_ARMY = -100000            			-- Score for assigning a field marshal to a normal army (want to use them for army groups)
 NDefines.NAI.ARMY_LEADER_ASSIGN_EMPTYNESS_MALUS = 0.0                  				-- Factor for avoiding assigning leaders that can lead large armies to small armies (a value of 0.2 reduces the score by max 20 %)
