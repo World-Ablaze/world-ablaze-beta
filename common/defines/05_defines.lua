@@ -371,7 +371,7 @@ NDefines.NMilitary.AIR_EQUIPMENT_RAMP_COST = 2
 
 NDefines.NMilitary.PLAN_SPREAD_ATTACK_WEIGHT = 0.5									-- The higher the value, the less it should crowd provinces with multiple attacks. Minimum Value is 0.5, lower values cause crashes.
 
---NDefines.NMilitary.PLAN_MAX_PROGRESS_TO_JOIN = 1000000.0							--  "Progress" refers to the sum of organization of all divisions. Only if that sum is below the threshold (0.5 vanilla) will certain support attacks be executed
+NDefines.NMilitary.PLAN_MAX_PROGRESS_TO_JOIN = 1000000.0							--  "Progress" refers to the sum of organization of all divisions. Only if that sum is below the threshold (0.5 vanilla) will certain support attacks be executed
 
 NDefines.NMilitary.PLAN_AREA_DEFENSE_ENEMY_UNIT_FACTOR = -100.0						-- Factor applied to province score in area defense order per enemy unit in that province, stops ai from shuffling defense orders
 
@@ -952,8 +952,8 @@ NDefines.NAI.REGION_CONVOY_DANGER_DAILY_DECAY = 5									-- When convoys are su
 
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_MINE_LAYING = 0.15							-- maximum ratio of screens forces to be used in mine laying
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_MINE_SWEEPING = 0.05 						-- maximum ratio of screens forces to be used in mine sweeping
-NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MIN = 0.2						-- minimum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
-NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX = 0.7 					-- maximum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
+NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MIN = 0.20					-- minimum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
+NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX = 0.70 					-- maximum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX_CONVOY_THREAT = 500 		-- AI will increase screen assignment for escort missions as threat increases
 NDefines.NAI.MAX_SCREEN_FORCES_FOR_INVASION_SUPPORT = 0.4 							-- max ratio of screens forces to be used in naval invasion missions
 NDefines.NAI.MAX_CAPITAL_FORCES_FOR_INVASION_SUPPORT = 0.4 							-- max ratio of capital forces to be used in naval invasion missions
@@ -1128,6 +1128,7 @@ NDefines.NAI.RELUCTANCE_TO_CHANGE_FRONT_FACTOR = 0.9								-- Factor for how re
 NDefines.NAI.REVISITED_PROV_PENALTY_FACTOR = 1.8									-- When the AI picks units for a front, it tries to spread out a bit which units it grabs.
 
 NDefines.NAI.FRONT_EVAL_UNIT_ACCURACY = 0.95										-- scale how stupid ai will act on fronts. 0 is potato
+NDefines.NAI.EXTRA_NAVY_INTEL_FOR_CONVOY_RAIDING = 1.0                   			-- this amount of intel is added to navy intel while ai is assigning convoy raiding mission
 NDefines.NAI.GARRISON_FRACTION = 0.05												-- How large part of a front should always be holding the line rather than advancing at the enemy
 
 NDefines.NAI.FRONT_TERRAIN_DEFENSE_FACTOR = 1.0										-- Multiplier applied to unit defense modifier for terrain on front province multiplied by terrain importance
