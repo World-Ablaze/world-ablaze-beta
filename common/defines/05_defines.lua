@@ -894,6 +894,10 @@ NDefines.NAI.MIN_FRONT_SIZE_TO_CONSIDER_STANDARD_COHESION = 1000					-- How long
 
 NDefines.NAI.RESERVE_TO_COMMITTED_BALANCE = 1.0										-- How many reserve divisions in combat compared to number of committed divisions in a combat (1.0 = as many as reserves as committed), if ratio is not fulfilled ai will support attack.
 
+NDefines.NAI.MAX_MICRO_ATTACKS_PER_ORDER = 10										-- AI goes through its orders and checks if there are situations to take advantage of
+
+NDefines.NAI.PLAN_ATTACK_DEPTH_FACTOR = 1.0											-- Factor applied to size or enemy being attacked, makes AI draw attack orders deeper into enemy territory.
+
 NDefines.NAI.ARMY_LEADER_ASSIGN_FIELD_MARSHAL_TO_ARMY = -100000            			-- Score for assigning a field marshal to a normal army (want to use them for army groups)
 NDefines.NAI.ARMY_LEADER_ASSIGN_EMPTYNESS_MALUS = 0.0                  				-- Factor for avoiding assigning leaders that can lead large armies to small armies (a value of 0.2 reduces the score by max 20 %)
 NDefines.NAI.ARMY_LEADER_ASSIGN_OVERCAPACITY = 0                     				-- Score for assigning leader to a too large army
@@ -1096,8 +1100,8 @@ NDefines.NAI.PLAN_ATTACK_MIN_STRENGTH_FACTOR_LOW = 0.85								-- Minimum streng
 NDefines.NAI.PLAN_ATTACK_MIN_ORG_FACTOR_MED = 0.75									-- (LOW,MED,HIGH) corresponds to the plan execution agressiveness level.
 NDefines.NAI.PLAN_ATTACK_MIN_STRENGTH_FACTOR_MED = 0.8
 
-NDefines.NAI.PLAN_ATTACK_MIN_ORG_FACTOR_HIGH = 0.2
-NDefines.NAI.PLAN_ATTACK_MIN_STRENGTH_FACTOR_HIGH = 0.7
+NDefines.NAI.PLAN_ATTACK_MIN_ORG_FACTOR_HIGH = 0.6
+NDefines.NAI.PLAN_ATTACK_MIN_STRENGTH_FACTOR_HIGH = 0.75
 
 NDefines.NAI.PLAN_ACTIVATION_SUPERIORITY_AGGRO = 10.0         					    -- How aggressive a country is in activating a plan based on how superiour their force is.
 
