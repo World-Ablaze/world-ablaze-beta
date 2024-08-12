@@ -1494,7 +1494,7 @@ focus_tree = {
 			add_political_power = -25
 			swap_ideas = {
 				remove_idea = ROM_iron_guard
-				add_idea = ROM_iron_guard_emboldened
+				add_idea = ROM_iron_guard_ncp_alliance
 			}
 		}
 	}
@@ -1690,7 +1690,7 @@ focus_tree = {
 
 		completion_reward = {
 			swap_ideas = {
-				remove_idea = ROM_iron_guard_emboldened
+				remove_idea = ROM_iron_guard_ncp_alliance
 				add_idea = ROM_national_legionary_state
 			}
 		}
@@ -1719,6 +1719,46 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+			custom_effect_tooltip = ROM_the_legion_of_archangel_michael_tt
+			hidden_effect = {
+				division_template = {
+					name = "Motorized Infantry Division"
+					division_names_group = ROM_IRN_01
+					priority = 2
+
+					regiments = {
+						light_armor = { x = 0 y = 0 }
+						light_armor = { x = 0 y = 1 }
+						light_armor = { x = 0 y = 2 }
+
+						motorized = { x = 1 y = 0 }
+						motorized = { x = 1 y = 1 }
+						motorized = { x = 1 y = 2 }
+
+						motorized = { x = 2 y = 0 }
+						motorized = { x = 2 y = 1 }
+						motorized = { x = 2 y = 2 }
+
+						motorized_artillery_brigade = { x = 3 y = 0 }
+						motorized_artillery_brigade = { x = 3 y = 1 }
+						motorized_artillery_brigade = { x = 3 y = 2 }
+						motorized_anti_tank_brigade = { x = 3 y = 3 }
+					}
+					support = {
+						engineer = { x = 0 y = 0 }
+						field_hospital = { x = 0 y = 1 }
+						motorized_logistics_company = { x = 0 y = 2 }
+
+						mot_recon = { x = 1 y = 0 }
+					}
+				}
+				capital_scope = {
+					create_unit = {
+						division = "division_template = \"Motorized Infantry Division\" start_experience_factor = 0.8 start_equipment_factor = 0.5"
+						owner = ROOT
+					}
+				}
+			}
 		}
 	}
 
@@ -1916,6 +1956,7 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+			custom_effect_tooltip = ROM_social_reforms_tt
 			swap_ideas = {
 				remove_idea = ROM_peasant_revolt
 				add_idea = ROM_peasant_revolt_2
@@ -1940,6 +1981,10 @@ focus_tree = {
 			factor = 1
 		}
 
+		available = {
+			has_completed_focus = ROM_tackle_corruption
+		}
+
 		search_filters = {
 			
 		}
@@ -1949,6 +1994,10 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+			country_event = rom_armor.835
+			add_stability = 0.15
+			add_political_power = -100
+			add_popularity = { ideology = neutrality popularity = -0.2 }
 		}
 	}
 
@@ -1975,6 +2024,13 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+			add_war_support = 0.2
+			add_ideas = GER_anti_comintern_pact
+			custom_effect_tooltip = available_political_advisor
+			show_ideas_tooltip = ROM_gheorghe_clime
+			SOV = {
+				add_opinion_modifier = { target = ROM modifier = embargo }
+			}
 		}
 	}
 
@@ -2001,6 +2057,8 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+			add_ideas = ROM_inteligensia
+			FRA = { add_opinion_modifier = { target = ROM modifier = distrustful_opinion } }
 			if = {
 				limit = {
 					has_idea = ROM_foreign_designed_military
@@ -5504,6 +5562,7 @@ focus_tree = {
 			GER = {
 				has_completed_focus = GER_integrate_romanian_war_economies
 			}
+			is_in_faction_with = GER
 		}
 
 		bypass = {
@@ -5535,6 +5594,10 @@ focus_tree = {
 		relative_position_id = ROM_invite_goring
 		
 		cost = 3
+
+		available = {
+			is_in_faction_with = GER
+		}
 
 		ai_will_do = {
 			factor = 1
@@ -5614,6 +5677,10 @@ focus_tree = {
 		relative_position_id = ROM_joint_land_exploitation
 		
 		cost = 3
+		
+		available = {
+			is_in_faction_with = GER
+		}
 
 		ai_will_do = {
 			factor = 1
@@ -5653,6 +5720,11 @@ focus_tree = {
 		relative_position_id = ROM_joint_military_exercises
 		
 		cost = 5
+		
+		available = {
+			is_in_faction_with = GER
+			has_country_flag = german_technologies_tree_flag
+		}
 
 		ai_will_do = {
 			factor = 1
@@ -5668,21 +5740,89 @@ focus_tree = {
 
 		completion_reward = {
 			add_doctrine_cost_reduction = {
-				name = ROM_copy_german_tanks
+				name = ROM_romanian_panzers
 				cost_reduction = 0.99
 				uses = 2
 				category = cat_mobile_warfare
 			}
-			#add 50 latest P3 and P4 PLACEHOLDER FOR NOW
-			
-			add_equipment_to_stockpile = {
-				type = ger_medium_tank_infantry_support_chassis_2
-				amount = 50
+			if = {
+				limit = {
+					GER = { has_tech = ger_support_tank_chassis_1_4 }
+				}
+				add_equipment_to_stockpile = { type = tank_ger_medium_chassis_infantry_support_2 amount = 50 producer = GER }
+				add_tech_bonus = {
+					name = ROM_romanian_panzers
+					bonus = 1.0
+					uses = 1
+					technology = ger_support_tank_chassis_1_4
+					technology = ger_support_tank_chassis_1_3
+					technology = ger_support_tank_chassis_1_2
+				}
+			}
+			else_if = {
+				limit = {
+					GER = { has_tech = ger_support_tank_chassis_1_3 }
+				}
+				add_equipment_to_stockpile = { type = tank_ger_medium_chassis_infantry_support_3_3 amount = 50 producer = GER }
+				add_tech_bonus = {
+					name = ROM_romanian_panzers
+					bonus = 1.0
+					uses = 1
+					technology = ger_support_tank_chassis_1_3
+					technology = ger_support_tank_chassis_1_2
+				}
+			}
+			else_if = {
+				limit = {
+					GER = { has_tech = ger_support_tank_chassis_1_2 }
+				}
+				add_equipment_to_stockpile = { type = tank_ger_medium_chassis_infantry_support_3_2 amount = 50 producer = GER }
+				add_tech_bonus = {
+					name = ROM_romanian_panzers
+					bonus = 1.0
+					uses = 1
+					technology = ger_support_tank_chassis_1_2
+				}
 			}
 
-			add_equipment_to_stockpile = {
-				type = tank_ger_medium_tank_chassis_2_2
-				amount = 50
+			if = {
+				limit = {
+					GER = { has_tech = ger_medium_tank_chassis_2_4 }
+				}
+				add_equipment_to_stockpile = { type = tank_ger_medium_chassis_3 amount = 50 producer = GER }
+				add_tech_bonus = {
+					name = ROM_romanian_panzers
+					bonus = 1.0
+					uses = 1
+					technology = ger_medium_tank_chassis_2_4
+					technology = ger_medium_tank_chassis_2_3
+					technology = ger_medium_tank_chassis_2_2
+				}
+			}
+			else_if = {
+				limit = {
+					GER = { has_tech = ger_medium_tank_chassis_2_3 }
+				}
+				add_equipment_to_stockpile = { type = tank_ger_medium_chassis_2_3 amount = 50 producer = GER }
+				add_tech_bonus = {
+					name = ROM_romanian_panzers
+					bonus = 1.0
+					uses = 1
+					technology = ger_medium_tank_chassis_2_3
+					technology = ger_medium_tank_chassis_2_2
+				}
+			}
+			else_if = {
+				limit = {
+					GER = { has_tech = ger_medium_tank_chassis_2_2 }
+				}
+				add_equipment_to_stockpile = { type = tank_ger_medium_chassis_2_2 amount = 50 producer = GER }
+				add_tech_bonus = {
+					name = ROM_romanian_panzers
+					bonus = 1.0
+					uses = 1
+					technology = ger_medium_tank_chassis_2_2
+				}
 			}
 		}
 	}
