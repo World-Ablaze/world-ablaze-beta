@@ -31,8 +31,8 @@ country_event = {
 						}
 					}
 					has_idea = anti_soviet_pact
+					has_government = fascism
 				}
-				is_historical_focus_on = no #Romania will still cede on historical
 			}
 		}
 		SOV = {
@@ -72,12 +72,18 @@ country_event = {
 			base = 0
 			modifier = {
 				add = 10
-				is_in_faction = yes
-				NOT = { is_in_faction_with = SOV }
-			}
-			modifier = {
-				is_historical_focus_on = yes
-				factor = 0
+				NOT = {
+					any_other_country = {
+						is_major = yes
+						NOT = { tag = SOV }
+						OR = {
+							is_in_faction_with = ROM
+							has_guaranteed = ROM
+						}
+					}
+					has_idea = anti_soviet_pact
+					has_government = fascism
+				}
 			}
 		}
 		SOV = {
@@ -90,35 +96,43 @@ country_event = {
 				create_wargoal = {
 					type = take_state
 					target = ROM
-					generator = { 78 }
+					generator = { 80 78 766 }
 				}
 			}
 		}
-		ROM = {
-			add_opinion_modifier = {
-				target = GER
-				modifier = refused_support
+		if = {
+			limit = {
+				ROM = {
+					is_in_faction_with = GER
+				}
+			}
+			ROM = {
+				add_opinion_modifier = {
+					target = GER
+					modifier = refused_support
+				}
+				activate_mission = activate_decision
 			}
 		}
-		GER = {
-			if = {
-				limit = {
-					ROM = {
-						NOT = {
-							has_government = fascism
-						}
-					}	
-				}
+		if = {
+			limit = {
+				ROM = {
+					NOT = {
+						has_government = fascism
+					}
+				}	
+			}
+			GER = {
 				remove_from_faction = ROM
-			add_opinion_modifier = {
-				target = ROM
-				modifier = endangered_oilfields
-			}
-			create_wargoal = {
-				type = annex_everything
-				target = ROM
-			}
-			set_country_flag = romania_endangered_oilfields
+				add_opinion_modifier = {
+					target = ROM
+					modifier = endangered_oilfields
+				}
+				create_wargoal = {
+					type = annex_everything
+					target = ROM
+				}
+				set_country_flag = romania_endangered_oilfields
 			}
 		}
 	}
@@ -308,6 +322,139 @@ country_event = {
 		BUL = {
 			country_event = { days = 1 id = bulgaria.2 }
 		}
+	}
+}
+
+#Surrender when Soviet has taken too much land
+country_event = {
+	id = romania.7
+	title = romania.7.t
+	desc = romania.7.d
+	picture = GFX_report_event_SOV_tank_column
+
+	is_triggered_only = yes
+
+	#Surrender and offer territory
+	option = {
+		name = romania.7.a
+		ai_chance = {
+			base = 8
+		}
+		SOV = {
+			country_event = { id = romania.8 days = 1 }
+		}
+		effect_tooltip = {
+			SOV = {
+				white_peace = {
+					tag = ROM
+					message = ROM_agree_peace
+				}
+			}
+			transfer_state = 80
+			transfer_state = 78
+			transfer_state = 766
+		}
+		hidden_effect = {
+			set_global_flag = SOV_rw_over
+		}
+	}
+
+	#Never give up!
+	#option = {
+	#	name = finland.7.b
+	#	ai_chance = {
+	#		base = 2
+	#		modifier = {
+	#			factor = 0
+	#			is_historical_focus_on = yes
+	#		}
+	#	}
+	#}
+}
+
+#Soviet response to Romanian surrender
+country_event = {
+	id = romania.8
+	title = romania.8.t
+	desc = romania.8.d
+	picture = GFX_report_event_romanian_soldiers
+
+	is_triggered_only = yes
+
+	#Accept surrender
+	option = {
+		name = romania.8.a
+		army_experience = 25
+		ai_chance = {
+			base = 9
+			modifier = {
+				factor = 0
+				has_completed_focus = SOV_a_global_class_struggle
+			}
+		}
+		white_peace = ROM
+		transfer_state = 80
+		transfer_state = 78
+		transfer_state = 766
+		ROM = {
+			add_ai_strategy = {
+				type = antagonize
+				id = "SOV"
+				value = 200
+			}
+		}
+		if = {
+			limit = {
+				GER = {
+					is_subject = no
+					NOT = { is_in_faction_with = SOV }
+				}
+			}
+			add_ai_strategy = {
+				type = alliance
+				id = "GER"
+				value = 2000
+			}
+			add_ai_strategy = {
+				type = befriend
+				id = "GER"
+				value = 200
+			}
+			GER = {
+				add_ai_strategy = {
+					type = alliance
+					id = "ROM"
+					value = 2000
+				}
+			}
+		}
+	}
+
+	#Take it all
+	option = {
+		name = finland.8.b
+		ai_chance = {
+			base = 1
+			modifier = {
+				factor = 0
+				has_completed_focus = SOV_great_purge
+			}
+		}
+		ROM = { country_event = { id = romania.9 } }
+	}
+}
+
+#Soviet says no!
+country_event = {
+	id = romania.9
+	title = romania.9.t
+	desc = romania.9.d
+	picture = GFX_report_event_romanian_soldiers
+
+	is_triggered_only = yes
+
+	option = {
+		name = romania.9.a
 	}
 }
 
