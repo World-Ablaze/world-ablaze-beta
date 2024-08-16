@@ -289,6 +289,17 @@ FRA_garrison_the_maginot = {
 	enable = {
 		controls_state = 28
 		NOT = {
+			AND = {
+				has_war_with = ITA
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+		NOT = {
+			surrender_progress > 0
+		}
+		NOT = {
 			OR = {
 				GER = { has_war_with = LUX }
 				GER = { has_war_with = BEL }
@@ -526,6 +537,34 @@ FRA_trying_to_save_benelux_is_deathtrap = {
 		value = 500
 	}
 }
+FRA_protect_home_navy = {
+	allowed = {
+		original_tag = FRA
+	}
+	enable = {
+		OR = {
+			has_war = yes
+			has_war = no
+		}
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = strike_force_home_base
+		id = 219
+	}
+
+	ai_strategy = {
+		type = strike_force_home_base
+		id = 18
+	}
+
+	ai_strategy = {
+		type = strike_force_home_base
+		id = 42
+	}
+}
 
 FRA_protect_the_homeland = {
 	allowed = {
@@ -699,6 +738,9 @@ FRA_pre_fall_rot = {
 	}
 	enable = {
 		has_war_with = GER
+		NOT = {
+			surrender_progress > 0
+		}
 		NOT = {
 			GER = {
 				OR = {
@@ -1223,39 +1265,108 @@ FRA_saar_offensive = {
 	}
 	enable = {
 		has_war_with = GER
-	#	date < 1940.1.1
+		date < 1940.1.1
 		has_full_control_of_state = 28
 		NOT = { surrender_progress > 0.1 }
 		OR = {
 			has_idea = FRA_static_command
 			has_idea = FRA_structured_doctrines
 		}
-	#	OR = {
-	#		GER = { is_ai = yes }
-	#		AND = {
-	#			GER = {
-	#				divisions_in_state = {
-	#					type = infantry
-	#					size > 4
-	#					state = 899
-	#				}
-	#			}
-	#			GER = {
-	#				divisions_in_state = {
-	#					type = infantry
-	#					size > 2
-	#					state = 42
-	#				}
-	#			}
-	#			GER = {
-	#				divisions_in_state = {
-	#					type = infantry
-	#					size > 6
-	#					state = 801
-	#				}
-	#			}
-	#		}
-	#	}
+		NOT = {
+			GER = {
+				OR = {
+					has_war_with = LUX
+					has_war_with = HOL
+					has_war_with = BEL
+				}
+			}
+		}
+		AND = {
+			GER = {
+				divisions_in_state = {
+					type = infantry
+					size < 1
+					state = 899
+				}
+			}
+			GER = {
+				divisions_in_state = {
+					type = infantry
+					size < 1
+					state = 42
+				}
+			}
+			GER = {
+				divisions_in_state = {
+					type = infantry
+					size < 1
+					state = 801
+				}
+			}
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_control
+		area = germany
+		ordertype = front
+		execution_type = careful
+		execute_order = yes
+	}
+}
+
+FRA_no_saar_offensive = {
+	allowed = {
+		tag = FRA
+	}
+	enable = {
+		has_war_with = GER
+		has_full_control_of_state = 28
+		NOT = {
+			GER = {
+				OR = {
+					has_war_with = LUX
+					has_war_with = HOL
+					has_war_with = BEL
+				}
+			}
+		}
+		NOT = {
+			surrender_progress > 0.1 
+		}
+		OR = {
+			has_idea = FRA_static_command
+			has_idea = FRA_structured_doctrines
+		}
+		OR = {
+			date > 1940.1.1
+			NOT = {
+				AND = {
+					GER = {
+						divisions_in_state = {
+							type = infantry
+							size < 1
+							state = 899
+						}
+					}
+					GER = {
+						divisions_in_state = {
+							type = infantry
+							size < 1
+							state = 42
+						}
+					}
+					GER = {
+						divisions_in_state = {
+							type = infantry
+							size < 1
+							state = 801
+						}
+					}
+				}
+			}
+		}
 	}
 	abort_when_not_enabled = yes
 
@@ -1265,6 +1376,34 @@ FRA_saar_offensive = {
 		ordertype = front
 		execution_type = careful
 		execute_order = no
+		manual_attack = no
+	}
+}
+
+FRA_no_suicide_invasions = {
+	allowed = {
+		tag = FRA
+	}
+	enable = {
+		OR = {
+			has_war_with = GER
+			has_war_with = ITA
+		}
+		date < 1942.1.1
+	}
+	
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = invade
+		id = "GER"
+		value = -2000
+	}
+	
+	ai_strategy = {
+		type = invade
+		id = "ITA"
+		value = -2000
 	}
 }
 
