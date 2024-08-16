@@ -1403,7 +1403,7 @@ Allies_bomb_germany = {
 	ai_strategy = {
 		type = strategic_air_importance
 		id = 154
-		value = -20000 #value of stocked main front in active combat is usually around 35,000
+		value = -7500 #value of stocked main front in active combat is usually around 35,000
 	}
 }
 
@@ -2349,6 +2349,62 @@ ENG_protect_home = {
 
 		order_id = 1
 
+		# malaysia
+		states = {
+			336
+		}
+
+		ratio = 0.2
+
+		area = malaysia
+
+		subtract_invasions_from_need = no
+	}
+}
+
+ENG_protect_africa = {
+	allowed = {
+		original_tag = ENG
+	}
+	enable = {
+		NOT = {
+			OR = {
+				AND = {
+					date > 1944.1.1
+					has_war_with = GER
+					OR = {
+						6 = { CONTROLLER = { is_in_faction_with = ROOT } }
+						29 = { CONTROLLER = { is_in_faction_with = ROOT } }
+						785 = { CONTROLLER = { is_in_faction_with = ROOT } }
+						15 = { CONTROLLER = { is_in_faction_with = ROOT } }
+						14 = { CONTROLLER = { is_in_faction_with = ROOT } }
+						30 = { CONTROLLER = { is_in_faction_with = ROOT } }
+						23 = { CONTROLLER = { is_in_faction_with = ROOT } }
+						19 = { CONTROLLER = { is_in_faction_with = ROOT } }
+						1016 = { CONTROLLER = { is_in_faction_with = ROOT } }
+					}
+				}
+				OR = {
+					any_country = {
+						is_in_faction_with = ENG
+						has_full_control_of_state = 115
+					}
+					any_country = {
+						is_in_faction_with = ENG
+						has_full_control_of_state = 1032
+					}
+				}
+			}
+		}
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+
+		order_id = 1
+
 		# north_africa
 		states = {
 			452
@@ -2379,22 +2435,48 @@ ENG_protect_home = {
 
 		subtract_invasions_from_need = no
 	}
+}
+
+commonwealth_protect_africa = {
+	allowed = {
+		OR = {
+			tag = SAF
+			tag = AST
+			tag = NZL
+		}
+	}
+	enable = {
+		ENG = {
+			is_ai = yes
+		}
+		is_in_faction_with = ENG
+		NOT = {
+			OR = {
+				surrender_progress > 0
+				has_war_with = JAP
+			}
+		}
+	}
+
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = put_unit_buffers
 
-		order_id = 1
+		order_id = 2
 
-		# malaysia
+		# north_africa
 		states = {
-			336
+			447
+			446
 		}
 
-		ratio = 0.2
+		ratio = 2.0
 
-		area = malaysia
+		area = north_africa
 
 		subtract_invasions_from_need = no
+		subtract_fronts_from_need = yes
 	}
 }
 
@@ -2428,6 +2510,8 @@ ENG_protect_ireland = {
 		subtract_fronts_from_need = yes
 	}
 }
+
+
 
 ENG_protect_home_navy = {
 	allowed = {
@@ -2853,7 +2937,7 @@ ENG_avoiding_early_deathtraps = {
 
 	ai_strategy = {
 		type = naval_avoid_region
-		id = 219 #Ligurian Sea
+		id = 219 #Baleric Sea
 		value = 2000
 	}
 
@@ -2900,6 +2984,31 @@ ENG_defense_of_el_alamein = {
 		original_tag = ENG
 	}
 	enable = {
+		NOT = {
+			AND = {
+				date > 1944.1.1
+				has_war_with = GER
+				any_country = {
+					is_in_faction_with = ENG
+					has_full_control_of_state = 115
+				}
+				any_country = {
+					is_in_faction_with = ENG
+					has_full_control_of_state = 1032
+				}
+				OR = {
+					6 = { CONTROLLER = { is_in_faction_with = ROOT } }
+					29 = { CONTROLLER = { is_in_faction_with = ROOT } }
+					785 = { CONTROLLER = { is_in_faction_with = ROOT } }
+					15 = { CONTROLLER = { is_in_faction_with = ROOT } }
+					14 = { CONTROLLER = { is_in_faction_with = ROOT } }
+					30 = { CONTROLLER = { is_in_faction_with = ROOT } }
+					23 = { CONTROLLER = { is_in_faction_with = ROOT } }
+					19 = { CONTROLLER = { is_in_faction_with = ROOT } }
+					1016 = { CONTROLLER = { is_in_faction_with = ROOT } }
+				}
+			}
+		}
 		447 = {
 			CONTROLLER = {
 				OR = {
@@ -3840,6 +3949,13 @@ ENG_stay_out_of_shithole = {
 
 		strategic_region = 340
 		value = -80
+	}
+	
+	ai_strategy = {
+		type = front_unit_request
+
+		strategic_region = 167
+		value = -1000
 	}
 }
 
@@ -5097,19 +5213,33 @@ ENG_war_against_ITA_1 = {
 
 	ai_strategy = {
 		type = naval_avoid_region
-		id = 168 #adriatic sea
-		value = 2000
-	}
-
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 169 #tyrrhenian sea
-		value = 2000
-	}
-
-	ai_strategy = {
-		type = naval_avoid_region
 		id = 202 #aegean sea
+		value = 2000
+	}
+}
+
+ENG_war_against_axis = {
+	allowed = {
+		tag = ENG
+	}
+	enable = {
+		OR = {
+			has_war_with = ITA
+			has_war_with = GER
+		}
+		any_enemy_country = { has_full_control_of_state = 115 }
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 169 #tyr sea
+		value = 2000
+	}
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 168 #adriatic sea
 		value = 2000
 	}
 }
@@ -5489,7 +5619,7 @@ ENG_sealion_cheese_fix = {
 	}
 }
 
-sealion_is_happening  = {
+sealion_is_happening = {
 	allowed = {
 		OR = {
 			tag = ENG
@@ -6296,6 +6426,36 @@ ENG_ignore_japan_until_germany_is_dealt_with = {
 	ai_strategy = {
 		type = naval_avoid_region
 		id = 88
+		value = 2000
+	}
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 352
+		value = 2000
+	}
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 351
+		value = 2000
+	}
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 350
+		value = 2000
+	}
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 349
+		value = 2000
+	}
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 353
+		value = 2000
+	}
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 354
 		value = 2000
 	}
 }

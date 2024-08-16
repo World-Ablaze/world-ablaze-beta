@@ -6,6 +6,9 @@ on_actions = {
 			}
 		}
 		effect = {
+			set_global_flag = new_save_game_started ########remove in the next big patch
+		}
+		effect = {
 			every_country = {
 				## Steel ##
 				set_variable = {this.open_steel_mill_target = 0 }
@@ -250,7 +253,7 @@ on_actions = {
 				every_army_leader = {
 					limit = {
 						NOT = {
-							has_trait = incompetent
+							has_trait = incompetent_unit_leader
 						}
 					}
 					add_unit_leader_trait = inadequate_army_trait
@@ -697,6 +700,26 @@ on_actions = {
 	}
 
 	on_war = {
+		effect = {
+			if = {
+				limit = {
+					is_major = yes
+					all_enemy_country = {
+						ic_ratio = {
+							tag = ROOT
+							ratio < 0.75
+						}
+						OR = {
+							original_tag = CHI
+							original_tag = PRC
+							is_major = no
+						}
+					}
+					NOT = { has_idea = inferior_enemy }
+				}
+				add_ideas = inferior_enemy
+			}
+		}
 		effect = {
 			if = {
 				limit = {
@@ -2032,6 +2055,27 @@ on_actions = {
 			if = {
 				limit = {
 					FROM.FROM = {
+						OR = {
+							is_one_state_island = yes
+							is_island_state = yes
+						}
+						NOT = {
+							has_dynamic_modifier = { modifier = island_province_ai }
+						}
+						CONTROLLER = {
+							is_ai = yes
+						}
+					}
+				}
+				FROM.FROM = {
+					add_dynamic_modifier = { modifier = island_province_ai }
+				}
+			}
+		}
+		effect = {
+			if = {
+				limit = {
+					FROM.FROM = {
 						NOT = {
 							is_core_of = ROOT
 						}
@@ -2679,6 +2723,9 @@ on_actions = {
 						}
 						NOT = {
 							37 = { is_fully_controlled_by = DEN }
+						}
+						NOT = {
+							1051 = { is_fully_controlled_by = DEN }
 						}
 					}
 					# 37 = { is_owned_by = DEN }
@@ -3962,7 +4009,7 @@ on_actions = {
 					if = {
 						limit = {
 							NOT = {
-								has_trait = incompetent
+								has_trait = incompetent_unit_leader
 							}
 						}
 						add_unit_leader_trait = inadequate_army_trait
@@ -3984,7 +4031,7 @@ on_actions = {
 					if = {
 						limit = {
 							NOT = {
-								has_trait = incompetent
+								has_trait = incompetent_unit_leader
 							}
 						}
 						add_unit_leader_trait = inadequate_army_trait
@@ -4006,7 +4053,7 @@ on_actions = {
 					if = {
 						limit = {
 							NOT = {
-								has_trait = incompetent
+								has_trait = incompetent_unit_leader
 							}
 						}
 						add_unit_leader_trait = inadequate_army_trait

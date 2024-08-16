@@ -2874,6 +2874,16 @@ country_event = {
 			every_navy_leader = {
 				set_nationality = ENG
 			}
+			every_character = {
+				#limit = {
+				#	OR = {
+				#		is_political_advisor = yes
+				#		is_high_command = yes
+				#		is_advisor = yes	
+				#	}
+				#}
+				set_nationality = ENG
+			}
 			transfer_navy = { target = ENG }
 			transfer_units_fraction = {
 				target = ENG
@@ -2906,6 +2916,16 @@ country_event = {
 		custom_effect_tooltip = population_evacuates_tt
 		hidden_effect = {
 			set_global_flag = uk_evacuated
+			ENG = {
+				add_ideas = CAN_reciprocal_trade_agreement
+				add_ideas = CAN_cbc
+				add_ideas = diversified_farmland_2
+				add_ideas = south_america_USA_treaty
+				add_ideas = CAN_wartime_prices_and_trade_board
+				add_ideas = CAN_defence_of_canada_regulations_democratic
+				add_ideas = CAN_bits_and_pieces_program
+				add_ideas = CAN_send_in_the_zombies
+			}
 			if = {
 				limit = {
 					ENG = { is_ai = yes }
@@ -5431,6 +5451,105 @@ country_event = {
 	}
 }
 
+#######################################Alt-hist aluminium company of canada
+
+country_event = {
+	id = eng_armor.863
+	hidden = yes
+
+	mean_time_to_happen = { days = 1 }
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = ENG
+		has_government = democratic
+		has_global_flag = uk_evacuated
+		has_war = yes
+		controls_state = 971
+		date > 1941.1.1
+	}
+
+	immediate = {
+		country_event = { id = can_armor.809 }
+	}
+}
+
+####################################### Invite France Early
+
+country_event = {
+	id = eng_armor.864
+	title = eng_armor.864.t
+	desc = eng_armor.864.d
+
+	mean_time_to_happen = { days = 1 }
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = ENG
+		has_government = democratic
+		FRA = {
+			has_government = democratic
+		}
+		has_completed_focus = ENG_steady_as_she_goes
+		FRA = {
+			NOT = {
+				has_completed_focus = FRA_go_with_britain
+				has_completed_focus = FRA_go_with_russia
+				has_completed_focus = FRA_go_with_germany
+				has_completed_focus = FRA_france_leads
+				has_completed_focus = FRA_invite_communist_ministers
+				has_completed_focus = FRA_revive_the_national_bloc
+			}
+		}
+		any_enemy_country = {
+			is_major = yes
+		}
+		NOT = { has_war_With = FRA }
+		NOT = {
+			is_in_faction_with = FRA
+		}
+		is_faction_leader = yes
+	}
+
+	immediate = {
+		hidden_effect = {
+			set_global_flag = early_world_war_2
+		}
+	}
+
+	option = {
+		name = eng_armor.864.a
+		ai_chance = {
+			factor = 10
+		}
+		FRA = { country_event = { id = generic.5 } }
+		if = {
+			limit = {
+				country_exists = CZE
+				CZE = { 
+					is_subject = no
+					has_government = democratic
+					is_guaranteed_by = FRA
+					NOT = {
+						has_completed_focus = CZE_go_left
+						has_completed_focus = CZE_go_right
+					}
+				}
+			}
+			CZE = { country_event = { id = generic.5 } }
+		}
+	}
+
+	option = {
+		name = eng_armor.864.b
+		ai_chance = {
+			factor = 0
+		}
+	}
+}
+
 ####################################### Cheats
 
 country_event = {
@@ -5479,10 +5598,18 @@ country_event = {
 				}
 			}
 		}
-		447 = {
+		446 = {
 			add_building_construction = {
 				type = bunker
 				level = 3
+				province = 13343
+				instant_build = yes
+			}
+		}
+		447 = {
+			add_building_construction = {
+				type = bunker
+				level = 5
 				province = 1071
 				instant_build = yes
 			}
@@ -5490,6 +5617,12 @@ country_event = {
 				type = bunker
 				level = 3
 				province = 13478
+				instant_build = yes
+			}
+			add_building_construction = {
+				type = bunker
+				level = 3
+				province = 4076
 				instant_build = yes
 			}
 			add_building_construction = {
@@ -5726,6 +5859,35 @@ country_event = {
 	}
 
 	immediate = {
+		add_equipment_to_stockpile = { type = train_equipment_2 amount = 300 producer = ENG }
+		136 = {
+			add_building_construction = {
+				type = radar_station
+				level = 4
+				instant_build = yes
+			}
+		}
+		860 = {
+			add_building_construction = {
+				type = radar_station
+				level = 4
+				instant_build = yes
+			}
+		}
+		126 = {
+			add_building_construction = {
+				type = air_base
+				level = 5
+				instant_build = yes
+			}
+		}
+		132 = {
+			add_building_construction = {
+				type = air_base
+				level = 5
+				instant_build = yes
+			}
+		}
 		set_technology = { frontal_tanks = 0 }
 		set_technology = { tank_logistics = 0 }
 		set_technology = { combined_warfare = 1 }
@@ -5927,7 +6089,7 @@ country_event = {
 
 	immediate = {
 		#load_oob = "ENG_Iceland"
-		add_equipment_to_stockpile = { type = convoy_1 amount = 50 producer = ENG }
+		add_equipment_to_stockpile = { type = convoy_1 amount = 2000 producer = ENG }
 	}
 
 	option = {}
@@ -6071,16 +6233,22 @@ country_event = {
 
 	immediate = {
 		navy_experience = 200
-		# set_fuel_ratio = 1.0
-		set_technology = { encirclement = 1 }
-		deactivate_advisor = ENG_maxwell_aitken
-		activate_advisor = ENG_hugh_dalton
-		deactivate_advisor = ENG_herbert_morrison
-		activate_advisor = ENG_samuel_hoare
 		set_technology = { eng_frigate_9 = 1 }
 		set_technology = { eng_destroyer_9  = 1 }
-		deactivate_advisor = ENG_edward_halifax
-		activate_advisor = ENG_anthony_eden
+		set_technology = { encirclement = 1 }
+		if = {
+			limit = {
+				NOT = {
+					has_global_flag = uk_evacuated
+				}
+			}
+			deactivate_advisor = ENG_maxwell_aitken
+			activate_advisor = ENG_hugh_dalton
+			deactivate_advisor = ENG_herbert_morrison
+			activate_advisor = ENG_samuel_hoare
+			deactivate_advisor = ENG_edward_halifax
+			activate_advisor = ENG_anthony_eden
+		}
 	}
 
 	option = {}
@@ -6285,6 +6453,7 @@ country_event = {
 
 	immediate = {
 		# set_fuel_ratio = 1.0
+		add_equipment_to_stockpile = { type = train_equipment_2 amount = 500 producer = ENG }
 		if = {
 			limit = {
 				NOT = { has_global_flag = disable_cheats }
@@ -6301,6 +6470,7 @@ country_event = {
 
 }
 
+####Operation Husky
 country_event = {
 	id = eng_armor.918
 	hidden = yes
@@ -6419,7 +6589,14 @@ country_event = {
 	}
 
 	immediate = {
-		#load_oob = "ENG_sicily"
+		random_list = {
+			50 = {
+				load_oob = "ENG_sicily"
+			}
+			50 = {
+				load_oob = "ENG_sicily_2"
+			}
+		}
 	}
 
 	option = {}
@@ -7258,13 +7435,6 @@ country_event = {
 				instant_build = yes
 			}
 		}
-		132 = {
-			add_building_construction = {
-				type = air_base
-				level = 5
-				instant_build = yes
-			}
-		}
 		122 = {
 			add_building_construction = {
 				type = air_base
@@ -7713,6 +7883,191 @@ country_event = {
 		}
 		set_technology = {
 			concentrated_industry = 1
+		}
+	}
+
+	option = {}
+}
+
+
+###Operation Slapstick
+country_event = {
+	id = eng_armor.942
+	hidden = yes
+
+	mean_time_to_happen = { days = 1 }
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = ENG
+		is_ai = yes
+		ENG = { has_war_with = ITA }
+		date > 1943.9.1
+		OR = {
+			AND = {
+				NOT = {
+					665 = {
+						CONTROLLER = {
+							OR = {
+								has_war_with = ROOT
+								tag = VIC
+								is_subject_of = VIC
+							}
+						}
+					}
+				}
+				NOT = {
+					458 = {
+						CONTROLLER = {
+							OR = {
+								has_war_with = ROOT
+								tag = VIC
+								is_subject_of = VIC
+							}
+						}
+					}
+				}
+				NOT = {
+					460 = {
+						CONTROLLER = {
+							OR = {
+								has_war_with = ROOT
+								tag = VIC
+								is_subject_of = VIC
+							}
+						}
+					}
+				}
+				NOT = {
+					513 = {
+						CONTROLLER = {
+							OR = {
+								has_war_with = ROOT
+								tag = VIC
+								is_subject_of = VIC
+							}
+						}
+					}
+				}
+				NOT = {
+					459 = {
+						CONTROLLER = {
+							OR = {
+								has_war_with = ROOT
+								tag = VIC
+								is_subject_of = VIC
+							}
+						}
+					}
+				}
+				NOT = {
+					461 = {
+						CONTROLLER = {
+							OR = {
+								has_war_with = ROOT
+								tag = VIC
+								is_subject_of = VIC
+							}
+						}
+					}
+				}
+				NOT = {
+					462 = {
+						CONTROLLER = {
+							OR = {
+								has_war_with = ROOT
+								tag = VIC
+								is_subject_of = VIC
+							}
+						}
+					}
+				}
+			}
+			AND = {
+				NOT = {	451 = { CONTROLLER = { has_war_with = ROOT } } }
+				NOT = {	450 = { CONTROLLER = { has_war_with = ROOT } } }
+				NOT = {	449 = { CONTROLLER = { has_war_with = ROOT } } }
+				NOT = {	448 = { CONTROLLER = { has_war_with = ROOT } } }
+				NOT = {	661 = { CONTROLLER = { has_war_with = ROOT } } }
+				NOT = {	662 = { CONTROLLER = { has_war_with = ROOT } } }
+				NOT = {	663 = { CONTROLLER = { has_war_with = ROOT } } }
+				NOT = {	665 = { CONTROLLER = { has_war_with = ROOT } } }
+				NOT = {	460 = { CONTROLLER = { has_war_with = ROOT } } }
+				NOT = {	513 = { CONTROLLER = { has_war_with = ROOT } } }
+				NOT = {	459 = { CONTROLLER = { has_war_with = ROOT } } }
+				NOT = {	461 = { CONTROLLER = { has_war_with = ROOT } } }
+				NOT = {	462 = { CONTROLLER = { has_war_with = ROOT } } }
+			}
+		}
+		NOT = { has_global_flag = disable_cheats }
+		AND = {
+			any_country = {
+				is_in_faction_with = ENG
+				has_full_control_of_state = 115
+			}
+			any_country = {
+				is_in_faction_with = ENG
+				has_full_control_of_state = 1032
+			}
+		}
+	}
+
+	immediate = {
+		load_oob = "ENG_slapstick"
+	}
+
+	option = {}
+
+}
+
+country_event = {
+	id = eng_armor.943
+	hidden = yes
+
+	mean_time_to_happen = { days = 2 }
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = ENG
+		is_ai = yes
+		has_global_flag = uk_evacuated
+	}
+
+	immediate = {
+		add_political_power = 1500
+		activate_advisor = ENG_edward_halifax
+		activate_advisor = ENG_kingsley_wood
+		activate_advisor = ENG_samuel_hoare
+		activate_advisor = ENG_brendan_bracken
+		activate_advisor = CAN_leo_richer_lafleche
+	}
+
+	option = {}
+}
+
+country_event = {
+	id = eng_armor.944
+	hidden = yes
+
+	mean_time_to_happen = { days = 1 }
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = ENG
+		is_ai = yes
+		controls_state = 100
+	}
+
+	immediate = {
+		100 = {
+			add_building_construction = {
+				type = radar_station
+				level = 6
+				instant_build = yes
+			}
 		}
 	}
 
