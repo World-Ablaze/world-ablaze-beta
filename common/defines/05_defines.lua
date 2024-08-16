@@ -1105,11 +1105,11 @@ NDefines.NAI.PLAN_FRONT_SECTION_MIN_LENGTH = 2										-- When two front sectio
 ----------- AI Battleplan Execution
 ----------- AI Executes plan if PLAN_FACTION_STRONG_TO_EXECUTE and PLAN_FACTION_STRONG_TO_EXECUTE are both met, will cancel the plan if PLAN_FACTION_WEAK_TO_ABORT is met, wont reenable plan until first two are met again
 
-NDefines.NAI.PLAN_FACTION_STRONG_TO_EXECUTE = 0.8									-- % or more of units in an order at high strength to consider executing the plan, these are ANDs so both (Org or strength) have to be true
+NDefines.NAI.PLAN_FACTION_STRONG_TO_EXECUTE = 0.8									-- % or more of units in an order at high strength to consider executing the plan, these are ANDs so both (Org and strength) have to be true
 NDefines.NAI.ORG_UNIT_STRONG = 0.5													-- Organization % for unit to be considered strong
 NDefines.NAI.STR_UNIT_STRONG = 0.95													-- Strength (equipment) % for unit to be considered strong
 
-NDefines.NAI.PLAN_FACTION_NORMAL_TO_EXECUTE = 0.8									-- % or more of units in an order at normal strength to consider executing the plan, these are ANDs so both (Org or strength) have to be true
+NDefines.NAI.PLAN_FACTION_NORMAL_TO_EXECUTE = 0.8									-- % or more of units in an order at normal strength to consider executing the plan, these are ANDs so both (Org and strength) have to be true
 NDefines.NAI.ORG_UNIT_NORMAL = 0.5													-- Organization % for unit to be considered normal
 NDefines.NAI.STR_UNIT_NORMAL = 0.85													-- Strength (equipment) % for unit to be considered normal
 
@@ -1124,7 +1124,7 @@ NDefines.NAI.PLAN_ATTACK_MIN_ORG_FACTOR_MED = 0.75									-- (LOW,MED,HIGH) cor
 NDefines.NAI.PLAN_ATTACK_MIN_STRENGTH_FACTOR_MED = 0.8
 
 NDefines.NAI.PLAN_ATTACK_MIN_ORG_FACTOR_HIGH = 0.6
-NDefines.NAI.PLAN_ATTACK_MIN_STRENGTH_FACTOR_HIGH = 0.8
+NDefines.NAI.PLAN_ATTACK_MIN_STRENGTH_FACTOR_HIGH = 0.75
 
 NDefines.NAI.PLAN_AVG_PREPARATION_TO_EXECUTE = 0.5									-- % or more average plan preparation before executing
 NDefines.NAI.AI_FRONT_MOVEMENT_FACTOR_FOR_READY = 0.5			               		-- If less than this fraction of units on a front is moving  AI sees it as ready for action
