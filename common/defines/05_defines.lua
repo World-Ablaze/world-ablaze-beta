@@ -375,7 +375,7 @@ NDefines.NMilitary.PLAN_MAX_PROGRESS_TO_JOIN = 1000000.0							--  "Progress" re
 
 NDefines.NMilitary.PLAN_AREA_DEFENSE_ENEMY_UNIT_FACTOR = -100.0						-- Factor applied to province score in area defense order per enemy unit in that province, stops ai from shuffling defense orders
 
-NDefines.NMilitary.PLAN_EXECUTE_BALANCED_LIMIT = -20								-- When looking for an attach target, this score limit is required in the battle plan to consider province for attack
+--NDefines.NMilitary.PLAN_EXECUTE_BALANCED_LIMIT = -20								-- When looking for an attach target, this score limit is required in the battle plan to consider province for attack
 
 -----------
 
@@ -1102,6 +1102,8 @@ NDefines.NAI.MIN_INVASION_PLAN_VALUE_TO_EXECUTE = 0.05								-- ai will only ac
 NDefines.NAI.PLAN_FRONT_SECTION_MAX_LENGTH = 5										-- When a front is longer than this it will be split in two sections for the AI
 NDefines.NAI.PLAN_FRONT_SECTION_MIN_LENGTH = 2										-- When two front sections together are this short they will be merged for the AI
 
+NDefines.NAI.ENTRENCHMENT_WEIGHT = 10.0												-- AI should favour units with less entrenchment when assigning units around.
+
 ----------- AI Battleplan Execution
 ----------- AI Executes plan if PLAN_FACTION_STRONG_TO_EXECUTE and PLAN_FACTION_STRONG_TO_EXECUTE are both met, will cancel the plan if PLAN_FACTION_WEAK_TO_ABORT is met, wont reenable plan until first two are met again
 
@@ -1118,7 +1120,7 @@ NDefines.NAI.ORG_UNIT_WEAK = 0.05													-- Organization % for unit to be c
 NDefines.NAI.STR_UNIT_WEAK = 0.8													-- Strength (equipment) % for unit to be considered weak
 
 NDefines.NAI.PLAN_ATTACK_MIN_ORG_FACTOR_LOW = 0.85									-- Minimum org % for a unit to actively attack an enemy unit when executing a plan
-NDefines.NAI.PLAN_ATTACK_MIN_STRENGTH_FACTOR_LOW = 0.9								-- Minimum strength for a unit to actively attack an enemy unit when executing a plan
+NDefines.NAI.PLAN_ATTACK_MIN_STRENGTH_FACTOR_LOW = 0.85								-- Minimum strength for a unit to actively attack an enemy unit when executing a plan
 
 NDefines.NAI.PLAN_ATTACK_MIN_ORG_FACTOR_MED = 0.75									-- (LOW,MED,HIGH) corresponds to the plan execution agressiveness level.
 NDefines.NAI.PLAN_ATTACK_MIN_STRENGTH_FACTOR_MED = 0.8
@@ -1138,10 +1140,10 @@ NDefines.NAI.FORTIFIED_MIN_ORG_FACTOR_TO_CONSIDER_A_FRONT_FORTIFIED = 100 			-- 
 
 ----------- End
 
-NDefines.NAI.REVISITED_PROV_BOOST_FACTOR = 100                            			-- When the AI picks units for a front, it prioritises units already nearby.
-NDefines.NAI.ORDER_ASSIGNMENT_DISTANCE_FACTOR = 10.0								-- When the AI assigns units to orders, it attempts to calculate the distance.
-NDefines.NAI.RELUCTANCE_TO_CHANGE_FRONT_FACTOR = 0.9								-- Factor for how reluctant the AI is to change a units order group.
-NDefines.NAI.REVISITED_PROV_PENALTY_FACTOR = 1.8									-- When the AI picks units for a front, it tries to spread out a bit which units it grabs.
+--NDefines.NAI.REVISITED_PROV_BOOST_FACTOR = 100                            		-- When the AI picks units for a front, it prioritises units already nearby.
+--NDefines.NAI.ORDER_ASSIGNMENT_DISTANCE_FACTOR = 10.0								-- When the AI assigns units to orders, it attempts to calculate the distance.
+--NDefines.NAI.RELUCTANCE_TO_CHANGE_FRONT_FACTOR = 0.9								-- Factor for how reluctant the AI is to change a units order group.
+--NDefines.NAI.REVISITED_PROV_PENALTY_FACTOR = 1.8									-- When the AI picks units for a front, it tries to spread out a bit which units it grabs.
 
 NDefines.NAI.FRONT_EVAL_UNIT_ACCURACY = 0.95										-- scale how stupid ai will act on fronts. 0 is potato
 NDefines.NAI.EXTRA_NAVY_INTEL_FOR_CONVOY_RAIDING = 1.0                   			-- this amount of intel is added to navy intel while ai is assigning convoy raiding mission
