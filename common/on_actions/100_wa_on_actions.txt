@@ -6,6 +6,9 @@ on_actions = {
 			}
 		}
 		effect = {
+			set_global_flag = new_save_game_started ########remove in the next big patch
+		}
+		effect = {
 			every_country = {
 				## Steel ##
 				set_variable = {this.open_steel_mill_target = 0 }
@@ -706,6 +709,26 @@ on_actions = {
 	}
 
 	on_war = {
+		effect = {
+			if = {
+				limit = {
+					is_major = yes
+					all_enemy_country = {
+						ic_ratio = {
+							tag = ROOT
+							ratio < 0.75
+						}
+						OR = {
+							original_tag = CHI
+							original_tag = PRC
+							is_major = no
+						}
+					}
+					NOT = { has_idea = inferior_enemy }
+				}
+				add_ideas = inferior_enemy
+			}
+		}
 		effect = {
 			if = {
 				limit = {
@@ -2021,6 +2044,26 @@ on_actions = {
 
 	#ROOT is new controller #FROM is old controller #FROM.FROM is state ID
 	on_state_control_changed = {
+		effect = {
+			if = {
+				limit = {
+					FROM.FROM = {
+						OR = {
+							state = 629
+							state = 631
+							state = 630
+						}
+					}
+				}
+				FROM.FROM = {
+					set_state_flag = {
+						flag = recent_controller_change
+						days = 45
+						value = 1
+					}
+				}
+			}
+		}
 		effect = {
 			if = {
 				limit = {
