@@ -22,7 +22,7 @@ country_event = {
 			tech_military_police = 1
 		}
 		add_equipment_to_stockpile = { type = eng_motorized_equipment_1 amount = 25000 producer = RAJ }
-		add_equipment_to_stockpile = { type = convoy_1 amount = 250 producer = RAJ }
+		add_equipment_to_stockpile = { type = convoy_1 amount = 450 producer = RAJ }
 		division_template = {
 			name = "Indian Infantry Division"
 			division_names_group = RAJ_INF_01
@@ -53,16 +53,72 @@ country_event = {
 				artillery = { x = 0 y = 1 }
 				horse_logistics_company = { x = 0 y = 2 }
 				signal_company = { x = 0 y = 3 }
+				maintenance_company = { x = 0 y = 4 }
 
 				recon = { x = 1 y = 0 }
 				field_hospital = { x = 1 y = 1 }
 				anti_tank = { x = 1 y = 2 }
 				military_police = { x = 1 y = 3 }
+				anti_air = { x = 1 y = 4 }
+			}
+		}
+		division_template = { 
+			name = "Indian Gurkha Division" 
+			division_names_group = RAJ_MNT_01
+			priority = 2 
+
+			regiments = { 
+				mountaineers = { x = 0 y = 0 }
+				mountaineers = { x = 0 y = 1 }
+				mountaineers = { x = 0 y = 2 }
+				mountaineers = { x = 0 y = 3 }
+				mountaineers = { x = 0 y = 4 }
+
+				mountaineers = { x = 1 y = 0 }
+				mountaineers = { x = 1 y = 1 }
+				mountaineers = { x = 1 y = 2 }
+				mountaineers = { x = 1 y = 3 }
+
+				artillery_brigade = { x = 2 y = 0 }
+				artillery_brigade = { x = 2 y = 1 }
+				artillery_brigade = { x = 2 y = 2 }
+				
+				motorized_heavy_artillery_brigade = { x = 3 y = 0 }
+			}
+			
+			support = {
+				engineer = { x = 0 y = 0 }
+				heavy_artillery = { x = 0 y = 1 }
+				horse_logistics_company = { x = 0 y = 2 }
+				signal_company = { x = 0 y = 3 }
+				maintenance_company = { x = 0 y = 4 }
+
+				recon = { x = 1 y = 0 }
+				field_hospital = { x = 1 y = 1 }
+				anti_tank = { x = 1 y = 2 }
+				military_police = { x = 1 y = 3 }
+				anti_air = { x = 1 y = 4 }
 			}
 		}
 		set_country_flag = infantry_template_raj
 		RAJ_william_slim = {
 			promote_leader = yes
+		}
+		delete_unit_template_and_units = { division_template = "Infantry Division" }
+		delete_unit_template_and_units = { division_template = "District Garrison" }
+		delete_unit_template_and_units = { division_template = "Gurkha Rifles" }
+		add_equipment_to_stockpile = { type = train_equipment_1 amount = 600 producer = RAJ }
+		439 = {
+			create_unit = {
+				division = "division_template = \"Indian Infantry Division\" start_experience_factor = 0.55 start_equipment_factor = 0.75"
+				owner = RAJ
+				count = 50
+			}
+			create_unit = {
+				division = "division_template = \"Indian Gurkha Division\" start_experience_factor = 0.55 start_equipment_factor = 0.75"
+				owner = RAJ
+				count = 5
+			}
 		}
 	}
 
@@ -1666,17 +1722,125 @@ country_event = {
 	trigger = {
 		tag = RAJ
 		is_ai = yes
-		date > 1941.1.1
+		OR = {
+			date > 1941.1.1
+			surrender_progress > 0
+		}
 	}
 
 	immediate = {
+		add_political_power = 300
+		add_advisor_role = {
+			character = "RAJ_frank_messervy"
+			advisor = {
+				slot = high_command
+				idea_token = RAJ_frank_messervy
+				ledger = army
+				traits = {
+					army_infantry_2
+				}
+				cost = 100
+				ai_will_do = {
+					base = 100
+				}
+			}
+		}
+		add_advisor_role = {
+			character = "RAJ_douglas_gracey"
+			advisor = {
+				slot = high_command
+				idea_token = RAJ_douglas_gracey
+				ledger = army
+				traits = {
+					army_concealment_2
+				}
+				cost = 100
+				ai_will_do = {
+					base = 100
+				}
+			}
+		}
+		add_advisor_role = {
+			character = "RAJ_noel_beresfordpeirse"
+			advisor = {
+				slot = high_command
+				idea_token = RAJ_noel_beresfordpeirse
+				ledger = army
+				traits = {
+					army_artillery_2
+				}
+				cost = 100
+				ai_will_do = {
+					base = 100
+				}
+			}
+		}
+		add_advisor_role = {
+			character = "RAJ_william_slim"
+			advisor = {
+				slot = high_command
+				idea_token = RAJ_william_slim
+				ledger = army
+				traits = {
+					army_regrouping_1
+				}
+				cost = 100
+				ai_will_do = {
+					base = 100
+				}
+			}
+		}
+		add_ideas = RAJ_frank_messervy
+		add_ideas = RAJ_douglas_gracey
+		add_ideas = RAJ_noel_beresfordpeirse
+		add_ideas = RAJ_william_slim
+		if = {
+			limit = {
+				NOT = {
+					has_tech = integrated_support
+				}
+			}
+			set_technology = { integrated_support = 1 }
+			set_technology = { creeping_barrages = 0 }
+			set_technology = { direct_fire = 0 }
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_tech = converging_sheaf
+				}
+			}
+			set_technology = { converging_sheaf = 1 }
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_tech = tank_platoons
+				}
+			}
+			set_technology = { tank_platoons = 1 }
+		}
+		add_units_to_division_template = {
+			template_name = "Indian Infantry Division"
+			regiments = {
+				artillery_brigade = 4
+				heavy_infantry = 1
+			}
+		}
+		add_units_to_division_template = {
+			template_name = "Indian Gurkha Division"
+			regiments = {
+				motorized_heavy_artillery_brigade = 3
+				artillery_brigade = 2
+			}
+		}
 		add_equipment_to_stockpile = { type = motorized_equipment_1 amount = 100 producer = RAJ }
 		add_equipment_to_stockpile = { type = eng_art_1 amount = 400 producer = RAJ }
 		439 = {
 			create_unit = {
-				division = "division_template = \"Indian Infantry Division\" start_experience_factor = 0.4 start_equipment_factor = 1"
+				division = "division_template = \"Indian Infantry Division\" start_experience_factor = 0.5 start_equipment_factor = 0.8"
 				owner = RAJ
-				count = 10
+				count = 25
 			}
 		}
 	}
@@ -1737,14 +1901,6 @@ country_event = {
 
 	immediate = {
 		add_political_power = 2000
-		delete_unit_template_and_units = { division_template = "Infantry Division" }
-		439 = {
-			create_unit = {
-				division = "division_template = \"Indian Infantry Division\" start_experience_factor = 0.4 start_equipment_factor = 1"
-				owner = RAJ
-				count = 25
-			}
-		}
 	}
 
 	option = {
@@ -1794,6 +1950,164 @@ country_event = {
 	}
 
 	immediate = {
+		if = {
+			limit = {
+				431 = {
+					is_owned_and_controlled_by = RAJ
+				}
+			}
+			431 = {
+				add_building_construction = {
+					type = bunker
+					level = 4
+					province = {
+						id = 4062
+						id = 10077
+						id = 4644
+						id = 7565
+						id = 12338
+					}
+					instant_build = yes
+				}
+				add_building_construction = {
+					type = bunker
+					level = 5
+					province = {
+						id = 4245
+					}
+					instant_build = yes
+				}
+			}
+		}
+		if = {
+			limit = {
+				435 = {
+					is_owned_and_controlled_by = RAJ
+				}
+			}
+			435 = {
+				add_building_construction = {
+					type = bunker
+					level = 5
+					province = {
+						id = 4516
+					}
+					instant_build = yes
+				}
+			}
+		}
+		if = {
+			limit = {
+				429 = {
+					is_owned_and_controlled_by = RAJ
+				}
+			}
+			429 = {
+				add_building_construction = {
+					type = coastal_bunker
+					level = 5
+					province = {
+						id = 1349
+					}
+					instant_build = yes
+				}
+			}
+		}
+		if = {
+			limit = {
+				443 = {
+					is_owned_and_controlled_by = RAJ
+				}
+			}
+			443 = {
+				add_building_construction = {
+					type = coastal_bunker
+					level = 5
+					province = {
+						id = 3456
+					}
+					instant_build = yes
+				}
+			}
+		}
+		if = {
+			limit = {
+				428 = {
+					is_owned_and_controlled_by = RAJ
+				}
+			}
+			428 = {
+				add_building_construction = {
+					type = coastal_bunker
+					level = 5
+					province = {
+						id = 13467
+					}
+					instant_build = yes
+				}
+			}
+		}
+		if = {
+			limit = {
+				430 = {
+					is_owned_and_controlled_by = RAJ
+				}
+			}
+			430 = {
+				add_building_construction = {
+					type = bunker
+					level = 4
+					province = {
+						id = 4162
+						id = 10389
+					}
+					instant_build = yes
+				}
+				add_building_construction = {
+					type = bunker
+					level = 2
+					province = {
+						id = 11929
+					}
+					instant_build = yes
+				}
+			}
+		}
+		if = {
+			limit = {
+				439 = {
+					is_owned_and_controlled_by = RAJ
+				}
+			}
+			439 = {
+				add_building_construction = {
+					type = bunker
+					level = 5
+					province = {
+						id = 13464
+						id = 2086
+					}
+					instant_build = yes
+				}
+			}
+		}
+		if = {
+			limit = {
+				993 = {
+					is_owned_and_controlled_by = RAJ
+				}
+			}
+			993 = {
+				add_building_construction = {
+					type = bunker
+					level = 5
+					province = {
+						id = 12307
+					}
+					instant_build = yes
+				}
+			}
+		}
 		add_equipment_to_stockpile = { type = eng_art_1 amount = 400 producer = RAJ }
 		add_equipment_to_stockpile = { type = convoy_1 amount = 125 producer = RAJ }
 	}
@@ -1864,6 +2178,28 @@ country_event = {
 
 	immediate = {
 		add_political_power = 1500
+	}
+
+	option = {
+	}
+}
+
+country_event = {
+	id = raj_armor.909
+	hidden = yes
+
+	mean_time_to_happen = { days = 1 }
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = RAJ
+		is_ai = yes
+		date > 1942.10.1
+	}
+
+	immediate = {
+		army_experience = 350
 	}
 
 	option = {
