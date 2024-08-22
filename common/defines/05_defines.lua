@@ -374,6 +374,7 @@ NDefines.NMilitary.PLAN_SPREAD_ATTACK_WEIGHT = 0.5									-- The higher the val
 NDefines.NMilitary.PLAN_MAX_PROGRESS_TO_JOIN = 1000000.0							--  "Progress" refers to the sum of organization of all divisions. Only if that sum is below the threshold (0.5 vanilla) will certain support attacks be executed
 
 NDefines.NMilitary.PLAN_AREA_DEFENSE_ENEMY_UNIT_FACTOR = -100.0						-- Factor applied to province score in area defense order per enemy unit in that province, stops ai from shuffling defense orders
+NDefines.NMilitary.PLAN_AREA_DEFENSE_ENEMY_CONTROLLER_SCORE = -100.0				-- Score applied to provinces in the defense area order controlled by enemies, stops ai from shuffling defense orders
 
 --NDefines.NMilitary.PLAN_EXECUTE_BALANCED_LIMIT = -20								-- When looking for an attach target, this score limit is required in the battle plan to consider province for attack
 
@@ -953,14 +954,16 @@ NDefines.NAI.MIN_UNITS_FACTOR_INVASION_ORDER = 1.2									-- Factor for min num
 NDefines.NAI.ENEMY_NAVY_STRENGTH_DONT_BOTHER = 5.0									-- If the enemy has a navy at least these many times stronger that the own, don't bother invading
 
 NDefines.NAI.CONVOY_ESCORT_MUL_FROM_NO_CONVOYS = 0 									-- score multiplier when no convoys are around
-NDefines.NAI.CONVOY_ESCORT_SCORE_FROM_CONVOYS = 1             				        -- score for each convoy you have in area
+NDefines.NAI.CONVOY_ESCORT_SCORE_FROM_CONVOYS = 0            				    	-- score for each convoy you have in area
 NDefines.NAI.REGION_CONVOY_DANGER_DAILY_DECAY = 5									-- When convoys are sunk it generates threat in the region which the AI uses to prio nalval missions
+NDefines.NAI.NAVAL_MISSION_ESCORT_NEAR_OWNED = 0									-- Extra escort mission score near owned provinces
+NDefines.NAI.NAVAL_MISSION_ESCORT_NEAR_CONTROLLED = 0								-- Extra escort mission score near controlled provinces
 
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_MINE_LAYING = 0.15							-- maximum ratio of screens forces to be used in mine laying
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_MINE_SWEEPING = 0.05 						-- maximum ratio of screens forces to be used in mine sweeping
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MIN = 0.20					-- minimum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX = 0.70 					-- maximum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
-NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX_CONVOY_THREAT = 500 		-- AI will increase screen assignment for escort missions as threat increases
+NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX_CONVOY_THREAT = 500		-- AI will increase screen assignment for escort missions as threat increases
 NDefines.NAI.MAX_SCREEN_FORCES_FOR_INVASION_SUPPORT = 0.4 							-- max ratio of screens forces to be used in naval invasion missions
 NDefines.NAI.MAX_CAPITAL_FORCES_FOR_INVASION_SUPPORT = 0.4 							-- max ratio of capital forces to be used in naval invasion missions
 
@@ -975,8 +978,9 @@ NDefines.NAI.CAPITALS_TO_CARRIER_RATIO = 3.0										-- capital to carrier coun
 
 NDefines.NAI.MAX_PATROL_TO_STRIKE_FORCE_RATIO = 5.0									-- maximum patrol/strike force ratio
 
+--Need to find good values, 1 convoy sunk generates 25 threat
 NDefines.NAI.REGION_THREAT_LEVEL_TO_AVOID_REGION = 25 * 1000						-- How much threat must be generated in region ( by REGION_THREAT_PER_SUNK_CONVOY ) so the AI will decide to mark the region as avoid
-NDefines.NAI.REGION_THREAT_LEVEL_TO_BLOCK_REGION = 25 * 100							-- How much threat must be generated in region ( by REGION_THREAT_PER_SUNK_CONVOY ) so the AI will decide to mark the region as avoid
+NDefines.NAI.REGION_THREAT_LEVEL_TO_BLOCK_REGION = 25 * 1000						-- How much threat must be generated in region ( by REGION_THREAT_PER_SUNK_CONVOY ) so the AI will decide to mark the region as avoid
 
 --NDefines.NAI.NAVAL_MISSION_AGGRESSIVE_PATROL_DIVISOR = 3							-- Divides patrol score when not defending
 NDefines.NAI.NAVAL_MISSION_PATROL_NEAR_OWNED = 0									-- Extra patrol mission score near owned provinces
@@ -987,8 +991,6 @@ NDefines.NAI.SUB_TASKFORCE_MAX_SHIP_COUNT = 5 										-- optimum sub count for
 NDefines.NAI.PRODUCTION_MAX_PROGRESS_TO_SWITCH_NAVAL = 0.0							-- AI will not replace ships being built by newer types if progress is above this
 NDefines.NAI.PRODUCTION_WAIT_TO_FINISH_IF_EXPENSIVE = 0.1      						-- If produced item is expensive (producing less than one/week), wait to finish item if progress is above this
 --NDefines.NAI.PRODUCTION_WAIT_TO_FINISH_IF_CHEAP = 0.0         			 		-- If produced item is cheap (producing more than one/week), wait to finish item if progress is above this
-
-NDefines.NAI.REGION_THREAT_LEVEL_TO_BLOCK_REGION = 25 * 1000						-- How much threat must be generated in region ( by REGION_THREAT_PER_SUNK_CONVOY ) so the AI will decide to mark the region as avoid
 
 
 NDefines.NAI.NAVAL_MISSION_MINES_PLANTING_NEAR_OWNED = 100000
@@ -1125,7 +1127,7 @@ NDefines.NAI.PLAN_ATTACK_MIN_STRENGTH_FACTOR_LOW = 0.85								-- Minimum streng
 NDefines.NAI.PLAN_ATTACK_MIN_ORG_FACTOR_MED = 0.75									-- (LOW,MED,HIGH) corresponds to the plan execution agressiveness level.
 NDefines.NAI.PLAN_ATTACK_MIN_STRENGTH_FACTOR_MED = 0.8
 
-NDefines.NAI.PLAN_ATTACK_MIN_ORG_FACTOR_HIGH = 0.6
+NDefines.NAI.PLAN_ATTACK_MIN_ORG_FACTOR_HIGH = 0.5
 NDefines.NAI.PLAN_ATTACK_MIN_STRENGTH_FACTOR_HIGH = 0.75
 
 NDefines.NAI.PLAN_AVG_PREPARATION_TO_EXECUTE = 0.5									-- % or more average plan preparation before executing
@@ -1140,7 +1142,7 @@ NDefines.NAI.FORTIFIED_MIN_ORG_FACTOR_TO_CONSIDER_A_FRONT_FORTIFIED = 100 			-- 
 
 ----------- End
 
---NDefines.NAI.REVISITED_PROV_BOOST_FACTOR = 100                            		-- When the AI picks units for a front, it prioritises units already nearby.
+NDefines.NAI.REVISITED_PROV_BOOST_FACTOR = 10                            			-- When the AI picks units for a front, it prioritises units already nearby.
 --NDefines.NAI.ORDER_ASSIGNMENT_DISTANCE_FACTOR = 10.0								-- When the AI assigns units to orders, it attempts to calculate the distance.
 --NDefines.NAI.RELUCTANCE_TO_CHANGE_FRONT_FACTOR = 0.9								-- Factor for how reluctant the AI is to change a units order group.
 --NDefines.NAI.REVISITED_PROV_PENALTY_FACTOR = 1.8									-- When the AI picks units for a front, it tries to spread out a bit which units it grabs.
@@ -1252,3 +1254,4 @@ NDefines.NIndustrialOrganisation.MAX_FUNDS_FROM_MANUFACTURER_PER_DAY = 100			-- 
 -- NDefines.NIndustrialOrganisation.DEFAULT_INITIAL_TASK_CAPACITY = 2					-- Default start task capacity for each MIO (may be overriden in DB)
 NDefines.NIndustrialOrganisation.DEFAULT_INITIAL_POLICY_ATTACH_COST = 50			-- Default start attach cost in PP for policies
 NDefines.NIndustrialOrganisation.DEFAULT_INITIAL_ATTACH_POLICY_COOLDOWN = 182		-- Default start cooldown in days after attaching a policy
+
