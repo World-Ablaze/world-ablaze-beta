@@ -11,8 +11,452 @@ country_event = {
 	desc = BBA_italy_second_italo_ethiopian_war.1.desc
 	picture = GFX_report_event_african_soldiers
 
-	
+
 }
+
+#START TEST
+############################
+### ITALIAN CW VIA FOCUS ###
+############################
+
+# Italian CW (triggered by focus) - Event for ITA
+country_event = {
+	id = BBA_italy_civil_war.300
+	title = BBA_italy_civil_war.1.t #intentional
+	desc = BBA_italy_civil_war.300.desc
+	picture = GFX_report_event_ITA_italian_civil_war
+	
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			set_country_flag = ITA_antifa_side_for_character_split_flag #For character split
+			ITA_set_special_characters_as_antifascists_effect = yes
+		}
+	}
+
+	# Communist always!
+	option = { 
+		name = BBA_italy_civil_war.1.c #intentional
+
+		ai_chance = {
+			base = 1
+			modifier = {
+				factor = 0
+				ITA_is_socialist_ai = yes
+			}
+		}
+
+		ITA_start_anti_fascist_civil_war = yes
+
+		ITA_promote_cln_to_country_leader_communism = yes
+
+		ITA_civil_war_deal_with_militias = yes
+
+		ITA_anti_fascist_civil_war_deal_with_fascist_side = yes
+	}
+	
+	#Mimimimi democratic
+	option = { 
+		name = BBA_italy_civil_war.1.d #intentional
+
+		ai_chance = {
+			base = 1
+			modifier = {
+				factor = 0
+				ITA_is_communist_ai = yes
+			}
+		}
+
+		ITA_start_anti_fascist_civil_war = yes
+
+		set_politics = { ruling_party = democratic }
+
+		ITA_promote_cln_to_country_leader_democratic = yes
+
+		ITA_civil_war_deal_with_militias = yes
+
+		ITA_anti_fascist_civil_war_deal_with_fascist_side = yes
+	}
+}
+#Gramsci gets a new leader trait
+country_event = {
+	id = BBA_italy_communist_events.09
+	title = BBA_italy_communist_events.09.t
+	desc = BBA_italy_communist_events.09.desc
+	picture = GFX_report_event_ITA_gramsci
+
+	fire_only_once = yes
+
+	is_triggered_only = yes
+
+	trigger = {
+		has_character = ITA_antonio_gramsci
+	}
+
+	#Ok
+	option = {
+		name = BBA_italy_communist_events.09.a
+		if = {	
+			limit = {
+				ITA_antonio_gramsci = { 
+					is_country_leader = yes
+				}
+			}
+			ITA_antonio_gramsci = {
+				swap_country_leader_traits = {
+					remove = indisposed_political_scientist
+					add = cultural_hegemony_theorist
+				}
+			}
+		}
+		else = {
+			effect_tooltip = {
+				remove_trait = {
+					character = ITA_antonio_gramsci
+					ideology = marxism
+					trait = indisposed_political_scientist
+				}
+				add_trait = {
+					character = ITA_antonio_gramsci
+					ideology = marxism
+					trait = cultural_hegemony_theorist
+				}
+			}
+			hidden_effect = {
+				ITA_antonio_gramsci = {
+					set_character_flag = ITA_improve_gramscis_trait_flag
+				}
+			}
+		}
+	}
+}
+country_event = {
+	id = BBA_italy_communist_events.01
+	title = BBA_italy_communist_events.01.t
+	desc = BBA_italy_communist_events.01.desc
+	picture = GFX_report_event_communists_in_riga
+
+	is_triggered_only = yes
+
+	#GRAMSCI (COMMIE)
+	option = {
+		name = BBA_italy_communist_events.01.a
+
+		ai_chance = {
+			base = 3
+		}
+
+		trigger = {
+			has_completed_focus = ITA_liberate_gramsci
+		}
+
+		hidden_effect = {
+			if = {
+				limit = {
+					ITA_comitato_di_liberazione_nazionale = {
+						has_ideology = marxism
+					}
+				}
+				remove_country_leader_role = {
+					character = ITA_comitato_di_liberazione_nazionale
+					ideology = marxism
+				}
+			}
+			if = {
+				limit = {
+					ITA_comitato_di_liberazione_nazionale = {
+						has_ideology = socialism
+					}
+				}
+				remove_country_leader_role = {
+					character = ITA_comitato_di_liberazione_nazionale
+					ideology = socialism
+				}
+			}
+		}
+		ITA_add_country_leader_role_to_gramsci = yes		
+	}
+
+	#TOGLIATTI (COMMUNIST)
+	option = {
+		name = BBA_italy_communist_events.01.b
+
+		ai_chance = {
+			base = 1
+		}
+
+		hidden_effect = {
+			remove_country_leader_role = {
+				character = ITA_comitato_di_liberazione_nazionale
+				ideology = marxism
+			} 
+		}
+		promote_character = ITA_palmiro_togliatti
+	}
+
+	#PERTINI (SOCIALIST)
+	option = {
+		name = BBA_italy_communist_events.01.c
+
+		ai_chance = {
+			base = 1
+		}
+
+		hidden_effect = {
+			remove_country_leader_role = {
+				character = ITA_comitato_di_liberazione_nazionale
+				ideology = marxism
+			} 
+		}
+		promote_character = ITA_sandro_pertini
+		set_party_name = {
+			ideology = communism
+			name = ITA_partito_socialista_italiano
+			long_name = ITA_partito_socialista_italiano_long
+		}
+	}
+}
+
+# International Aid arrives! - Event for ITA
+country_event = {
+	id = BBA_italy_communist_events.03
+	title = BBA_italy_communist_events.03.t
+	desc = BBA_italy_communist_events.03.desc
+	picture = GFX_report_event_generic_rifles
+
+	is_triggered_only = yes
+
+	#Send Help
+	option = {
+		name = BBA_italy_communist_events.03.a
+
+		custom_effect_tooltip = ITA_international_support_arrives_tt
+		add_equipment_to_stockpile = { 
+			type = infantry_equipment
+			amount = ROOT.ITA_infantry_equipment_from_leftist_aid
+			producer = ROOT
+		}
+		add_equipment_to_stockpile = { 
+			type = support_equipment
+			amount = ROOT.ITA_support_equipment_from_leftist_aid
+			producer = ROOT
+		}
+		add_equipment_to_stockpile = { 
+			type = motorized_equipment
+			amount = ROOT.ITA_trucks_from_leftist_aid
+			producer = ROOT
+		}
+		custom_effect_tooltip = ITA_international_support_consumer_goods_tt
+		hidden_effect = {
+			add_dynamic_modifier = { modifier = ITA_international_aid days = 730 } #WARNING this days value needs to match the one in the tooltip ITA_international_support_arrives_tt
+		}
+	}
+}
+
+# No International Aid received - Event for ITA
+country_event = {
+	id = BBA_italy_communist_events.04
+	title = BBA_italy_communist_events.04.t
+	desc = BBA_italy_communist_events.04.desc
+	picture = GFX_report_event_generic_rifles
+
+	is_triggered_only = yes
+
+	#Send Help
+	option = {
+		name = BBA_italy_communist_events.04.a
+
+		add_political_power = 25
+	}
+}
+
+# Military Cooperation - Event for Italian allies
+country_event = {
+	id = BBA_italy_communist_events.05
+	title = BBA_italy_communist_events.05.t
+	desc = BBA_italy_communist_events.05.desc
+	picture = GFX_report_event_soldiers_marching
+
+	is_triggered_only = yes
+
+	#Military Cooperation
+	option = {
+		name = BBA_italy_communist_events.05.a
+
+		if = {
+			limit = {
+				is_faction_leader = yes
+			}
+			army_experience = 25
+			air_experience = 25
+			navy_experience = 25
+
+			add_doctrine_cost_reduction = {
+				name = ITA_army_modernization
+				cost_reduction = 1
+				uses = 1
+				category = land_doctrine
+			}
+		}
+		else = {
+			army_experience = 15
+			air_experience = 15
+			navy_experience = 15
+
+			add_doctrine_cost_reduction = {
+				name = ITA_army_modernization
+				cost_reduction = 0.5
+				uses = 1
+				category = land_doctrine
+			}
+		}
+	}
+}
+country_event = {
+	id = BBA_italy_democratic_events.03
+	title = BBA_italy_democratic_events.03.t
+	desc = BBA_italy_democratic_events.03.desc
+	picture = GFX_report_event_gathering_protest
+
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			set_country_flag = ITA_country_is_aware_of_mafia_flag
+			country_event = { id = BBA_italy_democratic_events.04 days = 40 random_days = 20 }
+		}
+	}
+
+	#Su vieja
+	option = {
+		name = BBA_italy_democratic_events.03.a
+
+		if = { #SICILIA PRIO
+			limit = {
+				115 = {
+					controller = {
+						original_tag = ITA
+					}
+				}
+			}
+			115 = {
+				ITA_add_correct_mafia_rising_modifier_version = yes
+				set_variable = { ROOT.ITA_mafia_epicenter_state = THIS }
+			}
+		}
+		else_if = { #CAMPANIA next - Camorra Napolitana
+			limit = {
+				117 = {
+					controller = {
+						original_tag = ITA
+					}
+				}
+			}
+			117 = {
+				ITA_add_correct_mafia_rising_modifier_version = yes
+				set_variable = { ROOT.ITA_mafia_epicenter_state = THIS }
+			}
+		}
+		else_if = { #CALABRIA
+			limit = {
+				156 = {
+					controller = {
+						original_tag = ITA
+					}
+				}
+			}
+			156 = {
+				ITA_add_correct_mafia_rising_modifier_version = yes
+				set_variable = { ROOT.ITA_mafia_epicenter_state = THIS }
+			}
+		}
+		else = { #FALLBACK
+			random_state = {
+				limit = {
+					is_core_of = ITA
+					controller = {
+						original_tag = ITA
+					}
+				}
+				ITA_add_correct_mafia_rising_modifier_version = yes
+				set_variable = { ROOT.ITA_mafia_epicenter_state = THIS }
+			}
+		}
+	}
+}
+#Democratic Leadership - Event for ITA
+country_event = {
+	id = BBA_italy_democratic_events.01
+	title = BBA_italy_democratic_events.01.t
+	desc = BBA_italy_democratic_events.01.desc
+	picture = GFX_report_event_ITA_democratic_parlament
+
+	is_triggered_only = yes
+
+	#PARRI (Popolare)
+	option = {
+		name = BBA_italy_democratic_events.01.a
+
+		ai_chance = {
+			base = 1
+		}
+
+		hidden_effect = {
+			if = {
+				limit = {
+					ITA_comitato_di_liberazione_nazionale = {
+						has_ideology = marxism
+					}
+				}
+				remove_country_leader_role = {
+					character = ITA_comitato_di_liberazione_nazionale
+					ideology = marxism
+				}
+			}
+			if = {
+				limit = {
+					ITA_comitato_di_liberazione_nazionale = {
+						has_ideology = socialism
+					}
+				}
+				remove_country_leader_role = {
+					character = ITA_comitato_di_liberazione_nazionale
+					ideology = socialism
+				}
+			}
+		}
+		promote_character = ITA_ferruccio_parri
+	}
+
+	#BONOMI (Lavoro)
+	option = {
+		name = BBA_italy_democratic_events.01.b
+
+		ai_chance = {
+			base = 1
+		}
+
+		hidden_effect = {
+			remove_country_leader_role = {
+				character = ITA_comitato_di_liberazione_nazionale
+				ideology = marxism
+			} 
+		}
+		promote_character = ITA_ivanoe_bonomi
+		set_party_name = {
+			ideology = democratic
+			name = ITA_partito_democratico_del_lavoro
+			long_name = ITA_partito_democratico_del_lavoro_long
+		}
+	}
+}
+
+#
+#
+#
+#END TEST
+
 # Italy offer for peace - Event for ETH
 country_event = {
 	id = BBA_italy_second_italo_ethiopian_war.1
