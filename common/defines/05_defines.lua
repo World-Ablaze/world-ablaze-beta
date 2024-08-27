@@ -268,7 +268,7 @@ NDefines.NRailwayGun.ATTACK_TO_BOMBARDMENT_MODIFIER_FACTOR = 0						-- Bombardme
 
 
 NDefines.NTechnology.BASE_TECH_COST = 85											-- Base cost for a tech. multiplied with tech cost and ahead of time penalties
-NDefines.NTechnology.BASE_YEAR_AHEAD_PENALTY_FACTOR = 5								-- Base year ahead penalty
+NDefines.NTechnology.BASE_YEAR_AHEAD_PENALTY_FACTOR = 10								-- Base year ahead penalty
 NDefines.NTechnology.LICENSE_PRODUCTION_TECH_BONUS = 0								-- License production tech bonus
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Military
