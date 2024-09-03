@@ -3045,6 +3045,7 @@ country_event = {
 		NOT = { has_idea = civilian_economy }
 		NOT = { has_idea = low_economic_mobilisation }
 		has_completed_focus = HUN_renounce_the_treaty_of_trianon
+		surrender_progress < 0.05
 		OR = {
 			NOT = { country_exists = FRA }
 			FRA = { has_capitulated = yes }
@@ -3062,14 +3063,6 @@ country_event = {
 			modifier = {
 				factor = 0
 				is_in_faction_with = GER
-			}
-		}
-		effect_tooltip = {
-			HUN = {
-				transfer_state = 76
-				transfer_state = 84
-				transfer_state = 83
-				transfer_state = 82
 			}
 		}
 		custom_effect_tooltip = may_lead_to_war_with_romania
@@ -3198,6 +3191,17 @@ country_event = {
 				}
 				remove_from_faction = ROM
 			}
+		}
+		if = {
+			limit = {
+				ROM = { is_in_faction = no }
+			}
+			every_country = {
+				limit = {
+					is_in_faction_with = HUN
+				}
+				remove_from_faction = HUN
+			}
 			add_ideas = internal_conflict
 			ROM = { add_ideas = internal_conflict }
 		}
@@ -3206,9 +3210,17 @@ country_event = {
 			type = take_state_focus
 			generator = { 82 76 83 84 }
 		}
+		if = {
+			limit = {
+				ROM = { is_in_faction = no }
+			}
+			hidden_effect = {
+				activate_mission = HUN_war_for_transylvania
+				ROM = { activate_mission = ROM_war_for_transylvania }
+				news_event = { id = news.302 days = 1 }
+			}
+		}
 		hidden_effect = {
-			activate_mission = HUN_war_for_transylvania
-			ROM = { activate_mission = ROM_war_for_transylvania }
 			news_event = { id = news.302 days = 1 }
 		}
 		ai_chance = {
@@ -3336,6 +3348,10 @@ country_event = {
 		HUN = { 
 			white_peace = ROM
 			remove_ideas = internal_conflict
+			transfer_state = 76
+			transfer_state = 84
+			transfer_state = 83
+			transfer_state = 82
 		}
 		ROM = {
 			remove_ideas = internal_conflict
@@ -3356,8 +3372,34 @@ country_event = {
 
 	option = {
 		name = hun_armor.858.a
-		add_war_support = -0.1
-		ROM = { add_stability = 0.05 }
+		if = {
+			limit = {
+				HUN = { controls_state = 76 }
+			}
+			HUN = { transfer_state = 76 }
+			if = {
+				limit = {
+					HUN = { controls_state = 83 }
+				}
+				HUN = { transfer_state = 83 }
+			}
+			if = {
+				limit = {
+					HUN = { controls_state = 84 }
+				}
+				HUN = { transfer_state = 84 }
+			}
+			if = {
+				limit = {
+					HUN = { controls_state = 82 }
+				}
+				HUN = { transfer_state = 82 }
+			}
+		}
+		else = {
+			add_war_support = -0.1
+			ROM = { add_stability = 0.05 }
+		}
 		HUN = { 
 			white_peace = ROM
 			remove_ideas = internal_conflict
