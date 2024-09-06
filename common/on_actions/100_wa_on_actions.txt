@@ -1084,6 +1084,27 @@ on_actions = {
 		effect = {
 			if = {
 				limit = {
+					original_tag = YUG
+				}
+				every_state = {
+					limit = {
+						is_core_of = YUG
+						NOT = { is_core_of = CONTROLLER }
+						NOT = { has_state_flag = YUG_partisan_activity_destroyed }
+						NOT = { has_state_flag = YUG_dispersed_partisan_activity }
+						NOT = {
+							has_dynamic_modifier = {
+								modifier = YUG_organized_partisan_activity
+							}
+						}
+					}
+					add_dynamic_modifier = { modifier = YUG_organized_partisan_activity }
+				}
+			}
+		}
+		effect = {
+			if = {
+				limit = {
 					original_tag = GER
 					has_government = fascism
 					has_global_flag = GER_civil_war
@@ -1347,10 +1368,10 @@ on_actions = {
 					}
 				}
 				GER = {
-					add_to_variable = { GER_rk_production_speed_buildings_factor = 0.025 }
+					add_to_variable = { GER_rk_consumer_goods_expected_value = -0.005 }
 					if = {
 						limit = {
-							check_variable = { GER_rk_production_speed_buildings_factor = 0 compare = greater_than_or_equals }
+							check_variable = { GER_rk_consumer_goods_expected_value = 0 compare = less_than_or_equals }
 						}
 						remove_dynamic_modifier = {
 							modifier = GER_rk_obligations
@@ -1366,10 +1387,10 @@ on_actions = {
 					}
 				}
 				GER = {
-					add_to_variable = { GER_rk_production_speed_buildings_factor = 0.05 }
+					add_to_variable = { GER_rk_consumer_goods_expected_value = -0.01 }
 					if = {
 						limit = {
-							check_variable = { GER_rk_production_speed_buildings_factor = 0 compare = greater_than_or_equals }
+							check_variable = { GER_rk_consumer_goods_expected_value = 0 compare = less_than_or_equals }
 						}
 						remove_dynamic_modifier = {
 							modifier = GER_rk_obligations
@@ -1514,6 +1535,27 @@ on_actions = {
 	}
 
 	on_annex = {
+		effect = {
+			if = {
+				limit = {
+					original_tag = YUG
+				}
+				every_state = {
+					limit = {
+						is_core_of = YUG
+						NOT = { is_core_of = CONTROLLER }
+						NOT = { has_state_flag = YUG_partisan_activity_destroyed }
+						NOT = { has_state_flag = YUG_dispersed_partisan_activity }
+						NOT = {
+							has_dynamic_modifier = {
+								modifier = YUG_organized_partisan_activity
+							}
+						}
+					}
+					add_dynamic_modifier = { modifier = YUG_organized_partisan_activity }
+				}
+			}
+		}
 		effect = {
 			FROM = {
 				if = {
@@ -2046,6 +2088,24 @@ on_actions = {
 
 	#ROOT is new controller #FROM is old controller #FROM.FROM is state ID
 	on_state_control_changed = {
+		effect = {
+			if = {
+				limit = {
+					FROM.FROM = {
+						has_dynamic_modifier = { modifier = YUG_organized_partisan_activity }
+						CONTROLLER = {
+							OR = {
+								is_in_faction_with = YUG
+								tag = YUG
+							}
+						}
+					}
+				}
+				FROM.FROM = {
+					remove_dynamic_modifier = { modifier = YUG_organized_partisan_activity }
+				}
+			}
+		}
 		effect = {
 			if = {
 				limit = {
@@ -2925,7 +2985,6 @@ on_actions = {
 
 				set_variable = { greatest_airforce_fighters = num_deployed_planes_with_type@small_fighter_airframe }
 				add_to_variable = { greatest_airforce_fighters = num_deployed_planes_with_type@small_fighter_multirole_airframe }
-
 			}
 		}
 	}
