@@ -182,7 +182,7 @@ NDefines.NProduction.EQUIPMENT_MODULE_REMOVE_XP_COST = 2.0							-- XP cost for 
 
 NDefines.NProduction.LICENSE_IC_COST_YEAR_INCREASE = 0.25							-- IC cost equipment for every year of equipment after 1936
 
-NDefines.NProduction.CONVERSION_SPEED_BONUS = 3.0									-- Modifier to the production speed when converting equipment
+NDefines.NProduction.CONVERSION_SPEED_BONUS = 1.0									-- Modifier to the production speed when converting equipment
 NDefines.NProduction.MIN_NAVAL_EQUIPMENT_CONVERSION_IC_COST_FACTOR = 0.2			-- Fraction of the hull industry cost which is always included in the refitting cost.
 NDefines.NProduction.MIN_LAND_EQUIPMENT_CONVERSION_IC_COST_FACTOR = 0.9				-- Fraction of the chassis industry cost which is always included in the conversion cost.
 NDefines.NProduction.MIN_NAVAL_EQUIPMENT_CONVERSION_RESOURCE_COST_FACTOR = 0.2		-- Minimum fraction of a naval equipment's strategic resource cost that any conversion will cost.
