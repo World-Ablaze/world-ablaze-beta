@@ -1244,12 +1244,13 @@ NDefines_Graphics.NGraphics.DRAW_FOW_FADE_LENGTH = 0
 
 NDefines.NIndustrialOrganisation.ASSIGN_DESIGN_TEAM_PP_COST_PER_DAY = 0.04				-- Cost in Political Power daily generation when one MIO is assigned to a research slot
 NDefines.NIndustrialOrganisation.ASSIGN_INDUSTRIAL_MANUFACTURER_PP_COST_PER_DAY = 0.0 	-- Cost in Political Power daily generation when one MIO is assigned to a production line
--- NDefines.NIndustrialOrganisation.FUNDS_FOR_SIZE_UP = 1000							-- Funds needed for a MIO to increment its size and get points to unlock traits
--- NDefines.NIndustrialOrganisation.FUNDS_FOR_SIZE_UP_LEVEL_FACTOR = 0.8 				-- How much each level mutliplies the funds for size up
+NDefines.NIndustrialOrganisation.FUNDS_FOR_SIZE_UP = 600								-- Funds needed for a MIO to increment its size and get points to unlock traits
+NDefines.NIndustrialOrganisation.FUNDS_FOR_SIZE_UP_LEVEL_FACTOR = 400 					-- How much each level mutliplies the funds for size up
+NDefines.NIndustrialOrganisation.FUNDS_FOR_SIZE_UP_LEVEL_POW = 1.002 					-- the power we apply to the mio size when calculating funds to level up.
 NDefines.NIndustrialOrganisation.DESIGN_TEAM_CHANGE_XP_COST = 10						-- Flat cost added to the XP cost of a new equipment design
 NDefines.NIndustrialOrganisation.FUNDS_FOR_RESEARCH_COMPLETION_PER_RESEARCH_COST = 400  -- Funds added to MIO when the Design Team has completed a research, multiplied by research_cost in technology template
 NDefines.NIndustrialOrganisation.FUNDS_FOR_CREATING_EQUIPMENT_VARIANT = 25				-- Funds added to MIO when a new variant is created with the Design Team assigned to it
-NDefines.NIndustrialOrganisation.MAX_FUNDS_FROM_MANUFACTURER_PER_DAY = 12000				-- Max funds generated per manufacturer per day. Set to 0 for no Maximum.
+NDefines.NIndustrialOrganisation.MAX_FUNDS_FROM_MANUFACTURER_PER_DAY = 12000			-- Max funds generated per manufacturer per day. Set to 0 for no Maximum.
 NDefines.NIndustrialOrganisation.FUNDS_FROM_MANUFACTURER_PER_IC_PER_DAY = 0.2			-- Funds added to MIO when a manufacturer is attached to a production line. Added every day proportional to IC produced.
 -- NDefines.NIndustrialOrganisation.ENABLE_TASK_CAPACITY = true							-- Enable limited task capacity for MIOs
 -- NDefines.NIndustrialOrganisation.DEFAULT_INITIAL_TASK_CAPACITY = 2					-- Default start task capacity for each MIO (may be overriden in DB)
