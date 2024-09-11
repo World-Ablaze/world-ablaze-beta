@@ -262,6 +262,7 @@ NDefines.NRailwayGun.RAILWAY_GUN_RANGE = 15											-- The range of railway gu
 NDefines.NRailwayGun.ATTACK_TO_FORTS_MODIFIER_FACTOR = 1.0							-- Forts modifier is calculated by multiplying railway gun attack value with this and dividing by 100
 NDefines.NRailwayGun.ATTACK_TO_ENTRENCHMENT_MODIFIER_FACTOR = 1.39					-- Entrenchment modifier is calculated by multiplying railway gun attack value with this and dividing by 100
 NDefines.NRailwayGun.ATTACK_TO_BOMBARDMENT_MODIFIER_FACTOR = 0						-- Bombardment modifier is calculated by multiplying railway gun attack value with this and dividing by 100
+NDefines.NRailwayGun.ANNEX_RATIO = 1.0												-- How many railway guns will be transferred on annexation
 
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Technology
