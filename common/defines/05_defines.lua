@@ -1245,7 +1245,7 @@ NDefines_Graphics.NGraphics.DRAW_FOW_FADE_LENGTH = 0
 
 NDefines.NIndustrialOrganisation.ASSIGN_DESIGN_TEAM_PP_COST_PER_DAY = 0.04				-- Cost in Political Power daily generation when one MIO is assigned to a research slot
 NDefines.NIndustrialOrganisation.ASSIGN_INDUSTRIAL_MANUFACTURER_PP_COST_PER_DAY = 0.0 	-- Cost in Political Power daily generation when one MIO is assigned to a production line
-NDefines.NIndustrialOrganisation.FUNDS_FOR_SIZE_UP = 600								-- Funds needed for a MIO to increment its size and get points to unlock traits
+NDefines.NIndustrialOrganisation.FUNDS_FOR_SIZE_UP = 200								-- Funds needed for a MIO to increment its size and get points to unlock traits
 NDefines.NIndustrialOrganisation.FUNDS_FOR_SIZE_UP_LEVEL_FACTOR = 400 					-- How much each level mutliplies the funds for size up
 NDefines.NIndustrialOrganisation.FUNDS_FOR_SIZE_UP_LEVEL_POW = 1.002 					-- the power we apply to the mio size when calculating funds to level up.
 NDefines.NIndustrialOrganisation.DESIGN_TEAM_CHANGE_XP_COST = 10						-- Flat cost added to the XP cost of a new equipment design
