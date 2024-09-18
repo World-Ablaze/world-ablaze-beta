@@ -756,6 +756,7 @@ YUG_partisan_detachments = {
 				CONTROLLER = {
 					has_war_with = ROOT
 				}
+				resistance < 81
 			}
 			has_capitulated = yes
 		}
@@ -811,7 +812,7 @@ YUG_partisan_detachments = {
 				add_command_power = -5
 			}
 			FROM = {
-				add_resistance = 10
+				add_resistance = 20
 			}
 		}
 
@@ -1613,4 +1614,214 @@ YUG_progress_crushing_decisions = {
 		}
 	}
 
+}
+
+YUG_yugoslav_partisan_activity = {
+	YUG_dismantle_organized_partisan_activity = {
+		icon = generic_police_action
+		allowed = {
+		}
+
+		available = {
+			army_manpower_in_state = { state = FROM amount > 19999 }
+			divisions_in_state = {
+				state = FROM
+				size > 1
+			}
+			FROM = {
+				has_dynamic_modifier = { modifier = YUG_organized_partisan_activity }
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+				NOT = { has_state_flag = YUG_rooting_out_partisan_activity }
+			}
+		}
+
+		target_trigger = {
+			FROM = {
+				has_dynamic_modifier = { modifier = YUG_organized_partisan_activity }
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+		}
+
+		visible = {
+			FROM = {
+				has_dynamic_modifier = { modifier = YUG_organized_partisan_activity }
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+		}
+
+		cancel_trigger = {
+			army_manpower_in_state = { state = FROM amount < 19999 }
+			divisions_in_state = {
+				state = FROM
+				size < 2
+			}
+		}
+
+		cost = 0
+
+		fire_only_once = no
+		custom_cost_trigger = {
+			command_power > 4
+		}
+		custom_cost_text = custom_cost_5_cp
+
+		ai_will_do = {
+			factor = 400
+		}
+
+		days_remove = 120
+
+		state_target = yes
+
+		cancel_if_not_visible = yes
+
+		on_map_mode = map_and_decisions_view
+
+		modifier = {
+		}
+
+		complete_effect = {
+			FROM = {
+				set_state_flag = YUG_rooting_out_partisan_activity
+			}
+		}
+
+		cancel_effect = {
+			FROM = {
+				clr_state_flag = YUG_rooting_out_partisan_activity
+			}
+		}
+
+		remove_effect = {
+			damage_units = {
+				state = FROM
+				damage = 0.2
+				ratio = yes
+				army = yes
+			}
+			FROM = {
+				clr_state_flag = YUG_rooting_out_partisan_activity
+				set_state_flag = YUG_dispersed_partisan_activity
+				remove_dynamic_modifier = { modifier = YUG_organized_partisan_activity }
+				add_dynamic_modifier = { modifier = YUG_dispersed_partisan_activity }
+			}
+		}
+	}
+	YUG_counter_partisan_activity = {
+		icon = generic_police_action
+		allowed = {
+		}
+
+		available = {
+			army_manpower_in_state = { state = FROM amount > 9999 }
+			divisions_in_state = {
+				state = FROM
+				size > 0
+			}
+			FROM = {
+				has_dynamic_modifier = { modifier = YUG_dispersed_partisan_activity }
+				has_state_flag = YUG_dispersed_partisan_activity
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+				NOT = { has_state_flag = YUG_rooting_out_partisan_activity }
+			}
+			has_war = no
+		}
+
+		target_trigger = {
+			FROM = {
+				has_dynamic_modifier = { modifier = YUG_dispersed_partisan_activity }
+				has_state_flag = YUG_dispersed_partisan_activity
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+		}
+
+		visible = {
+			FROM = {
+				has_dynamic_modifier = { modifier = YUG_dispersed_partisan_activity }
+				has_state_flag = YUG_dispersed_partisan_activity
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+		}
+
+		cancel_trigger = {
+			army_manpower_in_state = { state = FROM amount < 9999 }
+			divisions_in_state = {
+				state = FROM
+				size < 1
+			}
+		}
+
+		cost = 0
+
+		fire_only_once = no
+		custom_cost_trigger = {
+			command_power > 4
+		}
+		custom_cost_text = custom_cost_5_cp
+
+		ai_will_do = {
+			factor = 400
+		}
+
+		days_remove = 120
+
+		state_target = yes
+
+		cancel_if_not_visible = yes
+
+		on_map_mode = map_and_decisions_view
+
+		modifier = {
+		}
+
+		complete_effect = {
+			FROM = {
+				set_state_flag = YUG_rooting_out_partisan_activity
+			}
+		}
+
+		cancel_effect = {
+			FROM = {
+				clr_state_flag = YUG_rooting_out_partisan_activity
+			}
+		}
+
+		remove_effect = {
+			FROM = {
+				clr_state_flag = YUG_rooting_out_partisan_activity
+				set_state_flag = YUG_partisan_activity_destroyed
+				remove_dynamic_modifier = { modifier = YUG_dispersed_partisan_activity }
+			}
+		}
+	}
 }
