@@ -400,6 +400,12 @@ WA_SOV_ground_production_strategy_late = {
 		id = artillery
 		value = 30
 	}
+	
+	ai_strategy = {
+		type = equipment_variant_production_factor
+		id = infantry_equipment
+		value = 10
+	}
 
 	ai_strategy = {
 		type = equipment_production_factor
@@ -410,7 +416,7 @@ WA_SOV_ground_production_strategy_late = {
 	ai_strategy = {
 		type = equipment_production_factor
 		id = armor
-		value = 25
+		value = 15
 	}
 
 	ai_strategy = {
@@ -422,7 +428,7 @@ WA_SOV_ground_production_strategy_late = {
 	ai_strategy = {
 		type = equipment_variant_production_factor
 		id = medium_tank_chassis
-		value = 20
+		value = 15
 	}
 
 	ai_strategy = {
@@ -1019,6 +1025,40 @@ default_army_size_usa_tanks = {
 	}
 }
 
+Allies_need_more_infantry_stuff_now = {
+	allowed = {
+		OR = {
+			original_tag = USA
+			original_tag = ENG
+			original_tag = CAN
+		}
+	}
+	enable = {
+		AND = {
+			date > 1944.1.1
+			OR = {
+				6 = { CONTROLLER = { is_in_faction_with = ROOT } }
+				29 = { CONTROLLER = { is_in_faction_with = ROOT } }
+				785 = { CONTROLLER = { is_in_faction_with = ROOT } }
+				15 = { CONTROLLER = { is_in_faction_with = ROOT } }
+				14 = { CONTROLLER = { is_in_faction_with = ROOT } }
+				30 = { CONTROLLER = { is_in_faction_with = ROOT } }
+				23 = { CONTROLLER = { is_in_faction_with = ROOT } }
+				19 = { CONTROLLER = { is_in_faction_with = ROOT } }
+				1016 = { CONTROLLER = { is_in_faction_with = ROOT } }
+			}
+		}
+		has_war_with = GER
+	}
+	
+	abort_when_not_enabled = yes
+	
+	ai_strategy = {
+		type = air_factory_balance
+		value = -100
+	}
+}
+
 WA_USA_lend_lease_production_early = {
 	allowed = {
 		original_tag = USA
@@ -1119,22 +1159,32 @@ WA_USA_lend_lease_production = {
 	ai_strategy = {
 		type = equipment_variant_production_factor
 		id = heavy_infantry_equipment
-		value = 100
+		value = 150
+	}
+	ai_strategy = {
+		type = equipment_production_min_factories
+		id = anti_air
+		value = 4
+	}
+	ai_strategy = {
+		type = equipment_production_min_factories
+		id = anti_tank
+		value = 3
 	}
 	ai_strategy = {
 		type = equipment_variant_production_factor
 		id = support_equipment
-		value = 125
+		value = 200
 	}
 	ai_strategy = {
 		type = equipment_variant_production_factor
 		id = infantry_equipment
-		value = 125
+		value = 200
 	}
 	ai_strategy = {
 		type = equipment_variant_production_factor
 		id = anti_tank_equipment
-		value = 125
+		value = 150
 	}
 	ai_strategy = {
 		type = equipment_variant_production_factor
@@ -1144,17 +1194,32 @@ WA_USA_lend_lease_production = {
 	ai_strategy = {
 		type = equipment_variant_production_factor
 		id = artillery_equipment
-		value = 125
+		value = 150
 	}
 	ai_strategy = {
 		type = equipment_variant_production_factor
 		id = mechanized_equipment
-		value = 125
+		value = 20
 	}
 	ai_strategy = {
 		type = equipment_variant_production_factor
 		id = mechanized_td_equipment
 		value = 25
+	}
+	ai_strategy = {
+		type = equipment_variant_production_factor
+		id = mechanized_artillery_equipment
+		value = 25
+	}
+	ai_strategy = {
+		type = equipment_variant_production_factor
+		id = mechanized_aa_equipment
+		value = 25
+	}
+	ai_strategy = {
+		type = equipment_variant_production_factor
+		id = medium_tank_chassis
+		value = 20
 	}
 	ai_strategy = {
 		type = equipment_variant_production_factor
@@ -1300,12 +1365,12 @@ WA_CZE_ground_production_strategy_default = {
 	ai_strategy = {
 		type = equipment_production_factor
 		id = armor
-		value = 20
+		value = 10
 	}
 	ai_strategy = {
 		type = equipment_production_min_factories
 		id = artillery
-		value = 5
+		value = 3
 	}
 }
 
@@ -1330,15 +1395,12 @@ default_army_size_usa = {
 				}
 			}
 			has_army_size = {
-				size > 199
+				size > 39
 				type = infantry
 			}
 		}
 		else = {
-			has_army_size = {
-				size > 129
-				type = infantry
-			}
+			always = yes
 		}
 	}
 
@@ -1350,17 +1412,17 @@ default_army_size_usa = {
 		value = -1
 	}
 
-	ai_strategy = {
-		type = build_army
-		id = mechanized
-		value = -1
-	}
+	#ai_strategy = {
+	#	type = build_army
+	#	id = mechanized
+	#	value = -1
+	#}
 
-	ai_strategy = {
-		type = build_army
-		id = motorized
-		value = -1
-	}
+	#ai_strategy = {
+	#	type = build_army
+	#	id = motorized
+	#	value = -1
+	#}
 
 	ai_strategy = {
 		type = build_army
@@ -1371,6 +1433,52 @@ default_army_size_usa = {
 	ai_strategy = {
 		type = build_army
 		id = mountaineers
+		value = -1
+	}
+}
+
+default_army_size_usa_mech = {
+	allowed = {
+		tag = USA
+	}
+	enable = {
+		if = {
+			limit = {
+				OR = {
+					has_global_flag = soviet_union_defeated
+					has_idea = USA_homeland_defense
+					SOV = {
+						OR = {
+							has_capitulated = yes
+							exists = no
+						}
+					}
+				}
+			}
+			has_army_size = {
+				size > 149
+				type = mechanized
+			}
+		}
+		else = {
+			has_army_size = {
+				size > 119
+				type = mechanized
+			}
+		}
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = build_army
+		id = mechanized
+		value = -1
+	}
+
+	ai_strategy = {
+		type = build_army
+		id = motorized
 		value = -1
 	}
 }
@@ -1451,6 +1559,32 @@ default_army_size_jap_tanks = {
 default_army_size_eng = {
 	allowed = {
 		tag = ENG
+	}
+	enable = {
+		has_army_size = {
+			size > 99
+			type = infantry
+		}
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = build_army
+		id = infantry
+		value = -1
+	}
+
+	ai_strategy = {
+		type = build_army
+		id = garrison
+		value = -1
+	}
+}
+
+default_army_size_raj = {
+	allowed = {
+		tag = RAJ
 	}
 	enable = {
 		has_army_size = {
@@ -1752,6 +1886,7 @@ default_army_size = {
 			tag = ROM
 			tag = HUN
 			tag = JAP
+			tag = RAJ
 		}
 	}
 	enable = {
@@ -1995,7 +2130,7 @@ default_army_size_sov_tank = {
 	enable = {
 		OR = {
 			has_army_size = {
-				size > 54
+				size > 49
 				type = armor
 			}
 			NOT = {

@@ -6,6 +6,9 @@ on_actions = {
 			}
 		}
 		effect = {
+			set_global_flag = new_save_game_started ########remove in the next big patch
+		}
+		effect = {
 			every_country = {
 				## Steel ##
 				set_variable = {this.open_steel_mill_target = 0 }
@@ -250,7 +253,7 @@ on_actions = {
 				every_army_leader = {
 					limit = {
 						NOT = {
-							has_trait = incompetent
+							has_trait = incompetent_unit_leader
 						}
 					}
 					add_unit_leader_trait = inadequate_army_trait
@@ -329,9 +332,11 @@ on_actions = {
 						is_core_of = BRM
 						is_core_of = PAL
 						is_core_of = JOR
-						is_core_of = TAN
+						#is_core_of = TAN
 						is_on_continent = africa
 						is_on_continent = south_america
+						state = 721
+						state = 634
 					}
 					# CHI
 					NOT = { state = 613 }
@@ -700,6 +705,26 @@ on_actions = {
 		effect = {
 			if = {
 				limit = {
+					is_major = yes
+					all_enemy_country = {
+						ic_ratio = {
+							tag = ROOT
+							ratio < 0.75
+						}
+						OR = {
+							original_tag = CHI
+							original_tag = PRC
+							is_major = no
+						}
+					}
+					NOT = { has_idea = inferior_enemy }
+				}
+				add_ideas = inferior_enemy
+			}
+		}
+		effect = {
+			if = {
+				limit = {
 					tag = SOV
 					SOV = {
 						has_global_flag = sov_yes_pact
@@ -1050,6 +1075,27 @@ on_actions = {
 		effect = {
 			if = {
 				limit = {
+					original_tag = YUG
+				}
+				every_state = {
+					limit = {
+						is_core_of = YUG
+						NOT = { is_core_of = CONTROLLER }
+						NOT = { has_state_flag = YUG_partisan_activity_destroyed }
+						NOT = { has_state_flag = YUG_dispersed_partisan_activity }
+						NOT = {
+							has_dynamic_modifier = {
+								modifier = YUG_organized_partisan_activity
+							}
+						}
+					}
+					add_dynamic_modifier = { modifier = YUG_organized_partisan_activity }
+				}
+			}
+		}
+		effect = {
+			if = {
+				limit = {
 					original_tag = GER
 					has_government = fascism
 					has_global_flag = GER_civil_war
@@ -1313,10 +1359,10 @@ on_actions = {
 					}
 				}
 				GER = {
-					add_to_variable = { GER_rk_production_speed_buildings_factor = 0.025 }
+					add_to_variable = { GER_rk_consumer_goods_expected_value = -0.005 }
 					if = {
 						limit = {
-							check_variable = { GER_rk_production_speed_buildings_factor = 0 compare = greater_than_or_equals }
+							check_variable = { GER_rk_consumer_goods_expected_value = 0 compare = less_than_or_equals }
 						}
 						remove_dynamic_modifier = {
 							modifier = GER_rk_obligations
@@ -1332,10 +1378,10 @@ on_actions = {
 					}
 				}
 				GER = {
-					add_to_variable = { GER_rk_production_speed_buildings_factor = 0.05 }
+					add_to_variable = { GER_rk_consumer_goods_expected_value = -0.01 }
 					if = {
 						limit = {
-							check_variable = { GER_rk_production_speed_buildings_factor = 0 compare = greater_than_or_equals }
+							check_variable = { GER_rk_consumer_goods_expected_value = 0 compare = less_than_or_equals }
 						}
 						remove_dynamic_modifier = {
 							modifier = GER_rk_obligations
@@ -1480,6 +1526,27 @@ on_actions = {
 	}
 
 	on_annex = {
+		effect = {
+			if = {
+				limit = {
+					original_tag = YUG
+				}
+				every_state = {
+					limit = {
+						is_core_of = YUG
+						NOT = { is_core_of = CONTROLLER }
+						NOT = { has_state_flag = YUG_partisan_activity_destroyed }
+						NOT = { has_state_flag = YUG_dispersed_partisan_activity }
+						NOT = {
+							has_dynamic_modifier = {
+								modifier = YUG_organized_partisan_activity
+							}
+						}
+					}
+					add_dynamic_modifier = { modifier = YUG_organized_partisan_activity }
+				}
+			}
+		}
 		effect = {
 			FROM = {
 				if = {
@@ -2012,6 +2079,44 @@ on_actions = {
 
 	#ROOT is new controller #FROM is old controller #FROM.FROM is state ID
 	on_state_control_changed = {
+		effect = {
+			if = {
+				limit = {
+					FROM.FROM = {
+						has_dynamic_modifier = { modifier = YUG_organized_partisan_activity }
+						CONTROLLER = {
+							OR = {
+								is_in_faction_with = YUG
+								tag = YUG
+							}
+						}
+					}
+				}
+				FROM.FROM = {
+					remove_dynamic_modifier = { modifier = YUG_organized_partisan_activity }
+				}
+			}
+		}
+		effect = {
+			if = {
+				limit = {
+					FROM.FROM = {
+						OR = {
+							state = 629
+							state = 631
+							state = 630
+						}
+					}
+				}
+				FROM.FROM = {
+					set_state_flag = {
+						flag = recent_controller_change
+						days = 45
+						value = 1
+					}
+				}
+			}
+		}
 		effect = {
 			if = {
 				limit = {
@@ -2868,6 +2973,10 @@ on_actions = {
 
 				set_variable = { sov_cur_str = num_deployed_planes_with_type@strike_bomber_equipment }
 				add_to_variable = { greatest_airforce_tac = sov_cur_str }
+
+				set_variable = { greatest_airforce_fighters = num_deployed_planes_with_type@fighter_equipment }
+				add_to_variable = { greatest_airforce_fighters = num_deployed_planes_with_type@fighter_multirole_equipment }
+
 			}
 		}
 	}
@@ -3405,6 +3514,17 @@ on_actions = {
 				add_to_variable = { ENG_modernization_of_the_royal_airforce_bombers = eng_mod_pat }
 			}
 		}
+		effect = {
+			if = {
+				limit = { has_active_mission = ENG_rejuvenate_the_royal_navy }
+
+				set_variable = { ENG_royal_navy_carriers = num_ships_with_type@carrier }
+				subtract_from_variable = { ENG_royal_navy_carriers = num_ships_with_type@light_carrier }
+
+				set_variable = { ENG_royal_navy_submarines = num_ships_with_type@submarine }
+				subtract_from_variable = { ENG_royal_navy_submarines = num_ships_with_type@cruiser_submarine }
+			}
+		}
 	}
 	on_weekly_ITA = {
 		effect = {
@@ -3467,9 +3587,20 @@ on_actions = {
 		effect = {
 			if = {
 				limit = {
+					OR = {
+						has_idea = USA_FY42_plan
+						has_idea = USA_FY40_plan
+					}
+				}
+				set_variable = { usa_plan_cv = num_ships_with_type@carrier }
+				subtract_from_variable = { usa_plan_cv = num_ships_with_type@light_carrier }
+			}
+		}
+		effect = {
+			if = {
+				limit = {
 					has_idea = USA_FY42_plan
 				}
-				log = "I'm working"
 				set_variable = {
 					new_total_light_ships = num_ships_with_type@destroyer
 				}
@@ -3986,7 +4117,7 @@ on_actions = {
 					if = {
 						limit = {
 							NOT = {
-								has_trait = incompetent
+								has_trait = incompetent_unit_leader
 							}
 						}
 						add_unit_leader_trait = inadequate_army_trait
@@ -4008,7 +4139,7 @@ on_actions = {
 					if = {
 						limit = {
 							NOT = {
-								has_trait = incompetent
+								has_trait = incompetent_unit_leader
 							}
 						}
 						add_unit_leader_trait = inadequate_army_trait
@@ -4030,7 +4161,7 @@ on_actions = {
 					if = {
 						limit = {
 							NOT = {
-								has_trait = incompetent
+								has_trait = incompetent_unit_leader
 							}
 						}
 						add_unit_leader_trait = inadequate_army_trait
