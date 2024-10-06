@@ -1,0 +1,160 @@
+
+
+FIN_kallio_becomes_country_leader = {
+	retire_country_leader = yes
+	effect_tooltip = { #Kyosti Kallio will automatically be the next in line after Svinhufvud, so this is just for tooltip purposes
+		promote_character = FIN_kyosti_kallio
+	}
+	#Set Maalaisliitto (Agrarian League) as Non-Aligned party
+	set_party_name = {
+		ideology = democratic
+		name = FIN_neutrality_party
+		long_name = FIN_neutrality_party_long
+	}
+}
+
+FIN_ryti_becomes_country_leader = {
+	retire_country_leader = yes
+	effect_tooltip = { #Risto Ryti will automatically be the next in line after Kallio, so this is just for tooltip purposes
+		promote_character = FIN_risto_heikki_ryti
+	}
+	#Set National Progressive Party as Non-Aligned party
+	set_party_name = {
+		ideology = democratic
+		name = FIN_neutrality_party_progressive
+		long_name = FIN_neutrality_party_progressive_long
+	}
+}
+
+FIN_paasikivi_becomes_country_leader = {
+	if = {
+		limit = {
+			has_country_leader = {
+				ruling_only = yes
+				character = FIN_risto_heikki_ryti
+			}
+		}
+		retire_country_leader = yes
+	}
+	else_if = {
+		limit = {
+			has_country_leader = {
+				ruling_only = yes
+				character = FIN_carl_mannerheim
+			}
+		}
+		remove_country_leader_role = { #Removing country role on Mannerheim (instead of retiring) since he should still be a military guy.
+			character = FIN_carl_mannerheim
+			ideology = conservatism
+		}
+	}
+
+	#Paasikivi should usually be the next in line after Ryti or Mannerheim, but just in case due to Mannerheim intereference
+	promote_character = FIN_juho_kusti_paasikivi
+
+	#Set Kokoomus as Non-Aligned party
+	set_party_name = {
+		ideology = democratic
+		name = FIN_neutrality_party_kokoomus
+		long_name = FIN_neutrality_party_kokoomus_long
+	}
+}
+
+FIN_mannerheim_becomes_country_leader = {
+	#In this case we do want to keep the political leaders (Ryti or Paasikivi)
+	add_country_leader_role = {
+		character = FIN_carl_mannerheim
+		country_leader = {
+			ideology = conservatism
+			expire = "1965.1.1.1"
+			traits = {
+				sotamarsalkka
+			}
+		}
+		promote_leader = yes
+	}
+	promote_character = FIN_carl_mannerheim
+	#Set National Progressive Party as Non-Aligned party
+	set_party_name = {
+		ideology = democratic
+		name = FIN_neutrality_party_military
+		long_name = FIN_neutrality_party_military_long
+	}
+}
+
+FIN_seize_weapon_caches = { #Used on the state scope
+	remove_dynamic_modifier = { modifier = FIN_weapon_caches_modifier }
+	ROOT = {
+		random_list = {
+			#log = yes
+			25 = {
+				add_equipment_to_stockpile = {
+					type = infantry_equipment
+					amount = 15
+					producer = FIN
+				}
+			}
+			25 = {
+				add_equipment_to_stockpile = {
+					type = infantry_equipment
+					amount = 35
+					producer = FIN
+				}
+			}
+			25 = {
+				add_equipment_to_stockpile = {
+					type = infantry_equipment
+					amount = 50
+					producer = FIN
+				}
+			}
+			25 = {
+				add_equipment_to_stockpile = {
+					type = infantry_equipment
+					amount = 65
+					producer = FIN
+				}
+				add_equipment_to_stockpile = {
+					type = support_equipment
+					amount = 35
+					producer = FIN
+				}
+			}
+		}
+	}
+}
+
+
+### CONTINUATION WAR
+
+FIN_pact_for_continuation_war_start = { #To be used on FIN's scope - Used immediately upon signing agreement
+	FIN = {
+		if = {
+			limit = {
+				NOT = { gives_military_access_to = GER }
+			}
+			give_military_access = GER
+		}
+		diplomatic_relation = {
+			country = GER
+			relation = docking_rights
+			active = yes
+		}
+		if = {
+			limit = {
+				NOT = { has_non_aggression_pact_with = GER }
+			}
+			diplomatic_relation = {
+				country = GER
+				relation = non_aggression_pact
+				active = yes
+			}
+		}
+	}
+	if = {
+		limit = {
+			GER = { NOT = { has_guaranteed = FIN } }
+		}
+		GER = { give_guarantee = FIN }
+	}
+}
