@@ -17,6 +17,9 @@ country_event = {
 	immediate = {
 		set_country_flag = motorized_template_sov
 		set_country_flag = infantry_template_sov
+		set_technology = {
+			sov_medium_tank_spg_2 = 1
+		}
 
 		division_template = {
 			name = "Soviet Rifle Division"
@@ -1305,6 +1308,11 @@ country_event = {
 				NOT = { has_global_flag = uk_evacuated }
 				NOT = { has_global_flag = GER_SOV_ceasefire }
 				has_completed_focus = SOV_eradicate_western_fascism
+			}
+			AND = {
+				date > 1941.6.1
+				NOT = { has_global_flag = uk_evacuated }
+				ENG = { surrender_progress > 0.2 }
 			}
 			AND = {
 				date > 1941.1.1
@@ -5177,6 +5185,7 @@ country_event = {
 	option = {
 		name = sov_armor.858.a
 		add_stability = 0.1
+		add_timed_idea = { idea = rebuild_the_nation days = 180 }
 		SOV = {
 			transfer_state = 146
 			transfer_state = 1044
@@ -5232,6 +5241,7 @@ country_event = {
 	option = {
 		name = sov_armor.850.a
 		add_stability = 0.2
+		add_timed_idea = { idea = rebuild_the_nation days = 180 }
 		SOV = {
 			white_peace = FIN
 			add_war_support = -0.2
@@ -5571,18 +5581,26 @@ country_event = {
 
 	trigger = {
 		tag = SOV
-		OR = {
-			has_tech = industry_infrastructure3
-			date > 1939.10.1
-		}
+		date > 1939.11.1
 		NOT = { has_tech = expanded_industry4 } #for save games, REMOVE FOR 8.1
 	}
 
 	immediate = {
 		hidden_effect = {
-			add_timed_idea = {
-				idea = SOV_worker_shortage
-				days = 700
+			if = {
+				limit = {
+					has_aat = yes
+				}
+				add_timed_idea = {
+					idea = SOV_worker_shortage_mio
+					days = 600
+				}
+			}
+			else = {
+				add_timed_idea = {
+					idea = SOV_worker_shortage
+					days = 600
+				}
 			}
 		}
 	}
@@ -5590,9 +5608,20 @@ country_event = {
 	option = {
 		name = sov_armor.859.a
 		effect_tooltip = {
-			add_timed_idea = {
-				idea = SOV_worker_shortage
-				days = 700
+			if = {
+				limit = {
+					has_aat = yes
+				}
+				add_timed_idea = {
+					idea = SOV_worker_shortage_mio
+					days = 600
+				}
+			}
+			else = {
+				add_timed_idea = {
+					idea = SOV_worker_shortage
+					days = 600
+				}
 			}
 		}
 		ai_chance = {
@@ -5703,6 +5732,158 @@ country_event = {
 		effect_tooltip = {
 			remove_ideas = officers_purged_10
 		}
+	}
+}
+
+####################################### River War failed
+
+country_event = {
+	id = sov_armor.861
+	title = sov_armor.861.t
+	desc = {
+		text = sov_armor.861.da
+		trigger = {
+			has_country_flag = SOV_winter_war_phyrric_victory
+		}
+	}
+	desc = {
+		text = sov_armor.861.db
+		trigger = {
+			NOT = { has_country_flag = SOV_winter_war_phyrric_victory }
+		}
+	}
+
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			set_global_flag = SOV_ww_over
+		}
+	}
+
+	#partial failure
+	option = {
+		name = sov_armor.861.a
+		trigger = {
+			has_country_flag = SOV_winter_war_phyrric_victory
+		}
+		ai_chance = {
+			factor = 1
+		}
+		effect_tooltip = {
+			transfer_state = 146
+			transfer_state = 1044
+			transfer_state = 1045
+			1045 = { set_state_name = "Koivisto" }
+			white_peace = ROM
+			add_war_support = -0.2
+			add_stability = -0.1
+			army_experience = 50
+			ROM = {
+				add_stability = 0.1
+			}
+		}
+		ROM = { country_event = { id = sov_armor.862 hours = 6 } }
+	}
+
+	#complete failure
+	option = {
+		name = sov_armor.861.b
+		trigger = {
+			NOT = { has_country_flag = SOV_winter_war_phyrric_victory }
+		}
+		ai_chance = {
+			factor = 1
+		}
+		effect_tooltip = {
+			white_peace = ROM
+			add_war_support = -0.3
+			add_stability = -0.2
+			ROM = {
+				add_stability = 0.2
+			}
+		}
+		ROM = { country_event = { id = sov_armor.863 hours = 6 } }
+	}
+
+	#War goes on
+	option = {
+		name = sov_armor.861.c
+		ai_chance = {
+			factor = 0
+		}
+		add_political_power = -150
+		add_war_support = -0.5
+		effect_tooltip = {
+			ROM = {
+				add_war_support = 0.2
+			}
+		}
+		ROM = { country_event = { id = sov_armor.864 hours = 6 } }
+	}
+}
+
+#SU phyrric win
+country_event = {
+	id = sov_armor.862
+	title = sov_armor.862.t
+	desc = sov_armor.862.d
+
+	is_triggered_only = yes
+
+	immediate = {
+	}
+
+	option = {
+		name = sov_armor.862.a
+		add_stability = 0.1
+		SOV = {
+			transfer_state = 80
+			transfer_state = 78
+			transfer_state = 766
+			army_experience = 25
+			white_peace = ROM
+			add_war_support = -0.1
+			add_stability = -0.05
+		}
+	}
+}
+
+#SU loses and wants peace
+country_event = {
+	id = sov_armor.863
+	title = sov_armor.863.t
+	desc = sov_armor.863.d
+
+	is_triggered_only = yes
+
+	immediate = {
+	}
+	option = {
+		name = sov_armor.863.a
+		add_stability = 0.2
+		SOV = {
+			white_peace = ROM
+			add_war_support = -0.2
+			add_stability = -0.1
+		}
+	}
+}
+
+#SU doesnt want peace
+country_event = {
+	id = sov_armor.864
+	title = sov_armor.864.t
+	desc = sov_armor.864.d
+
+	is_triggered_only = yes
+
+	immediate = {
+	}
+
+	option = {
+		name = sov_armor.864.a
+		add_war_support = 0.2
 	}
 }
 

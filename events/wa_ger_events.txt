@@ -2481,7 +2481,7 @@ country_event = {
 						artillery_brigade = { x = 3 y = 0 }
 						artillery_brigade = { x = 3 y = 1 }
 						artillery_brigade = { x = 3 y = 2 }
-						
+
 						anti_tank_brigade = { x = 3 y = 3 }
 						anti_tank_brigade = { x = 3 y = 4 }
 
@@ -5012,8 +5012,8 @@ country_event = {
 				ship_secondaries_slot_3 = ger_ship_light_secondaries_6_6x2
 				ship_secondaries_slot_4 = ger_ship_light_secondaries_6_2x1
 				ship_anti_air_slot_1 = ger_ship_anti_air_1_20x1
-				ship_anti_air_slot_2 = ger_ship_large_anti_air_3_6x2
-				ship_anti_air_slot_3 = ger_ship_large_anti_air_3_6x2
+				ship_anti_air_slot_2 = ger_ship_anti_air_1_20x1
+				ship_anti_air_slot_3 = ger_ship_large_anti_air_3_4x2
 				ship_anti_air_slot_4 = ger_ship_large_anti_air_3_4x2
 				airplane_catapult_slot_1 = ship_airplane_launcher_1
 			}
@@ -5063,7 +5063,7 @@ country_event = {
 				ship_secondaries_slot_3 = ger_ship_light_secondaries_2_4x2
 				ship_anti_air_slot_1 = ger_ship_anti_air_1_10x1
 				ship_anti_air_slot_2 = ger_ship_anti_air_1_4x2
-				torpedo_slot_1 = ger_ship_torpedo_1_2x4
+				torpedo_slot_1 = ger_ship_side_torpedo_1_2x4
 				airplane_catapult_slot_1 = ship_airplane_launcher_1
 			}
 		}
@@ -5085,8 +5085,8 @@ country_event = {
 				ship_anti_air_slot_1 = ger_ship_anti_air_1_20x1
 				ship_anti_air_slot_2 = ger_ship_large_anti_air_3_6x2
 				ship_anti_air_slot_3 = ger_ship_large_anti_air_3_6x2
-				torpedo_slot_1 = ger_ship_torpedo_1_2x3
-				torpedo_slot_2 = ger_ship_torpedo_1_2x3
+				torpedo_slot_1 = ger_ship_side_torpedo_1_2x3
+				torpedo_slot_2 = ger_ship_side_torpedo_1_2x3
 				airplane_catapult_slot_1 = ship_airplane_launcher_1
 			}
 		}
@@ -5097,7 +5097,7 @@ country_event = {
 			parent_version = 0
 			modules = {
 				fixed_ship_engine_slot = ger_semi_medium_ship_engine_1
-				fixed_ship_fire_control_system_slot = ship_sonar_2
+				fixed_ship_fire_control_system_slot = ship_fire_control_system_2
 				fixed_ship_radar_slot = ship_radar_2
 				fixed_ship_armor_slot = ship_armor_50_40
 				ship_battery_slot_1 = ger_ship_semi_medium_battery_10_x1
@@ -5536,7 +5536,1417 @@ country_event = {
 
 
 
+
+
+################################################# Fate of YUG Germany
+
+
+
+
+
+country_event = {
+	id = ger_armor.711
+	title = ger_armor.711.t
+	desc = ger_armor.711.d
+
+	is_triggered_only = yes
+
+	option = {
+		name = ger_armor.711.a
+		ai_chance = {
+			factor = 10
+		}
+		trigger = {
+			OR = {
+				is_in_faction_with = ITA
+				is_in_faction_with = HUN
+				is_in_faction_with = BUL
+			}
+		}
+		economy_fatigue_level_down_4 = yes
+		if = {
+			limit = {
+				CRO = { exists = no }
+			}
+			release = CRO
+		}
+		CRO = {
+			transfer_state = 109
+			transfer_state = 999
+			transfer_state = 103
+			transfer_state = 104
+			transfer_state = 913
+			transfer_state = 907
+			hidden_effect = {
+				load_focus_tree = rkcroatia_focus
+				inherit_technology = GER
+				add_equipment_to_stockpile = {
+					type = ger_inf_1
+					amount = 2500
+					producer = GER
+				}
+
+				add_manpower = 150000
+				add_political_power = 350
+				add_ideas = partial_economic_mobilisation
+			}
+
+			GER = {
+				puppet = CRO
+				if = {
+					limit = {
+						NOT = { has_dlc = "Death or Dishonor" }
+					}
+					set_autonomy = { target = CRO autonomy_state = autonomy_integrated_puppet }
+				}
+				else = {
+					set_autonomy = { target = CRO autonomy_state = autonomy_reichsprotectorate }
+				}
+				add_to_variable = { GER_rk_consumer_goods_expected_value = 0.01 }
+				if = {
+					limit = {
+						NOT = {
+							has_dynamic_modifier = {
+								modifier = GER_rk_obligations
+							}
+						}
+					}
+					custom_effect_tooltip = GER_rp_obligations_add_tt
+					hidden_effect = {
+						add_dynamic_modifier = {
+							modifier = GER_rk_obligations
+						}
+					}
+				}
+				else = {
+					custom_effect_tooltip = GER_rp_obligations_tt
+				}
+			}
+		}
+		if = {
+			limit = {
+				is_in_faction_with = ITA
+			}
+			ITA = {
+				if = {
+					limit = {
+						has_war_with = YUG
+					}
+					set_state_controller = 102
+					set_state_controller = 1022
+					set_state_controller = 908
+				}
+				else = {
+					transfer_state = 102
+					transfer_state = 1022
+					transfer_state = 908
+				}
+				hidden_effect = {
+					add_state_claim = 102
+					add_state_claim = 1022
+					add_state_claim = 908
+				}
+				economy_fatigue_level_down_4 = yes
+				country_event = { id = ger_armor.837 }
+			}
+			if = {
+				limit = {
+					is_in_faction_with = ALB
+				}
+				ALB = {
+					if = {
+						limit = {
+							has_war_with = YUG
+						}
+						set_state_controller = 849
+						set_state_controller = 850
+						set_state_controller = 105
+						hidden_effect = {
+							add_state_claim = 849
+							add_state_claim = 850
+							add_state_claim = 105
+						}
+					}
+					else = {
+						transfer_state = 849
+						transfer_state = 850
+						transfer_state = 105
+					}
+				}
+			}
+			else = {
+				ITA = {
+					if = {
+						limit = {
+							has_war_with = YUG
+						}
+						set_state_controller = 849
+						set_state_controller = 850
+						set_state_controller = 105
+						hidden_effect = {
+							add_state_claim = 849
+							add_state_claim = 850
+							add_state_claim = 105
+						}
+					}
+					else = {
+						transfer_state = 849
+						transfer_state = 850
+						transfer_state = 105
+					}
+				}
+			}
+		}
+		if = {
+			limit = {
+				is_in_faction_with = HUN
+			}
+			HUN = {
+				transfer_state = 45
+				transfer_state = 888
+				hidden_effect = {
+					add_state_claim = 45
+					add_state_claim = 888
+				}
+				economy_fatigue_level_down_4 = yes
+				country_event = { id = ger_armor.835 }
+			}
+		}
+		if = {
+			limit = {
+				is_in_faction_with = BUL
+			}
+			BUL = {
+				if = {
+					limit = {
+						has_war_with = YUG
+					}
+					set_state_controller = 851
+					set_state_controller = 106
+				}
+				else = {
+					transfer_state = 851
+					transfer_state = 106
+				}
+				hidden_effect = {
+					add_state_claim = 851
+					add_state_claim = 106
+				}
+				economy_fatigue_level_down_4 = yes
+				country_event = { id = ger_armor.836 }
+			}
+		}
+		release = RSE
+		RSE = {
+			if = {
+				limit = {
+					GER = { has_war_with = YUG }
+				}
+				transfer_state = 107
+				set_state_controller = 764
+				set_state_controller = 108
+			}
+			else = {
+				transfer_state = 107
+				transfer_state = 764
+				transfer_state = 108
+			}
+			hidden_effect = {
+				add_state_claim = 107
+				add_state_claim = 764
+				add_state_claim = 108
+				set_cosmetic_tag = REN_reichskommissariat
+				set_party_name = {
+					ideology = fascism
+					long_name = RSE_PARTY_NAME_LONG
+					name = RSE_PARTY_NAME_SHORT
+				}
+				GER = {
+					if = {
+						limit = {
+							OR = {
+								has_dlc = "Together for Victory"
+								has_dlc = "Man the Guns"
+							}
+						}
+						set_autonomy = {
+							target = RSE
+							autonomy_state = autonomy_reichskommissariat
+						}
+					}
+					else = {
+						puppet = RSE
+					}
+					send_equipment = {
+						target = RSE
+						type = infantry_equipment
+						amount = 7500
+						old_prioritised = yes
+					}
+					send_equipment = {
+						target = RSE
+						type = support_equipment
+						amount = 800
+						old_prioritised = yes
+					}
+				}
+				add_ideas = GER_reichkommissariats_governments
+				add_stability = 0.3
+				add_manpower = 25000
+				inherit_technology = ROOT
+				add_equipment_to_stockpile = {
+					type = ger_inf_0
+					amount = 5000
+					producer = GER
+				}
+				add_equipment_to_stockpile = {
+					type = support_equipment_1
+					amount = 400
+					producer = GER
+				}
+				load_oob = "REN_Military_Police"
+			}
+			every_state = {
+				limit = {
+					is_controlled_by = RSE
+				}
+				set_garrison_strength = 1
+			}
+		}
+	}
+
+	option = {
+		name = ger_armor.711.b
+		ai_chance = {
+			factor = 0
+		}
+		trigger = {
+			OR = {
+				is_in_faction_with = ITA
+				is_in_faction_with = HUN
+				is_in_faction_with = BUL
+			}
+		}
+		economy_fatigue_level_down_4 = yes
+		if = {
+			limit = {
+				is_in_faction_with = ITA
+			}
+			ITA = {
+				set_state_controller = 102
+				set_state_controller = 1022
+				set_state_controller = 908
+				set_state_controller = 999
+				set_state_controller = 103
+				set_state_controller = 104
+				set_state_controller = 913
+				hidden_effect = {
+					add_state_claim = 102
+					add_state_claim = 1022
+					add_state_claim = 908
+					add_state_claim = 999
+					add_state_claim = 103
+					add_state_claim = 104
+					add_state_claim = 913
+				}
+				economy_fatigue_level_down_4 = yes
+				country_event = { id = ger_armor.837 }
+			}
+			if = {
+				limit = {
+					is_in_faction_with = ALB
+				}
+				ALB = {
+					transfer_state = 849
+					transfer_state = 850
+					transfer_state = 105
+				}
+			}
+			else = {
+				ITA = {
+					transfer_state = 849
+					transfer_state = 850
+					transfer_state = 105
+				}
+			}
+		}
+		if = {
+			limit = {
+				is_in_faction_with = HUN
+			}
+			HUN = {
+				transfer_state = 45
+				transfer_state = 888
+				set_state_controller = 109
+				set_state_controller = 907
+				hidden_effect = {
+					add_state_claim = 45
+					add_state_claim = 888
+					add_state_claim = 109
+					add_state_claim = 907
+				}
+				economy_fatigue_level_down_4 = yes
+				country_event = { id = ger_armor.835 }
+			}
+		}
+		if = {
+			limit = {
+				is_in_faction_with = BUL
+			}
+			BUL = {
+				set_state_controller = 851
+				set_state_controller = 106
+				hidden_effect = {
+					add_state_claim = 851
+					add_state_claim = 106
+				}
+				economy_fatigue_level_down_4 = yes
+				country_event = { id = ger_armor.836 }
+			}
+		}
+		release = RSE
+		RSE = {
+			if = {
+				limit = {
+					GER = { has_war_with = YUG }
+				}
+				transfer_state = 107
+				set_state_controller = 764
+				set_state_controller = 108
+			}
+			else = {
+				transfer_state = 107
+				transfer_state = 764
+				transfer_state = 108
+			}
+			hidden_effect = {
+				add_state_claim = 107
+				add_state_claim = 764
+				add_state_claim = 108
+				set_cosmetic_tag = REN_reichskommissariat
+				set_party_name = {
+					ideology = fascism
+					long_name = RSE_PARTY_NAME_LONG
+					name = RSE_PARTY_NAME_SHORT
+				}
+				GER = {
+					if = {
+						limit = {
+							OR = {
+								has_dlc = "Together for Victory"
+								has_dlc = "Man the Guns"
+							}
+						}
+						set_autonomy = {
+							target = RSE
+							autonomy_state = autonomy_reichskommissariat
+						}
+					}
+					else = {
+						puppet = RSE
+					}
+					send_equipment = {
+						target = RSE
+						type = infantry_equipment
+						amount = 7500
+						old_prioritised = yes
+					}
+					send_equipment = {
+						target = RSE
+						type = support_equipment
+						amount = 800
+						old_prioritised = yes
+					}
+				}
+				add_ideas = GER_reichkommissariats_governments
+				add_stability = 0.3
+				add_manpower = 25000
+				inherit_technology = ROOT
+				add_equipment_to_stockpile = {
+					type = ger_inf_0
+					amount = 5000
+					producer = GER
+				}
+				add_equipment_to_stockpile = {
+					type = support_equipment_1
+					amount = 400
+					producer = GER
+				}
+				load_oob = "REN_Military_Police"
+			}
+			every_state = {
+				limit = {
+					is_controlled_by = RSE
+				}
+				set_garrison_strength = 1
+			}
+		}
+	}
+
+	option = {
+		name = ger_armor.711.c
+		ai_chance = {
+			factor = 10
+
+			modifier = {
+				factor = 0
+				OR = {
+					is_in_faction_with = ITA
+					is_in_faction_with = HUN
+					is_in_faction_with = BUL
+				}
+			}
+		}
+		economy_fatigue_level_down_4 = yes
+		if = {
+			limit = {
+				CRO = { exists = no }
+			}
+			release = CRO
+		}
+		CRO = {
+			transfer_state = 109
+			transfer_state = 999
+			transfer_state = 103
+			transfer_state = 104
+			transfer_state = 913
+			transfer_state = 907
+			transfer_state = 45
+			transfer_state = 888
+			transfer_state = 102
+			transfer_state = 1022
+			load_focus_tree = rkcroatia_focus
+			inherit_technology = GER
+			add_equipment_to_stockpile = {
+				type = ger_inf_1
+				amount = 2500
+				producer = GER
+			}
+
+			add_manpower = 150000
+			add_political_power = 500
+			add_ideas = partial_economic_mobilisation
+
+			GER = {
+				puppet = CRO
+				if = {
+					limit = {
+						NOT = { has_dlc = "Death or Dishonor" }
+					}
+					set_autonomy = { target = CRO autonomy_state = autonomy_integrated_puppet }
+				}
+				else = {
+					set_autonomy = { target = CRO autonomy_state = autonomy_reichsprotectorate }
+				}
+				add_to_variable = { GER_rk_consumer_goods_expected_value = 0.01 }
+				if = {
+					limit = {
+						NOT = {
+							has_dynamic_modifier = {
+								modifier = GER_rk_obligations
+							}
+						}
+					}
+					custom_effect_tooltip = GER_rp_obligations_add_tt
+					hidden_effect = {
+						add_dynamic_modifier = {
+							modifier = GER_rk_obligations
+						}
+					}
+				}
+				else = {
+					custom_effect_tooltip = GER_rp_obligations_tt
+				}
+			}
+		}
+		release = RSE
+		RSE = {
+			if = {
+				limit = {
+					GER = { has_war_with = YUG }
+				}
+				transfer_state = 107
+				set_state_controller = 908
+				set_state_controller = 764
+				set_state_controller = 105
+				set_state_controller = 108
+				set_state_controller = 106
+				set_state_controller = 851
+				set_state_controller = 849
+				set_state_controller = 850
+			}
+			else = {
+				transfer_state = 107
+				transfer_state = 908
+				transfer_state = 764
+				transfer_state = 105
+				transfer_state = 108
+				transfer_state = 106
+				transfer_state = 851
+				transfer_state = 849
+				transfer_state = 850
+			}
+			hidden_effect = {
+				add_state_claim = 107
+				add_state_claim = 908
+				add_state_claim = 764
+				add_state_claim = 105
+				add_state_claim = 108
+				add_state_claim = 106
+				add_state_claim = 851
+				add_state_claim = 849
+				add_state_claim = 850
+				set_cosmetic_tag = REN_reichskommissariat
+				set_party_name = {
+					ideology = fascism
+					long_name = RSE_PARTY_NAME_LONG
+					name = RSE_PARTY_NAME_SHORT
+				}
+				GER = {
+					if = {
+						limit = {
+							OR = {
+								has_dlc = "Together for Victory"
+								has_dlc = "Man the Guns"
+							}
+						}
+						set_autonomy = {
+							target = RSE
+							autonomy_state = autonomy_reichskommissariat
+						}
+					}
+					else = {
+						puppet = RSE
+					}
+					send_equipment = {
+						target = RSE
+						type = infantry_equipment
+						amount = 7500
+						old_prioritised = yes
+					}
+					send_equipment = {
+						target = RSE
+						type = support_equipment
+						amount = 800
+						old_prioritised = yes
+					}
+				}
+				add_ideas = GER_reichkommissariats_governments
+				add_stability = 0.3
+				add_manpower = 40000
+				inherit_technology = ROOT
+				add_equipment_to_stockpile = {
+					type = ger_inf_0
+					amount = 5000
+					producer = GER
+				}
+				add_equipment_to_stockpile = {
+					type = support_equipment_1
+					amount = 400
+					producer = GER
+				}
+				load_oob = "REN_Military_Police"
+			}
+			every_state = {
+				limit = {
+					is_controlled_by = RSE
+				}
+				set_garrison_strength = 1
+			}
+		}
+	}
+
+	option = {
+		name = ger_armor.711.e
+		ai_chance = {
+			factor = 0
+		}
+		economy_fatigue_level_down_4 = yes
+		release = RSE
+		RSE = {
+			if = {
+				limit = {
+					GER = { has_war_with = YUG }
+				}
+				transfer_state = 107
+				set_state_controller = 102
+				set_state_controller = 103
+				set_state_controller = 1022
+				set_state_controller = 999
+				set_state_controller = 908
+				set_state_controller = 109
+				set_state_controller = 104
+				set_state_controller = 45
+				set_state_controller = 764
+				set_state_controller = 907
+				set_state_controller = 105
+				set_state_controller = 108
+				set_state_controller = 106
+				set_state_controller = 888
+				set_state_controller = 851
+				set_state_controller = 849
+				set_state_controller = 850
+				set_state_controller = 913
+			}
+			else = {
+				transfer_state = 107
+				transfer_state = 102
+				transfer_state = 103
+				transfer_state = 1022
+				transfer_state = 999
+				transfer_state = 908
+				transfer_state = 109
+				transfer_state = 104
+				transfer_state = 45
+				transfer_state = 764
+				transfer_state = 907
+				transfer_state = 105
+				transfer_state = 108
+				transfer_state = 106
+				transfer_state = 888
+				transfer_state = 851
+				transfer_state = 849
+				transfer_state = 850
+				transfer_state = 913
+			}
+			hidden_effect = {
+				add_state_claim = 107
+				add_state_claim = 102
+				add_state_claim = 103
+				add_state_claim = 1022
+				add_state_claim = 999
+				add_state_claim = 908
+				add_state_claim = 109
+				add_state_claim = 104
+				add_state_claim = 45
+				add_state_claim = 764
+				add_state_claim = 907
+				add_state_claim = 105
+				add_state_claim = 108
+				add_state_claim = 106
+				add_state_claim = 888
+				add_state_claim = 851
+				add_state_claim = 849
+				add_state_claim = 850
+				add_state_claim = 913
+				set_cosmetic_tag = REN_reichskommissariat
+				set_party_name = {
+					ideology = fascism
+					long_name = RSE_PARTY_NAME_LONG
+					name = RSE_PARTY_NAME_SHORT
+				}
+				GER = {
+					if = {
+						limit = {
+							OR = {
+								has_dlc = "Together for Victory"
+								has_dlc = "Man the Guns"
+							}
+						}
+						set_autonomy = {
+							target = RSE
+							autonomy_state = autonomy_reichskommissariat
+						}
+					}
+					else = {
+						puppet = RSE
+					}
+					send_equipment = {
+						target = RSE
+						type = infantry_equipment
+						amount = 7500
+						old_prioritised = yes
+					}
+					send_equipment = {
+						target = RSE
+						type = support_equipment
+						amount = 800
+						old_prioritised = yes
+					}
+				}
+				add_ideas = GER_reichkommissariats_governments
+				add_stability = 0.3
+				add_manpower = 50000
+				inherit_technology = ROOT
+				add_equipment_to_stockpile = {
+					type = ger_inf_0
+					amount = 5000
+					producer = GER
+				}
+				add_equipment_to_stockpile = {
+					type = support_equipment_1
+					amount = 400
+					producer = GER
+				}
+				load_oob = "REN_Military_Police"
+			}
+			every_state = {
+				limit = {
+					is_controlled_by = RSE
+				}
+				set_garrison_strength = 1
+			}
+		}
+	}
+}
+
+
+
+
+
+################################################# Fate of Greece Germany
+
+
+
+
+
+country_event = {
+	id = ger_armor.712
+	title = ger_armor.712.t
+	desc = ger_armor.712.d
+
+	is_triggered_only = yes
+
+	option = {
+		name = ger_armor.712.a
+		ai_chance = {
+			factor = 10
+		}
+		trigger = {
+			OR = {
+				is_in_faction_with = ITA
+				is_in_faction_with = BUL
+			}
+		}
+		if = {
+			limit = {
+				is_in_faction_with = BUL
+				NOT = { is_in_faction_with = ITA }
+			}
+			BUL = {
+				transfer_state = 184
+				economy_fatigue_level_down_3 = yes
+				country_event = { id = ger_armor.838 }
+			}
+			economy_fatigue_level_down_3 = yes
+			release = RGR
+			RGR = {
+				if = {
+					limit = {
+						has_war_with = GRE
+					}
+					transfer_state = 731
+					set_state_controller = 185
+					set_state_controller = 47
+					set_state_controller = 186
+					set_state_controller = 187
+					set_state_controller = 182
+				}
+				else = {
+					transfer_state = 731
+					transfer_state = 185
+					transfer_state = 47
+					transfer_state = 186
+					transfer_state = 187
+					transfer_state = 182
+				}
+				hidden_effect = {
+					add_state_claim = 731
+					add_state_claim = 185
+					add_state_claim = 47
+					add_state_claim = 186
+					add_state_claim = 187
+					add_state_claim = 182
+					set_cosmetic_tag = RGR_rk
+					set_party_name = {
+						ideology = fascism
+						long_name = RK_PARTY_NAME_LONG
+						name = RK_PARTY_NAME_SHORT
+					}
+					GER = {
+						if = {
+							limit = {
+								OR = {
+									has_dlc = "Together for Victory"
+									has_dlc = "Man the Guns"
+								}
+							}
+							set_autonomy = {
+								target = RGR
+								autonomy_state = autonomy_reichskommissariat
+							}
+						}
+						else = {
+							puppet = RGR
+						}
+						send_equipment = {
+							target = RGR
+							type = infantry_equipment
+							amount = 7500
+							old_prioritised = yes
+						}
+						send_equipment = {
+							target = RGR
+							type = support_equipment
+							amount = 800
+							old_prioritised = yes
+						}
+					}
+					add_ideas = GER_reichkommissariats_governments
+					add_stability = 0.3
+					add_manpower = 50000
+					add_equipment_to_stockpile = {
+						type = ger_inf_0
+						amount = 5000
+						producer = GER
+					}
+					add_equipment_to_stockpile = {
+						type = support_equipment_1
+						amount = 400
+						producer = GER
+					}
+					load_oob = "REN_Military_Police"
+				}
+				every_state = {
+					limit = {
+						is_controlled_by = RGR
+					}
+					set_compliance = 10
+					set_garrison_strength = 1
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				is_in_faction_with = ITA
+				NOT = { is_in_faction_with = BUL }
+			}
+			ITA = {
+				economy_fatigue_level_down_3 = yes
+				country_event = { id = ger_armor.839 }
+			}
+			economy_fatigue_level_down_3 = yes
+			release = RGR
+			RGR = {
+				if = {
+					limit = {
+						has_war_with = GRE
+					}
+					transfer_state = 731
+					set_state_controller = 185
+					set_state_controller = 47
+					set_state_controller = 186
+					set_state_controller = 187
+					set_state_controller = 182
+					set_state_controller = 184
+				}
+				else = {
+					transfer_state = 731
+					transfer_state = 185
+					transfer_state = 47
+					transfer_state = 186
+					transfer_state = 187
+					transfer_state = 182
+					transfer_state = 184
+				}
+				hidden_effect = {
+					add_state_claim = 731
+					add_state_claim = 185
+					add_state_claim = 47
+					add_state_claim = 186
+					add_state_claim = 187
+					add_state_claim = 182
+					add_state_claim = 184
+					set_cosmetic_tag = RGR_italy
+					set_party_name = {
+						ideology = fascism
+						long_name = ITA_PARTY_NAME_LONG
+						name = ITA_PARTY_NAME_SHORT
+					}
+					ITA = {
+						if = {
+							limit = {
+								OR = {
+									has_dlc = "Together for Victory"
+									has_dlc = "Man the Guns"
+								}
+							}
+							set_autonomy = {
+								target = RGR
+								autonomy_state = autonomy_reichskommissariat
+							}
+						}
+						else = {
+							puppet = RGR
+						}
+						send_equipment = {
+							target = RGR
+							type = infantry_equipment
+							amount = 7500
+							old_prioritised = yes
+						}
+						send_equipment = {
+							target = RGR
+							type = support_equipment
+							amount = 800
+							old_prioritised = yes
+						}
+					}
+					add_ideas = GER_reichkommissariats_governments
+					add_stability = 0.3
+					add_manpower = 50000
+					add_equipment_to_stockpile = {
+						type = ger_inf_0
+						amount = 5000
+						producer = GER
+					}
+					add_equipment_to_stockpile = {
+						type = support_equipment_1
+						amount = 400
+						producer = GER
+					}
+					load_oob = "REN_Military_Police"
+				}
+				every_state = {
+					limit = {
+						is_controlled_by = RGR
+					}
+					set_compliance = 10
+					set_garrison_strength = 1
+				}
+			}
+		}
+		else = {
+			BUL = {
+				transfer_state = 184
+				economy_fatigue_level_down_3 = yes
+				country_event = { id = ger_armor.838 }
+			}
+			ITA = {
+				economy_fatigue_level_down_3 = yes
+				country_event = { id = ger_armor.839 }
+			}
+			economy_fatigue_level_down_3 = yes
+			release = RGR
+			RGR = {
+				if = {
+					limit = {
+						has_war_with = GRE
+					}
+					transfer_state = 731
+					set_state_controller = 185
+					set_state_controller = 47
+					set_state_controller = 186
+					set_state_controller = 187
+					set_state_controller = 182
+				}
+				else = {
+					transfer_state = 731
+					transfer_state = 185
+					transfer_state = 47
+					transfer_state = 186
+					transfer_state = 187
+					transfer_state = 182
+				}
+				hidden_effect = {
+					add_state_claim = 731
+					add_state_claim = 185
+					add_state_claim = 47
+					add_state_claim = 186
+					add_state_claim = 187
+					add_state_claim = 182
+					set_cosmetic_tag = RGR_italy
+					set_party_name = {
+						ideology = fascism
+						long_name = ITA_PARTY_NAME_LONG
+						name = ITA_PARTY_NAME_SHORT
+					}
+					ITA = {
+						if = {
+							limit = {
+								OR = {
+									has_dlc = "Together for Victory"
+									has_dlc = "Man the Guns"
+								}
+							}
+							set_autonomy = {
+								target = RGR
+								autonomy_state = autonomy_reichskommissariat
+							}
+						}
+						else = {
+							puppet = RGR
+						}
+						send_equipment = {
+							target = RGR
+							type = infantry_equipment
+							amount = 7500
+							old_prioritised = yes
+						}
+						send_equipment = {
+							target = RGR
+							type = support_equipment
+							amount = 800
+							old_prioritised = yes
+						}
+					}
+					add_ideas = GER_reichkommissariats_governments
+					add_stability = 0.3
+					add_manpower = 50000
+					add_equipment_to_stockpile = {
+						type = ger_inf_0
+						amount = 5000
+						producer = GER
+					}
+					add_equipment_to_stockpile = {
+						type = support_equipment_1
+						amount = 400
+						producer = GER
+					}
+					load_oob = "REN_Military_Police"
+				}
+				every_state = {
+					limit = {
+						is_controlled_by = RGR
+					}
+					set_compliance = 10
+					set_garrison_strength = 1
+				}
+			}
+		}
+	}
+
+	option = {
+		name = ger_armor.712.b
+		ai_chance = {
+			factor = 0
+		}
+		trigger = {
+			OR = {
+				is_in_faction_with = ITA
+				is_in_faction_with = BUL
+			}
+		}
+		if = {
+			limit = {
+				is_in_faction_with = BUL
+				NOT = { is_in_faction_with = ITA }
+			}
+			BUL = {
+				transfer_state = 731
+				transfer_state = 184
+				economy_fatigue_level_down_3 = yes
+				country_event = { id = ger_armor.838 }
+			}
+			economy_fatigue_level_down_3 = yes
+		}
+		else_if = {
+			limit = {
+				is_in_faction_with = ITA
+				NOT = { is_in_faction_with = BUL }
+			}
+			ITA = {
+				economy_fatigue_level_down_3 = yes
+				country_event = { id = ger_armor.839 }
+				if = {
+					limit = {
+						is_in_faction_with = ALB
+						has_war_with = GRE
+					}
+					ALB = {
+						set_state_controller = 185
+						set_state_controller = 47
+						set_state_controller = 186
+						set_state_controller = 187
+						set_state_controller = 182
+					}
+				}
+				else_if = {
+					limit = {
+						is_in_faction_with = ALB
+					}
+					ALB = {
+						transfer_state = 185
+						transfer_state = 47
+						transfer_state = 186
+						transfer_state = 187
+						transfer_state = 182
+					}
+				}
+				else_if = {
+					limit = {
+						has_war_with = GRE
+					}
+					ITA = {
+						set_state_controller = 185
+						set_state_controller = 47
+						set_state_controller = 186
+						set_state_controller = 187
+						set_state_controller = 182
+					}
+				}
+				else = {
+					ITA = {
+						transfer_state = 185
+						transfer_state = 47
+						transfer_state = 186
+						transfer_state = 187
+						transfer_state = 182
+					}
+				}
+			}
+			economy_fatigue_level_down_3 = yes
+		}
+		else = {
+			BUL = {
+				transfer_state = 184
+				economy_fatigue_level_down_3 = yes
+				country_event = { id = ger_armor.838 }
+			}
+			ITA = {
+				economy_fatigue_level_down_3 = yes
+				country_event = { id = ger_armor.839 }
+				if = {
+					limit = {
+						is_in_faction_with = ALB
+						has_war_with = GRE
+					}
+					ALB = {
+						transfer_state = 731
+						set_state_controller = 185
+						set_state_controller = 47
+						set_state_controller = 186
+						set_state_controller = 187
+						set_state_controller = 182
+						set_state_controller = 184
+					}
+				}
+				else_if = {
+					limit = {
+						is_in_faction_with = ALB
+					}
+					ALB = {
+						transfer_state = 731
+						transfer_state = 185
+						transfer_state = 47
+						transfer_state = 186
+						transfer_state = 187
+						transfer_state = 182
+						transfer_state = 184
+					}
+				}
+				else_if = {
+					limit = {
+						has_war_with = GRE
+					}
+					ITA = {
+						transfer_state = 731
+						set_state_controller = 185
+						set_state_controller = 47
+						set_state_controller = 186
+						set_state_controller = 187
+						set_state_controller = 182
+						set_state_controller = 184
+					}
+				}
+				else = {
+					ITA = {
+						transfer_state = 731
+						transfer_state = 185
+						transfer_state = 47
+						transfer_state = 186
+						transfer_state = 187
+						transfer_state = 182
+						transfer_state = 184
+					}
+				}
+			}
+			economy_fatigue_level_down_3 = yes
+		}
+	}
+
+	option = {
+		name = ger_armor.712.c
+		ai_chance = {
+			factor = 10
+
+			modifier = {
+				factor = 0
+				OR = {
+					is_in_faction_with = ITA
+					is_in_faction_with = BUL
+				}
+			}
+		}
+		economy_fatigue_level_down_3 = yes
+		release = RGR
+		RGR = {
+			if = {
+				limit = {
+					has_war_with = GRE
+				}
+				transfer_state = 731
+				set_state_controller = 185
+				set_state_controller = 47
+				set_state_controller = 186
+				set_state_controller = 187
+				set_state_controller = 182
+				set_state_controller = 184
+			}
+			else = {
+				transfer_state = 731
+				transfer_state = 185
+				transfer_state = 47
+				transfer_state = 186
+				transfer_state = 187
+				transfer_state = 182
+				transfer_state = 184
+			}
+			hidden_effect = {
+				add_state_claim = 731
+				add_state_claim = 185
+				add_state_claim = 47
+				add_state_claim = 186
+				add_state_claim = 187
+				add_state_claim = 182
+				add_state_claim = 184
+				set_cosmetic_tag = RGR_rk
+				set_party_name = {
+					ideology = fascism
+					long_name = RK_PARTY_NAME_LONG
+					name = RK_PARTY_NAME_SHORT
+				}
+				GER = {
+					if = {
+						limit = {
+							OR = {
+								has_dlc = "Together for Victory"
+								has_dlc = "Man the Guns"
+							}
+						}
+						set_autonomy = {
+							target = RGR
+							autonomy_state = autonomy_reichskommissariat
+						}
+					}
+					else = {
+						puppet = RGR
+					}
+					send_equipment = {
+						target = RGR
+						type = infantry_equipment
+						amount = 7500
+						old_prioritised = yes
+					}
+					send_equipment = {
+						target = RGR
+						type = support_equipment
+						amount = 800
+						old_prioritised = yes
+					}
+				}
+				add_ideas = GER_reichkommissariats_governments
+				add_stability = 0.3
+				add_manpower = 50000
+				add_equipment_to_stockpile = {
+					type = ger_inf_0
+					amount = 5000
+					producer = GER
+				}
+				add_equipment_to_stockpile = {
+					type = support_equipment_1
+					amount = 400
+					producer = GER
+				}
+				load_oob = "REN_Military_Police"
+			}
+			every_state = {
+				limit = {
+					is_controlled_by = RGR
+				}
+				set_compliance = 10
+				set_garrison_strength = 1
+			}
+		}
+	}
+}
+
+
+
+
+
+################################################# Croations demand independance
+
+
+
+
+
+country_event = {
+	id = ger_armor.713
+	title = ger_armor.713.t
+	desc = ger_armor.713.d
+	picture = GFX_report_event_ustasha
+
+	fire_only_once = yes
+
+	trigger = {
+		original_tag = GER
+		109 = {
+			CONTROLLER = {
+				OR = {
+					tag = ROOT
+					is_in_faction_with = ROOT
+					is_subject_of = ROOT
+				}
+			}
+		}
+		999 = {
+			CONTROLLER = {
+				OR = {
+					tag = ROOT
+					is_in_faction_with = ROOT
+					is_subject_of = ROOT
+				}
+			}
+		}
+		103 = {
+			CONTROLLER = {
+				OR = {
+					tag = ROOT
+					is_in_faction_with = ROOT
+					is_subject_of = ROOT
+				}
+			}
+		}
+		OR = {
+			NOT = { country_exists = YUG }
+			YUG = { has_capitulated = yes }
+		}
+	}
+
+	immediate = {
+		hidden_effect = {
+			activate_mission = GER_croats_demand_independance
+		}
+	}
+
+	option = {
+		name = ger_armor.713.a
+		effect_tooltip = {
+			activate_mission = GER_croats_demand_independance
+		}
+	}
+}
+
+
+
+
+
 ############################################### Alt-history ally with britain
+
+
+
+
 
 country_event = {
 	id = ger_armor.798
@@ -5706,6 +7116,7 @@ country_event = {
 		add_state_claim = 215
 		add_state_claim = 216
 		set_global_flag = finland_joined_axis
+		FIN_pact_for_continuation_war_start = yes
 		#create_wargoal = {
 		#	type = take_state_focus
 		#	target = SOV
@@ -7160,7 +8571,7 @@ country_event = {
 		}
 		GER = {
 			set_autonomy = { target = ITA autonomy_state = autonomy_reichskommissariat }
-			add_to_variable = { GER_rk_production_speed_buildings_factor = -0.02 }
+			add_to_variable = { GER_rk_consumer_goods_expected_value = 0.005 }
 			if = {
 				limit = {
 					NOT = {
@@ -7190,7 +8601,7 @@ country_event = {
 		}
 		GER = {
 			set_autonomy = { target = HUN autonomy_state = autonomy_reichskommissariat }
-			add_to_variable = { GER_rk_production_speed_buildings_factor = -0.02 }
+			add_to_variable = { GER_rk_consumer_goods_expected_value = 0.005 }
 			if = {
 				limit = {
 					NOT = {
@@ -7220,7 +8631,7 @@ country_event = {
 		}
 		GER = {
 			set_autonomy = { target = ROM autonomy_state = autonomy_reichskommissariat }
-			add_to_variable = { GER_rk_production_speed_buildings_factor = -0.02 }
+			add_to_variable = { GER_rk_consumer_goods_expected_value = 0.005 }
 			if = {
 				limit = {
 					NOT = {
@@ -7250,7 +8661,7 @@ country_event = {
 		}
 		GER = {
 			set_autonomy = { target = BUL autonomy_state = autonomy_reichskommissariat }
-			add_to_variable = { GER_rk_production_speed_buildings_factor = -0.02 }
+			add_to_variable = { GER_rk_consumer_goods_expected_value = 0.005 }
 			if = {
 				limit = {
 					NOT = {
@@ -7285,7 +8696,7 @@ country_event = {
 		trigger = { tag = ITA }
 		GER = {
 			set_autonomy = { target = ITA autonomy_state = autonomy_reichsprotectorate }
-			add_to_variable = { GER_rk_production_speed_buildings_factor = -0.02 }
+			add_to_variable = { GER_rk_consumer_goods_expected_value = 0.005 }
 			if = {
 				limit = {
 					NOT = {
@@ -7312,7 +8723,7 @@ country_event = {
 		trigger = { tag = HUN }
 		GER = {
 			set_autonomy = { target = HUN autonomy_state = autonomy_reichsprotectorate }
-			add_to_variable = { GER_rk_production_speed_buildings_factor = -0.02 }
+			add_to_variable = { GER_rk_consumer_goods_expected_value = 0.005 }
 			if = {
 				limit = {
 					NOT = {
@@ -7339,7 +8750,7 @@ country_event = {
 		trigger = { tag = ROM }
 		GER = {
 			set_autonomy = { target = ROM autonomy_state = autonomy_reichsprotectorate }
-			add_to_variable = { GER_rk_production_speed_buildings_factor = -0.02 }
+			add_to_variable = { GER_rk_consumer_goods_expected_value = 0.005 }
 			if = {
 				limit = {
 					NOT = {
@@ -7366,7 +8777,7 @@ country_event = {
 		trigger = { tag = BUL }
 		GER = {
 			set_autonomy = { target = BUL autonomy_state = autonomy_reichsprotectorate }
-			add_to_variable = { GER_rk_production_speed_buildings_factor = -0.02 }
+			add_to_variable = { GER_rk_consumer_goods_expected_value = 0.005 }
 			if = {
 				limit = {
 					NOT = {
@@ -7516,7 +8927,7 @@ country_event = {
 		effect_tooltip = {
 			set_state_controller = 45
 			set_state_controller = 888
-			economy_fatigue_level_down_2 = yes
+			economy_fatigue_level_down_4 = yes
 		}
 	}
 }
@@ -7536,7 +8947,7 @@ country_event = {
 		effect_tooltip = {
 			set_state_controller = 851
 			set_state_controller = 106
-			economy_fatigue_level_down_2 = yes
+			economy_fatigue_level_down_4 = yes
 		}
 	}
 }
@@ -7567,7 +8978,7 @@ country_event = {
 			effect_tooltip = {
 				set_state_controller = 102
 				set_state_controller = 908
-				economy_fatigue_level_down_2 = yes
+				economy_fatigue_level_down_4 = yes
 			}
 		}
 		else = {
@@ -7577,7 +8988,7 @@ country_event = {
 				set_state_controller = 105
 				set_state_controller = 102
 				set_state_controller = 908
-				economy_fatigue_level_down_2 = yes
+				economy_fatigue_level_down_4 = yes
 			}
 		}
 	}
@@ -7614,7 +9025,7 @@ country_event = {
 				BUL = {
 					set_state_controller = 184
 					set_state_controller = 731
-					economy_fatigue_level_down_2 = yes
+					economy_fatigue_level_down_3 = yes
 				}
 			}
 			else_if = {
@@ -7625,7 +9036,7 @@ country_event = {
 				BUL = {
 					set_state_controller = 184
 					set_state_controller = 731
-					economy_fatigue_level_down_2 = yes
+					economy_fatigue_level_down_3 = yes
 				}
 			}
 			else_if = {
@@ -7639,7 +9050,7 @@ country_event = {
 					set_state_controller = 182
 					set_state_controller = 184
 					set_state_controller = 731
-					economy_fatigue_level_down_2 = yes
+					economy_fatigue_level_down_3 = yes
 				}
 			}
 		}
@@ -7671,7 +9082,7 @@ country_event = {
 					set_state_controller = 182
 				}
 				ITA = {
-					economy_fatigue_level_down_2 = yes
+					economy_fatigue_level_down_3 = yes
 				}
 			}
 			else_if = {
@@ -7684,7 +9095,7 @@ country_event = {
 					set_state_controller = 47
 					set_state_controller = 186
 					set_state_controller = 182
-					economy_fatigue_level_down_2 = yes
+					economy_fatigue_level_down_3 = yes
 				}
 			}
 			else_if = {
@@ -7698,7 +9109,7 @@ country_event = {
 					set_state_controller = 182
 					set_state_controller = 184
 					set_state_controller = 731
-					economy_fatigue_level_down_2 = yes
+					economy_fatigue_level_down_3 = yes
 					country_event = { id = ger_armor.839 }
 				}
 			}
@@ -8116,6 +9527,12 @@ country_event = {
 		name = ger_armor.851.a
 	}
 }
+
+
+
+
+
+
 ################################################# Hitler's Suicide
 
 
@@ -12379,7 +13796,7 @@ country_event = {
 	trigger = {
 		tag = GER
 		is_ai = yes
-		61 = { is_controlled_by = GER }
+		810 = { is_controlled_by = GER }
 		date > 1939.1.1
 		NOT = { date > 1940.1.1 }
 		is_subject = no
@@ -12398,6 +13815,13 @@ country_event = {
 		set_technology = { submarine_schools = 1 }
 		set_technology = { evasive_tactics = 1 }
 		set_technology = { crash_diving = 1 }
+		810 = {
+			create_unit = { #ai is lacking equipment
+				division = "division_template = \"German Infantry Division\" start_experience_factor = 0.3 start_equipment_factor = 1"
+				owner = GER
+				count = 16
+			}
+		}
 		random_owned_controlled_state = {
 			prioritize = { 57 59 803 799 51 55 42 800 54 60 }
 			limit = {
@@ -14623,7 +16047,7 @@ country_event = {
 				add_equipment_to_stockpile = { type = ger_mechanized_aa_equipment_2 amount = 700 producer = GER }
 			}
 			if = {
-				limit = { stockpile_ratio = { archetype = scout_car_equipment	ratio < 0.95 } }
+				limit = { stockpile_ratio = { archetype = scout_car_chassis	ratio < 0.95 } }
 				add_equipment_to_stockpile = { type = ger_scout_car_equipment_3 amount = 1000 producer = GER }
 			}
 			if = {
@@ -14685,7 +16109,7 @@ country_event = {
 				add_equipment_to_stockpile = { type = ger_mechanized_aa_equipment_2 amount = 700 producer = GER }
 			}
 			if = {
-				limit = { stockpile_ratio = { archetype = scout_car_equipment	ratio < 0.95 } }
+				limit = { stockpile_ratio = { archetype = scout_car_chassis	ratio < 0.95 } }
 				add_equipment_to_stockpile = { type = ger_scout_car_equipment_3 amount = 1000 producer = GER }
 			}
 			if = {
@@ -14753,7 +16177,7 @@ country_event = {
 			add_equipment_to_stockpile = { type = ger_mechanized_aa_equipment_2 amount = 700 producer = GER }
 		}
 		if = {
-			limit = { stockpile_ratio = { archetype = scout_car_equipment	ratio < 0.95 } }
+			limit = { stockpile_ratio = { archetype = scout_car_chassis	ratio < 0.95 } }
 			add_equipment_to_stockpile = { type = ger_scout_car_equipment_3 amount = 1000 producer = GER }
 		}
 		if = {

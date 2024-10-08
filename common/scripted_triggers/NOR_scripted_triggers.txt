@@ -44,11 +44,303 @@ NOR_prep_fasc_mod_remove_trigger = { #Trigger to remove the state modifiers in t
 	}
 }
 
+NOR_tank_seller_still_exists = {
+	NOR = {
+		OR = {
+			AND = {
+				has_variable = NOR_fascist_tank_seller
+				var:NOR_fascist_tank_seller = {
+					exists = yes
+					NOT = { has_war_with = ROOT }
+				}
+			}
+			AND = {
+				has_variable = NOR_communist_tank_seller
+				var:NOR_communist_tank_seller = {
+					exists = yes
+					NOT = { has_war_with = ROOT }
+				}
+			}
+			AND = {
+				has_variable = NOR_nordic_tank_seller
+				var:NOR_nordic_tank_seller = {
+					exists = yes
+					NOT = { has_war_with = ROOT }
+				}
+			}
+		}
+
+	}
+}
+
 NOR_fascist_norway_exists = {
 	any_country = {
 		original_tag = NOR
 		has_government = fascism
 		exists = yes
 		has_capitulated = no
+	}
+}
+
+NOR_going_communist = {
+	OR = {
+		has_country_flag = NOR_going_stalinist
+		has_country_flag = NOR_going_against_stalin
+	}
+}
+
+NOR_stalin_exists = {
+	any_other_country = {
+		has_government = communism
+		has_country_leader = {
+			character = SOV_iosif_stalin
+			ruling_only = yes
+		}
+	}
+}
+
+NOR_valid_fascist_tank_seller = {
+	custom_trigger_tooltip = {
+		tooltip = NOR_valid_fascist_tank_seller_TT
+		FROM = {
+			has_government = fascism
+			is_major = yes
+			has_capitulated = no
+			NOT = {
+				original_tag = NOR
+				has_war_with = ROOT
+			}
+		}
+	}
+}
+
+NOR_broken_gun_trigger = {
+	if = {
+		limit = {
+			has_idea = NOR_broken_gun_ns_3
+		}
+		NOT = { has_idea = NOR_broken_gun_ns_3 }
+	}
+	else_if = {
+		limit = {
+			has_idea = NOR_broken_gun_ns_2
+		}
+		NOT = { has_idea = NOR_broken_gun_ns_2 }
+	}
+	else = {
+		NOT = { has_idea = NOR_broken_gun_ns }
+	}
+}
+
+NOR_kings_no_allow_trigger = {
+	if = {
+		limit = {
+			has_mtg = yes
+		}
+		if = {
+			limit = {
+				has_hide_rule = yes
+			}
+			NOT = {
+				has_completed_focus = NOR_the_stumbling_storting
+				has_completed_focus = NOR_a_resurgent_labor_movement
+			}
+		}
+	}
+	else = {
+		always = no
+	}
+}
+NOR_is_only_core_denmark = {
+	original_tag = DEN
+	owns_state = 871
+	owns_state = 99
+	owns_state = 1051
+	owns_state = 37
+	owns_state = 957
+	NOT = {
+		any_owned_state = {
+			OR = {
+				state = 871
+				state = 99
+				state = 1051
+				state = 37
+				state = 957
+			}
+		}
+	}
+}
+
+NOR_is_norwegian_inital_state = {
+	state = 110 # Oslofjord
+	state = 1019 # Telemark
+	state = 1020 # Telemark
+	state = 1017 # Agder
+	state = 142 # Vestlandet
+	state = 1018 # Opplandene
+	state = 143 # Trondelag
+	state = 144 # Nordland
+	state = 878 # Troms
+	state = 1023 # Finnmark
+	# It is intentional that I left Jan Mayen out. I keep having to make exceptions for it anyway...
+}
+
+NOR_tank_seller_for_subsidy = {
+	NOT = { has_war_with = ROOT	}
+	has_government = ROOT
+}
+
+# Allowed Civil War character triggers
+
+NOR_char_cw_democratic = { # Any Dem
+	has_government = democratic
+}
+
+NOR_char_cw_labor_only = { # They go democratic as long as it's Labor
+	has_government = democratic
+	NOT = { has_completed_focus = NOR_vote_of_no_confidence }
+}
+
+NOR_char_cw_conservative = {
+	has_government = democratic
+	NOT = { has_completed_focus = NOR_continue_nygaardsvold_government }
+}
+NOR_char_cw_stalinist = { # Communist but only if it's Stalin
+	has_government = communism
+	has_country_flag = NOR_going_stalinist
+}
+
+NOR_char_cw_trotskyist = { # Communist but only if not Stalin
+	has_government = communism
+	OR = {
+		has_country_flag = NOR_going_against_stalin
+		has_country_flag = NOR_trotsky_embraced
+	}
+}
+
+NOR_char_cw_loyalist = { #These will stay with either the monarchy or any democratic regime but will yeet themselves at the sight of fascists or communists
+	OR = {
+		has_government = neutrality
+		has_government = democratic
+	}
+}
+
+NOR_char_cw_fascist = { # Run off the mill fascists
+	has_government = fascism
+}
+
+
+
+###### AI Triggers #####
+
+NOR_is_historical_ai = {
+	is_ai = yes
+	OR = {
+		AND = {
+			is_historical_focus_on = yes
+			has_game_rule = {
+				rule = NOR_AI_BEHAVIOR
+				option = DEFAULT
+			}
+		}
+		has_country_flag = NOR_AI_RANDOM_HISTORICAL
+		has_game_rule = {
+			rule = NOR_AI_BEHAVIOR
+			option = HISTORICAL
+		}
+	}
+}
+
+NOR_is_fascist_ai = {
+	is_ai = yes
+	OR = {
+		has_game_rule = {
+			rule = NOR_AI_BEHAVIOR
+			option = NOR_FASCIST
+		}
+		has_country_flag = NOR_AI_RANDOM_FASCIST
+	}
+}
+
+NOR_is_stalinist_ai = {
+	is_ai = yes
+	OR = {
+		has_game_rule = {
+			rule = NOR_AI_BEHAVIOR
+			option = NOR_STALINIST
+		}
+		has_country_flag = NOR_AI_RANDOM_STALINIST
+	}
+}
+
+NOR_is_trotskyist_ai = {
+	is_ai = yes
+	OR = {
+		has_game_rule = {
+			rule = NOR_AI_BEHAVIOR
+			option = NOR_TROSTSKYIST
+		}
+		has_country_flag = NOR_AI_RANDOM_TROSTSKYIST
+	}
+}
+
+NOR_is_monarchist_ai = {
+	is_ai = yes
+	OR = {
+		has_game_rule = {
+			rule = NOR_AI_BEHAVIOR
+			option = NOR_MONARCHIST
+		}
+		has_country_flag = NOR_AI_RANDOM_MONARCHIST
+	}
+}
+
+NOR_FROM_is_twice_as_strong = {
+	strength_ratio = {
+		tag = FROM
+		ratio < 0.5
+	}
+}
+
+NOR_FROM_is_twice_as_weak = {
+	strength_ratio = {
+		tag = FROM
+		ratio > 2
+	}
+}
+
+NOR_has_100_convoys = {
+	has_equipment = {
+		convoy > 99
+	}
+}
+
+NOR_has_75_convoys = {
+	has_equipment = {
+		convoy > 74
+	}
+}
+
+NOR_has_50_convoys = {
+	has_equipment = {
+		convoy > 49
+	}
+}
+
+NOR_has_25_convoys = {
+	has_equipment = {
+		convoy > 24
+	}
+}
+
+NOR_has_4_convoys = {
+	has_equipment = {
+		convoy > 3
+	}
+}
+
+NOR_has_40_convoys = {
+	has_equipment = {
+		convoy > 39
 	}
 }
