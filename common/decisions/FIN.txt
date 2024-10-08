@@ -1,3 +1,198 @@
+FIN_motti_tactics_category = {
+	FIN_abandon_motti_tactics = {
+		allowed = {
+			original_tag = FIN
+		}
+		visible = {
+			has_idea = FIN_motti_tactics_national_spirit
+		}
+		complete_effect = {
+			remove_ideas = FIN_motti_tactics_national_spirit
+		}
+	}
+
+	FIN_prepare_motti_tactics_in_state = {
+		icon = generic_operation
+
+		priority = 10
+
+		state_target = yes
+
+		on_map_mode = map_only
+
+		target_array = ROOT.core_states
+
+		target_trigger = {
+			FROM = {
+				FIN_state_is_valid_for_motti_tactics = yes
+				NOT = { has_dynamic_modifier = { modifier = FIN_motti_tactics_modifier } }
+			}
+		}
+
+		visible = {
+			FROM = {
+				is_controlled_by = ROOT
+			}
+		}
+		
+		cancel_if_not_visible = yes
+
+		custom_cost_trigger = {
+			command_power > FIN_motti_decision_cost_for_trigger
+			# has_political_power > FIN_motti_decision_cost_for_trigger
+		}
+		custom_cost_text = FIN_motti_tactics_decision_cost_dynamic_cp_pp
+		# ai_hint_pp_cost = 10 #It increases every time this decision is taken though
+
+		days_remove = 15
+
+		available = {
+			FROM = {
+				NOT = { has_dynamic_modifier = { modifier = FIN_motti_tactics_modifier } }
+				is_controlled_by = ROOT
+			}
+		}
+
+		cancel_trigger = {
+			FROM = {
+				NOT = { is_controlled_by = ROOT }
+			}
+		}
+
+		cancel_effect = {
+			#Reset cost
+			hidden_effect = {
+				divide_variable = { FIN_motti_decision_cost = FIN_motti_decision_cost_increase }
+				set_variable = { FIN_motti_decision_cost_for_trigger = FIN_motti_decision_cost } #For trigger purposes
+				subtract_from_variable = { FIN_motti_decision_cost_for_trigger = 1 } 
+			}
+		}
+
+		complete_effect = {
+			#Cost increase
+			hidden_effect = {
+				set_temp_variable = { FIN_remove_mana_cost = FIN_motti_decision_cost }
+				multiply_temp_variable = { FIN_remove_mana_cost = -1 }
+				add_command_power = FIN_remove_mana_cost
+				add_political_power = FIN_remove_mana_cost
+				
+				multiply_variable = { FIN_motti_decision_cost = FIN_motti_decision_cost_increase }
+				set_variable = { FIN_motti_decision_cost_for_trigger = FIN_motti_decision_cost } #For trigger purposes
+				subtract_from_variable = { FIN_motti_decision_cost_for_trigger = 1 } 
+			}
+
+			custom_effect_tooltip = FIN_motti_tactics_cost_increase_tt
+		}
+
+		remove_effect = {
+			FROM = {	
+				add_dynamic_modifier = { modifier = FIN_motti_tactics_modifier scope = FIN }
+			}
+
+			#Trigger event only once per country
+			every_enemy_country = {
+				limit = {
+					NOT = { has_country_flag = FIN_aware_about_motti_tactics_flag }
+				}
+				country_event = { id = AAT_finland_motti.01 hours = 1 }
+			}
+		}
+
+		ai_will_do = {
+			base = 0.1
+			modifier = {
+				factor = 10
+				FROM = {
+					any_neighbor_state = {
+						controller = {
+							original_tag = SOV
+						}
+					}
+				}
+			}
+			modifier = {
+				factor = 10
+				FROM = {
+					any_neighbor_state = {
+						controller = {
+							has_war_with = ROOT
+						}
+					}
+				}
+			}
+			modifier = {
+				factor = 10
+				FROM = {
+					NOT = { is_fully_controlled_by = ROOT }
+				}
+			}
+			modifier = { #Don't do this if historical Finland needs to ban communism tack
+				factor = 0
+				FIN_is_historical_ai = yes
+				OR = {
+					has_idea = communist_pressure
+					communism > 0.08
+				}
+				NOT = { has_country_flag = banned_communism_flag }
+			}
+		}
+	}
+
+	FIN_cancel_motti_tactics_in_state = {
+		icon = GFX_decision_FIN_stop_motti_tactics
+
+		priority = 1
+
+		state_target = yes
+
+		on_map_mode = map_only
+
+		target_array = ROOT.core_states
+
+		target_trigger = {
+			FROM = {
+				has_dynamic_modifier = { modifier = FIN_motti_tactics_modifier }
+			}
+		}
+
+		available = {
+			FROM = {
+				has_dynamic_modifier = { modifier = FIN_motti_tactics_modifier }
+			}
+		}
+
+		complete_effect = {
+			FROM = {	
+				remove_dynamic_modifier = { modifier = FIN_motti_tactics_modifier }
+			}
+
+			#Cost decrease
+			hidden_effect = {
+				divide_variable = { FIN_motti_decision_cost = FIN_motti_decision_cost_increase }
+				set_variable = { FIN_motti_decision_cost_for_trigger = FIN_motti_decision_cost } #For trigger purposes
+				subtract_from_variable = { FIN_motti_decision_cost_for_trigger = 1 } 
+			}
+
+			custom_effect_tooltip = FIN_motti_tactics_cost_decrease_tt
+		}
+
+		ai_will_do = {
+			base = 0.1
+			modifier = {
+				factor = 1000
+				FROM = {
+					is_fully_controlled_by = ROOT
+					all_neighbor_state = {
+						controller = {
+							NOT = { has_war_with = ROOT }
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 FIN_foreign_aid = {
 	FIN_purchase_light_infantry_equipment_SOV = {
 		icon = generic_decision
