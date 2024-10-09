@@ -1140,10 +1140,10 @@ NDefines.NAI.AI_FRONT_MOVEMENT_FACTOR_FOR_READY = 0.5			               		-- If l
 
 ----------- Experiment, should stop the AI from having staring contests with forts, if AI starts suiciding maginot issue is here
 
-NDefines.NAI.FORT_LEVEL_TO_CONSIDER_HIGHLY_FORTIFIED = 13							-- Provinces above this level of fortification will be considered highly fortified by plan evaluation
-NDefines.NAI.FORTIFIED_RATIO_TO_CONSIDER_A_FRONT_FORTIFIED = 1.0 					-- ai will consider a front fortified if this ratio of provinces has fort
-NDefines.NAI.HEAVILY_FORTIFIED_RATIO_TO_CONSIDER_A_FRONT_FORTIFIED = 1.0			-- ai will consider a front super fortified if this ratio of provinces has lots of forts
-NDefines.NAI.FORTIFIED_MIN_ORG_FACTOR_TO_CONSIDER_A_FRONT_FORTIFIED = 100 			-- ai will treat fortified provinces as unfortified if no unit in that province has an organization factor at least this high
+NDefines.NAI.FORT_LEVEL_TO_CONSIDER_HIGHLY_FORTIFIED = 8							-- Provinces above this level of fortification will be considered highly fortified by plan evaluation
+--NDefines.NAI.FORTIFIED_RATIO_TO_CONSIDER_A_FRONT_FORTIFIED = 1.0 					-- ai will consider a front fortified if this ratio of provinces has fort
+--NDefines.NAI.HEAVILY_FORTIFIED_RATIO_TO_CONSIDER_A_FRONT_FORTIFIED = 1.0			-- ai will consider a front super fortified if this ratio of provinces has lots of forts
+--NDefines.NAI.FORTIFIED_MIN_ORG_FACTOR_TO_CONSIDER_A_FRONT_FORTIFIED = 100 		-- ai will treat fortified provinces as unfortified if no unit in that province has an organization factor at least this high
 
 ----------- End
 
