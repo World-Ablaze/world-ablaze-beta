@@ -589,6 +589,10 @@ NDefines.NAir.DAY_NIGHT_COVERAGE_FACTOR = 0.02 										-- The max night covera
 
 NDefines.NAir.PORT_STRIKE_DAMAGE_FACTOR = 0.1										-- How much damage is dealt to ports during a port strike (per plane damage [complex number] * num flying planes * define)
 
+NDefines.NAir.THRUST_WEIGHT_AGILITY_FACTOR = 1									-- For plane designs, additive agility bonus per point of thrust exceeding weight
+NDefines.NAir.MAX_QUICK_WING_SELECTION = 4										-- Max possible selection for airwing quick deploy
+USE_SINGLE_NAVAL_ARMAMENT_CATEGORY = false										-- If true, only the armament module category that inflicts the greatest damage to naval targets will contribute naval strike and port strike mission specific stats. Only modules with both naval_strike_attack and naval_strike_targetting are considered. This is used to prevent torpedo_mounting and bomb_locks stats from stacking.
+
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Navy
 
 NDefines.NNavy.NAVAL_COMBAT_AIR_SUB_DETECTION_MAX = 2
