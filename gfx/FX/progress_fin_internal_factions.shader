@@ -45,6 +45,7 @@ ConstantBuffer( 0, 0 )
 	float4 FrontColor;
 	float4 BackColor;
 	float CurrentState;
+	float4 transparent;
 };
 
 VertexShader =
@@ -71,11 +72,25 @@ PixelShader =
 			if( Input.TexCoord0.x <= .5f && Input.TexCoord0.x <= CurrentState ||
 				Input.TexCoord0.x >= .5f && Input.TexCoord0.x >= CurrentState )
 			{
-				return FrontColor;
+				return transparent;
 			}
 			else
 			{
-				return BackColor;
+				float tempPercent;
+				if( CurrentState <= .5f )
+				{
+					tempPercent =( CurrentState - .5f) * -2;
+				}
+				else
+				{
+					tempPercent = ( CurrentState - .5f) * 2;
+				}
+				float4 tempColour;
+				tempColour.x = FrontColor.x - (FrontColor.x - BackColor.x) * tempPercent;
+				tempColour.y = FrontColor.y - (FrontColor.y - BackColor.y) * tempPercent;
+				tempColour.z = FrontColor.z - (FrontColor.z - BackColor.z) * tempPercent;
+				tempColour.w = BackColor.w;
+				return tempColour;
 			}
 		}
 	]]
