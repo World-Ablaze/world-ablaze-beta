@@ -867,7 +867,7 @@ NDefines.NSupply.TRUCK_DISTANCE_FACTOR_FOR_REINFORCEMENT_SPEED = 0.01 				-- tim
 NDefines.NSupply.NAVAL_DISTANCE_FACTOR_FOR_REINFORCEMENT_SPEED = 0.08 				-- time factor for total naval distance
 
 
-NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN = 15 									-- railways will be put on cooldown when they are captured by enemy and will not be usable during the cooldown
+NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN = 7 									-- railways will be put on cooldown when they are captured by enemy and will not be usable during the cooldown
 NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN_CORE = 5
 NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN_CIVILWAR = 0
 
