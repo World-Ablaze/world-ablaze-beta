@@ -25,7 +25,7 @@ FIN_motti_tactics_category = {
 		target_trigger = {
 			FROM = {
 				FIN_state_is_valid_for_motti_tactics = yes
-				NOT = { has_dynamic_modifier = { modifier = FIN_motti_tactics_modifier } }
+				NOT = { has_dynamic_modifier = { modifier = FIN_motti_tactics_modifier scope = FIN } }
 			}
 		}
 
@@ -34,7 +34,7 @@ FIN_motti_tactics_category = {
 				is_controlled_by = ROOT
 			}
 		}
-		
+
 		cancel_if_not_visible = yes
 
 		custom_cost_trigger = {
@@ -48,7 +48,7 @@ FIN_motti_tactics_category = {
 
 		available = {
 			FROM = {
-				NOT = { has_dynamic_modifier = { modifier = FIN_motti_tactics_modifier } }
+				NOT = { has_dynamic_modifier = { modifier = FIN_motti_tactics_modifier scope = FIN } }
 				is_controlled_by = ROOT
 			}
 		}
@@ -64,7 +64,7 @@ FIN_motti_tactics_category = {
 			hidden_effect = {
 				divide_variable = { FIN_motti_decision_cost = FIN_motti_decision_cost_increase }
 				set_variable = { FIN_motti_decision_cost_for_trigger = FIN_motti_decision_cost } #For trigger purposes
-				subtract_from_variable = { FIN_motti_decision_cost_for_trigger = 1 } 
+				subtract_from_variable = { FIN_motti_decision_cost_for_trigger = 1 }
 			}
 		}
 
@@ -74,18 +74,17 @@ FIN_motti_tactics_category = {
 				set_temp_variable = { FIN_remove_mana_cost = FIN_motti_decision_cost }
 				multiply_temp_variable = { FIN_remove_mana_cost = -1 }
 				add_command_power = FIN_remove_mana_cost
-				add_political_power = FIN_remove_mana_cost
-				
+
 				multiply_variable = { FIN_motti_decision_cost = FIN_motti_decision_cost_increase }
 				set_variable = { FIN_motti_decision_cost_for_trigger = FIN_motti_decision_cost } #For trigger purposes
-				subtract_from_variable = { FIN_motti_decision_cost_for_trigger = 1 } 
+				subtract_from_variable = { FIN_motti_decision_cost_for_trigger = 1 }
 			}
 
 			custom_effect_tooltip = FIN_motti_tactics_cost_increase_tt
 		}
 
 		remove_effect = {
-			FROM = {	
+			FROM = {
 				add_dynamic_modifier = { modifier = FIN_motti_tactics_modifier scope = FIN }
 			}
 
@@ -100,12 +99,40 @@ FIN_motti_tactics_category = {
 
 		ai_will_do = {
 			base = 0.1
+			modifier = { #Focus on Karelia and Savo
+				factor = 10
+				FROM = {
+					OR = {
+						state = 146
+						state = 1044
+						state = 150
+						state = 147
+					}
+				}
+			}
 			modifier = {
 				factor = 10
 				FROM = {
 					any_neighbor_state = {
 						controller = {
 							original_tag = SOV
+						}
+					}
+					if = {
+						limit = {
+							state = 870
+						}
+						NOT = {
+							has_full_control_of_state = 147
+						}
+					}
+					if = {
+						limit = {
+							state = 148
+						}
+						NOT = {
+							has_full_control_of_state = 722
+							has_full_control_of_state = 147
 						}
 					}
 				}
@@ -121,19 +148,16 @@ FIN_motti_tactics_category = {
 				}
 			}
 			modifier = {
+				factor = 20
+				FROM = {
+					state = 146
+				}
+			}
+			modifier = {
 				factor = 10
 				FROM = {
 					NOT = { is_fully_controlled_by = ROOT }
 				}
-			}
-			modifier = { #Don't do this if historical Finland needs to ban communism tack
-				factor = 0
-				FIN_is_historical_ai = yes
-				OR = {
-					has_idea = communist_pressure
-					communism > 0.08
-				}
-				NOT = { has_country_flag = banned_communism_flag }
 			}
 		}
 	}
@@ -151,26 +175,26 @@ FIN_motti_tactics_category = {
 
 		target_trigger = {
 			FROM = {
-				has_dynamic_modifier = { modifier = FIN_motti_tactics_modifier }
+				has_dynamic_modifier = { modifier = FIN_motti_tactics_modifier scope = FIN }
 			}
 		}
 
 		available = {
 			FROM = {
-				has_dynamic_modifier = { modifier = FIN_motti_tactics_modifier }
+				has_dynamic_modifier = { modifier = FIN_motti_tactics_modifier scope = FIN }
 			}
 		}
 
 		complete_effect = {
-			FROM = {	
-				remove_dynamic_modifier = { modifier = FIN_motti_tactics_modifier }
+			FROM = {
+				remove_dynamic_modifier = { modifier = FIN_motti_tactics_modifier scope = FIN }
 			}
 
 			#Cost decrease
 			hidden_effect = {
 				divide_variable = { FIN_motti_decision_cost = FIN_motti_decision_cost_increase }
 				set_variable = { FIN_motti_decision_cost_for_trigger = FIN_motti_decision_cost } #For trigger purposes
-				subtract_from_variable = { FIN_motti_decision_cost_for_trigger = 1 } 
+				subtract_from_variable = { FIN_motti_decision_cost_for_trigger = 1 }
 			}
 
 			custom_effect_tooltip = FIN_motti_tactics_cost_decrease_tt
@@ -185,6 +209,7 @@ FIN_motti_tactics_category = {
 					all_neighbor_state = {
 						controller = {
 							NOT = { has_war_with = ROOT }
+							NOT = { original_tag = SOV }
 						}
 					}
 				}
