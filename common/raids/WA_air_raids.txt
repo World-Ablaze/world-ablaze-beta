@@ -1,0 +1,2230 @@
+types = {
+	oil_field_raid = {
+		days_to_prepare = 90
+
+		ai_will_do = {
+			base = 0
+			# base = 1
+			# modifier = {
+			# 	# Don't target anyone who is not a potential enemy
+			# 	factor = 0
+			# 	NOT = {
+			# 		is_in_array = {
+			# 			array = potential_and_current_enemies
+			# 			value = FROM  # Target country
+			# 		}
+			# 	}
+			# }
+			# modifier = {
+			# 	# Don't target anyone who is not a potential enemy
+			# 	factor = 0.25
+			# 	NOT = {
+			# 		has_war_with = FROM
+			# 	}
+			# }
+			# modifier = {
+			# 	factor = 3 # Historical
+			# 	original_tag = ENG
+			# 	has_war_with = GER
+			# 	FROM = {
+			# 		original_tag = ROM
+			# 		is_in_faction_with = GER
+			# 	}
+			# }
+		}
+
+		category = air_raids
+
+		command_power = 5 # command power allocation cost
+
+		allowed = {
+		}
+		# Raid Type is visible
+		visible = {
+		}
+		# Specific Target is visible
+		show_target = {
+			NOT = {
+				is_in_faction_with = FROM
+			}
+		}
+
+		# Can prepare
+		available = {
+
+		}
+
+		# Can launch a raid
+		launchable = {
+			has_war_with = FROM
+		}
+
+		target_type = {
+			# province = any
+			state = {
+				# Resouce amount needed to be eligible as raid target
+				oil > 19
+				# If the site has been hit recently you can't target it again
+				NOT = {
+					OR = {
+						has_dynamic_modifier = {
+							modifier = oil_fields_lightly_damaged_modifier
+						}
+						has_dynamic_modifier = {
+							modifier = oil_fields_damaged_modifier
+						}
+						has_dynamic_modifier = {
+							modifier = oil_fields_critically_damaged_modifier
+						}
+					}
+				}
+			}
+		}
+		target_icon = GFX_oilfield_target_icon
+		target_loc_key = raid_target_name_oil_field
+		arrow = {
+			type = air
+		}
+		unit_model = {
+			type = equipment
+		}
+		launch_sound = raid_launch_air
+
+		unit_requirements = {
+			equipment = {
+				type = { large_plane_airframe }
+				modules = {
+					bomb_920kg_bomb_bay
+					bomb_1000kg_bomb_bay
+					bomb_1380kg_bomb_bay
+					bomb_1400kg_bomb_bay
+					bomb_1840kg_bomb_bay
+					bomb_2000kg_bomb_bay
+					bomb_2300kg_bomb_bay
+					bomb_2760kg_bomb_bay
+					bomb_3000kg_bomb_bay
+					bomb_3220kg_bomb_bay
+					bomb_3680kg_bomb_bay
+					bomb_4600kg_bomb_bay
+					bomb_5000kg_bomb_bay
+					bomb_5520kg_bomb_bay
+					bomb_8000kg_bomb_bay
+					bomb_8280kg_bomb_bay
+					bomb_9200kg_bomb_bay
+				}
+				amount = { min = 100 }
+			}
+		}
+
+		starting_point = {
+			types = { air_base }
+		}
+
+		success_factors = {
+			success = {
+				base = 0.5
+
+				# Raiding unit modifiers
+				experience = {
+					reference = 1.0
+					weight = 0.1
+					start_weight = -0.1
+				}
+				# air_agility = {
+				# 	reference = 100.0 # As air unit agility approaches 100 (as defined by the value above), increase chance by this value
+				# 	weight = 0.1 # At 0 agility, the modifier will have negative effect.
+				# 	start_weight = -0.1 # The modifier will scale linearly, meaning at 50 agility, the modifier will be 0.
+				# }
+				reliability = {
+					reference = 1
+					weight = 0.1
+					start_weight = -0.1
+				}
+				air_defence = {
+					reference = 100
+					weight = 0.05
+					start_weight = -0.05
+				}
+				strategic_bomber = {
+					reference = 75
+					weight = 0.2
+					start_weight = -0.2
+				}
+
+				## Actor Modifiers
+				air_superiority = {
+					reference = 1
+					start_reference = 0.5
+					weight = 0.25
+					start_weight = -0.25
+				}
+
+				### Target Modifiers
+				anti_air = {
+					reference = 10
+					weight = -0.5
+				}
+				interception = {
+					reference = 500 # More than 500 fighters won't really make any difference
+					weight = -0.25
+				}
+				intel = {
+					weight = 0.3
+					start_weight = -0.1
+					reference = 100
+				}
+			}
+
+			critical = {
+				base = 0.10
+			}
+		}
+
+		success_levels = {
+			failure = {
+				victim_effects = {
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.9
+						ratio = yes
+					}
+					raid_add_unit_experience = 0.05
+				}
+				visual_effect = {
+					entity = "nuke_entity"
+					animation = "attack"
+				}
+				visual_effect = {
+					entity = "raid_failed_entity"
+					animation = "attack"
+				}
+			}
+			limited_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						add_dynamic_modifier = {
+							modifier = oil_fields_lightly_damaged_modifier
+							days = 90
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.5
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.1
+				}
+				visual_effect = {
+					entity = "air_raids_2_limited_success_entity"
+					animation = "attack"
+				}
+			}
+			success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						add_dynamic_modifier = {
+							modifier = oil_fields_damaged_modifier
+							days = 120
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.25
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.2
+
+					var:actor_country = {
+						air_experience = 10
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_success_entity"
+					animation = "attack"
+				}
+			}
+			critical_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						add_dynamic_modifier = {
+							modifier = oil_fields_critically_damaged_modifier
+							days = 180
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.1
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.35
+
+					var:actor_country = {
+						air_experience = 20
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_critical_success_entity"
+					animation = "attack"
+				}
+			}
+		}
+	}
+	synthetic_refinery_raid = {
+		days_to_prepare = 90
+
+		ai_will_do = {
+			base = 0
+			# base = 1
+			# modifier = {
+			# 	# Don't target anyone who is not a potential enemy
+			# 	factor = 0
+			# 	NOT = {
+			# 		is_in_array = {
+			# 			array = potential_and_current_enemies
+			# 			value = FROM  # Target country
+			# 		}
+			# 	}
+			# }
+			# modifier = {
+			# 	# Don't target anyone who is not a potential enemy
+			# 	factor = 0.25
+			# 	NOT = {
+			# 		has_war_with = FROM
+			# 	}
+			# }
+			# modifier = {
+			# 	factor = 3 # Historical
+			# 	original_tag = ENG
+			# 	has_war_with = GER
+			# 	FROM = {
+			# 		original_tag = ROM
+			# 		is_in_faction_with = GER
+			# 	}
+			# }
+		}
+
+		category = air_raids
+
+		command_power = 5 # command power allocation cost
+
+		allowed = {
+			always = yes
+		}
+		# Raid Type is visible
+		visible = {
+			always = yes
+		}
+		# Specific Target is visible
+		show_target = {
+			NOT = {
+				is_in_faction_with = FROM
+			}
+		}
+
+		# Can prepare
+		available = {
+
+		}
+
+		# Can launch a raid
+		launchable = {
+			has_war_with = FROM
+		}
+
+		target_type = {
+			# province = any
+			state = {
+				synthetic_refinery > 3
+				# If the site has been hit recently you can't target it again
+				NOT = {
+					# OR = {
+					# 	has_dynamic_modifier = {
+					# 		modifier = synthetic_refineries_lightly_damaged_modifier
+					# 	}
+					# 	has_dynamic_modifier = {
+					# 		modifier = synthetic_refineries_damaged_modifier
+					# 	}
+					# 	has_dynamic_modifier = {
+					# 		modifier = synthetic_refineries_critically_damaged_modifier
+					# 	}
+					# }
+				}
+			}
+		}
+		target_icon = GFX_synthetic_refinery_target_icon
+		target_loc_key = raid_target_name_synthetic_refinery
+		arrow = {
+			type = air
+		}
+		unit_model = {
+			type = equipment
+		}
+		launch_sound = raid_launch_air
+
+		unit_requirements = {
+			equipment = {
+				type = { large_plane_airframe }
+				modules = {
+					bomb_920kg_bomb_bay
+					bomb_1000kg_bomb_bay
+					bomb_1380kg_bomb_bay
+					bomb_1400kg_bomb_bay
+					bomb_1840kg_bomb_bay
+					bomb_2000kg_bomb_bay
+					bomb_2300kg_bomb_bay
+					bomb_2760kg_bomb_bay
+					bomb_3000kg_bomb_bay
+					bomb_3220kg_bomb_bay
+					bomb_3680kg_bomb_bay
+					bomb_4600kg_bomb_bay
+					bomb_5000kg_bomb_bay
+					bomb_5520kg_bomb_bay
+					bomb_8000kg_bomb_bay
+					bomb_8280kg_bomb_bay
+					bomb_9200kg_bomb_bay
+				}
+				amount = { min = 100 }
+			}
+		}
+
+		starting_point = {
+			types = { air_base }
+		}
+
+		success_factors = {
+			success = {
+				base = 0.5
+
+				# Raiding unit modifiers
+				experience = {
+					reference = 1.0
+					weight = 0.1
+					start_weight = -0.1
+				}
+				# air_agility = {
+				# 	reference = 100.0 # As air unit agility approaches 100 (as defined by the value above), increase chance by this value
+				# 	weight = 0.1 # At 0 agility, the modifier will have negative effect.
+				# 	start_weight = -0.1 # The modifier will scale linearly, meaning at 50 agility, the modifier will be 0.
+				# }
+				reliability = {
+					reference = 1
+					weight = 0.1
+					start_weight = -0.1
+				}
+				air_defence = {
+					reference = 100
+					weight = 0.05
+					start_weight = -0.05
+				}
+				strategic_bomber = {
+					reference = 75
+					weight = 0.2
+					start_weight = -0.2
+				}
+
+				## Actor Modifiers
+				air_superiority = {
+					reference = 1
+					start_reference = 0.5
+					weight = 0.25
+					start_weight = -0.25
+				}
+
+				### Target Modifiers
+				anti_air = {
+					reference = 10
+					weight = -0.5
+				}
+				interception = {
+					reference = 500 # More than 500 fighters won't really make any difference
+					weight = -0.25
+				}
+				intel = {
+					weight = 0.3
+					start_weight = -0.1
+					reference = 100
+				}
+			}
+
+			critical = {
+				base = 0.10
+			}
+		}
+
+		success_levels = {
+			failure = {
+				victim_effects = {
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.9
+						ratio = yes
+					}
+					raid_add_unit_experience = 0.05
+				}
+				visual_effect = {
+					entity = "nuke_entity"
+					animation = "attack"
+				}
+				visual_effect = {
+					entity = "raid_failed_entity"
+					animation = "attack"
+				}
+			}
+			limited_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						# add_dynamic_modifier = {
+						# 	modifier = synthetic_refineries_lightly_damaged_modifier
+						# 	days = 90
+						# }
+						# set_temp_variable = { tmp_damage = building_level@synthetic_refinery } # Get how many buildings in the state
+						# multiply_temp_variable = { tmp_damage = 0.25 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# multiply_temp_variable = { tmp_damage = 5 } # Multiply by health of building ("value" in building definition)
+						damage_building = {
+							type = synthetic_refinery
+							damage = 5
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.5
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.1
+				}
+				visual_effect = {
+					entity = "air_raids_2_limited_success_entity"
+					animation = "attack"
+				}
+			}
+			success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						# add_dynamic_modifier = {
+						# 	modifier = synthetic_refineries_damaged_modifier
+						# 	days = 120
+						# }
+						# set_temp_variable = { tmp_damage = building_level@synthetic_refinery } # Get how many buildings in the state
+						# multiply_temp_variable = { tmp_damage = 0.5 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# multiply_temp_variable = { tmp_damage = 5 } # Multiply by health of building ("value" in building definition)
+						damage_building = {
+							type = synthetic_refinery
+							damage = 10
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.25
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.2
+
+					var:actor_country = {
+						air_experience = 10
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_success_entity"
+					animation = "attack"
+				}
+			}
+			critical_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						# add_dynamic_modifier = {
+						# 	modifier = synthetic_refineries_critically_damaged_modifier
+						# 	days = 180
+						# }
+						# set_temp_variable = { tmp_damage = building_level@synthetic_refinery } # Get how many buildings in the state
+						# multiply_temp_variable = { tmp_damage = 0.75 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# multiply_temp_variable = { tmp_damage = 5 } # Multiply by health of building ("value" in building definition)
+						damage_building = {
+							type = synthetic_refinery
+							damage = 15
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.1
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.35
+
+					var:actor_country = {
+						air_experience = 20
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_critical_success_entity"
+					animation = "attack"
+				}
+			}
+		}
+	}
+	steel_refinery_raid = {
+		days_to_prepare = 90
+
+		ai_will_do = {
+			base = 0
+			# base = 1
+			# modifier = {
+			# 	# Don't target anyone who is not a potential enemy
+			# 	factor = 0
+			# 	NOT = {
+			# 		is_in_array = {
+			# 			array = potential_and_current_enemies
+			# 			value = FROM  # Target country
+			# 		}
+			# 	}
+			# }
+			# modifier = {
+			# 	# Don't target anyone who is not a potential enemy
+			# 	factor = 0.25
+			# 	NOT = {
+			# 		has_war_with = FROM
+			# 	}
+			# }
+			# modifier = {
+			# 	factor = 3 # Historical
+			# 	original_tag = ENG
+			# 	has_war_with = GER
+			# 	FROM = {
+			# 		original_tag = ROM
+			# 		is_in_faction_with = GER
+			# 	}
+			# }
+		}
+
+		category = air_raids
+
+		command_power = 5 # command power allocation cost
+
+		allowed = {
+			always = yes
+		}
+		# Raid Type is visible
+		visible = {
+			always = yes
+		}
+		# Specific Target is visible
+		show_target = {
+			NOT = {
+				is_in_faction_with = FROM
+			}
+		}
+
+		# Can prepare
+		available = {
+
+		}
+
+		# Can launch a raid
+		launchable = {
+			has_war_with = FROM
+		}
+
+		target_type = {
+			# province = any
+			state = {
+				OR = {
+					steel_refinery > 3
+					hydro_steel_refinery > 3
+				}
+				# If the site has been hit recently you can't target it again
+				NOT = {
+					# OR = {
+					# 	has_dynamic_modifier = {
+					# 		modifier = synthetic_refineries_lightly_damaged_modifier
+					# 	}
+					# 	has_dynamic_modifier = {
+					# 		modifier = synthetic_refineries_damaged_modifier
+					# 	}
+					# 	has_dynamic_modifier = {
+					# 		modifier = synthetic_refineries_critically_damaged_modifier
+					# 	}
+					# }
+				}
+			}
+		}
+		target_icon = GFX_steel_refinery_target_icon
+		target_loc_key = raid_target_name_steel_refinery
+		arrow = {
+			type = air
+		}
+		unit_model = {
+			type = equipment
+		}
+		launch_sound = raid_launch_air
+
+		unit_requirements = {
+			equipment = {
+				type = { large_plane_airframe }
+				modules = {
+					bomb_920kg_bomb_bay
+					bomb_1000kg_bomb_bay
+					bomb_1380kg_bomb_bay
+					bomb_1400kg_bomb_bay
+					bomb_1840kg_bomb_bay
+					bomb_2000kg_bomb_bay
+					bomb_2300kg_bomb_bay
+					bomb_2760kg_bomb_bay
+					bomb_3000kg_bomb_bay
+					bomb_3220kg_bomb_bay
+					bomb_3680kg_bomb_bay
+					bomb_4600kg_bomb_bay
+					bomb_5000kg_bomb_bay
+					bomb_5520kg_bomb_bay
+					bomb_8000kg_bomb_bay
+					bomb_8280kg_bomb_bay
+					bomb_9200kg_bomb_bay
+				}
+				amount = { min = 100 }
+			}
+		}
+
+		starting_point = {
+			types = { air_base }
+		}
+
+		success_factors = {
+			success = {
+				base = 0.5
+
+				# Raiding unit modifiers
+				experience = {
+					reference = 1.0
+					weight = 0.1
+					start_weight = -0.1
+				}
+				# air_agility = {
+				# 	reference = 100.0 # As air unit agility approaches 100 (as defined by the value above), increase chance by this value
+				# 	weight = 0.1 # At 0 agility, the modifier will have negative effect.
+				# 	start_weight = -0.1 # The modifier will scale linearly, meaning at 50 agility, the modifier will be 0.
+				# }
+				reliability = {
+					reference = 1
+					weight = 0.1
+					start_weight = -0.1
+				}
+				air_defence = {
+					reference = 100
+					weight = 0.05
+					start_weight = -0.05
+				}
+				strategic_bomber = {
+					reference = 75
+					weight = 0.2
+					start_weight = -0.2
+				}
+
+				## Actor Modifiers
+				air_superiority = {
+					reference = 1
+					start_reference = 0.5
+					weight = 0.25
+					start_weight = -0.25
+				}
+
+				### Target Modifiers
+				anti_air = {
+					reference = 10
+					weight = -0.5
+				}
+				interception = {
+					reference = 500 # More than 500 fighters won't really make any difference
+					weight = -0.25
+				}
+				intel = {
+					weight = 0.3
+					start_weight = -0.1
+					reference = 100
+				}
+			}
+
+			critical = {
+				base = 0.10
+			}
+		}
+
+		success_levels = {
+			failure = {
+				victim_effects = {
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.9
+						ratio = yes
+					}
+					raid_add_unit_experience = 0.05
+				}
+				visual_effect = {
+					entity = "nuke_entity"
+					animation = "attack"
+				}
+				visual_effect = {
+					entity = "raid_failed_entity"
+					animation = "attack"
+				}
+			}
+			limited_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						# add_dynamic_modifier = {
+						# 	modifier = synthetic_refineries_lightly_damaged_modifier
+						# 	days = 90
+						# }
+						# set_temp_variable = { tmp_damage = building_level@synthetic_refinery } # Get how many buildings in the state
+						# multiply_temp_variable = { tmp_damage = 0.25 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# multiply_temp_variable = { tmp_damage = 5 } # Multiply by health of building ("value" in building definition)
+						if = {
+							limit = { steel_refinery > 3 }
+							damage_building = {
+								type = steel_refinery
+								damage = 5
+							}
+						}
+						else_if = {
+							limit = { hydro_steel_refinery > 3 }
+							damage_building = {
+								type = hydro_steel_refinery
+								damage = 5
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.5
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.1
+				}
+				visual_effect = {
+					entity = "air_raids_2_limited_success_entity"
+					animation = "attack"
+				}
+			}
+			success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						# add_dynamic_modifier = {
+						# 	modifier = synthetic_refineries_damaged_modifier
+						# 	days = 120
+						# }
+						# set_temp_variable = { tmp_damage = building_level@synthetic_refinery } # Get how many buildings in the state
+						# multiply_temp_variable = { tmp_damage = 0.5 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# multiply_temp_variable = { tmp_damage = 5 } # Multiply by health of building ("value" in building definition)
+						if = {
+							limit = { steel_refinery > 3 }
+							damage_building = {
+								type = steel_refinery
+								damage = 10
+							}
+						}
+						else_if = {
+							limit = { hydro_steel_refinery > 3 }
+							damage_building = {
+								type = hydro_steel_refinery
+								damage = 10
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.25
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.2
+
+					var:actor_country = {
+						air_experience = 10
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_success_entity"
+					animation = "attack"
+				}
+			}
+			critical_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						# add_dynamic_modifier = {
+						# 	modifier = synthetic_refineries_critically_damaged_modifier
+						# 	days = 180
+						# }
+						# set_temp_variable = { tmp_damage = building_level@synthetic_refinery } # Get how many buildings in the state
+						# multiply_temp_variable = { tmp_damage = 0.75 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# multiply_temp_variable = { tmp_damage = 5 } # Multiply by health of building ("value" in building definition)
+						if = {
+							limit = { steel_refinery > 3 }
+							damage_building = {
+								type = steel_refinery
+								damage = 15
+							}
+						}
+						else_if = {
+							limit = { hydro_steel_refinery > 3 }
+							damage_building = {
+								type = hydro_steel_refinery
+								damage = 15
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.1
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.35
+
+					var:actor_country = {
+						air_experience = 20
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_critical_success_entity"
+					animation = "attack"
+				}
+			}
+		}
+	}
+	aluminium_refinery_raid = {
+		days_to_prepare = 90
+
+		ai_will_do = {
+			base = 0
+			# base = 1
+			# modifier = {
+			# 	# Don't target anyone who is not a potential enemy
+			# 	factor = 0
+			# 	NOT = {
+			# 		is_in_array = {
+			# 			array = potential_and_current_enemies
+			# 			value = FROM  # Target country
+			# 		}
+			# 	}
+			# }
+			# modifier = {
+			# 	# Don't target anyone who is not a potential enemy
+			# 	factor = 0.25
+			# 	NOT = {
+			# 		has_war_with = FROM
+			# 	}
+			# }
+			# modifier = {
+			# 	factor = 3 # Historical
+			# 	original_tag = ENG
+			# 	has_war_with = GER
+			# 	FROM = {
+			# 		original_tag = ROM
+			# 		is_in_faction_with = GER
+			# 	}
+			# }
+		}
+
+		category = air_raids
+
+		command_power = 5 # command power allocation cost
+
+		allowed = {
+			always = yes
+		}
+		# Raid Type is visible
+		visible = {
+			always = yes
+		}
+		# Specific Target is visible
+		show_target = {
+			NOT = {
+				is_in_faction_with = FROM
+			}
+		}
+
+		# Can prepare
+		available = {
+
+		}
+
+		# Can launch a raid
+		launchable = {
+			has_war_with = FROM
+		}
+
+		target_type = {
+			# province = any
+			state = {
+				OR = {
+					aluminium_refinery > 3
+					hydro_aluminium_refinery > 3
+				}
+				# If the site has been hit recently you can't target it again
+				NOT = {
+					# OR = {
+					# 	has_dynamic_modifier = {
+					# 		modifier = synthetic_refineries_lightly_damaged_modifier
+					# 	}
+					# 	has_dynamic_modifier = {
+					# 		modifier = synthetic_refineries_damaged_modifier
+					# 	}
+					# 	has_dynamic_modifier = {
+					# 		modifier = synthetic_refineries_critically_damaged_modifier
+					# 	}
+					# }
+				}
+			}
+		}
+		target_icon = GFX_aluminium_refinery_target_icon
+		target_loc_key = raid_target_name_aluminium_refinery
+		arrow = {
+			type = air
+		}
+		unit_model = {
+			type = equipment
+		}
+		launch_sound = raid_launch_air
+
+		unit_requirements = {
+			equipment = {
+				type = { large_plane_airframe }
+				modules = {
+					bomb_920kg_bomb_bay
+					bomb_1000kg_bomb_bay
+					bomb_1380kg_bomb_bay
+					bomb_1400kg_bomb_bay
+					bomb_1840kg_bomb_bay
+					bomb_2000kg_bomb_bay
+					bomb_2300kg_bomb_bay
+					bomb_2760kg_bomb_bay
+					bomb_3000kg_bomb_bay
+					bomb_3220kg_bomb_bay
+					bomb_3680kg_bomb_bay
+					bomb_4600kg_bomb_bay
+					bomb_5000kg_bomb_bay
+					bomb_5520kg_bomb_bay
+					bomb_8000kg_bomb_bay
+					bomb_8280kg_bomb_bay
+					bomb_9200kg_bomb_bay
+				}
+				amount = { min = 100 }
+			}
+		}
+
+		starting_point = {
+			types = { air_base }
+		}
+
+		success_factors = {
+			success = {
+				base = 0.5
+
+				# Raiding unit modifiers
+				experience = {
+					reference = 1.0
+					weight = 0.1
+					start_weight = -0.1
+				}
+				# air_agility = {
+				# 	reference = 100.0 # As air unit agility approaches 100 (as defined by the value above), increase chance by this value
+				# 	weight = 0.1 # At 0 agility, the modifier will have negative effect.
+				# 	start_weight = -0.1 # The modifier will scale linearly, meaning at 50 agility, the modifier will be 0.
+				# }
+				reliability = {
+					reference = 1
+					weight = 0.1
+					start_weight = -0.1
+				}
+				air_defence = {
+					reference = 100
+					weight = 0.05
+					start_weight = -0.05
+				}
+				strategic_bomber = {
+					reference = 75
+					weight = 0.2
+					start_weight = -0.2
+				}
+
+				## Actor Modifiers
+				air_superiority = {
+					reference = 1
+					start_reference = 0.5
+					weight = 0.25
+					start_weight = -0.25
+				}
+
+				### Target Modifiers
+				anti_air = {
+					reference = 10
+					weight = -0.5
+				}
+				interception = {
+					reference = 500 # More than 500 fighters won't really make any difference
+					weight = -0.25
+				}
+				intel = {
+					weight = 0.3
+					start_weight = -0.1
+					reference = 100
+				}
+			}
+
+			critical = {
+				base = 0.10
+			}
+		}
+
+		success_levels = {
+			failure = {
+				victim_effects = {
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.9
+						ratio = yes
+					}
+					raid_add_unit_experience = 0.05
+				}
+				visual_effect = {
+					entity = "nuke_entity"
+					animation = "attack"
+				}
+				visual_effect = {
+					entity = "raid_failed_entity"
+					animation = "attack"
+				}
+			}
+			limited_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						# add_dynamic_modifier = {
+						# 	modifier = synthetic_refineries_lightly_damaged_modifier
+						# 	days = 90
+						# }
+						# set_temp_variable = { tmp_damage = building_level@synthetic_refinery } # Get how many buildings in the state
+						# multiply_temp_variable = { tmp_damage = 0.25 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# multiply_temp_variable = { tmp_damage = 5 } # Multiply by health of building ("value" in building definition)
+						if = {
+							limit = { aluminium_refinery > 3 }
+							damage_building = {
+								type = aluminium_refinery
+								damage = 5
+							}
+						}
+						else_if = {
+							limit = { hydro_aluminium_refinery > 3 }
+							damage_building = {
+								type = hydro_aluminium_refinery
+								damage = 5
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.5
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.1
+				}
+				visual_effect = {
+					entity = "air_raids_2_limited_success_entity"
+					animation = "attack"
+				}
+			}
+			success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						# add_dynamic_modifier = {
+						# 	modifier = synthetic_refineries_damaged_modifier
+						# 	days = 120
+						# }
+						# set_temp_variable = { tmp_damage = building_level@synthetic_refinery } # Get how many buildings in the state
+						# multiply_temp_variable = { tmp_damage = 0.5 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# multiply_temp_variable = { tmp_damage = 5 } # Multiply by health of building ("value" in building definition)
+						if = {
+							limit = { aluminium_refinery > 3 }
+							damage_building = {
+								type = aluminium_refinery
+								damage = 10
+							}
+						}
+						else_if = {
+							limit = { hydro_aluminium_refinery > 3 }
+							damage_building = {
+								type = hydro_aluminium_refinery
+								damage = 10
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.25
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.2
+
+					var:actor_country = {
+						air_experience = 10
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_success_entity"
+					animation = "attack"
+				}
+			}
+			critical_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						# add_dynamic_modifier = {
+						# 	modifier = synthetic_refineries_critically_damaged_modifier
+						# 	days = 180
+						# }
+						# set_temp_variable = { tmp_damage = building_level@synthetic_refinery } # Get how many buildings in the state
+						# multiply_temp_variable = { tmp_damage = 0.75 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# multiply_temp_variable = { tmp_damage = 5 } # Multiply by health of building ("value" in building definition)
+						if = {
+							limit = { aluminium_refinery > 3 }
+							damage_building = {
+								type = aluminium_refinery
+								damage = 15
+							}
+						}
+						else_if = {
+							limit = { hydro_aluminium_refinery > 3 }
+							damage_building = {
+								type = hydro_aluminium_refinery
+								damage = 15
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.1
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.35
+
+					var:actor_country = {
+						air_experience = 20
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_critical_success_entity"
+					animation = "attack"
+				}
+			}
+		}
+	}
+	arms_factory_raid = {
+		days_to_prepare = 90
+
+		ai_will_do = {
+			base = 0
+			# base = 1
+			# modifier = {
+			# 	# Don't target anyone who is not a potential enemy
+			# 	factor = 0
+			# 	NOT = {
+			# 		is_in_array = {
+			# 			array = potential_and_current_enemies
+			# 			value = FROM  # Target country
+			# 		}
+			# 	}
+			# }
+			# modifier = {
+			# 	# Don't target anyone who is not a potential enemy
+			# 	factor = 0.25
+			# 	NOT = {
+			# 		has_war_with = FROM
+			# 	}
+			# }
+			# modifier = {
+			# 	factor = 3 # Historical
+			# 	original_tag = ENG
+			# 	has_war_with = GER
+			# 	FROM = {
+			# 		original_tag = ROM
+			# 		is_in_faction_with = GER
+			# 	}
+			# }
+		}
+
+		category = air_raids
+
+		command_power = 5 # command power allocation cost
+
+		allowed = {
+			always = yes
+		}
+		# Raid Type is visible
+		visible = {
+			always = yes
+		}
+		# Specific Target is visible
+		show_target = {
+			NOT = {
+				is_in_faction_with = FROM
+			}
+		}
+
+		# Can prepare
+		available = {
+
+		}
+
+		# Can launch a raid
+		launchable = {
+			has_war_with = FROM
+		}
+
+		target_type = {
+			# province = any
+			state = {
+				arms_factory > 19
+				# If the site has been hit recently you can't target it again
+				NOT = {
+					# OR = {
+					# 	has_dynamic_modifier = {
+					# 		modifier = synthetic_refineries_lightly_damaged_modifier
+					# 	}
+					# 	has_dynamic_modifier = {
+					# 		modifier = synthetic_refineries_damaged_modifier
+					# 	}
+					# 	has_dynamic_modifier = {
+					# 		modifier = synthetic_refineries_critically_damaged_modifier
+					# 	}
+					# }
+				}
+			}
+		}
+		target_icon = GFX_arms_factory_target_icon
+		target_loc_key = raid_target_name_arms_factory
+		arrow = {
+			type = air
+		}
+		unit_model = {
+			type = equipment
+		}
+		launch_sound = raid_launch_air
+
+		unit_requirements = {
+			equipment = {
+				type = { large_plane_airframe }
+				modules = {
+					bomb_920kg_bomb_bay
+					bomb_1000kg_bomb_bay
+					bomb_1380kg_bomb_bay
+					bomb_1400kg_bomb_bay
+					bomb_1840kg_bomb_bay
+					bomb_2000kg_bomb_bay
+					bomb_2300kg_bomb_bay
+					bomb_2760kg_bomb_bay
+					bomb_3000kg_bomb_bay
+					bomb_3220kg_bomb_bay
+					bomb_3680kg_bomb_bay
+					bomb_4600kg_bomb_bay
+					bomb_5000kg_bomb_bay
+					bomb_5520kg_bomb_bay
+					bomb_8000kg_bomb_bay
+					bomb_8280kg_bomb_bay
+					bomb_9200kg_bomb_bay
+				}
+				amount = { min = 100 }
+			}
+		}
+
+		starting_point = {
+			types = { air_base }
+		}
+
+		success_factors = {
+			success = {
+				base = 0.5
+
+				# Raiding unit modifiers
+				experience = {
+					reference = 1.0
+					weight = 0.1
+					start_weight = -0.1
+				}
+				# air_agility = {
+				# 	reference = 100.0 # As air unit agility approaches 100 (as defined by the value above), increase chance by this value
+				# 	weight = 0.1 # At 0 agility, the modifier will have negative effect.
+				# 	start_weight = -0.1 # The modifier will scale linearly, meaning at 50 agility, the modifier will be 0.
+				# }
+				reliability = {
+					reference = 1
+					weight = 0.1
+					start_weight = -0.1
+				}
+				air_defence = {
+					reference = 100
+					weight = 0.05
+					start_weight = -0.05
+				}
+				strategic_bomber = {
+					reference = 75
+					weight = 0.2
+					start_weight = -0.2
+				}
+
+				## Actor Modifiers
+				air_superiority = {
+					reference = 1
+					start_reference = 0.5
+					weight = 0.25
+					start_weight = -0.25
+				}
+
+				### Target Modifiers
+				anti_air = {
+					reference = 10
+					weight = -0.5
+				}
+				interception = {
+					reference = 500 # More than 500 fighters won't really make any difference
+					weight = -0.25
+				}
+				intel = {
+					weight = 0.3
+					start_weight = -0.1
+					reference = 100
+				}
+			}
+
+			critical = {
+				base = 0.10
+			}
+		}
+
+		success_levels = {
+			failure = {
+				victim_effects = {
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.9
+						ratio = yes
+					}
+					raid_add_unit_experience = 0.05
+				}
+				visual_effect = {
+					entity = "nuke_entity"
+					animation = "attack"
+				}
+				visual_effect = {
+					entity = "raid_failed_entity"
+					animation = "attack"
+				}
+			}
+			limited_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						# add_dynamic_modifier = {
+						# 	modifier = synthetic_refineries_lightly_damaged_modifier
+						# 	days = 90
+						# }
+						# set_temp_variable = { tmp_damage = building_level@synthetic_refinery } # Get how many buildings in the state
+						# multiply_temp_variable = { tmp_damage = 0.25 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# multiply_temp_variable = { tmp_damage = 5 } # Multiply by health of building ("value" in building definition)
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = raid_damage_buildings_tt
+								building = arms_factory
+								num = 5
+							}
+							damage_building = {
+								type = arms_factory
+								damage = 40
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.5
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.1
+				}
+				visual_effect = {
+					entity = "air_raids_2_limited_success_entity"
+					animation = "attack"
+				}
+			}
+			success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						# add_dynamic_modifier = {
+						# 	modifier = synthetic_refineries_damaged_modifier
+						# 	days = 120
+						# }
+						# set_temp_variable = { tmp_damage = building_level@synthetic_refinery } # Get how many buildings in the state
+						# multiply_temp_variable = { tmp_damage = 0.5 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# multiply_temp_variable = { tmp_damage = 5 } # Multiply by health of building ("value" in building definition)
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = raid_damage_buildings_tt
+								building = arms_factory
+								num = 10
+							}
+							damage_building = {
+								type = arms_factory
+								damage = 80
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.25
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.2
+
+					var:actor_country = {
+						air_experience = 10
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_success_entity"
+					animation = "attack"
+				}
+			}
+			critical_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						# add_dynamic_modifier = {
+						# 	modifier = synthetic_refineries_critically_damaged_modifier
+						# 	days = 180
+						# }
+						# set_temp_variable = { tmp_damage = building_level@synthetic_refinery } # Get how many buildings in the state
+						# multiply_temp_variable = { tmp_damage = 0.75 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# multiply_temp_variable = { tmp_damage = 5 } # Multiply by health of building ("value" in building definition)
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = raid_damage_buildings_tt
+								building = arms_factory
+								num = 15
+							}
+							damage_building = {
+								type = arms_factory
+								damage = 120
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.1
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.35
+
+					var:actor_country = {
+						air_experience = 20
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_critical_success_entity"
+					animation = "attack"
+				}
+			}
+		}
+	}
+	dockyard_raid = {
+		days_to_prepare = 90
+
+		ai_will_do = {
+			base = 0
+			# base = 1
+			# modifier = {
+			# 	# Don't target anyone who is not a potential enemy
+			# 	factor = 0
+			# 	NOT = {
+			# 		is_in_array = {
+			# 			array = potential_and_current_enemies
+			# 			value = FROM  # Target country
+			# 		}
+			# 	}
+			# }
+			# modifier = {
+			# 	# Don't target anyone who is not a potential enemy
+			# 	factor = 0.25
+			# 	NOT = {
+			# 		has_war_with = FROM
+			# 	}
+			# }
+			# modifier = {
+			# 	factor = 3 # Historical
+			# 	original_tag = ENG
+			# 	has_war_with = GER
+			# 	FROM = {
+			# 		original_tag = ROM
+			# 		is_in_faction_with = GER
+			# 	}
+			# }
+		}
+
+		category = air_raids
+
+		command_power = 5 # command power allocation cost
+
+		allowed = {
+			always = yes
+		}
+		# Raid Type is visible
+		visible = {
+			always = yes
+		}
+		# Specific Target is visible
+		show_target = {
+			NOT = {
+				is_in_faction_with = FROM
+			}
+		}
+
+		# Can prepare
+		available = {
+
+		}
+
+		# Can launch a raid
+		launchable = {
+			has_war_with = FROM
+		}
+
+		target_type = {
+			# province = any
+			state = {
+				dockyard > 4
+				# If the site has been hit recently you can't target it again
+				NOT = {
+					# OR = {
+					# 	has_dynamic_modifier = {
+					# 		modifier = synthetic_refineries_lightly_damaged_modifier
+					# 	}
+					# 	has_dynamic_modifier = {
+					# 		modifier = synthetic_refineries_damaged_modifier
+					# 	}
+					# 	has_dynamic_modifier = {
+					# 		modifier = synthetic_refineries_critically_damaged_modifier
+					# 	}
+					# }
+				}
+			}
+		}
+		target_icon = GFX_dockyard_target_icon
+		target_loc_key = raid_target_name_dockyard
+		arrow = {
+			type = air
+		}
+		unit_model = {
+			type = equipment
+		}
+		launch_sound = raid_launch_air
+
+		unit_requirements = {
+			equipment = {
+				type = { large_plane_airframe }
+				modules = {
+					bomb_920kg_bomb_bay
+					bomb_1000kg_bomb_bay
+					bomb_1380kg_bomb_bay
+					bomb_1400kg_bomb_bay
+					bomb_1840kg_bomb_bay
+					bomb_2000kg_bomb_bay
+					bomb_2300kg_bomb_bay
+					bomb_2760kg_bomb_bay
+					bomb_3000kg_bomb_bay
+					bomb_3220kg_bomb_bay
+					bomb_3680kg_bomb_bay
+					bomb_4600kg_bomb_bay
+					bomb_5000kg_bomb_bay
+					bomb_5520kg_bomb_bay
+					bomb_8000kg_bomb_bay
+					bomb_8280kg_bomb_bay
+					bomb_9200kg_bomb_bay
+				}
+				amount = { min = 100 }
+			}
+		}
+
+		starting_point = {
+			types = { air_base }
+		}
+
+		success_factors = {
+			success = {
+				base = 0.5
+
+				# Raiding unit modifiers
+				experience = {
+					reference = 1.0
+					weight = 0.1
+					start_weight = -0.1
+				}
+				# air_agility = {
+				# 	reference = 100.0 # As air unit agility approaches 100 (as defined by the value above), increase chance by this value
+				# 	weight = 0.1 # At 0 agility, the modifier will have negative effect.
+				# 	start_weight = -0.1 # The modifier will scale linearly, meaning at 50 agility, the modifier will be 0.
+				# }
+				reliability = {
+					reference = 1
+					weight = 0.1
+					start_weight = -0.1
+				}
+				air_defence = {
+					reference = 100
+					weight = 0.05
+					start_weight = -0.05
+				}
+				strategic_bomber = {
+					reference = 75
+					weight = 0.2
+					start_weight = -0.2
+				}
+
+				## Actor Modifiers
+				air_superiority = {
+					reference = 1
+					start_reference = 0.5
+					weight = 0.25
+					start_weight = -0.25
+				}
+
+				### Target Modifiers
+				anti_air = {
+					reference = 10
+					weight = -0.5
+				}
+				interception = {
+					reference = 500 # More than 500 fighters won't really make any difference
+					weight = -0.25
+				}
+				intel = {
+					weight = 0.3
+					start_weight = -0.1
+					reference = 100
+				}
+			}
+
+			critical = {
+				base = 0.10
+			}
+		}
+
+		success_levels = {
+			failure = {
+				victim_effects = {
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.9
+						ratio = yes
+					}
+					raid_add_unit_experience = 0.05
+				}
+				visual_effect = {
+					entity = "nuke_entity"
+					animation = "attack"
+				}
+				visual_effect = {
+					entity = "raid_failed_entity"
+					animation = "attack"
+				}
+			}
+			limited_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						# add_dynamic_modifier = {
+						# 	modifier = synthetic_refineries_lightly_damaged_modifier
+						# 	days = 90
+						# }
+						# set_temp_variable = { tmp_damage = building_level@synthetic_refinery } # Get how many buildings in the state
+						# multiply_temp_variable = { tmp_damage = 0.25 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# multiply_temp_variable = { tmp_damage = 5 } # Multiply by health of building ("value" in building definition)
+						damage_building = {
+							type = dockyard
+							damage = 6
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.5
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.1
+				}
+				visual_effect = {
+					entity = "air_raids_2_limited_success_entity"
+					animation = "attack"
+				}
+			}
+			success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						# add_dynamic_modifier = {
+						# 	modifier = synthetic_refineries_damaged_modifier
+						# 	days = 120
+						# }
+						# set_temp_variable = { tmp_damage = building_level@synthetic_refinery } # Get how many buildings in the state
+						# multiply_temp_variable = { tmp_damage = 0.5 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# multiply_temp_variable = { tmp_damage = 5 } # Multiply by health of building ("value" in building definition)
+						damage_building = {
+							type = dockyard
+							damage = 12
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.25
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.2
+
+					var:actor_country = {
+						air_experience = 10
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_success_entity"
+					animation = "attack"
+				}
+			}
+			critical_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						# add_dynamic_modifier = {
+						# 	modifier = synthetic_refineries_critically_damaged_modifier
+						# 	days = 180
+						# }
+						# set_temp_variable = { tmp_damage = building_level@synthetic_refinery } # Get how many buildings in the state
+						# multiply_temp_variable = { tmp_damage = 0.75 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# multiply_temp_variable = { tmp_damage = 5 } # Multiply by health of building ("value" in building definition)
+						damage_building = {
+							type = dockyard
+							damage = 18
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.1
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.35
+
+					var:actor_country = {
+						air_experience = 20
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_critical_success_entity"
+					animation = "attack"
+				}
+			}
+		}
+	}
+	industrial_complex_raid = {
+		days_to_prepare = 90
+
+		ai_will_do = {
+			base = 0
+			# base = 1
+			# modifier = {
+			# 	# Don't target anyone who is not a potential enemy
+			# 	factor = 0
+			# 	NOT = {
+			# 		is_in_array = {
+			# 			array = potential_and_current_enemies
+			# 			value = FROM  # Target country
+			# 		}
+			# 	}
+			# }
+			# modifier = {
+			# 	# Don't target anyone who is not a potential enemy
+			# 	factor = 0.25
+			# 	NOT = {
+			# 		has_war_with = FROM
+			# 	}
+			# }
+			# modifier = {
+			# 	factor = 3 # Historical
+			# 	original_tag = ENG
+			# 	has_war_with = GER
+			# 	FROM = {
+			# 		original_tag = ROM
+			# 		is_in_faction_with = GER
+			# 	}
+			# }
+		}
+
+		category = air_raids
+
+		command_power = 5 # command power allocation cost
+
+		allowed = {
+			always = yes
+		}
+		# Raid Type is visible
+		visible = {
+			always = yes
+		}
+		# Specific Target is visible
+		show_target = {
+			NOT = {
+				is_in_faction_with = FROM
+			}
+		}
+
+		# Can prepare
+		available = {
+
+		}
+
+		# Can launch a raid
+		launchable = {
+			has_war_with = FROM
+		}
+
+		target_type = {
+			# province = any
+			state = {
+				industrial_complex > 19
+				# If the site has been hit recently you can't target it again
+				NOT = {
+					# OR = {
+					# 	has_dynamic_modifier = {
+					# 		modifier = synthetic_refineries_lightly_damaged_modifier
+					# 	}
+					# 	has_dynamic_modifier = {
+					# 		modifier = synthetic_refineries_damaged_modifier
+					# 	}
+					# 	has_dynamic_modifier = {
+					# 		modifier = synthetic_refineries_critically_damaged_modifier
+					# 	}
+					# }
+				}
+			}
+		}
+		target_icon = GFX_industrial_complex_target_icon
+		target_loc_key = raid_target_name_industrial_complex
+		arrow = {
+			type = air
+		}
+		unit_model = {
+			type = equipment
+		}
+		launch_sound = raid_launch_air
+
+		unit_requirements = {
+			equipment = {
+				type = { large_plane_airframe }
+				modules = {
+					bomb_920kg_bomb_bay
+					bomb_1000kg_bomb_bay
+					bomb_1380kg_bomb_bay
+					bomb_1400kg_bomb_bay
+					bomb_1840kg_bomb_bay
+					bomb_2000kg_bomb_bay
+					bomb_2300kg_bomb_bay
+					bomb_2760kg_bomb_bay
+					bomb_3000kg_bomb_bay
+					bomb_3220kg_bomb_bay
+					bomb_3680kg_bomb_bay
+					bomb_4600kg_bomb_bay
+					bomb_5000kg_bomb_bay
+					bomb_5520kg_bomb_bay
+					bomb_8000kg_bomb_bay
+					bomb_8280kg_bomb_bay
+					bomb_9200kg_bomb_bay
+				}
+				amount = { min = 100 }
+			}
+		}
+
+		starting_point = {
+			types = { air_base }
+		}
+
+		success_factors = {
+			success = {
+				base = 0.5
+
+				# Raiding unit modifiers
+				experience = {
+					reference = 1.0
+					weight = 0.1
+					start_weight = -0.1
+				}
+				# air_agility = {
+				# 	reference = 100.0 # As air unit agility approaches 100 (as defined by the value above), increase chance by this value
+				# 	weight = 0.1 # At 0 agility, the modifier will have negative effect.
+				# 	start_weight = -0.1 # The modifier will scale linearly, meaning at 50 agility, the modifier will be 0.
+				# }
+				reliability = {
+					reference = 1
+					weight = 0.1
+					start_weight = -0.1
+				}
+				air_defence = {
+					reference = 100
+					weight = 0.05
+					start_weight = -0.05
+				}
+				strategic_bomber = {
+					reference = 75
+					weight = 0.2
+					start_weight = -0.2
+				}
+
+				## Actor Modifiers
+				air_superiority = {
+					reference = 1
+					start_reference = 0.5
+					weight = 0.25
+					start_weight = -0.25
+				}
+
+				### Target Modifiers
+				anti_air = {
+					reference = 10
+					weight = -0.5
+				}
+				interception = {
+					reference = 500 # More than 500 fighters won't really make any difference
+					weight = -0.25
+				}
+				intel = {
+					weight = 0.3
+					start_weight = -0.1
+					reference = 100
+				}
+			}
+
+			critical = {
+				base = 0.10
+			}
+		}
+
+		success_levels = {
+			failure = {
+				victim_effects = {
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.9
+						ratio = yes
+					}
+					raid_add_unit_experience = 0.05
+				}
+				visual_effect = {
+					entity = "nuke_entity"
+					animation = "attack"
+				}
+				visual_effect = {
+					entity = "raid_failed_entity"
+					animation = "attack"
+				}
+			}
+			limited_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						# add_dynamic_modifier = {
+						# 	modifier = synthetic_refineries_lightly_damaged_modifier
+						# 	days = 90
+						# }
+						# set_temp_variable = { tmp_damage = building_level@synthetic_refinery } # Get how many buildings in the state
+						# multiply_temp_variable = { tmp_damage = 0.25 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# multiply_temp_variable = { tmp_damage = 5 } # Multiply by health of building ("value" in building definition)
+						damage_building = {
+							type = industrial_complex
+							damage = 25
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.5
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.1
+				}
+				visual_effect = {
+					entity = "air_raids_2_limited_success_entity"
+					animation = "attack"
+				}
+			}
+			success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						# add_dynamic_modifier = {
+						# 	modifier = synthetic_refineries_damaged_modifier
+						# 	days = 120
+						# }
+						# set_temp_variable = { tmp_damage = building_level@synthetic_refinery } # Get how many buildings in the state
+						# multiply_temp_variable = { tmp_damage = 0.5 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# multiply_temp_variable = { tmp_damage = 5 } # Multiply by health of building ("value" in building definition)
+						damage_building = {
+							type = industrial_complex
+							damage = 50
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.25
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.2
+
+					var:actor_country = {
+						air_experience = 10
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_success_entity"
+					animation = "attack"
+				}
+			}
+			critical_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						# add_dynamic_modifier = {
+						# 	modifier = synthetic_refineries_critically_damaged_modifier
+						# 	days = 180
+						# }
+						# set_temp_variable = { tmp_damage = building_level@synthetic_refinery } # Get how many buildings in the state
+						# multiply_temp_variable = { tmp_damage = 0.75 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# multiply_temp_variable = { tmp_damage = 5 } # Multiply by health of building ("value" in building definition)
+						damage_building = {
+							type = industrial_complex
+							damage = 75
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.1
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.35
+
+					var:actor_country = {
+						air_experience = 20
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_critical_success_entity"
+					animation = "attack"
+				}
+			}
+		}
+	}
+}
