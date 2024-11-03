@@ -12,13 +12,12 @@ raid_category_id = {
 ```
 
 # Raids
-TODO Raids: Clean up the documentation before release
 ```
 raid_type_id = {
 
 	category = raid_category_id
 
-	custom_map_icon = GFX_ref [Optional] - override for the automatic icon lookup (if this is not set, will look for "GFX_raid_type_icon_{raid_name} )" 
+	custom_map_icon = GFX_ref [Optional] - override for the automatic icon lookup (if this is not set, will look for "GFX_raid_type_icon_{raid_name} )"
     custom_terrain_icon = GFX_ref [Optional] - override for the automatic background based on target province terrain
 
 	unit_icon = GFX_ref
@@ -96,9 +95,9 @@ raid_type_id = {
 				is_coastal = yes # Optional
 			}
 			state = { <triggers> }
-			
+
 	target_loc_key = LOC_KEY [Optional] - Custom loc key for overriding the target name. Use $LOCATION$ if you want to include the location name (state or VP).
-	
+
     # Conditions on the starting point:
     starting_point = {
         types = { air_base, naval_base, rocket_site, carrier, submarine }
