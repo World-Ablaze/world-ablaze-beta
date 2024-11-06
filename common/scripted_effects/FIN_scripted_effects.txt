@@ -1,4 +1,117 @@
+### Internal FACTIONS
 
+FIN_change_public_trust_effect = {
+	add_to_variable = { FIN_public_trust = FIN_internal_faction_effect_input }
+	clamp_variable = {
+		var = FIN_public_trust
+		min = 0
+		max = 100
+	}
+	FIN_calculate_factions_effect = yes
+}
+
+FIN_change_public_influence_effect = {
+	add_to_variable = { FIN_public_influence = FIN_internal_faction_effect_input }
+	clamp_variable = {
+		var = FIN_public_influence
+		min = 0
+		max = 100
+	}
+	FIN_calculate_factions_effect = yes
+}
+
+FIN_change_parliament_trust_effect = {
+	add_to_variable = { FIN_parliament_trust = FIN_internal_faction_effect_input }
+	clamp_variable = {
+		var = FIN_parliament_trust
+		min = 0
+		max = 100
+	}
+	FIN_calculate_factions_effect = yes
+}
+
+FIN_change_parliament_influence_effect = {
+	add_to_variable = { FIN_parliament_influence = FIN_internal_faction_effect_input }
+	clamp_variable = {
+		var = FIN_parliament_influence
+		min = 0
+		max = 100
+	}
+	FIN_calculate_factions_effect = yes
+}
+
+FIN_calculate_factions_effect = {
+	set_variable = { FIN_public_effective_trust = FIN_public_trust }
+	subtract_from_variable = { FIN_public_effective_trust = 50 }
+	set_temp_variable = {tempScaling = FIN_public_influence }
+	divide_temp_variable = { tempScaling = 100 }
+	multiply_variable = { FIN_public_effective_trust = tempScaling }
+	add_to_variable = { FIN_public_effective_trust = 50 }
+	set_temp_variable = { tempTrust = FIN_public_effective_trust }
+
+	# invlerped
+	divide_temp_variable = { tempTrust = 100}
+
+	# lerp war
+	set_variable = { FIN_public_war_support = 1}
+	subtract_from_variable = { FIN_public_war_support = tempTrust }
+	multiply_variable = { FIN_public_war_support = -0.05 } 				# Min
+	set_temp_variable = { lerp_max = 0.05 } 							# Max
+	multiply_temp_variable = { lerp_max = tempTrust }
+	add_to_variable = { FIN_public_war_support = lerp_max}
+
+	# lerp recruit
+	set_variable = { FIN_public_recruitable = 1}
+	subtract_from_variable = { FIN_public_recruitable = tempTrust }
+	multiply_variable = { FIN_public_recruitable = -0.5 } 				# Min
+	set_temp_variable = { lerp_max = 0.5 } 								# Max
+	multiply_temp_variable = { lerp_max = tempTrust }
+	add_to_variable = { FIN_public_recruitable = lerp_max}
+
+	###
+
+	set_variable = { FIN_parliament_effective_trust = FIN_parliament_trust }
+	subtract_from_variable = { FIN_parliament_effective_trust = 50 }
+	set_temp_variable = {tempScaling = FIN_parliament_influence }
+	divide_temp_variable = { tempScaling = 100 }
+	multiply_variable = { FIN_parliament_effective_trust = tempScaling }
+	add_to_variable = { FIN_parliament_effective_trust = 50 }
+	set_temp_variable = { tempTrust = FIN_parliament_effective_trust }
+
+	# invlerped
+	divide_temp_variable = { tempTrust = 100}
+
+	# lerp pp
+	set_variable = { FIN_parliament_pp_gain = 1}
+	subtract_from_variable = { FIN_parliament_pp_gain = tempTrust }
+	multiply_variable = { FIN_parliament_pp_gain = -0.5 } 				# Min
+	set_temp_variable = { lerp_max = 0.5 } 								# Max
+	multiply_temp_variable = { lerp_max = tempTrust }
+	add_to_variable = { FIN_parliament_pp_gain = lerp_max}
+
+	# lerp stab
+	set_variable = { FIN_parliament_stability = 1}
+	subtract_from_variable = { FIN_parliament_stability = tempTrust }
+	multiply_variable = { FIN_parliament_stability = -0.05 }			# Min
+	set_temp_variable = { lerp_max = 0.05 }								# Max
+	multiply_temp_variable = { lerp_max = tempTrust }
+	add_to_variable = { FIN_parliament_stability = lerp_max}
+
+	# lerp output
+	set_variable = { FIN_parliament_factory_output = 1}
+	subtract_from_variable = { FIN_parliament_factory_output = tempTrust }
+	multiply_variable = { FIN_parliament_factory_output = -0.05 } 		# Min
+	set_temp_variable = { lerp_max = 0.05 } 							# Max
+	multiply_temp_variable = { lerp_max = tempTrust }
+	add_to_variable = { FIN_parliament_factory_output = lerp_max}
+
+	add_to_variable = { FIN_public_war_support = FIN_extra_public_war_support }
+	add_to_variable = { FIN_public_recruitable = FIN_extra_public_recruits }
+
+	add_to_variable = { FIN_parliament_pp_gain = FIN_extra_parliament_pp }
+	add_to_variable = { FIN_parliament_stability = FIN_extra_parliament_stability }
+	add_to_variable = { FIN_parliament_factory_output = FIN_extra_parliament_output }
+}
 
 FIN_kallio_becomes_country_leader = {
 	retire_country_leader = yes
@@ -146,6 +259,15 @@ FIN_seize_weapon_caches = { #Used on the state scope
 	}
 }
 
+### WINTER WAR
+
+FIN_winter_war_setup_effect = {
+	set_variable = { FIN_winter_war_exhaustion_variable = 0}
+	set_variable = { FIN_winter_war_fort_variable = 0.2}
+	set_variable = { FIN_winter_war_core_defence_variable = 0}
+	set_variable = { FIN_winter_war_attack_variable = 0}
+	add_dynamic_modifier = { modifier = FIN_winter_war_modifiers }
+}
 
 ### CONTINUATION WAR
 

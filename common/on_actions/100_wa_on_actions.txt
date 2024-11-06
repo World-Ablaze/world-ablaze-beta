@@ -1042,6 +1042,21 @@ on_actions = {
 		effect = {
 			if = {
 				limit = {
+					has_global_flag = WA_winter_war_flag
+					THIS = { tag = FIN }
+				}
+				clr_global_flag = WA_winter_war_flag
+				FIN = {
+					remove_dynamic_modifier = { modifier = FIN_winter_war_modifiers }
+				}
+				SOV = {
+					remove_dynamic_modifier = { modifier = SOV_winter_war_modifiers }
+				}
+			}
+		}
+		effect = {
+			if = {
+				limit = {
 					OR = {
 						ETH = { exists = no }
 						NOT = { ETH = { has_war_with = ITA } }
@@ -3039,6 +3054,26 @@ on_actions = {
 			}
 		}
 	}
+	on_daily_SOV = {
+		# Soviet Winter War calculation
+		effect = {
+			if = {
+				limit = { has_global_flag = WA_winter_war_flag }
+			}
+			SOV = {
+				add_to_variable = { SOV_winter_war_impatience_variable = 0.5 }
+				clamp_variable = {
+					var = SOV_winter_war_impatience_variable
+					max = 100
+				}
+
+				set_temp_variable = { temp_impatience = SOV_winter_war_impatience_variable}
+				divide_temp_variable = { temp_impatience = 100}
+
+				set_variable = { SOV_winter_war_pp_variable = temp_impatience}
+			}
+		}
+	}
 	on_weekly_FRA = {
 		effect = {
 			if = {
@@ -3804,6 +3839,62 @@ on_actions = {
 	#	}
 	}
 	on_monthly = {
+	}
+	on_weekly_FIN = {
+		effect = {
+			set_temp_variable = { FIN_parliament_shift = 0 }
+			set_temp_variable = { FIN_public_shift = 0 }
+			if = {
+				limit = { has_country_flag = FIN_curfew_flag }
+				add_to_variable = { FIN_public_shift = -0.2 }
+			}
+			if = {
+				limit = { has_war = yes }
+				set_temp_variable = { temp_losses = casualties_k }
+				divide_temp_variable = { temp_losses = 10 }
+				round_temp_variable = temp_losses
+				divide_temp_variable = { temp_losses = 10 }
+				multiply_temp_variable = { temp_losses = -1 }
+				add_to_variable = { FIN_public_shift = temp_losses }
+			}
+			if = {
+				limit = { has_war = no }
+				add_to_variable = { FIN_public_shift = 0.2 }
+				add_to_variable = { FIN_parliament_shift = 0.1 }
+			}
+			set_variable = { FIN_internal_faction_effect_input = FIN_public_shift }
+			FIN_change_public_trust_effect = yes
+			set_variable = { FIN_internal_faction_effect_input = FIN_parliament_shift }
+			FIN_change_parliament_trust_effect = yes
+		}
+	}
+	on_daily_FIN = {
+		# Finland Winter War calculation
+		effect = {
+			if = {
+				limit = { has_global_flag = WA_winter_war_flag }
+				FIN = {
+					set_variable = { FIN_winter_war_exhaustion_variable = casualties_k }
+					clamp_variable = {
+						var = FIN_winter_war_exhaustion_variable
+						max = 100
+					}
+					round_variable = FIN_winter_war_exhaustion_variable
+					set_temp_variable = { temp_exhaustion = FIN_winter_war_exhaustion_variable }
+					divide_temp_variable = { temp_exhaustion = 100 }
+
+					set_variable = { FIN_winter_war_fort_variable = temp_exhaustion }
+					multiply_variable = { FIN_winter_war_fort_variable = -1.2}
+					add_to_variable = { FIN_winter_war_fort_variable = 0.2 }
+
+					set_variable = { FIN_winter_war_core_defence_variable = temp_exhaustion}
+					divide_variable = { FIN_winter_war_core_defence_variable = 5}
+
+					set_variable = { FIN_winter_war_attack_variable = temp_exhaustion}
+					multiply_variable = { FIN_winter_war_attack_variable = -0.2}
+				}
+			}
+		}
 	}
 
 	on_declare_war = {
