@@ -2896,4 +2896,279 @@ types = {
 			}
 		}
 	}
+ ######     ###    ##    ##    ###    ##
+##    ##   ## ##   ###   ##   ## ##   ##
+##        ##   ##  ####  ##  ##   ##  ##
+##       ##     ## ## ## ## ##     ## ##
+##       ######### ##  #### ######### ##
+##    ## ##     ## ##   ### ##     ## ##
+ ######  ##     ## ##    ## ##     ## ########
+	lock_bombing_raid = {
+		days_to_prepare = 90
+
+		category = air_raids
+
+		command_power = 20 # command power allocation cost
+
+		ai_will_do = {
+			base = 1
+		}
+
+		allowed = {
+			has_dlc = "Gotterdammerung"
+		}
+		# Raid Type is visible
+		visible = {
+			# has_tech = day_bombing
+			OR = {
+				is_major = yes
+				has_deployed_air_force_size = {
+					size > 2999
+				}
+			}
+		}
+		# Specific Target is visible
+		show_target = {
+			has_war_with = FROM
+		}
+
+		# Can prepare
+		available = {
+
+		}
+
+		# Can launch a raid
+		launchable = {
+			has_war_with = FROM
+			has_fuel > 24999
+		}
+
+		target_type = {
+			building = {
+				tags = locks_building
+			}
+		}
+		target_icon = GFX_canal_icon
+		launch_sound = raid_launch_air
+
+		arrow = {
+			type = air
+		}
+		unit_model = {
+			type = equipment
+		}
+
+		unit_requirements = {
+			equipment = {
+				type = { medium_plane_airframe large_plane_airframe }
+				modules = {
+					bomb_920kg_bomb_bay
+					bomb_1000kg_bomb_bay
+					bomb_1380kg_bomb_bay
+					bomb_1400kg_bomb_bay
+					bomb_1500kg_bomb_bay
+					bomb_1840kg_bomb_bay
+					bomb_2000kg_bomb_bay
+					bomb_2300kg_bomb_bay
+					bomb_2500kg_bomb_bay
+					bomb_2760kg_bomb_bay
+					bomb_3000kg_bomb_bay
+					bomb_3220kg_bomb_bay
+					bomb_3680kg_bomb_bay
+					bomb_4600kg_bomb_bay
+					bomb_5000kg_bomb_bay
+					bomb_5520kg_bomb_bay
+					bomb_8000kg_bomb_bay
+					bomb_8280kg_bomb_bay
+					bomb_9200kg_bomb_bay
+				}
+				amount = { min = 100 }
+			}
+		}
+
+		starting_point = {
+			types = { air_base }
+		}
+
+		success_factors = {
+			success = {
+				base = 0.4
+
+				# Raiding unit modifiers
+				experience = {
+					reference = 1.0
+					weight = 0.1
+					start_weight = -0.1
+				}
+				# air_agility = {
+				# 	reference = 100.0 # As air unit agility approaches 100 (as defined by the value above), increase chance by this value
+				# 	weight = 0.1 # At 0 agility, the modifier will have negative effect.
+				# 	start_weight = -0.1 # The modifier will scale linearly, meaning at 50 agility, the modifier will be 0.
+				# }
+				reliability = {
+					reference = 1
+					weight = 0.1
+					start_weight = -0.1
+				}
+				air_defence = {
+					reference = 100
+					weight = 0.05
+					start_weight = -0.05
+				}
+				strategic_bomber = {
+					reference = 75
+					weight = 0.2
+					start_weight = -0.2
+				}
+
+				## Actor Modifiers
+				air_superiority = {
+					reference = 1
+					start_reference = 0.5
+					weight = 0.25
+					start_weight = -0.25
+				}
+
+				### Target Modifiers
+				anti_air = {
+					reference = 10
+					weight = -0.5
+				}
+				interception = {
+					reference = 500 # More than 500 fighters won't really make any difference
+					weight = -0.25
+				}
+				radar = {
+					weight = -0.1
+				}
+				intel = {
+					weight = 0.3
+					start_weight = -0.1
+					reference = 100
+				}
+			}
+
+			critical = {
+				base = 0.10
+			}
+		}
+		success_levels = {
+			failure = {
+				victim_effects = {
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.25
+						ratio = yes
+					}
+					raid_add_unit_experience = 0.05
+					var:actor_country = {
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "nuke_entity"
+					animation = "attack"
+				}
+				visual_effect = {
+					entity = "raid_failed_entity"
+					animation = "attack"
+				}
+			}
+			limited_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						damage_building = {
+							tags = locks_building
+							damage = 0.33 # levels of damage
+							province = var:ROOT.target_province
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.15
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.1
+					var:actor_country = {
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_limited_success_entity"
+					animation = "attack"
+				}
+			}
+			success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						damage_building = {
+							tags = locks_building
+							damage = 0.66 # levels of damage
+							province = var:ROOT.target_province
+							repair_speed_modifier = -0.35
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.1
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.2
+
+					var:actor_country = {
+						air_experience = 5
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_success_entity"
+					animation = "attack"
+				}
+			}
+			critical_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						damage_building = {
+							tags = locks_building
+							damage = 1 # levels of damage
+							province = var:ROOT.target_province
+							repair_speed_modifier = -0.55
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.05
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.35
+
+					var:actor_country = {
+						air_experience = 10
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_critical_success_entity"
+					animation = "attack"
+				}
+			}
+		}
+	}
 }
