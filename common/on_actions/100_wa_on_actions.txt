@@ -3842,6 +3842,12 @@ on_actions = {
 	}
 	on_weekly_FIN = {
 		effect = {
+			set_temp_variable = { FIN_parliament_shift = 0 }
+			set_temp_variable = { FIN_public_shift = 0 }
+			if = {
+				limit = { has_country_flag = FIN_curfew_flag }
+				add_to_variable = { FIN_public_shift = -0.2 }
+			}
 			if = {
 				limit = { has_war = yes }
 				set_temp_variable = { temp_losses = casualties_k }
@@ -3849,14 +3855,17 @@ on_actions = {
 				round_temp_variable = temp_losses
 				divide_temp_variable = { temp_losses = 10 }
 				multiply_temp_variable = { temp_losses = -1 }
-				set_variable = { FIN_internal_faction_effect_input = temp_losses }
-				FIN_change_public_trust_effect = yes
+				add_to_variable = { FIN_public_shift = temp_losses }
 			}
 			if = {
 				limit = { has_war = no }
-				set_variable = { FIN_internal_faction_effect_input = 0.2 }
-				FIN_change_public_trust_effect = yes
+				add_to_variable = { FIN_public_shift = 0.2 }
+				add_to_variable = { FIN_parliament_shift = 0.1 }
 			}
+			set_variable = { FIN_internal_faction_effect_input = FIN_public_shift }
+			FIN_change_public_trust_effect = yes
+			set_variable = { FIN_internal_faction_effect_input = FIN_parliament_shift }
+			FIN_change_parliament_trust_effect = yes
 		}
 	}
 	on_daily_FIN = {
