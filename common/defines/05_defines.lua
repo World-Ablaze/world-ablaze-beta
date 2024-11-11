@@ -1252,7 +1252,7 @@ NDefines.NIndustrialOrganisation.ASSIGN_INDUSTRIAL_MANUFACTURER_PP_COST_PER_DAY 
 NDefines.NIndustrialOrganisation.FUNDS_FOR_SIZE_UP = 200								-- Funds needed for a MIO to increment its size and get points to unlock traits
 NDefines.NIndustrialOrganisation.FUNDS_FOR_SIZE_UP_LEVEL_FACTOR = 50 					-- How much each level mutliplies the funds for size up
 NDefines.NIndustrialOrganisation.FUNDS_FOR_SIZE_UP_LEVEL_POW = 1.78 					-- the power we apply to the mio size when calculating funds to level up.
-NDefines.NIndustrialOrganisation.DESIGN_TEAM_CHANGE_XP_COST = 10						-- Flat cost added to the XP cost of a new equipment design
+NDefines.NIndustrialOrganisation.DESIGN_TEAM_CHANGE_XP_COST = 2							-- Flat cost added to the XP cost of a new equipment design
 NDefines.NIndustrialOrganisation.FUNDS_FOR_RESEARCH_COMPLETION_PER_RESEARCH_COST = 50  	-- Funds added to MIO when the Design Team has completed a research, multiplied by research_cost in technology template
 NDefines.NIndustrialOrganisation.FUNDS_FOR_CREATING_EQUIPMENT_VARIANT = 25				-- Funds added to MIO when a new variant is created with the Design Team assigned to it
 NDefines.NIndustrialOrganisation.MAX_FUNDS_FROM_MANUFACTURER_PER_DAY = 12000			-- Max funds generated per manufacturer per day. Set to 0 for no Maximum.
