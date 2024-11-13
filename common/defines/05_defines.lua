@@ -920,6 +920,9 @@ NDefines.NAI.MAX_MICRO_ATTACKS_PER_ORDER = 5										-- AI goes through its ord
 
 NDefines.NAI.PLAN_ATTACK_DEPTH_FACTOR = 1.0											-- Factor applied to size or enemy being attacked, makes AI draw attack orders deeper into enemy territory.
 
+NDefines.NAI.CANCEL_COMBAT_DISADVANTAGE_RATIO = 1.5             					-- If the enemy's advantage ratio over us during (normal) combat is more than <value>, allow canceling the attack
+NDefines.NAI.CANCEL_COMBAT_MIN_DURATION_HOURS = 24              					-- Only allow cancelling (normal) combat if at least <value> hours have passed
+
 NDefines.NAI.ARMY_LEADER_ASSIGN_FIELD_MARSHAL_TO_ARMY = -100000            			-- Score for assigning a field marshal to a normal army (want to use them for army groups)
 NDefines.NAI.ARMY_LEADER_ASSIGN_EMPTYNESS_MALUS = 0.0                  				-- Factor for avoiding assigning leaders that can lead large armies to small armies (a value of 0.2 reduces the score by max 20 %)
 NDefines.NAI.ARMY_LEADER_ASSIGN_OVERCAPACITY = 0                     				-- Score for assigning leader to a too large army
@@ -952,9 +955,7 @@ NDefines.NAI.MINIMUM_CONVOY_TO_ASK_LEND_LEASE = 200									-- AI will accept to
 NDefines.NAI.MINIMUM_FUEL_DAYS_TO_ASK_LEND_LEASE = 60								-- AI will accept to lend lease fuel only if the player have less fuel than this number multiply by his max daily consumption.
 NDefines.NAI.MINIMUM_FUEL_DAYS_TO_ACCEPT_LEND_LEASE = 60					 		-- AI will accept to lend lease fuel only if they have more fuel than this number multiply by their max daily consumption. Note that for a GiE asking to its host, we divide this number by 2.
 
------------ NAVY
-
-NDefines.NAI.MISSING_CONVOYS_BOOST_FACTOR = 0.0										-- The more convoys a country is missing, the more resources it diverts to cover this.
+----------- INVASIONS
 
 NDefines.NAI.MAX_DISTANCE_NALAV_INVASION = 200.0									-- AI is extremely unwilling to plan naval invasions above this naval distance limit.
 NDefines.NAI.MAX_UNIT_RATIO_FOR_INVASIONS = 0.35									-- countries won't use armies more than this ratio of total units for invasions
@@ -968,7 +969,14 @@ NDefines.NAI.MAX_INVASION_SIZE = 24													-- max invasion group size
 NDefines.NAI.MAX_UNITS_FACTOR_INVASION_ORDER = 1.4									-- Factor for max number of units to assign to naval invasion orders
 NDefines.NAI.DESIRED_UNITS_FACTOR_INVASION_ORDER = 1.4								-- Factor for desired number of units to assign to naval invasion orders
 NDefines.NAI.MIN_UNITS_FACTOR_INVASION_ORDER = 1.2									-- Factor for min number of units to assign to naval invasion orders
-NDefines.NAI.ENEMY_NAVY_STRENGTH_DONT_BOTHER = 5.0									-- If the enemy has a navy at least these many times stronger that the own, don't bother invading
+NDefines.NAI.ENEMY_NAVY_STRENGTH_DONT_BOTHER = 5.0
+
+NDefines.NAI.CANCEL_INVASION_COMBAT_DISADVANTAGE_RATIO = 3.5    					-- If the enemy's advantage ratio over us during invasion combat is more than <value>, allow canceling the attack
+NDefines.NAI.CANCEL_INVASION_COMBAT_MIN_DURATION_HOURS = 720    					-- Only allow cancelling invasion combat if at least <value> hours have passed
+
+----------- NAVY
+
+NDefines.NAI.MISSING_CONVOYS_BOOST_FACTOR = 0.0										-- The more convoys a country is missing, the more resources it diverts to cover this.						-- If the enemy has a navy at least these many times stronger that the own, don't bother invading
 
 NDefines.NAI.CONVOY_ESCORT_MUL_FROM_NO_CONVOYS = 0 									-- score multiplier when no convoys are around
 NDefines.NAI.CONVOY_ESCORT_SCORE_FROM_CONVOYS = 0            				    	-- score for each convoy you have in area
