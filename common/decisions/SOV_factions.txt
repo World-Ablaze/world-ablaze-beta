@@ -1719,19 +1719,24 @@ SOV_internal_factions = {
 	###########################################################################################################
 	###########################################################################################################
 	###########################################################################################################
-	SOV_take_viipuri = {
+	SOV_take_besserabia = {
 		icon = generic_decision
 		allowed = {
 			original_tag = SOV
 		}
 		#Succeed trigger
 		available = {
-			146 = {
+			80 = {
 				CONTROLLER = {
 					is_in_faction_with = SOV
 				}
 			}
-			1045 = {
+			78 = {
+				CONTROLLER = {
+					is_in_faction_with = SOV
+				}
+			}
+			766 = {
 				CONTROLLER = {
 					is_in_faction_with = SOV
 				}
@@ -1754,7 +1759,7 @@ SOV_internal_factions = {
 			army_experience = 25
 		}
 	}
-	SOV_win_the_winter_war = {
+	SOV_win_the_river_war = {
 		icon = eng_trade_unions_support
 
 		allowed = {
@@ -1762,48 +1767,51 @@ SOV_internal_factions = {
 		}
 		available = {
 			custom_trigger_tooltip = {
-				tooltip = SOV_win_the_winter_war_tt
-				controls_state = 213
-				controls_state = 1047
-				controls_state = 215
-				controls_state = 216
-				controls_state = 195
+				tooltip = SOV_win_the_river_war_tt
+				controls_state = 199
+				controls_state = 198
+				controls_state = 192
 			}
 			OR = {
 				AND = {
-					controls_state = 146
-					controls_state = 1044
+					controls_state = 80
+					controls_state = 78
+					controls_state = 766
 				}
-				any_controlled_state = {
-					is_core_of = FIN
-					state_population > 100000
-				}
+				ROM = { surrender_progress > 0.2 }
 			}
-			FIN = { surrender_progress > 0.16 }
 		}
 
 		days_mission_timeout = 240
 		is_good = no
 
 		activation = {
-			has_war_with = FIN
-			OR = {
-				FIN = { is_in_faction = no }
-				FIN = { is_faction_leader = yes }
-			}
-			146 = { is_owned_by = FIN }
+			has_war_with = ROM
+			#OR = {
+			#	ROM = { is_in_faction = no }
+			#	ROM = { is_faction_leader = yes }
+			#}
+			78 = { is_owned_by = ROM }
 			NOT = {
 				any_enemy_country = {
-					is_major = yes
+					OR = {
+						original_tag = FRA
+						original_tag = ITA
+						original_tag = JAP
+						original_tag = GER
+						original_tag = SOV
+						original_tag = ENG
+						original_tag = USA
+					}
 				}
 			}
 			NOT = {
-				has_global_flag = SOV_ww_over
+				has_global_flag = SOV_rw_over
 			}
 		}
 
 		complete_effect = {
-			FIN = { country_event = { id = finland.7 } }
+			ROM = { country_event = { id = romania.7 } }
 		}
 
 		timeout_effect = {
@@ -1811,17 +1819,15 @@ SOV_internal_factions = {
 				limit = {
 					OR = {
 						AND = {
-							controls_state = 1044
-							controls_state = 1045
+							controls_state = 80
+							controls_state = 766
 						}
-						controls_state = 150
-						controls_state = 870
-						controls_state = 148
+						controls_state = 78
 					}
 				}
-				set_country_flag = SOV_winter_war_phyrric_victory
+				set_country_flag = SOV_river_war_phyrric_victory
 			}
-			country_event = { id = sov_armor.849 }
+			country_event = { id = sov_armor.861 }
 		}
 	}
 
@@ -1831,12 +1837,12 @@ SOV_internal_factions = {
 
 		available = {
 			custom_trigger_tooltip = {
-				tooltip = SOV_the_greatest_tank_army_light_tt
-				check_variable = { num_equipment_in_armies@light_tank_chassis > 9999 }
+				tooltip = SOV_the_greatest_tank_army_light_support_tt
+				check_variable = { num_equipment_in_armies@light_tank_support_chassis > 9999 }
 			}
 			custom_trigger_tooltip = {
-				tooltip = SOV_the_greatest_tank_army__medium_tt
-				check_variable = { num_equipment_in_armies@medium_tank_chassis > 4999 }
+				tooltip = SOV_the_greatest_tank_army_light_tt
+				check_variable = { num_equipment_in_armies@light_tank_chassis > 4999 }
 			}
 			has_army_size = {
 				size > 29
@@ -1856,8 +1862,22 @@ SOV_internal_factions = {
 		}
 
 		complete_effect = {
-			add_political_power = 300
+			add_political_power = 150
 			army_experience = 100
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				mio:SOV_morozov_design_bureau_organization = {
+					add_mio_funds = 1800
+				}
+				mio:SOV_astrov_design_bureau_organization = {
+					add_mio_funds = 1800
+				}
+				mio:SOV_kirov_organization = {
+					add_mio_funds = 1800
+				}
+			}
 			add_doctrine_cost_reduction = {
 				name = SOV_the_greatest_tank_army
 				cost_reduction = 0.99
@@ -1896,7 +1916,7 @@ SOV_internal_factions = {
 			}
 			custom_trigger_tooltip = {
 				tooltip = SOV_the_greatest_airforce_bomber_tt
-				check_variable = { greatest_airforce_tac > 2999 }
+				check_variable = { greatest_airforce_tac > 2499 }
 			}
 		}
 
@@ -1910,13 +1930,100 @@ SOV_internal_factions = {
 		activation = {
 			tag = SOV
 		}
-
 		complete_effect = {
-			add_political_power = 300
+			add_political_power = 150
 			air_experience = 100
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				custom_effect_tooltip = ENG_military_missions_tt
+				effect_tooltip = {
+					mio:SOV_mig_design_bureau_organization = {
+						add_mio_funds = 1800
+					}
+					mio:SOV_yakovlev_design_bureau_organization = {
+						add_mio_funds = 1800
+					}
+					mio:SOV_lavochkin_design_bureau_organization = {
+						add_mio_funds = 1800
+					}
+					mio:SOV_ilyushin_design_bureau_organization = {
+						add_mio_funds = 1800
+					}
+					mio:SOV_okb_organization = {
+						add_mio_funds = 1800
+					}
+					mio:SOV_tupolev_design_bureau_organization = {
+						add_mio_funds = 1800
+					}
+				}
+				hidden_effect = {
+					if = {
+						limit = {
+							mio:SOV_mig_design_bureau_organization = {
+								has_mio_size > 1
+							}
+						}
+						mio:SOV_mig_design_bureau_organization = {
+							add_mio_funds = 1800
+						}
+					}
+					if = {
+						limit = {
+							mio:SOV_yakovlev_design_bureau_organization = {
+								has_mio_size > 1
+							}
+						}
+						mio:SOV_yakovlev_design_bureau_organization = {
+							add_mio_funds = 1800
+						}
+					}
+					if = {
+						limit = {
+							mio:SOV_lavochkin_design_bureau_organization = {
+								has_mio_size > 1
+							}
+						}
+						mio:SOV_lavochkin_design_bureau_organization = {
+							add_mio_funds = 1800
+						}
+					}
+					if = {
+						limit = {
+							mio:SOV_ilyushin_design_bureau_organization = {
+								has_mio_size > 1
+							}
+						}
+						mio:SOV_ilyushin_design_bureau_organization = {
+							add_mio_funds = 1800
+						}
+					}
+					if = {
+						limit = {
+							mio:SOV_okb_organization = {
+								has_mio_size > 1
+							}
+						}
+						mio:SOV_okb_organization = {
+							add_mio_funds = 1800
+						}
+					}
+					if = {
+						limit = {
+							mio:SOV_tupolev_design_bureau_organization = {
+								has_mio_size > 1
+							}
+						}
+						mio:SOV_tupolev_design_bureau_organization = {
+							add_mio_funds = 1800
+						}
+					}
+				}
+			}
 			add_doctrine_cost_reduction = {
 				name = SOV_the_greatest_airforce
-				cost_reduction = 0.5
+				cost_reduction = 0.99
 				uses = 1
 				category = air_doctrine
 			}
@@ -1979,7 +2086,7 @@ SOV_internal_factions = {
 				}
 				has_navy_size = {
 					size > 224
-					archetype = ship_hull_cruiser_submarine
+					archetype = sub_hull_cruiser_submarine
 				}
 				has_navy_size = {
 					size > 119
@@ -2023,6 +2130,13 @@ SOV_internal_factions = {
 			}
 			has_army_size = {
 				size > 265
+			}
+			custom_override_tooltip = {
+				tooltip = {
+					localization_key = has_army_eq_tt
+					num_eq = "250.00K"
+				}
+				check_variable = { num_equipment_in_armies@infantry_equipment > 250000 }
 			}
 		}
 

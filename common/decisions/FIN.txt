@@ -1,4 +1,564 @@
+FIN_winter_war_category = {
+	FIN_evacuate_karjala = {
+
+		icon = generic_operation
+
+		allowed = { tag = FIN }
+
+		available = {
+			has_war_with = SOV
+			controls_state = 146
+			controls_state = 111
+			controls_state = 879
+			controls_state = 149
+			controls_state = 870
+			controls_state = 972
+			OR = {
+				NOT = { has_full_control_of_state = 146 }
+				NOT = { has_full_control_of_state = 1044 }
+				NOT = { has_full_control_of_state = 1045 }
+			}
+		}
+
+		visible = {
+			controls_state = 146
+			OR = {
+				threat > 0.3
+				has_war_with = SOV
+			}
+		}
+
+		cost = 50
+		fire_only_once = yes
+
+		cancel_if_not_visible = yes
+
+		ai_will_do = {
+			factor = 400
+		}
+
+		modifier = {
+			civilian_factory_use = 5
+		}
+
+		days_remove = 60
+
+		remove_effect = {
+			146 = {
+				add_manpower = -279666
+			}
+			1044 = {
+				add_manpower = -88105
+			}
+			1045 = {
+				add_manpower = -9031
+			}
+			111 = {
+				add_manpower = 176837
+			}
+			150 = {
+				add_manpower = 75535
+			}
+			879 = {
+				add_manpower = 67922
+			}
+			149 = {
+				add_manpower = 35142
+			}
+			870 = {
+				add_manpower = 13279
+			}
+			972 = {
+				add_manpower = 3150
+			}
+			148 = {
+				add_manpower = 8003
+			}
+			custom_effect_tooltip = FIN_increase_public_support_tt
+			hidden_effect = {
+				set_variable = { FIN_internal_faction_effect_input = 10 }
+				FIN_change_public_trust_effect = yes
+			}
+		}
+	}
+
+	FIN_negotiate_an_end_to_the_winter_war = {
+
+		icon = eng_trade_unions_support
+
+		allowed = { tag = FIN }
+
+		available = {
+			has_war_with = SOV
+			controls_state = 146
+			controls_state = 1044
+			controls_state = 1045
+			controls_state = 150
+			controls_state = 870
+			controls_state = 972
+			controls_state = 148
+			controls_state = 149
+			controls_state = 879
+			controls_state = 195
+		}
+
+		visible = {
+			has_war_with = SOV
+			is_in_faction = no
+			has_civil_war = no
+		}
+
+		cost = 0
+		fire_only_once = yes
+
+		ai_will_do = {
+			factor = 200
+		}
+
+		complete_effect = {
+			SOV = { country_event = { id = fin_armor.802 } }
+			hidden_effect = {
+				if = {
+					limit = {
+						FIN = { has_full_control_of_state = 213 }
+						FIN = { has_full_control_of_state = 1047 }
+						FIN = { has_full_control_of_state = 215 }
+						FIN = { has_full_control_of_state = 216 }
+					}
+					SOV = { set_country_flag = FIN_there_all_ours }
+				}
+				else_if = {
+					limit = {
+						FIN = { has_full_control_of_state = 213 }
+						FIN = { has_full_control_of_state = 1047 }
+						FIN = { has_full_control_of_state = 215 }
+					}
+					SOV = { set_country_flag = FIN_murmansk_and_onega_are_ours }
+				}
+				else_if = {
+					limit = {
+						FIN = { has_full_control_of_state = 213 }
+						FIN = { has_full_control_of_state = 1047 }
+					}
+					SOV = { set_country_flag = FIN_murmansk_is_ours }
+				}
+			}
+		}
+	}
+}
+
+FIN_motti_tactics_category = {
+	FIN_abandon_motti_tactics = {
+		allowed = {
+			original_tag = FIN
+		}
+		visible = {
+			has_idea = FIN_motti_tactics_national_spirit
+		}
+		complete_effect = {
+			remove_ideas = FIN_motti_tactics_national_spirit
+			every_state = {
+				limit = {
+					has_dynamic_modifier = { modifier = FIN_motti_tactics_modifier }
+				}
+				remove_dynamic_modifier = { modifier = FIN_motti_tactics_modifier }
+			}
+		}
+	}
+
+	FIN_prepare_motti_tactics_in_state = {
+		icon = generic_operation
+
+		priority = 10
+
+		state_target = yes
+
+		on_map_mode = map_only
+
+		target_array = ROOT.core_states
+
+		target_trigger = {
+			FROM = {
+				FIN_state_is_valid_for_motti_tactics = yes
+				NOT = { has_dynamic_modifier = { modifier = FIN_motti_tactics_modifier scope = FIN } }
+			}
+		}
+
+		visible = {
+			FROM = {
+				is_controlled_by = ROOT
+			}
+		}
+
+
+		cancel_if_not_visible = yes
+
+		custom_cost_trigger = {
+			command_power > FIN_motti_decision_cost_for_trigger
+			# has_political_power > FIN_motti_decision_cost_for_trigger
+		}
+		custom_cost_text = FIN_motti_tactics_decision_cost_dynamic_cp_pp
+		# ai_hint_pp_cost = 10 #It increases every time this decision is taken though
+
+		days_remove = 15
+
+		available = {
+			FROM = {
+				NOT = { has_dynamic_modifier = { modifier = FIN_motti_tactics_modifier } }
+				is_controlled_by = ROOT
+			}
+		}
+
+		cancel_trigger = {
+			FROM = {
+				NOT = { is_controlled_by = ROOT }
+			}
+		}
+
+		cancel_effect = {
+			#Reset cost
+			hidden_effect = {
+				divide_variable = { FIN_motti_decision_cost = FIN_motti_decision_cost_increase }
+				set_variable = { FIN_motti_decision_cost_for_trigger = FIN_motti_decision_cost } #For trigger purposes
+				subtract_from_variable = { FIN_motti_decision_cost_for_trigger = 1 }
+			}
+		}
+
+		complete_effect = {
+			#Cost increase
+			hidden_effect = {
+				set_temp_variable = { FIN_remove_mana_cost = FIN_motti_decision_cost }
+				multiply_temp_variable = { FIN_remove_mana_cost = -1 }
+				add_command_power = FIN_remove_mana_cost
+
+				multiply_variable = { FIN_motti_decision_cost = FIN_motti_decision_cost_increase }
+				set_variable = { FIN_motti_decision_cost_for_trigger = FIN_motti_decision_cost } #For trigger purposes
+				subtract_from_variable = { FIN_motti_decision_cost_for_trigger = 1 }
+			}
+
+			custom_effect_tooltip = FIN_motti_tactics_cost_increase_tt
+		}
+
+		remove_effect = {
+			FROM = {
+				add_dynamic_modifier = { modifier = FIN_motti_tactics_modifier }
+			}
+
+			#Trigger event only once per country
+			every_enemy_country = {
+				limit = {
+					NOT = { has_country_flag = FIN_aware_about_motti_tactics_flag }
+				}
+				country_event = { id = AAT_finland_motti.01 hours = 1 }
+			}
+		}
+
+		ai_will_do = {
+			base = 0.1
+			modifier = { #Focus on Karelia and Savo
+				factor = 10
+				FROM = {
+					OR = {
+						state = 146
+						state = 1044
+						state = 150
+						state = 147
+					}
+				}
+			}
+			modifier = {
+				factor = 10
+				FROM = {
+					any_neighbor_state = {
+						controller = {
+							original_tag = SOV
+						}
+					}
+					if = {
+						limit = {
+							state = 870
+						}
+						root = {
+							NOT = {
+								has_full_control_of_state = 147
+							}
+						}
+
+					}
+					if = {
+						limit = {
+							state = 148
+						}
+						root = {
+							NOT = {
+								has_full_control_of_state = 722
+								has_full_control_of_state = 147
+							}
+						}
+					}
+				}
+			}
+			modifier = {
+				factor = 10
+				FROM = {
+					any_neighbor_state = {
+						controller = {
+							has_war_with = ROOT
+						}
+					}
+				}
+			}
+			modifier = {
+				factor = 20
+				FROM = {
+					state = 146
+				}
+			}
+			modifier = {
+				factor = 10
+				FROM = {
+					NOT = { is_fully_controlled_by = ROOT }
+				}
+			}
+		}
+	}
+
+	FIN_cancel_motti_tactics_in_state = {
+		icon = GFX_decision_FIN_stop_motti_tactics
+
+		priority = 1
+
+		state_target = yes
+
+		on_map_mode = map_only
+
+		target_array = ROOT.core_states
+
+		target_trigger = {
+			FROM = {
+				has_dynamic_modifier = { modifier = FIN_motti_tactics_modifier }
+			}
+		}
+
+		available = {
+			FROM = {
+				has_dynamic_modifier = { modifier = FIN_motti_tactics_modifier }
+			}
+		}
+
+		complete_effect = {
+			FROM = {
+				remove_dynamic_modifier = { modifier = FIN_motti_tactics_modifier }
+			}
+
+			#Cost decrease
+			hidden_effect = {
+				divide_variable = { FIN_motti_decision_cost = FIN_motti_decision_cost_increase }
+				set_variable = { FIN_motti_decision_cost_for_trigger = FIN_motti_decision_cost } #For trigger purposes
+				subtract_from_variable = { FIN_motti_decision_cost_for_trigger = 1 }
+			}
+
+			custom_effect_tooltip = FIN_motti_tactics_cost_decrease_tt
+		}
+
+		ai_will_do = {
+			base = 0
+			modifier = {
+				add = 10
+				FROM = {
+					is_fully_controlled_by = ROOT
+					all_neighbor_state = {
+						controller = {
+							NOT = { has_war_with = ROOT }
+							NOT = { original_tag = SOV }
+						}
+					}
+				}
+			}
+			modifier = {
+				factor = 0
+				FROM = {
+					any_neighbor_state = {
+						controller = {
+							has_war_with = ROOT
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 FIN_foreign_aid = {
+	FIN_purchase_light_infantry_equipment_SOV = {
+		icon = generic_decision
+
+        allowed = { tag = FIN }
+
+		available = {
+			NOT = { has_war_with = SOV }
+			is_subject = no
+		}
+		visible = {
+			NOT = { has_war_with = SOV }
+			country_exists = SOV
+			has_completed_focus = FIN_approach_the_soviets
+		}
+
+		fire_only_once = yes
+
+		days_remove = 21
+
+		cost = 25
+
+		ai_will_do = {
+			factor = 50
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = sov_inf_1
+				amount = 2500
+				producer = SOV
+			}
+		}
+	}
+	FIN_purchase_heavy_infantry_equipment_SOV = {
+		icon = generic_decision
+
+        allowed = { tag = FIN }
+
+		available = {
+			NOT = { has_war_with = SOV }
+			is_subject = no
+		}
+		visible = {
+			NOT = { has_war_with = SOV }
+			country_exists = SOV
+			has_completed_focus = FIN_approach_the_soviets
+		}
+
+		fire_only_once = yes
+
+		days_remove = 21
+
+		cost = 25
+
+		ai_will_do = {
+			factor = 50
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = sov_hv_inf_1
+				amount = 1000
+				producer = SOV
+			}
+		}
+	}
+	FIN_purchase_support_equipment_SOV = {
+		icon = generic_decision
+
+        allowed = { tag = FIN }
+
+		available = {
+			NOT = { has_war_with = SOV }
+			is_subject = no
+		}
+		visible = {
+			NOT = { has_war_with = SOV }
+			country_exists = SOV
+			has_completed_focus = FIN_approach_the_soviets
+		}
+
+		fire_only_once = yes
+
+		days_remove = 21
+
+		cost = 25
+
+		ai_will_do = {
+			factor = 50
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = support_equipment_1
+				amount = 500
+				producer = SOV
+			}
+		}
+	}
+	FIN_purchase_fighter_equipment_SOV = {
+		icon = generic_decision
+
+        allowed = { tag = FIN }
+
+		available = {
+			NOT = { has_war_with = SOV }
+			is_subject = no
+			SOV = { has_tech = sov_fighter_multirole_1 }
+		}
+		visible = {
+			NOT = { has_war_with = SOV }
+			country_exists = SOV
+			has_completed_focus = FIN_approach_the_soviets
+		}
+
+		fire_only_once = yes
+
+		days_remove = 21
+
+		cost = 25
+
+		ai_will_do = {
+			factor = 50
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = sov_fighter_multirole_equipment_1
+				amount = 50
+				producer = SOV
+			}
+		}
+	}
+
+	FIN_purchase_bomber_equipment_SOV = {
+		icon = generic_decision
+
+        allowed = { tag = FIN }
+
+		available = {
+			NOT = { has_war_with = SOV }
+			is_subject = no
+			SOV = { has_tech = sov_tactical_bomber_1 }
+		}
+		visible = {
+			NOT = { has_war_with = SOV }
+			country_exists = SOV
+			has_completed_focus = FIN_approach_the_soviets
+		}
+
+		fire_only_once = yes
+
+		days_remove = 21
+
+		cost = 25
+
+		ai_will_do = {
+			factor = 50
+		}
+
+		remove_effect = {
+			add_equipment_to_stockpile = {
+				type = sov_tac_bomber_equipment_1
+				amount = 75
+				producer = SOV
+			}
+		}
+	}
+
 	FIN_purchase_light_infantry_equipment_ENG = {
 		icon = generic_decision
 
@@ -11,7 +571,7 @@ FIN_foreign_aid = {
 		visible = {
 			NOT = { has_war_with = ENG }
 			country_exists = ENG
-			has_completed_focus = FIN_strengthen_british_bonds
+			has_completed_focus = FIN_approach_the_british
 		}
 
 		fire_only_once = yes
@@ -44,7 +604,7 @@ FIN_foreign_aid = {
 		visible = {
 			NOT = { has_war_with = ENG }
 			country_exists = ENG
-			has_completed_focus = FIN_strengthen_british_bonds
+			has_completed_focus = FIN_approach_the_british
 		}
 
 		fire_only_once = yes
@@ -77,7 +637,7 @@ FIN_foreign_aid = {
 		visible = {
 			NOT = { has_war_with = ENG }
 			country_exists = ENG
-			has_completed_focus = FIN_strengthen_british_bonds
+			has_completed_focus = FIN_approach_the_british
 		}
 
 		fire_only_once = yes
@@ -106,12 +666,20 @@ FIN_foreign_aid = {
 		available = {
 			NOT = { has_war_with = ENG }
 			is_subject = no
-			ENG = { has_tech = eng_fighter_2 }
+			if = {
+                limit = {
+                    has_dlc = "By Blood Alone"
+                }
+				ENG = { has_tech = eng_fighter_ad_tech_2 }
+            }
+            else = {
+				ENG = { has_tech = eng_fighter_2 }
+            }
 		}
 		visible = {
 			NOT = { has_war_with = ENG }
 			country_exists = ENG
-			has_completed_focus = FIN_strengthen_british_bonds
+			has_completed_focus = FIN_approach_the_british
 		}
 
 		fire_only_once = yes
@@ -125,11 +693,23 @@ FIN_foreign_aid = {
 		}
 
 		remove_effect = {
-			add_equipment_to_stockpile = {
-				type = eng_fighter_equipment_2
-				amount = 50
-				producer = ENG
-			}
+			if = {
+                limit = {
+                    has_dlc = "By Blood Alone"
+                }
+				add_equipment_to_stockpile = {
+					type = ENG_gladiator_airframe
+					amount = 50
+					producer = ENG
+				}
+            }
+            else = {
+				add_equipment_to_stockpile = {
+					type = eng_fighter_equipment_2
+					amount = 50
+					producer = ENG
+				}
+            }
 		}
 	}
 
@@ -141,12 +721,20 @@ FIN_foreign_aid = {
 		available = {
 			NOT = { has_war_with = ENG }
 			is_subject = no
-			ENG = { has_tech = eng_tactical_bomber_2 }
+			if = {
+                limit = {
+                    has_dlc = "By Blood Alone"
+                }
+				ENG = { has_tech = eng_tactical_bomber_ad_tech_2 }
+            }
+            else = {
+				ENG = { has_tech = eng_tactical_bomber_2 }
+            }
 		}
 		visible = {
 			NOT = { has_war_with = ENG }
 			country_exists = ENG
-			has_completed_focus = FIN_strengthen_british_bonds
+			has_completed_focus = FIN_approach_the_british
 		}
 
 		fire_only_once = yes
@@ -160,11 +748,23 @@ FIN_foreign_aid = {
 		}
 
 		remove_effect = {
-			add_equipment_to_stockpile = {
-				type = eng_tac_bomber_equipment_2
-				amount = 75
-				producer = ENG
-			}
+			if = {
+                limit = {
+                    has_dlc = "By Blood Alone"
+                }
+				add_equipment_to_stockpile = {
+					type = ENG_wellesley_airframe
+					amount = 75
+					producer = ENG
+				}
+            }
+            else = {
+				add_equipment_to_stockpile = {
+					type = eng_tac_bomber_equipment_2
+					amount = 75
+					producer = ENG
+				}
+            }
 		}
 	}
 
@@ -180,7 +780,7 @@ FIN_foreign_aid = {
 		visible = {
 			NOT = { has_war_with = GER }
 			country_exists = GER
-			has_completed_focus = FIN_strengthen_german_bonds
+			has_completed_focus = FIN_approach_the_germans
 		}
 
 		fire_only_once = yes
@@ -213,7 +813,7 @@ FIN_foreign_aid = {
 		visible = {
 			NOT = { has_war_with = GER }
 			country_exists = GER
-			has_completed_focus = FIN_strengthen_german_bonds
+			has_completed_focus = FIN_approach_the_germans
 		}
 
 		fire_only_once = yes
@@ -247,7 +847,7 @@ FIN_foreign_aid = {
 		visible = {
 			NOT = { has_war_with = GER }
 			country_exists = GER
-			has_completed_focus = FIN_strengthen_german_bonds
+			has_completed_focus = FIN_approach_the_germans
 		}
 
 		fire_only_once = yes
@@ -277,12 +877,20 @@ FIN_foreign_aid = {
 		available = {
 			NOT = { has_war_with = GER }
 			is_subject = no
-			GER = { has_tech = ger_fighter_3 }
+			if = {
+                limit = {
+                    has_dlc = "By Blood Alone"
+                }
+				GER = { has_tech = ger_fighter_ad_tech_3 }
+            }
+            else = {
+				GER = { has_tech = ger_fighter_3 }
+            }
 		}
 		visible = {
 			NOT = { has_war_with = GER }
 			country_exists = GER
-			has_completed_focus = FIN_strengthen_german_bonds
+			has_completed_focus = FIN_approach_the_germans
 		}
 
 		fire_only_once = yes
@@ -296,11 +904,23 @@ FIN_foreign_aid = {
 		}
 
 		remove_effect = {
-			add_equipment_to_stockpile = {
-				type = ger_fighter_equipment_3
-				amount = 50
-				producer = GER
-			}
+			if = {
+                limit = {
+                    has_dlc = "By Blood Alone"
+                }
+				add_equipment_to_stockpile = {
+					type = GER_bf_109_d1_airframe
+					amount = 50
+					producer = GER
+				}
+            }
+            else = {
+				add_equipment_to_stockpile = {
+					type = ger_fighter_equipment_3
+					amount = 50
+					producer = GER
+				}
+            }
 		}
 	}
 	FIN_purchase_bomber_equipment_GER = {
@@ -311,12 +931,11 @@ FIN_foreign_aid = {
 		available = {
 			NOT = { has_war_with = GER }
 			is_subject = no
-			GER = { has_tech = ger_tactical_bomber_1 }
 		}
 		visible = {
 			NOT = { has_war_with = GER }
 			country_exists = GER
-			has_completed_focus = FIN_strengthen_german_bonds
+			has_completed_focus = FIN_approach_the_germans
 		}
 
 		fire_only_once = yes
@@ -330,11 +949,23 @@ FIN_foreign_aid = {
 		}
 
 		remove_effect = {
-			add_equipment_to_stockpile = {
-				type = ger_tac_bomber_equipment_1
-				amount = 75
-				producer = GER
-			}
+			if = {
+                limit = {
+                    has_dlc = "By Blood Alone"
+                }
+				add_equipment_to_stockpile = {
+					type = GER_ju_86_airframe
+					amount = 75
+					producer = GER
+				}
+            }
+            else = {
+				add_equipment_to_stockpile = {
+					type = ger_tac_bomber_equipment_1
+					amount = 75
+					producer = GER
+				}
+            }
 		}
 	}
 }
@@ -469,147 +1100,7 @@ FIN_gather_local_support = {
 
 political_actions = {
 
-	FIN_evacuate_karjala = {
 
-		icon = generic_operation
-
-		allowed = { tag = FIN }
-
-		available = {
-			has_war_with = SOV
-			controls_state = 146
-			controls_state = 111
-			controls_state = 879
-			controls_state = 149
-			controls_state = 870
-			controls_state = 972
-			OR = {
-				NOT = { has_full_control_of_state = 146 }
-				NOT = { has_full_control_of_state = 1044 }
-				NOT = { has_full_control_of_state = 1045 }
-			}
-		}
-
-		visible = {
-			controls_state = 146
-			OR = {
-				threat > 0.3
-				has_war_with = SOV
-			}
-		}
-
-		cost = 50
-		fire_only_once = yes
-
-		cancel_if_not_visible = yes
-
-		ai_will_do = {
-			factor = 400
-		}
-
-		modifier = {
-			civilian_factory_use = 5
-		}
-
-		days_remove = 60
-
-		remove_effect = {
-			146 = {
-				add_manpower = -279666
-			}
-			1044 = {
-				add_manpower = -88105
-			}
-			1045 = {
-				add_manpower = -9031
-			}
-			111 = {
-				add_manpower = 176837
-			}
-			150 = {
-				add_manpower = 75535
-			}
-			879 = {
-				add_manpower = 67922
-			}
-			149 = {
-				add_manpower = 35142
-			}
-			870 = {
-				add_manpower = 13279
-			}
-			972 = {
-				add_manpower = 3150
-			}
-			148 = {
-				add_manpower = 8003
-			}
-		}
-	}
-
-	FIN_negotiate_an_end_to_the_winter_war = {
-
-		icon = eng_trade_unions_support
-
-		allowed = { tag = FIN }
-
-		available = {
-			has_war_with = SOV
-			controls_state = 146
-			controls_state = 1044
-			controls_state = 1045
-			controls_state = 150
-			controls_state = 870
-			controls_state = 972
-			controls_state = 148
-			controls_state = 149
-			controls_state = 879
-			controls_state = 195
-		}
-
-		visible = {
-			has_war_with = SOV
-			is_in_faction = no
-			has_civil_war = no
-		}
-
-		cost = 0
-		fire_only_once = yes
-
-		ai_will_do = {
-			factor = 200
-		}
-
-		complete_effect = {
-			SOV = { country_event = { id = fin_armor.802 } }
-			hidden_effect = {
-				if = {
-					limit = {
-						FIN = { has_full_control_of_state = 213 }
-						FIN = { has_full_control_of_state = 1047 }
-						FIN = { has_full_control_of_state = 215 }
-						FIN = { has_full_control_of_state = 216 }
-					}
-					SOV = { set_country_flag = FIN_there_all_ours }
-				}
-				else_if = {
-					limit = {
-						FIN = { has_full_control_of_state = 213 }
-						FIN = { has_full_control_of_state = 1047 }
-						FIN = { has_full_control_of_state = 215 }
-					}
-					SOV = { set_country_flag = FIN_murmansk_and_onega_are_ours }
-				}
-				else_if = {
-					limit = {
-						FIN = { has_full_control_of_state = 213 }
-						FIN = { has_full_control_of_state = 1047 }
-					}
-					SOV = { set_country_flag = FIN_murmansk_is_ours }
-				}
-			}
-		}
-	}
 }
 
 war_measures = {
@@ -648,6 +1139,923 @@ war_measures = {
 
 		complete_effect = {
 			set_technology = { fin_medium_spg_1 = 1 }
+			set_technology = { fin_mechanized_infantry_1 = 1 }
+		}
+	}
+}
+
+FIN_national_defense_category = {
+
+	FIN_coastal_garrisons = {
+		priority = 6
+
+		icon = GFX_decision_generic_military
+
+		ai_will_do = {
+			base = 1
+		}
+
+		allowed = {
+			original_tag = FIN
+		}
+
+		visible = {
+			has_completed_focus = FIN_defensive_preparations
+			OR = {
+				has_full_control_of_state = 111
+				has_full_control_of_state = 146
+				has_full_control_of_state = 879
+				has_full_control_of_state = 145
+				has_full_control_of_state = 149
+				has_full_control_of_state = 870
+				has_full_control_of_state = 148
+			}
+		}
+
+		available = {
+			OR = {
+				has_full_control_of_state = 111
+				has_full_control_of_state = 146
+				has_full_control_of_state = 879
+				has_full_control_of_state = 145
+				has_full_control_of_state = 149
+				has_full_control_of_state = 870
+				has_full_control_of_state = 148
+			}
+		}
+
+		custom_cost_trigger = {
+			has_political_power > FIN_coastal_garrisons_pp_xp_cost_trigger
+			has_army_experience > FIN_coastal_garrisons_pp_xp_cost_trigger
+			command_power > FIN_coastal_garrisons_cp_cost_trigger
+		}
+		custom_cost_text = FIN_coastal_garrisons_decision_cost_pp_xp_cp
+		ai_hint_pp_cost = 60
+
+		days_remove = FIN_coastal_garrisons_time
+
+		fire_only_once = yes
+
+		complete_effect = {
+			hidden_effect = {
+				set_temp_variable = { FIN_coastal_garrisons_pp_xp_remove_value = FIN_coastal_garrisons_pp_xp_cost }
+				multiply_temp_variable = { FIN_coastal_garrisons_pp_xp_remove_value = -1 }
+				add_political_power = FIN_coastal_garrisons_pp_xp_remove_value
+				army_experience = FIN_coastal_garrisons_pp_xp_remove_value
+
+				set_temp_variable = { FIN_coastal_garrisons_cp_remove_value = FIN_coastal_garrisons_cp_cost }
+				multiply_temp_variable = { FIN_coastal_garrisons_cp_remove_value = -1 }
+				add_command_power = FIN_coastal_garrisons_cp_remove_value
+
+				set_country_flag = FIN_coastal_garrisons_deployed_flag #For loc purposes in focus tooltips
+			}
+		}
+
+		remove_effect = {
+			if = {
+				limit = {
+					has_completed_focus = FIN_sissi_tactics
+				}
+				division_template = {
+					name = "Rannikkorykmentti"
+					is_locked = yes
+					priority = 0
+					template_counter = 6
+					regiments = {
+						infantry = { x = 0 y = 0 }
+						infantry = { x = 0 y = 1 }
+						infantry = { x = 0 y = 2 }
+					}
+					support = {
+						engineer = { x = 0 y = 0 }
+						artillery = { x = 0 y = 1 }
+						winter_logistics_support = { x = 0 y = 2 }
+					}
+				}
+			}
+			else = {
+				division_template = {
+					name = "Rannikkorykmentti"
+					is_locked = yes
+					priority = 0
+					template_counter = 6
+					regiments = {
+						infantry = { x = 0 y = 0 }
+						infantry = { x = 0 y = 1 }
+						infantry = { x = 0 y = 2 }
+					}
+					support = {
+						engineer = { x = 0 y = 0 }
+						artillery = { x = 0 y = 1 }
+					}
+				}
+			}
+			if = { #UUSIMAA (Helsinki)
+				limit = {
+					111 = {
+						is_fully_controlled_by = ROOT
+						naval_base > 0
+					}
+				}
+				111 = {
+					create_unit = {
+						division = "name = \"Helsingin Rannikkorykmentti\" division_template = \"Rannikkorykmentti\" start_experience_factor = 0.3 start_equipment_factor = 1.0 start_manpower_factor = 1.0"
+						owner = ROOT
+						prioritize_location = 11105
+						allow_spawning_on_enemy_provs = no
+						count = 1
+					}
+				}
+			}
+			if = { #KYMI (Kotka)
+				limit = {
+					972 = {
+						is_fully_controlled_by = ROOT
+						naval_base > 0
+					}
+				}
+				972 = {
+					create_unit = {
+						division = "name = \"Kotkan Rannikkorykmentti\" division_template = \"Rannikkorykmentti\" start_experience_factor = 0.3 start_equipment_factor = 1.0 start_manpower_factor = 1.0"
+						owner = ROOT
+						prioritize_location = 3061
+						allow_spawning_on_enemy_provs = no
+						count = 1
+					}
+				}
+			}
+			if = { #KARJALA (Viipuri)
+				limit = {
+					146 = {
+						is_fully_controlled_by = ROOT
+						naval_base > 0
+					}
+				}
+				146 = {
+					create_unit = {
+						division = "name = \"Viipurin Rannikkorykmentti\" division_template = \"Rannikkorykmentti\" start_experience_factor = 0.3 start_equipment_factor = 1.0 start_manpower_factor = 1.0"
+						owner = ROOT
+						prioritize_location = 9206
+						allow_spawning_on_enemy_provs = no
+						count = 1
+					}
+				}
+			}
+			if = { #TURKU (Turku)
+				limit = {
+					879 = {
+						is_fully_controlled_by = ROOT
+						naval_base > 0
+					}
+				}
+				879 = {
+					create_unit = {
+						division = "name = \"Turun Rannikkorykmentti\" division_template = \"Rannikkorykmentti\" start_experience_factor = 0.3 start_equipment_factor = 1.0 start_manpower_factor = 1.0"
+						owner = ROOT
+						prioritize_location = 3083
+						allow_spawning_on_enemy_provs = no
+						count = 1
+					}
+				}
+			}
+			if = { #VAASA (Vaasa)
+				limit = {
+					149 = {
+						is_fully_controlled_by = ROOT
+						naval_base > 0
+					}
+				}
+				149 = {
+					create_unit = {
+						division = "name = \"Vaasan Rannikkorykmentti\" division_template = \"Rannikkorykmentti\" start_experience_factor = 0.3 start_equipment_factor = 1.0 start_manpower_factor = 1.0"
+						owner = ROOT
+						prioritize_location = 3122
+						allow_spawning_on_enemy_provs = no
+						count = 1
+					}
+				}
+			}
+			if = { #OULU (Oulu)
+				limit = {
+					870 = {
+						is_fully_controlled_by = ROOT
+						naval_base > 0
+					}
+				}
+				870 = {
+					create_unit = {
+						division = "name = \"Oulun Rannikkorykmentti\" division_template = \"Rannikkorykmentti\" start_experience_factor = 0.3 start_equipment_factor = 1.0 start_manpower_factor = 1.0"
+						owner = ROOT
+						prioritize_location = 158
+						allow_spawning_on_enemy_provs = no
+						count = 1
+					}
+				}
+			}
+			if = { #LAPPI (Kemi)
+				limit = {
+					148 = {
+						is_fully_controlled_by = ROOT
+						naval_base > 0
+					}
+				}
+				148 = {
+					create_unit = {
+						division = "name = \"Kemin Rannikkorykmentti\" division_template = \"Rannikkorykmentti\" start_experience_factor = 0.3 start_equipment_factor = 1.0 start_manpower_factor = 1.0"
+						owner = ROOT
+						prioritize_location = 11164
+						allow_spawning_on_enemy_provs = no
+						count = 1
+					}
+				}
+			}
+			if = { #Åland (Mariehamn I guess)
+				limit = {
+					145 = {
+						is_fully_controlled_by = ROOT
+						naval_base > 0
+					}
+				}
+				145 = {
+					create_unit = {
+						division = "name = \"Maarianhaminan Rannikkorykmentti\" division_template = \"Rannikkorykmentti\" start_experience_factor = 0.3 start_equipment_factor = 1.0 start_manpower_factor = 1.0"
+						owner = ROOT
+						prioritize_location = 9228
+						allow_spawning_on_enemy_provs = no
+						count = 1
+					}
+				}
+			}
+		}
+	}
+
+	FIN_mining_the_sea = {
+		priority = 5
+
+		icon = GFX_decision_generic_naval_mine
+
+		ai_will_do = {
+			base = 0.25
+		}
+
+		allowed = {
+			original_tag = FIN
+			has_dlc = "Man the Guns"
+		}
+
+		visible = {
+			OR = {
+				has_completed_focus = FIN_protection_of_the_gulf
+				has_completed_focus = FIN_defensive_preparations
+			}
+			has_full_control_of_state = 111
+		}
+
+		available = {
+			has_war = no
+			has_full_control_of_state = 111
+		}
+
+		custom_cost_trigger = {
+			has_political_power > FIN_mining_the_sea_pp_xp_cost_trigger
+			has_navy_experience > FIN_mining_the_sea_pp_xp_cost_trigger
+			command_power > FIN_mining_the_sea_cp_cost_trigger
+		}
+		custom_cost_text = FIN_mining_the_sea_decision_cost_pp_xp_cp
+		ai_hint_pp_cost = 60
+
+		days_remove = FIN_mining_the_sea_time
+
+		fire_only_once = yes
+
+		complete_effect = {
+			hidden_effect = {
+				set_temp_variable = { FIN_mining_the_sea_pp_xp_remove_value = FIN_mining_the_sea_pp_xp_cost }
+				multiply_temp_variable = { FIN_mining_the_sea_pp_xp_remove_value = -1 }
+				add_political_power = FIN_mining_the_sea_pp_xp_remove_value
+				navy_experience = FIN_mining_the_sea_pp_xp_remove_value
+
+				set_temp_variable = { FIN_mining_the_sea_cp_remove_value = FIN_mining_the_sea_cp_cost }
+				multiply_temp_variable = { FIN_mining_the_sea_cp_remove_value = -1 }
+				add_command_power = FIN_mining_the_sea_cp_remove_value
+
+				set_country_flag = FIN_sea_mines_deployed_flag #For loc purposes in focus tooltips
+			}
+		}
+
+		remove_effect = {
+			add_mines = {
+				region = 9
+				amount = 150
+			}
+			add_mines = {
+				region = 279
+				amount = 100
+			}
+		}
+	}
+}
+
+
+########  #### ########  ##        #######  ##     ##    ###     ######  ##    ##
+##     ##  ##  ##     ## ##       ##     ## ###   ###   ## ##   ##    ##  ##  ##
+##     ##  ##  ##     ## ##       ##     ## #### ####  ##   ##  ##         ####
+##     ##  ##  ########  ##       ##     ## ## ### ## ##     ## ##          ##
+##     ##  ##  ##        ##       ##     ## ##     ## ######### ##          ##
+##     ##  ##  ##        ##       ##     ## ##     ## ##     ## ##    ##    ##
+########  #### ##        ########  #######  ##     ## ##     ##  ######     ##
+
+
+FIN_foreign_politics_decision_category = {
+
+	###################
+	##### BALTICS #####
+	###################
+	FIN_pressure_country_government_baltic = {
+		priority = 50
+
+		icon = generic_political_discourse
+
+		ai_will_do = {
+			base = 0.8
+			modifier = {
+				factor = 2
+				has_political_power > 160
+			}
+			modifier = { #If ideological rallies happened, then it's better
+				factor = 4
+				FROM = { has_country_flag = FIN_ideological_rallies_promoted_flag }
+			}
+			modifier = { #Do it only once, don't spam
+				factor = 0
+				FROM = { has_country_flag = FIN_government_pressured_flag }
+			}
+		}
+
+		targets = { EST LAT LIT POL }
+
+		target_trigger = {
+			SOV_basic_pressure_government_triggers = yes #Reusable
+		}
+
+		target_root_trigger = {
+			has_completed_focus = FIN_keepers_of_the_baltic_countries
+			is_subject = no
+		}
+
+		allowed = {
+			original_tag = FIN
+		}
+
+		available = {
+			is_faction_leader = yes
+			FROM = {
+				has_opinion = {
+					target = ROOT
+					value > 49
+				}
+				SOV_is_valid_subject = yes # Reusable
+				NOT = { has_war_with = ROOT }
+			}
+			NOT = { has_country_flag = FIN_pressure_government_active_flag }
+		}
+
+		visible = {
+		}
+
+		days_remove = FIN_pressure_government_days
+
+		days_re_enable = FIN_pressure_government_cd
+
+		cost = FIN_pressure_country_government_cost
+
+		modifier = {
+			political_power_gain = -0.25
+		}
+
+		complete_effect = {
+			set_country_flag = FIN_pressure_government_active_flag
+		}
+
+		remove_effect = {
+			FROM = {
+				country_event = { id = NSB_soviet_foreign_politics_events.1 hours = 4 random_hours = 2 } #Reusable
+				set_country_flag = FIN_government_pressured_flag #For AI weights - don't spam
+			}
+			clr_country_flag = FIN_pressure_government_active_flag
+			custom_effect_tooltip = SOV_pressure_government_effects_tt
+			custom_effect_tooltip = FIN_pressure_government_cd_tt
+		}
+	}
+
+	FIN_promote_ideology_rallies_baltic = {
+		priority = 50
+
+		icon = generic_political_rally
+
+		ai_will_do = {
+			base = 1
+			modifier = {
+				factor = 2
+				has_political_power > 160
+			}
+		}
+
+		targets = { EST LAT LIT POL }
+
+		target_trigger = {
+			SOV_basic_promote_rallies_triggers = yes #Reusable
+		}
+
+		target_root_trigger = {
+			has_completed_focus = FIN_keepers_of_the_baltic_countries
+		}
+
+		allowed = {
+			original_tag = FIN
+		}
+
+		available = {
+			FROM = {
+				SOV_is_valid_subject = yes #Reusable
+				NOT = { has_war_with = ROOT }
+			}
+		}
+
+		visible = {
+		}
+
+		days_remove = FIN_ideological_rallies_days
+
+		fire_only_once = yes
+
+		cost = FIN_promote_ideology_rallies_cost
+
+		modifier = {
+			political_power_gain = -0.25
+		}
+
+		complete_effect = {
+		}
+
+		remove_effect = {
+			FROM = {
+				country_event = { id = NSB_soviet_foreign_politics_events.2 hours = 4 random_hours = 2 }
+			}
+			custom_effect_tooltip = SOV_promote_rallies_effects_tt
+			custom_effect_tooltip = SOV_promote_ideological_rallies_cd_tt
+		}
+	}
+
+	FIN_fight_alongside_country_comrades_baltic = {
+		priority = 100
+
+		icon = generic_prepare_civil_war
+
+		ai_will_do = {
+			base = 0
+			modifier = {
+				add = 0.01
+				has_stability > 0.4
+				FROM = {  #Join if it will not lead to a new war against a major
+					all_enemy_country = {
+						OR = {
+							is_major = no
+							has_war_with = ROOT
+						}
+					}
+				}
+			}
+			modifier = {
+				factor = 2
+				has_war = no
+			}
+			modifier = {
+				factor = 1.5
+				has_manpower > 100000
+			}
+			modifier = {
+				factor = 10
+				FROM = { is_neighbor_of = ROOT }
+			}
+		}
+
+		targets = { EST LAT LIT POL }
+
+		target_trigger = {
+			SOV_basic_fight_alongside_comrades_triggers = yes #Reusable
+		}
+
+		target_root_trigger = {
+			has_completed_focus = FIN_keepers_of_the_baltic_countries
+			is_subject = no
+		}
+
+		allowed = {
+			original_tag = FIN
+		}
+
+		available = {
+			has_war_support > 0.15
+			has_stability > 0.25
+			NOT = { has_war_with = FROM }
+		}
+
+		visible = {
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				random_country = {
+					limit = {
+						original_tag = FROM
+						has_civil_war = yes
+						NOT = { has_government = ROOT }
+					}
+					ROOT = { add_to_war = { targeted_alliance = FROM enemy = PREV hostility_reason = asked_to_join } }
+				}
+			}
+			custom_effect_tooltip = BUL_fight_alongside_country_comrades_join_cw_tt #This tt works just fine :)
+
+			effect_tooltip = {
+				give_military_access = FROM
+				FROM = { give_military_access = ROOT }
+			}
+			hidden_effect = {
+				diplomatic_relation = {
+					country = FROM
+					relation = military_access
+					active = yes
+				}
+				FROM = {
+					diplomatic_relation = {
+						country = ROOT
+						relation = military_access
+						active = yes
+					}
+				}
+			}
+		}
+	}
+
+	###################
+	##### NORDICS #####
+	###################
+
+	FIN_pressure_country_government_nordic = {
+		priority = 50
+
+		icon = generic_political_discourse
+
+		ai_will_do = {
+			base = 0.8
+			modifier = {
+				factor = 2
+				has_political_power > 160
+			}
+			modifier = { #If ideological rallies happened, then it's better
+				factor = 4
+				FROM = { has_country_flag = FIN_ideological_rallies_promoted_flag }
+			}
+			modifier = { #Do it only once, don't spam
+				factor = 0
+				FROM = { has_country_flag = FIN_government_pressured_flag }
+			}
+		}
+
+		targets = { SWE NOR DEN ICE SMI }
+
+		target_trigger = {
+			SOV_basic_pressure_government_triggers = yes #Reusable
+		}
+
+		target_root_trigger = {
+			has_completed_focus = FIN_spread_the_revolution
+			is_subject = no
+		}
+
+		allowed = {
+			original_tag = FIN
+		}
+
+		available = {
+			is_faction_leader = yes
+			FROM = {
+				has_opinion = {
+					target = ROOT
+					value > 49
+				}
+				SOV_is_valid_subject = yes # Reusable
+				NOT = { has_war_with = ROOT }
+			}
+			NOT = { has_country_flag = FIN_pressure_government_active_flag }
+		}
+
+		visible = {
+		}
+
+		days_remove = FIN_pressure_government_days
+
+		days_re_enable = FIN_pressure_government_cd
+
+		cost = FIN_pressure_country_government_cost
+
+		modifier = {
+			political_power_gain = -0.25
+		}
+
+		complete_effect = {
+			set_country_flag = FIN_pressure_government_active_flag
+		}
+
+		remove_effect = {
+			FROM = {
+				country_event = { id = NSB_soviet_foreign_politics_events.1 hours = 4 random_hours = 2 } #Reusable
+				set_country_flag = FIN_government_pressured_flag #For AI weights - don't spam
+			}
+			clr_country_flag = FIN_pressure_government_active_flag
+			custom_effect_tooltip = SOV_pressure_government_effects_tt
+			custom_effect_tooltip = FIN_pressure_government_cd_tt
+		}
+	}
+
+	FIN_promote_ideology_rallies_nordic = {
+		priority = 50
+
+		icon = generic_political_rally
+
+		ai_will_do = {
+			base = 1
+			modifier = {
+				factor = 2
+				has_political_power > 160
+			}
+		}
+
+		targets = { SWE NOR DEN ICE SMI }
+
+		target_trigger = {
+			SOV_basic_promote_rallies_triggers = yes #Reusable
+		}
+
+		target_root_trigger = {
+			has_completed_focus = FIN_spread_the_revolution
+		}
+
+		allowed = {
+			original_tag = FIN
+		}
+
+		available = {
+			FROM = {
+				SOV_is_valid_subject = yes #Reusable
+				NOT = { has_war_with = ROOT }
+			}
+		}
+
+		visible = {
+		}
+
+		days_remove = FIN_ideological_rallies_days
+
+		fire_only_once = yes
+
+		cost = FIN_promote_ideology_rallies_cost
+
+		modifier = {
+			political_power_gain = -0.25
+		}
+
+		complete_effect = {
+		}
+
+		remove_effect = {
+			FROM = {
+				country_event = { id = NSB_soviet_foreign_politics_events.2 hours = 4 random_hours = 2 }
+			}
+			custom_effect_tooltip = SOV_promote_rallies_effects_tt
+			custom_effect_tooltip = SOV_promote_ideological_rallies_cd_tt
+		}
+	}
+
+	FIN_fight_alongside_country_comrades_nordic = {
+		priority = 100
+
+		icon = generic_prepare_civil_war
+
+		ai_will_do = {
+			base = 0
+			modifier = {
+				add = 0.01
+				has_stability > 0.4
+				FROM = {  #Join if it will not lead to a new war against a major
+					all_enemy_country = {
+						OR = {
+							is_major = no
+							has_war_with = ROOT
+						}
+					}
+				}
+			}
+			modifier = {
+				factor = 2
+				has_war = no
+			}
+			modifier = {
+				factor = 1.5
+				has_manpower > 100000
+			}
+			modifier = {
+				factor = 10
+				FROM = { is_neighbor_of = ROOT }
+			}
+		}
+
+		targets = { SWE NOR DEN ICE SMI }
+
+		target_trigger = {
+			SOV_basic_fight_alongside_comrades_triggers = yes #Reusable
+		}
+
+		target_root_trigger = {
+			has_completed_focus = FIN_spread_the_revolution
+			is_subject = no
+		}
+
+		allowed = {
+			original_tag = FIN
+		}
+
+		available = {
+			has_war_support > 0.15
+			has_stability > 0.25
+			NOT = { has_war_with = FROM }
+		}
+
+		visible = {
+		}
+
+		complete_effect = {
+			hidden_effect = {
+				random_country = {
+					limit = {
+						original_tag = FROM
+						has_civil_war = yes
+						NOT = { has_government = ROOT }
+					}
+					ROOT = { add_to_war = { targeted_alliance = FROM enemy = PREV hostility_reason = asked_to_join } }
+				}
+			}
+			custom_effect_tooltip = BUL_fight_alongside_country_comrades_join_cw_tt #This tt works just fine :)
+
+			effect_tooltip = {
+				give_military_access = FROM
+				FROM = { give_military_access = ROOT }
+			}
+			hidden_effect = {
+				diplomatic_relation = {
+					country = FROM
+					relation = military_access
+					active = yes
+				}
+				FROM = {
+					diplomatic_relation = {
+						country = ROOT
+						relation = military_access
+						active = yes
+					}
+				}
+			}
+		}
+	}
+}
+
+
+########    ###     ######   ######  ####  ######  ########     ######   #######  ##     ## ########
+##         ## ##   ##    ## ##    ##  ##  ##    ##    ##       ##    ## ##     ## ##     ## ##     ##
+##        ##   ##  ##       ##        ##  ##          ##       ##       ##     ## ##     ## ##     ##
+######   ##     ##  ######  ##        ##   ######     ##       ##       ##     ## ##     ## ########
+##       #########       ## ##        ##        ##    ##       ##       ##     ## ##     ## ##
+##       ##     ## ##    ## ##    ##  ##  ##    ##    ##       ##    ## ##     ## ##     ## ##
+##       ##     ##  ######   ######  ####  ######     ##        ######   #######   #######  ##
+
+
+FIN_coup_preparations = {
+	FIN_secure_the_military = {
+		priority = 50
+
+		icon = GFX_decision_generic_civil_support
+
+		ai_will_do = {
+			base = 200
+		}
+
+		allowed = {
+			original_tag = FIN
+		}
+
+		available = {
+			fascism > 0.3
+		}
+
+		visible = {
+		}
+
+		fire_only_once = yes
+
+		cost = 70
+
+		complete_effect = {
+			set_country_flag = FIN_cw_military_secured_flag
+			hidden_effect = {
+				FIN_carl_mannerheim = {
+					clr_character_flag = FIN_anti_fascist_character_flag
+				}
+				FIN_aksel_airo = {
+					clr_character_flag = FIN_anti_fascist_character_flag
+				}
+			}
+			add_popularity = {
+				ideology = fascism
+				popularity = 0.1
+			}
+			custom_effect_tooltip = when_civil_war_starts_tt
+			custom_effect_tooltip = FIN_secure_the_military_dec_tt
+		}
+	}
+
+	FIN_purchase_german_equipment = {
+		priority = 50
+
+		icon = GFX_decision_generic_industry
+
+		ai_will_do = {
+			base = 200
+		}
+
+		allowed = {
+			original_tag = FIN
+		}
+
+		available = {
+			country_exists = GER
+			GER = {
+				OR = {
+					has_government = fascism
+					has_government = neutrality
+				}
+			}
+			NOT = { has_war_with = GER }
+		}
+
+		visible = {
+		}
+
+		fire_only_once = yes
+
+		cost = 150
+
+		complete_effect = {
+			set_country_flag = FIN_cw_purchase_german_equipment_flag
+			custom_effect_tooltip = when_civil_war_starts_tt
+			effect_tooltip = {
+				FIN_purchase_german_equipment_for_cw = yes
+			}
+		}
+	}
+
+	FIN_appeal_to_the_middle_class = {
+		priority = 50
+
+		icon = GFX_decision_generic_civil_support
+
+		ai_will_do = {
+			base = 200
+		}
+
+		allowed = {
+			original_tag = FIN
+		}
+
+		available = {
+			fascism > 0.4
+		}
+
+		visible = {
+		}
+
+		fire_only_once = yes
+
+		cost = 50
+
+		complete_effect = {
+			set_country_flag = FIN_cw_support_from_middle_class_flag
+			add_popularity = {
+				ideology = fascism
+				popularity = 0.2
+			}
+			custom_effect_tooltip = when_civil_war_starts_tt
+			custom_effect_tooltip = FIN_appeal_to_the_middle_class_dec_tt
 		}
 	}
 }

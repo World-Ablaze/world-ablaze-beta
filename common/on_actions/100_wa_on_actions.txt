@@ -3,10 +3,44 @@ on_actions = {
 		effect = {
 			every_country = {
 				add_ideas = Coastal_fort_nerf
+				add_dynamic_modifier = {
+					modifier = military_industrial_capital
+				}
 			}
 		}
 		effect = {
-			set_global_flag = new_save_game_started ########remove in the next big patch
+			every_country = {
+				limit = {
+					NOT = {
+						original_tag = FRA
+						original_tag = ENG
+						original_tag = GER
+						original_tag = ITA
+						original_tag = SOV
+						original_tag = POL
+						original_tag = CZE
+						original_tag = HUN
+						original_tag = ROM
+						original_tag = BUL
+						original_tag = GRE
+						original_tag = NOR
+						original_tag = FIN
+						original_tag = DEN
+						original_tag = SPR
+						original_tag = POR
+						original_tag = BEL
+						original_tag = HOL
+						original_tag = LUX
+						original_tag = AUS
+						original_tag = YUG
+						original_tag = SWI
+						original_tag = EST
+						original_tag = LAT
+						original_tag = LIT
+					}
+				}
+				reverse_add_opinion_modifier = { target = SWE modifier = european_market_preference }
+			}
 		}
 		effect = {
 			every_country = {
@@ -274,12 +308,12 @@ on_actions = {
 			SOV = {
 				complete_national_focus = SOV_start_the_second_five_year_plan
 				add_equipment_to_stockpile = {
-					type = tank_sov_light_chassis_1
+					type = tank_sov_light_chassis_support_1
 					amount = 1943
 					producer = SOV
 				}
 				add_equipment_to_stockpile = {
-					type = tank_sov_medium_chassis_2
+					type = tank_sov_light_chassis_1
 					amount = 750
 					producer = SOV
 				}
@@ -498,7 +532,13 @@ on_actions = {
 					FRA = { is_ai = no }
 				}
 				FRA = {
-					load_oob = "FRA_1936_air_legacy_player"
+					if = {
+						limit = { has_dlc = "By Blood Alone" }
+						load_oob = "FRA_1936_air_bba_player"
+					}
+					else = {
+						load_oob = "FRA_1936_air_legacy_player"
+					}
 					add_manpower = -40000
 				}
 			}
@@ -519,7 +559,13 @@ on_actions = {
 					ENG = { is_ai = no }
 				}
 				ENG = {
-					load_oob = "ENG_1936_air_legacy_player"
+					if = {
+						limit = { has_dlc = "By Blood Alone" }
+						load_oob = "ENG_1936_air_bba_player"
+					}
+					else = {
+						load_oob = "ENG_1936_air_legacy_player"
+					}
 					load_oob = "ENG_1936_Cavalry"
 				}
 			}
@@ -530,7 +576,14 @@ on_actions = {
 					GER = { is_ai = no }
 				}
 				GER = {
-					load_oob = "GER_1936_air_legacy_player"
+					if = {
+						limit = { has_dlc = "By Blood Alone" }
+						load_oob = "GER_1936_air_bba_player"
+					}
+					else = {
+						load_oob = "GER_1936_air_legacy_player"
+					}
+					load_oob = "GER_1936_Cavalry"
 				}
 			}
 		}
@@ -557,22 +610,24 @@ on_actions = {
 		effect = {
 			if = {
 				limit = {
-					GER = { is_ai = no }
-				}
-				GER = {
-					load_oob = "GER_1936_Cavalry"
-				}
-			}
-		}
-		effect = {
-			if = {
-				limit = {
+					NOT = { has_dlc = "No Step Back" }
 					SOV = { is_ai = no }
 				}
 				SOV = {
 					set_technology = { sov_armoured_car_1 = 1 popup = no }
 					set_technology = { sov_scout_car_1 = 1 popup = no }
-					load_oob = "SOV_1936_Cavalry"
+					load_oob = "SOV_1936_cavalry"
+				}
+			}
+			if = {
+				limit = {
+					has_dlc = "No Step Back"
+					SOV = { is_ai = no }
+				}
+				SOV = {
+					set_technology = { sov_combat_armoured_car_1 = 1 popup = no }
+					set_technology = { sov_scout_armoured_car_1 = 1 popup = no }
+					load_oob = "SOV_1936_cavalry_nsb"
 				}
 			}
 		}
@@ -696,6 +751,27 @@ on_actions = {
 				}
 				924 = {
 					add_dynamic_modifier = { modifier = island_province_ai }
+				}
+			}
+		}
+		effect = {
+			28 = {
+				add_building_construction = {
+					type = bunker
+					level = 9
+					instant_build = yes
+					province = {
+						all_provinces = yes
+						limit_to_border_country = GER
+					}
+				}
+				add_building_construction = {
+					type = bunker
+					level = 9
+					instant_build = yes
+					province = {
+						id = 9559
+					}
 				}
 			}
 		}
@@ -977,6 +1053,22 @@ on_actions = {
 			if = {
 				limit = {
 					ROOT = {
+						tag = ROM
+						is_in_faction_with = GER
+					}
+					FROM = {
+						tag = SOV
+					}
+				}
+				ROOT = {
+					activate_decision = ROM_soviet_war_mission
+				}
+			}
+		}
+		effect = {
+			if = {
+				limit = {
+					ROOT = {
 						tag = ITA
 					}
 					FROM = {
@@ -999,6 +1091,21 @@ on_actions = {
 	}
 
 	on_peace = {
+		effect = {
+			if = {
+				limit = {
+					has_global_flag = WA_winter_war_flag
+					THIS = { tag = FIN }
+				}
+				clr_global_flag = WA_winter_war_flag
+				FIN = {
+					remove_dynamic_modifier = { modifier = FIN_winter_war_modifiers }
+				}
+				SOV = {
+					remove_dynamic_modifier = { modifier = SOV_winter_war_modifiers }
+				}
+			}
+		}
 		effect = {
 			if = {
 				limit = {
@@ -1076,7 +1183,9 @@ on_actions = {
 			if = {
 				limit = {
 					original_tag = YUG
+					NOT = { has_global_flag = YUG_partisans }
 				}
+				set_global_flag = YUG_partisans
 				every_state = {
 					limit = {
 						is_core_of = YUG
@@ -1104,6 +1213,21 @@ on_actions = {
 					every_character = {
 						set_nationality = GER
 						set_character_flag = imprisoned_flag
+					}
+				}
+			}
+		}
+		effect = {
+			if = {
+				limit = {
+					original_tag = ROM
+					has_government = neutrality
+					has_global_flag = ROM_civil_war
+				}
+				RMC = {
+					kill_country_leader = yes
+					every_character = {
+						set_nationality = ROM
 					}
 				}
 			}
@@ -1530,7 +1654,9 @@ on_actions = {
 			if = {
 				limit = {
 					original_tag = YUG
+					NOT = { has_global_flag = YUG_partisans }
 				}
+				set_global_flag = YUG_partisans
 				every_state = {
 					limit = {
 						is_core_of = YUG
@@ -2079,6 +2205,32 @@ on_actions = {
 
 	#ROOT is new controller #FROM is old controller #FROM.FROM is state ID
 	on_state_control_changed = {
+		effect = {
+			if = {
+				limit = {
+					FROM = {
+						has_completed_focus = SOV_great_patriotic_war
+					}
+					FROM.FROM = {
+						is_core_of = FROM
+						NOT = { has_state_flag = gpw_state_flag }
+					}
+				}
+				FROM.FROM = { set_state_flag = gpw_state_flag }
+				FROM = { army_experience = 5 }
+			}
+		}
+		effect = {
+			if = {
+				limit = {
+					FROM.FROM = {
+						state = 28
+						NOT = { has_dynamic_modifier = { modifier = FRA_iron_industry_collapse } }
+					}
+				}
+				FROM.FROM = { add_dynamic_modifier = { modifier = FRA_iron_industry_collapse } }
+			}
+		}
 		effect = {
 			if = {
 				limit = {
@@ -2968,15 +3120,35 @@ on_actions = {
 			if = {
 				limit = { has_variable = greatest_airforce_tac }
 
-				set_variable = { sov_cur_tac = num_deployed_planes_with_type@tac_bomber_equipment }
+				set_variable = { sov_cur_tac = num_deployed_planes_with_type@medium_heavy_bomber_airframe }
 				set_variable = { greatest_airforce_tac = sov_cur_tac }
 
-				set_variable = { sov_cur_str = num_deployed_planes_with_type@strike_bomber_equipment }
+				set_variable = { sov_cur_str = num_deployed_planes_with_type@medium_bomber_airframe }
 				add_to_variable = { greatest_airforce_tac = sov_cur_str }
 
-				set_variable = { greatest_airforce_fighters = num_deployed_planes_with_type@fighter_equipment }
-				add_to_variable = { greatest_airforce_fighters = num_deployed_planes_with_type@fighter_multirole_equipment }
+				set_variable = { greatest_airforce_fighters = num_deployed_planes_with_type@small_fighter_airframe }
+				add_to_variable = { greatest_airforce_fighters = num_deployed_planes_with_type@small_fighter_multirole_airframe }
+				add_to_variable = { greatest_airforce_fighters = num_deployed_planes_with_type@small_fighter_interceptor_airframe }
+			}
+		}
+	}
+	on_daily_SOV = {
+		# Soviet Winter War calculation
+		effect = {
+			if = {
+				limit = { has_global_flag = WA_winter_war_flag }
+				SOV = {
+					add_to_variable = { SOV_winter_war_impatience_variable = 0.5 }
+					clamp_variable = {
+						var = SOV_winter_war_impatience_variable
+						max = 100
+					}
 
+					set_temp_variable = { temp_impatience = SOV_winter_war_impatience_variable}
+					divide_temp_variable = { temp_impatience = 100}
+
+					set_variable = { SOV_winter_war_pp_variable = temp_impatience}
+				}
 			}
 		}
 	}
@@ -2990,19 +3162,19 @@ on_actions = {
 					}
 				}
 
-				set_variable = { french_figthers = num_deployed_planes_with_type@fighter_equipment}
-				add_to_variable = {french_figthers = num_deployed_planes_with_type@fighter_multirole_equipment }
+				set_variable = { french_figthers = num_deployed_planes_with_type@small_fighter_airframe}
+				add_to_variable = {french_figthers = num_deployed_planes_with_type@small_fighter_multirole_airframe }
 
-				set_variable = {french_bombers = num_deployed_planes_with_type@tac_bomber_equipment}
-				add_to_variable = { french_bombers = num_deployed_planes_with_type@strat_bomber_equipment}
+				set_variable = {french_bombers = num_deployed_planes_with_type@medium_heavy_bomber_airframe}
+				add_to_variable = { french_bombers = num_deployed_planes_with_type@large_bomber_airframe}
 
-				set_variable = { fra_cur_atac = num_deployed_planes_with_type@attacker_equipment }
+				set_variable = { fra_cur_atac = num_deployed_planes_with_type@medium_fighter_multirole_airframe }
 				set_variable = { french_attackers = fra_cur_atac }
 
-				set_variable = { french_heavy_plane = num_deployed_planes_with_type@heavy_fighter_equipment }
+				set_variable = { french_heavy_plane = num_deployed_planes_with_type@medium_fighter_airframe }
 				add_to_variable = { french_heavy_plane = fra_cur_atac }
 
-				set_variable = { fra_cur_cas = num_deployed_planes_with_type@CAS_equipment }
+				set_variable = { fra_cur_cas = num_deployed_planes_with_type@small_bomber_airframe }
 				add_to_variable = { french_attackers = fra_cur_cas }
 			}
 		}
@@ -3504,17 +3676,17 @@ on_actions = {
 			if = {
 				limit = { has_active_mission = ENG_modernization_of_the_royal_airforce }
 
-				set_variable = { eng_mod_tac = num_deployed_planes_with_type@tac_bomber_equipment }
+				set_variable = { eng_mod_tac = num_deployed_planes_with_type@medium_heavy_bomber_airframe }
 				set_variable = { ENG_modernization_of_the_royal_airforce_bombers = eng_mod_tac }
 
-				set_variable = { eng_mod_str = num_deployed_planes_with_type@strike_bomber_equipment }
+				set_variable = { eng_mod_str = num_deployed_planes_with_type@medium_bomber_airframe }
 				add_to_variable = { ENG_modernization_of_the_royal_airforce_bombers = eng_mod_str }
 
-				set_variable = { eng_mod_pat = num_deployed_planes_with_type@patrol_equipment }
+				set_variable = { eng_mod_pat = num_deployed_planes_with_type@large_maritime_patrol_airframe }
 				add_to_variable = { ENG_modernization_of_the_royal_airforce_bombers = eng_mod_pat }
 
-				set_variable = { ENG_modernization_of_the_royal_airforce_fighters = num_deployed_planes_with_type@fighter_equipment }
-				add_to_variable = { ENG_modernization_of_the_royal_airforce_fighters = num_deployed_planes_with_type@fighter_multirole_equipment }
+				set_variable = { ENG_modernization_of_the_royal_airforce_fighters = num_deployed_planes_with_type@small_fighter_airframe }
+				add_to_variable = { ENG_modernization_of_the_royal_airforce_fighters = num_deployed_planes_with_type@small_fighter_multirole_airframe }
 			}
 		}
 		effect = {
@@ -3545,10 +3717,10 @@ on_actions = {
 			if = {
 				limit = { has_variable = ITA_modernization_of_the_regio_aeronautica }
 
-				set_variable = { ita_cur_tac = num_deployed_planes_with_type@tac_bomber_equipment }
+				set_variable = { ita_cur_tac = num_deployed_planes_with_type@medium_heavy_bomber_airframe }
 				set_variable = { ITA_modernization_of_the_regio_aeronautica = ita_cur_tac }
 
-				set_variable = { ita_cur_str = num_deployed_planes_with_type@strike_bomber_equipment }
+				set_variable = { ita_cur_str = num_deployed_planes_with_type@medium_bomber_airframe }
 				add_to_variable = { ITA_modernization_of_the_regio_aeronautica = ita_cur_str }
 			}
 		}
@@ -3661,7 +3833,7 @@ on_actions = {
 					limit = {
 						has_navy_size = {
 							size > fy_sc
-							archetype = ship_hull_cruiser_submarine
+							archetype = sub_hull_cruiser_submarine
 						}
 					}
 					set_country_flag = fy44_sc_done
@@ -3722,7 +3894,7 @@ on_actions = {
 					limit = {
 						has_navy_size = {
 							size > fy_sc
-							archetype = ship_hull_cruiser_submarine
+							archetype = sub_hull_cruiser_submarine
 						}
 					}
 					set_country_flag = fy40_sc_done
@@ -3745,6 +3917,73 @@ on_actions = {
 	#	}
 	}
 	on_monthly = {
+	}
+	on_weekly_FIN = {
+		effect = {
+			set_variable = { FIN_parliament_shift = 0 }
+			set_variable = { FIN_public_shift = 0 }
+			if = {
+				limit = { has_country_flag = FIN_curfew_flag }
+				add_to_variable = { FIN_public_shift = -0.2 }
+			}
+			if = {
+				limit = { has_war = yes }
+				set_temp_variable = { temp_losses = casualties_k }
+				divide_temp_variable = { temp_losses = 10 }
+				round_temp_variable = temp_losses
+				divide_temp_variable = { temp_losses = 10 }
+				multiply_temp_variable = { temp_losses = -1 }
+				add_to_variable = { FIN_public_shift = temp_losses }
+			}
+			if = {
+				limit = { has_war = no }
+				add_to_variable = { FIN_public_shift = 0.2 }
+				add_to_variable = { FIN_parliament_shift = 0.1 }
+			}
+			set_variable = { FIN_internal_faction_effect_input = FIN_public_shift }
+			FIN_change_public_trust_effect = yes
+			set_variable = { FIN_internal_faction_effect_input = FIN_parliament_shift }
+			FIN_change_parliament_trust_effect = yes
+		}
+	}
+	on_daily_FIN = {
+		# Finland Winter War calculation
+		effect = {
+			if = {
+				limit = { has_global_flag = WA_winter_war_flag }
+				FIN = {
+					set_variable = { FIN_winter_war_exhaustion_variable = casualties_k }
+					clamp_variable = {
+						var = FIN_winter_war_exhaustion_variable
+						max = 100
+					}
+					round_variable = FIN_winter_war_exhaustion_variable
+					set_temp_variable = { temp_exhaustion = FIN_winter_war_exhaustion_variable }
+					divide_temp_variable = { temp_exhaustion = 100 }
+
+					set_variable = { FIN_winter_war_fort_variable = 1}
+					subtract_from_variable = { FIN_winter_war_fort_variable = temp_exhaustion }
+					multiply_variable = { FIN_winter_war_fort_variable = 0.2 } 				# Min
+					set_temp_variable = { lerp_max = -1 } 								# Max
+					multiply_temp_variable = { lerp_max = temp_exhaustion }
+					add_to_variable = { FIN_winter_war_fort_variable = lerp_max}
+
+					set_variable = { FIN_winter_war_attack_variable = 1}
+					subtract_from_variable = { FIN_winter_war_attack_variable = temp_exhaustion }
+					multiply_variable = { FIN_winter_war_attack_variable = 0 } 				# Min
+					set_temp_variable = { lerp_max = -0.5 } 								# Max
+					multiply_temp_variable = { lerp_max = temp_exhaustion }
+					add_to_variable = { FIN_winter_war_attack_variable = lerp_max}
+
+					set_variable = { FIN_winter_war_core_defence_variable = 1}
+					subtract_from_variable = { FIN_winter_war_core_defence_variable = temp_exhaustion }
+					multiply_variable = { FIN_winter_war_core_defence_variable = 0 } 				# Min
+					set_temp_variable = { lerp_max = -0.5 }								# Max
+					multiply_temp_variable = { lerp_max = temp_exhaustion }
+					add_to_variable = { FIN_winter_war_core_defence_variable = lerp_max}
+				}
+			}
+		}
 	}
 
 	on_declare_war = {
@@ -4034,7 +4273,7 @@ on_actions = {
 						original_tag = GER
 					}
 					SWE = {
-						has_opinion_modifier = strongarm_swedish
+						has_opinion_modifier = swedish_resource_monopoly
 					}
 				}
 				SWE = {
@@ -4075,7 +4314,7 @@ on_actions = {
 						original_tag = GER
 					}
 					SWE = {
-						has_opinion_modifier = strongarm_swedish
+						has_opinion_modifier = swedish_resource_monopoly
 					}
 				}
 				SWE = {

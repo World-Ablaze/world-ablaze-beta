@@ -1,4 +1,291 @@
+
+ROM_civil_war_dec_cat = {
+
+	ROM_prepare_fascist_cell = {
+		icon = {
+			key = rom_mon_garrison_control_4
+			trigger = {
+				FROM = {
+					check_variable = { ROM_garrison_control = 0 }
+					has_state_flag = ROM_government_stronghold
+				}
+			}
+		}
+		icon = {
+			key = rom_mon_garrison_control_1
+			trigger = {
+				FROM = {
+					check_variable = { ROM_garrison_control = 0 }
+					NOT = { has_state_flag = ROM_government_stronghold }
+				}
+			}
+		}
+		icon = {
+			key = rom_mon_garrison_control_2
+			trigger = {
+				FROM = {
+					check_variable = { ROM_garrison_control = 1 }
+					NOT = { has_state_flag = ROM_government_stronghold }
+				}
+			}
+		}
+		icon = {
+			key = rom_mon_garrison_control_3
+			trigger = {
+				FROM = {
+					check_variable = { ROM_garrison_control = 2 }
+					NOT = { has_state_flag = ROM_government_stronghold }
+				}
+			}
+		}
+		icon = {
+			key = rom_fas_garrison_control_4
+			trigger = {
+				FROM = {
+					check_variable = { var = ROM_garrison_control value = 3 compare = greater_than_or_equals }
+					NOT = { has_state_flag = ROM_government_stronghold }
+				}
+			}
+		}
+
+		allowed = {
+			tag = ROM
+		}
+
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = ROM_expand_influence_trigger_tt
+				FROM = {
+					check_variable = {
+						ROM_garrison_control < 3
+					}
+					any_neighbor_state = {
+						check_variable = {
+							ROM_garrison_control > 2
+						}
+					}
+					NOT = { has_state_flag = ROM_government_stronghold }
+				}
+			}
+		}
+
+		state_target = yes
+
+		on_map_mode = map_only
+
+		target_array = ROM.core_states
+    	target_trigger = {
+			FROM = {
+				is_fully_controlled_by = ROOT
+			}
+		}
+
+		cost = 10
+
+		days_remove = 28
+
+		visible = {
+			NOT = { has_global_flag = ROM_civil_war }
+			has_completed_focus = ROM_organize_the_peasants
+		}
+
+		ai_will_do = {
+			factor = 40
+			modifier = {
+				factor = 3
+				OR = {
+					has_decision = ROM_sway_army_loyalty
+					has_decision = ROM_sway_navy_loyalty
+					has_decision = ROM_sway_airforce_loyalty
+				}
+			}
+		}
+
+		remove_effect = {
+			custom_effect_tooltip = ROM_expand_influence_tt
+			hidden_effect = {
+				FROM = {
+					add_to_variable = {
+						ROM_garrison_control = 1
+					}
+				}
+			}
+		}
+	}
+
+	ROM_sway_army_loyalty = {
+		icon = generic_military
+
+		allowed = {
+			tag = ROM
+		}
+
+		visible = {
+			has_completed_focus = ROM_sway_the_military
+			NOT = { has_global_flag = ROM_civil_war }
+			NOT = { has_global_flag = ROM_civil_war_end }
+			check_variable = { iron_legion_civil_war_army_counter_var = 90 compare = less_than }
+		}
+
+		fire_only_once = no
+
+		days_remove = 60
+
+		cost = 20
+
+		cancel_if_not_visible = yes
+		ai_will_do = {
+			factor = 150
+		}
+		remove_effect = {
+			custom_effect_tooltip = ROM_sway_army_loyalty_tt
+			random_army_leader = {
+				limit = {
+					NOT = { has_trait = trait_ROM_legionare }
+				}
+				add_unit_leader_trait = trait_ROM_legionare
+				set_unit_leader_flag = ROM_swayed_leader_loyalty_flag
+			}
+			hidden_effect = {
+				add_to_variable = { var = iron_legion_civil_war_army_counter_var value = 10 }
+				subtract_from_variable = { var = iron_legion_civil_war_army_actual_counter_var value = 0.1 }
+			}
+		}
+	}
+
+	ROM_sway_airforce_loyalty = {
+		icon = generic_air
+
+		allowed = {
+			tag = ROM
+		}
+
+		available = {
+		}
+
+		visible = {
+			has_completed_focus = ROM_sway_the_military
+			NOT = { has_global_flag = ROM_civil_war }
+			NOT = { has_global_flag = ROM_civil_war_end }
+			#check_variable = { iron_legion_civil_war_air_counter_var = 100 compare = less_than }
+		}
+
+		fire_only_once = yes
+
+		days_remove = 60
+
+		cost = 15
+
+		cancel_if_not_visible = yes
+		ai_will_do = {
+			factor = 200
+		}
+		remove_effect = {
+			custom_effect_tooltip = ROM_sway_airforce_loyalty_tt
+			hidden_effect = {
+				79 = {
+					set_variable = { ROM_garrison_control = 4 }
+				}
+				add_to_variable = { var = iron_legion_civil_war_air_counter_var value = 100 }
+				subtract_from_variable = { var = iron_legion_civil_war_air_actual_counter_var value = 1.0 }
+			}
+		}
+	}
+
+	ROM_sway_navy_loyalty = {
+		icon = generic_naval
+
+		allowed = {
+			tag = ROM
+		}
+
+		available = {
+		}
+
+		visible = {
+			has_completed_focus = ROM_sway_the_military
+			NOT = { has_global_flag = ROM_civil_war }
+			NOT = { has_global_flag = ROM_civil_war_end }
+			#check_variable = { iron_legion_civil_war_navy_counter_var = 100 compare = less_than }
+		}
+
+		fire_only_once = yes
+
+		days_remove = 60
+
+		cost = 15
+
+		cancel_if_not_visible = yes
+
+		ai_will_do = {
+			factor = 70
+		}
+
+		remove_effect = {
+			custom_effect_tooltip = ROM_sway_navy_loyalty_tt
+			random_navy_leader = {
+				limit = {
+					NOT = { has_trait = trait_ROM_legionare }
+				}
+				add_unit_leader_trait = trait_ROM_legionare
+				set_unit_leader_flag = ROM_swayed_leader_loyalty_flag
+			}
+			hidden_effect = {
+				899 = {
+					set_variable = { ROM_garrison_control = 4 }
+				}
+				add_to_variable = { var = iron_legion_civil_war_navy_counter_var value = 100 }
+				subtract_from_variable = { var = iron_legion_civil_war_navy_actual_counter_var value = 1.0 }
+			}
+		}
+	}
+}
+
 political_actions = {
+
+	ROM_the_1937_elections = {
+		icon = generic_political_rally
+
+		allowed = {
+			original_tag = ROM
+		}
+		available = {
+			hidden_trigger = {
+				always = no
+			}
+		}
+
+		days_mission_timeout = 700
+		is_good = no
+		fire_only_once = yes
+
+		activation = {
+			tag = ROM
+		}
+
+		timeout_effect = {
+			if = {
+				limit = {
+					has_completed_focus = ROM_flexible_foreign_policy
+				}
+				country_event = rom_armor.815
+			}
+			if = {
+				limit = {
+					has_completed_focus = ROM_continue_the_violence
+				}
+				country_event = rom_armor.832
+				unlock_national_focus = ROM_everything_for_the_country
+			}
+		}
+
+		complete_effect = {
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+	}
 
 	ROM_proclaim_greater_romania = {
 		icon = generic_nationalism
@@ -176,6 +463,81 @@ political_actions = {
 }
 
 war_measures = {
+	ROM_hold_besserabia = {
+		icon = generic_decision
+		allowed = {
+			original_tag = ROM
+		}
+
+		available = {
+			80 = {
+				CONTROLLER = {
+					is_in_faction_with = SOV
+				}
+			}
+			78 = {
+				CONTROLLER = {
+					is_in_faction_with = SOV
+				}
+			}
+			766 = {
+				CONTROLLER = {
+					is_in_faction_with = SOV
+				}
+			}
+		}
+
+		days_mission_timeout = 30
+		fire_only_once = yes
+
+		activation = {
+			always = no
+		}
+
+		is_good = yes
+
+		timeout_effect = {
+			add_war_support = 0.15
+			add_stability = 0.15
+			add_political_power = 100
+		}
+
+		complete_effect = {
+			add_war_support = -0.2
+		}
+	}
+
+	ROM_soviet_war_mission = {
+		allowed = {
+			original_tag = ROM
+		}
+
+		visible = {
+			always = no
+		}
+
+		days_remove = 300
+
+		modifier = {
+			ai_call_ally_desire_factor = -2000
+		}
+
+		cancel_trigger = {
+			any_allied_country = {
+				NOT = { tag = ROOT }
+				has_war_with = SOV
+			}
+			# any_country = { #TODO figure out how to make greece not give access
+			# 	has_military_access_to = GRE
+			# }
+		}
+
+		remove_effect = {
+		}
+
+		cancel_effect = {
+		}
+	}
 	ROM_expand_the_royal_guards_1 = {
 		icon = generic_intelligence_operation
 
@@ -190,6 +552,13 @@ war_measures = {
 		available = {
 			num_of_controlled_states > 3
 			has_army_manpower = { size > 599999 }
+			custom_override_tooltip = {
+				tooltip = {
+					localization_key = has_army_eq_tt
+					num_eq = "35.00K"
+				}
+				check_variable = { num_equipment_in_armies@infantry_equipment > 35000 }
+			}
 		}
 
 		days_remove = 90
@@ -231,6 +600,13 @@ war_measures = {
 		available = {
 			num_of_controlled_states > 3
 			has_army_manpower = { size > 899999 }
+			custom_override_tooltip = {
+				tooltip = {
+					localization_key = has_army_eq_tt
+					num_eq = "50.00K"
+				}
+				check_variable = { num_equipment_in_armies@infantry_equipment > 50000 }
+		   }
 		}
 
 		days_remove = 90
@@ -272,6 +648,13 @@ war_measures = {
 		available = {
 			num_of_controlled_states > 3
 			has_army_manpower = { size > 1199999 }
+			custom_override_tooltip = {
+				tooltip = {
+					localization_key = has_army_eq_tt
+					num_eq = "65.00K"
+				}
+				check_variable = { num_equipment_in_armies@infantry_equipment > 65000 }
+			}
 		}
 
 		days_remove = 90
@@ -301,7 +684,7 @@ war_measures = {
 }
 
 operations = {
-	
+
 }
 ROM_change_sides = {
 

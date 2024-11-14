@@ -2116,7 +2116,14 @@ country_event = {
 			modifier = {
 				factor = 2
 				ITA = {
-					has_army_manpower = { size > 999999 }
+					has_army_manpower = { size > 999999 } #80 div
+					custom_override_tooltip = {
+						tooltip = {
+							localization_key = has_army_eq_tt
+							num_eq = "55.00K"
+						}
+						check_variable = { num_equipment_in_armies@infantry_equipment > 55000 }
+					}
 				}
 			}
 		}
@@ -5352,35 +5359,56 @@ country_event = {
 
 }
 
-#country_event = {
-#	id = ita_armor.906
-#	hidden = yes
-#
-#	mean_time_to_happen = { days = 2 }
-#
-#	fire_only_once = yes
-#
-#	trigger = {
-#		tag = ITA
-#		is_ai = yes
-#		has_country_flag = medium_armor_template_1_ita
-#		448 = {
-#			CONTROLLER = {
-#				OR = {
-#					tag = ITA
-#					is_subject_of = ITA
-#					is_in_faction_with = ITA
-#				}
-#			}
-#		}
-#	}
-#
-#	immediate = {
-#		load_oob = "ITA_north_africa"
-#	}
-#
-#	option = {}
-#}
+country_event = {
+	id = ita_armor.906
+	hidden = yes
+
+	mean_time_to_happen = { days = 2 }
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = ITA
+		is_ai = yes
+		has_country_flag = medium_armor_template_1_ita
+		#448 = {
+		#	CONTROLLER = {
+		#		OR = {
+		#			tag = ITA
+		#			is_subject_of = ITA
+		#			is_in_faction_with = ITA
+		#		}
+		#	}
+		#}
+		OR = {
+			date > 1941.7.1
+			has_war_with = ENG
+		}
+		has_tech = ita_medium_tank_chassis_2
+		has_template = "Medium Tank Division"
+	}
+
+	immediate = {
+		#load_oob = "ITA_north_africa"
+		add_equipment_to_stockpile = { type = tank_ita_medium_chassis_1 amount = 700 }
+		add_equipment_to_stockpile = { type = ita_hv_aa_1 amount = 200 }
+		if = {
+			limit = {
+				is_subject = no
+				has_capitulated = no
+			}
+			capital_scope = {
+				create_unit = {
+					division = "division_template = \"Medium Tank Division\" start_experience_factor = 0.5 start_equipment_factor = 1.0"
+					owner = ITA
+					count = 2
+				}
+			}
+		}
+	}
+
+	option = {}
+}
 
 country_event = {
 	id = ita_armor.907
@@ -5475,6 +5503,7 @@ country_event = {
 			tech_engineers = 1
 			tech_recon = 1
 			tech_logistics_company = 1
+			ita_pack_artillery_1 = 1
 			ita_artillery_1 = 1
 			ita_motorised_infantry = 1
 		}
@@ -5795,7 +5824,7 @@ country_event = {
 	trigger = {
 		tag = ITA
 		is_ai = yes
-		date > 1939.1.1
+		date > 1937.1.1
 		OR = {
 			has_full_control_of_state = 451
 			any_allied_country = {

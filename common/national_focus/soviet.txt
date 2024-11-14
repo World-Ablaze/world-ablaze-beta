@@ -1,3 +1,4 @@
+#!gfx:interface\afo_focuses.gfx
 focus_tree = {
 	id = soviet_focus
 	country = {
@@ -193,7 +194,7 @@ focus_tree = {
 		completion_reward = {
             if = {
                 limit = { has_aat = yes }
-                unlock_military_industrial_organization_tooltip = mio:SOV_gaz_organization
+                #unlock_military_industrial_organization_tooltip = mio:SOV_gaz_organization
             }
             else = {
 				custom_effect_tooltip = available_designer
@@ -687,7 +688,7 @@ focus_tree = {
 					3582
 					579
 					487
-					950
+					9502
 					13978
 					11512
 					3566
@@ -1076,6 +1077,22 @@ focus_tree = {
 				add_building_construction = {
 					type = industrial_complex
 					level = 3
+					instant_build = yes
+				}
+			}
+			227 = {
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = industrial_complex
+					level = 2
+					instant_build = yes
+				}
+			}
+			242 = {
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = industrial_complex
+					level = 2
 					instant_build = yes
 				}
 			}
@@ -1689,6 +1706,14 @@ focus_tree = {
 			SOV_replace_industrial_designer = yes			#"National" Industrial Designers get +5% research bonus
 			hidden_effect = {
 				add_ideas = SOV_national_specialists_ns
+			}
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				custom_effect_tooltip = available_mio_tt
+				show_mio_tooltip = SOV_astrov_design_bureau_organization
+				show_mio_tooltip = SOV_uralvagonzavod_organization
 			}
 		}
 	}
@@ -2539,9 +2564,20 @@ focus_tree = {
 			}
 		}
 		completion_reward = {
-			add_timed_idea = {
-				idea = disorganised_industry
-				days = 730
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				add_timed_idea = {
+					idea = disorganised_industry_mio
+					days = 730
+				}
+			}
+			else = {
+				add_timed_idea = {
+					idea = disorganised_industry
+					days = 730
+				}
 			}
 			custom_effect_tooltip = SOV_split_the_pc_of_defence_industry_tt
 			hidden_effect = {
@@ -2607,17 +2643,7 @@ focus_tree = {
 		}
 		completion_reward = {
             if = {
-                limit = { has_aat = yes }
-                unlock_military_industrial_organization_tooltip = mio:SOV_kirov_organization
-                mio:SOV_kirov_organization = {
-                    add_mio_funds_gain_factor = 0.15
-                }
-                unlock_military_industrial_organization_tooltip = mio:SOV_morozov_design_bureau_organization
-                mio:SOV_morozov_design_bureau_organization = {
-                    add_mio_funds_gain_factor = 0.15
-                }
-            }
-            else = {
+                limit = { has_aat = no }
 				custom_effect_tooltip = available_designer
 				show_ideas_tooltip = SOV_kirov
 				custom_effect_tooltip = available_designer
@@ -2843,6 +2869,96 @@ focus_tree = {
 				add_to_variable = { SOV_army_attitude = 1 }
 				add_to_variable = { SOV_army_influence = 1 }
 				set_country_flag = great_patriotic_war_flag
+				every_state = {
+					limit = {
+						is_core_of = SOV
+						CONTROLLER = {
+							NOT = {
+								tag = SOV
+							}
+						}
+					}
+					set_state_flag = gpw_state_flag
+				}
+			}
+			custom_effect_tooltip = SOV_great_patriotic_war_tt2
+			effect_tooltip = {
+				if = {
+					limit = {
+						NOT = {
+							has_tech = concentrated_spacing
+							has_tech = anti_tank_strong_points
+						}
+					}
+					add_doctrine_cost_reduction = {
+						name = SOV_great_patriotic_war
+						cost_reduction = 0.99
+						uses = 2
+						category = cat_grand_battle_plan
+					}
+					add_doctrine_cost_reduction = {
+						name = SOV_great_patriotic_war
+						cost_reduction = 0.99
+						uses = 1
+						category = cat_superior_firepower
+					}
+					set_technology = { concentrated_spacing = 1 }
+				}
+				else = {
+					add_doctrine_cost_reduction = {
+						name = SOV_great_patriotic_war
+						cost_reduction = 0.99
+						uses = 2
+						category = cat_grand_battle_plan
+					}
+					add_doctrine_cost_reduction = {
+						name = SOV_great_patriotic_war
+						cost_reduction = 0.99
+						uses = 2
+						category = cat_superior_firepower
+					}
+				}
+			}
+			hidden_effect = {
+				if = {
+					limit = {
+						OR = {
+							has_tech = box_barrages
+							has_tech = creeping_barrages
+						}
+						NOT = {
+							has_tech = concentrated_spacing
+							has_tech = anti_tank_strong_points
+						}
+					}
+					add_doctrine_cost_reduction = {
+						name = SOV_great_patriotic_war
+						cost_reduction = 0.99
+						uses = 2
+						category = cat_grand_battle_plan
+					}
+					add_doctrine_cost_reduction = {
+						name = SOV_great_patriotic_war
+						cost_reduction = 0.99
+						uses = 1
+						category = cat_superior_firepower
+					}
+					set_technology = { concentrated_spacing = 1 }
+				}
+				else = {
+					add_doctrine_cost_reduction = {
+						name = SOV_great_patriotic_war
+						cost_reduction = 0.99
+						uses = 2
+						category = cat_grand_battle_plan
+					}
+					add_doctrine_cost_reduction = {
+						name = SOV_great_patriotic_war
+						cost_reduction = 0.99
+						uses = 2
+						category = cat_superior_firepower
+					}
+				}
 			}
 		}
 	}
@@ -3010,28 +3126,58 @@ focus_tree = {
 		}
 
 		available = {
-			OR = {
-				any_enemy_country = { is_major = yes }
-				NOT = {
-					if = {
-						limit = { has_idea = cavalry_army_clique }
-						has_idea = cavalry_army_clique
-					}
-					else_if = {
-						limit = { has_idea = cavalry_army_clique_2 }
-						has_idea = cavalry_army_clique_2
-					}
-					else = {
-						has_idea = cavalry_army_clique_3
-					}
-				}
-			}
 		}
 
 		completion_reward = {
 			custom_effect_tooltip = SOV_glavvoenstroi_tt
 			add_to_variable = { SOV_fyp_consumer_goods_expected_value = -0.02 }
 			add_to_variable = { SOV_fyp_production_speed_buildings_factor = 0.05 }
+			653 = {
+				set_state_category = metropolis
+			}
+			572 = {
+				set_state_category = metropolis
+			}
+			249 = {
+				set_state_category = city
+			}
+			651 = {
+				set_state_category = large_town
+			}
+			255 = {
+				set_state_category = large_town
+			}
+			398 = {
+				set_state_category = large_town
+			}
+			876 = {
+				set_state_category = town
+			}
+			40 = {
+				set_state_category = city
+			}
+			569 = {
+				set_state_category = large_town
+			}
+			hidden_effect = {
+				every_state = {
+					limit = {
+						is_owned_by = ROOT
+						OR = {
+							state = 653
+							state = 572
+							state = 249
+							state = 651
+							state = 255
+							state = 398
+							state = 876
+							state = 40
+							state = 569
+						}
+					}
+					set_state_flag = marked_for_industrialization
+				}
+			}
 		}
 	}
 
@@ -3075,6 +3221,12 @@ focus_tree = {
 				}
 				219 = {
 					custom_effect_tooltip = SOV_defense_of_the_motherland_moscow_forts
+					add_extra_state_shared_building_slots = 1
+					add_building_construction = {
+						type = stronghold_network
+						level = 1
+						instant_build = yes
+					}
 					hidden_effect = {
 						add_building_construction = {
 							type = anti_air_building
@@ -3304,6 +3456,12 @@ focus_tree = {
 				}
 				195 = {
 					custom_effect_tooltip = SOV_defense_of_the_motherland_leningrad_forts
+					add_extra_state_shared_building_slots = 1
+					add_building_construction = {
+						type = stronghold_network
+						level = 1
+						instant_build = yes
+					}
 					hidden_effect = {
 						add_building_construction = {
 							type = anti_air_building
@@ -3485,7 +3643,15 @@ focus_tree = {
 			572 = {
 				is_owned_and_controlled_by = SOV
 			}
-			NOT = { has_idea = disorganised_industry }
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				NOT = { has_idea = disorganised_industry_mio }
+			}
+			else = {
+				NOT = { has_idea = disorganised_industry }
+			}
 		}
 		completion_reward = {
 			custom_effect_tooltip = SOV_over_mobilisation_tt
@@ -3524,7 +3690,15 @@ focus_tree = {
 			653 = {
 				is_owned_and_controlled_by = SOV
 			}
-			NOT = { has_idea = disorganised_industry }
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				NOT = { has_idea = disorganised_industry_mio }
+			}
+			else = {
+				NOT = { has_idea = disorganised_industry }
+			}
 		}
 		search_filters = {
 			FOCUS_FILTER_INDUSTRY
@@ -3940,12 +4114,6 @@ focus_tree = {
 				}
 				remove_ideas = mass_assault_corps_spirit
 			}
-			add_doctrine_cost_reduction = {
-				name = SOV_lessons_of_war
-				cost_reduction = 0.99
-				uses = 1
-				category = cat_grand_battle_plan
-			}
 			add_tech_bonus = {
 				name = SOV_lessons_of_war
 				bonus = 1
@@ -4220,7 +4388,15 @@ focus_tree = {
 					AND = {
 						has_war = yes
 						any_enemy_country = {
-							is_major = yes
+							OR = {
+								original_tag = FRA
+								original_tag = ITA
+								original_tag = JAP
+								original_tag = GER
+								original_tag = SOV
+								original_tag = ENG
+								original_tag = USA
+							}
 						}
 					}
 					AND = {
@@ -4238,7 +4414,15 @@ focus_tree = {
 					AND = {
 						has_war = yes
 						any_enemy_country = {
-							is_major = yes
+							OR = {
+								original_tag = FRA
+								original_tag = ITA
+								original_tag = JAP
+								original_tag = GER
+								original_tag = SOV
+								original_tag = ENG
+								original_tag = USA
+							}
 						}
 					}
 				}
@@ -4282,7 +4466,6 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			add_political_power = 25
 			#Tooltip purposes (Select Effect)
 			custom_effect_tooltip = SOV_focus_select_effect_tt
 			if = {
@@ -4294,11 +4477,15 @@ focus_tree = {
 			custom_effect_tooltip = SOV_desperate_measures_decisions_unlocked_tt
 			#(Complete Effect)
 			custom_effect_tooltip = SOV_focus_complete_effect_tt
-			add_ideas = SOV_stavka
-			swap_ideas = {
-				remove_idea = home_of_revolution
-				add_idea = great_patriotic_war
+			add_political_power = 25
+			add_tech_bonus = {
+				name = SOV_form_the_stavka
+				bonus = 1
+				uses = 1
+				technology = sov_mechanized_td_1
 			}
+			add_ideas = SOV_stavka
+			custom_effect_tooltip = SOV_form_the_stavka_tt
 			if = {
 				limit = {
 					OR = {
@@ -4309,15 +4496,15 @@ focus_tree = {
 				}
 				add_ideas = extensive_conscription
 			}
-			if = {
-				limit = {
-					OR = {
-						has_idea = free_trade
-						has_idea = export_focus
-					}
-				}
-				add_ideas = collectivization
-			}
+			#if = {
+			#	limit = {
+			#		OR = {
+			#			has_idea = free_trade
+			#			has_idea = export_focus
+			#		}
+			#	}
+			#	add_ideas = collectivization
+			#}
 			if = {
 				limit = {
 					any_enemy_country = {
@@ -4326,7 +4513,15 @@ focus_tree = {
 					has_war_support > 0.5
 					is_government_in_exile = no
 					NOT = { has_idea = tot_economic_mobilisation }
-					NOT = { has_idea = disorganised_industry }
+					if = {
+						limit = {
+							has_dlc = "Arms Against Tyranny"
+						}
+						NOT = { has_idea = disorganised_industry_mio }
+					}
+					else = {
+						NOT = { has_idea = disorganised_industry }
+					}
 				}
 				add_ideas = tot_economic_mobilisation
 			}
@@ -4339,22 +4534,33 @@ focus_tree = {
 					add_political_power = 75
 				}
 				else = {
-
+					add_political_power = 150
 				}
-				add_political_power = 150
 			}
-			custom_effect_tooltip = SOV_form_the_stavka_tt
 			hidden_effect = {
 				add_to_variable = { SOV_army_attitude = 1 }
 				add_to_variable = { SOV_army_influence = -1 }
 				add_to_variable = { SOV_commissars_influence = 2 }
+				every_state = {
+					limit = {
+						is_owned_by = ROOT
+						OR = {
+							is_core_of = BLR
+							is_core_of = UKR
+							state = 217
+							state = 219
+							state = 195
+							state = 218
+							state = 220
+							state = 234
+						}
+					}
+					set_state_flag = marked_for_evacuation
+				}
 			}
-
-			add_tech_bonus = {
-				name = SOV_form_the_stavka
-				bonus = 1
-				uses = 1
-				technology = sov_mechanized_td_1
+			swap_ideas = {
+				remove_idea = home_of_revolution
+				add_idea = great_patriotic_war
 			}
 		}
 	}
@@ -4994,7 +5200,7 @@ focus_tree = {
 			add_doctrine_cost_reduction = {
 				name = SOV_concentrated_artillery
 				cost_reduction = 0.99
-				uses = 2
+				uses = 1
 				category = cat_superior_firepower
 			}
 		}
@@ -5062,6 +5268,12 @@ focus_tree = {
 				name = SOV_attempt_combined_arms
 				cost_reduction = 0.99
 				uses = 1
+				category = cat_mobile_warfare
+			}
+			add_doctrine_cost_reduction = {
+				name = SOV_attempt_combined_arms
+				cost_reduction = 0.99
+				uses = 1
 				category = cat_grand_battle_plan
 			}
 			add_doctrine_cost_reduction = {
@@ -5093,18 +5305,6 @@ focus_tree = {
 					shock_division_hq = 1
 					popup = no
 				}
-			}
-			add_doctrine_cost_reduction = {
-				name = SOV_Shock_armies
-				cost_reduction = 0.99
-				uses = 1
-				category = cat_superior_firepower
-			}
-			add_doctrine_cost_reduction = {
-				name = SOV_Shock_armies
-				cost_reduction = 0.99
-				uses = 1
-				category = cat_grand_battle_plan
 			}
 		}
 	}
@@ -5276,6 +5476,13 @@ focus_tree = {
 				category = cat_mobile_warfare
 				category = cat_superior_firepower
 			}
+			add_tech_bonus = {
+				name = SOV_offensive_juggernaut
+				bonus = 1.0
+				uses = 2
+				technology = tech_headquarters2
+				technology = tech_headquarters3
+			}
 		}
 	}
 	###
@@ -5391,14 +5598,14 @@ focus_tree = {
 					name = SOV_mechanization_of_the_red_army
 					bonus = 0.5
 					uses = 1
-					technology = sov_light_tank_chassis_3
+					technology = sov_light_tank_support_chassis_2
 					technology = sov_medium_tank_chassis_3
 				}
 				add_tech_bonus = {
 					name = SOV_mechanization_of_the_red_army
 					bonus = 1.5
 					uses = 2
-					technology = sov_light_tank_chassis_1_2
+					technology = sov_light_tank_support_chassis_1_2
 					technology = sov_light_tank_chassis_4
 				}
 			}
@@ -5474,9 +5681,9 @@ focus_tree = {
 		completion_reward = {
 			add_tech_bonus = {
 				name = SOV_heavy_weapons_modernization
-				bonus = 0.5
-				uses = 2
-				category = heavy_infantry_weapons
+				bonus = 2.0
+				uses = 1
+				technology = sov_heavy_infantry_weapons_3
 			}
 			add_tech_bonus = {
 				name = SOV_heavy_weapons_modernization
@@ -5564,24 +5771,24 @@ focus_tree = {
 				}
 			}
 
-			add_equipment_production = {
-				equipment = {
-					type = sov_at_3
-					creator = "SOV"
-				}
-				requested_factories = 15
-				progress = 0
-				efficiency = 100
-			}
-			add_equipment_production = {
-				equipment = {
-					type = sov_art_3
-					creator = "SOV"
-				}
-				requested_factories = 15
-				progress = 0
-				efficiency = 100
-			}
+			#add_equipment_production = {
+			#	equipment = {
+			#		type = sov_at_3
+			#		creator = "SOV"
+			#	}
+			#	requested_factories = 15
+			#	progress = 0
+			#	efficiency = 100
+			#}
+			#add_equipment_production = {
+			#	equipment = {
+			#		type = sov_art_3
+			#		creator = "SOV"
+			#	}
+			#	requested_factories = 15
+			#	progress = 0
+			#	efficiency = 100
+			#}
 		}
 	}
 	focus = {
@@ -5935,15 +6142,16 @@ focus_tree = {
 			}
             if = {
                 limit = { has_aat = yes }
+                unlock_military_industrial_organization_tooltip = mio:SOV_mig_design_bureau_organization
+                #unlock_military_industrial_organization_tooltip = mio:SOV_lavochkin_design_bureau_organization
 				every_military_industrial_organization = {
 					limit = {
 						OR = {
-							is_military_industrial_organization = SOV_tupolev_design_bureau_organization
-							is_military_industrial_organization = SOV_yakovlev_design_bureau_organization
-							is_military_industrial_organization = SOV_ilyushin_design_bureau_organization
+							is_military_industrial_organization = SOV_mig_design_bureau_organization
+							is_military_industrial_organization = SOV_lavochkin_design_bureau_organization
 						}
 					}
-					add_mio_funds = 2000
+					add_mio_funds = 300
 				}
             }
 
@@ -6005,43 +6213,81 @@ focus_tree = {
 		completion_reward = {
             if = {
                 limit = { has_aat = yes }
-                unlock_military_industrial_organization_tooltip = mio:SOV_mig_design_bureau_organization
-                unlock_military_industrial_organization_tooltip = mio:SOV_lavochkin_design_bureau_organization
 				every_military_industrial_organization = {
 					limit = {
 						OR = {
-							is_military_industrial_organization = SOV_mig_design_bureau_organization
-							is_military_industrial_organization = SOV_lavochkin_design_bureau_organization
+							is_military_industrial_organization = SOV_tupolev_design_bureau_organization
+							is_military_industrial_organization = SOV_yakovlev_design_bureau_organization
+							is_military_industrial_organization = SOV_ilyushin_design_bureau_organization
 						}
 					}
-					add_mio_funds = 2000
+					add_mio_funds = 600
 				}
             }
-			add_tech_bonus = {
-				name = SOV_innovative_fighters
-				bonus = 1.0
-				uses = 2
-				technology = sov_fighter_multirole_2
-				technology = sov_fighter_multirole_3
-				technology = sov_fighter_multirole_4
+			if = {
+				limit = {
+					has_dlc = "By Blood Alone"
+				}
+				add_tech_bonus = {
+					name = SOV_innovative_fighters
+					bonus = 1.0
+					uses = 2
+					technology = sov_fighter_multirole_ad_tech_2
+					technology = sov_fighter_multirole_ad_tech_3
+					technology = sov_fighter_multirole_ad_tech_3_1
+				}
+				add_tech_bonus = {
+					name = SOV_innovative_fighters
+					bonus = 1.0
+					uses = 1
+					technology = sov_cas_ad_tech_2
+				}
+				add_tech_bonus = {
+					name = SOV_innovative_fighters
+					bonus = 0.5
+					uses = 1
+					technology = sov_fighter_ad_tech_3
+				}
+				add_tech_bonus = {
+					name = SOV_innovative_fighters
+					bonus = 0.5
+					uses = 1
+					technology = sov_interceptor_ad_tech_1
+				}
+				add_tech_bonus = {
+					name = SOV_innovative_fighters
+					bonus = 0.5
+					uses = 1
+					technology = sov_fighter_multirole_ad_tech_5
+				}
 			}
-			add_tech_bonus = {
-				name = SOV_innovative_fighters
-				bonus = 1.0
-				uses = 1
-				technology = sov_cas_2
-			}
-			add_tech_bonus = {
-				name = SOV_innovative_fighters
-				bonus = 0.5
-				uses = 1
-				technology = sov_fighter_3
-			}
-			add_tech_bonus = {
-				name = SOV_innovative_fighters
-				bonus = 0.5
-				uses = 1
-				technology = sov_fighter_multirole_5
+			else = {
+				add_tech_bonus = {
+					name = SOV_innovative_fighters
+					bonus = 1.0
+					uses = 2
+					technology = sov_fighter_multirole_2
+					technology = sov_fighter_multirole_3
+					technology = sov_fighter_multirole_4
+				}
+				add_tech_bonus = {
+					name = SOV_innovative_fighters
+					bonus = 1.0
+					uses = 1
+					technology = sov_cas_2
+				}
+				add_tech_bonus = {
+					name = SOV_innovative_fighters
+					bonus = 0.5
+					uses = 1
+					technology = sov_fighter_3
+				}
+				add_tech_bonus = {
+					name = SOV_innovative_fighters
+					bonus = 0.5
+					uses = 1
+					technology = sov_fighter_multirole_5
+				}
 			}
 		}
 	}
@@ -6338,7 +6584,8 @@ focus_tree = {
 				name = SOV_modern_fighter_designs
 				bonus = 0.5
 				uses = 3
-				category = light_fighter
+				category = cat_fighter
+				category = cat_multirole
 			}
             add_doctrine_cost_reduction = {
 				name = SOV_modern_fighter_designs
@@ -6367,7 +6614,7 @@ focus_tree = {
 				name = SOV_long_range_aviation
 				bonus = 0.5
 				uses = 2
-				category = cat_heavy_fighter
+				category = cat_attacker
 				category = tactical_bomber
 				category = cat_strategic_bomber
 			}
@@ -12741,8 +12988,7 @@ focus_tree = {
 	focus = {
 		id = SOV_end_the_khalkhin_gol_conflict
 		icon = GFX_goal_generic_occupy_states_ongoing_war
-		prerequisite = { focus = SOV_prepare_a_war_with_japan
-		}
+		prerequisite = { focus = SOV_prepare_a_war_with_japan }
 		x = 1
 		y = 1
 		relative_position_id = SOV_prepare_a_war_with_japan
@@ -14663,7 +14909,7 @@ focus_tree = {
 		x = 1
 		y = 1
 		relative_position_id = SOV_nkvd_divisions
-		cost = 2
+		cost = 1
 		available = {
 			has_war = yes
 			OR = {
@@ -14678,8 +14924,9 @@ focus_tree = {
 			FOCUS_FILTER_EMERGENCY
 		}
 		completion_reward = {
-			add_ideas = order_227_1
+			add_ideas = barrier_troops
 			unlock_decision_tooltip = SOV_order_227
+			custom_effect_tooltip = SOV_barrier_troops_tt
 		}
 	}
 	focus = {
@@ -14689,7 +14936,7 @@ focus_tree = {
 		x = 0
 		y = 1
 		relative_position_id = SOV_barrier_troops
-		cost = 3
+		cost = 1
 		available = {
 			has_war = yes
 			surrender_progress > 0.34
@@ -14743,7 +14990,7 @@ focus_tree = {
 		x = 0
 		y = 1
 		relative_position_id = SOV_peoples_militia
-		cost = 3
+		cost = 1
 		available = {
 			has_war = yes
 		}
@@ -14816,9 +15063,9 @@ focus_tree = {
 		completion_reward = {
 			if = {
 				limit = {
-					NOT = { has_idea = conscript_men_into_the_factories }
+					NOT = { has_idea = factory_conscription }
 				}
-				add_ideas = conscript_men_into_the_factories
+				add_ideas = factory_conscription
 			}
 			else = {
 				add_political_power = 150
@@ -19649,7 +19896,7 @@ focus_tree = {
 						has_idea = incentivise_employability_oppertunities
 					}
 					NOT = {
-						has_idea = conscript_men_into_the_factories
+						has_idea = factory_conscription
 					}
 				}
 				add_ideas = mandatory_army_service
