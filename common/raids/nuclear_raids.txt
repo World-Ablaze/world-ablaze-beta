@@ -7,16 +7,10 @@ types = {
 
 		command_power = 20 # command power allocation cost
 		ai_will_do = {
-			base = 1
+			base = 0
 			modifier = {
-				# Don't target anyone who is not a potential enemy
-				factor = 0
-				NOT = {
-					is_in_array = {
-						array = potential_and_current_enemies
-						value = FROM  # Target country
-					}
-				}
+				add = 1
+				has_war_with = FROM
 			}
 			modifier = {
 				factor = 2
@@ -25,17 +19,49 @@ types = {
 				}
 			}
 			modifier = {
-				factor = 5 # Historical bombing of Japan
+				factor = 0
+				var:target_state = {
+					NOT = {
+						is_core_of = FROM
+					}
+				}
+			}
+			modifier = {
+				factor = 3
+				var:target_state = {
+					is_capital = yes
+				}
+			}
+			# modifier = {
+			# 	factor = 2
+			# 	var:target_state = {
+			# 		OR = {
+			# 			has_state_category = large_city
+			# 			has_state_category = metropolis
+			# 			has_state_category = large_metropolis
+			# 			has_state_category = megalopolis
+			# 		}
+			# 	}
+			# }
+			modifier = {
+				factor = 10 # Historical bombing of Japan
 				FROM = {
 					original_tag = JAP
 				}
 				original_tag = USA
-				has_war_with = FROM
+				var:target_state = {
+					OR = {
+						state = 529
+						state = 528
+					}
+				}
 			}
 			modifier = {
-				factor = 0.25 # If possible, during peacetime, prepare strikes against the main enemies
-				NOT = { has_war_with = FROM }
-				FROM = { is_major = no }
+				factor = 5
+				FROM = {
+					original_tag = JAP
+				}
+				original_tag = USA
 			}
 		}
 
@@ -56,6 +82,7 @@ types = {
 		}
 		launchable = {
 			has_war_with = FROM
+			has_fuel > 24999
 		}
 
 		launch_sound = raid_launch_nuclear_strike
@@ -67,8 +94,22 @@ types = {
 
 		unit_requirements = {
 			equipment = {
-				type = { strategic_bomber }
-				amount = { min = 10 }
+				type = { large_plane_airframe heavy_large_plane_airframe }
+				modules = {
+					bomb_1840kg_bomb_bay
+					bomb_2000kg_bomb_bay
+					bomb_2300kg_bomb_bay
+					bomb_2500kg_bomb_bay
+					bomb_2760kg_bomb_bay
+					bomb_3000kg_bomb_bay
+					bomb_3220kg_bomb_bay
+					bomb_3680kg_bomb_bay
+					bomb_4600kg_bomb_bay
+					bomb_5000kg_bomb_bay
+					bomb_5520kg_bomb_bay
+					bomb_8280kg_bomb_bay
+				}
+				amount = { min = 300 }
 			}
 		}
 		essential_equipment = {
@@ -88,7 +129,7 @@ types = {
 
 		success_factors = {
 			success = {
-				base = 0.5
+				base = 0.4
 
 				# Raiding unit modifiers
 				experience = {
@@ -115,7 +156,7 @@ types = {
 				## Actor Modifiers
 				air_superiority = {
 					reference = 1
-					start_reference = 0.5
+					start_reference = 0.7
 					weight = 0.25
 					start_weight = -0.25
 				}
@@ -146,9 +187,10 @@ types = {
 					var:actor_country = {
 						custom_effect_tooltip = raid_aborted_tt
 						add_political_power = -50
+						add_fuel = -25000
 					}
 					raid_damage_units = {
-						plane_loss = 0.9
+						plane_loss = 0.25
 						ratio = yes
 					}
 				}
@@ -156,7 +198,7 @@ types = {
 			limited_success = {
 				actor_effects = {
 					raid_damage_units = {
-						plane_loss = 0.5
+						plane_loss = 0.15
 						ratio = yes
 					}
 					raid_add_unit_experience = 0.1
@@ -175,6 +217,7 @@ types = {
 							state = var:ROOT.target_state
 							use_nuke = yes
 						}
+						add_fuel = -25000
 					}
 				}
 			}
@@ -182,10 +225,10 @@ types = {
 			    custom_sound = raid_result_success_nuclear
 				actor_effects = {
 					raid_damage_units = {
-						plane_loss = 0.25
+						plane_loss = 0.1
 						ratio = yes
 					}
-					raid_add_unit_experience = 0.35
+					raid_add_unit_experience = 0.2
 				}
 				victim_effects = {
 					var:target_state = {
@@ -200,6 +243,7 @@ types = {
 							province = var:ROOT.target_province #optional use either province or state
 							use_nuke = yes
 						}
+						add_fuel = -25000
 					}
 				}
 			}
@@ -207,10 +251,10 @@ types = {
 			    custom_sound = raid_result_critical_success_nuclear
 				actor_effects = {
 					raid_damage_units = {
-						plane_loss = 0.1
+						plane_loss = 0.05
 						ratio = yes
 					}
-					raid_add_unit_experience = 0.5
+					raid_add_unit_experience = 0.35
 				}
 				victim_effects = {
 					var:actor_country = {
@@ -218,6 +262,7 @@ types = {
 							province = var:ROOT.target_province #optional use either province or state
 							use_nuke = yes
 						}
+						add_fuel = -25000
 					}
 					var:target_state = {
 						custom_effect_tooltip = raid_nuclear_strike_tt
