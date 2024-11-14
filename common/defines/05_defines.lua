@@ -484,9 +484,6 @@ NDefines.NMilitary.LAND_COMBAT_COLLATERAL_FORT_FACTOR = 0.03						-- Factor to s
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Air
 
-NDefines.NAir.MIN_PLANE_COUNT_PARADROP = 350											-- Minimum amount of transport planes for paradropping
-NDefines.NAir.BASE_UNIT_WEIGHT_IN_TRANSPORT_PLANES = 45.0
-
 NDefines.NAir.AI_ALLOWED_PLANES_KEPT_IN_RESERVE = 0.0								--AI allowed planes is reduced by this percentage. Overflow will be distributed to the next valid order. Worst case, this will result in this % of planes no being assigned any order.
 
 NDefines.NAir.LEND_LEASED_EQUIPMENT_EXPERIENCE_GAIN = 0.0							-- Value used for equipment
