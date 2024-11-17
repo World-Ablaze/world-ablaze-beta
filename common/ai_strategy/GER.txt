@@ -2269,7 +2269,7 @@ GER_we_dont_fight_pathetic_sweden = { # :O
 	}
 }
 
-war_with_denmark = {
+denmark_prep = {
 	allowed = {
 		tag = GER
 	}
@@ -2327,6 +2327,34 @@ war_with_denmark = {
 	}
 }
 
+war_with_denmark = {
+	allowed = {
+		tag = GER
+	}
+	enable = {
+		country_exists = DEN
+		has_war_with = DEN
+		DEN = { has_capitulated = no }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_control
+		strategic_region = 6
+		ordertype = front
+		execution_type = rush
+		execute_order = yes
+	}
+
+	ai_strategy = {
+		type = front_control
+		strategic_region = 207
+		ordertype = front
+		execution_type = rush
+		execute_order = yes
+	}
+}
+
 war_with_norway = {
 	allowed = {
 		tag = GER
@@ -2368,37 +2396,9 @@ war_with_norway = {
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
-		type = invade
-		id = "DEN"
-		value = 1000
-	}
-	ai_strategy = {
-		type = invade
-		id = "NOR"
-		value = 1000
-	}
-	ai_strategy = {
 		type = front_armor_score
 		id = "NOR"
 		value = -100
-	}
-
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 173 #Norwegian Trench
-		value = 100
-	}
-
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 174 #Voring
-		value = 2000
-	}
-
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 242 #German Bight
-		value = 100
 	}
 
 #	ai_strategy = {
@@ -2406,15 +2406,6 @@ war_with_norway = {
 #		area = scandinavia
 #		value = 10
 #	}
-
-	ai_strategy = {
-		type = front_control
-
-		area = norwegian_coast
-
-		ordertype = invasion
-		execute_order = yes
-	}
 
 	ai_strategy = {
 		type = area_priority
@@ -2429,34 +2420,66 @@ war_with_norway = {
 	}
 }
 
-war_with_norway_2 = {
+naval_invade_norway = {
 	allowed = {
 		tag = GER
 	}
 	enable = {
-		date > 1940.5.10
+		date > 1940.3.1
 		OR = {
-			142 = { CONTROLLER = { has_war_with = ROOT } }
-			143 = { CONTROLLER = { has_war_with = ROOT } }
+			NOT = { is_in_faction_with = NOR }
+			NOT = { NOR = { is_subject_of = GER } }
+			has_war_with = NOR
 		}
 		OR = {
-			110 = { CONTROLLER = { is_in_faction_with = ROOT } }
-			110 = { CONTROLLER = { is_subject_of = ROOT } }
-			110 = { CONTROLLER = { tag = ROOT } }
+			110 = { CONTROLLER = { has_war_with = ROOT } }
+			1020 = { CONTROLLER = { has_war_with = ROOT } }
+			#142 = { CONTROLLER = { has_war_with = ROOT } }
+			#143 = { CONTROLLER = { has_war_with = ROOT } }
+			#144 = { CONTROLLER = { has_war_with = ROOT } }
 		}
 	}
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
-		type = naval_avoid_region
-		id = 242 #German Bight
-		value = 2000
+		type = front_control
+
+		area = norwegian_coast
+
+		ordertype = invasion
+		execute_order = yes
 	}
 
 	ai_strategy = {
-		type = front_armor_score
+		type = invade
 		id = "NOR"
-		value = -100
+		value = 1000
+	}
+}
+
+dont_naval_invade_norway = {
+	allowed = {
+		tag = GER
+	}
+	enable = {
+		has_war_with = NOR
+		OR = {
+			110 = { CONTROLLER = { is_in_faction_with = ROOT } }
+			110 = { CONTROLLER = { is_subject_of = ROOT } }
+			110 = { CONTROLLER = { tag = ROOT } }
+		}
+		OR = {
+			1020 = { CONTROLLER = { is_in_faction_with = ROOT } }
+			1020 = { CONTROLLER = { is_subject_of = ROOT } }
+			1020 = { CONTROLLER = { tag = ROOT } }
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = invade
+		id = "NOR"
+		value = -1000
 	}
 }
 
@@ -3656,6 +3679,52 @@ GER_abandon_allies = {
 	}
 }
 
+naval_death_traps = {
+	allowed = {
+		tag = GER
+	}
+	enable = {
+		if = {
+			limit = {
+				has_war_with = FRA
+			}
+			OR = {
+				FRA = { has_capitulated = yes }
+				date > 1940.5.1
+			}
+		}
+		OR = {
+			110 = { CONTROLLER = { is_in_faction_with = ROOT } }
+			110 = { CONTROLLER = { is_subject_of = ROOT } }
+			110 = { CONTROLLER = { tag = ROOT } }
+		}
+		OR = {
+			1020 = { CONTROLLER = { is_in_faction_with = ROOT } }
+			1020 = { CONTROLLER = { is_subject_of = ROOT } }
+			1020 = { CONTROLLER = { tag = ROOT } }
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 173 #Norwegian Trench
+		value = 100
+	}
+
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 174 #Voring
+		value = 2000
+	}
+
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 242 #German Bight
+		value = 100
+	}
+}
+
 GER_convoy_raid_areas = {
 	allowed = {
 		tag = GER
@@ -3663,6 +3732,13 @@ GER_convoy_raid_areas = {
 
 	enable = {
 		has_war = yes
+		OR = {
+			date > 1940.7.1
+			FRA = { is_subject_of = ROOT }
+			FRA = { is_in_faction_with = ROOT }
+			FRA = { has_capitulated = yes }
+			NOT = { country_exists = FRA }
+		}
 	}
 	abort_when_not_enabled = yes
 

@@ -609,6 +609,8 @@ USE_SINGLE_NAVAL_ARMAMENT_CATEGORY = false										-- If true, only the armamen
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Navy
 
+NDefines.NNavy.MIN_SHIPS_FOR_HIGHER_SHIP_RATIO_PENALTY = 61    						-- the minimum fleet size in ships that a fleet must be before having the large fleet penalty applied to them
+
 NDefines.NNavy.NAVAL_COMBAT_AIR_SUB_DETECTION_MAX = 2
 NDefines.NNavy.NAVAL_COMBAT_AIR_PLANE_COUNT_TO_SUB_DETECTION = 0.2					-- Factor applied to the number of active plane in a naval combat to deduce their contribution to sub detection
 
@@ -709,7 +711,7 @@ NDefines.NNavy.BASE_GUN_COOLDOWNS = { 												-- number of hours for a gun t
 NDefines.NNavy.RELATIVE_SURFACE_DETECTION_TO_POSITIONING_FACTOR	= 0.01				-- multiples the surface detection difference between two sides. the side with higher detection will get a bonus of this value
 NDefines.NNavy.MAX_POSITIONING_BONUS_FROM_SURFACE_DETECTION	= 0.0 					-- will clamp the bonus that you get from detection
 
-NDefines.NNavy.HIGHER_SHIP_RATIO_POSITIONING_PENALTY_FACTOR	= 0.48 					-- if one side has more ships than the other, that side will get this penalty for each +100% ship ratio it has
+NDefines.NNavy.HIGHER_SHIP_RATIO_POSITIONING_PENALTY_FACTOR	= 1.0 					-- if one side has more ships than the other, that side will get this penalty for each +100% ship ratio it has
 NDefines.NNavy.MAX_POSITIONING_PENALTY_FROM_HIGHER_SHIP_RATIO = 3.0  				-- maximum penalty to get from larger fleets
 
 NDefines.NNavy.HIGHER_CARRIER_RATIO_POSITIONING_PENALTY_FACTOR = 0.2  				-- penalty if other side has stronger carrier air force
@@ -1011,7 +1013,7 @@ NDefines.NAI.REGION_THREAT_LEVEL_TO_BLOCK_REGION = 25 * 1000						-- How much th
 NDefines.NAI.NAVAL_MISSION_PATROL_NEAR_OWNED = 0									-- Extra patrol mission score near owned provinces
 
 NDefines.NAI.NAVAL_DOCKYARDS_SHIP_FACTOR = 2										-- The extent to which number of dockyards play into amount of sips a nation wants
-NDefines.NAI.NAVY_PREFERED_MAX_SIZE = 75											-- AI will generally attempt to merge fleets into this size, but as a soft limit.
+NDefines.NAI.NAVY_PREFERED_MAX_SIZE = 62											-- AI will generally attempt to merge fleets into this size, but as a soft limit.
 NDefines.NAI.SUB_TASKFORCE_MAX_SHIP_COUNT = 5 										-- optimum sub count for sub taskforces
 NDefines.NAI.PRODUCTION_MAX_PROGRESS_TO_SWITCH_NAVAL = 0.0							-- AI will not replace ships being built by newer types if progress is above this
 NDefines.NAI.PRODUCTION_WAIT_TO_FINISH_IF_EXPENSIVE = 0.1      						-- If produced item is expensive (producing less than one/week), wait to finish item if progress is above this
