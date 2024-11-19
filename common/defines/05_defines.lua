@@ -1025,6 +1025,8 @@ NDefines.NAI.NAVAL_MISSION_MINES_SWEEPING_NEAR_OWNED = 100000	 					-- How likel
 
 ------------------------------------------------- AIR
 
+NDefines.NAI.RAIDS_MIN_SUCCESS_FOR_LAUNCH = 0.05                  	 				-- The AI will not launch a raid if the chance of success is lower than this.
+
 --NDefines.NAI.AIR_WING_REINFORCEMENT_LIMIT = 100									-- Doesnt exist anymore
 
 NDefines.NAI.MINES_SWEEPING_PLANES_PER_MAX_MINES = 1 								-- Amount of air wings request for mines sweeping when there is max amount of mines planted by enemy in certain region
