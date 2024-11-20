@@ -1,3 +1,4 @@
+#!gfx:interface\afo_focuses.gfx
 ### search_filters = { FOCUS_FILTER_RESEARCH }
 ### search_filters = { FOCUS_FILTER_INDUSTRY }
 ### search_filters = { FOCUS_FILTER_HISTORICAL }
@@ -88,14 +89,22 @@ focus_tree = {
 					jap_heavy_infantry_weapons_2 = 1
 				}
 			}
-			add_equipment_production = {
-				equipment = {
-					type = jap_hv_inf_2
-					creator = "JAP"
+			if = {
+				limit = { has_aat = yes }
+				mio:JAP_tokyo_arsenal_organization = {
+					add_mio_funds = 1800
 				}
-				requested_factories = 5
-				progress = 0
-				efficiency = 100
+			}
+			else = {
+				add_equipment_production = {
+					equipment = {
+						type = jap_hv_inf_2
+						creator = "JAP"
+					}
+					requested_factories = 5
+					progress = 0
+					efficiency = 100
+				}
 			}
 			random_owned_controlled_state = {
 				prioritize = { 528 }
@@ -138,9 +147,8 @@ focus_tree = {
 		completion_reward = {
 			if = {
 				limit = { has_aat = yes }
-				unlock_military_industrial_organization_tooltip = mio:JAP_tokyo_arsenal_organization
 				mio:JAP_tokyo_arsenal_organization = {
-					add_mio_funds = 2000
+					add_mio_funds = 1800
 				}
 			}
 			else = {
@@ -191,13 +199,7 @@ focus_tree = {
 
 		completion_reward = {
 			if = {
-				limit = { has_aat = yes }
-				unlock_military_industrial_organization_tooltip = mio:JAP_osaka_army_arsenal_artillery_organization
-				mio:JAP_osaka_army_arsenal_artillery_organization = {
-					add_mio_funds = 2000
-				}
-			}
-			else = {
+				limit = { has_aat = no }
 				custom_effect_tooltip = available_designer
 				show_ideas_tooltip = osaka_army_arsenal
 			}
@@ -274,9 +276,8 @@ focus_tree = {
 				custom_effect_tooltip = JAP_chosen_zaibatsu_path_tt
 				if = {
 					limit = { has_aat = yes }
-					unlock_military_industrial_organization_tooltip = mio:JAP_nakajima_organization
 					mio:JAP_nakajima_organization = {
-						add_mio_funds = 2000
+						add_mio_funds = 1800
 					}
 				}
 				else = {
@@ -757,6 +758,7 @@ focus_tree = {
 					instant_build = yes
 				}
 			}
+			economy_fatigue_level_up_1 = yes
 		}
 	}
 
@@ -849,14 +851,13 @@ focus_tree = {
 						include_locked = yes
 					}
 				}
-				add_extra_state_shared_building_slots = 3
+				add_extra_state_shared_building_slots = 1
 				add_building_construction = {
 					type = steel_refinery
-					level = 3
+					level = 1
 					instant_build = yes
 				}
 			}
-			economy_fatigue_level_up_1 = yes
 		}
 	}
 
@@ -1351,7 +1352,7 @@ focus_tree = {
 		completion_reward = {
 			custom_effect_tooltip = JAP_develop_the_naval_ports_tt
 			hidden_effect = {
-				add_to_variable = { JAP_kantaiha_industrial_capacity_dockyard = 0.1 }
+				add_to_variable = { JAP_kantaiha_industrial_capacity_dockyard = 0.05 }
 			}
 			if = {
 				limit = {
@@ -1459,13 +1460,13 @@ focus_tree = {
 			if = {
 				limit = { has_aat = yes }
 				mio:JAP_aichi_organization = {
-					add_mio_funds = 2000
+					add_mio_funds = 1800
 				}
 			}
 			if = {
 				limit = { has_aat = yes }
 				mio:JAP_kawanishi_organization = {
-					add_mio_funds = 2000
+					add_mio_funds = 1800
 				}
 			}
 		}
@@ -1516,8 +1517,17 @@ focus_tree = {
 			}
 			if = {
 				limit = { has_aat = yes }
-				mio:JAP_mitsubishi_organization = {
-					add_mio_funds = 2000
+				mio:JAP_nakajima_organization = {
+					add_mio_funds = 1200
+				}
+				mio:JAP_aichi_organization = {
+					add_mio_funds = 1200
+				}
+				mio:JAP_kawasaki_organization = {
+					add_mio_funds = 1200
+				}
+				mio:JAP_yokosuka_organization = {
+					add_mio_funds = 1200
 				}
 			}
 		}
@@ -1659,7 +1669,7 @@ focus_tree = {
 		relative_position_id = JAP_ministry_of_munitions
 
 		cost = 2
-		
+
 		available = {
 		}
 
@@ -2632,7 +2642,7 @@ focus_tree = {
 		x = 0
 		y = 2
 		relative_position_id = JAP_appoint_yanagawa_heisuke
-		
+
 		cost = 2
 
 		ai_will_do = {
@@ -3177,6 +3187,7 @@ focus_tree = {
 			custom_effect_tooltip = available_economic_minister
 			show_ideas_tooltip = JAP_ikeda_shigeaki
 			random_owned_controlled_state = {
+				prioritize = { 528 529 530 531 532 533 534 535 536 282 }#
 				limit = {
 					ROOT = { has_full_control_of_state = PREV }
 					is_core_of = ROOT
@@ -3695,6 +3706,13 @@ focus_tree = {
 			NOT = { CHI = { is_puppet_of = JAP } }
 			NOT = { is_in_faction_with = CHI }
 			has_army_manpower = { size > 749999 }
+			custom_override_tooltip = {
+				tooltip = {
+					localization_key = has_army_eq_tt
+					num_eq = "42.50K"
+				}
+				check_variable = { num_equipment_in_armies@infantry_equipment > 42500 }
+			}
 			num_of_factories > 199
 		}
 
@@ -3783,6 +3801,13 @@ focus_tree = {
 		}
 
 		available = {
+			NOT = { has_idea = disarmed_nation }
+			NOT = { has_idea = volunteer_only }
+			OR = {
+				has_idea = war_economy
+				has_idea = tot_economic_mobilisation
+				has_idea = over_mobilisation
+			}
 		}
 
 		bypass = {
@@ -3791,9 +3816,9 @@ focus_tree = {
 		completion_reward = {
 			if = {
 				limit = {
-					NOT = { has_idea = conscript_men_into_the_factories }
+					NOT = { has_idea = factory_conscription }
 				}
-				add_ideas = conscript_men_into_the_factories
+				add_ideas = factory_conscription
 			}
 			else = {
 				add_political_power = 150
@@ -4324,7 +4349,7 @@ focus_tree = {
 
 		available = {
 			OR = {
-				threat > 0.72
+				threat > 0.75
 				has_war = yes
 				FRA = { has_capitulated = yes }
 				ITA = { has_capitulated = yes }
@@ -4350,18 +4375,16 @@ focus_tree = {
 			custom_trigger_tooltip = {
 				tooltip = JAP_sign_tripartite_pact_bypass_tt
 				OR = {
-					AND = {
-						NOT = {
-							any_country = {
-								original_tag = GER
-								has_government = fascism
-							}
+					NOT = {
+						any_country = {
+							original_tag = GER
+							has_government = fascism
 						}
-						NOT = {
-							any_country = {
-								original_tag = ITA
-								has_government = fascism
-							}
+					}
+					NOT = {
+						any_country = {
+							original_tag = ITA
+							has_government = fascism
 						}
 					}
 					any_country = {
@@ -4618,7 +4641,7 @@ focus_tree = {
 				NOT = { MAN = { surrender_progress > 0 } }
 			}
 			OR = {
-				threat > 0.72
+				threat > 0.75
 				has_war = yes
 				FRA = { has_capitulated = yes }
 				ITA = { has_capitulated = yes }
@@ -5123,6 +5146,15 @@ focus_tree = {
 				}
 				set_technology = {
 					eng_heavy_tank_chassis_3_3 = 1
+				}
+			}
+			if = {
+				limit = { has_dlc = "By Blood Alone" }
+				add_tech_bonus = {
+					name = JAP_technological_exchanges
+					bonus = 0.25
+					uses = 1
+					category = jet_technology
 				}
 			}
 		}
@@ -7345,8 +7377,7 @@ focus_tree = {
 	focus = {
 		id = JAP_reorganize_the_military
 		icon = GFX_focus_generic_military_mission
-		prerequisite = { focus = JAP_bicycle_battalions }
-		prerequisite = { focus = JAP_ija_institute_of_science }
+		prerequisite = { focus = JAP_split_the_ija_academy }
 		x = 1
 		y = 1
 		relative_position_id = JAP_bicycle_battalions
@@ -7363,6 +7394,8 @@ focus_tree = {
 
 		completion_reward = {
 			army_experience = 50
+			custom_effect_tooltip = firepower_induction_spirit_unlock_tt
+			custom_effect_tooltip = infantry_modernization_spirit_unlock_tt
 		}
 	}
 
@@ -7389,10 +7422,6 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			if = {
-				limit = { has_aat = yes }
-				unlock_military_industrial_organization_tooltip = mio:JAP_sagami_arsenal_organization
-			}
 			add_tech_bonus = {
 				name = JAP_persue_new_endevours
 				bonus = 0.5
@@ -7433,11 +7462,11 @@ focus_tree = {
 			}
 		}
 	}
-	
+
 	focus = {
 		id = JAP_integrate_joseon_volunteers
 		icon = GFX_focus_generic_manpower
-		prerequisite = { focus = JAP_persue_new_endevours focus = JAP_reorganize_the_military }
+		prerequisite = { focus = JAP_reorganize_the_military }
 		x = 1
 		y = 1
 		relative_position_id = JAP_reorganize_the_military
@@ -7478,7 +7507,7 @@ focus_tree = {
 
 		completion_reward = {
 			mio:JAP_sagami_arsenal_organization = {
-				add_mio_funds = 2000
+				add_mio_funds = 1800
 			}
 			add_ideas = JAP_supremacy_of_technology
 		}
@@ -7564,6 +7593,7 @@ focus_tree = {
 		id = JAP_new_armoured_divisions
 		icon = GFX_goal_generic_tanks
 		prerequisite = { focus = JAP_reorganize_the_military }
+		prerequisite = { focus = JAP_persue_new_endevours }
 		x = 0
 		y = 2
 		relative_position_id = JAP_reorganize_the_military
@@ -7579,52 +7609,53 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			custom_effect_tooltip = JAP_new_armoured_divisions_tt
-			if = {
-				limit = {
-					is_ai = no
-				}
-				hidden_effect = {
-					division_template = {
-						name = "Armored Division"
-						division_names_group = JAP_ARM_01
-						priority = 1
-
-						regiments = {
-							light_armor = { x = 0 y = 0 }
-							light_armor = { x = 0 y = 1 }
-							light_armor = { x = 0 y = 2 }
-
-							light_armor = { x = 1 y = 0 }
-							light_armor = { x = 1 y = 1 }
-							light_armor = { x = 1 y = 2 }
-
-							medium_armor = { x = 2 y = 0 }
-							medium_armor = { x = 2 y = 1 }
-							medium_armor = { x = 2 y = 2 }
-
-							motorized_artillery_brigade = { x = 3 y = 0 }
-							motorized_artillery_brigade = { x = 3 y = 1 }
-							motorized_artillery_brigade = { x = 3 y = 2 }
-
-							motorized = { x = 4 y = 0 }
-							motorized = { x = 4 y = 1 }
-							motorized = { x = 4 y = 2 }
-						}
-
-						support = {
-							engineer = { x = 0 y = 0 }
-							motorized_logistics_company = { x = 0 y = 1 }
-							mot_maintenance_company = { x = 0 y = 2 }
-							signal_company = { x = 0 y = 3 }
-
-							mot_recon = { x = 1 y = 0 }
-			        		field_hospital = { x = 1 y = 1 }
-			        		heavy_artillery = { x = 1 y = 2 }
-						}
-					}
-				}
-			}
+			custom_effect_tooltip = mobile_warfare_drive_spirit_unlock_tt
+			#			custom_effect_tooltip = JAP_new_armoured_divisions_tt
+			#			if = {
+			#				limit = {
+			#					is_ai = no
+			#				}
+			#				hidden_effect = {
+			#					division_template = {
+			#						name = "Armored Division"
+			#						division_names_group = JAP_ARM_01
+			#						priority = 1
+			#
+			#						regiments = {
+			#							light_armor = { x = 0 y = 0 }
+			#							light_armor = { x = 0 y = 1 }
+			#							light_armor = { x = 0 y = 2 }
+			#
+			#							light_armor = { x = 1 y = 0 }
+			#							light_armor = { x = 1 y = 1 }
+			#							light_armor = { x = 1 y = 2 }
+			#
+			#							medium_armor = { x = 2 y = 0 }
+			#							medium_armor = { x = 2 y = 1 }
+			#							medium_armor = { x = 2 y = 2 }
+			#
+			#							motorized_artillery_brigade = { x = 3 y = 0 }
+			#							motorized_artillery_brigade = { x = 3 y = 1 }
+			#							motorized_artillery_brigade = { x = 3 y = 2 }
+			#
+			#							motorized = { x = 4 y = 0 }
+			#							motorized = { x = 4 y = 1 }
+			#							motorized = { x = 4 y = 2 }
+			#						}
+			#
+			#						support = {
+			#							engineer = { x = 0 y = 0 }
+			#							motorized_logistics_company = { x = 0 y = 1 }
+			#							mot_maintenance_company = { x = 0 y = 2 }
+			#							signal_company = { x = 0 y = 3 }
+			#
+			#							mot_recon = { x = 1 y = 0 }
+			#			        		field_hospital = { x = 1 y = 1 }
+			#			        		heavy_artillery = { x = 1 y = 2 }
+			#						}
+			#					}
+			#				}
+			#			}
 		}
 	}
 
@@ -7652,7 +7683,7 @@ focus_tree = {
 			if = {
 				limit = { has_aat = yes }
 				mio:JAP_nissan_organization = {
-					add_mio_funds = 1000
+					add_mio_funds = 600
 				}
 			}
 		}
@@ -8184,11 +8215,10 @@ focus_tree = {
 				limit = { has_aat = yes }
 				unlock_military_industrial_organization_tooltip = mio:JAP_kure_naval_arsenal_organization
 				mio:JAP_kure_naval_arsenal_organization = {
-					add_mio_funds = 2000
+					add_mio_funds = 1800
 				}
 				mio:JAP_mitsubishi_organization = {
-					unlock_mio_trait_tooltip = generic_mio_trait_internal_armor_belt
-					add_mio_funds = 1000
+					unlock_mio_trait_tooltip = JAP_mio_initial_trait_ship_supplier
 				}
 			}
 			else = {
@@ -8655,7 +8685,7 @@ focus_tree = {
 	#			}
 	#			has_navy_size = {
 	#				size > 13
-	#				archetype = ship_hull_cruiser_submarine
+	#				archetype = sub_hull_cruiser_submarine
 	#			}
 	#			custom_trigger_tooltip = {
 	#				tooltip = JAP_complete_third_circle_plan_tt
@@ -8855,7 +8885,7 @@ focus_tree = {
 #			}
 #			has_navy_size = {
 #				size > 18
-#				archetype = ship_hull_cruiser_submarine
+#				archetype = sub_hull_cruiser_submarine
 #			}
 #			has_navy_size = {
 #				size > 25
@@ -9094,7 +9124,7 @@ focus_tree = {
 #				}
 #				has_navy_size = {
 #					size > 18
-#					archetype = ship_hull_cruiser_submarine
+#					archetype = sub_hull_cruiser_submarine
 #				}
 #				has_navy_size = {
 #					size > 34
@@ -9624,6 +9654,12 @@ focus_tree = {
 				category = tactical_bomber
 			}
 			add_tech_bonus = {
+				name = JAP_bomber_modernization
+				bonus = 0.5
+				uses = 3
+				category = cat_heavy_fighter
+			}
+			add_tech_bonus = {
 				name = JAP_naval_bomber_effort
 				bonus = 0.5
 				uses = 1
@@ -9719,6 +9755,12 @@ focus_tree = {
 				cost_reduction = 0.99
 				uses = 3
 				category = cat_battlefield_support
+			}
+			add_tech_bonus = {
+				name = JAP_ground_pounders
+				bonus = 1.0
+				uses = 2
+				category = strike_bomber
 			}
 		}
 	}
@@ -9828,6 +9870,12 @@ focus_tree = {
 				cost_reduction = 0.5
 				uses = 3
 				category = cat_operational_integrity
+			}
+			add_tech_bonus = {
+				name = JAP_air_acrobatics
+				bonus = 1.0
+				uses = 1
+				category = naval_fighter
 			}
 		}
 	}

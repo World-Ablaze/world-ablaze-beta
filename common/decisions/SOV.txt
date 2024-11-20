@@ -1,6 +1,138 @@
 ####### NO STEP BACK! #######
 @DAYS_DETERMINED = 180 #Used for propaganda campaign SOV_heroes_forward -> Value should be the same as SOV_default_propaganda_campaign_duration
 
+FIN_winter_war_category = {
+	#SOV_sack_commanders = {
+	#	icon = generic_decision
+	#	allowed = {
+	#		original_tag = SOV
+	#	}
+	#	visible = {
+	#		has_global_flag = WA_winter_war_flag
+	#	}
+	#	available = {
+	#		casualties_k > 50
+	#	}
+	#	cost = 50
+	#	fire_only_once = yes
+	#	complete_effect = {
+	#		SOV_paranoia_daunt_generals_effect = yes
+	#		custom_effect_tooltip = SOV_winter_war_investment_increases_tt
+	#		hidden_effect = {
+	#			add_to_variable = { SOV_winter_war_investment_variable = 10 }
+	#			clamp_variable = {
+	#				var = SOV_winter_war_investment_variable
+	#				max = 100
+	#			}
+	#		}
+	#	}
+	#}
+	SOV_win_the_winter_war = {
+		icon = eng_trade_unions_support
+
+		allowed = {
+			original_tag = SOV
+		}
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = SOV_win_the_winter_war_tt
+				controls_state = 213
+				controls_state = 1047
+				controls_state = 215
+				controls_state = 216
+				controls_state = 195
+			}
+			OR = {
+				AND = {
+					controls_state = 146
+					controls_state = 1044
+				}
+				any_controlled_state = {
+					is_core_of = FIN
+					state_population > 100000
+				}
+			}
+			FIN = { surrender_progress > 0.16 }
+		}
+
+		days_mission_timeout = 240
+		is_good = no
+
+		activation = {
+			has_war_with = FIN
+			OR = {
+				FIN = { is_in_faction = no }
+				FIN = { is_faction_leader = yes }
+			}
+			146 = { is_owned_by = FIN }
+			NOT = {
+				any_enemy_country = {
+					is_major = yes
+				}
+			}
+			NOT = {
+				has_global_flag = SOV_ww_over
+			}
+		}
+
+		complete_effect = {
+			FIN = { country_event = { id = finland.7 } }
+		}
+
+		timeout_effect = {
+			if = {
+				limit = {
+					OR = {
+						AND = {
+							controls_state = 1044
+							controls_state = 1045
+						}
+						controls_state = 150
+						controls_state = 870
+						controls_state = 148
+					}
+				}
+				set_country_flag = SOV_winter_war_phyrric_victory
+			}
+			country_event = { id = sov_armor.849 }
+		}
+	}
+	SOV_take_viipuri = {
+		icon = generic_decision
+		allowed = {
+			original_tag = SOV
+		}
+		#Succeed trigger
+		available = {
+			146 = {
+				CONTROLLER = {
+					is_in_faction_with = SOV
+				}
+			}
+			1045 = {
+				CONTROLLER = {
+					is_in_faction_with = SOV
+				}
+			}
+		}
+		days_mission_timeout = 90
+		fire_only_once = yes
+		activation = {
+			always = no
+		}
+		is_good = no
+		#Fail
+		timeout_effect = {
+			add_war_support = -0.2
+		}
+		#Success
+		complete_effect = {
+			add_war_support = 0.1
+			add_political_power = 100
+			army_experience = 25
+		}
+	}
+}
 
 ########     ###    ########     ###    ##    ##  #######  ####    ###
 ##     ##   ## ##   ##     ##   ## ##   ###   ## ##     ##  ##    ## ##
@@ -964,10 +1096,20 @@ foreign_politics = {
 							has_government = democratic
 						}
 					}
-					add_equipment_to_stockpile = {
-						type = sov_fighter_equipment_1
-						amount = 200
-						producer = SOV
+					if = {
+						limit = { has_dlc = "By Blood Alone" }
+						add_equipment_to_stockpile = {
+							type = SOV_i_15_airframe
+							amount = 200
+							producer = SOV
+						}
+					}
+					else = {
+						add_equipment_to_stockpile = {
+							type = sov_fighter_equipment_1
+							amount = 200
+							producer = SOV
+						}
 					}
 				}
 			}
@@ -983,10 +1125,20 @@ foreign_politics = {
 							has_government = democratic
 						}
 					}
-					add_equipment_to_stockpile = {
-						type = sov_fighter_equipment_1
-						amount = 200
-						producer = SOV
+					if = {
+						limit = { has_dlc = "By Blood Alone" }
+						add_equipment_to_stockpile = {
+							type = SOV_i_15_airframe
+							amount = 200
+							producer = SOV
+						}
+					}
+					else = {
+						add_equipment_to_stockpile = {
+							type = sov_fighter_equipment_1
+							amount = 200
+							producer = SOV
+						}
 					}
 				}
 			}
@@ -1057,7 +1209,7 @@ foreign_politics = {
 						}
 					}
 					add_equipment_to_stockpile = {
-						type = tank_sov_light_chassis_1
+						type = tank_sov_light_chassis_support_1
 						amount = 300
 						producer = SOV
 					}
@@ -1076,7 +1228,7 @@ foreign_politics = {
 						}
 					}
 					add_equipment_to_stockpile = {
-						type = tank_sov_light_chassis_1
+						type = tank_sov_light_chassis_support_1
 						amount = 300
 						producer = SOV
 					}
@@ -2274,7 +2426,7 @@ SOV_diplomacy_middle_east_decision_category = {
 			}
 		}
 
-		available =  {
+		available = {
 			hidden_trigger = { always = no }
 		}
 
@@ -2368,7 +2520,7 @@ SOV_diplomacy_middle_east_decision_category = {
 			}
 		}
 
-		available =  {
+		available = {
 			PER = { has_capitulated = yes }
 			all_of_scopes = {
 				array = SOV_iranian_initial_states
@@ -2441,7 +2593,7 @@ SOV_diplomacy_middle_east_decision_category = {
 						transfer_state = 420 #Gilan (AZB)
 						transfer_state = 416 #Khorasan
 					}
-					give_resource_rights = { receiver = SOV state = 421 }
+					give_resource_rights = { receiver = SOV state = 411 }
 					give_resource_rights = { receiver = SOV state = 412 }
 					give_resource_rights = { receiver = SOV state = 413 }
 				}
@@ -2458,7 +2610,7 @@ SOV_diplomacy_middle_east_decision_category = {
 						transfer_state = 416 #Khorasan
 					}
 					FROM = {
-						give_resource_rights = { receiver = SOV state = 421 }
+						give_resource_rights = { receiver = SOV state = 411 }
 						give_resource_rights = { receiver = SOV state = 412 }
 						give_resource_rights = { receiver = ENG state = 413 }
 						give_military_access = ROOT
@@ -3063,7 +3215,7 @@ SOV_diplomacy_asia_decision_category = {
 				has_full_control_of_state = 618 #DZUNGARIA
 			}
 			num_of_civilian_factories_available_for_projects > 0
-			has_equipment = { fighter_equipment > 39 }
+			has_equipment = { small_fighter_airframe > 39 }
 			has_equipment = { infantry_equipment > 499 }
 			NOT = { has_country_flag = SOV_sinkiang_investment_ongoing_flag }
 		}
@@ -3132,7 +3284,7 @@ SOV_diplomacy_asia_decision_category = {
 				#custom_effect_tooltip = SOV_sinikiang_influence_cg_tt_sov
 
 				send_equipment = {
-					type = fighter_equipment
+					type = small_fighter_airframe
 					amount = 40
 					target = SIK
 				}
@@ -3532,7 +3684,7 @@ SOV_diplomacy_asia_decision_category = {
 					days > 730
 				}
 			}
-			strength_ratio = {
+			fighting_army_strength_ratio = {
 			    tag = SIK
 			    ratio > 2
 			}
@@ -3593,7 +3745,7 @@ SOV_soviet_aid_decision_category = {
 			original_tag = SOV
 		}
 
-		available =  {
+		available = {
 			hidden_trigger = { always = no }
 		}
 
@@ -3677,7 +3829,7 @@ SOV_soviet_aid_decision_category = {
 			original_tag = SOV
 		}
 
-		available =  {
+		available = {
 			hidden_trigger = { always = no }
 		}
 
@@ -3767,7 +3919,7 @@ SOV_soviet_aid_decision_category = {
 			original_tag = SOV
 		}
 
-		available =  {
+		available = {
 			hidden_trigger = { always = no }
 		}
 
@@ -3889,7 +4041,7 @@ SOV_soviet_aid_decision_category = {
 			original_tag = SOV
 		}
 
-		available =  {
+		available = {
 			hidden_trigger = { always = no }
 		}
 
@@ -4519,7 +4671,15 @@ SOV_merge_designers_dec_cat = {
 
 		remove_effect = {
 			clr_country_flag = SOV_merge_tank_decision_ongoing_flag
-
+            if = {
+                limit = { has_aat = yes }
+                mio:SOV_kirov_organization = {
+					add_mio_funds = 600
+                }
+                mio:SOV_morozov_design_bureau_organization = {
+					add_mio_funds = 600
+                }
+            }
 			custom_effect_tooltip = SOV_merge_infantry_plant_efficiency_tt
 			if = {
 				limit = { has_aat = no }
@@ -4582,7 +4742,15 @@ SOV_merge_designers_dec_cat = {
 
 		remove_effect = {
 			clr_country_flag = SOV_merge_tank_decision_ongoing_flag
-
+            if = {
+                limit = { has_aat = yes }
+                mio:SOV_kirov_organization = {
+					add_mio_funds = 600
+                }
+                mio:SOV_morozov_design_bureau_organization = {
+					add_mio_funds = 600
+                }
+            }
 			custom_effect_tooltip = SOV_merge_infantry_plant_efficiency_tt
 			if = {
 				limit = { has_aat = no }
@@ -4645,7 +4813,15 @@ SOV_merge_designers_dec_cat = {
 
 		remove_effect = {
 			clr_country_flag = SOV_merge_tank_decision_ongoing_flag
-
+            if = {
+                limit = { has_aat = yes }
+                mio:SOV_kirov_organization = {
+                    add_mio_funds = 600
+                }
+                mio:SOV_morozov_design_bureau_organization = {
+                    add_mio_funds = 600
+                }
+            }
 			custom_effect_tooltip = SOV_merge_infantry_plant_efficiency_tt
 			if = {
 				limit = { has_aat = no }
@@ -6945,7 +7121,14 @@ SOV_great_patriotic_war = {
 
 		available = {
 			has_war = yes
-			divisions_in_state = { state = 969 size > 1 }
+			custom_trigger_tooltip = {
+			    tooltip = SOV_scorch_earth_tt
+			    num_battalions_in_states = {
+			        count > 4
+			        states = { 969 }
+			        exclude = { infantry motorized_light cavalry }
+			    }
+			}
 		}
 
 		cost = 0
@@ -6961,7 +7144,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -6979,7 +7162,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -6991,7 +7174,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_suduva = {
@@ -7006,7 +7189,14 @@ SOV_great_patriotic_war = {
 
 		available = {
 			has_war = yes
-			divisions_in_state = { state = 968 size > 1 }
+			custom_trigger_tooltip = {
+			    tooltip = SOV_scorch_earth_tt
+			    num_battalions_in_states = {
+			        count > 4
+			        states = { 968 }
+			        exclude = { infantry motorized_light cavalry }
+			    }
+			}
 		}
 
 		cost = 0
@@ -7024,7 +7214,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -7042,7 +7232,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -7054,7 +7244,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_latgale = {
@@ -7070,7 +7260,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 967 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 967 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -7093,7 +7297,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -7111,7 +7315,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -7123,7 +7327,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_riga = {
@@ -7139,7 +7343,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 966 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 966 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -7156,7 +7374,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -7174,7 +7392,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -7186,7 +7404,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_zemgale = {
@@ -7202,7 +7420,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 965 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 965 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -7223,7 +7455,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -7241,7 +7473,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -7253,7 +7485,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_virumaa = {
@@ -7269,7 +7501,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 964 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 964 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -7287,7 +7533,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -7305,7 +7551,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -7317,7 +7563,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_parnu = {
@@ -7333,7 +7579,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 963 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 963 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -7352,7 +7612,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -7370,7 +7630,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -7382,7 +7642,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_saaremaa = {
@@ -7398,7 +7658,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 962 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 962 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -7416,7 +7690,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -7434,7 +7708,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -7446,7 +7720,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_kaunas = {
@@ -7462,7 +7736,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 11 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 11 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -7481,7 +7769,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -7499,7 +7787,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -7511,7 +7799,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_siauliai = {
@@ -7527,7 +7815,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 189 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 189 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -7544,7 +7846,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -7562,7 +7864,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -7574,7 +7876,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_kurzeme = {
@@ -7590,7 +7892,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 190 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 190 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -7608,7 +7924,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -7626,7 +7942,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -7638,7 +7954,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_vidzeme = {
@@ -7654,7 +7970,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 12 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 12 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -7675,7 +8005,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -7693,7 +8023,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -7705,7 +8035,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_harju = {
@@ -7721,7 +8051,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 13 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 13 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -7739,7 +8083,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -7757,7 +8101,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -7769,7 +8113,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_tartu = {
@@ -7785,7 +8129,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 191 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 191 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -7804,7 +8162,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -7822,7 +8180,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -7834,7 +8192,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_leningrad = {
@@ -7850,7 +8208,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 195 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 195 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -7866,7 +8238,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -7885,7 +8257,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -7910,14 +8282,14 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 				}
 			}
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_luga = {
@@ -7933,7 +8305,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 208 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 208 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -7950,7 +8336,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -7968,7 +8354,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -7980,7 +8366,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_volkhov = {
@@ -7996,7 +8382,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 244 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 244 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -8012,7 +8412,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -8031,7 +8431,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -8056,14 +8456,14 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 				}
 			}
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_tikhvin = {
@@ -8079,7 +8479,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 264 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 264 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -8096,7 +8510,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -8115,7 +8529,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -8140,14 +8554,14 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 				}
 			}
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_pskov = {
@@ -8163,7 +8577,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 209 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 209 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -8181,7 +8609,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -8199,7 +8627,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -8211,7 +8639,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_novgorod = {
@@ -8227,7 +8655,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 263 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 263 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -8244,7 +8686,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -8262,7 +8704,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -8274,7 +8716,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_nevel = {
@@ -8290,7 +8732,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 210 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 210 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -8307,7 +8763,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -8325,7 +8781,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -8337,7 +8793,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_rzhev = {
@@ -8353,7 +8809,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 246 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 246 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -8371,7 +8841,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -8389,7 +8859,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -8401,7 +8871,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_kalinin = {
@@ -8417,7 +8887,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 247 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 247 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -8433,7 +8917,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -8452,7 +8936,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -8477,14 +8961,14 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 				}
 			}
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_wilno = {
@@ -8500,7 +8984,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 784 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 784 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -8516,7 +9014,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -8534,7 +9032,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -8546,7 +9044,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_wilejka = {
@@ -8562,7 +9060,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 96 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 96 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -8579,7 +9091,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -8597,7 +9109,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -8609,7 +9121,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_vitebsk = {
@@ -8625,7 +9137,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 207 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 207 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -8643,7 +9169,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -8661,7 +9187,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -8673,7 +9199,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_smolensk = {
@@ -8689,7 +9215,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 242 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 242 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -8707,7 +9247,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -8725,7 +9265,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -8737,7 +9277,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_moscow = {
@@ -8753,7 +9293,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 219 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 219 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -8772,7 +9326,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -8791,7 +9345,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -8816,14 +9370,14 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 				}
 			}
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_bialystok = {
@@ -8839,7 +9393,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 97 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 97 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -8857,7 +9425,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -8875,7 +9443,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -8887,7 +9455,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_nowogrodek = {
@@ -8903,7 +9471,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 95 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 95 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -8919,7 +9501,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -8937,7 +9519,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -8949,7 +9531,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_minsk = {
@@ -8965,7 +9547,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 206 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 206 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -8981,7 +9577,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -8999,7 +9595,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -9027,7 +9623,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 241 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 241 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -9045,7 +9655,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -9063,7 +9673,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -9075,7 +9685,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_roslavl = {
@@ -9091,7 +9701,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 243 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 243 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -9107,7 +9731,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -9125,7 +9749,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -9137,7 +9761,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_kaluga = {
@@ -9152,7 +9776,14 @@ SOV_great_patriotic_war = {
 
 		available = {
 			has_war = yes
-			divisions_in_state = { state = 205 size > 1 }
+			custom_trigger_tooltip = {
+			    tooltip = SOV_scorch_earth_tt
+			    num_battalions_in_states = {
+			        count > 4
+			        states = { 205 }
+			        exclude = { infantry motorized_light cavalry }
+			    }
+			}
 		}
 
 		cost = 0
@@ -9169,7 +9800,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -9187,7 +9818,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -9199,7 +9830,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_tula = {
@@ -9214,7 +9845,14 @@ SOV_great_patriotic_war = {
 
 		available = {
 			has_war = yes
-			divisions_in_state = { state = 223 size > 1 }
+			custom_trigger_tooltip = {
+			    tooltip = SOV_scorch_earth_tt
+			    num_battalions_in_states = {
+			        count > 4
+			        states = { 223 }
+			        exclude = { infantry motorized_light cavalry }
+			    }
+			}
 		}
 
 		cost = 0
@@ -9229,7 +9867,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -9247,7 +9885,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -9259,7 +9897,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_ryazan = {
@@ -9275,7 +9913,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 254 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 254 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -9291,7 +9943,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -9310,7 +9962,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -9335,14 +9987,14 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 				}
 			}
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_polesie = {
@@ -9358,7 +10010,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 94 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 94 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -9375,7 +10041,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -9393,7 +10059,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -9405,7 +10071,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_bobruysk = {
@@ -9421,7 +10087,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 204 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 204 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -9438,7 +10118,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -9456,7 +10136,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -9468,7 +10148,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_mozyr = {
@@ -9484,7 +10164,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 194 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 194 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -9502,7 +10196,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -9520,7 +10214,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -9532,7 +10226,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_bryansk = {
@@ -9548,7 +10242,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 224 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 224 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -9565,7 +10273,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -9583,7 +10291,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -9595,7 +10303,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_orel = {
@@ -9611,7 +10319,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 222 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 222 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -9627,7 +10349,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -9645,7 +10367,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -9657,7 +10379,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_lipetsk = {
@@ -9673,7 +10395,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 258 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 258 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -9690,7 +10426,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -9708,7 +10444,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -9720,7 +10456,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_tambov = {
@@ -9736,7 +10472,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 257 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 257 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -9753,7 +10503,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -9771,7 +10521,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -9783,7 +10533,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_saratov = {
@@ -9799,7 +10549,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 239 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 239 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -9815,7 +10579,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -9834,7 +10598,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -9859,14 +10623,14 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 				}
 			}
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_lublin = {
@@ -9882,7 +10646,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 92 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 92 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -9900,7 +10678,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -9918,7 +10696,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -9930,7 +10708,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_wolyn = {
@@ -9946,7 +10724,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 93 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 93 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -9963,7 +10755,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -9981,7 +10773,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -9993,7 +10785,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_zhytomyr = {
@@ -10009,7 +10801,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 201 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 201 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -10027,7 +10833,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -10045,7 +10851,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -10057,7 +10863,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_kiev = {
@@ -10073,7 +10879,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 202 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 202 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -10090,7 +10910,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -10108,7 +10928,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -10136,7 +10956,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 193 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 193 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -10153,7 +10987,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -10171,7 +11005,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -10183,7 +11017,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_sumy = {
@@ -10199,7 +11033,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 225 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 225 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -10216,7 +11064,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -10234,7 +11082,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -10246,7 +11094,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_kursk = {
@@ -10262,7 +11110,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 220 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 220 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -10279,7 +11141,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -10297,7 +11159,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -10309,7 +11171,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_belgorod = {
@@ -10325,7 +11187,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 240 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 240 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -10342,7 +11218,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -10360,7 +11236,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -10372,7 +11248,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_voronezh = {
@@ -10388,7 +11264,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 260 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 260 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -10406,7 +11296,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -10425,7 +11315,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -10450,14 +11340,14 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 				}
 			}
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_mikhaylovka = {
@@ -10473,7 +11363,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 265 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 265 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -10490,7 +11394,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -10509,7 +11413,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -10534,14 +11438,14 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 				}
 			}
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_lwow = {
@@ -10557,7 +11461,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 91 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 91 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -10573,7 +11491,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -10591,7 +11509,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -10603,7 +11521,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_khmelnytskyi = {
@@ -10619,7 +11537,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 199 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 199 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -10636,7 +11568,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -10654,7 +11586,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -10666,7 +11598,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_vinnytsia = {
@@ -10682,7 +11614,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 198 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 198 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -10699,7 +11645,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -10717,7 +11663,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -10729,7 +11675,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_cherkasy = {
@@ -10745,7 +11691,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 203 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 203 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -10761,7 +11721,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -10779,7 +11739,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -10791,7 +11751,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_poltava = {
@@ -10807,7 +11767,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 259 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 259 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -10825,7 +11799,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -10843,7 +11817,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -10855,7 +11829,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_kharkov = {
@@ -10871,7 +11845,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 221 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 221 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -10889,7 +11877,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -10907,7 +11895,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -10919,7 +11907,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_voroshilovgrad = {
@@ -10935,7 +11923,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 228 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 228 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -10951,7 +11953,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -10969,7 +11971,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -10981,7 +11983,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_millerovo = {
@@ -10997,7 +11999,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 245 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 245 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -11014,7 +12030,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -11032,7 +12048,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -11044,7 +12060,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_stalingrad = {
@@ -11060,7 +12076,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 217 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 217 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -11077,7 +12107,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -11095,7 +12125,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -11123,7 +12153,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 89 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 89 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -11141,7 +12185,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -11159,7 +12203,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -11171,7 +12215,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_bucovina = {
@@ -11187,7 +12231,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 80 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 80 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -11204,7 +12262,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -11222,7 +12280,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -11234,7 +12292,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_bessarabia = {
@@ -11250,7 +12308,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 78 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 78 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -11267,7 +12339,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -11285,7 +12357,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -11313,7 +12385,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 766 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 766 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -11329,7 +12415,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -11347,7 +12433,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -11375,7 +12461,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 192 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 192 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -11391,7 +12491,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -11409,7 +12509,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -11421,7 +12521,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_mykolaiv = {
@@ -11437,7 +12537,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 197 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 197 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -11453,7 +12567,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -11471,7 +12585,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -11483,7 +12597,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_kherson = {
@@ -11499,7 +12613,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 196 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 196 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -11516,7 +12644,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -11534,7 +12662,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -11546,7 +12674,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_zaporozhe = {
@@ -11562,7 +12690,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 200 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 200 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -11577,7 +12719,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -11595,7 +12737,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -11607,7 +12749,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_dnipropetrovsk = {
@@ -11623,7 +12765,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 226 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 226 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -11640,7 +12796,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -11658,7 +12814,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -11670,7 +12826,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_stalino = {
@@ -11686,7 +12842,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 227 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 227 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -11702,7 +12872,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -11720,7 +12890,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -11732,7 +12902,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_rostov = {
@@ -11748,7 +12918,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 218 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 218 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -11764,7 +12948,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -11782,7 +12966,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -11794,7 +12978,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_volgodonsk = {
@@ -11810,7 +12994,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 238 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 238 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -11827,7 +13025,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -11845,7 +13043,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -11857,7 +13055,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_elista = {
@@ -11873,7 +13071,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 237 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 237 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -11890,7 +13102,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -11908,7 +13120,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -11920,7 +13132,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_astrakhan = {
@@ -11936,7 +13148,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 236 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 236 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -11952,7 +13178,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -11970,7 +13196,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -11982,7 +13208,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_crimea = {
@@ -11998,7 +13224,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 137 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 137 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -12014,7 +13254,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -12032,7 +13272,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -12044,7 +13284,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_krasnodar = {
@@ -12060,7 +13300,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 234 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 234 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -12076,7 +13330,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -12094,7 +13348,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -12106,7 +13360,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_stavropol = {
@@ -12122,7 +13376,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 235 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 235 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -12138,7 +13406,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -12156,7 +13424,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -12168,7 +13436,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_caucasus_mountains = {
@@ -12184,7 +13452,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 233 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 233 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -12200,7 +13482,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -12218,7 +13500,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -12230,7 +13512,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_grozny = {
@@ -12246,7 +13528,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 232 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 232 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -12264,7 +13560,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -12282,7 +13578,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -12294,7 +13590,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_georgia = {
@@ -12310,7 +13606,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 231 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 231 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -12327,7 +13637,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -12345,7 +13655,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -12357,7 +13667,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_armenia = {
@@ -12373,7 +13683,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 230 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 230 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -12390,7 +13714,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -12408,7 +13732,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -12420,7 +13744,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 	SOV_scorch_earth_azerbaijan = {
@@ -12436,7 +13760,21 @@ SOV_great_patriotic_war = {
 		available = {
 			has_war = yes
 
-			divisions_in_state = { state = 229 size > 1 }
+			custom_trigger_tooltip = {
+
+			    tooltip = SOV_scorch_earth_tt
+
+			    num_battalions_in_states = {
+
+			        count > 4
+
+			        states = { 229 }
+
+			        exclude = { infantry motorized_light cavalry }
+
+			    }
+
+			}
 		}
 
 		cost = 0
@@ -12455,7 +13793,7 @@ SOV_great_patriotic_war = {
 			}
 		}
 
-		days_remove = 10
+		days_remove = 1
 
 		remove_effect = {
 			if = {
@@ -12473,7 +13811,7 @@ SOV_great_patriotic_war = {
 					}
 					damage_building = {
 						type = supply_node
-						damage = 0.7
+						damage = 1.0
 					}
 					damage_building = {
 						type = air_base
@@ -12485,7 +13823,7 @@ SOV_great_patriotic_war = {
 		}
 
 		ai_will_do = {
-			factor = 100
+			factor = 1000
 		}
 	}
 
@@ -13221,13 +14559,24 @@ SOV_great_patriotic_war = {
 		allowed = {
 			original_tag = SOV
 		}
+
 		available = {
+			has_war = no
+		}
+
+		visible = {
+			has_completed_focus = SOV_barrier_troops
+		}
+
+		activation = {
+			has_idea = barrier_troops
 			has_war = yes
 			any_enemy_country = {
 				is_major = yes
 			}
 			OR = {
 				surrender_progress > 0.34
+				casualties > 4000000
 				NOT = { controls_state = 219 }
 				NOT = { controls_state = 217 }
 				NOT = { has_full_control_of_state = 247 }
@@ -13253,17 +14602,15 @@ SOV_great_patriotic_war = {
 				}
 			}
 		}
-		visible = {
-			has_completed_focus = SOV_barrier_troops
-		}
 
-		cost = 50
 		fire_only_once = yes
+		days_mission_timeout = 3
+		is_good = yes
 
-		complete_effect = {
+		timeout_effect = {
 			set_country_flag = SOV_order_227_flag
 			swap_ideas = {
-				remove_idea = order_227_1
+				remove_idea = barrier_troops
 				add_idea = order_227
 			}
 			if = {
@@ -13290,6 +14637,66 @@ SOV_great_patriotic_war = {
 					remove_idea = cavalry_army_clique_2
 					add_idea = cavalry_army_clique_3
 				}
+			}
+			if = {
+				limit = {
+					has_idea = officers_purged
+				}
+				remove_ideas = officers_purged
+			}
+			if = {
+				limit = {
+					has_idea = officers_purged_2
+				}
+				remove_ideas = officers_purged_2
+			}
+			if = {
+				limit = {
+					has_idea = officers_purged_3
+				}
+				remove_ideas = officers_purged_3
+			}
+			if = {
+				limit = {
+					has_idea = officers_purged_4
+				}
+				remove_ideas = officers_purged_4
+			}
+			if = {
+				limit = {
+					has_idea = officers_purged_5
+				}
+				remove_ideas = officers_purged_5
+			}
+			if = {
+				limit = {
+					has_idea = officers_purged_6
+				}
+				remove_ideas = officers_purged_6
+			}
+			if = {
+				limit = {
+					has_idea = officers_purged_7
+				}
+				remove_ideas = officers_purged_7
+			}
+			if = {
+				limit = {
+					has_idea = officers_purged_8
+				}
+				remove_ideas = officers_purged_8
+			}
+			if = {
+				limit = {
+					has_idea = officers_purged_9
+				}
+				remove_ideas = officers_purged_9
+			}
+			if = {
+				limit = {
+					has_idea = officers_purged_10
+				}
+				remove_ideas = officers_purged_10
 			}
 		}
 
@@ -24728,7 +26135,7 @@ SOV_military_reform = {
 				set_country_flag = SOV_air_reform_2
 				add_to_variable = { SOV_soviet_airforce_air_mission_xp_gain_factor = 0.4 }
 				add_to_variable = { SOV_soviet_airforce_air_doctrine_cost_factor = -0.25 }
-				add_to_variable = { SOV_soviet_airforce_air_defence_factor = 0.2 }
+				add_to_variable = { SOV_soviet_airforce_air_defence_factor = 0.1 }
 				add_to_variable = { SOV_soviet_airforce_air_accidents_factor = -0.1 }
 				add_to_variable = { SOV_soviet_airforce_air_ace_generation_chance_factor = 0.15 }
 				add_to_variable = { SOV_soviet_airforce_air_night_penalty = -0.1 }

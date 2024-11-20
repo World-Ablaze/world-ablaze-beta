@@ -63,7 +63,7 @@
 
 no_garrison = {
 	icon = 1
-	
+
 	sound_effect = "Martial_Law_Interface_No_Garrison"
 
 	state_modifier = {
@@ -147,8 +147,9 @@ autonomous_occupation = {
 
 foreign_civilian_oversight = {
 	icon = 3
-	default_law = yes
 	sound_effect = "Martial_Law_Interface_Foreign_Cvilian_Oversight"
+	default_law = yes
+	starting_law = yes
 
 	state_modifier = {
 		resistance_target 				= -0.10
@@ -157,7 +158,6 @@ foreign_civilian_oversight = {
 		local_factories 				= 0.00
 		local_resources 				= 0.00
 	}
-	starting_law = yes
 
 	ai_will_do = {
 		base = 120
@@ -165,7 +165,7 @@ foreign_civilian_oversight = {
 			check_variable = { resistance_target_without_law > 0.29}
 			add = 100
 		}
-		
+
 		modifier = {
 			factor = 0
 			FROM = {
@@ -190,7 +190,7 @@ foreign_civilian_oversight = {
 				}
 			}
 		}
-		
+
 		modifier = {
 			add = 500
 			OR = {
@@ -204,7 +204,7 @@ foreign_civilian_oversight = {
 				compliance > 75
 			}
 		}
-		
+
 		modifier = {
 			add = 1000
 			FROM = {
@@ -255,7 +255,7 @@ local_police_force_garrison = {
 
 			add = 350
 		}
-		
+
 		modifier = {
 			factor = 0
 			OR = {
@@ -309,7 +309,7 @@ secret_police_oversight = {
 
 	state_modifier = {
 		resistance_target 				= -0.15
-		compliance_gain 				= -0.04
+		compliance_gain 				= -0.03
 		required_garrison_factor 		= -0.1
 		resistance_damage_to_garrison 	= -0.15
 		local_factories 				= 0.05
@@ -318,7 +318,7 @@ secret_police_oversight = {
 		enemy_intel_network_gain_factor_over_occupied_tag = -0.25 # -25% scaled by the number of occupied states and the ratio of the network covering those occupied states
 		# todo + spy defense
 	}
-	
+
 	ai_will_do = {
 		base = 1
 
@@ -349,7 +349,7 @@ liberate_workers_occupation = {
 		compliance_gain 				= -0.025
 		required_garrison_factor 		= -0.05
 		resistance_damage_to_garrison 	= 0.25
-		local_factories 				= 0.15
+		local_factories 				= 0.25
 		local_resources 				= 0.15
 	}
 
@@ -364,10 +364,10 @@ military_governor_occupation = {
 
 	state_modifier = {
 		resistance_target 			= -0.25
-		compliance_gain 			= -0.045
+		compliance_gain 			= -0.035
 		required_garrison_factor 	= 0.25
-		#local_factories 			= 0.0
-		local_resources 			= 0.10
+		local_factories 			= 0.05
+		local_resources 			= 0.05
 		local_manpower 				= 0.08
 	}
 	ai_will_do = {
@@ -386,12 +386,29 @@ military_governor_occupation = {
 		#	add = 150
 		#}
 		modifier = {
-			check_variable = { resistance_target_without_law > 0.55}
 			add = 400
+			check_variable = { resistance_target_without_law > 0.55 }
 		}
-		
+
+		modifier = {
+			add = 1000
+			FROM = {
+				has_government = fascism
+				NOT = {
+					has_idea = tot_economic_mobilisation
+					has_idea = over_mobilisation
+				}
+			}
+		}
+
 		modifier = {
 			factor = 0
+			FROM = {
+				OR = {
+					has_idea = tot_economic_mobilisation
+					has_idea = over_mobilisation
+				}
+			}
 			OR = {
 				FROM = {
 					is_subject_of = GER
@@ -413,8 +430,8 @@ martial_law_occupation = {
 		compliance_gain 				= -0.055
 		required_garrison_factor 		= 0.5
 		#resistance_damage_to_garrison 	= 0.0
-		#local_factories 				= 0.0
-		local_resources 				= 0.1
+		local_factories 				= 0.08
+		local_resources 				= 0.08
 	}
 
 	ai_will_do = {
@@ -435,7 +452,7 @@ martial_law_occupation = {
 
 			add = 500
 		}
-		
+
 		modifier = {
 			factor = 0
 			OR = {
@@ -454,12 +471,19 @@ forced_labor_occupation = {
 	icon = 8
 	sound_effect = "Martial_Law_Interface_Forced_Labor_Occupation"
 
+	available = {
+		OR = {
+			has_idea = tot_economic_mobilisation
+			has_idea = over_mobilisation
+		}
+	}
+
 	state_modifier = {
 		resistance_target 					= -0.15
 		compliance_gain 					= -0.08
 		resistance_damage_to_garrison 		= 0.1
 		required_garrison_factor 			= 0.5
-		local_resources 					= 0.2
+		local_resources 					= 0.25
 		local_factories 					= 0.05
 		repair_speed_infrastructure_factor 	= 0.25
 
@@ -476,6 +500,12 @@ forced_labor_occupation = {
 			add = 500
 			FROM = {
 				OR = {
+					has_idea = tot_economic_mobilisation
+					has_idea = over_mobilisation
+				}
+			}
+			FROM = {
+				OR = {
 					tag = RKA
 					tag = IPP
 					tag = IPI
@@ -483,9 +513,15 @@ forced_labor_occupation = {
 				}
 			}
 		}
-		
+
 		modifier = {
 			add = 1000
+			FROM = {
+				OR = {
+					has_idea = tot_economic_mobilisation
+					has_idea = over_mobilisation
+				}
+			}
 			compliance < 50 # if compliance is high enough, we are getting good enough resoruces already
 			OR = {
 				state = 28
@@ -524,6 +560,12 @@ forced_labor_occupation = {
 		}
 
 		modifier = {
+			FROM = {
+				OR = {
+					has_idea = tot_economic_mobilisation
+					has_idea = over_mobilisation
+				}
+			}
 			compliance < 40 # if compliance is high enough, we are getting good enough resoruces already
 
 			# if we are desiring a resource produced here
@@ -580,13 +622,20 @@ harsh_quotas_occupation = {
 	icon = 9
 	sound_effect = "Martial_Law_Interface_Harsh_Quotas_Occupation"
 
+	available = {
+		OR = {
+			has_idea = tot_economic_mobilisation
+			has_idea = over_mobilisation
+		}
+	}
+
 	state_modifier = {
 		resistance_target 				= -0.15
 		compliance_gain 				= -0.08
 		required_garrison_factor 		= 0.6
 		resistance_damage_to_garrison 	= 0.2
 
-		local_factories 				= 0.30
+		local_factories 				= 0.25
 		local_resources 				= 0.05
 
 		repair_speed_arms_factory_factor = 0.25
@@ -601,12 +650,18 @@ harsh_quotas_occupation = {
 		modifier = {
 			add = 500
 			FROM = {
+				OR = {
+					has_idea = tot_economic_mobilisation
+					has_idea = over_mobilisation
+				}
+			}
+			FROM = {
 				has_war = yes
 			}
 			FROM = {
 				has_government = fascism
 			}
-			NOT = { 
+			NOT = {
 				FROM = {
 					tag = RKA
 					tag = JAP
@@ -704,6 +759,13 @@ brutally_oppressive_occupation = {
 		has_government = fascism
 	}
 
+	available = {
+		OR = {
+			has_idea = tot_economic_mobilisation
+			has_idea = over_mobilisation
+		}
+	}
+
 	state_modifier = {
 		resistance_target 				= -0.5
 		compliance_gain 				= -0.11
@@ -717,6 +779,13 @@ brutally_oppressive_occupation = {
 		base = 0
 
 		modifier = {
+			add = 1000
+			FROM = {
+				OR = {
+					has_idea = tot_economic_mobilisation
+					has_idea = over_mobilisation
+				}
+			}
 
 			set_temp_variable = { resistance_limit = 74 }
 			if = {
@@ -725,7 +794,6 @@ brutally_oppressive_occupation = {
 			}
 			resistance > resistance_limit
 
-			add = 1000
 		}
 	}
 }
