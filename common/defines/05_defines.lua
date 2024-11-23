@@ -986,24 +986,24 @@ NDefines.NAI.REGION_CONVOY_DANGER_DAILY_DECAY = 5									-- When convoys are su
 NDefines.NAI.NAVAL_MISSION_ESCORT_NEAR_OWNED = 0									-- Extra escort mission score near owned provinces
 NDefines.NAI.NAVAL_MISSION_ESCORT_NEAR_CONTROLLED = 0								-- Extra escort mission score near controlled provinces
 
-NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_MINE_LAYING = 0.15							-- maximum ratio of screens forces to be used in mine laying
+NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_MINE_LAYING = 0.1							-- maximum ratio of screens forces to be used in mine laying
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_MINE_SWEEPING = 0.05 						-- maximum ratio of screens forces to be used in mine sweeping
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MIN = 0.20					-- minimum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
-NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX = 0.70 					-- maximum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
-NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX_CONVOY_THREAT = 500		-- AI will increase screen assignment for escort missions as threat increases
-NDefines.NAI.MAX_SCREEN_FORCES_FOR_INVASION_SUPPORT = 0.4 							-- max ratio of screens forces to be used in naval invasion missions
-NDefines.NAI.MAX_CAPITAL_FORCES_FOR_INVASION_SUPPORT = 0.4 							-- max ratio of capital forces to be used in naval invasion missions
+NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX = 0.50 					-- maximum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
+NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX_CONVOY_THREAT = 1500		-- AI will increase screen assignment for escort missions as threat increases
+NDefines.NAI.MAX_SCREEN_FORCES_FOR_INVASION_SUPPORT = 0.3 							-- max ratio of screens forces to be used in naval invasion missions
+NDefines.NAI.MAX_CAPITAL_FORCES_FOR_INVASION_SUPPORT = 0.3 							-- max ratio of capital forces to be used in naval invasion missions
 
 NDefines.NAI.CARRIER_TASKFORCE_MAX_CARRIER_COUNT = 10 								-- optimum carrier count for carrier taskforces
 NDefines.NAI.CAPITAL_TASKFORCE_MAX_CAPITAL_COUNT = 10 								-- optimum capital count for capital taskforces
 NDefines.NAI.SCREEN_TASKFORCE_MAX_SHIP_COUNT = 5									-- optimum screen count for screen taskforces
-NDefines.NAI.SCREENS_TO_CAPITAL_RATIO = 2.0											-- screens to capital/carrier count in carrier & capital taskforces
+NDefines.NAI.SCREENS_TO_CAPITAL_RATIO = 3.0											-- screens to capital/carrier count in carrier & capital taskforces
 
 NDefines.NAI.MAX_CARRIER_OVERFILL = 1.0												-- Carriers will be overfilled to this amount if there are doctrines to justify it
 NDefines.NAI.MIN_CAPITALS_FOR_CARRIER_TASKFORCE = 10								-- carrier fleets will at least have this amount of capitals
 NDefines.NAI.CAPITALS_TO_CARRIER_RATIO = 1.0										-- capital to carrier count in carrier taskfoces
 
-NDefines.NAI.MAX_PATROL_TO_STRIKE_FORCE_RATIO = 5.0									-- maximum patrol/strike force ratio
+NDefines.NAI.MAX_PATROL_TO_STRIKE_FORCE_RATIO = 3.0									-- maximum patrol/strike force ratio
 
 --Need to find good values, 1 convoy sunk generates 25 threat
 NDefines.NAI.REGION_THREAT_LEVEL_TO_AVOID_REGION = 25 * 1000						-- How much threat must be generated in region ( by REGION_THREAT_PER_SUNK_CONVOY ) so the AI will decide to mark the region as avoid
@@ -1011,6 +1011,7 @@ NDefines.NAI.REGION_THREAT_LEVEL_TO_BLOCK_REGION = 25 * 1000						-- How much th
 
 --NDefines.NAI.NAVAL_MISSION_AGGRESSIVE_PATROL_DIVISOR = 3							-- Divides patrol score when not defending
 NDefines.NAI.NAVAL_MISSION_PATROL_NEAR_OWNED = 0									-- Extra patrol mission score near owned provinces
+NDefines.NAI.NAVAL_MISSION_PATROL_NEAR_CONTROLLED = 0								-- Extra patrol mission score near controlled provinces
 
 NDefines.NAI.NAVAL_DOCKYARDS_SHIP_FACTOR = 2										-- The extent to which number of dockyards play into amount of sips a nation wants
 NDefines.NAI.NAVY_PREFERED_MAX_SIZE = 62											-- AI will generally attempt to merge fleets into this size, but as a soft limit.
