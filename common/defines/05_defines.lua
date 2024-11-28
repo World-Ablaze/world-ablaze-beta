@@ -389,7 +389,7 @@ NDefines.NMilitary.PLAN_AREA_DEFENSE_ENEMY_CONTROLLER_SCORE = -100.0				-- Score
 
 --NDefines.NMilitary.PLAN_EXECUTE_BALANCED_LIMIT = -20								-- When looking for an attach target, this score limit is required in the battle plan to consider province for attack
 
-NDefines.NMilitary.FRONT_MIN_PATH_TO_REDEPLOY = 12									-- If a units path is at least this long to reach its front location, it will strategically redeploy.
+NDefines.NMilitary.FRONT_MIN_PATH_TO_REDEPLOY = 3									-- If a units path is at least this long to reach its front location, it will strategically redeploy.
 
 -----------
 
