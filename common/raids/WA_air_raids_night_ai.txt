@@ -1,0 +1,3277 @@
+##    ## ####  ######   ##     ## ########
+###   ##  ##  ##    ##  ##     ##    ##
+####  ##  ##  ##        ##     ##    ##
+## ## ##  ##  ##   #### #########    ##
+##  ####  ##  ##    ##  ##     ##    ##
+##   ###  ##  ##    ##  ##     ##    ##
+##    ## ####  ######   ##     ##    ##
+###########################################
+
+ #######  #### ##       ######## #### ######## ##       ########
+##     ##  ##  ##       ##        ##  ##       ##       ##     ##
+##     ##  ##  ##       ##        ##  ##       ##       ##     ##
+##     ##  ##  ##       ######    ##  ######   ##       ##     ##
+##     ##  ##  ##       ##        ##  ##       ##       ##     ##
+##     ##  ##  ##       ##        ##  ##       ##       ##     ##
+ #######  #### ######## ##       #### ######## ######## ########
+types = {
+	oil_field_raid_night_ai = {
+		days_to_prepare = 90
+
+		ai_will_do = {
+			base = 0
+			modifier = {
+				add = 1
+				has_war_with = FROM
+			}
+			modifier = {
+				factor = 2
+				FROM = {
+					is_major = yes
+				}
+			}
+			modifier = {
+				factor = 20 # Historical raid
+				FROM = {
+					original_tag = ROM
+				}
+				OR = {
+					original_tag = USA
+					original_tag = ENG
+				}
+				var:target_state = {
+					state = 900
+				}
+			}
+		}
+
+		category = air_raids
+
+		command_power = 0 # command power allocation cost
+
+		allowed = {
+			is_ai = yes
+		}
+		# Raid Type is visible
+		visible = {
+			has_country_flag = ai_raids_active
+			has_tech = night_bombing
+			OR = {
+				is_major = yes
+				has_deployed_air_force_size = {
+					size > 2999
+				}
+			}
+		}
+		# Specific Target is visible
+		show_target = {
+			has_war_with = FROM
+		}
+
+		# Can prepare
+		available = {
+			has_country_flag = ai_raids_active
+		}
+
+		# Can launch a raid
+		launchable = {
+			has_war_with = FROM
+			has_fuel > 24999
+		}
+
+		target_type = {
+			state = {
+				# Resouce amount needed to be eligible as raid target
+				oil > 24
+				# If the site has been hit recently you can't target it again
+				NOT = {
+					OR = {
+						has_dynamic_modifier = {
+							modifier = oil_fields_lightly_damaged_modifier
+						}
+						has_dynamic_modifier = {
+							modifier = oil_fields_damaged_modifier
+						}
+						has_dynamic_modifier = {
+							modifier = oil_fields_critically_damaged_modifier
+						}
+					}
+				}
+			}
+		}
+		custom_map_icon = GFX_raid_type_icon_oil_field_raid
+		target_icon = GFX_oilfield_target_icon
+		target_loc_key = raid_target_name_oil_field
+		arrow = {
+			type = air
+		}
+		unit_model = {
+			type = equipment
+		}
+		launch_sound = raid_launch_air
+
+		unit_requirements = {
+			equipment = {
+				type = { medium_heavy_bomber_airframe large_bomber_airframe large_heavy_bomber_airframe }
+				modules = {
+					bomb_920kg_bomb_bay
+					bomb_1000kg_bomb_bay
+					bomb_1380kg_bomb_bay
+					bomb_1400kg_bomb_bay
+					bomb_1500kg_bomb_bay
+					bomb_1840kg_bomb_bay
+					bomb_2000kg_bomb_bay
+					bomb_2300kg_bomb_bay
+					bomb_2500kg_bomb_bay
+					bomb_2760kg_bomb_bay
+					bomb_3000kg_bomb_bay
+					bomb_3220kg_bomb_bay
+					bomb_3680kg_bomb_bay
+					bomb_4600kg_bomb_bay
+					bomb_5000kg_bomb_bay
+					bomb_5520kg_bomb_bay
+					bomb_8280kg_bomb_bay
+					bomb_920kg_bomb_bay_general_purpose
+					bomb_1000kg_bomb_bay_general_purpose
+					bomb_1380kg_bomb_bay_general_purpose
+					bomb_1400kg_bomb_bay_general_purpose
+					bomb_1500kg_bomb_bay_general_purpose
+					bomb_1840kg_bomb_bay_general_purpose
+					bomb_2000kg_bomb_bay_general_purpose
+					bomb_2300kg_bomb_bay_general_purpose
+					bomb_2500kg_bomb_bay_general_purpose
+					bomb_2760kg_bomb_bay_general_purpose
+					bomb_3000kg_bomb_bay_general_purpose
+					bomb_3220kg_bomb_bay_general_purpose
+					bomb_3680kg_bomb_bay_general_purpose
+					bomb_4600kg_bomb_bay_general_purpose
+					bomb_5000kg_bomb_bay_general_purpose
+					bomb_5520kg_bomb_bay_general_purpose
+					bomb_8280kg_bomb_bay_general_purpose
+					bomb_920kg
+					bomb_1000kg
+					bomb_1380kg
+					bomb_1500kg
+					bomb_1800kg
+					bomb_1840kg
+					bomb_2000kg
+					bomb_2500kg
+					bomb_3000kg
+					bomb_3600kg
+					bomb_920kg_locks_general_purpose
+					bomb_1000kg_locks_general_purpose
+					bomb_1380kg_locks_general_purpose
+					bomb_1500kg_locks_general_purpose
+					bomb_1800kg_locks_general_purpose
+					bomb_1840kg_locks_general_purpose
+					bomb_2000kg_locks_general_purpose
+					bomb_2500kg_locks_general_purpose
+					bomb_3000kg_locks_general_purpose
+					bomb_3600kg_locks_general_purpose
+				}
+				amount = { min = 300 }
+			}
+		}
+
+		starting_point = {
+			types = { air_base }
+		}
+
+		success_factors = {
+			success = {
+				base = 1.6
+
+				# Raiding unit modifiers
+				experience = {
+					reference = 1.0
+					weight = 0.15
+					start_weight = -0.15
+				}
+				# air_agility = {
+				# 	reference = 100.0 # As air unit agility approaches 100 (as defined by the value above), increase chance by this value
+				# 	weight = 0.1 # At 0 agility, the modifier will have negative effect.
+				# 	start_weight = -0.1 # The modifier will scale linearly, meaning at 50 agility, the modifier will be 0.
+				# }
+				reliability = {
+					reference = 1
+					weight = 0.1
+					start_weight = -0.1
+				}
+				air_defence = {
+					reference = 100
+					weight = 0.05
+					start_weight = -0.05
+				}
+				strategic_bomber = {
+					reference = 75
+					weight = 0.2
+					start_weight = -0.2
+				}
+
+				## Actor Modifiers
+				air_superiority = {
+					reference = 1
+					start_reference = 0.5
+					weight = 0.125
+					start_weight = -0.125
+				}
+
+				### Target Modifiers
+				anti_air = {
+					reference = 10
+					weight = -0.35
+				}
+				interception = {
+					reference = 500 # More than 500 fighters won't really make any difference
+					weight = -0.125
+				}
+				radar = {
+					weight = -0.25
+				}
+				intel = {
+					weight = 0.4
+					start_weight = -0.2
+					reference = 100
+				}
+			}
+
+			critical = {
+				base = 0.05
+			}
+		}
+
+		success_levels = {
+			failure = {
+				victim_effects = {
+					var:target_state = {
+						custom_effect_tooltip = raid_failure_tt
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.125
+						ratio = yes
+					}
+					raid_add_unit_experience = 0.05
+					var:actor_country = {
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "nuke_entity"
+					animation = "attack"
+				}
+				visual_effect = {
+					entity = "raid_failed_entity"
+					animation = "attack"
+				}
+			}
+			limited_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						add_dynamic_modifier = {
+							modifier = oil_fields_lightly_damaged_modifier
+							days = 45
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.075
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.1
+					var:actor_country = {
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_limited_success_entity"
+					animation = "attack"
+				}
+			}
+			success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						add_dynamic_modifier = {
+							modifier = oil_fields_damaged_modifier
+							days = 60
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.05
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.2
+
+					var:actor_country = {
+						air_experience = 5
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_success_entity"
+					animation = "attack"
+				}
+			}
+			critical_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						add_dynamic_modifier = {
+							modifier = oil_fields_critically_damaged_modifier
+							days = 90
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.025
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.35
+
+					var:actor_country = {
+						air_experience = 10
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_critical_success_entity"
+					animation = "attack"
+				}
+			}
+		}
+	}
+ ######  ##    ## ##    ## ######## ##     ##
+##    ##  ##  ##  ###   ##    ##    ##     ##
+##         ####   ####  ##    ##    ##     ##
+ ######     ##    ## ## ##    ##    #########
+      ##    ##    ##  ####    ##    ##     ##
+##    ##    ##    ##   ###    ##    ##     ##
+ ######     ##    ##    ##    ##    ##     ##
+	synthetic_refinery_raid_night_ai = {
+		days_to_prepare = 90
+
+		ai_will_do = {
+			base = 0
+			modifier = {
+				add = 1
+				has_war_with = FROM
+			}
+			modifier = {
+				factor = 2
+				FROM = {
+					is_major = yes
+				}
+			}
+			modifier = {
+				factor = 12
+				FROM = {
+					original_tag = GER
+				}
+			}
+			modifier = {
+				factor = 0
+				var:target_state = {
+					NOT = {
+						is_core_of = FROM
+					}
+				}
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					original_tag = USA
+					original_tag = ENG
+				}
+				OR = {
+					has_war_with = GER
+					has_war_with = JAP
+				}
+				NOT = {
+					FROM = {
+						OR = {
+							original_tag = GER
+							original_tag = JAP
+							original_tag = ROM
+							original_tag = HUN
+							original_tag = ITA
+						}
+					}
+				}
+			}
+		}
+
+		category = air_raids
+
+		command_power = 0 # command power allocation cost
+
+		allowed = {
+			is_ai = yes
+		}
+		# Raid Type is visible
+		visible = {
+			has_tech = night_bombing
+			has_country_flag = ai_raids_active
+			OR = {
+				is_major = yes
+				has_deployed_air_force_size = {
+					size > 2999
+				}
+			}
+		}
+		# Specific Target is visible
+		show_target = {
+			has_war_with = FROM
+		}
+
+		# Can prepare
+		available = {
+			has_country_flag = ai_raids_active
+		}
+
+		# Can launch a raid
+		launchable = {
+			has_war_with = FROM
+			has_fuel > 24999
+		}
+
+		target_type = {
+			state = {
+				non_damaged_building_level = {
+					building = synthetic_refinery
+					level > 4
+				}
+			}
+		}
+		custom_map_icon = GFX_raid_type_icon_synthetic_refinery_raid
+		target_icon = GFX_synthetic_refinery_target_icon
+		target_loc_key = raid_target_name_synthetic_refinery
+		arrow = {
+			type = air
+		}
+		unit_model = {
+			type = equipment
+		}
+		launch_sound = raid_launch_air
+
+		unit_requirements = {
+			equipment = {
+				type = { medium_heavy_bomber_airframe large_bomber_airframe large_heavy_bomber_airframe }
+				modules = {
+					bomb_920kg_bomb_bay
+					bomb_1000kg_bomb_bay
+					bomb_1380kg_bomb_bay
+					bomb_1400kg_bomb_bay
+					bomb_1500kg_bomb_bay
+					bomb_1840kg_bomb_bay
+					bomb_2000kg_bomb_bay
+					bomb_2300kg_bomb_bay
+					bomb_2500kg_bomb_bay
+					bomb_2760kg_bomb_bay
+					bomb_3000kg_bomb_bay
+					bomb_3220kg_bomb_bay
+					bomb_3680kg_bomb_bay
+					bomb_4600kg_bomb_bay
+					bomb_5000kg_bomb_bay
+					bomb_5520kg_bomb_bay
+					bomb_8280kg_bomb_bay
+					bomb_920kg_bomb_bay_general_purpose
+					bomb_1000kg_bomb_bay_general_purpose
+					bomb_1380kg_bomb_bay_general_purpose
+					bomb_1400kg_bomb_bay_general_purpose
+					bomb_1500kg_bomb_bay_general_purpose
+					bomb_1840kg_bomb_bay_general_purpose
+					bomb_2000kg_bomb_bay_general_purpose
+					bomb_2300kg_bomb_bay_general_purpose
+					bomb_2500kg_bomb_bay_general_purpose
+					bomb_2760kg_bomb_bay_general_purpose
+					bomb_3000kg_bomb_bay_general_purpose
+					bomb_3220kg_bomb_bay_general_purpose
+					bomb_3680kg_bomb_bay_general_purpose
+					bomb_4600kg_bomb_bay_general_purpose
+					bomb_5000kg_bomb_bay_general_purpose
+					bomb_5520kg_bomb_bay_general_purpose
+					bomb_8280kg_bomb_bay_general_purpose
+					bomb_920kg
+					bomb_1000kg
+					bomb_1380kg
+					bomb_1500kg
+					bomb_1800kg
+					bomb_1840kg
+					bomb_2000kg
+					bomb_2500kg
+					bomb_3000kg
+					bomb_3600kg
+					bomb_920kg_locks_general_purpose
+					bomb_1000kg_locks_general_purpose
+					bomb_1380kg_locks_general_purpose
+					bomb_1500kg_locks_general_purpose
+					bomb_1800kg_locks_general_purpose
+					bomb_1840kg_locks_general_purpose
+					bomb_2000kg_locks_general_purpose
+					bomb_2500kg_locks_general_purpose
+					bomb_3000kg_locks_general_purpose
+					bomb_3600kg_locks_general_purpose
+				}
+				amount = { min = 300 }
+			}
+		}
+
+		starting_point = {
+			types = { air_base }
+		}
+
+		success_factors = {
+			success = {
+				base = 1.6
+
+				# Raiding unit modifiers
+				experience = {
+					reference = 1.0
+					weight = 0.15
+					start_weight = -0.15
+				}
+				# air_agility = {
+				# 	reference = 100.0 # As air unit agility approaches 100 (as defined by the value above), increase chance by this value
+				# 	weight = 0.1 # At 0 agility, the modifier will have negative effect.
+				# 	start_weight = -0.1 # The modifier will scale linearly, meaning at 50 agility, the modifier will be 0.
+				# }
+				reliability = {
+					reference = 1
+					weight = 0.1
+					start_weight = -0.1
+				}
+				air_defence = {
+					reference = 100
+					weight = 0.05
+					start_weight = -0.05
+				}
+				strategic_bomber = {
+					reference = 75
+					weight = 0.2
+					start_weight = -0.2
+				}
+
+				## Actor Modifiers
+				air_superiority = {
+					reference = 1
+					start_reference = 0.5
+					weight = 0.125
+					start_weight = -0.125
+				}
+
+				### Target Modifiers
+				anti_air = {
+					reference = 10
+					weight = -0.35
+				}
+				interception = {
+					reference = 500 # More than 500 fighters won't really make any difference
+					weight = -0.125
+				}
+				radar = {
+					weight = -0.25
+				}
+				intel = {
+					weight = 0.4
+					start_weight = -0.2
+					reference = 100
+				}
+			}
+
+			critical = {
+				base = 0.05
+			}
+		}
+
+		success_levels = {
+			failure = {
+				victim_effects = {
+					var:target_state = {
+						custom_effect_tooltip = raid_failure_tt
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.125
+						ratio = yes
+					}
+					raid_add_unit_experience = 0.05
+					var:actor_country = {
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "nuke_entity"
+					animation = "attack"
+				}
+				visual_effect = {
+					entity = "raid_failed_entity"
+					animation = "attack"
+				}
+			}
+			limited_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						set_variable = { building_damage_synthetic_refinery_night = non_damaged_building_level@synthetic_refinery } # Get how many buildings in the state
+						multiply_variable = { building_damage_synthetic_refinery_night = 0.125 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# round_temp_variable = building_damage_synthetic_refinery_night # Round to nearest integer to display number of buildings destroyed to player
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = raid_damage_buildings_tt
+								building = synthetic_refinery
+								num = [?building_damage_synthetic_refinery_night]
+							}
+							meta_effect = {
+								text = {
+									damage_building = {
+										type = synthetic_refinery
+										damage = [BUILDING_DAMAGE_META_VAR]
+									}
+								}
+								BUILDING_DAMAGE_META_VAR = "[?building_damage_synthetic_refinery_night]"
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.075
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.1
+					var:actor_country = {
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_limited_success_entity"
+					animation = "attack"
+				}
+			}
+			success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						set_variable = { building_damage_synthetic_refinery_night = non_damaged_building_level@synthetic_refinery } # Get how many buildings in the state
+						multiply_variable = { building_damage_synthetic_refinery_night = 0.25 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# round_temp_variable = building_damage_synthetic_refinery_night # Round to nearest integer to display number of buildings destroyed to player
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = raid_damage_buildings_tt
+								building = synthetic_refinery
+								num = [?building_damage_synthetic_refinery_night]
+							}
+							meta_effect = {
+								text = {
+									damage_building = {
+										type = synthetic_refinery
+										damage = [BUILDING_DAMAGE_META_VAR]
+									}
+								}
+								BUILDING_DAMAGE_META_VAR = "[?building_damage_synthetic_refinery_night]"
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.05
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.2
+
+					var:actor_country = {
+						air_experience = 5
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_success_entity"
+					animation = "attack"
+				}
+			}
+			critical_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						set_variable = { building_damage_synthetic_refinery_night = non_damaged_building_level@synthetic_refinery } # Get how many buildings in the state
+						multiply_variable = { building_damage_synthetic_refinery_night = 0.375 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# round_temp_variable = building_damage_synthetic_refinery_night # Round to nearest integer to display number of buildings destroyed to player
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = raid_damage_buildings_tt
+								building = synthetic_refinery
+								num = [?building_damage_synthetic_refinery_night]
+							}
+							meta_effect = {
+								text = {
+									damage_building = {
+										type = synthetic_refinery
+										damage = [BUILDING_DAMAGE_META_VAR]
+									}
+								}
+								BUILDING_DAMAGE_META_VAR = "[?building_damage_synthetic_refinery_night]"
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.025
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.35
+
+					var:actor_country = {
+						air_experience = 10
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_critical_success_entity"
+					animation = "attack"
+				}
+			}
+		}
+	}
+ ######  ######## ######## ######## ##
+##    ##    ##    ##       ##       ##
+##          ##    ##       ##       ##
+ ######     ##    ######   ######   ##
+      ##    ##    ##       ##       ##
+##    ##    ##    ##       ##       ##
+ ######     ##    ######## ######## ########
+	steel_refinery_raid_night_ai = {
+		days_to_prepare = 90
+
+		ai_will_do = {
+			base = 0
+			modifier = {
+				add = 1
+				has_war_with = FROM
+			}
+			modifier = {
+				factor = 2
+				FROM = {
+					is_major = yes
+				}
+			}
+			modifier = {
+				factor = 0
+				var:target_state = {
+					NOT = {
+						is_core_of = FROM
+					}
+				}
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					original_tag = USA
+					original_tag = ENG
+				}
+				OR = {
+					has_war_with = GER
+					has_war_with = JAP
+				}
+				NOT = {
+					FROM = {
+						OR = {
+							original_tag = GER
+							original_tag = JAP
+							original_tag = ROM
+							original_tag = HUN
+							original_tag = ITA
+						}
+					}
+				}
+			}
+		}
+
+		category = air_raids
+
+		command_power = 0 # command power allocation cost
+
+		allowed = {
+			is_ai = yes
+		}
+		# Raid Type is visible
+		visible = {
+			has_tech = night_bombing
+			has_country_flag = ai_raids_active
+			OR = {
+				is_major = yes
+				has_deployed_air_force_size = {
+					size > 2999
+				}
+			}
+		}
+		# Specific Target is visible
+		show_target = {
+			has_war_with = FROM
+		}
+
+		# Can prepare
+		available = {
+			has_country_flag = ai_raids_active
+		}
+
+		# Can launch a raid
+		launchable = {
+			has_war_with = FROM
+			has_fuel > 24999
+		}
+
+		target_type = {
+			state = {
+				set_temp_variable = { tmp_num_total_mills = non_damaged_building_level@steel_refinery}
+				add_to_temp_variable = { tmp_num_total_mills = non_damaged_building_level@hydro_steel_refinery}
+				check_variable = { tmp_num_total_mills > 4 }
+			}
+		}
+		custom_map_icon = GFX_raid_type_icon_steel_refinery_raid
+		target_icon = GFX_steel_refinery_target_icon
+		target_loc_key = raid_target_name_steel_refinery
+		arrow = {
+			type = air
+		}
+		unit_model = {
+			type = equipment
+		}
+		launch_sound = raid_launch_air
+
+		unit_requirements = {
+			equipment = {
+				type = { medium_heavy_bomber_airframe large_bomber_airframe large_heavy_bomber_airframe }
+				modules = {
+					bomb_920kg_bomb_bay
+					bomb_1000kg_bomb_bay
+					bomb_1380kg_bomb_bay
+					bomb_1400kg_bomb_bay
+					bomb_1500kg_bomb_bay
+					bomb_1840kg_bomb_bay
+					bomb_2000kg_bomb_bay
+					bomb_2300kg_bomb_bay
+					bomb_2500kg_bomb_bay
+					bomb_2760kg_bomb_bay
+					bomb_3000kg_bomb_bay
+					bomb_3220kg_bomb_bay
+					bomb_3680kg_bomb_bay
+					bomb_4600kg_bomb_bay
+					bomb_5000kg_bomb_bay
+					bomb_5520kg_bomb_bay
+					bomb_8280kg_bomb_bay
+					bomb_920kg_bomb_bay_general_purpose
+					bomb_1000kg_bomb_bay_general_purpose
+					bomb_1380kg_bomb_bay_general_purpose
+					bomb_1400kg_bomb_bay_general_purpose
+					bomb_1500kg_bomb_bay_general_purpose
+					bomb_1840kg_bomb_bay_general_purpose
+					bomb_2000kg_bomb_bay_general_purpose
+					bomb_2300kg_bomb_bay_general_purpose
+					bomb_2500kg_bomb_bay_general_purpose
+					bomb_2760kg_bomb_bay_general_purpose
+					bomb_3000kg_bomb_bay_general_purpose
+					bomb_3220kg_bomb_bay_general_purpose
+					bomb_3680kg_bomb_bay_general_purpose
+					bomb_4600kg_bomb_bay_general_purpose
+					bomb_5000kg_bomb_bay_general_purpose
+					bomb_5520kg_bomb_bay_general_purpose
+					bomb_8280kg_bomb_bay_general_purpose
+					bomb_920kg
+					bomb_1000kg
+					bomb_1380kg
+					bomb_1500kg
+					bomb_1800kg
+					bomb_1840kg
+					bomb_2000kg
+					bomb_2500kg
+					bomb_3000kg
+					bomb_3600kg
+					bomb_920kg_locks_general_purpose
+					bomb_1000kg_locks_general_purpose
+					bomb_1380kg_locks_general_purpose
+					bomb_1500kg_locks_general_purpose
+					bomb_1800kg_locks_general_purpose
+					bomb_1840kg_locks_general_purpose
+					bomb_2000kg_locks_general_purpose
+					bomb_2500kg_locks_general_purpose
+					bomb_3000kg_locks_general_purpose
+					bomb_3600kg_locks_general_purpose
+				}
+				amount = { min = 300 }
+			}
+		}
+
+		starting_point = {
+			types = { air_base }
+		}
+
+		success_factors = {
+			success = {
+				base = 1.6
+
+				# Raiding unit modifiers
+				experience = {
+					reference = 1.0
+					weight = 0.15
+					start_weight = -0.15
+				}
+				# air_agility = {
+				# 	reference = 100.0 # As air unit agility approaches 100 (as defined by the value above), increase chance by this value
+				# 	weight = 0.1 # At 0 agility, the modifier will have negative effect.
+				# 	start_weight = -0.1 # The modifier will scale linearly, meaning at 50 agility, the modifier will be 0.
+				# }
+				reliability = {
+					reference = 1
+					weight = 0.1
+					start_weight = -0.1
+				}
+				air_defence = {
+					reference = 100
+					weight = 0.05
+					start_weight = -0.05
+				}
+				strategic_bomber = {
+					reference = 75
+					weight = 0.2
+					start_weight = -0.2
+				}
+
+				## Actor Modifiers
+				air_superiority = {
+					reference = 1
+					start_reference = 0.5
+					weight = 0.125
+					start_weight = -0.125
+				}
+
+				### Target Modifiers
+				anti_air = {
+					reference = 10
+					weight = -0.35
+				}
+				interception = {
+					reference = 500 # More than 500 fighters won't really make any difference
+					weight = -0.125
+				}
+				radar = {
+					weight = -0.25
+				}
+				intel = {
+					weight = 0.4
+					start_weight = -0.2
+					reference = 100
+				}
+			}
+
+			critical = {
+				base = 0.05
+			}
+		}
+
+		success_levels = {
+			failure = {
+				victim_effects = {
+					var:target_state = {
+						custom_effect_tooltip = raid_failure_tt
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.125
+						ratio = yes
+					}
+					raid_add_unit_experience = 0.05
+					var:actor_country = {
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "nuke_entity"
+					animation = "attack"
+				}
+				visual_effect = {
+					entity = "raid_failed_entity"
+					animation = "attack"
+				}
+			}
+			limited_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						set_variable = { building_damage_steel_refinery_night = non_damaged_building_level@steel_refinery } # Get how many buildings in the state
+						if = {
+							limit = {
+								check_variable = { building_damage_steel_refinery_night > 0 }
+							}
+							multiply_variable = { building_damage_steel_refinery_night = 0.125 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+							round_temp_variable = building_damage_steel_refinery_night # Round to nearest integer to display number of buildings destroyed to player
+							custom_override_tooltip = {
+								tooltip = {
+									localization_key = raid_damage_buildings_tt
+									building = steel_refinery
+									num = [?building_damage_steel_refinery_night]
+								}
+								meta_effect = {
+									text = {
+										damage_building = {
+											type = steel_refinery
+											damage = [BUILDING_DAMAGE_META_VAR]
+										}
+									}
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_steel_refinery_night]"
+								}
+							}
+							# log = "Steel limited success: Mill: temp_damage_building: [?building_damage_steel_refinery_night]."
+						}
+						set_variable = { building_damage_hydro_steel_refinery_night = non_damaged_building_level@hydro_steel_refinery } # Get how many buildings in the state
+						if = {
+							limit = {
+								check_variable = { building_damage_hydro_steel_refinery_night > 0 }
+							}
+							multiply_variable = { building_damage_hydro_steel_refinery_night = 0.125 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+							round_temp_variable = building_damage_hydro_steel_refinery_night # Round to nearest integer to display number of buildings destroyed to player
+							custom_override_tooltip = {
+								tooltip = {
+									localization_key = raid_damage_buildings_tt
+									building = hydro_steel_refinery
+									num = [?building_damage_hydro_steel_refinery_night]
+								}
+								meta_effect = {
+									text = {
+										damage_building = {
+											type = hydro_steel_refinery
+											damage = [BUILDING_DAMAGE_META_VAR]
+										}
+									}
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_hydro_steel_refinery_night]"
+								}
+							}
+							# log = "Steel limited success: Hydro: temp_damage_building: [?building_damage_hydro_steel_refinery_night]."
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.075
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.1
+					var:actor_country = {
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_limited_success_entity"
+					animation = "attack"
+				}
+			}
+			success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						set_variable = { building_damage_steel_refinery_night = non_damaged_building_level@steel_refinery } # Get how many buildings in the state
+						if = {
+							limit = {
+								check_variable = { building_damage_steel_refinery_night > 0 }
+							}
+							multiply_variable = { building_damage_steel_refinery_night = 0.25 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+							round_temp_variable = building_damage_steel_refinery_night # Round to nearest integer to display number of buildings destroyed to player
+							# log = "Steel success: Mill: temp_damage_building: [?building_damage_steel_refinery_night]."
+							custom_override_tooltip = {
+								tooltip = {
+									localization_key = raid_damage_buildings_tt
+									building = steel_refinery
+									num = [?building_damage_steel_refinery_night]
+								}
+								meta_effect = {
+									text = {
+										damage_building = {
+											type = steel_refinery
+											damage = [BUILDING_DAMAGE_META_VAR]
+										}
+									}
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_steel_refinery_night]"
+								}
+							}
+						}
+						set_variable = { building_damage_hydro_steel_refinery_night = non_damaged_building_level@hydro_steel_refinery } # Get how many buildings in the state
+						if = {
+							limit = {
+								check_variable = { building_damage_hydro_steel_refinery_night > 0 }
+							}
+							multiply_variable = { building_damage_hydro_steel_refinery_night = 0.25 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+							round_temp_variable = building_damage_hydro_steel_refinery_night # Round to nearest integer to display number of buildings destroyed to player
+							# log = "Steel success: Hydro: building_damage_hydro_steel_refinery_night: [?building_damage_hydro_steel_refinery_night]."
+							custom_override_tooltip = {
+								tooltip = {
+									localization_key = raid_damage_buildings_tt
+									building = hydro_steel_refinery
+									num = [?building_damage_hydro_steel_refinery_night]
+								}
+								meta_effect = {
+									text = {
+										damage_building = {
+											type = hydro_steel_refinery
+											damage = [BUILDING_DAMAGE_META_VAR]
+										}
+									}
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_hydro_steel_refinery_night]"
+								}
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.05
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.2
+
+					var:actor_country = {
+						air_experience = 5
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_success_entity"
+					animation = "attack"
+				}
+			}
+			critical_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						set_variable = { building_damage_steel_refinery_night = non_damaged_building_level@steel_refinery } # Get how many buildings in the state
+						if = {
+							limit = {
+								check_variable = { building_damage_steel_refinery_night > 0 }
+							}
+							multiply_variable = { building_damage_steel_refinery_night = 0.375 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+							round_temp_variable = building_damage_steel_refinery_night # Round to nearest integer to display number of buildings destroyed to player
+							custom_override_tooltip = {
+								tooltip = {
+									localization_key = raid_damage_buildings_tt
+									building = steel_refinery
+									num = [?building_damage_steel_refinery_night]
+								}
+								meta_effect = {
+									text = {
+										damage_building = {
+											type = steel_refinery
+											damage = [BUILDING_DAMAGE_META_VAR]
+										}
+									}
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_steel_refinery_night]"
+								}
+							}
+							# log = "Steel critical success: Mill: temp_damage_building: [?building_damage_steel_refinery_night]."
+						}
+						set_variable = { building_damage_hydro_steel_refinery_night = non_damaged_building_level@hydro_steel_refinery } # Get how many buildings in the state
+						if = {
+							limit = {
+								check_variable = { building_damage_hydro_steel_refinery_night > 0 }
+							}
+							multiply_variable = { building_damage_hydro_steel_refinery_night = 0.375 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+							round_temp_variable = building_damage_hydro_steel_refinery_night # Round to nearest integer to display number of buildings destroyed to player
+							custom_override_tooltip = {
+								tooltip = {
+									localization_key = raid_damage_buildings_tt
+									building = hydro_steel_refinery
+									num = [?building_damage_hydro_steel_refinery_night]
+								}
+								meta_effect = {
+									text = {
+										damage_building = {
+											type = hydro_steel_refinery
+											damage = [BUILDING_DAMAGE_META_VAR]
+										}
+									}
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_hydro_steel_refinery_night]"
+								}
+							}
+							# log = "Steel critical success: Hydro: temp_damage_building: [?building_damage_hydro_steel_refinery_night]."
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.025
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.35
+
+					var:actor_country = {
+						air_experience = 10
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_critical_success_entity"
+					animation = "attack"
+				}
+			}
+		}
+	}
+   ###    ##       ##     ## ##     ## #### ##    ## ##     ## ##     ##
+  ## ##   ##       ##     ## ###   ###  ##  ###   ## ##     ## ###   ###
+ ##   ##  ##       ##     ## #### ####  ##  ####  ## ##     ## #### ####
+##     ## ##       ##     ## ## ### ##  ##  ## ## ## ##     ## ## ### ##
+######### ##       ##     ## ##     ##  ##  ##  #### ##     ## ##     ##
+##     ## ##       ##     ## ##     ##  ##  ##   ### ##     ## ##     ##
+##     ## ########  #######  ##     ## #### ##    ##  #######  ##     ##
+	aluminium_refinery_raid_night_ai = {
+		days_to_prepare = 90
+
+		ai_will_do = {
+			base = 0
+			modifier = {
+				add = 1
+				has_war_with = FROM
+			}
+			modifier = {
+				factor = 2
+				FROM = {
+					is_major = yes
+				}
+			}
+			modifier = {
+				factor = 0
+				var:target_state = {
+					NOT = {
+						is_core_of = FROM
+					}
+				}
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					original_tag = USA
+					original_tag = ENG
+				}
+				OR = {
+					has_war_with = GER
+					has_war_with = JAP
+				}
+				NOT = {
+					FROM = {
+						OR = {
+							original_tag = GER
+							original_tag = JAP
+							original_tag = ROM
+							original_tag = HUN
+							original_tag = ITA
+						}
+					}
+				}
+			}
+		}
+
+		category = air_raids
+
+		command_power = 0 # command power allocation cost
+
+		allowed = {
+			is_ai = yes
+		}
+		# Raid Type is visible
+		visible = {
+			has_tech = night_bombing
+			has_country_flag = ai_raids_active
+			OR = {
+				is_major = yes
+				has_deployed_air_force_size = {
+					size > 2999
+				}
+			}
+		}
+		# Specific Target is visible
+		show_target = {
+			has_war_with = FROM
+		}
+
+		# Can prepare
+		available = {
+			has_country_flag = ai_raids_active
+		}
+
+		# Can launch a raid
+		launchable = {
+			has_war_with = FROM
+			has_fuel > 24999
+		}
+
+		target_type = {
+			state = {
+				set_temp_variable = { tmp_num_total_mills = non_damaged_building_level@aluminium_refinery}
+				add_to_temp_variable = { tmp_num_total_mills = non_damaged_building_level@hydro_aluminium_refinery}
+				check_variable = { tmp_num_total_mills > 4 }
+			}
+		}
+		custom_map_icon = GFX_raid_type_icon_aluminium_refinery_raid
+		target_icon = GFX_aluminium_refinery_target_icon
+		target_loc_key = raid_target_name_aluminium_refinery
+		arrow = {
+			type = air
+		}
+		unit_model = {
+			type = equipment
+		}
+		launch_sound = raid_launch_air
+
+		unit_requirements = {
+			equipment = {
+				type = { medium_heavy_bomber_airframe large_bomber_airframe large_heavy_bomber_airframe }
+				modules = {
+					bomb_920kg_bomb_bay
+					bomb_1000kg_bomb_bay
+					bomb_1380kg_bomb_bay
+					bomb_1400kg_bomb_bay
+					bomb_1500kg_bomb_bay
+					bomb_1840kg_bomb_bay
+					bomb_2000kg_bomb_bay
+					bomb_2300kg_bomb_bay
+					bomb_2500kg_bomb_bay
+					bomb_2760kg_bomb_bay
+					bomb_3000kg_bomb_bay
+					bomb_3220kg_bomb_bay
+					bomb_3680kg_bomb_bay
+					bomb_4600kg_bomb_bay
+					bomb_5000kg_bomb_bay
+					bomb_5520kg_bomb_bay
+					bomb_8280kg_bomb_bay
+					bomb_920kg_bomb_bay_general_purpose
+					bomb_1000kg_bomb_bay_general_purpose
+					bomb_1380kg_bomb_bay_general_purpose
+					bomb_1400kg_bomb_bay_general_purpose
+					bomb_1500kg_bomb_bay_general_purpose
+					bomb_1840kg_bomb_bay_general_purpose
+					bomb_2000kg_bomb_bay_general_purpose
+					bomb_2300kg_bomb_bay_general_purpose
+					bomb_2500kg_bomb_bay_general_purpose
+					bomb_2760kg_bomb_bay_general_purpose
+					bomb_3000kg_bomb_bay_general_purpose
+					bomb_3220kg_bomb_bay_general_purpose
+					bomb_3680kg_bomb_bay_general_purpose
+					bomb_4600kg_bomb_bay_general_purpose
+					bomb_5000kg_bomb_bay_general_purpose
+					bomb_5520kg_bomb_bay_general_purpose
+					bomb_8280kg_bomb_bay_general_purpose
+					bomb_920kg
+					bomb_1000kg
+					bomb_1380kg
+					bomb_1500kg
+					bomb_1800kg
+					bomb_1840kg
+					bomb_2000kg
+					bomb_2500kg
+					bomb_3000kg
+					bomb_3600kg
+					bomb_920kg_locks_general_purpose
+					bomb_1000kg_locks_general_purpose
+					bomb_1380kg_locks_general_purpose
+					bomb_1500kg_locks_general_purpose
+					bomb_1800kg_locks_general_purpose
+					bomb_1840kg_locks_general_purpose
+					bomb_2000kg_locks_general_purpose
+					bomb_2500kg_locks_general_purpose
+					bomb_3000kg_locks_general_purpose
+					bomb_3600kg_locks_general_purpose
+				}
+				amount = { min = 300 }
+			}
+		}
+
+		starting_point = {
+			types = { air_base }
+		}
+
+		success_factors = {
+			success = {
+				base = 1.6
+
+				# Raiding unit modifiers
+				experience = {
+					reference = 1.0
+					weight = 0.15
+					start_weight = -0.15
+				}
+				# air_agility = {
+				# 	reference = 100.0 # As air unit agility approaches 100 (as defined by the value above), increase chance by this value
+				# 	weight = 0.1 # At 0 agility, the modifier will have negative effect.
+				# 	start_weight = -0.1 # The modifier will scale linearly, meaning at 50 agility, the modifier will be 0.
+				# }
+				reliability = {
+					reference = 1
+					weight = 0.1
+					start_weight = -0.1
+				}
+				air_defence = {
+					reference = 100
+					weight = 0.05
+					start_weight = -0.05
+				}
+				strategic_bomber = {
+					reference = 75
+					weight = 0.2
+					start_weight = -0.2
+				}
+
+				## Actor Modifiers
+				air_superiority = {
+					reference = 1
+					start_reference = 0.5
+					weight = 0.125
+					start_weight = -0.125
+				}
+
+				### Target Modifiers
+				anti_air = {
+					reference = 10
+					weight = -0.35
+				}
+				interception = {
+					reference = 500 # More than 500 fighters won't really make any difference
+					weight = -0.125
+				}
+				radar = {
+					weight = -0.25
+				}
+				intel = {
+					weight = 0.4
+					start_weight = -0.2
+					reference = 100
+				}
+			}
+
+			critical = {
+				base = 0.05
+			}
+		}
+
+		success_levels = {
+			failure = {
+				victim_effects = {
+					var:target_state = {
+						custom_effect_tooltip = raid_failure_tt
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.125
+						ratio = yes
+					}
+					raid_add_unit_experience = 0.05
+					var:actor_country = {
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "nuke_entity"
+					animation = "attack"
+				}
+				visual_effect = {
+					entity = "raid_failed_entity"
+					animation = "attack"
+				}
+			}
+			limited_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						set_variable = { building_damage_aluminium_refinery_night = non_damaged_building_level@aluminium_refinery } # Get how many buildings in the state
+						multiply_variable = { building_damage_aluminium_refinery_night = 0.125 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# round_temp_variable = building_damage_aluminium_refinery_night # Round to nearest integer to display number of buildings destroyed to player
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = raid_damage_buildings_tt
+								building = aluminium_refinery
+								num = [?building_damage_aluminium_refinery_night]
+							}
+							meta_effect = {
+								text = {
+									damage_building = {
+										type = aluminium_refinery
+										damage = [BUILDING_DAMAGE_META_VAR]
+									}
+								}
+								BUILDING_DAMAGE_META_VAR = "[?building_damage_aluminium_refinery_night]"
+							}
+						}
+						set_variable = { building_damage_hydro_aluminium_refinery_night = non_damaged_building_level@hydro_aluminium_refinery } # Get how many buildings in the state
+						multiply_variable = { building_damage_hydro_aluminium_refinery_night = 0.125 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						round_temp_variable = building_damage_hydro_aluminium_refinery_night # Round to nearest integer to display number of buildings destroyed to player
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = raid_damage_buildings_tt
+								building = hydro_aluminium_refinery
+								num = [?building_damage_hydro_aluminium_refinery_night]
+							}
+							meta_effect = {
+								text = {
+									damage_building = {
+										type = hydro_aluminium_refinery
+										damage = [BUILDING_DAMAGE_META_VAR]
+									}
+								}
+								BUILDING_DAMAGE_META_VAR = "[?building_damage_hydro_aluminium_refinery_night]"
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.075
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.1
+					var:actor_country = {
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_limited_success_entity"
+					animation = "attack"
+				}
+			}
+			success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						set_variable = { building_damage_aluminium_refinery_night = non_damaged_building_level@aluminium_refinery } # Get how many buildings in the state
+						multiply_variable = { building_damage_aluminium_refinery_night = 0.25 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# round_temp_variable = building_damage_aluminium_refinery_night # Round to nearest integer to display number of buildings destroyed to player
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = raid_damage_buildings_tt
+								building = aluminium_refinery
+								num = [?building_damage_aluminium_refinery_night]
+							}
+							meta_effect = {
+								text = {
+									damage_building = {
+										type = aluminium_refinery
+										damage = [BUILDING_DAMAGE_META_VAR]
+									}
+								}
+								BUILDING_DAMAGE_META_VAR = "[?building_damage_aluminium_refinery_night]"
+							}
+						}
+						set_variable = { building_damage_hydro_aluminium_refinery_night = non_damaged_building_level@hydro_aluminium_refinery } # Get how many buildings in the state
+						multiply_variable = { building_damage_hydro_aluminium_refinery_night = 0.25 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						round_temp_variable = building_damage_hydro_aluminium_refinery_night # Round to nearest integer to display number of buildings destroyed to player
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = raid_damage_buildings_tt
+								building = hydro_aluminium_refinery
+								num = [?building_damage_hydro_aluminium_refinery_night]
+							}
+							meta_effect = {
+								text = {
+									damage_building = {
+										type = hydro_aluminium_refinery
+										damage = [BUILDING_DAMAGE_META_VAR]
+									}
+								}
+								BUILDING_DAMAGE_META_VAR = "[?building_damage_hydro_aluminium_refinery_night]"
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.05
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.2
+
+					var:actor_country = {
+						air_experience = 5
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_success_entity"
+					animation = "attack"
+				}
+			}
+			critical_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						set_variable = { building_damage_aluminium_refinery_night = non_damaged_building_level@aluminium_refinery } # Get how many buildings in the state
+						multiply_variable = { building_damage_aluminium_refinery_night = 0.375 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# round_temp_variable = building_damage_aluminium_refinery_night # Round to nearest integer to display number of buildings destroyed to player
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = raid_damage_buildings_tt
+								building = aluminium_refinery
+								num = [?building_damage_aluminium_refinery_night]
+							}
+							meta_effect = {
+								text = {
+									damage_building = {
+										type = aluminium_refinery
+										damage = [BUILDING_DAMAGE_META_VAR]
+									}
+								}
+								BUILDING_DAMAGE_META_VAR = "[?building_damage_aluminium_refinery_night]"
+							}
+						}
+						set_variable = { building_damage_hydro_aluminium_refinery_night = non_damaged_building_level@hydro_aluminium_refinery } # Get how many buildings in the state
+						multiply_variable = { building_damage_hydro_aluminium_refinery_night = 0.375 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						round_temp_variable = building_damage_hydro_aluminium_refinery_night # Round to nearest integer to display number of buildings destroyed to player
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = raid_damage_buildings_tt
+								building = hydro_aluminium_refinery
+								num = [?building_damage_hydro_aluminium_refinery_night]
+							}
+							meta_effect = {
+								text = {
+									damage_building = {
+										type = hydro_aluminium_refinery
+										damage = [BUILDING_DAMAGE_META_VAR]
+									}
+								}
+								BUILDING_DAMAGE_META_VAR = "[?building_damage_hydro_aluminium_refinery_night]"
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.025
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.35
+
+					var:actor_country = {
+						air_experience = 10
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_critical_success_entity"
+					animation = "attack"
+				}
+			}
+		}
+	}
+##     ## #### ##       #### ########    ###    ########  ##    ##
+###   ###  ##  ##        ##     ##      ## ##   ##     ##  ##  ##
+#### ####  ##  ##        ##     ##     ##   ##  ##     ##   ####
+## ### ##  ##  ##        ##     ##    ##     ## ########     ##
+##     ##  ##  ##        ##     ##    ######### ##   ##      ##
+##     ##  ##  ##        ##     ##    ##     ## ##    ##     ##
+##     ## #### ######## ####    ##    ##     ## ##     ##    ##
+	arms_factory_raid_night_ai = {
+		days_to_prepare = 90
+
+		ai_will_do = {
+			base = 0
+			modifier = {
+				add = 1
+				has_war_with = FROM
+			}
+			modifier = {
+				factor = 2
+				FROM = {
+					is_major = yes
+				}
+			}
+			modifier = {
+				factor = 10
+				FROM = {
+					original_tag = GER
+				}
+			}
+			modifier = {
+				factor = 0
+				var:target_state = {
+					NOT = {
+						is_core_of = FROM
+					}
+				}
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					original_tag = USA
+					original_tag = ENG
+				}
+				OR = {
+					has_war_with = GER
+					has_war_with = JAP
+				}
+				NOT = {
+					FROM = {
+						OR = {
+							original_tag = GER
+							original_tag = JAP
+							original_tag = ROM
+							original_tag = HUN
+							original_tag = ITA
+						}
+					}
+				}
+			}
+		}
+
+		category = air_raids
+
+		command_power = 0 # command power allocation cost
+
+		allowed = {
+			is_ai = yes
+		}
+		# Raid Type is visible
+		visible = {
+			has_tech = night_bombing
+			has_country_flag = ai_raids_active
+			OR = {
+				is_major = yes
+				has_deployed_air_force_size = {
+					size > 2999
+				}
+			}
+		}
+		# Specific Target is visible
+		show_target = {
+			has_war_with = FROM
+		}
+
+		# Can prepare
+		available = {
+			has_country_flag = ai_raids_active
+		}
+
+		# Can launch a raid
+		launchable = {
+			has_war_with = FROM
+			has_fuel > 24999
+		}
+
+		target_type = {
+			state = {
+				non_damaged_building_level = {
+					building = arms_factory
+					level > 19
+				}
+			}
+		}
+		custom_map_icon = GFX_raid_type_icon_arms_factory_raid
+		target_icon = GFX_arms_factory_target_icon
+		target_loc_key = raid_target_name_arms_factory
+		arrow = {
+			type = air
+		}
+		unit_model = {
+			type = equipment
+		}
+		launch_sound = raid_launch_air
+
+		unit_requirements = {
+			equipment = {
+				type = { medium_heavy_bomber_airframe large_bomber_airframe large_heavy_bomber_airframe }
+				modules = {
+					bomb_920kg_bomb_bay
+					bomb_1000kg_bomb_bay
+					bomb_1380kg_bomb_bay
+					bomb_1400kg_bomb_bay
+					bomb_1500kg_bomb_bay
+					bomb_1840kg_bomb_bay
+					bomb_2000kg_bomb_bay
+					bomb_2300kg_bomb_bay
+					bomb_2500kg_bomb_bay
+					bomb_2760kg_bomb_bay
+					bomb_3000kg_bomb_bay
+					bomb_3220kg_bomb_bay
+					bomb_3680kg_bomb_bay
+					bomb_4600kg_bomb_bay
+					bomb_5000kg_bomb_bay
+					bomb_5520kg_bomb_bay
+					bomb_8280kg_bomb_bay
+					bomb_920kg_bomb_bay_general_purpose
+					bomb_1000kg_bomb_bay_general_purpose
+					bomb_1380kg_bomb_bay_general_purpose
+					bomb_1400kg_bomb_bay_general_purpose
+					bomb_1500kg_bomb_bay_general_purpose
+					bomb_1840kg_bomb_bay_general_purpose
+					bomb_2000kg_bomb_bay_general_purpose
+					bomb_2300kg_bomb_bay_general_purpose
+					bomb_2500kg_bomb_bay_general_purpose
+					bomb_2760kg_bomb_bay_general_purpose
+					bomb_3000kg_bomb_bay_general_purpose
+					bomb_3220kg_bomb_bay_general_purpose
+					bomb_3680kg_bomb_bay_general_purpose
+					bomb_4600kg_bomb_bay_general_purpose
+					bomb_5000kg_bomb_bay_general_purpose
+					bomb_5520kg_bomb_bay_general_purpose
+					bomb_8280kg_bomb_bay_general_purpose
+					bomb_920kg
+					bomb_1000kg
+					bomb_1380kg
+					bomb_1500kg
+					bomb_1800kg
+					bomb_1840kg
+					bomb_2000kg
+					bomb_2500kg
+					bomb_3000kg
+					bomb_3600kg
+					bomb_920kg_locks_general_purpose
+					bomb_1000kg_locks_general_purpose
+					bomb_1380kg_locks_general_purpose
+					bomb_1500kg_locks_general_purpose
+					bomb_1800kg_locks_general_purpose
+					bomb_1840kg_locks_general_purpose
+					bomb_2000kg_locks_general_purpose
+					bomb_2500kg_locks_general_purpose
+					bomb_3000kg_locks_general_purpose
+					bomb_3600kg_locks_general_purpose
+				}
+				amount = { min = 300 }
+			}
+		}
+
+		starting_point = {
+			types = { air_base }
+		}
+
+		success_factors = {
+			success = {
+				base = 1.6
+
+				# Raiding unit modifiers
+				experience = {
+					reference = 1.0
+					weight = 0.15
+					start_weight = -0.15
+				}
+				# air_agility = {
+				# 	reference = 100.0 # As air unit agility approaches 100 (as defined by the value above), increase chance by this value
+				# 	weight = 0.1 # At 0 agility, the modifier will have negative effect.
+				# 	start_weight = -0.1 # The modifier will scale linearly, meaning at 50 agility, the modifier will be 0.
+				# }
+				reliability = {
+					reference = 1
+					weight = 0.1
+					start_weight = -0.1
+				}
+				air_defence = {
+					reference = 100
+					weight = 0.05
+					start_weight = -0.05
+				}
+				strategic_bomber = {
+					reference = 75
+					weight = 0.2
+					start_weight = -0.2
+				}
+
+				## Actor Modifiers
+				air_superiority = {
+					reference = 1
+					start_reference = 0.5
+					weight = 0.125
+					start_weight = -0.125
+				}
+
+				### Target Modifiers
+				anti_air = {
+					reference = 10
+					weight = -0.35
+				}
+				interception = {
+					reference = 500 # More than 500 fighters won't really make any difference
+					weight = -0.125
+				}
+				radar = {
+					weight = -0.25
+				}
+				intel = {
+					weight = 0.4
+					start_weight = -0.2
+					reference = 100
+				}
+			}
+
+			critical = {
+				base = 0.05
+			}
+		}
+
+		success_levels = {
+			failure = {
+				victim_effects = {
+					var:target_state = {
+						custom_effect_tooltip = raid_failure_tt
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.125
+						ratio = yes
+					}
+					raid_add_unit_experience = 0.05
+					var:actor_country = {
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "nuke_entity"
+					animation = "attack"
+				}
+				visual_effect = {
+					entity = "raid_failed_entity"
+					animation = "attack"
+				}
+			}
+			limited_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						set_variable = { building_damage_arms_factory_night = non_damaged_building_level@arms_factory } # Get how many buildings in the state
+						multiply_variable = { building_damage_arms_factory_night = 0.125 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# round_temp_variable = building_damage_arms_factory_night # Round to nearest integer to display number of buildings destroyed to player
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = raid_damage_buildings_tt
+								building = arms_factory
+								num = [?building_damage_arms_factory_night]
+							}
+							meta_effect = {
+								text = {
+									damage_building = {
+										type = arms_factory
+										damage = [BUILDING_DAMAGE_META_VAR]
+									}
+								}
+								BUILDING_DAMAGE_META_VAR = "[?building_damage_arms_factory_night]"
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.075
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.1
+					var:actor_country = {
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_limited_success_entity"
+					animation = "attack"
+				}
+			}
+			success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						set_variable = { building_damage_arms_factory_night = non_damaged_building_level@arms_factory } # Get how many buildings in the state
+						multiply_variable = { building_damage_arms_factory_night = 0.25 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# round_temp_variable = building_damage_arms_factory_night # Round to nearest integer to display number of buildings destroyed to player
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = raid_damage_buildings_tt
+								building = arms_factory
+								num = [?building_damage_arms_factory_night]
+							}
+							meta_effect = {
+								text = {
+									damage_building = {
+										type = arms_factory
+										damage = [BUILDING_DAMAGE_META_VAR]
+									}
+								}
+								BUILDING_DAMAGE_META_VAR = "[?building_damage_arms_factory_night]"
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.05
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.2
+
+					var:actor_country = {
+						air_experience = 5
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_success_entity"
+					animation = "attack"
+				}
+			}
+			critical_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						set_variable = { building_damage_arms_factory_night = non_damaged_building_level@arms_factory } # Get how many buildings in the state
+						multiply_variable = { building_damage_arms_factory_night = 0.375 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# round_temp_variable = building_damage_arms_factory_night # Round to nearest integer to display number of buildings destroyed to player
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = raid_damage_buildings_tt
+								building = arms_factory
+								num = [?building_damage_arms_factory_night]
+							}
+							meta_effect = {
+								text = {
+									damage_building = {
+										type = arms_factory
+										damage = [BUILDING_DAMAGE_META_VAR]
+									}
+								}
+								BUILDING_DAMAGE_META_VAR = "[?building_damage_arms_factory_night]"
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.025
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.35
+
+					var:actor_country = {
+						air_experience = 10
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_critical_success_entity"
+					animation = "attack"
+				}
+			}
+		}
+	}
+########   #######   ######  ##    ## ##    ##    ###    ########  ########
+##     ## ##     ## ##    ## ##   ##   ##  ##    ## ##   ##     ## ##     ##
+##     ## ##     ## ##       ##  ##     ####    ##   ##  ##     ## ##     ##
+##     ## ##     ## ##       #####       ##    ##     ## ########  ##     ##
+##     ## ##     ## ##       ##  ##      ##    ######### ##   ##   ##     ##
+##     ## ##     ## ##    ## ##   ##     ##    ##     ## ##    ##  ##     ##
+########   #######   ######  ##    ##    ##    ##     ## ##     ## ########
+	dockyard_raid_night_ai = {
+		days_to_prepare = 90
+
+		ai_will_do = {
+			base = 0
+			modifier = {
+				add = 1
+				has_war_with = FROM
+			}
+			modifier = {
+				factor = 2
+				FROM = {
+					is_major = yes
+				}
+			}
+			modifier = {
+				factor = 0
+				var:target_state = {
+					NOT = {
+						is_core_of = FROM
+					}
+				}
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					original_tag = USA
+					original_tag = ENG
+				}
+				OR = {
+					has_war_with = GER
+					has_war_with = JAP
+				}
+				NOT = {
+					FROM = {
+						OR = {
+							original_tag = GER
+							original_tag = JAP
+							original_tag = ROM
+							original_tag = HUN
+							original_tag = ITA
+						}
+					}
+				}
+			}
+		}
+
+		category = air_raids
+
+		command_power = 0 # command power allocation cost
+
+		allowed = {
+			is_ai = yes
+		}
+		# Raid Type is visible
+		visible = {
+			has_tech = night_bombing
+			has_country_flag = ai_raids_active
+			OR = {
+				is_major = yes
+				has_deployed_air_force_size = {
+					size > 2999
+				}
+			}
+		}
+		# Specific Target is visible
+		show_target = {
+			has_war_with = FROM
+		}
+
+		# Can prepare
+		available = {
+			has_country_flag = ai_raids_active
+		}
+
+		# Can launch a raid
+		launchable = {
+			has_war_with = FROM
+			has_fuel > 24999
+		}
+
+		target_type = {
+			state = {
+				non_damaged_building_level = {
+					building = dockyard
+					level > 4
+				}
+			}
+		}
+		custom_map_icon = GFX_raid_type_icon_dockyard_raid
+		target_icon = GFX_dockyard_target_icon
+		target_loc_key = raid_target_name_dockyard
+		arrow = {
+			type = air
+		}
+		unit_model = {
+			type = equipment
+		}
+		launch_sound = raid_launch_air
+
+		unit_requirements = {
+			equipment = {
+				type = { medium_heavy_bomber_airframe large_bomber_airframe large_heavy_bomber_airframe }
+				modules = {
+					bomb_920kg_bomb_bay
+					bomb_1000kg_bomb_bay
+					bomb_1380kg_bomb_bay
+					bomb_1400kg_bomb_bay
+					bomb_1500kg_bomb_bay
+					bomb_1840kg_bomb_bay
+					bomb_2000kg_bomb_bay
+					bomb_2300kg_bomb_bay
+					bomb_2500kg_bomb_bay
+					bomb_2760kg_bomb_bay
+					bomb_3000kg_bomb_bay
+					bomb_3220kg_bomb_bay
+					bomb_3680kg_bomb_bay
+					bomb_4600kg_bomb_bay
+					bomb_5000kg_bomb_bay
+					bomb_5520kg_bomb_bay
+					bomb_8280kg_bomb_bay
+					bomb_920kg_bomb_bay_general_purpose
+					bomb_1000kg_bomb_bay_general_purpose
+					bomb_1380kg_bomb_bay_general_purpose
+					bomb_1400kg_bomb_bay_general_purpose
+					bomb_1500kg_bomb_bay_general_purpose
+					bomb_1840kg_bomb_bay_general_purpose
+					bomb_2000kg_bomb_bay_general_purpose
+					bomb_2300kg_bomb_bay_general_purpose
+					bomb_2500kg_bomb_bay_general_purpose
+					bomb_2760kg_bomb_bay_general_purpose
+					bomb_3000kg_bomb_bay_general_purpose
+					bomb_3220kg_bomb_bay_general_purpose
+					bomb_3680kg_bomb_bay_general_purpose
+					bomb_4600kg_bomb_bay_general_purpose
+					bomb_5000kg_bomb_bay_general_purpose
+					bomb_5520kg_bomb_bay_general_purpose
+					bomb_8280kg_bomb_bay_general_purpose
+					bomb_920kg
+					bomb_1000kg
+					bomb_1380kg
+					bomb_1500kg
+					bomb_1800kg
+					bomb_1840kg
+					bomb_2000kg
+					bomb_2500kg
+					bomb_3000kg
+					bomb_3600kg
+					bomb_920kg_locks_general_purpose
+					bomb_1000kg_locks_general_purpose
+					bomb_1380kg_locks_general_purpose
+					bomb_1500kg_locks_general_purpose
+					bomb_1800kg_locks_general_purpose
+					bomb_1840kg_locks_general_purpose
+					bomb_2000kg_locks_general_purpose
+					bomb_2500kg_locks_general_purpose
+					bomb_3000kg_locks_general_purpose
+					bomb_3600kg_locks_general_purpose
+				}
+				amount = { min = 300 }
+			}
+		}
+
+		starting_point = {
+			types = { air_base }
+		}
+
+		success_factors = {
+			success = {
+				base = 1.6
+
+				# Raiding unit modifiers
+				experience = {
+					reference = 1.0
+					weight = 0.15
+					start_weight = -0.15
+				}
+				# air_agility = {
+				# 	reference = 100.0 # As air unit agility approaches 100 (as defined by the value above), increase chance by this value
+				# 	weight = 0.1 # At 0 agility, the modifier will have negative effect.
+				# 	start_weight = -0.1 # The modifier will scale linearly, meaning at 50 agility, the modifier will be 0.
+				# }
+				reliability = {
+					reference = 1
+					weight = 0.1
+					start_weight = -0.1
+				}
+				air_defence = {
+					reference = 100
+					weight = 0.05
+					start_weight = -0.05
+				}
+				strategic_bomber = {
+					reference = 75
+					weight = 0.2
+					start_weight = -0.2
+				}
+
+				## Actor Modifiers
+				air_superiority = {
+					reference = 1
+					start_reference = 0.5
+					weight = 0.125
+					start_weight = -0.125
+				}
+
+				### Target Modifiers
+				anti_air = {
+					reference = 10
+					weight = -0.35
+				}
+				interception = {
+					reference = 500 # More than 500 fighters won't really make any difference
+					weight = -0.125
+				}
+				radar = {
+					weight = -0.25
+				}
+				intel = {
+					weight = 0.4
+					start_weight = -0.2
+					reference = 100
+				}
+			}
+
+			critical = {
+				base = 0.05
+			}
+		}
+
+		success_levels = {
+			failure = {
+				victim_effects = {
+					var:target_state = {
+						custom_effect_tooltip = raid_failure_tt
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.125
+						ratio = yes
+					}
+					raid_add_unit_experience = 0.05
+					var:actor_country = {
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "nuke_entity"
+					animation = "attack"
+				}
+				visual_effect = {
+					entity = "raid_failed_entity"
+					animation = "attack"
+				}
+			}
+			limited_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						set_variable = { building_damage_dockyard_night = non_damaged_building_level@dockyard } # Get how many buildings in the state
+						multiply_variable = { building_damage_dockyard_night = 0.125 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# round_temp_variable = building_damage_dockyard_night # Round to nearest integer to display number of buildings destroyed to player
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = raid_damage_buildings_tt
+								building = dockyard
+								num = [?building_damage_dockyard_night]
+							}
+							meta_effect = {
+								text = {
+									damage_building = {
+										type = dockyard
+										damage = [BUILDING_DAMAGE_META_VAR]
+									}
+								}
+								BUILDING_DAMAGE_META_VAR = "[?building_damage_dockyard_night]"
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.075
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.1
+					var:actor_country = {
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_limited_success_entity"
+					animation = "attack"
+				}
+			}
+			success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						set_variable = { building_damage_dockyard_night = non_damaged_building_level@dockyard } # Get how many buildings in the state
+						multiply_variable = { building_damage_dockyard_night = 0.25 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# round_temp_variable = building_damage_dockyard_night # Round to nearest integer to display number of buildings destroyed to player
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = raid_damage_buildings_tt
+								building = dockyard
+								num = [?building_damage_dockyard_night]
+							}
+							meta_effect = {
+								text = {
+									damage_building = {
+										type = dockyard
+										damage = [BUILDING_DAMAGE_META_VAR]
+									}
+								}
+								BUILDING_DAMAGE_META_VAR = "[?building_damage_dockyard_night]"
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.05
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.2
+
+					var:actor_country = {
+						air_experience = 5
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_success_entity"
+					animation = "attack"
+				}
+			}
+			critical_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						set_variable = { building_damage_dockyard_night = non_damaged_building_level@dockyard } # Get how many buildings in the state
+						multiply_variable = { building_damage_dockyard_night = 0.375 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# round_temp_variable = building_damage_dockyard_night # Round to nearest integer to display number of buildings destroyed to player
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = raid_damage_buildings_tt
+								building = dockyard
+								num = [?building_damage_dockyard_night]
+							}
+							meta_effect = {
+								text = {
+									damage_building = {
+										type = dockyard
+										damage = [BUILDING_DAMAGE_META_VAR]
+									}
+								}
+								BUILDING_DAMAGE_META_VAR = "[?building_damage_dockyard_night]"
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.025
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.35
+
+					var:actor_country = {
+						air_experience = 10
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_critical_success_entity"
+					animation = "attack"
+				}
+			}
+		}
+	}
+ ######  #### ##     ## #### ##       ####    ###    ##    ##
+##    ##  ##  ##     ##  ##  ##        ##    ## ##   ###   ##
+##        ##  ##     ##  ##  ##        ##   ##   ##  ####  ##
+##        ##  ##     ##  ##  ##        ##  ##     ## ## ## ##
+##        ##   ##   ##   ##  ##        ##  ######### ##  ####
+##    ##  ##    ## ##    ##  ##        ##  ##     ## ##   ###
+ ######  ####    ###    #### ######## #### ##     ## ##    ##
+	industrial_complex_raid_night_ai = {
+		days_to_prepare = 90
+
+		ai_will_do = {
+			base = 0
+			modifier = {
+				add = 1
+				has_war_with = FROM
+			}
+			modifier = {
+				factor = 2
+				FROM = {
+					is_major = yes
+				}
+			}
+			modifier = {
+				factor = 2
+				FROM = {
+					original_tag = GER
+				}
+			}
+			modifier = {
+				factor = 0
+				var:target_state = {
+					NOT = {
+						is_core_of = FROM
+					}
+				}
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					original_tag = USA
+					original_tag = ENG
+				}
+				OR = {
+					has_war_with = GER
+					has_war_with = JAP
+				}
+				NOT = {
+					FROM = {
+						OR = {
+							original_tag = GER
+							original_tag = JAP
+							original_tag = ROM
+							original_tag = HUN
+							original_tag = ITA
+						}
+					}
+				}
+			}
+		}
+
+		category = air_raids
+
+		command_power = 0 # command power allocation cost
+
+		allowed = {
+			is_ai = yes
+		}
+		# Raid Type is visible
+		visible = {
+			has_tech = night_bombing
+			has_country_flag = ai_raids_active
+			OR = {
+				is_major = yes
+				has_deployed_air_force_size = {
+					size > 2999
+				}
+			}
+		}
+		# Specific Target is visible
+		show_target = {
+			has_war_with = FROM
+		}
+
+		# Can prepare
+		available = {
+			has_country_flag = ai_raids_active
+		}
+
+		# Can launch a raid
+		launchable = {
+			has_war_with = FROM
+			has_fuel > 24999
+		}
+
+		target_type = {
+			state = {
+				non_damaged_building_level = {
+					building = industrial_complex
+					level > 10
+				}
+			}
+		}
+		custom_map_icon = GFX_raid_type_icon_industrial_complex_raid
+		target_icon = GFX_industrial_complex_target_icon
+		target_loc_key = raid_target_name_industrial_complex
+		arrow = {
+			type = air
+		}
+		unit_model = {
+			type = equipment
+		}
+		launch_sound = raid_launch_air
+
+		unit_requirements = {
+			equipment = {
+				type = { medium_heavy_bomber_airframe large_bomber_airframe large_heavy_bomber_airframe }
+				modules = {
+					bomb_920kg_bomb_bay
+					bomb_1000kg_bomb_bay
+					bomb_1380kg_bomb_bay
+					bomb_1400kg_bomb_bay
+					bomb_1500kg_bomb_bay
+					bomb_1840kg_bomb_bay
+					bomb_2000kg_bomb_bay
+					bomb_2300kg_bomb_bay
+					bomb_2500kg_bomb_bay
+					bomb_2760kg_bomb_bay
+					bomb_3000kg_bomb_bay
+					bomb_3220kg_bomb_bay
+					bomb_3680kg_bomb_bay
+					bomb_4600kg_bomb_bay
+					bomb_5000kg_bomb_bay
+					bomb_5520kg_bomb_bay
+					bomb_8280kg_bomb_bay
+					bomb_920kg_bomb_bay_general_purpose
+					bomb_1000kg_bomb_bay_general_purpose
+					bomb_1380kg_bomb_bay_general_purpose
+					bomb_1400kg_bomb_bay_general_purpose
+					bomb_1500kg_bomb_bay_general_purpose
+					bomb_1840kg_bomb_bay_general_purpose
+					bomb_2000kg_bomb_bay_general_purpose
+					bomb_2300kg_bomb_bay_general_purpose
+					bomb_2500kg_bomb_bay_general_purpose
+					bomb_2760kg_bomb_bay_general_purpose
+					bomb_3000kg_bomb_bay_general_purpose
+					bomb_3220kg_bomb_bay_general_purpose
+					bomb_3680kg_bomb_bay_general_purpose
+					bomb_4600kg_bomb_bay_general_purpose
+					bomb_5000kg_bomb_bay_general_purpose
+					bomb_5520kg_bomb_bay_general_purpose
+					bomb_8280kg_bomb_bay_general_purpose
+					bomb_920kg
+					bomb_1000kg
+					bomb_1380kg
+					bomb_1500kg
+					bomb_1800kg
+					bomb_1840kg
+					bomb_2000kg
+					bomb_2500kg
+					bomb_3000kg
+					bomb_3600kg
+					bomb_920kg_locks_general_purpose
+					bomb_1000kg_locks_general_purpose
+					bomb_1380kg_locks_general_purpose
+					bomb_1500kg_locks_general_purpose
+					bomb_1800kg_locks_general_purpose
+					bomb_1840kg_locks_general_purpose
+					bomb_2000kg_locks_general_purpose
+					bomb_2500kg_locks_general_purpose
+					bomb_3000kg_locks_general_purpose
+					bomb_3600kg_locks_general_purpose
+				}
+				amount = { min = 300 }
+			}
+		}
+		starting_point = {
+			types = { air_base }
+		}
+
+		success_factors = {
+			success = {
+				base = 1.6
+
+				# Raiding unit modifiers
+				experience = {
+					reference = 1.0
+					weight = 0.15
+					start_weight = -0.15
+				}
+				# air_agility = {
+				# 	reference = 100.0 # As air unit agility approaches 100 (as defined by the value above), increase chance by this value
+				# 	weight = 0.1 # At 0 agility, the modifier will have negative effect.
+				# 	start_weight = -0.1 # The modifier will scale linearly, meaning at 50 agility, the modifier will be 0.
+				# }
+				reliability = {
+					reference = 1
+					weight = 0.1
+					start_weight = -0.1
+				}
+				air_defence = {
+					reference = 100
+					weight = 0.05
+					start_weight = -0.05
+				}
+				strategic_bomber = {
+					reference = 75
+					weight = 0.2
+					start_weight = -0.2
+				}
+
+				## Actor Modifiers
+				air_superiority = {
+					reference = 1
+					start_reference = 0.5
+					weight = 0.125
+					start_weight = -0.125
+				}
+
+				### Target Modifiers
+				anti_air = {
+					reference = 10
+					weight = -0.35
+				}
+				interception = {
+					reference = 500 # More than 500 fighters won't really make any difference
+					weight = -0.125
+				}
+				radar = {
+					weight = -0.25
+				}
+				intel = {
+					weight = 0.4
+					start_weight = -0.2
+					reference = 100
+				}
+			}
+
+			critical = {
+				base = 0.05
+			}
+		}
+
+		success_levels = {
+			failure = {
+				victim_effects = {
+					var:target_state = {
+						custom_effect_tooltip = raid_failure_tt
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.125
+						ratio = yes
+					}
+					raid_add_unit_experience = 0.05
+					var:actor_country = {
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "nuke_entity"
+					animation = "attack"
+				}
+				visual_effect = {
+					entity = "raid_failed_entity"
+					animation = "attack"
+				}
+			}
+			limited_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						set_variable = { building_damage_industrial_complex_night = non_damaged_building_level@industrial_complex } # Get how many buildings in the state
+						multiply_variable = { building_damage_industrial_complex_night = 0.05 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# round_temp_variable = building_damage_industrial_complex_night # Round to nearest integer to display number of buildings destroyed to player
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = raid_damage_buildings_tt
+								building = industrial_complex
+								num = [?building_damage_industrial_complex_night]
+							}
+							meta_effect = {
+								text = {
+									damage_building = {
+										type = industrial_complex
+										damage = [BUILDING_DAMAGE_META_VAR]
+									}
+								}
+								BUILDING_DAMAGE_META_VAR = "[?building_damage_industrial_complex_night]"
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.075
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.1
+					var:actor_country = {
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_limited_success_entity"
+					animation = "attack"
+				}
+			}
+			success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						set_variable = { building_damage_industrial_complex_night = non_damaged_building_level@industrial_complex } # Get how many buildings in the state
+						multiply_variable = { building_damage_industrial_complex_night = 0.10 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# round_temp_variable = building_damage_industrial_complex_night # Round to nearest integer to display number of buildings destroyed to player
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = raid_damage_buildings_tt
+								building = industrial_complex
+								num = [?building_damage_industrial_complex_night]
+							}
+							meta_effect = {
+								text = {
+									damage_building = {
+										type = industrial_complex
+										damage = [BUILDING_DAMAGE_META_VAR]
+									}
+								}
+								BUILDING_DAMAGE_META_VAR = "[?building_damage_industrial_complex_night]"
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.05
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.2
+
+					var:actor_country = {
+						air_experience = 5
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_success_entity"
+					animation = "attack"
+				}
+			}
+			critical_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						set_variable = { building_damage_industrial_complex_night = non_damaged_building_level@industrial_complex } # Get how many buildings in the state
+						multiply_variable = { building_damage_industrial_complex_night = 0.15 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# round_temp_variable = building_damage_industrial_complex_night # Round to nearest integer to display number of buildings destroyed to player
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = raid_damage_buildings_tt
+								building = industrial_complex
+								num = [?building_damage_industrial_complex_night]
+							}
+							meta_effect = {
+								text = {
+									damage_building = {
+										type = industrial_complex
+										damage = [BUILDING_DAMAGE_META_VAR]
+									}
+								}
+								BUILDING_DAMAGE_META_VAR = "[?building_damage_industrial_complex_night]"
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.025
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.35
+
+					var:actor_country = {
+						air_experience = 10
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_critical_success_entity"
+					animation = "attack"
+				}
+			}
+		}
+	}
+	###    #### ########  ########     ###     ######  ########
+   ## ##    ##  ##     ## ##     ##   ## ##   ##    ## ##
+  ##   ##   ##  ##     ## ##     ##  ##   ##  ##       ##
+ ##     ##  ##  ########  ########  ##     ##  ######  ######
+ #########  ##  ##   ##   ##     ## #########       ## ##
+ ##     ##  ##  ##    ##  ##     ## ##     ## ##    ## ##
+ ##     ## #### ##     ## ########  ##     ##  ######  ########
+	air_base_raid_night_ai = {
+		days_to_prepare = 90
+
+		ai_will_do = {
+			base = 0
+		}
+
+		category = air_raids
+
+		command_power = 0 # command power allocation cost
+
+		allowed = {
+			is_ai = yes
+		}
+		# Raid Type is visible
+		visible = {
+			has_tech = night_bombing
+			has_country_flag = ai_raids_active
+			OR = {
+				is_major = yes
+				has_deployed_air_force_size = {
+					size > 2999
+				}
+			}
+		}
+		# Specific Target is visible
+		show_target = {
+			has_war_with = FROM
+		}
+
+		# Can prepare
+		available = {
+			has_country_flag = ai_raids_active
+		}
+
+		# Can launch a raid
+		launchable = {
+			has_war_with = FROM
+			has_fuel > 24999
+		}
+
+		target_type = {
+			state = {
+				non_damaged_building_level = {
+					building = air_base
+					level > 9
+				}
+			}
+		}
+		custom_map_icon = GFX_raid_type_icon_air_base_raid
+		target_icon = GFX_air_base_target_icon
+		target_loc_key = raid_target_name_air_base
+		arrow = {
+			type = air
+		}
+		unit_model = {
+			type = equipment
+		}
+		launch_sound = raid_launch_air
+
+		unit_requirements = {
+			equipment = {
+				type = { medium_heavy_bomber_airframe large_bomber_airframe large_heavy_bomber_airframe }
+				modules = {
+					bomb_920kg_bomb_bay
+					bomb_1000kg_bomb_bay
+					bomb_1380kg_bomb_bay
+					bomb_1400kg_bomb_bay
+					bomb_1500kg_bomb_bay
+					bomb_1840kg_bomb_bay
+					bomb_2000kg_bomb_bay
+					bomb_2300kg_bomb_bay
+					bomb_2500kg_bomb_bay
+					bomb_2760kg_bomb_bay
+					bomb_3000kg_bomb_bay
+					bomb_3220kg_bomb_bay
+					bomb_3680kg_bomb_bay
+					bomb_4600kg_bomb_bay
+					bomb_5000kg_bomb_bay
+					bomb_5520kg_bomb_bay
+					bomb_8280kg_bomb_bay
+					bomb_920kg_bomb_bay_general_purpose
+					bomb_1000kg_bomb_bay_general_purpose
+					bomb_1380kg_bomb_bay_general_purpose
+					bomb_1400kg_bomb_bay_general_purpose
+					bomb_1500kg_bomb_bay_general_purpose
+					bomb_1840kg_bomb_bay_general_purpose
+					bomb_2000kg_bomb_bay_general_purpose
+					bomb_2300kg_bomb_bay_general_purpose
+					bomb_2500kg_bomb_bay_general_purpose
+					bomb_2760kg_bomb_bay_general_purpose
+					bomb_3000kg_bomb_bay_general_purpose
+					bomb_3220kg_bomb_bay_general_purpose
+					bomb_3680kg_bomb_bay_general_purpose
+					bomb_4600kg_bomb_bay_general_purpose
+					bomb_5000kg_bomb_bay_general_purpose
+					bomb_5520kg_bomb_bay_general_purpose
+					bomb_8280kg_bomb_bay_general_purpose
+					bomb_920kg
+					bomb_1000kg
+					bomb_1380kg
+					bomb_1500kg
+					bomb_1800kg
+					bomb_1840kg
+					bomb_2000kg
+					bomb_2500kg
+					bomb_3000kg
+					bomb_3600kg
+					bomb_920kg_locks_general_purpose
+					bomb_1000kg_locks_general_purpose
+					bomb_1380kg_locks_general_purpose
+					bomb_1500kg_locks_general_purpose
+					bomb_1800kg_locks_general_purpose
+					bomb_1840kg_locks_general_purpose
+					bomb_2000kg_locks_general_purpose
+					bomb_2500kg_locks_general_purpose
+					bomb_3000kg_locks_general_purpose
+					bomb_3600kg_locks_general_purpose
+				}
+				amount = { min = 300 }
+			}
+		}
+		starting_point = {
+			types = { air_base }
+		}
+
+		success_factors = {
+			success = {
+				base = 1.6
+
+				# Raiding unit modifiers
+				experience = {
+					reference = 1.0
+					weight = 0.15
+					start_weight = -0.15
+				}
+				# air_agility = {
+				# 	reference = 100.0 # As air unit agility approaches 100 (as defined by the value above), increase chance by this value
+				# 	weight = 0.1 # At 0 agility, the modifier will have negative effect.
+				# 	start_weight = -0.1 # The modifier will scale linearly, meaning at 50 agility, the modifier will be 0.
+				# }
+				reliability = {
+					reference = 1
+					weight = 0.1
+					start_weight = -0.1
+				}
+				air_defence = {
+					reference = 100
+					weight = 0.05
+					start_weight = -0.05
+				}
+				strategic_bomber = {
+					reference = 75
+					weight = 0.2
+					start_weight = -0.2
+				}
+
+				## Actor Modifiers
+				air_superiority = {
+					reference = 1
+					start_reference = 0.5
+					weight = 0.125
+					start_weight = -0.125
+				}
+
+				### Target Modifiers
+				anti_air = {
+					reference = 10
+					weight = -0.35
+				}
+				interception = {
+					reference = 500 # More than 500 fighters won't really make any difference
+					weight = -0.175
+				}
+				radar = {
+					weight = -0.25
+				}
+				intel = {
+					weight = 0.4
+					start_weight = -0.2
+					reference = 100
+				}
+			}
+
+			critical = {
+				base = 0.10
+			}
+		}
+
+		success_levels = {
+			failure = {
+				victim_effects = {
+					var:target_state = {
+						custom_effect_tooltip = raid_failure_tt
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.175
+						ratio = yes
+					}
+					raid_add_unit_experience = 0.05
+					var:actor_country = {
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "nuke_entity"
+					animation = "attack"
+				}
+				visual_effect = {
+					entity = "raid_failed_entity"
+					animation = "attack"
+				}
+			}
+			limited_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						set_variable = { building_damage_air_base_night = non_damaged_building_level@air_base } # Get how many buildings in the state
+						multiply_variable = { building_damage_air_base_night = 0.10 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# round_temp_variable = building_damage_air_base_night # Round to nearest integer to display number of buildings destroyed to player
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = raid_damage_buildings_tt
+								building = air_base
+								num = [?building_damage_air_base_night]
+							}
+							meta_effect = {
+								text = {
+									damage_building = {
+										type = air_base
+										damage = [BUILDING_DAMAGE_META_VAR]
+									}
+								}
+								BUILDING_DAMAGE_META_VAR = "[?building_damage_air_base_night]"
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.125
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.1
+					var:actor_country = {
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_limited_success_entity"
+					animation = "attack"
+				}
+			}
+			success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						set_variable = { building_damage_air_base_night = non_damaged_building_level@air_base } # Get how many buildings in the state
+						multiply_variable = { building_damage_air_base_night = 0.20 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# round_temp_variable = building_damage_air_base_night # Round to nearest integer to display number of buildings destroyed to player
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = raid_damage_buildings_tt
+								building = air_base
+								num = [?building_damage_air_base_night]
+							}
+							meta_effect = {
+								text = {
+									damage_building = {
+										type = air_base
+										damage = [BUILDING_DAMAGE_META_VAR]
+									}
+								}
+								BUILDING_DAMAGE_META_VAR = "[?building_damage_air_base_night]"
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.1
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.2
+
+					var:actor_country = {
+						air_experience = 5
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_success_entity"
+					animation = "attack"
+				}
+			}
+			critical_success = {
+				victim_effects = {
+					# Damage to Target
+					var:target_state = {
+						set_variable = { building_damage_air_base_night = non_damaged_building_level@air_base } # Get how many buildings in the state
+						multiply_variable = { building_damage_air_base_night = 0.30 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						# round_temp_variable = building_damage_air_base_night # Round to nearest integer to display number of buildings destroyed to player
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = raid_damage_buildings_tt
+								building = air_base
+								num = [?building_damage_air_base_night]
+							}
+							meta_effect = {
+								text = {
+									damage_building = {
+										type = air_base
+										damage = [BUILDING_DAMAGE_META_VAR]
+									}
+								}
+								BUILDING_DAMAGE_META_VAR = "[?building_damage_air_base_night]"
+							}
+						}
+					}
+				}
+				actor_effects = {
+					# Damage to raiding units
+					raid_damage_units = {
+						plane_loss = 0.075
+						ratio = yes
+					}
+
+					# XP etc
+					raid_add_unit_experience = 0.35
+
+					var:actor_country = {
+						air_experience = 10
+						add_fuel = -25000
+					}
+				}
+				visual_effect = {
+					entity = "air_raids_2_critical_success_entity"
+					animation = "attack"
+				}
+			}
+		}
+	}
+}
