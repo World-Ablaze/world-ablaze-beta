@@ -327,11 +327,7 @@ NDefines.NMilitary.BASE_DIVISION_BRIGADE_CHANGE_COST = 5							--Base XP cost to
 NDefines.NMilitary.BASE_DIVISION_SUPPORT_SLOT_COST = 1 								--Base XP cost to unlock a support slot
 
 NDefines.NMilitary.UNIT_LEADER_ASSIGN_TRAIT_COST = 5								-- cost to assign a new trait to a unit leader
-NDefines.NMilitary.ARMY_STRATEGIC_DEPLOYMENT_FUEL_MULT = 0.0						-- fuel consumption ratio while doing strategic deployment
-NDefines.NMilitary.STRATEGIC_SPEED_INFRA_BASE = 3.0
-NDefines.NMilitary.STRATEGIC_SPEED_INFRA_MAX = 5.0
-NDefines.NMilitary.STRATEGIC_SPEED_RAIL_BASE = 15.0
-NDefines.NMilitary.STRATEGIC_SPEED_RAIL_MAX = 25.0
+
 --NDefines.NMilitary.PLAN_EXECUTE_CAREFUL_LIMIT = 10								-- When looking for an attach target, this score limit is required in the battle plan to consider province for attack
 --NDefines.NMilitary.PLAN_EXECUTE_CAREFUL_MAX_FORT = 9								-- If execution mode is set to careful, units will not attack provinces with fort levels greater than or equal to this
 
@@ -404,8 +400,14 @@ NDefines.NMilitary.OUT_OF_SUPPLY_SPEED = -1.0                   					-- max spee
 NDefines.NMilitary.COMBAT_SUPPLY_LACK_IMPACT = -0.6									-- combat penalty if out of supply
 
 NDefines.NMilitary.INFRA_ORG_IMPACT = 0.25											-- scale factor of infra on org regain.
-
 NDefines.NMilitary.STRATEGIC_REDEPLOY_ORG_RATIO = 0.1								-- Ratio of max org while strategic redeployment
+
+NDefines.NMilitary.ARMY_STRATEGIC_DEPLOYMENT_FUEL_MULT = 0.0						-- fuel consumption ratio while doing strategic deployment
+
+NDefines.NMilitary.STRATEGIC_SPEED_INFRA_BASE = 3.0              					-- Base speed of strategic redeployment when not on railways
+NDefines.NMilitary.STRATEGIC_SPEED_INFRA_MAX = 5.0              					-- Additional speed of strategic redeployment on max-level infrastructure
+NDefines.NMilitary.STRATEGIC_SPEED_RAIL_BASE = 3.0              					-- Base speed of strategic redeployment when on railways
+NDefines.NMilitary.STRATEGIC_SPEED_RAIL_MAX = 15.0                					-- Additional speed of strategic redeployment on max-level railways
 
 NDefines.NMilitary.PARACHUTE_COMPLETE_ORG = 0.6									    -- Organisation value (in %) after unit being dropped, regardless if failed, disrupted, or successful.
 NDefines.NMilitary.PARACHUTE_ORG_REGAIN_PENALTY_DURATION = 24						-- penalty in org regain after being parachuted. Value is in hours.
