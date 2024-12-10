@@ -225,9 +225,9 @@ ENG_vickers_armstrong_eng_organization = {
 		name = expanded_supply_chain
 		icon = GFX_generic_mio_department_icon_facilities
 
-		all_parents = { mio_expanded_outbound_stream }
+		all_parents = { mio_quality_improvements }
 		position = { x = -1 y = 1 }
-		relative_position_id = mio_expanded_outbound_stream
+		relative_position_id = mio_quality_improvements
 		available = {
 			if = {
 				limit = {
@@ -251,6 +251,43 @@ ENG_vickers_armstrong_eng_organization = {
 
 		organization_modifier = {
 			military_industrial_organization_size_up_requirement = -0.25
+		}
+	}
+
+	###
+
+	override_trait = {
+		token = mio_mass_tank_production
+		available = {
+			if = {
+				limit = {
+					FROM = { has_idea = civilian_economy }
+				}
+				FROM = {
+					has_idea = partial_economic_mobilisation
+					NOT = { has_idea = civilian_economy }
+				}
+			}
+			if = {
+				limit = {
+					FROM = { has_idea = low_economic_mobilisation }
+				}
+				FROM = {
+					has_idea = partial_economic_mobilisation
+					NOT = { has_idea = low_economic_mobilisation }
+				}
+			}
+			FROM = {
+				custom_trigger_tooltip = {
+					tooltip = ENG_vickers_armstrong_eng_organization_tank_tt
+				}
+				hidden_trigger = {
+					check_variable = { num_equipment_in_armies@medium_tank_support_chassis > 99 }
+				}
+			}
+			#FROM = {
+			#	surrender_progress < 0.5
+			#}
 		}
 	}
 
@@ -281,6 +318,14 @@ ENG_vickers_armstrong_eng_organization = {
 					NOT = { has_idea = low_economic_mobilisation }
 				}
 			}
+			FROM = {
+				custom_trigger_tooltip = {
+					tooltip = ENG_vickers_armstrong_eng_organization_air_tt
+				}
+				hidden_trigger = {
+					check_variable = { num_deployed_planes_with_type@medium_heavy_bomber_airframe > 99 }
+				}
+			}
 			#FROM = {
 			#	surrender_progress < 0.5
 			#}
@@ -299,14 +344,55 @@ ENG_vickers_armstrong_eng_organization = {
 		}
 	}
 
+	override_trait = {
+		token = mio_standardize_turrets_and_hulls
+	}
+
+	override_trait = {
+		token = mio_integrated_variant_turret_and_hulls
+	}
+
+	override_trait = {
+		token = mio_common_parts_usage
+		any_parent = { mio_standardize_turrets_and_hulls mio_integrated_variant_turret_and_hulls }
+		position = { x = 1 y = 1 }
+		relative_position_id = mio_standardize_turrets_and_hulls
+		on_complete = {
+			FROM = {
+				mio_military_factory_2 = yes
+			}
+		}
+	}
+
+	add_trait = {
+		token = mio_heavy_manufacturing
+		name = heavy_manufacturing
+		icon = GFX_generic_mio_department_icon_facilities
+
+		all_parents = { mio_mass_plane_production mio_mass_tank_production }
+		position = { x = 0 y = 1 }
+		relative_position_id = mio_mass_tank_production
+
+		on_complete = {
+			FROM = {
+				mio_aluminium_refinery_1 = yes
+				mio_steel_refinery_1 = yes
+				mio_military_factory_2 = yes
+			}
+		}
+		organization_modifier = {
+			military_industrial_organization_funds_gain = 0.01
+		}
+	}
+
 	add_trait = {
 		token = mio_advanced_smelting_and_tools
 		name = advanced_smelting_and_tools
 		icon = GFX_generic_mio_trait_icon_efficiency_gain
 
-		all_parents = { mio_common_parts_usage }
-		position = { x = 0 y = 1 }
-		relative_position_id = mio_common_parts_usage
+		all_parents = { mio_heavy_manufacturing }
+		position = { x = -1 y = 1 }
+		relative_position_id = mio_heavy_manufacturing
 
 		available = {
 			if = {
@@ -363,6 +449,20 @@ ENG_vickers_armstrong_eng_organization = {
 			production_efficiency_gain_factor = 0.05
 		}
 	}
+
+	override_trait = {
+		token = mio_advanced_forges_and_tools
+		all_parents = { mio_heavy_manufacturing }
+		position = { x = 0 y = 1 }
+		relative_position_id = mio_heavy_manufacturing
+	}
+
+	override_trait = {
+		token = mio_improved_tooling_methods
+		position = { x = 0 y = 1 }
+	}
+
+	###
 
 	add_trait = {
 		token = mio_variable_dihedral
@@ -535,6 +635,9 @@ ENG_leyland_motors_organization = {
 		original_tag = ENG
 		has_dlc = "Arms Against Tyranny"
 	}
+	available = {
+		owner = { has_completed_focus = ENG_realize_the_main_battle_tank_concept }
+	}
 
 	equipment_type = {
 		mio_cat_eq_all_modern_tank
@@ -686,7 +789,6 @@ ENG_bristol_organization = {
 	equipment_type = {
 		medium_bomber_airframe
 		medium_fighter_multirole_airframe
-		maritime_patrol_plane
 		medium_scout_airframe
 		transport_plane_equipment
 	}
@@ -694,9 +796,24 @@ ENG_bristol_organization = {
 	research_categories = {
 		strike_bomber
 		cat_attacker
-		patrol_bomber
 		cat_transport
 		scout_plane
+	}
+}
+
+ENG_short_brothers_organization = {
+	include = generic_naval_aircraft_organization
+	icon = GFX_idea_short_brothers
+	allowed = {
+		original_tag = ENG
+		has_dlc = "Arms Against Tyranny"
+	}
+	equipment_type = {
+		maritime_patrol_plane
+	}
+
+	research_categories = {
+		patrol_bomber
 	}
 }
 
