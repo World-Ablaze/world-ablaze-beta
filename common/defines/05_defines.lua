@@ -990,15 +990,15 @@ NDefines.NAI.NAVAL_MISSION_ESCORT_NEAR_CONTROLLED = 0								-- Extra escort mis
 
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_MINE_LAYING = 0.05							-- maximum ratio of screens forces to be used in mine laying
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_MINE_SWEEPING = 0.05 						-- maximum ratio of screens forces to be used in mine sweeping
-NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MIN = 0.0						-- minimum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
-NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX = 0.4 					-- maximum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
+NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MIN = 0.25					-- minimum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
+NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX = 0.7 					-- maximum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX_CONVOY_THREAT = 1000		-- AI will increase screen assignment for escort missions as threat increases
 NDefines.NAI.MAX_SCREEN_FORCES_FOR_INVASION_SUPPORT = 0.2 							-- max ratio of screens forces to be used in naval invasion missions
 NDefines.NAI.MAX_CAPITAL_FORCES_FOR_INVASION_SUPPORT = 0.3 							-- max ratio of capital forces to be used in naval invasion missions
 
 NDefines.NAI.CARRIER_TASKFORCE_MAX_CARRIER_COUNT = 10 								-- optimum carrier count for carrier taskforces
 NDefines.NAI.CAPITAL_TASKFORCE_MAX_CAPITAL_COUNT = 10 								-- optimum capital count for capital taskforces
-NDefines.NAI.SCREEN_TASKFORCE_MAX_SHIP_COUNT = 5									-- optimum screen count for screen taskforces
+NDefines.NAI.SCREEN_TASKFORCE_MAX_SHIP_COUNT = 5									-- optimum screen count for screen taskforces !DONT INCREASE! (Affects patrol task forces and breaks stuff)
 NDefines.NAI.SCREENS_TO_CAPITAL_RATIO = 3.0											-- screens to capital/carrier count in carrier & capital taskforces
 
 NDefines.NAI.MAX_CARRIER_OVERFILL = 1.0												-- Carriers will be overfilled to this amount if there are doctrines to justify it
@@ -1010,10 +1010,23 @@ NDefines.NAI.MIN_SUPPORT_SHIP_RATIO = 1.0                   						-- if support 
 NDefines.NAI.MIN_MAIN_SHIP_RATIO_TO_REINFORCE = 0.5        	 						-- the main ships will be tried to reinforce this level.
 NDefines.NAI.MIN_SUPPORT_SHIP_RATIO_TO_REINFORCE = 0.9    		 					-- the support ships will be tried to reinforce this level.
 NDefines.NAI.MIN_MAIN_SHIP_TO_SPARE = 1.0                   						-- can only steal ships from a task force if their main ship ratio is above this.
-NDefines.NAI.MIN_SUPPORT_SHIP_TO_SPARE = 3.0               							-- can only steal ships from a task force if their support ship ratio is above this.
+NDefines.NAI.MIN_SUPPORT_SHIP_TO_SPARE = 3.0               							-- can only steal ships from a task force if their support ship ratio is above this. Prevents MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX from stealing ships.
 NDefines.NAI.MIN_MAIN_SHIP_RATIO_TO_MERGE = 0.7            							-- try merge task force if main ship ratio is lower than this.
 NDefines.NAI.MAX_MAIN_SHIP_RATIO_TO_MERGE = 1.001          							-- if resulting main ship ratio would be at most this, allow merging into this task force.
 NDefines.NAI.MAIN_SHIP_RATIO_TO_SPLIT = 1.8                 						-- if main ship ratio in a task force is larger than this, split it. (If a carrier TF wants 4 carriers (see defines above), but it has more than [this * 4] carriers, then we try to split the TF.)
+
+NDefines.NAI.MAX_MISSION_PER_TASKFORCE = {  -- max mission region/taskforce ratio
+	0, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
+	1.5, -- PATROL
+	6, -- STRIKE FORCE
+	1.5, -- CONVOY RAIDING
+	1, -- CONVOY ESCORT
+	2, -- MINES PLANTING
+	2, -- MINES SWEEPING
+	0, -- TRAIN
+	0, -- RESERVE_FLEET
+	10, -- NAVAL INVASION SUPPORT
+}
 
 NDefines.NAI.MAX_PATROL_TO_STRIKE_FORCE_RATIO = 4.0									-- maximum patrol/strike force ratio
 
