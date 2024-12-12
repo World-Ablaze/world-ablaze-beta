@@ -1120,6 +1120,15 @@ NDefines.NAI.LAND_COMBAT_GUIDE_DISTANCE = 0.0										-- Distance within whch w
 
 ------------------------------------------------- END
 
+NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_ARMY_SPIRIT = 1000.0     						-- How quickly is desire to unlock army spirits accumulated?
+NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_NAVY_SPIRIT = 1000.0      						-- How quickly is desire to unlock naval spirits accumulated?
+NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_AIR_SPIRIT = 1000.0     	 						-- How quickly is desire to unlock air spirits accumulated?
+
+NDefines.NAI.UNLOCK_SPIRIT_AI_WILL_DO_FACTOR = 200              					-- Factor for scripted ai_will_do value
+NDefines.NAI.UNLOCK_SPIRIT_MODIFIER_FACTOR = 0.0              						-- Factor for AI's evaluated value of the modifiers connected to the spirit
+NDefines.NAI.UNLOCK_SPIRIT_USE_TRUNCATION_SELECT = true       						-- Whether to use truncation select or roulette-wheel select. Set threshold for truncation select below.
+NDefines.NAI.UNLOCK_SPIRIT_TRUNCATION_SELECT_THRESHOLD = 1.0  						-- Valid between [0.0, 1.0]. When unlocking spirits, select randomly from all spirits with AI score >= VALUE * HighestSpiritScore. To always select the best, set this value to 1.0. To select fully randomly, set this value to 0.0.
+
 NDefines.NAI.MAX_REQUEST_EXPEDITIONARIES_ARMY_RATIO = 0.5							-- AI will not accept expeditionary requests if its expeditions are above this ratio
 NDefines.NAI.CASUALTY_RATIO_TO_PULL_EXPEDITIONARIES_BACK = 0.25						-- AI will pull expeditioniries back if its casualties is aboce this ratio compared to their total deployed manpower
 NDefines.NAI.CASUALTY_RATIO_TO_NOT_SEND_EXPEDITIONARIES = 0.1						-- AI will not send expeditioniries if its casualties is aboce this ratio compared to their total deployed manpower
