@@ -150,7 +150,7 @@ NDefines.NBuildings.BASE_FACTORY_REPAIR_FACTOR = 2.0								-- Factory speed mod
 NDefines.NBuildings.DESTRUCTION_COOLDOWN_IN_WAR = 180								-- Number of days cooldown between removal of buildings in war times
 NDefines.NBuildings.RADAR_RANGE_BASE = 10											-- Radar range base, first level radar will be this + min, best radar will be this + max
 NDefines.NBuildings.RADAR_RANGE_MIN = 10												-- Radar range (from state center to province center) in measure of map pixels. Exluding techs.
-NDefines.NBuildings.RADAR_RANGE_MAX = 100											-- Range is interpolated between building levels 1-15.
+NDefines.NBuildings.RADAR_RANGE_MAX = 130											-- Range is interpolated between building levels 1-15.
 NDefines.NBuildings.ANTI_AIR_SUPERIORITY_MULT = 2.0									-- How much air superiority reduction to the enemy does our AA guns? Normally each building level = -1 reduction. With this a 5.0 multiplier.
 NDefines.NBuildings.MAX_SHARED_SLOTS = 60											-- Max slots shared by factories
 NDefines.NBuildings.SABOTAGE_FACTORY_DAMAGE = 50.0									-- How much damage takes a factory building in sabotage when state is occupied. Damage is mult by (1 + resistance strength), i.e. up to 2 x base value.
@@ -625,7 +625,7 @@ NDefines.NNavy.SUB_DETECTION_CHANCE_BASE_SPOTTING_POW_EFFECT = 1.5					-- effect
 
 --NDefines.NNavy.NAVAL_COMBAT_AIR_SUB_DETECTION_EXTERNAL_FACTOR = 0.5					-- Factor applied to the stats of external air planes
 
-NDefines.NNavy.DEPTH_CHARGE_STAT_FOR_SHIP_TO_BE_SUB_HUNTER = 12						-- amount of depth charge required for a ship to be considred a sub hunter and so good for convoy escort
+NDefines.NNavy.DEPTH_CHARGE_STAT_FOR_SHIP_TO_BE_SUB_HUNTER = 6						-- amount of depth charge required for a ship to be considred a sub hunter and so good for convoy escort
 
 NDefines.NNavy.NAVAL_INVASION_PREPARE_HOURS = 336									-- base hours needed to prepare an invasion
 
