@@ -1035,7 +1035,7 @@ NDefines.NAI.REGION_THREAT_LEVEL_TO_AVOID_REGION = 25 * 1000						-- How much th
 NDefines.NAI.REGION_THREAT_LEVEL_TO_BLOCK_REGION = 25 * 1000						-- How much threat must be generated in region ( by REGION_THREAT_PER_SUNK_CONVOY ) so the AI will decide to mark the region as avoid
 
 --NDefines.NAI.NAVAL_MISSION_AGGRESSIVE_PATROL_DIVISOR = 3							-- Divides patrol score when not defending
-NDefines.NAI.NAVAL_MISSION_PATROL_NEAR_OWNED = 0									-- Extra patrol mission score near owned provinces
+--NDefines.NAI.NAVAL_MISSION_PATROL_NEAR_OWNED = 0									-- Extra patrol mission score near owned provinces
 --NDefines.NAI.NAVAL_MISSION_PATROL_NEAR_CONTROLLED = 0								-- Extra patrol mission score near controlled provinces
 
 NDefines.NAI.NAVAL_DOCKYARDS_SHIP_FACTOR = 2										-- The extent to which number of dockyards play into amount of sips a nation wants
