@@ -100,6 +100,7 @@ NDefines.NCountry.GIE_EXILE_AIR_START_EXPERIENCE = 300	 							--Starting experi
 NDefines.NCountry.GIE_ESCAPING_DIVISIONS_XP_BOOST = 50.0
 NDefines.NCountry.GIE_ESCAPING_DIVISIONS_EQUIPMENT_RATIO = 0.8 						-- Base equipment ratio on escaped troops.
 NDefines.NCountry.GIE_ESCAPING_DIVISIONS_AMOUNT_RATIO = 0.005 						-- Ratio on amount of divisions that escapes. Scales with starting legitimacy
+NDefines.NCountry.GIE_EXILE_TROOPS_DEPLOY_TRAINING_MAX_LEVEL = 12					--Max XP exile troops can receive from training
 
 NDefines.NCountry.VICTORY_POINTS_IMPORTANCE_FACTOR = 50.0							-- State victory points importance factor for AI and calculations
 NDefines.NCountry.ATTACHE_XP_SHARE = 0.15											-- Country received xp from attaches
