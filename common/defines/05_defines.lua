@@ -614,7 +614,7 @@ USE_SINGLE_NAVAL_ARMAMENT_CATEGORY = false										-- If true, only the armamen
 
 NDefines.NNavy.MIN_SHIPS_FOR_HIGHER_SHIP_RATIO_PENALTY = 61    						-- the minimum fleet size in ships that a fleet must be before having the large fleet penalty applied to them
 
-NDefines.NNavy.NAVAL_COMBAT_AIR_SUB_DETECTION_MAX = 2
+NDefines.NNavy.NAVAL_COMBAT_AIR_SUB_DETECTION_MAX = 4
 NDefines.NNavy.NAVAL_COMBAT_AIR_PLANE_COUNT_TO_SUB_DETECTION = 0.2					-- Factor applied to the number of active plane in a naval combat to deduce their contribution to sub detection
 
 NDefines.NNavy.EXPERIENCE_LOSS_FACTOR = 0.5                 						-- percentage of experienced solders who die when manpower is removed
