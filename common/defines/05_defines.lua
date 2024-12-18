@@ -991,7 +991,7 @@ NDefines.NAI.NAVAL_MISSION_ESCORT_NEAR_CONTROLLED = 0								-- Extra escort mis
 
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_MINE_LAYING = 0.05							-- maximum ratio of screens forces to be used in mine laying
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_MINE_SWEEPING = 0.05 						-- maximum ratio of screens forces to be used in mine sweeping
-NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MIN = 0.25					-- minimum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
+NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MIN = 0.3						-- minimum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX = 0.7 					-- maximum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX_CONVOY_THREAT = 1000		-- AI will increase screen assignment for escort missions as threat increases
 NDefines.NAI.MAX_SCREEN_FORCES_FOR_INVASION_SUPPORT = 0.2 							-- max ratio of screens forces to be used in naval invasion missions
@@ -1123,7 +1123,7 @@ NDefines.NAI.LAND_COMBAT_GUIDE_DISTANCE = 0.0										-- Distance within whch w
 
 NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_ARMY_SPIRIT = 1000.0     						-- How quickly is desire to unlock army spirits accumulated?
 NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_NAVY_SPIRIT = 1000.0      						-- How quickly is desire to unlock naval spirits accumulated?
-NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_AIR_SPIRIT = 1000.0     	 						-- How quickly is desire to unlock air spirits accumulated?
+NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_AIR_SPIRIT = 1000.0     	 					-- How quickly is desire to unlock air spirits accumulated?
 
 NDefines.NAI.UNLOCK_SPIRIT_AI_WILL_DO_FACTOR = 200              					-- Factor for scripted ai_will_do value
 NDefines.NAI.UNLOCK_SPIRIT_MODIFIER_FACTOR = 0.0              						-- Factor for AI's evaluated value of the modifiers connected to the spirit
