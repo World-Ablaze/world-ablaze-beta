@@ -862,8 +862,13 @@ political_actions = {
 	ai_reassignment_trait_fix = {
 		icon = generic_construction
 		available = {
-			any_army_leader = {
-				NOT = { has_trait = ai_reassignment }
+			OR = {
+				any_army_leader = {
+					NOT = { has_trait = ai_reassignment }
+				}
+				any_navy_leader = {
+					NOT = { has_trait = ai_admiral }
+				}
 			}
 		}
 		visible = {
@@ -873,7 +878,7 @@ political_actions = {
 		cancel_if_not_visible = yes
 
 		fire_only_once = no
-		days_re_enable = 5
+		days_re_enable = 30
 
 		cost = 0
 
@@ -895,6 +900,12 @@ political_actions = {
 					}
 					add_trait = { trait = ai_reassignment }
 				}
+				every_navy_leader = {
+					limit = {
+						NOT = { has_trait = ai_admiral }
+					}
+					add_trait = { trait = ai_admiral }
+				}
 			}
 			else = {
 				every_unit_leader = {
@@ -903,6 +914,320 @@ political_actions = {
 					}
 					add_trait = { trait = ai_reassignment }
 				}
+				every_navy_leader = {
+					limit = {
+						NOT = { has_trait = ai_admiral }
+					}
+					add_trait = { trait = ai_admiral }
+				}
+			}
+		}
+	}
+	
+	ai_encircled_divisions_cheese_fix_1 = { #detect encirclement
+		icon = generic_construction
+		allowed = {
+			OR = {
+				tag = USA
+				tag = SOV
+			}
+		}
+		available = {
+			any_core_state = {
+				NOT = {
+					OR = {
+						state = 137
+						state = 195
+						state = 233
+						state = 217
+					}
+				}
+				is_capital = no
+				NOT = {
+                    AND = {
+                        is_fully_controlled_by = controller
+                        CONTROLLER = { has_war_with = ROOT }
+                    }
+                }
+				NOT = {
+					has_state_flag = encircled_state_flag
+				}
+				NOT = {
+					has_state_flag = state_purged
+				}
+				all_neighbor_state = {
+					CONTROLLER = { has_war_with = ROOT }
+				}
+				NOT = {
+					any_neighbor_state = {
+						is_fully_controlled_by = ROOT
+					}
+				}
+				NOT = {
+					any_neighbor_state = {
+						any_neighbor_state = {
+							is_fully_controlled_by = ROOT
+						}
+					}
+				}
+			}
+		}
+		visible = {
+			is_ai = yes
+		}
+
+		fire_only_once = no
+
+		cost = 0
+
+		ai_will_do = {
+			factor = 2000
+		}
+
+		complete_effect = {
+			every_core_state = {
+				limit = {
+					is_capital = no
+					NOT = {
+						OR = {
+							state = 137
+							state = 195
+							state = 233
+							state = 217
+						}
+					}
+					NOT = {
+						AND = {
+							is_fully_controlled_by = controller
+							CONTROLLER = { has_war_with = ROOT }
+						}
+					}
+					NOT = {
+						has_state_flag = encircled_state_flag
+					}
+					NOT = {
+						has_state_flag = state_purged
+					}
+					all_neighbor_state = {
+						CONTROLLER = { has_war_with = ROOT }
+					}
+					NOT = {
+						any_neighbor_state = {
+							is_fully_controlled_by = ROOT
+						}
+					}
+					NOT = {
+						any_neighbor_state = {
+							any_neighbor_state = {
+								is_fully_controlled_by = ROOT
+							}
+						}
+					}
+				}
+				set_state_flag = encircled_state_flag
+			}
+		}
+	}
+	
+	ai_encircled_divisions_cheese_fix_2 = { #delete divisions
+		icon = generic_construction
+		allowed = {
+			OR = {
+				tag = USA
+				tag = SOV
+			}
+		}
+		available = {
+			any_core_state = {
+				is_capital = no
+				NOT = {
+					OR = {
+						state = 137
+						state = 195
+						state = 233
+						state = 217
+					}
+				}
+				NOT = {
+					AND = {
+						is_fully_controlled_by = controller
+						CONTROLLER = { has_war_with = ROOT }
+					}
+				}
+				all_neighbor_state = {
+					CONTROLLER = { has_war_with = ROOT }
+				}
+				has_state_flag = {
+					flag = encircled_state_flag
+					days > 89
+				}
+				NOT = {
+					any_neighbor_state = {
+						is_fully_controlled_by = ROOT
+					}
+				}
+				NOT = {
+					any_neighbor_state = {
+						any_neighbor_state = {
+							is_fully_controlled_by = ROOT
+						}
+					}
+				}
+			}
+		}
+		visible = {
+			is_ai = yes
+		}
+
+		fire_only_once = no
+
+		cost = 0
+
+		ai_will_do = {
+			factor = 2000
+		}
+
+		complete_effect = {
+			every_enemy_country = {
+				limit = {
+					is_major = yes
+					any_controlled_state = {
+						OR = {
+							is_core_of = SOV
+							is_core_of = USA
+						}
+					}
+				}
+				news_event = { days = 1 id = afo_news.60 }
+			}
+			every_core_state = {
+				limit = {
+					is_capital = no
+					NOT = {
+						OR = {
+							state = 137
+							state = 195
+							state = 233
+							state = 217
+						}
+					}
+					NOT = {
+						AND = {
+							is_fully_controlled_by = controller
+							CONTROLLER = { has_war_with = ROOT }
+						}
+					}
+					all_neighbor_state = {
+						CONTROLLER = { has_war_with = ROOT }
+					}
+					has_state_flag = {
+						flag = encircled_state_flag
+						days > 89
+					}
+					NOT = {
+						any_neighbor_state = {
+							is_fully_controlled_by = ROOT
+						}
+					}
+					NOT = {
+						any_neighbor_state = {
+							any_neighbor_state = {
+								is_fully_controlled_by = ROOT
+							}
+						}
+					}
+				}
+				clr_state_flag = encircled_state_flag
+				set_state_flag = {
+					flag = state_purged
+					days = 60
+				}
+				every_state_division = {
+					limit = {
+						OWNER = {
+							OR = {
+								tag = ROOT
+								is_subject_of = ROOT
+							}
+						}
+					}
+					destroy_unit = yes
+				}
+			}
+		}
+	}
+	
+	ai_encircled_divisions_cheese_fix_3 = { #encirclement freed
+		icon = generic_construction
+		allowed = {
+			OR = {
+				tag = USA
+				tag = SOV
+			}
+		}
+		available = {
+			any_core_state = {
+				is_capital = no
+				OR = {
+                    AND = {
+                        is_fully_controlled_by = controller
+                        CONTROLLER = { has_war_with = ROOT }
+                    }
+					NOT = {
+						all_neighbor_state = {
+							CONTROLLER = { has_war_with = ROOT }
+						}
+					}
+					#any_neighbor_state = {
+					#	any_neighbor_state = {
+					#		is_fully_controlled_by = ROOT
+					#	}
+					#}
+				}
+				has_state_flag = encircled_state_flag
+				NOT = {
+					has_state_flag = state_purged
+				}
+			}
+		}
+		visible = {
+			is_ai = yes
+		}
+
+		fire_only_once = no
+
+		cost = 0
+
+		ai_will_do = {
+			factor = 2000
+		}
+
+		complete_effect = {
+			every_core_state = {
+				limit = {
+					is_capital = no
+					OR = {
+						AND = {
+							is_fully_controlled_by = controller
+							CONTROLLER = { has_war_with = ROOT }
+						}
+						NOT = {
+							all_neighbor_state = {
+								CONTROLLER = { has_war_with = ROOT }
+							}
+						}
+						#any_neighbor_state = {
+						#	any_neighbor_state = {
+						#		is_fully_controlled_by = ROOT
+						#	}
+						#}
+					}
+					has_state_flag = encircled_state_flag
+					NOT = {
+						has_state_flag = state_purged
+					}
+				}
+				clr_state_flag = encircled_state_flag
 			}
 		}
 	}

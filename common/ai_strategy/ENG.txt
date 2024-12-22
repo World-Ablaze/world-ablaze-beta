@@ -93,7 +93,7 @@ ENG_WA_naval_production = {
 	}
 
 	enable = {
-		always = yes
+		has_war = no
 	}
 
 	abort_when_not_enabled = yes
@@ -115,6 +115,80 @@ ENG_WA_naval_production = {
 		type = role_ratio
 		id = naval_capital_bb
 		value = 5
+	}
+
+	ai_strategy = {
+		type = role_ratio
+		id = naval_mine_layer
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = unit_ratio
+		id = capital_ship
+		value = 400
+	}
+
+	ai_strategy = {
+		type = unit_ratio
+		id = convoy
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = unit_ratio
+		id = floating_harbor
+		value = 20
+	}
+
+	#ai_strategy = {
+	#	type = unit_ratio
+	#	id = submarine
+	#	value = 250
+	#}
+
+	#ai_strategy = {
+	#	type = role_ratio
+	#	id = cruiser_submarine
+	#	value = 200
+	#}
+}
+
+ENG_WA_naval_production_late = {
+	allowed = {
+		has_dlc = "Man the Guns"
+		original_tag = ENG
+	}
+
+	enable = {
+		has_war = yes
+	}
+
+	abort_when_not_enabled = yes
+
+	################1:1 ratio
+
+	ai_strategy = {
+		type = role_ratio
+		id = naval_screen
+		value = 400
+	}
+	ai_strategy = {
+		type = role_ratio
+		id = naval_escort #Dont dilute main fleets with shitty frigates
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = role_ratio
+		id = naval_capital_bb
+		value = 5
+	}
+	
+	ai_strategy = {
+		type = role_ratio
+		id = naval_cruiser_light
+		value = 30
 	}
 
 	ai_strategy = {
@@ -2131,26 +2205,14 @@ ENG_trying_to_save_the_east_is_a_deathtrap = {
 	}
 }
 
-ENG_iberia_safe = { ############Trade can go past portugal
+ENG_azores_safe = { ############Trade can go through azores
 	enable = {
 		is_in_faction_with = ENG # anyone in allies
-		OR = {
-			has_war_with = FRA
-			has_war_with = GER
-			has_war_with = ITA
+		NOT = {
+			tag = USA
 		}
 		NOT = {
-			OR = {
-				SPR = {
-					is_in_faction_with = GER
-				}
-				POR = {
-					is_in_faction_with = GER
-				}
-				has_war_with = SPR
-				has_war_with = POR
-				country_exists = RPT
-			}
+			698 = { CONTROLLER = { has_war_with = ROOT } }
 		}
 	}
 	abort_when_not_enabled = yes
@@ -2160,37 +2222,45 @@ ENG_iberia_safe = { ############Trade can go past portugal
 		id = 49 #
 		value = 2000
 	}
+	
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 51 #
+		value = 2000
+	}
+	
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 58 #
+		value = 2000
+	}
 
 	ai_strategy = {
 		type = naval_avoid_region
-		id = 112 #
+		id = 47
 		value = 2000
 	}
 }
 
-ENG_iberia_in_the_axis = { ############# Rerout trade around portugal
+ENG_azores_fallen = { ############# Rerout trade
 	enable = {
 		is_in_faction_with = ENG # anyone in allies
 		NOT = {
 			tag = USA
 		}
-		OR = {
-			SPR = {
-				is_in_faction_with = GER
-			}
-			POR = {
-				is_in_faction_with = GER
-			}
-			has_war_with = SPR
-			has_war_with = POR
-			country_exists = RPT
-		}
+		698 = { CONTROLLER = { has_war_with = ROOT } }
 	}
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = naval_avoid_region
 		id = 47
+		value = 2000
+	}
+	
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 112
 		value = 1000
 	}
 
@@ -2198,6 +2268,108 @@ ENG_iberia_in_the_axis = { ############# Rerout trade around portugal
 		type = front_unit_request
 		tag = POA
 		value = -1000
+	}
+}
+
+ENG_strike_force_home_base_1 = { #Protect Home
+	allowed = {
+		original_tag = ENG
+	}
+	enable = {
+		OR = {
+			WA_soviets_dead = yes
+			surrender_progress > 0
+		}
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = strike_force_home_base
+		id = 16
+	}
+
+	ai_strategy = {
+		type = strike_force_home_base
+		id = 365
+	}
+	
+	ai_strategy = {
+		type = strike_force_home_base
+		id = 241
+	}
+}
+
+ENG_strike_force_home_base_2 = { #Protect Home 2
+	allowed = {
+		original_tag = ENG
+	}
+	enable = {
+		NOT = {
+			OR = {
+				WA_soviets_dead = yes
+				surrender_progress > 0
+			}
+		}
+	}
+
+	abort_when_not_enabled = yes
+
+
+	#ai_strategy = {
+	#	type = strike_force_home_base
+	#	id = 241
+	#}
+	
+	ai_strategy = {
+		type = strike_force_home_base
+		id = 18
+	}
+}
+
+ENG_strike_force_home_base_3 = { #Azores
+	allowed = {
+		original_tag = ENG
+	}
+	enable = {
+		NOT = {
+			OR = {
+				surrender_progress > 0
+				WA_soviets_dead = yes
+				698 = { CONTROLLER = { has_war_with = ROOT } }
+			}
+		}
+	}
+	
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = strike_force_home_base
+		id = 112
+	}
+}
+
+ENG_strike_force_home_base_4 = { #Gibraltar
+	allowed = {
+		original_tag = ENG
+	}
+	enable = {
+		NOT = {
+			OR = {
+				surrender_progress > 0
+				WA_soviets_dead = yes
+				290 = { CONTROLLER = { has_war_with = ROOT } }
+			}
+		}
+		controls_state = 118
+		controls_state = 923
+	}
+	
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = strike_force_home_base
+		id = 249
 	}
 }
 
@@ -2280,14 +2452,14 @@ ENG_protect_home = {
 	ai_strategy = {
 		type = put_unit_buffers
 
-		order_id = 1
+		order_id = 3
 
 		# spain
 		states = {
 			118
 		}
 
-		ratio = 0.15
+		ratio = 0.1
 
 		area = spain
 
@@ -2298,14 +2470,14 @@ ENG_protect_home = {
 	ai_strategy = {
 		type = put_unit_buffers
 
-		order_id = 1
+		order_id = 4
 
 		# mediterranean
 		states = {
 			183
 		}
 
-		ratio = 0.1
+		ratio = 0.05
 
 		area = mediterranean
 
@@ -2315,14 +2487,14 @@ ENG_protect_home = {
 	ai_strategy = {
 		type = put_unit_buffers
 
-		order_id = 1
+		order_id = 5
 
 		# mediterranean
 		states = {
 			116
 		}
 
-		ratio = 0.1
+		ratio = 0.075
 
 		area = mediterranean
 
@@ -2332,14 +2504,14 @@ ENG_protect_home = {
 	ai_strategy = {
 		type = put_unit_buffers
 
-		order_id = 1
+		order_id = 6
 
 		# middle_east
 		states = {
 			659
 		}
 
-		ratio = 0.1
+		ratio = 0.075
 
 		area = middle_east
 
@@ -2349,7 +2521,7 @@ ENG_protect_home = {
 	ai_strategy = {
 		type = put_unit_buffers
 
-		order_id = 1
+		order_id = 7
 
 		# middle_east
 		states = {
@@ -2366,7 +2538,7 @@ ENG_protect_home = {
 	ai_strategy = {
 		type = put_unit_buffers
 
-		order_id = 1
+		order_id = 8
 
 		# malaysia
 		states = {
@@ -2378,6 +2550,32 @@ ENG_protect_home = {
 		area = malaysia
 
 		subtract_invasions_from_need = no
+	}
+	
+	ai_strategy = {
+		type = put_unit_buffers
+
+		order_id = 9
+
+		# azores
+		states = {
+			698
+		}
+
+		ratio = 0.05
+
+		subtract_invasions_from_need = no
+	}
+	
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 368
+		value = 1000
+	}
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 18
+		value = -10000
 	}
 }
 
@@ -2609,118 +2807,6 @@ ENG_protect_ireland = {
 
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = yes
-	}
-}
-
-
-
-ENG_protect_home_navy = {
-	allowed = {
-		original_tag = ENG
-	}
-	enable = {
-		OR = {
-			has_war = yes
-			has_war = no
-		}
-		if = {
-			limit = {
-				AND = {
-					has_war_with = GER
-					has_global_flag = fall_of_france
-				}
-			}
-			GER = {
-				has_war_with = SOV
-			}
-			NOT = {
-				572 = {
-					CONTROLLER = {
-						OR = {
-							tag = GER
-							is_subject_of = GER
-							is_in_faction_with = GER
-						}
-					}
-				}
-			}
-		}
-	}
-
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = strike_force_home_base
-		id = 16
-	}
-
-	ai_strategy = {
-		type = strike_force_home_base
-		id = 365
-	}
-
-	ai_strategy = {
-		type = strike_force_home_base
-		id = 18
-	}
-
-	ai_strategy = {
-		type = strike_force_home_base
-		id = 173
-	}
-
-	ai_strategy = {
-		type = strike_force_home_base
-		id = 249
-	}
-
-	ai_strategy = {
-		type = strike_force_home_base
-		id = 68
-	}
-
-	ai_strategy = {
-		type = strike_force_home_base
-		id = 29
-	}
-}
-
-ENG_protect_home_navy_sealion = {
-	allowed = {
-		original_tag = ENG
-	}
-	enable = {
-		has_war_with = GER
-		has_global_flag = fall_of_france
-		OR = {
-			NOT = {
-				GER = {
-					has_war_with = SOV
-				}
-			}
-			has_global_flag = soviet_union_defeated
-			572 = {
-				CONTROLLER = {
-					OR = {
-						tag = GER
-						is_subject_of = GER
-						is_in_faction_with = GER
-					}
-				}
-			}
-		}
-	}
-
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = strike_force_home_base
-		id = 365
-	}
-
-	ai_strategy = {
-		type = strike_force_home_base
-		id = 18
 	}
 }
 
@@ -3157,7 +3243,7 @@ ENG_defense_of_kuwait= {
 	ai_strategy = {
 		type = put_unit_buffers
 
-		order_id = 3
+		order_id = 10
 
 		states = {
 			656
@@ -3187,7 +3273,7 @@ ENG_bef_in_europe_garrison = {
 	ai_strategy = {
 		type = put_unit_buffers
 
-		order_id = 2
+		order_id = 11
 
 		# north_france
 		states = {
@@ -3195,7 +3281,7 @@ ENG_bef_in_europe_garrison = {
 			785
 		}
 
-		ratio = 0.15
+		ratio = 0.12
 
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = no
@@ -5667,8 +5753,6 @@ ENG_war_against_VIC = {
 	}
 }
 
-
-
 ENG_try_to_avoid_the_med = {
 	allowed = {
 		NOT = { tag = GRE }
@@ -6185,12 +6269,6 @@ ENG_atlantic_sea_zone_corridors = {
 
 	ai_strategy = {
 		type = naval_avoid_region
-		id = 51 #
-		value = 2000
-	}
-
-	ai_strategy = {
-		type = naval_avoid_region
 		id = 56 #
 		value = 2000
 	}
@@ -6198,12 +6276,6 @@ ENG_atlantic_sea_zone_corridors = {
 	ai_strategy = {
 		type = naval_avoid_region
 		id = 57 #
-		value = 2000
-	}
-
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 58 #
 		value = 2000
 	}
 
@@ -6243,22 +6315,6 @@ ENG_no_war_with_SOV = {
 		type = invade
 		id = "SOV"
 		value = -2000
-	}
-}
-
-contain_the_kreigsmarine = {
-	allowed = {
-		tag = ENG
-	}
-	enable = {
-		has_war_with = GER
-		NOR = { has_capitulated = yes }
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = strike_force_home_base
-		id = 173 # Norwegian Trench
 	}
 }
 
