@@ -1115,7 +1115,7 @@ NDefines.NAI.NAVAL_COMBAT_TRANSFER_AIR_IMPORTANCE = 500.0							-- Naval combat 
 
 NDefines.NAI.STR_BOMB_AIR_SUPERIORITY_IMPORTANCE = 0.0								-- Strategic importance of air superiority ( amount of enemy planes in area )
 
-NDefines.NAI.STR_BOMB_MIN_ENEMY_FIGHTERS_IN_AREA = 2800								-- If amount of enemy fighters is higher than this mission won't perform
+NDefines.NAI.STR_BOMB_MIN_ENEMY_FIGHTERS_IN_AREA = 4000								-- If amount of enemy fighters is higher than this mission won't perform
 NDefines.NAI.STR_BOMB_FIGHTERS_PER_PLANE = 50.0										-- Amount of air superiority planes requested per enemy plane
 NDefines.NAI.STR_BOMB_MIN_EXCORT_PLANES = 100											-- Min amount of planes requested to excort operations
 
@@ -1287,7 +1287,7 @@ NDefines.NAI.DESIRE_USE_XP_TO_UPDATE_LAND_TEMPLATE = 0    							-- How quickly 
 NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_LAND_DOCTRINE = 100.0    						-- How quickly is desire to unlock land doctrines accumulated?
 NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_NAVAL_DOCTRINE = 2.0   						-- How quickly is desire to unlock naval doctrines accumulated?
 NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_AIR_DOCTRINE = 100.0     						-- How quickly is desire to unlock air doctrines accumulated?
-NDefines.NAI.DESIRE_USE_XP_TO_UPGRADE_AIR_EQUIPMENT = 0.5   						-- How quickly is desire to update/create air equipment variants accumulated?
+NDefines.NAI.DESIRE_USE_XP_TO_UPGRADE_AIR_EQUIPMENT = 10.0   						-- How quickly is desire to update/create air equipment variants accumulated?
 
 NDefines.NAI.XP_RATIO_REQUIRED_TO_RESEARCH_WITH_XP = 1.0							-- AI will at least need this amount of xp compared to cost of a tech to reserch it with XP
 
