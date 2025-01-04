@@ -1911,30 +1911,44 @@ EAI_can_take_limited_exports = {
 		EAI_can_take_closed_economy = yes
 	}
 	NOT = {
-		is_major = no
-		is_in_faction = yes
-		has_war = yes
+		AND = {
+			is_major = no
+			is_in_faction = yes
+			has_war = yes
+		}
 	}
 
 	NOT = {
-		is_major = no
-		has_war = no
+		AND = {
+			is_major = no
+			has_war = no
+		}
 	}
-
-	NOT = {
-		has_government = democratic
-		tag = ENG
-	}
+	
+	#NOT = {
+	#	has_government = democratic
+	#	tag = ENG
+	#}
 
 	NOT = { has_idea = collectivization }
 	NOT = { original_tag = SPR }
 
 	### normal range: >= 60%
-
-	check_variable = { var = EAI_average_resource_need value = 0.60 compare = greater_than_or_equals }
-
+	OR = {
+		check_variable = { var = EAI_average_resource_need value = 0.60 compare = greater_than_or_equals }
+		tag = ENG
+	}
 	# when switching down, see if the AI cant fulfill needs by trading
-	if = { limit = { OR = { has_idea = free_trade has_idea = export_focus } }
+	if = { 
+		limit = { 
+			NOT = {
+				tag = ENG
+			}
+			OR = { 
+				has_idea = free_trade 
+				has_idea = export_focus 
+			}
+		}
 
 		count_triggers = {
 			amount = 2
@@ -1976,6 +1990,12 @@ EAI_can_take_limited_exports = {
 			}
 		}
 		AND = {
+			tag = ENG
+			has_war = yes
+			date > 1943.1.1
+			num_of_civilian_factories_available_for_projects < 30
+		}
+		AND = {
 			NOT = { has_government = democratic }
 			OR = {
 				has_idea = partial_economic_mobilisation
@@ -1988,8 +2008,6 @@ EAI_can_take_limited_exports = {
 		NOT = {	tag = SOV }
 		NOT = { has_opinion_modifier = MR_pact }
 	}
-
-
 	if = {
 		limit = {
 			original_tag = CHI
@@ -2003,6 +2021,14 @@ EAI_can_take_limited_exports = {
 			has_dlc = "La Resistance"
 		}
 		NOT = { has_completed_focus = SPR_all_must_bear_the_torch }
+	}
+	if = {
+		limit = {
+			tag = ENG
+		}
+		date > 1943.1.1
+		has_war = yes
+		num_of_civilian_factories_available_for_projects < 30
 	}
 	if = {
 		limit = {
