@@ -916,8 +916,8 @@ NDefines.NAI.AREA_DEFENSE_SETTING_RAILWAYS = false
 ----------- COHESION/FRONTS
 
 
---NDefines.NAI.MIN_AI_UNITS_PER_TILE_FOR_STANDARD_COHESION = 20.0						-- How many units should we have for each tile along a front in order to switch to standard cohesion (less moving around)
---NDefines.NAI.MIN_FRONT_SIZE_TO_CONSIDER_STANDARD_COHESION = 1000					-- How long should fronts be before we consider switching to standard cohesion (under this, standard cohesion fronts will switch back to relaxed)
+NDefines.NAI.MIN_AI_UNITS_PER_TILE_FOR_STANDARD_COHESION = 1.0						-- How many units should we have for each tile along a front in order to switch to standard cohesion (less moving around)
+NDefines.NAI.MIN_FRONT_SIZE_TO_CONSIDER_STANDARD_COHESION = 1						-- How long should fronts be before we consider switching to standard cohesion (under this, standard cohesion fronts will switch back to relaxed)
 
 NDefines.NAI.RESERVE_TO_COMMITTED_BALANCE = 1.0										-- How many reserve divisions in combat compared to number of committed divisions in a combat (1.0 = as many as reserves as committed), if ratio is not fulfilled ai will support attack.
 
@@ -1016,11 +1016,11 @@ NDefines.NAI.MIN_MAIN_SHIP_RATIO_TO_MERGE = 0.7            							-- try merge t
 NDefines.NAI.MAX_MAIN_SHIP_RATIO_TO_MERGE = 1.001          							-- if resulting main ship ratio would be at most this, allow merging into this task force.
 NDefines.NAI.MAIN_SHIP_RATIO_TO_SPLIT = 1.8                 						-- if main ship ratio in a task force is larger than this, split it. (If a carrier TF wants 4 carriers (see defines above), but it has more than [this * 4] carriers, then we try to split the TF.)
 
-NDefines.NAI.SHIP_STR_RATIO_PUT_ON_REPAIRS = 0.7									-- if ships are damaged below this ratio, they are put for repairs
+NDefines.NAI.SHIP_STR_RATIO_PUT_ON_REPAIRS = 0.8									-- if ships are damaged below this ratio, they are put for repairs
 
 NDefines.NAI.MAX_MISSION_PER_TASKFORCE = {  -- max mission region/taskforce ratio
 	0, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
-	1, -- PATROL
+	2, -- PATROL
 	20, -- STRIKE FORCE
 	1.5, -- CONVOY RAIDING
 	1, -- CONVOY ESCORT
