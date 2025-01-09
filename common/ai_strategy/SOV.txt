@@ -111,21 +111,21 @@ SOV_unit_production = {
 	}
 }
 
-SOV_higher_armor_production = {
-	allowed = {
-		tag = SOV
-	}
-	enable = {
-		date > 1944.1.1
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = building_target
-		id = steel_refinery
-		value = 50
-	}
-}
+#SOV_higher_armor_production = {
+#	allowed = {
+#		tag = SOV
+#	}
+#	enable = {
+#		date > 1944.1.1
+#	}
+#	abort_when_not_enabled = yes
+#
+#	ai_strategy = {
+#		type = building_target
+#		id = steel_refinery
+#		value = 5
+#	}
+#}
 
 SOV_wtf_are_you_doing = {
 	allowed = {
@@ -786,6 +786,71 @@ SOV_claims_on_romania = {
 	}
 }
 
+SOV_bessarabia_war = {
+	allowed = {
+		tag = SOV
+	}
+	enable = {
+		has_offensive_war_with = ROM
+		country_exists = ROM
+		NOT = { has_war_with = GER }
+		NOT = { has_war_with = JAP }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		tag = ROM
+		value = 2000
+	}
+
+	ai_strategy = {
+		type = front_unit_request
+		tag = GER
+		value = -500
+	}
+
+	ai_strategy = {
+		type = strategic_air_importance
+		id = 26
+		value = 500000 #value of stocked main front in active combat is usually around 35,000
+	}
+
+	ai_strategy = {
+		type = front_armor_score
+		id = "FIN"
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = front_armor_score
+		id = "GER"
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = front_armor_score
+		id = "HUN"
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = front_armor_score
+		id = "ROM"
+		value = 1000
+	}
+
+	ai_strategy = {
+		type = front_control
+		country_trigger = {
+			tag = ROM
+		}
+		ordertype = front
+		execution_type = balanced
+		#execute_order = yes
+	}
+}
+
 SOV_claims_on_finland = {
 	allowed = {
 		tag = SOV
@@ -836,6 +901,7 @@ SOV_prepare_war_with_finland = {
 		NOT = { has_war_with = GER }
 		NOT = { has_war_with = JAP }
 		NOT = { has_war_with = FIN }
+		NOT = { has_war_with = ROM }
 		OR = {
 			has_completed_focus = SOV_secure_leningrad
 			has_completed_focus = SOV_claims_in_baltic
@@ -970,7 +1036,7 @@ SOV_winter_war = {
 		strategic_region = 12
 		ordertype = front
 		execution_type = balanced
-		execute_order = yes
+		#execute_order = yes
 	}
 
 	ai_strategy = {
@@ -978,7 +1044,7 @@ SOV_winter_war = {
 		strategic_region = 13
 		ordertype = front
 		execution_type = balanced
-		execute_order = yes
+		#execute_order = yes
 	}
 
 	ai_strategy = {
@@ -986,7 +1052,7 @@ SOV_winter_war = {
 		strategic_region = 274
 		ordertype = front
 		execution_type = balanced
-		execute_order = yes
+		#execute_order = yes
 	}
 
 	ai_strategy = {
@@ -994,15 +1060,15 @@ SOV_winter_war = {
 		strategic_region = 288
 		ordertype = front
 		execution_type = balanced
-		execute_order = yes
+		#execute_order = yes
 	}
 
 	ai_strategy = {
 		type = front_control
 		strategic_region = 326
 		ordertype = front
-		execution_type = rush
-		execute_order = yes
+		execution_type = balanced
+		#execute_order = yes
 	}
 
 	ai_strategy = {
@@ -1720,6 +1786,9 @@ SOV_counterattack = {
 	enable = {
 		has_war_with = GER
 		has_country_flag = ai_barb_timer
+		NOT = {
+			has_global_flag = coordinate_offensive
+		}
 	}
 
 	abort_when_not_enabled = yes
@@ -1748,7 +1817,10 @@ SOV_be_defensive = {
 		date < 1942.9.1
 		NOT = { GER = { surrender_progress > 0.2 } }
 		NOT = {
-			has_country_flag = ai_barb_timer
+			OR = {
+				has_country_flag = ai_barb_timer
+				has_global_flag = coordinate_offensive
+			}
 		}
 	}
 
@@ -1778,7 +1850,10 @@ SOV_balanced_plan = {
 		date > 1942.9.1
 		NOT = { GER = { surrender_progress > 0.2 } }
 		NOT = {
-			has_country_flag = ai_barb_timer
+			OR = {
+				has_country_flag = ai_barb_timer
+				has_global_flag = coordinate_offensive
+			}
 		}
 	}
 
@@ -1807,7 +1882,10 @@ SOV_rush = {
 		has_war_with = GER
 		GER = { surrender_progress > 0.2 }
 		NOT = {
-			has_country_flag = ai_barb_timer
+			OR = {
+				has_country_flag = ai_barb_timer
+				has_global_flag = coordinate_offensive
+			}
 		}
 	}
 
@@ -1824,6 +1902,33 @@ SOV_rush = {
 		ordertype = front
 		execution_type = rush
 		manual_attack = yes
+	}
+}
+
+SOV_coordinate_offensive = {
+	allowed = {
+		tag = SOV
+	}
+
+	enable = {
+		has_war_with = GER
+		has_global_flag = coordinate_offensive
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_control
+		priority = 100
+		country_trigger = {
+			OR = {
+				tag = GER
+				is_in_faction_with = GER
+			}
+		}
+		ordertype = front
+		execute_order = yes
+		execution_type = balanced
 	}
 }
 
@@ -2133,6 +2238,38 @@ SOV_ribbentrop_pact_broken = {
 	}
 }
 
+SOV_aifc_linear_defence = {
+
+	allowed = {
+		original_tag = SOV
+	}
+
+	enable = {
+		OR = {
+			date < 1941.12.1
+			has_country_flag = ai_barb_timer
+		}
+	}
+
+	abort = {
+		NOT = {
+			has_country_flag = ai_barb_timer
+		}
+		OR = {
+			# Winter Offensive, Right
+			date > 1941.12.1
+			# Desperate Defence
+			surrender_progress > 0.45
+		}
+	}
+
+	ai_strategy = {
+		type = force_concentration_factor
+		value = -100  # Just don't
+	}
+}
+
+
 SOV_naval_role_ratios_historical = {
 	allowed = {
 		has_dlc = "Man the Guns"
@@ -2225,12 +2362,12 @@ SOV_defense_of_stalingrad = {
 		original_tag = SOV
 	}
 	enable = {
-		OR = {
-			surrender_progress > 0.2
-			NOT = {
-				controls_state = 218
-			}
-		}
+		#OR = {
+		#	surrender_progress > 0.2
+		#	NOT = {
+		#		controls_state = 218
+		#	}
+		#}
 		date < 1942.10.1
 		NOT = {
 			AND = {
@@ -2263,7 +2400,7 @@ SOV_defense_of_stalingrad = {
 			217
 		}
 
-		ratio = 0.12
+		ratio = 0.14
 
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = yes
@@ -2303,6 +2440,14 @@ SOV_defense_of_kiev = {
 					date < 1940.1.1
 					has_war_with = FIN
 				}
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
 				NOT = {
 					has_war_with = GER
 				}
@@ -2366,6 +2511,14 @@ SOV_defense_of_minsk = {
 				}
 			}
 		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
 	}
 	abort_when_not_enabled = yes
 
@@ -2391,9 +2544,14 @@ SOV_defense_of_leningrad = {
 		original_tag = SOV
 	}
 	enable = {
-		date < 1942.9.1
+		date < 1944.1.1
 		NOT = {
 			has_offensive_war_with = GER
+		}
+		NOT = {
+			GER = {
+				surrender_progress > 0
+			}
 		}
 		OR = {
 			AND = {
@@ -2402,15 +2560,20 @@ SOV_defense_of_leningrad = {
 					has_war_with = GER
 				}
 			}
-			surrender_progress > 0.02
+			GER = {
+				has_completed_focus = GER_prepare_barbarossa
+			}
+		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
+				NOT = {
+					has_war_with = GER
+				}
+			}
 		}
 	}
 	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = garrison
-		value = -25
-	}
 
 	ai_strategy = {
 		type = put_unit_buffers
@@ -2422,7 +2585,7 @@ SOV_defense_of_leningrad = {
 			195
 		}
 
-		ratio = 0.1
+		ratio = 0.12
 
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = yes
@@ -2435,6 +2598,9 @@ SOV_defense_of_sevastapol = {
 	}
 	enable = {
 		date < 1942.9.1
+		any_enemy_country = {
+			is_ai = no
+		}
 		NOT = {
 			has_offensive_war_with = GER
 		}
@@ -2451,6 +2617,14 @@ SOV_defense_of_sevastapol = {
 					date < 1940.1.1
 					has_war_with = FIN
 				}
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
 				NOT = {
 					has_war_with = GER
 				}
@@ -2474,7 +2648,7 @@ SOV_defense_of_sevastapol = {
 			137
 		}
 
-		ratio = 0.1
+		ratio = 0.12
 
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = yes
@@ -2504,6 +2678,14 @@ SOV_defense_of_rostov = {
 					date < 1940.1.1
 					has_war_with = FIN
 				}
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
 				NOT = {
 					has_war_with = GER
 				}
@@ -2566,6 +2748,14 @@ SOV_defense_of_smolensk = {
 				}
 			}
 		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
 	}
 	abort_when_not_enabled = yes
 
@@ -2591,22 +2781,43 @@ SOV_defense_of_moscow = {
 		original_tag = SOV
 	}
 	enable = {
-		date < 1942.9.1
+		date < 1944.1.1
 		NOT = {
 			has_offensive_war_with = GER
 		}
-		OR = {
-			AND = {
-				has_war_with = FIN
-				NOT = {
-					has_war_with = GER
-				}
+		#OR = {
+		#	AND = {
+		#		has_war_with = FIN
+		#		NOT = {
+		#			has_war_with = GER
+		#		}
+		#	}
+		#	surrender_progress > 0.05
+		#}
+		NOT = {
+			GER = {
+				surrender_progress > 0
 			}
-			surrender_progress > 0.05
 		}
 		NOT = {
 			GER = {
 				controls_state = 219
+			}
+		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = FIN
+				NOT = {
+					has_war_with = GER
+				}
 			}
 		}
 	}
@@ -2622,7 +2833,7 @@ SOV_defense_of_moscow = {
 			219
 		}
 
-		ratio = 0.1
+		ratio = 0.12
 
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = yes
@@ -2658,6 +2869,14 @@ SOV_defense_of_stalin_line = {
 					date < 1940.1.1
 					has_war_with = FIN
 				}
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
 				NOT = {
 					has_war_with = GER
 				}
@@ -2717,6 +2936,14 @@ SOV_defense_of_stalin_line_2 = {
 				}
 			}
 		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
 	}
 	abort_when_not_enabled = yes
 
@@ -2765,6 +2992,14 @@ SOV_defense_of_stalin_line_3 = {
 					date < 1940.1.1
 					has_war_with = FIN
 				}
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
 				NOT = {
 					has_war_with = GER
 				}
@@ -2824,6 +3059,14 @@ SOV_defense_of_stalin_line_4 = {
 				}
 			}
 		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
 	}
 	abort_when_not_enabled = yes
 
@@ -2877,6 +3120,14 @@ SOV_defense_of_stalin_line_5 = {
 				}
 			}
 		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
 	}
 	abort_when_not_enabled = yes
 
@@ -2925,6 +3176,14 @@ SOV_defense_of_stalin_line_6 = {
 					date < 1940.1.1
 					has_war_with = FIN
 				}
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
 				NOT = {
 					has_war_with = GER
 				}
@@ -2984,6 +3243,14 @@ SOV_defense_of_stalin_line_7 = {
 				}
 			}
 		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
 	}
 	abort_when_not_enabled = yes
 
@@ -3033,6 +3300,14 @@ SOV_defense_of_stalin_line_8 = {
 					date < 1940.1.1
 					has_war_with = FIN
 				}
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
 				NOT = {
 					has_war_with = GER
 				}
@@ -3091,6 +3366,14 @@ SOV_defense_of_stalin_line_9 = {
 				}
 			}
 		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
 	}
 	abort_when_not_enabled = yes
 
@@ -3139,6 +3422,14 @@ SOV_defense_of_stalin_line_10 = {
 					date < 1940.1.1
 					has_war_with = FIN
 				}
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
 				NOT = {
 					has_war_with = GER
 				}
@@ -3197,6 +3488,14 @@ SOV_defense_of_stalin_line_11 = {
 				}
 			}
 		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
 	}
 	abort_when_not_enabled = yes
 
@@ -3245,6 +3544,14 @@ SOV_defense_of_stalin_line_12 = {
 					date < 1940.1.1
 					has_war_with = FIN
 				}
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
 				NOT = {
 					has_war_with = GER
 				}
@@ -3303,6 +3610,14 @@ SOV_defense_of_stalin_line_13 = {
 				}
 			}
 		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
 	}
 	abort_when_not_enabled = yes
 
@@ -3351,6 +3666,14 @@ SOV_defense_of_stalin_line_14 = {
 					date < 1940.1.1
 					has_war_with = FIN
 				}
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
 				NOT = {
 					has_war_with = GER
 				}
@@ -3409,6 +3732,14 @@ SOV_defense_of_stalin_line_15 = {
 				}
 			}
 		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
 	}
 	abort_when_not_enabled = yes
 
@@ -3457,6 +3788,14 @@ SOV_defense_of_stalin_line_16 = {
 					date < 1940.1.1
 					has_war_with = FIN
 				}
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
 				NOT = {
 					has_war_with = GER
 				}
@@ -3515,6 +3854,14 @@ SOV_defense_of_stalin_line_17 = {
 				}
 			}
 		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
 	}
 	abort_when_not_enabled = yes
 
@@ -3563,6 +3910,14 @@ SOV_defense_of_stalin_line_18 = {
 					date < 1940.1.1
 					has_war_with = FIN
 				}
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
 				NOT = {
 					has_war_with = GER
 				}
@@ -3621,6 +3976,14 @@ SOV_defense_of_stalin_line_19 = {
 				}
 			}
 		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
 	}
 	abort_when_not_enabled = yes
 
@@ -3669,6 +4032,14 @@ SOV_defense_of_stalin_line_20 = {
 					date < 1940.1.1
 					has_war_with = FIN
 				}
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
 				NOT = {
 					has_war_with = GER
 				}
@@ -3727,6 +4098,14 @@ SOV_defense_of_stalin_line_21 = {
 				}
 			}
 		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
 	}
 	abort_when_not_enabled = yes
 
@@ -3775,6 +4154,14 @@ SOV_defense_of_stalin_line_22 = {
 					date < 1940.1.1
 					has_war_with = FIN
 				}
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
 				NOT = {
 					has_war_with = GER
 				}
@@ -3833,6 +4220,14 @@ SOV_defense_of_stalin_line_23 = {
 				}
 			}
 		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
 	}
 	abort_when_not_enabled = yes
 
@@ -3881,6 +4276,14 @@ SOV_defense_of_stalin_line_24 = {
 					date < 1940.1.1
 					has_war_with = FIN
 				}
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
 				NOT = {
 					has_war_with = GER
 				}
@@ -3938,6 +4341,14 @@ SOV_defense_of_odessa = {
 				}
 			}
 		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
 	}
 	abort_when_not_enabled = yes
 
@@ -3952,6 +4363,65 @@ SOV_defense_of_odessa = {
 		}
 
 		ratio = 0.1
+
+		subtract_invasions_from_need = no
+		subtract_fronts_from_need = yes
+	}
+}
+
+SOV_defense_of_odessa = {
+	allowed = {
+		original_tag = SOV
+	}
+	enable = {
+		AND = {
+			controls_state = 218
+			controls_state = 233
+		}
+		date < 1942.10.1
+		NOT = {
+			has_offensive_war_with = GER
+		}
+		NOT = {
+			AND = {
+				OR = {
+					has_completed_focus = SOV_secure_leningrad
+					focus_progress = {
+						focus = SOV_secure_leningrad
+						progress > 0.1
+					}
+				}
+				OR = {
+					date < 1940.1.1
+					has_war_with = FIN
+				}
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+
+		order_id = 43
+
+		# west russia
+		states = {
+			234
+		}
+
+		ratio = 0.05
 
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = yes
@@ -4670,11 +5140,13 @@ SOV_lend_lease_prc = {
 }
 
 SOV_trotsky_is_out_to_kill_everyone = {
-	enable = {
+	allowed = {
 		NOT = {
 			tag = SOV
 			tag = STA
 		}
+	}
+	enable = {
 		SOV = {
 			has_country_leader = { ruling_only = yes name = "Leon Trotsky" }
 		}
@@ -5037,10 +5509,118 @@ SOV_dont_join_wars_during_civil_war = {
 	}
 }
 
+SOV_dont_join_random_wars = {
+	allowed = {
+		original_tag = SOV
+	}
+	enable = {
+		always = yes
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = dont_join_wars_with
+		id = D01
+		target_country = JAP
+		value = 1000
+	}
+	ai_strategy = {
+		type = dont_join_wars_with
+		id = D02
+		target_country = JAP
+		value = 1000
+	}
+	ai_strategy = {
+		type = dont_join_wars_with
+		id = D03
+		target_country = JAP
+		value = 1000
+	}
+	ai_strategy = {
+		type = dont_join_wars_with
+		id = D04
+		target_country = JAP
+		value = 1000
+	}
+	ai_strategy = {
+		type = dont_join_wars_with
+		id = D05
+		target_country = JAP
+		value = 1000
+	}
+	ai_strategy = {
+		type = dont_join_wars_with
+		id = D06
+		target_country = JAP
+		value = 1000
+	}
+	ai_strategy = {
+		type = dont_join_wars_with
+		id = D07
+		target_country = JAP
+		value = 1000
+	}
+	ai_strategy = {
+		type = dont_join_wars_with
+		id = D08
+		target_country = JAP
+		value = 1000
+	}
+	ai_strategy = {
+		type = dont_join_wars_with
+		id = D09
+		target_country = JAP
+		value = 1000
+	}
+	ai_strategy = {
+		type = dont_join_wars_with
+		id = D10
+		target_country = JAP
+		value = 1000
+	}
+	ai_strategy = {
+		type = dont_join_wars_with
+		id = D11
+		target_country = JAP
+		value = 1000
+	}
+	ai_strategy = {
+		type = dont_join_wars_with
+		id = D12
+		target_country = JAP
+		value = 1000
+	}
+	ai_strategy = {
+		type = dont_join_wars_with
+		id = D13
+		target_country = JAP
+		value = 1000
+	}
+	ai_strategy = {
+		type = dont_join_wars_with
+		id = D14
+		target_country = JAP
+		value = 1000
+	}
+	ai_strategy = {
+		type = dont_join_wars_with
+		id = D15
+		target_country = JAP
+		value = 1000
+	}
+}
+
+
 # Make countries want to support the opposition IF
 SOV_support_opposition_with_arms = {
-
-	allowed = { always = yes }
+	allowed = {
+		OR = {
+			original_tag = ENG
+			original_tag = GER
+			original_tag = JAP
+		}
+	}
 	enable = {
 		OR = {
 			AND = {
@@ -6020,7 +6600,7 @@ SOV_poland_frontline_fix = {
 	ai_strategy = {
 		type = front_unit_request
 		tag = POL
-		value = -1000
+		value = -5000
 	}
 }
 
@@ -6050,5 +6630,39 @@ SOV_dont_build_shit_guns = {
 		type = equipment_production_min_factories
 		id = infantry
 		value = 1
+	}
+}
+
+SOV_free_trapped_allies = {
+	allowed = {
+		original_tag = SOV
+	}
+	enable = {
+		has_global_flag = ww2_has_ended
+		has_global_flag = allies_military_access
+		NOT = {
+			has_war_with = USA
+		}
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = diplo_action_acceptance
+		id = USA
+		target = military_access
+		value = 6000
+	}
+	ai_strategy = {
+		type = diplo_action_acceptance
+		id = ENG
+		target = military_access
+		value = 6000
+	}
+	ai_strategy = {
+		type = diplo_action_acceptance
+		id = CAN
+		target = military_access
+		value = 6000
 	}
 }

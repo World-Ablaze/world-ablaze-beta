@@ -40,7 +40,7 @@ country_event = {
 				artillery_brigade = { x = 3 y = 0 }
 				artillery_brigade = { x = 3 y = 1 }
 				artillery_brigade = { x = 3 y = 2 }
-				
+
 				anti_tank_brigade = { x = 4 y = 0 }
 			}
 
@@ -59,7 +59,21 @@ country_event = {
 		delete_unit_template_and_units = { division_template = "District Militia" }
 		delete_unit_template_and_units = { division_template = "Infantry Division" }
 		delete_unit_template_and_units = { division_template = "Cavalry Militia" }
-		load_oob = "CAN_Infantry"
+		if = {
+			limit = {
+				ENG = { is_ai = yes }
+			}
+			load_oob = "CAN_Infantry"
+		}
+		else = {
+			capital_scope = {
+				create_unit = {
+					division = "division_template = \"Canadian Infantry Division\" start_experience_factor = 0.3 start_equipment_factor = 0.6"
+					owner = CAN
+					count = 2
+				}
+			}
+		}
 		add_advisor_role = {
 			character = "CAN_charles_foulkes"
 			advisor = {
@@ -538,6 +552,7 @@ country_event = {
 		trigger = {
 			country_exists = ENG
 			NOT = { has_War_with = ENG }
+			NOT = { has_global_flag = uk_evacuated }
 		}
 		ai_chance = {
 			base = 1
@@ -576,8 +591,23 @@ country_event = {
 		hidden_effect = {
 			set_country_flag = aluminium_company_of_canada_flag
 		}
-		CAN = {
-			country_event = { id = can_armor.811 }
+		if = {
+			limit = {
+				NOT = {
+					has_country_flag = uk_evacuated
+				}
+			}
+			CAN = {
+				country_event = { id = can_armor.811 }
+			}
+		}
+		if = {
+			limit = {
+				has_country_flag = uk_evacuated
+			}
+			ENG = {
+				country_event = { id = can_armor.811 }
+			}
 		}
 	}
 
@@ -586,8 +616,23 @@ country_event = {
 		ai_chance = {
 			base = 0
 		}
-		CAN = {
-			country_event = { id = can_armor.812 }
+		if = {
+			limit = {
+				NOT = {
+					has_country_flag = uk_evacuated
+				}
+			}
+			CAN = {
+				country_event = { id = can_armor.812 }
+			}
+		}
+		if = {
+			limit = {
+				has_country_flag = uk_evacuated
+			}
+			ENG = {
+				country_event = { id = can_armor.812 }
+			}
 		}
 		hidden_effect = {
 			set_country_flag = aluminium_company_of_canada_refused_flag
@@ -646,6 +691,9 @@ country_event = {
 			NOT = { has_War_with = ENG }
 			NOT = {
 				ENG = { has_country_flag = aluminium_company_of_canada_refused_flag }
+			}
+			NOT = {
+				has_global_flag = uk_evacuated
 			}
 		}
 		ENG = {
@@ -710,6 +758,13 @@ country_event = {
 
 	immediate = {
 		add_equipment_to_stockpile = { type = convoy_1 amount = 300 producer = CAN }
+		add_political_power = 500
+		activate_advisor = CAN_charles_foulkes
+		activate_advisor = CAN_guy_simonds
+		activate_advisor = CAN_george_pearkes
+		activate_advisor = CAN_ernest_james_renaud
+		activate_advisor = CAN_frederick_m_w_harvey
+		activate_advisor = CAN_frank_robert_miller
 	}
 
 	option = {}
@@ -735,6 +790,7 @@ country_event = {
 		set_technology = { eng_strategic_bomber_2 = 1 }
 		set_technology = { eng_strategic_bomber_1 = 1 }
 		add_political_power = 500
+		add_equipment_to_stockpile = { type = train_equipment_1 amount = 650 producer = CAN }
 	}
 
 	option = {}
@@ -792,6 +848,40 @@ country_event = {
 			}
 		}
 		add_offsite_building = { type = dockyard level = 1 }
+	}
+
+	option = {}
+
+}
+
+country_event = {
+	id = can_armor.905
+	hidden = yes
+
+	mean_time_to_happen = { days = 1 }
+
+	fire_only_once = yes
+
+	trigger = {
+		is_in_faction_with = USA
+		tag = CAN
+		is_ai = yes
+		USA = { is_ai = yes }
+	}
+
+	immediate = {
+		USA = {
+			give_resource_rights = {
+				receiver = CAN
+				state = 379
+				resources = { bauxite }
+			}
+			give_resource_rights = {
+				receiver = CAN
+				state = 395
+				resources = { coal }
+			}
+		}
 	}
 
 	option = {}

@@ -33,6 +33,7 @@ country_event = {
 				heavy_infantry = { x = 1 y = 0 }
 				heavy_infantry = { x = 1 y = 1 }
 				heavy_infantry = { x = 1 y = 2 }
+				heavy_infantry = { x = 1 y = 3 }
 
 				heavy_infantry = { x = 2 y = 0 }
 				heavy_infantry = { x = 2 y = 1 }
@@ -40,11 +41,8 @@ country_event = {
 
 				artillery_brigade = { x = 3 y = 0 }
 				artillery_brigade = { x = 3 y = 1 }
-				artillery_brigade = { x = 3 y = 2 }
-
-				anti_tank_brigade = { x = 4 y = 0 }
-				anti_tank_brigade = { x = 4 y = 1 }
-				anti_tank_brigade = { x = 4 y = 2 }
+				anti_tank_brigade = { x = 3 y = 2 }
+				anti_tank_brigade = { x = 3 y = 3 }
 			}
 
 			support = {
@@ -56,10 +54,19 @@ country_event = {
 				recon = { x = 1 y = 0 }
 				field_hospital = { x = 1 y = 1 }
 				maori_detachment = { x = 1 y = 2 }
+				military_police = { x = 1 y = 3 }
 			}
 		}
 		delete_unit_template_and_units = {
 			division_template = "District Force"
+			disband = yes
+		}
+		delete_unit_template_and_units = {
+			division_template = "Garrison Division"
+			disband = yes
+		}
+		delete_unit_template_and_units = {
+			division_template = "District Garrison"
 			disband = yes
 		}
 		delete_unit_template_and_units = {
@@ -88,7 +95,80 @@ country_event = {
 	}
 
 	immediate = {
-		load_oob = "NZL_Infantry"
+		if = {
+			limit = {
+				ENG = { is_ai = yes }
+			}
+			load_oob = "NZL_Infantry"
+		}
+		else = {
+			capital_scope = {
+				create_unit = {
+					division = "division_template = \"New Zealand Infantry Division\" start_experience_factor = 0.3 start_equipment_factor = 0.5"
+					owner = NZL
+					count = 2
+				}
+			}
+		}
+	}
+
+	option = {}
+
+}
+
+country_event = {
+	id = nzl_armor.03
+	hidden = yes
+
+	mean_time_to_happen = { days = 1 }
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = NZL
+		is_ai = yes
+		has_war = yes
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				NOT = {
+					has_tech = decisive_strategy
+				}
+			}
+			set_technology = { decisive_strategy = 1 }
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_tech = attritional_containment
+				}
+			}
+			set_technology = { attritional_containment = 1 }
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_tech = c3i
+				}
+			}
+			set_technology = { c3i = 1 }
+		}
+		add_equipment_to_stockpile = { type = convoy_1 amount = 100 producer = NZL }
+		add_equipment_to_stockpile = { type = eng_motorized_equipment_1 amount = 1000 producer = NZL }
+		add_equipment_to_stockpile = { type = train_equipment_1 amount = 100 producer = NZL }
+		add_political_power = 500
+		add_ideas = NZL_wairarapa_ranches
+		add_ideas = mandatory_army_service
+		activate_advisor = NZL_paraire_paikea
+		activate_advisor = NZL_lee_martin
+		activate_advisor = NZL_walter_nash
+		activate_advisor = NZL_lee_webb
+		activate_advisor = NZL_bill_parry
+		activate_advisor = NZL_peter_fraser
+		activate_advisor = NZL_william_sinclair_burgess
+		activate_advisor = NZL_norris_stephen_falla
 	}
 
 	option = {}

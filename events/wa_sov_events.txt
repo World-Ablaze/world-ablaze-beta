@@ -17,6 +17,9 @@ country_event = {
 	immediate = {
 		set_country_flag = motorized_template_sov
 		set_country_flag = infantry_template_sov
+		set_technology = {
+			sov_light_assault_spg_1 = 1
+		}
 
 		division_template = {
 			name = "Soviet Rifle Division"
@@ -70,11 +73,12 @@ country_event = {
 				mountaineers = { x = 2 y = 1 }
 				mountaineers = { x = 2 y = 2 }
 
-				artillery_brigade = { x = 3 y = 0 }
-				artillery_brigade = { x = 3 y = 1 }
-				artillery_brigade = { x = 3 y = 2 }
+				pack_artillery_brigade = { x = 3 y = 0 }
+				pack_artillery_brigade = { x = 3 y = 1 }
 
 				anti_tank_brigade = { x = 4 y = 0 }
+				anti_tank_brigade = { x = 4 y = 1 }
+				anti_tank_brigade = { x = 4 y = 2 }
 			}
 
 			support = {
@@ -118,14 +122,55 @@ country_event = {
 			}
 
 			support = {
-				armored_engineer = { x = 0 y = 0 }
+				engineer = { x = 0 y = 0 }
 				motorized_logistics_company = { x = 0 y = 1 }
 				field_hospital = { x = 0 y = 2 }
 				signal_company = { x = 0 y = 3 }
 				infantry_support = { x = 0 y = 4 }
 
 				armoured_recon = { x = 1 y = 0 }
-				heavy_maintenance_company = { x = 1 y = 1 }
+				mot_maintenance_company = { x = 1 y = 1 }
+				military_police = { x = 1 y = 2 }
+				heavy_artillery = { x = 1 y = 3 }
+				#anti_tank = { x = 1 y = 4 }
+			}
+		}
+		division_template = {
+			name = "Soviet Light Infantry Tank Division"
+			division_names_group = SOV_ARM_01
+			template_counter = 137
+			priority = 1
+
+			regiments = {
+				light_support_armor = { x = 0 y = 0 }
+				light_support_armor = { x = 0 y = 1 }
+				light_support_armor = { x = 0 y = 2 }
+
+				light_support_armor = { x = 1 y = 0 }
+				light_support_armor = { x = 1 y = 1 }
+				light_support_armor = { x = 1 y = 2 }
+				light_support_armor = { x = 1 y = 3 }
+
+				light_support_armor = { x = 2 y = 0 }
+				light_support_armor = { x = 2 y = 1 }
+				light_support_armor = { x = 2 y = 2 }
+
+				motorized = { x = 3 y = 0 }
+				motorized = { x = 3 y = 1 }
+				motorized = { x = 3 y = 2 }
+				motorized = { x = 3 y = 3 }
+				motorized = { x = 3 y = 4 }
+			}
+
+			support = {
+				engineer = { x = 0 y = 0 }
+				motorized_logistics_company = { x = 0 y = 1 }
+				field_hospital = { x = 0 y = 2 }
+				signal_company = { x = 0 y = 3 }
+				infantry_support = { x = 0 y = 4 }
+
+				armoured_recon = { x = 1 y = 0 }
+				mot_maintenance_company = { x = 1 y = 1 }
 				military_police = { x = 1 y = 2 }
 				heavy_artillery = { x = 1 y = 3 }
 				#anti_tank = { x = 1 y = 4 }
@@ -171,9 +216,14 @@ country_event = {
 		}
 		219 = {
 			create_unit = {
+				division = "division_template = \"Soviet Light Infantry Tank Division\" start_experience_factor = 0.2 start_equipment_factor = 0.7"
+				owner = SOV
+				count = 18
+			}
+			create_unit = {
 				division = "division_template = \"Soviet Light Tank Division\" start_experience_factor = 0.2 start_equipment_factor = 0.7"
 				owner = SOV
-				count = 24
+				count = 6
 			}
 		}
 		219 = {
@@ -211,29 +261,29 @@ country_event = {
 	option = {}
 }
 
-country_event = {
-	id = sov_armor.002
-	hidden = yes
-
-	mean_time_to_happen = { days = 1 }
-
-	fire_only_once = yes
-
-	trigger = {
-		tag = SOV
-		is_ai = yes
-		has_template = "Soviet Medium Tank Division"
-	}
-
-	immediate = {
-		delete_units = {
-			division_template = "Soviet Light Tank Division"
-			disband = yes
-		}
-	}
-	option = {}
-}
-
+#country_event = {
+#	id = sov_armor.002
+#	hidden = yes
+#
+#	mean_time_to_happen = { days = 1 }
+#
+#	fire_only_once = yes
+#
+#	trigger = {
+#		tag = SOV
+#		is_ai = yes
+#		has_template = "Soviet Medium Tank Division"
+#	}
+#
+#	immediate = {
+#		delete_units = {
+#			division_template = "Soviet Light Tank Division"
+#			disband = yes
+#		}
+#	}
+#	option = {}
+#}
+#
 #country_event = {
 #	id = sov_armor.003
 #	hidden = yes
@@ -313,8 +363,13 @@ country_event = {
 			limit = {
 				has_dlc = "No Step Back"
 			}
-			has_tech = sov_medium_tank_chassis_3
-			has_tech = sov_medium_tank_spg_2
+			OR = {
+				AND = {
+					has_war = yes
+					has_tech = sov_medium_tank_chassis_3
+				}
+				has_tech = sov_medium_tank_chassis_3_2
+			}
 		}
 		else = {
 			has_tech = sov_medium_3
@@ -355,13 +410,20 @@ country_event = {
 				motorized_logistics_company = { x = 0 y = 1 }
 				field_hospital = { x = 0 y = 2 }
 				signal_company = { x = 0 y = 3 }
-				#anti_tank = { x = 0 y = 4 }
+				motorized_anti_tank = { x = 0 y = 4 }
 
 				armoured_recon = { x = 1 y = 0 }
 				heavy_maintenance_company = { x = 1 y = 1 }
 				military_police = { x = 1 y = 2 }
 				heavy_artillery = { x = 1 y = 3 }
 				heavy_anti_air = { x = 1 y = 4 }
+			}
+		}
+		capital_scope = {
+			create_unit = {
+				division = "division_template = \"Soviet Medium Tank Division\" start_experience_factor = 0.5 start_equipment_factor = 1.0 force_equipment_variants={tank_sov_medium_chassis_3_2={owner=\"SOV\"}"
+				owner = SOV
+				count = 4
 			}
 		}
 	}
@@ -409,24 +471,24 @@ country_event = {
 				modern_armor = { x = 0 y = 0 }
 				modern_armor = { x = 0 y = 1 }
 				modern_armor = { x = 0 y = 2 }
-				heavy_armor = { x = 0 y = 3 }
+				modern_armor = { x = 0 y = 3 }
 
 				modern_armor = { x = 1 y = 0 }
 				modern_armor = { x = 1 y = 1 }
 				modern_armor = { x = 1 y = 2 }
+				modern_armor = { x = 1 y = 3 }
 
-				modern_armor = { x = 2 y = 0 }
-				modern_armor = { x = 2 y = 1 }
-				modern_armor = { x = 2 y = 2 }
-				heavy_armor = { x = 2 y = 3 }
+				mechanized = { x = 2 y = 0 }
+				mechanized = { x = 2 y = 1 }
+				mechanized = { x = 2 y = 2 }
+				mechanized = { x = 2 y = 3 }
 
 				mechanized = { x = 3 y = 0 }
 				mechanized = { x = 3 y = 1 }
 				mechanized = { x = 3 y = 2 }
-				mechanized = { x = 3 y = 3 }
-				mechanized = { x = 3 y = 4 }
 
 				modern_tank_destroyer_brigade = { x = 4 y = 0 }
+				heavy_assault_brigade = { x = 4 y = 1 }
 			}
 
 			support = {
@@ -434,13 +496,13 @@ country_event = {
 				motorized_logistics_company = { x = 0 y = 1 }
 				field_hospital = { x = 0 y = 2 }
 				signal_company = { x = 0 y = 3 }
-				heavy_assault = { x = 0 y = 4 }
+				heavy_artillery = { x = 0 y = 4 }
 
 				armoured_recon = { x = 1 y = 0 }
 				heavy_maintenance_company_modern = { x = 1 y = 1 }
 				light_sp_anti_air = { x = 1 y = 2 }
 				modern_tank_destroyer = { x = 1 y = 3 }
-				motorized_rocket = { x = 1 y = 4 }
+				heavy_assault = { x = 1 y = 4 }
 			}
 		}
 	}
@@ -655,10 +717,11 @@ country_event = {
 				mechanized = { x = 2 y = 1 }
 				mechanized = { x = 2 y = 2 }
 				mechanized = { x = 2 y = 3 }
-				mechanized = { x = 2 y = 4 }
 
-				heavy_assault_brigade = { x = 3 y = 0 }
-				heavy_assault_brigade = { x = 3 y = 1 }
+				mechanized = { x = 3 y = 0 }
+
+				heavy_assault_brigade = { x = 4 y = 0 }
+				heavy_assault_brigade = { x = 4 y = 1 }
 			}
 
 			support = {
@@ -671,7 +734,7 @@ country_event = {
 				armoured_recon = { x = 1 y = 0 }
 				heavy_artillery = { x = 1 y = 1 }
 				heavy_assault = { x = 1 y = 2 }
-				#anti_tank = { x = 1 y = 3 }
+				support_heavy_armor = { x = 1 y = 3 }
 			}
 		}
 		219 = {
@@ -721,21 +784,21 @@ country_event = {
 				heavy_armor = { x = 0 y = 0 }
 				heavy_armor = { x = 0 y = 1 }
 				heavy_armor = { x = 0 y = 2 }
+				heavy_armor = { x = 0 y = 3 }
 
 				heavy_armor = { x = 1 y = 0 }
 				heavy_armor = { x = 1 y = 1 }
 				heavy_armor = { x = 1 y = 2 }
 				heavy_armor = { x = 1 y = 3 }
 
-				heavy_armor = { x = 2 y = 0 }
-				heavy_armor = { x = 2 y = 1 }
-				heavy_armor = { x = 2 y = 2 }
+				mechanized = { x = 2 y = 0 }
+				mechanized = { x = 2 y = 1 }
+				mechanized = { x = 2 y = 2 }
+				mechanized = { x = 2 y = 3 }
 
 				mechanized = { x = 3 y = 0 }
 				mechanized = { x = 3 y = 1 }
 				mechanized = { x = 3 y = 2 }
-				mechanized = { x = 3 y = 3 }
-				mechanized = { x = 3 y = 4 }
 
 				heavy_assault_brigade = { x = 4 y = 0 }
 				heavy_tank_destroyer_brigade = { x = 4 y = 1 }
@@ -952,7 +1015,6 @@ country_event = {
 			template_name = "Soviet Shock Division"
 			regiments = {
 				anti_tank_brigade = 4
-				anti_tank_brigade = 4
 			}
 		}
 	}
@@ -998,24 +1060,24 @@ country_event = {
 				medium_armor = { x = 0 y = 0 }
 				medium_armor = { x = 0 y = 1 }
 				medium_armor = { x = 0 y = 2 }
+				medium_armor = { x = 0 y = 3 }
 
 				medium_armor = { x = 1 y = 0 }
 				medium_armor = { x = 1 y = 1 }
 				medium_armor = { x = 1 y = 2 }
+				medium_armor = { x = 1 y = 3 }
 
-				medium_armor = { x = 2 y = 0 }
-				medium_armor = { x = 2 y = 1 }
-				medium_armor = { x = 2 y = 2 }
+				mechanized = { x = 2 y = 0 }
+				mechanized = { x = 2 y = 1 }
+				mechanized = { x = 2 y = 2 }
+				mechanized = { x = 2 y = 3 }
 
 				mechanized = { x = 3 y = 0 }
 				mechanized = { x = 3 y = 1 }
 				mechanized = { x = 3 y = 2 }
-				mechanized = { x = 3 y = 3 }
-				mechanized = { x = 3 y = 4 }
 
 				medium_tank_destroyer_brigade = { x = 4 y = 0 }
-				medium_tank_destroyer_brigade = { x = 4 y = 1 }
-				assault_brigade = { x = 4 y = 2 }
+				assault_brigade = { x = 4 y = 1 }
 			}
 
 			support = {
@@ -1035,11 +1097,18 @@ country_event = {
 		add_units_to_division_template = {
 			template_name = "Soviet Heavy Tank Division"
 			regiments = {
-				heavy_assault_brigade = 3
-				heavy_assault_brigade = 3
+				mechanized = 3
+				mechanized = 3
 			}
 			support = {
 				medium_tank_destroyer = 1
+			}
+		}
+		add_units_to_division_template = {
+			template_name = "Soviet Medium Tank Division"
+			regiments = {
+				mechanized = 4
+				mechanized = 4
 			}
 		}
 		add_units_to_division_template = {
@@ -1126,10 +1195,12 @@ country_event = {
 				artillery_brigade = { x = 3 y = 0 }
 				artillery_brigade = { x = 3 y = 1 }
 				artillery_brigade = { x = 3 y = 2 }
-				anti_tank_brigade = { x = 3 y = 3 }
-				anti_tank_brigade = { x = 3 y = 4 }
+				#anti_tank_brigade = { x = 3 y = 3 }
+				#anti_tank_brigade = { x = 3 y = 4 }
 
 				motorized_heavy_anti_tank_brigade = { x = 4 y = 0 }
+				motorized_heavy_anti_tank_brigade = { x = 4 y = 1 }
+				motorized_heavy_anti_tank_brigade = { x = 4 y = 2 }
 			}
 			support = {
 				engineer = { x = 0 y = 0 }
@@ -1189,6 +1260,62 @@ country_event = {
 	}
 
 	option = {}
+}
+
+#################################################################################### MIO
+
+country_event = {
+	id = sov_armor.501
+	hidden = yes
+
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			mio:SOV_mig_design_bureau_organization = {
+				add_mio_funds_gain_factor = -0.5
+			}
+		}
+	}
+
+	option = {
+	}
+}
+
+country_event = {
+	id = sov_armor.502
+	hidden = yes
+
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			mio:SOV_okb_organization = {
+				add_mio_funds_gain_factor = -0.5
+			}
+		}
+	}
+
+	option = {
+	}
+}
+
+country_event = {
+	id = sov_armor.503
+	hidden = yes
+
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			mio:SOV_uralvagonzavod_organization = {
+				add_mio_funds_gain_factor = -0.5
+			}
+		}
+	}
+
+	option = {
+	}
 }
 
 ####################################### Not cheats
@@ -1289,7 +1416,6 @@ country_event = {
 	trigger = {
 		tag = SOV
 		is_ai = yes
-		has_completed_focus = SOV_eradicate_western_fascism
 		NOT = { has_war_with = GER }
 		NOT = { has_government = fascism }
 		OR = {
@@ -1297,6 +1423,12 @@ country_event = {
 				date > 1942.8.1
 				NOT = { has_global_flag = uk_evacuated }
 				NOT = { has_global_flag = GER_SOV_ceasefire }
+				has_completed_focus = SOV_eradicate_western_fascism
+			}
+			AND = {
+				date > 1941.6.1
+				NOT = { has_global_flag = uk_evacuated }
+				ENG = { surrender_progress > 0.2 }
 			}
 			AND = {
 				date > 1941.1.1
@@ -1547,7 +1679,8 @@ country_event = {
 
 	immediate = {
 		add_political_power = 650
-		add_equipment_to_stockpile = { type = convoy_1 amount = 1500 producer = SOV } ###Vladivostok to murmansk supply
+		add_equipment_to_stockpile = { type = convoy_1 amount = 1800 producer = SOV }
+		add_equipment_to_stockpile = { type = train_equipment_1 amount = 1000 producer = SOV } ###I need to find another fix
 	}
 
 	option = {}
@@ -1568,6 +1701,8 @@ country_event = {
 	}
 
 	immediate = {
+		add_equipment_to_stockpile = { type = train_equipment_1 amount = 2000 producer = SOV }
+		add_equipment_to_stockpile = { type = convoy_1 amount = 750 producer = SOV }
 		add_political_power = 1500
 	}
 
@@ -1590,10 +1725,43 @@ country_event = {
 	}
 
 	immediate = {
+		add_equipment_to_stockpile = { type = train_equipment_1 amount = 3000 producer = SOV } ###I need to find another fix
+		add_equipment_to_stockpile = { type = convoy_1 amount = 1000 producer = SOV }
 		add_political_power = 1200
+		random_owned_controlled_state = {
+			prioritize = { 585 584 404 1013 }
+			limit = {
+				free_building_slots = {
+					building = aluminium_refinery
+					size > 5
+					include_locked = yes
+				}
+			}
+			add_extra_state_shared_building_slots = 6
+			add_building_construction = {
+				type = aluminium_refinery
+				level = 6
+				instant_build = yes
+			}
+		}
+		random_owned_controlled_state = {
+			prioritize = { 585 584 404 1013 }
+			limit = {
+				free_building_slots = {
+					building = synthetic_refinery
+					size > 5
+					include_locked = yes
+				}
+			}
+			add_extra_state_shared_building_slots = 6
+			add_building_construction = {
+				type = synthetic_refinery
+				level = 6
+				instant_build = yes
+			}
+		}
 		set_technology = {
 			sov_mechanized_infantry_4 = 1
-			sov_attacker_3 = 1
 			sov_mechanized_artillery_2 = 1
 			sov_rocket_upgrade_1 = 1
 			sov_rocket_upgrade_2 = 2
@@ -1615,13 +1783,13 @@ country_event = {
 			limit = {
 				NOT = {
 					OR = {
-						is_researching_technology = sov_battlefield_medicine_3
-						has_tech = sov_battlefield_medicine_3
+						is_researching_technology = tech_battlefield_medicine_3
+						has_tech = tech_battlefield_medicine_3
 					}
 				}
 			}
 			set_technology = {
-				sov_battlefield_medicine_3 = 1
+				tech_battlefield_medicine_3 = 1
 			}
 		}
 		if = {
@@ -1658,6 +1826,12 @@ country_event = {
 	}
 
 	immediate = {
+		set_technology = {
+			tech_field_hospital4 = 1
+			tech_battlefield_medicine_2 = 1
+			tech_signal_company4 = 1
+			tech_headquarters2 = 1
+		}
 		random_owned_controlled_state = {
 			prioritize = { 583 586 570 590 }
 			limit = {
@@ -1848,6 +2022,7 @@ country_event = {
 
 	immediate = {
 		add_political_power = 1000
+		add_equipment_to_stockpile = { type = usa_motorized_equipment_1 amount = 20000 producer = USA }
 	}
 
 	option = {}
@@ -2550,6 +2725,15 @@ country_event = {
 		}
 		SOV_paranoia_increase_purge_counter_great = yes
 		set_country_flag = SOV_tupolev_design_bureau_dissolved_flag
+		every_military_industrial_organization = {
+			limit = {
+				OR = {
+					is_military_industrial_organization = SOV_tupolev_design_bureau_organization
+				}
+			}
+			add_mio_funds_gain_factor = -0.25
+  			add_mio_research_bonus = -0.05
+		}
 		unlock_decision_tooltip = SOV_reinstate_tupolev_design_bureau
 	}
 }
@@ -5131,6 +5315,7 @@ country_event = {
 	option = {
 		name = sov_armor.858.a
 		add_stability = 0.1
+		add_timed_idea = { idea = rebuild_the_nation days = 180 }
 		SOV = {
 			transfer_state = 146
 			transfer_state = 1044
@@ -5186,6 +5371,7 @@ country_event = {
 	option = {
 		name = sov_armor.850.a
 		add_stability = 0.2
+		add_timed_idea = { idea = rebuild_the_nation days = 180 }
 		SOV = {
 			white_peace = FIN
 			add_war_support = -0.2
@@ -5525,18 +5711,26 @@ country_event = {
 
 	trigger = {
 		tag = SOV
-		OR = {
-			has_tech = industry_infrastructure3
-			date > 1939.10.1
-		}
+		date > 1939.11.1
 		NOT = { has_tech = expanded_industry4 } #for save games, REMOVE FOR 8.1
 	}
 
 	immediate = {
 		hidden_effect = {
-			add_timed_idea = {
-				idea = SOV_worker_shortage
-				days = 700
+			if = {
+				limit = {
+					has_aat = yes
+				}
+				add_timed_idea = {
+					idea = SOV_worker_shortage_mio
+					days = 580
+				}
+			}
+			else = {
+				add_timed_idea = {
+					idea = SOV_worker_shortage
+					days = 580
+				}
 			}
 		}
 	}
@@ -5544,9 +5738,20 @@ country_event = {
 	option = {
 		name = sov_armor.859.a
 		effect_tooltip = {
-			add_timed_idea = {
-				idea = SOV_worker_shortage
-				days = 700
+			if = {
+				limit = {
+					has_aat = yes
+				}
+				add_timed_idea = {
+					idea = SOV_worker_shortage_mio
+					days = 580
+				}
+			}
+			else = {
+				add_timed_idea = {
+					idea = SOV_worker_shortage
+					days = 580
+				}
 			}
 		}
 		ai_chance = {
@@ -5657,6 +5862,158 @@ country_event = {
 		effect_tooltip = {
 			remove_ideas = officers_purged_10
 		}
+	}
+}
+
+####################################### River War failed
+
+country_event = {
+	id = sov_armor.861
+	title = sov_armor.861.t
+	desc = {
+		text = sov_armor.861.da
+		trigger = {
+			has_country_flag = SOV_winter_war_phyrric_victory
+		}
+	}
+	desc = {
+		text = sov_armor.861.db
+		trigger = {
+			NOT = { has_country_flag = SOV_winter_war_phyrric_victory }
+		}
+	}
+
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			set_global_flag = SOV_ww_over
+		}
+	}
+
+	#partial failure
+	option = {
+		name = sov_armor.861.a
+		trigger = {
+			has_country_flag = SOV_winter_war_phyrric_victory
+		}
+		ai_chance = {
+			factor = 1
+		}
+		effect_tooltip = {
+			transfer_state = 146
+			transfer_state = 1044
+			transfer_state = 1045
+			1045 = { set_state_name = "Koivisto" }
+			white_peace = ROM
+			add_war_support = -0.2
+			add_stability = -0.1
+			army_experience = 50
+			ROM = {
+				add_stability = 0.1
+			}
+		}
+		ROM = { country_event = { id = sov_armor.862 hours = 6 } }
+	}
+
+	#complete failure
+	option = {
+		name = sov_armor.861.b
+		trigger = {
+			NOT = { has_country_flag = SOV_winter_war_phyrric_victory }
+		}
+		ai_chance = {
+			factor = 1
+		}
+		effect_tooltip = {
+			white_peace = ROM
+			add_war_support = -0.3
+			add_stability = -0.2
+			ROM = {
+				add_stability = 0.2
+			}
+		}
+		ROM = { country_event = { id = sov_armor.863 hours = 6 } }
+	}
+
+	#War goes on
+	option = {
+		name = sov_armor.861.c
+		ai_chance = {
+			factor = 0
+		}
+		add_political_power = -150
+		add_war_support = -0.5
+		effect_tooltip = {
+			ROM = {
+				add_war_support = 0.2
+			}
+		}
+		ROM = { country_event = { id = sov_armor.864 hours = 6 } }
+	}
+}
+
+#SU phyrric win
+country_event = {
+	id = sov_armor.862
+	title = sov_armor.862.t
+	desc = sov_armor.862.d
+
+	is_triggered_only = yes
+
+	immediate = {
+	}
+
+	option = {
+		name = sov_armor.862.a
+		add_stability = 0.1
+		SOV = {
+			transfer_state = 80
+			transfer_state = 78
+			transfer_state = 766
+			army_experience = 25
+			white_peace = ROM
+			add_war_support = -0.1
+			add_stability = -0.05
+		}
+	}
+}
+
+#SU loses and wants peace
+country_event = {
+	id = sov_armor.863
+	title = sov_armor.863.t
+	desc = sov_armor.863.d
+
+	is_triggered_only = yes
+
+	immediate = {
+	}
+	option = {
+		name = sov_armor.863.a
+		add_stability = 0.2
+		SOV = {
+			white_peace = ROM
+			add_war_support = -0.2
+			add_stability = -0.1
+		}
+	}
+}
+
+#SU doesnt want peace
+country_event = {
+	id = sov_armor.864
+	title = sov_armor.864.t
+	desc = sov_armor.864.d
+
+	is_triggered_only = yes
+
+	immediate = {
+	}
+
+	option = {
+		name = sov_armor.864.a
+		add_war_support = 0.2
 	}
 }
 
@@ -5902,11 +6259,11 @@ country_event = {
 	immediate = {
 		set_technology = {
 			simplified_train = 1
-			sov_battlefield_medicine_1 = 1
+			tech_battlefield_medicine_1 = 1
 		}
 		set_technology = { sov_anti_tank_2 = 1 }
 		add_political_power = 500
-		add_equipment_to_stockpile = { type = convoy_1 amount = 50 producer = SOV }
+		add_equipment_to_stockpile = { type = convoy_1 amount = 100 producer = SOV }
 		if = {
 			limit = {
 				398 = {
@@ -6291,6 +6648,8 @@ country_event = {
 	}
 
 	immediate = {
+		add_ideas = nepotism_naval_academy_spirit
+		add_equipment_to_stockpile = { type = train_equipment_1 amount = 2250 producer = SOV } ###I need to find another fix
 		set_technology = {
 			sov_infantry_weapons_upgrade_2 = 1
 		}
@@ -6409,15 +6768,23 @@ country_event = {
 		is_ai = yes
 		date > 1940.7.1
 		NOT = { date > 1941.7.1 }
-		controls_state = 653
 	}
 
 	immediate = {
+		#if = {
+		#	limit = {
+		#		NOT = {
+		#			has_tech = concentrated_spacing
+		#		}
+		#	}
+		#	set_technology = { concentrated_spacing = 1 }
+		#	set_technology = { anti_tank_strong_points = 0 }
+		#}
 		if = {
 			limit = {
 				NOT = {
 					OR = {
-						is_researching_technology  = sov_anti_tank_upgrade_1
+						is_researching_technology = sov_anti_tank_upgrade_1
 						has_tech = sov_anti_tank_upgrade_1
 					}
 				}
@@ -6430,7 +6797,7 @@ country_event = {
 			limit = {
 				NOT = {
 					OR = {
-						is_researching_technology  = sov_anti_tank_upgrade_2
+						is_researching_technology = sov_anti_tank_upgrade_2
 						has_tech = sov_anti_tank_upgrade_2
 					}
 				}
@@ -6559,36 +6926,36 @@ country_event = {
 				instant_build = yes
 			}
 		}
-		random_owned_controlled_state = {
-			prioritize = { 247 248 253 252 255 254 223 217 219 229 239 250 }
-			limit = {
-				free_building_slots = {
-					building = arms_factory
-					size > 3
-					include_locked = yes
-				}
-			}
-			add_building_construction = {
-				type = arms_factory
-				level = 4
-				instant_build = yes
-			}
-		}
-		random_owned_controlled_state = {
-			prioritize = { 247 248 253 252 255 254 223 217 219 229 239 250 }
-			limit = {
-				free_building_slots = {
-					building = arms_factory
-					size > 3
-					include_locked = yes
-				}
-			}
-			add_building_construction = {
-				type = arms_factory
-				level = 4
-				instant_build = yes
-			}
-		}
+		#random_owned_controlled_state = {
+		#	prioritize = { 247 248 253 252 255 254 223 217 219 229 239 250 }
+		#	limit = {
+		#		free_building_slots = {
+		#			building = arms_factory
+		#			size > 3
+		#			include_locked = yes
+		#		}
+		#	}
+		#	add_building_construction = {
+		#		type = arms_factory
+		#		level = 4
+		#		instant_build = yes
+		#	}
+		#}
+		#random_owned_controlled_state = {
+		#	prioritize = { 247 248 253 252 255 254 223 217 219 229 239 250 }
+		#	limit = {
+		#		free_building_slots = {
+		#			building = arms_factory
+		#			size > 3
+		#			include_locked = yes
+		#		}
+		#	}
+		#	add_building_construction = {
+		#		type = arms_factory
+		#		level = 4
+		#		instant_build = yes
+		#	}
+		#}
 	}
 
 	option = {}
@@ -6610,11 +6977,15 @@ country_event = {
 
 	immediate = {
 		set_technology = {
-			sov_fighter_multirole_5 = 1
-			sov_fighter_3 = 1
-			sov_attacker_1 = 1
-			sov_battlefield_medicine_2 = 1
-			sov_scout_plane_2 = 1
+			tech_field_hospital3 = 1
+			tech_battlefield_medicine_1 = 1
+			tech_signal_company3 = 1
+			tech_headquarters1 = 1
+			sov_fighter_multirole_ad_tech_5 = 1
+			sov_fighter_ad_tech_3 = 1
+			sov_attacker_ad_tech_1 = 1
+			tech_battlefield_medicine_2 = 1
+			sov_scout_plane_ad_tech_2 = 1
 			sov_infantry_weapons_3 = 1
 			sov_infantry_weapons_4 = 1
 		}
@@ -6631,38 +7002,37 @@ country_event = {
 			}
 			set_technology = { armoured_waves = 1 }
 		}
-		add_ideas = strategic_reserve_spirit
 		set_technology = { camo1 = 1 }
-		random_owned_controlled_state = {
-			prioritize = { 247 248 253 252 255 254 223 217 219 229 239 250 }
-			limit = {
-				free_building_slots = {
-					building = arms_factory
-					size > 3
-					include_locked = yes
-				}
-			}
-			add_building_construction = {
-				type = arms_factory
-				level = 4
-				instant_build = yes
-			}
-		}
-		random_owned_controlled_state = {
-			prioritize = { 247 248 253 252 255 254 223 217 219 229 239 250 }
-			limit = {
-				free_building_slots = {
-					building = arms_factory
-					size > 3
-					include_locked = yes
-				}
-			}
-			add_building_construction = {
-				type = arms_factory
-				level = 4
-				instant_build = yes
-			}
-		}
+		#random_owned_controlled_state = {
+		#	prioritize = { 247 248 253 252 255 254 223 217 219 229 239 250 }
+		#	limit = {
+		#		free_building_slots = {
+		#			building = arms_factory
+		#			size > 3
+		#			include_locked = yes
+		#		}
+		#	}
+		#	add_building_construction = {
+		#		type = arms_factory
+		#		level = 4
+		#		instant_build = yes
+		#	}
+		#}
+		#random_owned_controlled_state = {
+		#	prioritize = { 247 248 253 252 255 254 223 217 219 229 239 250 }
+		#	limit = {
+		#		free_building_slots = {
+		#			building = arms_factory
+		#			size > 3
+		#			include_locked = yes
+		#		}
+		#	}
+		#	add_building_construction = {
+		#		type = arms_factory
+		#		level = 4
+		#		instant_build = yes
+		#	}
+		#}
 	}
 
 	option = {}
@@ -6755,12 +7125,12 @@ country_event = {
 			sov_artillery_3 = 1
 			sov_mechanized_infantry_3 = 1
 		}
-		upgrade_intelligence_agency = upgrade_crypto_strength_2
-		upgrade_intelligence_agency = upgrade_crypto_strength_2
-		upgrade_intelligence_agency = upgrade_crypto_strength_2
-		upgrade_intelligence_agency = upgrade_crypto_strength_2
-		upgrade_intelligence_agency = upgrade_crypto_strength_2
-		upgrade_intelligence_agency = upgrade_crypto_strength_2
+		#upgrade_intelligence_agency = upgrade_crypto_strength_2
+		#upgrade_intelligence_agency = upgrade_crypto_strength_2
+		#upgrade_intelligence_agency = upgrade_crypto_strength_2
+		#upgrade_intelligence_agency = upgrade_crypto_strength_2
+		#upgrade_intelligence_agency = upgrade_crypto_strength_2
+		#upgrade_intelligence_agency = upgrade_crypto_strength_2
 		if = {
 			limit = {
 				has_dlc = "No Step Back"
@@ -6846,9 +7216,22 @@ country_event = {
 	}
 
 	immediate = {
+		if = {
+			limit = {
+				has_dlc = "By Blood Alone"
+			}
+			set_technology = {
+				sov_cas_ad_tech_3 = 1
+				sov_fighter_multirole_ad_tech_6 = 1
+			}
+		}
+		else = {
+			set_technology = {
+				sov_cas_3 = 1
+				sov_fighter_multirole_6	 = 1
+			}
+		}
 		set_technology = {
-			sov_cas_3 = 1
-			sov_fighter_multirole_5 = 1
 			wartime_train = 1
 		}
 
@@ -6955,15 +7338,35 @@ country_event = {
 		army_experience = 500
 		air_experience = 500
 		set_technology = { converging_sheaf = 1 }
+		delete_units = {
+			division_template = "Soviet Light Tank Division"
+			disband = yes
+		}
+		delete_units = {
+			division_template = "Soviet Light Infantry Tank Division"
+			disband = yes
+		}
+		if = {
+			limit = {
+				has_template = "Soviet Medium Tank Division"
+				controls_state = 249
+			}
+			249 = {
+				create_unit = {
+					division = "division_template = \"Soviet Medium Tank Division\" start_experience_factor = 0.5 start_equipment_factor = 1.0"
+					owner = SOV
+					count = 8
+				}
+			}
+		}
 		if = {
 			limit = {
 				NOT = {
-					has_tech = integrated_support
+					has_tech = direct_fire
 				}
 			}
-			set_technology = { integrated_support = 1 }
-			set_technology = { creeping_barrages = 0 }
-			set_technology = { direct_fire = 0 }
+			set_technology = { integrated_support = 0 }
+			set_technology = { direct_fire = 1 }
 		}
 		#add_equipment_to_stockpile = { type = sov_inf_1 amount = 10000 producer = SOV }
 		#add_equipment_to_stockpile = { type = sov_hv_inf_1 amount = 10000 producer = SOV }
@@ -7152,10 +7555,6 @@ country_event = {
 				sov_medium_tank_chassis_3_2 = 1
 			}
 		}
-		delete_units = {
-			division_template = "Soviet Light Tank Division"
-			disband = yes
-		}
 	}
 
 	option = {}
@@ -7182,7 +7581,7 @@ country_event = {
 		876 = { is_controlled_by = SOV }
 	 	date > 1942.8.1
 		has_war = yes
-		not = {has_global_flag = disable_cheats}
+		#not = {has_global_flag = disable_cheats}
 	}
 
 	immediate = {
@@ -7253,15 +7652,23 @@ country_event = {
  		date > 1942.10.1
 		NOT = { date > 1943.1.1 }
 		is_subject = no
-		not = {has_global_flag = disable_cheats}
+		#not = {has_global_flag = disable_cheats}
 		has_dlc = "No Step Back"
 		has_template = "Soviet Adv Rifle Division"
 		has_template = "Soviet Medium Tank Division"
 	}
 
 	immediate = {
-		set_technology = {
-			sov_strike_bomber_4 = 1
+		if = {
+			limit = {
+				has_dlc = "By Blood Alone"
+			}
+			set_technology = {
+				sov_strike_bomber_ad_tech_4 = 1
+			}
+		}
+		else = {
+			set_technology = { sov_attacker_2 = 1 }
 		}
 		if = {
 			limit = {
@@ -7388,7 +7795,7 @@ country_event = {
 		NOT = { date > 1944.3.1 }
 		has_war = yes
 		GER = { is_ai = no }
-		not = {has_global_flag = disable_cheats}
+		#not = {has_global_flag = disable_cheats}
 		has_dlc = "No Step Back"
 		has_template = "Soviet Adv Rifle Division"
 	}
@@ -7414,19 +7821,29 @@ country_event = {
 		tag = SOV
 		is_ai = yes
 		date > 1945.1.1
-		NOT = { date > 1945.6.1 }
-		has_war = yes
-		not = {has_global_flag = disable_cheats}
+		#not = {has_global_flag = disable_cheats}
 	}
 
 	immediate = {
 		set_technology = {
-			sov_fighter_7 = 1
+			tech_field_hospital5 = 1
+			tech_battlefield_medicine_3 = 1
+			tech_signal_company5 = 1
+			tech_headquarters3 = 1
 			sov_anti_tank_5 = 1
 			sov_artillery_4 = 1
 		}
-
-		add_equipment_to_stockpile = { type = convoy_1 amount = 50 producer = SOV }
+		if = {
+			limit = {
+				has_dlc = "By Blood Alone"
+			}
+			set_technology = {
+				sov_fighter_ad_tech_7 = 1
+			}
+		}
+		else = {
+			set_technology = { sov_fighter_7 = 1 }
+		}
 	}
 
 	option = {}
@@ -7547,8 +7964,9 @@ country_event = {
 
 	immediate = {
 		set_technology = {
-			sov_jet_fighter_1 = 1
-			sov_jet_cas_1 = 1
+			sov_fighter_ad_tech_8 = 1
+			sov_fighter_multirole_ad_tech_9 = 1
+			sov_cas_ad_tech_6 = 1
 		}
 
 		add_equipment_to_stockpile = { type = convoy_1 amount = 50 producer = SOV }
@@ -7666,6 +8084,7 @@ country_event = {
 
 	immediate = {
 		add_political_power = 1500
+		add_ideas = steel_wings_steel_hearts_spirit
 	}
 
 	option = {}
@@ -7764,6 +8183,11 @@ country_event = {
 				}
 			}
 			249 = {
+				add_building_construction = {
+					type = stronghold_network
+					level = 1
+					instant_build = yes
+				}
 				add_building_construction = {
 					type = air_base
 					level = 5
@@ -8065,8 +8489,19 @@ country_event = {
 			}
 			572 = {
 				add_building_construction = {
+					type = stronghold_network
+					level = 1
+					instant_build = yes
+				}
+				add_building_construction = {
 					type = anti_air_building
 					level = 7
+					instant_build = yes
+				}
+				add_building_construction = {
+					type = bunker
+					level = 8
+					province = 9292
 					instant_build = yes
 				}
 			}
@@ -8079,8 +8514,19 @@ country_event = {
 			}
 			653 = {
 				add_building_construction = {
+					type = stronghold_network
+					level = 1
+					instant_build = yes
+				}
+				add_building_construction = {
 					type = anti_air_building
 					level = 7
+					instant_build = yes
+				}
+				add_building_construction = {
+					type = bunker
+					level = 8
+					province = 1821
 					instant_build = yes
 				}
 			}
@@ -8122,9 +8568,65 @@ country_event = {
 			}
 			252 = {
 				add_building_construction = {
+					type = stronghold_network
+					level = 1
+					instant_build = yes
+				}
+				add_building_construction = {
 					type = supply_node
 					level = 1
 					province = 3245
+					instant_build = yes
+				}
+				add_building_construction = {
+					type = bunker
+					level = 7
+					province = 11375
+					instant_build = yes
+				}
+			}
+		}
+		if = {
+			limit = {
+				251 = {
+					is_owned_and_controlled_by = SOV
+				}
+			}
+			251 = {
+				add_building_construction = {
+					type = bunker
+					level = 6
+					province = 11225
+					instant_build = yes
+				}
+			}
+		}
+		if = {
+			limit = {
+				255 = {
+					is_owned_and_controlled_by = SOV
+				}
+			}
+			255 = {
+				add_building_construction = {
+					type = bunker
+					level = 6
+					province = 9258
+					instant_build = yes
+				}
+			}
+		}
+		if = {
+			limit = {
+				239 = {
+					is_owned_and_controlled_by = SOV
+				}
+			}
+			239 = {
+				add_building_construction = {
+					type = bunker
+					level = 6
+					province = 3578
 					instant_build = yes
 				}
 			}
@@ -9806,11 +10308,14 @@ country_event = {
 		if = {
 			limit = {
 				NOT = {
-					has_tech = concentrated_spacing
+					has_tech = creeping_barrages
 				}
 			}
-			set_technology = { concentrated_spacing = 1 }
-			set_technology = { anti_tank_strong_points = 0 }
+			set_technology = { creeping_barrages = 1 }
+			set_technology = { box_barrages = 0 }
+			#set_technology = { integrated_support = 1 }
+			#set_technology = { creeping_barrages = 0 }
+			#set_technology = { direct_fire = 0 }
 		}
 		if = {
 			limit = {
@@ -9824,12 +10329,21 @@ country_event = {
 		if = {
 			limit = {
 				NOT = {
+					has_tech = c3i
+				}
+			}
+			set_technology = { c3i = 1 }
+		}
+		if = {
+			limit = {
+				NOT = {
 					has_tech = tank_logistics
 					has_completed_focus = SOV_approach_tukhachevsky
 				}
 			}
 			set_technology = { tank_logistics = 1 }
 		}
+		add_ideas = operational_reserve_spirit
 		set_technology = { ai_bunker = 1 }
 		if = {
 			limit = {
@@ -9972,6 +10486,7 @@ country_event = {
 				137 = {
 					is_owned_and_controlled_by = SOV
 				}
+				GER = { is_ai = no }
 			}
 			137 = {
 				add_building_construction = {
@@ -10424,11 +10939,101 @@ country_event = {
 		}
 	}
 }
+############################################Hard and above Difficulty
+
+country_event = {
+	id = sov_armor.932
+	hidden = yes
+
+	mean_time_to_happen = { days = 2 }
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = SOV
+		is_ai = yes
+		NOT = {
+			has_full_control_of_state = 219 #Moscow
+		}
+		controls_state = 249
+		#has_country_flag = ai_barb_timer
+		has_template = "Soviet Medium Tank Division"
+		has_template = "Soviet Rifle Division"
+		difficulty > 2
+		has_war_with_major = yes
+	}
+
+	immediate = {
+		load_oob = "SOV_failsafe"
+	}
+
+	option = {}
+}
+
+country_event = {
+	id = sov_armor.933
+	hidden = yes
+
+	mean_time_to_happen = { days = 2 }
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = SOV
+		is_ai = yes
+		NOT = {
+			has_full_control_of_state = 195 #Leningrad
+		}
+		controls_state = 249
+		#has_country_flag = ai_barb_timer
+		has_template = "Soviet Medium Tank Division"
+		has_template = "Soviet Rifle Division"
+		difficulty > 2
+		has_war_with_major = yes
+	}
+
+	immediate = {
+		load_oob = "SOV_failsafe_2"
+	}
+
+	option = {}
+}
+
+country_event = {
+	id = sov_armor.934
+	hidden = yes
+
+	mean_time_to_happen = { days = 2 }
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = SOV
+		is_ai = yes
+		NOT = {
+			has_full_control_of_state = 217 #Stalingrad
+		}
+		controls_state = 249
+		#has_country_flag = ai_barb_timer
+		has_template = "Soviet Heavy Tank Division"
+		has_template = "Soviet Medium Tank Division"
+		has_template = "Soviet Rifle Division"
+		difficulty > 2
+		has_war_with_major = yes
+	}
+
+	immediate = {
+		load_oob = "SOV_failsafe_3"
+	}
+
+	option = {}
+}
+
 
 ############################################Alt history stuff
 
 country_event = {
-	id = sov_armor.932
+	id = sov_armor.971
 	hidden = yes
 
 	mean_time_to_happen = { days = 1 }
@@ -10457,7 +11062,7 @@ country_event = {
 }
 
 country_event = {
-	id = sov_armor.933
+	id = sov_armor.972
 	hidden = yes
 
 	mean_time_to_happen = { days = 1 }
@@ -10495,7 +11100,7 @@ country_event = {
 }
 
 country_event = {
-	id = sov_armor.934
+	id = sov_armor.973
 	hidden = yes
 
 	mean_time_to_happen = { days = 1 }
@@ -10515,65 +11120,83 @@ country_event = {
 		army_experience = 300
 		add_war_support = 0.5
 		activate_advisor = georgy_zhukov
-		random_owned_controlled_state = {
-			prioritize = { 247 248 253 252 255 254 223 217 219 229 239 250 }
-			limit = {
-				free_building_slots = {
-					building = arms_factory
-					size > 3
-					include_locked = yes
-				}
-			}
-			add_building_construction = {
-				type = arms_factory
-				level = 4
-				instant_build = yes
-			}
-		}
-		random_owned_controlled_state = {
-			prioritize = { 247 248 253 252 255 254 223 217 219 229 239 250 }
-			limit = {
-				free_building_slots = {
-					building = arms_factory
-					size > 3
-					include_locked = yes
-				}
-			}
-			add_building_construction = {
-				type = arms_factory
-				level = 4
-				instant_build = yes
-			}
-		}
-		random_owned_controlled_state = {
-			prioritize = { 247 248 253 252 255 254 223 217 219 229 239 250 }
-			limit = {
-				free_building_slots = {
-					building = arms_factory
-					size > 3
-					include_locked = yes
-				}
-			}
-			add_building_construction = {
-				type = arms_factory
-				level = 4
-				instant_build = yes
-			}
-		}
-		random_owned_controlled_state = {
-			prioritize = { 247 248 253 252 255 254 223 217 219 229 239 250 }
-			limit = {
-				free_building_slots = {
-					building = arms_factory
-					size > 3
-					include_locked = yes
-				}
-			}
-			add_building_construction = {
-				type = arms_factory
-				level = 4
-				instant_build = yes
-			}
-		}
+		#random_owned_controlled_state = {
+		#	prioritize = { 247 248 253 252 255 254 223 217 219 229 239 250 }
+		#	limit = {
+		#		free_building_slots = {
+		#			building = arms_factory
+		#			size > 3
+		#			include_locked = yes
+		#		}
+		#	}
+		#	add_building_construction = {
+		#		type = arms_factory
+		#		level = 4
+		#		instant_build = yes
+		#	}
+		#}
+		#random_owned_controlled_state = {
+		#	prioritize = { 247 248 253 252 255 254 223 217 219 229 239 250 }
+		#	limit = {
+		#		free_building_slots = {
+		#			building = arms_factory
+		#			size > 3
+		#			include_locked = yes
+		#		}
+		#	}
+		#	add_building_construction = {
+		#		type = arms_factory
+		#		level = 4
+		#		instant_build = yes
+		#	}
+		#}
+		#random_owned_controlled_state = {
+		#	prioritize = { 247 248 253 252 255 254 223 217 219 229 239 250 }
+		#	limit = {
+		#		free_building_slots = {
+		#			building = arms_factory
+		#			size > 3
+		#			include_locked = yes
+		#		}
+		#	}
+		#	add_building_construction = {
+		#		type = arms_factory
+		#		level = 4
+		#		instant_build = yes
+		#	}
+		#}
+		#random_owned_controlled_state = {
+		#	prioritize = { 247 248 253 252 255 254 223 217 219 229 239 250 }
+		#	limit = {
+		#		free_building_slots = {
+		#			building = arms_factory
+		#			size > 3
+		#			include_locked = yes
+		#		}
+		#	}
+		#	add_building_construction = {
+		#		type = arms_factory
+		#		level = 4
+		#		instant_build = yes
+		#	}
+		#}
+	}
+}
+
+country_event = { #Delete after next update
+	id = sov_armor.999
+	hidden = yes
+
+	mean_time_to_happen = { days = 1 }
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = SOV
+	}
+
+	immediate = {
+		set_variable = { SOV_soviet_airforce_air_attack_factor = 0 }
+		set_variable = { SOV_the_red_army_army_armor_attack_factor = 0 }
 	}
 }

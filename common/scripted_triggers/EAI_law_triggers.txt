@@ -606,6 +606,9 @@ EAI_can_take_tot_economic_mobilisation = {
 		tag = TUR
 		tag = GRE
 		tag = RAJ
+		tag = MAN
+		tag = CZE
+		tag = POL
 		AND = {
 			tag = ROM
 			date > 1942.1.1
@@ -618,6 +621,18 @@ EAI_can_take_tot_economic_mobilisation = {
 			tag = FIN
 			date > 1941.1.1
 		}
+		AND = {
+			is_subject_of = GER
+			GER = {
+				has_completed_focus = GER_appoint_albert_speer
+			}
+		}
+		AND = {
+			is_subject_of = JAP
+			JAP = {
+				has_completed_focus = JAP_national_mobilization_law
+			}
+		}
 	}
 	OR = {
 		date > 1940.1.1
@@ -625,6 +640,14 @@ EAI_can_take_tot_economic_mobilisation = {
 		tag = CAN
 		tag = TUR
 		tag = GRE
+		tag = CZE
+		tag = POL
+		AND = {
+			is_subject_of = JAP
+			JAP = {
+				has_completed_focus = JAP_national_mobilization_law
+			}
+		}
 	}
 	has_capitulated = no
 
@@ -660,7 +683,11 @@ EAI_can_take_tot_economic_mobilisation = {
 
 	has_war = yes
 	has_war_with_major = yes
-	has_war_support > 0.55
+	OR = {
+		has_war_support > 0.55
+		is_subject_of = GER
+		is_subject_of = JAP
+	}
 	if = {
 		limit = {
 			original_tag = JAP
@@ -718,6 +745,13 @@ EAI_can_take_tot_economic_mobilisation = {
 			has_government = fascism
 		}
 		has_completed_focus = GER_appoint_albert_speer
+	}
+	if = {
+		limit = {
+			original_tag = MAN
+			has_government = fascism
+		}
+		has_completed_focus = MAN_kishi_decree
 	}
 	if = {
 		limit = {
@@ -833,7 +867,11 @@ EAI_can_take_over_mobilisation = {
 		limit = {
 			tag = ENG
 		}
-		surrender_progress > 0
+		OR = {
+			surrender_progress > 0
+			has_global_flag = uk_evacuated
+			WA_soviets_dead = yes
+		}
 		any_enemy_country = {
 			is_major = yes
 		}
@@ -881,7 +919,7 @@ EAI_can_take_volunteer_only = {
 		NOT = { OVERLORD = { has_completed_focus = ENG_new_imperial_parliament } }
 	}
 
-	#has_manpower_for_recruit_change_to =  { value = 0.015 group = mobilization_laws }
+	#has_manpower_for_recruit_change_to = { value = 0.015 group = mobilization_laws }
 	if = {
 		limit = {
 			original_tag = HUN
@@ -923,7 +961,7 @@ EAI_can_take_limited_conscription = {
 
 	### copy from idea file
 
-	#has_manpower_for_recruit_change_to =  { value = 0.025 group = mobilization_laws }
+	#has_manpower_for_recruit_change_to = { value = 0.025 group = mobilization_laws }
 	NOT = { has_idea = undisturbed_isolation }
 	NOT = { has_idea = isolation }
 	if = {
@@ -1189,6 +1227,7 @@ EAI_can_take_service_by_requirement = {
 		tag = SOV
 		tag = ENG
 		tag = ITA
+		tag = CZE
 		date > 1941.1.1
 	}
 	########## LAW REQUIREMENTS
@@ -1204,7 +1243,7 @@ EAI_can_take_service_by_requirement = {
 		NOT = { OVERLORD = { has_completed_focus = ENG_new_imperial_parliament } }
 	}
 
-	#has_manpower_for_recruit_change_to =  { value = 0.1 group = mobilization_laws }
+	#has_manpower_for_recruit_change_to = { value = 0.1 group = mobilization_laws }
 	has_manpower < 500000
 	if = {
 		limit = {
@@ -1300,6 +1339,7 @@ EAI_can_take_all_adults_serve = {
 		tag = PRC
 		tag = FRA
 		tag = FIN
+		tag = CZE
 		date > 1942.6.1
 	}
 	########## LAW REQUIREMENTS
@@ -1315,7 +1355,7 @@ EAI_can_take_all_adults_serve = {
 		NOT = { OVERLORD = { has_completed_focus = ENG_new_imperial_parliament } }
 	}
 
-	#has_manpower_for_recruit_change_to =  { value = 0.2 group = mobilization_laws }
+	#has_manpower_for_recruit_change_to = { value = 0.2 group = mobilization_laws }
 	AND = {
 		has_manpower < 750000
 		has_capitulated = no
@@ -1418,6 +1458,7 @@ EAI_can_take_scraping_the_barrel = {
 	OR = {
 		tag = CHI
 		tag = SOV
+		tag = GER
 		date > 1943.1.1
 	}
 
@@ -1429,7 +1470,7 @@ EAI_can_take_scraping_the_barrel = {
 
 	### copy from idea file
 
-	#has_manpower_for_recruit_change_to =  { value = 0.25 group = mobilization_laws }
+	#has_manpower_for_recruit_change_to = { value = 0.25 group = mobilization_laws }
 	AND = {
 		has_manpower < 500000
 		has_capitulated = no
@@ -1579,12 +1620,8 @@ EAI_can_take_free_trade = {
 
 	if = {
 		limit = {
-			OR = {
-				original_tag = ENG
-				original_tag = FRA
-			}
+			original_tag = FRA
 		}
-
 		has_war = no
 		date > 1942.1.1
 	}
@@ -1593,6 +1630,7 @@ EAI_can_take_free_trade = {
 
 	OR = {
 		tag = IRQ
+		tag = TUR
 		has_government = neutrality
 		has_government = democratic
 		AND = {
@@ -1620,18 +1658,36 @@ EAI_can_take_free_trade = {
 		EAI_can_take_closed_economy = yes
 	}
 
-	NOT = { has_idea = planned_economy }
+	NOT = { has_idea = collectivization }
 
-	NOT = { EAI_major_country = yes }
+	OR = {
+		NOT = { EAI_major_country = yes }
+		AND = {
+			tag = ENG
+			has_global_flag = uk_evacuated
+		}
+	}
 	###
 
 	OR = {
 		tag = IRQ
+		tag = SWE
+		tag = TUR
+		AND = {
+			tag = ENG
+			has_global_flag = uk_evacuated
+		}
 		check_variable = { var = EAI_average_resource_need value = 0.15 compare = less_than }
 	}
 
 	OR = {
 		tag = IRQ
+		tag = SWE
+		tag = TUR
+		AND = {
+			tag = ENG
+			has_global_flag = uk_evacuated
+		}
 		NOT = { EAI_pp_advisor_prio = yes }
 	}
 
@@ -1647,6 +1703,12 @@ EAI_can_take_free_trade = {
 			has_dlc = "La Resistance"
 		}
 		NOT = { has_completed_focus = SPR_all_must_bear_the_torch }
+	}
+	if = {
+		limit = {
+			tag = ENG
+		}
+		has_global_flag = uk_evacuated
 	}
 	NOT = { has_idea = protectionism }
 	NOT = { has_idea = GER_autarky_idea }
@@ -1701,9 +1763,11 @@ EAI_can_take_export_focus = {
 	NOT = {
 		EAI_can_take_closed_economy = yes
 	}
-	NOT = { has_idea = planned_economy }
+	NOT = { has_idea = collectivization }
 	NOT = { original_tag = SPR }
 	NOT = {	tag = CAN }
+	NOT = {	tag = TUR }
+	NOT = {	tag = SWE }
 	NOT = {	tag = IRQ }
 
 	###
@@ -1782,6 +1846,12 @@ EAI_can_take_export_focus = {
 
 	if = {
 		limit = {
+			has_idea = TUR_funkplan
+		}
+		has_war = yes
+	}
+	if = {
+		limit = {
 			original_tag = CHI
 			has_dlc = "Waking the Tiger"
 		}
@@ -1822,6 +1892,7 @@ EAI_can_take_limited_exports = {
 			tag = UKW
 			tag = UKO
 			tag = CAN
+			tag = TUR
 		}
 	}
 	NOT = {
@@ -1855,7 +1926,7 @@ EAI_can_take_limited_exports = {
 		tag = ENG
 	}
 
-	NOT = { has_idea = planned_economy }
+	NOT = { has_idea = collectivization }
 	NOT = { original_tag = SPR }
 
 	### normal range: >= 60%
@@ -1887,6 +1958,12 @@ EAI_can_take_limited_exports = {
 	NOT = { has_idea = USA_marshall_plan_aid }
 	NOT = { has_idea = protectionism }
 
+	if = {
+		limit = {
+			has_idea = TUR_funkplan
+		}
+		has_war = yes
+	}
 	OR = {
 		AND = {
 			has_government = democratic
@@ -1950,6 +2027,12 @@ EAI_can_take_closed_economy = {
 	AND = {
 		has_war = yes
 		is_major = yes
+	}
+	if = {
+		limit = {
+			has_idea = TUR_funkplan
+		}
+		has_war = yes
 	}
 	if = {
 		limit = {

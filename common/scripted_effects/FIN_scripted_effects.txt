@@ -1,0 +1,414 @@
+### Internal FACTIONS
+
+FIN_change_public_trust_effect = {
+	add_to_variable = { FIN_public_trust = FIN_internal_faction_effect_input }
+	clamp_variable = {
+		var = FIN_public_trust
+		min = 0
+		max = 100
+	}
+	FIN_calculate_factions_effect = yes
+}
+
+FIN_change_public_influence_effect = {
+	add_to_variable = { FIN_public_influence = FIN_internal_faction_effect_input }
+	clamp_variable = {
+		var = FIN_public_influence
+		min = 0
+		max = 100
+	}
+	FIN_calculate_factions_effect = yes
+}
+
+FIN_change_parliament_trust_effect = {
+	add_to_variable = { FIN_parliament_trust = FIN_internal_faction_effect_input }
+	clamp_variable = {
+		var = FIN_parliament_trust
+		min = 0
+		max = 100
+	}
+	FIN_calculate_factions_effect = yes
+}
+
+FIN_change_parliament_influence_effect = {
+	add_to_variable = { FIN_parliament_influence = FIN_internal_faction_effect_input }
+	clamp_variable = {
+		var = FIN_parliament_influence
+		min = 0
+		max = 100
+	}
+	FIN_calculate_factions_effect = yes
+}
+
+FIN_calculate_factions_effect = {
+	set_variable = { FIN_public_effective_trust = FIN_public_trust }
+	subtract_from_variable = { FIN_public_effective_trust = 50 }
+	set_temp_variable = {tempScaling = FIN_public_influence }
+	divide_temp_variable = { tempScaling = 100 }
+	multiply_variable = { FIN_public_effective_trust = tempScaling }
+	add_to_variable = { FIN_public_effective_trust = 50 }
+	set_temp_variable = { tempTrust = FIN_public_effective_trust }
+
+	# invlerped
+	divide_temp_variable = { tempTrust = 100}
+
+	# lerp war
+	set_variable = { FIN_public_war_support = 1}
+	subtract_from_variable = { FIN_public_war_support = tempTrust }
+	multiply_variable = { FIN_public_war_support = -0.05 } 				# Min
+	set_temp_variable = { lerp_max = 0.05 } 							# Max
+	multiply_temp_variable = { lerp_max = tempTrust }
+	add_to_variable = { FIN_public_war_support = lerp_max}
+
+	# lerp recruit
+	set_variable = { FIN_public_recruitable = 1}
+	subtract_from_variable = { FIN_public_recruitable = tempTrust }
+	multiply_variable = { FIN_public_recruitable = -0.5 } 				# Min
+	set_temp_variable = { lerp_max = 0.5 } 								# Max
+	multiply_temp_variable = { lerp_max = tempTrust }
+	add_to_variable = { FIN_public_recruitable = lerp_max}
+
+	###
+
+	set_variable = { FIN_parliament_effective_trust = FIN_parliament_trust }
+	subtract_from_variable = { FIN_parliament_effective_trust = 50 }
+	set_temp_variable = {tempScaling = FIN_parliament_influence }
+	divide_temp_variable = { tempScaling = 100 }
+	multiply_variable = { FIN_parliament_effective_trust = tempScaling }
+	add_to_variable = { FIN_parliament_effective_trust = 50 }
+	set_temp_variable = { tempTrust = FIN_parliament_effective_trust }
+
+	# invlerped
+	divide_temp_variable = { tempTrust = 100}
+
+	# lerp pp
+	set_variable = { FIN_parliament_pp_gain = 1}
+	subtract_from_variable = { FIN_parliament_pp_gain = tempTrust }
+	multiply_variable = { FIN_parliament_pp_gain = -0.5 } 				# Min
+	set_temp_variable = { lerp_max = 0.5 } 								# Max
+	multiply_temp_variable = { lerp_max = tempTrust }
+	add_to_variable = { FIN_parliament_pp_gain = lerp_max}
+
+	# lerp stab
+	set_variable = { FIN_parliament_stability = 1}
+	subtract_from_variable = { FIN_parliament_stability = tempTrust }
+	multiply_variable = { FIN_parliament_stability = -0.05 }			# Min
+	set_temp_variable = { lerp_max = 0.05 }								# Max
+	multiply_temp_variable = { lerp_max = tempTrust }
+	add_to_variable = { FIN_parliament_stability = lerp_max}
+
+	# lerp output
+	set_variable = { FIN_parliament_factory_output = 1}
+	subtract_from_variable = { FIN_parliament_factory_output = tempTrust }
+	multiply_variable = { FIN_parliament_factory_output = -0.05 } 		# Min
+	set_temp_variable = { lerp_max = 0.05 } 							# Max
+	multiply_temp_variable = { lerp_max = tempTrust }
+	add_to_variable = { FIN_parliament_factory_output = lerp_max}
+
+	add_to_variable = { FIN_public_war_support = FIN_extra_public_war_support }
+	add_to_variable = { FIN_public_recruitable = FIN_extra_public_recruits }
+
+	add_to_variable = { FIN_parliament_pp_gain = FIN_extra_parliament_pp }
+	add_to_variable = { FIN_parliament_stability = FIN_extra_parliament_stability }
+	add_to_variable = { FIN_parliament_factory_output = FIN_extra_parliament_output }
+}
+
+FIN_kallio_becomes_country_leader = {
+	retire_country_leader = yes
+	effect_tooltip = { #Kyosti Kallio will automatically be the next in line after Svinhufvud, so this is just for tooltip purposes
+		promote_character = FIN_kyosti_kallio
+	}
+	#Set Maalaisliitto (Agrarian League) as Non-Aligned party
+	set_party_name = {
+		ideology = democratic
+		name = FIN_neutrality_party
+		long_name = FIN_neutrality_party_long
+	}
+}
+
+FIN_ryti_becomes_country_leader = {
+	retire_country_leader = yes
+	effect_tooltip = { #Risto Ryti will automatically be the next in line after Kallio, so this is just for tooltip purposes
+		promote_character = FIN_risto_heikki_ryti
+	}
+	#Set National Progressive Party as Non-Aligned party
+	set_party_name = {
+		ideology = democratic
+		name = FIN_neutrality_party_progressive
+		long_name = FIN_neutrality_party_progressive_long
+	}
+}
+
+FIN_paasikivi_becomes_country_leader = {
+	if = {
+		limit = {
+			has_country_leader = {
+				ruling_only = yes
+				character = FIN_risto_heikki_ryti
+			}
+		}
+		retire_country_leader = yes
+	}
+	else_if = {
+		limit = {
+			has_country_leader = {
+				ruling_only = yes
+				character = FIN_carl_mannerheim
+			}
+		}
+		remove_country_leader_role = { #Removing country role on Mannerheim (instead of retiring) since he should still be a military guy.
+			character = FIN_carl_mannerheim
+			ideology = conservatism
+		}
+	}
+
+	#Paasikivi should usually be the next in line after Ryti or Mannerheim, but just in case due to Mannerheim intereference
+	promote_character = FIN_juho_kusti_paasikivi
+
+	#Set Kokoomus as Non-Aligned party
+	set_party_name = {
+		ideology = democratic
+		name = FIN_neutrality_party_kokoomus
+		long_name = FIN_neutrality_party_kokoomus_long
+	}
+}
+
+FIN_mannerheim_becomes_country_leader = {
+	#In this case we do want to keep the political leaders (Ryti or Paasikivi)
+	add_country_leader_role = {
+		character = FIN_carl_mannerheim
+		country_leader = {
+			ideology = conservatism
+			expire = "1965.1.1.1"
+			traits = {
+				sotamarsalkka
+			}
+		}
+		promote_leader = yes
+	}
+	#Set National Progressive Party as Non-Aligned party
+	set_party_name = {
+		ideology = democratic
+		name = FIN_neutrality_party_military
+		long_name = FIN_neutrality_party_military_long
+	}
+}
+
+### OPERATIVES
+FIN_create_operative_hella_wuolijok = { # Focus The Red Watch & Focus Trade Agreements
+	create_operative_leader = {
+		name = "Hella Wuolijok"
+		GFX = GFX_portrait_FIN_hella_wuolijok
+		traits = { operative_well_groomed operative_escape_artist }
+		bypass_recruitment = no
+		available_to_spy_master = yes
+		nationalities = { FIN EST }
+	}
+}
+
+FIN_create_operative_vilho_pentikainen = { # Focus The Red Watch
+	create_operative_leader = {
+		name = "Vilho Pentikäinen"
+		GFX = GFX_portrait_FIN_vilho_pentikainen
+		traits = { operative_safe_cracker operative_master_interrogator }
+		bypass_recruitment = no
+		available_to_spy_master = yes
+		nationalities = { FIN SOV }
+	}
+}
+
+FIN_seize_weapon_caches = { #Used on the state scope
+	remove_dynamic_modifier = { modifier = FIN_weapon_caches_modifier }
+	ROOT = {
+		random_list = {
+			#log = yes
+			25 = {
+				add_equipment_to_stockpile = {
+					type = infantry_equipment
+					amount = 15
+					producer = FIN
+				}
+			}
+			25 = {
+				add_equipment_to_stockpile = {
+					type = infantry_equipment
+					amount = 35
+					producer = FIN
+				}
+			}
+			25 = {
+				add_equipment_to_stockpile = {
+					type = infantry_equipment
+					amount = 50
+					producer = FIN
+				}
+			}
+			25 = {
+				add_equipment_to_stockpile = {
+					type = infantry_equipment
+					amount = 65
+					producer = FIN
+				}
+				add_equipment_to_stockpile = {
+					type = support_equipment
+					amount = 35
+					producer = FIN
+				}
+			}
+		}
+	}
+}
+
+### WINTER WAR
+
+FIN_winter_war_setup_effect = {
+	set_variable = { FIN_winter_war_exhaustion_variable = 0}
+	set_variable = { FIN_winter_war_fort_variable = 0.2}
+	set_variable = { FIN_winter_war_core_defence_variable = 0}
+	set_variable = { FIN_winter_war_attack_variable = 0}
+	add_dynamic_modifier = { modifier = FIN_winter_war_modifiers }
+}
+
+### CONTINUATION WAR
+
+FIN_pact_for_continuation_war_start = { #To be used on FIN's scope - Used immediately upon signing agreement
+	FIN = {
+		if = {
+			limit = {
+				NOT = { gives_military_access_to = GER }
+			}
+			give_military_access = GER
+		}
+		diplomatic_relation = {
+			country = GER
+			relation = docking_rights
+			active = yes
+		}
+		if = {
+			limit = {
+				NOT = { has_non_aggression_pact_with = GER }
+			}
+			diplomatic_relation = {
+				country = GER
+				relation = non_aggression_pact
+				active = yes
+			}
+		}
+	}
+	if = {
+		limit = {
+			GER = { NOT = { has_guaranteed = FIN } }
+		}
+		GER = { give_guarantee = FIN }
+	}
+}
+
+###################################
+### FINNISH DEMOCRATIC REPUBLIC ###
+###################################
+
+FIN_form_finnish_democratic_republic = {
+	if = {
+		limit = {
+			NOT = { has_country_flag = FIN_finish_democratic_republic_formed_flag }
+		}
+		promote_character = FIN_otto_wille_kuusinen
+		set_cosmetic_tag = FIN_finnish_democratic_republic
+		random_other_country = {
+			limit = {
+				original_tag = SOV
+				has_country_leader = {
+					ruling_only = yes
+					character = SOV_iosif_stalin
+				}
+			}
+			add_timed_idea = {
+				idea = FIN_finnish_goods
+				days = 730
+			}
+		}
+		set_country_flag = FIN_finish_democratic_republic_formed_flag
+	}
+}
+
+
+########    ###     ######   ######  ####  ######  ########     ######   #######  ##     ## ########
+##         ## ##   ##    ## ##    ##  ##  ##    ##    ##       ##    ## ##     ## ##     ## ##     ##
+##        ##   ##  ##       ##        ##  ##          ##       ##       ##     ## ##     ## ##     ##
+######   ##     ##  ######  ##        ##   ######     ##       ##       ##     ## ##     ## ########
+##       #########       ## ##        ##        ##    ##       ##       ##     ## ##     ## ##
+##       ##     ## ##    ## ##    ##  ##  ##    ##    ##       ##    ## ##     ## ##     ## ##
+##       ##     ##  ######   ######  ####  ######     ##        ######   #######   #######  ##
+
+
+FIN_purchase_german_equipment_for_cw = {
+	add_equipment_to_stockpile = {
+		type = ger_inf_0
+		amount = 6000
+		producer = GER
+	}
+
+	add_equipment_to_stockpile = {
+		type = support_equipment
+		amount = 600
+		producer = GER
+	}
+
+	add_equipment_to_stockpile = {
+		type = motorized_equipment_1
+		amount = 200
+		producer = GER
+	}
+
+	if = {
+		limit = {
+			has_dlc = "La Resistance"
+		}
+		add_equipment_to_stockpile = {
+			type = tank_ger_scout_car_chassis_1
+			amount = 100
+			producer = GER
+			variant_name = "Sdkfz 222"
+		}
+	}
+
+	#if = {
+	#	limit = {
+	#		has_dlc = "By Blood Alone"
+	#	}
+	#	if = {
+	#		limit = {
+	#			NOT = { has_tech = iw_small_airframe }
+	#		}
+	#		set_technology = {
+	#			iw_small_airframe = 1
+	#			popup = yes
+	#		}
+	#	}
+	#	create_equipment_variant = { #Copy of I-15 variant in German history file
+	#		name = "He 51" #also covers Ar 68
+	#		type = small_plane_airframe_0
+	#		modules = {
+	#			fixed_main_weapon_slot = light_mg_2x
+	#			engine_type_slot = engine_1_1x
+	#			special_type_slot_1 = empty
+	#		}
+	#		obsolete = yes
+	#		icon = "GFX_GER_early_fighter_medium"
+	#		model = "GER_fighter_equipment_0_entity"
+	#	}
+	#	add_equipment_to_stockpile = {
+	#		type = small_plane_airframe_0
+	#		amount = 30
+	#		producer = GER
+	#		variant_name = "He 51"
+	#	}
+	#}
+	#else = {
+		add_equipment_to_stockpile = {
+			type = ger_fighter_equipment_1
+			amount = 30
+			producer = GER
+		}
+	#}
+}

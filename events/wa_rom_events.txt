@@ -49,11 +49,12 @@ country_event = {
 			support = {
 				engineer = { x = 0 y = 0 }
        			horse_logistics_company = { x = 0 y = 1 }
-				artillery =  { x = 0 y = 2 }
+				artillery = { x = 0 y = 2 }
+				anti_tank = { x = 0 y = 3 }
 
 		        recon = { x = 1 y = 0 }
 				horse_field_hospital = { x = 1 y = 1 }
-				signal_company = { x = 1 y = 2 }
+				horse_signal_company = { x = 1 y = 2 }
 			}
 		}
 		set_country_flag = infantry_template_rom
@@ -133,6 +134,7 @@ country_event = {
 	}
 
 	immediate = {
+		add_equipment_to_stockpile = { type = train_equipment_1 amount = 600 producer = ROM } ###I need to find another fix
 		activate_advisor = ROM_leonard_mociulschi
 		activate_advisor = ROM_gheorghe_avramescu
 		delete_unit_template_and_units = {
@@ -763,16 +765,17 @@ country_event = {
 	desc = rom_armor.815.d
 	picture = GFX_report_event_rom_fascist_elections
 
-	fire_only_once = yes
-
-	trigger = {
-		tag = ROM
-		date > 1937.12.1
-	}
+	is_triggered_only = yes
 
 	immediate = {
 		hidden_effect = {
 			set_country_flag = ROM_1937_election_flag
+			#if = {
+			#	limit = {
+			#		has_completed_focus = ROM_continue_the_violence
+			#	}
+			#	unlock_national_focus = ROM_everything_for_the_country
+			#}
 		}
 	}
 
@@ -867,6 +870,7 @@ country_event = {
 				is_major = yes
 			}
 		}
+		NOT = { has_completed_focus = ROM_continue_the_violence }
 		NOT = { has_completed_focus = ROM_constitutional_guarantees }
 	}
 
@@ -1023,6 +1027,394 @@ country_event = {
 	}
 }
 
+############################################ Fascist Events
+
+#Violence
+country_event = {
+	id = rom_armor.830
+	title = rom_armor.830.t
+	desc = rom_armor.830.d
+
+	is_triggered_only = yes
+
+	option = {
+		name = rom_armor.830.a
+		ai_chance = {
+			factor = 25
+		}
+		effect_tooltip = {
+			add_stability = -0.05
+			random_owned_controlled_state = {
+				limit = {
+					ROOT = { has_full_control_of_state = PREV }
+				}
+				prioritize = { 79 }
+				damage_building = {
+					type = infrastructure
+					damage = 1
+				}
+				damage_building = {
+					type = industrial_complex
+					damage = 1
+				}
+			}
+			random_owned_controlled_state = {
+				limit = {
+					ROOT = { has_full_control_of_state = PREV }
+				}
+				prioritize = { 900 }
+				damage_building = {
+					type = infrastructure
+					damage = 1
+				}
+				damage_building = {
+					type = industrial_complex
+					damage = 1
+				}
+			}
+			random_owned_controlled_state = {
+				limit = {
+					ROOT = { has_full_control_of_state = PREV }
+				}
+				prioritize = { 76 }
+				damage_building = {
+					type = infrastructure
+					damage = 1
+				}
+				damage_building = {
+					type = industrial_complex
+					damage = 1
+				}
+			}
+		}
+	}
+}
+
+#Steal Carol's Records
+country_event = {
+	id = rom_armor.831
+	title = rom_armor.831.t
+	desc = rom_armor.831.d
+
+	is_triggered_only = yes
+
+	option = {
+		name = rom_armor.831.a
+		ai_chance = {
+			factor = 25
+		}
+	}
+}
+
+
+#Civil war
+country_event = {
+	id = rom_armor.832
+	title = rom_armor.832.t
+    desc = rom_armor.832.d
+	picture = GFX_report_event_ger_civil_war
+
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			ROM_corneliu_codreanu = { set_character_flag = ROM_legionare_advisor }
+			ROM_horia_sima = { set_character_flag = ROM_legionare_advisor }
+			ROM_ilie_steflea = { set_character_flag = ROM_legionare_advisor }
+			ROM_mihail_sturdza = { set_character_flag = ROM_legionare_advisor }
+			ROM_mihai_antonescu = { set_character_flag = ROM_legionare_advisor }
+			ROM_dumitru_i_popescu = { set_character_flag = ROM_legionare_advisor }
+			ROM_nicolae_malaxa = { set_character_flag = ROM_legionare_advisor }
+			ROM_ion_c_marinescu = { set_character_flag = ROM_legionare_advisor }
+			ROM_petre_bejan = { set_character_flag = ROM_legionare_advisor }
+			ROM_stelian_popescu = { set_character_flag = ROM_legionare_advisor }
+			ROM_eugen_cristescu = { set_character_flag = ROM_legionare_advisor }
+
+			set_global_flag = ROM_civil_war
+			add_ideas = national_socialism
+			add_ideas = internal_conflict
+			#set_party_name = { ideology = fascism long_name = GER_neutrality_party_civil_war name = GER_neutrality_party_civil_war }
+			set_politics = {
+				ruling_party = fascism
+				elections_allowed = no
+			}
+			hidden_effect = { set_cosmetic_tag = ROM_IRON }
+			set_capital = { state = 83 }
+			division_template = {
+				name = "Regimentul de Fier"
+				is_locked = yes
+
+				division_names_group = ROM_Inf_01
+
+				regiments = {
+					heavy_militia = { x = 0 y = 0 }
+					militia = { x = 0 y = 1 }
+					militia = { x = 0 y = 2 }
+
+					heavy_militia = { x = 1 y = 0 }
+					militia = { x = 1 y = 1 }
+					militia = { x = 1 y = 2 }
+
+					heavy_militia = { x = 2 y = 0 }
+					militia = { x = 2 y = 1 }
+					militia = { x = 2 y = 2 }
+				}
+			}
+			every_character = {
+				limit = {
+					NOT = { has_trait = trait_ROM_legionare }
+					NOT = { has_character_flag = ROM_legionare_advisor }
+				}
+				set_nationality = RMC
+				set_character_flag = ROM_character_government_flag
+			}
+			RMC = {
+				set_capital = { state = 46 }
+				inherit_technology = ROM
+				ROM_gheorghe_tatarescu = {
+					promote_leader = yes
+				}
+				division_template = {
+					name = "Regimentul de santinelă"
+					is_locked = yes
+
+					division_names_group = ROM_Inf_01
+
+					regiments = {
+						heavy_militia = { x = 0 y = 0 }
+						militia = { x = 0 y = 1 }
+						militia = { x = 0 y = 2 }
+
+						heavy_militia = { x = 1 y = 0 }
+						militia = { x = 1 y = 1 }
+						militia = { x = 1 y = 2 }
+
+						heavy_militia = { x = 2 y = 0 }
+						militia = { x = 2 y = 1 }
+						militia = { x = 2 y = 2 }
+					}
+				}
+				load_focus_tree = {
+					tree = romanian_focus
+					keep_completed = no
+				}
+				unlock_national_focus = ROM_flexible_foreign_policy
+				unlock_national_focus = ROM_appoint_allied_friendly_government
+				unlock_national_focus = ROM_appoint_calinescu
+			}
+			every_state = {
+				limit = {
+					is_core_of = ROOT
+					check_variable = { ROM_garrison_control = 2 compare = less_than_or_equals }
+				}
+				RMC = {
+					transfer_state = PREV
+				}
+			}
+			transfer_units_fraction = {
+				target = RMC
+				size = 0.5
+				stockpile_ratio = 0.5
+				army_ratio = ROM.iron_legion_civil_war_army_actual_counter_var
+				navy_ratio = ROM.iron_legion_civil_war_air_actual_counter_var
+				air_ratio = ROM.iron_legion_civil_war_navy_actual_counter_var
+				keep_unit_leaders = {
+
+				}
+				keep_unit_leaders_trigger = {
+					has_trait = trait_ROM_legionare
+				}
+			}
+			every_state = {
+				limit = {
+					is_core_of = ROOT
+					check_variable = { ROM_garrison_control = 0 compare = equals }
+				}
+				set_state_flag = ROM_fascist_stronghold
+				create_unit = {
+					division = "division_template = \"Regimentul de santinelă\" start_experience_factor = 0.3 start_equipment_factor = 1.0"
+					owner = RMC
+					allow_spawning_on_enemy_provs = yes
+					count = 3
+				}
+			}
+			every_state = {
+				limit = {
+					is_core_of = ROOT
+					check_variable = { ROM_garrison_control = 1 compare = equals }
+				}
+				set_state_flag = ROM_fascist_stronghold
+				create_unit = {
+					division = "division_template = \"Regimentul de santinelă\" start_experience_factor = 0.3 start_equipment_factor = 1.0"
+					owner = RMC
+					allow_spawning_on_enemy_provs = yes
+					count = 2
+				}
+				create_unit = {
+					division = "division_template = \"Regimentul de Fier\" start_experience_factor = 0.3 start_equipment_factor = 1.0"
+					owner = ROM
+					allow_spawning_on_enemy_provs = yes
+					count = 1
+				}
+			}
+			every_state = {
+				limit = {
+					is_core_of = ROOT
+					check_variable = { ROM_garrison_control = 2 compare = equals }
+				}
+				set_state_flag = ROM_fascist_stronghold
+				create_unit = {
+					division = "division_template = \"Regimentul de santinelă\" start_experience_factor = 0.3 start_equipment_factor = 1.0"
+					owner = RMC
+					allow_spawning_on_enemy_provs = yes
+					count = 1
+				}
+				create_unit = {
+					division = "division_template = \"Regimentul de Fier\" start_experience_factor = 0.3 start_equipment_factor = 1.0"
+					owner = ROM
+					allow_spawning_on_enemy_provs = yes
+					count = 2
+				}
+			}
+			every_state = {
+				limit = {
+					is_core_of = ROOT
+					check_variable = { ROM_garrison_control = 3 compare = equals }
+				}
+				create_unit = {
+					division = "division_template = \"Regimentul de Fier\" start_experience_factor = 0.3 start_equipment_factor = 1.0"
+					owner = ROM
+					allow_spawning_on_enemy_provs = yes
+					count = 3
+				}
+			}
+			declare_war_on = {
+				target = RMC
+				type = civil_war
+			}
+			add_civil_war_target = RMC
+			RMC = {
+				set_popularities = {
+					neutrality = 100
+				}
+				#promote_character = ROM_king_carol
+				add_ideas = economy_fatigue_20
+				set_variable = { economic_fatigue = 20 }
+				add_ideas = limited_exports
+				add_ideas = extensive_conscription
+				add_ideas = partial_economic_mobilisation
+				add_ideas = state_sponsored_economy
+				add_ideas = ROM_disinclined_economy
+				add_ideas = ROM_king_carol_ii
+				add_ideas = ROM_greater_romania
+				add_ideas = ROM_nationwide_corruption
+				add_ideas = ROM_foreign_designed_military
+				add_ideas = internal_conflict
+			}
+			#add_stability = 0.5
+			#news_event = { id = wtt_news.1 hours = 6 } Need News Event still
+		}
+	}
+
+	option = {
+		name = rom_armor.832.a
+	}
+}
+
+#Civil War End
+country_event = {
+	id = rom_armor.833
+	title = rom_armor.833.t
+	desc = rom_armor.833.d
+
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			delete_unit_template_and_units = { division_template = "Regimentul de Fier" }
+			delete_unit_template_and_units = { division_template = "Regimentul de santinelă" }
+		}
+	}
+
+	option = {
+		name = rom_armor.833.a
+		effect_tooltip = {
+			add_ideas = ROM_peasant_revolt
+		}
+		ai_chance = {
+			factor = 25
+		}
+	}
+}
+
+#Law and order returns
+country_event = {
+	id = rom_armor.834
+	title = rom_armor.834.t
+	desc = rom_armor.834.d
+
+	is_triggered_only = yes
+
+	option = {
+		name = rom_armor.834.a
+		if = {
+			limit = {
+				has_idea = ROM_peasant_revolt_4
+			}
+			remove_ideas = ROM_peasant_revolt_4
+		}
+		else_if = {
+			limit = {
+				has_idea = ROM_peasant_revolt_3
+			}
+			swap_ideas = {
+				remove_idea = ROM_peasant_revolt_3
+				add_idea = ROM_peasant_revolt_4
+			}
+			hidden_effect = {
+				country_event = { id = rom_armor.834 days = 40 }
+			}
+		}
+		else_if = {
+			limit = {
+				has_idea = ROM_peasant_revolt_2
+			}
+			swap_ideas = {
+				remove_idea = ROM_peasant_revolt_2
+				add_idea = ROM_peasant_revolt_3
+			}
+			hidden_effect = {
+				country_event = { id = rom_armor.834 days = 40 }
+			}
+		}
+		ai_chance = {
+			factor = 25
+		}
+	}
+}
+
+#Purge of the Elites
+country_event = {
+	id = rom_armor.835
+	title = rom_armor.835.t
+	desc = rom_armor.835.d
+	picture = GFX_report_event_generic_riot
+
+	is_triggered_only = yes
+
+	immediate = {
+	}
+
+	option = {
+		name = rom_armor.835.a
+		effect_tooltip = {
+			add_stability = 0.15
+			add_political_power = -100
+			add_popularity = { ideology = neutrality popularity = -0.2 }
+		}
+	}
+}
+
 ############################################ King Abdication
 
 country_event = {
@@ -1144,7 +1536,10 @@ country_event = {
 			}
 		}
 	}
+
 }
+
+
 
 #################################################################################### Cheats
 
@@ -1161,11 +1556,39 @@ country_event = {
 		is_ai = yes
 		date > 1942.6.1
 		NOT = { date > 1943.6.1 }
-		not = {has_global_flag = disable_cheats}
+		#not = {has_global_flag = disable_cheats}
 	}
 
 	immediate = {
 		add_political_power = 2000
+	}
+
+	option = {}
+
+}
+
+
+country_event = {
+	id = rom_armor.902
+	hidden = yes
+
+	mean_time_to_happen = { days = 1 }
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = ROM
+		is_ai = yes
+		has_war_with = SOV
+		date > 1941.9.1
+	}
+
+	immediate = {
+		set_technology = {
+			motorised_infantry = 1
+		}
+		add_equipment_to_stockpile = { type = motorized_equipment_1 amount = 500 producer = ROM }
+		add_equipment_to_stockpile = { type = train_equipment_2 amount = 500 producer = ROM }
 	}
 
 	option = {}

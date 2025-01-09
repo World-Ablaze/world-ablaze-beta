@@ -51,7 +51,7 @@ country_event = {
 				engineer = { x = 0 y = 0 }
 				horse_field_hospital = { x = 0 y = 1 }
 				horse_logistics_company = { x = 0 y = 2 }
-				signal_company = { x = 0 y = 3 }
+				horse_signal_company = { x = 0 y = 3 }
 
 				recon = { x = 1 y = 0 }
 				artillery = { x = 1 y = 1 }
@@ -848,10 +848,66 @@ country_event = {
 			every_unit_leader = {
 				set_nationality = HUN
 			}
+			if = {
+				limit = {
+					has_template = "Czechoslovakian Reserve Divisíon"
+				}
+				delete_units = {
+					division_template = "Czechoslovakian Reserve Divisíon"
+					disband = yes
+				}
+			}
+			if = {
+				limit = {
+					has_template = "Pěší divize"
+				}
+				delete_units = {
+					division_template = "Pěší divize"
+					disband = yes
+				}
+			}
+			if = {
+				limit = {
+					has_template = "Horská divize"
+				}
+				delete_units = {
+					division_template = "Horská divize"
+					disband = yes
+				}
+			}
+			if = {
+				limit = {
+					has_template = "Jezdecká brigáda"
+				}
+				delete_units = {
+					division_template = "Jezdecká brigáda"
+					disband = yes
+				}
+			}
+			if = {
+				limit = {
+					has_template = "Rychlá divize"
+				}
+				delete_units = {
+					division_template = "Rychlá divize"
+					disband = yes
+				}
+			}
 		}
-		annex_country = { target = CZE transfer_troops = no }
+		annex_country = { target = CZE }
 		set_country_flag = CZE_annexed_peacefully # Used to change division name lists for HUN
 		add_equipment_to_stockpile = { type = tank_cze_light_chassis_4 amount = 500 producer = CZE }
+		every_state = {
+			limit = {
+				OR = {
+					is_core_of = SLO
+					is_core_of = CZE
+				}
+				controller = { tag = ROOT }
+			}
+			set_compliance = 90
+			set_resistance = 0
+		}
 	}
 }
 
@@ -2342,13 +2398,40 @@ country_event = {
 		}
 		effect_tooltip = {
 			HUN = {
+				add_stability = 0.15
 				transfer_state = 76
 				transfer_state = 84
 				transfer_state = 83
 				transfer_state = 82
 			}
 		}
-		HUN = { country_event = { id = hun_armor.833 hours = 6 } }
+		HUN = { country_event = { id = hun_armor.853 hours = 6 } }
+		add_war_support = -0.15
+		add_stability = -0.1
+		if = {
+			limit = {
+				has_government = neutrality
+			}
+			add_popularity = { ideology = neutrality popularity = -0.30 }
+		}
+		if = {
+			limit = {
+				has_government = democratic
+			}
+			add_popularity = { ideology = democratic popularity = -0.30 }
+		}
+		if = {
+			limit = {
+				has_government = communism
+			}
+			add_popularity = { ideology = communism popularity = -0.30 }
+		}
+		if = {
+			limit = {
+				has_government = fascism
+			}
+			add_popularity = { ideology = fascism popularity = -0.30 }
+		}
 	}
 
 	option = {
@@ -2356,47 +2439,17 @@ country_event = {
 		ai_chance = {
 			factor = 1
 		}
+		HUN = { country_event = { id = hun_armor.852 hours = 6 } }
 		effect_tooltip = {
 			HUN = {
-				add_state_claim = 76
-				add_state_claim = 84
-				add_state_claim = 83
-				add_state_claim = 82
+				add_war_support = 0.15
+				declare_war_on = {
+					target = ROM
+					type = take_state_focus
+					generator = { 82 76 83 84 }
+				}
 			}
 		}
-		HUN = { country_event = { id = hun_armor.834 hours = 6 } }
-	}
-}
-
-country_event = {
-	id = hun_armor.833
-	title = hun_armor.833.t
-	desc = hun_armor.883.d
-
-	is_triggered_only = yes
-
-	option = {
-		name = hun_armor.833.a
-		transfer_state = 76
-		transfer_state = 84
-		transfer_state = 83
-		transfer_state = 82
-	}
-}
-
-country_event = {
-	id = hun_armor.834
-	title = hun_armor.834.t
-	desc = hun_armor.834.d
-
-	is_triggered_only = yes
-
-	option = {
-		name = hun_armor.834.a
-		add_state_claim = 76
-		add_state_claim = 84
-		add_state_claim = 83
-		add_state_claim = 82
 	}
 }
 
@@ -2993,7 +3046,13 @@ country_event = {
 	}
 }
 
+
+
+
+
 ############################################ Soviet Union rejects Peace
+
+
 
 
 country_event = {
@@ -3005,6 +3064,410 @@ country_event = {
 
 	option = {
 		name = hun_armor.849.a
+	}
+}
+
+
+
+
+
+################################################# Question of Transylvania
+
+
+
+
+
+country_event = {
+	id = hun_armor.850
+	title = hun_armor.850.t
+	desc = hun_armor.850.d
+	picture = GFX_report_event_hungarian_soldiers
+
+	fire_only_once = yes
+
+	trigger = {
+		original_tag = HUN
+		is_subject = no
+		ROM = { is_subject = no }
+		any_state = {
+			is_core_of = ROM
+			controller = {
+				NOT = { tag = ROM }
+			}
+		}
+		is_in_faction = yes
+		is_faction_leader = no
+		NOT = { has_war_with = ROM }
+		NOT = { has_idea = civilian_economy }
+		NOT = { has_idea = low_economic_mobilisation }
+		has_completed_focus = HUN_renounce_the_treaty_of_trianon
+		NOT = { GER = { has_completed_focus = GER_second_vienna_award } }
+		ROM = { controls_state = 76 }
+		surrender_progress < 0.05
+		OR = {
+			NOT = { country_exists = FRA }
+			FRA = { has_capitulated = yes }
+		}
+	}
+
+	immediate = {
+	}
+
+	option = {
+		name = hun_armor.850.a
+		ai_chance = {
+			factor = 10
+
+			modifier = {
+				factor = 0
+				is_in_faction_with = GER
+			}
+		}
+		custom_effect_tooltip = may_lead_to_war_with_romania
+		ROM = { country_event = { id = hun_armor.851 hours = 6 } }
+	}
+
+	option = {
+		name = hun_armor.850.b
+		trigger = {
+			is_in_faction_with = GER
+		}
+		ai_chance = {
+			factor = 10
+		}
+		GER = { country_event = { id = hun_armor.854 hours = 6 } }
+		ai_chance = {
+			factor = 10
+		}
+	}
+
+	option = {
+		name = hun_armor.850.c
+		ai_chance = {
+			factor = 0
+		}
+		add_war_support = -0.2
+		add_political_power = -150
+	}
+}
+
+country_event = {
+	id = hun_armor.851
+	title = hun_armor.851.t
+	desc = hun_armor.851.d
+	picture = GFX_report_event_hungarian_soldiers
+
+	is_triggered_only = yes
+
+	immediate = {
+	}
+
+	option = {
+		name = hun_armor.851.a
+		ai_chance = {
+			factor = 10
+		}
+		effect_tooltip = {
+			HUN = {
+				add_war_support = 0.15
+				declare_war_on = {
+					target = ROM
+					type = take_state_focus
+					generator = { 82 76 83 84 }
+				}
+			}
+		}
+		HUN = { country_event = { id = hun_armor.852 hours = 6 } }
+	}
+
+	option = {
+		name = hun_armor.851.b
+		ai_chance = {
+			factor = 0
+		}
+		effect_tooltip = {
+			HUN = {
+				transfer_state = 76
+				transfer_state = 84
+				transfer_state = 83
+				transfer_state = 82
+			}
+		}
+		HUN = { country_event = { id = hun_armor.853 hours = 6 } }
+		add_war_support = -0.15
+		add_stability = -0.1
+		if = {
+			limit = {
+				has_government = neutrality
+			}
+			add_popularity = { ideology = neutrality popularity = -0.30 }
+		}
+		if = {
+			limit = {
+				has_government = democratic
+			}
+			add_popularity = { ideology = democratic popularity = -0.30 }
+		}
+		if = {
+			limit = {
+				has_government = communism
+			}
+			add_popularity = { ideology = communism popularity = -0.30 }
+		}
+		if = {
+			limit = {
+				has_government = fascism
+			}
+			add_popularity = { ideology = fascism popularity = -0.30 }
+		}
+	}
+}
+
+country_event = {
+	id = hun_armor.852
+	title = hun_armor.852.t
+	desc = hun_armor.852.d
+	picture = GFX_report_event_romanian_soldiers
+
+	is_triggered_only = yes
+
+	immediate = {
+	}
+
+	option = {
+		name = hun_armor.852.a
+		add_war_support = 0.15
+		if = {
+			limit = {
+				ROM = {
+					is_in_faction_with = ROOT
+				}
+			}
+			every_country = {
+				limit = {
+					is_in_faction_with = ROM
+				}
+				remove_from_faction = ROM
+			}
+		}
+		if = {
+			limit = {
+				ROM = { is_in_faction = no }
+			}
+			every_country = {
+				limit = {
+					is_in_faction_with = HUN
+				}
+				remove_from_faction = HUN
+			}
+			add_ideas = internal_conflict
+			ROM = { add_ideas = internal_conflict }
+		}
+		declare_war_on = {
+			target = ROM
+			type = take_state_focus
+			generator = { 82 76 83 84 }
+		}
+		if = {
+			limit = {
+				ROM = { is_in_faction = no }
+			}
+			hidden_effect = {
+				activate_mission = HUN_war_for_transylvania
+				ROM = { activate_mission = ROM_war_for_transylvania }
+				news_event = { id = news.302 days = 1 }
+			}
+		}
+		hidden_effect = {
+			news_event = { id = news.302 days = 1 }
+		}
+		ai_chance = {
+			factor = 10
+		}
+	}
+}
+
+country_event = {
+	id = hun_armor.853
+	title = hun_armor.853.t
+	desc = hun_armor.853.d
+	picture = GFX_report_event_romanian_soldiers
+
+	is_triggered_only = yes
+
+	immediate = {
+	}
+
+	option = {
+		name = hun_armor.853.a
+		add_stability = 0.15
+		transfer_state = 76
+		transfer_state = 84
+		transfer_state = 83
+		transfer_state = 82
+		ai_chance = {
+			factor = 10
+		}
+	}
+}
+
+country_event = {
+	id = hun_armor.854
+	title = hun_armor.854.t
+	desc = hun_armor.854.d
+	picture = GFX_report_event_generic_read_write
+
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			set_global_flag = HUN_transylvania_arbitration
+			activate_mission = GER_hungarians_demand_transylvania
+		}
+	}
+
+	option = {
+		name = hun_armor.854.a
+		effect_tooltip = {
+			activate_mission = GER_hungarians_demand_transylvania
+		}
+		ai_chance = {
+			factor = 10
+		}
+	}
+}
+
+country_event = {
+	id = hun_armor.855
+	title = hun_armor.855.t
+	desc = hun_armor.855.d
+	picture = GFX_report_event_generic_read_write
+
+	is_triggered_only = yes
+
+	immediate = {
+	}
+
+	option = {
+		name = hun_armor.855.a
+		ai_chance = {
+			factor = 10
+		}
+		custom_effect_tooltip = may_lead_to_war_with_romania
+		ROM = { country_event = { id = hun_armor.851 hours = 6 } }
+	}
+
+	option = {
+		name = hun_armor.855.b
+		ai_chance = {
+			factor = 0
+		}
+		add_war_support = -0.2
+		add_political_power = -150
+	}
+}
+
+country_event = {
+	id = hun_armor.856
+	title = hun_armor.856.t
+	desc = hun_armor.856.d
+	picture = GFX_report_event_hungarian_soldiers
+
+	is_triggered_only = yes
+
+	immediate = {
+	}
+
+	option = {
+		name = hun_armor.856.a
+		add_war_support = -0.15
+		add_stability = -0.1
+		HUN = {
+			white_peace = ROM
+			remove_ideas = internal_conflict
+		}
+		ROM = {
+			remove_ideas = internal_conflict
+		}
+	}
+}
+
+country_event = {
+	id = hun_armor.857
+	title = hun_armor.857.t
+	desc = hun_armor.857.d
+	picture = GFX_report_event_hungarian_soldiers
+
+	is_triggered_only = yes
+
+	immediate = {
+	}
+
+	option = {
+		name = hun_armor.857.a
+		add_stability = -0.15
+		HUN = {
+			white_peace = ROM
+			remove_ideas = internal_conflict
+			transfer_state = 76
+			transfer_state = 84
+			transfer_state = 83
+			transfer_state = 82
+		}
+		ROM = {
+			remove_ideas = internal_conflict
+		}
+	}
+}
+
+country_event = {
+	id = hun_armor.858
+	title = hun_armor.858.t
+	desc = hun_armor.858.d
+	picture = GFX_report_event_hungarian_soldiers
+
+	is_triggered_only = yes
+
+	immediate = {
+	}
+
+	option = {
+		name = hun_armor.858.a
+		if = {
+			limit = {
+				HUN = { controls_state = 76 }
+			}
+			HUN = { transfer_state = 76 }
+			if = {
+				limit = {
+					HUN = { controls_state = 83 }
+				}
+				HUN = { transfer_state = 83 }
+			}
+			if = {
+				limit = {
+					HUN = { controls_state = 84 }
+				}
+				HUN = { transfer_state = 84 }
+			}
+			if = {
+				limit = {
+					HUN = { controls_state = 82 }
+				}
+				HUN = { transfer_state = 82 }
+			}
+		}
+		else = {
+			add_war_support = -0.1
+			ROM = { add_stability = 0.05 }
+		}
+		HUN = {
+			white_peace = ROM
+			remove_ideas = internal_conflict
+		}
+		ROM = {
+			remove_ideas = internal_conflict
+		}
 	}
 }
 
@@ -3111,7 +3574,7 @@ country_event = {
 		is_ai = yes
 		date > 1942.6.1
 		NOT = { date > 1943.6.1 }
-		not = {has_global_flag = disable_cheats}
+		#not = {has_global_flag = disable_cheats}
 	}
 
 	immediate = {
@@ -3128,6 +3591,52 @@ country_event = {
 				instant_build = yes
 			}
 		}
+	}
+
+	option = {}
+
+}
+
+country_event = {
+	id = hun_armor.904
+	hidden = yes
+
+	mean_time_to_happen = { days = 1 }
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = HUN
+		is_ai = yes
+		has_war_with = SOV
+	}
+
+	immediate = {
+		add_equipment_to_stockpile = { type = train_equipment_1 amount = 750 producer = HUN } ###I need to find another fix
+	}
+
+	option = {}
+
+}
+
+country_event = {
+	id = hun_armor.905
+	hidden = yes
+
+	mean_time_to_happen = { days = 1 }
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = HUN
+		is_ai = yes
+		has_war_with = SOV
+		date > 1941.9.1
+	}
+
+	immediate = {
+		add_equipment_to_stockpile = { type = hun_motorized_equipment_1 amount = 500 producer = HUN }
+		add_equipment_to_stockpile = { type = train_equipment_2 amount = 500 producer = HUN }
 	}
 
 	option = {}

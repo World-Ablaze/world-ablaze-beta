@@ -32,6 +32,7 @@ country_event = {
 				heavy_infantry = { x = 1 y = 0 }
 				heavy_infantry = { x = 1 y = 1 }
 				heavy_infantry = { x = 1 y = 2 }
+				heavy_infantry = { x = 1 y = 3 }
 
 				heavy_infantry = { x = 2 y = 0 }
 				heavy_infantry = { x = 2 y = 1 }
@@ -39,21 +40,20 @@ country_event = {
 
 				artillery_brigade = { x = 3 y = 0 }
 				artillery_brigade = { x = 3 y = 1 }
-				artillery_brigade = { x = 3 y = 2 }
-
-				anti_tank_brigade = { x = 4 y = 0 }
-				anti_tank_brigade = { x = 4 y = 1 }
-				anti_tank_brigade = { x = 4 y = 2 }
+				anti_tank_brigade = { x = 3 y = 2 }
+				anti_tank_brigade = { x = 3 y = 3 }
 			}
 
 			support = {
 				engineer = { x = 0 y = 0 }
 				artillery = { x = 0 y = 1 }
-				motorized_logistics_company = { x = 0 y = 2 }
+				horse_logistics_company = { x = 0 y = 2 }
 				signal_company = { x = 0 y = 3 }
 
 				recon = { x = 1 y = 0 }
 				field_hospital = { x = 1 y = 1 }
+				military_police = { x = 1 y = 2 }
+				anti_tank = { x = 1 y = 3 }
 			}
 		}
 		add_advisor_role = {
@@ -405,13 +405,57 @@ country_event = {
 	}
 
 	immediate = {
-		275 = {
-			create_unit = {
-				division = "division_template = \"South African Infantry Division\" start_experience_factor = 0.5 start_equipment_factor = 0.05"
-				owner = SAF
-				count = 3
+		add_equipment_to_stockpile = { type = eng_motorized_equipment_1 amount = 2000 producer = ENG }
+		add_equipment_to_stockpile = { type = train_equipment_2 amount = 120 producer = SAF }
+		add_equipment_to_stockpile = { type = convoy_1 amount = 50 producer = SAF }
+		add_political_power = 500
+		if = {
+			limit = {
+				NOT = {
+					has_tech = decisive_strategy
+				}
+			}
+			set_technology = { decisive_strategy = 1 }
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_tech = attritional_containment
+				}
+			}
+			set_technology = { attritional_containment = 1 }
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_tech = c3i
+				}
+			}
+			set_technology = { c3i = 1 }
+		}
+		if = {
+			limit = {
+				ENG = { is_ai = yes }
+			}
+			capital_scope = {
+				create_unit = {
+					division = "division_template = \"South African Infantry Division\" start_experience_factor = 0.5 start_equipment_factor = 0.5"
+					owner = SAF
+					count = 10
+				}
 			}
 		}
+		else = {
+			capital_scope = {
+				create_unit = {
+					division = "division_template = \"South African Infantry Division\" start_experience_factor = 0.5 start_equipment_factor = 0.5"
+					owner = SAF
+					count = 5
+				}
+			}
+		}
+		delete_unit_template_and_units = { division_template = "District Force" }
+		delete_unit_template_and_units = { division_template = "District Brigade" }
 	}
 
 	option = {

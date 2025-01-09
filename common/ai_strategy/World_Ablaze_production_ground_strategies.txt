@@ -196,7 +196,7 @@ WA_JAP_ground_production_strategy_default = {
 		id = infantry
 		value = 1
 	}
-	
+
 	ai_strategy = {
 		type = equipment_production_factor
 		id = artillery
@@ -367,7 +367,7 @@ WA_SOV_ground_production_strategy_default = {
 
 	ai_strategy = {
 		type = equipment_variant_production_factor
-		id = scout_car_equipment
+		id = scout_car_chassis
 		value = -100
 	}
 }
@@ -389,7 +389,7 @@ WA_SOV_ground_production_strategy_late = {
 		date > 1942.1.1
 	}
 	abort_when_not_enabled = yes
-	
+
 	ai_strategy = {
 		type = equipment_stockpile_surplus_ratio
 		value = -20
@@ -402,15 +402,21 @@ WA_SOV_ground_production_strategy_late = {
 	}
 
 	ai_strategy = {
+		type = equipment_variant_production_factor
+		id = infantry_equipment
+		value = 10
+	}
+
+	ai_strategy = {
 		type = equipment_production_factor
 		id = anti_tank
 		value = 30
 	}
-	
+
 	ai_strategy = {
 		type = equipment_production_factor
 		id = armor
-		value = 25
+		value = 15
 	}
 
 	ai_strategy = {
@@ -418,13 +424,13 @@ WA_SOV_ground_production_strategy_late = {
 		id = heavy_anti_tank_equipment
 		value = 50
 	}
-	
+
 	ai_strategy = {
 		type = equipment_variant_production_factor
 		id = medium_tank_chassis
-		value = 20
+		value = 15
 	}
-	
+
 	ai_strategy = {
 		type = equipment_variant_production_factor
 		id = medium_tank_destroyer_chassis
@@ -442,7 +448,7 @@ WA_SOV_ground_production_strategy_late = {
 		id = medium_tank_assault_chassis
 		value = 250
 	}
-	
+
 	ai_strategy = {
 		type = equipment_variant_production_factor
 		id = heavy_tank_assault_chassis
@@ -564,9 +570,9 @@ WA_SOV_you_need_aa = {
 	ai_strategy = {
 		type = equipment_production_min_factories
 		id = anti_air
-		value = 4
+		value = 5
 	}
-	
+
 	ai_strategy = {
 		type = equipment_production_factor
 		id = anti_air
@@ -578,7 +584,7 @@ WA_SOV_you_need_aa = {
 		id = anti_air_equipment
 		value = -1000
 	}
-	
+
 	ai_strategy = {
 		type = equipment_variant_production_factor
 		id = heavy_anti_air_equipment
@@ -977,24 +983,30 @@ default_army_size_usa_tanks = {
 		original_tag = USA
 	}
 	enable = {
-		if = {
-			limit = {
+		OR = {
+			AND = {
 				NOT = {
 					has_template = "US Modern Tank Division"
 				}
+				has_army_size = {
+					size > 34
+					type = armor
+				}
 			}
-			has_army_size = {
-				size > 34
-				type = armor
-			}
-		}
-		if = {
-			limit = {
+			AND = {
 				has_template = "US Modern Tank Division"
+				has_army_size = {
+					size > 59
+					type = armor
+				}
 			}
-			has_army_size = {
-				size > 59
-				type = armor
+			AND = {
+				has_war_with = JAP
+				has_completed_focus = USA_synthetic_rubber_program
+				has_country_flag = {
+					flag = USA_synthetic_rubber_program_started
+					days < 100
+				}
 			}
 		}
 	}
@@ -1016,6 +1028,40 @@ default_army_size_usa_tanks = {
 		type = build_army
 		id = heavy_armor
 		value = -1
+	}
+}
+
+Allies_need_more_infantry_stuff_now = {
+	allowed = {
+		OR = {
+			original_tag = USA
+			original_tag = ENG
+			original_tag = CAN
+		}
+	}
+	enable = {
+		AND = {
+			date > 1944.1.1
+			OR = {
+				6 = { CONTROLLER = { is_in_faction_with = ROOT } }
+				29 = { CONTROLLER = { is_in_faction_with = ROOT } }
+				785 = { CONTROLLER = { is_in_faction_with = ROOT } }
+				15 = { CONTROLLER = { is_in_faction_with = ROOT } }
+				14 = { CONTROLLER = { is_in_faction_with = ROOT } }
+				30 = { CONTROLLER = { is_in_faction_with = ROOT } }
+				23 = { CONTROLLER = { is_in_faction_with = ROOT } }
+				19 = { CONTROLLER = { is_in_faction_with = ROOT } }
+				1016 = { CONTROLLER = { is_in_faction_with = ROOT } }
+			}
+		}
+		has_war_with = GER
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = air_factory_balance
+		value = -100
 	}
 }
 
@@ -1119,22 +1165,32 @@ WA_USA_lend_lease_production = {
 	ai_strategy = {
 		type = equipment_variant_production_factor
 		id = heavy_infantry_equipment
-		value = 100
+		value = 150
+	}
+	ai_strategy = {
+		type = equipment_production_min_factories
+		id = anti_air
+		value = 4
+	}
+	ai_strategy = {
+		type = equipment_production_min_factories
+		id = anti_tank
+		value = 3
 	}
 	ai_strategy = {
 		type = equipment_variant_production_factor
 		id = support_equipment
-		value = 125
+		value = 200
 	}
 	ai_strategy = {
 		type = equipment_variant_production_factor
 		id = infantry_equipment
-		value = 125
+		value = 200
 	}
 	ai_strategy = {
 		type = equipment_variant_production_factor
 		id = anti_tank_equipment
-		value = 125
+		value = 150
 	}
 	ai_strategy = {
 		type = equipment_variant_production_factor
@@ -1144,17 +1200,32 @@ WA_USA_lend_lease_production = {
 	ai_strategy = {
 		type = equipment_variant_production_factor
 		id = artillery_equipment
-		value = 125
+		value = 150
 	}
 	ai_strategy = {
 		type = equipment_variant_production_factor
 		id = mechanized_equipment
-		value = 125
+		value = 20
 	}
 	ai_strategy = {
 		type = equipment_variant_production_factor
 		id = mechanized_td_equipment
 		value = 25
+	}
+	ai_strategy = {
+		type = equipment_variant_production_factor
+		id = mechanized_artillery_equipment
+		value = 25
+	}
+	ai_strategy = {
+		type = equipment_variant_production_factor
+		id = mechanized_aa_equipment
+		value = 25
+	}
+	ai_strategy = {
+		type = equipment_variant_production_factor
+		id = medium_tank_chassis
+		value = 20
 	}
 	ai_strategy = {
 		type = equipment_variant_production_factor
@@ -1300,12 +1371,12 @@ WA_CZE_ground_production_strategy_default = {
 	ai_strategy = {
 		type = equipment_production_factor
 		id = armor
-		value = 20
+		value = 10
 	}
 	ai_strategy = {
 		type = equipment_production_min_factories
 		id = artillery
-		value = 5
+		value = 3
 	}
 }
 
@@ -1330,15 +1401,12 @@ default_army_size_usa = {
 				}
 			}
 			has_army_size = {
-				size > 199
+				size > 39
 				type = infantry
 			}
 		}
 		else = {
-			has_army_size = {
-				size > 129
-				type = infantry
-			}
+			always = yes
 		}
 	}
 
@@ -1350,17 +1418,17 @@ default_army_size_usa = {
 		value = -1
 	}
 
-	ai_strategy = {
-		type = build_army
-		id = mechanized
-		value = -1
-	}
+	#ai_strategy = {
+	#	type = build_army
+	#	id = mechanized
+	#	value = -1
+	#}
 
-	ai_strategy = {
-		type = build_army
-		id = motorized
-		value = -1
-	}
+	#ai_strategy = {
+	#	type = build_army
+	#	id = motorized
+	#	value = -1
+	#}
 
 	ai_strategy = {
 		type = build_army
@@ -1371,6 +1439,52 @@ default_army_size_usa = {
 	ai_strategy = {
 		type = build_army
 		id = mountaineers
+		value = -1
+	}
+}
+
+default_army_size_usa_mech = {
+	allowed = {
+		tag = USA
+	}
+	enable = {
+		if = {
+			limit = {
+				OR = {
+					has_global_flag = soviet_union_defeated
+					has_idea = USA_homeland_defense
+					SOV = {
+						OR = {
+							has_capitulated = yes
+							exists = no
+						}
+					}
+				}
+			}
+			has_army_size = {
+				size > 149
+				type = mechanized
+			}
+		}
+		else = {
+			has_army_size = {
+				size > 119
+				type = mechanized
+			}
+		}
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = build_army
+		id = mechanized
+		value = -1
+	}
+
+	ai_strategy = {
+		type = build_army
+		id = motorized
 		value = -1
 	}
 }
@@ -1451,6 +1565,32 @@ default_army_size_jap_tanks = {
 default_army_size_eng = {
 	allowed = {
 		tag = ENG
+	}
+	enable = {
+		has_army_size = {
+			size > 99
+			type = infantry
+		}
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = build_army
+		id = infantry
+		value = -1
+	}
+
+	ai_strategy = {
+		type = build_army
+		id = garrison
+		value = -1
+	}
+}
+
+default_army_size_raj = {
+	allowed = {
+		tag = RAJ
 	}
 	enable = {
 		has_army_size = {
@@ -1590,7 +1730,7 @@ default_army_size_ger = {
 			AND = {
 				date < 1941.10.1
 				has_army_size = {
-					size > 100
+					size > 120
 					type = infantry
 				}
 				NOT = {
@@ -1600,27 +1740,7 @@ default_army_size_ger = {
 			AND = {
 				date > 1941.10.1
 				has_army_size = {
-					size > 160
-					type = infantry
-				}
-				NOT = {
-					surrender_progress > 0
-				}
-			}
-			AND = {
-				date > 1942.10.1
-				has_army_size = {
-					size > 170
-					type = infantry
-				}
-				NOT = {
-					surrender_progress > 0
-				}
-			}
-			AND = {
-				date > 1943.10.1
-				has_army_size = {
-					size > 175
+					size > 200
 					type = infantry
 				}
 				NOT = {
@@ -1669,7 +1789,7 @@ default_army_size_ger_tanks = {
 				has_template = "German Medium Tank Division"
 				has_template = "German Modern Tank Division"
 				has_army_size = {
-					size > 28
+					size > 40
 					type = armor
 				}
 			}
@@ -1752,6 +1872,7 @@ default_army_size = {
 			tag = ROM
 			tag = HUN
 			tag = JAP
+			tag = RAJ
 		}
 	}
 	enable = {
@@ -1963,12 +2084,23 @@ default_army_size_sov = {
 					has_country_flag = ai_barb_timer
 				}
 				has_war_with_major = yes
+				NOT = {
+					has_war_with = USA
+				}
 			}
 			AND = {
 				has_country_flag = ai_barb_timer
 				GER = {
 					is_ai = yes
 				}
+			}
+			AND = {
+				num_divisions > 320
+				has_army_size = {
+					size > 300
+					type = infantry
+				}
+				has_war_with = USA
 			}
 		}
 	}
@@ -1988,6 +2120,52 @@ default_army_size_sov = {
 	}
 }
 
+build_medium_tank_sov = {
+	allowed = {
+		tag = SOV
+	}
+	enable = {
+		any_enemy_country = {
+			is_major = yes
+		}
+		has_army_size = {
+			size < 39
+			type = armor
+		}
+	}
+
+	abort_when_not_enabled = yes
+
+
+	ai_strategy = {
+		type = build_army
+		id = medium_armor
+		value = 35
+	}
+	ai_strategy = {
+		type = build_army
+		id = heavy_armor
+		value = 4
+	}
+
+	ai_strategy = {
+		type = role_ratio
+		id = medium_armor
+		value = 90
+	}
+
+	#ai_strategy = {
+	#	type = equipment_production_factor
+	#	id = medium_armor
+	#	value = 40
+	#}
+	#ai_strategy = {
+	#	type = equipment_variant_production_factor
+	#	id = medium_tank_chassis
+	#	value = 90
+	#}
+}
+
 default_army_size_sov_tank = {
 	allowed = {
 		tag = SOV
@@ -1995,7 +2173,7 @@ default_army_size_sov_tank = {
 	enable = {
 		OR = {
 			has_army_size = {
-				size > 54
+				size > 39
 				type = armor
 			}
 			NOT = {
@@ -2142,8 +2320,11 @@ SOV_enough_divisions_now_stockpile_and_tanks = {
 #}
 
 DEFAULT_train_production_usa = {
+	allowed = {
+		original_tag = USA
+	}
 	enable = {
-		tag = USA
+		always = yes
 	}
 	abort_when_not_enabled = yes
 
@@ -2161,8 +2342,11 @@ DEFAULT_train_production_usa = {
 }
 
 DEFAULT_train_production_sov = {
+	allowed = {
+		original_tag = SOV
+	}
 	enable = {
-		tag = SOV
+		always = yes
 	}
 	abort_when_not_enabled = yes
 
@@ -2180,8 +2364,11 @@ DEFAULT_train_production_sov = {
 }
 
 DEFAULT_train_production_ger = {
+	allowed = {
+		original_tag = GER
+	}
 	enable = {
-		tag = GER
+		always = yes
 	}
 	abort_when_not_enabled = yes
 
@@ -2201,21 +2388,23 @@ DEFAULT_train_production_ger = {
 ################################################ Truck AI
 
 DEFAULT_truck_production = {
+	allowed = {
+		NOT = {
+			OR = {
+				original_tag = USA
+				original_tag = ENG
+				original_tag = JAP
+				original_tag = ITA
+				original_tag = FRA
+				original_tag = CHI
+				original_tag = GER
+				original_tag = SOV
+			}
+		}
+	}
 	enable = {
 		is_major = yes
 		has_equipment = { motorized_equipment < 25000 }
-		NOT = {
-			OR = {
-				tag = USA
-				tag = ENG
-				tag = JAP
-				tag = ITA
-				tag = FRA
-				tag = CHI
-				tag = GER
-				tag = SOV
-			}
-		}
 	}
 	abort_when_not_enabled = yes
 
@@ -2227,9 +2416,11 @@ DEFAULT_truck_production = {
 }
 
 ENG_truck_production = {
+	allowed = {
+		original_tag = ENG
+	}
 	enable = {
 		has_equipment = { motorized_equipment < 25000 }
-		tag = ENG
 	}
 	abort_when_not_enabled = yes
 
@@ -2242,9 +2433,11 @@ ENG_truck_production = {
 
 
 ENG_truck_production_2 = {
+	allowed = {
+		original_tag = ENG
+	}
 	enable = {
 		has_equipment = { motorized_equipment < 25000 }
-		tag = ENG
 		date > 1941.1.1
 	}
 	abort_when_not_enabled = yes
@@ -2257,9 +2450,11 @@ ENG_truck_production_2 = {
 }
 
 JAP_truck_production = {
+	allowed = {
+		original_tag = JAP
+	}
 	enable = {
 		has_equipment = { motorized_equipment < 25000 }
-		tag = JAP
 	}
 	abort_when_not_enabled = yes
 
@@ -2271,9 +2466,11 @@ JAP_truck_production = {
 }
 
 ITA_truck_production = {
+	allowed = {
+		original_tag = ITA
+	}
 	enable = {
 		has_equipment = { motorized_equipment < 25000 }
-		tag = ITA
 	}
 	abort_when_not_enabled = yes
 
@@ -2285,9 +2482,11 @@ ITA_truck_production = {
 }
 
 ROM_truck_production = {
+	allowed = {
+		original_tag = ROM
+	}
 	enable = {
 		has_equipment = { motorized_equipment < 15000 }
-		tag = ROM
 	}
 	abort_when_not_enabled = yes
 
@@ -2299,9 +2498,11 @@ ROM_truck_production = {
 }
 
 HUN_truck_production = {
+	allowed = {
+		original_tag = HUN
+	}
 	enable = {
 		has_equipment = { motorized_equipment < 15000 }
-		tag = HUN
 	}
 	abort_when_not_enabled = yes
 
@@ -2313,9 +2514,11 @@ HUN_truck_production = {
 }
 
 ROM_truck_production_2 = {
+	allowed = {
+		original_tag = ROM
+	}
 	enable = {
 		has_equipment = { motorized_equipment < 15000 }
-		tag = ROM
 		date > 1940.1.1
 	}
 	abort_when_not_enabled = yes
@@ -2328,9 +2531,11 @@ ROM_truck_production_2 = {
 }
 
 HUN_truck_production_2 = {
+	allowed = {
+		original_tag = HUN
+	}
 	enable = {
 		has_equipment = { motorized_equipment < 15000 }
-		tag = HUN
 		date > 1940.1.1
 	}
 	abort_when_not_enabled = yes
@@ -2343,9 +2548,11 @@ HUN_truck_production_2 = {
 }
 
 FRA_truck_production = {
+	allowed = {
+		original_tag = FRA
+	}
 	enable = {
 		has_equipment = { motorized_equipment < 25000 }
-		tag = FRA
 	}
 	abort_when_not_enabled = yes
 
@@ -2357,9 +2564,11 @@ FRA_truck_production = {
 }
 
 SOV_truck_production = {
+	allowed = {
+		original_tag = SOV
+	}
 	enable = {
 		has_equipment = { motorized_equipment < 50000 }
-		tag = SOV
 	}
 	abort_when_not_enabled = yes
 
@@ -2371,9 +2580,11 @@ SOV_truck_production = {
 }
 
 GER_truck_production_1 = {
+	allowed = {
+		original_tag = GER
+	}
 	enable = {
 		has_equipment = { motorized_equipment < 25000 }
-		tag = GER
 	}
 	abort_when_not_enabled = yes
 
@@ -2385,9 +2596,11 @@ GER_truck_production_1 = {
 }
 
 GER_truck_production_2 = {
+	allowed = {
+		original_tag = GER
+	}
 	enable = {
 		has_equipment = { motorized_equipment < 25000 }
-		tag = GER
 		date > 1941.1.1
 	}
 	abort_when_not_enabled = yes

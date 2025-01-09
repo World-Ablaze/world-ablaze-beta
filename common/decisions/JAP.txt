@@ -1,4 +1,91 @@
 JAP_intervene_in_china = {
+
+	JAP_activate_chinese_dockyards = {
+		icon = generic_construction
+		highlight_states = {
+			highlight_state_targets = {
+				state = 598
+				state = 613
+				state = 924
+				state = 1011
+			}
+		}
+		allowed = {
+			tag = JAP
+		}
+		available = {
+			RNC = {
+				controls_state = 598
+				controls_state = 613
+				controls_state = 924
+				controls_state = 1011
+			}
+		}
+		visible = {
+			tag = RNC
+			is_subject = no
+			country_exists = RNC
+			RNC = {
+				is_subject_of = ROOT
+			}
+			NOT = { has_country_flag = JAP_chinese_dockyards }
+		}
+		fire_only_once = no
+
+		cost = 0
+
+		days_remove = 7
+
+		modifier = {
+		}
+
+		ai_will_do = {
+			factor = 200
+		}
+
+		remove_effect = {
+			add_offsite_building = { type = dockyard level = 3 }
+			RNC = { add_ideas = GER_redirected_ship_production }
+			hidden_effect = {
+				set_country_flag = JAP_chinese_dockyards
+			}
+		}
+	}
+
+	JAP_lost_control_of_chinese_dockyards = {
+		icon = generic_construction
+
+		allowed = {
+			tag = JAP
+		}
+
+		available = {
+			country_exists = RNC
+			RNC = { has_capitulated = no }
+		}
+
+		visible = {
+		}
+
+		days_mission_timeout = 1
+		is_good = no
+
+		activation = {
+			has_country_flag = JAP_chinese_dockyards
+			OR = {
+				NOT = { country_exists = RNC }
+				RNC = { has_capitulated = yes }
+			}
+		}
+
+		timeout_effect = {
+			add_offsite_building = { type = dockyard level = -3 }
+			RNC = { remove_ideas = GER_redirected_ship_production }
+			hidden_effect = {
+				clr_country_flag = JAP_chinese_dockyards
+			}
+		}
+	}
 	JAP_form_ips = {
 		icon = generic_nationalism
 		allowed = {
@@ -550,36 +637,40 @@ JAP_intervene_in_china = {
 
 		available = {
 			NOT = { has_country_flag = JAP_military_offensive_in_progress_flag }
-			command_power > 49
+			hidden_trigger = {
+				command_power > 49
+			}
 		}
 
 		visible = {
 			CHI = {
 				has_completed_focus = CHI_expand_guerilla_operations
 			}
-			FROM = {
-				OR = {
-					controller = {
-						is_literally_china = yes
-					}
-					NOT = {
-						is_fully_controlled_by = controller
-					}
-				}
-			 	owner = {
-					is_literally_china = yes
-			 	}
-			 	any_neighbor_state = {
+			hidden_trigger = {
+				FROM = {
 					OR = {
-						is_controlled_by = ROOT
 						controller = {
-							OR = {
-								is_in_Faction_with = root
-								is_subject_of = root
-							}
+							is_literally_china = yes
+						}
+						NOT = {
+							is_fully_controlled_by = controller
 						}
 					}
-			 	}
+					 owner = {
+						is_literally_china = yes
+					 }
+					 any_neighbor_state = {
+						OR = {
+							is_controlled_by = ROOT
+							controller = {
+								OR = {
+									is_in_Faction_with = root
+									is_subject_of = root
+								}
+							}
+						}
+					 }
+				}
 			}
 		}
 
@@ -656,6 +747,9 @@ JAP_intervene_in_china = {
 
 		complete_effect = {
 			set_country_flag = JAP_military_offensive_in_progress_flag
+			hidden_effect = {
+				add_command_power = -50
+			}
 		}
 
 		remove_effect = {
@@ -993,43 +1087,43 @@ JAP_intervene_in_china = {
 		available = {
 			OR = {
 				controls_province = 7191
-				any_allied_country = {
+				any_subject_country = {
 					controls_province = 7191
 				}
 			}
 			OR = {
 				controls_province = 9974
-				any_allied_country = {
+				any_subject_country = {
 					controls_province = 9974
 				}
 			}
 			OR = {
 				controls_province = 1055
-				any_allied_country = {
+				any_subject_country = {
 					controls_province = 1055
 				}
 			}
 			OR = {
 				controls_province = 4196
-				any_allied_country = {
+				any_subject_country = {
 					controls_province = 4196
 				}
 			}
 			OR = {
 				controls_province = 7071
-				any_allied_country = {
+				any_subject_country = {
 					controls_province = 7071
 				}
 			}
 			OR = {
 				controls_province = 9938
-				any_allied_country = {
+				any_subject_country = {
 					controls_province = 9938
 				}
 			}
 			OR = {
 				controls_province = 1047
-				any_allied_country = {
+				any_subject_country = {
 					controls_province = 1047
 				}
 			}
@@ -1809,6 +1903,7 @@ foreign_politics = {
 					surrender_progress > 0.01
 				}
 			}
+			is_subject = no
 			OR = {
 				SOV = {
 					is_faction_leader = yes
@@ -1967,6 +2062,7 @@ foreign_politics = {
 		}
 		visible = {
 			JAP = {
+				is_subject = no
 				exists = yes
 			}
 			has_war_with = SOV
@@ -3649,7 +3745,7 @@ colonial_managment = {
 					type = infrastructure
 					level = 1
 					instant_build = yes
-				}				
+				}
 			}
 			328 = {
 				add_extra_state_shared_building_slots = 2
@@ -3678,7 +3774,7 @@ colonial_managment = {
 					type = infrastructure
 					level = 2
 					instant_build = yes
-				}				
+				}
 			}
 		}
 	}
@@ -4314,91 +4410,91 @@ colonial_managment = {
 		}
 	}
 
-#	JAP_rnc_japanese_settlers = {
-#		icon = decision_generic_factory
-#		allowed = {
-#			tag = JAP
-#		}
-#		available = {
-#			608 = {
-#			    compliance < 20
-#			}
-#			949 = {
-#			    compliance < 20
-#			}
-#			1011 = {
-#			    compliance < 20
-#			}
-#			614 = {
-#			    compliance < 20
-#			}
-#			597 = {
-#			    compliance < 20
-#			}
-#			743 = {
-#			    compliance < 20
-#			}
-#			937 = {
-#			    compliance < 20
-#			}
-#			925 = {
-#			    compliance < 20
-#			}
-#			598 = {
-#			    compliance < 20
-#			}
-#			613 = {
-#			    compliance < 20
-#			}
-#			#606 = {
-#			#    compliance < 20
-#			#}
-#		}
-#		visible = {
-#			has_completed_Focus = JAP_set_up_the_wang_jingwei_regieme
-#		}
-#		cost = 15
-#		fire_only_once = yes
-#		ai_will_do = {
-#			base = 40
-#		}
-#		days_remove = 30
-#		remove_effect = {
-#			608 = {
-#				add_compliance = 20
-#			}
-#			949 = {
-#				add_compliance = 20
-#			}
-#			1011 = {
-#				add_compliance = 20
-#			}
-#			614 = {
-#				add_compliance = 20
-#			}
-#			597 = {
-#				add_compliance = 20
-#			}
-#			743 = {
-#				add_compliance = 20
-#			}
-#			937 = {
-#				add_compliance = 20
-#			}
-#			925 = {
-#				add_compliance = 20
-#			}
-#			598 = {
-#				add_compliance = 20
-#			}
-#			613 = {
-#				add_compliance = 20
-#			}
-#			#606 = {
-#			#	add_compliance = 20
-#			#}
-#		}
-#	}
+	# JAP_rnc_japanese_settlers = {
+	# 	icon = decision_generic_factory
+	# 	allowed = {
+	# 		tag = JAP
+	# 	}
+	# 	available = {
+	# 		608 = {
+	# 		    compliance < 20
+	# 		}
+	# 		949 = {
+	# 		    compliance < 20
+	# 		}
+	# 		1011 = {
+	# 		    compliance < 20
+	# 		}
+	# 		614 = {
+	# 		    compliance < 20
+	# 		}
+	# 		597 = {
+	# 		    compliance < 20
+	# 		}
+	# 		743 = {
+	# 		    compliance < 20
+	# 		}
+	# 		937 = {
+	# 		    compliance < 20
+	# 		}
+	# 		925 = {
+	# 		    compliance < 20
+	# 		}
+	# 		598 = {
+	# 		    compliance < 20
+	# 		}
+	# 		613 = {
+	# 		    compliance < 20
+	# 		}
+	# 		#606 = {
+	# 		#    compliance < 20
+	# 		#}
+	# 	}
+	# 	visible = {
+	# 		has_completed_Focus = JAP_set_up_the_wang_jingwei_regieme
+	# 	}
+	# 	cost = 15
+	# 	fire_only_once = yes
+	# 	ai_will_do = {
+	# 		base = 40
+	# 	}
+	# 	days_remove = 30
+	# 	remove_effect = {
+	# 		608 = {
+	# 			add_compliance = 20
+	# 		}
+	# 		949 = {
+	# 			add_compliance = 20
+	# 		}
+	# 		1011 = {
+	# 			add_compliance = 20
+	# 		}
+	# 		614 = {
+	# 			add_compliance = 20
+	# 		}
+	# 		597 = {
+	# 			add_compliance = 20
+	# 		}
+	# 		743 = {
+	# 			add_compliance = 20
+	# 		}
+	# 		937 = {
+	# 			add_compliance = 20
+	# 		}
+	# 		925 = {
+	# 			add_compliance = 20
+	# 		}
+	# 		598 = {
+	# 			add_compliance = 20
+	# 		}
+	# 		613 = {
+	# 			add_compliance = 20
+	# 		}
+	# 		#606 = {
+	# 		#	add_compliance = 20
+	# 		#}
+	# 	}
+	# }
 }
 
 #Category allowed for JAP
@@ -5150,6 +5246,14 @@ JAP_southern_expansion = {
 					}
 					add_civil_war_target = PHI
 				}
+				every_state = {
+					limit = {
+						is_core_of = PHI
+						is_controlled_by = IPP
+					}
+					set_compliance = 100
+					set_garrison_strength = 1
+				}
 			}
 			else_if = {
 				limit = {
@@ -5280,6 +5384,14 @@ JAP_southern_expansion = {
 						}
 					}
 				}
+				every_state = {
+					limit = {
+						is_core_of = PHI
+						is_controlled_by = IPP
+					}
+					set_compliance = 100
+					set_garrison_strength = 1
+				}
 			}
 		}
 	}
@@ -5393,6 +5505,14 @@ JAP_southern_expansion = {
 					}
 					add_civil_war_target = MAL
 				}
+				every_state = {
+					limit = {
+						is_core_of = MLY
+						is_controlled_by = IPM
+					}
+					set_compliance = 100
+					set_garrison_strength = 1
+				}
 			}
 			else_if = {
 				limit = {
@@ -5444,7 +5564,7 @@ JAP_southern_expansion = {
 				}
 				every_state = {
 					limit = {
-						is_core_of = MAL
+						is_core_of = MLY
 						is_controlled_by = IPM
 					}
 					set_compliance = 100
@@ -5475,6 +5595,14 @@ JAP_southern_expansion = {
 							amount = 1250
 							producer = JAP
 						}
+					}
+					every_state = {
+						limit = {
+							is_core_of = MLY
+							is_controlled_by = IPM
+						}
+						set_compliance = 100
+						set_garrison_strength = 1
 					}
 				}
 				JAP = {
@@ -5516,14 +5644,14 @@ JAP_southern_expansion = {
 					}
 				}
 			}
-			334 = {
-				OR = {
-					is_controlled_by = ROOT
-					CONTROLLER = {
-						is_in_faction_with = ROOT
-					}
-				}
-			}
+			#334 = {
+			#	OR = {
+			#		is_controlled_by = ROOT
+			#		CONTROLLER = {
+			#			is_in_faction_with = ROOT
+			#		}
+			#	}
+			#}
 			OR = {
 				AND = {
 					673 = {
@@ -5578,10 +5706,7 @@ JAP_southern_expansion = {
 			factor = 200
 		}
 		visible = {
-			OR = {
-				has_completed_focus = JAP_the_east_asian_project
-				has_completed_focus = JAP_the_china_project
-			}
+			has_completed_focus = JAP_the_east_asian_project
 			has_government = fascism
 		}
 		complete_effect = {
@@ -5602,7 +5727,7 @@ JAP_southern_expansion = {
 				IPI = {
 					every_state = {
 						limit = {
-							is_core_of = INS
+							is_core_of = IND
 							#or = {
 							#	is_controlled_by = JAP
 							#	controller = {
@@ -5616,6 +5741,7 @@ JAP_southern_expansion = {
 					hidden_effect = {
 						add_stability = 0.3
 						add_manpower = 100000
+						add_ideas = RNC_military_government
 						add_equipment_to_stockpile = {
 							type = train_equipment_1
 							amount = 15
@@ -5652,6 +5778,14 @@ JAP_southern_expansion = {
 					}
 					add_civil_war_target = INS
 				}
+				every_state = {
+					limit = {
+						is_core_of = IND
+						is_controlled_by = IPI
+					}
+					set_compliance = 100
+					set_garrison_strength = 1
+				}
 			}
 			else_if = {
 				limit = {
@@ -5661,7 +5795,7 @@ JAP_southern_expansion = {
 				IPI = {
 					every_state = {
 						limit = {
-							is_core_of = INS
+							is_core_of = IND
 							or = {
 								is_controlled_by = JAP
 								controller = {
@@ -5709,7 +5843,7 @@ JAP_southern_expansion = {
 				}
 				every_state = {
 					limit = {
-						is_core_of = INS
+						is_core_of = IND
 						is_controlled_by = IPI
 					}
 					set_compliance = 100
@@ -5750,6 +5884,14 @@ JAP_southern_expansion = {
 							amount = 1250
 							producer = JAP
 						}
+					}
+					every_state = {
+						limit = {
+							is_core_of = IND
+							is_controlled_by = IPI
+						}
+						set_compliance = 100
+						set_garrison_strength = 1
 					}
 				}
 				JAP = {
@@ -7357,6 +7499,78 @@ political_actions = {
 
 operations = {
 
+	JAP_the_final_struggle = {
+
+		icon = generic_operation
+		allowed = {
+			tag = JAP
+		}
+
+		available = {
+			OR = {
+				has_war = no
+				NOT = {
+					has_war_with = USA
+				}
+				AND = {
+					has_full_control_of_state = 528
+					has_full_control_of_state = 529
+					has_full_control_of_state = 530
+					has_full_control_of_state = 531
+					has_full_control_of_state = 532
+					has_full_control_of_state = 535
+					has_full_control_of_state = 282
+					has_full_control_of_state = 534
+					has_full_control_of_state = 533
+					has_full_control_of_state = 536
+				}
+				hidden_trigger = {
+					has_global_flag = JAP_conditional_surrender_achieved
+					has_global_flag = JAP_conditional_surrender_declined
+				}
+			}
+		}
+
+		activation = {
+			has_war_with = USA
+			has_completed_focus = JAP_prevent_surrender
+			surrender_progress > 0.08
+			NOT = {
+				OR = {
+					has_global_flag = JAP_conditional_surrender_achieved
+					has_global_flag = JAP_conditional_surrender_declined
+				}
+			}
+			NOT = {
+				AND = {
+					has_full_control_of_state = 528
+					has_full_control_of_state = 529
+					has_full_control_of_state = 530
+					has_full_control_of_state = 531
+					has_full_control_of_state = 532
+					has_full_control_of_state = 535
+					has_full_control_of_state = 282
+					has_full_control_of_state = 534
+					has_full_control_of_state = 533
+					has_full_control_of_state = 536
+				}
+			}
+		}
+
+		days_mission_timeout = 365
+		is_good = yes
+		fire_only_once = no
+
+		timeout_effect = {
+			USA = {
+				country_event = {
+					id = jap_armor.803
+					days = 1
+				}
+			}
+		}
+	}
+
 	JAP_ichi_go = {
 		icon = generic_intelligence_operation
 		allowed = {
@@ -7377,11 +7591,11 @@ operations = {
 		fire_only_once = yes
 
 		ai_will_do = {
-			factor = 1
+			base = 0
 			modifier = {
-				factor = 0
+				add = 1000
 				is_historical_focus_on = yes
-				date < 1944.1.1
+				date > 1944.4.19
 			}
 		}
 
@@ -7632,13 +7846,105 @@ operations = {
 
 		complete_effect = {
 			add_timed_idea = { idea = JAP_tora_tora_tora_idea days = 240 }
+			if = {
+				limit = {
+					is_ai = yes
+				}
+				hidden_effect = {
+					add_timed_idea = { idea = JAP_tora_tora_tora_ai days = 240 }
+					USA = {
+						news_event = { days = 1 id = afo_news.59 }
+					}
+					damage_units = {
+						region = 349
+						limit = { tag = USA }
+						org_damage = 0.75
+						str_damage = 0.1
+						army = no
+						navy = yes
+					}
+					every_state = {
+					 	limit = {
+					 		OR = {
+					 			is_core_of = JAP
+					 			state = 524 # Taiwan
+					 			state = 286 # Cocinchina
+					 			state = 289 # Bangkok
+					 		}
+					 	}
+					 	add_dynamic_modifier = {
+					 		modifier = AI_invasion_points
+					 		days = 240
+					 		scope = JAP
+					 	}
+					}
+					random_owned_controlled_state = {
+						prioritize = { 524 }
+						create_unit = {
+							division = "division_template = \"Japanese Infantry Division\" start_experience_factor = 0.8 start_equipment_factor = 1.0"
+							owner = JAP
+							count = 50
+						}
+					}
+					if = {
+						limit = {
+							ARG = {
+								is_ai = yes
+								is_guaranteed_by = USA
+								has_war = no
+								is_subject = no
+								OR = {
+									has_government = democratic
+									has_government = neutrality
+								}
+							}
+						}
+						random_country = {
+							limit = {
+								is_faction_leader = yes
+								OR = {
+									original_tag = ENG
+									original_tag = USA
+								}
+								has_government = democratic
+							}
+							add_to_faction = ARG
+						}
+					}
+					if = {
+						limit = {
+							CHL = {
+								is_ai = yes
+								is_guaranteed_by = USA
+								has_war = no
+								is_subject = no
+								OR = {
+									has_government = democratic
+									has_government = neutrality
+								}
+							}
+						}
+						random_country = {
+							limit = {
+								is_faction_leader = yes
+								OR = {
+									original_tag = ENG
+									original_tag = USA
+								}
+								has_government = democratic
+							}
+							add_to_faction = CHL
+						}
+					}
+				}
+			}
 			add_threat = 5
 			# every_state = {
 			# 	limit = {
 			# 		OR = {
 			# 			is_core_of = BRM
 			# 			is_core_of = PHI
-			# 			is_core_of = INS
+			# 			is_core_of = IND
 			# 			is_core_of = MAL
 			# 			state = 638 # Guam
 			# 			state = 632 # Wake
@@ -9241,7 +9547,7 @@ PRC_counter_guerilla_warfare = {
 			}
 		}
 
-		target_trigger = { 
+		target_trigger = {
 			FROM = {
 				is_fully_controlled_by = controller
 				CONTROLLER = {
