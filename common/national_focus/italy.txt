@@ -7190,21 +7190,6 @@ focus_tree = {
 			}
 
 			unlock_decision_tooltip = ITA_bop_cooperation_with_anarchists
-
-			#Remove the other country leader role if any
-			hidden_effect = {
-				if = {
-					limit = {
-						ITA_comitato_di_liberazione_nazionale = {
-							has_ideology = socialism
-						}
-					}
-					remove_country_leader_role = {
-						character =  ITA_comitato_di_liberazione_nazionale
-						ideology = socialism
-					}
-				}
-			}
 		}
 	}
 
@@ -7462,7 +7447,7 @@ focus_tree = {
 		completion_reward = {
 			add_stability = 0.15
 		}
-	}	
+	}
 
 	focus = {
 		id = ITA_union_in_the_party
@@ -7740,7 +7725,7 @@ focus_tree = {
 				technology = ita_fighter_ad_tech_2
 			}
 		}
-	}	
+	}
 
 	focus = {
 		id = ITA_europe_our_motherland
@@ -9880,7 +9865,7 @@ focus_tree = {
 						option = HIDE
 					}
 				}
-				NOT = { has_completed_focus = ITA_defy_the_duce }
+				NOT = { has_completed_focus = ITA_undermine_the_duce }
 			}
 		}
 
@@ -9926,20 +9911,6 @@ focus_tree = {
 		relative_position_id = ITA_banda_carita
 		cost = 3
 
-		allow_branch = {
-			has_dlc = "La Resistance"
-			if = {
-				limit = {
-					has_dlc = "By Blood Alone"
-					has_game_rule = {
-						rule = obsolete_focus_branches_visibility
-						option = HIDE
-					}
-				}
-				NOT = { has_completed_focus = ITA_defy_the_duce }
-			}
-		}
-
 		available = {
 			agency_upgrade_number > 9
 		}
@@ -9978,7 +9949,8 @@ focus_tree = {
 						option = HIDE
 					}
 				}
-				NOT = { has_completed_focus = ITA_defy_the_duce }
+				NOT = { has_completed_focus = ITA_triumph_in_africa }
+				NOT = { has_completed_focus = ITA_unite_the_opposition }
 			}
 		}
 
@@ -10314,6 +10286,466 @@ focus_tree = {
 		}
 	}
 
+	############################
+	######## DEMOCRATIC ########
+	############################
+
+	focus = {
+		id = ITA_italian_socialism
+		icon = GFX_focus_generic_the_giant_wakes
+		mutually_exclusive = { focus = ITA_power_to_the_king }
+		prerequisite = { focus = ITA_arrest_mussolini }
+		x = 1
+		y = 1
+		relative_position_id = ITA_arrest_mussolini
+		cost = 3
+		available = {
+			has_civil_war = no
+			is_subject = no
+		}
+
+		search_filters = {FOCUS_FILTER_POLITICAL FOCUS_FILTER_BALANCE_OF_POWER}
+
+		completion_reward = {
+			every_owned_state = { #Compensating for ideology swap auto-eating half compliance
+				limit = {
+					has_resistance = yes
+				}
+				add_compliance = 10
+			}
+			add_political_power = 50
+			add_popularity = {
+				ideology = democratic
+				popularity = 0.15
+			}
+			if = {
+				limit = {
+					NOT = { has_government = democratic }
+				}
+				if = {
+					limit = {
+						has_country_leader = {
+							character = ITA_comitato_di_liberazione_nazionale
+							ruling_only = yes
+						}
+					}
+					add_country_leader_role = {
+						character =  ITA_comitato_di_liberazione_nazionale
+						promote_leader = yes
+						country_leader = {
+							ideology = socialism
+							expire = 1965.1.1
+							traits = { anti_fascist_committee }
+						}
+					}
+				}
+				set_politics = {
+					ruling_party = democratic
+				}
+				hidden_effect = {
+					every_core_state = {
+						add_dynamic_modifier = {
+							modifier = ITA_fascist_remnants
+						}
+					}
+				}
+			}
+
+			show_unit_leaders_tooltip = ITA_giuseppe_de_stefanis
+
+			unlock_decision_tooltip = ITA_bop_cooperation_with_christian_democrats
+		}
+	}
+
+	focus = {
+		id = ITA_open_elections
+		icon = GFX_focus_ITA_alcide_de_gasperi
+		prerequisite = { focus = ITA_italian_socialism }
+		x = 1
+		y = 1
+		relative_position_id = ITA_italian_socialism
+
+		cost = 3
+
+		available = {
+		}
+
+		search_filters = {FOCUS_FILTER_POLITICAL FOCUS_FILTER_INDUSTRY FOCUS_FILTER_STABILITY}
+
+		completion_reward = {
+			every_owned_state = { #Compensating for ideology swap auto-eating half compliance
+				limit = {
+					has_resistance = yes
+				}
+				add_compliance = 10
+			}
+
+			add_political_power = 50
+			add_popularity = {
+				ideology = democratic
+				popularity = 0.1
+			}
+			set_politics = {
+				ruling_party = democratic
+				elections_allowed = no
+			}
+			set_party_name = {
+				ideology = democratic
+				name = ITA_democrazia_cristiana
+				long_name = ITA_democrazia_cristiana_long
+			}
+
+			if = {
+				limit = {
+					has_character = ITA_victor_emmanuel_iii
+				}
+				ITA_add_king_victor_emmanuel_back_as_idea = yes
+			}
+
+			if = {
+				limit = {
+					has_character = ITA_alcide_de_gasperi
+				}
+				promote_character = ITA_alcide_de_gasperi
+			}
+
+			custom_effect_tooltip = available_political_advisor
+			show_ideas_tooltip = ITA_mario_scelba
+
+			hidden_effect = {
+				set_cosmetic_tag = ITA_neutrality
+			}
+		}
+	}
+
+	focus = {
+		id = ITA_cooperate_with_the_republics
+		icon = GFX_focus_ITA_democratic_leadership
+		prerequisite = { focus = ITA_open_elections }
+		x = 0
+		y = 1
+		relative_position_id = ITA_open_elections
+
+		cost = 3
+
+		available = {
+			has_government = democratic
+		}
+
+		search_filters = {FOCUS_FILTER_POLITICAL}
+
+		completion_reward = {
+			set_variable = {
+				ITA_pci_political_power_gain = 0
+			}
+			set_variable = {
+				ITA_pci_stability_factor = 0
+			}
+			add_popularity = {
+				ideology = communism
+				popularity = 0.15
+			}
+			#welfare improvements?
+		}
+	}
+
+	focus = {
+		id = ITA_cooperate_with_moderates
+		icon = GFX_goal_generic_improve_relations
+		prerequisite = { focus = ITA_cooperate_with_the_republics }
+		x = 0
+		y = 2
+		relative_position_id = ITA_cooperate_with_the_republics
+
+		cost = 3
+
+		available = {
+		}
+
+		search_filters = {FOCUS_FILTER_POLITICAL FOCUS_FILTER_RESEARCH FOCUS_FILTER_INDUSTRY FOCUS_FILTER_STABILITY}
+
+		completion_reward = {
+			add_ideas = ITA_cooperate_with_moderates
+			#add 6 mils
+			random_core_state = {
+				limit = {
+					is_fully_controlled_by = ROOT
+					free_building_slots = {
+						building = arms_factory
+						size > 2
+						include_locked = yes
+					}
+				}
+				set_state_flag = ITA_prepare_for_the_coming_wars
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = arms_factory
+					level = 2
+					instant_build = yes
+				}
+			}
+			random_core_state = {
+				limit = {
+					is_fully_controlled_by = ROOT
+					NOT = { has_state_flag = ITA_prepare_for_the_coming_wars }
+					free_building_slots = {
+						building = arms_factory
+						size > 2
+						include_locked = yes
+					}
+				}
+				set_state_flag = ITA_prepare_for_the_coming_wars
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = arms_factory
+					level = 2
+					instant_build = yes
+				}
+			}
+			random_core_state = {
+				limit = {
+					is_fully_controlled_by = ROOT
+					NOT = { has_state_flag = ITA_prepare_for_the_coming_wars }
+					free_building_slots = {
+						building = arms_factory
+						size > 2
+						include_locked = yes
+					}
+				}
+				set_state_flag = ITA_prepare_for_the_coming_wars
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = arms_factory
+					level = 2
+					instant_build = yes
+				}
+			}
+			#add 6 civs
+			random_core_state = {
+				limit = {
+					is_fully_controlled_by = ROOT
+					free_building_slots = {
+						building = industrial_complex
+						size > 2
+						include_locked = yes
+					}
+				}
+				set_state_flag = ITA_prepare_for_the_coming_wars
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = industrial_complex
+					level = 2
+					instant_build = yes
+				}
+			}
+			random_core_state = {
+				limit = {
+					is_fully_controlled_by = ROOT
+					NOT = { has_state_flag = ITA_prepare_for_the_coming_wars }
+					free_building_slots = {
+						building = industrial_complex
+						size > 2
+						include_locked = yes
+					}
+				}
+				set_state_flag = ITA_prepare_for_the_coming_wars
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = industrial_complex
+					level = 2
+					instant_build = yes
+				}
+			}
+			random_core_state = {
+				limit = {
+					is_fully_controlled_by = ROOT
+					NOT = { has_state_flag = ITA_prepare_for_the_coming_wars }
+					free_building_slots = {
+						building = industrial_complex
+						size > 2
+						include_locked = yes
+					}
+				}
+				set_state_flag = ITA_prepare_for_the_coming_wars
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = industrial_complex
+					level = 2
+					instant_build = yes
+				}
+			}
+			#bug happy
+			set_variable = {
+				ITA_bourgeoisie_attitude = 1 #idk need fix
+				ITA_bourgeoisie_influence = 1
+			}
+			add_to_variable = {
+				ITA_bourgeoisie_political_power_gain = 0.2
+			}
+			add_to_variable = {
+				ITA_bourgeoisie_stability_factor = 0.1
+			}
+
+			#Clear stuff thanks
+			hidden_effect = {
+				every_core_state = {
+					limit = {
+						has_state_flag = ITA_prepare_for_the_coming_wars
+					}
+					clr_state_flag = ITA_prepare_for_the_coming_wars
+				}
+			}
+		}
+	}
+
+	focus = {
+		id = ITA_empower_the_unions
+		icon = GFX_focus_ITA_workers_unions
+		prerequisite = { focus = ITA_cooperate_with_the_republics }
+		x = 1
+		y = 1
+		relative_position_id = ITA_cooperate_with_the_republics
+
+		cost = 3
+
+		available = {
+		}
+
+		search_filters = {FOCUS_FILTER_INDUSTRY}
+
+		completion_reward = {
+			add_ideas = ITA_empower_the_unions
+		}
+	}
+
+	focus = {
+		id = ITA_bring_back_exiled_intellectuals
+		icon = GFX_goal_generic_research_shared
+		prerequisite = { focus = ITA_cooperate_with_moderates }
+		x = 1
+		y = 1
+		relative_position_id = ITA_cooperate_with_moderates
+		cost = 3
+		available = {
+		}
+
+		search_filters = {FOCUS_FILTER_POLITICAL FOCUS_FILTER_RESEARCH}
+
+		completion_reward = {
+			add_political_power = 70
+
+			add_tech_bonus = {
+				name = ITA_bring_back_exiled_intellectuals
+				bonus = 1
+				uses = 2
+				category = industry
+				category = electronics
+				category = nuclear
+				category = rocketry
+			}
+			swap_ideas = {
+				remove_idea = ITA_cooperate_with_moderates
+				add_idea = ITA_cooperate_with_moderates_nukes
+			}
+		}
+	}
+
+	###
+
+	focus = {
+		id = ITA_reign_in_the_fascist_remnants
+		icon = GFX_
+		prerequisite = { focus = ITA_power_to_the_king focus = ITA_italian_socialism }
+		x = 1
+		y = 1
+		relative_position_id = ITA_power_to_the_king
+
+		cost = 3
+
+		available = {
+		}
+
+		search_filters = {FOCUS_FILTER_POLITICAL FOCUS_FILTER_RESEARCH}
+
+		completion_reward = {
+			#unlocks on map state decisions - need tooltip
+		}
+	}
+
+	focus = {
+		id = ITA_stabalize_the_country
+		icon = GFX_
+		prerequisite = { focus = ITA_reign_in_the_fascist_remnants }
+		x = 0
+		y = 1
+		relative_position_id = ITA_reign_in_the_fascist_remnants
+
+		cost = 3
+
+		available = {
+			#no more fascist dynamic modifiers
+			all_core_state = {
+				NOT = {
+					has_dynamic_modifier = {
+						modifier = ITA_fascist_remnants
+					}
+				}
+			}
+		}
+
+		search_filters = {FOCUS_FILTER_POLITICAL FOCUS_FILTER_RESEARCH}
+
+		completion_reward = {
+			add_popularity = {
+				ideology = fascism
+				popularity = -0.5
+			}
+			add_stability = 0.1
+
+		}
+	}
+
+	focus = {
+		id = ITA_the_catholic_dominion
+		icon = GFX_focus_generic_catholic_dominion
+		prerequisite = { focus = ITA_stabalize_the_country }
+		x = 0
+		y = 1
+		relative_position_id = ITA_stabalize_the_country
+		cost = 10
+		available = {
+			has_completed_focus = ITA_agents_of_the_church
+		}
+
+		search_filters = {FOCUS_FILTER_POLITICAL FOCUS_FILTER_MANPOWER FOCUS_FILTER_INDUSTRY FOCUS_FILTER_STABILITY FOCUS_FILTER_BALANCE_OF_POWER}
+
+		completion_reward = {
+			add_stability = 0.1
+			add_war_support = 0.1
+			#compliance bonus
+
+			if = {
+				limit = { has_idea = ITA_papal_support_agents }
+
+				swap_ideas = {
+					remove_idea = ITA_papal_support_agents
+					add_idea = ITA_papal_support_agents_dominion
+				}
+			}
+
+			if = {
+				limit = {has_idea = ITA_papal_support_agents_no_lar }
+
+				swap_ideas = {
+					remove_idea = ITA_papal_support_agents_no_lar
+					add_idea = ITA_papal_support_agents_no_lar_dominion
+				}
+			}
+		}
+	}
+
+	###
+
 	focus = {
 		id = ITA_protector_of_the_balkans
 		icon = GFX_focus_TUR_reform_the_balkan_pact
@@ -10629,486 +11061,6 @@ focus_tree = {
 		}
 	}
 
-	############################
-	######## DEMOCRATIC ########
-	############################
-
-	focus = {
-		id = ITA_italian_socialism
-		icon = GFX_focus_generic_the_giant_wakes
-		mutually_exclusive = { focus = ITA_power_to_the_king }
-		prerequisite = { focus = ITA_arrest_mussolini }
-		x = 1
-		y = 1
-		relative_position_id = ITA_arrest_mussolini
-		cost = 3
-		available = {
-			has_civil_war = no
-			is_subject = no
-		}
-
-		search_filters = {FOCUS_FILTER_POLITICAL FOCUS_FILTER_BALANCE_OF_POWER}
-
-		completion_reward = {
-			every_owned_state = { #Compensating for ideology swap auto-eating half compliance
-				limit = {
-					has_resistance = yes
-				}
-				add_compliance = 10
-			}
-			add_political_power = 50
-			add_popularity = {
-				ideology = democratic
-				popularity = 0.15
-			}
-			if = {
-				limit = {
-					NOT = { has_government = democratic }
-				}
-				if = {
-					limit = {
-						has_country_leader = {
-							character = ITA_comitato_di_liberazione_nazionale
-							ruling_only = yes
-						}
-					}
-					add_country_leader_role = {
-						character =  ITA_comitato_di_liberazione_nazionale
-						promote_leader = yes
-						country_leader = {
-							ideology = socialism
-							expire = 1965.1.1
-							traits = { anti_fascist_committee }
-						}
-					}
-				}
-				set_politics = {
-					ruling_party = democratic
-				}
-				hidden_effect = {
-					every_core_state = {
-						add_dynamic_modifier = {
-							modifier = ITA_fascist_remnants
-						}
-					}
-				}
-			}
-
-			show_unit_leaders_tooltip = ITA_giuseppe_de_stefanis
-
-			unlock_decision_tooltip = ITA_bop_cooperation_with_christian_democrats
-
-			#Remove the other country leader role if any
-			hidden_effect = {
-				if = {
-					limit = {
-						ITA_comitato_di_liberazione_nazionale = {
-							has_ideology = marxism
-						}
-					}
-					remove_country_leader_role = {
-						character =  ITA_comitato_di_liberazione_nazionale
-						ideology = marxism
-					}
-				}
-			}
-		}
-	}
-
-	focus = {
-		id = ITA_open_elections
-		icon = GFX_focus_ITA_alcide_de_gasperi
-		prerequisite = { focus = ITA_italian_socialism }
-		x = 1
-		y = 1
-		relative_position_id = ITA_italian_socialism
-
-		cost = 3
-
-		available = {
-		}
-
-		search_filters = {FOCUS_FILTER_POLITICAL FOCUS_FILTER_INDUSTRY FOCUS_FILTER_STABILITY}
-
-		completion_reward = {
-			every_owned_state = { #Compensating for ideology swap auto-eating half compliance
-				limit = {
-					has_resistance = yes
-				}
-				add_compliance = 10
-			}
-
-			add_political_power = 50
-			add_popularity = {
-				ideology = democratic
-				popularity = 0.1
-			}
-			set_politics = {
-				ruling_party = democratic
-				elections_allowed = no
-			}
-			set_party_name = {
-				ideology = democratic
-				name = ITA_democrazia_cristiana
-				long_name = ITA_democrazia_cristiana_long
-			}
-
-			if = {
-				limit = {
-					has_character = ITA_victor_emmanuel_iii
-				}
-				ITA_add_king_victor_emmanuel_back_as_idea = yes
-			}
-
-			if = {
-				limit = {
-					has_character = ITA_alcide_de_gasperi
-				}
-				promote_character = ITA_alcide_de_gasperi
-			}
-
-			custom_effect_tooltip = available_political_advisor
-			show_ideas_tooltip = ITA_mario_scelba
-
-			hidden_effect = {
-				set_cosmetic_tag = ITA_neutrality
-			}
-		}
-	}
-
-	focus = {
-		id = ITA_cooperate_with_the_republics
-		icon = GFX_focus_ITA_democratic_leadership
-		prerequisite = { focus = ITA_open_elections }
-		x = 0
-		y = 1
-		relative_position_id = ITA_open_elections
-
-		cost = 3
-
-		available = {
-			has_government = democratic
-		}
-
-		search_filters = {FOCUS_FILTER_POLITICAL}
-
-		completion_reward = {
-			set_variable = {
-				ITA_pci_political_power_gain = 0
-			}
-			set_variable = {
-				ITA_pci_stability_factor = 0
-			}
-			add_popularity = {
-				ideology = communism
-				popularity = 0.15
-			}
-			#welfare improvements?
-		}
-	}
-
-	focus = {
-		id = ITA_cooperate_with_moderates
-		icon = GFX_goal_generic_improve_relations
-		prerequisite = { focus = ITA_cooperate_with_the_republics }
-		x = 0
-		y = 2
-		relative_position_id = ITA_cooperate_with_the_republics
-
-		cost = 3
-
-		available = {
-		}
-
-		search_filters = {FOCUS_FILTER_POLITICAL FOCUS_FILTER_RESEARCH FOCUS_FILTER_INDUSTRY FOCUS_FILTER_STABILITY}
-
-		completion_reward = {
-			add_ideas = ITA_cooperate_with_moderates
-			#add 6 mils
-			random_core_state = {
-				limit = {
-					is_fully_controlled_by = ROOT
-					free_building_slots = {
-						building = arms_factory
-						size > 2
-						include_locked = yes
-					}
-				}
-				set_state_flag = ITA_prepare_for_the_coming_wars
-				add_extra_state_shared_building_slots = 2
-				add_building_construction = {
-					type = arms_factory
-					level = 2
-					instant_build = yes
-				}
-			}
-			random_core_state = {
-				limit = {
-					is_fully_controlled_by = ROOT
-					NOT = { has_state_flag = ITA_prepare_for_the_coming_wars }
-					free_building_slots = {
-						building = arms_factory
-						size > 2
-						include_locked = yes
-					}
-				}
-				set_state_flag = ITA_prepare_for_the_coming_wars
-				add_extra_state_shared_building_slots = 2
-				add_building_construction = {
-					type = arms_factory
-					level = 2
-					instant_build = yes
-				}
-			}
-			random_core_state = {
-				limit = {
-					is_fully_controlled_by = ROOT
-					NOT = { has_state_flag = ITA_prepare_for_the_coming_wars }
-					free_building_slots = {
-						building = arms_factory
-						size > 2
-						include_locked = yes
-					}
-				}
-				set_state_flag = ITA_prepare_for_the_coming_wars
-				add_extra_state_shared_building_slots = 2
-				add_building_construction = {
-					type = arms_factory
-					level = 2
-					instant_build = yes
-				}
-			}
-			#add 6 civs
-			random_core_state = {
-				limit = {
-					is_fully_controlled_by = ROOT
-					free_building_slots = {
-						building = industrial_complex
-						size > 2
-						include_locked = yes
-					}
-				}
-				set_state_flag = ITA_prepare_for_the_coming_wars
-				add_extra_state_shared_building_slots = 2
-				add_building_construction = {
-					type = industrial_complex
-					level = 2
-					instant_build = yes
-				}
-			}
-			random_core_state = {
-				limit = {
-					is_fully_controlled_by = ROOT
-					NOT = { has_state_flag = ITA_prepare_for_the_coming_wars }
-					free_building_slots = {
-						building = industrial_complex
-						size > 2
-						include_locked = yes
-					}
-				}
-				set_state_flag = ITA_prepare_for_the_coming_wars
-				add_extra_state_shared_building_slots = 2
-				add_building_construction = {
-					type = industrial_complex
-					level = 2
-					instant_build = yes
-				}
-			}
-			random_core_state = {
-				limit = {
-					is_fully_controlled_by = ROOT
-					NOT = { has_state_flag = ITA_prepare_for_the_coming_wars }
-					free_building_slots = {
-						building = industrial_complex
-						size > 2
-						include_locked = yes
-					}
-				}
-				set_state_flag = ITA_prepare_for_the_coming_wars
-				add_extra_state_shared_building_slots = 2
-				add_building_construction = {
-					type = industrial_complex
-					level = 2
-					instant_build = yes
-				}
-			}
-			#bug happy
-			set_variable = {
-				ITA_bourgeoisie_attitude = 1 #idk need fix
-				ITA_bourgeoisie_influence = 1
-			}
-			add_to_variable = {
-				ITA_bourgeoisie_political_power_gain = 0.2
-			}
-			add_to_variable = {
-				ITA_bourgeoisie_stability_factor = 0.1
-			}
-
-			#Clear stuff thanks
-			hidden_effect = {
-				every_core_state = {
-					limit = {
-						has_state_flag = ITA_prepare_for_the_coming_wars
-					}
-					clr_state_flag = ITA_prepare_for_the_coming_wars
-				}
-			}
-
-
-
-		}
-	}
-
-	focus = {
-		id = ITA_empower_the_unions
-		icon = GFX_focus_ITA_workers_unions
-		prerequisite = { focus = ITA_cooperate_with_the_republics }
-		x = 1
-		y = 1
-		relative_position_id = ITA_cooperate_with_the_republics
-
-		cost = 3
-
-		available = {
-		}
-
-		search_filters = {FOCUS_FILTER_INDUSTRY}
-
-		completion_reward = {
-			add_ideas = ITA_empower_the_unions
-		}
-	}
-
-	focus = {
-		id = ITA_bring_back_exiled_intellectuals
-		icon = GFX_goal_generic_research_shared
-		prerequisite = { focus = ITA_cooperate_with_moderates }
-		x = 1
-		y = 1
-		relative_position_id = ITA_cooperate_with_moderates
-		cost = 3
-		available = {
-		}
-
-		search_filters = {FOCUS_FILTER_POLITICAL FOCUS_FILTER_RESEARCH}
-
-		completion_reward = {
-			add_political_power = 70
-
-			add_tech_bonus = {
-				name = ITA_bring_back_exiled_intellectuals
-				bonus = 1
-				uses = 2
-				category = industry
-				category = electronics
-				category = nuclear
-				category = rocketry
-			}
-			swap_ideas = {
-				remove_idea = ITA_cooperate_with_moderates
-				add_idea = ITA_cooperate_with_moderates_nukes
-			}
-		}
-	}
-
-	###
-
-	focus = {
-		id = ITA_reign_in_the_fascist_remnants
-		icon = GFX_
-		prerequisite = { focus = ITA_power_to_the_king focus = ITA_italian_socialism }
-		x = 1
-		y = 1
-		relative_position_id = ITA_power_to_the_king
-
-		cost = 3
-
-		available = {
-		}
-
-		search_filters = {FOCUS_FILTER_POLITICAL FOCUS_FILTER_RESEARCH}
-
-		completion_reward = {
-			#unlocks on map state decisions - need tooltip
-		}
-	}
-
-	focus = {
-		id = ITA_stabalize_the_country
-		icon = GFX_
-		prerequisite = { focus = ITA_reign_in_the_fascist_remnants }
-		x = 0
-		y = 1
-		relative_position_id = ITA_reign_in_the_fascist_remnants
-
-		cost = 3
-
-		available = {
-			#no more fascist dynamic modifiers
-			all_core_state = {
-				NOT = {
-					has_dynamic_modifier = {
-						modifier = ITA_fascist_remnants
-					}
-				}
-			}
-		}
-
-		search_filters = {FOCUS_FILTER_POLITICAL FOCUS_FILTER_RESEARCH}
-
-		completion_reward = {
-			add_popularity = {
-				ideology = fascism
-				popularity = -0.5
-			}
-			add_stability = 0.1
-
-		}
-	}
-
-	focus = {
-		id = ITA_the_catholic_dominion
-		icon = GFX_focus_generic_catholic_dominion
-		prerequisite = { focus = ITA_stabalize_the_country }
-		x = 0
-		y = 1
-		relative_position_id = ITA_stabalize_the_country
-		cost = 10
-		available = {
-			has_completed_focus = ITA_agents_of_the_church
-		}
-
-		search_filters = {FOCUS_FILTER_POLITICAL FOCUS_FILTER_MANPOWER FOCUS_FILTER_INDUSTRY FOCUS_FILTER_STABILITY FOCUS_FILTER_BALANCE_OF_POWER}
-
-		completion_reward = {
-			add_stability = 0.1
-			add_war_support = 0.1
-			#compliance bonus
-
-			if = {
-				limit = {has_idea = ITA_papal_support_agents}
-
-				swap_ideas = {
-					remove_idea = ITA_papal_support_agents
-					add_idea = ITA_papal_support_agents_dominion
-				}
-			}
-
-			if = {
-				limit = {has_idea = ITA_papal_support_agents_no_lar}
-
-				swap_ideas = {
-					remove_idea = ITA_papal_support_agents_no_lar
-					add_idea = ITA_papal_support_agents_dominion_no_lar
-				}
-			}
-
-
-		}
-	}
-
-	###
-
 	focus = {
 		id = ITA_allied_cooperation
 		icon = GFX_
@@ -11126,6 +11078,8 @@ focus_tree = {
 		search_filters = {FOCUS_FILTER_POLITICAL FOCUS_FILTER_RESEARCH}
 
 		completion_reward = {
+			#Military cooperation?
+			join_allies_effect = yes #prob wont work but worth try
 		}
 	}
 
@@ -11254,26 +11208,6 @@ focus_tree = {
 		}
 	}
 
-	focus = {
-		id = ITA_allied_cooperation
-		icon = GFX_
-		prerequisite = { focus = ITA_agents_of_the_church focus = ITA_cooperate_with_moderates }
-		x = -1
-		y = 1
-		relative_position_id = ITA_cooperate_with_moderates
-
-		cost = 3
-
-		available = {
-		}
-
-		search_filters = {FOCUS_FILTER_POLITICAL FOCUS_FILTER_RESEARCH}
-
-		completion_reward = {
-			#Military cooperation?
-			join_allies_effect = yes #prob wont work but worth try
-		}
-	}
 	focus = {
 		id = ITA_dem_educational_reform
 		icon = GFX_
