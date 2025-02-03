@@ -3689,7 +3689,7 @@ focus_tree = {
 
 		completion_reward = {
 			add_popularity = { ideology = fascism popularity = 0.1 }
-			add_stability = 0.15
+			add_stability = 0.20
 			hidden_effect = {
 				set_variable = {JAP_toseiha_influence = 4 }
 				set_variable = {JAP_toseiha_production_speed_arms_factory_factor = 0 }
@@ -4335,13 +4335,10 @@ focus_tree = {
 			economy_fatigue_level_down_2 = yes
 			add_popularity = { ideology = fascism popularity = -0.03}
 			add_popularity = { ideology = neutrality popularity = 0.03}
-			swap_ideas = {
-				remove_idea = JAP_liberal_agitation_2
-				add_idea = JAP_liberal_agitation_3
-			}
-			hidden_effect = { 
-				add_to_variable = { JAP_zaibatsu_influence = -1 }
-			}
+			# swap_ideas = {
+			# 	remove_idea = JAP_liberal_agitation_2
+			# 	add_idea = JAP_liberal_agitation_3
+			# }
 		}
 
 	}
@@ -4362,9 +4359,20 @@ focus_tree = {
 			add_popularity = { ideology = democratic popularity = 0.03}
 			add_popularity = { ideology = neutrality popularity = 0.03}
 			add_stability = 0.05
-			replace_idea = {
-				remove_idea = JAP_meiji_constitution_1
-				add_idea = JAP_meiji_constitution_2
+			if = {
+				limit = {
+					NOT = {
+						OR = {
+							has_idea = women_in_the_workforce
+							has_idea = women_in_the_workplace
+							has_idea = women_in_the_frontlines
+						 }
+					}
+				}
+				add_ideas = women_in_the_workplace
+			}
+			else = {
+				add_political_power = 300
 			}
 		}
 
@@ -4382,6 +4390,10 @@ focus_tree = {
 
 		allow_branch = {
 			has_dlc = "Waking the Tiger"
+		}
+
+		available = {
+
 		}
 
 		completion_reward = {
@@ -4462,6 +4474,10 @@ focus_tree = {
 		y = 2
 		cost = 2
 
+		available = {
+			NOT = { has_ideas = JAP_amend_the_constitution }
+		}
+
 		completion_reward = {
 			add_political_power = 100
 			add_stability = 0.1
@@ -4490,6 +4506,10 @@ focus_tree = {
 
 		completion_reward = {
 			add_stability = 0.05
+			remove_country_leader_role	= {
+				character = JAP_emperor_takahito
+				ideology = conservatism
+			}
 			add_popularity = { ideology = fascism popularity = -0.03}
 			remove_ideas = JAP_showa_crisis_fallout
 			country_event = { id = jap_armor.1007 days = 0 }
@@ -4543,10 +4563,6 @@ focus_tree = {
 			add_political_power = 100
 			army_experience = 20
 			add_command_power = 50
-			add_ideas = {  
-				JAP_military_government
-			}
-			
 			if = {
 				limit = {
 					has_country_leader = {
@@ -4667,6 +4683,10 @@ focus_tree = {
 
 		ai_will_do = {
 			factor = 1
+		}
+
+		available = {
+				fascism > 0.20
 		}
 
 		completion_reward = {
@@ -5617,6 +5637,7 @@ focus_tree = {
 		}
 
 		available = {
+			fascism < 0.45
 			OR = {
 				has_country_flag = {
 					flag = JAP_hiranuma_kiichiros_cabinet_dd_flag
@@ -5792,7 +5813,8 @@ focus_tree = {
 
 		completion_reward = {
 			add_popularity = {ideology = democratic popularity = 0.10}
-			activate_advisor = kijuro_shidehara
+			custom_effect_tooltip = available_political_advisor
+			show_ideas_tooltip = JAP_kijuro_shidehara
 		}
 	
 	}
@@ -5844,7 +5866,7 @@ focus_tree = {
 	
 	}
 	focus = {
-		id = JAP_japanese_monroe_doctrine
+		id = JAP_manifest_destiny
 		icon = GFX_
 		relative_position_id = JAP_court_the_philipines
 		prerequisite = { focus = JAP_court_the_philipines}
@@ -5852,6 +5874,8 @@ focus_tree = {
 		cost = 4
 		x = -1
 		y = 1
+
+
 	
 	}
 	focus = {
@@ -5895,6 +5919,13 @@ focus_tree = {
 
 		available = {
 			has_government = fascism
+			NOT = {
+				has_ideas = { 
+					JAP_political_turmoil_2
+					JAP_political_turmoil
+				}
+			is_faction_leader = yes
+			}
 		}
 
 		bypass = {
@@ -5903,14 +5934,14 @@ focus_tree = {
 		cancel_if_invalid = no
 		continue_if_invalid = yes
 
-
 		completion_reward = {
 			set_politics = {
 				ruling_party = fascism
 				last_election = "1935.12.17"
 				elections_allowed = no
 			}
-			add_popularity = { ideology = fascism popularity = 1}
+			add_popularity = { ideology = democratic popularity = -0.25}
+			add_popularity = { ideology = neutrality popularity = -0.25}
 			swap_ideas = {
 				remove_idea = JAP_kokutai_ideology
 				add_idea = JAP_imperial_rule_association
@@ -6050,6 +6081,7 @@ focus_tree = {
 		}
 
 		available = {
+			fascism < 0.45
 			has_country_flag = {
 				flag = JAP_hiranuma_kiichiros_cabinet_dd_flag
 				days > 570
@@ -6144,6 +6176,7 @@ focus_tree = {
 			OR = {
 				NOT = { has_war_with = CHI }
 				NOT = { country_exists = CHI }
+				NOT = { has_government = fascism}
 				custom_trigger_tooltip = {
 					tooltip = JAP_placate_the_allies_bypass_tt
 					OR = {
@@ -6340,6 +6373,16 @@ focus_tree = {
 			create_faction = JAP_greater_east_asian_co_prosperity_sphere
 			custom_effect_tooltip = available_interior_minister
 			show_ideas_tooltip = JAP_koichi_kido
+			
+			every_country = {
+				limit = {
+					is_ally_with = ROOT
+				}
+				swap_ideas = {
+					remove_idea = the_yen_bloc
+					add_idea = co_prosperity_sphere
+				}
+			}
 		}
 	}
 
