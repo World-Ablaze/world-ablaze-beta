@@ -711,10 +711,8 @@ ITA_internal_factions = {
 		}
 
 		complete_effect = {
-			custom_effect_tooltip = ITA_sway_armor_division_loyalty_tt
-			custom_effect_tooltip = ITA_sway_infantry_division_loyalty_tt
 			hidden_effect = {
-				set_country_flag = infiltrated_the_army
+				set_country_flag = ITA_infiltrated_the_army
 			}
 		}
 	}
@@ -751,7 +749,7 @@ ITA_internal_factions = {
 		}
 
 		visible = {
-			has_country_flag = ITA_infiltrated_army
+			has_country_flag = ITA_infiltrated_the_army
 		}
 
 		available = {
@@ -809,6 +807,134 @@ ITA_internal_factions = {
 
 		complete_effect = {
 			
+		}
+	}
+
+	ITA_prepare_opposition_cell = {
+		icon = {
+			key = ger_garrison_control_4
+			trigger = {
+				FROM = {
+					check_variable = { ITA_garrison_control = 0 }
+					has_state_flag = ITA_fascist_stronghold
+				}
+			}
+		}
+		icon = {
+			key = ger_garrison_control_1
+			trigger = {
+				FROM = {
+					check_variable = { ITA_garrison_control = 0 }
+					NOT = { has_state_flag = ITA_fascist_stronghold }
+				}
+			}
+		}
+		icon = {
+			key = ger_garrison_control_2
+			trigger = {
+				FROM = {
+					check_variable = { ITA_garrison_control = 1 }
+					NOT = { has_state_flag = ITA_fascist_stronghold }
+				}
+			}
+		}
+		icon = {
+			key = ger_garrison_control_3
+			trigger = {
+				FROM = {
+					check_variable = { ITA_garrison_control = 2 }
+					NOT = { has_state_flag = ITA_fascist_stronghold }
+				}
+			}
+		}
+		icon = {
+			key = opp_garrison_control_4
+			trigger = {
+				FROM = {
+					check_variable = { var = ITA_garrison_control value = 3 compare = greater_than_or_equals }
+					NOT = { has_state_flag = ITA_fascist_stronghold }
+				}
+			}
+		}
+
+		allowed = {
+			tag = ITA
+		}
+
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = GER_expand_influence_trigger_tt
+				FROM = {
+					check_variable = {
+						ITA_garrison_control < 3
+					}
+					any_neighbor_state = {
+						check_variable = {
+							ITA_garrison_control > 2
+						}
+					}
+					NOT = { has_state_flag = ITA_fascist_stronghold }
+				}
+			}
+		}
+
+		state_target = yes
+
+		on_map_mode = map_only
+
+		target_array = ITA.core_states
+    	target_trigger = {
+			FROM = {
+				is_fully_controlled_by = ROOT
+			}
+		}
+
+		cost = 10
+
+		days_remove = 28
+
+		visible = {
+			NOT = { has_global_flag = ITA_civil_war_starts }
+			has_country_flag = ITA_civil_war_flag
+		}
+
+		remove_effect = {
+			custom_effect_tooltip = GER_expand_influence_tt
+			hidden_effect = {
+				FROM = {
+					add_to_variable = {
+						ITA_garrison_control = 1
+					}
+				}
+			}
+		}
+	}
+
+	ITA_the_enemy_of_my_enemy_is_my_friend	= {
+		
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_country_flag = ITA_civil_war_flag
+		}
+
+		available = {
+			has_completed_focus = ITA_unite_the_opposition
+		}
+
+		days_remove = 21
+		fire_only_once = yes
+
+		remove_effect = {
+			custom_effect_tooltip = ITA_the_enemy_of_my_enemy_is_my_friend_tt
+			add_stability = -0.05
+			hidden_effect = {
+				115 = {
+					set_variable = { ITA_garrison_control = 4 }
+				}
+			}
 		}
 	}
 
