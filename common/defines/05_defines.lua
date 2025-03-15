@@ -841,10 +841,14 @@ NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.50									-- the train usage is 
 NDefines.NSupply.MIN_TRAIN_SUPPLY_FACTOR = 0 										-- Having 0 trains in stockpile only applies this penalty factor, scaling up to 1.0 when need is met
 
 NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST = 500
+
 NDefines.NSupply.CAPITAL_SUPPLY_BASE = 5.0 											-- base supply for capital
 NDefines.NSupply.CAPITAL_SUPPLY_CIVILIAN_FACTORIES = 0.1	 						-- supply from one civilian factory
 NDefines.NSupply.CAPITAL_SUPPLY_MILITARY_FACTORIES = 0 								-- supply from one military factory
 NDefines.NSupply.CAPITAL_SUPPLY_DOCKYARDS = 0 										--supply from one naval factory
+NDefines.NSupply.CAPITAL_STARTING_PENALTY_PER_PROVINCE = 0 							-- starting penalty that will be added as supply moves away from its origin (modified by stuff like terrain)
+NDefines.NSupply.CAPITAL_ADDED_PENALTY_PER_PROVINCE = 0 							-- added penalty as we move away from origin
+
 NDefines.NSupply.AVAILABLE_MANPOWER_STATE_SUPPLY = 3.0								--Factor for state supply from max manpower (population)
 NDefines.NSupply.NON_CORE_MANPOWER_STATE_SUPPLY = 0.025								--Factor for population sttate supply when controlled by an occupier (NO TAKE FOOD)
 
