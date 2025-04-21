@@ -841,8 +841,16 @@ NDefines.NSupply.NUM_RAILWAYS_TRAIN_FACTOR = 0.50									-- the train usage is 
 NDefines.NSupply.MIN_TRAIN_SUPPLY_FACTOR = 0 										-- Having 0 trains in stockpile only applies this penalty factor, scaling up to 1.0 when need is met
 
 NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST = 500
-NDefines.NSupply.CAPITAL_SUPPLY_CIVILIAN_FACTORIES = 0.3 							-- supply from one civilian factory
-NDefines.NSupply.CAPITAL_SUPPLY_MILITARY_FACTORIES = 0.6 							-- supply from one military factory
+
+NDefines.NSupply.CAPITAL_SUPPLY_BASE = 5.0 											-- base supply for capital
+NDefines.NSupply.CAPITAL_SUPPLY_CIVILIAN_FACTORIES = 0.1	 						-- supply from one civilian factory
+NDefines.NSupply.CAPITAL_SUPPLY_MILITARY_FACTORIES = 0.2 							-- supply from one military factory
+NDefines.NSupply.CAPITAL_SUPPLY_DOCKYARDS = 0.2 									-- supply from one naval factory
+
+--NDefines.NSupply.CAPITAL_INITIAL_SUPPLY_FLOW = 100.0 								-- starting supply from
+--NDefines.NSupply.CAPITAL_STARTING_PENALTY_PER_PROVINCE = 0 							-- starting penalty that will be added as supply moves away from its origin (modified by stuff like terrain)
+--NDefines.NSupply.CAPITAL_ADDED_PENALTY_PER_PROVINCE = 0 							-- added penalty as we move away from origin
+
 NDefines.NSupply.AVAILABLE_MANPOWER_STATE_SUPPLY = 3.0								--Factor for state supply from max manpower (population)
 NDefines.NSupply.NON_CORE_MANPOWER_STATE_SUPPLY = 0.025								--Factor for population sttate supply when controlled by an occupier (NO TAKE FOOD)
 
@@ -940,10 +948,11 @@ NDefines.NAI.ARMY_LEADER_ASSIGN_NR_TRAITS = 100                          		 	-- 
 
 --NDefines.NAI.SUPPLY_CRISIS_LIMIT = 1.0											-- If a unit is standing in an area with
 NDefines.NAI.MIN_INVASION_AREA_SIZE_FOR_FLOATING_HARBORS = 5  				    	-- AI will consider using floating harbors for naval invasion if invasion area is larger than this many provinces
-NDefines.NAI.DEFAULT_SUPPLY_TRUCK_BUFFER_RATIO = 1.0								-- This modifies the amount of trucks taken from the stockpile by the set factor for the AI, if set to for example 1.2 the need is multiplied by 1.2, that way the AI can be made to produce a buffer of trucks. can be modified by wanted_supply_trucks min_wanted_supply_trucks ai strats
-NDefines.NAI.DEFAULT_SUPPLY_TRAIN_NEED_FACTOR = 1.0     							-- AI multiplies current train usage by this to determine desired nr of wanted trains. Can be modified by wanted_supply_train min_wanted_supply_trains ai strats.
-NDefines.NAI.DIVISION_SUPPLY_RATIO_TO_MOTORIZE = 0.8								-- If supply ratio is less than this, consider motorizing any applicable nearby supply hub
-NDefines.NAI.UPDATE_SUPPLY_MOTORIZATION_FREQUENCY_HOURS = 24    		 			-- Check if activating motorization would improve supply situation this often.
+NDefines.NAI.DEFAULT_SUPPLY_TRUCK_BUFFER_RATIO = 1.2								-- This modifies the amount of trucks taken from the stockpile by the set factor for the AI, if set to for example 1.2 the need is multiplied by 1.2, that way the AI can be made to produce a buffer of trucks. can be modified by wanted_supply_trucks min_wanted_supply_trucks ai strats
+NDefines.NAI.DEFAULT_SUPPLY_TRAIN_NEED_FACTOR = 1.2     							-- AI multiplies current train usage by this to determine desired nr of wanted trains. Can be modified by wanted_supply_train min_wanted_supply_trains ai strats.
+NDefines.NAI.DIVISION_SUPPLY_RATIO_TO_MOTORIZE = 0.95								-- If supply ratio is less than this, consider motorizing any applicable nearby supply hub
+NDefines.NAI.UPDATE_SUPPLY_MOTORIZATION_FREQUENCY_HOURS = 48    		 			-- Check if activating motorization would improve supply situation this often.
+NDefines.NAI.FIX_SUPPLY_BOTTLENECK_SATURATION_THRESHOLD = 1.1						-- Try to fix supply bottlenecks if supply node saturation exceeds this value.
 
 ----------- LEND LEASE
 
@@ -962,14 +971,14 @@ NDefines.NAI.MINIMUM_FUEL_DAYS_TO_ACCEPT_LEND_LEASE = 60					 		-- AI will accep
 
 ----------- INVASIONS
 
-NDefines.NAI.MAX_DISTANCE_NALAV_INVASION = 200.0									-- AI is extremely unwilling to plan naval invasions above this naval distance limit.
+NDefines.NAI.MAX_DISTANCE_NAVAL_INVASION = 200.0									-- AI is extremely unwilling to plan naval invasions above this naval distance limit.
 NDefines.NAI.MAX_UNIT_RATIO_FOR_INVASIONS = 0.35									-- countries won't use armies more than this ratio of total units for invasions
 NDefines.NAI.MAX_INVASION_FRONT_SCORE = 2400										-- max score for naval invasion front scores
 NDefines.NAI.MIN_FRONT_SCORE_FOR_AFTER_INVASION_AREAS = 1800						-- min score for army fronts that are created on recently invaded regions
 NDefines.NAI.INVASION_COASTAL_PROVS_PER_ORDER = 28									-- AI will consider one extra invasion per number of provinces stated here (num orders = total coast / this)
 NDefines.NAI.NAVAL_INVADED_AREA_PRIO_DURATION = 270									-- after successful invasion, AI will prio the enemy area for this number of days
 NDefines.NAI.NAVAL_INVADED_AREA_PRIO_MULT = 2.0										-- fronts that belongs to recent invasions gets more prio
-NDefines.NAI.MIN_NUM_CONQUERED_PROVINCES_TO_DEPRIO_NAVAL_INVADED_FRONTS = 30		-- if you conquer this amount of provinces after a naval invasion, it will lose its prio status and will act as a regular front
+NDefines.NAI.MIN_NUM_CONQUERED_PROVINCES_TO_DEPRIO_NAVAL_INVADED_FRONTS = 60		-- if you conquer this amount of provinces after a naval invasion, it will lose its prio status and will act as a regular front
 NDefines.NAI.MAX_INVASION_SIZE = 24													-- max invasion group size
 NDefines.NAI.MAX_UNITS_FACTOR_INVASION_ORDER = 1.4									-- Factor for max number of units to assign to naval invasion orders
 NDefines.NAI.DESIRED_UNITS_FACTOR_INVASION_ORDER = 1.4								-- Factor for desired number of units to assign to naval invasion orders
@@ -1093,11 +1102,11 @@ NDefines.NAI.LAND_COMBAT_OUR_ARMIES_AIR_IMPORTANCE = 25 							-- Strategic impo
 NDefines.NAI.LAND_COMBAT_OUR_COMBATS_AIR_IMPORTANCE = 100							-- Strategic importance of our armies in the combats
 NDefines.NAI.LAND_COMBAT_IMPORTANCE_SCALE = 5 										-- Lend combat total importance scale (every land combat score get's multiplied by it)
 NDefines.NAI.LAND_COMBAT_FIGHTERS_PER_PLANE = 1.2									-- Amount of air superiority planes requested per enemy plane
-NDefines.NAI.LAND_COMBAT_CAS_PER_ENEMY_ARMY = 50									-- Amount of CAS planes requested per enemy army
+NDefines.NAI.LAND_COMBAT_CAS_PER_ENEMY_ARMY = 100									-- Amount of CAS planes requested per enemy army
 NDefines.NAI.AIR_SUPERIORITY_FOR_FRIENDLY_CAS_RATIO = 0.0							-- Demand at least this proportion of our cas planes as air superiority regardless of other needs
 NDefines.NAI.LAND_COMBAT_CAS_PLANES_PER_ENEMY_ARMY_LIMIT = 1500						-- Limit of CAS planes requested by enemy armies
 NDefines.NAI.LAND_COMBAT_ANTI_LOGISTICS_PER_ENEMY_ARMY = 0    						-- Amount of CAS planes requested per enemy army for anti-logistics
-NDefines.NAI.LAND_COMBAT_CAS_PER_COMBAT = 150										-- Amount of CAS requested per combat
+NDefines.NAI.LAND_COMBAT_CAS_PER_COMBAT = 300										-- Amount of CAS requested per combat, 90cw x 3 cas per cw
 NDefines.NAI.LAND_COMBAT_BOMBERS_PER_LAND_FORT_LEVEL = 30							-- Amount of bomber planes requested per enemy land fort level
 NDefines.NAI.LAND_COMBAT_MIN_EXCORT_WINGS = 3										-- Min amount of airwings requested to excort operations
 NDefines.NAI.LAND_COMBAT_INTERCEPT_PER_PLANE = 0									-- Amount of interception planes requested per enemy plane
@@ -1197,7 +1206,7 @@ NDefines.NAI.AI_FRONT_MOVEMENT_FACTOR_FOR_READY = 0.5			               		-- If l
 
 ----------- Experiment, should stop the AI from having staring contests with forts, if AI starts suiciding maginot issue is here
 
-NDefines.NAI.FORT_LEVEL_TO_CONSIDER_HIGHLY_FORTIFIED = 8							-- Provinces above this level of fortification will be considered highly fortified by plan evaluation
+NDefines.NAI.FORT_LEVEL_TO_CONSIDER_HIGHLY_FORTIFIED = 6							-- Provinces above this level of fortification will be considered highly fortified by plan evaluation
 --NDefines.NAI.FORTIFIED_RATIO_TO_CONSIDER_A_FRONT_FORTIFIED = 1.0 					-- ai will consider a front fortified if this ratio of provinces has fort
 --NDefines.NAI.HEAVILY_FORTIFIED_RATIO_TO_CONSIDER_A_FRONT_FORTIFIED = 1.0			-- ai will consider a front super fortified if this ratio of provinces has lots of forts
 --NDefines.NAI.FORTIFIED_MIN_ORG_FACTOR_TO_CONSIDER_A_FRONT_FORTIFIED = 100 		-- ai will treat fortified provinces as unfortified if no unit in that province has an organization factor at least this high
@@ -1290,7 +1299,7 @@ NDefines.NAI.MAX_THREAT_FOR_FIRST_YEAR_CIVILIAN_MODE = 40							-- above this th
 NDefines.NAI.CONSTRUCTION_PRIO_INFRASTRUCTURE = 0.20                                -- base prio for infrastructure in the construction queue
 NDefines.NAI.CONSTRUCTION_PRIO_CIV_FACTORY = 0.75                                  	-- base prio for civilian factories in the construction queue
 NDefines.NAI.CONSTRUCTION_PRIO_MIL_FACTORY = 0.70                                   -- base prio for military factories in the construction queue
-NDefines.NAI.CONSTRUCTION_PRIO_RAILWAY = 100.00                                     -- base prio for railways in the construction queue
+NDefines.NAI.CONSTRUCTION_PRIO_RAILWAY = 0.50                                       -- base prio for railways in the construction queue
 NDefines.NAI.CONSTRUCTION_PRIO_RAILWAY_GUN_REPAIR = 15.00                           -- base prio for railway gun repairs in the construction queue
 NDefines.NAI.CONSTRUCTION_PRIO_UNSPECIFIED = 0.50                                   -- base prio for unspecified buildings (none of the categories above) in the construction queue
 NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_OCCUPIED_TERRITORY = 0.50                     -- factor prio with this if occupied territory
