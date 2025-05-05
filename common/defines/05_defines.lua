@@ -1061,7 +1061,7 @@ NDefines.NAI.NAVAL_MISSION_MINES_SWEEPING_NEAR_OWNED = 100000	 					-- How likel
 
 ------------------------------------------------- AIR
 
-NDefines.NAI.RAIDS_MIN_SUCCESS_FOR_LAUNCH = 0.05                  	 				-- The AI will not launch a raid if the chance of success is lower than this.
+NDefines.NAI.RAIDS_MIN_SUCCESS_FOR_LAUNCH = 0.3                  	 				-- The AI will not launch a raid if the chance of success is lower than this.
 NDefines.NAI.RAIDS_AVOID_SAME_TARGET_DURATION_DAYS = 90           					-- After a raid is finished/canceled, AI is less likely to raid the same target for this time.
 
 --NDefines.NAI.AIR_WING_REINFORCEMENT_LIMIT = 100									-- Doesnt exist anymore
