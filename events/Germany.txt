@@ -196,7 +196,7 @@ country_event = {
 				NOT = { has_completed_focus = JAP_showa_restoration }
 			}
 		}
-		GER =  { add_opinion_modifier = { target = ROOT modifier = refused_anti_comintern_pact_opinion } }
+		GER = { add_opinion_modifier = { target = ROOT modifier = refused_anti_comintern_pact_opinion } }
 	}
 
 }
@@ -249,6 +249,7 @@ country_event = {
 			modifier = {
 				factor = 0
 				NOT = { SOV = { has_completed_focus = SOV_great_purge } }
+				NOT = { SOV = { has_completed_focus = SOV_the_left_opposition } }
 				GER = {
 					OR = {
 						has_wargoal_against = SOV
@@ -270,7 +271,7 @@ country_event = {
 		add_state_claim = 93
 		add_state_claim = 91
 		add_state_claim = 89
-		hidden_effect =  { add_timed_idea = { idea = SOV_molotov_ribbentrop_pact days = 3650 } }
+		hidden_effect = { add_timed_idea = { idea = SOV_molotov_ribbentrop_pact days = 3650 } }
 		GER = {
 			country_event = { days = 1 id = germany.12 }
 			effect_tooltip = {
@@ -317,7 +318,10 @@ country_event = {
 			factor = 10
 			modifier = {
 				factor = 0
-				SOV = { has_completed_focus = SOV_great_purge }
+				OR = {
+					SOV = { has_completed_focus = SOV_great_purge }
+					SOV = { has_completed_focus = SOV_the_left_opposition }
+				}
 				GER = {
 					NOT = { has_wargoal_against = SOV }
 					NOT = { is_justifying_wargoal_against = SOV }
@@ -481,7 +485,12 @@ country_event = {
 				}
 			}
 			AND = {
-				POL = { has_capitulated = yes }
+				POL = {
+					OR = {
+						has_capitulated = yes
+						exists = no
+					}
+				}
 				AND = {
 					OR = {
 						controls_state = 96
@@ -1486,19 +1495,26 @@ country_event = {
 			}
 			SOV = { transfer_state = 893 }
 		}
-		SOV = {
-			add_state_claim = 96
-			add_state_claim = 95
-			add_state_claim = 94
-			add_state_claim = 93
-			add_state_claim = 91
-			add_state_claim = 97
-			add_state_claim = 89
-			add_state_claim = 784
-			effect_tooltip = {
-				create_wargoal = {
-					type = annex_everything
-					target = GER
+		if = {
+			limit = {
+				SOV = {
+					is_ai = no
+				}
+			}
+			SOV = {
+				add_state_claim = 96
+				add_state_claim = 95
+				add_state_claim = 94
+				add_state_claim = 93
+				add_state_claim = 91
+				add_state_claim = 97
+				add_state_claim = 89
+				add_state_claim = 784
+				effect_tooltip = {
+					create_wargoal = {
+						type = annex_everything
+						target = GER
+					}
 				}
 			}
 		}
@@ -1580,6 +1596,10 @@ country_event = {
 		HUN = {
 			set_country_flag = GER_second_vienna_award_HUN_north
 			add_opinion_modifier = { target = GER modifier = GER_second_vienna_award_HUN_north }
+			effect_tooltip = {
+				add_stability = 0.15
+				add_war_support = 0.15
+			}
 		}
 		ROM = {
 			add_opinion_modifier = { target = GER modifier = GER_second_vienna_award_ROM_north }
@@ -1607,6 +1627,10 @@ country_event = {
 		HUN = {
 			set_country_flag = GER_second_vienna_award_HUN_all
 			add_opinion_modifier = { target = GER modifier = GER_second_vienna_award_HUN_all }
+			effect_tooltip = {
+				add_stability = 0.20
+				add_war_support = 0.20
+			}
 		}
 		ROM = {
 			add_opinion_modifier = { target = GER modifier = GER_second_vienna_award_ROM_all }
@@ -1629,6 +1653,9 @@ country_event = {
 			set_country_flag = GER_second_vienna_award_noland
 			add_opinion_modifier = { target = GER modifier = GER_second_vienna_award_noland }
 			country_event = { id = hungary.1 }
+			effect_tooltip = {
+				add_war_support = -0.10
+			}
 		}
 	}
 }
@@ -1703,6 +1730,7 @@ country_event = {
 
 	option = { # Agree
 		name = germany.24.a
+		remove_ideas = GER_sinogerman_cooperation
 		ai_chance = {
 			factor = 10
 		}
@@ -1718,6 +1746,7 @@ country_event = {
 			add_opinion_modifier = { target = GER modifier = withdrew_advisors }
 			effect_tooltip = {
 				remove_ideas = CHI_alexander_von_falkenhausen
+				remove_ideas = CHI_sinogerman_cooperation
 				show_ideas_tooltip = CHI_alexander_von_falkenhausen
 			}
 		}
@@ -2304,25 +2333,9 @@ country_event = {
 				CZE = { has_government = communism }
 			}
 			modifier = {
-				has_global_flag = GER_has_started_war
+				factor = 0
 				NOT = { is_in_faction_with = GER }
-				factor = 0
-			}
-			modifier = {
-				factor = 0
 				OR = {
-					has_game_rule = {
-						rule = ENG_ai_behavior
-						option = DEMOCRATIC_HISTORICAL
-					}
-					has_game_rule = {
-						rule = ENG_ai_behavior
-						option = DEMOCRATIC_ALTERNATE
-					}
-					has_game_rule = {
-						rule = ENG_ai_behavior
-						option = FASCIST
-					}
 					has_war_with = GER
 					is_in_faction_with = CZE
 					has_global_flag = GER_has_started_war
@@ -2417,19 +2430,11 @@ country_event = {
 			}
 			modifier = {
 				factor = 0
+				is_in_faction_with = GER
 				NOT = {
-					OR = {
-						is_in_faction_with = CZE
-						has_war_with = GER
-					}
-				}
-				OR = {
-					has_game_rule = {
-						rule = ENG_ai_behavior
-						option = NEUTRALITY
-					}
-					NOT = { has_global_flag = GER_has_started_war }
-					is_in_faction_with = GER
+					has_war_with = GER
+					is_in_faction_with = CZE
+					has_global_flag = GER_has_started_war
 				}
 			}
 		}
@@ -3050,6 +3055,9 @@ country_event = {
 						is_in_faction_with = GER
 					}
 				}
+				NOT = {
+					is_historical_focus_on = yes
+				}
 			}
 			modifier = {
 				factor = 0 #if you lead a faction, fight
@@ -3584,7 +3592,7 @@ country_event = {
 				HUN = {
 					is_friend_or_potential_friend_of_GER = yes
 					OR = {
-						has_completed_focus = HUN_toggle_the_german_line
+						has_completed_focus = HUN_toe_the_german_line
 						has_government = fascism
 					}
 				}
@@ -3615,7 +3623,7 @@ country_event = {
 						is_friend_or_potential_friend_of_GER = no
 					}
 					AND = {
-						NOT = { HUN = { has_completed_focus = HUN_toggle_the_german_line } }
+						NOT = { HUN = { has_completed_focus = HUN_toe_the_german_line } }
 						NOT = { HUN = { has_government = fascism } }
 					}
 				}
@@ -3687,6 +3695,25 @@ country_event = {
 					GER_reinhard_heydrich = {
 						set_nationality = RCZ
 					}
+					add_to_variable = { GER_rk_consumer_goods_expected_value = 0.01 }
+					if = {
+						limit = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = GER_rk_obligations
+								}
+							}
+						}
+						custom_effect_tooltip = GER_rp_obligations_add_tt
+						hidden_effect = {
+							add_dynamic_modifier = {
+								modifier = GER_rk_obligations
+							}
+						}
+					}
+					else = {
+						custom_effect_tooltip = GER_rp_obligations_tt
+					}
 				}
 
 				hidden_effect = {
@@ -3710,63 +3737,63 @@ country_event = {
 					delete_unit_template_and_units = { division_template = "Horská divize" }
 					delete_unit_template_and_units = { division_template = "Jezdecká brigáda" }
 					delete_unit_template_and_units = { division_template = "Rychlá divize" }
-					880 = {
-						add_extra_state_shared_building_slots = 5
-						add_building_construction = {
-							type = arms_factory
-							level = 4
-							instant_build = yes
-						}
-						add_building_construction = {
-							type = industrial_complex
-							level = 1
-							instant_build = yes
-						}
-					}
-					9 = {
-						add_extra_state_shared_building_slots = 14
-						add_building_construction = {
-							type = arms_factory
-							level = 3
-							instant_build = yes
-						}
-						add_building_construction = {
-							type = industrial_complex
-							level = 11
-							instant_build = yes
-						}
-					}
-					75 = {
-						add_extra_state_shared_building_slots = 6
-						add_building_construction = {
-							type = arms_factory
-							level = 3
-							instant_build = yes
-						}
-						add_building_construction = {
-							type = industrial_complex
-							level = 3
-							instant_build = yes
-						}
-						# add_building_construction = {
-						# 	type = steel_refinery
-						# 	level = 1
-						# 	instant_build = yes
-						# }
-					}
-					881 = {
-						add_extra_state_shared_building_slots = 9
-						add_building_construction = {
-							type = arms_factory
-							level = 4
-							instant_build = yes
-						}
-						add_building_construction = {
-							type = industrial_complex
-							level = 5
-							instant_build = yes
-						}
-					}
+					#880 = {
+					#	add_extra_state_shared_building_slots = 5
+					#	add_building_construction = {
+					#		type = arms_factory
+					#		level = 4
+					#		instant_build = yes
+					#	}
+					#	add_building_construction = {
+					#		type = industrial_complex
+					#		level = 1
+					#		instant_build = yes
+					#	}
+					#}
+					#9 = {
+					#	add_extra_state_shared_building_slots = 14
+					#	add_building_construction = {
+					#		type = arms_factory
+					#		level = 3
+					#		instant_build = yes
+					#	}
+					#	add_building_construction = {
+					#		type = industrial_complex
+					#		level = 11
+					#		instant_build = yes
+					#	}
+					#}
+					#75 = {
+					#	add_extra_state_shared_building_slots = 6
+					#	add_building_construction = {
+					#		type = arms_factory
+					#		level = 3
+					#		instant_build = yes
+					#	}
+					#	add_building_construction = {
+					#		type = industrial_complex
+					#		level = 3
+					#		instant_build = yes
+					#	}
+					#	# add_building_construction = {
+					#	# 	type = steel_refinery
+					#	# 	level = 1
+					#	# 	instant_build = yes
+					#	# }
+					#}
+					#881 = {
+					#	add_extra_state_shared_building_slots = 9
+					#	add_building_construction = {
+					#		type = arms_factory
+					#		level = 4
+					#		instant_build = yes
+					#	}
+					#	add_building_construction = {
+					#		type = industrial_complex
+					#		level = 5
+					#		instant_build = yes
+					#	}
+					#}
 				}
 
 				load_oob = "RCZ_Military_Police"
@@ -3774,12 +3801,31 @@ country_event = {
 			add_war_support = 0.1
 		}
 		puppet = SLO
+		add_to_variable = { GER_rk_consumer_goods_expected_value = 0.01 }
+		if = {
+			limit = {
+				NOT = {
+					has_dynamic_modifier = {
+						modifier = GER_rk_obligations
+					}
+				}
+			}
+			custom_effect_tooltip = GER_rp_obligations_add_tt
+			hidden_effect = {
+				add_dynamic_modifier = {
+					modifier = GER_rk_obligations
+				}
+			}
+		}
+		else = {
+			custom_effect_tooltip = GER_rp_obligations_tt
+		}
 		every_state = {
 			limit = {
 				is_core_of = CZE
 				is_controlled_by = RCZ
 			}
-			set_compliance = 70
+			set_compliance = 90 #Ingame 70
 			set_garrison_strength = 1.0
 		}
 
@@ -3801,6 +3847,9 @@ country_event = {
 				add_stability = 0.1
 				add_war_support = 0.1
 				add_ideas = national_socialism
+				hidden_effect = {
+					add_ideas = GER_reichkommissariats_governments
+				}
 			}
 		}
 	}
@@ -3880,6 +3929,25 @@ country_event = {
 						puppet = RCZ
 					}
 					add_manpower = -100000
+					add_to_variable = { GER_rk_consumer_goods_expected_value = 0.01 }
+					if = {
+						limit = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = GER_rk_obligations
+								}
+							}
+						}
+						custom_effect_tooltip = GER_rp_obligations_add_tt
+						hidden_effect = {
+							add_dynamic_modifier = {
+								modifier = GER_rk_obligations
+							}
+						}
+					}
+					else = {
+						custom_effect_tooltip = GER_rp_obligations_tt
+					}
 				}
 
 				hidden_effect = {
@@ -3893,58 +3961,63 @@ country_event = {
 					delete_unit_template_and_units = { division_template = "Horská divize" }
 					delete_unit_template_and_units = { division_template = "Jezdecká brigáda" }
 					delete_unit_template_and_units = { division_template = "Rychlá divize" }
-					880 = {
-						add_extra_state_shared_building_slots = 5
-						add_building_construction = {
-							type = arms_factory
-							level = 4
-							instant_build = yes
-						}
-						add_building_construction = {
-							type = industrial_complex
-							level = 1
-							instant_build = yes
-						}
-					}
-					9 = {
-						add_extra_state_shared_building_slots = 14
-						add_building_construction = {
-							type = arms_factory
-							level = 3
-							instant_build = yes
-						}
-						add_building_construction = {
-							type = industrial_complex
-							level = 11
-							instant_build = yes
-						}
-					}
-					75 = {
-						add_extra_state_shared_building_slots = 6
-						add_building_construction = {
-							type = arms_factory
-							level = 3
-							instant_build = yes
-						}
-						add_building_construction = {
-							type = industrial_complex
-							level = 3
-							instant_build = yes
-						}
-					}
-					881 = {
-						add_extra_state_shared_building_slots = 9
-						add_building_construction = {
-							type = arms_factory
-							level = 4
-							instant_build = yes
-						}
-						add_building_construction = {
-							type = industrial_complex
-							level = 5
-							instant_build = yes
-						}
-					}
+					#880 = {
+					#	add_extra_state_shared_building_slots = 5
+					#	add_building_construction = {
+					#		type = arms_factory
+					#		level = 4
+					#		instant_build = yes
+					#	}
+					#	add_building_construction = {
+					#		type = industrial_complex
+					#		level = 1
+					#		instant_build = yes
+					#	}
+					#}
+					#9 = {
+					#	add_extra_state_shared_building_slots = 14
+					#	add_building_construction = {
+					#		type = arms_factory
+					#		level = 3
+					#		instant_build = yes
+					#	}
+					#	add_building_construction = {
+					#		type = industrial_complex
+					#		level = 11
+					#		instant_build = yes
+					#	}
+					#}
+					#75 = {
+					#	add_extra_state_shared_building_slots = 6
+					#	add_building_construction = {
+					#		type = arms_factory
+					#		level = 3
+					#		instant_build = yes
+					#	}
+					#	add_building_construction = {
+					#		type = industrial_complex
+					#		level = 3
+					#		instant_build = yes
+					#	}
+					#	# add_building_construction = {
+					#	# 	type = steel_refinery
+					#	# 	level = 1
+					#	# 	instant_build = yes
+					#	# }
+					#}
+					#881 = {
+					#	add_extra_state_shared_building_slots = 9
+					#	add_building_construction = {
+					#		type = arms_factory
+					#		level = 4
+					#		instant_build = yes
+					#	}
+					#	add_building_construction = {
+					#		type = industrial_complex
+					#		level = 5
+					#		instant_build = yes
+					#	}
+					#}
 				}
 
 				load_oob = "RCZ_Military_Police"
@@ -4751,7 +4824,12 @@ country_event = {
 		has_war_with = CZE
 		has_war_with = FRA
 		has_war_with = ENG
-		has_country_flag = allies_support_czechs
+		OR = {
+			has_country_flag = allies_support_czechs
+			CZE = {
+				is_in_faction_with = ENG
+			}
+		}
 	}
 
 	mean_time_to_happen = {
@@ -4864,7 +4942,7 @@ country_event = {
 		set_country_flag = german_rebels
 		kill_country_leader = yes
 		if = {
-			limit =  {
+			limit = {
 				OR = {
 					any_war_score < 39
 					has_stability < 60
@@ -4877,7 +4955,7 @@ country_event = {
 			}
 		}
 		if = {
-			limit =  {
+			limit = {
 				NOT = {
 					any_war_score < 39
 					has_stability < 60
@@ -4918,7 +4996,7 @@ country_event = {
 			}
 		}
 		if = {
-			limit =  {
+			limit = {
 				OR = {
 					any_war_score < 39
 					has_stability < 60
@@ -4930,7 +5008,7 @@ country_event = {
 			}
 		}
 		if = {
-			limit =  {
+			limit = {
 				NOT = {
 					any_war_score < 39
 					has_stability < 60
@@ -4960,7 +5038,7 @@ country_event = {
 			}
 		}
 		if = {
-			limit =  {
+			limit = {
 				OR = {
 					any_war_score < 39
 					has_stability < 60
@@ -4972,7 +5050,7 @@ country_event = {
 			}
 		}
 		if = {
-			limit =  {
+			limit = {
 				NOT = {
 					any_war_score < 39
 					has_stability < 60
@@ -5085,13 +5163,13 @@ country_event = {
 				name = GER_soviet_treaty_support
 				bonus = 0.5
 				uses = 1
-				technology = ger_support_tank_chassis_1
+				technology = ger_support_tank_chassis_1_2
 			}
 			add_tech_bonus = {
 				name = GER_soviet_treaty_med
 				bonus = 0.5
 				uses = 1
-				technology = ger_medium_tank_chassis_2
+				technology = ger_medium_tank_chassis_2_2
 			}
 		}
 		else = {
@@ -5821,6 +5899,7 @@ country_event = {
 			every_other_country = {
 				limit = {
 					has_non_aggression_pact_with = GER
+					NOT = { tag = SOV }
 				}
 				add_opinion_modifier = {
 					target = GER
@@ -6231,7 +6310,7 @@ country_event = {
 		custom_effect_tooltip = yugoslavia_mefo_bills_tt
 		add_to_variable = { var = GER_mefo_bill_counter value = -5 }
 		#GER_mefo_bills_level_down = yes
-		economy_fatigue_level_down_10 = yes
+		economy_fatigue_level_down_4 = yes
 	}
 
 	option = {
@@ -6351,7 +6430,7 @@ country_event = {
 		custom_effect_tooltip = yugoslavia_mefo_bills_tt
 		add_to_variable = { var = GER_mefo_bill_counter value = -5 }
 		#GER_mefo_bills_level_down = yes
-		economy_fatigue_level_down_10 = yes
+		economy_fatigue_level_down_4 = yes
 	}
 
 	option = {
@@ -6464,7 +6543,7 @@ country_event = {
 		custom_effect_tooltip = yugoslavia_mefo_bills_tt
 		add_to_variable = { var = GER_mefo_bill_counter value = -5 }
 		#GER_mefo_bills_level_down = yes
-		economy_fatigue_level_down_10 = yes
+		economy_fatigue_level_down_4 = yes
 	}
 
 	option = {
@@ -6493,10 +6572,29 @@ country_event = {
 		GER = {
 			set_state_controller = 887
 			add_state_claim = 887
-			economy_fatigue_level_down_5 = yes
+			economy_fatigue_level_down_4 = yes
 			set_autonomy = {
 				target = RSE
 				autonomy_state = autonomy_reichskommissariat
+			}
+			add_to_variable = { GER_rk_consumer_goods_expected_value = 0.005 }
+			if = {
+				limit = {
+					NOT = {
+						has_dynamic_modifier = {
+							modifier = GER_rk_obligations
+						}
+					}
+				}
+				custom_effect_tooltip = GER_rk_obligations_add_tt
+				hidden_effect = {
+					add_dynamic_modifier = {
+						modifier = GER_rk_obligations
+					}
+				}
+			}
+			else = {
+				custom_effect_tooltip = GER_rk_obligations_tt
 			}
 		}
 
@@ -6509,7 +6607,7 @@ country_event = {
 				transfer_state = 45
 				transfer_state = 888
 				add_state_claim = 888
-				economy_fatigue_level_down_2 = yes
+				economy_fatigue_level_down_4 = yes
 				country_event = { id = ger_armor.835 }
 			}
 		}
@@ -6533,7 +6631,7 @@ country_event = {
 				set_state_controller = 106
 				add_state_claim = 851
 				add_state_claim = 106
-				economy_fatigue_level_down_2 = yes
+				economy_fatigue_level_down_4 = yes
 				country_event = { id = ger_armor.836 }
 			}
 		}
@@ -6564,7 +6662,7 @@ country_event = {
 				add_state_claim = 102
 				add_state_claim = 1022
 				add_state_claim = 908
-				economy_fatigue_level_down_2 = yes
+				economy_fatigue_level_down_4 = yes
 				country_event = { id = ger_armor.837 }
 			}
 		}
@@ -6587,7 +6685,7 @@ country_event = {
 				add_state_claim = 102
 				add_state_claim = 1022
 				add_state_claim = 908
-				economy_fatigue_level_down_2 = yes
+				economy_fatigue_level_down_4 = yes
 			}
 		}
 		else = {
@@ -6620,24 +6718,6 @@ country_event = {
 				transfer_state = 104
 				transfer_state = 913
 				set_state_controller = 907
-				103 = {
-					add_dynamic_modifier = { modifier = CRO_partisans }
-				}
-				999 = {
-					add_dynamic_modifier = { modifier = CRO_partisans }
-				}
-				913 = {
-					add_dynamic_modifier = { modifier = CRO_partisans }
-				}
-				104 = {
-					add_dynamic_modifier = { modifier = CRO_partisans }
-				}
-				109 = {
-					add_dynamic_modifier = { modifier = CRO_partisans }
-				}
-				907 = {
-					add_dynamic_modifier = { modifier = CRO_partisans }
-				}
 				load_focus_tree = rkcroatia_focus
 				inherit_technology = GER
 				add_equipment_to_stockpile = {
@@ -6688,24 +6768,6 @@ country_event = {
 					amount = 2500
 					producer = GER
 				}
-				999 = {
-					add_dynamic_modifier = { modifier = CRO_partisans }
-				}
-				103 = {
-					add_dynamic_modifier = { modifier = CRO_partisans }
-				}
-				913 = {
-					add_dynamic_modifier = { modifier = CRO_partisans }
-				}
-				104 = {
-					add_dynamic_modifier = { modifier = CRO_partisans }
-				}
-				109 = {
-					add_dynamic_modifier = { modifier = CRO_partisans }
-				}
-				907 = {
-					add_dynamic_modifier = { modifier = CRO_partisans }
-				}
 
 				add_manpower = 150000
 				add_political_power = 500
@@ -6721,6 +6783,25 @@ country_event = {
 					}
 					else = {
 						set_autonomy = { target = CRO autonomy_state = autonomy_reichsprotectorate }
+					}
+					add_to_variable = { GER_rk_consumer_goods_expected_value = 0.01 }
+					if = {
+						limit = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = GER_rk_obligations
+								}
+							}
+						}
+						custom_effect_tooltip = GER_rp_obligations_add_tt
+						hidden_effect = {
+							add_dynamic_modifier = {
+								modifier = GER_rk_obligations
+							}
+						}
+					}
+					else = {
+						custom_effect_tooltip = GER_rp_obligations_tt
 					}
 				}
 			}
@@ -7507,12 +7588,12 @@ country_event = {
 #			factor = 0
 #		}
 #		trigger = {
-#			tag = ENG 
+#			tag = ENG
 #			has_country_leader = {
 #				character = ENG_winston_churchill
 #				ruling_only = yes
 #			}
-#			is_ai = no 
+#			is_ai = no
 #		}
 #		hidden_effect = {
 #			event_target:yalta_partner = {
@@ -7528,8 +7609,8 @@ country_event = {
 			factor = 0
 		}
 	}
-	
-	
+
+
 }
 
 
@@ -7603,7 +7684,7 @@ country_event = {
 		# AUS = {
 		# 	set_politics = {
 		# 		ruling_party = democratic
-		# 		elections_allowed = yes 
+		# 		elections_allowed = yes
 		# 	}
 		# }
 		hidden_effect = {
@@ -7674,30 +7755,30 @@ country_event = {
 			51 = { set_state_flag = morgenthau_international }
 			52 = { set_state_flag = morgenthau_international }
 			56 = { set_state_flag = morgenthau_international }
-		
+
 		#NGS
-			58 = { set_state_flag = morgenthau_north_german } 	
-			59 = { set_state_flag = morgenthau_north_german } 	
-			51 = { set_state_flag = morgenthau_north_german } 	
-			61 = { set_state_flag = morgenthau_north_german } 	
-			62 = { set_state_flag = morgenthau_north_german } 	
-			63 = { set_state_flag = morgenthau_north_german } 	
-			68 = { set_state_flag = morgenthau_north_german } 	
-			66 = { set_state_flag = morgenthau_north_german } 	
-			65 = { set_state_flag = morgenthau_north_german } 	
-			64 = { set_state_flag = morgenthau_north_german } 	
-			60 = { set_state_flag = morgenthau_north_german } 	
+			58 = { set_state_flag = morgenthau_north_german }
+			59 = { set_state_flag = morgenthau_north_german }
+			51 = { set_state_flag = morgenthau_north_german }
+			61 = { set_state_flag = morgenthau_north_german }
+			62 = { set_state_flag = morgenthau_north_german }
+			63 = { set_state_flag = morgenthau_north_german }
+			68 = { set_state_flag = morgenthau_north_german }
+			66 = { set_state_flag = morgenthau_north_german }
+			65 = { set_state_flag = morgenthau_north_german }
+			64 = { set_state_flag = morgenthau_north_german }
+			60 = { set_state_flag = morgenthau_north_german }
 
 		#SGS
-			54 = { set_state_flag = morgenthau_south_german } 
-			50 = { set_state_flag = morgenthau_south_german } 
-			52 = { set_state_flag = morgenthau_south_german } 
-			53 = { set_state_flag = morgenthau_south_german } 		
-		
+			54 = { set_state_flag = morgenthau_south_german }
+			50 = { set_state_flag = morgenthau_south_german }
+			52 = { set_state_flag = morgenthau_south_german }
+			53 = { set_state_flag = morgenthau_south_german }
+
 		hidden_effect = {
 			news_event = { days = 1 id = news.236 }
 		}
-		set_global_flag = morgenthau_agreed_flag 
+		set_global_flag = morgenthau_agreed_flag
 	}
 
 	option = {
@@ -7705,7 +7786,7 @@ country_event = {
 		ai_chance = {
 			base = 1
 		}
-		
+
 		event_target:yalta_origin = {
 			country_event = {
 				id = germany.120
@@ -7744,12 +7825,12 @@ country_event = {
 			add_state_core = 763
 		}
 
-			
-		
+
+
 		hidden_effect = {
 			news_event = { days = 1 id = news.236 }
 		}
-		set_global_flag = morgenthau_agreed_flag 
+		set_global_flag = morgenthau_agreed_flag
 	}
 
 	option = {
@@ -7757,7 +7838,7 @@ country_event = {
 		ai_chance = {
 			base = 1
 		}
-		
+
 		event_target:yalta_origin = {
 			country_event = {
 				id = germany.120

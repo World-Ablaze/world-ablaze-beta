@@ -51,7 +51,7 @@ GER_roles = {
 	ai_strategy = {
 		type = role_ratio
 		id = cavalry
-		value = -100
+		value = 0
 	}
 
 	ai_strategy = {
@@ -63,7 +63,7 @@ GER_roles = {
 	ai_strategy = {
 		type = role_ratio
 		id = mechanized
-		value = 33
+		value = 50
 	}
 
 	ai_strategy = {
@@ -88,6 +88,25 @@ GER_roles = {
 		type = role_ratio
 		id = infantry
 		value = 100
+	}
+}
+
+GER_dont_join_for_bessarabia = {
+	allowed = {
+		original_tag = GER
+	}
+	enable = {
+		is_in_faction_with = ROM
+	}
+	abort = {
+		has_war_with = SOV
+	}
+
+	ai_strategy = {
+		type = dont_join_wars_with
+		id = ROM
+		value = 1000
+		target_country = SOV
 	}
 }
 
@@ -735,6 +754,21 @@ war_with_poland = {
 	}
 
 	ai_strategy = {
+		type = force_concentration_target_weight
+		state = 87 # Lodz
+		state = 892 # Warsaw outskirts
+		state = 10 # Warsaw
+
+		value = 25 # +25%
+	}
+
+	ai_strategy = {
+		type = front_armor_score
+		id = "POL"
+		value = 100
+	}
+
+	ai_strategy = {
 		type = conquer
 		id = "FRA"
 		value = 100
@@ -1020,12 +1054,6 @@ gank_everyone = { #####DONT TOUCH
 	}
 
 	ai_strategy = {
-		type = front_armor_score
-		id = "HOL"
-		value = 100
-	}
-
-	ai_strategy = {
 		type = ignore
 		id = "FIN"
 		value = 1000
@@ -1141,6 +1169,85 @@ gank_everyone = { #####DONT TOUCH
 		type = strategic_air_importance
 		id = 5
 		value = 500000 #value of stocked main front in active combat is usually around 35,000
+	}
+}
+
+GER_fall_gelb = {
+	allowed = {
+		tag = GER
+	}
+	enable = {
+		has_war_with = BEL
+		BEL = { has_capitulated = no }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = force_concentration_front_factor
+		tag = BEL
+		value = 200
+	}
+	ai_strategy = {
+		type = force_concentration_front_factor
+		tag = LUX
+		value = 200
+	}
+}
+
+GER_fall_rot = {
+	allowed = {
+		tag = GER
+	}
+	enable = {
+		HOL = { has_capitulated = yes }
+		BEL = { has_capitulated = yes }
+		NOR = { has_capitulated = yes }
+		has_war_with = FRA
+		NOT = {
+			OR = {
+				has_global_flag = fall_of_france
+				FRA = {
+					has_capitulated = yes
+				}
+				surrender_progress > 0
+				has_war_with = SOV
+			}
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		tag = FRA
+		value = 1000
+	}
+	ai_strategy = {
+		type = force_concentration_target_weight
+		state = 29 # Nord-Pas_de_Calais
+		state = 785 # Picardy
+		state = 855 # Paris
+		state = 16 # Ile de France
+		#state = 18 # Champagne
+		state = 1016
+		state = 15 # Normandy
+		# include Belgium as well even though we hopefully have already taken it
+		state = 979 # Brabant
+		state = 6 # Vlaanderen
+		state = 34 # Wallonie
+		state = 790 # Eupen Malmady
+		state = 985 # Ardennes
+
+		value = 80 # +80%
+	}
+
+	ai_strategy = {
+		# Avoid the areas behind the Maginot line
+		type = force_concentration_target_weight
+		state = 17 # Franche-Comte
+		state = 28 # Alsace-Lorraine
+		state = 27 # Bourgogne
+
+		value = -60 # -60%
 	}
 }
 
@@ -1407,18 +1514,22 @@ avoid_the_med = {
 		id = 269 #
 		value = 2000
 	}
-
 	ai_strategy = {
 		type = naval_avoid_region
-		id = 169 #
+		id = 373 #ligurian sea
+		value = 2000
+	}
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 169 #tyrrhenian sea
 		value = 2000
 	}
 
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 68 #
-		value = 2000
-	}
+	#ai_strategy = {
+	#	type = naval_avoid_region
+	#	id = 68 #
+	#	value = 2000
+	#}
 
 	ai_strategy = {
 		type = naval_avoid_region
@@ -1429,12 +1540,6 @@ avoid_the_med = {
 	ai_strategy = {
 		type = naval_avoid_region
 		id = 219 #
-		value = 2000
-	}
-
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 249 #
 		value = 2000
 	}
 }
@@ -1493,11 +1598,11 @@ GER_sicily_corridor = {
 		value = 100
 	}
 
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 68 #
-		value = 2000
-	}
+	#ai_strategy = {
+	#	type = naval_avoid_region
+	#	id = 68 #
+	#	value = 2000
+	#}
 
 	ai_strategy = {
 		type = naval_avoid_region
@@ -1738,10 +1843,14 @@ battle_of_britain_yes = {
 	enable = {
 		has_war_with = ENG
 		NOT = { has_war_with = SOV }
-		date < 1940.11.1
+		OR = {
+			has_country_flag = sealion_active
+			date < 1940.11.1
+		}
 		OR = {
 			NOT = { has_war_with = FRA }
 			FRA = { has_capitulated = yes }
+			has_country_flag = sealion_active
 		}
 	}
 	abort_when_not_enabled = yes
@@ -1766,6 +1875,12 @@ battle_of_britain_yes = {
 
 	ai_strategy = {
 		type = strategic_air_importance
+		id = 365
+		value = -750000 #value of stocked main front in active combat is usually around 35,000
+	}
+
+	ai_strategy = {
+		type = strategic_air_importance
 		id = 16
 		value = -750000 #value of stocked main front in active combat is usually around 35,000
 	}
@@ -1780,6 +1895,39 @@ battle_of_britain_yes = {
 		type = strategic_air_importance
 		id = 18
 		value = 100000
+	}
+
+	ai_strategy = {
+		type = front_control
+		strategic_region = 1
+		ordertype = front
+		execute_order = yes
+	}
+
+	ai_strategy = {
+		type = front_control
+		strategic_region = 2
+		ordertype = front
+		execute_order = yes
+	}
+
+	ai_strategy = {
+		type = front_control
+		strategic_region = 3
+		ordertype = front
+		execute_order = yes
+	}
+
+	ai_strategy = {
+		type = front_unit_request
+		state = 857
+		value = -50
+	}
+
+	ai_strategy = {
+		type = front_unit_request
+		state = 127
+		value = -50
 	}
 }
 
@@ -1796,6 +1944,9 @@ battle_of_britain_no = {
 		}
 	}
 	enable = {
+		NOT = {
+			has_country_flag = sealion_active
+		}
 		OR = {
 			tag = GER
 			is_in_faction_with = GER
@@ -1854,6 +2005,12 @@ battle_of_britain_no = {
 
 	ai_strategy = {
 		type = strategic_air_importance
+		id = 369
+		value = -1000000 #value of stocked main front in active combat is usually around 35,000
+	}
+
+	ai_strategy = {
+		type = strategic_air_importance
 		id = 43
 		value = -1000000 #value of stocked main front in active combat is usually around 35,000
 	}
@@ -1890,6 +2047,12 @@ battle_of_britain_no = {
 
 	ai_strategy = {
 		type = strategic_air_importance
+		id = 365
+		value = -500000 #value of stocked main front in active combat is usually around 35,000
+	}
+
+	ai_strategy = {
+		type = strategic_air_importance
 		id = 16
 		value = -500000 #value of stocked main front in active combat is usually around 35,000
 	}
@@ -1915,6 +2078,18 @@ ger_defend_against_bombing = {
 	ai_strategy = {
 		type = strategic_air_importance
 		id = 7
+		value = 10000 #value of stocked main front in active combat is usually around 35,000
+	}
+
+	ai_strategy = {
+		type = strategic_air_importance
+		id = 6
+		value = 10000 #value of stocked main front in active combat is usually around 35,000
+	}
+
+	ai_strategy = {
+		type = strategic_air_importance
+		id = 8
 		value = 10000 #value of stocked main front in active combat is usually around 35,000
 	}
 }
@@ -2203,7 +2378,7 @@ GER_we_dont_fight_pathetic_sweden = { # :O
 	}
 }
 
-war_with_denmark = {
+denmark_prep = {
 	allowed = {
 		tag = GER
 	}
@@ -2261,6 +2436,34 @@ war_with_denmark = {
 	}
 }
 
+war_with_denmark = {
+	allowed = {
+		tag = GER
+	}
+	enable = {
+		country_exists = DEN
+		has_war_with = DEN
+		DEN = { has_capitulated = no }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_control
+		strategic_region = 6
+		ordertype = front
+		execution_type = rush
+		execute_order = yes
+	}
+
+	ai_strategy = {
+		type = front_control
+		strategic_region = 207
+		ordertype = front
+		execution_type = rush
+		execute_order = yes
+	}
+}
+
 war_with_norway = {
 	allowed = {
 		tag = GER
@@ -2302,37 +2505,9 @@ war_with_norway = {
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
-		type = invade
-		id = "DEN"
-		value = 1000
-	}
-	ai_strategy = {
-		type = invade
-		id = "NOR"
-		value = 1000
-	}
-	ai_strategy = {
 		type = front_armor_score
 		id = "NOR"
 		value = -100
-	}
-
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 173 #Norwegian Trench
-		value = 100
-	}
-
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 174 #Voring
-		value = 2000
-	}
-
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 242 #German Bight
-		value = 100
 	}
 
 #	ai_strategy = {
@@ -2340,15 +2515,6 @@ war_with_norway = {
 #		area = scandinavia
 #		value = 10
 #	}
-
-	ai_strategy = {
-		type = front_control
-
-		area = norwegian_coast
-
-		ordertype = invasion
-		execute_order = yes
-	}
 
 	ai_strategy = {
 		type = area_priority
@@ -2363,34 +2529,66 @@ war_with_norway = {
 	}
 }
 
-war_with_norway_2 = {
+naval_invade_norway = {
 	allowed = {
 		tag = GER
 	}
 	enable = {
-		date > 1940.5.10
+		date > 1940.3.1
 		OR = {
-			142 = { CONTROLLER = { has_war_with = ROOT } }
-			143 = { CONTROLLER = { has_war_with = ROOT } }
+			NOT = { is_in_faction_with = NOR }
+			NOT = { NOR = { is_subject_of = GER } }
+			has_war_with = NOR
 		}
 		OR = {
-			110 = { CONTROLLER = { is_in_faction_with = ROOT } }
-			110 = { CONTROLLER = { is_subject_of = ROOT } }
-			110 = { CONTROLLER = { tag = ROOT } }
+			110 = { CONTROLLER = { has_war_with = ROOT } }
+			1020 = { CONTROLLER = { has_war_with = ROOT } }
+			#142 = { CONTROLLER = { has_war_with = ROOT } }
+			#143 = { CONTROLLER = { has_war_with = ROOT } }
+			#144 = { CONTROLLER = { has_war_with = ROOT } }
 		}
 	}
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
-		type = naval_avoid_region
-		id = 242 #German Bight
-		value = 2000
+		type = front_control
+
+		area = norwegian_coast
+
+		ordertype = invasion
+		execute_order = yes
 	}
 
 	ai_strategy = {
-		type = front_armor_score
+		type = invade
 		id = "NOR"
-		value = -100
+		value = 1000
+	}
+}
+
+dont_naval_invade_norway = {
+	allowed = {
+		tag = GER
+	}
+	enable = {
+		has_war_with = NOR
+		OR = {
+			110 = { CONTROLLER = { is_in_faction_with = ROOT } }
+			110 = { CONTROLLER = { is_subject_of = ROOT } }
+			110 = { CONTROLLER = { tag = ROOT } }
+		}
+		OR = {
+			1020 = { CONTROLLER = { is_in_faction_with = ROOT } }
+			1020 = { CONTROLLER = { is_subject_of = ROOT } }
+			1020 = { CONTROLLER = { tag = ROOT } }
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = invade
+		id = "NOR"
+		value = -1000
 	}
 }
 
@@ -2428,16 +2626,6 @@ GER_focus_on_north_africa = {
 		type = area_priority
 		id = north_africa
 		value = 130
-	}
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 48 #Ionian sea
-		value = 2000
-	}
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 48 #African Coast
-		value = 2000
 	}
 	ai_strategy = {
 		type = naval_avoid_region
@@ -2685,6 +2873,111 @@ germany_stay_out_of_shitholes = {
 	}
 }
 
+GER_no_need_for_africa = {
+	allowed = {
+		tag = GER
+	}
+	enable = {
+		is_in_faction_with = ENG
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+
+		area = asia
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 183
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 217
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 184
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 185
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 140
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 139
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 338
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 191
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 12
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = front_unit_request
+
+		area = north_africa
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = front_unit_request
+
+		area = middle_east
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = front_unit_request
+
+		area = central_africa
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = front_unit_request
+
+		area = south_africa
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = garrison
+		value = -1000
+	}
+}
+
+
 africa_is_lost = {
 	allowed = {
 		tag = GER
@@ -2833,6 +3126,19 @@ war_with_soviets = {
 		value = 500
 	}
 
+	ai_strategy = {
+		type = force_concentration_front_factor
+		tag = SOV
+		value = 200
+	}
+
+	ai_strategy = {
+		type = force_concentration_target_weight
+		state = 206 #Minsk
+
+		value = 80 # +80%
+	}
+
 	ai_strategy = {									#Komrade
 		type = area_priority
 		id = north_russia
@@ -2878,17 +3184,6 @@ war_with_soviets_2 = {
 		area = north_africa
 		value = -75
 	}
-
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 48 #Ionian sea
-		value = 2000
-	}
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 48 #African Coast
-		value = 2000
-	}
 	ai_strategy = {
 		type = naval_avoid_region
 		id = 61 #Cap Verde
@@ -2920,7 +3215,82 @@ war_with_soviets_3 = {
 		tag = GER
 	}
 	enable = {
-		has_war_with = USA
+		202 = {
+			CONTROLLER = {
+				OR = {
+					tag = ROOT
+					is_subject_of = ROOT
+					is_in_faction_with = ROOT
+				}
+			}
+		}
+		196 = {
+			CONTROLLER = {
+				OR = {
+					tag = ROOT
+					is_subject_of = ROOT
+					is_in_faction_with = ROOT
+				}
+			}
+		}
+		200 = {
+			CONTROLLER = {
+				OR = {
+					tag = ROOT
+					is_subject_of = ROOT
+					is_in_faction_with = ROOT
+				}
+			}
+		}
+		137 = {
+			CONTROLLER = {
+				has_war_with = ROOT
+			}
+		}
+		date < 1942.3.1
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 30
+		value = 150
+	}
+
+	ai_strategy = {
+		type = front_control
+		strategic_region = 30
+		ordertype = front
+		execution_type = balanced
+		execute_order = yes
+	}
+
+	ai_strategy = {
+	 	type = front_unit_request
+		state = 196
+		value = 150
+	}
+
+	ai_strategy = {
+	 	type = front_unit_request
+		state = 137
+		value = 150
+	}
+
+	ai_strategy = {
+		type = force_concentration_target_weight
+		state = 137 #Sevastopol
+
+		value = 80 # +80%
+	}
+}
+
+war_with_soviets_4 = {
+	allowed = {
+		tag = GER
+	}
+	enable = {
+		has_war_with = SOV
 		date > 1942.3.1
 	}
 	abort = {
@@ -2928,6 +3298,14 @@ war_with_soviets_3 = {
 			NOT = { country_exists = SOV }
 			date < 1942.10.1
 		}
+	}
+
+	ai_strategy = {
+		type = force_concentration_target_weight
+		state = 217 #Stalingrad
+		state = 218 #Rostov
+
+		value = 80 # +80%
 	}
 
 	ai_strategy = {
@@ -2949,7 +3327,7 @@ war_with_soviets_3 = {
 	}
 }
 
-war_with_soviets_4 = {
+war_with_soviets_5 = {
 	allowed = {
 		tag = GER
 	}
@@ -3101,7 +3479,7 @@ GER_frontline_requests = { ###stops the AI from garrisoning random VPs
 		id = "ITA"
 		value = -100
 	}
-	
+
 	ai_strategy = {
 		type = front_armor_score
 		id = "ENG"
@@ -3297,6 +3675,31 @@ GER_frontline_requests_5 = {
 		type = front_unit_request
 		strategic_region = 290
 		value = -1000
+	}
+}
+
+GER_frontline_requests_5 = {
+	allowed = {
+		tag = GER
+	}
+	enable = {
+		has_war_with = ITA
+		country_exists = RIT
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+
+		strategic_region = 23
+		value = 100
+	}
+
+	ai_strategy = {
+		type = front_unit_request
+
+		strategic_region = 21
+		value = 100
 	}
 }
 
@@ -3506,6 +3909,249 @@ GER_abandon_allies = {
 	}
 }
 
+naval_death_traps = {
+	allowed = {
+		tag = GER
+	}
+	enable = {
+		if = {
+			limit = {
+				has_war_with = FRA
+			}
+			OR = {
+				FRA = { has_capitulated = yes }
+				date > 1940.5.1
+			}
+		}
+		OR = {
+			110 = { CONTROLLER = { is_in_faction_with = ROOT } }
+			110 = { CONTROLLER = { is_subject_of = ROOT } }
+			110 = { CONTROLLER = { tag = ROOT } }
+		}
+		OR = {
+			1020 = { CONTROLLER = { is_in_faction_with = ROOT } }
+			1020 = { CONTROLLER = { is_subject_of = ROOT } }
+			1020 = { CONTROLLER = { tag = ROOT } }
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 173 #Norwegian Trench
+		value = 100
+	}
+
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 174 #Voring
+		value = 2000
+	}
+
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 242 #German Bight
+		value = 100
+	}
+}
+
+GER_convoy_raid_areas = {
+	allowed = {
+		tag = GER
+	}
+
+	enable = {
+		has_war = yes
+		OR = {
+			date > 1940.7.1
+			FRA = { is_subject_of = ROOT }
+			FRA = { is_in_faction_with = ROOT }
+			FRA = { has_capitulated = yes }
+			NOT = { country_exists = FRA }
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 247
+		value = 1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 44
+		value = 1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 243
+		value = 1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 43
+		value = 1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 47
+		value = 1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 48
+		value = 1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 356
+		value = 1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 61
+		value = 1000
+	}
+}
+
+GER_dont_convoy_raid_too_far_away = {
+	allowed = {
+		tag = GER
+	}
+
+	enable = {
+		has_war = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 106 #Mexican coast
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 52 #Gulf of mexico
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 59 #Demerara Plain
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 321 #Gulf of finland
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 62 #Gulf of guinea
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 357 #Angola Basin
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 29 #Strait of sicily
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 68 #Algerian coast
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 249 #Alboran Sea
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 103 #Mozambique channel
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 102 #East african coast
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 65 #Cape of africa
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 331 #Andaman Basin
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 308 #Gulf of aden
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 361 #Arabian Basin
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 332 #Cape Basin
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 42 #Bay of biscay
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 327
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 269
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = naval_convoy_raid_region
+		id = 218
+		value = -1000
+	}
+}
+
 dont_invade_siberia = {
 	allowed = {
 		tag = GER
@@ -3544,6 +4190,27 @@ dont_invade_italy = {
 	}
 }
 
+GER_war_With_GRE_invasions = {
+	enable = {
+		tag = GER
+		has_War_With = GRE
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = invade
+		id = "GRE"
+		value = -2000
+	}
+
+	ai_strategy = {
+		type = invasion_unit_request
+		tag = GRE
+		value = -1000
+	}
+}
+
 GER_war_With_GRE = {
 	enable = {
 		tag = GER
@@ -3561,6 +4228,26 @@ GER_war_With_GRE = {
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 295
+		value = 50
+	}
+
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 25
+		value = 50
+	}
+
+	ai_strategy = {
+		type = front_control
+		strategic_region = 295
+		ordertype = front
+		execution_type = balanced
+		execute_order = yes
+	}
+
+	ai_strategy = {
 		type = front_control
 		strategic_region = 25
 		ordertype = front
@@ -3573,7 +4260,7 @@ GER_war_With_GRE_rush = {
 	enable = {
 		tag = GER
 		date > 1941.5.1
-		date < 1941.6.1
+		date < 1941.6.7
 		NOT = {
 			has_war_with = SOV
 		}
@@ -3585,6 +4272,26 @@ GER_war_With_GRE_rush = {
 	}
 
 	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 295
+		value = 100
+	}
+
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 25
+		value = 100
+	}
+
+	ai_strategy = {
+		type = front_control
+		strategic_region = 295
+		ordertype = front
+		execution_type = rush
+		execute_order = yes
+	}
 
 	ai_strategy = {
 		type = front_control
@@ -3645,6 +4352,42 @@ war_with_soviets_barbarossa  = {
 		execution_type = rush
 		execute_order = yes
 		#manual_attack = yes
+	}
+
+	ai_strategy = {
+		type = front_control
+		state = 206
+		ordertype = front
+		execution_type = rush
+		execute_order = yes
+		manual_attack = yes
+	}
+
+	ai_strategy = {
+		type = front_unit_request
+		state = 206
+		value = 50
+	}
+
+	ai_strategy = {
+		type = front_unit_request
+		state = 137
+		value = 1000
+	}
+
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 30
+		value = 1000
+	}
+
+	ai_strategy = {
+		type = front_control
+		state = 137
+		ordertype = front
+		execution_type = balanced
+		execute_order = yes
+		manual_attack = yes
 	}
 }
 
@@ -4736,11 +5479,34 @@ GER_atlantik_wall_scandinavia = {
 	}
 }
 
+GER_VEN_no_axis = {
+	allowed = {
+		OR = {
+			tag = GER
+			tag = ITA
+		}
+	}
+	enable = {
+		is_historical_focus_on = yes
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = alliance
+		id = "VEN"
+		value = -2000
+	}
+}
+
 GER_dont_sea_lion_until_the_soviets_are_defeated = {
 	allowed = {
 		tag = GER
 	}
 	enable = {
+		NOT = {
+			has_country_flag = sealion_active
+		}
 		OR = {
 			has_war_with = SOV
 			date < 1942.1.1
@@ -4761,6 +5527,11 @@ GER_dont_sea_lion_until_the_soviets_are_defeated = {
 	}
 	ai_strategy = {
 		type = naval_avoid_region
+		id = 365 #north sea
+		value = 2000
+	}
+	ai_strategy = {
+		type = naval_avoid_region
 		id = 16 #north sea
 		value = 2000
 	}
@@ -4776,13 +5547,8 @@ GER_dont_sea_lion_until_the_soviets_are_defeated = {
 	}
 	ai_strategy = {
 		type = naval_avoid_region
-		id = 43 #western approaches
+		id = 369 #british isles
 		value = 2000
-	}
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 249 #alboran sea
-		value = 1000
 	}
 	ai_strategy = {
 		type = naval_avoid_region
@@ -4872,10 +5638,15 @@ axis_stay_away_from_the_royal_navy = {
 		id = 42 #bay of biscay
 		value = 100
 	}
+	#ai_strategy = {
+	#	type = naval_avoid_region
+	#	id = 68 #western mediterranean sea
+	#	value = 100
+	#}
 	ai_strategy = {
 		type = naval_avoid_region
-		id = 68 #western mediterranean sea
-		value = 100
+		id = 373 #ligurian sea
+		value = 2000
 	}
 	ai_strategy = {
 		type = naval_avoid_region
@@ -5641,13 +6412,13 @@ axis_no_asian_volunteers = {
 #
 #	ai_strategy = {
 #		type = equipment_variant_production_factor
-#		id = fighter_equipment
+#		id = small_fighter_airframe
 #		value = -90
 #	}
 #
 #	ai_strategy = {
 #		type = equipment_variant_production_factor
-#		id = cas_equipment
+#		id = small_bomber_airframe
 #		value = -90
 #	}
 #}
@@ -6038,6 +6809,40 @@ GER_avoid_early_death_traps = {
 	}
 }
 
+GER_dont_invade_greenland = {
+	enable = {
+		NOT = { has_country_flag = soviet_union_defeated }
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = invasion_unit_request
+		state = 873
+		value = -1000
+	}
+	ai_strategy = {
+		type = invasion_unit_request
+		state = 791
+		value = -1000
+	}
+	ai_strategy = {
+		type = invasion_unit_request
+		state = 101
+		value = -1000
+	}
+	ai_strategy = {
+		type = invasion_unit_request
+		state = 874
+		value = -1000
+	}
+	ai_strategy = {
+		type = invade
+		id = "USA"
+		value = -2000
+	}
+}
+
 invasions_are_pointless_if_at_war_with_the_soviets = {
 	allowed = {
 		NOT = { tag = GER }
@@ -6298,7 +7103,7 @@ GER_not_sealion_time = {
 	ai_strategy = {
 		type = invade
 		id = "ENG"
-		value = -2000
+		value = -5000
 	}
 
 	ai_strategy = {
@@ -6350,12 +7155,6 @@ GER_shank_greece = {
 		}
 	}
 	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = invade
-		id = "GRE"
-		value = -2000
-	}
 
 	ai_strategy = {
 		type = front_unit_request
@@ -6504,6 +7303,44 @@ GER_stop_spamming_lend_lease = {
 		type = send_lend_lease_desire
 		id = "HUN"
 		value = -1000
+	}
+}
+
+axis_minors_keep_your_trains = {
+	allowed = {
+		OR = {
+			original_tag = ROM
+			original_tag = BUL
+			original_tag = HUN
+			original_tag = SPR
+			original_tag = ITA
+			original_tag = VIC
+			original_tag = FIN
+		}
+	}
+	enable = {
+		is_subject = no
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = send_lend_lease_desire
+		id = "GER"
+		value = -2000
+	}
+
+	#ai_strategy = {
+	#	type = diplo_action_acceptance
+	#	id = GER
+	#	target = lend_lease
+	#	value = -5000
+	#}
+
+	ai_strategy = {
+		type = diplo_action_acceptance
+		id = GER
+		target = incoming_lend_lease
+		value = -5000
 	}
 }
 
@@ -6768,6 +7605,91 @@ focus_sub_navy_at_the_atlantic = {
 # 	}
 # }
 
+GER_dont_suicide_into_maginot_line = {
+	allowed = {
+		tag = GER
+	}
+
+	enable = {
+		date < 1941.6.3
+		has_war_with = FRA
+		FRA = { has_capitulated = no }
+		NOT = { has_global_flag = fall_of_france }
+		NOT = { has_full_control_of_state = 28 }
+		NOT = { has_war_with = HOL }
+		NOT = { has_war_with = BEL }
+		NOT = { has_war_with = LUX }
+		NOT = {
+			6 = {
+				CONTROLLER = {
+					OR = {
+						tag = GER
+						is_subject_of = GER
+						is_in_faction_with = GER
+					}
+				}
+			}
+		}
+		NOT = {
+			34 = {
+				CONTROLLER = {
+					OR = {
+						tag = GER
+						is_subject_of = GER
+						is_in_faction_with = GER
+					}
+				}
+			}
+		}
+		NOT = {
+			985 = {
+				CONTROLLER = {
+					OR = {
+						tag = GER
+						is_subject_of = GER
+						is_in_faction_with = GER
+					}
+				}
+			}
+		}
+		OR = {
+			if = {
+				limit = {
+					has_war_With = POL
+				}
+				POL = { has_capitulated = no }
+			}
+			FRA = { divisions_in_state = { state = 28 size > 4 } }
+		}
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = force_concentration_front_factor
+		state = 28  # Alsace Lorraine
+		state = 17  # Franche Comte
+		state = 18  # Chamagne
+		ratio = 0.10     # Only if > 50 % of the front consists of Alsace-Lorraine. This should make it deactivate if the frontline extends around the maginot
+		value = -100
+	}
+
+	ai_strategy = {
+		type = force_concentration_target_weight
+		state = 28 # Alsace-Lorraine
+		state = 17  # Franche Comte
+		state = 18  # Chamagne
+		value = -200 # -100 % / Don't even consider targets here. Infantry and Artillery are better at dealing with the Maginot than tank formations are
+	}
+
+	ai_strategy = {
+		type = front_control
+		state = 28
+		ordertype = front
+		execute_order = no
+	}
+}
+
 GER_ITA_close_up_maginot_line_after_FRA_falls  = {
 	allowed = {
 		OR = {
@@ -7003,6 +7925,16 @@ romania_stop_crowding_up_the_soviet_line = {
 		}
 		is_in_faction_with = GER
 		has_war_with = SOV
+		NOT = {
+			AND = {
+				has_defensive_war_with = SOV
+				NOT = {
+					GER = {
+						has_war_with = SOV
+					}
+				}
+			}
+		}
 	}
 	abort_when_not_enabled = yes
 
@@ -7521,6 +8453,51 @@ german_civil_war = {
 	ai_strategy = {
 		type = front_unit_request
 		tag = DEN
+		value = -1000
+	}
+}
+
+axis_minors_stay_out_of_france = {
+	allowed = {
+		OR = {
+			tag = ITA
+			tag = ROM
+			tag = BUL
+			tag = HUN
+			tag = CRO
+			tag = FIN
+		}
+	}
+	enable = {
+		is_historical_focus_on = yes
+		is_in_faction_with = GER
+	}
+
+	abort_when_not_enabled = yes
+
+
+	ai_strategy = {
+		type = front_unit_request
+
+		strategic_region = 239
+		value = -1000
+	}
+	ai_strategy = {
+		type = front_unit_request
+
+		strategic_region = 19
+		value = -1000
+	}
+	ai_strategy = {
+		type = front_unit_request
+
+		strategic_region = 290
+		value = -1000
+	}
+	ai_strategy = {
+		type = front_unit_request
+
+		strategic_region = 5
 		value = -1000
 	}
 }

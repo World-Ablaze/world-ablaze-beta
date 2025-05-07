@@ -1,7 +1,7 @@
 ﻿add_namespace = nzl_armor
 
 country_event = {
-	id = nzl_armor.101
+	id = nzl_armor.01
 	hidden = yes
 
 	mean_time_to_happen = { days = 1 }
@@ -14,6 +14,7 @@ country_event = {
 			has_tech = anti_tank_1
 			has_tech = eng_anti_tank_1
 		}
+		has_completed_focus = NZL_start_recruiting_maori_detatchments
 		is_ai = yes
 	}
 
@@ -32,18 +33,16 @@ country_event = {
 				heavy_infantry = { x = 1 y = 0 }
 				heavy_infantry = { x = 1 y = 1 }
 				heavy_infantry = { x = 1 y = 2 }
+				heavy_infantry = { x = 1 y = 3 }
 
 				heavy_infantry = { x = 2 y = 0 }
 				heavy_infantry = { x = 2 y = 1 }
 				heavy_infantry = { x = 2 y = 2 }
 
-				heavy_infantry = { x = 3 y = 0 }
-				heavy_infantry = { x = 3 y = 1 }
-
-				artillery_brigade = { x = 4 y = 0 }
-				artillery_brigade = { x = 4 y = 1 }
-				anti_tank_brigade = { x = 4 y = 2 }
-				anti_tank_brigade = { x = 4 y = 3 }
+				artillery_brigade = { x = 3 y = 0 }
+				artillery_brigade = { x = 3 y = 1 }
+				anti_tank_brigade = { x = 3 y = 2 }
+				anti_tank_brigade = { x = 3 y = 3 }
 			}
 
 			support = {
@@ -54,11 +53,207 @@ country_event = {
 
 				recon = { x = 1 y = 0 }
 				field_hospital = { x = 1 y = 1 }
+				maori_detachment = { x = 1 y = 2 }
+				military_police = { x = 1 y = 3 }
 			}
+		}
+		delete_unit_template_and_units = {
+			division_template = "District Force"
+			disband = yes
+		}
+		delete_unit_template_and_units = {
+			division_template = "Garrison Division"
+			disband = yes
+		}
+		delete_unit_template_and_units = {
+			division_template = "District Garrison"
+			disband = yes
+		}
+		delete_unit_template_and_units = {
+			division_template = "Infantry Division"
+			disband = yes
 		}
 		set_country_flag = infantry_template_nzl
 	}
 
 	option = {}
 
+}
+
+country_event = {
+	id = nzl_armor.02
+	hidden = yes
+
+	mean_time_to_happen = { days = 1 }
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = NZL
+		has_country_flag = infantry_template_nzl
+		is_ai = yes
+	}
+
+	immediate = {
+
+		capital_scope = {
+			create_unit = {
+				division = "division_template = \"New Zealand Infantry Division\" start_experience_factor = 0.3 start_equipment_factor = 0.5"
+				owner = NZL
+				count = 2
+			}
+		}
+		add_manpower = -32000
+	}
+
+	option = {}
+
+}
+
+country_event = {
+	id = nzl_armor.03
+	hidden = yes
+
+	mean_time_to_happen = { days = 1 }
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = NZL
+		is_ai = yes
+		has_war = yes
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				NOT = {
+					has_tech = decisive_strategy
+				}
+			}
+			set_technology = { decisive_strategy = 1 }
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_tech = attritional_containment
+				}
+			}
+			set_technology = { attritional_containment = 1 }
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_tech = c3i
+				}
+			}
+			set_technology = { c3i = 1 }
+		}
+		add_equipment_to_stockpile = { type = convoy_1 amount = 100 producer = NZL }
+		add_equipment_to_stockpile = { type = eng_motorized_equipment_1 amount = 1000 producer = NZL }
+		add_equipment_to_stockpile = { type = train_equipment_1 amount = 100 producer = NZL }
+		add_political_power = 500
+		add_ideas = NZL_wairarapa_ranches
+		add_ideas = mandatory_army_service
+		activate_advisor = NZL_paraire_paikea
+		activate_advisor = NZL_lee_martin
+		activate_advisor = NZL_walter_nash
+		activate_advisor = NZL_lee_webb
+		activate_advisor = NZL_bill_parry
+		activate_advisor = NZL_peter_fraser
+		activate_advisor = NZL_william_sinclair_burgess
+		activate_advisor = NZL_norris_stephen_falla
+	}
+
+	option = {}
+
+}
+
+#Labour government relected
+
+country_event = {
+	id = nzl_armor.801
+	title = nzl_armor.801.t
+	desc = nzl_armor.801.d
+	picture = GFX_report_event_new_zealand_1938_elections
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = NZL
+		date > 1938.10.15
+	}
+
+	option = {
+		name = nzl_armor.801.a
+		add_political_power = 25
+		ai_chance = {
+			factor = 1
+		}
+	}
+}
+
+#Maori
+
+country_event = {
+	id = nzl_armor.802
+	title = nzl_armor.802.t
+	desc = nzl_armor.802.d
+	picture = GFX_report_event_maori_battalions
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = NZL
+		has_war = yes
+		casualties > 1000
+		has_war = yes
+		has_completed_focus = NZL_maori_volunteer_battallions
+	}
+
+	option = {
+		name = nzl_armor.802.a
+		add_political_power = 25
+		ai_chance = {
+			factor = 1
+		}
+	}
+}
+
+#Death of Michael Joseph Savage
+
+country_event = {
+	id = nzl_armor.803
+	title = nzl_armor.803.t
+	desc = nzl_armor.803.d
+	picture = GFX_report_event_death_of_michael_joseph_savage
+
+	fire_only_once = yes
+
+	trigger = {
+		tag = NZL
+		date > 1940.3.27
+		has_country_leader = {
+			character = NZL_michael_joseph_savage
+			ruling_only = yes
+		}
+	}
+
+	option = {
+		name = nzl_armor.803.a
+		retire_country_leader = yes
+		add_country_leader_role = {
+			character = NZL_peter_fraser
+			promote_leader = yes
+			country_leader = {
+				ideology = socialism
+				traits = { nationalist information_controller }
+				expire = "1965.1.1.1"
+				id = -1
+			}
+		}
+		ai_chance = {
+			factor = 1
+		}
+	}
 }

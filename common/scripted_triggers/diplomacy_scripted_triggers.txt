@@ -593,6 +593,25 @@ DIPLOMACY_MILACC_ENABLE_TRIGGER = {
 			always = no
 		}
 	}
+	if = {
+		limit = {
+			OR = {
+				FROM = {
+					has_idea = VIC_depowered_government
+				}
+				AND = {
+					FROM = {
+						is_subject_of = VIC
+						VIC = { has_idea = VIC_depowered_government }
+					}
+				}
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_REQUEST_MILITARY_ACCESS_BLOCKED_TT
+			always = no
+		}
+	}
 }
 DIPLOMACY_OFFER_MILACC_ENABLE_TRIGGER = {
 	if = {
@@ -628,6 +647,32 @@ DIPLOMACY_OFFER_MILACC_ENABLE_TRIGGER = {
 			always = no
 		}
 	}
+	if = {
+		limit = {
+			OR = {
+				has_idea = VIC_depowered_government
+				AND = {
+					is_subject_of = VIC
+					VIC = { has_idea = VIC_depowered_government }
+				}
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_OFFER_MILITARY_ACCESS_BLOCKED_TT
+			always = no
+		}
+	}
+}
+DIPLOMACY_REVOKE_OFFER_MILACC_ENABLE_TRIGGER = {
+	if = {
+		limit = {
+			has_idea = IRQ_anglo_iraq_treaty
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_ANGLO_IRAQ_TREATY_TT
+			always = no
+		}
+	}
 }
 DIPLOMACY_DOCKING_RIGHTS_ENABLE_TRIGGER = {
 	if = {
@@ -638,12 +683,6 @@ DIPLOMACY_DOCKING_RIGHTS_ENABLE_TRIGGER = {
 			}
 		}
 		always = yes
-	}
-	if = {
-		limit = {
-			has_idea = VIC_depowered_government
-		}
-		always = no
 	}
 	if = {
 		limit = {
@@ -666,6 +705,25 @@ DIPLOMACY_DOCKING_RIGHTS_ENABLE_TRIGGER = {
 		}
 		custom_trigger_tooltip = {
 			tooltip = RULE_ALLOW_MILITARY_ACCESS_BLOCKED_TT
+			always = no
+		}
+	}
+	if = {
+		limit = {
+			OR = {
+				FROM = {
+					has_idea = VIC_depowered_government
+				}
+				AND = {
+					FROM = {
+						is_subject_of = VIC
+						VIC = { has_idea = VIC_depowered_government }
+					}
+				}
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_REQUEST_DOCKING_RIGHTS_BLOCKED_TT
 			always = no
 		}
 	}
@@ -701,6 +759,21 @@ DIPLOMACY_OFFER_DOCKING_RIGHTS_ENABLE_TRIGGER = {
 		}
 		custom_trigger_tooltip = {
 			tooltip = RULE_ALLOW_MILITARY_ACCESS_BLOCKED_TT
+			always = no
+		}
+	}
+	if = {
+		limit = {
+			OR = {
+				has_idea = VIC_depowered_government
+				AND = {
+					is_subject_of = VIC
+					VIC = { has_idea = VIC_depowered_government }
+				}
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_OFFER_DOCKING_RIGHTS_BLOCKED_TT
 			always = no
 		}
 	}
@@ -830,23 +903,52 @@ DIPLOMACY_INCOMING_LEND_LEASE_ENABLE_TRIGGER = {
 		}
 		if = {
 			limit = {
-				tag = FRA
-				has_focus_tree = free_french_focus
-				from = {
-					NOT = {
-						tag = ENG
-					}
-				}
+				is_in_faction = yes
 			}
-			custom_trigger_tooltip = {
-				tooltip = RULE_FREE_FRANCE_RECIEVE_LENDLEASE
+			OR = {
 				FROM = {
-					has_completed_focus = FRA_french_national_committee
+					is_subject_of = ROOT
+				}
+				FROM = {
+					is_in_faction_with = ROOT
+				}
+				FROM = {
+					is_major = yes
+				}
+				FROM = {
+					any_enemy_country = { has_war_with = ROOT }
 				}
 			}
 		}
 		else = {
 			always = yes #handled by game logic, see above
+		}
+	}
+	if = {
+		limit = {
+			FROM = {
+				OR = {
+					has_idea = FRA_disjointed_government
+					has_idea = FRA_disjointed_government_2
+					has_idea = FRA_disjointed_government_3
+					has_idea = FRA_disjointed_government_bloc_path
+				}
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_FRANCE_REQUEST_LENDLEASE
+			always = no
+		}
+	}
+	if = {
+		limit = {
+			FROM = {
+				has_focus_tree = free_french_focus
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_FREE_FRANCE_REQUEST_LENDLEASE
+			always = no
 		}
 	}
 	if = {
@@ -934,6 +1036,15 @@ DIPLOMACY_REQUEST_LICENSED_PRODUCTION_ENABLE_TRIGGER = {
 	}
 }
 DIPLOMACY_GENERATE_WARGOAL_ENABLE_TRIGGER = {
+	#if = {
+	#	limit = {
+	#		has_idea = IRQ_anglo_iraq_treaty
+	#	}
+	#	custom_trigger_tooltip = {
+	#		tooltip = RULE_ANGLO_IRAQ_TREATY_TT
+	#		always = no
+	#	}
+	#}
 	if = {
 		limit = {
 			has_game_rule = {
@@ -1119,6 +1230,19 @@ DIPLOMACY_STAGE_COUP_ENABLE_TRIGGER = {
 		}
 	}
 }
+
+DIPLOMACY_JOIN_FACTION_ENABLE_TRIGGER = {
+	if = {
+		limit = {
+			has_idea = internal_conflict
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_JOIN_FACTION_BLOCKED_TOOLTIP
+			always = no
+		}
+	}
+}
+
 DIPLOMACY_LEAVE_FACTION_ENABLE_TRIGGER = {
 	if = {
 		limit = {
@@ -1161,6 +1285,69 @@ DIPLOMACY_KICK_FROM_FACTION_ENABLE_TRIGGER = {
 		}
 	}
 }
+DIPLOMACY_IMPROVERELATION_ENABLE_TRIGGER = {
+	if = {
+		limit = {
+			FROM = {
+				has_opinion	= {
+					target = ROOT
+					value < -75
+				}
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_IS_EMBARGOED
+			always = no
+		}
+	}
+}
+
+DIPLOMACY_EMBARGO_ENABLE_TRIGGER = {
+	if = {
+		limit = {
+			is_in_faction = no
+			#any_owned_state = {
+			#	is_core_of = ROOT
+			#	OR = {
+			#		any_neighbor_state = {
+			#			controller = { is_in_faction_with = FROM }
+			#		}
+			#		any_neighbor_state = {
+			#			controller = { is_subject_of = FROM }
+			#		}
+			#		any_neighbor_state = {
+			#			controller = { tag = FROM }
+			#		}
+			#	}
+			#}
+		}
+		#custom_trigger_tooltip = {
+		#	tooltip = RULE_IS_AT_RISK_OF_INVASION
+		#	always = no
+		#}
+		FROM = {
+			strength_ratio = {
+				tag = ROOT
+				ratio < 0.6
+			}
+		}
+	}
+	if = {
+		limit = {
+			NOT = {
+				has_war_with = FROM
+			}
+		}
+		NOT = {
+			FROM = {
+				any_enemy_country = {
+					has_war_with = ROOT
+				}
+			}
+		}
+	}
+}
+
 DIPLOMACY_SEND_VOLUNTEERS_ENABLE_TRIGGER = {
 	if = {
 		limit = {
@@ -1193,6 +1380,24 @@ DIPLOMACY_SEND_VOLUNTEERS_ENABLE_TRIGGER = {
 				option = LIMITED
 			}
 		}
+		if = { #No Japanese volunteers
+			limit = {
+				FROM = { tag = JAP }
+			}
+			NOT = {
+				custom_trigger_tooltip = {
+					tooltip = RULE_VOLUNTEERS_JAP_MILITARISM_TT
+					FROM = {
+						OR = {
+							has_idea = JAP_militarism
+							has_idea = JAP_militarism_shogunate
+							has_idea = JAP_militarism_showa
+							is_subject_of = JAP
+						}
+					}
+				}
+			}
+		}
 		if = {
 			limit = {
 				NOT = { tag = SPC }
@@ -1206,7 +1411,7 @@ DIPLOMACY_SEND_VOLUNTEERS_ENABLE_TRIGGER = {
 				NOT = { FROM = { tag = SPC } }
 			}
 		}
-		else_if = {
+		if = {
 			limit = {
 				has_dlc = "La Resistance"
 				tag = POR
@@ -1235,7 +1440,30 @@ DIPLOMACY_SEND_VOLUNTEERS_ENABLE_TRIGGER = {
 				}
 			}
 		}
-		else_if = { #Soviet volunteers to China (Communist Soviet -> Only to the supported China)
+		#if = { #Soviet no volunteers if stalin
+		#	limit = {
+		#		original_tag = SOV
+		#		has_government = communism
+		#		OR = {
+		#			has_idea = trotskyite_plot
+		#			has_idea = trotskyite_plot_nsb
+		#			has_idea = trotskyite_plot_purged
+		#			has_idea = trotskyite_plot_purged_2
+		#			has_completed_focus = SOV_socialism_in_one_country
+		#		}
+		#	}
+		#	custom_trigger_tooltip = {
+		#		tooltip = RULE_VOLUNTEERS_SOV_SOCIALISM_IN_ONE_COUNTRY_TT
+		#		NOT = {
+		#			has_idea = trotskyite_plot
+		#			has_idea = trotskyite_plot_nsb
+		#			has_idea = trotskyite_plot_purged
+		#			has_idea = trotskyite_plot_purged_2
+		#			has_completed_focus = SOV_socialism_in_one_country
+		#		}
+		#	}
+		#}
+		if = { #Soviet volunteers to China (Communist Soviet -> Only to the supported China)
 			limit = {
 				original_tag = SOV
 				has_government = communism
@@ -1252,7 +1480,7 @@ DIPLOMACY_SEND_VOLUNTEERS_ENABLE_TRIGGER = {
 					AND = {
 						has_completed_focus = SOV_the_gobi_gambit
 						JAP = { has_war_with = CHI }
-						FROM = { tag = SIK } 
+						FROM = { tag = SIK }
 					}
 					AND = {
 						has_completed_focus = SOV_two_red_flags
@@ -1263,24 +1491,6 @@ DIPLOMACY_SEND_VOLUNTEERS_ENABLE_TRIGGER = {
 						has_completed_focus = SOV_operation_zet
 						JAP = { has_war_with = CHI }
 						FROM = { tag = CHI }
-					}
-				}
-			}
-		}
-		else_if = { #Soviet volunteers to China (Communist Soviet -> Only to the supported China)
-			limit = {
-				NOT = { tag = JAP }
-			}
-			NOT = {
-				custom_trigger_tooltip = {
-					tooltip = RULE_VOLUNTEERS_JAP_MILITARISM_TT
-					FROM = {
-						OR = {	
-							has_idea = JAP_militarism
-							has_idea = JAP_militarism_shogunate
-							has_idea = JAP_militarism_showa
-							is_subject_of = JAP
-						}
 					}
 				}
 			}
@@ -1460,7 +1670,7 @@ DIPLOMACY_SEND_VOLUNTEERS_ENABLE_TRIGGER = {
 				FROM = {
 					tag = SPC
 					has_completed_focus = SPR_regional_defense_council_of_aragon
-	}
+				}
 			}
 			custom_trigger_tooltip = {
 				tooltip = RULE_VOLUNTEERS_NOT_ANARCHISTS_TT
@@ -1496,6 +1706,243 @@ DIPLOMACY_SEND_EXP_FORCE_ENABLE_TRIGGER = {
 		custom_trigger_tooltip = {
 			tooltip = RULE_FRANCE_SEND_EXPED
 			always = no
+		}
+	}
+}
+
+DIPLOMACY_GIVESTATECONTROL_ENABLE_TRIGGER = {
+	if = {
+		limit = {
+			original_tag = GER
+			FROM = {
+				OR = {
+					tag = RPO
+					tag = RBE
+					tag = RHO
+					tag = RFR
+					tag = RDE
+					tag = RSW
+					tag = RNO
+					tag = RFI
+					tag = RBL
+					tag = RUK
+					tag = RSO
+					tag = RTU
+					tag = RSI
+					tag = REN
+					tag = RIT
+					tag = RCZ
+					tag = RIR
+					tag = RKA
+					tag = RBU
+					tag = RAT
+					tag = RSE
+					tag = RUA
+					tag = RTK
+					tag = RSP
+					tag = RPT
+					tag = RPE
+					tag = RMO
+					tag = RSE
+					tag = RCA
+					tag = RPZ
+					tag = RAM
+					tag = RMI
+					tag = ROS
+					tag = RGR
+					tag = RBA
+				}
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_CANNOT_GIVE_STATES
+			always = no
+		}
+	}
+	if = {
+		limit = {
+			OR = {
+				tag = RPO
+				tag = RBE
+				tag = RHO
+				tag = RFR
+				tag = RDE
+				tag = RSW
+				tag = RNO
+				tag = RFI
+				tag = RBL
+				tag = RUK
+				tag = RSO
+				tag = RTU
+				tag = RSI
+				tag = REN
+				tag = RIT
+				tag = RCZ
+				tag = RIR
+				tag = RKA
+				tag = RBU
+				tag = RAT
+				tag = RSE
+				tag = RUA
+				tag = RTK
+				tag = RSP
+				tag = RPT
+				tag = RPE
+				tag = RMO
+				tag = RSE
+				tag = RCA
+				tag = RPZ
+				tag = RAM
+				tag = RMI
+				tag = ROS
+				tag = RGR
+				tag = RBA
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_CANNOT_GIVE_STATES
+			always = no
+		}
+	}
+}
+
+DIPLOMACY_ASKSTATECONTROL_ENABLE_TRIGGER = {
+	if = {
+		limit = {
+			OR = {
+				tag = RPO
+				tag = RBE
+				tag = RHO
+				tag = RFR
+				tag = RDE
+				tag = RSW
+				tag = RNO
+				tag = RFI
+				tag = RBL
+				tag = RUK
+				tag = RSO
+				tag = RTU
+				tag = RSI
+				tag = REN
+				tag = RIT
+				tag = RCZ
+				tag = RIR
+				tag = RKA
+				tag = RBU
+				tag = RAT
+				tag = RSE
+				tag = RUA
+				tag = RTK
+				tag = RSP
+				tag = RPT
+				tag = RPE
+				tag = RMO
+				tag = RSE
+				tag = RCA
+				tag = RPZ
+				tag = RAM
+				tag = RMI
+				tag = ROS
+				tag = RGR
+				tag = RBA
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_CANNOT_GIVE_STATES
+			always = no
+		}
+	}
+}
+
+
+game_weight_can_add_fascist = {
+	GER = {
+		AND = {
+			OR = {
+				check_variable = { fascist_game_weight < democratic_game_weight }
+				check_variable = { fascist_game_weight = democratic_game_weight }
+			}
+		}
+		AND = {
+			OR = {
+				check_variable = { fascist_game_weight < unaligned_game_weight }
+				check_variable = { fascist_game_weight = unaligned_game_weight }
+			}
+		}
+		AND = {
+			OR = {
+				check_variable = { fascist_game_weight < communist_game_weight }
+				check_variable = { fascist_game_weight = communist_game_weight }
+			}
+		}
+	}
+}
+
+game_weight_can_add_democratic = {
+	GER = {
+		AND = {
+			OR = {
+				check_variable = { democratic_game_weight < fascist_game_weight }
+				check_variable = { democratic_game_weight = fascist_game_weight }
+			}
+		}
+		AND = {
+			OR = {
+				check_variable = { democratic_game_weight < unaligned_game_weight }
+				check_variable = { democratic_game_weight = unaligned_game_weight }
+			}
+		}
+		AND = {
+			OR = {
+				check_variable = { democratic_game_weight < communist_game_weight }
+				check_variable = { democratic_game_weight = communist_game_weight }
+			}
+		}
+	}
+}
+
+game_weight_can_add_unaligned = {
+	GER = {
+		AND = {
+			OR = {
+				check_variable = { unaligned_game_weight < fascist_game_weight }
+				check_variable = { unaligned_game_weight = fascist_game_weight }
+			}
+		}
+		AND = {
+			OR = {
+				check_variable = { unaligned_game_weight < democratic_game_weight }
+				check_variable = { unaligned_game_weight = democratic_game_weight }
+			}
+		}
+		AND = {
+			OR = {
+				check_variable = { unaligned_game_weight < communist_game_weight }
+				check_variable = { unaligned_game_weight = communist_game_weight }
+			}
+		}
+	}
+}
+
+game_weight_can_add_communist = {
+	GER = {
+		AND = {
+			OR = {
+				check_variable = { communist_game_weight < fascist_game_weight }
+				check_variable = { communist_game_weight = fascist_game_weight }
+			}
+		}
+		AND = {
+			OR = {
+				check_variable = { communist_game_weight < democratic_game_weight }
+				check_variable = { communist_game_weight = democratic_game_weight }
+			}
+		}
+		AND = {
+			OR = {
+				check_variable = { communist_game_weight < unaligned_game_weight }
+				check_variable = { communist_game_weight = unaligned_game_weight }
+			}
 		}
 	}
 }

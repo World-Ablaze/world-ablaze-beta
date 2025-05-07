@@ -434,7 +434,7 @@ country_event = {
 		}
 		news_event = { hours = 6 id = news.34 }
 		add_named_threat = {
-			threat = -25
+			threat = -20
 			name = vichy_formed
 		}
 		trigger = {
@@ -538,6 +538,69 @@ country_event = {
 				delete_unit_template_and_units = {
 					division_template = "Compagnies Méharistes Sahariennes"
 					disband = yes
+				}
+			}
+			# Handle equipment failsafe
+			FRA = {
+				if = {
+					limit = {
+						has_country_flag = FRA_inf_eq_failsafe
+					}
+					add_equipment_to_stockpile = {
+						type = fra_inf_3
+						amount = inf_eq
+						producer = FRA
+					}
+				}
+				if = {
+					limit = {
+						has_country_flag = FRA_inf_hv_eq_failsafe
+					}
+					add_equipment_to_stockpile = {
+						type = fra_inf_3
+						amount = hv_inf_eq
+						producer = FRA
+					}
+				}
+				if = {
+					limit = {
+						has_country_flag = FRA_supp_eq_failsafe
+					}
+					add_equipment_to_stockpile = {
+						type = support_equipment_1
+						amount = supp_eq
+						producer = FRA
+					}
+				}
+				if = {
+					limit = {
+						has_country_flag = FRA_truck_eq_failsafe
+					}
+					add_equipment_to_stockpile = {
+						type = fra_motorized_equipment_1
+						amount = truck_eq
+						producer = FRA
+					}
+				}
+				if = {
+					limit = {
+						has_country_flag = FRA_art_eq_failsafe
+					}
+					add_equipment_to_stockpile = {
+						type = fra_art_2
+						amount = art_eq
+						producer = FRA
+					}
+				}
+				if = {
+					limit = {
+						has_country_flag = FRA_train_eq_failsafe
+					}
+					add_equipment_to_stockpile = {
+						type = train_equipment_1
+						amount = train_eq
+						producer = FRA
+					}
 				}
 			}
 			FRA = { # Give all Military and stockpile to Vichy
@@ -1437,6 +1500,45 @@ country_event = {
 					# log = "Current num_mils: [?num_mils]."
 				}
 			}
+			if = {
+				limit = {
+					has_country_flag = FRA_civs_failsafe
+					is_ai = no
+				}
+				every_state = {
+					limit = {
+						is_core_of = FRA
+						NOT = { state = 1 }
+					}
+					add_to_temp_array = { temp_states = THIS.ID }
+				}
+				set_temp_variable = { break = 0 }
+				while_loop_effect = {
+					random_scope_in_array = {
+						array = temp_states
+						limit = {
+							free_building_slots = {
+								building = industrial_complex
+								size > 0
+							}
+						}
+						# log = "Current state: [THIS.GetID]."
+						add_building_construction = {
+							type = industrial_complex
+							level = 1
+							instant_build = yes
+						}
+					}
+					add_to_variable = { num_civs = -1 }
+					if = {
+						limit = {
+							check_variable = { num_civs = 0 }
+						}
+						set_temp_variable = { break = 1 }
+					}
+					# log = "Current num_civs: [?num_civs]."
+				}
+			}
 		}
 	}
 
@@ -1453,57 +1555,29 @@ country_event = {
 			set_country_flag = FRA_capitulate_into_free_france
 		}
 		# German Occupation Zone
-		if = {
-			limit = { 28 = { owner = { original_tag = FRA } } }
-			set_state_controller = 28
-		}
-		if = {
-			limit = { 17 = { owner = { original_tag = FRA } } }
-			set_state_controller = 17
-		}
-		if = {
-			limit = { 27 = { owner = { original_tag = FRA } } }
-			set_state_controller = 27
-		}
-		if = {
-			limit = { 18 = { owner = { original_tag = FRA } } }
-			set_state_controller = 18
-		}
-		if = {
-			limit = { 29 = { owner = { original_tag = FRA } } }
-			set_state_controller = 29
-		}
-		if = {
-			limit = { 785 = { owner = { original_tag = FRA } } }
-			set_state_controller = 785
-		}
-		if = {
-			limit = { 15 = { owner = { original_tag = FRA } } }
-			set_state_controller = 15
-		}
-		if = {
-			limit = { 16 = { owner = { original_tag = FRA } } }
-			set_state_controller = 16
-		}
-		if = {
-			limit = { 24 = { owner = { original_tag = FRA } } }
-			set_state_controller = 24
-		}
-		if = {
-			limit = { 30 = { owner = { original_tag = FRA } } }
-			set_state_controller = 30
-		}
-		if = {
-			limit = { 14 = { owner = { original_tag = FRA } } }
-			set_state_controller = 14
-		}
-		if = {
-			limit = { 23 = { owner = { original_tag = FRA } } }
-			set_state_controller = 23
-		}
-		if = {
-			limit = { 19 = { owner = { original_tag = FRA } } }
-			set_state_controller = 19
+		add_to_temp_array = {temp_german_zone = 28}
+		add_to_temp_array = {temp_german_zone = 17}
+		add_to_temp_array = {temp_german_zone = 27}
+		add_to_temp_array = {temp_german_zone = 18}
+		add_to_temp_array = {temp_german_zone = 29}
+		add_to_temp_array = {temp_german_zone = 785}
+		add_to_temp_array = {temp_german_zone = 15}
+		add_to_temp_array = {temp_german_zone = 16}
+		add_to_temp_array = {temp_german_zone = 24}
+		add_to_temp_array = {temp_german_zone = 30}
+		add_to_temp_array = {temp_german_zone = 14}
+		add_to_temp_array = {temp_german_zone = 23}
+		add_to_temp_array = {temp_german_zone = 19}
+		add_to_temp_array = {temp_german_zone = 855}
+		add_to_temp_array = {temp_german_zone = 1016}
+		for_each_loop = {
+			array = temp_german_zone
+			value = state_id
+			break = break
+			if = {
+				limit = { state_id = { owner = { original_tag = FRA } } }
+				set_state_controller = state_id
+			}
 		}
 		# Italian Occupation Zone (if they did well)
 		if = { #if Italy did really well, they get an extra bonus state (but only if that doesn't lead to bordergore)
@@ -1576,7 +1650,6 @@ country_event = {
 			}
 		}
 		FRA = {
-			set_capital = { state = 539 }
 			hidden_effect = {
 					set_state_controller = 26
 					set_state_controller = 22
@@ -1584,95 +1657,77 @@ country_event = {
 					set_state_controller = 20
 					set_state_controller = 33
 
-					#tunisia
-					if = {
-						limit = {
-							458 = {
-								owner = { original_tag = FRA }
-								controller = {
-									original_tag = FRA
+					# Colonies
+					add_to_temp_array = {temp_fra_colonial_zone = 458}
+					add_to_temp_array = {temp_fra_colonial_zone = 665}
+					add_to_temp_array = {temp_fra_colonial_zone = 460}
+					add_to_temp_array = {temp_fra_colonial_zone = 513}
+					add_to_temp_array = {temp_fra_colonial_zone = 459}
+					add_to_temp_array = {temp_fra_colonial_zone = 461}
+					add_to_temp_array = {temp_fra_colonial_zone = 462}
+					add_to_temp_array = {temp_fra_colonial_zone = 553}
+					add_to_temp_array = {temp_fra_colonial_zone = 554}
+					add_to_temp_array = {temp_fra_colonial_zone = 677}
+					add_to_temp_array = {temp_fra_colonial_zone = 680}
+					add_to_temp_array = {temp_fra_colonial_zone = 901}
+					add_to_temp_array = {temp_fra_colonial_zone = 1043}
+					for_each_loop = {
+						array = temp_fra_colonial_zone
+						value = state_id
+						break = break
+						if = {
+							limit = { state_id = {
+									owner = {
+										or = {
+											original_tag = FRA
+											is_puppet_of = FRA
+										}
+									}
+									controller = {
+										or = {
+											original_tag = FRA
+											is_puppet_of = FRA
+										}
+									}
 								}
 							}
+							set_state_controller = state_id
 						}
-						set_state_controller = 458
-					}
-
-					#syria
-					if = {
-						limit = {
-							677 = {
-								owner = { original_tag = FRA }
-								controller = {
-									original_tag = FRA
-								}
-							}
-						}
-						set_state_controller = 677
 					}
 					if = {
 						limit = {
-							680 = {
-								owner = { original_tag = FRA }
-								controller = {
-									original_tag = FRA
-								}
+							FRS = {
+								exists = yes
 							}
 						}
-						set_state_controller = 680
+						annex_country = { target = FRS }
 					}
 					if = {
 						limit = {
-							554 = {
-								owner = { original_tag = FRA }
-								controller = {
-									original_tag = FRA
-								}
+							FRT = {
+								exists = yes
 							}
 						}
-						set_state_controller = 554
-					}
-
-					if = {
-						limit = {
-							1 = {
-								owner = { original_tag = FRA }
-							}
-						}
-						set_state_controller = 1
+						annex_country = { target = FRT }
 					}
 					if = {
 						limit = {
-							32 = {
-								owner = { original_tag = FRA }
+							FRN = {
+								exists = yes
 							}
 						}
-						set_state_controller = 32
+						annex_country = { target = FRN }
 					}
 					if = {
 						limit = {
-							735 = {
-								owner = { original_tag = FRA }
+							FRM = {
+								exists = yes
 							}
 						}
-						set_state_controller = 735
-					}
-					if = {
-						limit = {
-							21 = {
-								owner = { original_tag = FRA }
-							}
-						}
-						set_state_controller = 21
-					}
-					if = {
-						limit = {
-							31 = {
-								owner = { original_tag = FRA }
-							}
-						}
-						set_state_controller = 31
+						annex_country = { target = FRM }
 					}
 			}
+			set_capital = { state = 458 }
 			start_civil_war = {
 				ideology = neutrality
 				size = 0.5
@@ -1719,128 +1774,7 @@ country_event = {
 				fascism = 16
 				communism = 2
 			}
-			if = {
-				limit = {
-					FRN = {
-						exists = yes
-						OR = {
-							is_subject_of = ROOT
-							is_subject_of = FRA
-						}
-					}
-				}
-				annex_country = { target = FRN }
-			}
-			if = {
-				limit = {
-					FRT = {
-						exists = yes
-						OR = {
-							is_subject_of = ROOT
-							is_subject_of = FRA
-						}
-					}
-				}
-				annex_country = { target = FRT }
-			}
-			if = {
-				limit = {
-					FRM = {
-						exists = yes
-						OR = {
-							is_subject_of = ROOT
-							is_subject_of = FRA
-						}
-					}
-				}
-				annex_country = { target = FRM }
-			}
-			if = {
-				limit = {
-					FRS = {
-						exists = yes
-						OR = {
-							is_subject_of = ROOT
-							is_subject_of = FRA
-						}
-					}
-				}
-				annex_country = { target = FRS }
-			}
-			if = {
-				limit = {
-					FRW = {
-						exists = yes
-						OR = {
-							is_subject_of = ROOT
-							is_subject_of = FRA
-						}
-					}
-				}
-				annex_country = { target = FRW }
-			}
-			if = {
-				limit = {
-					FRC = {
-						exists = yes
-						OR = {
-							is_subject_of = ROOT
-							is_subject_of = FRA
-						}
-					}
-				}
-				annex_country = { target = FRC }
-			}
-			if = {
-				limit = {
-					FRP = {
-						exists = yes
-						OR = {
-							is_subject_of = ROOT
-							is_subject_of = FRA
-						}
-					}
-				}
-				annex_country = { target = FRP }
-			}
-			if = {
-				limit = {
-					FRJ = {
-						exists = yes
-						OR = {
-							is_subject_of = ROOT
-							is_subject_of = FRA
-						}
-					}
-				}
-				annex_country = { target = FRJ }
-			}
-			if = {
-				limit = {
-					FRI = {
-						exists = yes
-						OR = {
-							is_subject_of = ROOT
-							is_subject_of = FRA
-						}
-					}
-				}
-				annex_country = { target = FRI }
-			}
-			if = {
-				limit = {
-					FRV = {
-						exists = yes
-						OR = {
-							is_subject_of = ROOT
-							is_subject_of = FRA
-						}
-					}
-				}
-				annex_country = { target = FRV }
-			}
-			transfer_state = 514
-			# FRA Player Switches to Vichy
+			# FRA Player Switches to Bourbon
 			if = {
 				limit = { FRA = { has_country_flag = become_vichy } }
 				change_tag_from = FRA
@@ -2089,32 +2023,32 @@ country_event = {
 				VIC = {
 					send_equipment = {
 						target = FRA
-						type = fighter_equipment
+						type = small_fighter_airframe
 						amount = 500
 					}
 					send_equipment = {
 						target = FRA
-						type = CAS_equipment
+						type = small_bomber_airframe
 						amount = 300
 					}
 					send_equipment = {
 						target = FRA
-						type = attacker_equipment
+						type = medium_fighter_multirole_airframe
 						amount = 100
 					}
 					send_equipment = {
 						target = FRA
-						type = tac_bomber_equipment
+						type = medium_heavy_bomber_airframe
 						amount = 500
 					}
 					send_equipment = {
 						target = FRA
-						type = strat_bomber_equipment
+						type = large_bomber_airframe
 						amount = 200
 					}
 					send_equipment = {
 						target = FRA
-						type = scout_plane_equipment
+						type = medium_scout_airframe
 						amount = 100
 					}
 				}
@@ -2126,32 +2060,32 @@ country_event = {
 				VIC = {
 					send_equipment = {
 						target = FRA
-						type = fighter_equipment
+						type = small_fighter_airframe
 						amount = 250
 					}
 					send_equipment = {
 						target = FRA
-						type = CAS_equipment
+						type = small_bomber_airframe
 						amount = 150
 					}
 					send_equipment = {
 						target = FRA
-						type = attacker_equipment
+						type = medium_fighter_multirole_airframe
 						amount = 50
 					}
 					send_equipment = {
 						target = FRA
-						type = tac_bomber_equipment
+						type = medium_heavy_bomber_airframe
 						amount = 250
 					}
 					send_equipment = {
 						target = FRA
-						type = strat_bomber_equipment
+						type = large_bomber_airframe
 						amount = 100
 					}
 					send_equipment = {
 						target = FRA
-						type = scout_plane_equipment
+						type = medium_scout_airframe
 						amount = 50
 					}
 				}
@@ -3196,7 +3130,7 @@ country_event = {
 			set_nationality = FRA
 		}
 
-		hidden_effect =  {
+		hidden_effect = {
 			news_event = { id = france.34 days = 1 }
 		}
 

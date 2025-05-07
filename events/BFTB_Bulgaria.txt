@@ -3028,18 +3028,36 @@ country_event = {
 
 	option = { #Refuse
 		name = bftb_bulgaria_rearmament.1.a
+		trigger = {
+			OR = {
+				has_opinion = {
+					target = BUL
+					value < 0
+				}
+				AND = {
+					BUL = {
+						is_in_faction_with = GER
+					}
+					NOT = {
+						GER = {
+							is_in_faction_with = ROOT
+						}
+					}
+				}
+			}
+		}
 
 		ai_chance = {
-			base = 1
+			base = 0
 			modifier = {
-				factor = 100
+				add = 100
 				has_opinion = {
 					target = BUL
 					value < 0
 				}
 			}
 			modifier = {
-				factor = 100
+				add = 1000
 				BUL = {
 					is_in_faction_with = GER
 				}
@@ -3048,18 +3066,6 @@ country_event = {
 						is_in_faction_with = ROOT
 					}
 				}
-			}
-			modifier = { #Support IMRO is not cool bro
-				factor = 10
-				BUL = { has_completed_focus = BUL_support_macedonian_organizations }
-			}
-			modifier = { #Your coop with IMRO is just too much
-				factor = 10
-				BUL = { has_idea = BUL_imro_05 }
-			}
-			modifier = {
-				factor = 5
-				BUL_has_some_sort_of_bogdan_filov = yes
 			}
 		}
 
@@ -3072,11 +3078,50 @@ country_event = {
 		ai_chance = {
 			base = 5
 			modifier = {
-				factor = 5
-				is_historical_focus_on = yes
+				add = 100
+				has_opinion = {
+					target = BUL
+					value > 75
+				}
+				BUL_has_some_sort_of_bogdan_filov = yes
 			}
 			modifier = {
-				factor = 2
+				add = 1000
+				BUL = {
+					OR = {
+						AND = {
+							has_war_with = GER
+							NOT = { GER = { is_in_faction_with = ROOT } }
+						}
+						is_in_faction_with = ROOT
+					}
+				}
+				BUL_has_some_sort_of_bogdan_filov = yes
+			}
+			modifier = { #You have good relations with your neighbors, we like that
+				add = 100
+				BUL = {
+					OR = {
+						has_completed_focus = BUL_treaty_of_perpetual_friendship
+						has_completed_focus = BUL_the_salonika_agreement
+					}
+				}
+				BUL_has_some_sort_of_bogdan_filov = yes
+			}
+			modifier = { #You approached us, we like that
+				add = 100
+				BUL = {	has_completed_focus = BUL_approach_the_united_kingdom }
+				BUL_has_some_sort_of_bogdan_filov = yes
+			}
+			modifier = { #You are becoming yet another capitalist country, we like that
+				add = 1000
+				has_government = democratic
+				BUL = {	has_completed_focus = BUL_democratic_principles }
+				BUL_has_some_sort_of_bogdan_filov = yes
+			}
+			modifier = { #You think like us, we like that
+				add = 1000
+				BUL = {	has_government = ROOT }
 				BUL_has_some_sort_of_bogdan_filov = yes
 			}
 		}
@@ -3090,14 +3135,15 @@ country_event = {
 		ai_chance = {
 			base = 1
 			modifier = {
-				factor = 5
+				add = 100
 				has_opinion = {
 					target = BUL
 					value > 75
 				}
+				BUL_has_some_sort_of_bogdan_filov = no
 			}
 			modifier = {
-				factor = 100
+				add = 1000
 				BUL = {
 					OR = {
 						AND = {
@@ -3107,42 +3153,33 @@ country_event = {
 						is_in_faction_with = ROOT
 					}
 				}
-			}
-			modifier = { #We like that you condemn IMRO
-				factor = 10
-				BUL = { has_completed_focus = BUL_condemn_macedonian_organizations }
-			}
-			modifier = { #You have tried
-				factor = 10
-				BUL = {
-					NOT = {
-						has_idea = BUL_imro_01
-						has_idea = BUL_imro_04
-						has_idea = BUL_imro_05
-					}
-				}
+				BUL_has_some_sort_of_bogdan_filov = no
 			}
 			modifier = { #You have good relations with your neighbors, we like that
-				factor = 1.5
+				add = 100
 				BUL = {
 					OR = {
 						has_completed_focus = BUL_treaty_of_perpetual_friendship
 						has_completed_focus = BUL_the_salonika_agreement
 					}
 				}
+				BUL_has_some_sort_of_bogdan_filov = no
 			}
 			modifier = { #You approached us, we like that
-				factor = 1.5
+				add = 100
 				BUL = {	has_completed_focus = BUL_approach_the_united_kingdom }
+				BUL_has_some_sort_of_bogdan_filov = no
 			}
 			modifier = { #You are becoming yet another capitalist country, we like that
-				factor = 1.5
+				add = 1000
 				has_government = democratic
 				BUL = {	has_completed_focus = BUL_democratic_principles }
+				BUL_has_some_sort_of_bogdan_filov = no
 			}
 			modifier = { #You think like us, we like that
-				factor = 5
+				add = 1000
 				BUL = {	has_government = ROOT }
+				BUL_has_some_sort_of_bogdan_filov = no
 			}
 		}
 
@@ -3193,7 +3230,23 @@ country_event = {
 
 	option = { #Ok
 		name = bftb_bulgaria_rearmament.3.a
-
+		every_country = {
+			limit = {
+				exists = yes
+				NOT = { has_war = yes }
+				OR = {
+					original_tag = ROM
+					original_tag = YUG
+					original_tag = GRE
+					original_tag = TUR
+				}
+			}
+			diplomatic_relation = {
+				country = FROM
+				relation = non_aggression_pact
+				active = yes
+			}
+		}
 		custom_effect_tooltip = BUL_uk_demands_nap_with_balkan_nation_tt
 	}
 }
@@ -4624,7 +4677,7 @@ country_event = {
 
 		GER = {
 			send_equipment = {
-				type = fighter_equipment
+				type = small_fighter_airframe
 				amount = 12
 				target = ROOT
 			}
@@ -4682,7 +4735,7 @@ country_event = {
 				}
 			}
 			send_equipment = {
-				type = fighter_equipment
+				type = small_fighter_airframe
 				amount = 12
 				target = ROOT
 			}
@@ -5192,7 +5245,7 @@ country_event = {
 			modifier = {
 				factor = 2
 				stockpile_ratio = {
-	  				archetype = scout_car_equipment
+	  				archetype = scout_car_chassis
 	  				ratio < 0.76
 	  			}
 			}
@@ -5212,7 +5265,7 @@ country_event = {
 			}
 		}
 
-		set_variable = { BUL_vehicle_type = token:scout_car_equipment }
+		set_variable = { BUL_vehicle_type = token:scout_car_chassis }
 		var:BUL_military_vehicles_seller = { set_country_flag = BUL_producing_armored_car_for_bulgaria_flag }
 		custom_effect_tooltip = bftb_bulgaria_equipment_purchases.2.c_tt
 	}
@@ -5330,13 +5383,13 @@ country_event = {
 			modifier = {
 				factor = 2
 				stockpile_ratio = {
-	  				archetype = fighter_equipment
+	  				archetype = small_fighter_airframe
 	  				ratio < 0.76
 	  			}
 			}
 		}
 
-		set_variable = { BUL_aircraft_type = token:fighter_equipment }
+		set_variable = { BUL_aircraft_type = token:small_fighter_airframe }
 		var:BUL_aircraft_seller = { set_country_flag = BUL_producing_fighters_for_bulgaria_flag }
 		custom_effect_tooltip = bftb_bulgaria_equipment_purchases.4.a_tt
 	}
@@ -5349,7 +5402,7 @@ country_event = {
 			modifier = {
 				factor = 2
 				stockpile_ratio = {
-	  				archetype = nav_bomber_equipment
+	  				archetype = small_naval_bomber_airframe
 	  				ratio < 0.76
 	  			}
 			}
@@ -5369,7 +5422,7 @@ country_event = {
 			}
 		}
 
-		set_variable = { BUL_aircraft_type = token:nav_bomber_equipment }
+		set_variable = { BUL_aircraft_type = token:small_naval_bomber_airframe }
 		var:BUL_aircraft_seller = { set_country_flag = BUL_producing_naval_bombers_for_bulgaria_flag }
 		custom_effect_tooltip = bftb_bulgaria_equipment_purchases.4.b_tt
 	}
@@ -5382,7 +5435,7 @@ country_event = {
 			modifier = {
 				factor = 2
 				stockpile_ratio = {
-	  				archetype = tac_bomber_equipment
+	  				archetype = medium_heavy_bomber_airframe
 	  				ratio < 0.76
 	  			}
 			}
@@ -5402,7 +5455,7 @@ country_event = {
 			}
 		}
 
-		set_variable = { BUL_aircraft_type = token:tac_bomber_equipment }
+		set_variable = { BUL_aircraft_type = token:medium_heavy_bomber_airframe }
 		var:BUL_aircraft_seller = { set_country_flag = BUL_producing_tactical_bombers_for_bulgaria_flag }
 		custom_effect_tooltip = bftb_bulgaria_equipment_purchases.4.c_tt
 	}
@@ -6010,11 +6063,11 @@ country_event = {
 	title =  bftb_bulgaria_equipment_purchases.12.t
 	desc = bftb_bulgaria_equipment_purchases.12.desc
 	picture = GFX_report_event_sailors_in_working_rig
-	
+
 	fire_only_once = yes
 
 	is_triggered_only = yes
-	
+
 	option = { #Ok
 		name = lar_portugal_purchase_ships.4.a
 

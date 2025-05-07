@@ -14,9 +14,9 @@ political_actions = {
 
 		cost = 0
 		custom_cost_trigger = {
-			command_power > 100
+			command_power > 24
 		}
-		custom_cost_text = custom_cost_100_cp
+		custom_cost_text = custom_cost_25_cp
         fire_only_once = yes
 
         ai_will_do = {
@@ -26,7 +26,7 @@ political_actions = {
 		complete_effect = {
 			add_political_power = 100
 			hidden_effect = {
-				add_command_power = -100
+				add_command_power = -25
 			}
         }
 	}
@@ -325,10 +325,17 @@ political_actions = {
 			modifier = {
 				add = 1
 				has_stability < 0.5
+				has_war = no
 			}
 			modifier = {
 				add = 100
 				has_stability < 0.25
+			}
+			modifier = {
+				add = 100
+				tag = CHI
+				has_war = yes
+				has_stability < 0.75
 			}
 			modifier = {
 				factor = 0
@@ -404,10 +411,10 @@ propaganda_efforts = {
 		}
 
 		ai_will_do = {
-			factor = 0
+			factor = 800
 			modifier = {
-				add = 50
-				has_war_support < 0.9
+				factor = 0
+				has_war_support > 0.9
 			}
 		}
 	}
@@ -621,7 +628,7 @@ propaganda_efforts = {
 		}
 
 		ai_will_do = {
-			factor = 1
+			factor = 800
 			modifier = {
 				factor = 0
 				has_war_support > 0.9
@@ -1011,7 +1018,7 @@ operations = {
 				}
 			}
 			is_subject = no
-			surrender_progress > 0.1
+			surrender_progress > 0
 		}
 
 		visible = {
@@ -1090,6 +1097,21 @@ operations = {
 
 		ai_will_do = {
 			factor = 500
+
+			modifier = { #Sweden dont shoot yourself in the foot
+				factor = 0
+				144 = { CONTROLLER = { NOT = {has_war_with = ROOT } } }
+				878 = { CONTROLLER = { NOT = {has_war_with = ROOT } } }
+				1036 = { CONTROLLER = { NOT = {has_war_with = ROOT } } }
+				1035 = { CONTROLLER = { NOT = {has_war_with = ROOT } } }
+				1037 = { CONTROLLER = { NOT = {has_war_with = ROOT } } }
+				140 = { CONTROLLER = { NOT = {has_war_with = ROOT } } }
+				1038 = { CONTROLLER = { NOT = {has_war_with = ROOT } } }
+				140 = { CONTROLLER = { NOT = {has_war_with = ROOT } } }
+				38 = { CONTROLLER = { NOT = {has_war_with = ROOT } } }
+				141 = { CONTROLLER = { NOT = {has_war_with = ROOT } } }
+				1034 = { CONTROLLER = { NOT = {has_war_with = ROOT } } }
+			}
 		}
 	}
 
@@ -1415,42 +1437,64 @@ operations = {
 	}
 }
 
+island_fortifications = {
+
+}
+
 special_projects = {
 
 	#######################################Fortify
 
-	JAP_fortify_marcus = {
+	Fortify_island = {
 		icon = generic_construction
 
+		target_trigger = {
+			FROM = {
+				OR = {
+					has_dynamic_modifier = {
+						modifier = island_state
+					}
+					has_dynamic_modifier = {
+						modifier = island_province
+					}
+				}
+			}
+		}
+
+		state_target = yes
+
+		target_array = controlled_states
+
 		available = {
-			648 = { is_fully_controlled_by = ROOT }
 			num_of_civilian_factories_available_for_projects > 19
 			has_war = yes
 		}
 
-		cost = 25
+		cost = 0
 
 		modifier = {
 			civilian_factory_use = 20
 		}
 
+		on_map_mode = map_only
+
 		visible = {
 			is_ai = no
-			controls_state = 648
+			controls_state = from
 			OR = {
-				648 = {
+				from = {
 					free_building_slots = {
 						building = radar_station
 						size > 0
 					}
 				}
-				648 = {
+				from = {
 					free_building_slots = {
 						building = anti_air_building
 						size > 0
 					}
 				}
-				648 = {
+				from = {
 					free_building_slots = {
 						building = air_base
 						size > 0
@@ -1463,19 +1507,23 @@ special_projects = {
 
 		days_remove = 60
 
+		ai_will_do = {
+			factor = 0
+		}
+
 		fire_only_once = no
 
 		remove_effect = {
 			if = {
 				limit = {
-					648 = {
+					from = {
 						free_building_slots = {
 							building = radar_station
 							size > 0
 						}
 					}
 				}
-				648 = {
+				from = {
 					add_building_construction = {
 						type = radar_station
 						level = 1
@@ -1485,14 +1533,14 @@ special_projects = {
 			}
 			if = {
 				limit = {
-					648 = {
+					from = {
 						free_building_slots = {
 							building = anti_air_building
 							size > 0
 						}
 					}
 				}
-				648 = {
+				from = {
 					add_building_construction = {
 						type = anti_air_building
 						level = 1
@@ -1502,14 +1550,14 @@ special_projects = {
 			}
 			if = {
 				limit = {
-					648 = {
+					from = {
 						free_building_slots = {
 							building = air_base
 							size > 0
 						}
 					}
 				}
-				648 = {
+				from = {
 					add_building_construction = {
 						type = air_base
 						level = 1
@@ -1520,38 +1568,55 @@ special_projects = {
 		}
 	}
 
-	JAP_fortify_saipan = {
+	Fortify_island_ai = {
 		icon = generic_construction
 
+		target_trigger = {
+			FROM = {
+				OR = {
+					has_dynamic_modifier = {
+						modifier = island_state
+					}
+					has_dynamic_modifier = {
+						modifier = island_province
+					}
+				}
+			}
+		}
+
+		state_target = yes
+
+		target_array = controlled_states
+
 		available = {
-			646 = { is_fully_controlled_by = ROOT }
 			num_of_civilian_factories_available_for_projects > 19
 			has_war = yes
 		}
 
-		cost = 25
+		cost = 0
 
 		modifier = {
-			civilian_factory_use = 20
 		}
 
+		on_map_mode = map_only
+
 		visible = {
-			is_ai = no
-			controls_state = 646
+			is_ai = yes
+			controls_state = from
 			OR = {
-				646 = {
+				from = {
 					free_building_slots = {
 						building = radar_station
 						size > 0
 					}
 				}
-				646 = {
+				from = {
 					free_building_slots = {
 						building = anti_air_building
 						size > 0
 					}
 				}
-				646 = {
+				from = {
 					free_building_slots = {
 						building = air_base
 						size > 0
@@ -1564,19 +1629,23 @@ special_projects = {
 
 		days_remove = 60
 
+		ai_will_do = {
+			factor = 1
+		}
+
 		fire_only_once = no
 
 		remove_effect = {
 			if = {
 				limit = {
-					646 = {
+					from = {
 						free_building_slots = {
 							building = radar_station
 							size > 0
 						}
 					}
 				}
-				646 = {
+				from = {
 					add_building_construction = {
 						type = radar_station
 						level = 1
@@ -1586,14 +1655,14 @@ special_projects = {
 			}
 			if = {
 				limit = {
-					646 = {
+					from = {
 						free_building_slots = {
 							building = anti_air_building
 							size > 0
 						}
 					}
 				}
-				646 = {
+				from = {
 					add_building_construction = {
 						type = anti_air_building
 						level = 1
@@ -1603,15 +1672,14 @@ special_projects = {
 			}
 			if = {
 				limit = {
-					is_ai = no
-					646 = {
+					from = {
 						free_building_slots = {
 							building = air_base
 							size > 0
 						}
 					}
 				}
-				646 = {
+				from = {
 					add_building_construction = {
 						type = air_base
 						level = 1
@@ -1622,202 +1690,418 @@ special_projects = {
 		}
 	}
 
-	JAP_fortify_tinian = {
+	USA_fortify_east_coast = {
 		icon = generic_construction
 
 		available = {
-			863 = { is_fully_controlled_by = ROOT }
-			num_of_civilian_factories_available_for_projects > 19
-			has_war = yes
-		}
-
-		cost = 25
-
-		modifier = {
-			civilian_factory_use = 20
+			num_of_civilian_factories_available_for_projects > 149
+			tag = USA
 		}
 
 		visible = {
-			is_ai = no
-			controls_state = 863
-			OR = {
-				863 = {
-					free_building_slots = {
-						building = radar_station
-						size > 0
-					}
-				}
-				863 = {
-					free_building_slots = {
-						building = anti_air_building
-						size > 0
-					}
-				}
-				863 = {
-					free_building_slots = {
-						building = air_base
-						size > 0
-					}
-				}
+			has_global_flag = soviet_union_defeated
+			tag = USA
+			any_owned_state = {
+				is_core_of = USA
+				is_on_continent = north_america
+				is_controlled_by = ROOT
 			}
 		}
 
 		cancel_if_not_visible = yes
 
-		days_remove = 60
+		fire_only_once = yes
 
-		fire_only_once = no
+		cost = 0
 
-		remove_effect = {
-			if = {
-				limit = {
-					863 = {
-						free_building_slots = {
-							building = radar_station
-							size > 0
-						}
-					}
-				}
-				863 = {
-					add_building_construction = {
-						type = radar_station
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					863 = {
-						free_building_slots = {
-							building = anti_air_building
-							size > 0
-						}
-					}
-				}
-				863 = {
-					add_building_construction = {
-						type = anti_air_building
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					is_ai = no
-					863 = {
-						free_building_slots = {
-							building = air_base
-							size > 0
-						}
-					}
-				}
-				863 = {
-					add_building_construction = {
-						type = air_base
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-		}
-	}
-
-	JAP_fortify_palau = {
-		icon = generic_construction
-
-		available = {
-			647 = { is_fully_controlled_by = ROOT }
-			num_of_civilian_factories_available_for_projects > 19
-			has_war = yes
+		ai_will_do = {
+			factor = 320
 		}
 
-		cost = 25
+		days_remove = 120
 
 		modifier = {
-			civilian_factory_use = 20
+			civilian_factory_use = 150
 		}
-
-		visible = {
-			is_ai = no
-			controls_state = 647
-			OR = {
-				647 = {
-					free_building_slots = {
-						building = radar_station
-						size > 0
-					}
-				}
-				647 = {
-					free_building_slots = {
-						building = anti_air_building
-						size > 0
-					}
-				}
-				647 = {
-					free_building_slots = {
-						building = air_base
-						size > 0
-					}
-				}
-			}
-		}
-
-		cancel_if_not_visible = yes
-
-		days_remove = 60
-
-		fire_only_once = no
 
 		remove_effect = {
-			if = {
-				limit = {
-					647 = {
-						free_building_slots = {
-							building = radar_station
-							size > 0
-						}
-					}
-				}
-				647 = {
-					add_building_construction = {
-						type = radar_station
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					647 = {
-						free_building_slots = {
-							building = anti_air_building
-							size > 0
-						}
-					}
-				}
-				647 = {
+			custom_effect_tooltip = USA_fortify_east_coast_tt
+			hidden_effect = {
+				834 = {
 					add_building_construction = {
 						type = anti_air_building
-						level = 1
+						level = 10
 						instant_build = yes
 					}
 				}
-			}
-			if = {
-				limit = {
-					647 = {
-						free_building_slots = {
-							building = air_base
-							size > 0
-						}
+				840 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
 					}
 				}
-				647 = {
+				830 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				359 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				829 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				831 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				361 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				833 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				832 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				360 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				362 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				363 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 7
+						instant_build = yes
+					}
+				}
+				364 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 7
+						instant_build = yes
+					}
+				}
+				365 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 7
+						instant_build = yes
+					}
+				}
+				367 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 7
+						instant_build = yes
+					}
+				}
+				828 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				827 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				261 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				824 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 7
+						instant_build = yes
+					}
+				}
+				826 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				825 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 7
+						instant_build = yes
+					}
+				}
+				396 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				819 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				369 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				368 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 7
+						instant_build = yes
+					}
+				}
+				370 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 7
+						instant_build = yes
+					}
+				}
+				815 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 7
+						instant_build = yes
+					}
+				}
+				366 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 7
+						instant_build = yes
+					}
+				}
+				816 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 7
+						instant_build = yes
+					}
+				}
+				841 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				842 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				835 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				843 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				357 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 7
+						instant_build = yes
+					}
+				}
+				358 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				823 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				393 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				276 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 7
+						instant_build = yes
+					}
+				}
+				836 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				837 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				838 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				839 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				465 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 7
+						instant_build = yes
+					}
+				}
+				468 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 7
+						instant_build = yes
+					}
+				}
+				464 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 7
+						instant_build = yes
+					}
+				}
+				861 = {
+					add_building_construction = {
+						type = anti_air_building
+						level = 10
+						instant_build = yes
+					}
+				}
+				824 = {
 					add_building_construction = {
 						type = air_base
-						level = 1
+						level = 8
+						instant_build = yes
+					}
+				}
+				358 = {
+					add_building_construction = {
+						type = air_base
+						level = 8
+						instant_build = yes
+					}
+				}
+				828 = {
+					add_building_construction = {
+						type = air_base
+						level = 8
+						instant_build = yes
+					}
+				}
+				368 = {
+					add_building_construction = {
+						type = air_base
+						level = 8
+						instant_build = yes
+					}
+				}
+				383 = {
+					add_building_construction = {
+						type = air_base
+						level = 8
+						instant_build = yes
+					}
+				}
+				861 = {
+					add_building_construction = {
+						type = radar_station
+						level = 6
+						instant_build = yes
+					}
+				}
+				696 = {
+					add_building_construction = {
+						type = radar_station
+						level = 6
+						instant_build = yes
+					}
+				}
+				366 = {
+					add_building_construction = {
+						type = radar_station
+						level = 6
 						instant_build = yes
 					}
 				}
@@ -1825,1606 +2109,7 @@ special_projects = {
 		}
 	}
 
-	JAP_fortify_iwo_jima = {
-		icon = generic_construction
-
-		available = {
-			645 = { is_fully_controlled_by = ROOT }
-			num_of_civilian_factories_available_for_projects > 19
-			has_war = yes
-		}
-
-		cost = 25
-
-		modifier = {
-			civilian_factory_use = 20
-		}
-
-		visible = {
-			is_ai = no
-			controls_state = 645
-			OR = {
-				645 = {
-					free_building_slots = {
-						building = radar_station
-						size > 0
-					}
-				}
-				645 = {
-					free_building_slots = {
-						building = anti_air_building
-						size > 0
-					}
-				}
-				645 = {
-					free_building_slots = {
-						building = air_base
-						size > 0
-					}
-				}
-			}
-		}
-
-		cancel_if_not_visible = yes
-
-		days_remove = 60
-
-		fire_only_once = no
-
-		remove_effect = {
-			if = {
-				limit = {
-					645 = {
-						free_building_slots = {
-							building = radar_station
-							size > 0
-						}
-					}
-				}
-				645 = {
-					add_building_construction = {
-						type = radar_station
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					645 = {
-						free_building_slots = {
-							building = anti_air_building
-							size > 0
-						}
-					}
-				}
-				645 = {
-					add_building_construction = {
-						type = anti_air_building
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					645 = {
-						free_building_slots = {
-							building = air_base
-							size > 0
-						}
-					}
-				}
-				645 = {
-					add_building_construction = {
-						type = air_base
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-		}
-	}
-
-	JAP_fortify_okinawa = {
-		icon = generic_construction
-
-		available = {
-			526 = { is_fully_controlled_by = ROOT }
-			num_of_civilian_factories_available_for_projects > 19
-			has_war = yes
-		}
-
-		cost = 25
-
-		modifier = {
-			civilian_factory_use = 20
-		}
-
-		visible = {
-			is_ai = no
-			controls_state = 526
-			OR = {
-				526 = {
-					free_building_slots = {
-						building = radar_station
-						size > 0
-					}
-				}
-				526 = {
-					free_building_slots = {
-						building = anti_air_building
-						size > 0
-					}
-				}
-				526 = {
-					free_building_slots = {
-						building = air_base
-						size > 0
-					}
-				}
-			}
-		}
-
-		cancel_if_not_visible = yes
-
-		days_remove = 60
-
-		fire_only_once = no
-
-		remove_effect = {
-			if = {
-				limit = {
-					526 = {
-						free_building_slots = {
-							building = radar_station
-							size > 0
-						}
-					}
-				}
-				526 = {
-					add_building_construction = {
-						type = radar_station
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					526 = {
-						free_building_slots = {
-							building = anti_air_building
-							size > 0
-						}
-					}
-				}
-				526 = {
-					add_building_construction = {
-						type = anti_air_building
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					526 = {
-						free_building_slots = {
-							building = air_base
-							size > 0
-						}
-					}
-				}
-				526 = {
-					add_building_construction = {
-						type = air_base
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-		}
-	}
-
-	USA_fortify_guam = {
-		icon = generic_construction
-
-		available = {
-			638 = { is_fully_controlled_by = ROOT }
-			num_of_civilian_factories_available_for_projects > 19
-			has_war = yes
-		}
-
-		cost = 25
-
-		modifier = {
-			civilian_factory_use = 20
-		}
-
-		visible = {
-			is_ai = no
-			controls_state = 638
-			OR = {
-				638 = {
-					free_building_slots = {
-						building = radar_station
-						size > 0
-					}
-				}
-				638 = {
-					free_building_slots = {
-						building = anti_air_building
-						size > 0
-					}
-				}
-				638 = {
-					free_building_slots = {
-						building = air_base
-						size > 0
-					}
-				}
-			}
-		}
-
-		cancel_if_not_visible = yes
-
-		days_remove = 60
-
-		fire_only_once = no
-
-		remove_effect = {
-			if = {
-				limit = {
-					638 = {
-						free_building_slots = {
-							building = radar_station
-							size > 0
-						}
-					}
-				}
-				638 = {
-					add_building_construction = {
-						type = radar_station
-						level = 1
-						instant_build = yes
-					}
-					set_state_flag = guam_radar_1
-				}
-			}
-			if = {
-				limit = {
-					638 = {
-						free_building_slots = {
-							building = anti_air_building
-							size > 0
-						}
-					}
-				}
-				638 = {
-					add_building_construction = {
-						type = anti_air_building
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					is_ai = no
-					638 = {
-						free_building_slots = {
-							building = air_base
-							size > 0
-						}
-					}
-				}
-				638	 = {
-					add_building_construction = {
-						type = air_base
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-		}
-	}
-
-	USA_fortify_attu = {
-		icon = generic_construction
-
-		available = {
-			650 = { is_fully_controlled_by = ROOT }
-			num_of_civilian_factories_available_for_projects > 19
-			has_war = yes
-		}
-
-		cost = 25
-
-		modifier = {
-			civilian_factory_use = 20
-		}
-
-		visible = {
-			is_ai = no
-			controls_state = 650
-			OR = {
-				650 = {
-					free_building_slots = {
-						building = radar_station
-						size > 0
-					}
-				}
-				650 = {
-					free_building_slots = {
-						building = anti_air_building
-						size > 0
-					}
-				}
-				650 = {
-					free_building_slots = {
-						building = air_base
-						size > 0
-					}
-				}
-			}
-		}
-
-		cancel_if_not_visible = yes
-
-		days_remove = 60
-
-		fire_only_once = no
-
-		remove_effect = {
-			if = {
-				limit = {
-					650 = {
-						free_building_slots = {
-							building = radar_station
-							size > 0
-						}
-					}
-				}
-				650 = {
-					add_building_construction = {
-						type = radar_station
-						level = 1
-						instant_build = yes
-					}
-					set_state_flag = attu_radar_1
-				}
-			}
-			if = {
-				limit = {
-					650 = {
-						free_building_slots = {
-							building = anti_air_building
-							size > 0
-						}
-					}
-				}
-				650 = {
-					add_building_construction = {
-						type = anti_air_building
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					is_ai = no
-					650 = {
-						free_building_slots = {
-							building = air_base
-							size > 0
-						}
-					}
-				}
-				650 = {
-					add_building_construction = {
-						type = air_base
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-		}
-	}
-
-	USA_fortify_wake = {
-		icon = generic_construction
-
-		available = {
-			632 = { is_fully_controlled_by = ROOT }
-			num_of_civilian_factories_available_for_projects > 19
-			has_war = yes
-		}
-
-		cost = 25
-
-		modifier = {
-			civilian_factory_use = 20
-		}
-
-		visible = {
-			is_ai = no
-			controls_state = 632
-			OR = {
-				632 = {
-					free_building_slots = {
-						building = radar_station
-						size > 0
-					}
-				}
-				632 = {
-					free_building_slots = {
-						building = anti_air_building
-						size > 0
-					}
-				}
-				632 = {
-					free_building_slots = {
-						building = air_base
-						size > 0
-					}
-				}
-			}
-		}
-
-		days_remove = 60
-
-		fire_only_once = no
-
-		remove_effect = {
-			if = {
-				limit = {
-					632 = {
-						free_building_slots = {
-							building = radar_station
-							size > 0
-						}
-					}
-				}
-				632 = {
-					add_building_construction = {
-						type = radar_station
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					632 = {
-						free_building_slots = {
-							building = anti_air_building
-							size > 0
-						}
-					}
-				}
-				632 = {
-					add_building_construction = {
-						type = anti_air_building
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					is_ai = no
-					632 = {
-						free_building_slots = {
-							building = air_base
-							size > 0
-						}
-					}
-				}
-				632 = {
-					add_building_construction = {
-						type = air_base
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-		}
-	}
-
-	USA_fortify_midway = {
-		icon = generic_construction
-
-		available = {
-			631 = { is_fully_controlled_by = ROOT }
-			num_of_civilian_factories_available_for_projects > 19
-			has_war = yes
-		}
-
-		cost = 25
-
-		modifier = {
-			civilian_factory_use = 20
-		}
-
-		visible = {
-			is_ai = no
-			controls_state = 631
-			OR = {
-				631 = {
-					free_building_slots = {
-						building = radar_station
-						size > 0
-					}
-				}
-				631 = {
-					free_building_slots = {
-						building = anti_air_building
-						size > 0
-					}
-				}
-				631 = {
-					free_building_slots = {
-						building = air_base
-						size > 0
-					}
-				}
-			}
-		}
-
-		days_remove = 60
-
-		fire_only_once = no
-
-		remove_effect = {
-			if = {
-				limit = {
-					631 = {
-						free_building_slots = {
-							building = radar_station
-							size > 0
-						}
-					}
-				}
-				631 = {
-					add_building_construction = {
-						type = radar_station
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					631 = {
-						free_building_slots = {
-							building = anti_air_building
-							size > 0
-						}
-					}
-				}
-				631 = {
-					add_building_construction = {
-						type = anti_air_building
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					is_ai = no
-					631 = {
-						free_building_slots = {
-							building = air_base
-							size > 0
-						}
-					}
-				}
-				631 = {
-					add_building_construction = {
-						type = air_base
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-		}
-	}
-
-	USA_fortify_johnston_atoll = {
-		icon = generic_construction
-
-		available = {
-			630 = { is_fully_controlled_by = ROOT }
-			num_of_civilian_factories_available_for_projects > 19
-			has_war = yes
-		}
-
-		cost = 25
-
-		modifier = {
-			civilian_factory_use = 20
-		}
-
-		visible = {
-			is_ai = no
-			controls_state = 630
-			OR = {
-				630 = {
-					free_building_slots = {
-						building = radar_station
-						size > 0
-					}
-				}
-				630 = {
-					free_building_slots = {
-						building = anti_air_building
-						size > 0
-					}
-				}
-				630 = {
-					free_building_slots = {
-						building = air_base
-						size > 0
-					}
-				}
-			}
-		}
-
-		days_remove = 60
-
-		fire_only_once = no
-
-		remove_effect = {
-			if = {
-				limit = {
-					630 = {
-						free_building_slots = {
-							building = radar_station
-							size > 0
-						}
-					}
-				}
-				630 = {
-					add_building_construction = {
-						type = radar_station
-						level = 1
-						instant_build = yes
-					}
-					set_state_flag = johnston_atoll_radar_1
-				}
-			}
-			if = {
-				limit = {
-					630 = {
-						free_building_slots = {
-							building = anti_air_building
-							size > 0
-						}
-					}
-				}
-				630 = {
-					add_building_construction = {
-						type = anti_air_building
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					is_ai = no
-					630 = {
-						free_building_slots = {
-							building = air_base
-							size > 0
-						}
-					}
-				}
-				630 = {
-					add_building_construction = {
-						type = air_base
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-		}
-	}
-
-	USA_fortify_phoenix = {
-		icon = generic_construction
-
-		available = {
-			642 = { is_fully_controlled_by = ROOT }
-			num_of_civilian_factories_available_for_projects > 19
-			has_war = yes
-		}
-
-		cost = 25
-
-		modifier = {
-			civilian_factory_use = 20
-		}
-
-		visible = {
-			is_ai = no
-			controls_state = 642
-			OR = {
-				642 = {
-					free_building_slots = {
-						building = radar_station
-						size > 0
-					}
-				}
-				642 = {
-					free_building_slots = {
-						building = anti_air_building
-						size > 0
-					}
-				}
-				642 = {
-					free_building_slots = {
-						building = air_base
-						size > 0
-					}
-				}
-			}
-		}
-
-		days_remove = 60
-
-		fire_only_once = no
-
-		remove_effect = {
-			if = {
-				limit = {
-					642 = {
-						free_building_slots = {
-							building = radar_station
-							size > 0
-						}
-					}
-				}
-				642 = {
-					add_building_construction = {
-						type = radar_station
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					642 = {
-						free_building_slots = {
-							building = anti_air_building
-							size > 0
-						}
-					}
-				}
-				642 = {
-					add_building_construction = {
-						type = anti_air_building
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					is_ai = no
-					642 = {
-						free_building_slots = {
-							building = air_base
-							size > 0
-						}
-					}
-				}
-				642 = {
-					add_building_construction = {
-						type = air_base
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-		}
-	}
-
-	USA_fortify_hawaii = {
-		icon = generic_construction
-
-		available = {
-			629 = { is_fully_controlled_by = ROOT }
-			num_of_civilian_factories_available_for_projects > 19
-			has_war = yes
-		}
-
-		cost = 25
-
-		modifier = {
-			civilian_factory_use = 20
-		}
-
-		visible = {
-			is_ai = no
-			controls_state = 629
-			OR = {
-				629 = {
-					free_building_slots = {
-						building = radar_station
-						size > 0
-					}
-				}
-				629 = {
-					free_building_slots = {
-						building = anti_air_building
-						size > 0
-					}
-				}
-				629 = {
-					free_building_slots = {
-						building = air_base
-						size > 0
-					}
-				}
-			}
-		}
-
-		days_remove = 60
-
-		fire_only_once = no
-
-		remove_effect = {
-			if = {
-				limit = {
-					629 = {
-						free_building_slots = {
-							building = radar_station
-							size > 0
-						}
-					}
-				}
-				629 = {
-					add_building_construction = {
-						type = radar_station
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					629 = {
-						free_building_slots = {
-							building = anti_air_building
-							size > 0
-						}
-					}
-				}
-				629 = {
-					add_building_construction = {
-						type = anti_air_building
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					629 = {
-						free_building_slots = {
-							building = air_base
-							size > 0
-						}
-					}
-				}
-				629 = {
-					add_building_construction = {
-						type = air_base
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-		}
-	}
-
-	ENG_fortify_gibraltar = {
-		icon = generic_construction
-
-		available = {
-			118 = { is_fully_controlled_by = ROOT }
-			num_of_civilian_factories_available_for_projects > 19
-			has_war = yes
-		}
-
-		cost = 25
-
-		modifier = {
-			civilian_factory_use = 20
-		}
-
-		visible = {
-			is_ai = no
-			controls_state = 118
-			OR = {
-				118 = {
-					free_building_slots = {
-						building = radar_station
-						size > 0
-					}
-				}
-				118 = {
-					free_building_slots = {
-						building = anti_air_building
-						size > 0
-					}
-				}
-				118 = {
-					free_building_slots = {
-						building = air_base
-						size > 0
-					}
-				}
-			}
-		}
-
-		days_remove = 60
-
-		fire_only_once = no
-
-		remove_effect = {
-			if = {
-				limit = {
-					118 = {
-						free_building_slots = {
-							building = radar_station
-							size > 0
-						}
-					}
-				}
-				118 = {
-					add_building_construction = {
-						type = radar_station
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					118 = {
-						free_building_slots = {
-							building = anti_air_building
-							size > 0
-						}
-					}
-				}
-				118 = {
-					add_building_construction = {
-						type = anti_air_building
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					118 = {
-						free_building_slots = {
-							building = air_base
-							size > 0
-						}
-					}
-				}
-				118 = {
-					add_building_construction = {
-						type = air_base
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-		}
-	}
-
-	ENG_fortify_malta = {
-		icon = generic_construction
-
-		available = {
-			116 = { is_fully_controlled_by = ROOT }
-			num_of_civilian_factories_available_for_projects > 19
-			has_war = yes
-		}
-
-		cost = 25
-
-		modifier = {
-			civilian_factory_use = 20
-		}
-
-		visible = {
-			is_ai = no
-			controls_state = 116
-			OR = {
-				116 = {
-					free_building_slots = {
-						building = radar_station
-						size > 0
-					}
-				}
-				116 = {
-					free_building_slots = {
-						building = anti_air_building
-						size > 0
-					}
-				}
-				116 = {
-					free_building_slots = {
-						building = air_base
-						size > 0
-					}
-				}
-			}
-		}
-
-		days_remove = 60
-
-		fire_only_once = no
-
-		remove_effect = {
-			if = {
-				limit = {
-					116 = {
-						free_building_slots = {
-							building = radar_station
-							size > 0
-						}
-					}
-				}
-				116 = {
-					add_building_construction = {
-						type = radar_station
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					116 = {
-						free_building_slots = {
-							building = anti_air_building
-							size > 0
-						}
-					}
-				}
-				116 = {
-					add_building_construction = {
-						type = anti_air_building
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					116 = {
-						free_building_slots = {
-							building = air_base
-							size > 0
-						}
-					}
-				}
-				116 = {
-					add_building_construction = {
-						type = air_base
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-		}
-	}
-
-	ENG_fortify_cyprus = {
-		icon = generic_construction
-
-		available = {
-			183 = { is_fully_controlled_by = ROOT }
-			num_of_civilian_factories_available_for_projects > 19
-			has_war = yes
-		}
-
-		cost = 25
-
-		modifier = {
-			civilian_factory_use = 20
-		}
-
-		visible = {
-			is_ai = no
-			controls_state = 183
-			OR = {
-				183 = {
-					free_building_slots = {
-						building = radar_station
-						size > 0
-					}
-				}
-				183 = {
-					free_building_slots = {
-						building = anti_air_building
-						size > 0
-					}
-				}
-				183 = {
-					free_building_slots = {
-						building = air_base
-						size > 0
-					}
-				}
-			}
-		}
-
-		days_remove = 60
-
-		fire_only_once = no
-
-		remove_effect = {
-			if = {
-				limit = {
-					183 = {
-						free_building_slots = {
-							building = radar_station
-							size > 0
-						}
-					}
-				}
-				183 = {
-					add_building_construction = {
-						type = radar_station
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					183 = {
-						free_building_slots = {
-							building = anti_air_building
-							size > 0
-						}
-					}
-				}
-				183 = {
-					add_building_construction = {
-						type = anti_air_building
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					183 = {
-						free_building_slots = {
-							building = air_base
-							size > 0
-						}
-					}
-				}
-				183 = {
-					add_building_construction = {
-						type = air_base
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-		}
-	}
-
-	ENG_fortify_crete = {
-		icon = generic_construction
-
-		available = {
-			182 = { is_fully_controlled_by = ROOT }
-			num_of_civilian_factories_available_for_projects > 19
-			has_war = yes
-		}
-
-		cost = 25
-
-		modifier = {
-			civilian_factory_use = 20
-		}
-
-		visible = {
-			is_ai = no
-			controls_state = 182
-			OR = {
-				182 = {
-					free_building_slots = {
-						building = radar_station
-						size > 0
-					}
-				}
-				182 = {
-					free_building_slots = {
-						building = anti_air_building
-						size > 0
-					}
-				}
-				182 = {
-					free_building_slots = {
-						building = air_base
-						size > 0
-					}
-				}
-			}
-		}
-
-		days_remove = 60
-
-		fire_only_once = no
-
-		remove_effect = {
-			if = {
-				limit = {
-					182 = {
-						free_building_slots = {
-							building = radar_station
-							size > 0
-						}
-					}
-				}
-				182 = {
-					add_building_construction = {
-						type = radar_station
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					182 = {
-						free_building_slots = {
-							building = anti_air_building
-							size > 0
-						}
-					}
-				}
-				182 = {
-					add_building_construction = {
-						type = anti_air_building
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					182 = {
-						free_building_slots = {
-							building = air_base
-							size > 0
-						}
-					}
-				}
-				182 = {
-					add_building_construction = {
-						type = air_base
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-		}
-	}
-
-	ENG_fortify_azores = {
-		icon = generic_construction
-
-		available = {
-			698 = { is_fully_controlled_by = ROOT }
-			num_of_civilian_factories_available_for_projects > 19
-			has_war = yes
-		}
-
-		cost = 25
-
-		modifier = {
-			civilian_factory_use = 20
-		}
-
-		visible = {
-			is_ai = no
-			controls_state = 698
-			OR = {
-				698 = {
-					free_building_slots = {
-						building = radar_station
-						size > 0
-					}
-				}
-				698 = {
-					free_building_slots = {
-						building = anti_air_building
-						size > 0
-					}
-				}
-				698 = {
-					free_building_slots = {
-						building = air_base
-						size > 0
-					}
-				}
-			}
-		}
-
-		days_remove = 60
-
-		fire_only_once = no
-
-		remove_effect = {
-			if = {
-				limit = {
-					698 = {
-						free_building_slots = {
-							building = radar_station
-							size > 0
-						}
-					}
-				}
-				698 = {
-					add_building_construction = {
-						type = radar_station
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					698 = {
-						free_building_slots = {
-							building = anti_air_building
-							size > 0
-						}
-					}
-				}
-				698 = {
-					add_building_construction = {
-						type = anti_air_building
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					698 = {
-						free_building_slots = {
-							building = air_base
-							size > 0
-						}
-					}
-				}
-				698 = {
-					add_building_construction = {
-						type = air_base
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-		}
-	}
-
-	FRA_fortify_corsica = {
-		icon = generic_construction
-
-		available = {
-			1 = { is_fully_controlled_by = ROOT }
-			num_of_civilian_factories_available_for_projects > 19
-			has_war = yes
-		}
-
-		cost = 25
-
-		modifier = {
-			civilian_factory_use = 20
-		}
-
-		visible = {
-			is_ai = no
-			controls_state = 1
-			OR = {
-				1 = {
-					free_building_slots = {
-						building = radar_station
-						size > 0
-					}
-				}
-				1 = {
-					free_building_slots = {
-						building = anti_air_building
-						size > 0
-					}
-				}
-				1 = {
-					free_building_slots = {
-						building = air_base
-						size > 0
-					}
-				}
-			}
-		}
-
-		days_remove = 60
-
-		fire_only_once = no
-
-		remove_effect = {
-			if = {
-				limit = {
-					1 = {
-						free_building_slots = {
-							building = radar_station
-							size > 0
-						}
-					}
-				}
-				1 = {
-					add_building_construction = {
-						type = radar_station
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					1 = {
-						free_building_slots = {
-							building = anti_air_building
-							size > 0
-						}
-					}
-				}
-				1 = {
-					add_building_construction = {
-						type = anti_air_building
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					1 = {
-						free_building_slots = {
-							building = air_base
-							size > 0
-						}
-					}
-				}
-				1 = {
-					add_building_construction = {
-						type = air_base
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-		}
-	}
-
-	SPR_fortify_baleric_islands = {
-		icon = generic_construction
-
-		available = {
-			177 = { is_fully_controlled_by = ROOT }
-			num_of_civilian_factories_available_for_projects > 19
-			has_war = yes
-		}
-
-		cost = 25
-
-		modifier = {
-			civilian_factory_use = 20
-		}
-
-		visible = {
-			is_ai = no
-			controls_state = 177
-			OR = {
-				177 = {
-					free_building_slots = {
-						building = radar_station
-						size > 0
-					}
-				}
-				177 = {
-					free_building_slots = {
-						building = anti_air_building
-						size > 0
-					}
-				}
-				177 = {
-					free_building_slots = {
-						building = air_base
-						size > 0
-					}
-				}
-			}
-		}
-
-		days_remove = 60
-
-		fire_only_once = no
-
-		remove_effect = {
-			if = {
-				limit = {
-					177 = {
-						free_building_slots = {
-							building = radar_station
-							size > 0
-						}
-					}
-				}
-				177 = {
-					add_building_construction = {
-						type = radar_station
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					177 = {
-						free_building_slots = {
-							building = anti_air_building
-							size > 0
-						}
-					}
-				}
-				177 = {
-					add_building_construction = {
-						type = anti_air_building
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					177 = {
-						free_building_slots = {
-							building = air_base
-							size > 0
-						}
-					}
-				}
-				177 = {
-					add_building_construction = {
-						type = air_base
-						level = 1
-						instant_build = yes
-					}
-				}
-			}
-		}
-	}
+###########################################REPAIR#########################################
 
 	repair_yellow_river_flood = {
 
@@ -3457,6 +2142,24 @@ special_projects = {
 		}
 
 		remove_effect = {
+			every_state = {
+				limit = {
+					is_core_of = CHI
+					OR = {
+						state = 607
+						state = 606
+						state = 925
+						state = 936
+					}
+					CONTROLLER = {
+						OR = {
+							tag = JAP
+							is_subject_of = JAP
+						}
+					}
+				}
+				add_compliance = 20
+			}
 			clr_global_flag = CHI_yellow_river_flooded
 			hidden_effect = {
 				607 = {
@@ -3560,8 +2263,6 @@ special_projects = {
 			}
 		}
 
-		complete_effect = {
-		}
 
 		ai_will_do = {
 			factor = 0
@@ -4050,6 +2751,7 @@ special_projects = {
 			civilian_factory_use = 20
 		}
 
+
 		cancel_if_not_visible = yes
 
 		remove_effect = {
@@ -4402,7 +3104,7 @@ war_measures = {
 
 		cost = 50
 		ai_will_do = {
-			factor = 1
+			factor = 100
 			modifier = {
 				surrender_progress > 0.6
 				factor = 10
@@ -4420,862 +3122,6 @@ war_measures = {
 
 		complete_effect = {
 
-		}
-	}
-
-	order_weapons_from_USA = {
-		icon = generic_prepare_civil_war
-
-		available = {
-			USA = { has_completed_focus = USA_cash_and_carry_act }
-			num_of_civilian_factories_available_for_projects > 9
-			USA = { has_war = no }
-		}
-		visible = {
-			has_war_with = GER
-			if = {
-				limit = {
-					USA = {
-						OR = {
-							has_government = democratic
-							has_government = neutrality
-						}
-					}
-				}
-				OR = {
-					has_government = democratic
-					has_government = neutrality
-				}
-			}
-			else = {
-				USA = { has_government = ROOT }
-			}
-			NOT = { USA = { has_completed_focus = USA_lend_lease_act } }
-			NOT = { tag = USA }
-		}
-		days_remove = 60
-		cost = 0
-		ai_will_do = {
-			factor = 40
-
-			modifier = {
-				AND = {
-					stockpile_ratio = {
-						archetype = infantry_equipment
-						ratio > 0.90
-					}
-					stockpile_ratio = {
-						archetype = heavy_infantry_equipment
-						ratio > 0.90
-					}
-				}
-				factor = 0
-			}
-
-			modifier = {
-				num_of_civilian_factories_available_for_projects < 21
-				factor = 0
-			}
-		}
-		modifier = {
-			civilian_factory_use = 10
-		}
-		complete_effect = {
-			USA = {
-				add_offsite_building = {
-					type = industrial_complex
-					level = 10
-				}
-			}
-		}
-		remove_effect = {
-			USA = {
-				add_offsite_building = {
-					type = industrial_complex
-					level = -10
-				}
-			}
-			if = {
-				limit = {
-					USA = { has_tech = usa_infantry_weapons_3 }
-				}
-				add_equipment_to_stockpile = { type = usa_inf_3 amount = 2000 producer = USA }
-			}
-			else = {
-				add_equipment_to_stockpile = { type = usa_inf_2 amount = 2000 producer = USA }
-			}
-			if = {
-				limit = {
-					USA = { has_tech = usa_heavy_infantry_weapons_3 }
-				}
-				add_equipment_to_stockpile = { type = usa_hv_inf_3 amount = 1000 producer = USA }
-			}
-			else = {
-				add_equipment_to_stockpile = { type = usa_hv_inf_2 amount = 1000 producer = USA }
-			}
-		}
-	}
-	order_support_equipment_from_USA = {
-		icon = generic_prepare_civil_war
-
-		available = {
-			USA = { has_completed_focus = USA_cash_and_carry_act }
-			num_of_civilian_factories_available_for_projects > 9
-			USA = { has_war = no }
-		}
-		visible = {
-			has_war_with = GER
-			if = {
-				limit = {
-					USA = {
-						OR = {
-							has_government = democratic
-							has_government = neutrality
-						}
-					}
-				}
-				OR = {
-					has_government = democratic
-					has_government = neutrality
-				}
-			}
-			else = {
-				USA = { has_government = ROOT }
-			}
-			NOT = { USA = { has_completed_focus = USA_lend_lease_act } }
-			NOT = { tag = USA }
-		}
-		days_remove = 60
-		cost = 0
-		ai_will_do = {
-			factor = 40
-
-			modifier = {
-				stockpile_ratio = {
-					archetype = support_equipment
-					ratio > 0.90
-				}
-
-				factor = 0
-			}
-
-			modifier = {
-				num_of_civilian_factories_available_for_projects < 21
-				factor = 0
-			}
-			modifier = {
-				tag = ENG
-				factor = 0
-			}
-		}
-		modifier = {
-			civilian_factory_use = 10
-		}
-		complete_effect = {
-			USA = {
-				add_offsite_building = {
-					type = industrial_complex
-					level = 10
-				}
-			}
-		}
-		remove_effect = {
-			USA = {
-				add_offsite_building = {
-					type = industrial_complex
-					level = -10
-				}
-			}
-			add_equipment_to_stockpile = { type = support_equipment_1 amount = 1000 producer = USA }
-		}
-	}
-	order_artillery_from_USA = {
-		icon = ger_military_buildup
-
-		available = {
-			USA = { has_completed_focus = USA_cash_and_carry_act }
-			num_of_civilian_factories_available_for_projects > 9
-			USA = { has_war = no }
-		}
-		visible = {
-			has_war_with = GER
-			if = {
-				limit = {
-					USA = {
-						OR = {
-							has_government = democratic
-							has_government = neutrality
-						}
-					}
-				}
-				OR = {
-					has_government = democratic
-					has_government = neutrality
-				}
-			}
-			else = {
-				USA = { has_government = ROOT }
-			}
-			NOT = { USA = { has_completed_focus = USA_lend_lease_act } }
-			NOT = { tag = USA }
-		}
-		days_remove = 60
-		cost = 0
-		ai_will_do = {
-			factor = 40
-
-			modifier = {
-				AND = {
-					stockpile_ratio = {
-						archetype = artillery_equipment
-						ratio > 0.90
-					}
-					stockpile_ratio = {
-						archetype = heavy_artillery_equipment
-						ratio > 0.90
-					}
-					stockpile_ratio = {
-						archetype = anti_tank_equipment
-						ratio > 0.90
-					}
-				}
-
-				factor = 0
-			}
-
-			modifier = {
-				num_of_civilian_factories_available_for_projects < 21
-				factor = 0
-			}
-			modifier = {
-				tag = ENG
-				factor = 0
-			}
-		}
-		modifier = {
-			civilian_factory_use = 10
-		}
-		complete_effect = {
-			USA = {
-				add_offsite_building = {
-					type = industrial_complex
-					level = 10
-				}
-			}
-		}
-		remove_effect = {
-			USA = {
-				add_offsite_building = {
-					type = industrial_complex
-					level = -10
-				}
-			}
-			if = {
-				limit = {
-					USA = { has_tech = usa_artillery_3 }
-				}
-				add_equipment_to_stockpile = { type = usa_art_3 amount = 250 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_artillery_2 }
-				}
-				add_equipment_to_stockpile = { type = usa_art_2 amount = 250 producer = USA }
-			}
-			else = {
-				add_equipment_to_stockpile = { type = usa_art_1 amount = 250 producer = USA }
-			}
-			if = {
-				limit = {
-					USA = { has_tech = usa_heavy_artillery_2 }
-				}
-				add_equipment_to_stockpile = { type = usa_hv_art_2 amount = 150 producer = USA }
-			}
-			else = {
-				add_equipment_to_stockpile = { type = usa_hv_art_1 amount = 150 producer = USA }
-			}
-			if = {
-				limit = {
-					USA = { has_tech = usa_anti_tank_3 }
-				}
-				add_equipment_to_stockpile = { type = usa_at_3 amount = 250 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_anti_tank_2 }
-				}
-				add_equipment_to_stockpile = { type = usa_at_2 amount = 250 producer = USA }
-			}
-			else = {
-				add_equipment_to_stockpile = { type = usa_at_1 amount = 250 producer = USA }
-			}
-		}
-	}
-	order_trucks_from_USA = {
-		icon = generic_tank
-
-		available = {
-			USA = { has_completed_focus = USA_cash_and_carry_act }
-			num_of_civilian_factories_available_for_projects > 14
-			USA = { has_war = no }
-		}
-		visible = {
-			has_war_with = GER
-			if = {
-				limit = {
-					USA = {
-						OR = {
-							has_government = democratic
-							has_government = neutrality
-						}
-					}
-				}
-				OR = {
-					has_government = democratic
-					has_government = neutrality
-				}
-			}
-			else = {
-				USA = { has_government = ROOT }
-			}
-			NOT = { USA = { has_completed_focus = USA_lend_lease_act } }
-			NOT = { tag = USA }
-		}
-		days_remove = 60
-		cost = 0
-		ai_will_do = {
-			factor = 40
-
-			modifier = {
-				stockpile_ratio = {
-					archetype = motorized_equipment
-					ratio > 0.90
-				}
-
-				factor = 0
-			}
-
-			modifier = {
-				num_of_civilian_factories_available_for_projects < 21
-				factor = 0
-			}
-			modifier = {
-				tag = ENG
-				factor = 0
-			}
-		}
-		modifier = {
-			civilian_factory_use = 15
-		}
-		complete_effect = {
-			USA = {
-				add_offsite_building = {
-					type = industrial_complex
-					level = 15
-				}
-			}
-		}
-		remove_effect = {
-			USA = {
-				add_offsite_building = {
-					type = industrial_complex
-					level = -15
-				}
-			}
-			add_equipment_to_stockpile = { type = usa_motorized_equipment_1 amount = 400 producer = USA }
-		}
-	}
-	order_tanks_from_USA = {
-		icon = generic_tank
-
-		allowed = {
-			NOT = { has_dlc = "No Step Back" }
-		}
-
-		available = {
-			USA = { has_completed_focus = USA_cash_and_carry_act }
-			num_of_civilian_factories_available_for_projects > 14
-			USA = { has_war = no }
-		}
-		visible = {
-			has_war_with = GER
-			if = {
-				limit = {
-					USA = {
-						OR = {
-							has_government = democratic
-							has_government = neutrality
-						}
-					}
-				}
-				OR = {
-					has_government = democratic
-					has_government = neutrality
-				}
-			}
-			else = {
-				USA = { has_government = ROOT }
-			}
-			NOT = { USA = { has_completed_focus = USA_lend_lease_act } }
-			NOT = { tag = USA }
-		}
-		days_remove = 60
-		cost = 0
-		ai_will_do = {
-			factor = 40
-
-			modifier = {
-				AND = {
-					stockpile_ratio = {
-						archetype = medium_tank_chassis
-						ratio > 0.90
-					}
-					stockpile_ratio = {
-						archetype = light_tank_chassis
-						ratio > 0.90
-					}
-				}
-				factor = 0
-			}
-
-			modifier = {
-				num_of_civilian_factories_available_for_projects < 21
-				factor = 0
-			}
-			modifier = {
-				tag = ENG
-				factor = 0
-			}
-		}
-		modifier = {
-			civilian_factory_use = 15
-		}
-		complete_effect = {
-			USA = {
-				add_offsite_building = {
-					type = industrial_complex
-					level = 15
-				}
-			}
-		}
-		remove_effect = {
-			USA = {
-				add_offsite_building = {
-					type = industrial_complex
-					level = -15
-				}
-			}
-			if = {
-				limit = {
-					USA = { has_tech = usa_medium_4 }
-				}
-				add_equipment_to_stockpile = { type = usa_medium_equipment_4 amount = 150 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_medium_3 }
-				}
-				add_equipment_to_stockpile = { type = usa_medium_equipment_3 amount = 150 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_medium_2 }
-				}
-				add_equipment_to_stockpile = { type = usa_medium_equipment_2 amount = 150 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_medium_1 }
-				}
-				add_equipment_to_stockpile = { type = usa_medium_equipment_1 amount = 150 producer = USA }
-			}
-			if = {
-				limit = {
-					USA = { has_tech = usa_light_4 }
-				}
-				add_equipment_to_stockpile = { type = usa_light_equipment_4 amount = 250 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_light_3 }
-				}
-				add_equipment_to_stockpile = { type = usa_light_equipment_3 amount = 250 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_light_2 }
-				}
-				add_equipment_to_stockpile = { type = usa_light_equipment_2 amount = 250 producer = USA }
-			}
-			else = {
-				add_equipment_to_stockpile = { type = usa_light_equipment_1 amount = 250 producer = USA }
-			}
-		}
-	}
-	order_tanks_from_USA_nsb = {
-		icon = generic_tank
-
-		allowed = {
-			has_dlc = "No Step Back"
-		}
-
-		available = {
-			USA = { has_completed_focus = USA_cash_and_carry_act }
-			num_of_civilian_factories_available_for_projects > 14
-			USA = { has_war = no }
-		}
-		visible = {
-			has_war_with = GER
-			if = {
-				limit = {
-					USA = {
-						OR = {
-							has_government = democratic
-							has_government = neutrality
-						}
-					}
-				}
-				OR = {
-					has_government = democratic
-					has_government = neutrality
-				}
-			}
-			else = {
-				USA = { has_government = ROOT }
-			}
-			NOT = { USA = { has_completed_focus = USA_lend_lease_act } }
-			NOT = { tag = USA }
-		}
-
-		days_remove = 60
-		cost = 0
-		ai_will_do = {
-			factor = 40
-
-			modifier = {
-				AND = {
-					stockpile_ratio = {
-						archetype = medium_tank_chassis
-						ratio > 0.90
-					}
-					stockpile_ratio = {
-						archetype = light_tank_chassis
-						ratio > 0.90
-					}
-				}
-				factor = 0
-			}
-
-			modifier = {
-				num_of_civilian_factories_available_for_projects < 21
-				factor = 0
-			}
-			modifier = {
-				tag = ENG
-				factor = 0
-			}
-		}
-		modifier = {
-			civilian_factory_use = 15
-		}
-		complete_effect = {
-			USA = {
-				add_offsite_building = {
-					type = industrial_complex
-					level = 15
-				}
-			}
-		}
-		remove_effect = {
-			USA = {
-				add_offsite_building = {
-					type = industrial_complex
-					level = -15
-				}
-			}
-			if = {
-				limit = {
-					USA = { has_tech = usa_medium_tank_chassis_4 }
-				}
-				add_equipment_to_stockpile = { type = tank_usa_medium_chassis_4 amount = 150 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_medium_tank_chassis_3 }
-				}
-				add_equipment_to_stockpile = { type = tank_usa_medium_chassis_3 amount = 150 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_medium_tank_chassis_2 }
-				}
-				add_equipment_to_stockpile = { type = tank_usa_medium_chassis_2 amount = 150 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_medium_tank_chassis_1 }
-				}
-				add_equipment_to_stockpile = { type = tank_usa_medium_chassis_1 amount = 150 producer = USA }
-			}
-			if = {
-				limit = {
-					USA = { has_tech = usa_light_tank_chassis_4 }
-				}
-				add_equipment_to_stockpile = { type = tank_usa_light_chassis_4 amount = 250 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_light_tank_chassis_3 }
-				}
-				add_equipment_to_stockpile = { type = tank_usa_light_chassis_3 amount = 250 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_light_tank_chassis_2 }
-				}
-				add_equipment_to_stockpile = { type = tank_usa_light_chassis_2 amount = 250 producer = USA }
-			}
-			else = {
-				add_equipment_to_stockpile = { type = tank_usa_light_chassis_1 amount = 250 producer = USA }
-			}
-		}
-	}
-	order_fighters_from_USA = {
-		icon = generic_air
-
-		available = {
-			USA = { has_completed_focus = USA_cash_and_carry_act }
-			num_of_civilian_factories_available_for_projects > 14
-			USA = { has_war = no }
-		}
-		visible = {
-			has_war_with = GER
-			if = {
-				limit = {
-					USA = {
-						OR = {
-							has_government = democratic
-							has_government = neutrality
-						}
-					}
-				}
-				OR = {
-					has_government = democratic
-					has_government = neutrality
-				}
-			}
-			else = {
-				USA = { has_government = ROOT }
-			}
-			NOT = { USA = { has_completed_focus = USA_lend_lease_act } }
-			NOT = { tag = USA }
-		}
-
-		days_remove = 60
-		cost = 0
-		ai_will_do = {
-			factor = 40
-
-			modifier = {
-				AND = {
-					stockpile_ratio = {
-						archetype = fighter_equipment
-						ratio > 0.90
-					}
-					stockpile_ratio = {
-						archetype = fighter_multirole_equipment
-						ratio > 0.90
-					}
-				}
-				# has_deployed_air_force_size = {
-				# 	size > 999
-				# 	type = fighter
-				# }
-				factor = 0
-			}
-
-			modifier = {
-				num_of_civilian_factories_available_for_projects < 21
-				factor = 0
-			}
-			modifier = {
-				tag = ENG
-				factor = 0
-			}
-		}
-		modifier = {
-			civilian_factory_use = 15
-		}
-		complete_effect = {
-			USA = {
-				add_offsite_building = {
-					type = industrial_complex
-					level = 15
-				}
-			}
-		}
-		remove_effect = {
-			USA = {
-				add_offsite_building = {
-					type = industrial_complex
-					level = -15
-				}
-			}
-			if = {
-				limit = {
-					USA = { has_tech = usa_fighter_multirole_3 }
-				}
-				add_equipment_to_stockpile = { type = usa_fighter_multirole_equipment_3 amount = 150 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_fighter_multirole_2 }
-				}
-				add_equipment_to_stockpile = { type = usa_fighter_multirole_equipment_2 amount = 150 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_fighter_multirole_1 }
-				}
-				add_equipment_to_stockpile = { type = usa_fighter_multirole_equipment_1 amount = 150 producer = USA }
-			}
-			if = {
-				limit = {
-					USA = { has_tech = usa_fighter_5 }
-				}
-				add_equipment_to_stockpile = { type = usa_fighter_equipment_6 amount = 150 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_fighter_4 }
-				}
-				add_equipment_to_stockpile = { type = usa_fighter_equipment_5 amount = 150 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_fighter_3 }
-				}
-				add_equipment_to_stockpile = { type = usa_fighter_equipment_4 amount = 150 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_fighter_2 }
-				}
-				add_equipment_to_stockpile = { type = usa_fighter_equipment_3 amount = 150 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_fighter_1 }
-				}
-				add_equipment_to_stockpile = { type = usa_fighter_equipment_2 amount = 150 producer = USA }
-			}
-			else = {
-				add_equipment_to_stockpile = { type = usa_fighter_equipment_1 amount = 150 producer = USA }
-			}
-		}
-	}
-	order_bombers_from_USA = {
-		icon = generic_air
-
-		available = {
-			USA = { has_completed_focus = USA_cash_and_carry_act }
-			num_of_civilian_factories_available_for_projects > 14
-			USA = { has_war = no }
-		}
-		visible = {
-			has_war_with = GER
-			if = {
-				limit = {
-					USA = {
-						OR = {
-							has_government = democratic
-							has_government = neutrality
-						}
-					}
-				}
-				OR = {
-					has_government = democratic
-					has_government = neutrality
-				}
-			}
-			else = {
-				USA = { has_government = ROOT }
-			}
-			NOT = { USA = { has_completed_focus = USA_lend_lease_act } }
-			NOT = { tag = USA }
-		}
-
-		days_remove = 60
-		cost = 0
-		ai_will_do = {
-			factor = 40
-
-			modifier = {
-				stockpile_ratio = {
-					archetype = tac_bomber_equipment
-					ratio > 0.90
-				}
-				# has_deployed_air_force_size = {
-				# 	size > 499
-				# 	type = tactical_bomber
-				# }
-				factor = 0
-			}
-
-			modifier = {
-				num_of_civilian_factories_available_for_projects < 21
-				factor = 0
-			}
-			modifier = {
-				tag = ENG
-				factor = 0
-			}
-		}
-		modifier = {
-			civilian_factory_use = 15
-		}
-		complete_effect = {
-			USA = {
-				add_offsite_building = {
-					type = industrial_complex
-					level = 15
-				}
-			}
-		}
-		remove_effect = {
-			USA = {
-				add_offsite_building = {
-					type = industrial_complex
-					level = -15
-				}
-			}
-			if = {
-				limit = {
-					USA = { has_tech = usa_tactical_bomber_6 }
-				}
-				add_equipment_to_stockpile = { type = usa_tac_bomber_equipment_6 amount = 100 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_tactical_bomber_5 }
-				}
-				add_equipment_to_stockpile = { type = usa_tac_bomber_equipment_5 amount = 100 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_tactical_bomber_4 }
-				}
-				add_equipment_to_stockpile = { type = usa_tac_bomber_equipment_4 amount = 100 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_tactical_bomber_3 }
-				}
-				add_equipment_to_stockpile = { type = usa_tac_bomber_equipment_3 amount = 100 producer = USA }
-			}
-			else = {
-				add_equipment_to_stockpile = { type = usa_tac_bomber_equipment_2 amount = 100 producer = USA }
-			}
 		}
 	}
 }
@@ -5359,7 +3205,11 @@ economy_decisions = {
 				limit = {
 					tag = JAP
 				}
-				has_completed_focus = JAP_exploit_china
+				OR = {
+					has_completed_focus = JAP_exploit_china
+					has_completed_focus = JAP_exploit_the_south
+				}
+
 			}
 		}
 
@@ -5423,7 +3273,6 @@ economy_decisions = {
 								is_controlled_by_ROOT_or_subject = yes
 								NOT = { is_core_of = CONTROLLER }
 							}
-							is_controlled_by_ROOT_or_ally = yes
 						}
 						NOT = { has_state_flag = state_exploited_by_@ROOT }
 					}
@@ -5442,7 +3291,29 @@ economy_decisions = {
 				}
 				else_if = {
 					limit = {
-						tag = CHI
+						OR = {
+							tag = CHI
+							tag = PRC
+							tag = SHA
+							tag = HPC
+							tag = GUC
+							tag = GXC
+							tag = YUN
+							tag = NEA
+							tag = SHX
+							tag = XSM
+							tag = SIC
+							tag = XIK
+							tag = SIK
+						}
+					}
+					ROOT = {
+						if = {
+							limit = {
+								tag = JAP
+							}
+						}
+						has_completed_focus = JAP_exploit_china
 					}
 					any_core_state = {
 						if = {
@@ -5457,6 +3328,24 @@ economy_decisions = {
 							NOT = { state = 950 } # Miyun
 							NOT = { state = 924 } # Japanese Shanghai
 						}
+						is_controlled_by_ROOT_or_subject = yes
+						NOT = { is_core_of = CONTROLLER }
+						NOT = { has_state_flag = state_exploited_by_@ROOT }
+						check_variable = { industrial_complex_level > 0 }
+					}
+				}
+				else_if = {
+					limit = {
+						ROOT = {
+							if = {
+								limit = {
+									tag = JAP
+								}
+							}
+							has_completed_focus = JAP_exploit_the_south
+						}
+					}
+					any_core_state = {
 						is_controlled_by_ROOT_or_subject = yes
 						NOT = { is_core_of = CONTROLLER }
 						NOT = { has_state_flag = state_exploited_by_@ROOT }
@@ -5704,6 +3593,10 @@ economy_decisions = {
 						level > 2
 					}
 				}
+				set_building_level = {
+					type = stronghold_network
+					level = 0
+				}
 			}
 			if = {
 				limit = {
@@ -5769,7 +3662,7 @@ economy_decisions = {
 
 		complete_effect = {
 			add_timed_idea = {
-				idea = dismantled_fort_line
+				idea = IRQ_political_turmoil
 				days = 180
 			}
 		}
@@ -5785,6 +3678,10 @@ economy_decisions = {
 						limit_to_border = no
 						level > 1
 					}
+				}
+				set_building_level = {
+					type = stronghold_network
+					level = 0
 				}
 			}
 			74 = {
@@ -5994,7 +3891,7 @@ economy_decisions = {
             always = yes
         }
 
-        cost = 25
+        cost = 100
         fire_only_once = no
 
         days_re_enable = 30

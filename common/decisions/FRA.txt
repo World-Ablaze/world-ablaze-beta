@@ -1,4 +1,43 @@
 FRA_imperial_actions = {
+	FRA_reassure_hotchkiss_and_renault = {
+		allowed = {
+			tag = FRA
+		}
+		available = {
+
+		}
+		cost = 75
+		visible = {
+			or = {
+				has_active_mission = FRA_fulfill_the_hotchkiss_contract
+				has_active_mission = FRA_fulfill_the_renault_contract
+			}
+		}
+
+		complete_effect = {
+			add_days_mission_timeout = {
+				mission = FRA_fulfill_the_hotchkiss_contract
+				days = 700
+			}
+			add_days_mission_timeout = {
+				mission = FRA_fulfill_the_renault_contract
+				days = 700
+			}
+		}
+		# ai_will_do = {
+		# 	factor = 5
+		# 	modifier = {
+		# 		factor = 50
+
+		# 		check_variable = {
+		# 			var = trainingpips
+		# 			value = 4
+		# 			compare = greater_than
+		# 		}
+		# 	}
+		# }
+	}
+
 	FRA_the_emperor_finishes_training = {
 		allowed = {
 			tag = FRA
@@ -74,7 +113,7 @@ FRA_imperial_actions = {
 		remove_effect = {
 			every_unit_leader = {
 				limit = {
-					has_id = 104 #Napoleon
+					is_character = FRA_napoleon_vi
 				}
 				add_attack = 1
 			}
@@ -137,7 +176,7 @@ FRA_imperial_actions = {
 		remove_effect = {
 			every_unit_leader = {
 				limit = {
-					has_id = 104 #Napoleon
+					is_character = FRA_napoleon_vi
 				}
 				add_defense = 1
 			}
@@ -200,7 +239,7 @@ FRA_imperial_actions = {
 		remove_effect = {
 			every_unit_leader = {
 				limit = {
-					has_id = 104 #Napoleon
+					is_character = FRA_napoleon_vi
 				}
 				add_logistics = 1
 			}
@@ -263,7 +302,7 @@ FRA_imperial_actions = {
 		remove_effect = {
 			every_unit_leader = {
 				limit = {
-					has_id = 104 #Napoleon
+					is_character = FRA_napoleon_vi
 				}
 				add_planning = 1
 			}
@@ -350,7 +389,7 @@ FRA_imperial_actions = {
 						artillery_brigade = { x = 3 y = 0 }
 						artillery_brigade = { x = 3 y = 1 }
 						artillery_brigade = { x = 3 y = 2 }
-						anti_tank_brigade =  { x = 3 y = 3 }
+						anti_tank_brigade = { x = 3 y = 3 }
 					}
 
 					support = {
@@ -580,6 +619,7 @@ FRA_spanish_intervention_category = {
 		complete_effect = {
 			set_country_flag = FRA_sending_weapons_allowed
 			clr_country_flag = FRA_non_intervention
+			unlock_decision_tooltip = { decision = FRA_send_military_aid_to_FROM show_effect_tooltip = yes }
 			unlock_decision_tooltip = FRA_ban_sending_weapons
 		}
 
@@ -588,8 +628,6 @@ FRA_spanish_intervention_category = {
 		modifier = {
 			stability_factor = -0.15
 			war_support_factor = 0.075
-			lend_lease_tension = -1
-			request_lease_tension = -1
 		}
 		ai_will_do = {
 			factor = 1
@@ -617,6 +655,54 @@ FRA_spanish_intervention_category = {
 				add = 5
 			}
 		}
+	}
+	FRA_send_military_aid_to_FROM = {
+		available = {
+			has_equipment = {
+				infantry_equipment > 4999
+			}
+			has_equipment = {
+				heavy_infantry_equipment > 2499
+			}
+			has_equipment = {
+				artillery_equipment > 249
+			}
+		}
+
+		visible = { has_war = no has_country_flag = FRA_sending_weapons_allowed }
+		target_root_trigger = { has_country_flag = FRA_sending_weapons_allowed }
+
+		targets = { SPA SPR SPB SPC SPD }
+
+		target_trigger = {
+			FROM = {
+				exists = yes
+				has_war = yes
+				NOT = { has_war_with = ROOT }
+			}
+		}
+		days_re_enable = 30
+		complete_effect = {
+			send_equipment = {
+				type = infantry_equipment
+				amount = 4999
+				target = FROM
+			}
+			send_equipment = {
+				type = heavy_infantry_equipment
+				amount = 2499
+				target = FROM
+			}
+			send_equipment = {
+				type = artillery_equipment
+				amount = 249
+				target = FROM
+			}
+		}
+		ai_will_do = {
+			factor = 0
+		}
+		cost = 0
 	}
 	FRA_allow_volunteer_work = {
 		available = {  }
@@ -922,6 +1008,14 @@ economy_decisions = {
 					}
 				}
 			}
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				mio:FRA_sncan_organization = {
+					add_mio_funds = 600
+				}
+			}
 		}
 		days_remove = 120
 		cost = 15
@@ -962,6 +1056,14 @@ economy_decisions = {
 						limit = { has_variable = military_goal }
 						add_to_variable = { military_goal = 2 }
 					}
+				}
+			}
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				mio:FRA_sncao_organization = {
+					add_mio_funds = 600
 				}
 			}
 		}
@@ -1006,6 +1108,14 @@ economy_decisions = {
 					}
 				}
 			}
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				mio:FRA_sncac_organization = {
+					add_mio_funds = 600
+				}
+			}
 		}
 		days_remove = 120
 		cost = 15
@@ -1047,6 +1157,14 @@ economy_decisions = {
 					}
 				}
 			}
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				mio:FRA_sncase_organization = {
+					add_mio_funds = 600
+				}
+			}
 		}
 		days_remove = 120
 		cost = 15
@@ -1086,6 +1204,14 @@ economy_decisions = {
 						limit = { has_variable = military_goal }
 						add_to_variable = { military_goal = 2 }
 					}
+				}
+			}
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				mio:FRA_sncaso_organization = {
+					add_mio_funds = 600
 				}
 			}
 		}
@@ -1866,7 +1992,8 @@ war_measures = {
 		available = {
 			has_war = yes
 			has_civil_war = no
-			NOT = { controls_state = 16 }
+			NOT = { has_full_control_of_state = 855 }
+			has_full_control_of_state = 33
 			has_capitulated = no
 		}
 		visible = {
@@ -1874,7 +2001,44 @@ war_measures = {
 			has_capitulated = no
 		}
 
-		days_remove = 14
+		days_remove = 1
+		is_good = yes
+		cost = 0
+
+		cancel_if_not_visible = yes
+
+		ai_will_do = {
+			factor = 150
+
+			modifier = {
+				factor = 0
+				date > 1943.1.1
+			}
+		}
+
+		remove_effect = {
+			set_capital = { state = 33 }
+		}
+	}
+	FRA_relocate_capital_from_chateauroux = {
+		icon = generic_operation
+		allowed = {
+			tag = FRA
+		}
+		available = {
+			has_war = yes
+			has_civil_war = no
+			NOT = { has_full_control_of_state = 24 }
+			has_full_control_of_state = 19
+			has_capitulated = no
+		}
+		visible = {
+			has_war = yes
+			has_capitulated = no
+			NOT = { has_full_control_of_state = 855 }
+		}
+
+		days_remove = 1
 		is_good = yes
 		cost = 0
 
@@ -1908,7 +2072,7 @@ war_measures = {
 			has_focus_tree = free_french_focus
 		}
 
-		days_remove = 14
+		days_remove = 3
 		is_good = yes
 		cost = 0
 
@@ -1942,7 +2106,7 @@ war_measures = {
 			has_focus_tree = free_french_focus
 		}
 
-		days_remove = 14
+		days_remove = 3
 		is_good = yes
 		cost = 0
 
@@ -2812,6 +2976,43 @@ operations = {
 
 special_projects = {
 
+	FRA_reactivate_alcase_iron = {
+		icon = steel
+
+		visible = {
+			28 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+			28 = { has_dynamic_modifier = { modifier = FRA_iron_industry_collapse } }
+		}
+
+		available = {
+			num_of_civilian_factories_available_for_projects > 19
+			has_war = no
+		}
+
+		fire_only_once = no
+
+		cost = 25
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 20
+		}
+
+		ai_will_do = {
+			factor = 1000
+		}
+		remove_effect = {
+			28 = { remove_dynamic_modifier = { modifier = FRA_iron_industry_collapse } }
+		}
+	}
+
 	FRA_build_the_mareth_line = {
 
 		icon = generic_construction
@@ -3622,7 +3823,7 @@ colonial_managment = {
 								planning_skill = 1
 								logistics_skill = 3
 							}
-						}	
+						}
 					}
 				}
 				else_if = {
@@ -3689,7 +3890,7 @@ colonial_managment = {
 								planning_skill = 1
 								logistics_skill = 3
 							}
-						}	
+						}
 					}
 				}
 			}
@@ -4493,24 +4694,18 @@ colonial_managment = {
 						can_create_factions = no
 						can_join_factions = no
 					}
-					give_military_access = GER
-					give_military_access = ITA
 				}
 				FRN = {
 					set_rule = {
 						can_create_factions = no
 						can_join_factions = no
 					}
-					give_military_access = GER
-					give_military_access = ITA
 				}
 				FRT = {
 					set_rule = {
 						can_create_factions = no
 						can_join_factions = no
 					}
-					give_military_access = GER
-					give_military_access = ITA
 				}
 			}
 			hidden_effect = {
@@ -4799,7 +4994,7 @@ FRA_export_equipment_dec_cat = {
 		target_trigger = {
 			FROM = {
 				has_army_manpower = {
-				size > 50000
+					size > 50000
 				}
 			}
 		}
@@ -5119,7 +5314,7 @@ FRA_procure_allied_equipment_dec_cat = {
 		}
 		visible = {
 			has_war_with = GER
-			has_capitulated = YES
+			has_capitulated = yes
 			has_completed_focus = FRA_procure_allied_equipment
 			NOT = {
 				has_war_with = USA
@@ -5155,8 +5350,14 @@ FRA_procure_allied_equipment_dec_cat = {
 				}
 				add_equipment_to_stockpile = { type = usa_inf_3 amount = 2000 producer = USA }
 			}
-			else = {
+			else_if = {
+				limit = {
+					USA = { has_tech = usa_infantry_weapons_2 }
+				}
 				add_equipment_to_stockpile = { type = usa_inf_2 amount = 2000 producer = USA }
+			}
+			else = {
+				add_equipment_to_stockpile = { type = usa_inf_1 amount = 2000 producer = USA }
 			}
 			if = {
 				limit = {
@@ -5181,7 +5382,7 @@ FRA_procure_allied_equipment_dec_cat = {
 		}
 		visible = {
 			has_war_with = GER
-			has_capitulated = YES
+			has_capitulated = yes
 			has_completed_focus = FRA_procure_allied_equipment
 			NOT = {
 				has_war_with = USA
@@ -5221,7 +5422,7 @@ FRA_procure_allied_equipment_dec_cat = {
 		}
 		visible = {
 			has_war_with = GER
-			has_capitulated = YES
+			has_capitulated = yes
 			has_completed_focus = FRA_procure_allied_equipment
 			NOT = {
 				has_war_with = USA
@@ -5310,7 +5511,7 @@ FRA_procure_allied_equipment_dec_cat = {
 		}
 		visible = {
 			has_war_with = GER
-			has_capitulated = YES
+			has_capitulated = yes
 			has_completed_focus = FRA_procure_allied_equipment
 			NOT = {
 				has_war_with = USA
@@ -5352,7 +5553,7 @@ FRA_procure_allied_equipment_dec_cat = {
 		}
 		visible = {
 			has_war_with = GER
-			has_capitulated = YES
+			has_capitulated = yes
 			has_completed_focus = FRA_procure_allied_equipment
 			NOT = {
 				has_war_with = USA
@@ -5442,7 +5643,7 @@ FRA_procure_allied_equipment_dec_cat = {
 		}
 		visible = {
 			has_war_with = GER
-			has_capitulated = YES
+			has_capitulated = yes
 			has_completed_focus = FRA_procure_allied_equipment
 			NOT = {
 				has_war_with = USA
@@ -5532,7 +5733,7 @@ FRA_procure_allied_equipment_dec_cat = {
 		}
 		visible = {
 			has_war_with = GER
-			has_capitulated = YES
+			has_capitulated = yes
 			has_completed_focus = FRA_procure_allied_equipment
 			NOT = {
 				has_war_with = USA
@@ -5547,11 +5748,11 @@ FRA_procure_allied_equipment_dec_cat = {
 			modifier = {
 				AND = {
 					stockpile_ratio = {
-						archetype = fighter_equipment
+						archetype = small_fighter_airframe
 						ratio > 0.90
 					}
 					stockpile_ratio = {
-						archetype = fighter_multirole_equipment
+						archetype = small_fighter_multirole_airframe
 						ratio > 0.90
 					}
 				}
@@ -5564,56 +5765,8 @@ FRA_procure_allied_equipment_dec_cat = {
 		complete_effect = {
 		}
 		remove_effect = {
-			if = {
-				limit = {
-					USA = { has_tech = usa_fighter_multirole_3 }
-				}
-				add_equipment_to_stockpile = { type = usa_fighter_multirole_equipment_3 amount = 50 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_fighter_multirole_2 }
-				}
-				add_equipment_to_stockpile = { type = usa_fighter_multirole_equipment_2 amount = 50 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_fighter_multirole_1 }
-				}
-				add_equipment_to_stockpile = { type = usa_fighter_multirole_equipment_1 amount = 50 producer = USA }
-			}
-			if = {
-				limit = {
-					USA = { has_tech = usa_fighter_5 }
-				}
-				add_equipment_to_stockpile = { type = usa_fighter_equipment_6 amount = 50 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_fighter_4 }
-				}
-				add_equipment_to_stockpile = { type = usa_fighter_equipment_5 amount = 50 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_fighter_3 }
-				}
-				add_equipment_to_stockpile = { type = usa_fighter_equipment_4 amount = 50 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_fighter_2 }
-				}
-				add_equipment_to_stockpile = { type = usa_fighter_equipment_3 amount = 50 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_fighter_1 }
-				}
-				add_equipment_to_stockpile = { type = usa_fighter_equipment_2 amount = 50 producer = USA }
-			}
-			else = {
-				add_equipment_to_stockpile = { type = usa_fighter_equipment_1 amount = 50 producer = USA }
+			USA = {
+				give_fighter_aircraft = yes
 			}
 		}
 	}
@@ -5629,7 +5782,7 @@ FRA_procure_allied_equipment_dec_cat = {
 		}
 		visible = {
 			has_war_with = GER
-			has_capitulated = YES
+			has_capitulated = yes
 			has_completed_focus = FRA_procure_allied_equipment
 			NOT = {
 				has_war_with = ENG
@@ -5678,7 +5831,7 @@ FRA_procure_allied_equipment_dec_cat = {
 		}
 		visible = {
 			has_war_with = GER
-			has_capitulated = YES
+			has_capitulated = yes
 			has_completed_focus = FRA_procure_allied_equipment
 			NOT = {
 				has_war_with = ENG
@@ -5741,7 +5894,7 @@ FRA_procure_allied_equipment_dec_cat = {
 		}
 		visible = {
 			has_war_with = GER
-			has_capitulated = YES
+			has_capitulated = yes
 			has_completed_focus = FRA_procure_allied_equipment
 			NOT = {
 				has_war_with = ENG
@@ -5841,7 +5994,7 @@ FRA_procure_allied_equipment_dec_cat = {
 		}
 		visible = {
 			has_war_with = GER
-			has_capitulated = YES
+			has_capitulated = yes
 			has_completed_focus = FRA_procure_allied_equipment
 			NOT = {
 				has_war_with = ENG
@@ -5960,7 +6113,7 @@ FRA_procure_allied_equipment_dec_cat = {
 		}
 		visible = {
 			has_war_with = GER
-			has_capitulated = YES
+			has_capitulated = yes
 			has_completed_focus = FRA_procure_allied_equipment
 			NOT = {
 				has_war_with = USA
@@ -6079,7 +6232,7 @@ FRA_procure_allied_equipment_dec_cat = {
 		}
 		visible = {
 			has_war_with = GER
-			has_capitulated = YES
+			has_capitulated = yes
 			has_completed_focus = FRA_procure_allied_equipment
 			NOT = {
 				has_war_with = ENG
@@ -6148,7 +6301,7 @@ FRA_procure_allied_equipment_dec_cat = {
 		}
 		visible = {
 			has_war_with = GER
-			has_capitulated = YES
+			has_capitulated = yes
 			has_completed_focus = FRA_procure_allied_equipment
 			NOT = {
 				has_war_with = USA
@@ -6205,7 +6358,7 @@ FRA_procure_allied_equipment_dec_cat = {
 			}
 		}
 	}
-	procure_hurricans_from_UK = {
+	procure_hurricanes_from_UK = {
 		icon = generic_air
 
 		allowed = {
@@ -6213,12 +6366,20 @@ FRA_procure_allied_equipment_dec_cat = {
 		}
 
 		available = {
-			ENG = { has_tech = eng_fighter_multirole_1 }
+			if = {
+                limit = {
+                    has_dlc = "By Blood Alone"
+                }
+				ENG = { has_tech = eng_fighter_multirole_ad_tech_1 }
+            }
+            else = {
+				ENG = { has_tech = eng_fighter_multirole_1 }
+            }
 			is_in_faction_with = ENG
 		}
 		visible = {
 			has_war_with = GER
-			has_capitulated = YES
+			has_capitulated = yes
 			has_completed_focus = FRA_procure_allied_equipment
 			NOT = {
 				has_war_with = ENG
@@ -6233,7 +6394,7 @@ FRA_procure_allied_equipment_dec_cat = {
 			modifier = {
 				AND = {
 					stockpile_ratio = {
-						archetype = fighter_multirole_equipment
+						archetype = small_fighter_multirole_airframe
 						ratio > 0.90
 					}
 				}
@@ -6247,26 +6408,54 @@ FRA_procure_allied_equipment_dec_cat = {
 		}
 		remove_effect = {
 			if = {
-				limit = {
-					ENG = { has_tech = eng_fighter_multirole_4 }
+                limit = {
+                    has_dlc = "By Blood Alone"
+                }
+				if = {
+					limit = {
+						ENG = { has_tech = eng_fighter_multirole_ad_tech_4 }
+					}
+					add_equipment_to_stockpile = { type = ENG_typhoon_mkib_airframe amount = 50 producer = ENG }
 				}
-				add_equipment_to_stockpile = { type = eng_fighter_multirole_equipment_4 amount = 50 producer = ENG }
-			}
-			else_if = {
-				limit = {
-					ENG = { has_tech = eng_fighter_multirole_3 }
+				else_if = {
+					limit = {
+						ENG = { has_tech = eng_fighter_multirole_ad_tech_3 }
+					}
+					add_equipment_to_stockpile = { type = ENG_typhoon_mkia_airframe amount = 50 producer = ENG }
 				}
-				add_equipment_to_stockpile = { type = eng_fighter_multirole_equipment_3 amount = 50 producer = ENG }
-			}
-			else_if = {
-				limit = {
-					ENG = { has_tech = eng_fighter_multirole_2 }
+				else_if = {
+					limit = {
+						ENG = { has_tech = eng_fighter_multirole_ad_tech_2 }
+					}
+					add_equipment_to_stockpile = { type = ENG_hurricane_mkii_airframe amount = 50 producer = ENG }
 				}
-				add_equipment_to_stockpile = { type = eng_fighter_multirole_equipment_2 amount = 50 producer = ENG }
-			}
-			else = {
-				add_equipment_to_stockpile = { type = eng_fighter_multirole_equipment_1 amount = 50 producer = ENG }
-			}
+				else = {
+					add_equipment_to_stockpile = { type = ENG_hurricane_mki_airframe amount = 50 producer = ENG }
+				}
+            }
+            else = {
+				if = {
+					limit = {
+						ENG = { has_tech = eng_fighter_multirole_4 }
+					}
+					add_equipment_to_stockpile = { type = eng_fighter_multirole_equipment_4 amount = 50 producer = ENG }
+				}
+				else_if = {
+					limit = {
+						ENG = { has_tech = eng_fighter_multirole_3 }
+					}
+					add_equipment_to_stockpile = { type = eng_fighter_multirole_equipment_3 amount = 50 producer = ENG }
+				}
+				else_if = {
+					limit = {
+						ENG = { has_tech = eng_fighter_multirole_2 }
+					}
+					add_equipment_to_stockpile = { type = eng_fighter_multirole_equipment_2 amount = 50 producer = ENG }
+				}
+				else = {
+					add_equipment_to_stockpile = { type = eng_fighter_multirole_equipment_1 amount = 50 producer = ENG }
+				}
+            }
 		}
 	}
 	procure_spits_from_UK = {
@@ -6282,7 +6471,7 @@ FRA_procure_allied_equipment_dec_cat = {
 		}
 		visible = {
 			has_war_with = GER
-			has_capitulated = YES
+			has_capitulated = yes
 			has_completed_focus = FRA_procure_allied_equipment
 			NOT = {
 				has_war_with = ENG
@@ -6297,7 +6486,7 @@ FRA_procure_allied_equipment_dec_cat = {
 			modifier = {
 				AND = {
 					stockpile_ratio = {
-						archetype = fighter_equipment
+						archetype = small_fighter_airframe
 						ratio > 0.90
 					}
 				}
@@ -6985,220 +7174,260 @@ FRA_civil_war_dec_cat = {
 	}
 	### monarchist section
 
-	FRA_infiltrate_state_monarchists = {
-		icon = {
-			key = GFX_decision_fra_garrison_control_1
-			trigger = {
-				from = { has_state_flag = FRA_state_bonapart }
-			}
-		}
-		icon = {
-			key = GFX_decision_fra_garrison_control_2
-			trigger = {
-				from = { has_state_flag = FRA_state_legitimist }
-			}
-		}
-		icon = {
-			key = GFX_decision_fra_garrison_control_3
-			trigger = {
-				from = { has_state_flag = FRA_state_orleanist }
-			}
-		}
-		icon = {
-			key = GFX_decision_fra_fas_garrison_control_4
-			trigger = {
-				from = {
-					NOT = {
-						has_state_flag = FRA_state_legitimist
-						has_state_flag = FRA_state_bonapart
-						has_state_flag = FRA_state_orleanist
-					}
-				}
-			}
-		}
+	FRA_unite_the_monarchists = {
 
 		allowed = {
 			tag = FRA
 		}
 
 		available = {
-			not = {
-				has_country_flag = fra_securing_state_flag
-			}
-			FROM = {
-				not = {
-					OR = {
-						has_state_flag = FRA_state_legitimist
-						has_state_flag = FRA_state_bonapart
-						has_state_flag = FRA_state_orleanist
-					}
-				}
-			}
 		}
-
-		state_target = yes
-
-		on_map_mode = map_only
-
-		target_array = FRA.core_states
-    	target_trigger = {
-			FROM = {
-				any_neighbor_state = {
-					if = {
-						limit = { ROOT = { has_country_flag = FRA_is_legitimist} }
-						has_state_flag = FRA_state_legitimist
-					}
-					if = {
-						limit = { ROOT = { has_country_flag = FRA_is_orleanist} }
-						has_state_flag = FRA_state_orleanist
-					}
-					if = {
-						limit = { ROOT = { has_country_flag = FRA_is_bonapart} }
-						has_state_flag = FRA_state_bonapart
-					}
-				}
-			}
-		}
-
-		cost = 0
-
-		days_remove = 15
 
 		visible = {
 			has_completed_focus = FRA_violate_the_law_of_exile
-			has_civil_war = no
-			not = { has_country_flag = FRA_civil_war_over_flag }
-			#is_ai = no
+			not = {
+				has_completed_focus = FRA_counter_revolution
+			}
+		}
+
+		fire_only_once = yes
+
+		cost = 50
+
+		days_remove = 30
+
+		icon = gfx_
+
+		ai_will_do = {
+			base = 1
 		}
 
 		complete_effect = {
-			hidden_effect = {
-				set_country_flag = fra_securing_state_flag
+			custom_effect_tooltip = FRA_unite_the_monarchists_tt
+			set_country_flag = FRA_unite_monarchists_flag
+		}
+	}
+
+	FRA_support_of_the_fascists = {
+
+		allowed = {
+			tag = FRA
+		}
+
+		available = {
+		}
+
+		visible = {
+			has_completed_focus = FRA_violate_the_law_of_exile
+			not = {
+				has_completed_focus = FRA_counter_revolution
+			}
+		}
+
+		fire_only_once = yes
+
+		cost = 50
+
+		days_remove = 30
+
+		icon = gfx_
+
+		ai_will_do = {
+			base = 1
+		}
+
+		complete_effect = {
+
+		}
+		remove_effect = {
+			custom_effect_tooltip = FRA_support_of_the_fascists_tt
+			set_country_flag = FRA_fascist_support_flag
+			add_to_variable = { FRA_fascist_division_count = 9 }
+			add_timed_idea = {
+				idea = FRA_alliance_with_fascism
+				days = 1200
+			}
+		}
+	}
+
+	FRA_fascist_divisions = {
+
+		allowed = {
+			tag = FRA
+		}
+
+		available = {
+		}
+
+		visible = {
+			has_completed_focus = FRA_violate_the_law_of_exile
+			not = {
+				has_completed_focus = FRA_counter_revolution
+			}
+		}
+
+		fire_only_once = no
+
+		cost = 20
+
+		days_remove = 30
+
+		icon = gfx_
+
+		ai_will_do = {
+			base = 1
+		}
+
+		complete_effect = {
+			custom_effect_tooltip = FRA_fascist_divisions_tt
+			add_to_variable = { FRA_fascist_division_count = 3 }
+			add_popularity = {
+				ideology = fascism
+				popularity = 0.025
+			}
+		}
+	}
+
+	FRA_heavy_siege_artillery = {
+
+		allowed = {
+			tag = FRA
+		}
+
+		available = {
+			num_of_civilian_factories_available_for_projects > 19
+		}
+
+		visible = {
+			has_idea = FRA_devasted_capital
+		}
+
+		fire_only_once = yes
+
+		cost = 0
+
+		icon = gfx_
+
+		ai_will_do = {
+			base = 1
+		}
+
+		complete_effect = {
+			every_country = {
+				limit = {
+					has_country_flag = fra_communist_france_flag
+				}
+				add_ideas = FRA_heavy_siege_artillery_idea
+				855 = {
+					remove_building = {
+						type = industrial_complex
+						level = 4
+					}
+					remove_building = {
+						type = arms_factory
+						level = 4
+					}
+				}
+				16 = {
+					remove_building = {
+						type = industrial_complex
+						level = 2
+					}
+					remove_building = {
+						type = arms_factory
+						level = 2
+					}
+				}
 			}
 		}
 
 		remove_effect = {
-			FROM = {
-				if = {
-					limit = { ROOT = { has_country_flag = FRA_is_legitimist} }
-					set_state_flag = FRA_state_legitimist
-					hidden_effect = {
-						ROOT = {
-							random_core_state = {
-								limit = {
-									NOT = {
-										OR = {
-											has_state_flag = FRA_state_legitimist
-											has_state_flag = FRA_state_bonapart
-											has_state_flag = FRA_state_orleanist
-										}
-									}
-									any_neighbor_state = {
-										has_state_flag = FRA_state_bonapart
-									}
-								}
-								set_state_flag = FRA_state_bonapart
-							}
-							random_core_state = {
-								limit = {
-									NOT = {
-										OR = {
-											has_state_flag = FRA_state_legitimist
-											has_state_flag = FRA_state_bonapart
-											has_state_flag = FRA_state_orleanist
-										}
-									}
-									any_neighbor_state = {
-										has_state_flag = FRA_state_orleanist
-									}
-								}
-								set_state_flag = FRA_state_orleanist
-							}
-						}
+		}
+	}
 
-					}
+	FRA_repair_the_capital = {
+
+		allowed = {
+			tag = FRA
+		}
+
+		available = {
+			num_of_civilian_factories_available_for_projects > 19
+		}
+
+		visible = {
+			has_idea = FRA_devasted_capital
+		}
+
+		fire_only_once = yes
+
+		cost = 0
+
+		days_remove = 365
+
+		icon = gfx_
+
+		ai_will_do = {
+			base = 1
+		}
+
+		modifier = {
+			civilian_factory_use = 20
+		}
+
+		complete_effect = {
+			remove_ideas = FRA_devasted_capital
+			add_timed_idea = {
+				idea = FRA_capital_rebuilding
+				days = 365
+			}
+		}
+
+		remove_effect = {
+			set_capital = {
+				state = 855
+			}
+			855 = {
+				remove_dynamic_modifier = {
+					modifier = FRA_devastated_city
 				}
-				if = {
-					limit = { ROOT = { has_country_flag = FRA_is_orleanist} }
-					set_state_flag = FRA_state_orleanist
-					hidden_effect = {
-						ROOT = {
-							random_core_state = {
-								limit = {
-									NOT = {
-										OR = {
-											has_state_flag = FRA_state_legitimist
-											has_state_flag = FRA_state_bonapart
-											has_state_flag = FRA_state_orleanist
-										}
-									}
-									any_neighbor_state = {
-										has_state_flag = FRA_state_bonapart
-									}
-								}
-								set_state_flag = FRA_state_bonapart
-							}
-							random_core_state = {
-								limit = {
-									NOT = {
-										OR = {
-											has_state_flag = FRA_state_legitimist
-											has_state_flag = FRA_state_bonapart
-											has_state_flag = FRA_state_orleanist
-										}
-									}
-									any_neighbor_state = {
-										has_state_flag = FRA_state_legitimist
-									}
-								}
-								set_state_flag = FRA_state_legitimist
-							}
-						}
-
-					}
-				}
-				if = {
-					limit = { ROOT = { has_country_flag = FRA_is_bonapart} }
-					set_state_flag = FRA_state_bonapart
-					hidden_effect = {
-						ROOT = {
-							random_core_state = {
-								limit = {
-									NOT = {
-										OR = {
-											has_state_flag = FRA_state_legitimist
-											has_state_flag = FRA_state_bonapart
-											has_state_flag = FRA_state_orleanist
-										}
-									}
-									any_neighbor_state = {
-										has_state_flag = FRA_state_orleanist
-									}
-								}
-								set_state_flag = FRA_state_orleanist
-							}
-							random_core_state = {
-								limit = {
-									NOT = {
-										OR = {
-											has_state_flag = FRA_state_legitimist
-											has_state_flag = FRA_state_bonapart
-											has_state_flag = FRA_state_orleanist
-										}
-									}
-									any_neighbor_state = {
-										has_state_flag = FRA_state_legitimist
-									}
-								}
-								set_state_flag = FRA_state_legitimist
-							}
-						}
-
-					}
+				add_building_construction = {
+					type = infrastructure
+					level = 5
+					instant_build = yes
 				}
 			}
-			hidden_effect = {
-				clr_country_flag = fra_securing_state_flag
+		}
+	}
+
+	FRA_abandon_the_capital = {
+
+		allowed = {
+			tag = FRA
+		}
+
+		available = {
+		}
+
+		visible = {
+			has_idea = FRA_devasted_capital
+		}
+
+		fire_only_once = yes
+
+		cost = 0
+
+		icon = gfx_
+
+		ai_will_do = {
+			base = 1
+		}
+
+		complete_effect = {
+			remove_ideas = FRA_devasted_capital
+			add_ideas = FRA_capital_abandoned
+			855 = {
+				set_state_category = wasteland
 			}
 		}
 	}
@@ -7611,28 +7840,28 @@ FRA_communist_support_dec_cat = {
 				limit = {
 					SOV = { has_tech = sov_medium_tank_chassis_3 }
 				}
-				add_equipment_to_stockpile = { type = tank_sov_medium_chassis_2_3 amount = 150 producer = SOV }
+				add_equipment_to_stockpile = { type = tank_sov_light_chassis_1_3 amount = 150 producer = SOV }
 			}
 			else_if = {
 				limit = {
-					SOV = { has_tech = sov_medium_tank_chassis_2_3 }
+					SOV = { has_tech = sov_light_tank_chassis_2_2 }
 				}
-				add_equipment_to_stockpile = { type = tank_sov_medium_chassis_2_2 amount = 150 producer = SOV }
+				add_equipment_to_stockpile = { type = tank_sov_light_chassis_1_2 amount = 150 producer = SOV }
 			}
 			else_if = {
 				limit = {
-					SOV = { has_tech = sov_medium_tank_chassis_2_2 }
+					SOV = { has_tech = sov_light_tank_chassis_2 }
 				}
-				add_equipment_to_stockpile = { type = tank_sov_medium_chassis_2 amount = 150 producer = SOV }
+				add_equipment_to_stockpile = { type = tank_sov_light_chassis_1 amount = 150 producer = SOV }
 			}
 			if = {
 				limit = {
-					SOV = { has_tech = sov_light_tank_chassis_3 }
+					SOV = { has_tech = sov_light_tank_support_chassis_2 }
 				}
-				add_equipment_to_stockpile = { type = tank_sov_light_chassis_1_2 amount = 250 producer = SOV }
+				add_equipment_to_stockpile = { type = tank_sov_light_chassis_support_1_2 amount = 250 producer = SOV }
 			}
 			else = {
-				add_equipment_to_stockpile = { type = tank_sov_light_chassis_1 amount = 250 producer = SOV }
+				add_equipment_to_stockpile = { type = tank_sov_light_chassis_support_1 amount = 250 producer = SOV }
 			}
 		}
 	}

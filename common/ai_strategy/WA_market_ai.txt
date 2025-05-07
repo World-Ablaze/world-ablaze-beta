@@ -55,8 +55,8 @@
 # }
 
 
-default_market_stockpile_management = {
-    enable = { 
+DEFAULT_market_stockpile_management = {
+    enable = {
 		OR = {
 			AND = {
 				has_war = yes
@@ -72,6 +72,20 @@ default_market_stockpile_management = {
 				tag = SWE
 			}
 		}
+        OR = {
+            AND = {
+                tag = USA
+                USA = {
+                    OR = {
+                        NOT = { has_completed_focus = USA_cash_and_carry_act }
+                        has_completed_focus = USA_lend_lease_act
+                    }
+                }
+            }
+            NOT = {
+                tag = USA
+            }
+        }
     }
     abort_when_not_enabled = yes
 
@@ -98,10 +112,12 @@ default_market_stockpile_management = {
 }
 
 FRA_market = {
-
-    enable = { 
-        has_war = no
+    allowed = {
         tag = FRA
+    }
+
+    enable = {
+        has_war = no
         threat < 0.7
     }
     abort_when_not_enabled = yes
@@ -150,14 +166,16 @@ FRA_market = {
 
     ai_strategy = { type = equipment_market_for_sale_threshold id = strategic_bomber value = 200 } # Absolute number of units
     ai_strategy = { type = equipment_market_max_for_sale id = strategic_bomber value = 100 } # Absolute number of units
-    
+
 }
 
 SWE_market = {
-
-    enable = { 
-        has_war = no
+    allowed = {
         tag = SWE
+    }
+
+    enable = {
+        has_war = no
         threat < 0.7
     }
     abort_when_not_enabled = yes
@@ -208,14 +226,16 @@ SWE_market = {
 
     ai_strategy = { type = equipment_market_for_sale_threshold id = strategic_bomber value = 50 } # Absolute number of units
     ai_strategy = { type = equipment_market_max_for_sale id = strategic_bomber value = 100 } # Absolute number of units
-    
+
 }
 
 CZE_market = {
-
-    enable = { 
-        has_war = no
+    allowed = {
         tag = CZE
+    }
+
+    enable = {
+        has_war = no
         threat < 0.4
     }
     abort_when_not_enabled = yes
@@ -266,5 +286,282 @@ CZE_market = {
 
     ai_strategy = { type = equipment_market_for_sale_threshold id = strategic_bomber value = 50 } # Absolute number of units
     ai_strategy = { type = equipment_market_max_for_sale id = strategic_bomber value = 100 } # Absolute number of units
-    
+
+}
+
+USA_sell_cash_and_carry = {
+	allowed = {
+		tag = USA
+	}
+
+	enable = {
+		has_completed_focus = USA_cash_and_carry_act
+		NOT = {
+			has_completed_focus = USA_lend_lease_act
+		}
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_market_for_sale_threshold id = infantry value = 500 } # Absolute number of units
+    ai_strategy = { type = equipment_market_min_for_sale id = infantry value = 500 } # Absolute number of units
+
+    ai_strategy = { type = equipment_market_for_sale_threshold id = support value = 500 } # Absolute number of units
+    ai_strategy = { type = equipment_market_min_for_sale id = support value = 500 } # Absolute number of units
+
+    ai_strategy = { type = equipment_market_for_sale_threshold id = artillery value = 100 } # Absolute number of units
+    ai_strategy = { type = equipment_market_min_for_sale id = artillery value = 100 } # Absolute number of units
+
+    ai_strategy = { type = equipment_market_for_sale_threshold id = motorized value = 250 } # Absolute number of units
+    ai_strategy = { type = equipment_market_min_for_sale id = motorized value = 250 } # Absolute number of units
+
+    ai_strategy = { type = equipment_market_for_sale_threshold id = mechanized value = 100 } # Absolute number of units
+    ai_strategy = { type = equipment_market_min_for_sale id = mechanized value = 100 } # Absolute number of units
+
+    ai_strategy = { type = equipment_market_for_sale_threshold id = armor value = 50 } # Absolute number of units
+    ai_strategy = { type = equipment_market_min_for_sale id = armor value = 50 } # Absolute number of units
+
+    ai_strategy = { type = equipment_market_for_sale_threshold id = fighter value = 50 } # Absolute number of units
+    ai_strategy = { type = equipment_market_min_for_sale id = fighter value = 50 } # Absolute number of units
+
+    ai_strategy = { type = equipment_market_for_sale_threshold id = cas value = 50 } # Absolute number of units
+    ai_strategy = { type = equipment_market_min_for_sale id = cas value = 50 } # Absolute number of units
+
+    ai_strategy = { type = equipment_market_for_sale_threshold id = tactical_bomber value = 50 } # Absolute number of units
+    ai_strategy = { type = equipment_market_min_for_sale id = tactical_bomber value = 50 } # Absolute number of units
+
+    ai_strategy = { type = equipment_market_for_sale_threshold id = train value = 3000 } # Absolute number of units
+    ai_strategy = { type = equipment_market_min_for_sale id = train value = 100 } # Absolute number of units
+
+    ai_strategy = { type = equipment_market_for_sale_threshold id = convoy value = 300 } # Absolute number of units
+    ai_strategy = { type = equipment_market_min_for_sale id = convoy value = 50 } # Absolute number of units
+
+    ai_strategy = { type = equipment_market_for_sale_factor id = cv_fighter value = -500 }
+    ai_strategy = { type = equipment_market_for_sale_factor id = naval_bomber value = -500 }
+    ai_strategy = { type = equipment_market_for_sale_factor id = strategic_bomber value = -500 }
+}
+
+ENG_buy_cash_and_carry = {
+	allowed = {
+		tag = ENG
+	}
+
+	enable = {
+		has_war = yes
+		USA = {
+			has_completed_focus = USA_cash_and_carry_act
+			NOT = {
+				has_completed_focus = USA_lend_lease_act
+			}
+		}
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = equipment_market_trade_desire
+		id = USA
+		value = 4000
+	}
+	ai_strategy = {
+		type = equipment_market_spend_factories
+		value = 60
+	}
+	ai_strategy = {
+		type = equipment_market_buy
+		seller = USA
+		value = 4000
+	}
+    ai_strategy = {
+        type = equipment_market_buying_threshold
+        id = infantry_equipment  # equipment archetype
+        value = 5000  # Absolute number of units
+    }
+    ai_strategy = {
+        type = equipment_market_buying_threshold
+        id = heavy_infantry_equipment  # equipment archetype
+        value = 2500  # Absolute number of units
+    }
+    ai_strategy = {
+        type = equipment_market_buying_threshold
+        id = support_equipment  # equipment archetype
+        value = 2000  # Absolute number of units
+    }
+    ai_strategy = {
+        type = equipment_market_buying_threshold
+        id = motorized_equipment  # equipment archetype
+        value = 1500  # Absolute number of units
+    }
+    ai_strategy = {
+        type = equipment_market_buying_threshold
+        id = artillery_equipment  # equipment archetype
+        value = 1000  # Absolute number of units
+    }
+    ai_strategy = {
+        type = equipment_market_buying_threshold
+        id = small_fighter_airframe  # equipment archetype
+        value = 300  # Absolute number of units
+    }
+    ai_strategy = {
+        type = equipment_market_buying_threshold
+        id = small_fighter_multirole_airframe  # equipment archetype
+        value = 300  # Absolute number of units
+    }
+    ai_strategy = {
+        type = equipment_market_buying_threshold
+        id = medium_heavy_bomber_airframe  # equipment archetype
+        value = 300  # Absolute number of units
+    }
+}
+
+FRA_buy_cash_and_carry = {
+	allowed = {
+		tag = FRA
+	}
+
+	enable = {
+		has_war = yes
+		USA = {
+			has_completed_focus = USA_cash_and_carry_act
+			NOT = {
+				has_completed_focus = USA_lend_lease_act
+			}
+		}
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = equipment_market_trade_desire
+		id = USA
+		value = 4000
+	}
+	ai_strategy = {
+		type = equipment_market_spend_factories
+		value = 60
+	}
+	ai_strategy = {
+		type = equipment_market_buy
+		seller = USA
+		value = 4000
+	}
+    ai_strategy = {
+        type = equipment_market_buying_threshold
+        id = infantry_equipment  # equipment archetype
+        value = 5000  # Absolute number of units
+    }
+    ai_strategy = {
+        type = equipment_market_buying_threshold
+        id = heavy_infantry_equipment  # equipment archetype
+        value = 2500  # Absolute number of units
+    }
+    ai_strategy = {
+        type = equipment_market_buying_threshold
+        id = support_equipment  # equipment archetype
+        value = 2000  # Absolute number of units
+    }
+    ai_strategy = {
+        type = equipment_market_buying_threshold
+        id = motorized_equipment  # equipment archetype
+        value = 1500  # Absolute number of units
+    }
+    ai_strategy = {
+        type = equipment_market_buying_threshold
+        id = artillery_equipment  # equipment archetype
+        value = 1000  # Absolute number of units
+    }
+    ai_strategy = {
+        type = equipment_market_buying_threshold
+        id = small_fighter_airframe  # equipment archetype
+        value = 300  # Absolute number of units
+    }
+    ai_strategy = {
+        type = equipment_market_buying_threshold
+        id = small_fighter_multirole_airframe  # equipment archetype
+        value = 300  # Absolute number of units
+    }
+    ai_strategy = {
+        type = equipment_market_buying_threshold
+        id = medium_heavy_bomber_airframe  # equipment archetype
+        value = 300  # Absolute number of units
+    }
+}
+
+COMMONWEALTH_buy_cash_and_carry = {
+	allowed = {
+		OR = {
+			tag = RAJ
+			tag = AST
+			tag = NZL
+			tag = SAF
+			tag = CAN
+		}
+	}
+
+	enable = {
+		has_war = yes
+		USA = {
+			has_completed_focus = USA_cash_and_carry_act
+			NOT = {
+				has_completed_focus = USA_lend_lease_act
+			}
+		}
+	}
+
+    abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = equipment_market_trade_desire
+		id = USA
+		value = 4000
+	}
+	ai_strategy = {
+		type = equipment_market_spend_factories
+		value = 20
+	}
+	ai_strategy = {
+		type = equipment_market_buy
+		seller = USA
+		value = 4000
+	}
+    ai_strategy = {
+        type = equipment_market_buying_threshold
+        id = infantry_equipment  # equipment archetype
+        value = 2500  # Absolute number of units
+    }
+    ai_strategy = {
+        type = equipment_market_buying_threshold
+        id = heavy_infantry_equipment  # equipment archetype
+        value = 1250  # Absolute number of units
+    }
+    ai_strategy = {
+        type = equipment_market_buying_threshold
+        id = support_equipment  # equipment archetype
+        value = 1000  # Absolute number of units
+    }
+    ai_strategy = {
+        type = equipment_market_buying_threshold
+        id = motorized_equipment  # equipment archetype
+        value = 750  # Absolute number of units
+    }
+    ai_strategy = {
+        type = equipment_market_buying_threshold
+        id = artillery_equipment  # equipment archetype
+        value = 500  # Absolute number of units
+    }
+    ai_strategy = {
+        type = equipment_market_buying_threshold
+        id = small_fighter_airframe  # equipment archetype
+        value = 150  # Absolute number of units
+    }
+    ai_strategy = {
+        type = equipment_market_buying_threshold
+        id = small_fighter_multirole_airframe  # equipment archetype
+        value = 150  # Absolute number of units
+    }
+    ai_strategy = {
+        type = equipment_market_buying_threshold
+        id = medium_heavy_bomber_airframe  # equipment archetype
+        value = 150  # Absolute number of units
+    }
 }

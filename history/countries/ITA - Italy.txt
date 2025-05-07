@@ -1,4 +1,4 @@
-﻿capital = 856
+capital = 856
 
 if = {
 	limit = {
@@ -22,10 +22,9 @@ if = {
 	limit = { has_dlc = "Man the Guns" }
 	set_naval_oob = "ITA_1936_naval_mtg"
 }
-
 if = {
     limit = { has_dlc = "By Blood Alone" }
-        set_air_oob = "ITA_1936_air_legacy" #set_air_oob = "ITA_1936_air_bba"
+        set_air_oob = "ITA_1936_air_bba"
     else = {
         set_air_oob = "ITA_1936_air_legacy"
     }
@@ -49,21 +48,16 @@ set_technology = {
 
 	ita_tech_special_forces = 1
 	ita_motorised_infantry = 1
-	ita_scout_car_1 = 1
 
+	ita_pack_artillery_1 = 1
 	ita_artillery_1 = 1
 	ita_heavy_artillery_1 = 1
 	ita_anti_air_1 = 1
 	ita_heavy_anti_air_1 = 1
 	ita_anti_tank_1 = 1
 
-	ita_fighter_1 = 1
-	ita_tactical_bomber_1 = 1
-	ita_cas_1 = 1
-	ita_transport_plane_1 = 1
 	# = 1
 
-	basic_machine_tools = 1
 	fuel_silos = 1
 	fuel_refining = 1
 	synth_oil_experiments = 1
@@ -83,9 +77,26 @@ set_technology = {
 }
 if = {
 	limit = {
+		not = { has_dlc = "Arms Against Tyranny" }
+	}
+	set_technology = {
+		basic_machine_tools_comp = 1
+	}
+}
+if = {
+	limit = {
+		has_dlc = "Arms Against Tyranny"
+	}
+	set_technology = {
+		basic_machine_tools = 1
+	}
+}
+if = {
+	limit = {
 		NOT = { has_dlc = "No Step Back" }
 	}
 	set_technology = {
+		ita_scout_car_1 = 1
 		ita_interwar = 1
 		ita_light_1 = 1
 	}
@@ -95,6 +106,7 @@ if = {
 		has_dlc = "No Step Back"
 	}
 	set_technology = {
+		ita_scout_armoured_car_1 = 1
 		ita_light_tank_chassis_0 = 1
 		ita_light_tank_chassis_1 = 1
 	}
@@ -162,9 +174,16 @@ if = {
 	}
 }
 
-starting_train_buffer = 2
+#starting_train_buffer = 2
+add_equipment_to_stockpile = { type = train_equipment_1 amount = 505 producer = ITA }
+if = {
+	limit = {
+		has_dlc = "Arms Against Tyranny"
+	}
+	add_equipment_to_stockpile = { type = train_equipment_1 amount = 330 producer = ITA }
+}
 
-set_research_slots = 6
+set_research_slots = 7
 set_stability = 0.45
 set_war_support = 0.55
 add_command_power = 20
@@ -175,6 +194,7 @@ activate_mission = economy_fatigue_volunteer_only_mission
 ###### Mission Variables ######
 set_variable = { modernization_of_the_Regio_esercito_tanks = 0 }
 set_variable = { ITA_modernization_of_the_regio_aeronautica = 0 }
+set_variable = { ITA_modernization_of_the_regio_marina = 0 }
 ############# DIVISION CAP ###############
 set_variable = { ITA_militias_cap = 12 } #WARNING THIS NEEDS TOP MATCH THE division_cap for the template in the OOB
 
@@ -187,11 +207,14 @@ add_ideas = {
 	national_syndicalism
 	league_of_nations
 	ITA_industry_wide_naval_production
+	inferior_enemy
 	ITA_grand_council_of_fascism
 	victor_emmanuel
 	ITA_empire
 }
 set_variable = { economic_fatigue = 35 }
+add_timed_idea = { idea = military_contracts days = 1095 }
+military_contracts_effect = yes
 
 #INADEQUATE MILITARY
 set_variable = { ITA_inadequate_army_army_org_factor = -0.2 }
@@ -199,7 +222,6 @@ set_variable = { ITA_inadequate_army_army_morale_factor = -0.2 }
 set_variable = { ITA_inadequate_army_training_time_factor = 0.4 }
 set_variable = { ITA_inadequate_army_planning_speed = -0.8 }
 set_variable = { ITA_inadequate_army_max_planning = -0.8 }
-set_variable = { ITA_inadequate_army_experience_gain_army_factor = -0.4 }
 
 add_dynamic_modifier = { modifier = ITA_inadequate_army_dynamic_modifier }
 
@@ -207,6 +229,7 @@ set_variable = { ITA_inadequate_airforce_air_ace_generation_chance_factor = -0.4
 set_variable = { ITA_inadequate_airforce_air_night_penalty = 0.28 }
 set_variable = { ITA_inadequate_airforce_air_weather_penalty = 0.28 }
 set_variable = { ITA_inadequate_airforce_air_mission_efficiency = -0.2 }
+set_variable = { ITA_inadequate_airforce_air_nav_efficiency = -0.28 }
 
 add_dynamic_modifier = { modifier = ITA_inadequate_airforce_dynamic_modifier }
 
@@ -306,7 +329,7 @@ if = {
 			ruling_party = fascism
 		}
 		set_cosmetic_tag = ITA_WAR
-		set_research_slots = 6
+		set_research_slots = 7
 	    reserve_dynamic_country = yes
 	}
 }
@@ -325,7 +348,7 @@ if = {
 	give_guarantee = AUS
 }
 
-set_convoys = 120
+set_convoys = 340
 
 create_import = {
 	resource = coal
@@ -672,5 +695,763 @@ if = {
 			ship_armor_upgrade = 2
 			ship_gun_upgrade = 2
 		}
+	}
+}
+
+#########################
+## STARTING PRODUCTION ##
+#########################
+### Land Production ###
+if = {
+	limit = {
+		NOT = { has_dlc = "No Step Back" }
+	}
+	##### Equipments #####
+	add_equipment_production = {
+		equipment = {
+			type = ita_inf_1
+			creator = "ITA"
+		}
+		requested_factories = 4
+		progress = 0.1
+		efficiency = 50
+	}
+	add_equipment_production = {
+		equipment = {
+			type = ita_hv_inf_1
+			creator = "ITA"
+		}
+		requested_factories = 1
+		progress = 0.1
+		efficiency = 50
+	}
+	add_equipment_production = {
+		equipment = {
+			type = support_equipment_1
+			creator = "ITA"
+		}
+		requested_factories = 1
+		progress = 0.3
+		efficiency = 50
+	}
+	add_equipment_production = {
+		equipment = {
+			type = ita_p_art_1
+			creator = "ITA"
+		}
+		requested_factories = 1
+		progress = 0.4
+		efficiency = 50
+	}
+	add_equipment_production = {
+		equipment = {
+			type = ita_art_1
+			creator = "ITA"
+		}
+		requested_factories = 2
+		progress = 0.4
+		efficiency = 50
+	}
+	add_equipment_production = {
+		equipment = {
+			type = ita_hv_art_1
+			creator = "ITA"
+		}
+		requested_factories = 2
+		progress = 0.4
+		efficiency = 50
+	}
+	add_equipment_production = {
+		equipment = {
+			type = ita_at_1
+			creator = "ITA"
+		}
+		requested_factories = 2
+		progress = 0.4
+		efficiency = 50
+	}
+	add_equipment_production = {
+		equipment = {
+			type = ita_aa_1
+			creator = "ITA"
+		}
+		requested_factories = 2
+		progress = 0.4
+		efficiency = 50
+	}
+	add_equipment_production = {
+		equipment = {
+			type = ita_hv_aa_1
+			creator = "ITA"
+		}
+		requested_factories = 2
+		progress = 0.4
+		efficiency = 50
+	}
+	add_equipment_production = {
+		equipment = {
+			type = ita_scout_car_equipment_1
+			creator = "ITA"
+		}
+		requested_factories = 1
+		progress = 0.4
+		efficiency = 50
+	}
+	add_equipment_production = {
+		equipment = {
+			type = ita_motorized_equipment_1
+			creator = "ITA"
+		}
+		requested_factories = 1
+		progress = 0.4
+		efficiency = 50
+	}
+	add_equipment_production = {
+		equipment = {
+			type = ita_light_equipment_1
+			creator = "ITA"
+		}
+		requested_factories = 1
+		progress = 0.2
+		efficiency = 50
+	}
+	add_equipment_production = {
+		equipment = {
+			type = train_equipment_1
+			creator = "ITA"
+		}
+		requested_factories = 1
+		progress = 0.2
+		efficiency = 100
+	}
+}
+if = {
+	limit = {
+		has_dlc = "No Step Back"
+	}
+	##### Equipments #####
+	add_equipment_production = {
+		equipment = {
+			type = ita_inf_1
+			creator = "ITA"
+		}
+		requested_factories = 6
+		progress = 0.1
+		efficiency = 50
+		industrial_manufacturer = mio:ITA_beretta_organization
+	}
+	add_equipment_production = {
+		equipment = {
+			type = ita_hv_inf_1
+			creator = "ITA"
+		}
+		requested_factories = 8
+		progress = 0.1
+		efficiency = 50
+		industrial_manufacturer = mio:ITA_beretta_organization
+	}
+	add_equipment_production = {
+		equipment = {
+			type = support_equipment_1
+			creator = "ITA"
+		}
+		requested_factories = 6
+		progress = 0.3
+		efficiency = 50
+		industrial_manufacturer = mio:ITA_breda_organization
+	}
+	add_equipment_production = {
+		equipment = {
+			type = ita_p_art_1
+			creator = "ITA"
+		}
+		requested_factories = 2
+		progress = 0.4
+		efficiency = 50
+		industrial_manufacturer = mio:ITA_oto_melara_organization
+	}
+	add_equipment_production = {
+		equipment = {
+			type = ita_art_1
+			creator = "ITA"
+		}
+		requested_factories = 3
+		progress = 0.4
+		efficiency = 50
+		industrial_manufacturer = mio:ITA_oto_melara_organization
+	}
+	add_equipment_production = {
+		equipment = {
+			type = ita_hv_art_1
+			creator = "ITA"
+		}
+		requested_factories = 2
+		progress = 0.4
+		efficiency = 50
+		industrial_manufacturer = mio:ITA_oto_melara_organization
+	}
+	add_equipment_production = {
+		equipment = {
+			type = ita_at_1
+			creator = "ITA"
+		}
+		requested_factories = 2
+		progress = 0.4
+		efficiency = 50
+		industrial_manufacturer = mio:ITA_oto_melara_organization
+	}
+	add_equipment_production = {
+		equipment = {
+			type = ita_aa_1
+			creator = "ITA"
+		}
+		requested_factories = 1
+		progress = 0.4
+		efficiency = 50
+		industrial_manufacturer = mio:ITA_oto_melara_organization
+	}
+	add_equipment_production = {
+		equipment = {
+			type = ita_hv_aa_1
+			creator = "ITA"
+		}
+		requested_factories = 1
+		progress = 0.4
+		efficiency = 50
+		industrial_manufacturer = mio:ITA_oto_melara_organization
+	}
+	add_equipment_production = {
+		equipment = {
+			type = tank_ita_scout_car_chassis_1
+			creator = "ITA"
+		}
+		requested_factories = 1
+		progress = 0.4
+		efficiency = 50
+		industrial_manufacturer = mio:ITA_fiat_organization
+	}
+	add_equipment_production = {
+		equipment = {
+			type = ita_motorized_equipment_1
+			creator = "ITA"
+		}
+		requested_factories = 2
+		progress = 0.4
+		efficiency = 50
+		industrial_manufacturer = mio:ITA_lancia_organization
+	}
+	add_equipment_production = {
+		equipment = {
+			type = tank_ita_light_chassis_2
+			creator = "ITA"
+		}
+		requested_factories = 4
+		progress = 0.2
+		efficiency = 50
+		industrial_manufacturer = mio:ITA_fiat_organization
+	}
+	add_equipment_production = {
+		equipment = {
+			type = train_equipment_1
+			creator = "ITA"
+		}
+		requested_factories = 1
+		progress = 0.1
+		efficiency = 100
+		industrial_manufacturer = mio:ITA_breda_organization
+	}
+}
+### Air Production ###
+if = {
+	limit = {
+		has_dlc = "By Blood Alone"
+	}
+	set_technology = {
+		AD_bombs_metric = 1
+		ita_fighter_ad_tech_1 = 1
+		ita_cv_naval_bomber_ad_tech_1 = 1
+		ita_tactical_bomber_ad_tech_1 = 1
+		ita_cas_ad_tech_1 = 1
+		ita_transport_plane_1 = 1
+	}
+	##### Equipments #####
+	add_equipment_production = {
+		equipment = {
+			type = ITA_cr_32_airframe
+			creator = "ITA"
+		}
+		requested_factories = 3
+		progress = 0.2
+		efficiency = 50
+		industrial_manufacturer = mio:ITA_fiat_aviazione_organization
+	}
+
+	add_equipment_production = {
+		equipment = {
+			type = ITA_ca_307_airframe
+			creator = "ITA"
+		}
+		requested_factories = 3
+		progress = 0.2
+		efficiency = 50
+		industrial_manufacturer = mio:ITA_breda_aircraft_organization
+	}
+
+	add_equipment_production = {
+		equipment = {
+			type = ITA_sm_81_airframe
+			creator = "ITA"
+		}
+		requested_factories = 4
+		progress = 0.2
+		efficiency = 50
+		industrial_manufacturer = mio:ITA_crda_cant_organization
+	}
+}
+if = {
+	limit = {
+		NOT = { has_dlc = "By Blood Alone" }
+	}
+	set_technology = {
+		ita_fighter_1 = 1
+		ita_tactical_bomber_1 = 1
+		ita_cas_1 = 1
+		ita_transport_plane_1 = 1
+	}
+	##### Equipments #####
+	add_equipment_production = {
+		equipment = {
+			type = ita_fighter_equipment_1
+			creator = "ITA"
+		}
+
+		requested_factories = 2
+		progress = 0.2
+		efficiency = 50
+	}
+
+	add_equipment_production = {
+		equipment = {
+			type = ita_cas_equipment_1
+			creator = "ITA"
+		}
+
+		requested_factories = 1
+		progress = 0.2
+		efficiency = 50
+	}
+
+	add_equipment_production = {
+		equipment = {
+			type = ita_tac_bomber_equipment_1
+			creator = "ITA"
+		}
+
+		requested_factories = 2
+		progress = 0.2
+		efficiency = 50
+	}
+}
+if = {
+	limit = { NOT = { has_dlc = "Man the Guns" } }
+
+	add_equipment_production = {
+		equipment = {
+			type = battleship_2 # Caio Duilio Class
+			creator = "ITA"
+		}
+		requested_factories = 2
+		progress = 0.20
+		amount = 1
+	}
+
+	add_equipment_production = {
+		equipment = {
+			type = battleship_2 # Caio Duilio Class
+			creator = "ITA"
+		}
+		requested_factories = 2
+		progress = 0.20
+		amount = 1
+	}
+
+	add_equipment_production = {
+		equipment = {
+			type = light_cruiser_1
+			creator = "ITA"
+			version_name = "Montecuccoli Class"
+		}
+		requested_factories = 1
+		progress = 0.95
+		amount = 1
+	}
+
+	# DD: "RCT Perseo"
+	add_equipment_production = {
+		equipment = {
+			type = destroyer_1
+			creator = "ITA"
+			version_name = "Maestrale Class"
+		}
+		requested_factories = 1
+		progress = 0.70
+		amount = 1
+	}
+
+	# DD: "RCT Sirio"
+	add_equipment_production = {
+		equipment = {
+			type = destroyer_1
+			creator = "ITA"
+			version_name = "Maestrale Class"
+		}
+		requested_factories = 1
+		progress = 0.60
+		amount = 1
+	}
+
+	# SS: "RSmg Enrico Tazzoli"
+	add_equipment_production = {
+		equipment = {
+			type = submarine_1
+			creator = "ITA"
+			version_name = "Sirena Class"
+		}
+		requested_factories = 1
+		progress = 0.50
+		amount = 1
+	}
+}
+if = {
+	limit = { has_dlc = "Man the Guns" }
+	##### Ships #####
+	# BB: "RN Conte di Cavour" (Refitted & Recommissioned: 1-Jun, 1937)
+	add_equipment_production = { #June 1937
+		equipment = {
+			type = ita_battleship_hull_1
+			creator = "ITA"
+		}
+		name = "RN Conte di Cavour"
+		requested_factories = 1
+		progress = 0.86
+		amount = 1
+		industrial_manufacturer = mio:ITA_crda_organization
+	}
+
+	# BB: "RN Giulio Cesare" (Refitted & Recommissioned: 3-Jun, 1937)
+	add_equipment_production = { #June 1937
+		equipment = {
+			type = ita_battleship_hull_1
+			creator = "ITA"
+		}
+		name = "RN Giulio Cesare"
+		requested_factories = 1
+		progress = 0.86
+		amount = 1
+		industrial_manufacturer = mio:ITA_crda_organization
+	}
+
+	add_equipment_production = { #July 1937
+		equipment = {
+			type = ita_battleship_hull_3
+			creator = "ITA"
+		}
+		name = "RN Vittorio Veneto"
+		requested_factories = 3
+		progress = 0.18
+		amount = 1
+		industrial_manufacturer = mio:ITA_crda_organization
+	}
+
+	add_equipment_production = {  #August 1937
+		equipment = {
+			type = ita_battleship_hull_3
+			creator = "ITA"
+		}
+		name = "RN Littorio"
+		requested_factories = 3
+		progress = 0.18
+		amount = 1
+		industrial_manufacturer = mio:ITA_crda_organization
+	}
+
+	add_equipment_production = { #Apiril 1936
+		equipment = {
+			type = ita_light_cruiser_hull_5
+			creator = "ITA"
+		}
+		name = "RI Duca degli Abruzzi"
+		requested_factories = 1
+		progress = 0.95
+		amount = 1
+		industrial_manufacturer = mio:ITA_navalmeccanica_organization
+	}
+
+	add_equipment_production = { #Apiril 1936
+		equipment = {
+			type = ita_light_cruiser_hull_5
+			creator = "ITA"
+		}
+		name = "RI Giuseppe Garibaldi"
+		requested_factories = 1
+		progress = 0.95
+		amount = 1
+		industrial_manufacturer = mio:ITA_navalmeccanica_organization
+	}
+
+	add_equipment_production = { #July 1936
+		equipment = {
+			type = ita_destroyer_hull_8
+			creator = "ITA"
+		}
+		name = "RCT Alfredo Oriani"
+		requested_factories = 1
+		progress = 0.65
+		amount = 1
+		industrial_manufacturer = mio:ITA_cantiere_navale_di_ancona_organization
+	}
+	add_equipment_production = { #Dec 1936
+		equipment = {
+			type = ita_destroyer_hull_8
+			creator = "ITA"
+		}
+		name = "RCT Vittorio Alfieri"
+		requested_factories = 1
+		progress = 0.65
+		amount = 1
+		industrial_manufacturer = mio:ITA_cantiere_navale_di_ancona_organization
+	}
+
+	add_equipment_production = { # Feb 1936
+		equipment = {
+			type = ita_frigate_hull_6
+			creator = "ITA"
+		}
+		name = "RCT Canopo"
+		requested_factories = 1
+		progress = 0.1
+		amount = 1
+		industrial_manufacturer = mio:ITA_cantiere_navale_di_ancona_organization
+	}
+	add_equipment_production = { # Feb 1936
+		equipment = {
+			type = ita_frigate_hull_6
+			creator = "ITA"
+		}
+		name = "RCT Castore"
+		requested_factories = 1
+		progress = 0.20
+		amount = 1
+		industrial_manufacturer = mio:ITA_cantiere_navale_di_ancona_organization
+	}
+	add_equipment_production = { #March 1936
+		equipment = {
+			type = ita_frigate_hull_6
+			creator = "ITA"
+		}
+		name = "RCT Cassiopea"
+		requested_factories = 1
+		progress = 0.80
+		amount = 1
+		industrial_manufacturer = mio:ITA_cantiere_navale_di_ancona_organization
+	}
+	add_equipment_production = { #April 1936
+		equipment = {
+			type = ita_frigate_hull_6
+			creator = "ITA"
+		}
+		name = "RCT Climene"
+		requested_factories = 1
+		progress = 0.70
+		amount = 1
+		industrial_manufacturer = mio:ITA_cantiere_navale_di_ancona_organization
+	}
+	add_equipment_production = { #June 1936
+		equipment = {
+			type = ita_frigate_hull_6
+			creator = "ITA"
+		}
+		name = "RCT Centauro"
+		requested_factories = 1
+		progress = 0.50
+		amount = 1
+		industrial_manufacturer = mio:ITA_cantiere_navale_di_ancona_organization
+	}
+
+	add_equipment_production = { #May 1936
+		equipment = {
+			type = ita_submarine_hull_6
+			creator = "ITA"
+		}
+		name = "RSmg Perla"
+		requested_factories = 1
+		progress = 0.60
+		amount = 1
+		industrial_manufacturer = mio:ITA_cantieri_navali_tosi_organization
+	}
+	add_equipment_production = { #May 1936
+		equipment = {
+			type = ita_submarine_hull_6
+			creator = "ITA"
+		}
+		name = "RSmg Gemma"
+		requested_factories = 1
+		progress = 0.60
+		amount = 1
+		industrial_manufacturer = mio:ITA_cantieri_navali_tosi_organization
+	}
+	add_equipment_production = { #May 1936
+		equipment = {
+			type = ita_submarine_hull_6
+			creator = "ITA"
+		}
+		name = "RSmg Ambra"
+		requested_factories = 1
+		progress = 0.60
+		amount = 1
+		industrial_manufacturer = mio:ITA_cantieri_navali_tosi_organization
+	}
+	add_equipment_production = { #June 1936
+		equipment = {
+			type = ita_submarine_hull_6
+			creator = "ITA"
+		}
+		name = "RSmg Berillo"
+		requested_factories = 1
+		progress = 0.45
+		amount = 1
+		industrial_manufacturer = mio:ITA_cantieri_navali_tosi_organization
+	}
+	add_equipment_production = { #June 1936
+		equipment = {
+			type = ita_submarine_hull_6
+			creator = "ITA"
+		}
+		name = "RSmg Onice"
+		requested_factories = 1
+		progress = 0.45
+		amount = 1
+		industrial_manufacturer = mio:ITA_cantieri_navali_tosi_organization
+	}
+	add_equipment_production = { #June 1936
+		equipment = {
+			type = ita_submarine_hull_6
+			creator = "ITA"
+		}
+		name = "RSmg Diaspro"
+		requested_factories = 1
+		progress = 0.45
+		amount = 1
+		industrial_manufacturer = mio:ITA_cantieri_navali_tosi_organization
+	}
+	add_equipment_production = { #July 1936
+		equipment = {
+			type = ita_submarine_hull_6
+			creator = "ITA"
+		}
+		name = "RSmg Malachite"
+		requested_factories = 1
+		progress = 0.30
+		amount = 1
+		industrial_manufacturer = mio:ITA_cantieri_navali_tosi_organization
+	}
+	add_equipment_production = { #July 1936
+		equipment = {
+			type = ita_submarine_hull_6
+			creator = "ITA"
+		}
+		name = "RSmg Turchese"
+		requested_factories = 1
+		progress = 0.30
+		amount = 1
+		industrial_manufacturer = mio:ITA_cantieri_navali_tosi_organization
+	}
+	add_equipment_production = { #July 1936
+		equipment = {
+			type = ita_submarine_hull_6
+			creator = "ITA"
+		}
+		name = "RSmg Iride"
+		requested_factories = 1
+		progress = 0.30
+		amount = 1
+		industrial_manufacturer = mio:ITA_cantieri_navali_tosi_organization
+	}
+	add_equipment_production = { #August 1936
+		equipment = {
+			type = ita_submarine_hull_6
+			creator = "ITA"
+		}
+		name = "RSmg Corallo"
+		requested_factories = 1
+		progress = 0.15
+		amount = 1
+		industrial_manufacturer = mio:ITA_cantieri_navali_tosi_organization
+	}
+	add_equipment_production = { #March 1936
+		equipment = {
+			type = ita_frigate_hull_6
+			creator = "ITA"
+		}
+		name = "RCT Aldebaran"
+		requested_factories = 1
+		progress = 0.1
+		amount = 1
+		industrial_manufacturer = mio:ITA_cantiere_navale_di_ancona_organization
+	}
+	add_equipment_production = { #March 1936
+		equipment = {
+			type = ita_frigate_hull_6
+			creator = "ITA"
+		}
+		name = "RCT Altair"
+		requested_factories = 1
+		progress = 0.1
+		amount = 1
+		industrial_manufacturer = mio:ITA_cantiere_navale_di_ancona_organization
+	}
+	add_equipment_production = { #March 1936
+		equipment = {
+			type = ita_frigate_hull_6
+			creator = "ITA"
+		}
+		name = "RCT Andromeda"
+		requested_factories = 1
+		progress = 0.1
+		amount = 1
+		industrial_manufacturer = mio:ITA_cantiere_navale_di_ancona_organization
+	}
+	add_equipment_production = { #March 1936
+		equipment = {
+			type = ita_frigate_hull_6
+			creator = "ITA"
+		}
+		name = "RCT Antares"
+		requested_factories = 1
+		progress = 0.1
+		amount = 1
+		industrial_manufacturer = mio:ITA_cantiere_navale_di_ancona_organization
+	}
+	add_equipment_production = { #March 1936
+		equipment = {
+			type = ita_frigate_hull_6
+			creator = "ITA"
+		}
+		name = "RCT Sagittario"
+		requested_factories = 1
+		progress = 0.1
+		amount = 1
+		industrial_manufacturer = mio:ITA_cantiere_navale_di_ancona_organization
+	}
+	add_equipment_production = { #March 1936
+		equipment = {
+			type = ita_frigate_hull_6
+			creator = "ITA"
+		}
+		name = "RCT Vega"
+		requested_factories = 1
+		progress = 0.1
+		amount = 1
+		industrial_manufacturer = mio:ITA_cantiere_navale_di_ancona_organization
 	}
 }

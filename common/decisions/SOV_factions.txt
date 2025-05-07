@@ -31,9 +31,9 @@ SOV_internal_factions = {
 
 		modifier = {
 			army_attack_factor = 0.1
-			air_interception_attack_factor = 0.1
-			air_air_superiority_attack_factor = 0.1
-			air_close_air_support_attack_factor = 0.1
+			air_intercept_efficiency = 0.05
+			air_superiority_efficiency = 0.05
+			air_cas_efficiency = 0.05
 			navy_capital_ship_attack_factor = 0.1
 			navy_carrier_air_attack_factor = 0.1
 			navy_screen_attack_factor = 0.1
@@ -73,7 +73,7 @@ SOV_internal_factions = {
 		}
 
 		ai_will_do = {
-			factor = 1
+			factor = 100
 		}
 	}
 
@@ -238,60 +238,10 @@ SOV_internal_factions = {
 				limit = {
 					is_ai = yes
 				}
-				if = {
-					limit = {
-						NOT = {
-							has_country_flag = sov_nkvd_infantry_template
-						}
-					}
-					set_country_flag = sov_nkvd_infantry_template
-					division_template = {
-						name = "Soviet NKVD Division"
-						division_names_group = SOV_GAR_01
-						template_counter = 71
-						is_locked = yes
-
-						regiments = {
-							heavy_infantry = { x = 0 y = 0 }
-							heavy_infantry = { x = 0 y = 1 }
-							heavy_infantry = { x = 0 y = 2 }
-
-							heavy_infantry = { x = 1 y = 0 }
-							heavy_infantry = { x = 1 y = 1 }
-							heavy_infantry = { x = 1 y = 2 }
-
-							heavy_infantry = { x = 2 y = 0 }
-							heavy_infantry = { x = 2 y = 1 }
-							heavy_infantry = { x = 2 y = 2 }
-
-							artillery_brigade = { x = 3 y = 0 }
-							artillery_brigade = { x = 3 y = 1 }
-							artillery_brigade = { x = 3 y = 2 }
-							artillery_brigade = { x = 3 y = 3 }
-
-							artillery_brigade = { x = 4 y = 0 }
-							anti_tank_brigade = { x = 4 y = 1 }
-							anti_tank_brigade = { x = 4 y = 2 }
-						}
-						support = {
-							engineer = { x = 0 y = 0 }
-							horse_logistics_company = { x = 0 y = 1 }
-							artillery = { x = 0 y = 2 }
-							field_hospital = { x = 0 y = 3 }
-							signal_company = { x = 0 y = 4 }
-
-							recon = { x = 1 y = 0 }
-							military_police = { x = 1 y = 1 }
-							anti_air = { x = 1 y = 2 }
-							maintenance_company = { x = 1 y = 3 }
-							anti_tank = { x = 1 y = 4 }
-						}
-					}
-				}
-				add_manpower = -134400
+				add_manpower = -140000
 				capital_scope = {
 					create_unit = {
-						division = "division_template=\"Soviet NKVD Division\" start_experience_factor=0.2 start_equipment_factor=0.4"
+						division = "division_template=\"Soviet Rifle Division\" start_experience_factor=0.2 start_equipment_factor=0.4"
 						owner = ROOT
 						count = 8
 					}
@@ -304,12 +254,7 @@ SOV_internal_factions = {
 
 			modifier = {
 				factor = 0
-				OR = {
-					NOT = {
-						has_tech = converging_sheaf
-					}
-					num_divisions > 250
-				}
+				num_divisions > 250
 			}
 		}
 	}
@@ -348,6 +293,21 @@ SOV_internal_factions = {
 				}
 				custom_effect_tooltip = SOV_release_from_gulag_tt
 				clr_character_flag = SOV_sent_to_gulag_flag
+				if = {
+					limit = {
+						NOT = {
+							has_trait = large_front_commander
+						}
+						OWNER = {
+							has_completed_focus = SOV_reinstate_general_staff_academy
+						}
+					}
+					hidden_effect = {
+						add_trait = {
+							trait = large_front_commander
+						}
+					}
+				}
 			}
 		}
 
@@ -424,7 +384,7 @@ SOV_internal_factions = {
 				}
 				add_doctrine_cost_reduction = {
 					name = SOV_Army_free_thinking
-					cost_reduction = 0.99
+					cost_reduction = 0.30
 					uses = 1
 					category = land_doctrine
 				}
@@ -435,7 +395,7 @@ SOV_internal_factions = {
 				}
 				add_doctrine_cost_reduction = {
 					name = SOV_Army_free_thinking
-					cost_reduction = 0.75
+					cost_reduction = 0.25
 					uses = 1
 					category = land_doctrine
 				}
@@ -446,7 +406,7 @@ SOV_internal_factions = {
 				}
 				add_doctrine_cost_reduction = {
 					name = SOV_Army_free_thinking
-					cost_reduction = 0.5
+					cost_reduction = 0.2
 					uses = 1
 					category = land_doctrine
 				}
@@ -457,7 +417,7 @@ SOV_internal_factions = {
 				}
 				add_doctrine_cost_reduction = {
 					name = SOV_Army_free_thinking
-					cost_reduction = 0.25
+					cost_reduction = 0.15
 					uses = 1
 					category = land_doctrine
 				}
@@ -595,8 +555,68 @@ SOV_internal_factions = {
 		allowed = {
 			original_tag = SOV
 		}
+
+		available = {
+			any_enemy_country = {
+				is_major = yes
+			}
+			if = {
+				limit = {
+					is_ai = no
+				}
+				has_army_size = {
+					size < 241
+					type = infantry
+				}
+				has_army_size = { #Small but elite army shouldnt count
+					size < 91
+					type = motorized
+				}
+			}
+			####AI cant cheese
+			#if = {
+			#	limit = {
+			#		is_ai = yes
+			#	}
+			#	OR = {
+			#		has_army_size = {
+			#			size < 241
+			#			type = infantry
+			#		}
+			#		has_country_flag = ai_barb_timer
+			#	}
+			#}
+			OR = {
+				#is_ai = yes
+				has_idea = service_by_requirement
+				has_idea = all_adults_serve
+				has_idea = scraping_the_barrel
+			}
+		}
+
 		visible = {
 			has_completed_focus = SOV_rebuild_the_army
+		}
+
+		days_remove = 100
+
+		fire_only_once = no
+
+		modifier = {
+			training_time_army_factor = -0.5
+		}
+
+		ai_will_do = {
+			factor = 0
+		}
+	}
+
+	SOV_Army_conscript_troops = {
+
+		icon = decision_category_military_operation
+
+		allowed = {
+			original_tag = SOV
 		}
 
 		available = {
@@ -622,43 +642,157 @@ SOV_internal_factions = {
 						check_variable = { ROOT.reserves = 100 }
 					}
 				}
-				has_army_size = {
-					size < 180
-					type = infantry
-				}
 			}
-			else = {
-				has_army_manpower = {
-					size < 4000001
+			#else = {
+			#	has_army_manpower = {
+			#		size < 4000001
+			#	}
+			#}
+			has_army_size = {
+				size < 241
+				type = infantry
+			}
+			has_army_size = { #Small but elite army shouldnt count
+				size < 91
+				type = motorized
+			}
+			if = {
+				limit = {
+					is_ai = no
 				}
+				has_template = "Prízyvnaya dívízíya"
+			}
+			if = {
+				limit = {
+					is_ai = yes
+				}
+				has_template = "Soviet Rifle Division"
 			}
 		}
 
-		days_remove = 14
+		visible = {
+			has_completed_focus = SOV_rebuild_the_army
+		}
+
+		days_remove = 7
 
 		fire_only_once = no
 
 		modifier = {
 			industrial_capacity_factory = -0.05
 		}
-		highlight_states = {
-		}
 
 		remove_effect = {
 			if = {
 				limit = { is_ai = no }
 				add_manpower = -135600
-				random_core_state = {
-					prioritize = { 217 401 251 250 249 399 651 652 256 572 876 653 586 405 }
+				if = {
 					limit = {
-						is_on_continent = asia
-						is_fully_controlled_by = ROOT
-						all_neighbor_state = { is_fully_controlled_by = ROOT }
+						controls_state = 219
+						has_full_control_of_state = 252
 					}
-					create_unit = {
-						division = "division_template = \"Prizyvnaya diviziya\" start_experience_factor = 0.45 start_equipment_factor = 0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}}"
-						owner = ROOT
-						count = 12
+					252 = {
+						create_unit = {
+							division = "division_template = \"Prízyvnaya dívízíya\" start_experience_factor = 0.45 start_equipment_factor = 0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}}"
+							owner = ROOT
+							count = 6
+						}
+					}
+				}
+				else_if = {
+					limit = {
+						controls_state = 252
+						has_full_control_of_state = 249
+					}
+					249 = {
+						create_unit = {
+							division = "division_template = \"Prízyvnaya dívízíya\" start_experience_factor = 0.45 start_equipment_factor = 0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}}"
+							owner = ROOT
+							count = 6
+						}
+					}
+				}
+				else_if = {
+					limit = {
+						controls_state = 249
+						has_full_control_of_state = 572
+					}
+					249 = {
+						create_unit = {
+							division = "division_template = \"Prízyvnaya dívízíya\" start_experience_factor = 0.45 start_equipment_factor = 0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}}"
+							owner = ROOT
+							count = 6
+						}
+					}
+				}
+				else = {
+					random_core_state = {
+						prioritize = { 217 401 251 250 249 399 651 652 256 572 876 653 586 405 }
+						limit = {
+							is_on_continent = asia
+							is_fully_controlled_by = ROOT
+							all_neighbor_state = { is_fully_controlled_by = ROOT }
+						}
+						create_unit = {
+							division = "division_template = \"Prízyvnaya dívízíya\" start_experience_factor = 0.45 start_equipment_factor = 0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}}"
+							owner = ROOT
+							count = 6
+						}
+					}
+				}
+
+				if = {
+					limit = {
+						controls_state = 218
+						has_full_control_of_state = 217
+					}
+					217 = {
+						create_unit = {
+							division = "division_template = \"Prízyvnaya dívízíya\" start_experience_factor = 0.45 start_equipment_factor = 0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}}"
+							owner = ROOT
+							count = 6
+						}
+					}
+				}
+				else_if = {
+					limit = {
+						controls_state = 217
+						has_full_control_of_state = 251
+					}
+					251 = {
+						create_unit = {
+							division = "division_template = \"Prízyvnaya dívízíya\" start_experience_factor = 0.45 start_equipment_factor = 0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}}"
+							owner = ROOT
+							count = 6
+						}
+					}
+				}
+				else_if = {
+					limit = {
+						controls_state = 251
+						has_full_control_of_state = 876
+					}
+					876 = {
+						create_unit = {
+							division = "division_template = \"Prízyvnaya dívízíya\" start_experience_factor = 0.45 start_equipment_factor = 0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}}"
+							owner = ROOT
+							count = 6
+						}
+					}
+				}
+				else = {
+					random_core_state = {
+						prioritize = { 217 401 251 250 249 399 651 652 256 572 876 653 586 405 }
+						limit = {
+							is_on_continent = asia
+							is_fully_controlled_by = ROOT
+							all_neighbor_state = { is_fully_controlled_by = ROOT }
+						}
+						create_unit = {
+							division = "division_template = \"Prízyvnaya dívízíya\" start_experience_factor = 0.45 start_equipment_factor = 0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}}"
+							owner = ROOT
+							count = 6
+						}
 					}
 				}
 			}
@@ -668,24 +802,120 @@ SOV_internal_factions = {
 					has_template = "Soviet Rifle Division"
 				}
 				add_manpower = -171600
-				random_core_state = {
-					prioritize = { 217 401 251 250 249 399 651 652 256 572 876 653 586 405 }
+				if = {
 					limit = {
-						is_on_continent = asia
-						is_fully_controlled_by = ROOT
-						all_neighbor_state = { is_fully_controlled_by = ROOT }
+						controls_state = 219
+						has_full_control_of_state = 252
 					}
-					create_unit = {
-						division = "division_template = \"Soviet Rifle Division\" start_experience_factor = 0.3 start_equipment_factor = 1 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}}"
-						owner = ROOT
-						count = 12
+					252 = {
+						create_unit = {
+							division = "division_template = \"Soviet Rifle Division\" start_experience_factor = 0.45 start_equipment_factor = 0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}}"
+							owner = ROOT
+							count = 6
+						}
+					}
+				}
+				else_if = {
+					limit = {
+						controls_state = 252
+						has_full_control_of_state = 249
+					}
+					249 = {
+						create_unit = {
+							division = "division_template = \"Soviet Rifle Division\" start_experience_factor = 0.45 start_equipment_factor = 0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}}"
+							owner = ROOT
+							count = 6
+						}
+					}
+				}
+				else_if = {
+					limit = {
+						controls_state = 249
+						has_full_control_of_state = 572
+					}
+					249 = {
+						create_unit = {
+							division = "division_template = \"Soviet Rifle Division\" start_experience_factor = 0.45 start_equipment_factor = 0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}}"
+							owner = ROOT
+							count = 6
+						}
+					}
+				}
+				else = {
+					random_core_state = {
+						prioritize = { 217 401 251 250 249 399 651 652 256 572 876 653 586 405 }
+						limit = {
+							is_on_continent = asia
+							is_fully_controlled_by = ROOT
+							all_neighbor_state = { is_fully_controlled_by = ROOT }
+						}
+						create_unit = {
+							division = "division_template = \"Soviet Rifle Division\" start_experience_factor = 0.45 start_equipment_factor = 0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}}"
+							owner = ROOT
+							count = 6
+						}
+					}
+				}
+
+				if = {
+					limit = {
+						controls_state = 218
+						has_full_control_of_state = 217
+					}
+					217 = {
+						create_unit = {
+							division = "division_template = \"Soviet Rifle Division\" start_experience_factor = 0.45 start_equipment_factor = 0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}}"
+							owner = ROOT
+							count = 6
+						}
+					}
+				}
+				else_if = {
+					limit = {
+						controls_state = 217
+						has_full_control_of_state = 251
+					}
+					251 = {
+						create_unit = {
+							division = "division_template = \"Soviet Rifle Division\" start_experience_factor = 0.45 start_equipment_factor = 0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}}"
+							owner = ROOT
+							count = 6
+						}
+					}
+				}
+				else_if = {
+					limit = {
+						controls_state = 251
+						has_full_control_of_state = 876
+					}
+					876 = {
+						create_unit = {
+							division = "division_template = \"Soviet Rifle Division\" start_experience_factor = 0.45 start_equipment_factor = 0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}}"
+							owner = ROOT
+							count = 6
+						}
+					}
+				}
+				else = {
+					random_core_state = {
+						prioritize = { 217 401 251 250 249 399 651 652 256 572 876 653 586 405 }
+						limit = {
+							is_on_continent = asia
+							is_fully_controlled_by = ROOT
+							all_neighbor_state = { is_fully_controlled_by = ROOT }
+						}
+						create_unit = {
+							division = "division_template = \"Soviet Rifle Division\" start_experience_factor = 0.45 start_equipment_factor = 0.5 force_equipment_variants={sov_inf_1={owner=\"SOV\"}sov_hv_inf_1={owner=\"SOV\"}}"
+							owner = ROOT
+							count = 6
+						}
 					}
 				}
 			}
 		}
 
 		ai_will_do = {
-			factor = 1000
+			factor = 8000
 		}
 	}
 
@@ -885,7 +1115,7 @@ SOV_internal_factions = {
 
 		modifier = {
 			production_speed_buildings_factor = 0.15
-			stability_weekly = -0.005
+			#stability_weekly = -0.005 
 		}
 
 		complete_effect = {
@@ -1276,15 +1506,7 @@ SOV_internal_factions = {
 		}
 
 		ai_will_do = {
-			factor = 200
-
-			modifier = {
-				factor = 0
-				OR = {
-					has_army_manpower = { size > 4000000 }
-					has_idea = soviet_ai_3
-				}
-			}
+			factor = 0
 		}
 	}
 
@@ -1386,7 +1608,24 @@ SOV_internal_factions = {
 		}
 
 		ai_will_do = {
-			factor = 20
+			factor = 2000
+
+			modifier = {
+				factor = 0
+				OR = {
+					AND = {
+						NOT = {
+							OR = {
+								has_idea = soviet_ai_3
+								has_idea = soviet_ai_hard_3
+							}
+						}
+						has_idea = mandatory_army_service
+					}
+					has_idea = soviet_ai_3
+					has_idea = soviet_ai_hard_3
+				}
+			}
 		}
 
 		days_remove = PEASANTS_INFLUENCE_LEVEL4
@@ -1396,8 +1635,10 @@ SOV_internal_factions = {
 
 		modifier = {
 			industrial_capacity_factory = 0.05
-			training_time_factor = -0.25
+			training_time_factor = -0.1
 			war_support_weekly = 0.002
+			minimum_training_level = -0.1
+			mobilization_speed = 0.1
 		}
 
 		complete_effect = {
@@ -1450,11 +1691,6 @@ SOV_internal_factions = {
 
 		ai_will_do = {
 			factor = 40
-
-			modifier = {
-				factor = 0
-				date < 1939.1.1
-			}
 		}
 
 		cost = 50
@@ -1482,14 +1718,24 @@ SOV_internal_factions = {
 	###########################################################################################################
 	###########################################################################################################
 	###########################################################################################################
-	SOV_take_viipuri = {
+	SOV_take_besserabia = {
 		icon = generic_decision
 		allowed = {
 			original_tag = SOV
 		}
 		#Succeed trigger
 		available = {
-			146 = {
+			80 = {
+				CONTROLLER = {
+					is_in_faction_with = SOV
+				}
+			}
+			78 = {
+				CONTROLLER = {
+					is_in_faction_with = SOV
+				}
+			}
+			766 = {
 				CONTROLLER = {
 					is_in_faction_with = SOV
 				}
@@ -1512,59 +1758,75 @@ SOV_internal_factions = {
 			army_experience = 25
 		}
 	}
-	SOV_win_the_winter_war = {
+	SOV_win_the_river_war = {
 		icon = eng_trade_unions_support
 
 		allowed = {
 			original_tag = SOV
 		}
 		available = {
-			controls_state = 213
-			controls_state = 215
-			controls_state = 216
-			controls_state = 195
-			OR = {
-				controls_state = 111
-				controls_state = 146
+			custom_trigger_tooltip = {
+				tooltip = SOV_win_the_river_war_tt
+				controls_state = 199
+				controls_state = 198
+				controls_state = 192
 			}
-			FIN = { surrender_progress > 0.14 }
+			OR = {
+				AND = {
+					controls_state = 80
+					controls_state = 78
+					controls_state = 766
+				}
+				ROM = { surrender_progress > 0.2 }
+			}
 		}
 
 		days_mission_timeout = 240
 		is_good = no
 
 		activation = {
-			has_war_with = FIN
-			OR = {
-				FIN = { is_in_faction = no }
-				FIN = { is_faction_leader = yes }
-			}
-			146 = { is_owned_by = FIN }
+			has_war_with = ROM
+			#OR = {
+			#	ROM = { is_in_faction = no }
+			#	ROM = { is_faction_leader = yes }
+			#}
+			78 = { is_owned_by = ROM }
 			NOT = {
 				any_enemy_country = {
-					is_major = yes
+					OR = {
+						original_tag = FRA
+						original_tag = ITA
+						original_tag = JAP
+						original_tag = GER
+						original_tag = SOV
+						original_tag = ENG
+						original_tag = USA
+					}
 				}
 			}
 			NOT = {
-				has_global_flag = SOV_ww_over
+				has_global_flag = SOV_rw_over
 			}
 		}
 
 		complete_effect = {
-			FIN = { country_event = { id = finland.7 } }
+			ROM = { country_event = { id = romania.7 } }
 		}
 
 		timeout_effect = {
 			if = {
 				limit = {
 					OR = {
-						controls_state = 111
-						controls_state = 146
+						AND = {
+							controls_state = 80
+							controls_state = 766
+						}
+						controls_state = 78
 					}
 				}
-				set_country_flag = SOV_karjala_is_ours
+				set_country_flag = SOV_river_war_phyrric_victory
 			}
-			country_event = { id = sov_armor.849 }
+			country_event = { id = sov_armor.861 }
 		}
 	}
 
@@ -1574,9 +1836,12 @@ SOV_internal_factions = {
 
 		available = {
 			custom_trigger_tooltip = {
-				tooltip = SOV_the_greatest_tank_army_tt
-				check_variable = { num_equipment_in_armies@light_tank_chassis > 9999 }
-				check_variable = { num_equipment_in_armies@medium_tank_chassis > 4999 }
+				tooltip = SOV_the_greatest_tank_army_light_support_tt
+				check_variable = { num_equipment_in_armies@light_tank_support_chassis > 9999 }
+			}
+			custom_trigger_tooltip = {
+				tooltip = SOV_the_greatest_tank_army_light_tt
+				check_variable = { num_equipment_in_armies@light_tank_chassis > 4999 }
 			}
 			has_army_size = {
 				size > 29
@@ -1596,8 +1861,22 @@ SOV_internal_factions = {
 		}
 
 		complete_effect = {
-			add_political_power = 300
+			add_political_power = 150
 			army_experience = 100
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				mio:SOV_morozov_design_bureau_organization = {
+					add_mio_funds = 1800
+				}
+				mio:SOV_astrov_design_bureau_organization = {
+					add_mio_funds = 1800
+				}
+				mio:SOV_kirov_organization = {
+					add_mio_funds = 1800
+				}
+			}
 			add_doctrine_cost_reduction = {
 				name = SOV_the_greatest_tank_army
 				cost_reduction = 0.99
@@ -1621,16 +1900,22 @@ SOV_internal_factions = {
 
 		available = {
 			custom_trigger_tooltip = {
-				tooltip = SOV_the_greatest_airforce_tt
+				tooltip = SOV_the_greatest_airforce_fighter_tt
 				has_deployed_air_force_size = {
 					size > 5999
 					type = fighter
 				}
+			}
+			custom_trigger_tooltip = {
+				tooltip = SOV_the_greatest_airforce_cas_tt
 				has_deployed_air_force_size = {
 					size > 999
 					type = cas
 				}
-				check_variable = { greatest_airforce_tac > 2999 }
+			}
+			custom_trigger_tooltip = {
+				tooltip = SOV_the_greatest_airforce_bomber_tt
+				check_variable = { greatest_airforce_tac > 2499 }
 			}
 		}
 
@@ -1644,10 +1929,97 @@ SOV_internal_factions = {
 		activation = {
 			tag = SOV
 		}
-
 		complete_effect = {
-			add_political_power = 300
+			add_political_power = 150
 			air_experience = 100
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				custom_effect_tooltip = ENG_military_missions_tt
+				effect_tooltip = {
+					mio:SOV_mig_design_bureau_organization = {
+						add_mio_funds = 1800
+					}
+					mio:SOV_yakovlev_design_bureau_organization = {
+						add_mio_funds = 1800
+					}
+					mio:SOV_lavochkin_design_bureau_organization = {
+						add_mio_funds = 1800
+					}
+					mio:SOV_ilyushin_design_bureau_organization = {
+						add_mio_funds = 1800
+					}
+					mio:SOV_okb_organization = {
+						add_mio_funds = 1800
+					}
+					mio:SOV_tupolev_design_bureau_organization = {
+						add_mio_funds = 1800
+					}
+				}
+				hidden_effect = {
+					if = {
+						limit = {
+							mio:SOV_mig_design_bureau_organization = {
+								has_mio_size > 2
+							}
+						}
+						mio:SOV_mig_design_bureau_organization = {
+							add_mio_funds = 1800
+						}
+					}
+					if = {
+						limit = {
+							mio:SOV_yakovlev_design_bureau_organization = {
+								has_mio_size > 2
+							}
+						}
+						mio:SOV_yakovlev_design_bureau_organization = {
+							add_mio_funds = 1800
+						}
+					}
+					if = {
+						limit = {
+							mio:SOV_lavochkin_design_bureau_organization = {
+								has_mio_size > 2
+							}
+						}
+						mio:SOV_lavochkin_design_bureau_organization = {
+							add_mio_funds = 1800
+						}
+					}
+					if = {
+						limit = {
+							mio:SOV_ilyushin_design_bureau_organization = {
+								has_mio_size > 2
+							}
+						}
+						mio:SOV_ilyushin_design_bureau_organization = {
+							add_mio_funds = 1800
+						}
+					}
+					if = {
+						limit = {
+							mio:SOV_okb_organization = {
+								has_mio_size > 2
+							}
+						}
+						mio:SOV_okb_organization = {
+							add_mio_funds = 1800
+						}
+					}
+					if = {
+						limit = {
+							mio:SOV_tupolev_design_bureau_organization = {
+								has_mio_size > 2
+							}
+						}
+						mio:SOV_tupolev_design_bureau_organization = {
+							add_mio_funds = 1800
+						}
+					}
+				}
+			}
 			add_doctrine_cost_reduction = {
 				name = SOV_the_greatest_airforce
 				cost_reduction = 0.99
@@ -1713,7 +2085,7 @@ SOV_internal_factions = {
 				}
 				has_navy_size = {
 					size > 224
-					archetype = ship_hull_cruiser_submarine
+					archetype = sub_hull_cruiser_submarine
 				}
 				has_navy_size = {
 					size > 119
@@ -1758,6 +2130,13 @@ SOV_internal_factions = {
 			has_army_size = {
 				size > 265
 			}
+			custom_override_tooltip = {
+				tooltip = {
+					localization_key = has_army_eq_tt
+					num_eq = "250.00K"
+				}
+				check_variable = { num_equipment_in_armies@infantry_equipment > 250000 }
+			}
 		}
 
 		allowed = {
@@ -1777,7 +2156,8 @@ SOV_internal_factions = {
 			add_tech_bonus = {
 				name = SOV_the_greatest_army
 				bonus = 0.5
-				category = infantry_tech
+				category = mountaineers_tech
+				category = para_tech
 			}
 		}
 

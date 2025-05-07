@@ -279,13 +279,12 @@ ITA_missiolinis = {
 			OR = {
 				has_country_flag = ITA_victory_in_ethiopia_flag
 				count_triggers = {
-					amount = 3
+					amount = 2
 					# 841 = { is_controlled_by = ROOT }
 					# 842 = { is_controlled_by = ROOT }
 					# 843 = { is_controlled_by = ROOT }
 					controls_province = 1984
 					controls_province = 7944
-					controls_province = 5097
 				}
 			}
 		}
@@ -337,13 +336,12 @@ ITA_missiolinis = {
 					OR = {
 						has_country_flag = ITA_victory_in_ethiopia_flag
 						count_triggers = {
-							amount = 3
+							amount = 2
 							# 841 = { is_controlled_by = ROOT }
 							# 842 = { is_controlled_by = ROOT }
 							# 843 = { is_controlled_by = ROOT }
 							controls_province = 1984
 							controls_province = 7944
-							controls_province = 5097
 						}
 						hidden_trigger = {
 							NOT = { has_global_flag = second_italo_ethiopian_war_flag }
@@ -839,9 +837,23 @@ ITA_missiolinis = {
 						ITA_has_missiolini_easier_goals = yes
 					}
 					has_army_manpower = { size > 650000 } #650k
+					custom_override_tooltip = {
+						tooltip = {
+							localization_key = has_army_eq_tt
+							num_eq = "37.50K"
+						}
+						check_variable = { num_equipment_in_armies@infantry_equipment > 37500 }
+					}
 				}
 				else = {
 					has_army_manpower = { size > 750000 } #750k
+					custom_override_tooltip = {
+						tooltip = {
+							localization_key = has_army_eq_tt
+							num_eq = "42.50K"
+						}
+						check_variable = { num_equipment_in_armies@infantry_equipment > 42500 }
+					}
 				}
 			#}
 			#else = { #IF REPEATING
@@ -983,22 +995,55 @@ ITA_missiolinis = {
 		}
 
 		available = {
+			if = {
+				limit = { has_bba = yes }
+				OR = {
+					has_tech = ita_attacker_ad_tech_1
+					has_tech = ita_heavy_fighter_ad_tech_1
+				}
+				has_tech = ita_fighter_ad_tech_3
+			}
+			else = {
+				has_tech = ita_attacker_1
+				has_tech = ita_heavy_fighter_1
+			}
 			custom_trigger_tooltip = {
 				tooltip = ITA_missiolini_strengthen_the_airforce_tt
-				OR = {
-					check_variable = { num_deployed_planes_with_type@attacker_equipment > 299 }
-					check_variable = { num_deployed_planes_with_type@heavy_fighter_equipment > 299 }
-					AND = {
-						check_variable = { num_deployed_planes_with_type@attacker_equipment > 99 }
-						check_variable = { num_deployed_planes_with_type@heavy_fighter_equipment > 199 }
+				if = {
+					limit = {
+						has_dlc = "By Blood Alone"
 					}
-					AND = {
-						check_variable = { num_deployed_planes_with_type@attacker_equipment > 199 }
-						check_variable = { num_deployed_planes_with_type@heavy_fighter_equipment > 99 }
-					}
+					# OR = {
+					# 	check_variable = { num_deployed_planes_with_type@medium_fighter_multirole_airframe > 299 }
+					# 	check_variable = { num_deployed_planes_with_type@medium_fighter_airframe > 299 }
+					# 	AND = {
+					# 		check_variable = { num_deployed_planes_with_type@medium_fighter_multirole_airframe > 99 }
+					# 		check_variable = { num_deployed_planes_with_type@medium_fighter_airframe > 199 }
+					# 	}
+					# 	AND = {
+					# 		check_variable = { num_deployed_planes_with_type@medium_fighter_multirole_airframe > 199 }
+					# 		check_variable = { num_deployed_planes_with_type@medium_fighter_airframe > 99 }
+					# 	}
+					# }
+					check_variable = { num_deployed_planes_with_type@medium_scout_airframe > 29 }
+					check_variable = { num_deployed_planes_with_type@cv_small_naval_bomber_airframe > 99 }
 				}
-				check_variable = { num_deployed_planes_with_type@scout_plane_equipment > 29 }
-				check_variable = { num_deployed_planes_with_type@cv_nav_bomber_equipment > 299 }
+				else = {
+					#OR = {
+					#	check_variable = { num_deployed_planes_with_type@attacker_equipment > 299 }
+					#	check_variable = { num_deployed_planes_with_type@heavy_fighter_equipment > 299 }
+					#	AND = {
+					#		check_variable = { num_deployed_planes_with_type@attacker_equipment > 99 }
+					#		check_variable = { num_deployed_planes_with_type@heavy_fighter_equipment > 199 }
+					#	}
+					#	AND = {
+					#		check_variable = { num_deployed_planes_with_type@attacker_equipment > 199 }
+					#		check_variable = { num_deployed_planes_with_type@heavy_fighter_equipment > 99 }
+					#	}
+					#}
+					check_variable = { num_deployed_planes_with_type@medium_scout_airframe > 29 }
+					check_variable = { num_deployed_planes_with_type@cv_small_naval_bomber_airframe > 99 }
+				}
 			}
 		}
 
@@ -1602,6 +1647,145 @@ ITA_missiolinis = {
 			}
 		}
 	}
+
+	ITA_mussolini_bolster_the_airforce = {
+		icon = generic_air
+		allowed = {
+			tag = ITA
+		}
+
+		available = {
+			has_completed_focus = ITA_italian_airforce
+			custom_trigger_tooltip = {
+				tooltip = ITA_bolster_cap_tt
+				check_variable = {
+					ita_bolster_airforce < 6
+				}
+			}
+		}
+
+		visible = {
+			ITA_missiolinis_system_available = yes
+			has_war = no
+			check_variable = {
+				ita_bolster_airforce < 6
+			}
+		}
+
+		fire_only_once = no
+		cost = 25
+		days_re_enable = 90
+
+		complete_effect = {
+			add_timed_idea = { idea = ITA_bolster_the_airforce days = 90 }
+			if = {
+				limit = {
+					NOT = { has_variable = ita_bolster_airforce }
+				}
+				set_variable = { ita_bolster_airforce = 0 }
+			}
+			else = {
+				add_to_variable = { ita_bolster_airforce = 1 }
+			}
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+	}
+
+	ITA_mussolini_bolster_the_army = {
+		icon = generic_tank
+		allowed = {
+			tag = ITA
+		}
+
+		available = {
+			has_completed_focus = ITA_italian_army
+			custom_trigger_tooltip = {
+				tooltip = ITA_bolster_cap_tt
+				check_variable = {
+					ita_bolster_army < 6
+				}
+			}
+		}
+
+		visible = {
+			ITA_missiolinis_system_available = yes
+			has_war = no
+			check_variable = {
+				ita_bolster_army < 6
+			}
+		}
+
+		fire_only_once = no
+		cost = 25
+		days_re_enable = 90
+
+		complete_effect = {
+			add_timed_idea = { idea = ITA_bolster_the_army days = 90 }
+			if = {
+				limit = {
+					NOT = { has_variable = ita_bolster_army }
+				}
+				set_variable = { ita_bolster_army = 0 }
+			}
+			else = {
+				add_to_variable = { ita_bolster_army = 1 }
+			}
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+	}
+
+	ITA_mussolini_bolster_the_navy = {
+		icon = generic_naval
+		allowed = {
+			tag = ITA
+		}
+
+		available = {
+			has_completed_focus = ITA_italian_navy
+			has_completed_focus = ITA_continue_naval_rearmament
+			custom_trigger_tooltip = {
+				tooltip = ITA_bolster_cap_tt
+				check_variable = {
+					ita_bolster_navy < 6
+				}
+			}
+		}
+
+		visible = {
+			ITA_missiolinis_system_available = yes
+			has_war = no
+			check_variable = {
+				ita_bolster_navy < 6
+			}
+		}
+
+		fire_only_once = no
+		cost = 25
+		days_re_enable = 90
+
+		complete_effect = {
+			add_timed_idea = { idea = ITA_bolster_the_navy days = 90 }
+			if = {
+				limit = {
+					NOT = { has_variable = ita_bolster_navy }
+				}
+				set_variable = { ita_bolster_navy = 0 }
+			}
+			else = {
+				add_to_variable = { ita_bolster_navy = 1 }
+			}
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+	}
 }
 
 
@@ -1674,7 +1858,7 @@ ITA_missiolinis = {
 						regiments = {
 							cavalry = { x = 0 y = 0 }
 							cavalry = { x = 0 y = 1 }
-							
+
 							cavalry = { x = 1 y = 0 }
 							cavalry = { x = 1 y = 1 }
 						}
@@ -5848,7 +6032,7 @@ ITA_military_reform = {
 			tag = ITA
 		}
 		available = {
-			has_army_experience > 74
+			has_army_experience > 125
 		}
 
 		cost = 0
@@ -5884,6 +6068,12 @@ ITA_military_reform = {
 				clr_country_flag = ITA_army_reform_3
 				set_country_flag = adequate_army
 				remove_dynamic_modifier = { modifier = ITA_inadequate_army_dynamic_modifier }
+				every_army_leader = {
+					limit = {
+						has_trait = inadequate_army_trait
+					}
+					remove_unit_leader_trait = inadequate_army_trait
+				}
 			}
 			else = {
 				set_country_flag = ITA_army_reform_1
@@ -5893,11 +6083,10 @@ ITA_military_reform = {
 			add_to_variable = { ITA_inadequate_army_training_time_factor = -0.1 }
 			add_to_variable = { ITA_inadequate_army_planning_speed = 0.2 }
 			add_to_variable = { ITA_inadequate_army_max_planning = 0.2 }
-			add_to_variable = { ITA_inadequate_army_experience_gain_army_factor = 0.1 }
 			custom_effect_tooltip = ITA_army_reform_tt
 		}
 		complete_effect = {
-			army_experience = -75
+			army_experience = -125
 		}
 	}
 
@@ -5908,7 +6097,7 @@ ITA_military_reform = {
 			tag = ITA
 		}
 		available = {
-			has_air_experience > 74
+			has_air_experience > 75
 		}
 
 		cost = 0
@@ -5952,6 +6141,7 @@ ITA_military_reform = {
 			add_to_variable = { ITA_inadequate_airforce_air_night_penalty = -0.07 }
 			add_to_variable = { ITA_inadequate_airforce_air_weather_penalty = -0.07 }
 			add_to_variable = { ITA_inadequate_airforce_air_mission_efficiency = 0.05 }
+			add_to_variable = { ITA_inadequate_airforce_air_nav_efficiency = 0.07 }
 			custom_effect_tooltip = ITA_air_reform_tt
 		}
 		complete_effect = {
@@ -8414,7 +8604,7 @@ colonial_managment = {
 			original_tag = ITA
 		}
 
-		targets = { ITC ITE ITL ITM ITN ITO ITS ITT ITU ITW }
+		targets = { ITC ITE ITL ITM ITN ITO ITS ITT ITU ITW ALB}
 
 		target_root_trigger = {
 			OR = {
@@ -8697,7 +8887,6 @@ colonial_managment = {
 		timeout_effect = {
 			custom_effect_tooltip = ITA_hunt_down_ethiopian_rebels_tt
 			army_experience = 10
-			army_experience = 10
 			271 = {
 				add_compliance = 20
 				add_resistance = -10
@@ -8865,6 +9054,44 @@ economy_decisions = {
 
 political_actions = {
 
+	ITA_aquila = {
+
+		allowed = {
+            tag = ITA
+        }
+
+        cost = 0
+        fire_only_once = yes
+
+        available = {
+            tag = ITA
+            has_tech = ita_carrier_2
+			has_completed_focus = ITA_age_of_carriers
+        }
+
+        visible = {
+            original_tag = ITA
+			is_ai = no
+        }
+
+        complete_effect = {
+			add_equipment_production = {
+				equipment = {
+					type = ita_carrier_hull_2
+					creator = "GER"
+				}
+				name = "Aquila"
+				requested_factories = 1
+				progress = 0.1
+				amount = 1
+			}
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+	}
+
 	#Discredit Haile Selassie
 	ITA_discredit_haile_selassie = {
 		icon = GFX_decision_generic_speech
@@ -8989,23 +9216,24 @@ political_actions = {
 			tag = ITA
 		}
 
-        cost = 0
-        fire_only_once = yes
+       cost = 0
+       fire_only_once = yes
 
-        available = {
+       available = {
 			hidden_trigger = {
 				NOT = { has_country_flag = ITA_colonies_annexed }
 			}
-        }
+			ENG = { is_ai = no }
+       }
 
-        visible = {
+       visible = {
 			country_exists = ITL
 			hidden_trigger = {
 				NOT = { has_country_flag = ITA_colonies_annexed }
 			}
-        }
+       }
 
-        complete_effect = {
+       complete_effect = {
 			ITL = {
 				every_unit_leader = {
 					set_nationality = ITA
@@ -9025,17 +9253,18 @@ political_actions = {
 			tag = ITA
 		}
 
-        cost = 0
-        fire_only_once = yes
+       cost = 0
+       fire_only_once = yes
 
-        available = {
-        }
+       available = {
+			ENG = { is_ai = no }
+       }
 
-        visible = {
+       visible = {
 			country_exists = ITS
-        }
+       }
 
-        complete_effect = {
+       complete_effect = {
 			ITS = {
 				every_unit_leader = {
 					set_nationality = ITA
@@ -9962,7 +10191,24 @@ political_actions = {
 		}
 
 		available = {
-			has_capitulated = yes
+			OR = {
+				has_capitulated = yes
+				surrender_progress < 0.05
+				AND = {
+					has_full_control_of_state = 1032
+					has_full_control_of_state = 115
+					has_full_control_of_state = 156
+					has_full_control_of_state = 117
+					has_full_control_of_state = 2
+					has_full_control_of_state = 856
+					has_full_control_of_state = 162
+					has_full_control_of_state = 158
+					has_full_control_of_state = 159
+					has_full_control_of_state = 161
+					has_full_control_of_state = 986
+					has_full_control_of_state = 157
+				}
+			}
 		}
 
 		activation = {
@@ -10012,6 +10258,167 @@ political_actions = {
 		}
 
 		complete_effect = {
+			hidden_effect = {
+				set_country_flag = ITA_armistice_mission_failed_flag
+			}
+		}
+	}
+
+	ITA_armistice_mission_again = {
+
+		icon = generic_ignite_civil_war
+
+		allowed = {
+			tag = ITA
+		}
+
+		available = {
+			OR = {
+				surrender_progress < 0.05
+				AND = {
+					has_full_control_of_state = 1032
+					has_full_control_of_state = 115
+					has_full_control_of_state = 156
+					has_full_control_of_state = 117
+					has_full_control_of_state = 2
+					has_full_control_of_state = 856
+					has_full_control_of_state = 162
+					has_full_control_of_state = 158
+					has_full_control_of_state = 159
+					has_full_control_of_state = 161
+					has_full_control_of_state = 986
+					has_full_control_of_state = 157
+				}
+			}
+		}
+
+		activation = {
+			has_country_flag = ITA_armistice_mission_failed_flag
+            ITA = { has_war_with = ENG }
+			has_idea = ITA_grand_council_of_fascism
+            NOT = { has_country_flag = italy_switching_sides }
+            NOT = { has_country_flag = italy_stands_strong }
+            has_government = fascism
+			any_enemy_country = {
+				is_faction_leader = yes
+				is_major = yes
+			}
+			any_state = {
+				is_core_of = ITA
+				or = {
+					region = 21
+					region = 23
+					region = 238
+				}
+				not = {
+					is_controlled_by = root
+				}
+			}
+            OR = {
+            	AND = { #Lost control of Overseas
+					surrender_progress > 0.1
+		            116 = { #Malta
+						CONTROLLER = {
+							NOT = {
+								tag = ROOT
+								is_subject_of = ROOT
+								is_in_faction_with = ROOT
+							}
+						}
+					}
+		            118 = { #Gibralter
+						CONTROLLER = {
+							NOT = {
+								tag = ROOT
+								is_subject_of = ROOT
+								is_in_faction_with = ROOT
+							}
+						}
+					}
+		            923 = { #Suez
+						CONTROLLER = {
+							NOT = {
+								tag = ROOT
+								is_subject_of = ROOT
+								is_in_faction_with = ROOT
+							}
+						}
+					}
+		            448 = { #Tripoli
+						CONTROLLER = {
+							NOT = {
+								tag = ROOT
+								is_subject_of = ROOT
+								is_in_faction_with = ROOT
+							}
+						}
+					}
+		            450 = { #Bengazi
+						CONTROLLER = {
+							NOT = {
+								tag = ROOT
+								is_subject_of = ROOT
+								is_in_faction_with = ROOT
+							}
+						}
+					}
+		            451 = { #Tobruk
+						CONTROLLER = {
+							NOT = {
+								tag = ROOT
+								is_subject_of = ROOT
+								is_in_faction_with = ROOT
+							}
+						}
+					}
+            	}
+            	AND = { #Lost control of most overseas
+					surrender_progress > 0.2
+		            116 = { #Malta
+						CONTROLLER = {
+							NOT = {
+								tag = ROOT
+								is_subject_of = ROOT
+								is_in_faction_with = ROOT
+							}
+						}
+					}
+		            448 = { #Tripoli
+						CONTROLLER = {
+							NOT = {
+								tag = ROOT
+								is_subject_of = ROOT
+								is_in_faction_with = ROOT
+							}
+						}
+					}
+		            450 = { #Bengazi
+						CONTROLLER = {
+							NOT = {
+								tag = ROOT
+								is_subject_of = ROOT
+								is_in_faction_with = ROOT
+							}
+						}
+					}
+		            451 = { #Tobruk
+						CONTROLLER = {
+							NOT = {
+								tag = ROOT
+								is_subject_of = ROOT
+								is_in_faction_with = ROOT
+							}
+						}
+					}
+            	}
+				surrender_progress > 0.5 #Getting stomped
+            }
+        }
+
+		days_mission_timeout = 60
+		is_good = no
+
+		timeout_effect = {
 			if = {
 				limit = {
 					any_enemy_country = {
@@ -10032,7 +10439,7 @@ political_actions = {
 							has_government = neutrality
 						}
 					}
-					country_event = { id = ita_armor.895 days = 1 }
+					country_event = { id = ita_armor.895 }
 				}
 			}
 			else = {
@@ -10045,21 +10452,12 @@ political_actions = {
 							has_government = communism
 						}
 					}
-					country_event = { id = ita_armor.895 days = 1 }
+					country_event = { id = ita_armor.895 }
 				}
 			}
-			hidden_effect = {
-				GER = {
-					add_days_mission_timeout = {
-						mission = GER_fall_achse_preperation
-						days = -60
-					}
-					add_days_mission_timeout = {
-						mission = GER_fall_achse_preperation_ai
-						days = -60
-					}
-				}
-			}
+		}
+
+		complete_effect = {
 		}
 	}
 

@@ -1,3 +1,4 @@
+#!gfx:interface\afo_focuses.gfx
 focus_tree = {
 	id = australian_focus
 
@@ -487,9 +488,6 @@ focus_tree = {
 			has_completed_focus = AST_reform_the_economy
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
 			economy_fatigue_level_down_10 = yes
@@ -680,7 +678,6 @@ focus_tree = {
 
 		cancel_if_invalid = no
 		continue_if_invalid = yes
-		available_if_capitulated = no
 
 		completion_reward = {
 			random_owned_controlled_state = {
@@ -697,6 +694,18 @@ focus_tree = {
 			}
 			random_owned_controlled_state = {
 				prioritize = { 285 }
+				limit = {
+					is_controlled_by = ROOT
+				}
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = arms_factory
+					level = 2
+					instant_build = yes
+				}
+			}
+			random_owned_controlled_state = {
+				prioritize = { 519 }
 				limit = {
 					is_controlled_by = ROOT
 				}
@@ -870,25 +879,65 @@ focus_tree = {
 	}
 
 	focus = {
+		id = AST_establish_the_commonwealth_aircraft_corporation
+		icon = GFX_goal_generic_air_fighter
+		x = 2
+		y = 0
+		relative_position_id = AST_reorganize_the_department_of_defense
+
+		cost = 3
+
+		available = {
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+
+
+		completion_reward = {
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				custom_effect_tooltip = available_mio_tt
+				show_mio_tooltip = AST_com_aircraft_corporation_organization
+			}
+			else = {
+				custom_effect_tooltip = available_designer
+				show_ideas_tooltip = AST_commonwealth_aircraft_corporation
+			}
+			if = {
+				limit = { has_dlc = "By Blood Alone" }
+				add_tech_bonus = {
+					name = AST_establish_the_commonwealth_aircraft_corporation
+					bonus = 0.5
+					uses = 1
+					technology = ast_fighter_multirole_ad_tech_1
+				}
+			}
+			else = {
+				add_tech_bonus = {
+					name = AST_establish_the_commonwealth_aircraft_corporation
+					bonus = 0.5
+					uses = 1
+					technology = ast_fighter_multirole_1
+				}
+			}
+		}
+	}
+
+	focus = {
 		id = AST_integrate_tugan_aircraft_into_the_cac
 		icon = GFX_goal_generic_air_production
-		prerequisite = { focus = AST_form_the_department_of_supply_and_development }
-		x = 1
+		prerequisite = { focus = AST_establish_the_commonwealth_aircraft_corporation }
+		x = 0
 		y = 1
-		relative_position_id = AST_form_the_department_of_supply_and_development
+		relative_position_id = AST_establish_the_commonwealth_aircraft_corporation
 
 		cost = 5
 
 		available = {
-			has_tech = ast_fighter_multirole_2
-			has_completed_focus = AST_establish_the_commonwealth_aircraft_corporation
-			custom_trigger_tooltip = {
-				tooltip = AST_integrate_tugan_aircraft_into_the_cac_tt
-				has_deployed_air_force_size = {
-					size > 399
-					type = fighter
-				}
-			}
 		}
 
 		ai_will_do = {
@@ -897,22 +946,30 @@ focus_tree = {
 
 		completion_reward = {
 			if = {
-				limit = { has_aat = yes }
-				unlock_military_industrial_organization_tooltip = mio:AAST_tugan_aircraft_organization
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				mio:AST_com_aircraft_corporation_organization = {
+					add_mio_funds = 300
+				}
 			}
-			else = {
-				custom_effect_tooltip = available_designer
-				show_ideas_tooltip = AST_tugan_aircraft
-			}
+			#if = {
+			#	limit = { has_aat = yes }
+			#	unlock_military_industrial_organization_tooltip = mio:AST_tugan_aircraft_organization
+			#}
+			#else = {
+			#	custom_effect_tooltip = available_designer
+			#	show_ideas_tooltip = AST_tugan_aircraft
+			#}
 			random_owned_controlled_state = {
 				prioritize = { 285 }
 				limit = {
 					is_controlled_by = ROOT
 				}
-				add_extra_state_shared_building_slots = 3
+				add_extra_state_shared_building_slots = 1
 				add_building_construction = {
 					type = arms_factory
-					level = 3
+					level = 1
 					instant_build = yes
 				}
 			}
@@ -920,16 +977,104 @@ focus_tree = {
 	}
 
 	focus = {
-		id = AST_expand_cac_facilities
-		icon = GFX_goal_generic_military_economy_medium
+		id = AST_recruit_lawrence_wackett
+		icon = GFX_focus_generic_diplomatic_treaty
 		prerequisite = { focus = AST_integrate_tugan_aircraft_into_the_cac }
 		x = 0
+		y = 2
+		relative_position_id = AST_integrate_tugan_aircraft_into_the_cac
+
+		cost = 3
+
+		available = {
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+
+
+		completion_reward = {
+			if = {
+				limit = { has_aat = yes }
+				mio:AST_com_aircraft_corporation_organization = {
+					complete_mio_trait = AST_mio_trait_recruit_lawrence_wackett
+				}
+				#mio:AST_tugan_aircraft_organization = {
+				#	complete_mio_trait = AST_mio_trait_recruit_lawrence_wackett
+				#}
+			}
+			else = {
+				custom_effect_tooltip = AST_recruit_lawrence_wackett_tt
+			}
+			if = {
+				limit = { has_dlc = "By Blood Alone" }
+				add_tech_bonus = {
+					name = AST_recruit_lawrence_wackett
+					bonus = 0.5
+					uses = 3
+					technology = ast_fighter_multirole_ad_tech_2
+					technology = ast_fighter_multirole_ad_tech_3
+					technology = ast_attacker_ad_tech_1
+				}
+			}
+			else = {
+                if = {
+                    limit = {
+                        has_idea = AST_commonwealth_aircraft_corporation
+                    }
+                    swap_ideas = {
+                        remove_idea = AST_commonwealth_aircraft_corporation
+                        add_idea = AST_commonwealth_aircraft_corporation_1
+                    }
+                }
+                if = {
+                    limit = {
+                        has_idea = AST_tugan_aircraft
+                    }
+                    swap_ideas = {
+                        remove_idea = AST_tugan_aircraft
+                        add_idea = AST_tugan_aircraft_1
+                    }
+                }
+			}
+		}
+	}
+
+	focus = {
+		id = AST_expand_cac_facilities
+		icon = GFX_goal_generic_military_economy_medium
+		prerequisite = { focus = AST_form_the_department_of_supply_and_development }
+		prerequisite = { focus = AST_integrate_tugan_aircraft_into_the_cac }
+		x = -1
 		y = 1
 		relative_position_id = AST_integrate_tugan_aircraft_into_the_cac
 
 		cost = 5
 
 		available = {
+			if = {
+				limit = { has_dlc = "By Blood Alone" }
+				has_tech = ast_fighter_multirole_ad_tech_2
+			}
+			else = {
+				has_tech = ast_fighter_multirole_2
+			}
+			if = {
+				limit = { has_aat = yes }
+				mio:AST_com_aircraft_corporation_organization = {
+					has_mio_size > 1
+				}
+			}
+			else = {
+				custom_trigger_tooltip = {
+					tooltip = AST_integrate_tugan_aircraft_into_the_cac_tt
+					has_deployed_air_force_size = {
+						size > 399
+						type = fighter
+					}
+				}
+			}
 		}
 
 		ai_will_do = {
@@ -943,10 +1088,10 @@ focus_tree = {
 				limit = {
 					is_controlled_by = ROOT
 				}
-				add_extra_state_shared_building_slots = 3
+				add_extra_state_shared_building_slots = 4
 				add_building_construction = {
 					type = arms_factory
-					level = 3
+					level = 4
 					instant_build = yes
 				}
 			}
@@ -958,32 +1103,50 @@ focus_tree = {
 		icon = GFX_goal_generic_military_economy_large
 		prerequisite = { focus = AST_expand_cac_facilities }
 		x = 0
-		y = 1
+		y = 2
 		relative_position_id = AST_expand_cac_facilities
 
 		cost = 5
 
 		available = {
-			has_tech = ast_attacker_1
-			custom_trigger_tooltip = {
-				tooltip = AST_nationalize_daf_tt
-				has_deployed_air_force_size = {
-					size > 799
-					type = fighter
-				}
-				check_variable = { num_deployed_planes_with_type@attacker_equipment > 199 }
+			if = {
+				limit = { has_dlc = "By Blood Alone" }
+				has_tech = ast_attacker_ad_tech_1
 			}
-			#custom_trigger_tooltip = {
-			#	tooltip = AST_nationalize_daf_tt
-			#	has_deployed_air_force_size = {
-			#		size > 599
-			#		type = fighter
-			#	}
-			#	has_deployed_air_force_size = {
-			#		size > 199
-			#		type = attacker
-			#	}
-			#}
+			else = {
+				has_tech = ast_attacker_1
+			}
+			if = {
+				limit = { has_aat = yes }
+				mio:AST_com_aircraft_corporation_organization = {
+					has_mio_size > 3
+				}
+			}
+			else = {
+				if = {
+					limit = {
+						has_dlc = "By Blood Alone"
+					}
+					custom_trigger_tooltip = {
+						tooltip = AST_nationalize_daf_tt
+						has_deployed_air_force_size = {
+							size > 799
+							type = fighter
+						}
+						check_variable = { num_deployed_planes_with_type@medium_fighter_multirole_airframe > 199 }
+					}
+				}
+				else = {
+					custom_trigger_tooltip = {
+						tooltip = AST_nationalize_daf_tt
+						has_deployed_air_force_size = {
+							size > 799
+							type = fighter
+						}
+						check_variable = { num_deployed_planes_with_type@medium_fighter_multirole_airframe > 199 }
+					}
+				}
+			}
 		}
 
 		ai_will_do = {
@@ -997,10 +1160,10 @@ focus_tree = {
 				limit = {
 					is_controlled_by = ROOT
 				}
-				add_extra_state_shared_building_slots = 2
+				add_extra_state_shared_building_slots = 3
 				add_building_construction = {
 					type = arms_factory
-					level = 2
+					level = 3
 					instant_build = yes
 				}
 			}
@@ -1009,10 +1172,10 @@ focus_tree = {
 				limit = {
 					is_controlled_by = ROOT
 				}
-				add_extra_state_shared_building_slots = 2
+				add_extra_state_shared_building_slots = 3
 				add_building_construction = {
 					type = arms_factory
-					level = 2
+					level = 3
 					instant_build = yes
 				}
 			}
@@ -1026,8 +1189,9 @@ focus_tree = {
 	focus = {
 		id = AST_further_british_cooperation
 		icon = GFX_focus_generic_home_defense
-		x = 13
+		x = 3
 		y = 0
+		relative_position_id = AST_establish_the_commonwealth_aircraft_corporation
 
 		cost = 3
 
@@ -1044,9 +1208,6 @@ focus_tree = {
 			}
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
 			army_experience = 10
@@ -1076,9 +1237,6 @@ focus_tree = {
 			}
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
 			add_tech_bonus = {
@@ -1285,8 +1443,9 @@ focus_tree = {
 	focus = {
 		id = AST_closer_ties_with_the_netherlands
 		icon = GFX_goal_generic_befriend_netherlands
-		x = 15
+		x = 2
 		y = 0
+		relative_position_id = AST_further_british_cooperation
 
 		cost = 3
 
@@ -1305,9 +1464,6 @@ focus_tree = {
 			}
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
             add_opinion_modifier = { target = HOL modifier = democratic_leanings_good }
@@ -1340,9 +1496,6 @@ focus_tree = {
 			}
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
             add_opinion_modifier = { target = HOL modifier = dutch_partnership }
@@ -1392,9 +1545,6 @@ focus_tree = {
 			}
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
 			army_experience = 25
@@ -1435,9 +1585,6 @@ focus_tree = {
 			}
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
 			HOL = {
@@ -1464,8 +1611,9 @@ focus_tree = {
 	focus = {
 		id = AST_closer_ties_with_the_usa
 		icon = GFX_focus_chi_mission_to_the_us
-		x = 17
+		x = 4
 		y = 0
+		relative_position_id = AST_further_british_cooperation
 
 		cost = 3
 
@@ -1481,9 +1629,6 @@ focus_tree = {
 			NOT = { country_exists = HOL }
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
             add_opinion_modifier = { target = USA modifier = democratic_leanings_good }
@@ -1519,9 +1664,6 @@ focus_tree = {
 			}
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
 			add_tech_bonus = {
@@ -1529,21 +1671,6 @@ focus_tree = {
 				bonus = 1.0
 				uses = 2
 				category = industry
-			}
-			if = {
-				limit = {
-					USA = { has_tech = usa_fighter_multirole_3 }
-				}
-				add_equipment_to_stockpile = { type = usa_fighter_multirole_equipment_3 amount = 250 producer = USA }
-			}
-			else_if = {
-				limit = {
-					USA = { has_tech = usa_fighter_multirole_2 }
-				}
-				add_equipment_to_stockpile = { type = usa_fighter_multirole_equipment_2 amount = 250 producer = USA }
-			}
-			else = {
-				add_equipment_to_stockpile = { type = usa_fighter_multirole_equipment_1 amount = 250 producer = USA }
 			}
 		}
 	}
@@ -1578,9 +1705,6 @@ focus_tree = {
 			}
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
 			add_research_slot = 1
@@ -1616,9 +1740,6 @@ focus_tree = {
 			}
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
 			USA = { country_event = { id = ast_armor.801 } }
@@ -1630,7 +1751,7 @@ focus_tree = {
 	focus = {
 		id = AST_cooperation_with_new_zealand
 		icon = GFX_goal_generic_befriend_new_zealand
-		x = 14
+		x = 13
 		y = 4
 
 		cost = 3
@@ -1653,7 +1774,6 @@ focus_tree = {
 
 		completion_reward = {
 			AST = {
-				army_experience = 10
 				add_doctrine_cost_reduction = {
 					name = AST_cooperation_with_new_zealand
 					cost_reduction = 0.99
@@ -1663,7 +1783,6 @@ focus_tree = {
 			}
 			effect_tooltip = {
 				NZL = {
-					army_experience = 10
 					add_doctrine_cost_reduction = {
 						name = AST_cooperation_with_new_zealand
 						cost_reduction = 0.99
@@ -1755,8 +1874,14 @@ focus_tree = {
 
 
 		completion_reward = {
+			army_experience = 35
+			air_experience = 35
+			navy_experience = 35
 			NZL = {
-				country_event = { id = ast_armor.804 }
+			#	country_event = { id = ast_armor.804 }
+				army_experience = 35
+				air_experience = 35
+				navy_experience = 35
 			}
 		}
 	}
@@ -1766,7 +1891,7 @@ focus_tree = {
 	focus = {
 		id = AST_form_abdacom
 		icon = GFX_focus_hol_the_foundations_of_defense
-		x = 16
+		x = 19
 		y = 4
 
 		cost = 3
@@ -1867,8 +1992,9 @@ focus_tree = {
 		id = AST_adopt_westminster
 		mutually_exclusive = { focus = AST_never_another_gallipoli }
 		icon = GFX_goal_ENG_adopt_westminster
-		x = 22
+		x = 10
 		y = 0
+		relative_position_id = AST_further_british_cooperation
 
 		cost = 5
 
@@ -2266,7 +2392,6 @@ focus_tree = {
 
 		cancel_if_invalid = no
 		continue_if_invalid = yes
-		available_if_capitulated = no
 
 		completion_reward = {
             add_war_support = 0.1
@@ -2301,7 +2426,7 @@ focus_tree = {
 
 		available = {
 			OR = {
-				threat > 0.72
+				threat > 0.75
 				has_war_with = JAP
 				has_war_with = USA
 				FRA = { has_capitulated = yes }
@@ -2324,9 +2449,10 @@ focus_tree = {
 
 		cancel_if_invalid = no
 		continue_if_invalid = yes
-		available_if_capitulated = no
 
 		completion_reward = {
+			add_timed_idea = { idea = military_contracts days = 730 }
+			military_contracts_effect = yes
 			custom_effect_tooltip = available_interior_minister
 			show_ideas_tooltip = AST_harry_foll
 			if = {
@@ -2359,7 +2485,7 @@ focus_tree = {
 
 		available = {
 			OR = {
-				threat > 0.72
+				threat > 0.75
 				has_war = yes
 			}
 		}
@@ -2581,9 +2707,6 @@ focus_tree = {
 			is_subject = no
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
 			AST = {
@@ -2614,6 +2737,24 @@ focus_tree = {
 
 
 		completion_reward = {
+			random_owned_controlled_state = {
+				prioritize = { 285 }
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = arms_factory
+					level = 2
+					instant_build = yes
+				}
+			}
+			random_owned_controlled_state = {
+				prioritize = { 517 }
+				add_extra_state_shared_building_slots = 1
+				add_building_construction = {
+					type = arms_factory
+					level = 1
+					instant_build = yes
+				}
+			}
 			add_tech_bonus = {
 				name = AST_army_inventions_directorate
 				bonus = 0.5
@@ -2942,9 +3083,6 @@ focus_tree = {
 			ENG = { has_completed_focus = ENG_new_imperial_parliament }
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
 			if = {
@@ -3019,15 +3157,29 @@ focus_tree = {
 
 
 		completion_reward = {
-			set_division_template_lock = {
-				division_template = "Infantry Division"
-				is_locked = no
+			if = {
+				limit = {
+					is_ai = no
+				}
+				set_division_template_lock = {
+					division_template = "Infantry Division"
+					is_locked = no
+				}
+				capital_scope = {
+					create_unit = {
+						division = "division_template = \"Infantry Division\" start_experience_factor = 0.3 start_equipment_factor = 0.1"
+						owner = ROOT
+						count = 3
+					}
+				}
 			}
-			capital_scope = {
-				create_unit = {
-					division = "division_template = \"Infantry Division\" start_experience_factor = 0.3 start_equipment_factor = 0.1"
-					owner = ROOT
-					count = 3
+			else = {
+				capital_scope = {
+					create_unit = {
+						division = "division_template = \"Australian Infantry Division\" start_experience_factor = 0.3 start_equipment_factor = 0.1"
+						owner = ROOT
+						count = 3
+					}
 				}
 			}
 		}
@@ -3052,6 +3204,8 @@ focus_tree = {
 
 
 		completion_reward = {
+			custom_effect_tooltip = firepower_induction_spirit_unlock_tt
+			custom_effect_tooltip = infantry_modernization_spirit_unlock_tt
 			swap_ideas = {
 				remove_idea = AST_underfunded_military
 				add_idea = AST_underfunded_military_2
@@ -3088,7 +3242,6 @@ focus_tree = {
 
 		cancel_if_invalid = no
 		continue_if_invalid = yes
-		available_if_capitulated = no
 
 		completion_reward = {
 			add_doctrine_cost_reduction = {
@@ -3253,9 +3406,9 @@ focus_tree = {
 							is_controlled_by = IPM
 						}
 						AND = {
-							is_core_of = INS
-							NOT = { INS = { is_in_faction_with = JAP } }
-							NOT = { INS = { is_subject_of = JAP } }
+							is_core_of = IND
+							NOT = { IND = { is_in_faction_with = JAP } }
+							NOT = { IND = { is_subject_of = JAP } }
 						}
 					}
 					add_resistance = 25
@@ -3293,9 +3446,9 @@ focus_tree = {
 
 		cancel_if_invalid = no
 		continue_if_invalid = yes
-		available_if_capitulated = no
 
 		completion_reward = {
+			army_experience = 30
 			add_ideas = AST_military_college
 		}
 	}
@@ -3319,6 +3472,12 @@ focus_tree = {
 
 
 		completion_reward = {
+			add_doctrine_cost_reduction = {
+				name = AST_revive_the_aif
+				cost_reduction = 0.99
+				uses = 2
+				category = land_doctrine
+			}
 			if = {
 				limit = {
 					NOT = {
@@ -3331,7 +3490,7 @@ focus_tree = {
 						has_idea = incentivise_employability_oppertunities
 					}
 					NOT = {
-						has_idea = conscript_men_into_the_factories
+						has_idea = factory_conscription
 					}
 				}
 				add_ideas = mandatory_army_service
@@ -3348,7 +3507,7 @@ focus_tree = {
 
 	focus = {
 		id = AST_reestablish_the_school_of_military_engineering
-		icon = GFX_goal_generic_research
+		icon = GFX_goal_generic_research_2
 		prerequisite = { focus = AST_revive_the_aif }
 		x = 0
 		y = 1
@@ -3365,7 +3524,7 @@ focus_tree = {
 
 
 		completion_reward = {
-			add_research_slot = 1
+			add_research_slot = 2
 		}
 	}
 
@@ -3396,9 +3555,9 @@ focus_tree = {
 
 		cancel_if_invalid = no
 		continue_if_invalid = yes
-		available_if_capitulated = no
 
 		completion_reward = {
+			army_experience = 20
 			remove_ideas = AST_underfunded_military_3
 		}
 	}
@@ -3544,7 +3703,6 @@ focus_tree = {
 
 		cancel_if_invalid = no
 		continue_if_invalid = yes
-		available_if_capitulated = no
 
 		completion_reward = {
 			custom_effect_tooltip = AST_pacific_garrison_desc_tt
@@ -3574,7 +3732,7 @@ focus_tree = {
 
 	focus = {
 		id = AST_womens_army_service
-		icon = GFX_goal_ENG_womans_land_army
+		icon = GFX_goal_ENG_womens_land_army
 		prerequisite = { focus = AST_pacific_garrison }
 		x = 0
 		y = 1
@@ -3598,9 +3756,6 @@ focus_tree = {
 			}
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
             if = {
@@ -3634,13 +3789,28 @@ focus_tree = {
 
 
 		completion_reward = {
-			add_tech_bonus = {
-				name = AST_pioneer_advanced_recon
-				bonus = 1.0
-				uses = 1
-				technology = ast_scout_car_1
-				technology = ast_scout_car_2
-				technology = ast_armoured_car_1
+			if = {
+				limit = {
+					has_dlc = "No Step Back"
+				}
+				add_tech_bonus = {
+					name = AST_pioneer_advanced_recon
+					bonus = 1.0
+					uses = 1
+					technology = ast_scout_armoured_car_1
+					technology = ast_scout_armoured_car_2
+					technology = ast_combat_armoured_car_1
+				}
+			}
+			else = {
+				add_tech_bonus = {
+					name = AST_pioneer_advanced_recon
+					bonus = 1.0
+					uses = 1
+					technology = ast_scout_car_1
+					technology = ast_scout_car_2
+					technology = ast_armoured_car_1
+				}
 			}
 		}
 	}
@@ -3718,46 +3888,56 @@ focus_tree = {
 
 
 		completion_reward = {
-			custom_effect_tooltip = AST_first_armoured_division_tt
-			if = {
-				limit = {
-					is_ai = no
-				}
-				hidden_effect = {
-					division_template = {
-						name = "Armoured Division"
-						division_names_group = AST_ARM_01
-						priority = 1
-
-						regiments = {
-							medium_armor = { x = 0 y = 0 }
-							medium_armor = { x = 0 y = 1}
-							medium_armor = { x = 0 y = 2}
-
-							medium_armor = { x = 1 y = 0}
-							medium_armor = { x = 1 y = 1}
-							medium_armor = { x = 1 y = 2}
-
-							motorized_artillery_brigade = { x = 2 y = 0 }
-							motorized_artillery_brigade = { x = 2 y = 1 }
-							motorized_artillery_brigade = { x = 2 y = 2 }
-
-							motorized = { x = 3 y = 0 }
-							motorized = { x = 3 y = 1 }
-							motorized = { x = 3 y = 2 }
-						}
-
-						support = {
-							engineer = { x = 0 y = 0 }
-							motorized_logistics_company = { x = 0 y = 1 }
-							field_hospital = { x = 0 y = 2 }
-							signal_company = { x = 0 y = 3 }
-
-							mot_recon = { x = 1 y = 0 }
-						}
-					}
-				}
+			AST_horace_robertson = {
+				add_skill_level = 1
 			}
+			AST_john_northcott = {
+				add_trait = {
+					trait = organizer
+				}
+				add_skill_level = 1
+			}
+			custom_effect_tooltip = mobile_warfare_drive_spirit_unlock_tt
+			#			custom_effect_tooltip = AST_first_armoured_division_tt
+			#			if = {
+			#				limit = {
+			#					is_ai = no
+			#				}
+			#				hidden_effect = {
+			#					division_template = {
+			#						name = "Armoured Division"
+			#						division_names_group = AST_ARM_01
+			#						priority = 1
+			#
+			#						regiments = {
+			#							medium_armor = { x = 0 y = 0 }
+			#							medium_armor = { x = 0 y = 1}
+			#							medium_armor = { x = 0 y = 2}
+			#
+			#							medium_armor = { x = 1 y = 0}
+			#							medium_armor = { x = 1 y = 1}
+			#							medium_armor = { x = 1 y = 2}
+			#
+			#							motorized_artillery_brigade = { x = 2 y = 0 }
+			#							motorized_artillery_brigade = { x = 2 y = 1 }
+			#							motorized_artillery_brigade = { x = 2 y = 2 }
+			#
+			#							motorized = { x = 3 y = 0 }
+			#							motorized = { x = 3 y = 1 }
+			#							motorized = { x = 3 y = 2 }
+			#						}
+			#
+			#						support = {
+			#							engineer = { x = 0 y = 0 }
+			#							motorized_logistics_company = { x = 0 y = 1 }
+			#							field_hospital = { x = 0 y = 2 }
+			#							signal_company = { x = 0 y = 3 }
+			#
+			#							mot_recon = { x = 1 y = 0 }
+			#						}
+			#					}
+			#				}
+			#			}
 			add_doctrine_cost_reduction = {
 				name = AST_first_armoured_division
 				cost_reduction = 0.99
@@ -3789,6 +3969,17 @@ focus_tree = {
 			set_technology = {
 				ast_infantry_weapons_1 = 1
 			}
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				mio:AST_lysaghts_works_organization = {
+					add_mio_funds = 600
+				}
+				mio:AST_lithgow_saf_organization = {
+					add_mio_funds = 600
+				}
+			}
 		}
 	}
 
@@ -3811,7 +4002,20 @@ focus_tree = {
 
 
 		completion_reward = {
-			add_ideas = AST_mobile_artillery
+			ENG = {
+				add_tech_bonus = {
+					name = AST_mobile_artillery
+					bonus = 1.0
+					uses = 1
+					technology = eng_pack_artillery_3
+				}
+			}
+			add_tech_bonus = {
+				name = AST_mobile_artillery
+				bonus = 1.0
+				uses = 1
+				technology = eng_pack_artillery_3
+			}
 		}
 	}
 
@@ -3822,7 +4026,7 @@ focus_tree = {
 	focus = {
 		id = AST_expand_number_one_flying_training_school_raaf
 		icon = GFX_goal_generic_air_fighter2
-		x = 9
+		x = 8
 		y = 0
 		relative_position_id = AST_additional_militia_training
 
@@ -3847,7 +4051,7 @@ focus_tree = {
 		id = AST_expand_the_air_fleet
 		icon = GFX_goal_generic_license_planes
 		prerequisite = { focus = AST_expand_number_one_flying_training_school_raaf }
-		x = -3
+		x = 0
 		y = 1
 		relative_position_id = AST_expand_number_one_flying_training_school_raaf
 
@@ -3862,9 +4066,11 @@ focus_tree = {
 
 
 		completion_reward = {
+			custom_effect_tooltip = AST_expand_the_air_fleet_tt
 			unlock_decision_tooltip = AST_purchase_the_buffalo
-			unlock_decision_tooltip = AST_purchase_the_kittyhawk
-			unlock_decision_tooltip = AST_purchase_the_aircobra
+			unlock_decision_tooltip = AST_purchase_the_hawk
+			unlock_decision_tooltip = AST_purchase_the_nomad
+			unlock_decision_tooltip = AST_purchase_the_lexington
 		}
 	}
 
@@ -3874,7 +4080,7 @@ focus_tree = {
 		id = AST_focus_on_oversea_defence
 		icon = GFX_focus_generic_multi_role_aircraft
 		prerequisite = { focus = AST_expand_number_one_flying_training_school_raaf }
-		x = -1
+		x = -2
 		y = 1
 		relative_position_id = AST_expand_number_one_flying_training_school_raaf
 
@@ -3891,7 +4097,7 @@ focus_tree = {
 		completion_reward = {
 			add_doctrine_cost_reduction = {
 				name = AST_focus_on_oversea_defence
-				cost_reduction = 0.99
+				cost_reduction = 0.5
 				uses = 1
 				category = cat_operational_integrity
 			}
@@ -3902,7 +4108,7 @@ focus_tree = {
 		id = AST_focus_on_local_defence
 		icon = GFX_focus_generic_tank_air_support
 		prerequisite = { focus = AST_expand_number_one_flying_training_school_raaf }
-		x = 1
+		x = 2
 		y = 1
 		relative_position_id = AST_expand_number_one_flying_training_school_raaf
 
@@ -3929,11 +4135,11 @@ focus_tree = {
 	focus = {
 		id = AST_expand_the_raaf
 		icon = GFX_goal_generic_construct_civilian
-		prerequisite = { focus = AST_focus_on_oversea_defence }
-		prerequisite = { focus = AST_focus_on_local_defence }
+		prerequisite = { focus = AST_focus_on_oversea_defence focus = AST_focus_on_local_defence }
+		prerequisite = { focus = AST_expand_the_air_fleet }
 		x = 0
 		y = 1
-		relative_position_id = AST_focus_on_oversea_defence
+		relative_position_id = AST_expand_the_air_fleet
 
 		cost = 3
 
@@ -3976,6 +4182,7 @@ focus_tree = {
 		cost = 3
 
 		available = {
+			has_war = yes
 		}
 
 		ai_will_do = {
@@ -3984,6 +4191,38 @@ focus_tree = {
 
 
 		completion_reward = {
+			if = {
+				limit = { has_dlc = "By Blood Alone" }
+				#add_tech_bonus = {
+				#	name = AST_establish_the_department_of_aircraft_production
+				#	bonus = 0.5
+				#	uses = 1
+				#	technology = eng_attacker_ad_tech_1
+				#}
+				add_tech_bonus = {
+					name = AST_establish_the_department_of_aircraft_production
+					bonus = 0.5
+					uses = 3
+					technology = eng_strike_bomber_ad_tech_1
+					technology = eng_strike_bomber_ad_tech_1_1
+					technology = eng_strike_bomber_ad_tech_2
+				}
+			}
+			else = {
+				#add_tech_bonus = {
+				#	name = AST_establish_the_department_of_aircraft_production
+				#	bonus = 0.5
+				#	uses = 2
+				#	technology = eng_attacker_1
+				#}
+				add_tech_bonus = {
+					name = AST_establish_the_department_of_aircraft_production
+					bonus = 0.5
+					uses = 2
+					technology = eng_strike_bomber_1
+					technology = eng_strike_bomber_2
+				}
+			}
 			random_owned_controlled_state = {
 				prioritize = { 517 }
 				add_extra_state_shared_building_slots = 2
@@ -3996,115 +4235,26 @@ focus_tree = {
 		}
 	}
 
-	focus = {
-		id = AST_establish_the_commonwealth_aircraft_corporation
-		icon = GFX_goal_generic_air_fighter
-		prerequisite = { focus = AST_focus_on_oversea_defence }
-		prerequisite = { focus = AST_focus_on_local_defence }
-		x = 0
-		y = 1
-		relative_position_id = AST_focus_on_local_defence
-
-		cost = 3
-
-		available = {
-		}
-
-		ai_will_do = {
-			factor = 1
-		}
-
-
-		completion_reward = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				custom_effect_tooltip = available_mio_tt
-				show_mio_tooltip = AST_com_aircraft_corporation_organization
-				mio:AST_com_aircraft_corporation_organization = {
-					add_mio_size = 2
-				}
-			}
-			else = {
-				custom_effect_tooltip = available_designer
-				show_ideas_tooltip = AST_commonwealth_aircraft_corporation
-			}
-		}
-	}
-
-	focus = {
-		id = AST_recruit_lawrence_wackett
-		icon = GFX_focus_generic_diplomatic_treaty
-		prerequisite = { focus = AST_establish_the_commonwealth_aircraft_corporation }
-		x = 0
-		y = 1
-		relative_position_id = AST_establish_the_commonwealth_aircraft_corporation
-
-		cost = 3
-
-		available = {
-			has_completed_focus = AST_integrate_tugan_aircraft_into_the_cac
-		}
-
-		ai_will_do = {
-			factor = 1
-		}
-
-
-		completion_reward = {
-			if = {
-				limit = { has_aat = yes }
-				mio:AST_com_aircraft_corporation_organization = {
-					complete_mio_trait = AST_mio_trait_recruit_lawrence_wackett
-				}
-				mio:AAST_tugan_aircraft_organization = {
-					complete_mio_trait = AST_mio_trait_recruit_lawrence_wackett
-				}
-			}
-			else = {
-				custom_effect_tooltip = AST_recruit_lawrence_wackett_tt
-			}
-            hidden_effect = {
-                if = {
-                    limit = {
-                        has_idea = AST_commonwealth_aircraft_corporation
-                    }
-                    swap_ideas = {
-                        remove_idea = AST_commonwealth_aircraft_corporation
-                        add_idea = AST_commonwealth_aircraft_corporation_1
-                    }
-                }
-                if = {
-                    limit = {
-                        has_idea = AST_tugan_aircraft
-                    }
-                    swap_ideas = {
-                        remove_idea = AST_tugan_aircraft
-                        add_idea = AST_tugan_aircraft_1
-                    }
-                }
-            }
-		}
-	}
-
 	###
 
 	focus = {
 		id = AST_empire_air_training_scheme
 		icon = GFX_goal_generic_air_doctrine
-		prerequisite = { focus = AST_recruit_lawrence_wackett }
 		prerequisite = { focus = AST_establish_the_department_of_aircraft_production }
-		x = 1
+		x = 0
 		y = 1
 		relative_position_id = AST_establish_the_department_of_aircraft_production
 
 		cost = 3
 
 		available = {
-			is_in_faction_with = ENG
-			is_subject_of = ENG
-			has_war = yes
+		}
+
+		bypass = {
+			NOT = {
+				is_in_faction_with = ENG
+				is_subject_of = ENG
+			}
 		}
 
 		ai_will_do = {
@@ -4115,7 +4265,7 @@ focus_tree = {
 		completion_reward = {
 			add_doctrine_cost_reduction = {
 				name = AST_empire_air_training_scheme
-				cost_reduction = 0.99
+				cost_reduction = 0.5
 				uses = 3
 				category = cat_operational_integrity
 			}
@@ -4161,26 +4311,29 @@ focus_tree = {
 		cost = 3
 
 		available = {
-			has_tech = ast_attacker_1
-			custom_trigger_tooltip = {
-				tooltip = AST_nationalize_daf_tt
-				has_deployed_air_force_size = {
-					size > 599
-					type = fighter
-				}
-				check_variable = { num_deployed_planes_with_type@attacker_equipment > 199 }
+			if = {
+				limit = { has_dlc = "By Blood Alone" }
+				has_tech = ast_attacker_ad_tech_1
 			}
-			#custom_trigger_tooltip = {
-			#	tooltip = AST_nationalize_daf_tt
-			#	has_deployed_air_force_size = {
-			#		size > 599
-			#		type = fighter
-			#	}
-			#	has_deployed_air_force_size = {
-			#		size > 199
-			#		type = attacker
-			#	}
-			#}
+			else = {
+				has_tech = ast_attacker_1
+			}
+			if = {
+				limit = { has_aat = yes }
+				mio:AST_com_aircraft_corporation_organization = {
+					has_mio_size > 3
+				}
+			}
+			else = {
+				custom_trigger_tooltip = {
+					tooltip = AST_nationalize_daf_tt
+					has_deployed_air_force_size = {
+						size > 599
+						type = fighter
+					}
+					check_variable = { num_deployed_planes_with_type@medium_fighter_multirole_airframe > 199 }
+				}
+			}
 		}
 
 		ai_will_do = {
@@ -4189,11 +4342,34 @@ focus_tree = {
 
 
 		completion_reward = {
-			add_doctrine_cost_reduction = {
-				name = AST_develop_the_ran_airforce
-				cost_reduction = 0.99
-				uses = 4
-				category = air_doctrine
+			if = {
+				limit = { has_dlc = "By Blood Alone" }
+				add_doctrine_cost_reduction = {
+					name = AST_develop_the_ran_airforce
+					cost_reduction = 0.5
+					uses = 1
+					category = air_doctrine
+				}
+				add_doctrine_cost_reduction = {
+					name = AST_develop_the_ran_airforce
+					cost_reduction = 0.5
+					uses = 1
+					category = naval_doctrine
+				}
+				add_tech_bonus = {
+					name = AST_develop_the_ran_airforce
+					bonus = 0.5
+					uses = 3
+					category = naval_air
+				}
+			}
+			else = {
+				add_doctrine_cost_reduction = {
+					name = AST_develop_the_ran_airforce
+					cost_reduction = 0.5
+					uses = 4
+					category = air_doctrine
+				}
 			}
 		}
 	}
@@ -4218,7 +4394,13 @@ focus_tree = {
 
 		bypass = {
 			OR = {
-				has_tech = eng_attacker_2
+				if = {
+					limit = { has_dlc = "By Blood Alone" }
+					has_tech = eng_attacker_ad_tech_2
+				}
+				else = {
+					has_tech = eng_attacker_2
+				}
 				AND = {
 					NOT = { is_in_faction_with = ENG }
 					NOT = { is_subject_of = ENG }
@@ -4226,17 +4408,26 @@ focus_tree = {
 			}
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
-			add_tech_bonus = {
-				name = AST_long_range_attackers
-				bonus = 0.5
-				uses = 2
-				technology = eng_attacker_1
-				technology = eng_attacker_2
+			if = {
+				limit = { has_dlc = "By Blood Alone" }
+				add_tech_bonus = {
+					name = AST_long_range_attackers
+					bonus = 0.5
+					uses = 2
+					technology = eng_attacker_ad_tech_1
+					technology = eng_attacker_ad_tech_2
+				}
+			}
+			else = {
+				add_tech_bonus = {
+					name = AST_long_range_attackers
+					bonus = 0.5
+					uses = 2
+					technology = eng_attacker_1
+					technology = eng_attacker_2
+				}
 			}
 		}
 	}
@@ -4267,8 +4458,17 @@ focus_tree = {
 				uses = 1
 				category = cat_strategic_bomber
 			}
-			custom_effect_tooltip = available_designer
-			show_ideas_tooltip = CAN_handley_page
+			if = {
+				limit = {
+					has_aat = yes
+				}
+				custom_effect_tooltip = available_mio_tt
+				show_mio_tooltip = CAN_handley_page_organization
+			}
+			else = {
+				custom_effect_tooltip = available_designer
+				show_ideas_tooltip = CAN_handley_page
+			}
 		}
 	}
 
@@ -4293,9 +4493,6 @@ focus_tree = {
 		bypass = {
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
             add_tech_bonus = {
@@ -4322,11 +4519,28 @@ focus_tree = {
 		}
 
 		available = {
+			if = {
+				limit = { has_dlc = "By Blood Alone" }
+				ENG = { has_tech = eng_jet_fighter_ad_tech_1 }
+			}
+			else = {
+				ENG = { has_tech = eng_jet_fighter_1 }
+			}
+			OR = {
+				is_in_faction_with = ENG
+				is_subject_of = ENG
+			}
 		}
 
 		bypass = {
 			OR = {
-				has_tech = eng_jet_fighter_1
+				if = {
+					limit = { has_dlc = "By Blood Alone" }
+					has_tech = eng_jet_fighter_ad_tech_2
+				}
+				else = {
+					has_tech = eng_jet_fighter_1
+				}
 				AND = {
 					NOT = { is_in_faction_with = ENG }
 					NOT = { is_subject_of = ENG }
@@ -4334,16 +4548,25 @@ focus_tree = {
 			}
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
-			add_tech_bonus = {
-				name = AST_the_meteor_project
-				bonus = 1.0
-				uses = 1
-				technology = eng_jet_fighter_1
+			if = {
+				limit = { has_dlc = "By Blood Alone" }
+				add_tech_bonus = {
+					name = AST_the_meteor_project
+					bonus = 1.0
+					uses = 1
+					technology = eng_jet_fighter_ad_tech_1
+					technology = eng_jet_fighter_ad_tech_2
+				}
+			}
+			else = {
+				add_tech_bonus = {
+					name = AST_the_meteor_project
+					bonus = 1.0
+					uses = 1
+					technology = eng_jet_fighter_1
+				}
 			}
 		}
 	}
@@ -4363,7 +4586,13 @@ focus_tree = {
 		}
 
 		available = {
-			USA = { has_tech = usa_jet_fighter_multirole_3 }
+			if = {
+				limit = { has_dlc = "By Blood Alone" }
+				USA = { has_tech = usa_jet_fighter_ad_tech_3 }
+			}
+			else = {
+				USA = { has_tech = usa_jet_fighter_multirole_3 }
+			}
 			OR = {
 				is_in_faction_with = USA
 				is_subject_of = USA
@@ -4373,12 +4602,15 @@ focus_tree = {
 		bypass = {
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
-			set_technology = { usa_jet_fighter_multirole_3 = 1 }
+			if = {
+				limit = { has_dlc = "By Blood Alone" }
+				set_technology = { usa_jet_fighter_ad_tech_3 = 1 }
+			}
+			else = {
+				set_technology = { usa_jet_fighter_multirole_3 = 1 }
+			}
 		}
 	}
 
@@ -4387,10 +4619,10 @@ focus_tree = {
 	focus = {
 		id = AST_expand_our_eastern_bases
 		icon = GFX_goal_generic_build_airbases
-		prerequisite = { focus = AST_establish_the_department_of_aircraft_production }
+		prerequisite = { focus = AST_expand_the_raaf }
 		x = -2
 		y = 1
-		relative_position_id = AST_establish_the_department_of_aircraft_production
+		relative_position_id = AST_expand_the_raaf
 
 		cost = 3
 
@@ -4522,10 +4754,10 @@ focus_tree = {
 	focus = {
 		id = AST_expand_our_western_bases
 		icon = GFX_goal_generic_build_airbases
-		prerequisite = { focus = AST_expand_our_northern_bases }
-		x = 0
-		y = 2
-		relative_position_id = AST_expand_our_northern_bases
+		prerequisite = { focus = AST_expand_the_raaf }
+		x = 2
+		y = 1
+		relative_position_id = AST_expand_the_raaf
 
 		cost = 3
 
@@ -4585,7 +4817,7 @@ focus_tree = {
 	focus = {
 		id = AST_expand_morts_dock_and_cockatoo_island_shipyards
 		icon = GFX_goal_AST_cockatoo_shipyards
-		x = 13
+		x = 12
 		y = 0
 		relative_position_id = AST_additional_militia_training
 
@@ -4617,8 +4849,9 @@ focus_tree = {
 				limit = {
 					has_dlc = "Arms Against Tyranny"
 				}
-				custom_effect_tooltip = available_mio_tt
-				show_mio_tooltip = AST_cockatoo_doe_organization
+				mio:AST_cockatoo_doe_organization = {
+					add_mio_funds = 600
+				}
 			}
 			else = {
 				custom_effect_tooltip = available_designer
@@ -4646,7 +4879,7 @@ focus_tree = {
 
 
 		completion_reward = {
-            add_ideas = ENG_expand_the_repair_yards
+            add_ideas = expanded_refit_and_repair_yards
 		}
 	}
 
@@ -4687,6 +4920,9 @@ focus_tree = {
 				}
 				custom_effect_tooltip = available_mio_tt
 				show_mio_tooltip = AST_evans_deakin_co_organization
+				mio:AST_evans_deakin_co_organization = {
+					add_mio_funds = 1000
+				}
 			}
 			else = {
 				custom_effect_tooltip = available_designer
@@ -4839,7 +5075,7 @@ focus_tree = {
 	focus = {
 		id = AST_training_exercises_with_the_royal_navy
 		icon = GFX_goal_ENG_the_admiralty
-		x = 18
+		x = 17
 		y = 0
 		relative_position_id = AST_additional_militia_training
 
@@ -4970,9 +5206,6 @@ focus_tree = {
 		bypass = {
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
 			add_doctrine_cost_reduction = {
@@ -5148,9 +5381,6 @@ focus_tree = {
 			}
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
 			ENG = { country_event = { id = ast_armor.811 } }
@@ -5286,6 +5516,12 @@ focus_tree = {
 				cost_reduction = 0.99
 				uses = 1
 				category = cat_fleet_in_being
+			}
+			add_doctrine_cost_reduction = {
+				name = AST_protect_oversea_commerce
+				cost_reduction = 0.99
+				uses = 1
+				category = convoy_defense_tree
 			}
 		}
 	}
@@ -5443,9 +5679,6 @@ focus_tree = {
 		bypass = {
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
 			add_doctrine_cost_reduction = {
@@ -5479,9 +5712,6 @@ focus_tree = {
 		bypass = {
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
 			add_doctrine_cost_reduction = {
@@ -5514,9 +5744,6 @@ focus_tree = {
 		bypass = {
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
 			add_tech_bonus = {
@@ -5550,9 +5777,6 @@ focus_tree = {
 		bypass = {
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
 			add_doctrine_cost_reduction = {
@@ -5587,9 +5811,6 @@ focus_tree = {
 		bypass = {
 		}
 
-		cancel_if_invalid = yes
-		continue_if_invalid = no
-		available_if_capitulated = no
 
 		completion_reward = {
 			add_doctrine_cost_reduction = {
@@ -5600,6 +5821,264 @@ focus_tree = {
 			}
 		}
 	}
+
+	############################
+	#### Emergency Defence #####
+	############################
+
+	focus = {
+        id = AST_defence_of_australia
+        icon = GFX_goal_AST_defence_of_australia
+        x = 16
+        y = 4
+
+        available = {
+			has_war = yes
+			OR = {
+				has_war_with = JAP
+				has_war_with = ENG
+				has_war_with = USA
+			}
+			#always = no
+        }
+
+        bypass = {
+			surrender_progress > 0
+        }
+
+        cost = 3
+
+        ai_will_do = {
+            factor = 1
+        }
+
+        cancel_if_invalid = yes
+        continue_if_invalid = no
+        available_if_capitulated = no
+        search_filters = {
+        }
+        completion_reward = {
+			add_ideas = AST_defence_of_australia_idea
+        }
+    }
+
+	focus = {
+        id = AST_emergency_conscription_program
+        icon = GFX_focus_generic_court
+        prerequisite = { focus = AST_defence_of_australia }
+        x = 0
+        y = 1
+        relative_position_id = AST_defence_of_australia
+
+        available = {
+            OR = {
+				any_country = {
+					any_controlled_state = {
+						or = {
+							is_core_of = root
+							region = 167
+							region = 148
+							region = 287
+							region = 157
+							region = 354
+							region = 353
+							region = 83
+							region = 91
+						}
+					}
+					has_war_with = root
+				}
+            }
+        }
+
+        bypass = {
+        }
+
+        cost = 1
+
+        ai_will_do = {
+            factor = 1
+        }
+
+        cancel_if_invalid = yes
+        continue_if_invalid = no
+        available_if_capitulated = no
+        search_filters = {
+        }
+        completion_reward = {
+			add_ideas = AST_emergency_conscription_program_idea
+        }
+    }
+
+
+    focus = {
+        id = AST_emergency_fortifications
+        icon = GFX_goal_NZL_emergency_fortifications
+        prerequisite = { focus = AST_emergency_conscription_program }
+        x = -1
+        y = 1
+        relative_position_id = AST_emergency_conscription_program
+
+        available = {
+
+        }
+        bypass = {
+
+        }
+
+        cost = 1
+
+        ai_will_do = {
+            factor = 1
+        }
+
+        completion_reward = {
+            unlock_decision_category_tooltip = AST_emergency_fortifications_fake_decisions_cat
+        }
+    }
+
+    focus = {
+        id = AST_build_up_coastal_defences
+        icon = GFX_focus_FIN_coastal_defense
+        prerequisite = { focus = AST_emergency_conscription_program }
+        x = 1
+        y = 1
+        relative_position_id = AST_emergency_conscription_program
+
+        available = {
+        }
+
+        bypass = {
+        }
+
+        cost = 4
+
+        ai_will_do = {
+            factor = 1
+        }
+
+        cancel_if_invalid = yes
+        continue_if_invalid = no
+        available_if_capitulated = no
+        search_filters = {
+            FOCUS_FILTER_NAVY
+        }
+        completion_reward = {
+            every_state = {
+				limit = {
+					is_core_of = ROOT
+					is_controlled_by = ROOT
+				}
+				add_building_construction = {
+					type = coastal_bunker
+					level = 2
+					province = {
+						all_provinces = yes
+						limit_to_naval_base = yes
+					}
+				}
+			}
+        }
+    }
+
+    focus = {
+        id = AST_call_up_reinforcements
+        icon = GFX_focus_generic_little_entente
+        prerequisite = { focus = AST_emergency_fortifications focus = AST_build_up_coastal_defences }
+        x = 1
+        y = 1
+        relative_position_id = AST_emergency_fortifications
+
+        available = {
+        }
+        bypass = {
+
+        }
+
+        cost = 1
+
+        ai_will_do = {
+            factor = 1
+        }
+
+        cancel_if_invalid = yes
+        continue_if_invalid = no
+        available_if_capitulated = no
+        search_filters = {}
+
+        completion_reward = {
+			custom_effect_tooltip = NZL_call_up_reinforcements_tt
+			hidden_effect = {
+				set_country_flag = home_guard_deployed
+				division_template = {
+					name = "Home Guard Unit"
+					division_names_group = AST_GAR_01
+					priority = 0 # garrison
+
+					is_locked = yes
+
+					regiments = {
+						heavy_militia = { x = 0 y = 0 }
+						militia = { x = 0 y = 1 }
+						militia = { x = 0 y = 2 }
+
+						heavy_militia = { x = 1 y = 0 }
+						militia = { x = 1 y = 1 }
+						militia = { x = 1 y = 2 }
+					}
+
+					support = {
+						normal_engineer = { x = 0 y = 0 }
+						horse_logistics_company = { x = 0 y = 1 }
+
+						recon = { x = 1 y = 0 }
+					}
+				}
+				every_state = {
+					limit = {
+						is_core_of = ROOT
+						is_controlled_by = ROOT
+						not = {
+							state = 520
+							state = 955
+						}
+					}
+					create_unit = {
+						division = "division_template=\"Home Guard Unit\" start_experience_factor=0.3 start_equipment_factor=0.75 force_equipment_variants={eng_inf_1={owner=\"AST\"}}"
+						owner = ROOT
+						count = 1
+						#prioritize_location = 12632
+					}
+				}
+			}
+        }
+    }
+
+    focus = {
+        id = AST_scorch_earth_tactics
+        icon = GFX_goal_generic_scorch_earth
+        prerequisite = { focus = AST_call_up_reinforcements }
+        x = 0
+        y = 1
+        relative_position_id = AST_call_up_reinforcements
+
+        available = {
+
+        }
+        bypass = {
+
+        }
+
+        cost = 1
+
+        ai_will_do = {
+            factor = 1
+        }
+
+        completion_reward = {
+			unlock_decision_tooltip = AST_scorched_earth
+        }
+    }
 
 	####################### ALT HISTORY
 

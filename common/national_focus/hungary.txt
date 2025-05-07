@@ -6,6 +6,7 @@
 ### search_filters = {FOCUS_FILTER_MANPOWER}
 ### search_filters = {FOCUS_FILTER_ANNEXATION}
 
+#!gfx:interface\afo_focuses.gfx
 focus_tree = {
 	id = hungarian_focus
 
@@ -300,6 +301,8 @@ focus_tree = {
 		completion_reward = {
 			economy_fatigue_level_down_4 = yes
 			custom_effect_tooltip = HUN_trade_deals_with_germany_tt
+			HUN = { add_ideas = HUN_GER_trade_treaty }
+			GER = { add_ideas = GER_HUN_trade_treaty }
 		}
 	}
 
@@ -332,6 +335,8 @@ focus_tree = {
 		completion_reward = {
 			economy_fatigue_level_down_4 = yes
 			custom_effect_tooltip = HUN_trade_deals_with_italy_tt
+			HUN = { add_ideas = HUN_ITA_trade_treaty }
+			ITA = { add_ideas = ITA_HUN_trade_treaty }
 		}
 	}
 
@@ -518,7 +523,7 @@ focus_tree = {
 
 	focus = {
 		id = HUN_institute_for_industrial_techniques
-		icon = GFX_goal_generic_research
+		icon = GFX_goal_generic_research_2
 		prerequisite = { focus = HUN_reintegrate_the_railroads }
 		prerequisite = { focus = HUN_the_housing_act }
 		x = 0
@@ -544,7 +549,7 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			add_research_slot = 1
+			add_research_slot = 2
 		}
 	}
 
@@ -868,13 +873,13 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			add_ideas = GER_autarky_idea
-			if = {
-				limit = {
-					NOT = { has_idea = limited_exports }
-				}
-				add_ideas = limited_exports
-			}
+			#add_ideas = GER_autarky_idea
+			#if = {
+			#	limit = {
+			#		NOT = { has_idea = limited_exports }
+			#	}
+			#	add_ideas = limited_exports
+			#}
 			add_tech_bonus = {
 				name = HUN_self_dependancy
 				bonus = 0.5
@@ -884,7 +889,7 @@ focus_tree = {
 			add_tech_bonus = {
 				name = HUN_self_dependancy
 				bonus = 0.5
-				uses = 1
+				uses = 2
 				category = synth_resources
 			}
 		}
@@ -921,12 +926,12 @@ focus_tree = {
 				prioritize = { 43 }
 				add_resource = {
 					type = iron
-					amount = 60
+					amount = 6
 				}
 				add_extra_state_shared_building_slots = 2
 				add_building_construction = {
 					type = steel_refinery
-					level = 4
+					level = 2
 					instant_build = yes
 				}
 			}
@@ -1059,11 +1064,19 @@ focus_tree = {
 		}
 
 		available = {
-			custom_trigger_tooltip = {
-				tooltip = HUN_boost_hungarian_aviation_industry_tt
-				has_deployed_air_force_size = {
-					size > 399
-					type = fighter
+			if = {
+				limit = { has_aat = yes }
+				mio:HUN_mw_aircraft_organization = {
+					has_mio_size > 1
+				}
+			}
+			else = {
+				custom_trigger_tooltip = {
+					tooltip = HUN_boost_hungarian_aviation_industry_tt
+					has_deployed_air_force_size = {
+						size > 399
+						type = fighter
+					}
 				}
 			}
 		}
@@ -1086,7 +1099,7 @@ focus_tree = {
 						include_locked = yes
 					}
 				}
-				add_extra_state_shared_building_slots = 4
+				add_extra_state_shared_building_slots = 6
 				add_building_construction = {
 					type = arms_factory
 					level = 2
@@ -1094,7 +1107,7 @@ focus_tree = {
 				}
 				add_building_construction = {
 					type = aluminium_refinery
-					level = 2
+					level = 4
 					instant_build = yes
 				}
 			}
@@ -1102,7 +1115,7 @@ focus_tree = {
 	}
 
 	focus = {
-		id = HUN_manfred_and_wiess_arms_integration
+		id = HUN_manfred_weiss_arms_integration
 		icon = GFX_goal_generic_military_economy_large
 		prerequisite = { focus = HUN_expand_the_manfred_weiss_steel_works }
 		prerequisite = { focus = HUN_expand_the_technical_university_of_budapest }
@@ -1144,7 +1157,7 @@ focus_tree = {
 	focus = {
 		id = HUN_invest_in_mavag
 		icon = GFX_goal_generic_civilian_economy_massive
-		prerequisite = { focus = HUN_manfred_and_wiess_arms_integration focus = HUN_boost_hungarian_aviation_industry }
+		prerequisite = { focus = HUN_manfred_weiss_arms_integration focus = HUN_boost_hungarian_aviation_industry }
 		x = -1
 		y = 1
 		relative_position_id = HUN_boost_hungarian_aviation_industry
@@ -1201,7 +1214,7 @@ focus_tree = {
 	focus = {
 		id = HUN_invest_in_fegyver_es_gepgyar
 		icon = GFX_goal_generic_small_arms
-		prerequisite = { focus = HUN_manfred_and_wiess_arms_integration focus = HUN_boost_hungarian_aviation_industry }
+		prerequisite = { focus = HUN_manfred_weiss_arms_integration focus = HUN_boost_hungarian_aviation_industry }
 		x = 1
 		y = 1
 		relative_position_id = HUN_boost_hungarian_aviation_industry
@@ -1258,7 +1271,7 @@ focus_tree = {
 	focus = {
 		id = HUN_invest_in_tuzersegi_gyar
 		icon = GFX_goal_generic_build_tank
-		prerequisite = { focus = HUN_manfred_and_wiess_arms_integration focus = HUN_boost_hungarian_aviation_industry }
+		prerequisite = { focus = HUN_manfred_weiss_arms_integration focus = HUN_boost_hungarian_aviation_industry }
 		x = 3
 		y = 1
 		relative_position_id = HUN_boost_hungarian_aviation_industry
@@ -1463,9 +1476,7 @@ focus_tree = {
 
 		completion_reward = {
 			unlock_decision_category_tooltip = HUN_regency_powers
-			effect_tooltip = {
-				add_popularity = { ideology = democratic popularity = -0.1 }
-			}
+			add_popularity = { ideology = democratic popularity = -0.1 }
 		}
 	}
 
@@ -1763,7 +1774,7 @@ focus_tree = {
 	}
 
 	focus = {
-		id = HUN_toggle_the_italian_line
+		id = HUN_toe_the_italian_line
 		icon = GFX_goal_HUN_italian_line
 		prerequisite = { focus = HUN_expand_the_vitezi_rend focus = HUN_hungarian_fraternal_community }
 		x = -1
@@ -1793,13 +1804,14 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			custom_effect_tooltip = HUN_toggle_the_italian_line_tt
+			add_political_power = 75
+			custom_effect_tooltip = HUN_toe_the_italian_line_tt
 			reverse_add_opinion_modifier = { target = ITA modifier = HUN_italian_leanings }
 		}
 	}
 
 	focus = {
-		id = HUN_toggle_the_german_line
+		id = HUN_toe_the_german_line
 		icon = GFX_goal_HUN_german_line
 		prerequisite = { focus = HUN_expand_the_vitezi_rend focus = HUN_hungarian_fraternal_community }
 		x = 1
@@ -1829,7 +1841,8 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			custom_effect_tooltip = HUN_toggle_the_german_line_tt
+			add_political_power = 75
+			custom_effect_tooltip = HUN_toe_the_german_line_tt
 			reverse_add_opinion_modifier = { target = GER modifier = HUN_german_leanings }
 		}
 	}
@@ -1837,10 +1850,10 @@ focus_tree = {
 	focus = {
 		id = HUN_abandon_the_league_of_nations
 		icon = GFX_goal_generic_leave_league_of_nations
-		prerequisite = { focus = HUN_toggle_the_italian_line focus = HUN_toggle_the_german_line }
+		prerequisite = { focus = HUN_toe_the_italian_line focus = HUN_toe_the_german_line }
 		x = 1
 		y = 1
-		relative_position_id = HUN_toggle_the_italian_line
+		relative_position_id = HUN_toe_the_italian_line
 		search_filters = { FOCUS_FILTER_HISTORICAL }
 		cost = 3
 
@@ -1873,10 +1886,10 @@ focus_tree = {
 		icon = GFX_goal_generic_subjugation_to_italy
 		mutually_exclusive = { focus = HUN_cave_to_german_demands }
 		mutually_exclusive = { focus = HUN_allaince_with_poland }
-		prerequisite = { focus = HUN_toggle_the_italian_line }
+		prerequisite = { focus = HUN_toe_the_italian_line }
 		x = 0
 		y = 2
-		relative_position_id = HUN_toggle_the_italian_line
+		relative_position_id = HUN_toe_the_italian_line
 
 		cost = 3
 
@@ -1923,10 +1936,10 @@ focus_tree = {
 		icon = GFX_goal_generic_subjugation_to_germany
 		mutually_exclusive = { focus = HUN_cave_to_italian_demands }
 		mutually_exclusive = { focus = HUN_allaince_with_poland }
-		prerequisite = { focus = HUN_toggle_the_german_line }
+		prerequisite = { focus = HUN_toe_the_german_line }
 		x = 0
 		y = 2
-		relative_position_id = HUN_toggle_the_german_line
+		relative_position_id = HUN_toe_the_german_line
 		search_filters = { FOCUS_FILTER_HISTORICAL }
 		cost = 3
 
@@ -2099,7 +2112,7 @@ focus_tree = {
 	}
 
 	focus = {
-		id = HUN_toggle_the_polish_line
+		id = HUN_toe_the_polish_line
 		icon = GFX_goal_HUN_polish_line
 		prerequisite = { focus = HUN_hungarian_fraternal_community }
 		x = 3
@@ -2133,7 +2146,8 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			custom_effect_tooltip = HUN_toggle_the_polish_line_tt
+			add_political_power = 50
+			custom_effect_tooltip = HUN_toe_the_polish_line_tt
 			reverse_add_opinion_modifier = { target = POL modifier = HUN_polish_leanings }
 		}
 	}
@@ -2143,10 +2157,10 @@ focus_tree = {
 		icon = GFX_goal_generic_befriend_poland
 		mutually_exclusive = { focus = HUN_cave_to_german_demands }
 		mutually_exclusive = { focus = HUN_cave_to_italian_demands }
-		prerequisite = { focus = HUN_toggle_the_polish_line }
+		prerequisite = { focus = HUN_toe_the_polish_line }
 		x = 0
 		y = 2
-		relative_position_id = HUN_toggle_the_polish_line
+		relative_position_id = HUN_toe_the_polish_line
 
 		cost = 3
 
@@ -2252,14 +2266,45 @@ focus_tree = {
 	}
 
 	focus = {
-		id = HUN_military_cooperation
-		icon = GFX_goal_generic_contract_ratify
+		id = HUN_the_red_terror
+		icon = GFX_goal_generic_war_with_comintern
 		prerequisite = { focus = HUN_join_italy focus = HUN_join_the_axis focus = HUN_concessions_from_czechoslovakia }
-		x = 0
+		x = -1
 		y = 1
 		relative_position_id = HUN_join_the_axis
 		search_filters = { FOCUS_FILTER_HISTORICAL }
-		cost = 5
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			is_in_faction = yes
+		}
+
+		bypass = {
+
+		}
+
+		cancel_if_invalid = yes
+		continue_if_invalid = no
+		available_if_capitulated = no
+
+		completion_reward = {
+			add_ideas = HUN_fight_the_red_terror
+		}
+	}
+
+	focus = {
+		id = HUN_military_cooperation
+		icon = GFX_goal_generic_contract_ratify
+		prerequisite = { focus = HUN_join_italy focus = HUN_join_the_axis focus = HUN_concessions_from_czechoslovakia }
+		x = 1
+		y = 1
+		relative_position_id = HUN_join_the_axis
+		search_filters = { FOCUS_FILTER_HISTORICAL }
+		cost = 3
 
 		ai_will_do = {
 			factor = 1
@@ -2312,10 +2357,11 @@ focus_tree = {
 	focus = {
 		id = HUN_the_national_saviour
 		icon = GFX_goal_HUN_the_national_saviour
+		prerequisite = { focus = HUN_the_red_terror }
 		prerequisite = { focus = HUN_military_cooperation }
-		x = 0
+		x = 1
 		y = 1
-		relative_position_id = HUN_military_cooperation
+		relative_position_id = HUN_the_red_terror
 		search_filters = { FOCUS_FILTER_HISTORICAL }
 		cost = 5
 
@@ -2639,7 +2685,7 @@ focus_tree = {
 	}
 
 	focus = {
-		id = HUN_the_tural_alliance
+		id = HUN_the_turul_alliance
 		icon = GFX_goal_generic_military_deal
 		prerequisite = { focus = HUN_arrest_societal_elites }
 		prerequisite = { focus = HUN_nationalize_the_banks }
@@ -2712,11 +2758,11 @@ focus_tree = {
 	focus = {
 		id = HUN_the_three_year_plan
 		icon = GFX_goal_HUN_the_three_year_plan
-		prerequisite = { focus = HUN_the_tural_alliance }
+		prerequisite = { focus = HUN_the_turul_alliance }
 		prerequisite = { focus = HUN_hungarian_life_movement }
 		x = 1
 		y = 1
-		relative_position_id = HUN_the_tural_alliance
+		relative_position_id = HUN_the_turul_alliance
 
 		cost = 5
 
@@ -3198,11 +3244,11 @@ focus_tree = {
 			if = {
 				limit = {
 					OR = {
-						strength_ratio = {
+						fighting_army_strength_ratio = {
 							tag = CZE
 							ratio < 1
 						}
-						strength_ratio = {
+						fighting_army_strength_ratio = {
 							tag = YUG
 							ratio < 1
 						}
@@ -3418,6 +3464,14 @@ focus_tree = {
 			upgrade_intelligence_agency = upgrade_psycho_warfare
 			upgrade_intelligence_agency = upgrade_suicide_pills
 			custom_effect_tooltip = HUN_counter_the_fatherland_front_tt
+			hidden_effect = {
+				AUS = {
+					add_timed_idea = {
+						idea = monarchist_drift_AUS
+						days = 270
+					}
+				}
+			}
 		}
 	}
 
@@ -3442,7 +3496,7 @@ focus_tree = {
 			AUS = {
 				exists = yes
 				is_subject = no
-				neutrality > .5
+				neutrality > 0.5
 			}
 		}
 
@@ -3797,7 +3851,7 @@ focus_tree = {
 					has_idea = HUN_treaty_of_trianon_2
 				}
 				OR = {
-					threat > 0.72
+					threat > 0.75
 					has_war = yes
 					FRA = { has_capitulated = yes }
 					ITA = { has_capitulated = yes }
@@ -4234,7 +4288,14 @@ focus_tree = {
 		}
 
 		available = {
-			has_army_manpower = { size > 250000 }
+			has_army_manpower = { size > 249999 }
+			custom_override_tooltip = {
+				tooltip = {
+					localization_key = has_army_eq_tt
+					num_eq = "22.50K"
+				}
+				check_variable = { num_equipment_in_armies@infantry_equipment > 22500 }
+			}
 			76 = { OWNER = { NOT = { is_in_faction_with = HUN } } }
 			is_subject = no
 			has_war = no
@@ -4365,7 +4426,14 @@ focus_tree = {
 		}
 
 		available = {
-			has_army_manpower = { size > 400000 } #TODO: change back to 45
+			has_army_manpower = { size > 399999 } #TODO: change back to 45
+			custom_override_tooltip = {
+				tooltip = {
+					localization_key = has_army_eq_tt
+					num_eq = "25.00K"
+				}
+				check_variable = { num_equipment_in_armies@infantry_equipment > 25000 }
+			}
 			109 = { OWNER = { NOT = { is_in_faction_with = HUN } } }
 			is_subject = no
 			has_war = no
@@ -4500,7 +4568,14 @@ focus_tree = {
 		}
 
 		available = {
-			has_army_manpower = { size > 550000 }
+			has_army_manpower = { size > 549999 }
+			custom_override_tooltip = {
+				tooltip = {
+					localization_key = has_army_eq_tt
+					num_eq = "32.50K"
+				}
+				check_variable = { num_equipment_in_armies@infantry_equipment > 32500 }
+			}
 			39 = { OWNER = { NOT = { is_in_faction_with = HUN } } }
 			is_subject = no
 			has_war = no
@@ -4729,7 +4804,14 @@ focus_tree = {
 		}
 
 		available = {
-			has_army_manpower = { size > 450000 }
+			has_army_manpower = { size > 449999 }
+			custom_override_tooltip = {
+				tooltip = {
+					localization_key = has_army_eq_tt
+					num_eq = "27.50K"
+				}
+				check_variable = { num_equipment_in_armies@infantry_equipment > 27500 }
+			}
 			88 = { OWNER = { NOT = { is_in_faction_with = HUN } } }
 			is_subject = no
 			has_war = no
@@ -4850,7 +4932,14 @@ focus_tree = {
 		available = {
 			44 = { OWNER = { NOT = { is_in_faction_with = HUN } } }
 			47 = { OWNER = { NOT = { is_in_faction_with = HUN } } }
-			has_army_manpower = { size > 550000 }
+			has_army_manpower = { size > 549999 }
+			custom_override_tooltip = {
+				tooltip = {
+					localization_key = has_army_eq_tt
+					num_eq = "32.50K"
+				}
+				check_variable = { num_equipment_in_armies@infantry_equipment > 32500 }
+			}
 			is_subject = no
 			has_war = no
 		}
@@ -6299,7 +6388,7 @@ focus_tree = {
 					has_idea = HUN_treaty_of_trianon_2
 				}
 				OR = {
-					threat > 0.72
+					threat > 0.75
 					has_war = yes
 					FRA = { has_capitulated = yes }
 					ITA = { has_capitulated = yes }
@@ -6913,6 +7002,13 @@ focus_tree = {
 
 		available = {
 			has_army_manpower = { size > 199999 }
+			custom_override_tooltip = {
+				tooltip = {
+					localization_key = has_army_eq_tt
+					num_eq = "15.00K"
+				}
+				check_variable = { num_equipment_in_armies@infantry_equipment > 15000 }
+			}
 			is_faction_leader = yes
 			is_subject = no
 			OR = {
@@ -6989,6 +7085,13 @@ focus_tree = {
 
 		available = {
 			has_army_manpower = { size > 199999 }
+			custom_override_tooltip = {
+				tooltip = {
+					localization_key = has_army_eq_tt
+					num_eq = "15.00K"
+				}
+				check_variable = { num_equipment_in_armies@infantry_equipment > 15000 }
+			}
 			is_faction_leader = yes
 			is_subject = no
 			OR = {
@@ -7070,6 +7173,13 @@ focus_tree = {
 
 		available = {
 			has_army_manpower = { size > 99999 }
+			custom_override_tooltip = {
+				tooltip = {
+					localization_key = has_army_eq_tt
+					num_eq = "10.00K"
+				}
+				check_variable = { num_equipment_in_armies@infantry_equipment > 10000 }
+			}
 			is_faction_leader = yes
 			is_subject = no
 			OR = {
@@ -7157,6 +7267,13 @@ focus_tree = {
 
 		available = {
 			has_army_manpower = { size > 99999 }
+			custom_override_tooltip = {
+				tooltip = {
+					localization_key = has_army_eq_tt
+					num_eq = "10.00K"
+				}
+				check_variable = { num_equipment_in_armies@infantry_equipment > 10000 }
+			}
 			is_faction_leader = yes
 			is_subject = no
 			OR = {
@@ -7269,6 +7386,13 @@ focus_tree = {
 
 		available = {
 			has_army_manpower = { size > 249999 }
+			custom_override_tooltip = {
+				tooltip = {
+					localization_key = has_army_eq_tt
+					num_eq = "17.50K"
+				}
+				check_variable = { num_equipment_in_armies@infantry_equipment > 17500 }
+			}
 			is_faction_leader = yes
 			is_subject = no
 			OR = {
@@ -7356,6 +7480,7 @@ focus_tree = {
 
 		bypass = {
 			NOT = {
+				has_idea = disarmed_nation
 				has_idea = HUN_treaty_of_trianon
 				has_idea = HUN_treaty_of_trianon_2
 			}
@@ -7629,6 +7754,9 @@ focus_tree = {
 					owner = HUN
 				}
 			}
+			mio:HUN_mavag_organization = {
+			 	add_mio_funds = 1200
+			}
 			if = {
 				limit = {
 					FRA = { has_completed_focus = FRA_ratify_the_entente }
@@ -7684,6 +7812,10 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+			add_timed_idea = { idea = military_contracts days = 730 }
+			military_contracts_effect = yes
+			custom_effect_tooltip = firepower_induction_spirit_unlock_tt
+			custom_effect_tooltip = infantry_modernization_spirit_unlock_tt
 			custom_effect_tooltip = HUN_gyorshadtest_tt
 			hidden_effect = {
 				division_template = {
@@ -7752,7 +7884,7 @@ focus_tree = {
 			}
 			custom_trigger_tooltip = {
 				tooltip = HUN_complete_huba_i_art_tt
-				check_variable = { num_equipment_in_armies@artillery_equipment > 535 }
+				check_variable = { num_equipment_in_armies@artillery_equipment > 534 }
 			}
 			custom_trigger_tooltip = {
 				tooltip = HUN_complete_huba_i_sup_tt
@@ -7773,7 +7905,9 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+			add_political_power = 25
 			army_experience = 25
+			add_equipment_to_stockpile = { type = hun_motorized_equipment_1 amount = 200 }
 			swap_ideas = {
 				remove_idea = Huba_mobalization_plans
 				add_idea = Huba_mobalization_plans_2
@@ -7808,10 +7942,13 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+			mio:HUN_raba_organization = {
+			 	add_mio_funds = 1200
+			}
 			add_doctrine_cost_reduction = {
 				name = HUN_mobile_corps_doctrine
 				cost_reduction = 0.99
-				uses = 3
+				uses = 1
 				category = cat_mobile_warfare
 			}
 		}
@@ -7845,7 +7982,7 @@ focus_tree = {
 			add_doctrine_cost_reduction = {
 				name = HUN_creation_of_the_artillery_corps
 				cost_reduction = 0.99
-				uses = 2
+				uses = 1
 				category = cat_superior_firepower
 			}
 		}
@@ -7908,7 +8045,7 @@ focus_tree = {
 			}
 			custom_trigger_tooltip = {
 				tooltip = HUN_complete_huba_ii_art_tt
-				check_variable = { num_equipment_in_armies@artillery_equipment > 927 }
+				check_variable = { num_equipment_in_armies@artillery_equipment > 928 }
 			}
 			custom_trigger_tooltip = {
 				tooltip = HUN_complete_huba_ii_sup_tt
@@ -7943,7 +8080,9 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+			add_political_power = 50
 			army_experience = 50
+			add_equipment_to_stockpile = { type = support_equipment_1 amount = 1000 }
 			swap_ideas = {
 				remove_idea = Huba_mobalization_plans_2
 				add_idea = Huba_mobalization_plans_3
@@ -8102,7 +8241,9 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+			add_political_power = 75
 			army_experience = 75
+			add_equipment_to_stockpile = { type = train_equipment_1 amount = 100 }
 			swap_ideas = {
 				remove_idea = Huba_mobalization_plans_3
 				add_idea = Huba_mobalization_plans_4
@@ -8131,12 +8272,13 @@ focus_tree = {
 				}
 				has_tech = hun_light_tank_chassis_3
 				has_tech = hun_medium_tank_chassis_1
+				has_tech = hun_scout_armoured_car_2
 			}
 			else = {
 				has_tech = hun_light_2
 				has_tech = hun_medium_1
+				has_tech = hun_scout_car_2
 			}
-			has_tech = hun_scout_car_2
 			has_tech = hun_motorised_infantry
 			has_tech = tech_field_hospital
 			has_tech = tech_maintenance_company
@@ -8152,6 +8294,7 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
+			custom_effect_tooltip = mobile_warfare_drive_spirit_unlock_tt
 			custom_effect_tooltip = HUN_form_an_armoured_division_tt
 			hidden_effect = {
 				division_template = {
@@ -8160,21 +8303,19 @@ focus_tree = {
 					priority = 1
 
 					regiments = {
-						medium_armor = { x = 0 y = 0 }
-						medium_armor = { x = 0 y = 1 }
-						medium_armor = { x = 0 y = 2 }
+						light_armor = { x = 0 y = 0 }
+						light_armor = { x = 0 y = 1 }
+						light_armor = { x = 0 y = 2 }
 
-						medium_armor = { x = 1 y = 0 }
-						medium_armor = { x = 1 y = 1 }
-						medium_armor = { x = 1 y = 2 }
+						light_armor = { x = 1 y = 0 }
+						light_armor = { x = 1 y = 1 }
+						light_armor = { x = 1 y = 2 }
 
 						motorized = { x = 2 y = 0 }
 						motorized = { x = 2 y = 1 }
-						motorized = { x = 2 y = 2 }
 
 						motorized = { x = 3 y = 0 }
 						motorized = { x = 3 y = 1 }
-						motorized = { x = 3 y = 2 }
 					}
 
 					support = {
@@ -8213,51 +8354,52 @@ focus_tree = {
 		}
 
 		available = {
-			if = {
-				limit = {
-					has_country_flag = french_technologies_tree_flag
-				}
-				has_tech = fra_aa_tower_1
-			}
-			else_if = {
-				limit = {
-					has_country_flag = italian_technologies_tree_flag
-				}
-				has_tech = ita_aa_tower_1
-			}
-			else_if = {
-				limit = {
-					has_country_flag = japanese_technologies_tree_flag
-				}
-				has_tech = jap_aa_tower_1
-			}
-			else_if = {
-				limit = {
-					has_country_flag = german_technologies_tree_flag
-				}
-				has_tech = ger_aa_tower_1
-			}
-			else_if = {
-				limit = {
-					has_country_flag = soviet_technologies_tree_flag
-				}
-				has_tech = sov_aa_tower_1
-			}
-			else_if = {
-				limit = {
-					has_country_flag = british_technologies_tree_flag
-				}
-				has_tech = eng_aa_tower_1
-			}
-			else_if = {
-				limit = {
-					has_country_flag = unitedstates_technologies_tree_flag
-				}
-				has_tech = usa_aa_tower_1
-			}
-			else = {
-				has_tech = aa_tower_1
-			}
+			has_tech = hun_aa_tower_1
+			# if = {
+			# 	limit = {
+			# 		has_country_flag = french_technologies_tree_flag
+			# 	}
+			# 	has_tech = fra_aa_tower_1
+			# }
+			# else_if = {
+			# 	limit = {
+			# 		has_country_flag = italian_technologies_tree_flag
+			# 	}
+			# 	has_tech = ita_aa_tower_1
+			# }
+			# else_if = {
+			# 	limit = {
+			# 		has_country_flag = japanese_technologies_tree_flag
+			# 	}
+			# 	has_tech = jap_aa_tower_1
+			# }
+			# else_if = {
+			# 	limit = {
+			# 		has_country_flag = german_technologies_tree_flag
+			# 	}
+			# 	has_tech = ger_aa_tower_1
+			# }
+			# else_if = {
+			# 	limit = {
+			# 		has_country_flag = soviet_technologies_tree_flag
+			# 	}
+			# 	has_tech = sov_aa_tower_1
+			# }
+			# else_if = {
+			# 	limit = {
+			# 		has_country_flag = british_technologies_tree_flag
+			# 	}
+			# 	has_tech = eng_aa_tower_1
+			# }
+			# else_if = {
+			# 	limit = {
+			# 		has_country_flag = unitedstates_technologies_tree_flag
+			# 	}
+			# 	has_tech = usa_aa_tower_1
+			# }
+			# else = {
+			# 	has_tech = aa_tower_1
+			# }
 			889 = { is_fully_controlled_by = ROOT }
 			155 = { is_fully_controlled_by = ROOT }
 			43 = { is_fully_controlled_by = ROOT }
@@ -8353,7 +8495,7 @@ focus_tree = {
 		completion_reward = {
 			add_doctrine_cost_reduction = {
 				name = HUN_the_hungarian_air_forces
-				cost_reduction = 0.99
+				cost_reduction = 0.5
 				uses = 2
 				category = air_doctrine
 			}
@@ -8464,7 +8606,7 @@ focus_tree = {
 				name = HUN_veszprem_design_centre
 				bonus = 0.5
 				uses = 2
-				category = light_fighter
+				category = cat_multirole
 			}
 			add_tech_bonus = {
 				name = HUN_veszprem_design_centre
@@ -8645,7 +8787,7 @@ focus_tree = {
 				custom_effect_tooltip = invites_mio_tt
 				show_mio_tooltip = HUN_ganz_danubius_organization
 				# mio:HUN_ganz_danubius_organization = {
-				# 	add_mio_funds = 2500
+				# 	add_mio_funds = 1800
 				# }
 #				unlock_mio_trait_tooltip  = {
 #					department = HUN_mio_department_design_ship_capital_screen_weapons
@@ -8883,7 +9025,7 @@ focus_tree = {
 			add_doctrine_cost_reduction = {
 				name = HUN_the_hungarian_ground_forces
 				cost_reduction = 0.99
-				uses = 2
+				uses = 1
 				category = land_doctrine
 			}
 			add_tech_bonus = {
@@ -9113,7 +9255,7 @@ focus_tree = {
 			add_doctrine_cost_reduction = {
 				name = HUN_modernize_the_hdf
 				cost_reduction = 0.99
-				uses = 2
+				uses = 1
 				category = cat_superior_firepower
 			}
 			add_tech_bonus = {
@@ -9191,7 +9333,7 @@ focus_tree = {
 			add_doctrine_cost_reduction = {
 				name = HUN_combined_warfare
 				cost_reduction = 0.99
-				uses = 2
+				uses = 1
 				category = cat_mobile_warfare
 			}
 		}
@@ -9227,7 +9369,7 @@ focus_tree = {
 			add_doctrine_cost_reduction = {
 				name = HUN_theory_of_flexible_defence
 				cost_reduction = 0.99
-				uses = 2
+				uses = 1
 				category = cat_grand_battle_plan
 			}
 		}

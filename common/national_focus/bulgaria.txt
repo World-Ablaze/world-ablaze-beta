@@ -7,6 +7,7 @@
 ### search_filters = {FOCUS_FILTER_ANNEXATION}
 ### search_filters = {FOCUS_FILTER_INTERNAL_AFFAIRS}
 
+#!gfx:interface\afo_focuses.gfx
 focus_tree = {
     id = bulgarian_focus
 	country = {
@@ -273,12 +274,15 @@ focus_tree = {
 		x = -1
 		y = 1
 		relative_position_id = BUL_grow_closer_to_germany
-		search_filters = { FOCUS_FILTER_POLITICAL }
+		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_HISTORICAL }
 		cost = 5
 
 		available = {
 			threat > 0.32
 		}
+
+		cancel_if_invalid = no
+		continue_if_invalid = yes
 
 		completion_reward = {
 			unlock_decision_tooltip = BUL_a_royal_visit
@@ -302,7 +306,7 @@ focus_tree = {
 		x = 0
 		y = 1
 		relative_position_id = BUL_power_to_the_tsar
-		search_filters = { FOCUS_FILTER_POLITICAL }
+		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_HISTORICAL }
 		cost = 5
 
 		completion_reward = {
@@ -328,7 +332,7 @@ focus_tree = {
 		x = 0
 		y = 1
 		relative_position_id = BUL_continue_funding_royal_institutions
-		search_filters = { FOCUS_FILTER_POLITICAL }
+		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_HISTORICAL }
 		cost = 5
 
 		completion_reward = {
@@ -352,7 +356,7 @@ focus_tree = {
 		x = 1
 		y = 1
 		relative_position_id = BUL_grow_closer_to_germany
-		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_HISTORICAL }
+		search_filters = { FOCUS_FILTER_POLITICAL }
 		cost = 5
 
 		ai_will_do = { factor = 0 }
@@ -420,7 +424,7 @@ focus_tree = {
 		x = 0
 		y = 1
 		relative_position_id = BUL_consolidate_power_in_the_cabinet
-		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_HISTORICAL }
+		search_filters = { FOCUS_FILTER_POLITICAL }
 		available = {
 			fascism > 0.25
 		}
@@ -439,7 +443,7 @@ focus_tree = {
 		x = 0
 		y = 1
 		relative_position_id = BUL_encourage_fascist_youth_groups
-		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_HISTORICAL }
+		search_filters = { FOCUS_FILTER_POLITICAL }
 		available = {
 			fascism > 0.45
 		}
@@ -484,6 +488,7 @@ focus_tree = {
 		completion_reward = {
 			add_stability = 0.1
 			add_ideas = neutrality_idea
+			custom_effect_tooltip = BUL_policy_of_neutrality_tt
 		}
 	}
 
@@ -799,7 +804,7 @@ focus_tree = {
 					set_global_flag = BUL_fatherland_front_coup_flag
 					set_country_flag = BUL_ff_civil_war_flag
 					set_variable = { BUL_communist_support_before_cw = party_popularity@communism }
-					set_variable = { BUL_ff_coup_size = 0.1 }
+					set_variable = { BUL_ff_coup_size = 1 }
 					#Default state
 					if = {
 						limit = {
@@ -818,27 +823,27 @@ focus_tree = {
 						limit = {
 							check_variable = { BUL_zveno_attitude = -4 }
 						}
-						set_temp_variable = { a = BUL_zveno_influence }
-						multiply_temp_variable = { a = 0.05 }
-						add_to_temp_variable = { BUL_ff_coup_size = a }
+						add_to_variable = { BUL_ff_coup_size = 1 }
+						48 = { set_state_flag = BUL_ff_state_flag }
+						set_country_flag = BUL_zveno_joined_ff_flag
 					}
 					#Bonuses from BS
 					if = {
 						limit = {
 							check_variable = { BUL_socialist_attitude = -4 }
 						}
-						set_temp_variable = { a = BUL_socialist_influence }
-						multiply_temp_variable = { a = 0.05 }
-						add_to_temp_variable = { BUL_ff_coup_size = a }
+						add_to_variable = { BUL_ff_coup_size = 1 }
+						212 = { set_state_flag = BUL_ff_state_flag }
+						set_country_flag = BUL_bs_joined_ff_flag
 					}
 					#Bonuses from Agrarian Union
 					if = {
 						limit = {
 							check_variable = { BUL_agrarian_attitude = -4 }
 						}
-						set_temp_variable = { a = BUL_agrarian_influence }
-						multiply_temp_variable = { a = 0.05 }
-						add_to_temp_variable = { BUL_ff_coup_size = a }
+						add_to_variable = { BUL_ff_coup_size = 1 }
+						875 = { set_state_flag = BUL_ff_state_flag }
+						set_country_flag = BUL_bzns_joined_ff_flag
 					}
 
 					if = {
@@ -870,14 +875,56 @@ focus_tree = {
 							}
 						}
 					}
-					#START CIVIL WAR
-					start_civil_war = {
-						ideology = communism
-						size = BUL_ff_coup_size
-						capital = 211
-						states = all
-						states_filter = {
-							has_state_flag = BUL_ff_state_flag
+					#Set FF capital based on the states they get in the split
+					if = {
+						limit = {
+							48 = { has_state_flag = BUL_ff_state_flag } #Sofia is FF's capital
+						}
+						#START CIVIL WAR
+						start_civil_war = {
+							ideology = communism
+							size = 0.1
+							army_ratio = 0
+							air_ratio = 0
+							navy_ratio = 0
+							capital = 48
+							states = all
+							states_filter = {
+								has_state_flag = BUL_ff_state_flag
+							}
+						}
+					}
+					else_if = {
+						limit = {
+							212 = { has_state_flag = BUL_ff_state_flag } #Plovdiv is FF's capital
+						}
+						#START CIVIL WAR
+						start_civil_war = {
+							ideology = communism
+							size = 0.1
+							army_ratio = 0
+							air_ratio = 0
+							navy_ratio = 0
+							capital = 212
+							states = all
+							states_filter = {
+								has_state_flag = BUL_ff_state_flag
+							}
+						}
+					}
+					else = {	#Varna is FF's capital
+						#START CIVIL WAR
+						start_civil_war = {
+							ideology = communism
+							size = 0.1
+							army_ratio = 0
+							air_ratio = 0
+							navy_ratio = 0
+							capital = 211
+							states = all
+							states_filter = {
+								has_state_flag = BUL_ff_state_flag
+							}
 						}
 					}
 
@@ -891,26 +938,35 @@ focus_tree = {
 						set_cosmetic_tag = BUL_ff_bulgaria
 
 						division_template = {
+							name = "Fatherland Front Infantry"
+							priority = 1
+							is_locked = yes
+							division_names_group = BUL_INF_04
+							regiments = {
+								heavy_infantry = { x = 0 y = 0 }
+								infantry = { x = 0 y = 1 }
+								infantry = { x = 0 y = 2 }
+
+								heavy_infantry = { x = 1 y = 0 }
+								infantry = { x = 1 y = 1 }
+								infantry = { x = 1 y = 2 }
+							}
+
+							support = {
+								normal_engineer = { x = 0 y = 0 }
+								horse_logistics_company = { x = 0 y = 1 }
+							}
+						}
+
+						division_template = {
 							name = "Fatherland Front Militia"
 							priority = 1
 							is_locked = yes
 							division_names_group = BUL_INF_04
 							regiments = {
-								infantry = { x = 0 y = 0 }
-								infantry = { x = 0 y = 1 }
-								infantry = { x = 0 y = 2 }
-							}
-						}
-
-						division_template = {
-							name = "Fatherland Front Partisans"
-							priority = 1
-							is_locked = yes
-							division_names_group = BUL_INF_06
-							regiments = {
-								infantry = { x = 0 y = 0 }
-								infantry = { x = 0 y = 1 }
-								infantry = { x = 0 y = 1 }
+								militia = { x = 0 y = 0 }
+								militia = { x = 0 y = 1 }
+								militia = { x = 0 y = 1 }
 							}
 						}
 
@@ -957,37 +1013,27 @@ focus_tree = {
 								}
 							}
 						}
-						#Bonus from BS in the FF
 						if = {
 							limit = {
-								has_country_flag = BUL_bs_joined_ff_flag
 								owns_state = 212
 							}
 							212 = {
 								create_unit = {
-									division = "division_template = \"Fatherland Front Militia\" start_experience_factor = 0.15"
-									owner = PREV
-								}
-								create_unit = {
-									division = "division_template = \"Fatherland Front Militia\" start_experience_factor = 0.15"
-									owner = PREV
+									division = "division_template = \"Fatherland Front Infantry\" start_experience_factor = 0.15 start_equipment_factor = 1.0"
+									owner = ROOT
+									count = BUL_ff_coup_size
 								}
 							}
 						}
-						#Bonus from BZNS in the FF
-						if = {
+						else_if = {
 							limit = {
-								has_country_flag = BUL_bs_joined_ff_flag
-								owns_state = 801
+								owns_state = 211
 							}
-							801 = {
+							211 = {
 								create_unit = {
-									division = "division_template = \"Fatherland Front Militia\" start_experience_factor = 0.1"
-									owner = PREV
-								}
-								create_unit = {
-									division = "division_template = \"Fatherland Front Militia\" start_experience_factor = 0.1"
-									owner = PREV
+									division = "division_template = \"Fatherland Front Infantry\" start_experience_factor = 0.15 start_equipment_factor = 1.0"
+									owner = ROOT
+									count = BUL_ff_coup_size
 								}
 							}
 						}
@@ -1280,9 +1326,13 @@ focus_tree = {
 		x = -1
 		y = 1
 		relative_position_id = BUL_arrest_leaders
+
 		available = {
 			threat > 0.15
 		}
+
+		cancel_if_invalid = no
+		continue_if_invalid = yes
 
 		cost = 5
 
@@ -1302,9 +1352,13 @@ focus_tree = {
 		y = 1
 		relative_position_id = BUL_arrest_leaders
 		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_HISTORICAL }
+
 		available = {
 			threat > 0.03
 		}
+
+		cancel_if_invalid = no
+		continue_if_invalid = yes
 
 		cost = 3
 
@@ -1363,7 +1417,7 @@ focus_tree = {
 
 	focus = {
 		id = BUL_reconcile_with_turkey
-		icon = GFX_focus_generic_befriend_turkey
+		icon = GFX_goal_generic_befriend_turkey
 		prerequisite = { focus = BUL_reopen_relations_with_Yugoslavia }
 		x = -1
 		y = 1
@@ -1452,6 +1506,9 @@ focus_tree = {
 		available = {
 			threat > 0.2
 		}
+
+		cancel_if_invalid = no
+		continue_if_invalid = yes
 
 		completion_reward = {
 			if = {
@@ -1614,6 +1671,7 @@ focus_tree = {
 		completion_reward = {
 			add_state_core = 851
 			add_state_core = 106
+			add_state_core = 731
 			add_war_support = 0.05
 			if = {
 				limit = {
@@ -2069,9 +2127,7 @@ focus_tree = {
 				limit = {
 					free_building_slots = {
 						building = infrastructure
-						size > 0
-						include_locked = yes
-					}
+						size > 0}
 				}
 				add_building_construction = {
 					type = infrastructure
@@ -2084,9 +2140,7 @@ focus_tree = {
 				limit = {
 					free_building_slots = {
 						building = infrastructure
-						size > 0
-						include_locked = yes
-					}
+						size > 0}
 				}
 				add_building_construction = {
 					type = infrastructure
@@ -2119,6 +2173,8 @@ focus_tree = {
 		cost = 5
 
 	 	completion_reward = {
+			custom_effect_tooltip = available_mio_tt
+			show_mio_tooltip = BUL_bdz_organization
 			random_owned_controlled_state = {
 				prioritize = { 48 }
 				add_extra_state_shared_building_slots = 2
@@ -2176,6 +2232,16 @@ focus_tree = {
 
 		search_filters = {FOCUS_FILTER_INDUSTRY FOCUS_FILTER_RESEARCH}
 		completion_reward = {
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				custom_effect_tooltip = available_mio_tt
+				show_mio_tooltip = BUL_dar_organization
+				mio:BUL_dar_organization = {
+					add_mio_funds = 500
+				}
+			}
 			48 = {
 				add_extra_state_shared_building_slots = 1
 				add_building_construction = {
@@ -2190,14 +2256,12 @@ focus_tree = {
 				uses = 1
 				category = light_air
 			}
-			custom_effect_tooltip = available_designer
-			show_ideas_tooltip = BUL_dar
 		}
 	}
 
 	focus = {
 		id = BUL_expand_sofia_university
-		icon = GFX_goal_generic_research_2
+		icon = GFX_goal_generic_research
 		prerequisite = { focus = BUL_begin_industrial_rearmament }
 		x = 0
 		y = 1
@@ -2301,9 +2365,7 @@ focus_tree = {
 				limit = {
 					free_building_slots = {
 						building = infrastructure
-						size > 0
-						include_locked = yes
-					}
+						size > 0}
 				}
 				add_building_construction = {
 					type = infrastructure
@@ -2316,9 +2378,7 @@ focus_tree = {
 				limit = {
 					free_building_slots = {
 						building = infrastructure
-						size > 0
-						include_locked = yes
-					}
+						size > 0}
 				}
 				add_building_construction = {
 					type = infrastructure
@@ -2331,9 +2391,7 @@ focus_tree = {
 				limit = {
 					free_building_slots = {
 						building = infrastructure
-						size > 0
-						include_locked = yes
-					}
+						size > 0}
 				}
 				add_building_construction = {
 					type = infrastructure
@@ -2346,9 +2404,7 @@ focus_tree = {
 				limit = {
 					free_building_slots = {
 						building = infrastructure
-						size > 0
-						include_locked = yes
-					}
+						size > 0}
 				}
 				add_building_construction = {
 					type = infrastructure
@@ -2394,6 +2450,11 @@ focus_tree = {
 		search_filters = {FOCUS_FILTER_INDUSTRY FOCUS_FILTER_RESEARCH}
 		completion_reward = {
 			economy_fatigue_level_up_1 = yes
+			custom_effect_tooltip = available_mio_tt
+			show_mio_tooltip = BUL_dvf_organization
+			mio:BUL_dvf_organization = {
+				add_mio_funds = 500
+			}
 			212 = {
 				add_extra_state_shared_building_slots = 4
 				add_building_construction = {
@@ -2409,8 +2470,6 @@ focus_tree = {
 				category = infantry_weapons
 				category = support_tech
 			}
-			custom_effect_tooltip = available_designer
-			show_ideas_tooltip = BUL_dvf
 		}
 	}
 
@@ -2432,6 +2491,11 @@ focus_tree = {
 
 		search_filters = {FOCUS_FILTER_INDUSTRY FOCUS_FILTER_RESEARCH}
 		completion_reward = {
+			custom_effect_tooltip = available_mio_tt
+			show_mio_tooltip = BUL_dvf_sopot_organization
+			mio:BUL_dvf_sopot_organization = {
+				add_mio_funds = 500
+			}
 			212 = {
 				add_extra_state_shared_building_slots = 3
 				add_building_construction = {
@@ -2446,8 +2510,6 @@ focus_tree = {
 				uses = 1
 				category = artillery
 			}
-			custom_effect_tooltip = available_designer
-			show_ideas_tooltip = BUL_dvf_sopot
 		}
 	}
 
@@ -2544,7 +2606,15 @@ focus_tree = {
 		cost = 3
 
 	 	completion_reward = {
-			add_equipment_to_stockpile = { type = train_equipment_1 amount = 25 producer = ROOT }
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				mio:BUL_bdz_organization = {
+					add_mio_funds = 600
+				}
+			}
+			add_equipment_to_stockpile = { type = train_equipment_1 amount = 150 producer = ROOT }
 		}
    	}
 
@@ -2753,6 +2823,8 @@ focus_tree = {
 		}
 
 	 	completion_reward = {
+			add_timed_idea = { idea = military_contracts days = 730 }
+			military_contracts_effect = yes
 			if = {
 				limit = {
 					NOT = { has_war_with = GER }
@@ -2821,7 +2893,10 @@ focus_tree = {
 
 		completion_reward = {
 			army_experience = 25
+			custom_effect_tooltip = firepower_induction_spirit_unlock_tt
+			custom_effect_tooltip = infantry_modernization_spirit_unlock_tt
 			add_political_power = 50
+			add_manpower = 2000
 		}
 	}
 
@@ -2961,7 +3036,7 @@ focus_tree = {
 					NOT = {
 						has_idea = offer_better_wages
 						has_idea = incentivise_employability_oppertunities
-						has_idea = conscript_men_into_the_factories
+						has_idea = factory_conscription
 					}
 				}
 				add_ideas = mandatory_army_service
@@ -3010,7 +3085,7 @@ focus_tree = {
 
 	focus = {
 		id = BUL_vasil_levsky_national_military_university
-		icon = GFX_goal_generic_research
+		icon = GFX_goal_generic_research_2
 		prerequisite = { focus = BUL_reform_the_general_staff }
 		x = 0
 		y = 1
@@ -3034,7 +3109,7 @@ focus_tree = {
 				category = naval_doctrine
 				category = air_doctrine
 			}
-			add_research_slot = 1
+			add_research_slot = 2
 		}
 	}
 
@@ -3137,6 +3212,7 @@ focus_tree = {
 		}
 
 		completion_reward = {
+			custom_effect_tooltip = mobile_warfare_drive_spirit_unlock_tt
 			custom_effect_tooltip = BUL_form_a_pure_armoured_corps_tt
 			hidden_effect = {
 				division_template = {
@@ -3155,11 +3231,9 @@ focus_tree = {
 
 						motorized = { x = 2 y = 0 }
 						motorized = { x = 2 y = 1 }
-						motorized = { x = 2 y = 2 }
 
 						motorized = { x = 3 y = 0 }
 						motorized = { x = 3 y = 1 }
-						motorized = { x = 3 y = 2 }
 					}
 					support = {
 						engineer = { x = 0 y = 0 }
@@ -3242,6 +3316,8 @@ focus_tree = {
 
 				}
 			}
+			custom_effect_tooltip = available_mio_tt
+			show_mio_tooltip = BUL_chavdar_organization
 		}
 	}
 
@@ -3256,6 +3332,8 @@ focus_tree = {
 		cost = 3
 
 		completion_reward = {
+			custom_effect_tooltip = available_mio_tt
+			show_mio_tooltip = BUL_balcancar_organization
 			add_tech_bonus = {
 				name = BUL_mechanise_the_armoured_corps
 				bonus = 1
@@ -3333,7 +3411,7 @@ focus_tree = {
 			}
 			custom_trigger_tooltip = {
 				tooltip = BUL_a_professional_army_art_tt
-				check_variable = { num_equipment_in_armies@artillery_equipment > 383 }
+				check_variable = { num_equipment_in_armies@artillery_equipment > 384 }
 			}
 			custom_trigger_tooltip = {
 				tooltip = BUL_a_professional_army_at_tt
@@ -3477,7 +3555,10 @@ focus_tree = {
 		cost = 3
 
 	 	completion_reward = {
-			add_ideas = BUL_refitting_focus
+			add_timed_idea = {
+				idea = fleet_modernization
+				days = 365
+			}
 			create_equipment_variant = {
 				type = generic_frigate_hull_1
 				name = "Drazki Class"
@@ -3858,9 +3939,6 @@ focus_tree = {
 				}
 				custom_effect_tooltip = available_mio_tt
 				show_mio_tooltip = BUL_kaproni_bulgarski_organization
-				mio:BUL_kaproni_bulgarski_organization = {
-					add_mio_size = 3
-				}
 			}
 			else = {
 				custom_effect_tooltip = available_designer
@@ -3928,7 +4006,7 @@ focus_tree = {
 
 		completion_reward = {
 			add_doctrine_cost_reduction = {
-				cost_reduction = 0.99
+				cost_reduction = 0.5
 				name = BUL_focus_on_a_fighter_core
 				uses = 2
 				category = cat_operational_integrity
@@ -3969,8 +4047,8 @@ focus_tree = {
 
 		completion_reward = {
 			add_doctrine_cost_reduction = {
-				cost_reduction = 0.99
-				name = BUL_focus_on_a_fighter_core
+				cost_reduction = 0.5
+				name = BUL_focus_on_a_bomber_core
 				uses = 2
 				category = cat_strategic_destruction
 			}
@@ -3989,8 +4067,8 @@ focus_tree = {
 
 		completion_reward = {
 			add_doctrine_cost_reduction = {
-				cost_reduction = 0.99
-				name = BUL_focus_on_a_fighter_core
+				cost_reduction = 0.5
+				name = BUL_expand_forward_airbases
 				uses = 2
 				category = air_doctrine
 			}
