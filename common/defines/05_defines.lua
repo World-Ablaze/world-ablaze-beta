@@ -806,7 +806,7 @@ NDefines.NNavy.AMPHIBIOUS_INVADE_SPEED_BASE = 0.5 									-- every hour movemen
 
 NDefines.NNavy.TRAINING_DAILY_COUNTRY_EXP_FACTOR = 0.0003							-- Factor used to scale the Daily Country Navy XP gain
 NDefines.NNavy.TRAINING_MAX_DAILY_COUNTRY_EXP = 0.15								-- Maximum navy XP daily gain
-NDefines.NNavy.CARRIER_STACK_PENALTY = 10											-- The most efficient is 4 carriers in combat. 5+ brings the penalty to the amount of wings in battle.
+NDefines.NNavy.CARRIER_STACK_PENALTY = 6											-- The most efficient is 4 carriers in combat. 5+ brings the penalty to the amount of wings in battle.
 NDefines.NNavy.CARRIER_STACK_PENALTY_EFFECT = 0.6									-- Each carrier above the optimal amount decreases the amount of airplanes being able to takeoff by such %.
 
 --NDefines.NNavy.SUPREMACY_PER_SHIP_PER_MANPOWER = 0.15								-- supremacy of a ship is calculated using its IC, manpower and a base define
@@ -1006,13 +1006,13 @@ NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX_CONVOY_THREAT = 1000		
 NDefines.NAI.MAX_SCREEN_FORCES_FOR_INVASION_SUPPORT = 0.2 							-- max ratio of screens forces to be used in naval invasion missions
 NDefines.NAI.MAX_CAPITAL_FORCES_FOR_INVASION_SUPPORT = 0.3 							-- max ratio of capital forces to be used in naval invasion missions
 
-NDefines.NAI.CARRIER_TASKFORCE_MAX_CARRIER_COUNT = 10 								-- optimum carrier count for carrier taskforces
-NDefines.NAI.CAPITAL_TASKFORCE_MAX_CAPITAL_COUNT = 10 								-- optimum capital count for capital taskforces
+NDefines.NAI.CARRIER_TASKFORCE_MAX_CARRIER_COUNT = 6 								-- optimum carrier count for carrier taskforces
+NDefines.NAI.CAPITAL_TASKFORCE_MAX_CAPITAL_COUNT = 6 								-- optimum capital count for capital taskforces
 NDefines.NAI.SCREEN_TASKFORCE_MAX_SHIP_COUNT = 5									-- optimum screen count for screen taskforces !DONT INCREASE! (Affects patrol task forces and breaks stuff)
 NDefines.NAI.SCREENS_TO_CAPITAL_RATIO = 3.0											-- screens to capital/carrier count in carrier & capital taskforces
 
 NDefines.NAI.MAX_CARRIER_OVERFILL = 1.0												-- Carriers will be overfilled to this amount if there are doctrines to justify it
-NDefines.NAI.MIN_CAPITALS_FOR_CARRIER_TASKFORCE = 10								-- carrier fleets will at least have this amount of capitals
+NDefines.NAI.MIN_CAPITALS_FOR_CARRIER_TASKFORCE = 6								-- carrier fleets will at least have this amount of capitals
 NDefines.NAI.CAPITALS_TO_CARRIER_RATIO = 1.0										-- capital to carrier count in carrier taskfoces
 
 NDefines.NAI.MIN_MAIN_SHIP_RATIO = 0.3                      						-- if main ship ratio is below this, steal other ships.
