@@ -78,7 +78,7 @@ political_actions = {
 		}
 	}
 
-	turkish_militia = {
+	TUR_turkish_militia_forces = {
 
 		icon = generic_prepare_civil_war
 
@@ -87,33 +87,34 @@ political_actions = {
 		}
 
 		available = {
-			is_ai = yes
-			OR = {
-				has_war_with = GER
-				has_war_with = ITA
+			any_enemy_country = {
+				strength_ratio = {
+					ratio > 0.6
+				}
 			}
 			has_civil_war = no
 		}
 
 		visible = {
-			is_ai = yes
-			OR = {
-				has_war_with = GER
-				has_war_with = ITA
-			}
-			has_civil_war = no
+			has_completed_focus = TUR_expand_the_armed_forces
 		}
 
 		cost = 0
 		fire_only_once = yes
+
 		ai_will_do = {
 			factor = 4000
+
+			modifier = {
+				factor = 0
+				surrender_progress < 0.02
+			}
 		}
 
 		complete_effect = {
 			hidden_effect = {
 				division_template = {
-					name = "Turkish Militia"
+					name = "Turkish Militia Force"
 					division_names_group = TUR_GAR_01
 					is_locked = yes
 
@@ -145,23 +146,79 @@ political_actions = {
 					}
 				}
 			}
-			every_controlled_state = {
+			if = {
 				limit = {
-					OR = {
-						state = 49
-						state = 343
-						state = 341
-						state = 347
-						state = 353
-					}
-					is_controlled_by = ROOT
+					is_ai = yes
 				}
-				create_unit = {
-					division = "division_template =\"Turkish Militia\" start_experience_factor =0.2 start_equipment_factor =1.0"
-					owner = ROOT
-					count = 5
+				every_controlled_state = {
+					limit = {
+						OR = {
+							state = 49
+							state = 343
+							state = 341
+							state = 347
+							state = 353
+						}
+						is_controlled_by = ROOT
+					}
+					create_unit = {
+						division = "division_template =\"Turkish Militia Force\" start_experience_factor =0.2 start_equipment_factor =1.0"
+						owner = ROOT
+						count = 5
+					}
 				}
 			}
+			else = {
+				every_controlled_state = {
+					limit = {
+						OR = {
+							state = 49
+							state = 343
+							state = 341
+							state = 347
+							state = 353
+						}
+						is_controlled_by = ROOT
+					}
+					create_unit = {
+						division = "division_template =\"Turkish Militia Force\" start_experience_factor =0.2 start_equipment_factor =0.1"
+						owner = ROOT
+						count = 5
+					}
+				}
+			}
+		}
+	}
+
+	TUR_disband_the_militia = {
+		icon = generic_political_discourse
+		available = {
+
+		}
+		visible = {
+			has_template = "Turkish Militia Force"
+		}
+
+		days_remove = 30
+		cost = 0
+
+		fire_only_once = yes
+
+		cancel_if_not_visible = yes
+
+		ai_will_do = {
+			base = 0
+			modifier = {
+				add = 400
+
+				has_war = no
+				date > 1948.1.1
+			}
+		}
+
+		remove_effect = {
+			custom_effect_tooltip = CHI_militia_disbanded_tt
+			delete_unit_template_and_units = { division_template = "Turkish Militia Force" }
 		}
 	}
 
