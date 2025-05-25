@@ -3970,16 +3970,17 @@ country_event = {
 
 	fire_only_once = yes
 
-	is_triggered_only = yes
+	trigger = {
+		date > 1939.1.1
+		has_completed_focus = ITA_liberate_gramsci
+	}
 
 	#Ok
 	option = {
 		name = ita_armor.850.a
 		if = {
 			limit = {
-				ITA_antonio_gramsci = {
-					is_country_leader = yes
-				}
+				ITA_antonio_gramsci = { is_country_leader = yes }
 			}
 			ITA_antonio_gramsci = {
 				swap_country_leader_traits = {
@@ -4114,6 +4115,21 @@ country_event = {
 	}
 }
 
+############################################### Benito Mussolini Reprisals
+
+country_event = {
+	id = ita_armor.856
+	title = ita_armor.856.t
+	desc = ita_armor.856.d
+	picture = GFX_report_event_mussolini_and_king_flight
+
+	is_triggered_only = yes
+
+	option = {
+		name = ita_armor.856.a
+	}
+}
+
 ############################################### Approach the King
 
 country_event = {
@@ -4149,11 +4165,30 @@ country_event = {
 		name = ita_armor.887.a
 
 		hidden_effect = {
+			set_division_template_lock = {
+				division_template = "Reggimento di Cavalleria"
+				is_locked = no
+			}
+			set_division_template_lock = {
+				division_template = "Divisione di Fanteria"
+				is_locked = no
+			}
+			set_division_template_lock = {
+				division_template = "Divisione Alpina"
+				is_locked = no
+			}
+			set_division_template_lock = {
+				division_template = "Divisione Coloniale"
+				is_locked = no
+			}
+			set_division_template_lock = {
+				division_template = "Divisione Celere"
+				is_locked = no
+			}
 			play_song = "bella_ciao"
 			set_party_name = { ideology = communism long_name = Partito_Comunista_Italiano name = PCI }
 			remove_ideas = ITA_shadow_government
 			remove_ideas = ITA_grand_council_of_fascism
-			remove_ideas = victor_emmanuel
 			add_equipment_to_stockpile = { type = train_equipment_1 amount = 100 producer = ITA }
 			if = {
 				limit = {
@@ -4166,18 +4201,16 @@ country_event = {
 						expire = 1965.1.1
 						traits = { indisposed_political_scientist }
 					}
-					promote_character = yes
 				}
+				promote_character = ITA_antonio_gramsci
 			}
-			retire_ideology_leader = fascism
 			set_politics = {
 				ruling_party = communism
 				elections_allowed = no
 			}
-			set_capital = { state = 159 }
 			division_template = {
-				name = "Divisione di Fanteria"
-				division_names_group = ITA_Inf_01
+				name = "Gruppo Bande Irregolari"
+				division_names_group = ITA_COL_02
 				template_counter = 123
 				priority = 1
 
@@ -4193,50 +4226,20 @@ country_event = {
 					heavy_infantry = { x = 2 y = 0 }
 					heavy_infantry = { x = 2 y = 1 }
 
-					artillery_brigade = { x = 3 y = 0 }
-					artillery_brigade = { x = 3 y = 1 }
-					artillery_brigade = { x = 3 y = 2 }
+					pack_artillery_brigade = { x = 3 y = 0 }
+					pack_artillery_brigade = { x = 3 y = 1 }
 				}
 
 				support = {
 					engineer = { x = 0 y = 0 }
 					horse_logistics_company = { x = 0 y = 1 }
+					artillery = { x = 0 y = 2 }
 
 					recon = { x = 1 y = 0 }
 				}
 			}
-
 			division_template = {
-				name = "Divisione Celere"
-				template_counter = 101
-
-				division_names_group = ITA_CAV_02
-
-				regiments = {
-					heavy_cavalry = { x = 0 y = 0 }
-					heavy_cavalry = { x = 0 y = 1 }
-
-					motorized = { x = 1 y = 0 }
-					motorized = { x = 1 y = 1 }
-					motorized = { x = 1 y = 2 }
-					motorized_artillery_brigade = { x = 1 y = 3 }
-
-					light_armor = { x = 2 y = 0 }
-					light_armor = { x = 2 y = 1 }
-					light_armor = { x = 2 y = 2 }
-
-					scout_car = { x = 3 y = 0 }
-				}
-
-				support = {
-					engineer = { x = 0 y = 0 }
-					artillery = { x = 0 y = 1 }
-        			horse_logistics_company = { x = 0 y = 2 }
-				}
-			}
-
-			division_template = {
-				name = "Militia"
+				name = "Milizia lavoratori"
 				is_locked = yes
 
 				division_names_group = ITA_Inf_01
@@ -4262,16 +4265,73 @@ country_event = {
 				}
 				set_nationality = ITF
 			}
-			ITF = {
-				set_capital = { state = 856 }
-				inherit_technology = ITA
-				set_technology = {
-					ita_light_tank_chassis_1 = 1
+			REP = {
+				set_capital = { state = 156 }
+				add_equipment_to_stockpile = { type = train_equipment_1 amount = 500 producer = ITA }
+				add_equipment_to_stockpile = { type = ita_motorized_equipment_1 amount = 10000 producer = ITA }
+			}
+			every_state = {
+				limit = {
+					is_core_of = ROOT
+					has_state_flag = ITA_democratic_state
+					check_variable = { ITA_garrison_control = 3 compare = less_than_or_equals }
 				}
+				ITF = {
+					transfer_state = PREV
+				}
+			}
+			transfer_units_fraction = {
+				target = REP
+				size = 0.5
+				stockpile_ratio = ITA.ita_rep_civil_war_airforce_actual_counter_var
+				army_ratio = ITA.ita_rep_civil_war_army_actual_counter_var
+				navy_ratio = ITA.ita_rep_civil_war_navy_actual_counter_var
+				air_ratio = ITA.ita_rep_civil_war_airforce_actual_counter_var
+				keep_unit_leaders = {
+
+				}
+				keep_unit_leaders_trigger = {
+					has_trait = trait_fascist_loyalties
+					has_trait = trait_communist_loyalties
+				}
+			}
+			ITF = {
+				set_capital = { state = 159 }
+				inherit_technology = ITA
 				division_template = {
-					name = "Fascist Militia"
+					name = "CC.NN. Infantry Division"
 					division_names_group = ITA_INF_02
 					is_locked = yes
+
+					regiments = {
+						infantry = { x = 0 y = 0 }
+						infantry = { x = 0 y = 1 }
+						infantry = { x = 0 y = 2 }
+
+						infantry = { x = 1 y = 0 }
+						infantry = { x = 1 y = 1 }
+						infantry = { x = 1 y = 2 }
+
+						heavy_infantry = { x = 2 y = 0 }
+						heavy_infantry = { x = 2 y = 1 }
+
+						pack_artillery_brigade = { x = 3 y = 0 }
+						pack_artillery_brigade = { x = 3 y = 1 }
+					}
+
+					support = {
+						engineer = { x = 0 y = 0 }
+						horse_logistics_company = { x = 0 y = 1 }
+						artillery = { x = 0 y = 2 }
+
+						recon = { x = 1 y = 0 }
+					}
+				}
+				division_template = {
+					name = "Milizia Nera"
+					is_locked = yes
+
+					division_names_group = ITA_Inf_01
 
 					regiments = {
 						heavy_militia = { x = 0 y = 0 }
@@ -4287,67 +4347,6 @@ country_event = {
 						militia = { x = 2 y = 2 }
 					}
 				}
-
-				division_template = {
-					name = "Divisione di Fanteria"
-					division_names_group = ITA_Inf_01
-					template_counter = 123
-					priority = 1
-
-					regiments = {
-						infantry = { x = 0 y = 0 }
-						infantry = { x = 0 y = 1 }
-						infantry = { x = 0 y = 2 }
-
-						infantry = { x = 1 y = 0 }
-						infantry = { x = 1 y = 1 }
-						infantry = { x = 1 y = 2 }
-
-						heavy_infantry = { x = 2 y = 0 }
-						heavy_infantry = { x = 2 y = 1 }
-
-						artillery_brigade = { x = 3 y = 0 }
-						artillery_brigade = { x = 3 y = 1 }
-						artillery_brigade = { x = 3 y = 2 }
-					}
-
-					support = {
-						engineer = { x = 0 y = 0 }
-						horse_logistics_company = { x = 0 y = 1 }
-
-						recon = { x = 1 y = 0 }
-					}
-				}
-
-				division_template = {
-					name = "Divisione Celere"
-					template_counter = 101
-
-					division_names_group = ITA_CAV_02
-
-					regiments = {
-						heavy_cavalry = { x = 0 y = 0 }
-						heavy_cavalry = { x = 0 y = 1 }
-
-						motorized = { x = 1 y = 0 }
-						motorized = { x = 1 y = 1 }
-						motorized = { x = 1 y = 2 }
-						motorized_artillery_brigade = { x = 1 y = 3 }
-
-						light_armor = { x = 2 y = 0 }
-						light_armor = { x = 2 y = 1 }
-						light_armor = { x = 2 y = 2 }
-
-						scout_car = { x = 3 y = 0 }
-					}
-
-					support = {
-						engineer = { x = 0 y = 0 }
-						artillery = { x = 0 y = 1 }
-        				horse_logistics_company = { x = 0 y = 2 }
-					}
-				}
-
 				load_focus_tree = {
 					tree = italian_focus
 					keep_completed = no
@@ -4363,7 +4362,8 @@ country_event = {
 			every_state = {
 				limit = {
 					is_core_of = ROOT
-					check_variable = { ITA_garrison_control = 2 compare = less_than_or_equals }
+					has_state_flag = ITA_fascist_state
+					check_variable = { ITA_garrison_control = 3 compare = less_than_or_equals }
 				}
 				ITF = {
 					transfer_state = PREV
@@ -4372,15 +4372,15 @@ country_event = {
 			transfer_units_fraction = {
 				target = ITF
 				size = 0.5
-				stockpile_ratio = ita_com_civil_war_airforce_counter_var
-				army_ratio = 0
-				navy_ratio = ita_com_civil_war_navy_counter_var
-				air_ratio = ita_com_civil_war_airforce_counter_var
+				stockpile_ratio = ITA.ita_com_civil_war_airforce_actual_counter_var
+				army_ratio = ITA.ita_com_civil_war_army_actual_counter_var
+				navy_ratio = ITA.ita_com_civil_war_navy_actual_counter_var
+				air_ratio = ITA.ita_com_civil_war_airforce_actual_counter_var
 				keep_unit_leaders = {
 
 				}
 				keep_unit_leaders_trigger = {
-					has_trait = trait_GER_wehrmacht
+					has_trait = trait_communist_loyalties
 				}
 			}
 			every_state = {
@@ -4388,12 +4388,12 @@ country_event = {
 					is_core_of = ROOT
 					check_variable = { ITA_garrison_control = 0 compare = equals }
 				}
-				set_state_flag = ITA_fascist_stronghold
+				set_state_flag = ITA_fascist_state
 				create_unit = {
-					division = "division_template = \"Fascist Militia\" start_experience_factor = 0.3 start_equipment_factor = 1.0"
+					division = "division_template = \"Milizia Nera\" start_experience_factor = 0.3 start_equipment_factor = 1.0"
 					owner = ITF
 					allow_spawning_on_enemy_provs = yes
-					count = 3
+					count = 4
 				}
 			}
 			every_state = {
@@ -4401,15 +4401,15 @@ country_event = {
 					is_core_of = ROOT
 					check_variable = { ITA_garrison_control = 1 compare = equals }
 				}
-				set_state_flag = ITA_fascist_stronghold
+				set_state_flag = ITA_fascist_state
 				create_unit = {
-					division = "division_template = \"Fascist Militia\" start_experience_factor = 0.3 start_equipment_factor = 1.0"
+					division = "division_template = \"Milizia Nera\" start_experience_factor = 0.3 start_equipment_factor = 1.0"
 					owner = ITF
 					allow_spawning_on_enemy_provs = yes
-					count = 2
+					count = 3
 				}
 				create_unit = {
-					division = "division_template = \"Militia\" start_experience_factor = 0.3 start_equipment_factor = 1.0"
+					division = "division_template = \"Milizia lavoratori\" start_experience_factor = 0.3 start_equipment_factor = 1.0"
 					owner = ITA
 					allow_spawning_on_enemy_provs = yes
 					count = 1
@@ -4420,15 +4420,15 @@ country_event = {
 					is_core_of = ROOT
 					check_variable = { ITA_garrison_control = 2 compare = equals }
 				}
-				set_state_flag = ITA_fascist_stronghold
+				set_state_flag = ITA_fascist_state
 				create_unit = {
-					division = "division_template = \"Fascist Militia\" start_experience_factor = 0.3 start_equipment_factor = 1.0"
+					division = "division_template = \"Milizia Nera\" start_experience_factor = 0.3 start_equipment_factor = 1.0"
 					owner = ITF
 					allow_spawning_on_enemy_provs = yes
-					count = 1
+					count = 2
 				}
 				create_unit = {
-					division = "division_template = \"Militia\" start_experience_factor = 0.3 start_equipment_factor = 1.0"
+					division = "division_template = \"Milizia lavoratori\" start_experience_factor = 0.3 start_equipment_factor = 1.0"
 					owner = ITA
 					allow_spawning_on_enemy_provs = yes
 					count = 2
@@ -4440,7 +4440,13 @@ country_event = {
 					check_variable = { ITA_garrison_control = 3 compare = equals }
 				}
 				create_unit = {
-					division = "division_template = \"Militia\" start_experience_factor = 0.3 start_equipment_factor = 1.0"
+					division = "division_template = \"Milizia Nera\" start_experience_factor = 0.3 start_equipment_factor = 1.0"
+					owner = ITF
+					allow_spawning_on_enemy_provs = yes
+					count = 1
+				}
+				create_unit = {
+					division = "division_template = \"Milizia lavoratori\" start_experience_factor = 0.3 start_equipment_factor = 1.0"
 					owner = ITA
 					allow_spawning_on_enemy_provs = yes
 					count = 3
@@ -4449,13 +4455,13 @@ country_event = {
 			every_state = {
 				limit = {
 					is_core_of = ROOT
-					check_variable = { ITA_garrison_control = 4 compare = equals }
+					check_variable = { ITA_garrison_control = 4 compare = greater_than_or_equals }
 				}
 				create_unit = {
-					division = "division_template = \"Militia\" start_experience_factor = 0.3 start_equipment_factor = 1.0"
+					division = "division_template = \"Milizia lavoratori\" start_experience_factor = 0.3 start_equipment_factor = 1.0"
 					owner = ITA
 					allow_spawning_on_enemy_provs = yes
-					count = 3
+					count = 4
 				}
 			}
 			declare_war_on = {
@@ -4463,98 +4469,54 @@ country_event = {
 				type = civil_war
 			}
 			add_civil_war_target = ITF
-			ITF = {
-				set_variable = { ITF.ita_civil_war_armor_divisions_counter_var = ITA.ita_civil_war_armor_divisions_counter_var }
-				set_variable = { ITF.ita_civil_war_infantry_divisions_counter_var = ITA.ita_civil_war_infantry_divisions_counter_var }
+			REP = {
+				set_variable = { ITF.ita_rep_civil_war_infantry_divisions_counter_var = ITA.ita_rep_civil_war_infantry_divisions_counter_var }
 				capital_scope = {
 					create_unit = {
 						division = "division_template = \"Divisione di Fanteria\" start_experience_factor = 0.5 start_equipment_factor = 1.0"
 						owner = ITF
-						count = ITF.ita_civil_war_infantry_divisions_counter_var
+						count = ITF.ita_rep_civil_war_infantry_divisions_counter_var
 					}
+				}
+				set_popularities = {
+					democratic = 70
+					neutrality = 30
+				}
+				add_ideas = economy_fatigue_35
+				set_variable = { economic_fatigue = 35 }
+				add_ideas = export_focus
+				add_ideas = limited_conscription
+				add_ideas = partial_economic_mobilisation
+				add_ideas = state_sponsored_economy
+				add_ideas = vittoria_mutilata
+			}
+			ITF = {
+				set_variable = { ITF.ita_fas_civil_war_infantry_divisions_counter_var = ITA.ita_fas_civil_war_infantry_divisions_counter_var }
+				capital_scope = {
 					create_unit = {
-						division = "division_template = \"Divisione Celere\" start_experience_factor = 0.5 start_equipment_factor = 1.0"
+						division = "division_template = \"CC.NN. Infantry Division\" start_experience_factor = 0.5 start_equipment_factor = 1.0"
 						owner = ITF
-						count = ITF.ita_civil_war_armor_divisions_counter_var
+						count = ITF.ita_fas_civil_war_infantry_divisions_counter_var
 					}
 				}
 				set_popularities = {
 					fascism = 100
 				}
-
-				if = {
-					limit = {
-						ITA = {
-							NOT = { has_country_flag = ITA_mussolini_assassinated }
-						}
-					}
-					promote_character = ITA_benito_mussolini
-				}
-				if = {
-					limit = {
-						ITA = {
-							NOT = { has_country_flag = ITA_victor_emmanuel_assassinated }
-						}
-					}
-					add_ideas = victor_emmanuel
-				}
 				add_ideas = economy_fatigue_35
 				set_variable = { economic_fatigue = 35 }
 				add_ideas = limited_exports
-				add_ideas = volunteer_only
+				add_ideas = extensive_conscription
 				add_ideas = partial_economic_mobilisation
 				add_ideas = national_syndicalism
 				add_ideas = vittoria_mutilata
 				add_ideas = ITA_grand_council_of_fascism
 				add_ideas = ITA_empire
-				add_ideas = inferior_enemy
-				add_ideas = ITA_industry_wide_naval_production
 			}
 			capital_scope = {
 				create_unit = {
-					division = "division_template = \"Divisione di Fanteria\" start_experience_factor = 0.5 start_equipment_factor = 1.0"
+					division = "division_template = \"Gruppo Bande Irregolari\" start_experience_factor = 0.5 start_equipment_factor = 1.0"
 					owner = ITA
 					count = ITA.ita_com_civil_war_infantry_divisions_counter_var
-					prioritize_location = 3780
-				}
-				create_unit = {
-					division = "division_template = \"Divisione Celere\" start_experience_factor = 0.5 start_equipment_factor = 1.0"
-					owner = ITA
-					count = ITA.ita_com_civil_war_armor_divisions_counter_var
-					prioritize_location = 3780
-				}
-			}
-			if = {
-				limit = {
-					has_completed_focus = ITA_organize_strikes_in_the_north
-				}
-				division_template = {
-					name = "Workers Militia"
-					is_locked = yes
-
-					division_names_group = ITA_Inf_01
-
-					regiments = {
-						heavy_militia = { x = 0 y = 0 }
-						militia = { x = 0 y = 1 }
-						militia = { x = 0 y = 2 }
-
-						heavy_militia = { x = 1 y = 0 }
-						militia = { x = 1 y = 1 }
-						militia = { x = 1 y = 2 }
-
-						heavy_militia = { x = 2 y = 0 }
-						militia = { x = 2 y = 1 }
-						militia = { x = 2 y = 2 }
-					}
-				}
-				capital_scope = {
-					create_unit = {
-						division = "division_template = \"Workers Militia\" start_experience_factor = 0.7 start_equipment_factor = 1.0"
-						owner = ITA
-						count = 5
-						prioritize_location = 6788
-					}
 				}
 			}
 			if = {
@@ -4564,7 +4526,6 @@ country_event = {
 				division_template = {
 					name = "Guardie Rosse"
 					is_locked = yes
-
 
 					regiments = {
 						heavy_infantry = { x = 0 y = 0 }
@@ -4603,93 +4564,6 @@ country_event = {
 				}
 			}
 			ITF = {
-				if = {
-					limit = {
-						NOT = { has_country_flag = ITA_mussolini_assassinated }
-					}
-					division_template = {
-						name = "Camicie Nere"
-						is_locked = yes
-
-						regiments = {
-							heavy_infantry = { x = 0 y = 0 }
-							heavy_infantry = { x = 0 y = 1 }
-							heavy_infantry = { x = 0 y = 2 }
-
-							heavy_infantry = { x = 1 y = 0 }
-							heavy_infantry = { x = 1 y = 1 }
-							heavy_infantry = { x = 1 y = 2 }
-
-							heavy_infantry = { x = 2 y = 0 }
-							heavy_infantry = { x = 2 y = 1 }
-							heavy_infantry = { x = 2 y = 2 }
-
-							heavy_infantry = { x = 3 y = 0 }
-						}
-
-						support = {
-							normal_engineer = { x = 0 y = 0 }
-							artillery = { x = 0 y = 1 }
-							horse_logistics_company = { x = 0 y = 2 }
-							horse_field_hospital = { x = 0 y = 3 }
-
-							recon = { x = 1 y = 0 }
-							blackshirt_officers = { x = 1 y = 1 }
-						}
-					}
-					capital_scope = {
-						create_unit = {
-							division = "division_template = \"Camicie Nere\" start_experience_factor = 0.5 start_equipment_factor = 1.0"
-							owner = ITF
-							count = 7
-							prioritize_location = 9904
-						}
-					}
-				}
-				if = {
-					limit = {
-						NOT = { has_country_flag = ITA_victor_emmanuel_assassinated }
-					}
-					division_template = {
-						name = "Kings Guard"
-						is_locked = yes
-
-						regiments = {
-							heavy_infantry = { x = 0 y = 0 }
-							heavy_infantry = { x = 0 y = 1 }
-							heavy_infantry = { x = 0 y = 2 }
-
-							heavy_infantry = { x = 1 y = 0 }
-							heavy_infantry = { x = 1 y = 1 }
-							heavy_infantry = { x = 1 y = 2 }
-
-							heavy_infantry = { x = 2 y = 0 }
-							heavy_infantry = { x = 2 y = 1 }
-							heavy_infantry = { x = 2 y = 2 }
-
-							artillery_brigade = { x = 3 y = 0 }
-							artillery_brigade = { x = 3 y = 1 }
-							artillery_brigade = { x = 3 y = 2 }
-						}
-
-						support = {
-							engineer = { x = 0 y = 0 }
-							motorized_logistics_company = { x = 0 y = 1 }
-							heavy_artillery = { x = 0 y = 2 }
-
-							recon = { x = 1 y = 0 }
-							field_hospital = { x = 1 y = 1 }
-						}
-					}
-					capital_scope = {
-						create_unit = {
-							division = "division_template = \"Kings Guard\" start_experience_factor = 0.5 start_equipment_factor = 1.0"
-							owner = ITF
-							count = 7
-							prioritize_location = 11846
-						}
-					}
-				}
 				if = {
 					limit = {
 						is_ai = yes
@@ -4876,7 +4750,7 @@ country_event = {
 
 				}
 				keep_unit_leaders_trigger = {
-					NOT = { has_trait = trait_ITA_fascist_loyalties }
+					NOT = { has_trait = trait_fascist_loyalties }
 				}
 			}
 			every_owned_state = {
@@ -5229,7 +5103,7 @@ country_event = {
 			ITA = {
 				every_unit_leader = {
 					limit = {
-						NOT = { has_trait = trait_ITA_fascist_loyalties }
+						NOT = { has_trait = trait_fascist_loyalties }
 					}
 					set_nationality = REP
 				}
@@ -5243,7 +5117,7 @@ country_event = {
 				add_civil_war_target = ITA
 				every_unit_leader = {
 					limit = {
-						has_trait = trait_ITA_fascist_loyalties
+						has_trait = trait_fascist_loyalties
 					}
 					set_nationality = ITA
 				}
