@@ -7082,6 +7082,13 @@ focus_tree = {
 			hidden_effect = {
 				activate_mission = ITA_mussolini_reprisals
 				activate_mission = ITA_victor_emmanuel_denunciations
+				ITA = {
+					diplomatic_relation = {
+						country = AUS
+						relation = guarantee
+						active = no
+					}
+				}
 
 				set_variable = { ita_com_civil_war_infantry_divisions_counter_var = 0 }
 				set_variable = { ita_com_civil_war_army_counter_var = 0 }
@@ -7673,6 +7680,9 @@ focus_tree = {
 			remove_dynamic_modifier = { modifier = ITA_inadequate_airforce_dynamic_modifier }
 			remove_dynamic_modifier = { modifier = ITA_inadequate_navy_dynamic_modifier }
 			hidden_effect = {
+				set_country_flag = adequate_army
+				set_country_flag = adequate_airforce
+				set_country_flag = adequate_navy
 				set_variable = { ITA_inadequate_army_army_org_factor = 0 }
 				set_variable = { ITA_inadequate_army_army_morale_factor = 0 }
 				set_variable = { ITA_inadequate_army_training_time_factor = 0 }
@@ -7750,7 +7760,7 @@ focus_tree = {
 				limit = {
 					original_tag = ITA
 				}
-				country_event =
+				country_event = { id = ita_armor.858 }
 			}
 		}
 	}
@@ -7801,7 +7811,7 @@ focus_tree = {
 	###
 
 	focus = {
-		id = ITA_industrial_socialization
+		id = ITA_secure_coal_imports
 		icon = GFX_goal_generic_soviet_construction
 		prerequisite = { focus = ITA_the_popular_front }
 		x = 3
@@ -7813,67 +7823,44 @@ focus_tree = {
 		available = {
 		}
 
-		search_filters = {FOCUS_FILTER_INDUSTRY FOCUS_FILTER_BALANCE_OF_POWER}
+		search_filters = {FOCUS_FILTER_INDUSTRY}
 
 		completion_reward = {
-			#add_timed_idea = {
-			#	idea = ITA_rebuild_the_nation days = 180
-			#}
-			add_ideas = ITA_industrial_socialization
+			unlock_decision_tooltip = ITA_trade_deal_with_france
+			unlock_decision_tooltip = ITA_investments_into_yugoslavia
+			unlock_decision_tooltip = ITA_investments_into_spain
+		}
+	}
 
-				random_core_state = {
-					limit = {
-						free_building_slots = {
-							building = industrial_complex
-							size > 1
-							include_locked = yes
-						}
-					}
-					set_state_flag = ITA_social_industrialization_flag
-					add_extra_state_shared_building_slots = 2
-					add_building_construction = {
-						type = industrial_complex
-						level = 2
-						instant_build = yes
-					}
-				}
-				random_core_state = {
-					limit = {
-						NOT = { has_state_flag = ITA_social_industrialization_flag }
-						free_building_slots = {
-							building = industrial_complex
-							size > 1
-							include_locked = yes
-						}
-					}
-					set_state_flag = ITA_social_industrialization_flag
-					add_extra_state_shared_building_slots = 2
-					add_building_construction = {
-						type = industrial_complex
-						level = 2
-						instant_build = yes
-					}
-				}
-
-
-			#Clear stuff thanks
-			hidden_effect = {
-				every_core_state = {
-					limit = {
-						has_state_flag = ITA_social_industrialization_flag
-					}
-					clr_state_flag = ITA_social_industrialization_flag
-				}
+	focus = {
+		id = ITA_industrial_socialization
+		icon = GFX_goal_generic_construct_civ_factory
+		prerequisite = { focus = ITA_secure_coal_imports }
+		x = 0
+		y = 2
+		relative_position_id = ITA_secure_coal_imports
+		cost = 3
+		available = {
+			any_other_country = {
+				original_tag = ITA
+				exists = no
 			}
+		}
+
+		search_filters = {FOCUS_FILTER_INDUSTRY}
+
+		completion_reward = {
+			add_timed_idea = { idea = ITA_industrial_socialization days = 720 }
+			add_timed_idea = { idea = ITA_civilian_work_camps days = 720 }
 		}
 	}
 
 	focus = {
 		id = ITA_institute_the_five_year_plan
-		icon = GFX_goal_generic_construct_civ_factory
+		icon = GFX_goal_generic_construct_civilian
 		prerequisite = { focus = ITA_industrial_socialization }
 		x = 0
-		y = 2
+		y = 1
 		relative_position_id = ITA_industrial_socialization
 		cost = 3
 		available = {
@@ -7882,31 +7869,16 @@ focus_tree = {
 		search_filters = {FOCUS_FILTER_INDUSTRY}
 
 		completion_reward = {
-			swap_ideas = {
-				remove_idea = ITA_industrial_socialization
-				add_idea = ITA_industrial_socialization2
+			if = {
+				limit = {
+					OR = {
+						has_idea =ITA_civilian_work_camps
+						NOT = { has_completed_focus = ITA_industrial_socialization }
+					}
+				}
+				remove_ideas = ITA_civilian_work_camps
 			}
-		}
-	}
-
-	focus = {
-		id = ITA_new_ricostruzione_industriale
-		icon = GFX_goal_generic_construct_civilian
-		prerequisite = { focus = ITA_institute_the_five_year_plan }
-		x = 0
-		y = 1
-		relative_position_id = ITA_institute_the_five_year_plan
-		cost = 3
-		available = {
-		}
-
-		search_filters = {FOCUS_FILTER_INDUSTRY}
-
-		completion_reward = {
-			swap_ideas = {
-				remove_idea = ITA_industrial_socialization2
-				add_idea = ITA_industrial_socialization3
-			}
+			add_timed_idea = { idea = ITA_military_work_camps days = 720 }
 		}
 	}
 	###
@@ -7933,13 +7905,13 @@ focus_tree = {
 	}
 
 	focus = {
-		id = ITA_the_path_to_progress
+		id = ITA_path_to_progress
 		icon = GFX_focus_SOV_proclaim_soviet_hegemony
 		prerequisite = { focus = ITA_a_leader_steps_forward }
 		x = 0
 		y = 1
 		relative_position_id = ITA_a_leader_steps_forward
-		cost = 3
+		cost = 5
 		available = {
 		}
 
@@ -7995,11 +7967,11 @@ focus_tree = {
 	focus = {
 		id = ITA_union_in_the_party
 		icon = GFX_focus_generic_soviet_politics
-		prerequisite = { focus = ITA_the_path_to_progress }
+		prerequisite = { focus = ITA_path_to_progress }
 		x = 0
 		y = 1
-		relative_position_id = ITA_the_path_to_progress
-		cost = 3
+		relative_position_id = ITA_path_to_progress
+		cost = 5
 		available = {
 		}
 
@@ -8008,6 +7980,12 @@ focus_tree = {
 		completion_reward = {
 			add_political_power = 150
 			add_war_support = 0.2
+			custom_effect_tooltip = ITA_union_in_the_party_tt
+			hidden_effect = {
+				add_to_variable = { ITA_bourgeoisie_attitude = 2 }
+				add_to_variable = { ITA_bourgeoisie_influence = 1 }
+				add_to_variable = { ITA_bourgeoisie_stability = 0.05 }
+			}
 		}
 	}
 
@@ -10563,6 +10541,15 @@ focus_tree = {
 				}
 				unlock_decision_tooltip = ITA_bop_slander_the_duce
 				unlock_decision_tooltip = ITA_bop_criticize_the_war
+			}
+			hidden_effect = {
+				ITA = {
+					diplomatic_relation = {
+						country = AUS
+						relation = guarantee
+						active = no
+					}
+				}
 			}
 		}
 	}
