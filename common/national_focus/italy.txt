@@ -8125,10 +8125,11 @@ focus_tree = {
 		search_filters = {}
 
 		completion_reward = {
+			custom_effect_tooltip = ITA_the_camicie_rosse_tt
 			hidden_effect = {
-				add_to_variable = { ITA_pci_influence = 4 }
-				add_to_variable = { ITA_pci_attitude = 5 }
-				set_variable = { ITA_pci_stability_factor = 0.15 }
+				add_to_variable = { ITA_pci_influence = 3 }
+				add_to_variable = { ITA_pci_attitude = 1 }
+				set_variable = { ITA_pci_stability_factor = 0.1 }
 				set_variable = { ITA_pci_political_power_gain = 0.10 }
 			}
 			division_template = {
@@ -8141,42 +8142,40 @@ focus_tree = {
 					heavy_infantry = { x = 0 y = 0 }
 					heavy_infantry = { x = 0 y = 1 }
 					heavy_infantry = { x = 0 y = 2 }
+
 					heavy_infantry = { x = 1 y = 0 }
 					heavy_infantry = { x = 1 y = 1 }
 					heavy_infantry = { x = 1 y = 2 }
+
 					heavy_infantry = { x = 2 y = 0 }
 					heavy_infantry = { x = 2 y = 1 }
 					heavy_infantry = { x = 2 y = 2 }
+
 					artillery_brigade = { x = 3 y = 0 }
 					artillery_brigade = { x = 3 y = 1 }
 					artillery_brigade = { x = 3 y = 2 }
 					artillery_brigade = { x = 3 y = 3 }
+
 					anti_tank_brigade = { x = 4 y = 0 }
 					anti_tank_brigade = { x = 4 y = 1 }
 				}
 				support = {
 					engineer = { x = 0 y = 0 }
-					artillery = { x = 0 y = 1 }
-					anti_air = { x = 0 y = 2 }
-					field_hospital = {
-						x = 1
-						y = 0
-					}
-					signal_company = {
-						x = 1
-						y = 1
-					}
+					logistics_company = { x = 0 y = 1 }
+					field_hospital = { x = 0 y = 2 }
+
+					recon = { x = 1 y = 0 }
+					heavy_artillery = { x = 1 y = 1 }
+					anti_air = { x = 1 y = 2 }
 				}
 			}
 			capital_scope = {
 				create_unit = {
-					division = "division_template = \"Camice Rosse\" start_experience_factor = 1.0 start_equipment_factor = 1.0"
+					division = "division_template = \"Camice Rosse\" start_experience_factor = 0.7 start_equipment_factor = 1.0"
 					owner = ROOT
 					count = 4
 				}
 			}
-			add_stability = 0.1
-			add_political_power = 50
 		}
 	}
 
@@ -8317,11 +8316,10 @@ focus_tree = {
 						has_government = communism
 						is_in_faction = no
 						is_subject = no
-						NOT = {
-							has_country_leader = {
-								character = SOV_iosif_stalin
-								ruling_only = yes
-							}
+						OR = {
+							original_tag = SPR
+							original_tag = YUG
+							original_tag = FRA
 						}
 					}
 				}
@@ -8331,19 +8329,10 @@ focus_tree = {
 						has_government = communism
 						is_in_faction = no
 						is_subject = no
-						NOT = {
-							OR = {
-								has_country_leader = {
-									character = SOV_iosif_stalin
-									ruling_only = yes
-								}
-								any_allied_country = {
-									has_country_leader = {
-										character = SOV_iosif_stalin
-										ruling_only = yes
-									}
-								}
-							}
+						OR = {
+							original_tag = SPR
+							original_tag = YUG
+							original_tag = FRA
 						}
 					}
 					hidden_effect = {
@@ -8374,9 +8363,28 @@ focus_tree = {
 		completion_reward = {
 			every_country = {
 				limit = {
+					NOT = { has_government = communism }
 					OR = {
-						tag = YUG
-						is_subject_of = YUG
+						OR = {
+							tag = YUG
+							is_subject_of = YUG
+						}
+						OR = {
+							tag = BUL
+							is_subject_of = BUL
+						}
+						OR = {
+							tag = ALB
+							is_subject_of = ALB
+						}
+						OR = {
+							tag = GRE
+							is_subject_of = GRE
+						}
+						OR = {
+							tag = ROM
+							is_subject_of = ROM
+						}
 					}
 				}
 				add_timed_idea = {
@@ -8384,57 +8392,24 @@ focus_tree = {
 					days = 1095
 				}
 			}
-			every_country = {
+			if = {
 				limit = {
-					OR = {
-						tag = BUL
-						is_subject_of = BUL
+					YUG = {
+						NOT = { has_government = communism }
+						is_subject = no
+						NOT = { is_guaranteed_by = FRA }
+						NOT = { is_guaranteed_by = GER }
+						NOT = { is_guaranteed_by = ENG }
+						NOT = { is_guaranteed_by = SOV }
 					}
 				}
-				add_timed_idea = {
-					idea = comintern_influence
-					days = 1095
+				create_wargoal = {
+					type = puppet_wargoal_focus
+					target = YUG
 				}
 			}
-			every_country = {
-				limit = {
-					OR = {
-						tag = ALB
-						is_subject_of = ALB
-					}
-				}
-				add_timed_idea = {
-					idea = comintern_influence
-					days = 1095
-				}
-			}
-			every_country = {
-				limit = {
-					OR = {
-						tag = GRE
-						is_subject_of = GRE
-					}
-				}
-				add_timed_idea = {
-					idea = comintern_influence
-					days = 1095
-				}
-			}
-			every_country = {
-				limit = {
-					OR = {
-						tag = ROM
-						is_subject_of = ROM
-					}
-				}
-				add_timed_idea = {
-					idea = comintern_influence
-					days = 1095
-				}
-			}
-			create_wargoal = {
-				type = puppet_wargoal_focus
-				target = YUG
+			else = {
+				custom_effect_tooltip = ITA_pugno_alzato_tt
 			}
 		}
 	}
