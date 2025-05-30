@@ -161,6 +161,10 @@ ITA_missiolini_conquer_ethiopia_failure_effect = {
 	add_political_power = -25
 	add_war_support = -0.05
 	add_stability = -0.05
+	add_popularity = {
+		ideology = ROOT
+		popularity = -0.05
+	}
 	every_controlled_state = {
 		limit = {
 			NOT = { is_owned_by = ROOT }
@@ -176,6 +180,10 @@ ITA_missiolini_conquer_ethiopia_success_effect = {
 	add_war_support = 0.05
 	army_experience = 25
 	add_command_power = 25
+	add_popularity = {
+		ideology = fascism
+		popularity = 0.1
+	}
 }
 
 ### PACIFY ETHIOPIA ###
@@ -1329,28 +1337,28 @@ ITA_garrison_control_tooltip = {
 	if = {
 		limit = {
 			check_variable = { var = ITA_garrison_control value = 1 compare = equals }
-			ROOT = { has_completed_focus = ITA_depose_mussolini }
+			ROOT = { has_completed_focus = ITA_arrest_mussolini }
 		}
 		custom_effect_tooltip = ITA_garrison_control_none_tt
 	}
 	if = {
 		limit = {
 			check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-			ROOT = { has_completed_focus = ITA_depose_mussolini }
+			ROOT = { has_completed_focus = ITA_arrest_mussolini }
 		}
 		custom_effect_tooltip = ITA_garrison_control_weak_tt
 	}
 	if = {
 		limit = {
 			check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-			ROOT = { has_completed_focus = ITA_depose_mussolini }
+			ROOT = { has_completed_focus = ITA_arrest_mussolini }
 		}
 		custom_effect_tooltip = ITA_garrison_control_strong_tt
 	}
 	if = {
 		limit = {
 			check_variable = { var = ITA_garrison_control value = 4 compare = equals }
-			ROOT = { has_completed_focus = ITA_depose_mussolini }
+			ROOT = { has_completed_focus = ITA_arrest_mussolini }
 		}
 		custom_effect_tooltip = ITA_garrison_control_total_tt
 	}
@@ -1359,21 +1367,51 @@ ITA_garrison_control_tooltip = {
 ITA_garrison_control_cost_calculation = {
 	if = {
 		limit = {
-			check_variable = { var = ITA_garrison_control value = 2 compare = equals }
+			check_variable = { ITA_garrison_control = 0 }
 		}
-		set_variable = { var = ITA_garrison_control_cost value = 20 }
+		set_variable = { ITA_garrison_control_cost = 110 }
 	}
 	if = {
 		limit = {
-			check_variable = { var = ITA_garrison_control value = 3 compare = equals }
+			check_variable = { ITA_garrison_control =  1 }
 		}
-		set_variable = { var = ITA_garrison_control_cost value = 30 }
+		set_variable = { ITA_garrison_control_cost = 80 }
 	}
 	if = {
 		limit = {
-			check_variable = { var = ITA_garrison_control value = 4 compare = equals }
+			check_variable = { ITA_garrison_control = 2 }
 		}
-		set_variable = { var = ITA_garrison_control_cost value = 40 }
+		set_variable = { ITA_garrison_control_cost = 55 }
+	}
+	if = {
+		limit = {
+			check_variable = { ITA_garrison_control = 3 }
+		}
+		set_variable = { ITA_garrison_control_cost = 35 }
+	}
+	if = {
+		limit = {
+			check_variable = { ITA_garrison_control = 4 }
+		}
+		set_variable = { ITA_garrison_control_cost = 20 }
+	}
+	if = {
+		limit = {
+			check_variable = { ITA_garrison_control = 5 }
+		}
+		set_variable = { ITA_garrison_control_cost = 10 }
+	}
+	if = {
+		limit = {
+			check_variable = { ITA_garrison_control = 6 }
+		}
+		set_variable = { ITA_garrison_control_cost = 5 }
+	}
+	if = {
+		limit = {
+			check_variable = { ITA_garrison_control = 7 }
+		}
+		set_variable = { ITA_garrison_control_cost = 0 }
 	}
 }
 
@@ -1695,6 +1733,47 @@ ITA_pope_takes_over = {
 				ideology = despotism
 				expire = 1958.12.16
 				traits = { supreme_pontiff temperamental }
+			}
+		}
+	}
+}
+
+ITA_add_country_leader_role_to_gramsci = {
+	if = { #GRAMSCI RECOVERED
+		limit = {
+			ITA_antonio_gramsci = {
+				has_character_flag = ITA_improve_gramscis_trait_flag
+			}
+		}
+		effect_tooltip = {
+			ITA_antonio_gramsci = {
+				swap_country_leader_traits = {
+					remove = indisposed_political_scientist
+					add = cultural_hegemony_theorist
+				}
+			}
+		}
+
+		hidden_effect = {
+			add_country_leader_role = {
+				character =  ITA_antonio_gramsci # optional if inside character scope
+				promote_leader = yes
+				country_leader = {
+					ideology = marxism
+					expire = 1965.1.1
+					traits = { cultural_hegemony_theorist }
+				}
+			}
+		}
+	}
+	else = { #GRAMSCI STILL SICK
+		add_country_leader_role = {
+			character =  ITA_antonio_gramsci # optional if inside character scope
+			promote_leader = yes
+			country_leader = {
+				ideology = marxism
+				expire = 1965.1.1
+				traits = { indisposed_political_scientist }
 			}
 		}
 	}

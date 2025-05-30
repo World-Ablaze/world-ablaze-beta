@@ -4074,6 +4074,12 @@ focus_tree = {
 				name = GER_sturzbomber_programm
 				bonus = 0.5
 				uses = 1
+				category = fast_bomber
+			}
+			add_tech_bonus = {
+				name = GER_sturzbomber_programm
+				bonus = 0.5
+				uses = 1
 				category = strike_bomber
 			}
 			add_doctrine_cost_reduction = {
@@ -4087,13 +4093,13 @@ focus_tree = {
 				mio:GER_dornier_organization = {
 					add_mio_funds = 200
 				}
-				custom_effect_tooltip = GER_sturzbomber_programm_tt
-				hidden_effect = {
-					mio:GER_dornier_organization = {
-						add_mio_funds_gain_factor = 2.0
-					}
-					country_event = { id = ger_armor.501 days = 365 }
-				}
+				#custom_effect_tooltip = GER_sturzbomber_programm_tt
+				#hidden_effect = {
+				#	mio:GER_dornier_organization = {
+				#		add_mio_funds_gain_factor = 2.0
+				#	}
+				#	country_event = { id = ger_armor.501 days = 365 }
+				#}
 			}
 		}
 	}
@@ -4123,7 +4129,7 @@ focus_tree = {
 					bonus = 1.0
 					uses = 2
 					technology = ger_jet_fighter_ad_tech_2
-					technology = ger_jet_strike_bomber_ad_tech_3
+					technology = ger_jet_fast_bomber_ad_tech_3
 				}
 			}
 			else = {
@@ -4669,8 +4675,8 @@ focus_tree = {
 	}
 
 	focus = {
-		id = GER_nebeltruppen
-		icon = GFX_goal_generic_rocket_artillery
+		id = GER_specialized_equipment
+		icon = GFX_goal_GER_specialized_equipment
 		prerequisite = { focus = GER_aggressive_artillery }
 		x = -2
 		y = 1
@@ -4692,12 +4698,18 @@ focus_tree = {
 				uses = 2
 				category = rocket_artillery
 			}
+			add_tech_bonus = {
+				name = GER_luftverteidigung
+				bonus = 1.0
+				uses = 2
+				category = cat_anti_air
+			}
 		}
 	}
 
 	focus = {
-		id = GER_luftverteidigung
-		icon = GFX_goal_generic_anti_air
+		id = GER_lessons_from_war
+		icon = GFX_goal_GER_lessons_from_war
 		prerequisite = { focus = GER_aggressive_artillery }
 		x = 2
 		y = 1
@@ -4708,16 +4720,20 @@ focus_tree = {
 		}
 
 		available = {
+			has_tech = ger_medium_tank_chassis_2_4
+			has_war_with = SOV
+			date > 1942.5.1
 		}
 
 		search_filters = { FOCUS_FILTER_RESEARCH }
 
 		completion_reward = {
+			set_technology = { ger_medium_tank_chassis_2_5 = 1 }
 			add_tech_bonus = {
-				name = GER_luftverteidigung
+				name = GER_lessons_from_war
 				bonus = 1.0
-				uses = 2
-				category = cat_anti_air
+				uses = 1
+				technology = ger_cas_ad_tech_7
 			}
 		}
 	}
@@ -5834,6 +5850,37 @@ focus_tree = {
 					technology = jap_cruiser_submarine_3 #tbd
 				}
 			}
+        }
+    }
+
+    focus = {
+        id = GER_japanese_areal_torpedoes
+        icon = GFX_goal_generic_air_naval_bomber
+		prerequisite = { focus = GER_naval_cooperation_with_japan }
+		x = 0
+		y = 1
+		relative_position_id = GER_naval_cooperation_with_japan
+        cost = 3
+        ai_will_do = {
+            factor = 1
+        }
+
+		allow_branch = {
+			has_bba = yes
+		}
+
+		available = {
+			any_enemy_country = {
+				is_major = yes
+				has_war_with = JAP
+			}
+			NOT = { has_war_with = JAP }
+		}
+
+		search_filters = { FOCUS_FILTER_RESEARCH }
+
+        completion_reward = {
+			country_event = { id = ger_armor.503 days = 1 }
         }
     }
 
@@ -7157,6 +7204,33 @@ focus_tree = {
 			FOCUS_FILTER_HISTORICAL
 		}
 
+		select_effect = {
+			set_division_template_lock = {
+				division_template = "Sicherungs-Division"
+				is_locked = no
+			}
+			set_division_template_lock = {
+				division_template = "Kavallerie Brigade"
+				is_locked = no
+			}
+			set_division_template_lock = {
+				division_template = "Infanterie Division"
+				is_locked = no
+			}
+			set_division_template_lock = {
+				division_template = "Panzer Division"
+				is_locked = no
+			}
+			set_division_template_lock = {
+				division_template = "Motorized Infanterie Division"
+				is_locked = no
+			}
+			set_division_template_lock = {
+				division_template = "Gebirgs-Division"
+				is_locked = no
+			}
+		}
+
 		completion_reward = {
 			42 = { set_demilitarized_zone = no }
 			51 = { set_demilitarized_zone = no }
@@ -7414,7 +7488,7 @@ focus_tree = {
 					AUS = { is_guaranteed_by = ITA }
 				}
 				ITA = {
-					country_event = { id = ita_armor.828 days = 1 }
+					country_event = { id = ita_armor.812 days = 1 }
 				}
 			}
    		}
@@ -10253,12 +10327,26 @@ focus_tree = {
 		available = {
 		}
 
+		bypass = {
+			NOT = {
+				any_country = {
+					exists = yes
+					original_tag = ITA
+					has_government = fascism
+				}
+			}
+		}
+
 		ai_will_do = {
 			factor = 1
 		}
 
 		completion_reward = {
-			ITA = {
+			random_other_country = {
+				limit = {
+					original_tag = ITA
+					has_government = fascism
+				}
 				country_event = { id = ger_armor.822 }
 				custom_effect_tooltip = needs_approval
 			}
@@ -12376,7 +12464,7 @@ focus_tree = {
 
 
 				set_variable = { opp_civil_war_luftwaffe_actual_counter_var = 1 }
-				set_variable = { opp_civil_war_kriegsmarine_actual_var = 1 }
+				set_variable = { opp_civil_war_kriegsmarine_actual_counter_var = 1 }
 
 				42 = { set_demilitarized_zone = no }
 				51 = { set_demilitarized_zone = no }

@@ -1,4 +1,44 @@
 ITA_internal_factions = {
+	ITA_defascist_the_populace = {
+		icon = generic_police_action
+
+		allowed = {
+			#tag = ITA
+		}
+		visible = {
+			has_completed_focus = ITA_reign_in_the_fascist_remnants
+		}
+
+		state_target = yes
+
+		on_map_mode = map_only
+
+		target_array = ITA.core_states
+
+    	target_trigger = {
+			FROM = {
+				has_dynamic_modifier = {
+					modifier = ITA_fascist_remnants
+				}
+			}
+		}
+
+		cost = 25
+
+		days_remove = 120
+		ai_will_do = {
+			factor = 60
+		}
+
+		remove_effect = {
+			FROM = {
+				remove_dynamic_modifier = {
+					modifier = ITA_fascist_remnants
+				}
+			}
+		}
+	}
+
 
 	ITA_Bourgeoisie_issue_construction_contracts = {
 
@@ -613,38 +653,36 @@ ITA_internal_factions = {
 		}
 
 		modifier = {
-			consumer_goods_expected_value = 0.05
+			consumer_goods_expected_value = 0.02
 		}
 
 		complete_effect = {
-			hidden_effect = {
-				if = {
-					limit = {
-						check_variable = { ITA_pci_influence > 4 }
-					}
-			        add_stability = 0.1
+			if = {
+				limit = {
+					check_variable = { ITA_pci_influence > 4 }
 				}
-				else_if = {
-					limit = {
-						check_variable = { ITA_pci_influence > 3 }
-					}
-			        add_stability = 0.08
+				add_stability = 0.05
+			}
+			else_if = {
+				limit = {
+					check_variable = { ITA_pci_influence > 3 }
 				}
-				else_if = {
-					limit = {
-						check_variable = { ITA_pci_influence > 2 }
-					}
-			        add_stability = 0.06
+				add_stability = 0.04
+			}
+			else_if = {
+				limit = {
+					check_variable = { ITA_pci_influence > 2 }
 				}
-				else_if = {
-					limit = {
-						check_variable = { ITA_pci_influence > 1 }
-					}
-			        add_stability = 0.04
+				add_stability = 0.03
+			}
+			else_if = {
+				limit = {
+					check_variable = { ITA_pci_influence > 1 }
 				}
-				else = {
-			        add_stability = 0.02
-				}
+				add_stability = 0.02
+			}
+			else = {
+				add_stability = 0.01
 			}
 		}
 
@@ -891,11 +929,8 @@ ITA_internal_factions = {
 
 		available = {
 			custom_trigger_tooltip = {
-				tooltip = ITA_modernization_of_the_regio_aeronautica_fighter_tt
-				has_deployed_air_force_size = {
-					size > 999
-					type = fighter
-				}
+				tooltip = ITA_modernization_of_the_regio_aeronautica_fighters_tt
+				check_variable = { ITA_modernization_of_the_regio_aeronautica_fighters > 999 }
 			}
 			custom_trigger_tooltip = {
 				tooltip = ITA_modernization_of_the_regio_aeronautica_cas_tt
@@ -906,14 +941,14 @@ ITA_internal_factions = {
 			}
 			custom_trigger_tooltip = {
 				tooltip = ITA_modernization_of_the_regio_aeronautica_bombers_tt
-				check_variable = { ITA_modernization_of_the_regio_aeronautica > 799 }
+				check_variable = { ITA_modernization_of_the_regio_aeronautica_bombers > 799 }
 			}
 			if = {
 				limit = { has_bba = yes }
 				has_tech = ita_cas_ad_tech_3
 				OR = {
 					has_tech = ita_fighter_ad_tech_2
-					has_tech = ita_fighter_ad_tech_3
+					has_tech = ita_interceptor_ad_tech_1
 				}
 				OR = {
 					has_tech = ita_strike_bomber_ad_tech_1
@@ -947,7 +982,11 @@ ITA_internal_factions = {
 				category = air_doctrine
 			}
 			hidden_effect = {
-				clear_variable = ITA_modernization_of_the_regio_aeronautica
+				clear_variable = ITA_modernization_of_the_regio_aeronautica_fighters
+				clear_variable = ita_cur_fit
+				clear_variable = ita_cur_int
+				clear_variable = ita_cur_fim
+				clear_variable = ITA_modernization_of_the_regio_aeronautica_bombers
 				clear_variable = ita_cur_tac
 				clear_variable = ita_cur_str
 			}
@@ -958,7 +997,7 @@ ITA_internal_factions = {
 				}
 				custom_effect_tooltip = FRA_military_missions_tt
 				effect_tooltip = {
-					mio:ITA_fiat_aviazione_organization = {
+					mio:ITA_fiat_organization = {
 						add_mio_funds = 1200
 					}
 					mio:ITA_macchi_organization = {
@@ -980,11 +1019,11 @@ ITA_internal_factions = {
 				hidden_effect = {
 					if = {
 						limit = {
-							mio:ITA_fiat_aviazione_organization = {
+							mio:ITA_fiat_organization = {
 								has_mio_size > 1
 							}
 						}
-						mio:ITA_fiat_aviazione_organization = {
+						mio:ITA_fiat_organization = {
 							add_mio_funds = 1200
 						}
 					}
@@ -1141,6 +1180,30 @@ ITA_internal_factions = {
 			hidden_effect = {
 				clear_variable = ITA_modernization_of_the_regio_marina
 			}
+            random_owned_controlled_state = {
+                prioritize = { 117 }
+				limit = {
+					is_coastal = yes
+				}
+                add_extra_state_shared_building_slots = 2
+                add_building_construction = {
+                    type = dockyard
+                    level = 2
+                    instant_build = yes
+                }
+            }
+            random_owned_controlled_state = {
+                prioritize = { 1032 }
+				limit = {
+					is_coastal = yes
+				}
+                add_extra_state_shared_building_slots = 3
+                add_building_construction = {
+                    type = dockyard
+                    level = 3
+                    instant_build = yes
+                }
+            }
 			if = {
 				limit = {
 					has_dlc = "Arms Against Tyranny"
@@ -1199,7 +1262,7 @@ ITA_internal_factions = {
 			custom_effect_tooltip = ITA_war_speech_tt
 			hidden_effect = {
 				add_to_variable = { ITA_proletariat_political_power_gain = 0.1 }
-				country_event = { id = ita_armor.864 hours = 6 }
+				country_event = { id = ita_armor.849 hours = 6 }
 			}
 		}
 
@@ -1260,11 +1323,10 @@ ITA_internal_factions = {
 			tag = ITA
 			has_government = communism
 		}
-		days_re_enable = 90
 
 		cost = 50
 
-		fire_only_once = no
+		fire_only_once = yes
 
 		visible = {
 			tag = ITA
@@ -1276,8 +1338,6 @@ ITA_internal_factions = {
 			hidden_effect = {
 				set_variable = { ITA_pci_attitude = 2 }
 				set_variable = { ITA_pci_influence = 4 }
-				set_variable = { ITA_pci_political_power_gain = 0 }
-				set_variable = { ITA_pci_stability_factor = 0 }
 			}
 		}
 
@@ -1436,233 +1496,7 @@ ITA_internal_factions = {
 		}
 	}
 
-	ITA_bop_slander_the_duce = {
-		priority = 120
-		icon = GFX_decision_generic_political_discourse
-
-		allowed = {
-			original_tag = ITA
-		}
-
-		visible = {
-			has_country_leader = {
-				character = ITA_benito_mussolini
-				ruling_only = yes
-			}
-			OR = {
-				has_completed_focus = ITA_undermine_the_duce
-				has_completed_focus = ITA_unite_the_opposition
-			}
-		}
-
-		available = {}
-
-		cost = ITA_bop_generic_council_cost
-
-		fire_only_once = yes
-
-		complete_effect = {
-			#ITA_bop_low_decrease_effect = yes
-		}
-
-		ai_will_do = {
-			base = 1
-			modifier = {
-				factor = 0
-				ITA_is_historical_ai = yes
-			}
-		}
-	}
-
-	ITA_bop_criticize_the_war = {
-		priority = 119
-		icon = GFX_decision_generic_political_discourse
-
-		allowed = {
-			original_tag = ITA
-		}
-
-		visible = {
-			has_country_leader = {
-				character = ITA_benito_mussolini
-				ruling_only = yes
-			}
-			OR = {
-				has_completed_focus = ITA_undermine_the_duce
-				has_completed_focus = ITA_unite_the_opposition
-			}
-		}
-
-		available = {}
-
-		ai_hint_pp_cost = 25
-		custom_cost_trigger = {
-			command_power > 24
-			has_political_power > 24
-		}
-		custom_cost_text = decision_cost_CP_25_pp_25
-
-		fire_only_once = yes
-
-		complete_effect = {
-			#ITA_bop_low_decrease_effect = yes
-			hidden_effect = {
-				add_command_power = -25
-				add_political_power = -25
-
-			}
-
-		}
-
-		ai_will_do = {
-			base = 1
-			modifier = {
-				factor = 0
-				ITA_is_historical_ai = yes
-			}
-		}
-	}
-
-	ITA_bop_question_the_army = {
-		priority = 118
-		icon = GFX_decision_generic_political_discourse
-
-		allowed = {
-			original_tag = ITA
-		}
-
-		visible = {
-			has_country_leader = {
-				character = ITA_benito_mussolini
-				ruling_only = yes
-			}
-			OR = {
-				has_completed_focus = ITA_conspiracies_in_the_shadows
-				has_completed_focus = ITA_unite_the_opposition
-			}
-		}
-
-		available = {}
-
-		ai_hint_pp_cost = 15
-		custom_cost_trigger = {
-			has_political_power > 14
-			has_army_experience > 9
-		}
-		custom_cost_text = decision_cost_pp_15_ArmXP_10
-
-		days_re_enable = 365
-
-		complete_effect = {
-			#ITA_bop_very_low_decrease_effect = yes
-			hidden_effect = {
-				add_political_power = -15
-				army_experience = -10
-			}
-		}
-
-		ai_will_do = {
-			base = 1
-			modifier = {
-				factor = 0
-				ITA_is_historical_ai = yes
-			}
-		}
-	}
-
-	ITA_bop_question_the_airforce = {
-		priority = 117
-		icon = GFX_decision_generic_political_discourse
-
-		allowed = {
-			original_tag = ITA
-		}
-
-		visible = {
-			has_country_leader = {
-				character = ITA_benito_mussolini
-				ruling_only = yes
-			}
-			OR = {
-				has_completed_focus = ITA_conspiracies_in_the_shadows
-				has_completed_focus = ITA_unite_the_opposition
-			}
-		}
-
-		available = {}
-
-		ai_hint_pp_cost = 15
-		custom_cost_trigger = {
-			has_political_power > 14
-			has_air_experience > 9
-		}
-		custom_cost_text = decision_cost_pp_15_AirXP_10
-
-		days_re_enable = 365
-
-		complete_effect = {
-			#ITA_bop_very_low_decrease_effect = yes
-			hidden_effect = {
-				add_political_power = -15
-				air_experience = -10
-			}
-		}
-
-		ai_will_do = {
-			base = 1
-			modifier = {
-				factor = 0
-				ITA_is_historical_ai = yes
-			}
-		}
-	}
-
-	ITA_bop_question_the_navy = {
-		priority = 116
-		icon = GFX_decision_generic_political_discourse
-
-		allowed = {
-			original_tag = ITA
-		}
-
-		visible = {
-			has_country_leader = {
-				character = ITA_benito_mussolini
-				ruling_only = yes
-			}
-			OR = {
-				has_completed_focus = ITA_conspiracies_in_the_shadows
-				has_completed_focus = ITA_unite_the_opposition
-			}
-		}
-
-		available = {}
-
-		ai_hint_pp_cost = 15
-		custom_cost_trigger = {
-			has_political_power > 14
-			has_navy_experience > 9
-		}
-		custom_cost_text = decision_cost_pp_15_NavXP_10
-
-		days_re_enable = 365
-
-		complete_effect = {
-			#ITA_bop_very_low_decrease_effect = yes
-			hidden_effect = {
-				add_political_power = -15
-				navy_experience = -10
-			}
-		}
-
-		ai_will_do = {
-			base = 1
-			modifier = {
-				factor = 0
-				ITA_is_historical_ai = yes
-			}
-		}
-	}
+	###
 
 	#ITA_bop_military_parade = {
 	#	priority = 1115
@@ -2084,7 +1918,7 @@ ITA_internal_factions = {
 		}
 
 		visible = {
-			has_completed_focus = ITA_strengthen_the_papacy
+			has_completed_focus = ITA_the_catholic_dominion
 		}
 
 		available = {
@@ -2261,7 +2095,7 @@ ITA_internal_factions = {
 		}
 
 		visible = {
-			has_completed_focus = ITA_common_ground
+			has_completed_focus = ITA_the_popular_front
 		}
 
 		available = {
@@ -2291,6 +2125,7 @@ ITA_internal_factions = {
 					has_government = communism
 				}
 				add_stability = 0.05
+				add_political_power = 50
 			}
 			else = {
 				add_stability = 0.1
