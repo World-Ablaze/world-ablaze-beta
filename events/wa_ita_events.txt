@@ -5721,18 +5721,19 @@ country_event = {
 	is_triggered_only = yes
 
 	immediate = {
-		if = {
-			limit = {
-				any_enemy_country = {
-					is_faction_leader = yes
-					is_major = yes
-					OR = {
-						has_government = democratic
-						has_government = neutrality
+		hidden_effect = {
+			#SET UP ALLIES
+			if = {
+				limit = {
+					any_enemy_country = {
+						is_faction_leader = yes
+						is_major = yes
+						OR = {
+							has_government = democratic
+							has_government = neutrality
+						}
 					}
 				}
-			}
-			hidden_effect = {
 				random_enemy_country = {
 					limit = {
 						is_faction_leader = yes
@@ -5745,9 +5746,7 @@ country_event = {
 					save_event_target_as = italy_new_ally_target
 				}
 			}
-		}
-		else = {
-			hidden_effect = {
+			else = {
 				random_enemy_country = {
 					limit = {
 						is_faction_leader = yes
@@ -5757,8 +5756,7 @@ country_event = {
 					save_event_target_as = italy_new_ally_target
 				}
 			}
-		}
-		hidden_effect = {
+			#SET UP AXIS
 			random_country = {
 				limit = {
 					is_faction_leader = yes
@@ -5766,63 +5764,187 @@ country_event = {
 				}
 				save_event_target_as = italy_new_enemy_target
 			}
-		}
-		if = {
-			limit = {
-				GER = { has_country_flag = GER_fall_achse_prepared }
-				GER = { has_capitulated = no }
+			#Allies annex North Africa
+			if = {
+				limit = {
+					OR = {
+						event_target:italy_new_ally_target = {
+							is_in_faction_with = ENG
+						}
+						event_target:italy_new_ally_target = {
+							tag = ENG
+						}
+					}
+				}
+				ENG = { # Libya
+					transfer_state = 448
+					transfer_state = 449
+					transfer_state = 450
+					transfer_state = 451
+					transfer_state = 661
+					transfer_state = 662
+					transfer_state = 663
+					transfer_state = 273
+				}
+				if = {
+					limit = {
+						country_exists = ITS
+						country_exists = UKT
+					}
+					UKT = {
+						annex_country = { target = ITS transfer_troops = no }
+					}
+				}
+				if = {
+					limit = {
+						country_exists = ITE
+						country_exists = UKE
+					}
+					UKE = {
+						annex_country = { target = ITE transfer_troops = no }
+					}
+				}
+				if = {
+					limit = {
+						country_exists = UKT
+					}
+					UKT = {
+						transfer_state = 550
+						transfer_state = 559
+					}
+				}
+				if = {
+					limit = {
+						NOT = { country_exists = UKT }
+					}
+					ENG = {
+						transfer_state = 550
+						transfer_state = 559
+					}
+				}
 			}
-			hidden_effect = {
+			else = {
+				event_target:italy_new_ally_target = { # Libya
+					transfer_state = 448
+					transfer_state = 449
+					transfer_state = 450
+					transfer_state = 451
+					transfer_state = 661
+					transfer_state = 662
+					transfer_state = 663
+					transfer_state = 273
+				}
+				if = {
+					limit = {
+						country_exists = ITS
+					}
+					event_target:italy_new_ally_target = {
+						annex_country = { target = ITS transfer_troops = no }
+					}
+				}
+				if = {
+					limit = {
+						country_exists = ITE
+					}
+					event_target:italy_new_ally_target = {
+						annex_country = { target = ITE transfer_troops = no }
+					}
+				}
+			}
+			#Fall Achse
+			if = {
+				limit = {
+					GER = { has_country_flag = GER_fall_achse_prepared }
+					GER = { has_capitulated = no }
+				}
 				every_state = {
 					limit = {
-						CONTROLLER = {
-							tag = ITA
-						}
-						NOT = { is_core_of = ITA }
+						has_state_flag = GER_fall_achse_flag
 					}
 					GER = {
 						transfer_state = PREV
 					}
 				}
-			}
-			every_country = {
-				limit = {
-					is_subject_of = ITA
-					has_capitulated = no
-				}
-				hidden_effect = {
+				every_country = {
+					limit = {
+						is_subject_of = ITA
+						has_capitulated = no
+					}
 					GER = { annex_country = { target = PREV transfer_troops = no } }
 				}
-			}
-			every_state = {
-				limit = {
-					has_state_flag = GER_fall_achse_flag
-					is_controlled_by = ITA
+				if = {
+					limit = {
+						GER = {
+							is_ai = yes
+							has_template = "German Infantry Division"
+						}
+					}
+					every_state = {
+						limit = {
+							has_state_flag = GER_fall_achse_flag
+						}
+						GER = {
+							create_unit = {
+								division = "division_template = \"German Infantry Division\" start_experience_factor = 0.5 start_equipment_factor = 1.0"
+								owner = GER
+								count = 1
+							}
+						}
+					}
 				}
-				hidden_effect = {
-					GER = { transfer_state = PREV }
-				}
-			}
-			#ITA = {
-			#	set_province_controller = 3923
-			#	set_province_controller = 3966
-			#	set_province_controller = 923
-			#	set_province_controller = 963
-			#	set_province_controller = 6831
-			#}
-			if = {
-				limit = {
-					GER = { is_ai = yes }
-				}
-				hidden_effect = {
-					GER = {
-						load_oob = "GER_achse"
+				if = {
+					limit = {
+						159 = { has_state_flag = GER_fall_achse_flag }
+						GER = {
+							is_ai = yes
+							has_template = "German Infantry Division"
+						}
+					}
+					159 = {
+						GER = {
+							create_unit = {
+								division = "division_template = \"German Infantry Division\" start_experience_factor = 0.5 start_equipment_factor = 1.0"
+								owner = GER
+								count = 5
+							}
+						}
 					}
 				}
 			}
-			hidden_effect = {
-				news_event = { hours = 6 id = afo_news.15 }
-				ITA = {
+			news_event = { hours = 6 id = afo_news.15 }
+			ITA = {
+				random_country = {
+					limit = {
+						is_faction_leader = yes
+						is_in_faction_with = ROOT
+					}
+					remove_from_faction = ROOT
+				}
+			}
+			every_country = {
+				limit = {
+					has_war_with = ITA
+				}
+				remove_wargoal = {
+					type = all
+					target = ITA
+				}
+				white_peace = ITA
+			}
+			event_target:italy_new_ally_target = {
+				add_to_faction = ITA
+			}
+			event_target:italy_new_enemy_target = {
+				declare_war_on = {
+					target = ITA
+					type = annex_everything
+				}
+			}
+			ITA = {
+				if = {
+					limit = {
+						GER = { has_country_flag = GER_fall_achse_prepared }
+					}
 					every_state = {
 						limit = {
 							NOT = { is_fully_controlled_by = ITA }
@@ -5834,169 +5956,30 @@ country_event = {
 							to_state_array = owned_controlled_states
 						}
 					}
-					retire_country_leader = yes
-					add_country_leader_role = {
-						character = ITA_victor_emmanuel_iii
-						country_leader = {
-							expire = "1965.1.1"
-							ideology = conservatism
-							traits = {
-							}
-							desc = "POLITICS_VICTOR_EMMANUEL_III_DESC"
-						}
-						promote_leader = yes
-					}
-					set_politics = {
-						ruling_party = democratic
-						elections_allowed = yes
-					}
-					add_popularity = {
-						ideology = democratic
-						popularity = 0.6
-					}
-					add_popularity = {
-						ideology = communism
-						popularity = 0.4
-					}
 				}
-				if = {
-					limit = {
-						OR = {
-							event_target:italy_new_ally_target = {
-								is_in_faction_with = ENG
-							}
-							event_target:italy_new_ally_target = {
-								tag = ENG
-							}
+				retire_country_leader = yes
+				add_country_leader_role = {
+					character = ITA_victor_emmanuel_iii
+					country_leader = {
+						expire = "1965.1.1"
+						ideology = conservatism
+						traits = {
 						}
+						desc = "POLITICS_VICTOR_EMMANUEL_III_DESC"
 					}
-					ENG = {
-						transfer_state = 448
-						transfer_state = 449
-						transfer_state = 450
-						transfer_state = 451
-						transfer_state = 661
-						transfer_state = 662
-						transfer_state = 663
-						transfer_state = 273
-					}
+					promote_leader = yes
 				}
-				else = {
-					event_target:italy_new_ally_target = {
-						transfer_state = 448
-						transfer_state = 449
-						transfer_state = 450
-						transfer_state = 451
-						transfer_state = 661
-						transfer_state = 662
-						transfer_state = 663
-						transfer_state = 273
-					}
+				set_politics = {
+					ruling_party = democratic
+					elections_allowed = yes
 				}
-				hidden_effect = {
-					random_country = {
-						limit = {
-							is_faction_leader = yes
-							is_in_faction_with = ROOT
-						}
-						remove_from_faction = ROOT
-					}
-					every_country = {
-						limit = {
-							has_war_with = ITA
-						}
-						remove_wargoal = {
-							type = all
-							target = ITA
-						}
-						white_peace = ITA
-					}
+				add_popularity = {
+					ideology = democratic
+					popularity = 0.6
 				}
-				if = {
-					limit = {
-						OR = {
-							event_target:italy_new_ally_target = {
-								is_in_faction_with = ENG
-							}
-							event_target:italy_new_ally_target = {
-								tag = ENG
-							}
-						}
-					}
-					hidden_effect = {
-						ENG = {
-							transfer_state = 448
-							transfer_state = 449
-							transfer_state = 450
-							transfer_state = 451
-							transfer_state = 661
-							transfer_state = 662
-							transfer_state = 663
-							transfer_state = 273
-						}
-					}
-					if = {
-						limit = {
-							country_exists = ITS
-							country_exists = UKT
-						}
-						hidden_effect = {
-							UKT = {
-								annex_country = { target = ITS transfer_troops = no }
-							}
-						}
-					}
-					if = {
-						limit = {
-							country_exists = ITE
-							country_exists = UKE
-						}
-						hidden_effect = {
-							UKE = {
-								annex_country = { target = ITE transfer_troops = no }
-							}
-						}
-					}
-					if = {
-						limit = {
-							country_exists = UKT
-						}
-						UKT = {
-							transfer_state = 550
-							transfer_state = 559
-						}
-					}
-					if = {
-						limit = {
-							NOT = { country_exists = UKT }
-						}
-						ENG = {
-							transfer_state = 550
-							transfer_state = 559
-						}
-					}
-				}
-				else = {
-					hidden_effect = {
-						event_target:italy_new_ally_target = {
-							transfer_state = 448
-							transfer_state = 449
-							transfer_state = 450
-							transfer_state = 451
-							transfer_state = 661
-							transfer_state = 662
-							transfer_state = 663
-							transfer_state = 273
-						}
-					}
-				}
-				hidden_effect = {
-					event_target:italy_new_enemy_target = {
-						declare_war_on = {
-							target = ITA
-							type = annex_everything
-						}
-					}
+				add_popularity = {
+					ideology = communism
+					popularity = 0.4
 				}
 			}
 		}
@@ -6005,9 +5988,6 @@ country_event = {
 	option = {
 		name = ita_armor.897.a
 		ai_chance = { factor = 1 }
-		event_target:italy_new_ally_target = {
-			add_to_faction = ITA
-		}
 		effect_tooltip = {
 			add_country_leader_role = {
 				character = ITA_victor_emmanuel_iii
