@@ -6,8 +6,6 @@ By extension, It is also the category of Facilities where Special Project are re
 Facility buildings in building DB (`game/common/buildings`) and Specializations here need to be perfectly aligned.
 For each Specialization entry here, there should be a building with `specialization = specialization_token` in building DB.
 
-TODO SP : also aligned with entities/mesh/3d model ???
-
 # Specialization localization
 For the displayed name of the specialization :
 - if localization key TAG_my_speciliazation_token exists, use it

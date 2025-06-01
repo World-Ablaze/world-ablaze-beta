@@ -30,5 +30,14 @@ my_scientist_trait_token = {
 	# Trait limited to scientist with that specialization only.
 	# If not specified it will applicable to all scientist specializations
 	specialization = {specialization_land}
+	
+	# Optional
+	# Allow trait for recruitable scientist based on trigger. Country scope is FROM, ROOT and PREV
+	available = {
+		has_dlc = "No Step Back"
+		ROOT = {
+			has_tech = tech_engineers
+		}
+	}
 }
 ```

@@ -97,6 +97,9 @@ token = { # Dynamic token for the reward (i.e. identifier for the reward)
 				# Localization key used for the name of the Project
 				# The localization key is localized with the following localization scope objects:
 				#    * Country: The country that owns the project.
+				#    * (Nullable) Character: The scientist working on the project, if one exist (effects may miss character).
+				#    * (Nullable) State: The state that the scientist is in, if one exist (effects may miss state).
+				#    * (Nullable) Project: The project that the option was completed from (effects may miss project).
 				name = name_loc_key
 				# if name provided, use TAG_name_loc_key if it exists. if not use name_loc_key (where TAG is the tag of the project owner)
 				# if localization key TAG_my_option_token exists, use it
