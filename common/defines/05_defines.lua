@@ -660,8 +660,16 @@ NDefines.NNavy.HIT_PROFILE_SPEED_FACTOR = 1.2										-- factors speed value wh
 NDefines.NNavy.COMBAT_DAMAGE_TO_STR_FACTOR = 0.3									-- casting damage value to ship strength multiplier. Use it ot balance the game difficulty.
 NDefines.NNavy.COMBAT_DAMAGE_TO_ORG_FACTOR = 1.0									-- casting damage value to ship organisation multiplier. Use it to balance the game difficulty.
 
-
-NDefines.NNavy.COMBAT_CHASE_RESIGNATION_HOURS = 16									--	Before we resign chasing enemy, give them some minimum time so the combat doesn't end instantly.
+NDefines.NNavy.MIN_SPOTTING_PROGRESS = 0.005										-- Minimum spotting progress (in percent) per hourly tick
+NDefines.NNavy.RELATIVE_SURFACE_DETECTION_TO_POSITIONING_FACTOR	= 0.005				-- multiples the surface detection difference between two sides. the side with higher detection will get a bonus of this value
+NDefines.NNavy.NAVY_SPOTTER_DETECTION_FACTOR = 0.05									-- multiplier for task forces' detection value before logistic transform
+NDefines.NNavy.DETECTION_CHANCE_MULT_BASE = 0.05									-- base multiplier value for detection chance. Later the chance is an average between our detection and enemy visibility, mult by surface/sub detection chance in the following defines.
+--NDefines.NNavy.NAVY_VISIBILITY_BONUS_ON_RETURN_FOR_REPAIR = 0.05					-- Multiplier for the surface/sub visiblity when the heavily damaged fleet is returning to the home base for reparation. 1.0 = no bonus. 0.0 = invisible.
+--NDefines.NNavy.SPOTTING_ENEMY_SPOTTING_MULTIPLIER_FOR_RUNNING_AWAY = 0.01			-- enemy spotting is multiplied by this value to simulate running away
+--NDefines.NNavy.SPOTTING_SPEED_MULT_FOR_RUNNING_AWAY = 0.99                        -- task forces that does not want to engage will reduce enemy spotting rate every hour by speed diff mult this ratio
+--NDefines.NNavy.SPOTTING_SPEED_MULT_FOR_CATCHING_UP = 0.01							-- speed diff bonus rate that is added to spotting every hour
+--NDefines.NNavy.COMBAT_MIN_DURATION = 4											-- Min combat duration before we can retreat. It's a balancing variable so it's not possible to always run with our weak ships agains big flotillas.
+--NDefines.NNavy.COMBAT_CHASE_RESIGNATION_HOURS = 48								--	Before we resign chasing enemy, give them some minimum time so the combat doesn't end instantly.
 
 NDefines.NNavy.MIN_REPAIR_FOR_JOINING_COMBATS = { 									-- strikeforces/patrol forces will not join combats if they are not repaired enough
 	0.0,	-- do not repair
