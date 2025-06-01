@@ -660,6 +660,9 @@ NDefines.NNavy.HIT_PROFILE_SPEED_FACTOR = 1.2										-- factors speed value wh
 NDefines.NNavy.COMBAT_DAMAGE_TO_STR_FACTOR = 0.3									-- casting damage value to ship strength multiplier. Use it ot balance the game difficulty.
 NDefines.NNavy.COMBAT_DAMAGE_TO_ORG_FACTOR = 1.0									-- casting damage value to ship organisation multiplier. Use it to balance the game difficulty.
 
+
+NDefines.NNavy.COMBAT_CHASE_RESIGNATION_HOURS = 16									--	Before we resign chasing enemy, give them some minimum time so the combat doesn't end instantly.
+
 NDefines.NNavy.MIN_REPAIR_FOR_JOINING_COMBATS = { 									-- strikeforces/patrol forces will not join combats if they are not repaired enough
 	0.0,	-- do not repair
 	0.5,	-- low
