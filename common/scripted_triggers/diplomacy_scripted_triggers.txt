@@ -57,7 +57,7 @@ DIPLOMACY_GUARANTEE_ENABLE_TRIGGER = {
 				option = LIMITED
 			}
 		}
-		always = yes # Handled by game logic.
+		threat > 0.2
 	}
 	if = {
 		limit = {
@@ -114,24 +114,6 @@ DIPLOMACY_JOIN_ALLY_ENABLE_TRIGGER = {
 		}
 		custom_trigger_tooltip = {
 			tooltip = ally_cant_faction_call_tt
-			always = no
-		}
-	}
-}
-
-DIPLOMACY_ACCEPT_VOLUNTEERS_ENABLE_TRIGGER = {
-	if = {
-		limit = {
-			FROM = {
-				check_variable = {
-					var = modifier@cant_accept_volunteers
-					value = 1
-					compare = greater_than_or_equals
-				}
-			}
-		}
-		custom_trigger_tooltip = {
-			tooltip = cant_accept_volunteers_tt
 			always = no
 		}
 	}
@@ -612,6 +594,17 @@ DIPLOMACY_MILACC_ENABLE_TRIGGER = {
 			always = no
 		}
 	}
+	if = {
+		limit = {
+			FROM = {
+				has_idea = neutrality_idea
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_REQUEST_MILITARY_ACCESS_NEUTRALITY_TT
+			always = no
+		}
+	}
 }
 DIPLOMACY_OFFER_MILACC_ENABLE_TRIGGER = {
 	if = {
@@ -659,6 +652,17 @@ DIPLOMACY_OFFER_MILACC_ENABLE_TRIGGER = {
 		}
 		custom_trigger_tooltip = {
 			tooltip = RULE_OFFER_MILITARY_ACCESS_BLOCKED_TT
+			always = no
+		}
+	}
+	if = {
+		limit = {
+			FROM = {
+				has_idea = neutrality_idea
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_REQUEST_MILITARY_ACCESS_NEUTRALITY_TT
 			always = no
 		}
 	}
@@ -727,6 +731,17 @@ DIPLOMACY_DOCKING_RIGHTS_ENABLE_TRIGGER = {
 			always = no
 		}
 	}
+	if = {
+		limit = {
+			FROM = {
+				has_idea = neutrality_idea
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_REQUEST_MILITARY_ACCESS_NEUTRALITY_TT
+			always = no
+		}
+	}
 }
 DIPLOMACY_OFFER_DOCKING_RIGHTS_ENABLE_TRIGGER = {
 	if = {
@@ -774,6 +789,17 @@ DIPLOMACY_OFFER_DOCKING_RIGHTS_ENABLE_TRIGGER = {
 		}
 		custom_trigger_tooltip = {
 			tooltip = RULE_OFFER_DOCKING_RIGHTS_BLOCKED_TT
+			always = no
+		}
+	}
+	if = {
+		limit = {
+			FROM = {
+				has_idea = neutrality_idea
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_REQUEST_MILITARY_ACCESS_NEUTRALITY_TT
 			always = no
 		}
 	}
@@ -1061,7 +1087,29 @@ DIPLOMACY_GENERATE_WARGOAL_ENABLE_TRIGGER = {
 				option = LIMITED
 			}
 		}
-		always = yes
+		if = {
+			limit = {
+				is_major = yes
+			}
+			OR = {
+				threat > 0.2
+				AND = {
+					has_civil_war = no
+					any_enemy_country = {
+						is_major = yes
+					}
+				}
+			}
+		}
+		else = {
+			OR = {
+				threat > 0.2
+				AND = {
+					has_civil_war = no
+					has_war = yes
+				}
+			}
+		}
 	}
 	if = {
 		limit = {
@@ -1348,6 +1396,24 @@ DIPLOMACY_EMBARGO_ENABLE_TRIGGER = {
 	}
 }
 
+DIPLOMACY_ACCEPT_VOLUNTEERS_ENABLE_TRIGGER = {
+	if = {
+		limit = {
+			FROM = {
+				check_variable = {
+					var = modifier@cant_accept_volunteers
+					value = 1
+					compare = greater_than_or_equals
+				}
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = cant_accept_volunteers_tt
+			always = no
+		}
+	}
+}
+
 DIPLOMACY_SEND_VOLUNTEERS_ENABLE_TRIGGER = {
 	if = {
 		limit = {
@@ -1394,6 +1460,21 @@ DIPLOMACY_SEND_VOLUNTEERS_ENABLE_TRIGGER = {
 							has_idea = JAP_militarism_showa
 							is_subject_of = JAP
 						}
+					}
+				}
+			}
+		}
+		if = { #No Chinese volunteers
+			limit = {
+				NOT = { original_tag = SOV }
+				FROM = { is_literally_china = yes }
+			}
+			custom_trigger_tooltip = {
+				tooltip = RULE_VOLUNTEERS_ONE_CHINA_POLICY_TT
+				FROM = {
+					OR = {
+						has_completed_focus = PRC_one_china_policy
+						has_completed_focus = CHI_one_china_policy
 					}
 				}
 			}

@@ -3397,14 +3397,12 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_ARMY_XP }
 
 		completion_reward = {
-			custom_effect_tooltip = recruiting_reserves_40
-			hidden_effect = {
-				if = {
-					limit = {
-						check_variable = { ROOT.reserves < 50 }
-					}
-					set_variable = { ROOT.reserves = 40 }
+			if = {
+				limit = {
+					check_variable = { ROOT.reserves < 40 }
 				}
+				set_variable = { ROOT.reserves = 40 }
+				custom_effect_tooltip = set_reserves_40
 			}
 			if = {
 				limit = {
@@ -4076,6 +4074,12 @@ focus_tree = {
 				name = GER_sturzbomber_programm
 				bonus = 0.5
 				uses = 1
+				category = fast_bomber
+			}
+			add_tech_bonus = {
+				name = GER_sturzbomber_programm
+				bonus = 0.5
+				uses = 1
 				category = strike_bomber
 			}
 			add_doctrine_cost_reduction = {
@@ -4089,13 +4093,13 @@ focus_tree = {
 				mio:GER_dornier_organization = {
 					add_mio_funds = 200
 				}
-				custom_effect_tooltip = GER_sturzbomber_programm_tt
-				hidden_effect = {
-					mio:GER_dornier_organization = {
-						add_mio_funds_gain_factor = 2.0
-					}
-					country_event = { id = ger_armor.501 days = 365 }
-				}
+				#custom_effect_tooltip = GER_sturzbomber_programm_tt
+				#hidden_effect = {
+				#	mio:GER_dornier_organization = {
+				#		add_mio_funds_gain_factor = 2.0
+				#	}
+				#	country_event = { id = ger_armor.501 days = 365 }
+				#}
 			}
 		}
 	}
@@ -4125,7 +4129,7 @@ focus_tree = {
 					bonus = 1.0
 					uses = 2
 					technology = ger_jet_fighter_ad_tech_2
-					technology = ger_jet_strike_bomber_ad_tech_3
+					technology = ger_jet_fast_bomber_ad_tech_3
 				}
 			}
 			else = {
@@ -4600,8 +4604,18 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			set_technology = {
-				ger_armoured_car_5 = 1
+			if = {
+				limit = {
+					has_dlc = "No Step Back"
+				}
+				set_technology = {
+					ger_combat_armoured_car_5_1 = 1
+				}
+			}
+			else = {
+				set_technology = {
+					ger_armoured_car_5 = 1
+				}
 			}
 			set_technology = {
 				panzer_aufklarung = 1
@@ -4661,8 +4675,8 @@ focus_tree = {
 	}
 
 	focus = {
-		id = GER_nebeltruppen
-		icon = GFX_goal_generic_rocket_artillery
+		id = GER_specialized_equipment
+		icon = GFX_goal_GER_specialized_equipment
 		prerequisite = { focus = GER_aggressive_artillery }
 		x = -2
 		y = 1
@@ -4684,12 +4698,18 @@ focus_tree = {
 				uses = 2
 				category = rocket_artillery
 			}
+			add_tech_bonus = {
+				name = GER_luftverteidigung
+				bonus = 1.0
+				uses = 2
+				category = cat_anti_air
+			}
 		}
 	}
 
 	focus = {
-		id = GER_luftverteidigung
-		icon = GFX_goal_generic_anti_air
+		id = GER_lessons_from_war
+		icon = GFX_goal_GER_lessons_from_war
 		prerequisite = { focus = GER_aggressive_artillery }
 		x = 2
 		y = 1
@@ -4700,16 +4720,20 @@ focus_tree = {
 		}
 
 		available = {
+			has_tech = ger_medium_tank_chassis_2_4
+			has_war_with = SOV
+			date > 1942.5.1
 		}
 
 		search_filters = { FOCUS_FILTER_RESEARCH }
 
 		completion_reward = {
+			set_technology = { ger_medium_tank_chassis_2_5 = 1 }
 			add_tech_bonus = {
-				name = GER_luftverteidigung
+				name = GER_lessons_from_war
 				bonus = 1.0
-				uses = 2
-				category = cat_anti_air
+				uses = 1
+				technology = ger_cas_ad_tech_7
 			}
 		}
 	}
@@ -4943,7 +4967,7 @@ focus_tree = {
 			add_doctrine_cost_reduction = {
 				name = GER_refinement_of_bewegungskrieg
 				cost_reduction = 0.5
-				uses = 2
+				uses = 1
 				category = cat_mobile_warfare
 			}
 			add_tech_bonus = {
@@ -5266,6 +5290,12 @@ focus_tree = {
 					uses = 1
 					technology = ger_modern_1
 				}
+			}
+			add_doctrine_cost_reduction = {
+				name = GER_plan_the_third_generation
+				cost_reduction = 0.5
+				uses = 1
+				category = cat_mobile_warfare
 			}
 		}
 	}
@@ -5779,7 +5809,7 @@ focus_tree = {
 		x = 5
 		y = 1
 		relative_position_id = GER_the_kriegsmarine
-        cost = 2
+        cost = 1
         ai_will_do = {
             factor = 1
         }
@@ -5807,6 +5837,50 @@ focus_tree = {
 				uses = 1
 				technology = ger_carrier_1
 			}
+			JAP = {
+				add_tech_bonus = {
+					name = JAP_naval_cooperation_with_germany
+					bonus = 1.0
+					uses = 2
+					technology = jap_submarine_1
+					technology = jap_submarine_2
+					technology = jap_submarine_3
+					technology = jap_cruiser_submarine_1
+					technology = jap_cruiser_submarine_2
+					technology = jap_cruiser_submarine_3 #tbd
+				}
+			}
+        }
+    }
+
+    focus = {
+        id = GER_japanese_areal_torpedoes
+        icon = GFX_goal_generic_air_naval_bomber
+		prerequisite = { focus = GER_naval_cooperation_with_japan }
+		x = 0
+		y = 1
+		relative_position_id = GER_naval_cooperation_with_japan
+        cost = 3
+        ai_will_do = {
+            factor = 1
+        }
+
+		allow_branch = {
+			has_bba = yes
+		}
+
+		available = {
+			any_enemy_country = {
+				is_major = yes
+				has_war_with = JAP
+			}
+			NOT = { has_war_with = JAP }
+		}
+
+		search_filters = { FOCUS_FILTER_RESEARCH }
+
+        completion_reward = {
+			country_event = { id = ger_armor.503 days = 1 }
         }
     }
 
@@ -5903,7 +5977,7 @@ focus_tree = {
 		completion_reward = {
 			add_doctrine_cost_reduction = {
 				name = GER_unrestricted_submarine_warfare
-				cost_reduction = 0.99
+				cost_reduction = 0.50
 				uses = 2
 				category = cat_trade_interdiction
 			}
@@ -5925,7 +5999,7 @@ focus_tree = {
 		completion_reward = {
 			add_doctrine_cost_reduction = {
 				name = GER_wolfpacks
-				cost_reduction = 0.99
+				cost_reduction = 0.50
 				uses = 3
 				category = cat_trade_interdiction
 			}
@@ -6182,7 +6256,7 @@ focus_tree = {
 		x = -3
 		y = 4
 		relative_position_id = GER_expand_the_naval_dockyards
-		cost = 3
+		cost = 2
 
 		available = {
 			144 = {
@@ -6282,7 +6356,7 @@ focus_tree = {
 		x = -1
 		y = 4
 		relative_position_id = GER_expand_the_naval_dockyards
-		cost = 4
+		cost = 2
 
 		available = {
 			19 = {
@@ -6469,7 +6543,7 @@ focus_tree = {
 		x = 1
 		y = 4
 		relative_position_id = GER_expand_the_naval_dockyards
-		cost = 4
+		cost = 2
 
 		available = {
 			123 = {
@@ -6695,7 +6769,7 @@ focus_tree = {
 		x = 3
 		y = 4
 		relative_position_id = GER_expand_the_naval_dockyards
-		cost = 6
+		cost = 2
 
 		available = {
 			791 = {
@@ -6909,6 +6983,13 @@ focus_tree = {
 			}
 			custom_effect_tooltip = GER_plan_z_tt
 			economy_fatigue_level_up_2 = yes
+			add_doctrine_cost_reduction = {
+				name = GER_plan_z
+				cost_reduction = 0.99
+				uses = 2
+				category = cat_base_strike
+				category = fleet_in_being_tree
+			}
 		}
 	}
 
@@ -7121,6 +7202,33 @@ focus_tree = {
 		}
 		search_filters = {
 			FOCUS_FILTER_HISTORICAL
+		}
+
+		select_effect = {
+			set_division_template_lock = {
+				division_template = "Sicherungs-Division"
+				is_locked = no
+			}
+			set_division_template_lock = {
+				division_template = "Kavallerie Brigade"
+				is_locked = no
+			}
+			set_division_template_lock = {
+				division_template = "Infanterie Division"
+				is_locked = no
+			}
+			set_division_template_lock = {
+				division_template = "Panzer Division"
+				is_locked = no
+			}
+			set_division_template_lock = {
+				division_template = "Motorized Infanterie Division"
+				is_locked = no
+			}
+			set_division_template_lock = {
+				division_template = "Gebirgs-Division"
+				is_locked = no
+			}
 		}
 
 		completion_reward = {
@@ -7380,7 +7488,7 @@ focus_tree = {
 					AUS = { is_guaranteed_by = ITA }
 				}
 				ITA = {
-					country_event = { id = ita_armor.828 days = 1 }
+					country_event = { id = ita_armor.812 days = 1 }
 				}
 			}
    		}
@@ -8260,17 +8368,49 @@ focus_tree = {
 
 		available = {
 			TUR = { controls_state = 342 }
+			211 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+			184 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+			}
 			OR = {
 				is_in_faction_with = BUL
 				BUL = { is_subject_of = ROOT }
-				BUL = { has_capitulated = yes }
-				NOT = { country_exists = BUL }
+				48 = {
+					CONTROLLER = {
+						OR = {
+							tag = ROOT
+							is_subject_of = ROOT
+							is_in_faction_with = ROOT
+						}
+					}
+				}
 			}
 			OR = {
 				is_in_faction_with = GRE
 				GRE = { is_subject_of = ROOT }
-				GRE = { has_capitulated = yes }
-				NOT = { country_exists = GRE }
+				47 = {
+					CONTROLLER = {
+						OR = {
+							tag = ROOT
+							is_subject_of = ROOT
+							is_in_faction_with = ROOT
+						}
+					}
+				}
 			}
 			if = {
 				limit = {
@@ -8307,6 +8447,7 @@ focus_tree = {
 			effect_tooltip = {
 				TUR = {
 					give_resource_rights = { receiver = GER state = 342 resources = { chromium } }
+					add_ideas = free_trade
 				}
 				send_equipment = {
 					target = TUR
@@ -9259,13 +9400,13 @@ focus_tree = {
 		available = {
 			has_country_flag = {
 				flag = GER_barb
-				days > 365
+				days > 344 # 365 - focus time
 			}
 			custom_trigger_tooltip = {
 				tooltip = GER_barb_tt
 				has_country_flag = {
 					flag = GER_barb
-					days > 365
+					days > 344 # 365 - focus time
 				}
 			}
 		}
@@ -9285,14 +9426,49 @@ focus_tree = {
 			unlock_decision_tooltip = GER_fall_blau
 		}
 	}
-
 	focus = {
-		id = GER_endsieg
-		icon = GFX_goal_GER_endsieg
+		id = GER_all_forces_at_all_costs
+		icon = GFX_goal_GER_barbarossa_v4
+		cost = 1
 		prerequisite = { focus = GER_one_battle_one_will_one_destiny }
 		x = 0
 		y = 1
 		relative_position_id = GER_one_battle_one_will_one_destiny
+
+		available = {
+			has_country_flag = {
+				flag = GER_barb
+				days > 709 # 2 years - focus time
+			}
+			custom_trigger_tooltip = {
+				tooltip = GER_barb_tt
+				has_country_flag = {
+					flag = GER_barb
+					days > 709 # 2 years - focus time
+				}
+			}
+		}
+
+		bypass = {
+			OR = {
+				SOV = { exists = no }
+				SOV = { is_subject_of = ROOT }
+				has_global_flag = soviet_union_defeated
+			}
+		}
+
+		completion_reward = {
+			unlock_decision_tooltip = GER_operation_citadel
+		}
+	}
+
+	focus = {
+		id = GER_endsieg
+		icon = GFX_goal_GER_endsieg
+		prerequisite = { focus = GER_all_forces_at_all_costs }
+		x = 0
+		y = 1
+		relative_position_id = GER_all_forces_at_all_costs
 
 		available = {
 			has_government = fascism
@@ -10151,12 +10327,26 @@ focus_tree = {
 		available = {
 		}
 
+		bypass = {
+			NOT = {
+				any_country = {
+					exists = yes
+					original_tag = ITA
+					has_government = fascism
+				}
+			}
+		}
+
 		ai_will_do = {
 			factor = 1
 		}
 
 		completion_reward = {
-			ITA = {
+			random_other_country = {
+				limit = {
+					original_tag = ITA
+					has_government = fascism
+				}
 				country_event = { id = ger_armor.822 }
 				custom_effect_tooltip = needs_approval
 			}
@@ -10280,30 +10470,92 @@ focus_tree = {
 		available = {
 			NOT = { is_in_faction_with = PER }
 			NOT = { PER = { is_subject_of = GER } }
-			676 = {
-				CONTROLLER = {
+			if = {
+				limit = {
 					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
-						is_in_faction_with = ROOT
+						IRQ = { is_subject_of = ROOT }
+						IRQ = { is_in_faction_with = ROOT }
+					}
+				}
+				NOT = { IRQ = { surrender_progress > 0.01 } }
+			}
+			else = {
+				675 = {
+					CONTROLLER = {
+						OR = {
+							tag = ROOT
+							is_subject_of = ROOT
+							is_in_faction_with = ROOT
+						}
+					}
+				}
+				1041 = {
+					CONTROLLER = {
+						OR = {
+							tag = ROOT
+							is_subject_of = ROOT
+							is_in_faction_with = ROOT
+						}
+					}
+				}
+				291 = {
+					CONTROLLER = {
+						OR = {
+							tag = ROOT
+							is_subject_of = ROOT
+							is_in_faction_with = ROOT
+						}
+					}
+				}
+				676 = {
+					CONTROLLER = {
+						OR = {
+							tag = ROOT
+							is_subject_of = ROOT
+							is_in_faction_with = ROOT
+						}
 					}
 				}
 			}
-			675 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
-						is_in_faction_with = ROOT
+			OR = {
+				AND = {
+					553 = {
+						CONTROLLER = {
+							OR = {
+								tag = ROOT
+								is_subject_of = ROOT
+								is_in_faction_with = ROOT
+							}
+						}
+					}
+					554 = {
+						CONTROLLER = {
+							OR = {
+								tag = ROOT
+								is_subject_of = ROOT
+								is_in_faction_with = ROOT
+							}
+						}
 					}
 				}
-			}
-			291 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
-						is_in_faction_with = ROOT
+				AND = {
+					454 = {
+						CONTROLLER = {
+							OR = {
+								tag = ROOT
+								is_subject_of = ROOT
+								is_in_faction_with = ROOT
+							}
+						}
+					}
+					455 = {
+						CONTROLLER = {
+							OR = {
+								tag = ROOT
+								is_subject_of = ROOT
+								is_in_faction_with = ROOT
+							}
+						}
 					}
 				}
 			}
@@ -10313,6 +10565,7 @@ focus_tree = {
 						tag = ROOT
 						is_subject_of = ROOT
 						is_in_faction_with = ROOT
+						NOT = { has_war_with = ROOT }
 					}
 				}
 			}
@@ -12211,7 +12464,7 @@ focus_tree = {
 
 
 				set_variable = { opp_civil_war_luftwaffe_actual_counter_var = 1 }
-				set_variable = { opp_civil_war_kriegsmarine_actual_var = 1 }
+				set_variable = { opp_civil_war_kriegsmarine_actual_counter_var = 1 }
 
 				42 = { set_demilitarized_zone = no }
 				51 = { set_demilitarized_zone = no }

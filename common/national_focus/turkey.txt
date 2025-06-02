@@ -42,7 +42,7 @@ focus_tree = {
 
 		search_filters = { FOCUS_FILTER_POLITICAL }
 		completion_reward = {
-			custom_effect_tooltip = focus_tree_coming_in_83
+			custom_effect_tooltip = focus_tree_coming_in_94
 			ENG = { country_event = { id = bftb_turkey.1 } }
 			custom_effect_tooltip = TUR_the_montreux_convention_tt
 		}
@@ -93,7 +93,6 @@ focus_tree = {
 		completion_reward = {
 			add_political_power = 120
 			add_ideas = TUR_celal_bayar
-			add_ideas = free_trade
 			custom_effect_tooltip = TUR_sanayiciler_liberals_tt
 		}
 	}
@@ -310,7 +309,7 @@ focus_tree = {
 
 	focus = {
 		id = TUR_permit_regional_elections
-		icon = GFX_goal_generic_improve_relations
+		icon = GFX_focus_generic_election
 		prerequisite = { focus = TUR_democratic_transition_focus }
 		x = 1
 		y = 1
@@ -480,13 +479,16 @@ focus_tree = {
 		id = TUR_the_sanayiciler
 		icon = GFX_goal_generic_civilian_economy_medium
 		prerequisite = { focus = TUR_ratify_the_six_arrows }
-		available = {
-			NOT = { TUR = { has_government = communism } }
-		}
 		x = -3
 		y = 1
 		relative_position_id = TUR_ratify_the_six_arrows
+
+		available = {
+			NOT = { TUR = { has_government = communism } }
+		}
+
 		cost = 5
+
 		ai_will_do = {
 			base = 10
 		}
@@ -495,6 +497,42 @@ focus_tree = {
 		completion_reward = {
 			custom_effect_tooltip = TUR_sanayiciler_tt
 			unlock_decision_tooltip = TUR_sponsor_petrol_olfisis_formation
+		}
+	}
+
+	focus = {
+		id = TUR_nationalize_zonguldak_coal_and_steelworks
+		icon = GFX_goal_generic_build_steel
+		prerequisite = { focus = TUR_the_sanayiciler }
+		x = -2
+		y = 1
+		relative_position_id = TUR_the_sanayiciler
+
+		cost = 5
+
+		available = {
+			has_full_control_of_state = 347
+		}
+
+		ai_will_do = {
+			factor = 9
+		}
+
+		available_if_capitulated = no
+
+		completion_reward = {
+			347 = {
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = steel_refinery
+					level = 2
+					instant_build = yes
+				}
+				add_resource = {
+					type = coal
+					amount = 162
+				}
+			}
 		}
 	}
 
@@ -515,12 +553,6 @@ focus_tree = {
 
 		completion_reward = {
 			add_political_power = 120
-			if = {
-				limit = {
-					NOT = { has_idea = free_trade }
-				}
-				add_ideas = free_trade
-			}
 			every_country_with_original_tag = {
 				original_tag_to_check = ENG
 				add_opinion_modifier = {
@@ -857,6 +889,7 @@ focus_tree = {
 
 		search_filters = { FOCUS_FILTER_INDUSTRY FOCUS_FILTER_TUR_KEMALISM }
 		completion_reward = {
+			economy_fatigue_level_down_4 = yes
 			show_ideas_tooltip = tcdd
 			every_owned_state = {
 				limit = {
@@ -6473,13 +6506,14 @@ focus_tree = {
 				}
 			}
 		}
-		cost = 10
+		cost = 1
 		ai_will_do = {
 			base = 10
 		}
 
 		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_INDUSTRY }
 		completion_reward = {
+			economy_fatigue_level_down_4 = yes
 			GER = {
 				add_opinion_modifier = {
 					target = TUR
@@ -6492,19 +6526,19 @@ focus_tree = {
 					modifier = TUR_clodius_agreement
 				}
 			}
-			custom_effect_tooltip = TUR_clodius_agreement_tt
+			custom_effect_tooltip = TUR_the_clodius_agreement_tt
 			hidden_effect = {
 				every_owned_state = {
 					limit = {
 						has_resources_amount = {
 							resource = chromium
-							amount > 39
+							amount > 35
 						}
 					}
 					add_extra_state_shared_building_slots = 2
 					add_building_construction = {
 						type = infrastructure
-						level = 3
+						level = 1
 						instant_build = yes
 					}
 					add_building_construction = {
@@ -6557,12 +6591,6 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_INDUSTRY }
 		completion_reward = {
 			add_ideas = TUR_funkplan
-			if = {
-				limit = {
-					NOT = { has_idea = free_trade }
-				}
-				add_ideas = free_trade
-			}
 			GER = { add_stability = 0.1 }
 		}
 	}
@@ -10071,14 +10099,26 @@ focus_tree = {
 	}
 
 	focus = {
-		id = TUR_nationalize_zonguldak_coal_and_steelworks
-		icon = GFX_goal_generic_build_steel
+		id = TUR_begin_military_mobilization
+		icon = GFX_goal_generic_rearmament
 		x = 37
 		y = 0
-		cost = 10
+
+		cost = 4
 
 		available = {
-			has_full_control_of_state = 347
+			OR = {
+				threat > 0.2
+				any_country = {
+					is_justifying_wargoal_against = ROOT
+				}
+				any_country = {
+					has_wargoal_against = ROOT
+				}
+				has_war = yes
+				NOT = { has_government = neutrality }
+				has_completed_focus = TUR_pivot_to_the_past
+			}
 		}
 
 		ai_will_do = {
@@ -10088,26 +10128,93 @@ focus_tree = {
 		available_if_capitulated = no
 
 		completion_reward = {
-			347 = {
+            custom_effect_tooltip = unlock_early_mobalization
+			add_ideas = low_economic_mobilisation
+		}
+	}
+
+	focus = {
+		id = TUR_foreign_military_credit
+		icon = GFX_goal_generic_military_economy_medium
+		prerequisite = { focus = TUR_begin_military_mobilization }
+		x = 0
+		y = 1
+		relative_position_id = TUR_begin_military_mobilization
+
+		cost = 4
+
+		ai_will_do = {
+			base = 10
+		}
+
+		completion_reward = {
+			random_owned_controlled_state = {
+				prioritize = { 347 }
+				add_extra_state_shared_building_slots = 2
 				add_building_construction = {
-					type = steel_refinery
+					type = arms_factory
 					level = 2
 					instant_build = yes
 				}
-				add_resource = {
-					type = coal
-					amount = 162
+			}
+			random_owned_controlled_state = {
+				prioritize = { 339 }
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = arms_factory
+					level = 2
+					instant_build = yes
 				}
 			}
 		}
 	}
 
 	focus = {
+		id = TUR_expand_the_armed_forces
+		icon = GFX_focus_generic_reorient_production
+		prerequisite = { focus = TUR_foreign_military_credit }
+		x = 0
+		y = 1
+		relative_position_id = TUR_foreign_military_credit
+
+		available = {
+			OR = {
+				threat > 0.4
+				any_country = {
+					is_justifying_wargoal_against = ROOT
+				}
+				any_country = {
+					has_wargoal_against = ROOT
+				}
+				has_war = yes
+				NOT = { has_government = neutrality }
+				has_completed_focus = TUR_pivot_to_the_past
+			}
+		}
+
+		cost = 4
+
+		ai_will_do = {
+			base = 10
+		}
+
+		completion_reward = {
+			custom_effect_tooltip = TUR_expand_the_armed_forces_tt
+            custom_effect_tooltip = unlock_partial_mobalization
+			add_ideas = partial_economic_mobilisation
+		}
+	}
+
+	focus = {
 		id = TUR_learning_from_the_great_war
 		icon = GFX_goal_generic_attack_allies
-		x = 30
-		y = 0
-		cost = 8
+		prerequisite = { focus = TUR_begin_military_mobilization }
+		x = -7
+		y = 1
+		relative_position_id = TUR_begin_military_mobilization
+
+		cost = 4
+
 		ai_will_do = {
 			base = 10
 		}
@@ -10150,9 +10257,13 @@ focus_tree = {
 	focus = {
 		id = TUR_hava_okulu
 		icon = GFX_goal_generic_air_fighter
-		x = 45
-		y = 0
-		cost = 8
+		prerequisite = { focus = TUR_begin_military_mobilization }
+		x = 7
+		y = 1
+		relative_position_id = TUR_begin_military_mobilization
+
+		cost = 4
+
 		ai_will_do = {
 			base = 10
 		}
@@ -10244,10 +10355,13 @@ focus_tree = {
 		}
 	}
 
+	###
+
 	focus = {
 		id = TUR_mechanising_our_army
 		icon = GFX_goal_generic_build_tank
 		mutually_exclusive = { focus = TUR_embrace_military_tradition }
+		prerequisite = { focus = TUR_expand_the_armed_forces }
 		prerequisite = { focus = TUR_modernising_the_army }
 		x = -2
 		y = 1
@@ -10277,6 +10391,7 @@ focus_tree = {
 		id = TUR_embrace_military_tradition
 		icon = GFX_goal_generic_occupy_states_ongoing_war
 		mutually_exclusive = {  focus = TUR_mechanising_our_army }
+		prerequisite = { focus = TUR_expand_the_armed_forces }
 		prerequisite = { focus = TUR_modernising_the_army }
 		x = 2
 		y = 1
@@ -10304,7 +10419,7 @@ focus_tree = {
 
 	focus = {
 		id = TUR_the_kirikkale_tank
-		icon = GFX_focus_generic_army_tanks2
+		icon = GFX_goal_generic_army_tanks
 		prerequisite = { focus = TUR_mechanising_our_army }
 		x = -1
 		y = 1
@@ -10366,7 +10481,7 @@ focus_tree = {
 
 	focus = {
 		id = TUR_utilising_our_terrain
-		icon = GFX_goal_generic_position_armies
+		icon = GFX_focus_AFG_mountain_training
 		prerequisite = { focus = TUR_embrace_military_tradition }
 		x = 1
 		y = 1
@@ -10430,6 +10545,7 @@ focus_tree = {
 	focus = {
 		id = TUR_accelerate_native_fighter_designs
 		icon = GFX_goal_generic_air_fighter2
+		prerequisite = { focus = TUR_expand_the_armed_forces }
 		prerequisite = { focus = TUR_expand_the_air_bases }
 		x = 0
 		y = 1
@@ -10553,11 +10669,10 @@ focus_tree = {
 	focus = {
 		id = TUR_expand_the_golcuk_naval_base
 		icon = GFX_goal_generic_construct_naval_dockyard
-		prerequisite = { focus = TUR_modernising_the_army }
-		prerequisite = { focus = TUR_expand_the_air_bases }
-		x = 7
+		prerequisite = { focus = TUR_expand_the_armed_forces }
+		x = 0
 		y = 1
-		relative_position_id = TUR_modernising_the_army
+		relative_position_id = TUR_expand_the_armed_forces
 		cost = 8
 		ai_will_do = {
 			base = 10
