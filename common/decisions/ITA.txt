@@ -101,11 +101,19 @@ ETH_second_italo_ethiopian_war_category = {
 		is_good = no
 		fire_only_once = yes
 		selectable_mission = no
-		days_mission_timeout = 180
+		days_mission_timeout = 100
 
 		timeout_effect = {
 			add_war_support = -0.2
 			add_political_power = -150
+			add_popularity = {
+				ideology = fascism
+				popularity = -0.15
+			}
+			add_popularity = {
+				ideology = communism
+				popularity = 0.08
+			}
 			ETH = {
 				country_event = { id = BBA_italy_second_italo_ethiopian_war.1 hours = 1 }
 			}
@@ -143,76 +151,49 @@ ETH_second_italo_ethiopian_war_category = {
 		}
 	}
 
-	#ITA_withdraw_from_ethiopia = {
-	#	priority = -10
-	#	icon = GFX_decision_eng_trade_unions_support
-#
-	#	allowed = {
-	#		original_tag = ITA
-	#	}
-#
-	#	visible = {
-	#		has_global_flag = second_italo_ethiopian_war_flag
-	#	}
-#
-	#	available = {
-	#		OR = {
-	#			date > 1937.01.01
-	#			NOT = { has_full_control_of_state = 550 } #ERITREA
-	#			NOT = { has_full_control_of_state = 559 } #SOMALILAND
-	#			NOT = { has_full_control_of_state = 844 } #JUBALAND
-	#		}
-	#	}
-#
-	#	cost = 15
-#
-	#	fire_only_once = yes
-#
-	#	complete_effect = {
-	#		ETH = {
-	#			country_event = { id = BBA_italy_second_italo_ethiopian_war.1 hours = 1 }
-	#		}
-	#		custom_effect_tooltip = if_they_accept_tt
-	#		effect_tooltip = {
-	#			custom_effect_tooltip = ITA_transfer_lost_states_tt
-	#			white_peace = ETH
-#
-	#			ITA_manage_italian_defeat_in_ethiopia_effect = yes
-	#		}
-	#	}
-#
-	#	ai_will_do = {
-	#		base = 0
-	#		modifier = {
-	#			add = 10
-	#			NOT = { has_full_control_of_state = 550 } #ERITREA
-	#		}
-	#		modifier = {
-	#			add = 10
-	#			NOT = { has_full_control_of_state = 559 } #SOMALILAND
-	#		}
-	#		modifier = {
-	#			add = 5
-	#			NOT = { has_full_control_of_state = 844 } #JUBALAND
-	#		}
-	#		modifier = {
-	#			factor = 100
-	#			NOT = { has_full_control_of_state = 550 } #ERITREA
-	#			NOT = { has_full_control_of_state = 559 } #SOMALILAND
-	#			NOT = { has_full_control_of_state = 844 } #JUBALAND
-	#		}
-	#		modifier = {
-	#			factor = 0.5
-	#			any_controlled_state = {
-	#				is_core_of = ETH
-	#			}
-	#		}
-	#		modifier = {
-	#			factor = 0
-	#			date < 1937.03.01
-	#		}
-	#	}
-	#}
+	ITA_withdraw_from_ethiopia = {
+		priority = 100
+		icon = GFX_decision_eng_trade_unions_support
+
+		allowed = {
+			original_tag = ITA
+		}
+
+		visible = {
+			has_war_with = ETH
+			OR = {
+				has_completed_focus = ITA_the_abyssinian_fiasco
+				has_completed_focus = ITA_struggle_in_ethiopia
+			}
+		}
+
+		available = {
+			NOT = { has_full_control_of_state = 550 } #ERITREA
+			NOT = { has_full_control_of_state = 559 } #SOMALILAND
+		}
+
+		cost = 15
+
+		fire_only_once = yes
+
+		complete_effect = {
+			ETH = {
+				country_event = { id = BBA_italy_second_italo_ethiopian_war.1 hours = 1 }
+			}
+			custom_effect_tooltip = if_they_accept_tt
+			effect_tooltip = {
+				custom_effect_tooltip = ITA_transfer_lost_states_tt
+				white_peace = ETH
+
+				ITA_manage_italian_defeat_in_ethiopia_effect = yes
+			}
+		}
+
+		ai_will_do = {
+			base = 100
+
+		}
+	}
 }
 
 
@@ -227,45 +208,6 @@ ETH_second_italo_ethiopian_war_category = {
 
 ### MISSIOLINIS
 ITA_missiolinis = {
-	DEBUG_MISSIOLINIS_FASTER_TACK = {
-		priority = 100
-		allowed = {
-			tag = ITA
-		}
-
-		visible = {
-			is_debug = yes
-			NOT = { has_country_flag = ITA_missiolinis_faster_missions_flag }
-		}
-
-		complete_effect = {
-			set_country_flag = ITA_missiolinis_faster_missions_flag
-
-			set_variable = { ITA_missiolinis_conquer_ethiopia_days = 3 }
-			set_variable = { ITA_missiolinis_pacify_ethiopia_days = 3 }
-			set_variable = { ITA_missiolinis_default_days = 3 }
-		}
-	}
-
-	DEBUG_MISSIOLINIS_BACK_TO_NORMAL = {
-		priority = 100
-		allowed = {
-			tag = ITA
-		}
-
-		visible = {
-			is_debug = yes
-			has_country_flag = ITA_missiolinis_faster_missions_flag
-		}
-
-		complete_effect = {
-			clr_country_flag = ITA_missiolinis_faster_missions_flag
-
-			set_variable = { ITA_missiolinis_conquer_ethiopia_days = 170 }
-			set_variable = { ITA_missiolinis_pacify_ethiopia_days = 720 }
-			set_variable = { ITA_missiolinis_default_days = 350 }
-		}
-	}
 
 	# Hold the north "dummy" mission for Italy
 	ITA_conquer_the_north_mission = {
@@ -414,14 +356,7 @@ ITA_missiolinis = {
 					}
 					ITA_missiolinis_manage_next_mission = yes
 				}
-
-				if = {
-					limit = {
-						NOT = { has_country_flag = ITA_missiolini_conquer_the_south_succeeded_flag }
-					}
-					set_country_flag = ITA_missiolini_conquer_the_north_succeeded_flag
-				}
-
+				set_country_flag = ITA_missiolini_conquer_the_north_succeeded_flag
 				country_event = { id = BBA_italy_missiolinis.03_north hours = 1 }
 			}
 		}
@@ -544,14 +479,7 @@ ITA_missiolinis = {
 					}
 					ITA_missiolinis_manage_next_mission = yes
 				}
-
-				if = {
-					limit = {
-						NOT = { has_country_flag = ITA_missiolini_conquer_the_north_succeeded_flag }
-					}
-					set_country_flag = ITA_missiolini_conquer_the_south_succeeded_flag
-				}
-
+				set_country_flag = ITA_missiolini_conquer_the_south_succeeded_flag
 				country_event = { id = BBA_italy_missiolinis.05_south hours = 1 }
 			}
 		}
@@ -580,7 +508,7 @@ ITA_missiolinis = {
 		is_good = no #Tooltip purposes
 		fire_only_once = yes
 		selectable_mission = no
-		days_mission_timeout = ITA_missiolinis_conquer_ethiopia_days
+		days_mission_timeout = 70
 
 		cancel_effect = {
 			if = { #Succeeded
@@ -2262,7 +2190,921 @@ ITA_missiolinis = {
 	}
 }
 
+ITA_the_communist_uprising = {
+
+	ITA_prepare_communist_cell = {
+		icon = {
+			key = rep_garrison_control_4
+			trigger = {
+				FROM = {
+					check_variable = { ITA_garrison_control = 0 }
+					has_state_flag = ITA_democratic_state
+				}
+			}
+		}
+		icon = {
+			key = rep_garrison_control_3
+			trigger = {
+				FROM = {
+					check_variable = { ITA_garrison_control = 1 }
+					has_state_flag = ITA_democratic_state
+				}
+			}
+		}
+		icon = {
+			key = rep_garrison_control_2
+			trigger = {
+				FROM = {
+					check_variable = { ITA_garrison_control = 2 }
+					has_state_flag = ITA_democratic_state
+				}
+			}
+		}
+		icon = {
+			key = rep_garrison_control_1
+			trigger = {
+				FROM = {
+					check_variable = { ITA_garrison_control = 3 }
+					has_state_flag = ITA_democratic_state
+				}
+			}
+		}
+		icon = {
+			key = ita_garrison_control_4
+			trigger = {
+				FROM = {
+					check_variable = { ITA_garrison_control = 0 }
+					has_state_flag = ITA_fascist_state
+				}
+			}
+		}
+		icon = {
+			key = ita_garrison_control_3
+			trigger = {
+				FROM = {
+					check_variable = { ITA_garrison_control = 1 }
+					has_state_flag = ITA_fascist_state
+				}
+			}
+		}
+		icon = {
+			key = ita_garrison_control_2
+			trigger = {
+				FROM = {
+					check_variable = { ITA_garrison_control = 2 }
+					has_state_flag = ITA_fascist_state
+				}
+			}
+		}
+		icon = {
+			key = ita_garrison_control_1
+			trigger = {
+				FROM = {
+					check_variable = { ITA_garrison_control = 3 }
+					has_state_flag = ITA_fascist_state
+				}
+			}
+		}
+		icon = {
+			key = itc_garrison_control_1
+			trigger = {
+				FROM = {
+					check_variable = { ITA_garrison_control = 4 }
+				}
+			}
+		}
+		icon = {
+			key = itc_garrison_control_2
+			trigger = {
+				FROM = {
+					check_variable = { ITA_garrison_control = 5 }
+				}
+			}
+		}
+		icon = {
+			key = itc_garrison_control_3
+			trigger = {
+				FROM = {
+					check_variable = { ITA_garrison_control = 6 }
+				}
+			}
+		}
+		icon = {
+			key = itc_garrison_control_4
+			trigger = {
+				FROM = {
+					check_variable = { ITA_garrison_control = 7 }
+				}
+			}
+		}
+
+		allowed = {
+			tag = ITA
+		}
+
+		available = {
+			hidden_trigger = {
+				NOT = { has_global_flag = ITA_civil_war }
+			}
+			custom_trigger_tooltip = {
+				tooltip = ITA_prepare_communist_cell_trigger_tt
+				FROM = {
+					check_variable = {
+						ITA_garrison_control < 7
+					}
+					any_neighbor_state = {
+						check_variable = {
+							ITA_garrison_control > 6
+						}
+					}
+					NOT = { has_state_flag = ITA_fascist_stronghold }
+					NOT = { has_state_flag = ITA_democratic_stronghold }
+				}
+			}
+		}
+
+		state_target = yes
+
+		on_map_mode = map_only
+
+		target_array = ITA.core_states
+    	target_trigger = {
+			FROM = {
+				is_fully_controlled_by = ROOT
+			}
+		}
+
+		cost = 15
+
+		days_remove = 14
+
+		visible = {
+			NOT = { has_global_flag = ITA_civil_war }
+			has_completed_focus = ITA_unite_the_opposition
+		}
+
+		remove_effect = {
+			custom_effect_tooltip = ITA_expand_influence_tt
+			hidden_effect = {
+				FROM = {
+					add_to_variable = {
+						ITA_garrison_control = 1
+					}
+					ITA_garrison_control_cost_calculation = yes
+				}
+			}
+		}
+	}
+
+	ITA_mussolini_reprisals = {
+		icon = eng_blackshirt_march
+
+		allowed = { original_tag = ITA }
+
+		available = {
+			has_global_flag = ITA_benito_mussolini_assasinated
+		}
+
+		activation = {
+			always = no
+		}
+
+		visible = {
+			NOT = { has_global_flag = ITA_benito_mussolini_assasinated }
+		}
+		cancel_if_not_visible = yes
+
+		is_good = no
+		fire_only_once = yes
+		selectable_mission = no
+
+		days_mission_timeout = 28
+
+		timeout_effect = {
+			if = {
+				limit = {
+					NOT = { has_global_flag = ITA_benito_mussolini_assasinated }
+				}
+				activate_mission = ITA_mussolini_reprisals
+			}
+			hidden_effect = {
+				add_to_variable = { ita_fas_civil_war_infantry_divisions_counter_var = 1 }
+			}
+			random_owned_controlled_state = {
+				limit = {
+					is_core_of = ROOT
+					check_variable = {
+						ITA_garrison_control > 0
+					}
+				}
+				custom_effect_tooltip = ITA_mussolini_reprisals_tt
+				add_to_variable = {
+					ITA_garrison_control = -1
+				}
+			}
+			country_event = ita_armor.853
+		}
+	}
+
+	ITA_victor_emmanuel_denunciations = {
+		icon = eng_blackshirt_speech
+
+		allowed = { original_tag = ITA }
+
+		available = {
+			has_global_flag = ITA_victor_emmanuel_assasinated
+		}
+
+		activation = {
+			always = no
+		}
+
+		visible = {
+			NOT = { has_global_flag = ITA_victor_emmanuel_assasinated }
+		}
+		cancel_if_not_visible = yes
+
+		is_good = no
+		fire_only_once = yes
+		selectable_mission = no
+
+		days_mission_timeout = 35
+
+		timeout_effect = {
+			if = {
+				limit = {
+					NOT = { has_global_flag = ITA_victor_emmanuel_assasinated }
+				}
+				activate_mission = ITA_victor_emmanuel_denunciations
+			}
+			hidden_effect = {
+				add_to_variable = { ita_fas_civil_war_infantry_divisions_counter_var = 1 }
+			}
+			random_list = {
+				50 = {
+					country_event = ita_armor.854
+				}
+				50 = {
+					country_event = ita_armor.855
+				}
+			}
+		}
+	}
+
+	ITA_expand_civil_communist_support = {
+
+		icon = generic_civil_support
+
+		visible = {
+			has_completed_focus = ITA_unite_the_opposition
+			hidden_trigger = {
+				NOT = { has_global_flag = ITA_civil_war }
+			}
+		}
+
+		cancel_trigger = {
+			hidden_trigger = {
+				has_global_flag = ITA_civil_war
+			}
+		}
+
+		fire_only_once = no
+
+		cost = 0
+
+		days_remove = 30
+
+		modifier = {
+			communism_drift = 0.02
+			stability_weekly = -0.01
+ 			political_power_gain = -0.2
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+	}
+
+	ITA_infiltrate_the_army = {
+
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_completed_focus = ITA_unite_the_opposition
+			hidden_trigger = {
+				NOT = { has_global_flag = ITA_civil_war }
+			}
+		}
+
+		available = {
+		}
+
+		cost = 25
+		fire_only_once = yes
+		days_remove = 30
+
+		remove_effect = {
+			custom_effect_tooltip = ITA_infiltrate_the_army_tt
+			army_experience = 25
+			unlock_decision_tooltip = ITA_sway_army_leader_loyalty
+			hidden_effect = {
+				set_country_flag = ITA_infiltrated_the_army
+			}
+		}
+
+		ai_will_do = {
+			base = 1
+		}
+	}
+
+	ITA_recruit_irregular_divisions = {
+
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_country_flag = ITA_infiltrated_the_army
+			hidden_trigger = {
+				NOT = { has_global_flag = ITA_civil_war }
+			}
+		}
+
+		available = {
+		}
+
+		cost = 15
+		days_remove = 14
+
+		remove_effect = {
+			custom_effect_tooltip = ITA_recruit_irregular_divisions_tt
+			hidden_effect = {
+				add_to_variable = { ita_com_civil_war_infantry_divisions_counter_var = 1 }
+			}
+		}
+
+		ai_will_do = {
+			base = 1
+		}
+	}
+
+	ITA_sway_army_leader_loyalty = {
+		icon = generic_army_support
+
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_country_flag = ITA_infiltrated_the_army
+			NOT = { has_global_flag = ITA_civil_war }
+			any_army_leader = {
+				NOT = { has_trait = trait_fascist_loyalties }
+				NOT = { has_trait = trait_communist_loyalties }
+				NOT = { has_trait = trait_democratic_loyalties }
+			}
+		}
+
+		fire_only_once = no
+
+		days_remove = 14
+
+		cost = 20
+
+		cancel_if_not_visible = yes
+
+		ai_will_do = {
+			factor = 200
+		}
+
+		complete_effect = {
+			random_army_leader = {
+				limit = {
+					NOT = { has_trait = trait_fascist_loyalties }
+					NOT = { has_trait = trait_communist_loyalties }
+					NOT = { has_trait = trait_democratic_loyalties }
+				}
+				add_unit_leader_trait = trait_communist_loyalties
+				set_unit_leader_flag = ITA_swayed_leader_loyalty_flag
+			}
+		}
+
+		remove_effect = {
+		}
+	}
+
+	ITA_sway_the_army = {
+
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_country_flag = ITA_infiltrated_the_army
+			hidden_trigger = {
+				NOT = { has_global_flag = ITA_civil_war }
+			}
+		}
+
+		available = {
+			has_army_experience > 9
+		}
+
+		custom_cost_trigger = {
+ 			has_army_experience > 9
+		}
+		custom_cost_text = ITA_cost_sway_the_army
+
+		days_remove = 21
+
+		fire_only_once = yes
+
+		complete_effect = {
+			hidden_effect = {
+				army_experience = -10
+			}
+		}
+
+		remove_effect = {
+			custom_effect_tooltip = ITA_sway_the_army_tt
+			hidden_effect = {
+				add_to_variable = { ita_fas_civil_war_army_counter_var = -35 }
+				add_to_variable = { ita_com_civil_war_army_counter_var = 35 }
+				add_to_variable = { ita_com_civil_war_army_actual_counter_var = -0.5 }
+			}
+		}
+	}
+
+	ITA_infiltrate_the_air_force = {
+
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_completed_focus = ITA_unite_the_opposition
+			hidden_trigger = {
+				NOT = { has_global_flag = ITA_civil_war }
+			}
+		}
+
+		available = {
+		}
+
+		cost = 25
+		fire_only_once = yes
+		days_remove = 30
+
+		remove_effect = {
+			custom_effect_tooltip = ITA_infiltrate_the_air_force_tt
+			set_country_flag = ITA_infiltrated_the_air_force
+			air_experience = 25
+		}
+
+		ai_will_do = {
+			base = 1
+		}
+	}
+
+	ITA_plan_raids_on_airfields = {
+
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_country_flag = ITA_infiltrated_the_air_force
+			hidden_trigger = {
+				NOT = { has_global_flag = ITA_civil_war }
+			}
+		}
+
+		available = {
+			has_air_experience > 9
+		}
+
+		custom_cost_trigger = {
+ 			has_air_experience > 9
+		}
+		custom_cost_text = ITA_cost_plan_raids_on_airfields
+
+		days_remove = 21
+
+		fire_only_once = yes
+
+		complete_effect = {
+			hidden_effect = {
+				air_experience = -10
+			}
+		}
+
+		remove_effect = {
+			custom_effect_tooltip = ITA_plan_raids_on_airfields_tt
+			hidden_effect = {
+				add_to_variable = {	ita_fas_civil_war_airforce_counter_var = -40 }
+				add_to_variable = { ita_com_civil_war_airforce_counter_var = 40 }
+				add_to_variable = { ita_com_civil_war_airforce_actual_counter_var = -0.45 }
+			}
+		}
+	}
+
+	ITA_infiltrate_the_navy = {
+
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_completed_focus = ITA_unite_the_opposition
+			hidden_trigger = {
+				NOT = { has_global_flag = ITA_civil_war }
+			}
+		}
+
+		available = {
+		}
+
+		cost = 25
+		fire_only_once = yes
+		days_remove = 30
+
+		remove_effect = {
+			custom_effect_tooltip = ITA_infiltrate_the_navy_tt
+			hidden_effect = {
+				set_country_flag = ITA_infiltrated_the_navy
+			}
+			navy_experience = 25
+		}
+
+		ai_will_do = {
+			base = 1
+		}
+	}
+
+	ITA_plant_false_missions = {
+
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_country_flag = ITA_infiltrated_the_navy
+			hidden_trigger = {
+				NOT = { has_global_flag = ITA_civil_war }
+			}
+		}
+
+		available = {
+			has_navy_experience > 9
+		}
+
+		custom_cost_trigger = {
+ 			has_navy_experience > 9
+		}
+		custom_cost_text = ITA_cost_plant_false_missions
+
+		days_remove = 21
+
+		fire_only_once = yes
+
+		complete_effect = {
+			hidden_effect = {
+				navy_experience = -10
+			}
+		}
+
+		remove_effect = {
+			custom_effect_tooltip = ITA_plant_false_missions_tt
+			hidden_effect = {
+				add_to_variable = { ita_fas_civil_war_navy_counter_var = -40 }
+				add_to_variable = { ita_rep_civil_war_navy_counter_var = 40 }
+				add_to_variable = { ita_rep_civil_war_navy_actual_counter_var = -0.4 }
+			}
+		}
+
+		ai_will_do = {
+			base = 1
+		}
+	}
+
+	ITA_contact_the_mafia = {
+
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_completed_focus = ITA_unite_the_opposition
+			hidden_trigger = {
+				NOT = { has_global_flag = ITA_civil_war }
+			}
+		}
+
+		available = {
+			has_completed_focus = ITA_unite_the_opposition
+			hidden_trigger = {
+				NOT = { has_global_flag = ITA_civil_war }
+			}
+		}
+
+		cost = 10
+		days_remove = 21
+		fire_only_once = yes
+
+		complete_effect = {
+			add_stability = -0.05
+		}
+
+		remove_effect = {
+			custom_effect_tooltip = ITA_contact_the_mafia_tt
+			hidden_effect = {
+				set_country_flag = ITA_contact_the_mafia_flag
+			}
+		}
+	}
+
+	ITA_bribe_government_officials = {
+
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_completed_focus = ITA_revive_the_guardie_rosse
+			hidden_trigger = {
+				NOT = { has_global_flag = ITA_civil_war }
+			}
+		}
+
+		available = {
+			has_completed_focus = ITA_revive_the_guardie_rosse
+		}
+
+		cost = 10
+		days_remove = 100
+		fire_only_once = yes
+
+		modifier = {
+			communism_drift = 0.15
+		}
+
+		complete_effect = {
+			add_stability = -0.05
+		}
+	}
+
+	ITA_intimidate_army_officers = {
+
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_completed_focus = ITA_revive_the_guardie_rosse
+			hidden_trigger = {
+				NOT = { has_global_flag = ITA_civil_war }
+			}
+		}
+
+		available = {
+			has_completed_focus = ITA_revive_the_guardie_rosse
+			hidden_trigger = {
+				NOT = { has_global_flag = ITA_civil_war }
+			}
+		}
+
+		cost = 15
+		days_remove = 30
+		fire_only_once = yes
+
+		remove_effect = {
+			custom_effect_tooltip = ITA_intimidate_army_officers_tt
+			hidden_effect = {
+				set_country_flag = ITA_intimidate_army_officers_flag
+			}
+		}
+	}
+}
+
 ITA_the_inevitable_civil_war = {
+
+	ITA_duce_sways_the_army = {
+		icon = eng_blackshirt_march
+
+		allowed = { original_tag = ITA }
+
+		available = {
+			has_global_flag = ITA_civil_war
+		}
+
+		activation = {
+			always = no
+		}
+
+		visible = {
+			NOT = { has_global_flag = ITA_civil_war }
+		}
+		cancel_if_not_visible = yes
+
+		is_good = no
+		fire_only_once = yes
+		selectable_mission = no
+
+		days_mission_timeout = 14
+
+		timeout_effect = {
+			if = {
+				limit = {
+					NOT = { has_global_flag = ITA_civil_war }
+				}
+				activate_mission = ITA_duce_sways_the_army
+			}
+			custom_effect_tooltip = ITA_duce_sways_the_army_tt
+			hidden_effect = {
+				add_to_variable = { ita_rep_civil_war_army_counter_var = -2 }
+				add_to_variable = { ita_rep_civil_war_army_actual_counter_var = 0.02 }
+				add_to_variable = { ita_fas_civil_war_army_counter_var = 2 }
+			}
+		}
+	}
+
+	ITA_bop_question_the_army = {
+
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_country_flag = ITA_civil_war_imminent_flag
+			has_country_flag = ITA_duce_is_swaying_the_army
+			hidden_trigger = {
+				NOT = { has_global_flag = ITA_civil_war }
+			}
+		}
+
+		available = {}
+
+		cost = 20
+		fire_only_once = no
+		days_re_enable = 28
+
+		complete_effect = {
+			add_days_mission_timeout = {
+				mission = ITA_duce_sways_the_army
+				days = 14
+			}
+		}
+
+		ai_will_do = {
+			base = 1
+		}
+	}
+
+	ITA_duce_sways_the_airforce = {
+		icon = eng_blackshirt_march
+
+		allowed = { original_tag = ITA }
+
+		available = {
+			has_global_flag = ITA_civil_war
+		}
+
+		activation = {
+			always = no
+		}
+
+		visible = {
+			NOT = { has_global_flag = ITA_civil_war }
+		}
+		cancel_if_not_visible = yes
+
+		is_good = no
+		fire_only_once = yes
+		selectable_mission = no
+
+		days_mission_timeout = 14
+
+		timeout_effect = {
+			if = {
+				limit = {
+					NOT = { has_global_flag = ITA_civil_war }
+				}
+				activate_mission = ITA_duce_sways_the_airforce
+			}
+			custom_effect_tooltip = ITA_duce_sways_the_airforce_tt
+			hidden_effect = {
+				add_to_variable = { ita_rep_civil_war_airforce_counter_var = -2 }
+				add_to_variable = { ita_rep_civil_war_airforce_actual_counter_var = 0.02 }
+				add_to_variable = { ita_fas_civil_war_airforce_counter_var = 2 }
+			}
+		}
+	}
+
+	ITA_bop_question_the_airforce = {
+
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_country_flag = ITA_civil_war_imminent_flag
+			has_country_flag = ITA_duce_is_swaying_the_airforce
+			hidden_trigger = {
+				NOT = { has_global_flag = ITA_civil_war }
+			}
+		}
+
+		available = {}
+
+		cost = 20
+		fire_only_once = no
+		days_re_enable = 28
+
+		complete_effect = {
+			add_days_mission_timeout = {
+				mission = ITA_duce_sways_the_airforce
+				days = 14
+			}
+		}
+
+		ai_will_do = {
+			base = 1
+		}
+	}
+
+	ITA_duce_sways_the_navy = {
+		icon = eng_blackshirt_march
+
+		allowed = { original_tag = ITA }
+
+		available = {
+			has_global_flag = ITA_civil_war
+		}
+
+		activation = {
+			always = no
+		}
+
+		visible = {
+			NOT = { has_global_flag = ITA_civil_war }
+		}
+		cancel_if_not_visible = yes
+
+		is_good = no
+		fire_only_once = yes
+		selectable_mission = no
+
+		days_mission_timeout = 14
+
+		timeout_effect = {
+			if = {
+				limit = {
+					NOT = { has_global_flag = ITA_civil_war }
+				}
+				activate_mission = ITA_duce_sways_the_navy
+			}
+			custom_effect_tooltip = ITA_duce_sways_the_navy_tt
+			hidden_effect = {
+				add_to_variable = { ita_rep_civil_war_navy_counter_var = -2 }
+				add_to_variable = { ita_rep_civil_war_navy_actual_counter_var = 0.02 }
+				add_to_variable = { ita_fas_civil_war_navy_counter_var = 2 }
+			}
+		}
+	}
+
+	ITA_bop_question_the_navy = {
+
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_country_flag = ITA_civil_war_imminent_flag
+			has_country_flag = ITA_duce_is_swaying_the_navy
+			hidden_trigger = {
+				NOT = { has_global_flag = ITA_civil_war }
+			}
+		}
+
+		available = {}
+
+		cost = 20
+		fire_only_once = no
+		days_re_enable = 28
+
+		complete_effect = {
+			add_days_mission_timeout = {
+				mission = ITA_duce_sways_the_navy
+				days = 14
+			}
+		}
+
+		ai_will_do = {
+			base = 0
+		}
+	}
 
 	ITA_military_plot = {
 
@@ -2276,7 +3118,7 @@ ITA_the_inevitable_civil_war = {
 			hidden_trigger = { always = no }
 		}
 
-		days_mission_timeout = 140
+		days_mission_timeout = 240
 
 		fire_only_once = yes
 
@@ -2287,7 +3129,7 @@ ITA_the_inevitable_civil_war = {
 
 		visible = {
 			tag = ITA
-			has_completed_focus = ITA_depose_mussolini
+			has_completed_focus = ITA_arrest_mussolini
 			has_country_flag = ITA_civil_war_imminent_flag
 			NOT = { has_global_flag = italian_civil_war }
 		}
@@ -2298,6 +3140,9 @@ ITA_the_inevitable_civil_war = {
 
 		timeout_effect = {
 			country_event = ita_armor.892
+			hidden_effect = {
+				remove_ideas = ITA_state_of_emergency
+			}
 		}
 	}
 	###  ###  ###     ##  ### #   # ### #       #   #  ##  ###      ### #  #  ##      ##  ###    #   #  ##  ###
@@ -2315,10 +3160,16 @@ ITA_the_inevitable_civil_war = {
 			}
 
 			available = {
-				NOT = {
-					has_country_flag = ITA_inevitable_civil_war_in_progress_flag
+			}
+
+			visible = {
+				has_country_flag = ITA_civil_war_imminent_flag
+				hidden_trigger = {
+					NOT = { has_global_flag = ITA_civil_war }
 				}
 			}
+
+			cancel_if_not_visible = yes
 
 			cost = 30
 
@@ -2334,13 +3185,6 @@ ITA_the_inevitable_civil_war = {
 
 			}
 
-			visible = {
-				tag = ITA
-				has_country_flag = ITA_civil_war_imminent_flag
-				has_completed_focus = ITA_depose_mussolini
-				NOT = { has_global_flag = italian_civil_war }
-			}
-
 			complete_effect = {
 				set_country_flag = ITA_inevitable_civil_war_in_progress_flag
 			}
@@ -2352,7 +3196,7 @@ ITA_the_inevitable_civil_war = {
 				}
 				add_days_mission_timeout = {
 					mission = ITA_military_plot
-					days = 28
+					days = -7
 				}
 				clr_country_flag = ITA_inevitable_civil_war_in_progress_flag
 			}
@@ -2367,10 +3211,16 @@ ITA_the_inevitable_civil_war = {
 			}
 
 			available = {
-				NOT = {
-					has_country_flag = ITA_inevitable_civil_war_in_progress_flag
+			}
+
+			visible = {
+				has_country_flag = ITA_civil_war_imminent_flag
+				hidden_trigger = {
+					NOT = { has_global_flag = ITA_civil_war }
 				}
 			}
+
+			cancel_if_not_visible = yes
 
 			cost = 25
 
@@ -2386,13 +3236,6 @@ ITA_the_inevitable_civil_war = {
 
 			}
 
-			visible = {
-				tag = ITA
-				has_country_flag = ITA_civil_war_imminent_flag
-				has_completed_focus = ITA_depose_mussolini
-				NOT = { has_global_flag = italian_civil_war }
-			}
-
 			complete_effect = {
 				set_country_flag = SPR_inevitable_civil_war_in_progress_flag
 			}
@@ -2404,7 +3247,7 @@ ITA_the_inevitable_civil_war = {
 					popularity = 0.2
 				}
 				custom_effect_tooltip = ITA_concessions_to_the_communists_tt
-				add_to_variable = { var = ita_civil_war_divisions_counter_icon_var value = 12 }
+				add_to_variable = { var = ita_rep_civil_war_infantry_divisions_counter_var value = 12 }
 				hidden_effect = {
 					set_country_flag = ICW_concessions_to_the_communists
 				}
@@ -2421,10 +3264,16 @@ ITA_the_inevitable_civil_war = {
 			}
 
 			available = {
-				NOT = {
-					has_country_flag = ITA_inevitable_civil_war_in_progress_flag
+			}
+
+			visible = {
+				has_country_flag = ITA_civil_war_imminent_flag
+				hidden_trigger = {
+					NOT = { has_global_flag = ITA_civil_war }
 				}
 			}
+
+			cancel_if_not_visible = yes
 
 			cost = 25
 
@@ -2440,13 +3289,6 @@ ITA_the_inevitable_civil_war = {
 
 			}
 
-			visible = {
-				tag = ITA
-				has_country_flag = ITA_civil_war_imminent_flag
-				has_completed_focus = ITA_depose_mussolini
-				NOT = { has_global_flag = italian_civil_war }
-			}
-
 			complete_effect = {
 				set_country_flag = SPR_inevitable_civil_war_in_progress_flag
 			}
@@ -2455,7 +3297,7 @@ ITA_the_inevitable_civil_war = {
 				add_stability = 0.05
 				add_days_mission_timeout = {
 					mission = ITA_military_plot
-					days = 28
+					days = -7
 				}
 				clr_country_flag = ITA_inevitable_civil_war_in_progress_flag
 			}
@@ -2470,10 +3312,16 @@ ITA_the_inevitable_civil_war = {
 			}
 
 			available = {
-				NOT = {
-					has_country_flag = ITA_inevitable_civil_war_in_progress_flag
+			}
+
+			visible = {
+				has_country_flag = ITA_civil_war_imminent_flag
+				hidden_trigger = {
+					NOT = { has_global_flag = ITA_civil_war }
 				}
 			}
+
+			cancel_if_not_visible = yes
 
 			cost = 25
 
@@ -2489,13 +3337,6 @@ ITA_the_inevitable_civil_war = {
 
 			}
 
-			visible = {
-				tag = ITA
-				has_country_flag = ITA_civil_war_imminent_flag
-				has_completed_focus = ITA_depose_mussolini
-				NOT = { has_global_flag = italian_civil_war }
-			}
-
 			complete_effect = {
 				set_country_flag = ITA_inevitable_civil_war_in_progress_flag
 			}
@@ -2504,7 +3345,7 @@ ITA_the_inevitable_civil_war = {
 				add_stability = 0.05
 				add_days_mission_timeout = {
 					mission = ITA_military_plot
-					days = 28
+					days = -7
 				}
 				clr_country_flag = ITA_inevitable_civil_war_in_progress_flag
 			}
@@ -2529,7 +3370,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				114 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -2538,7 +3378,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				114 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -2547,7 +3386,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				114 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -2556,7 +3394,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				114 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -2630,7 +3467,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				115 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -2639,7 +3475,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				115 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -2648,7 +3483,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				115 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -2657,7 +3491,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				115 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -2731,7 +3564,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				1032 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -2740,7 +3572,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				1032 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -2749,7 +3580,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				1032 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -2758,7 +3588,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				1032 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -2832,7 +3661,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				156 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -2841,7 +3669,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				156 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -2850,7 +3677,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				156 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -2859,7 +3685,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				156 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -2933,7 +3758,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				117 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -2942,7 +3766,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				117 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -2951,7 +3774,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				117 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -2960,7 +3782,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				117 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -3034,7 +3855,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				986 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -3043,7 +3863,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				986 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -3052,7 +3871,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				986 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -3061,7 +3879,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				986 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -3135,7 +3952,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				157 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -3144,7 +3960,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				157 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -3153,7 +3968,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				157 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -3162,7 +3976,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				157 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -3236,7 +4049,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				2 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -3245,7 +4057,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				2 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -3254,7 +4065,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				2 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -3263,7 +4073,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				2 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -3337,7 +4146,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				856 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -3346,7 +4154,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				856 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -3355,7 +4162,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				856 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -3364,7 +4170,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				856 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -3438,7 +4243,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				162 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -3447,7 +4251,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				162 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -3456,7 +4259,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				162 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -3465,7 +4267,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				162 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -3539,7 +4340,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				161 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -3548,7 +4348,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				161 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -3557,7 +4356,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				161 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -3566,7 +4364,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				161 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -3640,7 +4437,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				158 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -3649,7 +4445,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				158 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -3658,7 +4453,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				158 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -3667,7 +4461,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				158 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -3741,7 +4534,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				159 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -3750,7 +4542,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				159 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -3759,7 +4550,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				159 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -3768,7 +4558,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				159 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -3865,7 +4654,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				39 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -3874,7 +4662,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				39 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -3883,7 +4670,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				39 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -3892,7 +4678,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				39 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -3966,7 +4751,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				160 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -3975,7 +4759,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				160 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -3984,7 +4767,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				160 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -3993,7 +4775,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				160 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -4067,7 +4848,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				885 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -4076,7 +4856,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				885 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -4085,7 +4864,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				885 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -4094,7 +4872,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				885 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -4168,7 +4945,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				886 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -4177,7 +4953,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				886 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -4186,7 +4961,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				886 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -4195,7 +4969,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				886 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -4269,7 +5042,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				736 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -4278,7 +5050,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				736 = {
 					check_variable = { var = ITA_garrison_control value = 2 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -4287,7 +5058,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				736 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					NOT = { has_state_flag = ITA_northern_garrisons_state_flag }
 				}
 			}
 		}
@@ -4296,7 +5066,6 @@ ITA_the_inevitable_civil_war = {
 			trigger = {
 				736 = {
 					check_variable = { var = ITA_garrison_control value = 3 compare = equals }
-					has_state_flag = ITA_northern_garrisons_state_flag
 				}
 			}
 		}
@@ -4358,6 +5127,7 @@ ITA_the_inevitable_civil_war = {
 		}
 	}
 
+
  ##   ##  ###  ###  ###  ##  ##  #  #      ##   ##  #  # ### ###   ##  #       #   # ###  ##  ## ###  ##  #  #  ##
 #    #  # #  # #  #  #  #   #  # ## #     #  # #  # ## #  #  #  # #  # #       ## ##  #  #   #    #  #  # ## # #
 # ## #### ###  ###   #   #  #  # # ##     #    #  # # ##  #  ###  #  # #       # # #  #   #   #   #  #  # # ##  #
@@ -4415,7 +5185,7 @@ ITA_the_inevitable_civil_war = {
 					}
 					ITA_garrison_control_cost_calculation = yes
 				}
-				country_event = { id = ita_armor.891 }
+				country_event = { id = ita_armor.701 }
 			}
 		}
 	}
@@ -4470,7 +5240,7 @@ ITA_the_inevitable_civil_war = {
 					}
 					ITA_garrison_control_cost_calculation = yes
 				}
-				country_event = { id = ita_armor.891 }
+				country_event = { id = ita_armor.701 }
 			}
 		}
 	}
@@ -4525,7 +5295,7 @@ ITA_the_inevitable_civil_war = {
 					}
 					ITA_garrison_control_cost_calculation = yes
 				}
-				country_event = { id = ita_armor.891 }
+				country_event = { id = ita_armor.701 }
 			}
 		}
 	}
@@ -4580,7 +5350,7 @@ ITA_the_inevitable_civil_war = {
 					}
 					ITA_garrison_control_cost_calculation = yes
 				}
-				country_event = { id = ita_armor.891 }
+				country_event = { id = ita_armor.701 }
 			}
 		}
 	}
@@ -4635,7 +5405,7 @@ ITA_the_inevitable_civil_war = {
 					}
 					ITA_garrison_control_cost_calculation = yes
 				}
-				country_event = { id = ita_armor.891 }
+				country_event = { id = ita_armor.701 }
 			}
 		}
 	}
@@ -4690,7 +5460,7 @@ ITA_the_inevitable_civil_war = {
 					}
 					ITA_garrison_control_cost_calculation = yes
 				}
-				country_event = { id = ita_armor.891 }
+				country_event = { id = ita_armor.701 }
 			}
 		}
 	}
@@ -4745,7 +5515,7 @@ ITA_the_inevitable_civil_war = {
 					}
 					ITA_garrison_control_cost_calculation = yes
 				}
-				country_event = { id = ita_armor.891 }
+				country_event = { id = ita_armor.701 }
 			}
 		}
 	}
@@ -4800,7 +5570,7 @@ ITA_the_inevitable_civil_war = {
 					}
 					ITA_garrison_control_cost_calculation = yes
 				}
-				country_event = { id = ita_armor.891 }
+				country_event = { id = ita_armor.701 }
 			}
 		}
 	}
@@ -4855,7 +5625,7 @@ ITA_the_inevitable_civil_war = {
 					}
 					ITA_garrison_control_cost_calculation = yes
 				}
-				country_event = { id = ita_armor.891 }
+				country_event = { id = ita_armor.701 }
 			}
 		}
 	}
@@ -4910,7 +5680,7 @@ ITA_the_inevitable_civil_war = {
 					}
 					ITA_garrison_control_cost_calculation = yes
 				}
-				country_event = { id = ita_armor.891 }
+				country_event = { id = ita_armor.701 }
 			}
 		}
 	}
@@ -4965,7 +5735,7 @@ ITA_the_inevitable_civil_war = {
 					}
 					ITA_garrison_control_cost_calculation = yes
 				}
-				country_event = { id = ita_armor.891 }
+				country_event = { id = ita_armor.701 }
 			}
 		}
 	}
@@ -5020,7 +5790,7 @@ ITA_the_inevitable_civil_war = {
 					}
 					ITA_garrison_control_cost_calculation = yes
 				}
-				country_event = { id = ita_armor.891 }
+				country_event = { id = ita_armor.701 }
 			}
 		}
 	}
@@ -5075,7 +5845,7 @@ ITA_the_inevitable_civil_war = {
 					}
 					ITA_garrison_control_cost_calculation = yes
 				}
-				country_event = { id = ita_armor.891 }
+				country_event = { id = ita_armor.701 }
 			}
 		}
 	}
@@ -5130,7 +5900,7 @@ ITA_the_inevitable_civil_war = {
 					}
 					ITA_garrison_control_cost_calculation = yes
 				}
-				country_event = { id = ita_armor.891 }
+				country_event = { id = ita_armor.701 }
 			}
 		}
 	}
@@ -5185,7 +5955,7 @@ ITA_the_inevitable_civil_war = {
 					}
 					ITA_garrison_control_cost_calculation = yes
 				}
-				country_event = { id = ita_armor.891 }
+				country_event = { id = ita_armor.701 }
 			}
 		}
 	}
@@ -5240,7 +6010,7 @@ ITA_the_inevitable_civil_war = {
 					}
 					ITA_garrison_control_cost_calculation = yes
 				}
-				country_event = { id = ita_armor.891 }
+				country_event = { id = ita_armor.701 }
 			}
 		}
 	}
@@ -5295,7 +6065,7 @@ ITA_the_inevitable_civil_war = {
 					}
 					ITA_garrison_control_cost_calculation = yes
 				}
-				country_event = { id = ita_armor.891 }
+				country_event = { id = ita_armor.701 }
 			}
 		}
 	}
@@ -5350,7 +6120,7 @@ ITA_the_inevitable_civil_war = {
 					}
 					ITA_garrison_control_cost_calculation = yes
 				}
-				country_event = { id = ita_armor.891 }
+				country_event = { id = ita_armor.701 }
 			}
 		}
 	}
@@ -6032,7 +6802,7 @@ ITA_military_reform = {
 			tag = ITA
 		}
 		available = {
-			has_army_experience > 140
+			has_army_experience > 125
 		}
 
 		cost = 0
@@ -6097,7 +6867,7 @@ ITA_military_reform = {
 			tag = ITA
 		}
 		available = {
-			has_air_experience > 99
+			has_air_experience > 75
 		}
 
 		cost = 0
@@ -6607,6 +7377,143 @@ ITA_war_plans = {
 	}
 }
 
+prospect_for_resources = {
+	ITA_coal_prospecting_yugo = { #108
+
+		icon = coal
+
+		allowed = {
+
+		}
+
+		highlight_states = { highlight_state_targets = { state = 108 } }
+
+		available = {
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				has_tech = excavation2
+			}
+			else = {
+				has_tech = excavation2_comp
+			}
+			num_of_civilian_factories_available_for_projects > 2
+			108 = {
+				CONTROLLER = {
+					NOT = { has_War_With = ROOT }
+				}
+			}
+		}
+
+		visible = {
+			has_country_flag = ITA_coal_prospecting_yugo_flag
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				has_tech = excavation1
+			}
+			else = {
+				has_tech = excavation1_comp
+			}
+			108 = {
+				CONTROLLER = {
+					NOT = { has_War_With = ROOT }
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		cost = 0
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 3
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+		remove_effect = {
+			108 = {
+				add_resource = {
+					type = coal
+					amount = 25
+				}
+			}
+		}
+	}
+	ITA_coal_prospecting_spain = { #796
+
+		icon = coal
+
+		allowed = {
+
+		}
+
+		highlight_states = { highlight_state_targets = { state = 796 } }
+
+		available = {
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				has_tech = excavation2
+			}
+			else = {
+				has_tech = excavation2_comp
+			}
+			num_of_civilian_factories_available_for_projects > 2
+			796 = {
+				CONTROLLER = {
+					NOT = { has_War_With = ROOT }
+				}
+			}
+		}
+
+		visible = {
+			has_country_flag = ITA_coal_prospecting_spain_flag
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				has_tech = excavation1
+			}
+			else = {
+				has_tech = excavation1_comp
+			}
+			796 = {
+				CONTROLLER = {
+					NOT = { has_War_With = ROOT }
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		cost = 0
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 3
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+		remove_effect = {
+			796 = {
+				add_resource = {
+					type = coal
+					amount = 32
+				}
+			}
+		}
+	}
+}
+
 #operations = {
 #
 #	ETH_gas_attacks = {
@@ -6808,6 +7715,13 @@ colonial_managment = {
 					has_full_control_of_state = 513
 				}
 			}
+			OR = {
+				has_full_control_of_state = 1057
+				any_other_country = {
+					is_subject_of = ROOT
+					has_full_control_of_state = 1057
+				}
+			}
 			has_equipment = { infantry_equipment > 4999 }
 			has_equipment = { support_equipment > 199 }
 			has_manpower > 49000
@@ -6834,6 +7748,7 @@ colonial_managment = {
 				transfer_state = 459
 				transfer_state = 460
 				transfer_state = 513
+				transfer_state = 1057
 				transfer_state = 514
 
 				inherit_technology = ROOT
@@ -6931,6 +7846,10 @@ colonial_managment = {
 				set_garrison_strength = 1.0
 			}
 			513 = {
+				set_compliance = 25
+				set_garrison_strength = 1.0
+			}
+			1057 = {
 				set_compliance = 25
 				set_garrison_strength = 1.0
 			}
@@ -8022,6 +8941,20 @@ colonial_managment = {
 					has_full_control_of_state = 462
 				}
 			}
+			OR = {
+				has_full_control_of_state = 1055
+				any_other_country = {
+					is_subject_of = ROOT
+					has_full_control_of_state = 1055
+				}
+			}
+			OR = {
+				has_full_control_of_state = 1056
+				any_other_country = {
+					is_subject_of = ROOT
+					has_full_control_of_state = 1056
+				}
+			}
 			has_equipment = { infantry_equipment > 4999 }
 			has_equipment = { support_equipment > 199 }
 			has_manpower > 49000
@@ -8047,6 +8980,8 @@ colonial_managment = {
 			ITO = {
 				transfer_state = 461
 				transfer_state = 462
+				transfer_state = 1055
+				transfer_state = 1056
 
 				inherit_technology = ROOT
 
@@ -8139,6 +9074,14 @@ colonial_managment = {
 				set_garrison_strength = 1.0
 			}
 			462 = {
+				set_compliance = 25
+				set_garrison_strength = 1.0
+			}
+			1055 = {
+				set_compliance = 25
+				set_garrison_strength = 1.0
+			}
+			1056 = {
 				set_compliance = 25
 				set_garrison_strength = 1.0
 			}
@@ -8604,7 +9547,7 @@ colonial_managment = {
 			original_tag = ITA
 		}
 
-		targets = { ITC ITE ITL ITM ITN ITO ITS ITT ITU ITW }
+		targets = { ITC ITE ITL ITM ITN ITO ITS ITT ITU ITW ALB}
 
 		target_root_trigger = {
 			OR = {
@@ -9092,6 +10035,421 @@ political_actions = {
 		}
 	}
 
+	ITA_bop_slander_the_duce = {
+		priority = 120
+		icon = GFX_decision_generic_political_discourse
+
+		allowed = {
+			original_tag = ITA
+		}
+
+		visible = {
+			has_completed_focus = ITA_convene_the_grand_council
+			NOT = { has_completed_focus = ITA_arrest_mussolini }
+			hidden_trigger = {
+				NOT = { has_global_flag = ITA_civil_war }
+			}
+		}
+
+		available = {
+			fascism > 0.48
+			NOT = { has_completed_focus = ITA_arrest_mussolini }
+			hidden_trigger = {
+				NOT = { has_country_flag = ITA_bop_criticize_the_war_flag }
+			}
+		}
+
+		cost = 10
+		days_re_enable = 21
+
+		fire_only_once = no
+
+		complete_effect = {
+			custom_effect_tooltip = ITA_bop_slander_the_duce_tt
+			hidden_effect = {
+				set_country_flag = ITA_bop_slander_the_duce_flag
+			}
+		}
+
+		remove_effect = {
+			add_popularity = {
+				ideology = fascism
+				popularity = -0.1
+			}
+			add_stability = -0.05
+			hidden_effect = {
+				clr_country_flag = ITA_bop_slander_the_duce_flag
+			}
+		}
+
+		ai_will_do = {
+			base = 1
+		}
+	}
+
+	ITA_bop_criticize_the_war = {
+		priority = 119
+		icon = GFX_decision_generic_political_discourse
+
+		allowed = {
+			original_tag = ITA
+		}
+
+		visible = {
+			has_completed_focus = ITA_convene_the_grand_council
+			NOT = { has_completed_focus = ITA_arrest_mussolini }
+			hidden_trigger = {
+				NOT = { has_global_flag = ITA_civil_war }
+			}
+		}
+
+		available = {
+			fascism > 0.48
+			NOT = { has_completed_focus = ITA_arrest_mussolini }
+			hidden_trigger = {
+				NOT = { has_country_flag = ITA_bop_slander_the_duce_flag }
+			}
+		}
+
+		cost = 10
+		days_remove = 3
+		days_re_enable = 21
+
+		fire_only_once = no
+
+		complete_effect = {
+			custom_effect_tooltip = ITA_bop_criticize_the_war_tt
+			hidden_effect = {
+				set_country_flag = ITA_bop_criticize_the_war_flag
+			}
+		}
+
+		remove_effect = {
+			add_popularity = {
+				ideology = fascism
+				popularity = -0.1
+			}
+			add_war_support = -0.05
+			hidden_effect = {
+				clr_country_flag = ITA_bop_criticize_the_war_flag
+			}
+		}
+
+		ai_will_do = {
+			base = 1
+		}
+	}
+	ITA_restructure_the_military = {
+		icon = generic_police_action
+
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_completed_focus = ITA_the_popular_front
+		}
+
+		available = {
+			has_completed_focus = ITA_the_popular_front
+			has_army_experience > 99
+		}
+
+		custom_cost_trigger = {
+ 			has_army_experience > 99
+		}
+		custom_cost_text = ITA_cost_restructure_the_military
+		days_remove = 21
+		fire_only_once = yes
+
+		complete_effect = {
+			hidden_effect = {
+				army_experience = -100
+			}
+		}
+
+		remove_effect = {
+			remove_ideas = ITA_broken_military
+			custom_effect_tooltip = ITA_restructure_the_military_tt
+		}
+	}
+
+	ITA_social_reformation = {
+		icon = eng_trade_unions_support
+
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_completed_focus = ITA_the_popular_front
+		}
+
+		available = {
+			has_completed_focus = ITA_the_popular_front
+		}
+
+		cost = 75
+		days_remove = 35
+		fire_only_once = yes
+
+		remove_effect = {
+			swap_ideas = {
+				remove_idea = ITA_broken_nation_1
+				add_idea = ITA_broken_nation_2
+			}
+			hidden_effect = {
+				set_country_flag = ITA_broken_nation_1_flag
+			}
+		}
+	}
+	ITA_nationalize_the_industries = {
+		icon = eng_trade_unions_support
+
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_country_flag = ITA_broken_nation_1_flag
+		}
+
+		available = {
+			has_completed_focus = ITA_the_popular_front
+		}
+
+		cost = 25
+		days_remove = 35
+		fire_only_once = yes
+
+		remove_effect = {
+			economy_fatigue_level_up_4 = yes
+			swap_ideas = {
+				remove_idea = ITA_broken_nation_2
+				add_idea = ITA_broken_nation_3
+			}
+			hidden_effect = {
+				set_country_flag = ITA_broken_nation_2_flag
+			}
+		}
+	}
+	ITA_nationalize_the_banks = {
+		icon = GFX_decision_generic_speech
+
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_country_flag = ITA_broken_nation_2_flag
+		}
+
+		available = {
+			has_completed_focus = ITA_the_popular_front
+		}
+
+		cost = 25
+		days_remove = 35
+		fire_only_once = yes
+
+		remove_effect = {
+			economy_fatigue_level_up_4 = yes
+			remove_ideas = ITA_broken_nation_3
+			hidden_effect = {
+				clr_country_flag = ITA_broken_nation_1_flag
+				clr_country_flag = ITA_broken_nation_2_flag
+			}
+		}
+	}
+	ITA_high_agricultural_quotas = {
+
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_completed_focus = ITA_path_to_progress
+		}
+
+		available = {
+			has_completed_focus = ITA_path_to_progress
+			has_idea = ITA_looming_famine
+		}
+
+		cancel_trigger = {
+			has_idea = ITA_famine
+		}
+
+		cost = 100
+		days_remove = 90
+		fire_only_once = yes
+
+		complete_effect = {
+		}
+
+		remove_effect = {
+			custom_effect_tooltip = ITA_high_agricultural_quotas_tt
+			hidden_effect = {
+				set_country_flag = ITA_high_agricultural_quotas_flag
+			}
+		}
+	}
+	ITA_empower_collectivized_farms = {
+
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_completed_focus = ITA_path_to_progress
+			has_country_flag = ITA_high_agricultural_quotas_flag
+		}
+
+		available = {
+			has_completed_focus = ITA_path_to_progress
+			has_idea = ITA_looming_famine
+		}
+
+		cancel_trigger = {
+			has_idea = ITA_famine
+		}
+
+		cost = 25
+		days_remove = 90
+		fire_only_once = yes
+
+		modifier = {
+			consumer_goods_expected_value = 0.05
+		}
+
+		complete_effect = {
+		}
+
+		remove_effect = {
+			remove_ideas = ITA_looming_famine
+		}
+	}
+
+	ITA_trade_deal_with_france = {
+		icon = gre_investment_decisions
+
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_completed_focus = ITA_secure_coal_imports
+		}
+
+		available = {
+			FRA = {
+				is_subject = no
+				controls_state = 26
+			}
+			OR = {
+				any_enemy_country = {
+					has_war_with = FRA
+				}
+				FRA = { has_government = communism }
+			}
+			NOT = { has_war_with = FRA }
+		}
+
+		cost = 25
+		fire_only_once = yes
+
+		complete_effect = {
+			FRA = {
+				country_event = { id = ita_armor.861 }
+				custom_effect_tooltip = needs_approval
+			}
+		}
+
+		ai_will_do = {
+			base = 10
+		}
+	}
+
+	ITA_investments_into_yugoslavia = {
+		icon = gre_investment_decisions
+
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_completed_focus = ITA_secure_coal_imports
+		}
+
+		available = {
+			YUG = {
+				is_subject = no
+				controls_state = 108
+			}
+			OR = {
+				any_enemy_country = {
+					has_war_with = YUG
+				}
+				YUG = { has_government = communism }
+			}
+			NOT = { has_war_with = YUG }
+		}
+
+		cost = 25
+		fire_only_once = yes
+
+		complete_effect = {
+			YUG = {
+				country_event = { id = ita_armor.864 }
+				custom_effect_tooltip = needs_approval
+			}
+		}
+
+		ai_will_do = {
+			base = 10
+		}
+	}
+
+	ITA_investments_into_spain = {
+		icon = gre_investment_decisions
+
+		allowed = {
+			tag = ITA
+		}
+
+		visible = {
+			has_completed_focus = ITA_secure_coal_imports
+		}
+
+		available = {
+			SPD = {
+				is_subject = no
+				controls_state = 796
+			}
+			OR = {
+				any_enemy_country = {
+					has_war_with = SPD
+				}
+				SPD = { has_government = communism }
+			}
+			NOT = { has_war_with = SPD }
+		}
+
+		cost = 25
+		fire_only_once = yes
+
+		complete_effect = {
+			SPD = {
+				country_event = { id = ita_armor.867 }
+				custom_effect_tooltip = needs_approval
+			}
+		}
+
+		ai_will_do = {
+			base = 10
+		}
+	}
+
 	#Discredit Haile Selassie
 	ITA_discredit_haile_selassie = {
 		icon = GFX_decision_generic_speech
@@ -9216,23 +10574,24 @@ political_actions = {
 			tag = ITA
 		}
 
-        cost = 0
-        fire_only_once = yes
+       cost = 0
+       fire_only_once = yes
 
-        available = {
+       available = {
 			hidden_trigger = {
 				NOT = { has_country_flag = ITA_colonies_annexed }
 			}
-        }
+			ENG = { is_ai = no }
+       }
 
-        visible = {
+       visible = {
 			country_exists = ITL
 			hidden_trigger = {
 				NOT = { has_country_flag = ITA_colonies_annexed }
 			}
-        }
+       }
 
-        complete_effect = {
+       complete_effect = {
 			ITL = {
 				every_unit_leader = {
 					set_nationality = ITA
@@ -9252,17 +10611,18 @@ political_actions = {
 			tag = ITA
 		}
 
-        cost = 0
-        fire_only_once = yes
+       cost = 0
+       fire_only_once = yes
 
-        available = {
-        }
+       available = {
+			ENG = { is_ai = no }
+       }
 
-        visible = {
+       visible = {
 			country_exists = ITS
-        }
+       }
 
-        complete_effect = {
+       complete_effect = {
 			ITS = {
 				every_unit_leader = {
 					set_nationality = ITA
@@ -9556,12 +10916,12 @@ political_actions = {
 						is_in_faction_with = GER
 					}
 				}
-				GER = { country_event = ita_armor.834 }
+				GER = { country_event = ita_armor.818 }
 			}
 			else = {
 				735 = {
 					CONTROLLER = {
-						country_event = ita_armor.834
+						country_event = ita_armor.818
 					}
 				}
 			}
@@ -9764,12 +11124,12 @@ political_actions = {
 						is_in_faction_with = GER
 					}
 				}
-				GER = { country_event = ita_armor.835 }
+				GER = { country_event = ita_armor.819 }
 			}
 			else = {
 				1 = {
 					CONTROLLER = {
-						country_event = ita_armor.835
+						country_event = ita_armor.819
 					}
 				}
 			}
@@ -9818,7 +11178,7 @@ political_actions = {
 		complete_effect = {
 			116 = {
 				CONTROLLER = {
-					country_event = ita_armor.836
+					country_event = ita_armor.820
 				}
 			}
 		}
@@ -9939,12 +11299,12 @@ political_actions = {
 						is_in_faction_with = GER
 					}
 				}
-				GER = { country_event = ita_armor.837 }
+				GER = { country_event = ita_armor.821 }
 			}
 			else = {
 				999 = {
 					CONTROLLER = {
-						country_event = ita_armor.837
+						country_event = ita_armor.821
 					}
 				}
 			}
@@ -10037,12 +11397,12 @@ political_actions = {
 						is_in_faction_with = GER
 					}
 				}
-				GER = { country_event = ita_armor.8371 }
+				GER = { country_event = ita_armor.8211 }
 			}
 			else = {
 				908 = {
 					CONTROLLER = {
-						country_event = ita_armor.8371
+						country_event = ita_armor.8211
 					}
 				}
 			}
@@ -10096,7 +11456,7 @@ political_actions = {
 		complete_effect = {
 			151 = {
 				CONTROLLER = {
-					country_event = ita_armor.838
+					country_event = ita_armor.822
 				}
 			}
 		}
@@ -10168,501 +11528,15 @@ political_actions = {
 						}
 					}
 				}
-				GER = { country_event = ita_armor.865 }
+				GER = { country_event = ita_armor.823 }
 			}
 			else = {
 				182 = {
 					CONTROLLER = {
-						country_event = ita_armor.865
+						country_event = ita_armor.823
 					}
 				}
 			}
-		}
-	}
-
-	ITA_armistice_mission = {
-
-		icon = eng_trade_unions_support
-
-		allowed = {
-			tag = ITA
-		}
-
-		available = {
-			OR = {
-				has_capitulated = yes
-				surrender_progress < 0.05
-				AND = {
-					has_full_control_of_state = 1032
-					has_full_control_of_state = 115
-					has_full_control_of_state = 156
-					has_full_control_of_state = 117
-					has_full_control_of_state = 2
-					has_full_control_of_state = 856
-					has_full_control_of_state = 162
-					has_full_control_of_state = 158
-					has_full_control_of_state = 159
-					has_full_control_of_state = 161
-					has_full_control_of_state = 986
-					has_full_control_of_state = 157
-				}
-			}
-		}
-
-		activation = {
-			always = no #Triggered from event
-		}
-
-		days_mission_timeout = 60
-		is_good = yes
-
-		timeout_effect = {
-			if = {
-				limit = {
-					any_enemy_country = {
-						is_faction_leader = yes
-						is_major = yes
-						OR = {
-							has_government = democratic
-							has_government = neutrality
-						}
-					}
-				}
-				random_enemy_country = {
-					limit = {
-						is_faction_leader = yes
-						is_major = yes
-						OR = {
-							has_government = democratic
-							has_government = neutrality
-						}
-					}
-					country_event = { id = ita_armor.895 }
-				}
-			}
-			else = {
-				random_enemy_country = {
-					limit = {
-						is_faction_leader = yes
-						is_major = yes
-						OR = {
-							has_government = fascism
-							has_government = communism
-						}
-					}
-					country_event = { id = ita_armor.895 }
-				}
-			}
-		}
-
-		complete_effect = {
-			hidden_effect = {
-				set_country_flag = ITA_armistice_mission_failed_flag
-			}
-		}
-	}
-
-	ITA_armistice_mission_again = {
-
-		icon = generic_ignite_civil_war
-
-		allowed = {
-			tag = ITA
-		}
-
-		available = {
-			OR = {
-				surrender_progress < 0.05
-				AND = {
-					has_full_control_of_state = 1032
-					has_full_control_of_state = 115
-					has_full_control_of_state = 156
-					has_full_control_of_state = 117
-					has_full_control_of_state = 2
-					has_full_control_of_state = 856
-					has_full_control_of_state = 162
-					has_full_control_of_state = 158
-					has_full_control_of_state = 159
-					has_full_control_of_state = 161
-					has_full_control_of_state = 986
-					has_full_control_of_state = 157
-				}
-			}
-		}
-
-		activation = {
-			has_country_flag = ITA_armistice_mission_failed_flag
-            ITA = { has_war_with = ENG }
-			has_idea = ITA_grand_council_of_fascism
-            NOT = { has_country_flag = italy_switching_sides }
-            NOT = { has_country_flag = italy_stands_strong }
-            has_government = fascism
-			any_enemy_country = {
-				is_faction_leader = yes
-				is_major = yes
-			}
-			any_state = {
-				is_core_of = ITA
-				or = {
-					region = 21
-					region = 23
-					region = 238
-				}
-				not = {
-					is_controlled_by = root
-				}
-			}
-            OR = {
-            	AND = { #Lost control of Overseas
-					surrender_progress > 0.1
-		            116 = { #Malta
-						CONTROLLER = {
-							NOT = {
-								tag = ROOT
-								is_subject_of = ROOT
-								is_in_faction_with = ROOT
-							}
-						}
-					}
-		            118 = { #Gibralter
-						CONTROLLER = {
-							NOT = {
-								tag = ROOT
-								is_subject_of = ROOT
-								is_in_faction_with = ROOT
-							}
-						}
-					}
-		            923 = { #Suez
-						CONTROLLER = {
-							NOT = {
-								tag = ROOT
-								is_subject_of = ROOT
-								is_in_faction_with = ROOT
-							}
-						}
-					}
-		            448 = { #Tripoli
-						CONTROLLER = {
-							NOT = {
-								tag = ROOT
-								is_subject_of = ROOT
-								is_in_faction_with = ROOT
-							}
-						}
-					}
-		            450 = { #Bengazi
-						CONTROLLER = {
-							NOT = {
-								tag = ROOT
-								is_subject_of = ROOT
-								is_in_faction_with = ROOT
-							}
-						}
-					}
-		            451 = { #Tobruk
-						CONTROLLER = {
-							NOT = {
-								tag = ROOT
-								is_subject_of = ROOT
-								is_in_faction_with = ROOT
-							}
-						}
-					}
-            	}
-            	AND = { #Lost control of most overseas
-					surrender_progress > 0.2
-		            116 = { #Malta
-						CONTROLLER = {
-							NOT = {
-								tag = ROOT
-								is_subject_of = ROOT
-								is_in_faction_with = ROOT
-							}
-						}
-					}
-		            448 = { #Tripoli
-						CONTROLLER = {
-							NOT = {
-								tag = ROOT
-								is_subject_of = ROOT
-								is_in_faction_with = ROOT
-							}
-						}
-					}
-		            450 = { #Bengazi
-						CONTROLLER = {
-							NOT = {
-								tag = ROOT
-								is_subject_of = ROOT
-								is_in_faction_with = ROOT
-							}
-						}
-					}
-		            451 = { #Tobruk
-						CONTROLLER = {
-							NOT = {
-								tag = ROOT
-								is_subject_of = ROOT
-								is_in_faction_with = ROOT
-							}
-						}
-					}
-            	}
-				surrender_progress > 0.5 #Getting stomped
-            }
-        }
-
-		days_mission_timeout = 60
-		is_good = no
-
-		timeout_effect = {
-			if = {
-				limit = {
-					any_enemy_country = {
-						is_faction_leader = yes
-						is_major = yes
-						OR = {
-							has_government = democratic
-							has_government = neutrality
-						}
-					}
-				}
-				random_enemy_country = {
-					limit = {
-						is_faction_leader = yes
-						is_major = yes
-						OR = {
-							has_government = democratic
-							has_government = neutrality
-						}
-					}
-					country_event = { id = ita_armor.895 }
-				}
-			}
-			else = {
-				random_enemy_country = {
-					limit = {
-						is_faction_leader = yes
-						is_major = yes
-						OR = {
-							has_government = fascism
-							has_government = communism
-						}
-					}
-					country_event = { id = ita_armor.895 }
-				}
-			}
-		}
-
-		complete_effect = {
-		}
-	}
-
-	ITA_armistice_mission_allies_timer = {
-
-		icon = eng_trade_unions_support
-
-		allowed = {
-			tag = ITA
-		}
-
-		available = {
-			ITA = { has_capitulated = yes }
-		}
-
-		activation = {
-			always = no #Triggered from event
-		}
-
-		days_mission_timeout = 60
-		is_good = yes
-
-		timeout_effect = {
-			effect_tooltip = {
-				country_event = { id = ita_armor.895 }
-			}
-		}
-
-		complete_effect = {
-		}
-	}
-
-	ITA_in_crisis = {
-
-		icon = generic_ignite_civil_war
-
-		allowed = {
-			tag = ITA
-		}
-
-		available = {
-			OR = {
-				surrender_progress < 0.05
-				AND = {
-					1032 = { is_fully_controlled_by = ROOT }
-					115 = { is_fully_controlled_by = ROOT }
-					156 = { is_fully_controlled_by = ROOT }
-					117 = { is_fully_controlled_by = ROOT }
-					2 = { is_fully_controlled_by = ROOT }
-					856 = { is_fully_controlled_by = ROOT }
-					162 = { is_fully_controlled_by = ROOT }
-					158 = { is_fully_controlled_by = ROOT }
-				}
-			}
-		}
-
-		activation = {
-            ITA = { has_war_with = ENG }
-			has_idea = ITA_grand_council_of_fascism
-            NOT = { has_country_flag = italy_switching_sides }
-            NOT = { has_country_flag = italy_stands_strong }
-            has_government = fascism
-			any_enemy_country = {
-				is_faction_leader = yes
-				is_major = yes
-			}
-			any_state = {
-				is_core_of = ITA
-				or = {
-					region = 21
-					region = 23
-					region = 238
-				}
-				not = {
-					is_controlled_by = root
-				}
-				# any_state = {
-				# 	is_core_of = ITA
-				# 	or = {
-				# 		region = 21
-				# 		region = 23
-				# 		region = 238
-				# 	}
-				# 	not = {
-				# 		is_controlled_by = root
-				# 		state = prev
-				# 	}
-				# }
-			}
-			# NOT = {
-			# 	115 = { is_fully_controlled_by = ROOT } #sicily
-			# 	156 = { is_fully_controlled_by = ROOT } #calabria
-			# 	117 = { is_fully_controlled_by = ROOT } #campania
-			# 	2 = { is_fully_controlled_by = ROOT } #latinum
-			# 	856 = { is_fully_controlled_by = ROOT } #rome
-			# 	162 = { is_fully_controlled_by = ROOT } #tuscany
-			# 	158 = { is_fully_controlled_by = ROOT } #piedmont
-			# }
-            OR = {
-            	AND = { #Lost control of Overseas
-					surrender_progress > 0.1
-		            116 = { #Malta
-						CONTROLLER = {
-							NOT = {
-								tag = ROOT
-								is_subject_of = ROOT
-								is_in_faction_with = ROOT
-							}
-						}
-					}
-		            118 = { #Gibralter
-						CONTROLLER = {
-							NOT = {
-								tag = ROOT
-								is_subject_of = ROOT
-								is_in_faction_with = ROOT
-							}
-						}
-					}
-		            923 = { #Suez
-						CONTROLLER = {
-							NOT = {
-								tag = ROOT
-								is_subject_of = ROOT
-								is_in_faction_with = ROOT
-							}
-						}
-					}
-		            448 = { #Tripoli
-						CONTROLLER = {
-							NOT = {
-								tag = ROOT
-								is_subject_of = ROOT
-								is_in_faction_with = ROOT
-							}
-						}
-					}
-		            450 = { #Bengazi
-						CONTROLLER = {
-							NOT = {
-								tag = ROOT
-								is_subject_of = ROOT
-								is_in_faction_with = ROOT
-							}
-						}
-					}
-		            451 = { #Tobruk
-						CONTROLLER = {
-							NOT = {
-								tag = ROOT
-								is_subject_of = ROOT
-								is_in_faction_with = ROOT
-							}
-						}
-					}
-            	}
-            	AND = { #Lost control of most overseas
-					surrender_progress > 0.2
-		            116 = { #Malta
-						CONTROLLER = {
-							NOT = {
-								tag = ROOT
-								is_subject_of = ROOT
-								is_in_faction_with = ROOT
-							}
-						}
-					}
-		            448 = { #Tripoli
-						CONTROLLER = {
-							NOT = {
-								tag = ROOT
-								is_subject_of = ROOT
-								is_in_faction_with = ROOT
-							}
-						}
-					}
-		            450 = { #Bengazi
-						CONTROLLER = {
-							NOT = {
-								tag = ROOT
-								is_subject_of = ROOT
-								is_in_faction_with = ROOT
-							}
-						}
-					}
-		            451 = { #Tobruk
-						CONTROLLER = {
-							NOT = {
-								tag = ROOT
-								is_subject_of = ROOT
-								is_in_faction_with = ROOT
-							}
-						}
-					}
-            	}
-				surrender_progress > 0.5 #Getting stomped
-            }
-        }
-
-		days_mission_timeout = 14
-		is_good = no
-
-		timeout_effect = {
-			ITA = { country_event = { id = ita_armor.893 } }
-		}
-
-		complete_effect = {
 		}
 	}
 }
