@@ -407,6 +407,11 @@ types = {
 		# Specific Target is visible
 		show_target = {
 			has_war_with = FROM
+			var:target_state = {
+				set_temp_variable = { tmp_num_total_synths = non_damaged_building_level@synthetic_refinery}
+				add_to_temp_variable = { tmp_num_total_synths = non_damaged_building_level@synthetic_refinery_inactive}
+				check_variable = { tmp_num_total_synths > 3 }
+			}
 		}
 
 		# Can prepare
@@ -421,10 +426,9 @@ types = {
 
 		target_type = {
 			state = {
-				non_damaged_building_level = {
-					building = synthetic_refinery
-					level > 3
-				}
+				set_temp_variable = { tmp_num_total_synths = non_damaged_building_level@synthetic_refinery}
+				add_to_temp_variable = { tmp_num_total_synths = non_damaged_building_level@synthetic_refinery_inactive}
+				check_variable = { tmp_num_total_synths > 3 }
 			}
 		}
 		custom_map_icon = GFX_raid_type_icon_synthetic_refinery_raid
@@ -641,13 +645,17 @@ types = {
 					# Damage to Target
 					var:target_state = {
 						set_variable = { building_damage_synthetic_refinery_day = non_damaged_building_level@synthetic_refinery } # Get how many buildings in the state
+						set_variable = { building_damage_synthetic_refinery_inactive_day = non_damaged_building_level@synthetic_refinery_inactive }
 						multiply_variable = { building_damage_synthetic_refinery_day = 0.25 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						multiply_variable = { building_damage_synthetic_refinery_inactive_day = 0.25 }
+						set_variable = { building_damage_synthetic_refinery_day_tt = building_damage_synthetic_refinery_day }
+						add_to_variable = { building_damage_synthetic_refinery_day_tt = building_damage_synthetic_refinery_inactive_day }
 						# round_temp_variable = building_damage_synthetic_refinery_day # Round to nearest integer to display number of buildings destroyed to player
 						custom_override_tooltip = {
 							tooltip = {
 								localization_key = raid_damage_buildings_tt
 								building = synthetic_refinery
-								num = [?building_damage_synthetic_refinery_day]
+								num = [?building_damage_synthetic_refinery_day_tt]
 							}
 							meta_effect = {
 								text = {
@@ -657,6 +665,15 @@ types = {
 									}
 								}
 								BUILDING_DAMAGE_META_VAR = "[?building_damage_synthetic_refinery_day]"
+							}
+							meta_effect = {
+								text = {
+									damage_building = {
+										type = synthetic_refinery_inactive
+										damage = [BUILDING_DAMAGE_META_VAR]
+									}
+								}
+								BUILDING_DAMAGE_META_VAR = "[?building_damage_synthetic_refinery_inactive_day]"
 							}
 						}
 					}
@@ -684,13 +701,17 @@ types = {
 					# Damage to Target
 					var:target_state = {
 						set_variable = { building_damage_synthetic_refinery_day = non_damaged_building_level@synthetic_refinery } # Get how many buildings in the state
+						set_variable = { building_damage_synthetic_refinery_inactive_day = non_damaged_building_level@synthetic_refinery_inactive }
 						multiply_variable = { building_damage_synthetic_refinery_day = 0.5 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						multiply_variable = { building_damage_synthetic_refinery_inactive_day = 0.5 }
+						set_variable = { building_damage_synthetic_refinery_day_tt = building_damage_synthetic_refinery_day }
+						add_to_variable = { building_damage_synthetic_refinery_day_tt = building_damage_synthetic_refinery_inactive_day }
 						# round_temp_variable = building_damage_synthetic_refinery_day # Round to nearest integer to display number of buildings destroyed to player
 						custom_override_tooltip = {
 							tooltip = {
 								localization_key = raid_damage_buildings_tt
 								building = synthetic_refinery
-								num = [?building_damage_synthetic_refinery_day]
+								num = [?building_damage_synthetic_refinery_day_tt]
 							}
 							meta_effect = {
 								text = {
@@ -700,6 +721,15 @@ types = {
 									}
 								}
 								BUILDING_DAMAGE_META_VAR = "[?building_damage_synthetic_refinery_day]"
+							}
+							meta_effect = {
+								text = {
+									damage_building = {
+										type = synthetic_refinery_inactive
+										damage = [BUILDING_DAMAGE_META_VAR]
+									}
+								}
+								BUILDING_DAMAGE_META_VAR = "[?building_damage_synthetic_refinery_inactive_day]"
 							}
 						}
 					}
@@ -729,13 +759,17 @@ types = {
 					# Damage to Target
 					var:target_state = {
 						set_variable = { building_damage_synthetic_refinery_day = non_damaged_building_level@synthetic_refinery } # Get how many buildings in the state
+						set_variable = { building_damage_synthetic_refinery_inactive_day = non_damaged_building_level@synthetic_refinery_inactive }
 						multiply_variable = { building_damage_synthetic_refinery_day = 0.75 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+						multiply_variable = { building_damage_synthetic_refinery_inactive_day = 0.75 }
+						set_variable = { building_damage_synthetic_refinery_day_tt = building_damage_synthetic_refinery_day }
+						add_to_variable = { building_damage_synthetic_refinery_day_tt = building_damage_synthetic_refinery_inactive_day }
 						# round_temp_variable = building_damage_synthetic_refinery_day # Round to nearest integer to display number of buildings destroyed to player
 						custom_override_tooltip = {
 							tooltip = {
 								localization_key = raid_damage_buildings_tt
 								building = synthetic_refinery
-								num = [?building_damage_synthetic_refinery_day]
+								num = [?building_damage_synthetic_refinery_day_tt]
 							}
 							meta_effect = {
 								text = {
@@ -745,6 +779,15 @@ types = {
 									}
 								}
 								BUILDING_DAMAGE_META_VAR = "[?building_damage_synthetic_refinery_day]"
+							}
+							meta_effect = {
+								text = {
+									damage_building = {
+										type = synthetic_refinery_inactive
+										damage = [BUILDING_DAMAGE_META_VAR]
+									}
+								}
+								BUILDING_DAMAGE_META_VAR = "[?building_damage_synthetic_refinery_inactive_day]"
 							}
 						}
 					}
@@ -779,7 +822,7 @@ types = {
 ##    ##    ##    ##       ##       ##
  ######     ##    ######## ######## ########
 	steel_refinery_raid_day = {
-		days_to_prepare = 90
+		days_to_prepare = 1
 
 		ai_will_do = {
 			base = 0
@@ -805,6 +848,13 @@ types = {
 		# Specific Target is visible
 		show_target = {
 			has_war_with = FROM
+			var:target_state = {
+				set_temp_variable = { tmp_num_total_mills = non_damaged_building_level@steel_refinery}
+				add_to_temp_variable = { tmp_num_total_mills = non_damaged_building_level@steel_refinery_inactive}
+				add_to_temp_variable = { tmp_num_total_mills = non_damaged_building_level@hydro_steel_refinery}
+				add_to_temp_variable = { tmp_num_total_mills = non_damaged_building_level@hydro_steel_refinery_inactive}
+				check_variable = { tmp_num_total_mills > 3 }
+			}
 		}
 
 		# Can prepare
@@ -820,7 +870,9 @@ types = {
 		target_type = {
 			state = {
 				set_temp_variable = { tmp_num_total_mills = non_damaged_building_level@steel_refinery}
+				add_to_temp_variable = { tmp_num_total_mills = non_damaged_building_level@steel_refinery_inactive}
 				add_to_temp_variable = { tmp_num_total_mills = non_damaged_building_level@hydro_steel_refinery}
+				add_to_temp_variable = { tmp_num_total_mills = non_damaged_building_level@hydro_steel_refinery_inactive}
 				check_variable = { tmp_num_total_mills > 3 }
 			}
 		}
@@ -1038,17 +1090,24 @@ types = {
 					# Damage to Target
 					var:target_state = {
 						set_variable = { building_damage_steel_refinery_day = non_damaged_building_level@steel_refinery } # Get how many buildings in the state
+						set_variable = { building_damage_steel_refinery_inactive_day = non_damaged_building_level@steel_refinery_inactive }
 						if = {
 							limit = {
-								check_variable = { building_damage_steel_refinery_day > 0 }
+								OR = {
+									check_variable = { building_damage_steel_refinery_day > 0 }
+									check_variable = { building_damage_steel_refinery_inactive_day > 0 }
+								}
 							}
 							multiply_variable = { building_damage_steel_refinery_day = 0.25 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
-							# round_temp_variable = building_damage_steel_refinery_day # Round to nearest integer to display number of buildings destroyed to player
+							multiply_variable = { building_damage_steel_refinery_inactive_day = 0.25 }
+							set_variable = { building_damage_steel_refinery_day_tt = building_damage_steel_refinery_day }
+							add_to_variable = { building_damage_steel_refinery_day_tt = building_damage_steel_refinery_inactive_day }
+							# round_variable = building_damage_steel_refinery_day_tt # Round to nearest integer to display number of buildings destroyed to player
 							custom_override_tooltip = {
 								tooltip = {
 									localization_key = raid_damage_buildings_tt
 									building = steel_refinery
-									num = [?building_damage_steel_refinery_day]
+									num = [?building_damage_steel_refinery_day_tt]
 								}
 								meta_effect = {
 									text = {
@@ -1059,21 +1118,37 @@ types = {
 									}
 									BUILDING_DAMAGE_META_VAR = "[?building_damage_steel_refinery_day]"
 								}
+								meta_effect = {
+									text = {
+										damage_building = {
+											type = steel_refinery_inactive
+											damage = [BUILDING_DAMAGE_META_VAR]
+										}
+									}
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_steel_refinery_inactive_day]"
+								}
 							}
-							log = "Steel limited success: Mill: temp_damage_building: [?building_damage_steel_refinery_day]."
+							log = "Steel limited success: Mill: temp_damage_building: [?building_damage_steel_refinery_day_tt]."
 						}
-						set_temp_variable = { damage_building_hydro_steel_refinery_day = non_damaged_building_level@hydro_steel_refinery } # Get how many buildings in the state
+						set_variable = { building_damage_hydro_steel_refinery_day = non_damaged_building_level@hydro_steel_refinery } # Get how many buildings in the state
+						set_variable = { building_damage_hydro_steel_refinery_inactive_day = non_damaged_building_level@hydro_steel_refinery_inactive }
 						if = {
 							limit = {
-								check_variable = { damage_building_hydro_steel_refinery_day > 0 }
+								OR = {
+									check_variable = { building_damage_hydro_steel_refinery_day > 0 }
+									check_variable = { building_damage_hydro_steel_refinery_inactive_day > 0 }
+								}
 							}
-							multiply_temp_variable = { damage_building_hydro_steel_refinery_day = 0.25 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
-							# round_temp_variable = damage_building_hydro_steel_refinery_day # Round to nearest integer to display number of buildings destroyed to player
+							multiply_variable = { building_damage_hydro_steel_refinery_day = 0.25 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+							multiply_variable = { building_damage_hydro_steel_refinery_inactive_day = 0.25 }
+							set_variable = { building_damage_hydro_steel_refinery_day_tt = building_damage_hydro_steel_refinery_day }
+							add_to_variable = { building_damage_hydro_steel_refinery_day_tt = building_damage_hydro_steel_refinery_inactive_day }
+							# round_variable = building_damage_hydro_steel_refinery_day_tt # Round to nearest integer to display number of buildings destroyed to player
 							custom_override_tooltip = {
 								tooltip = {
 									localization_key = raid_damage_buildings_tt
 									building = hydro_steel_refinery
-									num = [?damage_building_hydro_steel_refinery_day]
+									num = [?building_damage_hydro_steel_refinery_day_tt]
 								}
 								meta_effect = {
 									text = {
@@ -1082,10 +1157,19 @@ types = {
 											damage = [BUILDING_DAMAGE_META_VAR]
 										}
 									}
-									BUILDING_DAMAGE_META_VAR = "[?damage_building_hydro_steel_refinery_day]"
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_hydro_steel_refinery_day]"
+								}
+								meta_effect = {
+									text = {
+										damage_building = {
+											type = hydro_steel_refinery_inactive
+											damage = [BUILDING_DAMAGE_META_VAR]
+										}
+									}
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_hydro_steel_refinery_inactive_day]"
 								}
 							}
-							log = "Steel limited success: Hydro: temp_damage_building: [?damage_building_hydro_steel_refinery_day]."
+							log = "Steel limited success: Hydro: temp_damage_building: [?building_damage_hydro_steel_refinery_day_tt]."
 						}
 					}
 				}
@@ -1112,18 +1196,24 @@ types = {
 					# Damage to Target
 					var:target_state = {
 						set_variable = { building_damage_steel_refinery_day = non_damaged_building_level@steel_refinery } # Get how many buildings in the state
+						set_variable = { building_damage_steel_refinery_inactive_day = non_damaged_building_level@steel_refinery_inactive }
 						if = {
 							limit = {
-								check_variable = { building_damage_steel_refinery_day > 0 }
+								OR = {
+									check_variable = { building_damage_steel_refinery_day > 0 }
+									check_variable = { building_damage_steel_refinery_inactive_day > 0 }
+								}
 							}
 							multiply_variable = { building_damage_steel_refinery_day = 0.5 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
-							# round_temp_variable = building_damage_steel_refinery_day # Round to nearest integer to display number of buildings destroyed to player
-							log = "Steel success: Mill: temp_damage_building: [?building_damage_steel_refinery_day]."
+							multiply_variable = { building_damage_steel_refinery_inactive_day = 0.5 }
+							set_variable = { building_damage_steel_refinery_day_tt = building_damage_steel_refinery_day }
+							add_to_variable = { building_damage_steel_refinery_day_tt = building_damage_steel_refinery_inactive_day }
+							# round_variable = building_damage_steel_refinery_day_tt # Round to nearest integer to display number of buildings destroyed to player
 							custom_override_tooltip = {
 								tooltip = {
 									localization_key = raid_damage_buildings_tt
 									building = steel_refinery
-									num = [?building_damage_steel_refinery_day]
+									num = [?building_damage_steel_refinery_day_TT]
 								}
 								meta_effect = {
 									text = {
@@ -1134,21 +1224,37 @@ types = {
 									}
 									BUILDING_DAMAGE_META_VAR = "[?building_damage_steel_refinery_day]"
 								}
+								meta_effect = {
+									text = {
+										damage_building = {
+											type = steel_refinery_inactive
+											damage = [BUILDING_DAMAGE_META_VAR]
+										}
+									}
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_steel_refinery_inactive_day]"
+								}
 							}
+							log = "Steel success: Mill: temp_damage_building: [?building_damage_steel_refinery_day_tt]."
 						}
-						set_temp_variable = { damage_building_hydro_steel_refinery_day = non_damaged_building_level@hydro_steel_refinery } # Get how many buildings in the state
+						set_variable = { building_damage_hydro_steel_refinery_day = non_damaged_building_level@hydro_steel_refinery } # Get how many buildings in the state
+						set_variable = { building_damage_hydro_steel_refinery_inactive_day = non_damaged_building_level@hydro_steel_refinery_inactive }
 						if = {
 							limit = {
-								check_variable = { damage_building_hydro_steel_refinery_day > 0 }
+								OR = {
+									check_variable = { building_damage_hydro_steel_refinery_day > 0 }
+									check_variable = { building_damage_hydro_steel_refinery_inactive_day > 0 }
+								}
 							}
-							multiply_temp_variable = { damage_building_hydro_steel_refinery_day = 0.5 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
-							# round_temp_variable = damage_building_hydro_steel_refinery_day # Round to nearest integer to display number of buildings destroyed to player
-							log = "Steel success: Hydro: damage_building_hydro_steel_refinery_day: [?damage_building_hydro_steel_refinery_day]."
+							multiply_variable = { building_damage_hydro_steel_refinery_day = 0.5 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+							multiply_variable = { building_damage_hydro_steel_refinery_inactive_day = 0.5 }
+							set_variable = { building_damage_hydro_steel_refinery_day_tt = building_damage_hydro_steel_refinery_day }
+							add_to_variable = { building_damage_hydro_steel_refinery_day_tt = building_damage_hydro_steel_refinery_inactive_day }
+							# round_variable = building_damage_hydro_steel_refinery_day_tt # Round to nearest integer to display number of buildings destroyed to player
 							custom_override_tooltip = {
 								tooltip = {
 									localization_key = raid_damage_buildings_tt
 									building = hydro_steel_refinery
-									num = [?damage_building_hydro_steel_refinery_day]
+									num = [?building_damage_hydro_steel_refinery_day_tt]
 								}
 								meta_effect = {
 									text = {
@@ -1157,9 +1263,19 @@ types = {
 											damage = [BUILDING_DAMAGE_META_VAR]
 										}
 									}
-									BUILDING_DAMAGE_META_VAR = "[?damage_building_hydro_steel_refinery_day]"
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_hydro_steel_refinery_day]"
+								}
+								meta_effect = {
+									text = {
+										damage_building = {
+											type = hydro_steel_refinery_inactive
+											damage = [BUILDING_DAMAGE_META_VAR]
+										}
+									}
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_hydro_steel_refinery_inactive_day]"
 								}
 							}
+							log = "Steel success: Hydro: building_damage_hydro_steel_refinery_day: [?building_damage_hydro_steel_refinery_day_tt]."
 						}
 					}
 				}
@@ -1188,17 +1304,24 @@ types = {
 					# Damage to Target
 					var:target_state = {
 						set_variable = { building_damage_steel_refinery_day = non_damaged_building_level@steel_refinery } # Get how many buildings in the state
+						set_variable = { building_damage_steel_refinery_inactive_day = non_damaged_building_level@steel_refinery_inactive }
 						if = {
 							limit = {
-								check_variable = { building_damage_steel_refinery_day > 0 }
+								OR = {
+									check_variable = { building_damage_steel_refinery_day > 0 }
+									check_variable = { building_damage_steel_refinery_inactive_day > 0 }
+								}
 							}
 							multiply_variable = { building_damage_steel_refinery_day = 0.75 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
-							# round_temp_variable = building_damage_steel_refinery_day # Round to nearest integer to display number of buildings destroyed to player
+							multiply_variable = { building_damage_steel_refinery_inactive_day = 0.75 }
+							set_variable = { building_damage_steel_refinery_day_tt = building_damage_steel_refinery_day }
+							add_to_variable = { building_damage_steel_refinery_day_tt = building_damage_steel_refinery_inactive_day }
+							# round_variable = building_damage_steel_refinery_day_tt # Round to nearest integer to display number of buildings destroyed to player
 							custom_override_tooltip = {
 								tooltip = {
 									localization_key = raid_damage_buildings_tt
 									building = steel_refinery
-									num = [?building_damage_steel_refinery_day]
+									num = [?building_damage_steel_refinery_day_tt]
 								}
 								meta_effect = {
 									text = {
@@ -1209,21 +1332,37 @@ types = {
 									}
 									BUILDING_DAMAGE_META_VAR = "[?building_damage_steel_refinery_day]"
 								}
+								meta_effect = {
+									text = {
+										damage_building = {
+											type = steel_refinery_inactive
+											damage = [BUILDING_DAMAGE_META_VAR]
+										}
+									}
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_steel_refinery_inactive_day]"
+								}
 							}
-							log = "Steel critical success: Mill: temp_damage_building: [?building_damage_steel_refinery_day]."
+							log = "Steel critical success: Mill: temp_damage_building: [?building_damage_steel_refinery_day_tt]."
 						}
-						set_temp_variable = { damage_building_hydro_steel_refinery_day = non_damaged_building_level@hydro_steel_refinery } # Get how many buildings in the state
+						set_variable = { building_damage_hydro_steel_refinery_day = non_damaged_building_level@hydro_steel_refinery } # Get how many buildings in the state
+						set_variable = { building_damage_hydro_steel_refinery_inactive_day = non_damaged_building_level@hydro_steel_refinery_inactive }
 						if = {
 							limit = {
-								check_variable = { damage_building_hydro_steel_refinery_day > 0 }
+								OR = {
+									check_variable = { building_damage_hydro_steel_refinery_day > 0 }
+									check_variable = { building_damage_hydro_steel_refinery_inactive_day > 0 }
+								}
 							}
-							multiply_temp_variable = { damage_building_hydro_steel_refinery_day = 0.75 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
-							# round_temp_variable = damage_building_hydro_steel_refinery_day # Round to nearest integer to display number of buildings destroyed to player
+							multiply_variable = { building_damage_hydro_steel_refinery_day = 0.75 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+							multiply_variable = { building_damage_hydro_steel_refinery_inactive_day = 0.75 }
+							set_variable = { building_damage_hydro_steel_refinery_day_tt = building_damage_hydro_steel_refinery_day }
+							add_to_variable = { building_damage_hydro_steel_refinery_day_tt = building_damage_hydro_steel_refinery_inactive_day }
+							# round_variable = building_damage_hydro_steel_refinery_day_tt # Round to nearest integer to display number of buildings destroyed to player
 							custom_override_tooltip = {
 								tooltip = {
 									localization_key = raid_damage_buildings_tt
 									building = hydro_steel_refinery
-									num = [?damage_building_hydro_steel_refinery_day]
+									num = [?building_damage_hydro_steel_refinery_day_tt]
 								}
 								meta_effect = {
 									text = {
@@ -1232,10 +1371,19 @@ types = {
 											damage = [BUILDING_DAMAGE_META_VAR]
 										}
 									}
-									BUILDING_DAMAGE_META_VAR = "[?damage_building_hydro_steel_refinery_day]"
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_hydro_steel_refinery_day]"
+								}
+								meta_effect = {
+									text = {
+										damage_building = {
+											type = hydro_steel_refinery_inactive
+											damage = [BUILDING_DAMAGE_META_VAR]
+										}
+									}
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_hydro_steel_refinery_inactive_day]"
 								}
 							}
-							log = "Steel critical success: Hydro: temp_damage_building: [?damage_building_hydro_steel_refinery_day]."
+							log = "Steel critical success: Hydro: temp_damage_building: [?building_damage_hydro_steel_refinery_day_tt]."
 						}
 					}
 				}
@@ -1295,6 +1443,13 @@ types = {
 		# Specific Target is visible
 		show_target = {
 			has_war_with = FROM
+			var:target_state = {
+				set_temp_variable = { tmp_num_total_mills = non_damaged_building_level@aluminium_refinery}
+				add_to_temp_variable = { tmp_num_total_mills = non_damaged_building_level@aluminium_refinery_inactive}
+				add_to_temp_variable = { tmp_num_total_mills = non_damaged_building_level@hydro_aluminium_refinery}
+				add_to_temp_variable = { tmp_num_total_mills = non_damaged_building_level@hydro_aluminium_refinery_inactive}
+				check_variable = { tmp_num_total_mills > 3 }
+			}
 		}
 
 		# Can prepare
@@ -1310,7 +1465,9 @@ types = {
 		target_type = {
 			state = {
 				set_temp_variable = { tmp_num_total_mills = non_damaged_building_level@aluminium_refinery}
+				add_to_temp_variable = { tmp_num_total_mills = non_damaged_building_level@aluminium_refinery_inactive}
 				add_to_temp_variable = { tmp_num_total_mills = non_damaged_building_level@hydro_aluminium_refinery}
+				add_to_temp_variable = { tmp_num_total_mills = non_damaged_building_level@hydro_aluminium_refinery_inactive}
 				check_variable = { tmp_num_total_mills > 3 }
 			}
 		}
@@ -1528,41 +1685,83 @@ types = {
 					# Damage to Target
 					var:target_state = {
 						set_variable = { building_damage_aluminium_refinery_day = non_damaged_building_level@aluminium_refinery } # Get how many buildings in the state
-						multiply_variable = { building_damage_aluminium_refinery_day = 0.25 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
-						# round_temp_variable = building_damage_aluminium_refinery_day # Round to nearest integer to display number of buildings destroyed to player
-						custom_override_tooltip = {
-							tooltip = {
-								localization_key = raid_damage_buildings_tt
-								building = aluminium_refinery
-								num = [?building_damage_aluminium_refinery_day]
-							}
-							meta_effect = {
-								text = {
-									damage_building = {
-										type = aluminium_refinery
-										damage = [BUILDING_DAMAGE_META_VAR]
-									}
+						set_variable = { building_damage_aluminium_refinery_inactive_day = non_damaged_building_level@aluminium_refinery_inactive }
+						if = {
+							limit = {
+								OR = {
+									check_variable = { building_damage_aluminium_refinery_day > 0 }
+									check_variable = { building_damage_aluminium_refinery_inactive_day > 0 }
 								}
-								BUILDING_DAMAGE_META_VAR = "[?building_damage_aluminium_refinery_day]"
+							}
+							multiply_variable = { building_damage_aluminium_refinery_day = 0.25 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+							multiply_variable = { building_damage_aluminium_refinery_inactive_day = 0.25 }
+							set_variable = { building_damage_aluminium_refinery_day_tt = building_damage_aluminium_refinery_day }
+							add_to_variable = { building_damage_aluminium_refinery_day_tt = building_damage_aluminium_refinery_inactive_day }
+							# round_temp_variable = building_damage_aluminium_refinery_day # Round to nearest integer to display number of buildings destroyed to player
+							custom_override_tooltip = {
+								tooltip = {
+									localization_key = raid_damage_buildings_tt
+									building = aluminium_refinery
+									num = [?building_damage_aluminium_refinery_day_tt]
+								}
+								meta_effect = {
+									text = {
+										damage_building = {
+											type = aluminium_refinery
+											damage = [BUILDING_DAMAGE_META_VAR]
+										}
+									}
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_aluminium_refinery_day]"
+								}
+								meta_effect = {
+									text = {
+										damage_building = {
+											type = aluminium_refinery_inactive
+											damage = [BUILDING_DAMAGE_META_VAR]
+										}
+									}
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_aluminium_refinery_inactive_day]"
+								}
 							}
 						}
-						set_temp_variable = { damage_building_hydro_aluminium_refinery_day = non_damaged_building_level@hydro_aluminium_refinery } # Get how many buildings in the state
-						multiply_temp_variable = { damage_building_hydro_aluminium_refinery_day = 0.25 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
-						# round_temp_variable = damage_building_hydro_aluminium_refinery_day # Round to nearest integer to display number of buildings destroyed to player
-						custom_override_tooltip = {
-							tooltip = {
-								localization_key = raid_damage_buildings_tt
-								building = hydro_aluminium_refinery
-								num = [?damage_building_hydro_aluminium_refinery_day]
-							}
-							meta_effect = {
-								text = {
-									damage_building = {
-										type = hydro_aluminium_refinery
-										damage = [BUILDING_DAMAGE_META_VAR]
-									}
+						set_variable = { building_damage_hydro_aluminium_refinery_day = non_damaged_building_level@hydro_aluminium_refinery } # Get how many buildings in the state
+						set_variable = { building_damage_hydro_aluminium_refinery_inactive_day = non_damaged_building_level@hydro_aluminium_refinery_inactive }
+						if = {
+							limit = {
+								OR = {
+									check_variable = { building_damage_hydro_aluminium_refinery_day > 0 }
+									check_variable = { building_damage_hydro_aluminium_refinery_inactive_day > 0 }
 								}
-								BUILDING_DAMAGE_META_VAR = "[?damage_building_hydro_aluminium_refinery_day]"
+							}
+							multiply_variable = { building_damage_hydro_aluminium_refinery_day = 0.25 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+							multiply_variable = { building_damage_hydro_aluminium_refinery_inactive_day = 0.25 }
+							set_variable = { building_damage_hydro_aluminium_refinery_day_tt = building_damage_hydro_aluminium_refinery_day }
+							add_to_variable = { building_damage_hydro_aluminium_refinery_day_tt = building_damage_hydro_aluminium_refinery_inactive_day }
+							# round_temp_variable = building_damage_hydro_aluminium_refinery_day # Round to nearest integer to display number of buildings destroyed to player
+							custom_override_tooltip = {
+								tooltip = {
+									localization_key = raid_damage_buildings_tt
+									building = hydro_aluminium_refinery
+									num = [?building_damage_hydro_aluminium_refinery_day_TT]
+								}
+								meta_effect = {
+									text = {
+										damage_building = {
+											type = hydro_aluminium_refinery
+											damage = [BUILDING_DAMAGE_META_VAR]
+										}
+									}
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_hydro_aluminium_refinery_day]"
+								}
+								meta_effect = {
+									text = {
+										damage_building = {
+											type = hydro_aluminium_refinery_inactive
+											damage = [BUILDING_DAMAGE_META_VAR]
+										}
+									}
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_hydro_aluminium_refinery_inactive_day]"
+								}
 							}
 						}
 					}
@@ -1590,41 +1789,83 @@ types = {
 					# Damage to Target
 					var:target_state = {
 						set_variable = { building_damage_aluminium_refinery_day = non_damaged_building_level@aluminium_refinery } # Get how many buildings in the state
-						multiply_variable = { building_damage_aluminium_refinery_day = 0.5 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
-						# round_temp_variable = building_damage_aluminium_refinery_day # Round to nearest integer to display number of buildings destroyed to player
-						custom_override_tooltip = {
-							tooltip = {
-								localization_key = raid_damage_buildings_tt
-								building = aluminium_refinery
-								num = [?building_damage_aluminium_refinery_day]
-							}
-							meta_effect = {
-								text = {
-									damage_building = {
-										type = aluminium_refinery
-										damage = [BUILDING_DAMAGE_META_VAR]
-									}
+						set_variable = { building_damage_aluminium_refinery_inactive_day = non_damaged_building_level@aluminium_refinery_inactive }
+						if = {
+							limit = {
+								OR = {
+									check_variable = { building_damage_aluminium_refinery_day > 0 }
+									check_variable = { building_damage_aluminium_refinery_inactive_day > 0 }
 								}
-								BUILDING_DAMAGE_META_VAR = "[?building_damage_aluminium_refinery_day]"
+							}
+							multiply_variable = { building_damage_aluminium_refinery_day = 0.5 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+							multiply_variable = { building_damage_aluminium_refinery_inactive_day = 0.5 }
+							set_variable = { building_damage_aluminium_refinery_day_tt = building_damage_aluminium_refinery_day }
+							add_to_variable = { building_damage_aluminium_refinery_day_tt = building_damage_aluminium_refinery_inactive_day }
+							# round_temp_variable = building_damage_aluminium_refinery_day # Round to nearest integer to display number of buildings destroyed to player
+							custom_override_tooltip = {
+								tooltip = {
+									localization_key = raid_damage_buildings_tt
+									building = aluminium_refinery
+									num = [?building_damage_aluminium_refinery_day_tt]
+								}
+								meta_effect = {
+									text = {
+										damage_building = {
+											type = aluminium_refinery
+											damage = [BUILDING_DAMAGE_META_VAR]
+										}
+									}
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_aluminium_refinery_day]"
+								}
+								meta_effect = {
+									text = {
+										damage_building = {
+											type = aluminium_refinery_inactive
+											damage = [BUILDING_DAMAGE_META_VAR]
+										}
+									}
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_aluminium_refinery_inactive_day]"
+								}
 							}
 						}
-						set_temp_variable = { damage_building_hydro_aluminium_refinery_day = non_damaged_building_level@hydro_aluminium_refinery } # Get how many buildings in the state
-						multiply_temp_variable = { damage_building_hydro_aluminium_refinery_day = 0.5 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
-						# round_temp_variable = damage_building_hydro_aluminium_refinery_day # Round to nearest integer to display number of buildings destroyed to player
-						custom_override_tooltip = {
-							tooltip = {
-								localization_key = raid_damage_buildings_tt
-								building = hydro_aluminium_refinery
-								num = [?damage_building_hydro_aluminium_refinery_day]
-							}
-							meta_effect = {
-								text = {
-									damage_building = {
-										type = hydro_aluminium_refinery
-										damage = [BUILDING_DAMAGE_META_VAR]
-									}
+						set_variable = { building_damage_hydro_aluminium_refinery_day = non_damaged_building_level@hydro_aluminium_refinery } # Get how many buildings in the state
+						set_variable = { building_damage_hydro_aluminium_refinery_inactive_day = non_damaged_building_level@hydro_aluminium_refinery_inactive }
+						if = {
+							limit = {
+								OR = {
+									check_variable = { building_damage_hydro_aluminium_refinery_day > 0 }
+									check_variable = { building_damage_hydro_aluminium_refinery_inactive_day > 0 }
 								}
-								BUILDING_DAMAGE_META_VAR = "[?damage_building_hydro_aluminium_refinery_day]"
+							}
+							multiply_variable = { building_damage_hydro_aluminium_refinery_day = 0.5 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+							multiply_variable = { building_damage_hydro_aluminium_refinery_inactive_day = 0.5 }
+							set_variable = { building_damage_hydro_aluminium_refinery_day_tt = building_damage_hydro_aluminium_refinery_day }
+							add_to_variable = { building_damage_hydro_aluminium_refinery_day_tt = building_damage_hydro_aluminium_refinery_inactive_day }
+							# round_temp_variable = building_damage_hydro_aluminium_refinery_day # Round to nearest integer to display number of buildings destroyed to player
+							custom_override_tooltip = {
+								tooltip = {
+									localization_key = raid_damage_buildings_tt
+									building = hydro_aluminium_refinery
+									num = [?building_damage_hydro_aluminium_refinery_day_tt]
+								}
+								meta_effect = {
+									text = {
+										damage_building = {
+											type = hydro_aluminium_refinery
+											damage = [BUILDING_DAMAGE_META_VAR]
+										}
+									}
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_hydro_aluminium_refinery_day]"
+								}
+								meta_effect = {
+									text = {
+										damage_building = {
+											type = hydro_aluminium_refinery_inactive
+											damage = [BUILDING_DAMAGE_META_VAR]
+										}
+									}
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_hydro_aluminium_refinery_inactive_day]"
+								}
 							}
 						}
 					}
@@ -1654,41 +1895,83 @@ types = {
 					# Damage to Target
 					var:target_state = {
 						set_variable = { building_damage_aluminium_refinery_day = non_damaged_building_level@aluminium_refinery } # Get how many buildings in the state
-						multiply_variable = { building_damage_aluminium_refinery_day = 0.75 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
-						# round_temp_variable = building_damage_aluminium_refinery_day # Round to nearest integer to display number of buildings destroyed to player
-						custom_override_tooltip = {
-							tooltip = {
-								localization_key = raid_damage_buildings_tt
-								building = aluminium_refinery
-								num = [?building_damage_aluminium_refinery_day]
-							}
-							meta_effect = {
-								text = {
-									damage_building = {
-										type = aluminium_refinery
-										damage = [BUILDING_DAMAGE_META_VAR]
-									}
+						set_variable = { building_damage_aluminium_refinery_inactive_day = non_damaged_building_level@aluminium_refinery_inactive }
+						if = {
+							limit = {
+								OR = {
+									check_variable = { building_damage_aluminium_refinery_day > 0 }
+									check_variable = { building_damage_aluminium_refinery_inactive_day > 0 }
 								}
-								BUILDING_DAMAGE_META_VAR = "[?building_damage_aluminium_refinery_day]"
+							}
+							multiply_variable = { building_damage_aluminium_refinery_day = 0.75 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+							multiply_variable = { building_damage_aluminium_refinery_inactive_day = 0.75 }
+							set_variable = { building_damage_aluminium_refinery_day_tt = building_damage_aluminium_refinery_day }
+							add_to_variable = { building_damage_aluminium_refinery_day_tt = building_damage_aluminium_refinery_inactive_day }
+							# round_temp_variable = building_damage_aluminium_refinery_day # Round to nearest integer to display number of buildings destroyed to player
+							custom_override_tooltip = {
+								tooltip = {
+									localization_key = raid_damage_buildings_tt
+									building = aluminium_refinery
+									num = [?building_damage_aluminium_refinery_day_tt]
+								}
+								meta_effect = {
+									text = {
+										damage_building = {
+											type = aluminium_refinery
+											damage = [BUILDING_DAMAGE_META_VAR]
+										}
+									}
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_aluminium_refinery_day]"
+								}
+								meta_effect = {
+									text = {
+										damage_building = {
+											type = aluminium_refinery_inactive
+											damage = [BUILDING_DAMAGE_META_VAR]
+										}
+									}
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_aluminium_refinery_inactive_day]"
+								}
 							}
 						}
-						set_temp_variable = { damage_building_hydro_aluminium_refinery_day = non_damaged_building_level@hydro_aluminium_refinery } # Get how many buildings in the state
-						multiply_temp_variable = { damage_building_hydro_aluminium_refinery_day = 0.75 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
-						# round_temp_variable = damage_building_hydro_aluminium_refinery_day # Round to nearest integer to display number of buildings destroyed to player
-						custom_override_tooltip = {
-							tooltip = {
-								localization_key = raid_damage_buildings_tt
-								building = hydro_aluminium_refinery
-								num = [?damage_building_hydro_aluminium_refinery_day]
-							}
-							meta_effect = {
-								text = {
-									damage_building = {
-										type = hydro_aluminium_refinery
-										damage = [BUILDING_DAMAGE_META_VAR]
-									}
+						set_variable = { building_damage_hydro_aluminium_refinery_day = non_damaged_building_level@hydro_aluminium_refinery } # Get how many buildings in the state
+						set_variable = { building_damage_hydro_aluminium_refinery_inactive_day = non_damaged_building_level@hydro_aluminium_refinery_inactive }
+						if = {
+							limit = {
+								OR = {
+									check_variable = { building_damage_hydro_aluminium_refinery_day > 0 }
+									check_variable = { building_damage_hydro_aluminium_refinery_inactive_day > 0 }
 								}
-								BUILDING_DAMAGE_META_VAR = "[?damage_building_hydro_aluminium_refinery_day]"
+							}
+							multiply_variable = { building_damage_hydro_aluminium_refinery_day = 0.75 } # Multiply by ratio of how many destroyed (e.g. 25% destroyed)
+							multiply_variable = { building_damage_hydro_aluminium_refinery_inactive_day = 0.75 }
+							set_variable = { building_damage_hydro_aluminium_refinery_day_tt = building_damage_hydro_aluminium_refinery_day }
+							add_to_variable = { building_damage_hydro_aluminium_refinery_day_tt = building_damage_hydro_aluminium_refinery_inactive_day }
+							# round_temp_variable = building_damage_hydro_aluminium_refinery_day # Round to nearest integer to display number of buildings destroyed to player
+							custom_override_tooltip = {
+								tooltip = {
+									localization_key = raid_damage_buildings_tt
+									building = hydro_aluminium_refinery
+									num = [?building_damage_hydro_aluminium_refinery_day_tt]
+								}
+								meta_effect = {
+									text = {
+										damage_building = {
+											type = hydro_aluminium_refinery
+											damage = [BUILDING_DAMAGE_META_VAR]
+										}
+									}
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_hydro_aluminium_refinery_day]"
+								}
+								meta_effect = {
+									text = {
+										damage_building = {
+											type = hydro_aluminium_refinery_inactive
+											damage = [BUILDING_DAMAGE_META_VAR]
+										}
+									}
+									BUILDING_DAMAGE_META_VAR = "[?building_damage_hydro_aluminium_refinery_inactive_day]"
+								}
 							}
 						}
 					}
@@ -1749,6 +2032,12 @@ types = {
 		# Specific Target is visible
 		show_target = {
 			has_war_with = FROM
+			var:target_state = {
+				non_damaged_building_level = {
+					building = arms_factory
+					level > 15
+				}
+			}
 		}
 
 		# Can prepare
@@ -2147,6 +2436,12 @@ types = {
 		# Specific Target is visible
 		show_target = {
 			has_war_with = FROM
+			var:target_state = {
+				non_damaged_building_level = {
+					building = dockyard
+					level > 3
+				}
+			}
 		}
 
 		# Can prepare
@@ -2545,6 +2840,12 @@ types = {
 		# Specific Target is visible
 		show_target = {
 			has_war_with = FROM
+			var:target_state = {
+				non_damaged_building_level = {
+					building = industrial_complex
+					level > 15
+				}
+			}
 		}
 
 		# Can prepare
