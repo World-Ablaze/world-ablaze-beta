@@ -1348,7 +1348,7 @@ NDefines.NIndustrialOrganisation.DEFAULT_INITIAL_POLICY_ATTACH_COST = 50				-- D
 NDefines.NIndustrialOrganisation.DEFAULT_INITIAL_ATTACH_POLICY_COOLDOWN = 182			-- Default start cooldown in days after attaching a policy
 
 --- NRaids ---
-NDefines.NRaids.BASE_DAYS_TO_PREPARE = 60
+NDefines.NRaids.BASE_DAYS_TO_PREPARE = 90
 NDefines.NRaids.RAID_LOW_RISK_SETTING_DISASTER_MODIFIER = 0.05							-- How much the disaster risk is modified when the dial is set to "low"
 NDefines.NRaids.RAID_DEFAULT_TARGET_COOLDOWN_DAYS = 180									-- The default cooldown (in days) for raiding the same target, can be overriden for specific raid types through script
 NDefines.NRaids.RAID_OUTCOME_REPORT_DAYS_TO_LIVE = 60									-- How many days after a raid has ended will the raid outcome report be visible on the map before being automatically dismissed
