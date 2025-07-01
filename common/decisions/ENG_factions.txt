@@ -978,7 +978,412 @@ ENG_internal_factions = {
 	############################################################################################################
 	############################################################################################################
 
-	ENG_creation_of_the_armoured_core = {
+	ENG_befriend_the_blackshirts = {
+
+		icon = generic_decision
+
+		allowed = {
+			tag = ENG
+		}
+
+		available = {
+		}
+
+		cost = 100
+
+		fire_only_once = yes
+
+		visible = {
+			has_country_flag = Radical_party_discourse_open
+			NOT = { has_country_flag = Radical_parties_banned }
+		}
+
+		complete_effect = {
+			custom_effect_tooltip = ENG_befriend_the_blackshirts_tt
+			hidden_effect = {
+				if = {
+					limit = {
+						check_variable = { ENG_radicalists_political_power_gain < 0 }
+					}
+					multiply_variable = { ENG_radicalists_political_power_gain = -1 }
+				}
+				else = {
+					add_to_variable = { ENG_radicalists_political_power_gain = 0.1 }
+				}
+				if = {
+					limit = {
+						check_variable = { ENG_radicalists_stability_factor < 0 }
+					}
+					multiply_variable = { ENG_radicalists_stability_factor = -1 }
+				}
+				else = {
+					add_to_variable = { ENG_radicalists_stability_factor = 0.1 }
+				}
+				set_country_flag = Blackshirts_befriended
+				set_variable = { ENG_labour_attitude  = 0 }
+				set_variable = { ENG_conservative_attitude  = 0 }
+				if = {
+					limit = {
+						check_variable = { ENG_labour_stability_factor > 0 }
+					}
+					set_variable = { ENG_labour_stability_factor = 0 }
+				}
+				if = {
+					limit = {
+						check_variable = { ENG_conservative_stability_factor > 0 }
+					}
+					set_variable = { ENG_conservative_stability_factor = 0 }
+				}
+			}
+		}
+
+		ai_will_do = {
+			factor = 1
+
+			modifier = {
+				factor = 0
+				NOT = {
+					has_completed_focus = ENG_organize_the_blackshirts
+				}
+			}
+		}
+	}
+
+	ENG_support_the_radical_parties = {
+
+		icon = generic_decision
+
+		allowed = {
+			tag = ENG
+		}
+
+		available = {
+		}
+
+		visible = {
+			OR = {
+				has_completed_focus = ENG_organize_the_blackshirts
+				has_country_flag = Blackshirts_befriended
+			}
+			NOT = { has_country_flag = Radical_parties_banned }
+			check_variable = { ENG_radicalists_attitude < 3 }
+			check_variable = { ENG_radicalists_influence < 6 }
+		}
+
+		cost = 50
+
+		fire_only_once = no
+		days_remove = 90
+
+		modifier = {
+		}
+
+		remove_effect = {
+			add_stability = -0.05
+			custom_effect_tooltip = ENG_support_the_radical_parties_tt
+			hidden_effect = {
+				add_to_variable = { ENG_radicalists_attitude = 1 }
+				add_to_variable = { ENG_radicalists_influence = 1 }
+			}
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+	}
+
+	ENG_ban_the_radical_parties = {
+
+		icon = generic_decision
+
+		allowed = {
+			tag = ENG
+		}
+
+		available = {
+			threat > 0.1
+		}
+
+		cost = 50
+
+		fire_only_once = yes
+
+		visible = {
+			NOT = { has_country_flag = Blackshirts_befriended }
+		}
+
+		modifier = {
+		}
+
+		complete_effect = {
+			custom_effect_tooltip = ENG_ban_the_radical_parties_tt
+			if = {
+				limit = {
+					check_variable = { ENG_radicalists_influence > 4 }
+				}
+				add_political_power = -250
+			}
+			else_if = {
+				limit = {
+					check_variable = { ENG_radicalists_influence > 3 }
+				}
+				add_political_power = -200
+			}
+			else_if = {
+				limit = {
+					check_variable = { ENG_radicalists_influence > 2 }
+				}
+				add_political_power = -150
+			}
+			else_if = {
+				limit = {
+					check_variable = { ENG_radicalists_influence > 1 }
+				}
+				add_political_power = -100
+			}
+			hidden_effect = {
+				set_variable = { ENG_radicalists_attitude = -3 }
+				set_variable = { ENG_radicalists_influence = 0 }
+				set_variable = { ENG_radicalists_political_power_gain = 0 }
+				set_variable = { ENG_radicalists_stability_factor = 0 }
+				set_country_flag = Radical_parties_banned
+			}
+		}
+
+		ai_will_do = {
+			factor = 400
+
+			modifier = {
+				factor = 0
+				has_war = no
+			}
+		}
+	}
+
+	ENG_the_kings_speech = {
+
+		icon = generic_speech
+
+		allowed = {
+			tag = ENG
+		}
+
+		available = {
+			has_government = democratic
+			has_war = yes
+			any_enemy_country = {
+				is_major = yes
+			}
+			NOT = { has_country_flag = Blackshirts_befriended }
+		}
+
+		cost = 50
+
+		fire_only_once = yes
+
+		visible = {
+			has_government = democratic
+			has_war = yes
+			any_enemy_country = {
+				is_major = yes
+			}
+			NOT = { has_country_flag = Blackshirts_befriended }
+		}
+
+		modifier = {
+		}
+
+		complete_effect = {
+			custom_effect_tooltip = ENG_the_kings_speech_tt
+			hidden_effect = {
+				add_to_variable = { ENG_labour_attitude = 1 }
+				add_to_variable = { ENG_conservative_attitude = 1 }
+				add_to_variable = { ENG_royalists_attitude = 1 }
+				add_to_variable = { ENG_labour_political_power_gain = 0.05 }
+				add_to_variable = { ENG_conservative_political_power_gain = 0.05 }
+				add_to_variable = { ENG_royalists_political_power_gain = 0.05 }
+			}
+		}
+
+		ai_will_do = {
+			factor = 1
+
+			modifier = {
+				factor = 0
+				has_war = no
+			}
+		}
+	}
+
+	ENG_request_trade_union_support_for_new_factories = {
+
+		icon = eng_trade_unions_support
+
+		allowed = {
+			tag = ENG
+		}
+
+		available = {
+		}
+
+		cost = ENG_trade_unions_support_50_cost?40
+
+		fire_only_once = yes
+
+		visible = {
+			has_completed_focus = ENG_concessions_to_the_trade_unions
+		}
+
+		complete_effect = {
+			random_owned_controlled_state = {
+				limit = {
+					is_in_home_area = yes
+					free_building_slots = {
+						building = arms_factory
+						size > 1
+						include_locked = yes
+					}
+					NOT = { has_state_flag = ENG_trade_unions_demand_referendum_1AF }
+				}
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = arms_factory
+					level = 2
+					instant_build = yes
+				}
+				set_state_flag = ENG_trade_unions_demand_referendum_1AF
+			}
+			ENG_request_trade_union_support_cost_level_up = yes
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+	}
+
+	ENG_request_trade_union_factory_worker_support = {
+
+		icon = eng_trade_unions_support
+
+		allowed = {
+			tag = ENG
+		}
+
+		available = {
+			NOT = { has_idea = ENG_trade_union_factory_worker_support }
+		}
+
+		cost = ENG_trade_unions_support_75_cost?50
+
+		fire_only_once = yes
+
+		visible = {
+			has_completed_focus = ENG_concessions_to_the_trade_unions
+		}
+
+		complete_effect = {
+			add_timed_idea = { idea = ENG_trade_union_factory_worker_support days = 180 }
+			ENG_request_trade_union_support_cost_level_up = yes
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+	}
+
+	ENG_request_trade_union_dockyard_worker_support = {
+
+		icon = eng_trade_unions_support
+
+		allowed = {
+			tag = ENG
+		}
+
+		available = {
+			NOT = { has_idea = ENG_trade_union_dockyard_worker_support }
+		}
+
+		cost = ENG_trade_unions_support_75_cost?50
+
+		fire_only_once = yes
+
+		visible = {
+			has_completed_focus = ENG_concessions_to_the_trade_unions
+		}
+
+		complete_effect = {
+			add_timed_idea = { idea = ENG_trade_union_dockyard_worker_support days = 180 }
+			ENG_request_trade_union_support_cost_level_up = yes
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+	}
+
+	ENG_request_trade_union_construction_worker_support = {
+
+		icon = eng_trade_unions_support
+
+		allowed = {
+			tag = ENG
+		}
+
+		available = {
+			NOT = { has_idea = ENG_trade_union_construction_worker_support }
+		}
+
+		cost = ENG_trade_unions_support_75_cost?50
+
+		fire_only_once = yes
+
+		visible = {
+			has_completed_focus = ENG_concessions_to_the_trade_unions
+		}
+
+		complete_effect = {
+			add_timed_idea = { idea = ENG_trade_union_construction_worker_support days = 180 }
+			ENG_request_trade_union_support_cost_level_up = yes
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+	}
+
+	ENG_trade_union_war_propaganda_support = {
+
+		icon = eng_trade_unions_support
+
+		allowed = {
+			tag = ENG
+		}
+
+		available = {
+			NOT = { has_idea = ENG_trade_union_war_propaganda_support }
+		}
+
+		cost = ENG_trade_unions_support_75_cost?50
+
+		fire_only_once = yes
+
+		visible = {
+			has_completed_focus = ENG_concessions_to_the_trade_unions
+		}
+
+		complete_effect = {
+			add_timed_idea = { idea = ENG_trade_union_war_propaganda_support days = 180 }
+			ENG_request_trade_union_support_cost_level_up = yes
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+	}
+}
+
+equipment_missions = {
+		ENG_creation_of_the_armoured_core = {
 		icon = generic_tank
 
 		allowed = {
@@ -1490,409 +1895,6 @@ ENG_internal_factions = {
 		}
 
 		timeout_effect = {
-		}
-
-		ai_will_do = {
-			factor = 1
-		}
-	}
-
-	ENG_befriend_the_blackshirts = {
-
-		icon = generic_decision
-
-		allowed = {
-			tag = ENG
-		}
-
-		available = {
-		}
-
-		cost = 100
-
-		fire_only_once = yes
-
-		visible = {
-			has_country_flag = Radical_party_discourse_open
-			NOT = { has_country_flag = Radical_parties_banned }
-		}
-
-		complete_effect = {
-			custom_effect_tooltip = ENG_befriend_the_blackshirts_tt
-			hidden_effect = {
-				if = {
-					limit = {
-						check_variable = { ENG_radicalists_political_power_gain < 0 }
-					}
-					multiply_variable = { ENG_radicalists_political_power_gain = -1 }
-				}
-				else = {
-					add_to_variable = { ENG_radicalists_political_power_gain = 0.1 }
-				}
-				if = {
-					limit = {
-						check_variable = { ENG_radicalists_stability_factor < 0 }
-					}
-					multiply_variable = { ENG_radicalists_stability_factor = -1 }
-				}
-				else = {
-					add_to_variable = { ENG_radicalists_stability_factor = 0.1 }
-				}
-				set_country_flag = Blackshirts_befriended
-				set_variable = { ENG_labour_attitude  = 0 }
-				set_variable = { ENG_conservative_attitude  = 0 }
-				if = {
-					limit = {
-						check_variable = { ENG_labour_stability_factor > 0 }
-					}
-					set_variable = { ENG_labour_stability_factor = 0 }
-				}
-				if = {
-					limit = {
-						check_variable = { ENG_conservative_stability_factor > 0 }
-					}
-					set_variable = { ENG_conservative_stability_factor = 0 }
-				}
-			}
-		}
-
-		ai_will_do = {
-			factor = 1
-
-			modifier = {
-				factor = 0
-				NOT = {
-					has_completed_focus = ENG_organize_the_blackshirts
-				}
-			}
-		}
-	}
-
-	ENG_support_the_radical_parties = {
-
-		icon = generic_decision
-
-		allowed = {
-			tag = ENG
-		}
-
-		available = {
-		}
-
-		visible = {
-			OR = {
-				has_completed_focus = ENG_organize_the_blackshirts
-				has_country_flag = Blackshirts_befriended
-			}
-			NOT = { has_country_flag = Radical_parties_banned }
-			check_variable = { ENG_radicalists_attitude < 3 }
-			check_variable = { ENG_radicalists_influence < 6 }
-		}
-
-		cost = 50
-
-		fire_only_once = no
-		days_remove = 90
-
-		modifier = {
-		}
-
-		remove_effect = {
-			add_stability = -0.05
-			custom_effect_tooltip = ENG_support_the_radical_parties_tt
-			hidden_effect = {
-				add_to_variable = { ENG_radicalists_attitude = 1 }
-				add_to_variable = { ENG_radicalists_influence = 1 }
-			}
-		}
-
-		ai_will_do = {
-			factor = 1
-		}
-	}
-
-	ENG_ban_the_radical_parties = {
-
-		icon = generic_decision
-
-		allowed = {
-			tag = ENG
-		}
-
-		available = {
-			threat > 0.1
-		}
-
-		cost = 50
-
-		fire_only_once = yes
-
-		visible = {
-			NOT = { has_country_flag = Blackshirts_befriended }
-		}
-
-		modifier = {
-		}
-
-		complete_effect = {
-			custom_effect_tooltip = ENG_ban_the_radical_parties_tt
-			if = {
-				limit = {
-					check_variable = { ENG_radicalists_influence > 4 }
-				}
-				add_political_power = -250
-			}
-			else_if = {
-				limit = {
-					check_variable = { ENG_radicalists_influence > 3 }
-				}
-				add_political_power = -200
-			}
-			else_if = {
-				limit = {
-					check_variable = { ENG_radicalists_influence > 2 }
-				}
-				add_political_power = -150
-			}
-			else_if = {
-				limit = {
-					check_variable = { ENG_radicalists_influence > 1 }
-				}
-				add_political_power = -100
-			}
-			hidden_effect = {
-				set_variable = { ENG_radicalists_attitude = -3 }
-				set_variable = { ENG_radicalists_influence = 0 }
-				set_variable = { ENG_radicalists_political_power_gain = 0 }
-				set_variable = { ENG_radicalists_stability_factor = 0 }
-				set_country_flag = Radical_parties_banned
-			}
-		}
-
-		ai_will_do = {
-			factor = 400
-
-			modifier = {
-				factor = 0
-				has_war = no
-			}
-		}
-	}
-
-	ENG_the_kings_speech = {
-
-		icon = generic_speech
-
-		allowed = {
-			tag = ENG
-		}
-
-		available = {
-			has_government = democratic
-			has_war = yes
-			any_enemy_country = {
-				is_major = yes
-			}
-			NOT = { has_country_flag = Blackshirts_befriended }
-		}
-
-		cost = 50
-
-		fire_only_once = yes
-
-		visible = {
-			has_government = democratic
-			has_war = yes
-			any_enemy_country = {
-				is_major = yes
-			}
-			NOT = { has_country_flag = Blackshirts_befriended }
-		}
-
-		modifier = {
-		}
-
-		complete_effect = {
-			custom_effect_tooltip = ENG_the_kings_speech_tt
-			hidden_effect = {
-				add_to_variable = { ENG_labour_attitude = 1 }
-				add_to_variable = { ENG_conservative_attitude = 1 }
-				add_to_variable = { ENG_royalists_attitude = 1 }
-				add_to_variable = { ENG_labour_political_power_gain = 0.05 }
-				add_to_variable = { ENG_conservative_political_power_gain = 0.05 }
-				add_to_variable = { ENG_royalists_political_power_gain = 0.05 }
-			}
-		}
-
-		ai_will_do = {
-			factor = 1
-
-			modifier = {
-				factor = 0
-				has_war = no
-			}
-		}
-	}
-
-	ENG_request_trade_union_support_for_new_factories = {
-
-		icon = eng_trade_unions_support
-
-		allowed = {
-			tag = ENG
-		}
-
-		available = {
-		}
-
-		cost = ENG_trade_unions_support_50_cost?40
-
-		fire_only_once = yes
-
-		visible = {
-			has_completed_focus = ENG_concessions_to_the_trade_unions
-		}
-
-		complete_effect = {
-			random_owned_controlled_state = {
-				limit = {
-					is_in_home_area = yes
-					free_building_slots = {
-						building = arms_factory
-						size > 1
-						include_locked = yes
-					}
-					NOT = { has_state_flag = ENG_trade_unions_demand_referendum_1AF }
-				}
-				add_extra_state_shared_building_slots = 2
-				add_building_construction = {
-					type = arms_factory
-					level = 2
-					instant_build = yes
-				}
-				set_state_flag = ENG_trade_unions_demand_referendum_1AF
-			}
-			ENG_request_trade_union_support_cost_level_up = yes
-		}
-
-		ai_will_do = {
-			factor = 1
-		}
-	}
-
-	ENG_request_trade_union_factory_worker_support = {
-
-		icon = eng_trade_unions_support
-
-		allowed = {
-			tag = ENG
-		}
-
-		available = {
-			NOT = { has_idea = ENG_trade_union_factory_worker_support }
-		}
-
-		cost = ENG_trade_unions_support_75_cost?50
-
-		fire_only_once = yes
-
-		visible = {
-			has_completed_focus = ENG_concessions_to_the_trade_unions
-		}
-
-		complete_effect = {
-			add_timed_idea = { idea = ENG_trade_union_factory_worker_support days = 180 }
-			ENG_request_trade_union_support_cost_level_up = yes
-		}
-
-		ai_will_do = {
-			factor = 1
-		}
-	}
-
-	ENG_request_trade_union_dockyard_worker_support = {
-
-		icon = eng_trade_unions_support
-
-		allowed = {
-			tag = ENG
-		}
-
-		available = {
-			NOT = { has_idea = ENG_trade_union_dockyard_worker_support }
-		}
-
-		cost = ENG_trade_unions_support_75_cost?50
-
-		fire_only_once = yes
-
-		visible = {
-			has_completed_focus = ENG_concessions_to_the_trade_unions
-		}
-
-		complete_effect = {
-			add_timed_idea = { idea = ENG_trade_union_dockyard_worker_support days = 180 }
-			ENG_request_trade_union_support_cost_level_up = yes
-		}
-
-		ai_will_do = {
-			factor = 1
-		}
-	}
-
-	ENG_request_trade_union_construction_worker_support = {
-
-		icon = eng_trade_unions_support
-
-		allowed = {
-			tag = ENG
-		}
-
-		available = {
-			NOT = { has_idea = ENG_trade_union_construction_worker_support }
-		}
-
-		cost = ENG_trade_unions_support_75_cost?50
-
-		fire_only_once = yes
-
-		visible = {
-			has_completed_focus = ENG_concessions_to_the_trade_unions
-		}
-
-		complete_effect = {
-			add_timed_idea = { idea = ENG_trade_union_construction_worker_support days = 180 }
-			ENG_request_trade_union_support_cost_level_up = yes
-		}
-
-		ai_will_do = {
-			factor = 1
-		}
-	}
-
-	ENG_trade_union_war_propaganda_support = {
-
-		icon = eng_trade_unions_support
-
-		allowed = {
-			tag = ENG
-		}
-
-		available = {
-			NOT = { has_idea = ENG_trade_union_war_propaganda_support }
-		}
-
-		cost = ENG_trade_unions_support_75_cost?50
-
-		fire_only_once = yes
-
-		visible = {
-			has_completed_focus = ENG_concessions_to_the_trade_unions
-		}
-
-		complete_effect = {
-			add_timed_idea = { idea = ENG_trade_union_war_propaganda_support days = 180 }
-			ENG_request_trade_union_support_cost_level_up = yes
 		}
 
 		ai_will_do = {
