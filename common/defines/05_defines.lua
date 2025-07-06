@@ -243,7 +243,7 @@ NDefines.NResistance.FOREIGN_MANPOWER_MIN_THRESHOLD = 500000000			 			-- The min
 NDefines.NResistance.RESISTANCE_TARGET_BASE = 50.0
 
 NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_POP_LOW = -5.0						-- how much we reduce the resistance target
-NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_POP_VERY_LOW = -10.0				-- resistance target modifier in % for states we have claim
+NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_POP_VERY_LOW = -20.0				-- resistance in very low pop states
 
 NDefines.NResistance.RESISTANCE_POP_LOW_CUTOFF = 500000
 NDefines.NResistance.RESISTANCE_POP_VERY_LOW_CUTOFF = 200000
