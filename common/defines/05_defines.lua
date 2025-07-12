@@ -438,7 +438,7 @@ NDefines.NMilitary.TRAINING_MIN_STRENGTH = 0.95										-- if strength is less 
 NDefines.NMilitary.UNIT_EXPERIENCE_SCALE = 0.3
 
 NDefines.NMilitary.RIVER_CROSSING_PENALTY = -0.3                					-- small river crossing
-NDefines.NMilitary.RIVER_CROSSING_PENALTY_LARGE = -0.6								-- large river crossing
+NDefines.NMilitary.RIVER_CROSSING_PENALTY_LARGE = -0.45								-- large river crossing
 NDefines.NMilitary.RIVER_CROSSING_SPEED_PENALTY = -0.25								-- small river crossing
 NDefines.NMilitary.RIVER_CROSSING_SPEED_PENALTY_LARGE = -0.5						-- large river crossing
 
