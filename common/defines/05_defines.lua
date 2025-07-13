@@ -868,7 +868,7 @@ NDefines.NSupply.CAPITAL_SUPPLY_DOCKYARDS = 0.2 									-- supply from one nava
 --NDefines.NSupply.CAPITAL_STARTING_PENALTY_PER_PROVINCE = 0 						-- starting penalty that will be added as supply moves away from its origin (modified by stuff like terrain)
 --NDefines.NSupply.CAPITAL_ADDED_PENALTY_PER_PROVINCE = 0 							-- added penalty as we move away from origin
 
-NDefines.NSupply.AVAILABLE_MANPOWER_STATE_SUPPLY = 3.0								--Factor for state supply from max manpower (population)
+NDefines.NSupply.AVAILABLE_MANPOWER_STATE_SUPPLY = 1.0								--Factor for state supply from max manpower (population)
 NDefines.NSupply.NON_CORE_MANPOWER_STATE_SUPPLY = 0.025								--Factor for population sttate supply when controlled by an occupier (NO TAKE FOOD)
 
 NDefines.NSupply.NAVAL_BASE_FLOW = 0.0 												-- max output/input of a naval node is limited by this base value + additional ratio for each level
