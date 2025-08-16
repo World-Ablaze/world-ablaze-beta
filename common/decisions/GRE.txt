@@ -76,6 +76,10 @@ propaganda_efforts = {
 		complete_effect = {
 			add_country_leader_trait = first_worker
 		}
+
+        ai_will_do = {
+            base = 1
+        }
 	}
 	GRE_metaxas_the_first_peaseant = {
 		allowed = {
@@ -97,6 +101,10 @@ propaganda_efforts = {
 		complete_effect = {
 			add_country_leader_trait = first_peaseant
 		}
+
+        ai_will_do = {
+            base = 1
+        }
 	}
 }
 
@@ -166,12 +174,26 @@ war_measures = {
 		fire_only_once = yes
 
 		available = {
-			has_country_flag = GRE_british_gurantees
+			has_country_flag = GRE_british_gurantees_flag
 			has_war_with_major = yes
+            if = {
+                limit = {
+                    is_ai = yes
+                    any_enemy_country = {
+                        tag = ITA
+                    }
+                }
+                any_enemy_country = {
+                    NOT = {
+                        tag = ITA
+                    }
+                    is_major = yes
+                }
+            }
 		}
 
 		visible = {
-			has_country_flag = GRE_british_gurantees
+			has_country_flag = GRE_british_gurantees_flag
 			is_in_faction = no
 		}
 
@@ -179,12 +201,25 @@ war_measures = {
 			ENG = {
 				add_to_faction = GRE
 			}
+            if = {
+                limit = {
+                    has_active_mission = GRE_italian_war_mission_gre
+                }
+                add_war_support = -0.05
+                add_stability = -0.05
+            }
 		}
 
 		ai_will_do = {
 			base = 0
 			modifier = {
-				surrender_progress > 50
+				surrender_progress > 40
+				add = 100
+			}
+            modifier = {
+				NOT = {
+                    has_full_control_of_state = 47
+                }
 				add = 100
 			}
 		}
@@ -207,29 +242,31 @@ war_measures = {
 		}
 
 		cancel_trigger = {
-			any_enemy_country = {
-				NOT = {
-					original_tag = ITA
-					is_subject_of = ITA
-				}
-			}
-			NOT = {
-				controls_state = 185
-			}
-			OR = {
-				NOT = {
-					controls_state = 731
-				}
-				NOT = {
-					controls_state = 47
-				}
-			}
+            OR = {
+                any_enemy_country = {
+                    NOT = {
+                        original_tag = ITA
+                        is_subject_of = ITA
+                    }
+                }
+                NOT = {
+                    controls_state = 185
+                }
+                OR = {
+                    NOT = {
+                        controls_state = 731
+                    }
+                    NOT = {
+                        has_full_control_of_state = 47
+                    }
+                }
+            }
 		}
 
 		cancel_effect = {
 			if = {
 				limit = {
-					has_country_flag = GRE_british_gurantees
+					has_country_flag = GRE_british_gurantees_flag
 				}
 				ENG = {
 					add_to_faction = GRE
@@ -238,9 +275,11 @@ war_measures = {
 		}
 
 		remove_effect = {
+            add_war_support = 0.2
+            add_stability = 0.1
 			if = {
 				limit = {
-					has_country_flag = GRE_british_gurantees
+					has_country_flag = GRE_british_gurantees_flag
 				}
 				ENG = {
 					add_to_faction = GRE
