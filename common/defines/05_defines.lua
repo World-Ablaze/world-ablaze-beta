@@ -82,7 +82,7 @@ NDefines.NCountry.SUPPLY_PORT_LEVEL_THROUGHPUT = 3			    					-- supply throughp
 NDefines.NCountry.EVENT_PROCESS_OFFSET = 7											-- Events are checked every X day per country or state (1 is ideal, but CPU heavy)
 
 NDefines.NCountry.AIR_SUPPLY_CONVERSION_SCALE = 0.01								-- Conversion scale for planes to air supply
-NDefines.NCountry.AIR_SUPPLY_DROP_EXPIRATION_HOURS = 24								-- Air drop length after being dropped
+NDefines.NCountry.AIR_SUPPLY_DROP_EXPIRATION_HOURS = 48							-- Air drop length after being dropped
 
 NDefines.NCountry.REINFORCEMENT_EQUIPMENT_DELIVERY_SPEED = 0.1						-- Modifier for army equipment reinforcement speed
 
@@ -868,7 +868,7 @@ NDefines.NSupply.CAPITAL_SUPPLY_DOCKYARDS = 0.2 									-- supply from one nava
 --NDefines.NSupply.CAPITAL_STARTING_PENALTY_PER_PROVINCE = 0 						-- starting penalty that will be added as supply moves away from its origin (modified by stuff like terrain)
 --NDefines.NSupply.CAPITAL_ADDED_PENALTY_PER_PROVINCE = 0 							-- added penalty as we move away from origin
 
-NDefines.NSupply.AVAILABLE_MANPOWER_STATE_SUPPLY = 3.0								--Factor for state supply from max manpower (population)
+NDefines.NSupply.AVAILABLE_MANPOWER_STATE_SUPPLY = 1.0								--Factor for state supply from max manpower (population)
 NDefines.NSupply.NON_CORE_MANPOWER_STATE_SUPPLY = 0.025								--Factor for population sttate supply when controlled by an occupier (NO TAKE FOOD)
 
 NDefines.NSupply.NAVAL_BASE_FLOW = 0.0 												-- max output/input of a naval node is limited by this base value + additional ratio for each level
@@ -884,8 +884,8 @@ NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_BONUS = 10.0							-- The range bo
 NDefines.NSupply.SUPPLY_HUB_MOTORIZATION_MARGINAL_EFFECT_DECAY = 0					-- For each additional level of motorization on a hub (i.e. contry with set motoriazation) reduce max bonus for next level by this amount
 NDefines.NSupply.NODE_STARTING_PENALTY_PER_PROVINCE = 0.75
 
-NDefines.NSupply.RAILWAY_BASE_FLOW = 5.0											-- how much base flow railway gives when a node connected to its capital/a naval node by a railway
-NDefines.NSupply.RAILWAY_FLOW_PER_LEVEL = 10.0 										-- how much additional flow a railway level gives
+NDefines.NSupply.RAILWAY_BASE_FLOW = 4.0											-- how much base flow railway gives when a node connected to its capital/a naval node by a railway
+NDefines.NSupply.RAILWAY_FLOW_PER_LEVEL = 8.0 										-- how much additional flow a railway level gives
 NDefines.NSupply.RAILWAY_FLOW_PENALTY_PER_DAMAGED = 8.0 							-- penalty to flow per damaged railway
 NDefines.NSupply.DAYS_TO_START_GIVING_SUPPLY_AFTER_MOVING_SUPPLY_CAPITAL = 1  		-- the country will start gaining supply after this many days moving its capital
 NDefines.NSupply.DAYS_TO_START_GIVING_FULL_SUPPLY_AFTER_MOVING_SUPPLY_CAPITAL =  2 	-- the country will reach max supply after this many days moving its capital
@@ -912,7 +912,7 @@ NDefines.NSupply.ARMY_SUPPLY_RATIO_STARTING_GAIN = 0.0
 NDefines.NSupply.ARMY_SUPPLY_RATIO_SPEED_GAIN_PER_HOUR = 0.01
 NDefines.NSupply.ARMY_MAX_SUPPLY_RATIO_GAIN_PER_HOUR = 0.33
 
-NDefines.NSupply.INFRA_TO_SUPPLY = 0.5
+NDefines.NSupply.INFRA_TO_SUPPLY = 1.5
 NDefines.NSupply.VP_TO_SUPPLY_BASE = 0.3
 
 ---- INTEL
@@ -1269,12 +1269,12 @@ NDefines.NAI.UPGRADES_DEFICIT_LIMIT_DAYS = 30	                    				-- Ai will
 NDefines.NAI.MAX_AVAILABLE_MANPOWER_RATIO_TO_BUFFER_WARTIME = 0.4					-- deployment will try to buffer a ratio of manpower (for reinforcements) during war time
 NDefines.NAI.MAX_AVAILABLE_MANPOWER_RATIO_TO_BUFFER_PEACETIME = 0.01				-- deployment will try to buffer a ratio of manpower (for reinforcements) during peace time
 
---NDefines.NAI.DESPERATE_AI_MIN_UNIT_ASSIGN_TO_ESCAPE = 2							-- AI will assign at least this amount of units to break from desperate situations
+NDefines.NAI.DESPERATE_AI_MIN_UNIT_ASSIGN_TO_ESCAPE = 1								-- AI will assign at least this amount of units to break from desperate situations
 
---NDefines.NAI.DESPERATE_AI_WEAK_UNIT_STR_LIMIT = 0.1								-- ai will increase number of units assigned to break from desperate situations when units are start falling lower than this str limit
+NDefines.NAI.DESPERATE_AI_WEAK_UNIT_STR_LIMIT = 0.99								-- ai will increase number of units assigned to break from desperate situations when units are start falling lower than this str limit
 --NDefines.NAI.DESPERATE_AI_MIN_ORG_BEFORE_ATTACK = 0.9								-- ai will wait for this much org to attack an enemy prov in desperate situations
 --NDefines.NAI.DESPERATE_AI_MIN_ORG_BEFORE_MOVE = 0.25								-- ai will wait for this much org to move in desperate situations
-NDefines.NAI.DESPERATE_ATTACK_WITHOUT_ORG_WHEN_NO_ORG_GAIN = 1000					-- if ai can't regain enough org to attack in this many hours, it will go truly desperate and attack anyway (still has to wait for move org)
+--NDefines.NAI.DESPERATE_ATTACK_WITHOUT_ORG_WHEN_NO_ORG_GAIN = 1000					-- if ai can't regain enough org to attack in this many hours, it will go truly desperate and attack anyway (still has to wait for move org)
 
 NDefines.NAI.TRADEABLE_FACTORIES_FRACTION = 1.0	 									-- Will at most trade away this fraction of factories.
 
