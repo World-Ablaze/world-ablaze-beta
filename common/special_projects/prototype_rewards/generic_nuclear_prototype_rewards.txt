@@ -1,57 +1,55 @@
+# General Nuclear Projects
 # sp_nuclear_scientist_xp_generic_reward
 # sp_nuclear_minor_progress_generic_reward
 # sp_nuclear_generic_electronics_tech_reward
 # sp_nuclear_war_support_generic_reward
 # sp_nuclear_generic_industry_tech_reward
+# sp_nuclear_minor_security_generic_reward
+# sp_nuclear_major_security_generic_reward
 
+# Reactor Projects
 # sp_nuclear_reactor_radioactive_leak_stabilized_reward
 # sp_nuclear_reactor_minor_explosion_reward
 
-sp_nuclear_generic_industry_tech_reward = {
-	fire_only_once = no
-	
-	threshold = { 
-		min = 0
-		max = 100
-	}
-	
-	option = {
-		token = sp_nuclear_generic_reward_option_industryr_tech
-		
-		iteration_output = {
-			country_effects = { 
-				add_tech_bonus = {
-					name = sp_nuclear_generic_reward_option_industry_tech_name
-					bonus = 0.1
-					uses = 1
-					category = industry
-				}
-					
-			}
-		}
-	}
-}
+# Bomb Projects
+# sp_nuclear_bomb_theoretical_breakthrough_generic_reward
+# sp_nuclear_bomb_critical_mass_generic_reward
+# sp_nuclear_bomb_accident_generic_reward
 
+# General
 sp_nuclear_scientist_xp_generic_reward = {
 	fire_only_once = no
-	
-	threshold = { 
+
+	threshold = {
 		min = 0
 		max = 100
 	}
-	
+
 	weight = {
 		factor = 1.0
 	}
-	
+
 	option = {
 		token = sp_nuclear_scientist_xp_generic_reward_option
-				
+
 		iteration_output = {
 			scientist_effects = {
-				add_scientist_xp = {
-					experience = constant:sp_scientist_xp_gain.low
-					specialization = specialization_nuclear
+				if = {
+					limit = {
+						FROM = { has_project_flag = sp_nuclear_security_choice_reward_high }
+					}
+					add_scientist_xp = {
+						experience = constant:sp_scientist_xp.gain_high_security.medium
+						specialization = specialization_nuclear
+					}
+					custom_effect_tooltip = sp_nuclear_security_high_tt
+				}
+				else = {
+					add_scientist_xp = {
+						experience = constant:sp_scientist_xp.gain.medium
+						specialization = specialization_nuclear
+					}
+					custom_effect_tooltip = sp_nuclear_security_low_tt
 				}
 			}
 		}
@@ -60,22 +58,22 @@ sp_nuclear_scientist_xp_generic_reward = {
 
 sp_nuclear_minor_progress_generic_reward = {
 	fire_only_once = no
-	
-	threshold = { 
+
+	threshold = {
 		min = 0
 		max = 80
 	}
-	
+
 	weight = {
 		factor = 1.0
 	}
-	
+
 	option = {
 		token = sp_nuclear_minor_progress_generic_reward_option
-				
+
 		iteration_output = {
 			country_effects = {
-				FROM = { add_project_progress_ratio = constant:sp_progress.gain.low }
+				sp_nuclear_progress_low = yes
 			}
 		}
 	}
@@ -83,23 +81,45 @@ sp_nuclear_minor_progress_generic_reward = {
 
 sp_nuclear_generic_electronics_tech_reward = {
 	fire_only_once = no
-	
-	threshold = { 
+
+	threshold = {
 		min = 0
 		max = 100
 	}
-	
+
+	weight = {
+		base = 1.0
+		modifier = {
+			factor = 0.5
+			FROM = {
+				NOT = {
+					has_idea = full_privatization
+					has_idea = state_sponsored_economy
+					has_idea = state_capitalism
+				}
+			}
+		}
+		# modifier = {
+		# 	factor = 0.5
+		# 	FROM = {
+		# 		has_tech_bonus = {
+		# 			category = electronics
+		# 		}
+		# 	}
+		# }
+	}
+
 	option = {
 		token = sp_nuclear_generic_reward_option_electronics_tech
-		
+
 		iteration_output = {
-			country_effects = { 
+			country_effects = {
 				random_list = {
 					#Low Bonus
 					20 = {
 						add_tech_bonus = {
 							name = sp_nuclear_generic_reward_option_electronics_tech_bonus_name
-							bonus = 0.1
+							bonus = 0.05
 							uses = 1
 							category = electronics
 						}
@@ -108,7 +128,7 @@ sp_nuclear_generic_electronics_tech_reward = {
 					70 = {
 						add_tech_bonus = {
 							name = sp_nuclear_generic_reward_option_electronics_tech_bonus_name
-							bonus = 0.2
+							bonus = 0.1
 							uses = 1
 							category = electronics
 						}
@@ -117,70 +137,357 @@ sp_nuclear_generic_electronics_tech_reward = {
 					10 = {
 						add_tech_bonus = {
 							name = sp_nuclear_generic_reward_option_electronics_tech_bonus_name
-							bonus = 0.35
+							bonus = 0.15
 							uses = 1
 							category = electronics
 						}
 					}
 				}
 			}
-		}
-	}
-}
-
-sp_nuclear_war_support_generic_reward = {
-	fire_only_once = yes
-	
-	threshold = { 
-		min = 50
-		max = 100
-	}
-	
-	weight = {
-		factor = 1.0
-	}
-	
-	option = {
-		token = sp_nuclear_war_support_generic_reward_option
-				
-		iteration_output = {
-			country_effects = {
-				add_war_support = 0.02
+			scientist_effects = {
+				if = {
+					limit = {
+						FROM = { has_project_flag = sp_nuclear_security_choice_reward_high }
+					}
+					add_scientist_xp = {
+						experience = constant:sp_scientist_xp.gain_high_security.low
+						specialization = specialization_nuclear
+					}
+					custom_effect_tooltip = sp_nuclear_security_high_tt
+				}
+				else = {
+					add_scientist_xp = {
+						experience = constant:sp_scientist_xp.gain.low
+						specialization = specialization_nuclear
+					}
+					custom_effect_tooltip = sp_nuclear_security_low_tt
+				}
 			}
 		}
 	}
 }
 
-sp_nuclear_major_political_interference_generic_reward = {
-	fire_only_once = yes
+sp_nuclear_generic_industry_tech_reward = {
+	fire_only_once = no
 
-	threshold = { 
+	threshold = {
+		min = 0
+		max = 100
+	}
+
+	weight = {
+		base = 1.0
+		modifier = {
+			factor = 0.5
+			FROM = {
+				NOT = {
+					has_idea = full_privatization
+					has_idea = state_sponsored_economy
+					has_idea = state_capitalism
+				}
+			}
+		}
+		# modifier = {
+		# 	factor = 0.5
+		# 	FROM = {
+		# 		has_tech_bonus = {
+		# 			category = industry
+		# 		}
+		# 	}
+		# }
+	}
+
+	option = {
+		token = sp_nuclear_generic_reward_option_industryr_tech
+
+		iteration_output = {
+			country_effects = {
+				random_list = {
+					#Low Bonus
+					20 = {
+						add_tech_bonus = {
+							name = sp_nuclear_generic_reward_option_industry_tech_name
+							bonus = 0.05
+							uses = 1
+							category = industry
+						}
+					}
+					#Mid Bonus
+					70 = {
+						add_tech_bonus = {
+							name = sp_nuclear_generic_reward_option_industry_tech_name
+							bonus = 0.1
+							uses = 1
+							category = industry
+						}
+					}
+					#High Bonus
+					10 = {
+						add_tech_bonus = {
+							name = sp_nuclear_generic_reward_option_industry_tech_name
+							bonus = 0.15
+							uses = 1
+							category = industry
+						}
+					}
+				}
+			}
+			scientist_effects = {
+				if = {
+					limit = {
+						FROM = { has_project_flag = sp_nuclear_security_choice_reward_high }
+					}
+					add_scientist_xp = {
+						experience = constant:sp_scientist_xp.gain_high_security.low
+						specialization = specialization_nuclear
+					}
+					custom_effect_tooltip = sp_nuclear_security_high_tt
+				}
+				else = {
+					add_scientist_xp = {
+						experience = constant:sp_scientist_xp.gain.low
+						specialization = specialization_nuclear
+					}
+					custom_effect_tooltip = sp_nuclear_security_low_tt
+				}
+			}
+		}
+	}
+}
+
+# sp_nuclear_war_support_generic_reward = {
+# 	fire_only_once = yes
+
+# 	threshold = {
+# 		min = 50
+# 		max = 100
+# 	}
+
+# 	weight = {
+# 		base = 1.0
+# 		modifier = {
+# 			factor = 0
+# 			FROM = { has_project_flag = sp_nuclear_security_choice_reward_high }
+# 		}
+# 	}
+
+# 	option = {
+# 		token = sp_nuclear_war_support_generic_reward_option
+
+# 		iteration_output = {
+# 			country_effects = {
+# 				add_war_support = 0.02
+# 			}
+# 		}
+# 	}
+# }
+
+# sp_nuclear_major_political_interference_generic_reward = {
+# 	fire_only_once = yes
+
+# 	threshold = {
+# 		min = 15
+# 		max = 85
+# 	}
+
+# 	weight = {
+# 		base = 1
+# 		modifier = {
+# 			factor = 0.25
+# 			FROM = {
+# 				NOT = { has_government = fascism }
+# 			}
+# 		}
+# 	}
+
+# 	option = {
+# 		token = sp_nuclear_major_political_interference_generic_reward_option_keep
+
+# 		iteration_output = {
+# 			country_effects = {
+# 				add_political_power = -50
+# 				FROM = { add_project_progress_ratio = constant:sp_progress.loss.medium	 }
+
+# 			}
+# 			scientist_effects = {
+# 				add_scientist_xp = {
+# 					experience = constant:sp_scientist_xp.gain.medium
+# 					specialization = specialization_nuclear
+# 				}
+# 			}
+# 		}
+# 	}
+
+# 	option = {
+# 		token = sp_nuclear_major_political_interference_generic_reward_option_fire
+
+# 		iteration_output = {
+# 			country_effects = {
+# 				add_political_power = 50
+# 				FROM = { add_project_progress_ratio = constant:sp_progress.loss.low	 }
+
+# 			}
+# 			scientist_effects = {
+# 				remove_scientist_role = yes
+# 			}
+# 		}
+# 	}
+# }
+
+sp_nuclear_minor_security_generic_reward = {
+	fire_only_once = no
+
+	threshold = {
 		min = 15
-		max = 85
+		max = 100
 	}
 
 	weight = {
 		base = 1
 		modifier = {
-			factor = 0.25
-			FROM = {
-				NOT = { has_government = fascism }
+			factor = 0.5
+			has_project_flag = sp_nuclear_security_choice_reward_high
+		}
+		# modifier = {
+		# 	factor = 0.5
+		# 	has_project_flag = sp_nuclear_security_choice_reward_high
+		# }
+	}
+
+	option = {
+		token = sp_nuclear_minor_security_generic_reward_option
+
+		iteration_output = {
+			country_effects = {
+				add_political_power = -25
+				FROM = { add_project_progress_ratio = constant:sp_progress.loss.low }
 			}
 		}
 	}
-	
+}
+
+sp_nuclear_major_security_generic_reward = {
+	fire_only_once = yes
+
+	threshold = {
+		min = 15
+		max = 100
+	}
+
+	weight = {
+		base = 0
+		modifier = {
+			add = 1
+			has_project_flag = sp_nuclear_security_choice_reward_low
+		}
+	}
+
 	option = {
-		token = sp_nuclear_major_political_interference_generic_reward_option_keep
-		
+		token = sp_nuclear_minor_security_generic_reward_option_fire
+
 		iteration_output = {
 			country_effects = {
-				add_political_power = -50
-				FROM = { add_project_progress_ratio = constant:sp_progress.loss.medium	 }
+				FROM = { add_project_progress_ratio = constant:sp_progress.loss.medium }
+				every_other_country = {
+					limit = {
+						is_major = yes
+					}
+					custom_effect_tooltip = sp_nuclear_reactor_tested_reward_public_tt
+					hidden_effect = {
+						if = {
+							limit = {
+								has_tech = atomic_research
+								NOT = { is_special_project_completed = sp:sp_nuclear_reactor }
+							}
+							sp:sp_nuclear_reactor = { add_project_progress_ratio = 0.05 }
+						}
+					}
+				}
+			}
+		}
+	}
 
+	option = {
+		token = sp_nuclear_minor_security_generic_reward_option_keep
+
+		iteration_output = {
+			country_effects = {
+				add_political_power = -150
+				add_stability = -0.05
+				add_war_support = -0.025
+			}
+			scientist_effects = {
+				sp_nuclear_progress_medium = yes
+			}
+		}
+	}
+}
+
+# Only Reactor Projects
+sp_nuclear_reactor_radioactive_leak_stabilized_reward = {
+	fire_only_once = yes
+
+	threshold = {
+		min = 30
+		max = 100
+	}
+
+	weight = {
+		base = 1
+		modifier = {
+			factor = 0.5
+			var:scientist = {
+				has_scientist_level = {
+					level > 2
+					specialization = specialization_nuclear
+				}
+			}
+		}
+		modifier = {
+			factor = 5
+			FROM = { has_country_flag = no_filters_for_reactors_flag }
+		}
+	}
+
+	option = {
+		token = sp_nuclear_reactor_radioactive_leak_stabilized_reward_option
+
+		iteration_output = {
+			country_effects = {
+				FROM = { add_project_progress_ratio = constant:sp_progress.loss.low }
 			}
 			scientist_effects = {
 				add_scientist_xp = {
-					experience = constant:sp_scientist_xp_gain.medium
+					experience = constant:sp_scientist_xp.gain.medium
+					specialization = specialization_nuclear
+				}
+			}
+			facility_state_effects = {
+				damage_building = {
+					tags = facility
+					damage = 0.15
+					province = var:facility_province_id
+				}
+			}
+		}
+	}
+}
+
+sp_nuclear_reactor_minor_explosion_reward = {
+	fire_only_once = yes
+
+	threshold = {
+		min = 20
+		max = 40
+	}
+
+	weight = {
+		base = 1
+		modifier = {
+			factor = 0.5
+			var:scientist = {
+				has_scientist_level = {
+					level > 1
 					specialization = specialization_nuclear
 				}
 			}
@@ -188,16 +495,70 @@ sp_nuclear_major_political_interference_generic_reward = {
 	}
 
 	option = {
-		token = sp_nuclear_major_political_interference_generic_reward_option_fire
-		
+		token = sp_nuclear_reactor_minor_explosion_reward_option
+
+		iteration_output = {
+			scientist_effects = {
+				add_scientist_xp = {
+					experience = constant:sp_scientist_xp.gain.low
+					specialization = specialization_nuclear
+				}
+				injure_scientist_for_days = 7
+			}
+			facility_state_effects = {
+				damage_building = {
+					tags = facility
+					damage = 0.2
+					province = var:facility_province_id
+				}
+			}
+		}
+	}
+}
+
+# German graphite purity calculation errors
+sp_nuclear_reactor_graphite_purity_error_reward = {
+	allowed = {
+		original_tag = GER
+	}
+
+	fire_only_once = yes
+
+	threshold = {
+		min = 60
+		max = 100
+	}
+
+	weight = {
+		base = 0
+		modifier = {
+			add = 1000
+			FROM = {
+				# tag = GER
+				has_country_flag = nuclear_reactor_graphite_flag
+				has_government = fascism
+			}
+			var:scientist = {
+				has_scientist_level = {
+					level < 3
+					specialization = specialization_nuclear
+				}
+			}
+		}
+	}
+
+	option = {
+		token = sp_nuclear_reactor_graphite_purity_error_reward_option
+
 		iteration_output = {
 			country_effects = {
-				add_political_power = 50
-				FROM = { add_project_progress_ratio = constant:sp_progress.loss.low	 }
-
-			}
-			scientist_effects = {
-				remove_scientist_role = yes 
+				FROM = { add_project_progress_ratio = constant:sp_progress.loss.medium }
+				custom_effect_tooltip = {
+					localization_key = SP_UNLOCK_BUILDING
+					BUILDING = nuclear_reactor_heavy_water
+				}
+				clr_country_flag = nuclear_reactor_graphite_flag
+				set_country_flag = nuclear_reactor_heavy_water_flag
 			}
 		}
 	}
@@ -206,27 +567,27 @@ sp_nuclear_major_political_interference_generic_reward = {
 # Only bomb Projects
 sp_nuclear_bomb_theoretical_breakthrough_generic_reward = {
 	fire_only_once = yes
-	
-	threshold = { 
+
+	threshold = {
 		min = 0
 		max = 70
 	}
-	
+
 	weight = {
 		base = 0.5
 	}
-	
+
 	option = {
 		token = sp_nuclear_bomb_theoretical_breakthrough_generic_reward_option
-		
-		
+
+
 		iteration_output = {
 			country_effects = {
 				FROM = { add_project_progress_ratio = constant:sp_progress.gain.medium }
 			}
 			scientist_effects = {
 				add_scientist_xp = {
-					experience = constant:sp_scientist_xp_gain.medium
+					experience = constant:sp_scientist_xp.gain.medium
 					specialization = specialization_nuclear
 				}
 			}
@@ -236,27 +597,27 @@ sp_nuclear_bomb_theoretical_breakthrough_generic_reward = {
 
 sp_nuclear_bomb_critical_mass_generic_reward = {
 	fire_only_once = yes
-	
-	threshold = { 
+
+	threshold = {
 		min = 0
 		max = 60
 	}
-	
+
 	weight = {
 		base = 0.5
 	}
-	
+
 	option = {
 		token = sp_nuclear_bomb_theoretical_breakthrough_generic_reward_option
-		
-		
+
+
 		iteration_output = {
 			country_effects = {
 				FROM = { add_project_progress_ratio = constant:sp_progress.loss.low }
 			}
 			scientist_effects = {
 				add_scientist_xp = {
-					experience = constant:sp_scientist_xp_gain.low
+					experience = constant:sp_scientist_xp.gain.low
 					specialization = specialization_nuclear
 				}
 			}
@@ -273,12 +634,12 @@ sp_nuclear_bomb_critical_mass_generic_reward = {
 
 sp_nuclear_bomb_accident_generic_reward = {
 	fire_only_once = yes
-	
-	threshold = { 
+
+	threshold = {
 		min = 0
 		max = 100
 	}
-	
+
 	weight = {
 		base = 1
 		modifier = {
@@ -298,91 +659,13 @@ sp_nuclear_bomb_accident_generic_reward = {
 			FROM = {has_country_flag = no_filters_for_reactors_flag }
 		}
 	}
-	
+
 	option = {
 		token = sp_nuclear_bomb_accident_generic_reward_option
-		
-		
+
+
 		iteration_output = {
 			facility_state_effects = {
-				damage_building = {
-					tags = facility
-					damage = 0.1
-					province = var:facility_province_id
-				}
-			}
-		}
-	}
-}
-
-# Only Reactor Projects
-sp_nuclear_reactor_radioactive_leak_stabilized_reward = {
-	fire_only_once = yes
-	
-	threshold = { 
-		min = 40
-		max = 60
-	}
-	
-	weight = {
-		base = 0.75
-		modifier = {
-			factor = 5
-			FROM = {has_country_flag = no_filters_for_reactors_flag }
-		}
-	}
-	
-	option = {
-		token = sp_nuclear_reactor_radioactive_leak_stabilized_reward_option
-		
-		
-		iteration_output = {
-			country_effects = {
-				FROM = { add_project_progress_ratio = constant:sp_progress.gain.low }
-			}
-			scientist_effects = {
-				add_scientist_xp = {
-					experience = constant:sp_scientist_xp_gain.medium
-					specialization = specialization_nuclear
-				}
-			}
-
-			facility_state_effects = { 
-				damage_building = {
-					tags = facility
-					damage = 0.1
-					province = var:facility_province_id
-				}
-			}
-		}
-	}
-}
-
-sp_nuclear_reactor_minor_explosion_reward = {
-	fire_only_once = yes
-	
-	threshold = { 
-		min = 20
-		max = 40
-	}
-	
-	weight = {
-		base = 0.75
-	}
-	
-	option = {
-		token = sp_nuclear_reactor_minor_explosion_reward_option
-		
-		
-		iteration_output = {
-			scientist_effects = {
-				add_scientist_xp = {
-					experience = constant:sp_scientist_xp_gain.low
-					specialization = specialization_nuclear
-				}
-			}
-
-			facility_state_effects = { 
 				damage_building = {
 					tags = facility
 					damage = 0.1
