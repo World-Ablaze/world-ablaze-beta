@@ -8733,7 +8733,7 @@ focus_tree = {
 
 	focus = {
 		id = USA_office_of_scientific_research_and_development
-		icon = GFX_goal_generic_research
+		icon = GFX_focus_wonderweapons
 		prerequisite = { focus = USA_advisory_committee_on_uranium }
 		prerequisite = { focus = USA_office_of_production_management }
 		prerequisite = { focus = USA_limited_rearmament }
@@ -8750,12 +8750,38 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_INDUSTRY FOCUS_FILTER_HISTORICAL FOCUS_FILTER_RESEARCH }
 
 		completion_reward = {
-			376 = {
-				add_building_construction = {
-					type = nuclear_facility
-					level = 1
-					province = 12552
-					instant_build = yes
+			if = {
+				limit = {
+					376 = {
+						is_fully_controlled_by = ROOT
+						nuclear_facility < 1
+					}
+				}
+				376 = { # Los Alamos
+					add_building_construction = {
+						type = nuclear_facility
+						level = 1
+						province = 12552
+						instant_build = yes
+					}
+				}
+			}
+			else = {
+				random_core_state = {
+					prioritize = { 820 368 386 } # Met Lab, Oak Ridge, Hanford
+					limit = {
+						is_fully_controlled_by = ROOT
+						all_neighbor_state = { is_fully_controlled_by = ROOT }
+						nuclear_facility < 1
+					}
+					add_building_construction = {
+						type = nuclear_facility
+						level = 1
+						province = {
+							limit_to_victory_point = yes
+						}
+						instant_build = yes
+					}
 				}
 			}
 			add_research_slot = 1
