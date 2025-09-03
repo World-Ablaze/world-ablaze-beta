@@ -191,7 +191,7 @@ nuclear_espionage = { ### 1/50
 	map_icon = GFX_operations_steal_blueprints_map
 	name = nuclear_espionage
 	desc = nuclear_espionage_desc
-	days = 3
+	days = 180
 
 	priority = 15
 
@@ -210,11 +210,16 @@ nuclear_espionage = { ### 1/50
 			is_major = yes
 			NOT = { has_country_flag = SOV_nuclear_espionage_flag } # This operation can only be done once in a country
 			NOT = { has_war_with = ROOT }
-			has_tech = atomic_research
+			OR = {
+				is_special_project_completed = sp:sp_nuclear_reactor
+				is_special_project_being_researched = sp:sp_nuclear_reactor
+				is_special_project_completed = sp:sp_nuclear_bomb
+				is_special_project_being_researched = sp:sp_nuclear_bomb
+			}
 		}
 	}
 
-	operatives = 1
+	operatives = 2
 
 	# Integer [0-100] - Every operation has a hard requirement of network strength in the target country
 	network_strength = 75
@@ -234,7 +239,30 @@ nuclear_espionage = { ### 1/50
 	experience = 5
 	# outcome is an effect that runs when the operation has completed
 	outcome_execute = { # SCOPE_OPERATION
-		FROM = { set_country_flag = SOV_nuclear_espionage_flag } # This operation can only be done once per country
+		FROM = {
+			set_country_flag = SOV_nuclear_espionage_flag # This operation can only be done once per country
+			if = {
+				limit = {
+					OR = {
+						AND = {
+							is_special_project_being_researched = sp:sp_nuclear_reactor
+							sp:sp_nuclear_reactor = {
+								has_project_flag = sp_nuclear_security_choice_reward_high
+							}
+						}
+						AND = {
+							is_special_project_being_researched = sp:sp_nuclear_bomb
+							sp:sp_nuclear_bomb = {
+								has_project_flag = sp_nuclear_security_choice_reward_high
+							}
+						}
+					}
+				}
+				ROOT = {
+					set_country_flag = SOV_nuclear_espionage_flag_high_security
+				}
+			}
+		}
 		ROOT = { country_event = NSB_soviet_atomic_bomb_project.1 }
 	}
 
@@ -245,12 +273,12 @@ nuclear_espionage = { ### 1/50
 		infiltration_submarine = { base = 20 }
 		infiltration_diplomatic = {
 			base = 20
-			modifier = {
-				FROM = {
-					has_war_with = ROOT
-				}
-				factor = 0
-			}
+			# modifier = {
+			# 	FROM = {
+			# 		has_war_with = ROOT
+			# 	}
+			# 	factor = 0
+			# }
 		}
 	}
 	phases = { #gather vital info
