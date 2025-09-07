@@ -330,7 +330,7 @@ NDefines.NMilitary.BASE_DIVISION_SUPPORT_SLOT_COST = 1 								--Base XP cost to
 NDefines.NMilitary.UNIT_LEADER_ASSIGN_TRAIT_COST = 5								-- cost to assign a new trait to a unit leader
 
 --NDefines.NMilitary.PLAN_EXECUTE_CAREFUL_LIMIT = 10								-- When looking for an attach target, this score limit is required in the battle plan to consider province for attack
---NDefines.NMilitary.PLAN_EXECUTE_CAREFUL_MAX_FORT = 9								-- If execution mode is set to careful, units will not attack provinces with fort levels greater than or equal to this
+NDefines.NMilitary.PLAN_EXECUTE_CAREFUL_MAX_FORT = 7								-- If execution mode is set to careful, units will not attack provinces with fort levels greater than or equal to this
 
 NDefines.NMilitary.BATALION_CHANGED_EXPERIENCE_DROP = 0.75							-- Division experience drop if unit has different batalion
 
@@ -1097,7 +1097,14 @@ NDefines.NAI.NAVAL_STRIKE_PLANES_PER_ARMY = 20										-- Amount of planes requ
 NDefines.NAI.NAVAL_SHIP_IN_PORT_AIR_IMPORTANCE = 20.0                             	-- Naval ship in the port air importance
 NDefines.NAI.PORT_STRIKE_PLANES_PER_SHIP = 20										-- Amount of bombers request per enemy ship in the port
 
+----------- Experiment, should stop the AI from having staring contests with forts, if AI starts suiciding maginot issue is here
+
+NDefines.NAI.FORT_LEVEL_TO_CONSIDER_HIGHLY_FORTIFIED = 9							-- Provinces above this level of fortification will be considered highly fortified by plan evaluation
 NDefines.NAI.FORTIFIED_RATIO_TO_CONSIDER_A_FRONT_FORTIFIED = 0.25 					-- ai will consider a front fortified if this ratio of provinces has fort
+--NDefines.NAI.HEAVILY_FORTIFIED_RATIO_TO_CONSIDER_A_FRONT_FORTIFIED = 0.8			-- ai will consider a front super fortified if this ratio of provinces has lots of forts
+--NDefines.NAI.FORTIFIED_MIN_ORG_FACTOR_TO_CONSIDER_A_FRONT_FORTIFIED = 0.05 		-- ai will treat fortified provinces as unfortified if no unit in that province has an organization factor at least this high
+
+----------- End
 
 NDefines.NAI.AGGRESSIVENESS_CHECK_PARTLY_FORTIFIED = 2.0							-- if front strength balance is at or above this value versus a party fortified enemy, we do a balanced attack
 NDefines.NAI.AGGRESSIVENESS_CHECK_PARTLY_FORTIFIED_WEAK_POINTS = 0.75				-- if front strength balance is at or above this value versus a party fortified enemy, we rush attack weak points; below this value, we are careful
@@ -1220,15 +1227,6 @@ NDefines.NAI.PLAN_ATTACK_MIN_STRENGTH_FACTOR_HIGH = 0.75
 
 NDefines.NAI.PLAN_AVG_PREPARATION_TO_EXECUTE = 0.5									-- % or more average plan preparation before executing
 NDefines.NAI.AI_FRONT_MOVEMENT_FACTOR_FOR_READY = 0.5			               		-- If less than this fraction of units on a front is moving  AI sees it as ready for action
-
------------ Experiment, should stop the AI from having staring contests with forts, if AI starts suiciding maginot issue is here
-
-NDefines.NAI.FORT_LEVEL_TO_CONSIDER_HIGHLY_FORTIFIED = 6							-- Provinces above this level of fortification will be considered highly fortified by plan evaluation
---NDefines.NAI.FORTIFIED_RATIO_TO_CONSIDER_A_FRONT_FORTIFIED = 1.0 					-- ai will consider a front fortified if this ratio of provinces has fort
---NDefines.NAI.HEAVILY_FORTIFIED_RATIO_TO_CONSIDER_A_FRONT_FORTIFIED = 1.0			-- ai will consider a front super fortified if this ratio of provinces has lots of forts
---NDefines.NAI.FORTIFIED_MIN_ORG_FACTOR_TO_CONSIDER_A_FRONT_FORTIFIED = 100 		-- ai will treat fortified provinces as unfortified if no unit in that province has an organization factor at least this high
-
------------ End
 
 NDefines.NAI.REVISITED_PROV_BOOST_FACTOR = 10                            			-- When the AI picks units for a front, it prioritises units already nearby.
 --NDefines.NAI.ORDER_ASSIGNMENT_DISTANCE_FACTOR = 10.0								-- When the AI assigns units to orders, it attempts to calculate the distance.
