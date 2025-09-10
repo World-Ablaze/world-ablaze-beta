@@ -1353,3 +1353,5 @@ NDefines.NRaids.RAID_LOW_RISK_SETTING_DISASTER_MODIFIER = 0.05							-- How much
 NDefines.NRaids.RAID_DEFAULT_TARGET_COOLDOWN_DAYS = 180									-- The default cooldown (in days) for raiding the same target, can be overriden for specific raid types through script
 NDefines.NRaids.RAID_OUTCOME_REPORT_DAYS_TO_LIVE = 60									-- How many days after a raid has ended will the raid outcome report be visible on the map before being automatically dismissed
 NDefines.NRaids.MAX_TARGETS_TO_UPDATE_PER_FRAME = 50									-- PERFORMANCE (FRAME) : max raid targets to evaluate per frame (affects raid map icon refresh rate)
+NDefines.NRaids.NUCLEAR_BOMB_PRODUCTION_SCALE = 124										-- +1 nuclear_production gives 1 atomic bomb per 121 days (4 reactors = 1 bomb per month)
+NDefines.NRaids.THERMONUCLEAR_BOMB_PRODUCTION_SCALE = 124								-- +1 nuclear_production gives 1 atomic bomb per 121 days (4 reactors = 1 bomb per month)
