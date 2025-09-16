@@ -6,6 +6,7 @@
 # sp_nuclear_generic_industry_tech_reward
 # sp_nuclear_minor_security_generic_reward
 # sp_nuclear_major_security_generic_reward
+# sp_nuclear_war_priorities_generic_reward
 
 # Reactor Projects
 # sp_nuclear_reactor_radioactive_leak_stabilized_reward
@@ -73,7 +74,7 @@ sp_nuclear_minor_progress_generic_reward = {
 		token = sp_nuclear_minor_progress_generic_reward_option
 
 		iteration_output = {
-			scientist_effects = {
+			scientist_effects = { # Scoped for the tooltip
 				custom_effect_tooltip = sp_nuclear_minor_progress_generic_reward_desc
 			}
 			country_effects = {
@@ -94,7 +95,7 @@ sp_nuclear_generic_electronics_tech_reward = {
 	weight = {
 		base = 1.0
 		modifier = {
-			factor = 0.5
+			factor = 0.75
 			FROM = {
 				NOT = {
 					has_idea = full_privatization
@@ -118,6 +119,7 @@ sp_nuclear_generic_electronics_tech_reward = {
 
 		iteration_output = {
 			country_effects = {
+				custom_effect_tooltip = sp_nuclear_generic_electronics_tech_reward_desc
 				random_list = {
 					#Low Bonus
 					20 = {
@@ -182,7 +184,7 @@ sp_nuclear_generic_industry_tech_reward = {
 	weight = {
 		base = 1.0
 		modifier = {
-			factor = 0.5
+			factor = 0.75
 			FROM = {
 				NOT = {
 					has_idea = full_privatization
@@ -202,9 +204,29 @@ sp_nuclear_generic_industry_tech_reward = {
 	}
 
 	option = {
-		token = sp_nuclear_generic_reward_option_industryr_tech
+		token = sp_nuclear_generic_reward_option_industry_tech
 
 		iteration_output = {
+			scientist_effects = {
+				custom_effect_tooltip = sp_nuclear_generic_industry_tech_reward_desc
+				if = {
+					limit = {
+						FROM = { has_project_flag = sp_nuclear_security_choice_reward_high }
+					}
+					add_scientist_xp = {
+						experience = constant:sp_scientist_xp.gain_high_security.low
+						specialization = specialization_nuclear
+					}
+					custom_effect_tooltip = sp_nuclear_security_high_tt
+				}
+				else = {
+					add_scientist_xp = {
+						experience = constant:sp_scientist_xp.gain.low
+						specialization = specialization_nuclear
+					}
+					custom_effect_tooltip = sp_nuclear_security_low_tt
+				}
+			}
 			country_effects = {
 				random_list = {
 					#Low Bonus
@@ -234,25 +256,6 @@ sp_nuclear_generic_industry_tech_reward = {
 							category = industry
 						}
 					}
-				}
-			}
-			scientist_effects = {
-				if = {
-					limit = {
-						FROM = { has_project_flag = sp_nuclear_security_choice_reward_high }
-					}
-					add_scientist_xp = {
-						experience = constant:sp_scientist_xp.gain_high_security.low
-						specialization = specialization_nuclear
-					}
-					custom_effect_tooltip = sp_nuclear_security_high_tt
-				}
-				else = {
-					add_scientist_xp = {
-						experience = constant:sp_scientist_xp.gain.low
-						specialization = specialization_nuclear
-					}
-					custom_effect_tooltip = sp_nuclear_security_low_tt
 				}
 			}
 		}
@@ -334,11 +337,51 @@ sp_nuclear_major_security_generic_reward = {
 		iteration_output = {
 			country_effects = {
 				add_political_power = -150
-				add_stability = -0.05
+				add_stability = -0.025
 				add_war_support = -0.025
 			}
 			scientist_effects = {
 				sp_nuclear_progress_medium = yes
+			}
+		}
+	}
+}
+
+sp_nuclear_war_priorities_generic_reward = {
+	fire_only_once = no
+
+	threshold = {
+		min = 5 # Needs to be able to lose progress
+		max = 100
+	}
+
+	weight = {
+		base = 0
+		modifier = {
+			add = 1
+			FROM = {
+				has_war = yes
+				NOT = { has_government = democratic }
+			}
+		}
+	}
+
+	option = {
+		token = sp_nuclear_war_priorities_generic_reward_option_agree
+
+		iteration_output = {
+			country_effects = {
+				FROM = { add_project_progress_ratio = constant:sp_progress.loss.low }
+			}
+		}
+	}
+
+	option = {
+		token = sp_nuclear_war_priorities_generic_reward_option_ignore
+
+		iteration_output = {
+			country_effects = {
+				add_political_power = -25
 			}
 		}
 	}
