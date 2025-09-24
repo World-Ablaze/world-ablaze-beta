@@ -160,6 +160,10 @@ sp_nuclear_generic_electronics_tech_reward = {
 					}
 					#High Bonus
 					10 = {
+						modifier = {
+							add = 20
+							NOT = { FROM = { has_project_flag = sp_nuclear_security_choice_reward_high } }
+						}
 						add_tech_bonus = {
 							name = sp_nuclear_generic_reward_option_electronics_tech_bonus_name
 							bonus = 0.15
@@ -438,7 +442,7 @@ sp_nuclear_reactor_radioactive_leak_stabilized_reward = {
 			facility_state_effects = {
 				damage_building = {
 					tags = facility
-					damage = 0.15
+					damage = 0.2
 					province = var:facility_province_id
 				}
 			}
@@ -481,7 +485,7 @@ sp_nuclear_reactor_minor_explosion_reward = {
 			facility_state_effects = {
 				damage_building = {
 					tags = facility
-					damage = 0.2
+					damage = 0.3
 					province = var:facility_province_id
 				}
 			}
@@ -525,7 +529,7 @@ sp_nuclear_reactor_graphite_purity_error_reward = {
 
 		iteration_output = {
 			country_effects = {
-				FROM = { add_project_progress_ratio = constant:sp_progress.loss.medium }
+				FROM = { add_project_progress_ratio = constant:sp_progress.loss.high }
 				custom_effect_tooltip = {
 					localization_key = SP_UNLOCK_BUILDING
 					BUILDING = nuclear_reactor_heavy_water
@@ -609,7 +613,7 @@ sp_nuclear_bomb_accident_generic_reward = {
 			facility_state_effects = {
 				damage_building = {
 					tags = facility
-					damage = 0.1
+					damage = 0.2
 					province = var:facility_province_id
 				}
 			}
@@ -658,6 +662,76 @@ sp_nuclear_bomb_critical_mass_generic_reward = {
 					damage = 0.3
 					province = var:facility_province_id
 				}
+			}
+		}
+	}
+}
+
+	# Lacking Radar tech
+sp_nuclear_bomb_lacking_radar_reward = {
+	fire_only_once = yes
+
+	threshold = {
+		min = 75 # Relies on fuze choice unique reward
+		max = 100
+	}
+
+	weight = {
+		base = 0
+		modifier = {
+			add = 1000
+			FROM = {
+				NOT = { has_tech = advanced_centimetric_radar }
+			}
+		}
+	}
+
+	option = {
+		token = sp_nuclear_bomb_fuze_choice_reward_barometer
+
+		iteration_output = {
+			country_effects = {
+				custom_effect_tooltip = sp_nuclear_bomb_trigger_choice_reward_radar_loss_tt
+				FROM = { add_project_progress_ratio = constant:sp_progress.loss.high }
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = SP_COST_RESOURCE
+						RESOURCE = chromium
+						AMOUNT = 10
+						ICON_FRAME = 6
+					}
+					add_to_variable = { sp_nuclear_bomb_country_resource_cost_chromium = 10 }
+					add_to_variable = { sp_nuclear_cost_country_resource_cost_chromium = 10 }
+				}
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = SP_COST_CIV
+						AMOUNT = 5
+					}
+					add_to_variable = { sp_nuclear_bomb_civilian_factory_use = 5 }
+					add_to_variable = { sp_nuclear_cost_civilian_factory_use = 5 }
+				}
+				custom_effect_tooltip = sp_nuclear_bomb_dud_tt
+			}
+		}
+	}
+
+	option = {
+		token = sp_nuclear_bomb_trigger_choice_reward_clock
+
+		iteration_output = {
+			country_effects = {
+				custom_effect_tooltip = sp_nuclear_bomb_trigger_choice_reward_radar_loss_tt
+				FROM = { add_project_progress_ratio = constant:sp_progress.loss.high }
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = SP_COST_CIV
+						AMOUNT = 10
+					}
+					add_to_variable = { sp_nuclear_bomb_civilian_factory_use = 10 }
+					add_to_variable = { sp_nuclear_cost_civilian_factory_use = 10 }
+				}
+				custom_effect_tooltip = sp_nuclear_bomb_dud_tt
 			}
 		}
 	}
