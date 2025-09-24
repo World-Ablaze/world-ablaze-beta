@@ -118,8 +118,27 @@ sp_nuclear_generic_electronics_tech_reward = {
 		token = sp_nuclear_generic_reward_option_electronics_tech
 
 		iteration_output = {
-			country_effects = {
+			scientist_effects = {
 				custom_effect_tooltip = sp_nuclear_generic_electronics_tech_reward_desc
+				if = {
+					limit = {
+						FROM = { has_project_flag = sp_nuclear_security_choice_reward_high }
+					}
+					add_scientist_xp = {
+						experience = constant:sp_scientist_xp.gain_high_security.low
+						specialization = specialization_nuclear
+					}
+					custom_effect_tooltip = sp_nuclear_security_high_tt
+				}
+				else = {
+					add_scientist_xp = {
+						experience = constant:sp_scientist_xp.gain.low
+						specialization = specialization_nuclear
+					}
+					custom_effect_tooltip = sp_nuclear_security_low_tt
+				}
+			}
+			country_effects = {
 				random_list = {
 					#Low Bonus
 					20 = {
@@ -148,25 +167,6 @@ sp_nuclear_generic_electronics_tech_reward = {
 							category = electronics
 						}
 					}
-				}
-			}
-			scientist_effects = {
-				if = {
-					limit = {
-						FROM = { has_project_flag = sp_nuclear_security_choice_reward_high }
-					}
-					add_scientist_xp = {
-						experience = constant:sp_scientist_xp.gain_high_security.low
-						specialization = specialization_nuclear
-					}
-					custom_effect_tooltip = sp_nuclear_security_high_tt
-				}
-				else = {
-					add_scientist_xp = {
-						experience = constant:sp_scientist_xp.gain.low
-						specialization = specialization_nuclear
-					}
-					custom_effect_tooltip = sp_nuclear_security_low_tt
 				}
 			}
 		}
@@ -282,6 +282,9 @@ sp_nuclear_minor_security_generic_reward = {
 		token = sp_nuclear_minor_security_generic_reward_option
 
 		iteration_output = {
+			scientist_effects = { # Scoped for the tooltip
+				custom_effect_tooltip = sp_nuclear_minor_security_generic_reward_desc
+			}
 			country_effects = {
 				add_political_power = -25
 				FROM = { add_project_progress_ratio = constant:sp_progress.loss.low }
@@ -358,10 +361,15 @@ sp_nuclear_war_priorities_generic_reward = {
 	weight = {
 		base = 0
 		modifier = {
-			add = 1
+			add = 0.5
+			FROM = {
+				NOT = { has_government = democratic }
+			}
+		}
+		modifier = {
+			add = 0.5
 			FROM = {
 				has_war = yes
-				NOT = { has_government = democratic }
 			}
 		}
 	}
@@ -381,7 +389,7 @@ sp_nuclear_war_priorities_generic_reward = {
 
 		iteration_output = {
 			country_effects = {
-				add_political_power = -25
+				add_political_power = -50
 			}
 		}
 	}
@@ -417,14 +425,15 @@ sp_nuclear_reactor_radioactive_leak_stabilized_reward = {
 		token = sp_nuclear_reactor_radioactive_leak_stabilized_reward_option
 
 		iteration_output = {
-			country_effects = {
-				FROM = { add_project_progress_ratio = constant:sp_progress.loss.low }
-			}
 			scientist_effects = {
+				custom_effect_tooltip = sp_nuclear_reactor_radioactive_leak_stabilized_reward
 				add_scientist_xp = {
 					experience = constant:sp_scientist_xp.gain.medium
 					specialization = specialization_nuclear
 				}
+			}
+			country_effects = {
+				FROM = { add_project_progress_ratio = constant:sp_progress.loss.low }
 			}
 			facility_state_effects = {
 				damage_building = {
