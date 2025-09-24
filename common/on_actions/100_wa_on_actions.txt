@@ -1045,6 +1045,14 @@ on_actions = {
 		effect = {
 			if = {
 				limit = {
+					tag = YUG
+				}
+				set_country_flag = YUG_war_since_start
+			}
+		}
+		effect = {
+			if = {
+				limit = {
 					tag = FIN
 				}
 				set_country_flag = FIN_war_since_start
@@ -1365,14 +1373,39 @@ on_actions = {
 				limit = {
 					ROOT = {
 						tag = ITA
-						is_in_faction_with = GER
+                        OR = {
+						    is_in_faction_with = GER
+                            AND = {
+                                is_ai = no
+                                any_other_country = {
+                                    is_ai = no
+                                }
+                            }
+                        }
 					}
 					FROM = {
 						tag = GRE
 					}
 				}
 				FROM = {
-					activate_decision = GRE_italian_war_mission_GRE
+					activate_decision = GRE_italian_war_mission_gre
+                    if = {
+                        limit = {
+                            is_ai = yes
+                            OR = {
+                                NOT = {
+                                    has_completed_focus = GRE_british_gurantees
+                                }
+                                NOT = {
+                                    has_country_flag = GRE_british_gurantees_flag
+                                }
+                            }
+                        }
+                        hidden_effect = {
+                            complete_national_focus = GRE_british_gurantees
+                            set_country_flag = GRE_british_gurantees_flag
+                        }
+                    }
 				}
 				ROOT = {
 					activate_decision = GRE_italian_war_mission_ita
@@ -3218,6 +3251,27 @@ on_actions = {
 				}
 			}
 		}
+		effect = {
+			if = {
+				limit = {
+					FROM.FROM = {
+						has_state_flag = GER_atlantik_wall_state_flag
+					}
+					ROOT = { has_war_with = GER }
+				}
+				FROM.FROM = {
+					remove_province_modifier = {
+						static_modifiers = {
+							GER_atlantik_wall
+						}
+						province = {
+							all_provinces = yes
+						}
+					}
+					clr_state_flag = GER_atlantik_wall_state_flag
+				}
+			}
+		}
 	}
 
 	on_government_exiled = {
@@ -3290,17 +3344,9 @@ on_actions = {
 	on_weekly_SOV = {
 		effect = {
 			if = {
-				limit = { has_variable = greatest_airforce_tac }
+				limit = { has_active_mission = SOV_the_greatest_airforce }
 
-				set_variable = { sov_cur_tac = num_deployed_planes_with_type@medium_heavy_bomber_airframe }
-				set_variable = { greatest_airforce_tac = sov_cur_tac }
-
-				set_variable = { sov_cur_str = num_deployed_planes_with_type@medium_bomber_airframe }
-				add_to_variable = { greatest_airforce_tac = sov_cur_str }
-
-				set_variable = { greatest_airforce_fighters = num_deployed_planes_with_type@small_fighter_airframe }
-				add_to_variable = { greatest_airforce_fighters = num_deployed_planes_with_type@small_fighter_multirole_airframe }
-				add_to_variable = { greatest_airforce_fighters = num_deployed_planes_with_type@small_fighter_interceptor_airframe }
+				SOV_CALC_airforce_effect = yes
 			}
 		}
 	}
@@ -3343,21 +3389,7 @@ on_actions = {
 						NOT = { has_completed_focus = FRA_arsenal_de_laeronautique}
 					}
 				}
-
-				set_variable = { french_figthers = num_deployed_planes_with_type@small_fighter_airframe}
-				add_to_variable = {french_figthers = num_deployed_planes_with_type@small_fighter_multirole_airframe }
-
-				set_variable = {french_bombers = num_deployed_planes_with_type@medium_heavy_bomber_airframe}
-				add_to_variable = { french_bombers = num_deployed_planes_with_type@large_bomber_airframe}
-
-				set_variable = { fra_cur_atac = num_deployed_planes_with_type@medium_fighter_multirole_airframe }
-				set_variable = { french_attackers = fra_cur_atac }
-
-				set_variable = { french_heavy_plane = num_deployed_planes_with_type@medium_fighter_airframe }
-				add_to_variable = { french_heavy_plane = fra_cur_atac }
-
-				set_variable = { fra_cur_cas = num_deployed_planes_with_type@small_bomber_airframe }
-				add_to_variable = { french_attackers = fra_cur_cas }
+				FRA_CALC_airforce_effect = yes
 			}
 		}
 		effect = {
@@ -3365,9 +3397,7 @@ on_actions = {
 				limit = {
 					has_active_mission = FRA_modernize_navy_mission
 				}
-
-				set_variable = { fra_sub_var = num_ships_with_type@submarine }
-				add_to_variable = {fra_sub_varnch_figthers = num_ships_with_type@cruiser_submarine }
+				FRA_CALC_navy_effect = yes
 			}
 		}
 		effect = {
@@ -3707,16 +3737,9 @@ on_actions = {
 	on_weekly_GER = {
 		effect = {
 			if = {
-				limit = { has_variable = creation_of_the_panzer_core_tanks }
+				limit = { has_active_mission = GER_creation_of_the_panzer_core }
 
-				set_variable = { ger_cur_lt = num_equipment_in_armies@light_tank_chassis }
-				set_variable = { creation_of_the_panzer_core_tanks = ger_cur_lt }
-
-				set_variable = { ger_cur_mt = num_equipment_in_armies@medium_tank_chassis }
-				add_to_variable = { creation_of_the_panzer_core_tanks = ger_cur_mt }
-
-				set_variable = { ger_cur_ist = num_equipment_in_armies@medium_tank_infantry_support_chassis }
-				add_to_variable = { creation_of_the_panzer_core_tanks = ger_cur_ist }
+				GER_CALC_panzer_effect = yes
 			}
 			if = {
 				limit = {
@@ -3833,101 +3856,46 @@ on_actions = {
 	on_weekly_ENG = {
 		effect = {
 			if = {
-				limit = { has_variable = creation_of_the_armoured_corps_tanks }
+				limit = { has_active_mission = ENG_creation_of_the_armoured_core }
 
-				set_variable = { eng_cur_ht = num_equipment_in_armies@heavy_tank_chassis }
-				set_variable = { creation_of_the_armoured_corps_tanks = eng_cur_ht }
-
-				set_variable = { eng_cur_mt = num_equipment_in_armies@medium_tank_chassis }
-				add_to_variable = { creation_of_the_armoured_corps_tanks = eng_cur_mt }
-
-				set_variable = { eng_cur_st = num_equipment_in_armies@medium_tank_support_chassis }
-				add_to_variable = { creation_of_the_armoured_corps_tanks = eng_cur_st }
-
-				set_variable = { eng_cur_lt = num_equipment_in_armies@light_tank_chassis }
-				add_to_variable = { creation_of_the_armoured_corps_tanks = eng_cur_lt }
-
-				set_variable = { eng_cur_mist = num_equipment_in_armies@medium_tank_infantry_support_chassis }
-				add_to_variable = { creation_of_the_armoured_corps_tanks = eng_cur_mist }
-
-				set_variable = { eng_cur_hist = num_equipment_in_armies@heavy_tank_infantry_support_chassis }
-				add_to_variable = { creation_of_the_armoured_corps_tanks = eng_cur_hist }
+				ENG_CALC_army_effect = yes
 			}
 		}
 		effect = {
 			if = {
 				limit = { has_active_mission = ENG_modernization_of_the_royal_airforce }
 
-				set_variable = { eng_mod_tac = num_deployed_planes_with_type@medium_heavy_bomber_airframe }
-				set_variable = { ENG_modernization_of_the_royal_airforce_bombers = eng_mod_tac }
-
-				set_variable = { eng_mod_str = num_deployed_planes_with_type@medium_bomber_airframe }
-				add_to_variable = { ENG_modernization_of_the_royal_airforce_bombers = eng_mod_str }
-
-				set_variable = { eng_mod_pat = num_deployed_planes_with_type@large_maritime_patrol_airframe }
-				add_to_variable = { ENG_modernization_of_the_royal_airforce_bombers = eng_mod_pat }
-
-				set_variable = { ENG_modernization_of_the_royal_airforce_fighters = num_deployed_planes_with_type@small_fighter_airframe }
-				add_to_variable = { ENG_modernization_of_the_royal_airforce_fighters = num_deployed_planes_with_type@small_fighter_multirole_airframe }
-				add_to_variable = { ENG_modernization_of_the_royal_airforce_fighters = num_deployed_planes_with_type@small_fighter_interceptor_airframe }
-				add_to_variable = { ENG_modernization_of_the_royal_airforce_fighters = num_deployed_planes_with_type@cv_small_fighter_airframe }
+				ENG_CALC_airforce_effect = yes
 			}
 		}
 		effect = {
 			if = {
 				limit = { has_active_mission = ENG_rejuvenate_the_royal_navy }
 
-				set_variable = { ENG_royal_navy_carriers = num_ships_with_type@carrier }
-				subtract_from_variable = { ENG_royal_navy_carriers = num_ships_with_type@light_carrier }
-
-				set_variable = { ENG_royal_navy_submarines = num_ships_with_type@submarine }
-				subtract_from_variable = { ENG_royal_navy_submarines = num_ships_with_type@cruiser_submarine }
+				ENG_CALC_navy_effect = yes
 			}
 		}
 	}
 	on_weekly_ITA = {
 		effect = {
 			if = {
-				limit = { has_variable = modernization_of_the_Regio_esercito_tanks }
+				limit = { has_active_mission = ITA_modernization_of_the_regio_esercito }
 
-				set_variable = { ita_cur_lt = num_equipment_in_armies@light_tank_chassis }
-				set_variable = { modernization_of_the_Regio_esercito_tanks = ita_cur_lt }
-
-				set_variable = { ita_cur_mt = num_equipment_in_armies@medium_tank_chassis }
-				add_to_variable = { modernization_of_the_Regio_esercito_tanks = ita_cur_mt }
+				ITA_CALC_army_effect = yes
 			}
 		}
 		effect = {
 			if = {
-				limit = { has_variable = ITA_modernization_of_the_regio_aeronautica_fighters }
+				limit = { has_active_mission = ITA_modernization_of_the_regio_aeronautica }
 
-				set_variable = { ita_cur_fit = num_deployed_planes_with_type@small_fighter_airframe }
-				set_variable = { ITA_modernization_of_the_regio_aeronautica_fighters = ita_cur_fit }
-
-				set_variable = { ita_cur_int = num_deployed_planes_with_type@small_fighter_interceptor_airframe }
-				add_to_variable = { ITA_modernization_of_the_regio_aeronautica_fighters = ita_cur_int }
-
-				set_variable = { ita_cur_fim = num_deployed_planes_with_type@small_fighter_multirole_airframe }
-				add_to_variable = { ITA_modernization_of_the_regio_aeronautica_fighters = ita_cur_fim }
+				ITA_CALC_airforce_effect = yes
 			}
 		}
 		effect = {
 			if = {
-				limit = { has_variable = ITA_modernization_of_the_regio_aeronautica_bombers }
+				limit = { has_active_mission = ITA_modernization_of_the_regio_marina }
 
-				set_variable = { ita_cur_tac = num_deployed_planes_with_type@medium_heavy_bomber_airframe }
-				set_variable = { ITA_modernization_of_the_regio_aeronautica_bombers = ita_cur_tac }
-
-				set_variable = { ita_cur_str = num_deployed_planes_with_type@medium_bomber_airframe }
-				add_to_variable = { ITA_modernization_of_the_regio_aeronautica_bombers = ita_cur_str }
-			}
-		}
-		effect = {
-			if = {
-				limit = { has_variable = ITA_modernization_of_the_regio_marina }
-
-				set_variable = { ITA_modernization_of_the_regio_marina = num_ships_with_type@submarine }
-				subtract_from_variable = { ITA_modernization_of_the_regio_marina = num_ships_with_type@cruiser_submarine }
+				ITA_CALC_navy_effect = yes
 			}
 		}
 		effect = {
@@ -3965,8 +3933,8 @@ on_actions = {
 						has_idea = USA_FY40_plan
 					}
 				}
-				set_variable = { usa_plan_cv = num_ships_with_type@carrier }
-				subtract_from_variable = { usa_plan_cv = num_ships_with_type@light_carrier }
+
+				USA_CALC_fyboth_plan = yes
 			}
 		}
 		effect = {
@@ -3974,68 +3942,8 @@ on_actions = {
 				limit = {
 					has_idea = USA_FY42_plan
 				}
-				set_variable = {
-					new_total_light_ships = num_ships_with_type@destroyer
-				}
-				add_to_variable = {
-					new_total_light_ships = num_ships_with_type@frigate
-				}
-				set_variable = {
-					total_light_ships = new_total_light_ships
-				}
-				if = {
-					limit = {
-						has_navy_size = {
-							size > fy_cv
-							archetype = ship_hull_carrier
-						}
-					}
-					set_country_flag = fy44_cv_done
-				}
-				if = {
-					limit = {
-						has_navy_size = {
-							size > fy_cvl
-							archetype = ship_hull_light_carrier
-						}
-					}
-					set_country_flag = fy44_cvl_done
-				}
-				if = {
-					limit = {
-						has_navy_size = {
-							size > fy_ca
-							archetype = ship_hull_heavy_cruiser
-						}
-					}
-					set_country_flag = fy44_ca_done
-				}
-				if = {
-					limit = {
-						has_navy_size = {
-							size > fy_cl
-							archetype = ship_hull_cruiser
-						}
-					}
-					set_country_flag = fy44_cl_done
-				}
-				if = {
-					limit = {
-						check_variable = {
-							total_light_ships > required_light_ships
-						}
-					}
-					set_country_flag = fy44_light_done
-				}
-				if = {
-					limit = {
-						has_navy_size = {
-							size > fy_sc
-							archetype = sub_hull_cruiser_submarine
-						}
-					}
-					set_country_flag = fy44_sc_done
-				}
+
+				USA_CALC_fy42_plan = yes
 			}
 		}
 		effect = {
@@ -4043,60 +3951,7 @@ on_actions = {
 				limit = {
 					has_idea = USA_FY40_plan
 				}
-				if = {
-					limit = {
-						has_navy_size = {
-							size > fy_cv
-							archetype = ship_hull_carrier
-						}
-					}
-					set_country_flag = fy40_cv_done
-				}
-				if = {
-					limit = {
-						has_navy_size = {
-							size > fy_bb
-							archetype = ship_hull_heavy_battleship
-						}
-					}
-					set_country_flag = fy40_bb_done
-				}
-				if = {
-					limit = {
-						has_navy_size = {
-							size > fy_ca
-							archetype = ship_hull_heavy_cruiser
-						}
-					}
-					set_country_flag = fy40_ca_done
-				}
-				if = {
-					limit = {
-						has_navy_size = {
-							size > fy_cl
-							archetype = ship_hull_cruiser
-						}
-					}
-					set_country_flag = fy40_cl_done
-				}
-				if = {
-					limit = {
-						has_navy_size = {
-							size > fy_dd
-							archetype = ship_hull_light
-						}
-					}
-					set_country_flag = fy40_dd_done
-				}
-				if = {
-					limit = {
-						has_navy_size = {
-							size > fy_sc
-							archetype = sub_hull_cruiser_submarine
-						}
-					}
-					set_country_flag = fy40_sc_done
-				}
+				USA_CALC_fy40_plan = yes
 			}
 		}
 	#	effect = {
