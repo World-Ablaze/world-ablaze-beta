@@ -11,11 +11,14 @@
 # Reactor Projects
 # sp_nuclear_reactor_radioactive_leak_stabilized_reward
 # sp_nuclear_reactor_minor_explosion_reward
+# sp_nuclear_reactor_graphite_purity_error_reward
+# sp_nuclear_reactor_dupont_reward
 
 # Bomb Projects
-# sp_nuclear_bomb_theoretical_breakthrough_generic_reward
-# sp_nuclear_bomb_critical_mass_generic_reward
 # sp_nuclear_bomb_accident_generic_reward
+# sp_nuclear_bomb_critical_mass_generic_reward
+# sp_nuclear_bomb_lacking_radar_reward
+# sp_nuclear_bomb_wrong_trigger_reward
 
 # General
 sp_nuclear_scientist_xp_generic_reward = {
@@ -253,6 +256,10 @@ sp_nuclear_generic_industry_tech_reward = {
 					}
 					#High Bonus
 					10 = {
+						modifier = {
+							add = 20
+							NOT = { FROM = { has_project_flag = sp_nuclear_security_choice_reward_high } }
+						}
 						add_tech_bonus = {
 							name = sp_nuclear_generic_reward_option_industry_tech_name
 							bonus = 0.15
@@ -316,6 +323,10 @@ sp_nuclear_major_security_generic_reward = {
 	option = {
 		token = sp_nuclear_minor_security_generic_reward_option_fire
 
+		ai_will_do = {
+			base = 1
+		}
+
 		iteration_output = {
 			country_effects = {
 				FROM = { add_project_progress_ratio = constant:sp_progress.loss.medium }
@@ -340,6 +351,10 @@ sp_nuclear_major_security_generic_reward = {
 
 	option = {
 		token = sp_nuclear_minor_security_generic_reward_option_keep
+
+		ai_will_do = {
+			base = 0
+		}
 
 		iteration_output = {
 			country_effects = {
@@ -381,6 +396,17 @@ sp_nuclear_war_priorities_generic_reward = {
 	option = {
 		token = sp_nuclear_war_priorities_generic_reward_option_agree
 
+		ai_will_do = {
+			base = 0
+
+			modifier = {
+				add = 1
+				FROM = {
+					NOT = { has_government = democratic }
+				}
+			}
+		}
+
 		iteration_output = {
 			country_effects = {
 				FROM = { add_project_progress_ratio = constant:sp_progress.loss.low }
@@ -390,6 +416,17 @@ sp_nuclear_war_priorities_generic_reward = {
 
 	option = {
 		token = sp_nuclear_war_priorities_generic_reward_option_ignore
+
+		ai_will_do = {
+			base = 0
+
+			modifier = {
+				add = 1
+				FROM = {
+					has_government = democratic
+				}
+			}
+		}
 
 		iteration_output = {
 			country_effects = {
@@ -691,6 +728,7 @@ sp_nuclear_bomb_lacking_radar_reward = {
 
 		iteration_output = {
 			country_effects = {
+				custom_effect_tooltip = sp_nuclear_bomb_lacking_radar_reward_desc
 				custom_effect_tooltip = sp_nuclear_bomb_trigger_choice_reward_radar_loss_tt
 				FROM = { add_project_progress_ratio = constant:sp_progress.loss.high }
 				custom_override_tooltip = {
@@ -721,6 +759,7 @@ sp_nuclear_bomb_lacking_radar_reward = {
 
 		iteration_output = {
 			country_effects = {
+				custom_effect_tooltip = sp_nuclear_bomb_lacking_radar_reward_desc
 				custom_effect_tooltip = sp_nuclear_bomb_trigger_choice_reward_radar_loss_tt
 				FROM = { add_project_progress_ratio = constant:sp_progress.loss.high }
 				custom_override_tooltip = {
@@ -737,113 +776,72 @@ sp_nuclear_bomb_lacking_radar_reward = {
 	}
 }
 
+	# Wrong trigger chosen for material
+sp_nuclear_bomb_wrong_trigger_reward = {
+	fire_only_once = yes
 
+	threshold = {
+		min = 30 # Relies on fuze choice unique reward
+		max = 45
+	}
 
-# sp_nuclear_war_support_generic_reward = {
-# 	fire_only_once = yes
+	weight = {
+		base = 0
+		modifier = {
+			add = 1000
+			FROM = {
+				OR = {
+					AND = {
+						has_country_flag = sp_nuclear_bomb_trigger_gun
+						has_country_flag = sp_nuclear_reactor_choice_reward_plutonium
+					}
+					AND = {
+						has_country_flag = sp_nuclear_bomb_trigger_implosion
+						has_country_flag = sp_nuclear_reactor_choice_reward_uranium
+					}
+				}
+			}
+		}
+	}
 
-# 	threshold = {
-# 		min = 50
-# 		max = 100
-# 	}
+	option = {
+		token = sp_nuclear_bomb_wrong_trigger_reward_option
 
-# 	weight = {
-# 		base = 1.0
-# 		modifier = {
-# 			factor = 0
-# 			FROM = { has_project_flag = sp_nuclear_security_choice_reward_high }
-# 		}
-# 	}
-
-# 	option = {
-# 		token = sp_nuclear_war_support_generic_reward_option
-
-# 		iteration_output = {
-# 			country_effects = {
-# 				add_war_support = 0.02
-# 			}
-# 		}
-# 	}
-# }
-
-# sp_nuclear_major_political_interference_generic_reward = {
-# 	fire_only_once = yes
-
-# 	threshold = {
-# 		min = 15
-# 		max = 85
-# 	}
-
-# 	weight = {
-# 		base = 1
-# 		modifier = {
-# 			factor = 0.25
-# 			FROM = {
-# 				NOT = { has_government = fascism }
-# 			}
-# 		}
-# 	}
-
-# 	option = {
-# 		token = sp_nuclear_major_political_interference_generic_reward_option_keep
-
-# 		iteration_output = {
-# 			country_effects = {
-# 				add_political_power = -50
-# 				FROM = { add_project_progress_ratio = constant:sp_progress.loss.medium	 }
-
-# 			}
-# 			scientist_effects = {
-# 				add_scientist_xp = {
-# 					experience = constant:sp_scientist_xp.gain.medium
-# 					specialization = specialization_nuclear
-# 				}
-# 			}
-# 		}
-# 	}
-
-# 	option = {
-# 		token = sp_nuclear_major_political_interference_generic_reward_option_fire
-
-# 		iteration_output = {
-# 			country_effects = {
-# 				add_political_power = 50
-# 				FROM = { add_project_progress_ratio = constant:sp_progress.loss.low	 }
-
-# 			}
-# 			scientist_effects = {
-# 				remove_scientist_role = yes
-# 			}
-# 		}
-# 	}
-# }
-
-# sp_nuclear_bomb_theoretical_breakthrough_generic_reward = {
-# 	fire_only_once = yes
-
-# 	threshold = {
-# 		min = 15
-# 		max = 75
-# 	}
-
-# 	weight = {
-# 		base = 1.0
-# 	}
-
-# 	option = {
-# 		token = sp_nuclear_bomb_theoretical_breakthrough_generic_reward_option
-
-
-# 		iteration_output = {
-# 			country_effects = {
-# 				FROM = { add_project_progress_ratio = constant:sp_progress.gain.medium }
-# 			}
-# 			scientist_effects = {
-# 				add_scientist_xp = {
-# 					experience = constant:sp_scientist_xp.gain.medium
-# 					specialization = specialization_nuclear
-# 				}
-# 			}
-# 		}
-# 	}
-# }
+		iteration_output = {
+			country_effects = {
+				if = {
+					limit = {
+						has_country_flag = sp_nuclear_bomb_trigger_implosion
+						has_country_flag = sp_nuclear_reactor_choice_reward_uranium
+					}
+					custom_effect_tooltip = sp_nuclear_bomb_wrong_trigger_reward_option_uranium_tt
+					FROM = { add_project_progress_ratio = constant:sp_progress.loss.medium }
+					custom_override_tooltip = {
+						tooltip = {
+							localization_key = SP_COST_CIV
+							AMOUNT = 5
+						}
+						add_to_variable = { sp_nuclear_bomb_civilian_factory_use = 5 }
+						add_to_variable = { sp_nuclear_cost_civilian_factory_use = 5 }
+					}
+				}
+				else_if = {
+					limit = {
+						has_country_flag = sp_nuclear_bomb_trigger_gun
+						has_country_flag = sp_nuclear_reactor_choice_reward_plutonium
+					}
+					custom_effect_tooltip = sp_nuclear_bomb_wrong_trigger_reward_option_plutonium_tt
+					FROM = { add_project_progress_ratio = constant:sp_progress.loss.medium }
+					custom_override_tooltip = {
+						tooltip = {
+							localization_key = SP_COST_CIV
+							AMOUNT = 10
+						}
+						add_to_variable = { sp_nuclear_bomb_civilian_factory_use = 10 }
+						add_to_variable = { sp_nuclear_cost_civilian_factory_use = 10 }
+					}
+				}
+			}
+		}
+	}
+}
