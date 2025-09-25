@@ -10,6 +10,51 @@ sp_nuclear_reactor = {
 	}
 	available = {
 		FROM = { has_tech = atomic_research }
+
+		# Temporary solution for ai_will_do crash. Remove with release of next update
+		FROM = {
+			if = {
+				limit = {
+					is_ai = yes
+				}
+				if = {
+					limit = {
+						tag = USA
+					}
+					is_historical_focus_on = yes
+					OR = {
+						has_war = yes
+						date > 1942.1.1
+					}
+				}
+				else_if = {
+					limit = {
+						tag = SOV
+					}
+					is_historical_focus_on = yes
+					OR = {
+						AND = {
+							date > 1944.1.1 # Incase war ends early
+							has_war = no
+						}
+						date > 1945.8.15
+					}
+				}
+				else_if = {
+					limit = {
+						tag = ENG
+					}
+					is_historical_focus_on = yes
+					OR = {
+						AND = {
+							date > 1944.1.1 # Incase war ends early
+							has_war = no
+						}
+						date > 1946.1.1 # TODO US Atomic Energy Act of 1946
+					}
+				}
+			}
+		}
 	}
 
 	ai_will_do = {
@@ -19,9 +64,13 @@ sp_nuclear_reactor = {
 			add = 1
 			is_historical_focus_on = no
 			ROOT = {
-				is_major = yes
-				has_tech = atomic_research
-				nuclear_facility > 0
+				OR = {
+					is_major = yes
+					AND = { # To avoid pdx bug
+						has_tech = atomic_research
+						nuclear_facility > 0
+					}
+				}
 			}
 		}
 
@@ -30,8 +79,6 @@ sp_nuclear_reactor = {
 			is_historical_focus_on = yes
 			ROOT = {
 				tag = GER
-				has_tech = atomic_research
-				nuclear_facility > 0
 			}
 		}
 
@@ -44,8 +91,6 @@ sp_nuclear_reactor = {
 					has_war = yes
 					date > 1942.1.1
 				}
-				has_tech = atomic_research
-				nuclear_facility > 0
 			}
 		}
 
@@ -61,8 +106,6 @@ sp_nuclear_reactor = {
 					}
 					date > 1945.8.15
 				}
-				has_tech = atomic_research
-				nuclear_facility > 0
 			}
 		}
 
@@ -78,8 +121,6 @@ sp_nuclear_reactor = {
 					}
 					date > 1946.1.1 # TODO US Atomic Energy Act of 1946
 				}
-				has_tech = atomic_research
-				nuclear_facility > 0
 			}
 		}
 	}
@@ -1057,28 +1098,7 @@ sp_nuclear_bomb = {
 	}
 
 	ai_will_do = {
-		base = 0
-
-		modifier = {
-			add = 1
-			is_historical_focus_on = no
-			ROOT = {
-				is_major = yes
-			}
-		}
-
-		modifier = {
-			add = 1
-			is_historical_focus_on = yes
-			ROOT = {
-				OR = {
-					tag = GER
-					tag = USA
-					tag = SOV
-					tag = ENG
-				}
-			}
-		}
+		base = 1
 	}
 
 	breakthrough_cost = {
