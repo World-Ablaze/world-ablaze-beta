@@ -21,6 +21,7 @@ phases = { # phase = no is the standard phase, default phase = positional phase
 
 tactic_preliminary_bombardment = { # who knew you needed artillery to bombard an area?
 	is_attacker = yes
+	countered_by = tactic_counter_barrage
 	trigger = {
 		is_attacker = yes
 		has_unit_type = artillery
@@ -110,6 +111,7 @@ tactic_recon_in_force = { # Recon in force -> Infiltration tactics
 tactic_urban_bombardment = { # when attacking vp that is > 5 points, or urban terrain
 
 	is_attacker = yes
+	countered_by = tactic_urban_concealment
 	trigger = {
 		is_attacker = yes
 		is_fighting_in_terrain = urban
@@ -269,32 +271,55 @@ tactic_embankment_bombardment = { # only triggers during river crossing
 	picture = attack
 
 	attacker = 0.10
+	defender = -0.10
 	attacker_movement_speed = -1
 	attacker_org_damage_modifier = -0.5
 	defender_org_damage_modifier = -0.8
 }
 
-# tactic_hindered_attack = { # only triggers during bad weather
+tactic_hindered_attack = { # only triggers during bad weather
 
-# 	is_attacker = yes
-# 	trigger = {
-# 		is_attacker = yes
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+	is_fighting_in_weather = {
+		 rain_heavy snow blizzard blizzard mud
+	}
+		phase = no
+	}
 
-# 		phase = no
-# 	}
+	active = yes
 
-# 	active = yes
+	base = { factor = 6
+		modifier = {
+			add = -2
+			has_trait = adaptable
 
-# 	base = { factor = 4 }
-# 	picture = attack
+		}
+		modifier = {
+			add = -2
+			skill > 2
+			skill_advantage > 1
 
-# 	attacker = 0.05
-# }
+		}
+			modifier = {
+			add = -2
+			recon_advantage > 1
+		}
+		}
+	}
+
+	picture = attack
+	attacker = -0.10
+	attacker_movement_speed = -0.75
+	attacker_org_damage_modifier = -0.5
+	defender_org_damage_modifier = -0.5}
 
 # defending #
 
 tactic_counter_barrage = {
 	is_attacker = no
+	countered_by = tactic_recon_in_force
 	trigger = {
 		is_attacker = no
 		phase = no
@@ -302,16 +327,43 @@ tactic_counter_barrage = {
 
 	active = yes
 
-	base = { factor = 4 }
+		base = {
+		factor = 4
+		modifier = {
+			add = 2
+			has_trait = artillery_officer
+		}
+		modifier = {
+			add = 2
+			has_trait = old_guard
+		}
+		modifier = {
+			add = 2
+			has_trait = fortress_buster
+		}
+		modifier = {
+			add = 2
+			has_trait = artillery_expert
+		}
+			modifier = {
+			add = 2
+			has_artillery_ratio > 0.25
+
+		}
+	}
 	picture = defend
 
-	defender = 0.05
-}
+	attacker = 0.05
+	defender = 0.10
+	attacker_movement_speed = -0.75
+	attacker_org_damage_modifier = -0.4
+	defender_org_damage_modifier = -0.2}
 
 tactic_urban_concealment = {
 	is_attacker = no
 	trigger = {
 		is_attacker = no
+		is_fighting_in_terrain = urban
 		phase = no
 	}
 
@@ -319,12 +371,15 @@ tactic_urban_concealment = {
 
 	base = { factor = 4 }
 	picture = defend
-
-	defender = 0.05
+	defender = 0.1
+	attacker_movement_speed = 0.50
+	attacker_org_damage_modifier = -0.5
+	defender_org_damage_modifier = -0.5
 }
 
 tactic_defensive_posture = {
 	is_attacker = no
+	countered_by = tactic_frontal_assault
 	trigger = {
 		is_attacker = no
 		phase = no
@@ -335,22 +390,85 @@ tactic_defensive_posture = {
 	base = { factor = 4 }
 	picture = defend
 
-	defender = 0.05
+	defender = 0.1
 }
 tactic_dug_in = {
 	is_attacker = no
 	trigger = {
 		is_attacker = no
+		dig_in > 0.14
 		phase = no
 	}
 
 	active = yes
 
-	base = { factor = 4 }
-	picture = defend
+		base = {
+		factor = 6
+		modifier = {
+			add = 2
+			dig_in > 0.19
+	}
+		modifier = {
+			add = 2
+			dig_in > 0.29
+	}
+		modifier = {
+			add = 2
+			has_trait = engineer_officer
+		}
+		modifier = {
+			add = 2
+			has_trait = old_guard
+		}
+			modifier = {
+			add = 2
+			has_trait = trait_engineer
 
-	defender = 0.05
+		}
+			modifier = {
+			add = 2
+			has_trait = inflexible_strategist
+
+		}
+	}	picture = defend
+
+	defender = 0.15
+	attacker_movement_speed = -0.75
+	attacker_org_damage_modifier = -0.8
+	defender_org_damage_modifier = -0.8
 }
+
+tactic_hampered_defense = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		is_fighting_in_weather = {
+		 rain_heavy snow blizzard blizzard mud
+	}
+		phase = no
+	}
+
+	active = yes
+
+	base = { factor = 6
+		modifier = {
+			add = -2
+			has_trait = adaptable
+
+		}
+		modifier = {
+			add = -2
+			skill > 2
+			skill_advantage > 1
+
+		}
+			modifier = {
+			add = -2
+			recon_advantage > 1
+		}
+		}
+			defender = 0.05
+	}
 
 
 
