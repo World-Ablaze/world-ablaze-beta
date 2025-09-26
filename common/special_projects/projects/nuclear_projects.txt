@@ -137,30 +137,7 @@ sp_nuclear_reactor = {
 
 	project_output = {
 		country_effects = {
-			custom_override_tooltip = {
-				tooltip = {
-					localization_key = SP_UNLOCK_BUILDING_ICON_DESC
-					BUILDING = nuclear_reactor
-					BUILDING_DESCRIPTION = nuclear_reactor_desc
-					ICON_FRAME = 13
-				}
-				if = {
-					limit = {
-						has_country_flag = nuclear_reactor_heavy_water_flag
-					}
-					set_technology = {
-						nuclear_reactor_heavy_water = 1
-						popup = no
-					}
-				}
-				else = {
-					set_technology = {
-						nuclear_reactor = 1
-						popup = no
-					}
-				}
-			}
-			# Reset this project's costs
+			# Reset this project's costs no matter what
 			subtract_from_variable = { sp_nuclear_cost_country_resource_cost_oil = sp_nuclear_reactor_country_resource_cost_oil }
 			clear_variable = sp_nuclear_reactor_country_resource_cost_oil
 			subtract_from_variable = { sp_nuclear_cost_country_resource_cost_aluminium = sp_nuclear_reactor_country_resource_cost_aluminium }
@@ -179,144 +156,196 @@ sp_nuclear_reactor = {
 			clear_variable = sp_nuclear_reactor_political_power_cost
 			subtract_from_variable = { sp_nuclear_cost_civilian_factory_use = sp_nuclear_reactor_civilian_factory_use }
 			clear_variable = sp_nuclear_reactor_civilian_factory_use
+			# Normal effects
+			if = {
+				limit = {
+					NOT = { has_country_flag = sp_nuclear_reactor_cancel }
+				}
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = SP_UNLOCK_BUILDING_ICON_DESC
+						BUILDING = nuclear_reactor
+						BUILDING_DESCRIPTION = nuclear_reactor_desc
+						ICON_FRAME = 13
+					}
+					if = {
+						limit = {
+							has_country_flag = nuclear_reactor_heavy_water_flag
+						}
+						set_technology = {
+							nuclear_reactor_heavy_water = 1
+							popup = no
+						}
+					}
+					else = {
+						set_technology = {
+							nuclear_reactor = 1
+							popup = no
+						}
+					}
+				}
+			}
+			else = { # Cancel effects
+				custom_effect_tooltip = sp_nuclear_reactor_cancel_output_tt
+			}
 		}
 		facility_state_effects = {
-			# Determine how many reactors to build
-			# Uranium factors
-			OWNER = { calculate_available_uranium = yes }
+			# Normal effects
 			if = {
 				limit = {
 					OWNER = {
-						has_country_flag = enough_controlled_uranium
+						NOT = { has_country_flag = sp_nuclear_reactor_cancel }
 					}
 				}
-				add_to_temp_variable = { tmp_num_reactors = 2 }
-			}
-			else_if = {
-				limit = {
-					OWNER = {
-						has_country_flag = enough_total_uranium
-					}
-				}
-				add_to_temp_variable = { tmp_num_reactors = 1 }
-			}
-			# Isotope separation factors
-			if = {
-				limit = {
-					OWNER = {
-						has_country_flag = sp_nuclear_isotope_separation_choice_reward_all
-					}
-				}
-				add_to_temp_variable = { tmp_num_reactors = 2 }
-			}
-			else_if = {
-				limit = {
-					OWNER = {
-						has_country_flag = sp_nuclear_isotope_separation_choice_reward_diffusion
-					}
-				}
-				add_to_temp_variable = { tmp_num_reactors = 1 }
-			}
-			# Heavy water factors
-			OWNER = { calculate_available_heavy_water = yes }
-			if = {
-				limit = {
-					OWNER = {
-						has_country_flag = nuclear_reactor_heavy_water_flag
-						has_country_flag = enough_heavy_water
-					}
-				}
-				add_to_temp_variable = { tmp_num_reactors = 1 }
-			}
-			# Reactor type factors
-			if = {
-				limit = {
-					OWNER = {
-						has_country_flag = sp_nuclear_reactor_choice_reward_all
-					}
-				}
-				add_to_temp_variable = { tmp_num_reactors = 1 }
-			}
-			# Covered by following tooltip
-			hidden_effect = {
-				# Always build first reactor in same state as facility
-				add_extra_state_shared_building_slots = 1
-				meta_effect = {
-					text = {
-						set_building_level = {
-							type = nuclear_[REACTOR_TYPE_M]
-							level = 1
+				# Determine how many reactors to build
+				# Uranium factors
+				OWNER = { calculate_available_uranium = yes }
+				if = {
+					limit = {
+						OWNER = {
+							has_country_flag = enough_controlled_uranium
 						}
 					}
-					REACTOR_TYPE_M = "[GetReactorType]"
+					add_to_temp_variable = { tmp_num_reactors = 2 }
 				}
-			}
-			add_to_temp_variable = { tmp_num_reactors = -1 } # Account for that reactor built
-			clamp_temp_variable = { var = tmp_num_reactors min = 0 }
-			custom_effect_tooltip = sp_nuclear_reactor_facility_state_effects_tt
-
-			# USA Unique reactor locations
-			if = {
-				limit = {
-					OWNER = { tag = USA }
+				else_if = {
+					limit = {
+						OWNER = {
+							has_country_flag = enough_total_uranium
+						}
+					}
+					add_to_temp_variable = { tmp_num_reactors = 1 }
 				}
-				OWNER = {
-					for_loop_effect = {
-						end = tmp_num_reactors
-						compare = less_than_or_equals
-
-						random_core_state = {
-							prioritize = { 820 368 386 } # Met Lab, Oak Ridge, Hanford
-							limit = {
-								nuclear_reactor < 1
-								nuclear_reactor_heavy_water < 1
+				# Isotope separation factors
+				if = {
+					limit = {
+						OWNER = {
+							has_country_flag = sp_nuclear_isotope_separation_choice_reward_all
+						}
+					}
+					add_to_temp_variable = { tmp_num_reactors = 2 }
+				}
+				else_if = {
+					limit = {
+						OWNER = {
+							has_country_flag = sp_nuclear_isotope_separation_choice_reward_diffusion
+						}
+					}
+					add_to_temp_variable = { tmp_num_reactors = 1 }
+				}
+				# Heavy water factors
+				OWNER = { calculate_available_heavy_water = yes }
+				if = {
+					limit = {
+						OWNER = {
+							has_country_flag = nuclear_reactor_heavy_water_flag
+							has_country_flag = enough_heavy_water
+						}
+					}
+					add_to_temp_variable = { tmp_num_reactors = 1 }
+				}
+				# Reactor type factors
+				if = {
+					limit = {
+						OWNER = {
+							has_country_flag = sp_nuclear_reactor_choice_reward_all
+						}
+					}
+					add_to_temp_variable = { tmp_num_reactors = 1 }
+				}
+				# Covered by following tooltip
+				hidden_effect = {
+					# Always build first reactor in same state as facility
+					add_extra_state_shared_building_slots = 1
+					meta_effect = {
+						text = {
+							set_building_level = {
+								type = nuclear_[REACTOR_TYPE_M]
+								level = 1
 							}
-							add_extra_state_shared_building_slots = 1
-							meta_effect = {
-								text = {
-									set_building_level = {
-										type = nuclear_[REACTOR_TYPE_M]
-										level = 1
-									}
+						}
+						REACTOR_TYPE_M = "[GetReactorType]"
+					}
+				}
+				add_to_temp_variable = { tmp_num_reactors = -1 } # Account for that reactor built
+				clamp_temp_variable = { var = tmp_num_reactors min = 0 }
+				custom_effect_tooltip = sp_nuclear_reactor_facility_state_effects_tt
+
+				# USA Unique reactor locations
+				if = {
+					limit = {
+						OWNER = { tag = USA }
+					}
+					OWNER = {
+						for_loop_effect = {
+							end = tmp_num_reactors
+							compare = less_than_or_equals
+
+							random_core_state = {
+								prioritize = { 820 368 386 } # Met Lab, Oak Ridge, Hanford
+								limit = {
+									nuclear_reactor < 1
+									nuclear_reactor_heavy_water < 1
 								}
-								REACTOR_TYPE_M = "[GetReactorType]"
+								add_extra_state_shared_building_slots = 1
+								meta_effect = {
+									text = {
+										set_building_level = {
+											type = nuclear_[REACTOR_TYPE_M]
+											level = 1
+										}
+									}
+									REACTOR_TYPE_M = "[GetReactorType]"
+								}
+							}
+						}
+					}
+				}
+				# Generic reactor locations
+				else = {
+					OWNER = {
+						for_loop_effect = {
+							end = tmp_num_reactors
+							compare = less_than_or_equals
+
+							random_core_state = {
+								limit = {
+									nuclear_reactor < 1
+									nuclear_reactor_heavy_water < 1
+									# is_coastal = no
+									# TODO
+									# OR = {
+									# 	has_state_category = megalopolis
+									# 	has_state_category = large_metropolis
+									# 	has_state_category = metropolis
+									# 	has_state_category = large_city
+									# 	has_state_category = city
+									# }
+								}
+								add_extra_state_shared_building_slots = 1
+								meta_effect = {
+									text = {
+										set_building_level = {
+											type = nuclear_[REACTOR_TYPE_M]
+											level = 1
+										}
+									}
+									REACTOR_TYPE_M = "[GetReactorType]"
+								}
 							}
 						}
 					}
 				}
 			}
-			# Generic reactor locations
-			else = {
-				OWNER = {
-					for_loop_effect = {
-						end = tmp_num_reactors
-						compare = less_than_or_equals
-
-						random_core_state = {
-							limit = {
-								nuclear_reactor < 1
-								nuclear_reactor_heavy_water < 1
-								# is_coastal = no
-								# TODO
-								# OR = {
-								# 	has_state_category = megalopolis
-								# 	has_state_category = large_metropolis
-								# 	has_state_category = metropolis
-								# 	has_state_category = large_city
-								# 	has_state_category = city
-								# }
-							}
-							add_extra_state_shared_building_slots = 1
-							meta_effect = {
-								text = {
-									set_building_level = {
-										type = nuclear_[REACTOR_TYPE_M]
-										level = 1
-									}
-								}
-								REACTOR_TYPE_M = "[GetReactorType]"
-							}
-						}
+			else = { # Cancel effects
+				hidden_effect = {
+					add_resource = {
+						type = tungsten
+						amount = 50
+					}
+					set_state_flag = sp_uranium_tungsten
+					OWNER = {
+						activate_mission = sp_uranium_tungsten
 					}
 				}
 			}
@@ -337,6 +366,7 @@ sp_nuclear_reactor = {
 		sp_nuclear_reactor_minor_explosion_reward
 		sp_nuclear_reactor_graphite_purity_error_reward
 		sp_nuclear_reactor_dupont_reward
+		sp_nuclear_reactor_cancel_reward
 	}
 
 	unique_prototype_rewards = {
@@ -804,12 +834,122 @@ sp_nuclear_reactor = {
 			}
 		}
 
-		sp_nuclear_reactor_tested_reward = {
+		sp_nuclear_reactor_choice_reward = {
 			fire_only_once = yes
 
 			threshold = {
 				min = 60
 				max = 80
+			}
+
+			weight = {
+				base = 1000.0
+			}
+
+			option = {
+				token = sp_nuclear_reactor_choice_reward_uranium
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 10
+						is_historical_focus_on = yes
+						FROM = {
+							OR = {
+								tag = GER
+							}
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						sp_nuclear_progress_medium = yes
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_CIV
+								AMOUNT = 5
+							}
+							add_to_variable = { sp_nuclear_reactor_civilian_factory_use = 5 }
+							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 5 }
+						}
+						set_country_flag = sp_nuclear_reactor_choice_reward_uranium
+					}
+				}
+			}
+
+			option = {
+				token = sp_nuclear_reactor_choice_reward_plutonium
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 10
+						is_historical_focus_on = yes
+						FROM = {
+							tag = ENG
+							tag = SOV
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						sp_nuclear_progress_low = yes
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_CIV
+								AMOUNT = 10
+							}
+							add_to_variable = { sp_nuclear_reactor_civilian_factory_use = 10 }
+							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 10 }
+						}
+						set_country_flag = sp_nuclear_reactor_choice_reward_plutonium
+					}
+				}
+			}
+
+			option = {
+				token = sp_nuclear_reactor_choice_reward_all
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 10
+						is_historical_focus_on = yes
+						FROM = {
+							tag = USA
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						sp_nuclear_progress_high = yes
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_CIV
+								AMOUNT = 15
+							}
+							add_to_variable = { sp_nuclear_reactor_civilian_factory_use = 15 }
+							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 15 }
+						}
+						custom_effect_tooltip = sp_nuclear_reactor_extra_reactor_tt
+						set_country_flag = sp_nuclear_reactor_choice_reward_all
+					}
+				}
+			}
+		}
+
+		sp_nuclear_reactor_tested_reward = {
+			fire_only_once = yes
+
+			threshold = {
+				min = 80
+				max = 100
 			}
 
 			weight = {
@@ -968,116 +1108,6 @@ sp_nuclear_reactor = {
 				}
 			}
 		}
-
-		sp_nuclear_reactor_choice_reward = {
-			fire_only_once = yes
-
-			threshold = {
-				min = 80
-				max = 100
-			}
-
-			weight = {
-				base = 1000.0
-			}
-
-			option = {
-				token = sp_nuclear_reactor_choice_reward_uranium
-
-				ai_will_do = {
-					base = 1
-
-					modifier = {
-						factor = 10
-						is_historical_focus_on = yes
-						FROM = {
-							OR = {
-								tag = GER
-							}
-						}
-					}
-				}
-
-				iteration_output = {
-					country_effects = {
-						sp_nuclear_progress_medium = yes
-						custom_override_tooltip = {
-							tooltip = {
-								localization_key = SP_COST_CIV
-								AMOUNT = 5
-							}
-							add_to_variable = { sp_nuclear_reactor_civilian_factory_use = 5 }
-							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 5 }
-						}
-						set_country_flag = sp_nuclear_reactor_choice_reward_uranium
-					}
-				}
-			}
-
-			option = {
-				token = sp_nuclear_reactor_choice_reward_plutonium
-
-				ai_will_do = {
-					base = 1
-
-					modifier = {
-						factor = 10
-						is_historical_focus_on = yes
-						FROM = {
-							tag = ENG
-							tag = SOV
-						}
-					}
-				}
-
-				iteration_output = {
-					country_effects = {
-						sp_nuclear_progress_low = yes
-						custom_override_tooltip = {
-							tooltip = {
-								localization_key = SP_COST_CIV
-								AMOUNT = 10
-							}
-							add_to_variable = { sp_nuclear_reactor_civilian_factory_use = 10 }
-							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 10 }
-						}
-						set_country_flag = sp_nuclear_reactor_choice_reward_plutonium
-					}
-				}
-			}
-
-			option = {
-				token = sp_nuclear_reactor_choice_reward_all
-
-				ai_will_do = {
-					base = 1
-
-					modifier = {
-						factor = 10
-						is_historical_focus_on = yes
-						FROM = {
-							tag = USA
-						}
-					}
-				}
-
-				iteration_output = {
-					country_effects = {
-						sp_nuclear_progress_high = yes
-						custom_override_tooltip = {
-							tooltip = {
-								localization_key = SP_COST_CIV
-								AMOUNT = 15
-							}
-							add_to_variable = { sp_nuclear_reactor_civilian_factory_use = 15 }
-							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 15 }
-						}
-						custom_effect_tooltip = sp_nuclear_reactor_extra_reactor_tt
-						set_country_flag = sp_nuclear_reactor_choice_reward_all
-					}
-				}
-			}
-		}
 	}
 }
 
@@ -1093,7 +1123,9 @@ sp_nuclear_bomb = {
 
 	}
 	available = {
-
+		FROM = {
+			NOT = { has_country_flag = sp_nuclear_reactor_cancel }
+		}
 	}
 	special_project_parent = {
 		sp_nuclear_reactor

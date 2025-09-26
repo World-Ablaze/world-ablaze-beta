@@ -613,10 +613,6 @@ sp_nuclear_reactor_minor_explosion_reward = {
 
 	# Graphite purity calculation errors
 sp_nuclear_reactor_graphite_purity_error_reward = {
-	allowed = {
-		original_tag = GER
-	}
-
 	fire_only_once = yes
 
 	threshold = {
@@ -712,6 +708,73 @@ sp_nuclear_reactor_dupont_reward = {
 				else = {
 					sp_nuclear_progress_low = yes
 					custom_effect_tooltip = sp_nuclear_reactor_dupont_reward_tt
+				}
+			}
+		}
+	}
+}
+
+	# Cancel for ammunition
+sp_nuclear_reactor_cancel_reward = {
+	fire_only_once = yes
+
+	threshold = {
+		min = 70
+		max = 80 # Must be before first successful reactor test
+	}
+
+	weight = {
+		base = 0
+
+		# Mostly for Germany
+		modifier = {
+			add = 1000
+			FROM = {
+				OR = { # Must complete the moderator choice first
+					has_country_flag = nuclear_reactor_graphite_flag
+					has_country_flag = nuclear_reactor_heavy_water_flag
+				}
+				NOT = {
+					has_country_flag = enough_controlled_uranium
+					has_country_flag = enough_total_uranium
+				}
+			}
+		}
+	}
+
+	option = {
+		token = sp_nuclear_reactor_cancel_reward_option_continue
+
+		iteration_output = {
+			country_effects = {
+				custom_effect_tooltip = sp_nuclear_reactor_cancel_reward_option_continue_tt
+			}
+		}
+	}
+
+	option = {
+		token = sp_nuclear_reactor_cancel_reward_option_cancel
+
+		ai_will_do = {
+			base = 0
+
+			modifier = {
+				add = 10
+				is_historical_focus_on = yes
+				FROM = {
+					tag = GER
+					NOT = { has_country_flag = enough_controlled_uranium }
+					NOT = { has_country_flag = enough_total_uranium }
+				}
+			}
+		}
+
+		iteration_output = {
+			country_effects = {
+				custom_effect_tooltip = sp_nuclear_reactor_cancel_reward_option_cancel_tt
+				set_country_flag = sp_nuclear_reactor_cancel
+				hidden_effect = {
+					FROM = { add_project_progress_ratio = 1 }
 				}
 			}
 		}
