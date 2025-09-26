@@ -19,12 +19,11 @@ phases = { # phase = no is the standard phase, default phase = positional phase
 
 # attacking #
 
-	tactic_preliminary_bombardment = {
+tactic_preliminary_bombardment = { # who knew you needed artillery to bombard an area?
 	is_attacker = yes
 	trigger = {
 		is_attacker = yes
 		has_unit_type = artillery
-		has_artillery_ratio > 0.1
 		phase = no
 	}
 	active = yes
@@ -35,7 +34,7 @@ phases = { # phase = no is the standard phase, default phase = positional phase
 			has_trait = artillery_officer
 		}
 		modifier = {
-			add = 4
+			add = 2
 			has_trait = old_guard
 		}
 		modifier = {
@@ -43,11 +42,15 @@ phases = { # phase = no is the standard phase, default phase = positional phase
 			has_trait = fortress_buster
 		}
 		modifier = {
-			add = 4
+			add = 2
 			has_trait = artillery_expert
 		}
+			modifier = {
+			add = 2
+			has_artillery_ratio > 0.25
 
-	}
+		}
+
 	picture = attack
 	#phase = long_range # changes phase to long-range combat
 	attacker = 0.10
@@ -56,9 +59,10 @@ phases = { # phase = no is the standard phase, default phase = positional phase
 	attacker_org_damage_modifier = -0.2
 	defender_org_damage_modifier = -0.4
 
+	}
 }
 
-	tactic_recon_in_force = {
+tactic_recon_in_force = { # Recon in force -> Infiltration tactics
 
 	is_attacker = yes
 	trigger = {
@@ -104,7 +108,7 @@ phases = { # phase = no is the standard phase, default phase = positional phase
 	attacker_org_damage_modifier = 0.1
 	}
 
-	tactic_urban_bombardment = { # when attacking vp that is > 10 points, or urban terrain
+tactic_urban_bombardment = { # when attacking vp that is > 5 points, or urban terrain
 
 	is_attacker = yes
 	trigger = {
@@ -115,13 +119,91 @@ phases = { # phase = no is the standard phase, default phase = positional phase
 
 	active = yes
 
+		base =  {
+		factor = 2
+		modifier = {
+			factor = 0
+			NOT = { is_fighting_in_terrain = urban }
+		}
+		modifier = {
+			add = 4
+			province_vp > 5
+		}
+
+	picture = attack
+	attacker = 0.05
+	attacker_movement_speed = 0.50
+	attacker_org_damage_modifier = -0.5
+	defender_org_damage_modifier = -0.6
+	}
+}
+tactic_beach_assault = { # only triggers during amphibious assault
+
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		is_amphibious_invasion = yes
+		phase = no
+	}
+
+	active = yes
+
 	base = { factor = 4 }
 	picture = attack
 
 	attacker = 0.05
+	defender = 0.10
+	attacker_movement_speed = 0.50
+	attacker_org_damage_modifier = -0.5
+	defender_org_damage_modifier = -0.8
 }
 
-	tactic_beach_assault = { # only triggers during amphibious assault
+tactic_heavy_preliminary_bombardment = { # only triggers when enemy has dig-in and is guarunteed to have trench warfare tactics.
+
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = trench_assault
+	}
+
+	active = yes
+
+		modifier = {
+			add = 2
+			has_trait = artillery_officer
+		}
+		modifier = {
+			add = 2
+			has_trait = old_guard
+		}
+		modifier = {
+			add = 2
+			has_trait = fortress_buster
+		}
+		modifier = {
+			add = 2
+			has_trait = artillery_expert
+		}
+			modifier = {
+			add = 2
+			has_artillery_ratio > 0.25
+
+		}
+		modifier = {
+			add = 2
+			has_artillery_ratio > 0.35
+
+		}
+		picture = attack
+
+	attacker = 0.15
+	attacker_movement_speed = -1
+	attacker_org_damage_modifier = -0.5
+	defender_org_damage_modifier = -0.8
+
+}
+
+tactic_frontal_assault = { # only triggers during amphibious assault
 
 	is_attacker = yes
 	trigger = {
@@ -137,7 +219,7 @@ phases = { # phase = no is the standard phase, default phase = positional phase
 	attacker = 0.05
 }
 
-	tactic_heavy_preliminary_bombardment = { # only triggers during amphibious assault
+tactic_embankment_bombardment = { # only triggers during amphibious assault
 
 	is_attacker = yes
 	trigger = {
@@ -153,39 +235,7 @@ phases = { # phase = no is the standard phase, default phase = positional phase
 	attacker = 0.05
 }
 
-	tactic_frontal_assault = { # only triggers during amphibious assault
-
-	is_attacker = yes
-	trigger = {
-		is_attacker = yes
-		phase = no
-	}
-
-	active = yes
-
-	base = { factor = 4 }
-	picture = attack
-
-	attacker = 0.05
-}
-
-	tactic_embankment_bombardment = { # only triggers during amphibious assault
-
-	is_attacker = yes
-	trigger = {
-		is_attacker = yes
-		phase = no
-	}
-
-	active = yes
-
-	base = { factor = 4 }
-	picture = attack
-
-	attacker = 0.05
-}
-
-	tactic_hindered_attack = { # only triggers during amphibious assault
+tactic_hindered_attack = { # only triggers during amphibious assault
 
 	is_attacker = yes
 	trigger = {
