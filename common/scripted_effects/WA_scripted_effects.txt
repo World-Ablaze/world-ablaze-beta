@@ -7767,3 +7767,244 @@ remove_mills_effect_30 = {
 		}
 	}
 }
+
+calculate_available_uranium = {
+	hidden_effect = {
+		# Uranium controlled by ROOT or subjects
+		clear_variable = controlled_uranium_states
+		every_controlled_state = {
+			limit = {
+				has_dynamic_modifier = { modifier = uranium_deposits }
+			}
+			OWNER = {
+				add_to_variable = { controlled_uranium_states = 1 }
+			}
+		}
+		every_subject_country = {
+			every_controlled_state = {
+				limit = {
+					has_dynamic_modifier = { modifier = uranium_deposits }
+				}
+				ROOT = {
+					add_to_variable = { controlled_uranium_states = 1 }
+				}
+			}
+		}
+		if = {
+			limit = {
+				check_variable = { controlled_uranium_states > 2 }
+			}
+			set_country_flag = enough_controlled_uranium
+		}
+		else = {
+			clr_country_flag = enough_controlled_uranium
+		}
+
+		# Uranium controlled by ROOT's allies
+		clear_variable = allied_uranium_states
+		every_other_country = {
+			limit = {
+				NOT = { is_subject_of = ROOT }
+				is_in_faction_with = ROOT
+			}
+			every_controlled_state = {
+				limit = {
+					has_dynamic_modifier = { modifier = uranium_deposits }
+				}
+				ROOT = {
+					add_to_variable = { allied_uranium_states = 1 }
+				}
+			}
+		}
+		clear_variable = total_uranium_states
+		add_to_variable = { total_uranium_states = controlled_uranium_states }
+		add_to_variable = { total_uranium_states = allied_uranium_states }
+
+		if = {
+			limit = {
+				check_variable = { total_uranium_states > 2 }
+			}
+			set_country_flag = enough_total_uranium
+		}
+		else = {
+			clr_country_flag = enough_total_uranium
+		}
+	}
+}
+
+calculate_available_heavy_water = {
+	hidden_effect = {
+		if = {
+			limit = {
+				OR = {
+					any_controlled_state = {
+						has_dynamic_modifier = {
+							modifier = heavy_water_plant
+						}
+					}
+					any_subject_country = {
+						any_controlled_state = {
+							has_dynamic_modifier = {
+								modifier = heavy_water_plant
+							}
+						}
+					}
+				}
+			}
+			set_country_flag = enough_heavy_water
+		}
+		else = {
+			clr_country_flag = enough_heavy_water
+		}
+	}
+}
+
+sp_nuclear_progress_low = {
+	calculate_available_uranium = yes
+	if = {
+		limit = {
+			has_country_flag = enough_controlled_uranium
+		}
+		FROM = { add_project_progress_ratio = constant:sp_progress.gain_controlled_u.low }
+		custom_effect_tooltip = sp_nuclear_controlled_uranium_tt
+	}
+	else_if = {
+		limit = {
+			has_country_flag = enough_total_uranium
+		}
+		FROM = { add_project_progress_ratio = constant:sp_progress.gain.low }
+		custom_effect_tooltip = sp_nuclear_allied_controlled_uranium_tt
+	}
+	else = {
+		FROM = { add_project_progress_ratio = constant:sp_progress.gain_lacking_u.low }
+		custom_effect_tooltip = sp_nuclear_lacking_uranium_tt
+	}
+}
+
+sp_nuclear_progress_medium = {
+	calculate_available_uranium = yes
+	if = {
+		limit = {
+			has_country_flag = enough_controlled_uranium
+		}
+		FROM = { add_project_progress_ratio = constant:sp_progress.gain_controlled_u.medium }
+		custom_effect_tooltip = sp_nuclear_controlled_uranium_tt
+	}
+	else_if = {
+		limit = {
+			has_country_flag = enough_total_uranium
+		}
+		FROM = { add_project_progress_ratio = constant:sp_progress.gain.medium }
+		custom_effect_tooltip = sp_nuclear_allied_controlled_uranium_tt
+	}
+	else = {
+		FROM = { add_project_progress_ratio = constant:sp_progress.gain_lacking_u.medium }
+		custom_effect_tooltip = sp_nuclear_lacking_uranium_tt
+	}
+}
+
+sp_nuclear_progress_high = {
+	calculate_available_uranium = yes
+	if = {
+		limit = {
+			has_country_flag = enough_controlled_uranium
+		}
+		FROM = { add_project_progress_ratio = constant:sp_progress.gain_controlled_u.high }
+		custom_effect_tooltip = sp_nuclear_controlled_uranium_tt
+	}
+	else_if = {
+		limit = {
+			has_country_flag = enough_total_uranium
+		}
+		FROM = { add_project_progress_ratio = constant:sp_progress.gain.high }
+		custom_effect_tooltip = sp_nuclear_allied_controlled_uranium_tt
+	}
+	else = {
+		FROM = { add_project_progress_ratio = constant:sp_progress.gain_lacking_u.high }
+		custom_effect_tooltip = sp_nuclear_lacking_uranium_tt
+	}
+}
+
+# Damn pdx bugs
+# sp_nuclear_scientist_xp_low = {
+	# if = {
+	# 	limit = {
+	# 		FROM = { has_project_flag = sp_nuclear_security_choice_reward_high }
+	# 	}
+	# 	add_scientist_xp = {
+	# 		experience = constant:sp_scientist_xp.gain_high_security.low
+	# 		specialization = specialization_nuclear
+	# 	}
+	# 	custom_effect_tooltip = sp_nuclear_security_high_tt
+	# }
+	# else = {
+	# 	add_scientist_xp = {
+	# 		experience = constant:sp_scientist_xp.gain.low
+	# 		specialization = specialization_nuclear
+	# 	}
+	# 	custom_effect_tooltip = sp_nuclear_security_low_tt
+	# }
+# }
+
+# Damn pdx bugs
+# sp_nuclear_scientist_xp_medium = {
+	# if = {
+	# 	limit = {
+	# 		FROM = { has_project_flag = sp_nuclear_security_choice_reward_high }
+	# 	}
+	# 	add_scientist_xp = {
+	# 		experience = constant:sp_scientist_xp.gain_high_security.medium
+	# 		specialization = specialization_nuclear
+	# 	}
+	# 	custom_effect_tooltip = sp_nuclear_security_high_tt
+	# }
+	# else = {
+	# 	add_scientist_xp = {
+	# 		experience = constant:sp_scientist_xp.gain.medium
+	# 		specialization = specialization_nuclear
+	# 	}
+	# 	custom_effect_tooltip = sp_nuclear_security_low_tt
+	# }
+# }
+
+# Damn pdx bugs
+# sp_nuclear_scientist_xp_high = {
+# 	if = {
+# 		limit = {
+# 			FROM = { has_project_flag = sp_nuclear_security_choice_reward_high }
+# 		}
+# 		add_scientist_xp = {
+# 			experience = constant:sp_scientist_xp.gain_high_security.high
+# 			specialization = specialization_nuclear
+# 		}
+# 		custom_effect_tooltip = sp_nuclear_security_high_tt
+# 	}
+# 	else = {
+# 		add_scientist_xp = {
+# 			experience = constant:sp_scientist_xp.gain.high
+# 			specialization = specialization_nuclear
+# 		}
+# 		custom_effect_tooltip = sp_nuclear_security_low_tt
+# 	}
+# }
+
+# Damn pdx bugs
+# sp_nuclear_scientist_xp_very_high = {
+# 	if = {
+# 		limit = {
+# 			FROM = { has_project_flag = sp_nuclear_security_choice_reward_high }
+# 		}
+# 		add_scientist_xp = {
+# 			experience = constant:sp_scientist_xp.gain_high_security.very_high
+# 			specialization = specialization_nuclear
+# 		}
+# 		custom_effect_tooltip = sp_nuclear_security_high_tt
+# 	}
+# 	else = {
+# 		add_scientist_xp = {
+# 			experience = constant:sp_scientist_xp.gain.very_high
+# 			specialization = specialization_nuclear
+# 		}
+# 		custom_effect_tooltip = sp_nuclear_security_low_tt
+# 	}
+# }

@@ -48,17 +48,8 @@ on_actions = {
 				add_dynamic_modifier = {
 					modifier = military_industrial_capital
 				}
-			}
-		}
-		effect = {
-			every_state = {
-				limit = {
-					OR = {
-						is_core_of = GER
-						is_core_of = JAP
-					}
-				}
-				set_state_flag = allied_nuke_target
+				calculate_available_uranium = yes
+				calculate_available_heavy_water = yes
 			}
 		}
 		effect = {
@@ -3307,6 +3298,72 @@ on_actions = {
 				}
 			}
 		}
+		effect = {
+			if = {
+				limit = {
+					FROM.FROM = {
+						has_dynamic_modifier = { modifier = uranium_deposits }
+					}
+				}
+				ROOT = {
+					calculate_available_uranium = yes
+					every_other_country = {
+						limit = {
+							is_in_faction_with = PREV
+						}
+						calculate_available_uranium = yes
+					}
+				}
+				FROM = {
+					calculate_available_uranium = yes
+					every_other_country = {
+						limit = {
+							is_in_faction_with = PREV
+						}
+						calculate_available_uranium = yes
+					}
+				}
+			}
+			if = {
+				limit = {
+					FROM.FROM = {
+						has_dynamic_modifier = { modifier = heavy_water_plant }
+					}
+				}
+				ROOT = {
+					calculate_available_heavy_water = yes
+					every_other_country = {
+						limit = {
+							is_in_faction_with = PREV
+						}
+						calculate_available_heavy_water = yes
+					}
+				}
+				FROM = {
+					calculate_available_heavy_water = yes
+					every_other_country = {
+						limit = {
+							is_in_faction_with = PREV
+						}
+						calculate_available_heavy_water = yes
+					}
+				}
+			}
+		}
+		effect = {
+			if = {
+				limit = {
+					FROM.FROM = {
+						has_state_flag = sp_uranium_tungsten
+					}
+				}
+				add_resource = {
+					type = tungsten
+					amount = -50
+				}
+				clr_state_flag = sp_uranium_tungsten
+			}
+		}
 	}
 
 	on_government_exiled = {
@@ -4445,6 +4502,7 @@ on_actions = {
 		}
 	}
 
+	#FROM is faction leader on join faction requests. THIS DOES NOT FIRE ON ADD_TO_FACTION EFFECT! USE ON_OFFER_JOIN_FACTION!
 	on_join_faction = {
 		effect = {
 			if = {
@@ -4484,8 +4542,20 @@ on_actions = {
 				}
 			}
 		}
+		effect = {
+			calculate_available_uranium = yes
+			calculate_available_heavy_water = yes
+			every_other_country = {
+				limit = {
+					is_in_faction_with = PREV
+				}
+				calculate_available_uranium = yes
+				calculate_available_heavy_water = yes
+			}
+		}
 	}
 
+	#FROM is country getting invited.
 	on_offer_join_faction = {
 		effect = {
 			if = {
@@ -4523,6 +4593,17 @@ on_actions = {
 						}
 					}
 				}
+			}
+		}
+		effect = {
+			calculate_available_uranium = yes
+			calculate_available_heavy_water = yes
+			every_other_country = {
+				limit = {
+					is_in_faction_with = PREV
+				}
+				calculate_available_uranium = yes
+				calculate_available_heavy_water = yes
 			}
 		}
 	}
@@ -4591,5 +4672,10 @@ on_actions = {
 				}
 			}
 		}
+	}
+
+	# ROOT Tag FROM Project
+	# Triggered when a project is completed
+	on_project_completion = {
 	}
 }
