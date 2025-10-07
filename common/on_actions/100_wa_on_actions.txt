@@ -1,22 +1,55 @@
 on_actions = {
 	on_startup = {
 		effect = {
+			# Atlantik wall arrays setup
+			add_to_array =  { GER.atlantik_wall_west_france = 19 }
+			add_to_array =  { GER.atlantik_wall_west_france = 23 }
+			add_to_array =  { GER.atlantik_wall_west_france = 30 }
+			set_variable = { GER.GER_atlantik_wall_west_france_cost = 12 } # 4 per state
+
+			add_to_array =  { GER.atlantik_wall_north_france = 14 }
+			add_to_array =  { GER.atlantik_wall_north_france = 15 }
+			add_to_array =  { GER.atlantik_wall_north_france = 1016 }
+			add_to_array =  { GER.atlantik_wall_north_france = 785 }
+			add_to_array =  { GER.atlantik_wall_north_france = 29 }
+			set_variable = { GER.GER_atlantik_wall_north_france_cost = 20 }
+
+			add_to_array =  { GER.atlantik_wall_benelux = 6 }
+			add_to_array =  { GER.atlantik_wall_benelux = 979 } # Antwerp, not factored into cost
+			add_to_array =  { GER.atlantik_wall_benelux = 35 }
+			add_to_array =  { GER.atlantik_wall_benelux = 7 }
+			add_to_array =  { GER.atlantik_wall_benelux = 36 }
+			set_variable = { GER.GER_atlantik_wall_benelux_cost = 16 }
+
+			add_to_array =  { GER.atlantik_wall_germany = 56 }
+			add_to_array =  { GER.atlantik_wall_germany = 59 }
+			add_to_array =  { GER.atlantik_wall_germany = 803 } # Hamburg, not factored into cost
+			add_to_array =  { GER.atlantik_wall_germany = 58 }
+			set_variable = { GER.GER_atlantik_wall_germany_cost = 12 }
+
+			add_to_array =  { GER.atlantik_wall_denmark = 871 }
+			add_to_array =  { GER.atlantik_wall_denmark = 99 }
+			set_variable = { GER.GER_atlantik_wall_denmark_cost = 8 }
+
+			add_to_array =  { GER.atlantik_wall_west_norway = 1020 }
+			add_to_array =  { GER.atlantik_wall_west_norway = 1017 }
+			add_to_array =  { GER.atlantik_wall_west_norway = 142 }
+			add_to_array =  { GER.atlantik_wall_west_norway = 143 }
+			set_variable = { GER.GER_atlantik_wall_west_norway_cost = 16 }
+
+			add_to_array =  { GER.atlantik_wall_north_norway = 144 }
+			add_to_array =  { GER.atlantik_wall_north_norway = 878 }
+			add_to_array =  { GER.atlantik_wall_north_norway = 1023 }
+			set_variable = { GER.GER_atlantik_wall_north_norway_cost = 12 }
+		}
+		effect = {
 			every_country = {
 				add_ideas = Coastal_fort_nerf
 				add_dynamic_modifier = {
 					modifier = military_industrial_capital
 				}
-			}
-		}
-		effect = {
-			every_state = {
-				limit = {
-					OR = {
-						is_core_of = GER
-						is_core_of = JAP
-					}
-				}
-				set_state_flag = allied_nuke_target
+				calculate_available_uranium = yes
+				calculate_available_heavy_water = yes
 			}
 		}
 		effect = {
@@ -228,6 +261,7 @@ on_actions = {
 							option = EASTEREGGS_ALLOWED
 						}
 					}
+					country_event = { id = afo_event.20 }
 					country_event = { id = afo_event.19 }
 				}
 			}
@@ -3255,21 +3289,79 @@ on_actions = {
 			if = {
 				limit = {
 					FROM.FROM = {
-						has_state_flag = GER_atlantik_wall_state_flag
+						has_dynamic_modifier = { modifier = GER_atlantik_wall }
 					}
 					ROOT = { has_war_with = GER }
 				}
 				FROM.FROM = {
-					remove_province_modifier = {
-						static_modifiers = {
-							GER_atlantik_wall
-						}
-						province = {
-							all_provinces = yes
-						}
-					}
-					clr_state_flag = GER_atlantik_wall_state_flag
+					remove_dynamic_modifier = { modifier = GER_atlantik_wall }
 				}
+			}
+		}
+		effect = {
+			if = {
+				limit = {
+					FROM.FROM = {
+						has_dynamic_modifier = { modifier = uranium_deposits }
+					}
+				}
+				ROOT = {
+					calculate_available_uranium = yes
+					every_other_country = {
+						limit = {
+							is_in_faction_with = PREV
+						}
+						calculate_available_uranium = yes
+					}
+				}
+				FROM = {
+					calculate_available_uranium = yes
+					every_other_country = {
+						limit = {
+							is_in_faction_with = PREV
+						}
+						calculate_available_uranium = yes
+					}
+				}
+			}
+			if = {
+				limit = {
+					FROM.FROM = {
+						has_dynamic_modifier = { modifier = heavy_water_plant }
+					}
+				}
+				ROOT = {
+					calculate_available_heavy_water = yes
+					every_other_country = {
+						limit = {
+							is_in_faction_with = PREV
+						}
+						calculate_available_heavy_water = yes
+					}
+				}
+				FROM = {
+					calculate_available_heavy_water = yes
+					every_other_country = {
+						limit = {
+							is_in_faction_with = PREV
+						}
+						calculate_available_heavy_water = yes
+					}
+				}
+			}
+		}
+		effect = {
+			if = {
+				limit = {
+					FROM.FROM = {
+						has_state_flag = sp_uranium_tungsten
+					}
+				}
+				add_resource = {
+					type = tungsten
+					amount = -50
+				}
+				clr_state_flag = sp_uranium_tungsten
 			}
 		}
 	}
@@ -3876,6 +3968,31 @@ on_actions = {
 			}
 		}
 	}
+
+	on_weekly_JAP = {
+		effect = {
+			if = {
+				limit = { has_active_mission = Jap_Third_and_Fourth_Circle_Plan }
+
+				JAP_CALC_navy_effect = yes
+			}
+		}
+		effect = {
+			if = {
+				limit = { has_variable = JAP_creation_of_the_armoured_corps_tanks }
+
+				JAP_CALC_tanks_effect = yes
+			}
+		}
+		effect = {
+			if = {
+				limit = { has_active_mission = JAP_Army_versus_Navy_Airforce }
+
+				JAP_CALC_airforce_effect = yes
+			}
+		}
+	}
+
 	on_weekly_ITA = {
 		effect = {
 			if = {
@@ -4410,6 +4527,7 @@ on_actions = {
 		}
 	}
 
+	#FROM is faction leader on join faction requests. THIS DOES NOT FIRE ON ADD_TO_FACTION EFFECT! USE ON_OFFER_JOIN_FACTION!
 	on_join_faction = {
 		effect = {
 			if = {
@@ -4449,8 +4567,20 @@ on_actions = {
 				}
 			}
 		}
+		effect = {
+			calculate_available_uranium = yes
+			calculate_available_heavy_water = yes
+			every_other_country = {
+				limit = {
+					is_in_faction_with = PREV
+				}
+				calculate_available_uranium = yes
+				calculate_available_heavy_water = yes
+			}
+		}
 	}
 
+	#FROM is country getting invited.
 	on_offer_join_faction = {
 		effect = {
 			if = {
@@ -4488,6 +4618,17 @@ on_actions = {
 						}
 					}
 				}
+			}
+		}
+		effect = {
+			calculate_available_uranium = yes
+			calculate_available_heavy_water = yes
+			every_other_country = {
+				limit = {
+					is_in_faction_with = PREV
+				}
+				calculate_available_uranium = yes
+				calculate_available_heavy_water = yes
 			}
 		}
 	}
@@ -4556,5 +4697,10 @@ on_actions = {
 				}
 			}
 		}
+	}
+
+	# ROOT Tag FROM Project
+	# Triggered when a project is completed
+	on_project_completion = {
 	}
 }

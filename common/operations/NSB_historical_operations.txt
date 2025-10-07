@@ -191,7 +191,7 @@ nuclear_espionage = { ### 1/50
 	map_icon = GFX_operations_steal_blueprints_map
 	name = nuclear_espionage
 	desc = nuclear_espionage_desc
-	days = 3
+	days = 150
 
 	priority = 15
 
@@ -199,25 +199,49 @@ nuclear_espionage = { ### 1/50
 		original_tag = SOV
 	}
 	available = {
-		FROM = {
-			has_tech = atomic_research
-			NOT = { has_war_with = ROOT }
-		}
 	}
 	visible = {
 		has_completed_focus = SOV_kurnatovs_experiments
 		FROM = {
-			is_major = yes
-			NOT = { has_country_flag = SOV_nuclear_espionage_flag } # This operation can only be done once in a country
-			NOT = { has_war_with = ROOT }
-			has_tech = atomic_research
+			NOT = {
+				tag = SOV
+				has_war_with = ROOT
+			}
+		}
+		if = {
+			limit = {
+				NOT = { is_special_project_completed = sp:sp_nuclear_reactor }
+			}
+			FROM = {
+				OR = {
+					is_special_project_being_researched = sp:sp_nuclear_reactor
+					is_special_project_completed = sp:sp_nuclear_reactor
+				}
+				sp:sp_nuclear_reactor = {
+					NOT = { has_project_flag = SOV_nuclear_espionage_flag }
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				NOT = { is_special_project_completed = sp:sp_nuclear_bomb }
+			}
+			FROM = {
+				OR = {
+					is_special_project_being_researched = sp:sp_nuclear_bomb
+					is_special_project_completed = sp:sp_nuclear_bomb
+				}
+				sp:sp_nuclear_bomb = {
+					NOT = { has_project_flag = SOV_nuclear_espionage_flag }
+				}
+			}
 		}
 	}
 
-	operatives = 1
+	operatives = 4
 
 	# Integer [0-100] - Every operation has a hard requirement of network strength in the target country
-	network_strength = 75
+	network_strength = 90
 
 	on_start = {  # SCOPE_OPERATION
 
@@ -234,8 +258,29 @@ nuclear_espionage = { ### 1/50
 	experience = 5
 	# outcome is an effect that runs when the operation has completed
 	outcome_execute = { # SCOPE_OPERATION
-		FROM = { set_country_flag = SOV_nuclear_espionage_flag } # This operation can only be done once per country
-		ROOT = { country_event = NSB_soviet_atomic_bomb_project.1 }
+		ROOT = {
+			if = {
+				limit = { # Infiltrate reactor project
+					NOT = { is_special_project_completed = sp:sp_nuclear_reactor }
+				}
+				FROM = {
+					sp:sp_nuclear_reactor = {
+						set_project_flag = SOV_nuclear_espionage_flag
+					}
+				}
+			}
+			else_if = { # Infiltrate bomb project
+				limit = {
+					NOT = { is_special_project_completed = sp:sp_nuclear_bomb }
+				}
+				FROM = {
+					sp:sp_nuclear_bomb = {
+						set_project_flag = SOV_nuclear_espionage_flag
+					}
+				}
+			}
+			country_event = NSB_soviet_atomic_bomb_project.1
+		}
 	}
 
 	# This is where all the separate phases are defined
@@ -245,12 +290,12 @@ nuclear_espionage = { ### 1/50
 		infiltration_submarine = { base = 20 }
 		infiltration_diplomatic = {
 			base = 20
-			modifier = {
-				FROM = {
-					has_war_with = ROOT
-				}
-				factor = 0
-			}
+			# modifier = {
+			# 	FROM = {
+			# 		has_war_with = ROOT
+			# 	}
+			# 	factor = 0
+			# }
 		}
 	}
 	phases = { #gather vital info

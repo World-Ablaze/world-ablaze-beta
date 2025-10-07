@@ -4873,6 +4873,44 @@ GER_reichskommissariats = {
 		}
 	}
 
+	give_przemysl_to_RPO = {
+		icon = GFX_decision_infiltrate_state
+
+		allowed = {
+			original_tag = GER
+		}
+
+		visible = {
+			RPO = {
+				exists = yes
+			}
+			1059 = {
+				CONTROLLER = {
+					NOT = { tag = RPO }
+					OR = {
+						tag = GER
+						is_in_faction_with = GER
+						is_subject_of = GER
+					}
+				}
+			}
+		}
+
+		cost = 0
+
+		fire_only_once = yes
+
+		complete_effect = {
+			RPO = {
+				transfer_state = 1059
+			}
+		}
+
+		ai_will_do = {
+			factor = 400
+		}
+	}
+
 	give_trabazon_to_RTU = {
 		icon = GFX_decision_infiltrate_state
 
@@ -17853,7 +17891,7 @@ GER_reichskommissariats = {
 			original_tag = GER
 		}
 
-		targets = { RAM RAT RBA RBE RBK RBL RBU RCA RCZ RDI REF REN RFI RFR RGR RHO RHU RIC RIR RIT RKA RMI RMO RNA RNO ROS RPE RPO RPT RPZ RRO RSE RSI RSO RSP RSW RTK RTU RUA RUK } #RDE
+		targets = { RAM RAT RBA RBE RBK RBL RBU RCA RCZ RDI REF REN RFI RFR CRO RHO RHU RIC RIR RIT RKA RMI RMO RNA RNO ROS RPE RPO RPT RPZ RRO RSE RSI RSO RSP RSW RTK RTU RUA RUK } #RDE
 
 		target_root_trigger = {
 			has_completed_focus = GER_form_the_reichskommissariats
@@ -17970,6 +18008,62 @@ GER_reichskommissariats = {
 						}
 					}
 				}
+			}
+		}
+	}
+
+	GER_assume_control_over_occupied_Chromium = {
+		icon = ger_reichskommissariats
+		allowed = {
+			tag = GER
+		}
+		available = {
+			country_exists = RSE
+			country_exists = RGR
+		}
+		visible = {
+			ALB = {
+				controls_state = 850
+			}
+			BUL = {
+				controls_state = 184
+			}
+			has_country_flag = ger_bulgarian_influence
+			184 = {
+				NOT = {
+					has_state_flag = BUL_Chromium_flag
+				}
+			}
+			850 = {
+				NOT = {
+					has_state_flag = ALB_Chromium_flag
+				}
+			}
+		}
+		cost = 0
+		fire_only_once = yes
+		ai_will_do = {
+			base = 4000
+		}
+		complete_effect = {
+			custom_effect_tooltip = GER_assume_control_over_occupied_Chromium_tt
+			BUL = {
+				give_resource_rights = {
+					receiver = GER
+					state = 184
+				}
+			}
+			ALB = {
+				give_resource_rights = {
+					receiver = GER
+					state = 850
+				}
+			}
+			184 = {
+				set_state_flag = BUL_Chromium_flag
+			}
+			850 = {
+				set_state_flag = ALB_Chromium_flag
 			}
 		}
 	}
@@ -20949,7 +21043,6 @@ political_actions = {
 	GER_sharpen_zepplin_air_safety_regulations = {
 		allowed = {
 			original_tag = GER
-			has_dlc = "Waking the Tiger"
 		}
 		available = {
 		}
@@ -26825,70 +26918,104 @@ GER_military_buildup = {
 
 special_projects = {
 
-	GER_begin_heavy_water_production = {
+	GER_atlantik_wall_west_france_start = {
+		icon = generic_construction
+
 		allowed = {
-			original_tag = GER
-			has_dlc = "La Resistance"
+			tag = GER
 		}
+
 		available = {
-			110 = {
+			any_of_scopes = {
+				array = GER.atlantik_wall_west_france
 				CONTROLLER = {
 					OR = {
 						tag = ROOT
 						is_subject_of = ROOT
+						is_in_faction_with = ROOT
 					}
 				}
 			}
+			if = { # Not required to stop
+				limit = {
+					NOT = { has_decision = GER_atlantik_wall_west_france }
+				}
+				num_of_civilian_factories_available_for_projects > 69
+			}
 		}
+
 		visible = {
-			has_tech = atomic_research
+			has_completed_focus = GER_atlantikwall
 		}
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 19
+				state = 23
+				state = 30
+			}
+		}
+
+		ai_will_do = {
+			factor = 30
+			modifier = {
+				factor = -9999
+				num_of_civilian_factories_available_for_projects < 200
+			}
+
+			modifier = {
+				factor = 0.5
+				check_variable = { GER.GER_atlantik_wall_west_france_cost = 24 } # 2 iterations
+			}
+
+			modifier = {
+				factor = 0
+				check_variable = { GER.GER_atlantik_wall_west_france_cost = 36 } # 3 iterations
+			}
+		}
+
 		cost = 0
-		ai_will_do = {
-			factor = 5
-		}
-		cancel_trigger = {
-			NOT = {
-				has_global_flag = GER_heavy_water_production_underway
-			}
-		}		#can be removed via intelligence ops
-		days_remove = 365
-		remove_effect = {
-			add_tech_bonus = {
-				name = GER_heavy_water
-				category = nuclear
-				uses = 1
-				bonus = 2
-			}
-		}
+		on_map_mode = map_and_decisions_view
+		fire_only_once = no
+
 		complete_effect = {
-			set_global_flag = GER_heavy_water_production_underway
+			if = {
+				limit = {
+					NOT = { has_decision = GER_atlantik_wall_west_france }
+				}
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = GER_atlantik_wall_start_tt
+					}
+					activate_decision = GER_atlantik_wall_west_france
+				}
+				set_country_flag = GER_atlantik_wall_west_france
+			}
+			else = {
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = GER_atlantik_wall_stop_tt
+					}
+					remove_decision_on_cooldown = GER_atlantik_wall_west_france
+				}
+				clr_country_flag = GER_atlantik_wall_west_france
+			}
 		}
 	}
 
-	GER_atlantik_wall_1 = {
+	GER_atlantik_wall_west_france = {
 		icon = generic_construction
+
 		allowed = {
 			tag = GER
 		}
 
-		available = {
-			FROM = {
-				is_fully_controlled_by = controller
-			}
-			num_of_civilian_factories_available_for_projects > 69
-		}
+		available = {}
 
 		visible = {
-			has_completed_focus = GER_atlantikwall
-		}
-
-		state_target = yes
-
-		on_map_mode = map_and_decisions_view
-
-		target_trigger = {
-			FROM = {
+			any_of_scopes = {
+				array = GER.atlantik_wall_west_france
+				tooltip = GER_atlantik_wall_west_france
 				CONTROLLER = {
 					OR = {
 						tag = ROOT
@@ -26896,202 +27023,59 @@ special_projects = {
 						is_in_faction_with = ROOT
 					}
 				}
-				OR = {
-					NOT = {
-						has_state_flag = atlantik_wall_development
-					}
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value < 12
-					}
-				}
-				OR = {
-					state = 785
-					state = 803
-					state = 871
-				}
+			}
+			hidden_trigger = { # Only visible while running
+				has_decision = GER_atlantik_wall_west_france
 			}
 		}
+		cancel_if_not_visible = yes
 
-		cost = 5
-
-		fire_only_once = no
+		highlight_states = {
+			highlight_state_targets = {
+				state = 19
+				state = 23
+				state = 30
+			}
+		}
 
 		ai_will_do = {
-			factor = 10
-			modifier = {
-				factor = -9999
-				num_of_civilian_factories_available_for_projects < 200
-			}
-			modifier = {
-				factor = 3
-				FROM = {
-					OR = {
-						is_core_of = FRA
-						is_core_of = BEL
-						is_core_of = HOL
-					}
-				}
-			}
-
-			modifier = {
-				factor = 2
-				FROM = {
-					OR = {
-						is_core_of = GER
-						is_core_of = DEN
-					}
-				}
-			}
-
-			modifier = {
-				factor = 0.5
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 2
-					}
-					NOT = { state = 29 }
-				}
-			}
-
-			modifier = {
-				factor = 0.4
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 4
-					}
-					NOT = { state = 29 }
-				}
-			}
-
-			modifier = {
-				factor = 0.3
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 6
-					}
-					NOT = { state = 29 }
-				}
-			}
-
-			modifier = {
-				factor = 0
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 8
-					}
-					NOT = { state = 29 }
-					NOT = { state = 15 }
-				}
-			}
+			factor = 0
 		}
 
-		days_remove = ATLANTIK_WALL_COST
-
-		days_re_enable = 90
+		cost = 0
+		days_remove = GER.GER_atlantik_wall_west_france_cost
+		fire_only_once = no
 
 		modifier = {
 			civilian_factory_use = 70
 		}
+
 		complete_effect = {
-			if = {
-				limit = {
-					FROM = { NOT = { has_state_flag = atlantik_wall_development } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 1 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 11 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 12 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 10 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 11 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 9 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 10 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 8 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 9 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 7 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 8 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 6 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 7 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 5 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 6 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 4 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 5 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 3 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 4 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 2 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 3 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 1 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 2 }
-			}
 		}
 
 		remove_effect = {
 			custom_effect_tooltip = GER_atlantik_wall_tt
-			hidden_effect = {
+			for_each_scope_loop = {
+				array = GER.atlantik_wall_west_france
 				if = {
 					limit = {
-						FROM = { has_state_flag = { flag = atlantik_wall_development value < 3 } }
-					}
-					FROM = {
-						add_building_construction = {
-							type = coastal_bunker
-							province = {
-								all_provinces = yes
-								limit_to_naval_base = yes
+						CONTROLLER = {
+							OR = {
+								tag = ROOT
+								is_subject_of = ROOT
+								is_in_faction_with = ROOT
 							}
-							level = 1
-							instant_build = yes
 						}
 					}
-				}
-				FROM = {
+					add_building_construction = {
+						type = coastal_bunker
+						province = {
+							all_provinces = yes
+							limit_to_naval_base = yes
+						}
+						level = 1
+						instant_build = yes
+					}
 					add_building_construction = {
 						type = coastal_bunker
 						province = {
@@ -27101,51 +27085,32 @@ special_projects = {
 						level = 1
 						instant_build = yes
 					}
-					if = {
-						limit = {
-							NOT = {
-								has_state_flag = atlantik_wall_development
-							}
-						}
-						set_state_flag = {
-							flag = atlantik_wall_development
-							value = 1
-						}
-					}
-					else = {
-						modify_state_flag = {
-							flag = atlantik_wall_development
-							value = 1
-						}
-					}
+					add_to_variable = { atlantik_wall_development = 1 }
+					add_to_temp_variable = { tmp_cost = atlantik_wall_development }
 				}
+			}
+			multiply_temp_variable = { tmp_cost = 4 }
+			add_to_temp_variable = { tmp_cost = 12 } # 4 per state
+			set_variable = { GER.GER_atlantik_wall_west_france_cost = tmp_cost } # atlantik_wall_development * # of states * 4
+			custom_override_tooltip = {
+				tooltip = {
+					localization_key = GER_atlantik_wall_repeat_tt
+				}
+				activate_decision = GER_atlantik_wall_west_france
 			}
 		}
 	}
 
-	GER_atlantik_wall_2 = {
+	GER_atlantik_wall_north_france_start = {
 		icon = generic_construction
+
 		allowed = {
 			tag = GER
 		}
 
 		available = {
-			FROM = {
-				is_fully_controlled_by = controller
-			}
-			num_of_civilian_factories_available_for_projects > 69
-		}
-
-		visible = {
-			has_completed_focus = GER_atlantikwall
-		}
-
-		state_target = yes
-
-		on_map_mode = map_and_decisions_view
-
-		target_trigger = {
-			FROM = {
+			any_of_scopes = {
+				array = GER.atlantik_wall_north_france
 				CONTROLLER = {
 					OR = {
 						tag = ROOT
@@ -27153,205 +27118,151 @@ special_projects = {
 						is_in_faction_with = ROOT
 					}
 				}
-				OR = {
-					NOT = {
-						has_state_flag = atlantik_wall_development
-					}
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value < 12
-					}
+			}
+			if = { # Not required to stop
+				limit = {
+					NOT = { has_decision = GER_atlantik_wall_north_france }
 				}
-				OR = {
-					state = 869
-					state = 180
-					state = 864
-					state = 30
-					state = 6
-					state = 31
-				}
+				num_of_civilian_factories_available_for_projects > 69
 			}
 		}
 
-		cost = 5
+		visible = {
+			has_completed_focus = GER_atlantikwall
+		}
 
-		fire_only_once = no
+		highlight_states = {
+			highlight_state_targets = {
+				state = 14
+				state = 15
+				state = 1016
+				state = 785
+				state = 29
+			}
+		}
 
 		ai_will_do = {
-			factor = 10
+			factor = 30
 			modifier = {
 				factor = -9999
 				num_of_civilian_factories_available_for_projects < 200
 			}
-			modifier = {
-				factor = 3
-				FROM = {
-					OR = {
-						is_core_of = FRA
-						is_core_of = BEL
-						is_core_of = HOL
-					}
-				}
-			}
-
-			modifier = {
-				factor = 2
-				FROM = {
-					OR = {
-						is_core_of = GER
-						is_core_of = DEN
-					}
-				}
-			}
 
 			modifier = {
 				factor = 0.5
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 2
-					}
-					NOT = { state = 29 }
-				}
-			}
-
-			modifier = {
-				factor = 0.4
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 4
-					}
-					NOT = { state = 29 }
-				}
-			}
-
-			modifier = {
-				factor = 0.3
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 6
-					}
-					NOT = { state = 29 }
-				}
+				check_variable = { GER.GER_atlantik_wall_north_france_cost = 100 } # 5 iterations
 			}
 
 			modifier = {
 				factor = 0
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 8
-					}
-					NOT = { state = 29 }
-					NOT = { state = 15 }
-				}
+				check_variable = { GER.GER_atlantik_wall_north_france_cost = 120 } # 6 iterations
 			}
 		}
 
-		days_remove = ATLANTIK_WALL_COST
+		cost = 0
+		on_map_mode = map_and_decisions_view
+		fire_only_once = no
 
-		days_re_enable = 83
+		complete_effect = {
+			if = {
+				limit = {
+					NOT = { has_decision = GER_atlantik_wall_north_france }
+				}
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = GER_atlantik_wall_start_tt
+					}
+					activate_decision = GER_atlantik_wall_north_france
+				}
+				set_country_flag = GER_atlantik_wall_north_france
+			}
+			else = {
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = GER_atlantik_wall_stop_tt
+					}
+					remove_decision_on_cooldown = GER_atlantik_wall_north_france
+				}
+				clr_country_flag = GER_atlantik_wall_north_france
+			}
+		}
+	}
+
+	GER_atlantik_wall_north_france = {
+		icon = generic_construction
+
+		allowed = {
+			tag = GER
+		}
+
+		available = {}
+
+		visible = {
+			any_of_scopes = {
+				array = GER.atlantik_wall_north_france
+				tooltip = GER_atlantik_wall_north_france
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+			hidden_trigger = { # Only visible while running
+				has_decision = GER_atlantik_wall_north_france
+			}
+		}
+		cancel_if_not_visible = yes
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 14
+				state = 15
+				state = 1016
+				state = 785
+				state = 29
+			}
+		}
+
+		ai_will_do = {
+			factor = 0
+		}
+
+		cost = 0
+		days_remove = GER.GER_atlantik_wall_north_france_cost
+		fire_only_once = no
 
 		modifier = {
 			civilian_factory_use = 70
 		}
+
 		complete_effect = {
-			if = {
-				limit = {
-					FROM = { NOT = { has_state_flag = atlantik_wall_development } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 2 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 11 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 24 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 10 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 22 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 9 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 20 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 8 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 18 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 7 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 16 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 6 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 14 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 5 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 12 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 4 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 10 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 3 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 8 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 2 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 6 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 1 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 4 }
-			}
 		}
 
 		remove_effect = {
 			custom_effect_tooltip = GER_atlantik_wall_tt
-			hidden_effect = {
+			for_each_scope_loop = {
+				array = GER.atlantik_wall_north_france
 				if = {
 					limit = {
-						FROM = { has_state_flag = { flag = atlantik_wall_development value < 3 } }
-					}
-					FROM = {
-						add_building_construction = {
-							type = coastal_bunker
-							province = {
-								all_provinces = yes
-								limit_to_naval_base = yes
+						CONTROLLER = {
+							OR = {
+								tag = ROOT
+								is_subject_of = ROOT
+								is_in_faction_with = ROOT
 							}
-							level = 1
-							instant_build = yes
 						}
 					}
-				}
-				FROM = {
+					add_building_construction = {
+						type = coastal_bunker
+						province = {
+							all_provinces = yes
+							limit_to_naval_base = yes
+						}
+						level = 1
+						instant_build = yes
+					}
 					add_building_construction = {
 						type = coastal_bunker
 						province = {
@@ -27361,51 +27272,32 @@ special_projects = {
 						level = 1
 						instant_build = yes
 					}
-					if = {
-						limit = {
-							NOT = {
-								has_state_flag = atlantik_wall_development
-							}
-						}
-						set_state_flag = {
-							flag = atlantik_wall_development
-							value = 1
-						}
-					}
-					else = {
-						modify_state_flag = {
-							flag = atlantik_wall_development
-							value = 1
-						}
-					}
+					add_to_variable = { atlantik_wall_development = 1 }
+					add_to_temp_variable = { tmp_cost = atlantik_wall_development }
 				}
+			}
+			multiply_temp_variable = { tmp_cost = 4 }
+			add_to_temp_variable = { tmp_cost = 20 } # 4 per state
+			set_variable = { GER.GER_atlantik_wall_north_france_cost = tmp_cost } # atlantik_wall_development * # of states * 4
+			custom_override_tooltip = {
+				tooltip = {
+					localization_key = GER_atlantik_wall_repeat_tt
+				}
+				activate_decision = GER_atlantik_wall_north_france
 			}
 		}
 	}
 
-	GER_atlantik_wall_3 = {
+	GER_atlantik_wall_benelux_start = {
 		icon = generic_construction
+
 		allowed = {
 			tag = GER
 		}
 
 		available = {
-			FROM = {
-				is_fully_controlled_by = controller
-			}
-			num_of_civilian_factories_available_for_projects > 69
-		}
-
-		visible = {
-			has_completed_focus = GER_atlantikwall
-		}
-
-		state_target = yes
-
-		on_map_mode = map_and_decisions_view
-
-		target_trigger = {
-			FROM = {
+			any_of_scopes = {
+				array = GER.atlantik_wall_benelux
 				CONTROLLER = {
 					OR = {
 						tag = ROOT
@@ -27413,206 +27305,151 @@ special_projects = {
 						is_in_faction_with = ROOT
 					}
 				}
-				OR = {
-					NOT = {
-						has_state_flag = atlantik_wall_development
-					}
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value < 12
-					}
+			}
+			if = { # Not required to stop
+				limit = {
+					NOT = { has_decision = GER_atlantik_wall_benelux }
 				}
-				OR = {
-					state = 23
-					state = 29
-					state = 35
-					state = 7
-					state = 36
-					state = 56
-					state = 22
-				}
+				num_of_civilian_factories_available_for_projects > 69
 			}
 		}
 
-		cost = 5
+		visible = {
+			has_completed_focus = GER_atlantikwall
+		}
 
-		fire_only_once = no
+		highlight_states = {
+			highlight_state_targets = {
+				state = 6
+				state = 979
+				state = 35
+				state = 7
+				state = 36
+			}
+		}
 
 		ai_will_do = {
-			factor = 10
+			factor = 30
 			modifier = {
 				factor = -9999
 				num_of_civilian_factories_available_for_projects < 200
 			}
-			modifier = {
-				factor = 3
-				FROM = {
-					OR = {
-						is_core_of = FRA
-						is_core_of = BEL
-						is_core_of = HOL
-					}
-				}
-			}
-
-			modifier = {
-				factor = 2
-				FROM = {
-					OR = {
-						is_core_of = GER
-						is_core_of = DEN
-					}
-				}
-			}
 
 			modifier = {
 				factor = 0.5
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 2
-					}
-					NOT = { state = 29 }
-				}
-			}
-
-			modifier = {
-				factor = 0.4
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 4
-					}
-					NOT = { state = 29 }
-				}
-			}
-
-			modifier = {
-				factor = 0.3
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 6
-					}
-					NOT = { state = 29 }
-				}
+				check_variable = { GER.GER_atlantik_wall_benelux_cost = 40 } # 2 iterations
 			}
 
 			modifier = {
 				factor = 0
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 8
-					}
-					NOT = { state = 29 }
-					NOT = { state = 15 }
-				}
+				check_variable = { GER.GER_atlantik_wall_benelux_cost = 60 } # 3 iterations
 			}
 		}
 
-		days_remove = ATLANTIK_WALL_COST
+		cost = 0
+		on_map_mode = map_and_decisions_view
+		fire_only_once = no
 
-		days_re_enable = 76
+		complete_effect = {
+			if = {
+				limit = {
+					NOT = { has_decision = GER_atlantik_wall_benelux }
+				}
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = GER_atlantik_wall_start_tt
+					}
+					activate_decision = GER_atlantik_wall_benelux
+				}
+				set_country_flag = GER_atlantik_wall_benelux
+			}
+			else = {
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = GER_atlantik_wall_stop_tt
+					}
+					remove_decision_on_cooldown = GER_atlantik_wall_benelux
+				}
+				clr_country_flag = GER_atlantik_wall_benelux
+			}
+		}
+	}
+
+	GER_atlantik_wall_benelux = {
+		icon = generic_construction
+
+		allowed = {
+			tag = GER
+		}
+
+		available = {}
+
+		visible = {
+			any_of_scopes = {
+				array = GER.atlantik_wall_benelux
+				tooltip = GER_atlantik_wall_benelux
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+			hidden_trigger = { # Only visible while running
+				has_decision = GER_atlantik_wall_benelux
+			}
+		}
+		cancel_if_not_visible = yes
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 6
+				state = 979
+				state = 35
+				state = 7
+				state = 36
+			}
+		}
+
+		ai_will_do = {
+			factor = 0
+		}
+
+		cost = 0
+		days_remove = GER.GER_atlantik_wall_benelux_cost
+		fire_only_once = no
 
 		modifier = {
 			civilian_factory_use = 70
 		}
+
 		complete_effect = {
-			if = {
-				limit = {
-					FROM = { NOT = { has_state_flag = atlantik_wall_development } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 3 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 11 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 36 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 10 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 33 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 9 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 30 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 8 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 27 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 7 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 24 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 6 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 21 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 5 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 18 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 4 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 15 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 3 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 12 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 2 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 9 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 1 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 6 }
-			}
 		}
 
 		remove_effect = {
 			custom_effect_tooltip = GER_atlantik_wall_tt
-			hidden_effect = {
+			for_each_scope_loop = {
+				array = GER.atlantik_wall_benelux
 				if = {
 					limit = {
-						FROM = { has_state_flag = { flag = atlantik_wall_development value < 3 } }
-					}
-					FROM = {
-						add_building_construction = {
-							type = coastal_bunker
-							province = {
-								all_provinces = yes
-								limit_to_naval_base = yes
+						CONTROLLER = {
+							OR = {
+								tag = ROOT
+								is_subject_of = ROOT
+								is_in_faction_with = ROOT
 							}
-							level = 1
-							instant_build = yes
 						}
 					}
-				}
-				FROM = {
+					add_building_construction = {
+						type = coastal_bunker
+						province = {
+							all_provinces = yes
+							limit_to_naval_base = yes
+						}
+						level = 1
+						instant_build = yes
+					}
 					add_building_construction = {
 						type = coastal_bunker
 						province = {
@@ -27622,51 +27459,37 @@ special_projects = {
 						level = 1
 						instant_build = yes
 					}
+					add_to_variable = { atlantik_wall_development = 1 }
 					if = {
 						limit = {
-							NOT = {
-								has_state_flag = atlantik_wall_development
-							}
+							NOT = { state = 979 } # exclude Antwerp from cost
 						}
-						set_state_flag = {
-							flag = atlantik_wall_development
-							value = 1
-						}
-					}
-					else = {
-						modify_state_flag = {
-							flag = atlantik_wall_development
-							value = 1
-						}
+						add_to_temp_variable = { tmp_cost = atlantik_wall_development }
 					}
 				}
+			}
+			multiply_temp_variable = { tmp_cost = 4 }
+			add_to_temp_variable = { tmp_cost = 16 } # 4 per state, doesn't include Antwerp
+			set_variable = { GER.GER_atlantik_wall_benelux_cost = tmp_cost } # atlantik_wall_development * # of states * 4
+			custom_override_tooltip = {
+				tooltip = {
+					localization_key = GER_atlantik_wall_repeat_tt
+				}
+				activate_decision = GER_atlantik_wall_benelux
 			}
 		}
 	}
 
-	GER_atlantik_wall_4 = {
+	GER_atlantik_wall_germany_start = {
 		icon = generic_construction
+
 		allowed = {
 			tag = GER
 		}
 
 		available = {
-			FROM = {
-				is_fully_controlled_by = controller
-			}
-			num_of_civilian_factories_available_for_projects > 69
-		}
-
-		visible = {
-			has_completed_focus = GER_atlantikwall
-		}
-
-		state_target = yes
-
-		on_map_mode = map_and_decisions_view
-
-		target_trigger = {
-			FROM = {
+			any_of_scopes = {
+				array = GER.atlantik_wall_germany
 				CONTROLLER = {
 					OR = {
 						tag = ROOT
@@ -27674,27 +27497,27 @@ special_projects = {
 						is_in_faction_with = ROOT
 					}
 				}
-				OR = {
-					NOT = {
-						has_state_flag = atlantik_wall_development
-					}
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value < 12
-					}
+			}
+			if = { # Not required to stop
+				limit = {
+					NOT = { has_decision = GER_atlantik_wall_germany }
 				}
-				OR = {
-					state = 179
-					state = 1016
-					state = 59
-					state = 21
-				}
+				num_of_civilian_factories_available_for_projects > 69
 			}
 		}
 
-		cost = 5
+		visible = {
+			has_completed_focus = GER_atlantikwall
+		}
 
-		fire_only_once = no
+		highlight_states = {
+			highlight_state_targets = {
+				state = 56
+				state = 59
+				state = 803
+				state = 58
+			}
+		}
 
 		ai_will_do = {
 			factor = 10
@@ -27702,175 +27525,121 @@ special_projects = {
 				factor = -9999
 				num_of_civilian_factories_available_for_projects < 200
 			}
-			modifier = {
-				factor = 3
-				FROM = {
-					OR = {
-						is_core_of = FRA
-						is_core_of = BEL
-						is_core_of = HOL
-					}
-				}
-			}
-
-			modifier = {
-				factor = 2
-				FROM = {
-					OR = {
-						is_core_of = GER
-						is_core_of = DEN
-					}
-				}
-			}
 
 			modifier = {
 				factor = 0.5
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 2
-					}
-					NOT = { state = 29 }
-				}
-			}
-
-			modifier = {
-				factor = 0.4
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 4
-					}
-					NOT = { state = 29 }
-				}
-			}
-
-			modifier = {
-				factor = 0.3
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 6
-					}
-					NOT = { state = 29 }
-				}
+				check_variable = { GER.GER_atlantik_wall_germany_cost = 24 } # 2 iterations
 			}
 
 			modifier = {
 				factor = 0
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 8
-					}
-					NOT = { state = 29 }
-					NOT = { state = 15 }
-				}
+				check_variable = { GER.GER_atlantik_wall_germany_cost = 36 } # 3 iterations
 			}
 		}
 
-		days_remove = ATLANTIK_WALL_COST
+		cost = 0
+		on_map_mode = map_and_decisions_view
+		fire_only_once = no
 
-		days_re_enable = 69
+		complete_effect = {
+			if = {
+				limit = {
+					NOT = { has_decision = GER_atlantik_wall_germany }
+				}
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = GER_atlantik_wall_start_tt
+					}
+					activate_decision = GER_atlantik_wall_germany
+				}
+				set_country_flag = GER_atlantik_wall_germany
+			}
+			else = {
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = GER_atlantik_wall_stop_tt
+					}
+					remove_decision_on_cooldown = GER_atlantik_wall_germany
+				}
+				clr_country_flag = GER_atlantik_wall_germany
+			}
+		}
+	}
+
+	GER_atlantik_wall_germany = {
+		icon = generic_construction
+
+		allowed = {
+			tag = GER
+		}
+
+		available = {}
+
+		visible = {
+			any_of_scopes = {
+				array = GER.atlantik_wall_germany
+				tooltip = GER_atlantik_wall_germany
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+			hidden_trigger = { # Only visible while running
+				has_decision = GER_atlantik_wall_germany
+			}
+		}
+		cancel_if_not_visible = yes
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 56
+				state = 59
+				state = 803
+				state = 58
+			}
+		}
+
+		ai_will_do = {
+			factor = 0
+		}
+
+		cost = 0
+		days_remove = GER.GER_atlantik_wall_germany_cost
+		fire_only_once = no
 
 		modifier = {
 			civilian_factory_use = 70
 		}
+
 		complete_effect = {
-			if = {
-				limit = {
-					FROM = { NOT = { has_state_flag = atlantik_wall_development } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 4 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 11 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 48 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 10 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 44 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 9 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 40 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 8 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 36 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 7 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 32 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 6 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 28 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 5 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 24 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 4 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 20 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 3 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 16 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 2 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 12 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 1 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 8 }
-			}
 		}
 
 		remove_effect = {
 			custom_effect_tooltip = GER_atlantik_wall_tt
-			hidden_effect = {
+			for_each_scope_loop = {
+				array = GER.atlantik_wall_germany
 				if = {
 					limit = {
-						FROM = { has_state_flag = { flag = atlantik_wall_development value < 3 } }
-					}
-					FROM = {
-						add_building_construction = {
-							type = coastal_bunker
-							province = {
-								all_provinces = yes
-								limit_to_naval_base = yes
+						CONTROLLER = {
+							OR = {
+								tag = ROOT
+								is_subject_of = ROOT
+								is_in_faction_with = ROOT
 							}
-							level = 1
-							instant_build = yes
 						}
 					}
-				}
-				FROM = {
+					add_building_construction = {
+						type = coastal_bunker
+						province = {
+							all_provinces = yes
+							limit_to_naval_base = yes
+						}
+						level = 1
+						instant_build = yes
+					}
 					add_building_construction = {
 						type = coastal_bunker
 						province = {
@@ -27880,51 +27649,37 @@ special_projects = {
 						level = 1
 						instant_build = yes
 					}
+					add_to_variable = { atlantik_wall_development = 1 }
 					if = {
 						limit = {
-							NOT = {
-								has_state_flag = atlantik_wall_development
-							}
+							NOT = { state = 803 } # exclude Hamburg from cost
 						}
-						set_state_flag = {
-							flag = atlantik_wall_development
-							value = 1
-						}
-					}
-					else = {
-						modify_state_flag = {
-							flag = atlantik_wall_development
-							value = 1
-						}
+						add_to_temp_variable = { tmp_cost = atlantik_wall_development }
 					}
 				}
+			}
+			multiply_temp_variable = { tmp_cost = 4 }
+			add_to_temp_variable = { tmp_cost = 12 } # 4 per state, doesn't include Hamburg
+			set_variable = { GER.GER_atlantik_wall_germany_cost = tmp_cost } # atlantik_wall_development * # of states * 4
+			custom_override_tooltip = {
+				tooltip = {
+					localization_key = GER_atlantik_wall_repeat_tt
+				}
+				activate_decision = GER_atlantik_wall_germany
 			}
 		}
 	}
 
-	GER_atlantik_wall_5 = {
+	GER_atlantik_wall_denmark_start = {
 		icon = generic_construction
+
 		allowed = {
 			tag = GER
 		}
 
 		available = {
-			FROM = {
-				is_fully_controlled_by = controller
-			}
-			num_of_civilian_factories_available_for_projects > 69
-		}
-
-		visible = {
-			has_completed_focus = GER_atlantikwall
-		}
-
-		state_target = yes
-
-		on_map_mode = map_and_decisions_view
-
-		target_trigger = {
-			FROM = {
+			any_of_scopes = {
+				array = GER.atlantik_wall_denmark
 				CONTROLLER = {
 					OR = {
 						tag = ROOT
@@ -27932,29 +27687,25 @@ special_projects = {
 						is_in_faction_with = ROOT
 					}
 				}
-				OR = {
-					NOT = {
-						has_state_flag = atlantik_wall_development
-					}
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value < 12
-					}
+			}
+			if = { # Not required to stop
+				limit = {
+					NOT = { has_decision = GER_atlantik_wall_denmark }
 				}
-				OR = {
-					state = 169
-					state = 112
-					state = 99
-					state = 1020
-					state = 1017
-					state = 878
-				}
+				num_of_civilian_factories_available_for_projects > 69
 			}
 		}
 
-		cost = 5
+		visible = {
+			has_completed_focus = GER_atlantikwall
+		}
 
-		fire_only_once = no
+		highlight_states = {
+			highlight_state_targets = {
+				state = 871
+				state = 99
+			}
+		}
 
 		ai_will_do = {
 			factor = 10
@@ -27962,175 +27713,119 @@ special_projects = {
 				factor = -9999
 				num_of_civilian_factories_available_for_projects < 200
 			}
-			modifier = {
-				factor = 3
-				FROM = {
-					OR = {
-						is_core_of = FRA
-						is_core_of = BEL
-						is_core_of = HOL
-					}
-				}
-			}
-
-			modifier = {
-				factor = 2
-				FROM = {
-					OR = {
-						is_core_of = GER
-						is_core_of = DEN
-					}
-				}
-			}
 
 			modifier = {
 				factor = 0.5
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 2
-					}
-					NOT = { state = 29 }
-				}
-			}
-
-			modifier = {
-				factor = 0.4
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 4
-					}
-					NOT = { state = 29 }
-				}
-			}
-
-			modifier = {
-				factor = 0.3
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 6
-					}
-					NOT = { state = 29 }
-				}
+				check_variable = { GER.GER_atlantik_wall_denmark_cost = 16 } # 2 iterations
 			}
 
 			modifier = {
 				factor = 0
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 8
-					}
-					NOT = { state = 29 }
-					NOT = { state = 15 }
-				}
+				check_variable = { GER.GER_atlantik_wall_denmark_cost = 24 } # 3 iterations
 			}
 		}
 
-		days_remove = ATLANTIK_WALL_COST
+		cost = 0
+		on_map_mode = map_and_decisions_view
+		fire_only_once = no
 
-		days_re_enable = 62
+		complete_effect = {
+			if = {
+				limit = {
+					NOT = { has_decision = GER_atlantik_wall_denmark }
+				}
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = GER_atlantik_wall_start_tt
+					}
+					activate_decision = GER_atlantik_wall_denmark
+				}
+				set_country_flag = GER_atlantik_wall_denmark
+			}
+			else = {
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = GER_atlantik_wall_stop_tt
+					}
+					remove_decision_on_cooldown = GER_atlantik_wall_denmark
+				}
+				clr_country_flag = GER_atlantik_wall_denmark
+			}
+		}
+	}
+
+	GER_atlantik_wall_denmark = {
+		icon = generic_construction
+
+		allowed = {
+			tag = GER
+		}
+
+		available = {}
+
+		visible = {
+			any_of_scopes = {
+				array = GER.atlantik_wall_denmark
+				tooltip = GER_atlantik_wall_denmark
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+			hidden_trigger = { # Only visible while running
+				has_decision = GER_atlantik_wall_denmark
+			}
+		}
+		cancel_if_not_visible = yes
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 871
+				state = 99
+			}
+		}
+
+		ai_will_do = {
+			factor = 0
+		}
+
+		cost = 0
+		days_remove = GER.GER_atlantik_wall_denmark_cost
+		fire_only_once = no
 
 		modifier = {
 			civilian_factory_use = 70
 		}
+
 		complete_effect = {
-			if = {
-				limit = {
-					FROM = { NOT = { has_state_flag = atlantik_wall_development } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 5 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 11 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 60 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 10 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 55 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 9 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 50 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 8 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 45 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 7 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 40 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 6 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 35 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 5 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 30 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 4 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 25 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 3 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 20 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 2 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 15 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 1 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 10 }
-			}
 		}
 
 		remove_effect = {
 			custom_effect_tooltip = GER_atlantik_wall_tt
-			hidden_effect = {
+			for_each_scope_loop = {
+				array = GER.atlantik_wall_denmark
 				if = {
 					limit = {
-						FROM = { has_state_flag = { flag = atlantik_wall_development value < 3 } }
-					}
-					FROM = {
-						add_building_construction = {
-							type = coastal_bunker
-							province = {
-								all_provinces = yes
-								limit_to_naval_base = yes
+						CONTROLLER = {
+							OR = {
+								tag = ROOT
+								is_subject_of = ROOT
+								is_in_faction_with = ROOT
 							}
-							level = 1
-							instant_build = yes
 						}
 					}
-				}
-				FROM = {
+					add_building_construction = {
+						type = coastal_bunker
+						province = {
+							all_provinces = yes
+							limit_to_naval_base = yes
+						}
+						level = 1
+						instant_build = yes
+					}
 					add_building_construction = {
 						type = coastal_bunker
 						province = {
@@ -28140,51 +27835,32 @@ special_projects = {
 						level = 1
 						instant_build = yes
 					}
-					if = {
-						limit = {
-							NOT = {
-								has_state_flag = atlantik_wall_development
-							}
-						}
-						set_state_flag = {
-							flag = atlantik_wall_development
-							value = 1
-						}
-					}
-					else = {
-						modify_state_flag = {
-							flag = atlantik_wall_development
-							value = 1
-						}
-					}
+					add_to_variable = { atlantik_wall_development = 1 }
+					add_to_temp_variable = { tmp_cost = atlantik_wall_development }
 				}
+			}
+			multiply_temp_variable = { tmp_cost = 4 }
+			add_to_temp_variable = { tmp_cost = 8 } # 4 per state
+			set_variable = { GER.GER_atlantik_wall_denmark_cost = tmp_cost } # atlantik_wall_development * # of states * 4
+			custom_override_tooltip = {
+				tooltip = {
+					localization_key = GER_atlantik_wall_repeat_tt
+				}
+				activate_decision = GER_atlantik_wall_denmark
 			}
 		}
 	}
 
-	GER_atlantik_wall_6 = {
+	GER_atlantik_wall_west_norway_start = {
 		icon = generic_construction
+
 		allowed = {
 			tag = GER
 		}
 
 		available = {
-			FROM = {
-				is_fully_controlled_by = controller
-			}
-			num_of_civilian_factories_available_for_projects > 69
-		}
-
-		visible = {
-			has_completed_focus = GER_atlantikwall
-		}
-
-		state_target = yes
-
-		on_map_mode = map_and_decisions_view
-
-		target_trigger = {
-			FROM = {
+			any_of_scopes = {
+				array = GER.atlantik_wall_west_norway
 				CONTROLLER = {
 					OR = {
 						tag = ROOT
@@ -28192,27 +27868,27 @@ special_projects = {
 						is_in_faction_with = ROOT
 					}
 				}
-				OR = {
-					NOT = {
-						has_state_flag = atlantik_wall_development
-					}
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value < 12
-					}
+			}
+			if = { # Not required to stop
+				limit = {
+					NOT = { has_decision = GER_atlantik_wall_west_norway }
 				}
-				OR = {
-					state = 171
-					state = 796
-					state = 19
-					state = 15
-				}
+				num_of_civilian_factories_available_for_projects > 69
 			}
 		}
 
-		cost = 5
+		visible = {
+			has_completed_focus = GER_atlantikwall
+		}
 
-		fire_only_once = no
+		highlight_states = {
+			highlight_state_targets = {
+				state = 1020
+				state = 1017
+				state = 142
+				state = 143
+			}
+		}
 
 		ai_will_do = {
 			factor = 10
@@ -28220,175 +27896,121 @@ special_projects = {
 				factor = -9999
 				num_of_civilian_factories_available_for_projects < 200
 			}
-			modifier = {
-				factor = 3
-				FROM = {
-					OR = {
-						is_core_of = FRA
-						is_core_of = BEL
-						is_core_of = HOL
-					}
-				}
-			}
-
-			modifier = {
-				factor = 2
-				FROM = {
-					OR = {
-						is_core_of = GER
-						is_core_of = DEN
-					}
-				}
-			}
 
 			modifier = {
 				factor = 0.5
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 2
-					}
-					NOT = { state = 29 }
-				}
-			}
-
-			modifier = {
-				factor = 0.4
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 4
-					}
-					NOT = { state = 29 }
-				}
-			}
-
-			modifier = {
-				factor = 0.3
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 6
-					}
-					NOT = { state = 29 }
-				}
+				check_variable = { GER.GER_atlantik_wall_west_norway_cost = 16 } # 1 iterations
 			}
 
 			modifier = {
 				factor = 0
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 8
-					}
-					NOT = { state = 29 }
-					NOT = { state = 15 }
-				}
+				check_variable = { GER.GER_atlantik_wall_west_norway_cost = 32 } # 2 iterations
 			}
 		}
 
-		days_remove = ATLANTIK_WALL_COST
+		cost = 0
+		on_map_mode = map_and_decisions_view
+		fire_only_once = no
 
-		days_re_enable = 55
+		complete_effect = {
+			if = {
+				limit = {
+					NOT = { has_decision = GER_atlantik_wall_west_norway }
+				}
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = GER_atlantik_wall_start_tt
+					}
+					activate_decision = GER_atlantik_wall_west_norway
+				}
+				set_country_flag = GER_atlantik_wall_west_norway
+			}
+			else = {
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = GER_atlantik_wall_stop_tt
+					}
+					remove_decision_on_cooldown = GER_atlantik_wall_west_norway
+				}
+				clr_country_flag = GER_atlantik_wall_west_norway
+			}
+		}
+	}
+
+	GER_atlantik_wall_west_norway = {
+		icon = generic_construction
+
+		allowed = {
+			tag = GER
+		}
+
+		available = {}
+
+		visible = {
+			any_of_scopes = {
+				array = GER.atlantik_wall_west_norway
+				tooltip = GER_atlantik_wall_west_norway
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+			hidden_trigger = { # Only visible while running
+				has_decision = GER_atlantik_wall_west_norway
+			}
+		}
+		cancel_if_not_visible = yes
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 1020
+				state = 1017
+				state = 142
+				state = 143
+			}
+		}
+
+		ai_will_do = {
+			factor = 0
+		}
+
+		cost = 0
+		days_remove = GER.GER_atlantik_wall_west_norway_cost
+		fire_only_once = no
 
 		modifier = {
 			civilian_factory_use = 70
 		}
+
 		complete_effect = {
-			if = {
-				limit = {
-					FROM = { NOT = { has_state_flag = atlantik_wall_development } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 6 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 11 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 72 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 10 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 66 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 9 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 60 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 8 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 54 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 7 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 48 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 6 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 42 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 5 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 36 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 4 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 30 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 3 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 24 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 2 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 18 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 1 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 12 }
-			}
 		}
 
 		remove_effect = {
 			custom_effect_tooltip = GER_atlantik_wall_tt
-			hidden_effect = {
+			for_each_scope_loop = {
+				array = GER.atlantik_wall_west_norway
 				if = {
 					limit = {
-						FROM = { has_state_flag = { flag = atlantik_wall_development value < 3 } }
-					}
-					FROM = {
-						add_building_construction = {
-							type = coastal_bunker
-							province = {
-								all_provinces = yes
-								limit_to_naval_base = yes
+						CONTROLLER = {
+							OR = {
+								tag = ROOT
+								is_subject_of = ROOT
+								is_in_faction_with = ROOT
 							}
-							level = 1
-							instant_build = yes
 						}
 					}
-				}
-				FROM = {
+					add_building_construction = {
+						type = coastal_bunker
+						province = {
+							all_provinces = yes
+							limit_to_naval_base = yes
+						}
+						level = 1
+						instant_build = yes
+					}
 					add_building_construction = {
 						type = coastal_bunker
 						province = {
@@ -28398,51 +28020,32 @@ special_projects = {
 						level = 1
 						instant_build = yes
 					}
-					if = {
-						limit = {
-							NOT = {
-								has_state_flag = atlantik_wall_development
-							}
-						}
-						set_state_flag = {
-							flag = atlantik_wall_development
-							value = 1
-						}
-					}
-					else = {
-						modify_state_flag = {
-							flag = atlantik_wall_development
-							value = 1
-						}
-					}
+					add_to_variable = { atlantik_wall_development = 1 }
+					add_to_temp_variable = { tmp_cost = atlantik_wall_development }
 				}
+			}
+			multiply_temp_variable = { tmp_cost = 4 }
+			add_to_temp_variable = { tmp_cost = 16 } # 4 per state
+			set_variable = { GER.GER_atlantik_wall_west_norway_cost = tmp_cost } # atlantik_wall_development * # of states * 4
+			custom_override_tooltip = {
+				tooltip = {
+					localization_key = GER_atlantik_wall_repeat_tt
+				}
+				activate_decision = GER_atlantik_wall_west_norway
 			}
 		}
 	}
 
-	GER_atlantik_wall_7 = {
+	GER_atlantik_wall_north_norway_start = {
 		icon = generic_construction
+
 		allowed = {
 			tag = GER
 		}
 
 		available = {
-			FROM = {
-				is_fully_controlled_by = controller
-			}
-			num_of_civilian_factories_available_for_projects > 69
-		}
-
-		visible = {
-			has_completed_focus = GER_atlantikwall
-		}
-
-		state_target = yes
-
-		on_map_mode = map_and_decisions_view
-
-		target_trigger = {
-			FROM = {
+			any_of_scopes = {
+				array = GER.atlantik_wall_north_norway
 				CONTROLLER = {
 					OR = {
 						tag = ROOT
@@ -28450,24 +28053,26 @@ special_projects = {
 						is_in_faction_with = ROOT
 					}
 				}
-				OR = {
-					NOT = {
-						has_state_flag = atlantik_wall_development
-					}
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value < 12
-					}
+			}
+			if = { # Not required to stop
+				limit = {
+					NOT = { has_decision = GER_atlantik_wall_north_norway }
 				}
-				OR = {
-					state = 14
-				}
+				num_of_civilian_factories_available_for_projects > 69
 			}
 		}
 
-		cost = 5
+		visible = {
+			has_completed_focus = GER_atlantikwall
+		}
 
-		fire_only_once = no
+		highlight_states = {
+			highlight_state_targets = {
+				state = 144
+				state = 878
+				state = 1023
+			}
+		}
 
 		ai_will_do = {
 			factor = 10
@@ -28475,175 +28080,120 @@ special_projects = {
 				factor = -9999
 				num_of_civilian_factories_available_for_projects < 200
 			}
-			modifier = {
-				factor = 3
-				FROM = {
-					OR = {
-						is_core_of = FRA
-						is_core_of = BEL
-						is_core_of = HOL
-					}
-				}
-			}
-
-			modifier = {
-				factor = 2
-				FROM = {
-					OR = {
-						is_core_of = GER
-						is_core_of = DEN
-					}
-				}
-			}
 
 			modifier = {
 				factor = 0.5
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 2
-					}
-					NOT = { state = 29 }
-				}
-			}
-
-			modifier = {
-				factor = 0.4
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 4
-					}
-					NOT = { state = 29 }
-				}
-			}
-
-			modifier = {
-				factor = 0.3
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 6
-					}
-					NOT = { state = 29 }
-				}
+				check_variable = { GER.GER_atlantik_wall_north_norway_cost = 12 } # 1 iterations
 			}
 
 			modifier = {
 				factor = 0
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 8
-					}
-					NOT = { state = 29 }
-					NOT = { state = 15 }
-				}
+				check_variable = { GER.GER_atlantik_wall_north_norway_cost = 24 } # 2 iterations
 			}
 		}
 
-		days_remove = ATLANTIK_WALL_COST
+		cost = 0
+		on_map_mode = map_and_decisions_view
+		fire_only_once = no
 
-		days_re_enable = 48
+		complete_effect = {
+			if = {
+				limit = {
+					NOT = { has_decision = GER_atlantik_wall_north_norway }
+				}
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = GER_atlantik_wall_start_tt
+					}
+					activate_decision = GER_atlantik_wall_north_norway
+				}
+				set_country_flag = GER_atlantik_wall_north_norway
+			}
+			else = {
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = GER_atlantik_wall_stop_tt
+					}
+					remove_decision_on_cooldown = GER_atlantik_wall_north_norway
+				}
+				clr_country_flag = GER_atlantik_wall_north_norway
+			}
+		}
+	}
+
+	GER_atlantik_wall_north_norway = {
+		icon = generic_construction
+
+		allowed = {
+			tag = GER
+		}
+
+		available = {}
+
+		visible = {
+			any_of_scopes = {
+				array = GER.atlantik_wall_north_norway
+				tooltip = GER_atlantik_wall_north_norway
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+			hidden_trigger = { # Only visible while running
+				has_decision = GER_atlantik_wall_north_norway
+			}
+		}
+		cancel_if_not_visible = yes
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 144
+				state = 878
+				state = 1023
+			}
+		}
+
+		ai_will_do = {
+			factor = 0
+		}
+
+		cost = 0
+		days_remove = GER.GER_atlantik_wall_north_norway_cost
+		fire_only_once = no
 
 		modifier = {
 			civilian_factory_use = 70
 		}
+
 		complete_effect = {
-			if = {
-				limit = {
-					FROM = { NOT = { has_state_flag = atlantik_wall_development } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 7 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 11 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 84 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 10 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 77 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 9 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 70 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 8 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 63 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 7 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 56 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 6 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 49 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 5 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 42 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 4 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 35 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 3 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 28 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 2 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 21 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 1 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 14 }
-			}
 		}
 
 		remove_effect = {
 			custom_effect_tooltip = GER_atlantik_wall_tt
-			hidden_effect = {
+			for_each_scope_loop = {
+				array = GER.atlantik_wall_north_norway
 				if = {
 					limit = {
-						FROM = { has_state_flag = { flag = atlantik_wall_development value < 3 } }
-					}
-					FROM = {
-						add_building_construction = {
-							type = coastal_bunker
-							province = {
-								all_provinces = yes
-								limit_to_naval_base = yes
+						CONTROLLER = {
+							OR = {
+								tag = ROOT
+								is_subject_of = ROOT
+								is_in_faction_with = ROOT
 							}
-							level = 1
-							instant_build = yes
 						}
 					}
-				}
-				FROM = {
+					add_building_construction = {
+						type = coastal_bunker
+						province = {
+							all_provinces = yes
+							limit_to_naval_base = yes
+						}
+						level = 1
+						instant_build = yes
+					}
 					add_building_construction = {
 						type = coastal_bunker
 						province = {
@@ -28653,789 +28203,18 @@ special_projects = {
 						level = 1
 						instant_build = yes
 					}
-					if = {
-						limit = {
-							NOT = {
-								has_state_flag = atlantik_wall_development
-							}
-						}
-						set_state_flag = {
-							flag = atlantik_wall_development
-							value = 1
-						}
-					}
-					else = {
-						modify_state_flag = {
-							flag = atlantik_wall_development
-							value = 1
-						}
-					}
+					add_to_variable = { atlantik_wall_development = 1 }
+					add_to_temp_variable = { tmp_cost = atlantik_wall_development }
 				}
 			}
-		}
-	}
-
-	GER_atlantik_wall_8 = {
-		icon = generic_construction
-		allowed = {
-			tag = GER
-		}
-
-		available = {
-			FROM = {
-				is_fully_controlled_by = controller
-			}
-			num_of_civilian_factories_available_for_projects > 69
-		}
-
-		visible = {
-			has_completed_focus = GER_atlantikwall
-		}
-
-		state_target = yes
-
-		on_map_mode = map_and_decisions_view
-
-		target_trigger = {
-			FROM = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
-						is_in_faction_with = ROOT
-					}
-				}
-				OR = {
-					NOT = {
-						has_state_flag = atlantik_wall_development
-					}
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value < 12
-					}
-				}
-				OR = {
-					state = 143
-				}
-			}
-		}
-
-		cost = 5
-
-		fire_only_once = no
-
-		ai_will_do = {
-			factor = 10
-			modifier = {
-				factor = -9999
-				num_of_civilian_factories_available_for_projects < 200
-			}
-			modifier = {
-				factor = 3
-				FROM = {
-					OR = {
-						is_core_of = FRA
-						is_core_of = BEL
-						is_core_of = HOL
-					}
-				}
-			}
-
-			modifier = {
-				factor = 2
-				FROM = {
-					OR = {
-						is_core_of = GER
-						is_core_of = DEN
-					}
-				}
-			}
-
-			modifier = {
-				factor = 0.5
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 2
-					}
-					NOT = { state = 29 }
-				}
-			}
-
-			modifier = {
-				factor = 0.4
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 4
-					}
-					NOT = { state = 29 }
-				}
-			}
-
-			modifier = {
-				factor = 0.3
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 6
-					}
-					NOT = { state = 29 }
-				}
-			}
-
-			modifier = {
-				factor = 0
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 8
-					}
-					NOT = { state = 29 }
-					NOT = { state = 15 }
-				}
-			}
-		}
-
-		days_remove = ATLANTIK_WALL_COST
-
-		days_re_enable = 41
-
-		modifier = {
-			civilian_factory_use = 70
-		}
-		complete_effect = {
-			if = {
-				limit = {
-					FROM = { NOT = { has_state_flag = atlantik_wall_development } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 8 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 11 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 96 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 10 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 88 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 9 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 80 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 8 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 72 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 7 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 64 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 6 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 56 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 5 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 48 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 4 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 40 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 3 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 32 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 2 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 24 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 1 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 16 }
-			}
-		}
-
-		remove_effect = {
-			custom_effect_tooltip = GER_atlantik_wall_tt
-			hidden_effect = {
-				if = {
-					limit = {
-						FROM = { has_state_flag = { flag = atlantik_wall_development value < 3 } }
-					}
-					FROM = {
-						add_building_construction = {
-							type = coastal_bunker
-							province = {
-								all_provinces = yes
-								limit_to_naval_base = yes
-							}
-							level = 1
-							instant_build = yes
-						}
-					}
-				}
-				FROM = {
-					add_building_construction = {
-						type = coastal_bunker
-						province = {
-							all_provinces = yes
-							limit_to_coastal = yes
-						}
-						level = 1
-						instant_build = yes
-					}
-					if = {
-						limit = {
-							NOT = {
-								has_state_flag = atlantik_wall_development
-							}
-						}
-						set_state_flag = {
-							flag = atlantik_wall_development
-							value = 1
-						}
-					}
-					else = {
-						modify_state_flag = {
-							flag = atlantik_wall_development
-							value = 1
-						}
-					}
-				}
-			}
-		}
-	}
-
-	GER_atlantik_wall_11 = {
-		icon = generic_construction
-		allowed = {
-			tag = GER
-		}
-
-		available = {
-			FROM = {
-				is_fully_controlled_by = controller
-			}
-			num_of_civilian_factories_available_for_projects > 69
-		}
-
-		visible = {
-			has_completed_focus = GER_atlantikwall
-		}
-
-		state_target = yes
-
-		on_map_mode = map_and_decisions_view
-
-		target_trigger = {
-			FROM = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
-						is_in_faction_with = ROOT
-					}
-				}
-				OR = {
-					NOT = {
-						has_state_flag = atlantik_wall_development
-					}
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value < 12
-					}
-				}
-				OR = {
-					state = 144
-				}
-			}
-		}
-
-		cost = 5
-
-		fire_only_once = no
-
-		ai_will_do = {
-			factor = 10
-			modifier = {
-				factor = -9999
-				num_of_civilian_factories_available_for_projects < 200
-			}
-			modifier = {
-				factor = 3
-				FROM = {
-					OR = {
-						is_core_of = FRA
-						is_core_of = BEL
-						is_core_of = HOL
-					}
-				}
-			}
-
-			modifier = {
-				factor = 2
-				FROM = {
-					OR = {
-						is_core_of = GER
-						is_core_of = DEN
-					}
-				}
-			}
-
-			modifier = {
-				factor = 0.5
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 2
-					}
-					NOT = { state = 29 }
-				}
-			}
-
-			modifier = {
-				factor = 0.4
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 4
-					}
-					NOT = { state = 29 }
-				}
-			}
-
-			modifier = {
-				factor = 0.3
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 6
-					}
-					NOT = { state = 29 }
-				}
-			}
-
-			modifier = {
-				factor = 0
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 8
-					}
-					NOT = { state = 29 }
-					NOT = { state = 15 }
-				}
-			}
-		}
-
-		days_remove = ATLANTIK_WALL_COST
-
-		days_re_enable = 20
-
-		modifier = {
-			civilian_factory_use = 70
-		}
-		complete_effect = {
-			if = {
-				limit = {
-					FROM = { NOT = { has_state_flag = atlantik_wall_development } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 11 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 11 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 132 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 10 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 121 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 9 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 110 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 8 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 99 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 7 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 88 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 6 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 77 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 5 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 66 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 4 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 55 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 3 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 44 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 2 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 33 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 1 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 22 }
-			}
-		}
-
-		remove_effect = {
-			custom_effect_tooltip = GER_atlantik_wall_tt
-			hidden_effect = {
-				if = {
-					limit = {
-						FROM = { has_state_flag = { flag = atlantik_wall_development value < 3 } }
-					}
-					FROM = {
-						add_building_construction = {
-							type = coastal_bunker
-							province = {
-								all_provinces = yes
-								limit_to_naval_base = yes
-							}
-							level = 1
-							instant_build = yes
-						}
-					}
-				}
-				FROM = {
-					add_building_construction = {
-						type = coastal_bunker
-						province = {
-							all_provinces = yes
-							limit_to_coastal = yes
-						}
-						level = 1
-						instant_build = yes
-					}
-					if = {
-						limit = {
-							NOT = {
-								has_state_flag = atlantik_wall_development
-							}
-						}
-						set_state_flag = {
-							flag = atlantik_wall_development
-							value = 1
-						}
-					}
-					else = {
-						modify_state_flag = {
-							flag = atlantik_wall_development
-							value = 1
-						}
-					}
-				}
-			}
-		}
-	}
-
-	GER_atlantik_wall_13 = {
-		icon = generic_construction
-		allowed = {
-			tag = GER
-		}
-
-		available = {
-			FROM = {
-				is_fully_controlled_by = controller
-			}
-			num_of_civilian_factories_available_for_projects > 69
-		}
-
-		visible = {
-			has_completed_focus = GER_atlantikwall
-		}
-
-		state_target = yes
-
-		on_map_mode = map_and_decisions_view
-
-		target_trigger = {
-			FROM = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
-						is_in_faction_with = ROOT
-					}
-				}
-				OR = {
-					NOT = {
-						has_state_flag = atlantik_wall_development
-					}
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value < 12
-					}
-				}
-				OR = {
-					state = 142
-				}
-			}
-		}
-
-		cost = 5
-
-		fire_only_once = no
-
-		ai_will_do = {
-			factor = 10
-			modifier = {
-				factor = -9999
-				num_of_civilian_factories_available_for_projects < 200
-			}
-			modifier = {
-				factor = 3
-				FROM = {
-					OR = {
-						is_core_of = FRA
-						is_core_of = BEL
-						is_core_of = HOL
-					}
-				}
-			}
-
-			modifier = {
-				factor = 2
-				FROM = {
-					OR = {
-						is_core_of = GER
-						is_core_of = DEN
-					}
-				}
-			}
-
-			modifier = {
-				factor = 0.5
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 2
-					}
-					NOT = { state = 29 }
-				}
-			}
-
-			modifier = {
-				factor = 0.4
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 4
-					}
-					NOT = { state = 29 }
-				}
-			}
-
-			modifier = {
-				factor = 0.3
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 6
-					}
-					NOT = { state = 29 }
-				}
-			}
-
-			modifier = {
-				factor = 0
-				FROM = {
-					has_state_flag = {
-						flag = atlantik_wall_development
-						value = 8
-					}
-					NOT = { state = 29 }
-					NOT = { state = 15 }
-				}
-			}
-		}
-
-		days_remove = ATLANTIK_WALL_COST
-
-		days_re_enable = 6
-
-		modifier = {
-			civilian_factory_use = 70
-		}
-		complete_effect = {
-			if = {
-				limit = {
-					FROM = { NOT = { has_state_flag = atlantik_wall_development } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 13 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 11 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 156 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 10 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 143 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 9 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 130 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 8 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 117 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 7 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 104 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 6 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 91 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 5 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 78 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 4 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 65 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 3 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 52 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 2 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 39 }
-			}
-			else_if = {
-				limit = {
-					FROM = { has_state_flag = { flag = atlantik_wall_development value = 1 } }
-				}
-				set_variable = { ATLANTIK_WALL_COST = 26 }
-			}
-		}
-
-		remove_effect = {
-			custom_effect_tooltip = GER_atlantik_wall_tt
-			hidden_effect = {
-				if = {
-					limit = {
-						FROM = { has_state_flag = { flag = atlantik_wall_development value < 3 } }
-					}
-					FROM = {
-						add_building_construction = {
-							type = coastal_bunker
-							province = {
-								all_provinces = yes
-								limit_to_naval_base = yes
-							}
-							level = 1
-							instant_build = yes
-						}
-					}
-				}
-				FROM = {
-					add_building_construction = {
-						type = coastal_bunker
-						province = {
-							all_provinces = yes
-							limit_to_coastal = yes
-						}
-						level = 1
-						instant_build = yes
-					}
-					if = {
-						limit = {
-							NOT = {
-								has_state_flag = atlantik_wall_development
-							}
-						}
-						set_state_flag = {
-							flag = atlantik_wall_development
-							value = 1
-						}
-					}
-					else = {
-						modify_state_flag = {
-							flag = atlantik_wall_development
-							value = 1
-						}
-					}
+			multiply_temp_variable = { tmp_cost = 4 }
+			add_to_temp_variable = { tmp_cost = 12 } # 4 per state
+			set_variable = { GER.GER_atlantik_wall_north_norway_cost = tmp_cost } # atlantik_wall_development * # of states * 4
+			custom_override_tooltip = {
+				tooltip = {
+					localization_key = GER_atlantik_wall_repeat_tt
 				}
+				activate_decision = GER_atlantik_wall_north_norway
 			}
 		}
 	}
