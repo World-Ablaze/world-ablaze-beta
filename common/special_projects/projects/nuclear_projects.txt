@@ -1,0 +1,2150 @@
+sp_nuclear_reactor = {
+	specialization = specialization_nuclear
+	icon = GFX_sp_nuclear_reactor
+	complexity = sp_complexity.insane
+
+	project_tags = sp_tag_nuclear_power
+
+	allowed = {
+
+	}
+	available = {
+		FROM = { has_tech = atomic_research }
+
+		# Temporary solution for ai_will_do crash. Remove with release of next update
+		FROM = {
+			if = {
+				limit = {
+					is_ai = yes
+				}
+				if = {
+					limit = {
+						tag = USA
+					}
+					is_historical_focus_on = yes
+					OR = {
+						has_war = yes
+						date > 1942.1.1
+					}
+				}
+				else_if = {
+					limit = {
+						tag = SOV
+					}
+					is_historical_focus_on = yes
+					OR = {
+						AND = {
+							date > 1944.1.1 # Incase war ends early
+							has_war = no
+						}
+						date > 1945.8.15
+					}
+				}
+				else_if = {
+					limit = {
+						tag = ENG
+					}
+					is_historical_focus_on = yes
+					OR = {
+						AND = {
+							date > 1944.1.1 # Incase war ends early
+							has_war = no
+						}
+						date > 1946.1.1 # TODO US Atomic Energy Act of 1946
+					}
+				}
+			}
+		}
+	}
+
+	ai_will_do = {
+		base = 0
+
+		modifier = {
+			add = 1
+			is_historical_focus_on = no
+			ROOT = {
+				OR = {
+					is_major = yes
+					AND = { # To avoid pdx bug
+						has_tech = atomic_research
+						nuclear_facility > 0
+					}
+				}
+			}
+		}
+
+		modifier = {
+			add = 1
+			is_historical_focus_on = yes
+			ROOT = {
+				tag = GER
+			}
+		}
+
+		modifier = {
+			add = 1
+			is_historical_focus_on = yes
+			ROOT = {
+				tag = USA
+				OR = {
+					has_war = yes
+					# ENG = { has_completed_focus = ENG_the_tizard_mission }
+					date > 1941.11.1
+				}
+			}
+		}
+
+		modifier = {
+			add = 1
+			is_historical_focus_on = yes
+			ROOT = {
+				tag = SOV
+				OR = {
+					AND = {
+						date > 1944.1.1 # Incase war ends early
+						has_war = no
+					}
+					date > 1945.8.15
+				}
+			}
+		}
+
+		modifier = {
+			add = 1
+			is_historical_focus_on = yes
+			ROOT = {
+				tag = ENG
+				OR = {
+					AND = {
+						date > 1944.1.1 # Incase war ends early
+						has_war = no
+					}
+					date > 1946.1.1 # TODO US Atomic Energy Act of 1946
+				}
+			}
+		}
+	}
+
+	breakthrough_cost = {
+		specialization_nuclear = 0
+	}
+
+	resource_cost = {} # Empty, handled in first unique_prototype_reward
+
+	prototype_time = sp_time.prototype.medium
+
+	project_output = {
+		country_effects = {
+			# Reset this project's costs no matter what
+			subtract_from_variable = { sp_nuclear_cost_country_resource_cost_oil = sp_nuclear_reactor_country_resource_cost_oil }
+			clear_variable = sp_nuclear_reactor_country_resource_cost_oil
+			subtract_from_variable = { sp_nuclear_cost_country_resource_cost_aluminium = sp_nuclear_reactor_country_resource_cost_aluminium }
+			clear_variable = sp_nuclear_reactor_country_resource_cost_aluminium
+			subtract_from_variable = { sp_nuclear_cost_country_resource_cost_rubber = sp_nuclear_reactor_country_resource_cost_rubber }
+			clear_variable = sp_nuclear_reactor_country_resource_cost_rubber
+			subtract_from_variable = { sp_nuclear_cost_country_resource_cost_tungsten = sp_nuclear_reactor_country_resource_cost_tungsten }
+			clear_variable = sp_nuclear_reactor_country_resource_cost_tungsten
+			subtract_from_variable = { sp_nuclear_cost_country_resource_cost_steel = sp_nuclear_reactor_country_resource_cost_steel }
+			clear_variable = sp_nuclear_reactor_country_resource_cost_steel
+			subtract_from_variable = { sp_nuclear_cost_country_resource_cost_coal = sp_nuclear_reactor_country_resource_cost_coal }
+			clear_variable = sp_nuclear_reactor_country_resource_cost_coal
+			subtract_from_variable = { sp_nuclear_cost_country_resource_cost_chromium = sp_nuclear_reactor_country_resource_cost_chromium }
+			clear_variable = sp_nuclear_reactor_country_resource_cost_chromium
+			subtract_from_variable = { sp_nuclear_cost_political_power_cost = sp_nuclear_reactor_political_power_cost }
+			clear_variable = sp_nuclear_reactor_political_power_cost
+			subtract_from_variable = { sp_nuclear_cost_civilian_factory_use = sp_nuclear_reactor_civilian_factory_use }
+			clear_variable = sp_nuclear_reactor_civilian_factory_use
+			# Normal effects
+			if = {
+				limit = {
+					NOT = { has_country_flag = sp_nuclear_reactor_cancel }
+				}
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = SP_UNLOCK_BUILDING_ICON_DESC
+						BUILDING = nuclear_reactor
+						BUILDING_DESCRIPTION = nuclear_reactor_desc
+						ICON_FRAME = 13
+					}
+					if = {
+						limit = {
+							has_country_flag = nuclear_reactor_heavy_water_flag
+						}
+						set_technology = {
+							nuclear_reactor_heavy_water = 1
+							popup = no
+						}
+					}
+					else = {
+						set_technology = {
+							nuclear_reactor = 1
+							popup = no
+						}
+					}
+				}
+			}
+			else = { # Cancel effects
+				custom_effect_tooltip = sp_nuclear_reactor_cancel_output_tt
+			}
+		}
+		facility_state_effects = {
+			# Normal effects
+			if = {
+				limit = {
+					OWNER = {
+						NOT = { has_country_flag = sp_nuclear_reactor_cancel }
+					}
+				}
+				# Determine how many reactors to build
+				# Uranium factors
+				OWNER = { calculate_available_uranium = yes }
+				if = {
+					limit = {
+						OWNER = {
+							has_country_flag = enough_controlled_uranium
+						}
+					}
+					add_to_temp_variable = { tmp_num_reactors = 2 }
+				}
+				else_if = {
+					limit = {
+						OWNER = {
+							has_country_flag = enough_total_uranium
+						}
+					}
+					add_to_temp_variable = { tmp_num_reactors = 1 }
+				}
+				# Isotope separation factors
+				if = {
+					limit = {
+						OWNER = {
+							has_country_flag = sp_nuclear_isotope_separation_choice_reward_all
+						}
+					}
+					add_to_temp_variable = { tmp_num_reactors = 2 }
+				}
+				else_if = {
+					limit = {
+						OWNER = {
+							has_country_flag = sp_nuclear_isotope_separation_choice_reward_diffusion
+						}
+					}
+					add_to_temp_variable = { tmp_num_reactors = 1 }
+				}
+				# Heavy water factors
+				OWNER = { calculate_available_heavy_water = yes }
+				if = {
+					limit = {
+						OWNER = {
+							has_country_flag = nuclear_reactor_heavy_water_flag
+							has_country_flag = enough_heavy_water
+						}
+					}
+					add_to_temp_variable = { tmp_num_reactors = 1 }
+				}
+				# Reactor type factors
+				if = {
+					limit = {
+						OWNER = {
+							has_country_flag = sp_nuclear_reactor_choice_reward_all
+						}
+					}
+					add_to_temp_variable = { tmp_num_reactors = 1 }
+				}
+				# Covered by following tooltip
+				hidden_effect = {
+					# Always build first reactor in same state as facility
+					add_extra_state_shared_building_slots = 1
+					meta_effect = {
+						text = {
+							set_building_level = {
+								type = nuclear_[REACTOR_TYPE_M]
+								level = 1
+							}
+						}
+						REACTOR_TYPE_M = "[GetReactorType]"
+					}
+				}
+				add_to_temp_variable = { tmp_num_reactors = -1 } # Account for that reactor built
+				clamp_temp_variable = { var = tmp_num_reactors min = 0 }
+				custom_effect_tooltip = sp_nuclear_reactor_facility_state_effects_tt
+
+				# USA Unique reactor locations
+				if = {
+					limit = {
+						OWNER = { tag = USA }
+					}
+					OWNER = {
+						for_loop_effect = {
+							end = tmp_num_reactors
+							compare = less_than_or_equals
+
+							random_core_state = {
+								prioritize = { 820 368 386 } # Met Lab, Oak Ridge, Hanford
+								limit = {
+									nuclear_reactor < 1
+									nuclear_reactor_heavy_water < 1
+								}
+								add_extra_state_shared_building_slots = 1
+								meta_effect = {
+									text = {
+										set_building_level = {
+											type = nuclear_[REACTOR_TYPE_M]
+											level = 1
+										}
+									}
+									REACTOR_TYPE_M = "[GetReactorType]"
+								}
+							}
+						}
+					}
+				}
+				# Generic reactor locations
+				else = {
+					OWNER = {
+						for_loop_effect = {
+							end = tmp_num_reactors
+							compare = less_than_or_equals
+
+							random_core_state = {
+								limit = {
+									nuclear_reactor < 1
+									nuclear_reactor_heavy_water < 1
+									# is_coastal = no
+									# TODO
+									# OR = {
+									# 	has_state_category = megalopolis
+									# 	has_state_category = large_metropolis
+									# 	has_state_category = metropolis
+									# 	has_state_category = large_city
+									# 	has_state_category = city
+									# }
+								}
+								add_extra_state_shared_building_slots = 1
+								meta_effect = {
+									text = {
+										set_building_level = {
+											type = nuclear_[REACTOR_TYPE_M]
+											level = 1
+										}
+									}
+									REACTOR_TYPE_M = "[GetReactorType]"
+								}
+							}
+						}
+					}
+				}
+			}
+			else = { # Cancel effects
+				hidden_effect = {
+					add_resource = {
+						type = tungsten
+						amount = 50
+					}
+					set_state_flag = sp_uranium_tungsten
+					OWNER = {
+						activate_mission = sp_uranium_tungsten
+					}
+				}
+			}
+		}
+	}
+
+	generic_prototype_rewards = {
+		sp_nuclear_scientist_xp_generic_reward
+		sp_nuclear_minor_progress_generic_reward
+		sp_nuclear_minor_progress_generic_2_reward
+		sp_nuclear_generic_electronics_tech_reward
+		sp_nuclear_generic_industry_tech_reward
+		sp_nuclear_minor_security_generic_reward
+		sp_nuclear_major_security_generic_reward
+		sp_nuclear_war_priorities_generic_reward
+		sp_nuclear_brain_drain_generic_reward
+		sp_nuclear_reactor_radioactive_leak_stabilized_reward
+		sp_nuclear_reactor_minor_explosion_reward
+		sp_nuclear_reactor_graphite_purity_error_reward
+		sp_nuclear_reactor_dupont_reward
+		sp_nuclear_reactor_cancel_reward
+	}
+
+	unique_prototype_rewards = {
+		sp_nuclear_reactor_initial_cost_reward = {
+			fire_only_once = yes
+
+			threshold = {
+				min = 0
+				max = 5
+			}
+
+			weight = {
+				base = 1000
+			}
+
+			option = {
+				token = sp_nuclear_reactor_initial_cost_reward_option
+
+				iteration_output = {
+					country_effects = {
+						custom_effect_tooltip = sp_nuclear_reactor_initial_cost_reward_desc
+						hidden_effect = {
+							if = {
+								limit = {
+									NOT = {
+										has_dynamic_modifier = { modifier = sp_nuclear_cost }
+									}
+								}
+								add_dynamic_modifier = {
+									modifier = sp_nuclear_cost
+								}
+							}
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Tungsten
+								AMOUNT = 10
+								ICON_FRAME = 4
+							}
+							add_to_variable = { sp_nuclear_reactor_country_resource_cost_tungsten = 10 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_tungsten = 10 }
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Steel
+								AMOUNT = 20
+								ICON_FRAME = 5
+							}
+							add_to_variable = { sp_nuclear_reactor_country_resource_cost_steel = 20 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_steel = 20 }
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Chromium
+								AMOUNT = 15
+								ICON_FRAME = 6
+							}
+							add_to_variable = { sp_nuclear_reactor_country_resource_cost_chromium = 15 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_chromium = 15 }
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Coal
+								AMOUNT = 200
+								ICON_FRAME = 7
+							}
+							add_to_variable = { sp_nuclear_reactor_country_resource_cost_coal = 200 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_coal = 200 }
+						}
+					}
+				}
+			}
+		}
+
+		sp_nuclear_security_choice_reward = {
+			fire_only_once = yes
+
+			threshold = {
+				min = 5
+				max = 10
+			}
+
+			weight = {
+				base = 1000
+			}
+
+			option = {
+				token = sp_nuclear_security_choice_reward_high
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							OR = {
+								tag = USA
+								tag = SOV
+								tag = ENG
+							}
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						FROM = {
+							add_project_progress_ratio = constant:sp_progress.gain.low
+							set_project_flag = sp_nuclear_security_choice_reward_high
+						}
+						custom_effect_tooltip = sp_nuclear_security_choice_reward_high_tt
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_PP
+								AMOUNT = 0.25
+							}
+							add_to_variable = { sp_nuclear_reactor_political_power_cost = 0.25 }
+							add_to_variable = { sp_nuclear_cost_political_power_cost = 0.25 }
+						}
+					}
+				}
+			}
+
+			option = {
+				token = sp_nuclear_security_choice_reward_low
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							tag = GER
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						FROM = {
+							add_project_progress_ratio = constant:sp_progress.gain.medium
+						}
+						custom_effect_tooltip = sp_nuclear_security_choice_reward_low_tt
+					}
+				}
+			}
+		}
+
+		sp_nuclear_supply_choice_reward = {
+			fire_only_once = yes
+
+			threshold = {
+				min = 10
+				max = 20
+			}
+
+			weight = {
+				base = 1000
+			}
+
+			option = {
+				token = sp_nuclear_supply_choice_reward_option
+
+				iteration_output = {
+					country_effects = {
+						calculate_available_heavy_water = yes
+						calculate_available_uranium = yes
+						if = {
+							limit = {
+								has_country_flag = enough_controlled_uranium
+							}
+							FROM = { add_project_progress_ratio = constant:sp_progress.gain_controlled_u.medium }
+							custom_effect_tooltip = sp_nuclear_supply_choice_reward_option_controlled_tt
+						}
+						else_if = {
+							limit = {
+								has_country_flag = enough_total_uranium
+							}
+							FROM = { add_project_progress_ratio = constant:sp_progress.gain.medium }
+							custom_effect_tooltip = sp_nuclear_supply_choice_reward_option_allied_tt
+						}
+						else = {
+							FROM = { add_project_progress_ratio = constant:sp_progress.gain_lacking_u.medium }
+							custom_effect_tooltip = sp_nuclear_supply_choice_reward_option_lacking_tt
+						}
+					}
+				}
+			}
+		}
+
+		sp_nuclear_isotope_separation_choice_reward = {
+			fire_only_once = yes
+
+			threshold = {
+				min = 20
+				max = 40
+			}
+
+			weight = {
+				base = 1000
+			}
+
+			option = {
+				token = sp_nuclear_isotope_separation_choice_reward_centrifugal
+
+				ai_will_do = {
+					base = 1
+				}
+
+				iteration_output = {
+					country_effects = {
+						sp_nuclear_progress_low = yes
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Coal
+								AMOUNT = 100
+								ICON_FRAME = 7
+							}
+							add_to_variable = { sp_nuclear_reactor_country_resource_cost_coal = 100 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_coal = 100 }
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Steel
+								AMOUNT = 15
+								ICON_FRAME = 5
+							}
+							add_to_variable = { sp_nuclear_reactor_country_resource_cost_steel = 15 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_steel = 15 }
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_CIV
+								AMOUNT = 5
+							}
+							add_to_variable = { sp_nuclear_reactor_civilian_factory_use = 5 }
+							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 5 }
+						}
+					}
+				}
+			}
+
+			option = {
+				token = sp_nuclear_isotope_separation_choice_reward_electromagnetic
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							tag = GER
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						sp_nuclear_progress_medium = yes
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Chromium
+								AMOUNT = 25
+								ICON_FRAME = 6
+							}
+							add_to_variable = { sp_nuclear_reactor_country_resource_cost_chromium = 25 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_chromium = 25 }
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_CIV
+								AMOUNT = 5
+							}
+							add_to_variable = { sp_nuclear_reactor_civilian_factory_use = 5 }
+							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 5 }
+						}
+					}
+				}
+			}
+
+			option = {
+				token = sp_nuclear_isotope_separation_choice_reward_diffusion
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							OR = {
+								tag = SOV
+								tag = ENG
+							}
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						sp_nuclear_progress_medium = yes
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Coal
+								AMOUNT = 300
+								ICON_FRAME = 7
+							}
+							add_to_variable = { sp_nuclear_reactor_country_resource_cost_coal = 300 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_coal = 300 }
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Rubber
+								AMOUNT = 15
+								ICON_FRAME = 3
+							}
+							add_to_variable = { sp_nuclear_reactor_country_resource_cost_rubber = 15 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_rubber = 15 }
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_CIV
+								AMOUNT = 15
+							}
+							add_to_variable = { sp_nuclear_reactor_civilian_factory_use = 15 }
+							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 15 }
+						}
+						set_country_flag = sp_nuclear_isotope_separation_choice_reward_diffusion
+					}
+				}
+			}
+
+			option = {
+				token = sp_nuclear_isotope_separation_choice_reward_all
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							tag = USA
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						sp_nuclear_progress_high = yes
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Coal
+								AMOUNT = 400
+								ICON_FRAME = 7
+							}
+							add_to_variable = { sp_nuclear_reactor_country_resource_cost_coal = 400 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_coal = 400 }
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Chromium
+								AMOUNT = 25
+								ICON_FRAME = 6
+							}
+							add_to_variable = { sp_nuclear_reactor_country_resource_cost_chromium = 25 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_chromium = 25 }
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Rubber
+								AMOUNT = 15
+								ICON_FRAME = 3
+							}
+							add_to_variable = { sp_nuclear_reactor_country_resource_cost_rubber = 15 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_rubber = 15 }
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Steel
+								AMOUNT = 15
+								ICON_FRAME = 5
+							}
+							add_to_variable = { sp_nuclear_reactor_country_resource_cost_steel = 15 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_steel = 15 }
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_CIV
+								AMOUNT = 25
+							}
+							add_to_variable = { sp_nuclear_reactor_civilian_factory_use = 25 }
+							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 25 }
+						}
+						custom_effect_tooltip = sp_nuclear_reactor_extra_reactor_tt
+						set_country_flag = sp_nuclear_isotope_separation_choice_reward_all
+					}
+				}
+			}
+		}
+
+		sp_nuclear_design_choice_reward = {
+			fire_only_once = yes
+
+			threshold = {
+				min = 40
+				max = 60
+			}
+
+			weight = {
+				base = 1000
+			}
+
+			option = {
+				token = sp_nuclear_design_choice_reward_graphite
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							OR = {
+								tag = USA
+								tag = SOV
+								tag = ENG
+							}
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						sp_nuclear_progress_medium = yes
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_CIV
+								AMOUNT = 10
+							}
+							add_to_variable = { sp_nuclear_reactor_civilian_factory_use = 10 }
+							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 10 }
+						}
+						custom_effect_tooltip = {
+							localization_key = SP_UNLOCK_BUILDING
+							BUILDING = nuclear_reactor
+						}
+						set_country_flag = nuclear_reactor_graphite_flag
+					}
+				}
+			}
+
+			option = {
+				token = sp_nuclear_design_choice_reward_heavy_water
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							tag = GER
+						}
+					}
+
+					modifier = {
+						factor = 0
+						FROM = {
+							NOT = { has_country_flag = enough_heavy_water }
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						calculate_available_heavy_water = yes
+						if = {
+							limit = {
+								has_country_flag = enough_heavy_water
+							}
+							sp_nuclear_progress_low = yes
+						}
+						else = {
+							custom_effect_tooltip = sp_nuclear_lacking_heavy_water_tt
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_CIV
+								AMOUNT = 5
+							}
+							add_to_variable = { sp_nuclear_reactor_civilian_factory_use = 5 }
+							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 5 }
+						}
+						custom_effect_tooltip = {
+							localization_key = SP_UNLOCK_BUILDING
+							BUILDING = nuclear_reactor_heavy_water
+						}
+						set_country_flag = nuclear_reactor_heavy_water_flag
+					}
+				}
+			}
+		}
+
+		sp_nuclear_reactor_choice_reward = {
+			fire_only_once = yes
+
+			threshold = {
+				min = 60
+				max = 80
+			}
+
+			weight = {
+				base = 1000.0
+			}
+
+			option = {
+				token = sp_nuclear_reactor_choice_reward_uranium
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							OR = {
+								tag = GER
+							}
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						sp_nuclear_progress_medium = yes
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_CIV
+								AMOUNT = 5
+							}
+							add_to_variable = { sp_nuclear_reactor_civilian_factory_use = 5 }
+							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 5 }
+						}
+						set_country_flag = sp_nuclear_reactor_choice_reward_uranium
+					}
+				}
+			}
+
+			option = {
+				token = sp_nuclear_reactor_choice_reward_plutonium
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							tag = ENG
+							tag = SOV
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						sp_nuclear_progress_low = yes
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_CIV
+								AMOUNT = 10
+							}
+							add_to_variable = { sp_nuclear_reactor_civilian_factory_use = 10 }
+							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 10 }
+						}
+						set_country_flag = sp_nuclear_reactor_choice_reward_plutonium
+					}
+				}
+			}
+
+			option = {
+				token = sp_nuclear_reactor_choice_reward_all
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							tag = USA
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						sp_nuclear_progress_high = yes
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_CIV
+								AMOUNT = 15
+							}
+							add_to_variable = { sp_nuclear_reactor_civilian_factory_use = 15 }
+							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 15 }
+						}
+						custom_effect_tooltip = sp_nuclear_reactor_extra_reactor_tt
+						set_country_flag = sp_nuclear_reactor_choice_reward_all
+					}
+				}
+			}
+		}
+
+		sp_nuclear_reactor_tested_reward = {
+			fire_only_once = yes
+
+			threshold = {
+				min = 80
+				max = 100
+			}
+
+			weight = {
+				base = 1000
+			}
+
+			option = {
+				token = nuclear_reactor_tested_reward_classify
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							OR = {
+								tag = USA
+								tag = SOV
+							}
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						set_global_flag = nuclear_reactor_tested_flag
+						set_country_flag = nuclear_reactor_classify_flag
+					}
+				}
+			}
+
+			option = {
+				token = sp_nuclear_reactor_tested_reward_public
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							OR = {
+								tag = GER
+								tag = ENG
+							}
+						}
+					}
+				}
+
+				iteration_output = {
+					scientist_effects = {
+						if = {
+							limit = {
+								NOT = { has_trait = scientist_trait_nuclear_power_expert }
+							}
+							add_scientist_trait = scientist_trait_nuclear_power_expert
+						}
+						else = {
+							if = {
+								limit = {
+									FROM = { has_project_flag = sp_nuclear_security_choice_reward_high }
+								}
+								add_scientist_xp = {
+									experience = constant:sp_scientist_xp.gain_high_security.medium
+									specialization = specialization_nuclear
+								}
+								custom_effect_tooltip = sp_nuclear_security_high_tt
+							}
+							else = {
+								add_scientist_xp = {
+									experience = constant:sp_scientist_xp.gain.medium
+									specialization = specialization_nuclear
+								}
+								custom_effect_tooltip = sp_nuclear_security_low_tt
+							}
+						}
+					}
+					country_effects = {
+						# More foreign bonuses for lower security
+						if = {
+							limit = {
+								FROM = {
+									has_project_flag = sp_nuclear_security_choice_reward_high
+								}
+							}
+							set_temp_variable = { tmp_progress = 0.05 }
+							set_temp_variable = { tmp_bonus = 0.1 }
+							custom_effect_tooltip = sp_nuclear_security_high_bonus_tt
+						}
+						else = {
+							set_temp_variable = { tmp_progress = 0.1 }
+							set_temp_variable = { tmp_bonus = 0.2 }
+							custom_effect_tooltip = sp_nuclear_security_low_bonus_tt
+						}
+						add_popularity = {
+							ideology = ROOT
+							popularity = 0.05
+						}
+						add_political_power = 100
+						add_war_support = 0.05
+						every_enemy_country = {
+							add_war_support = -0.025
+						}
+						every_other_country = {
+							limit = {
+								is_in_faction_with = ROOT
+							}
+							add_war_support = 0.025
+						}
+						# Only happens on the first world-wide reactor test
+						if = {
+							limit = {
+								NOT = { has_global_flag = nuclear_reactor_tested_flag }
+							}
+							set_global_flag = nuclear_reactor_tested_flag
+							set_country_flag = nuclear_reactor_public_flag
+							every_other_country = {
+								limit = {
+									OR = {
+										is_major = yes
+										is_special_project_being_researched = sp:sp_nuclear_reactor
+									}
+								}
+								custom_effect_tooltip = sp_nuclear_reactor_tested_reward_public_tt
+								hidden_effect = {
+									if = {
+										limit = {
+											has_tech = atomic_research
+											NOT = { is_special_project_completed = sp:sp_nuclear_reactor }
+										}
+										sp:sp_nuclear_reactor = { add_project_progress_ratio = tmp_progress }
+									}
+									else_if = {
+										limit = {
+											NOT = {
+												has_tech = atomic_research
+											}
+										}
+										meta_effect = {
+											text = {
+												add_tech_bonus = {
+													name = sp_nuclear_reactor_tested_tech_bonus
+													bonus = [TMP_BONUS_M]
+													uses = 1
+													technology  = atomic_research
+												}
+											}
+											TMP_BONUS_M = "[?tmp_bonus]"
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+# ATOMIC BOMBS
+sp_nuclear_bomb = {
+	specialization = specialization_nuclear
+	icon = GFX_sp_nuclear_bomb
+	complexity = sp_complexity.insane
+
+	project_tags = sp_tag_nuclear_warfare
+
+	allowed = {
+
+	}
+	available = {
+		FROM = {
+			NOT = { has_country_flag = sp_nuclear_reactor_cancel }
+		}
+	}
+	special_project_parent = {
+		sp_nuclear_reactor
+	}
+
+	ai_will_do = {
+		base = 100
+	}
+
+	breakthrough_cost = {
+		specialization_nuclear = 0
+	}
+
+	resource_cost = {}
+
+	prototype_time = sp_time.prototype.medium
+
+	project_output = {
+		country_effects = {
+			custom_effect_tooltip = sp_nuclear_bomb_tt
+			hidden_effect = {
+				set_technology = {
+					nukes = 1
+					popup = no
+				}
+			}
+			# Clear this project's cost
+			subtract_from_variable = { sp_nuclear_cost_country_resource_cost_oil = sp_nuclear_bomb_country_resource_cost_oil }
+			clear_variable = sp_nuclear_bomb_country_resource_cost_oil
+			subtract_from_variable = { sp_nuclear_cost_country_resource_cost_aluminium = sp_nuclear_bomb_country_resource_cost_aluminium }
+			clear_variable = sp_nuclear_bomb_country_resource_cost_aluminium
+			subtract_from_variable = { sp_nuclear_cost_country_resource_cost_rubber = sp_nuclear_bomb_country_resource_cost_rubber }
+			clear_variable = sp_nuclear_bomb_country_resource_cost_rubber
+			subtract_from_variable = { sp_nuclear_cost_country_resource_cost_tungsten = sp_nuclear_bomb_country_resource_cost_tungsten }
+			clear_variable = sp_nuclear_bomb_country_resource_cost_tungsten
+			subtract_from_variable = { sp_nuclear_cost_country_resource_cost_steel = sp_nuclear_bomb_country_resource_cost_steel }
+			clear_variable = sp_nuclear_bomb_country_resource_cost_steel
+			subtract_from_variable = { sp_nuclear_cost_country_resource_cost_coal = sp_nuclear_bomb_country_resource_cost_coal }
+			clear_variable = sp_nuclear_bomb_country_resource_cost_coal
+			subtract_from_variable = { sp_nuclear_cost_country_resource_cost_chromium = sp_nuclear_bomb_country_resource_cost_chromium }
+			clear_variable = sp_nuclear_bomb_country_resource_cost_chromium
+			subtract_from_variable = { sp_nuclear_cost_political_power_cost = sp_nuclear_bomb_political_power_cost }
+			clear_variable = sp_nuclear_bomb_political_power_cost
+			subtract_from_variable = { sp_nuclear_cost_civilian_factory_use = sp_nuclear_bomb_civilian_factory_use }
+			clear_variable = sp_nuclear_bomb_civilian_factory_use
+			# Determine how many atomic bombs to build
+			# Uranium factors - ahistorically quick
+			calculate_available_uranium = yes
+			if = {
+				limit = {
+					has_country_flag = enough_controlled_uranium
+				}
+				add_to_temp_variable = { tmp_num_bombs = 1 }
+			}
+			# SP:Reactor isotope separation factors
+			if = {
+				limit = {
+					has_country_flag = sp_nuclear_isotope_separation_choice_reward_all
+				}
+				add_to_temp_variable = { tmp_num_bombs = 1 }
+			}
+			# SP:Reactor reactor factors
+			if = {
+				limit = {
+					has_country_flag = sp_nuclear_reactor_choice_reward_all
+				}
+				add_to_temp_variable = { tmp_num_bombs = 1 }
+			}
+			# Trigger factors
+			if = {
+				limit = {
+					has_country_flag = sp_nuclear_bomb_trigger_both
+				}
+				add_to_temp_variable = { tmp_num_bombs = 1 }
+			}
+			# Initiator factors
+			if = {
+				limit = {
+					has_country_flag = sp_nuclear_bomb_initiator_both
+				}
+				add_to_temp_variable = { tmp_num_bombs = 1 }
+			}
+			# Bomb test factors
+			if = {
+				limit = {
+					NOT = { has_country_flag = sp_nuclear_bomb_no_test }
+				}
+				add_to_temp_variable = { tmp_num_bombs = -1 }
+			}
+			clamp_temp_variable = { var = tmp_num_bombs min = 1 }
+			custom_effect_tooltip = sp_nuclear_bomb_country_effects_tt
+			hidden_effect = {
+				add_nuclear_bombs = tmp_num_bombs
+			}
+		}
+
+		scientist_effects = { #The limit to only apply the effect if is_character = USA_robert_oppenheimer throws error and doesn't work.
+			set_character_flag = USA_oppenheimer_made_the_nuke_flag
+		}
+
+	}
+
+	generic_prototype_rewards = {
+		sp_nuclear_scientist_xp_generic_reward
+		sp_nuclear_minor_progress_generic_reward
+		sp_nuclear_minor_progress_generic_2_reward
+		sp_nuclear_generic_electronics_tech_reward
+		sp_nuclear_generic_industry_tech_reward
+		sp_nuclear_minor_security_generic_reward
+		sp_nuclear_major_security_generic_reward
+		sp_nuclear_war_priorities_generic_reward
+		sp_nuclear_brain_drain_generic_reward
+		sp_nuclear_bomb_critical_mass_generic_reward
+		sp_nuclear_bomb_accident_generic_reward
+		sp_nuclear_bomb_lacking_radar_reward
+		sp_nuclear_bomb_wrong_trigger_reward
+	}
+
+	unique_prototype_rewards = {
+		sp_nuclear_bomb_initial_cost_reward = {
+			fire_only_once = yes
+
+			threshold = {
+				min = 0
+				max = 5
+			}
+
+			weight = {
+				base = 1000
+			}
+
+			option = {
+				token = sp_nuclear_bomb_initial_cost_reward_option
+
+				iteration_output = {
+					country_effects = {
+						custom_effect_tooltip = sp_nuclear_reactor_initial_cost_reward_desc
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Tungsten
+								AMOUNT = 15
+								ICON_FRAME = 4
+							}
+							add_to_variable = { sp_nuclear_reactor_country_resource_cost_tungsten = 15 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_tungsten = 15 }
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Steel
+								AMOUNT = 30
+								ICON_FRAME = 5
+							}
+							add_to_variable = { sp_nuclear_reactor_country_resource_cost_steel = 30 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_steel = 30 }
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Chromium
+								AMOUNT = 30
+								ICON_FRAME = 6
+							}
+							add_to_variable = { sp_nuclear_reactor_country_resource_cost_chromium = 30 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_chromium = 30 }
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Coal
+								AMOUNT = 100
+								ICON_FRAME = 7
+							}
+							add_to_variable = { sp_nuclear_reactor_country_resource_cost_coal = 100 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_coal = 100 }
+						}
+					}
+				}
+			}
+		}
+
+		sp_nuclear_security_choice_reward = {
+			fire_only_once = yes
+
+			threshold = {
+				min = 5
+				max = 10
+			}
+
+			weight = {
+				base = 1000
+			}
+
+			option = {
+				token = sp_nuclear_security_choice_reward_high
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							OR = {
+								tag = USA
+								tag = SOV
+								tag = ENG
+							}
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						FROM = {
+							add_project_progress_ratio = constant:sp_progress.gain.low
+							set_project_flag = sp_nuclear_security_choice_reward_high
+						}
+						custom_effect_tooltip = sp_nuclear_security_choice_reward_high_tt
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_PP
+								AMOUNT = 0.25
+							}
+							if = {
+								limit = {
+									NOT = {
+										has_dynamic_modifier = { modifier = sp_nuclear_cost }
+									}
+								}
+								add_dynamic_modifier = {
+									modifier = sp_nuclear_cost
+								}
+							}
+							add_to_variable = { sp_nuclear_bomb_political_power_cost = 0.25 }
+							add_to_variable = { sp_nuclear_cost_political_power_cost = 0.25 }
+						}
+					}
+				}
+			}
+
+			option = {
+				token = sp_nuclear_security_choice_reward_low
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							tag = GER
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						FROM = {
+							add_project_progress_ratio = constant:sp_progress.gain.high
+						}
+						custom_effect_tooltip = sp_nuclear_security_choice_reward_low_tt
+						hidden_effect = {
+							if = {
+								limit = {
+									NOT = {
+										has_dynamic_modifier = { modifier = sp_nuclear_cost }
+									}
+								}
+								add_dynamic_modifier = {
+									modifier = sp_nuclear_cost
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		sp_nuclear_supply_choice_reward = {
+			fire_only_once = yes
+
+			threshold = {
+				min = 10
+				max = 20
+			}
+
+			weight = {
+				base = 1000
+			}
+
+			option = {
+				token = sp_nuclear_supply_choice_reward_option
+
+				iteration_output = {
+					country_effects = {
+						calculate_available_uranium = yes
+						if = {
+							limit = {
+								has_country_flag = enough_controlled_uranium
+							}
+							FROM = { add_project_progress_ratio = constant:sp_progress.gain_controlled_u.medium }
+							custom_effect_tooltip = sp_nuclear_supply_choice_reward_option_controlled_tt
+						}
+						else_if = {
+							limit = {
+								has_country_flag = enough_total_uranium
+							}
+							FROM = { add_project_progress_ratio = constant:sp_progress.gain.medium }
+							custom_effect_tooltip = sp_nuclear_supply_choice_reward_option_allied_tt
+						}
+						else = {
+							FROM = { add_project_progress_ratio = constant:sp_progress.gain_lacking_u.medium }
+							custom_effect_tooltip = sp_nuclear_supply_choice_reward_option_lacking_tt
+						}
+					}
+				}
+			}
+		}
+
+		sp_nuclear_bomb_trigger_choice_reward = {
+			fire_only_once = yes
+
+			threshold = {
+				min = 20
+				max = 40
+			}
+
+			weight = {
+				base = 1000
+			}
+
+			option = {
+				token = sp_nuclear_bomb_trigger_choice_reward_gun_type
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							tag = GER
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						if = {
+							limit = {
+								has_country_flag = sp_nuclear_reactor_choice_reward_uranium
+							}
+							sp_nuclear_progress_medium = yes
+						}
+						else = {
+							sp_nuclear_progress_low = yes
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_CIV
+								AMOUNT = 5
+							}
+							add_to_variable = { sp_nuclear_bomb_civilian_factory_use = 5 }
+							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 5 }
+						}
+						set_country_flag = sp_nuclear_bomb_trigger_gun
+					}
+				}
+			}
+
+			option = {
+				token = sp_nuclear_bomb_trigger_choice_reward_implosion
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							OR = {
+								tag = SOV
+								tag = ENG
+							}
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						if = {
+							limit = {
+								has_country_flag = sp_nuclear_reactor_choice_reward_plutonium
+							}
+							sp_nuclear_progress_medium = yes
+						}
+						else = {
+							sp_nuclear_progress_low = yes
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_CIV
+								AMOUNT = 10
+							}
+							add_to_variable = { sp_nuclear_bomb_civilian_factory_use = 10 }
+							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 10 }
+						}
+						set_country_flag = sp_nuclear_bomb_trigger_implosion
+					}
+				}
+			}
+
+			option = {
+				token = sp_nuclear_bomb_trigger_choice_reward_both
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							tag = USA
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						if = {
+							limit = {
+								has_country_flag = sp_nuclear_reactor_choice_reward_all
+							}
+							sp_nuclear_progress_high = yes
+						}
+						else = {
+							sp_nuclear_progress_medium = yes
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_CIV
+								AMOUNT = 15
+							}
+							add_to_variable = { sp_nuclear_bomb_civilian_factory_use = 15 }
+							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 15 }
+						}
+						custom_effect_tooltip = sp_nuclear_bomb_extra_bomb_tt
+						set_country_flag = sp_nuclear_bomb_trigger_both
+					}
+				}
+			}
+		}
+
+		sp_nuclear_bomb_initiator_choice_reward = {
+			fire_only_once = yes
+
+			threshold = {
+				min = 40
+				max = 60
+			}
+
+			weight = {
+				base = 1000
+			}
+
+			option = {
+				token = sp_nuclear_bomb_initiator_choice_reward_lead
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							tag = GER
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						sp_nuclear_progress_low = yes
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Steel
+								AMOUNT = 15
+								ICON_FRAME = 5
+							}
+							add_to_variable = { sp_nuclear_bomb_country_resource_cost_steel = 15 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_steel = 15 }
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_CIV
+								AMOUNT = 5
+							}
+							add_to_variable = { sp_nuclear_bomb_civilian_factory_use = 5 }
+							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 5 }
+						}
+						set_country_flag = sp_nuclear_bomb_initiator_lead
+					}
+				}
+			}
+
+			option = {
+				token = sp_nuclear_bomb_initiator_choice_reward_pile
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							OR = {
+								tag = SOV
+								tag = ENG
+							}
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						if = {
+							limit = {
+								has_country_flag = sp_nuclear_reactor_choice_reward_all
+							}
+							sp_nuclear_progress_medium = yes
+						}
+						else = {
+							sp_nuclear_progress_low = yes
+							custom_effect_tooltip = sp_nuclear_bomb_initiator_choice_reward_pile_tt
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Chromium
+								AMOUNT = 25
+								ICON_FRAME = 6
+							}
+							add_to_variable = { sp_nuclear_bomb_country_resource_cost_chromium = 25 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_chromium = 25 }
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_CIV
+								AMOUNT = 15
+							}
+							add_to_variable = { sp_nuclear_bomb_civilian_factory_use = 15 }
+							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 15 }
+						}
+						set_country_flag = sp_nuclear_bomb_initiator_pile
+					}
+				}
+			}
+
+			option = {
+				token = sp_nuclear_bomb_initiator_choice_reward_both
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							tag = USA
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						sp_nuclear_progress_medium = yes
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Chromium
+								AMOUNT = 25
+								ICON_FRAME = 6
+							}
+							add_to_variable = { sp_nuclear_bomb_country_resource_cost_chromium = 25 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_chromium = 25 }
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Steel
+								AMOUNT = 15
+								ICON_FRAME = 5
+							}
+							add_to_variable = { sp_nuclear_bomb_country_resource_cost_steel = 15 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_steel = 15 }
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_CIV
+								AMOUNT = 20
+							}
+							add_to_variable = { sp_nuclear_bomb_civilian_factory_use = 20 }
+							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 20 }
+						}
+						custom_effect_tooltip = sp_nuclear_bomb_extra_bomb_tt
+						set_country_flag = sp_nuclear_bomb_initiator_both
+					}
+				}
+			}
+		}
+
+		sp_nuclear_bomb_fuze_choice_reward = {
+			fire_only_once = yes
+
+			threshold = {
+				min = 60
+				max = 80
+			}
+
+			weight = {
+				base = 1000
+			}
+
+			option = {
+				token = sp_nuclear_bomb_fuze_choice_reward_barometer
+
+				iteration_output = {
+					country_effects = {
+						sp_nuclear_progress_low = yes
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Chromium
+								AMOUNT = 10
+								ICON_FRAME = 6
+							}
+							add_to_variable = { sp_nuclear_bomb_country_resource_cost_chromium = 10 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_chromium = 10 }
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_CIV
+								AMOUNT = 5
+							}
+							add_to_variable = { sp_nuclear_bomb_civilian_factory_use = 5 }
+							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 5 }
+						}
+						custom_effect_tooltip = sp_nuclear_bomb_dud_tt
+					}
+				}
+			}
+
+			option = {
+				token = sp_nuclear_bomb_trigger_choice_reward_clock
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							tag = GER
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						sp_nuclear_progress_low = yes
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_CIV
+								AMOUNT = 10
+							}
+							add_to_variable = { sp_nuclear_bomb_civilian_factory_use = 10 }
+							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 10 }
+						}
+						custom_effect_tooltip = sp_nuclear_bomb_dud_tt
+					}
+				}
+			}
+
+			option = {
+				token = sp_nuclear_bomb_trigger_choice_reward_radar
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							OR = {
+								tag = SOV
+								tag = ENG
+							}
+						}
+					}
+
+					modifier = {
+						factor = 0
+						FROM = {
+							NOT = { has_tech = advanced_centimetric_radar }
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						if = {
+							limit = {
+								NOT = { has_tech = advanced_centimetric_radar }
+							}
+							custom_effect_tooltip = sp_nuclear_bomb_trigger_choice_reward_radar_no_tt
+						}
+						sp_nuclear_progress_low = yes
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Chromium
+								AMOUNT = 25
+								ICON_FRAME = 6
+							}
+							add_to_variable = { sp_nuclear_bomb_country_resource_cost_chromium = 25 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_chromium = 25 }
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_CIV
+								AMOUNT = 15
+							}
+							add_to_variable = { sp_nuclear_bomb_civilian_factory_use = 15 }
+							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 15 }
+						}
+						custom_effect_tooltip = sp_nuclear_bomb_dud_tt
+					}
+				}
+			}
+
+			option = {
+				token = sp_nuclear_bomb_trigger_choice_reward_all
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							tag = USA
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						if = {
+							limit = {
+								NOT = { has_tech = advanced_centimetric_radar }
+							}
+							custom_effect_tooltip = sp_nuclear_bomb_trigger_choice_reward_radar_no_tt
+						}
+						sp_nuclear_progress_medium = yes
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Chromium
+								AMOUNT = 35
+								ICON_FRAME = 6
+							}
+							add_to_variable = { sp_nuclear_bomb_country_resource_cost_chromium = 35 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_chromium = 35 }
+						}
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_CIV
+								AMOUNT = 30
+							}
+							add_to_variable = { sp_nuclear_bomb_civilian_factory_use = 30 }
+							add_to_variable = { sp_nuclear_cost_civilian_factory_use = 30 }
+						}
+						set_country_flag = sp_nuclear_bomb_fuze_all
+					}
+				}
+			}
+		}
+
+		sp_nuclear_bomb_test_prototype_reward = {
+			fire_only_once = yes
+
+			threshold = {
+				min = 80
+				max = 100
+			}
+
+			weight = {
+				base = 1000
+			}
+
+			option = {
+				token = sp_nuclear_bomb_test_prototype_reward_test_bomb
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							OR = {
+								tag = USA
+								tag = SOV
+							}
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						sp_nuclear_progress_medium = yes
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Steel
+								AMOUNT = 15
+								ICON_FRAME = 5
+							}
+							add_to_variable = { sp_nuclear_bomb_country_resource_cost_chromium = 15 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_chromium = 15 }
+						}
+					}
+				}
+			}
+
+			option = {
+				token = sp_nuclear_bomb_test_prototype_reward_test_bomb_announcement
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							tag = ENG
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						sp_nuclear_progress_medium = yes
+						custom_override_tooltip = {
+							tooltip = {
+								localization_key = SP_COST_RESOURCE
+								RESOURCE = Steel
+								AMOUNT = 15
+								ICON_FRAME = 5
+							}
+							add_to_variable = { sp_nuclear_bomb_country_resource_cost_steel = 15 }
+							add_to_variable = { sp_nuclear_cost_country_resource_cost_steel = 15 }
+						}
+						# More foreign bonuses for lower security
+						if = {
+							limit = {
+								FROM = {
+									has_project_flag = sp_nuclear_security_choice_reward_high
+								}
+							}
+							set_temp_variable = { tmp_progress = 0.05 }
+							set_temp_variable = { tmp_bonus = 0.15 }
+							custom_effect_tooltip = sp_nuclear_security_high_bonus_tt
+						}
+						else = {
+							set_temp_variable = { tmp_progress = 0.1 }
+							set_temp_variable = { tmp_bonus = 0.25 }
+							custom_effect_tooltip = sp_nuclear_security_low_bonus_tt
+						}
+						add_popularity = {
+							ideology = ROOT
+							popularity = 0.05
+						}
+						add_political_power = 150
+						add_war_support = 0.075
+						every_enemy_country = {
+							add_war_support = -0.05
+						}
+						every_other_country = {
+							limit = {
+								is_in_faction_with = ROOT
+							}
+							add_war_support = 0.05
+						}
+						# Only happens on the first world-wide bomb test
+						if = {
+							limit = {
+								NOT = { has_global_flag = nuclear_bomb_tested_flag }
+							}
+							set_global_flag = nuclear_bomb_tested_flag
+							set_country_flag = nuclear_bomb_public_flag
+							every_other_country = {
+								limit = {
+									OR = {
+										is_major = yes
+										is_special_project_being_researched = sp:sp_nuclear_bomb
+									}
+								}
+								custom_effect_tooltip = sp_nuclear_reactor_tested_reward_public_tt
+								hidden_effect = {
+									if = {
+										limit = {
+											has_tech = atomic_research
+											NOT = { is_special_project_completed = sp:sp_nuclear_bomb }
+										}
+										sp:sp_nuclear_bomb = { add_project_progress_ratio = tmp_progress }
+									}
+									else_if = {
+										limit = {
+											NOT = {
+												has_tech = atomic_research
+											}
+										}
+										meta_effect = {
+											text = {
+												add_tech_bonus = {
+													name = sp_nuclear_bomb_tested_tech_bonus
+													bonus = [TMP_BONUS_M]
+													uses = 1
+													technology  = atomic_research
+												}
+											}
+											TMP_BONUS_M = "[?tmp_bonus]"
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			option = {
+				token = sp_nuclear_bomb_test_prototype_reward_keep_bomb
+
+				ai_will_do = {
+					base = 1
+
+					modifier = {
+						factor = 100
+						is_historical_focus_on = yes
+						FROM = {
+							tag = GER
+						}
+					}
+				}
+
+				iteration_output = {
+					country_effects = {
+						set_country_flag = sp_nuclear_bomb_no_test
+						custom_effect_tooltip = sp_nuclear_bomb_test_prototype_reward_keep_bomb_tt
+					}
+				}
+			}
+		}
+	}
+}

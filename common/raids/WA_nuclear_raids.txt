@@ -11,11 +11,10 @@ types = {
 		}
 
 		allowed = {
-			# is_ai = no # PDX BUG, DO NOT UNCOMMENT
+			# is_ai = no # PDX BUG, DO NOT UNCOMMENT. WILL NOT ALLOW A DROP
 		}
 		# Raid Type is visible
 		visible = {
-			has_tech = nukes
 			is_ai = no
 		}
 		# Specific Target is visible
@@ -25,6 +24,7 @@ types = {
 
 		# Can prepare
 		available = {
+			is_ai = no
 		}
 		launchable = {
 			has_war_with = FROM
@@ -37,6 +37,7 @@ types = {
 			province = any
 		}
 		target_icon = GFX_other_target_icon
+		custom_map_icon = GFX_raid_type_icon_nuclear_strike
 
 		unit_requirements = {
 			equipment = {
@@ -157,22 +158,100 @@ types = {
 						ratio = yes
 					}
 					raid_add_unit_experience = 0.1
+					var:actor_country = {
+						add_fuel = -25000
+					}
 				}
 				victim_effects = {
-					var:target_state = {
-						custom_effect_tooltip = raid_nuclear_strike_tt
-						add_dynamic_modifier = {
-							modifier = fallout_atomic
-							days = 90
+					var:actor_country = {
+						if = {
+							limit = {
+								has_country_flag = nuclear_raid_dud
+							}
+							clr_country_flag = nuclear_raid_dud
 						}
 					}
-					var:actor_country = {
-						custom_effect_tooltip = raid_nuclear_secondary_target_tt
-						launch_nuke = {
-							state = var:ROOT.target_state
-							use_nuke = yes
+					hidden_effect = {
+						random_list = {
+							0 = {
+								modifier = {
+									add = 50 # Make it 33% likely to happen
+									var:actor_country = {
+										has_country_flag = sp_nuclear_bomb_no_test
+										NOT = { has_country_flag = first_nuclear_raid }
+									}
+								}
+								modifier = {
+									add = 15 # Make it 7% likely to happen with above or 13% alone
+									var:actor_country = {
+										NOT = { has_country_flag = sp_nuclear_bomb_fuze_all }
+										NOT = { has_country_flag = first_nuclear_raid }
+									}
+								}
+								var:actor_country = {
+									custom_effect_tooltip = nuclear_raid_dud_tt
+									set_country_flag = nuclear_raid_dud
+									set_country_flag = first_nuclear_raid
+									country_event = { id = afo_event.21 hours = 1 }
+								}
+								var:victim_country = {
+									country_event = { id = afo_event.22 hours = 1 }
+								}
+							}
+							100 = {
+								var:actor_country = {
+									custom_effect_tooltip = raid_nuclear_secondary_target_tt
+									launch_nuke = {
+										state = var:ROOT.target_state
+										use_nuke = no
+									}
+								}
+								var:victim_country = {
+									add_stability = -0.1
+									add_war_support = -0.2
+								}
+								var:target_state = {
+									custom_effect_tooltip = raid_nuclear_strike_tt
+									add_dynamic_modifier = {
+										modifier = fallout_atomic
+										days = 90
+									}
+								}
+							}
 						}
-						add_fuel = -25000
+					}
+					# Above effects repeated below for the correct tooltip to show up on the raid menu
+					if = {
+						limit = {
+							var:actor_country = { has_country_flag = nuclear_raid_dud }
+						}
+						effect_tooltip = {
+							var:actor_country = {
+								custom_effect_tooltip = nuclear_raid_dud_tt
+							}
+						}
+					}
+					else = {
+						effect_tooltip = {
+							var:actor_country = {
+								custom_effect_tooltip = raid_nuclear_secondary_target_tt
+								launch_nuke = {
+									state = var:ROOT.target_state
+									use_nuke = no
+								}
+							}
+							var:victim_country = {
+								add_stability = -0.1
+								add_war_support = -0.2
+							}
+							var:target_state = {
+								custom_effect_tooltip = raid_nuclear_strike_tt
+								add_dynamic_modifier = {
+									modifier = fallout_atomic
+									days = 90
+								}
+							}
+						}
 					}
 				}
 			}
@@ -184,21 +263,98 @@ types = {
 						ratio = yes
 					}
 					raid_add_unit_experience = 0.2
+					var:actor_country = {
+						add_fuel = -25000
+					}
 				}
 				victim_effects = {
-					var:target_state = {
-						custom_effect_tooltip = raid_nuclear_strike_tt
-						add_dynamic_modifier = {
-							modifier = fallout_atomic
-							days = 180
+					var:actor_country = {
+						if = {
+							limit = {
+								has_country_flag = nuclear_raid_dud
+							}
+							clr_country_flag = nuclear_raid_dud
 						}
 					}
-					var:actor_country = {
-						launch_nuke = {
-							province = var:ROOT.target_province #optional use either province or state
-							use_nuke = yes
+					hidden_effect = {
+						random_list = {
+							0 = {
+								modifier = {
+									add = 50 # Make it 33% likely to happen
+									var:actor_country = {
+										has_country_flag = sp_nuclear_bomb_no_test
+										NOT = { has_country_flag = first_nuclear_raid }
+									}
+								}
+								modifier = {
+									add = 15 # Make it 7% likely to happen with above or 13% alone
+									var:actor_country = {
+										NOT = { has_country_flag = sp_nuclear_bomb_fuze_all }
+										NOT = { has_country_flag = first_nuclear_raid }
+									}
+								}
+								var:actor_country = {
+									custom_effect_tooltip = nuclear_raid_dud_tt
+									set_country_flag = nuclear_raid_dud
+									set_country_flag = first_nuclear_raid
+									country_event = { id = afo_event.21 hours = 1 }
+								}
+								var:victim_country = {
+									country_event = { id = afo_event.22 hours = 1 }
+								}
+							}
+							100 = {
+								var:actor_country = {
+									launch_nuke = {
+										province = var:ROOT.target_province #optional use either province or state
+										use_nuke = no
+									}
+								}
+								var:victim_country = {
+									add_stability = -0.15
+									add_war_support = -0.25
+								}
+								var:target_state = {
+									custom_effect_tooltip = raid_nuclear_strike_tt
+									add_dynamic_modifier = {
+										modifier = fallout_atomic
+										days = 120
+									}
+								}
+							}
 						}
-						add_fuel = -25000
+					}
+					# Above effects repeated below for the correct tooltip to show up on the raid menu
+					if = {
+						limit = {
+							var:actor_country = { has_country_flag = nuclear_raid_dud }
+						}
+						effect_tooltip = {
+							var:actor_country = {
+								custom_effect_tooltip = nuclear_raid_dud_tt
+							}
+						}
+					}
+					else = {
+						effect_tooltip = {
+							var:actor_country = {
+								launch_nuke = {
+									province = var:ROOT.target_province #optional use either province or state
+									use_nuke = no
+								}
+							}
+							var:victim_country = {
+								add_stability = -0.15
+								add_war_support = -0.25
+							}
+							var:target_state = {
+								custom_effect_tooltip = raid_nuclear_strike_tt
+								add_dynamic_modifier = {
+									modifier = fallout_atomic
+									days = 120
+								}
+							}
+						}
 					}
 				}
 			}
@@ -210,20 +366,97 @@ types = {
 						ratio = yes
 					}
 					raid_add_unit_experience = 0.35
+					var:actor_country = {
+						add_fuel = -25000
+					}
 				}
 				victim_effects = {
 					var:actor_country = {
-						launch_nuke = {
-							province = var:ROOT.target_province #optional use either province or state
-							use_nuke = yes
+						if = {
+							limit = {
+								has_country_flag = nuclear_raid_dud
+							}
+							clr_country_flag = nuclear_raid_dud
 						}
-						add_fuel = -25000
 					}
-					var:target_state = {
-						custom_effect_tooltip = raid_nuclear_strike_tt
-						add_dynamic_modifier = {
-							modifier = fallout_atomic
-							days = 180
+					hidden_effect = {
+						random_list = {
+							0 = {
+								modifier = {
+									add = 50 # Make it 33% likely to happen
+									var:actor_country = {
+										has_country_flag = sp_nuclear_bomb_no_test
+										NOT = { has_country_flag = first_nuclear_raid }
+									}
+								}
+								modifier = {
+									add = 15 # Make it 7% likely to happen with above or 13% alone
+									var:actor_country = {
+										NOT = { has_country_flag = sp_nuclear_bomb_fuze_all }
+										NOT = { has_country_flag = first_nuclear_raid }
+									}
+								}
+								var:actor_country = {
+									custom_effect_tooltip = nuclear_raid_dud_tt
+									set_country_flag = nuclear_raid_dud
+									set_country_flag = first_nuclear_raid
+									country_event = { id = afo_event.21 hours = 1 }
+								}
+								var:victim_country = {
+									country_event = { id = afo_event.22 hours = 1 }
+								}
+							}
+							100 = {
+								var:actor_country = {
+									launch_nuke = {
+										province = var:ROOT.target_province #optional use either province or state
+										use_nuke = no
+									}
+								}
+								var:victim_country = {
+									add_stability = -0.2
+									add_war_support = -0.3
+								}
+								var:target_state = {
+									custom_effect_tooltip = raid_nuclear_strike_tt
+									add_dynamic_modifier = {
+										modifier = fallout_atomic
+										days = 180
+									}
+								}
+							}
+						}
+					}
+					# Above effects repeated below for the correct tooltip to show up on the raid menu
+					if = {
+						limit = {
+							var:actor_country = { has_country_flag = nuclear_raid_dud }
+						}
+						effect_tooltip = {
+							var:actor_country = {
+								custom_effect_tooltip = nuclear_raid_dud_tt
+							}
+						}
+					}
+					else = {
+						effect_tooltip = {
+							var:actor_country = {
+								launch_nuke = {
+									province = var:ROOT.target_province #optional use either province or state
+									use_nuke = no
+								}
+							}
+							var:victim_country = {
+								add_stability = -0.2
+								add_war_support = -0.3
+							}
+							var:target_state = {
+								custom_effect_tooltip = raid_nuclear_strike_tt
+								add_dynamic_modifier = {
+									modifier = fallout_atomic
+									days = 180
+								}
+							}
 						}
 					}
 				}

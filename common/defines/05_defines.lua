@@ -121,6 +121,12 @@ NDefines.NCountry.MAX_BOMBING_WEEKLY_WAR_SUPPORT_PENALTY = -0.005					-- Max pen
 NDefines.NCountry.BOMBING_WEEKLY_WAR_SUPPORT_PENALTY_DECAY = 0.002					-- Weekly decay of bomber damage war support penalty
 NDefines.NCountry.MAX_BOMBING_WAR_SUPPORT_IMPACT = -0.2								-- Max total penalty from bomber's damage
 
+-- We handle these penalties below directly in the nuclear raid
+NDefines.NCountry.NUCLEAR_BOMB_DROP_WAR_SUPPORT_EFFECT_MAX_INFRA = 0				-- Reduce enemy national war support on nuking a province, the value scales with infrastructure up to this number
+NDefines.NCountry.NUCLEAR_BOMB_DROP_WAR_SUPPORT_EFFECT_MAX_VP = 0					-- War support will be scaled down if there's less VP than this in the province
+NDefines.NCountry.THERMONUCLEAR_BOMB_DROP_WAR_SUPPORT_EFFECT_MAX_INFRA = 0			-- Reduce enemy national war support on nuking a province, the value scales with infrastructure up to this number
+NDefines.NCountry.THERMONUCLEAR_BOMB_DROP_WAR_SUPPORT_EFFECT_MAX_VP = 0				-- War support will be scaled down if there's less VP than this in the province
+
 NDefines.NCountry.CONVOYS_BEING_RAIDED_WAR_SUPPORT_PENALTY_SCALE = -0.01			-- Scaling of trade convoy raided to war support impact, will be added weekly as a war support penalty
 NDefines.NCountry.MAX_CONVOYS_BEING_RAIDED_WEEKLY_WAR_SUPPORT_PENALTY = -0.01		-- Max penalty that will gained per week from trade convoy raided
 NDefines.NCountry.CONVOYS_BEING_RAIDED_WEEKLY_WAR_SUPPORT_PENALTY_DECAY = 0.025		-- Weekly decay of trade convoy raided war support penalty
@@ -330,7 +336,7 @@ NDefines.NMilitary.BASE_DIVISION_SUPPORT_SLOT_COST = 1 								--Base XP cost to
 NDefines.NMilitary.UNIT_LEADER_ASSIGN_TRAIT_COST = 5								-- cost to assign a new trait to a unit leader
 
 --NDefines.NMilitary.PLAN_EXECUTE_CAREFUL_LIMIT = 10								-- When looking for an attach target, this score limit is required in the battle plan to consider province for attack
---NDefines.NMilitary.PLAN_EXECUTE_CAREFUL_MAX_FORT = 9								-- If execution mode is set to careful, units will not attack provinces with fort levels greater than or equal to this
+NDefines.NMilitary.PLAN_EXECUTE_CAREFUL_MAX_FORT = 7								-- If execution mode is set to careful, units will not attack provinces with fort levels greater than or equal to this
 
 NDefines.NMilitary.BATALION_CHANGED_EXPERIENCE_DROP = 0.75							-- Division experience drop if unit has different batalion
 
@@ -728,6 +734,8 @@ NDefines.NNavy.BASE_GUN_COOLDOWNS = { 												-- number of hours for a gun t
 	1.0,	-- small guns
 }
 
+NDefines.NNavy.BASE_POSITIONING = 0.6												-- base value for positioning
+
 NDefines.NNavy.RELATIVE_SURFACE_DETECTION_TO_POSITIONING_FACTOR	= 0.01				-- multiples the surface detection difference between two sides. the side with higher detection will get a bonus of this value
 NDefines.NNavy.MAX_POSITIONING_BONUS_FROM_SURFACE_DETECTION	= 0.0 					-- will clamp the bonus that you get from detection
 
@@ -1097,7 +1105,14 @@ NDefines.NAI.NAVAL_STRIKE_PLANES_PER_ARMY = 20										-- Amount of planes requ
 NDefines.NAI.NAVAL_SHIP_IN_PORT_AIR_IMPORTANCE = 20.0                             	-- Naval ship in the port air importance
 NDefines.NAI.PORT_STRIKE_PLANES_PER_SHIP = 20										-- Amount of bombers request per enemy ship in the port
 
+----------- Experiment, should stop the AI from having staring contests with forts, if AI starts suiciding maginot issue is here
+
+NDefines.NAI.FORT_LEVEL_TO_CONSIDER_HIGHLY_FORTIFIED = 9							-- Provinces above this level of fortification will be considered highly fortified by plan evaluation
 NDefines.NAI.FORTIFIED_RATIO_TO_CONSIDER_A_FRONT_FORTIFIED = 0.25 					-- ai will consider a front fortified if this ratio of provinces has fort
+--NDefines.NAI.HEAVILY_FORTIFIED_RATIO_TO_CONSIDER_A_FRONT_FORTIFIED = 0.8			-- ai will consider a front super fortified if this ratio of provinces has lots of forts
+--NDefines.NAI.FORTIFIED_MIN_ORG_FACTOR_TO_CONSIDER_A_FRONT_FORTIFIED = 0.05 		-- ai will treat fortified provinces as unfortified if no unit in that province has an organization factor at least this high
+
+----------- End
 
 NDefines.NAI.AGGRESSIVENESS_CHECK_PARTLY_FORTIFIED = 2.0							-- if front strength balance is at or above this value versus a party fortified enemy, we do a balanced attack
 NDefines.NAI.AGGRESSIVENESS_CHECK_PARTLY_FORTIFIED_WEAK_POINTS = 0.75				-- if front strength balance is at or above this value versus a party fortified enemy, we rush attack weak points; below this value, we are careful
@@ -1220,15 +1235,6 @@ NDefines.NAI.PLAN_ATTACK_MIN_STRENGTH_FACTOR_HIGH = 0.75
 
 NDefines.NAI.PLAN_AVG_PREPARATION_TO_EXECUTE = 0.5									-- % or more average plan preparation before executing
 NDefines.NAI.AI_FRONT_MOVEMENT_FACTOR_FOR_READY = 0.5			               		-- If less than this fraction of units on a front is moving  AI sees it as ready for action
-
------------ Experiment, should stop the AI from having staring contests with forts, if AI starts suiciding maginot issue is here
-
-NDefines.NAI.FORT_LEVEL_TO_CONSIDER_HIGHLY_FORTIFIED = 6							-- Provinces above this level of fortification will be considered highly fortified by plan evaluation
---NDefines.NAI.FORTIFIED_RATIO_TO_CONSIDER_A_FRONT_FORTIFIED = 1.0 					-- ai will consider a front fortified if this ratio of provinces has fort
---NDefines.NAI.HEAVILY_FORTIFIED_RATIO_TO_CONSIDER_A_FRONT_FORTIFIED = 1.0			-- ai will consider a front super fortified if this ratio of provinces has lots of forts
---NDefines.NAI.FORTIFIED_MIN_ORG_FACTOR_TO_CONSIDER_A_FRONT_FORTIFIED = 100 		-- ai will treat fortified provinces as unfortified if no unit in that province has an organization factor at least this high
-
------------ End
 
 NDefines.NAI.REVISITED_PROV_BOOST_FACTOR = 10                            			-- When the AI picks units for a front, it prioritises units already nearby.
 --NDefines.NAI.ORDER_ASSIGNMENT_DISTANCE_FACTOR = 10.0								-- When the AI assigns units to orders, it attempts to calculate the distance.
@@ -1353,3 +1359,5 @@ NDefines.NRaids.RAID_LOW_RISK_SETTING_DISASTER_MODIFIER = 0.05							-- How much
 NDefines.NRaids.RAID_DEFAULT_TARGET_COOLDOWN_DAYS = 180									-- The default cooldown (in days) for raiding the same target, can be overriden for specific raid types through script
 NDefines.NRaids.RAID_OUTCOME_REPORT_DAYS_TO_LIVE = 60									-- How many days after a raid has ended will the raid outcome report be visible on the map before being automatically dismissed
 NDefines.NRaids.MAX_TARGETS_TO_UPDATE_PER_FRAME = 50									-- PERFORMANCE (FRAME) : max raid targets to evaluate per frame (affects raid map icon refresh rate)
+NDefines.NRaids.NUCLEAR_BOMB_PRODUCTION_SCALE = 124										-- +1 nuclear_production gives 1 atomic bomb per 121 days (4 reactors = 1 bomb per month)
+NDefines.NRaids.THERMONUCLEAR_BOMB_PRODUCTION_SCALE = 124								-- +1 nuclear_production gives 1 atomic bomb per 121 days (4 reactors = 1 bomb per month)
