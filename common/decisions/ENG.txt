@@ -368,16 +368,32 @@ ENG_league_of_nations = {
 
 		available = {
 			has_idea = league_of_nations
-			FROM = { has_country_flag = lon_embargo_flag }
+			OR = {
+				AND = {
+					is_in_faction_with = ROOT
+					has_opinion = { target = FROM value < -99 }
+				}
+				FROM = { has_country_flag = lon_embargo_flag }
+			}
 		}
 		visible = {
 			has_idea = league_of_nations
-			FROM = { has_country_flag = lon_embargo_flag }
+			OR = {
+				AND = {
+					is_in_faction_with = ROOT
+					has_opinion = { target = FROM value < -99 }
+				}
+				FROM = { has_country_flag = lon_embargo_flag }
+			}
 		}
 
 		target_trigger = {
-			FROM = {
-				has_country_flag = lon_embargo_flag
+			OR = {
+				AND = {
+					is_in_faction_with = ROOT
+					has_opinion = { target = FROM value < -99 }
+				}
+				FROM = { has_country_flag = lon_embargo_flag }
 			}
 		}
 
@@ -403,13 +419,27 @@ ENG_league_of_nations = {
 		}
 
 		complete_effect = {
-			every_country = {
+			if = {
 				limit = {
-					has_idea = league_of_nations
-					NOT = { tag = FROM }
-					NOT = { is_in_faction_with = FROM }
+					is_in_faction_with = FROM
 				}
-				remove_opinion_modifier = { target = FROM modifier = lon_embargo }
+				every_country = {
+					limit = {
+						has_idea = league_of_nations
+						NOT = { tag = FROM }
+					}
+					remove_opinion_modifier = { target = FROM modifier = lon_embargo }
+				}
+			}
+			else = {
+				every_country = {
+					limit = {
+						has_idea = league_of_nations
+						NOT = { tag = FROM }
+						NOT = { is_in_faction_with = FROM }
+					}
+					remove_opinion_modifier = { target = FROM modifier = lon_embargo }
+				}
 			}
 			FROM = { country_event = { id = eng_armor.829 } }
 		}

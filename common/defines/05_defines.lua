@@ -1237,7 +1237,9 @@ NDefines.NAI.PLAN_AVG_PREPARATION_TO_EXECUTE = 0.5									-- % or more average 
 NDefines.NAI.AI_FRONT_MOVEMENT_FACTOR_FOR_READY = 0.5			               		-- If less than this fraction of units on a front is moving  AI sees it as ready for action
 
 NDefines.NAI.REVISITED_PROV_BOOST_FACTOR = 10                            			-- When the AI picks units for a front, it prioritises units already nearby.
---NDefines.NAI.ORDER_ASSIGNMENT_DISTANCE_FACTOR = 10.0								-- When the AI assigns units to orders, it attempts to calculate the distance.
+
+NDefines.NAI.PLAN_FRONTUNIT_DISTANCE_FACTOR = 10.0									-- Factor for candidate units distance to front positions.
+NDefines.NAI.ORDER_ASSIGNMENT_DISTANCE_FACTOR = 100.0								-- When the AI assigns units to orders, how much should distance be taken into account?
 --NDefines.NAI.RELUCTANCE_TO_CHANGE_FRONT_FACTOR = 0.9								-- Factor for how reluctant the AI is to change a units order group.
 --NDefines.NAI.REVISITED_PROV_PENALTY_FACTOR = 1.8									-- When the AI picks units for a front, it tries to spread out a bit which units it grabs.
 
