@@ -173,9 +173,16 @@ NDefines.NBuildings.MAX_BUILDING_LEVELS = 55  										-- Max levels a building
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Production
 
-NDefines.NProduction.BASE_FACTORY_SPEED = 2.5 										-- Base factory speed multiplier (how much hoi3 style IC each factory gives).
-NDefines.NProduction.BASE_FACTORY_SPEED_MIL = 2.5 									-- Base factory speed multiplier (how much hoi3 style IC each factory gives).
-NDefines.NProduction.BASE_FACTORY_SPEED_NAV = 4.2					 				-- Base factory speed multiplier (how much hoi3 style IC each factory gives).
+NDefines.NProduction.RESOURCE_TO_ENERGY_COEFFICIENT = 1.0							-- How much energy per coal produces
+NDefines.NProduction.BASE_ENERGY_COST = 5.0											-- How much energy per factory consumes
+NDefines.NProduction.ENERGY_SCALING_COST_BY_FACTORY_COUNT = 0.02					-- Scales energy cost based on the total number of factories
+
+NDefines.NProduction.BASE_FACTORY_SPEED = 0.0 										-- Base factory speed multiplier (how much hoi3 style IC each factory gives).
+NDefines.NProduction.POWERED_FACTORY_SPEED = 2.5									-- Powered factory speed multiplier.
+NDefines.NProduction.BASE_FACTORY_SPEED_MIL = 0.0 									-- Base factory speed multiplier (how much hoi3 style IC each factory gives).
+NDefines.NProduction.POWERED_FACTORY_SPEED_MIL = 2.5								-- Powered factory speed multiplier.
+NDefines.NProduction.BASE_FACTORY_SPEED_NAV = 0.0					 				-- Base factory speed multiplier (how much hoi3 style IC each factory gives).
+NDefines.NProduction.POWERED_FACTORY_SPEED_NAV = 4.2								-- Powered factory speed multiplier.
 
 NDefines.NProduction.LICENSE_EQUIPMENT_BASE_SPEED = -0.35							-- base MIC speed modifier for licensed equipment
 NDefines.NProduction.LICENSE_EQUIPMENT_SPEED_NOT_FACTION = -0.25					-- MIC speed modifier for licensed equipment for not being in faction
@@ -430,7 +437,6 @@ NDefines.NMilitary.SUPPLY_GRACE = 168												-- troops always carry 10 days 
 NDefines.NMilitary.SUPPLY_GRACE_MAX_REDUCE_PER_HOUR = 1         					-- supply grace is not decreased instantly when it is buffed temporarily and buff is removed
 
 NDefines.NMilitary.ATTRITION_EQUIPMENT_LOSS_CHANCE = 0.03							-- Chance for loosing equipment when suffer attrition. Scaled up the stronger attrition is. Then scaled down by equipment reliability.
-NDefines.NMilitary.ATTRITION_EQUIPMENT_PER_TYPE_LOSS_CHANCE = 0.1 					-- Chance for loosing equipment when suffer attrition. Scaled up the stronger attrition is. Then scaled down by equipment reliability.
 
 NDefines.NMilitary.ARMY_EXP_BASE_LEVEL = 10
 
@@ -634,7 +640,9 @@ NDefines.NNavy.SUB_DETECTION_CHANCE_BASE_SPOTTING_POW_EFFECT = 1.5					-- effect
 
 NDefines.NNavy.DEPTH_CHARGE_STAT_FOR_SHIP_TO_BE_SUB_HUNTER = 6						-- amount of depth charge required for a ship to be considred a sub hunter and so good for convoy escort
 
-NDefines.NNavy.NAVAL_INVASION_PREPARE_HOURS = 336									-- base hours needed to prepare an invasion
+NDefines.NNavy.NAVAL_INVASION_PREPARE_DAYS = 14										-- base days needed to prepare a naval invasion
+NDefines.NNavy.NAVAL_INVASION_PLAN_CAP = 1000										-- base cap of naval invasions can be planned at the same time
+NDefines.NNavy.BASE_NAVAL_INVASION_DIVISION_CAP = 1000								-- base cap of divisions that can be assigned in a naval invasion
 
 NDefines.NNavy.SHIP_TO_FLEET_ANTI_AIR_RATIO	= 0.05									-- total sum of fleet's anti air will be multiplied with this ratio and added to calculations anti-air of individual ships while air damage reduction
 NDefines.NNavy.ANTI_AIR_TARGETTING_TO_CHANCE = 0.06									-- Balancing value to convert averaged equipment stats (anti_air_targetting and naval_strike_agility) to probability chances of airplane being hit by navies AA.
@@ -775,8 +783,6 @@ NDefines.NNavy.EXPERIENCE_FACTOR_CONVOY_ATTACK = 0.12
 NDefines.NNavy.EXPERIENCE_FACTOR_NON_CARRIER_GAIN = 0.24							-- Xp gain by non-carrier ships in the combat
 NDefines.NNavy.EXPERIENCE_FACTOR_CARRIER_GAIN = 0.06								-- Xp gain by carrier ships in the combat
 
-NDefines.NNavy.NAVAL_SUPREMACY_CAN_INVADE = 0.5										-- required naval supremacy to perform invasions on an area
-
 NDefines.NNavy.AGGRESSION_SETTINGS_VALUES = { 										-- ships will use this values while deciding to attack enemies
 		0,		-- do not engage
 		0.95,	-- low
@@ -785,7 +791,7 @@ NDefines.NNavy.AGGRESSION_SETTINGS_VALUES = { 										-- ships will use this v
 		10000,	-- I am death incarnate!
 	}
 
-NDefines.NNavy.MISSION_SUPREMACY_RATIOS = { 										-- supremacy multipliers for different mission types
+NDefines.NNavy.MISSION_DOMINANCE_RATIOS = { 										-- dominance multipliers for different mission types
         0.0, -- HOLD
         1.0, -- PATROL
         0.18, -- STRIKE FORCE
@@ -797,8 +803,6 @@ NDefines.NNavy.MISSION_SUPREMACY_RATIOS = { 										-- supremacy multipliers f
         0.0, -- RESERVE_FLEET
         0.4, -- NAVAL_INVASION_SUPPORT
     }
-
-NDefines.NNavy.NAVAL_MINES_NAVAL_SUPREMACY_FACTOR = 0.5								-- Factor for max amount of mines increasing naval supremacy
 
 NDefines.NNavy.CONVOY_EFFICIENCY_LOSS_MODIFIER = 1.1								-- How much efficiency drops when losing convoys. If modifier is 0.5, then losing 100% of convoys in short period, the efficiency will drop by 50%.
 NDefines.NNavy.CONVOY_EFFICIENCY_REGAIN_AFTER_DAYS = 1								-- Convoy starts regaining it's efficiency after X days without any convoys being sink.
@@ -834,14 +838,9 @@ NDefines.NNavy.TRAINING_MAX_DAILY_COUNTRY_EXP = 0.15								-- Maximum navy XP d
 NDefines.NNavy.CARRIER_STACK_PENALTY = 10											-- The most efficient is 4 carriers in combat. 5+ brings the penalty to the amount of wings in battle.
 NDefines.NNavy.CARRIER_STACK_PENALTY_EFFECT = 0.6									-- Each carrier above the optimal amount decreases the amount of airplanes being able to takeoff by such %.
 
---NDefines.NNavy.SUPREMACY_PER_SHIP_PER_MANPOWER = 0.15								-- supremacy of a ship is calculated using its IC, manpower and a base define
---NDefines.NNavy.SUPREMACY_PER_SHIP_PER_IC = 0.1
---NDefines.NNavy.SUPREMACY_PER_SHIP_BASE = 25.0
-
 NDefines.NNavy.DEPTH_CHARGES_HIT_CHANCE_MULT = 2
 NDefines.NNavy.NAVAL_COMBAT_AIR_LOW_AA_TARGET_SCORE = 1
-NDefines.NNavy.NAVAL_COMBAT_AIR_CARRIER_TARGET_SCORE = 1000
-NDefines.NNavy.SUPPLY_NEED_FACTOR = 0										   		-- multiplies supply usage
+NDefines.NNavy.SUPPLY_NEED_FACTOR = 4										   		-- multiplies supply usage
 
 NDefines.NNavy.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
 	0.5, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
