@@ -1331,6 +1331,18 @@ NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_OWNED_NONCORE = 0.50                      
 NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_OWNED_CORE = 2.00                             -- factor prio with this if owned core territory
 NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_REPAIRING = 0.30                              -- factor prio with this if building is being repaired
 
+NDefines.NAI.MIN_FACTORIES_TO_WANT_TO_IMPORT = {  -- minimum number of civilian factories the AI must have to consider importing a resource - per strategic resource. Default 0, array -should- be updated with new resources, or if the order changes.
+	0, -- oil
+	0, -- aluminium
+	0, -- rubber
+	0, -- tungsten
+	0, -- steel
+	0, -- chromium
+	0, -- coal
+	0, -- bauxite
+	0, -- iron
+}
+
 
 --	NDefines_Graphics.NGraphics.
 
