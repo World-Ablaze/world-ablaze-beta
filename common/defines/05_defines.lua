@@ -174,8 +174,8 @@ NDefines.NBuildings.MAX_BUILDING_LEVELS = 55  										-- Max levels a building
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Production
 
 NDefines.NProduction.RESOURCE_TO_ENERGY_COEFFICIENT = 1.0							-- How much energy per coal produces
-NDefines.NProduction.BASE_ENERGY_COST = 5.0											-- How much energy per factory consumes
-NDefines.NProduction.ENERGY_SCALING_COST_BY_FACTORY_COUNT = 0.02					-- Scales energy cost based on the total number of factories
+NDefines.NProduction.BASE_ENERGY_COST = 1.0											-- How much energy per factory consumes
+NDefines.NProduction.ENERGY_SCALING_COST_BY_FACTORY_COUNT = 0.00					-- Scales energy cost based on the total number of factories
 
 NDefines.NProduction.BASE_FACTORY_SPEED = 0.0 										-- Base factory speed multiplier (how much hoi3 style IC each factory gives).
 NDefines.NProduction.POWERED_FACTORY_SPEED = 2.5									-- Powered factory speed multiplier.
