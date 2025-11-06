@@ -174,8 +174,8 @@ NDefines.NBuildings.MAX_BUILDING_LEVELS = 55  										-- Max levels a building
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Production
 
 NDefines.NProduction.RESOURCE_TO_ENERGY_COEFFICIENT = 1.0							-- How much energy per coal produces
-NDefines.NProduction.BASE_ENERGY_COST = 5.0											-- How much energy per factory consumes
-NDefines.NProduction.ENERGY_SCALING_COST_BY_FACTORY_COUNT = 0.02					-- Scales energy cost based on the total number of factories
+NDefines.NProduction.BASE_ENERGY_COST = 1.0											-- How much energy per factory consumes
+NDefines.NProduction.ENERGY_SCALING_COST_BY_FACTORY_COUNT = 0.00					-- Scales energy cost based on the total number of factories
 
 NDefines.NProduction.BASE_FACTORY_SPEED = 0.0 										-- Base factory speed multiplier (how much hoi3 style IC each factory gives).
 NDefines.NProduction.POWERED_FACTORY_SPEED = 2.5									-- Powered factory speed multiplier.
@@ -804,6 +804,11 @@ NDefines.NNavy.MISSION_DOMINANCE_RATIOS = { 										-- dominance multipliers f
         0.4, -- NAVAL_INVASION_SUPPORT
     }
 
+NDefines.NNavy.DOMINANCE_PER_SHIP_PER_RANGE_NEUTRAL = 4000							-- ship range where there is no penalty nor bonus to naval dominance, below or above this will be scaled accordingly with penalty or bonus, min value is 0
+NDefines.NNavy.DOMINANCE_PER_SHIP_PER_SPEED_NEUTRAL = 30							-- ship speed where there is no penalty nor bonus to naval dominance, below or above this will be scaled accordingly with penalty or bonus, min value is 0
+NDefines.NNavy.DOMINANCE_PER_SHIP_PER_CARRIER_SIZE = 0.05							-- bonus to dominance based on the carrier size - e.g. regular carrier hangar has carrier_size of 2, so it would be a bonus of 2 * DOMINANCE_PER_SHIP_PER_CARRIER_SIZE, min value is 0
+NDefines.NNavy.DOMINANCE_PER_SHIP_PER_HEAVY_GUN_ATTACK = 0.002						-- bonus to dominance based on the heavy attack, min value is 0
+
 NDefines.NNavy.CONVOY_EFFICIENCY_LOSS_MODIFIER = 1.1								-- How much efficiency drops when losing convoys. If modifier is 0.5, then losing 100% of convoys in short period, the efficiency will drop by 50%.
 NDefines.NNavy.CONVOY_EFFICIENCY_REGAIN_AFTER_DAYS = 1								-- Convoy starts regaining it's efficiency after X days without any convoys being sink.
 NDefines.NNavy.CONVOY_EFFICIENCY_REGAIN_BASE_SPEED = 0.04							-- How much efficiency regains every day.
@@ -1330,6 +1335,18 @@ NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_OCCUPIED_TERRITORY = 0.50                 
 NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_OWNED_NONCORE = 0.50                          -- factor prio with this if owned non-core territory
 NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_OWNED_CORE = 2.00                             -- factor prio with this if owned core territory
 NDefines.NAI.CONSTRUCTION_PRIO_FACTOR_REPAIRING = 0.30                              -- factor prio with this if building is being repaired
+
+NDefines.NAI.MIN_FACTORIES_TO_WANT_TO_IMPORT = {  -- minimum number of civilian factories the AI must have to consider importing a resource - per strategic resource. Default 0, array -should- be updated with new resources, or if the order changes.
+	0, -- oil
+	0, -- aluminium
+	0, -- rubber
+	0, -- tungsten
+	0, -- steel
+	0, -- chromium
+	0, -- coal
+	0, -- bauxite
+	0, -- iron
+}
 
 
 --	NDefines_Graphics.NGraphics.
