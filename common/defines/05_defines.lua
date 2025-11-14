@@ -1381,5 +1381,5 @@ NDefines.NRaids.NUCLEAR_BOMB_PRODUCTION_SCALE = 124										-- +1 nuclear_produ
 NDefines.NRaids.THERMONUCLEAR_BOMB_PRODUCTION_SCALE = 124								-- +1 nuclear_production gives 1 atomic bomb per 121 days (4 reactors = 1 bomb per month)
 
 --- NDoctrines ---
-NDefines.NDoctrines.TRAINING_MASTERY_GAIN_FACTOR = 0.01									-- How much training contributes to doctrine mastery relative to combat/missions
+NDefines.NDoctrines.TRAINING_MASTERY_GAIN_FACTOR = 0.02									-- How much training contributes to doctrine mastery relative to combat/missions
 NDefines.NDoctrines.MASTERY_BANK_MAX = 0                               					-- The maximum amount of mastery that can be banked
