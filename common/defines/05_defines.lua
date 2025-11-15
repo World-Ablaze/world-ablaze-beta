@@ -147,6 +147,10 @@ NDefines.NCountry.FEMALE_UNIT_LEADER_BASE_CHANCE = {
 
 NDefines.NCountry.BASE_MAX_COMMAND_POWER = 200.0									-- base value for maximum command power
 
+
+NDefines.NCountry.AIR_VOLUNTEER_PLANES_RATIO = 0.1									-- Ratio for volunteer planes available for sending in relation to sender air force
+NDefines.NCountry.AIR_VOLUNTEER_BASES_CAPACITY_LIMIT = 0.05							-- Ratio for volunteer planes available for sending in relation to receiver air base capacity
+
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Buildings
 
 
