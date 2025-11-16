@@ -627,6 +627,8 @@ NDefines.NAir.MAX_QUICK_WING_SELECTION = 4											-- Max possible selection f
 USE_SINGLE_NAVAL_ARMAMENT_CATEGORY = false											-- If true, only the armament module category that inflicts the greatest damage to naval targets will contribute naval strike and port strike mission specific stats. Only modules with both naval_strike_attack and naval_strike_targetting are considered. This is used to prevent torpedo_mounting and bomb_locks stats from stacking.
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Navy
+NDefines.NNavy.NAVAL_HEADQUARTER_ADJACENCY = 3										-- How many extra steps of strategic regions from the first the naval headquarter provides benefits.
+
 -- Having Naval Dominance will provide the following benefits:
 NDefines.NNavy.NAVAL_DOMINANCE_STRIKE_FORCE_FRACTION = 0.0004						-- How much dominance points goes into one percent of the multiplier from strike force missions. ( e.g. a taskforce of 1000 dominance generates a 40% multiplier )
 NDefines.NNavy.NAVAL_DOMINANCE_STRIKE_FORCE_MULTIREGION_DECAY = 0.10				-- Percentage that the strike force mission's naval dominance multiplier decreases with for each additional assigned region
