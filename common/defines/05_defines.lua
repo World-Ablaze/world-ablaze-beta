@@ -30,6 +30,7 @@ NDefines.NDiplomacy.FLEET_FEAR = 0													-- Impact on troops on borders wh
 NDefines.NDiplomacy.BASE_SEND_ATTACHE_COST = 50										-- Political power cost to send attache
 
 NDefines.NDiplomacy.EMBARGO_THREAT_THRESHOLD = 50									-- Target-generated threat threshold to allow embargo (affected by modifiers)
+NDefines.NDiplomacy.NAVAL_BLOCKADE_THREAT_THRESHOLD = 50							-- Target-generated threat threshold to allow naval blockade
 
 NDefines.NDiplomacy.LL_TO_OVERLORD_AUTONOMY_DAILY_BASE = 0.0						-- If puppet lend leases equipment to overlord of at least same tech level as they have, they gain autonomy
 NDefines.NDiplomacy.LL_TO_OVERLORD_AUTONOMY_DAILY_FACTOR = 0.0						-- If puppet lend leases equipment to overlord of at least same tech level as they have, they gain autonomy
@@ -1393,6 +1394,10 @@ NDefines.NRaids.RAID_OUTCOME_REPORT_DAYS_TO_LIVE = 60									-- How many days a
 NDefines.NRaids.MAX_TARGETS_TO_UPDATE_PER_FRAME = 50									-- PERFORMANCE (FRAME) : max raid targets to evaluate per frame (affects raid map icon refresh rate)
 NDefines.NRaids.NUCLEAR_BOMB_PRODUCTION_SCALE = 124										-- +1 nuclear_production gives 1 atomic bomb per 121 days (4 reactors = 1 bomb per month)
 NDefines.NRaids.THERMONUCLEAR_BOMB_PRODUCTION_SCALE = 124								-- +1 nuclear_production gives 1 atomic bomb per 121 days (4 reactors = 1 bomb per month)
+
+--- NFactions ---
+NDefines.NFactions.AI_MIN_POWER_PROJECTION_SCORE = 0									-- Min AI score for Power Projection
+NDefines.NFactions.AI_MAX_POWER_PROJECTION_SCORE = 0									-- Max AI score for Power Projection
 
 --- NDoctrines ---
 NDefines.NDoctrines.BASE_MASTERY_GAIN_TARGET_MANPOWER = 500000.0           				-- Beyond this amount of manpower contributing to mastery, mastery gain will start having diminishing returns (see doctrines documentation)
