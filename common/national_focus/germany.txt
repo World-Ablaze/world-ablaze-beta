@@ -4912,12 +4912,76 @@ focus_tree = {
 	}
 
 	focus = {
-		id = GER_integration_of_enigma
-		icon = GFX_goal_GER_integration_of_enigma
+		id = GER_aggressive_artillery
+		icon = GFX_goal_generic_artillery
+		mutually_exclusive = { focus = GER_frontline_artillery }
 		prerequisite = { focus = GER_formation_of_the_okw }
 		x = -1
 		y = 1
 		relative_position_id = GER_formation_of_the_okw
+		cost = 3
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_RESEARCH }
+
+		completion_reward = {
+			add_tech_bonus = {
+				name = GER_aggressive_artillery
+				bonus = 0.5
+				uses = 2
+				category = artillery
+			}
+            WA_add_mastery_artillery_100 = yes
+		}
+	}
+
+	focus = {
+		id = GER_frontline_artillery
+		icon = GFX_goal_GER_frontline_artillery
+		mutually_exclusive = { focus = GER_aggressive_artillery }
+		prerequisite = { focus = GER_formation_of_the_okw }
+		x = 1
+		y = 1
+		relative_position_id = GER_formation_of_the_okw
+		cost = 3
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_RESEARCH }
+
+		completion_reward = {
+			add_tech_bonus = {
+				name = GER_frontline_artillery
+				bonus = 0.5
+				uses = 2
+				category = artillery
+			}
+			add_tech_bonus = {
+				name = GER_frontline_artillery
+				bonus = 0.5
+				uses = 2
+				category = cat_anti_air
+			}
+			custom_effect_tooltip = GER_frontline_artillery_tt
+			hidden_effect = {
+				set_technology = {
+					frontline_support = 1
+				}
+			}
+            WA_add_mastery_artillery_50 = yes
+		}
+	}
+
+	focus = {
+		id = GER_integration_of_enigma
+		icon = GFX_goal_GER_integration_of_enigma
+		prerequisite = { focus = GER_aggressive_artillery focus = GER_frontline_artillery }
+		x = 1
+		y = 1
+		relative_position_id = GER_aggressive_artillery
 		cost = 4
 		ai_will_do = {
 			factor = 1
@@ -4947,13 +5011,130 @@ focus_tree = {
 		}
 	}
 
+	###
+
+	focus = {
+		id = GER_specialized_equipment
+		icon = GFX_goal_GER_specialized_equipment
+		prerequisite = { focus = GER_integration_of_enigma }
+		x = -2
+		y = 1
+		relative_position_id = GER_integration_of_enigma
+		cost = 3
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+		}
+
+		search_filters = { FOCUS_FILTER_RESEARCH }
+
+		completion_reward = {
+			add_tech_bonus = {
+				name = GER_nebeltruppen
+				bonus = 1.0
+				uses = 2
+				category = rocket_artillery
+			}
+			add_tech_bonus = {
+				name = GER_luftverteidigung
+				bonus = 1.0
+				uses = 2
+				category = cat_anti_air
+			}
+		}
+	}
+
+	focus = {
+		id = GER_sturmgeschutz
+		icon = GFX_goal_generic_assault_artillery
+		prerequisite = { focus = GER_integration_of_enigma }
+		x = 0
+		y = 1
+		relative_position_id = GER_integration_of_enigma
+		cost = 3
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = { FOCUS_FILTER_RESEARCH }
+
+		completion_reward = {
+			if = {
+				limit = { has_aat = yes }
+				mio:GER_alkett_organization = {
+					add_mio_funds = 1800
+				}
+			}
+			if = {
+				limit = {
+					has_dlc = "No Step Back"
+				}
+				add_tech_bonus = {
+					name = GER_sturmgeschutz
+					bonus = 1.0
+					uses = 2
+					technology = ger_assault_tank_2_spg
+					technology = ger_assault_tank_3_spg
+					technology = ger_assault_tank_4_spg
+				}
+			}
+			else = {
+				add_tech_bonus = {
+					name = GER_sturmgeschutz
+					bonus = 1.0
+					uses = 2
+					technology = ger_assault_2_spg
+					technology = ger_assault_3_spg
+					technology = ger_assault_4_spg
+				}
+			}
+            WA_add_mastery_artillery_100 = yes
+		}
+	}
+
+	focus = {
+		id = GER_lessons_from_war
+		icon = GFX_goal_GER_lessons_from_war
+		prerequisite = { focus = GER_integration_of_enigma }
+		x = 2
+		y = 1
+		relative_position_id = GER_integration_of_enigma
+		cost = 3
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			has_tech = ger_medium_tank_chassis_2_4
+			has_war_with = SOV
+			date > 1942.5.1
+		}
+
+		search_filters = { FOCUS_FILTER_RESEARCH FOCUS_FILTER_HISTORICAL }
+
+		completion_reward = {
+			set_technology = { ger_medium_tank_chassis_2_5 = 1 }
+			add_tech_bonus = {
+				name = GER_lessons_from_war
+				bonus = 1.0
+				uses = 1
+				technology = ger_cas_ad_tech_7
+				technology = ger_cas_ad_tech_7_1
+			}
+		}
+	}
+
+	###
+
 	focus = {
 		id = GER_re_establish_jager_training
 		icon = GFX_goal_GER_re_establish_jager_training
-		prerequisite = { focus = GER_formation_of_the_okw }
-		x = 1
-		y = 1
-		relative_position_id = GER_formation_of_the_okw
+		prerequisite = { focus = GER_integration_of_enigma }
+		x = -1
+		y = 2
+		relative_position_id = GER_integration_of_enigma
 		cost = 3
 		ai_will_do = {
 			factor = 1
@@ -4968,6 +5149,10 @@ focus_tree = {
 				uses = 3
 				category = mountaineers_tech
 			}
+			hidden_effect = {
+				set_technology = { german_fusiliers = 1 }
+			}
+			custom_effect_tooltip = german_fusiliers_tt
 		}
 	}
 
@@ -4975,8 +5160,8 @@ focus_tree = {
 		id = GER_evolution_of_the_aufklarungs_battalions
 		icon = GFX_goal_GER_evolution_of_the_aufklarungs_battalions
 		prerequisite = { focus = GER_integration_of_enigma }
-		x = 0
-		y = 3
+		x = 1
+		y = 2
 		relative_position_id = GER_integration_of_enigma
 		cost = 3
 		ai_will_do = {
@@ -5028,165 +5213,6 @@ focus_tree = {
 				panzer_aufklarung = 1
 				popup = no
 			}
-		}
-	}
-
-	focus = {
-		id = GER_german_fusiliers
-		icon = GFX_goal_generic_light_infantry
-		prerequisite = { focus = GER_re_establish_jager_training }
-		x = 0
-		y = 3
-		relative_position_id = GER_re_establish_jager_training
-		cost = 3
-		ai_will_do = {
-			factor = 1
-		}
-
-		completion_reward = {
-			hidden_effect = {
-				set_technology = { german_fusiliers = 1 }
-			}
-			custom_effect_tooltip = german_fusiliers_tt
-		}
-	}
-
-	focus = {
-		id = GER_aggressive_artillery
-		icon = GFX_goal_generic_artillery
-		prerequisite = { focus = GER_integration_of_enigma focus = GER_re_establish_jager_training }
-		x = 1
-		y = 1
-		relative_position_id = GER_integration_of_enigma
-		cost = 3
-		ai_will_do = {
-			factor = 1
-		}
-
-		search_filters = { FOCUS_FILTER_RESEARCH }
-
-		completion_reward = {
-			add_tech_bonus = {
-				name = GER_aggressive_artillery
-				bonus = 0.5
-				uses = 2
-				category = artillery
-			}
-            WA_add_mastery_artillery_100 = yes
-		}
-	}
-
-	focus = {
-		id = GER_specialized_equipment
-		icon = GFX_goal_GER_specialized_equipment
-		prerequisite = { focus = GER_aggressive_artillery }
-		x = -2
-		y = 1
-		relative_position_id = GER_aggressive_artillery
-		cost = 3
-		ai_will_do = {
-			factor = 1
-		}
-
-		available = {
-		}
-
-		search_filters = { FOCUS_FILTER_RESEARCH }
-
-		completion_reward = {
-			add_tech_bonus = {
-				name = GER_nebeltruppen
-				bonus = 1.0
-				uses = 2
-				category = rocket_artillery
-			}
-			add_tech_bonus = {
-				name = GER_luftverteidigung
-				bonus = 1.0
-				uses = 2
-				category = cat_anti_air
-			}
-		}
-	}
-
-	focus = {
-		id = GER_lessons_from_war
-		icon = GFX_goal_GER_lessons_from_war
-		#alternate_icon = GFX_focus_GER_combined_arms_historical
-		prerequisite = { focus = GER_aggressive_artillery }
-		x = 2
-		y = 1
-		relative_position_id = GER_aggressive_artillery
-		cost = 3
-		ai_will_do = {
-			factor = 1
-		}
-
-		available = {
-			has_tech = ger_medium_tank_chassis_2_4
-			has_war_with = SOV
-			date > 1942.5.1
-		}
-
-		search_filters = { FOCUS_FILTER_RESEARCH FOCUS_FILTER_HISTORICAL }
-
-		completion_reward = {
-			set_technology = { ger_medium_tank_chassis_2_5 = 1 }
-			add_tech_bonus = {
-				name = GER_lessons_from_war
-				bonus = 1.0
-				uses = 1
-				technology = ger_cas_ad_tech_7
-				technology = ger_cas_ad_tech_7_1
-			}
-		}
-	}
-
-	focus = {
-		id = GER_sturmgeschutz
-		icon = GFX_goal_generic_assault_artillery
-		prerequisite = { focus = GER_aggressive_artillery }
-		x = 0
-		y = 1
-		relative_position_id = GER_aggressive_artillery
-		cost = 3
-		ai_will_do = {
-			factor = 1
-		}
-
-		search_filters = { FOCUS_FILTER_RESEARCH }
-
-		completion_reward = {
-			if = {
-				limit = { has_aat = yes }
-				mio:GER_alkett_organization = {
-					add_mio_funds = 1800
-				}
-			}
-			if = {
-				limit = {
-					has_dlc = "No Step Back"
-				}
-				add_tech_bonus = {
-					name = GER_sturmgeschutz
-					bonus = 1.0
-					uses = 2
-					technology = ger_assault_tank_2_spg
-					technology = ger_assault_tank_3_spg
-					technology = ger_assault_tank_4_spg
-				}
-			}
-			else = {
-				add_tech_bonus = {
-					name = GER_sturmgeschutz
-					bonus = 1.0
-					uses = 2
-					technology = ger_assault_2_spg
-					technology = ger_assault_3_spg
-					technology = ger_assault_4_spg
-				}
-			}
-            WA_add_mastery_artillery_100 = yes
 		}
 	}
 
