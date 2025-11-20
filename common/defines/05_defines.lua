@@ -757,7 +757,7 @@ NDefines.NNavy.BASE_GUN_COOLDOWNS = { 												-- number of hours for a gun t
 	1.0,	-- small guns
 }
 
-NDefines.NNavy.BASE_POSITIONING = 0.6												-- base value for positioning
+NDefines.NNavy.BASE_POSITIONING = 0.75												-- base value for positioning
 
 NDefines.NNavy.RELATIVE_SURFACE_DETECTION_TO_POSITIONING_FACTOR	= 0.01				-- multiples the surface detection difference between two sides. the side with higher detection will get a bonus of this value
 NDefines.NNavy.MAX_POSITIONING_BONUS_FROM_SURFACE_DETECTION	= 0.0 					-- will clamp the bonus that you get from detection
