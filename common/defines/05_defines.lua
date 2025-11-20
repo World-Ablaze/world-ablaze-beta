@@ -860,7 +860,7 @@ NDefines.NNavy.CARRIER_STACK_PENALTY_EFFECT = 0.6									-- Each carrier above 
 
 NDefines.NNavy.DEPTH_CHARGES_HIT_CHANCE_MULT = 2
 NDefines.NNavy.NAVAL_COMBAT_AIR_LOW_AA_TARGET_SCORE = 1
-NDefines.NNavy.SUPPLY_NEED_FACTOR = 4										   		-- multiplies supply usage
+NDefines.NNavy.SUPPLY_NEED_FACTOR = 0.75										   		-- multiplies supply usage
 
 NDefines.NNavy.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
 	0.5, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
