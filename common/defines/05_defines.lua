@@ -52,7 +52,7 @@ NDefines.NPolitics.NAVY_LEADER_MAX_COST = 80										-- max cost BEFORE modifie
 
 NDefines.NTrade.BASE_TRADE_FACTOR = 55												-- This is the base trade factor
 NDefines.NTrade.RELATION_TRADE_FACTOR = 2											-- Trade factor is modified by Opinion value times this
-NDefines.NTrade.DISTANCE_TRADE_FACTOR = -0.005										-- Trade factor is modified by distance times this
+NDefines.NTrade.DISTANCE_TRADE_FACTOR = -0.02										-- Trade factor is modified by distance times this
 NDefines.NTrade.PARTY_SUPPORT_TRADE_FACTOR = 0										-- Trade factor bonus at the other side having 100 % party popularity for my party
 NDefines.NTrade.ANTI_MONOPOLY_TRADE_FACTOR = 0										-- This is added to the factor value when anti-monopoly threshold is exceeded
 
@@ -657,7 +657,7 @@ NDefines.NNavy.DEPTH_CHARGE_STAT_FOR_SHIP_TO_BE_SUB_HUNTER = 6						-- amount of
 
 NDefines.NNavy.NAVAL_INVASION_PREPARE_DAYS = 60										-- base days needed to prepare a naval invasion
 NDefines.NNavy.NAVAL_INVASION_PLAN_CAP = 1											-- base cap of naval invasions can be planned at the same time
-NDefines.NNavy.BASE_NAVAL_INVASION_DIVISION_CAP = 4									-- base cap of divisions that can be assigned in a naval invasion
+NDefines.NNavy.BASE_NAVAL_INVASION_DIVISION_CAP = 3									-- base cap of divisions that can be assigned in a naval invasion
 
 NDefines.NNavy.SHIP_TO_FLEET_ANTI_AIR_RATIO	= 0.05									-- total sum of fleet's anti air will be multiplied with this ratio and added to calculations anti-air of individual ships while air damage reduction
 NDefines.NNavy.ANTI_AIR_TARGETTING_TO_CHANCE = 0.06									-- Balancing value to convert averaged equipment stats (anti_air_targetting and naval_strike_agility) to probability chances of airplane being hit by navies AA.
@@ -746,7 +746,7 @@ NDefines.NNavy.NAVY_PIERCING_THRESHOLD_CRITICAL_VALUES = {							-- 0 armor will
 
 NDefines.NNavy.BASE_SPOTTING = 1													-- base spotting percentage for navy
 NDefines.NNavy.BASE_SPOTTING_FROM_RADAR = 10										-- base spotting percentage that comes from full radar coverage
-NDefines.NNavy.BASE_SPOTTING_FROM_AIR_SUPERIORITY = 30								-- base spotting percentage that comes from air superiority
+NDefines.NNavy.BASE_SPOTTING_FROM_AIR = 5								-- base spotting percentage that comes from air superiority
 NDefines.NNavy.BASE_SPOTTING_FROM_ACTIVE_NAVY = 20									-- base spotting percentage that comes from ships in area
 NDefines.NNavy.BASE_SPOTTING_ACTIVE_NAVY_MULT = 0.1									-- multiplier for your navies base spotting percentage
 NDefines.NNavy.BASE_SPOTTING_FROM_DECRYPTION = 20									-- base spotting percentage that comes from decryption, can go negative (enemy decryption is subtracted)
@@ -775,7 +775,7 @@ NDefines.NNavy.POSITIONING_PENALTY_HOURLY_DECAY_FOR_NEWLY_JOINED_SHIPS = 0.05		-
 NDefines.NNavy.DAMAGE_PENALTY_ON_MINIMUM_POSITIONING = 0.5							-- damage penalty at 0% positioning
 NDefines.NNavy.SCREENING_EFFICIENCY_PENALTY_ON_MINIMUM_POSITIONING = 0.25  			-- screening efficiency (screen to capital ratio) at 0% positioning
 NDefines.NNavy.AA_EFFICIENCY_PENALTY_ON_MINIMUM_POSITIONING = 0  					-- AA penalty at 0% positioning
-NDefines.NNavy.SUBMARINE_REVEAL_ON_MINIMUM_POSITIONING = 10.0  						-- submarine reveal change on 0% positioning
+NDefines.NNavy.SUBMARINE_REVEAL_ON_MINIMUM_POSITIONING = 0.5  						-- submarine reveal change on 0% positioning
 
 NDefines.NNavy.SHORE_BOMBARDMENT_CAP = 0.30
 NDefines.NNavy.HEAVY_GUN_ATTACK_TO_SHORE_BOMBARDMENT = 0.025  						-- heavy gun attack value is divided by this value * 100 and added to shore bombardment modifier
