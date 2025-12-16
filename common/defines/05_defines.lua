@@ -659,7 +659,9 @@ NDefines.NNavy.NAVAL_INVASION_PREPARE_DAYS = 60										-- base days needed to 
 NDefines.NNavy.NAVAL_INVASION_PLAN_CAP = 1											-- base cap of naval invasions can be planned at the same time
 NDefines.NNavy.BASE_NAVAL_INVASION_DIVISION_CAP = 3									-- base cap of divisions that can be assigned in a naval invasion
 
-NDefines.NNavy.SHIP_TO_FLEET_ANTI_AIR_RATIO	= 0.05									-- total sum of fleet's anti air will be multiplied with this ratio and added to calculations anti-air of individual ships while air damage reduction
+NDefines.NNavy.SHIP_TO_FLEET_ANTI_AIR_RATIO	= 0.4									-- total sum of fleet's anti air will be multiplied with this ratio and added to calculations anti-air of individual ships while air damage reduction
+NDefines.NNavy.ANTI_AIR_ATTACK_TO_AMOUNT = 0.004									-- Balancing value to convert equipment stat anti_air_attack to the random % value of airplanes being hit.
+
 NDefines.NNavy.ANTI_AIR_TARGETTING_TO_CHANCE = 0.06									-- Balancing value to convert averaged equipment stats (anti_air_targetting and naval_strike_agility) to probability chances of airplane being hit by navies AA.
 NDefines.NNavy.ANTI_AIR_POW_ON_INCOMING_AIR_DAMAGE = 0.2							-- received air damage is calculated using following: 1 - ( (ship_anti_air + fleet_anti_air * SHIP_TO_FLEET_ANTI_AIR_RATIO )^ANTI_AIR_POW_ON_INCOMING_AIR_DAMAGE ) * ANTI_AIR_MULT_ON_INCOMING_AIR_DAMAGE
 NDefines.NNavy.ANTI_AIR_MULT_ON_INCOMING_AIR_DAMAGE	= 0.2
