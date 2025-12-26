@@ -41,7 +41,12 @@ WA_AI_TEMPLATES_update_target_template = {
 				}
 				clr_country_flag = { flag = WA_[TEMPLATE_TYPE]_TEMPLATE }
 			}
-			set_country_flag = { flag = WA_[TEMPLATE_TYPE]_TEMPLATE value = [TEMPLATE_VALUE] }
+			if = {
+				limit = {
+					NOT = { check_variable = { [TEMPLATE_VALUE] = 0 } }
+				}
+				set_country_flag = { flag = WA_[TEMPLATE_TYPE]_TEMPLATE value = [TEMPLATE_VALUE] }
+			}
 		}
 		TEMPLATE_TYPE = "[WA_AI_TEMPLATE_TYPE]"
 		TEMPLATE_VALUE = "[?_template_value]"
@@ -109,40 +114,58 @@ WA_AI_TEMPLATES_calculate_infantry_template = {
 
 WA_AI_TEMPLATES_calculate_motorized_template = {
 	set_temp_variable = { _template_type_code = 2 }
-	set_temp_variable = { _template_value = 3000 }
+	set_temp_variable = { _template_value = 0 }
+	if = {
+		limit = {
+			WA_AI_TEMPLATES_use_motorized = yes
+		}
+		set_temp_variable = { _template_value = 3000 }
+	}
 	WA_AI_TEMPLATES_update_target_template = yes
 }
 
 WA_AI_TEMPLATES_calculate_mechanized_template = {
 	set_temp_variable = { _template_type_code = 3 }
-	set_temp_variable = { _template_value = 4000 }
+	set_temp_variable = { _template_value = 0 }
+	if = {
+		limit = {
+			WA_AI_TEMPLATES_use_mechanized = yes
+		}
+		set_temp_variable = { _template_value = 4000 }
+	}
 	WA_AI_TEMPLATES_update_target_template = yes
 }
 
 WA_AI_TEMPLATES_calculate_mountaineer_template = {
 	set_temp_variable = { _template_type_code = 11 }
+	set_temp_variable = { _template_value = 0 }
 	if = {
 		limit = {
-			WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
+			WA_AI_TEMPLATES_use_mountaineers = yes
 		}
 		if = {
 			limit = {
-				WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
+				WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
 			}
-			set_temp_variable = { _template_value = 2001 }
-			else = {
-				set_temp_variable = { _template_value = 2000 }
+			if = {
+				limit = {
+					WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
+				}
+				set_temp_variable = { _template_value = 2001 }
+				else = {
+					set_temp_variable = { _template_value = 2000 }
+				}
 			}
 		}
-	}
-	else = {
-		if = {
-			limit = {
-				WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
-			}
-			set_temp_variable = { _template_value = 2003 }
-			else = {
-				set_temp_variable = { _template_value = 2002 }
+		else = {
+			if = {
+				limit = {
+					WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
+				}
+				set_temp_variable = { _template_value = 2003 }
+				else = {
+					set_temp_variable = { _template_value = 2002 }
+				}
 			}
 		}
 	}
@@ -157,7 +180,7 @@ WA_AI_TEMPLATES_calculate_garrison_template = {
 		}
 		set_temp_variable = { _template_value = 9000 }
 	}
-	else_if = {
+	else = {
 		if = {
 			limit = {
 				WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
@@ -173,9 +196,10 @@ WA_AI_TEMPLATES_calculate_garrison_template = {
 
 WA_AI_TEMPLATES_calculate_marines_template = {
 	set_temp_variable = { _template_type_code = 9 }
+	set_temp_variable = { _template_value = 0 }
 	if = {
 		limit = {
-			WA_AI_TEMPLATES_use_mechanized = yes
+			WA_AI_TEMPLATES_use_marines = yes
 		}
 		if = {
 			limit = {
