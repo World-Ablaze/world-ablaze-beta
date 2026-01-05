@@ -578,8 +578,46 @@ reserve_divisions = {
 
 		cost = 0
 		ai_will_do = {
-			factor = 500
-
+			base = 100
+			
+			# Increase priority if facing strong enemies
+			modifier = {
+				factor = 2
+				any_enemy_country = {
+					strength_ratio = {
+						tag = ROOT
+						ratio > 1.5
+					}
+				}
+			}
+			
+			# Increase priority if at war with major
+			modifier = {
+				factor = 1.5
+				any_enemy_country = {
+					is_major = yes
+				}
+			}
+			
+			# Reduce priority if manpower is low
+			modifier = {
+				factor = 0.5
+				has_manpower < 100000
+			}
+			
+			# Reduce priority if equipment shortage
+			modifier = {
+				factor = 0.5
+				has_equipment = { infantry_equipment < 10000 }
+			}
+			
+			# Reduce priority early in game
+			modifier = {
+				factor = 0.1
+				date < 1937.1.1
+			}
+			
+			# Country-specific caps (legacy behavior)
 			modifier = {
 				factor = 0
 				OR = {
@@ -601,7 +639,7 @@ reserve_divisions = {
 
 			modifier = {
 				factor = 0
-				tag = SOV ####gets all 100 reserves from focuses
+				tag = SOV # Gets all 100 reserves from focuses
 			}
 
 			modifier = {
@@ -627,12 +665,6 @@ reserve_divisions = {
 				tag = FRA
 				check_variable = { ROOT.reserves > 40 }
 			}
-
-			#modifier = {
-			#	factor = 0
-			#	tag = SOV
-			#	check_variable = { ROOT.reserves = 90 }
-			#}
 		}
 		days_remove = 90
 
