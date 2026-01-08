@@ -1,20 +1,36 @@
+# ============================================================================
+# AI Research Needs Triggers for Tanks and Mechanized
+# ============================================================================
+# These triggers determine when the AI should prioritize researching tank/mech techs.
+# They are based on strategic desire/config, NOT on whether equipment is already unlocked,
+# to avoid circular logic (AI needs research to unlock, but needs unlock to research).
+# ============================================================================
+
 WA_AI_RESEARCH_needs_light_armor = {
+	# AI wants to use armored divisions at all
 	WA_AI_TEMPLATES_use_armor_templates = yes
 }
 
 WA_AI_RESEARCH_needs_medium_armor = {
+	WA_AI_TEMPLATES_use_armor_templates = yes
 	OR = {
-		WA_AI_TEMPLATES_use_medium_armor_templates = yes
-		WA_AI_TEMPLATES_use_heavy_armor_templates = yes
+		# Focused on medium armor
+		WA_AI_CONFIG_DIVISIONS_focus_on_medium_armor = yes
+		# Focused on heavy armor (often requires medium research path)
+		WA_AI_CONFIG_DIVISIONS_focus_on_heavy_armor = yes
+		# After 1941, all armor-using nations should research mediums
+		date > 1941.1.1
 	}
 }
 
 WA_AI_RESEARCH_needs_heavy_armor = {
-	WA_AI_TEMPLATES_use_heavy_armor_templates = yes
+	WA_AI_TEMPLATES_use_armor_templates = yes
+	WA_AI_CONFIG_DIVISIONS_focus_on_heavy_armor = yes
 }
 
 WA_AI_RESEARCH_needs_modern_armor = {
-	WA_AI_TEMPLATES_use_modern_armor = yes
+	WA_AI_TEMPLATES_use_armor_templates = yes
+	date > 1945.1.1
 }
 
 WA_AI_RESEARCH_needs_trucks = {
@@ -23,8 +39,20 @@ WA_AI_RESEARCH_needs_trucks = {
 
 WA_AI_RESEARCH_needs_mechanized = {
 	OR = {
-		WA_AI_TEMPLATES_use_heavy_armor_templates = yes
-		WA_AI_TEMPLATES_use_medium_armor_templates = yes
-		WA_AI_TEMPLATES_use_mechanized_templates = yes
+		# Nations configured to use mechanized
+		WA_AI_CONFIG_DIVISIONS_use_mechanized_divisions = yes
+		# Nations focusing on medium/heavy armor should also get mechs for combined arms
+		AND = {
+			WA_AI_TEMPLATES_use_armor_templates = yes
+			OR = {
+				WA_AI_CONFIG_DIVISIONS_focus_on_medium_armor = yes
+				WA_AI_CONFIG_DIVISIONS_focus_on_heavy_armor = yes
+			}
+		}
+		# Late game, larger nations should research mechanized
+		AND = {
+			num_of_military_factories > 100
+			date > 1941.1.1
+		}
 	}
 }
