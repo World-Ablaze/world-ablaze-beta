@@ -20,7 +20,20 @@ WA_AI_TEMPLATES_calculate_templates = {
 		limit = {
 			WA_AI_CONFIG_DIVISIONS_use_default_templates = yes
 		}
-		WA_AI_TEMPLATES_calculate_all_templates = yes
+		# Block template creation if T1 doctrine is picked but required spirits are not yet selected
+		if = {
+			limit = {
+				WA_has_one_t1_land_doctrine = yes
+				NOT = { WA_AI_TEMPLATES_has_required_spirits = yes }
+			}
+			# Ensure correct spirits are assigned
+			WA_AI_TEMPLATES_ensure_correct_spirits = yes
+			# Still block templates this tick (spirits will be ready next check)
+			WA_AI_TEMPLATES_block_all_templates = yes
+		}
+		else = {
+			WA_AI_TEMPLATES_calculate_all_templates = yes
+		}
 	}
 }
 
@@ -51,6 +64,109 @@ WA_AI_TEMPLATES_update_target_template = {
 		TEMPLATE_TYPE = "[WA_AI_TEMPLATE_TYPE]"
 		TEMPLATE_VALUE = "[?_template_value]"
 	}
+}
+
+WA_AI_TEMPLATES_block_all_templates = {
+	# Set each template type to 0, effectively blocking template creation
+	# This is called when T1 doctrine is researched but required spirits are not yet selected
+	set_temp_variable = { _template_value = 0 }
+	
+	set_temp_variable = { _template_type_code = 1 }  # Infantry
+	WA_AI_TEMPLATES_update_target_template = yes
+	set_temp_variable = { _template_type_code = 2 }  # Motorized
+	WA_AI_TEMPLATES_update_target_template = yes
+	set_temp_variable = { _template_type_code = 3 }  # Mechanized
+	WA_AI_TEMPLATES_update_target_template = yes
+	set_temp_variable = { _template_type_code = 4 }  # Light Armor
+	WA_AI_TEMPLATES_update_target_template = yes
+	set_temp_variable = { _template_type_code = 5 }  # Medium Armor
+	WA_AI_TEMPLATES_update_target_template = yes
+	set_temp_variable = { _template_type_code = 6 }  # Heavy Armor
+	WA_AI_TEMPLATES_update_target_template = yes
+	set_temp_variable = { _template_type_code = 7 }  # Modern Armor
+	WA_AI_TEMPLATES_update_target_template = yes
+	set_temp_variable = { _template_type_code = 8 }  # Garrison
+	WA_AI_TEMPLATES_update_target_template = yes
+	set_temp_variable = { _template_type_code = 9 }  # Marines
+	WA_AI_TEMPLATES_update_target_template = yes
+	set_temp_variable = { _template_type_code = 11 }  # Mountaineer
+	WA_AI_TEMPLATES_update_target_template = yes
+}
+
+WA_AI_TEMPLATES_ensure_correct_spirits = {
+	# Replace incorrect army_spirit if needed (MUST be ideology-specific)
+	WA_AI_TEMPLATES_ensure_correct_army_spirit = yes
+	# Add academy_spirit ONLY if empty (any existing is valid)
+	WA_AI_TEMPLATES_ensure_correct_academy_spirit = yes
+}
+
+WA_AI_TEMPLATES_ensure_correct_army_spirit = {
+	# Democratic -> relief_of_command_spirit
+	if = {
+		limit = {
+			has_government = democratic
+			NOT = { has_idea = relief_of_command_spirit }
+		}
+		WA_AI_TEMPLATES_remove_wrong_army_spirits = yes
+		add_ideas = relief_of_command_spirit
+	}
+	# Fascist/Neutral -> professional_officer_corps_spirit
+	else_if = {
+		limit = {
+			OR = {
+				has_government = fascism
+				has_government = neutrality
+			}
+			NOT = { has_idea = professional_officer_corps_spirit }
+		}
+		WA_AI_TEMPLATES_remove_wrong_army_spirits = yes
+		add_ideas = professional_officer_corps_spirit
+	}
+	# Communist -> ideological_loyalty_spirit
+	else_if = {
+		limit = {
+			has_government = communism
+			NOT = { has_idea = ideological_loyalty_spirit }
+		}
+		WA_AI_TEMPLATES_remove_wrong_army_spirits = yes
+		add_ideas = ideological_loyalty_spirit
+	}
+}
+
+WA_AI_TEMPLATES_ensure_correct_academy_spirit = {
+	# ONLY add if no academy spirit exists (any existing is valid)
+	if = {
+		limit = {
+			NOT = { WA_AI_TEMPLATES_has_any_academy_spirit = yes }
+		}
+		# Democratic -> best_of_the_best_spirit
+		if = {
+			limit = { has_government = democratic }
+			add_ideas = best_of_the_best_spirit
+		}
+		# Non-Democratic -> political_loyalty_spirit
+		else = {
+			add_ideas = political_loyalty_spirit
+		}
+	}
+}
+
+WA_AI_TEMPLATES_remove_wrong_army_spirits = {
+	# Remove all army_spirit ideas
+	if = { limit = { has_idea = improvised_weapons } remove_ideas = improvised_weapons }
+	if = { limit = { has_idea = professional_officer_corps_spirit } remove_ideas = professional_officer_corps_spirit }
+	if = { limit = { has_idea = elevated_engineering_corps_spirit } remove_ideas = elevated_engineering_corps_spirit }
+	if = { limit = { has_idea = proper_heritage_spirit } remove_ideas = proper_heritage_spirit }
+	if = { limit = { has_idea = quick_improvisation_spirit } remove_ideas = quick_improvisation_spirit }
+	if = { limit = { has_idea = relief_of_command_spirit } remove_ideas = relief_of_command_spirit }
+	if = { limit = { has_idea = ideological_loyalty_spirit } remove_ideas = ideological_loyalty_spirit }
+	if = { limit = { has_idea = state_serves_the_military_spirit } remove_ideas = state_serves_the_military_spirit }
+	if = { limit = { has_idea = reserve_officers_spirit } remove_ideas = reserve_officers_spirit }
+	if = { limit = { has_idea = the_tip_of_the_spear_spirit } remove_ideas = the_tip_of_the_spear_spirit }
+	if = { limit = { has_idea = mobile_warfare_drive_spirit } remove_ideas = mobile_warfare_drive_spirit }
+	if = { limit = { has_idea = firepower_induction_spirit } remove_ideas = firepower_induction_spirit }
+	if = { limit = { has_idea = infantry_modernization_spirit } remove_ideas = infantry_modernization_spirit }
+	if = { limit = { has_idea = heritage_of_accomplishment } remove_ideas = heritage_of_accomplishment }
 }
 
 WA_AI_TEMPLATES_calculate_all_templates = {
@@ -129,7 +245,7 @@ WA_AI_TEMPLATES_calculate_mechanized_template = {
 	set_temp_variable = { _template_value = 0 }
 	if = {
 		limit = {
-			WA_AI_CONFIG_DIVISIONS_use_mechanized_divisions = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
 		}
 		set_temp_variable = { _template_value = 4000 }
 	}
