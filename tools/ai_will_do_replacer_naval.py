@@ -160,7 +160,7 @@ def determine_trigger(tech_name: str, categories: list[str], file_path: Optional
 def is_old_pattern(ai_will_do_block: str) -> bool:
     """
     Check if ai_will_do block uses the old pattern.
-    
+
     Old pattern characteristics:
     - Has modifiers with date > patterns (factor = 30 multipliers)
     - Has tag-specific modifiers (tag = CHI, tag = SOV, etc.)
@@ -170,33 +170,33 @@ def is_old_pattern(ai_will_do_block: str) -> bool:
     # Must not already be new pattern
     if 'WA_AI_RESEARCH' in ai_will_do_block:
         return False
-    
+
     # Check for date > pattern (old style) - this is the key indicator
     has_date_multiplier = re.search(r'date\s*>\s*["\']?\d{4}', ai_will_do_block)
-    
+
     # Check for factor = 3 or factor = 30 patterns (common in naval techs)
     if re.search(r'factor\s*=\s*[3]', ai_will_do_block):
         if has_date_multiplier:
             return True
-    
+
     # Check for factor = 1 with date multipliers
     if re.search(r'factor\s*=\s*1\b', ai_will_do_block):
         if has_date_multiplier:
             return True
-    
+
     # Check for modifier blocks with factor = 30 (old pattern multipliers)
     if re.search(r'modifier\s*=\s*\{[^}]*factor\s*=\s*30', ai_will_do_block, re.DOTALL):
         return True
-    
+
     # Check for is_major = no pattern (common in naval techs)
     if re.search(r'is_major\s*=\s*no', ai_will_do_block):
         return True
-    
+
     # Check for tag-specific modifiers (tag = CHI, tag = SOV, etc.)
+    # Simple tag-based patterns without WA_AI_RESEARCH should be updated
     if re.search(r'tag\s*=\s*(CHI|SOV|PRC|USA|JAP|ENG|GER|FRA|ITA)', ai_will_do_block):
-        if has_date_multiplier:
-            return True
-    
+        return True
+
     return False
 
 
