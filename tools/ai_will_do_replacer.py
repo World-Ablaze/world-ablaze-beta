@@ -456,7 +456,7 @@ def process_file(file_path: Path, file_type: str, dry_run: bool = False) -> dict
             if start_year != mapping_date and dry_run:
                 print(f"  WARNING: {tech_name}: start_year={start_year} doesn't match mapping date={mapping_date}, using start_year")
 
-        if trigger is None and start_year is None:
+        if trigger is None:
             base_name = get_tech_base_name(tech_name)
             if base_name not in (INDUSTRY_TRIGGERS if file_type == 'industry' else ELECTRONICS_TRIGGERS):
                 stats['unknown'].append(tech_name)
@@ -467,13 +467,17 @@ def process_file(file_path: Path, file_type: str, dry_run: bool = False) -> dict
         factor = 1 if should_use_factor_1(tech_name, trigger) else 5
         new_ai_will_do = generate_ai_will_do(trigger, start_year, factor)
 
-        # Replace the block
-        content = content[:block['start']] + new_ai_will_do + content[block['end']:]
-        stats['replaced'] += 1
+        # Only replace if the block actually changed
+        old_block = content[block['start']:block['end']]
+        if new_ai_will_do != old_block:
+            content = content[:block['start']] + new_ai_will_do + content[block['end']]
+            stats['replaced'] += 1
 
-        if dry_run:
-            factor_str = f", factor={factor}" if trigger is not None else ""
-            print(f"  {tech_name}: {trigger or 'factor=0'}, date={start_year}{factor_str} (from {'tech file' if block.get('start_year') else 'mapping'})")
+            if dry_run:
+                factor_str = f", factor={factor}" if trigger is not None else ""
+                print(f"  {tech_name}: {trigger or 'factor=0'}, date={start_year}{factor_str} (from {'tech file' if block.get('start_year') else 'mapping'})")
+        else:
+            stats['skipped'] += 1
 
     # Always rewrite file without BOM if it had BOM or content changed
     if not dry_run and (content != original_content or has_bom):

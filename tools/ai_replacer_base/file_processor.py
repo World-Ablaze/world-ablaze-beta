@@ -327,12 +327,16 @@ class BaseFileProcessor(ABC):
             triggers = [trigger] if isinstance(trigger, str) else trigger
             new_block = generate_ai_will_do_block(triggers, start_year, indent="\t\t")
 
-            # Replace the block
-            content = content[:block_start] + new_block + content[block_end:]
-            stats.updated += 1
+            # Only replace if the block actually changed
+            old_block = content[block_start:block_end]
+            if new_block != old_block:
+                content = content[:block_start] + new_block + content[block_end:]
+                stats.updated += 1
 
-            if self.verbose:
-                print(f"  Updated: {tech_name} -> {trigger} (year: {start_year})")
+                if self.verbose:
+                    print(f"  Updated: {tech_name} -> {trigger} (year: {start_year})")
+            else:
+                stats.skipped += 1
 
         # Write if changed
         if content != original_content and not self.dry_run:

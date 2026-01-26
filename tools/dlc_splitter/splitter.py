@@ -1,5 +1,6 @@
 """File splitting logic based on DLC context"""
 
+import logging
 from typing import Dict, List, Optional
 from pathlib import Path
 from .ast_nodes import (
@@ -8,6 +9,8 @@ from .ast_nodes import (
 )
 from .dlc_detector import DLCDetector
 from .config import DLC_SHORT_NAMES
+
+logger = logging.getLogger(__name__)
 
 
 class FileSplitter:
@@ -54,10 +57,32 @@ class FileSplitter:
             if not self._has_dlc_specific_content(ast, dlc):
                 continue
 
+            # Check file state BEFORE processing
+            file_state = self._analyze_file_state(ast, dlc)
+
+            # Skip if file is already in post-split state (prevents data loss)
+            if file_state in ("DLC_ONLY", "NON_DLC_ONLY"):
+                logger.warning(
+                    f"File {source_path.name} appears to be already split "
+                    f"(state: {file_state}). Skipping to prevent data loss. "
+                    f"To re-split, ensure the source file contains BOTH DLC-required "
+                    f"and DLC-excluded content."
+                )
+                return {}  # Return empty to prevent any processing
+
+            # Only proceed if file is in PRE_SPLIT state
+            if file_state != "PRE_SPLIT":
+                logger.debug(f"File {source_path.name} has no mixed DLC content (state: {file_state})")
+                continue
+
             relevant_dlcs.append(dlc)
 
-            # Generate non-DLC filename
+            # Generate non-DLC filename (returns None if already a non-DLC file)
             non_dlc_filename = self._generate_non_dlc_filename(source_path, dlc)
+
+            # Skip if this is already a non-DLC file for this DLC
+            if non_dlc_filename is None:
+                continue
 
             # Filter AST for non-DLC version (only DLC_EXCLUDED content)
             filtered_ast = self._filter_for_non_dlc(ast, dlc)
@@ -71,6 +96,15 @@ class FileSplitter:
             original_ast = self._filter_for_dlc(ast, relevant_dlcs)
             if original_ast:
                 results[original_filename] = original_ast
+
+        # Validate split completeness (ensure no content was lost)
+        if results and not self._validate_split_completeness(ast, results):
+            logger.error(
+                f"Content validation failed for {source_path.name}! "
+                f"Some technologies may have been lost during split. "
+                f"Split operation aborted."
+            )
+            return {}  # Return empty dict to prevent writing incomplete split
 
         return results
 
@@ -108,6 +142,77 @@ class FileSplitter:
                 return True
 
         return False
+
+    def _analyze_file_state(self, ast: FileNode, dlc_name: str) -> str:
+        """
+        Analyze if file is in pre-split, post-split, or neutral state.
+
+        Returns:
+            "PRE_SPLIT": Has both DLC_REQUIRED and DLC_EXCLUDED content (needs splitting)
+            "DLC_ONLY": Has only DLC_REQUIRED content (already split original)
+            "NON_DLC_ONLY": Has only DLC_EXCLUDED content (already split non-DLC)
+            "NEUTRAL_ONLY": Has only NEUTRAL content (no DLC dependencies)
+        """
+        if not ast.root_block:
+            return "NEUTRAL_ONLY"
+
+        has_required = 0
+        has_excluded = 0
+        has_neutral = 0
+
+        for child in ast.root_block.children:
+            if isinstance(child, BlockNode):
+                ctx = child.dlc_context.get(dlc_name, DLCContext.NEUTRAL)
+                if ctx == DLCContext.DLC_REQUIRED:
+                    has_required += 1
+                elif ctx == DLCContext.DLC_EXCLUDED:
+                    has_excluded += 1
+                elif ctx == DLCContext.NEUTRAL:
+                    has_neutral += 1
+
+        if has_required > 0 and has_excluded > 0:
+            return "PRE_SPLIT"
+        elif has_required > 0 and has_excluded == 0:
+            return "DLC_ONLY"
+        elif has_required == 0 and has_excluded > 0:
+            return "NON_DLC_ONLY"
+        else:
+            return "NEUTRAL_ONLY"
+
+    def _validate_split_completeness(
+        self,
+        original_ast: FileNode,
+        split_results: Dict[str, FileNode]
+    ) -> bool:
+        """
+        Validate that split results contain all content from original.
+
+        Returns:
+            True if split is complete, False if content was lost
+        """
+        # Count tech definitions in original
+        original_count = 0
+        if original_ast.root_block:
+            for child in original_ast.root_block.children:
+                if isinstance(child, BlockNode):
+                    original_count += 1
+
+        # Count tech definitions in all split results
+        split_count = 0
+        for file_ast in split_results.values():
+            if file_ast.root_block:
+                for child in file_ast.root_block.children:
+                    if isinstance(child, BlockNode):
+                        split_count += 1
+
+        if original_count != split_count:
+            logger.error(
+                f"Content count mismatch: original={original_count}, "
+                f"split={split_count}"
+            )
+            return False
+
+        return True
 
     def _filter_for_non_dlc(self, ast: FileNode, dlc_name: str) -> FileNode:
         """
@@ -279,7 +384,7 @@ class FileSplitter:
 
         return cloned
 
-    def _generate_non_dlc_filename(self, source_path: Path, dlc_name: str) -> str:
+    def _generate_non_dlc_filename(self, source_path: Path, dlc_name: str) -> Optional[str]:
         """
         Generate filename for non-DLC version.
 
@@ -288,9 +393,17 @@ class FileSplitter:
 
         For files without country code:
         Example: armor.txt -> armor_non_nsb.txt
+
+        Returns None if file is already a non-DLC version for this DLC.
         """
         stem = source_path.stem  # e.g., "air_techs_eng" or "armor"
         dlc_short = DLC_SHORT_NAMES.get(dlc_name, dlc_name.lower().replace(" ", "_"))
+
+        # Check if file is already a non-DLC version (contains _non_{dlc})
+        non_dlc_marker = f"_non_{dlc_short}"
+        if non_dlc_marker in stem:
+            # Already a non-DLC file for this DLC, return None to skip
+            return None
 
         # Try to detect country code (last segment, typically 3 chars)
         parts = stem.rsplit('_', 1)
