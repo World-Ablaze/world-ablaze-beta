@@ -2,6 +2,12 @@
 #	Expert AI mod - on_actions
 ############################################################################################################
 
+### Railway eligibility constants (must match WA_AI_CONSTRUCTION_PRIORITY_strategies_misc.txt)
+@WA_AI_PC_railway_MIN_CIVS_PEACE = 75        # Higher threshold during peace
+@WA_AI_PC_railway_MIN_STATES = 5             # Minimum controlled states to run
+@WA_AI_PC_railway_MAX_SURRENDER = 0.3        # Skip if surrender progress > 30%
+@WA_AI_PC_railway_MINOR_CIV_THRESHOLD = 50   # Minor nations bypass if civs > this
+
 on_actions = {
 	on_daily = {
 		effect = {
@@ -110,13 +116,31 @@ on_actions = {
 
 				# Dynamic factory allocation to projects
 				WA_AI_PC_assign_factories = yes
-				
+
 				# Update construction progress and complete finished projects
 				WA_AI_PC_update_project_progress = yes
-				
-				### Railway building - Highest priority, every 3 months (12 weeks)
-				### Now runs during peace (pre-war preparation) and war
-				WA_AI_PC_railway = yes
+
+				### Railway building - with eligibility filters to reduce processing
+				if = {
+					limit = {
+						# Higher peacetime industrial threshold (75 civs) - war uses lower threshold inside effect
+						OR = {
+							has_war = yes
+							num_of_civilian_factories > @WA_AI_PC_railway_MIN_CIVS_PEACE
+						}
+						# Skip minor countries unless at war or rich
+						OR = {
+							is_major = yes
+							has_war = yes
+							num_of_civilian_factories > @WA_AI_PC_railway_MINOR_CIV_THRESHOLD
+						}
+						# Minimum state count - skip tiny nations
+						num_of_controlled_states > @WA_AI_PC_railway_MIN_STATES
+						# Skip countries losing badly
+						surrender_progress < @WA_AI_PC_railway_MAX_SURRENDER
+					}
+					WA_AI_PC_railway = yes
+				}
 			}
 		}
 	}

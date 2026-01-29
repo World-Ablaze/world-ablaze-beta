@@ -6,21 +6,44 @@
 ############################################################################################################
 
 ### Railway Building - HIGHEST PRIORITY
-### Runs every 3 months (12 weeks)
+### Performance-optimized: limits which countries run and caps routes calculated
 
 @WA_AI_PC_railway_TYPE_ID = 13
 @WA_AI_PC_railway_PRIO = 9999
 @WA_AI_PC_railway_PRIO_PREWAR = 5000
-@WA_AI_PC_railway_INTERVAL = 12
+
+### Interval control (weeks)
+@WA_AI_PC_railway_INTERVAL_PEACE = 24        # 6 months during peace
+@WA_AI_PC_railway_INTERVAL_WAR = 12          # 3 months during war
 
 ### Industrial requirements
-@WA_AI_PC_railway_MIN_CIVS = 50
+@WA_AI_PC_railway_MIN_CIVS = 50              # Base minimum (war threshold = 60% of this)
+@WA_AI_PC_railway_MIN_CIVS_PEACE = 75        # Higher threshold during peace
+
+### Country eligibility (checked in on_weekly)
+@WA_AI_PC_railway_MIN_STATES = 5             # Minimum controlled states to run
+@WA_AI_PC_railway_MAX_SURRENDER = 0.3        # Skip if surrender progress > 30%
+@WA_AI_PC_railway_MINOR_CIV_THRESHOLD = 50   # Minor nations bypass if civs > this
+
+### Route caps per execution
+@WA_AI_PC_railway_MAX_ROUTES_TOTAL = 3       # Max routes processed per run
+@WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY = 2   # Max routes per enemy country
+
+### Caching thresholds
+@WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD = 3   # Skip recalculation if queue has 3+ railway projects
 
 WA_AI_PC_railway = {
 
 	if = { limit = { check_variable = { WA_AI_PC_railway_INTERVAL_counter = 0 } }
 
-		set_variable = { WA_AI_PC_railway_INTERVAL_counter = @WA_AI_PC_railway_INTERVAL }
+		### Dynamic interval - longer during peace, shorter during war
+		if = {
+			limit = { has_war = yes }
+			set_variable = { WA_AI_PC_railway_INTERVAL_counter = @WA_AI_PC_railway_INTERVAL_WAR }
+		}
+		else = {
+			set_variable = { WA_AI_PC_railway_INTERVAL_counter = @WA_AI_PC_railway_INTERVAL_PEACE }
+		}
 
 		set_temp_variable = { _project_building_type = global.WA_AI_PC_RAIL }
 		set_temp_variable = { _project_build_for_ally = 1 }
@@ -43,8 +66,18 @@ WA_AI_PC_railway = {
 				has_capitulated = no
 			}
 
-			### Execute all applicable strategies
-			WA_AI_PC_railway_STRATEGIES = yes
+			### Skip recalculation if queue already has enough railway projects
+			set_temp_variable = { _get_queued_num_building_type = @WA_AI_PC_railway_TYPE_ID }
+			set_temp_variable = { _get_queued_num_type_id = @WA_AI_PC_railway_TYPE_ID }
+			WA_AI_PC_get_total_queued_num = yes
+
+			if = {
+				limit = {
+					check_variable = { queued_type_num_ < @WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD }
+				}
+
+				### Execute all applicable strategies
+				WA_AI_PC_railway_STRATEGIES = yes
 
 			if = {
 				limit = {
@@ -53,27 +86,41 @@ WA_AI_PC_railway = {
 
 				if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: WA_AI_PC_railway" }
 
-				###
+				### Route capping - limit pathfinding calls per execution
+					set_temp_variable = { _routes_processed = 0 }
 
 					for_each_loop = { array = railway_end_provinces_ index = railway_i value = railway_v break = railway_b
-						set_temp_variable = { _pathfind_prov_start = railway_start_provinces_^railway_i }
-						set_temp_variable = { _pathfind_prov_end = railway_end_provinces_^railway_i }
-						set_temp_variable = { _pathfind_prov_type = 2 } # Fix 21: Rail networks - only ROOT-controlled provinces (not allied)
-						WA_AI_PATHFIND_PROV_get_path = yes
-						if = { limit = { check_variable = { pathfind_prov_success_ = 1 } }
-							for_each_loop = { array = pathfind_prov_path_ index = path_i value = path_v break = path_b
-								add_to_temp_array = { _valid_provinces = path_v }
-								set_temp_variable = { next_i = path_i }
-								add_to_temp_variable = { next_i = 1 }
-								if = { limit = { check_variable = { next_i < pathfind_prov_path_^num } }
-									set_temp_variable = { _project_province_id = path_v }
-									set_temp_variable = { _project_connect_id = pathfind_prov_path_^next_i }
-									set_temp_variable = { _project_target_level = railway_target_levels_^railway_i }
-									set_temp_variable = { _project_priority = railway_priorities_^railway_i }
-									var:global.WA_AI_MAP_province_state_id^path_v = { WA_AI_PC_start_railway_project = yes }
-									set_temp_variable = { _designated_railway_network_^path_v = 1 }
-									set_temp_variable = { _designated_railway_network_^pathfind_prov_path_^next_i = 1 }
+
+						### Break if max routes reached (use > with value-1 since >= not supported)
+						set_temp_variable = { _max_routes_minus_one = @WA_AI_PC_railway_MAX_ROUTES_TOTAL }
+						subtract_from_temp_variable = { _max_routes_minus_one = 1 }
+						if = {
+							limit = { check_variable = { _routes_processed > _max_routes_minus_one } }
+							set_temp_variable = { railway_b = 1 }
+						}
+						else = {
+							set_temp_variable = { _pathfind_prov_start = railway_start_provinces_^railway_i }
+							set_temp_variable = { _pathfind_prov_end = railway_end_provinces_^railway_i }
+							set_temp_variable = { _pathfind_prov_type = 2 } # Fix 21: Rail networks - only ROOT-controlled provinces (not allied)
+							WA_AI_PATHFIND_PROV_get_path = yes
+							if = { limit = { check_variable = { pathfind_prov_success_ = 1 } }
+								for_each_loop = { array = pathfind_prov_path_ index = path_i value = path_v break = path_b
+									add_to_temp_array = { _valid_provinces = path_v }
+									set_temp_variable = { next_i = path_i }
+									add_to_temp_variable = { next_i = 1 }
+									if = { limit = { check_variable = { next_i < pathfind_prov_path_^num } }
+										set_temp_variable = { _project_province_id = path_v }
+										set_temp_variable = { _project_connect_id = pathfind_prov_path_^next_i }
+										set_temp_variable = { _project_target_level = railway_target_levels_^railway_i }
+										set_temp_variable = { _project_priority = railway_priorities_^railway_i }
+										var:global.WA_AI_MAP_province_state_id^path_v = { WA_AI_PC_start_railway_project = yes }
+										set_temp_variable = { _designated_railway_network_^path_v = 1 }
+										set_temp_variable = { _designated_railway_network_^pathfind_prov_path_^next_i = 1 }
+									}
 								}
+
+								### Increment route counter after successful pathfinding
+								add_to_temp_variable = { _routes_processed = 1 }
 							}
 						}
 					}
@@ -103,6 +150,7 @@ WA_AI_PC_railway = {
 
 				###
 			}
+			} # close queue skip check
 		}
 
 		WA_AI_PC_clear_project_inputs = yes
@@ -152,6 +200,9 @@ WA_AI_PC_railway_STRATEGIES = { # >>> arr:railway_start_provinces_:railway_end_p
 		limit = {
 			has_war = yes
 		}
+		### Pre-filter enemies to reduce iteration count
+		WA_AI_PC_railway_get_relevant_enemies = yes
+
 		WA_AI_PC_railway_check_land_access_to_enemies = yes
 
 		if = {
@@ -211,6 +262,62 @@ WA_AI_PC_railway_check_land_access_to_enemies = {
 		}
 		else = {
 			set_temp_variable = { has_overseas_enemy_ = 1 }
+		}
+	}
+}
+
+############################################################################################################
+#	HELPER: Pre-filter enemies to reduce iteration count
+#	Only includes: majors, enemies we directly border, or enemies with significant industry
+############################################################################################################
+
+WA_AI_PC_railway_get_relevant_enemies = { # >>> arr:_relevant_enemies_
+
+	clear_temp_array = _relevant_enemies_
+
+	every_enemy_country = {
+		set_temp_variable = { _include_enemy = 0 }
+
+		### Always include majors
+		if = {
+			limit = { is_major = yes }
+			set_temp_variable = { _include_enemy = 1 }
+		}
+
+		### Include enemies with 50+ factories (significant industrial threat)
+		if = {
+			limit = {
+				check_variable = { _include_enemy = 0 }
+				num_of_factories > 50
+			}
+			set_temp_variable = { _include_enemy = 1 }
+		}
+
+		### Include enemies we directly border
+		if = {
+			limit = { check_variable = { _include_enemy = 0 } }
+			set_temp_variable = { _check_enemy_for_border = THIS }
+			set_temp_variable = { _found_border = 0 }
+			ROOT = {
+				every_controlled_state = {
+					limit = {
+						check_variable = { _found_border = 0 }
+						any_neighbor_state = {
+							is_controlled_by = var:_check_enemy_for_border
+						}
+					}
+					set_temp_variable = { _found_border = 1 }
+				}
+			}
+			if = {
+				limit = { check_variable = { _found_border = 1 } }
+				set_temp_variable = { _include_enemy = 1 }
+			}
+		}
+
+		if = {
+			limit = { check_variable = { _include_enemy = 1 } }
+			add_to_temp_array = { _relevant_enemies_ = THIS }
 		}
 	}
 }
@@ -374,9 +481,10 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 	set_temp_variable = { high_route_priority = route_priority }
 	multiply_temp_variable = { high_route_priority = 1.1 }
 
-	### For each enemy we DIRECTLY border (not through allies), find frontline states with supply hubs
+	### For each RELEVANT enemy we DIRECTLY border (not through allies), find frontline states with supply hubs
 	### This prevents building railways to distant frontlines (e.g., Italy → SOV through Germany)
-	every_enemy_country = {
+	### Uses pre-filtered _relevant_enemies_ array to reduce iteration count
+	for_each_scope_loop = { array = _relevant_enemies_
 		set_temp_variable = { _current_enemy_tag = THIS }
 
 		# Check if ROOT (or ROOT's puppets) directly borders this enemy
@@ -389,10 +497,15 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 		if = {
 			limit = { check_variable = { borders_enemy_ = 1 } }
 
+			### Per-enemy route counter
+			set_temp_variable = { _routes_for_this_enemy = 0 }
+
 			# Find front line states with supply hubs that border THIS specific enemy
 			ROOT = {
 				every_controlled_state = {
 					limit = {
+						### Skip if we already have enough routes for this enemy
+						check_variable = { _routes_for_this_enemy < @WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY }
 						# State borders this specific enemy (or enemy's puppets)
 						any_neighbor_state = {
 							OR = {
@@ -415,20 +528,40 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 							NOT = { is_in_array = { railway_end_provinces_ = supply_hub_province_ } }
 						}
 
-						# Fix 1 & 2: Validate land path exists from capital to this frontline
-						# This prevents queuing railways for puppets/enclaves without land connection
-						set_temp_variable = { _pathfind_prov_start = route_start }
-						set_temp_variable = { _pathfind_prov_end = supply_hub_province_ }
-						set_temp_variable = { _pathfind_prov_type = 2 } # Fix 21: Rail networks - only ROOT-controlled provinces (not allied)
-						WA_AI_PATHFIND_PROV_get_path = yes
+						### Check for existing project to this destination - skip pathfinding if found
+						set_temp_variable = { _skip_pathfinding = 0 }
+						for_each_loop = { array = ROOT.WA_AI_PC_queue value = _check_proj break = _found_existing
+							if = {
+								limit = {
+									check_variable = { ROOT.WA_AI_PC_building_type^_check_proj = 13 } # railway
+									check_variable = { ROOT.WA_AI_PC_target_province^_check_proj = supply_hub_province_ }
+								}
+								set_temp_variable = { _skip_pathfinding = 1 }
+								set_temp_variable = { _found_existing = 1 }
+							}
+						}
 
 						if = {
-							limit = { check_variable = { pathfind_prov_success_ = 1 } }
-							add_to_temp_array = { railway_start_provinces_ = route_start }
-							add_to_temp_array = { railway_end_provinces_ = supply_hub_province_ }
-							add_to_temp_array = { railway_target_levels_ = route_level }
-							add_to_temp_array = { railway_priorities_ = route_priority }
-							add_to_temp_array = { railway_enemy_tags_ = _current_enemy_tag }
+							limit = { check_variable = { _skip_pathfinding = 0 } }
+
+							# Fix 1 & 2: Validate land path exists from capital to this frontline
+							# This prevents queuing railways for puppets/enclaves without land connection
+							set_temp_variable = { _pathfind_prov_start = route_start }
+							set_temp_variable = { _pathfind_prov_end = supply_hub_province_ }
+							set_temp_variable = { _pathfind_prov_type = 2 } # Fix 21: Rail networks - only ROOT-controlled provinces (not allied)
+							WA_AI_PATHFIND_PROV_get_path = yes
+
+							if = {
+								limit = { check_variable = { pathfind_prov_success_ = 1 } }
+								add_to_temp_array = { railway_start_provinces_ = route_start }
+								add_to_temp_array = { railway_end_provinces_ = supply_hub_province_ }
+								add_to_temp_array = { railway_target_levels_ = route_level }
+								add_to_temp_array = { railway_priorities_ = route_priority }
+								add_to_temp_array = { railway_enemy_tags_ = _current_enemy_tag }
+
+								### Increment per-enemy counter
+								add_to_temp_variable = { _routes_for_this_enemy = 1 }
+							}
 						}
 					}
 				}
