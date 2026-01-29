@@ -1,4 +1,4 @@
-﻿###########################
+###########################
 # French Events
 ###########################
 
@@ -1466,38 +1466,26 @@ country_event = {
 					has_country_flag = FRA_mills_failsafe
 					is_ai = no
 				}
-				every_state = {
-					limit = {
-						is_core_of = FRA
-						NOT = { state = 1 }
-					}
-					add_to_temp_array = { temp_states = THIS.ID }
-				}
-				set_temp_variable = { break = 0 }
 				while_loop_effect = {
-					random_scope_in_array = {
-						array = temp_states
+					limit = {
+						check_variable = { num_mils > 0 }
+					}
+					random_owned_controlled_state = {
 						limit = {
+							is_core_of = FRA
+							NOT = { state = 1 }
 							free_building_slots = {
 								building = arms_factory
 								size > 0
 							}
 						}
-						# log = "Current state: [THIS.GetID]."
 						add_building_construction = {
 							type = arms_factory
 							level = 1
 							instant_build = yes
 						}
 					}
-					add_to_variable = { num_mils = -1 }
-					if = {
-						limit = {
-							check_variable = { num_mils = 0 }
-						}
-						set_temp_variable = { break = 1 }
-					}
-					# log = "Current num_mils: [?num_mils]."
+					subtract_from_variable = { num_mils = 1 }
 				}
 			}
 			if = {
@@ -1505,38 +1493,26 @@ country_event = {
 					has_country_flag = FRA_civs_failsafe
 					is_ai = no
 				}
-				every_state = {
-					limit = {
-						is_core_of = FRA
-						NOT = { state = 1 }
-					}
-					add_to_temp_array = { temp_states = THIS.ID }
-				}
-				set_temp_variable = { break = 0 }
 				while_loop_effect = {
-					random_scope_in_array = {
-						array = temp_states
+					limit = {
+						check_variable = { num_civs > 0 }
+					}
+					random_owned_controlled_state = {
 						limit = {
+							is_core_of = FRA
+							NOT = { state = 1 }
 							free_building_slots = {
 								building = industrial_complex
 								size > 0
 							}
 						}
-						# log = "Current state: [THIS.GetID]."
 						add_building_construction = {
 							type = industrial_complex
 							level = 1
 							instant_build = yes
 						}
 					}
-					add_to_variable = { num_civs = -1 }
-					if = {
-						limit = {
-							check_variable = { num_civs = 0 }
-						}
-						set_temp_variable = { break = 1 }
-					}
-					# log = "Current num_civs: [?num_civs]."
+					subtract_from_variable = { num_civs = 1 }
 				}
 			}
 		}
@@ -1574,9 +1550,11 @@ country_event = {
 			array = temp_german_zone
 			value = state_id
 			break = break
-			if = {
-				limit = { state_id = { owner = { original_tag = FRA } } }
-				set_state_controller = state_id
+			var:state_id = {
+				if = {
+					limit = { owner = { original_tag = FRA } }
+					GER = { set_state_controller = PREV }
+				}
 			}
 		}
 		# Italian Occupation Zone (if they did well)
@@ -1675,8 +1653,9 @@ country_event = {
 						array = temp_fra_colonial_zone
 						value = state_id
 						break = break
-						if = {
-							limit = { state_id = {
+						var:state_id = {
+							if = {
+								limit = {
 									owner = {
 										or = {
 											original_tag = FRA
@@ -1690,8 +1669,8 @@ country_event = {
 										}
 									}
 								}
+								FRA = { set_state_controller = PREV }
 							}
-							set_state_controller = state_id
 						}
 					}
 					if = {
