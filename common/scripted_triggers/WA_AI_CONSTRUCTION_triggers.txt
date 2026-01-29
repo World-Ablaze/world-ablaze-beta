@@ -93,6 +93,7 @@ WA_AI_PC_can_afford_project = {
 	check_variable = { min_factories_on_projects < max_factories_on_projects }
 }
 
+# THIS = STATE, PREV = BUILDER, _project_building_type, _project_province_id
 WA_AI_PC_can_build_project = {
 	OR = {
 		is_controlled_by = ROOT
@@ -101,31 +102,42 @@ WA_AI_PC_can_build_project = {
 		}
 	}
 
-
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
 
-	# is not already building the same type of building here
-	if = { limit = { is_in_array = { THIS.WA_AI_PC_projects_in_state = ROOT.id } }
+	# Check not already building the same type here (uses per-country array)
+	NOT = { WA_AI_PC_has_same_type_project_here = yes }
 
-		NOT = { check_variable = { ROOT.WA_AI_PC_project_building_type^THIS.WA_AI_PC_project_target_state_@ROOT = ROOT.WA_AI_PC_project_building_type^-1 } }
+	WA_AI_PC_building_slot_available_for_type = yes
+}
+
+# THIS = STATE, PREV = BUILDER, _project_building_type, _project_province_id
+# Checks if we already have a project of the same type in this state
+WA_AI_PC_has_same_type_project_here = {
+	any_of = { array = WA_AI_PC_projects_in_state_of_@ROOT value = v_proj
+		check_variable = { ROOT.WA_AI_PC_building_type^v_proj = _project_building_type }
 	}
+}
 
-	if = { limit = { check_variable = { ROOT.WA_AI_PC_project_building_type^-1 = 1 } }
+# THIS = STATE, PREV = BUILDER, _project_building_type
+# Checks if building slot is available for the specified building type
+WA_AI_PC_building_slot_available_for_type = {
+
+	if = { limit = { check_variable = { _project_building_type = 1 } }
 
 		free_building_slots = { building = infrastructure size > 0 include_locked = no }
 	}
 
-	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_project_building_type^-1 = 2 } }
+	else_if = { limit = { check_variable = { _project_building_type = 2 } }
 
 		free_building_slots = { building = air_base size > 0 include_locked = no }
 	}
 
-	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_project_building_type^-1 = 3 } }
+	else_if = { limit = { check_variable = { _project_building_type = 3 } }
 
 		free_building_slots = { building = anti_air_building size > 0 include_locked = no }
 	}
 
-	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_project_building_type^-1 = 4 } }
+	else_if = { limit = { check_variable = { _project_building_type = 4 } }
 
 		OR = {
 			AND = { ROOT = { has_tech = radio_detection } 				radar_station < 1 }
@@ -137,22 +149,22 @@ WA_AI_PC_can_build_project = {
 		}
 	}
 
-	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_project_building_type^-1 = 5 } }
+	else_if = { limit = { check_variable = { _project_building_type = 5 } }
 
 		free_building_slots = { building = arms_factory size > 0 include_locked = no }
 	}
 
-	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_project_building_type^-1 = 6 } }
+	else_if = { limit = { check_variable = { _project_building_type = 6 } }
 
 		free_building_slots = { building = industrial_complex size > 0 include_locked = no }
 	}
 
-	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_project_building_type^-1 = 7 } }
+	else_if = { limit = { check_variable = { _project_building_type = 7 } }
 
 		free_building_slots = { building = dockyard size > 0 include_locked = no }
 	}
 
-	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_project_building_type^-1 = 8 } }
+	else_if = { limit = { check_variable = { _project_building_type = 8 } }
 
 		OR = {
 			free_building_slots = { building = synthetic_refinery size > 0 include_locked = no }
@@ -163,45 +175,50 @@ WA_AI_PC_can_build_project = {
 		synthetic_refinery < 3
 	}
 
-	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_project_building_type^-1 = 9 } }
+	else_if = { limit = { check_variable = { _project_building_type = 9 } }
 
 		check_variable = { building_level@arms_factory > 0 }
 	}
 
-	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_project_building_type^-1 = 10 } }
+	else_if = { limit = { check_variable = { _project_building_type = 10 } }
 
 		check_variable = { building_level@industrial_complex > 0 }
 	}
 
-	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_project_building_type^-1 = 11 } }
+	else_if = { limit = { check_variable = { _project_building_type = 11 } }
 
 		free_building_slots = { building = hydro_steel_refinery size > 0 include_locked = no }
 	}
 
-	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_project_building_type^-1 = 12 } }
+	else_if = { limit = { check_variable = { _project_building_type = 12 } }
 
 		free_building_slots = { building = hydro_aluminium_refinery size > 0 include_locked = no }
+	}
+
+	# Railway type 13 - railways don't use traditional building slots
+	else_if = { limit = { check_variable = { _project_building_type = 13 } }
+		always = yes
 	}
 }
 
 WA_AI_PC_building_slot_available = {
 
-	if = { limit = { check_variable = { ROOT.WA_AI_PC_project_building_type^ROOT.WA_AI_PC_project_type = 1 } }
+	if = { limit = { check_variable = { ROOT.WA_AI_PC_building_type^ROOT.WA_AI_PC_project_type = 1 } }
 
 		free_building_slots = { building = infrastructure size > 0 include_locked = no }
 	}
 
-	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_project_building_type^ROOT.WA_AI_PC_project_type = 2 } }
+	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_building_type^ROOT.WA_AI_PC_project_type = 2 } }
 
 		free_building_slots = { building = air_base size > 0 include_locked = no }
 	}
 
-	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_project_building_type^ROOT.WA_AI_PC_project_type = 3 } }
+	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_building_type^ROOT.WA_AI_PC_project_type = 3 } }
 
 		free_building_slots = { building = anti_air_building size > 0 include_locked = no }
 	}
 
-	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_project_building_type^ROOT.WA_AI_PC_project_type = 4 } }
+	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_building_type^ROOT.WA_AI_PC_project_type = 4 } }
 
 		OR = {
 			AND = { ROOT = { has_tech = radio_detection } 				radar_station < 1 }
@@ -213,22 +230,22 @@ WA_AI_PC_building_slot_available = {
 		}
 	}
 
-	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_project_building_type^ROOT.WA_AI_PC_project_type = 5 } }
+	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_building_type^ROOT.WA_AI_PC_project_type = 5 } }
 
 		free_building_slots = { building = arms_factory size > 0 include_locked = no }
 	}
 
-	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_project_building_type^ROOT.WA_AI_PC_project_type = 6 } }
+	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_building_type^ROOT.WA_AI_PC_project_type = 6 } }
 
 		free_building_slots = { building = industrial_complex size > 0 include_locked = no }
 	}
 
-	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_project_building_type^ROOT.WA_AI_PC_project_type = 7 } }
+	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_building_type^ROOT.WA_AI_PC_project_type = 7 } }
 
 		free_building_slots = { building = dockyard size > 0 include_locked = no }
 	}
 
-	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_project_building_type^ROOT.WA_AI_PC_project_type = 8 } }
+	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_building_type^ROOT.WA_AI_PC_project_type = 8 } }
 
 		OR = {
 			free_building_slots = { building = synthetic_refinery size > 0 include_locked = no }
@@ -239,24 +256,29 @@ WA_AI_PC_building_slot_available = {
 		synthetic_refinery < 3
 	}
 
-	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_project_building_type^-1 = 9 } }
+	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_building_type^ROOT.WA_AI_PC_project_type = 9 } }
 
 		check_variable = { building_level@arms_factory > 0 }
 	}
 
-	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_project_building_type^-1 = 10 } }
+	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_building_type^ROOT.WA_AI_PC_project_type = 10 } }
 
 		check_variable = { building_level@industrial_complex > 0 }
 	}
 
-	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_project_building_type^ROOT.WA_AI_PC_project_type = 11 } }
+	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_building_type^ROOT.WA_AI_PC_project_type = 11 } }
 
 		free_building_slots = { building = hydro_steel_refinery size > 0 include_locked = no }
 	}
 
-	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_project_building_type^ROOT.WA_AI_PC_project_type = 12 } }
+	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_building_type^ROOT.WA_AI_PC_project_type = 12 } }
 
 		free_building_slots = { building = hydro_aluminium_refinery size > 0 include_locked = no }
+	}
+
+	# Railway type 13 - railways don't use traditional building slots
+	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_building_type^ROOT.WA_AI_PC_project_type = 13 } }
+		always = yes
 	}
 }
 

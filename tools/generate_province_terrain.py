@@ -1,0 +1,252 @@
+"""
+Province terrain type generator for World Ablaze AI.
+
+This script reads HOI4's map/definition.csv to extract terrain types for each province
+and generates a precomputed terrain mapping file in the World Ablaze AI format.
+
+The output enables terrain-aware pathfinding by providing:
+- Province -> terrain_type mapping for all provinces
+
+This module is designed to be:
+- Standalone: Can be run directly from command line
+- Robust: Handles the standard HOI4 definition.csv format
+- Compatible: Outputs in World Ablaze AI's expected format
+
+Key constraints:
+- Expects standard HOI4 map/definition.csv format
+- Terrain types must match WA_AI_MAP_PROV_TYPE_* constants in WA_AI_MAP_effects.txt
+"""
+
+import argparse
+import csv
+import logging
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
+
+# World Ablaze terrain type mapping (from WA_AI_MAP_effects.txt)
+# These must match the constants defined in WA_AI_MAP_startup
+WA_TERRAIN_TYPES = {
+    "unknown": 0,
+    "plains": 1,
+    "desert": 2,
+    "marsh": 3,
+    "jungle": 4,
+    "forest": 5,
+    "urban": 6,
+    "hills": 7,
+    "mountain": 8,
+    "ocean": 9,
+    "lakes": 9,           # Treat lakes as ocean for pathfinding
+    "lake": 9,            # Alternative spelling
+    "sea": 9,             # Sea provinces
+    # Additional terrain types found in World Ablaze definition.csv
+    "marsh_forest": 3,    # Treat as marsh (defensive terrain)
+    "arid": 2,            # Treat as desert (open terrain)
+    "island": 1,          # Treat as plains
+    "atoll": 1,           # Treat as plains (small island)
+    "savanna": 1,         # Treat as plains (open terrain)
+    "steppe": 1,          # Treat as plains (open terrain)
+    "tundra": 1,          # Treat as plains (open terrain)
+    # Impassable terrain types - treat as mountain (most defensive)
+    "desert_impassable": 8,
+    "jungle_impassable": 8,
+    "mountain_impassable": 8,
+    "plains_impassable": 8,
+    "forest_impassable": 8,
+}
+
+
+def parse_definition_csv(definition_path: Path) -> dict[int, str]:
+    """
+    Parse the HOI4 map/definition.csv to extract province terrain types.
+
+    The CSV format is:
+        province_id;R;G;B;type;coastal;terrain;continent
+
+    Args:
+        definition_path: Path to the definition.csv file.
+
+    Returns:
+        Dictionary mapping province_id -> terrain_name.
+    """
+    province_terrain: dict[int, str] = {}
+
+    try:
+        with open(definition_path, "r", encoding="utf-8-sig") as f:
+            reader = csv.reader(f, delimiter=";")
+            
+            for row in reader:
+                if len(row) < 7:
+                    continue
+                
+                try:
+                    province_id = int(row[0])
+                except ValueError:
+                    # Skip header or malformed rows
+                    continue
+                
+                # Column 4 is the province type (land/sea/lake)
+                province_type = row[4].lower().strip()
+                
+                # Column 6 is the terrain type
+                terrain = row[6].lower().strip()
+                
+                # For sea provinces, override terrain to ocean
+                if province_type == "sea":
+                    terrain = "ocean"
+                elif province_type == "lake":
+                    terrain = "lakes"
+                
+                province_terrain[province_id] = terrain
+
+    except Exception as e:
+        logger.error(f"Failed to parse definition.csv: {e}")
+        raise
+
+    logger.info(f"Parsed {len(province_terrain)} provinces from definition.csv")
+    return province_terrain
+
+
+def terrain_to_wa_type(terrain: str) -> int:
+    """
+    Convert terrain name to World Ablaze terrain type number.
+
+    Args:
+        terrain: Terrain name from definition.csv.
+
+    Returns:
+        World Ablaze terrain type constant (0-9).
+    """
+    terrain_lower = terrain.lower().strip()
+    
+    if terrain_lower in WA_TERRAIN_TYPES:
+        return WA_TERRAIN_TYPES[terrain_lower]
+    
+    # Log unknown terrain types
+    logger.warning(f"Unknown terrain type '{terrain}', defaulting to plains (1)")
+    return WA_TERRAIN_TYPES["plains"]
+
+
+def write_wa_ai_format(
+    province_terrain: dict[int, str],
+    output_path: Path
+) -> None:
+    """
+    Write province terrain mappings in World Ablaze AI format.
+
+    Output format:
+        WA_AI_MAP_set_province_terrain_type = {
+            set_variable = { global.WA_AI_MAP_province_terrain_type^0 = 0 }
+            set_variable = { global.WA_AI_MAP_province_terrain_type^1 = 9 }
+            ...
+        }
+
+    Args:
+        province_terrain: Dictionary of province_id -> terrain_name.
+        output_path: Path for output file.
+    """
+    lines: list[str] = []
+    
+    # Header comment
+    lines.append("############################################################################################################")
+    lines.append("#    World Ablaze AI - Province Terrain Types")
+    lines.append("#    Auto-generated by generate_province_terrain.py")
+    lines.append("#    DO NOT EDIT MANUALLY - Regenerate using the script if map changes")
+    lines.append("############################################################################################################")
+    lines.append("")
+    lines.append("WA_AI_MAP_set_province_terrain_type = {")
+
+    # Count terrain types for logging
+    terrain_counts: dict[str, int] = {}
+    
+    # Sort by province ID for consistent output
+    for province_id in sorted(province_terrain.keys()):
+        terrain_name = province_terrain[province_id]
+        terrain_type = terrain_to_wa_type(terrain_name)
+        
+        lines.append(
+            f"    set_variable = {{ global.WA_AI_MAP_province_terrain_type^{province_id} = {terrain_type} }}"
+        )
+        
+        # Count for stats
+        terrain_counts[terrain_name] = terrain_counts.get(terrain_name, 0) + 1
+
+    lines.append("}")
+
+    # Write output
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+
+    # Log statistics
+    logger.info(f"Wrote {len(province_terrain)} province terrain mappings to {output_path}")
+    logger.info("Terrain distribution:")
+    for terrain, count in sorted(terrain_counts.items(), key=lambda x: -x[1]):
+        wa_type = terrain_to_wa_type(terrain)
+        logger.info(f"  {terrain}: {count} provinces (WA type {wa_type})")
+
+
+def main() -> None:
+    """Main entry point for the province terrain generator."""
+    parser = argparse.ArgumentParser(
+        description="Generate province terrain mappings for World Ablaze AI.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python generate_province_terrain.py
+  python generate_province_terrain.py --definition ../map/definition.csv --output ../common/scripted_effects/WA_AI_MAP_province_terrain.txt
+        """,
+    )
+    parser.add_argument(
+        "--definition",
+        type=Path,
+        default=Path("../map/definition.csv"),
+        help="Path to the map/definition.csv file (default: ../map/definition.csv)",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("../common/scripted_effects/WA_AI_MAP_province_terrain.txt"),
+        help="Output file path (default: ../common/scripted_effects/WA_AI_MAP_province_terrain.txt)",
+    )
+    parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Enable verbose logging",
+    )
+
+    args = parser.parse_args()
+
+    # Configure logging
+    log_level = logging.DEBUG if args.verbose else logging.INFO
+    logging.basicConfig(
+        level=log_level,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
+
+    # Validate paths
+    if not args.definition.exists():
+        logger.error(f"Definition file not found at {args.definition}")
+        return
+
+    # Step 1: Parse definition.csv
+    logger.info(f"Step 1: Parsing terrain data from {args.definition}...")
+    province_terrain = parse_definition_csv(args.definition)
+
+    if not province_terrain:
+        logger.error("No province terrain mappings found!")
+        return
+
+    # Step 2: Write output
+    logger.info("Step 2: Writing output file...")
+
+    # Ensure output directory exists
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+
+    write_wa_ai_format(province_terrain, args.output)
+
+    logger.info("Done!")
+
+
+if __name__ == "__main__":
+    main()

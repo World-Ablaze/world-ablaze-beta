@@ -55,7 +55,6 @@ WA_AI_PC_railway = {
 
 				###
 
-					WA_AI_PC_save_project_inputs = yes
 					for_each_loop = { array = railway_end_provinces_ index = railway_i value = railway_v break = railway_b
 						set_temp_variable = { _pathfind_prov_start = railway_start_provinces_^railway_i }
 						set_temp_variable = { _pathfind_prov_end = railway_end_provinces_^railway_i }
@@ -67,7 +66,6 @@ WA_AI_PC_railway = {
 								set_temp_variable = { next_i = path_i }
 								add_to_temp_variable = { next_i = 1 }
 								if = { limit = { check_variable = { next_i < pathfind_prov_path_^num } }
-									WA_AI_PC_get_project_inputs_provincial = yes
 									set_temp_variable = { _project_province_id = path_v }
 									set_temp_variable = { _project_connect_id = pathfind_prov_path_^next_i }
 									set_temp_variable = { _project_target_level = railway_target_levels_^railway_i }
@@ -78,6 +76,16 @@ WA_AI_PC_railway = {
 								}
 							}
 						}
+					}
+
+				### Validate queued projects - cancel any that are no longer on valid paths
+				### This cleans up stale projects when frontlines shift or territory is lost
+					set_temp_variable = { _strategy_id = _project_type_id }
+					WA_AI_PC_validate_queued_provincial_projects = yes
+
+				### Process port upgrades for overseas operations
+					if = { limit = { check_variable = { railway_port_upgrades_^num > 0 } }
+						WA_AI_PC_process_port_upgrades = yes
 					}
 
 				### Assign more IC to PC if these types are queued
@@ -266,18 +274,12 @@ WA_AI_PC_railway_get_supply_hub_province = { # THIS = state >>> supply_hub_provi
 	set_temp_variable = { supply_hub_province_ = 0 }
 
 	# Iterate through all provinces in the state to find supply hub
+	# Note: Province control check removed - this function is called within controlled state context
 	for_each_loop = { array = global.WA_AI_MAP_state_province_ids@THIS value = _province_hub_id break = _found_hub
 		if = {
 			limit = {
 				# Check if this province has a supply_node or naval_base
 				WA_AI_PC_prov_has_supply_hub = yes
-				# Ensure we control this province
-				var:global.province_controllers^_province_hub_id = {
-					OR = {
-						tag = ROOT
-						is_in_array = { ROOT.faction_members = THIS }
-					}
-				}
 			}
 			set_temp_variable = { supply_hub_province_ = _province_hub_id }
 			set_temp_variable = { _found_hub = 1 }
@@ -295,18 +297,12 @@ WA_AI_PC_railway_get_naval_base_province = { # THIS = state >>> naval_base_provi
 	set_temp_variable = { naval_base_level_ = 0 }
 
 	# Iterate through all provinces in the state to find naval base
+	# Note: Province control check removed - this function is called within controlled state context
 	for_each_loop = { array = global.WA_AI_MAP_state_province_ids@THIS value = _province_hub_id break = _found_port
 		if = {
 			limit = {
 				# Check if this province has a naval_base
 				WA_AI_PC_prov_has_naval_base = yes
-				# Ensure we control this province
-				var:global.province_controllers^_province_hub_id = {
-					OR = {
-						tag = ROOT
-						is_in_array = { ROOT.faction_members = THIS }
-					}
-				}
 			}
 			set_temp_variable = { naval_base_province_ = _province_hub_id }
 			# Note: We can't easily get the level per province, so we use state level
@@ -1095,14 +1091,6 @@ WA_AI_PC_start_railway_project = { # THIS = state, _project_province_id, _projec
 	}
 }
 
-WA_AI_PC_get_project_inputs_provincial = {
-	# Placeholder for getting project inputs for provincial construction
-}
-
-WA_AI_PC_save_project_inputs = {
-	# Placeholder for saving project inputs
-}
-
 WA_AI_PC_clear_project_inputs = {
 	# Clear temporary project input variables
 	clear_temp_array = railway_start_provinces_
@@ -1120,13 +1108,6 @@ WA_AI_PC_get_total_queued_num = { # _get_queued_num_building_type, _get_queued_n
 			add_to_temp_variable = { queued_type_num_ = 1 }
 		}
 	}
-}
-
-###
-
-WA_AI_PC_process_railway_queue = {
-	# DEPRECATED: Railway construction is now handled by the PC system via WA_AI_PC_update_project_progress
-	# This function is kept as a no-op for backward compatibility
 }
 
 ############################################################################################################

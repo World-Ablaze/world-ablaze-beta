@@ -115,9 +115,8 @@ on_actions = {
 				WA_AI_PC_update_project_progress = yes
 				
 				### Railway building - Highest priority, every 3 months (12 weeks)
-				if = { limit = { has_war = yes }
-					WA_AI_PC_railway = yes
-				}
+				### Now runs during peace (pre-war preparation) and war
+				WA_AI_PC_railway = yes
 			}
 		}
 	}
@@ -225,48 +224,33 @@ on_actions = {
 		effect = {
 
 			FROM.FROM = {
+				# Check if old controller (FROM) has any projects in this state
+				if = { limit = { check_variable = { WA_AI_PC_projects_in_state_of_@FROM^num > 0 } }
 
-				if = { limit = { check_variable = { WA_AI_PC_projects_in_state^num > 0 } }
+					# Collect project IDs to cancel
+					clear_temp_array = _cancel_projects_IDS
+					for_each_loop = { array = WA_AI_PC_projects_in_state_of_@FROM value = _proj_id
 
-					for_each_scope_loop = { array = WA_AI_PC_projects_in_state
-
-						### remove any invalid projects from state
-
+						# Check if new controller has permission to continue this project
 						if = {
 							limit = {
 								NOT = {
-									is_in_array = { array = WA_AI_PC_construction_permissions value = ROOT.id }
-									tag = ROOT
-									is_in_faction_with = ROOT
-									is_subject_of = ROOT
-									ROOT = { is_subject_of = PREV }
+									is_in_array = { array = FROM.WA_AI_PC_construction_permissions value = ROOT.id }
+									FROM = { tag = ROOT }
+									FROM = { is_in_faction_with = ROOT }
+									FROM = { is_subject_of = ROOT }
+									ROOT = { is_subject_of = FROM }
 								}
 							}
 
-							add_to_array = { PREV.WA_AI_PC_remove_projects = THIS.id }
-						}
-
-						### update project target country
-
-						else = {
-
-							meta_effect = { # remove target decision from old controller
-								text = { var:WA_AI_PC_project_target_country^PREV.WA_AI_PC_project_target_state_@THIS = { remove_targeted_decision = { target = PREV decision = WA_AI_PC_project_[x]_target_decision } } }
-								x = "[?PREV.WA_AI_PC_project_target_state_@THIS]"
-							}
-
-							set_variable = { WA_AI_PC_project_target_country^PREV.WA_AI_PC_project_target_state_@THIS = ROOT.id }
+							add_to_temp_array = { _cancel_projects_IDS = _proj_id }
 						}
 					}
 
-					for_each_scope_loop = { array = WA_AI_PC_remove_projects
-
-						set_variable = { WA_AI_PC_project = PREV.WA_AI_PC_project_target_state_@THIS }
-						log = "AC - [GetDate] [This.GetTag] - on_state_control_changed - deleted invalid project [?WA_AI_PC_project] in [?WA_AI_PC_project_array^WA_AI_PC_project] [?WA_AI_PC_project_array^WA_AI_PC_project.GetName]"
-						WA_AI_PC_end_project = yes
+					# Cancel invalid projects
+					if = { limit = { check_variable = { _cancel_projects_IDS^num > 0 } }
+						FROM = { WA_AI_PC_cancel_projects = yes }
 					}
-
-					clear_array = WA_AI_PC_remove_projects
 				}
 			}
 		}

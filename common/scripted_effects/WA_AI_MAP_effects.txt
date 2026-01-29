@@ -26,6 +26,9 @@ WA_AI_MAP_startup = {
 	add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_hills }
 	add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_mountain }
 
+	# Initialize province terrain types for terrain-aware pathfinding
+	WA_AI_MAP_set_province_terrain_type = yes
+
 	# Initialize province connections from WA data
 	WA_AI_MAP_set_province_connections = yes
 
@@ -34,6 +37,9 @@ WA_AI_MAP_startup = {
 
 	# Initialize railway connections
 	WA_AI_MAP_set_province_railway_connections = yes
+
+	# Initialize province position coordinates for pathfinding distance calculations
+	WA_AI_MAP_set_province_pos = yes
 }
 
 ###
@@ -85,27 +91,12 @@ WA_AI_MAP_get_nearby_states = { # var:_state arr:nearby_states_
 ###
 
 WA_AI_MAP_set_state_province_ids = {
-	# Map state IDs to their province IDs for railway routing
-	every_state = {
-		set_temp_variable = { state_id = THIS.id }
-		clear_array = global.WA_AI_MAP_state_province_ids@THIS
-
-		# Use map province iteration to populate
-		for_each_loop = { array = global.WA_AI_MAP_province_connections_@THIS value = prov_id
-			if = { limit = { NOT = { is_in_array = { global.WA_AI_MAP_state_province_ids@THIS = prov_id } } }
-				add_to_array = { global.WA_AI_MAP_state_province_ids@THIS = prov_id }
-				set_variable = { global.WA_AI_MAP_province_state_id^prov_id = state_id }
-			}
-		}
-	}
+	# State-to-province mappings are now pre-generated in WA_AI_MAP_state_provinces.txt
+	# This function calls the generated data to populate:
+	# - global.WA_AI_MAP_state_province_ids@{state_id} = [province_ids]
+	# - global.WA_AI_MAP_province_state_id^{province_id} = state_id
+	WA_AI_MAP_set_state_province_ids_data = yes
 }
 
-WA_AI_MAP_set_province_railway_connections = {
-	# Initialize railway connection tracking arrays
-	# This maps which provinces have railway connections and their levels
-	# Will be populated dynamically as railways are built
-
-	# Initialize empty - railways will be added as AI builds them
-	# Format: global.WA_AI_PC_railway_connections^[province_id] = 1 if has any connection
-	# Format: global.WA_AI_PC_railway_connection_level_[from]^[to] = level (1-5)
-}
+# Note: WA_AI_MAP_set_province_railway_connections is defined in WA_AI_MAP_province_railway_connections.txt
+# That generated file contains all initial railway connection data from map/railways.txt
