@@ -537,15 +537,16 @@ def process_tech_file(filepath: Path, dry_run: bool = True) -> tuple[int, int, l
         
         # Generate new ai_will_do block with all reachable triggers
         new_block = generate_new_ai_will_do(reachable_triggers, base_indent, start_year)
-        
-        # Replace the block
-        content = content[:block_start] + new_block + content[block_end:]
-        techs_modified += 1
-        
-        # Build modification message
-        year_info = f" (year: {start_year})" if start_year else " (no start_year)"
-        triggers_info = ", ".join(sorted(reachable_triggers))
-        modifications.append(f"  {tech_name} -> triggers: [{triggers_info}]{year_info}")
+
+        # Only replace if the block actually changed
+        if new_block != old_block:
+            content = content[:block_start] + new_block + content[block_end:]
+            techs_modified += 1
+
+            # Build modification message
+            year_info = f" (year: {start_year})" if start_year else " (no start_year)"
+            triggers_info = ", ".join(sorted(reachable_triggers))
+            modifications.append(f"  {tech_name} -> triggers: [{triggers_info}]{year_info}")
     
     # Always rewrite file without BOM if it had BOM or content changed
     if content != original_content or has_bom:

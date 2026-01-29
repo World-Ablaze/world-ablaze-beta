@@ -457,19 +457,24 @@ def process_file(filepath: Path, dry_run: bool = False, verbose: bool = False) -
         
         # Generate new block
         new_block = generate_new_ai_will_do(trigger, start_year, indent)
-        
+
         # Add a single newline before the block if we removed blank lines
         if prefix_start < block_start:
             new_block = "\n" + indent + "ai_will_do" + new_block[new_block.find('ai_will_do') + len('ai_will_do'):]
-        
-        # Replace
-        content = content[:prefix_start] + new_block + content[block_end:]
-        
-        # Adjust position for next search
-        pos = prefix_start + len(new_block)
-        
-        updated_count += 1
-        messages.append(f"  Updated: {tech_name} -> {trigger} (year: {start_year})")
+
+        # Only replace if the block actually changed
+        old_block = content[prefix_start:block_end]
+        if new_block != old_block:
+            content = content[:prefix_start] + new_block + content[block_end:]
+
+            # Adjust position for next search
+            pos = prefix_start + len(new_block)
+
+            updated_count += 1
+            messages.append(f"  Updated: {tech_name} -> {trigger} (year: {start_year})")
+        else:
+            pos = block_end
+            skipped_count += 1
     
     # Always rewrite file without BOM if it had BOM or content changed
     if (content != original_content or has_bom) and not dry_run:

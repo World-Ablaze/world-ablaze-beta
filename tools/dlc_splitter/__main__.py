@@ -68,6 +68,7 @@ def process_file(
     output_dir: Optional[Path],
     dlcs: List[str],
     dry_run: bool = False,
+    force: bool = False,
     verbose: bool = False,
 ) -> Dict[str, any]:
     """
@@ -79,6 +80,7 @@ def process_file(
     stats = {
         'files_created': 0,
         'files_skipped': 0,
+        'files_overwritten': 0,
         'errors': [],
     }
 
@@ -123,8 +125,14 @@ def process_file(
     for filename, file_ast in split_results.items():
         output_path = output_dir / filename
 
+        # Check if output file already exists
+        file_exists = output_path.exists()
+
         if dry_run:
-            logger.info(f"Would create: {output_path}")
+            if file_exists:
+                logger.info(f"Would overwrite existing: {output_path}")
+            else:
+                logger.info(f"Would create: {output_path}")
             if verbose:
                 content_preview = ast_to_string(file_ast)
                 lines = content_preview.split('\n')
@@ -135,9 +143,22 @@ def process_file(
                 if len(lines) > 20:
                     logger.info(f"  ... ({len(lines) - 20} more lines)")
         else:
+            # Check for existing file and warn (unless --force is used)
+            if file_exists and not force:
+                logger.warning(
+                    f"Output file already exists: {output_path}. "
+                    f"Use --force to overwrite or --dry-run to preview changes."
+                )
+                stats['files_skipped'] += 1
+                continue
+
             try:
                 writer.write(file_ast, output_path)
-                logger.info(f"Created: {output_path}")
+                if file_exists:
+                    logger.info(f"Overwrote: {output_path}")
+                    stats['files_overwritten'] += 1
+                else:
+                    logger.info(f"Created: {output_path}")
             except Exception as e:
                 stats['errors'].append(f"Failed to write {output_path}: {e}")
                 continue
@@ -185,6 +206,12 @@ Examples:
         '--dry-run',
         action='store_true',
         help='Show what would be done without making changes'
+    )
+
+    parser.add_argument(
+        '--force',
+        action='store_true',
+        help='Force overwrite of existing files (use with caution - may cause data loss)'
     )
 
     parser.add_argument(
@@ -254,6 +281,7 @@ Examples:
     total_stats = {
         'files_processed': 0,
         'files_created': 0,
+        'files_overwritten': 0,
         'files_skipped': 0,
         'errors': [],
     }
@@ -265,11 +293,13 @@ Examples:
             args.output,
             args.dlc,
             args.dry_run,
+            args.force,
             args.verbose,
         )
 
         total_stats['files_processed'] += 1
         total_stats['files_created'] += stats['files_created']
+        total_stats['files_overwritten'] += stats.get('files_overwritten', 0)
         total_stats['files_skipped'] += stats['files_skipped']
         total_stats['errors'].extend(stats['errors'])
 
@@ -277,7 +307,8 @@ Examples:
     print(f"\nSummary:")
     print(f"  Files processed: {total_stats['files_processed']}")
     print(f"  Non-DLC files created: {total_stats['files_created']}")
-    print(f"  Files with no non-DLC content: {total_stats['files_skipped']}")
+    print(f"  Files overwritten: {total_stats['files_overwritten']}")
+    print(f"  Files skipped: {total_stats['files_skipped']}")
 
     if total_stats['errors']:
         print(f"  Errors: {len(total_stats['errors'])}")
