@@ -34,7 +34,11 @@
 
 WA_AI_PC_railway = {
 
+	if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: Entry - interval_counter=[?WA_AI_PC_railway_INTERVAL_counter]" }
+
 	if = { limit = { check_variable = { WA_AI_PC_railway_INTERVAL_counter = 0 } }
+
+		if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: Interval check PASSED" }
 
 		### Dynamic interval - longer during peace, shorter during war
 		if = {
@@ -60,11 +64,15 @@ WA_AI_PC_railway = {
 			multiply_temp_variable = { _min_civs_required = 0.6 }  # 30 civs during war
 		}
 
+		if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: Civs check - required=[?_min_civs_required] has_war=[?has_war]" }
+
 		if = {
 			limit = {
 				num_of_civilian_factories > _min_civs_required
 				has_capitulated = no
 			}
+
+			if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: Civs check PASSED" }
 
 			### Skip recalculation if queue already has enough railway projects
 			set_temp_variable = { _get_queued_num_building_type = @WA_AI_PC_railway_TYPE_ID }
@@ -78,6 +86,8 @@ WA_AI_PC_railway = {
 
 				### Execute all applicable strategies
 				WA_AI_PC_railway_STRATEGIES = yes
+
+				if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: Strategies done - success=[?WA_AI_PC_railway_STRATEGIES] targets=[?railway_end_provinces_^num]" }
 
 			if = {
 				limit = {
@@ -177,6 +187,7 @@ WA_AI_PC_railway_STRATEGIES = { # >>> arr:railway_start_provinces_:railway_end_p
 	clear_temp_array = railway_enemy_tags_
 
 	### Get capital info
+	set_temp_variable = { capital_province = 0 }
 	capital_scope = {
 		set_temp_variable = { capital_state_id = THIS.id }
 		set_temp_variable = { capital_continent = 0 }
@@ -188,11 +199,27 @@ WA_AI_PC_railway_STRATEGIES = { # >>> arr:railway_start_provinces_:railway_end_p
 		else_if = { limit = { is_on_continent = middle_east } set_temp_variable = { capital_continent = 6 } }
 		else_if = { limit = { is_on_continent = australia } set_temp_variable = { capital_continent = 7 } }
 
-		# Get a representative province from capital state
-		for_each_loop = { array = global.WA_AI_MAP_province_connections_@THIS value = cap_prov
-			set_temp_variable = { capital_province = cap_prov }
-			set_temp_variable = { break = 1 }
+		# Get a representative province from capital state - prefer one with railway connections
+		set_temp_variable = { _found_railway_prov = 0 }
+		for_each_loop = { array = global.WA_AI_MAP_state_province_ids@THIS value = cap_prov break = _found_railway_prov
+			# Check if this province has railway connections
+			if = { limit = { check_variable = { global.WA_AI_PC_railway_connections^cap_prov = 1 } }
+				set_temp_variable = { capital_province = cap_prov }
+				set_temp_variable = { _found_railway_prov = 1 }
+			}
 		}
+		# Fallback: if no province with railways, use first province
+		if = { limit = { check_variable = { _found_railway_prov = 0 } }
+			for_each_loop = { array = global.WA_AI_MAP_state_province_ids@THIS value = cap_prov
+				set_temp_variable = { capital_province = cap_prov }
+				set_temp_variable = { break = 1 }
+			}
+		}
+	}
+
+	if = { limit = { has_country_flag = WA_AI_construction_logging }
+		set_temp_variable = { _log_state = global.WA_AI_MAP_province_state_id^capital_province }
+		var:_log_state = { ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: Capital province=[?capital_province] in [Prev.GetName] (state [?_log_state]) continent=[?capital_continent]" } }
 	}
 
 	### STRATEGY 1: WARTIME - Land access to enemy
@@ -205,14 +232,18 @@ WA_AI_PC_railway_STRATEGIES = { # >>> arr:railway_start_provinces_:railway_end_p
 
 		WA_AI_PC_railway_check_land_access_to_enemies = yes
 
+		if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: Enemy check - land=[?has_land_enemy_] overseas=[?has_overseas_enemy_]" }
+
 		if = {
 			limit = { check_variable = { has_land_enemy_ = 1 } }
+			if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: Executing STRATEGY_land_war" }
 			WA_AI_PC_railway_STRATEGY_land_war = yes
 		}
 
 		### STRATEGY 2: WARTIME - Overseas enemies (no land access)
 		if = {
 			limit = { check_variable = { has_overseas_enemy_ = 1 } }
+			if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: Executing STRATEGY_overseas_war" }
 			WA_AI_PC_railway_STRATEGY_overseas_war = yes
 		}
 	}
@@ -475,6 +506,11 @@ WA_AI_PC_railway_country_borders_enemy = { # _enemy_tag >>> borders_enemy_
 
 WA_AI_PC_railway_STRATEGY_land_war = {
 
+	if = { limit = { has_country_flag = WA_AI_construction_logging }
+		set_temp_variable = { _log_cap_state = global.WA_AI_MAP_province_state_id^capital_province }
+		var:_log_cap_state = { ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: LAND_WAR started - route_start=[?capital_province] ([Prev.GetName])" } }
+	}
+
 	set_temp_variable = { route_start = capital_province }
 	set_temp_variable = { route_level = 5 }
 	set_temp_variable = { route_priority = _project_priority }
@@ -484,6 +520,9 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 	### For each RELEVANT enemy we DIRECTLY border (not through allies), find frontline states with supply hubs
 	### This prevents building railways to distant frontlines (e.g., Italy → SOV through Germany)
 	### Uses pre-filtered _relevant_enemies_ array to reduce iteration count
+
+	if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: LAND_WAR - checking [?_relevant_enemies_^num] relevant enemies" }
+
 	for_each_scope_loop = { array = _relevant_enemies_
 		set_temp_variable = { _current_enemy_tag = THIS }
 
@@ -492,6 +531,8 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 			set_temp_variable = { _enemy_tag = _current_enemy_tag }
 			WA_AI_PC_railway_country_borders_enemy = yes
 		}
+
+		ROOT = { if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: LAND_WAR enemy [?_current_enemy_tag.GetName] - borders=[?borders_enemy_]" } }
 
 		# Only process enemies we directly border
 		if = {
@@ -544,6 +585,16 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 						if = {
 							limit = { check_variable = { _skip_pathfinding = 0 } }
 
+							set_temp_variable = { _log_dest_state = THIS.id }
+							ROOT = { if = { limit = { has_country_flag = WA_AI_construction_logging }
+								set_temp_variable = { _log_start_state = global.WA_AI_MAP_province_state_id^route_start }
+								var:_log_start_state = {
+									var:_log_dest_state = {
+										ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: LAND_WAR pathfind [?route_start] ([Prev.Prev.GetName]) -> [?supply_hub_province_] ([Prev.GetName])" }
+									}
+								}
+							} }
+
 							# Fix 1 & 2: Validate land path exists from capital to this frontline
 							# This prevents queuing railways for puppets/enclaves without land connection
 							set_temp_variable = { _pathfind_prov_start = route_start }
@@ -583,6 +634,8 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 
 WA_AI_PC_railway_STRATEGY_overseas_war = {
 
+	if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: OVERSEAS_WAR started" }
+
 	set_temp_variable = { route_level = 5 }
 	set_temp_variable = { route_priority = _project_priority }
 
@@ -596,6 +649,8 @@ WA_AI_PC_railway_STRATEGY_overseas_war = {
 	set_temp_variable = { best_home_port_state = 0 }
 	set_temp_variable = { best_home_port_level = 0 }
 	set_temp_variable = { best_home_port_province = 0 }
+
+	if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: OVERSEAS Part A - checking [?states_within_distance_^num] states near capital" }
 
 	# Also check capital state itself
 	add_to_temp_array = { states_within_distance_ = capital_state_id }
@@ -666,6 +721,8 @@ WA_AI_PC_railway_STRATEGY_overseas_war = {
 				set_temp_variable = { enemy_has_land_border = 1 }
 			}
 		}
+
+		ROOT = { if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: OVERSEAS enemy [?enemy_tag.GetName] - has_land_border=[?enemy_has_land_border]" } }
 
 		if = {
 			limit = { check_variable = { enemy_has_land_border = 0 } }
