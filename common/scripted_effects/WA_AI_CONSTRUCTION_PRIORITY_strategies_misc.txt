@@ -1,0 +1,910 @@
+############################################################################################################
+#	Expert AI mod - Construction Priority Strategies - Misc
+#	Railway building system for World Ablaze
+#	Builds railways from capital to front lines every 6 months
+#	Supports: Land wars, overseas invasions, pre-war preparation
+############################################################################################################
+
+### Railway Building - HIGHEST PRIORITY
+### Runs every 6 months (26 weeks)
+
+@WA_AI_PC_railway_TYPE_ID = 13
+@WA_AI_PC_railway_PRIO = 9999
+@WA_AI_PC_railway_PRIO_PREWAR = 5000
+@WA_AI_PC_railway_INTERVAL = 26
+
+### Industrial requirements
+@WA_AI_PC_railway_MIN_CIVS = 50
+
+WA_AI_PC_railway = {
+
+	if = { limit = { check_variable = { WA_AI_PC_railway_INTERVAL_counter = 0 } }
+
+		set_variable = { WA_AI_PC_railway_INTERVAL_counter = @WA_AI_PC_railway_INTERVAL }
+
+		set_temp_variable = { _project_building_type = global.WA_AI_PC_RAIL }
+		set_temp_variable = { _project_build_for_ally = 1 }
+		set_temp_variable = { _project_type_id = @WA_AI_PC_railway_TYPE_ID }
+		set_temp_variable = { _project_priority = @WA_AI_PC_railway_PRIO }
+		set_temp_variable = { _project_queue_num = 5 }
+		set_temp_variable = { _project_queue_max = 5 }
+
+		### Industrial base requirement: 50+ civilian factories
+		if = {
+			limit = {
+				num_of_civilian_factories > @WA_AI_PC_railway_MIN_CIVS
+				has_capitulated = no
+			}
+
+			### Execute all applicable strategies
+			WA_AI_PC_railway_STRATEGIES = yes
+
+			if = {
+				limit = {
+					check_variable = { WA_AI_PC_railway_STRATEGIES = 1 }
+				}
+
+				if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: WA_AI_PC_railway" }
+
+				###
+
+					WA_AI_PC_save_project_inputs = yes
+					for_each_loop = { array = railway_end_provinces_ index = railway_i value = railway_v break = railway_b
+						set_temp_variable = { _pathfind_prov_start = railway_start_provinces_^railway_i }
+						set_temp_variable = { _pathfind_prov_end = railway_end_provinces_^railway_i }
+						set_temp_variable = { _pathfind_prov_type = 1 }
+						WA_AI_PATHFIND_PROV_get_path = yes
+						if = { limit = { check_variable = { pathfind_prov_success_ = 1 } }
+							for_each_loop = { array = pathfind_prov_path_ index = path_i value = path_v break = path_b
+								add_to_temp_array = { _valid_provinces = path_v }
+								set_temp_variable = { next_i = path_i }
+								add_to_temp_variable = { next_i = 1 }
+								if = { limit = { check_variable = { next_i < pathfind_prov_path_^num } }
+									WA_AI_PC_get_project_inputs_provincial = yes
+									set_temp_variable = { _project_province_id = path_v }
+									set_temp_variable = { _project_connect_id = pathfind_prov_path_^next_i }
+									set_temp_variable = { _project_target_level = railway_target_levels_^railway_i }
+									set_temp_variable = { _project_priority = railway_priorities_^railway_i }
+									var:global.WA_AI_MAP_province_state_id^path_v = { WA_AI_PC_start_railway_project = yes }
+									set_temp_variable = { _designated_railway_network_^path_v = 1 }
+									set_temp_variable = { _designated_railway_network_^pathfind_prov_path_^next_i = 1 }
+								}
+							}
+						}
+					}
+
+				### Assign more IC to PC if these types are queued
+
+					set_temp_variable = { _get_queued_num_building_type = _project_building_type }
+					set_temp_variable = { _get_queued_num_type_id = _project_type_id }
+					if = {
+						limit = {
+							WA_AI_PC_get_total_queued_num = yes
+							check_variable = { queued_type_num_ > 0 }
+						}
+						set_country_flag = { flag = WA_AI_PC_override_max_factories_factor value = 1 days = 30 }
+						set_variable = { WA_AI_PC_override_max_factories_factor = 0.5 }
+					}
+
+				###
+			}
+		}
+
+		WA_AI_PC_clear_project_inputs = yes
+	}
+	else = {
+		add_to_variable = { WA_AI_PC_railway_INTERVAL_counter = -1 }
+	}
+}
+
+############################################################################################################
+#	MAIN STRATEGY DISPATCHER
+#	Calls appropriate strategy based on war status and land access
+############################################################################################################
+
+WA_AI_PC_railway_STRATEGIES = { # >>> arr:railway_start_provinces_:railway_end_provinces_:railway_target_levels_:railway_priorities_
+
+	set_temp_variable = { WA_AI_PC_railway_STRATEGIES = 0 }
+
+	clear_temp_array = railway_start_provinces_
+	clear_temp_array = railway_end_provinces_
+	clear_temp_array = railway_target_levels_
+	clear_temp_array = railway_priorities_
+	clear_temp_array = railway_port_upgrades_
+
+	### Get capital info
+	capital_scope = {
+		set_temp_variable = { capital_state_id = THIS.id }
+		set_temp_variable = { capital_continent = 0 }
+		if = { limit = { is_on_continent = europe } set_temp_variable = { capital_continent = 1 } }
+		else_if = { limit = { is_on_continent = north_america } set_temp_variable = { capital_continent = 2 } }
+		else_if = { limit = { is_on_continent = south_america } set_temp_variable = { capital_continent = 3 } }
+		else_if = { limit = { is_on_continent = asia } set_temp_variable = { capital_continent = 4 } }
+		else_if = { limit = { is_on_continent = africa } set_temp_variable = { capital_continent = 5 } }
+		else_if = { limit = { is_on_continent = middle_east } set_temp_variable = { capital_continent = 6 } }
+		else_if = { limit = { is_on_continent = australia } set_temp_variable = { capital_continent = 7 } }
+
+		# Get a representative province from capital state
+		for_each_loop = { array = global.WA_AI_MAP_province_connections_@THIS value = cap_prov
+			set_temp_variable = { capital_province = cap_prov }
+			set_temp_variable = { break = 1 }
+		}
+	}
+
+	### STRATEGY 1: WARTIME - Land access to enemy
+	if = {
+		limit = {
+			has_war = yes
+		}
+		WA_AI_PC_railway_check_land_access_to_enemies = yes
+
+		if = {
+			limit = { check_variable = { has_land_enemy_ = 1 } }
+			WA_AI_PC_railway_STRATEGY_land_war = yes
+		}
+
+		### STRATEGY 2: WARTIME - Overseas enemies (no land access)
+		if = {
+			limit = { check_variable = { has_overseas_enemy_ = 1 } }
+			WA_AI_PC_railway_STRATEGY_overseas_war = yes
+		}
+	}
+
+	### STRATEGY 3: PRE-WAR PREPARATION (justifying, has wargoal, or claims)
+	if = {
+		limit = {
+			has_war = no
+		}
+		WA_AI_PC_railway_STRATEGY_prewar_preparation = yes
+	}
+
+	### Set success flag if we have targets
+	if = { limit = { check_variable = { railway_end_provinces_^num > 0 } }
+		set_temp_variable = { WA_AI_PC_railway_STRATEGIES = 1 }
+	}
+}
+
+############################################################################################################
+#	HELPER: Check if we have land access to any enemy
+############################################################################################################
+
+WA_AI_PC_railway_check_land_access_to_enemies = {
+	set_temp_variable = { has_land_enemy_ = 0 }
+	set_temp_variable = { has_overseas_enemy_ = 0 }
+
+	every_enemy_country = {
+		set_temp_variable = { this_enemy = THIS }
+		set_temp_variable = { enemy_has_land_border = 0 }
+
+		# Check if any of our controlled states border this enemy's controlled states
+		ROOT = {
+			any_controlled_state = {
+				limit = {
+					any_neighbor_state = {
+						controller = { has_war_with = ROOT }
+						is_controlled_by = var:this_enemy
+					}
+				}
+				set_temp_variable = { enemy_has_land_border = 1 }
+			}
+		}
+
+		if = {
+			limit = { check_variable = { enemy_has_land_border = 1 } }
+			set_temp_variable = { has_land_enemy_ = 1 }
+		}
+		else = {
+			set_temp_variable = { has_overseas_enemy_ = 1 }
+		}
+	}
+}
+
+############################################################################################################
+#	HELPER: Get states within N adjacency steps from a state
+############################################################################################################
+
+WA_AI_PC_railway_get_states_within_distance = { # _origin_state_id, _max_distance >>> states_within_distance_
+
+	clear_temp_array = states_within_distance_
+	clear_temp_array = _states_current_wave_
+	clear_temp_array = _states_next_wave_
+	clear_temp_array = _states_visited_
+
+	add_to_temp_array = { _states_current_wave_ = _origin_state_id }
+	add_to_temp_array = { _states_visited_ = _origin_state_id }
+
+	set_temp_variable = { _current_distance = 0 }
+
+	while_loop_effect = {
+		limit = {
+			check_variable = { _current_distance < _max_distance }
+			check_variable = { _states_current_wave_^num > 0 }
+		}
+
+		# Process current wave
+		for_each_loop = { array = _states_current_wave_ value = _wave_state
+			var:_wave_state = {
+				every_neighbor_state = {
+					set_temp_variable = { _neighbor_id = THIS.id }
+					if = {
+						limit = {
+							NOT = { is_in_array = { _states_visited_ = _neighbor_id } }
+						}
+						add_to_temp_array = { _states_next_wave_ = _neighbor_id }
+						add_to_temp_array = { _states_visited_ = _neighbor_id }
+						add_to_temp_array = { states_within_distance_ = _neighbor_id }
+					}
+				}
+			}
+		}
+
+		# Move to next wave
+		clear_temp_array = _states_current_wave_
+		for_each_loop = { array = _states_next_wave_ value = _next_state
+			add_to_temp_array = { _states_current_wave_ = _next_state }
+		}
+		clear_temp_array = _states_next_wave_
+
+		add_to_temp_variable = { _current_distance = 1 }
+	}
+}
+
+############################################################################################################
+#	HELPER: Find supply hub province in a state
+#	Iterates through all provinces in a state to find the one with supply_node or naval_base
+############################################################################################################
+
+WA_AI_PC_railway_get_supply_hub_province = { # THIS = state >>> supply_hub_province_ (0 if not found)
+	set_temp_variable = { supply_hub_province_ = 0 }
+
+	# Iterate through all provinces in the state to find supply hub
+	for_each_loop = { array = global.WA_AI_MAP_state_province_ids@THIS value = _province_hub_id break = _found_hub
+		if = {
+			limit = {
+				# Check if this province has a supply_node or naval_base
+				WA_AI_PC_prov_has_supply_hub = yes
+				# Ensure we control this province
+				var:global.province_controllers^_province_hub_id = {
+					OR = {
+						tag = ROOT
+						is_in_array = { ROOT.faction_members = THIS }
+					}
+				}
+			}
+			set_temp_variable = { supply_hub_province_ = _province_hub_id }
+			set_temp_variable = { _found_hub = 1 }
+		}
+	}
+}
+
+############################################################################################################
+#	HELPER: Find naval base province in a state
+#	Iterates through all provinces to find the one with naval_base and returns the level
+############################################################################################################
+
+WA_AI_PC_railway_get_naval_base_province = { # THIS = state >>> naval_base_province_, naval_base_level_ (0 if not found)
+	set_temp_variable = { naval_base_province_ = 0 }
+	set_temp_variable = { naval_base_level_ = 0 }
+
+	# Iterate through all provinces in the state to find naval base
+	for_each_loop = { array = global.WA_AI_MAP_state_province_ids@THIS value = _province_hub_id break = _found_port
+		if = {
+			limit = {
+				# Check if this province has a naval_base
+				WA_AI_PC_prov_has_naval_base = yes
+				# Ensure we control this province
+				var:global.province_controllers^_province_hub_id = {
+					OR = {
+						tag = ROOT
+						is_in_array = { ROOT.faction_members = THIS }
+					}
+				}
+			}
+			set_temp_variable = { naval_base_province_ = _province_hub_id }
+			# Note: We can't easily get the level per province, so we use state level
+			set_temp_variable = { naval_base_level_ = naval_base }
+			set_temp_variable = { _found_port = 1 }
+		}
+	}
+}
+
+############################################################################################################
+#	HELPER: Check if state has supply hub and get the province ID
+#	Uses proper supply_node > 0 check at state level, then finds the exact province
+############################################################################################################
+
+WA_AI_PC_railway_state_has_supply_hub = { # THIS = state >>> has_supply_, supply_hub_province_
+	set_temp_variable = { has_supply_ = 0 }
+	set_temp_variable = { supply_hub_province_ = 0 }
+
+	# Check if state has a supply hub using proper trigger
+	if = {
+		limit = { WA_AI_PC_state_has_supply_hub = yes }
+
+		set_temp_variable = { has_supply_ = 1 }
+
+		# Find the exact province with the supply hub
+		WA_AI_PC_railway_get_supply_hub_province = yes
+	}
+}
+
+############################################################################################################
+#	STRATEGY 1: LAND WAR
+#	Build railways from capital to front-line states with supply hubs/naval bases
+#	Now properly detects supply_node buildings and finds exact province ID
+#	Uses has_railway_level to skip states that already have level 5 railways (including focus-built)
+############################################################################################################
+
+WA_AI_PC_railway_STRATEGY_land_war = {
+
+	set_temp_variable = { route_start = capital_province }
+	set_temp_variable = { route_level = 5 }
+	set_temp_variable = { route_priority = _project_priority }
+	set_temp_variable = { high_route_priority = route_priority }
+	multiply_temp_variable = { high_route_priority = 1.1 }
+
+	### Find front line states with supply hubs (supply_node or naval_base)
+	every_controlled_state = {
+		limit = {
+			# State borders enemy
+			any_neighbor_state = {
+				CONTROLLER = { has_war_with = ROOT }
+			}
+			# State has a supply hub (proper check)
+			WA_AI_PC_state_has_supply_hub = yes
+			# Skip states that already have level 5 railways (native check - includes focus/event built)
+			NOT = { WA_AI_PC_state_has_railway_level_5 = yes }
+		}
+
+		# Find the exact province with the supply hub
+		WA_AI_PC_railway_get_supply_hub_province = yes
+
+		if = {
+			limit = {
+				check_variable = { supply_hub_province_ > 0 }
+				NOT = { is_in_array = { railway_end_provinces_ = supply_hub_province_ } }
+			}
+			add_to_temp_array = { railway_start_provinces_ = route_start }
+			add_to_temp_array = { railway_end_provinces_ = supply_hub_province_ }
+			add_to_temp_array = { railway_target_levels_ = route_level }
+			add_to_temp_array = { railway_priorities_ = route_priority }
+		}
+	}
+
+	### Prioritize central hub first
+	if = { limit = { check_variable = { railway_end_provinces_^num > 1 } }
+		WA_AI_PC_railway_prioritize_central_hub = yes
+	}
+}
+
+############################################################################################################
+#	STRATEGY 2: OVERSEAS WAR
+#	A) Build max railway + port to best home port (within 5 states of capital)
+#	B) Build railways from beachhead port on enemy continent to front lines
+############################################################################################################
+
+WA_AI_PC_railway_STRATEGY_overseas_war = {
+
+	set_temp_variable = { route_level = 5 }
+	set_temp_variable = { route_priority = _project_priority }
+
+	### PART A: Home port infrastructure
+	### Find best port within 5 states of capital
+
+	set_temp_variable = { _origin_state_id = capital_state_id }
+	set_temp_variable = { _max_distance = 5 }
+	WA_AI_PC_railway_get_states_within_distance = yes
+
+	set_temp_variable = { best_home_port_state = 0 }
+	set_temp_variable = { best_home_port_level = 0 }
+	set_temp_variable = { best_home_port_province = 0 }
+
+	# Also check capital state itself
+	add_to_temp_array = { states_within_distance_ = capital_state_id }
+
+	for_each_loop = { array = states_within_distance_ value = _check_state
+		var:_check_state = {
+			if = {
+				limit = {
+					is_controlled_by = ROOT
+					is_coastal = yes
+					naval_base > 0
+				}
+				# Find the actual naval base province and its level
+				WA_AI_PC_railway_get_naval_base_province = yes
+
+				if = {
+					limit = {
+						check_variable = { naval_base_province_ > 0 }
+						check_variable = { naval_base_level_ > best_home_port_level }
+					}
+					set_temp_variable = { best_home_port_state = THIS.id }
+					set_temp_variable = { best_home_port_level = naval_base_level_ }
+					set_temp_variable = { best_home_port_province = naval_base_province_ }
+				}
+			}
+		}
+	}
+
+	### Queue railway from capital to home port (if not capital itself)
+	if = {
+		limit = {
+			check_variable = { best_home_port_state > 0 }
+			NOT = { check_variable = { best_home_port_state = capital_state_id } }
+		}
+		add_to_temp_array = { railway_start_provinces_ = capital_province }
+		add_to_temp_array = { railway_end_provinces_ = best_home_port_province }
+		add_to_temp_array = { railway_target_levels_ = route_level }
+		add_to_temp_array = { railway_priorities_ = route_priority }
+
+		# Mark port for upgrade
+		add_to_temp_array = { railway_port_upgrades_ = best_home_port_state }
+	}
+
+	### PART B: Beachhead expansion
+	### For each overseas enemy, find our biggest port on their continent
+
+	every_enemy_country = {
+		set_temp_variable = { enemy_tag = THIS }
+
+		# Check if this is an overseas enemy (no land border)
+		set_temp_variable = { enemy_has_land_border = 0 }
+		ROOT = {
+			any_controlled_state = {
+				limit = {
+					any_neighbor_state = {
+						is_controlled_by = var:enemy_tag
+					}
+				}
+				set_temp_variable = { enemy_has_land_border = 1 }
+			}
+		}
+
+		if = {
+			limit = { check_variable = { enemy_has_land_border = 0 } }
+
+			# Get enemy capital continent
+			capital_scope = {
+				set_temp_variable = { enemy_continent = 0 }
+				if = { limit = { is_on_continent = europe } set_temp_variable = { enemy_continent = 1 } }
+				else_if = { limit = { is_on_continent = north_america } set_temp_variable = { enemy_continent = 2 } }
+				else_if = { limit = { is_on_continent = south_america } set_temp_variable = { enemy_continent = 3 } }
+				else_if = { limit = { is_on_continent = asia } set_temp_variable = { enemy_continent = 4 } }
+				else_if = { limit = { is_on_continent = africa } set_temp_variable = { enemy_continent = 5 } }
+				else_if = { limit = { is_on_continent = middle_east } set_temp_variable = { enemy_continent = 6 } }
+				else_if = { limit = { is_on_continent = australia } set_temp_variable = { enemy_continent = 7 } }
+			}
+
+			# Find our biggest port on that continent
+			set_temp_variable = { best_beachhead_state = 0 }
+			set_temp_variable = { best_beachhead_port = 0 }
+			set_temp_variable = { best_beachhead_province = 0 }
+
+			ROOT = {
+				every_controlled_state = {
+					# Check if on same continent as enemy capital
+					set_temp_variable = { _state_continent = 0 }
+					if = { limit = { is_on_continent = europe } set_temp_variable = { _state_continent = 1 } }
+					else_if = { limit = { is_on_continent = north_america } set_temp_variable = { _state_continent = 2 } }
+					else_if = { limit = { is_on_continent = south_america } set_temp_variable = { _state_continent = 3 } }
+					else_if = { limit = { is_on_continent = asia } set_temp_variable = { _state_continent = 4 } }
+					else_if = { limit = { is_on_continent = africa } set_temp_variable = { _state_continent = 5 } }
+					else_if = { limit = { is_on_continent = middle_east } set_temp_variable = { _state_continent = 6 } }
+					else_if = { limit = { is_on_continent = australia } set_temp_variable = { _state_continent = 7 } }
+
+					if = {
+						limit = {
+							check_variable = { _state_continent = enemy_continent }
+							is_coastal = yes
+							naval_base > 0
+						}
+						# Find the actual naval base province and its level
+						WA_AI_PC_railway_get_naval_base_province = yes
+
+						if = {
+							limit = {
+								check_variable = { naval_base_province_ > 0 }
+								check_variable = { naval_base_level_ > best_beachhead_port }
+							}
+							set_temp_variable = { best_beachhead_state = THIS.id }
+							set_temp_variable = { best_beachhead_port = naval_base_level_ }
+							set_temp_variable = { best_beachhead_province = naval_base_province_ }
+						}
+					}
+				}
+			}
+
+			### Build railways from beachhead to front lines on this continent
+			if = {
+				limit = { check_variable = { best_beachhead_state > 0 } }
+
+				# Mark beachhead port for upgrade
+				if = {
+					limit = { NOT = { is_in_array = { railway_port_upgrades_ = best_beachhead_state } } }
+					add_to_temp_array = { railway_port_upgrades_ = best_beachhead_state }
+				}
+
+				# Find front-line states on this continent with supply hubs
+				ROOT = {
+					every_controlled_state = {
+						# Check continent
+						set_temp_variable = { _state_continent = 0 }
+						if = { limit = { is_on_continent = europe } set_temp_variable = { _state_continent = 1 } }
+						else_if = { limit = { is_on_continent = north_america } set_temp_variable = { _state_continent = 2 } }
+						else_if = { limit = { is_on_continent = south_america } set_temp_variable = { _state_continent = 3 } }
+						else_if = { limit = { is_on_continent = asia } set_temp_variable = { _state_continent = 4 } }
+						else_if = { limit = { is_on_continent = africa } set_temp_variable = { _state_continent = 5 } }
+						else_if = { limit = { is_on_continent = middle_east } set_temp_variable = { _state_continent = 6 } }
+						else_if = { limit = { is_on_continent = australia } set_temp_variable = { _state_continent = 7 } }
+
+						if = {
+							limit = {
+								check_variable = { _state_continent = enemy_continent }
+								# Borders enemy
+								any_neighbor_state = {
+									is_controlled_by = var:enemy_tag
+								}
+								# Has supply hub (proper check)
+								WA_AI_PC_state_has_supply_hub = yes
+								# Skip states that already have level 5 railways (native check - includes focus/event built)
+								NOT = { WA_AI_PC_state_has_railway_level_5 = yes }
+							}
+
+							# Find the exact province with the supply hub
+							WA_AI_PC_railway_get_supply_hub_province = yes
+
+							if = {
+								limit = {
+									check_variable = { supply_hub_province_ > 0 }
+									NOT = { is_in_array = { railway_end_provinces_ = supply_hub_province_ } }
+								}
+								# Start from beachhead, not capital
+								add_to_temp_array = { railway_start_provinces_ = best_beachhead_province }
+								add_to_temp_array = { railway_end_provinces_ = supply_hub_province_ }
+								add_to_temp_array = { railway_target_levels_ = route_level }
+								add_to_temp_array = { railway_priorities_ = route_priority }
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+############################################################################################################
+#	STRATEGY 3: PRE-WAR PREPARATION
+#	Build railways toward countries we're justifying against, have wargoals on, or have claims on
+############################################################################################################
+
+WA_AI_PC_railway_STRATEGY_prewar_preparation = {
+
+	set_temp_variable = { route_start = capital_province }
+	set_temp_variable = { route_level = 3 }  # Lower level for preparation
+	set_temp_variable = { route_priority = @WA_AI_PC_railway_PRIO_PREWAR }
+
+	### Find potential targets: countries we're justifying against or have wargoals on
+	clear_temp_array = _target_countries_
+
+	every_country = {
+		limit = {
+			exists = yes
+			NOT = { tag = ROOT }
+			NOT = { is_in_faction_with = ROOT }
+			NOT = { is_subject_of = ROOT }
+			OR = {
+				ROOT = { is_justifying_wargoal_against = PREV }
+				ROOT = { has_wargoal_against = PREV }
+			}
+		}
+		add_to_temp_array = { _target_countries_ = THIS }
+	}
+
+	### Also check for claims on neighbor countries
+	every_neighbor_country = {
+		limit = {
+			exists = yes
+			NOT = { tag = ROOT }
+			NOT = { is_in_faction_with = ROOT }
+			NOT = { is_subject_of = ROOT }
+			NOT = { is_in_array = { _target_countries_ = THIS } }
+			any_owned_state = {
+				is_claimed_by = ROOT
+			}
+		}
+		add_to_temp_array = { _target_countries_ = THIS }
+	}
+
+	### For each target, check if land or overseas
+	for_each_loop = { array = _target_countries_ value = _target_tag
+
+		# Check for land border
+		set_temp_variable = { target_has_land_border = 0 }
+		any_controlled_state = {
+			limit = {
+				any_neighbor_state = {
+					is_owned_by = var:_target_tag
+				}
+			}
+			set_temp_variable = { target_has_land_border = 1 }
+		}
+
+		if = {
+			limit = { check_variable = { target_has_land_border = 1 } }
+
+			### LAND TARGET: Build to border states with supply hubs
+			every_controlled_state = {
+				limit = {
+					any_neighbor_state = {
+						is_owned_by = var:_target_tag
+					}
+					# Has supply hub (proper check)
+					WA_AI_PC_state_has_supply_hub = yes
+					# Skip states that already have level 3+ railways (native check - includes focus/event built)
+					NOT = { WA_AI_PC_state_has_railway_level_3 = yes }
+				}
+
+				# Find the exact province with the supply hub
+				WA_AI_PC_railway_get_supply_hub_province = yes
+
+				if = {
+					limit = {
+						check_variable = { supply_hub_province_ > 0 }
+						NOT = { is_in_array = { railway_end_provinces_ = supply_hub_province_ } }
+					}
+					add_to_temp_array = { railway_start_provinces_ = route_start }
+					add_to_temp_array = { railway_end_provinces_ = supply_hub_province_ }
+					add_to_temp_array = { railway_target_levels_ = route_level }
+					add_to_temp_array = { railway_priorities_ = route_priority }
+				}
+			}
+		}
+		else = {
+			### OVERSEAS TARGET: Upgrade home port infrastructure
+			set_temp_variable = { _origin_state_id = capital_state_id }
+			set_temp_variable = { _max_distance = 5 }
+			WA_AI_PC_railway_get_states_within_distance = yes
+
+			set_temp_variable = { best_home_port_state = 0 }
+			set_temp_variable = { best_home_port_level = 0 }
+			set_temp_variable = { best_home_port_province = 0 }
+
+			add_to_temp_array = { states_within_distance_ = capital_state_id }
+
+			for_each_loop = { array = states_within_distance_ value = _check_state
+				var:_check_state = {
+					if = {
+						limit = {
+							is_controlled_by = ROOT
+							is_coastal = yes
+							naval_base > 0
+						}
+						# Find the actual naval base province and its level
+						WA_AI_PC_railway_get_naval_base_province = yes
+
+						if = {
+							limit = {
+								check_variable = { naval_base_province_ > 0 }
+								check_variable = { naval_base_level_ > best_home_port_level }
+							}
+							set_temp_variable = { best_home_port_state = THIS.id }
+							set_temp_variable = { best_home_port_level = naval_base_level_ }
+							set_temp_variable = { best_home_port_province = naval_base_province_ }
+						}
+					}
+				}
+			}
+
+			if = {
+				limit = {
+					check_variable = { best_home_port_state > 0 }
+					NOT = { check_variable = { best_home_port_state = capital_state_id } }
+					NOT = { is_in_array = { railway_end_provinces_ = best_home_port_province } }
+				}
+				add_to_temp_array = { railway_start_provinces_ = capital_province }
+				add_to_temp_array = { railway_end_provinces_ = best_home_port_province }
+				add_to_temp_array = { railway_target_levels_ = route_level }
+				add_to_temp_array = { railway_priorities_ = route_priority }
+
+				if = {
+					limit = { NOT = { is_in_array = { railway_port_upgrades_ = best_home_port_state } } }
+					add_to_temp_array = { railway_port_upgrades_ = best_home_port_state }
+				}
+			}
+		}
+	}
+}
+
+############################################################################################################
+#	HELPER: Prioritize central hub (sort to put closest to center first)
+############################################################################################################
+
+WA_AI_PC_railway_prioritize_central_hub = {
+
+	### Calculate average position of all targets
+	clear_temp_array = _set
+	for_each_loop = { array = railway_end_provinces_
+		add_to_temp_array = { _set = global.WA_AI_MAP_province_x_pos^v }
+	}
+	WA_AI_MATH_average = yes
+	set_temp_variable = { avg_x = average_ }
+
+	clear_temp_array = _set
+	for_each_loop = { array = railway_end_provinces_
+		add_to_temp_array = { _set = global.WA_AI_MAP_province_y_pos^v }
+	}
+	WA_AI_MATH_average = yes
+	set_temp_variable = { avg_y = average_ }
+
+	### Find closest hub to central point
+	set_temp_variable = { best_target_index = 0 }
+	set_temp_variable = { best_dist = 99999 }
+	for_each_loop = { array = railway_end_provinces_
+		set_temp_variable = { _point_a_x = global.WA_AI_MAP_province_x_pos^v }
+		set_temp_variable = { _point_a_y = global.WA_AI_MAP_province_y_pos^v }
+		set_temp_variable = { _point_b_x = avg_x }
+		set_temp_variable = { _point_b_y = avg_y }
+		WA_AI_MATH_get_distance_between_points_a_b = yes
+		if = { limit = { check_variable = { distance_ < best_dist } }
+			set_temp_variable = { best_target_index = i }
+			set_temp_variable = { best_dist = distance_ }
+		}
+	}
+
+	### Swap central hub to index 0 with higher priority
+	if = { limit = { NOT = { check_variable = { best_target_index = 0 } } }
+		set_temp_variable = { tmp_start = railway_start_provinces_^0 }
+		set_temp_variable = { railway_start_provinces_^0 = railway_start_provinces_^best_target_index }
+		set_temp_variable = { railway_start_provinces_^best_target_index = tmp_start }
+
+		set_temp_variable = { tmp_end = railway_end_provinces_^0 }
+		set_temp_variable = { railway_end_provinces_^0 = railway_end_provinces_^best_target_index }
+		set_temp_variable = { railway_end_provinces_^best_target_index = tmp_end }
+
+		set_temp_variable = { tmp_level = railway_target_levels_^0 }
+		set_temp_variable = { railway_target_levels_^0 = railway_target_levels_^best_target_index }
+		set_temp_variable = { railway_target_levels_^best_target_index = tmp_level }
+
+		set_temp_variable = { tmp_priority = railway_priorities_^0 }
+		set_temp_variable = { railway_priorities_^0 = railway_priorities_^best_target_index }
+		set_temp_variable = { railway_priorities_^best_target_index = tmp_priority }
+	}
+
+	# Boost priority of central hub
+	set_temp_variable = { high_priority = railway_priorities_^0 }
+	multiply_temp_variable = { high_priority = 1.1 }
+	set_temp_variable = { railway_priorities_^0 = high_priority }
+}
+
+############################################################################################################
+#	EXISTING HELPER EFFECTS (unchanged)
+############################################################################################################
+
+WA_AI_PC_start_railway_project = { # THIS = state, _project_province_id, _project_connect_id, _project_target_level, _project_priority
+
+	# Check if railway already at target level
+	meta_effect = {
+		text = {
+			set_temp_variable = { current_level = global.WA_AI_PC_railway_connection_level_[x]^[y] }
+		}
+		x = "[?_project_province_id]"
+		y = "[?_project_connect_id]"
+	}
+
+	if = {
+		limit = {
+			check_variable = { current_level < _project_target_level }
+		}
+
+		# Queue railway construction
+		ROOT = {
+			add_to_array = { WA_AI_PC_railway_queue_province = _project_province_id }
+			add_to_array = { WA_AI_PC_railway_queue_connect = _project_connect_id }
+			add_to_array = { WA_AI_PC_railway_queue_level = _project_target_level }
+			add_to_array = { WA_AI_PC_railway_queue_priority = _project_priority }
+		}
+	}
+}
+
+WA_AI_PC_get_project_inputs_provincial = {
+	# Placeholder for getting project inputs for provincial construction
+}
+
+WA_AI_PC_save_project_inputs = {
+	# Placeholder for saving project inputs
+}
+
+WA_AI_PC_clear_project_inputs = {
+	# Clear temporary project input variables
+	clear_temp_array = railway_start_provinces_
+	clear_temp_array = railway_end_provinces_
+	clear_temp_array = railway_target_levels_
+	clear_temp_array = railway_priorities_
+	clear_temp_array = railway_port_upgrades_
+}
+
+WA_AI_PC_get_total_queued_num = { # _get_queued_num_building_type, _get_queued_num_type_id >>> queued_type_num_
+
+	set_temp_variable = { queued_type_num_ = WA_AI_PC_railway_queue_province^num }
+}
+
+###
+
+WA_AI_PC_process_railway_queue = {
+	# Process queued railway projects
+
+	for_each_loop = { array = WA_AI_PC_railway_queue_province index = q_i value = q_prov break = q_b
+
+		set_temp_variable = { q_connect = WA_AI_PC_railway_queue_connect^q_i }
+		set_temp_variable = { q_level = WA_AI_PC_railway_queue_level^q_i }
+
+		# Build the railway
+		meta_effect = {
+			text = {
+				build_railway = {
+					level = 1
+					path = { [x] [y] }
+				}
+				set_variable = { global.WA_AI_PC_railway_connections^[x] = 1 }
+				add_to_variable = { global.WA_AI_PC_railway_connection_level_[x]^[y] = 1 }
+				set_variable = { global.WA_AI_PC_railway_connections^[y] = 1 }
+				add_to_variable = { global.WA_AI_PC_railway_connection_level_[y]^[x] = 1 }
+			}
+			x = "[?q_prov]"
+			y = "[?q_connect]"
+		}
+
+		# Limit to one railway per tick to avoid overload
+		set_temp_variable = { q_b = 1 }
+	}
+
+	# Remove processed item
+	if = { limit = { check_variable = { WA_AI_PC_railway_queue_province^num > 0 } }
+		remove_from_array = { array = WA_AI_PC_railway_queue_province index = 0 }
+		remove_from_array = { array = WA_AI_PC_railway_queue_connect index = 0 }
+		remove_from_array = { array = WA_AI_PC_railway_queue_level index = 0 }
+		remove_from_array = { array = WA_AI_PC_railway_queue_priority index = 0 }
+	}
+}
+
+############################################################################################################
+#	PORT UPGRADE PROCESSING
+#	Upgrades ports marked in railway_port_upgrades_ array
+############################################################################################################
+
+WA_AI_PC_process_port_upgrades = {
+	# Process port upgrades for overseas operations
+
+	for_each_loop = { array = railway_port_upgrades_ value = _port_state break = _port_b
+
+		var:_port_state = {
+			if = {
+				limit = {
+					is_controlled_by = ROOT
+					is_coastal = yes
+					# Only upgrade if not at max level (10)
+					NOT = { naval_base > 9 }
+				}
+
+				# Queue port construction
+				add_building_construction = {
+					type = naval_base
+					level = 1
+					instant_build = no
+				}
+
+				if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
+					ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: Port upgrade in [Prev.GetName]" }
+				}
+			}
+		}
+
+		# Process one port per tick
+		set_temp_variable = { _port_b = 1 }
+	}
+
+	# Remove processed item
+	if = { limit = { check_variable = { railway_port_upgrades_^num > 0 } }
+		remove_from_array = { array = railway_port_upgrades_ index = 0 }
+	}
+}

@@ -1,0 +1,118 @@
+############################################################################################################
+#	Expert AI mod - MATH effects for World Ablaze
+#	Distance calculations and utility functions for pathfinding
+############################################################################################################
+
+WA_AI_MATH_sqrt = { # var:_val_
+
+	if = { limit = { NOT = { check_variable = { _val_ < 0 } } }
+
+		set_temp_variable = { sqrt_result = 0 }
+		set_temp_variable = { accuracy = 0.01 }
+		set_temp_variable = { x1 = _val_ }
+		while_loop_effect = { limit = { check_variable = { WA_AI_sqrt_b = 0 } } break = WA_AI_sqrt_b
+
+			set_temp_variable = { a = _val_ }
+			divide_temp_variable = { a = x1 }
+
+			set_temp_variable = { x2 = x1 }
+			add_to_temp_variable = { x2 = a }
+
+			divide_temp_variable = { x2 = 2 }
+
+			set_temp_variable = { abs_x = x2 }
+			subtract_from_temp_variable = { abs_x = x1 }
+			if = { limit = { check_variable = { abs_x < 0 } } multiply_temp_variable = { abs_x = -1 } }
+
+			if = { limit = { check_variable = { abs_x < accuracy } }
+				set_temp_variable = { _val_ = x2 }
+				set_temp_variable = { WA_AI_sqrt_b = 1 }
+			}
+
+			set_temp_variable = { x1 = x2 }
+		}
+
+		set_temp_variable = { WA_AI_sqrt_b = 0 }
+	}
+	else = {
+		log = "WA_AI_MATH_sqrt ERROR"
+		log = "_val_=[?_val_]"
+	}
+}
+
+###
+
+WA_AI_MATH_get_distance_between_provinces_a_b = { # _province_id_a, _province_id_b, distance_
+
+	set_temp_variable = { _point_a_x = global.WA_AI_MAP_province_x_pos^_province_id_a }
+	set_temp_variable = { _point_a_y = global.WA_AI_MAP_province_y_pos^_province_id_a }
+	set_temp_variable = { _point_b_x = global.WA_AI_MAP_province_x_pos^_province_id_b }
+	set_temp_variable = { _point_b_y = global.WA_AI_MAP_province_y_pos^_province_id_b }
+	WA_AI_MATH_get_distance_between_points_a_b = yes
+}
+
+WA_AI_MATH_get_distance_between_points_a_b = { # _point_a_x, _point_a_y, _point_b_x, _point_b_y, distance_
+
+	@map_width = 5632
+	@map_width_half = 2816
+
+	set_temp_variable = { dx = _point_a_x }
+	subtract_from_temp_variable = { dx = _point_b_x }
+	if = { limit = { check_variable = { dx < 0 } } multiply_temp_variable = { dx = -1 } }
+	if = { limit = { check_variable = { dx > @map_width_half } }
+		set_temp_variable = { dx_wr = @map_width }
+		subtract_from_temp_variable = { dx_wr = dx }
+		set_temp_variable = { dx = dx_wr }
+	}
+
+	set_temp_variable = { dy = _point_a_y }
+	subtract_from_temp_variable = { dy = _point_b_y }
+	if = { limit = { check_variable = { dy < 0 } } multiply_temp_variable = { dy = -1 } }
+
+	multiply_temp_variable = { dx = dx }
+	multiply_temp_variable = { dy = dy }
+	set_temp_variable = { distance_ = dx }
+	add_to_temp_variable = { distance_ = dy }
+
+	set_temp_variable = { _val_ = distance_ }
+	WA_AI_MATH_sqrt = yes
+	set_temp_variable = { distance_ = _val_ }
+}
+
+###
+
+WA_AI_MATH_average = { # arr:_set >>> var:average_
+
+	set_temp_variable = { average_ = 0 }
+	if = { limit = { check_variable = { _set^num > 0 } }
+		for_each_loop = { array = _set
+			add_to_temp_variable = { average_ = v }
+		}
+		divide_temp_variable = { average_ = _set^num }
+	}
+}
+
+WA_AI_MATH_sort_array = { # arr:_items_ arr:_values_ >>> sorted _items_ by _values_
+
+	# Simple bubble sort
+	set_temp_variable = { n = _items_^num }
+	set_temp_variable = { sort_i = 0 }
+	while_loop_effect = { limit = { check_variable = { sort_i < n } }
+		set_temp_variable = { sort_j = sort_i }
+		add_to_temp_variable = { sort_j = 1 }
+		while_loop_effect = { limit = { check_variable = { sort_j < n } }
+			if = { limit = { check_variable = { _values_^sort_j < _values_^sort_i } }
+				# Swap values
+				set_temp_variable = { tmp_val = _values_^sort_i }
+				set_temp_variable = { _values_^sort_i = _values_^sort_j }
+				set_temp_variable = { _values_^sort_j = tmp_val }
+				# Swap items
+				set_temp_variable = { tmp_item = _items_^sort_i }
+				set_temp_variable = { _items_^sort_i = _items_^sort_j }
+				set_temp_variable = { _items_^sort_j = tmp_item }
+			}
+			add_to_temp_variable = { sort_j = 1 }
+		}
+		add_to_temp_variable = { sort_i = 1 }
+	}
+}

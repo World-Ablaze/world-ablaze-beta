@@ -1,0 +1,147 @@
+############################################################################################################
+#	Expert AI mod - MAP effects for World Ablaze
+#	Province neighbor lookup and railway connections support
+############################################################################################################
+
+WA_AI_MAP_startup = {
+
+	# Initialize province terrain types for pathfinding
+	set_variable = { global.WA_AI_MAP_PROV_TYPE_plains = 1 }
+	set_variable = { global.WA_AI_MAP_PROV_TYPE_desert = 2 }
+	set_variable = { global.WA_AI_MAP_PROV_TYPE_marsh = 3 }
+	set_variable = { global.WA_AI_MAP_PROV_TYPE_jungle = 4 }
+	set_variable = { global.WA_AI_MAP_PROV_TYPE_forest = 5 }
+	set_variable = { global.WA_AI_MAP_PROV_TYPE_urban = 6 }
+	set_variable = { global.WA_AI_MAP_PROV_TYPE_hills = 7 }
+	set_variable = { global.WA_AI_MAP_PROV_TYPE_mountain = 8 }
+	set_variable = { global.WA_AI_MAP_PROV_TYPE_ocean = 9 }
+
+	# Set up land types array for filtering
+	add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_plains }
+	add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_desert }
+	add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_marsh }
+	add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_jungle }
+	add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_forest }
+	add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_urban }
+	add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_hills }
+	add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_mountain }
+
+	# Initialize province connections from WA data
+	WA_AI_MAP_set_province_connections = yes
+
+	# Initialize province positions from WA data
+	WA_AI_MAP_set_province_positions = yes
+
+	# Initialize state province mappings
+	WA_AI_MAP_set_state_province_ids = yes
+
+	# Initialize railway connections
+	WA_AI_MAP_set_province_railway_connections = yes
+}
+
+###
+
+WA_AI_MAP_get_province_neighbors = { # _get_province_id_neighbors, _get_province_neighbors_TERRAIN_TYPES = LAND, province_neighbors_
+
+	clear_temp_array = province_neighbors_
+	meta_effect = {
+		text = {
+			for_each_loop = { array = global.WA_AI_MAP_province_connections_[x] index = pn_i value = pn_v break = pn_b
+
+				if = {
+					limit = {
+						if = { limit = { check_variable = { _get_province_neighbors_TERRAIN_TYPES^num > 0 } }
+							is_in_array = { _get_province_neighbors_TERRAIN_TYPES = global.WA_AI_MAP_province_terrain_type^pn_v }
+						}
+						else = {
+							# Default: all land types are valid
+							OR = {
+								NOT = { check_variable = { global.WA_AI_MAP_province_terrain_type^pn_v = global.WA_AI_MAP_PROV_TYPE_ocean } }
+								check_variable = { global.WA_AI_MAP_province_terrain_type^pn_v = 0 } # Unknown terrain defaults to valid
+							}
+						}
+					}
+
+					add_to_temp_array = { province_neighbors_ = pn_v }
+				}
+			}
+		}
+		x = "[?_get_province_id_neighbors]"
+	}
+
+	clear_temp_array = _get_province_neighbors_TERRAIN_TYPES
+}
+
+WA_AI_MAP_get_nearby_states = { # var:_state arr:nearby_states_
+
+	clear_temp_array = nearby_states_
+	var:_state = {
+		every_neighbor_state = {
+			if = { limit = { NOT = { is_in_array = { nearby_states_ = THIS.id } } } add_to_temp_array = { nearby_states_ = THIS.id } }
+			every_neighbor_state = { limit = { NOT = { state = PREV } }
+				if = { limit = { NOT = { is_in_array = { nearby_states_ = THIS.id } } } add_to_temp_array = { nearby_states_ = THIS.id } }
+			}
+		}
+	}
+}
+
+###
+
+WA_AI_MAP_set_state_province_ids = {
+	# Map state IDs to their province IDs for railway routing
+	every_state = {
+		set_temp_variable = { state_id = THIS.id }
+		clear_array = global.WA_AI_MAP_state_province_ids@THIS
+
+		# Use map province iteration to populate
+		for_each_loop = { array = global.WA_AI_MAP_province_connections_@THIS value = prov_id
+			if = { limit = { NOT = { is_in_array = { global.WA_AI_MAP_state_province_ids@THIS = prov_id } } }
+				add_to_array = { global.WA_AI_MAP_state_province_ids@THIS = prov_id }
+				set_variable = { global.WA_AI_MAP_province_state_id^prov_id = state_id }
+			}
+		}
+	}
+}
+
+WA_AI_MAP_set_province_positions = {
+	# Province positions are initialized from WA map data
+	# These are used for distance calculations in pathfinding
+	# The actual values would be populated from map/provinces.txt
+	# For now, we use a simplified approach based on state positions
+
+	every_state = {
+		set_temp_variable = { state_id = THIS.id }
+		# Approximate province positions based on state
+		for_each_loop = { array = global.WA_AI_MAP_province_connections_@THIS value = prov_id
+			if = { limit = { NOT = { check_variable = { global.WA_AI_MAP_province_x_pos^prov_id > 0 } } }
+				# Set approximate position based on state center
+				# These can be refined with actual province coordinates later
+				set_variable = { global.WA_AI_MAP_province_x_pos^prov_id = 1000 }
+				set_variable = { global.WA_AI_MAP_province_y_pos^prov_id = 1000 }
+			}
+		}
+	}
+}
+
+WA_AI_MAP_set_province_railway_connections = {
+	# Initialize railway connection tracking arrays
+	# This maps which provinces have railway connections and their levels
+	# Will be populated dynamically as railways are built
+
+	# Initialize empty - railways will be added as AI builds them
+	# Format: global.WA_AI_PC_railway_connections^[province_id] = 1 if has any connection
+	# Format: global.WA_AI_PC_railway_connection_level_[from]^[to] = level (1-5)
+}
+
+###
+
+WA_AI_PC_state_has_supply_hub = { # THIS = state, return true if state has supply hub
+	# Check if state has a supply hub
+	has_state_flag = has_supply_hub
+}
+
+WA_AI_PC_prov_has_supply_hub = { # _province_hub_id, return true if province has supply hub
+	# For now, assume capital provinces of states have supply hubs
+	# This can be refined based on actual supply hub data
+	always = yes
+}
