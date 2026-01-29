@@ -29,9 +29,6 @@ WA_AI_MAP_startup = {
 	# Initialize province connections from WA data
 	WA_AI_MAP_set_province_connections = yes
 
-	# Initialize province positions from WA data
-	WA_AI_MAP_set_province_positions = yes
-
 	# Initialize state province mappings
 	WA_AI_MAP_set_state_province_ids = yes
 
@@ -103,26 +100,6 @@ WA_AI_MAP_set_state_province_ids = {
 	}
 }
 
-WA_AI_MAP_set_province_positions = {
-	# Province positions are initialized from WA map data
-	# These are used for distance calculations in pathfinding
-	# The actual values would be populated from map/provinces.txt
-	# For now, we use a simplified approach based on state positions
-
-	every_state = {
-		set_temp_variable = { state_id = THIS.id }
-		# Approximate province positions based on state
-		for_each_loop = { array = global.WA_AI_MAP_province_connections_@THIS value = prov_id
-			if = { limit = { NOT = { check_variable = { global.WA_AI_MAP_province_x_pos^prov_id > 0 } } }
-				# Set approximate position based on state center
-				# These can be refined with actual province coordinates later
-				set_variable = { global.WA_AI_MAP_province_x_pos^prov_id = 1000 }
-				set_variable = { global.WA_AI_MAP_province_y_pos^prov_id = 1000 }
-			}
-		}
-	}
-}
-
 WA_AI_MAP_set_province_railway_connections = {
 	# Initialize railway connection tracking arrays
 	# This maps which provinces have railway connections and their levels
@@ -131,17 +108,4 @@ WA_AI_MAP_set_province_railway_connections = {
 	# Initialize empty - railways will be added as AI builds them
 	# Format: global.WA_AI_PC_railway_connections^[province_id] = 1 if has any connection
 	# Format: global.WA_AI_PC_railway_connection_level_[from]^[to] = level (1-5)
-}
-
-###
-
-WA_AI_PC_state_has_supply_hub = { # THIS = state, return true if state has supply hub
-	# Check if state has a supply hub
-	has_state_flag = has_supply_hub
-}
-
-WA_AI_PC_prov_has_supply_hub = { # _province_hub_id, return true if province has supply hub
-	# For now, assume capital provinces of states have supply hubs
-	# This can be refined based on actual supply hub data
-	always = yes
 }

@@ -280,7 +280,34 @@ on_actions = {
 				POR = {
 					set_rule = { can_not_declare_war = yes }
 				}
-			}		
+			}
+		}
+	}
+
+	### Fix 5 & 19: Invalidate railway queue when peace is made
+	### This prevents outdated railway projects from continuing after frontlines disappear
+	on_peace = {
+		effect = {
+			if = {
+				limit = {
+					is_ai = yes
+					OR = {
+						check_variable = { WA_AI_PC_railway_queue_province^num > 0 }
+						check_variable = { WA_AI_PC_railway_queue_connect^num > 0 }
+					}
+				}
+
+				# Clear all railway queue arrays
+				clear_array = WA_AI_PC_railway_queue_province
+				clear_array = WA_AI_PC_railway_queue_connect
+				clear_array = WA_AI_PC_railway_queue_level
+				clear_array = WA_AI_PC_railway_queue_priority
+
+				# Reset interval counter to trigger immediate recalculation
+				set_variable = { WA_AI_PC_railway_INTERVAL_counter = 0 }
+
+				if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: Railway queue cleared due to peace" }
+			}
 		}
 	}
 }

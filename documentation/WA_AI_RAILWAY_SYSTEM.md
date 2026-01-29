@@ -33,17 +33,26 @@ The World Ablaze AI railway system automatically builds railways from a country'
 **Trigger:** Country is at war with an enemy that shares a land border
 
 **Behavior:**
-- Finds all controlled states that border enemy-controlled states
+- **Direct Border Check:** Only builds railways to enemies that ROOT (or ROOT's puppets) directly borders
+  - Prevents wasteful construction like Italy building railways to SOV front through Germany
+  - Uses `WA_AI_PC_railway_country_borders_enemy` helper to check owned state borders
+- Finds all controlled states that border those direct-border enemies
 - Filters to states with supply hubs (supply_node or naval_base building)
 - Skips states that already have level 5 railways
 - Builds level 5 railways from capital to each front-line supply hub
 - Prioritizes the "central" hub (closest to geometric center of all targets)
 
 **Example:** Germany vs Soviet Union
+- Germany directly borders SOV territory → builds railways
 - Front line spans 10 states from Baltic to Black Sea
 - System identifies states with supply hubs on the front
 - Builds railways from Berlin to each supply hub
 - Central hub (e.g., Warsaw area) gets +10% priority boost
+
+**Example:** Italy in Axis vs Soviet Union
+- Italy does NOT directly border SOV territory
+- Italy's puppets (Libya, etc.) do NOT border SOV
+- Result: Italy does NOT build railways to SOV front (correct behavior)
 
 ### 2. Overseas War Strategy (`WA_AI_PC_railway_STRATEGY_overseas_war`)
 
@@ -57,12 +66,22 @@ The World Ablaze AI railway system automatically builds railways from a country'
 **Behavior (Part B - Beachhead):**
 - For each overseas enemy, identifies their capital's continent
 - Finds our largest port on that continent (beachhead)
-- Builds railways from beachhead to front-line supply hubs on that continent
+- **Distance Check:** Beachhead must be within 15 states (by adjacency) of enemy capital
+  - Prevents selecting beachheads too far from the actual theater of war
+- **Beachhead Validation:** Tests pathfinding from beachhead to at least one frontline supply hub
+  - If no valid path exists, the beachhead is skipped (prevents useless beachheads like Hong Kong surrounded by enemy)
+- Builds railways from validated beachhead to front-line supply hubs on that continent
 - Skips states that already have level 5 railways
 
 **Example:** USA vs Japan
 - Part A: Build railway from Washington D.C. to best West Coast port
 - Part B: From captured port in Philippines, build railways to front-line supply hubs
+
+**Example:** England vs Japan (Hong Kong scenario)
+- Hong Kong is England's port in Asia
+- If Hong Kong is surrounded by Japanese-occupied China with no path to frontlines
+- Pathfinding validation fails → Hong Kong is skipped as beachhead
+- England waits for a better beachhead (e.g., captured port with actual frontline access)
 
 ### 3. Pre-War Preparation Strategy (`WA_AI_PC_railway_STRATEGY_prewar_preparation`)
 
@@ -167,6 +186,22 @@ Uses A* algorithm via `WA_AI_PATHFIND_PROV_get_path`:
 - Input: `_pathfind_prov_start`, `_pathfind_prov_end`, `_pathfind_prov_type`
 - Output: `pathfind_prov_path_` array of province IDs
 - Uses pre-computed province connections from `WA_AI_MAP_province_connections_X` arrays
+
+### Pathfinding Types
+
+The `_pathfind_prov_type` parameter controls neighbor filtering and cost calculation:
+
+| Type | Neighbor Filter | G-Cost (Movement) | H-Cost (Heuristic) | Use Case |
+|------|-----------------|-------------------|-------------------|----------|
+| **0** | ROOT + allies | Distance only | Distance × 1.1 | General pathfinding through friendly territory |
+| **1** | ROOT + allies | Distance + terrain modifiers | Distance × 1.1 | Defensible positions (prefers mountains/hills) |
+| **2** | ROOT only | Railway cost reduction | Railway heuristic bonus | Railway building (prefers existing railways) |
+
+**Railway strategies use type 2**, which:
+- Restricts pathfinding to ROOT-controlled provinces only (no allied territory)
+- Applies cost reduction for existing railways: `cost = base_cost / (railway_level + 1)`
+- Applies heuristic bonuses for provinces with railway connections
+- Ensures railways are only built through own territory
 
 ## Data Flow
 
