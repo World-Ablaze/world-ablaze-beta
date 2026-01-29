@@ -101,19 +101,22 @@ on_actions = {
 				}
 			}
 
-			### Railway building - Highest priority, every 6 months (26 weeks)
+			### Priority Construction System - Weekly Update
 			if = {
 				limit = {
 					is_ai = yes
-					has_war = yes
 					has_capitulated = no
 				}
 
-				WA_AI_PC_railway = yes
-
-				# Process queued railway projects
-				if = { limit = { check_variable = { WA_AI_PC_railway_queue_province^num > 0 } }
-					WA_AI_PC_process_railway_queue = yes
+				# Dynamic factory allocation to projects
+				WA_AI_PC_assign_factories = yes
+				
+				# Update construction progress and complete finished projects
+				WA_AI_PC_update_project_progress = yes
+				
+				### Railway building - Highest priority, every 3 months (12 weeks)
+				if = { limit = { has_war = yes }
+					WA_AI_PC_railway = yes
 				}
 			}
 		}
@@ -284,29 +287,48 @@ on_actions = {
 		}
 	}
 
-	### Fix 5 & 19: Invalidate railway queue when peace is made
+	### Fix 5 & 19: Clear railway projects when peace is made
 	### This prevents outdated railway projects from continuing after frontlines disappear
 	on_peace = {
 		effect = {
 			if = {
 				limit = {
 					is_ai = yes
-					OR = {
-						check_variable = { WA_AI_PC_railway_queue_province^num > 0 }
-						check_variable = { WA_AI_PC_railway_queue_connect^num > 0 }
-					}
+					check_variable = { WA_AI_PC_queue^num > 0 }
 				}
 
-				# Clear all railway queue arrays
-				clear_array = WA_AI_PC_railway_queue_province
-				clear_array = WA_AI_PC_railway_queue_connect
-				clear_array = WA_AI_PC_railway_queue_level
-				clear_array = WA_AI_PC_railway_queue_priority
+				# Cancel all railway projects (type 13) from the PC queue
+				# Store IDs first, then remove (can't modify array during iteration)
+				set_temp_variable = { _cancel_count = 0 }
+				while_loop_effect = {
+					limit = {
+						check_variable = { WA_AI_PC_queue^num > 0 }
+						check_variable = { _cancel_count < 100 }  # Safety limit
+					}
+					
+					set_temp_variable = { _found_railway = 0 }
+					for_each_loop = { array = WA_AI_PC_queue value = _proj_id break = _found_break
+						if = { limit = { check_variable = { WA_AI_PC_building_type^_proj_id = 13 } }
+							set_temp_variable = { _project_id = _proj_id }
+							set_temp_variable = { _found_railway = 1 }
+							set_temp_variable = { _found_break = 1 }
+						}
+					}
+					
+					if = { limit = { check_variable = { _found_railway = 1 } }
+						WA_AI_PC_end_project_by_id = yes
+						add_to_temp_variable = { _cancel_count = 1 }
+					}
+					else = {
+						# No more railway projects
+						set_temp_variable = { _cancel_count = 100 }
+					}
+				}
 
 				# Reset interval counter to trigger immediate recalculation
 				set_variable = { WA_AI_PC_railway_INTERVAL_counter = 0 }
 
-				if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: Railway queue cleared due to peace" }
+				if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: Railway projects cancelled due to peace" }
 			}
 		}
 	}

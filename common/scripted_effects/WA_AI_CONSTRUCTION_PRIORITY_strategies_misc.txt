@@ -1,17 +1,17 @@
 ############################################################################################################
 #	Expert AI mod - Construction Priority Strategies - Misc
 #	Railway building system for World Ablaze
-#	Builds railways from capital to front lines every 6 months
+#	Builds railways from capital to front lines every 3 months
 #	Supports: Land wars, overseas invasions, pre-war preparation
 ############################################################################################################
 
 ### Railway Building - HIGHEST PRIORITY
-### Runs every 6 months (26 weeks)
+### Runs every 3 months (12 weeks)
 
 @WA_AI_PC_railway_TYPE_ID = 13
 @WA_AI_PC_railway_PRIO = 9999
 @WA_AI_PC_railway_PRIO_PREWAR = 5000
-@WA_AI_PC_railway_INTERVAL = 26
+@WA_AI_PC_railway_INTERVAL = 12
 
 ### Industrial requirements
 @WA_AI_PC_railway_MIN_CIVS = 50
@@ -1061,18 +1061,37 @@ WA_AI_PC_start_railway_project = { # THIS = state, _project_province_id, _projec
 		y = "[?_project_connect_id]"
 	}
 
+	# Count already queued projects for this segment
+	set_temp_variable = { _queued_for_segment = 0 }
+	ROOT = {
+		for_each_loop = { array = WA_AI_PC_queue value = _check_proj
+			if = {
+				limit = {
+					check_variable = { WA_AI_PC_building_type^_check_proj = 13 }
+					check_variable = { WA_AI_PC_target_province^_check_proj = _project_province_id }
+					check_variable = { WA_AI_PC_connect_province^_check_proj = _project_connect_id }
+				}
+				add_to_temp_variable = { _queued_for_segment = 1 }
+			}
+		}
+	}
+
+	# Effective level = current level + queued upgrades
+	add_to_temp_variable = { current_level = _queued_for_segment }
+
 	if = {
 		limit = {
 			check_variable = { current_level < _project_target_level }
 		}
 
-		# Queue railway construction
-		ROOT = {
-			add_to_array = { WA_AI_PC_railway_queue_province = _project_province_id }
-			add_to_array = { WA_AI_PC_railway_queue_connect = _project_connect_id }
-			add_to_array = { WA_AI_PC_railway_queue_level = _project_target_level }
-			add_to_array = { WA_AI_PC_railway_queue_priority = _project_priority }
-		}
+		# Use new PC system - call WA_AI_PC_start_project
+		set_temp_variable = { _project_building_type = 13 }
+		set_temp_variable = { _project_type_id = @WA_AI_PC_railway_TYPE_ID }
+		set_temp_variable = { _project_queue_num = 1 }
+		set_temp_variable = { _project_queue_max = 0 }  # No max per segment
+		set_temp_variable = { _project_target_level = 0 }  # Already checked above
+		
+		WA_AI_PC_start_project = yes
 	}
 }
 
@@ -1094,47 +1113,20 @@ WA_AI_PC_clear_project_inputs = {
 }
 
 WA_AI_PC_get_total_queued_num = { # _get_queued_num_building_type, _get_queued_num_type_id >>> queued_type_num_
-
-	set_temp_variable = { queued_type_num_ = WA_AI_PC_railway_queue_province^num }
+	# Count projects of the specified building type in the PC queue
+	set_temp_variable = { queued_type_num_ = 0 }
+	for_each_loop = { array = WA_AI_PC_queue value = _count_proj_id
+		if = { limit = { check_variable = { WA_AI_PC_building_type^_count_proj_id = _get_queued_num_building_type } }
+			add_to_temp_variable = { queued_type_num_ = 1 }
+		}
+	}
 }
 
 ###
 
 WA_AI_PC_process_railway_queue = {
-	# Process queued railway projects
-
-	for_each_loop = { array = WA_AI_PC_railway_queue_province index = q_i value = q_prov break = q_b
-
-		set_temp_variable = { q_connect = WA_AI_PC_railway_queue_connect^q_i }
-		set_temp_variable = { q_level = WA_AI_PC_railway_queue_level^q_i }
-
-		# Build the railway
-		meta_effect = {
-			text = {
-				build_railway = {
-					level = 1
-					path = { [x] [y] }
-				}
-				set_variable = { global.WA_AI_PC_railway_connections^[x] = 1 }
-				add_to_variable = { global.WA_AI_PC_railway_connection_level_[x]^[y] = 1 }
-				set_variable = { global.WA_AI_PC_railway_connections^[y] = 1 }
-				add_to_variable = { global.WA_AI_PC_railway_connection_level_[y]^[x] = 1 }
-			}
-			x = "[?q_prov]"
-			y = "[?q_connect]"
-		}
-
-		# Limit to one railway per tick to avoid overload
-		set_temp_variable = { q_b = 1 }
-	}
-
-	# Remove processed item
-	if = { limit = { check_variable = { WA_AI_PC_railway_queue_province^num > 0 } }
-		remove_from_array = { array = WA_AI_PC_railway_queue_province index = 0 }
-		remove_from_array = { array = WA_AI_PC_railway_queue_connect index = 0 }
-		remove_from_array = { array = WA_AI_PC_railway_queue_level index = 0 }
-		remove_from_array = { array = WA_AI_PC_railway_queue_priority index = 0 }
-	}
+	# DEPRECATED: Railway construction is now handled by the PC system via WA_AI_PC_update_project_progress
+	# This function is kept as a no-op for backward compatibility
 }
 
 ############################################################################################################

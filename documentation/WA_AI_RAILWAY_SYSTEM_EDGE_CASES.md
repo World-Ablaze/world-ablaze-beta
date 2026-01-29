@@ -1,5 +1,17 @@
 # AI Railway System - Edge Case Analysis Report
 
+## Architecture Note
+
+**This document has been updated to reflect the new dynamic queue-based PC system architecture.**
+
+The railway system now uses:
+- **Dynamic queue** (`WA_AI_PC_queue`) with unlimited projects (no more 5-slot limit)
+- **Progress-based construction** with weekly progress calculation
+- **Dynamic factory allocation** (35% of available civs, up to 15 per project)
+- **Railway-specific variables** (`WA_AI_PC_target_province^X`, `WA_AI_PC_connect_province^X`)
+
+This addresses several previous edge cases related to queue limits and factory allocation.
+
 ## Summary of Test Cases
 
 | Test Case | Expected Behavior | System Verdict |
@@ -17,18 +29,16 @@
 
 ### **EDGE CASE 1: Puppet Territories Triggering False Borders** ✅ FIXED (Fix 25)
 
-**Location:** `WA_AI_PC_railway_country_borders_enemy` (lines 343-362)
+**Location:** `WA_AI_PC_railway_country_borders_enemy` (lines 343-376)
 
 **Severity:** Medium | **Frequency:** Rare | **Fix Complexity:** Medium
 
-**Issue:** The border check includes ROOT's puppets' territories (lines 359-374). This means:
+**Issue:** The border check previously included ROOT's puppets' territories. This could cause countries to build railways towards distant fronts through puppet chain territories that don't make strategic sense.
 
 **Example:**
 If Germany puppets Croatia, and Croatia borders Soviet-controlled territory:
 - Italy (allied with Germany) would NOT trigger this since it checks ROOT's puppets, not faction allies' puppets
 - BUT: If Italy itself puppets Albania, and Albania somehow borders Yugoslavia (SOV puppet), Italy would suddenly start building railways towards Albania
-
-**Potential Problem:** A country could be "tricked" into building railways towards distant fronts through puppet chain territories that don't make strategic sense.
 
 **Current Behavior (FIXED - Fix 25):**
 ```
@@ -45,17 +55,17 @@ every_controlled_state = {
 }
 ```
 
-**Fix Applied:** The `every_subject_country` block has been completely removed. ROOT now only checks its own controlled states, not puppet territories. This prevents illogical railway decisions through puppet chains.
+**Fix Applied:** The `every_subject_country` block has been completely removed. ROOT now only checks its own controlled states, not puppet territories. This prevents illogical railway decisions through puppet chains. Additionally, with Fix 21 (pathfinding type 2), ROOT cannot build railways through puppet territory anyway, so puppet borders are useless for railway planning.
 
 ---
 
 ### **EDGE CASE 2: Owned vs Controlled State Mismatch** ✅ FIXED (Fix 24)
 
-**Location:** Lines 351-360 (border check) and line 397 (frontline detection)
+**Location:** Border check and frontline detection in `WA_AI_PC_railway_country_borders_enemy` and `WA_AI_PC_railway_STRATEGY_land_war`
 
 **Severity:** Medium | **Frequency:** Occasional | **Fix Complexity:** Low
 
-**Issue:** The border check uses `any_owned_state` (line 347) but the frontline detection uses `every_controlled_state` (line 411).
+**Issue:** The border check previously used `any_owned_state` but the frontline detection used `every_controlled_state`, creating inconsistency.
 
 **Example:**
 - Germany owns Alsace-Lorraine but France currently controls it (occupation/peace deal)
@@ -66,36 +76,7 @@ every_controlled_state = {
 - No railways being built despite passing the border check
 - Inconsistent decision-making between border detection and target selection
 
-**Code Location (FIXED - Fix 24):**
-```
-# Border check (line 351): Now uses every_controlled_state
-every_controlled_state = {
-    limit = {
-        any_neighbor_state = {
-            OR = {
-                is_controlled_by = var:_enemy_tag
-                controller = { is_subject_of = var:_enemy_tag }
-            }
-        }
-    }
-    ROOT = { set_temp_variable = { borders_enemy_ = 1 } }
-}
-
-# Frontline detection (line 397): Uses every_controlled_state
-every_controlled_state = {
-    limit = {
-        any_neighbor_state = {
-            OR = {
-                is_controlled_by = var:_current_enemy_tag
-                controller = { is_subject_of = var:_current_enemy_tag }
-            }
-        }
-        # ... additional checks for supply hub, railway level, etc.
-    }
-}
-```
-
-**Fix Applied:** Both border check and frontline detection now consistently use `every_controlled_state` and `is_controlled_by`, eliminating the mismatch between owned and controlled state checks.
+**Fix Applied:** Both border check and frontline detection now consistently use `every_controlled_state` and `is_controlled_by`, eliminating the mismatch between owned and controlled state checks. This ensures that border detection and frontline target selection use the same criteria.
 
 ---
 
@@ -131,29 +112,32 @@ Germany fighting both UK (in France) and SOV (in Poland):
 
 ---
 
-### **EDGE CASE 4: 26-Week Update Interval with Fast-Moving Fronts**
+### **EDGE CASE 4: 12-Week Update Interval with Fast-Moving Fronts**
 
-**Location:** Line 21 (interval check: `check_variable = { railway_update_timer > 0 }`)
+**Location:** Line 21 (interval check: `check_variable = { WA_AI_PC_railway_INTERVAL_counter = 0 }`)
 
 **Severity:** Low | **Frequency:** Always | **Fix Complexity:** Design Choice
 
-**Issue:** Railways are planned every 6 months. In a fast-moving war, frontlines shift significantly between updates.
+**Issue:** Railways are planned every 3 months (12 weeks). In a fast-moving war, frontlines may still shift significantly between updates, though less than the previous 6-month interval.
 
 **Example:**
 1. **January 1942:** SOV frontline is at Smolensk (Smolensk supply hub selected)
 2. **January-April:** Railway construction to Smolensk begins (3 months to build)
 3. **April 1942:** Front collapses, now at Moscow (100+ km away)
-4. **July 1942:** Next 6-month update happens
-   - Smolensk railway finally completes
-   - Moscow still has no railway
-   - New queue starts building to Moscow, but gap persists
+4. **April 1942:** Next 3-month update happens (improved from previous 6-month cycle)
+   - Smolensk railway may still be in progress
+   - New queue starts building to Moscow sooner
+   - Reduced lag compared to 6-month interval
 
 **Result:**
-- Railway construction perpetually lags behind the actual front by 6+ months
-- Defensive infrastructure doesn't keep up with retreats
-- Offensive infrastructure doesn't support rapid advances
+- Railway construction still lags behind the actual front, but by 3 months instead of 6+
+- More responsive to front line changes than previous 6-month interval
+- Defensive infrastructure updates more frequently
+- Offensive infrastructure supports advances more quickly
 
-**Impact:** More pronounced in rapidly changing scenarios (Soviet invasions, strategic retreats, large-scale breakthroughs).
+**Impact:** Reduced compared to 6-month interval, but still present in rapidly changing scenarios (Soviet invasions, strategic retreats, large-scale breakthroughs).
+
+**Note:** Interval was reduced from 26 weeks (6 months) to 12 weeks (3 months) to improve responsiveness.
 
 ---
 

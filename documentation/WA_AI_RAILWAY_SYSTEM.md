@@ -4,27 +4,79 @@
 
 The World Ablaze AI railway system automatically builds railways from a country's capital to front-line states with supply hubs. It supports land wars, overseas invasions, and pre-war preparation.
 
+**Architecture:** Uses a **dynamic queue-based Priority Construction (PC) system** with progress tracking and weekly factory allocation, similar to Expert AI's architecture.
+
 ## File Locations
 
 | File | Purpose |
 |------|---------|
+| `common/scripted_effects/WA_AI_CONSTRUCTION_effects.txt` | Core PC system (queue, factory allocation, progress tracking) |
 | `common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_strategies_misc.txt` | Main railway strategies and logic |
 | `common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt` | Supply hub and railway level detection triggers |
 | `common/scripted_effects/WA_AI_MAP_province_connections.txt` | Pre-computed province adjacency data |
 | `common/scripted_effects/WA_AI_MAP_province_railway_connections.txt` | Pre-computed initial railway levels |
 | `common/scripted_effects/WA_AI_pathfinding_effects.txt` | A* pathfinding for route calculation |
+| `common/scripted_effects/WA_AI_MAP_effects.txt` | Map utility effects (province neighbors, state mappings) |
+| `common/on_actions/WA_AI_misc_on_actions.txt` | Weekly update calls for PC system |
 | `tools/generate_province_connections.py` | Generates province adjacency from map files |
 | `tools/generate_railway_connections.py` | Generates initial railway state from railways.txt |
 
 ## System Parameters
 
 ```pdx
-@WA_AI_PC_railway_TYPE_ID = 13          # Internal type identifier
+@WA_AI_PC_railway_TYPE_ID = 13          # Internal type identifier (building type)
 @WA_AI_PC_railway_PRIO = 9999           # Wartime priority (highest)
 @WA_AI_PC_railway_PRIO_PREWAR = 5000    # Pre-war preparation priority
-@WA_AI_PC_railway_INTERVAL = 26         # Runs every 26 weeks (6 months)
+@WA_AI_PC_railway_INTERVAL = 12         # Runs every 12 weeks (3 months)
 @WA_AI_PC_railway_MIN_CIVS = 50         # Minimum civilian factories required
 ```
+
+## Priority Construction System Architecture
+
+The railway system is fully integrated with the PC system, which uses a **dynamic queue** architecture:
+
+### Key Data Structures
+
+```pdx
+# Country-level arrays
+arr: WA_AI_PC_queue              # Dynamic queue of project IDs (unlimited)
+arr: WA_AI_PC_target_state       # Project state targets (indexed by project_id)
+
+# Project-level variables (indexed by _project_id)
+var: WA_AI_PC_target_province^X      # Start province ID (for railways)
+var: WA_AI_PC_connect_province^X     # End province ID (for railways)
+var: WA_AI_PC_project_cost^X         # Total construction cost
+var: WA_AI_PC_progress^X             # Remaining progress (decrements weekly)
+var: WA_AI_PC_building_type^X        # Building type (13 for railways)
+var: WA_AI_PC_assigned_factories^X   # Factories currently assigned
+var: WA_AI_PC_priority^X             # Project priority
+```
+
+### Weekly Update Cycle
+
+```
+on_weekly:
+  1. WA_AI_PC_assign_factories
+     - Reset all project factory assignments
+     - Allocate 35% of available civs to projects
+     - Assign from top of queue (up to 15 per project)
+     
+  2. WA_AI_PC_update_project_progress
+     - For each project with factories assigned:
+       - Calculate: progress -= (speed * factories * 7)
+       - If progress <= 0: complete project
+       
+  3. WA_AI_PC_railway (every 12 weeks)
+     - Evaluate railway needs
+     - Queue new railway projects via WA_AI_PC_start_project
+```
+
+### Project Completion
+
+When a railway project completes:
+1. `WA_AI_PC_add_finished_building_by_id` executes `build_railway` with stored province data
+2. Updates `global.WA_AI_PC_railway_connection_level_X^Y` tracking variables
+3. `WA_AI_PC_end_project_by_id` removes project from queue and clears variables
 
 ## Three Strategies
 
@@ -99,10 +151,10 @@ The World Ablaze AI railway system automatically builds railways from a country'
 
 ## Supply Hub Detection
 
-The system uses proper HOI4 building checks instead of infrastructure proxies:
+The system uses proper HOI4 building checks instead of infrastructure proxies. These are defined as **scripted triggers** in `common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt`:
 
 ```pdx
-# State-level check
+# State-level check (THIS = state scope)
 WA_AI_PC_state_has_supply_hub = {
     OR = {
         any_province_building_level = {
@@ -139,6 +191,8 @@ WA_AI_PC_prov_has_supply_hub = {
     }
 }
 ```
+
+**Note:** These triggers are defined in `WA_AI_CONSTRUCTION_triggers.txt` (lines 505-539), not in `WA_AI_MAP_effects.txt`. The `WA_AI_MAP_effects.txt` file only contains map-related effects, not triggers.
 
 ## Railway Level Detection
 
@@ -187,6 +241,8 @@ Uses A* algorithm via `WA_AI_PATHFIND_PROV_get_path`:
 - Output: `pathfind_prov_path_` array of province IDs
 - Uses pre-computed province connections from `WA_AI_MAP_province_connections_X` arrays
 
+**Note:** The function name is `WA_AI_PATHFIND_PROV_get_path` (with underscores, not slashes). There is also a state-level pathfinding function `WA_AI_PATHFIND_get_path` used for supply line building.
+
 ### Pathfinding Types
 
 The `_pathfind_prov_type` parameter controls neighbor filtering and cost calculation:
@@ -203,11 +259,21 @@ The `_pathfind_prov_type` parameter controls neighbor filtering and cost calcula
 - Applies heuristic bonuses for provinces with railway connections
 - Ensures railways are only built through own territory
 
+**Important:** This was fixed to prevent pathfinding failures where a path through allied territory would be found, but railway construction would fail because railways can only be built in your own territory.
+
 ## Data Flow
 
 ```
-1. WA_AI_PC_railway (main entry)
-   ├── Check interval (every 26 weeks)
+1. on_weekly (weekly pulse)
+   ├── WA_AI_PC_assign_factories
+   │   └── Allocate factories to queued projects
+   ├── WA_AI_PC_update_project_progress
+   │   ├── Update progress for each project
+   │   └── Complete finished projects (build railways)
+   └── WA_AI_PC_railway (every 12 weeks)
+
+2. WA_AI_PC_railway (main entry)
+   ├── Check interval (every 12 weeks / 3 months)
    ├── Check requirements (50+ civs, not capitulated)
    └── Call WA_AI_PC_railway_STRATEGIES
        ├── Get capital info (state, continent, province)
@@ -218,15 +284,19 @@ The `_pathfind_prov_type` parameter controls neighbor filtering and cost calcula
        │   └── STRATEGY_prewar_preparation → Border states + home port
        └── Build arrays: railway_start_provinces_, railway_end_provinces_, etc.
 
-2. For each route in arrays:
-   ├── Call A* pathfinding
+3. For each route in arrays:
+   ├── Call A* pathfinding (WA_AI_PATHFIND_PROV_get_path)
    └── For each segment in path:
        └── WA_AI_PC_start_railway_project
            ├── Check if segment already at target level
-           └── Queue for construction if needed
+           └── Call WA_AI_PC_start_project (adds to queue)
 
-3. WA_AI_PC_process_railway_queue (called elsewhere)
-   └── Execute build_railway command
+4. Project completion (via WA_AI_PC_update_project_progress)
+   ├── WA_AI_PC_complete_project_by_id
+   │   └── WA_AI_PC_add_finished_building_by_id
+   │       └── Execute build_railway with stored province data
+   └── WA_AI_PC_end_project_by_id
+       └── Remove from queue, clear variables
 ```
 
 ## Limitations
@@ -238,6 +308,12 @@ The system tracks railway connections at the province level (e.g., `global.WA_AI
 - Supply hub location needs to be precise
 
 **Limitation:** This creates many variables. The pre-computed file has ~9,300 connection entries.
+
+### 2. Queue Unlimited but Practical Limits
+The dynamic queue has no hard limit, but practical constraints exist:
+- Factory allocation is limited to 35% of available civs (configurable via `WA_AI_PC_override_max_factories_factor`)
+- Each project can receive up to 15 factories
+- `_project_queue_max` parameter allows limiting concurrent projects of a type
 
 ### 2. Continent Detection
 Uses hardcoded continent IDs:
@@ -269,11 +345,9 @@ Land war and pre-war strategies always start from capital province.
 - Shortest path from nearest existing level-5 railway
 
 ### 6. Fixed Intervals
-Runs every 26 weeks regardless of war intensity or economic situation.
+Runs every 12 weeks (3 months) regardless of war intensity or economic situation.
 
-**Limitation:** Can't react quickly to:
-- Sudden front line changes
-- Economic booms allowing more construction
+**Note:** This interval was reduced from 26 weeks (6 months) to allow more frequent updates and better responsiveness to changing front lines.
 
 ### 7. No Railway Repair
 Only builds new railways, doesn't prioritize repairing damaged ones.
@@ -325,9 +399,73 @@ Log output format:
 ## Related Systems
 
 - **WA_AI_MAP_startup**: Initializes province connections and railway data at game start
-- **WA_AI_PC_process_railway_queue**: Executes queued railway construction
+- **WA_AI_PC_assign_factories**: Weekly factory allocation to queued projects
+- **WA_AI_PC_update_project_progress**: Weekly progress calculation and project completion
+- **WA_AI_PC_start_project**: Adds new projects to the dynamic queue
+- **WA_AI_PC_complete_project_by_id**: Spawns completed buildings
+- **WA_AI_PC_end_project_by_id**: Removes projects from queue
+- **WA_AI_PC_get_total_queued_num**: Helper effect to count queued projects by building type
 - **WA_AI_PC_process_port_upgrades**: Builds naval bases for overseas operations
-- **WA_AI_PATHFIND_PROV_***: A* pathfinding implementation
+- **WA_AI_PATHFIND_PROV_***: A* pathfinding implementation for province-level routing
+- **WA_AI_PATHFIND_get_path**: State-level pathfinding for supply line building
+
+## Recent Fixes and Architecture Changes
+
+### Dynamic Queue Architecture (Major Refactor)
+- **Changed:** Replaced fixed 5-slot decision-based system with dynamic queue
+- **Old System:** 5 project slots tied to decision timers, one-time factory allocation
+- **New System:** Unlimited queue, weekly progress calculation, dynamic factory allocation
+- **Benefits:**
+  - No more 5-project limit for railways
+  - Proper factory allocation shared with other PC buildings
+  - `_project_queue_num` and `_project_queue_max` parameters for controlled batching
+  - Progress visibility via `WA_AI_PC_progress^_project_id`
+- **Key Functions Added:**
+  - `WA_AI_PC_get_new_project_ID`: Gets next available project ID
+  - `WA_AI_PC_assign_factories`: Weekly factory allocation
+  - `WA_AI_PC_update_project_progress`: Weekly progress calculation
+  - `WA_AI_PC_complete_project_by_id`: Completes project and spawns building
+  - `WA_AI_PC_end_project_by_id`: Removes project from queue
+  - `WA_AI_PC_get_build_speed`: Calculates construction speed for a state
+  - `WA_AI_PC_get_building_cost`: Calculates building cost
+
+### Railway PC Integration
+- **Changed:** Railways now use the PC system for factory allocation and timing
+- **Old:** Separate queue arrays (`WA_AI_PC_railway_queue_*`), instant `build_railway`
+- **New:** Uses `WA_AI_PC_start_project` with `connect_province` variable, construction time
+- **Variables Added:**
+  - `WA_AI_PC_target_province^X`: Start province ID for railway segment
+  - `WA_AI_PC_connect_province^X`: End province ID for railway segment
+- **Removed:** `WA_AI_PC_process_railway_queue` (now a no-op for compatibility)
+
+### Scripted Triggers vs Scripted Effects
+- **Fixed:** Removed duplicate supply hub trigger definitions from `WA_AI_MAP_effects.txt`
+- **Reason:** `WA_AI_PC_state_has_supply_hub` and `WA_AI_PC_prov_has_supply_hub` are scripted **triggers** (conditions), not scripted **effects** (actions)
+- **Location:** Properly defined in `common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt` (lines 505-539)
+- **Impact:** Prevents "Unknown trigger-type" errors when these are used in `limit` blocks
+
+### Pathfinding Function Names
+- **Fixed:** Corrected `WA_AI_PATHFIND/get_path` → `WA_AI_PATHFIND_get_path` (underscore, not slash)
+- **Location:** `WA_AI_CONSTRUCTION_effects.txt` line 925
+- **Impact:** Prevents "Unknown effect-type" errors
+
+### Trigger vs Effect Usage
+- **Fixed:** Changed `any_controlled_state` to `every_controlled_state` in effect contexts
+- **Reason:** `any_controlled_state` is a trigger (returns true/false), `every_controlled_state` is an effect (iterates and executes)
+- **Locations:** Multiple locations in `WA_AI_CONSTRUCTION_PRIORITY_strategies_misc.txt` (lines 189, 528, 823)
+- **Impact:** Prevents "Unknown effect-type" errors when iterating over states to set variables
+
+### Scripted Effect Usage in Triggers
+- **Fixed:** Moved `WA_AI_PC_get_total_queued_num` call outside of `limit` block
+- **Reason:** Scripted effects cannot be called inside trigger/limit contexts
+- **Location:** `WA_AI_CONSTRUCTION_PRIORITY_strategies_misc.txt` line 87
+- **Impact:** Effect now executes before the condition check, allowing proper variable evaluation
+
+### Pathfinding Code Corruption
+- **Fixed:** Corrected mangled code in `WA_AI_pathfinding_effects.txt` (line 249)
+- **Issue:** `owest_f_score` typo and broken `set_temp_variable` statement
+- **Fix:** Proper `set_temp_variable = { lowest_f_score = WA_AI_PATHFIND_f_score }`
+- **Impact:** Prevents parser errors and ensures correct lowest f-score calculation in A* algorithm
 
 ## Future Improvements (Ideas)
 

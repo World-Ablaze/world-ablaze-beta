@@ -45,7 +45,7 @@ Use this document to evaluate whether the current codebase correctly handles eac
 
 **Code Locations:**
 - Strategy trigger: `WA_AI_CONSTRUCTION_PRIORITY_strategies_misc.txt` lines 386-456
-- Border check: `WA_AI_PC_railway_country_borders_enemy` lines 343-376
+- Border check: `WA_AI_PC_railway_country_borders_enemy` (defined in same file, lines 343-376)
 
 **Validation Method:**
 1. Check `borders_enemy_` = 1 after border check
@@ -864,8 +864,8 @@ any_neighbor_state = {
 - Only UK-controlled path considered
 
 **Code Locations:**
-- Type 2 filter: `WA_AI_pathfinding_effects.txt` lines 447-450
-- Railway usage: Fixed lines using type 2
+- Type 2 filter: `WA_AI_pathfinding_effects.txt` lines 447-450 (only ROOT-controlled provinces allowed)
+- Railway usage: All railway pathfinding calls use `_pathfind_prov_type = 2` (see `WA_AI_CONSTRUCTION_PRIORITY_strategies_misc.txt`)
 
 **Validation Method:**
 1. Verify `_pathfind_prov_type = 2` in railway code
@@ -1087,29 +1087,30 @@ any_neighbor_state = {
 
 ---
 
-### TC-052: 26-week update interval
+### TC-052: 12-week update interval
 
 **Scenario:** System respects update interval.
 
 **Setup:**
 - Initial run at week 0
-- Check at week 13 (mid-interval)
-- Check at week 26 (next interval)
+- Check at week 6 (mid-interval)
+- Check at week 12 (next interval)
 
 **Expected Behavior:**
 - Counter decremented each call
-- At 0: full execution + reset to 26
-- Between 0-26: skip execution
+- At 0: full execution + reset to 12
+- Between 0-12: skip execution
 
 **Code Locations:**
 - Interval check: line 21
+- Interval value: line 14 `@WA_AI_PC_railway_INTERVAL = 12`
 
 **Validation Method:**
 1. Verify counter mechanism
 2. Verify execution only at counter = 0
-3. Verify reset after execution
+3. Verify reset after execution to 12 (not 26)
 
-**Expected Result:** PASS - Correct interval behavior
+**Expected Result:** PASS - Correct interval behavior (3 months / 12 weeks)
 
 ---
 
@@ -1229,7 +1230,7 @@ any_neighbor_state = {
   - State C: NO
 
 **Code Locations:**
-- Trigger: `WA_AI_CONSTRUCTION_triggers.txt` lines 505-567
+- Trigger: `WA_AI_CONSTRUCTION_triggers.txt` lines 505-539 (`WA_AI_PC_state_has_supply_hub` and `WA_AI_PC_prov_has_supply_hub`)
 
 **Validation Method:**
 1. Verify trigger checks both supply_node and naval_base
