@@ -276,49 +276,105 @@ WA_AI_PC_assign_factories = {
 ### Dynamic Queue System - Update project progress
 # THIS = country
 # Called weekly to progress construction and complete finished projects
+# Handles mid-week completions by reassigning freed factories immediately
 WA_AI_PC_update_project_progress = {
-	# Track projects to remove (can't modify array during iteration)
-	clear_temp_array = _projects_to_complete_
-	
-	for_each_loop = { array = WA_AI_PC_queue value = _project_id
-		if = {
-			limit = {
-				check_variable = { WA_AI_PC_assigned_factories^_project_id > 0 }
-				check_variable = { WA_AI_PC_progress^_project_id > 0 }
-			}
-			
-			# Get construction speed from target state
-			set_temp_variable = { _project_building_type = WA_AI_PC_building_type^_project_id }
-			var:WA_AI_PC_target_state^_project_id = {
-				WA_AI_PC_get_build_speed = yes
-			}
-			
-			# Weekly progress = speed * factories * 7 (days per week)
-			set_temp_variable = { _weekly_progress = construction_speed_ }
-			multiply_temp_variable = { _weekly_progress = WA_AI_PC_assigned_factories^_project_id }
-			multiply_temp_variable = { _weekly_progress = 7 }
-			subtract_from_variable = { WA_AI_PC_progress^_project_id = _weekly_progress }
-			
-			# Update estimated build time (in days)
-			if = { limit = { check_variable = { construction_speed_ > 0 } }
-				set_variable = { WA_AI_PC_build_time^_project_id = WA_AI_PC_progress^_project_id }
-				set_temp_variable = { _daily_speed = construction_speed_ }
-				multiply_temp_variable = { _daily_speed = WA_AI_PC_assigned_factories^_project_id }
-				if = { limit = { check_variable = { _daily_speed > 0 } }
-					divide_variable = { WA_AI_PC_build_time^_project_id = _daily_speed }
+	set_temp_variable = { _remaining_days = 7 }
+	set_temp_variable = { _progress_iterations = 0 }
+
+	# Process the week in segments, reassigning factories when projects complete
+	while_loop_effect = {
+		limit = {
+			check_variable = { _remaining_days > 0.1 }
+			check_variable = { _progress_iterations < 10 }
+		}
+		add_to_temp_variable = { _progress_iterations = 1 }
+
+		# Find the earliest completing project
+		set_temp_variable = { _earliest_completion_days = 999 }
+		set_temp_variable = { _earliest_completion_id = -1 }
+
+		for_each_loop = { array = WA_AI_PC_queue value = _project_id
+			if = {
+				limit = {
+					check_variable = { WA_AI_PC_assigned_factories^_project_id > 0 }
+					check_variable = { WA_AI_PC_progress^_project_id > 0 }
+				}
+
+				# Get construction speed
+				set_temp_variable = { _project_building_type = WA_AI_PC_building_type^_project_id }
+				var:WA_AI_PC_target_state^_project_id = {
+					WA_AI_PC_get_build_speed = yes
+				}
+
+				# Calculate days to completion for this project
+				set_temp_variable = { _daily_progress = construction_speed_ }
+				multiply_temp_variable = { _daily_progress = WA_AI_PC_assigned_factories^_project_id }
+
+				if = { limit = { check_variable = { _daily_progress > 0 } }
+					set_temp_variable = { _days_needed = WA_AI_PC_progress^_project_id }
+					divide_temp_variable = { _days_needed = _daily_progress }
+
+					# Check if this completes within remaining days and is earliest
+					if = {
+						limit = {
+							NOT = { check_variable = { _days_needed > _remaining_days } }
+							check_variable = { _days_needed < _earliest_completion_days }
+						}
+						set_temp_variable = { _earliest_completion_days = _days_needed }
+						set_temp_variable = { _earliest_completion_id = _project_id }
+					}
 				}
 			}
-			
-			# Complete if progress <= 0
-			if = { limit = { NOT = { check_variable = { WA_AI_PC_progress^_project_id > 0 } } }
-				add_to_temp_array = { _projects_to_complete_ = _project_id }
+		}
+
+		# Determine how many days to process this iteration
+		if = { limit = { NOT = { check_variable = { _earliest_completion_id < 0 } } }
+			# Process up to the completion point
+			set_temp_variable = { _days_to_process = _earliest_completion_days }
+		}
+		else = {
+			# No completions - process remaining days
+			set_temp_variable = { _days_to_process = _remaining_days }
+		}
+
+		# Apply progress for _days_to_process to all active projects
+		for_each_loop = { array = WA_AI_PC_queue value = _project_id
+			if = {
+				limit = {
+					check_variable = { WA_AI_PC_assigned_factories^_project_id > 0 }
+					check_variable = { WA_AI_PC_progress^_project_id > 0 }
+				}
+
+				set_temp_variable = { _project_building_type = WA_AI_PC_building_type^_project_id }
+				var:WA_AI_PC_target_state^_project_id = {
+					WA_AI_PC_get_build_speed = yes
+				}
+
+				set_temp_variable = { _segment_progress = construction_speed_ }
+				multiply_temp_variable = { _segment_progress = WA_AI_PC_assigned_factories^_project_id }
+				multiply_temp_variable = { _segment_progress = _days_to_process }
+				subtract_from_variable = { WA_AI_PC_progress^_project_id = _segment_progress }
+
+				# Update estimated build time
+				if = { limit = { check_variable = { construction_speed_ > 0 } }
+					set_variable = { WA_AI_PC_build_time^_project_id = WA_AI_PC_progress^_project_id }
+					set_temp_variable = { _daily_speed = construction_speed_ }
+					multiply_temp_variable = { _daily_speed = WA_AI_PC_assigned_factories^_project_id }
+					if = { limit = { check_variable = { _daily_speed > 0 } }
+						divide_variable = { WA_AI_PC_build_time^_project_id = _daily_speed }
+					}
+				}
 			}
 		}
-	}
-	
-	# Complete all finished projects
-	for_each_loop = { array = _projects_to_complete_ value = _project_id
-		WA_AI_PC_complete_project_by_id = yes
+
+		subtract_from_temp_variable = { _remaining_days = _days_to_process }
+
+		# If a project completed, handle it and reassign factories
+		if = { limit = { NOT = { check_variable = { _earliest_completion_id < 0 } } }
+			set_temp_variable = { _project_id = _earliest_completion_id }
+			WA_AI_PC_complete_project_by_id = yes
+			WA_AI_PC_assign_factories = yes
+		}
 	}
 }
 
@@ -330,22 +386,62 @@ WA_AI_PC_complete_project_by_id = {
 		limit = {
 			NOT = { check_variable = { WA_AI_PC_target_state^_project_id = 0 } }
 		}
-		
+
 		# Set project_type for the slot availability trigger
 		set_variable = { WA_AI_PC_project_type = _project_id }
-		
+
+		# Check if this building type can be built in allied territory
+		# Types: 1=infra, 2=airbase, 3=AA, 4=radar, 13=railway
+		set_temp_variable = { _can_build_in_allied = 0 }
+		if = {
+			limit = {
+				OR = {
+					check_variable = { WA_AI_PC_building_type^_project_id = 1 }
+					check_variable = { WA_AI_PC_building_type^_project_id = 2 }
+					check_variable = { WA_AI_PC_building_type^_project_id = 3 }
+					check_variable = { WA_AI_PC_building_type^_project_id = 4 }
+					check_variable = { WA_AI_PC_building_type^_project_id = 13 }
+				}
+			}
+			set_temp_variable = { _can_build_in_allied = 1 }
+		}
+
 		var:WA_AI_PC_target_state^_project_id = {
+			# Strategic buildings (infra, airbase, AA, radar, railway) can be built in allied territory
 			if = {
 				limit = {
+					check_variable = { _can_build_in_allied = 1 }
+					CONTROLLER = {
+						OR = {
+							tag = ROOT
+							is_in_faction_with = ROOT
+							is_subject_of = ROOT
+							ROOT = { is_subject_of = PREV }
+						}
+					}
+					# Railways don't need slot check, others do
+					OR = {
+						check_variable = { ROOT.WA_AI_PC_building_type^_project_id = 13 }
+						WA_AI_PC_building_slot_available = yes
+					}
+				}
+
+				# Spawn the building
+				WA_AI_PC_add_finished_building_by_id = yes
+			}
+			# Factories and refineries require direct control
+			else_if = {
+				limit = {
+					check_variable = { _can_build_in_allied = 0 }
 					CONTROLLER = { tag = ROOT }
 					WA_AI_PC_building_slot_available = yes
 				}
-				
+
 				# Spawn the building
 				WA_AI_PC_add_finished_building_by_id = yes
 			}
 		}
-		
+
 		WA_AI_PC_end_project_by_id = yes
 	}
 }
@@ -356,15 +452,15 @@ WA_AI_PC_end_project_by_id = {
 	# Remove from queue
 	remove_from_array = { array = WA_AI_PC_queue value = _project_id }
 	subtract_from_variable = { WA_AI_PC_active_projects = 1 }
-	subtract_from_variable = { WA_AI_PC_assigned_factories_total = WA_AI_PC_assigned_factories^_project_id }
-	
+	# Factory total is recalculated by WA_AI_PC_assign_factories after all completions
+
 	# Remove from state tracking (per-country array stores project IDs)
 	if = { limit = { NOT = { check_variable = { WA_AI_PC_target_state^_project_id = 0 } } }
 		var:WA_AI_PC_target_state^_project_id = {
 			remove_from_array = { array = WA_AI_PC_projects_in_state_of_@ROOT value = _project_id }
 		}
 	}
-	
+
 	# Clear project variables (mark slot as available by setting target_state to 0)
 	set_variable = { WA_AI_PC_target_state^_project_id = 0 }
 	clear_variable = WA_AI_PC_target_province^_project_id
@@ -376,8 +472,6 @@ WA_AI_PC_end_project_by_id = {
 	clear_variable = WA_AI_PC_priority^_project_id
 	clear_variable = WA_AI_PC_assigned_factories^_project_id
 	clear_variable = WA_AI_PC_type_id^_project_id
-	
-	force_update_dynamic_modifier = yes
 }
 
 ### Cancel multiple projects at once
