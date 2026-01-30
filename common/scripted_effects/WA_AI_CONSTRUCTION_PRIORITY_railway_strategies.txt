@@ -36,8 +36,6 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 	### This prevents building railways to distant frontlines (e.g., Italy -> SOV through Germany)
 	### Uses pre-filtered _relevant_enemies_ array to reduce iteration count
 
-	if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: checking [?_relevant_enemies_^num] relevant enemies" }
-
 	for_each_scope_loop = { array = _relevant_enemies_
 		set_temp_variable = { _current_enemy_tag = THIS }
 
@@ -46,8 +44,6 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 			set_temp_variable = { _enemy_tag = _current_enemy_tag }
 			WA_AI_PC_railway_country_borders_enemy = yes
 		}
-
-		ROOT = { if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: enemy [?_current_enemy_tag.GetName] borders=[?borders_enemy_]" } }
 
 		# Only process enemies we directly border
 		if = {
@@ -78,12 +74,8 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 					# Skip single-node states (only port, no supply hub to connect to)
 					WA_AI_PC_state_is_single_node = yes
 					if = {
-						limit = { check_variable = { is_single_node_ = 1 } }
-						ROOT = { if = { limit = { has_country_flag = WA_AI_construction_logging }
-							log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: skipping single-node [Prev.GetName]"
-						} }
-					}
-					else = {
+						limit = { check_variable = { is_single_node_ = 0 } }
+
 
 					# Find the exact province with the supply hub
 					WA_AI_PC_railway_get_supply_hub_province = yes
@@ -109,10 +101,6 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 						}
 						else = {
 							# Different landmass: analyze overseas supply chain
-							ROOT = { if = { limit = { has_country_flag = WA_AI_construction_logging }
-								log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: cross-landmass target=[?target_landmass] vs capital=[?capital_landmass]"
-							} }
-
 							# Check if we've already analyzed this landmass
 							set_temp_variable = { _already_analyzed = 0 }
 							for_each_loop = { array = _analyzed_landmasses_ value = _analyzed_lm
@@ -140,9 +128,6 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 										NOT = { is_in_array = { railway_port_upgrades_ = overseas_receiving_port_state_ } }
 									}
 									add_to_temp_array = { railway_port_upgrades_ = overseas_receiving_port_state_ }
-									ROOT = { if = { limit = { has_country_flag = WA_AI_construction_logging }
-										log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: queuing port upgrade for bottleneck"
-									} }
 								}
 							}
 
@@ -150,13 +135,6 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 							set_temp_variable = { route_start = _cached_overseas_route_start^target_landmass }
 							set_temp_variable = { route_level = _cached_overseas_max_level^target_landmass }
 
-							# Skip if no valid supply entry point
-							if = {
-								limit = { check_variable = { route_start = 0 } }
-								ROOT = { if = { limit = { has_country_flag = WA_AI_construction_logging }
-									log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: skipping - no receiving port on landmass [?target_landmass]"
-								} }
-							}
 						}
 
 						# Only proceed if we have a valid route start
@@ -179,51 +157,29 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 							if = {
 								limit = { check_variable = { _skip_pathfinding = 0 } }
 
-								# Skip if start and end are the same province (already connected - no railway needed)
+								# Skip if start and end are the same province (already connected)
 								if = {
-									limit = { check_variable = { route_start = supply_hub_province_ } }
-									ROOT = { if = { limit = { has_country_flag = WA_AI_construction_logging }
-										log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: skipping - start=end (province [?route_start] is both port and supply hub)"
-									} }
-								}
-								else = {
-									set_temp_variable = { _log_dest_state = _target_state_id }
-									ROOT = { if = { limit = { has_country_flag = WA_AI_construction_logging }
-										set_temp_variable = { _log_start_state = global.WA_AI_MAP_province_state_id^route_start }
-										var:_log_start_state = {
-											var:_log_dest_state = {
-												ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: pathfind [?route_start] ([Prev.Prev.GetName]) -> [?supply_hub_province_] ([Prev.GetName]) level=[?route_level]" }
-											}
-										}
-									} }
+									limit = { NOT = { check_variable = { route_start = supply_hub_province_ } } }
 
 									# Validate land path exists from route start to this frontline
 									set_temp_variable = { _pathfind_prov_start = route_start }
 									set_temp_variable = { _pathfind_prov_end = supply_hub_province_ }
-									set_temp_variable = { _pathfind_prov_type = 2 } # Rail networks - only ROOT-controlled provinces (not allied)
+									set_temp_variable = { _pathfind_prov_type = 2 } # Rail networks - only ROOT-controlled provinces
+									set_temp_variable = { _pathfind_prov_allow_partial = 1 } # Allow partial paths to frontier
 									WA_AI_PATHFIND_PROV_get_path = yes
 
-								if = {
-									limit = { check_variable = { pathfind_prov_success_ = 1 } }
-									add_to_temp_array = { railway_start_provinces_ = route_start }
-									add_to_temp_array = { railway_end_provinces_ = supply_hub_province_ }
-									add_to_temp_array = { railway_target_levels_ = route_level }
-									add_to_temp_array = { railway_priorities_ = route_priority }
-									add_to_temp_array = { railway_enemy_tags_ = _current_enemy_tag }
+									if = {
+										limit = { check_variable = { pathfind_prov_success_ > 0 } } # 1 = full path, 2 = partial
+										add_to_temp_array = { railway_start_provinces_ = route_start }
+										add_to_temp_array = { railway_end_provinces_ = supply_hub_province_ }
+										add_to_temp_array = { railway_target_levels_ = route_level }
+										add_to_temp_array = { railway_priorities_ = route_priority }
+										add_to_temp_array = { railway_enemy_tags_ = _current_enemy_tag }
 
-									### Increment per-enemy counter
-									add_to_temp_variable = { _routes_for_this_enemy = 1 }
-
-									ROOT = { if = { limit = { has_country_flag = WA_AI_construction_logging }
-										log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: ADDED route - path_length=[?pathfind_prov_path_^num]"
-									} }
+										### Increment per-enemy counter
+										add_to_temp_variable = { _routes_for_this_enemy = 1 }
+									}
 								}
-								else = {
-									ROOT = { if = { limit = { has_country_flag = WA_AI_construction_logging }
-										log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: pathfind FAILED"
-									} }
-								}
-								} # end else (route_start != supply_hub_province_)
 							}
 						}
 					}
@@ -693,28 +649,21 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 
 						# Skip if start and end are the same province (already connected)
 						if = {
-							limit = { check_variable = { route_start = supply_hub_province_ } }
-							ROOT = { if = { limit = { has_country_flag = WA_AI_construction_logging }
-								log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY PREWAR: skipping - start=end (province [?route_start])"
-							} }
-						}
-						else = {
+							limit = { NOT = { check_variable = { route_start = supply_hub_province_ } } }
+
 							# Validate land path exists from route start to this frontline
 							set_temp_variable = { _pathfind_prov_start = route_start }
 							set_temp_variable = { _pathfind_prov_end = supply_hub_province_ }
 							set_temp_variable = { _pathfind_prov_type = 2 } # Rail networks - only ROOT-controlled provinces
+							set_temp_variable = { _pathfind_prov_allow_partial = 1 } # Allow partial paths to frontier
 							WA_AI_PATHFIND_PROV_get_path = yes
 
 							if = {
-								limit = { check_variable = { pathfind_prov_success_ = 1 } }
+								limit = { check_variable = { pathfind_prov_success_ > 0 } } # 1 = full path, 2 = partial
 								add_to_temp_array = { railway_start_provinces_ = route_start }
 								add_to_temp_array = { railway_end_provinces_ = supply_hub_province_ }
 								add_to_temp_array = { railway_target_levels_ = route_level }
 								add_to_temp_array = { railway_priorities_ = route_priority }
-
-								ROOT = { if = { limit = { has_country_flag = WA_AI_construction_logging }
-									log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY PREWAR: ADDED land route to [Prev.GetName]"
-								} }
 							}
 						}
 					}

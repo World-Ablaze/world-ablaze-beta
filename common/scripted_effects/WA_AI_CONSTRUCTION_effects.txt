@@ -198,15 +198,14 @@ WA_AI_PC_get_building_cost = {
 # THIS = country
 # Allocates available factories to projects from the top of the queue
 WA_AI_PC_assign_factories = {
-	# Reset all project factory assignments
-	for_each_loop = { array = WA_AI_PC_queue value = _project_id
-		set_variable = { WA_AI_PC_assigned_factories^_project_id = 0 }
-	}
-	set_variable = { WA_AI_PC_assigned_factories_total = 0 }
-	
-	# Calculate available factories (35% of available civs for PC system)
+	# Calculate available factories BEFORE resetting (add back currently assigned to get true available)
 	set_temp_variable = { available_factories_ = num_of_civilian_factories_available_for_projects }
-	
+	add_to_temp_variable = { available_factories_ = WA_AI_PC_assigned_factories_total }
+
+	if = { limit = { has_country_flag = WA_AI_construction_logging }
+		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC_ASSIGN: queue=[?WA_AI_PC_queue^num] raw_avail=[?available_factories_]"
+	}
+
 	# Check for override factor (e.g., during high-priority railway construction)
 	if = { limit = { has_country_flag = WA_AI_PC_override_max_factories_factor }
 		multiply_temp_variable = { available_factories_ = WA_AI_PC_override_max_factories_factor }
@@ -214,7 +213,17 @@ WA_AI_PC_assign_factories = {
 	else = {
 		multiply_temp_variable = { available_factories_ = 0.35 }
 	}
-	
+
+	if = { limit = { has_country_flag = WA_AI_construction_logging }
+		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC_ASSIGN: after_35pct=[?available_factories_]"
+	}
+
+	# Reset all project factory assignments (use temp for new total)
+	for_each_loop = { array = WA_AI_PC_queue value = _project_id
+		set_variable = { WA_AI_PC_assigned_factories^_project_id = 0 }
+	}
+	set_temp_variable = { _new_total = 0 }
+
 	# Assign to projects from top of queue
 	for_each_loop = { array = WA_AI_PC_queue value = _project_id break = _assign_break
 		if = {
@@ -225,21 +234,42 @@ WA_AI_PC_assign_factories = {
 				# Check progress remaining
 				check_variable = { WA_AI_PC_progress^_project_id > 0 }
 			}
-			
+
 			set_temp_variable = { assign_amount = available_factories_ }
 			clamp_temp_variable = { var = assign_amount min = 1 max = 20 }
 			round_temp_variable = assign_amount
-			
+
 			set_variable = { WA_AI_PC_assigned_factories^_project_id = assign_amount }
-			add_to_variable = { WA_AI_PC_assigned_factories_total = assign_amount }
+			add_to_temp_variable = { _new_total = assign_amount }
 			subtract_from_temp_variable = { available_factories_ = assign_amount }
+
+			if = { limit = { has_country_flag = WA_AI_construction_logging }
+				set_temp_variable = { _dbg_state = WA_AI_PC_target_state^_project_id }
+				set_temp_variable = { _dbg_prog = WA_AI_PC_progress^_project_id }
+				log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC_ASSIGN: proj=[?_project_id] assigned=[?assign_amount] state=[?_dbg_state] prog=[?_dbg_prog]"
+			}
 		}
 		else_if = {
 			limit = { check_variable = { available_factories_ < 1 } }
 			set_temp_variable = { _assign_break = 1 }
 		}
+		else = {
+			# Log why project was skipped
+			if = { limit = { has_country_flag = WA_AI_construction_logging }
+				set_temp_variable = { _dbg_state = WA_AI_PC_target_state^_project_id }
+				set_temp_variable = { _dbg_prog = WA_AI_PC_progress^_project_id }
+				log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC_ASSIGN: SKIPPED proj=[?_project_id] state=[?_dbg_state] prog=[?_dbg_prog] avail=[?available_factories_]"
+			}
+		}
 	}
-	
+
+	# Update total only once at the end, then force single modifier update
+	set_variable = { WA_AI_PC_assigned_factories_total = _new_total }
+
+	if = { limit = { has_country_flag = WA_AI_construction_logging }
+		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC_ASSIGN: TOTAL=[?WA_AI_PC_assigned_factories_total]"
+	}
+
 	force_update_dynamic_modifier = yes
 }
 

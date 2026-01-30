@@ -273,14 +273,14 @@ WA_AI_PATHFIND_PROV_get_path = { # var:_pathfind_prov_start, var:_pathfind_prov_
 	}
 
 	# Trivial case: start equals end - already at destination
+	# Note: Use subtraction to compare temp variables reliably (direct comparison has quirks)
+	set_temp_variable = { _trivial_diff = _pathfind_prov_start }
+	subtract_from_temp_variable = { _trivial_diff = _pathfind_prov_end }
 	if = {
-		limit = { check_variable = { _pathfind_prov_start = _pathfind_prov_end } }
+		limit = { check_variable = { _trivial_diff = 0 } }
 		set_temp_variable = { pathfind_prov_success_ = 1 }
 		clear_temp_array = pathfind_prov_path_
 		add_to_temp_array = { pathfind_prov_path_ = _pathfind_prov_start }
-		if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } }
-			log = "PATHFIND: trivial success - start=end"
-		}
 	}
 	else = {
 
@@ -292,10 +292,6 @@ WA_AI_PATHFIND_PROV_get_path = { # var:_pathfind_prov_start, var:_pathfind_prov_
 	set_temp_variable = { _pf_max_its = 100 }
 	set_temp_variable = { _pf_its = 0 }
 	set_temp_variable = { pathfind_prov_success_ = 0 }
-
-	if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } }
-		log = "PATHFIND INIT: its=[?_pf_its] max_its=[?_pf_max_its] open_list=[?open_list_id^num] start=[?_pathfind_prov_start]"
-	}
 
 	while_loop_effect = { break = pathfind_prov_success_
 		limit = {
@@ -348,7 +344,12 @@ WA_AI_PATHFIND_PROV_get_path = { # var:_pathfind_prov_start, var:_pathfind_prov_
 		# Success
 		if = { limit = { check_variable = { cur_id = _pathfind_prov_end } }
 
-			if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } } log = "PATHFIND: found path, end = [?cur_id], its = [?_pf_its]" }
+			if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } }
+				set_temp_variable = { _log_end_state = global.WA_AI_MAP_province_state_id^cur_id }
+				var:_log_end_state = {
+					ROOT = { log = "PATHFIND: found path to [?cur_id] ([Prev.GetName]) its=[?_pf_its]" }
+				}
+			}
 
 			set_temp_variable = { pathfind_prov_success_ = 1 }
 
@@ -424,15 +425,72 @@ WA_AI_PATHFIND_PROV_get_path = { # var:_pathfind_prov_start, var:_pathfind_prov_
 			}
 		}
 
-		# Debug: log iteration state
-		if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } check_variable = { _pf_its < 5 } }
-			log = "PATHFIND ITER: its=[?_pf_its] open_list=[?open_list_id^num] cur_id=[?cur_id] neighbors=[?pathfind_prov_neighbors^num]"
-		}
 	}
 
 	if = { limit = { check_variable = { pathfind_prov_success_ = 0 } }
 		if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } }
-			log = "PATHFIND FAIL: its=[?_pf_its] open_list=[?open_list_id^num] closed_list=[?closed_list_id^num]"
+			set_temp_variable = { _log_target_state = global.WA_AI_MAP_province_state_id^_pathfind_prov_end }
+			var:_log_target_state = {
+				ROOT = { log = "PATHFIND FAIL: target [?_pathfind_prov_end] ([Prev.GetName]) its=[?_pf_its] closed=[?closed_list_id^num]" }
+			}
+		}
+
+		### Partial path fallback: build to the frontier province with most progress
+		if = {
+			limit = {
+				check_variable = { _pathfind_prov_allow_partial = 1 }
+				check_variable = { closed_list_id^num > 1 }  # Need at least start + 1 other
+			}
+
+			# Find province in closed_list with highest g_cost (most progress from start)
+			# This is the actual frontier - the province furthest along the path
+			set_temp_variable = { best_frontier_id = 0 }
+			set_temp_variable = { best_frontier_g = -1 }
+
+			for_each_loop = { array = closed_list_id value = _check_id
+				# Skip start province
+				if = { limit = { NOT = { check_variable = { _check_id = _pathfind_prov_start } } }
+					# Check g_cost (cumulative progress from start)
+					if = { limit = { check_variable = { prov_g^_check_id > best_frontier_g } }
+						set_temp_variable = { best_frontier_g = prov_g^_check_id }
+						set_temp_variable = { best_frontier_id = _check_id }
+					}
+				}
+			}
+
+			# If we found a valid frontier, build path to it
+			if = { limit = { check_variable = { best_frontier_id > 0 } }
+				if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } }
+					set_temp_variable = { _log_frontier_state = global.WA_AI_MAP_province_state_id^best_frontier_id }
+					var:_log_frontier_state = {
+						ROOT = { log = "PATHFIND PARTIAL: building to frontier [?best_frontier_id] ([Prev.GetName]) g=[?best_frontier_g]" }
+					}
+				}
+
+				# Build path from start to frontier using came_from
+				set_temp_variable = { pathfind_prov_success_ = 2 }  # 2 = partial success
+				set_temp_variable = { build_path_cur_id = best_frontier_id }
+				clear_temp_array = pathfind_prov_path_reversed
+
+				while_loop_effect = { limit = { NOT = { check_variable = { build_path_cur_id = _pathfind_prov_start } } }
+					add_to_temp_array = { pathfind_prov_path_reversed = build_path_cur_id }
+					set_temp_variable = { build_path_cur_id = came_from_id^build_path_cur_id }
+				}
+				add_to_temp_array = { pathfind_prov_path_reversed = _pathfind_prov_start }
+
+				# Reverse to get correct order
+				clear_temp_array = pathfind_prov_path_
+				for_each_loop = { array = pathfind_prov_path_reversed
+					set_temp_variable = { rev_idx = pathfind_prov_path_reversed^num }
+					subtract_from_temp_variable = { rev_idx = 1 }
+					subtract_from_temp_variable = { rev_idx = i }
+					add_to_temp_array = { pathfind_prov_path_ = pathfind_prov_path_reversed^rev_idx }
+				}
+
+				if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } }
+					log = "PATHFIND PARTIAL: path length=[?pathfind_prov_path_^num]"
+				}
+			}
 		}
 	}
 	} # end else (non-trivial pathfinding)
@@ -442,10 +500,6 @@ WA_AI_PATHFIND_PROV_get_neighbors = {
 
 	set_temp_variable = { _get_province_id_neighbors = cur_id }
 	WA_AI_MAP_get_province_neighbors = yes
-
-	if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } }
-		log = "PATHFIND NEIGHBORS: cur_id=[?cur_id] raw_neighbors=[?province_neighbors_^num]"
-	}
 
 	clear_temp_array = pathfind_prov_neighbors
 	for_each_loop = { array = province_neighbors_ value = neighbor_id
@@ -477,13 +531,20 @@ WA_AI_PATHFIND_PROV_get_neighbors = {
 			set_temp_variable = { _neighbor_passes_control = 1 }
 		}
 
-		### Type 2: Only ROOT controlled provinces (for rail networks)
+		### Type 2: ROOT or allied controlled provinces (for rail networks)
 		if = {
 			limit = {
 				check_variable = { _pathfind_prov_type = 2 }
 				ROOT = {
 					meta_trigger = {
-						text = { controls_province = [prov] }
+						text = {
+							OR = {
+								controls_province = [prov]
+								any_allied_country = {
+									controls_province = [prov]
+								}
+							}
+						}
 						prov = "[?neighbor_id]"
 					}
 				}
@@ -498,9 +559,6 @@ WA_AI_PATHFIND_PROV_get_neighbors = {
 		}
 	}
 
-	if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } }
-		log = "PATHFIND NEIGHBORS: filtered=[?pathfind_prov_neighbors^num] type=[?_pathfind_prov_type]"
-	}
 }
 
 WA_AI_PATHFIND_PROV_g_cost = {
@@ -607,4 +665,14 @@ WA_AI_PATHFIND_PROV_h_cost = {
 		}
 
 	###
+}
+
+### Calculate h (heuristic distance) between two arbitrary provinces
+# Input: _h_check_id, _h_target_id
+# Output: _calc_h_result
+WA_AI_PATHFIND_PROV_calculate_h = {
+	set_temp_variable = { _province_id_a = _h_check_id }
+	set_temp_variable = { _province_id_b = _h_target_id }
+	WA_AI_MATH_get_distance_between_provinces_a_b = yes
+	set_temp_variable = { _calc_h_result = distance_ }
 }
