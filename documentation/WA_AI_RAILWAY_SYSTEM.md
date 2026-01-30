@@ -8,10 +8,19 @@ The World Ablaze AI railway system automatically builds railways from a country'
 
 ## File Locations
 
+### Railway System Files (Refactored Architecture)
+
+| File | Purpose |
+|------|---------|
+| `WA_AI_CONSTRUCTION_PRIORITY_railway_core.txt` | Entry point, dispatcher, constants (~250 lines) |
+| `WA_AI_CONSTRUCTION_PRIORITY_railway_strategies.txt` | Three strategy implementations (~500 lines) |
+| `WA_AI_CONSTRUCTION_PRIORITY_railway_helpers.txt` | All helper functions (~450 lines) |
+
+### Supporting Files
+
 | File | Purpose |
 |------|---------|
 | `common/scripted_effects/WA_AI_CONSTRUCTION_effects.txt` | Core PC system (queue, factory allocation, progress tracking) |
-| `common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_strategies_misc.txt` | Main railway strategies and logic |
 | `common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt` | Supply hub and railway level detection triggers |
 | `common/scripted_effects/WA_AI_MAP_province_connections.txt` | Pre-computed province adjacency data |
 | `common/scripted_effects/WA_AI_MAP_province_railway_connections.txt` | Pre-computed initial railway levels |
@@ -390,10 +399,26 @@ Enable logging with country flag:
 set_country_flag = WA_AI_construction_logging
 ```
 
-Log output format:
+### Log Categories
+
+The railway system uses categorized logging for easier debugging:
+
+| Category | Description | Example |
+| -------- | ----------- | ------- |
+| `RAILWAY ENTRY:` | Entry point, eligibility checks | `interval_counter=12` |
+| `RAILWAY DISPATCH:` | Strategy selection, capital info | `capital province=3529 continent=1` |
+| `RAILWAY LAND:` | Land war strategy decisions | `enemy Germany borders=1` |
+| `RAILWAY OVERSEAS:` | Overseas war decisions | `Part A - home port state=125` |
+| `RAILWAY PREWAR:` | Pre-war preparation | `found 3 target countries` |
+| `RAILWAY HELPER:` | Helper function calls | `get_continent Bavaria = 1` |
+
+### Log Output Format
+
 ```
-[Year] [Month] | AI | [Country] | CONSTRUCTION: WA_AI_PC_railway
-[Year] [Month] | AI | [Country] | CONSTRUCTION: Port upgrade in [State]
+[Year] [Month] | AI | [Country] | RAILWAY ENTRY: interval_counter=12
+[Year] [Month] | AI | [Country] | RAILWAY DISPATCH: executing STRATEGY_land_war
+[Year] [Month] | AI | [Country] | RAILWAY LAND: ADDED route - path_length=15
+[Year] [Month] | AI | [Country] | RAILWAY HELPER: find_best_home_port FOUND Hamburg level=8
 ```
 
 ## Related Systems
@@ -452,13 +477,13 @@ Log output format:
 ### Trigger vs Effect Usage
 - **Fixed:** Changed `any_controlled_state` to `every_controlled_state` in effect contexts
 - **Reason:** `any_controlled_state` is a trigger (returns true/false), `every_controlled_state` is an effect (iterates and executes)
-- **Locations:** Multiple locations in `WA_AI_CONSTRUCTION_PRIORITY_strategies_misc.txt` (lines 189, 528, 823)
+- **Locations:** Multiple locations in railway strategy files
 - **Impact:** Prevents "Unknown effect-type" errors when iterating over states to set variables
 
 ### Scripted Effect Usage in Triggers
 - **Fixed:** Moved `WA_AI_PC_get_total_queued_num` call outside of `limit` block
 - **Reason:** Scripted effects cannot be called inside trigger/limit contexts
-- **Location:** `WA_AI_CONSTRUCTION_PRIORITY_strategies_misc.txt` line 87
+- **Location:** `WA_AI_CONSTRUCTION_PRIORITY_railway_core.txt`
 - **Impact:** Effect now executes before the condition check, allowing proper variable evaluation
 
 ### Pathfinding Code Corruption
@@ -466,6 +491,26 @@ Log output format:
 - **Issue:** `owest_f_score` typo and broken `set_temp_variable` statement
 - **Fix:** Proper `set_temp_variable = { lowest_f_score = WA_AI_PATHFIND_f_score }`
 - **Impact:** Prevents parser errors and ensures correct lowest f-score calculation in A* algorithm
+
+### Modular File Architecture (Major Refactor)
+
+- **Changed:** Split monolithic `WA_AI_CONSTRUCTION_PRIORITY_strategies_misc.txt` (1,630 lines) into three focused files
+- **New Files:**
+  - `WA_AI_CONSTRUCTION_PRIORITY_railway_core.txt` - Entry point, dispatcher, constants
+  - `WA_AI_CONSTRUCTION_PRIORITY_railway_strategies.txt` - Three strategy implementations
+  - `WA_AI_CONSTRUCTION_PRIORITY_railway_helpers.txt` - All helper functions
+- **Benefits:**
+  - Single responsibility per file
+  - Easier maintenance and debugging
+  - Reduced code duplication
+  - Exhaustive logging throughout
+- **New Helper Functions:**
+  - `WA_AI_PC_railway_get_continent`: Unified continent detection (replaces 5 inline duplications)
+  - `WA_AI_PC_railway_find_best_home_port`: Home port finding (replaces 2 duplications)
+- **Logging Improvements:**
+  - Added categorized logging: `RAILWAY ENTRY:`, `RAILWAY DISPATCH:`, `RAILWAY LAND:`, `RAILWAY OVERSEAS:`, `RAILWAY PREWAR:`, `RAILWAY HELPER:`
+  - Logs at every decision point for full traceability
+- **Note:** HOI4 `@` constants are file-scoped, so required constants are redeclared in each file
 
 ## Future Improvements (Ideas)
 

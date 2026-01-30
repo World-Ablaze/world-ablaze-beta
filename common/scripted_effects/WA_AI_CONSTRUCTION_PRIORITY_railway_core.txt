@@ -1,0 +1,282 @@
+############################################################################################################
+#	World Ablaze AI mod - Railway Construction Priority - Core Module
+#	Entry point, dispatcher, and configuration constants
+#	Builds railways from capital to front lines every 3 months
+#	Supports: Land wars, overseas invasions, pre-war preparation
+############################################################################################################
+
+### Railway Building - HIGHEST PRIORITY
+### Performance-optimized: limits which countries run and caps routes calculated
+
+@WA_AI_PC_railway_TYPE_ID = 13
+@WA_AI_PC_railway_PRIO = 9999
+@WA_AI_PC_railway_PRIO_PREWAR = 5000
+
+### Interval control (weeks)
+@WA_AI_PC_railway_INTERVAL_PEACE = 24        # 6 months during peace
+@WA_AI_PC_railway_INTERVAL_WAR = 12          # 3 months during war
+
+### Industrial requirements
+@WA_AI_PC_railway_MIN_CIVS = 50              # Base minimum (war threshold = 60% of this)
+@WA_AI_PC_railway_MIN_CIVS_PEACE = 75        # Higher threshold during peace
+
+### Country eligibility (checked in on_weekly)
+@WA_AI_PC_railway_MIN_STATES = 5             # Minimum controlled states to run
+@WA_AI_PC_railway_MAX_SURRENDER = 0.3        # Skip if surrender progress > 30%
+@WA_AI_PC_railway_MINOR_CIV_THRESHOLD = 50   # Minor nations bypass if civs > this
+
+### Route caps per execution
+@WA_AI_PC_railway_MAX_ROUTES_TOTAL = 3       # Max routes processed per run
+@WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY = 2   # Max routes per enemy country
+
+### Caching thresholds
+@WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD = 3   # Skip recalculation if queue has 3+ railway projects
+
+############################################################################################################
+#	ENTRY POINT
+#	Called weekly from on_actions
+############################################################################################################
+
+WA_AI_PC_railway = {
+
+	if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY ENTRY: interval_counter=[?WA_AI_PC_railway_INTERVAL_counter]" }
+
+	if = { limit = { check_variable = { WA_AI_PC_railway_INTERVAL_counter = 0 } }
+
+		if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY ENTRY: interval check PASSED - executing" }
+
+		### Dynamic interval - longer during peace, shorter during war
+		if = {
+			limit = { has_war = yes }
+			set_variable = { WA_AI_PC_railway_INTERVAL_counter = @WA_AI_PC_railway_INTERVAL_WAR }
+		}
+		else = {
+			set_variable = { WA_AI_PC_railway_INTERVAL_counter = @WA_AI_PC_railway_INTERVAL_PEACE }
+		}
+
+		set_temp_variable = { _project_building_type = global.WA_AI_PC_RAIL }
+		set_temp_variable = { _project_build_for_ally = 1 }
+		set_temp_variable = { _project_type_id = @WA_AI_PC_railway_TYPE_ID }
+		set_temp_variable = { _project_priority = @WA_AI_PC_railway_PRIO }
+		set_temp_variable = { _project_queue_num = 5 }
+		set_temp_variable = { _project_queue_max = 5 }
+
+		### Industrial base requirement: 50+ civilian factories (30+ during war)
+		### Fix 20: Lower threshold during war to ensure critical railways continue
+		set_temp_variable = { _min_civs_required = @WA_AI_PC_railway_MIN_CIVS }
+		if = {
+			limit = { has_war = yes }
+			multiply_temp_variable = { _min_civs_required = 0.6 }  # 30 civs during war
+		}
+
+		if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY ENTRY: eligibility check civs=[?num_of_civilian_factories] required=[?_min_civs_required] has_war=[?has_war]" }
+
+		if = {
+			limit = {
+				num_of_civilian_factories > _min_civs_required
+				has_capitulated = no
+			}
+
+			if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY ENTRY: eligibility PASSED" }
+
+			### Skip recalculation if queue already has enough railway projects
+			set_temp_variable = { _get_queued_num_building_type = @WA_AI_PC_railway_TYPE_ID }
+			set_temp_variable = { _get_queued_num_type_id = @WA_AI_PC_railway_TYPE_ID }
+			WA_AI_PC_get_total_queued_num = yes
+
+			if = {
+				limit = {
+					check_variable = { queued_type_num_ < @WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD }
+				}
+
+				if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY ENTRY: queue_check PASSED (queued=[?queued_type_num_] threshold=3)" }
+
+				### Execute all applicable strategies
+				WA_AI_PC_railway_STRATEGIES = yes
+
+				if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY ENTRY: strategies done - success=[?WA_AI_PC_railway_STRATEGIES] targets=[?railway_end_provinces_^num]" }
+
+			if = {
+				limit = {
+					check_variable = { WA_AI_PC_railway_STRATEGIES = 1 }
+				}
+
+				if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY ENTRY: processing routes" }
+
+				### Route capping - limit pathfinding calls per execution
+					set_temp_variable = { _routes_processed = 0 }
+
+					for_each_loop = { array = railway_end_provinces_ index = railway_i value = railway_v break = railway_b
+
+						### Break if max routes reached (use > with value-1 since >= not supported)
+						set_temp_variable = { _max_routes_minus_one = @WA_AI_PC_railway_MAX_ROUTES_TOTAL }
+						subtract_from_temp_variable = { _max_routes_minus_one = 1 }
+						if = {
+							limit = { check_variable = { _routes_processed > _max_routes_minus_one } }
+							set_temp_variable = { railway_b = 1 }
+
+							if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY ENTRY: route cap reached ([?_routes_processed] routes)" }
+						}
+						else = {
+							set_temp_variable = { _pathfind_prov_start = railway_start_provinces_^railway_i }
+							set_temp_variable = { _pathfind_prov_end = railway_end_provinces_^railway_i }
+							set_temp_variable = { _pathfind_prov_type = 2 } # Fix 21: Rail networks - only ROOT-controlled provinces (not allied)
+							WA_AI_PATHFIND_PROV_get_path = yes
+							if = { limit = { check_variable = { pathfind_prov_success_ = 1 } }
+								for_each_loop = { array = pathfind_prov_path_ index = path_i value = path_v break = path_b
+									add_to_temp_array = { _valid_provinces = path_v }
+									set_temp_variable = { next_i = path_i }
+									add_to_temp_variable = { next_i = 1 }
+									if = { limit = { check_variable = { next_i < pathfind_prov_path_^num } }
+										set_temp_variable = { _project_province_id = path_v }
+										set_temp_variable = { _project_connect_id = pathfind_prov_path_^next_i }
+										set_temp_variable = { _project_target_level = railway_target_levels_^railway_i }
+										set_temp_variable = { _project_priority = railway_priorities_^railway_i }
+										var:global.WA_AI_MAP_province_state_id^path_v = { WA_AI_PC_start_railway_project = yes }
+										set_temp_variable = { _designated_railway_network_^path_v = 1 }
+										set_temp_variable = { _designated_railway_network_^pathfind_prov_path_^next_i = 1 }
+									}
+								}
+
+								### Increment route counter after successful pathfinding
+								add_to_temp_variable = { _routes_processed = 1 }
+
+								if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY ENTRY: route [?_routes_processed] processed successfully" }
+							}
+						}
+					}
+
+				### Validate queued projects - cancel any that are no longer on valid paths
+				### This cleans up stale projects when frontlines shift or territory is lost
+					set_temp_variable = { _strategy_id = _project_type_id }
+					WA_AI_PC_validate_queued_provincial_projects = yes
+
+				### Process port upgrades for overseas operations
+					if = { limit = { check_variable = { railway_port_upgrades_^num > 0 } }
+						WA_AI_PC_process_port_upgrades = yes
+					}
+
+				### Assign more IC to PC if these types are queued
+
+					set_temp_variable = { _get_queued_num_building_type = _project_building_type }
+					set_temp_variable = { _get_queued_num_type_id = _project_type_id }
+					WA_AI_PC_get_total_queued_num = yes
+					if = {
+						limit = {
+							check_variable = { queued_type_num_ > 0 }
+						}
+						set_country_flag = { flag = WA_AI_PC_override_max_factories_factor value = 1 days = 30 }
+						set_variable = { WA_AI_PC_override_max_factories_factor = 0.5 }
+					}
+
+				###
+			}
+			}
+			else = {
+				if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY ENTRY: queue_check SKIPPED (queued=[?queued_type_num_] >= threshold)" }
+			}
+		}
+		else = {
+			if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY ENTRY: eligibility FAILED (civs or capitulated)" }
+		}
+
+		WA_AI_PC_clear_project_inputs = yes
+	}
+	else = {
+		add_to_variable = { WA_AI_PC_railway_INTERVAL_counter = -1 }
+	}
+}
+
+############################################################################################################
+#	MAIN STRATEGY DISPATCHER
+#	Calls appropriate strategy based on war status and land access
+############################################################################################################
+
+WA_AI_PC_railway_STRATEGIES = { # >>> arr:railway_start_provinces_:railway_end_provinces_:railway_target_levels_:railway_priorities_:railway_enemy_tags_
+
+	set_temp_variable = { WA_AI_PC_railway_STRATEGIES = 0 }
+
+	clear_temp_array = railway_start_provinces_
+	clear_temp_array = railway_end_provinces_
+	clear_temp_array = railway_target_levels_
+	clear_temp_array = railway_priorities_
+	clear_temp_array = railway_port_upgrades_
+	clear_temp_array = railway_enemy_tags_
+
+	### Get capital info using VP-based detection
+	WA_AI_MAP_get_capital_vp_province = yes
+	set_temp_variable = { capital_province = capital_vp_province_ }
+	set_temp_variable = { capital_state_id = capital_state_id_ }
+
+	# Get continent from capital state
+	capital_scope = {
+		WA_AI_PC_railway_get_continent = yes
+		set_temp_variable = { capital_continent = continent_id_ }
+	}
+
+	# Get capital landmass for island nation detection
+	set_temp_variable = { capital_landmass = global.WA_AI_MAP_province_landmass^capital_province }
+
+	# Verify map data is loaded - if landmass is 0 for a valid province, data may not be initialized
+	if = {
+		limit = {
+			check_variable = { capital_province > 0 }
+			check_variable = { capital_landmass = 0 }
+		}
+		# Try to use state landmass as fallback
+		set_temp_variable = { capital_landmass = global.WA_AI_MAP_state_landmass^capital_state_id }
+
+		if = { limit = { has_country_flag = WA_AI_construction_logging }
+			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY WARNING: Province landmass=0, using state landmass=[?capital_landmass] - map data may need reload"
+		}
+	}
+
+	if = { limit = { has_country_flag = WA_AI_construction_logging }
+		set_temp_variable = { _log_state = global.WA_AI_MAP_province_state_id^capital_province }
+		var:_log_state = { ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DISPATCH: capital province=[?capital_province] state=[Prev.GetName] continent=[?capital_continent] landmass=[?capital_landmass]" } }
+	}
+
+	### STRATEGY 1: WARTIME - Land access to enemy
+	if = {
+		limit = {
+			has_war = yes
+		}
+		### Pre-filter enemies to reduce iteration count
+		WA_AI_PC_railway_get_relevant_enemies = yes
+
+		WA_AI_PC_railway_check_land_access_to_enemies = yes
+
+		if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DISPATCH: wartime - has_land_enemy=[?has_land_enemy_] has_overseas_enemy=[?has_overseas_enemy_]" }
+
+		if = {
+			limit = { check_variable = { has_land_enemy_ = 1 } }
+			if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DISPATCH: executing STRATEGY_land_war" }
+			WA_AI_PC_railway_STRATEGY_land_war = yes
+		}
+
+		### STRATEGY 2: WARTIME - Overseas enemies (no land access)
+		if = {
+			limit = { check_variable = { has_overseas_enemy_ = 1 } }
+			if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DISPATCH: executing STRATEGY_overseas_war" }
+			WA_AI_PC_railway_STRATEGY_overseas_war = yes
+		}
+	}
+
+	### STRATEGY 3: PRE-WAR PREPARATION (justifying, has wargoal, or claims)
+	if = {
+		limit = {
+			has_war = no
+		}
+		if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DISPATCH: executing STRATEGY_prewar_preparation" }
+		WA_AI_PC_railway_STRATEGY_prewar_preparation = yes
+	}
+
+	### Set success flag if we have targets
+	if = { limit = { check_variable = { railway_end_provinces_^num > 0 } }
+		set_temp_variable = { WA_AI_PC_railway_STRATEGIES = 1 }
+	}
+
+	if = { limit = { has_country_flag = WA_AI_construction_logging }
+		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DISPATCH: completed - success=[?WA_AI_PC_railway_STRATEGIES] targets=[?railway_end_provinces_^num]"
+	}
+}

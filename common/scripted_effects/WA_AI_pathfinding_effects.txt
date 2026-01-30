@@ -1,5 +1,5 @@
 ############################################################################################################
-#	Expert AI mod - scripted AI effects - PATHFINDING
+#	World Ablaze AI mod - scripted AI effects - PATHFINDING
 #	Updated for World Ablaze with provincial pathfinding for railway building
 ############################################################################################################
 
@@ -11,7 +11,7 @@ WA_AI_PATHFIND_get_path = { # _pathfind_start, _pathfind_target, _pathfind_type
 
 	if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_detailed_logging } } every_state = { set_variable = { WA_AI_debug_value = 0 } } }
 
-	if = { limit = { has_country_flag = WA_AI_pathfind_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PATHFIND: START - [?_pathfind_start.GetName] -> [?_pathfind_target.GetName] - type [?_pathfind_type]" }
+	if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PATHFIND: START - [?_pathfind_start.GetName] -> [?_pathfind_target.GetName] - type [?_pathfind_type]" }
 
 	var:_pathfind_start = {
 		clear_variable = WA_AI_PATHFIND_g_score
@@ -28,7 +28,7 @@ WA_AI_PATHFIND_get_path = { # _pathfind_start, _pathfind_target, _pathfind_type
 
 		if = { limit = { check_variable = { found_path = 1 } }
 
-			if = { limit = { has_country_flag = WA_AI_pathfind_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PATHFIND: found path, end = [?current.GetName]" }
+			if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PATHFIND: found path, end = [?current.GetName]" }
 
 			WA_AI_PATHFIND_build_path = yes
 
@@ -86,7 +86,7 @@ WA_AI_PATHFIND_get_path = { # _pathfind_start, _pathfind_target, _pathfind_type
 		add_to_temp_variable = { its = 1 }
 	}
 
-	if = { limit = { has_country_flag = WA_AI_pathfind_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PATHFIND: END - iterations = [?its]" }
+	if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PATHFIND: END - iterations = [?its]" }
 
 	if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_detailed_logging } } force_update_map_mode = { limit = { always = yes } mapmode = debug_map_mode } }
 
@@ -272,21 +272,38 @@ WA_AI_PATHFIND_PROV_get_path = { # var:_pathfind_prov_start, var:_pathfind_prov_
 		}
 	}
 
+	# Trivial case: start equals end - already at destination
+	if = {
+		limit = { check_variable = { _pathfind_prov_start = _pathfind_prov_end } }
+		set_temp_variable = { pathfind_prov_success_ = 1 }
+		clear_temp_array = pathfind_prov_path_
+		add_to_temp_array = { pathfind_prov_path_ = _pathfind_prov_start }
+		if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } }
+			log = "PATHFIND: trivial success - start=end"
+		}
+	}
+	else = {
+
 	clear_temp_array = closed_list_id
 	clear_temp_array = open_list_id
 
 	add_to_temp_array = { open_list_id = _pathfind_prov_start }
 
-	set_temp_variable = { max_its = 100 }
-	set_temp_variable = { its = 0 }
+	set_temp_variable = { _pf_max_its = 100 }
+	set_temp_variable = { _pf_its = 0 }
 	set_temp_variable = { pathfind_prov_success_ = 0 }
+
+	if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } }
+		log = "PATHFIND INIT: its=[?_pf_its] max_its=[?_pf_max_its] open_list=[?open_list_id^num] start=[?_pathfind_prov_start]"
+	}
+
 	while_loop_effect = { break = pathfind_prov_success_
 		limit = {
 			check_variable = { open_list_id^num > 0 }
-			check_variable = { its < max_its }
+			check_variable = { _pf_its < _pf_max_its }
 		}
 
-		add_to_temp_variable = { its = 1 }
+		add_to_temp_variable = { _pf_its = 1 }
 
 		# Get lowest F
 		set_temp_variable = { first_val = 1 }
@@ -307,7 +324,7 @@ WA_AI_PATHFIND_PROV_get_path = { # var:_pathfind_prov_start, var:_pathfind_prov_
 		remove_from_temp_array = { array = open_list_id value = cur_id }
 
 		# Draw visited
-		if = { limit = { has_country_flag = WA_AI_pathfind_draw_visited }
+		if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_draw_visited } }
 
 			var:global.WA_AI_MAP_province_state_id^cur_id = {
 				meta_effect = {
@@ -326,12 +343,12 @@ WA_AI_PATHFIND_PROV_get_path = { # var:_pathfind_prov_start, var:_pathfind_prov_
 			}
 		}
 
-		if = { limit = { has_country_flag = WA_AI_pathfind_detailed_logging } log = "PATHFIND: cur_id=[?cur_id]" }
+		if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_detailed_logging } } log = "PATHFIND: cur_id=[?cur_id]" }
 
 		# Success
 		if = { limit = { check_variable = { cur_id = _pathfind_prov_end } }
 
-			if = { limit = { has_country_flag = WA_AI_pathfind_logging } log = "PATHFIND: found path, end = [?cur_id], its = [?its]" }
+			if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } } log = "PATHFIND: found path, end = [?cur_id], its = [?_pf_its]" }
 
 			set_temp_variable = { pathfind_prov_success_ = 1 }
 
@@ -353,7 +370,7 @@ WA_AI_PATHFIND_PROV_get_path = { # var:_pathfind_prov_start, var:_pathfind_prov_
 				add_to_temp_array = { pathfind_prov_path_ = pathfind_prov_path_reversed^rev_idx }
 
 				# Draw path
-				if = { limit = { has_country_flag = WA_AI_pathfind_draw_path }
+				if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_draw_path } }
 
 					var:global.WA_AI_MAP_province_state_id^v = {
 						meta_effect = {
@@ -388,7 +405,7 @@ WA_AI_PATHFIND_PROV_get_path = { # var:_pathfind_prov_start, var:_pathfind_prov_
 					set_temp_variable = { neighbor_f = neighbor_g_ }
 					add_to_temp_variable = { neighbor_f = neighbor_h_ }
 
-					if = { limit = { has_country_flag = WA_AI_pathfind_detailed_logging } log = "PATHFIND: neighbor_id=[?neighbor_id] neighbor_g_=[?neighbor_g_] neighbor_h_=[?neighbor_h_] neighbor_f=[?neighbor_f]" }
+					if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_detailed_logging } } log = "PATHFIND: neighbor_id=[?neighbor_id] neighbor_g_=[?neighbor_g_] neighbor_h_=[?neighbor_h_] neighbor_f=[?neighbor_f]" }
 
 					if = {
 						limit = {
@@ -406,12 +423,19 @@ WA_AI_PATHFIND_PROV_get_path = { # var:_pathfind_prov_start, var:_pathfind_prov_
 				}
 			}
 		}
+
+		# Debug: log iteration state
+		if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } check_variable = { _pf_its < 5 } }
+			log = "PATHFIND ITER: its=[?_pf_its] open_list=[?open_list_id^num] cur_id=[?cur_id] neighbors=[?pathfind_prov_neighbors^num]"
+		}
 	}
 
 	if = { limit = { check_variable = { pathfind_prov_success_ = 0 } }
-
-		if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } } log = "PATHFIND: could not find path, its=[?its]" }
+		if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } }
+			log = "PATHFIND FAIL: its=[?_pf_its] open_list=[?open_list_id^num] closed_list=[?closed_list_id^num]"
+		}
 	}
+	} # end else (non-trivial pathfinding)
 }
 
 WA_AI_PATHFIND_PROV_get_neighbors = {
@@ -419,48 +443,63 @@ WA_AI_PATHFIND_PROV_get_neighbors = {
 	set_temp_variable = { _get_province_id_neighbors = cur_id }
 	WA_AI_MAP_get_province_neighbors = yes
 
+	if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } }
+		log = "PATHFIND NEIGHBORS: cur_id=[?cur_id] raw_neighbors=[?province_neighbors_^num]"
+	}
+
 	clear_temp_array = pathfind_prov_neighbors
 	for_each_loop = { array = province_neighbors_ value = neighbor_id
 
+		### Check province control using meta_trigger for proper variable substitution
+		set_temp_variable = { _neighbor_passes_control = 0 }
+
+		### Type 0 & 1: Allow ROOT or allied controlled provinces
 		if = {
 			limit = {
-
-				### Path through friendly provinces
-
-					if = { limit = { check_variable = { _pathfind_prov_type = 0 } }
-
-						OR = {
-							controls_province = neighbor_id
-							any_allied_country = {
-								controls_province = neighbor_id
+				OR = {
+					check_variable = { _pathfind_prov_type = 0 }
+					check_variable = { _pathfind_prov_type = 1 }
+				}
+				ROOT = {
+					meta_trigger = {
+						text = {
+							OR = {
+								controls_province = [prov]
+								any_allied_country = {
+									controls_province = [prov]
+								}
 							}
 						}
+						prov = "[?neighbor_id]"
 					}
-
-				### Path through defensible provinces
-
-					if = { limit = { check_variable = { _pathfind_prov_type = 1 } }
-
-						OR = {
-							controls_province = neighbor_id
-							any_allied_country = {
-								controls_province = neighbor_id
-							}
-						}
-					}
-
-				### Rail networks
-
-					if = { limit = { check_variable = { _pathfind_prov_type = 2 } }
-
-						controls_province = neighbor_id
-					}
-
-				###
+				}
 			}
+			set_temp_variable = { _neighbor_passes_control = 1 }
+		}
 
+		### Type 2: Only ROOT controlled provinces (for rail networks)
+		if = {
+			limit = {
+				check_variable = { _pathfind_prov_type = 2 }
+				ROOT = {
+					meta_trigger = {
+						text = { controls_province = [prov] }
+						prov = "[?neighbor_id]"
+					}
+				}
+			}
+			set_temp_variable = { _neighbor_passes_control = 1 }
+		}
+
+		### Add to valid neighbors if control check passed
+		if = {
+			limit = { check_variable = { _neighbor_passes_control = 1 } }
 			add_to_temp_array = { pathfind_prov_neighbors = neighbor_id }
 		}
+	}
+
+	if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } }
+		log = "PATHFIND NEIGHBORS: filtered=[?pathfind_prov_neighbors^num] type=[?_pathfind_prov_type]"
 	}
 }
 

@@ -1,5 +1,5 @@
 ############################################################################################################
-#	Expert AI mod - scripted construction AI effects
+#	World Ablaze AI mod - scripted construction AI effects
 ############################################################################################################
 
 ######################################################
@@ -10,17 +10,17 @@ WA_AI_PC_set_global_variables = {
 
 	### BUILDING CONSTRUCTION COSTS
 
-	set_variable = { global.WA_AI_PC_BUILDING_RAILWAY_COST		  = 3000 }
+	set_variable = { global.WA_AI_PC_BUILDING_RAILWAY_COST          = 800 }
 	set_variable = { global.WA_AI_PC_BUILDING_INFRASTRUCTURE_COST   = 3000 }
 	set_variable = { global.WA_AI_PC_BUILDING_AIRBASE_COST          = 500 }
-	set_variable = { global.WA_AI_PC_BUILDING_ANTIAIR_COST          = 4000 }
-	set_variable = { global.WA_AI_PC_BUILDING_RADAR_COST            = 3375 }
-	set_variable = { global.WA_AI_PC_BUILDING_MILITARY_FACTORY_COST = 7200 }
-	set_variable = { global.WA_AI_PC_BUILDING_CIVILIAN_FACTORY_COST = 10800 }
-	set_variable = { global.WA_AI_PC_BUILDING_DOCKYARD_COST         = 6400 }
-	set_variable = { global.WA_AI_PC_BUILDING_REFINERY_COST         = 14500 }
-	set_variable = { global.WA_AI_PC_CONVERSION_COST_MIL_TO_CIV     = 9000 }
-	set_variable = { global.WA_AI_PC_CONVERSION_COST_CIV_TO_MIL     = 9000 }
+	set_variable = { global.WA_AI_PC_BUILDING_ANTIAIR_COST          = 1200 }
+	set_variable = { global.WA_AI_PC_BUILDING_RADAR_COST            = 2000 }
+	set_variable = { global.WA_AI_PC_BUILDING_MILITARY_FACTORY_COST = 7500 }
+	set_variable = { global.WA_AI_PC_BUILDING_CIVILIAN_FACTORY_COST = 10000 }
+	set_variable = { global.WA_AI_PC_BUILDING_DOCKYARD_COST         = 10000 }
+	set_variable = { global.WA_AI_PC_BUILDING_REFINERY_COST         = 18000 }
+	set_variable = { global.WA_AI_PC_CONVERSION_COST_MIL_TO_CIV     = 8000 }
+	set_variable = { global.WA_AI_PC_CONVERSION_COST_CIV_TO_MIL     = 6800 }
 	set_variable = { global.WA_AI_PC_BUILDING_HYDROPOWEREDSTEELMILL_COST         = 12500 }
 	set_variable = { global.WA_AI_PC_BUILDING_HYDROPOWEREDALUMINIUMSMELTER_COST  = 12500 }
 
@@ -227,7 +227,7 @@ WA_AI_PC_assign_factories = {
 			}
 			
 			set_temp_variable = { assign_amount = available_factories_ }
-			clamp_temp_variable = { var = assign_amount min = 1 max = 15 }
+			clamp_temp_variable = { var = assign_amount min = 1 max = 20 }
 			round_temp_variable = assign_amount
 			
 			set_variable = { WA_AI_PC_assigned_factories^_project_id = assign_amount }
@@ -540,7 +540,18 @@ WA_AI_PC_start_project = {
 				PREV = { WA_AI_PC_get_building_cost = yes }
 				
 				# Set project variables
-				set_variable = { WA_AI_PC_target_state^_project_id = PREV.id }
+				# Use _project_target_state if provided (for railways), otherwise get from PREV scope
+				if = { limit = { check_variable = { _project_target_state > 0 } }
+					set_variable = { WA_AI_PC_target_state^_project_id = _project_target_state }
+				}
+				else = {
+					# For state-level buildings called from state scope, get state ID via province mapping
+					PREV = {
+						set_temp_variable = { _temp_first_prov = global.WA_AI_MAP_state_province_ids@THIS^0 }
+						set_temp_variable = { _project_target_state = global.WA_AI_MAP_province_state_id^_temp_first_prov }
+					}
+					set_variable = { WA_AI_PC_target_state^_project_id = _project_target_state }
+				}
 				set_variable = { WA_AI_PC_target_province^_project_id = _project_province_id }
 				set_variable = { WA_AI_PC_connect_province^_project_id = _project_connect_id }
 				set_variable = { WA_AI_PC_project_cost^_project_id = building_cost_ }
