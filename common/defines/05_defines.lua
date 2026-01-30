@@ -30,7 +30,7 @@ NDefines.NDiplomacy.FLEET_FEAR = 0													-- Impact on troops on borders wh
 NDefines.NDiplomacy.BASE_SEND_ATTACHE_COST = 50										-- Political power cost to send attache
 
 NDefines.NDiplomacy.EMBARGO_THREAT_THRESHOLD = 50									-- Target-generated threat threshold to allow embargo (affected by modifiers)
-NDefines.NDiplomacy.NAVAL_BLOCKADE_THREAT_THRESHOLD = 50							-- Target-generated threat threshold to allow naval blockade
+NDefines.NDiplomacy.NAVAL_BLOCKADE_THREAT_THRESHOLD = 150							-- Target-generated threat threshold to allow naval blockade
 
 NDefines.NDiplomacy.LL_TO_OVERLORD_AUTONOMY_DAILY_BASE = 0.0						-- If puppet lend leases equipment to overlord of at least same tech level as they have, they gain autonomy
 NDefines.NDiplomacy.LL_TO_OVERLORD_AUTONOMY_DAILY_FACTOR = 0.0						-- If puppet lend leases equipment to overlord of at least same tech level as they have, they gain autonomy
@@ -319,7 +319,8 @@ NDefines.NMilitary.COMBAT_SUPPLY_LACK_DEFENDER_DEFEND = -0.40     					-- defend
 NDefines.NMilitary.BASE_COMBAT_WIDTH = 90											-- base combat width
 NDefines.NMilitary.ADDITIONAL_COMBAT_WIDTH = 30										-- more opened up by support attack
 
---NDefines.NMilitary.PLAN_COHESION_WEIGHTS = { 1.0, 20.0, 40.0 } 					-- for each cohesion setting, how keen on relocating from distance should we be? (default 1.0), higher weight = shorter max distance
+--NDefines.NMilitary.PLAN_COHESION_WEIGHTS = { 1.0, 40.0, 80.0, 100.0 }				-- for each cohesion setting, how keen on relocating from distance should we be? (default 1.0), higher weight = shorter max distance
+NDefines.NMilitary.COHESION_IMMOBILE_PLANNING_SPEED_MULTIPLIER = 0.25				-- If using the 'immobile' cohesion setting, factor ALL planning speed growth by this
 
 NDefines.NMilitary.MIN_SUPPLY_CONSUMPTION = 0.01									-- minimum value of supply consumption that a unit can get
 
