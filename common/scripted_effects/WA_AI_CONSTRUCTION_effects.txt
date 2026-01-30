@@ -23,9 +23,11 @@ WA_AI_PC_set_global_variables = {
 	set_variable = { global.WA_AI_PC_CONVERSION_COST_CIV_TO_MIL     = 6800 }
 	set_variable = { global.WA_AI_PC_BUILDING_HYDROPOWEREDSTEELMILL_COST         = 12500 }
 	set_variable = { global.WA_AI_PC_BUILDING_HYDROPOWEREDALUMINIUMSMELTER_COST  = 12500 }
+	set_variable = { global.WA_AI_PC_BUILDING_NAVAL_BASE_COST                    = 3000 }
 
 	### BUILDING TYPE IDS
 	set_variable = { global.WA_AI_PC_RAIL = 13 }
+	set_variable = { global.WA_AI_PC_NAVAL_BASE = 14 }
 
 	###
 
@@ -104,7 +106,10 @@ WA_AI_PC_get_build_speed = {
 	else_if = { limit = { check_variable = { _project_building_type = 13 } }
 		add_to_temp_variable = { construction_speed_ = modifier@production_speed_rail_way_factor }
 	}
-	
+	else_if = { limit = { check_variable = { _project_building_type = 14 } }
+		add_to_temp_variable = { construction_speed_ = modifier@production_speed_naval_base_factor }
+	}
+
 	# Add general construction speed modifier
 	add_to_temp_variable = { construction_speed_ = modifier@production_speed_buildings_factor }
 	
@@ -192,6 +197,9 @@ WA_AI_PC_get_building_cost = {
 		multiply_temp_variable = { _level_cost = _rail_level }
 		add_to_temp_variable = { building_cost_ = _level_cost }
 	}
+	else_if = { limit = { check_variable = { _project_building_type = 14 } }
+		set_temp_variable = { building_cost_ = global.WA_AI_PC_BUILDING_NAVAL_BASE_COST }
+	}
 }
 
 ### Dynamic Queue System - Assign factories to projects
@@ -223,6 +231,64 @@ WA_AI_PC_assign_factories = {
 		set_variable = { WA_AI_PC_assigned_factories^_project_id = 0 }
 	}
 	set_temp_variable = { _new_total = 0 }
+
+	# Sort queue by priority (descending - highest priority first)
+	# Step 1: Build temp arrays for sorting
+	clear_temp_array = _sort_ids_
+	clear_temp_array = _sort_prios_
+	for_each_loop = { array = WA_AI_PC_queue value = _project_id
+		add_to_temp_array = { _sort_ids_ = _project_id }
+		add_to_temp_array = { _sort_prios_ = WA_AI_PC_priority^_project_id }
+	}
+
+	# Step 2: Bubble sort descending (higher priority first)
+	set_temp_variable = { _sort_n = _sort_ids_^num }
+	set_temp_variable = { _sort_i = 0 }
+	while_loop_effect = { limit = { check_variable = { _sort_i < _sort_n } }
+		set_temp_variable = { _sort_j = _sort_i }
+		add_to_temp_variable = { _sort_j = 1 }
+		while_loop_effect = { limit = { check_variable = { _sort_j < _sort_n } }
+			# Descending: swap if j > i (higher values should come first)
+			if = { limit = { check_variable = { _sort_prios_^_sort_j > _sort_prios_^_sort_i } }
+				# Swap priorities
+				set_temp_variable = { _tmp_prio = _sort_prios_^_sort_i }
+				set_temp_variable = { _sort_prios_^_sort_i = _sort_prios_^_sort_j }
+				set_temp_variable = { _sort_prios_^_sort_j = _tmp_prio }
+				# Swap IDs
+				set_temp_variable = { _tmp_id = _sort_ids_^_sort_i }
+				set_temp_variable = { _sort_ids_^_sort_i = _sort_ids_^_sort_j }
+				set_temp_variable = { _sort_ids_^_sort_j = _tmp_id }
+			}
+			add_to_temp_variable = { _sort_j = 1 }
+		}
+		add_to_temp_variable = { _sort_i = 1 }
+	}
+
+	# Step 3: Rebuild queue in sorted order
+	clear_array = WA_AI_PC_queue
+	for_each_loop = { array = _sort_ids_ value = _sorted_id
+		add_to_array = { WA_AI_PC_queue = _sorted_id }
+	}
+
+	if = { limit = { has_country_flag = WA_AI_construction_logging }
+		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC_ASSIGN: queue sorted by priority"
+		# Log first 3 projects after sort to verify order
+		if = { limit = { check_variable = { WA_AI_PC_queue^num > 0 } }
+			set_temp_variable = { _dbg_p0 = WA_AI_PC_queue^0 }
+			set_temp_variable = { _dbg_prio0 = WA_AI_PC_priority^_dbg_p0 }
+			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC_ASSIGN: [0] proj=[?_dbg_p0] prio=[?_dbg_prio0]"
+		}
+		if = { limit = { check_variable = { WA_AI_PC_queue^num > 1 } }
+			set_temp_variable = { _dbg_p1 = WA_AI_PC_queue^1 }
+			set_temp_variable = { _dbg_prio1 = WA_AI_PC_priority^_dbg_p1 }
+			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC_ASSIGN: [1] proj=[?_dbg_p1] prio=[?_dbg_prio1]"
+		}
+		if = { limit = { check_variable = { WA_AI_PC_queue^num > 2 } }
+			set_temp_variable = { _dbg_p2 = WA_AI_PC_queue^2 }
+			set_temp_variable = { _dbg_prio2 = WA_AI_PC_priority^_dbg_p2 }
+			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC_ASSIGN: [2] proj=[?_dbg_p2] prio=[?_dbg_prio2]"
+		}
+	}
 
 	# Assign to projects from top of queue
 	for_each_loop = { array = WA_AI_PC_queue value = _project_id break = _assign_break
@@ -280,6 +346,33 @@ WA_AI_PC_assign_factories = {
 WA_AI_PC_update_project_progress = {
 	set_temp_variable = { _remaining_days = 7 }
 	set_temp_variable = { _progress_iterations = 0 }
+
+	# Cleanup pass: complete any stuck projects with progress <= 0 or cost = 0
+	clear_temp_array = _cleanup_project_ids
+	for_each_loop = { array = WA_AI_PC_queue value = _project_id
+		if = {
+			limit = {
+				OR = {
+					NOT = { check_variable = { WA_AI_PC_progress^_project_id > 0 } }
+					NOT = { check_variable = { WA_AI_PC_project_cost^_project_id > 0 } }
+				}
+			}
+			add_to_temp_array = { _cleanup_project_ids = _project_id }
+		}
+	}
+	if = {
+		limit = { check_variable = { _cleanup_project_ids^num > 0 } }
+		for_each_loop = { array = _cleanup_project_ids value = _project_id
+			if = { limit = { has_country_flag = WA_AI_construction_logging }
+				set_temp_variable = { _dbg_prog = WA_AI_PC_progress^_project_id }
+				set_temp_variable = { _dbg_cost = WA_AI_PC_project_cost^_project_id }
+				log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC CLEANUP: proj=[?_project_id] prog=[?_dbg_prog] cost=[?_dbg_cost]"
+			}
+			WA_AI_PC_complete_project_by_id = yes
+		}
+		# Reassign factories after cleanup
+		WA_AI_PC_assign_factories = yes
+	}
 
 	# Process the week in segments, reassigning factories when projects complete
 	while_loop_effect = {
@@ -391,7 +484,7 @@ WA_AI_PC_complete_project_by_id = {
 		set_variable = { WA_AI_PC_project_type = _project_id }
 
 		# Check if this building type can be built in allied territory
-		# Types: 1=infra, 2=airbase, 3=AA, 4=radar, 13=railway
+		# Types: 1=infra, 2=airbase, 3=AA, 4=radar, 13=railway, 14=naval_base
 		set_temp_variable = { _can_build_in_allied = 0 }
 		if = {
 			limit = {
@@ -401,6 +494,7 @@ WA_AI_PC_complete_project_by_id = {
 					check_variable = { WA_AI_PC_building_type^_project_id = 3 }
 					check_variable = { WA_AI_PC_building_type^_project_id = 4 }
 					check_variable = { WA_AI_PC_building_type^_project_id = 13 }
+					check_variable = { WA_AI_PC_building_type^_project_id = 14 }
 				}
 			}
 			set_temp_variable = { _can_build_in_allied = 1 }
@@ -419,9 +513,10 @@ WA_AI_PC_complete_project_by_id = {
 							ROOT = { is_subject_of = PREV }
 						}
 					}
-					# Railways don't need slot check, others do
+					# Railways and naval_bases don't need slot check, others do
 					OR = {
 						check_variable = { ROOT.WA_AI_PC_building_type^_project_id = 13 }
+						check_variable = { ROOT.WA_AI_PC_building_type^_project_id = 14 }
 						WA_AI_PC_building_slot_available = yes
 					}
 				}
@@ -563,7 +658,7 @@ WA_AI_PC_add_finished_building_by_id = {
 		# Railway construction using stored province data
 		set_temp_variable = { _prov_from = ROOT.WA_AI_PC_target_province^_project_id }
 		set_temp_variable = { _prov_to = ROOT.WA_AI_PC_connect_province^_project_id }
-		
+
 		meta_effect = {
 			text = {
 				build_railway = {
@@ -578,9 +673,29 @@ WA_AI_PC_add_finished_building_by_id = {
 			x = "[?_prov_from]"
 			y = "[?_prov_to]"
 		}
-		
+
 		if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
 			ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: Railway built [?_prov_from] -> [?_prov_to]" }
+		}
+	}
+	else_if = { limit = { check_variable = { _build_type = 14 } }
+		# Naval base construction using stored province data
+		set_temp_variable = { _port_prov = ROOT.WA_AI_PC_target_province^_project_id }
+
+		meta_effect = {
+			text = {
+				add_building_construction = {
+					type = naval_base
+					level = 1
+					province = { id = [PROV] }
+					instant_build = yes
+				}
+			}
+			PROV = "[?_port_prov]"
+		}
+
+		if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
+			ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: Naval base built at province [?_port_prov]" }
 		}
 	}
 }

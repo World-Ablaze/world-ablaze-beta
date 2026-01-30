@@ -5,6 +5,8 @@
 
 ### Constants (file-scoped, must be redeclared)
 @WA_AI_PC_railway_TYPE_ID = 13
+@WA_AI_PC_railway_PRIO = 9999
+@WA_AI_PC_railway_PRIO_PREWAR = 5000
 
 ############################################################################################################
 #	NEW HELPER: Continent Detection (eliminates 5 duplications)
@@ -679,7 +681,7 @@ WA_AI_PC_get_total_queued_num = { # _get_queued_num_building_type, _get_queued_n
 ############################################################################################################
 
 WA_AI_PC_process_port_upgrades = {
-	# Process port upgrades for overseas operations
+	# Process port upgrades for overseas operations via PC system
 	set_temp_variable = { _port_processed = 0 }
 	for_each_loop = { array = railway_port_upgrades_ value = _port_state break = _port_b
 
@@ -698,20 +700,24 @@ WA_AI_PC_process_port_upgrades = {
 				if = {
 					limit = { check_variable = { naval_base_province_ > 0 } }
 
-					# Queue port construction using meta_effect for province variable substitution
-					meta_effect = {
-						text = {
-							add_building_construction = {
-								type = naval_base
-								level = 1
-								instant_build = no
-								province = { id = [PROV] }
-							}
-						}
-						PROV = "[?naval_base_province_]"
-					}
+					# Queue port construction via PC system
+					set_temp_variable = { _project_building_type = 14 }  # naval_base
+					set_temp_variable = { _project_type_id = 14 }
+					set_temp_variable = { _project_province_id = naval_base_province_ }
+					set_temp_variable = { _project_connect_id = 0 }  # Not used for ports
+					set_temp_variable = { _project_priority = @WA_AI_PC_railway_PRIO_PREWAR }  # Lower priority for upgrades
+					set_temp_variable = { _project_queue_num = 1 }
+					set_temp_variable = { _project_queue_max = 0 }
+					set_temp_variable = { _project_target_level = 0 }
+					set_temp_variable = { _project_target_state = _port_state }
+
+					WA_AI_PC_start_project = yes
 
 					set_temp_variable = { _port_processed = 1 }
+
+					if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
+						ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY: Queued port upgrade at province [?naval_base_province_] in state [?_port_state]" }
+					}
 				}
 			}
 		}
@@ -723,5 +729,102 @@ WA_AI_PC_process_port_upgrades = {
 	# Remove processed item from front of queue (we always process index 0)
 	if = { limit = { check_variable = { railway_port_upgrades_^num > 0 } }
 		remove_from_array = { array = railway_port_upgrades_ index = 0 }
+	}
+}
+
+############################################################################################################
+#	HELPER: Check if province is coastal (has ocean neighbor)
+#	Uses map data to check if any neighbor province has terrain type 9 (ocean)
+############################################################################################################
+
+WA_AI_PC_province_is_coastal = { # _check_province_id >>> is_coastal_province_
+	set_temp_variable = { is_coastal_province_ = 0 }
+
+	# Get the state containing this province
+	set_temp_variable = { _check_state_id = global.WA_AI_MAP_province_state_id^_check_province_id }
+
+	# Check if state is coastal using state-level trigger (more reliable than province checks)
+	if = {
+		limit = { check_variable = { _check_state_id > 0 } }
+		var:_check_state_id = {
+			if = {
+				limit = { is_coastal = yes }
+				set_temp_variable = { is_coastal_province_ = 1 }
+			}
+		}
+	}
+}
+
+############################################################################################################
+#	HELPER: Create frontier port at a partial path terminus
+#	When a railway path ends at a coastal province with no naval base, queue port construction
+#	Input: _frontier_province_id (the last province in a partial path)
+#	Output: frontier_port_created_ (1 if port was queued, 0 otherwise)
+############################################################################################################
+
+WA_AI_PC_create_frontier_port = { # _frontier_province_id >>> frontier_port_created_
+	set_temp_variable = { frontier_port_created_ = 0 }
+
+	# Get state containing frontier province
+	set_temp_variable = { _frontier_state_id = global.WA_AI_MAP_province_state_id^_frontier_province_id }
+
+	if = {
+		limit = { check_variable = { _frontier_state_id > 0 } }
+
+		var:_frontier_state_id = {
+			if = {
+				limit = {
+					is_controlled_by = ROOT
+					is_coastal = yes
+				}
+
+				# Check if state already has a naval base
+				WA_AI_PC_railway_get_naval_base_province = yes
+
+				if = {
+					limit = { check_variable = { naval_base_province_ = 0 } }
+
+					# No naval base - find a coastal province in this state to build one
+					# Use the frontier province if it's coastal, otherwise find another
+					set_temp_variable = { _check_province_id = _frontier_province_id }
+					WA_AI_PC_province_is_coastal = yes
+
+					if = {
+						limit = { check_variable = { is_coastal_province_ = 1 } }
+						# Build at frontier province
+						set_temp_variable = { _build_port_province = _frontier_province_id }
+					}
+					else = {
+						# Find a coastal province in this state
+						# Use the state's first province as fallback (state is_coastal=yes so it has one)
+						set_temp_variable = { _build_port_province = global.WA_AI_MAP_state_province_ids@THIS^0 }
+					}
+
+					# Queue naval base construction via PC system
+					set_temp_variable = { _project_building_type = 14 }  # naval_base
+					set_temp_variable = { _project_type_id = 14 }
+					set_temp_variable = { _project_province_id = _build_port_province }
+					set_temp_variable = { _project_connect_id = 0 }  # Not used for ports
+					set_temp_variable = { _project_priority = @WA_AI_PC_railway_PRIO }  # Same priority as railway
+					set_temp_variable = { _project_queue_num = 1 }
+					set_temp_variable = { _project_queue_max = 0 }
+					set_temp_variable = { _project_target_level = 0 }
+					set_temp_variable = { _project_target_state = _frontier_state_id }
+
+					WA_AI_PC_start_project = yes
+
+					set_temp_variable = { frontier_port_created_ = 1 }
+
+					if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
+						ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY: Queued frontier port at province [?_build_port_province] in state [?_frontier_state_id]" }
+					}
+				}
+				else = {
+					if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
+						ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY: Frontier state [?_frontier_state_id] already has naval base at [?naval_base_province_]" }
+					}
+				}
+			}
+		}
 	}
 }

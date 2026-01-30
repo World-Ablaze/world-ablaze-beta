@@ -536,6 +536,31 @@ WA_AI_PC_railway_STRATEGY_overseas_war = {
 }
 
 ############################################################################################################
+#	SCRIPTED OVERRIDE TARGET RETRIEVAL
+#	Gets target countries from WA_AI_CONFIG scripted override triggers
+#	Called by STRATEGY_prewar_preparation when overrides are active
+############################################################################################################
+
+WA_AI_PC_railway_get_scripted_override_targets = { # >>> _scripted_override_targets_
+
+	# Germany -> SOV (Barbarossa preparation)
+	if = {
+		limit = { WA_AI_CONFIG_RAILWAY_override_GER_to_SOV = yes }
+		add_to_temp_array = { _scripted_override_targets_ = SOV.id }
+		if = { limit = { has_country_flag = WA_AI_construction_logging }
+			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY OVERRIDE: GER->SOV active"
+		}
+	}
+
+	# Add more override target mappings here as needed
+	# Example format:
+	# if = {
+	#     limit = { WA_AI_CONFIG_RAILWAY_override_XXX_to_YYY = yes }
+	#     add_to_temp_array = { _scripted_override_targets_ = YYY.id }
+	# }
+}
+
+############################################################################################################
 #	STRATEGY 3: PRE-WAR PREPARATION
 #	Build railways toward countries we're justifying against, have wargoals on, or have claims on
 ############################################################################################################
@@ -558,12 +583,42 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 	### Consolidated from triple loop to single loop with OR conditions
 	clear_temp_array = _target_countries_
 
+	### SCRIPTED OVERRIDES: Check for country-specific override targets first (highest priority)
+	clear_temp_array = _scripted_override_targets_
+	if = {
+		limit = { WA_AI_CONFIG_RAILWAY_has_scripted_override = yes }
+		WA_AI_PC_railway_get_scripted_override_targets = yes
+
+		if = { limit = { has_country_flag = WA_AI_construction_logging }
+			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY PREWAR: [?_scripted_override_targets_^num] scripted override targets found"
+		}
+
+		# Add override targets to main target list (with safety checks)
+		for_each_loop = { array = _scripted_override_targets_ value = _override_target
+			var:_override_target = {
+				if = {
+					limit = {
+						exists = yes
+						NOT = { has_war_with = ROOT }
+						NOT = { is_in_faction_with = ROOT }
+						NOT = { is_subject_of = ROOT }
+						ROOT = { NOT = { is_subject_of = PREV } }
+					}
+					add_to_temp_array = { _target_countries_ = THIS }
+				}
+			}
+		}
+	}
+
+	### Standard target detection: wargoals, claims, justifications
 	every_country = {
 		limit = {
 			exists = yes
 			NOT = { tag = ROOT }
 			NOT = { is_in_faction_with = ROOT }
 			NOT = { is_subject_of = ROOT }
+			# Avoid duplicates from scripted overrides
+			NOT = { is_in_array = { _target_countries_ = THIS } }
 			OR = {
 				ROOT = { is_justifying_wargoal_against = PREV }
 				ROOT = { has_wargoal_against = PREV }
@@ -574,7 +629,7 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 	}
 
 	if = { limit = { has_country_flag = WA_AI_construction_logging }
-		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY PREWAR: found [?_target_countries_^num] target countries"
+		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY PREWAR: found [?_target_countries_^num] target countries (including overrides)"
 	}
 
 	### For each target, check if land or overseas

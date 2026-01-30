@@ -30,7 +30,10 @@
 @WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY = 4   # Max routes per enemy country
 
 ### Caching thresholds
-@WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD = 3   # Skip recalculation if queue has 3+ railway projects
+@WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD = 3   # Skip recalculation if queue has 3+ projects (any type)
+
+### Priority modifiers
+@WA_AI_PC_railway_PARTIAL_PATH_PRIORITY_FACTOR = 0.7  # Partial paths (dead-ends) get 70% priority
 
 ############################################################################################################
 #	ENTRY POINT
@@ -74,14 +77,10 @@ WA_AI_PC_railway = {
 				has_capitulated = no
 			}
 
-			### Skip recalculation if queue already has enough railway projects
-			set_temp_variable = { _get_queued_num_building_type = @WA_AI_PC_railway_TYPE_ID }
-			set_temp_variable = { _get_queued_num_type_id = @WA_AI_PC_railway_TYPE_ID }
-			WA_AI_PC_get_total_queued_num = yes
-
+			### Skip recalculation if queue already has enough projects (any type)
 			if = {
 				limit = {
-					check_variable = { queued_type_num_ < @WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD }
+					check_variable = { WA_AI_PC_queue^num < @WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD }
 				}
 
 				### Execute all applicable strategies
@@ -112,6 +111,14 @@ WA_AI_PC_railway = {
 							set_temp_variable = { _pathfind_prov_allow_partial = 1 } # Allow partial paths to frontier
 							WA_AI_PATHFIND_PROV_get_path = yes
 							if = { limit = { check_variable = { pathfind_prov_success_ > 0 } } # 1 = full path, 2 = partial path to frontier
+
+								### Apply priority penalty for partial paths (dead-ends get 70% priority)
+								set_temp_variable = { _route_priority = railway_priorities_^railway_i }
+								if = {
+									limit = { check_variable = { pathfind_prov_success_ = 2 } }
+									multiply_temp_variable = { _route_priority = @WA_AI_PC_railway_PARTIAL_PATH_PRIORITY_FACTOR }
+								}
+
 								for_each_loop = { array = pathfind_prov_path_ index = path_i value = path_v break = path_b
 									add_to_temp_array = { _valid_provinces = path_v }
 									set_temp_variable = { next_i = path_i }
@@ -120,7 +127,7 @@ WA_AI_PC_railway = {
 										set_temp_variable = { _project_province_id = path_v }
 										set_temp_variable = { _project_connect_id = pathfind_prov_path_^next_i }
 										set_temp_variable = { _project_target_level = railway_target_levels_^railway_i }
-										set_temp_variable = { _project_priority = railway_priorities_^railway_i }
+										set_temp_variable = { _project_priority = _route_priority }
 										set_temp_variable = { _state_for_project = global.WA_AI_MAP_province_state_id^path_v }
 										# Validate state lookup succeeded (0 = no mapping in map data)
 										if = {
@@ -140,6 +147,15 @@ WA_AI_PC_railway = {
 								add_to_temp_variable = { _routes_processed = 1 }
 								if = { limit = { check_variable = { pathfind_prov_success_ = 2 } }
 									add_to_temp_variable = { _partial_routes = 1 }
+
+									### Create frontier port at coastal dead-ends
+									### Get frontier province (last element of partial path)
+									set_temp_variable = { _last_path_index = pathfind_prov_path_^num }
+									subtract_from_temp_variable = { _last_path_index = 1 }
+									set_temp_variable = { _frontier_province_id = pathfind_prov_path_^_last_path_index }
+
+									### Create port if frontier is coastal and has no naval base
+									WA_AI_PC_create_frontier_port = yes
 								}
 							}
 						}
