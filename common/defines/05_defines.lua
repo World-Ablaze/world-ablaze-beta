@@ -319,7 +319,8 @@ NDefines.NMilitary.COMBAT_SUPPLY_LACK_DEFENDER_DEFEND = -0.40     					-- defend
 NDefines.NMilitary.BASE_COMBAT_WIDTH = 90											-- base combat width
 NDefines.NMilitary.ADDITIONAL_COMBAT_WIDTH = 30										-- more opened up by support attack
 
---NDefines.NMilitary.PLAN_COHESION_WEIGHTS = { 1.0, 20.0, 40.0 } 					-- for each cohesion setting, how keen on relocating from distance should we be? (default 1.0), higher weight = shorter max distance
+--NDefines.NMilitary.PLAN_COHESION_WEIGHTS = { 1.0, 40.0, 80.0, 100.0 }				-- for each cohesion setting, how keen on relocating from distance should we be? (default 1.0), higher weight = shorter max distance
+NDefines.NMilitary.COHESION_IMMOBILE_PLANNING_SPEED_MULTIPLIER = 0.25				-- If using the 'immobile' cohesion setting, factor ALL planning speed growth by this
 
 NDefines.NMilitary.MIN_SUPPLY_CONSUMPTION = 0.01									-- minimum value of supply consumption that a unit can get
 
