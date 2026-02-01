@@ -1,0 +1,544 @@
+############################################################################################################
+#	World Ablaze AI mod - Construction System - Scoring Module
+#	Slot scoring functions for building placement optimization
+############################################################################################################
+
+######################################################
+# 	construction AI - Scoring System
+######################################################
+
+WA_AI_clear_construction_scores = {
+
+	set_temp_variable = { WA_AI_has_shared_slot_scores = 0 }
+	clear_temp_array = WA_AI_shared_slot_scores
+
+	set_temp_variable = { WA_AI_has_infrastructure_slot_scores = 0 }
+	clear_temp_array = WA_AI_infrastructure_slot_scores
+
+	set_temp_variable = { WA_AI_has_resource_slot_scores = 0 }
+	clear_temp_array = WA_AI_resource_slot_scores
+
+	set_temp_variable = { WA_AI_has_radar_slot_scores = 0 }
+	clear_temp_array = WA_AI_radar_slot_scores
+
+	set_temp_variable = { WA_AI_has_airbase_slot_scores = 0 }
+	clear_temp_array = WA_AI_airbase_slot_scores
+
+	set_temp_variable = { WA_AI_has_antiair_slot_scores = 0 }
+	clear_temp_array = WA_AI_antiair_slot_scores
+
+	set_temp_variable = { WA_AI_has_mil_to_civ_conversion_slot_scores = 0 }
+	clear_temp_array = WA_AI_mil_to_civ_conversion_slot_scores
+
+	set_temp_variable = { WA_AI_has_civ_to_mil_conversion_slot_scores = 0 }
+	clear_temp_array = WA_AI_civ_to_mil_conversion_slot_scores
+}
+
+# shared slots
+WA_AI_get_shared_slot_scores = {
+
+	set_temp_variable = { WA_AI_has_shared_slot_scores = 1 }
+
+	for_each_scope_loop = { array = controlled_states
+
+		if = { limit = { WA_AI_available_SHARED = yes }
+
+			WA_AI_get_shared_slot_score = yes
+
+			for_each_loop = { array = WA_AI_shared_slot_scores
+
+				var:v = {
+					if = { limit = { check_variable = { PREV.WA_AI_shared_slot_score > WA_AI_shared_slot_score } }
+
+						add_to_temp_array = { array = WA_AI_shared_slot_scores index = i value = PREV.id }
+						set_temp_variable = { break = 1 }
+					}
+				}
+			}
+
+			if = { limit = { check_variable = { break = 0 } }
+
+				add_to_temp_array = { array = WA_AI_shared_slot_scores value = THIS.id }
+			}
+			else = { set_temp_variable = { break = 0 } }
+		}
+	}
+
+	if = { limit = { has_country_flag = WA_AI_construction_logging }
+
+		log = "======= PRINTING WA_AI_shared_slot_scores ======="
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores
+			log = "[?WA_AI_shared_slot_score] - [This.GetName]"
+		}
+		log = "==============================================="
+	}
+}
+WA_AI_get_shared_slot_score = {
+
+	set_variable = { WA_AI_shared_slot_score = building_level@infrastructure }
+
+	if = { limit = { WA_AI_no_border = yes } multiply_variable = { WA_AI_shared_slot_score = 1.1 } }
+
+	if = { limit = { WA_AI_no_enemy_border = yes } multiply_variable = { WA_AI_shared_slot_score = 2 } }
+
+	if = { limit = { WA_AI_region_priority = yes } multiply_variable = { WA_AI_shared_slot_score = 4 } }
+
+	if = { limit = { is_core_of = ROOT } multiply_variable = { WA_AI_shared_slot_score = 4 } }
+}
+
+# infrastructure score for construction
+WA_AI_get_infrastructure_slot_scores = {
+
+	set_temp_variable = { WA_AI_has_infrastructure_slot_scores = 1 }
+
+	for_each_scope_loop = { array = controlled_states
+
+		if = { limit = { WA_AI_available_INF = yes }
+
+			WA_AI_get_infrastructure_slot_score = yes
+
+			for_each_loop = { array = WA_AI_infrastructure_slot_scores
+
+				var:v = {
+					if = { limit = { check_variable = { PREV.WA_AI_infrastructure_slot_score > WA_AI_infrastructure_slot_score } }
+
+						add_to_temp_array = { array = WA_AI_infrastructure_slot_scores index = i value = PREV.id }
+						set_temp_variable = { break = 1 }
+					}
+				}
+			}
+
+			if = { limit = { check_variable = { break = 0 } }
+
+				add_to_temp_array = { array = WA_AI_infrastructure_slot_scores value = THIS.id }
+			}
+			else = { set_temp_variable = { break = 0 } }
+		}
+	}
+
+	if = { limit = { has_country_flag = WA_AI_construction_logging }
+
+		log = "======= PRINTING WA_AI_infrastructure_slot_scores ======="
+		for_each_scope_loop = { array = WA_AI_infrastructure_slot_scores
+			log = "[?WA_AI_infrastructure_slot_score] - [This.GetName]"
+		}
+		log = "==============================================="
+	}
+}
+WA_AI_get_infrastructure_slot_score = {
+
+	set_variable = { WA_AI_infrastructure_slot_score = 11 }
+	set_temp_variable = { t1 = building_level@infrastructure }
+	multiply_temp_variable = { t1 = 1.5 }
+	subtract_from_variable = { WA_AI_infrastructure_slot_score = t1 }
+	clamp_variable = { var = WA_AI_infrastructure_slot_score min = 1 max = 10 }
+
+	if = { limit = { WA_AI_no_border = yes } multiply_variable = { WA_AI_infrastructure_slot_score = 1.1 } }
+
+	if = { limit = { WA_AI_no_enemy_border = yes } multiply_variable = { WA_AI_infrastructure_slot_score = 2 } }
+
+	if = { limit = { WA_AI_region_priority = yes } multiply_variable = { WA_AI_infrastructure_slot_score = 4 } }
+
+	if = { limit = { is_core_of = ROOT } multiply_variable = { WA_AI_infrastructure_slot_score = 4 } }
+}
+
+# infrastructure score for resource extraction
+WA_AI_get_resource_slot_scores = {
+
+	set_temp_variable = { WA_AI_has_resource_slot_scores = 1 }
+
+	for_each_scope_loop = { array = controlled_states
+
+		if = { limit = { WA_AI_available_INF = yes check_variable = { WA_AI_total_resources > 25 } }
+
+			WA_AI_get_resource_slot_score = yes
+
+			for_each_loop = { array = WA_AI_resource_slot_scores
+
+				var:v = {
+					if = { limit = { check_variable = { PREV.WA_AI_resource_slot_score > WA_AI_resource_slot_score } }
+
+						add_to_temp_array = { array = WA_AI_resource_slot_scores index = i value = PREV.id }
+						set_temp_variable = { break = 1 }
+					}
+				}
+			}
+
+			if = { limit = { check_variable = { break = 0 } }
+
+				add_to_temp_array = { array = WA_AI_resource_slot_scores value = THIS.id }
+			}
+			else = { set_temp_variable = { break = 0 } }
+		}
+	}
+
+	if = { limit = { has_country_flag = WA_AI_construction_logging }
+
+		log = "======= PRINTING WA_AI_resource_slot_scores ======="
+		for_each_scope_loop = { array = WA_AI_resource_slot_scores
+			log = "[?WA_AI_resource_slot_score] - [This.GetName]"
+		}
+		log = "==============================================="
+	}
+}
+WA_AI_get_resource_slot_score = {
+
+	set_temp_variable = { t3 = 0 }
+
+	set_temp_variable = { t2 = resource@oil }
+	if = { limit = { ROOT = { has_war = yes fuel_ratio < 0.5 } } multiply_temp_variable = { t2 = 4 } }
+	add_to_temp_variable = { t3 = t2 }
+
+	set_temp_variable = { t2 = resource@aluminium }
+	if = { limit = { check_variable = { ROOT.WA_AI_needs_aluminium = 3 } } multiply_temp_variable = { t2 = 4 } }
+	add_to_temp_variable = { t3 = t2 }
+
+	set_temp_variable = { t2 = resource@rubber }
+	if = { limit = { check_variable = { ROOT.WA_AI_needs_rubber = 3 } } multiply_temp_variable = { t2 = 4 } }
+	add_to_temp_variable = { t3 = t2 }
+
+	set_temp_variable = { t2 = resource@tungsten }
+	if = { limit = { check_variable = { ROOT.WA_AI_needs_tungsten = 3 } } multiply_temp_variable = { t2 = 4 } }
+	add_to_temp_variable = { t3 = t2 }
+
+	set_temp_variable = { t2 = resource@steel }
+	if = { limit = { check_variable = { ROOT.WA_AI_needs_steel = 3 } } multiply_temp_variable = { t2 = 4 } }
+	add_to_temp_variable = { t3 = t2 }
+
+	set_temp_variable = { t2 = resource@chromium }
+	if = { limit = { check_variable = { ROOT.WA_AI_needs_chromium = 3 } } multiply_temp_variable = { t2 = 4 } }
+	add_to_temp_variable = { t3 = t2 }
+
+	set_temp_variable = { t2 = resource@coal }
+	if = { limit = { check_variable = { ROOT.WA_AI_needs_coal = 3 } } multiply_temp_variable = { t2 = 4 } }
+	add_to_temp_variable = { t3 = t2 }
+
+	set_temp_variable = { t2 = resource@bauxite }
+	if = { limit = { check_variable = { ROOT.WA_AI_needs_bauxite = 3 } } multiply_temp_variable = { t2 = 4 } }
+	add_to_temp_variable = { t3 = t2 }
+
+	set_temp_variable = { t2 = resource@iron }
+	if = { limit = { check_variable = { ROOT.WA_AI_needs_iron = 3 } } multiply_temp_variable = { t2 = 4 } }
+
+	add_to_temp_variable = { t3 = t2 }
+	set_variable = { WA_AI_resource_slot_score = t3 }
+
+	if = { limit = { WA_AI_no_border = yes } multiply_variable = { WA_AI_resource_slot_score = 1.1 } }
+
+	if = { limit = { WA_AI_no_enemy_border = yes } multiply_variable = { WA_AI_resource_slot_score = 1.2 } }
+
+	if = { limit = { WA_AI_region_priority = yes } multiply_variable = { WA_AI_resource_slot_score = 1.2 } }
+}
+WA_AI_set_resource_variables = {
+
+	set_variable = { WA_AI_total_resources = resource@oil }
+	add_to_variable = { WA_AI_total_resources = resource@aluminium }
+	add_to_variable = { WA_AI_total_resources = resource@rubber }
+	add_to_variable = { WA_AI_total_resources = resource@tungsten }
+	add_to_variable = { WA_AI_total_resources = resource@steel }
+	add_to_variable = { WA_AI_total_resources = resource@chromium }
+	add_to_variable = { WA_AI_total_resources = resource@coal }
+	add_to_variable = { WA_AI_total_resources = resource@bauxite }
+	add_to_variable = { WA_AI_total_resources = resource@iron }
+}
+
+# radar
+WA_AI_get_radar_slot_scores = {
+
+	set_temp_variable = { WA_AI_has_radar_slot_scores = 1 }
+
+	for_each_scope_loop = { array = controlled_states
+
+		if = { limit = { WA_AI_available_RADAR = yes }
+
+			WA_AI_get_radar_slot_score = yes
+
+			for_each_loop = { array = WA_AI_radar_slot_scores
+
+				var:v = {
+					if = { limit = { check_variable = { PREV.WA_AI_radar_slot_score > WA_AI_radar_slot_score } }
+
+						add_to_temp_array = { array = WA_AI_radar_slot_scores index = i value = PREV.id }
+						set_temp_variable = { break = 1 }
+					}
+				}
+			}
+
+			if = { limit = { check_variable = { break = 0 } }
+
+				add_to_temp_array = { array = WA_AI_radar_slot_scores value = THIS.id }
+			}
+			else = { set_temp_variable = { break = 0 } }
+		}
+	}
+
+	if = { limit = { has_country_flag = WA_AI_construction_logging }
+
+		log = "======= PRINTING WA_AI_radar_slot_scores ======="
+		for_each_scope_loop = { array = WA_AI_radar_slot_scores
+			log = "[?WA_AI_radar_slot_score] - [This.GetName]"
+		}
+		log = "==============================================="
+	}
+}
+WA_AI_get_radar_slot_score = {
+
+	set_variable = { WA_AI_radar_slot_score = 6 }
+	subtract_from_variable = { WA_AI_radar_slot_score = building_level@radar }
+
+	if = { limit = { WA_AI_radar_location_2 = yes } multiply_variable = { WA_AI_radar_slot_score = 10 } }
+
+	if = { limit = { radar_station > 1 has_state_flag = WA_AI_radar_site } multiply_variable = { WA_AI_radar_slot_score = 2 } }
+
+	if = {
+		limit = {
+			NOT = {
+				any_neighbor_state = {
+					OR = {
+						AND = {
+							OR = { has_state_flag = WA_AI_radar_site radar_station > 0 }
+							check_variable = { PREV.distance_to@THIS < 400 }
+						}
+						any_neighbor_state = {
+							NOT = { check_variable = { THIS.id = PREV.PREV.id } }
+							OR = { has_state_flag = WA_AI_radar_site radar_station > 0 }
+							check_variable = { PREV.PREV.distance_to@THIS < 400 }
+						}
+					}
+				}
+			}
+		}
+
+		multiply_variable = { WA_AI_radar_slot_score = 2 }
+	}
+}
+
+# airbase
+WA_AI_get_airbase_slot_scores = {
+
+	set_temp_variable = { WA_AI_has_airbase_slot_scores = 1 }
+
+	for_each_scope_loop = { array = controlled_states
+
+		if = { limit = { WA_AI_available_AIR = yes }
+
+			WA_AI_get_airbase_slot_score = yes
+
+			for_each_loop = { array = WA_AI_airbase_slot_scores
+
+				var:v = {
+					if = { limit = { check_variable = { PREV.WA_AI_airbase_slot_score > WA_AI_airbase_slot_score } }
+
+						add_to_temp_array = { array = WA_AI_airbase_slot_scores index = i value = PREV.id }
+						set_temp_variable = { break = 1 }
+					}
+				}
+			}
+
+			if = { limit = { check_variable = { break = 0 } }
+
+				add_to_temp_array = { array = WA_AI_airbase_slot_scores value = THIS.id }
+			}
+			else = { set_temp_variable = { break = 0 } }
+		}
+	}
+
+	if = { limit = { has_country_flag = WA_AI_construction_logging }
+
+		log = "======= PRINTING WA_AI_airbase_slot_scores ======="
+		for_each_scope_loop = { array = WA_AI_airbase_slot_scores
+			log = "[?WA_AI_airbase_slot_score] - [This.GetName]"
+		}
+		log = "==============================================="
+	}
+}
+WA_AI_get_airbase_slot_score = {
+
+	set_variable = { WA_AI_airbase_slot_score = 10 }
+	subtract_from_variable = { WA_AI_airbase_slot_score = building_level@air_base }
+
+	if = { limit = { WA_AI_airbase_priority = yes } multiply_variable = { WA_AI_airbase_slot_score = 4 } }
+
+	if = {
+		limit = {
+			any_neighbor_state = {
+				CONTROLLER = {
+					has_war_with = ROOT
+				}
+			}
+		}
+		multiply_variable = {
+			WA_AI_airbase_slot_score = 1.5
+		}
+	}
+
+	if = { limit = { air_base > 0 } multiply_variable = { WA_AI_airbase_slot_score = 1.25 } }
+
+	if = {
+		limit = {
+			any_of_scopes = { array = ROOT.enemies
+				any_of_scopes = { array = controlled_states
+					check_variable = { PREV.PREV.distance_to@THIS < 400 }
+				}
+			}
+		}
+
+		multiply_variable = { WA_AI_airbase_slot_score = 2 }
+	}
+}
+
+# antiair
+WA_AI_get_antiair_slot_scores = {
+
+	set_temp_variable = { WA_AI_has_antiair_slot_scores = 1 }
+
+	for_each_scope_loop = { array = controlled_states
+
+		if = { limit = { WA_AI_available_AA = yes }
+
+			WA_AI_get_antiair_slot_score = yes
+
+			for_each_loop = { array = WA_AI_antiair_slot_scores
+
+				var:v = {
+					if = { limit = { check_variable = { PREV.WA_AI_antiair_slot_score > WA_AI_antiair_slot_score } }
+
+						add_to_temp_array = { array = WA_AI_antiair_slot_scores index = i value = PREV.id }
+						set_temp_variable = { break = 1 }
+					}
+				}
+			}
+
+			if = { limit = { check_variable = { break = 0 } }
+
+				add_to_temp_array = { array = WA_AI_antiair_slot_scores value = THIS.id }
+			}
+			else = { set_temp_variable = { break = 0 } }
+		}
+	}
+
+	if = { limit = { has_country_flag = WA_AI_construction_logging }
+
+		log = "======= PRINTING WA_AI_antiair_slot_scores ======="
+		for_each_scope_loop = { array = WA_AI_antiair_slot_scores
+			log = "[?WA_AI_antiair_slot_score] - [This.GetName]"
+		}
+		log = "==============================================="
+	}
+}
+WA_AI_get_antiair_slot_score = {
+
+	set_variable = { WA_AI_antiair_slot_score = 5 }
+	subtract_from_variable = { WA_AI_antiair_slot_score = building_level@anti_air_building }
+
+	# refineries
+	set_temp_variable = { t1 = building_level@synthetic_refinery }
+	divide_temp_variable = { t1 = 1.5 }
+	add_to_temp_variable = { t1 = 1 }
+	multiply_variable = { WA_AI_antiair_slot_score = t1 }
+
+	# steel mils
+	set_temp_variable = { t1 = building_level@hydro_steel_refinery }
+	divide_temp_variable = { t1 = 1.5 }
+	add_to_temp_variable = { t1 = 1 }
+	multiply_variable = { WA_AI_antiair_slot_score = t1 }
+
+	# aluminium smelter
+	set_temp_variable = { t1 = building_level@aluminium_refinery }
+	divide_temp_variable = { t1 = 1.5 }
+	add_to_temp_variable = { t1 = 1 }
+	multiply_variable = { WA_AI_antiair_slot_score = t1 }
+
+	set_temp_variable = { t1 = building_level@hydro_aluminium_refinery }
+	divide_temp_variable = { t1 = 1.5 }
+	add_to_temp_variable = { t1 = 1 }
+	multiply_variable = { WA_AI_antiair_slot_score = t1 }
+
+	# steel mils
+	set_temp_variable = { t1 = building_level@steel_refinery }
+	divide_temp_variable = { t1 = 1.5 }
+	add_to_temp_variable = { t1 = 1 }
+	multiply_variable = { WA_AI_antiair_slot_score = t1 }
+
+	set_temp_variable = { t1 = building_level@hydro_steel_refinery }
+	divide_temp_variable = { t1 = 1.5 }
+	add_to_temp_variable = { t1 = 1 }
+	multiply_variable = { WA_AI_antiair_slot_score = t1 }
+
+	# aluminium smelter
+	set_temp_variable = { t1 = building_level@hydro_aluminium_refinery }
+	divide_temp_variable = { t1 = 1.5 }
+	add_to_temp_variable = { t1 = 1 }
+	multiply_variable = { WA_AI_antiair_slot_score = t1 }
+
+	# mic
+	set_temp_variable = { t1 = building_level@industrial_complex }
+	divide_temp_variable = { t1 = 10 }
+	add_to_temp_variable = { t1 = 1 }
+	multiply_variable = { WA_AI_antiair_slot_score = t1 }
+
+	# cic
+	set_temp_variable = { t1 = building_level@arms_factory }
+	divide_temp_variable = { t1 = 10 }
+	add_to_temp_variable = { t1 = 1 }
+	multiply_variable = { WA_AI_antiair_slot_score = t1 }
+
+	if = { limit = { WA_AI_no_border = yes } multiply_variable = { WA_AI_antiair_slot_score = 1.1 } }
+
+	if = { limit = { WA_AI_no_enemy_border = yes } multiply_variable = { WA_AI_antiair_slot_score = 2 } }
+
+	if = { limit = { is_core_of = ROOT } multiply_variable = { WA_AI_antiair_slot_score = 4 } }
+}
+
+# mil to civ conversion
+WA_AI_get_mil_to_civ_conversion_slot_scores = {
+
+	set_temp_variable = { WA_AI_has_mil_to_civ_conversion_slot_scores = 1 }
+
+	for_each_scope_loop = { array = controlled_states
+
+		if = { limit = { check_variable = { building_level@arms_factory > 0 } }
+
+			WA_AI_get_mil_to_civ_conversion_slot_score = yes
+
+			for_each_loop = { array = WA_AI_mil_to_civ_conversion_slot_scores
+
+				var:v = {
+					if = { limit = { check_variable = { PREV.WA_AI_mil_to_civ_conversion_slot_score > WA_AI_mil_to_civ_conversion_slot_score } }
+
+						add_to_temp_array = { array = WA_AI_mil_to_civ_conversion_slot_scores index = i value = PREV.id }
+						set_temp_variable = { break = 1 }
+					}
+				}
+			}
+
+			if = { limit = { check_variable = { break = 0 } }
+
+				add_to_temp_array = { array = WA_AI_mil_to_civ_conversion_slot_scores value = THIS.id }
+			}
+			else = { set_temp_variable = { break = 0 } }
+		}
+	}
+
+	if = { limit = { has_country_flag = WA_AI_construction_logging }
+
+		log = "======= PRINTING WA_AI_mil_to_civ_conversion_slot_scores ======="
+		for_each_scope_loop = { array = WA_AI_mil_to_civ_conversion_slot_scores
+			log = "[?WA_AI_mil_to_civ_conversion_slot_score] - [This.GetName]"
+		}
+		log = "==============================================="
+	}
+}
+WA_AI_get_mil_to_civ_conversion_slot_score = {
+
+	set_variable = { WA_AI_mil_to_civ_conversion_slot_score = building_level@infrastructure }
+
+	if = { limit = { WA_AI_no_border = yes } multiply_variable = { WA_AI_mil_to_civ_conversion_slot_score = 1.1 } }
+
+	if = { limit = { WA_AI_no_enemy_border = yes } multiply_variable = { WA_AI_mil_to_civ_conversion_slot_score = 2 } }
+
+	if = { limit = { WA_AI_region_priority = yes } multiply_variable = { WA_AI_mil_to_civ_conversion_slot_score = 4 } }
+
+	if = { limit = { is_core_of = ROOT } multiply_variable = { WA_AI_mil_to_civ_conversion_slot_score = 4 } }
+}
+

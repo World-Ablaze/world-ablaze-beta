@@ -4,7 +4,7 @@
 ############################################################################################################
 
 ### Constants (file-scoped, must be redeclared)
-@WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY = 2
+@WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY = 4
 @WA_AI_PC_railway_PRIO_PREWAR = 5000
 
 ############################################################################################################
@@ -100,9 +100,8 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 								ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: [Prev.GetName] hub_prov=[?supply_hub_province_] ACCEPTED" }
 							}
 
-							# Get state ID using province mapping (THIS.id doesn't work reliably for states)
-							set_temp_variable = { _first_prov_temp = global.WA_AI_MAP_state_province_ids@THIS^0 }
-							set_temp_variable = { _target_state_id = global.WA_AI_MAP_province_state_id^_first_prov_temp }
+							WA_AI_PC_get_state_id = yes
+							set_temp_variable = { _target_state_id = state_id_ }
 							# Get target landmass
 							set_temp_variable = { target_landmass = global.WA_AI_MAP_state_landmass^_target_state_id }
 
@@ -278,97 +277,91 @@ WA_AI_PC_railway_STRATEGY_overseas_war = {
 		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY OVERSEAS: Part B - beachhead expansion starting"
 	}
 
-	# Fix 8: Track processed continents to avoid duplicate beachhead work (UK vs Japan + Siam)
-	clear_temp_array = _processed_continents_
+	# Track beachhead states for theatre-aware duplicate detection
+	# Replaces continent-based tracking to support multi-theatre scenarios (e.g., Japan vs China + India)
+	clear_temp_array = _beachhead_states_
 
 	every_enemy_country = {
 		set_temp_variable = { enemy_tag = THIS }
+		set_temp_variable = { _check_enemy_tag = THIS }
 
 		# Check if this is an overseas enemy (no land border)
-		set_temp_variable = { enemy_has_land_border = 0 }
-		ROOT = {
-			every_controlled_state = {
-				limit = {
-					any_neighbor_state = {
-						OR = {
-							is_controlled_by = var:enemy_tag
-							controller = { is_subject_of = var:enemy_tag }
-						}
-					}
-				}
-				set_temp_variable = { enemy_has_land_border = 1 }
-			}
-		}
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
 
-		ROOT = { if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY OVERSEAS: enemy [?enemy_tag.GetName] has_land_border=[?enemy_has_land_border]" } }
+		ROOT = { if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY OVERSEAS: enemy [?enemy_tag.GetName] has_land_border=[?has_land_border_with_enemy_]" } }
 
 		if = {
-			limit = { check_variable = { enemy_has_land_border = 0 } }
+			limit = { check_variable = { has_land_border_with_enemy_ = 0 } }
 
 			# Get enemy capital continent using new helper
 			capital_scope = {
 				WA_AI_PC_railway_get_continent = yes
 				set_temp_variable = { enemy_continent = continent_id_ }
-				# Get state ID using province mapping (THIS.id doesn't work reliably for states)
-				set_temp_variable = { _first_prov_temp = global.WA_AI_MAP_state_province_ids@THIS^0 }
-				set_temp_variable = { enemy_capital_state_id = global.WA_AI_MAP_province_state_id^_first_prov_temp }
+				WA_AI_PC_get_state_id = yes
+				set_temp_variable = { enemy_capital_state_id = state_id_ }
 			}
 
-			# Fix 8: Skip if we already processed a beachhead for this continent
-			set_temp_variable = { _skip_continent = 0 }
-			for_each_loop = { array = _processed_continents_ value = _proc_cont
-				if = {
-					limit = { check_variable = { _proc_cont = enemy_continent } }
-					set_temp_variable = { _skip_continent = 1 }
-				}
-			}
+			# Find our biggest port on that continent (candidate beachhead)
+			set_temp_variable = { best_beachhead_state = 0 }
+			set_temp_variable = { best_beachhead_port = 0 }
+			set_temp_variable = { best_beachhead_province = 0 }
 
-			# Only process if continent not already handled
-			if = {
-				limit = { check_variable = { _skip_continent = 0 } }
-				# Mark continent as processed
-				add_to_temp_array = { _processed_continents_ = enemy_continent }
-			}
+			ROOT = {
+				every_controlled_state = {
+					# Use new continent helper
+					WA_AI_PC_railway_get_continent = yes
 
-			# Find our biggest port on that continent (only if continent not already processed)
-			if = {
-				limit = { check_variable = { _skip_continent = 0 } }
-
-				set_temp_variable = { best_beachhead_state = 0 }
-				set_temp_variable = { best_beachhead_port = 0 }
-				set_temp_variable = { best_beachhead_province = 0 }
-
-				ROOT = {
-					every_controlled_state = {
-						# Use new continent helper
-						WA_AI_PC_railway_get_continent = yes
+					if = {
+						limit = {
+							check_variable = { continent_id_ = enemy_continent }
+							is_coastal = yes
+						}
+						# Get naval base province and level using helper (naval_base trigger returns 0 in this scope)
+						WA_AI_PC_railway_get_naval_base_province = yes
 
 						if = {
 							limit = {
-								check_variable = { continent_id_ = enemy_continent }
-								is_coastal = yes
+								check_variable = { naval_base_province_ > 0 }
+								check_variable = { naval_base_level_ > best_beachhead_port }
 							}
-							# Get naval base province and level using helper (naval_base trigger returns 0 in this scope)
-							WA_AI_PC_railway_get_naval_base_province = yes
-
-							if = {
-								limit = {
-									check_variable = { naval_base_province_ > 0 }
-									check_variable = { naval_base_level_ > best_beachhead_port }
-								}
-								# Get state ID using province mapping (THIS.id doesn't work reliably for states)
-								set_temp_variable = { _first_prov_temp = global.WA_AI_MAP_state_province_ids@THIS^0 }
-								set_temp_variable = { best_beachhead_state = global.WA_AI_MAP_province_state_id^_first_prov_temp }
-								set_temp_variable = { best_beachhead_port = naval_base_level_ }
-								set_temp_variable = { best_beachhead_province = naval_base_province_ }
-							}
+							WA_AI_PC_get_state_id = yes
+							set_temp_variable = { best_beachhead_state = state_id_ }
+							set_temp_variable = { best_beachhead_port = naval_base_level_ }
+							set_temp_variable = { best_beachhead_province = naval_base_province_ }
 						}
 					}
 				}
+			}
 
-				if = { limit = { has_country_flag = WA_AI_construction_logging }
-					log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY OVERSEAS: continent=[?enemy_continent] beachhead_state=[?best_beachhead_state] port_level=[?best_beachhead_port]"
+			if = { limit = { has_country_flag = WA_AI_construction_logging }
+				log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY OVERSEAS: continent=[?enemy_continent] candidate_beachhead=[?best_beachhead_state] port_level=[?best_beachhead_port]"
+			}
+
+			# Theatre separation check: Skip if this beachhead is too close to an existing one
+			# This supports multi-theatre scenarios (e.g., Japan vs China + India on same continent)
+			if = {
+				limit = { check_variable = { best_beachhead_state > 0 } }
+				set_temp_variable = { candidate_beachhead_state_ = best_beachhead_state }
+				WA_AI_PC_check_theatre_separation = yes
+
+				if = {
+					limit = { check_variable = { _is_duplicate_theatre_ = 1 } }
+					# Skip - too close to existing beachhead in same theatre
+					set_temp_variable = { best_beachhead_state = 0 }
+
+					if = { limit = { has_country_flag = WA_AI_construction_logging }
+						log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY OVERSEAS: beachhead [?candidate_beachhead_state_] SKIPPED - duplicate theatre"
+					}
 				}
+				else = {
+					# Register this beachhead for future duplicate checks
+					add_to_temp_array = { _beachhead_states_ = best_beachhead_state }
+
+					if = { limit = { has_country_flag = WA_AI_construction_logging }
+						log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY OVERSEAS: beachhead [?best_beachhead_state] ACCEPTED - new theatre"
+					}
+				}
+			}
 
 			### Distance check: Beachhead must be within 15 states of enemy capital
 			### This prevents selecting beachheads too far from the theater of war
@@ -526,7 +519,6 @@ WA_AI_PC_railway_STRATEGY_overseas_war = {
 					}
 				}
 			}
-			} # End of _skip_continent = 0 check (Fix 8)
 		}
 	}
 
@@ -681,9 +673,8 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 						ROOT = { controls_province = var:supply_hub_province_ }
 					}
 
-					# Get state ID using province mapping (THIS.id doesn't work reliably for states)
-					set_temp_variable = { _first_prov_temp = global.WA_AI_MAP_state_province_ids@THIS^0 }
-					set_temp_variable = { _this_state_id = global.WA_AI_MAP_province_state_id^_first_prov_temp }
+					WA_AI_PC_get_state_id = yes
+					set_temp_variable = { _this_state_id = state_id_ }
 					# Get target landmass for cross-landmass detection
 					set_temp_variable = { target_landmass = global.WA_AI_MAP_state_landmass^_this_state_id }
 

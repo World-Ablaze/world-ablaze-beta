@@ -1,0 +1,63 @@
+############################################################################################################
+#	World Ablaze AI mod - Railway Construction Priority - Primitives Module
+#	Low-level helper functions for state/province lookups and building detection
+#	These primitives are used across helpers.txt and strategies.txt to eliminate duplication
+############################################################################################################
+
+############################################################################################################
+#	PRIMITIVE: Get state ID from state scope
+#	Converts state scope to numeric state ID using province mapping
+#	THIS = state scope >>> state_id_
+############################################################################################################
+
+WA_AI_PC_get_state_id = {
+	set_temp_variable = { _first_prov_temp = global.WA_AI_MAP_state_province_ids@THIS^0 }
+	set_temp_variable = { state_id_ = global.WA_AI_MAP_province_state_id^_first_prov_temp }
+}
+
+############################################################################################################
+#	PRIMITIVE: Get naval base level from state scope
+#	Detects naval base level (0-10) using state-level trigger comparisons
+#	THIS = state scope, requires naval_base_province_ > 0 >>> naval_base_level_
+############################################################################################################
+
+WA_AI_PC_get_naval_base_level = {
+	set_temp_variable = { naval_base_level_ = 0 }
+
+	# Check from highest to lowest
+	if = { limit = { naval_base > 9 } set_temp_variable = { naval_base_level_ = 10 } }
+	else_if = { limit = { naval_base > 8 } set_temp_variable = { naval_base_level_ = 9 } }
+	else_if = { limit = { naval_base > 7 } set_temp_variable = { naval_base_level_ = 8 } }
+	else_if = { limit = { naval_base > 6 } set_temp_variable = { naval_base_level_ = 7 } }
+	else_if = { limit = { naval_base > 5 } set_temp_variable = { naval_base_level_ = 6 } }
+	else_if = { limit = { naval_base > 4 } set_temp_variable = { naval_base_level_ = 5 } }
+	else_if = { limit = { naval_base > 3 } set_temp_variable = { naval_base_level_ = 4 } }
+	else_if = { limit = { naval_base > 2 } set_temp_variable = { naval_base_level_ = 3 } }
+	else_if = { limit = { naval_base > 1 } set_temp_variable = { naval_base_level_ = 2 } }
+	else_if = { limit = { naval_base > 0 } set_temp_variable = { naval_base_level_ = 1 } }
+
+	set_variable = { _dummy_naval_base_check = 1 } # Required: HOI4 needs non-temp effect after temp ops
+}
+
+############################################################################################################
+#	PRIMITIVE: Check if ROOT has land border with specified enemy
+#	Uses controlled state neighbor detection
+#	ROOT = country scope, _check_enemy_tag = enemy tag >>> has_land_border_with_enemy_
+############################################################################################################
+
+WA_AI_PC_has_land_border_with_enemy = {
+	set_temp_variable = { has_land_border_with_enemy_ = 0 }
+
+	every_controlled_state = {
+		limit = {
+			any_neighbor_state = {
+				OR = {
+					is_controlled_by = var:_check_enemy_tag
+					controller = { is_subject_of = var:_check_enemy_tag }
+				}
+			}
+		}
+		ROOT = { set_temp_variable = { has_land_border_with_enemy_ = 1 } }
+	}
+}
+

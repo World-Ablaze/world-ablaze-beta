@@ -1,0 +1,752 @@
+############################################################################################################
+#	World Ablaze AI mod - Construction System - Queue Functions Module
+#	Building queue functions for standard construction AI
+############################################################################################################
+
+### functions for AI construction
+
+# civilian factories
+WA_AI_queue_CIC = {
+
+	if = { limit = { check_variable = { WA_AI_has_shared_slot_scores = 0 } }
+
+		WA_AI_get_shared_slot_scores = yes
+	}
+
+	for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+		if = {
+			limit = {
+				WA_AI_available_SHARED = yes
+				infrastructure > 3
+			}
+
+			WA_AI_add_CIC = yes
+			set_temp_variable = { break = 1 }
+		}
+	}
+
+	if = { limit = { check_variable = { break = 0 } }
+
+		WA_AI_queue_INF = yes
+	}
+}
+WA_AI_queue_CIC_2 = {
+
+	if = { limit = { check_variable = { WA_AI_has_shared_slot_scores = 0 } }
+
+		WA_AI_get_shared_slot_scores = yes
+	}
+
+	for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+		if = {
+			limit = {
+				WA_AI_available_SHARED = yes
+			}
+
+			WA_AI_add_CIC = yes
+			set_temp_variable = { break = 1 }
+		}
+	}
+}
+
+# military factories
+WA_AI_queue_MIC = {
+
+	if = { limit = { check_variable = { WA_AI_has_shared_slot_scores = 0 } }
+
+		WA_AI_get_shared_slot_scores = yes
+	}
+
+	for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+		if = {
+			limit = {
+				WA_AI_available_SHARED = yes
+				infrastructure > 3
+			}
+
+			WA_AI_add_MIC = yes
+			set_temp_variable = { break = 1 }
+		}
+	}
+
+	if = { limit = { check_variable = { break = 0 } }
+
+		WA_AI_queue_INF = yes
+	}
+}
+WA_AI_queue_MIC_2 = {
+
+	if = { limit = { check_variable = { WA_AI_has_shared_slot_scores = 0 } }
+
+		WA_AI_get_shared_slot_scores = yes
+	}
+
+	for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+		if = {
+			limit = {
+				WA_AI_available_SHARED = yes
+			}
+
+			WA_AI_add_MIC = yes
+			set_temp_variable = { break = 1 }
+		}
+	}
+}
+
+# dockayrds
+WA_AI_queue_NIC = {
+
+	if = { limit = { check_variable = { WA_AI_has_shared_slot_scores = 0 } }
+
+		WA_AI_get_shared_slot_scores = yes
+	}
+
+	for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+		if = {
+			limit = {
+				is_coastal = yes
+				WA_AI_available_SHARED = yes
+			}
+
+			WA_AI_add_NIC = yes
+			set_temp_variable = { break = 1 }
+		}
+	}
+
+	if = { limit = { check_variable = { break = 0 } }
+
+		WA_AI_queue_MIC = yes
+	}
+}
+
+# refineries
+WA_AI_queue_REF = {
+
+	if = { limit = { check_variable = { WA_AI_has_shared_slot_scores = 0 } }
+
+		WA_AI_get_shared_slot_scores = yes
+	}
+
+	for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+		if = {
+			limit = {
+				is_core_of = ROOT
+				WA_AI_available_REF = yes
+				WA_AI_available_SHARED = yes
+			}
+
+			WA_AI_add_REF = yes
+			set_temp_variable = { break = 1 }
+		}
+	}
+
+	if = { # replace MIC if slots are maxed out
+		limit = {
+			check_variable = { break = 0 }
+			has_tech = expanded_industry6
+		}
+
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+			if = {
+				limit = {
+					is_core_of = ROOT
+					arms_factory > 0
+					synthetic_refinery < 3
+					NOT = { has_state_flag = WA_AI_mic_replaced_with_ref }
+					ROOT = { has_full_control_of_state = PREV }
+				}
+
+				remove_building = { type = arms_factory level = 1 }
+				if = { limit = { WA_AI_available_REF = yes }
+					set_state_flag = { flag = WA_AI_mic_replaced_with_ref value = 1 days = 180 }
+					WA_AI_add_REF = yes
+					set_temp_variable = { break = 1 }
+
+					if = { limit = { ROOT = { has_country_flag = WA_AI_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: replacing MIC with REF in [This.GetName]" }
+				}
+				else = { add_building_construction = { type = arms_factory level = 1 instant_build = yes } }
+			}
+		}
+	}
+}
+
+# silos
+WA_AI_queue_SILO = {
+
+	if = { limit = { has_tech = fuel_silos }
+
+		if = { limit = { check_variable = { WA_AI_has_shared_slot_scores = 0 } }
+
+			WA_AI_get_shared_slot_scores = yes
+		}
+
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+			if = {
+				limit = {
+					is_core_of = ROOT
+					WA_AI_available_SILO = yes
+					WA_AI_available_SHARED = yes
+				}
+
+				WA_AI_add_SILO = yes
+				set_temp_variable = { break = 1 }
+			}
+		}
+	}
+}
+
+# infrastructure
+WA_AI_queue_INF = {
+
+	if = { limit = { check_variable = { WA_AI_has_infrastructure_slot_scores = 0 } }
+
+		WA_AI_get_infrastructure_slot_scores = yes
+	}
+
+	for_each_scope_loop = { array = WA_AI_infrastructure_slot_scores
+
+		if = {
+			limit = {
+				WA_AI_available_INF = yes
+				NOT = { has_state_flag = WA_AI_inf_queued }
+			}
+
+			WA_AI_add_INF = yes
+			set_temp_variable = { break = 1 }
+			set_state_flag = { flag = WA_AI_inf_queued value = 1 days = 1 }
+		}
+	}
+}
+
+# infrastructure for resources
+WA_AI_queue_INF_resource = {
+
+	if = { limit = { check_variable = { WA_AI_has_resource_slot_scores = 0 } }
+
+		WA_AI_get_resource_slot_scores = yes
+	}
+
+	if = { limit = { check_variable = { ROOT.WA_AI_PC_active_projects < 5 } WA_AI_PC_can_afford_project = yes }
+
+		WA_AI_priority_queue_INF_resource = yes
+	}
+	else = {
+
+		for_each_scope_loop = { array = WA_AI_resource_slot_scores
+
+			if = {
+				limit = {
+					WA_AI_available_INF = yes
+				}
+
+				WA_AI_add_INF = yes
+				set_temp_variable = { break = 1 }
+			}
+		}
+	}
+}
+WA_AI_priority_queue_INF_resource = {
+
+	if = { limit = { check_variable = { ROOT.WA_AI_PC_active_projects < 5 } }
+
+		if = { limit = { check_variable = { WA_AI_has_resource_slot_scores = 0 } }
+
+			WA_AI_get_resource_slot_scores = yes
+		}
+
+		set_temp_variable = { _project_building_type = 1 }
+		set_temp_variable = { _project_province_id = 0 }
+		set_temp_variable = { _project_priority = 100 }
+		set_temp_variable = { _project_queue_num = 1 }
+
+		for_each_scope_loop = { array = WA_AI_resource_slot_scores
+
+			if = { limit = { WA_AI_PC_can_build_project = yes }
+
+				WA_AI_PC_start_project = yes
+				set_temp_variable = { break = 1 }
+			}
+		}
+	}
+}
+
+#WA refineries
+
+WA_AI_queue_HSR = {
+
+	if = { limit = { check_variable = { WA_AI_has_shared_slot_scores = 0 } }
+
+		WA_AI_get_shared_slot_scores = yes
+	}
+
+	for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+		if = {
+			limit = {
+				is_core_of = ROOT
+				WA_AI_available_HSR = yes
+				WA_AI_available_SHARED = yes
+			}
+
+			WA_AI_add_HSR = yes
+			set_temp_variable = { break = 1 }
+		}
+	}
+
+	if = { # replace MIC if slots are maxed out
+		limit = {
+			check_variable = { break = 0 }
+			has_tech = expanded_industry6
+		}
+
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+			if = {
+				limit = {
+					is_core_of = ROOT
+					arms_factory > 0
+					hydro_steel_refinery < 3
+					NOT = { has_state_flag = WA_AI_mic_replaced_with_hsr }
+					ROOT = { has_full_control_of_state = PREV }
+				}
+
+				remove_building = { type = arms_factory level = 1 }
+				if = { limit = { WA_AI_available_HSR = yes }
+					set_state_flag = { flag = WA_AI_mic_replaced_with_hsr value = 1 days = 180 }
+					WA_AI_add_HSR = yes
+					set_temp_variable = { break = 1 }
+
+					if = { limit = { ROOT = { has_country_flag = WA_AI_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: replacing MIC with HSR in [This.GetName]" }
+				}
+				else = { add_building_construction = { type = arms_factory level = 1 instant_build = yes } }
+			}
+		}
+	}
+}
+
+WA_AI_queue_SR = {
+
+	if = { limit = { check_variable = { WA_AI_has_shared_slot_scores = 0 } }
+
+		WA_AI_get_shared_slot_scores = yes
+	}
+
+	for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+		if = {
+			limit = {
+				is_core_of = ROOT
+				WA_AI_available_SR = yes
+				WA_AI_available_SHARED = yes
+			}
+
+			WA_AI_add_SR = yes
+			set_temp_variable = { break = 1 }
+		}
+	}
+
+	if = { # replace MIC if slots are maxed out
+		limit = {
+			check_variable = { break = 0 }
+			has_tech = expanded_industry6
+		}
+
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+			if = {
+				limit = {
+					is_core_of = ROOT
+					arms_factory > 0
+					hydro_steel_refinery < 3
+					NOT = { has_state_flag = WA_AI_mic_replaced_with_SR }
+					ROOT = { has_full_control_of_state = PREV }
+				}
+
+				remove_building = { type = arms_factory level = 1 }
+				if = { limit = { WA_AI_available_SR = yes }
+					set_state_flag = { flag = WA_AI_mic_replaced_with_SR value = 1 days = 180 }
+					WA_AI_add_SR = yes
+					set_temp_variable = { break = 1 }
+
+					if = { limit = { ROOT = { has_country_flag = WA_AI_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: replacing MIC with SR in [This.GetName]" }
+				}
+				else = { add_building_construction = { type = arms_factory level = 1 instant_build = yes } }
+			}
+		}
+	}
+}
+
+WA_AI_queue_HAR = {
+
+	if = { limit = { check_variable = { WA_AI_has_shared_slot_scores = 0 } }
+
+		WA_AI_get_shared_slot_scores = yes
+	}
+
+	for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+		if = {
+			limit = {
+				is_core_of = ROOT
+				WA_AI_available_REF = yes
+				WA_AI_available_SHARED = yes
+			}
+
+			WA_AI_add_HAR = yes
+			set_temp_variable = { break = 1 }
+		}
+	}
+
+	if = { # replace MIC if slots are maxed out
+		limit = {
+			check_variable = { break = 0 }
+			has_tech = expanded_industry6
+		}
+
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+			if = {
+				limit = {
+					is_core_of = ROOT
+					arms_factory > 0
+					hydro_steel_refinery < 3
+					NOT = { has_state_flag = WA_AI_mic_replaced_with_har }
+					ROOT = { has_full_control_of_state = PREV }
+				}
+
+				remove_building = { type = arms_factory level = 1 }
+				if = { limit = { WA_AI_available_HAR = yes }
+					set_state_flag = { flag = WA_AI_mic_replaced_with_HAR value = 1 days = 180 }
+					WA_AI_add_HAR = yes
+					set_temp_variable = { break = 1 }
+
+					if = { limit = { ROOT = { has_country_flag = WA_AI_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: replacing MIC with HAR in [This.GetName]" }
+				}
+				else = { add_building_construction = { type = arms_factory level = 1 instant_build = yes } }
+			}
+		}
+	}
+}
+
+WA_AI_queue_AR = {
+
+	if = { limit = { check_variable = { WA_AI_has_shared_slot_scores = 0 } }
+
+		WA_AI_get_shared_slot_scores = yes
+	}
+
+	for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+		if = {
+			limit = {
+				is_core_of = ROOT
+				WA_AI_available_AR = yes
+				WA_AI_available_SHARED = yes
+			}
+
+			WA_AI_add_AR = yes
+			set_temp_variable = { break = 1 }
+		}
+	}
+
+	if = { # replace MIC if slots are maxed out
+		limit = {
+			check_variable = { break = 0 }
+			has_tech = expanded_industry6
+		}
+
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+			if = {
+				limit = {
+					is_core_of = ROOT
+					arms_factory > 0
+					hydro_steel_refinery < 3
+					NOT = { has_state_flag = WA_AI_mic_replaced_with_AR }
+					ROOT = { has_full_control_of_state = PREV }
+				}
+
+				remove_building = { type = arms_factory level = 1 }
+				if = { limit = { WA_AI_available_AR = yes }
+					set_state_flag = { flag = WA_AI_mic_replaced_with_AR value = 1 days = 180 }
+					WA_AI_add_AR = yes
+					set_temp_variable = { break = 1 }
+
+					if = { limit = { ROOT = { has_country_flag = WA_AI_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: replacing MIC with AR in [This.GetName]" }
+				}
+				else = { add_building_construction = { type = arms_factory level = 1 instant_build = yes } }
+			}
+		}
+	}
+}
+
+# radar
+WA_AI_queue_RADAR = {
+
+	if = { limit = { has_tech = radio_detection }
+
+		if = { limit = { check_variable = { WA_AI_has_radar_slot_scores = 0 } }
+
+			WA_AI_get_radar_slot_scores = yes
+		}
+
+		for_each_scope_loop = { array = WA_AI_radar_slot_scores
+
+			if = {
+				limit = {
+					WA_AI_available_RADAR = yes
+					NOT = { has_state_flag = WA_AI_radar_queued }
+				}
+
+				WA_AI_add_RADAR = yes
+				set_temp_variable = { break = 1 }
+				set_state_flag = { flag = WA_AI_radar_queued value = 1 days = 1 }
+			}
+		}
+	}
+}
+
+# airbase
+WA_AI_queue_AIR = {
+
+	if = { limit = { check_variable = { WA_AI_has_airbase_slot_scores = 0 } }
+
+		WA_AI_get_airbase_slot_scores = yes
+	}
+
+	for_each_scope_loop = { array = WA_AI_airbase_slot_scores
+
+		if = {
+			limit = {
+				WA_AI_available_AIR = yes
+			}
+
+			WA_AI_add_AIR = yes
+			set_temp_variable = { break = 1 }
+		}
+	}
+}
+
+# antiair
+WA_AI_queue_AA = {
+
+	if = { limit = { check_variable = { WA_AI_has_antiair_slot_scores = 0 } }
+
+		WA_AI_get_antiair_slot_scores = yes
+	}
+
+	for_each_scope_loop = { array = WA_AI_antiair_slot_scores
+
+		if = {
+			limit = {
+				WA_AI_available_AA = yes
+				NOT = { has_state_flag = WA_AI_aa_queued }
+			}
+
+			WA_AI_add_AA = yes
+			set_temp_variable = { break = 1 }
+			set_state_flag = { flag = WA_AI_aa_queued value = 1 days = 1 }
+		}
+	}
+}
+
+# mil to civ conversion
+WA_AI_priority_convert_MIC_to_CIC = {
+
+	if = { limit = { check_variable = { ROOT.WA_AI_PC_active_projects < 5 } }
+
+		if = { limit = { check_variable = { WA_AI_has_mil_to_civ_conversion_slot_scores = 0 } }
+
+			WA_AI_get_mil_to_civ_conversion_slot_scores = yes
+		}
+
+		set_temp_variable = { _project_building_type = 9 }
+		set_temp_variable = { _project_province_id = 0 }
+		set_temp_variable = { _project_priority = 100 }
+		set_temp_variable = { _project_queue_num = 1 }
+
+		for_each_scope_loop = { array = WA_AI_mil_to_civ_conversion_slot_scores
+
+			if = { limit = { WA_AI_PC_can_build_project = yes }
+
+				WA_AI_PC_start_project = yes
+				set_temp_variable = { break = 1 }
+			}
+		}
+	}
+}
+
+WA_AI_priority_queue_synthetic_refinery = {
+
+		if = { limit = { check_variable = { ROOT.WA_AI_PC_active_projects < 5 } }
+
+		set_temp_variable = { _project_building_type = 8 }
+		set_temp_variable = { _project_province_id = 0 }
+		set_temp_variable = { _project_priority = 100 }
+		set_temp_variable = { _project_queue_num = 1 }
+
+		random_scope_in_array = { array = controlled_states
+
+			if = { limit = { WA_AI_PC_can_build_project = yes WA_AI_region_priority = yes}
+
+				WA_AI_PC_start_project = yes
+				set_temp_variable = { break = 1 }
+			}
+		}
+	}
+}
+
+WA_AI_priority_queue_hydro_steel_refinery = {
+
+		if = { limit = { check_variable = { ROOT.WA_AI_PC_active_projects < 5 } }
+
+		set_temp_variable = { _project_building_type = 11 }
+		set_temp_variable = { _project_province_id = 0 }
+		set_temp_variable = { _project_priority = 100 }
+		set_temp_variable = { _project_queue_num = 1 }
+
+		random_scope_in_array = { array = controlled_states
+
+			if = { limit = { WA_AI_PC_can_build_project = yes WA_AI_region_priority = yes}
+
+				WA_AI_PC_start_project = yes
+				set_temp_variable = { break = 1 }
+			}
+		}
+	}
+}
+
+WA_AI_priority_queue_hydro_aluminium_refinery = {
+
+	if = { limit = { check_variable = { ROOT.WA_AI_PC_active_projects < 5 } }
+
+		set_temp_variable = { _project_building_type = 12 }
+		set_temp_variable = { _project_province_id = 0 }
+		set_temp_variable = { _project_priority = 100 }
+		set_temp_variable = { _project_queue_num = 1 }
+
+		random_scope_in_array = { array = controlled_states
+
+			if = { limit = { WA_AI_PC_can_build_project = yes WA_AI_region_priority = yes}
+
+				WA_AI_PC_start_project = yes
+				set_temp_variable = { break = 1 }
+			}
+		}
+	}
+}
+
+
+######################################################
+
+# for building INF to increase supply
+WA_AI_queue_INF_supply = {
+	if = {
+		limit = {
+			any_of_scopes = { array = controlled_states
+				WA_AI_available_INF = yes
+				free_building_slots = { building = infrastructure size > 5 include_locked = no }
+				ROOT = { divisions_in_state = { state = PREV size > 5 } }
+				any_neighbor_state = { CONTROLLER = { has_war_with = ROOT strength_ratio = { tag = ROOT ratio > 0.5 } } }
+			}
+		}
+
+		random_scope_in_array = { array = controlled_states
+			limit = {
+				WA_AI_available_INF = yes
+				free_building_slots = { building = infrastructure size > 5 include_locked = no }
+				ROOT = { divisions_in_state = { state = PREV size > 5 } }
+				any_neighbor_state = { CONTROLLER = { has_war_with = ROOT strength_ratio = { tag = ROOT ratio > 0.5 } } }
+			}
+			WA_AI_add_INF = yes
+		}
+	}
+	else_if = {
+		limit = {
+			any_of_scopes = { array = controlled_states
+				WA_AI_available_INF = yes
+				free_building_slots = { building = infrastructure size > 5 include_locked = no }
+				ROOT = { divisions_in_state = { state = PREV size > 5 } }
+				any_neighbor_state = { CONTROLLER = { has_war_with = ROOT } }
+			}
+		}
+		random_scope_in_array = { array = controlled_states
+			limit = {
+				WA_AI_available_INF = yes
+				free_building_slots = { building = infrastructure size > 5 include_locked = no }
+				ROOT = { divisions_in_state = { state = PREV size > 5 } }
+				any_neighbor_state = { CONTROLLER = { has_war_with = ROOT } }
+			}
+			WA_AI_add_INF = yes
+		}
+	}
+}
+
+# build forts on victory points in a state
+WA_AI_queue_FORT_CITIES = {
+
+	random_scope_in_array = { array = controlled_states
+		limit = {
+			is_in_home_area = yes
+			WA_AI_has_city = yes
+			check_variable = { WA_AI_forts_constructed_on_cities_@ROOT < 3 }
+		}
+
+		WA_AI_add_FORT_CITY = yes
+	}
+}
+
+# build forts on every border province of a state
+WA_AI_queue_FORT_BORDER = {
+
+	random_scope_in_array = { array = controlled_states
+		limit = {
+			is_controlled_by = ROOT
+			NOT = { WA_AI_no_border = yes }
+			is_in_home_area = yes
+			check_variable = { WA_AI_forts_constructed_on_border_@ROOT < 3 }
+		}
+
+		WA_AI_add_FORT_BORDER = yes
+	}
+}
+
+# build coastal forts on naval bases in a state
+WA_AI_queue_CFORT_BASES = {
+
+	random_scope_in_array = { array = controlled_states
+		limit = {
+			is_controlled_by = ROOT
+			is_coastal = yes
+			is_in_home_area = yes
+			WA_AI_has_naval_base = yes
+			check_variable = { WA_AI_forts_constructed_on_bases_@ROOT < 3 }
+		}
+
+		WA_AI_add_CFORT_BASE = yes
+	}
+}
+
+# build coastal forts on every coastal province in a state
+WA_AI_queue_CFORT_COAST = {
+
+	random_scope_in_array = { array = controlled_states
+		limit = {
+			is_controlled_by = ROOT
+			is_coastal = yes
+			is_in_home_area = yes
+			check_variable = { WA_AI_forts_constructed_on_coast_@ROOT < 3 }
+		}
+
+		WA_AI_add_CFORT_COAST = yes
+	}
+}
+
