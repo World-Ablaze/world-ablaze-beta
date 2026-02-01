@@ -845,6 +845,10 @@ WA_AI_PC_start_railway_project = { # THIS = state, _project_province_id, _projec
 	# Effective level = current level + queued upgrades
 	add_to_temp_variable = { current_level = _queued_for_segment }
 
+	ROOT = { if = { limit = { has_country_flag = WA_AI_construction_logging }
+		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: prov=[?_project_province_id]->[?_project_connect_id] current=[?current_level] target=[?_project_target_level] queued=[?_queued_for_segment]"
+	} }
+
 	if = {
 		limit = {
 			check_variable = { current_level < _project_target_level }
@@ -887,9 +891,9 @@ WA_AI_PC_get_total_queued_num = { # _get_queued_num_building_type, _get_queued_n
 ############################################################################################################
 
 WA_AI_PC_process_port_upgrades = {
-	# Process port upgrades for overseas operations via PC system
-	set_temp_variable = { _port_processed = 0 }
-	for_each_loop = { array = railway_port_upgrades_ value = _port_state break = _port_b
+	# Process all port upgrades for overseas operations via PC system
+	# Note: Uses temp array which is cleared each railway pass, so we process all at once
+	for_each_loop = { array = railway_port_upgrades_ value = _port_state
 
 		var:_port_state = {
 			if = {
@@ -919,22 +923,12 @@ WA_AI_PC_process_port_upgrades = {
 
 					WA_AI_PC_start_project = yes
 
-					set_temp_variable = { _port_processed = 1 }
-
 					if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
 						ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY: Queued port upgrade at province [?naval_base_province_] in state [?_port_state]" }
 					}
 				}
 			}
 		}
-
-		# Process one port per tick
-		set_temp_variable = { _port_b = 1 }
-	}
-
-	# Remove processed item from front of queue (we always process index 0)
-	if = { limit = { check_variable = { railway_port_upgrades_^num > 0 } }
-		remove_from_array = { array = railway_port_upgrades_ index = 0 }
 	}
 }
 

@@ -713,6 +713,11 @@ WA_AI_PC_add_finished_building_by_id = {
 #        _project_priority, _project_queue_num, _project_queue_max, _project_target_level, _project_type_id
 # Creates projects and adds them to the dynamic queue
 WA_AI_PC_start_project = {
+	# Debug: log entry
+	ROOT = { if = { limit = { has_country_flag = WA_AI_construction_logging }
+		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC START_PROJECT ENTRY: type=[?_project_building_type] state=[PREV.GetName] prov=[?_project_province_id]->[?_project_connect_id]"
+	} }
+
 	# Validate location is controlled
 	if = {
 		limit = {
@@ -730,12 +735,30 @@ WA_AI_PC_start_project = {
 			}
 
 			# Get current queued amount for this building type (for queue_max check)
+			# Also check for province-level duplicates (naval bases, supply hubs, etc.)
 			set_temp_variable = { queued_amount_ = 0 }
+			set_temp_variable = { _province_already_queued = 0 }
 			for_each_loop = { array = WA_AI_PC_queue value = _check_proj_id
 				if = { limit = { check_variable = { WA_AI_PC_building_type^_check_proj_id = _project_building_type } }
 					add_to_temp_variable = { queued_amount_ = 1 }
+					# Check for province-level duplicate (same type + same province)
+					if = {
+						limit = {
+							check_variable = { _project_province_id > 0 }
+							check_variable = { WA_AI_PC_target_province^_check_proj_id = _project_province_id }
+						}
+						set_temp_variable = { _province_already_queued = 1 }
+					}
 				}
 			}
+
+			# Skip if this exact province is already queued for this building type
+			if = { limit = { check_variable = { _province_already_queued = 1 } }
+				if = { limit = { has_country_flag = WA_AI_construction_logging }
+					log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC SKIP DUPLICATE: type=[?_project_building_type] prov=[?_project_province_id] already queued"
+				}
+			}
+			else = {
 
 			# Get current building level for target_level check (state-level buildings)
 			set_temp_variable = { final_building_level_ = 0 }
@@ -792,7 +815,7 @@ WA_AI_PC_start_project = {
 				set_variable = { WA_AI_PC_target_province^_project_id = _project_province_id }
 				set_variable = { WA_AI_PC_connect_province^_project_id = _project_connect_id }
 				set_variable = { WA_AI_PC_project_cost^_project_id = building_cost_ }
-				set_variable = { WA_AI_PC_progress^_project_id = building_cost_ }
+				set_variable = { WA_AI_PC_progress^_project_id = 0 }
 				set_variable = { WA_AI_PC_building_type^_project_id = _project_building_type }
 				set_variable = { WA_AI_PC_priority^_project_id = _project_priority }
 				set_variable = { WA_AI_PC_type_id^_project_id = _project_type_id }
@@ -816,6 +839,7 @@ WA_AI_PC_start_project = {
 				}
 			}
 		}
+		} # end else (not duplicate)
 	}
 }
 
