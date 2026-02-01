@@ -27,25 +27,23 @@ phases = { # phase = no is the standard phase, default phase = positional phase
 
 # attacking #
 
-tactic_preliminary_bombardment = { # who knew you needed artillery to bombard an area?
+tactic_preliminary_bombardment = {
 	is_attacker = yes
 	countered_by = tactic_counter_barrage
 	trigger = {
 		is_attacker = yes
-		has_unit_type = artillery
 		phase = no
 	}
 	active = yes
 	base = {
 		factor = 4
 			modifier = {
-			add = 2
+			add = 4
 			has_artillery_ratio > 0.25
-
 		}
 	}
 		picture = attack
-	#phase = long_range # changes phase to long-range combat
+	phase = long_range
 	attacker = 0.10
 	defender = 0.05
 	attacker_movement_speed = -0.75
@@ -74,6 +72,8 @@ tactic_recon_in_force = { # Recon in force -> Infiltration tactics
 	base = {
 		factor = 2
 }
+
+	phase = close_combat
 	picture = attack
 	attacker = 0.15
 	defender = 0.05
@@ -95,13 +95,15 @@ tactic_urban_bombardment = { # when attacking vp that is > 5 points, or urban te
 	active = yes
 
 		base =  {
-		factor = 8
+		factor = 12
 		modifier = {
 			factor = 0
 			NOT = { is_fighting_in_terrain = urban }
 		}
 	}
-		picture = attack
+	phase = urban_warfare
+
+	picture = attack
 	attacker = 0.05
 	attacker_movement_speed = 0.50
 	attacker_org_damage_modifier = -0.5
@@ -121,8 +123,9 @@ tactic_beach_assault = { # only triggers during amphibious assault
 	active = yes
 
 	base = { factor = 8 }
-	picture = attack
 
+	phase = amphibious
+	picture = attack
 	attacker = 0.05
 	defender = 0.10
 	attacker_movement_speed = 0.50
@@ -136,18 +139,20 @@ tactic_heavy_preliminary_bombardment = { # only triggers when enemy has dig-in a
 	is_attacker = yes
 	trigger = {
 		is_attacker = yes
-		phase = trench_assault
+		phase = no
 	}
 
 	active = yes
 	base = { factor = 4
 		modifier = {
-			add = 2
-			has_artillery_ratio > 0.35
+			add = 4
+			has_artillery_ratio > 0.45
 
 		}
-		picture = attack
 	}
+
+	phase = trench_assault
+	picture = attack
 	attacker = 0.15
 	attacker_movement_speed = -1
 	attacker_org_damage_modifier = -0.5
@@ -155,7 +160,7 @@ tactic_heavy_preliminary_bombardment = { # only triggers when enemy has dig-in a
 	}
 # attacking #
 
-tactic_frontal_assault = { # only triggers during amphibious assault
+tactic_frontal_assault = {
 
 	is_attacker = yes
 	trigger = {
@@ -168,6 +173,8 @@ tactic_frontal_assault = { # only triggers during amphibious assault
 	base = {
 		factor = 2
 }
+
+	phase = close_combat
 	picture = attack
 	attacker = 0.1
 	defender = 0.1
@@ -189,41 +196,20 @@ tactic_embankment_bombardment = { # only triggers during river crossing
 
 	active = yes
 
-	base = { factor = 8 }
+	base = {
+		factor = 8
+		modifier = {
+			add = 4
+			has_artillery_ratio > 0.35
+
+		}
+	}
 	picture = attack
 
+	phase = river_crossing
 	attacker = 0.10
 	defender = -0.10
 	attacker_movement_speed = -1
-	attacker_org_damage_modifier = -0.5
-	defender_org_damage_modifier = -0.5
-}
-# attacking #
-
-tactic_hindered_attack = { # only triggers during bad weather
-
-	is_attacker = yes
-	trigger = {
-		is_attacker = yes
-		OR = {
-			is_fighting_in_weather = rain_heavy
-			is_fighting_in_weather = snow
-			is_fighting_in_weather = blizzard
-			is_fighting_in_weather = mud
-			is_fighting_in_weather = sandstorm
-		}
-		phase = no
-	}
-
-	active = yes
-
-	base = {
-		factor = 6
-		}
-
-	picture = attack
-	attacker = -0.10
-	attacker_movement_speed = -0.75
 	attacker_org_damage_modifier = -0.5
 	defender_org_damage_modifier = -0.5
 }
@@ -235,15 +221,19 @@ tactic_counter_barrage = { # counters all preliminary bombardment
 	countered_by = tactic_recon_in_force
 	trigger = {
 		is_attacker = no
-		has_unit_type = artillery
 		phase = no
 	}
 	active = yes
-		base = {
-		factor = 2
-	}
-	picture = defend
+	base = {
+		factor = 8
+		modifier = {
+			add = 4
+			has_artillery_ratio > 0.35
 
+		}
+	}
+
+	picture = defend
 	attacker = 0.05
 	defender = 0.10
 	attacker_movement_speed = -0.75
@@ -262,6 +252,8 @@ tactic_urban_concealment = {
 	active = yes
 
 	base = { factor = 4 }
+
+	phase = urban_warfare
 	picture = defend
 	defender = 0.1
 	attacker_movement_speed = 0.50
@@ -280,6 +272,8 @@ tactic_defensive_posture = {
 	active = yes
 
 	base = { factor = 4 }
+
+	phase = long_range
 	picture = defend
 
 	defender = 0.1
@@ -298,33 +292,13 @@ tactic_entrenched_defense = {
 		base = {
 		factor = 6
 	}
-	picture = defend
 
+	phase = trench_assault
+	picture = defend
 	defender = 0.15
 	attacker_movement_speed = -0.75
 	attacker_org_damage_modifier = -0.8
 	defender_org_damage_modifier = -0.8
-}
-# defending #
-
-tactic_hampered_defense = {
-	is_attacker = no
-	trigger = {
-		is_attacker = no
-		is_fighting_in_weather = {
-		 rain_heavy snow blizzard blizzard mud
-	}
-		phase = no
-	}
-
-	active = yes
-
-	base = { factor = 6
-		}
-	attacker = -0.10
-	attacker_movement_speed = -0.75
-	attacker_org_damage_modifier = -0.5
-	defender_org_damage_modifier = -0.5
 }
 # END OF POSITIIONAL PHASE #
 
@@ -332,1449 +306,1458 @@ tactic_hampered_defense = {
 
 
 # attack #
-tactic_trench_suppressive_barrage = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = trench_assault
-	}
-		picture = attack
-
-}
-# attack #
-
-tactic_bite_n_hold_advance = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = trench_assault
-	}
-		picture = attack
-
-}
-# attack #
-
-tactic_mineclearing_ops = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = trench_assault
-	}
-		picture = attack
-}
-# attack #
-
-tactic_mass_assault = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = trench_assault
-	}
-}
-# attack #
-
-tactic_trench_flanking_manuever = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = trench_assault
-	}
-		picture = attack
-}
-# defense #
-
-tactic_trench_counter_battery = {
-	is_attacker = no
-		trigger = {
-		is_attacker = no
-		phase = trench_assault
-	}
-		picture = attack
-
-}
-# defense #
-
-tactic_final_protective_fire = {
-	is_attacker = no
-		trigger = {
-		is_attacker = no
-		phase = trench_assault
-	}
-		picture = attack
-
-}
-# defense #
-
-tactic_trench_prepared_defenses = {
-	is_attacker = no
-		trigger = {
-		is_attacker = no
-		phase = trench_assault
-	}
-		picture = attack
-}
-# defense #
-
-tactic_trench_flexible_defense = {
-	is_attacker = no
-		trigger = {
-		is_attacker = no
-		phase = trench_assault
-	}
-}
-
-#################################
-##### CLOSE QUARTERS PHASE ######
-#################################
-
-# attack #
-
-tactic_CQC_suppression = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = close_combat
-	}
-		picture = attack
-	attacker = -0.35
-	defender = -0.40
-	attacker_movement_speed = -0.75
-}
-
-# attack #
-
-tactic_EQC_assault = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = close_combat
-	}
-		picture = attack
-	attacker = -0.20
-	defender = -0.30
-	attacker_movement_speed = -0.50
-	attacker_org_damage_modifier = -0.10
-	defender_org_damage_modifier = -0.10
-}
-# attack #
-
-tactic_CQC_attack = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = close_combat
-	}
-	picture = attack
-
-	attacker = -0.25
-	defender = -0.30
-}
-# attack #
-
-tactic_CQC_sieze_strongpoint = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = close_combat
-	}
-		picture = attack
-
-	attacker = -0.35
-	defender = -0.40
-	attacker_movement_speed = -0.75
-	attacker_org_damage_modifier = -0.15
-	defender_org_damage_modifier = -0.15
-}
-# attack #
-
-tactic_CQC_flank = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = close_combat
-	}
-	picture = attack
-
-	attacker = -0.15
-	defender = -0.25
-	attacker_movement_speed = 0.25
-	attacker_org_damage_modifier = -0.15
-	defender_org_damage_modifier = -0.15
-}
-# attack #
-
-tactic_CQC_withdrawal = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = close_combat
-	}
-		picture = attack
-
-	attacker = -0.40
-	defender = -0.40
-	attacker_movement_speed = -0.50
-}
-# attack #
-
-tactic_CQC_clearing_ops = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = close_combat
-	}
-		picture = attack
-
-	attacker = -0.25
-	defender = -0.35
-	attacker_movement_speed = -0.75
-	attacker_org_damage_modifier = -0.10
-	defender_org_damage_modifier = -0.15
-}
-# attack #
-
-tactic_CQC_fire_superiority = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = close_combat
-	}
-		picture = attack
-
-	attacker = -0.35
-	defender = -0.40
-	attacker_movement_speed = -0.25
-	attacker_org_damage_modifier = -0.15
-	defender_org_damage_modifier = -0.15
-
-}
-
-# defense #
-
-tactic_def_CQC_suppression = {
-	is_attacker = no
-		trigger = {
-		is_attacker = no
-		phase = close_combat
-	}
-		picture = defend
-	attacker = -0.40
-	defender = -0.35
-	attacker_movement_speed = -0.50
-}
-
-# defense #
-
-tactic_ECQ_defense = {
-	is_attacker = no
-		trigger = {
-		is_attacker = no
-		phase = close_combat
-	}
-		picture = defend
-	attacker = -0.30
-	defender = -0.20
-	attacker_movement_speed = -0.25
-	attacker_org_damage_modifier = -0.10
-	defender_org_damage_modifier = -0.10
-}
-# defense #
-
-tactic_CQC_defense = {
-	is_attacker = no
-		trigger = {
-		is_attacker = no
-		phase = close_combat
-	}
-		picture = defend
-
-	attacker = -0.30
-	defender = -0.25
-
-}
-# defense #
-
-tactic_CQC_defend_strongpoint = {
-	is_attacker = no
-		trigger = {
-		is_attacker = no
-		phase = close_combat
-	}
-	picture = defend
-
-	attacker = -0.40
-	defender = -0.35
-	attacker_movement_speed = -0.25
-	attacker_org_damage_modifier = -0.15
-	defender_org_damage_modifier = -0.15
-}
-# defense #
-
-tactic_CQC_backhand_blow = {
-	is_attacker = no
-		trigger = {
-		is_attacker = no
-		phase = close_combat
-	}
-		picture = defend
-	attacker = -0.25
-	defender = -0.15
-	attacker_movement_speed = -0.25
-	attacker_org_damage_modifier = -0.15
-	defender_org_damage_modifier = -0.15
-
-
-}
-# defense #
-
-tactic_CQC_counter_attack = {
-	is_attacker = no
-		trigger = {
-		is_attacker = no
-		phase = close_combat
-	}
-		picture = defend
-
-}
-# defense #
-
-tactic_withdrawal = {
-	is_attacker = no
-		trigger = {
-		is_attacker = no
-		phase = close_combat
-	}
-		picture = defend
-	attacker = -0.40
-	defender = -0.40
-	attacker_movement_speed = 0.50
-
-}
-# defense #
-
-tactic_regain_fire_superiority = {
-	is_attacker = no
-		trigger = {
-		is_attacker = no
-		phase = close_combat
-	}
-		picture = defend
-
-	attacker = -0.40
-	defender = -0.35
-	attacker_movement_speed = -0.25
-	attacker_org_damage_modifier = -0.15
-	defender_org_damage_modifier = -0.15
-
-}
-
-#############################
-##### LONG RANGE COMBAT #####
-#############################
-
-# attack #
-
-tactic_attack = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = long_range
-	}
-		picture = attack
-	attacker = 0.05
-
-
-}
-# attack #
-
-tactic_assault = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = long_range
-	}
-		picture = attack
-	attacker = 0.10
-	defender = 0.05
-	attacker_movement_speed = -0.25
-
-}
-# attack #
-
-tactic_shock = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = long_range
-	}
-		picture = attack
-	attacker = 0.10
-	defender = 0.05
-	attacker_movement_speed = -0.25
-}
-# attack #
-
-tactic_blitz_attack = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = long_range
-	}
-		picture = attack
-	attacker = 0.10
-	attacker_movement_speed = 0.50
-	defender_org_damage_modifier = 0.15
-}
-# attack #
-
-tactic_banzai_charge = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = long_range
-	}
-		picture = attack
-	attacker = 0.15
-	defender = 0.15
-	attacker_movement_speed = 0.75
-	attacker_org_damage_modifier = -0.30
-}
-# attack #
-
-tactic_relentless_assault = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = long_range
-	}
-		picture = attack
-}
-# attack #
-
-tactic_pincer_manuever = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = long_range
-	}
-		picture = attack
-}
-# attack #
-
-tactic_well_planned_attack = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = long_range
-	}
-		picture = attack
-}
-# attack #
-
-tactic_infiltration_assault = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = long_range
-	}
-		picture = attack
-}
-# attack #
-
-tactic_suppressive_barrage = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = long_range
-	}
-		picture = attack
-}
-# attack #
-
-tactic_flanking_attack = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = long_range
-	}
-		picture = attack
-}
-
-# defense #
-
-tactic_defense = {
-	is_attacker = no
-		trigger = {
-		is_attacker = no
-		phase = long_range
-	}
-		picture = defend
-}
-# defense #
-
-tactic_counter_attack = {
-	is_attacker = no
-		trigger = {
-		is_attacker = no
-		phase = long_range
-	}
-		picture = defend
-}
-# defense #
-
-tactic_delay = {
-	is_attacker = no
-		trigger = {
-		is_attacker = no
-		phase = long_range
-	}
-		picture = defend
-}
-# defense #
-
-tactic_flexible_defense = {
-	is_attacker = no
-		trigger = {
-		is_attacker = no
-		phase = long_range
-	}
-		picture = defend
-}
-# defense #
-
-tactic_flanking_manuever = {
-	is_attacker = no
-		trigger = {
-		is_attacker = no
-		phase = long_range
-	}
-		picture = defend
-}
-# defense #
-
-tactic_prepared_defenses = {
-	is_attacker = no
-		trigger = {
-		is_attacker = no
-		phase = long_range
-	}
-		picture = defend
-}
-# defense #
-
-tactic_tactical_withdrawal = {
-	is_attacker = no
-		trigger = {
-		is_attacker = no
-		phase = long_range
-	}
-		picture = defend
-}
-# defense #
-
-tactic_counter_battery = {
-	is_attacker = no
-		trigger = {
-		is_attacker = no
-		phase = long_range
-	}
-}
-# defense #
-
-tactic_final_protective_fire = {
-	is_attacker = no
-		trigger = {
-		is_attacker = no
-		phase = long_range
-	}
-		picture = defend
-}
-# defense #
-
-tactic_ambush = {
-	is_attacker = no
-		trigger = {
-		is_attacker = no
-		phase = long_range
-	}
-		picture = defend
-}
-
-##############################
-##### AMPHIBIOUS LANDING #####
-##############################
-
-# attack #
-
-tactic_staggered_waves = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = amphibious
-	}
-		picture = attack
-}
-# attack #
-
-tactic_suppress_strongpoint = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = amphibious
-	}
-		picture = attack
-}
-# attack #
-
-tactic_raid_strongpoint = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = amphibious
-	}
-}
-# attack #
-
-tactic_amphib_bounding_overwatch = {
-	is_attacker = yes
-		trigger = {
-		is_attacker = yes
-		phase = amphibious
-	}
-		picture = attack
-}
-# defense #
-
-tactic_defend_strongpoint = {
-	is_attacker = no
-		trigger = {
-		is_attacker = no
-		phase = amphibious
-	}
-		picture = attack
-}
-# defense #
-
-tactic_amphib_final_protective_fire = {
-	is_attacker = no
-		trigger = {
-		is_attacker = no
-		phase = amphibious
-	}
-		picture = attack
-}
-# defense #
-
-tactic_amphib_counter_attack = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = amphibious
-	}
-}
-# defense #
-
-tactic_desperate_defense = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = amphibious
-	}
-		picture = attack
-}
-
-#########################
-##### URBAN WARFARE #####
-#########################
-
-# attack #
-
-tactic_atk_suppressive_bombardment = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = urban_warfare
-	}
-		picture = attack
-}
-# attack #
-
-tactic_siege_local_strongpoint = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = urban_warfare
-	}
-		picture = attack
-}
-# attack #
-
-tactic_siege_citadel = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = urban_warfare
-	}
-		picture = attack
-}
-# attack #
-
-tactic_bounding_overwatch = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = urban_warfare
-	}
-		picture = attack
-}
-# attack #
-
-tactic_urban_infiltration = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = urban_warfare
-	}
-		picture = attack
-}
-# attack #
-
-tactic_door2door_assault = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = urban_warfare
-	}
-		picture = attack
-}
-# attack #
-
-tactic_underground_assault = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = urban_warfare
-	}
-		picture = attack
-}
-# attack #
-
-tactic_street2street_assault = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = urban_warfare
-	}
-		picture = attack
-}
-# attack #
-
-tacitc_clearing_operations = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = urban_warfare
-	}
-		picture = attack
-}
-# attack #
-
-tactic_rubble_assault = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = urban_warfare
-	}
-		picture = attack
-}
-
-# defense #
-
-tactic_def_suppressive_bombardment = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = urban_warfare
-	}
-		picture = defend
-}
-# defense #
-
-tactic_defend_local_strongpoint = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = urban_warfare
-	}
-		picture = defend
-}
-# defense #
-
-tactic_defend_citadel = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = urban_warfare
-	}
-		picture = defend
-}
-# defense #
-
-tactic_concealed_defenses = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = urban_warfare
-	}
-		picture = defend
-}
-# defense #
-
-tactic_makeshift_barricades = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = urban_warfare
-	}
-		picture = defend
-}
-# defense #
-
-tactic_mouse_holing = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = urban_warfare
-	}
-		picture = defend
-}
-# defense #
-
-tactic_door2door_defense = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = urban_warfare
-	}
-		picture = defend
-}
-# defense #
-
-tactic_defend_rubble = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = urban_warfare
-	}
-		picture = defend
-}
-# defense #
-
-tactic_underground_defense = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = urban_warfare
-	}
-		picture = defend
-}
-# defense #
-
-tactic_street2street_defense = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = urban_warfare
-	}
-		picture = defend
-}
-
-##############################
-##### BREAKTHROUGH PHASE #####
-##############################
-
-# more grainulatiry because breakthrough phase is the most dynamic and "special"
-
-# poor attack #
-tactic_incomplete_envelopment = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = breakthrough
-	}
-		picture = attack
-
-}
-# attack #
-
-tactic_envelopement = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = breakthrough
-	}
-		picture = attack
-}
-# masterful attack #
-
-tactic_encirclement = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = breakthrough
-	}
-		picture = attack
-}
-# poor attack #
-tactic_stumbling_breakthrough = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = breakthrough
-	}
-		picture = attack
-}
-# attack #
-
-tactic_breakthrough = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = breakthrough
-	}
-		picture = attack
-}
-# masterful attack #
-
-tactic_overwhelming_breakthrough = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = breakthrough
-	}
-		picture = attack
-}
-# poor attack #
-tactic_overextended_pincer = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = breakthrough
-	}
-		picture = attack
-}
-# attack #
-
-tactic_br_pincer_manuever = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = breakthrough
-	}
-		picture = attack
-}
-# masterful attack #
-
-tactic_unexpected_pincer = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = breakthrough
-	}
-		picture = attack
-}
-# poor attack #
-tactic_overextended_flank_manuever = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = breakthrough
-	}
-		picture = attack
-}
-# attack #
-
-tactic_br_flanking_manuever = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = breakthrough
-	}
-		picture = attack
-}
-# masterful attack #
-
-tactic_masterful_flanking_manuever = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = breakthrough
-	}
-		picture = attack
-}
-# poor attack #
-tactic_unsupported_blitz_attack = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = breakthrough
-	}
-		picture = attack
-}
-# attack #
-
-tactic_br_blitz_attack = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = breakthrough
-	}
-		picture = attack
-}
-# masterful attack #
-
-tactic_masterful_blitz = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = breakthrough
-	}
-		picture = attack
-}
-# poor defense #
-tactic_clumsy_counter_attack = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = breakthrough
-	}
-}
-# defense #
-
-tactic_counter_attack = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = breakthrough
-	}
-		picture = attack
-}
-# masterful defense #
-
-tactic_masterful_counter_attack = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = breakthrough
-	}
-		picture = attack
-}
-# poor defense #
-tactic_miscalculated_delay = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = breakthrough
-	}
-		picture = attack
-}
-# defense #
-
-tactic_br_delay = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = breakthrough
-	}
-		picture = attack
-}
-# masterful defense #
-
-tactic_masterful_delay = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = breakthrough
-	}
-		picture = attack
-}
-# poor defense #
-tactic_inflexible_defense = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = breakthrough
-	}
-	picture = defend
-}
-# defense #
-
-tactic_br_flexible_defense = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = breakthrough
-	}
-		picture = defend
-}
-# masterful defense #
-
-tactic_elastic_defense = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = breakthrough
-	}
-		picture = defend
-}
-# poor defense #
-tactic_def_overextended_flank_manuever = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = breakthrough
-	}
-		picture = defend
-}
-# defense #
-
-tactic_def_flanking_manuever = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = breakthrough
-	}
-		picture = defend
-}
-# masterful defense #
-
-tactic_backhand_blow = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = breakthrough
-	}
-		picture = defend
-}
-# poor defense #
-tactic_panicked_withdrawal = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = breakthrough
-	}
-		picture = defend
-}
-# defense #
-
-tactic_br_tactical_withdrawal = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = breakthrough
-	}
-		picture = defend
-}
-# poor defense #
-tactic_reckless_ambush = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = breakthrough
-	}
-		picture = defend
-}
-# defense #
-
-tactic_br_ambush = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = breakthrough
-	}
-		picture = defend
-}
-# masterful defense #
-
-tactic_masterful_ambush = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = breakthrough
-	}
-		picture = defend
-}
-# masterful defense #
-
-tactic_breakout = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = breakthrough
-	}
-		picture = defend
-
-}
-
-#######################
-##### HOLD BRIDGE #####
-#######################
-
-# attack #
-
-tactic_attack_bridge = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = hold_bridge
-	}
-
-}
-# attack #
-
-tactic_storm_bridge = {
-	is_attacker = yes
-
-}
-# attack #
-
-tactic_atk_hold_bridge = {
-	is_attacker = yes
-
-}
-# attack #
-
-tactic_embankment_assault = {
-	is_attacker = yes
-
-}
-# attack #
-
-tactic_establish_breachhead = {
-	is_attacker = yes
-}
-
-# defense #
-
-tactic_hold_bridge = {
-	is_attacker = no
-}
-# defense #
-
-tactic_defend_bridge = {
-	is_attacker = no
-}
-# defense #
-
-tactic_defend_embankment = {
-	is_attacker = no
-}
-# defense #
-
-##############################
-##### SIEZE BRIDGE PHASE #####
-##############################
-
-# attack #
-tactic_sz_sieze_bridge = {
-	is_attacker = yes
-
-}
-# attack #
-
-tactic_sz_defend_bridge = {
-	is_attacker = yes
-
-}
-# attack #
-
-tactic_sz_defend_breachhead = {
-	is_attacker = yes
-
-}
-# attack #
-
-tactic_sz_defend_embankment = {
-	is_attacker = yes
-
-}
-
-# defense #
-
-tactic_sz_attack_bridge = {
-	is_attacker = no
-}
-# defense #
-
-tactic_sz_storm_bridge = {
-	is_attacker = no
-}
-# defense #
-
-tactic_sz_def_hold_bridge = {
-	is_attacker = no
-}
-# defense #
-
-tactic_sz_embankment_assault = {
-	is_attacker = no
-}
-# defense #
-
-tactic_recapture_bridge = {
-	is_attacker = no
-}
-
-################################
-##### RIVER CROSSING PHASE #####
-################################
-
-# attack #
-
-tactic_river_crossing = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = river_crossing
-	}
-		picture = attack
-}
-# attack #
-
-tactic_pontoon_bridge_assault = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = river_crossing
-	}
-		picture = attack
-
-}
-# attack #
-
-tactic_rvr_atk_suppressive_barrage = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = river_crossing
-	}
-		picture = attack
-
-}
-# attack #
-
-tactic_bridge_scouting = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = river_crossing
-	}
-		picture = attack
-
-}
-
-# defense #
-
-tactic_rvr_suppressive_barrage = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = river_crossing
-	}
-		picture = defend
-}
-# defense #
-
-tactic_embankment_defense = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = river_crossing
-	}
-		picture = defend
-}
-
-tactic_rvr_final_protective_fire = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = river_crossing
-	}
-		picture = defend
-}
-
-################################
-##### STRATEGIC WITHDRAWAL #####
-################################
-
-# attack #
-
-tactic_wdrl_flanking_manuever = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = tactical_withdrawal
-	}
-		picture = attack
-}
-# attack #
-
-tactic_pursuit = {
-	is_attacker = yes
-			trigger = {
-		is_attacker = yes
-		phase = tactical_withdrawal
-	}
-		picture = attack
-
-}
-
-# defense #
-
-tactic_routed = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = tactical_withdrawal
-	}
-		picture = defend
-}
-# defense #
-
-tactic_wdrl_tactical_withdrawal = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = tactical_withdrawal
-	}
-		picture = defend
-}
-# defense #
-
-tactic_evasion = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = tactical_withdrawal
-	}
-		picture = defend
-}
-
-# defense #
-
-tactic_wdrl_banzai_charge = {
-	is_attacker = no
-			trigger = {
-		is_attacker = no
-		phase = tactical_withdrawal
-	}
-		picture = defend
-}
-
-
-
-###################
-####### END #######
-###################
+# tactic_trench_suppressive_barrage = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = trench_assault
+# 	}
+# 		picture = attack
+# 			base = {
+# 		factor = 8
+# 		modifier = {
+# 			add = 4
+# 			has_artillery_ratio > 0.35
+
+# 		}
+# 	}
+
+
+# }
+# # attack #
+
+# tactic_bite_n_hold_advance = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = trench_assault
+# 	}
+# 		picture = attack
+
+# }
+# # attack #
+
+# tactic_mineclearing_ops = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = trench_assault
+# 	}
+# 		picture = attack
+# }
+# # attack #
+
+# tactic_mass_assault = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = trench_assault
+# 	}
+# }
+# # attack #
+
+# tactic_trench_flanking_manuever = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = trench_assault
+# 	}
+# 		picture = attack
+# }
+# # defense #
+
+# tactic_trench_counter_battery = {
+# 	is_attacker = no
+# 		trigger = {
+# 		is_attacker = no
+# 		phase = trench_assault
+# 	}
+# 		picture = attack
+
+# }
+# # defense #
+
+# tactic_final_protective_fire = {
+# 	is_attacker = no
+# 		trigger = {
+# 		is_attacker = no
+# 		phase = trench_assault
+# 	}
+# 		picture = attack
+
+# }
+# # defense #
+
+# tactic_trench_prepared_defenses = {
+# 	is_attacker = no
+# 		trigger = {
+# 		is_attacker = no
+# 		phase = trench_assault
+# 	}
+# 		picture = attack
+# }
+# # defense #
+
+# tactic_trench_flexible_defense = {
+# 	is_attacker = no
+# 		trigger = {
+# 		is_attacker = no
+# 		phase = trench_assault
+# 	}
+# }
+
+# #################################
+# ##### CLOSE QUARTERS PHASE ######
+# #################################
+
+# # attack #
+
+# tactic_CQC_suppression = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = close_combat
+# 	}
+# 		picture = attack
+# 	attacker = -0.35
+# 	defender = -0.40
+# 	attacker_movement_speed = -0.75
+# }
+
+# # attack #
+
+# tactic_EQC_assault = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = close_combat
+# 	}
+# 		picture = attack
+# 	attacker = -0.20
+# 	defender = -0.30
+# 	attacker_movement_speed = -0.50
+# 	attacker_org_damage_modifier = -0.10
+# 	defender_org_damage_modifier = -0.10
+# }
+# # attack #
+
+# tactic_CQC_attack = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = close_combat
+# 	}
+# 	picture = attack
+
+# 	attacker = -0.25
+# 	defender = -0.30
+# }
+# # attack #
+
+# tactic_CQC_sieze_strongpoint = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = close_combat
+# 	}
+# 		picture = attack
+
+# 	attacker = -0.35
+# 	defender = -0.40
+# 	attacker_movement_speed = -0.75
+# 	attacker_org_damage_modifier = -0.15
+# 	defender_org_damage_modifier = -0.15
+# }
+# # attack #
+
+# tactic_CQC_flank = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = close_combat
+# 	}
+# 	picture = attack
+
+# 	attacker = -0.15
+# 	defender = -0.25
+# 	attacker_movement_speed = 0.25
+# 	attacker_org_damage_modifier = -0.15
+# 	defender_org_damage_modifier = -0.15
+# }
+# # attack #
+
+# tactic_CQC_withdrawal = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = close_combat
+# 	}
+# 		picture = attack
+
+# 	attacker = -0.40
+# 	defender = -0.40
+# 	attacker_movement_speed = -0.50
+# }
+# # attack #
+
+# tactic_CQC_clearing_ops = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = close_combat
+# 	}
+# 		picture = attack
+
+# 	attacker = -0.25
+# 	defender = -0.35
+# 	attacker_movement_speed = -0.75
+# 	attacker_org_damage_modifier = -0.10
+# 	defender_org_damage_modifier = -0.15
+# }
+# # attack #
+
+# tactic_CQC_fire_superiority = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = close_combat
+# 	}
+# 		picture = attack
+
+# 	attacker = -0.35
+# 	defender = -0.40
+# 	attacker_movement_speed = -0.25
+# 	attacker_org_damage_modifier = -0.15
+# 	defender_org_damage_modifier = -0.15
+
+# }
+
+# # defense #
+
+# tactic_def_CQC_suppression = {
+# 	is_attacker = no
+# 		trigger = {
+# 		is_attacker = no
+# 		phase = close_combat
+# 	}
+# 		picture = defend
+# 	attacker = -0.40
+# 	defender = -0.35
+# 	attacker_movement_speed = -0.50
+# }
+
+# # defense #
+
+# tactic_ECQ_defense = {
+# 	is_attacker = no
+# 		trigger = {
+# 		is_attacker = no
+# 		phase = close_combat
+# 	}
+# 		picture = defend
+# 	attacker = -0.30
+# 	defender = -0.20
+# 	attacker_movement_speed = -0.25
+# 	attacker_org_damage_modifier = -0.10
+# 	defender_org_damage_modifier = -0.10
+# }
+# # defense #
+
+# tactic_CQC_defense = {
+# 	is_attacker = no
+# 		trigger = {
+# 		is_attacker = no
+# 		phase = close_combat
+# 	}
+# 		picture = defend
+
+# 	attacker = -0.30
+# 	defender = -0.25
+
+# }
+# # defense #
+
+# tactic_CQC_defend_strongpoint = {
+# 	is_attacker = no
+# 		trigger = {
+# 		is_attacker = no
+# 		phase = close_combat
+# 	}
+# 	picture = defend
+
+# 	attacker = -0.40
+# 	defender = -0.35
+# 	attacker_movement_speed = -0.25
+# 	attacker_org_damage_modifier = -0.15
+# 	defender_org_damage_modifier = -0.15
+# }
+# # defense #
+
+# tactic_CQC_backhand_blow = {
+# 	is_attacker = no
+# 		trigger = {
+# 		is_attacker = no
+# 		phase = close_combat
+# 	}
+# 		picture = defend
+# 	attacker = -0.25
+# 	defender = -0.15
+# 	attacker_movement_speed = -0.25
+# 	attacker_org_damage_modifier = -0.15
+# 	defender_org_damage_modifier = -0.15
+
+
+# }
+# # defense #
+
+# tactic_CQC_counter_attack = {
+# 	is_attacker = no
+# 		trigger = {
+# 		is_attacker = no
+# 		phase = close_combat
+# 	}
+# 		picture = defend
+
+# }
+# # defense #
+
+# tactic_withdrawal = {
+# 	is_attacker = no
+# 		trigger = {
+# 		is_attacker = no
+# 		phase = close_combat
+# 	}
+# 		picture = defend
+# 	attacker = -0.40
+# 	defender = -0.40
+# 	attacker_movement_speed = 0.50
+
+# }
+# # defense #
+
+# tactic_regain_fire_superiority = {
+# 	is_attacker = no
+# 		trigger = {
+# 		is_attacker = no
+# 		phase = close_combat
+# 	}
+# 		picture = defend
+
+# 	attacker = -0.40
+# 	defender = -0.35
+# 	attacker_movement_speed = -0.25
+# 	attacker_org_damage_modifier = -0.15
+# 	defender_org_damage_modifier = -0.15
+
+# }
+
+# #############################
+# ##### LONG RANGE COMBAT #####
+# #############################
+
+# # attack #
+
+# tactic_attack = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = long_range
+# 	}
+# 		picture = attack
+# 	attacker = 0.05
+
+
+# }
+# # attack #
+
+# tactic_assault = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = long_range
+# 	}
+# 		picture = attack
+# 	attacker = 0.10
+# 	defender = 0.05
+# 	attacker_movement_speed = -0.25
+
+# }
+# # attack #
+
+# tactic_shock = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = long_range
+# 	}
+# 		picture = attack
+# 	attacker = 0.10
+# 	defender = 0.05
+# 	attacker_movement_speed = -0.25
+# }
+# # attack #
+
+# tactic_blitz_attack = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = long_range
+# 	}
+# 		picture = attack
+# 	attacker = 0.10
+# 	attacker_movement_speed = 0.50
+# 	defender_org_damage_modifier = 0.15
+# }
+# # attack #
+
+# tactic_banzai_charge = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = long_range
+# 	}
+# 		picture = attack
+# 	attacker = 0.15
+# 	defender = 0.15
+# 	attacker_movement_speed = 0.75
+# 	attacker_org_damage_modifier = -0.30
+# }
+# # attack #
+
+# tactic_relentless_assault = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = long_range
+# 	}
+# 		picture = attack
+# }
+# # attack #
+
+# tactic_pincer_manuever = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = long_range
+# 	}
+# 		picture = attack
+# }
+# # attack #
+
+# tactic_well_planned_attack = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = long_range
+# 	}
+# 		picture = attack
+# }
+# # attack #
+
+# tactic_infiltration_assault = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = long_range
+# 	}
+# 		picture = attack
+# }
+# # attack #
+
+# tactic_suppressive_barrage = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = long_range
+# 	}
+# 		picture = attack
+# }
+# # attack #
+
+# tactic_flanking_attack = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = long_range
+# 	}
+# 		picture = attack
+# }
+
+# # defense #
+
+# tactic_defense = {
+# 	is_attacker = no
+# 		trigger = {
+# 		is_attacker = no
+# 		phase = long_range
+# 	}
+# 		picture = defend
+# }
+# # defense #
+
+# tactic_counter_attack = {
+# 	is_attacker = no
+# 		trigger = {
+# 		is_attacker = no
+# 		phase = long_range
+# 	}
+# 		picture = defend
+# }
+# # defense #
+
+# tactic_delay = {
+# 	is_attacker = no
+# 		trigger = {
+# 		is_attacker = no
+# 		phase = long_range
+# 	}
+# 		picture = defend
+# }
+# # defense #
+
+# tactic_flexible_defense = {
+# 	is_attacker = no
+# 		trigger = {
+# 		is_attacker = no
+# 		phase = long_range
+# 	}
+# 		picture = defend
+# }
+# # defense #
+
+# tactic_flanking_manuever = {
+# 	is_attacker = no
+# 		trigger = {
+# 		is_attacker = no
+# 		phase = long_range
+# 	}
+# 		picture = defend
+# }
+# # defense #
+
+# tactic_prepared_defenses = {
+# 	is_attacker = no
+# 		trigger = {
+# 		is_attacker = no
+# 		phase = long_range
+# 	}
+# 		picture = defend
+# }
+# # defense #
+
+# tactic_tactical_withdrawal = {
+# 	is_attacker = no
+# 		trigger = {
+# 		is_attacker = no
+# 		phase = long_range
+# 	}
+# 		picture = defend
+# }
+# # defense #
+
+# tactic_counter_battery = {
+# 	is_attacker = no
+# 		trigger = {
+# 		is_attacker = no
+# 		phase = long_range
+# 	}
+# }
+# # defense #
+
+# tactic_final_protective_fire = {
+# 	is_attacker = no
+# 		trigger = {
+# 		is_attacker = no
+# 		phase = long_range
+# 	}
+# 		picture = defend
+# }
+# # defense #
+
+# tactic_ambush = {
+# 	is_attacker = no
+# 		trigger = {
+# 		is_attacker = no
+# 		phase = long_range
+# 	}
+# 		picture = defend
+# }
+
+# ##############################
+# ##### AMPHIBIOUS LANDING #####
+# ##############################
+
+# # attack #
+
+# tactic_staggered_waves = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = amphibious
+# 	}
+# 		picture = attack
+# }
+# # attack #
+
+# tactic_suppress_strongpoint = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = amphibious
+# 	}
+# 		picture = attack
+# }
+# # attack #
+
+# tactic_raid_strongpoint = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = amphibious
+# 	}
+# }
+# # attack #
+
+# tactic_amphib_bounding_overwatch = {
+# 	is_attacker = yes
+# 		trigger = {
+# 		is_attacker = yes
+# 		phase = amphibious
+# 	}
+# 		picture = attack
+# }
+# # defense #
+
+# tactic_defend_strongpoint = {
+# 	is_attacker = no
+# 		trigger = {
+# 		is_attacker = no
+# 		phase = amphibious
+# 	}
+# 		picture = attack
+# }
+# # defense #
+
+# tactic_amphib_final_protective_fire = {
+# 	is_attacker = no
+# 		trigger = {
+# 		is_attacker = no
+# 		phase = amphibious
+# 	}
+# 		picture = attack
+# }
+# # defense #
+
+# tactic_amphib_counter_attack = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = amphibious
+# 	}
+# }
+# # defense #
+
+# tactic_desperate_defense = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = amphibious
+# 	}
+# 		picture = attack
+# }
+
+# #########################
+# ##### URBAN WARFARE #####
+# #########################
+
+# # attack #
+
+# tactic_atk_suppressive_bombardment = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = urban_warfare
+# 	}
+# 		picture = attack
+# }
+# # attack #
+
+# tactic_siege_local_strongpoint = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = urban_warfare
+# 	}
+# 		picture = attack
+# }
+# # attack #
+
+# tactic_siege_citadel = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = urban_warfare
+# 	}
+# 		picture = attack
+# }
+# # attack #
+
+# tactic_bounding_overwatch = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = urban_warfare
+# 	}
+# 		picture = attack
+# }
+# # attack #
+
+# tactic_urban_infiltration = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = urban_warfare
+# 	}
+# 		picture = attack
+# }
+# # attack #
+
+# tactic_door2door_assault = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = urban_warfare
+# 	}
+# 		picture = attack
+# }
+# # attack #
+
+# tactic_underground_assault = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = urban_warfare
+# 	}
+# 		picture = attack
+# }
+# # attack #
+
+# tactic_street2street_assault = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = urban_warfare
+# 	}
+# 		picture = attack
+# }
+# # attack #
+
+# tacitc_clearing_operations = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = urban_warfare
+# 	}
+# 		picture = attack
+# }
+# # attack #
+
+# tactic_rubble_assault = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = urban_warfare
+# 	}
+# 		picture = attack
+# }
+
+# # defense #
+
+# tactic_def_suppressive_bombardment = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = urban_warfare
+# 	}
+# 		picture = defend
+# }
+# # defense #
+
+# tactic_defend_local_strongpoint = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = urban_warfare
+# 	}
+# 		picture = defend
+# }
+# # defense #
+
+# tactic_defend_citadel = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = urban_warfare
+# 	}
+# 		picture = defend
+# }
+# # defense #
+
+# tactic_concealed_defenses = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = urban_warfare
+# 	}
+# 		picture = defend
+# }
+# # defense #
+
+# tactic_makeshift_barricades = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = urban_warfare
+# 	}
+# 		picture = defend
+# }
+# # defense #
+
+# tactic_mouse_holing = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = urban_warfare
+# 	}
+# 		picture = defend
+# }
+# # defense #
+
+# tactic_door2door_defense = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = urban_warfare
+# 	}
+# 		picture = defend
+# }
+# # defense #
+
+# tactic_defend_rubble = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = urban_warfare
+# 	}
+# 		picture = defend
+# }
+# # defense #
+
+# tactic_underground_defense = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = urban_warfare
+# 	}
+# 		picture = defend
+# }
+# # defense #
+
+# tactic_street2street_defense = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = urban_warfare
+# 	}
+# 		picture = defend
+# }
+
+# ##############################
+# ##### BREAKTHROUGH PHASE #####
+# ##############################
+
+# # more grainulatiry because breakthrough phase is the most dynamic and "special"
+
+# # poor attack #
+# tactic_incomplete_envelopment = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = breakthrough
+# 	}
+# 		picture = attack
+
+# }
+# # attack #
+
+# tactic_envelopement = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = breakthrough
+# 	}
+# 		picture = attack
+# }
+# # masterful attack #
+
+# tactic_encirclement = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = breakthrough
+# 	}
+# 		picture = attack
+# }
+# # poor attack #
+# tactic_stumbling_breakthrough = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = breakthrough
+# 	}
+# 		picture = attack
+# }
+# # attack #
+
+# tactic_breakthrough = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = breakthrough
+# 	}
+# 		picture = attack
+# }
+# # masterful attack #
+
+# tactic_overwhelming_breakthrough = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = breakthrough
+# 	}
+# 		picture = attack
+# }
+# # poor attack #
+# tactic_overextended_pincer = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = breakthrough
+# 	}
+# 		picture = attack
+# }
+# # attack #
+
+# tactic_br_pincer_manuever = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = breakthrough
+# 	}
+# 		picture = attack
+# }
+# # masterful attack #
+
+# tactic_unexpected_pincer = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = breakthrough
+# 	}
+# 		picture = attack
+# }
+# # poor attack #
+# tactic_overextended_flank_manuever = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = breakthrough
+# 	}
+# 		picture = attack
+# }
+# # attack #
+
+# tactic_br_flanking_manuever = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = breakthrough
+# 	}
+# 		picture = attack
+# }
+# # masterful attack #
+
+# tactic_masterful_flanking_manuever = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = breakthrough
+# 	}
+# 		picture = attack
+# }
+# # poor attack #
+# tactic_unsupported_blitz_attack = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = breakthrough
+# 	}
+# 		picture = attack
+# }
+# # attack #
+
+# tactic_br_blitz_attack = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = breakthrough
+# 	}
+# 		picture = attack
+# }
+# # masterful attack #
+
+# tactic_masterful_blitz = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = breakthrough
+# 	}
+# 		picture = attack
+# }
+# # poor defense #
+# tactic_clumsy_counter_attack = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = breakthrough
+# 	}
+# }
+# # defense #
+
+# tactic_counter_attack = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = breakthrough
+# 	}
+# 		picture = attack
+# }
+# # masterful defense #
+
+# tactic_masterful_counter_attack = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = breakthrough
+# 	}
+# 		picture = attack
+# }
+# # poor defense #
+# tactic_miscalculated_delay = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = breakthrough
+# 	}
+# 		picture = attack
+# }
+# # defense #
+
+# tactic_br_delay = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = breakthrough
+# 	}
+# 		picture = attack
+# }
+# # masterful defense #
+
+# tactic_masterful_delay = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = breakthrough
+# 	}
+# 		picture = attack
+# }
+# # poor defense #
+# tactic_inflexible_defense = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = breakthrough
+# 	}
+# 	picture = defend
+# }
+# # defense #
+
+# tactic_br_flexible_defense = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = breakthrough
+# 	}
+# 		picture = defend
+# }
+# # masterful defense #
+
+# tactic_elastic_defense = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = breakthrough
+# 	}
+# 		picture = defend
+# }
+# # poor defense #
+# tactic_def_overextended_flank_manuever = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = breakthrough
+# 	}
+# 		picture = defend
+# }
+# # defense #
+
+# tactic_def_flanking_manuever = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = breakthrough
+# 	}
+# 		picture = defend
+# }
+# # masterful defense #
+
+# tactic_backhand_blow = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = breakthrough
+# 	}
+# 		picture = defend
+# }
+# # poor defense #
+# tactic_panicked_withdrawal = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = breakthrough
+# 	}
+# 		picture = defend
+# }
+# # defense #
+
+# tactic_br_tactical_withdrawal = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = breakthrough
+# 	}
+# 		picture = defend
+# }
+# # poor defense #
+# tactic_reckless_ambush = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = breakthrough
+# 	}
+# 		picture = defend
+# }
+# # defense #
+
+# tactic_br_ambush = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = breakthrough
+# 	}
+# 		picture = defend
+# }
+# # masterful defense #
+
+# tactic_masterful_ambush = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = breakthrough
+# 	}
+# 		picture = defend
+# }
+# # masterful defense #
+
+# tactic_breakout = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = breakthrough
+# 	}
+# 		picture = defend
+
+# }
+
+# #######################
+# ##### HOLD BRIDGE #####
+# #######################
+
+# # attack #
+
+# tactic_attack_bridge = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = hold_bridge
+# 	}
+
+# }
+# # attack #
+
+# tactic_storm_bridge = {
+# 	is_attacker = yes
+
+# }
+# # attack #
+
+# tactic_atk_hold_bridge = {
+# 	is_attacker = yes
+
+# }
+# # attack #
+
+# tactic_embankment_assault = {
+# 	is_attacker = yes
+
+# }
+# # attack #
+
+# tactic_establish_breachhead = {
+# 	is_attacker = yes
+# }
+
+# # defense #
+
+# tactic_hold_bridge = {
+# 	is_attacker = no
+# }
+# # defense #
+
+# tactic_defend_bridge = {
+# 	is_attacker = no
+# }
+# # defense #
+
+# tactic_defend_embankment = {
+# 	is_attacker = no
+# }
+# # defense #
+
+# ##############################
+# ##### SIEZE BRIDGE PHASE #####
+# ##############################
+
+# # attack #
+# tactic_sz_sieze_bridge = {
+# 	is_attacker = yes
+
+# }
+# # attack #
+
+# tactic_sz_defend_bridge = {
+# 	is_attacker = yes
+
+# }
+# # attack #
+
+# tactic_sz_defend_breachhead = {
+# 	is_attacker = yes
+
+# }
+# # attack #
+
+# tactic_sz_defend_embankment = {
+# 	is_attacker = yes
+
+# }
+
+# # defense #
+
+# tactic_sz_attack_bridge = {
+# 	is_attacker = no
+# }
+# # defense #
+
+# tactic_sz_storm_bridge = {
+# 	is_attacker = no
+# }
+# # defense #
+
+# tactic_sz_def_hold_bridge = {
+# 	is_attacker = no
+# }
+# # defense #
+
+# tactic_sz_embankment_assault = {
+# 	is_attacker = no
+# }
+# # defense #
+
+# tactic_recapture_bridge = {
+# 	is_attacker = no
+# }
+
+# ################################
+# ##### RIVER CROSSING PHASE #####
+# ################################
+
+# # attack #
+
+# tactic_river_crossing = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = river_crossing
+# 	}
+# 		picture = attack
+# }
+# # attack #
+
+# tactic_pontoon_bridge_assault = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = river_crossing
+# 	}
+# 		picture = attack
+
+# }
+# # attack #
+
+# tactic_rvr_atk_suppressive_barrage = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = river_crossing
+# 	}
+# 		picture = attack
+
+# }
+# # attack #
+
+# tactic_bridge_scouting = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = river_crossing
+# 	}
+# 		picture = attack
+
+# }
+
+# # defense #
+
+# tactic_rvr_suppressive_barrage = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = river_crossing
+# 	}
+# 		picture = defend
+# }
+# # defense #
+
+# tactic_embankment_defense = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = river_crossing
+# 	}
+# 		picture = defend
+# }
+
+# tactic_rvr_final_protective_fire = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = river_crossing
+# 	}
+# 		picture = defend
+# }
+
+# ################################
+# ##### STRATEGIC WITHDRAWAL #####
+# ################################
+
+# # attack #
+
+# tactic_wdrl_flanking_manuever = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = tactical_withdrawal
+# 	}
+# 		picture = attack
+# }
+# # attack #
+
+# tactic_pursuit = {
+# 	is_attacker = yes
+# 			trigger = {
+# 		is_attacker = yes
+# 		phase = tactical_withdrawal
+# 	}
+# 		picture = attack
+
+# }
+
+# # defense #
+
+# tactic_routed = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = tactical_withdrawal
+# 	}
+# 		picture = defend
+# }
+# # defense #
+
+# tactic_wdrl_tactical_withdrawal = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = tactical_withdrawal
+# 	}
+# 		picture = defend
+# }
+# # defense #
+
+# tactic_evasion = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = tactical_withdrawal
+# 	}
+# 		picture = defend
+# }
+
+# # defense #
+
+# tactic_wdrl_banzai_charge = {
+# 	is_attacker = no
+# 			trigger = {
+# 		is_attacker = no
+# 		phase = tactical_withdrawal
+# 	}
+# 		picture = defend
+# }
+
+
+
+# ###################
+# ####### END #######
+# ###################
 
 
