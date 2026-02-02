@@ -24,6 +24,8 @@ WA_AI_PC_set_global_variables = {
 	set_variable = { global.WA_AI_PC_CONVERSION_COST_CIV_TO_MIL     = 6800 }
 	set_variable = { global.WA_AI_PC_BUILDING_HYDROPOWEREDSTEELMILL_COST         = 12500 }
 	set_variable = { global.WA_AI_PC_BUILDING_HYDROPOWEREDALUMINIUMSMELTER_COST  = 12500 }
+	set_variable = { global.WA_AI_PC_BUILDING_STEELMILL_COST                     = 10000 }
+	set_variable = { global.WA_AI_PC_BUILDING_ALUMINIUMSMELTER_COST              = 10000 }
 	set_variable = { global.WA_AI_PC_BUILDING_NAVAL_BASE_COST                    = 3000 }
 
 	### BUILDING TYPE IDS
@@ -104,6 +106,12 @@ WA_AI_PC_get_build_speed = {
 	else_if = { limit = { check_variable = { _project_building_type = 12 } }
 		add_to_temp_variable = { construction_speed_ = modifier@production_speed_hydro_aluminium_refinery_factor }
 	}
+	else_if = { limit = { check_variable = { _project_building_type = 15 } }
+		add_to_temp_variable = { construction_speed_ = modifier@production_speed_steel_refinery_factor }
+	}
+	else_if = { limit = { check_variable = { _project_building_type = 16 } }
+		add_to_temp_variable = { construction_speed_ = modifier@production_speed_aluminium_refinery_factor }
+	}
 	else_if = { limit = { check_variable = { _project_building_type = 13 } }
 		add_to_temp_variable = { construction_speed_ = modifier@production_speed_rail_way_factor }
 	}
@@ -114,8 +122,8 @@ WA_AI_PC_get_build_speed = {
 	# Add general construction speed modifier
 	add_to_temp_variable = { construction_speed_ = modifier@production_speed_buildings_factor }
 
-	# Infrastructure effect for factory-type buildings (types 5-12)
-	if = { limit = { check_variable = { _project_building_type > 4 } check_variable = { _project_building_type < 13 } }
+	# Infrastructure effect for factory-type buildings (types 5-12, 15-16)
+	if = { limit = { OR = { AND = { check_variable = { _project_building_type > 4 } check_variable = { _project_building_type < 13 } } check_variable = { _project_building_type = 15 } check_variable = { _project_building_type = 16 } } }
 		set_temp_variable = { _infra_bonus = infrastructure_level }
 		multiply_temp_variable = { _infra_bonus = 0.1 }
 		add_to_temp_variable = { _infra_bonus = 1 }
@@ -182,6 +190,12 @@ WA_AI_PC_get_building_cost = {
 	}
 	else_if = { limit = { check_variable = { _project_building_type = 12 } }
 		set_temp_variable = { building_cost_ = global.WA_AI_PC_BUILDING_HYDROPOWEREDALUMINIUMSMELTER_COST }
+	}
+	else_if = { limit = { check_variable = { _project_building_type = 15 } }
+		set_temp_variable = { building_cost_ = global.WA_AI_PC_BUILDING_STEELMILL_COST }
+	}
+	else_if = { limit = { check_variable = { _project_building_type = 16 } }
+		set_temp_variable = { building_cost_ = global.WA_AI_PC_BUILDING_ALUMINIUMSMELTER_COST }
 	}
 	else_if = { limit = { check_variable = { _project_building_type = 13 } }
 		# Railway cost: base + extra per existing level
@@ -654,6 +668,12 @@ WA_AI_PC_add_finished_building_by_id = {
 	}
 	else_if = { limit = { check_variable = { _build_type = 12 } }
 		add_building_construction = { type = hydro_aluminium_refinery level = 1 instant_build = yes }
+	}
+	else_if = { limit = { check_variable = { _build_type = 15 } }
+		add_building_construction = { type = steel_refinery level = 1 instant_build = yes }
+	}
+	else_if = { limit = { check_variable = { _build_type = 16 } }
+		add_building_construction = { type = aluminium_refinery level = 1 instant_build = yes }
 	}
 	else_if = { limit = { check_variable = { _build_type = 13 } }
 		# Railway construction using stored province data
