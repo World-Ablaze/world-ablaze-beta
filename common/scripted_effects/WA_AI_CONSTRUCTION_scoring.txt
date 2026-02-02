@@ -292,6 +292,11 @@ WA_AI_get_radar_slot_score = {
 
 	if = {
 		limit = {
+			# Scope structure for nested any_neighbor_state:
+			# - Original state being scored (outer context)
+			#   - PREV = first neighbor state
+			#     - THIS = second neighbor state (inner any_neighbor_state)
+			#     - PREV.PREV = original state being scored
 			NOT = {
 				any_neighbor_state = {
 					OR = {
@@ -300,9 +305,9 @@ WA_AI_get_radar_slot_score = {
 							check_variable = { PREV.distance_to@THIS < 400 }
 						}
 						any_neighbor_state = {
-							NOT = { check_variable = { THIS.id = PREV.PREV.id } }
+							NOT = { check_variable = { THIS.id = PREV.PREV.id } } # exclude original state
 							OR = { has_state_flag = WA_AI_radar_site radar_station > 0 }
-							check_variable = { PREV.PREV.distance_to@THIS < 400 }
+							check_variable = { PREV.PREV.distance_to@THIS < 400 } # distance from original state
 						}
 					}
 				}
@@ -374,11 +379,16 @@ WA_AI_get_airbase_slot_score = {
 
 	if = { limit = { air_base > 0 } multiply_variable = { WA_AI_airbase_slot_score = 1.25 } }
 
+	# Scope structure for nested any_of_scopes:
+	# - ROOT = country building airbases
+	#   - PREV = enemy country (from ROOT.enemies)
+	#     - THIS = enemy controlled state
+	#     - PREV.PREV = ROOT (distance from ROOT's state to enemy state)
 	if = {
 		limit = {
 			any_of_scopes = { array = ROOT.enemies
 				any_of_scopes = { array = controlled_states
-					check_variable = { PREV.PREV.distance_to@THIS < 400 }
+					check_variable = { PREV.PREV.distance_to@THIS < 400 } # distance from our state to enemy state
 				}
 			}
 		}
@@ -454,19 +464,8 @@ WA_AI_get_antiair_slot_score = {
 	add_to_temp_variable = { t1 = 1 }
 	multiply_variable = { WA_AI_antiair_slot_score = t1 }
 
-	# steel mils
+	# steel refinery (non-hydro)
 	set_temp_variable = { t1 = building_level@steel_refinery }
-	divide_temp_variable = { t1 = 1.5 }
-	add_to_temp_variable = { t1 = 1 }
-	multiply_variable = { WA_AI_antiair_slot_score = t1 }
-
-	set_temp_variable = { t1 = building_level@hydro_steel_refinery }
-	divide_temp_variable = { t1 = 1.5 }
-	add_to_temp_variable = { t1 = 1 }
-	multiply_variable = { WA_AI_antiair_slot_score = t1 }
-
-	# aluminium smelter
-	set_temp_variable = { t1 = building_level@hydro_aluminium_refinery }
 	divide_temp_variable = { t1 = 1.5 }
 	add_to_temp_variable = { t1 = 1 }
 	multiply_variable = { WA_AI_antiair_slot_score = t1 }
