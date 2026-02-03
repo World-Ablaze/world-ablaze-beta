@@ -4179,9 +4179,21 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			custom_effect_tooltip = infantry_modernization_spirit_unlock_tt
-			custom_effect_tooltip = mobile_warfare_drive_spirit_unlock_tt
-			custom_effect_tooltip = firepower_induction_spirit_unlock_tt
+			custom_effect_tooltip = infantry_modernization_spirit_permanent_tt
+			hidden_effect = {
+				add_ideas = infantry_modernization_spirit
+				set_technology = { infantry_modernization_tech = 1 }
+			}
+			custom_effect_tooltip = mobile_warfare_drive_spirit_permanent_tt
+			hidden_effect = {
+				add_ideas = mobile_warfare_drive_spirit
+				set_technology = { mobile_warfare_drive_tech = 1 }
+			}
+			custom_effect_tooltip = firepower_induction_spirit_permanent_tt
+			hidden_effect = {
+				add_ideas = firepower_induction_spirit
+				set_technology = { firepower_induction_tech = 1 }
+			}
 			custom_effect_tooltip = SOV_recruiting_reserves_40
 			set_variable = { ROOT.reserves_equipment = 0.5 }
 			hidden_effect = {
@@ -4209,6 +4221,7 @@ focus_tree = {
 					is_ai = no
 				}
 				add_ideas = infantry_modernization_spirit
+				set_technology = { infantry_modernization_tech = 1 }
 			}
 		}
 	}
@@ -11343,39 +11356,47 @@ focus_tree = {
 			any_state = {
 				is_core_of = GER
 				is_controlled_by = SOV
+				NOT = {
+					OWNER = {
+						has_war_with = ROOT
+					}
+				}
 			}
 		}
 
 		cancel_if_invalid = yes
 		continue_if_invalid = no
 		completion_reward = {
-			DDR = {
-				add_state_core = 42
-				add_state_core = 50
-				add_state_core = 51
-				add_state_core = 52
-				add_state_core = 53
-				add_state_core = 54
-				add_state_core = 55
-				add_state_core = 56
-				add_state_core = 57
-				add_state_core = 58
-				add_state_core = 59
-				add_state_core = 60
-				add_state_core = 61
-				add_state_core = 62
-				add_state_core = 64
-				add_state_core = 65
-				add_state_core = 66
-				add_state_core = 67
-				add_state_core = 803
-				add_state_core = 799
-				add_state_core = 800
-				add_state_core = 801
-				add_state_core = 802
-				add_state_core = 804
-				add_state_core = 810
-				add_state_core = 996
+			every_state = {
+				limit = {
+					is_core_of = GER
+					is_controlled_by = SOV
+					NOT = {
+						is_core_of = CZE
+					}
+					NOT = {
+						is_core_of = AUS
+					}
+					NOT = {
+						is_core_of = POL
+					}
+					NOT = {
+						is_core_of = FRA
+					}
+					NOT = {
+						is_core_of = LUX
+					}
+					NOT = {
+						is_core_of = DEN
+					}
+					NOT = {
+						is_core_of = LIT
+					}
+					NOT = {
+						state = 763
+					}
+				}
+				DDR = { add_state_core = PREV }
 			}
 			hidden_effect = {
 				SOV = {
@@ -11386,9 +11407,7 @@ focus_tree = {
 			every_state = {
 				limit = {
 					is_core_of = DDR
-					OR = {
-						is_controlled_by = SOV
-					}
+					is_controlled_by = SOV
 				}
 				DDR = {
 					transfer_state = PREV
@@ -11404,6 +11423,30 @@ focus_tree = {
 					fascism = 33
 				}
 				set_country_flag = soviet_technologies_tree_flag
+			}
+			DDR = {
+				if = {
+					limit = {
+						has_character = DDR_wilhelm_pieck
+					}
+					DDR_wilhelm_pieck = {
+						promote_leader = yes
+					}
+				}
+				else = {
+					retire_country_leader = yes
+					create_country_leader = {
+						name = "Wilhelm Pieck"
+						desc = "POLITICS_WILHELM_PIECK_DESC"	 
+						picture = GFX_portrait_Wilhelm_Pieck
+						expire = "1965.1.1"
+						ideology = stalinism
+						traits = {
+							#stalins_puppet # This will now be added in on_actions if SOV releases the country as a puppet via action or war conference
+							exiled # He left in 1933 so he should still be exiled
+						}
+					}
+				}
 			}
 		}
 	}
@@ -11591,6 +11634,24 @@ focus_tree = {
 		y = 1
 		relative_position_id = SOV_demand_balkan_submission
 
+		available = {
+			NOT = {
+				has_War_with = AUS
+			}
+			AUS = {
+				exists = no
+			}
+			any_state = {
+				is_core_of = AUS
+				is_controlled_by = SOV
+				NOT = {
+					OWNER = {
+						has_war_with = ROOT
+					}
+				}
+			}
+		}
+
 		cost = 3
 		ai_will_do = {
 			factor = 1
@@ -11600,6 +11661,64 @@ focus_tree = {
 		cancel_if_invalid = yes
 		continue_if_invalid = no
 		completion_reward = {
+			if = {
+				limit = {
+					has_global_flag = yalta_agreed_flag
+					any_state = {
+						is_core_of = AUS
+						CONTROLLER = {
+							OR = {
+								original_tag = ENG
+								original_tag = USA
+							}
+						}
+					}
+					USA = { is_in_faction_with = ENG }
+				}
+				if = {
+					limit = {
+						USA = {
+							is_faction_leader = yes
+						}
+					}
+					USA = {
+						country_event = {
+							id = sov_armor.870
+							days = 1
+						}
+					}
+				}
+				else = {
+					ENG = {
+						country_event = {
+							id = sov_armor.870
+							days = 1
+						}
+					}
+				}
+			}
+			else = { 
+				release = AUS
+				SOV = {
+					puppet = AUS
+				}
+				AUS = {
+					set_popularities = {
+						communism = 55
+						democratic = 35
+						fascism = 10
+					}
+					set_country_flag = soviet_technologies_tree_flag
+				}
+				if = {
+					limit = {
+						AUS = {
+							has_idea = AUS_fatherland_Front
+						}
+					}
+					remove_ideas = AUS_fatherland_Front
+				}
+			}
 		}
 	}
 	focus = {
