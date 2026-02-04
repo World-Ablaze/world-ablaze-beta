@@ -1,0 +1,75 @@
+add_namespace = wa_test
+
+############################################################################################################
+#	Railway Test Suite - Periodic Checker Event
+#	Fires on country scope after suite launch, re-fires every 28 days until all tests resolve
+############################################################################################################
+
+country_event = {
+	id = wa_test.100
+
+	hidden = yes
+	is_triggered_only = yes
+
+	immediate = {
+		if = {
+			limit = { has_country_flag = WA_TEST_suite_active }
+
+			log = "[GetYear] [GetMonth] | TEST | [This.GetName] | CHECKER: Evaluating tests..."
+
+			# Re-attempt deferred launches (tests that wait for preconditions)
+			WA_TEST_railway_001_launch = yes
+			WA_TEST_railway_002_launch = yes
+			WA_TEST_railway_004_launch = yes
+			WA_TEST_railway_005_launch = yes
+			WA_TEST_railway_006_launch = yes
+
+			# Run all test checks
+			WA_TEST_railway_check_all = yes
+
+			# Count ongoing tests
+			set_temp_variable = { _wt_still_ongoing = 0 }
+			if = { limit = { check_variable = { WA_TEST_state^1 = 1 } } add_to_temp_variable = { _wt_still_ongoing = 1 } }
+			if = { limit = { check_variable = { WA_TEST_state^2 = 1 } } add_to_temp_variable = { _wt_still_ongoing = 1 } }
+			if = { limit = { check_variable = { WA_TEST_state^3 = 1 } } add_to_temp_variable = { _wt_still_ongoing = 1 } }
+			if = { limit = { check_variable = { WA_TEST_state^4 = 1 } } add_to_temp_variable = { _wt_still_ongoing = 1 } }
+			if = { limit = { check_variable = { WA_TEST_state^5 = 1 } } add_to_temp_variable = { _wt_still_ongoing = 1 } }
+			if = { limit = { check_variable = { WA_TEST_state^6 = 1 } } add_to_temp_variable = { _wt_still_ongoing = 1 } }
+			if = { limit = { check_variable = { WA_TEST_state^7 = 1 } } add_to_temp_variable = { _wt_still_ongoing = 1 } }
+			if = { limit = { check_variable = { WA_TEST_state^8 = 1 } } add_to_temp_variable = { _wt_still_ongoing = 1 } }
+
+			# Count NOT_LAUNCHED tests (deferred, waiting for preconditions)
+			set_temp_variable = { _wt_still_waiting = 0 }
+			if = { limit = { check_variable = { WA_TEST_state^1 = 0 } } add_to_temp_variable = { _wt_still_waiting = 1 } }
+			if = { limit = { check_variable = { WA_TEST_state^2 = 0 } } add_to_temp_variable = { _wt_still_waiting = 1 } }
+			if = { limit = { check_variable = { WA_TEST_state^3 = 0 } } add_to_temp_variable = { _wt_still_waiting = 1 } }
+			if = { limit = { check_variable = { WA_TEST_state^4 = 0 } } add_to_temp_variable = { _wt_still_waiting = 1 } }
+			if = { limit = { check_variable = { WA_TEST_state^5 = 0 } } add_to_temp_variable = { _wt_still_waiting = 1 } }
+			if = { limit = { check_variable = { WA_TEST_state^6 = 0 } } add_to_temp_variable = { _wt_still_waiting = 1 } }
+			if = { limit = { check_variable = { WA_TEST_state^7 = 0 } } add_to_temp_variable = { _wt_still_waiting = 1 } }
+			if = { limit = { check_variable = { WA_TEST_state^8 = 0 } } add_to_temp_variable = { _wt_still_waiting = 1 } }
+
+			set_temp_variable = { _wt_unresolved = _wt_still_ongoing }
+			add_to_temp_variable = { _wt_unresolved = _wt_still_waiting }
+
+			WA_TEST_log_summary = yes
+
+			if = {
+				limit = { check_variable = { _wt_unresolved > 0 } }
+				# Re-schedule checker in 28 days
+				country_event = { id = wa_test.100 days = 28 }
+				log = "[GetYear] [GetMonth] | TEST | [This.GetName] | CHECKER: [?_wt_still_ongoing] tests ongoing, [?_wt_still_waiting] waiting, re-checking in 28 days"
+			}
+			else = {
+				# All tests resolved
+				clr_country_flag = WA_TEST_suite_active
+				log = "[GetYear] [GetMonth] | TEST | [This.GetName] | ================================================"
+				log = "[GetYear] [GetMonth] | TEST | [This.GetName] | SUITE COMPLETE - All tests resolved"
+				log = "[GetYear] [GetMonth] | TEST | [This.GetName] | ================================================"
+				WA_TEST_print_all = yes
+			}
+		}
+	}
+
+	option = {}
+}
