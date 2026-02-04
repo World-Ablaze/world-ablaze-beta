@@ -74,8 +74,9 @@ All files are in `common/scripted_effects/`.
 @WA_AI_PC_SUPPLY_RAILWAY_BASE = 4                    # Railway throughput base
 @WA_AI_PC_SUPPLY_RAILWAY_PER_LEVEL = 8               # Per level: L1=12, L2=20, L3=28, L4=36, L5=44
 @WA_AI_PC_SUPPLY_PORT_PER_LEVEL = 5                  # Port throughput: level * 5
+@WA_AI_PC_PORT_MAX_USEFUL_LEVEL = 9                  # L5 railway = 44 supply, L9 port = 45 (exceeds railway)
 @WA_AI_PC_HOME_PORT_SEARCH_DISTANCE = 5              # Max BFS from capital for home port
-@WA_AI_PC_HOME_PORT_TARGET_SUPPLY = 36               # Target supply (L4 railway = 36)
+@WA_AI_PC_HOME_PORT_TARGET_SUPPLY = 44               # Target supply (L5 railway = 44)
 @WA_AI_PC_RAILWAY_BASE_COST = 800                    # Rail segment base cost
 @WA_AI_PC_NAVAL_BASE_BASE_COST = 10000               # Naval base base cost
 @WA_AI_PC_NAVAL_BASE_PER_LEVEL_COST = -556            # Naval base per-level (decreasing)
@@ -225,7 +226,7 @@ After strategies populate the output arrays, the core processes each route:
 2. **Partial path handling**: Dead-end paths at coastal provinces trigger `WA_AI_PC_create_frontier_port` (queues port construction)
 3. **Segment creation**: For each segment in the path, calls `WA_AI_PC_start_railway_project`
 4. **Stale project validation**: Existing queued projects are checked; those targeting states no longer on the frontline are cancelled
-5. **Port upgrades**: Processed via `WA_AI_PC_process_port_upgrades` (builds naval bases via PC system)
+5. **Port upgrades**: Processed via `WA_AI_PC_process_port_upgrades` (builds naval bases via PC system, capped at level 9 since L5 railways bottleneck at 44 supply)
 6. **Factory override**: When railway projects are queued, sets override flag to allocate up to 50% extra factory capacity for 30 days
 
 ## Function Reference
@@ -276,9 +277,9 @@ After strategies populate the output arrays, the core processes each route:
 | `WA_AI_PC_start_railway_project` | 819 | THIS=state, `_project_province_id`, `_project_connect_id`, `_project_target_level`, `_project_priority` | Creates railway project after level/queue checks. |
 | `WA_AI_PC_clear_project_inputs` | 869 | — | Clears all temporary railway arrays. |
 | `WA_AI_PC_get_total_queued_num` | 878 | `_get_queued_num_building_type`, `_type_id` → `queued_type_num_` | Counts projects of specified type in queue. |
-| `WA_AI_PC_process_port_upgrades` | 893 | Uses `railway_port_upgrades_` | Processes port upgrade entries as naval base projects (type 14). |
+| `WA_AI_PC_process_port_upgrades` | 893 | Uses `railway_port_upgrades_` | Processes port upgrade entries as naval base projects (type 14), capped at level 9. |
 | `WA_AI_PC_province_is_coastal` | 940 | `_check_province_id` → `is_coastal_province_` | Checks if province is in a coastal state. |
-| `WA_AI_PC_create_frontier_port` | 965 | `_frontier_province_id` → `frontier_port_created_` | Queues port construction when partial path ends at coast. |
+| `WA_AI_PC_create_frontier_port` | 965 | `_frontier_province_id` → `frontier_port_created_` | Queues port construction when partial path ends at coast, capped at level 9. |
 
 ### Primitives (`railway_primitives.txt`)
 

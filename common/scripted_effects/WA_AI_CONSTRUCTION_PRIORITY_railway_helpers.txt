@@ -13,10 +13,11 @@
 @WA_AI_PC_SUPPLY_RAILWAY_BASE = 4				# Railway throughput: BASE + PER_LEVEL * level
 @WA_AI_PC_SUPPLY_RAILWAY_PER_LEVEL = 8			# L1=12, L2=20, L3=28, L4=36, L5=44
 @WA_AI_PC_SUPPLY_PORT_PER_LEVEL = 5				# Port throughput: level * 5
+@WA_AI_PC_PORT_MAX_USEFUL_LEVEL = 9				# L5 railway = 44 supply, L9 port = 45 supply (already exceeds railway)
 
 ### Home Port Search Parameters
 @WA_AI_PC_HOME_PORT_SEARCH_DISTANCE = 5			# Max BFS distance from capital
-@WA_AI_PC_HOME_PORT_TARGET_SUPPLY = 36			# Target supply capacity (L4 railway = 36)
+@WA_AI_PC_HOME_PORT_TARGET_SUPPLY = 44			# Target supply capacity (L5 railway = 44)
 
 ### Building Costs (from 00_buildings.txt)
 @WA_AI_PC_RAILWAY_BASE_COST = 800				# rail_way.base_cost (flat per segment)
@@ -900,8 +901,8 @@ WA_AI_PC_process_port_upgrades = {
 				limit = {
 					is_controlled_by = ROOT
 					is_coastal = yes
-					# Only upgrade if not at max level (10)
-					NOT = { naval_base > 9 }
+					# Only upgrade if below max useful level (L9 already exceeds L5 railway capacity)
+					NOT = { naval_base > 8 }
 				}
 
 				# Get the naval base province (naval bases are built on provinces, not states)
@@ -918,7 +919,7 @@ WA_AI_PC_process_port_upgrades = {
 					set_temp_variable = { _project_priority = @WA_AI_PC_railway_PRIO_PREWAR }  # Lower priority for upgrades
 					set_temp_variable = { _project_queue_num = 1 }
 					set_temp_variable = { _project_queue_max = 0 }
-					set_temp_variable = { _project_target_level = 0 }
+					set_temp_variable = { _project_target_level = @WA_AI_PC_PORT_MAX_USEFUL_LEVEL }
 					set_temp_variable = { _project_target_state = _port_state }
 
 					WA_AI_PC_start_project = yes
@@ -1008,7 +1009,7 @@ WA_AI_PC_create_frontier_port = { # _frontier_province_id >>> frontier_port_crea
 					set_temp_variable = { _project_priority = @WA_AI_PC_railway_PRIO }  # Same priority as railway
 					set_temp_variable = { _project_queue_num = 1 }
 					set_temp_variable = { _project_queue_max = 0 }
-					set_temp_variable = { _project_target_level = 0 }
+					set_temp_variable = { _project_target_level = @WA_AI_PC_PORT_MAX_USEFUL_LEVEL }
 					set_temp_variable = { _project_target_state = _frontier_state_id }
 
 					WA_AI_PC_start_project = yes

@@ -14,6 +14,7 @@
 # - Airborne : 11000-11999
 # - Mountaineer : 12000-12999
 # - Rangers : 13000-13999
+# - Suppression : 14000-14999
 
 WA_AI_TEMPLATES_calculate_templates = {
 	if = {
@@ -70,7 +71,6 @@ WA_AI_TEMPLATES_block_all_templates = {
 	# Set each template type to 0, effectively blocking template creation
 	# This is called when T1 doctrine is researched but required spirits are not yet selected
 	set_temp_variable = { _template_value = 0 }
-	
 	set_temp_variable = { _template_type_code = 1 }  # Infantry
 	WA_AI_TEMPLATES_update_target_template = yes
 	set_temp_variable = { _template_type_code = 2 }  # Motorized
@@ -89,7 +89,13 @@ WA_AI_TEMPLATES_block_all_templates = {
 	WA_AI_TEMPLATES_update_target_template = yes
 	set_temp_variable = { _template_type_code = 9 }  # Marines
 	WA_AI_TEMPLATES_update_target_template = yes
+	set_temp_variable = { _template_type_code = 10 }  # Airborne
+	WA_AI_TEMPLATES_update_target_template = yes
 	set_temp_variable = { _template_type_code = 11 }  # Mountaineer
+	WA_AI_TEMPLATES_update_target_template = yes
+	set_temp_variable = { _template_type_code = 12 }  # Rangers
+	WA_AI_TEMPLATES_update_target_template = yes
+	set_temp_variable = { _template_type_code = 13 }  # Suppression
 	WA_AI_TEMPLATES_update_target_template = yes
 }
 
@@ -111,6 +117,7 @@ WA_AI_TEMPLATES_ensure_correct_army_spirit = {
 		add_ideas = relief_of_command_spirit
 	}
 	# Fascist/Neutral -> professional_officer_corps_spirit
+	# Exception: Italy uses state_serves_the_military_spirit until adequate_army reforms are done
 	else_if = {
 		limit = {
 			OR = {
@@ -118,9 +125,27 @@ WA_AI_TEMPLATES_ensure_correct_army_spirit = {
 				has_government = neutrality
 			}
 			NOT = { has_idea = professional_officer_corps_spirit }
+			# Exclude Italy without adequate_army (they can't pick professional_officer_corps yet)
+			NOT = {
+				AND = {
+					tag = ITA
+					NOT = { has_country_flag = adequate_army }
+				}
+			}
 		}
 		WA_AI_TEMPLATES_remove_wrong_army_spirits = yes
 		add_ideas = professional_officer_corps_spirit
+	}
+	# Italy fallback: state_serves_the_military_spirit until adequate_army reforms complete
+	else_if = {
+		limit = {
+			tag = ITA
+			has_government = fascism
+			NOT = { has_country_flag = adequate_army }
+			NOT = { has_idea = state_serves_the_military_spirit }
+		}
+		WA_AI_TEMPLATES_remove_wrong_army_spirits = yes
+		add_ideas = state_serves_the_military_spirit
 	}
 	# Communist -> ideological_loyalty_spirit
 	else_if = {
@@ -180,6 +205,7 @@ WA_AI_TEMPLATES_calculate_all_templates = {
 	WA_AI_TEMPLATES_calculate_medium_armor_template = yes
 	WA_AI_TEMPLATES_calculate_heavy_armor_template = yes
 	WA_AI_TEMPLATES_calculate_modern_armor_template = yes
+	WA_AI_TEMPLATES_calculate_suppression_template = yes
 }
 
 WA_AI_TEMPLATES_calculate_infantry_template = {
@@ -491,5 +517,25 @@ WA_AI_TEMPLATES_calculate_modern_armor_template = {
 		}
 	}
 
+	WA_AI_TEMPLATES_update_target_template = yes
+}
+
+WA_AI_TEMPLATES_calculate_suppression_template = {
+	set_temp_variable = { _template_type_code = 13 }
+	set_temp_variable = { _template_value = 0 }
+	if = {
+		limit = {
+			WA_AI_TEMPLATES_use_suppression_templates = yes
+		}
+		if = {
+			limit = {
+				has_army_experience > 300
+			}
+			set_temp_variable = { _template_value = 14001 }
+			else = {
+				set_temp_variable = { _template_value = 14000 }
+			}
+		}
+	}
 	WA_AI_TEMPLATES_update_target_template = yes
 }
