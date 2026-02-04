@@ -1,37 +1,489 @@
 ############################################################################################################
-#	World Ablaze - Railway AI Functional Test Suite
+#	World Ablaze - Railway AI Functional Test Suite (Self-Contained)
 #	Test bed: Japan (JAP) - early war, island nation, multiple theatres, edge cases
 #	8 tests covering land war, overseas, pre-war, queue integrity, primitives
+#	Contains its own helpers (mark, init, summary, print) using WA_TEST_RW_* variable prefix
 ############################################################################################################
 
-### Test State Constants (must match framework)
-@WA_TEST_NOT_LAUNCHED = 0
-@WA_TEST_ONGOING = 1
-@WA_TEST_PASSED = 2
-@WA_TEST_FAILED = 3
+### Test State Constants
+@WA_TEST_RW_NOT_LAUNCHED = 0
+@WA_TEST_RW_ONGOING = 1
+@WA_TEST_RW_PASSED = 2
+@WA_TEST_RW_FAILED = 3
+@WA_TEST_RW_TIMEOUT_DAYS = 120
+
+############################################################################################################
+#	HELPERS
+############################################################################################################
+
+WA_TEST_RW_mark_passed = {
+	set_variable = { WA_TEST_RW_state^_wt_test_id = @WA_TEST_RW_PASSED }
+	set_variable = { WA_TEST_RW_end_day^_wt_test_id = global.num_days }
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST [?_wt_test_id]: PASSED"
+}
+
+WA_TEST_RW_mark_failed = {
+	set_variable = { WA_TEST_RW_state^_wt_test_id = @WA_TEST_RW_FAILED }
+	set_variable = { WA_TEST_RW_fail_code^_wt_test_id = _wt_fail_code }
+	set_variable = { WA_TEST_RW_end_day^_wt_test_id = global.num_days }
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST [?_wt_test_id]: FAILED (code=[?_wt_fail_code])"
+}
+
+WA_TEST_RW_mark_skipped = {
+	set_variable = { WA_TEST_RW_state^_wt_test_id = @WA_TEST_RW_FAILED }
+	set_variable = { WA_TEST_RW_fail_code^_wt_test_id = 99 }
+	set_variable = { WA_TEST_RW_end_day^_wt_test_id = global.num_days }
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST [?_wt_test_id]: SKIPPED (preconditions not met)"
+}
+
+WA_TEST_RW_check_timeout = {
+	if = {
+		limit = { check_variable = { WA_TEST_RW_state^_wt_test_id = @WA_TEST_RW_ONGOING } }
+
+		set_temp_variable = { _wt_elapsed = global.num_days }
+		subtract_from_temp_variable = { _wt_elapsed = WA_TEST_RW_launch_day^_wt_test_id }
+
+		if = {
+			limit = { check_variable = { _wt_elapsed > @WA_TEST_RW_TIMEOUT_DAYS } }
+			set_temp_variable = { _wt_fail_code = 98 }
+			WA_TEST_RW_mark_failed = yes
+			log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST [?_wt_test_id]: TIMEOUT after [?_wt_elapsed] days"
+		}
+	}
+}
+
+############################################################################################################
+#	INIT
+#	Resets test variables for tests that are NOT already PASSED
+#	Preserves prior successes across re-runs
+############################################################################################################
+
+WA_TEST_RW_init = {
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW INIT: Resetting non-PASSED test states"
+
+	# Test 1
+	if = { limit = { check_variable = { WA_TEST_RW_state^1 = @WA_TEST_RW_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 001: preserving previous PASS"
+	}
+	else = {
+		set_variable = { WA_TEST_RW_state^1 = @WA_TEST_RW_NOT_LAUNCHED }
+		set_variable = { WA_TEST_RW_fail_code^1 = 0 }
+		set_variable = { WA_TEST_RW_launch_day^1 = 0 }
+		set_variable = { WA_TEST_RW_end_day^1 = 0 }
+	}
+
+	# Test 2
+	if = { limit = { check_variable = { WA_TEST_RW_state^2 = @WA_TEST_RW_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 002: preserving previous PASS"
+	}
+	else = {
+		set_variable = { WA_TEST_RW_state^2 = @WA_TEST_RW_NOT_LAUNCHED }
+		set_variable = { WA_TEST_RW_fail_code^2 = 0 }
+		set_variable = { WA_TEST_RW_launch_day^2 = 0 }
+		set_variable = { WA_TEST_RW_end_day^2 = 0 }
+	}
+
+	# Test 3
+	if = { limit = { check_variable = { WA_TEST_RW_state^3 = @WA_TEST_RW_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 003: preserving previous PASS"
+	}
+	else = {
+		set_variable = { WA_TEST_RW_state^3 = @WA_TEST_RW_NOT_LAUNCHED }
+		set_variable = { WA_TEST_RW_fail_code^3 = 0 }
+		set_variable = { WA_TEST_RW_launch_day^3 = 0 }
+		set_variable = { WA_TEST_RW_end_day^3 = 0 }
+	}
+
+	# Test 4
+	if = { limit = { check_variable = { WA_TEST_RW_state^4 = @WA_TEST_RW_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 004: preserving previous PASS"
+	}
+	else = {
+		set_variable = { WA_TEST_RW_state^4 = @WA_TEST_RW_NOT_LAUNCHED }
+		set_variable = { WA_TEST_RW_fail_code^4 = 0 }
+		set_variable = { WA_TEST_RW_launch_day^4 = 0 }
+		set_variable = { WA_TEST_RW_end_day^4 = 0 }
+	}
+
+	# Test 5
+	if = { limit = { check_variable = { WA_TEST_RW_state^5 = @WA_TEST_RW_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 005: preserving previous PASS"
+	}
+	else = {
+		set_variable = { WA_TEST_RW_state^5 = @WA_TEST_RW_NOT_LAUNCHED }
+		set_variable = { WA_TEST_RW_fail_code^5 = 0 }
+		set_variable = { WA_TEST_RW_launch_day^5 = 0 }
+		set_variable = { WA_TEST_RW_end_day^5 = 0 }
+	}
+
+	# Test 6
+	if = { limit = { check_variable = { WA_TEST_RW_state^6 = @WA_TEST_RW_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 006: preserving previous PASS"
+	}
+	else = {
+		set_variable = { WA_TEST_RW_state^6 = @WA_TEST_RW_NOT_LAUNCHED }
+		set_variable = { WA_TEST_RW_fail_code^6 = 0 }
+		set_variable = { WA_TEST_RW_launch_day^6 = 0 }
+		set_variable = { WA_TEST_RW_end_day^6 = 0 }
+	}
+
+	# Test 7
+	if = { limit = { check_variable = { WA_TEST_RW_state^7 = @WA_TEST_RW_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 007: preserving previous PASS"
+	}
+	else = {
+		set_variable = { WA_TEST_RW_state^7 = @WA_TEST_RW_NOT_LAUNCHED }
+		set_variable = { WA_TEST_RW_fail_code^7 = 0 }
+		set_variable = { WA_TEST_RW_launch_day^7 = 0 }
+		set_variable = { WA_TEST_RW_end_day^7 = 0 }
+	}
+
+	# Test 8
+	if = { limit = { check_variable = { WA_TEST_RW_state^8 = @WA_TEST_RW_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 008: preserving previous PASS"
+	}
+	else = {
+		set_variable = { WA_TEST_RW_state^8 = @WA_TEST_RW_NOT_LAUNCHED }
+		set_variable = { WA_TEST_RW_fail_code^8 = 0 }
+		set_variable = { WA_TEST_RW_launch_day^8 = 0 }
+		set_variable = { WA_TEST_RW_end_day^8 = 0 }
+	}
+
+	# Test 9
+	if = { limit = { check_variable = { WA_TEST_RW_state^9 = @WA_TEST_RW_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 009: preserving previous PASS"
+	}
+	else = {
+		set_variable = { WA_TEST_RW_state^9 = @WA_TEST_RW_NOT_LAUNCHED }
+		set_variable = { WA_TEST_RW_fail_code^9 = 0 }
+		set_variable = { WA_TEST_RW_launch_day^9 = 0 }
+		set_variable = { WA_TEST_RW_end_day^9 = 0 }
+	}
+
+	set_variable = { WA_TEST_RW_suite_start_day = global.num_days }
+	add_to_variable = { WA_TEST_RW_suite_run_count = 1 }
+}
+
+############################################################################################################
+#	LOG SUMMARY
+############################################################################################################
+
+WA_TEST_RW_log_summary = {
+	set_temp_variable = { _wt_count_passed = 0 }
+	set_temp_variable = { _wt_count_failed = 0 }
+	set_temp_variable = { _wt_count_skipped = 0 }
+	set_temp_variable = { _wt_count_ongoing = 0 }
+	set_temp_variable = { _wt_count_not_launched = 0 }
+
+	# Test 1
+	if = { limit = { check_variable = { WA_TEST_RW_state^1 = @WA_TEST_RW_PASSED } } add_to_temp_variable = { _wt_count_passed = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^1 = @WA_TEST_RW_FAILED } check_variable = { WA_TEST_RW_fail_code^1 = 99 } } add_to_temp_variable = { _wt_count_skipped = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^1 = @WA_TEST_RW_FAILED } } add_to_temp_variable = { _wt_count_failed = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^1 = @WA_TEST_RW_ONGOING } } add_to_temp_variable = { _wt_count_ongoing = 1 } }
+	else = { add_to_temp_variable = { _wt_count_not_launched = 1 } }
+
+	# Test 2
+	if = { limit = { check_variable = { WA_TEST_RW_state^2 = @WA_TEST_RW_PASSED } } add_to_temp_variable = { _wt_count_passed = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^2 = @WA_TEST_RW_FAILED } check_variable = { WA_TEST_RW_fail_code^2 = 99 } } add_to_temp_variable = { _wt_count_skipped = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^2 = @WA_TEST_RW_FAILED } } add_to_temp_variable = { _wt_count_failed = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^2 = @WA_TEST_RW_ONGOING } } add_to_temp_variable = { _wt_count_ongoing = 1 } }
+	else = { add_to_temp_variable = { _wt_count_not_launched = 1 } }
+
+	# Test 3
+	if = { limit = { check_variable = { WA_TEST_RW_state^3 = @WA_TEST_RW_PASSED } } add_to_temp_variable = { _wt_count_passed = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^3 = @WA_TEST_RW_FAILED } check_variable = { WA_TEST_RW_fail_code^3 = 99 } } add_to_temp_variable = { _wt_count_skipped = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^3 = @WA_TEST_RW_FAILED } } add_to_temp_variable = { _wt_count_failed = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^3 = @WA_TEST_RW_ONGOING } } add_to_temp_variable = { _wt_count_ongoing = 1 } }
+	else = { add_to_temp_variable = { _wt_count_not_launched = 1 } }
+
+	# Test 4
+	if = { limit = { check_variable = { WA_TEST_RW_state^4 = @WA_TEST_RW_PASSED } } add_to_temp_variable = { _wt_count_passed = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^4 = @WA_TEST_RW_FAILED } check_variable = { WA_TEST_RW_fail_code^4 = 99 } } add_to_temp_variable = { _wt_count_skipped = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^4 = @WA_TEST_RW_FAILED } } add_to_temp_variable = { _wt_count_failed = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^4 = @WA_TEST_RW_ONGOING } } add_to_temp_variable = { _wt_count_ongoing = 1 } }
+	else = { add_to_temp_variable = { _wt_count_not_launched = 1 } }
+
+	# Test 5
+	if = { limit = { check_variable = { WA_TEST_RW_state^5 = @WA_TEST_RW_PASSED } } add_to_temp_variable = { _wt_count_passed = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^5 = @WA_TEST_RW_FAILED } check_variable = { WA_TEST_RW_fail_code^5 = 99 } } add_to_temp_variable = { _wt_count_skipped = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^5 = @WA_TEST_RW_FAILED } } add_to_temp_variable = { _wt_count_failed = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^5 = @WA_TEST_RW_ONGOING } } add_to_temp_variable = { _wt_count_ongoing = 1 } }
+	else = { add_to_temp_variable = { _wt_count_not_launched = 1 } }
+
+	# Test 6
+	if = { limit = { check_variable = { WA_TEST_RW_state^6 = @WA_TEST_RW_PASSED } } add_to_temp_variable = { _wt_count_passed = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^6 = @WA_TEST_RW_FAILED } check_variable = { WA_TEST_RW_fail_code^6 = 99 } } add_to_temp_variable = { _wt_count_skipped = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^6 = @WA_TEST_RW_FAILED } } add_to_temp_variable = { _wt_count_failed = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^6 = @WA_TEST_RW_ONGOING } } add_to_temp_variable = { _wt_count_ongoing = 1 } }
+	else = { add_to_temp_variable = { _wt_count_not_launched = 1 } }
+
+	# Test 7
+	if = { limit = { check_variable = { WA_TEST_RW_state^7 = @WA_TEST_RW_PASSED } } add_to_temp_variable = { _wt_count_passed = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^7 = @WA_TEST_RW_FAILED } check_variable = { WA_TEST_RW_fail_code^7 = 99 } } add_to_temp_variable = { _wt_count_skipped = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^7 = @WA_TEST_RW_FAILED } } add_to_temp_variable = { _wt_count_failed = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^7 = @WA_TEST_RW_ONGOING } } add_to_temp_variable = { _wt_count_ongoing = 1 } }
+	else = { add_to_temp_variable = { _wt_count_not_launched = 1 } }
+
+	# Test 8
+	if = { limit = { check_variable = { WA_TEST_RW_state^8 = @WA_TEST_RW_PASSED } } add_to_temp_variable = { _wt_count_passed = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^8 = @WA_TEST_RW_FAILED } check_variable = { WA_TEST_RW_fail_code^8 = 99 } } add_to_temp_variable = { _wt_count_skipped = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^8 = @WA_TEST_RW_FAILED } } add_to_temp_variable = { _wt_count_failed = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^8 = @WA_TEST_RW_ONGOING } } add_to_temp_variable = { _wt_count_ongoing = 1 } }
+	else = { add_to_temp_variable = { _wt_count_not_launched = 1 } }
+
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW SUMMARY: [?_wt_count_passed] PASSED, [?_wt_count_failed] FAILED, [?_wt_count_skipped] SKIPPED, [?_wt_count_ongoing] ONGOING, [?_wt_count_not_launched] NOT_LAUNCHED"
+}
+
+############################################################################################################
+#	PRINT
+############################################################################################################
+
+WA_TEST_RW_print = {
+	JAP = {
+		if = {
+			limit = { check_variable = { WA_TEST_RW_suite_run_count > 0 } }
+
+			log = "---------------------------------------------------------------------"
+			log = "  SUITE: RAILWAY"
+			log = "  COUNTRY: [This.GetName] - Run #[?WA_TEST_RW_suite_run_count]"
+			log = "  Started: day [?WA_TEST_RW_suite_start_day]"
+			log = "---------------------------------------------------------------------"
+			log = "  #   | Name                    | Status      | Code | +Launch  | +Resolved"
+
+			### Test 001
+			set_temp_variable = { _wt_s = WA_TEST_RW_state^1 }
+			set_temp_variable = { _wt_fc = WA_TEST_RW_fail_code^1 }
+			set_temp_variable = { _wt_ld = WA_TEST_RW_launch_day^1 }
+			subtract_from_temp_variable = { _wt_ld = WA_TEST_RW_suite_start_day }
+			set_temp_variable = { _wt_ed = WA_TEST_RW_end_day^1 }
+			subtract_from_temp_variable = { _wt_ed = WA_TEST_RW_suite_start_day }
+			if = { limit = { check_variable = { _wt_s = 2 } }
+				log = "  001 | Land War                | PASSED      |    [?_wt_fc] | +[?_wt_ld]d    | +[?_wt_ed]d"
+			}
+			else_if = { limit = { check_variable = { _wt_s = 3 } check_variable = { _wt_fc = 99 } }
+				log = "  001 | Land War                | SKIPPED     |   [?_wt_fc] | -        | -"
+			}
+			else_if = { limit = { check_variable = { _wt_s = 3 } }
+				log = "  001 | Land War                | FAILED      |   [?_wt_fc] | +[?_wt_ld]d    | +[?_wt_ed]d"
+			}
+			else_if = { limit = { check_variable = { _wt_s = 1 } }
+				log = "  001 | Land War                | ONGOING     |    [?_wt_fc] | +[?_wt_ld]d    | -"
+			}
+			else = {
+				log = "  001 | Land War                | NOT_LAUNCHED |    [?_wt_fc] | -        | -"
+			}
+
+			### Test 002
+			set_temp_variable = { _wt_s = WA_TEST_RW_state^2 }
+			set_temp_variable = { _wt_fc = WA_TEST_RW_fail_code^2 }
+			set_temp_variable = { _wt_ld = WA_TEST_RW_launch_day^2 }
+			subtract_from_temp_variable = { _wt_ld = WA_TEST_RW_suite_start_day }
+			set_temp_variable = { _wt_ed = WA_TEST_RW_end_day^2 }
+			subtract_from_temp_variable = { _wt_ed = WA_TEST_RW_suite_start_day }
+			if = { limit = { check_variable = { _wt_s = 2 } }
+				log = "  002 | Overseas Strategy       | PASSED      |    [?_wt_fc] | +[?_wt_ld]d    | +[?_wt_ed]d"
+			}
+			else_if = { limit = { check_variable = { _wt_s = 3 } check_variable = { _wt_fc = 99 } }
+				log = "  002 | Overseas Strategy       | SKIPPED     |   [?_wt_fc] | -        | -"
+			}
+			else_if = { limit = { check_variable = { _wt_s = 3 } }
+				log = "  002 | Overseas Strategy       | FAILED      |   [?_wt_fc] | +[?_wt_ld]d    | +[?_wt_ed]d"
+			}
+			else_if = { limit = { check_variable = { _wt_s = 1 } }
+				log = "  002 | Overseas Strategy       | ONGOING     |    [?_wt_fc] | +[?_wt_ld]d    | -"
+			}
+			else = {
+				log = "  002 | Overseas Strategy       | NOT_LAUNCHED |    [?_wt_fc] | -        | -"
+			}
+
+			### Test 003
+			set_temp_variable = { _wt_s = WA_TEST_RW_state^3 }
+			set_temp_variable = { _wt_fc = WA_TEST_RW_fail_code^3 }
+			set_temp_variable = { _wt_ld = WA_TEST_RW_launch_day^3 }
+			subtract_from_temp_variable = { _wt_ld = WA_TEST_RW_suite_start_day }
+			set_temp_variable = { _wt_ed = WA_TEST_RW_end_day^3 }
+			subtract_from_temp_variable = { _wt_ed = WA_TEST_RW_suite_start_day }
+			if = { limit = { check_variable = { _wt_s = 2 } }
+				log = "  003 | Ryukyu Filter           | PASSED      |    [?_wt_fc] | +[?_wt_ld]d    | +[?_wt_ed]d"
+			}
+			else_if = { limit = { check_variable = { _wt_s = 3 } check_variable = { _wt_fc = 99 } }
+				log = "  003 | Ryukyu Filter           | SKIPPED     |   [?_wt_fc] | -        | -"
+			}
+			else_if = { limit = { check_variable = { _wt_s = 3 } }
+				log = "  003 | Ryukyu Filter           | FAILED      |   [?_wt_fc] | +[?_wt_ld]d    | +[?_wt_ed]d"
+			}
+			else_if = { limit = { check_variable = { _wt_s = 1 } }
+				log = "  003 | Ryukyu Filter           | ONGOING     |    [?_wt_fc] | +[?_wt_ld]d    | -"
+			}
+			else = {
+				log = "  003 | Ryukyu Filter           | NOT_LAUNCHED |    [?_wt_fc] | -        | -"
+			}
+
+			### Test 004
+			set_temp_variable = { _wt_s = WA_TEST_RW_state^4 }
+			set_temp_variable = { _wt_fc = WA_TEST_RW_fail_code^4 }
+			set_temp_variable = { _wt_ld = WA_TEST_RW_launch_day^4 }
+			subtract_from_temp_variable = { _wt_ld = WA_TEST_RW_suite_start_day }
+			set_temp_variable = { _wt_ed = WA_TEST_RW_end_day^4 }
+			subtract_from_temp_variable = { _wt_ed = WA_TEST_RW_suite_start_day }
+			if = { limit = { check_variable = { _wt_s = 2 } }
+				log = "  004 | Pre-War Targets         | PASSED      |    [?_wt_fc] | +[?_wt_ld]d    | +[?_wt_ed]d"
+			}
+			else_if = { limit = { check_variable = { _wt_s = 3 } check_variable = { _wt_fc = 99 } }
+				log = "  004 | Pre-War Targets         | SKIPPED     |   [?_wt_fc] | -        | -"
+			}
+			else_if = { limit = { check_variable = { _wt_s = 3 } }
+				log = "  004 | Pre-War Targets         | FAILED      |   [?_wt_fc] | +[?_wt_ld]d    | +[?_wt_ed]d"
+			}
+			else_if = { limit = { check_variable = { _wt_s = 1 } }
+				log = "  004 | Pre-War Targets         | ONGOING     |    [?_wt_fc] | +[?_wt_ld]d    | -"
+			}
+			else = {
+				log = "  004 | Pre-War Targets         | NOT_LAUNCHED |    [?_wt_fc] | -        | -"
+			}
+
+			### Test 005
+			set_temp_variable = { _wt_s = WA_TEST_RW_state^5 }
+			set_temp_variable = { _wt_fc = WA_TEST_RW_fail_code^5 }
+			set_temp_variable = { _wt_ld = WA_TEST_RW_launch_day^5 }
+			subtract_from_temp_variable = { _wt_ld = WA_TEST_RW_suite_start_day }
+			set_temp_variable = { _wt_ed = WA_TEST_RW_end_day^5 }
+			subtract_from_temp_variable = { _wt_ed = WA_TEST_RW_suite_start_day }
+			if = { limit = { check_variable = { _wt_s = 2 } }
+				log = "  005 | Queue Data Integrity    | PASSED      |    [?_wt_fc] | +[?_wt_ld]d    | +[?_wt_ed]d"
+			}
+			else_if = { limit = { check_variable = { _wt_s = 3 } check_variable = { _wt_fc = 99 } }
+				log = "  005 | Queue Data Integrity    | SKIPPED     |   [?_wt_fc] | -        | -"
+			}
+			else_if = { limit = { check_variable = { _wt_s = 3 } }
+				log = "  005 | Queue Data Integrity    | FAILED      |   [?_wt_fc] | +[?_wt_ld]d    | +[?_wt_ed]d"
+			}
+			else_if = { limit = { check_variable = { _wt_s = 1 } }
+				log = "  005 | Queue Data Integrity    | ONGOING     |    [?_wt_fc] | +[?_wt_ld]d    | -"
+			}
+			else = {
+				log = "  005 | Queue Data Integrity    | NOT_LAUNCHED |    [?_wt_fc] | -        | -"
+			}
+
+			### Test 006
+			set_temp_variable = { _wt_s = WA_TEST_RW_state^6 }
+			set_temp_variable = { _wt_fc = WA_TEST_RW_fail_code^6 }
+			set_temp_variable = { _wt_ld = WA_TEST_RW_launch_day^6 }
+			subtract_from_temp_variable = { _wt_ld = WA_TEST_RW_suite_start_day }
+			set_temp_variable = { _wt_ed = WA_TEST_RW_end_day^6 }
+			subtract_from_temp_variable = { _wt_ed = WA_TEST_RW_suite_start_day }
+			if = { limit = { check_variable = { _wt_s = 2 } }
+				log = "  006 | Home Port Selection     | PASSED      |    [?_wt_fc] | +[?_wt_ld]d    | +[?_wt_ed]d"
+			}
+			else_if = { limit = { check_variable = { _wt_s = 3 } check_variable = { _wt_fc = 99 } }
+				log = "  006 | Home Port Selection     | SKIPPED     |   [?_wt_fc] | -        | -"
+			}
+			else_if = { limit = { check_variable = { _wt_s = 3 } }
+				log = "  006 | Home Port Selection     | FAILED      |   [?_wt_fc] | +[?_wt_ld]d    | +[?_wt_ed]d"
+			}
+			else_if = { limit = { check_variable = { _wt_s = 1 } }
+				log = "  006 | Home Port Selection     | ONGOING     |    [?_wt_fc] | +[?_wt_ld]d    | -"
+			}
+			else = {
+				log = "  006 | Home Port Selection     | NOT_LAUNCHED |    [?_wt_fc] | -        | -"
+			}
+
+			### Test 007
+			set_temp_variable = { _wt_s = WA_TEST_RW_state^7 }
+			set_temp_variable = { _wt_fc = WA_TEST_RW_fail_code^7 }
+			set_temp_variable = { _wt_ld = WA_TEST_RW_launch_day^7 }
+			subtract_from_temp_variable = { _wt_ld = WA_TEST_RW_suite_start_day }
+			set_temp_variable = { _wt_ed = WA_TEST_RW_end_day^7 }
+			subtract_from_temp_variable = { _wt_ed = WA_TEST_RW_suite_start_day }
+			if = { limit = { check_variable = { _wt_s = 2 } }
+				log = "  007 | Supply Chain Analysis   | PASSED      |    [?_wt_fc] | +[?_wt_ld]d    | +[?_wt_ed]d"
+			}
+			else_if = { limit = { check_variable = { _wt_s = 3 } check_variable = { _wt_fc = 99 } }
+				log = "  007 | Supply Chain Analysis   | SKIPPED     |   [?_wt_fc] | -        | -"
+			}
+			else_if = { limit = { check_variable = { _wt_s = 3 } }
+				log = "  007 | Supply Chain Analysis   | FAILED      |   [?_wt_fc] | +[?_wt_ld]d    | +[?_wt_ed]d"
+			}
+			else_if = { limit = { check_variable = { _wt_s = 1 } }
+				log = "  007 | Supply Chain Analysis   | ONGOING     |    [?_wt_fc] | +[?_wt_ld]d    | -"
+			}
+			else = {
+				log = "  007 | Supply Chain Analysis   | NOT_LAUNCHED |    [?_wt_fc] | -        | -"
+			}
+
+			### Test 008
+			set_temp_variable = { _wt_s = WA_TEST_RW_state^8 }
+			set_temp_variable = { _wt_fc = WA_TEST_RW_fail_code^8 }
+			set_temp_variable = { _wt_ld = WA_TEST_RW_launch_day^8 }
+			subtract_from_temp_variable = { _wt_ld = WA_TEST_RW_suite_start_day }
+			set_temp_variable = { _wt_ed = WA_TEST_RW_end_day^8 }
+			subtract_from_temp_variable = { _wt_ed = WA_TEST_RW_suite_start_day }
+			if = { limit = { check_variable = { _wt_s = 2 } }
+				log = "  008 | Single-Node Detection   | PASSED      |    [?_wt_fc] | +[?_wt_ld]d    | +[?_wt_ed]d"
+			}
+			else_if = { limit = { check_variable = { _wt_s = 3 } check_variable = { _wt_fc = 99 } }
+				log = "  008 | Single-Node Detection   | SKIPPED     |   [?_wt_fc] | -        | -"
+			}
+			else_if = { limit = { check_variable = { _wt_s = 3 } }
+				log = "  008 | Single-Node Detection   | FAILED      |   [?_wt_fc] | +[?_wt_ld]d    | +[?_wt_ed]d"
+			}
+			else_if = { limit = { check_variable = { _wt_s = 1 } }
+				log = "  008 | Single-Node Detection   | ONGOING     |    [?_wt_fc] | +[?_wt_ld]d    | -"
+			}
+			else = {
+				log = "  008 | Single-Node Detection   | NOT_LAUNCHED |    [?_wt_fc] | -        | -"
+			}
+
+		### Test 009
+		set_temp_variable = { _wt_s = WA_TEST_RW_state^9 }
+		set_temp_variable = { _wt_fc = WA_TEST_RW_fail_code^9 }
+		set_temp_variable = { _wt_ld = WA_TEST_RW_launch_day^9 }
+		subtract_from_temp_variable = { _wt_ld = WA_TEST_RW_suite_start_day }
+		set_temp_variable = { _wt_ed = WA_TEST_RW_end_day^9 }
+		subtract_from_temp_variable = { _wt_ed = WA_TEST_RW_suite_start_day }
+		if = { limit = { check_variable = { _wt_s = 2 } }
+			log = "  009 | Capital Home Port (War)  | PASSED      |    [?_wt_fc] | +[?_wt_ld]d    | +[?_wt_ed]d"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 3 } check_variable = { _wt_fc = 99 } }
+			log = "  009 | Capital Home Port (War)  | SKIPPED     |   [?_wt_fc] | -        | -"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 3 } }
+			log = "  009 | Capital Home Port (War)  | FAILED      |   [?_wt_fc] | +[?_wt_ld]d    | +[?_wt_ed]d"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 1 } }
+			log = "  009 | Capital Home Port (War)  | ONGOING     |    [?_wt_fc] | +[?_wt_ld]d    | -"
+		}
+		else = {
+			log = "  009 | Capital Home Port (War)  | NOT_LAUNCHED |    [?_wt_fc] | -        | -"
+		}
+
+			log = "---------------------------------------------------------------------"
+			WA_TEST_RW_log_summary = yes
+			log = "  Fail codes: 98=TIMEOUT, 99=SKIPPED"
+			log = "====================================================================="
+		}
+	}
+}
 
 ############################################################################################################
 #	SUITE RUNNER
 #	Scopes to JAP, initializes, launches all tests, schedules checker
 ############################################################################################################
 
-WA_TEST_railway_suite = {
+WA_TEST_RW_suite = {
 	JAP = {
 		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | ================================================"
 		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RAILWAY TEST SUITE: STARTING"
 		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | ================================================"
 
-		# Register country in global registry
-		WA_TEST_register_country = yes
-
-		# Initialize framework (preserves PASSED tests)
-		WA_TEST_init = yes
+		# Initialize (preserves PASSED tests)
+		WA_TEST_RW_init = yes
 
 		# Enable debug logging so railway system produces detailed output
 		set_country_flag = WA_AI_construction_logging
 
 		# Set suite active flag
-		set_country_flag = WA_TEST_suite_active
+		set_country_flag = WA_TEST_RW_suite_active
 
 		# Force railway system to run on next weekly tick
 		set_variable = { WA_AI_PC_railway_INTERVAL_counter = 0 }
@@ -53,13 +505,13 @@ WA_TEST_railway_suite = {
 		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | SUITE: Cleared [?_wt_clear_count] existing railway projects"
 
 		# Launch all tests
-		WA_TEST_railway_launch_all = yes
+		WA_TEST_RW_launch_all = yes
 
 		# Schedule the first checker event (after the weekly tick fires)
 		country_event = { id = wa_test.100 days = 7 }
 
 		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | SUITE: All tests launched, checker scheduled in 7 days"
-		WA_TEST_log_summary = yes
+		WA_TEST_RW_log_summary = yes
 	}
 }
 
@@ -67,47 +519,51 @@ WA_TEST_railway_suite = {
 #	ORCHESTRATORS
 ############################################################################################################
 
-WA_TEST_railway_launch_all = {
-	WA_TEST_railway_001_launch = yes
-	WA_TEST_railway_002_launch = yes
-	WA_TEST_railway_003_launch = yes
-	WA_TEST_railway_004_launch = yes
-	WA_TEST_railway_005_launch = yes
-	WA_TEST_railway_006_launch = yes
-	WA_TEST_railway_007_launch = yes
-	WA_TEST_railway_008_launch = yes
+WA_TEST_RW_launch_all = {
+	WA_TEST_RW_001_launch = yes
+	WA_TEST_RW_002_launch = yes
+	WA_TEST_RW_003_launch = yes
+	WA_TEST_RW_004_launch = yes
+	WA_TEST_RW_005_launch = yes
+	WA_TEST_RW_006_launch = yes
+	WA_TEST_RW_007_launch = yes
+	WA_TEST_RW_008_launch = yes
+	WA_TEST_RW_009_launch = yes
 }
 
-WA_TEST_railway_check_all = {
-	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | CHECK: Evaluating all ongoing tests"
+WA_TEST_RW_check_all = {
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW CHECK: Evaluating all ongoing tests"
 
 	# Timeout checks first
 	set_temp_variable = { _wt_test_id = 1 }
-	WA_TEST_check_timeout = yes
+	WA_TEST_RW_check_timeout = yes
 	set_temp_variable = { _wt_test_id = 2 }
-	WA_TEST_check_timeout = yes
+	WA_TEST_RW_check_timeout = yes
 	set_temp_variable = { _wt_test_id = 3 }
-	WA_TEST_check_timeout = yes
+	WA_TEST_RW_check_timeout = yes
 	set_temp_variable = { _wt_test_id = 4 }
-	WA_TEST_check_timeout = yes
+	WA_TEST_RW_check_timeout = yes
 	set_temp_variable = { _wt_test_id = 5 }
-	WA_TEST_check_timeout = yes
+	WA_TEST_RW_check_timeout = yes
 	set_temp_variable = { _wt_test_id = 6 }
-	WA_TEST_check_timeout = yes
+	WA_TEST_RW_check_timeout = yes
 	set_temp_variable = { _wt_test_id = 7 }
-	WA_TEST_check_timeout = yes
+	WA_TEST_RW_check_timeout = yes
 	set_temp_variable = { _wt_test_id = 8 }
-	WA_TEST_check_timeout = yes
+	WA_TEST_RW_check_timeout = yes
+	set_temp_variable = { _wt_test_id = 9 }
+	WA_TEST_RW_check_timeout = yes
 
 	# Individual test checks (only evaluates tests still ONGOING)
-	WA_TEST_railway_001_check = yes
-	WA_TEST_railway_002_check = yes
-	WA_TEST_railway_003_check = yes
-	WA_TEST_railway_004_check = yes
-	WA_TEST_railway_005_check = yes
-	WA_TEST_railway_006_check = yes
-	WA_TEST_railway_007_check = yes
-	WA_TEST_railway_008_check = yes
+	WA_TEST_RW_001_check = yes
+	WA_TEST_RW_002_check = yes
+	WA_TEST_RW_003_check = yes
+	WA_TEST_RW_004_check = yes
+	WA_TEST_RW_005_check = yes
+	WA_TEST_RW_006_check = yes
+	WA_TEST_RW_007_check = yes
+	WA_TEST_RW_008_check = yes
+	WA_TEST_RW_009_check = yes
 }
 
 ############################################################################################################
@@ -116,32 +572,32 @@ WA_TEST_railway_check_all = {
 #	Fail codes: 1=not at war, 2=no railways in queue, 3=no railways target Asia (continent=4)
 ############################################################################################################
 
-WA_TEST_railway_001_launch = {
+WA_TEST_RW_001_launch = {
 	set_temp_variable = { _wt_test_id = 1 }
 
-	if = { limit = { check_variable = { WA_TEST_state^1 = @WA_TEST_PASSED } }
-		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 001: already PASSED, skipping re-launch"
+	if = { limit = { check_variable = { WA_TEST_RW_state^1 = @WA_TEST_RW_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 001: already PASSED, skipping re-launch"
 	}
-	else_if = { limit = { check_variable = { WA_TEST_state^1 = @WA_TEST_FAILED } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^1 = @WA_TEST_RW_FAILED } }
 		# Already resolved
 	}
-	else_if = { limit = { check_variable = { WA_TEST_state^1 = @WA_TEST_ONGOING } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^1 = @WA_TEST_RW_ONGOING } }
 		# Already running
 	}
 	else_if = {
 		limit = { has_war = yes }
-		set_variable = { WA_TEST_state^1 = @WA_TEST_ONGOING }
-		set_variable = { WA_TEST_launch_day^1 = global.num_days }
-		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 001 (Land War): LAUNCHED (war started)"
+		set_variable = { WA_TEST_RW_state^1 = @WA_TEST_RW_ONGOING }
+		set_variable = { WA_TEST_RW_launch_day^1 = global.num_days }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 001 (Land War): LAUNCHED (war started)"
 	}
 	else = {
 		# Not at war yet - stay NOT_LAUNCHED, will be re-attempted by checker
 	}
 }
 
-WA_TEST_railway_001_check = {
+WA_TEST_RW_001_check = {
 	if = {
-		limit = { check_variable = { WA_TEST_state^1 = @WA_TEST_ONGOING } }
+		limit = { check_variable = { WA_TEST_RW_state^1 = @WA_TEST_RW_ONGOING } }
 
 		set_temp_variable = { _wt_test_id = 1 }
 		set_temp_variable = { _wt_railway_count = 0 }
@@ -167,7 +623,7 @@ WA_TEST_railway_001_check = {
 			}
 		}
 
-		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 001 CHECK: railway_count=[?_wt_railway_count] asia_railway_count=[?_wt_asia_railway_count]"
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 001 CHECK: railway_count=[?_wt_railway_count] asia_railway_count=[?_wt_asia_railway_count]"
 
 		if = {
 			limit = { check_variable = { _wt_railway_count = 0 } }
@@ -175,12 +631,12 @@ WA_TEST_railway_001_check = {
 		}
 		else_if = {
 			limit = { check_variable = { _wt_asia_railway_count > 0 } }
-			WA_TEST_mark_passed = yes
+			WA_TEST_RW_mark_passed = yes
 		}
 		else = {
 			# Railways exist but none target Asia
 			set_temp_variable = { _wt_fail_code = 3 }
-			WA_TEST_mark_failed = yes
+			WA_TEST_RW_mark_failed = yes
 		}
 	}
 }
@@ -191,32 +647,32 @@ WA_TEST_railway_001_check = {
 #	Fail codes: 1=not at war, 2=no overseas enemy, 3=no port upgrades queued
 ############################################################################################################
 
-WA_TEST_railway_002_launch = {
+WA_TEST_RW_002_launch = {
 	set_temp_variable = { _wt_test_id = 2 }
 
-	if = { limit = { check_variable = { WA_TEST_state^2 = @WA_TEST_PASSED } }
-		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 002: already PASSED, skipping re-launch"
+	if = { limit = { check_variable = { WA_TEST_RW_state^2 = @WA_TEST_RW_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 002: already PASSED, skipping re-launch"
 	}
-	else_if = { limit = { check_variable = { WA_TEST_state^2 = @WA_TEST_FAILED } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^2 = @WA_TEST_RW_FAILED } }
 		# Already resolved
 	}
-	else_if = { limit = { check_variable = { WA_TEST_state^2 = @WA_TEST_ONGOING } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^2 = @WA_TEST_RW_ONGOING } }
 		# Already running
 	}
 	else_if = {
 		limit = { has_war = yes }
-		set_variable = { WA_TEST_state^2 = @WA_TEST_ONGOING }
-		set_variable = { WA_TEST_launch_day^2 = global.num_days }
-		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 002 (Overseas Strategy): LAUNCHED (war started)"
+		set_variable = { WA_TEST_RW_state^2 = @WA_TEST_RW_ONGOING }
+		set_variable = { WA_TEST_RW_launch_day^2 = global.num_days }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 002 (Overseas Strategy): LAUNCHED (war started)"
 	}
 	else = {
 		# Not at war yet - stay NOT_LAUNCHED, will be re-attempted by checker
 	}
 }
 
-WA_TEST_railway_002_check = {
+WA_TEST_RW_002_check = {
 	if = {
-		limit = { check_variable = { WA_TEST_state^2 = @WA_TEST_ONGOING } }
+		limit = { check_variable = { WA_TEST_RW_state^2 = @WA_TEST_RW_ONGOING } }
 
 		set_temp_variable = { _wt_test_id = 2 }
 		set_temp_variable = { _wt_port_project_count = 0 }
@@ -231,7 +687,7 @@ WA_TEST_railway_002_check = {
 			}
 		}
 
-		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 002 CHECK: port_projects=[?_wt_port_project_count] railway_projects=[?_wt_any_project_count]"
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 002 CHECK: port_projects=[?_wt_port_project_count] railway_projects=[?_wt_any_project_count]"
 
 		if = {
 			limit = {
@@ -243,7 +699,7 @@ WA_TEST_railway_002_check = {
 		else_if = {
 			limit = { check_variable = { _wt_port_project_count > 0 } }
 			# PASS: Port upgrade projects exist (overseas strategy fired)
-			WA_TEST_mark_passed = yes
+			WA_TEST_RW_mark_passed = yes
 		}
 		else = {
 			# Railways exist but no port upgrades - check if any overseas enemy exists
@@ -261,7 +717,7 @@ WA_TEST_railway_002_check = {
 				limit = { check_variable = { _wt_has_overseas = 0 } }
 				# No overseas enemy exists - test not applicable
 				set_temp_variable = { _wt_fail_code = 2 }
-				WA_TEST_mark_failed = yes
+				WA_TEST_RW_mark_failed = yes
 			}
 			# else: overseas enemy exists but no port projects yet - stay ONGOING
 		}
@@ -275,25 +731,25 @@ WA_TEST_railway_002_check = {
 #	Fail codes: 1=single_node detection failed, 2=railway project targets 1053
 ############################################################################################################
 
-WA_TEST_railway_003_launch = {
+WA_TEST_RW_003_launch = {
 	set_temp_variable = { _wt_test_id = 3 }
 
-	if = { limit = { check_variable = { WA_TEST_state^3 = @WA_TEST_PASSED } }
-		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 003: already PASSED, skipping re-launch"
+	if = { limit = { check_variable = { WA_TEST_RW_state^3 = @WA_TEST_RW_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 003: already PASSED, skipping re-launch"
 	}
 	else_if = { limit = { NOT = { 1053 = { is_controlled_by = PREV } } }
-		WA_TEST_mark_skipped = yes
+		WA_TEST_RW_mark_skipped = yes
 	}
 	else = {
-		set_variable = { WA_TEST_state^3 = @WA_TEST_ONGOING }
-		set_variable = { WA_TEST_launch_day^3 = global.num_days }
-		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 003 (Ryukyu Filter): LAUNCHED"
+		set_variable = { WA_TEST_RW_state^3 = @WA_TEST_RW_ONGOING }
+		set_variable = { WA_TEST_RW_launch_day^3 = global.num_days }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 003 (Ryukyu Filter): LAUNCHED"
 	}
 }
 
-WA_TEST_railway_003_check = {
+WA_TEST_RW_003_check = {
 	if = {
-		limit = { check_variable = { WA_TEST_state^3 = @WA_TEST_ONGOING } }
+		limit = { check_variable = { WA_TEST_RW_state^3 = @WA_TEST_RW_ONGOING } }
 
 		set_temp_variable = { _wt_test_id = 3 }
 
@@ -303,8 +759,8 @@ WA_TEST_railway_003_check = {
 		if = {
 			limit = { check_variable = { is_single_node_ = 0 } }
 			set_temp_variable = { _wt_fail_code = 1 }
-			WA_TEST_mark_failed = yes
-			log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 003: ASSERTION FAIL - state 1053 is_single_node_=[?is_single_node_] (expected 1)"
+			WA_TEST_RW_mark_failed = yes
+			log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 003: ASSERTION FAIL - state 1053 is_single_node_=[?is_single_node_] (expected 1)"
 		}
 		else = {
 			# Assertion 2: No railway project targets state 1053
@@ -322,11 +778,11 @@ WA_TEST_railway_003_check = {
 			if = {
 				limit = { check_variable = { _wt_found_1053 = 1 } }
 				set_temp_variable = { _wt_fail_code = 2 }
-				WA_TEST_mark_failed = yes
-				log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 003: ASSERTION FAIL - found railway project targeting state 1053"
+				WA_TEST_RW_mark_failed = yes
+				log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 003: ASSERTION FAIL - found railway project targeting state 1053"
 			}
 			else = {
-				WA_TEST_mark_passed = yes
+				WA_TEST_RW_mark_passed = yes
 			}
 		}
 	}
@@ -338,29 +794,25 @@ WA_TEST_railway_003_check = {
 #	Fail codes: 1=already at war, 2=no railways, 3=no prewar-priority railways
 ############################################################################################################
 
-WA_TEST_railway_004_launch = {
+WA_TEST_RW_004_launch = {
 	set_temp_variable = { _wt_test_id = 4 }
 
-	if = { limit = { check_variable = { WA_TEST_state^4 = @WA_TEST_PASSED } }
-		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 004: already PASSED, skipping re-launch"
+	if = { limit = { check_variable = { WA_TEST_RW_state^4 = @WA_TEST_RW_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 004: already PASSED, skipping re-launch"
 	}
-	else_if = { limit = { check_variable = { WA_TEST_state^4 = @WA_TEST_FAILED } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^4 = @WA_TEST_RW_FAILED } }
 		# Already resolved (timeout or skip)
 	}
-	else_if = { limit = { check_variable = { WA_TEST_state^4 = @WA_TEST_ONGOING } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^4 = @WA_TEST_RW_ONGOING } }
 		# Already running
 	}
 	else_if = { limit = { has_war = yes }
-		WA_TEST_mark_skipped = yes
-		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 004: SKIPPED (already at war)"
+		WA_TEST_RW_mark_skipped = yes
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 004: SKIPPED (already at war)"
 	}
 	else_if = {
 		limit = {
-			# Railway system requires 75+ civs during peace (on_actions gate)
 			num_of_civilian_factories > 75
-			# Target country exists with a VIABLE land border:
-			# target owns a state neighboring a ROOT-controlled state with a supply hub and no level 3 railway
-			# This mirrors the pre-war strategy's land path filter
 			any_country = {
 				exists = yes
 				NOT = { tag = ROOT }
@@ -379,18 +831,18 @@ WA_TEST_railway_004_launch = {
 				}
 			}
 		}
-		set_variable = { WA_TEST_state^4 = @WA_TEST_ONGOING }
-		set_variable = { WA_TEST_launch_day^4 = global.num_days }
-		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 004 (Pre-War Targets): LAUNCHED (viable targets found)"
+		set_variable = { WA_TEST_RW_state^4 = @WA_TEST_RW_ONGOING }
+		set_variable = { WA_TEST_RW_launch_day^4 = global.num_days }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 004 (Pre-War Targets): LAUNCHED (viable targets found)"
 	}
 	else = {
 		# Preconditions not met yet - stay NOT_LAUNCHED, will be re-attempted by checker
 	}
 }
 
-WA_TEST_railway_004_check = {
+WA_TEST_RW_004_check = {
 	if = {
-		limit = { check_variable = { WA_TEST_state^4 = @WA_TEST_ONGOING } }
+		limit = { check_variable = { WA_TEST_RW_state^4 = @WA_TEST_RW_ONGOING } }
 
 		set_temp_variable = { _wt_test_id = 4 }
 		set_temp_variable = { _wt_railway_count = 0 }
@@ -401,7 +853,6 @@ WA_TEST_railway_004_check = {
 				limit = { check_variable = { WA_AI_PC_building_type^_wt_proj = 13 } }
 				add_to_temp_variable = { _wt_railway_count = 1 }
 
-				# Check priority = 5000 (prewar)
 				if = {
 					limit = { check_variable = { WA_AI_PC_priority^_wt_proj = 5000 } }
 					add_to_temp_variable = { _wt_prewar_count = 1 }
@@ -409,7 +860,7 @@ WA_TEST_railway_004_check = {
 			}
 		}
 
-		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 004 CHECK: railway_count=[?_wt_railway_count] prewar_priority_count=[?_wt_prewar_count]"
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 004 CHECK: railway_count=[?_wt_railway_count] prewar_priority_count=[?_wt_prewar_count]"
 
 		if = {
 			limit = { check_variable = { _wt_railway_count = 0 } }
@@ -417,11 +868,11 @@ WA_TEST_railway_004_check = {
 		}
 		else_if = {
 			limit = { check_variable = { _wt_prewar_count > 0 } }
-			WA_TEST_mark_passed = yes
+			WA_TEST_RW_mark_passed = yes
 		}
 		else = {
 			set_temp_variable = { _wt_fail_code = 3 }
-			WA_TEST_mark_failed = yes
+			WA_TEST_RW_mark_failed = yes
 		}
 	}
 }
@@ -433,16 +884,16 @@ WA_TEST_railway_004_check = {
 #	            4=project_cost<=0, 5=progress<=0, 6=priority<=0
 ############################################################################################################
 
-WA_TEST_railway_005_launch = {
+WA_TEST_RW_005_launch = {
 	set_temp_variable = { _wt_test_id = 5 }
 
-	if = { limit = { check_variable = { WA_TEST_state^5 = @WA_TEST_PASSED } }
-		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 005: already PASSED, skipping re-launch"
+	if = { limit = { check_variable = { WA_TEST_RW_state^5 = @WA_TEST_RW_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 005: already PASSED, skipping re-launch"
 	}
-	else_if = { limit = { check_variable = { WA_TEST_state^5 = @WA_TEST_FAILED } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^5 = @WA_TEST_RW_FAILED } }
 		# Already resolved
 	}
-	else_if = { limit = { check_variable = { WA_TEST_state^5 = @WA_TEST_ONGOING } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^5 = @WA_TEST_RW_ONGOING } }
 		# Already running
 	}
 	else_if = {
@@ -450,11 +901,7 @@ WA_TEST_railway_005_launch = {
 			OR = {
 				has_war = yes
 				AND = {
-					# Railway system requires 75+ civs during peace (on_actions gate)
 					num_of_civilian_factories > 75
-					# Target country exists with a VIABLE land border:
-					# target owns a state neighboring a ROOT-controlled state with a supply hub and no level 3 railway
-					# This mirrors the pre-war strategy's land path filter
 					any_country = {
 						exists = yes
 						NOT = { tag = ROOT }
@@ -475,18 +922,18 @@ WA_TEST_railway_005_launch = {
 				}
 			}
 		}
-		set_variable = { WA_TEST_state^5 = @WA_TEST_ONGOING }
-		set_variable = { WA_TEST_launch_day^5 = global.num_days }
-		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 005 (Queue Data Integrity): LAUNCHED (railway conditions active)"
+		set_variable = { WA_TEST_RW_state^5 = @WA_TEST_RW_ONGOING }
+		set_variable = { WA_TEST_RW_launch_day^5 = global.num_days }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 005 (Queue Data Integrity): LAUNCHED (railway conditions active)"
 	}
 	else = {
 		# No railway triggers active yet - stay NOT_LAUNCHED, will be re-attempted by checker
 	}
 }
 
-WA_TEST_railway_005_check = {
+WA_TEST_RW_005_check = {
 	if = {
-		limit = { check_variable = { WA_TEST_state^5 = @WA_TEST_ONGOING } }
+		limit = { check_variable = { WA_TEST_RW_state^5 = @WA_TEST_RW_ONGOING } }
 
 		set_temp_variable = { _wt_test_id = 5 }
 		set_temp_variable = { _wt_railway_count = 0 }
@@ -506,7 +953,7 @@ WA_TEST_railway_005_check = {
 					limit = { NOT = { check_variable = { WA_AI_PC_target_province^_wt_proj > 0 } } }
 					set_temp_variable = { _wt_invalid_found = 1 }
 					set_temp_variable = { _wt_invalid_code = 1 }
-					log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 005: INVALID proj=[?_wt_proj] target_province=[?WA_AI_PC_target_province^_wt_proj]"
+					log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 005: INVALID proj=[?_wt_proj] target_province=[?WA_AI_PC_target_province^_wt_proj]"
 				}
 				# Validate connect_province
 				if = {
@@ -516,7 +963,7 @@ WA_TEST_railway_005_check = {
 					}
 					set_temp_variable = { _wt_invalid_found = 1 }
 					set_temp_variable = { _wt_invalid_code = 2 }
-					log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 005: INVALID proj=[?_wt_proj] connect_province=[?WA_AI_PC_connect_province^_wt_proj]"
+					log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 005: INVALID proj=[?_wt_proj] connect_province=[?WA_AI_PC_connect_province^_wt_proj]"
 				}
 				# Validate target_state
 				if = {
@@ -526,7 +973,7 @@ WA_TEST_railway_005_check = {
 					}
 					set_temp_variable = { _wt_invalid_found = 1 }
 					set_temp_variable = { _wt_invalid_code = 3 }
-					log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 005: INVALID proj=[?_wt_proj] target_state=[?WA_AI_PC_target_state^_wt_proj]"
+					log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 005: INVALID proj=[?_wt_proj] target_state=[?WA_AI_PC_target_state^_wt_proj]"
 				}
 				# Validate project_cost
 				if = {
@@ -536,7 +983,7 @@ WA_TEST_railway_005_check = {
 					}
 					set_temp_variable = { _wt_invalid_found = 1 }
 					set_temp_variable = { _wt_invalid_code = 4 }
-					log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 005: INVALID proj=[?_wt_proj] project_cost=[?WA_AI_PC_project_cost^_wt_proj]"
+					log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 005: INVALID proj=[?_wt_proj] project_cost=[?WA_AI_PC_project_cost^_wt_proj]"
 				}
 				# Validate progress
 				if = {
@@ -546,7 +993,7 @@ WA_TEST_railway_005_check = {
 					}
 					set_temp_variable = { _wt_invalid_found = 1 }
 					set_temp_variable = { _wt_invalid_code = 5 }
-					log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 005: INVALID proj=[?_wt_proj] progress=[?WA_AI_PC_progress^_wt_proj]"
+					log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 005: INVALID proj=[?_wt_proj] progress=[?WA_AI_PC_progress^_wt_proj]"
 				}
 				# Validate priority
 				if = {
@@ -556,7 +1003,7 @@ WA_TEST_railway_005_check = {
 					}
 					set_temp_variable = { _wt_invalid_found = 1 }
 					set_temp_variable = { _wt_invalid_code = 6 }
-					log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 005: INVALID proj=[?_wt_proj] priority=[?WA_AI_PC_priority^_wt_proj]"
+					log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 005: INVALID proj=[?_wt_proj] priority=[?WA_AI_PC_priority^_wt_proj]"
 				}
 			}
 		}
@@ -568,11 +1015,11 @@ WA_TEST_railway_005_check = {
 		else_if = {
 			limit = { check_variable = { _wt_invalid_found = 1 } }
 			set_temp_variable = { _wt_fail_code = _wt_invalid_code }
-			WA_TEST_mark_failed = yes
+			WA_TEST_RW_mark_failed = yes
 		}
 		else = {
-			log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 005: Validated [?_wt_railway_count] railway projects - all fields valid"
-			WA_TEST_mark_passed = yes
+			log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 005: Validated [?_wt_railway_count] railway projects - all fields valid"
+			WA_TEST_RW_mark_passed = yes
 		}
 	}
 }
@@ -583,32 +1030,32 @@ WA_TEST_railway_005_check = {
 #	Fail codes: 1=no port projects, 2=port targets non-home-island state
 ############################################################################################################
 
-WA_TEST_railway_006_launch = {
+WA_TEST_RW_006_launch = {
 	set_temp_variable = { _wt_test_id = 6 }
 
-	if = { limit = { check_variable = { WA_TEST_state^6 = @WA_TEST_PASSED } }
-		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 006: already PASSED, skipping re-launch"
+	if = { limit = { check_variable = { WA_TEST_RW_state^6 = @WA_TEST_RW_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 006: already PASSED, skipping re-launch"
 	}
-	else_if = { limit = { check_variable = { WA_TEST_state^6 = @WA_TEST_FAILED } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^6 = @WA_TEST_RW_FAILED } }
 		# Already resolved
 	}
-	else_if = { limit = { check_variable = { WA_TEST_state^6 = @WA_TEST_ONGOING } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^6 = @WA_TEST_RW_ONGOING } }
 		# Already running
 	}
 	else_if = {
 		limit = { has_war = yes }
-		set_variable = { WA_TEST_state^6 = @WA_TEST_ONGOING }
-		set_variable = { WA_TEST_launch_day^6 = global.num_days }
-		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 006 (Home Port Selection): LAUNCHED (war started)"
+		set_variable = { WA_TEST_RW_state^6 = @WA_TEST_RW_ONGOING }
+		set_variable = { WA_TEST_RW_launch_day^6 = global.num_days }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 006 (Home Port Selection): LAUNCHED (war started)"
 	}
 	else = {
 		# Not at war yet - stay NOT_LAUNCHED, will be re-attempted by checker
 	}
 }
 
-WA_TEST_railway_006_check = {
+WA_TEST_RW_006_check = {
 	if = {
-		limit = { check_variable = { WA_TEST_state^6 = @WA_TEST_ONGOING } }
+		limit = { check_variable = { WA_TEST_RW_state^6 = @WA_TEST_RW_ONGOING } }
 
 		set_temp_variable = { _wt_test_id = 6 }
 		set_temp_variable = { _wt_port_count = 0 }
@@ -621,7 +1068,6 @@ WA_TEST_railway_006_check = {
 				add_to_temp_variable = { _wt_port_count = 1 }
 
 				set_temp_variable = { _wt_pstate = WA_AI_PC_target_state^_wt_proj }
-				# Check if target state is a Japanese home island
 				if = {
 					limit = {
 						OR = {
@@ -645,7 +1091,7 @@ WA_TEST_railway_006_check = {
 			}
 		}
 
-		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 006 CHECK: port_count=[?_wt_port_count] home_island=[?_wt_home_island_port] non_home=[?_wt_non_home_port]"
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 006 CHECK: port_count=[?_wt_port_count] home_island=[?_wt_home_island_port] non_home=[?_wt_non_home_port]"
 
 		if = {
 			limit = { check_variable = { _wt_port_count = 0 } }
@@ -653,11 +1099,11 @@ WA_TEST_railway_006_check = {
 		}
 		else_if = {
 			limit = { check_variable = { _wt_home_island_port = 1 } }
-			WA_TEST_mark_passed = yes
+			WA_TEST_RW_mark_passed = yes
 		}
 		else = {
 			set_temp_variable = { _wt_fail_code = 2 }
-			WA_TEST_mark_failed = yes
+			WA_TEST_RW_mark_failed = yes
 		}
 	}
 }
@@ -669,22 +1115,22 @@ WA_TEST_railway_006_check = {
 #	            5=landmass data invalid
 ############################################################################################################
 
-WA_TEST_railway_007_launch = {
+WA_TEST_RW_007_launch = {
 	set_temp_variable = { _wt_test_id = 7 }
 
-	if = { limit = { check_variable = { WA_TEST_state^7 = @WA_TEST_PASSED } }
-		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 007: already PASSED, skipping re-launch"
+	if = { limit = { check_variable = { WA_TEST_RW_state^7 = @WA_TEST_RW_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 007: already PASSED, skipping re-launch"
 	}
 	else = {
-		set_variable = { WA_TEST_state^7 = @WA_TEST_ONGOING }
-		set_variable = { WA_TEST_launch_day^7 = global.num_days }
-		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 007 (Supply Chain Analysis): LAUNCHED"
+		set_variable = { WA_TEST_RW_state^7 = @WA_TEST_RW_ONGOING }
+		set_variable = { WA_TEST_RW_launch_day^7 = global.num_days }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 007 (Supply Chain Analysis): LAUNCHED"
 	}
 }
 
-WA_TEST_railway_007_check = {
+WA_TEST_RW_007_check = {
 	if = {
-		limit = { check_variable = { WA_TEST_state^7 = @WA_TEST_ONGOING } }
+		limit = { check_variable = { WA_TEST_RW_state^7 = @WA_TEST_RW_ONGOING } }
 
 		set_temp_variable = { _wt_test_id = 7 }
 
@@ -697,7 +1143,7 @@ WA_TEST_railway_007_check = {
 		# Korea (state 525) is on the Asian mainland - use its landmass as target
 		set_temp_variable = { target_landmass = global.WA_AI_MAP_state_landmass^525 }
 
-		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 007: capital_landmass=[?capital_landmass] target_landmass(Korea 525)=[?target_landmass]"
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 007: capital_landmass=[?capital_landmass] target_landmass(Korea 525)=[?target_landmass]"
 
 		# Proceed only if both landmasses are known and different
 		if = {
@@ -710,40 +1156,40 @@ WA_TEST_railway_007_check = {
 			# Call the supply chain analyzer
 			WA_AI_PC_analyze_overseas_supply_chain = yes
 
-			log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 007: route_start=[?overseas_route_start_] max_level=[?overseas_max_railway_level_] port_state=[?overseas_receiving_port_state_]"
+			log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 007: route_start=[?overseas_route_start_] max_level=[?overseas_max_railway_level_] port_state=[?overseas_receiving_port_state_]"
 
 			# Assertion 1: route_start > 0
 			if = {
 				limit = { NOT = { check_variable = { overseas_route_start_ > 0 } } }
 				set_temp_variable = { _wt_fail_code = 1 }
-				WA_TEST_mark_failed = yes
+				WA_TEST_RW_mark_failed = yes
 			}
 			# Assertion 2: max_railway_level > 0
 			else_if = {
 				limit = { NOT = { check_variable = { overseas_max_railway_level_ > 0 } } }
 				set_temp_variable = { _wt_fail_code = 2 }
-				WA_TEST_mark_failed = yes
+				WA_TEST_RW_mark_failed = yes
 			}
 			# Assertion 3: max_railway_level <= 5
 			else_if = {
 				limit = { check_variable = { overseas_max_railway_level_ > 5 } }
 				set_temp_variable = { _wt_fail_code = 3 }
-				WA_TEST_mark_failed = yes
+				WA_TEST_RW_mark_failed = yes
 			}
 			# Assertion 4: receiving_port_state > 0
 			else_if = {
 				limit = { NOT = { check_variable = { overseas_receiving_port_state_ > 0 } } }
 				set_temp_variable = { _wt_fail_code = 4 }
-				WA_TEST_mark_failed = yes
+				WA_TEST_RW_mark_failed = yes
 			}
 			else = {
-				WA_TEST_mark_passed = yes
+				WA_TEST_RW_mark_passed = yes
 			}
 		}
 		else = {
 			set_temp_variable = { _wt_fail_code = 5 }
-			WA_TEST_mark_failed = yes
-			log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 007: FAIL - landmass data invalid or same"
+			WA_TEST_RW_mark_failed = yes
+			log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 007: FAIL - landmass data invalid or same"
 		}
 	}
 }
@@ -754,11 +1200,11 @@ WA_TEST_railway_007_check = {
 #	Fail codes: 1=state 1053 not detected as single_node, 2=state 528 incorrectly detected
 ############################################################################################################
 
-WA_TEST_railway_008_launch = {
+WA_TEST_RW_008_launch = {
 	set_temp_variable = { _wt_test_id = 8 }
 
-	if = { limit = { check_variable = { WA_TEST_state^8 = @WA_TEST_PASSED } }
-		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 008: already PASSED, skipping re-launch"
+	if = { limit = { check_variable = { WA_TEST_RW_state^8 = @WA_TEST_RW_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 008: already PASSED, skipping re-launch"
 	}
 	else_if = {
 		limit = {
@@ -769,18 +1215,18 @@ WA_TEST_railway_008_launch = {
 				}
 			}
 		}
-		WA_TEST_mark_skipped = yes
+		WA_TEST_RW_mark_skipped = yes
 	}
 	else = {
-		set_variable = { WA_TEST_state^8 = @WA_TEST_ONGOING }
-		set_variable = { WA_TEST_launch_day^8 = global.num_days }
-		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 008 (Single-Node Detection): LAUNCHED"
+		set_variable = { WA_TEST_RW_state^8 = @WA_TEST_RW_ONGOING }
+		set_variable = { WA_TEST_RW_launch_day^8 = global.num_days }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 008 (Single-Node Detection): LAUNCHED"
 	}
 }
 
-WA_TEST_railway_008_check = {
+WA_TEST_RW_008_check = {
 	if = {
-		limit = { check_variable = { WA_TEST_state^8 = @WA_TEST_ONGOING } }
+		limit = { check_variable = { WA_TEST_RW_state^8 = @WA_TEST_RW_ONGOING } }
 
 		set_temp_variable = { _wt_test_id = 8 }
 
@@ -792,20 +1238,105 @@ WA_TEST_railway_008_check = {
 		528 = { WA_AI_PC_coastal_state_is_single_node = yes }
 		set_temp_variable = { _wt_kyushu_result = is_single_node_ }
 
-		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | TEST 008: ryukyu(1053)=[?_wt_ryukyu_result] kyushu(528)=[?_wt_kyushu_result]"
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 008: ryukyu(1053)=[?_wt_ryukyu_result] kyushu(528)=[?_wt_kyushu_result]"
 
 		if = {
 			limit = { check_variable = { _wt_ryukyu_result = 0 } }
 			set_temp_variable = { _wt_fail_code = 1 }
-			WA_TEST_mark_failed = yes
+			WA_TEST_RW_mark_failed = yes
 		}
 		else_if = {
 			limit = { check_variable = { _wt_kyushu_result = 1 } }
 			set_temp_variable = { _wt_fail_code = 2 }
-			WA_TEST_mark_failed = yes
+			WA_TEST_RW_mark_failed = yes
 		}
 		else = {
-			WA_TEST_mark_passed = yes
+			WA_TEST_RW_mark_passed = yes
+		}
+	}
+}
+
+############################################################################################################
+#	TEST 009: Capital Home Port Railway (Wartime)
+#	When at war, capital state should queue railway to its naval base (capital -> naval base)
+#	For Japan: Tokyo (prov 1182) -> Yokohama (prov 9998) in Kanto state (282)
+#	Fail codes: 1=not at war, 2=no railways queued, 3=no Kanto target, 4=wrong route, 5=wrong level
+############################################################################################################
+
+WA_TEST_RW_009_launch = {
+	set_temp_variable = { _wt_test_id = 9 }
+
+	if = { limit = { check_variable = { WA_TEST_RW_state^9 = @WA_TEST_RW_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 009: already PASSED, skipping re-launch"
+	}
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^9 = @WA_TEST_RW_FAILED } }
+		# Already resolved
+	}
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^9 = @WA_TEST_RW_ONGOING } }
+		# Already running
+	}
+	else_if = {
+		limit = { has_war = yes }
+		set_variable = { WA_TEST_RW_state^9 = @WA_TEST_RW_ONGOING }
+		set_variable = { WA_TEST_RW_launch_day^9 = global.num_days }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 009 (Capital Home Port War): LAUNCHED (war started)"
+	}
+	else = {
+		# Not at war yet - stay NOT_LAUNCHED, will be re-attempted by checker
+	}
+}
+
+WA_TEST_RW_009_check = {
+	if = {
+		limit = { check_variable = { WA_TEST_RW_state^9 = @WA_TEST_RW_ONGOING } }
+
+		set_temp_variable = { _wt_test_id = 9 }
+		set_temp_variable = { _wt_railway_count = 0 }
+		set_temp_variable = { _wt_kanto_found = 0 }
+		set_temp_variable = { _wt_capital_province = 1182 }
+		set_temp_variable = { _wt_naval_base_province = 9998 }
+
+		for_each_loop = { array = WA_AI_PC_queue value = _wt_proj
+			if = {
+				limit = { check_variable = { WA_AI_PC_building_type^_wt_proj = 13 } }
+				add_to_temp_variable = { _wt_railway_count = 1 }
+
+				# Check if this project targets Kanto (state 282)
+				set_temp_variable = { _wt_proj_state = WA_AI_PC_target_state^_wt_proj }
+				if = {
+					limit = { check_variable = { _wt_proj_state = 282 } }
+					# Found Kanto target - check routing
+					set_temp_variable = { _wt_proj_start = WA_AI_PC_target_province^_wt_proj }
+					set_temp_variable = { _wt_proj_end = WA_AI_PC_connect_province^_wt_proj }
+					set_temp_variable = { _wt_proj_level = WA_AI_PC_target_level^_wt_proj }
+
+					if = {
+						limit = {
+							check_variable = { _wt_proj_start = _wt_capital_province }
+							check_variable = { _wt_proj_end = _wt_naval_base_province }
+							check_variable = { _wt_proj_level = 5 }
+						}
+						# Perfect match!
+						set_temp_variable = { _wt_kanto_found = 1 }
+					}
+				}
+			}
+		}
+
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 009 CHECK: railway_count=[?_wt_railway_count] kanto_valid=[?_wt_kanto_found]"
+
+		if = {
+			limit = { check_variable = { _wt_railway_count = 0 } }
+			# No railways yet - remain ONGOING (system might not have run yet)
+		}
+		else_if = {
+			limit = { check_variable = { _wt_kanto_found = 1 } }
+			WA_TEST_RW_mark_passed = yes
+		}
+		else = {
+			# Railways exist but Kanto not found with correct routing
+			set_temp_variable = { _wt_fail_code = 3 }
+			WA_TEST_RW_mark_failed = yes
 		}
 	}
 }
