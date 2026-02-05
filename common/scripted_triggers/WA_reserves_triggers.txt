@@ -155,258 +155,101 @@ WA_reserves_not_strictly_neutral = {
 # Thresholds increase as reserves increase (10, 20, 30... 90)
 ############################################################################################################
 
+# Main threshold check - uses meta_trigger for dynamic thresholds
+# Formulas:
+#   Standard: manpower = 199999 + (level * 20000), equipment = 15000 + (level * 1000)
+#   SOV:      manpower = 99999 + (level * 10000),  equipment = 10000 + (level * 500)
+# USA bypass: levels 0-20 both flags, levels 30-40 only 265_plan, levels 50+ no bypass
 WA_reserves_meets_recruitment_threshold = {
-	# No reserves yet - base threshold
-	if = {
-		limit = {
-			NOT = { check_variable = { ROOT.reserves > 0 } }
-		}
-		WA_reserves_meets_base_threshold = yes
-	}
-	# 10 reserves
-	else_if = {
-		limit = {
-			check_variable = { ROOT.reserves < 20 }
-		}
-		WA_reserves_meets_threshold_10 = yes
-	}
-	# 20 reserves
-	else_if = {
-		limit = {
-			check_variable = { ROOT.reserves < 30 }
-		}
-		WA_reserves_meets_threshold_20 = yes
-	}
-	# 30 reserves
-	else_if = {
-		limit = {
-			check_variable = { ROOT.reserves < 40 }
-		}
-		WA_reserves_meets_threshold_30 = yes
-	}
-	# 40 reserves
-	else_if = {
-		limit = {
-			check_variable = { ROOT.reserves < 50 }
-		}
-		WA_reserves_meets_threshold_40 = yes
-	}
-	# 50 reserves
-	else_if = {
-		limit = {
-			check_variable = { ROOT.reserves < 60 }
-		}
-		WA_reserves_meets_threshold_50 = yes
-	}
-	# 60 reserves
-	else_if = {
-		limit = {
-			check_variable = { ROOT.reserves < 70 }
-		}
-		WA_reserves_meets_threshold_60 = yes
-	}
-	# 70 reserves
-	else_if = {
-		limit = {
-			check_variable = { ROOT.reserves < 80 }
-		}
-		WA_reserves_meets_threshold_70 = yes
-	}
-	# 80 reserves
-	else_if = {
-		limit = {
-			check_variable = { ROOT.reserves < 90 }
-		}
-		WA_reserves_meets_threshold_80 = yes
-	}
-	# 90 reserves
-	else = {
-		WA_reserves_meets_threshold_90 = yes
+	# Calculate reserve level (floor to nearest 10)
+	set_temp_variable = { _reserves_level = ROOT.reserves }
+	clamp_temp_variable = { var = _reserves_level min = 0 max = 90 }
+	divide_temp_variable = { _reserves_level = 10 }
+	set_temp_variable = { _level_remainder = _reserves_level }
+	modulo_temp_variable = { _level_remainder = 1 }
+	subtract_from_temp_variable = { _reserves_level = _level_remainder }
+	multiply_temp_variable = { _reserves_level = 10 }
+
+	# Calculate standard thresholds: 199999 + (level * 2000)
+	set_temp_variable = { _std_manpower = _reserves_level }
+	multiply_temp_variable = { _std_manpower = 2000 }
+	add_to_temp_variable = { _std_manpower = 199999 }
+
+	# Standard equipment: 15000 + (level * 100)
+	set_temp_variable = { _std_equipment = _reserves_level }
+	multiply_temp_variable = { _std_equipment = 100 }
+	add_to_temp_variable = { _std_equipment = 15000 }
+
+	# Calculate SOV thresholds: 99999 + (level * 1000)
+	set_temp_variable = { _sov_manpower = _reserves_level }
+	multiply_temp_variable = { _sov_manpower = 1000 }
+	add_to_temp_variable = { _sov_manpower = 99999 }
+
+	# SOV equipment: 10000 + (level * 50)
+	set_temp_variable = { _sov_equipment = _reserves_level }
+	multiply_temp_variable = { _sov_equipment = 50 }
+	add_to_temp_variable = { _sov_equipment = 10000 }
+
+	# Check any path passes
+	OR = {
+		WA_reserves_has_usa_bypass = yes
+		WA_reserves_meets_sov_threshold = yes
+		WA_reserves_meets_standard_threshold = yes
 	}
 }
 
-# Base threshold (0 reserves)
-WA_reserves_meets_base_threshold = {
+# USA bypass check - varies by reserve level
+# Levels 0-20: accept both flags, Levels 30-40: only 265_plan, Levels 50+: no bypass
+WA_reserves_has_usa_bypass = {
+	original_tag = USA
+	check_variable = { _reserves_level < 50 }
 	OR = {
-		# USA can bypass with certain flags
+		# Levels 0-20: accept both flags
 		AND = {
-			original_tag = USA
+			check_variable = { _reserves_level < 30 }
 			OR = {
 				has_country_flag = USA_selective_service_act_flag
 				has_country_flag = USA_265_plan_flag
 			}
 		}
-		# SOV has reduced requirements with focus
+		# Levels 30-40: only 265_plan flag
 		AND = {
-			has_completed_focus = SOV_reserve_armies_administration
-			has_army_manpower = { size > 99999 }
-			check_variable = { num_equipment_in_armies@infantry_equipment > 10000 }
-		}
-		# Standard requirement
-		AND = {
-			has_army_manpower = { size > 199999 }
-			check_variable = { num_equipment_in_armies@infantry_equipment > 15000 }
-		}
-	}
-}
-
-# Threshold for 10 reserves
-WA_reserves_meets_threshold_10 = {
-	OR = {
-		# USA bypass
-		AND = {
-			original_tag = USA
-			OR = {
-				has_country_flag = USA_selective_service_act_flag
-				has_country_flag = USA_265_plan_flag
-			}
-		}
-		# SOV reduced requirements
-		AND = {
-			has_completed_focus = SOV_reserve_armies_administration
-			has_army_manpower = { size > 199999 }
-			check_variable = { num_equipment_in_armies@infantry_equipment > 15000 }
-		}
-		# Standard
-		AND = {
-			has_army_manpower = { size > 399999 }
-			check_variable = { num_equipment_in_armies@infantry_equipment > 25000 }
-		}
-	}
-}
-
-# Threshold for 20 reserves
-WA_reserves_meets_threshold_20 = {
-	OR = {
-		AND = {
-			original_tag = USA
-			OR = {
-				has_country_flag = USA_selective_service_act_flag
-				has_country_flag = USA_265_plan_flag
-			}
-		}
-		AND = {
-			has_completed_focus = SOV_reserve_armies_administration
-			has_army_manpower = { size > 299999 }
-			check_variable = { num_equipment_in_armies@infantry_equipment > 20000 }
-		}
-		AND = {
-			has_army_manpower = { size > 599999 }
-			check_variable = { num_equipment_in_armies@infantry_equipment > 35000 }
-		}
-	}
-}
-
-# Threshold for 30 reserves
-WA_reserves_meets_threshold_30 = {
-	OR = {
-		AND = {
-			original_tag = USA
+			check_variable = { _reserves_level > 19 }
 			has_country_flag = USA_265_plan_flag
 		}
-		AND = {
-			has_completed_focus = SOV_reserve_armies_administration
-			has_army_manpower = { size > 399999 }
-			check_variable = { num_equipment_in_armies@infantry_equipment > 25000 }
-		}
-		AND = {
-			has_army_manpower = { size > 799999 }
-			check_variable = { num_equipment_in_armies@infantry_equipment > 45000 }
-		}
 	}
 }
 
-# Threshold for 40 reserves
-WA_reserves_meets_threshold_40 = {
-	OR = {
-		AND = {
-			original_tag = USA
-			has_country_flag = USA_265_plan_flag
+# SOV reduced requirements - uses meta_trigger for variable thresholds
+WA_reserves_meets_sov_threshold = {
+	has_completed_focus = SOV_reserve_armies_administration
+	meta_trigger = {
+		text = {
+			has_army_manpower = { size > [MP] }
 		}
-		AND = {
-			has_completed_focus = SOV_reserve_armies_administration
-			has_army_manpower = { size > 499999 }
-			check_variable = { num_equipment_in_armies@infantry_equipment > 30000 }
+		MP = "[?_sov_manpower|.0]"
+	}
+	meta_trigger = {
+		text = {
+			check_variable = { num_equipment_in_armies@infantry_equipment > [EQ] }
 		}
-		AND = {
-			has_army_manpower = { size > 999999 }
-			check_variable = { num_equipment_in_armies@infantry_equipment > 55000 }
-		}
+		EQ = "[?_sov_equipment|.0]"
 	}
 }
 
-# Threshold for 50 reserves
-WA_reserves_meets_threshold_50 = {
-	OR = {
-		AND = {
-			has_completed_focus = SOV_reserve_armies_administration
-			has_army_manpower = { size > 599999 }
-			check_variable = { num_equipment_in_armies@infantry_equipment > 35000 }
+# Standard requirements - uses meta_trigger for variable thresholds
+WA_reserves_meets_standard_threshold = {
+	meta_trigger = {
+		text = {
+			has_army_manpower = { size > [MP] }
 		}
-		AND = {
-			has_army_manpower = { size > 1199999 }
-			check_variable = { num_equipment_in_armies@infantry_equipment > 65000 }
-		}
+		MP = "[?_std_manpower|.0]"
 	}
-}
-
-# Threshold for 60 reserves
-WA_reserves_meets_threshold_60 = {
-	OR = {
-		AND = {
-			has_completed_focus = SOV_reserve_armies_administration
-			has_army_manpower = { size > 699999 }
-			check_variable = { num_equipment_in_armies@infantry_equipment > 40000 }
+	meta_trigger = {
+		text = {
+			check_variable = { num_equipment_in_armies@infantry_equipment > [EQ] }
 		}
-		AND = {
-			has_army_manpower = { size > 1399999 }
-			check_variable = { num_equipment_in_armies@infantry_equipment > 75000 }
-		}
-	}
-}
-
-# Threshold for 70 reserves
-WA_reserves_meets_threshold_70 = {
-	OR = {
-		AND = {
-			has_completed_focus = SOV_reserve_armies_administration
-			has_army_manpower = { size > 799999 }
-			check_variable = { num_equipment_in_armies@infantry_equipment > 45000 }
-		}
-		AND = {
-			has_army_manpower = { size > 1599999 }
-			check_variable = { num_equipment_in_armies@infantry_equipment > 85000 }
-		}
-	}
-}
-
-# Threshold for 80 reserves
-WA_reserves_meets_threshold_80 = {
-	OR = {
-		AND = {
-			has_completed_focus = SOV_reserve_armies_administration
-			has_army_manpower = { size > 899999 }
-			check_variable = { num_equipment_in_armies@infantry_equipment > 50000 }
-		}
-		AND = {
-			has_army_manpower = { size > 1799999 }
-			check_variable = { num_equipment_in_armies@infantry_equipment > 95000 }
-		}
-	}
-}
-
-# Threshold for 90 reserves
-WA_reserves_meets_threshold_90 = {
-	OR = {
-		AND = {
-			has_completed_focus = SOV_reserve_armies_administration
-			has_army_manpower = { size > 999999 }
-			check_variable = { num_equipment_in_armies@infantry_equipment > 55000 }
-		}
-		AND = {
-			has_army_manpower = { size > 1999999 }
-			check_variable = { num_equipment_in_armies@infantry_equipment > 105000 }
-		}
+		EQ = "[?_std_equipment|.0]"
 	}
 }
 
