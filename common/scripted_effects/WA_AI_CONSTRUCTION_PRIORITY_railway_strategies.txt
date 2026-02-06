@@ -29,8 +29,6 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 	set_temp_variable = { high_route_priority = route_priority }
 	multiply_temp_variable = { high_route_priority = 1.1 }
 
-	# Track if we've analyzed overseas supply chain for this landmass
-	clear_temp_array = _analyzed_landmasses_
 
 	### For each RELEVANT enemy we DIRECTLY border (not through allies), find frontline states with supply hubs
 	### This prevents building railways to distant frontlines (e.g., Italy -> SOV through Germany)
@@ -114,41 +112,24 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 								set_temp_variable = { route_level = default_route_level }
 							}
 							else = {
-								# Different landmass: analyze overseas supply chain
-								# Check if we've already analyzed this landmass
-								set_temp_variable = { _already_analyzed = 0 }
-								for_each_loop = { array = _analyzed_landmasses_ value = _analyzed_lm
-									if = { limit = { check_variable = { _analyzed_lm = target_landmass } }
-										set_temp_variable = { _already_analyzed = 1 }
-									}
-								}
+								# Different landmass: find nearest receiving port via distance-limited search
+								# Fix 26: Each target gets its own port analysis (no caching per-landmass)
+								# Previously cached per-landmass, which on mega-landmasses like Afro-Eurasia
+								# caused all targets to share one port (e.g., Singapore for North Africa)
+								set_temp_variable = { _target_state_for_port_search = _target_state_id }
+								ROOT = { WA_AI_PC_analyze_overseas_supply_chain = yes }
+								set_temp_variable = { route_start = overseas_route_start_ }
+								set_temp_variable = { route_level = overseas_max_railway_level_ }
 
+								# Queue port upgrade if it's the bottleneck
 								if = {
-									limit = { check_variable = { _already_analyzed = 0 } }
-									# First time seeing this landmass - analyze supply chain
-									ROOT = { WA_AI_PC_analyze_overseas_supply_chain = yes }
-									add_to_temp_array = { _analyzed_landmasses_ = target_landmass }
-
-									# Store results for reuse
-									set_temp_variable = { _cached_overseas_route_start^target_landmass = overseas_route_start_ }
-									set_temp_variable = { _cached_overseas_max_level^target_landmass = overseas_max_railway_level_ }
-									set_temp_variable = { _cached_overseas_port_state^target_landmass = overseas_receiving_port_state_ }
-
-									# Queue port upgrade if it's the bottleneck
-									if = {
-										limit = {
-											check_variable = { overseas_max_railway_level_ < 5 }
-											check_variable = { overseas_receiving_port_state_ > 0 }
-											NOT = { is_in_array = { railway_port_upgrades_ = overseas_receiving_port_state_ } }
-										}
-										add_to_temp_array = { railway_port_upgrades_ = overseas_receiving_port_state_ }
+									limit = {
+										check_variable = { overseas_max_railway_level_ < 5 }
+										check_variable = { overseas_receiving_port_state_ > 0 }
+										NOT = { is_in_array = { railway_port_upgrades_ = overseas_receiving_port_state_ } }
 									}
+									add_to_temp_array = { railway_port_upgrades_ = overseas_receiving_port_state_ }
 								}
-
-								# Use cached overseas supply chain results
-								set_temp_variable = { route_start = _cached_overseas_route_start^target_landmass }
-								set_temp_variable = { route_level = _cached_overseas_max_level^target_landmass }
-
 							}
 
 							# Only proceed if we have a valid route start
@@ -328,11 +309,16 @@ WA_AI_PC_railway_STRATEGY_overseas_war = {
 				every_controlled_state = {
 					# Use new continent helper
 					WA_AI_PC_railway_get_continent = yes
+					WA_AI_PC_get_state_id = yes
+					set_temp_variable = { _bh_sid = state_id_ }
 
 					if = {
 						limit = {
 							check_variable = { continent_id_ = enemy_continent }
 							is_coastal = yes
+							# Fix 26: Exclude home territory (same landmass as capital)
+							# Beachheads should be on foreign soil, not home island ports
+							NOT = { check_variable = { global.WA_AI_MAP_state_landmass^_bh_sid = capital_landmass } }
 						}
 						# Get naval base province and level using helper (naval_base trigger returns 0 in this scope)
 						WA_AI_PC_railway_get_naval_base_province = yes
@@ -342,8 +328,7 @@ WA_AI_PC_railway_STRATEGY_overseas_war = {
 								check_variable = { naval_base_province_ > 0 }
 								check_variable = { naval_base_level_ > best_beachhead_port }
 							}
-							WA_AI_PC_get_state_id = yes
-							set_temp_variable = { best_beachhead_state = state_id_ }
+							set_temp_variable = { best_beachhead_state = _bh_sid }
 							set_temp_variable = { best_beachhead_port = naval_base_level_ }
 							set_temp_variable = { best_beachhead_province = naval_base_province_ }
 						}
@@ -587,9 +572,6 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 	set_temp_variable = { default_route_level = 5 }  # Lower level for preparation
 	set_temp_variable = { route_priority = @WA_AI_PC_railway_PRIO_PREWAR }
 
-	# Track analyzed landmasses for caching
-	clear_temp_array = _analyzed_landmasses_prewar_
-
 	### Find potential targets: countries we're justifying against, have wargoals on, or have claims on
 	### Consolidated from triple loop to single loop with OR conditions
 	clear_temp_array = _target_countries_
@@ -705,43 +687,24 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 						set_temp_variable = { route_level = default_route_level }
 					}
 					else = {
-						# Different landmass: analyze overseas supply chain
-
-						# Check if we've already analyzed this landmass
-						set_temp_variable = { _already_analyzed_pw = 0 }
-						for_each_loop = { array = _analyzed_landmasses_prewar_ value = _analyzed_lm_pw
-							if = { limit = { check_variable = { _analyzed_lm_pw = target_landmass } }
-								set_temp_variable = { _already_analyzed_pw = 1 }
-							}
-						}
-
-						if = {
-							limit = { check_variable = { _already_analyzed_pw = 0 } }
-							# First time seeing this landmass - analyze supply chain
-							ROOT = { WA_AI_PC_analyze_overseas_supply_chain = yes }
-							add_to_temp_array = { _analyzed_landmasses_prewar_ = target_landmass }
-
-							# Store results for reuse
-							set_temp_variable = { _cached_pw_route_start^target_landmass = overseas_route_start_ }
-							set_temp_variable = { _cached_pw_max_level^target_landmass = overseas_max_railway_level_ }
-							set_temp_variable = { _cached_pw_port_state^target_landmass = overseas_receiving_port_state_ }
-
-							# Queue port upgrade if needed
-							if = {
-								limit = {
-									check_variable = { overseas_receiving_port_state_ > 0 }
-									NOT = { is_in_array = { railway_port_upgrades_ = overseas_receiving_port_state_ } }
-								}
-								add_to_temp_array = { railway_port_upgrades_ = overseas_receiving_port_state_ }
-							}
-						}
-
-						# Use cached results, capped at prewar level
-						set_temp_variable = { route_start = _cached_pw_route_start^target_landmass }
-						set_temp_variable = { route_level = _cached_pw_max_level^target_landmass }
+						# Different landmass: find nearest receiving port via distance-limited search
+						# Fix 26: Each target gets its own port analysis (no caching per-landmass)
+						set_temp_variable = { _target_state_for_port_search = _this_state_id }
+						ROOT = { WA_AI_PC_analyze_overseas_supply_chain = yes }
+						set_temp_variable = { route_start = overseas_route_start_ }
+						set_temp_variable = { route_level = overseas_max_railway_level_ }
 						# Cap at default prewar level
 						if = { limit = { check_variable = { route_level > default_route_level } }
 							set_temp_variable = { route_level = default_route_level }
+						}
+
+						# Queue port upgrade if needed
+						if = {
+							limit = {
+								check_variable = { overseas_receiving_port_state_ > 0 }
+								NOT = { is_in_array = { railway_port_upgrades_ = overseas_receiving_port_state_ } }
+							}
+							add_to_temp_array = { railway_port_upgrades_ = overseas_receiving_port_state_ }
 						}
 					}
 

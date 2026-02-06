@@ -580,6 +580,62 @@ WA_AI_PC_get_best_port_on_landmass = { # _search_landmass >>> best_port_level_, 
 	set_temp_variable = { best_port_supply_ = port_supply_ }
 }
 
+############################################################################################################
+#	HELPER: Find Best Port Near a Target State (distance-limited)
+#	BFS from target state up to N states, then finds the highest-level controlled port
+#	on the same landmass within that radius. Uses every_controlled_state to include puppets.
+#	Fix 26: Replaces landmass-only search to prevent selecting ports thousands of km away
+#	        (e.g., Singapore for North Africa targets on the Afro-Eurasian mega-landmass)
+############################################################################################################
+
+WA_AI_PC_get_best_port_near_state = { # _target_state_for_port, _port_search_radius >>> best_port_level_, best_port_province_, best_port_state_, best_port_supply_
+
+	# Step 1: BFS from target state to get all states within radius
+	set_temp_variable = { _origin_state_id = _target_state_for_port }
+	set_temp_variable = { _max_distance = _port_search_radius }
+	WA_AI_PC_railway_get_states_within_distance = yes
+	# Include origin state itself (BFS helper excludes it)
+	add_to_temp_array = { states_within_distance_ = _target_state_for_port }
+
+	# Step 2: Get target landmass for filtering
+	set_temp_variable = { _ps_target_lm = global.WA_AI_MAP_state_landmass^_target_state_for_port }
+
+	# Step 3: Among ROOT's controlled states, find best port within BFS range on same landmass
+	set_temp_variable = { best_port_level_ = 0 }
+	set_temp_variable = { best_port_province_ = 0 }
+	set_temp_variable = { best_port_state_ = 0 }
+	set_temp_variable = { best_port_supply_ = 0 }
+
+	every_controlled_state = {
+		WA_AI_PC_get_state_id = yes
+		set_temp_variable = { _ps_state_id = state_id_ }
+		if = {
+			limit = {
+				# Must be on same landmass as target
+				check_variable = { global.WA_AI_MAP_state_landmass^_ps_state_id = _ps_target_lm }
+				# Must be within BFS search radius
+				is_in_array = { states_within_distance_ = _ps_state_id }
+				is_coastal = yes
+			}
+			WA_AI_PC_railway_get_naval_base_province = yes
+			if = {
+				limit = {
+					check_variable = { naval_base_province_ > 0 }
+					check_variable = { naval_base_level_ > best_port_level_ }
+				}
+				set_temp_variable = { best_port_level_ = naval_base_level_ }
+				set_temp_variable = { best_port_state_ = _ps_state_id }
+				set_temp_variable = { best_port_province_ = naval_base_province_ }
+			}
+		}
+	}
+
+	# Calculate supply capacity
+	set_temp_variable = { _port_level = best_port_level_ }
+	WA_AI_PC_calculate_port_supply = yes
+	set_temp_variable = { best_port_supply_ = port_supply_ }
+}
+
 ### Calculate supply bottleneck (minimum of two supply values)
 WA_AI_PC_calculate_supply_bottleneck = { # _supply_a, _supply_b >>> bottleneck_supply_
 
@@ -781,22 +837,27 @@ WA_AI_PC_coastal_state_is_single_node = { # THIS = state >>> is_single_node_ (1 
 
 ### Analyze overseas supply chain for a target on a different landmass
 ### Finds best ports and calculates bottleneck to determine max useful railway level
-WA_AI_PC_analyze_overseas_supply_chain = { # capital_landmass, target_landmass >>> overseas_route_start_, overseas_max_railway_level_, overseas_receiving_port_state_, overseas_home_port_state_
+### Fix 26: Receiving port now uses distance-limited search (WA_AI_PC_get_best_port_near_state)
+###         instead of searching entire landmass (which picked Singapore for North Africa)
+WA_AI_PC_analyze_overseas_supply_chain = { # capital_landmass, target_landmass, _target_state_for_port_search >>> overseas_route_start_, overseas_max_railway_level_, overseas_receiving_port_state_, overseas_home_port_state_
 
 	set_temp_variable = { overseas_route_start_ = 0 }
 	set_temp_variable = { overseas_max_railway_level_ = 0 }
 	set_temp_variable = { overseas_receiving_port_state_ = 0 }
 	set_temp_variable = { overseas_home_port_state_ = 0 }
 
-	# Find home port (on capital landmass)
+	# Find home port (on capital landmass) - unchanged
 	set_temp_variable = { _search_landmass = capital_landmass }
 	WA_AI_PC_get_best_port_on_landmass = yes
 	set_temp_variable = { home_port_supply_ = best_port_supply_ }
 	set_temp_variable = { overseas_home_port_state_ = best_port_state_ }
 
-	# Find receiving port (on target landmass)
-	set_temp_variable = { _search_landmass = target_landmass }
-	WA_AI_PC_get_best_port_on_landmass = yes
+	# Fix 26: Find receiving port near the target state (within 15 states BFS, same landmass)
+	# Previously searched entire landmass, which on landmass 2 (Afro-Eurasia) could pick
+	# Singapore for a North African target
+	set_temp_variable = { _target_state_for_port = _target_state_for_port_search }
+	set_temp_variable = { _port_search_radius = 15 }
+	WA_AI_PC_get_best_port_near_state = yes
 	set_temp_variable = { receiving_port_supply_ = best_port_supply_ }
 	set_temp_variable = { overseas_route_start_ = best_port_province_ }
 	set_temp_variable = { overseas_receiving_port_state_ = best_port_state_ }
