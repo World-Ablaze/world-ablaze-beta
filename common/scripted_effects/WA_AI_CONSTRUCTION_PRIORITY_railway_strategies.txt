@@ -107,9 +107,16 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 							# Determine route start and level based on landmass
 							if = {
 								limit = { check_variable = { target_landmass = capital_landmass } }
-								# Same landmass: use capital as route start, full level 5
+								# Same landmass: use capital as route start
 								set_temp_variable = { route_start = default_route_start }
-								set_temp_variable = { route_level = default_route_level }
+								# Calculate max level on this route, target max+1
+								set_temp_variable = { _route_path_array = pathfind_prov_path_ }
+								WA_AI_PC_get_max_railway_level_on_route = yes
+								set_temp_variable = { route_level = _max_route_level_ }
+								add_to_temp_variable = { route_level = 1 }
+								if = { limit = { check_variable = { route_level > 5 } }
+									set_temp_variable = { route_level = 5 }
+								}
 							}
 							else = {
 								# Different landmass: find nearest receiving port via distance-limited search
@@ -119,6 +126,8 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 								set_temp_variable = { _target_state_for_port_search = _target_state_id }
 								ROOT = { WA_AI_PC_analyze_overseas_supply_chain = yes }
 								set_temp_variable = { route_start = overseas_route_start_ }
+								# Note: For overseas routes, overseas_max_railway_level_ comes from port analysis
+								# and already considers the bottleneck, so we use it directly
 								set_temp_variable = { route_level = overseas_max_railway_level_ }
 
 								# Queue port upgrade if it's the bottleneck
@@ -295,7 +304,14 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 							if = {
 								limit = { check_variable = { target_landmass = capital_landmass } }
 								set_temp_variable = { route_start = default_route_start }
-								set_temp_variable = { route_level = default_route_level }
+								# Calculate max level on this route, target max+1
+								set_temp_variable = { _route_path_array = pathfind_prov_path_ }
+								WA_AI_PC_get_max_railway_level_on_route = yes
+								set_temp_variable = { route_level = _max_route_level_ }
+								add_to_temp_variable = { route_level = 1 }
+								if = { limit = { check_variable = { route_level > 5 } }
+									set_temp_variable = { route_level = 5 }
+								}
 							}
 							else = {
 								set_temp_variable = { _target_state_for_port_search = _target_state_id }
@@ -917,7 +933,18 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 						limit = { check_variable = { target_landmass = capital_landmass } }
 						# Same landmass: use capital as route start
 						set_temp_variable = { route_start = default_route_start }
-						set_temp_variable = { route_level = default_route_level }
+						# Calculate max level on this route, target max+1
+						set_temp_variable = { _route_path_array = pathfind_prov_path_ }
+						WA_AI_PC_get_max_railway_level_on_route = yes
+						set_temp_variable = { route_level = _max_route_level_ }
+						add_to_temp_variable = { route_level = 1 }
+						if = { limit = { check_variable = { route_level > 5 } }
+							set_temp_variable = { route_level = 5 }
+						}
+						# For prewar, cap at default level (5)
+						if = { limit = { check_variable = { route_level > default_route_level } }
+							set_temp_variable = { route_level = default_route_level }
+						}
 					}
 					else = {
 						# Different landmass: find nearest receiving port via distance-limited search

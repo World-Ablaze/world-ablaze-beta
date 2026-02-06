@@ -1156,3 +1156,43 @@ WA_AI_PC_create_frontier_port = { # _frontier_province_id >>> frontier_port_crea
 		}
 	}
 }
+
+############################################################################################################
+#	NEW HELPER: Get Maximum Railway Level on Route
+#	Input: _route_path_array (array of provinces along the route from pathfinding)
+#	Output: _max_route_level_ (highest level found on any segment in the route)
+#	Purpose: Find the max level segment in a route to sync all segments to max+1
+############################################################################################################
+
+WA_AI_PC_get_max_railway_level_on_route = {
+	# Initialize max to 0
+	set_temp_variable = { _max_route_level_ = 0 }
+
+	# Iterate through route path array to find all segments
+	for_each_loop = { array = _route_path_array index = seg_i value = seg_prov
+		# Calculate next index (segment endpoint)
+		set_temp_variable = { next_seg_i = seg_i }
+		add_to_temp_variable = { next_seg_i = 1 }
+
+		# Only process if there's a next segment (prevents index out of bounds)
+		if = { limit = { check_variable = { next_seg_i < _route_path_array^num } }
+			# Get endpoint of this segment
+			set_temp_variable = { seg_start = _route_path_array^seg_i }
+			set_temp_variable = { seg_end = _route_path_array^next_seg_i }
+
+			# Read the current level of this segment from global array
+			meta_effect = {
+				text = {
+					set_temp_variable = { seg_level = global.WA_AI_PC_railway_connection_level_[x]^[y] }
+				}
+				x = "[?seg_start]"
+				y = "[?seg_end]"
+			}
+
+			# Update max if this segment is higher than current max
+			if = { limit = { check_variable = { seg_level > _max_route_level_ } }
+				set_temp_variable = { _max_route_level_ = seg_level }
+			}
+		}
+	}
+}
