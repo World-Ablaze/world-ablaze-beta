@@ -1,0 +1,227 @@
+###############################################################################
+# AI Resource Prospecting Decision Triggers
+#
+# Provides needs-aware triggers for prospecting decisions:
+# - Reactive: Check if AI has resource shortages
+# - Cooperative: Check if faction allies have critical shortages
+# - Proactive: Check if AI is a strategic exporter
+#
+# Used by: common/decisions/_resource_prospecting.txt (ai_will_do blocks)
+###############################################################################
+
+
+###############################################################################
+# Reactive Layer: Check if AI needs resources
+###############################################################################
+
+# Check if AI has any shortage of a resource (OR: critical need OR 3+ months history)
+WA_AI_should_prospect_resource_coal = {
+	OR = {
+		check_variable = { WA_AI_needs_coal > 1 }
+		check_variable = { WA_AI_resource_coal_shortage_months > 0 }
+	}
+}
+
+WA_AI_should_prospect_resource_oil = {
+	OR = {
+		check_variable = { WA_AI_needs_oil > 1 }
+		check_variable = { WA_AI_resource_oil_shortage_months > 0 }
+	}
+}
+
+WA_AI_should_prospect_resource_iron = {
+	OR = {
+		check_variable = { WA_AI_needs_iron > 1 }
+		check_variable = { WA_AI_resource_iron_shortage_months > 0 }
+	}
+}
+
+WA_AI_should_prospect_resource_steel = {
+	OR = {
+		check_variable = { WA_AI_needs_steel > 1 }
+		check_variable = { WA_AI_resource_steel_shortage_months > 0 }
+	}
+}
+
+WA_AI_should_prospect_resource_aluminum = {
+	OR = {
+		check_variable = { WA_AI_needs_aluminum > 1 }
+		check_variable = { WA_AI_resource_aluminum_shortage_months > 0 }
+	}
+}
+
+WA_AI_should_prospect_resource_tungsten = {
+	OR = {
+		check_variable = { WA_AI_needs_tungsten > 1 }
+		check_variable = { WA_AI_resource_tungsten_shortage_months > 0 }
+	}
+}
+
+WA_AI_should_prospect_resource_chromium = {
+	OR = {
+		check_variable = { WA_AI_needs_chromium > 1 }
+		check_variable = { WA_AI_resource_chromium_shortage_months > 0 }
+	}
+}
+
+WA_AI_should_prospect_resource_rubber = {
+	OR = {
+		check_variable = { WA_AI_needs_rubber > 1 }
+		check_variable = { WA_AI_resource_rubber_shortage_months > 0 }
+	}
+}
+
+WA_AI_should_prospect_resource_bauxite = {
+	OR = {
+		check_variable = { WA_AI_needs_bauxite > 1 }
+		check_variable = { WA_AI_resource_bauxite_shortage_months > 0 }
+	}
+}
+
+
+###############################################################################
+# Cooperative Layer: Check if allies have critical resource shortages
+###############################################################################
+
+# Check if any faction ally has critical shortage of resource
+WA_AI_allies_need_coal = {
+	any_faction_member = {
+		NOT = { tag = ROOT }
+		check_variable = { WA_AI_needs_coal = 3 }
+	}
+}
+
+WA_AI_allies_need_oil = {
+	any_faction_member = {
+		NOT = { tag = ROOT }
+		check_variable = { WA_AI_needs_oil = 3 }
+	}
+}
+
+WA_AI_allies_need_iron = {
+	any_faction_member = {
+		NOT = { tag = ROOT }
+		check_variable = { WA_AI_needs_iron = 3 }
+	}
+}
+
+WA_AI_allies_need_steel = {
+	any_faction_member = {
+		NOT = { tag = ROOT }
+		check_variable = { WA_AI_needs_steel = 3 }
+	}
+}
+
+WA_AI_allies_need_aluminum = {
+	any_faction_member = {
+		NOT = { tag = ROOT }
+		check_variable = { WA_AI_needs_aluminum = 3 }
+	}
+}
+
+WA_AI_allies_need_tungsten = {
+	any_faction_member = {
+		NOT = { tag = ROOT }
+		check_variable = { WA_AI_needs_tungsten = 3 }
+	}
+}
+
+WA_AI_allies_need_chromium = {
+	any_faction_member = {
+		NOT = { tag = ROOT }
+		check_variable = { WA_AI_needs_chromium = 3 }
+	}
+}
+
+WA_AI_allies_need_rubber = {
+	any_faction_member = {
+		NOT = { tag = ROOT }
+		check_variable = { WA_AI_needs_rubber = 3 }
+	}
+}
+
+WA_AI_allies_need_bauxite = {
+	any_faction_member = {
+		NOT = { tag = ROOT }
+		check_variable = { WA_AI_needs_bauxite = 3 }
+	}
+}
+
+
+###############################################################################
+# Proactive Layer: Check if AI is a strategic exporter
+###############################################################################
+
+# Strategic exporters maintain high production during peace
+# Hardcoded list from trade laws + dynamic Free Trade detection
+
+WA_AI_is_strategic_tungsten_exporter = {
+	has_war = no
+	OR = {
+		tag = SWE
+		tag = POR
+	}
+	OR = {
+		has_idea = free_trade
+		has_completed_focus = POR_extraction_industries  # POR focus requirement
+	}
+}
+
+WA_AI_is_strategic_rubber_exporter = {
+	has_war = no
+	OR = {
+		tag = MAL
+		tag = INS
+		tag = BRA
+	}
+	OR = {
+		has_idea = free_trade
+	}
+}
+
+WA_AI_is_strategic_oil_exporter = {
+	has_war = no
+	OR = {
+		tag = IRQ
+		tag = BRA
+		tag = UKO  # UK Oil fields
+	}
+	OR = {
+		has_idea = free_trade
+	}
+}
+
+# Generic dynamic exporter: any country with Free Trade law and surplus factories
+WA_AI_is_dynamic_exporter = {
+	has_war = no
+	has_idea = free_trade
+	num_of_civilian_factories > 50
+}
+
+
+###############################################################################
+# Resource-Specific Export Detection
+# (For future enhancement: detect if exports are actually being bought)
+###############################################################################
+
+# Placeholder for future export tracking logic
+# These would check:
+# - If country has active lend-lease trades
+# - If resource is being imported by faction members
+# - If export volume > threshold
+
+WA_AI_coal_exports_are_needed = {
+	always = no  # TODO: Implement export detection
+}
+
+WA_AI_oil_exports_are_needed = {
+	always = no  # TODO: Implement export detection
+}
+
+WA_AI_tungsten_exports_are_needed = {
+	always = no  # TODO: Implement export detection
+}
+
+WA_AI_rubber_exports_are_needed = {
+	always = no  # TODO: Implement export detection
+}
