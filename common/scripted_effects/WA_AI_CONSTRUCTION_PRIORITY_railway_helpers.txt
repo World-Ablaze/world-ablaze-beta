@@ -404,8 +404,9 @@ WA_AI_PC_railway_country_borders_enemy = { # _enemy_tag >>> borders_enemy_
 	# Fix 24: Check if any of ROOT's owned AND controlled states border the enemy's territory (or enemy's puppets)
 	# Added is_controlled_by check to ensure consistency with frontline detection (which uses controlled states)
 	# This prevents false border detection for states ROOT owns but doesn't control (enemy occupation)
-	# Fix 25: Removed puppet border extension - ROOT should only trigger land war if ROOT itself borders enemy
-	# (With Fix 21, ROOT cannot build railways through puppet territory anyway, so puppet borders are useless)
+	# Fix 25: (REVOKED by Fix 27) Originally removed puppet border extension
+	# Fix 27: Re-enabled puppet borders — pathfinder type 2 now traverses puppet provinces (commit 9aef32f41),
+	# and build_railway scripted effects work on any province regardless of controller
 	every_controlled_state = {
 		limit = {
 			any_neighbor_state = {
@@ -416,6 +417,21 @@ WA_AI_PC_railway_country_borders_enemy = { # _enemy_tag >>> borders_enemy_
 			}
 		}
 		ROOT = { set_temp_variable = { borders_enemy_ = 1 } }
+	}
+
+	# Fix 27: Also check if ROOT's subjects/puppets border the enemy
+	every_subject_country = {
+		every_controlled_state = {
+			limit = {
+				any_neighbor_state = {
+					OR = {
+						is_controlled_by = var:_enemy_tag
+						controller = { is_subject_of = var:_enemy_tag }
+					}
+				}
+			}
+			ROOT = { set_temp_variable = { borders_enemy_ = 1 } }
+		}
 	}
 
 }
@@ -574,6 +590,30 @@ WA_AI_PC_get_best_port_on_landmass = { # _search_landmass >>> best_port_level_, 
 		}
 	}
 
+	# Fix 28: Also search puppet/subject states for ports on this landmass
+	every_subject_country = {
+		every_controlled_state = {
+			WA_AI_PC_get_state_id = yes
+			set_temp_variable = { _this_state_id = state_id_ }
+			if = {
+				limit = {
+					check_variable = { global.WA_AI_MAP_state_landmass^_this_state_id = _search_landmass }
+					is_coastal = yes
+				}
+				WA_AI_PC_railway_get_naval_base_province = yes
+				if = {
+					limit = {
+						check_variable = { naval_base_province_ > 0 }
+						check_variable = { naval_base_level_ > best_port_level_ }
+					}
+					set_temp_variable = { best_port_level_ = naval_base_level_ }
+					set_temp_variable = { best_port_state_ = _this_state_id }
+					set_temp_variable = { best_port_province_ = naval_base_province_ }
+				}
+			}
+		}
+	}
+
 	# Calculate supply capacity using configurable formula
 	set_temp_variable = { _port_level = best_port_level_ }
 	WA_AI_PC_calculate_port_supply = yes
@@ -600,7 +640,7 @@ WA_AI_PC_get_best_port_near_state = { # _target_state_for_port, _port_search_rad
 	# Step 2: Get target landmass for filtering
 	set_temp_variable = { _ps_target_lm = global.WA_AI_MAP_state_landmass^_target_state_for_port }
 
-	# Step 3: Among ROOT's controlled states, find best port within BFS range on same landmass
+	# Step 3: Among ROOT's controlled states (and puppet states), find best port within BFS range on same landmass
 	set_temp_variable = { best_port_level_ = 0 }
 	set_temp_variable = { best_port_province_ = 0 }
 	set_temp_variable = { best_port_state_ = 0 }
@@ -626,6 +666,32 @@ WA_AI_PC_get_best_port_near_state = { # _target_state_for_port, _port_search_rad
 				set_temp_variable = { best_port_level_ = naval_base_level_ }
 				set_temp_variable = { best_port_state_ = _ps_state_id }
 				set_temp_variable = { best_port_province_ = naval_base_province_ }
+			}
+		}
+	}
+
+	# Fix 28: Also search puppet/subject states for ports
+	# e.g. Italian Libya (ITL) has Tripoli port level 5, closer to Derna than Eritrea
+	every_subject_country = {
+		every_controlled_state = {
+			WA_AI_PC_get_state_id = yes
+			set_temp_variable = { _ps_state_id = state_id_ }
+			if = {
+				limit = {
+					check_variable = { global.WA_AI_MAP_state_landmass^_ps_state_id = _ps_target_lm }
+					is_in_array = { states_within_distance_ = _ps_state_id }
+					is_coastal = yes
+				}
+				WA_AI_PC_railway_get_naval_base_province = yes
+				if = {
+					limit = {
+						check_variable = { naval_base_province_ > 0 }
+						check_variable = { naval_base_level_ > best_port_level_ }
+					}
+					set_temp_variable = { best_port_level_ = naval_base_level_ }
+					set_temp_variable = { best_port_state_ = _ps_state_id }
+					set_temp_variable = { best_port_province_ = naval_base_province_ }
+				}
 			}
 		}
 	}
@@ -856,7 +922,7 @@ WA_AI_PC_analyze_overseas_supply_chain = { # capital_landmass, target_landmass, 
 	# Previously searched entire landmass, which on landmass 2 (Afro-Eurasia) could pick
 	# Singapore for a North African target
 	set_temp_variable = { _target_state_for_port = _target_state_for_port_search }
-	set_temp_variable = { _port_search_radius = 15 }
+	set_temp_variable = { _port_search_radius = 10 }
 	WA_AI_PC_get_best_port_near_state = yes
 	set_temp_variable = { receiving_port_supply_ = best_port_supply_ }
 	set_temp_variable = { overseas_route_start_ = best_port_province_ }

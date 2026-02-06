@@ -163,8 +163,57 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 										set_temp_variable = { _pathfind_prov_allow_partial = 1 } # Allow partial paths to frontier
 										WA_AI_PATHFIND_PROV_get_path = yes
 
+										# Fix 28: If same-landmass route got PARTIAL or FAIL, try overseas fallback
+										# This handles cases like Italy→Libya where both are on landmass 2 (Afro-Eurasia)
+										# but there's no land path across the Mediterranean
+										set_temp_variable = { _direct_success = pathfind_prov_success_ }
 										if = {
-											limit = { check_variable = { pathfind_prov_success_ > 0 } } # 1 = full path, 2 = partial
+											limit = {
+												check_variable = { target_landmass = capital_landmass }
+												NOT = { check_variable = { _direct_success = 1 } }
+											}
+											set_temp_variable = { _target_state_for_port_search = _target_state_id }
+											ROOT = { WA_AI_PC_analyze_overseas_supply_chain = yes }
+											if = {
+												limit = { check_variable = { overseas_route_start_ > 0 } }
+												set_temp_variable = { _pathfind_prov_start = overseas_route_start_ }
+												set_temp_variable = { _pathfind_prov_end = supply_hub_province_ }
+												set_temp_variable = { _pathfind_prov_type = 2 }
+												set_temp_variable = { _pathfind_prov_allow_partial = 1 }
+												WA_AI_PATHFIND_PROV_get_path = yes
+												if = {
+													limit = {
+														check_variable = { pathfind_prov_success_ > 0 }
+														OR = {
+															check_variable = { _direct_success = 0 }
+															check_variable = { pathfind_prov_success_ = 1 }
+														}
+													}
+													if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
+														ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: [Prev.GetName] overseas fallback SUCCESS (from port [?overseas_route_start_])" }
+													}
+													set_temp_variable = { route_start = overseas_route_start_ }
+													set_temp_variable = { route_level = overseas_max_railway_level_ }
+													set_temp_variable = { _direct_success = pathfind_prov_success_ }
+													if = {
+														limit = {
+															check_variable = { overseas_max_railway_level_ < 5 }
+															check_variable = { overseas_receiving_port_state_ > 0 }
+															NOT = { is_in_array = { railway_port_upgrades_ = overseas_receiving_port_state_ } }
+														}
+														add_to_temp_array = { railway_port_upgrades_ = overseas_receiving_port_state_ }
+													}
+												}
+												else = {
+													if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
+														ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: [Prev.GetName] overseas fallback also PARTIAL — keeping direct route" }
+													}
+												}
+											}
+										}
+
+										if = {
+											limit = { check_variable = { _direct_success > 0 } }
 											add_to_temp_array = { railway_start_provinces_ = route_start }
 											add_to_temp_array = { railway_end_provinces_ = supply_hub_province_ }
 											add_to_temp_array = { railway_target_levels_ = route_level }
@@ -194,6 +243,179 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 							}
 						}
 					} # end else (not single-node)
+				}
+			}
+
+			# Fix 27: Also scan puppet/subject frontline states (revokes Fix 25)
+			# Pathfinder type 2 now traverses puppet provinces (commit 9aef32f41),
+			# and build_railway scripted effects work on any province.
+			every_subject_country = {
+				every_controlled_state = {
+					limit = {
+						check_variable = { _routes_for_this_enemy < @WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY }
+						any_neighbor_state = {
+							OR = {
+								is_controlled_by = var:_current_enemy_tag
+								controller = { is_subject_of = var:_current_enemy_tag }
+							}
+						}
+						WA_AI_PC_state_has_supply_hub = yes
+						NOT = { WA_AI_PC_state_has_railway_at_level = yes }
+					}
+
+					if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
+						ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: puppet frontline [Prev.GetName] passed limit check" }
+					}
+
+					WA_AI_PC_coastal_state_is_single_node = yes
+					if = {
+						limit = { check_variable = { is_single_node_ = 0 } }
+
+						WA_AI_PC_railway_get_supply_hub_province = yes
+
+						if = {
+							limit = {
+								check_variable = { supply_hub_province_ > 0 }
+								NOT = { is_in_array = { railway_end_provinces_ = supply_hub_province_ } }
+								# Fix 27: Accept provinces controlled by ROOT or ROOT's subjects
+								OR = {
+									ROOT = { controls_province = var:supply_hub_province_ }
+									controller = { is_subject_of = ROOT }
+								}
+							}
+
+							if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
+								ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: [Prev.GetName] hub_prov=[?supply_hub_province_] ACCEPTED (puppet frontline)" }
+							}
+
+							WA_AI_PC_get_state_id = yes
+							set_temp_variable = { _target_state_id = state_id_ }
+							set_temp_variable = { target_landmass = global.WA_AI_MAP_state_landmass^_target_state_id }
+
+							if = {
+								limit = { check_variable = { target_landmass = capital_landmass } }
+								set_temp_variable = { route_start = default_route_start }
+								set_temp_variable = { route_level = default_route_level }
+							}
+							else = {
+								set_temp_variable = { _target_state_for_port_search = _target_state_id }
+								ROOT = { WA_AI_PC_analyze_overseas_supply_chain = yes }
+								set_temp_variable = { route_start = overseas_route_start_ }
+								set_temp_variable = { route_level = overseas_max_railway_level_ }
+
+								if = {
+									limit = {
+										check_variable = { overseas_max_railway_level_ < 5 }
+										check_variable = { overseas_receiving_port_state_ > 0 }
+										NOT = { is_in_array = { railway_port_upgrades_ = overseas_receiving_port_state_ } }
+									}
+									add_to_temp_array = { railway_port_upgrades_ = overseas_receiving_port_state_ }
+								}
+							}
+
+							if = {
+								limit = { check_variable = { route_start > 0 } }
+
+								set_temp_variable = { _skip_pathfinding = 0 }
+								for_each_loop = { array = ROOT.WA_AI_PC_queue value = _check_proj break = _found_existing
+									if = {
+										limit = {
+											check_variable = { ROOT.WA_AI_PC_building_type^_check_proj = 13 }
+											check_variable = { ROOT.WA_AI_PC_target_province^_check_proj = supply_hub_province_ }
+										}
+										set_temp_variable = { _skip_pathfinding = 1 }
+										set_temp_variable = { _found_existing = 1 }
+									}
+								}
+
+								if = {
+									limit = { check_variable = { _skip_pathfinding = 0 } }
+
+									if = {
+										limit = { NOT = { check_variable = { route_start = supply_hub_province_ } } }
+
+										set_temp_variable = { _pathfind_prov_start = route_start }
+										set_temp_variable = { _pathfind_prov_end = supply_hub_province_ }
+										set_temp_variable = { _pathfind_prov_type = 2 }
+										set_temp_variable = { _pathfind_prov_allow_partial = 1 }
+										WA_AI_PATHFIND_PROV_get_path = yes
+
+										# Fix 28: Overseas fallback for same-landmass puppet frontlines
+										set_temp_variable = { _direct_success = pathfind_prov_success_ }
+										if = {
+											limit = {
+												check_variable = { target_landmass = capital_landmass }
+												NOT = { check_variable = { _direct_success = 1 } }
+											}
+											set_temp_variable = { _target_state_for_port_search = _target_state_id }
+											ROOT = { WA_AI_PC_analyze_overseas_supply_chain = yes }
+											if = {
+												limit = { check_variable = { overseas_route_start_ > 0 } }
+												set_temp_variable = { _pathfind_prov_start = overseas_route_start_ }
+												set_temp_variable = { _pathfind_prov_end = supply_hub_province_ }
+												set_temp_variable = { _pathfind_prov_type = 2 }
+												set_temp_variable = { _pathfind_prov_allow_partial = 1 }
+												WA_AI_PATHFIND_PROV_get_path = yes
+												if = {
+													limit = {
+														check_variable = { pathfind_prov_success_ > 0 }
+														OR = {
+															check_variable = { _direct_success = 0 }
+															check_variable = { pathfind_prov_success_ = 1 }
+														}
+													}
+													if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
+														ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: puppet [Prev.GetName] overseas fallback SUCCESS (from port [?overseas_route_start_])" }
+													}
+													set_temp_variable = { route_start = overseas_route_start_ }
+													set_temp_variable = { route_level = overseas_max_railway_level_ }
+													set_temp_variable = { _direct_success = pathfind_prov_success_ }
+													if = {
+														limit = {
+															check_variable = { overseas_max_railway_level_ < 5 }
+															check_variable = { overseas_receiving_port_state_ > 0 }
+															NOT = { is_in_array = { railway_port_upgrades_ = overseas_receiving_port_state_ } }
+														}
+														add_to_temp_array = { railway_port_upgrades_ = overseas_receiving_port_state_ }
+													}
+												}
+												else = {
+													if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
+														ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: puppet [Prev.GetName] overseas fallback also PARTIAL — keeping direct route" }
+													}
+												}
+											}
+										}
+
+										if = {
+											limit = { check_variable = { _direct_success > 0 } }
+											add_to_temp_array = { railway_start_provinces_ = route_start }
+											add_to_temp_array = { railway_end_provinces_ = supply_hub_province_ }
+											add_to_temp_array = { railway_target_levels_ = route_level }
+											add_to_temp_array = { railway_priorities_ = route_priority }
+											add_to_temp_array = { railway_enemy_tags_ = _current_enemy_tag }
+
+											add_to_temp_variable = { _routes_for_this_enemy = 1 }
+										}
+									}
+								}
+							}
+						}
+
+						else = {
+							if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
+								if = { limit = { check_variable = { supply_hub_province_ = 0 } }
+									ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: puppet [Prev.GetName] SKIPPED - no supply hub province found" }
+								}
+								else_if = { limit = { is_in_array = { railway_end_provinces_ = supply_hub_province_ } }
+									ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: puppet [Prev.GetName] SKIPPED - already in targets" }
+								}
+								else = {
+									ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: puppet [Prev.GetName] hub_prov=[?supply_hub_province_] SKIPPED - province not controlled" }
+								}
+							}
+						}
+					}
 				}
 			}
 		}
@@ -637,6 +859,17 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 			}
 			set_temp_variable = { target_has_land_border = 1 }
 		}
+		# Fix 27: Also check puppet borders
+		every_subject_country = {
+			every_controlled_state = {
+				limit = {
+					any_neighbor_state = {
+						is_owned_by = var:_target_tag
+					}
+				}
+				ROOT = { set_temp_variable = { target_has_land_border = 1 } }
+			}
+		}
 
 		if = { limit = { has_country_flag = WA_AI_construction_logging }
 			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY PREWAR: target [?_target_tag.GetName] has_land_border=[?target_has_land_border]"
@@ -723,8 +956,50 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 							set_temp_variable = { _pathfind_prov_allow_partial = 1 } # Allow partial paths to frontier
 							WA_AI_PATHFIND_PROV_get_path = yes
 
+							# Fix 28: Overseas fallback for same-landmass prewar targets
+							set_temp_variable = { _direct_success = pathfind_prov_success_ }
 							if = {
-								limit = { check_variable = { pathfind_prov_success_ > 0 } } # 1 = full path, 2 = partial
+								limit = {
+									check_variable = { target_landmass = capital_landmass }
+									NOT = { check_variable = { _direct_success = 1 } }
+								}
+								set_temp_variable = { _target_state_for_port_search = _this_state_id }
+								ROOT = { WA_AI_PC_analyze_overseas_supply_chain = yes }
+								if = {
+									limit = { check_variable = { overseas_route_start_ > 0 } }
+									set_temp_variable = { _pathfind_prov_start = overseas_route_start_ }
+									set_temp_variable = { _pathfind_prov_end = supply_hub_province_ }
+									set_temp_variable = { _pathfind_prov_type = 2 }
+									set_temp_variable = { _pathfind_prov_allow_partial = 1 }
+									WA_AI_PATHFIND_PROV_get_path = yes
+									if = {
+										limit = {
+											check_variable = { pathfind_prov_success_ > 0 }
+											OR = {
+												check_variable = { _direct_success = 0 }
+												check_variable = { pathfind_prov_success_ = 1 }
+											}
+										}
+										set_temp_variable = { route_start = overseas_route_start_ }
+										set_temp_variable = { route_level = overseas_max_railway_level_ }
+										# Cap at prewar level
+										if = { limit = { check_variable = { route_level > default_route_level } }
+											set_temp_variable = { route_level = default_route_level }
+										}
+										set_temp_variable = { _direct_success = pathfind_prov_success_ }
+										if = {
+											limit = {
+												check_variable = { overseas_receiving_port_state_ > 0 }
+												NOT = { is_in_array = { railway_port_upgrades_ = overseas_receiving_port_state_ } }
+											}
+											add_to_temp_array = { railway_port_upgrades_ = overseas_receiving_port_state_ }
+										}
+									}
+								}
+							}
+
+							if = {
+								limit = { check_variable = { _direct_success > 0 } }
 								add_to_temp_array = { railway_start_provinces_ = route_start }
 								add_to_temp_array = { railway_end_provinces_ = supply_hub_province_ }
 								add_to_temp_array = { railway_target_levels_ = route_level }
@@ -734,6 +1009,127 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 					}
 				}
 				} # end if not single-node
+			}
+
+			# Fix 27: Also scan puppet/subject frontline states
+			every_subject_country = {
+				every_controlled_state = {
+					limit = {
+						any_neighbor_state = {
+							is_owned_by = var:_target_tag
+						}
+						WA_AI_PC_state_has_supply_hub = yes
+						NOT = { WA_AI_PC_state_has_railway_at_level = yes }
+					}
+
+					WA_AI_PC_coastal_state_is_single_node = yes
+					if = {
+						limit = { check_variable = { is_single_node_ = 0 } }
+
+						WA_AI_PC_railway_get_supply_hub_province = yes
+
+						if = {
+							limit = {
+								check_variable = { supply_hub_province_ > 0 }
+								NOT = { is_in_array = { railway_end_provinces_ = supply_hub_province_ } }
+								OR = {
+									ROOT = { controls_province = var:supply_hub_province_ }
+									controller = { is_subject_of = ROOT }
+								}
+							}
+
+							WA_AI_PC_get_state_id = yes
+							set_temp_variable = { _this_state_id = state_id_ }
+							set_temp_variable = { target_landmass = global.WA_AI_MAP_state_landmass^_this_state_id }
+
+							if = {
+								limit = { check_variable = { target_landmass = capital_landmass } }
+								set_temp_variable = { route_start = default_route_start }
+								set_temp_variable = { route_level = default_route_level }
+							}
+							else = {
+								set_temp_variable = { _target_state_for_port_search = _this_state_id }
+								ROOT = { WA_AI_PC_analyze_overseas_supply_chain = yes }
+								set_temp_variable = { route_start = overseas_route_start_ }
+								set_temp_variable = { route_level = overseas_max_railway_level_ }
+								if = { limit = { check_variable = { route_level > default_route_level } }
+									set_temp_variable = { route_level = default_route_level }
+								}
+
+								if = {
+									limit = {
+										check_variable = { overseas_receiving_port_state_ > 0 }
+										NOT = { is_in_array = { railway_port_upgrades_ = overseas_receiving_port_state_ } }
+									}
+									add_to_temp_array = { railway_port_upgrades_ = overseas_receiving_port_state_ }
+								}
+							}
+
+							if = {
+								limit = { check_variable = { route_start > 0 } }
+
+								if = {
+									limit = { NOT = { check_variable = { route_start = supply_hub_province_ } } }
+
+									set_temp_variable = { _pathfind_prov_start = route_start }
+									set_temp_variable = { _pathfind_prov_end = supply_hub_province_ }
+									set_temp_variable = { _pathfind_prov_type = 2 }
+									set_temp_variable = { _pathfind_prov_allow_partial = 1 }
+									WA_AI_PATHFIND_PROV_get_path = yes
+
+									# Fix 28: Overseas fallback for same-landmass prewar puppet targets
+									set_temp_variable = { _direct_success = pathfind_prov_success_ }
+									if = {
+										limit = {
+											check_variable = { target_landmass = capital_landmass }
+											NOT = { check_variable = { _direct_success = 1 } }
+										}
+										set_temp_variable = { _target_state_for_port_search = _this_state_id }
+										ROOT = { WA_AI_PC_analyze_overseas_supply_chain = yes }
+										if = {
+											limit = { check_variable = { overseas_route_start_ > 0 } }
+											set_temp_variable = { _pathfind_prov_start = overseas_route_start_ }
+											set_temp_variable = { _pathfind_prov_end = supply_hub_province_ }
+											set_temp_variable = { _pathfind_prov_type = 2 }
+											set_temp_variable = { _pathfind_prov_allow_partial = 1 }
+											WA_AI_PATHFIND_PROV_get_path = yes
+											if = {
+												limit = {
+													check_variable = { pathfind_prov_success_ > 0 }
+													OR = {
+														check_variable = { _direct_success = 0 }
+														check_variable = { pathfind_prov_success_ = 1 }
+													}
+												}
+												set_temp_variable = { route_start = overseas_route_start_ }
+												set_temp_variable = { route_level = overseas_max_railway_level_ }
+												if = { limit = { check_variable = { route_level > default_route_level } }
+													set_temp_variable = { route_level = default_route_level }
+												}
+												set_temp_variable = { _direct_success = pathfind_prov_success_ }
+												if = {
+													limit = {
+														check_variable = { overseas_receiving_port_state_ > 0 }
+														NOT = { is_in_array = { railway_port_upgrades_ = overseas_receiving_port_state_ } }
+													}
+													add_to_temp_array = { railway_port_upgrades_ = overseas_receiving_port_state_ }
+												}
+											}
+										}
+									}
+
+									if = {
+										limit = { check_variable = { _direct_success > 0 } }
+										add_to_temp_array = { railway_start_provinces_ = route_start }
+										add_to_temp_array = { railway_end_provinces_ = supply_hub_province_ }
+										add_to_temp_array = { railway_target_levels_ = route_level }
+										add_to_temp_array = { railway_priorities_ = route_priority }
+									}
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 		else_if = {

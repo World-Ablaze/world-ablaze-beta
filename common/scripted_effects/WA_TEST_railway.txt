@@ -182,6 +182,28 @@ WA_TEST_RW_init = {
 		set_variable = { WA_TEST_RW_end_day^11 = 0 }
 	}
 
+	# Test 12
+	if = { limit = { check_variable = { WA_TEST_RW_state^12 = @WA_TEST_RW_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 012: preserving previous PASS"
+	}
+	else = {
+		set_variable = { WA_TEST_RW_state^12 = @WA_TEST_RW_NOT_LAUNCHED }
+		set_variable = { WA_TEST_RW_fail_code^12 = 0 }
+		set_variable = { WA_TEST_RW_launch_day^12 = 0 }
+		set_variable = { WA_TEST_RW_end_day^12 = 0 }
+	}
+
+	# Test 13
+	if = { limit = { check_variable = { WA_TEST_RW_state^13 = @WA_TEST_RW_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 013: preserving previous PASS"
+	}
+	else = {
+		set_variable = { WA_TEST_RW_state^13 = @WA_TEST_RW_NOT_LAUNCHED }
+		set_variable = { WA_TEST_RW_fail_code^13 = 0 }
+		set_variable = { WA_TEST_RW_launch_day^13 = 0 }
+		set_variable = { WA_TEST_RW_end_day^13 = 0 }
+	}
+
 	set_variable = { WA_TEST_RW_suite_start_day = global.num_days }
 	add_to_variable = { WA_TEST_RW_suite_run_count = 1 }
 }
@@ -272,6 +294,20 @@ WA_TEST_RW_log_summary = {
 	else_if = { limit = { check_variable = { WA_TEST_RW_state^11 = @WA_TEST_RW_FAILED } check_variable = { WA_TEST_RW_fail_code^11 = 99 } } add_to_temp_variable = { _wt_count_skipped = 1 } }
 	else_if = { limit = { check_variable = { WA_TEST_RW_state^11 = @WA_TEST_RW_FAILED } } add_to_temp_variable = { _wt_count_failed = 1 } }
 	else_if = { limit = { check_variable = { WA_TEST_RW_state^11 = @WA_TEST_RW_ONGOING } } add_to_temp_variable = { _wt_count_ongoing = 1 } }
+	else = { add_to_temp_variable = { _wt_count_not_launched = 1 } }
+
+	# Test 12
+	if = { limit = { check_variable = { WA_TEST_RW_state^12 = @WA_TEST_RW_PASSED } } add_to_temp_variable = { _wt_count_passed = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^12 = @WA_TEST_RW_FAILED } check_variable = { WA_TEST_RW_fail_code^12 = 99 } } add_to_temp_variable = { _wt_count_skipped = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^12 = @WA_TEST_RW_FAILED } } add_to_temp_variable = { _wt_count_failed = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^12 = @WA_TEST_RW_ONGOING } } add_to_temp_variable = { _wt_count_ongoing = 1 } }
+	else = { add_to_temp_variable = { _wt_count_not_launched = 1 } }
+
+	# Test 13
+	if = { limit = { check_variable = { WA_TEST_RW_state^13 = @WA_TEST_RW_PASSED } } add_to_temp_variable = { _wt_count_passed = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^13 = @WA_TEST_RW_FAILED } check_variable = { WA_TEST_RW_fail_code^13 = 99 } } add_to_temp_variable = { _wt_count_skipped = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^13 = @WA_TEST_RW_FAILED } } add_to_temp_variable = { _wt_count_failed = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^13 = @WA_TEST_RW_ONGOING } } add_to_temp_variable = { _wt_count_ongoing = 1 } }
 	else = { add_to_temp_variable = { _wt_count_not_launched = 1 } }
 
 	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW SUMMARY: [?_wt_count_passed] PASSED, [?_wt_count_failed] FAILED, [?_wt_count_skipped] SKIPPED, [?_wt_count_ongoing] ONGOING, [?_wt_count_not_launched] NOT_LAUNCHED"
@@ -546,6 +582,52 @@ WA_TEST_RW_print = {
 			log = "  011 | Dalian-Beijing Railway  | NOT_LAUNCHED |    [?_wt_fc] | -        | -"
 		}
 
+		### Test 012
+		set_temp_variable = { _wt_s = WA_TEST_RW_state^12 }
+		set_temp_variable = { _wt_fc = WA_TEST_RW_fail_code^12 }
+		set_temp_variable = { _wt_ld = WA_TEST_RW_launch_day^12 }
+		subtract_from_temp_variable = { _wt_ld = WA_TEST_RW_suite_start_day }
+		set_temp_variable = { _wt_ed = WA_TEST_RW_end_day^12 }
+		subtract_from_temp_variable = { _wt_ed = WA_TEST_RW_suite_start_day }
+		if = { limit = { check_variable = { _wt_s = 2 } }
+			log = "  012 | ITA Libya Railways     | PASSED      |    [?_wt_fc] | +[?_wt_ld]d    | +[?_wt_ed]d"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 3 } check_variable = { _wt_fc = 99 } }
+			log = "  012 | ITA Libya Railways     | SKIPPED     |   [?_wt_fc] | -        | -"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 3 } }
+			log = "  012 | ITA Libya Railways     | FAILED      |   [?_wt_fc] | +[?_wt_ld]d    | +[?_wt_ed]d"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 1 } }
+			log = "  012 | ITA Libya Railways     | ONGOING     |    [?_wt_fc] | +[?_wt_ld]d    | -"
+		}
+		else = {
+			log = "  012 | ITA Libya Railways     | NOT_LAUNCHED |    [?_wt_fc] | -        | -"
+		}
+
+		### Test 013
+		set_temp_variable = { _wt_s = WA_TEST_RW_state^13 }
+		set_temp_variable = { _wt_fc = WA_TEST_RW_fail_code^13 }
+		set_temp_variable = { _wt_ld = WA_TEST_RW_launch_day^13 }
+		subtract_from_temp_variable = { _wt_ld = WA_TEST_RW_suite_start_day }
+		set_temp_variable = { _wt_ed = WA_TEST_RW_end_day^13 }
+		subtract_from_temp_variable = { _wt_ed = WA_TEST_RW_suite_start_day }
+		if = { limit = { check_variable = { _wt_s = 2 } }
+			log = "  013 | ITA Kenya Route Block  | PASSED      |    [?_wt_fc] | +[?_wt_ld]d    | +[?_wt_ed]d"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 3 } check_variable = { _wt_fc = 99 } }
+			log = "  013 | ITA Kenya Route Block  | SKIPPED     |   [?_wt_fc] | -        | -"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 3 } }
+			log = "  013 | ITA Kenya Route Block  | FAILED      |   [?_wt_fc] | +[?_wt_ld]d    | +[?_wt_ed]d"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 1 } }
+			log = "  013 | ITA Kenya Route Block  | ONGOING     |    [?_wt_fc] | +[?_wt_ld]d    | -"
+		}
+		else = {
+			log = "  013 | ITA Kenya Route Block  | NOT_LAUNCHED |    [?_wt_fc] | -        | -"
+		}
+
 			log = "---------------------------------------------------------------------"
 			WA_TEST_RW_log_summary = yes
 			log = "  Fail codes: 98=TIMEOUT, 99=SKIPPED"
@@ -620,6 +702,8 @@ WA_TEST_RW_launch_all = {
 	WA_TEST_RW_009_launch = yes
 	WA_TEST_RW_010_launch = yes
 	WA_TEST_RW_011_launch = yes
+	WA_TEST_RW_012_launch = yes
+	WA_TEST_RW_013_launch = yes
 }
 
 WA_TEST_RW_check_all = {
@@ -648,6 +732,10 @@ WA_TEST_RW_check_all = {
 	WA_TEST_RW_check_timeout = yes
 	set_temp_variable = { _wt_test_id = 11 }
 	WA_TEST_RW_check_timeout = yes
+	set_temp_variable = { _wt_test_id = 12 }
+	WA_TEST_RW_check_timeout = yes
+	set_temp_variable = { _wt_test_id = 13 }
+	WA_TEST_RW_check_timeout = yes
 
 	# Individual test checks (only evaluates tests still ONGOING)
 	WA_TEST_RW_001_check = yes
@@ -661,6 +749,8 @@ WA_TEST_RW_check_all = {
 	WA_TEST_RW_009_check = yes
 	WA_TEST_RW_010_check = yes
 	WA_TEST_RW_011_check = yes
+	WA_TEST_RW_012_check = yes
+	WA_TEST_RW_013_check = yes
 }
 
 ############################################################################################################
@@ -1532,6 +1622,153 @@ WA_TEST_RW_011_launch = {
 		# Not 1939 yet - stay NOT_LAUNCHED, will be re-attempted by checker
 	}
 }
+
+############################################################################################################
+#	TEST 012: ITA Libya Puppet Frontline Railways (Fix 27)
+#	Verify ITA builds railways to support ITL (Italian Libya) puppet frontlines vs ENG
+#	Precondition: ITA at war with ENG (1940+)
+#	Fail codes: 1=ITA not at war with ENG, 2=no railways in ITA queue, 3=no Libya railways
+############################################################################################################
+
+WA_TEST_RW_012_launch = {
+	set_temp_variable = { _wt_test_id = 12 }
+
+	if = { limit = { check_variable = { WA_TEST_RW_state^12 = @WA_TEST_RW_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 012: already PASSED, skipping re-launch"
+	}
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^12 = @WA_TEST_RW_FAILED } }
+		# Already resolved
+	}
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^12 = @WA_TEST_RW_ONGOING } }
+		# Already running
+	}
+	else_if = {
+		limit = { ITA = { has_war_with = ENG } }
+
+		# Enable construction logging on ITA and force railway system to run
+		ITA = {
+			set_country_flag = WA_AI_construction_logging
+			set_variable = { WA_AI_PC_railway_INTERVAL_counter = 0 }
+		}
+
+		set_variable = { WA_TEST_RW_state^12 = @WA_TEST_RW_ONGOING }
+		set_variable = { WA_TEST_RW_launch_day^12 = global.num_days }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 012 (ITA Libya Railways): LAUNCHED (ITA at war with ENG)"
+	}
+	else = {
+		# ITA not at war with ENG yet - stay NOT_LAUNCHED
+	}
+}
+
+WA_TEST_RW_012_check = {
+	if = {
+		limit = { check_variable = { WA_TEST_RW_state^12 = @WA_TEST_RW_ONGOING } }
+
+		set_temp_variable = { _wt_test_id = 12 }
+		set_temp_variable = { _wt_railway_count = 0 }
+		set_temp_variable = { _wt_libya_railway_count = 0 }
+
+		ITA = {
+			for_each_loop = { array = WA_AI_PC_queue value = _wt_proj
+				if = {
+					limit = { check_variable = { WA_AI_PC_building_type^_wt_proj = 13 } }
+					add_to_temp_variable = { _wt_railway_count = 1 }
+
+					# Check if target state is Libya (448=Tripoli, 450=Benghasi, 451=Derna)
+					set_temp_variable = { _wt_proj_state = WA_AI_PC_target_state^_wt_proj }
+					if = {
+						limit = {
+							OR = {
+								check_variable = { _wt_proj_state = 448 }
+								check_variable = { _wt_proj_state = 450 }
+								check_variable = { _wt_proj_state = 451 }
+							}
+						}
+						add_to_temp_variable = { _wt_libya_railway_count = 1 }
+					}
+				}
+			}
+		}
+
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 012 CHECK: ITA railway_count=[?_wt_railway_count] libya_railway_count=[?_wt_libya_railway_count]"
+
+		if = {
+			limit = { check_variable = { _wt_railway_count = 0 } }
+			# No railways yet - remain ONGOING (system might not have run yet)
+		}
+		else_if = {
+			limit = { check_variable = { _wt_libya_railway_count > 0 } }
+			WA_TEST_RW_mark_passed = yes
+		}
+		else = {
+			# Railways exist but none target Libya
+			set_temp_variable = { _wt_fail_code = 3 }
+			WA_TEST_RW_mark_failed = yes
+		}
+	}
+}
+
+############################################################################################################
+#	TEST 013: ITA Rome→Kenya Route Rejection (Fix 27b verification)
+#	Verify pathfinder type 2 rejects Rome→Eritrea route (no friendly path through neutral territory)
+#	Precondition: ITA at war with ENG
+#	Resolves immediately (unit test) — pass if pathfind fails, fail if pathfind succeeds
+#	Fail codes: 1=path found (should not exist), 2=Eritrea has no supply hub
+############################################################################################################
+
+WA_TEST_RW_013_launch = {
+	set_temp_variable = { _wt_test_id = 13 }
+
+	if = { limit = { check_variable = { WA_TEST_RW_state^13 = @WA_TEST_RW_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 013: already PASSED, skipping re-launch"
+	}
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^13 = @WA_TEST_RW_FAILED } }
+		# Already resolved
+	}
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^13 = @WA_TEST_RW_ONGOING } }
+		# Already running
+	}
+	else_if = {
+		limit = { ITA = { has_war_with = ENG } }
+
+		# Unit test: resolve immediately
+		set_variable = { WA_TEST_RW_state^13 = @WA_TEST_RW_ONGOING }
+		set_variable = { WA_TEST_RW_launch_day^13 = global.num_days }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 013 (ITA Kenya Route Block): LAUNCHED"
+
+		# Pathfind from Rome (prov 856) to Eritrea supply hub (prov 12766)
+		ITA = {
+			set_temp_variable = { _pathfind_prov_start = 856 }
+			set_temp_variable = { _pathfind_prov_end = 12766 }
+			set_temp_variable = { _pathfind_prov_type = 2 }
+			set_temp_variable = { _pathfind_prov_allow_partial = 0 }
+			WA_AI_PATHFIND_PROV_get_path = yes
+		}
+
+		if = {
+			limit = { check_variable = { pathfind_prov_success_ = 0 } }
+			# PASS — no path through friendly territory (correct rejection)
+			WA_TEST_RW_mark_passed = yes
+			log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 013: PASS - pathfinder correctly rejected Rome->Eritrea route"
+		}
+		else = {
+			# FAIL — path was found (shouldn't be possible through neutral/enemy territory)
+			set_temp_variable = { _wt_fail_code = 1 }
+			WA_TEST_RW_mark_failed = yes
+			log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 013: FAIL - pathfinder found route Rome->Eritrea (success=[?pathfind_prov_success_])"
+		}
+	}
+	else = {
+		# ITA not at war with ENG yet
+	}
+}
+
+WA_TEST_RW_013_check = {
+	# Test 013 resolves in launch phase (unit test), nothing to check
+	# Timeout handler will catch if stuck in ONGOING state
+}
+
+############################################################################################################
 
 WA_TEST_RW_011_check = {
 	if = {
