@@ -19,14 +19,27 @@ def extract_existing_modifiers(ai_will_do_block: str) -> list[str]:
     Extract existing modifier blocks that should be preserved.
 
     Looks for modifiers that are country-specific (tag, original_tag, SOV_*, etc)
-    and should not be overwritten.
+    and should not be overwritten. Properly handles nested braces.
     """
     preserved = []
 
-    # Extract all modifier blocks
-    modifier_pattern = r'modifier\s*=\s*\{[^}]*\}'
-    for match in re.finditer(modifier_pattern, ai_will_do_block, re.DOTALL):
-        modifier_block = match.group(0)
+    # Find all "modifier = {" positions
+    for match in re.finditer(r'modifier\s*=\s*\{', ai_will_do_block):
+        start_pos = match.start()
+        brace_start = match.end() - 1  # Position of the opening brace
+
+        # Find matching closing brace with proper nesting
+        brace_count = 1
+        end_pos = brace_start + 1
+        while end_pos < len(ai_will_do_block) and brace_count > 0:
+            if ai_will_do_block[end_pos] == '{':
+                brace_count += 1
+            elif ai_will_do_block[end_pos] == '}':
+                brace_count -= 1
+            end_pos += 1
+
+        # Extract the complete modifier block
+        modifier_block = ai_will_do_block[start_pos:end_pos]
 
         # Check if this is a country-specific or special modifier
         if any(pattern in modifier_block for pattern in [
@@ -156,13 +169,43 @@ def generate_ai_will_do_block(metadata: DecisionMetadata, preserved_modifiers: l
         lines.append('\t\t\t# Preserve existing country-specific modifiers')
         for mod in preserved_modifiers:
             # Preserved modifiers are already extracted and indented from original ai_will_do
-            # Just strip any leading/trailing whitespace and re-indent to match our context (3 tabs)
+            # We need to preserve their internal indentation structure while re-indenting to match our context (3 tabs)
             mod_lines = mod.strip().split('\n')
-            for mod_line in mod_lines:
-                # Re-indent to match ai_will_do context (3 tabs for content)
+
+            # Find the minimum indentation of opening and closing braces
+            # Content should be indented 1 tab MORE than braces
+            brace_indent = float('inf')
+            content_indent = float('inf')
+
+            for i, mod_line in enumerate(mod_lines):
                 if mod_line.strip():
-                    # Remove old indentation and add 3 tabs
-                    lines.append('\t\t\t' + mod_line.lstrip())
+                    indent = len(mod_line) - len(mod_line.lstrip('\t'))
+                    # First line (opening brace) and last line (closing brace) are at base level
+                    if i == 0 or i == len(mod_lines) - 1:
+                        brace_indent = min(brace_indent, indent)
+                    else:
+                        content_indent = min(content_indent, indent)
+
+            if brace_indent == float('inf'):
+                brace_indent = 0
+            if content_indent == float('inf'):
+                content_indent = 0
+
+            # Re-indent: move braces to 3 tabs, move content to 4 tabs
+            # Preserve relative indentation differences
+            for i, mod_line in enumerate(mod_lines):
+                if mod_line.strip():
+                    # First line is "modifier = {", place at 3 tabs
+                    if i == 0:
+                        lines.append('\t\t\t' + mod_line.lstrip())
+                    # Last line is closing brace, place at 3 tabs
+                    elif i == len(mod_lines) - 1:
+                        lines.append('\t\t\t' + mod_line.lstrip())
+                    # Content lines: place at 4 tabs (3 context + 1 nesting)
+                    # But preserve any relative indentation beyond the base content indent
+                    else:
+                        stripped = mod_line[content_indent:] if len(mod_line) >= content_indent else mod_line
+                        lines.append('\t\t\t\t' + stripped.lstrip('\t'))
                 else:
                     lines.append('')
         lines.append('')
