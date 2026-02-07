@@ -836,3 +836,83 @@ WA_AI_track_submarine_losses = {
 # 	}
 # }
 
+### AI Training Modifier - recalculate weekly
+
+WA_AI_update_training_modifier = {
+
+	# Reset
+	set_variable = { WA_AI_minimum_training_level = 0 }
+	set_variable = { WA_AI_training_time_factor = 0 }
+
+	### DOCTRINE BONUS (one applies)
+
+	# large_front_operations: +0.29 (NOT SOV, NOT historical GER before Sep 1939)
+	if = {
+		limit = {
+			has_doctrine = large_front_operations
+			NOT = { original_tag = SOV }
+			NOT = {
+				AND = {
+					original_tag = GER
+					is_historical_focus_on = yes
+					date < 1939.9.1
+				}
+			}
+		}
+		add_to_variable = { WA_AI_minimum_training_level = 0.29 }
+	}
+
+	# decisive_strategy: +0.09 (USA only)
+	if = {
+		limit = {
+			has_doctrine = decisive_strategy
+			original_tag = USA
+		}
+		add_to_variable = { WA_AI_minimum_training_level = 0.09 }
+	}
+
+	# advanced_squad_tactics: -0.2 (SOV alt-history)
+	if = {
+		limit = {
+			has_doctrine = advanced_squad_tactics
+			original_tag = SOV
+		}
+		add_to_variable = { WA_AI_minimum_training_level = -0.2 }
+	}
+
+	### CONSCRIPTION BONUS (highest tier only, if/else_if chain)
+	# GER historical exemption wraps entire block
+
+	if = {
+		limit = {
+			NOT = {
+				AND = {
+					original_tag = GER
+					is_historical_focus_on = yes
+					date < 1939.9.1
+				}
+			}
+		}
+
+		if = {
+			limit = { has_idea = scraping_the_barrel }
+			add_to_variable = { WA_AI_minimum_training_level = 0.7 }
+		}
+		else_if = {
+			limit = { has_idea = all_adults_serve }
+			add_to_variable = { WA_AI_minimum_training_level = 0.55 }
+		}
+		else_if = {
+			limit = { has_idea = service_by_requirement }
+			add_to_variable = { WA_AI_minimum_training_level = 0.4 }
+		}
+		else_if = {
+			limit = { has_idea = extensive_conscription }
+			add_to_variable = { WA_AI_minimum_training_level = 0.25 }
+		}
+		else_if = {
+			limit = { has_idea = limited_conscription }
+			add_to_variable = { WA_AI_minimum_training_level = 0.1 }
+		}
+	}
+}
