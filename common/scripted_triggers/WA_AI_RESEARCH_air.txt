@@ -1,0 +1,206 @@
+# ============================================================================
+# AI Research Needs Triggers for Air Technologies
+# ============================================================================
+# These triggers determine when the AI should prioritize researching air techs.
+# They are based on strategic desire/config (airforce doctrine type), NOT on 
+# whether equipment is already unlocked, to avoid circular logic.
+#
+# Aircraft are grouped into 5 main classes + carrier aircraft:
+# - Fighters (air superiority)
+# - CAS (close air support)
+# - Tactical Bombers (medium bombers)
+# - Strategic Bombers (heavy bombers)
+# - Naval Bombers (anti-ship)
+# - Carrier Aircraft (CV variants)
+# ============================================================================
+
+# ============================================================================
+# FIGHTERS CLASS
+# ============================================================================
+# Fighters are needed by all airforce doctrines for air superiority
+
+WA_AI_RESEARCH_needs_fighters = {
+	# All nations need fighters for air superiority
+	always = yes
+}
+
+WA_AI_RESEARCH_needs_interceptors = {
+	# Interceptors are high-speed point defense fighters (MB.152, Me 163)
+	# Only nations configured to use interceptors research them
+	OR = {
+		WA_AI_CONFIG_AIRFORCE_uses_interceptors = yes
+		# Strategic bombing nations need interceptors for defense
+		WA_AI_CONFIG_is_strategic_bombing_airforce = yes
+	}
+}
+
+WA_AI_RESEARCH_needs_multirole_fighters = {
+	# Multirole fighters (Fw 190, Typhoon) combine fighter and ground attack
+	# Most major nations use multirole fighters
+	OR = {
+		WA_AI_CONFIG_AIRFORCE_uses_multirole_fighters = yes
+		# CAS doctrine nations often use multirole for flexibility
+		WA_AI_CONFIG_is_close_air_support_airforce = yes
+		# Major nations generally have multirole capability
+		WA_AI_CONFIG_is_major_country = yes
+	}
+}
+
+# ============================================================================
+# CAS CLASS
+# ============================================================================
+# Close Air Support aircraft for ground attack missions
+
+WA_AI_RESEARCH_needs_cas = {
+	# CAS is the primary ground attack aircraft
+	OR = {
+		# CAS doctrine nations prioritize CAS
+		WA_AI_CONFIG_is_close_air_support_airforce = yes
+		# Tactical bombing nations also use CAS
+		WA_AI_CONFIG_is_strategic_bombing_airforce = yes
+	}
+}
+
+WA_AI_RESEARCH_needs_attackers = {
+	# Attackers (IL-2, Hs 129, Bf 110 ground attack) are specialized ground attack
+	# Only nations configured to use attackers research them
+	WA_AI_CONFIG_AIRFORCE_uses_attackers = yes
+}
+
+# ============================================================================
+# TACTICAL BOMBERS CLASS
+# ============================================================================
+# Medium bombers for tactical and operational level bombing
+
+WA_AI_RESEARCH_needs_tactical_bombers = {
+	# Tactical bombers (He 111, B-25) are medium bombers
+	OR = {
+		# Tactical bombing doctrine prioritizes these
+		WA_AI_CONFIG_is_tactical_bombing_airforce = yes
+		# CAS doctrine nations use tactical bombers as secondary
+		WA_AI_CONFIG_is_close_air_support_airforce = yes
+		# Major nations generally research tactical bombers
+		WA_AI_CONFIG_is_major_country = yes
+	}
+}
+
+WA_AI_RESEARCH_needs_strike_bombers = {
+	# Strike bombers (Ju 88, Mosquito) are fast precision bombers
+	# Only nations configured to use strike bombers research them
+	WA_AI_CONFIG_AIRFORCE_uses_strike_bombers = yes
+}
+
+WA_AI_RESEARCH_needs_fast_bombers = {
+	# Fast bombers are similar to strike bombers
+	# Only nations configured to use fast bombers research them
+	WA_AI_CONFIG_AIRFORCE_uses_fast_bombers = yes
+}
+
+# ============================================================================
+# STRATEGIC BOMBERS CLASS
+# ============================================================================
+# Heavy bombers for strategic bombing campaigns
+
+WA_AI_RESEARCH_needs_strategic_bombers = {
+	# Strategic bombers (B-17, Lancaster) are heavy bombers
+	# Only strategic bombing doctrine nations prioritize these
+	WA_AI_CONFIG_is_strategic_bombing_airforce = yes
+}
+
+WA_AI_RESEARCH_needs_heavy_strategic_bombers = {
+	# Heavy strategic bombers (B-24, B-29) are very heavy bombers
+	# Only nations configured to use heavy strategic bombers research them
+	AND = {
+		WA_AI_CONFIG_is_strategic_bombing_airforce = yes
+		WA_AI_CONFIG_AIRFORCE_uses_heavy_strategic = yes
+	}
+}
+
+# ============================================================================
+# NAVAL BOMBERS CLASS
+# ============================================================================
+# Anti-ship aircraft for naval operations
+
+WA_AI_RESEARCH_needs_naval_bombers = {
+	OR = {
+		num_of_military_factories > 30
+		WA_AI_CONFIG_is_major_country = yes
+	}
+	any_owned_state = {
+		is_coastal = yes
+	}
+}
+
+# ============================================================================
+# CARRIER AIRCRAFT CLASS
+# ============================================================================
+# Carrier-based variants of aircraft
+
+WA_AI_RESEARCH_needs_carrier_fighters = {
+	# Carrier fighters are needed by nations with carriers
+	WA_AI_CONFIG_needs_cv_planes = yes
+}
+
+WA_AI_RESEARCH_needs_carrier_bombers = {
+	# Carrier bombers (torpedo/dive bombers) are needed by nations with carriers
+	WA_AI_CONFIG_needs_cv_planes = yes
+}
+
+WA_AI_RESEARCH_needs_carrier_cas = {
+	# Carrier CAS variants
+	WA_AI_CONFIG_needs_cv_planes = yes
+}
+
+# ============================================================================
+# SPECIAL AIRCRAFT
+# ============================================================================
+# Specialized aircraft that are disabled or conditionally enabled
+
+WA_AI_RESEARCH_needs_heavy_fighters = {
+	# Heavy fighters (Bf 110, Mosquito NF) are twin-engine fighters
+	# Only nations configured to use heavy fighters research them
+	WA_AI_CONFIG_AIRFORCE_uses_heavy_fighters = yes
+}
+
+WA_AI_RESEARCH_needs_scout_planes = {
+	# Scout planes are disabled by default
+	always = no
+}
+
+WA_AI_RESEARCH_needs_patrol_planes = {
+	# Patrol planes (maritime patrol) are disabled by default
+	always = no
+}
+
+WA_AI_RESEARCH_needs_transport_planes = {
+	# Transport planes are needed by major nations for paratroopers/logistics
+	OR = {
+		WA_AI_CONFIG_is_major_country = yes
+	}
+}
+
+# ============================================================================
+# JET AIRCRAFT
+# ============================================================================
+# Jet variants follow their parent archetype needs
+
+WA_AI_RESEARCH_needs_jet_fighters = {
+	AND = {
+		WA_AI_RESEARCH_needs_fighters = yes
+		date > 1944.1.1
+	}
+}
+
+WA_AI_RESEARCH_needs_jet_tactical_bombers = {
+	AND = {
+		WA_AI_RESEARCH_needs_tactical_bombers = yes
+		date > 1945.1.1
+	}
+}
+
+WA_AI_RESEARCH_needs_jet_strategic_bombers = {
+	AND = {
+		WA_AI_RESEARCH_needs_strategic_bombers = yes
+		date > 1946.1.1
+	}
+}

@@ -1,0 +1,515 @@
+############################################################################################################
+#	World Ablaze - Spirit Assignment Functional Test Suite (Self-Contained)
+#	Tests that each major has the correct army spirit assigned after 1937.1.1
+#	7 countries: ENG, FRA, USA, GER, ITA, JAP, SOV - each uses slot 1
+#	Uses WA_TEST_SP_* variable prefix - no dependency on other test suites
+############################################################################################################
+
+### Test State Constants
+@WA_TEST_SP_NOT_LAUNCHED = 0
+@WA_TEST_SP_ONGOING = 1
+@WA_TEST_SP_PASSED = 2
+@WA_TEST_SP_FAILED = 3
+@WA_TEST_SP_TIMEOUT_DAYS = 400
+
+############################################################################################################
+#	HELPERS
+############################################################################################################
+
+WA_TEST_SP_mark_passed = {
+	set_variable = { WA_TEST_SP_state^_wt_test_id = @WA_TEST_SP_PASSED }
+	set_variable = { WA_TEST_SP_end_day^_wt_test_id = global.num_days }
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | SP TEST [?_wt_test_id]: PASSED"
+}
+
+WA_TEST_SP_mark_failed = {
+	set_variable = { WA_TEST_SP_state^_wt_test_id = @WA_TEST_SP_FAILED }
+	set_variable = { WA_TEST_SP_fail_code^_wt_test_id = _wt_fail_code }
+	set_variable = { WA_TEST_SP_end_day^_wt_test_id = global.num_days }
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | SP TEST [?_wt_test_id]: FAILED (code=[?_wt_fail_code])"
+}
+
+WA_TEST_SP_check_timeout = {
+	if = {
+		limit = { check_variable = { WA_TEST_SP_state^_wt_test_id = @WA_TEST_SP_ONGOING } }
+
+		set_temp_variable = { _wt_elapsed = global.num_days }
+		subtract_from_temp_variable = { _wt_elapsed = WA_TEST_SP_launch_day^_wt_test_id }
+
+		if = {
+			limit = { check_variable = { _wt_elapsed > @WA_TEST_SP_TIMEOUT_DAYS } }
+			set_temp_variable = { _wt_fail_code = 98 }
+			WA_TEST_SP_mark_failed = yes
+			log = "[GetYear] [GetMonth] | TEST | [This.GetName] | SP TEST [?_wt_test_id]: TIMEOUT after [?_wt_elapsed] days"
+		}
+	}
+}
+
+############################################################################################################
+#	INIT (1 slot per country)
+############################################################################################################
+
+WA_TEST_SP_init = {
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | SP INIT: Resetting non-PASSED test states"
+
+	if = { limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | SP TEST 001: preserving previous PASS"
+	}
+	else = {
+		set_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_NOT_LAUNCHED }
+		set_variable = { WA_TEST_SP_fail_code^1 = 0 }
+		set_variable = { WA_TEST_SP_launch_day^1 = 0 }
+		set_variable = { WA_TEST_SP_end_day^1 = 0 }
+	}
+
+	set_variable = { WA_TEST_SP_suite_start_day = global.num_days }
+	add_to_variable = { WA_TEST_SP_suite_run_count = 1 }
+}
+
+############################################################################################################
+#	SUITE RUNNER
+#	Registers each major, initializes, launches, schedules checker
+############################################################################################################
+
+WA_TEST_SP_suite = {
+	log = "================================================"
+	log = "  SPIRIT TEST SUITE: STARTING (7 majors)"
+	log = "================================================"
+
+	ENG = {
+		WA_TEST_SP_init = yes
+		set_country_flag = WA_TEST_SP_suite_active
+		WA_TEST_SP_ENG_launch = yes
+		country_event = { id = wa_test.200 days = 7 }
+	}
+
+	FRA = {
+		WA_TEST_SP_init = yes
+		set_country_flag = WA_TEST_SP_suite_active
+		WA_TEST_SP_FRA_launch = yes
+		country_event = { id = wa_test.200 days = 7 }
+	}
+
+	USA = {
+		WA_TEST_SP_init = yes
+		set_country_flag = WA_TEST_SP_suite_active
+		WA_TEST_SP_USA_launch = yes
+		country_event = { id = wa_test.200 days = 7 }
+	}
+
+	GER = {
+		WA_TEST_SP_init = yes
+		set_country_flag = WA_TEST_SP_suite_active
+		WA_TEST_SP_GER_launch = yes
+		country_event = { id = wa_test.200 days = 7 }
+	}
+
+	ITA = {
+		WA_TEST_SP_init = yes
+		set_country_flag = WA_TEST_SP_suite_active
+		WA_TEST_SP_ITA_launch = yes
+		country_event = { id = wa_test.200 days = 7 }
+	}
+
+	JAP = {
+		WA_TEST_SP_init = yes
+		set_country_flag = WA_TEST_SP_suite_active
+		WA_TEST_SP_JAP_launch = yes
+		country_event = { id = wa_test.200 days = 7 }
+	}
+
+	SOV = {
+		WA_TEST_SP_init = yes
+		set_country_flag = WA_TEST_SP_suite_active
+		WA_TEST_SP_SOV_launch = yes
+		country_event = { id = wa_test.200 days = 7 }
+	}
+
+	log = "  SPIRIT TEST SUITE: All 7 majors initialized, checkers scheduled"
+}
+
+############################################################################################################
+#	ORCHESTRATORS (dispatch by country tag for checker event)
+############################################################################################################
+
+WA_TEST_SP_launch_for_country = {
+	if = { limit = { original_tag = ENG } WA_TEST_SP_ENG_launch = yes }
+	else_if = { limit = { original_tag = FRA } WA_TEST_SP_FRA_launch = yes }
+	else_if = { limit = { original_tag = USA } WA_TEST_SP_USA_launch = yes }
+	else_if = { limit = { original_tag = GER } WA_TEST_SP_GER_launch = yes }
+	else_if = { limit = { original_tag = ITA } WA_TEST_SP_ITA_launch = yes }
+	else_if = { limit = { original_tag = JAP } WA_TEST_SP_JAP_launch = yes }
+	else_if = { limit = { original_tag = SOV } WA_TEST_SP_SOV_launch = yes }
+}
+
+WA_TEST_SP_check_for_country = {
+	# Timeout check
+	set_temp_variable = { _wt_test_id = 1 }
+	WA_TEST_SP_check_timeout = yes
+
+	# Dispatch to correct check function
+	if = { limit = { original_tag = ENG } WA_TEST_SP_ENG_check = yes }
+	else_if = { limit = { original_tag = FRA } WA_TEST_SP_FRA_check = yes }
+	else_if = { limit = { original_tag = USA } WA_TEST_SP_USA_check = yes }
+	else_if = { limit = { original_tag = GER } WA_TEST_SP_GER_check = yes }
+	else_if = { limit = { original_tag = ITA } WA_TEST_SP_ITA_check = yes }
+	else_if = { limit = { original_tag = JAP } WA_TEST_SP_JAP_check = yes }
+	else_if = { limit = { original_tag = SOV } WA_TEST_SP_SOV_check = yes }
+}
+
+############################################################################################################
+#	LAUNCH FUNCTIONS
+#	Date gate: only launch if date > 1937.1.1
+#	Fail code 1 = missing expected spirit
+############################################################################################################
+
+WA_TEST_SP_ENG_launch = {
+	set_temp_variable = { _wt_test_id = 1 }
+	if = { limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_PASSED } } }
+	else_if = { limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_FAILED } } }
+	else_if = { limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_ONGOING } } }
+	else_if = {
+		limit = { date > 1937.1.1 }
+		set_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_ONGOING }
+		set_variable = { WA_TEST_SP_launch_day^1 = global.num_days }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | SP TEST (relief_of_command): LAUNCHED"
+	}
+}
+
+WA_TEST_SP_FRA_launch = {
+	set_temp_variable = { _wt_test_id = 1 }
+	if = { limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_PASSED } } }
+	else_if = { limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_FAILED } } }
+	else_if = { limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_ONGOING } } }
+	else_if = {
+		limit = { date > 1937.1.1 }
+		set_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_ONGOING }
+		set_variable = { WA_TEST_SP_launch_day^1 = global.num_days }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | SP TEST (relief_of_command): LAUNCHED"
+	}
+}
+
+WA_TEST_SP_USA_launch = {
+	set_temp_variable = { _wt_test_id = 1 }
+	if = { limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_PASSED } } }
+	else_if = { limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_FAILED } } }
+	else_if = { limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_ONGOING } } }
+	else_if = {
+		limit = { date > 1937.1.1 }
+		set_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_ONGOING }
+		set_variable = { WA_TEST_SP_launch_day^1 = global.num_days }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | SP TEST (relief_of_command): LAUNCHED"
+	}
+}
+
+WA_TEST_SP_GER_launch = {
+	set_temp_variable = { _wt_test_id = 1 }
+	if = { limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_PASSED } } }
+	else_if = { limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_FAILED } } }
+	else_if = { limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_ONGOING } } }
+	else_if = {
+		limit = { date > 1937.1.1 }
+		set_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_ONGOING }
+		set_variable = { WA_TEST_SP_launch_day^1 = global.num_days }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | SP TEST (professional_officer_corps): LAUNCHED"
+	}
+}
+
+WA_TEST_SP_ITA_launch = {
+	set_temp_variable = { _wt_test_id = 1 }
+	if = { limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_PASSED } } }
+	else_if = { limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_FAILED } } }
+	else_if = { limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_ONGOING } } }
+	else_if = {
+		limit = { date > 1937.1.1 }
+		set_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_ONGOING }
+		set_variable = { WA_TEST_SP_launch_day^1 = global.num_days }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | SP TEST (state_serves_the_military): LAUNCHED"
+	}
+}
+
+WA_TEST_SP_JAP_launch = {
+	set_temp_variable = { _wt_test_id = 1 }
+	if = { limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_PASSED } } }
+	else_if = { limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_FAILED } } }
+	else_if = { limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_ONGOING } } }
+	else_if = {
+		limit = { date > 1937.1.1 }
+		set_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_ONGOING }
+		set_variable = { WA_TEST_SP_launch_day^1 = global.num_days }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | SP TEST (professional_officer_corps): LAUNCHED"
+	}
+}
+
+WA_TEST_SP_SOV_launch = {
+	set_temp_variable = { _wt_test_id = 1 }
+	if = { limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_PASSED } } }
+	else_if = { limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_FAILED } } }
+	else_if = { limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_ONGOING } } }
+	else_if = {
+		limit = { date > 1937.1.1 }
+		set_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_ONGOING }
+		set_variable = { WA_TEST_SP_launch_day^1 = global.num_days }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | SP TEST (ideological_loyalty): LAUNCHED"
+	}
+}
+
+############################################################################################################
+#	CHECK FUNCTIONS
+#	Each asserts has_idea = expected army spirit
+#	Fail code 1 = missing expected spirit
+############################################################################################################
+
+WA_TEST_SP_ENG_check = {
+	if = {
+		limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_ONGOING } }
+		set_temp_variable = { _wt_test_id = 1 }
+		if = {
+			limit = { has_idea = relief_of_command_spirit }
+			WA_TEST_SP_mark_passed = yes
+		}
+		else = {
+			set_temp_variable = { _wt_fail_code = 1 }
+			WA_TEST_SP_mark_failed = yes
+			log = "[GetYear] [GetMonth] | TEST | [This.GetName] | SP FAIL: expected relief_of_command_spirit"
+		}
+	}
+}
+
+WA_TEST_SP_FRA_check = {
+	if = {
+		limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_ONGOING } }
+		set_temp_variable = { _wt_test_id = 1 }
+		if = {
+			limit = { has_idea = relief_of_command_spirit }
+			WA_TEST_SP_mark_passed = yes
+		}
+		else = {
+			set_temp_variable = { _wt_fail_code = 1 }
+			WA_TEST_SP_mark_failed = yes
+			log = "[GetYear] [GetMonth] | TEST | [This.GetName] | SP FAIL: expected relief_of_command_spirit"
+		}
+	}
+}
+
+WA_TEST_SP_USA_check = {
+	if = {
+		limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_ONGOING } }
+		set_temp_variable = { _wt_test_id = 1 }
+		if = {
+			limit = { has_idea = relief_of_command_spirit }
+			WA_TEST_SP_mark_passed = yes
+		}
+		else = {
+			set_temp_variable = { _wt_fail_code = 1 }
+			WA_TEST_SP_mark_failed = yes
+			log = "[GetYear] [GetMonth] | TEST | [This.GetName] | SP FAIL: expected relief_of_command_spirit"
+		}
+	}
+}
+
+WA_TEST_SP_GER_check = {
+	if = {
+		limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_ONGOING } }
+		set_temp_variable = { _wt_test_id = 1 }
+		if = {
+			limit = { has_idea = professional_officer_corps_spirit }
+			WA_TEST_SP_mark_passed = yes
+		}
+		else = {
+			set_temp_variable = { _wt_fail_code = 1 }
+			WA_TEST_SP_mark_failed = yes
+			log = "[GetYear] [GetMonth] | TEST | [This.GetName] | SP FAIL: expected professional_officer_corps_spirit"
+		}
+	}
+}
+
+WA_TEST_SP_ITA_check = {
+	if = {
+		limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_ONGOING } }
+		set_temp_variable = { _wt_test_id = 1 }
+		if = {
+			limit = { has_idea = state_serves_the_military_spirit }
+			WA_TEST_SP_mark_passed = yes
+		}
+		else = {
+			set_temp_variable = { _wt_fail_code = 1 }
+			WA_TEST_SP_mark_failed = yes
+			log = "[GetYear] [GetMonth] | TEST | [This.GetName] | SP FAIL: expected state_serves_the_military_spirit"
+		}
+	}
+}
+
+WA_TEST_SP_JAP_check = {
+	if = {
+		limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_ONGOING } }
+		set_temp_variable = { _wt_test_id = 1 }
+		if = {
+			limit = { has_idea = professional_officer_corps_spirit }
+			WA_TEST_SP_mark_passed = yes
+		}
+		else = {
+			set_temp_variable = { _wt_fail_code = 1 }
+			WA_TEST_SP_mark_failed = yes
+			log = "[GetYear] [GetMonth] | TEST | [This.GetName] | SP FAIL: expected professional_officer_corps_spirit"
+		}
+	}
+}
+
+WA_TEST_SP_SOV_check = {
+	if = {
+		limit = { check_variable = { WA_TEST_SP_state^1 = @WA_TEST_SP_ONGOING } }
+		set_temp_variable = { _wt_test_id = 1 }
+		if = {
+			limit = { has_idea = ideological_loyalty_spirit }
+			WA_TEST_SP_mark_passed = yes
+		}
+		else = {
+			set_temp_variable = { _wt_fail_code = 1 }
+			WA_TEST_SP_mark_failed = yes
+			log = "[GetYear] [GetMonth] | TEST | [This.GetName] | SP FAIL: expected ideological_loyalty_spirit"
+		}
+	}
+}
+
+############################################################################################################
+#	PRINT
+#	Scopes to each major, prints slot 1 result with expected spirit name
+############################################################################################################
+
+WA_TEST_SP_print = {
+	log = "---------------------------------------------------------------------"
+	log = "  SUITE: SPIRITS"
+	log = "---------------------------------------------------------------------"
+	log = "  Country         | Spirit Expected             | Status      | Code"
+
+	# ENG
+	ENG = {
+		set_temp_variable = { _wt_s = WA_TEST_SP_state^1 }
+		set_temp_variable = { _wt_fc = WA_TEST_SP_fail_code^1 }
+		if = { limit = { check_variable = { _wt_s = 2 } }
+			log = "  ENG             | relief_of_command           | PASSED      |    [?_wt_fc]"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 3 } }
+			log = "  ENG             | relief_of_command           | FAILED      |   [?_wt_fc]"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 1 } }
+			log = "  ENG             | relief_of_command           | ONGOING     |    [?_wt_fc]"
+		}
+		else = {
+			log = "  ENG             | relief_of_command           | NOT_LAUNCHED |    [?_wt_fc]"
+		}
+	}
+
+	# FRA
+	FRA = {
+		set_temp_variable = { _wt_s = WA_TEST_SP_state^1 }
+		set_temp_variable = { _wt_fc = WA_TEST_SP_fail_code^1 }
+		if = { limit = { check_variable = { _wt_s = 2 } }
+			log = "  FRA             | relief_of_command           | PASSED      |    [?_wt_fc]"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 3 } }
+			log = "  FRA             | relief_of_command           | FAILED      |   [?_wt_fc]"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 1 } }
+			log = "  FRA             | relief_of_command           | ONGOING     |    [?_wt_fc]"
+		}
+		else = {
+			log = "  FRA             | relief_of_command           | NOT_LAUNCHED |    [?_wt_fc]"
+		}
+	}
+
+	# USA
+	USA = {
+		set_temp_variable = { _wt_s = WA_TEST_SP_state^1 }
+		set_temp_variable = { _wt_fc = WA_TEST_SP_fail_code^1 }
+		if = { limit = { check_variable = { _wt_s = 2 } }
+			log = "  USA             | relief_of_command           | PASSED      |    [?_wt_fc]"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 3 } }
+			log = "  USA             | relief_of_command           | FAILED      |   [?_wt_fc]"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 1 } }
+			log = "  USA             | relief_of_command           | ONGOING     |    [?_wt_fc]"
+		}
+		else = {
+			log = "  USA             | relief_of_command           | NOT_LAUNCHED |    [?_wt_fc]"
+		}
+	}
+
+	# GER
+	GER = {
+		set_temp_variable = { _wt_s = WA_TEST_SP_state^1 }
+		set_temp_variable = { _wt_fc = WA_TEST_SP_fail_code^1 }
+		if = { limit = { check_variable = { _wt_s = 2 } }
+			log = "  GER             | professional_officer_corps  | PASSED      |    [?_wt_fc]"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 3 } }
+			log = "  GER             | professional_officer_corps  | FAILED      |   [?_wt_fc]"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 1 } }
+			log = "  GER             | professional_officer_corps  | ONGOING     |    [?_wt_fc]"
+		}
+		else = {
+			log = "  GER             | professional_officer_corps  | NOT_LAUNCHED |    [?_wt_fc]"
+		}
+	}
+
+	# ITA
+	ITA = {
+		set_temp_variable = { _wt_s = WA_TEST_SP_state^1 }
+		set_temp_variable = { _wt_fc = WA_TEST_SP_fail_code^1 }
+		if = { limit = { check_variable = { _wt_s = 2 } }
+			log = "  ITA             | state_serves_the_military   | PASSED      |    [?_wt_fc]"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 3 } }
+			log = "  ITA             | state_serves_the_military   | FAILED      |   [?_wt_fc]"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 1 } }
+			log = "  ITA             | state_serves_the_military   | ONGOING     |    [?_wt_fc]"
+		}
+		else = {
+			log = "  ITA             | state_serves_the_military   | NOT_LAUNCHED |    [?_wt_fc]"
+		}
+	}
+
+	# JAP
+	JAP = {
+		set_temp_variable = { _wt_s = WA_TEST_SP_state^1 }
+		set_temp_variable = { _wt_fc = WA_TEST_SP_fail_code^1 }
+		if = { limit = { check_variable = { _wt_s = 2 } }
+			log = "  JAP             | professional_officer_corps  | PASSED      |    [?_wt_fc]"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 3 } }
+			log = "  JAP             | professional_officer_corps  | FAILED      |   [?_wt_fc]"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 1 } }
+			log = "  JAP             | professional_officer_corps  | ONGOING     |    [?_wt_fc]"
+		}
+		else = {
+			log = "  JAP             | professional_officer_corps  | NOT_LAUNCHED |    [?_wt_fc]"
+		}
+	}
+
+	# SOV
+	SOV = {
+		set_temp_variable = { _wt_s = WA_TEST_SP_state^1 }
+		set_temp_variable = { _wt_fc = WA_TEST_SP_fail_code^1 }
+		if = { limit = { check_variable = { _wt_s = 2 } }
+			log = "  SOV             | ideological_loyalty         | PASSED      |    [?_wt_fc]"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 3 } }
+			log = "  SOV             | ideological_loyalty         | FAILED      |   [?_wt_fc]"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 1 } }
+			log = "  SOV             | ideological_loyalty         | ONGOING     |    [?_wt_fc]"
+		}
+		else = {
+			log = "  SOV             | ideological_loyalty         | NOT_LAUNCHED |    [?_wt_fc]"
+		}
+	}
+
+	log = "---------------------------------------------------------------------"
+	log = "  Fail codes: 1=missing expected spirit, 98=TIMEOUT"
+	log = "====================================================================="
+}
