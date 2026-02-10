@@ -2,6 +2,7 @@
 # All required input parameters described below must be set via set_temp_variable before using this effect
 # Scope: Country
 # [INPUT] [REQUIRED] _num_divisions_spawn - The number of divisions to spawn. Must be 1 or greater
+# [INPUT] [OPTIONAL] _state - The state in which to spawn the divisions. Defaults to the country's capital
 # [INPUT] [OPTIONAL] _division_template - The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored. Defaults to 1
 # [INPUT] [OPTIONAL] _start_experience - The starting experience of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.2 (Trained 1)
 # [INPUT] [OPTIONAL] _start_equipment - The starting equipment of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.1
@@ -24,6 +25,12 @@ WA_AI_DIVISION_spawn_divisions = {
 	}
 
 	# Optional input parameters get a default value set if not provided
+	if = {
+		limit = {
+			check_variable = { _state < 1 }
+		}
+		set_temp_variable = { _state = -1 }
+	}
 	if = {
 		limit = {
 			NOT = {
@@ -83,20 +90,45 @@ WA_AI_DIVISION_spawn_divisions = {
 			WA_AI_DIVISION_setup = yes
 		}
 
-		capital_scope = {
-			meta_effect = {
-				text = {
-					create_unit = {
-						division = "name = \"[DIVISION_TEMPLATE]\" division_template = \"[DIVISION_TEMPLATE]\" start_experience_factor = [START_EXPERIENCE_FACTOR] start_equipment_factor = [START_EQUIPMENT_FACTOR] start_manpower_factor = [START_MANPOWER_FACTOR]"
-						owner = PREV
-						count = _num_divisions_spawn
-						id = 999
+		# If no state was provided, use capital_scope
+		if = {
+			limit = {
+				check_variable = { _state = -1 }
+			}
+			capital_scope = {
+				meta_effect = {
+					text = {
+						create_unit = {
+							division = "name = \"[DIVISION_TEMPLATE]\" division_template = \"[DIVISION_TEMPLATE]\" start_experience_factor = [START_EXPERIENCE_FACTOR] start_equipment_factor = [START_EQUIPMENT_FACTOR] start_manpower_factor = [START_MANPOWER_FACTOR]"
+							owner = PREV
+							count = _num_divisions_spawn
+							id = 999
+						}
 					}
+					DIVISION_TEMPLATE = "[GetSpawnDivisionTemplate]"
+					START_EXPERIENCE_FACTOR = "[?_start_experience|.2]"
+					START_EQUIPMENT_FACTOR = "[?_start_equipment|.2]"
+					START_MANPOWER_FACTOR = "[?_start_manpower|.2]"
 				}
-				DIVISION_TEMPLATE = "[GetSpawnDivisionTemplate]"
-				START_EXPERIENCE_FACTOR = "[?_start_experience|.2]"
-				START_EQUIPMENT_FACTOR = "[?_start_equipment|.2]"
-				START_MANPOWER_FACTOR = "[?_start_manpower|.2]"
+			}
+		}
+		# Otherwise, spawn in the state provided
+		else = {
+			var:_state = {
+				meta_effect = {
+					text = {
+						create_unit = {
+							division = "name = \"[DIVISION_TEMPLATE]\" division_template = \"[DIVISION_TEMPLATE]\" start_experience_factor = [START_EXPERIENCE_FACTOR] start_equipment_factor = [START_EQUIPMENT_FACTOR] start_manpower_factor = [START_MANPOWER_FACTOR]"
+							owner = PREV
+							count = _num_divisions_spawn
+							id = 999
+						}
+					}
+					DIVISION_TEMPLATE = "[GetSpawnDivisionTemplate]"
+					START_EXPERIENCE_FACTOR = "[?_start_experience|.2]"
+					START_EQUIPMENT_FACTOR = "[?_start_equipment|.2]"
+					START_MANPOWER_FACTOR = "[?_start_manpower|.2]"
+				}
 			}
 		}
 	}
@@ -112,7 +144,8 @@ WA_AI_DIVISION_spawn_divisions = {
 # All required input parameters described below must be set via set_temp_variable before using this effect
 # Scope: Country
 # [INPUT] [REQUIRED] _num_divisions_total - The number of total divisions the country needs. The number of divisions spawned will be this number minus the existing number of divisions. Must be greater than 1. If less than the country's current division count, does nothing
-# [INPUT] [REQUIRED] _division_template - The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored. Defaults to 1
+# [INPUT] [OPTIONAL] _state - The state in which to spawn the divisions. Defaults to the country's capital
+# [INPUT] [OPTIONAL] _division_template - The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored. Defaults to 1
 # [INPUT] [OPTIONAL] _start_experience - The starting experience of the spawned divisions. Must be between 0 and 1. Defaults to 0.2 (Trained 1)
 # [INPUT] [OPTIONAL] _start_equipment - The starting equipment of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.1
 # [INPUT] [OPTIONAL] _start_manpower - The starting manpower of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.1
