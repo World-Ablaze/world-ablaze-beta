@@ -1,0 +1,373 @@
+# Spawns a specified number of divisions in the country's capital state with configurable options via input parameters for AI only
+# All required input parameters described below must be set via set_temp_variable before using this effect
+# Scope: Country
+# [INPUT] [REQUIRED] _num_divisions_spawn - The number of divisions to spawn. Must be 1 or greater
+# [INPUT] [OPTIONAL] _division_template - The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored. Defaults to 1
+# [INPUT] [OPTIONAL] _start_experience - The starting experience of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.2 (Trained 1)
+# [INPUT] [OPTIONAL] _start_equipment - The starting equipment of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.1
+# [INPUT] [OPTIONAL] _start_manpower - The starting manpower of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.1
+WA_AI_DIVISION_spawn_divisions = {
+	# Validate the input parameters
+	set_temp_variable = { success = 1 }
+	if = {
+		limit = {
+			is_ai = no
+			is_debug = no
+		}
+		set_temp_variable = { success = 0 }
+	}
+	else_if = {
+		limit = {
+			check_variable = { _num_divisions_spawn < 1 }
+		}
+		set_temp_variable = { success = 0 }
+	}
+
+	# Optional input parameters get a default value set if not provided
+	if = {
+		limit = {
+			NOT = {
+				check_variable = { _division_template = 1 }
+				check_variable = { _division_template = 2 }
+				check_variable = { _division_template = 3 }
+				check_variable = { _division_template = 4 }
+			}
+		}
+		set_temp_variable = { _division_template = 1 }
+	}
+	if = {
+		limit = {
+			OR = {
+				check_variable = { _start_experience > 1 }
+				check_variable = { _start_experience < 0.1 }
+			}
+		}
+		set_temp_variable = { _start_experience = 0.2 }
+	}
+	if = {
+		limit = {
+			OR = {
+				check_variable = { _start_equipment > 1 }
+				check_variable = { _start_equipment < 0.1 }
+			}
+		}
+		set_temp_variable = { _start_equipment = 0.1 }
+	}
+	if = {
+		limit = {
+			OR = {
+				check_variable = { _start_manpower > 1 }
+				check_variable = { _start_manpower < 0.1 }
+			}
+		}
+		set_temp_variable = { _start_manpower = 0.1 }
+	}
+
+	# Execute the effect to spawn divisions if parameters are valid
+	if = {
+		limit = {
+			check_variable = { success = 1 }
+		}
+		# Run setup (create templates) if needed
+		if = {
+			limit = {
+				NOT = {
+					meta_trigger = {
+						text = {
+							has_template = "[DIVISION_TEMPLATE]"
+						}
+						DIVISION_TEMPLATE = "[GetSpawnDivisionTemplate]"
+					}
+				}
+			}
+			WA_AI_DIVISION_setup = yes
+		}
+
+		capital_scope = {
+			meta_effect = {
+				text = {
+					create_unit = {
+						division = "name = \"[DIVISION_TEMPLATE]\" division_template = \"[DIVISION_TEMPLATE]\" start_experience_factor = [START_EXPERIENCE_FACTOR] start_equipment_factor = [START_EQUIPMENT_FACTOR] start_manpower_factor = [START_MANPOWER_FACTOR]"
+						owner = PREV
+						count = _num_divisions_spawn
+						id = 999
+					}
+				}
+				DIVISION_TEMPLATE = "[GetSpawnDivisionTemplate]"
+				START_EXPERIENCE_FACTOR = "[?_start_experience|.2]"
+				START_EQUIPMENT_FACTOR = "[?_start_equipment|.2]"
+				START_MANPOWER_FACTOR = "[?_start_manpower|.2]"
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			check_variable = { success = 0 }
+		}
+		log = "WA_AI_DIVISION_spawn_divisions bad input. Parameters: _num_divisions_spawn = [?_num_divisions_spawn], _division_template = [?_division_template], experience = [?_start_experience|.2], equipment = [?_start_equipment|.2], manpower = [?_start_manpower|.2]. If all parameters valid, potentially not AI"
+	}
+}
+
+# Spawns the required amount of divisions for the country to reach the total number provided in the country's capital state with configurable options via input parameters for AI only
+# All required input parameters described below must be set via set_temp_variable before using this effect
+# Scope: Country
+# [INPUT] [REQUIRED] _num_divisions_total - The number of total divisions the country needs. The number of divisions spawned will be this number minus the existing number of divisions. Must be greater than 1. If less than the country's current division count, does nothing
+# [INPUT] [REQUIRED] _division_template - The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored. Defaults to 1
+# [INPUT] [OPTIONAL] _start_experience - The starting experience of the spawned divisions. Must be between 0 and 1. Defaults to 0.2 (Trained 1)
+# [INPUT] [OPTIONAL] _start_equipment - The starting equipment of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.1
+# [INPUT] [OPTIONAL] _start_manpower - The starting manpower of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.1
+WA_AI_DIVISION_spawn_divisions_up_to = {
+	# Validate the input parameters
+	set_temp_variable = { success = 1 }
+	if = {
+		limit = {
+			is_ai = no
+			is_debug = no
+		}
+		set_temp_variable = { success = 0 }
+	}
+	else_if = {
+		limit = {
+			check_variable = { _num_divisions_total < 1 }
+		}
+		set_temp_variable = { success = 0 }
+	}
+	else_if = {
+		limit = {
+			NOT = { check_variable = { _num_divisions_total > num_divisions } } # Input must be greater than the country's current division count
+		}
+		set_temp_variable = { success = 2 } # Skip
+	}
+
+	# Execute the effect to spawn divisions if parameters are valid
+	if = {
+		limit = {
+			check_variable = { success = 1 }
+		}
+		set_temp_variable = { _num_divisions_spawn = _num_divisions_total }
+		subtract_from_temp_variable = { _num_divisions_spawn = num_divisions }
+		WA_AI_DIVISION_spawn_divisions = yes
+	}
+	else_if = {
+		limit = {
+			check_variable = { success = 0 }
+		}
+		log = "WA_AI_DIVISION_spawn_divisions_up_to bad input. Parameters: _num_divisions_total = [?_num_divisions_total]. If all parameters valid, potentially not AI"
+	}
+}
+
+# Deletes all existing divisions that were ever spawned for the current country
+# Scope: Country
+WA_AI_DIVISION_delete_spawned_divisions = {
+	delete_unit = {
+		id = 999
+	}
+}
+
+# Creates a locked template for the spawned unit type
+# Scope: Country
+# [INPUT] [REQUIRED] _division_template - The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored. Defaults to 1
+WA_AI_DIVISION_setup = {
+	# Validate input parameters
+	set_temp_variable = { success = 1 }
+	if = {
+		limit = {
+			is_ai = no
+			is_debug = no
+		}
+		set_temp_variable = { success = 0 }
+	}
+	else_if = {
+		limit = {
+			NOT = {
+				check_variable = { _division_template = 1 }
+				check_variable = { _division_template = 2 }
+				check_variable = { _division_template = 3 }
+				check_variable = { _division_template = 4 }
+			}
+		}
+		set_temp_variable = { success = 0 }
+	}
+
+	# Execute the effect to create templates if parameters are valid
+	if = {
+		limit = {
+			check_variable = { success = 1 }
+		}
+		if = {
+			limit = {
+				check_variable = { _division_template = 1 }
+			}
+			meta_effect = {
+				text = {
+					division_template = {
+						name = "[TEMPLATE_NAME]"
+						is_locked = yes
+
+						regiments = {
+							heavy_infantry = { x = 0 y = 0 }
+							heavy_infantry = { x = 0 y = 1 }
+							heavy_infantry = { x = 0 y = 2 }
+							heavy_infantry = { x = 0 y = 3 }
+
+							heavy_infantry = { x = 1 y = 0 }
+							heavy_infantry = { x = 1 y = 1 }
+							heavy_infantry = { x = 1 y = 2 }
+							heavy_infantry = { x = 1 y = 3 }
+
+							heavy_infantry = { x = 2 y = 0 }
+							heavy_infantry = { x = 2 y = 1 }
+							heavy_infantry = { x = 2 y = 2 }
+							heavy_infantry = { x = 2 y = 3 }
+
+							artillery_brigade = { x = 3 y = 0 }
+							artillery_brigade = { x = 3 y = 1 }
+							artillery_brigade = { x = 3 y = 2 }
+						}
+						support = {
+							engineers = { x = 0 y = 0 }
+							[SUPPORT_LOGISTICS_TYPE]
+
+							recon = { x = 1 y = 0 }
+							horse_field_hospital = { x = 1 y = 1 }
+						}
+					}
+				}
+				TEMPLATE_NAME = "[GetSpawnDivisionTemplate]"
+				SUPPORT_LOGISTICS_TYPE = "[GetSpawnDivisionTemplateMotorization]"
+			}
+		}
+		else_if = {
+			limit = {
+				check_variable = { _division_template = 2 }
+			}
+			meta_effect = {
+				text = {
+					division_template = {
+						name = "[TEMPLATE_NAME]"
+						is_locked = yes
+
+						regiments = {
+							motorized = { x = 0 y = 0 }
+							motorized = { x = 0 y = 1 }
+							motorized = { x = 0 y = 2 }
+							motorized = { x = 0 y = 3 }
+
+							motorized = { x = 1 y = 0 }
+							motorized = { x = 1 y = 1 }
+							motorized = { x = 1 y = 2 }
+							motorized = { x = 1 y = 3 }
+
+							motorized = { x = 2 y = 0 }
+							motorized = { x = 2 y = 1 }
+							motorized = { x = 2 y = 2 }
+							motorized = { x = 2 y = 3 }
+
+							motorized_artillery_brigade = { x = 3 y = 0 }
+							motorized_artillery_brigade = { x = 3 y = 1 }
+							motorized_artillery_brigade = { x = 3 y = 2 }
+						}
+						support = {
+							engineers = { x = 0 y = 0 }
+							mot_logistics_company = { x = 0 y = 1 }
+
+							recon = { x = 1 y = 0 }
+							mot_field_hospital = { x = 1 y = 1 }
+						}
+					}
+				}
+				TEMPLATE_NAME = "[GetSpawnDivisionTemplate]"
+			}
+		}
+		else_if = {
+			limit = {
+				check_variable = { _division_template = 3 }
+			}
+			meta_effect = {
+				text = {
+					division_template = {
+						name = "[TEMPLATE_NAME]"
+						is_locked = yes
+
+						regiments = {
+							mechanized = { x = 0 y = 0 }
+							mechanized = { x = 0 y = 1 }
+							mechanized = { x = 0 y = 2 }
+							mechanized = { x = 0 y = 3 }
+
+							mechanized = { x = 1 y = 0 }
+							mechanized = { x = 1 y = 1 }
+							mechanized = { x = 1 y = 2 }
+							mechanized = { x = 1 y = 3 }
+
+							mechanized = { x = 2 y = 0 }
+							mechanized = { x = 2 y = 1 }
+							mechanized = { x = 2 y = 2 }
+							mechanized = { x = 2 y = 3 }
+
+							motorized_artillery_brigade = { x = 3 y = 0 }
+							motorized_artillery_brigade = { x = 3 y = 1 }
+							motorized_artillery_brigade = { x = 3 y = 2 }
+						}
+						support = {
+							engineers = { x = 0 y = 0 }
+							mot_logistics_company = { x = 0 y = 1 }
+
+							recon = { x = 1 y = 0 }
+							mot_field_hospital = { x = 1 y = 1 }
+						}
+					}
+				}
+				TEMPLATE_NAME = "[GetSpawnDivisionTemplate]"
+			}
+		}
+		else_if = {
+			limit = {
+				check_variable = { _division_template = 4 }
+			}
+			meta_effect = {
+				text = {
+					division_template = {
+						name = "[TEMPLATE_NAME]"
+						is_locked = yes
+
+						regiments = {
+							medium_armor = { x = 0 y = 0 }
+							medium_armor = { x = 0 y = 1 }
+							medium_armor = { x = 0 y = 2 }
+							medium_armor = { x = 0 y = 3 }
+
+							mechanized = { x = 1 y = 0 }
+							mechanized = { x = 1 y = 1 }
+							mechanized = { x = 1 y = 2 }
+							mechanized = { x = 1 y = 3 }
+
+							medium_armor = { x = 2 y = 0 }
+							medium_armor = { x = 2 y = 1 }
+							medium_armor = { x = 2 y = 2 }
+							medium_armor = { x = 2 y = 3 }
+
+							medium_armor = { x = 3 y = 0 }
+							medium_armor = { x = 3 y = 1 }
+							medium_armor = { x = 3 y = 2 }
+						}
+						support = {
+							engineers = { x = 0 y = 0 }
+							mot_logistics_company = { x = 0 y = 1 }
+
+							recon = { x = 1 y = 0 }
+							mot_field_hospital = { x = 1 y = 1 }
+						}
+					}
+				}
+				TEMPLATE_NAME = "[GetSpawnDivisionTemplate]"
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			check_variable = { success = 0 }
+		}
+		log = "WA_AI_DIVISION_setup bad input. Parameters: _division_template = [?_division_template]. If all parameters valid, potentially not AI"
+	}
+}
