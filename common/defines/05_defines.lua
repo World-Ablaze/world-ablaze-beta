@@ -656,6 +656,9 @@ NDefines.NNavy.SUB_DETECTION_CHANCE_BASE_SPOTTING_POW_EFFECT = 1.5					-- effect
 
 NDefines.NNavy.DEPTH_CHARGE_STAT_FOR_SHIP_TO_BE_SUB_HUNTER = 6						-- amount of depth charge required for a ship to be considred a sub hunter and so good for convoy escort
 
+NDefines.NNavy.DEPTH_CHARGES_HIT_PROFILE = 50 										-- hit profile for depth charges
+NDefines.NNavy.DEPTH_CHARGES_DAMAGE_MULT = 1.4										-- multiplies damage of depth charges 
+
 NDefines.NNavy.NAVAL_INVASION_PREPARE_DAYS = 60										-- base days needed to prepare a naval invasion
 NDefines.NNavy.NAVAL_INVASION_PLAN_CAP = 1											-- base cap of naval invasions can be planned at the same time
 NDefines.NNavy.BASE_NAVAL_INVASION_DIVISION_CAP = 3									-- base cap of divisions that can be assigned in a naval invasion
