@@ -1,12 +1,13 @@
 # Spawns a specified number of divisions in the country's capital state with configurable options via input parameters for AI only
 # All required input parameters described below must be set via set_temp_variable before using this effect
 # Scope: Country
-# [INPUT] [REQUIRED] _num_divisions_spawn - The number of divisions to spawn. Must be 1 or greater
-# [INPUT] [OPTIONAL] _state - The state in which to spawn the divisions. Defaults to the country's capital
-# [INPUT] [OPTIONAL] _division_template - The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored. Defaults to 1
-# [INPUT] [OPTIONAL] _start_experience - The starting experience of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.2 (Trained 1)
-# [INPUT] [OPTIONAL] _start_equipment - The starting equipment of the spawned divisions AND will be taken from the stockpile of the country. Must be between 0.1 and 1. Defaults to 0.1
-# [INPUT] [OPTIONAL] _start_manpower - The starting manpower of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.1
+# [INPUT] [REQUIRED] _num_divisions_spawn - Integer. The number of divisions to spawn. Must be greater than 1 and less than 100
+# [INPUT] [OPTIONAL] _state - Integer. The state in which to spawn the divisions. Defaults to the country's capital
+# [INPUT] [OPTIONAL] _use_stockpile - Integer Boolean. Whether to use the country's stockpiled equipment to supply the divisions. Must be 0 or 1 (false or true). Defaults to 1.
+# [INPUT] [OPTIONAL] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored. Defaults to 1
+# [INPUT] [OPTIONAL] _start_experience - Float. The starting experience of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.2 (Trained 1)
+# [INPUT] [OPTIONAL] _start_equipment - Float. The starting equipment of the spawned divisions AND will be taken from the stockpile of the country. Must be between 0.1 and 1. Defaults to 0.1
+# [INPUT] [OPTIONAL] _start_manpower - Float. The starting manpower of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.1
 WA_AI_DIVISION_spawn_divisions = {
 	# Validate the input parameters
 	set_temp_variable = { success = 1 }
@@ -19,7 +20,10 @@ WA_AI_DIVISION_spawn_divisions = {
 	}
 	else_if = {
 		limit = {
-			check_variable = { _num_divisions_spawn < 1 }
+			OR = {
+				check_variable = { _num_divisions_spawn < 1 }
+				check_variable = { _num_divisions_spawn > 100 }
+			}
 		}
 		set_temp_variable = { success = 0 }
 	}
@@ -30,6 +34,12 @@ WA_AI_DIVISION_spawn_divisions = {
 			check_variable = { _state < 1 }
 		}
 		set_temp_variable = { _state = -1 }
+	}
+	if = {
+		limit = {
+			NOT = { has_variable = _use_stockpile }
+		}
+		set_temp_variable = { _use_stockpile = 1 }
 	}
 	if = {
 		limit = {
@@ -90,6 +100,15 @@ WA_AI_DIVISION_spawn_divisions = {
 			WA_AI_DIVISION_setup = yes
 		}
 
+		# Calculate equipment usage and determine how many divisions can be spawned with the country's equipment and manpower
+		if = {
+			limit = {
+				check_variable = { _use_stockpile = 1 }
+			}
+			WA_AI_DIVISION_calculate_equipment_usage = yes
+			set_temp_variable = { _num_divisions_spawn = _num_division_spawn_calculated }
+		}
+
 		meta_effect = {
 			text = {
 				[STATE] = {
@@ -124,19 +143,28 @@ WA_AI_DIVISION_spawn_divisions = {
 					NUM_DIVISIONS_SPAWN_MINUS_ONE = "[?_num_divisions_spawn_mins_one]"
 				}
 			}
-			# log = "Success. _state = [?_state.GetName], _num_divisions_spawn_mins_one = [?_num_divisions_spawn_mins_one]"
-			WA_AI_DIVISION_remove_stockpiles = yes
+			if = {
+				limit = {
+					check_variable = { _use_stockpile = 1 }
+				}
+				WA_AI_DIVISION_remove_stockpiles = yes
+			}
 		}
 		else = {
-			# log = "Failure. _state = [?_state.GetName], _num_divisions_spawn_mins_one = [?_num_divisions_spawn_mins_one]"
-			log = "WA_AI_DIVISION_spawn_divisions create_unit meta effect failed. Parameters: STATE = [?_state.GetName], DIVISION_TEMPLATE = [WA_AI_DIVISION_GetSpawnDivisionTemplate], START_EXPERIENCE_FACTOR = [?_start_experience|.2], START_EQUIPMENT_FACTOR = [?_start_equipment|.2], START_MANPOWER_FACTOR = [?_start_manpower|.2]"
+			if = {
+				limit = { is_debug = yes }
+				log = "WA_AI_DIVISION_spawn_divisions create_unit meta effect failed. Parameters: STATE = [?_state.GetName], DIVISION_TEMPLATE = [WA_AI_DIVISION_GetSpawnDivisionTemplate], START_EXPERIENCE_FACTOR = [?_start_experience|.2], START_EQUIPMENT_FACTOR = [?_start_equipment|.2], START_MANPOWER_FACTOR = [?_start_manpower|.2]"
+			}
 		}
 	}
 	else_if = {
 		limit = {
 			check_variable = { success = 0 }
 		}
-		log = "WA_AI_DIVISION_spawn_divisions bad input. Parameters: _num_divisions_spawn = [?_num_divisions_spawn], _division_template = [?_division_template], experience = [?_start_experience|.2], equipment = [?_start_equipment|.2], manpower = [?_start_manpower|.2]. If all parameters valid, potentially not AI"
+		if = {
+			limit = { is_debug = yes }
+			log = "WA_AI_DIVISION_spawn_divisions bad input. Parameters: _num_divisions_spawn = [?_num_divisions_spawn], _division_template = [?_division_template], experience = [?_start_experience|.2], equipment = [?_start_equipment|.2], manpower = [?_start_manpower|.2]. If all parameters valid, potentially not AI"
+		}
 	}
 }
 
@@ -144,11 +172,12 @@ WA_AI_DIVISION_spawn_divisions = {
 # All required input parameters described below must be set via set_temp_variable before using this effect
 # Scope: Country
 # [INPUT] [REQUIRED] _num_divisions_total - The number of total divisions the country needs. The number of divisions spawned will be this number minus the existing number of divisions. Must be greater than 1. If less than the country's current division count, does nothing
-# [INPUT] [OPTIONAL] _state - The state in which to spawn the divisions. Defaults to the country's capital
-# [INPUT] [OPTIONAL] _division_template - The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored. Defaults to 1
-# [INPUT] [OPTIONAL] _start_experience - The starting experience of the spawned divisions. Must be between 0 and 1. Defaults to 0.2 (Trained 1)
-# [INPUT] [OPTIONAL] _start_equipment - The starting equipment of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.1
-# [INPUT] [OPTIONAL] _start_manpower - The starting manpower of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.1
+# [INPUT] [OPTIONAL] _state - Integer. The state in which to spawn the divisions. Defaults to the country's capital
+# [INPUT] [OPTIONAL] _use_stockpile - Integer Boolean. Whether to use the country's stockpiled equipment to supply the divisions. Must be 0 or 1 (false or true). Defaults to 1.
+# [INPUT] [OPTIONAL] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored. Defaults to 1
+# [INPUT] [OPTIONAL] _start_experience - Float. The starting experience of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.2 (Trained 1)
+# [INPUT] [OPTIONAL] _start_equipment - Float. The starting equipment of the spawned divisions AND will be taken from the stockpile of the country. Must be between 0.1 and 1. Defaults to 0.1
+# [INPUT] [OPTIONAL] _start_manpower - Float. The starting manpower of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.1
 WA_AI_DIVISION_spawn_divisions_up_to = {
 	# Validate the input parameters
 	set_temp_variable = { success = 1 }
@@ -169,7 +198,7 @@ WA_AI_DIVISION_spawn_divisions_up_to = {
 		limit = {
 			NOT = { check_variable = { _num_divisions_total > num_divisions } } # Input must be greater than the country's current division count
 		}
-		set_temp_variable = { success = 2 } # Skip
+		set_temp_variable = { success = 2 } # Skip, but not an error
 	}
 
 	# Execute the effect to spawn divisions if parameters are valid
@@ -179,17 +208,25 @@ WA_AI_DIVISION_spawn_divisions_up_to = {
 		}
 		set_temp_variable = { _num_divisions_spawn = _num_divisions_total }
 		subtract_from_temp_variable = { _num_divisions_spawn = num_divisions }
+		clamp_temp_variable = {
+			var = _num_divisions_spawn
+			min = 1
+			max = 100
+		}
 		WA_AI_DIVISION_spawn_divisions = yes
 	}
 	else_if = {
 		limit = {
 			check_variable = { success = 0 }
 		}
-		log = "WA_AI_DIVISION_spawn_divisions_up_to bad input. Parameters: _num_divisions_total = [?_num_divisions_total]. If all parameters valid, potentially not AI"
+		if = {
+			limit = { is_debug = yes }
+			log = "WA_AI_DIVISION_spawn_divisions_up_to bad input. Parameters: _num_divisions_total = [?_num_divisions_total]. If all parameters valid, potentially not AI"
+		}
 	}
 }
 
-# Deletes all existing divisions that were ever spawned for the current country
+# Deletes all existing divisions that were ever spawned by this system for the current country
 # Scope: Country
 WA_AI_DIVISION_delete_spawned_divisions = {
 	delete_unit = {
@@ -199,7 +236,7 @@ WA_AI_DIVISION_delete_spawned_divisions = {
 
 # Creates a locked template for the spawned unit type
 # Scope: Country
-# [INPUT] [REQUIRED] _division_template - The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored. Defaults to 1
+# [INPUT] [REQUIRED] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored. Defaults to 1
 WA_AI_DIVISION_setup = {
 	# Validate input parameters
 	set_temp_variable = { success = 1 }
@@ -408,29 +445,26 @@ WA_AI_DIVISION_setup = {
 		limit = {
 			check_variable = { success = 0 }
 		}
-		log = "WA_AI_DIVISION_setup bad input. Parameters: _division_template = [?_division_template]. If all parameters valid, potentially not AI"
+		if = {
+			limit = { is_debug = yes }
+			log = "WA_AI_DIVISION_setup bad input. Parameters: _division_template = [?_division_template]. If all parameters valid, potentially not AI"
+		}
 	}
 }
 
-# Removes equipment from the country stockpile proportional to how much equipment the spawned divisions started with
+# Calculates the equipment usage of a single division of the desired template at the specified equipment and manpower start factor, and determines how many can be fielded with current country stockpiles
 # Scope: Country
-# [INPUT] [REQUIRED] _num_divisions_spawn - The number of divisions to spawn. Must be 1 or greater
-# [INPUT] [REQUIRED] _division_template - The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored
-# [INPUT] [REQUIRED] _start_equipment - The starting equipment of the spawned divisions AND will be taken from the stockpile of the country. Must be between 0.1 and 1
-# [INPUT] [REQUIRED] _start_manpower - The starting manpower of the spawned divisions. Must be between 0.1 and 1
-WA_AI_DIVISION_remove_stockpiles = {
+# [INPUT] [OPTIONAL] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored. Defaults to 1
+# [INPUT] [OPTIONAL] _start_equipment - Float. The starting equipment of the spawned divisions AND will be taken from the stockpile of the country. Must be between 0.1 and 1. Defaults to 0.1
+# [INPUT] [OPTIONAL] _start_manpower - Float. The starting manpower of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.1
+# [OUTPUT] _num_division_spawn_calculated -Integer. The number of divisions that can be spawned at the specified start equipment factor considering the country's equipment stockpiles and manpower
+WA_AI_DIVISION_calculate_equipment_usage = {
 	# Validate the input parameters
 	set_temp_variable = { success = 1 }
 	if = {
 		limit = {
 			is_ai = no
 			is_debug = no
-		}
-		set_temp_variable = { success = 0 }
-	}
-	else_if = {
-		limit = {
-			check_variable = { _num_divisions_spawn < 1 }
 		}
 		set_temp_variable = { success = 0 }
 	}
@@ -464,7 +498,7 @@ WA_AI_DIVISION_remove_stockpiles = {
 		set_temp_variable = { success = 0 }
 	}
 
-	### Handle Equipment ###
+	######################################################### Handle Equipment #########################################################
 	# Equipment per line battalion
 	set_temp_variable = { l_inf_eq = 100 }
 	set_temp_variable = { h_inf_eq = 50 }
@@ -547,142 +581,98 @@ WA_AI_DIVISION_remove_stockpiles = {
 	add_to_temp_variable = { art_eq = art_eq_support }
 	add_to_temp_variable = { supp_eq = supp_eq_support }
 
-	# Calculate total equipment for all divisions spawned
-	multiply_temp_variable = { l_inf_eq = _num_divisions_spawn }
-	multiply_temp_variable = { h_inf_eq = _num_divisions_spawn }
-	multiply_temp_variable = { mot_eq = _num_divisions_spawn }
-	multiply_temp_variable = { art_eq = _num_divisions_spawn }
-	multiply_temp_variable = { supp_eq = _num_divisions_spawn }
-	if = {
-		limit = {
-			check_variable = { _division_template = 2 }
-		}
-		multiply_temp_variable = { art_mot_eq = _num_divisions_spawn }
-	}
-	else_if = {
-		limit = {
-			check_variable = { _division_template = 3 }
-		}
-		multiply_temp_variable = { mech_eq = _num_divisions_spawn }
-		multiply_temp_variable = { art_mot_eq = _num_divisions_spawn }
-	}
-	else_if = {
-		limit = {
-			check_variable = { _division_template = 4 }
-		}
-		multiply_temp_variable = { mech_eq = _num_divisions_spawn }
-		multiply_temp_variable = { med_armor_eq = _num_divisions_spawn }
-	}
-
-	# Calculate total equipment actually spawned based on % equipped, make negative, and round to a whole number
+	# Calculate total equipment actually spawned based on % equipped
 	multiply_temp_variable = { l_inf_eq = _start_equipment }
-	multiply_temp_variable = { l_inf_eq = -1 }
-	round_variable = l_inf_eq
 	multiply_temp_variable = { h_inf_eq = _start_equipment }
-	multiply_temp_variable = { h_inf_eq = -1 }
-	round_variable = h_inf_eq
 	multiply_temp_variable = { mot_eq = _start_equipment }
-	multiply_temp_variable = { mot_eq = -1 }
-	round_variable = mot_eq
 	multiply_temp_variable = { art_eq = _start_equipment }
-	multiply_temp_variable = { art_eq = -1 }
-	round_variable = art_eq
-	multiply_temp_variable = { art_mot_eq = _start_equipment }
-	multiply_temp_variable = { art_mot_eq = -1 }
-	round_variable = art_mot_eq
 	multiply_temp_variable = { supp_eq = _start_equipment }
-	multiply_temp_variable = { supp_eq = -1 }
-	round_variable = supp_eq
 	if = {
 		limit = {
 			check_variable = { _division_template = 2 }
 		}
-		multiply_temp_variable = { art_mot_eq = _num_divisions_spawn }
+		multiply_temp_variable = { art_mot_eq = _start_equipment }
 	}
 	else_if = {
 		limit = {
 			check_variable = { _division_template = 3 }
 		}
 		multiply_temp_variable = { mech_eq = _start_equipment }
-		multiply_temp_variable = { mech_eq = -1 }
-		round_variable = mech_eq
-		multiply_temp_variable = { art_mot_eq = _num_divisions_spawn }
+		multiply_temp_variable = { art_mot_eq = _start_equipment }
 	}
 	else_if = {
 		limit = {
 			check_variable = { _division_template = 4 }
 		}
 		multiply_temp_variable = { mech_eq = _start_equipment }
-		multiply_temp_variable = { mech_eq = -1 }
-		round_variable = mech_eq
 		multiply_temp_variable = { med_armor_eq = _start_equipment }
-		multiply_temp_variable = { med_armor_eq = -1 }
-		round_variable = med_armor_eq
 	}
 
-	# Remove total equipment for all divisions spawned from stockpile for the correct template
-	add_equipment_to_stockpile = {
-		type = infantry_equipment
-		amount = l_inf_eq
-	}
-	# log = "Removing [?l_inf_eq] l inf eq manpower"
-	add_equipment_to_stockpile = {
-		type = heavy_infantry_equipment
-		amount = h_inf_eq
-	}
-	# log = "Removing [?h_inf_eq] h inf eq manpower"
-	add_equipment_to_stockpile = {
-		type = motorized_equipment
-		amount = mot_eq
-	}
-	# log = "Removing [?mot_eq] mot eq manpower"
-	add_equipment_to_stockpile = {
-		type = artillery_equipment
-		amount = art_eq
-	}
-	# log = "Removing [?art_eq] art eq manpower"
-	add_equipment_to_stockpile = {
-		type = support_equipment
-		amount = supp_eq
-	}
-	# log = "Removing [?supp_eq] supp eq manpower"
+	# Divide the country stockpile by the calculated equipment requirement per division for each type of equipment and add them to an array
+	clear_temp_array = eq_requirements
+
+	set_temp_variable = { num_divs_l_inf_eq = num_equipment@infantry_equipment }
+	divide_temp_variable = { num_divs_l_inf_eq = l_inf_eq }
+	add_to_temp_array = { eq_requirements = num_divs_l_inf_eq }
+	set_temp_variable = { num_divs_h_inf_eq = num_equipment@heavy_infantry_equipment }
+	divide_temp_variable = { num_divs_h_inf_eq = h_inf_eq }
+	add_to_temp_array = { eq_requirements = num_divs_h_inf_eq }
+	set_temp_variable = { num_divs_art_eq = num_equipment@artillery_equipment }
+	divide_temp_variable = { num_divs_art_eq = art_eq }
+	add_to_temp_array = { eq_requirements = num_divs_art_eq }
+	set_temp_variable = { num_divs_supp_eq = num_equipment@support_equipment }
+	divide_temp_variable = { num_divs_supp_eq = supp_eq }
+	add_to_temp_array = { eq_requirements = num_divs_supp_eq }
 	if = {
 		limit = {
-			check_variable = { _division_template = 2 }
+			check_variable = { mot_eq > 0 }
 		}
-		add_equipment_to_stockpile = {
-			type = motorized_equipment
-			amount = art_mot_eq
-		}
+		set_temp_variable = { num_divs_mot_eq = num_equipment@motorized_equipment }
+		divide_temp_variable = { num_divs_mot_eq = mot_eq }
+		add_to_temp_array = { eq_requirements = num_divs_mot_eq }
 	}
-	else_if = {
+	if = {
 		limit = {
-			check_variable = { _division_template = 3 }
+			check_variable = { art_mot_eq > 0 }
 		}
-		add_equipment_to_stockpile = {
-			type = mechanized_equipment
-			amount = mech_eq
-		}
-		add_equipment_to_stockpile = {
-			type = motorized_equipment
-			amount = art_mot_eq
-		}
+		set_temp_variable = { num_divs_art_mot_eq = num_equipment@motorized_equipment }
+		divide_temp_variable = { num_divs_art_mot_eq = art_mot_eq }
+		add_to_temp_array = { eq_requirements = num_divs_art_mot_eq }
 	}
-	else_if = {
+	if = {
 		limit = {
-			check_variable = { _division_template = 4 }
+			check_variable = { mech_eq > 0 }
 		}
-		add_equipment_to_stockpile = {
-			type = mechanized_equipment
-			amount = mech_eq
+		set_temp_variable = { num_divs_mech_eq = num_equipment@motorized_equipment }
+		divide_temp_variable = { num_divs_mech_eq = mech_eq }
+		add_to_temp_array = { eq_requirements = num_divs_mech_eq }
+	}
+	if = {
+		limit = {
+			check_variable = { med_armor_eq > 0 }
 		}
-		add_equipment_to_stockpile = {
-			type = medium_tank_chassis
-			amount = med_armor_eq
-		}
+		set_temp_variable = { num_divs_med_armor_eq = num_equipment@motorized_equipment }
+		divide_temp_variable = { num_divs_med_armor_eq = med_armor_eq }
+		add_to_temp_array = { eq_requirements = num_divs_med_armor_eq }
 	}
 
-	### Handle Manpower ###
+	# Find the lowest number of divisions we can make with equipment limitations
+	find_lowest_in_array = {
+		array = eq_requirements
+		value = _num_division_spawn_calculated_eq
+	}
+	# The below round needs to be floor(var), so we calculate it manually since modulo function doesn't work with decimals
+	set_temp_variable = { _num_division_spawn_calculated_eq_rounded = _num_division_spawn_calculated_eq }
+	round_temp_variable = _num_division_spawn_calculated_eq_rounded
+	if = {
+		limit = {
+			check_variable = { _num_division_spawn_calculated_eq_rounded > _num_division_spawn_calculated_eq }
+		}
+		subtract_from_temp_variable = { _num_division_spawn_calculated_eq_rounded = 1 }
+	}
+	set_temp_variable = { _num_division_spawn_calculated_eq = _num_division_spawn_calculated_eq_rounded}
+
+	######################################################### Handle Manpower #########################################################
 	# Manpower per line battalion
 	if = {
 		limit = {
@@ -750,15 +740,195 @@ WA_AI_DIVISION_remove_stockpiles = {
 		add_to_temp_variable = { tot_mp = med_armor_mp }
 	}
 
-	# Calculate total manpower for all divisions spawned
-	multiply_temp_variable = { tot_mp = _num_divisions_spawn }
-
-	# Calculate total manpower actually spawned based on % equipped, make negative, and round to a whole number
+	# Calculate total manpower actually spawned based on % equipped
 	multiply_temp_variable = { tot_mp = _start_manpower }
+
+	# Divide the country's available manpower by the calculated manpower requirement per division
+	set_temp_variable = { _num_division_spawn_calculated_mp = manpower_k }
+	divide_temp_variable = { _num_division_spawn_calculated_mp = tot_mp }
+	multiply_temp_variable = { _num_division_spawn_calculated_mp = 1000 } # Since the country manpower var is 1/1000
+	# The below round needs to be floor(var), so we calculate it manually since modulo function doesn't work with decimals
+	set_temp_variable = { _num_division_spawn_calculated_mp_rounded = _num_division_spawn_calculated_mp }
+	round_temp_variable = _num_division_spawn_calculated_mp_rounded
+	if = {
+		limit = {
+			check_variable = { _num_division_spawn_calculated_mp_rounded > _num_division_spawn_calculated_mp }
+		}
+		subtract_from_temp_variable = { _num_division_spawn_calculated_mp_rounded = 1 }
+	}
+	set_temp_variable = { _num_division_spawn_calculated_mp = _num_division_spawn_calculated_mp_rounded}
+
+	# Do the final check to determine which limiting factor, equipment or manpower, will determine how many possible divisions can be spawned
+	if = {
+		limit = {
+			check_variable = { _num_division_spawn_calculated_eq < _num_division_spawn_calculated_mp }
+		}
+		set_temp_variable = { _num_division_spawn_calculated = _num_division_spawn_calculated_eq }
+	}
+	else = {
+		set_temp_variable = { _num_division_spawn_calculated = _num_division_spawn_calculated_mp }
+	}
+	if = {
+		limit = { is_debug = yes }
+		log = "WA_AI_DIVISION_calculate_equipment_usage Divisions spawnable based on equipment: [?_num_division_spawn_calculated_eq]. Divisions spawnable based on manpower: [?_num_division_spawn_calculated_mp]. Template: [WA_AI_DIVISION_GetSpawnDivisionTemplate]"
+	}
+}
+
+# Removes equipment from the country stockpile proportional to how much equipment the spawned divisions started with.
+# IMPORTANT: Assumes WA_AI_DIVISION_calculate_equipment_usage has already been called first to set most of the local variables
+# Scope: Country
+# [INPUT] [REQUIRED] _num_divisions_spawn - Integer. The number of divisions to spawn. Must greater than 1 and less than 100
+# [INPUT] [OPTIONAL] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored. Defaults to 1
+WA_AI_DIVISION_remove_stockpiles = {
+	# Validate the input parameters
+	set_temp_variable = { success = 1 }
+	if = {
+		limit = {
+			is_ai = no
+			is_debug = no
+		}
+		set_temp_variable = { success = 0 }
+	}
+	else_if = {
+		limit = {
+			OR = {
+				check_variable = { _num_divisions_spawn < 1 }
+				check_variable = { _num_divisions_spawn > 100 }
+			}
+		}
+		set_temp_variable = { success = 0 }
+	}
+	else_if = {
+		limit = {
+			NOT = {
+				check_variable = { _division_template = 1 }
+				check_variable = { _division_template = 2 }
+				check_variable = { _division_template = 3 }
+				check_variable = { _division_template = 4 }
+			}
+		}
+		set_temp_variable = { success = 0 }
+	}
+
+	######################################################### Handle Equipment #########################################################
+	# Calculate total equipment for all divisions spawned, make negative, and round to a whole number
+	multiply_temp_variable = { l_inf_eq = _num_divisions_spawn }
+	multiply_temp_variable = { l_inf_eq = -1 }
+	round_temp_variable = l_inf_eq
+	multiply_temp_variable = { h_inf_eq = _num_divisions_spawn }
+	multiply_temp_variable = { h_inf_eq = -1 }
+	round_temp_variable = h_inf_eq
+	multiply_temp_variable = { mot_eq = _num_divisions_spawn }
+	multiply_temp_variable = { mot_eq = -1 }
+	round_temp_variable = mot_eq
+	multiply_temp_variable = { art_eq = _num_divisions_spawn }
+	multiply_temp_variable = { art_eq = -1 }
+	round_temp_variable = art_eq
+	multiply_temp_variable = { supp_eq = _num_divisions_spawn }
+	multiply_temp_variable = { supp_eq = -1 }
+	round_temp_variable = supp_eq
+	if = {
+		limit = {
+			check_variable = { _division_template = 2 }
+		}
+		multiply_temp_variable = { art_mot_eq = _num_divisions_spawn }
+		multiply_temp_variable = { art_mot_eq = -1 }
+		round_temp_variable = art_mot_eq
+	}
+	else_if = {
+		limit = {
+			check_variable = { _division_template = 3 }
+		}
+		multiply_temp_variable = { mech_eq = _num_divisions_spawn }
+		multiply_temp_variable = { mech_eq = -1 }
+		round_temp_variable = mech_eq
+		multiply_temp_variable = { art_mot_eq = _num_divisions_spawn }
+		multiply_temp_variable = { art_mot_eq = -1 }
+		round_temp_variable = art_mot_eq
+	}
+	else_if = {
+		limit = {
+			check_variable = { _division_template = 4 }
+		}
+		multiply_temp_variable = { mech_eq = _num_divisions_spawn }
+		multiply_temp_variable = { mech_eq = -1 }
+		round_temp_variable = mech_eq
+		multiply_temp_variable = { med_armor_eq = _num_divisions_spawn }
+		multiply_temp_variable = { med_armor_eq = -1 }
+		round_temp_variable = med_armor_eq
+	}
+
+	# Remove total equipment for all divisions spawned from stockpile for the correct template
+	add_equipment_to_stockpile = {
+		type = infantry_equipment
+		amount = l_inf_eq
+	}
+	add_equipment_to_stockpile = {
+		type = heavy_infantry_equipment
+		amount = h_inf_eq
+	}
+	add_equipment_to_stockpile = {
+		type = motorized_equipment
+		amount = mot_eq
+	}
+	add_equipment_to_stockpile = {
+		type = artillery_equipment
+		amount = art_eq
+	}
+	add_equipment_to_stockpile = {
+		type = support_equipment
+		amount = supp_eq
+	}
+	if = {
+		limit = {
+			check_variable = { _division_template = 2 }
+		}
+		add_equipment_to_stockpile = {
+			type = motorized_equipment
+			amount = art_mot_eq
+		}
+	}
+	else_if = {
+		limit = {
+			check_variable = { _division_template = 3 }
+		}
+		add_equipment_to_stockpile = {
+			type = mechanized_equipment
+			amount = mech_eq
+		}
+		add_equipment_to_stockpile = {
+			type = motorized_equipment
+			amount = art_mot_eq
+		}
+	}
+	else_if = {
+		limit = {
+			check_variable = { _division_template = 4 }
+		}
+		add_equipment_to_stockpile = {
+			type = mechanized_equipment
+			amount = mech_eq
+		}
+		add_equipment_to_stockpile = {
+			type = medium_tank_chassis
+			amount = med_armor_eq
+		}
+	}
+	if = {
+		limit = { is_debug = yes }
+		log = "WA_AI_DIVISION_remove_stockpiles Removing [?l_inf_eq] l inf eq, [?h_inf_eq] h inf eq, [?mot_eq] mot eq, [?art_eq] art eq, [?supp_eq] supp eq for [?_num_divisions_spawn] division spawns of template [WA_AI_DIVISION_GetSpawnDivisionTemplate]"
+	}
+
+	######################################################### Handle Manpower #########################################################
+	# Calculate total manpower for all divisions spawned, make negative, and round to a whole number
+	multiply_temp_variable = { tot_mp = _num_divisions_spawn }
 	multiply_temp_variable = { tot_mp = -1 }
-	round_variable = tot_mp
+	round_temp_variable = tot_mp
 
 	# Remove total manpower from country
 	add_manpower = tot_mp
-	# log = "Removing [?tot_mp] manpower"
+	if = {
+		limit = { is_debug = yes }
+		log = "WA_AI_DIVISION_remove_stockpiles Removing [?tot_mp] manpower for [?_num_divisions_spawn] division spawns of template [WA_AI_DIVISION_GetSpawnDivisionTemplate]"
+	}
 }
