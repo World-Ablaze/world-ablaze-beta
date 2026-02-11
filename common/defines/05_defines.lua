@@ -520,7 +520,7 @@ NDefines.NAir.AIR_WING_XP_TRAINING_MISSION_ACCIDENT_FACTOR = 0.75	 				-- Traini
 
 NDefines.NAir.CAPACITY_PENALTY = 2													-- scales penalty of having overcrowded bases.
 NDefines.NAir.AIR_WING_MAX_SIZE = 500 												-- Max amount of airplanes in wing
-NDefines.NAir.MISSION_EFFICIENCY_MULT_AT_LACK_OF_FUEL = 0.05		 				-- multiplier for mission efficiency when a base lacks fuel
+NDefines.NAir.MISSION_EFFICIENCY_MULT_AT_LACK_OF_FUEL = 1		 				-- multiplier for mission efficiency when a base lacks fuel
 NDefines.NAir.AIR_DEPLOYMENT_DAYS = 7												-- Days to deploy one air wing
 NDefines.NAir.AIR_WING_COUNTRY_XP_FROM_TRAINING_FACTOR = 0.01						-- Factor on country Air XP gained from wing training
 NDefines.NAir.FIELD_EXPERIENCE_MAX_PER_DAY = 2.0									-- Most xp you can gain per day
