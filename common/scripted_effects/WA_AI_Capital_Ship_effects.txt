@@ -1,0 +1,109 @@
+############################################################################################################
+#	WA AI Capital Ship Effects
+#	These effects are used in the AI historical capital ship production system.
+############################################################################################################
+
+# Calculates the number of days to apply an AI dockyard output penalty modifier depending on spawned ship cost
+# All required input parameters described below must be set via set_temp_variable before using this effect
+# Scope: Country
+# [INPUT] [REQUIRED] _ship_ic_cost - Integer. The IC cost of the ship being spawned. Must be greater than 0
+# [OUTPUT] _days_idea - Integer. The number of days to apply the dockyard output penalty modifier
+WA_AI_Capital_Ship_calculate_dockyard_output_days = {
+	# Validate the input parameters
+	set_temp_variable = { success = 1 }
+	if = {
+		limit = {
+			is_ai = no
+			is_debug = no
+		}
+		set_temp_variable = { success = 0 }
+	}
+	else_if = {
+		limit = {
+			check_variable = { _ship_ic_cost < 0 }
+		}
+		set_temp_variable = { success = 0 }
+	}
+
+	if = {
+		limit = {
+			check_variable = { success = 1 }
+		}
+
+		# Calculate how many days the dockyard output penalty modifier should be applied
+		set_temp_variable = { tot_dockyard_ic_per_day = 4.2 } # Base dockyard IC production per day for 1 dockyard
+		multiply_temp_variable = { tot_dockyard_ic_per_day = num_of_naval_factories } # Multiply by total number of dockyards
+
+		set_temp_variable = { dockyard_output = 1 }
+		subtract_from_temp_variable = { dockyard_output = modifier@industrial_capacity_dockyard } # Actual dockyard IC output is 1 - dockyard output %
+		multiply_temp_variable = { tot_dockyard_ic_per_day = dockyard_output } # Adjust by country's current dockyard output
+
+		set_temp_variable = { _days_idea = _ship_ic_cost }
+		divide_temp_variable = { _days_idea = tot_dockyard_ic_per_day } # ship ic cost / dockyard ic output per day = # of days (if devoting 100% of naval IC production)
+		divide_temp_variable = { _days_idea = 0.25 } # of days / dockyard output penalty modifier = # of days with modifier
+		round_temp_variable = _days_idea
+	}
+	else_if = {
+		limit = {
+			check_variable = { success = 0 }
+		}
+		if = {
+			limit = { is_debug = yes }
+			log = "WA_AI_Capital_Ship_calculate_dockyard_output_days bad input. Parameters: _ship_ic_cost = [?_ship_ic_cost]. If all parameters valid, potentially not AI"
+		}
+	}
+}
+
+# Adds the AI dockyard output penalty modifier idea for the specified number of days
+# All required input parameters described below must be set via set_temp_variable before using this effect
+# Scope: Country
+# [INPUT] [REQUIRED] _days_idea - Integer. The number of days to apply the dockyard output penalty modifier
+WA_AI_Capital_Ship_apply_penalty = {
+	# Validate the input parameters
+	set_temp_variable = { success = 1 }
+	if = {
+		limit = {
+			is_ai = no
+			is_debug = no
+		}
+		set_temp_variable = { success = 0 }
+	}
+	else_if = {
+		limit = {
+			check_variable = { _days_idea < 0 }
+		}
+		set_temp_variable = { success = 0 }
+	}
+
+	if = {
+		limit = {
+			check_variable = { success = 1 }
+		}
+
+		# If the country already has the idea, extend the duration. Otherwise, add it
+		if = {
+			limit = {
+				has_idea = WA_AI_Capital_Ship_cost
+			}
+			modify_timed_idea = {
+				idea = WA_AI_Capital_Ship_cost
+				days = _days_idea
+			}
+		}
+		else = {
+			add_timed_idea = {
+				idea = WA_AI_Capital_Ship_cost
+				days = _days_idea
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			check_variable = { success = 0 }
+		}
+		if = {
+			limit = { is_debug = yes }
+			log = "WA_AI_Capital_Ship_apply_penalty bad input. Parameters: _days_idea = [?_days_idea]. If all parameters valid, potentially not AI"
+		}
+	}
+}

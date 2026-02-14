@@ -187,7 +187,7 @@ NDefines.NProduction.POWERED_FACTORY_SPEED = 2.5									-- Powered factory spee
 NDefines.NProduction.BASE_FACTORY_SPEED_MIL = 0.0 									-- Base factory speed multiplier (how much hoi3 style IC each factory gives).
 NDefines.NProduction.POWERED_FACTORY_SPEED_MIL = 2.5								-- Powered factory speed multiplier.
 NDefines.NProduction.BASE_FACTORY_SPEED_NAV = 0.0					 				-- Base factory speed multiplier (how much hoi3 style IC each factory gives).
-NDefines.NProduction.POWERED_FACTORY_SPEED_NAV = 4.2								-- Powered factory speed multiplier.
+NDefines.NProduction.POWERED_FACTORY_SPEED_NAV = 4.2								-- Powered factory speed multiplier. If you change this, you must also change WA_AI_Capital_Ship_effects.txt.
 
 NDefines.NProduction.LICENSE_EQUIPMENT_BASE_SPEED = -0.35							-- base MIC speed modifier for licensed equipment
 NDefines.NProduction.LICENSE_EQUIPMENT_SPEED_NOT_FACTION = -0.25					-- MIC speed modifier for licensed equipment for not being in faction
