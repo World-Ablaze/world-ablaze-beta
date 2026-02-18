@@ -2,6 +2,32 @@ WA_AI_MILITARY_is_allies_member = {
 	WA_AI_CONFIG_is_in_allies = yes
 }
 
+# Hostile land-neighbor pressure in the home area.
+# Used to keep continental countries from overcommitting to remote fronts
+# when a strong border rival exists (war or pre-war).
+WA_AI_MILITARY_border_hostile_pressure = {
+	any_home_area_neighbor_country = {
+		OR = {
+			# Active border war: trigger even against slightly weaker opponents.
+			AND = {
+				has_war_with = ROOT
+				strength_ratio = { tag = ROOT ratio > 0.55 }
+			}
+
+			# Pre-war standoff: only trigger against clearly threatening neighbors.
+			AND = {
+				ROOT = { NOT = { has_war_with = PREV } }
+				NOT = { is_in_faction_with = ROOT }
+				NOT = { is_subject_of = ROOT }
+				ROOT = { NOT = { is_subject_of = PREV } }
+				NOT = { has_war_together_with = ROOT }
+				NOT = { has_government = ROOT }
+				strength_ratio = { tag = ROOT ratio > 0.8 }
+			}
+		}
+	}
+}
+
 WA_AI_MILITARY_home_threatened = {
 	OR = {
 		WA_AI_defend_core = yes
@@ -85,6 +111,71 @@ WA_AI_MILITARY_can_open_secondary_fronts = {
 			has_army_manpower = { size > 800000 }
 			NOT = { WA_AI_MILITARY_home_threatened = yes }
 		}
+	}
+}
+
+# Shared conditions for all SOV Stalin Line buffer rules.
+# Each rule adds its own has_full_control_of_state check.
+WA_AI_MILITARY_SOV_stalin_line_base = {
+	controls_state = 206
+	controls_state = 202
+	surrender_progress < 0.06
+	date < 1942.10.1
+	NOT = {
+		has_offensive_war_with = GER
+	}
+	NOT = {
+		AND = {
+			OR = {
+				has_completed_focus = SOV_secure_leningrad
+				focus_progress = {
+					focus = SOV_secure_leningrad
+					progress > 0.1
+				}
+			}
+			OR = {
+				date < 1940.1.1
+				has_war_with = FIN
+			}
+			NOT = {
+				has_war_with = GER
+			}
+		}
+	}
+	NOT = {
+		AND = {
+			has_offensive_war_with = ROM
+			NOT = {
+				has_war_with = GER
+			}
+		}
+	}
+}
+
+# ENG/UKE holds East Egypt (used in Africa war rules)
+WA_AI_MILITARY_ENG_holds_east_egypt = {
+	OR = {
+		446 = { is_controlled_by = ENG }
+		447 = { is_controlled_by = ENG }
+		453 = { is_controlled_by = ENG }
+		446 = { is_controlled_by = UKE }
+		447 = { is_controlled_by = UKE }
+		453 = { is_controlled_by = UKE }
+	}
+}
+
+# Enemy controls any of the key Africa states (Libya, East Africa, Ethiopia)
+WA_AI_MILITARY_ENG_africa_hostile_presence = {
+	OR = {
+		450 = { CONTROLLER = { NOT = { tag = ROOT is_subject_of = ROOT is_in_faction_with = ROOT has_government = ROOT } } }
+		663 = { CONTROLLER = { NOT = { tag = ROOT is_subject_of = ROOT is_in_faction_with = ROOT has_government = ROOT } } }
+		451 = { CONTROLLER = { NOT = { tag = ROOT is_subject_of = ROOT is_in_faction_with = ROOT has_government = ROOT } } }
+		550 = { CONTROLLER = { NOT = { tag = ROOT is_subject_of = ROOT is_in_faction_with = ROOT has_government = ROOT } } }
+		910 = { CONTROLLER = { NOT = { tag = ROOT is_subject_of = ROOT is_in_faction_with = ROOT has_government = ROOT } } }
+		271 = { CONTROLLER = { NOT = { tag = ROOT is_subject_of = ROOT is_in_faction_with = ROOT has_government = ROOT } } }
+		909 = { CONTROLLER = { NOT = { tag = ROOT is_subject_of = ROOT is_in_faction_with = ROOT has_government = ROOT } } }
+		559 = { CONTROLLER = { NOT = { tag = ROOT is_subject_of = ROOT is_in_faction_with = ROOT has_government = ROOT } } }
+		269 = { CONTROLLER = { NOT = { tag = ROOT is_subject_of = ROOT is_in_faction_with = ROOT has_government = ROOT } } }
 	}
 }
 
