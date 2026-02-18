@@ -45,7 +45,7 @@ NDefines.NPolitics.ARMY_LEADER_COST = 2												-- cost for recruiting new le
 NDefines.NPolitics.NAVY_LEADER_COST = 2												-- command power cost for recruiting new leaders, 'this value' * number_of_existing_leaders_of_type
 NDefines.NPolitics.ARMY_LEADER_MAX_COST = 80										-- max cost BEFORE modifiers
 NDefines.NPolitics.NAVY_LEADER_MAX_COST = 80										-- max cost BEFORE modifiers
-
+NDefines.NPolitics.BASE_POLITICAL_POWER_INCREASE = 1.5								-- Weekly increase of PP.
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Trade
 
