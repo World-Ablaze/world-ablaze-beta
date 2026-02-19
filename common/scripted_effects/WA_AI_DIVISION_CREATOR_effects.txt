@@ -165,11 +165,7 @@ WA_AI_DIVISION_spawn_divisions = {
 				}
 			}
 		}
-		set_temp_variable = { success = 0 }
-		if = {
-			limit = { is_debug = yes }
-			log = "WA_AI_DIVISION_spawn_divisions missing equipment research. Country: [ROOT.GetName]. Desired template: _division_template = [?_division_template]"
-		}
+		set_temp_variable = { success = 2 }
 	}
 
 	# Execute the effect to spawn divisions if parameters are valid
@@ -269,6 +265,15 @@ WA_AI_DIVISION_spawn_divisions = {
 		if = {
 			limit = { is_debug = yes }
 			log = "WA_AI_DIVISION_spawn_divisions bad input. Country: [ROOT.GetName]. Parameters: _num_divisions_spawn = [?_num_divisions_spawn], _division_template = [?_division_template], experience = [?_start_experience|.2], equipment = [?_start_equipment|.2], manpower = [?_start_manpower|.2]. If all parameters valid, potentially not AI"
+		}
+	}
+	else_if = {
+		limit = {
+			check_variable = { success = 2 }
+		}
+		if = {
+			limit = { is_debug = yes }
+			log = "WA_AI_DIVISION_spawn_divisions missing equipment research. Country: [ROOT.GetName]. Desired template: _division_template = [?_division_template]"
 		}
 	}
 }
@@ -540,8 +545,9 @@ WA_AI_DIVISION_setup = {
 							medium_armor = { x = 2 y = 3 }
 
 							medium_armor = { x = 3 y = 0 }
-							medium_armor = { x = 3 y = 1 }
-							medium_armor = { x = 3 y = 2 }
+
+							mechanized = { x = 4 y = 0 }
+							mechanized = { x = 4 y = 1 }
 						}
 						support = {
 							assault_engineers = { x = 0 y = 0 }
@@ -941,17 +947,32 @@ WA_AI_DIVISION_remove_stockpiles = {
 		type = support_equipment
 		amount = supp_eq
 	}
-	add_equipment_to_stockpile = {
-		type = motorized_equipment
-		amount = mot_eq
+	if = {
+		limit = {
+			check_variable = { mot_eq > 0 }
+		}
+		add_equipment_to_stockpile = {
+			type = motorized_equipment
+			amount = mot_eq
+		}
 	}
-	add_equipment_to_stockpile = {
-		type = mechanized_equipment
-		amount = mech_eq
+	if = {
+		limit = {
+			check_variable = { mech_eq > 0 }
+		}
+		add_equipment_to_stockpile = {
+			type = mechanized_equipment
+			amount = mech_eq
+		}
 	}
-	add_equipment_to_stockpile = {
-		type = medium_tank_chassis
-		amount = med_tank_eq
+	if = {
+		limit = {
+			check_variable = { med_tank_eq > 0 }
+		}
+		add_equipment_to_stockpile = {
+			type = medium_tank_chassis
+			amount = med_tank_eq
+		}
 	}
 	if = {
 		limit = { is_debug = yes }
