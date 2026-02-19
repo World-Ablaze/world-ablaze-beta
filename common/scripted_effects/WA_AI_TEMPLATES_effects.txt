@@ -1,0 +1,541 @@
+############################################################################################################
+# WA AI Templates Effects
+# Templates types :
+# - Infantry : 1000-1999
+# - Mountaineers : 2000-2999
+# - Motorized : 3000-3999
+# - Mechanized : 4000-4999
+# - Light Armor : 5000-5999
+# - Medium Armor : 6000-6999
+# - Heavy Armor : 7000-7999
+# - Modern Armor : 8000-8999
+# - Garrison : 9000-9999
+# - Marines : 10000-10999
+# - Airborne : 11000-11999
+# - Mountaineer : 12000-12999
+# - Rangers : 13000-13999
+# - Suppression : 14000-14999
+
+WA_AI_TEMPLATES_calculate_templates = {
+	if = {
+		limit = {
+			WA_AI_CONFIG_DIVISIONS_use_default_templates = yes
+		}
+		# Block template creation if T1 doctrine is picked but required spirits are not yet selected
+		if = {
+			limit = {
+				WA_has_one_t1_land_doctrine = yes
+				NOT = { WA_AI_TEMPLATES_has_required_spirits = yes }
+			}
+			# Ensure correct spirits are assigned
+			WA_AI_TEMPLATES_ensure_correct_spirits = yes
+			# Still block templates this tick (spirits will be ready next check)
+			WA_AI_TEMPLATES_block_all_templates = yes
+		}
+		else = {
+			WA_AI_TEMPLATES_calculate_all_templates = yes
+		}
+	}
+}
+
+# Template type codes:
+# 1 = INFANTRY, 2 = MOTORIZED, 3 = MECHANIZED, 4 = LIGHT_ARMOR, 5 = MEDIUM_ARMOR, 6 = HEAVY_ARMOR, 7 = MODERN_ARMOR
+# 8 = GARRISON, 9 = MARINES, 10 = AIRBORNE, 11 = MOUNTAINEER, 12 = RANGERS
+
+WA_AI_TEMPLATES_update_target_template = {
+	#Inputs :
+	#_template_type_code : integer (1-12, see codes above)
+	#_template_value : integer (must be set before calling this effect)
+	#Note: HOI4 variables cannot store strings, so we use numeric codes and map them
+	meta_effect = {
+		text = {
+			if = {
+				limit = {
+					has_country_flag = { flag = WA_[TEMPLATE_TYPE]_TEMPLATE }
+				}
+				clr_country_flag = { flag = WA_[TEMPLATE_TYPE]_TEMPLATE }
+			}
+			if = {
+				limit = {
+					NOT = { check_variable = { [TEMPLATE_VALUE] = 0 } }
+				}
+				set_country_flag = { flag = WA_[TEMPLATE_TYPE]_TEMPLATE value = [TEMPLATE_VALUE] }
+			}
+		}
+		TEMPLATE_TYPE = "[WA_AI_TEMPLATE_TYPE]"
+		TEMPLATE_VALUE = "[?_template_value]"
+	}
+}
+
+WA_AI_TEMPLATES_block_all_templates = {
+	# Set each template type to 0, effectively blocking template creation
+	# This is called when T1 doctrine is researched but required spirits are not yet selected
+	set_temp_variable = { _template_value = 0 }
+	set_temp_variable = { _template_type_code = 1 }  # Infantry
+	WA_AI_TEMPLATES_update_target_template = yes
+	set_temp_variable = { _template_type_code = 2 }  # Motorized
+	WA_AI_TEMPLATES_update_target_template = yes
+	set_temp_variable = { _template_type_code = 3 }  # Mechanized
+	WA_AI_TEMPLATES_update_target_template = yes
+	set_temp_variable = { _template_type_code = 4 }  # Light Armor
+	WA_AI_TEMPLATES_update_target_template = yes
+	set_temp_variable = { _template_type_code = 5 }  # Medium Armor
+	WA_AI_TEMPLATES_update_target_template = yes
+	set_temp_variable = { _template_type_code = 6 }  # Heavy Armor
+	WA_AI_TEMPLATES_update_target_template = yes
+	set_temp_variable = { _template_type_code = 7 }  # Modern Armor
+	WA_AI_TEMPLATES_update_target_template = yes
+	set_temp_variable = { _template_type_code = 8 }  # Garrison
+	WA_AI_TEMPLATES_update_target_template = yes
+	set_temp_variable = { _template_type_code = 9 }  # Marines
+	WA_AI_TEMPLATES_update_target_template = yes
+	set_temp_variable = { _template_type_code = 10 }  # Airborne
+	WA_AI_TEMPLATES_update_target_template = yes
+	set_temp_variable = { _template_type_code = 11 }  # Mountaineer
+	WA_AI_TEMPLATES_update_target_template = yes
+	set_temp_variable = { _template_type_code = 12 }  # Rangers
+	WA_AI_TEMPLATES_update_target_template = yes
+	set_temp_variable = { _template_type_code = 13 }  # Suppression
+	WA_AI_TEMPLATES_update_target_template = yes
+}
+
+WA_AI_TEMPLATES_ensure_correct_spirits = {
+	# Replace incorrect army_spirit if needed (MUST be ideology-specific)
+	WA_AI_TEMPLATES_ensure_correct_army_spirit = yes
+	# Add academy_spirit ONLY if empty (any existing is valid)
+	WA_AI_TEMPLATES_ensure_correct_academy_spirit = yes
+}
+
+WA_AI_TEMPLATES_ensure_correct_army_spirit = {
+	# Democratic -> relief_of_command_spirit
+	if = {
+		limit = {
+			has_government = democratic
+			NOT = { has_idea = relief_of_command_spirit }
+		}
+		WA_AI_TEMPLATES_remove_wrong_army_spirits = yes
+		add_ideas = relief_of_command_spirit
+	}
+	# Fascist/Neutral -> professional_officer_corps_spirit
+	# Exception: Italy uses state_serves_the_military_spirit until adequate_army reforms are done
+	else_if = {
+		limit = {
+			OR = {
+				has_government = fascism
+				has_government = neutrality
+			}
+			NOT = { has_idea = professional_officer_corps_spirit }
+			# Exclude Italy without adequate_army (they can't pick professional_officer_corps yet)
+			NOT = {
+				AND = {
+					tag = ITA
+					NOT = { has_country_flag = adequate_army }
+				}
+			}
+		}
+		WA_AI_TEMPLATES_remove_wrong_army_spirits = yes
+		add_ideas = professional_officer_corps_spirit
+	}
+	# Italy fallback: state_serves_the_military_spirit until adequate_army reforms complete
+	else_if = {
+		limit = {
+			tag = ITA
+			has_government = fascism
+			NOT = { has_country_flag = adequate_army }
+			NOT = { has_idea = state_serves_the_military_spirit }
+		}
+		WA_AI_TEMPLATES_remove_wrong_army_spirits = yes
+		add_ideas = state_serves_the_military_spirit
+	}
+	# Communist -> ideological_loyalty_spirit
+	else_if = {
+		limit = {
+			has_government = communism
+			NOT = { has_idea = ideological_loyalty_spirit }
+		}
+		WA_AI_TEMPLATES_remove_wrong_army_spirits = yes
+		add_ideas = ideological_loyalty_spirit
+	}
+}
+
+WA_AI_TEMPLATES_ensure_correct_academy_spirit = {
+	# ONLY add if no academy spirit exists (any existing is valid)
+	if = {
+		limit = {
+			NOT = { WA_AI_TEMPLATES_has_any_academy_spirit = yes }
+		}
+		# Democratic -> best_of_the_best_spirit
+		if = {
+			limit = { has_government = democratic }
+			add_ideas = best_of_the_best_spirit
+		}
+		# Non-Democratic -> political_loyalty_spirit
+		else = {
+			add_ideas = political_loyalty_spirit
+		}
+	}
+}
+
+WA_AI_TEMPLATES_remove_wrong_army_spirits = {
+	# Remove all army_spirit ideas
+	if = { limit = { has_idea = improvised_weapons } remove_ideas = improvised_weapons }
+	if = { limit = { has_idea = professional_officer_corps_spirit } remove_ideas = professional_officer_corps_spirit }
+	if = { limit = { has_idea = elevated_engineering_corps_spirit } remove_ideas = elevated_engineering_corps_spirit }
+	if = { limit = { has_idea = proper_heritage_spirit } remove_ideas = proper_heritage_spirit }
+	if = { limit = { has_idea = quick_improvisation_spirit } remove_ideas = quick_improvisation_spirit }
+	if = { limit = { has_idea = relief_of_command_spirit } remove_ideas = relief_of_command_spirit }
+	if = { limit = { has_idea = ideological_loyalty_spirit } remove_ideas = ideological_loyalty_spirit }
+	if = { limit = { has_idea = state_serves_the_military_spirit } remove_ideas = state_serves_the_military_spirit }
+	if = { limit = { has_idea = reserve_officers_spirit } remove_ideas = reserve_officers_spirit }
+	if = { limit = { has_idea = the_tip_of_the_spear_spirit } remove_ideas = the_tip_of_the_spear_spirit }
+	if = { limit = { has_idea = mobile_warfare_drive_spirit } remove_ideas = mobile_warfare_drive_spirit }
+	if = { limit = { has_idea = firepower_induction_spirit } remove_ideas = firepower_induction_spirit }
+	if = { limit = { has_idea = infantry_modernization_spirit } remove_ideas = infantry_modernization_spirit }
+	if = { limit = { has_idea = heritage_of_accomplishment } remove_ideas = heritage_of_accomplishment }
+}
+
+WA_AI_TEMPLATES_calculate_all_templates = {
+	WA_AI_TEMPLATES_calculate_infantry_template = yes
+	WA_AI_TEMPLATES_calculate_motorized_template = yes
+	WA_AI_TEMPLATES_calculate_mountaineer_template = yes
+	WA_AI_TEMPLATES_calculate_mechanized_template = yes
+	WA_AI_TEMPLATES_calculate_garrison_template = yes
+	WA_AI_TEMPLATES_calculate_marines_template = yes
+	WA_AI_TEMPLATES_calculate_light_armor_template = yes
+	WA_AI_TEMPLATES_calculate_medium_armor_template = yes
+	WA_AI_TEMPLATES_calculate_heavy_armor_template = yes
+	WA_AI_TEMPLATES_calculate_modern_armor_template = yes
+	WA_AI_TEMPLATES_calculate_suppression_template = yes
+}
+
+WA_AI_TEMPLATES_calculate_infantry_template = {
+	set_temp_variable = { _template_type_code = 1 }
+	if = {
+		limit = {
+			NOT = { WA_AI_TEMPLATES_use_heavy_infantry = yes }
+		}
+		set_temp_variable = { _template_value = 1000 }
+	}
+	else = {
+		if = {
+			limit = {
+				WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
+			}
+			set_temp_variable = { _template_value = 1001 }
+			else = {
+				if = {
+					limit = {
+						WA_AI_CONFIG_DIVISIONS_use_line_support = yes
+					}
+					if = {
+						limit = {
+							WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
+						}
+						set_temp_variable = { _template_value = 1006 }
+						else = {
+							set_temp_variable = { _template_value = 1004 }
+						}
+					}
+					else = {
+						if = {
+							limit = {
+								WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
+							}
+							set_temp_variable = { _template_value = 1005 }
+							else = {
+								set_temp_variable = { _template_value = 1003 }
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	WA_AI_TEMPLATES_update_target_template = yes
+}
+
+WA_AI_TEMPLATES_calculate_motorized_template = {
+	set_temp_variable = { _template_type_code = 2 }
+	set_temp_variable = { _template_value = 0 }
+	if = {
+		limit = {
+			WA_AI_TEMPLATES_use_motorized_templates = yes
+		}
+		set_temp_variable = { _template_value = 3000 }
+	}
+	WA_AI_TEMPLATES_update_target_template = yes
+}
+
+WA_AI_TEMPLATES_calculate_mechanized_template = {
+	set_temp_variable = { _template_type_code = 3 }
+	set_temp_variable = { _template_value = 0 }
+	if = {
+		limit = {
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+		}
+		set_temp_variable = { _template_value = 4000 }
+	}
+	WA_AI_TEMPLATES_update_target_template = yes
+}
+
+WA_AI_TEMPLATES_calculate_mountaineer_template = {
+	set_temp_variable = { _template_type_code = 11 }
+	set_temp_variable = { _template_value = 0 }
+	if = {
+		limit = {
+			WA_AI_TEMPLATES_use_mountaineers = yes
+		}
+		if = {
+			limit = {
+				WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
+			}
+			if = {
+				limit = {
+					WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
+				}
+				set_temp_variable = { _template_value = 2001 }
+				else = {
+					set_temp_variable = { _template_value = 2000 }
+				}
+			}
+		}
+		else = {
+			if = {
+				limit = {
+					WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
+				}
+				set_temp_variable = { _template_value = 2003 }
+				else = {
+					set_temp_variable = { _template_value = 2002 }
+				}
+			}
+		}
+	}
+	WA_AI_TEMPLATES_update_target_template = yes
+}
+
+WA_AI_TEMPLATES_calculate_garrison_template = {
+	set_temp_variable = { _template_type_code = 8 }
+	if = {
+		limit = {
+			NOT = { WA_AI_TEMPLATES_use_heavy_infantry = yes }
+		}
+		set_temp_variable = { _template_value = 9000 }
+	}
+	else = {
+		if = {
+			limit = {
+				WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
+			}
+			set_temp_variable = { _template_value = 9001 }
+			else = {
+				set_temp_variable = { _template_value = 9002 }
+			}
+		}
+	}
+	WA_AI_TEMPLATES_update_target_template = yes
+}
+
+WA_AI_TEMPLATES_calculate_marines_template = {
+	set_temp_variable = { _template_type_code = 9 }
+	set_temp_variable = { _template_value = 0 }
+	if = {
+		limit = {
+			WA_AI_TEMPLATES_use_marines = yes
+		}
+		if = {
+			limit = {
+				WA_AI_TEMPLATES_has_amphibious_mechanized_unlocked = yes
+			}
+			if = {
+				limit = {
+					WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
+				}
+				set_temp_variable = { _template_value = 10004 }
+				else = {
+					set_temp_variable = { _template_value = 10005 }
+				}
+			}
+			else = {
+				if = {
+					limit = {
+						WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
+					}
+					if = {
+						limit = {
+							WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
+						}
+						set_temp_variable = { _template_value = 10001 }
+						else = {
+							set_temp_variable = { _template_value = 10003 }
+						}
+					}
+					else = {
+						if = {
+							limit = {
+								WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
+							}
+							set_temp_variable = { _template_value = 10000 }
+							else = {
+								set_temp_variable = { _template_value = 10002 }
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	WA_AI_TEMPLATES_update_target_template = yes
+}
+
+WA_AI_TEMPLATES_calculate_light_armor_template = {
+	set_temp_variable = { _template_type_code = 4 }
+	set_temp_variable = { _template_value = 0 }
+	if = {
+		limit = {
+			WA_AI_TEMPLATES_use_light_armor_templates = yes
+		}
+		if = {
+			limit = {
+				WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
+			}
+			if = {
+				limit = {
+					WA_AI_TEMPLATES_use_mechanized_templates = yes
+				}
+				set_temp_variable = { _template_value = 5002 }
+				else = {
+					set_temp_variable = { _template_value = 5000}
+				}
+			}
+			set_temp_variable = { _weird_debug = 1 } #for some reason, removing this line breaks the function ????
+			else = {
+				if = {
+					limit = {
+						WA_AI_TEMPLATES_use_mechanized_templates = yes
+					}
+					set_temp_variable = { _template_value = 5003 }
+					else = {
+						set_temp_variable = { _template_value = 5001}
+					}
+				}
+			}
+		}
+	}
+	WA_AI_TEMPLATES_update_target_template = yes
+}
+
+WA_AI_TEMPLATES_calculate_medium_armor_template = {
+	set_temp_variable = { _template_type_code = 5 }
+	set_temp_variable = { _template_value = 0 }
+	if = {
+		limit = {
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+		}
+		if = {
+			limit = {
+				WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
+			}
+			if = {
+				limit = {
+					WA_AI_TEMPLATES_use_mechanized_templates = yes
+				}
+				set_temp_variable = { _template_value = 6000 }
+				else = {
+					set_temp_variable = { _template_value = 6002 }
+				}
+			}
+			set_temp_variable = { _weird_debug = 1 } #for some reason, removing this line breaks the function ????
+			else = {
+				if = {
+					limit = {
+						WA_AI_TEMPLATES_use_mechanized_templates = yes
+					}
+					set_temp_variable = { _template_value = 6001 }
+					else = {
+						set_temp_variable = { _template_value = 6003 }
+					}
+				}
+			}
+		}
+	}
+	WA_AI_TEMPLATES_update_target_template = yes
+}
+
+WA_AI_TEMPLATES_calculate_heavy_armor_template = {
+	set_temp_variable = { _template_type_code = 6 }
+	set_temp_variable = { _template_value = 0 }
+	if = {
+		limit = {
+			WA_AI_TEMPLATES_use_heavy_armor_templates = yes
+		}
+		if = {
+			limit = {
+				WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
+			}
+			if = {
+				limit = {
+					WA_AI_TEMPLATES_use_mechanized_templates = yes
+				}
+				set_temp_variable = { _template_value = 7000 }
+				else = {
+					set_temp_variable = { _template_value = 7002 }
+				}
+			}
+			set_temp_variable = { _weird_debug = 1 } #for some reason, removing this line breaks the function ????
+			else = {
+				if = {
+					limit = {
+						WA_AI_TEMPLATES_use_mechanized_templates = yes
+					}
+					set_temp_variable = { _template_value = 7001 }
+					else = {
+						set_temp_variable = { _template_value = 7003 }
+					}
+				}
+			}
+		}
+	}
+	WA_AI_TEMPLATES_update_target_template = yes
+}
+
+WA_AI_TEMPLATES_calculate_modern_armor_template = {
+	set_temp_variable = { _template_type_code = 7 }
+	set_temp_variable = { _template_value = 0 }
+	if = {
+		limit = {
+			WA_AI_TEMPLATES_use_modern_armor = yes
+		}
+		if = {
+			limit = {
+				WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
+			}
+			set_temp_variable = { _template_value = 8000 }
+			else = {
+				set_temp_variable = { _template_value = 8001 }
+			}
+		}
+	}
+
+	WA_AI_TEMPLATES_update_target_template = yes
+}
+
+WA_AI_TEMPLATES_calculate_suppression_template = {
+	set_temp_variable = { _template_type_code = 13 }
+	set_temp_variable = { _template_value = 0 }
+	if = {
+		limit = {
+			WA_AI_TEMPLATES_use_suppression_templates = yes
+		}
+		if = {
+			limit = {
+				has_army_experience > 300
+			}
+			set_temp_variable = { _template_value = 14001 }
+			else = {
+				set_temp_variable = { _template_value = 14000 }
+			}
+		}
+	}
+	WA_AI_TEMPLATES_update_target_template = yes
+}
