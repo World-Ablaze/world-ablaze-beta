@@ -463,7 +463,14 @@ NDefines.NMilitary.RIVER_CROSSING_SPEED_PENALTY_LARGE = -0.5						-- large river
 NDefines.NMilitary.RETREAT_SPEED_FACTOR = 1.5              						    -- speed bonus when retreating
 NDefines.NMilitary.BASE_FORT_PENALTY = -0.18						 				-- fort penalty
 
-NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_IMPACT = -0.4      						-- effect on defense due to enemy air superiorty
+NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_IMPACT = -0.75      						-- effect on defense due to enemy air superiorty
+	-- Algorithm for AA reduction of enemy air superiority defense penalty = a * (xp / (xp + b)) (see: https://www.desmos.com/calculator/4936qnyxqp)
+	-- a = ENEMY_AIR_SUPERIORITY_DEFENSE
+	-- b = ENEMY_AIR_SUPERIORITY_DEFENSE_STEEPNESS
+	-- xp = anti_air ^ 1.5
+NDefines.NMilitaryENEMY_AIR_SUPERIORITY_DEFENSE = 0.75	       						-- more AA attack will approach this amount of help (diminishing returns)
+NDefines.NMilitaryENEMY_AIR_SUPERIORITY_DEFENSE_STEEPNESS = 97	 					-- how quickly defense approaches the max impact diminishing returns curve. This valu emeans 30AA = 47% reduction in enemy air superiority defense penalty = -40% resulting penalty
+
 NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_SPEED_IMPACT = -0.15				   		-- effect on speed due to enemy air superiority
 
 NDefines.NMilitary.COMBAT_MOVEMENT_SPEED = 0.8										-- speed reduction base modifier in combat
@@ -563,7 +570,10 @@ NDefines.NAir.AIR_WING_ATTACK_LOGISTICS_INFRA_DAMAGE_SPILL_FACTOR = 0.0 			-- Po
 
 NDefines.NAir.CAS_NIGHT_ATTACK_FACTOR = 0.1						                    -- CAS damaged get multiplied by this in land combats at night
 NDefines.NAir.ANTI_AIR_MAXIMUM_DAMAGE_REDUCTION_FACTOR = 0.75 						-- Maximum damage reduction factor applied to incoming air attacks against units with AA.
-NDefines.NAir.ANTI_AIR_ATTACK_TO_DAMAGE_REDUCTION_FACTOR = 0.14						-- Balancing value to convert equipment stat anti_air_attack to the damage reduction modifier apply to incoming air attacks against units with AA.
+-- formula for AA CAS damage reduction = enemy air superiority reduction (calculated with algorithm in NMilitary) * ANTI_AIR_ATTACK_TO_DAMAGE_REDUCTION_FACTOR
+-- With current values, 75AA yields the full ANTI_AIR_MAXIMUM_DAMAGE_REDUCTION_FACTOR
+NDefines.NAir.ANTI_AIR_ATTACK_TO_DAMAGE_REDUCTION_FACTOR = 1.15						-- Balancing value to convert equipment stat anti_air_attack to the damage reduction modifier apply to incoming air attacks against units with AA.
+
 NDefines.NAir.AA_INDUSTRY_AIR_DAMAGE_FACTOR = -0.036								-- 5x levels = 60% defense from bombing
 
 --NDefines.NAir.BOMBING_TARGETING_RANDOM_FACTOR = 0.9								-- % of picking the wrong target #DOESENT WORK (UNCHARTED)
@@ -658,7 +668,7 @@ NDefines.NNavy.CONVOY_RAID_MAX_REGION_TO_TASKFORCE_RATIO = 0.75						-- each tas
 NDefines.NNavy.DEPTH_CHARGE_STAT_FOR_SHIP_TO_BE_SUB_HUNTER = 6						-- amount of depth charge required for a ship to be considred a sub hunter and so good for convoy escort
 
 NDefines.NNavy.DEPTH_CHARGES_HIT_PROFILE = 50 										-- hit profile for depth charges
-NDefines.NNavy.DEPTH_CHARGES_DAMAGE_MULT = 1.0										-- multiplies damage of depth charges 
+NDefines.NNavy.DEPTH_CHARGES_DAMAGE_MULT = 1.0										-- multiplies damage of depth charges
 
 NDefines.NNavy.NAVAL_INVASION_PREPARE_DAYS = 60										-- base days needed to prepare a naval invasion
 NDefines.NNavy.NAVAL_INVASION_PLAN_CAP = 1											-- base cap of naval invasions can be planned at the same time
