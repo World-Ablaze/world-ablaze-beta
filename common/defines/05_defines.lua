@@ -464,12 +464,12 @@ NDefines.NMilitary.RETREAT_SPEED_FACTOR = 1.5              						    -- speed bo
 NDefines.NMilitary.BASE_FORT_PENALTY = -0.18						 				-- fort penalty
 
 NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_IMPACT = -0.75      						-- effect on defense due to enemy air superiorty
-	-- Algorithm for AA reduction of enemy air superiority defense penalty = a * (xp / (xp + b)) (see: https://www.desmos.com/calculator/4936qnyxqp)
+	-- Algorithm for AA reduction of enemy air superiority defense penalty = a * (xp / (xp + b)) (see: https://www.desmos.com/calculator/4936qnyxqp for function with vanilla values)
 	-- a = ENEMY_AIR_SUPERIORITY_DEFENSE
 	-- b = ENEMY_AIR_SUPERIORITY_DEFENSE_STEEPNESS
 	-- xp = anti_air ^ 1.5
-NDefines.NMilitaryENEMY_AIR_SUPERIORITY_DEFENSE = 0.75	       						-- more AA attack will approach this amount of help (diminishing returns)
-NDefines.NMilitaryENEMY_AIR_SUPERIORITY_DEFENSE_STEEPNESS = 97	 					-- how quickly defense approaches the max impact diminishing returns curve. This valu emeans 30AA = 47% reduction in enemy air superiority defense penalty = -40% resulting penalty
+NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_DEFENSE = 0.75	       						-- more AA attack will approach this amount of help (diminishing returns)
+NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_DEFENSE_STEEPNESS = 24	 					-- how quickly defense approaches the max impact diminishing returns curve. This valu emeans 30AA = 47% reduction in enemy air superiority defense penalty = -40% resulting penalty
 
 NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_SPEED_IMPACT = -0.15				   		-- effect on speed due to enemy air superiority
 
