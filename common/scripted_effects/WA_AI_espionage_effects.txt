@@ -1,0 +1,144 @@
+############################################################################################################
+#	World Ablaze AI mod
+############################################################################################################
+
+WA_AI_set_boost_resistance_target = {
+
+	if = { limit = { has_war = yes }
+
+		for_each_scope_loop = { array = owned_states
+
+			if = { limit = { CONTROLLER = { has_war_with = ROOT } }
+
+				add_to_temp_variable = { owned_states_controlled_by_enemies = 1 }
+			}
+		}
+	}
+
+	if = {
+		limit = {
+			check_variable = { owned_states_controlled_by_enemies > 10 }
+			check_variable = { operatives > 1 }
+		}
+
+		set_temp_variable = { best_boost_resistance_target = 0 }
+		set_temp_variable = { best_boost_resistance_states_num = 0 }
+
+		for_each_loop = { array = enemies
+
+			if = { limit = { any_home_area_neighbor_country = { tag = var:v } }
+
+				set_temp_variable = { num_owned_states_controlled_by_enemy = 0 }
+
+				for_each_scope_loop = { array = ROOT.owned_states
+
+					if = { limit = { is_controlled_by = var:v }
+
+						add_to_temp_variable = { num_owned_states_controlled_by_enemy = 1 }
+					}
+				}
+
+				if = { limit = { check_variable = { num_owned_states_controlled_by_enemy > best_boost_resistance_states_num } }
+
+					set_temp_variable = { best_boost_resistance_target = var:v }
+					set_temp_variable = { best_boost_resistance_states_num = num_owned_states_controlled_by_enemy }
+				}
+			}
+		}
+
+		if = { limit = { NOT = { check_variable = { best_boost_resistance_target = 0 } } }
+
+			set_variable = { WA_AI_boost_resistance_operation_target = best_boost_resistance_target }
+		}
+	}
+	else = {
+		clear_variable = WA_AI_boost_resistance_operation_target
+	}
+}
+
+WA_AI_set_rescue_operative_target = {
+
+	if = {
+		limit = {
+			NOT = {
+				AND = {
+					has_variable = WA_AI_rescue_operative_target
+					var:WA_AI_rescue_operative_target = { has_captured_operative = ROOT }
+				}
+			}
+		}
+
+		if = { limit = { any_operative_leader = { is_operative_captured = yes } }
+
+			random_operative = { limit = { is_operative_captured = yes }
+
+				set_variable = { ROOT.WA_AI_rescue_operative_target = operative_captor }
+			}
+		}
+		else = {
+			clear_variable = WA_AI_rescue_operative_target
+		}
+	}
+}
+
+WA_AI_set_collaboration_target = {
+
+	if = { limit = { tag = GER }
+
+		if = {
+			limit = {
+				check_variable = { operatives > 0 }
+				has_government = fascism
+				has_capitulated = no
+			}
+
+			# priority order
+			add_to_temp_array = { collab_targets = POL.id }
+			add_to_temp_array = { collab_targets = FRA.id }
+			add_to_temp_array = { collab_targets = BEL.id }
+			add_to_temp_array = { collab_targets = HOL.id }
+			add_to_temp_array = { collab_targets = YUG.id }
+			add_to_temp_array = { collab_targets = SOV.id }
+
+			for_each_loop = { array = collab_targets
+
+				var:v = {
+					if = {
+						limit = {
+							exists = yes
+							NOT = { has_government = fascism }
+							NOT = { is_in_faction_with = ROOT }
+							has_capitulated = no
+							GER = { check_variable = { has_collaboration@PREV < 0.1 } }
+							ROOT = {
+								NOT = {
+									is_running_operation = {
+										target = PREV
+										operation = operation_collaboration_government
+									}
+								}
+							}
+						}
+
+						set_variable = { ROOT.WA_AI_collaboration_target = THIS.id}
+
+						# set_temp_variable = { next_index = var:i }
+						# add_to_temp_variable = { next_index = 1 }
+						# if = { limit = { check_variable = { next_index < collab_target^num } }
+
+						# 	set_variable = { ROOT.WA_AI_collaboration_target_next = collab_targets^next_index }
+						# }
+
+						set_temp_variable = { break = 1 }
+					}
+				}
+			}
+
+			if = { limit = { check_variable = { break = 0 } }
+
+				clear_variable = WA_AI_collaboration_target
+			}
+		}
+		else = { clear_variable = WA_AI_collaboration_target }
+	}
+}

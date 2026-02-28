@@ -1,0 +1,134 @@
+############################################################################################################
+#	World Ablaze AI mod - scripted lendlease AI effects
+############################################################################################################
+
+### manages lend lease diplomacy
+
+WA_AI_update_lend_lease_targets = {
+
+	# lend lease coordinated target by player
+	if = {
+		limit = {
+			any_other_country = {
+				WA_AI_PREV_on_same_side_with_THIS = yes
+				has_country_flag = WA_AI_coordinated_lend_lease
+				set_temp_variable = { coordinated_lend_lease_iniatiator = THIS.id }
+			}
+		}
+
+		var:coordinated_lend_lease_iniatiator = {
+
+			var:WA_AI_coordinated_lend_lease_target = {
+
+				if = { limit = { NOT = { has_country_flag = WA_AI_lend_lease_from_@ROOT } }
+
+					ROOT = {
+						WA_AI_clear_lend_lease_targets = yes
+						WA_AI_set_lend_lease_target = yes
+					}
+
+					if = { limit = { ROOT = { has_country_flag = WA_AI_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | LEND-LEASE: [This.GetName] (coordinated)" }
+				}
+			}
+		}
+	}
+
+	# lend lease any valid targets
+	else_if = {
+		limit = {
+			# game rules for lend lease
+			any_other_country = {
+				OR = {
+					is_subject_of = ROOT
+
+					has_war_together_with = ROOT
+
+					AND = {
+						has_war = yes
+
+						ROOT = {
+							OR = {
+								AND = { has_government = neutrality NOT = { threat < 0.4 } }
+								AND = { has_government = fascism }
+								AND = { has_government = communism }
+								AND = { has_government = democratic NOT = { threat < 0.5 } }
+								AND = { has_government = democratic original_tag = USA has_completed_focus = USA_lend_lease_act }
+							}
+						}
+					}
+				}
+			}
+		}
+
+		every_country = { limit = { WA_AI_lend_lease = yes }
+
+			add_to_temp_array = { array = updated_lend_lease_targets value = THIS.id }
+		}
+
+		# clear invalid targets
+		for_each_scope_loop = { array = WA_AI_lend_lease_targets
+
+			if = { limit = { NOT = { is_in_array = { array = updated_lend_lease_targets value = THIS.id } } }
+
+				add_to_array = { array = ROOT.WA_AI_remove_lend_lease value = THIS.id }
+			}
+		}
+		for_each_scope_loop = { array = WA_AI_remove_lend_lease
+
+			WA_AI_clear_lend_lease_target = yes
+		}
+		clear_array = WA_AI_remove_lend_lease
+
+		# set lend lease targets
+		for_each_scope_loop = { array = updated_lend_lease_targets
+
+			if = { limit = { NOT = { is_in_array = { array = ROOT.WA_AI_lend_lease_targets value = THIS.id } } }
+
+				ROOT = { WA_AI_set_lend_lease_target = yes }
+			}
+		}
+	}
+	else = {
+		WA_AI_clear_lend_lease_targets = yes
+	}
+}
+
+WA_AI_set_lend_lease_target = { # THIS = SENDER PREV = TARGET
+
+	PREV = { set_country_flag = WA_AI_lend_lease_from_@PREV }
+	add_to_array = { array = WA_AI_lend_lease_targets value = PREV.id }
+	if = { limit = { has_country_flag = WA_AI_logging } log = "[GetYear] [GetMonth] | AI | [This.GetName] | LEND-LEASE: [Prev.GetName]" }
+}
+
+WA_AI_clear_lend_lease_target = { # THIS = TARGET PREV = SENDER
+
+	clr_country_flag = WA_AI_lend_lease_from_@PREV
+
+	# compare tags because the id may not match after civil wars
+	for_each_loop = { array = PREV.WA_AI_lend_lease_targets
+
+		var:v = {
+			if = { limit = { tag = PREV }
+
+				remove_from_array = { array = PREV.PREV.WA_AI_lend_lease_targets index = i }
+				set_temp_variable = { break = 1 }
+			}
+		}
+	}
+	set_temp_variable = { break = 0 }
+
+	if = { limit = { PREV = { has_country_flag = WA_AI_logging } } log = "[GetYear] [GetMonth] | AI | [Prev.GetName] | CANCEL LEND-LEASE: [This.GetName]" }
+}
+
+WA_AI_clear_lend_lease_targets = { # THIS = SENDER
+
+	if = { limit = { check_variable = { WA_AI_lend_lease_targets^num > 0 } }
+
+		every_country = { limit = { has_country_flag = WA_AI_lend_lease_from_@PREV }
+
+			WA_AI_clear_lend_lease_target = yes
+		}
+
+		clear_array = WA_AI_lend_lease_targets
+	}
+}

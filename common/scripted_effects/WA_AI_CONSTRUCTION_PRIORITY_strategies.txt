@@ -1,0 +1,766 @@
+############################################################################################################
+#	World Ablaze AI mod - Priority Construction System - Strategies Module
+#	Priority construction strategies: radar, North Africa infrastructure, supply lines, refineries
+############################################################################################################
+
+WA_AI_priority_construction_strategies = {
+
+
+	if = { limit = { check_variable = { ROOT.WA_AI_PC_active_projects < 5 }  }
+
+		if = { limit = { WA_AI_PC_can_afford_project = yes }
+
+			WA_AI_important_radar_constructions = yes
+
+			WA_AI_build_refinery_resource_shortage_steel = yes
+
+			WA_AI_build_refinery_resource_shortage_aluminium = yes
+
+			WA_AI_build_supply_line_GER_SOV = yes
+
+			WA_AI_build_supply_line_JAP_RAJ = yes
+
+			WA_AI_improve_north_africa_infrastructure = yes
+
+			WA_AI_resource_extraction = yes
+
+			WA_AI_fortify_strategic_islands = yes
+		}
+
+		# WA_AI_convert_MIC_to_CIC_industrial_expansion = yes not needed in WA
+	}
+}
+
+### priority construction strategies
+
+WA_AI_important_radar_constructions = {
+
+	if = {
+		limit = {
+			check_variable = { ROOT.WA_AI_PC_active_projects < 5 }
+			threat > 0.3
+			num_of_civilian_factories_available_for_projects > 15
+			any_of_scopes = { array = controlled_states WA_AI_radar_location_2 = yes WA_AI_available_RADAR = yes }
+		}
+
+		set_temp_variable = { _project_building_type = 4 }
+		set_temp_variable = { _project_province_id = 0 }
+		set_temp_variable = { _project_priority = 100 }
+		set_temp_variable = { _project_queue_num = 1 }
+		set_temp_variable = { _project_target_level = 0 } # no cap, tech-limited
+		random_scope_in_array = { array = controlled_states limit = { WA_AI_radar_location_2 = yes WA_AI_available_RADAR = yes WA_AI_PC_can_build_project = yes }
+			WA_AI_PC_start_project = yes
+		}
+	}
+}
+
+WA_AI_improve_north_africa_infrastructure = {
+
+	if = {
+		limit = {
+			OR = {
+				tag = ITA
+				tag = ITL
+			}
+
+			date > 1937.6.1
+		}
+
+		set_temp_variable = { supply_line_start = 448.id } # tripoli
+		set_temp_variable = { supply_line_target = 446.id } # cairo
+		WA_AI_build_supply_line = yes
+	}
+
+	if = {
+		limit = {
+			OR = {
+				tag = ENG
+				tag = UKE
+			}
+			date > 1937.6.1
+		}
+
+		set_temp_variable = { supply_line_start = 446.id }
+		set_temp_variable = { supply_line_target = 448.id }
+		WA_AI_build_supply_line = yes
+	}
+}
+
+WA_AI_resource_extraction = {
+
+	if = {
+		limit = {
+			num_of_civilian_factories_available_for_projects > 30
+
+			# any state exists with significant resources and there is a need for it
+			any_of_scopes = { array = controlled_states
+
+				WA_AI_PC_can_build_project = yes
+
+				OR = {
+					AND = { has_resources_amount = { resource = oil amount > 20 } 			ROOT = { has_war = yes fuel_ratio < 0.8 } }
+					# AND = { has_resources_amount = { resource = aluminium amount > 20 } 	check_variable = { ROOT.WA_AI_needs_aluminium = 3 } }
+					AND = { has_resources_amount = { resource = rubber amount > 20 } 		check_variable = { ROOT.WA_AI_needs_rubber = 3 } }
+					AND = { has_resources_amount = { resource = tungsten amount > 20 } 		check_variable = { ROOT.WA_AI_needs_tungsten = 3 } }
+					# AND = { has_resources_amount = { resource = steel amount > 20 } 		check_variable = { ROOT.WA_AI_needs_steel = 3 } }
+					AND = { has_resources_amount = { resource = chromium amount > 20 } 		check_variable = { ROOT.WA_AI_needs_chromium = 3 } }
+					AND = { has_resources_amount = { resource = coal amount > 100 } 		check_variable = { ROOT.WA_AI_needs_coal = 3 } }
+					AND = { has_resources_amount = { resource = bauxite amount > 15 } 		check_variable = { ROOT.WA_AI_needs_bauxite = 3 } }
+					AND = { has_resources_amount = { resource = iron amount > 20 } 	    	check_variable = { ROOT.WA_AI_needs_iron = 3 } }
+				}
+			}
+		}
+
+		WA_AI_priority_queue_INF_resource = yes
+	}
+}
+
+WA_AI_build_refinery_resource_shortage_rubber = {
+
+	### track rubber shortage
+
+	if = {
+		limit = {
+			# there is a rubber deficit
+			check_variable = { resource@rubber < 0 }
+
+			# total rubber needed for production
+			set_temp_variable = { rubber_needed = resource_consumed@rubber }
+			multiply_temp_variable = { rubber_needed = -1 }
+			add_to_temp_variable = { rubber_needed = resource@rubber }
+
+			# deficit is >5% of total need
+			set_temp_variable = { rubber_deficit = resource@rubber }
+			NOT = { check_variable = { rubber_needed = 0 } }
+			divide_temp_variable = { rubber_deficit = rubber_needed }
+			check_variable = { rubber_deficit > 0.05 }
+		}
+
+		add_to_variable = { WA_AI_resource_rubber_shortage_months = 1 }
+	}
+	else = {
+		subtract_from_variable = { WA_AI_resource_rubber_shortage_months = 1 }
+	}
+
+	clamp_variable = { var = WA_AI_resource_rubber_shortage_months min = 0 max = 3 }
+
+	###
+
+	if = {
+		limit = {
+			check_variable = { ROOT.WA_AI_PC_active_projects < 5 }
+
+			NOT = { num_of_civilian_factories_available_for_projects < 20 }
+
+			# resource shortage
+			check_variable = { WA_AI_resource_rubber_shortage_months = 3 }
+		}
+
+		WA_AI_priority_queue_synthetic_refinery = yes
+	}
+
+	###
+
+	else_if = {
+		limit = {
+			check_variable = { ROOT.WA_AI_PC_active_projects < 5 }
+
+			NOT = { num_of_civilian_factories_available_for_projects < 20 }
+
+			# resource shortage
+			check_variable = { WA_AI_resource_steel_shortage_months = 3 }
+
+			# over 50% of factories are mil
+			num_of_factories > 0
+			set_temp_variable = { mil_factories = num_of_military_factories }
+			divide_temp_variable = { mil_factories = num_of_factories }
+			check_variable = { mil_factories > 0.4 }
+
+			# no factory slots left
+			NOT = {
+				any_of_scopes = { array = controlled_states
+					WA_AI_available_SHARED = yes
+				}
+			}
+		}
+
+		WA_AI_priority_convert_MIC_to_CIC = yes
+	}
+}
+
+
+
+WA_AI_build_refinery_resource_shortage_steel = {
+
+	### track steel shortage
+
+	if = {
+		limit = {
+			# there is a steel deficit / we have enough industry to invest
+			OR = {
+				check_variable = { resource@steel < 0 }
+				AND = {
+					check_variable = { resource@iron > -1 }
+					check_variable = { resource_imported@steel > 0 }
+				}
+			}
+			OR = {
+				num_of_available_civilian_factories > 19
+				check_variable = { resource_imported@steel > 80 }
+			}
+		}
+
+		add_to_variable = { WA_AI_resource_steel_shortage_months = 1 }
+	}
+	else = {
+		subtract_from_variable = { WA_AI_resource_steel_shortage_months = 1 }
+	}
+
+	clamp_variable = { var = WA_AI_resource_steel_shortage_months min = 0 max = 3 }
+
+	###
+
+	if = {
+		limit = {
+			check_variable = { ROOT.WA_AI_PC_active_projects < 5 }
+
+			NOT = { num_of_civilian_factories_available_for_projects < 20 }
+
+			# resource shortage
+			check_variable = { WA_AI_resource_steel_shortage_months = 3 }
+		}
+
+		# Choose between hydro and non-hydro based on coal availability
+		# Prefer non-hydro if coal is abundant (saves IC cost)
+		# Prefer hydro if coal is scarce (saves coal consumption)
+		if = {
+			limit = {
+				check_variable = { resource@coal > 50 }
+				check_variable = { resource_imported@coal < 20 }
+			}
+			WA_AI_priority_queue_steel_refinery = yes
+		}
+		else = {
+			WA_AI_priority_queue_hydro_steel_refinery = yes
+		}
+	}
+
+	###
+
+	else_if = {
+		limit = {
+			check_variable = { ROOT.WA_AI_PC_active_projects < 5 }
+
+			NOT = { num_of_civilian_factories_available_for_projects < 20 }
+
+			# resource shortage
+			check_variable = { WA_AI_resource_steel_shortage_months = 3 }
+
+			# over 50% of factories are mil
+			num_of_factories > 0
+			set_temp_variable = { mil_factories = num_of_military_factories }
+			divide_temp_variable = { mil_factories = num_of_factories }
+			check_variable = { mil_factories > 0.4 }
+
+			# no factory slots left
+			NOT = {
+				any_of_scopes = { array = controlled_states
+					WA_AI_available_SHARED = yes
+				}
+			}
+		}
+
+		WA_AI_priority_convert_MIC_to_CIC = yes
+	}
+}
+
+WA_AI_build_refinery_resource_shortage_aluminium = {
+
+	### track aluminium shortage
+
+	if = {
+		limit = {
+			# there is a aluminium deficit
+			OR = {
+				check_variable = { resource@aluminium < 0 }
+				AND = {
+					check_variable = { resource@bauxite > -1 }
+					check_variable = { resource_imported@aluminium > 0 }
+				}
+			}
+			OR = {
+				num_of_available_civilian_factories > 19
+				check_variable = { resource_imported@aluminium > 80 }
+			}
+		}
+
+		add_to_variable = { WA_AI_resource_aluminium_shortage_months = 1 }
+	}
+	else = {
+		subtract_from_variable = { WA_AI_resource_aluminium_shortage_months = 1 }
+	}
+
+	clamp_variable = { var = WA_AI_resource_aluminium_shortage_months min = 0 max = 3 }
+
+	###
+
+	if = {
+		limit = {
+			check_variable = { ROOT.WA_AI_PC_active_projects < 5 }
+
+			NOT = { num_of_civilian_factories_available_for_projects < 20 }
+
+			# resource shortage
+			check_variable = { WA_AI_resource_aluminium_shortage_months = 3 }
+		}
+
+		# Choose between hydro and non-hydro based on coal availability
+		# Prefer non-hydro if coal is abundant (saves IC cost)
+		# Prefer hydro if coal is scarce (no coal consumption)
+		if = {
+			limit = {
+				check_variable = { resource@coal > 50 }
+				check_variable = { resource_imported@coal < 20 }
+			}
+			WA_AI_priority_queue_aluminium_refinery = yes
+		}
+		else = {
+			WA_AI_priority_queue_hydro_aluminium_refinery = yes
+		}
+	}
+
+	###
+
+	else_if = {
+		limit = {
+			check_variable = { ROOT.WA_AI_PC_active_projects < 5 }
+
+			NOT = { num_of_civilian_factories_available_for_projects < 20 }
+
+			# resource shortage
+			check_variable = { WA_AI_resource_aluminium_shortage_months = 3 }
+
+			# over 50% of factories are mil
+			num_of_factories > 0
+			set_temp_variable = { mil_factories = num_of_military_factories }
+			divide_temp_variable = { mil_factories = num_of_factories }
+			check_variable = { mil_factories > 0.4 }
+
+			# no factory slots left
+			NOT = {
+				any_of_scopes = { array = controlled_states
+					WA_AI_available_SHARED = yes
+				}
+			}
+		}
+
+		WA_AI_priority_convert_MIC_to_CIC = yes
+	}
+}
+
+WA_AI_build_supply_line_GER_SOV = {
+
+	if = {
+		limit = {
+			tag = GER
+			has_war_with = SOV
+			SOV = { has_capitulated = no }
+		}
+
+		set_temp_variable = { supply_line_start = GER.capital }
+		set_temp_variable = { supply_line_target = SOV.capital }
+		WA_AI_build_supply_line = yes
+	}
+
+	else_if = {
+		limit = {
+			tag = SOV
+			has_war_with = GER
+			GER = {
+				has_capitulated = no
+				surrender_progress > 0.1
+			}
+		}
+
+		set_temp_variable = { supply_line_start = SOV.capital }
+		set_temp_variable = { supply_line_target = GER.capital }
+		WA_AI_build_supply_line = yes
+	}
+}
+
+WA_AI_build_supply_line_JAP_RAJ = {
+
+	if = {
+		limit = {
+			tag = JAP
+			has_war_with = RAJ
+		}
+
+		613 = { set_temp_variable = { supply_line_start = THIS.id } }
+		439 = { set_temp_variable = { supply_line_target = THIS.id } }
+		WA_AI_build_supply_line = yes
+	}
+}
+
+WA_AI_convert_MIC_to_CIC_industrial_expansion = {
+
+	if = {
+		limit = {
+			tag = SOV
+			has_idea = war_economy
+			num_of_military_factories > 30
+			date < 1937.1.1
+			has_war = no
+			num_of_civilian_factories_available_for_projects > 14
+		}
+
+		set_temp_variable = { WA_AI_PC_ignore_factory_limit = 1 }
+		WA_AI_priority_convert_MIC_to_CIC = yes
+	}
+}
+
+###
+
+WA_AI_build_supply_line = {
+
+	set_temp_variable = { pathfind_start = supply_line_start }
+	set_temp_variable = { pathfind_target = supply_line_target }
+	set_temp_variable = { pathfind_type = 1 }
+	WA_AI_PATHFIND_get_path = yes
+
+	if = { limit = { check_variable = { pathfind_success = 1 } }
+
+		# Set up project parameters for infrastructure building
+		set_temp_variable = { _project_building_type = 1 }
+		set_temp_variable = { _project_province_id = 0 }
+		set_temp_variable = { _project_priority = 100 }
+		set_temp_variable = { _project_queue_num = 1 }
+
+		### build a route to the front
+
+		set_temp_variable = { target_id = pathfind_path_^0 }
+		for_each_loop = { array = pathfind_path_
+
+			var:v = {
+
+				if = { limit = { WA_AI_PC_can_build_project = yes }
+
+					var:target_id = {
+
+						if = { limit = { check_variable = { PREV.building_level@infrastructure < THIS.building_level@infrastructure } }
+
+							set_temp_variable = { target_id = pathfind_path_^i }
+						}
+					}
+
+					set_temp_variable = { building_path_to_front = 1 }
+				}
+			}
+		}
+
+		if = { limit = { check_variable = { building_path_to_front = 1 } }
+
+			var:target_id = { WA_AI_PC_start_project = yes }
+		}
+
+		### build along the front
+
+		if = { limit = { check_variable = { building_path_to_front = 0 } }
+
+			var:supply_line_target = {
+
+				CONTROLLER = {
+
+					set_temp_variable = { supply_line_target_controller = THIS.id }
+				}
+			}
+
+			set_temp_variable = { front_intersection = pathfind_path_^num }
+			subtract_from_temp_variable = { front_intersection = 1 }
+			set_temp_variable = { front_intersection = pathfind_path_^front_intersection }
+
+			add_to_temp_array = { front_states = front_intersection }
+			add_to_temp_array = { explore_states = front_intersection }
+
+			while_loop_effect = { limit = { check_variable = { explore_states^num > 0 } }
+
+				clear_temp_array = neighbor_states
+
+				for_each_scope_loop = { array = explore_states
+
+					# max infrastructure
+					if = { limit = { WA_AI_PC_can_build_project = yes }
+
+						WA_AI_PC_start_project = yes
+
+						set_temp_variable = { break = 1 }
+					}
+
+					# check neighbors
+					else = {
+						every_neighbor_state = {
+							limit = {
+								is_controlled_by = ROOT
+
+								NOT = { is_in_array = { front_states = THIS.id } }
+
+								any_neighbor_state = {
+
+									CONTROLLER = {
+
+										NOT = { tag = ROOT }
+
+										OR = {
+											tag = var:supply_line_target_controller
+										}
+									}
+								}
+							}
+
+							add_to_temp_array = { front_states = THIS.id }
+							add_to_temp_array = { neighbor_states = THIS.id }
+						}
+					}
+				}
+
+				clear_temp_array = explore_states
+				for_each_loop = { array = neighbor_states break = break_2
+
+					add_to_temp_array = { explore_states = v }
+				}
+			}
+		}
+	}
+}
+
+### strategic island fortifications
+
+WA_AI_fortify_strategic_islands = {
+
+	# JAP Pacific islands
+	if = {
+		limit = {
+			tag = JAP
+			has_war = yes
+			num_of_civilian_factories_available_for_projects > 19
+		}
+
+		every_controlled_state = {
+			limit = {
+				OR = {
+					state = 648  # Marcus
+					state = 646  # Saipan
+					state = 863  # Tinian
+					state = 647  # Palau
+					state = 645  # Iwo Jima
+					state = 526  # Okinawa
+				}
+			}
+
+			if = { limit = { WA_AI_available_RADAR = yes WA_AI_PC_can_build_project = yes }
+				set_temp_variable = { _project_building_type = 4 }
+				set_temp_variable = { _project_province_id = 0 }
+				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_target_level = 0 }
+				WA_AI_PC_start_project = yes
+			}
+
+			if = { limit = { WA_AI_available_AA = yes WA_AI_PC_can_build_project = yes }
+				set_temp_variable = { _project_building_type = 3 }
+				set_temp_variable = { _project_province_id = 0 }
+				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_target_level = 0 }
+				WA_AI_PC_start_project = yes
+			}
+
+			if = { limit = { WA_AI_available_AIR = yes WA_AI_PC_can_build_project = yes }
+				set_temp_variable = { _project_building_type = 2 }
+				set_temp_variable = { _project_province_id = 0 }
+				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_target_level = 0 }
+				WA_AI_PC_start_project = yes
+			}
+		}
+	}
+
+	# USA Pacific islands
+	if = {
+		limit = {
+			tag = USA
+			has_war = yes
+			num_of_civilian_factories_available_for_projects > 19
+		}
+
+		every_controlled_state = {
+			limit = {
+				OR = {
+					state = 638  # Guam
+					state = 650  # Attu
+					state = 632  # Wake
+					state = 631  # Midway
+					state = 630  # Johnston Atoll
+					state = 642  # Phoenix Islands
+					state = 629  # Hawaii
+				}
+			}
+
+			if = { limit = { WA_AI_available_RADAR = yes WA_AI_PC_can_build_project = yes }
+				set_temp_variable = { _project_building_type = 4 }
+				set_temp_variable = { _project_province_id = 0 }
+				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_target_level = 0 }
+				WA_AI_PC_start_project = yes
+			}
+
+			if = { limit = { WA_AI_available_AA = yes WA_AI_PC_can_build_project = yes }
+				set_temp_variable = { _project_building_type = 3 }
+				set_temp_variable = { _project_province_id = 0 }
+				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_target_level = 0 }
+				WA_AI_PC_start_project = yes
+			}
+
+			if = { limit = { WA_AI_available_AIR = yes WA_AI_PC_can_build_project = yes }
+				set_temp_variable = { _project_building_type = 2 }
+				set_temp_variable = { _project_province_id = 0 }
+				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_target_level = 0 }
+				WA_AI_PC_start_project = yes
+			}
+		}
+	}
+
+	# ENG strategic points
+	if = {
+		limit = {
+			tag = ENG
+			has_war = yes
+			num_of_civilian_factories_available_for_projects > 19
+		}
+
+		every_controlled_state = {
+			limit = {
+				OR = {
+					state = 118  # Gibraltar
+					state = 116  # Malta
+					state = 183  # Cyprus
+					state = 182  # Crete
+					state = 698  # Azores
+				}
+			}
+
+			if = { limit = { WA_AI_available_RADAR = yes WA_AI_PC_can_build_project = yes }
+				set_temp_variable = { _project_building_type = 4 }
+				set_temp_variable = { _project_province_id = 0 }
+				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_target_level = 0 }
+				WA_AI_PC_start_project = yes
+			}
+
+			if = { limit = { WA_AI_available_AA = yes WA_AI_PC_can_build_project = yes }
+				set_temp_variable = { _project_building_type = 3 }
+				set_temp_variable = { _project_province_id = 0 }
+				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_target_level = 0 }
+				WA_AI_PC_start_project = yes
+			}
+
+			if = { limit = { WA_AI_available_AIR = yes WA_AI_PC_can_build_project = yes }
+				set_temp_variable = { _project_building_type = 2 }
+				set_temp_variable = { _project_province_id = 0 }
+				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_target_level = 0 }
+				WA_AI_PC_start_project = yes
+			}
+		}
+	}
+
+	# FRA Corsica
+	if = {
+		limit = {
+			tag = FRA
+			has_war = yes
+			num_of_civilian_factories_available_for_projects > 19
+		}
+
+		every_controlled_state = {
+			limit = { state = 1 } # Corsica
+
+			if = { limit = { WA_AI_available_RADAR = yes WA_AI_PC_can_build_project = yes }
+				set_temp_variable = { _project_building_type = 4 }
+				set_temp_variable = { _project_province_id = 0 }
+				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_target_level = 0 }
+				WA_AI_PC_start_project = yes
+			}
+
+			if = { limit = { WA_AI_available_AA = yes WA_AI_PC_can_build_project = yes }
+				set_temp_variable = { _project_building_type = 3 }
+				set_temp_variable = { _project_province_id = 0 }
+				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_target_level = 0 }
+				WA_AI_PC_start_project = yes
+			}
+
+			if = { limit = { WA_AI_available_AIR = yes WA_AI_PC_can_build_project = yes }
+				set_temp_variable = { _project_building_type = 2 }
+				set_temp_variable = { _project_province_id = 0 }
+				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_target_level = 0 }
+				WA_AI_PC_start_project = yes
+			}
+		}
+	}
+
+	# SPR Balearic Islands
+	if = {
+		limit = {
+			tag = SPR
+			has_war = yes
+			num_of_civilian_factories_available_for_projects > 19
+		}
+
+		every_controlled_state = {
+			limit = { state = 177 } # Balearic Islands
+
+			if = { limit = { WA_AI_available_RADAR = yes WA_AI_PC_can_build_project = yes }
+				set_temp_variable = { _project_building_type = 4 }
+				set_temp_variable = { _project_province_id = 0 }
+				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_target_level = 0 }
+				WA_AI_PC_start_project = yes
+			}
+
+			if = { limit = { WA_AI_available_AA = yes WA_AI_PC_can_build_project = yes }
+				set_temp_variable = { _project_building_type = 3 }
+				set_temp_variable = { _project_province_id = 0 }
+				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_target_level = 0 }
+				WA_AI_PC_start_project = yes
+			}
+
+			if = { limit = { WA_AI_available_AIR = yes WA_AI_PC_can_build_project = yes }
+				set_temp_variable = { _project_building_type = 2 }
+				set_temp_variable = { _project_province_id = 0 }
+				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_target_level = 0 }
+				WA_AI_PC_start_project = yes
+			}
+		}
+	}
+}

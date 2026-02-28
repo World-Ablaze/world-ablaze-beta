@@ -1,0 +1,249 @@
+############################################################################################################
+#	World Ablaze AI mod - MAP effects for World Ablaze
+#	Province neighbor lookup and railway connections support
+############################################################################################################
+
+WA_AI_MAP_startup = {
+
+	# Prevent duplicate initialization (causes duplicate neighbor entries)
+	if = {
+		limit = { has_global_flag = WA_AI_MAP_initialized }
+		log = "WA_AI_MAP_startup: Already initialized, skipping"
+	}
+	else = {
+		set_global_flag = WA_AI_MAP_initialized
+
+		# Initialize province terrain types for pathfinding
+		set_variable = { global.WA_AI_MAP_PROV_TYPE_plains = 1 }
+		set_variable = { global.WA_AI_MAP_PROV_TYPE_desert = 2 }
+		set_variable = { global.WA_AI_MAP_PROV_TYPE_marsh = 3 }
+		set_variable = { global.WA_AI_MAP_PROV_TYPE_jungle = 4 }
+		set_variable = { global.WA_AI_MAP_PROV_TYPE_forest = 5 }
+		set_variable = { global.WA_AI_MAP_PROV_TYPE_urban = 6 }
+		set_variable = { global.WA_AI_MAP_PROV_TYPE_hills = 7 }
+		set_variable = { global.WA_AI_MAP_PROV_TYPE_mountain = 8 }
+		set_variable = { global.WA_AI_MAP_PROV_TYPE_ocean = 9 }
+
+		# Set up land types array for filtering
+		add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_plains }
+		add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_desert }
+		add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_marsh }
+		add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_jungle }
+		add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_forest }
+		add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_urban }
+		add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_hills }
+		add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_mountain }
+
+		# Initialize province terrain types for terrain-aware pathfinding
+		WA_AI_MAP_set_province_terrain_type = yes
+
+		# Initialize province connections from WA data
+		WA_AI_MAP_set_province_connections = yes
+
+		# Initialize state province mappings
+		WA_AI_MAP_set_state_province_ids = yes
+
+		# Initialize railway connections
+		WA_AI_MAP_set_province_railway_connections = yes
+
+		# Initialize province position coordinates for pathfinding distance calculations
+		WA_AI_MAP_set_province_pos = yes
+
+		# Initialize landmass data for island nation support
+		WA_AI_MAP_set_landmass_data = yes
+
+		# Initialize state VP province mappings (for capital detection)
+		WA_AI_MAP_set_state_vp_provinces_data = yes
+
+	} # end else (not already initialized)
+}
+
+###
+
+WA_AI_MAP_get_province_neighbors = { # _get_province_id_neighbors, _get_province_neighbors_TERRAIN_TYPES = LAND, province_neighbors_
+
+	clear_temp_array = province_neighbors_
+	meta_effect = {
+		text = {
+			for_each_loop = { array = global.WA_AI_MAP_province_connections_[x] index = pn_i value = pn_v break = pn_b
+
+				if = {
+					limit = {
+						if = { limit = { check_variable = { _get_province_neighbors_TERRAIN_TYPES^num > 0 } }
+							is_in_array = { _get_province_neighbors_TERRAIN_TYPES = global.WA_AI_MAP_province_terrain_type^pn_v }
+						}
+						else = {
+							# Default: all land types are valid
+							OR = {
+								NOT = { check_variable = { global.WA_AI_MAP_province_terrain_type^pn_v = global.WA_AI_MAP_PROV_TYPE_ocean } }
+								check_variable = { global.WA_AI_MAP_province_terrain_type^pn_v = 0 } # Unknown terrain defaults to valid
+							}
+						}
+					}
+
+					add_to_temp_array = { province_neighbors_ = pn_v }
+				}
+			}
+		}
+		x = "[?_get_province_id_neighbors]"
+	}
+
+	clear_temp_array = _get_province_neighbors_TERRAIN_TYPES
+}
+
+WA_AI_MAP_get_nearby_states = { # var:_state arr:nearby_states_
+
+	clear_temp_array = nearby_states_
+	var:_state = {
+		every_neighbor_state = {
+			if = { limit = { NOT = { is_in_array = { nearby_states_ = THIS.id } } } add_to_temp_array = { nearby_states_ = THIS.id } }
+			every_neighbor_state = { limit = { NOT = { state = PREV } }
+				if = { limit = { NOT = { is_in_array = { nearby_states_ = THIS.id } } } add_to_temp_array = { nearby_states_ = THIS.id } }
+			}
+		}
+	}
+}
+
+###
+
+WA_AI_MAP_set_state_province_ids = {
+	# State-to-province mappings are now pre-generated in WA_AI_MAP_state_provinces.txt
+	# This function calls the generated data to populate:
+	# - global.WA_AI_MAP_state_province_ids@{state_id} = [province_ids]
+	# - global.WA_AI_MAP_province_state_id^{province_id} = state_id
+	WA_AI_MAP_set_state_province_ids_data = yes
+}
+
+# Note: WA_AI_MAP_set_province_railway_connections is defined in WA_AI_MAP_province_railway_connections.txt
+# That generated file contains all initial railway connection data from map/railways.txt
+
+############################################################################################################
+#	DEBUG: Reload all precomputed map data
+#	Use this to reinitialize map data on old saves that weren't properly initialized
+#	Can be triggered via console: effect random_country = { WA_AI_MAP_reload_all_data = yes }
+############################################################################################################
+
+WA_AI_MAP_reload_all_data = {
+	log = "WA_AI_MAP: Reloading all precomputed map data..."
+
+	# Clear existing arrays to avoid duplicates
+	log = "WA_AI_MAP: Clearing existing data..."
+	clear_array = global.WA_AI_MAP_PROV_LAND_TYPES
+
+	# Reinitialize terrain type constants
+	log = "WA_AI_MAP: Setting terrain type constants..."
+	set_variable = { global.WA_AI_MAP_PROV_TYPE_plains = 1 }
+	set_variable = { global.WA_AI_MAP_PROV_TYPE_desert = 2 }
+	set_variable = { global.WA_AI_MAP_PROV_TYPE_marsh = 3 }
+	set_variable = { global.WA_AI_MAP_PROV_TYPE_jungle = 4 }
+	set_variable = { global.WA_AI_MAP_PROV_TYPE_forest = 5 }
+	set_variable = { global.WA_AI_MAP_PROV_TYPE_urban = 6 }
+	set_variable = { global.WA_AI_MAP_PROV_TYPE_hills = 7 }
+	set_variable = { global.WA_AI_MAP_PROV_TYPE_mountain = 8 }
+	set_variable = { global.WA_AI_MAP_PROV_TYPE_ocean = 9 }
+
+	add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_plains }
+	add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_desert }
+	add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_marsh }
+	add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_jungle }
+	add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_forest }
+	add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_urban }
+	add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_hills }
+	add_to_array = { global.WA_AI_MAP_PROV_LAND_TYPES = global.WA_AI_MAP_PROV_TYPE_mountain }
+
+	# Reload all data files
+	log = "WA_AI_MAP: Loading province terrain types..."
+	WA_AI_MAP_set_province_terrain_type = yes
+
+	log = "WA_AI_MAP: Loading province connections..."
+	WA_AI_MAP_set_province_connections = yes
+
+	log = "WA_AI_MAP: Loading state province mappings..."
+	WA_AI_MAP_set_state_province_ids = yes
+
+	log = "WA_AI_MAP: Loading railway connections..."
+	WA_AI_MAP_set_province_railway_connections = yes
+
+	log = "WA_AI_MAP: Loading province coordinates..."
+	WA_AI_MAP_set_province_pos = yes
+
+	log = "WA_AI_MAP: Loading landmass data..."
+	WA_AI_MAP_set_landmass_data = yes
+
+	log = "WA_AI_MAP: Loading state VP provinces..."
+	WA_AI_MAP_set_state_vp_provinces_data = yes
+
+	log = "WA_AI_MAP: Reload complete!"
+
+	# Verification: check if key data loaded correctly
+	set_temp_variable = { _test_landmass = global.WA_AI_MAP_province_landmass^1097 }
+	log = "WA_AI_MAP: Verification - Province 1097 landmass = [?_test_landmass] (should be 35 for Japan)"
+
+	set_temp_variable = { _test_vp = global.WA_AI_MAP_state_vp_province^282 }
+	log = "WA_AI_MAP: Verification - State 282 (Kanto) VP province = [?_test_vp] (should be 1182 for Tokyo)"
+}
+
+############################################################################################################
+#	Get actual capital province for a country
+#	ROOT = country >>> capital_vp_province_ (province ID in capital state), capital_state_id_
+#	Priority: 1) Pre-generated VP province 2) Railway connection 3) First province
+#	NOTE: VP detection at runtime doesn't work due to HOI4 scope restrictions (any_province_building_level
+#	requires STATE scope). Use pre-generated data in global.WA_AI_MAP_state_vp_province^{state_id}
+#	TODO: Add VP province generation to Python map generator (parse from history/states/*.txt)
+############################################################################################################
+
+WA_AI_MAP_get_capital_vp_province = { # >>> capital_vp_province_, capital_state_id_
+
+	set_temp_variable = { capital_vp_province_ = 0 }
+	set_temp_variable = { capital_state_id_ = 0 }
+	set_temp_variable = { _cap_method_used = 0 }
+
+	capital_scope = {
+		# Get state ID from the first province in the state (THIS.id doesn't work for states)
+		set_temp_variable = { _first_prov_for_state = global.WA_AI_MAP_state_province_ids@THIS^0 }
+		set_temp_variable = { capital_state_id_ = global.WA_AI_MAP_province_state_id^_first_prov_for_state }
+
+		if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
+			set_temp_variable = { _prov_count = global.WA_AI_MAP_state_province_ids@THIS^num }
+			ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | MAP HELPER DEBUG: state=[?capital_state_id_] provinces=[?_prov_count]" }
+		}
+
+		# Method 1: Use pre-generated VP province data (if available)
+		# VP provinces are stored in global.WA_AI_MAP_state_vp_province^{state_id}
+		set_temp_variable = { _state_vp_prov = global.WA_AI_MAP_state_vp_province^capital_state_id_ }
+		if = {
+			limit = { check_variable = { _state_vp_prov > 0 } }
+			set_temp_variable = { capital_vp_province_ = _state_vp_prov }
+			set_temp_variable = { _cap_method_used = 1 }
+			if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
+				ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | MAP HELPER: using pre-generated VP province [?_state_vp_prov]" }
+			}
+		}
+
+		# Method 2 fallback: Use province with railway connections (these are typically main cities)
+		if = {
+			limit = { check_variable = { capital_vp_province_ = 0 } }
+			for_each_loop = { array = global.WA_AI_MAP_state_province_ids@THIS value = _cap_prov_id break = _found_cap
+				if = { limit = { check_variable = { global.WA_AI_PC_railway_connections^_cap_prov_id = 1 } }
+					set_temp_variable = { capital_vp_province_ = _cap_prov_id }
+					set_temp_variable = { _found_cap = 1 }
+					set_temp_variable = { _cap_method_used = 2 }
+				}
+			}
+		}
+
+		# Method 3 fallback: Just use first province
+		if = {
+			limit = { check_variable = { capital_vp_province_ = 0 } }
+			for_each_loop = { array = global.WA_AI_MAP_state_province_ids@THIS value = _cap_prov_id break = _found_cap
+				set_temp_variable = { capital_vp_province_ = _cap_prov_id }
+				set_temp_variable = { _found_cap = 1 }
+				set_temp_variable = { _cap_method_used = 3 }
+			}
+		}
+	}
+
+	if = { limit = { has_country_flag = WA_AI_construction_logging }
+		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | MAP HELPER: capital province=[?capital_vp_province_] state=[?capital_state_id_] method=[?_cap_method_used]"
+	}
+}

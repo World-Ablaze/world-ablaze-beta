@@ -1,0 +1,353 @@
+############################################################################################################
+#	World Ablaze AI mod - on_actions
+############################################################################################################
+
+### Railway eligibility constants (must match WA_AI_CONSTRUCTION_PRIORITY_railway_core.txt)
+@WA_AI_PC_railway_MIN_CIVS_PEACE = 75        # Higher threshold during peace
+@WA_AI_PC_railway_MIN_STATES = 5             # Minimum controlled states to run
+@WA_AI_PC_railway_MAX_SURRENDER = 0.3        # Skip if surrender progress > 30%
+@WA_AI_PC_railway_MINOR_CIV_THRESHOLD = 50   # Minor nations bypass if civs > this
+
+on_actions = {
+	on_daily = {
+		effect = {
+
+			### cancel invalid projects
+
+#			if = { limit = { check_variable = { WA_AI_PC_active_projects > 0 } }
+#
+#				for_each_loop = { array = WA_AI_PC_project_array
+#
+#					if = { limit = { check_variable = { v < 0 } }
+#
+#						set_variable = { WA_AI_PC_project_type = i }
+#
+#						if = {
+#							limit = {
+#								OR = {
+#									CONTROLLER = { has_war_with = ROOT } # target state controller at war with project owner
+#
+#									var:v = { NOT = { WA_AI_PC_building_slot_available = yes } } # building slot unavailable in target state
+#								}
+#							}
+#
+#							set_variable = { WA_AI_PC_project = i }
+#							WA_AI_PC_end_project = yes
+#						}
+#					}
+#				}
+#
+#				clear_variable = WA_AI_PC_project_type
+#			}
+
+			### ai scripts
+
+			if = { limit = { is_ai = yes }
+
+				### train navy (game AI never training its navy workaround)
+
+				if = {
+					limit = {
+						check_variable = { num_ships > 0 }
+						OR = {
+							has_war = no
+							alliance_naval_strength_ratio > 10
+						}
+						has_navy_experience < 100
+						fuel_ratio > 0.5
+					}
+
+					WA_AI_train_navy = yes
+				}
+
+				###
+
+				# WA_AI_manage_xp = yes
+
+				if = { 
+					limit = {
+						num_of_available_civilian_factories > 1
+						NOT = {
+							has_country_flag = WA_AI_construction_timer
+						}
+						NOT = {
+							OR = {
+								AND = {
+									tag = ENG
+									date < 1942.1.1
+								}
+								AND = {
+									tag = USA
+									date < 1942.6.1
+								}
+							}
+						}
+					}
+					country_event = WA_AI_C.10
+				}
+			}
+		}
+	}
+	on_weekly = {
+		effect = {
+
+			if = { limit = { check_variable = { WA_AI_prepare_for_war_targets^num > 0 } }
+
+				for_each_scope_loop = { array = WA_AI_prepare_for_war_targets
+
+					if = { limit = { NOT = { has_country_flag = WA_AI_prepare_for_war_from_@ROOT } }
+
+						add_to_temp_array = { remove_prepare_for_war_targets = THIS.id }
+					}
+				}
+
+				for_each_scope_loop = { array = remove_prepare_for_war_targets
+
+					remove_from_array = { array = ROOT.WA_AI_prepare_for_war_targets value = THIS.id }
+				}
+			}
+
+			### Priority Construction System - Weekly Update
+			if = {
+				limit = {
+					is_ai = yes
+					has_capitulated = no
+				}
+
+				### AI Training Modifier System
+				if = {
+					limit = {
+						NOT = { has_dynamic_modifier = { modifier = WA_AI_training_modifier } }
+					}
+					add_dynamic_modifier = { modifier = WA_AI_training_modifier }
+				}
+				WA_AI_update_training_modifier = yes
+
+				# Dynamic factory allocation to projects
+				WA_AI_PC_assign_factories = yes
+
+				# Update construction progress and complete finished projects
+				WA_AI_PC_update_project_progress = yes
+
+				### Railway building - with eligibility filters to reduce processing
+				if = {
+					limit = {
+						# Higher peacetime industrial threshold (75 civs) - war uses lower threshold inside effect
+						OR = {
+							has_war = yes
+							num_of_civilian_factories > @WA_AI_PC_railway_MIN_CIVS_PEACE
+						}
+						# Skip minor countries unless at war or rich
+						OR = {
+							is_major = yes
+							has_war = yes
+							num_of_civilian_factories > @WA_AI_PC_railway_MINOR_CIV_THRESHOLD
+						}
+						# Minimum state count - skip tiny nations
+						num_of_controlled_states > @WA_AI_PC_railway_MIN_STATES
+						# Skip countries losing badly
+						surrender_progress < @WA_AI_PC_railway_MAX_SURRENDER
+					}
+					if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: on_weekly eligibility PASSED - calling WA_AI_PC_railway" }
+					WA_AI_PC_railway = yes
+				}
+			}
+		}
+	}
+	on_bi_yearly_pulse = {
+		effect = {
+
+			if = { limit = { NOT = { has_country_flag = WA_AI_on_bi_yearly_pulse_checked } } # on_bi_yearly_pulse triggers 24x per pulse?
+
+				set_country_flag = { flag = WA_AI_on_bi_yearly_pulse_checked value = 1 days = 10 }
+			}
+		}
+	}
+	on_puppet = {
+		effect = {
+
+			### clear ideology advisors
+
+			ROOT = {
+
+				if = { limit = { is_ai = yes }
+
+					clr_country_flag = WA_AI_democratic_focus
+					clr_country_flag = WA_AI_fascist_focus
+					clr_country_flag = WA_AI_communist_focus
+					clr_country_flag = WA_AI_neutral_focus
+
+					remove_ideas_with_trait = communist_revolutionary
+					remove_ideas_with_trait = ambitious_union_boss
+					remove_ideas_with_trait = fascist_demagogue
+					remove_ideas_with_trait = syncretic_revanchist
+					remove_ideas_with_trait = staunch_monarchist
+					remove_ideas_with_trait = colonial_communist
+					remove_ideas_with_trait = social_reformer
+					remove_ideas_with_trait = liberal_journalist
+					remove_ideas_with_trait = ambitious_union_boss
+					remove_ideas_with_trait = socialist_novelist
+					remove_ideas_with_trait = anti_communist_crusader
+					remove_ideas_with_trait = monarchist_media_mogul
+					remove_ideas_with_trait = royalist_bulldog
+					remove_ideas_with_trait = shadow_of_calles
+
+					if = { limit = { FROM = { WA_AI_democratic_nation = yes } } set_country_flag = WA_AI_democratic_focus }
+					else_if = { limit = { FROM = { WA_AI_fascist_nation = yes } } set_country_flag = WA_AI_fascist_focus }
+					else_if = { limit = { FROM = { WA_AI_communist_nation = yes } } set_country_flag = WA_AI_communist_focus }
+					else_if = { limit = { FROM = { WA_AI_nonaligned_nation = yes } } set_country_flag = WA_AI_neutral_focus }
+				}
+			}
+		}
+	}
+#	on_annex = {
+#		effect = {
+#
+#			# remove all projects by the annexed country
+#			if = { limit = { check_variable = { WA_AI_PC_active_projects > 0 } }
+#
+#				for_each_loop = { array = WA_AI_PC_project_array
+#
+#					if = { limit = { check_variable = { v < 0 } }
+#
+#						set_variable = { WA_AI_PC_project = i }
+#						WA_AI_PC_end_project = yes
+#					}
+#				}
+#			}
+#		}
+#	}
+	on_declare_war = {
+		effect = {
+
+			# force update scipted AI
+			if = { limit = { FROM = { is_ai = yes } }
+				hidden_effect = {
+					FROM = { country_event = { id = WA_AI_background.0 hours = 1 } }
+				}
+			}
+			if = { limit = { is_ai = yes }
+				hidden_effect = {
+					country_event = { id = WA_AI_background.0 hours = 1 }
+				}
+			}
+
+			# barbarossa
+			if = {
+				limit = {
+					is_ai = yes
+					is_in_faction_with = GER
+					is_neighbor_of = SOV
+					FROM = { tag = SOV }
+				}
+
+				hidden_effect = {
+					# set_country_flag = { flag = WA_AI_barbarossa_blitz value = 1 days = 30 }
+
+					SOV = { set_country_flag = { flag = WA_AI_barbarossa_defensive value = 1 days = 270 } }
+				}
+			}
+		}
+	}
+	on_nuke_drop = {
+		effect = {
+			if = { limit = { has_country_flag = WA_AI_logging } log = "[Root.GetName] nuked [From.GetName]" }
+		}
+	}
+	on_state_control_changed = { #ROOT is new controller #FROM is old controller #FROM.FROM is state ID
+		effect = {
+
+			FROM.FROM = {
+				# Check if old controller (FROM) has any projects in this state
+				if = { limit = { check_variable = { WA_AI_PC_projects_in_state_of_@FROM^num > 0 } }
+
+					# Collect project IDs to cancel
+					clear_temp_array = _cancel_projects_IDS
+					for_each_loop = { array = WA_AI_PC_projects_in_state_of_@FROM value = _proj_id
+
+						# Check if new controller has permission to continue this project
+						if = {
+							limit = {
+								NOT = {
+									is_in_array = { array = FROM.WA_AI_PC_construction_permissions value = ROOT.id }
+									FROM = { tag = ROOT }
+									FROM = { is_in_faction_with = ROOT }
+									FROM = { is_subject_of = ROOT }
+									ROOT = { is_subject_of = FROM }
+								}
+							}
+
+							add_to_temp_array = { _cancel_projects_IDS = _proj_id }
+						}
+					}
+
+					# Cancel invalid projects
+					if = { limit = { check_variable = { _cancel_projects_IDS^num > 0 } }
+						FROM = { WA_AI_PC_cancel_projects = yes }
+					}
+				}
+			}
+		}
+	}
+	on_startup = {
+		effect = {
+			if = {
+				limit = {
+					is_historical_focus_on = yes
+					POR = {
+						is_ai = yes
+					}
+				}
+				POR = {
+					set_rule = { can_not_declare_war = yes }
+				}
+			}
+		}
+	}
+
+	### Fix 5 & 19: Clear railway projects when peace is made
+	### This prevents outdated railway projects from continuing after frontlines disappear
+	on_peace = {
+		effect = {
+			if = {
+				limit = {
+					is_ai = yes
+					check_variable = { WA_AI_PC_queue^num > 0 }
+				}
+
+				# Cancel all railway projects (type 13) from the PC queue
+				# Store IDs first, then remove (can't modify array during iteration)
+				set_temp_variable = { _cancel_count = 0 }
+				while_loop_effect = {
+					limit = {
+						check_variable = { WA_AI_PC_queue^num > 0 }
+						check_variable = { _cancel_count < 100 }  # Safety limit
+					}
+					
+					set_temp_variable = { _found_railway = 0 }
+					for_each_loop = { array = WA_AI_PC_queue value = _proj_id break = _found_break
+						if = { limit = { check_variable = { WA_AI_PC_building_type^_proj_id = 13 } }
+							set_temp_variable = { _project_id = _proj_id }
+							set_temp_variable = { _found_railway = 1 }
+							set_temp_variable = { _found_break = 1 }
+						}
+					}
+					
+					if = { limit = { check_variable = { _found_railway = 1 } }
+						WA_AI_PC_end_project_by_id = yes
+						add_to_temp_variable = { _cancel_count = 1 }
+					}
+					else = {
+						# No more railway projects
+						set_temp_variable = { _cancel_count = 100 }
+					}
+				}
+
+				# Reset interval counter to trigger immediate recalculation
+				set_variable = { WA_AI_PC_railway_INTERVAL_counter = 0 }
+
+				if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: Railway projects cancelled due to peace" }
+			}
+		}
+	}
+}

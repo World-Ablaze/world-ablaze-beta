@@ -199,8 +199,8 @@ d_spawn_3D_models = {
 				infantry = { x = 1 y = 2 } 
 			} 
 			support = { 
-				engineer = { x = 0 y = 0 }
-				artillery = { x = 0 y = 1 }
+				assault_engineers = { x = 0 y = 0 }
+				horse_artillery = { x = 0 y = 1 }
 			} 
 		} 
 	}
@@ -297,4 +297,1062 @@ d_spawn_3D_models = {
 			count = 1
 		}
 	}
+}
+
+WA_AI_logging_debug = {
+	set_country_flag = WA_AI_construction_logging    # Logs railway built
+	set_country_flag = WA_AI_pathfind_logging        # Logs pathfinding start/end
+	set_country_flag = WA_AI_pathfind_detailed_logging  # Logs every pathfind step (verbose)
+}
+
+WA_AI_force_railway_calculation = {
+	set_variable = { WA_AI_PC_railway_INTERVAL_counter = 0 }
+}
+
+WA_AI_clear_PC_queue = {
+	log = "=== CLEARING WA_AI_PC_queue for [Root.GetName] ==="
+	log = "  Had [?WA_AI_PC_queue^num] projects"
+	clear_array = WA_AI_PC_queue
+	set_variable = { WA_AI_PC_assigned_factories_total = 0 }
+	set_variable = { WA_AI_PC_active_projects = 0 }
+	set_variable = { WA_AI_PC_next_project_id = 1 }
+	log = "  Queue cleared, counters reset"
+}
+
+WA_see_PC_queue = {
+	log = "=== WA_AI_PC_queue for [Root.GetName] ==="
+	log = "  Total queued projects: [?WA_AI_PC_queue^num]"
+	log = "  Active projects count: [?WA_AI_PC_active_projects]"
+	log = "  Assigned factories total: [?WA_AI_PC_assigned_factories_total]"
+	log = "  Available civs for projects: [?num_of_civilian_factories_available_for_projects]"
+
+	for_each_loop = { array = WA_AI_PC_queue value = _dbg_proj_id
+		set_temp_variable = { _dbg_type = WA_AI_PC_building_type^_dbg_proj_id }
+		set_temp_variable = { _dbg_prio = WA_AI_PC_priority^_dbg_proj_id }
+		set_temp_variable = { _dbg_cost = WA_AI_PC_project_cost^_dbg_proj_id }
+		set_temp_variable = { _dbg_prog = WA_AI_PC_progress^_dbg_proj_id }
+		set_temp_variable = { _dbg_prov = WA_AI_PC_target_province^_dbg_proj_id }
+		set_temp_variable = { _dbg_conn = WA_AI_PC_connect_province^_dbg_proj_id }
+		set_temp_variable = { _dbg_state = WA_AI_PC_target_state^_dbg_proj_id }
+		set_temp_variable = { _dbg_facs = WA_AI_PC_assigned_factories^_dbg_proj_id }
+		log = "  Project [?_dbg_proj_id]: type=[?_dbg_type] prio=[?_dbg_prio] cost=[?_dbg_cost] progress=[?_dbg_prog] factories=[?_dbg_facs] prov=[?_dbg_prov]->[?_dbg_conn] state=[?_dbg_state]"
+	}
+
+	if = { limit = { check_variable = { WA_AI_PC_queue^num = 0 } }
+		log = "  (no projects in queue)"
+	}
+	log = "=== END PC QUEUE ==="
+}
+
+############################################################################################################
+#	TEST SYSTEM - Console Commands
+#	d_ prefix makes these available as console commands
+############################################################################################################
+
+d_WA_TEST_railway = {
+	WA_TEST_RW_suite = yes
+	log = "Railway test suite launched for JAP - check game.log for results"
+}
+
+d_WA_TEST_spirits = {
+	WA_TEST_SP_suite = yes
+	log = "Spirit test suite migrated to vanilla tests/wa_spirits_strict_parity.txt - run vanilla bundles and check logs/tests"
+}
+
+d_WA_TEST_stats = {
+	WA_TEST_ST_suite = yes
+	log = "Stats test suite migrated to vanilla tests/wa_stats_strict_parity.txt - run vanilla bundles and check logs/tests"
+}
+
+# Master command: launches all test suites. Add new suites here.
+d_WA_TEST_all = {
+	WA_TEST_RW_suite = yes
+	WA_TEST_SP_suite = yes
+	WA_TEST_ST_suite = yes
+	log = "WA legacy+vanilla test entry invoked (railway legacy, spirits/stats migrated) - check game.log and logs/tests"
+}
+
+# Master print: prints results from all suites. Add new suite printers here.
+d_WA_TEST_results = {
+	log = "====================================================================="
+	log = "  WA TEST RESULTS"
+	log = "====================================================================="
+	WA_TEST_RW_print = yes
+	WA_TEST_SP_print = yes
+	WA_TEST_ST_print = yes
+	log = "Legacy results dumped to game.log; migrated suites report in logs/tests/tests_<timestamp>.log"
+}
+
+############################################################################################################
+#	RAILWAY STRATEGY DEBUG LOGGER
+#	Console: effect d_railway_strategy_debug
+#	Replays the overseas war + land war strategy decision logic but only logs — queues nothing
+#	Use to diagnose why a country builds railways in unexpected locations
+#	Fix 26: Updated to match corrected logic (distance-based port search, landmass exclusion)
+############################################################################################################
+
+d_railway_strategy_debug = {
+	log = "====================================================================="
+	log = "  RAILWAY STRATEGY DEBUG for [Root.GetName] ([Root.GetTag])"
+	log = "  (Fix 26: distance-based port search + landmass exclusion)"
+	log = "====================================================================="
+
+	### SECTION 1: Country Context
+	WA_AI_MAP_get_capital_vp_province = yes
+	set_temp_variable = { capital_province = capital_vp_province_ }
+	set_temp_variable = { capital_state_id = capital_state_id_ }
+	set_temp_variable = { capital_landmass = global.WA_AI_MAP_state_landmass^capital_state_id }
+	var:capital_state_id = {
+		WA_AI_PC_railway_get_continent = yes
+		set_temp_variable = { capital_continent = continent_id_ }
+	}
+	log = "  Capital: province=[?capital_province] state=[?capital_state_id] landmass=[?capital_landmass] continent=[?capital_continent]"
+	if = { limit = { has_war = yes } log = "  Status: AT WAR" }
+	else = { log = "  Status: AT PEACE" }
+
+	### SECTION 2: Home Port Analysis
+	log = "---------------------------------------------------------------------"
+	log = "  HOME PORT ANALYSIS"
+	log = "---------------------------------------------------------------------"
+	WA_AI_PC_railway_find_best_home_port = yes
+	if = {
+		limit = { check_variable = { best_home_port_state_ > 0 } }
+		log = "  Best home port: state=[?best_home_port_state_] province=[?best_home_port_province_] level=[?best_home_port_level_] score=[?best_home_port_score_]"
+		var:best_home_port_state_ = { log = "  Home port state name: [This.GetName]" }
+	}
+	else = { log = "  Best home port: NONE FOUND" }
+
+	### SECTION 3: Enemy Analysis (Overseas Strategy Replay)
+	### Fix 26: Added landmass exclusion — beachhead candidates must NOT be on capital's landmass
+	log = "---------------------------------------------------------------------"
+	log = "  ENEMY ANALYSIS (Overseas Strategy Replay)"
+	log = "---------------------------------------------------------------------"
+
+	set_temp_variable = { _dbg_enemy_count = 0 }
+	set_temp_variable = { _dbg_overseas_count = 0 }
+	set_temp_variable = { _dbg_excluded_home_ports = 0 }
+	clear_temp_array = _dbg_beachhead_states_
+
+	every_enemy_country = {
+		add_to_temp_variable = { _dbg_enemy_count = 1 }
+		set_temp_variable = { _dbg_enemy_tag = THIS }
+
+		# Check land border
+		ROOT = {
+			set_temp_variable = { _check_enemy_tag = _dbg_enemy_tag }
+			WA_AI_PC_has_land_border_with_enemy = yes
+		}
+
+		log = "  ---"
+		log = "  Enemy: [This.GetName] ([This.GetTag]) | land_border=[?has_land_border_with_enemy_]"
+
+		if = {
+			limit = { check_variable = { has_land_border_with_enemy_ = 0 } }
+			ROOT = { add_to_temp_variable = { _dbg_overseas_count = 1 } }
+
+			# Get enemy capital continent
+			capital_scope = {
+				WA_AI_PC_railway_get_continent = yes
+				set_temp_variable = { _dbg_enemy_continent = continent_id_ }
+				WA_AI_PC_get_state_id = yes
+				set_temp_variable = { _dbg_enemy_cap_state = state_id_ }
+			}
+
+			log = "  -> OVERSEAS enemy | capital_continent=[?_dbg_enemy_continent] capital_state=[?_dbg_enemy_cap_state]"
+
+			# Find best controlled port on enemy's continent
+			# Fix 26: Exclude ports on capital's landmass (e.g. UK home ports for European enemies)
+			set_temp_variable = { _dbg_best_bh_state = 0 }
+			set_temp_variable = { _dbg_best_bh_port = 0 }
+			set_temp_variable = { _dbg_best_bh_prov = 0 }
+			set_temp_variable = { _dbg_candidate_count = 0 }
+
+			ROOT = {
+				every_controlled_state = {
+					WA_AI_PC_railway_get_continent = yes
+					WA_AI_PC_get_state_id = yes
+					set_temp_variable = { _bh_sid = state_id_ }
+
+					if = {
+						limit = {
+							check_variable = { continent_id_ = _dbg_enemy_continent }
+							is_coastal = yes
+							# Fix 26: Exclude home territory (same landmass as capital)
+							NOT = { check_variable = { global.WA_AI_MAP_state_landmass^_bh_sid = capital_landmass } }
+						}
+						WA_AI_PC_railway_get_naval_base_province = yes
+
+						if = {
+							limit = { check_variable = { naval_base_province_ > 0 } }
+							ROOT = { add_to_temp_variable = { _dbg_candidate_count = 1 } }
+							ROOT = { log = "     candidate port: [Prev.GetName] (state=[?_bh_sid]) naval_base_prov=[?naval_base_province_] level=[?naval_base_level_]" }
+
+							if = {
+								limit = { check_variable = { naval_base_level_ > _dbg_best_bh_port } }
+								set_temp_variable = { _dbg_best_bh_state = _bh_sid }
+								set_temp_variable = { _dbg_best_bh_port = naval_base_level_ }
+								set_temp_variable = { _dbg_best_bh_prov = naval_base_province_ }
+							}
+						}
+					}
+					else_if = {
+						limit = {
+							check_variable = { continent_id_ = _dbg_enemy_continent }
+							is_coastal = yes
+							check_variable = { global.WA_AI_MAP_state_landmass^_bh_sid = capital_landmass }
+						}
+						WA_AI_PC_railway_get_naval_base_province = yes
+						if = {
+							limit = { check_variable = { naval_base_province_ > 0 } }
+							ROOT = { add_to_temp_variable = { _dbg_excluded_home_ports = 1 } }
+							ROOT = { log = "     candidate port EXCLUDED (home landmass): [Prev.GetName] (state=[?_bh_sid]) level=[?naval_base_level_]" }
+						}
+					}
+				}
+			}
+
+			log = "  -> [?_dbg_candidate_count] port candidates found on continent [?_dbg_enemy_continent] ([?_dbg_excluded_home_ports] excluded as home landmass)"
+
+			if = {
+				limit = { check_variable = { _dbg_best_bh_state > 0 } }
+				ROOT = { var:_dbg_best_bh_state = {
+					ROOT = { log = "  -> BEST beachhead: [Prev.GetName] (state=[?_dbg_best_bh_state]) port_level=[?_dbg_best_bh_port] province=[?_dbg_best_bh_prov]" }
+				} }
+
+				### Validation 1: Theatre separation
+				set_temp_variable = { candidate_beachhead_state_ = _dbg_best_bh_state }
+				ROOT = { WA_AI_PC_check_theatre_separation = yes }
+
+				if = {
+					limit = { check_variable = { _is_duplicate_theatre_ = 1 } }
+					log = "  -> VALIDATION: theatre_separation=DUPLICATE (SKIPPED)"
+				}
+				else = {
+					log = "  -> VALIDATION: theatre_separation=OK (new theatre)"
+					add_to_temp_array = { _dbg_beachhead_states_ = _dbg_best_bh_state }
+
+					### Validation 2: Distance from enemy capital (15-state BFS)
+					set_temp_variable = { _origin_state_id = _dbg_enemy_cap_state }
+					set_temp_variable = { _max_distance = 15 }
+					ROOT = { WA_AI_PC_railway_get_states_within_distance = yes }
+					add_to_temp_array = { states_within_distance_ = _dbg_enemy_cap_state }
+
+					if = {
+						limit = { NOT = { is_in_array = { states_within_distance_ = _dbg_best_bh_state } } }
+						log = "  -> VALIDATION: distance_check=TOO FAR (>15 states from enemy capital) (SKIPPED)"
+					}
+					else = {
+						log = "  -> VALIDATION: distance_check=OK (within 15 states of enemy capital)"
+
+						### Validation 3: Path to frontline
+						set_temp_variable = { _dbg_bh_valid = 0 }
+						set_temp_variable = { _dbg_frontline_count = 0 }
+
+						ROOT = {
+							every_controlled_state = {
+								WA_AI_PC_railway_get_continent = yes
+
+								if = {
+									limit = {
+										check_variable = { continent_id_ = _dbg_enemy_continent }
+										any_neighbor_state = {
+											OR = {
+												is_controlled_by = var:_dbg_enemy_tag
+												controller = { is_subject_of = var:_dbg_enemy_tag }
+											}
+										}
+										WA_AI_PC_state_has_supply_hub = yes
+									}
+
+									WA_AI_PC_railway_get_supply_hub_province = yes
+
+									if = {
+										limit = {
+											check_variable = { supply_hub_province_ > 0 }
+											ROOT = { controls_province = var:supply_hub_province_ }
+										}
+										add_to_temp_variable = { _dbg_frontline_count = 1 }
+										ROOT = { log = "     frontline target: [Prev.GetName] hub_prov=[?supply_hub_province_]" }
+										ROOT = { set_temp_variable = { _dbg_bh_valid = 1 } }
+									}
+								}
+							}
+						}
+
+						if = {
+							limit = { check_variable = { _dbg_bh_valid = 0 } }
+							log = "  -> VALIDATION: frontline_path=NO PATH (SKIPPED)"
+						}
+						else = {
+							log = "  -> VALIDATION: frontline_path=OK ([?_dbg_frontline_count] frontline targets found)"
+							log = "  -> RESULT: BEACHHEAD ACCEPTED - would queue [?_dbg_frontline_count] routes from state [?_dbg_best_bh_state]"
+						}
+					}
+				}
+			}
+			else = {
+				log = "  -> NO controlled port found on continent [?_dbg_enemy_continent] (after landmass exclusion)"
+			}
+		}
+	}
+
+	log = "---------------------------------------------------------------------"
+	log = "  OVERSEAS SUMMARY"
+	log = "---------------------------------------------------------------------"
+	log = "  Total enemies: [?_dbg_enemy_count]"
+	log = "  Overseas enemies: [?_dbg_overseas_count]"
+	log = "  Accepted beachheads: [?_dbg_beachhead_states_^num]"
+	log = "  Excluded home-landmass ports: [?_dbg_excluded_home_ports]"
+
+	### SECTION 4: Land War Strategy Replay
+	### Fix 26: Removed per-landmass caching. Each target gets its own nearest-port search (BFS 15 states).
+	log = "====================================================================="
+	log = "  LAND WAR STRATEGY REPLAY"
+	log = "====================================================================="
+
+	# Build relevant enemies array (same as real strategy)
+	WA_AI_PC_railway_get_relevant_enemies = yes
+	log = "  Relevant enemies: [?_relevant_enemies_^num]"
+
+	set_temp_variable = { _dbg_lw_total_targets = 0 }
+	set_temp_variable = { _dbg_lw_overseas_targets = 0 }
+
+	for_each_scope_loop = { array = _relevant_enemies_
+		set_temp_variable = { _current_enemy_tag = THIS }
+
+		# Check if ROOT borders this enemy
+		ROOT = {
+			set_temp_variable = { _enemy_tag = _current_enemy_tag }
+			WA_AI_PC_railway_country_borders_enemy = yes
+		}
+
+		log = "  ---"
+		log = "  Enemy: [This.GetName] ([This.GetTag]) | borders=[?borders_enemy_]"
+
+		if = {
+			limit = { check_variable = { borders_enemy_ = 1 } }
+
+			log = "  -> BORDERED enemy - scanning frontline states..."
+
+			# Find frontline states that border this enemy and have supply hubs
+			set_temp_variable = { _check_railway_level = 5 }
+			ROOT = {
+				every_controlled_state = {
+					limit = {
+						any_neighbor_state = {
+							OR = {
+								is_controlled_by = var:_current_enemy_tag
+								controller = { is_subject_of = var:_current_enemy_tag }
+							}
+						}
+						WA_AI_PC_state_has_supply_hub = yes
+						NOT = { WA_AI_PC_state_has_railway_at_level = yes }
+					}
+
+					WA_AI_PC_coastal_state_is_single_node = yes
+					if = {
+						limit = { check_variable = { is_single_node_ = 0 } }
+
+						WA_AI_PC_railway_get_supply_hub_province = yes
+
+						if = {
+							limit = {
+								check_variable = { supply_hub_province_ > 0 }
+								ROOT = { controls_province = var:supply_hub_province_ }
+							}
+
+							WA_AI_PC_get_state_id = yes
+							set_temp_variable = { _target_state_id = state_id_ }
+							set_temp_variable = { target_landmass = global.WA_AI_MAP_state_landmass^_target_state_id }
+
+							add_to_temp_variable = { _dbg_lw_total_targets = 1 }
+
+							if = {
+								limit = { check_variable = { target_landmass = capital_landmass } }
+								ROOT = { log = "     frontline: [Prev.GetName] (state=[?_target_state_id]) hub=[?supply_hub_province_] landmass=[?target_landmass] -> SAME landmass as capital, route_start=capital (Fix 28: overseas fallback if path fails)" }
+							}
+							else = {
+								add_to_temp_variable = { _dbg_lw_overseas_targets = 1 }
+								ROOT = { log = "     frontline: [Prev.GetName] (state=[?_target_state_id]) hub=[?supply_hub_province_] landmass=[?target_landmass] -> DIFFERENT from capital (lm=[?capital_landmass])" }
+
+								# Fix 26: Per-target overseas supply chain analysis (no caching)
+								ROOT = { log = "     >>> OVERSEAS SUPPLY CHAIN for target state [?_target_state_id]" }
+
+								# Find home port (on capital landmass — unchanged)
+								set_temp_variable = { _search_landmass = capital_landmass }
+								ROOT = { WA_AI_PC_get_best_port_on_landmass = yes }
+								set_temp_variable = { _dbg_home_port_state = best_port_state_ }
+								set_temp_variable = { _dbg_home_port_prov = best_port_province_ }
+								set_temp_variable = { _dbg_home_port_level = best_port_level_ }
+								set_temp_variable = { home_port_supply_ = best_port_supply_ }
+
+								ROOT = {
+									if = {
+										limit = { check_variable = { _dbg_home_port_state > 0 } }
+										var:_dbg_home_port_state = {
+											ROOT = { log = "     >>> Home port (landmass [?capital_landmass]): [Prev.GetName] (state=[?_dbg_home_port_state]) prov=[?_dbg_home_port_prov] level=[?_dbg_home_port_level]" }
+										}
+									}
+									else = {
+										log = "     >>> Home port (landmass [?capital_landmass]): NONE FOUND"
+									}
+								}
+
+								# Fix 26: Find receiving port via DISTANCE-BASED search (BFS 15 states from target)
+								set_temp_variable = { _target_state_for_port = _target_state_id }
+								set_temp_variable = { _port_search_radius = 15 }
+								ROOT = { WA_AI_PC_get_best_port_near_state = yes }
+								set_temp_variable = { _dbg_recv_port_state = best_port_state_ }
+								set_temp_variable = { _dbg_recv_port_prov = best_port_province_ }
+								set_temp_variable = { _dbg_recv_port_level = best_port_level_ }
+								set_temp_variable = { receiving_port_supply_ = best_port_supply_ }
+								set_temp_variable = { overseas_route_start_ = best_port_province_ }
+
+								ROOT = {
+									if = {
+										limit = { check_variable = { _dbg_recv_port_state > 0 } }
+										var:_dbg_recv_port_state = {
+											ROOT = { log = "     >>> Receiving port (within 15 states): [Prev.GetName] (state=[?_dbg_recv_port_state]) prov=[?_dbg_recv_port_prov] level=[?_dbg_recv_port_level]" }
+										}
+									}
+									else = {
+										log = "     >>> Receiving port (within 15 states): NONE FOUND"
+									}
+								}
+
+								# Calculate bottleneck
+								set_temp_variable = { _supply_a = home_port_supply_ }
+								set_temp_variable = { _supply_b = receiving_port_supply_ }
+								WA_AI_PC_calculate_supply_bottleneck = yes
+								set_temp_variable = { _supply_capacity = bottleneck_supply_ }
+								WA_AI_PC_supply_to_railway_level = yes
+
+								ROOT = { log = "     >>> Bottleneck: home_supply=[?home_port_supply_] recv_supply=[?receiving_port_supply_] bottleneck=[?bottleneck_supply_] max_railway_level=[?max_railway_level_]" }
+								ROOT = { log = "     >>> ROUTE START for this target = province [?overseas_route_start_] (state [?_dbg_recv_port_state])" }
+
+								# Log all candidate ports within BFS radius to show why this one was picked
+								ROOT = { log = "     >>> All controlled ports within 15 states of target:" }
+								ROOT = {
+									every_controlled_state = {
+										WA_AI_PC_get_state_id = yes
+										set_temp_variable = { _this_state_id = state_id_ }
+
+										if = {
+											limit = {
+												check_variable = { global.WA_AI_MAP_state_landmass^_this_state_id = target_landmass }
+												is_in_array = { states_within_distance_ = _this_state_id }
+												is_coastal = yes
+											}
+											WA_AI_PC_railway_get_naval_base_province = yes
+											if = {
+												limit = { check_variable = { naval_base_province_ > 0 } }
+												ROOT = { log = "        port: [Prev.GetName] (state=[?state_id_]) prov=[?naval_base_province_] level=[?naval_base_level_]" }
+											}
+										}
+									}
+									# Fix 28: Also show puppet ports
+									every_subject_country = {
+										every_controlled_state = {
+											WA_AI_PC_get_state_id = yes
+											set_temp_variable = { _this_state_id = state_id_ }
+											if = {
+												limit = {
+													check_variable = { global.WA_AI_MAP_state_landmass^_this_state_id = target_landmass }
+													is_in_array = { states_within_distance_ = _this_state_id }
+													is_coastal = yes
+												}
+												WA_AI_PC_railway_get_naval_base_province = yes
+												if = {
+													limit = { check_variable = { naval_base_province_ > 0 } }
+													ROOT = { log = "        port (puppet): [Prev.GetName] (state=[?state_id_]) prov=[?naval_base_province_] level=[?naval_base_level_]" }
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+
+				# Fix 27: Also scan puppet/subject frontline states
+				every_subject_country = {
+					every_controlled_state = {
+						limit = {
+							any_neighbor_state = {
+								OR = {
+									is_controlled_by = var:_current_enemy_tag
+									controller = { is_subject_of = var:_current_enemy_tag }
+								}
+							}
+							WA_AI_PC_state_has_supply_hub = yes
+							NOT = { WA_AI_PC_state_has_railway_at_level = yes }
+						}
+
+						WA_AI_PC_coastal_state_is_single_node = yes
+						if = {
+							limit = { check_variable = { is_single_node_ = 0 } }
+
+							WA_AI_PC_railway_get_supply_hub_province = yes
+
+							if = {
+								limit = {
+									check_variable = { supply_hub_province_ > 0 }
+									OR = {
+										ROOT = { controls_province = var:supply_hub_province_ }
+										controller = { is_subject_of = ROOT }
+									}
+								}
+
+								WA_AI_PC_get_state_id = yes
+								set_temp_variable = { _target_state_id = state_id_ }
+								set_temp_variable = { target_landmass = global.WA_AI_MAP_state_landmass^_target_state_id }
+
+								add_to_temp_variable = { _dbg_lw_total_targets = 1 }
+
+								if = {
+									limit = { check_variable = { target_landmass = capital_landmass } }
+									ROOT = { log = "     frontline (PUPPET): [Prev.GetName] (state=[?_target_state_id]) hub=[?supply_hub_province_] landmass=[?target_landmass] -> SAME landmass as capital, route_start=capital (Fix 28: overseas fallback if path fails)" }
+								}
+								else = {
+									add_to_temp_variable = { _dbg_lw_overseas_targets = 1 }
+									ROOT = { log = "     frontline (PUPPET): [Prev.GetName] (state=[?_target_state_id]) hub=[?supply_hub_province_] landmass=[?target_landmass] -> DIFFERENT from capital (lm=[?capital_landmass])" }
+
+									ROOT = { log = "     >>> OVERSEAS SUPPLY CHAIN for puppet target state [?_target_state_id]" }
+
+									set_temp_variable = { _search_landmass = capital_landmass }
+									ROOT = { WA_AI_PC_get_best_port_on_landmass = yes }
+									set_temp_variable = { _dbg_home_port_state = best_port_state_ }
+									set_temp_variable = { _dbg_home_port_prov = best_port_province_ }
+									set_temp_variable = { _dbg_home_port_level = best_port_level_ }
+									set_temp_variable = { home_port_supply_ = best_port_supply_ }
+
+									ROOT = {
+										if = {
+											limit = { check_variable = { _dbg_home_port_state > 0 } }
+											var:_dbg_home_port_state = {
+												ROOT = { log = "     >>> Home port (landmass [?capital_landmass]): [Prev.GetName] (state=[?_dbg_home_port_state]) prov=[?_dbg_home_port_prov] level=[?_dbg_home_port_level]" }
+											}
+										}
+										else = {
+											log = "     >>> Home port (landmass [?capital_landmass]): NONE FOUND"
+										}
+									}
+
+									set_temp_variable = { _target_state_for_port = _target_state_id }
+									set_temp_variable = { _port_search_radius = 15 }
+									ROOT = { WA_AI_PC_get_best_port_near_state = yes }
+									set_temp_variable = { _dbg_recv_port_state = best_port_state_ }
+									set_temp_variable = { _dbg_recv_port_prov = best_port_province_ }
+									set_temp_variable = { _dbg_recv_port_level = best_port_level_ }
+									set_temp_variable = { receiving_port_supply_ = best_port_supply_ }
+									set_temp_variable = { overseas_route_start_ = best_port_province_ }
+
+									ROOT = {
+										if = {
+											limit = { check_variable = { _dbg_recv_port_state > 0 } }
+											var:_dbg_recv_port_state = {
+												ROOT = { log = "     >>> Receiving port (within 15 states): [Prev.GetName] (state=[?_dbg_recv_port_state]) prov=[?_dbg_recv_port_prov] level=[?_dbg_recv_port_level]" }
+											}
+										}
+										else = {
+											log = "     >>> Receiving port (within 15 states): NONE FOUND"
+										}
+									}
+
+									set_temp_variable = { _supply_a = home_port_supply_ }
+									set_temp_variable = { _supply_b = receiving_port_supply_ }
+									WA_AI_PC_calculate_supply_bottleneck = yes
+									set_temp_variable = { _supply_capacity = bottleneck_supply_ }
+									WA_AI_PC_supply_to_railway_level = yes
+
+									ROOT = { log = "     >>> Bottleneck: home_supply=[?home_port_supply_] recv_supply=[?receiving_port_supply_] bottleneck=[?bottleneck_supply_] max_railway_level=[?max_railway_level_]" }
+									ROOT = { log = "     >>> ROUTE START for this puppet target = province [?overseas_route_start_] (state [?_dbg_recv_port_state])" }
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		else = {
+			log = "  -> NOT bordered - skipping (land war only processes bordered enemies)"
+		}
+	}
+
+	### SECTION 5: Final Summary
+	log = "====================================================================="
+	log = "  FINAL SUMMARY"
+	log = "====================================================================="
+	log = "  Capital: state=[?capital_state_id] landmass=[?capital_landmass] continent=[?capital_continent]"
+	log = "  Home port (capital area): state=[?best_home_port_state_] prov=[?best_home_port_province_] level=[?best_home_port_level_]"
+	log = "  Overseas strategy: [?_dbg_overseas_count] overseas enemies, [?_dbg_beachhead_states_^num] accepted beachheads, [?_dbg_excluded_home_ports] home-landmass ports excluded"
+	log = "  Land war strategy: [?_dbg_lw_total_targets] frontline targets, [?_dbg_lw_overseas_targets] on different landmass (per-target distance-based port search)"
+	log = "====================================================================="
+}
+
+############################################################################################################
+#	Fix 27 Diagnostic: Single-Node Filter Analysis
+#	Checks all controlled states bordering ENG to see which filters block them
+#	Console: effect d_railway_diagnose_single_node
+############################################################################################################
+
+d_railway_diagnose_single_node = {
+	log = "====================================================================="
+	log = "  SINGLE-NODE DIAGNOSTIC for [This.GetName]"
+	log = "====================================================================="
+	log = "  Scanning all controlled states that border ENG (or ENG subjects)..."
+
+	set_temp_variable = { _diag_total = 0 }
+	set_temp_variable = { _diag_single_count = 0 }
+
+	every_controlled_state = {
+		if = {
+			limit = {
+				any_neighbor_state = {
+					OR = {
+						is_controlled_by = ENG
+						controller = { is_subject_of = ENG }
+					}
+				}
+			}
+
+			WA_AI_PC_get_state_id = yes
+			set_temp_variable = { _diag_sid = state_id_ }
+
+			# Check supply hub (state-level: supply_node > 0 OR naval_base > 0)
+			set_temp_variable = { _diag_has_hub = 0 }
+			if = { limit = { WA_AI_PC_state_has_supply_hub = yes }
+				set_temp_variable = { _diag_has_hub = 1 }
+			}
+
+			# Check single-node (coastal + no supply_node + has naval_base)
+			WA_AI_PC_coastal_state_is_single_node = yes
+			set_temp_variable = { _diag_single = is_single_node_ }
+
+			# Get supply hub province (supply_node province)
+			WA_AI_PC_railway_get_supply_hub_province = yes
+			set_temp_variable = { _diag_hub_prov = supply_hub_province_ }
+
+			# Get naval base province
+			WA_AI_PC_railway_get_naval_base_province = yes
+			set_temp_variable = { _diag_nb_prov = naval_base_province_ }
+			set_temp_variable = { _diag_nb_level = naval_base_level_ }
+
+			# Check if coastal
+			set_temp_variable = { _diag_coastal = 0 }
+			if = { limit = { is_coastal = yes }
+				set_temp_variable = { _diag_coastal = 1 }
+			}
+
+			# Check railway level 5
+			set_temp_variable = { _check_railway_level = 5 }
+			set_temp_variable = { _diag_has_rw5 = 0 }
+			if = { limit = { WA_AI_PC_state_has_railway_at_level = yes }
+				set_temp_variable = { _diag_has_rw5 = 1 }
+			}
+
+			ROOT = { add_to_temp_variable = { _diag_total = 1 } }
+			if = {
+				limit = { check_variable = { is_single_node_ = 1 } }
+				ROOT = { add_to_temp_variable = { _diag_single_count = 1 } }
+			}
+
+			ROOT = { log = "  [Prev.GetName] (state=[?_diag_sid]) | coastal=[?_diag_coastal] hub=[?_diag_has_hub] single_node=[?_diag_single] supply_prov=[?_diag_hub_prov] naval_prov=[?_diag_nb_prov] naval_level=[?_diag_nb_level] rw5=[?_diag_has_rw5]" }
+		}
+	}
+
+	log = "---------------------------------------------------------------------"
+	log = "  Total states bordering ENG: [?_diag_total]"
+	log = "  Blocked by single-node filter: [?_diag_single_count]"
+	log = "---------------------------------------------------------------------"
+	log = "  Expected: Libya states show hub=1, single_node=1 (this is the bug)"
+	log = "  If single_node=1 for Libya => confirms Fix 27 diagnosis"
+	log = "====================================================================="
+}
+
+############################################################################################################
+#	RAILWAY ROUTE DEBUG — Generic pathfinder route computation logger
+#	Console: effect d_railway_route_debug
+#	For each bordered enemy, finds frontline targets (ROOT + puppet) and RUNS the pathfinder,
+#	logging the full province chain. Use to see how routes are actually computed.
+############################################################################################################
+
+d_railway_route_debug = {
+	log = "====================================================================="
+	log = "  RAILWAY ROUTE DEBUG for [Root.GetName] ([Root.GetTag])"
+	log = "  Runs pathfinder for each frontline target and logs the province chain"
+	log = "====================================================================="
+
+	### SECTION 1: Country Context
+	WA_AI_MAP_get_capital_vp_province = yes
+	set_temp_variable = { capital_province = capital_vp_province_ }
+	set_temp_variable = { capital_state_id = capital_state_id_ }
+	set_temp_variable = { capital_landmass = global.WA_AI_MAP_state_landmass^capital_state_id }
+	var:capital_state_id = {
+		WA_AI_PC_railway_get_continent = yes
+		set_temp_variable = { capital_continent = continent_id_ }
+	}
+	set_temp_variable = { default_route_start = capital_province }
+	set_temp_variable = { default_route_level = 5 }
+
+	log = "  Capital: province=[?capital_province] state=[?capital_state_id] landmass=[?capital_landmass] continent=[?capital_continent]"
+	if = { limit = { has_war = yes } log = "  Status: AT WAR" }
+	else = { log = "  Status: AT PEACE — no enemies to route to" }
+
+	### SECTION 2: Per-enemy route computation
+	log = "====================================================================="
+	log = "  ROUTE COMPUTATION"
+	log = "====================================================================="
+
+	set_temp_variable = { _dbg_rt_total = 0 }
+	set_temp_variable = { _dbg_rt_success = 0 }
+	set_temp_variable = { _dbg_rt_partial = 0 }
+	set_temp_variable = { _dbg_rt_fail = 0 }
+	set_temp_variable = { _dbg_rt_skipped_singlenode = 0 }
+	set_temp_variable = { _dbg_rt_skipped_nohub = 0 }
+
+	WA_AI_PC_railway_get_relevant_enemies = yes
+	log = "  Relevant enemies: [?_relevant_enemies_^num]"
+
+	for_each_scope_loop = { array = _relevant_enemies_
+		set_temp_variable = { _current_enemy_tag = THIS }
+
+		# Check if ROOT (or puppets) borders this enemy
+		ROOT = {
+			set_temp_variable = { _enemy_tag = _current_enemy_tag }
+			WA_AI_PC_railway_country_borders_enemy = yes
+		}
+
+		log = "  ---"
+		log = "  Enemy: [This.GetName] ([This.GetTag]) | borders=[?borders_enemy_]"
+
+		if = {
+			limit = { check_variable = { borders_enemy_ = 1 } }
+
+			log = "  -> BORDERED — computing routes..."
+
+			set_temp_variable = { _check_railway_level = 5 }
+
+			### 2a: ROOT frontline states
+			ROOT = {
+				every_controlled_state = {
+					limit = {
+						any_neighbor_state = {
+							OR = {
+								is_controlled_by = var:_current_enemy_tag
+								controller = { is_subject_of = var:_current_enemy_tag }
+							}
+						}
+						WA_AI_PC_state_has_supply_hub = yes
+						NOT = { WA_AI_PC_state_has_railway_at_level = yes }
+					}
+
+					WA_AI_PC_coastal_state_is_single_node = yes
+					if = {
+						limit = { check_variable = { is_single_node_ = 1 } }
+						ROOT = {
+							add_to_temp_variable = { _dbg_rt_skipped_singlenode = 1 }
+							log = "     [Prev.GetName] — SKIPPED (single-node coastal state)"
+						}
+					}
+					else = {
+						WA_AI_PC_railway_get_supply_hub_province = yes
+
+						if = {
+							limit = {
+								check_variable = { supply_hub_province_ > 0 }
+								ROOT = { controls_province = var:supply_hub_province_ }
+							}
+
+							WA_AI_PC_get_state_id = yes
+							set_temp_variable = { _target_state_id = state_id_ }
+							set_temp_variable = { target_landmass = global.WA_AI_MAP_state_landmass^_target_state_id }
+
+							# Determine route start
+							if = {
+								limit = { check_variable = { target_landmass = capital_landmass } }
+								set_temp_variable = { route_start = default_route_start }
+								set_temp_variable = { route_level = default_route_level }
+								ROOT = { log = "     [Prev.GetName] (state=[?_target_state_id]) hub=[?supply_hub_province_] | SAME landmass — start=capital ([?default_route_start])" }
+							}
+							else = {
+								set_temp_variable = { _target_state_for_port_search = _target_state_id }
+								ROOT = { WA_AI_PC_analyze_overseas_supply_chain = yes }
+								set_temp_variable = { route_start = overseas_route_start_ }
+								set_temp_variable = { route_level = overseas_max_railway_level_ }
+								ROOT = { log = "     [Prev.GetName] (state=[?_target_state_id]) hub=[?supply_hub_province_] | CROSS landmass (target_lm=[?target_landmass] capital_lm=[?capital_landmass])" }
+								ROOT = { log = "        overseas: home_port_state=[?overseas_home_port_state_] recv_port=[?overseas_route_start_] recv_state=[?overseas_receiving_port_state_] max_level=[?overseas_max_railway_level_]" }
+							}
+
+							# Run pathfinder
+							if = {
+								limit = { check_variable = { route_start > 0 } }
+
+								ROOT = {
+									add_to_temp_variable = { _dbg_rt_total = 1 }
+
+									set_temp_variable = { _pathfind_prov_start = route_start }
+									set_temp_variable = { _pathfind_prov_end = supply_hub_province_ }
+									set_temp_variable = { _pathfind_prov_type = 2 }
+									set_temp_variable = { _pathfind_prov_allow_partial = 1 }
+									WA_AI_PATHFIND_PROV_get_path = yes
+
+									if = {
+										limit = { check_variable = { pathfind_prov_success_ = 1 } }
+										add_to_temp_variable = { _dbg_rt_success = 1 }
+										log = "        PATHFINDER: SUCCESS (full path) | [?route_start] -> [?supply_hub_province_] | length=[?pathfind_prov_path_^num] level=[?route_level]"
+									}
+									else_if = {
+										limit = { check_variable = { pathfind_prov_success_ = 2 } }
+										add_to_temp_variable = { _dbg_rt_partial = 1 }
+										log = "        PATHFINDER: PARTIAL (frontier) | [?route_start] -> [?supply_hub_province_] | length=[?pathfind_prov_path_^num] level=[?route_level]"
+									}
+									else = {
+										add_to_temp_variable = { _dbg_rt_fail = 1 }
+										log = "        PATHFINDER: FAILED | [?route_start] -> [?supply_hub_province_] | no valid path"
+									}
+
+									# Log province chain
+									if = {
+										limit = { check_variable = { pathfind_prov_success_ > 0 } }
+										log = "        Province chain:"
+										for_each_loop = { array = pathfind_prov_path_ index = _pi value = _pv
+											log = "          [?_pi]: [?_pv]"
+										}
+									}
+
+									# Fix 28: Overseas fallback — if same-landmass and not full success
+									set_temp_variable = { _direct_success = pathfind_prov_success_ }
+									if = {
+										limit = {
+											check_variable = { target_landmass = capital_landmass }
+											NOT = { check_variable = { _direct_success = 1 } }
+										}
+										log = "        >>> Fix 28: Direct route not full success — trying OVERSEAS FALLBACK..."
+										set_temp_variable = { _target_state_for_port_search = _target_state_id }
+										WA_AI_PC_analyze_overseas_supply_chain = yes
+
+										if = {
+											limit = { check_variable = { overseas_route_start_ > 0 } }
+											log = "        >>> Overseas port found: recv_port=[?overseas_route_start_] recv_state=[?overseas_receiving_port_state_] home_port_state=[?overseas_home_port_state_] max_level=[?overseas_max_railway_level_]"
+
+											set_temp_variable = { _pathfind_prov_start = overseas_route_start_ }
+											set_temp_variable = { _pathfind_prov_end = supply_hub_province_ }
+											set_temp_variable = { _pathfind_prov_type = 2 }
+											set_temp_variable = { _pathfind_prov_allow_partial = 1 }
+											WA_AI_PATHFIND_PROV_get_path = yes
+
+											if = {
+												limit = { check_variable = { pathfind_prov_success_ = 1 } }
+												log = "        >>> OVERSEAS SUCCESS (full path) | [?overseas_route_start_] -> [?supply_hub_province_] | length=[?pathfind_prov_path_^num]"
+												log = "        >>> Overseas province chain:"
+												for_each_loop = { array = pathfind_prov_path_ index = _pi value = _pv
+													log = "          [?_pi]: [?_pv]"
+												}
+											}
+											else_if = {
+												limit = { check_variable = { pathfind_prov_success_ = 2 } }
+												log = "        >>> OVERSEAS PARTIAL | [?overseas_route_start_] -> [?supply_hub_province_] | length=[?pathfind_prov_path_^num]"
+											}
+											else = {
+												log = "        >>> OVERSEAS FAILED | [?overseas_route_start_] -> [?supply_hub_province_]"
+											}
+										}
+										else = {
+											log = "        >>> No overseas port found near target"
+										}
+									}
+								}
+							}
+							else = {
+								ROOT = { log = "        route_start=0 — no valid start (overseas port not found)" }
+							}
+						}
+						else = {
+							if = {
+								limit = { check_variable = { supply_hub_province_ = 0 } }
+								ROOT = {
+									add_to_temp_variable = { _dbg_rt_skipped_nohub = 1 }
+									log = "     [Prev.GetName] — SKIPPED (no supply hub province found)"
+								}
+							}
+							else = {
+								ROOT = { log = "     [Prev.GetName] hub=[?supply_hub_province_] — SKIPPED (province not controlled by ROOT)" }
+							}
+						}
+					}
+				}
+
+				### 2b: Puppet frontline states
+				every_subject_country = {
+					every_controlled_state = {
+						limit = {
+							any_neighbor_state = {
+								OR = {
+									is_controlled_by = var:_current_enemy_tag
+									controller = { is_subject_of = var:_current_enemy_tag }
+								}
+							}
+							WA_AI_PC_state_has_supply_hub = yes
+							NOT = { WA_AI_PC_state_has_railway_at_level = yes }
+						}
+
+						WA_AI_PC_coastal_state_is_single_node = yes
+						if = {
+							limit = { check_variable = { is_single_node_ = 1 } }
+							ROOT = {
+								add_to_temp_variable = { _dbg_rt_skipped_singlenode = 1 }
+								log = "     (PUPPET) [Prev.GetName] — SKIPPED (single-node coastal state)"
+							}
+						}
+						else = {
+							WA_AI_PC_railway_get_supply_hub_province = yes
+
+							if = {
+								limit = {
+									check_variable = { supply_hub_province_ > 0 }
+									OR = {
+										ROOT = { controls_province = var:supply_hub_province_ }
+										controller = { is_subject_of = ROOT }
+									}
+								}
+
+								WA_AI_PC_get_state_id = yes
+								set_temp_variable = { _target_state_id = state_id_ }
+								set_temp_variable = { target_landmass = global.WA_AI_MAP_state_landmass^_target_state_id }
+
+								# Determine route start
+								if = {
+									limit = { check_variable = { target_landmass = capital_landmass } }
+									set_temp_variable = { route_start = default_route_start }
+									set_temp_variable = { route_level = default_route_level }
+									ROOT = { log = "     (PUPPET) [Prev.GetName] (state=[?_target_state_id]) hub=[?supply_hub_province_] | SAME landmass — start=capital ([?default_route_start])" }
+								}
+								else = {
+									set_temp_variable = { _target_state_for_port_search = _target_state_id }
+									ROOT = { WA_AI_PC_analyze_overseas_supply_chain = yes }
+									set_temp_variable = { route_start = overseas_route_start_ }
+									set_temp_variable = { route_level = overseas_max_railway_level_ }
+									ROOT = { log = "     (PUPPET) [Prev.GetName] (state=[?_target_state_id]) hub=[?supply_hub_province_] | CROSS landmass (target_lm=[?target_landmass] capital_lm=[?capital_landmass])" }
+									ROOT = { log = "        overseas: home_port_state=[?overseas_home_port_state_] recv_port=[?overseas_route_start_] recv_state=[?overseas_receiving_port_state_] max_level=[?overseas_max_railway_level_]" }
+								}
+
+								# Run pathfinder
+								if = {
+									limit = { check_variable = { route_start > 0 } }
+
+									ROOT = {
+										add_to_temp_variable = { _dbg_rt_total = 1 }
+
+										set_temp_variable = { _pathfind_prov_start = route_start }
+										set_temp_variable = { _pathfind_prov_end = supply_hub_province_ }
+										set_temp_variable = { _pathfind_prov_type = 2 }
+										set_temp_variable = { _pathfind_prov_allow_partial = 1 }
+										WA_AI_PATHFIND_PROV_get_path = yes
+
+										if = {
+											limit = { check_variable = { pathfind_prov_success_ = 1 } }
+											add_to_temp_variable = { _dbg_rt_success = 1 }
+											log = "        PATHFINDER: SUCCESS (full path) | [?route_start] -> [?supply_hub_province_] | length=[?pathfind_prov_path_^num] level=[?route_level]"
+										}
+										else_if = {
+											limit = { check_variable = { pathfind_prov_success_ = 2 } }
+											add_to_temp_variable = { _dbg_rt_partial = 1 }
+											log = "        PATHFINDER: PARTIAL (frontier) | [?route_start] -> [?supply_hub_province_] | length=[?pathfind_prov_path_^num] level=[?route_level]"
+										}
+										else = {
+											add_to_temp_variable = { _dbg_rt_fail = 1 }
+											log = "        PATHFINDER: FAILED | [?route_start] -> [?supply_hub_province_] | no valid path"
+										}
+
+										# Log province chain
+										if = {
+											limit = { check_variable = { pathfind_prov_success_ > 0 } }
+											log = "        Province chain:"
+											for_each_loop = { array = pathfind_prov_path_ index = _pi value = _pv
+												log = "          [?_pi]: [?_pv]"
+											}
+										}
+
+										# Fix 28: Overseas fallback for puppet targets
+										set_temp_variable = { _direct_success = pathfind_prov_success_ }
+										if = {
+											limit = {
+												check_variable = { target_landmass = capital_landmass }
+												NOT = { check_variable = { _direct_success = 1 } }
+											}
+											log = "        >>> Fix 28: Direct route not full success — trying OVERSEAS FALLBACK..."
+											set_temp_variable = { _target_state_for_port_search = _target_state_id }
+											WA_AI_PC_analyze_overseas_supply_chain = yes
+
+											if = {
+												limit = { check_variable = { overseas_route_start_ > 0 } }
+												log = "        >>> Overseas port found: recv_port=[?overseas_route_start_] recv_state=[?overseas_receiving_port_state_] home_port_state=[?overseas_home_port_state_] max_level=[?overseas_max_railway_level_]"
+
+												set_temp_variable = { _pathfind_prov_start = overseas_route_start_ }
+												set_temp_variable = { _pathfind_prov_end = supply_hub_province_ }
+												set_temp_variable = { _pathfind_prov_type = 2 }
+												set_temp_variable = { _pathfind_prov_allow_partial = 1 }
+												WA_AI_PATHFIND_PROV_get_path = yes
+
+												if = {
+													limit = { check_variable = { pathfind_prov_success_ = 1 } }
+													log = "        >>> OVERSEAS SUCCESS (full path) | [?overseas_route_start_] -> [?supply_hub_province_] | length=[?pathfind_prov_path_^num]"
+													log = "        >>> Overseas province chain:"
+													for_each_loop = { array = pathfind_prov_path_ index = _pi value = _pv
+														log = "          [?_pi]: [?_pv]"
+													}
+												}
+												else_if = {
+													limit = { check_variable = { pathfind_prov_success_ = 2 } }
+													log = "        >>> OVERSEAS PARTIAL | [?overseas_route_start_] -> [?supply_hub_province_] | length=[?pathfind_prov_path_^num]"
+												}
+												else = {
+													log = "        >>> OVERSEAS FAILED | [?overseas_route_start_] -> [?supply_hub_province_]"
+												}
+											}
+											else = {
+												log = "        >>> No overseas port found near target"
+											}
+										}
+									}
+								}
+								else = {
+									ROOT = { log = "        route_start=0 — no valid start (overseas port not found)" }
+								}
+							}
+							else = {
+								if = {
+									limit = { check_variable = { supply_hub_province_ = 0 } }
+									ROOT = {
+										add_to_temp_variable = { _dbg_rt_skipped_nohub = 1 }
+										log = "     (PUPPET) [Prev.GetName] — SKIPPED (no supply hub province found)"
+									}
+								}
+								else = {
+									ROOT = { log = "     (PUPPET) [Prev.GetName] hub=[?supply_hub_province_] — SKIPPED (province not controlled by ROOT or subject)" }
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		else = {
+			log = "  -> NOT bordered — skipping"
+		}
+	}
+
+	### SECTION 3: Summary
+	log = "====================================================================="
+	log = "  ROUTE SUMMARY"
+	log = "====================================================================="
+	log = "  Total routes computed: [?_dbg_rt_total]"
+	log = "  Full paths: [?_dbg_rt_success]"
+	log = "  Partial paths (frontier): [?_dbg_rt_partial]"
+	log = "  Failed (no path): [?_dbg_rt_fail]"
+	log = "  Skipped (single-node): [?_dbg_rt_skipped_singlenode]"
+	log = "  Skipped (no hub province): [?_dbg_rt_skipped_nohub]"
+	log = "====================================================================="
 }
