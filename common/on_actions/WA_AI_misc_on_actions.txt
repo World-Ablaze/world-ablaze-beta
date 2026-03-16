@@ -64,7 +64,7 @@ on_actions = {
 
 				# WA_AI_manage_xp = yes
 
-				if = { 
+				if = {
 					limit = {
 						num_of_available_civilian_factories > 1
 						NOT = {
@@ -151,6 +151,39 @@ on_actions = {
 					if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: on_weekly eligibility PASSED - calling WA_AI_PC_railway" }
 					WA_AI_PC_railway = yes
 				}
+			}
+		}
+		effect = {
+			if = {
+				limit = {
+					is_ai = yes
+					not = {has_country_flag = trade_fix_ai_strat}
+				}
+				if = {
+					limit = {
+						not = {has_tech = trade_fix_tech}
+					}
+					set_technology = { trade_fix_tech = 1 popup = no }
+				}
+				set_country_flag = trade_fix_ai_strat
+				add_equipment_production = {
+					equipment = {
+						type = trade_fix_equipment_0
+					}
+					requested_factories = 1
+					progress = 0.65
+					amount = 1
+				}
+				add_offsite_building = { type = dockyard level = 1 }
+			}
+		}
+	}
+	on_monthly = {
+		effect = {
+			if = {
+				limit = { is_ai = yes }
+				WA_AI_TEMPLATES_calculate_templates = yes
+				WA_AI_RESEARCH_check_for_empty_research_slots = yes
 			}
 		}
 	}
@@ -288,6 +321,27 @@ on_actions = {
 				}
 			}
 		}
+		effect = {
+			if = {
+				limit = {
+					FROM.FROM = {
+						OR = {
+							is_one_state_island = yes
+							is_island_state = yes
+						}
+						NOT = {
+							has_dynamic_modifier = { modifier = island_province_ai }
+						}
+						CONTROLLER = {
+							is_ai = yes
+						}
+					}
+				}
+				FROM.FROM = {
+					add_dynamic_modifier = { modifier = island_province_ai }
+				}
+			}
+		}
 	}
 	on_startup = {
 		effect = {
@@ -323,7 +377,7 @@ on_actions = {
 						check_variable = { WA_AI_PC_queue^num > 0 }
 						check_variable = { _cancel_count < 100 }  # Safety limit
 					}
-					
+
 					set_temp_variable = { _found_railway = 0 }
 					for_each_loop = { array = WA_AI_PC_queue value = _proj_id break = _found_break
 						if = { limit = { check_variable = { WA_AI_PC_building_type^_proj_id = 13 } }
@@ -332,7 +386,7 @@ on_actions = {
 							set_temp_variable = { _found_break = 1 }
 						}
 					}
-					
+
 					if = { limit = { check_variable = { _found_railway = 1 } }
 						WA_AI_PC_end_project_by_id = yes
 						add_to_temp_variable = { _cancel_count = 1 }
@@ -347,6 +401,138 @@ on_actions = {
 				set_variable = { WA_AI_PC_railway_INTERVAL_counter = 0 }
 
 				if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: Railway projects cancelled due to peace" }
+			}
+		}
+	}
+
+	on_capitulation_immediate = {
+		effect = {
+			ROOT = {
+				if = {
+					limit = {
+						tag = HOL
+						is_ai = yes
+					}
+					remove_resource_rights = 672
+					remove_resource_rights = 334
+					remove_resource_rights = 673
+					remove_resource_rights = 287
+				}
+			}
+		}
+	}
+
+	on_weekly_GER = {
+		effect = {
+			if = {
+				limit = {
+					is_ai = yes
+					tag = GER
+					has_war_with = SOV
+					date > 1941.10.1
+					date < 1945.4.1
+				}
+				if = {
+					limit = {
+						has_equipment = { infantry_equipment < 1000 }
+					}
+					add_equipment_to_stockpile = {
+						type = infantry_equipment
+						producer = GER
+						amount = 40000
+					}
+				}
+				if = {
+					limit = {
+						has_equipment = { support_equipment < 1000 }
+					}
+					add_equipment_to_stockpile = {
+						type = support_equipment
+						producer = GER
+						amount = 35000
+					}
+				}
+				if = {
+					limit = {
+						has_equipment = { heavy_infantry_equipment < 1000 }
+					}
+					add_equipment_to_stockpile = {
+						type = heavy_infantry_equipment
+						producer = GER
+						amount = 30000
+					}
+				}
+				if = {
+					limit = {
+						has_equipment = { artillery_equipment < 100 }
+					}
+					add_equipment_to_stockpile = {
+						type = artillery_equipment
+						producer = GER
+						amount = 3000
+					}
+				}
+				if = {
+					limit = {
+						has_equipment = { heavy_artillery_equipment < 100 }
+					}
+					add_equipment_to_stockpile = {
+						type = heavy_artillery_equipment
+						producer = GER
+						amount = 3000
+					}
+				}
+				if = {
+					limit = {
+						has_equipment = { mechanized_equipment < 100 }
+					}
+					add_equipment_to_stockpile = {
+						type = mechanized_equipment
+						producer = GER
+						amount = 1000
+					}
+				}
+				if = {
+					limit = {
+						has_equipment = { heavy_anti_air_equipment < 100 }
+					}
+					add_equipment_to_stockpile = {
+						type = heavy_anti_air_equipment
+						producer = GER
+						amount = 2000
+					}
+				}
+				if = {
+					limit = {
+						has_equipment = { anti_tank_equipment < 100 }
+					}
+					add_equipment_to_stockpile = {
+						type = anti_tank_equipment
+						producer = GER
+						amount = 3000
+					}
+				}
+				if = {
+					limit = {
+						has_equipment = { medium_tank_chassis < 100 }
+					}
+					add_equipment_to_stockpile = {
+						type = medium_tank_chassis
+						producer = GER
+						amount = 500
+					}
+				}
+				if = {
+					limit = {
+						has_tech = ger_modern_tank_chassis_1
+						has_equipment = { modern_tank_chassis < 100 }
+					}
+					add_equipment_to_stockpile = {
+						type = modern_tank_chassis
+						producer = GER
+						amount = 500
+					}
+				}
 			}
 		}
 	}
