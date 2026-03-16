@@ -93,7 +93,7 @@ NDefines.NCountry.POLITICAL_POWER_CAP = 5000.0
 
 NDefines.NCountry.MAJOR_MIN_FACTORIES = 70											-- need at least these many factories to become a major
 
-NDefines.NCountry.BASE_FUEL_GAIN_PER_OIL = 1.1										-- base amount of fuel gained hourly per excess oil
+NDefines.NCountry.BASE_FUEL_GAIN_PER_OIL = 10										-- base amount of fuel gained hourly per excess oil
 NDefines.NCountry.STARTING_FUEL_RATIO = 0.8											-- starting fuel ratio compared to max fuel for countries
 
 NDefines.NCountry.GIE_CAPITULATION_WARSCORE_LEGITIMACY_FACTOR = 4.0 				--Multiplies accumulated warscore with this factor for part of starting legitimacy.
@@ -878,16 +878,16 @@ NDefines.NNavy.NAVAL_COMBAT_AIR_LOW_AA_TARGET_SCORE = 1
 NDefines.NNavy.SUPPLY_NEED_FACTOR = 0.75										   		-- multiplies supply usage
 
 NDefines.NNavy.MISSION_FUEL_COSTS = {  -- fuel cost for each mission
-	0.5, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
-	0.8, -- PATROL
-	1.0, -- STRIKE FORCE (does not cost fuel at base, and uses IN_COMBAT_FUEL_COST in combat. this is just for the movement in between)
-	0.6, -- CONVOY RAIDING
-	0.6, -- CONVOY ESCORT
-	1.0, -- MINES PLANTING
-	1.0, -- MINES SWEEPING
-	0.4, -- TRAIN
+	0.1, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
+	0.1, -- PATROL
+	0.1, -- STRIKE FORCE (does not cost fuel at base, and uses IN_COMBAT_FUEL_COST in combat. this is just for the movement in between)
+	0.1, -- CONVOY RAIDING
+	0.1, -- CONVOY ESCORT
+	0.1, -- MINES PLANTING
+	0.1, -- MINES SWEEPING
+	0.1, -- TRAIN
 	0.0, -- RESERVE_FLEET (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
-	1.0, -- NAVAL_INVASION_SUPPORT (does not cost fuel at base, only costs while doing bombardment and escorting units)
+	0.1, -- NAVAL_INVASION_SUPPORT (does not cost fuel at base, only costs while doing bombardment and escorting units)
 }
 
 NDefines.NNavy.NAVAL_MINES_ACCIDENT_CRITICAL_HIT_CHANCES = 0.08						-- If an accident happens, how likely it is to be a critical hit (caused by naval mines)
@@ -1086,15 +1086,15 @@ NDefines.NAI.MAIN_SHIP_RATIO_TO_SPLIT = 2                 						-- if main ship 
 
 NDefines.NAI.MAX_MISSION_PER_TASKFORCE = {  -- max mission region/taskforce ratio
 	0, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
-	1.5, -- PATROL
-	6, -- STRIKE FORCE
-	1.5, -- CONVOY RAIDING
-	1, -- CONVOY ESCORT
-	2, -- MINES PLANTING
-	2, -- MINES SWEEPING
+	1, -- PATROL
+	5, -- STRIKE FORCE
+	0.75, -- CONVOY RAIDING
+	0.9, -- CONVOY ESCORT
+	0.5, -- MINES PLANTING
+	0.5, -- MINES SWEEPING
 	0, -- TRAIN
 	0, -- RESERVE_FLEET
-	10, -- NAVAL INVASION SUPPORT
+	5, -- NAVAL INVASION SUPPORT
 }
 
 NDefines.NAI.MAX_PATROL_TO_STRIKE_FORCE_RATIO = 4.0									-- maximum patrol/strike force ratio
