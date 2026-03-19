@@ -1049,74 +1049,18 @@ NDefines.NAI.CANCEL_INVASION_COMBAT_MIN_DURATION_HOURS = 720    					-- Only all
 
 ----------- NAVY
 
-NDefines.NAI.MISSING_CONVOYS_BOOST_FACTOR = 0.0										-- The more convoys a country is missing, the more resources it diverts to cover this.						-- If the enemy has a navy at least these many times stronger that the own, don't bother invading
-
-NDefines.NAI.CONVOY_ESCORT_MUL_FROM_NO_CONVOYS = 0 									-- score multiplier when no convoys are around
-NDefines.NAI.CONVOY_ESCORT_SCORE_FROM_CONVOYS = 0            				    	-- score for each convoy you have in area
-NDefines.NAI.REGION_CONVOY_DANGER_DAILY_DECAY = 5									-- When convoys are sunk it generates threat in the region which the AI uses to prio nalval missions
-NDefines.NAI.NAVAL_MISSION_ESCORT_NEAR_OWNED = 0									-- Extra escort mission score near owned provinces
-NDefines.NAI.NAVAL_MISSION_ESCORT_NEAR_CONTROLLED = 0								-- Extra escort mission score near controlled provinces
-
-NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_MINE_LAYING = 0.05							-- maximum ratio of screens forces to be used in mine laying
-NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_MINE_SWEEPING = 0.05 						-- maximum ratio of screens forces to be used in mine sweeping
-NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MIN = 0.3						-- minimum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
-NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX = 0.7 					-- maximum ratio of all screen-ships forces to be used in convoy defense (increases up to max as AI loses convoys).
-NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX_CONVOY_THREAT = 1000		-- AI will increase screen assignment for escort missions as threat increases
-NDefines.NAI.MAX_SCREEN_FORCES_FOR_INVASION_SUPPORT = 0.2 							-- max ratio of screens forces to be used in naval invasion missions
-NDefines.NAI.MAX_CAPITAL_FORCES_FOR_INVASION_SUPPORT = 0.3 							-- max ratio of capital forces to be used in naval invasion missions
-
-NDefines.NAI.CARRIER_TASKFORCE_MAX_CARRIER_COUNT = 10 								-- optimum carrier count for carrier taskforces
-NDefines.NAI.CAPITAL_TASKFORCE_MAX_CAPITAL_COUNT = 10 								-- optimum capital count for capital taskforces
-NDefines.NAI.SCREEN_TASKFORCE_MAX_SHIP_COUNT = 5									-- optimum screen count for screen taskforces !DONT INCREASE! (Affects patrol task forces and breaks stuff)
-NDefines.NAI.SCREENS_TO_CAPITAL_RATIO = 3.0											-- screens to capital/carrier count in carrier & capital taskforces
-
-NDefines.NAI.MAX_CARRIER_OVERFILL = 1.0												-- Carriers will be overfilled to this amount if there are doctrines to justify it
-NDefines.NAI.MIN_CAPITALS_FOR_CARRIER_TASKFORCE = 10								-- carrier fleets will at least have this amount of capitals
-NDefines.NAI.CAPITALS_TO_CARRIER_RATIO = 1.0										-- capital to carrier count in carrier taskfoces
-
-NDefines.NAI.MIN_MAIN_SHIP_RATIO = 1                      						-- if main ship ratio is below this, steal other ships.
-NDefines.NAI.MIN_SUPPORT_SHIP_RATIO = 1.0                   						-- if support ship ratio is below this, steal other ships.
-NDefines.NAI.MIN_MAIN_SHIP_RATIO_TO_REINFORCE = 1        	 						-- the main ships will be tried to reinforce this level.
-NDefines.NAI.MIN_SUPPORT_SHIP_RATIO_TO_REINFORCE = 1    		 					-- the support ships will be tried to reinforce this level.
-NDefines.NAI.MIN_MAIN_SHIP_TO_SPARE = 1.0                   						-- can only steal ships from a task force if their main ship ratio is above this.
-NDefines.NAI.MIN_SUPPORT_SHIP_TO_SPARE = 3.0               							-- can only steal ships from a task force if their support ship ratio is above this. Prevents MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX from stealing ships.
-NDefines.NAI.MIN_MAIN_SHIP_RATIO_TO_MERGE = 0.7            							-- try merge task force if main ship ratio is lower than this.
-NDefines.NAI.MAX_MAIN_SHIP_RATIO_TO_MERGE = 1.5          							-- if resulting main ship ratio would be at most this, allow merging into this task force.
-NDefines.NAI.MAIN_SHIP_RATIO_TO_SPLIT = 2                 						-- if main ship ratio in a task force is larger than this, split it. (If a carrier TF wants 4 carriers (see defines above), but it has more than [this * 4] carriers, then we try to split the TF.)
-
 NDefines.NAI.MAX_MISSION_PER_TASKFORCE = {  -- max mission region/taskforce ratio
 	0, -- HOLD (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
-	1, -- PATROL
+	0.5, -- PATROL
 	5, -- STRIKE FORCE
-	0.75, -- CONVOY RAIDING
-	0.9, -- CONVOY ESCORT
+	0.5, -- CONVOY RAIDING
+	0.5, -- CONVOY ESCORT
 	0.5, -- MINES PLANTING
 	0.5, -- MINES SWEEPING
 	0, -- TRAIN
 	0, -- RESERVE_FLEET
 	5, -- NAVAL INVASION SUPPORT
 }
-
-NDefines.NAI.MAX_PATROL_TO_STRIKE_FORCE_RATIO = 4.0									-- maximum patrol/strike force ratio
-
---Need to find good values, 1 convoy sunk generates 25 threat
-NDefines.NAI.REGION_THREAT_LEVEL_TO_AVOID_REGION = 25 * 1000						-- How much threat must be generated in region ( by REGION_THREAT_PER_SUNK_CONVOY ) so the AI will decide to mark the region as avoid
-NDefines.NAI.REGION_THREAT_LEVEL_TO_BLOCK_REGION = 25 * 1000						-- How much threat must be generated in region ( by REGION_THREAT_PER_SUNK_CONVOY ) so the AI will decide to mark the region as avoid
-
---NDefines.NAI.NAVAL_MISSION_AGGRESSIVE_PATROL_DIVISOR = 3							-- Divides patrol score when not defending
---NDefines.NAI.NAVAL_MISSION_PATROL_NEAR_OWNED = 0									-- Extra patrol mission score near owned provinces
---NDefines.NAI.NAVAL_MISSION_PATROL_NEAR_CONTROLLED = 0								-- Extra patrol mission score near controlled provinces
-
-NDefines.NAI.NAVAL_DOCKYARDS_SHIP_FACTOR = 2										-- The extent to which number of dockyards play into amount of sips a nation wants
-NDefines.NAI.NAVY_PREFERED_MAX_SIZE = 80											-- AI will generally attempt to merge fleets into this size, but as a soft limit.
-NDefines.NAI.SUB_TASKFORCE_MAX_SHIP_COUNT = 5										-- optimum sub count for sub taskforces
-NDefines.NAI.PRODUCTION_MAX_PROGRESS_TO_SWITCH_NAVAL = 0.0							-- AI will not replace ships being built by newer types if progress is above this
-NDefines.NAI.PRODUCTION_WAIT_TO_FINISH_IF_EXPENSIVE = 0.1      						-- If produced item is expensive (producing less than one/week), wait to finish item if progress is above this
---NDefines.NAI.PRODUCTION_WAIT_TO_FINISH_IF_CHEAP = 0.0         			 		-- If produced item is cheap (producing more than one/week), wait to finish item if progress is above this
-
-
-NDefines.NAI.NAVAL_MISSION_MINES_PLANTING_NEAR_OWNED = 100000
-NDefines.NAI.NAVAL_MISSION_MINES_SWEEPING_NEAR_OWNED = 100000	 					-- How likely the AI will do the sweeping missions. The value is scaled by the amount of mines to sweep.
 
 ------------------------------------------------- AIR
 
