@@ -77,6 +77,112 @@ war_measures = {
 			}
 		}
 	}
+
+	CHI_recruit_militias_ai = {
+		icon = generic_political_discourse
+
+        allowed = { tag = CHI }
+
+		available = {
+			NOT = { has_country_flag = CHI_militia_disbanded }
+			if = {
+				limit = {
+					surrender_progress < 0.45
+					OR = {
+						JAP = { is_ai = yes }
+						date > 1939.1.1
+					}
+				}
+				num_divisions < 200
+			}
+			else_if = {
+				limit = {
+					surrender_progress > 0.45
+					OR = {
+						JAP = { is_ai = yes }
+						date > 1939.1.1
+					}
+					date > 1939.1.1
+				}
+				num_divisions < 300
+			}
+			has_war = yes
+			is_ai = yes
+			has_manpower > 150000
+		}
+		visible = {
+			NOT = { has_country_flag = CHI_militia_disbanded }
+			is_ai = yes
+		}
+
+		days_remove = 30
+		is_good = yes
+		cost = 0
+
+		cancel_if_not_visible = yes
+
+		ai_will_do = {
+			factor = 250
+		}
+
+		complete_effect = {
+			add_manpower = -150000
+		}
+
+		remove_effect = {
+			if = {
+				limit = {
+					929 = {
+						is_fully_controlled_by = controller
+						CONTROLLER = {
+							OR = {
+								tag = CHI
+								is_in_faction_with = CHI
+								is_subject_of = CHI
+							}
+						}
+					}
+				}
+				929 = {
+					create_unit = {
+						division = "division_template = \"Mín bīngtuán\" start_experience_factor = 0.5 start_equipment_factor=1.0"
+						owner = CHI
+						count = 12
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					752 = {
+						is_fully_controlled_by = controller
+						CONTROLLER = {
+							OR = {
+								tag = CHI
+								is_in_faction_with = CHI
+								is_subject_of = CHI
+							}
+						}
+					}
+				}
+				752 = {
+					create_unit = {
+						division = "division_template = \"Mín bīngtuán\" start_experience_factor = 0.5 start_equipment_factor=1.0"
+						owner = CHI
+						count = 12
+					}
+				}
+			}
+			else = {
+				capital_scope = {
+					create_unit = {
+						division = "division_template = \"Mín bīngtuán\" start_experience_factor = 0.5 start_equipment_factor=1.0"
+						owner = CHI
+						count = 12
+					}
+				}
+			}
+		}
+	}
 }
 
 
@@ -143,6 +249,83 @@ political_actions = {
 					}
 				}
 				demote_leader = yes
+			}
+		}
+	}
+}
+CHI_war_of_resistance = {
+	CHI_scorched_earth_tactics_ai = {
+		icon = generic_scorched_earth
+
+        allowed = { tag = CHI }
+
+		available = {
+			FROM = {
+				is_controlled_by = ROOT
+				any_neighbor_state = {
+					controller = { has_war_with = ROOT }
+				}
+			}
+			divisions_in_state = { state = FROM size > 1 }
+		}
+
+		visible = {
+			has_completed_focus = CHI_scorched_earth_tactics
+			is_ai = yes
+		}
+
+		state_target = yes
+
+		on_map_mode = map_only
+
+		target_array = controlled_states
+
+		target_trigger = {
+			FROM = {
+				NOT = {
+					has_state_flag = CHI_scorched_earth_state
+				}
+				is_controlled_by = ROOT
+				any_neighbor_state = {
+					controller = { has_war_with = ROOT }
+				}
+			}
+		}
+
+		cost = 0
+
+		fire_only_once = no
+
+		days_remove = 5
+
+		ai_will_do = {
+			factor = 1000
+		}
+		complete_effect = {
+			custom_effect_tooltip = CHI_peoples_power_struggle_2_l_tt
+			add_to_variable = {
+			    var = chi_peoples_power_struggle_influence
+			    value = -2
+			}
+		}
+
+		remove_effect = {
+			FROM = {
+				damage_building = {
+					type = rail_way
+					damage = 1
+				}
+				damage_building = {
+					type = supply_node
+					damage = 1
+				}
+				damage_building = {
+					type = infrastructure
+					damage = 1
+				}
+				hidden_effect = {
+					set_state_flag = CHI_scorched_earth_state
+				}
 			}
 		}
 	}
