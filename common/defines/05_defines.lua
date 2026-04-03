@@ -45,7 +45,7 @@ NDefines.NPolitics.ARMY_LEADER_COST = 2												-- cost for recruiting new le
 NDefines.NPolitics.NAVY_LEADER_COST = 2												-- command power cost for recruiting new leaders, 'this value' * number_of_existing_leaders_of_type
 NDefines.NPolitics.ARMY_LEADER_MAX_COST = 80										-- max cost BEFORE modifiers
 NDefines.NPolitics.NAVY_LEADER_MAX_COST = 80										-- max cost BEFORE modifiers
-
+NDefines.NPolitics.BASE_POLITICAL_POWER_INCREASE = 1.5								-- Weekly increase of PP.
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Trade
 
@@ -1196,10 +1196,6 @@ NDefines.NAI.LAND_COMBAT_GUIDE_DISTANCE = 0.0										-- Distance within whch w
 
 ------------------------------------------------- END
 
-NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_ARMY_SPIRIT = 1000.0     						-- How quickly is desire to unlock army spirits accumulated?
-NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_NAVY_SPIRIT = 1000.0      						-- How quickly is desire to unlock naval spirits accumulated?
-NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_AIR_SPIRIT = 1000.0     	 					-- How quickly is desire to unlock air spirits accumulated?
-
 NDefines.NAI.UNLOCK_SPIRIT_AI_WILL_DO_FACTOR = 200              					-- Factor for scripted ai_will_do value
 NDefines.NAI.UNLOCK_SPIRIT_MODIFIER_FACTOR = 0.0              						-- Factor for AI's evaluated value of the modifiers connected to the spirit
 NDefines.NAI.UNLOCK_SPIRIT_USE_TRUNCATION_SELECT = true       						-- Whether to use truncation select or roulette-wheel select. Set threshold for truncation select below.
@@ -1345,11 +1341,73 @@ NDefines.NAI.DIPLOMACY_IMPROVE_RELATION_COST_FACTOR = 1000.0						-- Desire to b
 NDefines.NAI.GIVE_STATE_CONTROL_MIN_CONTROLLED = 0									-- AI needs to control more than this number of states before considering giving any away
 NDefines.NAI.GIVE_STATE_CONTROL_MIN_CONTROL_DIFF = 1								-- The difference in number of controlled states compared to war participation needs to be bigger than this for the AI to consider giving a state to a country
 
-NDefines.NAI.DESIRE_USE_XP_TO_UPDATE_LAND_TEMPLATE = 0    							-- How quickly is desire to update/create templates accumulated?
-NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_LAND_DOCTRINE = 100.0    						-- How quickly is desire to unlock land doctrines accumulated?
-NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_NAVAL_DOCTRINE = 2.0   						-- How quickly is desire to unlock naval doctrines accumulated?
-NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_AIR_DOCTRINE = 100.0     						-- How quickly is desire to unlock air doctrines accumulated?
-NDefines.NAI.DESIRE_USE_XP_TO_UPGRADE_AIR_EQUIPMENT = 0.5   						-- How quickly is desire to update/create air equipment variants accumulated?
+--------------------------------------------------------------------------------------------------------------
+-- DESIGNS
+--------------------------------------------------------------------------------------------------------------
+
+NDefines.NAI.DEFAULT_MODULE_VARIANT_CREATION_XP_CUTOFF_LAND = 50 --50	-- Army XP needed before attempting to create a variant of a type that uses the tank designer (the tank designer DLC feature must be active).
+NDefines.NAI.DEFAULT_MODULE_VARIANT_CREATION_XP_CUTOFF_NAVY = 25 --50	-- Same as above but for the ship designer.
+NDefines.NAI.DEFAULT_MODULE_VARIANT_CREATION_XP_CUTOFF_AIR = 25 --25	-- Same as above but for the ship designer.
+
+-- NDefines.NAI.DEFAULT_LEGACY_VARIANT_CREATION_XP_CUTOFF_LAND = 400 --10	-- Army XP needed before attempting to create a variant of a type that uses the legacy upgrades system. ai_strategy supports land_xp_spend_priority upgrade_xp_cutoff. If none is set this define is used instead.
+-- NDefines.NAI.DEFAULT_LEGACY_VARIANT_CREATION_XP_CUTOFF_NAVY = 400 --25	-- Same as above but for navy XP and navy_xp_spend_priority.
+-- NDefines.NAI.DEFAULT_LEGACY_VARIANT_CREATION_XP_CUTOFF_AIR  = 400 --25	-- Same as above but for air XP and air_xp_spend_priority.
+
+NDefines.NAI.VARIANT_CREATION_XP_RESERVE_LAND = 25 --50					-- If the AI lacks army XP to create a variant it will reserve this much XP for variant creation so that it will eventually be able to create a variant.
+NDefines.NAI.VARIANT_CREATION_XP_RESERVE_NAVY = 50 --50					-- Same as above but for navy XP.
+NDefines.NAI.VARIANT_CREATION_XP_RESERVE_AIR = 50 --50					-- Same as above but for air XP.
+
+-- The AI uses the below values when selecting which design to make among the types that use the tank designer
+-- (the tank designer DLC feature must be active). For each role, the highest priority AI design that can be
+-- created, if any, is assigned a weight. Any design with a weight of zero or a weight that falls below the
+-- cutoff is dropped. A random design is then picked from the remaining.
+-- Weight is calculated as AlternativeFactor * DemandFactor.
+-- An "alternative" is a producible design of the same archetype (each specialized type is its own archetype).
+
+NDefines.NAI.LAND_DESIGN_ALTERNATIVE_ABSENT = 10 --30000
+NDefines.NAI.LAND_DESIGN_ALTERNATIVE_OF_LESSER_TECH = 1 --10000
+NDefines.NAI.LAND_DESIGN_ALTERNATIVE_OF_EQUAL_TECH = 1 --100
+NDefines.NAI.LAND_DESIGN_ALTERNATIVE_OF_GREATER_TECH = 1 --1
+
+-- If a template may be reinforced with the archetype it's considered to be "demanded". If multiple conditions
+-- are met, e.g. it's both in the field and in training, the largest value is used.
+
+NDefines.NAI.LAND_DESIGN_DEMAND_FIELD_DIVISION = 5000
+NDefines.NAI.LAND_DESIGN_DEMAND_TRAINING_DIVISION = 50
+NDefines.NAI.LAND_DESIGN_DEMAND_GARRISON_DIVISION = 10
+NDefines.NAI.LAND_DESIGN_DEMAND_UNUSED_TEMPLATE = 10 --1
+NDefines.NAI.LAND_DESIGN_DEMAND_ABSENT = 10 --0
+
+-- If a design with a weight when divided by the largest weight falls below this value it's excluded from the
+-- selection. Valid values are in the range [0, 1] inclusive.
+
+NDefines.NAI.LAND_DESIGN_CUTOFF_AS_PERCENTAGE_OF_MAX = 0.01 --0.25
+
+-- The AI "desires" to spend XP on doctrines, templates, and equipment.
+-- The desire is built up over time and when XP is available it spends it on the action that has the highest accumulated desire. After spending XP the desire is reset, in effect balancing the desires.
+-- Below is the daily desire gain for each action.
+
+NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_LAND_DOCTRINE = 0.1    -- How quickly is desire to unlock land doctrines accumulated?
+NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_NAVAL_DOCTRINE = 0.1   -- How quickly is desire to unlock naval doctrines accumulated?
+NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_AIR_DOCTRINE = 0.1     -- How quickly is desire to unlock air doctrines accumulated?
+
+--EAI: make sure land template desire is always at the top, if the doctrine desire is high but the mod blocks it, AI wont create templates
+NDefines.NAI.DESIRE_USE_XP_TO_UPDATE_LAND_TEMPLATE = 100.0 --2.0    -- How quickly is desire to update/create templates accumulated?
+NDefines.NAI.DESIRE_USE_XP_TO_UPGRADE_LAND_EQUIPMENT = 0.1  -- How quickly is desire to update/create land equipment variants accumulated?
+
+NDefines.NAI.DESIRE_USE_XP_TO_UPGRADE_NAVAL_EQUIPMENT = 100.0 -- How quickly is desire to update/create naval equipment variants accumulated?
+NDefines.NAI.DESIRE_USE_XP_TO_UPGRADE_AIR_EQUIPMENT = 100.0   -- How quickly is desire to update/create air equipment variants accumulated?
+
+NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_ARMY_SPIRIT = 10    -- How quickly is desire to unlock army spirits accumulated?
+NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_NAVY_SPIRIT = 10   -- How quickly is desire to unlock naval spirits accumulated?
+NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_AIR_SPIRIT = 10     -- How quickly is desire to unlock air spirits accumulated?
+
+NDefines.NAI.DAYS_BETWEEN_CHECK_BEST_DOCTRINE = 7       -- Recalculate desired best doctrine to unlock with this many days inbetween.
+NDefines.NAI.DAYS_BETWEEN_CHECK_BEST_TEMPLATE = 7       -- Recalculate desired best template to upgrade with this many days inbetween.
+NDefines.NAI.DAYS_BETWEEN_CHECK_BEST_EQUIPMENT = 7      -- Recalculate desired best equipment to upgrade with this many days inbetween.
+
+NDefines.NAI.GARRISON_TEMPLATE_SCORE_IC_FACTOR = 1.0 -- ai uses these defines while calculating garrison template score of a template.
+NDefines.NAI.GARRISON_TEMPLATE_SCORE_MANPOWER_FACTOR = 0.05 -- formula is (template_ic * ic_factor + template_manpower * manpower_factor ) / template_supression (lower is better)
 
 NDefines.NAI.XP_RATIO_REQUIRED_TO_RESEARCH_WITH_XP = 1.0							-- AI will at least need this amount of xp compared to cost of a tech to reserch it with XP
 

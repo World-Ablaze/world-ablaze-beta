@@ -1,0 +1,207 @@
+"""
+State VP province mapping generator for World Ablaze AI.
+
+Reads HOI4 state history files and generates precomputed state->highest_vp_province mappings.
+This allows the AI to find the actual capital/major city province in each state.
+"""
+
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+import re
+import sys
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from core import read_file_with_bom
+from map_generators.base import BaseMapGenerator, GeneratorConfig
+
+
+def parse_state_vp_data(path: Path, logger) -> Tuple[Optional[int], Dict[int, int]]:
+    """
+    Parse a state history file to extract state ID and victory point data.
+
+    Args:
+        path: Path to the state history file.
+        logger: Logger instance.
+
+    Returns:
+        Tuple of (state_id, {province_id: vp_value}). Returns (None, {}) if parsing fails.
+    """
+    try:
+        content, _ = read_file_with_bom(path)
+    except Exception as e:
+        logger.warning(f"Failed to read {path}: {e}")
+        return None, {}
+
+    # Extract state ID
+    id_match = re.search(r"^\s*id\s*=\s*(\d+)", content, re.MULTILINE)
+    if not id_match:
+        logger.warning(f"No state ID found in {path}")
+        return None, {}
+
+    state_id = int(id_match.group(1))
+
+    # Extract all victory_points blocks
+    # Format: victory_points = { province_id vp_value }
+    vp_data: Dict[int, int] = {}
+
+    # Pattern matches: victory_points = { 1182 50 } (with various whitespace)
+    vp_pattern = re.compile(
+        r"victory_points\s*=\s*\{\s*(\d+)\s+(\d+)\s*\}", re.MULTILINE
+    )
+
+    for match in vp_pattern.finditer(content):
+        province_id = int(match.group(1))
+        vp_value = int(match.group(2))
+        vp_data[province_id] = vp_value
+
+    return state_id, vp_data
+
+
+def parse_all_state_vps(states_dir: Path, logger) -> Dict[int, int]:
+    """
+    Parse all state files and find the highest VP province for each state.
+
+    Args:
+        states_dir: Path to the history/states directory.
+        logger: Logger instance.
+
+    Returns:
+        Dictionary mapping state_id -> highest_vp_province_id.
+    """
+    state_vp_provinces: Dict[int, int] = {}
+    total_vps = 0
+
+    state_files = list(states_dir.glob("*.txt"))
+    logger.info(f"Found {len(state_files)} state files")
+
+    for state_file in state_files:
+        state_id, vp_data = parse_state_vp_data(state_file, logger)
+        if state_id is None:
+            continue
+
+        if vp_data:
+            # Find province with highest VP value
+            highest_vp_province = max(vp_data.keys(), key=lambda p: vp_data[p])
+            highest_vp_value = vp_data[highest_vp_province]
+            state_vp_provinces[state_id] = highest_vp_province
+            total_vps += 1
+
+            if logger.isEnabledFor(10):  # DEBUG level
+                logger.debug(
+                    f"State {state_id}: highest VP is province {highest_vp_province} ({highest_vp_value} VP)"
+                )
+
+    logger.info(f"Found {total_vps} states with victory points")
+    return state_vp_provinces
+
+
+class StateVpProvincesGenerator(BaseMapGenerator):
+    """Generator for state-to-highest-VP-province mappings."""
+
+    @property
+    def name(self) -> str:
+        return "state_vp_provinces"
+
+    @property
+    def description(self) -> str:
+        return "Generate state-to-VP-province mappings for World Ablaze AI capital detection"
+
+    def get_output_filename(self) -> str:
+        return "WA_AI_MAP_state_vp_provinces.txt"
+
+    def get_required_inputs(self) -> List[Path]:
+        return [self.config.states_dir]
+
+    def validate_inputs(self) -> List[str]:
+        """Override to check for directory instead of file."""
+        errors = []
+        if not self.config.states_dir.exists():
+            errors.append(f"States directory not found: {self.config.states_dir}")
+        elif not self.config.states_dir.is_dir():
+            errors.append(f"Not a directory: {self.config.states_dir}")
+        return errors
+
+    def process(self) -> Dict[str, Any]:
+        """Parse all state files for VP data."""
+        self.log_step(f"Parsing state files from {self.config.states_dir}...")
+        state_vp_provinces = parse_all_state_vps(self.config.states_dir, self.logger)
+
+        return {"state_vp_provinces": state_vp_provinces}
+
+    def format_output(self, data: Dict[str, Any]) -> str:
+        """Format state VP province data for output file."""
+        state_vp_provinces = data["state_vp_provinces"]
+
+        lines: List[str] = []
+        lines.append(
+            "############################################################################################################"
+        )
+        lines.append(
+            "#   World Ablaze AI - State VP Province Data (Auto-generated)"
+        )
+        lines.append(
+            "#   Maps each state to its highest VP province (the main city/capital)"
+        )
+        lines.append(
+            "#   Generated by: tools/map_generators/state_vp_provinces.py"
+        )
+        lines.append(
+            "############################################################################################################"
+        )
+        lines.append("")
+        lines.append("WA_AI_MAP_set_state_vp_provinces_data = {")
+
+        for state_id in sorted(state_vp_provinces.keys()):
+            province_id = state_vp_provinces[state_id]
+            lines.append(
+                f"    set_variable = {{ global.WA_AI_MAP_state_vp_province^{state_id} = {province_id} }}"
+            )
+
+        lines.append("}")
+        lines.append("")
+
+        return "\n".join(lines)
+
+
+def main() -> int:
+    """CLI entry point."""
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Generate state-to-VP-province mappings for World Ablaze AI."
+    )
+    parser.add_argument(
+        "--states-dir",
+        type=Path,
+        default=Path("../history/states"),
+        help="Path to the history/states folder",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path("../common/scripted_effects"),
+        help="Output directory",
+    )
+    parser.add_argument("-v", "--verbose", action="store_true")
+    parser.add_argument("-d", "--debug", action="store_true")
+    parser.add_argument("--dry-run", action="store_true")
+
+    args = parser.parse_args()
+
+    config = GeneratorConfig(
+        states_dir=args.states_dir,
+        output_dir=args.output_dir,
+        verbose=args.verbose,
+        debug=args.debug,
+        dry_run=args.dry_run,
+    )
+
+    generator = StateVpProvincesGenerator(config)
+    result = generator.run()
+
+    return 0 if result.success else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

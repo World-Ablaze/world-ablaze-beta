@@ -1,0 +1,316 @@
+WA_AI_MILITARY_is_allies_member = {
+	WA_AI_CONFIG_is_in_allies = yes
+}
+
+# Hostile land-neighbor pressure in the home area.
+# Used to keep continental countries from overcommitting to remote fronts
+# when a strong border rival exists (war or pre-war).
+WA_AI_MILITARY_border_hostile_pressure = {
+	any_home_area_neighbor_country = {
+		OR = {
+			# Active border war: trigger even against slightly weaker opponents.
+			AND = {
+				has_war_with = ROOT
+				strength_ratio = { tag = ROOT ratio > 0.55 }
+			}
+
+			# Pre-war standoff: only trigger against clearly threatening neighbors.
+			AND = {
+				ROOT = { NOT = { has_war_with = PREV } }
+				NOT = { is_in_faction_with = ROOT }
+				NOT = { is_subject_of = ROOT }
+				ROOT = { NOT = { is_subject_of = PREV } }
+				NOT = { has_war_together_with = ROOT }
+				NOT = { has_government = ROOT }
+				strength_ratio = { tag = ROOT ratio > 0.8 }
+			}
+		}
+	}
+}
+
+WA_AI_MILITARY_home_threatened = {
+	OR = {
+		WA_AI_defend_core = yes
+		surrender_progress > 0.05
+	}
+}
+
+WA_AI_MILITARY_has_western_foothold = {
+	OR = {
+		6 = {
+			CONTROLLER = {
+				OR = {
+					tag = ROOT
+					is_in_faction_with = ROOT
+					is_subject_of = ROOT
+				}
+			}
+		}
+		14 = {
+			CONTROLLER = {
+				OR = {
+					tag = ROOT
+					is_in_faction_with = ROOT
+					is_subject_of = ROOT
+				}
+			}
+		}
+		15 = {
+			CONTROLLER = {
+				OR = {
+					tag = ROOT
+					is_in_faction_with = ROOT
+					is_subject_of = ROOT
+				}
+			}
+		}
+		19 = {
+			CONTROLLER = {
+				OR = {
+					tag = ROOT
+					is_in_faction_with = ROOT
+					is_subject_of = ROOT
+				}
+			}
+		}
+		23 = {
+			CONTROLLER = {
+				OR = {
+					tag = ROOT
+					is_in_faction_with = ROOT
+					is_subject_of = ROOT
+				}
+			}
+		}
+		30 = {
+			CONTROLLER = {
+				OR = {
+					tag = ROOT
+					is_in_faction_with = ROOT
+					is_subject_of = ROOT
+				}
+			}
+		}
+		785 = {
+			CONTROLLER = {
+				OR = {
+					tag = ROOT
+					is_in_faction_with = ROOT
+					is_subject_of = ROOT
+				}
+			}
+		}
+	}
+}
+
+WA_AI_MILITARY_can_open_secondary_fronts = {
+	OR = {
+		num_divisions > 100
+		AND = {
+			num_divisions > 50
+			has_army_manpower = { size > 800000 }
+			NOT = { WA_AI_MILITARY_home_threatened = yes }
+		}
+	}
+}
+
+# Shared conditions for all SOV Stalin Line buffer rules.
+# Each rule adds its own has_full_control_of_state check.
+WA_AI_MILITARY_SOV_stalin_line_base = {
+	controls_state = 206
+	controls_state = 202
+	surrender_progress < 0.06
+	date < 1942.10.1
+	NOT = {
+		has_offensive_war_with = GER
+	}
+	NOT = {
+		AND = {
+			OR = {
+				has_completed_focus = SOV_secure_leningrad
+				focus_progress = {
+					focus = SOV_secure_leningrad
+					progress > 0.1
+				}
+			}
+			OR = {
+				date < 1940.1.1
+				has_war_with = FIN
+			}
+			NOT = {
+				has_war_with = GER
+			}
+		}
+	}
+	NOT = {
+		AND = {
+			has_offensive_war_with = ROM
+			NOT = {
+				has_war_with = GER
+			}
+		}
+	}
+}
+
+# ENG/UKE holds East Egypt (used in Africa war rules)
+WA_AI_MILITARY_ENG_holds_east_egypt = {
+	OR = {
+		446 = { is_controlled_by = ENG }
+		447 = { is_controlled_by = ENG }
+		453 = { is_controlled_by = ENG }
+		446 = { is_controlled_by = UKE }
+		447 = { is_controlled_by = UKE }
+		453 = { is_controlled_by = UKE }
+	}
+}
+
+# Enemy controls any of the key Africa states (Libya, East Africa, Ethiopia)
+WA_AI_MILITARY_ENG_africa_hostile_presence = {
+	OR = {
+		450 = { CONTROLLER = { NOT = { tag = ROOT is_subject_of = ROOT is_in_faction_with = ROOT has_government = ROOT } } }
+		663 = { CONTROLLER = { NOT = { tag = ROOT is_subject_of = ROOT is_in_faction_with = ROOT has_government = ROOT } } }
+		451 = { CONTROLLER = { NOT = { tag = ROOT is_subject_of = ROOT is_in_faction_with = ROOT has_government = ROOT } } }
+		550 = { CONTROLLER = { NOT = { tag = ROOT is_subject_of = ROOT is_in_faction_with = ROOT has_government = ROOT } } }
+		910 = { CONTROLLER = { NOT = { tag = ROOT is_subject_of = ROOT is_in_faction_with = ROOT has_government = ROOT } } }
+		271 = { CONTROLLER = { NOT = { tag = ROOT is_subject_of = ROOT is_in_faction_with = ROOT has_government = ROOT } } }
+		909 = { CONTROLLER = { NOT = { tag = ROOT is_subject_of = ROOT is_in_faction_with = ROOT has_government = ROOT } } }
+		559 = { CONTROLLER = { NOT = { tag = ROOT is_subject_of = ROOT is_in_faction_with = ROOT has_government = ROOT } } }
+		269 = { CONTROLLER = { NOT = { tag = ROOT is_subject_of = ROOT is_in_faction_with = ROOT has_government = ROOT } } }
+	}
+}
+
+WA_AI_MILITARY_is_minor_country = {
+	NOT = { WA_AI_CONFIG_is_major_country = yes }
+}
+
+WA_AI_MILITARY_is_major_naval = {
+	has_navy_size = { size > 100 }
+}
+
+WA_AI_MILITARY_is_major_continental = {
+	OR = {
+		has_army_manpower = { size > 1000000 }
+	}
+}
+
+WA_AI_MILITARY_is_axis_member = {
+	is_in_faction_with = GER
+}
+
+WA_AI_MILITARY_is_comintern_member = {
+	OR = {
+		tag = SOV
+		is_in_faction_with = SOV
+	}
+}
+
+WA_AI_MILITARY_is_co_prosperity_member = {
+	OR = {
+		tag = JAP
+		is_in_faction_with = JAP
+	}
+}
+
+WA_AI_MILITARY_is_china_front_member = {
+	OR = {
+		tag = CHI
+		tag = PRC
+		tag = SHA
+		tag = HPC
+		tag = SHX
+		tag = GUC
+		tag = GXC
+		tag = YUN
+		tag = XIK
+		tag = TUG
+		tag = SIC
+		tag = XSM
+		tag = SIK
+		tag = NEA
+		is_in_faction_with = CHI
+	}
+}
+
+WA_AI_MILITARY_is_commonwealth_member = {
+	OR = {
+		original_tag = ENG
+		original_tag = CAN
+		original_tag = AST
+		original_tag = NZL
+		original_tag = SAF
+		original_tag = RAJ
+		original_tag = MAL
+	}
+}
+
+WA_AI_MILITARY_can_safely_open_remote_theatres = {
+	WA_AI_MILITARY_can_open_secondary_fronts = yes
+	NOT = { WA_AI_MILITARY_home_threatened = yes }
+	NOT = { WA_AI_MILITARY_border_hostile_pressure = yes }
+}
+
+WA_AI_MILITARY_pacific_war_active = {
+	WA_AI_CONFIG_MILITARY_pacific_high_risk = yes
+}
+
+WA_AI_MILITARY_east_front_war_active = {
+	OR = {
+		has_war_with = GER
+		has_war_with = SOV
+		any_enemy_country = {
+			has_war_with = ROOT
+			OR = {
+				tag = GER
+				WA_AI_MILITARY_is_axis_member = yes
+				tag = SOV
+				WA_AI_MILITARY_is_comintern_member = yes
+			}
+		}
+	}
+}
+
+WA_AI_MILITARY_china_war_active = {
+	OR = {
+		has_war_with = JAP
+		has_war_with = CHI
+		any_enemy_country = {
+			has_war_with = ROOT
+			OR = {
+				tag = JAP
+				WA_AI_MILITARY_is_co_prosperity_member = yes
+				tag = CHI
+				WA_AI_MILITARY_is_china_front_member = yes
+			}
+		}
+	}
+}
+
+WA_AI_MILITARY_comintern_major_present = {
+	SOV = {
+		exists = yes
+		OR = {
+			tag = ROOT
+			is_in_faction_with = ROOT
+		}
+	}
+}
+
+WA_AI_MILITARY_co_prosperity_major_present = {
+	JAP = {
+		exists = yes
+		OR = {
+			tag = ROOT
+			is_in_faction_with = ROOT
+		}
+	}
+}
+
+WA_AI_MILITARY_china_front_leader_present = {
+	CHI = {
+		exists = yes
+		OR = {
+			tag = ROOT
+			is_in_faction_with = ROOT
+		}
+	}
+}
