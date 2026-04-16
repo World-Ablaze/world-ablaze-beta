@@ -2085,7 +2085,7 @@ special_projects = {
 		}
 	}
 
-###########################################REPAIR#########################################
+	###########################################REPAIR#########################################
 
 	repair_yellow_river_flood = {
 
@@ -3042,6 +3042,153 @@ special_projects = {
 }
 
 war_measures = {
+	scorch_earth = {
+		icon = generic_scorched_earth
+
+		allowed = {
+			OR = {
+				tag = SOV
+				tag = GER
+				tag = USA
+				tag = AST
+				tag = NZL
+				tag = CHI
+			}
+		}
+
+		target_array = controlled_states
+		state_target = yes
+		on_map_mode = map_only
+
+		target_root_trigger = {
+			has_war = yes
+			has_civil_war = no
+			any_enemy_country = {
+				is_major = yes
+			}
+			if = {
+				limit = { tag = GER }
+				has_completed_focus = GER_nero_decree
+			}
+			else_if = {
+				limit = { tag = USA }
+				has_completed_focus = USA_victory_at_all_costs
+			}
+			else_if = {
+				limit = { tag = AST }
+				has_completed_focus = AST_scorch_earth_tactics
+			}
+			else_if = {
+				limit = { tag = NZL }
+				has_completed_focus = NZL_scorch_earth_tactics
+			}
+			else_if = {
+				limit = { tag = CHI }
+				has_completed_focus = CHI_scorched_earth_tactics
+			}
+		}
+
+		target_trigger = {
+			FROM = {
+				is_controlled_by = ROOT
+				any_neighbor_state = {
+					CONTROLLER = { has_war_with = ROOT }
+				}
+			}
+		}
+
+		available = {
+			set_temp_variable = { target_state_id = FROM }
+			meta_trigger = {
+				text = {
+					custom_trigger_tooltip = {
+						tooltip = scorch_earth_trigger_tt
+						num_battalions_in_states = {
+							count > 4
+							states = { [TARGET_STATE_ID] }
+							exclude = { infantry motorized_light cavalry }
+						}
+					}
+				}
+				TARGET_STATE_ID = "[?target_state_id.GetID]"
+			}
+		}
+
+		cost = 0
+		fire_only_once = yes
+		days_remove = 1
+
+		complete_effect = {
+			if = {
+				limit = { tag = CHI }
+				custom_effect_tooltip = CHI_peoples_power_struggle_2_l_tt
+				add_to_variable = {
+					var = chi_peoples_power_struggle_influence
+					value = -2
+				}
+			}
+		}
+
+		remove_effect = {
+			FROM = {
+				damage_building = {
+					type = rail_way
+					damage = 5
+				}
+				damage_building = {
+					type = supply_node
+					damage = 1.0
+				}
+				damage_building = {
+					type = air_base
+					damage = 10
+				}
+				if = {
+					limit = { infrastructure > 1 }
+					remove_building = {
+						type = infrastructure
+						level= 1
+					}
+				}
+				else = {
+					damage_building = {
+						type = infrastructure
+						damage = 1
+					}
+				}
+				if = {
+					limit = { naval_base > 0 }
+					damage_building = {
+						type = naval_base
+						damage = 10
+					}
+				}
+				if = {
+					limit = { is_core_of = ROOT }
+					ROOT = { add_stability = -0.005 }
+				}
+				else = {
+					add_resistance = 15
+				}
+				add_equipment_to_stockpile = {
+					type = support_equipment
+					amount = -100
+				}
+				#add_dynamic_modifier = { modifier = scorched_earth days = 30 scope = ROOT }
+			}
+		}
+
+		ai_will_do = {
+			factor = 0
+
+			modifier = {
+				add = 1000
+				FROM = {
+					NOT = { is_fully_controlled_by = ROOT }
+				}
+			}
+		}
+	}
 
 	emergency_factory_conversion_defensive = {
 
