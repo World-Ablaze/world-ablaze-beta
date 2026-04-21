@@ -2365,38 +2365,33 @@ on_actions = {
 			   SF_marine_demoliton_effect = yes # Note that the state flag condition is not preventing it from doing 1 damage per division
 		   }
 		}
-		effect = {
-			if = {
-				limit = {
-					NOT = {
-						 THIS = {
-							controller = {
-								has_country_flag = no_notify_nav
+		effect = { 
+			THIS = {
+				if = {
+					limit = {
+						NOT = { CONTROLLER = { tag = ROOT } }
+						NOT = { CONTROLLER = { has_country_flag = no_notify_nav } }
+					}
+					save_global_event_target_as = invaded_state
+					# If getting naval invaded, alert
+					CONTROLLER = {
+						set_country_flag = invasion_alert
+						set_variable = { invaded_state = PREV }
+						country_event = generic.26
+					}
+					# If its a puppet, alert the overlord
+					if = {
+						limit = { CONTROLLER = { is_subject = yes } }
+						CONTROLLER = {
+							OVERLORD = {
+								set_country_flag = invasion_alert
+								set_variable = { invaded_state = PREV.PREV }
+								country_event = generic.26
 							}
-						 }
-					}
-					THIS.controller = {
-						OR = {
-							has_country_flag = {
-							flag = nav_notify
-							days > 7 #don't notify more than weekly (don't want 50 events for 50 seperate nav invasions)
 						}
-						NOT = {
-							has_country_flag = nav_notify #we've never been naval invaded
-						}
-						}
-						
-					}
-					
-				}
-				THIS = {
-					controller = {
-						news_event = afo_news.65
-						set_country_flag = nav_notify
-					}
+					} 
 				}
 			}
-			
 		}
    }
 
