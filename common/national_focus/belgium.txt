@@ -23,7 +23,7 @@ focus_tree = {
 		x = 2
 		y = 0
 
-		cost = 6
+		cost = 4
 
 		available = {
 		}
@@ -56,7 +56,9 @@ focus_tree = {
 		x = -2
 		y = 1
 		relative_position_id = BEL_continue_civil_projects
-		cost = 6
+
+		cost = 4
+
 		ai_will_do = {
 			factor = 1
 		}
@@ -446,14 +448,169 @@ focus_tree = {
 	############################################
 
 	focus = {
-		id = BEL_abandon_the_alliance_with_france
-		icon = GFX_focus_renounce_the_treaty_of_trianon
+		id = BEL_government_resigns
+		icon = GFX_focus_BEL_government_resigns	
+		x = 9
+		y = 0
+	
+		cost = 3
+
+		search_filters = { FOCUS_FILTER_INDUSTRY FOCUS_FILTER_POLITICAL FOCUS_FILTER_HISTORICAL }
+
+		available = {
+		}
+
+		available_if_capitulated = yes
+	
+		completion_reward = {
+			country_event = { id = ww_BEL_event_political.1 }
+			custom_effect_tooltip = BEL_modify_corruption_dynamic_modifier_tt
+			add_to_variable = { 
+				BEL_corruption_political_power_gain = 0.1
+				tooltip = political_power_gain_tt				
+			}	
+			add_to_variable = { 
+				BEL_corruption_production_speed_buildings_factor = 0.05
+				tooltip = production_speed_buildings_factor_tt				
+			}
+			add_to_variable = { 
+				BEL_corruption_fascism_drift = -0.04
+				tooltip = fascism_drift_tt				
+			}
+		}
+	}
+	focus = {
+		id = BEL_investigate_bribery_charges
+		icon = GFX_focus_generic_court
+		prerequisite = { focus = BEL_government_resigns }
+		x = -1
+		y = 1
+		relative_position_id = BEL_government_resigns
+
+		search_filters = { FOCUS_FILTER_INDUSTRY FOCUS_FILTER_POLITICAL FOCUS_FILTER_STABILITY FOCUS_FILTER_HISTORICAL }
+	
+		cost = 4
+
+		available = {
+		}
+
+		available_if_capitulated = yes
+	
+		completion_reward = {
+			custom_effect_tooltip = BEL_modify_corruption_dynamic_modifier_tt
+			add_to_variable = { 
+				BEL_corruption_political_power_gain = 0.05
+				tooltip = political_power_gain_tt				
+			}	
+			add_to_variable = { 
+				BEL_corruption_stability_factor = 0.05
+				tooltip = stability_factor_tt				
+			}
+			add_to_variable = { 
+				BEL_corruption_production_speed_buildings_factor = 0.10
+				tooltip = production_speed_buildings_factor_tt				
+			}
+			add_to_variable = { 
+				BEL_corruption_fascism_drift = -0.04
+				tooltip = fascism_drift_tt				
+			}
+			IF = {
+				limit = {
+					NOT = { 
+						has_completed_focus = BEL_vandervelde_minority
+					}
+				 }
+			custom_effect_tooltip = generic_skip_one_line_tt
+			custom_effect_tooltip = BEL_investigate_pm_tt
+			}
+		}
+	}
+
+	focus = {
+		id = BEL_government_of_national_unity
+		icon = GFX_goal_generic_national_unity
+		prerequisite = { focus = BEL_government_resigns }
+		x = 1
+		y = 1
+		relative_position_id = BEL_government_resigns
+
+		search_filters = { FOCUS_FILTER_POLITICAL FOCUS_FILTER_COMPLETED_BY_EVENT }
+	
+		cost = 0
+
+		allow_branch = {
+			IF = {
+				limit = {
+					has_game_rule = {
+						rule = obsolete_focus_branches_visibility
+						option = HIDE
+					}
+				}
+				NOT = { has_completed_focus = BEL_vandervelde_minority }
+				
+			}
+		}
+
+
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = BEL_auto_complete_government_resigns_tt
+				always = no
+			}
+		}
+
+		available_if_capitulated = yes
+	
+		completion_reward = {
+			custom_effect_tooltip = BEL_government_resigns_complete_national_unity_tt
+
+			hidden_effect = {
+				if = {
+					limit = {
+						has_game_rule = {
+							rule = obsolete_focus_branches_visibility
+							option = HIDE
+						}
+					}
+					mark_focus_tree_layout_dirty = yes
+				}
+			}
+		}
+
+	}
+
+	focus = {
+		id = BEL_policy_of_independance
+		icon = GFX_goal_generic_neutrality_focus
 		mutually_exclusive = { focus = BEL_back_the_rexiste_party }
 		prerequisite = {}
-		x = 9
+		x = 12
 		y = 0
 
 		cost = 6
+
+		available = {
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		completion_reward = {
+			add_ideas = policy_of_independance
+			set_country_flag = neutral_flag
+		}
+	}
+
+	focus = {
+		id = BEL_abandon_the_alliance_with_france
+		icon = GFX_focus_renounce_the_treaty_of_trianon
+		prerequisite = { focus = BEL_policy_of_independance }
+		x = 0
+		y = 1
+		relative_position_id = BEL_policy_of_independance
+
+		cost = 3
 
 		available = {
 			threat > 0
@@ -486,37 +643,84 @@ focus_tree = {
 	}
 
 	focus = {
-		id = BEL_policy_of_independance
-		icon = GFX_goal_generic_neutrality_focus
+		id = BEL_independent_neutral_and_loyal
+		icon = GFX_focus_BEL_independent_neutral_and_loyal
 		prerequisite = { focus = BEL_abandon_the_alliance_with_france }
 		x = 0
 		y = 1
 		relative_position_id = BEL_abandon_the_alliance_with_france
 
-		cost = 6
+		search_filters = { FOCUS_FILTER_INDUSTRY FOCUS_FILTER_HISTORICAL }
+	
+		cost = 3
 
 		available = {
 		}
 
-		ai_will_do = {
-			factor = 1
-		}
+		bypass = {
+			OR = {
+				has_war = yes
+				
+				has_completed_focus = BEL_growing_threat_of_fascism
 
+				AND = {
+					NOT = {
+						has_dynamic_modifier = {
+							modifier = BEL_neutrality_dynamic_modifier
+						}
+					}
+					has_completed_focus = BEL_perpetual_neutrality
+				}
+			}
+		}
+	
 		completion_reward = {
-			add_ideas = policy_of_independance
-			set_country_flag = neutral_flag
+			custom_effect_tooltip = BEL_modify_neutrality_dynamic_modifier_tt
+			add_to_variable = { 
+				BEL_neutrality_production_speed_infrastructure_factor = 0.1
+				tooltip = production_speed_infrastructure_factor_tt				
+			}	
+			add_to_variable = { 
+				BEL_neutrality_production_speed_arms_factory_factor = 0.1
+				tooltip = production_speed_arms_factory_factor_tt				
+			}	
+			add_to_variable = { 
+				BEL_neutrality_production_speed_industrial_complex_factor  = 0.1
+				tooltip = production_speed_industrial_complex_factor_tt				
+			}
+			add_to_variable = { 
+				BEL_neutrality_enemy_justify_war_goal_time = 0.5
+				tooltip = enemy_justify_war_goal_time_tt				
+			}
+			add_to_variable = { 
+				BEL_neutrality_send_volunteers_tension = 1
+				tooltip = send_volunteers_tension_tt				
+			}
+			add_to_variable = { 
+				BEL_neutrality_lend_lease_tension = 1
+				tooltip = lend_lease_tension_tt
+			}
+			if = {
+				limit = {
+					has_dlc = "By Blood Alone"
+				}
+				add_to_variable = { 
+					BEL_neutrality_embargo_threshold_factor = 1
+					tooltip = embargo_threshold_factor_tt				
+				}
+			}
 		}
 	}
 
 	focus = {
 		id = BEL_policies_of_deterrance
 		icon = GFX_goal_generic_defence
-		prerequisite = { focus = BEL_policy_of_independance }
+		prerequisite = { focus = BEL_independent_neutral_and_loyal }
 		x = -1
 		y = 1
-		relative_position_id = BEL_policy_of_independance
+		relative_position_id = BEL_independent_neutral_and_loyal
 
-		cost = 6
+		cost = 5
 
 		available = {
 		}
@@ -658,12 +862,12 @@ focus_tree = {
 	focus = {
 		id = BEL_national_labour_conference
 		icon = GFX_goal_generic_national_unity
-		prerequisite = { focus = BEL_policy_of_independance }
+		prerequisite = { focus = BEL_independent_neutral_and_loyal }
 		x = 1
 		y = 1
-		relative_position_id = BEL_policy_of_independance
+		relative_position_id = BEL_independent_neutral_and_loyal
 
-		cost = 6
+		cost = 5
 
 		available = {
 		}
@@ -686,7 +890,7 @@ focus_tree = {
 		y = 3
 		relative_position_id = BEL_national_labour_conference
 
-		cost = 6
+		cost = 5
 
 		available = {
 		}
@@ -764,8 +968,9 @@ focus_tree = {
 		icon = GFX_goal_BEL_rexiste
 		mutually_exclusive = { focus = BEL_abandon_the_alliance_with_france }
 		prerequisite = {}
-		x = 19
+		x = 11
 		y = 0
+		relative_position_id = BEL_policy_of_independance
 
 		cost = 6
 
