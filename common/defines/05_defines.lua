@@ -45,7 +45,7 @@ NDefines.NPolitics.ARMY_LEADER_COST = 2												-- cost for recruiting new le
 NDefines.NPolitics.NAVY_LEADER_COST = 2												-- command power cost for recruiting new leaders, 'this value' * number_of_existing_leaders_of_type
 NDefines.NPolitics.ARMY_LEADER_MAX_COST = 80										-- max cost BEFORE modifiers
 NDefines.NPolitics.NAVY_LEADER_MAX_COST = 80										-- max cost BEFORE modifiers
-
+NDefines.NPolitics.BASE_POLITICAL_POWER_INCREASE = 1.5								-- Weekly increase of PP.
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Trade
 
@@ -187,7 +187,7 @@ NDefines.NProduction.POWERED_FACTORY_SPEED = 2.5									-- Powered factory spee
 NDefines.NProduction.BASE_FACTORY_SPEED_MIL = 0.0 									-- Base factory speed multiplier (how much hoi3 style IC each factory gives).
 NDefines.NProduction.POWERED_FACTORY_SPEED_MIL = 2.5								-- Powered factory speed multiplier.
 NDefines.NProduction.BASE_FACTORY_SPEED_NAV = 0.0					 				-- Base factory speed multiplier (how much hoi3 style IC each factory gives).
-NDefines.NProduction.POWERED_FACTORY_SPEED_NAV = 4.2								-- Powered factory speed multiplier.
+NDefines.NProduction.POWERED_FACTORY_SPEED_NAV = 4.2								-- Powered factory speed multiplier. If you change this, you must also change WA_AI_Capital_Ship_effects.txt.
 
 NDefines.NProduction.LICENSE_EQUIPMENT_BASE_SPEED = -0.35							-- base MIC speed modifier for licensed equipment
 NDefines.NProduction.LICENSE_EQUIPMENT_SPEED_NOT_FACTION = -0.25					-- MIC speed modifier for licensed equipment for not being in faction
@@ -463,7 +463,14 @@ NDefines.NMilitary.RIVER_CROSSING_SPEED_PENALTY_LARGE = -0.5						-- large river
 NDefines.NMilitary.RETREAT_SPEED_FACTOR = 1.5              						    -- speed bonus when retreating
 NDefines.NMilitary.BASE_FORT_PENALTY = -0.18						 				-- fort penalty
 
-NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_IMPACT = -0.4      						-- effect on defense due to enemy air superiorty
+NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_IMPACT = -0.5      						-- effect on defense due to enemy air superiorty
+	-- Algorithm for AA reduction of enemy air superiority defense penalty = a * (xp / (xp + b)) (see: https://www.desmos.com/calculator/4936qnyxqp for function with vanilla values)
+	-- a = ENEMY_AIR_SUPERIORITY_DEFENSE
+	-- b = ENEMY_AIR_SUPERIORITY_DEFENSE_STEEPNESS
+	-- xp = anti_air ^ 1.5
+NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_DEFENSE = 0.75	       						-- more AA attack will approach this amount of help (diminishing returns)
+NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_DEFENSE_STEEPNESS = 162	 				-- how quickly defense approaches the max impact diminishing returns curve. This valu emeans 30AA = 47% reduction in enemy air superiority defense penalty = -40% resulting penalty
+
 NDefines.NMilitary.ENEMY_AIR_SUPERIORITY_SPEED_IMPACT = -0.15				   		-- effect on speed due to enemy air superiority
 
 NDefines.NMilitary.COMBAT_MOVEMENT_SPEED = 0.8										-- speed reduction base modifier in combat
@@ -563,7 +570,10 @@ NDefines.NAir.AIR_WING_ATTACK_LOGISTICS_INFRA_DAMAGE_SPILL_FACTOR = 0.0 			-- Po
 
 NDefines.NAir.CAS_NIGHT_ATTACK_FACTOR = 0.1						                    -- CAS damaged get multiplied by this in land combats at night
 NDefines.NAir.ANTI_AIR_MAXIMUM_DAMAGE_REDUCTION_FACTOR = 0.75 						-- Maximum damage reduction factor applied to incoming air attacks against units with AA.
-NDefines.NAir.ANTI_AIR_ATTACK_TO_DAMAGE_REDUCTION_FACTOR = 0.14						-- Balancing value to convert equipment stat anti_air_attack to the damage reduction modifier apply to incoming air attacks against units with AA.
+-- formula for AA CAS damage reduction = enemy air superiority reduction (calculated with algorithm in NMilitary) * ANTI_AIR_ATTACK_TO_DAMAGE_REDUCTION_FACTOR
+-- With current define below combined with the algorithm from NMilitary, 75AA yields the full ANTI_AIR_MAXIMUM_DAMAGE_REDUCTION_FACTOR
+NDefines.NAir.ANTI_AIR_ATTACK_TO_DAMAGE_REDUCTION_FACTOR = 1.25						-- Balancing value to convert equipment stat anti_air_attack to the damage reduction modifier apply to incoming air attacks against units with AA.
+
 NDefines.NAir.AA_INDUSTRY_AIR_DAMAGE_FACTOR = -0.036								-- 5x levels = 60% defense from bombing
 
 --NDefines.NAir.BOMBING_TARGETING_RANDOM_FACTOR = 0.9								-- % of picking the wrong target #DOESENT WORK (UNCHARTED)
@@ -652,9 +662,13 @@ NDefines.NNavy.SUB_DETECTION_CHANCE_BASE_SPOTTING_EFFECT = 0.5						-- effect of
 NDefines.NNavy.SUB_DETECTION_CHANCE_SPOTTING_SPEED_EFFECT = 1.0						-- effect of spotting speed for initial spotting of pure submarine forces. this along with prev value is added together and rolled against a random to start spotting
 NDefines.NNavy.SUB_DETECTION_CHANCE_BASE_SPOTTING_POW_EFFECT = 1.5					-- effect of spotting speed will be powered by this for initial spotting of pure submarine forces. this along with prev value is added together and rolled against a random to start spotting
 
+NDefines.NNavy.CONVOY_RAID_MAX_REGION_TO_TASKFORCE_RATIO = 0.75						-- each taskforce in convoy raid mission can at most cover this many regions without losing efficiency
 --NDefines.NNavy.NAVAL_COMBAT_AIR_SUB_DETECTION_EXTERNAL_FACTOR = 0.5				-- Factor applied to the stats of external air planes
 
 NDefines.NNavy.DEPTH_CHARGE_STAT_FOR_SHIP_TO_BE_SUB_HUNTER = 6						-- amount of depth charge required for a ship to be considred a sub hunter and so good for convoy escort
+
+NDefines.NNavy.DEPTH_CHARGES_HIT_PROFILE = 50 										-- hit profile for depth charges
+NDefines.NNavy.DEPTH_CHARGES_DAMAGE_MULT = 1.0										-- multiplies damage of depth charges
 
 NDefines.NNavy.NAVAL_INVASION_PREPARE_DAYS = 60										-- base days needed to prepare a naval invasion
 NDefines.NNavy.NAVAL_INVASION_PLAN_CAP = 1											-- base cap of naval invasions can be planned at the same time
@@ -1096,8 +1110,8 @@ NDefines.NAI.REGION_THREAT_LEVEL_TO_BLOCK_REGION = 25 * 1000						-- How much th
 NDefines.NAI.NAVAL_DOCKYARDS_SHIP_FACTOR = 2										-- The extent to which number of dockyards play into amount of sips a nation wants
 NDefines.NAI.NAVY_PREFERED_MAX_SIZE = 80											-- AI will generally attempt to merge fleets into this size, but as a soft limit.
 NDefines.NAI.SUB_TASKFORCE_MAX_SHIP_COUNT = 5										-- optimum sub count for sub taskforces
-NDefines.NAI.PRODUCTION_MAX_PROGRESS_TO_SWITCH_NAVAL = 0.0							-- AI will not replace ships being built by newer types if progress is above this
-NDefines.NAI.PRODUCTION_WAIT_TO_FINISH_IF_EXPENSIVE = 0.1      						-- If produced item is expensive (producing less than one/week), wait to finish item if progress is above this
+NDefines.NAI.PRODUCTION_MAX_PROGRESS_TO_SWITCH_NAVAL = 0.09							-- AI will not replace ships being built by newer types if progress is above this
+NDefines.NAI.PRODUCTION_WAIT_TO_FINISH_IF_EXPENSIVE = 0.09      					-- If produced item is expensive (producing less than one/week), wait to finish item if progress is above this
 --NDefines.NAI.PRODUCTION_WAIT_TO_FINISH_IF_CHEAP = 0.0         			 		-- If produced item is cheap (producing more than one/week), wait to finish item if progress is above this
 
 
