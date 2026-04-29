@@ -220,6 +220,17 @@ WA_AI_MILITARY_ALLIES_exec_vs_germany = {
 	enable = {
 		WA_AI_MILITARY_is_allies_member = yes
 		has_war_with = GER
+		OR = {
+			AND = {
+				date < 1941.1.1
+				alliance_strength_ratio > 3
+			}
+			AND = {
+				date > 1941.1.1
+				alliance_strength_ratio > 2
+			}
+		}
+		check_variable = { WA_AI_fielded_eq_ratio > 0.9 }
 	}
 	abort_when_not_enabled = yes
 
@@ -1195,7 +1206,7 @@ WA_AI_MILITARY_ALLIES_italy_invasion_execute = {
 }
 
 
-WA_AI_MILITARY_ALLIES_war_against_ITA = {
+WA_AI_MILITARY_ALLIES_war_against_ITA_north_africa = {
 	allowed = {
 		OR = {
 			tag = ENG
@@ -1259,13 +1270,45 @@ WA_AI_MILITARY_ALLIES_war_against_ITA = {
 
 	ai_strategy = {
 		type = invade
-		id = "ITS"
+		id = "ITL"
 		value = -2000
 	}
 
 	ai_strategy = {
+		type = area_priority
+		id = north_africa
+		value = 100
+	}
+
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 202 #aegean sea
+		value = 2000
+	}
+}
+
+
+WA_AI_MILITARY_ALLIES_war_against_ITA_central_africa = {
+	allowed = {
+		OR = {
+			tag = ENG
+			tag = USA
+		}
+	}
+	enable = {
+		OR = {
+			has_war_with = ITA
+			has_war_with = GER
+		}
+		date < 1943.7.1
+		country_exists = ITS
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
 		type = invade
-		id = "ITL"
+		id = "ITS"
 		value = -2000
 	}
 
@@ -1284,19 +1327,13 @@ WA_AI_MILITARY_ALLIES_war_against_ITA = {
 	ai_strategy = {
 		type = front_unit_request
 		area = central_africa
-		value = -70
+		value = 100
 	}
 
 	ai_strategy = {
 		type = area_priority
 		id = north_africa
-		value = 70
-	}
-
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 202 #aegean sea
-		value = 2000
+		value = -30 #divert resources from el alamein
 	}
 }
 
