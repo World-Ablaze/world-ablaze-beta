@@ -188,7 +188,7 @@ For each type: total count, where it currently appears (counts per file), recomm
    - The shared warlord block at `WA_AI_MILITARY_CHINA_FRONT_warlords_china_needs_you` (lines ~210+) uses an `OR { tag = ... }` list that must become a `WA_AI_CONFIG_MILITARY_is_chinese_warlord` archetype trigger in Phase 3.
    - The remainder of the file becomes `WA_AI_MILITARY_FACTION_CHINA_FRONT_<DOMAIN>.txt` files.
 
-3. **`WA_AI_MILITARY_COUNTRY_AXIS.txt`, `_ALLIES.txt`, `_COMINTERN.txt`, `_CO_PROSPERITY.txt`** are faction files mis-prefixed `COUNTRY_`. Phase 2 renames them to `WA_AI_MILITARY_FACTION_<NAME>_<DOMAIN>.txt`. The empty COMINTERN and CO_PROSPERITY files should be deleted unless Phase 2/3 adds content.
+3. **`WA_AI_MILITARY_COUNTRY_AXIS.txt`, `_ALLIES.txt`, `_COMINTERN.txt`, `_CO_PROSPERITY.txt`** were faction files mis-prefixed `COUNTRY_`. Phase 2 renamed them to `WA_AI_MILITARY_FACTION_<NAME>_<DOMAIN>.txt`. (Note: COMINTERN and CO_PROSPERITY were initially flagged as empty during Phase 1 inventory; they actually contain real `front_unit_request` content gated on the corresponding `WA_AI_MILITARY_is_<faction>_member` trigger.)
 
 4. **`WA_AI_MILITARY_COUNTRY_ALLIES.txt`** contains 15 `invasion_unit_request` blocks. Since `invasion_unit_request` is Additive, these can stay at the Faction layer; Phase 2 just renames the file to `WA_AI_MILITARY_FACTION_ALLIES_INVASION.txt`.
 
