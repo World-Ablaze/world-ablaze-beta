@@ -179,6 +179,37 @@ For each type: total count, where it currently appears (counts per file), recomm
 
 ---
 
+## Phase 4 audit: cross-layer duplication is mostly by-design
+
+Phase 4 was originally scoped to "consolidate cross-layer duplicates" — i.e. find cases where the same `(type, key)` block appears in DEFAULT/REGION/FACTION/COUNTRY and lift the duplicate to the highest shared layer. A scan across the 94 post-Phase-3 ai_strategy files (1826 indexed `ai_strategy = {}` blocks) found 153 cross-layer `(type, key)` groups. Closer inspection showed the headline number is misleading.
+
+### Breakdown of the 153 cross-layer groups
+
+| Type | Groups | Engine policy | Phase 4 actionable? |
+| --- | --- | --- | --- |
+| `dont_defend_ally_borders` | 58 | Exclusive per ally (highest value wins) | No - distinct rules from distinct sources targeting the same ally |
+| `front_unit_request` | 35 | Additive | No - sums are intended |
+| `invade` | 32 | Additive per target | No |
+| `front_control` | 7 (128 instances) | Exclusive per area | Cannot be safely auto-deduped (see below) |
+| `area_priority` / `put_unit_buffers` / `conquer` / `naval_avoid_region` / `strategic_air_importance` / `invasion_unit_request` / `garrison` / `spare_unit_factor` | 13 total | Additive | No |
+| `force_defend_ally_borders` | 4 | Exclusive per ally | Reviewed; gates are meaningfully distinct |
+| `contain` | 1 | Exclusive | Reviewed; legitimate |
+
+### Why mechanical de-dup does not apply
+
+1. **Cross-layer Exclusive entries are not duplicates.** For example, `dont_defend_ally_borders id = FIN` appears in 15 distinct blocks across REGION/FACTION/COUNTRY. They are gated on different sources (e.g. `BUL_stay_out_of_finland`, `GER_army_group_finland_does_not_exist`, `AXIS_hungary_stop_crowding_up_the_soviet_line`, `SOUTH_AMERICA_stay_in_south_america`). Each is the right rule for its source country/region. The engine's "highest value wins" semantic correctly resolves overlap; merging them would either lose semantics or require conditional payloads that the `ai_strategy` DSL does not support.
+2. **`ai_strategy` blocks are definitions, not effects.** They cannot be emitted from scripted effects (verified: zero `ai_strategy = {` occurrences in `common/scripted_effects/`). The only consolidation tool is collapsing the *outer* containing block by widening `allowed`/`enable` and accepting any per-tag tweaks as cross-cutting noise.
+3. **Near-duplicate outer blocks have meaningful gate differences.** The 5-block `AXIS_*_stop_crowding_up_the_soviet_line` family is the closest candidate for collapse: all five share ~9 `dont_defend_ally_borders` entries plus ~4 `front_unit_request` entries. But each variant has at least one meaningful difference - Romania has an extra `NOT = { has_defensive_war_with = SOV ... }` clause, Bulgaria omits all `front_unit_request` and the `support_requested_by_germany` exclusion, Italy adds `crimea` plus ROM/BUL to the ally list, the "iberian" general variant uses a different gate. Forcibly merging them would either lose these differences or require complex conditional payloads.
+4. **`front_control` cannot be safely auto-deduped.** All 128 instances collapse to `KEY=None` in the scanner because `front_control` is gated on embedded `country_trigger`/`state_trigger`/`ordertype` blocks rather than a top-level `id`/`area`/`target` field. The blocks are Exclusive-per-area in the spec, but mechanical overlap detection requires evaluating those embedded gates - this belongs to Phase 5 (mutual-exclusion triggers), not Phase 4.
+
+### Decision
+
+Phase 4 (cross-layer duplicate consolidation) is **closed without a refactor commit**. The cross-layer counts represent legitimately distinct rules from distinct sources, not duplication. The genuine overlap-management work moves to **Phase 5**, which adds mutual-exclusion triggers (e.g. `WA_AI_MILITARY_country_owns_ally_borders_directive_<TAG>`) for Exclusive types so multiple sources can be layered without silent override.
+
+Scanner artifact: `phase4_dup_scan.py` and `phase4_report.md` (1826 blocks, 153 cross-layer groups) preserved in the agent scratch directory for reference.
+
+---
+
 ## Cross-cutting issues to address in Phases 2-4
 
 1. **`WA_AI_MILITARY_COUNTRY_SOUTH_AMERICA.txt` is misnamed.** It is a regional rule, not a country file. Phase 2 renamed it to `WA_AI_MILITARY_REGION_SOUTH_AMERICA.txt`. **Phase 3 added `WA_AI_CONFIG_MILITARY_is_south_american` to `WA_AI_CONFIG.txt`** and replaced the inline 31-tag OR-lists in both `allowed` and `enable` with the trigger.
@@ -192,9 +223,9 @@ For each type: total count, where it currently appears (counts per file), recomm
 
 4. **`WA_AI_MILITARY_COUNTRY_ALLIES.txt`** contains 15 `invasion_unit_request` blocks. Since `invasion_unit_request` is Additive, these can stay at the Faction layer; Phase 2 just renames the file to `WA_AI_MILITARY_FACTION_ALLIES_INVASION.txt`.
 
-5. **USA `naval_avoid_region` (67 blocks)** is the largest single repetitive pattern in the system and is the prime candidate for Phase 4+ tooling.
+5. **USA `naval_avoid_region` (67 blocks)** is the largest single repetitive pattern in the system. Phase 4 audit determined these are Additive and the duplication is by-design (per-region per-doctrine entries). No consolidation needed; revisit only if a per-region helper trigger emerges naturally.
 
-6. **AXIS file's 59 `dont_defend_ally_borders` blocks** likely encode per-ally rules that should be country-files. Audit during Phase 2.
+6. **AXIS file's 59 `dont_defend_ally_borders` blocks.** Phase 2 split these across `WA_AI_MILITARY_FACTION_AXIS_*.txt` and `WA_AI_MILITARY_COUNTRY_*` files. Phase 4 audit confirmed the remaining FACTION-layer blocks (`AXIS_*_stop_crowding_up_the_soviet_line` family) have meaningfully distinct gates and cannot be safely merged. See "Phase 4 audit" section above.
 
 7. **`WA_AI_MILITARY_FRONT_execution.txt`** carries a single `front_control` block. Rename to `WA_AI_MILITARY_DEFAULT_FRONT_control.txt` in Phase 2.
 
