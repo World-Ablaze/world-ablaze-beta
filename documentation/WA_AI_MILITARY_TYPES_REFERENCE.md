@@ -181,12 +181,12 @@ For each type: total count, where it currently appears (counts per file), recomm
 
 ## Cross-cutting issues to address in Phases 2-4
 
-1. **`WA_AI_MILITARY_COUNTRY_SOUTH_AMERICA.txt` is misnamed.** It is a regional rule, not a country file. Phase 2 renames it to `WA_AI_MILITARY_REGION_SOUTH_AMERICA.txt`. Add `WA_AI_CONFIG_MILITARY_is_south_america` to `WA_AI_CONFIG.txt` as part of Phase 3.
+1. **`WA_AI_MILITARY_COUNTRY_SOUTH_AMERICA.txt` is misnamed.** It is a regional rule, not a country file. Phase 2 renamed it to `WA_AI_MILITARY_REGION_SOUTH_AMERICA.txt`. **Phase 3 added `WA_AI_CONFIG_MILITARY_is_south_american` to `WA_AI_CONFIG.txt`** and replaced the inline 31-tag OR-lists in both `allowed` and `enable` with the trigger.
 
-2. **`WA_AI_MILITARY_COUNTRY_CHINA_FRONT.txt` is a faction file with embedded country-specific blocks.** Specifically:
-   - `WA_AI_MILITARY_CHINA_FRONT_sic_support_chi_against_japan` (`allowed = { tag = SIC }`, lines ~158-208) must move to `WA_AI_MILITARY_COUNTRY_SIC_FRONT.txt` (or `_DIPLOMACY.txt`) in Phase 2.
-   - The shared warlord block at `WA_AI_MILITARY_CHINA_FRONT_warlords_china_needs_you` (lines ~210+) uses an `OR { tag = ... }` list that must become a `WA_AI_CONFIG_MILITARY_is_chinese_warlord` archetype trigger in Phase 3.
-   - The remainder of the file becomes `WA_AI_MILITARY_FACTION_CHINA_FRONT_<DOMAIN>.txt` files.
+2. **`WA_AI_MILITARY_COUNTRY_CHINA_FRONT.txt` was a faction file with embedded country-specific blocks.** Phase 2 split the file into `WA_AI_MILITARY_FACTION_CHINA_FRONT_<DOMAIN>.txt`. **Phase 3** then:
+   - Moved `WA_AI_MILITARY_CHINA_FRONT_sic_support_chi_against_japan` (gated on `tag = SIC`) into the new `WA_AI_MILITARY_COUNTRY_SIC_DIPLOMACY.txt`.
+   - Replaced the warlord OR-tag-list in `WA_AI_MILITARY_CHINA_FRONT_warlords_china_needs_you` with the new `WA_AI_CONFIG_MILITARY_is_chinese_warlord` trigger (excludes CHI/PRC/SHX, distinct from the existing `WA_AI_MILITARY_is_china_front_member` which includes them).
+   - Replaced the all-China-states OR-tag-list in `WA_AI_MILITARY_CHINA_FRONT_all_warlords_support_china_in_war` with the existing `WA_AI_MILITARY_is_china_front_member` trigger.
 
 3. **`WA_AI_MILITARY_COUNTRY_AXIS.txt`, `_ALLIES.txt`, `_COMINTERN.txt`, `_CO_PROSPERITY.txt`** were faction files mis-prefixed `COUNTRY_`. Phase 2 renamed them to `WA_AI_MILITARY_FACTION_<NAME>_<DOMAIN>.txt`. (Note: COMINTERN and CO_PROSPERITY were initially flagged as empty during Phase 1 inventory; they actually contain real `front_unit_request` content gated on the corresponding `WA_AI_MILITARY_is_<faction>_member` trigger.)
 
