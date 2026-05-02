@@ -2,16 +2,64 @@
 
 Per-`type` migration TODO list. Companion to `WA_AI_MILITARY_SYSTEM.md`. Read the system doc first for layer/domain/policy definitions.
 
-This document is a **snapshot** of `common/ai_strategy/WA_AI_MILITARY_*.txt` at the time of Phase 1. Counts will drift as Phases 2-4 land. Regenerate by running:
+## Canonical TYPE \u2192 DOMAIN mapping (post-Phase 6)
+
+This is the **single source of truth** for which `_DOMAIN.txt` file every `ai_strategy` block belongs in. The `tools/wa_ai_military_phase6_domain_split.py` tool encodes this same table in its `CANONICAL_DOMAIN` dict; if the two diverge, the tool wins and this table must be updated to match.
+
+| `type =` value | Domain | File suffix | Rationale |
+| --- | --- | --- | --- |
+| `front_unit_request` | FRONT | `_FRONT` | Sizes division allocation against an enemy front. |
+| `front_control` | FRONT | `_FRONT` | Per-area passive/active mode for an existing front. |
+| `front_armor_score` | FRONT | `_FRONT` | Front-line armour scoring. |
+| `force_concentration_front_factor` | FRONT | `_FRONT` | Front allocator concentration tuning. |
+| `force_concentration_target_weight` | FRONT | `_FRONT` | Front allocator target weighting. |
+| `force_ratio` | FRONT | `_FRONT` | Front allocator ratio bias. |
+| `infantry` | FRONT | `_FRONT` | Infantry-specific front bias. |
+| `garrison` | FRONT | `_FRONT` | Occupation force sizing. May move to `_GARRISON` if a country has many entries (currently none do). |
+| `invasion_unit_request` | INVASION | `_INVASION` | Sizes the amphibious-invasion division pool. |
+| `invade` | INVASION | `_INVASION` | Picks invasion targets. |
+| `naval_invasion_focus` | INVASION | `_INVASION` | Invasion-precondition flag (boolean per target). |
+| `naval_avoid_region` | NAVAL | `_NAVAL` | Sea regions the fleet should avoid. |
+| `strike_force_home_base` | NAVAL | `_NAVAL` | Designates a base as fleet home. |
+| `strategic_air_importance` | NAVAL | `_NAVAL` | Strategic air emphasis (sea-facing). |
+| `conquer` | DIPLOMACY | `_DIPLOMACY` | Inter-country posture: targets to subdue. |
+| `antagonize` | DIPLOMACY | `_DIPLOMACY` | Inter-country posture: increase friction. |
+| `protect` | DIPLOMACY | `_DIPLOMACY` | Inter-country posture: prioritise survival of an ally. |
+| `contain` | DIPLOMACY | `_DIPLOMACY` | Inter-country posture: contain expansion. |
+| `ignore` | DIPLOMACY | `_DIPLOMACY` | Inter-country posture: do not model as a threat. |
+| `ignore_claim` | DIPLOMACY | `_DIPLOMACY` | Inter-country posture: do not press claim. |
+| `declare_war` | DIPLOMACY | `_DIPLOMACY` | Country-only war declaration nudge. |
+| `diplo_action_desire` | DIPLOMACY | `_DIPLOMACY` | Country-only diplomatic action weighting. |
+| `diplo_action_acceptance` | DIPLOMACY | `_DIPLOMACY` | Country-only diplomatic action acceptance. |
+| `dont_defend_ally_borders` | DIPLOMACY | `_DIPLOMACY` | Per-ally umbrella opt-out. Addressed by `id = <ally>`; expresses a stance toward an ally rather than sizing a front against an enemy. Grouped with `protect`/`ignore`/`force_defend_ally_borders` for the same reason. |
+| `force_defend_ally_borders` | DIPLOMACY | `_DIPLOMACY` | Per-ally umbrella commitment. Same rationale as above. |
+| `theatre_distribution_demand_increase` | THEATRE | `_THEATRE` | Coarse-grained regional emphasis. |
+| `area_priority` | THEATRE | `_THEATRE` | Per-area priority (above the front allocator). |
+| `put_unit_buffers` | THEATRE | `_THEATRE` | Per-state unit buffer reservations. |
+| `spare_unit_factor` | THEATRE | `_THEATRE` | Strategic-reserve factor. |
+
+Domain definitions:
+
+- **FRONT**: how divisions are deployed along **existing** land borders. The front allocator's input set.
+- **INVASION**: how the AI **creates new fronts** via amphibious assault. Pre-invasion staging through post-landing buildup.
+- **NAVAL**: where the fleet operates, what it avoids, where it stages. Sea-domain emphasis.
+- **DIPLOMACY**: posture toward **specific other countries** (allies or enemies, addressed by `id =` or `tag =`). Not the same as front sizing even when the eventual effect is on division placement.
+- **THEATRE**: coarse-grained regional emphasis - which map-theatre to weight, per-state pooling, strategic reserves.
+- **GARRISON**: per-state occupation force sizing for already-conquered territory. Currently rolled into FRONT; promoted to its own file only if a country has enough garrison rules to warrant it.
+
+Note: `dont_defend_ally_borders` and `force_defend_ally_borders` operate on division placement (FRONT-domain mechanism) but express a stance toward an ally (DIPLOMACY-domain intent). Phase 6 routes them to DIPLOMACY for consistency with `protect`/`ignore` and because they are addressed by ally `id =`, the diplomacy-grammar form. See `WA_AI_MILITARY_SYSTEM.md` \u00a73 for the broader convention.
+
+---
+
+## Per-type migration history (Phase 1 snapshot, kept for reference)
+
+This was a **snapshot** of `common/ai_strategy/WA_AI_MILITARY_*.txt` at the time of Phase 1. Counts have drifted across Phases 2-6. Regenerate current counts by running:
 
 ```powershell
-python -c "import re,glob,collections; t=collections.Counter();
-for f in glob.glob('common/ai_strategy/WA_AI_MILITARY_*.txt'):
-  t.update(re.findall(r'^\s*type\s*=\s*(\w+)', open(f, encoding='utf-8').read(), re.M))
-[print(k, v) for k, v in sorted(t.items(), key=lambda x: -x[1])]"
+python tools/wa_ai_military_phase6_domain_split.py audit
 ```
 
-## Inventory summary
+## Inventory summary (Phase 1)
 
 - 45 source files
 - 28 distinct `type =` values

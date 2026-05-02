@@ -1,4 +1,205 @@
 ############################################################################################################
+# WA AI Military V2 - FACTION_ALLIES_THEATRE
+############################################################################################################
+# Phase 6 split: every ai_strategy in this file has type ∈ { area_priority, put_unit_buffers, spare_unit_factor, theatre_distribution_demand_increase }.
+# Canonical domain: THEATRE. See documentation/WA_AI_MILITARY_TYPES_REFERENCE.md.
+
+
+# Phase 6 split from WA_AI_MILITARY_ALLIES_ignore_raj_until_invasion (THEATRE domain)
+WA_AI_MILITARY_ALLIES_ignore_raj_until_invasion_THEATRE = {
+
+	allowed = {
+		NOT = { tag = RAJ }
+	}
+	enable = {
+		is_in_faction_with = RAJ
+		has_war_with = GER
+		RAJ = { surrender_progress < 0.1 }
+
+		# Phase 5 mutual exclusion: yield to Country-layer overrides.
+		NOT = { WA_AI_MILITARY_country_owns_ddab_RAJ = yes }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = area_priority
+		id = malaysia
+		value = -5000 # dont suicide in the east
+	}
+	ai_strategy = {
+		type = area_priority
+		id = east_asia
+		value = -5000 # dont suicide in the east
+	}
+}
+
+
+# Phase 6 split from WA_AI_MILITARY_ALLIES_war_against_ITA_central_africa (THEATRE domain)
+WA_AI_MILITARY_ALLIES_war_against_ITA_central_africa_THEATRE = {
+
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_anglo_major = yes
+	}
+	enable = {
+		OR = {
+			has_war_with = ITA
+			has_war_with = GER
+		}
+		date < 1943.7.1
+		country_exists = ITS
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = area_priority
+		id = north_africa
+		value = -30 #divert resources from el alamein
+	}
+}
+
+
+# Phase 6 split from WA_AI_MILITARY_ALLIES_commonwealth_north_africa_support (THEATRE domain)
+WA_AI_MILITARY_ALLIES_commonwealth_north_africa_support_THEATRE = {
+
+	allowed = {
+		OR = {
+			tag = SAF
+			tag = RAJ
+		}
+	}
+	enable = {
+		WA_AI_MILITARY_allies_africa_support_conditions = yes
+
+		# Phase 5 mutual exclusion: yield to Country-layer overrides.
+		NOT = { WA_AI_MILITARY_country_owns_fdab_target_north_africa = yes }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 9101
+		states = {
+			447
+			446
+			454
+			553
+			451
+			450
+			448
+			923
+		}
+		ratio = 0.5
+		area = north_africa
+		subtract_invasions_from_need = no
+	}
+}
+
+
+# Phase 6 split from WA_AI_MILITARY_ALLIES_no_italy_invasion_early (THEATRE domain)
+WA_AI_MILITARY_ALLIES_no_italy_invasion_early_THEATRE = {
+
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_invasion_pool = yes
+	}
+	enable = {
+		WA_AI_MILITARY_is_allies_member = yes
+		NOT = {
+			tag = ITA
+		}
+		NOT = {
+			AND = {
+				tag = USA
+				date > 1944.12.1
+				has_war_with = JAP
+			}
+		}
+		OR = {
+			AND = {
+				date > 1944.3.1
+				date < 1944.6.6
+			}
+			date < 1943.7.1
+			AND = {
+				any_country = {
+					WA_AI_MILITARY_is_allies_member = yes
+					has_full_control_of_state = 115
+				}
+				any_country = {
+					WA_AI_MILITARY_is_allies_member = yes
+					has_full_control_of_state = 1032
+				}
+				any_country = {
+					WA_AI_MILITARY_is_allies_member = yes
+					has_full_control_of_state = 156
+				}
+			}
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = area_priority
+		id = italy
+		value = -1000
+	}
+}
+
+
+# Phase 6 split from WA_AI_MILITARY_ALLIES_war_against_ITA_north_africa (THEATRE domain)
+WA_AI_MILITARY_ALLIES_war_against_ITA_north_africa_THEATRE = {
+
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_anglo_major = yes
+	}
+	enable = {
+		OR = {
+			has_war_with = ITA
+			has_war_with = GER
+		}
+		OR = {
+			date < 1943.7.1
+			448 = { is_controlled_by = ITA }
+			449 = { is_controlled_by = ITA }
+			450 = { is_controlled_by = ITA }
+			451 = { is_controlled_by = ITA }
+			661 = { is_controlled_by = ITA }
+			662 = { is_controlled_by = ITA }
+			663 = { is_controlled_by = ITA }
+
+			665 = { is_controlled_by = ITA }
+			458 = { is_controlled_by = ITA }
+			1061 = { is_controlled_by = ITA }
+			460 = { is_controlled_by = ITA }
+
+			448 = { is_controlled_by = ITL }
+			449 = { is_controlled_by = ITL }
+			450 = { is_controlled_by = ITL }
+			451 = { is_controlled_by = ITL }
+			661 = { is_controlled_by = ITL }
+			662 = { is_controlled_by = ITL }
+			663 = { is_controlled_by = ITL }
+
+			665 = { is_controlled_by = ITL }
+			458 = { is_controlled_by = ITL }
+			1061 = { is_controlled_by = ITL }
+			460 = { is_controlled_by = ITL }
+		}
+
+		# Phase 5 mutual exclusion: yield to Country-layer overrides.
+		NOT = { WA_AI_MILITARY_country_owns_contain_ITA = yes }
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = area_priority
+		id = north_africa
+		value = 100
+	}
+}
+
+############################################################################################################
 # WA Military V2 - Allies Faction Overlay
 ############################################################################################################
 # Phase 2 split: THEATRE domain blocks.
@@ -16,6 +217,8 @@ WA_AI_MILITARY_ALLIES_theatre_boost_north_africa = {
 		value = 10
 	}
 }
+
+
 
 WA_AI_MILITARY_ALLIES_commonwealth_stage_usa_east = {
 	allowed = {
@@ -55,6 +258,8 @@ WA_AI_MILITARY_ALLIES_commonwealth_stage_usa_east = {
 		subtract_invasions_from_need = no
 	}
 }
+
+
 
 WA_AI_MILITARY_ALLIES_commonwealth_protect_africa = {
 	allowed = {
@@ -111,8 +316,10 @@ WA_AI_MILITARY_ALLIES_commonwealth_protect_africa = {
 	}
 }
 
-# MIXED-DOMAIN: routed to THEATRE; also touches DIPLOMACY, FRONT, INVASION.
-WA_AI_MILITARY_ALLIES_husky_fire = {
+
+# Phase 6 split from WA_AI_MILITARY_ALLIES_husky_fire (THEATRE domain)
+WA_AI_MILITARY_ALLIES_husky_fire_THEATRE = {
+
 	allowed = {
 		WA_AI_CONFIG_MILITARY_is_anglo_major = yes
 	}
@@ -266,37 +473,17 @@ WA_AI_MILITARY_ALLIES_husky_fire = {
 		id = italy
 		value = 1000
 	}
-
 	ai_strategy = {
 		type = area_priority
 		id = south_italy
 		value = 1000
 	}
-
-	ai_strategy = {
-		type = conquer
-		id = "ITA"
-		value = 200
-	}
-
-	ai_strategy = {
-		type = invade
-		id = "ITA"
-		value = 4000
-	}
-
-	ai_strategy = {
-		type = front_control
-
-		state = 1032
-		ordertype = invasion
-		execution_type = careful
-		execute_order = yes
-	}
 }
 
-# MIXED-DOMAIN: routed to THEATRE; also touches DIPLOMACY, FRONT, INVASION.
-WA_AI_MILITARY_ALLIES_husky_prep = {
+
+# Phase 6 split from WA_AI_MILITARY_ALLIES_husky_prep (THEATRE domain)
+WA_AI_MILITARY_ALLIES_husky_prep_THEATRE = {
+
 	allowed = {
 		WA_AI_CONFIG_MILITARY_is_anglo_major = yes
 	}
@@ -444,31 +631,9 @@ WA_AI_MILITARY_ALLIES_husky_prep = {
 		id = italy
 		value = 1000
 	}
-
 	ai_strategy = {
 		type = area_priority
 		id = south_italy
 		value = 1000
 	}
-
-	ai_strategy = {
-		type = conquer
-		id = "ITA"
-		value = 200
-	}
-
-	ai_strategy = {
-		type = invade
-		id = "ITA"
-		value = 4000
-	}
-
-	ai_strategy = {
-		type = front_control
-
-		state = 1032
-		ordertype = invasion
-		execution_type = careful
-	}
 }
-

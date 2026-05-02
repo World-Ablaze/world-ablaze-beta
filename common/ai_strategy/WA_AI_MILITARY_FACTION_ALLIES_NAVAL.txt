@@ -1,14 +1,139 @@
 ############################################################################################################
-# WA Military V2 - Allies Faction Overlay
+# WA AI Military V2 - FACTION_ALLIES_NAVAL
 ############################################################################################################
-# Phase 2 split: NAVAL domain blocks.
+# Phase 6 split: every ai_strategy in this file has type ∈ { naval_avoid_region, strategic_air_importance, strike_force_home_base }.
+# Canonical domain: NAVAL. See documentation/WA_AI_MILITARY_TYPES_REFERENCE.md.
 
-############################################################################################################
-# Moved from ENG.txt - Multi-nation Allied strategies
-############################################################################################################
 
-# MIXED-DOMAIN: routed to NAVAL; also touches FRONT.
-WA_AI_MILITARY_ALLIES_azores_fallen = { ############# Rerout trade
+# Phase 6 split from WA_AI_MILITARY_ALLIES_downfall_push (NAVAL domain)
+WA_AI_MILITARY_ALLIES_downfall_push_NAVAL = {
+
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
+	enable = {
+		has_war_with = JAP
+		NOT = {
+			JAP = {
+				AND = {
+					has_full_control_of_state = 528
+					has_full_control_of_state = 529
+					has_full_control_of_state = 530
+					has_full_control_of_state = 531
+					has_full_control_of_state = 532
+					has_full_control_of_state = 535
+					has_full_control_of_state = 282
+					has_full_control_of_state = 534
+					has_full_control_of_state = 533
+					has_full_control_of_state = 536
+				}
+			}
+		}
+
+		# Phase 5 mutual exclusion: yield to Country-layer overrides.
+		NOT = { WA_AI_MILITARY_country_owns_fc_area_japan = yes }
+	}
+	abort_when_not_enabled = yes
+
+	#ai_strategy = {
+	#	type = front_unit_request
+	#	strategic_region = 154
+	#	value = -200
+	#}
+
+	ai_strategy = {
+		type = strategic_air_importance
+		id = 154
+		value = 30000 #value of stocked main front in active combat is usually around 35,000
+	}
+}
+
+
+# Phase 6 split from WA_AI_MILITARY_ALLIES_sicily_push (NAVAL domain)
+WA_AI_MILITARY_ALLIES_sicily_push_NAVAL = {
+
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
+	enable = {
+		OR = {
+			NOT = {
+				has_full_control_of_state = 115
+			}
+			NOT = {
+				has_full_control_of_state = 156
+			}
+		}
+		has_war_with = ITA
+		has_global_flag = fall_of_france
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 18 #Baleric Sea
+		value = 2000
+	}
+}
+
+
+# Phase 6 split from WA_AI_MILITARY_ALLIES_war_against_ITA_north_africa (NAVAL domain)
+WA_AI_MILITARY_ALLIES_war_against_ITA_north_africa_NAVAL = {
+
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_anglo_major = yes
+	}
+	enable = {
+		OR = {
+			has_war_with = ITA
+			has_war_with = GER
+		}
+		OR = {
+			date < 1943.7.1
+			448 = { is_controlled_by = ITA }
+			449 = { is_controlled_by = ITA }
+			450 = { is_controlled_by = ITA }
+			451 = { is_controlled_by = ITA }
+			661 = { is_controlled_by = ITA }
+			662 = { is_controlled_by = ITA }
+			663 = { is_controlled_by = ITA }
+
+			665 = { is_controlled_by = ITA }
+			458 = { is_controlled_by = ITA }
+			1061 = { is_controlled_by = ITA }
+			460 = { is_controlled_by = ITA }
+
+			448 = { is_controlled_by = ITL }
+			449 = { is_controlled_by = ITL }
+			450 = { is_controlled_by = ITL }
+			451 = { is_controlled_by = ITL }
+			661 = { is_controlled_by = ITL }
+			662 = { is_controlled_by = ITL }
+			663 = { is_controlled_by = ITL }
+
+			665 = { is_controlled_by = ITL }
+			458 = { is_controlled_by = ITL }
+			1061 = { is_controlled_by = ITL }
+			460 = { is_controlled_by = ITL }
+		}
+
+		# Phase 5 mutual exclusion: yield to Country-layer overrides.
+		NOT = { WA_AI_MILITARY_country_owns_contain_ITA = yes }
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = naval_avoid_region
+		id = 202 #aegean sea
+		value = 2000
+	}
+}
+
+
+# Phase 6 split from WA_AI_MILITARY_ALLIES_azores_fallen (NAVAL domain)
+WA_AI_MILITARY_ALLIES_azores_fallen_NAVAL = {
+	 ############# Rerout trade
 	allowed = {
 		WA_AI_MILITARY_is_allies_member = yes
 	}
@@ -26,22 +151,17 @@ WA_AI_MILITARY_ALLIES_azores_fallen = { ############# Rerout trade
 		id = 47
 		value = 2000
 	}
-
 	ai_strategy = {
 		type = naval_avoid_region
 		id = 112
 		value = 1000
 	}
-
-	ai_strategy = {
-		type = front_unit_request
-		tag = POA
-		value = -1000
-	}
 }
 
-# MIXED-DOMAIN: routed to NAVAL; also touches FRONT.
-WA_AI_MILITARY_ALLIES_sealion_is_happening = {
+
+# Phase 6 split from WA_AI_MILITARY_ALLIES_sealion_is_happening (NAVAL domain)
+WA_AI_MILITARY_ALLIES_sealion_is_happening_NAVAL = {
+
 	allowed = {
 		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
 	}
@@ -66,37 +186,18 @@ WA_AI_MILITARY_ALLIES_sealion_is_happening = {
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
-		type = front_control
-		strategic_region = 1
-		ordertype = front
-		execution_type = balanced
-		execute_order = yes
-	}
-
-	ai_strategy = {
-		type = front_control
-		strategic_region = 2
-		ordertype = front
-		execution_type = balanced
-		execute_order = yes
-	}
-
-	ai_strategy = {
 		type = strategic_air_importance
 		id = 1
 		value = 500000 #value of stocked main front in active combat is usually around 35,000
 	}
-
 	ai_strategy = {
 		type = strategic_air_importance
 		id = 2
 		value = 500000 #value of stocked main front in active combat is usually around 35,000
 	}
-
 	ai_strategy = {
 		type = strategic_air_importance
 		id = 18
 		value = -500000 #value of stocked main front in active combat is usually around 35,000
 	}
 }
-

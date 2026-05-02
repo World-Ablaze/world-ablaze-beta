@@ -9,6 +9,14 @@ NO LOGIC CHANGES. Block contents and ordering within a destination file are
 preserved exactly. Header comments at the top of a source file are duplicated
 onto every destination file so context is not lost.
 
+NOTE (post-Phase 6): This Phase 2 tool routes each ai_strategy *block* to a
+single domain by majority vote of its `type =` values. Phase 6 supersedes that
+by physically splitting blocks whose contents touch multiple domains. The
+canonical TYPE -> DOMAIN mapping below is the same one used by Phase 6 and is
+the single source of truth: `documentation/WA_AI_MILITARY_TYPES_REFERENCE.md`
+(top-of-file table) plus `tools/wa_ai_military_phase6_domain_split.py`
+(`CANONICAL_DOMAIN` dict). Keep all three in sync.
+
 Usage:
     python wa_ai_military_phase2_split.py --dry-run
     python wa_ai_military_phase2_split.py --apply

@@ -1,4 +1,131 @@
 ############################################################################################################
+# WA AI Military V2 - COUNTRY_SOV_THEATRE
+############################################################################################################
+# Phase 6 split: every ai_strategy in this file has type ∈ { area_priority, put_unit_buffers, spare_unit_factor, theatre_distribution_demand_increase }.
+# Canonical domain: THEATRE. See documentation/WA_AI_MILITARY_TYPES_REFERENCE.md.
+
+
+# Phase 6 split from WA_AI_MILITARY_SOV_winter_war (THEATRE domain)
+WA_AI_MILITARY_SOV_winter_war_THEATRE = {
+
+	allowed = {
+		tag = SOV
+	}
+	enable = {
+		has_war_with = FIN
+		country_exists = FIN
+		NOT = { has_war_with = GER }
+		NOT = { has_war_with = JAP }
+		OR = {
+			date < 1940.2.1
+			date > 1940.5.1
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = area_priority
+		id = finland
+		value = 1000 #more focus here
+	}
+	ai_strategy = {
+		type = area_priority
+		id = north_russia
+		value = 1000 #more focus here
+	}
+}
+
+
+# Phase 6 split from WA_AI_MILITARY_SOV_winter_war_invasion_time (THEATRE domain)
+WA_AI_MILITARY_SOV_winter_war_invasion_time_THEATRE = {
+
+	allowed = {
+		tag = SOV
+	}
+	enable = {
+		has_war_with = FIN
+		country_exists = FIN
+		NOT = { has_war_with = GER }
+		NOT = { has_war_with = JAP }
+		date > 1940.2.1
+		NOT = { date < 1940.5.1 }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = area_priority
+		id = finland
+		value = 1000 #more focus here
+	}
+	ai_strategy = {
+		type = area_priority
+		id = north_russia
+		value = 1000 #more focus here
+	}
+}
+
+
+# Phase 6 split from WA_AI_MILITARY_SOV_defense_of_sevastapol (THEATRE domain)
+WA_AI_MILITARY_SOV_defense_of_sevastapol_THEATRE = {
+
+	allowed = {
+		original_tag = SOV
+	}
+	enable = {
+		date < 1942.9.1
+		any_enemy_country = {
+			is_ai = no
+		}
+		NOT = {
+			has_offensive_war_with = GER
+		}
+		NOT = {
+			AND = {
+				OR = {
+					has_completed_focus = SOV_secure_leningrad
+					focus_progress = {
+						focus = SOV_secure_leningrad
+						progress > 0.1
+					}
+				}
+				OR = {
+					date < 1940.1.1
+					has_war_with = FIN
+				}
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+		NOT = {
+			AND = {
+				has_offensive_war_with = ROM
+				NOT = {
+					has_war_with = GER
+				}
+			}
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+
+		order_id = 7
+
+		# south_russia
+		states = {
+			137
+		}
+
+		ratio = 0.12
+
+		subtract_invasions_from_need = no
+		subtract_fronts_from_need = yes
+	}
+}
+
+############################################################################################################
 # WA Military V2 - SOV Country Overlay
 ############################################################################################################
 # Phase 2 split: THEATRE domain blocks.
@@ -26,9 +153,10 @@ WA_AI_MILITARY_SOV_theatre_boost_finland = {
 	}
 }
 
-# MIXED-DOMAIN: routed to THEATRE; also touches DIPLOMACY, FRONT, INVASION.
-# MIXED-DOMAIN: routed to THEATRE; also touches DIPLOMACY, FRONT, INVASION.
-WA_AI_MILITARY_SOV_war_with_germany = {
+
+# Phase 6 split from WA_AI_MILITARY_SOV_war_with_germany (THEATRE domain)
+WA_AI_MILITARY_SOV_war_with_germany_THEATRE = {
+
 	allowed = {
 		tag = SOV
 	}
@@ -47,146 +175,6 @@ WA_AI_MILITARY_SOV_war_with_germany = {
 	}
 	abort_when_not_enabled = yes
 
-	ai_strategy = {
-		type = conquer
-		id = "GER"
-		value = 5000
-	}
-
-	ai_strategy = {
-		type = conquer
-		id = "HUN"
-		value = 2000
-	}
-
-	ai_strategy = {
-		type = conquer
-		id = "ROM"
-		value = 1000
-	}
-
-	ai_strategy = {
-		type = invade
-		id = "ROM"
-		value = -500
-	}
-
-	ai_strategy = {
-		type = invade
-		id = "GER"
-		value = -500
-	}
-
-	ai_strategy = {
-		type = area_priority
-		id = north_russia
-		value = 2000 #more focus here
-	}
-
-	ai_strategy = {
-		type = area_priority
-		id = west_russia
-		value = 2000 #more focus here
-	}
-
-	ai_strategy = {
-		type = area_priority
-		id = south_russia
-		value = 2000 #more focus here
-	}
-
-	ai_strategy = {
-		type = area_priority
-		id = caucasus
-		value = 2000 #more focus here
-	}
-
-	ai_strategy = {
-		type = area_priority
-		id = germany
-		value = 2000 #more focus here
-	}
-
-	ai_strategy = {
-		type = area_priority
-		id = east_europe
-		value = 2000 #more focus here
-	}
-
-	ai_strategy = {
-		type = area_priority
-		id = north_balkans
-		value = 1000 #more focus here
-	}
-
-	ai_strategy = {
-		type = area_priority
-		id = south_balkans
-		value = 1000 #more focus here
-	}
-
-	ai_strategy = {
-		type = area_priority
-		id = central_balkans
-		value = 1000 #more focus here
-	}
-
-	ai_strategy = {
-		type = area_priority
-		id = east_russia
-		value = -500 #less focus here
-	}
-
-	ai_strategy = {
-		type = area_priority
-		id = asia
-		value = -500 #less focus here
-	}
-
-	ai_strategy = {
-		type = area_priority
-		id = north_china
-		value = -2000
-	}
-
-	ai_strategy = {
-		type = area_priority
-		id = shanghai_china
-		value = -2000
-	}
-
-	ai_strategy = {
-		type = area_priority
-		id = east_china
-		value = -2000
-	}
-
-	ai_strategy = {
-		type = area_priority
-		id = south_china
-		value = -2000
-	}
-
-	ai_strategy = {
-		type = front_armor_score
-		id = "FIN"
-		value = -1000
-	}
-	ai_strategy = {
-		type = front_armor_score
-		id = "GER"
-		value = 100
-	}
-	ai_strategy = {
-		type = front_armor_score
-		id = "RBL"
-		value = 100
-	}
-	ai_strategy = {
-		type = front_armor_score
-		id = "RUK"
-		value = 100
-	}
 	#ai_strategy = {
 	#	type = front_unit_request
 	#
@@ -195,35 +183,83 @@ WA_AI_MILITARY_SOV_war_with_germany = {
 	#}
 
 	ai_strategy = {
-		type = front_unit_request
-		strategic_region = 13
-		value = -10
+		type = area_priority
+		id = north_russia
+		value = 2000 #more focus here
 	}
-
 	ai_strategy = {
-		type = front_unit_request
-		strategic_region = 326
-		value = -100
+		type = area_priority
+		id = west_russia
+		value = 2000 #more focus here
 	}
-
 	ai_strategy = {
-		type = front_unit_request
-		tag = PER
-		value = -50
+		type = area_priority
+		id = south_russia
+		value = 2000 #more focus here
 	}
-
 	ai_strategy = {
-		type = front_unit_request
-		state = 146
-		value = -50
+		type = area_priority
+		id = caucasus
+		value = 2000 #more focus here
 	}
-
 	ai_strategy = {
-		type = front_unit_request
-		state = 1044
-		value = -50
+		type = area_priority
+		id = germany
+		value = 2000 #more focus here
+	}
+	ai_strategy = {
+		type = area_priority
+		id = east_europe
+		value = 2000 #more focus here
+	}
+	ai_strategy = {
+		type = area_priority
+		id = north_balkans
+		value = 1000 #more focus here
+	}
+	ai_strategy = {
+		type = area_priority
+		id = south_balkans
+		value = 1000 #more focus here
+	}
+	ai_strategy = {
+		type = area_priority
+		id = central_balkans
+		value = 1000 #more focus here
+	}
+	ai_strategy = {
+		type = area_priority
+		id = east_russia
+		value = -500 #less focus here
+	}
+	ai_strategy = {
+		type = area_priority
+		id = asia
+		value = -500 #less focus here
+	}
+	ai_strategy = {
+		type = area_priority
+		id = north_china
+		value = -2000
+	}
+	ai_strategy = {
+		type = area_priority
+		id = shanghai_china
+		value = -2000
+	}
+	ai_strategy = {
+		type = area_priority
+		id = east_china
+		value = -2000
+	}
+	ai_strategy = {
+		type = area_priority
+		id = south_china
+		value = -2000
 	}
 }
+
+
 
 WA_AI_MILITARY_SOV_defense_of_stalingrad = {
 	allowed = {
@@ -274,6 +310,8 @@ WA_AI_MILITARY_SOV_defense_of_stalingrad = {
 		subtract_fronts_from_need = yes
 	}
 }
+
+
 
 WA_AI_MILITARY_SOV_defense_of_kiev = {
 	allowed = {
@@ -341,6 +379,8 @@ WA_AI_MILITARY_SOV_defense_of_kiev = {
 	}
 }
 
+
+
 WA_AI_MILITARY_SOV_defense_of_minsk = {
 	allowed = {
 		original_tag = SOV
@@ -407,6 +447,8 @@ WA_AI_MILITARY_SOV_defense_of_minsk = {
 	}
 }
 
+
+
 WA_AI_MILITARY_SOV_defense_of_leningrad = {
 	allowed = {
 		original_tag = SOV
@@ -459,6 +501,8 @@ WA_AI_MILITARY_SOV_defense_of_leningrad = {
 		subtract_fronts_from_need = yes
 	}
 }
+
+
 
 WA_AI_MILITARY_SOV_defense_of_rostov = {
 	allowed = {
@@ -515,6 +559,8 @@ WA_AI_MILITARY_SOV_defense_of_rostov = {
 		subtract_fronts_from_need = yes
 	}
 }
+
+
 
 WA_AI_MILITARY_SOV_defense_of_smolensk = {
 	allowed = {
@@ -581,6 +627,8 @@ WA_AI_MILITARY_SOV_defense_of_smolensk = {
 	}
 }
 
+
+
 WA_AI_MILITARY_SOV_defense_of_moscow = {
 	allowed = {
 		original_tag = SOV
@@ -645,6 +693,8 @@ WA_AI_MILITARY_SOV_defense_of_moscow = {
 	}
 }
 
+
+
 WA_AI_MILITARY_SOV_defense_of_stalin_line = {
 	allowed = { original_tag = SOV }
 	enable = {
@@ -663,6 +713,8 @@ WA_AI_MILITARY_SOV_defense_of_stalin_line = {
 	}
 }
 
+
+
 WA_AI_MILITARY_SOV_defense_of_stalin_line_2 = {
 	allowed = { original_tag = SOV }
 	enable = {
@@ -679,6 +731,8 @@ WA_AI_MILITARY_SOV_defense_of_stalin_line_2 = {
 		subtract_fronts_from_need = yes
 	}
 }
+
+
 
 WA_AI_MILITARY_SOV_defense_of_stalin_line_3 = {
 	allowed = { original_tag = SOV }
@@ -697,6 +751,8 @@ WA_AI_MILITARY_SOV_defense_of_stalin_line_3 = {
 	}
 }
 
+
+
 WA_AI_MILITARY_SOV_defense_of_stalin_line_4 = {
 	allowed = { original_tag = SOV }
 	enable = {
@@ -713,6 +769,8 @@ WA_AI_MILITARY_SOV_defense_of_stalin_line_4 = {
 		subtract_fronts_from_need = yes
 	}
 }
+
+
 
 WA_AI_MILITARY_SOV_defense_of_stalin_line_5 = {
 	allowed = { original_tag = SOV }
@@ -731,6 +789,8 @@ WA_AI_MILITARY_SOV_defense_of_stalin_line_5 = {
 	}
 }
 
+
+
 WA_AI_MILITARY_SOV_defense_of_stalin_line_6 = {
 	allowed = { original_tag = SOV }
 	enable = {
@@ -747,6 +807,8 @@ WA_AI_MILITARY_SOV_defense_of_stalin_line_6 = {
 		subtract_fronts_from_need = yes
 	}
 }
+
+
 
 WA_AI_MILITARY_SOV_defense_of_stalin_line_7 = {
 	allowed = { original_tag = SOV }
@@ -765,6 +827,8 @@ WA_AI_MILITARY_SOV_defense_of_stalin_line_7 = {
 	}
 }
 
+
+
 WA_AI_MILITARY_SOV_defense_of_stalin_line_8 = {
 	allowed = { original_tag = SOV }
 	enable = {
@@ -781,6 +845,8 @@ WA_AI_MILITARY_SOV_defense_of_stalin_line_8 = {
 		subtract_fronts_from_need = yes
 	}
 }
+
+
 
 WA_AI_MILITARY_SOV_defense_of_stalin_line_9 = {
 	allowed = { original_tag = SOV }
@@ -799,6 +865,8 @@ WA_AI_MILITARY_SOV_defense_of_stalin_line_9 = {
 	}
 }
 
+
+
 WA_AI_MILITARY_SOV_defense_of_stalin_line_10 = {
 	allowed = { original_tag = SOV }
 	enable = {
@@ -815,6 +883,8 @@ WA_AI_MILITARY_SOV_defense_of_stalin_line_10 = {
 		subtract_fronts_from_need = yes
 	}
 }
+
+
 
 WA_AI_MILITARY_SOV_defense_of_stalin_line_11 = {
 	allowed = { original_tag = SOV }
@@ -833,6 +903,8 @@ WA_AI_MILITARY_SOV_defense_of_stalin_line_11 = {
 	}
 }
 
+
+
 WA_AI_MILITARY_SOV_defense_of_stalin_line_12 = {
 	allowed = { original_tag = SOV }
 	enable = {
@@ -849,6 +921,8 @@ WA_AI_MILITARY_SOV_defense_of_stalin_line_12 = {
 		subtract_fronts_from_need = yes
 	}
 }
+
+
 
 WA_AI_MILITARY_SOV_defense_of_stalin_line_13 = {
 	allowed = { original_tag = SOV }
@@ -867,6 +941,8 @@ WA_AI_MILITARY_SOV_defense_of_stalin_line_13 = {
 	}
 }
 
+
+
 WA_AI_MILITARY_SOV_defense_of_stalin_line_14 = {
 	allowed = { original_tag = SOV }
 	enable = {
@@ -883,6 +959,8 @@ WA_AI_MILITARY_SOV_defense_of_stalin_line_14 = {
 		subtract_fronts_from_need = yes
 	}
 }
+
+
 
 WA_AI_MILITARY_SOV_defense_of_stalin_line_15 = {
 	allowed = { original_tag = SOV }
@@ -901,6 +979,8 @@ WA_AI_MILITARY_SOV_defense_of_stalin_line_15 = {
 	}
 }
 
+
+
 WA_AI_MILITARY_SOV_defense_of_stalin_line_16 = {
 	allowed = { original_tag = SOV }
 	enable = {
@@ -917,6 +997,8 @@ WA_AI_MILITARY_SOV_defense_of_stalin_line_16 = {
 		subtract_fronts_from_need = yes
 	}
 }
+
+
 
 WA_AI_MILITARY_SOV_defense_of_stalin_line_17 = {
 	allowed = { original_tag = SOV }
@@ -935,6 +1017,8 @@ WA_AI_MILITARY_SOV_defense_of_stalin_line_17 = {
 	}
 }
 
+
+
 WA_AI_MILITARY_SOV_defense_of_stalin_line_18 = {
 	allowed = { original_tag = SOV }
 	enable = {
@@ -951,6 +1035,8 @@ WA_AI_MILITARY_SOV_defense_of_stalin_line_18 = {
 		subtract_fronts_from_need = yes
 	}
 }
+
+
 
 WA_AI_MILITARY_SOV_defense_of_stalin_line_19 = {
 	allowed = { original_tag = SOV }
@@ -969,6 +1055,8 @@ WA_AI_MILITARY_SOV_defense_of_stalin_line_19 = {
 	}
 }
 
+
+
 WA_AI_MILITARY_SOV_defense_of_stalin_line_20 = {
 	allowed = { original_tag = SOV }
 	enable = {
@@ -985,6 +1073,8 @@ WA_AI_MILITARY_SOV_defense_of_stalin_line_20 = {
 		subtract_fronts_from_need = yes
 	}
 }
+
+
 
 WA_AI_MILITARY_SOV_defense_of_stalin_line_21 = {
 	allowed = { original_tag = SOV }
@@ -1003,6 +1093,8 @@ WA_AI_MILITARY_SOV_defense_of_stalin_line_21 = {
 	}
 }
 
+
+
 WA_AI_MILITARY_SOV_defense_of_stalin_line_22 = {
 	allowed = { original_tag = SOV }
 	enable = {
@@ -1019,6 +1111,8 @@ WA_AI_MILITARY_SOV_defense_of_stalin_line_22 = {
 		subtract_fronts_from_need = yes
 	}
 }
+
+
 
 WA_AI_MILITARY_SOV_defense_of_stalin_line_23 = {
 	allowed = { original_tag = SOV }
@@ -1037,6 +1131,8 @@ WA_AI_MILITARY_SOV_defense_of_stalin_line_23 = {
 	}
 }
 
+
+
 WA_AI_MILITARY_SOV_defense_of_stalin_line_24 = {
 	allowed = { original_tag = SOV }
 	enable = {
@@ -1053,6 +1149,8 @@ WA_AI_MILITARY_SOV_defense_of_stalin_line_24 = {
 		subtract_fronts_from_need = yes
 	}
 }
+
+
 
 WA_AI_MILITARY_SOV_defense_of_odessa = {
 	allowed = { original_tag = SOV }
@@ -1071,6 +1169,8 @@ WA_AI_MILITARY_SOV_defense_of_odessa = {
 	}
 }
 
+
+
 WA_AI_MILITARY_SOV_defense_of_south_ukraine = {
 	allowed = { original_tag = SOV }
 	enable = {
@@ -1087,4 +1187,3 @@ WA_AI_MILITARY_SOV_defense_of_south_ukraine = {
 		subtract_fronts_from_need = yes
 	}
 }
-

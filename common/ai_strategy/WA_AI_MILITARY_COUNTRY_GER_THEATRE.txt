@@ -1,13 +1,252 @@
 ############################################################################################################
-# WA Military V2 - GER Country Overlay
+# WA AI Military V2 - COUNTRY_GER_THEATRE
 ############################################################################################################
-# Phase 2 split: THEATRE domain blocks.
+# Phase 6 split: every ai_strategy in this file has type ∈ { area_priority, put_unit_buffers, spare_unit_factor, theatre_distribution_demand_increase }.
+# Canonical domain: THEATRE. See documentation/WA_AI_MILITARY_TYPES_REFERENCE.md.
 
-# MIXED-DOMAIN: routed to THEATRE; also touches FRONT.
-# Phase 2 split: THEATRE domain blocks.
 
-# MIXED-DOMAIN: routed to THEATRE; also touches FRONT.
-WA_AI_MILITARY_GER_war_with_norway = {
+# Phase 6 split from WA_AI_MILITARY_GER_gank_everyone (THEATRE domain)
+WA_AI_MILITARY_GER_gank_everyone_THEATRE = {
+	 #####DONT TOUCH
+	allowed = {
+		tag = GER
+	}
+	enable = {
+		has_war_with = HOL
+		has_war_with = BEL
+		OR = {
+			HOL = { has_capitulated = no }
+			BEL = { has_capitulated = no }
+		}
+	}
+	abort = {
+		HOL = { has_capitulated = yes }
+		BEL = { has_capitulated = yes }
+	}
+
+	#ai_strategy = {
+	#	type = front_control
+	#	tag = FRA
+	#	ordertype = front
+	#	execution_type = careful ####rush before dont touch
+	#	#execute_order = yes
+	#	manual_attack = yes
+	#}
+
+	ai_strategy = {
+		type = area_priority
+		id = scandinavia
+		value = -200
+	}
+}
+
+
+# Phase 6 split from WA_AI_MILITARY_GER_gank_france (THEATRE domain)
+WA_AI_MILITARY_GER_gank_france_THEATRE = {
+	 ######DONT TOUCH
+	allowed = {
+		tag = GER
+	}
+	enable = {
+		has_war_with = HOL
+		has_war_with = BEL
+		has_war_with = FRA
+		HOL = { has_capitulated = yes }
+		BEL = { has_capitulated = yes }
+	}
+	abort = {
+		OR = {
+			FRA = { has_capitulated = yes }
+			date > 1942.1.1
+			has_war_with = SOV
+		}
+	}
+
+	ai_strategy = {
+		type = area_priority
+		id = north_france
+		value = 1000
+	}
+	ai_strategy = {
+		type = area_priority
+		id = france
+		value = 1000
+	}
+	ai_strategy = {
+		type = area_priority
+		id = south_france
+		value = 1000
+	}
+	ai_strategy = {
+		type = area_priority
+		id = scandinavia
+		value = -200
+	}
+}
+
+
+# Phase 6 split from WA_AI_MILITARY_GER_gank_france_2 (THEATRE domain)
+WA_AI_MILITARY_GER_gank_france_2_THEATRE = {
+	 #####DONT TOUCH
+	allowed = {
+		tag = GER
+	}
+	enable = {
+		has_war_with = HOL
+		has_war_with = BEL
+		has_war_with = FRA
+		OR = {
+			HOL = { has_capitulated = no }
+			BEL = { has_capitulated = no }
+			FRA = { has_capitulated = no }
+		}
+		date > 1940.9.1
+	}
+	abort = {
+		OR = {
+			FRA = { has_capitulated = yes }
+			date > 1940.10.1
+		}
+	}
+
+	ai_strategy = {
+		type = area_priority
+		id = north_france
+		value = 5000
+	}
+}
+
+
+# Phase 6 split from WA_AI_MILITARY_GER_gank_france_3 (THEATRE domain)
+WA_AI_MILITARY_GER_gank_france_3_THEATRE = {
+
+	allowed = {
+		tag = GER
+	}
+	enable = {
+		has_war_with = HOL
+		has_war_with = BEL
+		has_war_with = FRA
+		date > 1940.11.1
+		OR = {
+			HOL = { has_capitulated = no }
+			BEL = { has_capitulated = no }
+			FRA = { has_capitulated = no }
+		}
+	}
+	abort = {
+		OR = {
+			FRA = { has_capitulated = yes }
+			date > 1940.12.1
+		}
+	}
+
+	ai_strategy = {
+		type = area_priority
+		id = north_france
+		value = 5000
+	}
+}
+
+
+# Phase 6 split from WA_AI_MILITARY_GER_focus_on_north_africa (THEATRE domain)
+WA_AI_MILITARY_GER_focus_on_north_africa_THEATRE = {
+
+	allowed = {
+		tag = GER
+	}
+	enable = {
+		OR = {
+			NOT = { has_war_with = FRA }
+			FRA = { has_capitulated = yes }
+		}
+		OR = {
+			118 = { is_controlled_by = ENG }
+			446 = { is_controlled_by = ENG }
+			446 = { is_controlled_by = UKM }
+			446 = { is_controlled_by = UKE }
+		}
+		surrender_progress < 0.05
+		is_in_faction_with = ITA
+		has_war_with = ENG
+		NOT = {
+			has_war_with = SOV
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = area_priority
+		id = north_africa
+		value = 130
+	}
+}
+
+
+# Phase 6 split from WA_AI_MILITARY_GER_atlantik_wall_north_france (THEATRE domain)
+WA_AI_MILITARY_GER_atlantik_wall_north_france_THEATRE = {
+
+	allowed = {
+		tag = GER
+	}
+	enable = {
+		date > 1941.1.1
+		OR = {
+			NOT = { country_exists = RCZ }
+			NOT = { has_country_flag = RCZ_garrison_flag }
+		}
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+
+		order_id = 1
+
+		# france
+		states = {
+			29
+			23
+			30
+			14
+			15
+		}
+
+		ratio = 0.25
+
+		area = france
+
+		subtract_invasions_from_need = no
+	}
+}
+
+
+# Phase 6 split from WA_AI_MILITARY_GER_army_group_finland_does_not_exist (THEATRE domain)
+WA_AI_MILITARY_GER_army_group_finland_does_not_exist_THEATRE = {
+
+	allowed = {
+		NOT = { tag = FIN }
+	}
+	enable = {
+		is_in_faction_with = GER
+		FIN = {
+			is_in_faction_with = GER
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = area_priority
+		id = finland
+		value = -1000
+	}
+}
+
+
+# Phase 6 split from WA_AI_MILITARY_GER_war_with_norway (THEATRE domain)
+WA_AI_MILITARY_GER_war_with_norway_THEATRE = {
+
 	allowed = {
 		tag = GER
 	}
@@ -47,30 +286,25 @@ WA_AI_MILITARY_GER_war_with_norway = {
 	}
 	abort_when_not_enabled = yes
 
-	ai_strategy = {
-		type = front_armor_score
-		id = "NOR"
-		value = -100
-	}
-
-#	ai_strategy = {
-#		type = front_unit_request
-#		area = scandinavia
-#		value = 10
-#	}
+	#	ai_strategy = {
+	#		type = front_unit_request
+	#		area = scandinavia
+	#		value = 10
+	#	}
 
 	ai_strategy = {
 		type = area_priority
 		id = scandinavia
 		value = 50
 	}
-
 	ai_strategy = {
 		type = area_priority
 		id = finland
 		value = 50
 	}
 }
+
+
 
 WA_AI_MILITARY_GER_festung_berlin = {
 	allowed = {
@@ -99,6 +333,8 @@ WA_AI_MILITARY_GER_festung_berlin = {
 	}
 }
 
+
+
 WA_AI_MILITARY_GER_festung_danzig = {
 	allowed = {
 		tag = GER
@@ -126,6 +362,8 @@ WA_AI_MILITARY_GER_festung_danzig = {
 	}
 }
 
+
+
 WA_AI_MILITARY_GER_festung_breslau = {
 	allowed = {
 		tag = GER
@@ -151,6 +389,8 @@ WA_AI_MILITARY_GER_festung_breslau = {
 		subtract_fronts_from_need = no
 	}
 }
+
+
 
 WA_AI_MILITARY_GER_festung_poznan = {
 	allowed = {
@@ -178,6 +418,8 @@ WA_AI_MILITARY_GER_festung_poznan = {
 	}
 }
 
+
+
 WA_AI_MILITARY_GER_festung_stettin = {
 	allowed = {
 		tag = GER
@@ -204,9 +446,10 @@ WA_AI_MILITARY_GER_festung_stettin = {
 	}
 }
 
-# MIXED-DOMAIN: routed to THEATRE; also touches DIPLOMACY, FRONT.
-# MIXED-DOMAIN: routed to THEATRE; also touches DIPLOMACY, FRONT.
-WA_AI_MILITARY_GER_germany_protect_the_fatherland = {
+
+# Phase 6 split from WA_AI_MILITARY_GER_germany_protect_the_fatherland (THEATRE domain)
+WA_AI_MILITARY_GER_germany_protect_the_fatherland_THEATRE = {
+
 	allowed = {
 		original_tag = GER
 	}
@@ -262,48 +505,6 @@ WA_AI_MILITARY_GER_germany_protect_the_fatherland = {
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
-		type = front_control
-
-		tag = SOV
-
-		ratio = 0.75
-
-		priority = 100
-		ordertype = front
-		execution_type = careful
-		execute_order = no
-	}
-
-	ai_strategy = {
-		type = front_unit_request
-		area = germany
-		value = 500
-	}
-
-	ai_strategy = {
-		type = front_unit_request
-		area = east_europe
-		value = 500
-	}
-
-	ai_strategy = {
-		type = front_unit_request
-		area = benelux
-		value = 200
-	}
-
-	ai_strategy = {
-		type = dont_defend_ally_borders
-		id = "FIN"
-		value = 1000
-	}
-
-	ai_strategy = {
-		type = dont_defend_ally_borders
-		id = "RFR"
-		value = 1000
-	}
-	ai_strategy = {
 		type = area_priority
 		id = north_france
 		value = -2000
@@ -350,6 +551,8 @@ WA_AI_MILITARY_GER_germany_protect_the_fatherland = {
 	}
 }
 
+
+
 WA_AI_MILITARY_GER_margarethe = {
 	allowed = {
 		tag = GER
@@ -379,6 +582,8 @@ WA_AI_MILITARY_GER_margarethe = {
 		subtract_invasions_from_need = no
 	}
 }
+
+
 
 WA_AI_MILITARY_GER_fall_achse_a = {
 	allowed = {
@@ -417,6 +622,8 @@ WA_AI_MILITARY_GER_fall_achse_a = {
 	}
 }
 
+
+
 WA_AI_MILITARY_GER_fall_achse_b = {
 	allowed = {
 		tag = GER
@@ -445,6 +652,8 @@ WA_AI_MILITARY_GER_fall_achse_b = {
 		subtract_invasions_from_need = no
 	}
 }
+
+
 
 WA_AI_MILITARY_GER_atlantik_wall_south_france = {
 	allowed = {
@@ -485,6 +694,8 @@ WA_AI_MILITARY_GER_atlantik_wall_south_france = {
 	}
 }
 
+
+
 WA_AI_MILITARY_GER_atlantik_wall_benelux = {
 	allowed = {
 		tag = GER
@@ -521,6 +732,8 @@ WA_AI_MILITARY_GER_atlantik_wall_benelux = {
 	}
 }
 
+
+
 WA_AI_MILITARY_GER_atlantik_wall_germany = {
 	allowed = {
 		tag = GER
@@ -554,6 +767,8 @@ WA_AI_MILITARY_GER_atlantik_wall_germany = {
 		subtract_invasions_from_need = no
 	}
 }
+
+
 
 WA_AI_MILITARY_GER_atlantik_wall_scandinavia = {
 	allowed = {
@@ -592,4 +807,3 @@ WA_AI_MILITARY_GER_atlantik_wall_scandinavia = {
 		subtract_fronts_from_need = no
 	}
 }
-
