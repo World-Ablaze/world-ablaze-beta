@@ -1,0 +1,390 @@
+############################################################################################################
+# World Ablaze AI mod - background events - WA CONVERSION ONGOING
+############################################################################################################
+
+add_namespace = WA_AI_background
+
+# Scripted AI event
+country_event = {
+	id = WA_AI_background.0
+	hidden = yes
+	mean_time_to_happen = { days = 2 }
+
+	trigger = {
+		is_ai = yes
+		NOT = { has_country_flag = WA_AI_delay }
+	}
+
+	immediate = {
+
+		if = {
+			limit = {
+				has_global_flag = WA_AI_performance_mode
+				NOT = { has_country_flag = WA_AI_delay }
+			}
+
+			set_country_flag = { flag = WA_AI_delay value = 1 days = 7 }
+		}
+
+		### operation targets
+
+		WA_AI_set_collaboration_target = yes
+
+		WA_AI_set_boost_resistance_target = yes
+
+		# WA_AI_set_rescue_operative_target = yes
+
+		###
+
+		WA_AI_stop_air_production_strategy = yes
+
+		###
+
+		WA_AI_calculate_fielded_eq_ratio = yes
+
+		###
+
+		WA_AI_defensive_front_strategy = yes
+
+		### check the need to upgrade laws
+
+		WA_AI_upgrade_economy_law = yes
+
+		WA_AI_upgrade_conscription_law = yes
+
+		WA_AI_upgrade_trade_law = yes
+
+		WA_AI_recruit_general = yes
+
+		WA_AI_recruit_marshal = yes
+
+		#WA_AI_update_naval_invasion_target = yes
+
+		WA_AI_update_lend_lease_targets = yes
+
+		WA_AI_update_volunteer_targets = yes
+
+		WA_aircraft_production_strategies = yes
+
+		if = { limit = { WA_AI_defend_core = yes }
+
+			if = { limit = { NOT = { has_country_flag = WA_AI_defend_core } }
+
+				set_country_flag = WA_AI_defend_core
+			}
+		}
+		else = { clr_country_flag = WA_AI_defend_core }
+
+		WA_AI_num_surface_ships = yes
+
+		if = {
+			limit = {
+				any_enemy_country = {
+					has_mined = {
+					  target = ROOT
+					  value > 100
+					}
+				}
+			}
+			set_country_flag = WA_AI_enemy_mines_on_our_coasts
+		}
+		else = { clr_country_flag = WA_AI_enemy_mines_on_our_coasts }
+
+		if = {
+			limit = {
+				any_enemy_country = {
+  					has_mined = {
+  					  target = ROOT
+  					  value > 500
+  					}
+				}
+			}
+			set_country_flag = WA_AI_enemy_mines_on_our_coasts_critical
+		}
+		else = { clr_country_flag = WA_AI_enemy_mines_on_our_coasts_critical }
+	}
+
+	option = {}
+}
+
+# High priority scripts
+country_event = {
+	id = WA_AI_background.1
+	hidden = yes
+	mean_time_to_happen = { days = 2 }
+
+	trigger = {
+		is_ai = yes
+	}
+
+	immediate = {
+
+		### resource needs
+
+		WA_AI_check_resource_shortages = yes
+		WA_AI_check_resource_needs = yes
+
+		### store PP for law changes
+
+		WA_AI_store_PP = yes
+
+		###
+
+		WA_AI_track_submarine_losses = yes
+
+		###
+
+		WA_AI_priority_construction_strategies = yes
+	}
+
+	option = {}
+}
+
+# Low priority scripts
+country_event = {
+	id = WA_AI_background.11
+	hidden = yes
+	mean_time_to_happen = { days = 2 }
+
+	trigger = {
+		is_ai = yes
+		NOT = { has_country_flag = WA_AI_low_priority_delay }
+	}
+
+	immediate = {
+
+		set_country_flag = { flag = WA_AI_low_priority_delay value = 1 days = 80 }
+
+		### WA_AI_max_fuel_consumption_estimate
+
+		WA_AI_calculate_fuel_need = yes
+	}
+
+	option = {}
+}
+
+# Research reduction setting
+country_event = {
+	id = WA_AI_background.4
+	hidden = yes
+	mean_time_to_happen = { days = 2 }
+	trigger = {
+		has_global_flag = WA_AI_limit_research
+		NOT = { WA_AI_major_country = yes }
+		OR = {
+			AND = { original_research_slots > 3 NOT = { has_country_flag = WA_AI_slots_reduced_3 } }
+			AND = { original_research_slots > 2 original_research_slots < 4 NOT = { has_country_flag = WA_AI_slots_reduced_2 } }
+			AND = { original_research_slots > 1 original_research_slots < 3 NOT = { has_country_flag = WA_AI_slots_reduced_1 } }
+		}
+	}
+	immediate = {
+		if = { limit = { original_research_slots > 3 } add_research_slot = -3 set_country_flag = WA_AI_slots_reduced_3 }
+		if = { limit = { original_research_slots > 2 original_research_slots < 4 } add_research_slot = -2 set_country_flag = WA_AI_slots_reduced_2 }
+		if = { limit = { original_research_slots > 1 original_research_slots < 3 } add_research_slot = -1 set_country_flag = WA_AI_slots_reduced_1 }
+
+		if = { limit = { has_country_flag = WA_AI_logging } log = "[GetYear] [GetMonth] | GAME | [Root.GetName] | reducing research slots" }
+	}
+	option = {}
+}
+
+# Saves the original capital city location of a country
+country_event = {
+	id = WA_AI_background.5
+	hidden = yes
+	mean_time_to_happen = { days = 2 }
+	trigger = {
+		NOT = { has_country_flag = WA_AI_capital_saved }
+		NOT = { any_state = { has_state_flag = WA_AI_original_capital_@ROOT } }
+	}
+	immediate = {
+		set_country_flag = WA_AI_capital_saved
+		capital_scope = { set_state_flag = WA_AI_original_capital_@ROOT }
+	}
+	option = {}
+}
+
+# AI startup effects
+country_event = {
+	id = WA_AI_background.7
+	hidden = yes
+	is_triggered_only = yes
+	immediate = {
+
+		if = { limit = { is_ai = yes }
+
+			# military config
+			# set_country_flag = { flag = WA_AI_initialization_delay value = 1 days = 3 }
+			# country_event = { id = WA_AI_CFG.0 days = 3 random = 7 }
+
+			# starting construction queue
+			country_event = WA_AI_C.0
+		}
+	}
+	option = {}
+}
+
+####################################################
+# DEBUG
+####################################################
+
+add_namespace = WA_AI_debug
+
+country_event = {
+	id = WA_AI_debug.0
+	title = ""
+	desc = ""
+	is_triggered_only = yes
+
+	trigger = {
+	}
+
+	immediate = {
+	}
+
+	option = { name = WA_AI_can_take_civilian_economy
+		trigger = { WA_AI_can_take_civilian_economy = yes }
+	}
+	option = { name = WA_AI_can_take_low_economic_mobilisation
+		trigger = { WA_AI_can_take_low_economic_mobilisation = yes }
+	}
+	option = { name = WA_AI_can_take_partial_economic_mobilisation
+		trigger = { WA_AI_can_take_partial_economic_mobilisation = yes }
+	}
+	option = { name = WA_AI_can_take_war_economy
+		trigger = { WA_AI_can_take_war_economy = yes }
+	}
+	option = { name = WA_AI_can_take_tot_economic_mobilisation
+		trigger = { WA_AI_can_take_tot_economic_mobilisation = yes }
+	}
+
+	option = { name = WA_AI_can_take_volunteer_only
+		trigger = { WA_AI_can_take_volunteer_only = yes }
+	}
+	option = { name = WA_AI_can_take_limited_conscription
+		trigger = { WA_AI_can_take_limited_conscription = yes }
+	}
+	option = { name = WA_AI_can_take_extensive_conscription
+		trigger = { WA_AI_can_take_extensive_conscription = yes }
+	}
+	option = { name = WA_AI_can_take_service_by_requirement
+		trigger = { WA_AI_can_take_service_by_requirement = yes }
+	}
+	option = { name = WA_AI_can_take_all_adults_serve
+		trigger = { WA_AI_can_take_all_adults_serve = yes }
+	}
+	option = { name = WA_AI_can_take_scraping_the_barrel
+		trigger = { WA_AI_can_take_scraping_the_barrel = yes }
+	}
+
+	option = { name = WA_AI_can_take_free_trade
+		trigger = { WA_AI_can_take_free_trade = yes }
+	}
+	option = { name = WA_AI_can_take_export_focus
+		trigger = { WA_AI_can_take_export_focus = yes }
+	}
+	option = { name = WA_AI_can_take_limited_exports
+		trigger = { WA_AI_can_take_limited_exports = yes }
+	}
+	option = { name = WA_AI_can_take_closed_economy
+		trigger = { WA_AI_can_take_closed_economy = yes }
+	}
+}
+
+country_event = { # prints statistics on divisions counts
+	id = WA_AI_debug.30
+	hidden = yes
+	is_triggered_only = yes
+
+	immediate = {
+		set_variable = { global.1_num_divisions_TOTAL = 0 }
+		set_variable = { global.4_num_divisions_WAR = 0 }
+		set_variable = { global.5_num_divisions_PEACE = 0 }
+		set_variable = { global.2_num_divisions_MAJORS = 0 }
+		set_variable = { global.3_num_divisions_MINORS = 0 }
+
+		every_country = {
+			clear_variable = global.num_divisions_@THIS
+
+			add_to_variable = { global.1_num_divisions_TOTAL = num_divisions }
+		}
+
+		every_country = {
+			limit = { WA_AI_major_country = yes }
+
+			add_to_variable = { global.2_num_divisions_MAJORS = num_divisions }
+		}
+
+		every_country = {
+			limit = { NOT = { WA_AI_major_country = yes } }
+
+			add_to_variable = { global.3_num_divisions_MINORS = num_divisions }
+		}
+
+		every_country = {
+			limit = { has_war = yes }
+
+			add_to_variable = { global.4_num_divisions_WAR = num_divisions }
+		}
+
+		every_country = {
+			limit = { has_war = no }
+
+			add_to_variable = { global.5_num_divisions_PEACE = num_divisions }
+		}
+
+		every_country = {
+			limit = { has_war = yes }
+
+			set_variable = { global.num_divisions_@THIS = num_divisions }
+		}
+
+		print_variables = {
+			file = divs
+			text = "Division Statistics"
+			append = yes
+			print_global = yes
+		}
+	}
+
+	option = { name = 1
+
+	}
+}
+
+country_event = {
+	id = WA_AI_debug.33
+	hidden = yes
+	is_triggered_only = yes
+
+	immediate = {
+		every_country = { limit = { WA_AI_major_country = yes } set_country_flag = WA_AI_research_logging }
+	}
+
+
+	option = {}
+}
+
+country_event = {
+	id = WA_AI_debug.35
+	hidden = yes
+	is_triggered_only = yes
+
+	trigger = {
+		ROOT = { estimated_intel_max_piercing = { tag = ROOT value > 21 } }
+		ROOT = { estimated_intel_max_armor = { tag = ROOT value > 21 } }
+
+		ROOT = { estimated_intel_max_piercing = { tag = ROOT value > 23 } }
+		ROOT = { estimated_intel_max_armor = { tag = ROOT value > 23 } }
+	}
+
+	immediate = {
+	}
+
+	option = {}
+
+	option = { name = "yes"
+		trigger = {
+
+		}
+	}
+}

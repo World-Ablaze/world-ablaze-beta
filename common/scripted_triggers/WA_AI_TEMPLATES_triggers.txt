@@ -1,0 +1,1245 @@
+############################################################################################################
+# WA AI Templates Triggers
+# Templates types :
+# - Infantry
+# - Motorized
+# - Mechanized
+# - Light Armor
+# - Medium Armor
+# - Heavy Armor
+# - Modern Armor
+# - Garrison
+# - Military Police / Cavalry
+# - Marine
+# - Airborne
+# - Mountaineer
+# - Rangers
+
+
+# Available widths :
+# - 20 Width
+# - 30 Width
+
+# parameters :
+# - fuel availability
+# - total manpower
+# - mils count
+# - expected terrain
+
+WA_AI_TEMPLATES_use_heavy_infantry = {
+	num_of_military_factories > 5
+}
+
+WA_AI_TEMPLATES_use_suppression_templates = {
+	always = yes
+}
+
+WA_AI_TEMPLATES_use_marines = {
+	any_owned_state = {
+		is_coastal = yes
+	}
+	num_of_military_factories > 50
+	num_of_naval_factories > 50
+	NOT = { WA_AI_CONFIG_is_submarine_navy = yes }
+	NOT = { WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes }
+	NOT = { WA_AI_CONFIG_DIVISIONS_force_mountainneers_instead_of_marines = yes }
+	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
+}
+
+WA_AI_TEMPLATES_use_mountaineers = {
+	NOT = { WA_AI_TEMPLATES_use_marines = yes }
+	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
+}
+
+WA_AI_TEMPLATES_use_motorized_templates = {
+	OR = {
+		WA_AI_CONFIG_DIVISIONS_use_motorized_divisions = yes
+		AND = {
+			num_of_military_factories > 50
+			NOT = { WA_AI_TEMPLATES_use_mechanized_templates = yes }
+			NOT = { WA_AI_TEMPLATES_use_armor_templates = yes }
+		}
+	}
+	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
+}
+
+WA_AI_TEMPLATES_use_mechanized_templates = {
+	WA_AI_TEMPLATES_has_mechanized_unlocked = yes
+	OR = {
+		WA_AI_CONFIG_DIVISIONS_use_mechanized_divisions = yes
+		num_of_military_factories > 100
+	}
+	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
+}
+
+WA_AI_TEMPLATES_use_armor_templates = {
+	OR = {
+		WA_AI_CONFIG_DIVISIONS_use_armored_divisions = yes
+		num_of_military_factories > 150
+	}
+	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
+}
+
+WA_AI_TEMPLATES_use_heavy_armor_templates = {
+	WA_AI_TEMPLATES_use_armor_templates = yes
+	WA_AI_TEMPLATES_has_heavy_armor_unlocked = yes
+	WA_AI_CONFIG_DIVISIONS_focus_on_heavy_armor = yes
+	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
+}
+
+WA_AI_TEMPLATES_use_medium_armor_templates = {
+	WA_AI_TEMPLATES_use_armor_templates = yes
+	WA_AI_TEMPLATES_has_medium_armor_unlocked = yes
+	NOT = { WA_AI_TEMPLATES_use_heavy_armor_templates = yes }
+	OR = {
+		WA_AI_CONFIG_DIVISIONS_focus_on_medium_armor = yes
+		date > 1941.1.1
+	}
+	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
+}
+
+WA_AI_TEMPLATES_use_light_armor_templates = {
+	WA_AI_TEMPLATES_use_armor_templates = yes
+	WA_AI_TEMPLATES_has_light_armor_unlocked = yes
+	NOT = { WA_AI_TEMPLATES_switch_from_light_to_medium_armor = yes }
+	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
+}
+
+WA_AI_TEMPLATES_use_modern_armor = {
+	WA_AI_TEMPLATES_use_armor_templates = yes
+	WA_AI_TEMPLATES_has_modern_armor_unlocked = yes
+	date > 1945.1.1
+	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
+}
+
+WA_AI_TEMPLATES_switch_from_light_to_medium_armor = {
+	WA_AI_TEMPLATES_use_armor_templates = yes
+	date > 1940.1.1
+	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
+}
+
+############################################################################################################
+# Main Armor and Mechanized Unlock Triggers
+# These triggers check if a nation has researched any base tank/mechanized chassis technology.
+# Used to gate template creation until the country has the matching equipment unlocked.
+
+# Light Armor - Any light tank chassis unlocked (non-NSB or NSB)
+WA_AI_TEMPLATES_has_light_armor_unlocked = {
+	OR = {
+		# Generic
+		has_tech = generic_light_1
+		has_tech = generic_light_2
+		has_tech = generic_light_tank_1
+		has_tech = generic_light_tank_2
+		# Belgium
+		has_tech = bel_light_1
+		has_tech = bel_light_tank_chassis_1
+		# Czechoslovakia
+		has_tech = cze_light_0
+		has_tech = cze_light_1
+		has_tech = cze_light_2
+		has_tech = cze_light_3
+		has_tech = cze_light_tank_chassis_2
+		has_tech = cze_light_tank_chassis_3
+		has_tech = cze_light_tank_chassis_4
+		has_tech = cze_light_tank_chassis_5
+		# England
+		has_tech = eng_light_1
+		has_tech = eng_light_2
+		has_tech = eng_light_3
+		has_tech = eng_light_4
+		has_tech = eng_light_5
+		has_tech = eng_light_6
+		has_tech = eng_light_tank_chassis_1
+		has_tech = eng_light_tank_chassis_2
+		has_tech = eng_light_tank_chassis_3
+		has_tech = eng_light_tank_chassis_4
+		has_tech = eng_light_tank_chassis_5
+		has_tech = eng_light_tank_chassis_6
+		# France
+		has_tech = fra_light_1
+		has_tech = fra_light_2
+		has_tech = fra_light_3
+		has_tech = fra_light_4
+		has_tech = fra_light_5
+		has_tech = fra_light_7
+		has_tech = fra_light_8
+		has_tech = fra_light_tank_chassis_0
+		has_tech = fra_light_tank_chassis_1
+		has_tech = fra_light_tank_chassis_2
+		has_tech = fra_light_tank_chassis_3
+		has_tech = fra_light_tank_chassis_4
+		has_tech = fra_light_tank_chassis_5
+		has_tech = fra_light_tank_chassis_8
+		# Germany
+		has_tech = ger_light_0
+		has_tech = ger_light_1
+		has_tech = ger_light_2
+		has_tech = ger_light_3
+		has_tech = ger_light_4
+		has_tech = ger_light_5
+		has_tech = ger_light_6
+		has_tech = ger_light_7
+		has_tech = ger_light_tank_chassis_1
+		has_tech = ger_light_tank_chassis_2
+		has_tech = ger_light_tank_chassis_3
+		has_tech = ger_light_tank_chassis_4
+		has_tech = ger_light_tank_chassis_5
+		has_tech = ger_light_tank_chassis_6
+		has_tech = ger_light_tank_chassis_7
+		# Hungary
+		has_tech = hun_light_1
+		has_tech = hun_light_2
+		has_tech = hun_light_3
+		has_tech = hun_light_4
+		has_tech = hun_light_5
+		has_tech = hun_light_tank_chassis_1
+		has_tech = hun_light_tank_chassis_2
+		has_tech = hun_light_tank_chassis_3
+		has_tech = hun_light_tank_chassis_4
+		has_tech = hun_light_tank_chassis_5
+		# Italy
+		has_tech = ita_light_1
+		has_tech = ita_light_2
+		has_tech = ita_light_3
+		has_tech = ita_light_4
+		has_tech = ita_light_5
+		has_tech = ita_light_6
+		has_tech = ita_light_7
+		has_tech = ita_light_tank_chassis_0
+		has_tech = ita_light_tank_chassis_1
+		has_tech = ita_light_tank_chassis_2
+		has_tech = ita_light_tank_chassis_3
+		has_tech = ita_light_tank_chassis_4
+		has_tech = ita_light_tank_chassis_5
+		has_tech = ita_light_tank_chassis_6
+		has_tech = ita_light_tank_chassis_7
+		# Japan
+		has_tech = jap_light_1
+		has_tech = jap_light_2
+		has_tech = jap_light_3
+		has_tech = jap_light_4
+		has_tech = jap_light_5
+		has_tech = jap_light_6
+		has_tech = jap_light_7
+		has_tech = jap_light_tank_chassis_0
+		has_tech = jap_light_tank_chassis_1
+		has_tech = jap_light_tank_chassis_2
+		has_tech = jap_light_tank_chassis_3
+		has_tech = jap_light_tank_chassis_4
+		has_tech = jap_light_tank_chassis_5
+		has_tech = jap_light_tank_chassis_6
+		has_tech = jap_light_tank_chassis_7
+		# Poland
+		has_tech = pol_light_1
+		has_tech = pol_light_2
+		has_tech = pol_light_3
+		has_tech = pol_light_4
+		has_tech = pol_light_tank_chassis_1
+		has_tech = pol_light_tank_chassis_2
+		has_tech = pol_light_tank_chassis_3
+		has_tech = pol_light_tank_chassis_4
+		has_tech = pol_light_tank_chassis_5
+		# Soviet Union
+		has_tech = sov_light_1
+		has_tech = sov_light_2
+		has_tech = sov_light_3
+		has_tech = sov_light_4
+		has_tech = sov_light_5
+		has_tech = sov_light_6
+		has_tech = sov_light_7
+		has_tech = sov_light_tank_chassis_1
+		has_tech = sov_light_tank_chassis_2
+		has_tech = sov_light_tank_chassis_4
+		has_tech = sov_light_tank_chassis_5
+		has_tech = sov_light_tank_chassis_6
+		# Sweden
+		has_tech = swe_light_0
+		has_tech = swe_light_1
+		has_tech = swe_light_2
+		has_tech = swe_light_3
+		has_tech = swe_light_tank_chassis_0
+		has_tech = swe_light_tank_chassis_1
+		has_tech = swe_light_tank_chassis_2
+		has_tech = swe_light_tank_chassis_3
+		has_tech = swe_light_tank_chassis_4
+		# USA
+		has_tech = usa_light_1
+		has_tech = usa_light_2
+		has_tech = usa_light_3
+		has_tech = usa_light_4
+		has_tech = usa_light_5
+		has_tech = usa_light_6
+		has_tech = usa_light_7
+		has_tech = usa_light_tank_chassis_1
+		has_tech = usa_light_tank_chassis_2
+		has_tech = usa_light_tank_chassis_3
+		has_tech = usa_light_tank_chassis_4
+		has_tech = usa_light_tank_chassis_5
+		has_tech = usa_light_tank_chassis_6
+		has_tech = usa_light_tank_chassis_7
+		# Minors
+		has_tech = rom_light_1
+		has_tech = rom_light_tank_chassis_1
+		has_tech = rom_light_tank_chassis_2
+		has_tech = rom_light_tank_chassis_3
+		has_tech = nzl_light_1
+		has_tech = nzl_light_tank_chassis_1
+		has_tech = spr_light_tank_chassis_1
+		has_tech = spr_light_tank_chassis_2
+		has_tech = spr_light_tank_chassis_3
+		has_tech = hol_light_tank_chassis_1
+		has_tech = hol_light_tank_chassis_2
+		has_tech = hol_light_tank_chassis_3
+	}
+}
+
+# Medium Armor - Any main medium tank chassis unlocked (excludes infantry support mediums)
+WA_AI_TEMPLATES_has_medium_armor_unlocked = {
+	OR = {
+		# Belgium
+		has_tech = bel_medium_1
+		has_tech = bel_medium_2
+		has_tech = bel_medium_3
+		has_tech = bel_medium_4
+		has_tech = bel_medium_tank_chassis_1
+		has_tech = bel_medium_tank_chassis_2
+		has_tech = bel_medium_tank_chassis_3
+		has_tech = bel_medium_tank_chassis_4
+		# Canada/Australia/NZ
+		has_tech = can_medium_1
+		has_tech = can_medium_2
+		has_tech = can_medium_tank_chassis_1
+		has_tech = can_medium_tank_chassis_2
+		has_tech = ast_medium_1
+		has_tech = ast_medium_2
+		has_tech = ast_medium_3
+		has_tech = ast_medium_tank_chassis_1
+		has_tech = ast_medium_tank_chassis_2
+		has_tech = ast_medium_tank_chassis_3
+		has_tech = nzl_medium_1
+		has_tech = nzl_medium_tank_chassis_1
+		# Czechoslovakia
+		has_tech = cze_medium_1
+		has_tech = cze_medium_2
+		has_tech = cze_medium_3
+		has_tech = cze_medium_4
+		has_tech = cze_medium_tank_chassis_1
+		has_tech = cze_medium_tank_chassis_2
+		has_tech = cze_medium_tank_chassis_3 #T-24 (1941)
+		has_tech = cze_medium_tank_chassis_4 #T-25 (1942)
+		has_tech = cze_medium_tank_chassis_5
+		# England
+		has_tech = eng_medium_1
+		has_tech = eng_medium_2
+		has_tech = eng_medium_3
+		has_tech = eng_medium_4
+		has_tech = eng_medium_5
+		has_tech = eng_medium_6
+		has_tech = eng_medium_7
+		has_tech = eng_medium_8
+		has_tech = eng_medium_9
+		has_tech = eng_medium_tank_chassis_1
+		has_tech = eng_medium_tank_chassis_2
+		has_tech = eng_medium_tank_chassis_3
+		has_tech = eng_medium_tank_chassis_3_2 #Crusader Mk III (1941)
+		has_tech = eng_medium_tank_chassis_4
+		has_tech = eng_medium_tank_chassis_4_2 #Cromwell (1942)
+		has_tech = eng_medium_tank_chassis_5
+		has_tech = eng_medium_tank_chassis_6
+		has_tech = eng_medium_tank_chassis_8
+		has_tech = eng_medium_tank_chassis_9
+		# France
+		has_tech = fra_medium_0
+		has_tech = fra_medium_1
+		has_tech = fra_medium_2
+		has_tech = fra_medium_3
+		has_tech = fra_medium_4
+		has_tech = fra_medium_5
+		has_tech = fra_medium_6
+		has_tech = fra_medium_7
+		has_tech = fra_medium_tank_chassis_0
+		has_tech = fra_medium_tank_chassis_1
+		has_tech = fra_medium_tank_chassis_2
+		has_tech = fra_medium_tank_chassis_3
+		has_tech = fra_medium_tank_chassis_4
+		has_tech = fra_medium_tank_chassis_5
+		has_tech = fra_medium_tank_chassis_2_2 #Somua S40 (1940)
+		has_tech = fra_medium_tank_chassis_2_3 #SOMUA S40 bis (1941)
+		# Germany (main medium line - Panzer III series, excludes Panzer IV support line)
+		#has_tech = ger_medium_0 #Outdated equipment, don't trigger template with this
+		has_tech = ger_medium_1
+		has_tech = ger_medium_2
+		has_tech = ger_medium_3
+		has_tech = ger_medium_4
+		has_tech = ger_medium_5
+		has_tech = ger_medium_6
+		# has_tech = ger_medium_tank_chassis_1 #Outdated equipment, don't trigger template with this
+		has_tech = ger_medium_tank_chassis_2_2 #Panzer III E
+		has_tech = ger_medium_tank_chassis_2_3 #Panzer III L
+		has_tech = ger_medium_tank_chassis_2_4 #Panzer IV F2 (1942)
+		has_tech = ger_medium_tank_chassis_2_6 #Panzer IV H (1943)
+		# Hungary
+		has_tech = hun_medium_1
+		has_tech = hun_medium_2
+		has_tech = hun_medium_3
+		has_tech = hun_medium_tank_chassis_1
+		has_tech = hun_medium_tank_chassis_2
+		has_tech = hun_medium_tank_chassis_3
+		# Italy
+		has_tech = ita_medium_1
+		has_tech = ita_medium_2
+		has_tech = ita_medium_3
+		has_tech = ita_medium_4
+		has_tech = ita_medium_5
+		has_tech = ita_medium_6
+		has_tech = ita_medium_tank_chassis_1
+		has_tech = ita_medium_tank_chassis_2
+		has_tech = ita_medium_tank_chassis_3
+		has_tech = ita_medium_tank_chassis_4
+		has_tech = ita_medium_tank_chassis_5
+		has_tech = ita_medium_tank_chassis_6
+		# Japan
+		# has_tech = jap_medium_1 #Outdated equipment, don't trigger template with this
+		has_tech = jap_medium_2
+		has_tech = jap_medium_3
+		has_tech = jap_medium_4
+		has_tech = jap_medium_5
+		has_tech = jap_medium_6
+		has_tech = jap_medium_7
+		has_tech = jap_medium_8
+		has_tech = jap_medium_9
+		# has_tech = jap_medium_tank_chassis_1 #Outdated equipment, don't trigger template with this
+		has_tech = jap_medium_tank_chassis_2
+		has_tech = jap_medium_tank_chassis_3
+		has_tech = jap_medium_tank_chassis_4 #Chi Ha kai (1941)
+		has_tech = jap_medium_tank_chassis_5
+		has_tech = jap_medium_tank_chassis_6 #Chi He (1943)
+		has_tech = jap_medium_tank_chassis_7
+		has_tech = jap_medium_tank_chassis_8
+		has_tech = jap_medium_tank_chassis_9
+		# Poland
+		has_tech = pol_medium_1
+		has_tech = pol_medium_2
+		has_tech = pol_medium_3
+		has_tech = pol_medium_4
+		has_tech = pol_medium_5
+		has_tech = pol_medium_6
+		has_tech = pol_medium_7
+		has_tech = pol_medium_tank_chassis_1
+		has_tech = pol_medium_tank_chassis_2
+		has_tech = pol_medium_tank_chassis_3
+		has_tech = pol_medium_tank_chassis_4
+		has_tech = pol_medium_tank_chassis_5
+		has_tech = pol_medium_tank_chassis_6
+		has_tech = pol_medium_tank_chassis_7
+		# Soviet Union
+		# has_tech = sov_medium_0 #Outdated equipment, don't trigger template with this
+		has_tech = sov_medium_1
+		has_tech = sov_medium_2
+		has_tech = sov_medium_3
+		has_tech = sov_medium_4
+		has_tech = sov_medium_5
+		has_tech = sov_medium_6
+		has_tech = sov_medium_7
+		has_tech = sov_medium_8
+		# has_tech = sov_medium_tank_chassis_1 #Outdated equipment, don't trigger template with this
+		has_tech = sov_medium_tank_chassis_1_2
+		has_tech = sov_medium_tank_chassis_3
+		has_tech = sov_medium_tank_chassis_3_2 #T-34 41 (1941)
+		has_tech = sov_medium_tank_chassis_3_3 #T-34 42 (1942)
+		has_tech = sov_medium_tank_chassis_3_4 #T-34 85 (1944)
+		has_tech = sov_medium_tank_chassis_4
+		has_tech = sov_medium_tank_chassis_5
+		# Sweden
+		has_tech = swe_medium_1
+		has_tech = swe_medium_2
+		has_tech = swe_medium_3
+		has_tech = swe_medium_4
+		has_tech = swe_medium_tank_chassis_1
+		has_tech = swe_medium_tank_chassis_2
+		has_tech = swe_medium_tank_chassis_3 #Stridsvagn m/42 DT (1944)
+		has_tech = swe_medium_tank_chassis_4
+		# USA
+		has_tech = usa_medium_1
+		has_tech = usa_medium_2
+		has_tech = usa_medium_3
+		has_tech = usa_medium_4
+		has_tech = usa_medium_5
+		has_tech = usa_medium_6
+		has_tech = usa_medium_7
+		has_tech = usa_medium_tank_chassis_1
+		has_tech = usa_medium_tank_chassis_2
+		has_tech = usa_medium_tank_chassis_3
+		has_tech = usa_medium_tank_chassis_3_2 #M4A2 Sherman (1943)
+		has_tech = usa_medium_tank_chassis_3_3 #M4A3E8 Sherman (1944)
+		has_tech = usa_medium_tank_chassis_4
+		has_tech = usa_medium_tank_chassis_5
+		# Minors
+		has_tech = spr_medium_tank_chassis_1
+	}
+}
+
+# Heavy Armor - Any heavy tank chassis unlocked
+WA_AI_TEMPLATES_has_heavy_armor_unlocked = {
+	OR = {
+		# Czechoslovakia
+		has_tech = cze_heavy_tank_chassis_3
+		has_tech = cze_heavy_tank_chassis_4
+		has_tech = cze_heavy_tank_chassis_5
+		# England
+		has_tech = eng_heavy_1 #Outdated equipment, don't trigger template with this
+		has_tech = eng_heavy_2
+		has_tech = eng_heavy_4
+		has_tech = eng_heavy_5
+		has_tech = eng_heavy_6
+		has_tech = eng_heavy_8
+		has_tech = eng_heavy_9
+		has_tech = eng_heavy_10
+		# has_tech = eng_heavy_tank_chassis_0
+		has_tech = eng_heavy_tank_chassis_1
+		has_tech = eng_heavy_tank_chassis_2
+		has_tech = eng_heavy_tank_chassis_3
+		has_tech = eng_heavy_tank_chassis_4
+		has_tech = eng_heavy_tank_chassis_5
+		has_tech = eng_heavy_tank_chassis_6
+		# France
+		has_tech = fra_heavy_1
+		has_tech = fra_heavy_2
+		has_tech = fra_heavy_3
+		has_tech = fra_heavy_4
+		has_tech = fra_heavy_5
+		has_tech = fra_heavy_6
+		has_tech = fra_heavy_7
+		has_tech = fra_heavy_8
+		has_tech = fra_heavy_9
+		has_tech = fra_heavy_tank_chassis_1
+		has_tech = fra_heavy_tank_chassis_2
+		has_tech = fra_heavy_tank_chassis_3
+		has_tech = fra_heavy_tank_chassis_4
+		has_tech = fra_heavy_tank_chassis_5
+		has_tech = fra_heavy_tank_chassis_6
+		has_tech = fra_heavy_tank_chassis_7
+		has_tech = fra_heavy_tank_chassis_8
+		has_tech = fra_heavy_tank_chassis_9
+		# Germany
+		has_tech = ger_heavy_2
+		has_tech = ger_heavy_3
+		has_tech = ger_heavy_4
+		has_tech = ger_heavy_6
+		has_tech = ger_heavy_7
+		has_tech = ger_heavy_tank_chassis_0
+		has_tech = ger_heavy_tank_chassis_1
+		has_tech = ger_heavy_tank_chassis_2
+		has_tech = ger_heavy_tank_chassis_3
+		has_tech = ger_heavy_tank_chassis_4
+		has_tech = ger_heavy_tank_chassis_5
+		has_tech = ger_heavy_tank_chassis_6
+		# Italy
+		has_tech = ita_heavy_1
+		has_tech = ita_heavy_2
+		has_tech = ita_heavy_3
+		has_tech = ita_heavy_4
+		has_tech = ita_heavy_tank_chassis_1
+		has_tech = ita_heavy_tank_chassis_2
+		has_tech = ita_heavy_tank_chassis_3
+		has_tech = ita_heavy_tank_chassis_4
+		# Japan
+		# has_tech = jap_heavy_0 #Outdated equipment, don't trigger template with this
+		has_tech = jap_heavy_1
+		has_tech = jap_heavy_2
+		has_tech = jap_heavy_3
+		# has_tech = jap_heavy_tank_chassis_0 #Outdated equipment, don't trigger template with this
+		has_tech = jap_heavy_tank_chassis_1
+		has_tech = jap_heavy_tank_chassis_2
+		has_tech = jap_heavy_tank_chassis_5
+		has_tech = jap_heavy_tank_chassis_6
+		has_tech = jap_heavy_tank_chassis_7
+		# Poland
+		has_tech = pol_heavy_1
+		has_tech = pol_heavy_2
+		has_tech = pol_heavy_3
+		has_tech = pol_heavy_tank_chassis_1
+		has_tech = pol_heavy_tank_chassis_2
+		has_tech = pol_heavy_tank_chassis_3
+		# Soviet Union
+		# has_tech = sov_heavy_1 #Outdated equipment, don't trigger template with this
+		has_tech = sov_heavy_2
+		has_tech = sov_heavy_3
+		has_tech = sov_heavy_4
+		has_tech = sov_heavy_5
+		has_tech = sov_heavy_6
+		has_tech = sov_heavy_7
+		has_tech = sov_heavy_8
+		has_tech = sov_heavy_9
+		has_tech = sov_heavy_10
+		has_tech = sov_heavy_11
+		has_tech = sov_heavy_12
+		has_tech = sov_heavy_13
+		# has_tech = sov_heavy_tank_chassis_1 #Outdated equipment, don't trigger template with this
+		has_tech = sov_heavy_tank_chassis_2
+		has_tech = sov_heavy_tank_chassis_3
+		has_tech = sov_heavy_tank_chassis_4
+		has_tech = sov_heavy_tank_chassis_5
+		has_tech = sov_heavy_tank_chassis_6
+		has_tech = sov_heavy_tank_chassis_7
+		has_tech = sov_heavy_tank_chassis_8
+		# Sweden
+		has_tech = swe_heavy_1
+		has_tech = swe_heavy_2
+		has_tech = swe_heavy_tank_chassis_1
+		has_tech = swe_heavy_tank_chassis_2
+		# USA
+		has_tech = usa_heavy_1
+		has_tech = usa_heavy_2
+		has_tech = usa_heavy_3
+		has_tech = usa_heavy_4
+		has_tech = usa_heavy_5
+		has_tech = usa_heavy_6
+		has_tech = usa_heavy_7
+		has_tech = usa_heavy_tank_chassis_1
+		has_tech = usa_heavy_tank_chassis_2
+		has_tech = usa_heavy_tank_chassis_3
+		has_tech = usa_heavy_tank_chassis_4
+		has_tech = usa_heavy_tank_chassis_5
+		has_tech = usa_heavy_tank_chassis_6
+		has_tech = usa_heavy_tank_chassis_7
+	}
+}
+
+# Modern Armor - Any modern tank chassis unlocked
+WA_AI_TEMPLATES_has_modern_armor_unlocked = {
+	OR = {
+		# Czechoslovakia
+		has_tech = cze_modern_1
+		has_tech = cze_modern_2
+		has_tech = cze_modern_tank_chassis_1
+		has_tech = cze_modern_tank_chassis_2
+		has_tech = cze_modern_tank_chassis_3
+		# England
+		has_tech = eng_modern_1
+		has_tech = eng_modern_2
+		has_tech = eng_modern_3
+		has_tech = eng_modern_4
+		has_tech = eng_modern_tank_chassis_1
+		# France
+		has_tech = fra_modern_1
+		has_tech = fra_modern_2
+		has_tech = fra_modern_3
+		has_tech = fra_modern_4
+		has_tech = fra_modern_5
+		has_tech = fra_modern_6
+		has_tech = fra_modern_tank_chassis_1
+		has_tech = fra_modern_tank_chassis_2
+		has_tech = fra_modern_tank_chassis_3
+		has_tech = fra_modern_tank_chassis_4
+		has_tech = fra_modern_tank_chassis_5
+		has_tech = fra_modern_tank_chassis_6
+		# Germany
+		has_tech = ger_modern_1
+		has_tech = ger_modern_2
+		has_tech = ger_modern_3
+		has_tech = ger_modern_4
+		has_tech = ger_modern_5
+		has_tech = ger_modern_6
+		has_tech = ger_modern_7
+		has_tech = ger_modern_8
+		has_tech = ger_modern_tank_chassis_1
+		has_tech = ger_modern_tank_chassis_2
+		has_tech = ger_modern_tank_chassis_3
+		has_tech = ger_modern_tank_chassis_4
+		has_tech = ger_modern_tank_chassis_5
+		# Hungary
+		has_tech = hun_modern_1
+		has_tech = hun_modern_2
+		has_tech = hun_modern_3
+		has_tech = hun_modern_tank_chassis_1
+		has_tech = hun_modern_tank_chassis_2
+		has_tech = hun_modern_tank_chassis_3
+		# Italy
+		has_tech = ita_modern_1
+		has_tech = ita_modern_2
+		has_tech = ita_modern_3
+		has_tech = ita_modern_4
+		has_tech = ita_modern_tank_chassis_1
+		has_tech = ita_modern_tank_chassis_2
+		has_tech = ita_modern_tank_chassis_3
+		has_tech = ita_modern_tank_chassis_4
+		# Japan
+		has_tech = jap_modern_1
+		has_tech = jap_modern_2
+		has_tech = jap_modern_3
+		has_tech = jap_modern_tank_chassis_1
+		has_tech = jap_modern_tank_chassis_2
+		has_tech = jap_modern_tank_chassis_3
+		# Poland
+		has_tech = pol_modern_1
+		has_tech = pol_modern_tank_chassis_1
+		# Soviet Union
+		has_tech = sov_modern_1
+		has_tech = sov_modern_2
+		has_tech = sov_modern_3
+		has_tech = sov_modern_4
+		has_tech = sov_modern_5
+		has_tech = sov_modern_tank_chassis_1
+		has_tech = sov_modern_tank_chassis_2
+		has_tech = sov_modern_tank_chassis_3
+		# Sweden
+		has_tech = swe_modern_1
+		has_tech = swe_modern_tank_chassis_1
+		has_tech = swe_modern_tank_chassis_2
+		# USA
+		has_tech = usa_modern_1
+		has_tech = usa_modern_2
+		has_tech = usa_modern_3
+		has_tech = usa_modern_4
+		has_tech = usa_modern_5
+		has_tech = usa_modern_6
+		has_tech = usa_modern_7
+		has_tech = usa_modern_8
+		has_tech = usa_modern_tank_chassis_1
+		has_tech = usa_modern_tank_chassis_2
+		has_tech = usa_modern_tank_chassis_3
+		has_tech = usa_modern_tank_chassis_4
+		has_tech = usa_modern_tank_chassis_5
+		has_tech = usa_modern_tank_chassis_6
+	}
+}
+
+# Mechanized - Any mechanized infantry equipment unlocked
+WA_AI_TEMPLATES_has_mechanized_unlocked = {
+	OR = {
+		# Canada
+		has_tech = can_mechanized_infantry_1
+		# Czechoslovakia
+		has_tech = cze_mechanized_infantry_1
+		# England
+		has_tech = eng_mechanized_infantry_1
+		has_tech = eng_mechanized_infantry_2
+		has_tech = eng_mechanized_infantry_3
+		has_tech = eng_mechanized_infantry_4
+		has_tech = eng_mechanized_infantry_5
+		has_tech = eng_mechanized_infantry_6
+		# Finland
+		has_tech = fin_mechanized_infantry_1
+		# France
+		# has_tech = fra_mechanized_infantry_1 #Bad equipment, don't use or produce
+		has_tech = fra_mechanized_infantry_2
+		has_tech = fra_mechanized_infantry_3
+		has_tech = fra_mechanized_infantry_4
+		has_tech = fra_mechanized_infantry_5
+		has_tech = fra_mechanized_infantry_6
+		has_tech = fra_amphibious_mechanized_infantry_1
+		# Germany
+		has_tech = ger_mechanized_infantry_1
+		has_tech = ger_mechanized_infantry_2
+		has_tech = ger_mechanized_infantry_3
+		has_tech = ger_mechanized_infantry_4
+		has_tech = ger_mechanized_infantry_5
+		has_tech = ger_mechanized_infantry_6
+		has_tech = ger_mechanized_infantry_7
+		has_tech = ger_mechanized_infantry_8
+		has_tech = ger_mechanized_infantry_9
+		# Hungary
+		has_tech = hun_mechanized_infantry_1
+		# Italy
+		has_tech = ita_mechanized_infantry_1
+		has_tech = ita_mechanized_infantry_2
+		has_tech = ita_mechanized_infantry_3
+		has_tech = ita_mechanized_infantry_4
+		has_tech = ita_mechanized_infantry_5
+		# Japan
+		has_tech = jap_mechanized_infantry_1
+		has_tech = jap_mechanized_infantry_2
+		has_tech = jap_mechanized_infantry_3
+		has_tech = jap_mechanized_infantry_4
+		# Poland
+		has_tech = pol_mechanized_infantry_1
+		has_tech = pol_mechanized_infantry_2
+		has_tech = pol_mechanized_infantry_3
+		has_tech = pol_mechanized_infantry_4
+		# Soviet Union
+		has_tech = sov_mechanized_infantry_1
+		has_tech = sov_mechanized_infantry_2
+		has_tech = sov_mechanized_infantry_3
+		has_tech = sov_mechanized_infantry_4
+		has_tech = sov_mechanized_infantry_5
+		has_tech = sov_mechanized_infantry_6
+		# Sweden
+		has_tech = swe_mechanized_infantry_1
+		has_tech = swe_mechanized_infantry_2
+		# USA
+		has_tech = usa_mechanized_infantry_1
+		has_tech = usa_mechanized_infantry_2
+		has_tech = usa_mechanized_infantry_3
+		has_tech = usa_mechanized_infantry_4
+		has_tech = usa_mechanized_infantry_5
+		has_tech = usa_mechanized_infantry_6
+		has_tech = usa_mechanized_infantry_7
+	}
+}
+
+# Amphibious Mechanized - Any amphibious mechanized equipment unlocked
+WA_AI_TEMPLATES_has_amphibious_mechanized_unlocked = {
+	OR = {
+		# USA
+		has_tech = usa_amphibious_1
+		has_tech = usa_amphibious_2
+		has_tech = usa_amphibious_3
+		has_tech = usa_amphibious_4
+		has_tech = usa_amphibious_5
+		# Germany
+		has_tech = ger_amphibious_1
+		has_tech = ger_amphibious_2
+		has_tech = ger_amphibious_3
+		# England
+		has_tech = eng_amphibious_1
+		# France
+		has_tech = fra_amphibious_mechanized_infantry_1
+		# Japan
+		has_tech = jap_amphibious_1
+		# Soviet Union
+		has_tech = sov_amphibious_infantry_1
+	}
+}
+
+############################################################################################################
+# Equipment Unlock Triggers
+# These triggers check if a nation has researched any technology that unlocks specific equipment types.
+# Used to determine if certain equipment variants are available for template creation.
+
+# Heavy Anti-Tank Equipment
+WA_AI_TEMPLATES_has_heavy_at_unlocked = {
+	OR = {
+		has_tech = cze_heavy_anti_tank_1
+		has_tech = cze_heavy_anti_tank_2
+		has_tech = eng_heavy_anti_tank_1
+		has_tech = eng_heavy_anti_tank_2
+		has_tech = fra_heavy_anti_tank_1
+		has_tech = generic_heavy_anti_tank_1
+		has_tech = generic_heavy_anti_tank_2
+		has_tech = ger_heavy_anti_tank_1
+		has_tech = ger_heavy_anti_tank_2
+		has_tech = hun_heavy_anti_tank_1
+		has_tech = hun_heavy_anti_tank_2
+		has_tech = ita_heavy_anti_tank_1
+		has_tech = ita_heavy_anti_tank_2
+		has_tech = jap_heavy_anti_tank_1
+		has_tech = jap_heavy_anti_tank_2
+		has_tech = pol_heavy_anti_tank_1
+		has_tech = sov_heavy_anti_tank_1
+		has_tech = sov_heavy_anti_tank_2
+		has_tech = usa_heavy_anti_tank_1
+		has_tech = usa_heavy_anti_tank_2
+	}
+}
+
+# Heavy Anti-Air Equipment
+WA_AI_TEMPLATES_has_heavy_aa_unlocked = {
+	OR = {
+		has_tech = cze_heavy_anti_air_1
+		has_tech = cze_heavy_anti_air_2
+		has_tech = cze_heavy_anti_air_3
+		has_tech = cze_heavy_anti_air_4
+		has_tech = cze_heavy_anti_air_5
+		has_tech = cze_heavy_anti_air_6
+		has_tech = eng_heavy_anti_air_1
+		has_tech = eng_heavy_anti_air_2
+		has_tech = eng_heavy_anti_air_3
+		has_tech = fra_heavy_anti_air_1
+		has_tech = fra_heavy_anti_air_2
+		has_tech = fra_heavy_anti_air_3
+		has_tech = fra_heavy_anti_air_4
+		has_tech = generic_heavy_anti_air_1
+		has_tech = generic_heavy_anti_air_2
+		has_tech = generic_heavy_anti_air_3
+		has_tech = ger_heavy_anti_air_1
+		has_tech = ger_heavy_anti_air_2
+		has_tech = ger_heavy_anti_air_3
+		has_tech = hun_heavy_anti_air_1
+		has_tech = hun_heavy_anti_air_2
+		has_tech = hun_heavy_anti_air_3
+		has_tech = ita_heavy_anti_air_1
+		has_tech = ita_heavy_anti_air_2
+		has_tech = ita_heavy_anti_air_3
+		has_tech = jap_heavy_anti_air_1
+		has_tech = jap_heavy_anti_air_2
+		has_tech = jap_heavy_anti_air_3
+		has_tech = jap_heavy_anti_air_4
+		has_tech = jap_heavy_anti_air_5
+		has_tech = pol_heavy_anti_air_1
+		has_tech = pol_heavy_anti_air_2
+		has_tech = pol_heavy_anti_air_3
+		has_tech = sov_heavy_anti_air_1
+		has_tech = sov_heavy_anti_air_2
+		has_tech = sov_heavy_anti_air_3
+		has_tech = sov_heavy_anti_air_4
+		has_tech = swe_heavy_anti_air_1
+		has_tech = swe_heavy_anti_air_2
+		has_tech = swe_heavy_anti_air_3
+		has_tech = usa_heavy_anti_air_1
+		has_tech = usa_heavy_anti_air_2
+		has_tech = usa_heavy_anti_air_3
+		has_tech = usa_heavy_anti_air_4
+	}
+}
+
+# Mechanized Anti-Tank Equipment
+WA_AI_TEMPLATES_has_mechanized_at_unlocked = {
+	OR = {
+		has_tech = fra_mechanized_td_1
+		has_tech = ger_mechanized_td_1
+		has_tech = ger_mechanized_td_2
+		has_tech = ger_mechanized_td_3
+		has_tech = ger_mechanized_td_4
+		has_tech = sov_mechanized_td_1
+		has_tech = usa_mechanized_td_1
+		has_tech = usa_mechanized_td_2
+	}
+}
+
+# Mechanized Anti-Air Equipment
+WA_AI_TEMPLATES_has_mechanized_aa_unlocked = {
+	OR = {
+		has_tech = ger_mechanized_aa_1
+		has_tech = ger_mechanized_aa_2
+		has_tech = ger_mechanized_aa_3
+		has_tech = sov_mechanized_aa_1
+		has_tech = sov_mechanized_aa_2
+		has_tech = sov_mechanized_aa_3
+		has_tech = usa_mechanized_aa_1
+		has_tech = usa_mechanized_aa_2
+		has_tech = usa_mechanized_aa_3
+	}
+}
+
+# Light Tank Destroyer Equipment
+WA_AI_TEMPLATES_has_light_td_unlocked = {
+	OR = {
+		has_tech = cze_light_tank_1_td
+		has_tech = cze_light_tank_2_td
+		has_tech = cze_light_tank_3_td
+		has_tech = cze_light_tank_4_td
+		has_tech = ger_light_tank_1_td
+		has_tech = ger_light_tank_2_td
+		has_tech = ger_light_tank_3_td
+		has_tech = ger_light_tank_4_1_td
+		has_tech = ger_light_tank_4_td
+		has_tech = ger_light_tank_5_td
+		has_tech = ger_light_tank_6_td
+		has_tech = hun_light_tank_chassis_5_td
+		has_tech = ita_light_tank_td_1
+		has_tech = ita_light_tank_td_2
+		has_tech = ita_light_tank_td_4
+		has_tech = jap_light_tank_td_3
+		has_tech = jap_light_tank_td_6
+		has_tech = pol_light_tank_chassis_td_1
+		has_tech = pol_light_tank_chassis_td_2
+		has_tech = pol_light_tank_chassis_td_4
+		has_tech = usa_light_tank_td_3
+	}
+}
+
+# Medium Tank Destroyer Equipment
+WA_AI_TEMPLATES_has_medium_td_unlocked = {
+	OR = {
+		has_tech = cze_medium_tank_1_td
+		has_tech = eng_medium_tank_td_6
+		has_tech = eng_medium_tank_td_7
+		has_tech = eng_medium_tank_td_8
+		has_tech = fra_medium_tank_td_2
+		has_tech = fra_medium_tank_td_3
+		has_tech = fra_medium_tank_td_4
+		has_tech = fra_medium_tank_td_7
+		has_tech = ger_medium_tank_5_td
+		has_tech = ger_medium_tank_6_td
+		has_tech = ger_medium_tank_7_td
+		has_tech = hun_medium_tank_td_3
+		has_tech = ita_medium_tank_td_2
+		has_tech = ita_medium_tank_td_3
+		has_tech = ita_medium_tank_td_4
+		has_tech = ita_medium_tank_td_5
+		has_tech = jap_medium_tank_td_4
+		has_tech = jap_medium_tank_td_6
+		has_tech = jap_medium_tank_td_7
+		has_tech = jap_medium_tank_td_8
+		has_tech = jap_medium_tank_td_9
+		has_tech = pol_medium_tank_chassis_5_td
+		has_tech = pol_medium_tank_chassis_6_td
+		has_tech = sov_medium_tank_td_2
+		has_tech = sov_medium_tank_td_3
+		has_tech = sov_medium_tank_td_4
+		has_tech = swe_medium_tank_chassis_td_2
+		has_tech = swe_medium_tank_chassis_td_3
+		has_tech = usa_medium_tank_td_2
+		has_tech = usa_medium_tank_td_3
+		has_tech = usa_medium_tank_td_4
+		has_tech = usa_medium_tank_td_5
+	}
+}
+
+# Heavy Tank Destroyer Equipment
+WA_AI_TEMPLATES_has_heavy_td_unlocked = {
+	OR = {
+		has_tech = eng_heavy_tank_td_10
+		has_tech = eng_heavy_tank_td_3
+		has_tech = eng_heavy_tank_td_4
+		has_tech = eng_heavy_tank_td_8
+		has_tech = ger_heavy_tank_1_td
+		has_tech = ger_heavy_tank_2_td
+		has_tech = ger_heavy_tank_4_td
+		has_tech = ger_heavy_tank_6_td
+		has_tech = ger_heavy_tank_7_td
+		has_tech = ita_heavy_tank_td_1
+		has_tech = ita_heavy_tank_td_2
+		has_tech = ita_heavy_tank_td_3
+		has_tech = jap_heavy_tank_chassis_td_1
+		has_tech = jap_heavy_tank_chassis_td_3
+		has_tech = sov_heavy_tank_td_11
+		has_tech = sov_heavy_tank_td_12
+		has_tech = sov_heavy_tank_td_7
+		has_tech = sov_heavy_tank_td_9
+		has_tech = usa_heavy_tank_td_2
+		has_tech = usa_heavy_tank_td_6
+	}
+}
+
+# Modern Tank Destroyer Equipment
+WA_AI_TEMPLATES_has_modern_td_unlocked = {
+	OR = {
+		has_tech = cze_modern_tank_1_td
+		has_tech = cze_modern_tank_2_td
+		has_tech = eng_modern_tank_td_3
+		has_tech = fra_modern_tank_td_1
+		has_tech = fra_modern_tank_td_2
+		has_tech = fra_modern_tank_td_4
+		has_tech = fra_modern_tank_td_5
+		has_tech = ger_modern_tank_1_2_td
+		has_tech = ger_modern_tank_1_td
+		has_tech = ger_modern_tank_3_td
+		has_tech = hun_modern_tank_td_2
+		has_tech = ita_modern_tank_td_3
+		has_tech = ita_modern_tank_td_4
+		has_tech = jap_modern_tank_td_1
+		has_tech = pol_modern_tank_chassis_1_td
+		has_tech = sov_modern_tank_td_1
+		has_tech = sov_modern_tank_td_3
+		has_tech = usa_modern_tank_td_2
+	}
+}
+
+# Light Self-Propelled Gun Equipment
+WA_AI_TEMPLATES_has_light_spg_unlocked = {
+	OR = {
+		has_tech = cze_light_tank_2_spg
+		has_tech = eng_light_tank_spg_3
+		has_tech = eng_light_tank_spg_4
+		has_tech = fra_light_tank_spg_4
+		has_tech = fra_light_tank_spg_5
+		has_tech = fra_light_tank_spg_7
+		has_tech = ger_light_tank_4_spg
+		has_tech = ger_light_tank_5_spg
+		has_tech = ita_light_tank_spg_2
+		has_tech = ita_light_tank_spg_4
+		has_tech = jap_light_tank_spg_3
+		has_tech = jap_light_tank_spg_6
+		has_tech = sov_light_tank_spg_1
+		has_tech = sov_light_tank_spg_2
+		has_tech = sov_light_tank_spg_6
+		has_tech = sov_light_tank_spg_7
+		has_tech = spr_light_tank_3_spg
+		has_tech = swe_light_tank_chassis_spg_2
+		has_tech = swe_light_tank_chassis_spg_3
+		has_tech = usa_light_tank_spg_4
+		has_tech = usa_light_tank_spg_5
+		has_tech = usa_light_tank_spg_5_2
+	}
+}
+
+# Medium Self-Propelled Gun Equipment
+WA_AI_TEMPLATES_has_medium_spg_unlocked = {
+	OR = {
+		has_tech = can_medium_tank_chassis_2_tank_spg
+		has_tech = cze_medium_tank_1_spg
+		has_tech = cze_medium_tank_2_spg
+		has_tech = eng_medium_tank_spg_7
+		has_tech = eng_medium_tank_spg_8
+		has_tech = fra_medium_tank_spg_7
+		has_tech = ger_medium_tank_5_spg
+		has_tech = ita_medium_tank_spg_3
+		has_tech = ita_medium_tank_spg_4
+		has_tech = ita_medium_tank_spg_5
+		has_tech = jap_medium_tank_spg_4
+		has_tech = jap_medium_tank_spg_8
+		has_tech = jap_medium_tank_spg_9
+		has_tech = pol_medium_tank_chassis_5_spg
+		has_tech = pol_medium_tank_chassis_6_spg
+		has_tech = sov_light_assault_spg_1
+		has_tech = swe_medium_tank_chassis_spg_3
+		has_tech = usa_medium_tank_spg_2
+		has_tech = usa_medium_tank_spg_3
+		has_tech = usa_medium_tank_spg_5
+	}
+}
+
+# Heavy Self-Propelled Gun Equipment
+WA_AI_TEMPLATES_has_heavy_spg_unlocked = {
+	OR = {
+		has_tech = eng_heavy_tank_spg_1
+		has_tech = eng_heavy_tank_spg_10
+		has_tech = eng_heavy_tank_spg_9
+		has_tech = ger_heavy_tank_4_spg
+		has_tech = ger_heavy_tank_6_spg
+		has_tech = ger_heavy_tank_7_spg
+		has_tech = jap_heavy_tank_chassis_spg_1
+		has_tech = jap_heavy_tank_chassis_spg_3
+		has_tech = sov_heavy_tank_spg_11
+		has_tech = sov_heavy_tank_spg_12
+		has_tech = sov_heavy_tank_spg_3
+		has_tech = sov_heavy_tank_spg_4
+		has_tech = usa_heavy_tank_spg_3
+	}
+}
+
+# Modern Self-Propelled Gun Equipment
+WA_AI_TEMPLATES_has_modern_spg_unlocked = {
+	OR = {
+		has_tech = cze_modern_tank_1_spg
+		has_tech = cze_modern_tank_2_spg
+		has_tech = eng_modern_tank_spg_2
+		has_tech = eng_modern_tank_spg_3
+		has_tech = fra_modern_tank_spg_1
+		has_tech = fra_modern_tank_spg_2
+		has_tech = fra_modern_tank_spg_3
+		has_tech = fra_modern_tank_spg_4
+		has_tech = fra_modern_tank_spg_5
+		has_tech = ger_modern_tank_1_2_spg
+		has_tech = ger_modern_tank_1_spg
+		has_tech = ger_modern_tank_3_spg
+		has_tech = hun_modern_tank_spg_2
+		has_tech = ita_modern_tank_spg_3
+		has_tech = ita_modern_tank_spg_4
+		has_tech = jap_modern_tank_spg_1
+		has_tech = pol_modern_tank_chassis_1_spg
+		has_tech = sov_modern_tank_spg_4
+		has_tech = usa_modern_tank_spg_2
+	}
+}
+
+# Light Self-Propelled Anti-Air Equipment
+WA_AI_TEMPLATES_has_light_spaa_unlocked = {
+	OR = {
+		has_tech = fra_light_tank_aa_7
+		has_tech = ger_light_tank_1_aa
+		has_tech = ger_light_tank_2_aa
+		has_tech = ger_light_tank_3_aa
+		has_tech = ger_light_tank_5_aa
+		has_tech = hun_light_tank_aa_1
+		has_tech = ita_light_tank_aa_1
+		has_tech = ita_light_tank_aa_3
+		has_tech = ita_light_tank_aa_4
+		has_tech = ita_light_tank_aa_5
+		has_tech = jap_light_tank_aa_3
+		has_tech = jap_light_tank_aa_5
+		has_tech = jap_light_tank_aa_6
+		has_tech = pol_light_tank_chassis_4_aa
+		has_tech = sov_light_tank_aa_4
+		has_tech = sov_light_tank_aa_5
+		has_tech = sov_light_tank_aa_6
+		has_tech = swe_light_tank_chassis_aa_3
+		has_tech = usa_light_tank_aa_4
+		has_tech = usa_light_tank_aa_5
+	}
+}
+
+# Medium Self-Propelled Anti-Air Equipment
+WA_AI_TEMPLATES_has_medium_spaa_unlocked = {
+	OR = {
+		has_tech = eng_medium_tank_aa_4
+		has_tech = eng_medium_tank_aa_5
+		has_tech = eng_medium_tank_aa_7
+		has_tech = fra_medium_tank_aa_4
+		has_tech = fra_medium_tank_aa_7
+		has_tech = ger_medium_tank_5_aa
+		has_tech = ger_medium_tank_6_aa
+		has_tech = ger_medium_tank_7_aa
+		has_tech = ita_medium_tank_aa_3
+		has_tech = ita_medium_tank_aa_5
+		has_tech = jap_medium_tank_aa_8
+		has_tech = pol_medium_tank_chassis_5_aa
+		has_tech = pol_medium_tank_chassis_6_aa
+		has_tech = sov_medium_tank_aa_4
+		has_tech = swe_medium_tank_chassis_aa_2
+		has_tech = usa_medium_tank_aa_4
+	}
+}
+
+# Modern Self-Propelled Anti-Air Equipment
+WA_AI_TEMPLATES_has_modern_spaa_unlocked = {
+	OR = {
+		has_tech = eng_modern_tank_aa_3
+		has_tech = fra_modern_tank_aa_3
+		has_tech = fra_modern_tank_aa_6
+		has_tech = ger_modern_tank_1_aa
+		has_tech = ger_modern_tank_3_aa
+		has_tech = hun_modern_tank_aa_2
+		has_tech = ita_modern_tank_aa_3
+		has_tech = ita_modern_tank_aa_4
+		has_tech = jap_modern_tank_aa_1
+		has_tech = pol_modern_tank_chassis_1_aa
+		has_tech = sov_modern_tank_aa_3
+		has_tech = usa_modern_tank_aa_2
+	}
+}
+
+############################################################################################################
+# Spirit Selection Gate Triggers
+# These triggers check if the country has selected the required army command spirits
+# before allowing template creation when T1 doctrine is researched.
+
+WA_AI_TEMPLATES_has_any_academy_spirit = {
+	OR = {
+		has_idea = great_war_legacy_spirit
+		has_idea = bold_attack_spirit
+		has_idea = tenacious_defense_spirit
+		has_idea = meticulous_preparation_spirit
+		has_idea = best_of_the_best_spirit
+		has_idea = academy_scholarships_spirit
+		has_idea = political_loyalty_spirit
+		has_idea = inventive_leadership_spirit
+		has_idea = theatre_training_spirit
+		has_idea = mobile_warfare_academy_spirit
+		has_idea = superior_firepower_academy_spirit
+		has_idea = mass_assault_academy_spirit
+	}
+}
+
+WA_AI_TEMPLATES_has_required_spirits = {
+	# Check army_spirit - must be the SPECIFIC ideology-correct one
+	OR = {
+		AND = {
+			has_government = democratic
+			has_idea = relief_of_command_spirit
+		}
+		AND = {
+			OR = {
+				has_government = fascism
+				has_government = neutrality
+			}
+			has_idea = professional_officer_corps_spirit
+		}
+		# Italy fallback: accept state_serves_the_military until reforms are done
+		AND = {
+			tag = ITA
+			has_government = fascism
+			NOT = { has_country_flag = adequate_army }
+			has_idea = state_serves_the_military_spirit
+		}
+		AND = {
+			has_government = communism
+			has_idea = ideological_loyalty_spirit
+		}
+	}
+	# Check academy_spirit - ANY academy spirit is valid
+	WA_AI_TEMPLATES_has_any_academy_spirit = yes
+}

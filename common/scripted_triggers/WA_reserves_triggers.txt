@@ -1,0 +1,276 @@
+############################################################################################################
+# WA Reserve System Triggers
+#
+# This module handles eligibility checks for the reserve system.
+# Provides reusable triggers for recruitment and deployment decisions.
+############################################################################################################
+
+############################################################################################################
+# MAIN ELIGIBILITY TRIGGERS
+############################################################################################################
+
+# Check if country can use the reserve system at all
+WA_reserves_country_can_have_reserves = {
+	# Any country can have reserves - no tag restrictions
+	# Individual countries can be blocked via ideas or flags
+	NOT = { has_country_flag = WA_reserves_disabled }
+}
+
+# Check if country can recruit more reserves
+WA_reserves_can_recruit = {
+	WA_reserves_country_can_have_reserves = yes
+	has_war = no
+	custom_trigger_tooltip = {
+		tooltip = reserves_max_tt
+		check_variable = { ROOT.reserves < 100 }
+	}
+	# Block recruitment during certain conditions
+	WA_reserves_recruitment_not_blocked = yes
+	# Must meet army size/equipment requirements for current reserve level
+	WA_reserves_meets_recruitment_threshold = yes
+}
+
+# Check if country can deploy reserves
+WA_reserves_can_deploy = {
+	WA_reserves_country_can_have_reserves = yes
+	check_variable = { ROOT.reserves > 0 }
+	OR = {
+		has_war = yes
+		has_country_flag = early_reserve_mobilization_flag
+	}
+	has_manpower > 150499
+	WA_reserves_deployment_not_blocked = yes
+	NOT = { surrender_progress > 0.8 }
+	num_of_controlled_states > 0
+	# Must be fighting a significant enemy or have early mobilization
+	OR = {
+		any_enemy_country = {
+			OR = {
+				ic_ratio = {
+					tag = ROOT
+					ratio > 0.25
+				}
+				is_major = yes
+			}
+		}
+		has_country_flag = early_reserve_mobilization_flag
+	}
+}
+
+# Check if early mobilization is available
+WA_reserves_can_early_mobilize = {
+	WA_reserves_country_can_have_reserves = yes
+	check_variable = { ROOT.reserves > 0 }
+	has_war = no
+	NOT = { has_country_flag = early_reserve_mobilization_flag }
+	threat > 0.39
+	# Must not be strictly neutral
+	WA_reserves_not_strictly_neutral = yes
+}
+
+############################################################################################################
+# BLOCKING CONDITIONS
+############################################################################################################
+
+# Conditions that block recruitment
+WA_reserves_recruitment_not_blocked = {
+	# Spain military disloyalty
+	if = {
+		limit = {
+			has_idea = SPR_military_disloyalty
+		}
+		NOT = { has_idea = SPR_military_disloyalty }
+	}
+	# Disarmed nation (USA can bypass with certain flags)
+	if = {
+		limit = {
+			has_idea = disarmed_nation
+			NOT = {
+				OR = {
+					has_country_flag = USA_selective_service_act_flag
+					has_country_flag = USA_265_plan_flag
+				}
+			}
+		}
+		NOT = { has_idea = disarmed_nation }
+	}
+}
+
+# Conditions that block deployment
+WA_reserves_deployment_not_blocked = {
+	# No civil war
+	custom_trigger_tooltip = {
+		tooltip = SOV_has_civil_war_no_tt
+		has_civil_war = no
+		# France civil war check
+		OR = {
+			NOT = { original_tag = FRA }
+			NOT = { has_war_with = VIC }
+		}
+		# Italy civil war check
+		OR = {
+			NOT = { original_tag = ITA }
+			NOT = { has_war_with = RIT }
+		}
+		# Soviet civil war check
+		OR = {
+			NOT = { original_tag = SOV }
+			NOT = { has_war_with = STA }
+		}
+	}
+	# German opposition path check
+	if = {
+		limit = {
+			has_completed_focus = GER_prepare_the_opposition
+		}
+		has_global_flag = GER_civil_war_end
+	}
+	# Soviet Stavka requirement for player
+	if = {
+		limit = {
+			original_tag = SOV
+			is_ai = no
+			NOT = { has_completed_focus = SOV_beaten_but_not_defeated }
+		}
+		has_completed_focus = SOV_form_the_stavka
+	}
+}
+
+# Check if country is not strictly neutral
+WA_reserves_not_strictly_neutral = {
+	if = {
+		limit = {
+			original_tag = HOL
+		}
+		NOT = { has_idea = HOL_aloof_neutrality }
+	}
+	else = {
+		NOT = { has_country_flag = neutral_flag }
+	}
+}
+
+############################################################################################################
+# RECRUITMENT THRESHOLD TRIGGERS
+# These determine if a country has enough army size to recruit more reserves
+# Thresholds increase as reserves increase (10, 20, 30... 90)
+############################################################################################################
+
+# Main threshold check - uses meta_trigger for dynamic thresholds
+# Formulas:
+#   Standard: manpower = 199999 + (level * 20000), equipment = 15000 + (level * 1000)
+#   SOV:      manpower = 99999 + (level * 10000),  equipment = 10000 + (level * 500)
+# USA bypass: levels 0-20 both flags, levels 30-40 only 265_plan, levels 50+ no bypass
+WA_reserves_meets_recruitment_threshold = {
+	# Calculate reserve level (floor to nearest 10)
+	set_temp_variable = { _reserves_level = ROOT.reserves }
+	clamp_temp_variable = { var = _reserves_level min = 0 max = 90 }
+	divide_temp_variable = { _reserves_level = 10 }
+	set_temp_variable = { _level_remainder = _reserves_level }
+	modulo_temp_variable = { _level_remainder = 1 }
+	subtract_from_temp_variable = { _reserves_level = _level_remainder }
+	multiply_temp_variable = { _reserves_level = 10 }
+
+	# Calculate standard thresholds: 199999 + (level * 2000)
+	set_temp_variable = { _std_manpower = _reserves_level }
+	multiply_temp_variable = { _std_manpower = 2000 }
+	add_to_temp_variable = { _std_manpower = 199999 }
+
+	# Standard equipment: 15000 + (level * 100)
+	set_temp_variable = { _std_equipment = _reserves_level }
+	multiply_temp_variable = { _std_equipment = 100 }
+	add_to_temp_variable = { _std_equipment = 15000 }
+
+	# Calculate SOV thresholds: 99999 + (level * 1000)
+	set_temp_variable = { _sov_manpower = _reserves_level }
+	multiply_temp_variable = { _sov_manpower = 1000 }
+	add_to_temp_variable = { _sov_manpower = 99999 }
+
+	# SOV equipment: 10000 + (level * 50)
+	set_temp_variable = { _sov_equipment = _reserves_level }
+	multiply_temp_variable = { _sov_equipment = 50 }
+	add_to_temp_variable = { _sov_equipment = 10000 }
+
+	# Check any path passes
+	OR = {
+		WA_reserves_has_usa_bypass = yes
+		WA_reserves_meets_sov_threshold = yes
+		WA_reserves_meets_standard_threshold = yes
+	}
+}
+
+# USA bypass check - varies by reserve level
+# Levels 0-20: accept both flags, Levels 30-40: only 265_plan, Levels 50+: no bypass
+WA_reserves_has_usa_bypass = {
+	original_tag = USA
+	check_variable = { _reserves_level < 50 }
+	OR = {
+		# Levels 0-20: accept both flags
+		AND = {
+			check_variable = { _reserves_level < 30 }
+			OR = {
+				has_country_flag = USA_selective_service_act_flag
+				has_country_flag = USA_265_plan_flag
+			}
+		}
+		# Levels 30-40: only 265_plan flag
+		AND = {
+			check_variable = { _reserves_level > 19 }
+			has_country_flag = USA_265_plan_flag
+		}
+	}
+}
+
+# SOV reduced requirements - uses meta_trigger for variable thresholds
+WA_reserves_meets_sov_threshold = {
+	has_completed_focus = SOV_reserve_armies_administration
+	meta_trigger = {
+		text = {
+			has_army_manpower = { size > [MP] }
+		}
+		MP = "[?_sov_manpower|.0]"
+	}
+	meta_trigger = {
+		text = {
+			check_variable = { num_equipment_in_armies@infantry_equipment > [EQ] }
+		}
+		EQ = "[?_sov_equipment|.0]"
+	}
+}
+
+# Standard requirements - uses meta_trigger for variable thresholds
+WA_reserves_meets_standard_threshold = {
+	meta_trigger = {
+		text = {
+			has_army_manpower = { size > [MP] }
+		}
+		MP = "[?_std_manpower|.0]"
+	}
+	meta_trigger = {
+		text = {
+			check_variable = { num_equipment_in_armies@infantry_equipment > [EQ] }
+		}
+		EQ = "[?_std_equipment|.0]"
+	}
+}
+
+############################################################################################################
+# UTILITY TRIGGERS
+############################################################################################################
+
+# Check if country has reserves available
+WA_reserves_has_reserves = {
+	check_variable = { ROOT.reserves > 0 }
+}
+
+# Check if country has max reserves
+WA_reserves_at_max = {
+	check_variable = { ROOT.reserves > 99 }
+}
+
+# Check if deployment is complete (both waves done)
+WA_reserves_deployment_complete = {
+	OR = {
+		NOT = { check_variable = { ROOT.reserves > 0 } }
+		has_country_flag = reserves_finished_1
+	}
+}

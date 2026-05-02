@@ -1,0 +1,1198 @@
+############################################################################################################
+#	World Ablaze AI mod - Railway Construction Priority - Helper Functions
+#	Extracted from WA_AI_CONSTRUCTION_PRIORITY_strategies_misc.txt for single responsibility
+############################################################################################################
+
+### Constants (file-scoped, must be redeclared)
+@WA_AI_PC_railway_TYPE_ID = 13
+@WA_AI_PC_railway_PRIO = 9999
+@WA_AI_PC_railway_PRIO_PREWAR = 5000
+@WA_AI_PC_railway_THEATRE_SEPARATION_DISTANCE = 10
+
+### Supply Flow Formula Constants (from game mechanics)
+@WA_AI_PC_SUPPLY_RAILWAY_BASE = 4				# Railway throughput: BASE + PER_LEVEL * level
+@WA_AI_PC_SUPPLY_RAILWAY_PER_LEVEL = 8			# L1=12, L2=20, L3=28, L4=36, L5=44
+@WA_AI_PC_SUPPLY_PORT_PER_LEVEL = 5				# Port throughput: level * 5
+@WA_AI_PC_PORT_MAX_USEFUL_LEVEL = 9				# L5 railway = 44 supply, L9 port = 45 supply (already exceeds railway)
+
+### Home Port Search Parameters
+@WA_AI_PC_HOME_PORT_SEARCH_DISTANCE = 5			# Max BFS distance from capital
+@WA_AI_PC_HOME_PORT_TARGET_SUPPLY = 44			# Target supply capacity (L5 railway = 44)
+
+### Building Costs (from 00_buildings.txt)
+@WA_AI_PC_RAILWAY_BASE_COST = 800				# rail_way.base_cost (flat per segment)
+@WA_AI_PC_NAVAL_BASE_BASE_COST = 10000			# naval_base.base_cost
+@WA_AI_PC_NAVAL_BASE_PER_LEVEL_COST = -556		# naval_base.per_level_extra_cost (decreases!)
+
+### Cost Estimation Parameters
+@WA_AI_PC_RAILWAY_SEGMENTS_PER_STATE = 3		# Estimated railway segments per state
+
+############################################################################################################
+#	NEW HELPER: Continent Detection (eliminates 5 duplications)
+#	THIS = state >>> continent_id_ (1-7, 0 if unknown)
+#	1=europe, 2=north_america, 3=south_america, 4=asia, 5=africa, 6=middle_east, 7=australia
+############################################################################################################
+
+WA_AI_PC_railway_get_continent = {
+	set_temp_variable = { continent_id_ = 0 }
+
+	if = { limit = { is_on_continent = europe } set_temp_variable = { continent_id_ = 1 } }
+	else_if = { limit = { is_on_continent = north_america } set_temp_variable = { continent_id_ = 2 } }
+	else_if = { limit = { is_on_continent = south_america } set_temp_variable = { continent_id_ = 3 } }
+	else_if = { limit = { is_on_continent = asia } set_temp_variable = { continent_id_ = 4 } }
+	else_if = { limit = { is_on_continent = africa } set_temp_variable = { continent_id_ = 5 } }
+	else_if = { limit = { is_on_continent = middle_east } set_temp_variable = { continent_id_ = 6 } }
+	else_if = { limit = { is_on_continent = australia } set_temp_variable = { continent_id_ = 7 } }
+
+}
+
+############################################################################################################
+#	NEW HELPER: Find Best Home Port (with cost-based scoring)
+#	Uses scoring: maximize supply first, minimize cost as tiebreaker
+#	capital_state_id >>> best_home_port_state_, best_home_port_level_, best_home_port_province_, best_home_port_score_
+############################################################################################################
+
+WA_AI_PC_railway_find_best_home_port = {
+	set_temp_variable = { best_home_port_state_ = 0 }
+	set_temp_variable = { best_home_port_level_ = 0 }
+	set_temp_variable = { best_home_port_province_ = 0 }
+	set_temp_variable = { best_home_port_score_ = -999999999 }
+
+	# Use configurable search distance
+	set_temp_variable = { _origin_state_id = capital_state_id }
+	set_temp_variable = { _max_distance = @WA_AI_PC_HOME_PORT_SEARCH_DISTANCE }
+	WA_AI_PC_railway_get_states_within_distance = yes
+
+	# Also check capital state itself (distance 0)
+	add_to_temp_array = { states_within_distance_ = capital_state_id }
+
+	# Build distance lookup: states are added in BFS order, so index approximates distance
+	# Capital is always last (we just added it), so its effective distance is 0
+	set_temp_variable = { _capital_idx = states_within_distance_^num }
+	subtract_from_temp_variable = { _capital_idx = 1 }
+
+	# Evaluate each controlled coastal state within range
+	every_controlled_state = {
+		WA_AI_PC_get_state_id = yes
+		set_temp_variable = { _this_state_id = state_id_ }
+
+		if = {
+			limit = {
+				is_in_array = { states_within_distance_ = _this_state_id }
+				is_coastal = yes
+			}
+			# Get naval base province and level
+			WA_AI_PC_railway_get_naval_base_province = yes
+
+			if = {
+				limit = { check_variable = { naval_base_province_ > 0 } }
+
+				# Calculate BFS distance: find index in array, use as distance proxy
+				# Capital (last added) has distance 0, others have distance based on index
+				set_temp_variable = { _bfs_distance = 0 }
+				for_each_loop = { array = states_within_distance_ index = _dist_idx value = _check_state break = _found_dist
+					if = { limit = { check_variable = { _check_state = _this_state_id } }
+						# If this is capital, distance is 0; otherwise use index as distance
+						if = { limit = { check_variable = { _this_state_id = capital_state_id } }
+							set_temp_variable = { _bfs_distance = 0 }
+						}
+						else = {
+							# Estimate distance from index (earlier = closer)
+							# Scale index to max_distance range
+							set_temp_variable = { _bfs_distance = _dist_idx }
+							add_to_temp_variable = { _bfs_distance = 1 }
+							# Cap at max distance
+							if = { limit = { check_variable = { _bfs_distance > @WA_AI_PC_HOME_PORT_SEARCH_DISTANCE } }
+								set_temp_variable = { _bfs_distance = @WA_AI_PC_HOME_PORT_SEARCH_DISTANCE }
+							}
+						}
+						set_temp_variable = { _found_dist = 1 }
+					}
+				}
+
+				# Score this port candidate
+				set_temp_variable = { _candidate_port_level = naval_base_level_ }
+				WA_AI_PC_score_port_candidate = yes
+
+				# Check if this is the best so far
+				if = {
+					limit = { check_variable = { port_score_ > best_home_port_score_ } }
+					set_temp_variable = { best_home_port_state_ = _this_state_id }
+					set_temp_variable = { best_home_port_level_ = naval_base_level_ }
+					set_temp_variable = { best_home_port_province_ = naval_base_province_ }
+					set_temp_variable = { best_home_port_score_ = port_score_ }
+				}
+			}
+		}
+	}
+
+	if = { limit = { has_country_flag = WA_AI_construction_logging }
+		if = { limit = { check_variable = { best_home_port_state_ > 0 } }
+			var:best_home_port_state_ = {
+				ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY HELPER: find_best_home_port FOUND [Prev.GetName] level=[?best_home_port_level_] score=[?best_home_port_score_]" }
+			}
+		}
+		else = {
+			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY HELPER: find_best_home_port NONE FOUND"
+		}
+	}
+}
+
+############################################################################################################
+#	HELPER: Check if a candidate beachhead is in a separate theatre from existing beachheads
+#	Uses landmass for fast-path (different landmass = separate theatres)
+#	Uses BFS distance for same-landmass check (>10 states apart = separate theatres)
+#	candidate_beachhead_state_, _beachhead_states_ array >>> _is_duplicate_theatre_
+############################################################################################################
+
+WA_AI_PC_check_theatre_separation = {
+	set_temp_variable = { _is_duplicate_theatre_ = 0 }
+	set_temp_variable = { _found_duplicate = 0 }
+
+	# Get candidate's landmass
+	set_temp_variable = { _cand_landmass = global.WA_AI_MAP_state_landmass^candidate_beachhead_state_ }
+
+	for_each_loop = {
+		array = _beachhead_states_
+		value = _existing_bh_state
+		break = _found_duplicate
+
+		# Get existing beachhead's landmass
+		set_temp_variable = { _exist_landmass = global.WA_AI_MAP_state_landmass^_existing_bh_state }
+
+		# Same landmass = need distance check
+		if = {
+			limit = { check_variable = { _cand_landmass = _exist_landmass } }
+
+			# Check if candidate is within BFS distance of existing beachhead
+			set_temp_variable = { _origin_state_id = _existing_bh_state }
+			set_temp_variable = { _max_distance = @WA_AI_PC_railway_THEATRE_SEPARATION_DISTANCE }
+			WA_AI_PC_railway_get_states_within_distance = yes
+
+			# Include origin state in check
+			add_to_temp_array = { states_within_distance_ = _existing_bh_state }
+
+			# If candidate is within range of existing beachhead, it's a duplicate theatre
+			if = {
+				limit = { is_in_array = { states_within_distance_ = candidate_beachhead_state_ } }
+				set_temp_variable = { _is_duplicate_theatre_ = 1 }
+				set_temp_variable = { _found_duplicate = 1 }
+			}
+		}
+		# Different landmass = definitely separate theatres (fast path, no action needed)
+	}
+}
+
+############################################################################################################
+#	HELPER: Check if we have land access to any enemy
+############################################################################################################
+
+WA_AI_PC_railway_check_land_access_to_enemies = {
+	set_temp_variable = { has_land_enemy_ = 0 }
+	set_temp_variable = { has_overseas_enemy_ = 0 }
+
+	every_enemy_country = {
+		set_temp_variable = { _check_enemy_tag = THIS }
+
+		# Check if any of our controlled states border this enemy's controlled states
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
+
+		if = {
+			limit = { check_variable = { has_land_border_with_enemy_ = 1 } }
+			set_temp_variable = { has_land_enemy_ = 1 }
+		}
+		else = {
+			set_temp_variable = { has_overseas_enemy_ = 1 }
+		}
+	}
+
+}
+
+############################################################################################################
+#	HELPER: Pre-filter enemies to reduce iteration count
+#	Only includes: majors, enemies we directly border, or enemies with significant industry
+############################################################################################################
+
+WA_AI_PC_railway_get_relevant_enemies = { # >>> arr:_relevant_enemies_
+
+	clear_temp_array = _relevant_enemies_
+
+	every_enemy_country = {
+		set_temp_variable = { _include_enemy = 0 }
+
+		### Always include majors
+		if = {
+			limit = { is_major = yes }
+			set_temp_variable = { _include_enemy = 1 }
+		}
+
+		### Include enemies with 50+ factories (significant industrial threat)
+		if = {
+			limit = {
+				check_variable = { _include_enemy = 0 }
+				num_of_factories > 50
+			}
+			set_temp_variable = { _include_enemy = 1 }
+		}
+
+		### Include enemies we directly border
+		if = {
+			limit = { check_variable = { _include_enemy = 0 } }
+			set_temp_variable = { _check_enemy_for_border = THIS }
+			set_temp_variable = { _found_border = 0 }
+			ROOT = {
+				every_controlled_state = {
+					limit = {
+						check_variable = { _found_border = 0 }
+						any_neighbor_state = {
+							is_controlled_by = var:_check_enemy_for_border
+						}
+					}
+					set_temp_variable = { _found_border = 1 }
+				}
+			}
+			if = {
+				limit = { check_variable = { _found_border = 1 } }
+				set_temp_variable = { _include_enemy = 1 }
+			}
+		}
+
+		if = {
+			limit = { check_variable = { _include_enemy = 1 } }
+			add_to_temp_array = { _relevant_enemies_ = THIS }
+		}
+	}
+
+}
+
+############################################################################################################
+#	HELPER: Get states within N adjacency steps from a state (BFS)
+############################################################################################################
+
+WA_AI_PC_railway_get_states_within_distance = { # _origin_state_id, _max_distance >>> states_within_distance_
+
+	clear_temp_array = states_within_distance_
+	clear_temp_array = _states_current_wave_
+	clear_temp_array = _states_next_wave_
+	clear_temp_array = _states_visited_
+
+	add_to_temp_array = { _states_current_wave_ = _origin_state_id }
+	add_to_temp_array = { _states_visited_ = _origin_state_id }
+
+	set_temp_variable = { _current_distance = 0 }
+
+	while_loop_effect = {
+		limit = {
+			check_variable = { _current_distance < _max_distance }
+			check_variable = { _states_current_wave_^num > 0 }
+		}
+
+		# Process current wave
+		for_each_loop = { array = _states_current_wave_ value = _wave_state
+			var:_wave_state = {
+				every_neighbor_state = {
+					WA_AI_PC_get_state_id = yes
+					set_temp_variable = { _neighbor_id = state_id_ }
+					if = {
+						limit = {
+							NOT = { is_in_array = { _states_visited_ = _neighbor_id } }
+						}
+						add_to_temp_array = { _states_next_wave_ = _neighbor_id }
+						add_to_temp_array = { _states_visited_ = _neighbor_id }
+						add_to_temp_array = { states_within_distance_ = _neighbor_id }
+					}
+				}
+			}
+		}
+
+		# Move to next wave
+		clear_temp_array = _states_current_wave_
+		for_each_loop = { array = _states_next_wave_ value = _next_state
+			add_to_temp_array = { _states_current_wave_ = _next_state }
+		}
+		clear_temp_array = _states_next_wave_
+
+		add_to_temp_variable = { _current_distance = 1 }
+	}
+}
+
+############################################################################################################
+#	HELPER: Find supply hub province in a state
+#	Iterates through all provinces in a state to find the one with supply_node or naval_base
+############################################################################################################
+
+WA_AI_PC_railway_get_supply_hub_province = { # THIS = state >>> supply_hub_province_ (0 if not found)
+	set_temp_variable = { supply_hub_province_ = 0 }
+	WA_AI_PC_get_state_id = yes
+
+	# Use meta_effect to dynamically access the state's province array
+	meta_effect = {
+		text = {
+			for_each_loop = { array = global.WA_AI_MAP_state_province_ids@[STATE_ID] value = _province_hub_id break = _found_hub
+				if = {
+					limit = { WA_AI_PC_prov_has_supply_hub = yes }
+					set_temp_variable = { supply_hub_province_ = _province_hub_id }
+					set_temp_variable = { _found_hub = 1 }
+				}
+			}
+		}
+		STATE_ID = "[?state_id_]"
+	}
+}
+
+############################################################################################################
+#	HELPER: Find naval base province in a state
+#	Iterates through all provinces to find the one with naval_base and returns the level
+############################################################################################################
+
+WA_AI_PC_railway_get_naval_base_province = { # THIS = state >>> naval_base_province_, naval_base_level_ (0 if not found)
+	set_temp_variable = { naval_base_province_ = 0 }
+	set_temp_variable = { naval_base_level_ = 0 }
+	WA_AI_PC_get_state_id = yes
+
+	# Use meta_effect to dynamically access the state's province array
+	meta_effect = {
+		text = {
+			for_each_loop = { array = global.WA_AI_MAP_state_province_ids@[STATE_ID] value = _province_hub_id break = _found_port
+				if = {
+					limit = { WA_AI_PC_prov_has_naval_base = yes }
+					set_temp_variable = { naval_base_province_ = _province_hub_id }
+					set_temp_variable = { _found_port = 1 }
+				}
+			}
+		}
+		STATE_ID = "[?state_id_]"
+	}
+
+	# Determine naval base level if province was found
+	if = {
+		limit = { check_variable = { naval_base_province_ > 0 } }
+		WA_AI_PC_get_naval_base_level = yes
+	}
+
+}
+
+
+############################################################################################################
+#	HELPER: Check if state has supply hub and get the province ID
+#	Uses proper supply_node > 0 check at state level, then finds the exact province
+############################################################################################################
+
+WA_AI_PC_railway_state_has_supply_hub = { # THIS = state >>> has_supply_, supply_hub_province_
+	set_temp_variable = { has_supply_ = 0 }
+	set_temp_variable = { supply_hub_province_ = 0 }
+
+	# Check if state has a supply hub using proper trigger
+	if = {
+		limit = { WA_AI_PC_state_has_supply_hub = yes }
+
+		set_temp_variable = { has_supply_ = 1 }
+
+		# Find the exact province with the supply hub
+		WA_AI_PC_railway_get_supply_hub_province = yes
+	}
+}
+
+############################################################################################################
+#	HELPER: Check if ROOT (or ROOT's puppets) directly borders an enemy country
+#	Used to prevent building railways to frontlines the country doesn't directly touch
+############################################################################################################
+
+WA_AI_PC_railway_country_borders_enemy = { # _enemy_tag >>> borders_enemy_
+	set_temp_variable = { borders_enemy_ = 0 }
+
+	# Fix 24: Check if any of ROOT's owned AND controlled states border the enemy's territory (or enemy's puppets)
+	# Added is_controlled_by check to ensure consistency with frontline detection (which uses controlled states)
+	# This prevents false border detection for states ROOT owns but doesn't control (enemy occupation)
+	# Fix 25: (REVOKED by Fix 27) Originally removed puppet border extension
+	# Fix 27: Re-enabled puppet borders — pathfinder type 2 now traverses puppet provinces (commit 9aef32f41),
+	# and build_railway scripted effects work on any province regardless of controller
+	every_controlled_state = {
+		limit = {
+			any_neighbor_state = {
+				OR = {
+					is_controlled_by = var:_enemy_tag
+					controller = { is_subject_of = var:_enemy_tag }
+				}
+			}
+		}
+		ROOT = { set_temp_variable = { borders_enemy_ = 1 } }
+	}
+
+	# Fix 27: Also check if ROOT's subjects/puppets border the enemy
+	every_subject_country = {
+		every_controlled_state = {
+			limit = {
+				any_neighbor_state = {
+					OR = {
+						is_controlled_by = var:_enemy_tag
+						controller = { is_subject_of = var:_enemy_tag }
+					}
+				}
+			}
+			ROOT = { set_temp_variable = { borders_enemy_ = 1 } }
+		}
+	}
+
+}
+
+############################################################################################################
+#	HELPER: Score and sort targets by enemy threat (multi-front war support)
+#	Prioritizes targets facing the most dangerous enemy first
+#	Threat score = num_of_factories + (num_divisions * 5)
+############################################################################################################
+
+WA_AI_PC_railway_score_and_sort_by_enemy_threat = {
+
+	### Step 1: Build unique enemy list and calculate threat scores
+	clear_temp_array = _unique_enemies_
+	clear_temp_array = _enemy_scores_
+
+	for_each_loop = { array = railway_enemy_tags_ value = _check_enemy
+		# Check if this enemy is already in our unique list
+		set_temp_variable = { _enemy_already_listed = 0 }
+		for_each_loop = { array = _unique_enemies_ value = _listed_enemy
+			if = { limit = { check_variable = { _check_enemy = _listed_enemy } }
+				set_temp_variable = { _enemy_already_listed = 1 }
+			}
+		}
+
+		# If not listed, add enemy and calculate threat score
+		if = { limit = { check_variable = { _enemy_already_listed = 0 } }
+			add_to_temp_array = { _unique_enemies_ = _check_enemy }
+
+			# Calculate threat score: factories + (divisions * 5)
+			set_temp_variable = { _threat_score = 0 }
+			var:_check_enemy = {
+				add_to_temp_variable = { _threat_score = num_of_factories }
+				set_temp_variable = { _div_score = num_divisions }
+				multiply_temp_variable = { _div_score = 5 }
+				add_to_temp_variable = { _threat_score = _div_score }
+			}
+			add_to_temp_array = { _enemy_scores_ = _threat_score }
+		}
+	}
+
+	### Step 2: Sort enemies by threat score (descending) using bubble sort
+	set_temp_variable = { _num_enemies = _unique_enemies_^num }
+	set_temp_variable = { _outer_limit = _num_enemies }
+	subtract_from_temp_variable = { _outer_limit = 1 }
+
+	while_loop_effect = {
+		limit = { check_variable = { _outer_limit > 0 } }
+
+		set_temp_variable = { _inner_idx = 0 }
+		while_loop_effect = {
+			limit = { check_variable = { _inner_idx < _outer_limit } }
+
+			set_temp_variable = { _next_idx = _inner_idx }
+			add_to_temp_variable = { _next_idx = 1 }
+
+			# If current score < next score, swap (we want descending order)
+			if = { limit = { check_variable = { _enemy_scores_^_inner_idx < _enemy_scores_^_next_idx } }
+				# Swap scores
+				set_temp_variable = { _tmp_score = _enemy_scores_^_inner_idx }
+				set_temp_variable = { _enemy_scores_^_inner_idx = _enemy_scores_^_next_idx }
+				set_temp_variable = { _enemy_scores_^_next_idx = _tmp_score }
+
+				# Swap enemy tags
+				set_temp_variable = { _tmp_enemy = _unique_enemies_^_inner_idx }
+				set_temp_variable = { _unique_enemies_^_inner_idx = _unique_enemies_^_next_idx }
+				set_temp_variable = { _unique_enemies_^_next_idx = _tmp_enemy }
+			}
+
+			add_to_temp_variable = { _inner_idx = 1 }
+		}
+
+		subtract_from_temp_variable = { _outer_limit = 1 }
+	}
+
+	### Step 3: Rebuild target arrays in enemy-priority order
+	# Copy current arrays to temporary storage
+	clear_temp_array = _tmp_start_provinces_
+	clear_temp_array = _tmp_end_provinces_
+	clear_temp_array = _tmp_target_levels_
+	clear_temp_array = _tmp_priorities_
+	clear_temp_array = _tmp_enemy_tags_
+
+	for_each_loop = { array = railway_start_provinces_ index = _copy_i
+		add_to_temp_array = { _tmp_start_provinces_ = railway_start_provinces_^_copy_i }
+		add_to_temp_array = { _tmp_end_provinces_ = railway_end_provinces_^_copy_i }
+		add_to_temp_array = { _tmp_target_levels_ = railway_target_levels_^_copy_i }
+		add_to_temp_array = { _tmp_priorities_ = railway_priorities_^_copy_i }
+		add_to_temp_array = { _tmp_enemy_tags_ = railway_enemy_tags_^_copy_i }
+	}
+
+	# Clear original arrays
+	clear_temp_array = railway_start_provinces_
+	clear_temp_array = railway_end_provinces_
+	clear_temp_array = railway_target_levels_
+	clear_temp_array = railway_priorities_
+	clear_temp_array = railway_enemy_tags_
+
+	# Rebuild in sorted order: for each enemy (highest threat first), add all their targets
+	for_each_loop = { array = _unique_enemies_ value = _sorted_enemy
+		for_each_loop = { array = _tmp_enemy_tags_ index = _target_i value = _target_enemy
+			if = { limit = { check_variable = { _target_enemy = _sorted_enemy } }
+				add_to_temp_array = { railway_start_provinces_ = _tmp_start_provinces_^_target_i }
+				add_to_temp_array = { railway_end_provinces_ = _tmp_end_provinces_^_target_i }
+				add_to_temp_array = { railway_target_levels_ = _tmp_target_levels_^_target_i }
+				add_to_temp_array = { railway_priorities_ = _tmp_priorities_^_target_i }
+				add_to_temp_array = { railway_enemy_tags_ = _target_enemy }
+			}
+		}
+	}
+
+	# Boost priority of first target (highest threat enemy's first target)
+	if = { limit = { check_variable = { railway_priorities_^num > 0 } }
+		set_temp_variable = { _boosted_priority = railway_priorities_^0 }
+		multiply_temp_variable = { _boosted_priority = 1.1 }
+		set_temp_variable = { railway_priorities_^0 = _boosted_priority }
+	}
+
+}
+
+############################################################################################################
+#	LANDMASS-AWARE SUPPLY CHAIN HELPERS (Single Responsibility)
+#	Used to handle island nations like Japan that need overseas supply routes
+############################################################################################################
+
+### Find highest level naval base on a specific landmass
+WA_AI_PC_get_best_port_on_landmass = { # _search_landmass >>> best_port_level_, best_port_province_, best_port_state_, best_port_supply_
+
+	set_temp_variable = { best_port_level_ = 0 }
+	set_temp_variable = { best_port_province_ = 0 }
+	set_temp_variable = { best_port_state_ = 0 }
+	set_temp_variable = { best_port_supply_ = 0 }
+
+	every_controlled_state = {
+		WA_AI_PC_get_state_id = yes
+		set_temp_variable = { _this_state_id = state_id_ }
+
+		if = {
+			limit = {
+				check_variable = { global.WA_AI_MAP_state_landmass^_this_state_id = _search_landmass }
+				is_coastal = yes
+			}
+
+			# Get the naval base province and level
+			WA_AI_PC_railway_get_naval_base_province = yes
+
+			if = {
+				limit = {
+					check_variable = { naval_base_province_ > 0 }
+					check_variable = { naval_base_level_ > best_port_level_ }
+				}
+				set_temp_variable = { best_port_level_ = naval_base_level_ }
+				set_temp_variable = { best_port_state_ = _this_state_id }
+				set_temp_variable = { best_port_province_ = naval_base_province_ }
+			}
+		}
+	}
+
+	# Fix 28: Also search puppet/subject states for ports on this landmass
+	every_subject_country = {
+		every_controlled_state = {
+			WA_AI_PC_get_state_id = yes
+			set_temp_variable = { _this_state_id = state_id_ }
+			if = {
+				limit = {
+					check_variable = { global.WA_AI_MAP_state_landmass^_this_state_id = _search_landmass }
+					is_coastal = yes
+				}
+				WA_AI_PC_railway_get_naval_base_province = yes
+				if = {
+					limit = {
+						check_variable = { naval_base_province_ > 0 }
+						check_variable = { naval_base_level_ > best_port_level_ }
+					}
+					set_temp_variable = { best_port_level_ = naval_base_level_ }
+					set_temp_variable = { best_port_state_ = _this_state_id }
+					set_temp_variable = { best_port_province_ = naval_base_province_ }
+				}
+			}
+		}
+	}
+
+	# Calculate supply capacity using configurable formula
+	set_temp_variable = { _port_level = best_port_level_ }
+	WA_AI_PC_calculate_port_supply = yes
+	set_temp_variable = { best_port_supply_ = port_supply_ }
+}
+
+############################################################################################################
+#	HELPER: Find Best Port Near a Target State (distance-limited)
+#	BFS from target state up to N states, then finds the highest-level controlled port
+#	on the same landmass within that radius. Uses every_controlled_state to include puppets.
+#	Fix 26: Replaces landmass-only search to prevent selecting ports thousands of km away
+#	        (e.g., Singapore for North Africa targets on the Afro-Eurasian mega-landmass)
+############################################################################################################
+
+WA_AI_PC_get_best_port_near_state = { # _target_state_for_port, _port_search_radius >>> best_port_level_, best_port_province_, best_port_state_, best_port_supply_
+
+	# Step 1: BFS from target state to get all states within radius
+	set_temp_variable = { _origin_state_id = _target_state_for_port }
+	set_temp_variable = { _max_distance = _port_search_radius }
+	WA_AI_PC_railway_get_states_within_distance = yes
+	# Include origin state itself (BFS helper excludes it)
+	add_to_temp_array = { states_within_distance_ = _target_state_for_port }
+
+	# Step 2: Get target landmass for filtering
+	set_temp_variable = { _ps_target_lm = global.WA_AI_MAP_state_landmass^_target_state_for_port }
+
+	# Step 3: Among ROOT's controlled states (and puppet states), find best port within BFS range on same landmass
+	set_temp_variable = { best_port_level_ = 0 }
+	set_temp_variable = { best_port_province_ = 0 }
+	set_temp_variable = { best_port_state_ = 0 }
+	set_temp_variable = { best_port_supply_ = 0 }
+
+	every_controlled_state = {
+		WA_AI_PC_get_state_id = yes
+		set_temp_variable = { _ps_state_id = state_id_ }
+		if = {
+			limit = {
+				# Must be on same landmass as target
+				check_variable = { global.WA_AI_MAP_state_landmass^_ps_state_id = _ps_target_lm }
+				# Must be within BFS search radius
+				is_in_array = { states_within_distance_ = _ps_state_id }
+				is_coastal = yes
+			}
+			WA_AI_PC_railway_get_naval_base_province = yes
+			if = {
+				limit = {
+					check_variable = { naval_base_province_ > 0 }
+					check_variable = { naval_base_level_ > best_port_level_ }
+				}
+				set_temp_variable = { best_port_level_ = naval_base_level_ }
+				set_temp_variable = { best_port_state_ = _ps_state_id }
+				set_temp_variable = { best_port_province_ = naval_base_province_ }
+			}
+		}
+	}
+
+	# Fix 28: Also search puppet/subject states for ports
+	# e.g. Italian Libya (ITL) has Tripoli port level 5, closer to Derna than Eritrea
+	every_subject_country = {
+		every_controlled_state = {
+			WA_AI_PC_get_state_id = yes
+			set_temp_variable = { _ps_state_id = state_id_ }
+			if = {
+				limit = {
+					check_variable = { global.WA_AI_MAP_state_landmass^_ps_state_id = _ps_target_lm }
+					is_in_array = { states_within_distance_ = _ps_state_id }
+					is_coastal = yes
+				}
+				WA_AI_PC_railway_get_naval_base_province = yes
+				if = {
+					limit = {
+						check_variable = { naval_base_province_ > 0 }
+						check_variable = { naval_base_level_ > best_port_level_ }
+					}
+					set_temp_variable = { best_port_level_ = naval_base_level_ }
+					set_temp_variable = { best_port_state_ = _ps_state_id }
+					set_temp_variable = { best_port_province_ = naval_base_province_ }
+				}
+			}
+		}
+	}
+
+	# Calculate supply capacity
+	set_temp_variable = { _port_level = best_port_level_ }
+	WA_AI_PC_calculate_port_supply = yes
+	set_temp_variable = { best_port_supply_ = port_supply_ }
+}
+
+### Calculate supply bottleneck (minimum of two supply values)
+WA_AI_PC_calculate_supply_bottleneck = { # _supply_a, _supply_b >>> bottleneck_supply_
+
+	if = { limit = { check_variable = { _supply_a < _supply_b } }
+		set_temp_variable = { bottleneck_supply_ = _supply_a }
+	}
+	else = {
+		set_temp_variable = { bottleneck_supply_ = _supply_b }
+	}
+}
+
+### Convert supply capacity to maximum useful railway level
+### Uses configurable constants: BASE + PER_LEVEL * level
+WA_AI_PC_supply_to_railway_level = { # _supply_capacity >>> max_railway_level_
+	# Formula: level = (supply - BASE) / PER_LEVEL, clamped to 0-5
+	set_temp_variable = { max_railway_level_ = _supply_capacity }
+	subtract_from_temp_variable = { max_railway_level_ = @WA_AI_PC_SUPPLY_RAILWAY_BASE }
+	divide_temp_variable = { max_railway_level_ = @WA_AI_PC_SUPPLY_RAILWAY_PER_LEVEL }
+
+	# Clamp to valid range
+	if = { limit = { check_variable = { max_railway_level_ < 0 } }
+		set_temp_variable = { max_railway_level_ = 0 }
+	}
+	if = { limit = { check_variable = { max_railway_level_ > 5 } }
+		set_temp_variable = { max_railway_level_ = 5 }
+	}
+}
+
+### Calculate railway supply capacity for a given level
+### Formula: BASE + PER_LEVEL * level (e.g., 4 + 8*level)
+WA_AI_PC_calculate_railway_supply = { # _railway_level >>> railway_supply_
+	set_temp_variable = { railway_supply_ = _railway_level }
+	multiply_temp_variable = { railway_supply_ = @WA_AI_PC_SUPPLY_RAILWAY_PER_LEVEL }
+	add_to_temp_variable = { railway_supply_ = @WA_AI_PC_SUPPLY_RAILWAY_BASE }
+}
+
+### Calculate port supply capacity for a given level
+### Formula: level * PER_LEVEL (e.g., level * 5)
+WA_AI_PC_calculate_port_supply = { # _port_level >>> port_supply_
+	set_temp_variable = { port_supply_ = _port_level }
+	multiply_temp_variable = { port_supply_ = @WA_AI_PC_SUPPLY_PORT_PER_LEVEL }
+}
+
+### Calculate minimum railway level needed for target supply
+### Inverse of: supply = BASE + PER_LEVEL * level
+WA_AI_PC_supply_to_target_railway = { # _target_supply >>> target_railway_level_
+	set_temp_variable = { target_railway_level_ = _target_supply }
+	subtract_from_temp_variable = { target_railway_level_ = @WA_AI_PC_SUPPLY_RAILWAY_BASE }
+	divide_temp_variable = { target_railway_level_ = @WA_AI_PC_SUPPLY_RAILWAY_PER_LEVEL }
+	# Round up by adding 0.99 before implicit floor
+	add_to_temp_variable = { target_railway_level_ = 0.99 }
+	round_temp_variable = target_railway_level_
+
+	# Clamp to 1-5 range
+	if = { limit = { check_variable = { target_railway_level_ < 1 } }
+		set_temp_variable = { target_railway_level_ = 1 }
+	}
+	if = { limit = { check_variable = { target_railway_level_ > 5 } }
+		set_temp_variable = { target_railway_level_ = 5 }
+	}
+}
+
+### Calculate minimum port level needed for target supply
+### Inverse of: supply = level * PER_LEVEL
+WA_AI_PC_supply_to_target_port = { # _target_supply >>> target_port_level_
+	set_temp_variable = { target_port_level_ = _target_supply }
+	divide_temp_variable = { target_port_level_ = @WA_AI_PC_SUPPLY_PORT_PER_LEVEL }
+	# Round up by adding 0.99 before implicit floor
+	add_to_temp_variable = { target_port_level_ = 0.99 }
+	round_temp_variable = target_port_level_
+
+	# Clamp to 1-10 range (naval base max)
+	if = { limit = { check_variable = { target_port_level_ < 1 } }
+		set_temp_variable = { target_port_level_ = 1 }
+	}
+	if = { limit = { check_variable = { target_port_level_ > 10 } }
+		set_temp_variable = { target_port_level_ = 10 }
+	}
+}
+
+############################################################################################################
+#	COST CALCULATION HELPERS (for home port selection scoring)
+############################################################################################################
+
+### Estimate railway upgrade cost based on BFS distance
+### Uses estimated segments per state and base cost per segment
+WA_AI_PC_estimate_railway_cost = { # _bfs_distance, _target_level >>> estimated_railway_cost_
+	# Estimate total segments: distance * segments_per_state
+	set_temp_variable = { estimated_segments_ = _bfs_distance }
+	multiply_temp_variable = { estimated_segments_ = @WA_AI_PC_RAILWAY_SEGMENTS_PER_STATE }
+
+	# Total cost: segments * base_cost * target_level (higher levels need more upgrades)
+	set_temp_variable = { estimated_railway_cost_ = estimated_segments_ }
+	multiply_temp_variable = { estimated_railway_cost_ = @WA_AI_PC_RAILWAY_BASE_COST }
+	multiply_temp_variable = { estimated_railway_cost_ = _target_level }
+}
+
+### Calculate port upgrade cost from current to target level
+### Naval base cost: base_cost + per_level_cost * current_level (per_level is negative, so decreasing)
+### Total cost = sum from current to target-1 of (base + per_level * i)
+WA_AI_PC_calculate_port_upgrade_cost = { # _current_port_level, _target_port_level >>> port_upgrade_cost_
+	set_temp_variable = { port_upgrade_cost_ = 0 }
+
+	# If already at or above target, no cost
+	if = {
+		limit = { NOT = { check_variable = { _current_port_level < _target_port_level } } }
+		# Cost stays 0
+	}
+	else = {
+		# Calculate sum of costs for each level upgrade
+		# Cost per level = base + per_level * current_level
+		# For naval base: 10000 + (-556) * level
+		set_temp_variable = { _upgrade_level = _current_port_level }
+
+		while_loop_effect = {
+			limit = { check_variable = { _upgrade_level < _target_port_level } }
+
+			# Cost for this level: base + per_level * current_level
+			set_temp_variable = { _level_cost = _upgrade_level }
+			multiply_temp_variable = { _level_cost = @WA_AI_PC_NAVAL_BASE_PER_LEVEL_COST }
+			add_to_temp_variable = { _level_cost = @WA_AI_PC_NAVAL_BASE_BASE_COST }
+
+			add_to_temp_variable = { port_upgrade_cost_ = _level_cost }
+			add_to_temp_variable = { _upgrade_level = 1 }
+		}
+	}
+}
+
+### Score a candidate port for home port selection
+### Strategy: Maximize supply first, then minimize cost as tiebreaker
+### Score = achievable_supply * 100000 - total_cost
+WA_AI_PC_score_port_candidate = { # _candidate_port_level, _bfs_distance >>> port_score_
+	# Calculate target levels from configured target supply
+	set_temp_variable = { _target_supply = @WA_AI_PC_HOME_PORT_TARGET_SUPPLY }
+	WA_AI_PC_supply_to_target_railway = yes
+	WA_AI_PC_supply_to_target_port = yes
+
+	# Cap target port level to 10 (max naval base)
+	if = { limit = { check_variable = { target_port_level_ > 10 } }
+		set_temp_variable = { target_port_level_ = 10 }
+	}
+
+	# Calculate achievable supply (bottleneck of port and railway at target levels)
+	set_temp_variable = { _railway_level = target_railway_level_ }
+	WA_AI_PC_calculate_railway_supply = yes
+	set_temp_variable = { _railway_achievable = railway_supply_ }
+
+	set_temp_variable = { _port_level = target_port_level_ }
+	WA_AI_PC_calculate_port_supply = yes
+	set_temp_variable = { _port_achievable = port_supply_ }
+
+	# Bottleneck is the minimum
+	if = { limit = { check_variable = { _port_achievable < _railway_achievable } }
+		set_temp_variable = { achievable_supply_ = _port_achievable }
+	}
+	else = {
+		set_temp_variable = { achievable_supply_ = _railway_achievable }
+	}
+
+	# Estimate railway cost
+	set_temp_variable = { _target_level = target_railway_level_ }
+	WA_AI_PC_estimate_railway_cost = yes
+
+	# Calculate port upgrade cost
+	set_temp_variable = { _current_port_level = _candidate_port_level }
+	WA_AI_PC_calculate_port_upgrade_cost = yes
+
+	# Total cost
+	set_temp_variable = { total_cost_ = estimated_railway_cost_ }
+	add_to_temp_variable = { total_cost_ = port_upgrade_cost_ }
+
+	# Score: supply * 100000 - cost
+	# This ensures higher supply always wins, cost breaks ties
+	set_temp_variable = { port_score_ = achievable_supply_ }
+	multiply_temp_variable = { port_score_ = 100000 }
+	subtract_from_temp_variable = { port_score_ = total_cost_ }
+}
+
+### Check if state has only a single logistics node (port acting as hub, no actual supply_node)
+### States like Sakhalin have only a port - building railways is useless
+WA_AI_PC_coastal_state_is_single_node = { # THIS = state >>> is_single_node_ (1 = only port, no supply hub)
+
+	set_temp_variable = { is_single_node_ = 0 }
+
+	# If state has a naval base but no supply_node, it's a single-node state
+	if = {
+		limit = {
+			is_coastal = yes
+			NOT = { supply_node > 0 }
+		}
+		# Check for naval base using helper (trigger returns 0 in some scopes)
+		WA_AI_PC_railway_get_naval_base_province = yes
+		if = {
+			limit = { check_variable = { naval_base_province_ > 0 } }
+			set_temp_variable = { is_single_node_ = 1 }
+		}
+	}
+}
+
+### Analyze overseas supply chain for a target on a different landmass
+### Finds best ports and calculates bottleneck to determine max useful railway level
+### Fix 26: Receiving port now uses distance-limited search (WA_AI_PC_get_best_port_near_state)
+###         instead of searching entire landmass (which picked Singapore for North Africa)
+WA_AI_PC_analyze_overseas_supply_chain = { # capital_landmass, target_landmass, _target_state_for_port_search >>> overseas_route_start_, overseas_max_railway_level_, overseas_receiving_port_state_, overseas_home_port_state_
+
+	set_temp_variable = { overseas_route_start_ = 0 }
+	set_temp_variable = { overseas_max_railway_level_ = 0 }
+	set_temp_variable = { overseas_receiving_port_state_ = 0 }
+	set_temp_variable = { overseas_home_port_state_ = 0 }
+
+	# Find home port (on capital landmass) - unchanged
+	set_temp_variable = { _search_landmass = capital_landmass }
+	WA_AI_PC_get_best_port_on_landmass = yes
+	set_temp_variable = { home_port_supply_ = best_port_supply_ }
+	set_temp_variable = { overseas_home_port_state_ = best_port_state_ }
+
+	# Fix 26: Find receiving port near the target state (within 15 states BFS, same landmass)
+	# Previously searched entire landmass, which on landmass 2 (Afro-Eurasia) could pick
+	# Singapore for a North African target
+	set_temp_variable = { _target_state_for_port = _target_state_for_port_search }
+	set_temp_variable = { _port_search_radius = 10 }
+	WA_AI_PC_get_best_port_near_state = yes
+	set_temp_variable = { receiving_port_supply_ = best_port_supply_ }
+	set_temp_variable = { overseas_route_start_ = best_port_province_ }
+	set_temp_variable = { overseas_receiving_port_state_ = best_port_state_ }
+	set_temp_variable = { receiving_port_level_ = best_port_level_ }
+
+	# Calculate bottleneck (minimum of home and receiving port supply)
+	set_temp_variable = { _supply_a = home_port_supply_ }
+	set_temp_variable = { _supply_b = receiving_port_supply_ }
+	WA_AI_PC_calculate_supply_bottleneck = yes
+
+	# Convert bottleneck supply to max useful railway level
+	set_temp_variable = { _supply_capacity = bottleneck_supply_ }
+	WA_AI_PC_supply_to_railway_level = yes
+	set_temp_variable = { overseas_max_railway_level_ = max_railway_level_ }
+}
+
+############################################################################################################
+#	PROJECT MANAGEMENT HELPERS
+############################################################################################################
+
+WA_AI_PC_start_railway_project = { # THIS = state, _project_province_id, _project_connect_id, _project_target_level, _project_priority
+
+	# Check if railway already at target level
+	meta_effect = {
+		text = {
+			set_temp_variable = { current_level = global.WA_AI_PC_railway_connection_level_[x]^[y] }
+		}
+		x = "[?_project_province_id]"
+		y = "[?_project_connect_id]"
+	}
+
+	# Count already queued projects for this segment
+	set_temp_variable = { _queued_for_segment = 0 }
+	ROOT = {
+		for_each_loop = { array = WA_AI_PC_queue value = _check_proj
+			if = {
+				limit = {
+					check_variable = { WA_AI_PC_building_type^_check_proj = 13 }
+					check_variable = { WA_AI_PC_target_province^_check_proj = _project_province_id }
+					check_variable = { WA_AI_PC_connect_province^_check_proj = _project_connect_id }
+				}
+				add_to_temp_variable = { _queued_for_segment = 1 }
+			}
+		}
+	}
+
+	# Effective level = current level + queued upgrades
+	add_to_temp_variable = { current_level = _queued_for_segment }
+
+	ROOT = { if = { limit = { has_country_flag = WA_AI_construction_logging }
+		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: prov=[?_project_province_id]->[?_project_connect_id] current=[?current_level] target=[?_project_target_level] queued=[?_queued_for_segment]"
+	} }
+
+	if = {
+		limit = {
+			check_variable = { current_level < _project_target_level }
+		}
+		# Use new PC system - call WA_AI_PC_start_project
+		set_temp_variable = { _project_building_type = 13 }
+		set_temp_variable = { _project_type_id = @WA_AI_PC_railway_TYPE_ID }
+		set_temp_variable = { _project_queue_num = 1 }
+		set_temp_variable = { _project_queue_max = 0 }  # No max per segment
+		set_temp_variable = { _project_target_level = 0 }  # Already checked above
+		# Set state ID using province mapping (states don't have .id property)
+		set_temp_variable = { _project_target_state = global.WA_AI_MAP_province_state_id^_project_province_id }
+
+		WA_AI_PC_start_project = yes
+	}
+}
+
+WA_AI_PC_clear_project_inputs = {
+	# Clear temporary project input variables
+	clear_temp_array = railway_start_provinces_
+	clear_temp_array = railway_end_provinces_
+	clear_temp_array = railway_target_levels_
+	clear_temp_array = railway_priorities_
+	clear_temp_array = railway_port_upgrades_
+}
+
+WA_AI_PC_get_total_queued_num = { # _get_queued_num_building_type, _get_queued_num_type_id >>> queued_type_num_
+	# Count projects of the specified building type in the PC queue
+	set_temp_variable = { queued_type_num_ = 0 }
+	for_each_loop = { array = WA_AI_PC_queue value = _count_proj_id
+		if = { limit = { check_variable = { WA_AI_PC_building_type^_count_proj_id = _get_queued_num_building_type } }
+			add_to_temp_variable = { queued_type_num_ = 1 }
+		}
+	}
+}
+
+############################################################################################################
+#	PORT UPGRADE PROCESSING
+#	Upgrades ports marked in railway_port_upgrades_ array
+############################################################################################################
+
+WA_AI_PC_process_port_upgrades = {
+	# Process all port upgrades for overseas operations via PC system
+	# Note: Uses temp array which is cleared each railway pass, so we process all at once
+	for_each_loop = { array = railway_port_upgrades_ value = _port_state
+
+		var:_port_state = {
+			if = {
+				limit = {
+					is_controlled_by = ROOT
+					is_coastal = yes
+					# Only upgrade if below max useful level (L9 already exceeds L5 railway capacity)
+					NOT = { naval_base > 8 }
+				}
+
+				# Get the naval base province (naval bases are built on provinces, not states)
+				WA_AI_PC_railway_get_naval_base_province = yes
+
+				if = {
+					limit = { check_variable = { naval_base_province_ > 0 } }
+
+					# Queue port construction via PC system
+					set_temp_variable = { _project_building_type = 14 }  # naval_base
+					set_temp_variable = { _project_type_id = 14 }
+					set_temp_variable = { _project_province_id = naval_base_province_ }
+					set_temp_variable = { _project_connect_id = 0 }  # Not used for ports
+					set_temp_variable = { _project_priority = @WA_AI_PC_railway_PRIO_PREWAR }  # Lower priority for upgrades
+					set_temp_variable = { _project_queue_num = 1 }
+					set_temp_variable = { _project_queue_max = 0 }
+					set_temp_variable = { _project_target_level = @WA_AI_PC_PORT_MAX_USEFUL_LEVEL }
+					set_temp_variable = { _project_target_state = _port_state }
+
+					WA_AI_PC_start_project = yes
+
+					if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
+						ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY: Queued port upgrade at province [?naval_base_province_] in state [?_port_state]" }
+					}
+				}
+			}
+		}
+	}
+}
+
+############################################################################################################
+#	HELPER: Check if province is coastal (has ocean neighbor)
+#	Uses map data to check if any neighbor province has terrain type 9 (ocean)
+############################################################################################################
+
+WA_AI_PC_province_is_coastal = { # _check_province_id >>> is_coastal_province_
+	set_temp_variable = { is_coastal_province_ = 0 }
+
+	# Get the state containing this province
+	set_temp_variable = { _check_state_id = global.WA_AI_MAP_province_state_id^_check_province_id }
+
+	# Check if state is coastal using state-level trigger (more reliable than province checks)
+	if = {
+		limit = { check_variable = { _check_state_id > 0 } }
+		var:_check_state_id = {
+			if = {
+				limit = { is_coastal = yes }
+				set_temp_variable = { is_coastal_province_ = 1 }
+			}
+		}
+	}
+}
+
+############################################################################################################
+#	HELPER: Create frontier port at a partial path terminus
+#	When a railway path ends at a coastal province with no naval base, queue port construction
+#	Input: _frontier_province_id (the last province in a partial path)
+#	Output: frontier_port_created_ (1 if port was queued, 0 otherwise)
+############################################################################################################
+
+WA_AI_PC_create_frontier_port = { # _frontier_province_id >>> frontier_port_created_
+	set_temp_variable = { frontier_port_created_ = 0 }
+
+	# Get state containing frontier province
+	set_temp_variable = { _frontier_state_id = global.WA_AI_MAP_province_state_id^_frontier_province_id }
+
+	if = {
+		limit = { check_variable = { _frontier_state_id > 0 } }
+
+		var:_frontier_state_id = {
+			if = {
+				limit = {
+					is_controlled_by = ROOT
+					is_coastal = yes
+				}
+
+				# Check if state already has a naval base
+				WA_AI_PC_railway_get_naval_base_province = yes
+
+				if = {
+					limit = { check_variable = { naval_base_province_ = 0 } }
+
+					# No naval base - find a coastal province in this state to build one
+					# Use the frontier province if it's coastal, otherwise find another
+					set_temp_variable = { _check_province_id = _frontier_province_id }
+					WA_AI_PC_province_is_coastal = yes
+
+					if = {
+						limit = { check_variable = { is_coastal_province_ = 1 } }
+						# Build at frontier province
+						set_temp_variable = { _build_port_province = _frontier_province_id }
+					}
+					else = {
+						# Find a coastal province in this state
+						# Use the state's first province as fallback (state is_coastal=yes so it has one)
+						set_temp_variable = { _build_port_province = global.WA_AI_MAP_state_province_ids@THIS^0 }
+					}
+
+					# Queue naval base construction via PC system
+					set_temp_variable = { _project_building_type = 14 }  # naval_base
+					set_temp_variable = { _project_type_id = 14 }
+					set_temp_variable = { _project_province_id = _build_port_province }
+					set_temp_variable = { _project_connect_id = 0 }  # Not used for ports
+					set_temp_variable = { _project_priority = @WA_AI_PC_railway_PRIO }  # Same priority as railway
+					set_temp_variable = { _project_queue_num = 1 }
+					set_temp_variable = { _project_queue_max = 0 }
+					set_temp_variable = { _project_target_level = @WA_AI_PC_PORT_MAX_USEFUL_LEVEL }
+					set_temp_variable = { _project_target_state = _frontier_state_id }
+
+					WA_AI_PC_start_project = yes
+
+					set_temp_variable = { frontier_port_created_ = 1 }
+
+					if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
+						ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY: Queued frontier port at province [?_build_port_province] in state [?_frontier_state_id]" }
+					}
+				}
+				else = {
+					if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
+						ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY: Frontier state [?_frontier_state_id] already has naval base at [?naval_base_province_]" }
+					}
+				}
+			}
+		}
+	}
+}
+
+############################################################################################################
+#	NEW HELPER: Get Maximum Railway Level on Route
+#	Input: _route_path_array (array of provinces along the route from pathfinding)
+#	Output: _max_route_level_ (highest level found on any segment in the route)
+#	Purpose: Find the max level segment in a route to sync all segments to max+1
+############################################################################################################
+
+WA_AI_PC_get_max_railway_level_on_route = {
+	# Initialize max to 0
+	set_temp_variable = { _max_route_level_ = 0 }
+
+	# Iterate through route path array to find all segments
+	for_each_loop = { array = _route_path_array index = seg_i value = seg_prov
+		# Calculate next index (segment endpoint)
+		set_temp_variable = { next_seg_i = seg_i }
+		add_to_temp_variable = { next_seg_i = 1 }
+
+		# Only process if there's a next segment (prevents index out of bounds)
+		if = { limit = { check_variable = { next_seg_i < _route_path_array^num } }
+			# Get endpoint of this segment
+			set_temp_variable = { seg_start = _route_path_array^seg_i }
+			set_temp_variable = { seg_end = _route_path_array^next_seg_i }
+
+			# Read the current level of this segment from global array
+			meta_effect = {
+				text = {
+					set_temp_variable = { seg_level = global.WA_AI_PC_railway_connection_level_[x]^[y] }
+				}
+				x = "[?seg_start]"
+				y = "[?seg_end]"
+			}
+
+			# Update max if this segment is higher than current max
+			if = { limit = { check_variable = { seg_level > _max_route_level_ } }
+				set_temp_variable = { _max_route_level_ = seg_level }
+			}
+		}
+	}
+}

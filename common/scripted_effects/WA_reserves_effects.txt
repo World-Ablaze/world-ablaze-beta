@@ -1,0 +1,398 @@
+############################################################################################################
+# WA Reserve System Effects
+# 
+# This module handles reserve division spawning for all countries.
+# Templates are created dynamically based on country configuration.
+#
+# Key effects:
+# - WA_reserves_create_template: Creates the reserve template for a country
+# - WA_reserves_spawn_divisions: Main entry point for spawning reserve divisions
+# - WA_reserves_spawn_soviet_frontline: Special Soviet front-line aware spawning
+############################################################################################################
+
+############################################################################################################
+# TEMPLATE CREATION
+############################################################################################################
+
+# Main effect to create reserve template for a country
+# Should be called when reserves are first recruited or deployed
+WA_reserves_create_template = {
+	if = {
+		limit = {
+			NOT = { has_country_flag = WA_reserves_template_created }
+		}
+		# Determine template type based on country configuration
+		if = {
+			limit = {
+				WA_AI_TEMPLATES_use_heavy_infantry = yes
+			}
+			WA_reserves_create_heavy_infantry_template = yes
+		}
+		else = {
+			WA_reserves_create_light_infantry_template = yes
+		}
+		set_country_flag = WA_reserves_template_created
+	}
+}
+
+# Light infantry reserve template (for countries with < 5 mils or early game)
+WA_reserves_create_light_infantry_template = {
+	if = {
+		limit = {
+			NOT = { has_template = "Reserve Divisíon" }
+		}
+		division_template = {
+			name = "Reserve Divisíon"
+			is_locked = yes
+			
+			regiments = {
+				infantry = { x = 0 y = 0 }
+				infantry = { x = 0 y = 1 }
+				infantry = { x = 0 y = 2 }
+				
+				infantry = { x = 1 y = 0 }
+				infantry = { x = 1 y = 1 }
+				infantry = { x = 1 y = 2 }
+				
+				infantry = { x = 2 y = 0 }
+				infantry = { x = 2 y = 1 }
+				infantry = { x = 2 y = 2 }
+				
+				artillery_brigade = { x = 3 y = 0 }
+				artillery_brigade = { x = 3 y = 1 }
+			}
+			support = {
+				engineers = { x = 0 y = 0 }
+				horse_logistics_company = { x = 0 y = 1 }
+			}
+		}
+	}
+}
+
+# Heavy infantry reserve template (standard for most countries)
+WA_reserves_create_heavy_infantry_template = {
+	if = {
+		limit = {
+			NOT = { has_template = "Reserve Divisíon" }
+		}
+		# Check if country should use motorized support
+		if = {
+			limit = {
+				WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
+			}
+			WA_reserves_create_motorized_support_template = yes
+		}
+		else = {
+			WA_reserves_create_horse_support_template = yes
+		}
+	}
+}
+
+# Reserve template with horse-drawn support
+WA_reserves_create_horse_support_template = {
+	division_template = {
+		name = "Reserve Divisíon"
+		is_locked = yes
+		
+		regiments = {
+			heavy_infantry = { x = 0 y = 0 }
+			heavy_infantry = { x = 0 y = 1 }
+			heavy_infantry = { x = 0 y = 2 }
+			infantry = { x = 0 y = 3 }
+			
+			heavy_infantry = { x = 1 y = 0 }
+			heavy_infantry = { x = 1 y = 1 }
+			heavy_infantry = { x = 1 y = 2 }
+			infantry = { x = 1 y = 3 }
+			
+			heavy_infantry = { x = 2 y = 0 }
+			heavy_infantry = { x = 2 y = 1 }
+			heavy_infantry = { x = 2 y = 2 }
+			infantry = { x = 2 y = 3 }
+			
+			artillery_brigade = { x = 3 y = 0 }
+			artillery_brigade = { x = 3 y = 1 }
+			artillery_brigade = { x = 3 y = 2 }
+		}
+		support = {
+			engineers = { x = 0 y = 0 }
+			horse_logistics_company = { x = 0 y = 1 }
+			
+			recon = { x = 1 y = 0 }
+			horse_field_hospital = { x = 1 y = 1 }
+		}
+	}
+}
+
+# Reserve template with motorized support
+WA_reserves_create_motorized_support_template = {
+	division_template = {
+		name = "Reserve Divisíon"
+		is_locked = yes
+		
+		regiments = {
+			heavy_infantry = { x = 0 y = 0 }
+			heavy_infantry = { x = 0 y = 1 }
+			heavy_infantry = { x = 0 y = 2 }
+			infantry = { x = 0 y = 3 }
+			
+			heavy_infantry = { x = 1 y = 0 }
+			heavy_infantry = { x = 1 y = 1 }
+			heavy_infantry = { x = 1 y = 2 }
+			infantry = { x = 1 y = 3 }
+			
+			heavy_infantry = { x = 2 y = 0 }
+			heavy_infantry = { x = 2 y = 1 }
+			heavy_infantry = { x = 2 y = 2 }
+			infantry = { x = 2 y = 3 }
+			
+			artillery_brigade = { x = 3 y = 0 }
+			artillery_brigade = { x = 3 y = 1 }
+			artillery_brigade = { x = 3 y = 2 }
+		}
+		support = {
+			engineers = { x = 0 y = 0 }
+			mot_logistics_company = { x = 0 y = 1 }
+			
+			mot_recon = { x = 1 y = 0 }
+			mot_field_hospital = { x = 1 y = 1 }
+		}
+	}
+}
+
+############################################################################################################
+# DIVISION SPAWNING
+############################################################################################################
+
+# Main entry point for spawning reserve divisions
+# Input variables:
+#   _reserves_count: number of divisions to spawn (default 10)
+#   _reserves_equipment_factor: equipment factor 0.0-1.0 (default 0.3)
+WA_reserves_spawn_divisions = {
+	# Ensure template exists
+	WA_reserves_create_template = yes
+	
+	# Set defaults if not provided
+	if = {
+		limit = {
+			NOT = { check_variable = { _reserves_count > 0 } }
+		}
+		set_temp_variable = { _reserves_count = 10 }
+	}
+	if = {
+		limit = {
+			NOT = { check_variable = { _reserves_equipment_factor > 0 } }
+		}
+		set_temp_variable = { _reserves_equipment_factor = 0.3 }
+	}
+	
+	# Soviet has special front-line aware spawning
+	if = {
+		limit = {
+			original_tag = SOV
+		}
+		WA_reserves_spawn_soviet_frontline = yes
+	}
+	else = {
+		WA_reserves_spawn_generic = yes
+	}
+	
+	# Decrease reserves counter
+	add_to_variable = { ROOT.reserves = -10 }
+}
+
+# Generic spawning - spawns in capital or random controlled state
+WA_reserves_spawn_generic = {
+	# Try to spawn in capital first
+	if = {
+		limit = {
+			capital_scope = {
+				is_controlled_by = ROOT
+			}
+		}
+		capital_scope = {
+			create_unit = {
+				division = "division_template=\"Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.3"
+				owner = ROOT
+				count = 10
+			}
+		}
+	}
+	# Fallback to random controlled state
+	else = {
+		random_controlled_state = {
+			limit = {
+				is_core_of = ROOT
+				all_neighbor_state = {
+					OR = {
+						is_controlled_by = ROOT
+						is_coastal = yes
+					}
+				}
+			}
+			create_unit = {
+				division = "division_template=\"Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.3"
+				owner = ROOT
+				count = 10
+			}
+		}
+	}
+}
+
+############################################################################################################
+# SOVIET FRONT-LINE AWARE SPAWNING
+# Spawns reserves behind the current front line, not in the capital
+# This creates a defense-in-depth effect as the front collapses
+############################################################################################################
+
+WA_reserves_spawn_soviet_frontline = {
+	# Western front chain: spawn behind the contested line
+	# Chain: 219 (Leningrad) -> 252 -> 249 -> 572
+	WA_reserves_spawn_soviet_western_chain = yes
+	
+	# Siberian chain: second spawn location
+	# Chain: 218 -> 217 -> 251 -> 876
+	WA_reserves_spawn_soviet_siberian_chain = yes
+}
+
+# Western front spawning chain
+WA_reserves_spawn_soviet_western_chain = {
+	if = {
+		limit = {
+			controls_state = 219
+			has_full_control_of_state = 252
+		}
+		252 = {
+			create_unit = {
+				division = "division_template=\"Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.3"
+				owner = ROOT
+				count = 5
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			controls_state = 252
+			has_full_control_of_state = 249
+		}
+		249 = {
+			create_unit = {
+				division = "division_template=\"Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.3"
+				owner = ROOT
+				count = 5
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			controls_state = 249
+			has_full_control_of_state = 572
+		}
+		572 = {
+			create_unit = {
+				division = "division_template=\"Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.3"
+				owner = ROOT
+				count = 5
+			}
+		}
+	}
+	else = {
+		# Fallback: spawn in safe rear area in Asia
+		random_controlled_state = {
+			prioritize = { 217 401 251 250 249 399 651 652 256 572 876 653 586 405 }
+			limit = {
+				is_on_continent = asia
+				is_controlled_by = ROOT
+				all_neighbor_state = { is_controlled_by = ROOT }
+			}
+			create_unit = {
+				division = "division_template=\"Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.3"
+				owner = ROOT
+				count = 5
+			}
+		}
+	}
+}
+
+# Siberian chain spawning
+WA_reserves_spawn_soviet_siberian_chain = {
+	if = {
+		limit = {
+			controls_state = 218
+			has_full_control_of_state = 217
+		}
+		217 = {
+			create_unit = {
+				division = "division_template=\"Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.3"
+				owner = ROOT
+				count = 5
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			controls_state = 217
+			has_full_control_of_state = 251
+		}
+		251 = {
+			create_unit = {
+				division = "division_template=\"Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.3"
+				owner = ROOT
+				count = 5
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			controls_state = 251
+			has_full_control_of_state = 876
+		}
+		876 = {
+			create_unit = {
+				division = "division_template=\"Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.3"
+				owner = ROOT
+				count = 5
+			}
+		}
+	}
+	else = {
+		# Fallback: spawn in safe rear area in Asia
+		random_controlled_state = {
+			prioritize = { 217 401 251 250 249 399 651 652 256 572 876 653 586 405 }
+			limit = {
+				is_on_continent = asia
+				is_controlled_by = ROOT
+				all_neighbor_state = { is_controlled_by = ROOT }
+			}
+			create_unit = {
+				division = "division_template=\"Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.3"
+				owner = ROOT
+				count = 5
+			}
+		}
+	}
+}
+
+############################################################################################################
+# UTILITY EFFECTS
+############################################################################################################
+
+# Unlock reserve template after deployment
+WA_reserves_unlock_template = {
+	if = {
+		limit = {
+			has_template = "Reserve Divisíon"
+		}
+		set_division_template_lock = {
+			division_template = "Reserve Divisíon"
+			is_locked = no
+		}
+	}
+}
+
+# Clean up reserve system flags (for when war ends)
+WA_reserves_cleanup = {
+	clr_country_flag = WA_reserves_template_created
+	clr_country_flag = early_reserve_mobilization_flag
+	clr_country_flag = reserves_deployed_flag
+}
