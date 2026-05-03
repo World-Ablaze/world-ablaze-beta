@@ -50,7 +50,7 @@ DIPLOMACY_GUARANTEE_ENABLE_TRIGGER = {
 		}
 		always = yes
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_guarantees
@@ -59,7 +59,7 @@ DIPLOMACY_GUARANTEE_ENABLE_TRIGGER = {
 		}
 		threat > 0.2
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_guarantees
@@ -71,7 +71,7 @@ DIPLOMACY_GUARANTEE_ENABLE_TRIGGER = {
 			has_government = FROM
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_guarantees
@@ -547,19 +547,20 @@ DIPLOMACY_MILACC_ENABLE_TRIGGER = {
 			always = yes
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_access
 				option = SAME_IDEOLOGY
 			}
+			NOT = { has_government = FROM }
 		}
 		custom_trigger_tooltip = {
 			tooltip = RULE_ALLOW_MILITARY_ACCESS_SAME_IDEOLOGY_TT
-			has_government = FROM
+			always = no
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_access
@@ -572,6 +573,17 @@ DIPLOMACY_MILACC_ENABLE_TRIGGER = {
 		}
 	}
 	if = {
+		limit = {
+			FROM = {
+				has_idea = neutrality_idea
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_REQUEST_MILITARY_ACCESS_NEUTRALITY_TT
+			always = no
+		}
+	}
+	else_if = {
 		limit = {
 			OR = {
 				FROM = {
@@ -590,17 +602,6 @@ DIPLOMACY_MILACC_ENABLE_TRIGGER = {
 			always = no
 		}
 	}
-	if = {
-		limit = {
-			FROM = {
-				has_idea = neutrality_idea
-			}
-		}
-		custom_trigger_tooltip = {
-			tooltip = RULE_REQUEST_MILITARY_ACCESS_NEUTRALITY_TT
-			always = no
-		}
-	}
 }
 DIPLOMACY_OFFER_MILACC_ENABLE_TRIGGER = {
 	if = {
@@ -614,19 +615,20 @@ DIPLOMACY_OFFER_MILACC_ENABLE_TRIGGER = {
 			always = yes
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_access
 				option = SAME_IDEOLOGY
 			}
+			NOT = { has_government = from }
 		}
 		custom_trigger_tooltip = {
 			tooltip = RULE_ALLOW_MILITARY_ACCESS_SAME_IDEOLOGY_TT
-			has_government = FROM
+			always = no
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_access
@@ -639,6 +641,17 @@ DIPLOMACY_OFFER_MILACC_ENABLE_TRIGGER = {
 		}
 	}
 	if = {
+		limit = {
+			FROM = {
+				has_idea = neutrality_idea
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_REQUEST_MILITARY_ACCESS_NEUTRALITY_TT
+			always = no
+		}
+	}
+	else_if = {
 		limit = {
 			OR = {
 				has_idea = VIC_depowered_government
@@ -653,21 +666,11 @@ DIPLOMACY_OFFER_MILACC_ENABLE_TRIGGER = {
 			always = no
 		}
 	}
-	if = {
-		limit = {
-			FROM = {
-				has_idea = neutrality_idea
-			}
-		}
-		custom_trigger_tooltip = {
-			tooltip = RULE_REQUEST_MILITARY_ACCESS_NEUTRALITY_TT
-			always = no
-		}
-	}
 }
 DIPLOMACY_REVOKE_OFFER_MILACC_ENABLE_TRIGGER = {
 	if = {
 		limit = {
+			tag = IRQ
 			has_idea = IRQ_anglo_iraq_treaty
 		}
 		custom_trigger_tooltip = {
@@ -688,19 +691,20 @@ DIPLOMACY_AIR_BASE_ACCESS_ENABLE_TRIGGER = {
 			always = yes
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_air_base_access
 				option = SAME_IDEOLOGY
 			}
+			NOT = { has_government = FROM }
 		}
 		custom_trigger_tooltip = {
 			tooltip = RULE_ALLOW_MILITARY_ACCESS_SAME_IDEOLOGY_TT
-			has_government = FROM
+			always = no
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_air_base_access
@@ -720,6 +724,30 @@ DIPLOMACY_AIR_BASE_ACCESS_ENABLE_TRIGGER = {
 		}
 		custom_trigger_tooltip = {
 			tooltip = RULE_REQUEST_MILITARY_ACCESS_NEUTRALITY_TT
+			always = no
+		}
+	}
+	else_if = {
+		limit = {
+			FROM = {
+				capital_scope = {
+					set_temp_variable = { tmp_from_capital_id = THIS }
+				}
+			}
+			capital_scope = { # Berlin -> Tokyo = 14300
+				meta_trigger = {
+					text = {
+						distance_to = {
+							value > 10000
+							target = [FROM_CAPITAL_ID]
+						}
+					}
+					FROM_CAPITAL_ID = "[?tmp_from_capital_id.GetID]"
+				}
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_REQUEST_AIR_BASE_ACCESS_TOO_FAR_AWAY_TT
 			always = no
 		}
 	}
@@ -736,19 +764,20 @@ DIPLOMACY_OFFER_AIR_BASE_ACCESS_ENABLE_TRIGGER = {
 			always = yes
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_air_base_access
 				option = SAME_IDEOLOGY
 			}
+			NOT = { has_government = FROM }
 		}
 		custom_trigger_tooltip = {
 			tooltip = RULE_ALLOW_MILITARY_ACCESS_SAME_IDEOLOGY_TT
-			has_government = FROM
+			always = no
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_air_base_access
@@ -771,6 +800,30 @@ DIPLOMACY_OFFER_AIR_BASE_ACCESS_ENABLE_TRIGGER = {
 			always = no
 		}
 	}
+	else_if = {
+		limit = {
+			FROM = {
+				capital_scope = {
+					set_temp_variable = { tmp_from_capital_id = THIS }
+				}
+			}
+			capital_scope = { # Berlin -> Tokyo = 14300
+				meta_trigger = {
+					text = {
+						distance_to = {
+							value > 10000
+							target = [FROM_CAPITAL_ID]
+						}
+					}
+					FROM_CAPITAL_ID = "[?tmp_from_capital_id.GetID]"
+				}
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_OFFER_AIR_BASE_ACCESS_TOO_FAR_AWAY_TT
+			always = no
+		}
+	}
 }
 DIPLOMACY_DOCKING_RIGHTS_ENABLE_TRIGGER = {
 	if = {
@@ -782,19 +835,20 @@ DIPLOMACY_DOCKING_RIGHTS_ENABLE_TRIGGER = {
 		}
 		always = yes
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_access
 				option = SAME_IDEOLOGY
 			}
+			NOT = { has_government = FROM }
 		}
 		custom_trigger_tooltip = {
 			tooltip = RULE_ALLOW_MILITARY_ACCESS_SAME_IDEOLOGY_TT
-			has_government = FROM
+			always = no
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_access
@@ -807,6 +861,17 @@ DIPLOMACY_DOCKING_RIGHTS_ENABLE_TRIGGER = {
 		}
 	}
 	if = {
+		limit = {
+			FROM = {
+				has_idea = neutrality_idea
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_REQUEST_MILITARY_ACCESS_NEUTRALITY_TT
+			always = no
+		}
+	}
+	else_if = {
 		limit = {
 			OR = {
 				FROM = {
@@ -825,17 +890,6 @@ DIPLOMACY_DOCKING_RIGHTS_ENABLE_TRIGGER = {
 			always = no
 		}
 	}
-	if = {
-		limit = {
-			FROM = {
-				has_idea = neutrality_idea
-			}
-		}
-		custom_trigger_tooltip = {
-			tooltip = RULE_REQUEST_MILITARY_ACCESS_NEUTRALITY_TT
-			always = no
-		}
-	}
 }
 DIPLOMACY_OFFER_DOCKING_RIGHTS_ENABLE_TRIGGER = {
 	if = {
@@ -847,19 +901,20 @@ DIPLOMACY_OFFER_DOCKING_RIGHTS_ENABLE_TRIGGER = {
 		}
 		always = yes
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_access
 				option = SAME_IDEOLOGY
 			}
+			NOT = { has_government = FROM }
 		}
 		custom_trigger_tooltip = {
 			tooltip = RULE_ALLOW_MILITARY_ACCESS_SAME_IDEOLOGY_TT
-			has_government = FROM
+			always = no
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_access
@@ -872,6 +927,17 @@ DIPLOMACY_OFFER_DOCKING_RIGHTS_ENABLE_TRIGGER = {
 		}
 	}
 	if = {
+		limit = {
+			FROM = {
+				has_idea = neutrality_idea
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_REQUEST_MILITARY_ACCESS_NEUTRALITY_TT
+			always = no
+		}
+	}
+	else_if = {
 		limit = {
 			OR = {
 				has_idea = VIC_depowered_government
@@ -886,17 +952,6 @@ DIPLOMACY_OFFER_DOCKING_RIGHTS_ENABLE_TRIGGER = {
 			always = no
 		}
 	}
-	if = {
-		limit = {
-			FROM = {
-				has_idea = neutrality_idea
-			}
-		}
-		custom_trigger_tooltip = {
-			tooltip = RULE_REQUEST_MILITARY_ACCESS_NEUTRALITY_TT
-			always = no
-		}
-	}
 }
 DIPLOMACY_LEND_LEASE_ENABLE_TRIGGER = {
 	if = {
@@ -908,7 +963,7 @@ DIPLOMACY_LEND_LEASE_ENABLE_TRIGGER = {
 		}
 		always = yes
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_lend_lease
@@ -961,19 +1016,20 @@ DIPLOMACY_LEND_LEASE_ENABLE_TRIGGER = {
 			always = yes #handled by game logic, see above
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_lend_lease
 				option = SAME_IDEOLOGY
 			}
+			NOT = { has_government = FROM }
 		}
 		custom_trigger_tooltip = {
 			tooltip = RULE_ALLOW_LEND_LEASE_SAME_IDEOLOGY_TT
-			has_government = FROM
+			always = no
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_lend_lease
@@ -985,7 +1041,7 @@ DIPLOMACY_LEND_LEASE_ENABLE_TRIGGER = {
 			is_in_faction_with = FROM
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_lend_lease
@@ -1014,7 +1070,7 @@ DIPLOMACY_INCOMING_LEND_LEASE_ENABLE_TRIGGER = {
 		}
 		always = yes
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_lend_lease
@@ -1044,9 +1100,47 @@ DIPLOMACY_INCOMING_LEND_LEASE_ENABLE_TRIGGER = {
 			always = yes #handled by game logic, see above
 		}
 	}
+	else_if = {
+		limit = {
+			has_game_rule = {
+				rule = allow_lend_lease
+				option = SAME_IDEOLOGY
+			}
+			NOT = { has_government = FROM }
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_ALLOW_LEND_LEASE_SAME_IDEOLOGY_TT
+			always = no
+		}
+	}
+	else_if = {
+		limit = {
+			has_game_rule = {
+				rule = allow_lend_lease
+				option = SAME_FACTION
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_ALLOW_LEND_LEASE_SAME_FACTION_TT
+			is_in_faction_with = FROM
+		}
+	}
+	else_if = {
+		limit = {
+			has_game_rule = {
+				rule = allow_lend_lease
+				option = BLOCKED
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_ALLOW_LEND_LEASE_BLOCKED_TT
+			always = no
+		}
+	}
 	if = {
 		limit = {
 			FROM = {
+				tag = FRA
 				OR = {
 					has_idea = FRA_disjointed_government
 					has_idea = FRA_disjointed_government_2
@@ -1071,42 +1165,6 @@ DIPLOMACY_INCOMING_LEND_LEASE_ENABLE_TRIGGER = {
 			always = no
 		}
 	}
-	if = {
-		limit = {
-			has_game_rule = {
-				rule = allow_lend_lease
-				option = SAME_IDEOLOGY
-			}
-		}
-		custom_trigger_tooltip = {
-			tooltip = RULE_ALLOW_LEND_LEASE_SAME_IDEOLOGY_TT
-			has_government = FROM
-		}
-	}
-	if = {
-		limit = {
-			has_game_rule = {
-				rule = allow_lend_lease
-				option = SAME_FACTION
-			}
-		}
-		custom_trigger_tooltip = {
-			tooltip = RULE_ALLOW_LEND_LEASE_SAME_FACTION_TT
-			is_in_faction_with = FROM
-		}
-	}
-	if = {
-		limit = {
-			has_game_rule = {
-				rule = allow_lend_lease
-				option = BLOCKED
-			}
-		}
-		custom_trigger_tooltip = {
-			tooltip = RULE_ALLOW_LEND_LEASE_BLOCKED_TT
-			always = no
-		}
-	}
 }
 DIPLOMACY_REQUEST_LICENSED_PRODUCTION_ENABLE_TRIGGER = {
 	if = {
@@ -1118,19 +1176,20 @@ DIPLOMACY_REQUEST_LICENSED_PRODUCTION_ENABLE_TRIGGER = {
 		}
 		always = yes
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_licensing
 				option = SAME_IDEOLOGY
 			}
+			NOT = { has_government = FROM }
 		}
 		custom_trigger_tooltip = {
 			tooltip = RULE_ALLOW_LICENSING_SAME_IDEOLOGY_TT
-			has_government = FROM
+			always = no
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_licensing
@@ -1142,7 +1201,7 @@ DIPLOMACY_REQUEST_LICENSED_PRODUCTION_ENABLE_TRIGGER = {
 			is_in_faction_with = FROM
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_licensing
@@ -1174,7 +1233,7 @@ DIPLOMACY_GENERATE_WARGOAL_ENABLE_TRIGGER = {
 		}
 		always = yes
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_wargoals
@@ -1205,7 +1264,7 @@ DIPLOMACY_GENERATE_WARGOAL_ENABLE_TRIGGER = {
 			}
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_wargoals
@@ -1214,7 +1273,7 @@ DIPLOMACY_GENERATE_WARGOAL_ENABLE_TRIGGER = {
 		}
 		threat>0.24
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_wargoals
@@ -1223,7 +1282,7 @@ DIPLOMACY_GENERATE_WARGOAL_ENABLE_TRIGGER = {
 		}
 		threat>0.49
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_wargoals
@@ -1232,7 +1291,7 @@ DIPLOMACY_GENERATE_WARGOAL_ENABLE_TRIGGER = {
 		}
 		threat>0.74
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_wargoals
@@ -1241,7 +1300,7 @@ DIPLOMACY_GENERATE_WARGOAL_ENABLE_TRIGGER = {
 		}
 		threat>0.99
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_wargoals
@@ -1253,7 +1312,7 @@ DIPLOMACY_GENERATE_WARGOAL_ENABLE_TRIGGER = {
 			always = no
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_wargoals
@@ -1265,7 +1324,7 @@ DIPLOMACY_GENERATE_WARGOAL_ENABLE_TRIGGER = {
 			date > 1938.1.1
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_wargoals
@@ -1277,7 +1336,7 @@ DIPLOMACY_GENERATE_WARGOAL_ENABLE_TRIGGER = {
 			date > 1939.1.1
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_wargoals
@@ -1300,31 +1359,33 @@ DIPLOMACY_BOOST_PARTY_POPULARITY_ENABLE_TRIGGER = {
 		}
 		always = yes
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_party_boosting
 				option = AI_ONLY
 			}
+			FROM = { is_ai = no }
 		}
 		custom_trigger_tooltip = {
 			tooltip = RULE_BOOST_PARTY_AI_ONLY_TT
-			FROM = { is_ai = yes }
+			always = no
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_party_boosting
 				option = PLAYER_ONLY
 			}
+			FROM = { is_ai = yes }
 		}
 		custom_trigger_tooltip = {
 			tooltip = RULE_BOOST_PARTY_PLAYER_ONLY_TT
-			FROM = { is_ai = no }
+			always = no
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_party_boosting
@@ -1347,19 +1408,20 @@ DIPLOMACY_STAGE_COUP_ENABLE_TRIGGER = {
 		}
 		always = yes
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_coups
 				option = AI_ONLY
 			}
+			FROM = { is_ai = no }
 		}
 		custom_trigger_tooltip = {
 			tooltip = RULE_COUP_AI_ONLY_TT
-			FROM = { is_ai = yes }
+			always = no
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_coups
@@ -1552,7 +1614,7 @@ DIPLOMACY_SEND_VOLUNTEERS_ENABLE_TRIGGER = {
 			always = yes
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_volunteers
@@ -1847,16 +1909,17 @@ DIPLOMACY_SEND_VOLUNTEERS_ENABLE_TRIGGER = {
 			always = yes
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_volunteers
 				option = SAME_IDEOLOGY
 			}
+			NOT = { has_government = FROM }
 		}
 		custom_trigger_tooltip = {
 			tooltip = RULE_VOLUNTEERS_SAME_IDEOLOGY_TT
-			has_government = FROM
+			always = no
 		}
 		if = {
 			limit = {
@@ -1872,7 +1935,7 @@ DIPLOMACY_SEND_VOLUNTEERS_ENABLE_TRIGGER = {
 			}
 		}
 	}
-	if = {
+	else_if = {
 		limit = {
 			has_game_rule = {
 				rule = allow_volunteers
