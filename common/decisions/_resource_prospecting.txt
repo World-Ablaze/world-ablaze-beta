@@ -1,906 +1,478 @@
 prospect_for_resources = {
 
 ################################### Coal ###################################
-	develop_sardinian_coal_mines = { #114
-
+	coal_prospecting = {
 		icon = coal
 
-		allowed = {
+		target_array = global.coal_states_array
+		state_target = yes
 
+		target_root_trigger = {
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				OR = {
+					has_tech = excavation4
+					has_tech = excavation5
+				}
+			}
+			else = {
+				OR = {
+					has_tech = excavation4_comp
+					has_tech = excavation5_comp
+				}
+			}
 		}
 
-		highlight_states = { highlight_state_targets = { state = 114 } }
+		target_trigger = {
+			FROM = {
+
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+				if = {
+					limit = {
+						has_state_flag = {
+							flag = coal_developed
+							value = 1
+						}
+					}
+					ROOT = {
+						if = {
+							limit = {
+								has_dlc = "Arms Against Tyranny"
+							}
+							has_tech = excavation5
+						}
+						else = {
+							has_tech = excavation5_comp
+						}
+					}
+				}
+				else = {
+					ROOT = {
+						if = {
+							limit = {
+								has_dlc = "Arms Against Tyranny"
+							}
+							has_tech = excavation4
+						}
+						else = {
+							has_tech = excavation4_comp
+						}
+					}
+				}
+			}
+		}
 
 		available = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation2
-			}
-			else = {
-				has_tech = excavation2_comp
-			}
 			num_of_civilian_factories_available_for_projects > 4
-			#owns_state = 114
-			114 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
-					}
-				}
-			}
-		}
-
-		visible = {
 			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
+				limit = { has_dlc = "Arms Against Tyranny" }
+				OR = {
+					has_tech = excavation4
+					has_tech = excavation5
 				}
-				has_tech = excavation1
 			}
 			else = {
-				has_tech = excavation1_comp
-			}
-			#owns_state = 114
-			114 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
-					}
-				}
-			}
-			114 = {
-				NOT = {
-					has_state_flag = sardinian_coal_mines_developed
+				OR = {
+					has_tech = excavation4_comp
+					has_tech = excavation5_comp
 				}
 			}
 		}
-
-		fire_only_once = yes
 
 		cost = 5
-		days_remove = 60
+		days_remove = FROM.coal_duration
 
 		modifier = {
 			civilian_factory_use = 5
 		}
 
-		ai_will_do = {
-			factor = 1
+		complete_effect = {
 		}
+
 		remove_effect = {
-			114 = { set_state_flag = sardinian_coal_mines_developed }
-			114 = {
-				add_resource = {
-					type = coal
-					amount = 49
+			FROM = {
+				add_to_variable = { coal_duration = 30 }
+			}
+			FROM = {
+				# General effects for all states
+				if = {
+					limit = {
+						NOT = {
+							has_state_flag = coal_developed
+						}
+					}
+					set_state_flag = coal_developed
 				}
-			}
-		}
-	}
-
-	develop_eastern_rhineland_coal_mines = { #799
-
-		icon = coal
-
-		allowed = {
-
-		}
-
-		highlight_states = { highlight_state_targets = { state = 799 } }
-
-		available = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation2
-			}
-			else = {
-				has_tech = excavation2_comp
-			}
-			num_of_civilian_factories_available_for_projects > 4
-			#owns_state = 799
-			799 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
+				else = {
+					modify_state_flag = {
+						flag = coal_developed
+						value = 1
 					}
 				}
-			}
-		}
-
-		visible = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation1
-			}
-			else = {
-				has_tech = excavation1_comp
-			}
-			#owns_state = 799
-			799 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
+				# State-specific effects
+				if = {
+					limit = { state = 528 } # Kyushu (Japan)
+					add_resource = {
+						type = coal
+						amount = 87
 					}
 				}
-			}
-			799 = {
-				NOT = {
-					has_state_flag = eastern_rhineland_coal_mines_developed
-				}
-			}
-		}
-
-		fire_only_once = yes
-
-		cost = 5
-		days_remove = 60
-
-		modifier = {
-			civilian_factory_use = 5
-		}
-
-		ai_will_do = {
-			factor = 1
-		}
-		remove_effect = {
-			597 = { set_state_flag = eastern_rhineland_coal_mines_developed }
-			799 = {
-				add_resource = {
-					type = coal
-					amount = 254
-				}
-			}
-		}
-	}
-
-	develop_western_rhineland_coal_mines = { #51
-
-		icon = coal
-
-		allowed = {
-
-		}
-
-		highlight_states = { highlight_state_targets = { state = 51 } }
-
-		available = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation2
-			}
-			else = {
-				has_tech = excavation2_comp
-			}
-			num_of_civilian_factories_available_for_projects > 3
-			#owns_state = 51
-			51 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
+				else_if = {
+					limit = { state = 531 } # Kansai (Japan)
+					add_resource = {
+						type = coal
+						amount = 57
 					}
 				}
-			}
-		}
-
-		visible = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation1
-			}
-			else = {
-				has_tech = excavation1_comp
-			}
-			#owns_state = 51
-			51 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
+				else_if = {
+					limit = { state = 536 } # Hokkaido (Japan)
+					add_resource = {
+						type = coal
+						amount = 56
 					}
 				}
-			}
-			51 = {
-				NOT = {
-					has_state_flag = eastern_rhineland_coal_mines_developed
-				}
-			}
-		}
-
-		fire_only_once = yes
-
-		cost = 5
-		days_remove = 60
-
-		modifier = {
-			civilian_factory_use = 4
-		}
-
-		ai_will_do = {
-			factor = 1
-		}
-		remove_effect = {
-			51 = { set_state_flag = eastern_rhineland_coal_mines_developed }
-			51 = {
-				add_resource = {
-					type = coal
-					amount = 110
-				}
-			}
-		}
-	}
-
-	develop_tuscany_coal_mines = { #162
-
-		icon = coal
-
-		allowed = {
-
-		}
-
-		highlight_states = { highlight_state_targets = { state = 162 } }
-
-		available = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation3
-			}
-			else = {
-				has_tech = excavation3_comp
-			}
-			num_of_civilian_factories_available_for_projects > 2
-			#owns_state = 162
-			162 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
+				else_if = {
+					limit = { state = 537 } # South Sakhalin (Japan)
+					add_resource = {
+						type = coal
+						amount = 8
 					}
 				}
-			}
-		}
-
-		visible = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation2
-			}
-			else = {
-				has_tech = excavation2_comp
-			}
-			#owns_state = 162
-			162 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
+				else_if = {
+					limit = { state = 381 } # Wyoming (United States)
+					add_resource = {
+						type = coal
+						amount = 314
 					}
 				}
-			}
-			162 = {
-				NOT = {
-					has_state_flag = tuscany_coal_mines_developed
-				}
-			}
-		}
-
-		fire_only_once = yes
-
-		cost = 5
-		days_remove = 30
-
-		modifier = {
-			civilian_factory_use = 3
-		}
-
-		ai_will_do = {
-			factor = 1
-		}
-		remove_effect = {
-			162 = { set_state_flag = tuscany_coal_mines_developed }
-			162 = {
-				add_resource = {
-					type = coal
-					amount = 18
-				}
-			}
-		}
-	}
-
-	develop_champagne_coal_mines = { #18
-
-		icon = coal
-
-		allowed = {
-
-		}
-
-		highlight_states = { highlight_state_targets = { state = 18 } }
-
-		available = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation4
-			}
-			else = {
-				has_tech = excavation4_comp
-			}
-			num_of_civilian_factories_available_for_projects > 4
-			#owns_state = 18
-			18 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
+				else_if = {
+					limit = { state = 369 } # Kentucky (United States)
+					add_resource = {
+						type = coal
+						amount = 168
 					}
 				}
-			}
-		}
-
-		visible = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation3
-			}
-			else = {
-				has_tech = excavation3_comp
-			}
-			#owns_state = 18
-			18 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
+				else_if = {
+					limit = { state = 360 } # W. Pennsylvania (United States)
+					add_resource = {
+						type = coal
+						amount = 139
 					}
 				}
-			}
-			18 = {
-				NOT = {
-					has_state_flag = champagne_coal_mines_developed
-				}
-			}
-		}
-
-		fire_only_once = yes
-
-		cost = 5
-		days_remove = 45
-
-		modifier = {
-			civilian_factory_use = 5
-		}
-
-		ai_will_do = {
-			factor = 1
-		}
-		remove_effect = {
-			18 = { set_state_flag = champagne_coal_mines_developed }
-			18 = {
-				add_resource = {
-					type = coal
-					amount = 54
-				}
-			}
-		}
-	}
-
-	develop_guadalajara_coal_mines = { #868
-
-		icon = coal
-
-		allowed = {
-
-		}
-
-		highlight_states = { highlight_state_targets = { state = 868 } }
-
-		available = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation3
-			}
-			else = {
-				has_tech = excavation3_comp
-			}
-			num_of_civilian_factories_available_for_projects > 4
-			#owns_state = 868
-			868 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
+				else_if = {
+					limit = { state = 392 } # Iowa (United States)
+					add_resource = {
+						type = coal
+						amount = 134
 					}
 				}
-			}
-		}
-
-		visible = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation2
-			}
-			else = {
-				has_tech = excavation2_comp
-			}
-			#owns_state = 868
-			868 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
+				else_if = {
+					limit = { state = 395 } # Illinois (United States)
+					add_resource = {
+						type = coal
+						amount = 90
 					}
 				}
-			}
-			868 = {
-				NOT = {
-					has_state_flag = guadalajara_coal_mines_developed
+				else_if = {
+					limit = { state = 367 } # Alabama (United States)
+					add_resource = {
+						type = coal
+						amount = 50
+					}
 				}
+				else_if = {
+					limit = { state = 716 } # Liaotung (Manchukuo)
+					add_resource = {
+						type = coal
+						amount = 87
+					}
+				}
+				else_if = {
+					limit = { state = 761 } # Hulunbuir (Manchukuo)
+					add_resource = {
+						type = coal
+						amount = 50
+					}
+				}
+				else_if = {
+					limit = { state = 848 } # Gwangju (Japan)
+					add_resource = {
+						type = coal
+						amount = 64
+					}
+				}
+				else_if = {
+					limit = { state = 847 } # Gyeongsang (Japan)
+					add_resource = {
+						type = coal
+						amount = 32
+					}
+				}
+				else_if = {
+					limit = { state = 719 } # Natal (South Africa)
+					add_resource = {
+						type = coal
+						amount = 39
+					}
+				}
+				else_if = {
+					limit = { state = 275 } # Transvaal (South Africa)
+					add_resource = {
+						type = coal
+						amount = 20
+					}
+				}
+				else_if = {
+					limit = { state = 435 } # Bihar (British India)
+					add_resource = {
+						type = coal
+						amount = 47
+					}
+				}
+				else_if = {
+					limit = { state = 993 } # Jharkhand (British India)
+					add_resource = {
+						type = coal
+						amount = 19
+					}
+				}
+				else_if = {
+					limit = { state = 464 } # Nova Scotia (Canada)
+					add_resource = {
+						type = coal
+						amount = 49
+					}
+				}
+				else_if = {
+					limit = { state = 285 } # New South Wales (Australia)
+					add_resource = {
+						type = coal
+						amount = 10
+					}
+				}
+				else_if = {
+					limit = { state = 1040 } # Otago (New Zealand)
+					add_resource = {
+						type = coal
+						amount = 16
+					}
+				}
+				else_if = {
+					limit = { state = 496 } # Minas Gerais (Brazil)
+					add_resource = {
+						type = coal
+						amount = 29
+					}
+				}
+				else_if = {
+					limit = { state = 511 } # Mendoza (Argentina)
+					add_resource = {
+						type = coal
+						amount = 29
+					}
+				}
+				else_if = {
+					limit = { state = 114 } # Sardinia (Italy)
+					add_resource = {
+						type = coal
+						amount = 35
+					}
+				}
+				else_if = {
+					limit = { state = 799 } # Eastern Rhineland (Germany)
+					add_resource = {
+						type = coal
+						amount = 254
+					}
+				}
+				else_if = {
+					limit = { state = 51 } # Western Rhineland (Germany)
+					add_resource = {
+						type = coal
+						amount = 110
+					}
+				}
+				else_if = {
+					limit = { state = 57 } # Westfalen (Germany)
+					add_resource = {
+						type = coal
+						amount = 115
+					}
+				}
+				else_if = {
+					limit = { state = 169 } # Sevilla (Spain)
+					add_resource = {
+						type = coal
+						amount = 55
+					}
+				}
+				else_if = {
+					limit = { state = 340 } # Bursa (Turkey)
+					add_resource = {
+						type = coal
+						amount = 20
+					}
+				}
+				else_if = {
+					limit = { state = 569 } # Kemerovo (Soviet Union)
+					add_resource = {
+						type = coal
+						amount = 260
+					}
+				}
+				else_if = {
+					limit = { state = 876 } # Magnitogorsk (Soviet Union)
+					add_resource = {
+						type = coal
+						amount = 221
+					}
+				}
+				else_if = {
+					limit = { state = 69 } # Sudetenland (Czechoslovakia)
+					add_resource = {
+						type = coal
+						amount = 159
+					}
+				}
+				else_if = {
+					limit = { state = 881 } # Upper Bohemia (Czechoslovakia)
+					add_resource = {
+						type = coal
+						amount = 87
+					}
+				}
+				else_if = {
+					limit = { state = 34 } # Wallonie (Belgium)
+					add_resource = {
+						type = coal
+						amount = 20
+					}
+				}
+				else_if = {
+					limit = { state = 4 } # Lower Austria (Austria)
+					add_resource = {
+						type = coal
+						amount = 15
+					}
+				}
+				else_if = {
+					limit = { state = 43 } # Észak-Magyarország (Hungary)
+					add_resource = {
+						type = coal
+						amount = 44
+					}
+				}
+				else_if = {
+					limit = { state = 211 } # Burgas (Bulgaria)
+					add_resource = {
+						type = coal
+						amount = 17
+					}
+				}
+				else_if = {
+					limit = { state = 82 } # Banat (Romania)
+					add_resource = {
+						type = coal
+						amount = 16
+					}
+				}
+				else_if = {
+					limit = { state = 347 } # Izmit (Turkey)
+					add_resource = {
+						type = coal
+						amount = 20
+					}
+				}
+				else_if = {
+					limit = { state = 107 } # Serbia (Yugoslavia)
+					add_resource = {
+						type = coal
+						amount = 97
+					}
+				}
+				else_if = {
+					limit = { state = 762 } # Katowice (Poland)
+					add_resource = {
+						type = coal
+						amount = 293
+					}
+				}
+				else_if = {
+					limit = { state = 92 } # Lublin (Poland)
+					add_resource = {
+						type = coal
+						amount = 178
+					}
+				}
+				else_if = {
+					limit = { state = 1030 } # E. Mazowieckie (Poland)
+					add_resource = {
+						type = coal
+						amount = 158
+					}
+				}
+				else_if = {
+					limit = { state = 612 } # Chahar (China)
+					add_resource = {
+						type = coal
+						amount = 50
+					}
+				}
+				else_if = {
+					limit = { state = 615 } # Taiyuan (China)
+					add_resource = {
+						type = coal
+						amount = 50
+					}
+				}
+				else_if = {
+					limit = { state = 597 } # Jinan (China)
+					add_resource = {
+						type = coal
+						amount = 50
+					}
+				}
+				else_if = {
+					limit = { state = 925 } # Jiangsu (China)
+					add_resource = {
+						type = coal
+						amount = 50
+					}
+				}
+				else_if = {
+					limit = { state = 929 } # Sichuan (Sichuan)
+					add_resource = {
+						type = coal
+						amount = 100
+					}
+				}
+				else_if = {
+					limit = { state = 524 } # Taiwan (Japan)
+					add_resource = {
+						type = coal
+						amount = 25
+					}
+				}
+				else_if = {
+					limit = { state = 789 } # Altay Mountains (Mongolia)
+					add_resource = {
+						type = coal
+						amount = 87
+					}
+				}
+
 			}
-		}
-
-		fire_only_once = yes
-
-		cost = 5
-		days_remove = 45
-
-		modifier = {
-			civilian_factory_use = 5
 		}
 
 		ai_will_do = {
-			factor = 1
-		}
-		remove_effect = {
-			868 = { set_state_flag = guadalajara_coal_mines_developed }
-			868 = {
-				add_resource = {
-					type = coal
-					amount = 34
-				}
-			}
-		}
-	}
-
-	develop_sevilla_coal_mines = { #169
-
-		icon = coal
-
-		allowed = {
-
-		}
-
-		highlight_states = { highlight_state_targets = { state = 169 } }
-
-		available = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation4
-			}
-			else = {
-				has_tech = excavation4_comp
-			}
-			num_of_civilian_factories_available_for_projects > 4
-			#owns_state = 169
-			169 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
-					}
-				}
-			}
-		}
-
-		visible = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation3
-			}
-			else = {
-				has_tech = excavation3_comp
-			}
-			#owns_state = 169
-			169 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
-					}
-				}
-			}
-			169 = {
-				NOT = {
-					has_state_flag = sevilla_coal_mines_developed
-				}
-			}
-		}
-
-		fire_only_once = yes
-
-		cost = 5
-		days_remove = 45
-
-		modifier = {
-			civilian_factory_use = 5
-		}
-
-		ai_will_do = {
-			factor = 1
-		}
-		remove_effect = {
-			169 = { set_state_flag = sevilla_coal_mines_developed }
-			169 = {
-				add_resource = {
-					type = coal
-					amount = 45
-				}
-			}
-		}
-	}
-
-	develop_bursa_coal_mines = { #340
-
-		icon = coal
-
-		allowed = {
-
-		}
-
-		highlight_states = { highlight_state_targets = { state = 340 } }
-
-		available = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation4
-			}
-			else = {
-				has_tech = excavation4_comp
-			}
-			if = {
-				limit = {
-					original_tag = TUR
-				}
-				has_completed_focus = TUR_nationalize_zonguldak_coal_and_steelworks
-			}
-			num_of_civilian_factories_available_for_projects > 4
-			#owns_state = 340
-			340 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
-					}
-				}
-			}
-		}
-
-		visible = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation3
-			}
-			else = {
-				has_tech = excavation3_comp
-			}
-			#owns_state = 340
-			340 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
-					}
-				}
-			}
-			340 = {
-				NOT = {
-					has_state_flag = bursa_coal_mines_developed
-				}
-			}
-		}
-
-		fire_only_once = yes
-
-		cost = 5
-		days_remove = 45
-
-		modifier = {
-			civilian_factory_use = 5
-		}
-
-		ai_will_do = {
-			factor = 1
-		}
-		remove_effect = {
-			340 = { set_state_flag = bursa_coal_mines_developed }
-			340 = {
-				add_resource = {
-					type = coal
-					amount = 64
-				}
-			}
-		}
-	}
-
-	develop_trabzon_coal_mines = { #354
-
-		icon = coal
-
-		allowed = {
-
-		}
-
-		highlight_states = { highlight_state_targets = { state = 354 } }
-
-		available = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation3
-			}
-			else = {
-				has_tech = excavation3_comp
-			}
-			if = {
-				limit = {
-					original_tag = TUR
-				}
-				has_completed_focus = TUR_nationalize_zonguldak_coal_and_steelworks
-			}
-			num_of_civilian_factories_available_for_projects > 4
-			#owns_state = 354
-			354 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
-					}
-				}
-			}
-		}
-
-		visible = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation2
-			}
-			else = {
-				has_tech = excavation2_comp
-			}
-			#owns_state = 354
-			354 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
-					}
-				}
-			}
-			354 = {
-				NOT = {
-					has_state_flag = trabzon_coal_mines_developed
-				}
-			}
-		}
-
-		fire_only_once = yes
-
-		cost = 5
-		days_remove = 45
-
-		modifier = {
-			civilian_factory_use = 5
-		}
-
-		ai_will_do = {
-			factor = 1
-		}
-		remove_effect = {
-			354 = { set_state_flag = trabzon_coal_mines_developed }
-			354 = {
-				add_resource = {
-					type = coal
-					amount = 98
-				}
-			}
-		}
-	}
-
-	develop_north_dakota_coal_mines = { #389
-
-		icon = coal
-
-		allowed = {
-
-		}
-
-		highlight_states = { highlight_state_targets = { state = 389 } }
-
-		available = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation4
-			}
-			else = {
-				has_tech = excavation4_comp
-			}
-			num_of_civilian_factories_available_for_projects > 14
-			#owns_state = 389
-			389 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
-					}
-				}
-			}
-		}
-
-		visible = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation3
-			}
-			else = {
-				has_tech = excavation3_comp
-			}
-			#owns_state = 389
-			389 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
-					}
-				}
-			}
-			389 = {
-				NOT = {
-					has_state_flag = north_dakota_coal_mines_developed
-				}
-			}
-		}
-
-		fire_only_once = yes
-
-		cost = 5
-		days_remove = 60
-
-		modifier = {
-			civilian_factory_use = 15
-		}
-
-		ai_will_do = {
-			factor = 1
-		}
-		remove_effect = {
-			389 = { set_state_flag = north_dakota_coal_mines_developed }
-			389 = {
-				add_resource = {
-					type = coal
-					amount = 805
-				}
-			}
-		}
-	}
-
-	develop_montana_coal_mines = { #388
-
-		icon = coal
-
-		allowed = {
-
-		}
-
-		highlight_states = { highlight_state_targets = { state = 388 } }
-
-		available = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation5
-			}
-			else = {
-				has_tech = excavation5_comp
-			}
-			num_of_civilian_factories_available_for_projects > 19
-			#owns_state = 388
-			388 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
-					}
-				}
-			}
-		}
-
-		visible = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation4
-			}
-			else = {
-				has_tech = excavation4_comp
-			}
-			#owns_state = 388
-			388 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
-					}
-				}
-			}
-			388 = {
-				NOT = {
-					has_state_flag = montana_coal_mines_developed
-				}
-			}
-		}
-
-		fire_only_once = yes
-
-		cost = 5
-		days_remove = 60
-
-		modifier = {
-			civilian_factory_use = 20
-		}
-
-		ai_will_do = {
-			factor = 1
-		}
-		remove_effect = {
-			388 = { set_state_flag = montana_coal_mines_developed }
-			388 = {
-				add_resource = {
-					type = coal
-					amount = 1505
-				}
-			}
+			factor = 100
 		}
 	}
 
@@ -1127,28 +699,59 @@ prospect_for_resources = {
 		}
 	}
 
-	develop_kuznetsk_coal_mines = { #569
+	develop_Ukrainian_coal_mines = {
+
 		icon = coal
 
 		allowed = {
 
 		}
 
-		highlight_states = { highlight_state_targets = { state = 569 } }
+		highlight_states = {
+			highlight_state_targets = {
+				state = 228
+				state = 227
+				state = 200
+				state = 226
+			}
+		}
 
 		available = {
 			if = {
 				limit = {
 					has_dlc = "Arms Against Tyranny"
 				}
-				has_tech = excavation4
+				has_tech = excavation3
 			}
 			else = {
-				has_tech = excavation4_comp
+				has_tech = excavation3_comp
 			}
 			num_of_civilian_factories_available_for_projects > 9
-			#owns_state = 569
-			569 = {
+			226 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+			227 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+			228 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+			200 = {
 				CONTROLLER = {
 					OR = {
 						tag = ROOT
@@ -1168,8 +771,7 @@ prospect_for_resources = {
 			else = {
 				has_tech = excavation3_comp
 			}
-			#owns_state = 569
-			569 = {
+			226 = {
 				CONTROLLER = {
 					OR = {
 						tag = ROOT
@@ -1177,9 +779,33 @@ prospect_for_resources = {
 					}
 				}
 			}
-			569 = {
+			227 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+			228 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+			200 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+			200 = {
 				NOT = {
-					has_state_flag = kuznetsk_coal_mines_developed
+					has_state_flag = ukraine_coal_mines_developed
 				}
 			}
 		}
@@ -1187,7 +813,7 @@ prospect_for_resources = {
 		fire_only_once = yes
 
 		cost = 5
-		days_remove = 60
+		days_remove = 120
 
 		modifier = {
 			civilian_factory_use = 10
@@ -1197,250 +823,29 @@ prospect_for_resources = {
 			factor = 1
 		}
 		remove_effect = {
-			569 = { set_state_flag = kuznetsk_coal_mines_developed }
-			569 = {
+			200 = { set_state_flag = ukraine_coal_mines_developed }
+			226 = {
 				add_resource = {
 					type = coal
-					amount = 376
+					amount = 156
 				}
 			}
-		}
-	}
-	develop_kuznetsk_coal_mines_2 = { #569
-		icon = coal
-
-		allowed = {
-
-		}
-
-		highlight_states = { highlight_state_targets = { state = 569 } }
-
-		available = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation5
-			}
-			else = {
-				has_tech = excavation5_comp
-			}
-			num_of_civilian_factories_available_for_projects > 9
-			#owns_state = 569
-			569 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
-					}
-				}
-			}
-		}
-
-		visible = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation4
-			}
-			else = {
-				has_tech = excavation4_comp
-			}
-			#owns_state = 569
-			569 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
-					}
-				}
-			}
-			569 = {
-				has_state_flag = kuznetsk_coal_mines_developed
-				NOT = {
-					has_state_flag = kuznetsk_coal_mines_developed_2
-				}
-			}
-		}
-
-		fire_only_once = yes
-
-		cost = 5
-		days_remove = 60
-
-		modifier = {
-			civilian_factory_use = 10
-		}
-
-		ai_will_do = {
-			factor = 1
-		}
-		remove_effect = {
-			569 = { set_state_flag = kuznetsk_coal_mines_developed_2 }
-			569 = {
+			227 = {
 				add_resource = {
 					type = coal
-					amount = 288
+					amount = 122
 				}
 			}
-		}
-	}
-
-	develop_ural_coal_mines = { #876
-		icon = coal
-
-		allowed = {
-
-		}
-
-		highlight_states = { highlight_state_targets = { state = 876 } }
-
-		available = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation4
-			}
-			else = {
-				has_tech = excavation4_comp
-			}
-			num_of_civilian_factories_available_for_projects > 9
-			#owns_state = 876
-			876 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
-					}
-				}
-			}
-		}
-
-		visible = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation4
-			}
-			else = {
-				has_tech = excavation4_comp
-			}
-			#owns_state = 876
-			876 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
-					}
-				}
-			}
-			876 = {
-				NOT = {
-					has_state_flag = ural_coal_mines_developed
-				}
-			}
-		}
-
-		fire_only_once = yes
-
-		cost = 5
-		days_remove = 60
-
-		modifier = {
-			civilian_factory_use = 10
-		}
-
-		ai_will_do = {
-			factor = 1
-		}
-		remove_effect = {
-			876 = { set_state_flag = ural_coal_mines_developed }
-			876 = {
+			228 = {
 				add_resource = {
 					type = coal
-					amount = 268
+					amount = 90
 				}
 			}
-		}
-	}
-	develop_ayaguz_coal_mines = { #589
-		icon = coal
-
-		allowed = {
-
-		}
-
-		highlight_states = { highlight_state_targets = { state = 589 } }
-
-		available = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation4
-			}
-			else = {
-				has_tech = excavation4_comp
-			}
-			num_of_civilian_factories_available_for_projects > 9
-			#owns_state = 589
-			589 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
-					}
-				}
-			}
-		}
-
-		visible = {
-			if = {
-				limit = {
-					has_dlc = "Arms Against Tyranny"
-				}
-				has_tech = excavation4
-			}
-			else = {
-				has_tech = excavation4_comp
-			}
-			#owns_state = 589
-			589 = {
-				CONTROLLER = {
-					OR = {
-						tag = ROOT
-						is_subject_of = ROOT
-					}
-				}
-			}
-			589 = {
-				NOT = {
-					has_state_flag = ayaguz_coal_mines_developed
-				}
-			}
-		}
-
-		fire_only_once = yes
-
-		cost = 5
-		days_remove = 60
-
-		modifier = {
-			civilian_factory_use = 10
-		}
-
-		ai_will_do = {
-			factor = 1
-		}
-		remove_effect = {
-			589 = { set_state_flag = ayaguz_coal_mines_developed }
-			589 = {
+			200 = {
 				add_resource = {
 					type = coal
-					amount = 212
+					amount = 30
 				}
 			}
 		}
@@ -12102,6 +11507,653 @@ prospect_for_resources = {
 		}
 	}
 
+	develop_kemerovo_coal_mines = { #569
+
+		icon = coal
+
+		allowed = {
+
+		}
+
+		highlight_states = { highlight_state_targets = { state = 569 } }
+
+		available = {
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				has_tech = excavation4
+			}
+			else = {
+				has_tech = excavation4_comp
+			}
+			num_of_civilian_factories_available_for_projects > 4
+			#owns_state = 799
+			569 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+		}
+
+		visible = {
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				has_tech = excavation1
+			}
+			else = {
+				has_tech = excavation1_comp
+			}
+			#owns_state = 799
+			569 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+			569 = {
+				NOT = {
+					has_state_flag = kemerovo_coal_mines_developed
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		cost = 5
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 2
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+		remove_effect = {
+			569 = { set_state_flag = kemerovo_coal_mines_developed }
+			569 = {
+				add_resource = {
+					type = coal
+					amount = 100
+				}
+			}
+		}
+	}
+
+	develop_kemerovo_coal_mines_2 = { #569
+
+		icon = coal
+
+		allowed = {
+
+		}
+
+		highlight_states = { highlight_state_targets = { state = 569 } }
+
+		available = {
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				has_tech = excavation5
+			}
+			else = {
+				has_tech = excavation5_comp
+			}
+			num_of_civilian_factories_available_for_projects > 4
+			#owns_state = 799
+			569 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+		}
+
+		visible = {
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				has_tech = excavation1
+			}
+			else = {
+				has_tech = excavation1_comp
+			}
+			#owns_state = 799
+			569 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+			569 = {
+				NOT = {
+					has_state_flag = kemerovo_coal_mines_developed_2
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		cost = 5
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 2
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+		remove_effect = {
+			569 = { set_state_flag = kemerovo_coal_mines_developed_2 }
+			569 = {
+				add_resource = {
+					type = coal
+					amount = 233
+				}
+			}
+		}
+	}
+	develop_wallone_coal_mines = { #34
+
+		icon = coal
+
+		allowed = {
+
+		}
+
+		highlight_states = { highlight_state_targets = { state = 34 } }
+
+		available = {
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				has_tech = excavation4
+			}
+			else = {
+				has_tech = excavation4_comp
+			}
+			num_of_civilian_factories_available_for_projects > 4
+			#owns_state = 799
+			34 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+		}
+
+		visible = {
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				has_tech = excavation1
+			}
+			else = {
+				has_tech = excavation1_comp
+			}
+			#owns_state = 799
+			34 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+			34 = {
+				NOT = {
+					has_state_flag = wallone_coal_mines_developed
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		cost = 5
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 2
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+		remove_effect = {
+			34 = { set_state_flag = wallone_coal_mines_developed }
+			34 = {
+				add_resource = {
+					type = coal
+					amount = 40
+				}
+			}
+		}
+	}
+
+	develop_sudentenland_coal_mines = { #69
+
+		icon = coal
+
+		allowed = {
+
+		}
+
+		highlight_states = { highlight_state_targets = { state = 69 } }
+
+		available = {
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				has_tech = excavation4
+			}
+			else = {
+				has_tech = excavation4_comp
+			}
+			num_of_civilian_factories_available_for_projects > 4
+			#owns_state = 799
+			69 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+		}
+
+		visible = {
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				has_tech = excavation1
+			}
+			else = {
+				has_tech = excavation1_comp
+			}
+			#owns_state = 799
+			69 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+			69 = {
+				NOT = {
+					has_state_flag = sudent_coal_mines_developed
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		cost = 5
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 2
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+		remove_effect = {
+			69 = { set_state_flag = sudent_coal_mines_developed }
+			69 = {
+				add_resource = {
+					type = coal
+					amount = 492
+				}
+			}
+		}
+	}
+
+	develop_lublin_coal_mines = { #92
+
+		icon = coal
+
+		allowed = {
+
+		}
+
+		highlight_states = { highlight_state_targets = { state = 92 } }
+
+		available = {
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				has_tech = excavation4
+			}
+			else = {
+				has_tech = excavation4_comp
+			}
+			num_of_civilian_factories_available_for_projects > 4
+			#owns_state = 799
+			92 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+		}
+
+		visible = {
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				has_tech = excavation1
+			}
+			else = {
+				has_tech = excavation1_comp
+			}
+			#owns_state = 799
+			92 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+			92 = {
+				NOT = {
+					has_state_flag = lublin_coal_mines_developed
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		cost = 5
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 5
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+		remove_effect = {
+			92 = { set_state_flag = lublin_coal_mines_developed }
+			92 = {
+				add_resource = {
+					type = coal
+					amount = 600
+				}
+			}
+		}
+	}
+
+		develop_lublin_coal_mines_2 = { #92
+
+		icon = coal
+
+		allowed = {
+
+		}
+
+		highlight_states = { highlight_state_targets = { state = 92 } }
+
+		available = {
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				has_tech = excavation5
+			}
+			else = {
+				has_tech = excavation5_comp
+			}
+			num_of_civilian_factories_available_for_projects > 4
+			#owns_state = 799
+			92 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+		}
+
+		visible = {
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				has_tech = excavation1
+			}
+			else = {
+				has_tech = excavation1_comp
+			}
+			#owns_state = 799
+			92 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+			92 = {
+				NOT = {
+					has_state_flag = lublin_coal_mines_developed_2
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		cost = 5
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 5
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+		remove_effect = {
+			92 = { set_state_flag = lublin_coal_mines_developed_2 }
+			92 = {
+				add_resource = {
+					type = coal
+					amount = 657
+				}
+			}
+		}
+	}
+
+	develop_transtandubian_coal_mines = { #155
+
+		icon = coal
+
+		allowed = {
+
+		}
+
+		highlight_states = { highlight_state_targets = { state = 155 } }
+
+		available = {
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				has_tech = excavation4
+			}
+			else = {
+				has_tech = excavation4_comp
+			}
+			num_of_civilian_factories_available_for_projects > 4
+			#owns_state = 799
+			155 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+		}
+
+		visible = {
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				has_tech = excavation1
+			}
+			else = {
+				has_tech = excavation1_comp
+			}
+			#owns_state = 799
+			155 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+			155 = {
+				NOT = {
+					has_state_flag = sudent_coal_mines_developed
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		cost = 5
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 2
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+		remove_effect = {
+			155 = { set_state_flag = sudent_coal_mines_developed }
+			155 = {
+				add_resource = {
+					type = coal
+					amount = 87
+				}
+			}
+		}
+	}
+
+		develop_serbia_coal_mines = { #107
+
+		icon = coal
+
+		allowed = {
+
+		}
+
+		highlight_states = { highlight_state_targets = { state = 107 } }
+
+		available = {
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				has_tech = excavation4
+			}
+			else = {
+				has_tech = excavation4_comp
+			}
+			num_of_civilian_factories_available_for_projects > 4
+			#owns_state = 799
+			107 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+		}
+
+		visible = {
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				has_tech = excavation1
+			}
+			else = {
+				has_tech = excavation1_comp
+			}
+			#owns_state = 799
+			107 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+			107 = {
+				NOT = {
+					has_state_flag = serbian_coal_mines_developed
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		cost = 5
+		days_remove = 60
+
+		modifier = {
+			civilian_factory_use = 4
+		}
+
+		ai_will_do = {
+			factor = 1
+		}
+		remove_effect = {
+			107 = { set_state_flag = serbian_coal_mines_developed }
+			107 = {
+				add_resource = {
+					type = coal
+					amount = 194
+				}
+			}
+		}
+	}
+
 	################################### Mix ###################################
 
 	expand_greenlands_mines = { #101
@@ -12225,4 +12277,4 @@ prospect_for_resources = {
 			}
 		}
 	}
-}
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
