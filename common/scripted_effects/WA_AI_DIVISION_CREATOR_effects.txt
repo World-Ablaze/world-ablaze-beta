@@ -744,6 +744,7 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 		multiply_temp_variable = { mech_eq = _start_equipment }
 		multiply_temp_variable = { med_tank_eq = _start_equipment }
 
+		# Only calculate with respect to stockpiles if force use is disabled
 		if = {
 			limit = {
 				check_variable = { _force_use_equipment_manpower = 0 }
@@ -807,51 +808,57 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 				subtract_from_temp_variable = { _num_division_spawn_calculated_eq_rounded = 1 }
 			}
 			set_temp_variable = { _num_division_spawn_calculated_eq = _num_division_spawn_calculated_eq_rounded}
+		}
 
-			######################################################### Handle Manpower #########################################################
-			set_temp_variable = { tot_mp = 0 }
+		######################################################### Handle Manpower #########################################################
+		set_temp_variable = { tot_mp = 0 }
 
-			# Calculate total manpower based on provided division template
+		# Calculate total manpower based on provided division template
+		if = {
+			limit = {
+				check_variable = { _division_template = 1 }
+			}
+			set_temp_variable = { tot_mp = 15900 }
 			if = {
 				limit = {
-					check_variable = { _division_template = 1 }
+					WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
 				}
-				set_temp_variable = { tot_mp = 15900 }
-				if = {
-					limit = {
-						WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
-					}
-					add_to_temp_variable = { tot_mp = 300 }
-				}
+				add_to_temp_variable = { tot_mp = 300 }
 			}
-			else_if = {
-				limit = {
-					check_variable = { _division_template = 2 }
-				}
-				set_temp_variable = { tot_mp = 18900 }
+		}
+		else_if = {
+			limit = {
+				check_variable = { _division_template = 2 }
 			}
-			else_if = {
-				limit = {
-					check_variable = { _division_template = 3 }
-				}
-				set_temp_variable = { tot_mp = 18900 }
+			set_temp_variable = { tot_mp = 18900 }
+		}
+		else_if = {
+			limit = {
+				check_variable = { _division_template = 3 }
 			}
-			else_if = {
-				limit = {
-					check_variable = { _division_template = 4 }
-				}
-				set_temp_variable = { tot_mp = 18900 }
+			set_temp_variable = { tot_mp = 18900 }
+		}
+		else_if = {
+			limit = {
+				check_variable = { _division_template = 4 }
 			}
-			else_if = {
-				limit = {
-					check_variable = { _division_template = 5 }
-				}
-				set_temp_variable = { tot_mp = 10500 }
+			set_temp_variable = { tot_mp = 18900 }
+		}
+		else_if = {
+			limit = {
+				check_variable = { _division_template = 5 }
 			}
+			set_temp_variable = { tot_mp = 10500 }
+		}
 
-			# Calculate total manpower actually spawned based on % equipped
-			multiply_temp_variable = { tot_mp = _start_manpower }
+		# Calculate total manpower actually spawned based on % equipped
+		multiply_temp_variable = { tot_mp = _start_manpower }
 
+		# Only calculate with respect to available manpower if force use is disabled
+		if = {
+			limit = {
+				check_variable = { _force_use_equipment_manpower = 0 }
+			}
 			# Divide the country's available manpower by the calculated manpower requirement per division
 			set_temp_variable = { _num_division_spawn_calculated_mp = manpower_k }
 			divide_temp_variable = { _num_division_spawn_calculated_mp = tot_mp }
@@ -881,7 +888,13 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 		}
 		if = {
 			limit = { is_debug = yes }
-			log = "WA_AI_DIVISION_calculate_equipment_usage Country: [ROOT.GetName]. Divisions spawnable based on equipment: [?_num_division_spawn_calculated_eq]. Divisions spawnable based on manpower: [?_num_division_spawn_calculated_mp]. Template: [WA_AI_DIVISION_GetSpawnDivisionTemplate]"
+			if = {
+				limit = { check_variable = { _force_use_equipment_manpower = 0 }}
+				log = "WA_AI_DIVISION_calculate_equipment_usage Country: [ROOT.GetName]. Divisions spawnable based on equipment: [?_num_division_spawn_calculated_eq]. Divisions spawnable based on manpower: [?_num_division_spawn_calculated_mp]. Template: [WA_AI_DIVISION_GetSpawnDivisionTemplate]"
+			}
+			else = {
+				log = "WA_AI_DIVISION_calculate_equipment_usage Country: [ROOT.GetName]. Force use equipment and manpower: [?_force_use_equipment_manpower]. Template: [WA_AI_DIVISION_GetSpawnDivisionTemplate]"
+			}
 		}
 	}
 	else = {
@@ -1024,6 +1037,7 @@ WA_AI_DIVISION_remove_stockpiles = {
 # Calls the necessary effects to create units on specified enemy states.
 # [INPUT] [REQUIRED] _invasion_state - Integer. The State ID of a coastal state where the invasion divisions are spawned.
 # [INPUT] [REQUIRED] _invasion_state_provinces - Array of integer Province IDs. The Province IDs in _invasion_state where the divisions will be spawned.
+# [INPUT] [REQUIRED] _target_country - Country ID. The country the invasion is targeting.
 # [INPUT] [OPTIONAL] _divisions_per_province - Integer. The number of divisions to spawn in each state. Must be between 1 and 10. Defaults to 1.
 # [INPUT] [OPTIONAL] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia
 # [INPUT] [OPTIONAL] _start_experience - Float. The starting experience of the spawned divisions. Must be between 0.1 and 1. Defaults to ? (Regular 1)
@@ -1143,6 +1157,19 @@ WA_AI_DIVISION_spawn_invasion = {
 				# debug = yes
 			}
 		}
+		# Manually apply an attack penalty to emulate the in-battle naval invasion stat penalty
+		meta_effect = {
+			text = {
+				add_relation_modifier = {
+					target = [COUNTRY_TAG]
+					modifier = WA_AI_invasions_modifier
+				}
+			}
+			COUNTRY_TAG = "[?_target_country.GetTag]"
+			# debug = yes
+		}
+		set_variable = { most_recent_invasion_target = _target_country }
+		country_event = { id = WA_AI_invasions.1 days = 14 }
 	}
 	else_if = {
 		limit = {

@@ -1,8 +1,45 @@
 add_namespace = WA_AI_invasions
 
-# DDay
 country_event = {
 	id = WA_AI_invasions.1
+	hidden = yes
+
+	is_triggered_only = yes
+	fire_only_once = yes
+
+	trigger = {
+		is_ai = yes
+		WA_AI_DIFFICULTY_is_historical = yes
+		meta_trigger = {
+			text = {
+				has_relation_modifier = {
+					target = [COUNTRY_TAG]
+					modifier = WA_AI_invasions_modifier
+				}
+			}
+			COUNTRY_TAG = "[?most_recent_invasion_target.GetTag]"
+			# debug = yes
+		}
+	}
+
+	immediate = {
+		meta_effect = {
+			text = {
+				remove_relation_modifier = {
+					target = [COUNTRY_TAG]
+					modifier = WA_AI_invasions_modifier
+				}
+			}
+			COUNTRY_TAG = "[?most_recent_invasion_target.GetTag]"
+			# debug = yes
+		}
+		clear_variable = most_recent_invasion_target
+	}
+}
+
+# DDay
+country_event = {
+	id = WA_AI_invasions.2
 	hidden = yes
 
 	is_triggered_only = yes
@@ -16,14 +53,37 @@ country_event = {
 	immediate = {
 		if = {
 			limit = {
-				has_war_with = GER
-				GER = {
-					controls_state = 15
-					controls_state = 1016
+				# Get target country tag
+				15 = { # Lower Normandy
+					CONTROLLER = {
+						set_temp_variable = { _target_country = id }
+					}
 				}
-				# Allies control ENG
-				# seazone control
+
+				# Triggers for invasion target country and states
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 15 # Lower Normandy
+					controls_state = 1016 # Upper Normandy
+					if = { # PLAYER ONLY seazone check
+						limit = { is_ai = no }
+						NOT = { has_naval_control = 18 } # English Channel
+					}
+				}
+
+				# Triggers for invasion launch country
+				surrender_progress < 0.1
+
+				# Triggers for 'invasion launch states'
+				127 = { # Sussex
+					is_controlled_by_ROOT_or_ally = yes
+				}
+				859 = { # Dorset
+					is_controlled_by_ROOT_or_ally = yes
+				}
+				# Other misc triggers for overall game state
 				# Allies control africa? Italy?
+
 			}
 			# Account for checking for more defenses with any_province_building_level?
 			set_temp_variable = { _divisions_per_province = 2 }
@@ -40,7 +100,11 @@ country_event = {
 			add_to_temp_array = { _invasion_state_provinces = 13851 }
 			WA_AI_DIVISION_spawn_invasion = yes
 		}
-		else = {
+		else_if = {
+			limit = {
+				15 = { is_controlled_by_ROOT_or_ally = yes }
+				1016 = { is_controlled_by_ROOT_or_ally = yes }
+			}
 			country_event = { id = WA_AI_invasions.1 days = 7 }
 		}
 	}
