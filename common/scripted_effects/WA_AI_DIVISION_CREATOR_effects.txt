@@ -1038,7 +1038,7 @@ WA_AI_DIVISION_remove_stockpiles = {
 # [INPUT] [REQUIRED] _invasion_state - Integer. The State ID of a coastal state where the invasion divisions are spawned.
 # [INPUT] [REQUIRED] _invasion_state_provinces - Array of integer Province IDs. The Province IDs in _invasion_state where the divisions will be spawned.
 # [INPUT] [REQUIRED] _target_country - Country ID. The country the invasion is targeting.
-# [INPUT] [OPTIONAL] _divisions_per_province - Integer. The number of divisions to spawn in each state. Must be between 1 and 10. Defaults to 1.
+# [INPUT] [OPTIONAL] _divisions_per_province - Integer. The number of divisions to spawn in each state. Must be between 1 and 10 inclusive. Defaults to 1.
 # [INPUT] [OPTIONAL] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia
 # [INPUT] [OPTIONAL] _start_experience - Float. The starting experience of the spawned divisions. Must be between 0.1 and 1. Defaults to ? (Regular 1)
 # [INPUT] [OPTIONAL] _start_equipment - Float. The starting equipment of the spawned divisions AND will be taken from the stockpile of the country. Must be between 0.1 and 1. Defaults to 1.
@@ -1178,6 +1178,55 @@ WA_AI_DIVISION_spawn_invasion = {
 		if = {
 			limit = { is_debug = yes }
 			log = "WA_AI_DIVISION_spawn_invasion bad input. Country: [ROOT.GetName]. Parameters: _invasion_state = [?_invasion_state], _invasion_state_provinces first element = [?_invasion_state_provinces^0], _divisions_per_province = [?_divisions_per_province], _num_divisions_spawn = [?_num_divisions_spawn], _division_template = [?_division_template], experience = [?_start_experience|.2], equipment = [?_start_equipment|.2], manpower = [?_start_manpower|.2]. If all parameters valid, potentially not AI"
+		}
+	}
+}
+
+#
+# [INPUT] [REQUIRED] _divisions_per_province - Integer. The base number of divisions to spawn per invasion province on normal difficulty. Must be between 1 and 10.
+WA_AI_DIVISION_adjust_invasion_for_difficulty = {
+	# Validate required input parameters
+	set_temp_variable = { success = 1 }
+	if = {
+		limit = {
+			is_ai = no
+			is_debug = no
+		}
+		set_temp_variable = { success = 0 }
+	}
+	else_if = {
+		limit = {
+			OR = {
+				check_variable = { _divisions_per_province < 1 }
+				check_variable = { _divisions_per_province > 10 }
+			}
+		}
+		set_temp_variable = { success = 0 }
+	}
+
+	if = {
+		limit = {
+			check_variable = { success = 1 }
+		}
+		if = {
+			limit = { WA_AI_DIFFICULTY_is_historical_easy = yes }
+			multiply_temp_variable = { _divisions_per_province = 0.5 }
+			round_temp_variable = _divisions_per_province
+		}
+		else_if = {
+			limit = {
+				OR = {
+					WA_AI_DIFFICULTY_is_historical_hard = yes
+					WA_AI_DIFFICULTY_is_competitive_hard = yes
+				}
+			}
+			multiply_temp_variable = { _divisions_per_province = 2 }
+		}
+	}
+	else = {
+		if = {
+			limit = { is_debug = yes }
+			log = "WA_AI_DIVISION_adjust_invasion_for_difficulty bad input. Country: [ROOT.GetName]. Parameters: _divisions_per_province = [?_divisions_per_province]. If all parameters valid, potentially not AI"
 		}
 	}
 }

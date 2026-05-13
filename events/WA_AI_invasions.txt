@@ -1,11 +1,18 @@
 add_namespace = WA_AI_invasions
 
+##     ## ######## #### ##       #### ######## ##    ##
+##     ##    ##     ##  ##        ##     ##     ##  ##
+##     ##    ##     ##  ##        ##     ##      ####
+##     ##    ##     ##  ##        ##     ##       ##
+##     ##    ##     ##  ##        ##     ##       ##
+##     ##    ##     ##  ##        ##     ##       ##
+ #######     ##    #### ######## ####    ##       ##
+
 country_event = {
 	id = WA_AI_invasions.1
 	hidden = yes
 
 	is_triggered_only = yes
-	fire_only_once = yes
 
 	trigger = {
 		is_ai = yes
@@ -37,13 +44,60 @@ country_event = {
 	}
 }
 
+ ######   ######## ########  ##     ##    ###    ##    ## ##    ##
+##    ##  ##       ##     ## ###   ###   ## ##   ###   ##  ##  ##
+##        ##       ##     ## #### ####  ##   ##  ####  ##   ####
+##   #### ######   ########  ## ### ## ##     ## ## ## ##    ##
+##    ##  ##       ##   ##   ##     ## ######### ##  ####    ##
+##    ##  ##       ##    ##  ##     ## ##     ## ##   ###    ##
+ ######   ######## ##     ## ##     ## ##     ## ##    ##    ##
+
+#########################################################################################
+#########################################  GER  #########################################
+#########################################################################################
+
+      ##    ###    ########     ###    ##    ##
+      ##   ## ##   ##     ##   ## ##   ###   ##
+      ##  ##   ##  ##     ##  ##   ##  ####  ##
+      ## ##     ## ########  ##     ## ## ## ##
+##    ## ######### ##        ######### ##  ####
+##    ## ##     ## ##        ##     ## ##   ###
+ ######  ##     ## ##        ##     ## ##    ##
+
+#########################################################################################
+#########################################  JAP  #########################################
+#########################################################################################
+
+##     ## ##    ##
+##     ## ##   ##
+##     ## ##  ##
+##     ## #####
+##     ## ##  ##
+##     ## ##   ##
+ #######  ##    ##
+
+#########################################################################################
+#########################################  ENG  #########################################
+#########################################################################################
+
+##     ##  ######     ###
+##     ## ##    ##   ## ##
+##     ## ##        ##   ##
+##     ##  ######  ##     ##
+##     ##       ## #########
+##     ## ##    ## ##     ##
+ #######   ######  ##     ##
+
+#########################################################################################
+#########################################  USA  #########################################
+#########################################################################################
+
 # DDay
 country_event = {
 	id = WA_AI_invasions.2
 	hidden = yes
 
 	is_triggered_only = yes
-	fire_only_once = yes
 
 	trigger = {
 		is_ai = yes
@@ -51,42 +105,45 @@ country_event = {
 	}
 
 	immediate = {
+		# Get target country tag
+		15 = { # Lower Normandy
+			CONTROLLER = {
+				set_temp_variable = { _target_country = id }
+			}
+		}
+
 		if = {
 			limit = {
-				# Get target country tag
-				15 = { # Lower Normandy
-					CONTROLLER = {
-						set_temp_variable = { _target_country = id }
-					}
-				}
-
 				# Triggers for invasion target country and states
 				var:_target_country = {
 					has_war_with = ROOT
 					controls_state = 15 # Lower Normandy
 					controls_state = 1016 # Upper Normandy
-					if = { # PLAYER ONLY seazone check
-						limit = { is_ai = no }
-						NOT = { has_naval_control = 18 } # English Channel
+				}
+
+				# PLAYER ONLY seazone check
+				if = {
+					limit = {
+						var:_target_country = { is_ai = no }
+						NOT = { has_country_flag = { flag = WA_AI_invasions.2_flag days > 13 } }
 					}
+					NOT = { has_enemy_naval_control = 18 } # English Channel
 				}
 
 				# Triggers for invasion launch country
 				surrender_progress < 0.1
 
 				# Triggers for 'invasion launch states'
-				127 = { # Sussex
-					is_controlled_by_ROOT_or_ally = yes
-				}
-				859 = { # Dorset
-					is_controlled_by_ROOT_or_ally = yes
-				}
+				127 = { is_controlled_by_ROOT_or_ally = yes } # Sussex
+				859 = { is_controlled_by_ROOT_or_ally = yes } # Dorset
+
 				# Other misc triggers for overall game state
 				# Allies control africa? Italy?
 
 			}
 			# Account for checking for more defenses with any_province_building_level?
 			set_temp_variable = { _divisions_per_province = 2 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 15 }
 			clear_temp_array = _invasion_state_provinces
@@ -102,10 +159,29 @@ country_event = {
 		}
 		else_if = {
 			limit = {
-				15 = { is_controlled_by_ROOT_or_ally = yes }
-				1016 = { is_controlled_by_ROOT_or_ally = yes }
+				# Only refire if the invasion target is still valid
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 15 # Lower Normandy
+					controls_state = 1016 # Upper Normandy
+				}
 			}
-			country_event = { id = WA_AI_invasions.1 days = 7 }
+			country_event = { id = WA_AI_invasions.2 days = 7 }
+		}
+
+		# Seazone control delay mechanic
+		if = {
+			limit = {
+				has_enemy_naval_control = 18 # English Channel
+				NOT = { has_country_flag = WA_AI_invasions.2_flag }
+			}
+			set_country_flag = WA_AI_invasions.2_flag
+		}
+		else_if = {
+			limit = {
+				has_country_flag = { flag = WA_AI_invasions.2_flag days > 13 }
+			}
+			clr_country_flag = WA_AI_invasions.2_flag
 		}
 	}
 }
