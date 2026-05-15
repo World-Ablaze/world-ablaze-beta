@@ -44,6 +44,10 @@ country_event = {
 	}
 }
 
+#########################################################################################
+#########################################################################################
+#########################################################################################
+
  ######   ######## ########  ##     ##    ###    ##    ## ##    ##
 ##    ##  ##       ##     ## ###   ###   ## ##   ###   ##  ##  ##
 ##        ##       ##     ## #### ####  ##   ##  ####  ##   ####
@@ -54,6 +58,137 @@ country_event = {
 
 #########################################################################################
 #########################################  GER  #########################################
+#########################################################################################
+
+#Weserubung
+country_event = {
+	id = WA_AI_invasions.Weserubung
+	hidden = yes
+
+	is_triggered_only = yes
+
+	trigger = {
+		is_ai = yes
+		WA_AI_DIFFICULTY_is_historical = yes
+	}
+
+	immediate = {
+		# Get target country tag
+		1018 = { # Innlandet
+			CONTROLLER = {
+				set_temp_variable = { _target_country = id }
+			}
+		}
+
+		if = {
+			limit = {
+				# Triggers for invasion target country and states
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 110 # Ostlandet
+					controls_state = 1020 # Agder
+					controls_state = 1017 # Rogaland
+					controls_state = 142 # Vestlandet
+					controls_state = 143 # Trondelag
+					controls_state = 144 # Norde Norge
+
+				}
+
+				# PLAYER ONLY seazone check
+				if = {
+					limit = {
+						var:_target_country = { is_ai = no }
+						NOT = { has_country_flag = { flag = WA_AI_invasions.Weserubung_flag days > 179 } }
+					}
+					NOT = { has_enemy_naval_control = 250 } # Skagerrak
+				}
+
+				# Triggers for invasion launch country
+				surrender_progress < 0.1
+
+				# Triggers for 'invasion launch states'
+				99 = { is_controlled_by_ROOT_or_ally = yes } # Jutland
+
+				# Other misc triggers for overall game state
+				# Allies control africa? Italy?
+
+			}
+			# Account for checking for more defenses with any_province_building_level?
+			set_temp_variable = { _divisions_per_province = 1 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _invasion_state = 1020 } #Agder
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 9296 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _invasion_state = 1017 } #Rogaland
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 53 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _invasion_state = 142 } #Vestlandet
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 122 }
+			add_to_temp_array = { _invasion_state_provinces = 11100 }
+			add_to_temp_array = { _invasion_state_provinces = 3096 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _invasion_state = 143 } #Trondelag
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 3022 }
+			add_to_temp_array = { _invasion_state_provinces = 107 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _invasion_state = 144 } #Norde Norge
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 192 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _divisions_per_province = 2 }
+			set_temp_variable = { _division_template = 2 }
+			set_temp_variable = { _invasion_state = 110 } #Ostlandet
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 6115 }
+			add_to_temp_array = { _invasion_state_provinces = 13872 }
+			add_to_temp_array = { _invasion_state_provinces = 3171 }
+			WA_AI_DIVISION_spawn_invasion = yes
+		}
+		else_if = {
+			limit = {
+				# Only refire if the invasion target is still valid
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 110 # Ostlandet
+					controls_state = 1020 # Agder
+					controls_state = 1017 # Rogaland
+					controls_state = 142 # Vestlandet
+					controls_state = 143 # Trondelag
+					controls_state = 144 # Norde Norge
+				}
+			}
+			country_event = { id = WA_AI_invasions.Weserubung days = 7 }
+		}
+
+		# Seazone control delay mechanic
+		if = {
+			limit = {
+				has_enemy_naval_control = 250 # Skagerrak
+				NOT = { has_country_flag = WA_AI_invasions.Weserubung_flag }
+			}
+			set_country_flag = WA_AI_invasions.Weserubung_flag
+		}
+		else_if = {
+			limit = {
+				has_country_flag = { flag = WA_AI_invasions.Weserubung_flag days > 179 }
+			}
+			clr_country_flag = WA_AI_invasions.Weserubung_flag
+		}
+	}
+}
+
+#########################################################################################
+#########################################################################################
 #########################################################################################
 
       ##    ###    ########     ###    ##    ##
