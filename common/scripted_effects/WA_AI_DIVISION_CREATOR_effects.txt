@@ -163,6 +163,22 @@ WA_AI_DIVISION_spawn_divisions = {
 						has_tech = tech_engineers
 					}
 				}
+				AND = {
+					check_variable = { _division_template = 6 }
+					OR = {
+						NOT = { has_design_based_on = infantry_equipment }
+						NOT = { has_design_based_on = heavy_infantry_equipment }
+						NOT = { has_design_based_on = pack_artillery_equipmentent }
+						NOT = { has_design_based_on = support_equipment }
+						NOT = { has_design_based_on = motorized_equipment }
+						NOT = { has_tech = tech_engineers }
+						NOT = { has_tech = tech_recon }
+						NOT = { has_tech = tech_field_hospital }
+						NOT = { has_tech = tech_military_police }
+						NOT = { has_tech = tech_signal_company }
+						NOT = { has_tech = tech_maintenance_company }
+					}
+				}
 			}
 		}
 		set_temp_variable = { success = 2 }
@@ -598,6 +614,52 @@ WA_AI_DIVISION_setup = {
 				TEMPLATE_NAME = "[WA_AI_DIVISION_GetSpawnDivisionTemplate]"
 			}
 		}
+		else_if = {
+			limit = {
+				check_variable = { _division_template = 6 }
+			}
+			meta_effect = {
+				text = {
+					division_template = {
+						name = "[TEMPLATE_NAME]"
+						is_locked = yes
+
+						regiments = {
+							paratrooper = { x = 0 y = 0 }
+							paratrooper = { x = 0 y = 1 }
+							paratrooper = { x = 0 y = 2 }
+
+							paratrooper = { x = 1 y = 0 }
+							paratrooper = { x = 1 y = 1 }
+							paratrooper = { x = 1 y = 2 }
+
+							paratrooper = { x = 2 y = 0 }
+							paratrooper = { x = 2 y = 1 }
+							paratrooper = { x = 2 y = 2 }
+
+							para_artillery_brigade = { x = 3 y = 0 }
+							para_artillery_brigade = { x = 3 y = 1 }
+							para_artillery_brigade = { x = 3 y = 2 }
+
+							para_artillery_brigade = { x = 4 y = 0 }
+							para_artillery_brigade = { x = 4 y = 1 }
+							para_artillery_brigade = { x = 4 y = 2 }
+						}
+						support = {
+							assault_engineers = { x = 0 y = 0 }
+							mot_signal_company = { x = 0 y = 1 }
+							mot_field_hospital = { x = 0 y = 2 }
+
+							mot_recon = { x = 1 y = 0 }
+							military_police = { x = 1 y = 1 }
+							horse_maintenance_company = { x = 1 y = 2 }
+							pack_artillery = { x = 1 y = 3 }
+						}
+					}
+				}
+				TEMPLATE_NAME = "[WA_AI_DIVISION_GetSpawnDivisionTemplate]"
+			}
+		}
 	}
 	else_if = {
 		limit = {
@@ -663,6 +725,7 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 		set_temp_variable = { l_inf_eq = 0 }
 		set_temp_variable = { h_inf_eq = 0 }
 		set_temp_variable = { art_eq = 0 }
+		set_temp_variable = { p_art_eq = 0 }
 		set_temp_variable = { at_eq = 0 }
 		set_temp_variable = { supp_eq = 0 }
 		set_temp_variable = { mot_eq = 0 }
@@ -733,11 +796,22 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 			set_temp_variable = { h_inf_eq = 125 }
 			set_temp_variable = { supp_eq = 120 }
 		}
+		else_if = {
+			limit = {
+				check_variable = { _division_template = 6 }
+			}
+			set_temp_variable = { l_inf_eq = 1092 }
+			set_temp_variable = { h_inf_eq = 460 }
+			set_temp_variable = { p_art_eq = 78 }
+			set_temp_variable = { supp_eq = 990 }
+			set_temp_variable = { mot_eq = 80 }
+		}
 
 		# Calculate total equipment actually spawned based on % equipped
 		multiply_temp_variable = { l_inf_eq = _start_equipment }
 		multiply_temp_variable = { h_inf_eq = _start_equipment }
 		multiply_temp_variable = { art_eq = _start_equipment }
+		multiply_temp_variable = { p_art_eq = _start_equipment }
 		multiply_temp_variable = { at_eq = _start_equipment }
 		multiply_temp_variable = { supp_eq = _start_equipment }
 		multiply_temp_variable = { mot_eq = _start_equipment }
@@ -761,6 +835,9 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 			set_temp_variable = { num_divs_art_eq = num_equipment@artillery_equipment }
 			divide_temp_variable = { num_divs_art_eq = art_eq }
 			add_to_temp_array = { eq_requirements = num_divs_art_eq }
+			set_temp_variable = { num_divs_art_eq = num_equipment@pack_artillery_equipment }
+			divide_temp_variable = { num_divs_art_eq = p_art_eq }
+			add_to_temp_array = { eq_requirements = num_divs_p_art_eq }
 			set_temp_variable = { num_divs_at_eq = num_equipment@anti_tank_equipment }
 			divide_temp_variable = { num_divs_at_eq = at_eq }
 			add_to_temp_array = { eq_requirements = num_divs_at_eq }
@@ -849,6 +926,12 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 				check_variable = { _division_template = 5 }
 			}
 			set_temp_variable = { tot_mp = 10500 }
+		}
+		else_if = {
+			limit = {
+				check_variable = { _division_template = 6 }
+			}
+			set_temp_variable = { tot_mp = 15400 }
 		}
 
 		# Calculate total manpower actually spawned based on % equipped
@@ -944,6 +1027,9 @@ WA_AI_DIVISION_remove_stockpiles = {
 		multiply_temp_variable = { art_eq = _num_divisions_spawn }
 		multiply_temp_variable = { art_eq = -1 }
 		round_temp_variable = art_eq
+		multiply_temp_variable = { p_art_eq = _num_divisions_spawn }
+		multiply_temp_variable = { p_art_eq = -1 }
+		round_temp_variable = p_art_eq
 		multiply_temp_variable = { at_eq = _num_divisions_spawn }
 		multiply_temp_variable = { at_eq = -1 }
 		round_temp_variable = at_eq
@@ -972,6 +1058,10 @@ WA_AI_DIVISION_remove_stockpiles = {
 		add_equipment_to_stockpile = {
 			type = artillery_equipment
 			amount = art_eq
+		}
+		add_equipment_to_stockpile = {
+			type = pack_artillery_equipment
+			amount = p_art_eq
 		}
 		add_equipment_to_stockpile = {
 			type = anti_tank_equipment
@@ -1010,7 +1100,7 @@ WA_AI_DIVISION_remove_stockpiles = {
 		}
 		if = {
 			limit = { is_debug = yes }
-			log = "WA_AI_DIVISION_remove_stockpiles Country: [ROOT.GetName]. Removing [?l_inf_eq] l inf eq, [?h_inf_eq] h inf eq, [?art_eq] art eq, [?at_eq] at eq, [?supp_eq] supp eq, [?mot_eq] mot eq, [?mech_eq] mech eq, [?med_tank_eq] med armor eq for [?_num_divisions_spawn] division spawns of template [WA_AI_DIVISION_GetSpawnDivisionTemplate]"
+			log = "WA_AI_DIVISION_remove_stockpiles Country: [ROOT.GetName]. Removing [?l_inf_eq] l inf eq, [?h_inf_eq] h inf eq, [?art_eq] art eq, [?at_eq] at eq, [?supp_eq] supp eq, [?mot_eq] mot eq, [?mech_eq] mech eq, [?med_tank_eq] med armor eq, [?p_art_eq] p art eq for [?_num_divisions_spawn] division spawns of template [WA_AI_DIVISION_GetSpawnDivisionTemplate]"
 		}
 
 		######################################################### Handle Manpower #########################################################
