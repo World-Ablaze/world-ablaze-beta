@@ -4,7 +4,7 @@
 # [INPUT] [REQUIRED] _num_divisions_spawn - Integer. The number of divisions to spawn. Must be greater than 1 and less than 100
 # [INPUT] [OPTIONAL] _state - Integer. The state in which to spawn the divisions. Defaults to the country's capital
 # [INPUT] [OPTIONAL] _use_stockpile - Integer Boolean. Whether to use the country's stockpiled equipment to supply the divisions. Must be 0 or 1 (false or true). Defaults to 1.
-# [INPUT] [OPTIONAL] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia. Defaults to 1
+# [INPUT] [OPTIONAL] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper. Defaults to 1
 # [INPUT] [OPTIONAL] _start_experience - Float. The starting experience of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.2 (Trained 1)
 # [INPUT] [OPTIONAL] _start_equipment - Float. The starting equipment of the spawned divisions AND will be taken from the stockpile of the country. Must be between 0.1 and 1. Defaults to 0.1
 # [INPUT] [OPTIONAL] _start_manpower - Float. The starting manpower of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.1
@@ -45,7 +45,7 @@ WA_AI_DIVISION_spawn_divisions = {
 		limit = {
 			OR = {
 				check_variable = { _division_template < 1 }
-				check_variable = { _division_template > 5 }
+				check_variable = { _division_template > 6 }
 			}
 		}
 		set_temp_variable = { _division_template = 1 }
@@ -300,7 +300,7 @@ WA_AI_DIVISION_spawn_divisions = {
 # [INPUT] [REQUIRED] _num_divisions_total - The number of total divisions the country needs. The number of divisions spawned will be this number minus the existing number of divisions. Must be greater than 1. If less than the country's current division count, does nothing.
 # [INPUT] [OPTIONAL] _state - Integer. The state in which to spawn the divisions. Defaults to the country's capital.
 # [INPUT] [OPTIONAL] _use_stockpile - Integer Boolean. Whether to use the country's stockpiled equipment to supply the divisions. Must be 0 or 1 (false or true). Defaults to 1.
-# [INPUT] [OPTIONAL] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia. Defaults to 1
+# [INPUT] [OPTIONAL] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper. Defaults to 1
 # [INPUT] [OPTIONAL] _start_experience - Float. The starting experience of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.2 (Trained 1)
 # [INPUT] [OPTIONAL] _start_equipment - Float. The starting equipment of the spawned divisions AND will be taken from the stockpile of the country. Must be between 0.1 and 1. Defaults to 0.1
 # [INPUT] [OPTIONAL] _start_manpower - Float. The starting manpower of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.1
@@ -362,7 +362,7 @@ WA_AI_DIVISION_delete_spawned_divisions = {
 
 # Creates a locked template for the spawned unit type
 # Scope: Country
-# [INPUT] [REQUIRED] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia
+# [INPUT] [REQUIRED] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper.
 WA_AI_DIVISION_setup = {
 	# Validate required input parameters
 	set_temp_variable = { success = 1 }
@@ -377,7 +377,7 @@ WA_AI_DIVISION_setup = {
 		limit = {
 			NOT = {
 				check_variable = { _division_template > 0 }
-				check_variable = { _division_template < 6 }
+				check_variable = { _division_template < 7 }
 			}
 		}
 		set_temp_variable = { success = 0 }
@@ -674,7 +674,7 @@ WA_AI_DIVISION_setup = {
 
 # Calculates the equipment usage of a single division of the desired template at the specified equipment and manpower start factor, and determines how many can be fielded with current country stockpiles
 # Scope: Country
-# [INPUT] [REQUIRED] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia
+# [INPUT] [REQUIRED] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper.
 # [INPUT] [REQUIRED] _start_equipment - Float. The starting equipment of the spawned divisions AND will be taken from the stockpile of the country. Must be between 0.1 and 1.
 # [INPUT] [REQUIRED] _start_manpower - Float. The starting manpower of the spawned divisions. Must be between 0.1 and 1.
 # [INPUT] [OPTIONAL] _force_use_equipment_manpower - Integer Boolean. Whether to calculate the equipment and manpower useage of all requested divisions regardless of availability. Must be 0 or 1 (false or true). Defaults to 0.
@@ -693,7 +693,7 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 		limit = {
 			NOT = {
 				check_variable = { _division_template > 0 }
-				check_variable = { _division_template < 6 }
+				check_variable = { _division_template < 7 }
 			}
 		}
 		set_temp_variable = { success = 0 }
@@ -835,15 +835,20 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 			set_temp_variable = { num_divs_art_eq = num_equipment@artillery_equipment }
 			divide_temp_variable = { num_divs_art_eq = art_eq }
 			add_to_temp_array = { eq_requirements = num_divs_art_eq }
-			set_temp_variable = { num_divs_art_eq = num_equipment@pack_artillery_equipment }
-			divide_temp_variable = { num_divs_art_eq = p_art_eq }
-			add_to_temp_array = { eq_requirements = num_divs_p_art_eq }
 			set_temp_variable = { num_divs_at_eq = num_equipment@anti_tank_equipment }
 			divide_temp_variable = { num_divs_at_eq = at_eq }
 			add_to_temp_array = { eq_requirements = num_divs_at_eq }
 			set_temp_variable = { num_divs_supp_eq = num_equipment@support_equipment }
 			divide_temp_variable = { num_divs_supp_eq = supp_eq }
 			add_to_temp_array = { eq_requirements = num_divs_supp_eq }
+			if = {
+				limit = {
+					check_variable = { p_art_eq > 0 }
+				}
+				set_temp_variable = { num_divs_p_art_eq = num_equipment@pack_artillery_equipment }
+				divide_temp_variable = { num_divs_p_art_eq = p_art_eq }
+				add_to_temp_array = { eq_requirements = num_divs_p_art_eq }
+			}
 			if = {
 				limit = {
 					check_variable = { mot_eq > 0 }
@@ -1060,16 +1065,21 @@ WA_AI_DIVISION_remove_stockpiles = {
 			amount = art_eq
 		}
 		add_equipment_to_stockpile = {
-			type = pack_artillery_equipment
-			amount = p_art_eq
-		}
-		add_equipment_to_stockpile = {
 			type = anti_tank_equipment
 			amount = at_eq
 		}
 		add_equipment_to_stockpile = {
 			type = support_equipment
 			amount = supp_eq
+		}
+		if = {
+			limit = {
+				check_variable = { p_art_eq > 0 }
+			}
+			add_equipment_to_stockpile = {
+				type = pack_artillery_equipment
+				amount = p_art_eq
+			}
 		}
 		if = {
 			limit = {
@@ -1100,7 +1110,7 @@ WA_AI_DIVISION_remove_stockpiles = {
 		}
 		if = {
 			limit = { is_debug = yes }
-			log = "WA_AI_DIVISION_remove_stockpiles Country: [ROOT.GetName]. Removing [?l_inf_eq] l inf eq, [?h_inf_eq] h inf eq, [?art_eq] art eq, [?at_eq] at eq, [?supp_eq] supp eq, [?mot_eq] mot eq, [?mech_eq] mech eq, [?med_tank_eq] med armor eq, [?p_art_eq] p art eq for [?_num_divisions_spawn] division spawns of template [WA_AI_DIVISION_GetSpawnDivisionTemplate]"
+			log = "WA_AI_DIVISION_remove_stockpiles Country: [ROOT.GetName]. Removing [?l_inf_eq] l inf eq, [?h_inf_eq] h inf eq, [?art_eq] art eq, [?p_art_eq] p art eq, at eq, [?supp_eq] supp eq, [?mot_eq] mot eq, [?mech_eq] mech eq, [?med_tank_eq] med armor eq, [?p_art_eq] p art eq for [?_num_divisions_spawn] division spawns of template [WA_AI_DIVISION_GetSpawnDivisionTemplate]"
 		}
 
 		######################################################### Handle Manpower #########################################################
@@ -1129,7 +1139,7 @@ WA_AI_DIVISION_remove_stockpiles = {
 # [INPUT] [REQUIRED] _invasion_state_provinces - Array of integer Province IDs. The Province IDs in _invasion_state where the divisions will be spawned.
 # [INPUT] [REQUIRED] _target_country - Country ID. The country the invasion is targeting.
 # [INPUT] [OPTIONAL] _divisions_per_province - Integer. The number of divisions to spawn in each state. Must be between 1 and 10 inclusive. Defaults to 1.
-# [INPUT] [OPTIONAL] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia. Defaults to 1.
+# [INPUT] [OPTIONAL] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper. Defaults to 1.
 # [INPUT] [OPTIONAL] _start_experience - Float. The starting experience of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.45 (Regular 1).
 # [INPUT] [OPTIONAL] _start_equipment - Float. The starting equipment of the spawned divisions AND will be taken from the stockpile of the country. Must be between 0.1 and 1. Defaults to 1.
 # [INPUT] [OPTIONAL] _start_manpower - Float. The starting manpower of the spawned divisions. Must be between 0.1 and 1. Defaults to 1.
@@ -1167,7 +1177,7 @@ WA_AI_DIVISION_spawn_invasion = {
 		limit = {
 			OR = {
 				check_variable = { _division_template < 1 }
-				check_variable = { _division_template > 5 }
+				check_variable = { _division_template > 6 }
 			}
 		}
 		set_temp_variable = { _division_template = 1 }
