@@ -832,15 +832,17 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 			set_temp_variable = { num_divs_h_inf_eq = num_equipment@heavy_infantry_equipment }
 			divide_temp_variable = { num_divs_h_inf_eq = h_inf_eq }
 			add_to_temp_array = { eq_requirements = num_divs_h_inf_eq }
-			set_temp_variable = { num_divs_art_eq = num_equipment@artillery_equipment }
-			divide_temp_variable = { num_divs_art_eq = art_eq }
-			add_to_temp_array = { eq_requirements = num_divs_art_eq }
-			set_temp_variable = { num_divs_at_eq = num_equipment@anti_tank_equipment }
-			divide_temp_variable = { num_divs_at_eq = at_eq }
-			add_to_temp_array = { eq_requirements = num_divs_at_eq }
 			set_temp_variable = { num_divs_supp_eq = num_equipment@support_equipment }
 			divide_temp_variable = { num_divs_supp_eq = supp_eq }
 			add_to_temp_array = { eq_requirements = num_divs_supp_eq }
+			if = {
+				limit = {
+					check_variable = { art_eq > 0 }
+				}
+				set_temp_variable = { num_divs_art_eq = num_equipment@artillery_equipment }
+				divide_temp_variable = { num_divs_art_eq = art_eq }
+				add_to_temp_array = { eq_requirements = num_divs_art_eq }
+			}
 			if = {
 				limit = {
 					check_variable = { p_art_eq > 0 }
@@ -848,6 +850,14 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 				set_temp_variable = { num_divs_p_art_eq = num_equipment@pack_artillery_equipment }
 				divide_temp_variable = { num_divs_p_art_eq = p_art_eq }
 				add_to_temp_array = { eq_requirements = num_divs_p_art_eq }
+			}
+			if = {
+				limit = {
+					check_variable = { at_eq > 0 }
+				}
+				set_temp_variable = { num_divs_at_eq = num_equipment@anti_tank_equipment }
+				divide_temp_variable = { num_divs_at_eq = at_eq }
+				add_to_temp_array = { eq_requirements = num_divs_at_eq }
 			}
 			if = {
 				limit = {
@@ -1061,16 +1071,17 @@ WA_AI_DIVISION_remove_stockpiles = {
 			amount = h_inf_eq
 		}
 		add_equipment_to_stockpile = {
-			type = artillery_equipment
-			amount = art_eq
-		}
-		add_equipment_to_stockpile = {
-			type = anti_tank_equipment
-			amount = at_eq
-		}
-		add_equipment_to_stockpile = {
 			type = support_equipment
 			amount = supp_eq
+		}
+		if = {
+			limit = {
+				check_variable = { art_eq > 0 }
+			}
+			add_equipment_to_stockpile = {
+				type = artillery_equipment
+				amount = art_eq
+			}
 		}
 		if = {
 			limit = {
@@ -1079,6 +1090,15 @@ WA_AI_DIVISION_remove_stockpiles = {
 			add_equipment_to_stockpile = {
 				type = pack_artillery_equipment
 				amount = p_art_eq
+			}
+		}
+		if = {
+			limit = {
+				check_variable = { at_eq > 0 }
+			}
+			add_equipment_to_stockpile = {
+				type = anti_tank_equipment
+				amount = at_eq
 			}
 		}
 		if = {
