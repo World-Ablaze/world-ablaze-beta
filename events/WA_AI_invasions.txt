@@ -62,7 +62,7 @@ country_event = {
 
 #Weserubung
 country_event = {
-	id = WA_AI_invasions.Weserubung
+	id = WA_AI_invasions.3
 	hidden = yes
 
 	is_triggered_only = yes
@@ -98,7 +98,7 @@ country_event = {
 				if = {
 					limit = {
 						var:_target_country = { is_ai = no }
-						NOT = { has_country_flag = { flag = WA_AI_invasions.Weserubung_flag days > 179 } }
+						NOT = { has_country_flag = { flag = WA_AI_invasions.3_flag days > 179 } }
 					}
 					NOT = { has_enemy_naval_control = 250 } # Skagerrak
 				}
@@ -167,22 +167,22 @@ country_event = {
 					controls_state = 144 # Norde Norge
 				}
 			}
-			country_event = { id = WA_AI_invasions.Weserubung days = 7 }
+			country_event = { id = WA_AI_invasions.3 days = 7 }
 		}
 
 		# Seazone control delay mechanic
 		if = {
 			limit = {
 				has_enemy_naval_control = 250 # Skagerrak
-				NOT = { has_country_flag = WA_AI_invasions.Weserubung_flag }
+				NOT = { has_country_flag = WA_AI_invasions.3_flag }
 			}
-			set_country_flag = WA_AI_invasions.Weserubung_flag
+			set_country_flag = WA_AI_invasions.3_flag
 		}
 		else_if = {
 			limit = {
-				has_country_flag = { flag = WA_AI_invasions.Weserubung_flag days > 179 }
+				has_country_flag = { flag = WA_AI_invasions.3_flag days > 179 }
 			}
-			clr_country_flag = WA_AI_invasions.Weserubung_flag
+			clr_country_flag = WA_AI_invasions.3_flag
 		}
 	}
 }
@@ -226,6 +226,120 @@ country_event = {
 #########################################################################################
 #########################################  USA  #########################################
 #########################################################################################
+
+# Operation Torch
+country_event = {
+	id = WA_AI_invasions.4
+	hidden = yes
+
+	is_triggered_only = yes
+
+	trigger = {
+		is_ai = yes
+		WA_AI_DIFFICULTY_is_historical = yes
+	}
+
+	immediate = {
+		# Get target country tag
+		461 = { # Casablanca
+			CONTROLLER = {
+				set_temp_variable = { _target_country = id }
+			}
+		}
+
+		if = {
+			limit = {
+				# Triggers for invasion target country and states
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 461 # Casablanca
+					controls_state = 462 # Marrakech
+					controls_state = 459 # Algiers
+				}
+
+				# PLAYER ONLY seazone check
+				if = {
+					limit = {
+						var:_target_country = { is_ai = no }
+						NOT = { has_country_flag = { flag = WA_AI_invasions.4_flag days > 179 } }
+					}
+					NOT = { has_enemy_naval_control = 48 } # African Coast
+				}
+
+				# Triggers for invasion launch country
+				surrender_progress < 0.1
+
+				# Triggers for 'invasion launch states'
+				127 = { is_controlled_by_ROOT_or_ally = yes } # Sussex
+
+			}
+			set_temp_variable = { _divisions_per_province = 2 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _invasion_state = 461 } # Casablanca
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 7069 }
+			add_to_temp_array = { _invasion_state_provinces = 14134 }
+			add_to_temp_array = { _invasion_state_provinces = 10070 }
+			add_to_temp_array = { _invasion_state_provinces = 14133 }
+			add_to_temp_array = { _invasion_state_provinces = 11943 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _invasion_state = 462 } # Marrakech
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 1102 }
+			add_to_temp_array = { _invasion_state_provinces = 7203 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			# Only invade Algiers if Gibraltar is not enemy-controlled
+			if = {
+				limit = {
+					NOT = {
+						any_enemy_country = {
+							controls_state = 118 # Gibraltar
+						}
+					}
+				}
+				set_temp_variable = { _invasion_state = 459 } # Algiers
+				clear_temp_array = _invasion_state_provinces
+				add_to_temp_array = { _invasion_state_provinces = 7132 }
+				add_to_temp_array = { _invasion_state_provinces = 4116 }
+				add_to_temp_array = { _invasion_state_provinces = 11923 }
+				add_to_temp_array = { _invasion_state_provinces = 1145 }
+				add_to_temp_array = { _invasion_state_provinces = 11939 }
+				add_to_temp_array = { _invasion_state_provinces = 9964 }
+				WA_AI_DIVISION_spawn_invasion = yes
+			}
+		}
+		else_if = {
+			limit = {
+				# Only refire if the invasion target is still valid
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 461 # Casablanca
+					controls_state = 462 # Marrakech
+					controls_state = 459 # Algiers
+				}
+			}
+			country_event = { id = WA_AI_invasions.4 days = 7 }
+		}
+
+		# Seazone control delay mechanic
+		if = {
+			limit = {
+				has_enemy_naval_control = 48 # African Coast
+				NOT = { has_country_flag = WA_AI_invasions.4_flag }
+			}
+			set_country_flag = WA_AI_invasions.4_flag
+		}
+		else_if = {
+			limit = {
+				has_country_flag = { flag = WA_AI_invasions.4_flag days > 179 }
+			}
+			clr_country_flag = WA_AI_invasions.4_flag
+		}
+	}
+}
 
 # DDay
 country_event = {
@@ -280,16 +394,19 @@ country_event = {
 			set_temp_variable = { _divisions_per_province = 2 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
-			set_temp_variable = { _invasion_state = 15 }
+			set_temp_variable = { _invasion_state = 1016 } #Upper Normandy
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 13851 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _invasion_state = 15 } #Lower Normandy
 			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 3579 }
 			add_to_temp_array = { _invasion_state_provinces = 11535 }
 			add_to_temp_array = { _invasion_state_provinces = 6599 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _invasion_state = 1016 }
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 13851 }
+			set_temp_variable = { _divisions_per_province = 2 }
+			set_temp_variable = { _division_template = 6 } #paratroopers near omaha
+			add_to_temp_array = { _invasion_state_provinces = 13849 }
 			WA_AI_DIVISION_spawn_invasion = yes
 		}
 		else_if = {
