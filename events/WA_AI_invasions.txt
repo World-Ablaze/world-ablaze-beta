@@ -227,6 +227,101 @@ country_event = {
 #########################################  USA  #########################################
 #########################################################################################
 
+# Operation Husky
+country_event = {
+	id = WA_AI_invasions.5
+	hidden = yes
+
+	is_triggered_only = yes
+
+	trigger = {
+		is_ai = yes
+		WA_AI_DIFFICULTY_is_historical = yes
+	}
+
+	immediate = {
+		# Get target country tag
+		115 = { # Northern Sicily
+			CONTROLLER = {
+				set_temp_variable = { _target_country = id }
+			}
+		}
+
+		if = {
+			limit = {
+				# Triggers for invasion target country and states
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 115  # Northern Sicily
+					controls_state = 1032 # Southern Sicily
+				}
+
+				# PLAYER ONLY seazone check
+				if = {
+					limit = {
+						var:_target_country = { is_ai = no }
+						NOT = { has_country_flag = { flag = WA_AI_invasions.5_flag days > 179 } }
+					}
+					NOT = { has_enemy_naval_control = 29 } # Strait of Sicily
+				}
+
+				# Triggers for invasion launch country
+				surrender_progress < 0.1
+
+				# Triggers for 'invasion launch states'
+				458 = { is_controlled_by_ROOT_or_ally = yes } # Tunisia
+
+			}
+			set_temp_variable = { _divisions_per_province = 2 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _invasion_state = 115 } # Northern Sicily
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 4159  }
+			add_to_temp_array = { _invasion_state_provinces = 10074 }
+			add_to_temp_array = { _invasion_state_provinces = 1156  }
+			add_to_temp_array = { _invasion_state_provinces = 3857  }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _invasion_state = 1032 } # Southern Sicily
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 7059  }
+			add_to_temp_array = { _invasion_state_provinces = 4014  }
+			add_to_temp_array = { _invasion_state_provinces = 7147  }
+			add_to_temp_array = { _invasion_state_provinces = 13539 }
+			add_to_temp_array = { _invasion_state_provinces = 1009  }
+			add_to_temp_array = { _invasion_state_provinces = 13541 }
+			WA_AI_DIVISION_spawn_invasion = yes
+		}
+		else_if = {
+			limit = {
+				# Only refire if the invasion target is still valid
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 115  # Northern Sicily
+					controls_state = 1032 # Southern Sicily
+				}
+			}
+			country_event = { id = WA_AI_invasions.5 days = 7 }
+		}
+
+		# Seazone control delay mechanic
+		if = {
+			limit = {
+				has_enemy_naval_control = 29 # Strait of Sicily
+				NOT = { has_country_flag = WA_AI_invasions.5_flag }
+			}
+			set_country_flag = WA_AI_invasions.5_flag
+		}
+		else_if = {
+			limit = {
+				has_country_flag = { flag = WA_AI_invasions.5_flag days > 179 }
+			}
+			clr_country_flag = WA_AI_invasions.5_flag
+		}
+	}
+}
+
 # Operation Torch
 country_event = {
 	id = WA_AI_invasions.4
