@@ -1,0 +1,3209 @@
+AUS_antischluss_category = {
+
+	AUS_german_animosity_towards_high_command = {
+		icon = GFX_decision_generic_assassination
+		allowed = {tag = AUS }
+		priority = 100
+
+		activation = { #THIS INSTEAD OF VISIBLE!
+			
+			original_tag = AUS
+			has_country_flag = AUS_germans_plotting_murder_flag
+			OR = {
+				NOT = { has_war_with = GER}
+				NOT = { is_in_faction_with = GER}
+			}
+			GER = {
+				exists = yes
+				has_government = fascism
+			}
+				
+		}
+
+		available = {  hidden_trigger = { always = no } } 
+
+
+		cancel_if_not_visible = yes
+		is_good = no
+		fire_only_once = yes
+		selectable_mission = no
+		days_mission_timeout = 45
+
+		timeout_effect = {
+
+			custom_effect_tooltip = AUS_german_animosity_towards_high_command_tt
+			hidden_effect = {
+				IF = {
+					limit = { has_country_flag = AUS_securing_our_high_command }
+	
+					country_event = {
+						id = AUS_political_events.10
+						hours = 12
+					}
+				}
+				ELSE = {
+					country_event = {
+						id = AUS_political_events.9
+						hours = 12
+					}
+				}
+
+				clr_country_flag = AUS_germans_plotting_murder_flag
+			}
+		}
+	}
+
+	AUS_up_security_around_high_command = {
+		icon = GFX_decision_generic_army_support
+
+		allowed = { 
+			original_tag = AUS
+		}
+
+		visible = {
+				NOT = { is_subject_of =  GER  }
+				has_active_mission = AUS_german_animosity_towards_high_command
+		}
+		available = {
+				NOT = { is_subject_of =  GER  }
+				has_active_mission = AUS_german_animosity_towards_high_command
+		}
+
+
+		days_remove = 20
+
+		cost = 30
+
+		modifier = {
+			political_power_factor = -0.1
+		}
+
+		fire_only_once = yes
+
+		ai_will_do = {
+			base = 1
+			modifier = {
+				factor = 50
+				OR = {
+					has_government = democratic
+					has_government = communism
+				}
+			}
+		}
+
+		remove_effect = {
+			custom_effect_tooltip = AUS_up_security_around_high_command_tt
+
+			
+			set_country_flag = AUS_securing_our_high_command
+			
+		}
+
+	}
+	AUS_state_garrison = {
+		icon = GFX_decision_generic_protection
+
+		allowed = {
+			original_tag = AUS
+		} 
+
+		visible = {
+			is_subject = no
+		}
+		available = {
+			NOT = {
+				has_country_flag = AUS_antischluss_measures_flag
+			}
+			is_subject = no
+			has_civil_war = no
+		}
+
+		state_target = yes
+
+		on_map_mode = map_and_decisions_view
+
+		target_array = ROOT.core_states
+
+		target_trigger = {
+			FROM = {
+				NOT = {
+					has_dynamic_modifier =  { modifier = AUS_garrisoned_state_modifier }
+				}
+				is_fully_controlled_by = ROOT
+			}			
+		}
+		
+		cost = 25
+
+		fire_only_once = yes
+
+		days_remove = 30
+
+		ai_will_do = {
+			base = 1
+			modifier = {
+				factor = 50
+				FROM = {
+					any_neighbor_state = {
+						is_controlled_by = GER
+					}
+				}
+			}
+		}
+
+		cancel_trigger = {
+			has_civil_war = yes
+			
+			NOT = {
+				FROM = { is_fully_controlled_by = ROOT } 
+			}
+			
+		}
+
+		cancel_effect = {
+			clr_country_flag = AUS_antischluss_measures_flag
+		}
+
+		complete_effect = {
+			set_country_flag = AUS_antischluss_measures_flag
+		}
+
+		remove_effect = {
+			FROM = {
+				add_dynamic_modifier = {
+					modifier = AUS_garrisoned_state_modifier
+				}
+			}
+
+			clr_country_flag = AUS_antischluss_measures_flag
+		}
+	}
+
+	AUS_fortification_effort = {
+		icon = GFX_decision_generic_fortification
+
+		allowed = {
+			original_tag = AUS
+		}
+
+		visible = { 
+			NOT = { 
+				has_idea = AUS_fortification_effort_idea 
+				AUS_anschluss_risk_low = yes
+			}
+			OR = {
+				AUS_anschluss_risk_medium = yes
+				AUS_anschluss_risk_high = yes
+				AUS_anschluss_risk_critical = yes
+			}
+			is_subject = no
+		}
+		available = {
+			NOT = {
+				has_country_flag = AUS_antischluss_measures_flag
+				has_idea = AUS_fortification_effort_idea
+			}
+			OR = {
+				AUS_anschluss_risk_medium = yes
+				AUS_anschluss_risk_high = yes
+				AUS_anschluss_risk_critical = yes
+			}
+			is_subject = no
+			has_civil_war = no
+		}
+
+
+		cost = 50
+
+		days_remove = 30
+
+		ai_will_do = { #Please do not.
+			base = 0.1
+			modifier = {
+				factor = 10
+				OR = {
+					AUS_anschluss_risk_high = yes
+					AUS_anschluss_risk_critical = yes
+				}
+			}
+		}
+
+		cancel_trigger = {
+			AUS_anschluss_risk_low = yes
+			has_civil_war = yes
+		}
+
+		cancel_effect = {
+			clr_country_flag = AUS_antischluss_measures_flag
+		}
+
+		complete_effect = {
+
+			set_country_flag = AUS_antischluss_measures_flag
+
+			add_timed_idea = {
+				idea = AUS_fortification_effort_idea
+				days = 90
+			}
+		}
+
+		remove_effect = {
+			clr_country_flag = AUS_antischluss_measures_flag
+		}
+	}
+
+	AUS_civ_industry_effort_effort = {
+		icon = GFX_decision_generic_factory
+
+		allowed = {
+			original_tag = AUS
+		}
+
+		visible = {
+			NOT = { has_idea = AUS_civ_industry_effort_idea }
+			is_subject = no
+		}
+		available = {
+			NOT = {
+				has_country_flag = AUS_antischluss_measures_flag
+				has_idea = AUS_civ_industry_effort_idea
+			}
+			is_subject = no
+			has_civil_war = no
+		}
+
+		
+
+		cost = 50
+
+		days_remove = 30
+
+		ai_will_do = {
+			base = 3
+		}
+
+		cancel_trigger = {
+			has_civil_war = yes
+		}
+
+		cancel_effect = {
+			clr_country_flag = AUS_antischluss_measures_flag
+		}
+
+		complete_effect = {
+
+			set_country_flag = AUS_antischluss_measures_flag
+			
+			add_timed_idea = {
+				idea = AUS_civ_industry_effort_idea
+				days = 90
+			}
+		}
+
+		remove_effect = {
+			clr_country_flag = AUS_antischluss_measures_flag
+		}
+	}
+
+	AUS_arms_industry_effort_effort = {
+		icon = GFX_decision_generic_industry
+
+		allowed = {
+			original_tag = AUS
+		}
+
+		visible = {
+			NOT = { 
+				has_idea = AUS_arms_industry_effort_idea 
+			}
+			AUS_anschluss_risk_low = no
+			OR = {
+				AUS_anschluss_risk_medium = yes
+				AUS_anschluss_risk_high = yes
+				AUS_anschluss_risk_critical = yes
+			}
+			is_subject = no
+		}
+		available = {
+			NOT = {
+				has_country_flag = AUS_antischluss_measures_flag
+				has_idea = AUS_arms_industry_effort_idea
+			}
+			OR = {
+				AUS_anschluss_risk_medium = yes
+				AUS_anschluss_risk_high = yes
+				AUS_anschluss_risk_critical = yes
+			}
+			is_subject = no
+			has_civil_war = no
+		}
+
+		
+
+		cost = 50 
+		days_remove = 30
+
+		ai_will_do = {
+			base = 5
+		}
+
+		cancel_trigger = {
+			AUS_anschluss_risk_low = yes
+			has_civil_war = yes
+		}
+
+		cancel_effect = {
+			clr_country_flag = AUS_antischluss_measures_flag
+		}
+
+		complete_effect = {
+
+			set_country_flag = AUS_antischluss_measures_flag
+			
+			add_timed_idea = {
+				idea = AUS_arms_industry_effort_idea
+				days = 90
+			}
+		}
+
+		remove_effect = {
+			clr_country_flag = AUS_antischluss_measures_flag
+		}
+	}
+
+	AUS_extended_workshifts = {
+		icon = GFX_decision_generic_factory
+
+		allowed = {
+			original_tag = AUS
+		}
+
+		visible = {	
+			NOT = { 
+				has_idea = AUS_extended_workshifts_idea 
+			}
+			OR = {
+				AUS_anschluss_risk_low = no
+				AUS_anschluss_risk_medium = no
+			}
+			OR = {
+				AUS_anschluss_risk_high = yes
+				AUS_anschluss_risk_critical = yes
+			}
+			is_subject = no
+		}
+		available = {
+			NOT = {
+				has_country_flag = AUS_antischluss_measures_flag
+				has_idea = AUS_extended_workshifts_idea 
+			}
+			OR = {
+				AUS_anschluss_risk_high = yes
+				AUS_anschluss_risk_critical = yes
+			}
+			is_subject = no
+			has_civil_war = no
+		}
+
+		ai_will_do = {
+			base = 5
+			modifier = {
+				factor = 5
+				has_stability > 0.4
+			}
+			modifier = {
+				factor = 2
+				OR = {
+					AUS_anschluss_risk_high = yes
+					AUS_anschluss_risk_critical = yes
+				}
+			}
+		}
+
+		cost = 50 
+		days_remove = 30
+
+		cancel_trigger = {
+			OR = {
+				AUS_anschluss_risk_low = yes
+				AUS_anschluss_risk_medium = yes
+			}
+			has_civil_war = yes
+		}
+
+		cancel_effect = {
+			clr_country_flag = AUS_antischluss_measures_flag
+		}
+
+		complete_effect = {
+
+			set_country_flag = AUS_antischluss_measures_flag
+			
+			add_timed_idea = {
+				idea = AUS_extended_workshifts_idea 
+				days = 90
+			}
+
+			add_stability = -0.1
+		}
+
+		remove_effect = {
+			clr_country_flag = AUS_antischluss_measures_flag
+		}
+	}
+
+	AUS_recruitment_push = {
+		icon = GFX_decision_generic_military
+		allowed = {
+			original_tag = AUS
+		}
+
+		visible = {
+			NOT = {
+				has_idea = AUS_treaty_of_saint_germain_en_laye
+			}
+			OR = {
+				AUS_anschluss_risk_low = no
+				AUS_anschluss_risk_medium = no
+			}
+			OR = {
+				AUS_anschluss_risk_high = yes
+				AUS_anschluss_risk_critical = yes
+			}
+			is_subject = no
+		}
+		available = {
+			NOT = {
+				has_idea = AUS_treaty_of_saint_germain_en_laye
+				has_country_flag = AUS_antischluss_measures_flag
+			}
+			OR = {
+				AUS_anschluss_risk_high = yes
+				AUS_anschluss_risk_critical = yes
+			}
+			is_subject = no
+			has_civil_war = no
+		}
+
+
+
+		custom_cost_trigger = {
+			command_power > 25
+		}
+
+		custom_cost_text = decision_cost_CP_25
+
+		days_remove = 50
+
+		fire_only_once = yes
+
+		ai_will_do = {
+			base = 10
+			modifier = {
+				factor = 10
+				AUS_anschluss_risk_high = yes
+			}
+			modifier = {
+				factor = 10
+				AUS_anschluss_risk_critical = yes
+			}
+		}
+
+		cancel_trigger = {
+			OR = {
+				AUS_anschluss_risk_low = yes
+				AUS_anschluss_risk_medium = yes
+			}
+			has_civil_war = yes
+		}
+
+		cancel_effect = {
+			clr_country_flag = AUS_antischluss_measures_flag
+		}
+
+		complete_effect = {
+			set_country_flag = AUS_antischluss_measures_flag				
+		}
+		
+
+		remove_effect = {
+			clr_country_flag = AUS_antischluss_measures_flag
+
+			add_timed_idea = {
+				idea = AUS_recruitment_push_idea
+				days = 365
+			}
+
+			IF = {
+				limit = {
+					has_completed_focus = AUS_heimwehr_support
+				}
+
+				division_template = {
+					name = "Heimwehr Division"
+					priority = 1
+					division_names_group = AUS_INF_04
+					regiments = {
+						militia = { x = 0 y = 0 }
+						militia = { x = 0 y = 1 }
+						militia = { x = 0 y = 2 }
+				
+						militia = { x = 1 y = 0 }
+						militia = { x = 1 y = 1 }
+						militia = { x = 1 y = 2 }
+				
+					}
+					support = {
+						engineer = { x = 0 y = 0 }
+					}
+				}
+				random_owned_controlled_state = {
+					limit = { PREV = { has_full_control_of_state = PREV } }
+					create_unit = {
+						division = "name = \"3. Heimwehr Division\" division_template = \"Heimwehr Division\" start_experience_factor = 0.6" 
+						owner = PREV
+					}
+				}
+			}
+
+			ELSE_IF = {
+				limit = {
+					has_completed_focus = AUS_sturmscharen_support
+				}
+
+				division_template = {
+					name = "Sturmscharen Division"
+					priority = 1
+					division_names_group = AUS_INF_03
+					regiments = {
+						militia = { x = 0 y = 0 }
+						militia = { x = 0 y = 1 }
+						militia = { x = 0 y = 2 }
+				
+						militia = { x = 1 y = 0 }
+						militia = { x = 1 y = 1 }
+						militia = { x = 1 y = 2 }
+				
+					}
+					support = {
+						engineer = { x = 0 y = 0 }
+					}
+				}
+				random_owned_controlled_state = {
+					limit = { PREV = { has_full_control_of_state = PREV } }
+					create_unit = {
+						division = "name = \"3. Sturmscharen Division\" division_template = \"Sturmscharen Division\" start_experience_factor = 0.6" 
+						owner = PREV
+					}
+				}
+			}
+			ELSE_IF = {
+				limit = {
+					has_completed_focus = AUS_schutzbund_support
+				}
+
+				division_template = {
+					name = "Schutzbund Division"
+					priority = 1
+					division_names_group = AUS_INF_02
+					regiments = {
+						militia = { x = 0 y = 0 }
+						militia = { x = 0 y = 1 }
+						militia = { x = 0 y = 2 }
+				
+						militia = { x = 1 y = 0 }
+						militia = { x = 1 y = 1 }
+						militia = { x = 1 y = 2 }
+				
+					}
+					support = {
+						engineer = { x = 0 y = 0 }
+					}
+				}
+				random_owned_controlled_state = {
+					limit = { PREV = { has_full_control_of_state = PREV } }
+					create_unit = {
+						division = "name = \"3. Schutzbund Division\" division_template = \"Schutzbund Division\" start_experience_factor = 0.6" 
+						owner = PREV
+					}
+				}
+			}
+		}
+	}
+}
+
+AUS_supporting_italy_in_ethiopia_category = {
+
+	AUS_send_volunteers_to_italy = { 
+
+		icon = GFX_decision_generic_military
+
+		allowed = {
+			original_tag = AUS
+		}
+
+		visible = {
+			has_global_flag = second_italo_ethiopian_war_flag
+		}
+
+		available = {
+			has_global_flag = second_italo_ethiopian_war_flag
+		}
+
+		cost = 50
+
+		days_remove = 30
+
+		fire_only_once = yes
+
+		ai_will_do = {
+			base = 3
+			modifier = {
+				factor = 0.1
+				AUS_is_historical_ai = yes
+			}
+		}
+
+		complete_effect = {
+
+			add_relation_rule_override = {
+  				target = ITA
+  				can_send_volunteers = yes
+  			}	
+
+  			IF = {
+  				limit = {
+  					NOT = {
+  						has_idea = AUS_volunteer_effort
+  					}
+  				}
+  				
+  				add_ideas = AUS_volunteer_effort	
+  			}
+		}
+
+	}
+
+	AUS_send_infantry_equipment_to_italy = {
+
+		icon = GFX_decision_generic_prepare_civil_war
+		allowed = {
+			original_tag = AUS
+		}
+
+		visible = {
+			has_global_flag = second_italo_ethiopian_war_flag
+		}
+
+		available = {
+			has_global_flag = second_italo_ethiopian_war_flag
+		}
+
+
+		cost = 100
+
+		days_remove = 15
+
+		fire_only_once = yes
+
+		ai_will_do = {
+			base = 3
+			modifier = {
+				factor = 0.1
+				AUS_is_historical_ai = yes
+			}
+		}
+
+		complete_effect = {
+			ITA = { 
+				country_event = {
+					id = AUS_political_events.12
+					hours = 12
+				}
+			}
+			event_option_tooltip = AUS_political_events.12.a
+
+			set_country_flag = AUS_provided_infantry_equipment_for_italy_flag
+		}
+	}
+
+	AUS_speak_out_against_embargo = { #Speaking out against the Embargo against Italy
+		icon = GFX_decision_eng_trade_unions_demand
+		allowed = {
+			original_tag = AUS
+		}
+
+		visible = {
+			any_country = {
+				is_embargoing = ITA
+			}
+		}
+
+		available = {
+			any_country = {
+				is_embargoing = ITA
+			}
+			ROOT = {
+				NOT = {
+					is_embargoing = ITA
+				}
+			}
+		}
+
+		cost = 50
+
+		days_remove = 50
+
+		fire_only_once = yes
+
+		ai_will_do = {
+			base = 3
+			modifier = {
+				factor = 0.1
+				AUS_is_historical_ai = yes
+			}
+		}
+
+		remove_effect = {
+
+			set_country_flag = AUS_spoke_out_against_embargo_flag
+			
+			ITA = {
+				country_event = {
+					id = AUS_political_events.14
+					hours = 3
+				}
+			}
+
+			every_country = {
+				limit = { 
+					is_embargoing = ITA
+					is_league_of_nations_member = yes
+					NOT = {
+						tag = ROOT
+					}
+				}
+				country_event = {
+					id = AUS_political_events.13
+					hours = 6
+				}
+			}
+	
+		}
+	}
+}
+
+AUS_becoming_grossosterreich_category = {
+	AUS_integrating_german_cores_decision = {
+		icon = GFX_decision_generic_political_address
+		allowed = {
+			original_tag = AUS
+		}
+
+		visible = {
+			
+		}
+
+		available = { #No restraint on how many a player can do at the same time as that would have taken forever and I can already hear angry fans typing even considering that.
+			FROM = {
+				is_fully_controlled_by = AUS #can't integrate what you can't control
+			}
+		}
+
+		cost = 100
+
+		days_remove = 50
+
+		ai_will_do = {
+			base = 100
+		}
+
+		state_target = yes
+
+		on_map_mode = map_only #map only to not clog the decision ui with a huge list.
+
+		target_array = GER.core_states
+
+		target_trigger = {
+			
+			FROM = {
+				NOT = {
+					is_core_of = AUS
+				}
+			}	
+		}
+
+		complete_effect = {
+		}
+
+		remove_effect = {
+			FROM = {
+				add_core_of = AUS
+			}
+		}
+	}
+
+	AUS_becoming_grossosterreich_decision = {
+		icon = GFX_decision_eng_trade_unions_support
+		allowed = {
+			original_tag = AUS
+		}
+
+		visible = {
+
+		}
+
+		available = {
+			GER = {
+				all_core_state = {
+					is_core_of = AUS
+				}
+			}
+		}
+
+		cost = 50
+
+		days_remove = 30
+
+		fire_only_once = yes
+
+		ai_will_do = {
+			base = 10
+		}
+
+		remove_effect = {
+			IF = {
+				limit = {
+					has_government = fascism 
+				}
+
+				set_cosmetic_tag = AUS_grossosterreich_fascism
+			}
+			ELSE_IF = {
+				limit = {
+					has_government = neutrality 
+				}
+
+				set_cosmetic_tag = AUS_grossosterreich_neutrality
+			}
+		}
+	}
+}
+
+AUS_subjugating_the_lands_of_old_category = {
+
+	AUS_subjugating_the_lands_of_old_decision = {
+		icon = GFX_decision_hol_draw_up_staff_plans
+		priority = 80
+		ai_will_do = {
+			base = 5
+			modifier = {
+				factor = 2
+				FROM = {
+					OWNER = {
+						OR = {
+							has_non_aggression_pact_with = ROOT
+							has_country_flag = AUS_militarist_expansion_attempt_flag
+						}
+					}
+				}
+			}
+
+			modifier = {
+				factor = 2
+				FROM = {
+					OWNER = {
+						strength_ratio = {
+							tag = ROOT
+							ratio > 1
+						}
+					}
+				}
+			}
+
+			modifier = {
+				factor = 5
+				FROM = {
+					OWNER = {
+						count_triggers = {
+							amount > 1
+							has_country_flag = AUS_held_military_exercises_on_border_flag
+							has_country_flag = AUS_armed_guards_on_border_flag
+							has_country_flag = AUS_sent_industrial_suuport_flag
+							has_country_flag = AUS_held_joint_military_exercises_flag
+						}
+					}
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		state_target = yes
+
+		target_array = AUS.expansion_targets
+
+		on_map_mode = map_only
+
+		target_trigger = {
+			FROM = {
+				NOT = { has_state_flag = AUS_no_longer_expansion_target }
+				OR = {
+					OWNER = {
+						is_subject = no
+						NOT = { has_war_with = ROOT }
+						NOT = { is_in_faction_with = ROOT }
+						NOT = { has_country_flag = AUS_subjugation_demand_sent_flag }
+						NOT = { original_tag = ROOT}
+					}
+					OWNER = {
+						is_subject = yes
+						OVERLORD = {
+							NOT = { has_war_with = ROOT }
+							NOT = { is_in_faction_with = ROOT }
+							NOT = { has_country_flag = AUS_subjugation_demand_sent_flag }
+							NOT = { original_tag = ROOT}
+						}
+					}
+				}
+			}
+		}
+
+		allowed = {
+			original_tag = AUS
+		}
+
+		visible = {
+			has_completed_focus = AUS_demand_hungarian_submission
+			FROM = {
+				NOT = { has_state_flag = AUS_no_longer_expansion_target }
+			}	
+		}
+
+		available = {
+			is_subject = no
+			NOT = { has_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag }
+		}
+
+		days_remove = 30
+
+		custom_cost_trigger = {
+			command_power > 25
+			has_political_power > 50
+		}
+
+		custom_cost_text = decision_cost_CP_25_pp_50
+
+		cancel_trigger = {
+			FROM = {
+				OR = {
+					OWNER = {
+						exists = no
+						has_capitulated = yes
+						has_war_with = ROOT
+						is_subject = yes
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+		}
+
+		cancel_effect = {
+			clr_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+			FROM = {
+				clr_state_flag = AUS_currently_targets_this_landd_of_old_flag
+			}
+		}
+
+		complete_effect = {
+			set_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+			hidden_effect = {
+				add_political_power = -50
+				add_command_power = -25
+			}
+			FROM = {
+				set_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+				OWNER = {
+					set_country_flag = AUS_sent_ultimatum_flag
+				}
+			}
+		}
+
+		remove_effect = {
+			IF = {
+				limit = {
+					FROM = {
+						OWNER = {
+							is_subject = no
+						}
+					}
+				}
+
+				FROM = {
+					OWNER = {
+						country_event = {
+							id = AUS_political_events.43
+							hours = 6
+						}
+					}
+				}
+			}
+			
+
+			IF = {
+				limit = {
+					FROM = {
+						OWNER = {
+							is_subject = yes
+						}
+					}
+				}
+
+				FROM = {
+					OWNER = {
+						OVERLORD = {
+							country_event = {
+								id = AUS_political_events.43
+								hours = 6
+							}
+						}	
+					}
+				}
+			}
+
+			FROM = {
+				clr_state_flag = AUS_currently_targets_this_landd_of_old_flag
+			}
+
+			set_variable = {
+				var = AUS.potential_vassal
+				value = FROM.OWNER
+			}
+
+			clr_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+
+			custom_effect_tooltip = generic_skip_one_line_tt
+			custom_effect_tooltip = AUS_if_we_request_now_tt
+			custom_effect_tooltip = generic_skip_one_line_tt
+			custom_effect_tooltip = if_they_accept_tt
+			custom_effect_tooltip = AUS_subjugating_the_lands_of_old_decision_tt
+		}
+	}
+
+	AUS_annexing_the_lands_of_old_decision = {
+		icon = GFX_decision_generic_prepare_civil_war
+		priority = 80
+		ai_will_do = {
+			base = 2
+			modifier = {
+				factor = 2
+				FROM = {
+					OWNER = {
+						strength_ratio = {
+							tag = ROOT
+							ratio > 1
+						}
+					}
+				}
+			}
+			modifier = {
+				factor = 2
+				FROM = {
+					OWNER = {
+						OR = {
+							has_non_aggression_pact_with = ROOT
+							has_country_flag = AUS_militarist_expansion_attempt_flag
+						}
+					}
+				}
+			}
+
+			modifier = {
+				factor = 5
+				FROM = {
+					OWNER = {
+						count_triggers = {
+							amount > 1
+							has_country_flag = AUS_held_military_exercises_on_border_flag
+							has_country_flag = AUS_armed_guards_on_border_flag
+							has_country_flag = AUS_sent_industrial_suuport_flag
+							has_country_flag = AUS_held_joint_military_exercises_flag
+						}
+					}
+				}
+			}
+
+		}
+
+		fire_only_once = yes
+
+		state_target = yes
+
+		target_array = AUS.expansion_targets
+
+		on_map_mode = map_only
+
+		target_trigger = {
+			FROM = {
+				NOT = { has_state_flag = AUS_no_longer_expansion_target }
+				OWNER = {
+					NOT = { has_war_with = ROOT }
+					NOT = { is_in_faction_with = ROOT }
+					NOT = { has_country_flag = AUS_annexation_demand_sent_flag }
+					NOT = { original_tag = ROOT}
+				}
+			}
+		}
+
+		allowed = {
+			original_tag = AUS
+		}
+
+		visible = {
+			has_completed_focus = AUS_bring_hungary_back_into_the_fold	
+			FROM = {
+				NOT = { has_state_flag = AUS_no_longer_expansion_target }
+			}
+		}
+
+		available = {
+			is_subject = no
+			NOT = { has_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag }
+		}
+
+		days_remove = 30
+
+		custom_cost_trigger = {
+			command_power > 25
+			has_political_power > 50
+		}
+
+		custom_cost_text = decision_cost_CP_25_pp_50
+
+		cancel_trigger = {
+			FROM = {
+				OWNER = {
+					OR = {
+						exists = no
+						has_capitulated = yes
+						has_war_with = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+		}
+
+		cancel_effect = {
+			clr_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+			FROM = {
+				clr_state_flag = AUS_currently_targets_this_landd_of_old_flag
+			}
+		}
+
+		complete_effect = {
+			set_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+			hidden_effect = {
+				add_political_power = -50
+				add_command_power = -25
+			}
+
+			FROM = {
+				clr_state_flag = AUS_currently_targets_this_landd_of_old_flag
+				OWNER = {
+					set_country_flag = AUS_sent_ultimatum_flag
+				}
+			}
+		}
+
+		remove_effect = {
+			
+			IF = {
+				limit = {
+					FROM = {
+						OWNER = {
+							is_subject = no
+						}
+					}
+				}
+
+				FROM = {
+					OWNER = {
+						country_event = {
+							id = AUS_political_events.37
+							hours = 6
+						}
+					}
+				}
+			}
+			
+
+			IF = {
+				limit = {
+					FROM = {
+						OWNER = {
+							is_subject = yes
+						}
+					}
+				}
+
+				FROM = {
+					OWNER = {
+						OVERLORD = {
+							country_event = {
+								id = AUS_political_events.37
+								hours = 6
+							}
+						}	
+					}
+				}
+			}
+
+			FROM = {
+				OWNER = {
+					set_country_flag = is_current_expansion_target_for_AUS_flag
+				}
+			}
+
+			FROM = {
+				clr_state_flag = AUS_currently_targets_this_landd_of_old_flag
+			}
+
+			clr_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+
+			custom_effect_tooltip = generic_skip_one_line_tt
+			custom_effect_tooltip = AUS_if_we_request_now_tt
+			custom_effect_tooltip = generic_skip_one_line_tt
+			custom_effect_tooltip = if_they_accept_tt
+			custom_effect_tooltip = AUS_annexing_the_lands_of_old_decision_tt
+		}
+	}
+
+	AUS_anti_FROM_speech_decision = {
+		icon = GFX_decision_eng_blackshirt_speech
+		priority = 80
+		ai_will_do = {
+			base = 10
+			modifier = {
+				factor = 0.5
+				has_government = ROOT
+			}
+			modifier = {
+				factor = 5
+				FROM = {
+					OWNER = {
+						strength_ratio = {
+							tag = ROOT
+							ratio < 1
+						}
+					}
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		state_target = yes
+
+		target_array = AUS.expansion_targets
+
+		target_trigger = {
+			FROM = {
+				NOT = { has_state_flag = AUS_no_longer_expansion_target }
+				OWNER = {
+					NOT = { has_war_with = ROOT }
+					NOT = { is_in_faction_with = ROOT }
+					NOT = { original_tag = ROOT}
+					NOT = { 
+						OR = {
+							has_country_flag = AUS_subjugation_demand_sent_flag 
+							has_country_flag = AUS_annexation_demand_sent_flag
+						}
+						has_country_flag = AUS_diplomatic_expansion_attempt_flag
+						has_non_aggression_pact_with = ROOT
+					}
+				}
+			}
+		}
+
+		on_map_mode = map_only
+
+		allowed = {
+			original_tag = AUS
+		}
+
+		visible = {
+			FROM = {
+				NOT = { has_state_flag = AUS_no_longer_expansion_target }
+				OWNER = {
+					NOT = { has_country_flag = AUS_sent_ultimatum_flag }
+				}
+			}
+		}
+
+		available = {
+			NOT = { has_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag }
+
+			FROM = {
+				OWNER = {
+					is_neighbor_of = ROOT
+				}
+			}
+		}
+
+		days_remove = 30
+		cost = 50
+
+		cancel_trigger = {
+			FROM = {
+				OR = {
+					has_state_flag = AUS_no_longer_expansion_target
+					OWNER = {
+						OR = {
+							has_war_with = ROOT
+							has_capitulated = yes
+							exists = no
+							is_in_faction_with = ROOT
+							has_non_aggression_pact_with = ROOT
+							has_country_flag = AUS_sent_ultimatum_flag
+						}
+					}
+				}
+			}
+		}
+
+		cancel_effect = {
+			clr_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+
+			FROM = {
+				clr_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+				OWNER = {
+					clr_country_flag = AUS_went_militarist_with_FROM_OWNER_flag
+				}
+			}
+		}
+
+		complete_effect = {
+			set_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+			FROM = {
+				set_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+				OWNER = {
+					set_country_flag = AUS_went_militarist_with_FROM_OWNER_flag
+				}
+			}
+		}
+
+		remove_effect = {
+
+			clr_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+
+			FROM = {
+				clr_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+				OWNER = {
+					set_country_flag = AUS_militarist_expansion_attempt_flag
+					country_event = {
+						id = AUS_political_events.110
+						hours = 12
+					}
+				}
+			}
+			
+			custom_effect_tooltip = generic_skip_one_line_tt
+			custom_effect_tooltip = if_they_accept_tt
+			effect_tooltip = {
+				FROM = {
+					OWNER = {
+						diplomatic_relation = { 
+							country = ROOT
+							relation = non_aggression_pact
+							active = yes
+						}
+					}
+				}
+			}
+
+			custom_effect_tooltip = generic_skip_one_line_tt
+			custom_effect_tooltip = AUS_unlocks_militarist_decisions_tt
+		}
+	}
+
+	AUS_military_exercises_on_border_decision = {
+		icon = GFX_decision_generic_prepare_civil_war
+		priority = 80
+		ai_will_do = {
+			base = 3
+			modifier = {
+				factor = 0.5
+				has_government = ROOT
+			}
+			modifier = {
+				factor = 5
+				FROM = {
+					OWNER = {
+						strength_ratio = {
+							tag = ROOT
+							ratio < 1
+						}
+					}
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		state_target = yes 
+
+		target_array = AUS.expansion_targets
+
+		target_trigger = {
+			FROM = {
+				NOT = { has_state_flag = AUS_no_longer_expansion_target }
+				OWNER = {
+					has_country_flag = AUS_militarist_expansion_attempt_flag
+					NOT = { original_tag = ROOT}
+					NOT = { has_war_with = ROOT }
+					NOT = { is_in_faction_with = ROOT }
+					NOT = { 
+						OR = {
+							has_country_flag = AUS_subjugation_demand_sent_flag 
+							has_country_flag = AUS_annexation_demand_sent_flag
+						}
+					}
+				}
+			}
+		}
+
+		on_map_mode = map_only
+
+		allowed = {
+			original_tag = AUS
+		}
+
+		visible = {
+			FROM = {
+				NOT = { has_state_flag = AUS_no_longer_expansion_target }
+				OWNER = {
+					NOT = { has_country_flag = AUS_sent_ultimatum_flag }
+				}
+			}
+		}
+
+		available = {
+
+			NOT = { has_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag }
+			custom_trigger_tooltip = {
+				tooltip = AUS_military_exercises_on_border_decision_tt
+				FROM = {
+					OWNER = {
+						is_neighbor_of = ROOT
+						ROOT = {
+							any_controlled_state = {
+								ROOT = {
+									divisions_in_state = { 
+										state = PREV size > 2 
+									} 
+								}
+								any_neighbor_state = { 
+									is_fully_controlled_by = FROM.OWNER
+								}
+							}
+						}
+					}
+				}
+			}																				
+		}
+
+		days_remove = 15
+		cost = 50
+
+		cancel_trigger = {
+			FROM = {
+				OR = {
+					has_state_flag = AUS_no_longer_expansion_target
+					OWNER = {
+						OR = {
+							exists = no
+							has_capitulated = yes
+							has_war_with = ROOT
+							is_in_faction_with = ROOT
+							has_non_aggression_pact_with = ROOT
+							has_country_flag = AUS_sent_ultimatum_flag
+						}
+					}
+
+				}
+			}
+		}
+
+		cancel_effect = {
+			clr_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+			FROM = {
+				clr_state_flag = AUS_currently_targets_this_landd_of_old_flag
+			}
+		}
+
+		complete_effect = {
+			set_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+			FROM = {
+				set_state_flag = AUS_currently_targets_this_landd_of_old_flag
+			}
+		}
+
+		remove_effect = {
+
+			clr_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+			army_experience = 10
+
+			FROM = {
+				OWNER = {
+					country_event = {
+						id = AUS_political_events.108
+						hours = 12
+					}
+				}
+			}
+		}
+	}
+
+	AUS_arm_border_guards_decision = {
+		icon = GFX_decision_generic_reorganize_irregulars
+		priority = 80
+		ai_will_do = {
+			base = 3
+			modifier = {
+				factor = 0.5
+				has_government = ROOT
+			}
+			modifier = {
+				factor = 5
+				FROM = {
+					OWNER = {
+						strength_ratio = {
+							tag = ROOT
+							ratio < 1
+						}
+					}
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		state_target = yes
+
+		target_array = AUS.expansion_targets
+
+		target_trigger = {
+			FROM = {
+				NOT = { has_state_flag = AUS_no_longer_expansion_target }
+				OWNER = {
+					has_country_flag = AUS_militarist_expansion_attempt_flag
+					NOT = { original_tag = ROOT}
+					NOT = { has_war_with = ROOT }
+					NOT = { is_in_faction_with = ROOT }
+					NOT = { 
+						OR = {
+							has_country_flag = AUS_subjugation_demand_sent_flag 
+							has_country_flag = AUS_annexation_demand_sent_flag
+						}
+					}
+				}
+				
+			}
+		}
+
+		on_map_mode = map_only
+
+		allowed = {
+			original_tag = AUS
+		}
+
+		visible = {
+			FROM = {
+				NOT = { has_state_flag = AUS_no_longer_expansion_target }
+				OWNER = {
+					NOT = { has_country_flag = AUS_sent_ultimatum_flag }
+				}
+			}
+		}
+
+		available = {
+			NOT = { has_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag }
+
+			FROM = {
+				OWNER = {
+					is_neighbor_of = ROOT
+				}
+			}
+		}
+
+		days_remove = 30
+		cost = 25
+
+		custom_cost_trigger = {
+			has_equipment = { infantry_equipment > 499 }
+		}
+		custom_cost_text = decision_cost_ie_500
+
+		cancel_trigger = {
+			FROM = {
+				has_state_flag = AUS_no_longer_expansion_target
+				OWNER = {
+					OR = {
+						exists = no
+						has_capitulated = yes
+						has_war_with = ROOT
+						is_in_faction_with = ROOT
+						has_non_aggression_pact_with = ROOT
+						has_country_flag = AUS_sent_ultimatum_flag
+					}
+				}
+			}
+		}
+
+		cancel_effect = {
+			clr_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+			FROM = {
+				clr_state_flag = AUS_currently_targets_this_landd_of_old_flag
+			}
+		}
+
+		complete_effect = {
+			set_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+			FROM = {
+				set_state_flag = AUS_currently_targets_this_landd_of_old_flag
+			}
+		}
+
+		remove_effect = {
+			clr_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+
+			FROM = {
+				clr_state_flag = AUS_currently_targets_this_landd_of_old_flag
+				OWNER = {
+					country_event = {
+						id = AUS_political_events.109
+						hours = 6
+					}
+				}
+			}
+		}
+	}
+
+	
+
+	AUS_offer_nap_decision = {
+		icon = GFX_decision_eng_trade_unions_support
+		priority = 80
+		ai_will_do = {
+			base = 5
+			modifier = {
+				factor = 10
+				has_government = ROOT
+			}
+
+			modifier = {
+				factor = 2
+				FROM = {
+					OWNER = {
+						strength_ratio = {
+							tag = ROOT
+							ratio > 1
+						}
+					}
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		state_target = yes
+
+		target_array = AUS.expansion_targets
+
+		target_trigger = {
+			FROM = {
+				NOT = { has_state_flag = AUS_no_longer_expansion_target }
+				OWNER = {
+					is_subject = no
+					NOT = { has_war_with = ROOT }
+					NOT = { is_in_faction_with = ROOT }
+					NOT = { original_tag = ROOT}
+					NOT = { 
+						OR = {
+							has_country_flag = AUS_subjugation_demand_sent_flag 
+							has_country_flag = AUS_annexation_demand_sent_flag
+						}
+						has_country_flag = AUS_militarist_expansion_attempt_flag
+					}
+				}
+				
+			}
+		}
+
+		on_map_mode = map_only
+
+		allowed = {
+			original_tag = AUS
+		}
+
+		visible = {
+			FROM = {
+				NOT = { has_state_flag = AUS_no_longer_expansion_target }
+				OWNER = {
+					NOT = {
+						has_country_flag = AUS_went_militarist_with_FROM_OWNER_flag 
+						has_country_flag = AUS_sent_ultimatum_flag 
+					}
+					NOT = { has_non_aggression_pact_with = ROOT }
+				}
+			}
+		}
+
+		available = {
+			NOT = { has_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag }
+		}
+
+		days_remove = 30
+		cost = 50
+
+		cancel_trigger = {
+			FROM = {
+				OR = {
+					has_state_flag = AUS_no_longer_expansion_target
+					OWNER = {
+						OR = {
+							exists = no
+							has_capitulated = yes
+							has_war_with = ROOT
+							is_subject = yes
+							is_in_faction_with = ROOT
+							has_non_aggression_pact_with = ROOT
+							has_country_flag = AUS_sent_ultimatum_flag
+						}
+					}
+				}
+			}
+		}
+
+		cancel_effect = {
+			clr_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+			FROM = {
+				clr_state_flag = AUS_currently_targets_this_landd_of_old_flag
+			}
+		}
+
+		complete_effect = {
+			set_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+			FROM = {
+				set_state_flag = AUS_currently_targets_this_landd_of_old_flag
+			}
+		}
+
+		remove_effect = {
+			FROM = { 
+				clr_state_flag = AUS_currently_targets_this_landd_of_old_flag
+				OWNER = {
+					country_event = {
+						id = AUS_political_events.111
+						hours = 6
+					}
+				}
+			}
+			clr_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+
+			custom_effect_tooltip = generic_skip_one_line_tt
+			custom_effect_tooltip = AUS_unlocks_diplomatic_decisions_tt
+		}
+	}
+
+	AUS_industrial_bribery_decision = {
+		icon = GFX_decision_generic_construction
+		priority = 80
+		ai_will_do = {
+			base = 2
+
+			modifier = {
+				factor = 10
+				has_government = ROOT
+			}
+
+			modifier = {
+				factor = 2
+				FROM = {
+					OWNER = {
+						strength_ratio = {
+							tag = ROOT
+							ratio > 1
+						}
+					}
+				}
+			}
+		}
+
+		fire_only_once = yes
+
+		state_target = yes
+
+		target_array = AUS.expansion_targets
+
+		target_trigger = {
+			FROM = {
+				NOT = { has_state_flag = AUS_no_longer_expansion_target }
+				OWNER = {
+					is_subject = no
+					NOT = { has_war_with = ROOT }
+					NOT = { original_tag = ROOT}
+					NOT = { is_in_faction_with = ROOT }
+					OR = {
+						has_non_aggression_pact_with = ROOT
+						has_country_flag = AUS_diplomatic_expansion_attempt_flag
+					}
+					NOT = { 
+						OR = {
+							has_country_flag = AUS_subjugation_demand_sent_flag 
+							has_country_flag = AUS_annexation_demand_sent_flag
+						}
+					}
+				}
+				
+			}
+		}
+
+		on_map_mode = map_only
+
+		allowed = {
+			original_tag = AUS
+		}
+
+		visible = {
+			FROM = {
+				NOT = { has_state_flag = AUS_no_longer_expansion_target }
+				OWNER = {
+					NOT = { has_country_flag = AUS_sent_ultimatum_flag }
+				}
+			}
+		}
+
+		available = {
+			NOT = { has_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag }
+			num_of_civilian_factories_available_for_projects > 1
+		}
+
+		days_remove = 30
+		cost = 50
+
+		modifier = {
+			civilian_factory_use = 2
+		}
+
+		cancel_trigger = {
+			FROM = {
+				OR = {
+					has_state_flag = AUS_no_longer_expansion_target
+					OWNER = {
+						OR = {
+							exists = no
+							has_capitulated = yes
+							has_war_with = ROOT
+							is_subject = yes
+							is_in_faction_with = ROOT
+							has_country_flag = AUS_sent_ultimatum_flag
+						}
+					}
+				}
+			}
+		}
+
+		cancel_effect = {
+			clr_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+			FROM = {
+				clr_state_flag = AUS_currently_targets_this_landd_of_old_flag
+			}
+		}
+
+		complete_effect = {
+			set_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+			FROM = {
+				set_state_flag = AUS_currently_targets_this_landd_of_old_Flag
+			}
+		}
+
+		remove_effect = {
+			clr_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+
+			FROM = {
+				clr_state_flag = AUS_currently_targets_this_landd_of_old_flag
+				OWNER = {
+					country_event = {
+						id = AUS_political_events.114
+						hours = 6
+					}
+				}
+			}
+		}
+	}
+
+	AUS_joint_military_exercises_decision = {
+		icon = GFX_decision_generic_military
+		priority = 80
+		ai_will_do = {
+			base = 2
+			modifier = {
+				factor = 10
+				has_government = ROOT
+			}
+
+			modifier = {
+				factor = 2
+				FROM = {
+					OWNER = {
+						strength_ratio = {
+							tag = ROOT
+							ratio > 1
+						}
+					}
+				}
+			}
+		}	
+
+		fire_only_once = yes
+
+		state_target = yes
+
+		target_array = AUS.expansion_targets
+
+		target_trigger = {
+			FROM = {
+				NOT = { has_state_flag = AUS_no_longer_expansion_target }
+				OWNER = {
+					is_subject = no
+					NOT = { has_war_with = ROOT }
+					NOT = { original_tag = ROOT}
+					NOT = { is_in_faction_with = ROOT }
+					OR = {
+						has_non_aggression_pact_with = ROOT
+						has_country_flag = AUS_diplomatic_expansion_attempt_flag
+					}
+					NOT = { 
+						OR = {
+							has_country_flag = AUS_subjugation_demand_sent_flag 
+							has_country_flag = AUS_annexation_demand_sent_flag
+						}
+					}
+				}
+				
+			}
+		}
+
+		on_map_mode = map_only
+
+		allowed = {
+			original_tag = AUS
+		}
+
+		visible = {
+			FROM = {
+				NOT = { has_state_flag = AUS_no_longer_expansion_target }
+				OWNER = {
+					NOT = { has_country_flag = AUS_sent_ultimatum_flag }
+				}
+			}
+		}
+
+		available = {
+			NOT = { has_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag }
+		}
+
+		days_remove = 30
+		cost = 50
+
+		cancel_trigger = {
+			FROM = {
+				OR = {
+					has_state_flag = AUS_no_longer_expansion_target
+					OWNER = {
+						OR = {
+							exists = no
+							has_capitulated = yes
+							has_war_with = ROOT
+							is_subject = yes
+							is_in_faction_with = ROOT
+							has_country_flag = AUS_sent_ultimatum_flag
+						}
+					}
+				}
+			}
+		}
+
+		cancel_effect = {
+			clr_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+			FROM = {
+				clr_state_flag = AUS_currently_targets_this_landd_of_old_flag
+			}
+		}
+
+		complete_effect = {
+			set_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+			FROM = {
+				set_state_flag = AUS_currently_targets_this_landd_of_old_Flag
+			}
+		}
+
+		remove_effect = {
+			clr_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+
+			FROM = {
+				clr_state_flag = AUS_currently_targets_this_landd_of_old_flag
+				OWNER = {
+					country_event = {
+						id = AUS_political_events.115
+						hours = 6
+					}
+				}
+			}
+		}
+	}
+
+	AUS_further_balkan_demands = {
+		icon = GFX_decision_eng_trade_unions_demand
+		priority = 75
+		ai_will_do = {
+			base = 0.1 #this is a player thing
+		}
+
+		fire_only_once = yes
+
+		target_trigger = {
+			FROM = {
+				capital_scope = { #if USA owns the balkans you can't do this, to optimise the trigger mainly as nothing much can be done to the rest
+					is_on_continent = europe
+				}
+				is_subject = no
+
+				NOT = { 
+					is_in_faction_with = ROOT 
+					has_war_with = ROOT 
+				}
+
+				OR = {
+					controls_state = 764
+					any_subject_country = {
+						controls_state = 764
+					}
+				}
+				OR = {
+					controls_state = 104
+					any_subject_country = {
+						controls_state = 104
+					}
+				}
+				OR = {
+					controls_state = 103
+					any_subject_country = {
+						controls_state = 103
+					}
+				}
+				OR = {
+					controls_state = 804
+					any_subject_country = {
+						controls_state = 804
+					}
+				}
+				OR = {
+					controls_state = 45
+					any_subject_country = {
+						controls_state = 45
+					}
+				}	
+			}
+		}
+
+		allowed = {
+			original_tag = AUS
+		}
+
+		visible = {
+			AND = {
+				OR = {
+					has_completed_focus = AUS_reclaiming_yugoslavian_territories
+					has_completed_focus = AUS_subjugate_lands_of_old
+				}
+
+				controls_state = 102
+				controls_state = 109
+				controls_state = 853
+			}
+		}
+
+		available = {
+			NOT = { has_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag }
+		}
+
+		days_remove = 30
+
+		custom_cost_trigger = {
+			command_power > 25
+			has_political_power > 50
+		}
+
+		custom_cost_text = decision_cost_CP_25_pp_50
+
+		cancel_trigger = {
+			FROM = {
+				OR =  {
+					is_subject = no
+					exists = no
+					has_capitulated = yes
+					is_in_faction_with = ROOT
+					has_war_with = ROOT
+				}
+			}
+
+			ROOT = {
+				controls_state = 764
+				controls_state = 104
+				controls_state = 103 
+				controls_state = 804
+				controls_state = 45
+			}
+		}
+
+		cancel_effect = {
+			clr_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+		}
+
+		complete_effect = {
+			set_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+			hidden_effect = {
+				add_political_power = -50
+				add_command_power = -25
+			}
+		}
+
+		remove_effect = {
+			clr_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+
+			FROM = {
+				country_event = {
+					id = AUS_political_events.119
+					hours = 6
+				}
+			}
+			
+		}
+	}
+
+	AUS_installing_a_habsburg_ruler_decision = {
+		icon = GFX_decision_generic_monarchy
+		priority = 70
+		ai_will_do = {
+			base = 0.1 #this is a player thing
+		}
+
+		fire_only_once = yes
+
+		targets = { POL CZE HUN CRO }
+
+		target_trigger = {
+			country_exists = FROM
+			NOT = { has_war_with = FROM }
+			FROM = {
+				is_subject_of = ROOT
+			}
+		}
+
+		allowed = {
+			original_tag = AUS
+		}
+
+		visible = {
+			OR = {
+				has_completed_focus = AUS_tighten_control_of_subjects
+				has_completed_focus = AUS_bring_hungary_back_into_the_fold
+			}
+			
+			has_country_leader = {
+				ruling_only = yes # default = yes
+				character = HUN_otto_von_habsburg
+			}
+		}
+
+		available = {
+			FROM = {
+				is_subject_of = ROOT
+			}
+		}
+
+		days_remove = 50
+		cost = 25
+
+		complete_effect = {
+
+		}
+
+		remove_effect = {
+
+			FROM = {
+				country_event = {
+					id = AUS_political_events.48
+					hours = 6
+				}
+
+				add_autonomy_score = { 
+					value = -100 
+					localization = AUS_habsburg_monarch
+				}
+			}
+
+			IF = {
+				limit = {
+					FROM = {
+						original_tag = POL
+						has_character = POL_karl_albrecht
+					}
+				}
+				FROM = {
+					drop_cosmetic_tag = yes
+					set_cosmetic_tag = POL_KINGDOM
+				}
+				
+			}
+
+			ELSE_IF = {
+				limit = {
+					FROM = {
+						original_tag = HUN
+						has_character = HUN_joseph_august_von_habsburg
+					}
+				}
+				FROM = {
+					drop_cosmetic_tag = yes
+					set_cosmetic_tag = HUN_transleithanian_kingdom
+				}
+				
+			}
+
+			ELSE_IF = {
+				limit = {
+					FROM = {
+						original_tag = CZE
+						has_character = CZE_albrecht_franz
+					}
+				}
+
+				FROM = {
+					drop_cosmetic_tag = yes
+					set_cosmetic_tag = CZE_kingdom_of_bohemia_and_silesia
+				}
+			}
+
+			ELSE_IF = {
+				limit = {
+					FROM = {
+						original_tag = CRO
+						has_character = CRO_joseph_francis
+					}
+				}
+
+				FROM = {
+					drop_cosmetic_tag = yes
+					set_cosmetic_tag = CRO_croatia_slavonia_kingdom
+				}
+			}
+
+			hidden_effect = {
+				IF = {
+					limit = {
+						FROM = {
+							original_tag = POL
+							has_character = POL_karl_albrecht
+						}
+					}
+
+					
+					POL = {
+						promote_character = POL_karl_albrecht
+					}
+						
+				}
+				ELSE_IF = {
+					limit = {
+						FROM = {
+							original_tag = HUN
+							has_character = HUN_joseph_august_von_habsburg
+						}
+					}
+					
+
+					
+					HUN = {
+						add_country_leader_role = {
+						    character = HUN_joseph_august_von_habsburg
+						    promote_leader = yes
+						    country_leader = {
+						        ideology = despotism
+						        expire = "1965.1.1.1"
+						        traits = { HUN_the_old_warden }
+						    }
+						}
+					}
+					
+				}
+				ELSE_IF = {
+					limit = {
+						FROM = {
+							original_tag = CZE
+							has_character = CZE_albrecht_franz
+						}
+					}
+
+					
+					CZE = {
+						
+						promote_character = CZE_albrecht_franz
+					}
+								
+				}
+
+				ELSE_IF = {
+					limit = {
+						FROM = {
+							original_tag = CRO
+							has_character = CRO_joseph_francis
+						}
+					}
+
+					
+					CRO = {
+						add_country_leader_role = {
+						    character = CRO_joseph_francis
+						    promote_leader = yes
+						    country_leader = {
+						        ideology = despotism
+						        expire = "1965.1.1.1"
+						        traits = { ban_of_croatia_slavonia }
+						    }
+						}
+					}
+								
+				}
+			}
+		}
+	}
+
+	AUS_hand_bosnia_to_our_cro_puppet = {
+		icon = GFX_decision_generic_form_nation
+		priority = 70
+		ai_will_do = {
+			base = 0.1 #this is a player thing
+		}
+
+		fire_only_once = yes
+
+		cost = 25
+
+		targets = { CRO }
+
+		days_remove = 5
+
+		target_trigger = {
+			FROM = {
+				#is_subject_of = ROOT
+				has_country_leader = {
+					ruling_only = yes
+					character = CRO_joseph_francis
+				}
+			}
+		}
+
+		allowed = {
+			original_tag = AUS
+		}
+
+		available = {
+			always = yes
+		}
+
+		visible = {
+			always = yes
+		}
+
+		cancel_trigger = {
+			FROM = {
+				NOT = {
+					is_subject_of = ROOT
+				}
+			}
+			ROOT = { is_subject = yes }
+
+		}
+
+		complete_effect = {
+
+		}
+
+		remove_effect = {
+			804 = {
+				transfer_state_to = FROM
+			}
+
+			104 = {
+				transfer_state_to = FROM
+			}
+		}
+	}
+}
+
+AUS_the_danubian_federation_category = {
+	AUS_the_danubian_federation_decision = {
+		icon = GFX_decision_generic_protection
+		priority = 80
+		ai_will_do = {
+			base = 5
+			modifier = {
+				factor = 10
+				FROM = {
+					has_government = ROOT
+				}
+			}
+		}
+		
+		fire_only_once = yes
+
+		targets = { HUN CZE SLO TRA CRO LBV SIL MNT BOS SLV YUG ROM BUL}
+
+		target_trigger = {
+			country_exists = FROM
+			NOT = { has_war_with = FROM }
+			NOT = { FROM = { is_subject_of = ROOT } }
+			NOT = { is_in_faction_with = FROM }
+			FROM = {
+				NOT = { has_country_flag = AUS_federation_invite_sent_flag }
+			}
+		}
+
+		allowed = {
+			original_tag = AUS
+		}
+		visible = {
+			has_completed_focus = AUS_invite_danubian_countries
+		}
+		available = {
+			is_subject = no
+			FROM = {
+				NOT = {
+					OR = {
+						is_subject = yes
+						has_war_with = ROOT
+					}
+				}
+				is_in_faction = no
+			}
+			NOT = {
+				has_country_flag = AUS_sending_invite_to_danubian_federation_flag
+			}
+
+			IF = {
+				limit = {
+					has_country_flag = {
+						flag = AUS_has_started_inviting_faction_members_flag
+					} 
+				}
+
+				has_country_flag = {
+					flag = AUS_recently_sent_invite_to_danubian_federation_flag
+					days > 30
+				}
+			}
+			
+		}
+
+		days_remove = 30
+
+		cost = 100
+
+		
+		complete_effect = {
+
+			FROM = {
+				save_event_target_as = alliance_applicant
+			}
+
+			set_country_flag = AUS_sending_invite_to_danubian_federation_flag
+
+			clr_country_flag = AUS_recently_sent_invite_to_danubian_federation_flag
+
+			IF = {
+				limit = {
+					NOT = {
+						has_country_flag = {
+							flag = AUS_has_started_inviting_faction_members_flag
+						}
+					}
+				}
+
+				set_country_flag = AUS_has_started_inviting_faction_members_flag
+			}
+		}
+
+		remove_effect = {
+
+			custom_effect_tooltip = AUS_the_danubian_federation_decision_tt
+
+			hidden_effect = {
+				FROM = {
+					country_event = {
+						id = generic.5
+						hours = 12
+					}
+					set_country_flag = AUS_federation_invite_sent_flag
+				}
+				clr_country_flag = AUS_sending_invite_to_danubian_federation_flag
+
+				set_country_flag = AUS_recently_sent_invite_to_danubian_federation_flag
+			}
+			
+		}
+	}
+
+	AUS_the_danubian_federation_observers_decision = {
+		icon = GFX_decision_generic_protection
+		priority = 70
+		ai_will_do = {
+			base = 2
+			modifier = {
+				factor = 5
+				FROM = {
+					has_government = ROOT
+				}
+			}
+		}
+		
+		fire_only_once = yes
+
+		targets = { FRA TUR GRE HOL LUX BEL MNT MAC }
+
+		target_trigger = {
+			country_exists = FROM
+			NOT = { has_war_with = FROM }
+			NOT = { FROM = { is_subject_of = ROOT } }
+			NOT = { is_in_faction_with = FROM }
+			FROM = {
+				NOT = { has_country_flag = AUS_federation_invite_sent_flag }
+			}
+		}
+
+		allowed = {
+			original_tag = AUS
+		}
+		visible = {
+			has_completed_focus = AUS_inviting_the_observers
+		}
+		available = {
+			is_subject = no
+			FROM = {
+				NOT = {
+					OR = {
+						is_subject = yes
+						has_war_with = ROOT
+					}
+				}
+				is_in_faction = no
+			}
+
+			NOT = {
+				has_country_flag = AUS_sending_invite_to_danubian_federation_flag
+			}
+
+			IF = {
+				limit = {
+					has_country_flag = {
+						flag = AUS_has_started_inviting_faction_members_flag
+					} 
+				}
+
+				has_country_flag = {
+					flag = AUS_recently_sent_invite_to_danubian_federation_flag
+					days > 30
+				}
+			}
+		}
+
+		days_remove = 30
+
+		cost = 100
+
+		
+		complete_effect = {
+
+			FROM = {
+				save_event_target_as = alliance_applicant
+			}
+
+			set_country_flag = AUS_sending_invite_to_danubian_federation_flag
+
+			clr_country_flag = AUS_recently_sent_invite_to_danubian_federation_flag
+
+			IF = {
+				limit = {
+					NOT = {
+						has_country_flag = {
+							flag = AUS_has_started_inviting_faction_members_flag
+						}
+					}
+				}
+
+				set_country_flag = AUS_has_started_inviting_faction_members_flag
+			}
+		}
+
+		remove_effect = {
+
+			custom_effect_tooltip = AUS_the_danubian_federation_decision_tt
+
+			
+
+			hidden_effect = {
+				FROM = {
+					country_event = {
+						id = generic.5
+						hours = 12
+					}
+					set_country_flag = AUS_federation_invite_sent_flag
+				}
+
+				set_country_flag = AUS_recently_sent_invite_to_danubian_federation_flag
+
+				clr_country_flag = AUS_sending_invite_to_danubian_federation_flag 
+			}
+			
+		}
+	}
+
+	AUS_industrial_coaxing_decision = {
+		icon = GFX_decision_generic_factory
+		priority = 60
+		ai_will_do = {
+			base = 2
+			modifier = {
+				factor = 2
+				FROM = {
+					has_government = ROOT
+				}
+			}
+		}
+		
+		fire_only_once = yes
+
+		targets = { FRA TUR GRE HOL LUX BEL MNT MAC HUN CZE SLO TRA CRO LBV SIL MNT BOS SLV YUG ROM BUL }
+
+		target_trigger = {
+			country_exists = FROM
+			NOT = { has_war_with = FROM }
+			NOT = { FROM = { is_subject_of = ROOT } }
+			is_in_faction_with = FROM 
+			FROM = {
+				NOT = { has_country_flag = AUS_sent_industrial_help_flag }
+			}
+		}
+
+		allowed = {
+			original_tag = AUS
+		}
+		visible = {
+			has_completed_focus = AUS_protector_of_the_danube
+			FROM = {
+				is_in_faction_with = ROOT
+			}
+		}
+		available = {
+			is_subject = no
+			num_of_civilian_factories_available_for_projects > 2
+			is_faction_leader = yes
+			NOT = { has_country_flag = AUS_currently_industrially_coaxing_faction_member_flag }
+			FROM = {
+				is_subject = no
+				is_in_faction_with = ROOT
+			}
+		}
+
+		days_remove = 50
+
+		cost = 100
+
+		modifier = {
+			civilian_factory_use = 3
+		}
+
+		complete_effect = {
+			set_country_flag = AUS_currently_industrially_coaxing_faction_member_flag
+		}
+
+		remove_effect = {
+			FROM = {
+				country_event = {
+					id = AUS_political_events.64
+					hours = 12
+				}
+			}
+			clr_country_flag = AUS_currently_industrially_coaxing_faction_member_flag
+			
+		}
+	}
+
+	AUS_trade_coaxing_descision = {
+		icon = GFX_decision_hol_attract_foreign_investors
+		priority = 50
+		ai_will_do = {
+			base = 2
+			modifier = {
+				factor = 2
+				FROM = {
+					has_government = ROOT
+				}
+			}
+		}
+		
+		fire_only_once = yes
+
+		targets = { FRA TUR GRE HOL LUX BEL MNT MAC HUN CZE SLO TRA CRO LBV SIL MNT BOS SLV YUG ROM BUL }
+
+		target_trigger = {
+			country_exists = FROM
+			NOT = { has_war_with = FROM }
+			NOT = { FROM = { is_subject_of = ROOT } }
+			is_in_faction_with = FROM 
+			FROM = {
+				NOT = { has_country_flag = AUS_sent_market_subsidies_flag }
+			}
+		}
+
+		allowed = {
+			original_tag = AUS
+			has_dlc = "Arms Against Tyranny"
+		}
+		visible = {
+			has_completed_focus = AUS_protector_of_the_danube
+			FROM = {
+				is_in_faction_with = ROOT
+			}
+		}
+		available = {
+			is_subject = no
+			is_faction_leader = yes
+			NOT = { has_country_flag = AUS_currently_sending_a_subsidy_flag }
+			FROM = {
+				is_subject = no
+				is_in_faction_with = ROOT
+			}
+		}
+
+		days_remove = 25
+
+		cost = 50
+
+
+		complete_effect = {
+			set_country_flag = AUS_currently_sending_a_subsidy_flag
+		}
+
+		remove_effect = {
+			FROM = {
+				country_event = {
+					id = AUS_political_events.65
+					hours = 12
+				}
+				set_country_flag = AUS_sent_market_subsidies_flag
+			}
+			clr_country_flag = AUS_currently_sending_a_subsidy_flag
+		}
+	}
+
+	AUS_propose_a_federative_union_decision = {
+		icon = GFX_decision_eng_trade_unions_demand
+		priority = 90
+		ai_will_do = {
+			base = 5
+			modifier = {
+				factor = 10
+				FROM = {
+					has_government = ROOT
+				}
+			}
+			modifier = {
+				factor = 0.1 #Very sparingly!
+				FROM = {
+					is_major = yes
+				}
+			}
+		}
+		
+		fire_only_once = yes
+
+		targets = { FRA TUR GRE HOL LUX BEL MNT MAC HUN CZE SLO TRA CRO LBV SIL BOS SLV YUG ROM BUL }
+
+		target_trigger = {
+			country_exists = FROM
+			NOT = { has_war_with = FROM }
+			NOT = { FROM = { is_subject_of = ROOT } }
+			is_in_faction_with = FROM 
+			FROM = {
+				NOT = { has_country_flag = AUS_sent_puppet_proposal_flag }
+			}
+		}
+
+		allowed = {
+			original_tag = AUS
+			has_dlc = "Gotterdammerung"
+		}
+		visible = {
+			has_completed_focus = AUS_protector_of_the_danube
+			FROM = {
+				is_in_faction_with = ROOT
+			}
+		}
+		available = {
+			is_subject = no
+			is_faction_leader = yes
+			FROM = {
+				is_subject = no
+				is_in_faction_with = ROOT
+			}
+		}
+
+		days_remove = 50
+
+		cost = 150
+
+		complete_effect = {
+			
+		}
+
+		remove_effect = {
+			FROM = {
+				country_event = {
+					id = AUS_political_events.66
+					hours = 12
+				}
+				set_country_flag = AUS_sent_puppet_proposal_flag
+			}
+			
+			custom_effect_tooltip = if_they_accept_tt
+			custom_effect_tooltip = generic_skip_one_line_tt
+			effect_tooltip = {
+				puppet = FROM
+
+				FROM = {
+					AUS_set_danubian_cosmetic_for_country = yes
+				}
+			}
+
+			custom_effect_tooltip = generic_skip_one_line_tt
+			custom_effect_tooltip = AUS_propose_a_federative_union_decision_more_likely_tt
+
+		}
+	}
+}
+
+AUS_danubian_communism_category = {
+
+
+	AUS_spur_danubian_communism_decision = {
+		icon = GFX_decision_generic_civil_support
+		priority = 80
+		ai_will_do = {
+			base = 5
+			modifier = {
+				factor = 10
+				FROM = {
+					is_neighbor_of = ROOT
+				}
+			}
+
+			modifier = {
+				factor = 0.1
+				FROM = {
+					is_major = yes
+				}
+			}
+		}
+		
+		fire_only_once = yes
+
+		targets = { HUN CZE SLO TRA CRO LBV SIL BOS SLV YUG ROM BUL FRA TUR GRE HOL LUX BEL MNT MAC }
+
+		target_trigger = {
+			country_exists = FROM
+
+			NOT = { has_war_with = FROM }
+			NOT = { FROM = { is_subject_of = ROOT } }
+			NOT = { is_in_faction_with = FROM }
+			FROM = {
+				has_capitulated = no
+				NOT = { 
+					has_country_flag = AUS_attempt_to_spur_communism_sent_flag 
+					has_government = communism
+				}
+			}
+		}
+
+		allowed = {
+			original_tag = AUS
+		}
+		visible = {
+			has_completed_focus = AUS_spur_the_communist_resistance
+		}
+		available = {
+			is_subject = no
+			FROM = {
+				NOT = {
+					OR = {
+						is_subject = yes
+						has_war_with = ROOT
+						has_government = communism
+					}
+				}
+			}
+		}
+
+		days_remove = 30
+
+		cost = 100
+
+		
+		complete_effect = {
+
+		}
+
+		remove_effect = {
+
+			FROM = {
+				country_event = {
+					id = AUS_political_events.84
+					hours = 12
+				}
+			}
+		}
+	}
+
+	AUS_demand_liberation_of_workers_decision = {
+		icon = GFX_decision_generic_political_rally
+		priority = 80
+		ai_will_do = {
+			base = 2
+			modifier = { #do this sparingly please
+				factor = 0.1
+				is_major = yes
+			}
+		}
+		
+		fire_only_once = yes
+
+		targets = { HUN CZE SLO TRA CRO LBV SIL MNT BOS SLV YUG ROM BUL FRA TUR GRE HOL LUX BEL MNT MAC }
+
+		target_trigger = {
+			country_exists = FROM
+			NOT = { has_war_with = FROM }
+			NOT = { FROM = { is_subject_of = ROOT } }
+			NOT = { is_in_faction_with = FROM }
+			FROM = {
+				has_capitulated = no
+				has_country_flag = AUS_austria_boosting_communism_here_flag
+				NOT = { 
+					has_country_flag = AUS_demand_to_liberate_workers_sent_flag 
+					has_government = communism
+				}
+			}
+		}
+
+		allowed = {
+			original_tag = AUS
+		}
+		visible = {
+			has_completed_focus = AUS_demand_liberation_of_workers
+		}
+		available = {
+			is_subject = no
+			FROM = {
+				is_subject = no
+				NOT = {
+					OR = {
+						has_war_with = ROOT
+						has_government = communism
+					}
+				}
+			}
+		}
+
+		days_remove = 50
+
+		cost = 150
+
+		
+		complete_effect = {
+
+		}
+
+		remove_effect = {
+
+			FROM = {
+				country_event = {
+					id = AUS_political_events.87
+					hours = 12
+				}
+				set_country_flag = AUS_demand_to_liberate_workers_sent_flag 
+			}
+		}
+	}
+}
+
+AUS_reintegrating_the_empire_category = {
+	AUS_reintegrate_FROM_italy_decision = {
+		icon = GFX_decision_category_generic_propaganda
+		priority = 80
+		ai_will_do = {
+			base = 100 #whenever you can!
+		}
+
+		fire_only_once = yes
+
+		state_target = yes
+
+		target_trigger = {
+			FROM = {
+				
+				OR = {
+					# Italy
+					state = 39 #Alto Adige
+					state = 850 #Trentino
+					state = 160 #Veneto
+					state = 159 #Lombardia
+					state = 736 #Litorale
+					state = 852 #Istria
+					state = 163 #Zara
+				}
+				
+				is_fully_controlled_by = ROOT
+
+				NOT = {
+					is_core_of = ROOT
+				}
+			}
+			
+		}
+
+		allowed = {
+			original_tag = AUS
+		}
+
+		visible = {
+			has_completed_focus = AUS_extend_italian_claims
+		}
+
+		available = {
+			NOT = { has_country_flag = AUS_currently_reintegrating_state_flag }
+		}
+
+		cost = 100
+
+		days_remove = 90
+
+		cancel_trigger = {
+			FROM = {
+				NOT = {
+					is_fully_controlled_by = ROOT
+				}
+			}
+		}
+
+		cancel_effect = {
+			clr_country_flag = AUS_currently_reintegrating_state_flag
+		}
+
+		complete_effect = {
+			set_country_flag = AUS_currently_reintegrating_state_flag
+		}
+
+		remove_effect = {
+			clr_country_flag = AUS_currently_reintegrating_state_flag
+
+			FROM = {
+				add_core_of = ROOT
+			}
+		}
+	}
+
+	AUS_reintegrate_FROM_switzerland_decision = {
+		icon = GFX_decision_category_generic_propaganda
+		priority = 80
+		ai_will_do = {
+			base = 50 #This is kinda weird but go forth and SLAY I guess?
+		}
+
+		fire_only_once = yes
+
+		state_target = yes
+
+		target_trigger = {
+			FROM = {
+					
+				OR = {
+					#Switzerland
+					state = 151 #Eastern Swiss Alps
+					state = 846 #Ticio
+					state = 847 #Western Swiss Alps
+					state = 3 #Swiss Plateau
+					state = 845 #Jura Mountains
+				}
+
+				is_fully_controlled_by = ROOT
+
+				NOT = {
+					is_core_of = ROOT
+				}
+			}
+			
+		}
+
+		allowed = {
+			original_tag = AUS
+		}
+
+		visible = {
+			has_completed_focus = AUS_reclaim_habsburg
+		}
+
+		available = {
+			NOT = { has_country_flag = AUS_currently_reintegrating_state_flag }
+		}
+
+		cost = 100
+
+		days_remove = 90
+
+		cancel_trigger = {
+			FROM = {
+				NOT = {
+					is_fully_controlled_by = ROOT
+				}
+			}
+		}
+
+		cancel_effect = {
+			clr_country_flag = AUS_currently_reintegrating_state_flag
+		}
+
+		complete_effect = {
+			set_country_flag = AUS_currently_reintegrating_state_flag
+		}
+
+		remove_effect = {
+			clr_country_flag = AUS_currently_reintegrating_state_flag
+
+			FROM = {
+				add_core_of = ROOT
+			}
+		}
+	}
+}
+
