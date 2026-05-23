@@ -1,0 +1,3163 @@
+on_actions = {
+	
+	# FROM is the faction Leader, ROOT is the country leaving the faction 
+	on_leave_faction = {
+
+		effect = {
+			IF = {
+				limit = {
+					FROM = {
+						original_tag = GER
+						has_completed_focus = GER_shared_rd_programs_ww
+					}
+				}
+				FROM = {
+					GER_one_less_member_decrease_rnd_program_strength = yes
+				}
+			}
+		}
+
+		effect = { # Removing Joint Focus Tree modifiers 
+			IF = {
+				limit = {
+					ROOT = {
+						HABSBURG_is_a_habsburg_viable_nation = yes
+						NOT = {
+							tag = global.AH_originator_country
+						}
+						OR = {
+							is_subject = no
+							AND = {
+								is_subject = yes
+								NOT = {
+									is_subject_of = global.AH_originator_country
+								}
+							}
+						}
+					}
+					FROM = {
+						OR = {
+							original_tag = AUS
+							original_tag = HUN
+						}
+						tag = global.AH_originator_country
+					}
+				}
+				IF = {
+					limit = {
+						ROOT = {
+							has_dynamic_modifier = {
+								modifier = HABSBURG_army_modifier
+							}	
+						}
+					}
+					ROOT = {
+						remove_dynamic_modifier = {
+							modifier = HABSBURG_army_modifier
+						}
+					}
+				}
+				IF = {
+					limit = {
+						ROOT = {
+							has_dynamic_modifier = {
+								modifier = HABSBURG_cavalry_modifier
+							}	
+						}
+					}
+					ROOT = {
+						remove_dynamic_modifier = {
+							modifier = HABSBURG_cavalry_modifier
+						}
+					}
+				}
+				IF = {
+					limit = {
+						ROOT = {
+							has_dynamic_modifier = {
+								modifier = HABSBURG_economy_dynamic_modifier
+							}	
+						}
+					}
+					ROOT = {
+						remove_dynamic_modifier = {
+							modifier = HABSBURG_economy_dynamic_modifier
+						}
+					}
+				}
+				IF = {
+					limit = {
+						ROOT = {
+							has_dynamic_modifier = {
+								modifier = HABSBURG_joint_industry_modifier
+							}	
+						}
+					}
+					ROOT = {
+						remove_dynamic_modifier = {
+							modifier = HABSBURG_joint_industry_modifier
+						}
+					}
+				}
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_tech_sharing_group_activated_flag
+						}
+					}
+					ROOT = {
+						remove_from_tech_sharing_group = HABSBURG_tech_sharing_group
+					}
+				}
+			}
+			#German Autarky Trade Influence Stuff
+			if = {
+				limit = {
+					OR = {
+						FROM = { 
+							has_opinion_modifier = GER_autarky_trade_opinion
+						}
+						ROOT = { #In case Germany isn't faction leader any more
+							has_opinion_modifier = GER_autarky_trade_opinion
+						}
+					}
+				}
+				if = { #If Germany is faction leader, remove German trade Influence
+					limit = {
+						FROM = { 
+							has_opinion_modifier = GER_autarky_trade_opinion
+						}
+					}
+					ROOT = { #Remove trade opinion
+						remove_opinion_modifier = {
+							target = FROM
+							modifier = GER_autarky_trade_opinion
+						}
+					}
+				}
+				if = { #If Germany is NOT faction leader any more; remove German trade influence
+					limit = {
+						ROOT = { 
+							has_opinion_modifier = GER_autarky_trade_opinion
+						}
+					}
+					FROM = { #Remove trade opinion
+						remove_opinion_modifier = {
+							target = ROOT
+							modifier = GER_autarky_trade_opinion
+						}
+					}
+				}
+				if = { #If Germany is faction leader; remove faction leader trade influence
+					limit = {
+						ROOT = { 
+							has_opinion_modifier = GER_german_trade_opinion
+						}
+					}
+					FROM = { #Remove trade opinion
+						remove_opinion_modifier = {
+							target = ROOT
+							modifier = GER_german_trade_opinion
+						}
+					}
+				}
+				if = { #If Germany is NOT faction leader any more; remove faction leader trade influence
+					limit = {
+						FROM = { 
+							has_opinion_modifier = GER_german_trade_opinion
+						}
+					}
+					ROOT = { #Remove trade opinion
+						remove_opinion_modifier = {
+							target = FROM
+							modifier = GER_german_trade_opinion
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+
+	#FROM is faction leader on join faction requests. THIS DOES NOT FIRE ON ADD_TO_FACTION EFFECT! USE ON_OFFER_JOIN_FACTION!
+	on_join_faction = { 
+
+		effect = {
+			IF = {
+				limit = {
+					FROM = {
+						original_tag = GER
+						has_completed_focus = GER_shared_rd_programs_ww
+					}
+				}
+				FROM = {
+					GER_one_more_member_increase_rnd_program_strength = yes
+				}
+				
+			}
+		}
+
+		effect = { # Adding the correct stuff for faction joiners for the AH joint focus tree
+			IF = {
+				limit = {
+					FROM = {
+						OR = {
+							original_tag = AUS
+							original_tag = HUN
+						}
+						tag = global.AH_originator_country
+					}
+					ROOT = {
+						HABSBURG_is_a_habsburg_viable_nation = yes
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_tech_sharing_group_activated_flag
+						}
+						ROOT = {
+							NOT = {
+								is_in_tech_sharing_group = HABSBURG_tech_sharing_group
+							}
+						}
+					}
+					ROOT = {
+						add_to_tech_sharing_group = HABSBURG_tech_sharing_group
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_economy_spirit_activated_flag
+						}
+						ROOT = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = HABSBURG_economy_dynamic_modifier
+								}
+							}
+						}
+					}
+					ROOT = {
+						add_dynamic_modifier = { modifier = HABSBURG_economy_dynamic_modifier }
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_industry_spirit_activated_flag
+						}
+						ROOT = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = HABSBURG_joint_industry_modifier
+								}
+							}
+						}
+					}
+					ROOT = {
+						add_dynamic_modifier = { modifier = HABSBURG_joint_industry_modifier }
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_army_spirit_activated_flag
+						}
+						ROOT = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = HABSBURG_army_modifier
+								}
+							}
+						}
+					}
+					ROOT = {
+						add_dynamic_modifier = { modifier = HABSBURG_army_modifier }
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_cavalry_spirit_activated_flag
+						}
+						ROOT = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = HABSBURG_cavalry_modifier
+								}
+							}
+						}
+					}
+					ROOT = {
+						add_dynamic_modifier = { modifier = HABSBURG_cavalry_modifier }
+					}
+				}
+			}
+
+			#German Autarky Trade Influence Stuff
+			if = {
+				limit = {
+					FROM = { 
+						original_tag = GER
+						is_faction_leader = yes
+						has_completed_focus = GER_autarky_efforts
+					}
+				}
+				if = { #This is a fail safe to not boost trade relations to ridiculous levels 
+					limit = {
+						ROOT = {
+							NOT = { has_opinion_modifier = GER_german_trade_opinion }
+						}
+					}
+					FROM = { #Increase trade opinion, making it more likely that they trade and receive resources from Germany
+						add_opinion_modifier = {
+							target = ROOT
+							modifier = GER_german_trade_opinion
+						}
+					}
+				}
+				if = {  #This is a fail safe to not boost trade relations to ridiculous levels 
+					limit = {
+						FROM = {
+							NOT = { has_opinion_modifier = GER_autarky_trade_opinion }
+						}
+					}
+					ROOT = { #Increase trade opinion, making it more likely that Germany trade and receive resources from ROOT
+						add_opinion_modifier = {
+							target = FROM
+							modifier = GER_autarky_trade_opinion
+						}
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					ROOT = { 
+						original_tag = GER
+						has_completed_focus = GER_autarky_efforts
+					}
+				}
+				if = { #This is a fail safe to not boost trade relations to ridiculous levels 
+					limit = {
+						FROM = {
+							NOT = { has_opinion_modifier = GER_german_trade_opinion }
+						}
+					}
+					ROOT = { #Increase trade opinion, making it more likely that they trade and receive resources from Germany
+						add_opinion_modifier = {
+							target = FROM
+							modifier = GER_german_trade_opinion
+						}
+					}
+				}
+				if = { #This is a fail safe to not boost trade relations to ridiculous levels 
+					limit = {
+						ROOT = {
+							NOT = { has_opinion_modifier = GER_autarky_trade_opinion }
+						}
+					}
+					FROM = { #Increase trade opinion, making it more likely that Germany trade and receive resources from ROOT
+						add_opinion_modifier = {
+							target = ROOT
+							modifier = GER_autarky_trade_opinion
+						}
+					}
+				}
+			}
+		}
+
+		effect = { # Adding the correct stuff for puppets for German Mitteleuropa stuff
+			IF = {
+				limit = {
+					FROM = {
+						original_tag = GER
+						OR = {
+							has_completed_focus = GER_pool_technical_know_how_ww
+							has_completed_focus = GER_pool_technical_know_how
+							has_completed_focus = GER_shared_rd_programs_ww
+							has_completed_focus = GER_shared_rd_programs
+							has_completed_focus = GER_establish_a_customs_union
+							has_completed_focus = GER_mitteleuropa_cooperation_sphere
+						}
+					}
+				}
+
+				GER_setup_faction_wide_aoe_effects_from = yes
+
+			}
+		}
+
+		effect = {
+			IF = {
+				limit = {
+					FROM = {
+						original_tag = BEL
+						has_completed_focus = BEL_interpreters
+					}
+				}
+				ROOT = {
+					add_ideas = BEL_interpreters_ns
+				}
+			}
+		}
+
+	}
+
+	# FROM is the country invited, THIS and ROOT are the faction leader.
+	on_offer_join_faction = { 
+
+		effect = {
+			IF = {
+				limit = {
+					ROOT = {
+						original_tag = GER
+						has_completed_focus = GER_shared_rd_programs_ww
+					}
+				}
+				ROOT = {
+					GER_one_more_member_increase_rnd_program_strength = yes
+				}
+				
+			}
+		}
+
+		effect = { # Adding the correct stuff for puppets for German Mitteleuropa stuff
+			IF = {
+				limit = {
+					ROOT = {
+						original_tag = GER
+						OR = {
+							has_completed_focus = GER_pool_technical_know_how_ww
+							has_completed_focus = GER_pool_technical_know_how
+							has_completed_focus = GER_shared_rd_programs_ww
+							has_completed_focus = GER_shared_rd_programs
+							has_completed_focus = GER_establish_a_customs_union
+							has_completed_focus = GER_mitteleuropa_cooperation_sphere
+						}
+					}
+				}
+
+				GER_setup_faction_wide_aoe_effects_root = yes
+
+			}
+		}
+
+		effect = { # Adding the correct stuff for faction joiners for the AH joint focus tree
+			IF = {
+				limit = {
+					ROOT = {
+						OR = {
+							original_tag = AUS
+							original_tag = HUN
+						}
+						tag = global.AH_originator_country
+					}
+					FROM = {
+						HABSBURG_is_a_habsburg_viable_nation = yes
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_tech_sharing_group_activated_flag
+						}
+						FROM = {
+							NOT = {
+								is_in_tech_sharing_group = HABSBURG_tech_sharing_group
+							}
+						}
+					}
+					FROM = {
+						add_to_tech_sharing_group = HABSBURG_tech_sharing_group
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_economy_spirit_activated_flag
+						}
+						FROM = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = HABSBURG_economy_dynamic_modifier
+								}
+							}
+						}
+					}
+					FROM = {
+						add_dynamic_modifier = { modifier = HABSBURG_economy_dynamic_modifier }
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_industry_spirit_activated_flag
+						}
+						FROM = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = HABSBURG_joint_industry_modifier
+								}
+							}
+						}
+					}
+					FROM = {
+						add_dynamic_modifier = { modifier = HABSBURG_joint_industry_modifier }
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_army_spirit_activated_flag
+						}
+						FROM = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = HABSBURG_army_modifier
+								}
+							}
+						}
+					}
+					FROM = {
+						add_dynamic_modifier = { modifier = HABSBURG_army_modifier }
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_cavalry_spirit_activated_flag
+						}
+						FROM = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = HABSBURG_cavalry_modifier
+								}
+							}
+						}
+					}
+					FROM = {
+						add_dynamic_modifier = { modifier = HABSBURG_cavalry_modifier }
+					}
+				}
+			}
+			#German Autarky Trade Influence Stuff
+			if = {
+				limit = {
+					ROOT = { 
+						original_tag = GER
+						is_faction_leader = yes
+						has_completed_focus = GER_autarky_efforts
+					}
+				}
+				if = { #This is a fail safe to not boost trade relations to ridiculous levels 
+					limit = {
+						FROM = {
+							NOT = { has_opinion_modifier = GER_german_trade_opinion }
+						}
+					}
+					ROOT = { #Increase trade opinion, making it more likely that they trade and receive resources from Germany
+						add_opinion_modifier = {
+							target = FROM
+							modifier = GER_german_trade_opinion
+						}
+					}
+				}
+				if = { #This is a fail safe to not boost trade relations to ridiculous levels 
+					limit = {
+						ROOT = {
+							NOT = { has_opinion_modifier = GER_autarky_trade_opinion }
+						}
+					}
+					FROM = { #Increase trade opinion, making it more likely that Germany trade and receive resources from ROOT
+						add_opinion_modifier = {
+							target = ROOT
+							modifier = GER_autarky_trade_opinion
+						}
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					FROM = { 
+						original_tag = GER
+						has_completed_focus = GER_autarky_efforts
+					}
+				}
+				if = { #This is a fail safe to not boost trade relations to ridiculous levels 
+					limit = {
+						ROOT = {
+							NOT = { has_opinion_modifier = GER_german_trade_opinion }
+						}
+					}
+					FROM = { #Increase trade opinion, making it more likely that they trade and receive resources from Germany
+						add_opinion_modifier = {
+							target = ROOT
+							modifier = GER_german_trade_opinion
+						}
+					}
+				}
+				if = {  #This is a fail safe to not boost trade relations to ridiculous levels 
+					limit = {
+						FROM = {
+							NOT = { has_opinion_modifier = GER_autarky_trade_opinion }
+						}
+					}
+					ROOT = { #Increase trade opinion, making it more likely that Germany trade and receive resources from ROOT
+						add_opinion_modifier = {
+							target = FROM
+							modifier = GER_autarky_trade_opinion
+						}
+					}
+				}
+			}
+		}
+
+		effect = {
+			IF = {
+				limit = {
+					ROOT = {
+						original_tag = BEL
+						has_completed_focus = BEL_interpreters
+					}
+				}
+				FROM = {
+					add_ideas = BEL_interpreters_ns
+				}
+			}
+		}
+	}
+
+	# FROM is the one that joins the faction. Trigger the following commands whenever a country creates a faction.	
+	on_create_faction = {
+
+		effect = { # Adding the correct stuff for faction joiners for the AH joint focus tree
+			IF = {
+				limit = {
+					ROOT = {
+						OR = {
+							original_tag = AUS
+							original_tag = HUN
+						}
+						tag = global.AH_originator_country
+					}
+					FROM = {
+						HABSBURG_is_a_habsburg_viable_nation = yes
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_tech_sharing_group_activated_flag
+						}
+						FROM = {
+							NOT = {
+								is_in_tech_sharing_group = HABSBURG_tech_sharing_group
+							}
+						}
+					}
+					FROM = {
+						add_to_tech_sharing_group = HABSBURG_tech_sharing_group
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_economy_spirit_activated_flag
+						}
+						FROM = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = HABSBURG_economy_dynamic_modifier
+								}
+							}
+						}
+					}
+					FROM = {
+						add_dynamic_modifier = { modifier = HABSBURG_economy_dynamic_modifier }
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_industry_spirit_activated_flag
+						}
+						FROM = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = HABSBURG_joint_industry_modifier
+								}
+							}
+						}
+					}
+					FROM = {
+						add_dynamic_modifier = { modifier = HABSBURG_joint_industry_modifier }
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_army_spirit_activated_flag
+						}
+						FROM = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = HABSBURG_army_modifier
+								}
+							}
+						}
+					}
+					FROM = {
+						add_dynamic_modifier = { modifier = HABSBURG_army_modifier }
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_cavalry_spirit_activated_flag
+						}
+						FROM = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = HABSBURG_cavalry_modifier
+								}
+							}
+						}
+					}
+					FROM = {
+						add_dynamic_modifier = { modifier = HABSBURG_cavalry_modifier }
+					}
+				}
+			}
+		}
+	}
+
+	# ROOT is the nation being puppeted, FROM is the overlord. 	OBS: Trigger the following commands whenever a country is puppeted in a peace conference only.
+	on_puppet = {
+
+		effect = { # Fixing a weird issue with control of Greenland
+			IF = {
+				limit = {
+					ROOT = {
+						original_tag = GRN
+					}
+				}
+				101 = {
+					set_state_controller_to = GRN 
+				}
+			}
+		}
+
+		effect = {
+			IF = {
+				limit = {
+					FROM = {
+						original_tag = GER
+						has_completed_focus = GER_shared_rd_programs_ww
+					}
+					ROOT = {
+						NOT = { is_in_faction_with = FROM }
+					}
+				}
+				FROM = {
+					GER_one_more_member_increase_rnd_program_strength = yes
+				}
+			}
+		}
+
+		effect = { # Adding the correct stuff for puppets for the AH joint focus tree
+			IF = {
+				limit = {
+					FROM = {
+						OR = {
+							original_tag = AUS
+							original_tag = HUN
+						}
+						tag = global.AH_originator_country
+					}
+					ROOT = {
+						HABSBURG_is_a_habsburg_viable_nation = yes
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_tech_sharing_group_activated_flag
+						}
+						ROOT = {
+							NOT = {
+								is_in_tech_sharing_group = HABSBURG_tech_sharing_group
+							}
+						}
+					}
+					ROOT = {
+						add_to_tech_sharing_group = HABSBURG_tech_sharing_group
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_economy_spirit_activated_flag
+						}
+						ROOT = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = HABSBURG_economy_dynamic_modifier
+								}
+							}
+						}
+					}
+					ROOT = {
+						add_dynamic_modifier = { modifier = HABSBURG_economy_dynamic_modifier }
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_industry_spirit_activated_flag
+						}
+						ROOT = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = HABSBURG_joint_industry_modifier
+								}
+							}
+						}
+					}
+					ROOT = {
+						add_dynamic_modifier = { modifier = HABSBURG_joint_industry_modifier }
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_army_spirit_activated_flag
+						}
+						ROOT = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = HABSBURG_army_modifier
+								}
+							}
+						}
+					}
+					ROOT = {
+						add_dynamic_modifier = { modifier = HABSBURG_army_modifier }
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_cavalry_spirit_activated_flag
+						}
+						ROOT = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = HABSBURG_cavalry_modifier
+								}
+							}
+						}
+					}
+					ROOT = {
+						add_dynamic_modifier = { modifier = HABSBURG_cavalry_modifier }
+					}
+				}
+			}
+		}
+
+		effect = { # Adding the correct stuff for puppets for German Mitteleuropa stuff
+			IF = {
+				limit = {
+					FROM = {
+						original_tag = GER
+						is_faction_leader = yes
+						OR = {
+							has_completed_focus = GER_pool_technical_know_how_ww
+							has_completed_focus = GER_pool_technical_know_how
+							has_completed_focus = GER_shared_rd_programs_ww
+							has_completed_focus = GER_shared_rd_programs
+							has_completed_focus = GER_establish_a_customs_union
+							has_completed_focus = GER_mitteleuropa_cooperation_sphere
+						}
+					}
+				}
+
+				GER_setup_faction_wide_aoe_effects_from = yes
+
+			}
+		}
+
+	}
+
+	on_liberate = { # ROOT is the nation being liberated, FROM is the leader of the liberators.
+
+		effect = { # Fixing a weird issue with control of Greenland
+			IF = {
+				limit = {
+					ROOT = {
+						original_tag = GRN
+					}
+				}
+				101 = {
+					set_state_controller_to = GRN 
+				}
+			}
+		}
+		effect = {
+			# European States Array
+			if = {
+				limit = {
+					ROOT = {
+						capital_scope = { is_on_continent = europe }
+					}
+				}
+				add_to_array = { 
+					array = GER.GER_european_targets_array 
+					value = THIS
+				}
+			}
+		}
+		effect = { #If a Reichskommissariat is liberated through a peace conference, make Alfred Rosenberg suck a bit
+			IF = {
+				limit = {
+					ROOT = {
+						has_country_flag = GER_reichskommissariats_puppet_flag
+					}
+					GER = {
+						has_dynamic_modifier = { modifier = GER_alfred_rosenberg_modifier }
+					}
+				}
+				GER = {
+					GER_worsen_rosenbergs_trait_effect = yes
+				}
+				ROOT = {
+					clr_country_flag = GER_reichskommissariats_puppet_flag
+				}
+			}
+		}
+	}
+
+	# ROOT is the nation being released, FROM is the overlord. Trigger the following commands whenever puppeting through the occupied territories menu during peace time (or when releasing from non-core but owned territory).
+	on_release_as_puppet = {
+
+		effect = {
+			# European States Array
+			if = {
+				limit = {
+					ROOT = {
+						capital_scope = { is_on_continent = europe }
+					}
+				}
+				add_to_array = { 
+					array = GER.GER_european_targets_array 
+					value = THIS
+				}
+			}
+		}
+
+		effect = { # Fixing a weird issue with control of Greenland
+			IF = {
+				limit = {
+					ROOT = {
+						original_tag = GRN
+					}
+				}
+				101 = {
+					set_state_controller_to = GRN 
+				}
+			}
+		}
+
+		effect = { # Adding the correct stuff for puppets for the AH joint focus tree
+			IF = {
+				limit = {
+					FROM = {
+						OR = {
+							original_tag = AUS
+							original_tag = HUN
+						}
+						tag = global.AH_originator_country
+					}
+					ROOT = {
+						HABSBURG_is_a_habsburg_viable_nation = yes
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_tech_sharing_group_activated_flag
+						}
+						ROOT = {
+							NOT = {
+								is_in_tech_sharing_group = HABSBURG_tech_sharing_group
+							}
+						}
+					}
+					ROOT = {
+						add_to_tech_sharing_group = HABSBURG_tech_sharing_group
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_economy_spirit_activated_flag
+						}
+						ROOT = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = HABSBURG_economy_dynamic_modifier
+								}
+							}
+						}
+					}
+					ROOT = {
+						add_dynamic_modifier = { modifier = HABSBURG_economy_dynamic_modifier }
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_industry_spirit_activated_flag
+						}
+						ROOT = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = HABSBURG_joint_industry_modifier
+								}
+							}
+						}
+					}
+					ROOT = {
+						add_dynamic_modifier = { modifier = HABSBURG_joint_industry_modifier }
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_army_spirit_activated_flag
+						}
+						ROOT = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = HABSBURG_army_modifier
+								}
+							}
+						}
+					}
+					ROOT = {
+						add_dynamic_modifier = { modifier = HABSBURG_army_modifier }
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_cavalry_spirit_activated_flag
+						}
+						ROOT = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier =  HABSBURG_cavalry_modifier
+								}
+							}
+						}
+					}
+					ROOT = {
+						add_dynamic_modifier = { modifier = HABSBURG_cavalry_modifier }
+					}
+				}
+			}
+		}
+
+		effect = { # Adding the correct stuff for puppets for the German Mitteleruopa faction stuff
+			IF = {
+				limit = {
+					FROM = {
+						original_tag = GER
+						is_faction_leader = yes
+						OR = {
+							has_completed_focus = GER_pool_technical_know_how_ww
+							has_completed_focus = GER_pool_technical_know_how
+							has_completed_focus = GER_shared_rd_programs_ww
+							has_completed_focus = GER_shared_rd_programs
+							has_completed_focus = GER_establish_a_customs_union
+							has_completed_focus = GER_mitteleuropa_cooperation_sphere
+						}
+					}
+				}
+
+				GER_setup_faction_wide_aoe_effects_from = yes
+
+			}
+		}
+
+		effect = {
+			IF = {
+				limit = {
+					ROOT = {
+						original_tag = TRA
+					}
+
+					AUS = {
+						OR = {
+							has_completed_focus = AUS_demand_romanian_lands
+							has_completed_focus = AUS_subjugate_lands_of_old
+						}
+					}
+				}
+
+				TRA = {
+					capital_scope = {
+						add_to_array = {
+							array = AUS.expansion_targets
+							value = THIS
+						}
+
+						log = "[THIS.GetName] was added to array"
+					}
+				}
+				
+			}
+		}
+
+	}
+
+	on_release_as_free = { #ROOT is free nation FROM is releaser.
+		effect = {
+			# European States Array
+			if = {
+				limit = {
+					ROOT = {
+						capital_scope = { is_on_continent = europe }
+					}
+				}
+				add_to_array = { 
+					array = GER.GER_european_targets_array 
+					value = THIS
+				}
+			}
+		}
+
+		effect = { # Fixing a weird issue with control of Greenland
+			IF = {
+				limit = {
+					ROOT = {
+						original_tag = GRN
+					}
+				}
+				101 = {
+					set_state_controller_to = GRN 
+				}
+			}
+		}
+
+		effect = {
+			IF = {
+				limit = {
+					ROOT = {
+						original_tag = TRA
+					}
+
+					AUS = {
+						OR = {
+							has_completed_focus = AUS_demand_romanian_lands
+							has_completed_focus = AUS_subjugate_lands_of_old
+						}
+						
+					}
+				}
+
+				TRA = {
+					capital_scope = {
+						add_to_array = {
+							array = AUS.expansion_targets
+							value = THIS
+						}
+
+						log = "[THIS.GetName] was added to array"
+					}
+				}
+				
+			}
+		}
+	}
+
+	on_monthly = {
+
+		effect = {
+			IF = {
+				limit = {
+					ROOT = {
+						HABSBURG_is_a_habsburg_viable_nation = yes
+					}
+					any_other_country = {
+						tag = global.AH_originator_country
+						has_subject = ROOT
+					}
+					ROOT = {
+						NOT = {
+							AND = {
+								is_in_tech_sharing_group = HABSBURG_tech_sharing_group
+								has_dynamic_modifier = {
+									modifier = HABSBURG_economy_dynamic_modifier
+								}
+								has_dynamic_modifier = {
+									modifier = HABSBURG_joint_industry_modifier
+								}
+								has_dynamic_modifier = {
+									modifier = HABSBURG_army_modifier
+								}
+								has_dynamic_modifier = {
+									modifier =  HABSBURG_cavalry_modifier
+								}
+							}
+						}
+					}
+					OR = {
+						has_global_flag = {
+							flag = AH_joint_tech_sharing_group_activated_flag
+						}
+						has_global_flag = {
+							flag = AH_joint_economy_spirit_activated_flag
+						}
+						has_global_flag = {
+							flag = AH_joint_industry_spirit_activated_flag
+						}
+						has_global_flag = {
+							flag = AH_joint_army_spirit_activated_flag
+						}
+						has_global_flag = {
+							flag = AH_joint_cavalry_spirit_activated_flag
+						}
+					}
+				}
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_tech_sharing_group_activated_flag
+						}
+						ROOT = {
+							NOT = {
+								is_in_tech_sharing_group = HABSBURG_tech_sharing_group
+							}
+						}
+					}
+					ROOT = {
+						add_to_tech_sharing_group = HABSBURG_tech_sharing_group
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_economy_spirit_activated_flag
+						}
+						ROOT = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = HABSBURG_economy_dynamic_modifier
+								}
+							}
+						}
+					}
+					ROOT = {
+						add_dynamic_modifier = { modifier = HABSBURG_economy_dynamic_modifier }
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_industry_spirit_activated_flag
+						}
+						ROOT = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = HABSBURG_joint_industry_modifier
+								}
+							}
+						}
+					}
+					ROOT = {
+						add_dynamic_modifier = { modifier = HABSBURG_joint_industry_modifier }
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_army_spirit_activated_flag
+						}
+						ROOT = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier = HABSBURG_army_modifier
+								}
+							}
+						}
+					}
+					ROOT = {
+						add_dynamic_modifier = { modifier = HABSBURG_army_modifier }
+					}
+				}
+
+				IF = {
+					limit = {
+						has_global_flag = {
+							flag = AH_joint_cavalry_spirit_activated_flag
+						}
+						ROOT = {
+							NOT = {
+								has_dynamic_modifier = {
+									modifier =  HABSBURG_cavalry_modifier
+								}
+							}
+						}
+					}
+					ROOT = {
+						add_dynamic_modifier = { modifier = HABSBURG_cavalry_modifier }
+					}
+				}
+			}
+		}
+	}
+
+	#ROOT is capitulated country, FROM is winner.
+	on_capitulation_immediate = {
+
+		# Remove German cores on Anschluss'ed Austria after German capitulation
+		effect = {
+			if = {
+				limit = {
+					original_tag = GER
+					has_country_flag = AUS_annexed
+				}
+				for_each_scope_loop = {
+					array = AUS.AUS_initial_states
+					if = {
+						limit = {
+							is_core_of = GER
+						}
+						remove_core_of = GER
+					}
+				}
+			}
+		}
+
+		# Jan Zumbach flees to the UK if in faction with them when Poland caps
+		effect = {
+			IF = {
+				limit = {
+					original_tag = POL
+					is_in_faction_with = ENG
+					NOT = {
+						has_global_flag = jan_zumbach_fled_to_britain
+					}
+				}
+				country_event = {
+					id = ww_congo.70
+					hours = 2
+					random_hours = 4
+				}	
+				set_global_flag = jan_zumbach_fled_to_britain
+			}
+		}
+
+		effect = { #If a Reichskommissariat has capitulated, make Alfred Rosenberg suck a bit
+			IF = {
+				limit = {
+					ROOT = {
+						has_country_flag = GER_reichskommissariats_puppet_flag
+					}
+					GER = {
+						has_dynamic_modifier = { modifier = GER_alfred_rosenberg_modifier }
+					}
+				}
+				GER = {
+					GER_worsen_rosenbergs_trait_effect = yes
+				}
+				ROOT = {
+					clr_country_flag = GER_reichskommissariats_puppet_flag
+				}
+			}
+		}
+
+		#Count how many major countries Germany has capped so they can take the Supreme Leader Focus
+		effect = {
+			if = {
+				limit = {
+					FROM = {
+						original_tag = GER
+					}
+					ROOT = {
+						is_major = yes
+					}
+				}
+				FROM = {
+					add_to_variable = { GER_capitulated_major_countries = 1 }
+				}
+			}
+		}
+	}
+	
+	
+	on_capitulation = { # ROOT is capitulated country, FROM is winner
+
+		effect = { #recall the volunteers for ITA from ETH as war can go on and troops are needed
+			IF = { 
+				limit = {
+					original_tag = ETH
+					FROM = { tag = ITA }
+					ITA = {
+						has_volunteers_amount_from = {
+							tag = AUS
+							count > 0
+						}
+					}
+				}
+				AUS = {
+					recall_volunteers_from = ITA 
+				}
+			}
+		}
+
+		effect = { #Set the new flag and fire event when HAI capitulates to AUS
+			IF = {
+				limit = {
+					original_tag = HAI
+					FROM = { tag = AUS }
+				}
+				AUS = {
+					set_cosmetic_tag = AUS_true_liechtenstein 
+
+					country_event = {
+						id = AUS_political_events.95
+						days = 10
+					}
+				}
+			}
+		}
+
+		effect = {
+			IF = {
+				limit = {
+					FROM = {
+						OR = {
+							original_tag = GER
+							original_tag = SOV
+						}
+	
+					}
+					GER = {
+						has_completed_focus = GER_spheres_of_influence
+						has_country_flag = GER_SOV_agreed_sphere_of_influence
+					}
+	
+					ROOT = {
+						original_tag = POL
+					}
+				}
+
+				FROM = {
+					set_country_flag = capitulated_POL_flag
+
+					country_event = {
+						id = wuw_GER_diplomacy.87
+						hours = 12
+					}
+				}
+			}
+		}
+
+		effect = {
+			IF = {
+				limit = {
+					FROM = {
+						OR = {
+							original_tag = GER
+							original_tag = SOV
+						}
+		
+					}
+					GER = {
+						has_completed_focus = GER_spheres_of_influence
+						has_country_flag = GER_SOV_agreed_sphere_of_influence
+					}
+		
+					ROOT = {
+						original_tag = CZE
+					}
+				}
+
+				FROM = {
+					set_country_flag = capitulated_CZE_flag
+
+					country_event = {
+						id = wuw_GER_diplomacy.87
+						hours = 12
+					}
+				}
+			}
+		}
+
+		effect = {
+			IF = {
+				limit = {
+					FROM = {
+						AND = {
+							GER = {
+								has_country_leader = {
+									ruling_only = yes
+									character = GER_erich_raeder
+								}
+							}
+							OR = {
+								original_tag = GER
+								is_in_faction_with = GER
+							}
+						}						
+					}
+					ROOT = {
+						original_tag = ENG
+					}
+				}
+
+				GER = {
+					set_country_flag = GER_won_naval_arms_race_flag
+				}
+			}
+		}
+
+		effect = {
+
+			IF = {
+				limit = {
+					ROOT = { 
+						capital_scope = {
+							is_in_array = {
+								array = AUS.expansion_targets
+								value = THIS
+							}
+						}
+					}
+				}
+
+				ROOT = {
+					capital_scope = {
+						remove_from_array = {
+							array = AUS.expansion_targets
+							value = THIS
+						}
+						set_state_flag = AUS_no_longer_expansion_target
+					}
+				}
+				
+			}
+		}
+	}
+	
+	on_war = {
+
+		effect = { #if he survived, have Brumowski offer to become an AUS advisor
+			IF = {
+				limit = { 
+					original_tag = AUS  
+					has_global_flag = {
+						flag = AUS_brumowski_survives_flag
+					}
+				}
+				AUS = {
+					country_event = {
+						id = AUS_political_events.19
+						hours = 12
+					}
+				}
+			}
+		}
+
+		effect = {
+			if = { #If Germany has completed one of the necessary focuses, give them a timed National Spirit when the next war breaks out
+				limit = {
+					original_tag = GER
+					NOT = { has_country_flag = GER_has_war_preparations_flag }
+					OR = {
+						has_completed_focus = GER_prepare_for_the_next_naval_blockade
+						has_completed_focus = GER_war_preparations
+					}
+				}
+				add_timed_idea = {
+					idea = GER_strengthened_supply_lines_ns
+					days = 730
+				}
+				set_country_flag = GER_has_war_preparations_flag
+			}
+		}
+
+	}
+
+	on_war_relation_added = {
+
+		effect = {
+			if = { #If Germany goes into a war with YUG or SER, they will want to occupy Serbia Proper (thus gettign claims), helps fix osme of the YUG occupation bordergore
+				limit = {
+					ROOT = {
+						original_tag = GER
+					}
+					OR = {
+						FROM = {
+							original_tag = YUG
+							original_tag = SER
+						}
+					}
+					107 = {
+						NOT = {
+							is_claimed_by = GER
+						}
+					}
+					108 = {
+						NOT = {
+							is_claimed_by = GER
+						}
+					}
+				}
+				107 = {
+					add_claim_by = GER
+				}
+				108 = {
+					add_claim_by = GER
+				}
+			}
+		}
+
+		effect = {
+			if = { #If Germany goes into a war with YUG or SER, they will want to occupy Serbia Proper (thus gettign claims), helps fix osme of the YUG occupation bordergore
+				limit = {
+					FROM = {
+						original_tag = GER
+					}
+					ROOT = {
+						OR = {
+							original_tag = YUG
+							original_tag = SER
+						}
+					}
+					107 = {
+						NOT = {
+							is_claimed_by = GER
+						}
+					}
+					108 = {
+						NOT = {
+							is_claimed_by = GER
+						}
+					}
+				}
+				107 = {
+					add_claim_by = GER
+				}
+				108 = {
+					add_claim_by = GER
+				}
+			}
+		}
+
+		effect = { # Hungary has now joined a German war with Horthy at its helm
+			IF = {
+				limit = { 
+					original_tag = HUN  
+					FROM = {
+						original_tag = SOV
+					}
+
+					is_subject = no
+					has_country_leader = {
+						ruling_only = yes
+						character = HUN_miklos_horthy
+					}
+					is_in_faction_with = GER
+
+					NOT = {
+						has_country_flag = HUN_time_at_war_together_with_germany
+					}
+
+				}
+				HUN = {
+					set_country_flag = HUN_time_at_war_together_with_germany
+				}
+			}
+		}
+
+		effect = {  #BEL Unknown Sympathies Trigger : BEL is being attacked, with Leopold still as king 
+			if = { 
+				limit = {
+					FROM = {
+						original_tag = BEL
+						has_country_flag = BEL_leopold_flag
+						NOT = {
+							has_country_flag = BEL_unknown_sympathies_triggered_flag
+						}
+					}
+				}
+				ROOT = {
+					BEL = { 
+						country_event = { id = ww_BEL_event_war.2 hours = 6 } 
+					}
+				}
+				set_country_flag = BEL_unknown_sympathies_triggered_flag
+			}
+		}
+	}
+
+	on_send_volunteers = { 
+
+		#sets a flag when AUS sends volunteers to SPA
+		effect = {
+			IF = { 
+				limit = {
+					original_tag = AUS
+					FROM = { 
+						tag = SPA
+					}
+				}
+				ROOT = { set_country_flag = AUS_volunteer_effort_SPA_flag }
+			}	
+		}
+
+		#sets a flag when AUS sends volunteers to SPR
+		effect = {
+			IF = { 
+				limit = {
+					original_tag = AUS
+					FROM = { 
+						tag = SPR
+					}
+				}
+				ROOT = { set_country_flag = AUS_volunteer_effort_SPR_flag }
+			}	
+		}
+
+		#sets a flag when AUS sends volunteers to ITA
+		effect = {
+			IF = { 
+				limit = {
+					original_tag = AUS
+					FROM = { 
+						tag = ITA
+					}
+				}
+				ROOT = { set_country_flag = AUS_volunteer_effort_ITA_flag }
+			}	
+		}
+
+	}
+	
+	# ROOT Tag FROM Project
+	# Triggered when a project is completed
+	on_project_completion = {
+		effect = { #achievement check
+			IF = { 
+				limit = {
+					ROOT = { original_tag = BEL }
+				}
+				add_to_variable = { BEL.special_projects_completed = 1 }
+			}
+		}
+	}
+
+
+
+	on_join_allies = { # ROOT is the country which joined, FROM is the country whose war was joined
+
+		# Hungary joins their allies' war, thus Pal Teleki "resigns"
+		effect = {
+			IF = {
+				limit = {
+					ROOT = {
+						original_tag = HUN
+					}
+					FROM = {
+						has_offensive_war = yes 
+					}
+					NOT = {
+						has_global_flag = HUN_entered_an_offensive_war_flag	
+					}
+				}
+				set_global_flag = HUN_entered_an_offensive_war_flag
+				IF = {
+					limit = {
+						ROOT = {
+							has_idea = HUN_pal_teleki
+						}
+					}
+					ROOT = {
+						remove_ideas = HUN_pal_teleki
+					}
+				}
+			}
+		}
+
+	}
+
+	on_call_allies = { # ROOT is the country which called, FROM is the country that joined
+
+		# Hungary joins their allies' war, thus Pal Teleki "resigns"
+		effect = {
+			IF = {
+				limit = {
+					ROOT = {
+						has_offensive_war = yes 
+					}
+					FROM = {
+						original_tag = HUN
+					}
+					NOT = {
+						has_global_flag = HUN_entered_an_offensive_war_flag	
+					}
+				}
+				set_global_flag = HUN_entered_an_offensive_war_flag
+				IF = {
+					limit = {
+						FROM = {
+							has_idea = HUN_pal_teleki
+						}
+					}
+					FROM = {
+						remove_ideas = HUN_pal_teleki
+					}
+				}
+			}
+		}
+
+	}
+
+	on_declare_war = {
+
+		# Hungary declares an offensive war, thus Pal Teleki "resigns"
+	    effect = {
+	        IF = {
+	            limit = {
+	            	ROOT = {
+	            		original_tag = HUN
+	            	}
+					FROM = {
+						NOT = {
+							AND = {
+								original_tag = RUT
+								is_in_faction = no
+								all_other_country = {
+									OR = {
+										NOT = {
+											has_guaranteed = PREV
+										}
+										is_ally_with = ROOT
+										has_guaranteed = ROOT
+									}
+								}
+							}
+						}
+					}
+	               	NOT = {
+	               		has_global_flag = HUN_entered_an_offensive_war_flag	
+	               	}
+	            }
+	            set_global_flag = HUN_entered_an_offensive_war_flag
+	            IF = {
+	            	limit = {
+	            		ROOT = {
+	            			has_idea = HUN_pal_teleki
+	            		}
+	            	}
+	            	ROOT = {
+	            		remove_ideas = HUN_pal_teleki
+	            	}
+	            }
+	        }
+	    }
+
+	    # Adds the Eastern Bulwark effects to Germany when entering war with the Soviets after having completed said focus
+	    effect = {
+	    	IF = { 
+	    		limit = {
+	    			OR = {
+	    				AND = {
+	    					tag = GER
+	    					FROM = { tag = SOV }
+	    				}
+	    				AND = {
+	    					tag = SOV
+	    					FROM = { tag = GER }
+	    				}
+	    				NOT = {
+	    					has_global_flag = GER_eastern_bulwark_already_triggered_flag
+	    				}
+	    			}
+	    			GER = { has_completed_focus = GER_build_the_eastern_bulwark }
+	    		}
+	    		hidden_effect = {
+	    			GER = { 
+	    				add_timed_idea = { idea = GER_the_eastern_bulwark_ns days = 360 }
+	    			}
+	    			set_global_flag = GER_eastern_bulwark_already_triggered_flag
+	    		}
+	    	}
+	    }
+
+	    # Launches an event for Germany that recalls their attaché to the Soviets
+	    effect = {
+	    	IF = { 
+	    		limit = {
+    				OR = {
+    					AND = {
+    						tag = GER
+    						FROM = { tag = SOV }
+    					}
+    					AND = {
+    						tag = SOV
+    						FROM = { tag = GER }
+    					}
+    				}
+    				GER = {
+    					has_government = fascism
+    					has_civil_war = no
+    				}
+	    		}
+	    		hidden_effect = {
+	    			GER = { 
+	    				country_event = {
+	    					id = wuw_GER_legions.2
+	    					hours = 4
+	    				}	
+	    			}
+	    		}
+	    	}
+	    }
+
+	}
+
+	on_startup = {
+		effect = {
+			# European States Array
+			every_country = {
+				limit = {
+					capital_scope = { is_on_continent = europe }
+				}
+				add_to_array = { 
+					array = GER.GER_european_targets_array 
+					value = THIS
+				}
+			}  
+		}
+
+		# Creates the Colonial Template Divisions for Belgium
+		effect = {
+			IF = {
+				limit = {
+					has_dlc = "Gotterdammerung"
+				}
+				295 = {
+					create_unit = {
+					    division = "name = \"1. Groupes de Force Publique du Congo Belge\" division_template = \"Force Publique\" start_experience_factor = 0.1 start_equipment_factor = 0.6"
+					    owner = BEL
+					    prioritize_location = 5117 # Leopoldville
+					}
+					create_unit = {
+					    division = "name = \"2. Groupes de Force Publique du Congo Belge\" division_template = \"Force Publique\" start_experience_factor = 0.1 start_equipment_factor = 0.4"
+					    owner = BEL
+					    prioritize_location = 10968 # Fort de Shinakasa
+					}
+				}
+			}
+			
+		}
+
+		effect = {
+			IF = {
+				limit = { has_dlc = "Gotterdammerung" }
+				random_list = {
+					999 = {
+						BEL = { set_country_flag = BEL_serious_waffle_flag }
+					}
+					1 = {
+						BEL = { set_country_flag = BEL_wunder_waffle_flag }
+					}
+				}
+			}
+			
+		}
+
+		effect = {
+			IF = {
+				limit = { has_dlc = "Gotterdammerung" }
+				set_variable = { global.deployed_manpower_ratio_needed_for_anschluss = 24 }
+				set_variable = { global.deployed_manpower_ratio_needed_for_anschluss_incrementor = 1 } #if this is changed, please update loc AUS_anschluss_ratio_lowered and AUS_anschluss_ratio_raised
+
+				set_variable = { global.low_anschluss_risk = global.deployed_manpower_ratio_needed_for_anschluss }
+
+				set_variable = { global.medium_anschluss_risk = global.deployed_manpower_ratio_needed_for_anschluss }
+
+				set_variable = { global.high_anschluss_risk = global.deployed_manpower_ratio_needed_for_anschluss }
+
+				multiply_variable = {
+					var = global.low_anschluss_risk
+					value = 0.5
+				}
+
+				multiply_variable = {
+					var = global.medium_anschluss_risk
+					value = 0.75
+				}
+
+				multiply_variable = {
+					var = global.high_anschluss_risk
+					value = 0.90
+				}
+			}
+		}
+	}
+
+	on_subject_free = {
+
+		# Sends Raoul van Overstraeten back to Belgium
+		effect = {
+			IF = {
+				limit = {
+					ROOT = {
+						original_tag = COG
+						has_character = BEL_raoul_van_overstraeten
+					}
+				}
+				ROOT = {
+					country_event = {
+						id = ww_congo.4
+						hours = 2
+					}	
+				}
+			}
+		}
+
+		# If the Belgian Congo is freed, they are no longer Belgian
+		effect = {
+			IF = {
+				limit = {
+					original_tag = COG
+					has_cosmetic_tag = COG_belgian_congo
+				}
+				COG = {
+					drop_cosmetic_tag = yes
+				}
+			}
+		}
+
+		effect = { #If a Reichskommissariat is freed, make Alfred Rosenberg suck a bit
+			IF = {
+				limit = {
+					ROOT = {
+						has_country_flag = GER_reichskommissariats_puppet_flag
+					}
+					GER = {
+						has_dynamic_modifier = { modifier = GER_alfred_rosenberg_modifier }
+					}
+				}
+				GER = {
+					GER_worsen_rosenbergs_trait_effect = yes
+				}
+				ROOT = {
+					clr_country_flag = GER_reichskommissariats_puppet_flag
+				}
+			}
+		}
+
+	}
+
+	on_peaceconference_ended = {
+
+		# Drop Belgian Congo cosmetic tag to set correct flag and name
+		effect = {
+			IF = {
+				limit = {
+					original_tag = COG
+					has_cosmetic_tag = COG_belgian_congo
+					NOT = {
+						is_subject_of = BEL
+					}
+				}
+				COG = {
+					drop_cosmetic_tag = yes
+				}
+			}
+		}
+
+	}
+
+	on_peace = {
+
+		# Hungary has now ended a war together with Germany, thus at the very least resetting the timer
+		effect = {
+			IF = {
+				limit = {
+					original_tag = HUN
+					has_country_flag = HUN_time_at_war_together_with_germany
+					NOT = { has_war_with = SOV }
+				}
+				clr_country_flag = HUN_time_at_war_together_with_germany
+			}
+		}
+	}
+
+	on_monthly_COG = {
+
+		# Checks to see if Rwanda should revolt against Congolese rule or not
+		effect = {
+			IF = {
+				limit = {
+					NOT = {
+						has_global_flag = rwandan_revolution_happened_flag
+					}
+					ROOT = {
+						is_subject = no
+						owns_state = 768
+						has_war = no
+					}
+					RWA = {
+						exists = no
+					}
+					768 = {
+						NOT = {
+							is_core_of = COG
+						}
+					}
+				}
+				country_event = {
+					id = ww_congo.20
+					hours = 6
+					random_hours = 24
+				}
+			}
+		}
+
+		# Checks to see if Burundi should revolt against Congolese rule or not
+		effect = {
+			IF = {
+				limit = {
+					NOT = {
+						has_global_flag = burundian_revolution_happened_flag
+					}
+					ROOT = {
+						is_subject = no
+						owns_state = 769
+						has_war = no
+					}
+					BRD = {
+						exists = no
+					}
+					769 = {
+						NOT = {
+							is_core_of = COG
+						}
+					}
+				}
+				country_event = {
+					id = ww_congo.21
+					days = 1
+					random_days = 2
+				}
+			}
+		}
+
+	}
+
+	on_monthly_ENG = {
+
+		# Jan Zumbach heads on over to the Congo
+		effect = {
+			IF = {
+				limit = {
+					original_tag = ENG
+					COG = {
+						exists = yes
+						NOT = {
+							has_war_with = ENG
+						}
+					}
+					has_global_flag = jan_zumbach_fled_to_britain
+					NOT = {
+						has_global_flag = jan_zumbach_wanted_to_go_to_the_congo
+					}
+					date > 1943.01.01
+				}
+				country_event = {
+					id = ww_congo.71
+					hours = 2
+					random_hours = 4
+				}	
+				set_global_flag = jan_zumbach_wanted_to_go_to_the_congo
+			}
+		}
+
+	}
+
+	on_ruling_party_change = {
+
+		effect = {
+			IF = { #Check if Germany helped a country to the warm embrace of socialism
+				limit = {
+					GER = {
+						has_completed_focus = GER_strengthen_the_proletarian_international
+					}
+					ROOT = {
+						is_in_array = {
+							array = GER.started_communist_cw_here
+							value = THIS
+						}
+						NOt = {
+							is_in_faction_with = GER
+						}
+					}
+				}
+				if = { #Invite European Commies to Germany's faction
+					limit = {
+						GER = {
+							NOT = { 
+								has_completed_focus = GER_root_out_imperialism
+							}
+						}
+						ROOT = {
+							capital_scope = { is_on_continent = europe}
+						}
+					}
+					ROOT = {
+						country_event = {
+							id = wuw_GER_diplomacy.83
+							hours = 6
+						}
+					}
+				}
+				else = { #Invite every Commie to Germany's faction
+					ROOT = {
+						country_event = {
+							id = wuw_GER_diplomacy.83
+							hours = 6
+						}
+					}
+				}
+			}
+		}
+		effect = {
+			IF = {
+				limit = {
+					ROOT = {
+						original_tag = AUS
+						has_government = neutrality
+						has_completed_focus = AUS_legacy_of_the_empire
+						has_dynamic_modifier = {
+							modifier = AUS_army
+						}
+					}
+				}
+				remove_dynamic_modifier = {
+					modifier = AUS_army
+				}
+
+				add_dynamic_modifier = {
+					modifier = AUS_army_monarchy
+				}
+			}			
+		}
+
+		effect = {
+			IF = {
+				limit = {
+					ROOT = {
+						original_tag = GER
+						has_government = fascism
+						has_country_flag = GER_strasserism_relevant_in_germany_flag
+						NOT = {
+							has_country_flag = GER_strasserism_prevailed_in_germany_flag
+						}
+					}
+				}
+				drop_cosmetic_tag = yes
+				set_cosmetic_tag = GER_strasserite_state
+				set_country_flag = GER_strasserism_prevailed_in_germany_flag
+			}
+		}
+		#Changing German Military Modifiers
+		effect = {
+			if = {
+				limit = {
+					ROOT = {
+						original_tag = GER
+					}
+				}
+				#ARMY MODIFIERS
+				if = {
+					limit = {
+						NOT = {
+							has_government = communism
+						}
+					}
+					if =  {
+						limit = {
+							has_dynamic_modifier = { modifier = GER_army_communist_modifier }
+						}
+						remove_dynamic_modifier = {
+							modifier = GER_army_communist_modifier
+						}
+						add_dynamic_modifier = {
+							modifier = GER_army_modifier
+						}
+					}
+				}
+				if = {
+					limit = {
+						has_government = communism
+					}
+					if =  {
+						limit = {
+							has_dynamic_modifier = { modifier = GER_army_modifier }
+						}
+						remove_dynamic_modifier = {
+							modifier = GER_army_modifier
+						}
+						add_dynamic_modifier = {
+							modifier = GER_army_communist_modifier
+						}
+					}
+				}
+				#NAVY MODIFIERS
+				if = {
+					limit = {
+						has_government = fascism
+					}
+					if =  {
+						limit = {
+							has_dynamic_modifier = { modifier = GER_navy_democratic_modifier }
+						}
+						remove_dynamic_modifier = {
+							modifier = GER_navy_democratic_modifier
+						}
+						add_dynamic_modifier = {
+							modifier = GER_navy_fascist_modifier
+						}
+					}
+					else_if =  {
+						limit = {
+							has_dynamic_modifier = { modifier = GER_navy_imperial_modifier }
+						}
+						remove_dynamic_modifier = {
+							modifier = GER_navy_imperial_modifier
+						}
+						add_dynamic_modifier = {
+							modifier = GER_navy_fascist_modifier
+						}
+					}
+					else_if =  {
+						limit = {
+							has_dynamic_modifier = { modifier = GER_navy_communist_modifier }
+						}
+						remove_dynamic_modifier = {
+							modifier = GER_navy_communist_modifier
+						}
+						add_dynamic_modifier = {
+							modifier = GER_navy_fascist_modifier
+						}
+					}
+				}
+				if = {
+					limit = {
+						has_government = democratic
+					}
+					if =  {
+						limit = {
+							has_dynamic_modifier = { modifier = GER_navy_fascist_modifier }
+						}
+						remove_dynamic_modifier = {
+							modifier = GER_navy_fascist_modifier
+						}
+						add_dynamic_modifier = {
+							modifier = GER_navy_democratic_modifier
+						}
+					}
+					else_if =  {
+						limit = {
+							has_dynamic_modifier = { modifier = GER_navy_imperial_modifier }
+						}
+						remove_dynamic_modifier = {
+							modifier = GER_navy_imperial_modifier
+						}
+						add_dynamic_modifier = {
+							modifier = GER_navy_democratic_modifier
+						}
+					}
+					else_if =  {
+						limit = {
+							has_dynamic_modifier = { modifier = GER_navy_communist_modifier }
+						}
+						remove_dynamic_modifier = {
+							modifier = GER_navy_communist_modifier
+						}
+						add_dynamic_modifier = {
+							modifier = GER_navy_democratic_modifier
+						}
+					}
+				}
+				if = {
+					limit = {
+						has_government = neutrality
+					}
+					if =  {
+						limit = {
+							has_dynamic_modifier = { modifier = GER_navy_fascist_modifier }
+						}
+						remove_dynamic_modifier = {
+							modifier = GER_navy_fascist_modifier
+						}
+						add_dynamic_modifier = {
+							modifier = GER_navy_imperial_modifier
+						}
+					}
+					else_if =  {
+						limit = {
+							has_dynamic_modifier = { modifier = GER_navy_fascist_modifier }
+						}
+						remove_dynamic_modifier = {
+							modifier = GER_navy_fascist_modifier
+						}
+						add_dynamic_modifier = {
+							modifier = GER_navy_imperial_modifier
+						}
+					}
+					else_if =  {
+						limit = {
+							has_dynamic_modifier = { modifier = GER_navy_communist_modifier }
+						}
+						remove_dynamic_modifier = {
+							modifier = GER_navy_communist_modifier
+						}
+						add_dynamic_modifier = {
+							modifier = GER_navy_imperial_modifier
+						}
+					}
+				}
+				if = {
+					limit = {
+						has_government = communism
+					}
+					if =  {
+						limit = {
+							has_dynamic_modifier = { modifier = GER_navy_fascist_modifier }
+						}
+						remove_dynamic_modifier = {
+							modifier = GER_navy_fascist_modifier
+						}
+						add_dynamic_modifier = {
+							modifier = GER_navy_communist_modifier
+						}
+					}
+					else_if =  {
+						limit = {
+							has_dynamic_modifier = { modifier = GER_navy_imperial_modifier }
+						}
+						remove_dynamic_modifier = {
+							modifier = GER_navy_imperial_modifier
+						}
+						add_dynamic_modifier = {
+							modifier = GER_navy_communist_modifier
+						}
+					}
+					else_if =  {
+						limit = {
+							has_dynamic_modifier = { modifier = GER_navy_democratic_modifier }
+						}
+						remove_dynamic_modifier = {
+							modifier = GER_navy_democratic_modifier
+						}
+						add_dynamic_modifier = {
+							modifier = GER_navy_communist_modifier
+						}
+					}
+				}
+				#AIRFORCE
+				if = {
+					limit = {
+						NOT = {
+							has_government = communism
+						}
+					}
+					if =  {
+						limit = {
+							has_dynamic_modifier = { modifier = GER_airforce_communist_modifier }
+						}
+						remove_dynamic_modifier = {
+							modifier = GER_airforce_communist_modifier
+						}
+						add_dynamic_modifier = {
+							modifier = GER_airforce_modifier
+						}
+					}
+				}
+				if = {
+					limit = {
+						has_government = communism
+					}
+					if =  {
+						limit = {
+							has_dynamic_modifier = { modifier = GER_airforce_modifier }
+						}
+						remove_dynamic_modifier = {
+							modifier = GER_airforce_modifier
+						}
+						add_dynamic_modifier = {
+							modifier = GER_airforce_communist_modifier
+						}
+					}
+				}
+			}			
+		}
+
+		#Remove Inner Circle on ideology change despite going down the fascist path (e.g. being puppeted)
+		effect = {
+			if = {
+				limit = {
+					original_tag = GER
+					NOT = {
+						has_government = fascism
+					}
+				}
+				if = {
+					limit = {
+						check_variable = { GER_ascended_advisor_1 = 0 compare = not_equals }
+					}
+					GER_remove_replaced_advisor_1_effects = yes
+				}
+				if = {
+					limit = {
+						check_variable = { GER_ascended_advisor_2 = 0 compare = not_equals }
+					}
+					GER_remove_replaced_advisor_2_effects = yes
+				}
+				if = {
+					limit = {
+						check_variable = { GER_ascended_advisor_3 = 0 compare = not_equals }
+					}
+					GER_remove_replaced_advisor_3_effects = yes
+				}
+			}
+		}
+	}
+
+	#ROOT is new controller #FROM is old controller #FROM.FROM is state ID
+	on_state_control_changed = {
+
+		effect = { #reduce german oil if SOV loses state Germany gets industrial relocation oil from
+			IF = {
+				limit = {
+					FROM.FROM = {
+						OR = {
+							state = 229 #Azerbaijan
+							state = 234 #Krasnodar
+						}
+						has_state_flag = GER_trades_for_oil_here_flag
+					}
+
+					FROM = {
+						original_tag = SOV
+					}
+				}
+
+				subtract_from_variable = {
+					var = GER_industrial_relocation_resources_country_resource_oil
+					value = 5
+				}
+			}
+		}
+
+		effect = { #reduce german tungsten if SOV loses state Germany gets industrial relocation tungsten from
+			IF = {
+				limit = {
+					FROM.FROM = {
+						OR = {
+							state = 564 #Buryatia
+							state = 401 #Balakovo
+						}
+						has_state_flag = GER_trades_for_tungsten_here_flag
+					}
+					FROM = {
+						original_tag = SOV
+					}
+				}
+				subtract_from_variable = {
+					var = GER_industrial_relocation_resources_country_resource_tungsten
+					value = 5
+				}
+			}
+		}
+
+		effect = { #reduce german chromium if SOV loses state Germany gets industrial relocation chromium from
+			IF = {
+				limit = {
+					FROM.FROM = {
+						OR = {
+							state = 402 #Akhtubinsk
+							state = 573 #Zlatoust
+						}
+						has_state_flag = GER_trades_for_chromium_here_flag
+					}
+					FROM = {
+						original_tag = SOV
+					}
+				}
+				subtract_from_variable = {
+					var = GER_industrial_relocation_resources_country_resource_chromium
+					value = 5
+				}
+			}
+		}
+
+		effect = { # Makes France surrender to the Belgian meance
+			IF = {
+				limit = {
+
+					NOT = {
+						has_global_flag = FRA_and_BEL_already_sought_peace_flag
+					}
+
+					29 = {
+						is_owned_by = FRA
+					}
+					785 = {
+						is_owned_by = FRA
+					}
+
+					NOT = {
+						any_country = {
+							NOT = {
+								original_tag = FRA
+							}
+							is_in_faction_with = FRA
+							#is_major = yes
+						}
+					}
+
+					FROM.FROM = {
+						state = 16 #paris
+					}
+
+					FROM = {
+						original_tag = FRA
+					}
+
+					ROOT = {
+						original_tag = BEL
+						has_completed_focus = BEL_demand_calais
+						any_other_country = {
+							is_major = no
+							NOT = { is_in_faction_with = ROOT } 
+						}
+					}
+				}
+
+				ROOT = {
+					country_event = {
+						id = ww_BEL_event_war.10
+						hours = 6
+					}	
+				}
+				
+			}
+		}
+
+		#ROOT is new controller #FROM is old controller #FROM.FROM is state ID
+		effect = { #BEL trigger Kings Surrender if any of Liege, Antwerp or Brussels fall.
+			IF = {
+				limit = {
+					FROM = {
+						original_tag = BEL
+						has_country_flag = BEL_leopold_flag
+						NOT = {
+							has_completed_focus = BEL_kings_abdication
+							has_country_flag = BEL_king_surrendered_on_action_flag
+						}
+						has_war = yes
+						has_civil_war = no
+					}
+					FROM.FROM = {
+						is_owned_by = BEL
+						OR = { #Losing the capital of these provinces is enough to capitulate the state.
+							state = 977 #Antwerpen - Antwerp
+							state = 6 #Vlaanderen - Brussels
+							state = 34 #Wallonie - Liege
+						}
+					}
+				}
+				FROM = {
+					country_event = {
+						id = ww_BEL_event_war.3
+						hours = 6
+					}
+					set_country_flag = BEL_king_surrendered_on_action_flag
+				}
+			}
+		}
+
+		effect = { # Trigger the generic fall fo Budapest event 
+			IF = {
+				limit = {
+					FROM.FROM = {
+						state = 43 #Budapest/Northern Hungary
+						is_owned_by = HUN
+					}
+					ROOT = {
+						has_war_with = HUN 
+						NOT = { # SOV as their own specific one, also shouldn't be triggered during a civil war
+							OR = {
+								original_tag = SOV
+								original_tag = HUN
+							}
+						}
+					}
+					NOT = { has_global_flag = fall_of_budapest_generic_flag }
+				}
+				news_event = {
+					id = news.400
+					hours = 12
+					random_hours = 24
+				}	
+			}
+		}
+
+		#GER - Create German Operative Coco Chanel if the focus has been Subversive Infiltrators has been completed and Paris is controlled by GER
+		effect = {
+			if = {
+				limit = {
+					has_dlc = "La Resistance"
+					FROM.FROM = {
+						state = 16 #PARIS
+					}
+					ROOT = {
+						tag = GER
+						has_country_flag = GER_coco_chanel_ready_to_join_as_operative_flag
+					}
+				}
+				GER_create_operative_coco_chanel = yes
+				clr_country_flag = GER_coco_chanel_ready_to_join_as_operative_flag
+			}
+		}
+		#ROOT is new controller #FROM is old controller #FROM.FROM is state ID
+		effect = { #Check how many occupied states Germany has
+			IF = {
+				limit = {
+					ROOT = {
+						original_tag = GER
+					}
+					FROM.FROM = {
+						NOT = {	is_core_of = ROOT }
+						is_on_continent = europe
+					}
+				}
+				add_to_variable = { GER_occupied_states_europe = 1 }
+			}
+			IF = {
+				limit = {
+					FROM = {
+						original_tag = GER
+					}
+					FROM.FROM = {
+						NOT = {	is_core_of = FROM }
+						is_on_continent = europe
+					}
+				}
+				subtract_from_variable = { GER_occupied_states_europe = 1 }
+			}
+		}
+	}
+
+	on_weekly_GER = {
+
+		# INNER CIRCLE - Make sure AI doesn't get stuck with focuses paused due to focus triggers (focuses need to be paused when events are pending)
+		effect = {
+			if = {
+				limit = {
+					is_ai = yes
+				}
+				if = {
+					limit = {
+						has_country_flag = { flag = GER_todt_ascension_flag days > 20 }
+					}
+					#This looks ridiculous but it's the only way
+					unlock_national_focus = GER_ascension_of_todt
+					uncomplete_national_focus = {
+						focus = GER_ascension_of_todt
+						refund_political_power = yes
+					}
+					clr_country_flag = GER_todt_ascension_flag
+				}
+				else_if = {
+					limit = {
+						has_country_flag = { flag = GER_speer_ascension_flag days > 20 }
+					}
+					unlock_national_focus = GER_ascension_of_speer
+					uncomplete_national_focus = {
+						focus = GER_ascension_of_speer
+						refund_political_power = yes
+					}
+					clr_country_flag = GER_speer_ascension_flag
+				}
+				else_if = {
+					limit = {
+						has_country_flag = { flag = GER_goring_ascension_flag days > 20 }
+					}
+					unlock_national_focus = GER_ascension_of_goring
+					uncomplete_national_focus = {
+						focus = GER_ascension_of_goring
+						refund_political_power = yes
+					}
+					clr_country_flag = GER_goring_ascension_flag
+				}
+				else_if = {
+					limit = {
+						has_country_flag = { flag = GER_himmler_ascension_flag days > 20 }
+					}
+					unlock_national_focus = GER_ascension_of_himmler
+					uncomplete_national_focus = {
+						focus = GER_ascension_of_himmler
+						refund_political_power = yes
+					}
+					clr_country_flag = GER_himmler_ascension_flag
+				}
+				else_if = {
+					limit = {
+						has_country_flag = { flag = GER_goebbels_ascension_flag days > 20 }
+					}
+					unlock_national_focus = GER_ascension_of_goebbels
+					uncomplete_national_focus = {
+						focus = GER_ascension_of_goebbels
+						refund_political_power = yes
+					}
+					clr_country_flag = GER_goebbels_ascension_flag
+				}
+				else_if = {
+					limit = {
+						has_country_flag = { flag = GER_hess_ascension_flag days > 20 }
+					}
+					unlock_national_focus = GER_party_chancellor_hess
+					uncomplete_national_focus = {
+						focus = GER_party_chancellor_hess
+						refund_political_power = yes
+					}
+					clr_country_flag = GER_hess_ascension_flag
+				}
+				else_if = {
+					limit = {
+						has_country_flag = { flag = GER_bormann_ascension_flag days > 20 }
+					}
+					unlock_national_focus = GER_party_chancellor_bormann
+					uncomplete_national_focus = {
+						focus = GER_party_chancellor_bormann
+						refund_political_power = yes
+					}
+					clr_country_flag = GER_bormann_ascension_flag
+				}
+				else_if = {
+					limit = {
+						has_country_flag = { flag = GER_a_strong_successor_flag days > 40 }
+					}
+					unlock_national_focus = GER_a_strong_successor
+					uncomplete_national_focus = {
+						focus = GER_a_strong_successor
+						refund_political_power = yes
+					}
+					clr_country_flag = GER_a_strong_successor_flag
+				}
+				else_if = {
+					limit = {
+						has_country_flag = { flag = GER_loyalty_to_the_fuhrer_flag days > 40 }
+					}
+					unlock_national_focus = GER_loyalty_to_the_fuhrer
+					uncomplete_national_focus = {
+						focus = GER_loyalty_to_the_fuhrer
+						refund_political_power = yes
+					}
+					clr_country_flag = GER_loyalty_to_the_fuhrer_flag
+				}
+			}	
+		}
+
+		effect = { #ticking down effect for after the event
+			IF = {
+				limit = {
+					has_country_flag = GER_hitler_wants_austria_flag
+					AUS = {
+						exists = yes
+						is_subject = no
+						NOT = { has_war_with = GER }
+					}
+					GER = {
+						NOT = {
+							has_completed_focus = GER_anschluss
+							has_completed_focus = GER_oppose_hitler_ww
+							has_completed_focus = GER_oppose_hitler
+						}
+					}
+				}
+
+				IF = {
+					limit = {
+						AUS = {	
+							OR = {
+								has_completed_focus = AUS_reinstate_the_imperial_council
+								has_government = neutrality
+							}
+							
+						}
+					}
+
+					set_variable = { AUS.fascism_anschluss_tick = AUS.party_popularity@fascism } #sets a new variable to not risk affecting the standard variable of fascist popularity
+
+					IF = {
+						limit = { #makes sure that we do not get a negative ratio after the subtraction
+							check_variable = { global.deployed_manpower_ratio_needed_for_anschluss > AUS.fascism_anschluss_tick  }
+						}
+						subtract_from_variable = { #if we can subtract without going below zero, subtract the fascism support from the ratio
+							var = global.deployed_manpower_ratio_needed_for_anschluss
+							value = AUS.fascism_anschluss_tick
+						}
+					}
+				
+				}
+
+				ELSE = {
+
+					set_variable = { AUS.neutrality_anschluss_tick = AUS.party_popularity@neutrality } #sets a new variable to not risk affecting the standard variable of neutrality popularity
+					
+					IF = {
+						limit = { #makes sure that we do not get a negative ratio after the subtraction
+							check_variable = { global.deployed_manpower_ratio_needed_for_anschluss > AUS.neutrality_anschluss_tick }
+						}
+
+						subtract_from_variable = { #if we can subtract without going below zero, subtract the fascism support from the ratio
+							var = global.deployed_manpower_ratio_needed_for_anschluss
+							value = AUS.neutrality_anschluss_tick
+						}
+					}
+				}
+			}
+		}
+		#Check numbers of Reichskommissariats and make Rosenberg cry if the numbers don't add up - this is a failsafe system
+		effect = {
+			if = {
+				limit = {
+					has_dynamic_modifier = { modifier = GER_alfred_rosenberg_modifier }
+					check_variable = { 
+						var = GER_total_reichskommissariats
+						value = GER_max_alfred_rosenberg_upgrades
+						compare = less_than_or_equals
+					}
+					any_subject_country = {
+						has_country_flag = GER_reichskommissariats_puppet_flag
+					}
+				}
+				set_temp_variable = { current_number_of_reichskommissariats = 0 }
+				every_subject_country = {
+					limit = {
+						has_country_flag = GER_reichskommissariats_puppet_flag
+					}
+					add_to_temp_variable = { GER.current_number_of_reichskommissariats = 1 }
+				}
+				set_temp_variable = { number_of_reichskommissariats_difference = GER_total_reichskommissariats }
+				subtract_from_temp_variable = { number_of_reichskommissariats_difference = current_number_of_reichskommissariats }
+				while_loop_effect = {#Lessen Rosenberg's trait for each country that is no longer a RK
+					limit = {
+						check_variable = { 
+							var = number_of_reichskommissariats_difference
+							value = 0
+							compare = greater_than
+						}
+					}
+					GER = {
+						GER_worsen_rosenbergs_trait_effect = yes
+					}
+				}
+				every_other_country = {
+					limit = {
+						NOT = {
+							is_subject_of = GER
+						}
+						has_country_flag = GER_reichskommissariats_puppet_flag
+					}
+					clr_country_flag = GER_reichskommissariats_puppet_flag
+				}
+			}
+		}
+	}
+
+	on_monthly_AUS = {
+
+		effect = {
+			IF = {
+				limit = {
+					has_dlc = "Gotterdammerung"
+					AUS = { has_country_flag = AUS_antischluss_active_flag }
+				}
+
+				#below variables are set to be multiplied with a percentage to check how close Germany are to achieving the fighting army strength ratio needed for anschluss
+
+				set_variable = { global.low_anschluss_risk = global.deployed_manpower_ratio_needed_for_anschluss }
+
+				set_variable = { global.medium_anschluss_risk = global.deployed_manpower_ratio_needed_for_anschluss }
+
+				set_variable = { global.high_anschluss_risk = global.deployed_manpower_ratio_needed_for_anschluss }
+
+				multiply_variable = {
+					var = global.low_anschluss_risk
+					value = 0.5
+				}
+
+				multiply_variable = {
+					var = global.medium_anschluss_risk
+					value = 0.75
+				}
+
+				multiply_variable = {
+					var = global.high_anschluss_risk
+					value = 0.90
+				}
+			}
+		}
+	}
+
+	on_annex = {
+		effect = {
+			IF = {
+				limit = {
+					FROM = { 
+						capital_scope = {
+							is_in_array = {
+								array = AUS.expansion_targets
+								value = THIS
+							}
+						}
+					}
+				}
+
+				FROM = {
+					capital_scope = {
+						remove_from_array = {
+							array = AUS.expansion_targets
+							value = THIS
+						}
+						set_state_flag = AUS_no_longer_expansion_target
+
+						log = "[THIS.GetName] was removed"
+						AUS = {
+							clr_country_flag = AUS_currently_undertaking_subjugating_lands_of_old_flag
+						}
+					}
+				}
+			}
+		}
+		effect = { #If a Reichskommissariat is annexed by another country than Germany, make Alfred Rosenberg suck a bit more
+			IF = {
+				limit = {
+					FROM = {
+						has_country_flag = GER_reichskommissariats_puppet_flag
+					}
+					GER = {
+						has_dynamic_modifier = { modifier = GER_alfred_rosenberg_modifier }
+					}
+				}
+				GER = {
+					GER_worsen_rosenbergs_trait_effect = yes
+				}
+				FROM = {
+					clr_country_flag = GER_reichskommissariats_puppet_flag
+				}
+			}
+		}
+	}
+
+	#ROOT is subject, FROM is overlord
+	on_subject_annexed = {
+		effect = {
+			if = {
+				limit = {
+					FROM = {
+						has_dynamic_modifier = { modifier = GER_alfred_rosenberg_modifier }
+					}
+					ROOT = {
+						has_country_flag = GER_reichskommissariats_puppet_flag
+					}
+				}
+				GER = {
+					GER_worsen_rosenbergs_trait_effect = yes
+				}
+				FROM = {
+					clr_country_flag = GER_reichskommissariats_puppet_flag
+				}
+			}
+		}
+	}
+
+	on_civil_war_end = {
+
+		effect = {
+
+			IF = {
+				limit = {
+					ROOT = {
+						original_tag = AUS
+					}
+				}
+			}
+			
+			every_country = {
+				limit = {
+					has_country_flag = AUS_antischluss_measures_flag
+				}
+
+				clr_country_flag = AUS_antischluss_measures_flag
+			}
+		}
+	}
+
+
+	#ROOT is winner, FROM is loser (called for all winners against all losers)
+	on_before_peace_conference_start = {
+		# DEBUG TEST
+		effect = {
+			if = {
+				limit = {
+					FROM = { tag = GER }  # Germany is loser
+				}
+				log = "Germany [FROM.GetName] lost against [ROOT.GetName]"
+			}
+		}
+	}
+
+}
