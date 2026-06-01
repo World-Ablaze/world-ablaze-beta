@@ -336,15 +336,30 @@ NDefines.NMilitary.ZERO_ORG_MOVEMENT_MODIFIER = -0.25								-- speed impact at 
 
 NDefines.NMilitary.ACCLIMATIZATION_SPEED_GAIN = 0.05								-- A variable used to balance the overall speed of gaining the acclimatization
 
-NDefines.NMilitary.MAX_DIVISION_BRIGADE_WIDTH = 5									-- Max width of regiments in division designer.
-NDefines.NMilitary.MAX_DIVISION_BRIGADE_HEIGHT = 5									-- Max height of regiments in division designer.
+NDefines.NMilitary.MAX_DIVISION_BRIGADE_WIDTH = 5									-- Max width of regiments in division designer (non-HQ templates).
+NDefines.NMilitary.MAX_DIVISION_BRIGADE_HEIGHT = 5									-- Max height of regiments in division designer (non-HQ templates).
 NDefines.NMilitary.MIN_DIVISION_BRIGADE_HEIGHT = 5									-- Min height of regiments in division designer.
-NDefines.NMilitary.MAX_DIVISION_SUPPORT_WIDTH = 2									-- Max width of support in division designer.
-NDefines.NMilitary.MAX_DIVISION_SUPPORT_HEIGHT = 5									-- Max height of support in division designer.
+NDefines.NMilitary.MAX_DIVISION_SUPPORT_WIDTH = 2									-- Max width of support in division designer (non-HQ templates).
+NDefines.NMilitary.MAX_DIVISION_SUPPORT_HEIGHT = 5									-- Max height of support in division designer (non-HQ templates).
+NDefines.NMilitary.MAX_REGIMENTAL_SUPPORT_WIDTH = 5									-- Max width of regimental supports in division designer.
+NDefines.NMilitary.MAX_REGIMENTAL_SUPPORT_HEIGHT = 1								-- Max height of regimental supports in division designer.
+NDefines.NMilitary.MAX_HQ_BATTALION_WIDTH = 1										-- Max width of regiments in division designer (Army HQ templates).
+NDefines.NMilitary.MAX_HQ_BATTALION_HEIGHT = 4										-- Max height of regiments in division designer (Army HQ templates).
+NDefines.NMilitary.MAX_HQ_SUPPORT_WIDTH = 1											-- Max width of support in division designer (Army HQ templates).
+NDefines.NMilitary.MAX_HQ_SUPPORT_HEIGHT = 4										-- Max height of support in division designer (Army HQ templates).
+NDefines.NMilitary.MAX_HQ_REGIMENTAL_SUPPORT_WIDTH = 0								-- Max width of regimental supports in division designer (Army HQ templates).
+NDefines.NMilitary.MAX_HQ_REGIMENTAL_SUPPORT_HEIGHT = 0								-- Max height of regimental supports in division designer (Army HQ templates).
+NDefines.NMilitary.REGIMENTAL_SUPPORT_REQUIRED_BATTALIONS = { 3 } 					-- For each regimental support row, how many battalions are required in the regiment to be able to place a support in that row.
+NDefines.NMilitary.AI_BATTALION_BUILD_ORDER = { 	1,  6,  11, 16, 21,				-- When the AI is deciding where to place battalions, it tries to place it in the position with the lowest number according to this grid.
+													2,  7,  12, 17, 22,
+													3,  8,  13, 18, 23,
+													4,  9,  14, 19, 24,
+													5,  10, 15, 20, 25 }
 
 NDefines.NMilitary.BASE_DIVISION_BRIGADE_GROUP_COST = 10							--Base XP cost to unlock a regiment slot,
 NDefines.NMilitary.BASE_DIVISION_BRIGADE_CHANGE_COST = 5							--Base XP cost to change a regiment column.
 NDefines.NMilitary.BASE_DIVISION_SUPPORT_SLOT_COST = 1 								--Base XP cost to unlock a support slot
+NDefines.NMilitary.REGIMENTAL_SUPPORT_SLOT_COST_MULTIPLIER = 1	 					-- Regimental support slot costs are scaled by this value compared to normal support slots
 
 NDefines.NMilitary.UNIT_LEADER_ASSIGN_TRAIT_COST = 5								-- cost to assign a new trait to a unit leader
 
@@ -632,10 +647,10 @@ NDefines.NAir.NAVAL_STRIKE_DAMAGE_TO_ORG = 0.5										-- Balancing value to co
 NDefines.NAir.INTERCEPTION_DISTANCE_SCALE = 10 										-- At this many pixels of path length, full interception efficiency is applied to air missions. Lerp from 0.
 NDefines.NAir.INTERCEPTION_DAMAGE_SCALE = 1											-- Multiply the interception damage with this value. Works as a cap when interception distance is at maximum.
 
-NDefines.NAir.NAVAL_COMBAT_EXTERNAL_PLANES_JOIN_RATIO = 0.040							-- Max planes that can join a combat comparing to the total strength of the ships
-NDefines.NAir.NAVAL_COMBAT_EXTERNAL_PLANES_JOIN_RATIO_PER_DAY = 0.4 
+NDefines.NAir.NAVAL_COMBAT_EXTERNAL_PLANES_JOIN_RATIO = 0.040						-- Max planes that can join a combat comparing to the total strength of the ships
+NDefines.NAir.NAVAL_COMBAT_EXTERNAL_PLANES_JOIN_RATIO_PER_DAY = 0.4
 NDefines.NAir.DAY_NIGHT_COVERAGE_FACTOR = 0.02 										-- The max night coverage in a region that is still considered to be day-time when determining if day/night air missions shall run.
-NDefines.NAir.NAVAL_COMBAT_EXTERNAL_PLANES_MIN_CAP = 25								-- minimum number of planes to join per naval battle 
+NDefines.NAir.NAVAL_COMBAT_EXTERNAL_PLANES_MIN_CAP = 25								-- minimum number of planes to join per naval battle
 
 NDefines.NAir.PORT_STRIKE_DAMAGE_FACTOR = 0.1										-- How much damage is dealt to ports during a port strike (per plane damage [complex number] * num flying planes * define)
 
@@ -730,6 +745,7 @@ NDefines.NNavy.MIN_REPAIR_FOR_JOINING_COMBATS = { 									-- strikeforces/patro
 	0.5,	-- low
 	0.7,	-- medium
 	0.8,	-- high
+	0.0,	-- on order (AI-managed, engagement uses same threshold as "do not repair")
 }
 
 --NDefines.NNavy.ORG_COST_WHILE_MOVING_IN_MISSION_ZONE = { 							-- org cost while moving in mission zone
@@ -1015,6 +1031,11 @@ NDefines.NAI.DIVISION_SUPPLY_RATIO_TO_MOTORIZE = 0.95								-- If supply ratio 
 NDefines.NAI.UPDATE_SUPPLY_MOTORIZATION_FREQUENCY_HOURS = 48    		 			-- Check if activating motorization would improve supply situation this often.
 NDefines.NAI.FIX_SUPPLY_BOTTLENECK_SATURATION_THRESHOLD = 1.1						-- Try to fix supply bottlenecks if supply node saturation exceeds this value.
 
+----------- Army leader assignment
+
+NDefines.NAI.ARMY_LEADER_MIN_DIVISIONS_FOR_HQ = 6									-- Army must contain at least this many divisions before the AI will deploy an HQ unit for it
+NDefines.NAI.MAX_DEPLOYED_ARMY_HQS = 20												-- AI will not deploy more than this many army HQs at once
+
 ----------- LEND LEASE
 
 NDefines.NAI.BASE_RELUCTANCE = 10 													-- Base reluctance applied to all diplomatic offers
@@ -1122,7 +1143,7 @@ NDefines.NAI.NAVAL_MISSION_MINES_SWEEPING_NEAR_OWNED = 100000	 					-- How likel
 
 ------------------------------------------------- AIR
 
-NDefines.NAI.RAIDS_MIN_SUCCESS_FOR_LAUNCH = 0.3                  	 				-- The AI will not launch a raid if the chance of success is lower than this.
+NDefines.NAI.RAIDS_MIN_SUCCESS_FOR_LAUNCH = 0.3                  	 				-- The AI will not launch a raid if the chance of success is lower than this. Can be overridden per raid type via `ai_min_success_chance`.
 NDefines.NAI.RAIDS_AVOID_SAME_TARGET_DURATION_DAYS = 90           					-- After a raid is finished/canceled, AI is less likely to raid the same target for this time.
 
 --NDefines.NAI.AIR_WING_REINFORCEMENT_LIMIT = 100									-- Doesnt exist anymore
@@ -1298,6 +1319,7 @@ NDefines.NAI.VP_LEVEL_IMPORTANCE_LOW = 1											-- Victory points with values
 
 NDefines.NAI.START_TRAINING_EQUIPMENT_LEVEL = 0.9									-- ai will not start to train if equipment drops below this level
 NDefines.NAI.STOP_TRAINING_EQUIPMENT_LEVEL = 0.85            						-- ai will not train if equipment drops below this level
+NDefines.NAI.STOP_TRAINING_ACTIVE_COMBAT_RATIO = 0.05            					-- ai halts all training when more than this share of its divisions are in active combat (reinforce instead)
 NDefines.NAI.DEPLOY_MIN_TRAINING_SURRENDER_FACTOR = 1.0								-- Required percentage of training (1.0 = 100%) for AI to deploy unit in wartime while surrender progress is higher than 0
 NDefines.NAI.DEPLOY_MIN_EQUIPMENT_SURRENDER_FACTOR = 1.0							-- Required percentage of equipment (1.0 = 100%) for AI to deploy unit in wartime while surrender progress is higher than 0
 NDefines.NAI.DEPLOY_MIN_TRAINING_PEACE_FACTOR = 1.0									-- Required percentage of training (1.0 = 100%) for AI to deploy unit in peacetime
