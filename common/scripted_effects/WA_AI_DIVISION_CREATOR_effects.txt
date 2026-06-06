@@ -4,7 +4,7 @@
 # [INPUT] [REQUIRED] _num_divisions_spawn - Integer. The number of divisions to spawn. Must be greater than 1 and less than 100
 # [INPUT] [OPTIONAL] _state - Integer. The state in which to spawn the divisions. Defaults to the country's capital
 # [INPUT] [OPTIONAL] _use_stockpile - Integer Boolean. Whether to use the country's stockpiled equipment to supply the divisions. Must be 0 or 1 (false or true). Defaults to 1.
-# [INPUT] [OPTIONAL] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper. Defaults to 1
+# [INPUT] [OPTIONAL] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper, 7 = 20Width Infantry, 8 = Marines, 9 = Amtrac + Tanks, 10 = SNLF, 11 = Armoured SNLF. Defaults to 1
 # [INPUT] [OPTIONAL] _start_experience - Float. The starting experience of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.2 (Trained 1)
 # [INPUT] [OPTIONAL] _start_equipment - Float. The starting equipment of the spawned divisions AND will be taken from the stockpile of the country. Must be between 0.1 and 1. Defaults to 0.1
 # [INPUT] [OPTIONAL] _start_manpower - Float. The starting manpower of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.1
@@ -45,7 +45,7 @@ WA_AI_DIVISION_spawn_divisions = {
 		limit = {
 			OR = {
 				check_variable = { _division_template < 1 }
-				check_variable = { _division_template > 6 }
+				check_variable = { _division_template > 11 }
 			}
 		}
 		set_temp_variable = { _division_template = 1 }
@@ -89,6 +89,7 @@ WA_AI_DIVISION_spawn_divisions = {
 						NOT = { has_design_based_on = heavy_infantry_equipment }
 						NOT = { has_design_based_on = artillery_equipment }
 						NOT = { has_design_based_on = anti_tank_equipment }
+						NOT = { has_design_based_on = anti_air_equipment }
 						NOT = { has_design_based_on = support_equipment }
 						NOT = { has_tech = tech_engineers }
 						NOT = { has_tech = tech_recon }
@@ -96,6 +97,7 @@ WA_AI_DIVISION_spawn_divisions = {
 						NOT = { has_tech = tech_logistics_company }
 						NOT = { has_tech = tech_military_police }
 						NOT = { has_tech = tech_signal_company }
+						NOT = { has_tech = tech_maintenance_company }
 					}
 				}
 				AND = {
@@ -104,9 +106,12 @@ WA_AI_DIVISION_spawn_divisions = {
 						NOT = { has_design_based_on = infantry_equipment }
 						NOT = { has_design_based_on = heavy_infantry_equipment }
 						NOT = { has_design_based_on = artillery_equipment }
+						NOT = { has_design_based_on = heavy_artillery_equipment }
 						NOT = { has_design_based_on = anti_tank_equipment }
+						NOT = { has_design_based_on = heavy_anti_air_equipment }
 						NOT = { has_design_based_on = support_equipment }
 						NOT = { has_design_based_on = motorized_equipment }
+						NOT = { has_design_based_on = medium_tank_chassis }
 						NOT = { has_tech = tech_engineers }
 						NOT = { has_tech = tech_recon }
 						NOT = { has_tech = tech_field_hospital }
@@ -300,7 +305,7 @@ WA_AI_DIVISION_spawn_divisions = {
 # [INPUT] [REQUIRED] _num_divisions_total - The number of total divisions the country needs. The number of divisions spawned will be this number minus the existing number of divisions. Must be greater than 1. If less than the country's current division count, does nothing.
 # [INPUT] [OPTIONAL] _state - Integer. The state in which to spawn the divisions. Defaults to the country's capital.
 # [INPUT] [OPTIONAL] _use_stockpile - Integer Boolean. Whether to use the country's stockpiled equipment to supply the divisions. Must be 0 or 1 (false or true). Defaults to 1.
-# [INPUT] [OPTIONAL] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper. Defaults to 1
+# [INPUT] [OPTIONAL] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper, 7 = 20Width Infantry, 8 = Marines, 9 = Amtrac + Tanks, 10 = SNLF, 11 = Armoured SNLF. Defaults to 1
 # [INPUT] [OPTIONAL] _start_experience - Float. The starting experience of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.2 (Trained 1)
 # [INPUT] [OPTIONAL] _start_equipment - Float. The starting equipment of the spawned divisions AND will be taken from the stockpile of the country. Must be between 0.1 and 1. Defaults to 0.1
 # [INPUT] [OPTIONAL] _start_manpower - Float. The starting manpower of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.1
@@ -362,7 +367,7 @@ WA_AI_DIVISION_delete_spawned_divisions = {
 
 # Creates a locked template for the spawned unit type
 # Scope: Country
-# [INPUT] [REQUIRED] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper.
+# [INPUT] [REQUIRED] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper, 7 = 20Width Infantry, 8 = Marines, 9 = Amtrac + Tanks, 10 = SNLF, 11 = Armoured SNLF. Defaults to 1
 WA_AI_DIVISION_setup = {
 	# Validate required input parameters
 	set_temp_variable = { success = 1 }
@@ -377,7 +382,7 @@ WA_AI_DIVISION_setup = {
 		limit = {
 			NOT = {
 				check_variable = { _division_template > 0 }
-				check_variable = { _division_template < 7 }
+				check_variable = { _division_template < 11 }
 			}
 		}
 		set_temp_variable = { success = 0 }
@@ -402,12 +407,10 @@ WA_AI_DIVISION_setup = {
 							heavy_infantry = { x = 0 y = 0 }
 							heavy_infantry = { x = 0 y = 1 }
 							heavy_infantry = { x = 0 y = 2 }
-							heavy_infantry = { x = 0 y = 3 }
 
 							heavy_infantry = { x = 1 y = 0 }
 							heavy_infantry = { x = 1 y = 1 }
 							heavy_infantry = { x = 1 y = 2 }
-							heavy_infantry = { x = 1 y = 3 }
 
 							heavy_infantry = { x = 2 y = 0 }
 							heavy_infantry = { x = 2 y = 1 }
@@ -418,23 +421,28 @@ WA_AI_DIVISION_setup = {
 							artillery_brigade = { x = 3 y = 2 }
 
 							anti_tank_brigade = { x = 4 y = 0 }
+							anti_tank_brigade = { x = 4 y = 1 }
+							anti_tank_brigade = { x = 4 y = 2 }
 						}
 						support = {
 							[SUPPORT_ENG_TYPE]engineers = { x = 0 y = 0 }
-							[SUPPORT_MOT]_logistics_company = { x = 0 y = 1 }
-							[SUPPORT_MOT]_artillery = { x = 0 y = 2 }
-							[SUPPORT_MOT2]military_police = { x = 0 y = 3 }
-							[SUPPORT_MOT]_signal_company = { x = 0 y = 4 }
+							[SUPPORT_MOT]_maintenance_company = { x = 0 y = 1 }
+							[SUPPORT_MOT]_signal_company = { x = 0 y = 2 }
+							[SUPPORT_MOT]_field_hospital = { x = 0 y = 3 }
+							[SUPPORT_MOT]_logistics_company = { x = 0 y = 4 }
 
-							[SUPPORT_MOT2]recon = { x = 1 y = 0 }
-							[SUPPORT_MOT]_field_hospital = { x = 1 y = 1 }
-							[SUPPORT_MOT]_anti_tank = { x = 1 y = 2 }
+							[SUPPORT_SCOUT]recon = { x = 1 y = 0 }
+							[SUPPORT_SIZE]artillery = { x = 1 y = 1 }
+							[SUPPORT_SIZE]anti_air = { x = 1 y = 2 }
+							horse_anti_tank = { x = 1 y = 3 }
+							military_police = { x = 1 y = 4 }
 						}
 					}
 				}
 				TEMPLATE_NAME = "[WA_AI_DIVISION_GetSpawnDivisionTemplate]"
 				SUPPORT_MOT = "[WA_AI_DIVISION_GetSpawnDivisionTemplateSupportMotorized]"
-				SUPPORT_MOT2 = "[WA_AI_DIVISION_GetSpawnDivisionTemplateSupportMotorized2]"
+				SUPPORT_SCOUT = "[WA_AI_DIVISION_GetSpawnDivisionTemplateSupportScout]"
+				SUPPORT_SIZE = "[WA_AI_DIVISION_GetSpawnDivisionTemplateSupportSize]"
 				SUPPORT_ENG_TYPE = "[WA_AI_DIVISION_GetSpawnDivisionTemplateSupportEngineerType]"
 			}
 		}
@@ -452,12 +460,10 @@ WA_AI_DIVISION_setup = {
 							motorized = { x = 0 y = 0 }
 							motorized = { x = 0 y = 1 }
 							motorized = { x = 0 y = 2 }
-							motorized = { x = 0 y = 3 }
 
 							motorized = { x = 1 y = 0 }
 							motorized = { x = 1 y = 1 }
 							motorized = { x = 1 y = 2 }
-							motorized = { x = 1 y = 3 }
 
 							motorized = { x = 2 y = 0 }
 							motorized = { x = 2 y = 1 }
@@ -468,18 +474,21 @@ WA_AI_DIVISION_setup = {
 							motorized_artillery_brigade = { x = 3 y = 2 }
 
 							motorized_anti_tank_brigade = { x = 4 y = 0 }
+							motorized_anti_tank_brigade = { x = 4 y = 1 }
+							motorized_anti_tank_brigade = { x = 4 y = 2 }
 						}
 						support = {
-							assault_engineers = { x = 0 y = 0 }
+							armored_engineer = { x = 0 y = 0 }
 							mot_logistics_company = { x = 0 y = 1 }
-							mot_artillery = { x = 0 y = 2 }
+							heavy_artillery = { x = 0 y = 2 }
 							mot_military_police = { x = 0 y = 3 }
 							mot_signal_company = { x = 0 y = 4 }
 
-							mot_recon = { x = 1 y = 0 }
+							scout_car_recon = { x = 1 y = 0 }
 							mot_field_hospital = { x = 1 y = 1 }
 							mot_maintenance_company = { x = 1 y = 2 }
 							mot_anti_tank = { x = 1 y = 3 }
+							heavt_anti_air = { x = 1 y = 4 }
 						}
 					}
 				}
@@ -500,12 +509,10 @@ WA_AI_DIVISION_setup = {
 							mechanized = { x = 0 y = 0 }
 							mechanized = { x = 0 y = 1 }
 							mechanized = { x = 0 y = 2 }
-							mechanized = { x = 0 y = 3 }
 
 							mechanized = { x = 1 y = 0 }
 							mechanized = { x = 1 y = 1 }
 							mechanized = { x = 1 y = 2 }
-							mechanized = { x = 1 y = 3 }
 
 							mechanized = { x = 2 y = 0 }
 							mechanized = { x = 2 y = 1 }
@@ -516,11 +523,13 @@ WA_AI_DIVISION_setup = {
 							motorized_artillery_brigade = { x = 3 y = 2 }
 
 							motorized_anti_tank_brigade = { x = 4 y = 0 }
+							motorized_anti_tank_brigade = { x = 4 y = 1 }
+							motorized_anti_tank_brigade = { x = 4 y = 2 }
 						}
 						support = {
-							assault_engineers = { x = 0 y = 0 }
+							armored_engineer = { x = 0 y = 0 }
 							mot_logistics_company = { x = 0 y = 1 }
-							mot_artillery = { x = 0 y = 2 }
+							heavy_artillery = { x = 0 y = 2 }
 							mot_military_police = { x = 0 y = 3 }
 							mot_signal_company = { x = 0 y = 4 }
 
@@ -528,6 +537,7 @@ WA_AI_DIVISION_setup = {
 							mot_field_hospital = { x = 1 y = 1 }
 							mot_maintenance_company = { x = 1 y = 2 }
 							mot_anti_tank = { x = 1 y = 3 }
+							heavt_anti_air = { x = 1 y = 4 }
 						}
 					}
 				}
@@ -548,27 +558,27 @@ WA_AI_DIVISION_setup = {
 							medium_armor = { x = 0 y = 0 }
 							medium_armor = { x = 0 y = 1 }
 							medium_armor = { x = 0 y = 2 }
-							medium_armor = { x = 0 y = 3 }
 
-							mechanized = { x = 1 y = 0 }
-							mechanized = { x = 1 y = 1 }
-							mechanized = { x = 1 y = 2 }
-							mechanized = { x = 1 y = 3 }
+							medium_armor = { x = 1 y = 0 }
+							medium_armor = { x = 1 y = 1 }
+							medium_armor = { x = 1 y = 2 }
 
-							medium_armor = { x = 2 y = 0 }
-							medium_armor = { x = 2 y = 1 }
-							medium_armor = { x = 2 y = 2 }
-							medium_armor = { x = 2 y = 3 }
+							mechanized = { x = 2 y = 0 }
+							mechanized = { x = 2 y = 1 }
+							mechanized = { x = 2 y = 2 }
 
-							medium_armor = { x = 3 y = 0 }
+							mechanized = { x = 3 y = 0 }
+							mechanized = { x = 3 y = 1 }
+							mechanized = { x = 3 y = 2 }
 
-							mechanized = { x = 4 y = 0 }
-							mechanized = { x = 4 y = 1 }
+							[ARMOUR_TYPE] = { x = 4 y = 0 }
+							[ARMOUR_TYPE] = { x = 4 y = 1 }
+							[ARMOUR_TYPE] = { x = 4 y = 2 }
 						}
 						support = {
-							assault_engineers = { x = 0 y = 0 }
+							armored_engineer = { x = 0 y = 0 }
 							mot_logistics_company = { x = 0 y = 1 }
-							mot_artillery = { x = 0 y = 2 }
+							heavy_artillery = { x = 0 y = 2 }
 							mot_military_police = { x = 0 y = 3 }
 							mot_signal_company = { x = 0 y = 4 }
 
@@ -576,10 +586,12 @@ WA_AI_DIVISION_setup = {
 							mot_field_hospital = { x = 1 y = 1 }
 							mot_maintenance_company = { x = 1 y = 2 }
 							mot_anti_tank = { x = 1 y = 3 }
+							heavt_anti_air = { x = 1 y = 4 }
 						}
 					}
 				}
 				TEMPLATE_NAME = "[WA_AI_DIVISION_GetSpawnDivisionTemplate]"
+				ARMOUR_TYPE = "[WA_AI_DIVISION_GetSpawnDivisionTemplateArmourType]"
 			}
 		}
 		else_if = {
@@ -674,7 +686,7 @@ WA_AI_DIVISION_setup = {
 
 # Calculates the equipment usage of a single division of the desired template at the specified equipment and manpower start factor, and determines how many can be fielded with current country stockpiles
 # Scope: Country
-# [INPUT] [REQUIRED] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper.
+# [INPUT] [REQUIRED] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper, 7 = 20Width Infantry, 8 = Marines, 9 = Amtrac + Tanks, 10 = SNLF, 11 = Armoured SNLF. Defaults to 1
 # [INPUT] [REQUIRED] _start_equipment - Float. The starting equipment of the spawned divisions AND will be taken from the stockpile of the country. Must be between 0.1 and 1.
 # [INPUT] [REQUIRED] _start_manpower - Float. The starting manpower of the spawned divisions. Must be between 0.1 and 1.
 # [INPUT] [OPTIONAL] _force_use_equipment_manpower - Integer Boolean. Whether to calculate the equipment and manpower useage of all requested divisions regardless of availability. Must be 0 or 1 (false or true). Defaults to 0.
@@ -693,7 +705,7 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 		limit = {
 			NOT = {
 				check_variable = { _division_template > 0 }
-				check_variable = { _division_template < 7 }
+				check_variable = { _division_template < 11 }
 			}
 		}
 		set_temp_variable = { success = 0 }
@@ -1159,7 +1171,7 @@ WA_AI_DIVISION_remove_stockpiles = {
 # [INPUT] [REQUIRED] _invasion_state_provinces - Array of integer Province IDs. The Province IDs in _invasion_state where the divisions will be spawned.
 # [INPUT] [REQUIRED] _target_country - Country ID. The country the invasion is targeting.
 # [INPUT] [OPTIONAL] _divisions_per_province - Integer. The number of divisions to spawn in each state. Must be between 1 and 10 inclusive. Defaults to 1.
-# [INPUT] [OPTIONAL] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper. Defaults to 1.
+# [INPUT] [OPTIONAL] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper, 7 = 20Width Infantry, 8 = Marines, 9 = Amtrac + Tanks, 10 = SNLF, 11 = Armoured SNLF. Defaults to 1
 # [INPUT] [OPTIONAL] _start_experience - Float. The starting experience of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.45 (Regular 1).
 # [INPUT] [OPTIONAL] _start_equipment - Float. The starting equipment of the spawned divisions AND will be taken from the stockpile of the country. Must be between 0.1 and 1. Defaults to 1.
 # [INPUT] [OPTIONAL] _start_manpower - Float. The starting manpower of the spawned divisions. Must be between 0.1 and 1. Defaults to 1.
@@ -1197,7 +1209,7 @@ WA_AI_DIVISION_spawn_invasion = {
 		limit = {
 			OR = {
 				check_variable = { _division_template < 1 }
-				check_variable = { _division_template > 6 }
+				check_variable = { _division_template > 11 }
 			}
 		}
 		set_temp_variable = { _division_template = 1 }
