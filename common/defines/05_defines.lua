@@ -234,7 +234,7 @@ NDefines.NProduction.MINIMUM_NUMBER_OF_FACTORIES_TAKEN_BY_CONSUMER_GOODS_PERCENT
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Market
 NDefines.NMarket.IC_TO_CIC_FACTOR = 0.75											-- The factor for mapping IC cost to CIC cost. Should be a positive number.
-NDefines.NMarket.MAX_CIV_FACTORIES_PER_CONTRACT = 20								-- Max number of factories that can be assigned for paying single contract.
+NDefines.NMarket.MAX_CIV_FACTORIES_PER_CONTRACT = 30								-- Max number of factories that can be assigned for paying single contract.
 NDefines.NMarket.LOW_PRICE_LEVEL_FACTOR = 0.67										-- The factor of base equipment price for low price level. Should be in range (0,1]
 NDefines.NMarket.HIGH_PRICE_LEVEL_FACTOR = 1.33										-- The factor of base equipment price for high price level. Should be more than 1.
 
@@ -633,9 +633,9 @@ NDefines.NAir.INTERCEPTION_DISTANCE_SCALE = 10 										-- At this many pixels 
 NDefines.NAir.INTERCEPTION_DAMAGE_SCALE = 1											-- Multiply the interception damage with this value. Works as a cap when interception distance is at maximum.
 
 NDefines.NAir.NAVAL_COMBAT_EXTERNAL_PLANES_JOIN_RATIO = 0.040							-- Max planes that can join a combat comparing to the total strength of the ships
-NDefines.NAir.NAVAL_COMBAT_EXTERNAL_PLANES_JOIN_RATIO_PER_DAY = 0.4 
+NDefines.NAir.NAVAL_COMBAT_EXTERNAL_PLANES_JOIN_RATIO_PER_DAY = 0.4
 NDefines.NAir.DAY_NIGHT_COVERAGE_FACTOR = 0.02 										-- The max night coverage in a region that is still considered to be day-time when determining if day/night air missions shall run.
-NDefines.NAir.NAVAL_COMBAT_EXTERNAL_PLANES_MIN_CAP = 25								-- minimum number of planes to join per naval battle 
+NDefines.NAir.NAVAL_COMBAT_EXTERNAL_PLANES_MIN_CAP = 25								-- minimum number of planes to join per naval battle
 
 NDefines.NAir.PORT_STRIKE_DAMAGE_FACTOR = 0.1										-- How much damage is dealt to ports during a port strike (per plane damage [complex number] * num flying planes * define)
 
