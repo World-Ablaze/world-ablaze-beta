@@ -2327,6 +2327,63 @@ on_actions = {
 		}
 	}
 
+	on_deployed_leader_defeated = {
+		effect = {
+			if = {
+				limit = { can_be_captured = yes }
+				# TODO TAOG: a percentage chance to be captured? Other effects otherwise?
+
+				# is_in_state requires the leader to still be deployed, so check before capture_by
+				if = {
+					limit = {
+						is_in_state = 224
+						FROM = { is_ai = no }
+					}
+					FROM = {
+						set_country_flag = achievement_captured_general_in_bryansk
+					}
+				}
+
+				capture_by = FROM
+				FROM = {
+					if = {
+						limit = { is_ai = no }
+						set_country_flag = achievement_captured_a_general
+					}
+				}
+				if = {
+					limit = {
+						is_field_marshal = yes
+						FROM = { is_ai = no }
+					}
+					FROM = {
+						set_country_flag = achievement_captured_a_field_marshal
+					}
+				}
+				if = {
+					limit = {
+						tag = GER
+						FROM = { is_ai = no }
+					}
+					if = {
+						limit = { is_character = GER_erwin_rommel }
+						FROM = { set_country_flag = achievement_captured_rommel }
+					}
+				}
+			}
+			else = {
+				# uncapturable leaders (e.g. country leaders) get wounded instead
+				if = {
+					limit = { NOT = { has_trait = wounded } }
+					add_timed_unit_leader_trait = {
+						trait = wounded
+						days = 90
+					}
+				}
+			}
+		}
+	}
+
 	# root country that invades
 	# scope state that is invaded
 	# from scope state that the invasion started
