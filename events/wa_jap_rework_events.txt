@@ -88,3 +88,742 @@ country_event = {
 		}
 	}
 }
+
+# Greater East Asia Conference - announcement to Japan and all member governments
+country_event = {
+	id = jap_rework.10
+	title = jap_rework.10.t
+	desc = jap_rework.10.d
+	picture = GFX_report_event_generic_conference
+
+	is_triggered_only = yes
+
+	option = {
+		name = jap_rework.10.a
+		trigger = {
+			tag = JAP
+		}
+		activate_mission = JAP_geac_window
+		set_country_flag = { flag = JAP_geac_window_flag value = 1 days = 40 }
+	}
+
+	option = {
+		name = jap_rework.10.b
+		trigger = {
+			NOT = { tag = JAP }
+		}
+	}
+}
+
+# Greater East Asia Conference - defense agenda
+country_event = {
+	id = jap_rework.11
+	title = jap_rework.11.t
+	desc = jap_rework.11.d
+	picture = GFX_report_event_generic_conference
+
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			set_country_flag = JAP_geac_defense_flag
+			set_variable = { var = JAP_geac_defense_answers value = 0 }
+		}
+	}
+
+	# Put the agenda to the delegations
+	option = {
+		name = jap_rework.11.a
+		every_country = {
+			limit = {
+				is_subject_of = ROOT
+			}
+			country_event = { id = jap_rework.12 hours = 48 random_hours = 24 }
+		}
+		JAP_geac_set_subject_counter = yes
+	}
+
+	# Lean on the delegations
+	option = {
+		name = jap_rework.11.b
+		add_political_power = -25
+		set_country_flag = JAP_geac_pressure_flag
+		every_country = {
+			limit = {
+				is_subject_of = ROOT
+			}
+			country_event = { id = jap_rework.12 hours = 48 random_hours = 24 }
+		}
+		JAP_geac_set_subject_counter = yes
+	}
+
+	# Dictate terms
+	option = {
+		name = jap_rework.11.c
+		ai_chance = { factor = 50 }
+		add_political_power = -50
+		set_country_flag = JAP_geac_extensive_pressure_flag
+		every_country = {
+			limit = {
+				is_subject_of = ROOT
+			}
+			country_event = { id = jap_rework.12 hours = 48 random_hours = 24 }
+		}
+		JAP_geac_set_subject_counter = yes
+	}
+}
+
+country_event = {
+	id = jap_rework.12
+	title = jap_rework.11.t
+	desc = jap_rework.12.d
+	picture = GFX_report_event_generic_conference
+
+	is_triggered_only = yes
+
+	# Accept
+	option = {
+		name = jap_rework.12.a
+		ai_chance = {
+			factor = 70
+			modifier = {
+				factor = 2
+				FROM = { has_country_flag = JAP_geac_pressure_flag }
+			}
+			modifier = {
+				factor = 3
+				FROM = { has_country_flag = JAP_geac_extensive_pressure_flag }
+			}
+		}
+		if = {
+			limit = {
+				NOT = { has_country_flag = JAP_geac_defense_template }
+			}
+			set_country_flag = JAP_geac_defense_template
+			division_template = {
+				name = "East Asia Defense Force"
+				is_locked = yes
+				force_allow_recruiting = yes
+				division_cap = 10
+				priority = 1
+				regiments = {
+					heavy_infantry = { x = 0 y = 0 }
+					heavy_infantry = { x = 0 y = 1 }
+					heavy_infantry = { x = 0 y = 2 }
+					heavy_infantry = { x = 1 y = 0 }
+					heavy_infantry = { x = 1 y = 1 }
+					heavy_infantry = { x = 1 y = 2 }
+					artillery_brigade = { x = 2 y = 0 }
+					artillery_brigade = { x = 2 y = 1 }
+				}
+				support = {
+					normal_engineer = { x = 0 y = 0 }
+					horse_logistics_company = { x = 0 y = 1 }
+				}
+			}
+		}
+		capital_scope = {
+			create_unit = {
+				division = "name = \"East Asia Defense Force 1\" division_template = \"East Asia Defense Force\" start_experience_factor = 0.2 start_equipment_factor = 0.9"
+				owner = PREV
+			}
+			create_unit = {
+				division = "name = \"East Asia Defense Force 2\" division_template = \"East Asia Defense Force\" start_experience_factor = 0.2 start_equipment_factor = 0.9"
+				owner = PREV
+			}
+			create_unit = {
+				division = "name = \"East Asia Defense Force 3\" division_template = \"East Asia Defense Force\" start_experience_factor = 0.2 start_equipment_factor = 0.9"
+				owner = PREV
+			}
+			create_unit = {
+				division = "name = \"East Asia Defense Force 4\" division_template = \"East Asia Defense Force\" start_experience_factor = 0.2 start_equipment_factor = 0.9"
+				owner = PREV
+			}
+			create_unit = {
+				division = "name = \"East Asia Defense Force 5\" division_template = \"East Asia Defense Force\" start_experience_factor = 0.2 start_equipment_factor = 0.9"
+				owner = PREV
+			}
+		}
+		FROM = {
+			country_event = { id = jap_rework.13 }
+		}
+	}
+
+	# Reject
+	option = {
+		name = jap_rework.12.b
+		ai_chance = {
+			factor = 30
+			modifier = {
+				factor = 0
+				is_historical_focus_on = yes
+			}
+		}
+		FROM = {
+			country_event = { id = jap_rework.14 }
+		}
+	}
+}
+
+country_event = {
+	id = jap_rework.13
+	title = jap_rework.13.t
+	desc = jap_rework.13.d
+	picture = GFX_report_event_generic_read_write
+
+	is_triggered_only = yes
+
+	option = {
+		name = jap_rework.13.a
+		JAP_geac_defense_level_up = yes
+		add_to_variable = { var = JAP_geac_defense_answers value = 1 }
+		JAP_geac_clear_in_progress_flags = yes
+	}
+}
+
+country_event = {
+	id = jap_rework.14
+	title = jap_rework.14.t
+	desc = jap_rework.14.d
+	picture = GFX_report_event_generic_read_write
+
+	is_triggered_only = yes
+
+	option = {
+		name = jap_rework.14.a
+		add_to_variable = { var = JAP_geac_defense_answers value = 1 }
+		JAP_geac_clear_in_progress_flags = yes
+	}
+}
+
+# Greater East Asia Conference - economy agenda
+country_event = {
+	id = jap_rework.15
+	title = jap_rework.15.t
+	desc = jap_rework.15.d
+	picture = GFX_report_event_generic_conference
+
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			set_country_flag = JAP_geac_economy_flag
+			set_variable = { var = JAP_geac_economy_answers value = 0 }
+		}
+	}
+
+	# Put the agenda to the delegations
+	option = {
+		name = jap_rework.15.a
+		every_country = {
+			limit = {
+				is_subject_of = ROOT
+			}
+			country_event = { id = jap_rework.16 hours = 48 random_hours = 24 }
+		}
+		JAP_geac_set_subject_counter = yes
+	}
+
+	# Lean on the delegations
+	option = {
+		name = jap_rework.15.b
+		add_political_power = -25
+		set_country_flag = JAP_geac_pressure_flag
+		every_country = {
+			limit = {
+				is_subject_of = ROOT
+			}
+			country_event = { id = jap_rework.16 hours = 48 random_hours = 24 }
+		}
+		JAP_geac_set_subject_counter = yes
+	}
+
+	# Dictate terms
+	option = {
+		name = jap_rework.15.c
+		ai_chance = { factor = 50 }
+		add_political_power = -50
+		set_country_flag = JAP_geac_extensive_pressure_flag
+		every_country = {
+			limit = {
+				is_subject_of = ROOT
+			}
+			country_event = { id = jap_rework.16 hours = 48 random_hours = 24 }
+		}
+		JAP_geac_set_subject_counter = yes
+	}
+}
+
+country_event = {
+	id = jap_rework.16
+	title = jap_rework.15.t
+	desc = jap_rework.16.d
+	picture = GFX_report_event_generic_conference
+
+	is_triggered_only = yes
+
+	# Accept
+	option = {
+		name = jap_rework.16.a
+		ai_chance = {
+			factor = 70
+			modifier = {
+				factor = 2
+				FROM = { has_country_flag = JAP_geac_pressure_flag }
+			}
+			modifier = {
+				factor = 3
+				FROM = { has_country_flag = JAP_geac_extensive_pressure_flag }
+			}
+		}
+		set_country_flag = JAP_geac_development_unlocked
+		FROM = {
+			country_event = { id = jap_rework.17 }
+		}
+	}
+
+	# Reject
+	option = {
+		name = jap_rework.16.b
+		ai_chance = {
+			factor = 30
+			modifier = {
+				factor = 0
+				is_historical_focus_on = yes
+			}
+		}
+		FROM = {
+			country_event = { id = jap_rework.18 }
+		}
+	}
+}
+
+country_event = {
+	id = jap_rework.17
+	title = jap_rework.17.t
+	desc = jap_rework.17.d
+	picture = GFX_report_event_generic_read_write
+
+	is_triggered_only = yes
+
+	option = {
+		name = jap_rework.17.a
+		add_to_variable = { var = JAP_geac_economy_answers value = 1 }
+		JAP_geac_clear_in_progress_flags = yes
+	}
+}
+
+country_event = {
+	id = jap_rework.18
+	title = jap_rework.18.t
+	desc = jap_rework.18.d
+	picture = GFX_report_event_generic_read_write
+
+	is_triggered_only = yes
+
+	option = {
+		name = jap_rework.18.a
+		add_to_variable = { var = JAP_geac_economy_answers value = 1 }
+		JAP_geac_clear_in_progress_flags = yes
+	}
+}
+
+# Greater East Asia Conference - resources agenda
+country_event = {
+	id = jap_rework.19
+	title = jap_rework.19.t
+	desc = jap_rework.19.d
+	picture = GFX_report_event_generic_conference
+
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			set_country_flag = JAP_geac_resources_flag
+			set_variable = { var = JAP_geac_resources_answers value = 0 }
+		}
+	}
+
+	# Put the agenda to the delegations
+	option = {
+		name = jap_rework.19.a
+		every_country = {
+			limit = {
+				is_subject_of = ROOT
+			}
+			country_event = { id = jap_rework.20 hours = 48 random_hours = 24 }
+		}
+		JAP_geac_set_subject_counter = yes
+	}
+
+	# Lean on the delegations
+	option = {
+		name = jap_rework.19.b
+		add_political_power = -25
+		set_country_flag = JAP_geac_pressure_flag
+		every_country = {
+			limit = {
+				is_subject_of = ROOT
+			}
+			country_event = { id = jap_rework.20 hours = 48 random_hours = 24 }
+		}
+		JAP_geac_set_subject_counter = yes
+	}
+
+	# Dictate terms
+	option = {
+		name = jap_rework.19.c
+		ai_chance = { factor = 50 }
+		add_political_power = -50
+		set_country_flag = JAP_geac_extensive_pressure_flag
+		every_country = {
+			limit = {
+				is_subject_of = ROOT
+			}
+			country_event = { id = jap_rework.20 hours = 48 random_hours = 24 }
+		}
+		JAP_geac_set_subject_counter = yes
+	}
+}
+
+country_event = {
+	id = jap_rework.20
+	title = jap_rework.19.t
+	desc = jap_rework.20.d
+	picture = GFX_report_event_generic_conference
+
+	is_triggered_only = yes
+
+	# Accept
+	option = {
+		name = jap_rework.20.a
+		ai_chance = {
+			factor = 70
+			modifier = {
+				factor = 2
+				FROM = { has_country_flag = JAP_geac_pressure_flag }
+			}
+			modifier = {
+				factor = 3
+				FROM = { has_country_flag = JAP_geac_extensive_pressure_flag }
+			}
+		}
+		add_timed_idea = { idea = JAP_geac_resource_cooperation days = 365 }
+		FROM = {
+			country_event = { id = jap_rework.21 }
+		}
+	}
+
+	# Reject
+	option = {
+		name = jap_rework.20.b
+		ai_chance = {
+			factor = 30
+			modifier = {
+				factor = 0
+				is_historical_focus_on = yes
+			}
+		}
+		FROM = {
+			country_event = { id = jap_rework.22 }
+		}
+	}
+}
+
+country_event = {
+	id = jap_rework.21
+	title = jap_rework.21.t
+	desc = jap_rework.21.d
+	picture = GFX_report_event_generic_read_write
+
+	is_triggered_only = yes
+
+	option = {
+		name = jap_rework.21.a
+		JAP_geac_resources_level_up = yes
+		add_to_variable = { var = JAP_geac_resources_answers value = 1 }
+		JAP_geac_clear_in_progress_flags = yes
+	}
+}
+
+country_event = {
+	id = jap_rework.22
+	title = jap_rework.22.t
+	desc = jap_rework.22.d
+	picture = GFX_report_event_generic_read_write
+
+	is_triggered_only = yes
+
+	option = {
+		name = jap_rework.22.a
+		add_to_variable = { var = JAP_geac_resources_answers value = 1 }
+		JAP_geac_clear_in_progress_flags = yes
+	}
+}
+
+# Greater East Asia Conference - amity agenda
+country_event = {
+	id = jap_rework.23
+	title = jap_rework.23.t
+	desc = jap_rework.23.d
+	picture = GFX_report_event_generic_conference
+
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			set_country_flag = JAP_geac_amity_flag
+			set_variable = { var = JAP_geac_amity_answers value = 0 }
+		}
+	}
+
+	# Put the agenda to the delegations
+	option = {
+		name = jap_rework.23.a
+		every_country = {
+			limit = {
+				is_subject_of = ROOT
+			}
+			country_event = { id = jap_rework.24 hours = 48 random_hours = 24 }
+		}
+		JAP_geac_set_subject_counter = yes
+	}
+
+	# Lean on the delegations
+	option = {
+		name = jap_rework.23.b
+		add_political_power = -25
+		set_country_flag = JAP_geac_pressure_flag
+		every_country = {
+			limit = {
+				is_subject_of = ROOT
+			}
+			country_event = { id = jap_rework.24 hours = 48 random_hours = 24 }
+		}
+		JAP_geac_set_subject_counter = yes
+	}
+
+	# Dictate terms
+	option = {
+		name = jap_rework.23.c
+		ai_chance = { factor = 50 }
+		add_political_power = -50
+		set_country_flag = JAP_geac_extensive_pressure_flag
+		every_country = {
+			limit = {
+				is_subject_of = ROOT
+			}
+			country_event = { id = jap_rework.24 hours = 48 random_hours = 24 }
+		}
+		JAP_geac_set_subject_counter = yes
+	}
+}
+
+country_event = {
+	id = jap_rework.24
+	title = jap_rework.23.t
+	desc = jap_rework.24.d
+	picture = GFX_report_event_generic_conference
+
+	is_triggered_only = yes
+
+	# Accept
+	option = {
+		name = jap_rework.24.a
+		ai_chance = {
+			factor = 70
+			modifier = {
+				factor = 2
+				FROM = { has_country_flag = JAP_geac_pressure_flag }
+			}
+			modifier = {
+				factor = 3
+				FROM = { has_country_flag = JAP_geac_extensive_pressure_flag }
+			}
+		}
+		every_owned_state = {
+			add_compliance = 10
+		}
+		FROM = {
+			country_event = { id = jap_rework.25 }
+		}
+	}
+
+	# Reject
+	option = {
+		name = jap_rework.24.b
+		ai_chance = {
+			factor = 30
+			modifier = {
+				factor = 0
+				is_historical_focus_on = yes
+			}
+		}
+		FROM = {
+			country_event = { id = jap_rework.26 }
+		}
+	}
+}
+
+country_event = {
+	id = jap_rework.25
+	title = jap_rework.25.t
+	desc = jap_rework.25.d
+	picture = GFX_report_event_generic_read_write
+
+	is_triggered_only = yes
+
+	option = {
+		name = jap_rework.25.a
+		add_to_variable = { var = JAP_geac_amity_answers value = 1 }
+		JAP_geac_clear_in_progress_flags = yes
+	}
+}
+
+country_event = {
+	id = jap_rework.26
+	title = jap_rework.26.t
+	desc = jap_rework.26.d
+	picture = GFX_report_event_generic_read_write
+
+	is_triggered_only = yes
+
+	option = {
+		name = jap_rework.26.a
+		add_to_variable = { var = JAP_geac_amity_answers value = 1 }
+		JAP_geac_clear_in_progress_flags = yes
+	}
+}
+
+# Greater East Asia Conference - declaration agenda
+country_event = {
+	id = jap_rework.27
+	title = jap_rework.27.t
+	desc = jap_rework.27.d
+	picture = GFX_report_event_generic_conference
+
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			set_country_flag = JAP_geac_declaration_flag
+			set_variable = { var = JAP_geac_declaration_answers value = 0 }
+		}
+	}
+
+	# Put the agenda to the delegations
+	option = {
+		name = jap_rework.27.a
+		every_country = {
+			limit = {
+				is_subject_of = ROOT
+			}
+			country_event = { id = jap_rework.28 hours = 48 random_hours = 24 }
+		}
+		JAP_geac_set_subject_counter = yes
+	}
+
+	# Lean on the delegations
+	option = {
+		name = jap_rework.27.b
+		add_political_power = -25
+		set_country_flag = JAP_geac_pressure_flag
+		every_country = {
+			limit = {
+				is_subject_of = ROOT
+			}
+			country_event = { id = jap_rework.28 hours = 48 random_hours = 24 }
+		}
+		JAP_geac_set_subject_counter = yes
+	}
+
+	# Dictate terms
+	option = {
+		name = jap_rework.27.c
+		ai_chance = { factor = 50 }
+		add_political_power = -50
+		set_country_flag = JAP_geac_extensive_pressure_flag
+		every_country = {
+			limit = {
+				is_subject_of = ROOT
+			}
+			country_event = { id = jap_rework.28 hours = 48 random_hours = 24 }
+		}
+		JAP_geac_set_subject_counter = yes
+	}
+}
+
+country_event = {
+	id = jap_rework.28
+	title = jap_rework.27.t
+	desc = jap_rework.28.d
+	picture = GFX_report_event_generic_conference
+
+	is_triggered_only = yes
+
+	# Accept
+	option = {
+		name = jap_rework.28.a
+		ai_chance = {
+			factor = 70
+			modifier = {
+				factor = 2
+				FROM = { has_country_flag = JAP_geac_pressure_flag }
+			}
+			modifier = {
+				factor = 3
+				FROM = { has_country_flag = JAP_geac_extensive_pressure_flag }
+			}
+		}
+		add_timed_idea = { idea = JAP_geac_joint_declaration days = 365 }
+		FROM = {
+			country_event = { id = jap_rework.29 }
+		}
+	}
+
+	# Reject
+	option = {
+		name = jap_rework.28.b
+		ai_chance = {
+			factor = 30
+			modifier = {
+				factor = 0
+				is_historical_focus_on = yes
+			}
+		}
+		FROM = {
+			country_event = { id = jap_rework.30 }
+		}
+	}
+}
+
+country_event = {
+	id = jap_rework.29
+	title = jap_rework.29.t
+	desc = jap_rework.29.d
+	picture = GFX_report_event_generic_read_write
+
+	is_triggered_only = yes
+
+	option = {
+		name = jap_rework.29.a
+		add_war_support = 0.02
+		add_to_variable = { var = JAP_geac_declaration_answers value = 1 }
+		JAP_geac_clear_in_progress_flags = yes
+	}
+}
+
+country_event = {
+	id = jap_rework.30
+	title = jap_rework.30.t
+	desc = jap_rework.30.d
+	picture = GFX_report_event_generic_read_write
+
+	is_triggered_only = yes
+
+	option = {
+		name = jap_rework.30.a
+		add_to_variable = { var = JAP_geac_declaration_answers value = 1 }
+		JAP_geac_clear_in_progress_flags = yes
+	}
+}
