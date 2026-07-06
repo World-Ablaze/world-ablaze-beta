@@ -309,6 +309,9 @@ country_event = {
 			country_event = { id = jap_rework.12 hours = 48 random_hours = 24 }
 		}
 		JAP_geac_set_subject_counter = yes
+		hidden_effect = {
+			country_event = { id = jap_rework.31 }
+		}
 	}
 
 	# Lean on the delegations
@@ -323,6 +326,9 @@ country_event = {
 			country_event = { id = jap_rework.12 hours = 48 random_hours = 24 }
 		}
 		JAP_geac_set_subject_counter = yes
+		hidden_effect = {
+			country_event = { id = jap_rework.31 }
+		}
 	}
 
 	# Dictate terms
@@ -338,6 +344,9 @@ country_event = {
 			country_event = { id = jap_rework.12 hours = 48 random_hours = 24 }
 		}
 		JAP_geac_set_subject_counter = yes
+		hidden_effect = {
+			country_event = { id = jap_rework.31 }
+		}
 	}
 }
 
@@ -363,54 +372,9 @@ country_event = {
 				FROM = { has_country_flag = JAP_geac_extensive_pressure_flag }
 			}
 		}
-		if = {
-			limit = {
-				NOT = { has_country_flag = JAP_geac_defense_template }
-			}
-			set_country_flag = JAP_geac_defense_template
-			division_template = {
-				name = "East Asia Defense Force"
-				is_locked = yes
-				force_allow_recruiting = yes
-				division_cap = 10
-				priority = 1
-				regiments = {
-					heavy_infantry = { x = 0 y = 0 }
-					heavy_infantry = { x = 0 y = 1 }
-					heavy_infantry = { x = 0 y = 2 }
-					heavy_infantry = { x = 1 y = 0 }
-					heavy_infantry = { x = 1 y = 1 }
-					heavy_infantry = { x = 1 y = 2 }
-					artillery_brigade = { x = 2 y = 0 }
-					artillery_brigade = { x = 2 y = 1 }
-				}
-				support = {
-					normal_engineer = { x = 0 y = 0 }
-					horse_logistics_company = { x = 0 y = 1 }
-				}
-			}
-		}
-		capital_scope = {
-			create_unit = {
-				division = "name = \"East Asia Defense Force 1\" division_template = \"East Asia Defense Force\" start_experience_factor = 0.2 start_equipment_factor = 0.9"
-				owner = PREV
-			}
-			create_unit = {
-				division = "name = \"East Asia Defense Force 2\" division_template = \"East Asia Defense Force\" start_experience_factor = 0.2 start_equipment_factor = 0.9"
-				owner = PREV
-			}
-			create_unit = {
-				division = "name = \"East Asia Defense Force 3\" division_template = \"East Asia Defense Force\" start_experience_factor = 0.2 start_equipment_factor = 0.9"
-				owner = PREV
-			}
-			create_unit = {
-				division = "name = \"East Asia Defense Force 4\" division_template = \"East Asia Defense Force\" start_experience_factor = 0.2 start_equipment_factor = 0.9"
-				owner = PREV
-			}
-			create_unit = {
-				division = "name = \"East Asia Defense Force 5\" division_template = \"East Asia Defense Force\" start_experience_factor = 0.2 start_equipment_factor = 0.9"
-				owner = PREV
-			}
+		custom_effect_tooltip = JAP_geac_defense_muster_tt
+		hidden_effect = {
+			country_event = { id = jap_rework.32 days = 60 }
 		}
 		FROM = {
 			country_event = { id = jap_rework.13 }
@@ -994,4 +958,54 @@ country_event = {
 		add_to_variable = { var = JAP_geac_declaration_answers value = 1 }
 		JAP_geac_clear_in_progress_flags = yes
 	}
+}
+
+# Greater East Asia Conference - arming the East Asia Defense Force
+country_event = {
+	id = jap_rework.31
+	title = jap_rework.31.t
+	desc = jap_rework.31.d
+	picture = GFX_report_event_generic_conference
+
+	is_triggered_only = yes
+
+	# Token shipments
+	option = {
+		name = jap_rework.31.a
+		ai_chance = { factor = 40 }
+		clr_country_flag = JAP_geac_supply_large
+		set_country_flag = JAP_geac_supply_small
+		add_timed_idea = { idea = JAP_geac_arms_production_small days = 30 }
+	}
+
+	# Full production run
+	option = {
+		name = jap_rework.31.b
+		ai_chance = { factor = 60 }
+		clr_country_flag = JAP_geac_supply_small
+		set_country_flag = JAP_geac_supply_large
+		add_timed_idea = { idea = JAP_geac_arms_production_large days = 30 }
+	}
+}
+
+# Greater East Asia Conference - the defense force musters 60 days after acceptance
+country_event = {
+	id = jap_rework.32
+	hidden = yes
+
+	is_triggered_only = yes
+
+	immediate = {
+		if = {
+			limit = {
+				JAP = { has_country_flag = JAP_geac_supply_large }
+			}
+			JAP_geac_defense_spawn_full = yes
+		}
+		else = {
+			JAP_geac_defense_spawn_half = yes
+		}
+	}
+
+	option = {}
 }
