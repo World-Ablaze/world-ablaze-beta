@@ -462,7 +462,7 @@ country_event = {
 		}
 	}
 
-	# Put the agenda to the delegations
+	# Put the resolution before the conference - it will pass
 	option = {
 		name = jap_rework.19.a
 		every_country = {
@@ -472,35 +472,9 @@ country_event = {
 			country_event = { id = jap_rework.20 hours = 48 random_hours = 24 }
 		}
 		JAP_geac_set_subject_counter = yes
-	}
-
-	# Lean on the delegations
-	option = {
-		name = jap_rework.19.b
-		add_political_power = -25
-		set_country_flag = JAP_geac_pressure_flag
-		every_country = {
-			limit = {
-				is_subject_of = ROOT
-			}
-			country_event = { id = jap_rework.20 hours = 48 random_hours = 24 }
+		hidden_effect = {
+			country_event = { id = jap_rework.35 }
 		}
-		JAP_geac_set_subject_counter = yes
-	}
-
-	# Dictate terms
-	option = {
-		name = jap_rework.19.c
-		ai_chance = { factor = 50 }
-		add_political_power = -50
-		set_country_flag = JAP_geac_extensive_pressure_flag
-		every_country = {
-			limit = {
-				is_subject_of = ROOT
-			}
-			country_event = { id = jap_rework.20 hours = 48 random_hours = 24 }
-		}
-		JAP_geac_set_subject_counter = yes
 	}
 }
 
@@ -512,38 +486,11 @@ country_event = {
 
 	is_triggered_only = yes
 
-	# Accept
+	# The delegation bows to the resolution
 	option = {
 		name = jap_rework.20.a
-		ai_chance = {
-			factor = 70
-			modifier = {
-				factor = 2
-				FROM = { has_country_flag = JAP_geac_pressure_flag }
-			}
-			modifier = {
-				factor = 3
-				FROM = { has_country_flag = JAP_geac_extensive_pressure_flag }
-			}
-		}
-		add_timed_idea = { idea = JAP_geac_resource_cooperation days = 365 }
 		FROM = {
 			country_event = { id = jap_rework.21 }
-		}
-	}
-
-	# Reject
-	option = {
-		name = jap_rework.20.b
-		ai_chance = {
-			factor = 30
-			modifier = {
-				factor = 0
-				is_historical_focus_on = yes
-			}
-		}
-		FROM = {
-			country_event = { id = jap_rework.22 }
 		}
 	}
 }
@@ -558,7 +505,6 @@ country_event = {
 
 	option = {
 		name = jap_rework.21.a
-		JAP_geac_resources_level_up = yes
 		add_to_variable = { var = JAP_geac_resources_answers value = 1 }
 		JAP_geac_clear_in_progress_flags = yes
 	}
@@ -1004,4 +950,42 @@ country_event = {
 	}
 
 	option = {}
+}
+
+# Greater East Asia Conference - the course of the resource policy
+country_event = {
+	id = jap_rework.35
+	title = jap_rework.35.t
+	desc = jap_rework.35.d
+	picture = GFX_report_event_generic_conference
+
+	is_triggered_only = yes
+
+	# Total mobilization of the sphere - the colonial course
+	option = {
+		name = jap_rework.35.a
+		ai_chance = { factor = 60 }
+		custom_effect_tooltip = JAP_geac_resources_colonial_tt
+	}
+
+	# A development compact between sovereign nations - the independence course
+	option = {
+		name = jap_rework.35.b
+		ai_chance = { factor = 40 }
+		every_country = {
+			limit = {
+				is_subject_of = ROOT
+			}
+			add_stability = 0.05
+			every_owned_state = {
+				add_compliance = 5
+			}
+			add_autonomy_score = {
+				value = 200
+				localization = JAP_geac_resources_autonomy_gain
+			}
+		}
+		add_to_variable = { JAP_kantaiha_influence = -1 }
+		custom_effect_tooltip = JAP_geac_resources_navy_tt
+	}
 }
