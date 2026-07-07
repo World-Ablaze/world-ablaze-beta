@@ -46,19 +46,21 @@ Every country and every faction with content in more than one domain is split in
 | --- | --- | --- |
 | Front | `_FRONT` | `front_unit_request`, `front_control`, `front_armor_score`, `force_concentration_front_factor`, `force_concentration_target_weight`, `force_ratio`, `infantry`, `garrison` (small/normal cases) |
 | Invasion | `_INVASION` | `invasion_unit_request`, `invade`, `naval_invasion_focus` |
-| Naval | `_NAVAL` | `naval_avoid_region`, `strike_force_home_base`, `strategic_air_importance` (when the rule is sea-facing) |
+| Naval | `WA_AI_NAVAL_*` | `naval_avoid_region`, `naval_convoy_raid_region`, `naval_dominance`, `naval_mission_threshold`, `strike_force_home_base`, `naval_invasion_dominance_weight`, `naval_invasion_support_priority`, `strategic_air_importance` (when the rule is sea-facing) |
 | Diplomacy | `_DIPLOMACY` | `conquer`, `antagonize`, `protect`, `contain`, `ignore`, `ignore_claim`, `declare_war`, `diplo_action_desire`, `diplo_action_acceptance`, `dont_defend_ally_borders`, `force_defend_ally_borders` |
 | Theatre | `_THEATRE` | `theatre_distribution_demand_increase`, `area_priority`, `put_unit_buffers`, `spare_unit_factor` |
 | Garrison | `_GARRISON` | Only when garrison rules for one country are large enough to warrant their own file; otherwise garrison stays inside `_FRONT` |
 
+Naval rules must remain adaptive. The layer owns the concern (`Country > Faction > Default`), but the `enable = {}` block should also call readiness/opportunity triggers when a rule depends on changing strategic conditions. For example, Axis deep-Atlantic avoidance is a Faction constraint while the United Kingdom is operational; it is disabled by `WA_AI_MILITARY_NAVAL_axis_has_atlantic_opening` after the fall/capitulation of the UK so Axis countries can use Country or future Faction plans in the Atlantic.
+
 A given country only gets a file for the domains in which it actually has content. A Default or Faction file may be unsplit if it only carries one domain (e.g. `WA_AI_MILITARY_DEFAULT_INVASION.txt` is fine without a `_FRONT` sibling).
 
-Names follow the pattern `WA_AI_MILITARY_<LAYER>_<DOMAIN>[_<TAG>].txt`. Examples:
+Names follow the pattern `WA_AI_MILITARY_<LAYER>_<DOMAIN>[_<TAG>].txt` for military domains. Naval files use the domain-first pattern `WA_AI_NAVAL_<LAYER>[_<TAG_OR_SCOPE>].txt`. Examples:
 
 - `WA_AI_MILITARY_DEFAULT_FRONT_archetypes.txt`
 - `WA_AI_MILITARY_REGION_SOUTH_AMERICA.txt`
 - `WA_AI_MILITARY_FACTION_ALLIES_INVASION.txt`
-- `WA_AI_MILITARY_COUNTRY_USA_NAVAL.txt`
+- `WA_AI_NAVAL_COUNTRY_USA.txt`
 
 ---
 
@@ -92,6 +94,11 @@ This is the master legend. For each `ai_strategy` `type` currently in use, it st
 | `conquer` | Sums per target | Additive per target | n/a | 0 to 200 |
 | `antagonize` | Sums per target | Additive per target | n/a | 0 to 200 |
 | `naval_avoid_region` | Sums per region | Additive per region | n/a | 0 to +500 |
+| `naval_convoy_raid_region` | Sums per region | Additive per region | n/a | 0 to +500 |
+| `naval_dominance` | Sums per region/area | Additive per region | n/a | 0 to 100 |
+| `naval_mission_threshold` | Sums per mission | Additive | n/a | -100 to +100 |
+| `naval_invasion_dominance_weight` | Sums | Additive | n/a | 0 to +100 |
+| `naval_invasion_support_priority` | Sums per region | Additive per region | n/a | 0 to +100 |
 | `put_unit_buffers` | Sums per state | Additive per state | n/a | 0 to 100 |
 | `declare_war` | Sums per target | Country-only | n/a | 0 to 100 |
 | `diplo_action_desire` | Sums per target/action | Country-only | n/a | 0 to 100 |
@@ -117,9 +124,9 @@ This is the master legend. For each `ai_strategy` `type` currently in use, it st
    # range:   0 to +500
    # policy:  Additive per region
    # domain:  NAVAL
-   WA_AI_MILITARY_COUNTRY_USA_NAVAL_avoid_black_sea = { ... }
+   WA_AI_NAVAL_COUNTRY_USA_avoid_black_sea = { ... }
    ```
-4. **Block names must follow** `WA_AI_MILITARY_<LAYER>_<DOMAIN>_<DESCRIPTOR>` for Default/Region/Faction blocks, and `WA_AI_MILITARY_COUNTRY_<TAG>_<DOMAIN>_<DESCRIPTOR>` for Country blocks. The descriptor is lowercase snake_case and should describe the *behaviour*, not the tag.
+4. **Block names must follow** `WA_AI_MILITARY_<LAYER>_<DOMAIN>_<DESCRIPTOR>` for Default/Region/Faction military-domain blocks, `WA_AI_MILITARY_COUNTRY_<TAG>_<DOMAIN>_<DESCRIPTOR>` for Country military-domain blocks, and `WA_AI_NAVAL_<LAYER>[_<TAG_OR_SCOPE>]_<DESCRIPTOR>` for naval blocks. The descriptor is lowercase snake_case and should describe the *behaviour*, not the tag.
 5. **Do not duplicate behaviour across layers.** If a Default rule and a Country rule cover the same intent, the Country rule should either differ meaningfully (Additive types) or replace the Default rule under Phase 5 mutual-exclusion (Exclusive types). For Phase 1, document the duplication in `WA_AI_MILITARY_TYPES_REFERENCE.md` rather than fixing it.
 6. **Country-specific blocks living in faction files must be re-homed** to `WA_AI_MILITARY_COUNTRY_<TAG>_<DOMAIN>.txt` during Phase 2-4. Until then, keep them where they are but flag them in the types reference.
 
@@ -161,7 +168,7 @@ common/ai_strategy/
   WA_AI_MILITARY_FACTION_CHINA_FRONT_DIPLOMACY.txt
   WA_AI_MILITARY_COUNTRY_USA_FRONT.txt
   WA_AI_MILITARY_COUNTRY_USA_INVASION.txt
-  WA_AI_MILITARY_COUNTRY_USA_NAVAL.txt
+  WA_AI_NAVAL_COUNTRY_USA.txt
   WA_AI_MILITARY_COUNTRY_USA_DIPLOMACY.txt
   WA_AI_MILITARY_COUNTRY_USA_THEATRE.txt
   ...

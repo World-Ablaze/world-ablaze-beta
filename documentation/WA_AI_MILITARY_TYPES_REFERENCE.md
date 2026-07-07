@@ -4,7 +4,7 @@ Per-`type` migration TODO list. Companion to `WA_AI_MILITARY_SYSTEM.md`. Read th
 
 ## Canonical TYPE \u2192 DOMAIN mapping (post-Phase 6)
 
-This is the **single source of truth** for which `_DOMAIN.txt` file every `ai_strategy` block belongs in. The `tools/wa_ai_military_phase6_domain_split.py` tool encodes this same table in its `CANONICAL_DOMAIN` dict; if the two diverge, the tool wins and this table must be updated to match.
+This is the **single source of truth** for which domain file every `ai_strategy` block belongs in. Military-domain files use `WA_AI_MILITARY_<LAYER>..._<DOMAIN>.txt`; naval-domain files use `WA_AI_NAVAL_<LAYER>[_<TAG_OR_SCOPE>].txt`.
 
 | `type =` value | Domain | File suffix | Rationale |
 | --- | --- | --- | --- |
@@ -19,9 +19,14 @@ This is the **single source of truth** for which `_DOMAIN.txt` file every `ai_st
 | `invasion_unit_request` | INVASION | `_INVASION` | Sizes the amphibious-invasion division pool. |
 | `invade` | INVASION | `_INVASION` | Picks invasion targets. |
 | `naval_invasion_focus` | INVASION | `_INVASION` | Invasion-precondition flag (boolean per target). |
-| `naval_avoid_region` | NAVAL | `_NAVAL` | Sea regions the fleet should avoid. |
-| `strike_force_home_base` | NAVAL | `_NAVAL` | Designates a base as fleet home. |
-| `strategic_air_importance` | NAVAL | `_NAVAL` | Strategic air emphasis (sea-facing). |
+| `naval_avoid_region` | NAVAL | `WA_AI_NAVAL_*` | Sea regions the fleet should avoid. |
+| `naval_convoy_raid_region` | NAVAL | `WA_AI_NAVAL_*` | Sea regions where convoy raiding should be emphasised. |
+| `naval_dominance` | NAVAL | `WA_AI_NAVAL_*` | Sea-region or AI-area naval dominance objective. |
+| `naval_mission_threshold` | NAVAL | `WA_AI_NAVAL_*` | Generic naval mission threshold tuning. |
+| `naval_invasion_dominance_weight` | NAVAL | `WA_AI_NAVAL_*` | Fleet emphasis on supremacy along active invasion paths. |
+| `naval_invasion_support_priority` | NAVAL | `WA_AI_NAVAL_*` | Priority for naval invasion support in a sea region. |
+| `strike_force_home_base` | NAVAL | `WA_AI_NAVAL_*` | Designates a base as fleet home. |
+| `strategic_air_importance` | NAVAL | `WA_AI_NAVAL_*` | Strategic air emphasis (sea-facing). |
 | `conquer` | DIPLOMACY | `_DIPLOMACY` | Inter-country posture: targets to subdue. |
 | `antagonize` | DIPLOMACY | `_DIPLOMACY` | Inter-country posture: increase friction. |
 | `protect` | DIPLOMACY | `_DIPLOMACY` | Inter-country posture: prioritise survival of an ally. |
@@ -53,11 +58,7 @@ Note: `dont_defend_ally_borders` and `force_defend_ally_borders` operate on divi
 
 ## Per-type migration history (Phase 1 snapshot, kept for reference)
 
-This was a **snapshot** of `common/ai_strategy/WA_AI_MILITARY_*.txt` at the time of Phase 1. Counts have drifted across Phases 2-6. Regenerate current counts by running:
-
-```powershell
-python tools/wa_ai_military_phase6_domain_split.py audit
-```
+This was a **snapshot** of `common/ai_strategy/WA_AI_MILITARY_*.txt` at the time of Phase 1. Counts have drifted across Phases 2-6. Keep current counts synchronized by statically reviewing `common/ai_strategy/WA_AI_MILITARY_*` and `common/ai_strategy/WA_AI_NAVAL_*` after future migrations.
 
 ## Inventory summary (Phase 1)
 
