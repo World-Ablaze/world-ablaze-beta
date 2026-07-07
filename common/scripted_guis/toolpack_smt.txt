@@ -1,0 +1,652 @@
+scripted_gui = {
+
+	smt_main = {
+
+		context_type = selected_state_context
+
+		window_name = "smt_main_container"
+
+		visible = {
+			ROOT = {
+				is_ai = no
+				has_global_flag = smt_enabled
+				OR = {
+					has_country_flag = tp_is_host
+					NOT = {
+						has_global_flag = tp_is_multiplayer
+					}
+				}
+			}
+		}
+
+		effects = {
+
+			smt_mark_button_click = {
+				FROM.FROM = {
+					set_state_flag = smt_marked
+				}
+			}
+			smt_unmark_button_click = {
+				FROM.FROM = {
+					clr_state_flag = smt_marked
+				}
+			}
+			smt_mark_all_click = {
+				FROM.OWNER = {
+					every_owned_state = {
+						set_state_flag = smt_marked
+					}
+				}
+			}
+			smt_mark_cores_click  = {
+				FROM.OWNER = {
+					every_owned_state = {
+						limit = {
+							is_core_of = PREV
+							NOT = { has_state_flag = smt_marked }
+						}
+						set_state_flag = smt_marked
+					}
+				}
+			}
+			smt_mark_colonies_click  = {
+				FROM.OWNER = {
+					every_owned_state = {
+						limit = {
+							NOT = { is_core_of = PREV }
+							NOT = { has_state_flag = smt_marked }
+						}
+						set_state_flag = smt_marked
+					}
+				}
+			}
+			smt_unmark_all_click = {
+				every_state = {
+					clr_state_flag = smt_marked
+				}
+			}
+			smt_mark_occupied_click = {
+				every_state = {
+					limit = {
+						is_controlled_by = FROM
+						NOT = { is_owned_by = FROM }
+					}
+					set_state_flag = smt_marked
+				}
+			}
+			smt_transfer_ownership_click = {
+				every_state = {
+					limit = { has_state_flag = smt_marked }
+					toolpack_cycle_action_log_variables = yes
+					add_to_array = { global.toolpack_mp_action_array_targets = THIS }
+					add_to_array = { global.toolpack_mp_action_array = 1 }
+					FROM.OWNER = { transfer_state = PREV }
+					if = {
+						limit = {
+							NOT = {
+								has_global_flag = smt_turned_off_autoclear
+							}
+						}
+						clr_state_flag = smt_marked
+					}
+				}
+			}
+			smt_transfer_control_click = {
+				every_state = {
+					limit = { has_state_flag = smt_marked }
+					toolpack_cycle_action_log_variables = yes
+					add_to_array = { global.toolpack_mp_action_array_targets = THIS }
+					add_to_array = { global.toolpack_mp_action_array = 1 }
+					FROM.OWNER = { set_state_controller = PREV }
+					if = {
+						limit = {
+							NOT = {
+								has_global_flag = smt_turned_off_autoclear
+							}
+						}
+						clr_state_flag = smt_marked
+					}
+				}
+			}
+			smt_transfer_resource_click = {
+				every_state = {
+					limit = { has_state_flag = smt_marked }
+					toolpack_cycle_action_log_variables = yes
+					add_to_array = { global.toolpack_mp_action_array_targets = THIS }
+					add_to_array = { global.toolpack_mp_action_array = 1 }
+					OWNER = {			#owner of the state
+						FROM.OWNER = {	#target
+							PREV = {	#owner of the state, again
+								give_resource_rights = {
+									receiver = PREV	#target
+									state = PREV.PREV.PREV
+									#resources = { oil }
+								}
+							}
+						}
+					}
+					if = {
+						limit = {
+							NOT = {
+								has_global_flag = smt_turned_off_autoclear
+							}
+						}
+						clr_state_flag = smt_marked
+					}
+				}
+			}
+			smt_set_capital_click = {
+				random_country = {
+					limit = { owns_state = FROM.FROM }
+					set_capital = { state = FROM.FROM }
+				}
+			}
+			smt_core_states_click = {
+				every_state = {
+					limit = { has_state_flag = smt_marked }
+					FROM.OWNER = { add_state_core = PREV }
+					if = {
+						limit = {
+							NOT = {
+								has_global_flag = smt_turned_off_autoclear
+							}
+						}
+						clr_state_flag = smt_marked
+					}
+					toolpack_cycle_action_log_variables = yes
+					add_to_array = { global.toolpack_mp_action_array_targets = THIS }
+					add_to_array = { global.toolpack_mp_action_array = 1 }
+				}
+			}
+			smt_uncore_states_click = {
+				every_state = {
+					limit = { has_state_flag = smt_marked }
+					FROM.OWNER = { remove_state_core = PREV }
+					if = {
+						limit = {
+							NOT = {
+								has_global_flag = smt_turned_off_autoclear
+							}
+						}
+						clr_state_flag = smt_marked
+					}
+				}
+				toolpack_cycle_action_log_variables = yes
+				add_to_array = { global.toolpack_mp_action_array_targets = THIS }
+				add_to_array = { global.toolpack_mp_action_array = 1 }
+			}
+			smt_claim_states_click = {
+				every_state = {
+					limit = { has_state_flag = smt_marked }
+					FROM.OWNER = { add_state_claim = PREV }
+					if = {
+						limit = {
+							NOT = {
+								has_global_flag = smt_turned_off_autoclear
+							}
+						}
+						clr_state_flag = smt_marked
+					}
+					toolpack_cycle_action_log_variables = yes
+					add_to_array = { global.toolpack_mp_action_array_targets = THIS }
+					add_to_array = { global.toolpack_mp_action_array = 1 }
+				}
+			}
+			smt_unclaim_states_click = {
+				every_state = {
+					limit = { has_state_flag = smt_marked }
+					FROM.OWNER = { remove_state_claim = PREV }
+					if = {
+						limit = {
+							NOT = {
+								has_global_flag = smt_turned_off_autoclear
+							}
+						}
+						clr_state_flag = smt_marked
+					}
+					toolpack_cycle_action_log_variables = yes
+					add_to_array = { global.toolpack_mp_action_array_targets = THIS }
+					add_to_array = { global.toolpack_mp_action_array = 1 }
+				}
+			}
+			smt_demilitarize_click = {
+				FROM.OWNER = {
+					every_state = {
+						limit = { has_state_flag = smt_marked }
+						set_demilitarized_zone = yes
+						if = {
+							limit = {
+								NOT = {
+									has_global_flag = smt_turned_off_autoclear
+								}
+							}
+							clr_state_flag = smt_marked
+						}
+						toolpack_cycle_action_log_variables = yes
+						add_to_array = { global.toolpack_mp_action_array_targets = THIS }
+						add_to_array = { global.toolpack_mp_action_array = 1 }
+					}
+				}
+			}
+			smt_remilitarize_click = {
+				FROM.OWNER = {
+					every_state = {
+						limit = { has_state_flag = smt_marked }
+						set_demilitarized_zone = no
+						if = {
+							limit = {
+								NOT = {
+									has_global_flag = smt_turned_off_autoclear
+								}
+							}
+							clr_state_flag = smt_marked
+						}
+						toolpack_cycle_action_log_variables = yes
+						add_to_array = { global.toolpack_mp_action_array_targets = THIS }
+						add_to_array = { global.toolpack_mp_action_array = 1 }
+					}
+				}
+			}
+			smt_increase_resistance_1_click = {
+				every_state = {
+					limit = {
+						has_state_flag = smt_marked
+						has_resistance = yes
+					}
+					add_resistance = 1
+					toolpack_cycle_action_log_variables = yes
+					add_to_array = { global.toolpack_mp_action_array_targets = THIS }
+					add_to_array = { global.toolpack_mp_action_array = 1 }
+				}
+			}
+			smt_increase_resistance_5_click = {
+				every_state = {
+					limit = {
+						has_state_flag = smt_marked
+						has_resistance = yes
+					}
+					add_resistance = 5
+					toolpack_cycle_action_log_variables = yes
+					add_to_array = { global.toolpack_mp_action_array_targets = THIS }
+					add_to_array = { global.toolpack_mp_action_array = 1 }
+				}
+			}
+			smt_increase_resistance_20_click = {
+				every_state = {
+					limit = {
+						has_state_flag = smt_marked
+						has_resistance = yes
+					}
+					add_resistance = 20
+					toolpack_cycle_action_log_variables = yes
+					add_to_array = { global.toolpack_mp_action_array_targets = THIS }
+					add_to_array = { global.toolpack_mp_action_array = 1 }
+				}
+			}
+			smt_decrease_resistance_1_click = {
+				every_state = {
+					limit = {
+						has_state_flag = smt_marked
+						has_resistance = yes
+					}
+					add_resistance = -1
+					toolpack_cycle_action_log_variables = yes
+					add_to_array = { global.toolpack_mp_action_array_targets = THIS }
+					add_to_array = { global.toolpack_mp_action_array = 1 }
+				}
+			}
+			smt_decrease_resistance_5_click = {
+				every_state = {
+					limit = {
+						has_state_flag = smt_marked
+						has_resistance = yes
+					}
+					add_resistance = -5
+					toolpack_cycle_action_log_variables = yes
+					add_to_array = { global.toolpack_mp_action_array_targets = THIS }
+					add_to_array = { global.toolpack_mp_action_array = 1 }
+				}
+			}
+			smt_decrease_resistance_20_click = {
+				every_state = {
+					limit = {
+						has_state_flag = smt_marked
+						has_resistance = yes
+					}
+					add_resistance = -20
+					toolpack_cycle_action_log_variables = yes
+					add_to_array = { global.toolpack_mp_action_array_targets = THIS }
+					add_to_array = { global.toolpack_mp_action_array = 1 }
+				}
+			}
+
+
+			#####
+			smt_increase_compliance_1_click = {
+				every_state = {
+					limit = {
+						has_state_flag = smt_marked
+						has_resistance = yes
+					}
+					add_compliance = 1
+					toolpack_cycle_action_log_variables = yes
+					add_to_array = { global.toolpack_mp_action_array_targets = THIS }
+					add_to_array = { global.toolpack_mp_action_array = 1 }
+				}
+			}
+			smt_increase_compliance_5_click = {
+				every_state = {
+					limit = {
+						has_state_flag = smt_marked
+						has_resistance = yes
+					}
+					add_compliance = 5
+					toolpack_cycle_action_log_variables = yes
+					add_to_array = { global.toolpack_mp_action_array_targets = THIS }
+					add_to_array = { global.toolpack_mp_action_array = 1 }
+				}
+			}
+			smt_increase_compliance_20_click = {
+				every_state = {
+					limit = {
+						has_state_flag = smt_marked
+						has_resistance = yes
+					}
+					add_compliance = 20
+					toolpack_cycle_action_log_variables = yes
+					add_to_array = { global.toolpack_mp_action_array_targets = THIS }
+					add_to_array = { global.toolpack_mp_action_array = 1 }
+				}
+			}
+			smt_decrease_compliance_1_click = {
+				every_state = {
+					limit = {
+						has_state_flag = smt_marked
+						has_resistance = yes
+					}
+					add_compliance = -1
+					toolpack_cycle_action_log_variables = yes
+					add_to_array = { global.toolpack_mp_action_array_targets = THIS }
+					add_to_array = { global.toolpack_mp_action_array = 1 }
+				}
+			}
+			smt_decrease_compliance_5_click = {
+				every_state = {
+					limit = {
+						has_state_flag = smt_marked
+						has_resistance = yes
+					}
+					add_compliance = -5
+					toolpack_cycle_action_log_variables = yes
+					add_to_array = { global.toolpack_mp_action_array_targets = THIS }
+					add_to_array = { global.toolpack_mp_action_array = 1 }
+				}
+			}
+			smt_decrease_compliance_20_click = {
+				every_state = {
+					limit = {
+						has_state_flag = smt_marked
+						has_resistance = yes
+					}
+					add_compliance = -20
+					toolpack_cycle_action_log_variables = yes
+					add_to_array = { global.toolpack_mp_action_array_targets = THIS }
+					add_to_array = { global.toolpack_mp_action_array = 1 }
+				}
+			}
+			###
+			smt_autoclear_off_click = {
+				set_global_flag = smt_turned_off_autoclear
+			}
+			smt_autoclear_on_click = {
+				clr_global_flag = smt_turned_off_autoclear
+			}
+		}
+
+		triggers = {
+
+			smt_mark_button_visible = {
+				NOT = { has_state_flag = smt_marked }
+			}
+			smt_unmark_button_visible = {
+				has_state_flag = smt_marked
+			}
+			smt_mark_all_click_enabled = {
+				FROM.OWNER = {
+					any_owned_state = {
+						NOT = { has_state_flag = smt_marked }
+					}
+				}
+			}
+			smt_mark_cores_click_enabled = {
+				FROM.OWNER = {
+					any_owned_state = {
+						NOT = { has_state_flag = smt_marked }
+						is_core_of = this
+					}
+				}
+			}
+			smt_mark_colonies_click_enabled = {
+				FROM.OWNER = {
+					any_owned_state = {
+						NOT = { has_state_flag = smt_marked }
+						NOT = { is_core_of = this }
+					}
+				}
+			}
+			smt_unmark_all_click_enabled = {
+				any_state = { has_state_flag = smt_marked }
+			}
+			smt_transfer_ownership_click_enabled = {
+				FROM.OWNER = {
+					all_owned_state = {
+						NOT = { has_state_flag = smt_marked }
+					}
+				}
+				any_state = { has_state_flag = smt_marked }
+			}
+			smt_transfer_control_click_enabled = {
+				all_state = {
+					OR = {
+						NOT = { has_state_flag = smt_marked }
+						AND = {
+							has_state_flag = smt_marked
+							NOT = { is_controlled_by = FROM }
+						}
+					}
+				}
+				any_state = { has_state_flag = smt_marked }
+			}
+			smt_transfer_resource_click_enabled = {
+				all_state = {
+					OR = {
+						NOT = { has_state_flag = smt_marked }
+						AND = {
+							has_state_flag = smt_marked
+							NOT = { is_controlled_by = FROM }
+						}
+					}
+				}
+				any_state = { has_state_flag = smt_marked }
+			}
+			smt_set_capital_click_enabled = {
+				always = yes
+			}
+			smt_core_states_click_enabled = {
+				any_state = { has_state_flag = smt_marked }
+			}
+			smt_uncore_states_click_enabled = {
+				any_state = { has_state_flag = smt_marked }
+			}
+			smt_claim_states_click_enabled = {
+				any_state = { has_state_flag = smt_marked }
+			}
+			smt_unclaim_states_click_enabled = {
+				any_state = { has_state_flag = smt_marked }
+			}
+			smt_demilitarize_click_enabled = {
+				any_state = { has_state_flag = smt_marked }
+			}
+			smt_remilitarize_click_enabled = {
+				any_state = { has_state_flag = smt_marked }
+			}
+			smt_no_resistance_banner_visible = {
+				FROM = {	#selected state
+					has_resistance = no
+				}
+			}
+			smt_resistance_banner_visible = {
+				FROM = {	#selected state
+					has_resistance = yes
+				}
+			}
+			smt_increase_resistance_1_visible = {
+				FROM = {	#selected state
+					has_resistance = yes
+				}
+			}
+			smt_increase_resistance_5_visible = {
+				FROM = {	#selected state
+					has_resistance = yes
+				}
+			}
+			smt_increase_resistance_20_visible = {
+				FROM = {	#selected state
+					has_resistance = yes
+				}
+			}
+			smt_decrease_resistance_1_visible = {
+				FROM = {	#selected state
+					has_resistance = yes
+				}
+			}
+			smt_decrease_resistance_5_visible = {
+				FROM = {	#selected state
+					has_resistance = yes
+				}
+			}
+			smt_decrease_resistance_20_visible = {
+				FROM = {	#selected state
+					has_resistance = yes
+				}
+			}
+			smt_compliance_banner_visible = {
+				FROM = {	#selected state
+					has_resistance = yes
+				}
+			}
+			smt_increase_compliance_1_visible = {
+				FROM = {	#selected state
+					has_resistance = yes
+				}
+			}
+			smt_increase_compliance_5_visible = {
+				FROM = {	#selected state
+					has_resistance = yes
+				}
+			}
+			smt_increase_compliance_20_visible = {
+				FROM = {	#selected state
+					has_resistance = yes
+				}
+			}
+			smt_decrease_compliance_1_visible = {
+				FROM = {	#selected state
+					has_resistance = yes
+				}
+			}
+			smt_decrease_compliance_5_visible = {
+				FROM = {	#selected state
+					has_resistance = yes
+				}
+			}
+			smt_decrease_compliance_20_visible = {
+				FROM = {	#selected state
+					has_resistance = yes
+				}
+			}
+			###
+			smt_autoclear_off_visible = {
+				NOT = {
+					has_global_flag = smt_turned_off_autoclear
+				}
+			}
+			smt_autoclear_on_visible = {
+				has_global_flag = smt_turned_off_autoclear
+			}
+
+			smt_increase_resistance_1_click_enabled = {
+				any_state = {
+					has_state_flag = smt_marked
+					has_resistance = yes
+				}
+			}
+			smt_increase_resistance_5_click_enabled = {
+				any_state = {
+					has_state_flag = smt_marked
+					has_resistance = yes
+				}
+			}
+			smt_increase_resistance_20_click_enabled = {
+				any_state = {
+					has_state_flag = smt_marked
+					has_resistance = yes
+				}
+			}
+			smt_decrease_resistance_1_click_enabled = {
+				any_state = {
+					has_state_flag = smt_marked
+					has_resistance = yes
+				}
+			}
+			smt_decrease_resistance_5_click_enabled = {
+				any_state = {
+					has_state_flag = smt_marked
+					has_resistance = yes
+				}
+			}
+			smt_decrease_resistance_20_click_enabled = {
+				any_state = {
+					has_state_flag = smt_marked
+					has_resistance = yes
+				}
+			}
+			smt_increase_compliance_1_click_enabled = {
+				any_state = {
+					has_state_flag = smt_marked
+					has_resistance = yes
+				}
+			}
+			smt_increase_compliance_5_click_enabled = {
+				any_state = {
+					has_state_flag = smt_marked
+					has_resistance = yes
+				}
+			}
+			smt_increase_compliance_20_click_enabled = {
+				any_state = {
+					has_state_flag = smt_marked
+					has_resistance = yes
+				}
+			}
+			smt_decrease_compliance_1_click_enabled = {
+				any_state = {
+					has_state_flag = smt_marked
+					has_resistance = yes
+				}
+			}
+			smt_decrease_compliance_5_click_enabled = {
+				any_state = {
+					has_state_flag = smt_marked
+					has_resistance = yes
+				}
+			}
+			smt_decrease_compliance_20_click_enabled = {
+				any_state = {
+					has_state_flag = smt_marked
+					has_resistance = yes
+				}
+			}
+		}
+	}
+}

@@ -1133,7 +1133,10 @@ war_measures = {
 
 		complete_effect = {
 			custom_effect_tooltip = CHI_militia_disbanded_tt
-			delete_unit_template_and_units = { division_template = "Local Volunteers" }
+			if = {
+				limit = { has_template = "Local Volunteers" }
+				delete_unit_template_and_units = { division_template = "Local Volunteers" }
+			}
 			clr_country_flag = USA_militia_deployed
 		}
 	}
@@ -1395,7 +1398,7 @@ USA_aid_britain = {
 			OR = {
 				has_war = no
 				ENG = {
-					has_country_leader = { ruling_only = yes name = "George VI" }
+					has_country_leader = { ruling_only = yes character = ENG_george_vi }
 				}
 			}
 		}
@@ -4755,24 +4758,31 @@ USA_war_plans = {
 				}
 			}
 			OR = {
-				AND = {
-					JAP = { has_added_tension_amount > 24 }
-					threat > 0.5
+				JAP = { has_added_tension_amount > 24 }
+				JAP = {
+					any_allied_country = {
+						has_added_tension_amount > 24
+					}
 				}
 				AND = {
-					JAP = {
-						any_allied_country = {
-							has_added_tension_amount > 24
-						}
-					}
-					threat > 0.5
+					JAP = { has_war_with = CHI }
+					CHI = { surrender_progress > 0.7 }
 				}
 				AND = {
 					JAP = { has_war = yes }
 					JAP = { is_major = yes }
 					NOT = { JAP = { has_government = ROOT } }
-					JAP = { has_added_tension_amount > 10 }
-					threat > 0.8
+					JAP = { has_added_tension_amount > 9 }
+					GER = { has_war_with = SOV }
+					286 = {
+						CONTROLLER = {
+							OR = {
+								tag = JAP
+								is_in_faction_with = JAP
+								is_subject_of = JAP
+							}
+						}
+					}
 				}
 			}
 			NOT = { is_in_faction_with = JAP }
