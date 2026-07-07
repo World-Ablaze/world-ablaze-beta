@@ -911,3 +911,190 @@ news_event = {
 		}
 	}
 }
+
+# Watches for the collapse of Japan's Pacific perimeter and starts the Burmese defection countdown
+country_event = {
+	id = jap_rework.39
+	hidden = yes
+
+	mean_time_to_happen = { days = 2 }
+
+	fire_only_once = yes
+
+	trigger = {
+		original_tag = IPB
+		is_subject_of = JAP
+		has_capitulated = no
+		JAP = {
+			OR = {
+				has_war_with = USA
+				has_war_with = ENG
+			}
+		}
+		NOT = {
+			any_state = {
+				is_core_of = RAJ
+				CONTROLLER = {
+					OR = {
+						tag = JAP
+						is_subject_of = JAP
+					}
+				}
+			}
+		}
+		count_triggers = {
+			amount = 2
+			645 = {
+				CONTROLLER = {
+					has_war_with = JAP
+					OR = {
+						is_in_faction_with = USA
+						is_in_faction_with = ENG
+					}
+				}
+			}
+			526 = {
+				CONTROLLER = {
+					has_war_with = JAP
+					OR = {
+						is_in_faction_with = USA
+						is_in_faction_with = ENG
+					}
+				}
+			}
+			524 = {
+				CONTROLLER = {
+					has_war_with = JAP
+					OR = {
+						is_in_faction_with = USA
+						is_in_faction_with = ENG
+					}
+				}
+			}
+			any_state = {
+				is_core_of = PHI
+				CONTROLLER = {
+					has_war_with = JAP
+					OR = {
+						is_in_faction_with = USA
+						is_in_faction_with = ENG
+					}
+				}
+			}
+		}
+	}
+
+	immediate = {
+		country_event = { id = jap_rework.40 days = 60 }
+	}
+
+	option = {}
+}
+
+# The Burma National Army turns on the garrison and Burma declares for the Allies
+country_event = {
+	id = jap_rework.40
+	title = jap_rework.40.t
+	desc = jap_rework.40.d
+	picture = GFX_report_event_generic_riot
+
+	is_triggered_only = yes
+
+	trigger = {
+		is_subject_of = JAP
+		has_capitulated = no
+		JAP = {
+			OR = {
+				has_war_with = USA
+				has_war_with = ENG
+			}
+		}
+	}
+
+	option = {
+		name = jap_rework.40.a
+		set_country_flag = IPB_defected
+		drop_cosmetic_tag = yes
+		set_politics = {
+			ruling_party = neutrality
+			elections_allowed = no
+		}
+		create_country_leader = {
+			name = "IPB_aung_san"
+			desc = ""
+			picture = "gfx//leaders//Asia//Portrait_Asia_Generic_2.dds"
+			expire = "1965.1.1"
+			ideology = despotism
+		}
+		hidden_effect = {
+			JAP = {
+				set_autonomy = {
+					target = ROOT
+					autonomous_state = autonomy_free
+					end_wars = no
+					end_civil_wars = no
+				}
+				country_event = { id = jap_rework.41 }
+			}
+			if = {
+				limit = {
+					ENG = {
+						is_faction_leader = yes
+						has_war_with = JAP
+					}
+				}
+				ENG = { add_to_faction = ROOT }
+				add_to_war = {
+					targeted_alliance = ENG
+					enemy = JAP
+					hostility_reason = asked_to_join
+				}
+			}
+			else_if = {
+				limit = {
+					USA = {
+						is_faction_leader = yes
+						has_war_with = JAP
+					}
+				}
+				USA = { add_to_faction = ROOT }
+				add_to_war = {
+					targeted_alliance = USA
+					enemy = JAP
+					hostility_reason = asked_to_join
+				}
+			}
+			else = {
+				random_country = {
+					limit = {
+						is_faction_leader = yes
+						has_war_with = JAP
+						has_government = democratic
+					}
+					add_to_faction = ROOT
+					ROOT = {
+						add_to_war = {
+							targeted_alliance = PREV
+							enemy = JAP
+							hostility_reason = asked_to_join
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+# Japan learns of the Burmese defection
+country_event = {
+	id = jap_rework.41
+	title = jap_rework.41.t
+	desc = jap_rework.41.d
+	picture = GFX_report_event_generic_riot
+
+	is_triggered_only = yes
+
+	option = {
+		name = jap_rework.41.a
+	}
+}
