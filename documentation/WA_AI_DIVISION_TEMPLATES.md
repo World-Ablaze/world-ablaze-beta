@@ -122,7 +122,7 @@ WA_AI_TEMPLATES_GENERIC_MEDIUM_ARMOR_30_MEC_MOT = {
 			mot_heavy_artillery_divisional = 1
 			mot_anti_tank = 1
 			mot_military_police = 1
-			mot_anti_air = 1
+			mot_anti_air_divisional = 1
 		}
 	}
 }
