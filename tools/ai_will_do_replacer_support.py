@@ -83,7 +83,7 @@ class SupportFileProcessor(BaseFileProcessor):
             (r"maintenance|repair|field_repair", "WA_AI_RESEARCH_needs_maintenance_company"),
             (r"logistics|supply|field_supply", "WA_AI_RESEARCH_needs_logistics_company"),
             (r"hospital|medic|medical|field_hospital", "WA_AI_RESEARCH_needs_field_hospitals"),
-            (r"military_police|mp_|field_police", "WA_AI_RESEARCH_needs_military_police"),
+            (r"military_police_company_divisional|mp_|field_police", "WA_AI_RESEARCH_needs_military_police"),
             (r"camo|camouflage|false_emplacements", "WA_AI_RESEARCH_needs_camo"),
             # Line artillery (for artillery support companies)
             (r"artillery", "WA_AI_RESEARCH_needs_line_artillery"),

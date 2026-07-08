@@ -115,13 +115,13 @@ WA_AI_TEMPLATES_GENERIC_MEDIUM_ARMOR_30_MEC_MOT = {
 		support = {
 			armored_engineer = 1
 			heavy_maintenance_company = 1
-			armoured_recon = 1
+			light_tank_recon_company_divisional = 1
 			mot_field_hospital = 1
-			mot_signal_company = 1
+			mot_signal_company_divisional = 1
 			mot_logistics_company = 1
 			mot_heavy_artillery_divisional = 1
 			mot_anti_tank = 1
-			mot_military_police = 1
+			mot_military_police_company_divisional = 1
 			mot_anti_air_divisional = 1
 		}
 	}
