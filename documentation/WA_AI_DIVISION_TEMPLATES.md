@@ -113,15 +113,15 @@ WA_AI_TEMPLATES_GENERIC_MEDIUM_ARMOR_30_MEC_MOT = {
 			mechanized = 7
 		}
 		support = {
-			armored_engineer = 1
-			heavy_maintenance_company = 1
-			light_tank_recon_company_divisional = 1
-			mot_field_hospital = 1
-			mot_signal_company_divisional = 1
-			mot_logistics_company = 1
+			engineer_med_tank_company_divisional = 1
+			maintenance_med_tank_company_divisional = 1
+			recon_light_tank_company_divisional = 1
+			field_hospital_mot_company_divisional = 1
+			signal_mot_company_divisional = 1
+			logistics_mot_company_divisional = 1
 			mot_heavy_artillery_divisional = 1
 			mot_anti_tank = 1
-			mot_military_police_company_divisional = 1
+			military_police_mot_company_divisional = 1
 			mot_anti_air_divisional = 1
 		}
 	}
