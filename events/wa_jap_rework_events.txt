@@ -798,7 +798,10 @@ country_event = {
 				localization = JAP_geac_resources_autonomy_gain
 			}
 		}
-		add_to_variable = { JAP_kantaiha_influence = -1 }
+		if = {
+			limit = { check_variable = { JAP_kantaiha_influence > 0 } }
+			add_to_variable = { JAP_kantaiha_influence = -1 }
+		}
 		custom_effect_tooltip = JAP_geac_resources_navy_tt
 	}
 }
@@ -1100,5 +1103,52 @@ country_event = {
 
 	option = {
 		name = jap_rework.41.a
+	}
+}
+
+# Policy on the disposal of enemy property seized in China
+country_event = {
+	id = jap_rework.42
+	title = jap_rework.42.t
+	desc = jap_rework.42.d
+	picture = GFX_report_event_wa_geac_conference
+
+	is_triggered_only = yes
+
+	# Retain under direct military control
+	option = {
+		name = jap_rework.42.a
+		ai_chance = { factor = 70 }
+		economy_fatigue_level_down_3 = yes
+		custom_effect_tooltip = JAP_enemy_property_toseiha_up_tt
+		hidden_effect = {
+			if = {
+				limit = { check_variable = { JAP_toseiha_influence < 7 } }
+				add_to_variable = { JAP_toseiha_influence = 1 }
+			}
+		}
+	}
+
+	# Transfer assets to the Nanjing Government
+	option = {
+		name = jap_rework.42.b
+		ai_chance = { factor = 30 }
+		RNC = {
+			capital_scope = {
+				add_building_construction = {
+					type = industrial_complex
+					level = 2
+					instant_build = yes
+				}
+			}
+			add_stability = 0.05
+		}
+		custom_effect_tooltip = JAP_enemy_property_toseiha_down_tt
+		hidden_effect = {
+			if = {
+				limit = { check_variable = { JAP_toseiha_influence > 0 } }
+				add_to_variable = { JAP_toseiha_influence = -1 }
+			}
+		}
 	}
 }
