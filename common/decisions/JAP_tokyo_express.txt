@@ -1,0 +1,209 @@
+JAP_tokyo_express = {
+
+	# Detaches the Combined Fleet's administration into a semi-autonomous naval subject (IJN),
+	# based on states 633 (Marshall Islands) and 684 (Caroline Islands).
+	# Pattern follows the debug_jr_establish_* / real IPB establishment block in JAP.txt and
+	# zzz_JAP_rework_debug.txt: release -> configure new tag -> puppet + set_autonomy from JAP ->
+	# add_to_war into JAP's ongoing wars.
+	JAP_establish_ijn = {
+		icon = generic_naval
+
+		visible = {
+			original_tag = JAP
+			NOT = { country_exists = IJN }
+		}
+
+		available = {
+			owns_state = 633
+			owns_state = 684
+			controls_state = 633
+			controls_state = 684
+		}
+
+		cost = 25
+
+		complete_effect = {
+			release = IJN
+			IJN = {
+				transfer_state = 633
+				transfer_state = 684
+				set_state_controller = 633
+				set_state_controller = 684
+				set_capital = { state = 684 }
+				create_country_leader = {
+					name = "Imperial General Headquarters, Navy"
+					desc = ""
+					picture = "gfx//leaders//JAP//Portrait_Japan_Mitsumasa_Yonai.dds"
+					expire = "1965.1.1"
+					ideology = fascism_ideology
+					traits = { }
+				}
+			}
+			if = {
+				limit = { JAP = { has_government = fascism } }
+				IJN = {
+					set_politics = {
+						ruling_party = fascism
+						elections_allowed = no
+					}
+				}
+			}
+			else_if = {
+				limit = { JAP = { has_government = democratic } }
+				IJN = {
+					set_politics = {
+						ruling_party = democratic
+						elections_allowed = no
+					}
+				}
+			}
+			else_if = {
+				limit = { JAP = { has_government = communism } }
+				IJN = {
+					set_politics = {
+						ruling_party = communism
+						elections_allowed = no
+					}
+				}
+			}
+			else = {
+				IJN = {
+					set_politics = {
+						ruling_party = neutrality
+						elections_allowed = no
+					}
+				}
+			}
+			JAP = {
+				puppet = IJN
+				set_autonomy = {
+					target = IJN
+					autonomous_state = autonomy_integrated_puppet
+				}
+			}
+			every_country = {
+				limit = {
+					has_war_with = JAP
+				}
+				IJN = {
+					add_to_war = { targeted_alliance = JAP enemy = PREV hostility_reason = asked_to_join }
+				}
+			}
+		}
+	}
+
+	# Prototype "Tokyo Express" run into the Bismarck Sea. Detaches 4 destroyers to IJN and
+	# grants the 3 relevant states a stacking supply-cost discount for as many 7-day ticks
+	# as JAP_kantaiha_influence dictated at activation.
+	JAP_tokyo_express_bismarck = {
+		icon = generic_naval
+
+		visible = {
+			original_tag = JAP
+			IJN = { is_subject_of = ROOT }
+		}
+
+		available = {
+			NOT = { has_country_flag = JAP_te_active }
+			check_variable = { num_ships_with_type@destroyer > 3 }
+			check_variable = { JAP_kantaiha_influence > 0 }
+		}
+
+		cost = 25
+
+		complete_effect = {
+			transfer_ship = { type = destroyer target = IJN }
+			transfer_ship = { type = destroyer target = IJN }
+			transfer_ship = { type = destroyer target = IJN }
+			transfer_ship = { type = destroyer target = IJN }
+			set_country_flag = JAP_te_active
+			IJN = {
+				set_country_flag = IJN_te_target_bismarck
+			}
+			set_variable = { JAP_te_rounds = JAP_kantaiha_influence }
+			737 = {
+				add_dynamic_modifier = { modifier = JAP_te_supply_1 }
+				add_dynamic_modifier = { modifier = JAP_te_supply_2 }
+				add_dynamic_modifier = { modifier = JAP_te_supply_3 }
+				add_dynamic_modifier = { modifier = JAP_te_supply_4 }
+			}
+			1004 = {
+				add_dynamic_modifier = { modifier = JAP_te_supply_1 }
+				add_dynamic_modifier = { modifier = JAP_te_supply_2 }
+				add_dynamic_modifier = { modifier = JAP_te_supply_3 }
+				add_dynamic_modifier = { modifier = JAP_te_supply_4 }
+			}
+			634 = {
+				add_dynamic_modifier = { modifier = JAP_te_supply_1 }
+				add_dynamic_modifier = { modifier = JAP_te_supply_2 }
+				add_dynamic_modifier = { modifier = JAP_te_supply_3 }
+				add_dynamic_modifier = { modifier = JAP_te_supply_4 }
+			}
+			activate_mission = JAP_te_tick_mission
+		}
+	}
+
+	# Self-restarting timer mission, modelled directly on JAP_southern_development_fund_mission
+	# (common/decisions/JAP.txt, category JAP_southern_expansion): ticks every 7 days, counts
+	# down JAP_te_rounds, and re-activates itself while rounds remain and IJN still has destroyers.
+	JAP_te_tick_mission = {
+		icon = generic_naval
+
+		allowed = {
+			always = no
+		}
+
+		available = {
+			always = no
+		}
+
+		activation = {
+			always = no
+		}
+
+		days_mission_timeout = 7
+		is_good = yes
+		fire_only_once = no
+
+		timeout_effect = {
+			subtract_from_variable = { JAP_te_rounds = 1 }
+			if = {
+				limit = {
+					check_variable = { JAP_te_rounds > 0 }
+					IJN = {
+						check_variable = { num_ships_with_type@destroyer > 0 }
+					}
+				}
+				activate_mission = JAP_te_tick_mission
+			}
+			else = {
+				IJN = {
+					transfer_navy = { target = JAP }
+					clr_country_flag = IJN_te_target_bismarck
+				}
+				clr_country_flag = JAP_te_active
+				737 = {
+					remove_dynamic_modifier = { modifier = JAP_te_supply_1 }
+					remove_dynamic_modifier = { modifier = JAP_te_supply_2 }
+					remove_dynamic_modifier = { modifier = JAP_te_supply_3 }
+					remove_dynamic_modifier = { modifier = JAP_te_supply_4 }
+				}
+				1004 = {
+					remove_dynamic_modifier = { modifier = JAP_te_supply_1 }
+					remove_dynamic_modifier = { modifier = JAP_te_supply_2 }
+					remove_dynamic_modifier = { modifier = JAP_te_supply_3 }
+					remove_dynamic_modifier = { modifier = JAP_te_supply_4 }
+				}
+				634 = {
+					remove_dynamic_modifier = { modifier = JAP_te_supply_1 }
+					remove_dynamic_modifier = { modifier = JAP_te_supply_2 }
+					remove_dynamic_modifier = { modifier = JAP_te_supply_3 }
+					remove_dynamic_modifier = { modifier = JAP_te_supply_4 }
+				}
+			}
+		}
+
+		complete_effect = {
+		}
+	}
+}
