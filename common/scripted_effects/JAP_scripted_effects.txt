@@ -922,3 +922,27 @@ JAP_geac_defense_spawn_token = {
 		}
 	}
 }
+
+# Tokyo Express: sample IJN's surviving destroyer count into JAP_te_band (capped at 4).
+# The read happens inside IJN scope and writes across to JAP, mirroring the scope-dive
+# trigger form; the flat cross-scope form (var = IJN.x) silently breaks in triggers.
+JAP_te_sample_band_effect = {
+	IJN = {
+		set_variable = { JAP.JAP_te_band = num_ships_with_type@destroyer }
+	}
+	if = {
+		limit = { check_variable = { JAP_te_band > 4 } }
+		set_variable = { JAP_te_band = 4 }
+	}
+}
+
+# Tokyo Express: turn JAP_te_band into a supply strength (band x 0.05) and push it onto
+# the per-state variable that the JAP_te_supply dynamic modifier reads.
+JAP_te_push_supply_effect = {
+	set_variable = { JAP_te_strength = JAP_te_band }
+	multiply_variable = { JAP_te_strength = 0.05 }
+	737 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	1004 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	634 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	1002 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+}

@@ -127,30 +127,14 @@ JAP_tokyo_express = {
 				set_country_flag = IJN_te_target_bismarck
 			}
 			set_variable = { JAP_te_rounds = JAP_kantaiha_influence }
-			737 = {
-				add_dynamic_modifier = { modifier = JAP_te_supply_1 }
-				add_dynamic_modifier = { modifier = JAP_te_supply_2 }
-				add_dynamic_modifier = { modifier = JAP_te_supply_3 }
-				add_dynamic_modifier = { modifier = JAP_te_supply_4 }
-			}
-			1004 = {
-				add_dynamic_modifier = { modifier = JAP_te_supply_1 }
-				add_dynamic_modifier = { modifier = JAP_te_supply_2 }
-				add_dynamic_modifier = { modifier = JAP_te_supply_3 }
-				add_dynamic_modifier = { modifier = JAP_te_supply_4 }
-			}
-			634 = {
-				add_dynamic_modifier = { modifier = JAP_te_supply_1 }
-				add_dynamic_modifier = { modifier = JAP_te_supply_2 }
-				add_dynamic_modifier = { modifier = JAP_te_supply_3 }
-				add_dynamic_modifier = { modifier = JAP_te_supply_4 }
-			}
-			1002 = {
-				add_dynamic_modifier = { modifier = JAP_te_supply_1 }
-				add_dynamic_modifier = { modifier = JAP_te_supply_2 }
-				add_dynamic_modifier = { modifier = JAP_te_supply_3 }
-				add_dynamic_modifier = { modifier = JAP_te_supply_4 }
-			}
+			# The flotilla was just spawned at full strength, so seed the band directly
+			# instead of sampling (create_ship registration timing is unverified).
+			set_variable = { JAP_te_band = 4 }
+			JAP_te_push_supply_effect = yes
+			737 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+			1004 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+			634 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+			1002 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
 			activate_mission = JAP_te_tick_mission
 		}
 	}
@@ -179,45 +163,28 @@ JAP_tokyo_express = {
 
 		timeout_effect = {
 			subtract_from_variable = { JAP_te_rounds = 1 }
+			# Weekly sampling: the buff follows last week's surviving destroyer count,
+			# so ships sunk mid-week only lower it on this tick.
+			JAP_te_sample_band_effect = yes
+			JAP_te_push_supply_effect = yes
 			if = {
 				limit = {
 					check_variable = { JAP_te_rounds > 0 }
-					IJN = {
-						check_variable = { num_ships_with_type@destroyer > 0 }
-					}
+					check_variable = { JAP_te_band > 0 }
 				}
 				activate_mission = JAP_te_tick_mission
 			}
 			else = {
+				# Rounds exhausted, or the whole flotilla was sunk (band = 0 -> the run failed).
 				IJN = {
 					transfer_navy = { target = JAP }
 					clr_country_flag = IJN_te_target_bismarck
 				}
 				clr_country_flag = JAP_te_active
-				737 = {
-					remove_dynamic_modifier = { modifier = JAP_te_supply_1 }
-					remove_dynamic_modifier = { modifier = JAP_te_supply_2 }
-					remove_dynamic_modifier = { modifier = JAP_te_supply_3 }
-					remove_dynamic_modifier = { modifier = JAP_te_supply_4 }
-				}
-				1004 = {
-					remove_dynamic_modifier = { modifier = JAP_te_supply_1 }
-					remove_dynamic_modifier = { modifier = JAP_te_supply_2 }
-					remove_dynamic_modifier = { modifier = JAP_te_supply_3 }
-					remove_dynamic_modifier = { modifier = JAP_te_supply_4 }
-				}
-				634 = {
-					remove_dynamic_modifier = { modifier = JAP_te_supply_1 }
-					remove_dynamic_modifier = { modifier = JAP_te_supply_2 }
-					remove_dynamic_modifier = { modifier = JAP_te_supply_3 }
-					remove_dynamic_modifier = { modifier = JAP_te_supply_4 }
-				}
-				1002 = {
-					remove_dynamic_modifier = { modifier = JAP_te_supply_1 }
-					remove_dynamic_modifier = { modifier = JAP_te_supply_2 }
-					remove_dynamic_modifier = { modifier = JAP_te_supply_3 }
-					remove_dynamic_modifier = { modifier = JAP_te_supply_4 }
-				}
+				737 = { remove_dynamic_modifier = { modifier = JAP_te_supply } }
+				1004 = { remove_dynamic_modifier = { modifier = JAP_te_supply } }
+				634 = { remove_dynamic_modifier = { modifier = JAP_te_supply } }
+				1002 = { remove_dynamic_modifier = { modifier = JAP_te_supply } }
 			}
 		}
 
