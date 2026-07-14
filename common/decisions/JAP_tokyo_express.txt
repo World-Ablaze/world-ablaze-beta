@@ -98,26 +98,51 @@ JAP_tokyo_express = {
 		}
 	}
 
-	# Prototype "Tokyo Express" run into the Bismarck Sea. Detaches 8 destroyers to IJN and
-	# grants the 4 relevant states a stacking supply bonus (5% per surviving destroyer, up to
-	# 40%) for as many 7-day ticks as JAP_kantaiha_influence dictated at activation.
-	JAP_tokyo_express_bismarck = {
+	# "Tokyo Express" run, generalized to every adopted sea region (SE Asia, Indian Ocean,
+	# Bismarck/Solomons). Launched from the MAP, not the decision panel, following the
+	# economy_lift_great_depression_state pattern (_economy_fatigue.txt): state_target +
+	# on_map_mode. Clicking a coastal state runs the express into that state's home sea
+	# region and buffs every state touching that region (5% supply per surviving destroyer,
+	# up to 40%) for as many 7-day ticks as JAP_kantaiha_influence dictated at activation.
+	# State->region data is seeded on startup by the auto-generated
+	# JAP_te_seed_regions_effect (_modtools/Generate-TokyoExpressRegions.py).
+	JAP_tokyo_express_run = {
 		icon = generic_naval
+
+		state_target = yes
+		on_map_mode = map_only
+
+		# DEBUG: every seeded state shows the icon unconditionally (user ruling 2026-07-15).
+		# Before release, restrict to states ROOT controls (see PHI_guerrillas.txt for the
+		# CONTROLLER pattern).
+		target_trigger = {
+			FROM = { has_state_flag = JAP_te_eligible }
+		}
 
 		visible = {
 			original_tag = JAP
-			IJN = { is_subject_of = ROOT }
 		}
 
 		available = {
+			IJN = { is_subject_of = ROOT }
 			NOT = { has_country_flag = JAP_te_active }
 			check_variable = { num_ships_with_type@destroyer > 7 }
 			check_variable = { JAP_kantaiha_influence > 0 }
 		}
 
+		# AI Japan never map-clicks this on its own (manual/scripted use only for now).
+		ai_will_do = {
+			factor = 0
+		}
+
 		cost = 25
 
+		fire_only_once = no
+
 		complete_effect = {
+			# The clicked state's dominant sea region becomes the run target; the generated
+			# ai_strategy blocks in ai_strategy/IJN.txt key off this global variable.
+			set_variable = { global.JAP_te_region_active = FROM.JAP_te_home_region }
 			# Real ships change hands (no destroy+create swap): 8 transfer_ship calls, each
 			# preferring a named Minekaze-class boat from the 1936 OOB so second-line destroyers
 			# get requisitioned before the modern fleet. A sunk name falls back to whatever
@@ -136,18 +161,11 @@ JAP_tokyo_express = {
 				add_dynamic_modifier = { modifier = IJN_te_flank_speed days = 7 }
 			}
 			set_country_flag = JAP_te_active
-			IJN = {
-				set_country_flag = IJN_te_target_bismarck
-			}
 			set_variable = { JAP_te_rounds = JAP_kantaiha_influence }
 			# The flotilla was just spawned at full strength, so seed the band directly
 			# instead of sampling (create_ship registration timing is unverified).
 			set_variable = { JAP_te_band = 8 }
-			JAP_te_push_supply_effect = yes
-			737 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
-			1004 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
-			634 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
-			1002 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+			JAP_te_apply_supply_effect = yes
 			activate_mission = JAP_te_tick_mission
 		}
 	}
@@ -191,13 +209,9 @@ JAP_tokyo_express = {
 				# Rounds exhausted, or the whole flotilla was sunk (band = 0 -> the run failed).
 				IJN = {
 					transfer_navy = { target = JAP }
-					clr_country_flag = IJN_te_target_bismarck
 				}
 				clr_country_flag = JAP_te_active
-				737 = { remove_dynamic_modifier = { modifier = JAP_te_supply } }
-				1004 = { remove_dynamic_modifier = { modifier = JAP_te_supply } }
-				634 = { remove_dynamic_modifier = { modifier = JAP_te_supply } }
-				1002 = { remove_dynamic_modifier = { modifier = JAP_te_supply } }
+				JAP_te_remove_supply_effect = yes
 			}
 		}
 
