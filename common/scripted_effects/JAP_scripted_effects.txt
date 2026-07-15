@@ -951,6 +951,36 @@ JAP_te_push_supply_effect = {
 	}
 }
 
+# Tokyo Express: common launch body shared by all generated per-region decisions
+# (JAP_tokyo_express_runs.txt) and the debug starter. The caller must set
+# global.JAP_te_region_active to the target sea region FIRST.
+# Real ships change hands (no destroy+create swap): 8 transfer_ship calls, each
+# preferring a named Minekaze-class boat from the 1936 OOB so second-line destroyers
+# get requisitioned before the modern fleet. A sunk name falls back to whatever
+# destroyer the engine picks. Ships keep their position and sail to the zone
+# themselves under the 7-day flank speed modifier (ship teleports do not exist in
+# the engine; teleport_armies is army-only, tested 2026-07-14).
+JAP_te_launch_run_effect = {
+	transfer_ship = { prefer_name = "Minekaze" type = destroyer target = IJN }
+	transfer_ship = { prefer_name = "Sawakaze" type = destroyer target = IJN }
+	transfer_ship = { prefer_name = "Okikaze" type = destroyer target = IJN }
+	transfer_ship = { prefer_name = "Yakaze" type = destroyer target = IJN }
+	transfer_ship = { prefer_name = "Nadakaze" type = destroyer target = IJN }
+	transfer_ship = { prefer_name = "Akikaze" type = destroyer target = IJN }
+	transfer_ship = { prefer_name = "Hakaze" type = destroyer target = IJN }
+	transfer_ship = { prefer_name = "Nokaze" type = destroyer target = IJN }
+	IJN = {
+		add_dynamic_modifier = { modifier = IJN_te_flank_speed days = 7 }
+	}
+	set_country_flag = JAP_te_active
+	set_variable = { JAP_te_rounds = JAP_kantaiha_influence }
+	# The flotilla was just spawned at full strength, so seed the band directly
+	# instead of sampling (create_ship registration timing is unverified).
+	set_variable = { JAP_te_band = 8 }
+	JAP_te_apply_supply_effect = yes
+	activate_mission = JAP_te_tick_mission
+}
+
 # Tokyo Express: start of a run — attach the supply modifier to every state touching the
 # active sea region, then push the initial strength.
 JAP_te_apply_supply_effect = {

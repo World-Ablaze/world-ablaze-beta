@@ -98,77 +98,10 @@ JAP_tokyo_express = {
 		}
 	}
 
-	# "Tokyo Express" run, generalized to every adopted sea region (SE Asia, Indian Ocean,
-	# Bismarck/Solomons). Launched from the MAP, not the decision panel, following the
-	# economy_lift_great_depression_state pattern (_economy_fatigue.txt): state_target +
-	# on_map_mode. Clicking a coastal state runs the express into that state's home sea
-	# region and buffs every state touching that region (5% supply per surviving destroyer,
-	# up to 40%) for as many 7-day ticks as JAP_kantaiha_influence dictated at activation.
-	# State->region data is seeded on startup by the auto-generated
-	# JAP_te_seed_regions_effect (_modtools/Generate-TokyoExpressRegions.py).
-	JAP_tokyo_express_run = {
-		icon = generic_naval
-
-		state_target = yes
-		on_map_mode = map_only
-
-		# DEBUG: every seeded state shows the icon unconditionally (user ruling 2026-07-15).
-		# Before release, restrict to states ROOT controls (see PHI_guerrillas.txt for the
-		# CONTROLLER pattern).
-		target_trigger = {
-			FROM = { has_state_flag = JAP_te_eligible }
-		}
-
-		visible = {
-			original_tag = JAP
-		}
-
-		available = {
-			IJN = { is_subject_of = ROOT }
-			NOT = { has_country_flag = JAP_te_active }
-			check_variable = { num_ships_with_type@destroyer > 7 }
-			check_variable = { JAP_kantaiha_influence > 0 }
-		}
-
-		# AI Japan never map-clicks this on its own (manual/scripted use only for now).
-		ai_will_do = {
-			factor = 0
-		}
-
-		cost = 25
-
-		fire_only_once = no
-
-		complete_effect = {
-			# The clicked state's dominant sea region becomes the run target; the generated
-			# ai_strategy blocks in ai_strategy/IJN.txt key off this global variable.
-			set_variable = { global.JAP_te_region_active = FROM.JAP_te_home_region }
-			# Real ships change hands (no destroy+create swap): 8 transfer_ship calls, each
-			# preferring a named Minekaze-class boat from the 1936 OOB so second-line destroyers
-			# get requisitioned before the modern fleet. A sunk name falls back to whatever
-			# destroyer the engine picks. Ships keep their position and sail to the zone
-			# themselves under the 7-day flank speed modifier below (ship teleports do not
-			# exist in the engine; teleport_armies is army-only, tested 2026-07-14).
-			transfer_ship = { prefer_name = "Minekaze" type = destroyer target = IJN }
-			transfer_ship = { prefer_name = "Sawakaze" type = destroyer target = IJN }
-			transfer_ship = { prefer_name = "Okikaze" type = destroyer target = IJN }
-			transfer_ship = { prefer_name = "Yakaze" type = destroyer target = IJN }
-			transfer_ship = { prefer_name = "Nadakaze" type = destroyer target = IJN }
-			transfer_ship = { prefer_name = "Akikaze" type = destroyer target = IJN }
-			transfer_ship = { prefer_name = "Hakaze" type = destroyer target = IJN }
-			transfer_ship = { prefer_name = "Nokaze" type = destroyer target = IJN }
-			IJN = {
-				add_dynamic_modifier = { modifier = IJN_te_flank_speed days = 7 }
-			}
-			set_country_flag = JAP_te_active
-			set_variable = { JAP_te_rounds = JAP_kantaiha_influence }
-			# The flotilla was just spawned at full strength, so seed the band directly
-			# instead of sampling (create_ship registration timing is unverified).
-			set_variable = { JAP_te_band = 8 }
-			JAP_te_apply_supply_effect = yes
-			activate_mission = JAP_te_tick_mission
-		}
-	}
+	# The per-region "Tokyo Express" run decisions live in the auto-generated
+	# JAP_tokyo_express_runs.txt (one state_target + map_only decision per adopted sea
+	# region, icon on the region's anchor state; _modtools/Generate-TokyoExpressRegions.py).
+	# Their shared launch body is JAP_te_launch_run_effect in JAP_scripted_effects.txt.
 
 	# Self-restarting timer mission, modelled directly on JAP_southern_development_fund_mission
 	# (common/decisions/JAP.txt, category JAP_southern_expansion): ticks every 7 days, counts

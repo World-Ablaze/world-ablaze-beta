@@ -3,744 +3,1839 @@
 # Adjacency is machine-derived from provinces.bmp so no coastal state gets missed
 # (hand-picking managed to both miss 1002 and over-include 634 on the prototype).
 
-# Seeds every Tokyo Express eligible state with the list of adopted sea
-# regions it touches. Called from on_startup (new game AND save load), so
-# the array is cleared before refilling to stay idempotent.
+# Seeds every Tokyo Express relevant state with the list of adopted sea
+# regions it touches (used by the supply apply/push/remove loops).
+# Called from on_startup inside JAP country scope (numeric state scopes do
+# NOT resolve from the scopeless on_startup context - proven 2026-07-15).
 JAP_te_seed_regions_effect = {
 	268 = { # 268-French Somaliland.txt owner=FRP
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 308 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 100 } # 100-Red Sea
-		add_to_array = { JAP_te_regions = 308 } # 308-Gulf of Aden
+		add_to_array = { JAP_te_regions = 100 } # Red Sea
+		add_to_array = { JAP_te_regions = 308 } # Gulf of Aden
 	}
 	269 = { # 269-British Somaliland.txt owner=UKT
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 308 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 308 } # 308-Gulf of Aden
+		add_to_array = { JAP_te_regions = 308 } # Gulf of Aden
 	}
 	281 = { # 281-Maldives.txt owner=UKO
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 361 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 361 } # 361-Arabian Basin
+		add_to_array = { JAP_te_regions = 361 } # Arabian Basin
 	}
 	286 = { # 286-Cochinchina.txt owner=FRV
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 231 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 73 } # 73-Gulf of Thailand
-		add_to_array = { JAP_te_regions = 231 } # 231-Riau Archipelago
+		add_to_array = { JAP_te_regions = 73 } # Gulf of Thailand
+		add_to_array = { JAP_te_regions = 231 } # Riau Archipelago
 	}
 	288 = { # 288-Burma.txt owner=RAJ
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 335 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 101 } # 101-Bay of Bengal
-		add_to_array = { JAP_te_regions = 335 } # 335-Andaman Sea
+		add_to_array = { JAP_te_regions = 101 } # Bay of Bengal
+		add_to_array = { JAP_te_regions = 335 } # Andaman Sea
 	}
 	289 = { # 289-Bangkok.txt owner=SIA
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 73 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 73 } # 73-Gulf of Thailand
+		add_to_array = { JAP_te_regions = 73 } # Gulf of Thailand
 	}
 	293 = { # 293-Azal.txt owner=YEM
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 100 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 100 } # 100-Red Sea
-		add_to_array = { JAP_te_regions = 308 } # 308-Gulf of Aden
+		add_to_array = { JAP_te_regions = 100 } # Red Sea
+		add_to_array = { JAP_te_regions = 308 } # Gulf of Aden
 	}
 	294 = { # 294-Al Batinah.txt owner=OMA
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 372 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 104 } # 104-Arabian Sea
-		add_to_array = { JAP_te_regions = 372 } # 372-Gulf of Oman
+		add_to_array = { JAP_te_regions = 104 } # Arabian Sea
+		add_to_array = { JAP_te_regions = 372 } # Gulf of Oman
 	}
 	320 = { # 320-French India.txt owner=FRO
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 331 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 331 } # 331-Andaman Basin
+		add_to_array = { JAP_te_regions = 331 } # Andaman Basin
 	}
 	321 = { # 321-Goa.txt owner=POR
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 104 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 104 } # 104-Arabian Sea
-		add_to_array = { JAP_te_regions = 361 } # 361-Arabian Basin
+		add_to_array = { JAP_te_regions = 104 } # Arabian Sea
+		add_to_array = { JAP_te_regions = 361 } # Arabian Basin
 	}
 	326 = { # 326-Hong Kong.txt owner=ENG
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 75 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # 75-South China Sea
+		add_to_array = { JAP_te_regions = 75 } # South China Sea
 	}
 	327 = { # 327-Manila.txt owner=PHI
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 325 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # 75-South China Sea
-		add_to_array = { JAP_te_regions = 80 } # 80-Sulu Sea
-		add_to_array = { JAP_te_regions = 325 } # 325-Manilla Bay
+		add_to_array = { JAP_te_regions = 75 } # South China Sea
+		add_to_array = { JAP_te_regions = 80 } # Sulu Sea
+		add_to_array = { JAP_te_regions = 325 } # Manilla Bay
 	}
 	333 = { # 333-North Borneo.txt owner=MAL
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 231 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 80 } # 80-Sulu Sea
-		add_to_array = { JAP_te_regions = 231 } # 231-Riau Archipelago
-		add_to_array = { JAP_te_regions = 280 } # 280-Celebes Sea
+		add_to_array = { JAP_te_regions = 80 } # Sulu Sea
+		add_to_array = { JAP_te_regions = 231 } # Riau Archipelago
+		add_to_array = { JAP_te_regions = 280 } # Celebes Sea
 	}
 	334 = { # 334-Kalimantan.txt owner=INS
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 309 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 231 } # 231-Riau Archipelago
-		add_to_array = { JAP_te_regions = 252 } # 252-Selat Karimata
-		add_to_array = { JAP_te_regions = 280 } # 280-Celebes Sea
-		add_to_array = { JAP_te_regions = 309 } # 309-Java Sea
+		add_to_array = { JAP_te_regions = 231 } # Riau Archipelago
+		add_to_array = { JAP_te_regions = 252 } # Selat Karimata
+		add_to_array = { JAP_te_regions = 280 } # Celebes Sea
+		add_to_array = { JAP_te_regions = 309 } # Java Sea
 	}
 	335 = { # 335-Java.txt owner=INS
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 309 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 309 } # 309-Java Sea
-		add_to_array = { JAP_te_regions = 364 } # 364-Java Trench
+		add_to_array = { JAP_te_regions = 309 } # Java Sea
+		add_to_array = { JAP_te_regions = 364 } # Java Trench
 	}
 	336 = { # 336-Singapore.txt owner=ENG
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 252 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 72 } # 72-Straits of Malacca
-		add_to_array = { JAP_te_regions = 252 } # 252-Selat Karimata
+		add_to_array = { JAP_te_regions = 72 } # Straits of Malacca
+		add_to_array = { JAP_te_regions = 252 } # Selat Karimata
 	}
 	410 = { # 410-Sistan.txt owner=PER
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 372 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 203 } # 203-Persian Gulf
-		add_to_array = { JAP_te_regions = 372 } # 372-Gulf of Oman
+		add_to_array = { JAP_te_regions = 203 } # Persian Gulf
+		add_to_array = { JAP_te_regions = 372 } # Gulf of Oman
 	}
 	412 = { # 412-Fars.txt owner=PER
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 203 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 203 } # 203-Persian Gulf
+		add_to_array = { JAP_te_regions = 203 } # Persian Gulf
 	}
 	413 = { # 413-Khuzestan.txt owner=PER
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 203 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 203 } # 203-Persian Gulf
+		add_to_array = { JAP_te_regions = 203 } # Persian Gulf
 	}
 	422 = { # 422-Ceylon.txt owner=UKO
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 331 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 331 } # 331-Andaman Basin
+		add_to_array = { JAP_te_regions = 331 } # Andaman Basin
 	}
 	423 = { # 423-Tamil Nadu.txt owner=RAJ
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 331 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 331 } # 331-Andaman Basin
-		add_to_array = { JAP_te_regions = 361 } # 361-Arabian Basin
+		add_to_array = { JAP_te_regions = 331 } # Andaman Basin
+		add_to_array = { JAP_te_regions = 361 } # Arabian Basin
 	}
 	424 = { # 424-Madras.txt owner=RAJ
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 331 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 331 } # 331-Andaman Basin
+		add_to_array = { JAP_te_regions = 331 } # Andaman Basin
 	}
 	425 = { # 425-Mysore.txt owner=RAJ
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 361 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 104 } # 104-Arabian Sea
-		add_to_array = { JAP_te_regions = 361 } # 361-Arabian Basin
+		add_to_array = { JAP_te_regions = 104 } # Arabian Sea
+		add_to_array = { JAP_te_regions = 361 } # Arabian Basin
 	}
 	426 = { # 426-Odisha.txt owner=RAJ
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 101 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 101 } # 101-Bay of Bengal
-		add_to_array = { JAP_te_regions = 331 } # 331-Andaman Basin
+		add_to_array = { JAP_te_regions = 101 } # Bay of Bengal
+		add_to_array = { JAP_te_regions = 331 } # Andaman Basin
 	}
 	428 = { # 428-Gujarat.txt owner=RAJ
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 104 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 104 } # 104-Arabian Sea
-		add_to_array = { JAP_te_regions = 372 } # 372-Gulf of Oman
+		add_to_array = { JAP_te_regions = 104 } # Arabian Sea
+		add_to_array = { JAP_te_regions = 372 } # Gulf of Oman
 	}
 	429 = { # 429-Bombay.txt owner=RAJ
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 104 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 104 } # 104-Arabian Sea
+		add_to_array = { JAP_te_regions = 104 } # Arabian Sea
 	}
 	430 = { # 430-East Bengal.txt owner=RAJ
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 101 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 101 } # 101-Bay of Bengal
+		add_to_array = { JAP_te_regions = 101 } # Bay of Bengal
 	}
 	431 = { # 431-West Bengal.txt owner=RAJ
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 101 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 101 } # 101-Bay of Bengal
+		add_to_array = { JAP_te_regions = 101 } # Bay of Bengal
 	}
 	443 = { # 443-Sind.txt owner=RAJ
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 372 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 372 } # 372-Gulf of Oman
+		add_to_array = { JAP_te_regions = 372 } # Gulf of Oman
 	}
 	444 = { # 444-Baluchistan.txt owner=RAJ
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 372 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 372 } # 372-Gulf of Oman
+		add_to_array = { JAP_te_regions = 372 } # Gulf of Oman
 	}
 	446 = { # 446-Cairo.txt owner=UKE
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 323 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 323 } # 323-Gulf of Suez
+		add_to_array = { JAP_te_regions = 323 } # Gulf of Suez
 	}
 	453 = { # 453-Sinai.txt owner=UKE
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 323 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 100 } # 100-Red Sea
-		add_to_array = { JAP_te_regions = 323 } # 323-Gulf of Suez
-		add_to_array = { JAP_te_regions = 324 } # 324-Gulf of Aqaba
+		add_to_array = { JAP_te_regions = 100 } # Red Sea
+		add_to_array = { JAP_te_regions = 323 } # Gulf of Suez
+		add_to_array = { JAP_te_regions = 324 } # Gulf of Aqaba
 	}
 	454 = { # 454-Palestine.txt owner=UKM
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 324 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 324 } # 324-Gulf of Aqaba
+		add_to_array = { JAP_te_regions = 324 } # Gulf of Aqaba
 	}
 	455 = { # 455-Jordan.txt owner=UKM
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 324 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 324 } # 324-Gulf of Aqaba
+		add_to_array = { JAP_te_regions = 324 } # Gulf of Aqaba
 	}
 	457 = { # 457-Eastern Desert.txt owner=UKE
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 100 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 100 } # 100-Red Sea
-		add_to_array = { JAP_te_regions = 323 } # 323-Gulf of Suez
+		add_to_array = { JAP_te_regions = 100 } # Red Sea
+		add_to_array = { JAP_te_regions = 323 } # Gulf of Suez
 	}
 	517 = { # 517-Victoria.txt owner=AST
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 98 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 98 } # 98-Great Australian Bight
+		add_to_array = { JAP_te_regions = 98 } # Great Australian Bight
 	}
 	518 = { # 518-Tasmania.txt owner=AST
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 98 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 98 } # 98-Great Australian Bight
+		add_to_array = { JAP_te_regions = 98 } # Great Australian Bight
 	}
 	519 = { # 519-Southern Australia.txt owner=AST
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 98 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 98 } # 98-Great Australian Bight
+		add_to_array = { JAP_te_regions = 98 } # Great Australian Bight
 	}
 	520 = { # 520-Northern Territory.txt owner=AST
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 91 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 91 } # 91-Arafura Sea
+		add_to_array = { JAP_te_regions = 91 } # Arafura Sea
 	}
 	521 = { # 521-Queensland.txt owner=AST
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 81 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 81 } # 81-Coral Sea
+		add_to_array = { JAP_te_regions = 81 } # Coral Sea
 	}
 	522 = { # 522-S.Western Australia.txt owner=AST
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 98 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 98 } # 98-Great Australian Bight
-		add_to_array = { JAP_te_regions = 363 } # 363-Perth Basin
+		add_to_array = { JAP_te_regions = 98 } # Great Australian Bight
+		add_to_array = { JAP_te_regions = 363 } # Perth Basin
 	}
 	523 = { # 523-South East Papua.txt owner=AST
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 81 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 81 } # 81-Coral Sea
+		add_to_array = { JAP_te_regions = 81 } # Coral Sea
 	}
 	524 = { # 524-Taiwan.txt owner=JAP
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 75 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # 75-South China Sea
+		add_to_array = { JAP_te_regions = 75 } # South China Sea
 	}
 	543 = { # 543-Madagascar.txt owner=FRJ
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 85 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 60 } # 60-West Indian Ocean
-		add_to_array = { JAP_te_regions = 85 } # 85-South West Indian Ocean
-		add_to_array = { JAP_te_regions = 102 } # 102-East African Coast
-		add_to_array = { JAP_te_regions = 103 } # 103-Mozambique Channel
+		add_to_array = { JAP_te_regions = 60 } # West Indian Ocean
+		add_to_array = { JAP_te_regions = 85 } # South West Indian Ocean
+		add_to_array = { JAP_te_regions = 102 } # East African Coast
+		add_to_array = { JAP_te_regions = 103 } # Mozambique Channel
 	}
 	544 = { # 544-Mozambique.txt owner=POA
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 103 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 103 } # 103-Mozambique Channel
+		add_to_array = { JAP_te_regions = 103 } # Mozambique Channel
 	}
 	546 = { # 546-Tanganyika.txt owner=UKT
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 102 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 102 } # 102-East African Coast
+		add_to_array = { JAP_te_regions = 102 } # East African Coast
 	}
 	547 = { # 547-Kenya.txt owner=UKT
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 102 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 102 } # 102-East African Coast
+		add_to_array = { JAP_te_regions = 102 } # East African Coast
 	}
 	550 = { # 550-Eritrea.txt owner=ITA
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 100 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 100 } # 100-Red Sea
+		add_to_array = { JAP_te_regions = 100 } # Red Sea
 	}
 	559 = { # 559-Somaliland.txt owner=ITA
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 102 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 102 } # 102-East African Coast
-		add_to_array = { JAP_te_regions = 308 } # 308-Gulf of Aden
+		add_to_array = { JAP_te_regions = 102 } # East African Coast
+		add_to_array = { JAP_te_regions = 308 } # Gulf of Aden
 	}
 	591 = { # 591-Hainan.txt owner=GUC
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 75 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # 75-South China Sea
+		add_to_array = { JAP_te_regions = 75 } # South China Sea
 	}
 	592 = { # 592-Guangzhou.txt owner=GUC
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 75 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # 75-South China Sea
+		add_to_array = { JAP_te_regions = 75 } # South China Sea
 	}
 	593 = { # 593-Guangdong.txt owner=GUC
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 75 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # 75-South China Sea
+		add_to_array = { JAP_te_regions = 75 } # South China Sea
 	}
 	595 = { # 595-Fujian.txt owner=CHI
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 75 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # 75-South China Sea
+		add_to_array = { JAP_te_regions = 75 } # South China Sea
 	}
 	623 = { # 623-Luzon.txt owner=PHI
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 75 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # 75-South China Sea
+		add_to_array = { JAP_te_regions = 75 } # South China Sea
 	}
 	624 = { # 624-Central islands.txt owner=PHI
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 80 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # 75-South China Sea
-		add_to_array = { JAP_te_regions = 80 } # 80-Sulu Sea
+		add_to_array = { JAP_te_regions = 75 } # South China Sea
+		add_to_array = { JAP_te_regions = 80 } # Sulu Sea
 	}
 	625 = { # 625-Samar.txt owner=PHI
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 80 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 80 } # 80-Sulu Sea
+		add_to_array = { JAP_te_regions = 80 } # Sulu Sea
 	}
 	626 = { # 626-Palawan.txt owner=PHI
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 80 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # 75-South China Sea
-		add_to_array = { JAP_te_regions = 80 } # 80-Sulu Sea
-		add_to_array = { JAP_te_regions = 231 } # 231-Riau Archipelago
+		add_to_array = { JAP_te_regions = 75 } # South China Sea
+		add_to_array = { JAP_te_regions = 80 } # Sulu Sea
+		add_to_array = { JAP_te_regions = 231 } # Riau Archipelago
 	}
 	627 = { # 627-Mindanao.txt owner=PHI
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 80 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 80 } # 80-Sulu Sea
-		add_to_array = { JAP_te_regions = 280 } # 280-Celebes Sea
+		add_to_array = { JAP_te_regions = 80 } # Sulu Sea
+		add_to_array = { JAP_te_regions = 280 } # Celebes Sea
 	}
 	628 = { # 628-Cebu.txt owner=PHI
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 80 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 80 } # 80-Sulu Sea
+		add_to_array = { JAP_te_regions = 80 } # Sulu Sea
 	}
 	634 = { # 634-Solomon Islands.txt owner=AST
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 83 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 83 } # 83-Solomon Islands
-		add_to_array = { JAP_te_regions = 354 } # 354-Solomon Sea
+		add_to_array = { JAP_te_regions = 83 } # Solomon Islands
+		add_to_array = { JAP_te_regions = 354 } # Solomon Sea
 	}
 	656 = { # 656-Kuwait.txt owner=UKM
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 203 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 203 } # 203-Persian Gulf
+		add_to_array = { JAP_te_regions = 203 } # Persian Gulf
 	}
 	658 = { # 658-Abu Dhabi.txt owner=UKM
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 203 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 203 } # 203-Persian Gulf
-		add_to_array = { JAP_te_regions = 372 } # 372-Gulf of Oman
+		add_to_array = { JAP_te_regions = 203 } # Persian Gulf
+		add_to_array = { JAP_te_regions = 372 } # Gulf of Oman
 	}
 	659 = { # 659-Aden.txt owner=UKM
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 308 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 308 } # 308-Gulf of Aden
+		add_to_array = { JAP_te_regions = 308 } # Gulf of Aden
 	}
 	667 = { # 667-Lesser Sunda Islands.txt owner=INS
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 92 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 92 } # 92-Timor Sea
-		add_to_array = { JAP_te_regions = 93 } # 93-Banda Sea
-		add_to_array = { JAP_te_regions = 309 } # 309-Java Sea
-		add_to_array = { JAP_te_regions = 364 } # 364-Java Trench
+		add_to_array = { JAP_te_regions = 92 } # Timor Sea
+		add_to_array = { JAP_te_regions = 93 } # Banda Sea
+		add_to_array = { JAP_te_regions = 309 } # Java Sea
+		add_to_array = { JAP_te_regions = 364 } # Java Trench
 	}
 	668 = { # 668-The Moluccas.txt owner=INS
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 93 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 93 } # 93-Banda Sea
+		add_to_array = { JAP_te_regions = 93 } # Banda Sea
 	}
 	669 = { # 669-South West Papua.txt owner=INS
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 91 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 91 } # 91-Arafura Sea
-		add_to_array = { JAP_te_regions = 93 } # 93-Banda Sea
+		add_to_array = { JAP_te_regions = 91 } # Arafura Sea
+		add_to_array = { JAP_te_regions = 93 } # Banda Sea
 	}
 	671 = { # 671-Tonkin.txt owner=FRV
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 75 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # 75-South China Sea
+		add_to_array = { JAP_te_regions = 75 } # South China Sea
 	}
 	672 = { # 672-Sumatra.txt owner=INS
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 252 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 72 } # 72-Straits of Malacca
-		add_to_array = { JAP_te_regions = 252 } # 252-Selat Karimata
-		add_to_array = { JAP_te_regions = 309 } # 309-Java Sea
-		add_to_array = { JAP_te_regions = 335 } # 335-Andaman Sea
-		add_to_array = { JAP_te_regions = 362 } # 362-Cocos Basin
-		add_to_array = { JAP_te_regions = 364 } # 364-Java Trench
+		add_to_array = { JAP_te_regions = 72 } # Straits of Malacca
+		add_to_array = { JAP_te_regions = 252 } # Selat Karimata
+		add_to_array = { JAP_te_regions = 309 } # Java Sea
+		add_to_array = { JAP_te_regions = 335 } # Andaman Sea
+		add_to_array = { JAP_te_regions = 362 } # Cocos Basin
+		add_to_array = { JAP_te_regions = 364 } # Java Trench
 	}
 	673 = { # 673-Sulawesi.txt owner=INS
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 93 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 93 } # 93-Banda Sea
-		add_to_array = { JAP_te_regions = 280 } # 280-Celebes Sea
-		add_to_array = { JAP_te_regions = 309 } # 309-Java Sea
+		add_to_array = { JAP_te_regions = 93 } # Banda Sea
+		add_to_array = { JAP_te_regions = 280 } # Celebes Sea
+		add_to_array = { JAP_te_regions = 309 } # Java Sea
 	}
 	679 = { # 679-Hejaz.txt owner=SAU
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 100 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 100 } # 100-Red Sea
+		add_to_array = { JAP_te_regions = 100 } # Red Sea
 	}
 	706 = { # 706-Reunion.txt owner=FRO
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 85 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 85 } # 85-South West Indian Ocean
+		add_to_array = { JAP_te_regions = 85 } # South West Indian Ocean
 	}
 	707 = { # 707-Mauritius.txt owner=UKO
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 85 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 85 } # 85-South West Indian Ocean
+		add_to_array = { JAP_te_regions = 85 } # South West Indian Ocean
 	}
 	708 = { # 708-Comoro Islands.txt owner=FRA
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 102 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 102 } # 102-East African Coast
+		add_to_array = { JAP_te_regions = 102 } # East African Coast
 	}
 	709 = { # 709-Seychelles.txt owner=UKO
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 60 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 60 } # 60-West Indian Ocean
+		add_to_array = { JAP_te_regions = 60 } # West Indian Ocean
 	}
 	710 = { # 710-Diego Garcia.txt owner=UKO
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 60 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 60 } # 60-West Indian Ocean
+		add_to_array = { JAP_te_regions = 60 } # West Indian Ocean
 	}
 	711 = { # 711-Christmas Island.txt owner=UKO
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 364 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 364 } # 364-Java Trench
+		add_to_array = { JAP_te_regions = 364 } # Java Trench
 	}
 	712 = { # 712-Cocos Islands.txt owner=UKO
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 71 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 71 } # 71-Central Indian Ocean
+		add_to_array = { JAP_te_regions = 71 } # Central Indian Ocean
 	}
 	713 = { # 713-Kerguelen.txt owner=FRO
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 333 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 333 } # 333-Kerguelen Plateau
+		add_to_array = { JAP_te_regions = 333 } # Kerguelen Plateau
 	}
 	719 = { # 719-Natal.txt owner=SAF
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 103 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 103 } # 103-Mozambique Channel
+		add_to_array = { JAP_te_regions = 103 } # Mozambique Channel
 	}
 	721 = { # 721-Portuguese Timor.txt owner=POR
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 92 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 91 } # 91-Arafura Sea
-		add_to_array = { JAP_te_regions = 92 } # 92-Timor Sea
-		add_to_array = { JAP_te_regions = 93 } # 93-Banda Sea
+		add_to_array = { JAP_te_regions = 91 } # Arafura Sea
+		add_to_array = { JAP_te_regions = 92 } # Timor Sea
+		add_to_array = { JAP_te_regions = 93 } # Banda Sea
 	}
 	724 = { # 724-Northern Malay.txt owner=SIA
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 73 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 72 } # 72-Straits of Malacca
-		add_to_array = { JAP_te_regions = 73 } # 73-Gulf of Thailand
-		add_to_array = { JAP_te_regions = 335 } # 335-Andaman Sea
+		add_to_array = { JAP_te_regions = 72 } # Straits of Malacca
+		add_to_array = { JAP_te_regions = 73 } # Gulf of Thailand
+		add_to_array = { JAP_te_regions = 335 } # Andaman Sea
 	}
 	728 = { # 728-Guangzhouwan.txt owner=FRV
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 75 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # 75-South China Sea
+		add_to_array = { JAP_te_regions = 75 } # South China Sea
 	}
 	729 = { # 729-Macau.txt owner=POR
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 75 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # 75-South China Sea
+		add_to_array = { JAP_te_regions = 75 } # South China Sea
 	}
 	733 = { # 733-Andaman.txt owner=UKO
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 335 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 335 } # 335-Andaman Sea
+		add_to_array = { JAP_te_regions = 335 } # Andaman Sea
 	}
 	737 = { # 737-Bismarck.txt owner=AST
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 84 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 83 } # 83-Solomon Islands
-		add_to_array = { JAP_te_regions = 84 } # 84-Bismarck Sea
-		add_to_array = { JAP_te_regions = 354 } # 354-Solomon Sea
+		add_to_array = { JAP_te_regions = 83 } # Solomon Islands
+		add_to_array = { JAP_te_regions = 84 } # Bismarck Sea
+		add_to_array = { JAP_te_regions = 354 } # Solomon Sea
 	}
 	738 = { # 738-Aru Islands.txt owner=INS
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 91 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 91 } # 91-Arafura Sea
-		add_to_array = { JAP_te_regions = 93 } # 93-Banda Sea
+		add_to_array = { JAP_te_regions = 91 } # Arafura Sea
+		add_to_array = { JAP_te_regions = 93 } # Banda Sea
 	}
 	741 = { # 741-Cambodia.txt owner=FRV
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 73 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 73 } # 73-Gulf of Thailand
+		add_to_array = { JAP_te_regions = 73 } # Gulf of Thailand
 	}
 	765 = { # 765-Qatar.txt owner=UKM
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 203 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 203 } # 203-Persian Gulf
+		add_to_array = { JAP_te_regions = 203 } # Persian Gulf
 	}
 	862 = { # 862-Malay peninsula.txt owner=MAL
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 72 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 72 } # 72-Straits of Malacca
-		add_to_array = { JAP_te_regions = 73 } # 73-Gulf of Thailand
-		add_to_array = { JAP_te_regions = 252 } # 252-Selat Karimata
+		add_to_array = { JAP_te_regions = 72 } # Straits of Malacca
+		add_to_array = { JAP_te_regions = 73 } # Gulf of Thailand
+		add_to_array = { JAP_te_regions = 252 } # Selat Karimata
 	}
 	883 = { # 883-Hadramaut.txt owner=UKM
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 308 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 104 } # 104-Arabian Sea
-		add_to_array = { JAP_te_regions = 308 } # 308-Gulf of Aden
+		add_to_array = { JAP_te_regions = 104 } # Arabian Sea
+		add_to_array = { JAP_te_regions = 308 } # Gulf of Aden
 	}
 	894 = { # 894-Asir.txt owner=SAU
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 100 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 100 } # 100-Red Sea
+		add_to_array = { JAP_te_regions = 100 } # Red Sea
 	}
 	895 = { # 895-Tabuk.txt owner=SAU
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 100 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 100 } # 100-Red Sea
-		add_to_array = { JAP_te_regions = 324 } # 324-Gulf of Aqaba
+		add_to_array = { JAP_te_regions = 100 } # Red Sea
+		add_to_array = { JAP_te_regions = 324 } # Gulf of Aqaba
 	}
 	897 = { # 897-Al Wusta.txt owner=OMA
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 104 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 104 } # 104-Arabian Sea
+		add_to_array = { JAP_te_regions = 104 } # Arabian Sea
 	}
 	923 = { # 923-Suez Canal.txt owner=UKM
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 323 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 323 } # 323-Gulf of Suez
+		add_to_array = { JAP_te_regions = 323 } # Gulf of Suez
 	}
 	931 = { # 931-Leizhou.txt owner=GUC
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 75 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # 75-South China Sea
+		add_to_array = { JAP_te_regions = 75 } # South China Sea
 	}
 	955 = { # 955-N.Western Australia.txt owner=AST
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 92 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 91 } # 91-Arafura Sea
-		add_to_array = { JAP_te_regions = 92 } # 92-Timor Sea
-		add_to_array = { JAP_te_regions = 363 } # 363-Perth Basin
+		add_to_array = { JAP_te_regions = 91 } # Arafura Sea
+		add_to_array = { JAP_te_regions = 92 } # Timor Sea
+		add_to_array = { JAP_te_regions = 363 } # Perth Basin
 	}
 	975 = { # 975-Tanintharyi.txt owner=RAJ
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 335 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 335 } # 335-Andaman Sea
+		add_to_array = { JAP_te_regions = 335 } # Andaman Sea
 	}
 	976 = { # 976-Annam.txt owner=FRV
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 75 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # 75-South China Sea
-		add_to_array = { JAP_te_regions = 231 } # 231-Riau Archipelago
+		add_to_array = { JAP_te_regions = 75 } # South China Sea
+		add_to_array = { JAP_te_regions = 231 } # Riau Archipelago
 	}
 	987 = { # 987-Socotra.txt owner=UKM
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 102 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 102 } # 102-East African Coast
-		add_to_array = { JAP_te_regions = 308 } # 308-Gulf of Aden
+		add_to_array = { JAP_te_regions = 102 } # East African Coast
+		add_to_array = { JAP_te_regions = 308 } # Gulf of Aden
 	}
 	989 = { # 989-Northern Queensland.txt owner=AST
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 81 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 81 } # 81-Coral Sea
+		add_to_array = { JAP_te_regions = 81 } # Coral Sea
 	}
 	1002 = { # 1002-North West Papua.txt owner=INS
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 84 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 84 } # 84-Bismarck Sea
-		add_to_array = { JAP_te_regions = 93 } # 93-Banda Sea
+		add_to_array = { JAP_te_regions = 84 } # Bismarck Sea
+		add_to_array = { JAP_te_regions = 93 } # Banda Sea
 	}
 	1004 = { # 1004-North East Papua.txt owner=AST
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 84 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 81 } # 81-Coral Sea
-		add_to_array = { JAP_te_regions = 84 } # 84-Bismarck Sea
-		add_to_array = { JAP_te_regions = 354 } # 354-Solomon Sea
+		add_to_array = { JAP_te_regions = 81 } # Coral Sea
+		add_to_array = { JAP_te_regions = 84 } # Bismarck Sea
+		add_to_array = { JAP_te_regions = 354 } # Solomon Sea
 	}
 	1041 = { # 1041-Dhi Qar.txt owner=IRQ
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 203 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 203 } # 203-Persian Gulf
+		add_to_array = { JAP_te_regions = 203 } # Persian Gulf
 	}
 	1049 = { # 1049-Empty Corridor.txt owner=SAU
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 203 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 203 } # 203-Persian Gulf
+		add_to_array = { JAP_te_regions = 203 } # Persian Gulf
 	}
 	1050 = { # 1050-As Sharqiah.txt owner=SAU
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 203 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 203 } # 203-Persian Gulf
+		add_to_array = { JAP_te_regions = 203 } # Persian Gulf
 	}
 	1060 = { # 1060-Imus.txt owner=USA
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 325 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 325 } # 325-Manilla Bay
+		add_to_array = { JAP_te_regions = 325 } # Manilla Bay
 	}
 	1063 = { # 1063-Trincomalee.txt owner=ENG
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 331 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 331 } # 331-Andaman Basin
+		add_to_array = { JAP_te_regions = 331 } # Andaman Basin
 	}
 	1064 = { # 1064-Vung Tao.txt owner=FRA
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 231 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 231 } # 231-Riau Archipelago
+		add_to_array = { JAP_te_regions = 231 } # Riau Archipelago
 	}
 	1097 = { # 1097-Nahr.txt owner=UKE
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 100 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 100 } # 100-Red Sea
+		add_to_array = { JAP_te_regions = 100 } # Red Sea
 	}
 	1099 = { # 1099-Northern Tanganyika.txt owner=UKT
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 102 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 102 } # 102-East African Coast
+		add_to_array = { JAP_te_regions = 102 } # East African Coast
 	}
 	1102 = { # 1102-Tete.txt owner=POA
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 103 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 103 } # 103-Mozambique Channel
+		add_to_array = { JAP_te_regions = 103 } # Mozambique Channel
 	}
 	1103 = { # 1103-Nampula.txt owner=POA
-		set_state_flag = JAP_te_eligible
-		set_variable = { JAP_te_home_region = 103 }
 		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 102 } # 102-East African Coast
-		add_to_array = { JAP_te_regions = 103 } # 103-Mozambique Channel
+		add_to_array = { JAP_te_regions = 102 } # East African Coast
+		add_to_array = { JAP_te_regions = 103 } # Mozambique Channel
+	}
+}
+
+# Re-elects each region's anchor state: the highest-priority held state
+# (priority = coastal contact desc, state id asc) gets the region's anchor
+# flag, so exactly ONE map icon shows per sea region. 'Held' is defined by
+# JAP_te_state_held_trigger (scripted_triggers/JAP_rework_scripted_triggers.txt).
+# Called daily (on_daily_JAP) and after seeding.
+JAP_te_refresh_anchors_effect = {
+	every_state = {
+		limit = { has_state_flag = JAP_te_anchor }
+		clr_state_flag = JAP_te_anchor
+		clr_state_flag = JAP_te_anchor_60
+		clr_state_flag = JAP_te_anchor_71
+		clr_state_flag = JAP_te_anchor_72
+		clr_state_flag = JAP_te_anchor_73
+		clr_state_flag = JAP_te_anchor_75
+		clr_state_flag = JAP_te_anchor_80
+		clr_state_flag = JAP_te_anchor_81
+		clr_state_flag = JAP_te_anchor_83
+		clr_state_flag = JAP_te_anchor_84
+		clr_state_flag = JAP_te_anchor_85
+		clr_state_flag = JAP_te_anchor_91
+		clr_state_flag = JAP_te_anchor_92
+		clr_state_flag = JAP_te_anchor_93
+		clr_state_flag = JAP_te_anchor_98
+		clr_state_flag = JAP_te_anchor_100
+		clr_state_flag = JAP_te_anchor_101
+		clr_state_flag = JAP_te_anchor_102
+		clr_state_flag = JAP_te_anchor_103
+		clr_state_flag = JAP_te_anchor_104
+		clr_state_flag = JAP_te_anchor_203
+		clr_state_flag = JAP_te_anchor_231
+		clr_state_flag = JAP_te_anchor_252
+		clr_state_flag = JAP_te_anchor_280
+		clr_state_flag = JAP_te_anchor_308
+		clr_state_flag = JAP_te_anchor_309
+		clr_state_flag = JAP_te_anchor_323
+		clr_state_flag = JAP_te_anchor_324
+		clr_state_flag = JAP_te_anchor_325
+		clr_state_flag = JAP_te_anchor_331
+		clr_state_flag = JAP_te_anchor_333
+		clr_state_flag = JAP_te_anchor_335
+		clr_state_flag = JAP_te_anchor_354
+		clr_state_flag = JAP_te_anchor_361
+		clr_state_flag = JAP_te_anchor_362
+		clr_state_flag = JAP_te_anchor_363
+		clr_state_flag = JAP_te_anchor_364
+		clr_state_flag = JAP_te_anchor_372
+	}
+	# 60 West Indian Ocean: 543 > 709 > 710
+	if = {
+		limit = { 543 = { JAP_te_state_held_trigger = yes } }
+		543 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_60
+		}
+	}
+	else_if = {
+		limit = { 709 = { JAP_te_state_held_trigger = yes } }
+		709 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_60
+		}
+	}
+	else_if = {
+		limit = { 710 = { JAP_te_state_held_trigger = yes } }
+		710 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_60
+		}
+	}
+	# 71 Central Indian Ocean: 712
+	if = {
+		limit = { 712 = { JAP_te_state_held_trigger = yes } }
+		712 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_71
+		}
+	}
+	# 72 Straits of Malacca: 862 > 672 > 336 > 724
+	if = {
+		limit = { 862 = { JAP_te_state_held_trigger = yes } }
+		862 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_72
+		}
+	}
+	else_if = {
+		limit = { 672 = { JAP_te_state_held_trigger = yes } }
+		672 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_72
+		}
+	}
+	else_if = {
+		limit = { 336 = { JAP_te_state_held_trigger = yes } }
+		336 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_72
+		}
+	}
+	else_if = {
+		limit = { 724 = { JAP_te_state_held_trigger = yes } }
+		724 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_72
+		}
+	}
+	# 73 Gulf of Thailand: 724 > 289 > 741 > 286 > 862
+	if = {
+		limit = { 724 = { JAP_te_state_held_trigger = yes } }
+		724 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_73
+		}
+	}
+	else_if = {
+		limit = { 289 = { JAP_te_state_held_trigger = yes } }
+		289 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_73
+		}
+	}
+	else_if = {
+		limit = { 741 = { JAP_te_state_held_trigger = yes } }
+		741 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_73
+		}
+	}
+	else_if = {
+		limit = { 286 = { JAP_te_state_held_trigger = yes } }
+		286 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_73
+		}
+	}
+	else_if = {
+		limit = { 862 = { JAP_te_state_held_trigger = yes } }
+		862 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_73
+		}
+	}
+	# 75 South China Sea: 671 > 623 > 976 > 591 > 593 > 931 > 327 > 592 > 524 > 595 > 626 > 326 > 624 > 728 > 729
+	if = {
+		limit = { 671 = { JAP_te_state_held_trigger = yes } }
+		671 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_75
+		}
+	}
+	else_if = {
+		limit = { 623 = { JAP_te_state_held_trigger = yes } }
+		623 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_75
+		}
+	}
+	else_if = {
+		limit = { 976 = { JAP_te_state_held_trigger = yes } }
+		976 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_75
+		}
+	}
+	else_if = {
+		limit = { 591 = { JAP_te_state_held_trigger = yes } }
+		591 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_75
+		}
+	}
+	else_if = {
+		limit = { 593 = { JAP_te_state_held_trigger = yes } }
+		593 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_75
+		}
+	}
+	else_if = {
+		limit = { 931 = { JAP_te_state_held_trigger = yes } }
+		931 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_75
+		}
+	}
+	else_if = {
+		limit = { 327 = { JAP_te_state_held_trigger = yes } }
+		327 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_75
+		}
+	}
+	else_if = {
+		limit = { 592 = { JAP_te_state_held_trigger = yes } }
+		592 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_75
+		}
+	}
+	else_if = {
+		limit = { 524 = { JAP_te_state_held_trigger = yes } }
+		524 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_75
+		}
+	}
+	else_if = {
+		limit = { 595 = { JAP_te_state_held_trigger = yes } }
+		595 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_75
+		}
+	}
+	else_if = {
+		limit = { 626 = { JAP_te_state_held_trigger = yes } }
+		626 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_75
+		}
+	}
+	else_if = {
+		limit = { 326 = { JAP_te_state_held_trigger = yes } }
+		326 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_75
+		}
+	}
+	else_if = {
+		limit = { 624 = { JAP_te_state_held_trigger = yes } }
+		624 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_75
+		}
+	}
+	else_if = {
+		limit = { 728 = { JAP_te_state_held_trigger = yes } }
+		728 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_75
+		}
+	}
+	else_if = {
+		limit = { 729 = { JAP_te_state_held_trigger = yes } }
+		729 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_75
+		}
+	}
+	# 80 Sulu Sea: 627 > 628 > 624 > 625 > 333 > 626 > 327
+	if = {
+		limit = { 627 = { JAP_te_state_held_trigger = yes } }
+		627 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_80
+		}
+	}
+	else_if = {
+		limit = { 628 = { JAP_te_state_held_trigger = yes } }
+		628 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_80
+		}
+	}
+	else_if = {
+		limit = { 624 = { JAP_te_state_held_trigger = yes } }
+		624 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_80
+		}
+	}
+	else_if = {
+		limit = { 625 = { JAP_te_state_held_trigger = yes } }
+		625 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_80
+		}
+	}
+	else_if = {
+		limit = { 333 = { JAP_te_state_held_trigger = yes } }
+		333 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_80
+		}
+	}
+	else_if = {
+		limit = { 626 = { JAP_te_state_held_trigger = yes } }
+		626 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_80
+		}
+	}
+	else_if = {
+		limit = { 327 = { JAP_te_state_held_trigger = yes } }
+		327 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_80
+		}
+	}
+	# 81 Coral Sea: 523 > 989 > 521 > 1004
+	if = {
+		limit = { 523 = { JAP_te_state_held_trigger = yes } }
+		523 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_81
+		}
+	}
+	else_if = {
+		limit = { 989 = { JAP_te_state_held_trigger = yes } }
+		989 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_81
+		}
+	}
+	else_if = {
+		limit = { 521 = { JAP_te_state_held_trigger = yes } }
+		521 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_81
+		}
+	}
+	else_if = {
+		limit = { 1004 = { JAP_te_state_held_trigger = yes } }
+		1004 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_81
+		}
+	}
+	# 83 Solomon Islands: 634 > 737
+	if = {
+		limit = { 634 = { JAP_te_state_held_trigger = yes } }
+		634 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_83
+		}
+	}
+	else_if = {
+		limit = { 737 = { JAP_te_state_held_trigger = yes } }
+		737 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_83
+		}
+	}
+	# 84 Bismarck Sea: 737 > 1002 > 1004
+	if = {
+		limit = { 737 = { JAP_te_state_held_trigger = yes } }
+		737 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_84
+		}
+	}
+	else_if = {
+		limit = { 1002 = { JAP_te_state_held_trigger = yes } }
+		1002 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_84
+		}
+	}
+	else_if = {
+		limit = { 1004 = { JAP_te_state_held_trigger = yes } }
+		1004 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_84
+		}
+	}
+	# 85 South West Indian Ocean: 543 > 706 > 707
+	if = {
+		limit = { 543 = { JAP_te_state_held_trigger = yes } }
+		543 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_85
+		}
+	}
+	else_if = {
+		limit = { 706 = { JAP_te_state_held_trigger = yes } }
+		706 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_85
+		}
+	}
+	else_if = {
+		limit = { 707 = { JAP_te_state_held_trigger = yes } }
+		707 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_85
+		}
+	}
+	# 91 Arafura Sea: 520 > 669 > 738 > 721 > 955
+	if = {
+		limit = { 520 = { JAP_te_state_held_trigger = yes } }
+		520 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_91
+		}
+	}
+	else_if = {
+		limit = { 669 = { JAP_te_state_held_trigger = yes } }
+		669 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_91
+		}
+	}
+	else_if = {
+		limit = { 738 = { JAP_te_state_held_trigger = yes } }
+		738 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_91
+		}
+	}
+	else_if = {
+		limit = { 721 = { JAP_te_state_held_trigger = yes } }
+		721 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_91
+		}
+	}
+	else_if = {
+		limit = { 955 = { JAP_te_state_held_trigger = yes } }
+		955 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_91
+		}
+	}
+	# 92 Timor Sea: 667 > 955 > 721
+	if = {
+		limit = { 667 = { JAP_te_state_held_trigger = yes } }
+		667 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_92
+		}
+	}
+	else_if = {
+		limit = { 955 = { JAP_te_state_held_trigger = yes } }
+		955 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_92
+		}
+	}
+	else_if = {
+		limit = { 721 = { JAP_te_state_held_trigger = yes } }
+		721 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_92
+		}
+	}
+	# 93 Banda Sea: 673 > 668 > 1002 > 667 > 721 > 738 > 669
+	if = {
+		limit = { 673 = { JAP_te_state_held_trigger = yes } }
+		673 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_93
+		}
+	}
+	else_if = {
+		limit = { 668 = { JAP_te_state_held_trigger = yes } }
+		668 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_93
+		}
+	}
+	else_if = {
+		limit = { 1002 = { JAP_te_state_held_trigger = yes } }
+		1002 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_93
+		}
+	}
+	else_if = {
+		limit = { 667 = { JAP_te_state_held_trigger = yes } }
+		667 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_93
+		}
+	}
+	else_if = {
+		limit = { 721 = { JAP_te_state_held_trigger = yes } }
+		721 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_93
+		}
+	}
+	else_if = {
+		limit = { 738 = { JAP_te_state_held_trigger = yes } }
+		738 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_93
+		}
+	}
+	else_if = {
+		limit = { 669 = { JAP_te_state_held_trigger = yes } }
+		669 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_93
+		}
+	}
+	# 98 Great Australian Bight: 519 > 522 > 517 > 518
+	if = {
+		limit = { 519 = { JAP_te_state_held_trigger = yes } }
+		519 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_98
+		}
+	}
+	else_if = {
+		limit = { 522 = { JAP_te_state_held_trigger = yes } }
+		522 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_98
+		}
+	}
+	else_if = {
+		limit = { 517 = { JAP_te_state_held_trigger = yes } }
+		517 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_98
+		}
+	}
+	else_if = {
+		limit = { 518 = { JAP_te_state_held_trigger = yes } }
+		518 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_98
+		}
+	}
+	# 100 Red Sea: 457 > 550 > 679 > 895 > 293 > 1097 > 453 > 268 > 894
+	if = {
+		limit = { 457 = { JAP_te_state_held_trigger = yes } }
+		457 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_100
+		}
+	}
+	else_if = {
+		limit = { 550 = { JAP_te_state_held_trigger = yes } }
+		550 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_100
+		}
+	}
+	else_if = {
+		limit = { 679 = { JAP_te_state_held_trigger = yes } }
+		679 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_100
+		}
+	}
+	else_if = {
+		limit = { 895 = { JAP_te_state_held_trigger = yes } }
+		895 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_100
+		}
+	}
+	else_if = {
+		limit = { 293 = { JAP_te_state_held_trigger = yes } }
+		293 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_100
+		}
+	}
+	else_if = {
+		limit = { 1097 = { JAP_te_state_held_trigger = yes } }
+		1097 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_100
+		}
+	}
+	else_if = {
+		limit = { 453 = { JAP_te_state_held_trigger = yes } }
+		453 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_100
+		}
+	}
+	else_if = {
+		limit = { 268 = { JAP_te_state_held_trigger = yes } }
+		268 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_100
+		}
+	}
+	else_if = {
+		limit = { 894 = { JAP_te_state_held_trigger = yes } }
+		894 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_100
+		}
+	}
+	# 101 Bay of Bengal: 426 > 288 > 430 > 431
+	if = {
+		limit = { 426 = { JAP_te_state_held_trigger = yes } }
+		426 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_101
+		}
+	}
+	else_if = {
+		limit = { 288 = { JAP_te_state_held_trigger = yes } }
+		288 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_101
+		}
+	}
+	else_if = {
+		limit = { 430 = { JAP_te_state_held_trigger = yes } }
+		430 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_101
+		}
+	}
+	else_if = {
+		limit = { 431 = { JAP_te_state_held_trigger = yes } }
+		431 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_101
+		}
+	}
+	# 102 East African Coast: 559 > 543 > 546 > 547 > 1103 > 708 > 987 > 1099
+	if = {
+		limit = { 559 = { JAP_te_state_held_trigger = yes } }
+		559 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_102
+		}
+	}
+	else_if = {
+		limit = { 543 = { JAP_te_state_held_trigger = yes } }
+		543 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_102
+		}
+	}
+	else_if = {
+		limit = { 546 = { JAP_te_state_held_trigger = yes } }
+		546 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_102
+		}
+	}
+	else_if = {
+		limit = { 547 = { JAP_te_state_held_trigger = yes } }
+		547 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_102
+		}
+	}
+	else_if = {
+		limit = { 1103 = { JAP_te_state_held_trigger = yes } }
+		1103 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_102
+		}
+	}
+	else_if = {
+		limit = { 708 = { JAP_te_state_held_trigger = yes } }
+		708 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_102
+		}
+	}
+	else_if = {
+		limit = { 987 = { JAP_te_state_held_trigger = yes } }
+		987 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_102
+		}
+	}
+	else_if = {
+		limit = { 1099 = { JAP_te_state_held_trigger = yes } }
+		1099 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_102
+		}
+	}
+	# 103 Mozambique Channel: 543 > 544 > 1103 > 1102 > 719
+	if = {
+		limit = { 543 = { JAP_te_state_held_trigger = yes } }
+		543 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_103
+		}
+	}
+	else_if = {
+		limit = { 544 = { JAP_te_state_held_trigger = yes } }
+		544 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_103
+		}
+	}
+	else_if = {
+		limit = { 1103 = { JAP_te_state_held_trigger = yes } }
+		1103 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_103
+		}
+	}
+	else_if = {
+		limit = { 1102 = { JAP_te_state_held_trigger = yes } }
+		1102 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_103
+		}
+	}
+	else_if = {
+		limit = { 719 = { JAP_te_state_held_trigger = yes } }
+		719 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_103
+		}
+	}
+	# 104 Arabian Sea: 428 > 429 > 294 > 897 > 321 > 425 > 883
+	if = {
+		limit = { 428 = { JAP_te_state_held_trigger = yes } }
+		428 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_104
+		}
+	}
+	else_if = {
+		limit = { 429 = { JAP_te_state_held_trigger = yes } }
+		429 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_104
+		}
+	}
+	else_if = {
+		limit = { 294 = { JAP_te_state_held_trigger = yes } }
+		294 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_104
+		}
+	}
+	else_if = {
+		limit = { 897 = { JAP_te_state_held_trigger = yes } }
+		897 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_104
+		}
+	}
+	else_if = {
+		limit = { 321 = { JAP_te_state_held_trigger = yes } }
+		321 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_104
+		}
+	}
+	else_if = {
+		limit = { 425 = { JAP_te_state_held_trigger = yes } }
+		425 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_104
+		}
+	}
+	else_if = {
+		limit = { 883 = { JAP_te_state_held_trigger = yes } }
+		883 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_104
+		}
+	}
+	# 203 Persian Gulf: 658 > 412 > 765 > 656 > 1050 > 413 > 410 > 1041 > 1049
+	if = {
+		limit = { 658 = { JAP_te_state_held_trigger = yes } }
+		658 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_203
+		}
+	}
+	else_if = {
+		limit = { 412 = { JAP_te_state_held_trigger = yes } }
+		412 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_203
+		}
+	}
+	else_if = {
+		limit = { 765 = { JAP_te_state_held_trigger = yes } }
+		765 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_203
+		}
+	}
+	else_if = {
+		limit = { 656 = { JAP_te_state_held_trigger = yes } }
+		656 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_203
+		}
+	}
+	else_if = {
+		limit = { 1050 = { JAP_te_state_held_trigger = yes } }
+		1050 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_203
+		}
+	}
+	else_if = {
+		limit = { 413 = { JAP_te_state_held_trigger = yes } }
+		413 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_203
+		}
+	}
+	else_if = {
+		limit = { 410 = { JAP_te_state_held_trigger = yes } }
+		410 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_203
+		}
+	}
+	else_if = {
+		limit = { 1041 = { JAP_te_state_held_trigger = yes } }
+		1041 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_203
+		}
+	}
+	else_if = {
+		limit = { 1049 = { JAP_te_state_held_trigger = yes } }
+		1049 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_203
+		}
+	}
+	# 231 Riau Archipelago: 333 > 286 > 976 > 626 > 334 > 1064
+	if = {
+		limit = { 333 = { JAP_te_state_held_trigger = yes } }
+		333 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_231
+		}
+	}
+	else_if = {
+		limit = { 286 = { JAP_te_state_held_trigger = yes } }
+		286 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_231
+		}
+	}
+	else_if = {
+		limit = { 976 = { JAP_te_state_held_trigger = yes } }
+		976 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_231
+		}
+	}
+	else_if = {
+		limit = { 626 = { JAP_te_state_held_trigger = yes } }
+		626 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_231
+		}
+	}
+	else_if = {
+		limit = { 334 = { JAP_te_state_held_trigger = yes } }
+		334 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_231
+		}
+	}
+	else_if = {
+		limit = { 1064 = { JAP_te_state_held_trigger = yes } }
+		1064 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_231
+		}
+	}
+	# 252 Selat Karimata: 672 > 334 > 862 > 336
+	if = {
+		limit = { 672 = { JAP_te_state_held_trigger = yes } }
+		672 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_252
+		}
+	}
+	else_if = {
+		limit = { 334 = { JAP_te_state_held_trigger = yes } }
+		334 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_252
+		}
+	}
+	else_if = {
+		limit = { 862 = { JAP_te_state_held_trigger = yes } }
+		862 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_252
+		}
+	}
+	else_if = {
+		limit = { 336 = { JAP_te_state_held_trigger = yes } }
+		336 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_252
+		}
+	}
+	# 280 Celebes Sea: 627 > 673 > 334 > 333
+	if = {
+		limit = { 627 = { JAP_te_state_held_trigger = yes } }
+		627 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_280
+		}
+	}
+	else_if = {
+		limit = { 673 = { JAP_te_state_held_trigger = yes } }
+		673 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_280
+		}
+	}
+	else_if = {
+		limit = { 334 = { JAP_te_state_held_trigger = yes } }
+		334 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_280
+		}
+	}
+	else_if = {
+		limit = { 333 = { JAP_te_state_held_trigger = yes } }
+		333 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_280
+		}
+	}
+	# 308 Gulf of Aden: 269 > 883 > 268 > 659 > 293 > 559 > 987
+	if = {
+		limit = { 269 = { JAP_te_state_held_trigger = yes } }
+		269 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_308
+		}
+	}
+	else_if = {
+		limit = { 883 = { JAP_te_state_held_trigger = yes } }
+		883 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_308
+		}
+	}
+	else_if = {
+		limit = { 268 = { JAP_te_state_held_trigger = yes } }
+		268 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_308
+		}
+	}
+	else_if = {
+		limit = { 659 = { JAP_te_state_held_trigger = yes } }
+		659 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_308
+		}
+	}
+	else_if = {
+		limit = { 293 = { JAP_te_state_held_trigger = yes } }
+		293 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_308
+		}
+	}
+	else_if = {
+		limit = { 559 = { JAP_te_state_held_trigger = yes } }
+		559 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_308
+		}
+	}
+	else_if = {
+		limit = { 987 = { JAP_te_state_held_trigger = yes } }
+		987 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_308
+		}
+	}
+	# 309 Java Sea: 334 > 335 > 673 > 667 > 672
+	if = {
+		limit = { 334 = { JAP_te_state_held_trigger = yes } }
+		334 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_309
+		}
+	}
+	else_if = {
+		limit = { 335 = { JAP_te_state_held_trigger = yes } }
+		335 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_309
+		}
+	}
+	else_if = {
+		limit = { 673 = { JAP_te_state_held_trigger = yes } }
+		673 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_309
+		}
+	}
+	else_if = {
+		limit = { 667 = { JAP_te_state_held_trigger = yes } }
+		667 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_309
+		}
+	}
+	else_if = {
+		limit = { 672 = { JAP_te_state_held_trigger = yes } }
+		672 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_309
+		}
+	}
+	# 323 Gulf of Suez: 453 > 446 > 923 > 457
+	if = {
+		limit = { 453 = { JAP_te_state_held_trigger = yes } }
+		453 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_323
+		}
+	}
+	else_if = {
+		limit = { 446 = { JAP_te_state_held_trigger = yes } }
+		446 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_323
+		}
+	}
+	else_if = {
+		limit = { 923 = { JAP_te_state_held_trigger = yes } }
+		923 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_323
+		}
+	}
+	else_if = {
+		limit = { 457 = { JAP_te_state_held_trigger = yes } }
+		457 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_323
+		}
+	}
+	# 324 Gulf of Aqaba: 453 > 895 > 454 > 455
+	if = {
+		limit = { 453 = { JAP_te_state_held_trigger = yes } }
+		453 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_324
+		}
+	}
+	else_if = {
+		limit = { 895 = { JAP_te_state_held_trigger = yes } }
+		895 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_324
+		}
+	}
+	else_if = {
+		limit = { 454 = { JAP_te_state_held_trigger = yes } }
+		454 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_324
+		}
+	}
+	else_if = {
+		limit = { 455 = { JAP_te_state_held_trigger = yes } }
+		455 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_324
+		}
+	}
+	# 325 Manilla Bay: 327 > 1060
+	if = {
+		limit = { 327 = { JAP_te_state_held_trigger = yes } }
+		327 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_325
+		}
+	}
+	else_if = {
+		limit = { 1060 = { JAP_te_state_held_trigger = yes } }
+		1060 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_325
+		}
+	}
+	# 331 Andaman Basin: 423 > 422 > 424 > 426 > 320 > 1063
+	if = {
+		limit = { 423 = { JAP_te_state_held_trigger = yes } }
+		423 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_331
+		}
+	}
+	else_if = {
+		limit = { 422 = { JAP_te_state_held_trigger = yes } }
+		422 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_331
+		}
+	}
+	else_if = {
+		limit = { 424 = { JAP_te_state_held_trigger = yes } }
+		424 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_331
+		}
+	}
+	else_if = {
+		limit = { 426 = { JAP_te_state_held_trigger = yes } }
+		426 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_331
+		}
+	}
+	else_if = {
+		limit = { 320 = { JAP_te_state_held_trigger = yes } }
+		320 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_331
+		}
+	}
+	else_if = {
+		limit = { 1063 = { JAP_te_state_held_trigger = yes } }
+		1063 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_331
+		}
+	}
+	# 333 Kerguelen Plateau: 713
+	if = {
+		limit = { 713 = { JAP_te_state_held_trigger = yes } }
+		713 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_333
+		}
+	}
+	# 335 Andaman Sea: 288 > 975 > 724 > 672 > 733
+	if = {
+		limit = { 288 = { JAP_te_state_held_trigger = yes } }
+		288 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_335
+		}
+	}
+	else_if = {
+		limit = { 975 = { JAP_te_state_held_trigger = yes } }
+		975 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_335
+		}
+	}
+	else_if = {
+		limit = { 724 = { JAP_te_state_held_trigger = yes } }
+		724 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_335
+		}
+	}
+	else_if = {
+		limit = { 672 = { JAP_te_state_held_trigger = yes } }
+		672 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_335
+		}
+	}
+	else_if = {
+		limit = { 733 = { JAP_te_state_held_trigger = yes } }
+		733 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_335
+		}
+	}
+	# 354 Solomon Sea: 634 > 737 > 1004
+	if = {
+		limit = { 634 = { JAP_te_state_held_trigger = yes } }
+		634 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_354
+		}
+	}
+	else_if = {
+		limit = { 737 = { JAP_te_state_held_trigger = yes } }
+		737 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_354
+		}
+	}
+	else_if = {
+		limit = { 1004 = { JAP_te_state_held_trigger = yes } }
+		1004 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_354
+		}
+	}
+	# 361 Arabian Basin: 425 > 423 > 281 > 321
+	if = {
+		limit = { 425 = { JAP_te_state_held_trigger = yes } }
+		425 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_361
+		}
+	}
+	else_if = {
+		limit = { 423 = { JAP_te_state_held_trigger = yes } }
+		423 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_361
+		}
+	}
+	else_if = {
+		limit = { 281 = { JAP_te_state_held_trigger = yes } }
+		281 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_361
+		}
+	}
+	else_if = {
+		limit = { 321 = { JAP_te_state_held_trigger = yes } }
+		321 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_361
+		}
+	}
+	# 362 Cocos Basin: 672
+	if = {
+		limit = { 672 = { JAP_te_state_held_trigger = yes } }
+		672 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_362
+		}
+	}
+	# 363 Perth Basin: 522 > 955
+	if = {
+		limit = { 522 = { JAP_te_state_held_trigger = yes } }
+		522 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_363
+		}
+	}
+	else_if = {
+		limit = { 955 = { JAP_te_state_held_trigger = yes } }
+		955 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_363
+		}
+	}
+	# 364 Java Trench: 335 > 672 > 667 > 711
+	if = {
+		limit = { 335 = { JAP_te_state_held_trigger = yes } }
+		335 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_364
+		}
+	}
+	else_if = {
+		limit = { 672 = { JAP_te_state_held_trigger = yes } }
+		672 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_364
+		}
+	}
+	else_if = {
+		limit = { 667 = { JAP_te_state_held_trigger = yes } }
+		667 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_364
+		}
+	}
+	else_if = {
+		limit = { 711 = { JAP_te_state_held_trigger = yes } }
+		711 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_364
+		}
+	}
+	# 372 Gulf of Oman: 294 > 443 > 444 > 410 > 428 > 658
+	if = {
+		limit = { 294 = { JAP_te_state_held_trigger = yes } }
+		294 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_372
+		}
+	}
+	else_if = {
+		limit = { 443 = { JAP_te_state_held_trigger = yes } }
+		443 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_372
+		}
+	}
+	else_if = {
+		limit = { 444 = { JAP_te_state_held_trigger = yes } }
+		444 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_372
+		}
+	}
+	else_if = {
+		limit = { 410 = { JAP_te_state_held_trigger = yes } }
+		410 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_372
+		}
+	}
+	else_if = {
+		limit = { 428 = { JAP_te_state_held_trigger = yes } }
+		428 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_372
+		}
+	}
+	else_if = {
+		limit = { 658 = { JAP_te_state_held_trigger = yes } }
+		658 = {
+			set_state_flag = JAP_te_anchor
+			set_state_flag = JAP_te_anchor_372
+		}
 	}
 }
