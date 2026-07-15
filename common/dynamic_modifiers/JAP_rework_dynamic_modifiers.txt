@@ -46,15 +46,19 @@ IJN_te_flank_speed = { #COUNTRY MODIFIER
 }
 
 JAP_te_supply = { #STATE MODIFIER
-	enable = {
-		# Japan's own garrisons only (user ruling 2026-07-15): the faction-wide form
-		# turned runs into a supply buff for whoever held the coast - e.g. a Japan-
-		# aligned Chinese Guangdong. local_supplies_for_controller already guarantees
-		# nothing leaks to non-controllers, so this realtime check means "lit while
-		# Japan holds the state, dark the moment it falls" with no snapshotting.
-		CONTROLLER = { tag = JAP }
-		JAP = { has_country_flag = JAP_te_active }
+	# Conditions do NOT belong in enable: trigger blocks there are silently discarded
+	# and the modifier stays always-on (observed in-game 2026-07-15 - every South China
+	# Sea coast lit up, Chinese Guangdong included). The vanilla/WA state-modifier
+	# pattern is enable = always + remove_trigger (idea_RAJ_*, SOV_fortified_state):
+	# the modifier self-removes when Japan loses the state, and the daily
+	# JAP_te_refresh_supply_effect re-adds it on recapture. Japan-only per user
+	# ruling 2026-07-15.
+	enable = { always = yes }
+
+	remove_trigger = {
+		NOT = { CONTROLLER = { tag = JAP } }
 	}
+
 	icon = GFX_JAP_te_supply_icon
 
 	local_supplies_for_controller = JAP_te_supply_var
