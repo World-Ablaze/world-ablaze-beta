@@ -3,523 +3,1413 @@
 # Adjacency is machine-derived from provinces.bmp so no coastal state gets missed
 # (hand-picking managed to both miss 1002 and over-include 634 on the prototype).
 
-# Seeds every Tokyo Express relevant state with the list of adopted sea
-# regions it touches (used by the supply apply/push/remove loops).
-# Called from on_startup inside JAP country scope (numeric state scopes do
-# NOT resolve from the scopeless on_startup context - proven 2026-07-15).
-JAP_te_seed_regions_effect = {
-	268 = { # 268-French Somaliland.txt owner=FRP
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 100 } # Red Sea
-		add_to_array = { JAP_te_regions = 308 } # Gulf of Aden
-	}
-	269 = { # 269-British Somaliland.txt owner=UKT
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 308 } # Gulf of Aden
-	}
-	281 = { # 281-Maldives.txt owner=UKO
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 361 } # Arabian Basin
-	}
-	286 = { # 286-Cochinchina.txt owner=FRV
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 73 } # Gulf of Thailand
-		add_to_array = { JAP_te_regions = 231 } # Riau Archipelago
-	}
-	288 = { # 288-Burma.txt owner=RAJ
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 101 } # Bay of Bengal
-		add_to_array = { JAP_te_regions = 335 } # Andaman Sea
-	}
-	289 = { # 289-Bangkok.txt owner=SIA
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 73 } # Gulf of Thailand
-	}
-	293 = { # 293-Azal.txt owner=YEM
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 100 } # Red Sea
-		add_to_array = { JAP_te_regions = 308 } # Gulf of Aden
-	}
-	294 = { # 294-Al Batinah.txt owner=OMA
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 104 } # Arabian Sea
-		add_to_array = { JAP_te_regions = 372 } # Gulf of Oman
-	}
-	320 = { # 320-French India.txt owner=FRO
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 331 } # Andaman Basin
-	}
-	321 = { # 321-Goa.txt owner=POR
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 104 } # Arabian Sea
-		add_to_array = { JAP_te_regions = 361 } # Arabian Basin
-	}
-	326 = { # 326-Hong Kong.txt owner=ENG
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # South China Sea
-	}
-	327 = { # 327-Manila.txt owner=PHI
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # South China Sea
-		add_to_array = { JAP_te_regions = 80 } # Sulu Sea
-		add_to_array = { JAP_te_regions = 325 } # Manilla Bay
-	}
-	333 = { # 333-North Borneo.txt owner=MAL
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 80 } # Sulu Sea
-		add_to_array = { JAP_te_regions = 231 } # Riau Archipelago
-		add_to_array = { JAP_te_regions = 280 } # Celebes Sea
-	}
-	334 = { # 334-Kalimantan.txt owner=INS
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 231 } # Riau Archipelago
-		add_to_array = { JAP_te_regions = 252 } # Selat Karimata
-		add_to_array = { JAP_te_regions = 280 } # Celebes Sea
-		add_to_array = { JAP_te_regions = 309 } # Java Sea
-	}
-	335 = { # 335-Java.txt owner=INS
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 309 } # Java Sea
-		add_to_array = { JAP_te_regions = 364 } # Java Trench
-	}
-	336 = { # 336-Singapore.txt owner=ENG
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 72 } # Straits of Malacca
-		add_to_array = { JAP_te_regions = 252 } # Selat Karimata
-	}
-	410 = { # 410-Sistan.txt owner=PER
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 203 } # Persian Gulf
-		add_to_array = { JAP_te_regions = 372 } # Gulf of Oman
-	}
-	412 = { # 412-Fars.txt owner=PER
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 203 } # Persian Gulf
-	}
-	413 = { # 413-Khuzestan.txt owner=PER
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 203 } # Persian Gulf
-	}
-	422 = { # 422-Ceylon.txt owner=UKO
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 331 } # Andaman Basin
-	}
-	423 = { # 423-Tamil Nadu.txt owner=RAJ
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 331 } # Andaman Basin
-		add_to_array = { JAP_te_regions = 361 } # Arabian Basin
-	}
-	424 = { # 424-Madras.txt owner=RAJ
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 331 } # Andaman Basin
-	}
-	425 = { # 425-Mysore.txt owner=RAJ
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 104 } # Arabian Sea
-		add_to_array = { JAP_te_regions = 361 } # Arabian Basin
-	}
-	426 = { # 426-Odisha.txt owner=RAJ
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 101 } # Bay of Bengal
-		add_to_array = { JAP_te_regions = 331 } # Andaman Basin
-	}
-	428 = { # 428-Gujarat.txt owner=RAJ
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 104 } # Arabian Sea
-		add_to_array = { JAP_te_regions = 372 } # Gulf of Oman
-	}
-	429 = { # 429-Bombay.txt owner=RAJ
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 104 } # Arabian Sea
-	}
-	430 = { # 430-East Bengal.txt owner=RAJ
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 101 } # Bay of Bengal
-	}
-	431 = { # 431-West Bengal.txt owner=RAJ
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 101 } # Bay of Bengal
-	}
-	443 = { # 443-Sind.txt owner=RAJ
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 372 } # Gulf of Oman
-	}
-	444 = { # 444-Baluchistan.txt owner=RAJ
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 372 } # Gulf of Oman
-	}
-	446 = { # 446-Cairo.txt owner=UKE
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 323 } # Gulf of Suez
-	}
-	453 = { # 453-Sinai.txt owner=UKE
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 100 } # Red Sea
-		add_to_array = { JAP_te_regions = 323 } # Gulf of Suez
-		add_to_array = { JAP_te_regions = 324 } # Gulf of Aqaba
-	}
-	454 = { # 454-Palestine.txt owner=UKM
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 324 } # Gulf of Aqaba
-	}
-	455 = { # 455-Jordan.txt owner=UKM
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 324 } # Gulf of Aqaba
-	}
-	457 = { # 457-Eastern Desert.txt owner=UKE
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 100 } # Red Sea
-		add_to_array = { JAP_te_regions = 323 } # Gulf of Suez
-	}
-	517 = { # 517-Victoria.txt owner=AST
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 98 } # Great Australian Bight
-	}
-	518 = { # 518-Tasmania.txt owner=AST
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 98 } # Great Australian Bight
-	}
-	519 = { # 519-Southern Australia.txt owner=AST
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 98 } # Great Australian Bight
-	}
-	520 = { # 520-Northern Territory.txt owner=AST
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 91 } # Arafura Sea
-	}
-	521 = { # 521-Queensland.txt owner=AST
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 81 } # Coral Sea
-	}
-	522 = { # 522-S.Western Australia.txt owner=AST
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 98 } # Great Australian Bight
-		add_to_array = { JAP_te_regions = 363 } # Perth Basin
-	}
-	523 = { # 523-South East Papua.txt owner=AST
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 81 } # Coral Sea
-	}
-	524 = { # 524-Taiwan.txt owner=JAP
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # South China Sea
-	}
-	543 = { # 543-Madagascar.txt owner=FRJ
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 60 } # West Indian Ocean
-		add_to_array = { JAP_te_regions = 85 } # South West Indian Ocean
-		add_to_array = { JAP_te_regions = 102 } # East African Coast
-		add_to_array = { JAP_te_regions = 103 } # Mozambique Channel
-	}
-	544 = { # 544-Mozambique.txt owner=POA
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 103 } # Mozambique Channel
-	}
-	546 = { # 546-Tanganyika.txt owner=UKT
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 102 } # East African Coast
-	}
-	547 = { # 547-Kenya.txt owner=UKT
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 102 } # East African Coast
-	}
-	550 = { # 550-Eritrea.txt owner=ITA
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 100 } # Red Sea
-	}
-	559 = { # 559-Somaliland.txt owner=ITA
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 102 } # East African Coast
-		add_to_array = { JAP_te_regions = 308 } # Gulf of Aden
-	}
-	591 = { # 591-Hainan.txt owner=GUC
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # South China Sea
-	}
-	592 = { # 592-Guangzhou.txt owner=GUC
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # South China Sea
-	}
-	593 = { # 593-Guangdong.txt owner=GUC
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # South China Sea
-	}
-	595 = { # 595-Fujian.txt owner=CHI
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # South China Sea
-	}
-	623 = { # 623-Luzon.txt owner=PHI
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # South China Sea
-	}
-	624 = { # 624-Central islands.txt owner=PHI
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # South China Sea
-		add_to_array = { JAP_te_regions = 80 } # Sulu Sea
-	}
-	625 = { # 625-Samar.txt owner=PHI
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 80 } # Sulu Sea
-	}
-	626 = { # 626-Palawan.txt owner=PHI
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # South China Sea
-		add_to_array = { JAP_te_regions = 80 } # Sulu Sea
-		add_to_array = { JAP_te_regions = 231 } # Riau Archipelago
-	}
-	627 = { # 627-Mindanao.txt owner=PHI
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 80 } # Sulu Sea
-		add_to_array = { JAP_te_regions = 280 } # Celebes Sea
-	}
-	628 = { # 628-Cebu.txt owner=PHI
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 80 } # Sulu Sea
-	}
-	634 = { # 634-Solomon Islands.txt owner=AST
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 83 } # Solomon Islands
-		add_to_array = { JAP_te_regions = 354 } # Solomon Sea
-	}
-	656 = { # 656-Kuwait.txt owner=UKM
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 203 } # Persian Gulf
-	}
-	658 = { # 658-Abu Dhabi.txt owner=UKM
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 203 } # Persian Gulf
-		add_to_array = { JAP_te_regions = 372 } # Gulf of Oman
-	}
-	659 = { # 659-Aden.txt owner=UKM
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 308 } # Gulf of Aden
-	}
-	667 = { # 667-Lesser Sunda Islands.txt owner=INS
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 92 } # Timor Sea
-		add_to_array = { JAP_te_regions = 93 } # Banda Sea
-		add_to_array = { JAP_te_regions = 309 } # Java Sea
-		add_to_array = { JAP_te_regions = 364 } # Java Trench
-	}
-	668 = { # 668-The Moluccas.txt owner=INS
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 93 } # Banda Sea
-	}
-	669 = { # 669-South West Papua.txt owner=INS
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 91 } # Arafura Sea
-		add_to_array = { JAP_te_regions = 93 } # Banda Sea
-	}
-	671 = { # 671-Tonkin.txt owner=FRV
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # South China Sea
-	}
-	672 = { # 672-Sumatra.txt owner=INS
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 72 } # Straits of Malacca
-		add_to_array = { JAP_te_regions = 252 } # Selat Karimata
-		add_to_array = { JAP_te_regions = 309 } # Java Sea
-		add_to_array = { JAP_te_regions = 335 } # Andaman Sea
-		add_to_array = { JAP_te_regions = 362 } # Cocos Basin
-		add_to_array = { JAP_te_regions = 364 } # Java Trench
-	}
-	673 = { # 673-Sulawesi.txt owner=INS
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 93 } # Banda Sea
-		add_to_array = { JAP_te_regions = 280 } # Celebes Sea
-		add_to_array = { JAP_te_regions = 309 } # Java Sea
-	}
-	679 = { # 679-Hejaz.txt owner=SAU
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 100 } # Red Sea
-	}
-	706 = { # 706-Reunion.txt owner=FRO
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 85 } # South West Indian Ocean
-	}
-	707 = { # 707-Mauritius.txt owner=UKO
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 85 } # South West Indian Ocean
-	}
-	708 = { # 708-Comoro Islands.txt owner=FRA
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 102 } # East African Coast
-	}
-	709 = { # 709-Seychelles.txt owner=UKO
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 60 } # West Indian Ocean
-	}
-	710 = { # 710-Diego Garcia.txt owner=UKO
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 60 } # West Indian Ocean
-	}
-	711 = { # 711-Christmas Island.txt owner=UKO
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 364 } # Java Trench
-	}
-	712 = { # 712-Cocos Islands.txt owner=UKO
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 71 } # Central Indian Ocean
-	}
-	713 = { # 713-Kerguelen.txt owner=FRO
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 333 } # Kerguelen Plateau
-	}
-	719 = { # 719-Natal.txt owner=SAF
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 103 } # Mozambique Channel
-	}
-	721 = { # 721-Portuguese Timor.txt owner=POR
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 91 } # Arafura Sea
-		add_to_array = { JAP_te_regions = 92 } # Timor Sea
-		add_to_array = { JAP_te_regions = 93 } # Banda Sea
-	}
-	724 = { # 724-Northern Malay.txt owner=SIA
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 72 } # Straits of Malacca
-		add_to_array = { JAP_te_regions = 73 } # Gulf of Thailand
-		add_to_array = { JAP_te_regions = 335 } # Andaman Sea
-	}
-	728 = { # 728-Guangzhouwan.txt owner=FRV
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # South China Sea
-	}
-	729 = { # 729-Macau.txt owner=POR
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # South China Sea
-	}
-	733 = { # 733-Andaman.txt owner=UKO
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 335 } # Andaman Sea
-	}
-	737 = { # 737-Bismarck.txt owner=AST
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 83 } # Solomon Islands
-		add_to_array = { JAP_te_regions = 84 } # Bismarck Sea
-		add_to_array = { JAP_te_regions = 354 } # Solomon Sea
-	}
-	738 = { # 738-Aru Islands.txt owner=INS
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 91 } # Arafura Sea
-		add_to_array = { JAP_te_regions = 93 } # Banda Sea
-	}
-	741 = { # 741-Cambodia.txt owner=FRV
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 73 } # Gulf of Thailand
-	}
-	765 = { # 765-Qatar.txt owner=UKM
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 203 } # Persian Gulf
-	}
-	862 = { # 862-Malay peninsula.txt owner=MAL
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 72 } # Straits of Malacca
-		add_to_array = { JAP_te_regions = 73 } # Gulf of Thailand
-		add_to_array = { JAP_te_regions = 252 } # Selat Karimata
-	}
-	883 = { # 883-Hadramaut.txt owner=UKM
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 104 } # Arabian Sea
-		add_to_array = { JAP_te_regions = 308 } # Gulf of Aden
-	}
-	894 = { # 894-Asir.txt owner=SAU
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 100 } # Red Sea
-	}
-	895 = { # 895-Tabuk.txt owner=SAU
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 100 } # Red Sea
-		add_to_array = { JAP_te_regions = 324 } # Gulf of Aqaba
-	}
-	897 = { # 897-Al Wusta.txt owner=OMA
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 104 } # Arabian Sea
-	}
-	923 = { # 923-Suez Canal.txt owner=UKM
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 323 } # Gulf of Suez
-	}
-	931 = { # 931-Leizhou.txt owner=GUC
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # South China Sea
-	}
-	955 = { # 955-N.Western Australia.txt owner=AST
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 91 } # Arafura Sea
-		add_to_array = { JAP_te_regions = 92 } # Timor Sea
-		add_to_array = { JAP_te_regions = 363 } # Perth Basin
-	}
-	975 = { # 975-Tanintharyi.txt owner=RAJ
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 335 } # Andaman Sea
-	}
-	976 = { # 976-Annam.txt owner=FRV
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 75 } # South China Sea
-		add_to_array = { JAP_te_regions = 231 } # Riau Archipelago
-	}
-	987 = { # 987-Socotra.txt owner=UKM
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 102 } # East African Coast
-		add_to_array = { JAP_te_regions = 308 } # Gulf of Aden
-	}
-	989 = { # 989-Northern Queensland.txt owner=AST
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 81 } # Coral Sea
-	}
-	1002 = { # 1002-North West Papua.txt owner=INS
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 84 } # Bismarck Sea
-		add_to_array = { JAP_te_regions = 93 } # Banda Sea
-	}
-	1004 = { # 1004-North East Papua.txt owner=AST
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 81 } # Coral Sea
-		add_to_array = { JAP_te_regions = 84 } # Bismarck Sea
-		add_to_array = { JAP_te_regions = 354 } # Solomon Sea
-	}
-	1041 = { # 1041-Dhi Qar.txt owner=IRQ
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 203 } # Persian Gulf
-	}
-	1049 = { # 1049-Empty Corridor.txt owner=SAU
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 203 } # Persian Gulf
-	}
-	1050 = { # 1050-As Sharqiah.txt owner=SAU
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 203 } # Persian Gulf
-	}
-	1060 = { # 1060-Imus.txt owner=USA
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 325 } # Manilla Bay
-	}
-	1063 = { # 1063-Trincomalee.txt owner=ENG
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 331 } # Andaman Basin
-	}
-	1064 = { # 1064-Vung Tao.txt owner=FRA
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 231 } # Riau Archipelago
-	}
-	1097 = { # 1097-Nahr.txt owner=UKE
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 100 } # Red Sea
-	}
-	1099 = { # 1099-Northern Tanganyika.txt owner=UKT
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 102 } # East African Coast
-	}
-	1102 = { # 1102-Tete.txt owner=POA
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 103 } # Mozambique Channel
-	}
-	1103 = { # 1103-Nampula.txt owner=POA
-		clear_array = JAP_te_regions
-		add_to_array = { JAP_te_regions = 102 } # East African Coast
-		add_to_array = { JAP_te_regions = 103 } # Mozambique Channel
-	}
+# Tokyo Express: start of a run - attach the supply modifier to every state
+# touching the active sea region, then push the initial strength.
+JAP_te_apply_supply_effect = {
+	if = { # 60 West Indian Ocean
+		limit = { check_variable = { global.JAP_te_region_active = 60 } }
+		543 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		709 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		710 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 71 Central Indian Ocean
+		limit = { check_variable = { global.JAP_te_region_active = 71 } }
+		712 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 72 Straits of Malacca
+		limit = { check_variable = { global.JAP_te_region_active = 72 } }
+		336 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		672 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		724 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		862 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 73 Gulf of Thailand
+		limit = { check_variable = { global.JAP_te_region_active = 73 } }
+		286 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		289 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		724 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		741 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		862 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 75 South China Sea
+		limit = { check_variable = { global.JAP_te_region_active = 75 } }
+		326 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		327 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		524 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		591 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		592 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		593 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		595 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		623 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		624 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		626 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		671 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		728 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		729 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		931 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		976 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 80 Sulu Sea
+		limit = { check_variable = { global.JAP_te_region_active = 80 } }
+		327 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		333 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		624 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		625 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		626 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		627 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		628 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 81 Coral Sea
+		limit = { check_variable = { global.JAP_te_region_active = 81 } }
+		521 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		523 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		989 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		1004 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 83 Solomon Islands
+		limit = { check_variable = { global.JAP_te_region_active = 83 } }
+		634 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		737 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 84 Bismarck Sea
+		limit = { check_variable = { global.JAP_te_region_active = 84 } }
+		737 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		1002 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		1004 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 85 South West Indian Ocean
+		limit = { check_variable = { global.JAP_te_region_active = 85 } }
+		543 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		706 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		707 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 91 Arafura Sea
+		limit = { check_variable = { global.JAP_te_region_active = 91 } }
+		520 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		669 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		721 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		738 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		955 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 92 Timor Sea
+		limit = { check_variable = { global.JAP_te_region_active = 92 } }
+		667 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		721 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		955 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 93 Banda Sea
+		limit = { check_variable = { global.JAP_te_region_active = 93 } }
+		667 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		668 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		669 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		673 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		721 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		738 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		1002 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 98 Great Australian Bight
+		limit = { check_variable = { global.JAP_te_region_active = 98 } }
+		517 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		518 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		519 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		522 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 100 Red Sea
+		limit = { check_variable = { global.JAP_te_region_active = 100 } }
+		268 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		293 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		453 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		457 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		550 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		679 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		894 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		895 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		1097 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 101 Bay of Bengal
+		limit = { check_variable = { global.JAP_te_region_active = 101 } }
+		288 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		426 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		430 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		431 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 102 East African Coast
+		limit = { check_variable = { global.JAP_te_region_active = 102 } }
+		543 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		546 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		547 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		559 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		708 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		987 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		1099 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		1103 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 103 Mozambique Channel
+		limit = { check_variable = { global.JAP_te_region_active = 103 } }
+		543 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		544 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		719 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		1102 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		1103 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 104 Arabian Sea
+		limit = { check_variable = { global.JAP_te_region_active = 104 } }
+		294 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		321 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		425 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		428 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		429 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		883 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		897 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 203 Persian Gulf
+		limit = { check_variable = { global.JAP_te_region_active = 203 } }
+		410 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		412 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		413 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		656 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		658 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		765 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		1041 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		1049 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		1050 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 231 Riau Archipelago
+		limit = { check_variable = { global.JAP_te_region_active = 231 } }
+		286 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		333 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		334 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		626 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		976 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		1064 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 252 Selat Karimata
+		limit = { check_variable = { global.JAP_te_region_active = 252 } }
+		334 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		336 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		672 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		862 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 280 Celebes Sea
+		limit = { check_variable = { global.JAP_te_region_active = 280 } }
+		333 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		334 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		627 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		673 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 308 Gulf of Aden
+		limit = { check_variable = { global.JAP_te_region_active = 308 } }
+		268 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		269 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		293 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		559 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		659 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		883 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		987 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 309 Java Sea
+		limit = { check_variable = { global.JAP_te_region_active = 309 } }
+		334 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		335 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		667 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		672 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		673 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 323 Gulf of Suez
+		limit = { check_variable = { global.JAP_te_region_active = 323 } }
+		446 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		453 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		457 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		923 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 324 Gulf of Aqaba
+		limit = { check_variable = { global.JAP_te_region_active = 324 } }
+		453 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		454 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		455 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		895 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 325 Manilla Bay
+		limit = { check_variable = { global.JAP_te_region_active = 325 } }
+		327 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		1060 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 331 Andaman Basin
+		limit = { check_variable = { global.JAP_te_region_active = 331 } }
+		320 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		422 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		423 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		424 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		426 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		1063 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 333 Kerguelen Plateau
+		limit = { check_variable = { global.JAP_te_region_active = 333 } }
+		713 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 335 Andaman Sea
+		limit = { check_variable = { global.JAP_te_region_active = 335 } }
+		288 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		672 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		724 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		733 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		975 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 354 Solomon Sea
+		limit = { check_variable = { global.JAP_te_region_active = 354 } }
+		634 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		737 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		1004 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 361 Arabian Basin
+		limit = { check_variable = { global.JAP_te_region_active = 361 } }
+		281 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		321 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		423 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		425 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 362 Cocos Basin
+		limit = { check_variable = { global.JAP_te_region_active = 362 } }
+		672 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 363 Perth Basin
+		limit = { check_variable = { global.JAP_te_region_active = 363 } }
+		522 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		955 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 364 Java Trench
+		limit = { check_variable = { global.JAP_te_region_active = 364 } }
+		335 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		667 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		672 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		711 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	else_if = { # 372 Gulf of Oman
+		limit = { check_variable = { global.JAP_te_region_active = 372 } }
+		294 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		410 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		428 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		443 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		444 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+		658 = { add_dynamic_modifier = { modifier = JAP_te_supply } }
+	}
+	JAP_te_push_supply_effect = yes
+}
+
+# Tokyo Express: turn JAP_te_band into a supply strength (band x 0.05) and
+# push it onto the per-state variable the JAP_te_supply modifier reads.
+JAP_te_push_supply_effect = {
+	set_variable = { JAP_te_strength = JAP_te_band }
+	multiply_variable = { JAP_te_strength = 0.05 }
+	if = { # 60 West Indian Ocean
+		limit = { check_variable = { global.JAP_te_region_active = 60 } }
+		543 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		709 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		710 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 71 Central Indian Ocean
+		limit = { check_variable = { global.JAP_te_region_active = 71 } }
+		712 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 72 Straits of Malacca
+		limit = { check_variable = { global.JAP_te_region_active = 72 } }
+		336 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		672 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		724 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		862 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 73 Gulf of Thailand
+		limit = { check_variable = { global.JAP_te_region_active = 73 } }
+		286 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		289 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		724 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		741 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		862 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 75 South China Sea
+		limit = { check_variable = { global.JAP_te_region_active = 75 } }
+		326 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		327 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		524 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		591 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		592 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		593 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		595 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		623 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		624 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		626 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		671 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		728 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		729 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		931 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		976 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 80 Sulu Sea
+		limit = { check_variable = { global.JAP_te_region_active = 80 } }
+		327 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		333 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		624 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		625 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		626 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		627 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		628 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 81 Coral Sea
+		limit = { check_variable = { global.JAP_te_region_active = 81 } }
+		521 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		523 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		989 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		1004 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 83 Solomon Islands
+		limit = { check_variable = { global.JAP_te_region_active = 83 } }
+		634 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		737 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 84 Bismarck Sea
+		limit = { check_variable = { global.JAP_te_region_active = 84 } }
+		737 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		1002 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		1004 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 85 South West Indian Ocean
+		limit = { check_variable = { global.JAP_te_region_active = 85 } }
+		543 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		706 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		707 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 91 Arafura Sea
+		limit = { check_variable = { global.JAP_te_region_active = 91 } }
+		520 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		669 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		721 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		738 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		955 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 92 Timor Sea
+		limit = { check_variable = { global.JAP_te_region_active = 92 } }
+		667 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		721 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		955 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 93 Banda Sea
+		limit = { check_variable = { global.JAP_te_region_active = 93 } }
+		667 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		668 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		669 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		673 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		721 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		738 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		1002 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 98 Great Australian Bight
+		limit = { check_variable = { global.JAP_te_region_active = 98 } }
+		517 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		518 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		519 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		522 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 100 Red Sea
+		limit = { check_variable = { global.JAP_te_region_active = 100 } }
+		268 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		293 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		453 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		457 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		550 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		679 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		894 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		895 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		1097 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 101 Bay of Bengal
+		limit = { check_variable = { global.JAP_te_region_active = 101 } }
+		288 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		426 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		430 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		431 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 102 East African Coast
+		limit = { check_variable = { global.JAP_te_region_active = 102 } }
+		543 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		546 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		547 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		559 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		708 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		987 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		1099 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		1103 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 103 Mozambique Channel
+		limit = { check_variable = { global.JAP_te_region_active = 103 } }
+		543 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		544 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		719 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		1102 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		1103 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 104 Arabian Sea
+		limit = { check_variable = { global.JAP_te_region_active = 104 } }
+		294 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		321 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		425 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		428 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		429 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		883 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		897 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 203 Persian Gulf
+		limit = { check_variable = { global.JAP_te_region_active = 203 } }
+		410 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		412 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		413 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		656 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		658 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		765 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		1041 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		1049 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		1050 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 231 Riau Archipelago
+		limit = { check_variable = { global.JAP_te_region_active = 231 } }
+		286 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		333 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		334 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		626 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		976 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		1064 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 252 Selat Karimata
+		limit = { check_variable = { global.JAP_te_region_active = 252 } }
+		334 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		336 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		672 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		862 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 280 Celebes Sea
+		limit = { check_variable = { global.JAP_te_region_active = 280 } }
+		333 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		334 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		627 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		673 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 308 Gulf of Aden
+		limit = { check_variable = { global.JAP_te_region_active = 308 } }
+		268 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		269 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		293 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		559 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		659 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		883 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		987 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 309 Java Sea
+		limit = { check_variable = { global.JAP_te_region_active = 309 } }
+		334 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		335 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		667 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		672 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		673 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 323 Gulf of Suez
+		limit = { check_variable = { global.JAP_te_region_active = 323 } }
+		446 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		453 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		457 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		923 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 324 Gulf of Aqaba
+		limit = { check_variable = { global.JAP_te_region_active = 324 } }
+		453 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		454 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		455 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		895 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 325 Manilla Bay
+		limit = { check_variable = { global.JAP_te_region_active = 325 } }
+		327 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		1060 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 331 Andaman Basin
+		limit = { check_variable = { global.JAP_te_region_active = 331 } }
+		320 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		422 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		423 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		424 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		426 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		1063 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 333 Kerguelen Plateau
+		limit = { check_variable = { global.JAP_te_region_active = 333 } }
+		713 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 335 Andaman Sea
+		limit = { check_variable = { global.JAP_te_region_active = 335 } }
+		288 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		672 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		724 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		733 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		975 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 354 Solomon Sea
+		limit = { check_variable = { global.JAP_te_region_active = 354 } }
+		634 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		737 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		1004 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 361 Arabian Basin
+		limit = { check_variable = { global.JAP_te_region_active = 361 } }
+		281 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		321 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		423 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		425 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 362 Cocos Basin
+		limit = { check_variable = { global.JAP_te_region_active = 362 } }
+		672 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 363 Perth Basin
+		limit = { check_variable = { global.JAP_te_region_active = 363 } }
+		522 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		955 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 364 Java Trench
+		limit = { check_variable = { global.JAP_te_region_active = 364 } }
+		335 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		667 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		672 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		711 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+	else_if = { # 372 Gulf of Oman
+		limit = { check_variable = { global.JAP_te_region_active = 372 } }
+		294 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		410 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		428 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		443 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		444 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+		658 = { set_variable = { JAP_te_supply_var = JAP.JAP_te_strength } }
+	}
+}
+
+# Tokyo Express: end of a run (rounds exhausted or flotilla wiped) - detach
+# the modifier and zero the region selector, which also disables the
+# generated ai_strategy blocks and the running-status card.
+JAP_te_remove_supply_effect = {
+	if = { # 60 West Indian Ocean
+		limit = { check_variable = { global.JAP_te_region_active = 60 } }
+		543 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		709 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		710 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 71 Central Indian Ocean
+		limit = { check_variable = { global.JAP_te_region_active = 71 } }
+		712 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 72 Straits of Malacca
+		limit = { check_variable = { global.JAP_te_region_active = 72 } }
+		336 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		672 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		724 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		862 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 73 Gulf of Thailand
+		limit = { check_variable = { global.JAP_te_region_active = 73 } }
+		286 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		289 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		724 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		741 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		862 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 75 South China Sea
+		limit = { check_variable = { global.JAP_te_region_active = 75 } }
+		326 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		327 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		524 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		591 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		592 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		593 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		595 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		623 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		624 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		626 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		671 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		728 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		729 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		931 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		976 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 80 Sulu Sea
+		limit = { check_variable = { global.JAP_te_region_active = 80 } }
+		327 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		333 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		624 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		625 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		626 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		627 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		628 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 81 Coral Sea
+		limit = { check_variable = { global.JAP_te_region_active = 81 } }
+		521 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		523 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		989 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		1004 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 83 Solomon Islands
+		limit = { check_variable = { global.JAP_te_region_active = 83 } }
+		634 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		737 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 84 Bismarck Sea
+		limit = { check_variable = { global.JAP_te_region_active = 84 } }
+		737 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		1002 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		1004 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 85 South West Indian Ocean
+		limit = { check_variable = { global.JAP_te_region_active = 85 } }
+		543 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		706 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		707 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 91 Arafura Sea
+		limit = { check_variable = { global.JAP_te_region_active = 91 } }
+		520 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		669 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		721 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		738 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		955 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 92 Timor Sea
+		limit = { check_variable = { global.JAP_te_region_active = 92 } }
+		667 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		721 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		955 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 93 Banda Sea
+		limit = { check_variable = { global.JAP_te_region_active = 93 } }
+		667 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		668 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		669 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		673 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		721 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		738 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		1002 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 98 Great Australian Bight
+		limit = { check_variable = { global.JAP_te_region_active = 98 } }
+		517 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		518 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		519 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		522 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 100 Red Sea
+		limit = { check_variable = { global.JAP_te_region_active = 100 } }
+		268 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		293 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		453 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		457 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		550 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		679 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		894 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		895 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		1097 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 101 Bay of Bengal
+		limit = { check_variable = { global.JAP_te_region_active = 101 } }
+		288 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		426 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		430 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		431 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 102 East African Coast
+		limit = { check_variable = { global.JAP_te_region_active = 102 } }
+		543 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		546 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		547 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		559 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		708 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		987 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		1099 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		1103 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 103 Mozambique Channel
+		limit = { check_variable = { global.JAP_te_region_active = 103 } }
+		543 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		544 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		719 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		1102 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		1103 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 104 Arabian Sea
+		limit = { check_variable = { global.JAP_te_region_active = 104 } }
+		294 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		321 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		425 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		428 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		429 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		883 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		897 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 203 Persian Gulf
+		limit = { check_variable = { global.JAP_te_region_active = 203 } }
+		410 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		412 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		413 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		656 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		658 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		765 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		1041 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		1049 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		1050 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 231 Riau Archipelago
+		limit = { check_variable = { global.JAP_te_region_active = 231 } }
+		286 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		333 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		334 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		626 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		976 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		1064 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 252 Selat Karimata
+		limit = { check_variable = { global.JAP_te_region_active = 252 } }
+		334 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		336 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		672 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		862 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 280 Celebes Sea
+		limit = { check_variable = { global.JAP_te_region_active = 280 } }
+		333 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		334 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		627 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		673 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 308 Gulf of Aden
+		limit = { check_variable = { global.JAP_te_region_active = 308 } }
+		268 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		269 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		293 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		559 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		659 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		883 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		987 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 309 Java Sea
+		limit = { check_variable = { global.JAP_te_region_active = 309 } }
+		334 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		335 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		667 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		672 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		673 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 323 Gulf of Suez
+		limit = { check_variable = { global.JAP_te_region_active = 323 } }
+		446 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		453 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		457 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		923 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 324 Gulf of Aqaba
+		limit = { check_variable = { global.JAP_te_region_active = 324 } }
+		453 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		454 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		455 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		895 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 325 Manilla Bay
+		limit = { check_variable = { global.JAP_te_region_active = 325 } }
+		327 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		1060 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 331 Andaman Basin
+		limit = { check_variable = { global.JAP_te_region_active = 331 } }
+		320 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		422 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		423 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		424 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		426 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		1063 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 333 Kerguelen Plateau
+		limit = { check_variable = { global.JAP_te_region_active = 333 } }
+		713 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 335 Andaman Sea
+		limit = { check_variable = { global.JAP_te_region_active = 335 } }
+		288 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		672 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		724 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		733 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		975 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 354 Solomon Sea
+		limit = { check_variable = { global.JAP_te_region_active = 354 } }
+		634 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		737 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		1004 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 361 Arabian Basin
+		limit = { check_variable = { global.JAP_te_region_active = 361 } }
+		281 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		321 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		423 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		425 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 362 Cocos Basin
+		limit = { check_variable = { global.JAP_te_region_active = 362 } }
+		672 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 363 Perth Basin
+		limit = { check_variable = { global.JAP_te_region_active = 363 } }
+		522 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		955 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 364 Java Trench
+		limit = { check_variable = { global.JAP_te_region_active = 364 } }
+		335 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		667 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		672 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		711 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	else_if = { # 372 Gulf of Oman
+		limit = { check_variable = { global.JAP_te_region_active = 372 } }
+		294 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		410 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		428 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		443 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		444 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+		658 = {
+			remove_dynamic_modifier = { modifier = JAP_te_supply }
+			set_variable = { JAP_te_supply_var = 0 }
+		}
+	}
+	set_variable = { global.JAP_te_region_active = 0 }
 }
 
 # Re-elects each region's anchor state: the highest-priority held state

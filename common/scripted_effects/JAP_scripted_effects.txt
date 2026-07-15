@@ -936,21 +936,6 @@ JAP_te_sample_band_effect = {
 	}
 }
 
-# Tokyo Express: turn JAP_te_band into a supply strength (band x 0.05) and push it onto
-# the per-state variable that the JAP_te_supply dynamic modifier reads. Which states are
-# in the run = every state whose seeded JAP_te_regions array (auto-generated, see
-# _modtools/Generate-TokyoExpressRegions.py) contains the active sea region.
-JAP_te_push_supply_effect = {
-	set_variable = { JAP_te_strength = JAP_te_band }
-	multiply_variable = { JAP_te_strength = 0.05 }
-	every_state = {
-		limit = {
-			is_in_array = { array = JAP_te_regions value = global.JAP_te_region_active }
-		}
-		set_variable = { JAP_te_supply_var = JAP.JAP_te_strength }
-	}
-}
-
 # Tokyo Express: common launch body shared by all generated per-region decisions
 # (JAP_tokyo_express_runs.txt) and the debug starter. The caller must set
 # global.JAP_te_region_active to the target sea region FIRST.
@@ -981,27 +966,8 @@ JAP_te_launch_run_effect = {
 	activate_mission = JAP_te_tick_mission
 }
 
-# Tokyo Express: start of a run — attach the supply modifier to every state touching the
-# active sea region, then push the initial strength.
-JAP_te_apply_supply_effect = {
-	every_state = {
-		limit = {
-			is_in_array = { array = JAP_te_regions value = global.JAP_te_region_active }
-		}
-		add_dynamic_modifier = { modifier = JAP_te_supply }
-	}
-	JAP_te_push_supply_effect = yes
-}
-
-# Tokyo Express: end of a run (rounds exhausted or flotilla wiped) — detach the modifier
-# and zero the region selector, which also disables the generated ai_strategy blocks.
-JAP_te_remove_supply_effect = {
-	every_state = {
-		limit = {
-			is_in_array = { array = JAP_te_regions value = global.JAP_te_region_active }
-		}
-		remove_dynamic_modifier = { modifier = JAP_te_supply }
-		set_variable = { JAP_te_supply_var = 0 }
-	}
-	set_variable = { global.JAP_te_region_active = 0 }
-}
+# The supply apply/push/remove effects are AUTO-GENERATED per-region if-chains in
+# JAP_te_generated_effects.txt (_modtools/Generate-TokyoExpressRegions.py).
+# They were every_state + is_in_array loops here originally, but is_in_array with a
+# variable value silently never matches (observed in-game 2026-07-15), so they are
+# statically expanded with check_variable constant comparisons instead.
