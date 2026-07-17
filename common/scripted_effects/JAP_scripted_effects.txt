@@ -974,3 +974,80 @@ JAP_te_launch_run_effect = {
 # They were every_state + is_in_array loops here originally, but is_in_array with a
 # variable value silently never matches (observed in-game 2026-07-15), so they are
 # statically expanded with check_variable constant comparisons instead.
+
+# Pacific control focus-speed tiers. One discount step for the six southern
+# focuses; applied/reverted by the daily sync below as JAP_pacific_control
+# crosses the WA strategic-region thresholds (60/75/90). The negative-cost
+# revert mirrors vanilla AST_uap_5_time_discount_effect_reverse, the only
+# sanctioned way to raise a focus cost back.
+JAP_pacific_focus_discount_effect = {
+	reduce_focus_completion_cost = { focus = JAP_shonan_special_city cost = 2 }
+	reduce_focus_completion_cost = { focus = JAP_rubber_and_tin_of_malaya cost = 2 }
+	reduce_focus_completion_cost = { focus = JAP_southern_development_bank cost = 2 }
+	reduce_focus_completion_cost = { focus = JAP_philippine_logistics_hub cost = 2 }
+	reduce_focus_completion_cost = { focus = JAP_thai_burma_railway cost = 2 }
+	reduce_focus_completion_cost = { focus = JAP_develop_the_east_indies cost = 2 }
+}
+
+JAP_pacific_focus_discount_reverse_effect = {
+	reduce_focus_completion_cost = { focus = JAP_shonan_special_city cost = -2 }
+	reduce_focus_completion_cost = { focus = JAP_rubber_and_tin_of_malaya cost = -2 }
+	reduce_focus_completion_cost = { focus = JAP_southern_development_bank cost = -2 }
+	reduce_focus_completion_cost = { focus = JAP_philippine_logistics_hub cost = -2 }
+	reduce_focus_completion_cost = { focus = JAP_thai_burma_railway cost = -2 }
+	reduce_focus_completion_cost = { focus = JAP_develop_the_east_indies cost = -2 }
+}
+
+# Keeps the discount tiers in sync with JAP_pacific_control, both ways: gaining
+# a threshold applies one step, losing it reverts that step. Flags record which
+# steps are currently applied so nothing double-fires.
+JAP_pacific_focus_sync_effect = {
+	if = {
+		limit = {
+			check_variable = { JAP_pacific_control > 59 }
+			NOT = { has_country_flag = JAP_pacific_focus_tier_1 }
+		}
+		set_country_flag = JAP_pacific_focus_tier_1
+		JAP_pacific_focus_discount_effect = yes
+	}
+	else_if = {
+		limit = {
+			NOT = { check_variable = { JAP_pacific_control > 59 } }
+			has_country_flag = JAP_pacific_focus_tier_1
+		}
+		clr_country_flag = JAP_pacific_focus_tier_1
+		JAP_pacific_focus_discount_reverse_effect = yes
+	}
+	if = {
+		limit = {
+			check_variable = { JAP_pacific_control > 74 }
+			NOT = { has_country_flag = JAP_pacific_focus_tier_2 }
+		}
+		set_country_flag = JAP_pacific_focus_tier_2
+		JAP_pacific_focus_discount_effect = yes
+	}
+	else_if = {
+		limit = {
+			NOT = { check_variable = { JAP_pacific_control > 74 } }
+			has_country_flag = JAP_pacific_focus_tier_2
+		}
+		clr_country_flag = JAP_pacific_focus_tier_2
+		JAP_pacific_focus_discount_reverse_effect = yes
+	}
+	if = {
+		limit = {
+			check_variable = { JAP_pacific_control > 89 }
+			NOT = { has_country_flag = JAP_pacific_focus_tier_3 }
+		}
+		set_country_flag = JAP_pacific_focus_tier_3
+		JAP_pacific_focus_discount_effect = yes
+	}
+	else_if = {
+		limit = {
+			NOT = { check_variable = { JAP_pacific_control > 89 } }
+			has_country_flag = JAP_pacific_focus_tier_3
+		}
+		clr_country_flag = JAP_pacific_focus_tier_3
+		JAP_pacific_focus_discount_reverse_effect = yes
+	}
+}
