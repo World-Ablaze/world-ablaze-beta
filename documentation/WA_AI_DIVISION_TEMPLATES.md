@@ -205,7 +205,7 @@ Current division config triggers:
 - `WA_AI_CONFIG_DIVISIONS_use_anti_air_brigades`
 - `WA_AI_CONFIG_DIVISIONS_use_rocket_artillery`
 - `WA_AI_CONFIG_DIVISIONS_use_tank_destroyers`
-- `WA_AI_CONFIG_DIVISIONS_use_self_propelled_artillery`
+- `WA_AI_CONFIG_DIVISIONS_use_self_propelled_gun`
 - `WA_AI_CONFIG_DIVISIONS_use_self_propelled_aa`
 
 ### Template Use Triggers
