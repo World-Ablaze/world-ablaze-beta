@@ -4,981 +4,1976 @@
 ###############################################################################
 
 phases = { # phase = no is the standard phase
-	close_combat
-	tactical_withdrawal
-	seize_bridge
-	hold_bridge
+	static
+	cqc
+	manuever
+	withdrawal
+	operational_desctruction
+	urban_warfare	
 }
 
-tactic_basic_attack = {
+######### PHASE 0 #########
 
+tactic_Preliminary_Bombardment = {
 	is_attacker = yes
-	trigger = { # combined scope for both country and combatant
+	trigger = {
 		is_attacker = yes
 		phase = no
 	}
-
 	active = yes
+	base = { factor = 4 }
+	picture = attack
+	countered_by = tactic_Counter_Barrage
 
+	attacker = -0.45
+	defender = -0.5
+	combat_width = -0.25
+	attacker_movement_speed = -0.8
+	attacker_org_damage_modifier = -0.35
+	defender_org_damage_modifier = -0.45
+	phase = static
+}
+
+tactic_Reconnaissance_in_force = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = no
+	}
+	active = yes
 	base = { factor = 4 }
 	picture = attack
 
-	countered_by = tactic_counterattack
-
-	attacker = 0.05
-}
-
-tactic_basic_defend = {
-	is_attacker = no
-	trigger = {
-		is_attacker = no
-		phase = no
-	}
-
-	active = yes
-
-	base = { factor = 4 }
-	picture = defend
-
-	defender = 0.05
-}
-
-tactic_counterattack = { # counters basic attack, assault
-	is_attacker = no
-	trigger = {
-		is_attacker = no
-		skill_advantage > 0
-		phase = no
-	}
-
-	active = yes
-
-	base = {
-		factor = 4
-		modifier = {
-			add = 4
-			has_trait = unyielding_defender
-		}
-	}
-	picture = counterattack
-
-	defender = 0.25
-}
-
-
-tactic_assault = {
-	is_attacker = yes
-	trigger = {
-		is_attacker = yes
-		phase = no
-	}
-
-	active = yes
-
-	base = {
-		factor = 2
-		modifier = {
-			add = 2
-
-			has_trait = aggressive_assaulter
-		}
-
-		modifier = {
-			factor = 0.2
-
-			NOT = { is_fighting_in_terrain = urban }
-		}
-
-	} #Revisit ideally this should be more common in urban terrain
-
-	picture = assault
-	countered_by = tactic_counterattack
-
-	phase = close_combat #changes phase to close combat
-
-	attacker = 0.25			#attacker gets a bonus to doing damage
-}
-###close combat tactics here
-tactic_cc_attack = {
-	is_attacker = yes
-	trigger = {
-		is_attacker = yes
-		phase = close_combat
-	}
-
-	active = yes
-
-	base = { factor = 4 }
-	picture = cc_attack
-	display_phase = close_combat
-
-	attacker = 0.1			#attacker gets a bonus to doing damage
-	defender = 0.05
-}
-tactic_cc_defend = {
-	is_attacker = no
-	trigger = {
-		is_attacker = no
-		phase = close_combat
-	}
-
-	active = yes
-
-	base = { factor = 4 }
-	picture = cc_defend
-	display_phase = close_combat
-
-	attacker = 0.05
-	defender = 0.1			#defender gets a bonus to doing damage
-}
-tactic_cc_storm = {
-	is_attacker = yes
-	trigger = {
-		is_attacker = yes
-		phase = close_combat
-	}
-
-	active = yes
-
-	base = { factor = 2 }
-	picture = cc_storm
-	display_phase = close_combat
-
-	attacker = 0.2			#attacker gets a bonus to doing damage
-	defender = 0.2
-}
-tactic_cc_local_strong_point = {
-	is_attacker = no
-	trigger = {
-		is_attacker = no
-		phase = close_combat
-	}
-
-	active = yes
-	display_phase = close_combat
-
-	base = { factor = 2 }
-	picture = cc_local_strong_point
-
-	attacker = -0.2			#attacker gets a penalty to doing damage
-}
-tactic_cc_withdraw = {
-	is_attacker = yes
-	trigger = {
-		is_attacker = yes
-		phase = close_combat
-	}
-
-	active = yes
-
-	base = { factor = 1 }
-	picture = cc_withdraw
-	display_phase = close_combat
-
-	phase = no #changes phase to no
-
-	attacker = -0.05
-	defender = -0.05
-}
-
-
-tactic_encirclement = {
-	is_attacker = yes
-	trigger = {
-		is_attacker = yes
-		phase = no
-		frontage_full = yes
-		has_reserves = yes
-		OR = {
-			skill_advantage > 0
-			has_trait = panzer_leader
-			has_trait = trickster
-		}
-	}
-
-	active = yes
-
-	base = {
-		factor = 4
-		modifier = {
-			add = 4
-			OR = {
-				has_trait = panzer_expert
-				has_trait = combined_arms_expert
-			}
-		}
-	}
-
-	picture = encircle
-	countered_by = tactic_tactical_withdrawal
-
-	combat_width = 0.67		#increased combat_width
-	attacker = 0.25
-	defender = 0.05
-}
-
-tactic_delay = {
-	is_attacker = no
-	trigger = {
-		is_attacker = no
-		phase = no
-	}
-
-	active = no
-
-	base = {
-		factor = 4
-
-		modifier = {
-			add = 4
-
-			owner = {
-				has_idea = static_warfare_spirit
-			}
-		}
-	}
-	picture = delay
-	countered_by = tactic_shock
-
-	attacker_movement_speed = -0.25		#
-	attacker = -0.25
-	defender = -0.15
-}
-
-tactic_shock = { #counters delay
-	is_attacker = yes
-	trigger = {
-		is_attacker = yes
-		phase = no
-	}
-
-	active = yes
-
-	base = {
-		factor = 4
-		modifier = {
-			add = 4
-			has_trait = aggressive_assaulter
-		}
-
-		modifier = {
-			add = 4
-
-			owner = {
-				has_idea = strategic_reserve_spirit
-			}
-		}
-	}
-	picture = shock
-	countered_by = tactic_ambush
-
-	defender = -0.25
-}
-
-tactic_tactical_withdrawal = { #counters encirclement
-	is_attacker = no
-	trigger = {
-		is_attacker = no
-		phase = no
-		OR = {
-			skill_advantage > 0
-			has_trait = trickster
-		}
-	}
-
-	active = no
-
-	base = { factor = 4 }
-	picture = withdraw
-
-	phase = tactical_withdrawal
-
-	#combat_width = -0.15
-	attacker_movement_speed = 0.15
-	attacker = -0.25
-	defender = -0.05
-}
-###tactical withdrawal tactics
-tactic_tw_attack = {
-	is_attacker = yes
-	trigger = {
-		is_attacker = yes
-		phase = tactical_withdrawal
-	}
-
-	base = { factor = 4 }
-	picture = tw_attack
-	display_phase = tactical_withdrawal
-
-	combat_width = -0.15
-	attacker = -0.25
-	defender = -0.1
-}
-tactic_tw_defend = {
-	is_attacker = no
-	trigger = {
-		is_attacker = no
-		phase = tactical_withdrawal
-	}
-
-	base = { factor = 4 }
-	picture = tw_defend
-	display_phase = tactical_withdrawal
-
-	combat_width = -0.15
-	attacker = -0.3
-	defender = -0.05
-}
-tactic_tw_chase = {
-	is_attacker = yes
-	trigger = {
-		is_attacker = yes
-		phase = tactical_withdrawal
-	}
-
-	base = { factor = 4 }
-	picture = tw_chase
-	display_phase = tactical_withdrawal
-
-
-	combat_width = -0.15
-	attacker = -0.15
-	defender = -0.05
-}
-tactic_tw_evade = {
-	is_attacker = no
-	trigger = {
-		is_attacker = no
-		phase = tactical_withdrawal
-	}
-
-	base = { factor = 4 }
-	picture = tw_evade
-	display_phase = tactical_withdrawal
-
-
-	combat_width = -0.15
 	attacker = -0.4
-	defender = -0.1
-}
-tactic_tw_intercept = {
-	is_attacker = yes
-	trigger = {
-		is_attacker = yes
-		phase = tactical_withdrawal
-	}
-
-	base = { factor = 4 }
-	picture = tw_intercept
-	display_phase = tactical_withdrawal
-
-	phase = no
-
-	attacker = -0.05
-	defender = -0.1
+	defender = -0.5
+	combat_width = 0.25
+	attacker_movement_speed = -0.7
+	attacker_org_damage_modifier = -0.45
+	defender_org_damage_modifier = -0.35
+	phase = cqc
 }
 
-
-
-tactic_breakthrough = { #counters ambush
+tactic_Urban_Bombardment = {
 	is_attacker = yes
 	trigger = {
 		is_attacker = yes
 		phase = no
-		OR = {
-			hardness > 0.5
-			skill_advantage > 1
-		}
+		terrain = urban
 	}
+	active = yes
+	weight = { 
+		factor = 320 
+	}	
+	picture = attack
+	countered_by = tactic_Urban_Concealment	
 
-	active = no
-
-	base = { factor = 4 }
-	picture = breakthrough
-
-	countered_by = tactic_backhand_blow
-
-	attacker_movement_speed = 0.5
-	attacker = 0.25
-	defender = -0.15
+	attacker = -0.45
+	defender = -0.5
+	attacker_movement_speed = -0.8
+	attacker_org_damage_modifier = -0.4
+	defender_org_damage_modifier = -0.4
+	phase = urban_warfare
 }
 
-tactic_ambush = { #counters shock
+tactic_H_Preliminary_Bombardment = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = no
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	
+	combat_width = -0.25
+	attacker = -0.4
+	defender = -0.55
+	attacker_movement_speed = -0.8
+	attacker_org_damage_modifier = -0.4
+	defender_org_damage_modifier = -0.35
+	phase = static
+}
+
+tactic_Assault = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = no
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	
+	combat_width = -0.25
+	attacker = -0.45
+	defender = -0.4
+	attacker_movement_speed = -0.7
+	attacker_org_damage_modifier = -0.4
+	defender_org_damage_modifier = -0.45
+	phase = cqc
+}
+
+tactic_Embankment_Bombardment = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = no
+		has_combat_modifier = river_crossing
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	
+	attacker = -0.45
+	defender = -0.5
+	attacker_movement_speed = -0.8
+	attacker_org_damage_modifier = -0.35
+	defender_org_damage_modifier = -0.45
+	phase = static  
+	#####hold_bridge
+}
+
+tactic_Coup_de_Main = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = no
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	
+	combat_width = 0.5
+	attacker = -0.4
+	defender = -0.55
+	attacker_movement_speed = -0.7
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = -0.25
+	phase = manuever
+}
+
+tactic_Counter_Barrage = {
 	is_attacker = no
 	trigger = {
 		is_attacker = no
 		phase = no
-		OR = {
-			skill_advantage > 1
-			skill > 2
-			has_trait = trickster
-		}
 	}
-
 	active = yes
+	base = { factor = 4 }
+	picture = defense
 
-	base = {
-		factor = 4
+	attacker = -0.4
+	defender = -0.3
+	attacker_movement_speed = -0.8
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = -0.2
+}
 
-		modifier = {
-			add = 4
-
-			owner = {
-				has_idea = FIN_motti_tactics_national_spirit
-			}
-		}
+tactic_Urban_Concealment = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = no
+		terrain = urban
 	}
-	picture = ambush
-	countered_by = tactic_breakthrough
+	active = yes
+	weight = { 
+		factor = 320 
+	}
+	picture = defense
+
+	attacker = -0.3
+	defender = -0.3
+	attacker_movement_speed = -0.8
+	attacker_org_damage_modifier = -0.2
+	defender_org_damage_modifier = -0.3
+	phase = urban_warfare
+}
+
+tactic_Defense = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = no
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+	countered_by = tactic_Reconnaissance_in_force
+
+	attacker = -0.3
+	defender = -0.25
+	attacker_movement_speed = -0.8
+	attacker_org_damage_modifier = -0.2
+	defender_org_damage_modifier = -0.2
+	phase = cqc
+}
+
+
+######### STATIC PHASE 1 #########
+
+tactic_Suppressive_Barrage = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = static
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	countered_by = tactic_Counter_Barrage2
 
 	attacker = -0.25
+	defender = -0.3
+	attacker_movement_speed = -0.5
+	attacker_org_damage_modifier = -0.15
+	defender_org_damage_modifier = -0.2
+	phase = static
 }
 
-tactic_blitz = {
+tactic_Overwhelming_Fire = {
 	is_attacker = yes
 	trigger = {
 		is_attacker = yes
-		hardness > 0.5
-		phase = no
-		OR = {
-			skill > 2
-			has_trait = panzer_leader
-			skill_advantage > 1
-		}
+		phase = static
 	}
-
-	active = no
-
-	base = {
-		factor = 4
-		modifier = {
-			add = 4
-			OR = {
-				has_trait = panzer_expert
-				has_trait = combined_arms_expert
-			}
-		}
-		modifier = {
-			add = 4
-
-			owner = {
-				has_idea = maneuver_warfare_spirit
-			}
-		}
-	}
-
-	picture = blitz
-	countered_by = tactic_elastic_defense
-
-	attacker_movement_speed = 0.5
-	attacker = 0.15
-	defender = -0.15
-}
-
-
-tactic_elastic_defense = { #counters blitz
-	is_attacker = no
-	trigger = {
-		is_attacker = no
-		phase = no
-		OR = {
-			has_trait = defensive_doctrine
-			skill > 2
-		}
-	}
-
-	active = no
-
-	base = {
-		factor = 4
-
-		modifier = {
-			add = 4
-
-			owner = {
-				has_idea = flexible_organization_spirit
-			}
-		}
-	}
-	picture = elastic_defence
-
-	attacker_movement_speed = -0.25
-	attacker = -0.15
-	defender = 0.10
-}
-
-tactic_backhand_blow = { #counters breakthrough
-	is_attacker = no
-	trigger = {
-		is_attacker = no
-		phase = no
-		OR = {
-			skill > 4
-			AND = {
-				has_trait = defensive_doctrine
-				skill > 3
-			}
-		}
-	}
-
-	active = no
-
-	base = { factor = 4 }
-	picture = backhand_blow
-
-	attacker_movement_speed = -0.3
-	attacker = -0.2
-	defender = 0.25
-}
-
-tactic_seize_bridge = {
-	is_attacker = yes
-	trigger = {
-		is_attacker = yes
-		has_combat_modifier = river_crossing
-		phase = no
-		OR = {
-			skill > 3
-			AND = {
-				has_trait = offensive_doctrine
-				skill > 2
-			}
-		}
-	}
-
-	base = { factor = 2 }
-	picture = seize_bridge
-
-	phase = seize_bridge
-
-	attacker_movement_speed = 0.1
-	combat_width = -0.15
-	attacker = 0.2
-	defender = -0.05
-}
-tactic_attacker_sb_hold = {
-	is_attacker = yes
-	trigger = {
-		is_attacker = yes
-		phase = seize_bridge
-	}
-
-	base = { factor = 4 }
-	picture = attacker_sb_hold
-	display_phase = seize_bridge
-
-	combat_width = -0.15
-	attacker = 0.2
-}
-tactic_attacker_sb_skillful_defence = {
-	is_attacker = yes
-	trigger = {
-		is_attacker = yes
-		phase = seize_bridge
-		skill > 4
-	}
-
-	base = { factor = 4 }
-	picture = attacker_sb_skillful_defence
-	display_phase = seize_bridge
-
-	combat_width = -0.15
-	attacker = 0.2
-	defender = -0.1
-}
-tactic_defender_sb_assault = {
-	is_attacker = no
-	trigger = {
-		is_attacker = no
-		phase = seize_bridge
-	}
-
-	base = { factor = 4 }
-	picture = defender_sb_assault
-	display_phase = seize_bridge
-
-	combat_width = -0.15
-	defender = -0.05
-}
-tactic_defender_sb_reckless_assault = {
-	is_attacker = no
-	trigger = {
-		is_attacker = no
-		phase = seize_bridge
-		skill < 3
-	}
-
-	base = { factor = 4 }
-	picture = defender_sb_reckless_assault
-	display_phase = seize_bridge
-
-	combat_width = -0.15
-	attacker = 0.25
-	defender = -0.1
-}
-tactic_defender_sb_retake_bridge = {
-	is_attacker = no
-	trigger = {
-		is_attacker = no
-		phase = seize_bridge
-		OR = {
-			skill > 2
-			has_trait = trickster
-		}
-	}
-
-	countered_by = tactic_attacker_sb_skillful_defence
-	phase = hold_bridge
-
-	base = { factor = 4 }
-	picture = defender_sb_retake_bridge
-	display_phase = seize_bridge
-
-	combat_width = -0.15
-	attacker = 0.1
-	defender = -0.05
-}
-
-tactic_hold_bridge = {
-	is_attacker = no
-	trigger = {
-		has_combat_modifier = river_crossing
-		is_attacker = no
-		phase = no
-		OR = {
-			skill > 2
-			has_trait = defensive_doctrine
-		}
-	}
-
-	base = { factor = 2 }
-	picture = tactic_hold_bridge
-
-	phase = hold_bridge
-
-	attacker_movement_speed = 0.1
-	combat_width = -0.15
-	attacker = 0.2
-	defender = -0.05
-}
-tactic_attacker_hb_attack = {
-	is_attacker = yes
-	trigger = {
-		is_attacker = yes
-		phase = hold_bridge
-	}
-
-	base = { factor = 4 }
-	picture = attacker_hb_attack
-	display_phase = hold_bridge
-
-	combat_width = -0.15
-	attacker = 0.1
-}
-tactic_attacker_hb_rush = {
-	is_attacker = yes
-	trigger = {
-		is_attacker = yes
-		phase = hold_bridge
-		skill > 4
-	}
-
-	base = { factor = 4 }
-	picture = attacker_hb_rush
-	display_phase = hold_bridge
-
-	combat_width = -0.15
-	attacker = 0.2
-}
-tactic_attacker_hb_storm = {
-	is_attacker = yes
-	trigger = {
-		is_attacker = yes
-		phase = hold_bridge
-	}
-
-	base = { factor = 2 }
-	picture = attacker_hb_storm
-	display_phase = hold_bridge
-
-	countered_by = tactic_defender_hb_skillful_defence
-
-	phase = seize_bridge
-
-	combat_width = -0.15
-	attacker = 0.2
-	defender = 0.05
-}
-tactic_defender_hb_hold = {
-	is_attacker = no
-	trigger = {
-		is_attacker = no
-		phase = hold_bridge
-		skill < 3
-	}
-
-	base = { factor = 2 }
-	picture = defender_hb_hold
-	display_phase = hold_bridge
-
-	combat_width = -0.15
-	attacker = 0.2
-	defender = -0.1
-}
-tactic_defender_hb_skillful_defence = {
-	is_attacker = no
-	trigger = {
-		is_attacker = no
-		phase = hold_bridge
-		OR = {
-			skill > 2
-			has_trait = trickster
-		}
-	}
-
-	base = { factor = 2 }
-	picture = defender_hb_skillful_defence
-	display_phase = hold_bridge
-
-	combat_width = -0.15
-	attacker = 0.1
-	defender = 0.05
-}
-
-tactic_guerrilla_tactics = { #People's army defender tactic. also for German volksturm branch.
-	is_attacker = no
-	trigger = {
-		is_attacker = no
-		phase = no
-		OR = {
-			skill > 2
-			has_trait = trickster
-			owner = {
-				has_idea = guerilla_warfare_corps_spirit
-			}
-		}
-	}
-
-	active = no
-
-	base = {
-		factor = 4
-
-		modifier = {
-			add = 8
-
-			owner = {
-				has_idea = guerilla_warfare_corps_spirit
-			}
-		}
-
-	}
-	picture = tactic_guerrilla_tactics
-
-	combat_width = -0.5
-	attacker = -0.7
-	defender = -0.6
-}
-
-tactic_human_wave_tactics = { #People's army attacker tactic
-	is_attacker = yes
-	trigger = {
-		is_attacker = yes
-		phase = no
-		frontage_full = yes
-		has_reserves = yes
-	}
-
-	active = no
-
-	base = {
-		factor = 4
-
-		modifier = {
-			add = 8
-
-			owner = {
-				has_idea = mass_assault_corps_spirit
-			}
-		}
-	}
-	picture = tactic_human_wave_tactics
-
-	combat_width = 0.67
-	attacker = 0.1
-	defender = 0.1
-}
-
-tactic_banzai_charge = { #Special Japan attacker tactic
-	is_attacker = yes
-	trigger = {
-		tag = JAP
-		is_attacker = yes
-		phase = no
-	}
-
 	active = yes
-
-	countered_by = tactic_overwhelming_fire
-
 	base = { factor = 4 }
-	picture = tactic_banzai_charge
+	picture = attack
 
-	attacker_movement_speed = 0.1
-	attacker = 0.25
-	defender = 0.1
+	attacker = -0.25
+	defender = -0.35
+	attacker_movement_speed = -0.5
+	attacker_org_damage_modifier = -0.2
+	defender_org_damage_modifier = -0.2
+	phase = manuever
 }
 
-tactic_infantry_charge = { #GBP -> Infantry attacker tactic
+tactic_Grinding_Advance = {
 	is_attacker = yes
 	trigger = {
 		is_attacker = yes
-		phase = no
+		phase = static
 	}
-
-	active = no
-
-	base = {
-		factor = 4
-
-		modifier = {
-			add = 4
-
-			owner = {
-				has_idea = aggressive_reconnaisance_spirit
-			}
-		}
-	}
-	picture = tactic_infantry_charge
-
-	attacker = 0.1
-	defender = -0.05
-}
-
-tactic_planned_attack = { #GBP -> Armor attacker tactic
-	is_attacker = yes
-	trigger = {
-		is_attacker = yes
-		phase = no
-	}
-
-	active = no
-
-	base = {
-		factor = 4
-
-		modifier = {
-			add = 4
-
-			owner = {
-				has_idea = operational_reserve_spirit
-			}
-		}
-
-		modifier = {
-			add = 4
-
-			owner = {
-				has_idea = logistical_focus_spirit
-			}
-		}
-	}
-	picture = tactic_planned_attack
-
-	attacker = 0.15
-}
-
-tactic_relentless_assault = { #Deep battle attacker tactic
-	is_attacker = yes
-	trigger = {
-		is_attacker = yes
-		phase = no
-	}
-
-	active = no
-
-	base = {
-		factor = 4
-
-		modifier = {
-			add = 4
-
-			owner = {
-				has_idea = victory_or_death_spirit
-			}
-		}
-	}
-	picture = tactic_relentless_assault
-
-	attacker_movement_speed = 0.15
-	attacker = 0.2
-	defender = 0.05
-}
-
-tactic_unexpected_thrust = { #Mobile warfare attacker tactic
-	is_attacker = yes
-	trigger = {
-		is_attacker = yes
-		phase = no
-	}
-
-	active = no
-
+	active = yes
 	base = { factor = 4 }
-	picture = tactic_unexpected_thrust
+	picture = attack
 
-	attacker_movement_speed = 0.15
-	attacker = 0.15
+	attacker = -0.3
+	defender = -0.3
+	attacker_movement_speed = -0.5
+	attacker_org_damage_modifier = -0.2
+	defender_org_damage_modifier = -0.2
+	phase = static
 }
 
-tactic_overwhelming_fire = { # Counters Banzai charge
+tactic_Bite_and_Hold_Advance = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = static
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+
+	attacker = -0.3
+	defender = -0.25
+	attacker_movement_speed = -0.5
+	attacker_org_damage_modifier = -0.2
+	defender_org_damage_modifier = -0.2
+	phase = static
+}
+
+tactic_Sieze_Stronghold = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = static
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+
+	attacker = -0.25
+	defender = -0.3
+	attacker_movement_speed = -0.5
+	attacker_org_damage_modifier = -0.2
+	defender_org_damage_modifier = -0.2
+	phase = cqc
+}
+
+tactic_Mass_Charge = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = static
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	countered_by = tactic_Final_Protective_Fire
+
+	attacker = -0.25
+	defender = -0.2
+	attacker_movement_speed = -0.5
+	attacker_org_damage_modifier = -0.2
+	defender_org_damage_modifier = -0.1
+	phase = cqc
+}
+
+tactic_Assault2 = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = static
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	countered_by = tactic_Final_Protective_Fire
+
+	attacker = -0.2
+	defender = -0.2
+	attacker_movement_speed = -0.5
+	attacker_org_damage_modifier = -0.15
+	defender_org_damage_modifier = -0.1
+	phase = cqc
+}
+
+tactic_Flanking_Manuever = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = static
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	countered_by = tactic_Counter_Attack
+
+	attacker = -0.3
+	defender = -0.3
+	attacker_movement_speed = -0.5
+	attacker_org_damage_modifier = -0.1
+	defender_org_damage_modifier = -0.3
+	phase = manuever
+}
+
+tactic_Mineclearing_Operations = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = static
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+
+	attacker = -0.4
+	defender = -0.35
+	attacker_movement_speed = -0.5
+	attacker_org_damage_modifier = -0.2
+	defender_org_damage_modifier = -0.2
+	phase = no
+}
+
+tactic_H_Preliminary_Bombardment2 = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = static
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+
+	attacker = -0.25
+	defender = -0.35
+	attacker_movement_speed = -0.5
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = -0.3
+	phase = static
+}
+
+tactic_Suppressive_Barragedef = {
 	is_attacker = no
 	trigger = {
 		is_attacker = no
-		phase = no
+		phase = static
 	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
 
-	active = no
+	attacker = -0.25
+	defender = -0.2
+	attacker_movement_speed = -0.5
+	attacker_org_damage_modifier = -0.1
+	defender_org_damage_modifier = -0.15
+	phase = static
+}
 
-	base = {
-		factor = 2
-
-		modifier = {
-			add = 2
-
-			owner = {
-				has_idea = smoke_and_fire_spirit
-			}
-		}
+tactic_Final_Protective_Fire = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = static
 	}
-	picture = tactic_overwhelming_fire
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+
+	attacker = -0.25
+	defender = -0.3
+	attacker_movement_speed = -0.5
+	attacker_org_damage_modifier = 0.05
+	defender_org_damage_modifier = -0.1
+	phase = static
+}
+
+tactic_Prepared_Defenses = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = static
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+	countered_by = tactic_H_Preliminary_Bombardment2
 
 	attacker = -0.1
-	defender = 0.1
+	defender = 0.05
+	attacker_movement_speed = -0.5
+	attacker_org_damage_modifier = -0.1
+	defender_org_damage_modifier = -0.1
+	phase = static
 }
 
-tactic_barrage = { #Superior firepower attacker tactic
+tactic_Defense_in_Depth = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = static
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+	countered_by = tactic_Flanking_Manuever
+
+	attacker = -0.15
+	defender = 0.05
+	attacker_movement_speed = -0.5
+	attacker_org_damage_modifier = -0.1
+	defender_org_damage_modifier = -0.1
+	phase = no
+}
+
+tactic_Counter_Attack = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = static
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+
+	attacker = -0.15
+	defender = -0.1
+	attacker_movement_speed = -0.5
+	attacker_org_damage_modifier = -0.1
+	defender_org_damage_modifier = -0.1
+	phase = static
+}
+
+tactic_Counter_Barrage2 = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = static
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+
+	attacker = -0.2
+	defender = -0.2
+	attacker_movement_speed = -0.5
+	attacker_org_damage_modifier = -0.1
+	defender_org_damage_modifier = -0.1
+	phase = static
+}
+
+tactic_Stronghold_Defense = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = static
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+	countered_by = tactic_Flanking_Manuever
+
+	attacker = -0.3
+	defender = -0.2
+	attacker_movement_speed = -0.5
+	attacker_org_damage_modifier = -0.1
+	defender_org_damage_modifier = -0.1
+	phase = no
+}
+
+
+######### CQC PHASE 0 #########
+
+tactic_CQC_Fire_Superiority = {
 	is_attacker = yes
 	trigger = {
 		is_attacker = yes
-		phase = no
+		phase = cqc
 	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	countered_by = tactic_CQC_Defend_Strongpoint
 
-	active = no
+	attacker = -0.1
+	defender = -0.2
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = -0.3
+	phase = manuever
+}
 
-	base = {
-		factor = 4
-
-		modifier = {
-			add = 4
-
-			owner = {
-				has_idea = smoke_and_fire_spirit
-			}
-		}
+tactic_ECQ_Assault = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = cqc
 	}
-	picture = tactic_barrage
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	countered_by = tactic_CQC_Withdrawdef
+
+	attacker = -0.15
+	defender = -0.15
+	attacker_movement_speed = -0.2
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = -0.3
+	phase = cqc
+}
+
+tactic_CQC_Attack = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = cqc
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+
+	attacker = -0.2
+	defender = -0.25
+	attacker_movement_speed = 0.15
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = -0.3
+}
+
+tactic_CQC_Seize_Strongpoint = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = cqc
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	countered_by = tactic_CQC_Defend_Strongpoint
+
+	attacker = -0.25
+	defender = -0.2
+	attacker_movement_speed = -0.2
+	attacker_org_damage_modifier = -0.4
+	defender_org_damage_modifier = -0.4
+	phase = static
+}
+
+tactic_CQC_Flank = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = cqc
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	countered_by = tactic_CQC_Counter_Attack
+
+	attacker = -0.2
+	defender = -0.2
+	attacker_movement_speed = 0.1
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = -0.15
+	phase = manuever
+}
+
+tactic_CQC_Withdraw = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = cqc
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	countered_by = tactic_CQC_Fire_Superiority
+
+	attacker = -0.6
+	defender = -0.5
+	attacker_movement_speed = -0.5
+	phase = static
+}
+
+tactic_CQC_Clearing_Operations = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = cqc
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+
+	attacker = -0.1
+	defender = -0.05
+	attacker_movement_speed = -0.5
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = -0.3
+	phase = static
+}
+
+tactic_CQC_Fire_Superiority_Def = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = cqc
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+	countered_by = tactic_CQC_Clearing_Operations
+
+	attacker = -0.2
+	defender = -0.1
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = -0.3
+	phase = cqc
+}
+
+tactic_ECQ_Defense = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = cqc
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+
+	attacker = -0.2
+	defender = -0.2
+	attacker_movement_speed = -0.2
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = -0.3
+	phase = cqc
+}
+
+tactic_CQC_Defense = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = cqc
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+
+	attacker = -0.25
+	defender = -0.25
+	attacker_movement_speed = -0.15
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = -0.3
+	phase = cqc
+}
+
+tactic_CQC_Defend_Strongpoint = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = cqc
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+	countered_by = tactic_ECQ_Assault
+
+	attacker = -0.2
+	defender = -0.15
+	attacker_movement_speed = -0.2
+	attacker_org_damage_modifier = -0.4
+	defender_org_damage_modifier = -0.4
+	phase = cqc
+}
+
+tactic_CQC_Counter_Attack = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = cqc
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+	countered_by = tactic_CQC_Withdraw
+
+	attacker = -0.2
+	defender = -0.2
+	attacker_movement_speed = -0.5
+	attacker_org_damage_modifier = -0.15
+	defender_org_damage_modifier = -0.3
+	phase = static
+}
+
+tactic_CQC_Withdrawdef = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = cqc
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+	countered_by = tactic_CQC_Flank
+
+	attacker = -0.5
+	defender = -0.6
+	attacker_movement_speed = -0.5
+	phase = manuever
+}
+
+
+######### MANUEVER PHASE 2 #########
+
+tactic_Attack = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = manuever
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+
+	attacker = 0.05
+	attacker_movement_speed = 0.1
+	phase = manuever
+}
+
+tactic_Assault3 = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = manuever
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
 
 	attacker = 0.1
-	defender = -0.2
+	defender = 0.05
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = -0.25
+	phase = cqc
 }
+
+tactic_Shock = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = manuever
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	countered_by = tactic_Delay
+
+	attacker = 0.05
+	defender = -0.1
+	attacker_movement_speed = 0.2
+	attacker_org_damage_modifier = -0.15
+	defender_org_damage_modifier = -0.1
+	phase = manuever
+}
+
+tactic_Shock_and_Awe = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = manuever
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+
+	attacker = 0.1
+	defender = -0.1
+	attacker_movement_speed = 0.3
+	attacker_org_damage_modifier = -0.2
+	defender_org_damage_modifier = -0.05
+	phase = breakthrough
+}
+
+tactic_Blitz_Attack = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = manuever
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+
+	attacker = 0.15
+	defender = -0.15
+	attacker_movement_speed = 0.3
+	phase = breakthrough
+}
+
+tactic_Pincer_Manuever = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = manuever
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	countered_by = tactic_Ambush
+
+	attacker = 0.1
+	defender = -0.05
+	attacker_org_damage_modifier = -0.1
+	defender_org_damage_modifier = 0.1
+	phase = manuever
+}
+
+tactic_Infiltration_Assault = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = manuever
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	countered_by = tactic_Elastic_Defense
+
+	attacker = -0.05
+	defender = -0.1
+	attacker_movement_speed = 0.5
+	attacker_org_damage_modifier = -0.4
+	defender_org_damage_modifier = -0.3
+	phase = cqc
+}
+
+tactic_Pursuit = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = manuever
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+
+	attacker = -0.15
+	defender = -0.25
+	attacker_movement_speed = -0.45
+	phase = manuever
+}
+
+tactic_Overwhelming_Fire2 = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = manuever
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+
+	attacker = -0.2
+	defender = -0.3
+	attacker_movement_speed = -0.6
+	attacker_org_damage_modifier = -0.2
+	defender_org_damage_modifier = -0.2
+	phase = manuever
+}
+
+tactic_Flanking_Attack = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = manuever
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	countered_by = tactic_Counter_Attack2
+
+	attacker = 0.15
+	defender = -0.05
+	attacker_movement_speed = 0.25
+	attacker_org_damage_modifier = -0.2
+	defender_org_damage_modifier = -0.05
+	phase = manuever
+}
+
+tactic_Defense2 = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = manuever
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+	countered_by = tactic_Flanking_Attack
+
+	defender = 0.05
+	attacker_movement_speed = 0.05
+	phase = manuever
+}
+
+tactic_Counter_Attack2 = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = manuever
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+	countered_by = tactic_Shock
+
+	attacker = -0.05
+	defender = -0.05
+	attacker_movement_speed = -0.5
+	attacker_org_damage_modifier = 0.05
+	defender_org_damage_modifier = -0.1
+	phase = manuever
+}
+
+tactic_Delay = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = manuever
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+	countered_by = tactic_Shock_and_Awe
+
+	attacker = -0.15
+	defender = -0.1
+	attacker_movement_speed = -0.25
+	attacker_org_damage_modifier = -0.25
+	defender_org_damage_modifier = -0.3
+	phase = static
+}
+
+tactic_Elastic_Defense = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = manuever
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+	countered_by = tactic_Blitz_Attack
+
+	attacker = 0.05
+	defender = 0.05
+	attacker_movement_speed = -0.5
+	phase = manuever
+}
+
+tactic_Tactical_Withdrawal = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = manuever
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+
+	attacker = -0.3
+	defender = -0.2
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = -0.3
+	phase = breakthrough
+}
+
+tactic_Suppressive_Barragedef2 = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = manuever
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+
+	attacker = -0.3
+	defender = -0.2
+	attacker_movement_speed = -0.45
+	attacker_org_damage_modifier = -0.2
+	defender_org_damage_modifier = -0.2
+	phase = manuever
+}
+
+tactic_Final_Protective_Fire2 = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = manuever
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+
+	attacker = -0.35
+	defender = -0.3
+	attacker_movement_speed = -0.75
+	attacker_org_damage_modifier = 0.15
+	defender_org_damage_modifier = -0.1
+	phase = manuever
+}
+
+tactic_Ambush = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = manuever
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+
+	attacker = -0.05
+	defender = 0.15
+	attacker_movement_speed = -0.15
+	attacker_org_damage_modifier = -0.2
+	defender_org_damage_modifier = -0.15
+	phase = static
+}
+
+
+######### BREAKTHROUGH PHASE 3 #########
+
+tactic_Envelopement = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = breakthrough
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	countered_by = tactic_Delay2
+
+	attacker = 0.1
+	defender = -0.1
+	defender_org_damage_modifier = -0.1
+	phase = operational_desctruction
+}
+
+tactic_Encirclement = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = breakthrough
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	countered_by = tactic_Strategic_Withdrawl
+
+	attacker = 0.15
+	defender = -0.15
+	attacker_movement_speed = 0.2
+	defender_org_damage_modifier = -0.2
+	phase = operational_desctruction
+}
+
+tactic_Breakthrough = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = breakthrough
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	countered_by = tactic_Delay2
+
+	attacker = 0.2
+	defender = -0.1
+	attacker_movement_speed = 0.3
+	defender_org_damage_modifier = 0.3
+	phase = withdrawal
+}
+
+tactic_Pincer_Manuever2 = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = breakthrough
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	countered_by = tactic_Backhand_Blow
+
+	attacker = 0.1
+	defender = -0.05
+	attacker_movement_speed = -0.45
+	attacker_org_damage_modifier = -0.1
+	defender_org_damage_modifier = 0.1
+	phase = breakthrough
+}
+
+tactic_Flanking_Manuever2 = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = breakthrough
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	countered_by = tactic_Counter_Attack3
+
+	attacker = 0.15
+	defender = -0.05
+	attacker_movement_speed = 0.25
+	attacker_org_damage_modifier = -0.2
+	defender_org_damage_modifier = -0.05
+	phase = breakthrough
+}
+
+tactic_Blitz_Attack2 = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = breakthrough
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	countered_by = tactic_Backhand_Blow
+
+	attacker = 0.15
+	defender = -0.15
+	attacker_movement_speed = -0.25
+	attacker_org_damage_modifier = 0.05
+	defender_org_damage_modifier = 0.15
+	phase = withdrawal
+}
+
+tactic_Counter_Attack3 = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = breakthrough
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+
+	attacker = -0.05
+	defender = -0.05
+	attacker_movement_speed = -0.75
+	attacker_org_damage_modifier = 0.05
+	defender_org_damage_modifier = -0.1
+	phase = breakthrough
+}
+
+tactic_Delay2 = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = breakthrough
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+
+	attacker = -0.15
+	defender = -0.1
+	attacker_movement_speed = -0.25
+	attacker_org_damage_modifier = -0.25
+	defender_org_damage_modifier = -0.3
+	phase = breakthrough
+}
+
+tactic_Elastic_Defense2 = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = breakthrough
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+	countered_by = tactic_Breakthrough
+
+	attacker = 0.05
+	defender = 0.05
+	attacker_movement_speed = -0.5
+	phase = breakthrough
+}
+
+tactic_Strategic_Withdrawl = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = breakthrough
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+	countered_by = tactic_Flanking_Manuever2
+
+	attacker = -0.3
+	defender = -0.2
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = -0.3
+	phase = withdrawal
+}
+
+tactic_Backhand_Blow = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = breakthrough
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+
+	attacker = -0.15
+	defender = -0.1
+	attacker_movement_speed = -0.25
+	attacker_org_damage_modifier = 0.05
+	defender_org_damage_modifier = -0.05
+	phase = manuever
+}
+
+tactic_Hasty_Withdrawal = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = breakthrough
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+	countered_by = tactic_Envelopement
+
+	attacker = -0.3
+	defender = -0.4
+	attacker_movement_speed = 0.25
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = -0.2
+	phase = withdrawal
+}
+
+tactic_Ambush2 = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = breakthrough
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+
+	attacker = -0.05
+	defender = 0.15
+	attacker_movement_speed = -0.15
+	attacker_org_damage_modifier = -0.2
+	defender_org_damage_modifier = -0.15
+}
+
+
+######### STRATEGIC WITHDRAWL PHASE 4 #########
+
+tactic_Flanking_Manuever3 = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = withdrawal
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+
+	attacker = 0.15
+	defender = -0.05
+	attacker_movement_speed = 0.2
+	attacker_org_damage_modifier = -0.2
+	defender_org_damage_modifier = -0.05
+	phase = breakthrough
+}
+
+tactic_Pursuit2 = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = withdrawal
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	countered_by = tactic_Evasion
+
+	attacker = 0.15
+	defender = -0.1
+	attacker_movement_speed = 0.25
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = -0.3
+	phase = breakthrough
+}
+
+tactic_Envelopement2 = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = withdrawal
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	countered_by = tactic_Tactical_Withdrawal2
+
+	attacker = 0.1
+	defender = -0.1
+	defender_org_damage_modifier = -0.1
+	phase = operational_desctruction
+}
+
+tactic_Routed = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = withdrawal
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+	countered_by = tactic_Envelopement2
+
+	attacker = 0.1
+	defender = 0.1
+	attacker_movement_speed = -0.75
+	attacker_org_damage_modifier = -0.6
+	defender_org_damage_modifier = 0.6
+	phase = operational_desctruction
+}
+
+tactic_Tactical_Withdrawal2 = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = withdrawal
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+
+	attacker = -0.3
+	defender = -0.2
+	attacker_movement_speed = -0.5
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = -0.3
+	phase = withdrawal
+}
+
+tactic_Evasion = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = withdrawal
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+
+	attacker = -0.7
+	defender = -0.6
+	attacker_movement_speed = -0.25
+	attacker_org_damage_modifier = 0.2
+	defender_org_damage_modifier = 0.8
+	phase = manuever
+}
+
+
+######### OPERATIONAL DESTRUCTION PHASE 5 #########
+
+tactic_Operational_Destruction = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = operational_desctruction
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+
+	attacker = 0.3
+	defender = -0.3
+	attacker_movement_speed = 0.2
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = -0.6
+	phase = operational_desctruction
+}
+
+tactic_Operational_Pause = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = operational_desctruction
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	countered_by = tactic_Evasion2
+
+	attacker = -0.6
+	defender = -0.55
+	attacker_movement_speed = 0.25
+	attacker_org_damage_modifier = -0.6
+	defender_org_damage_modifier = -0.6
+	phase = operational_desctruction
+}
+
+tactic_Envelopement3 = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = operational_desctruction
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = attack
+	countered_by = tactic_Breakout
+
+	attacker = 0.2
+	defender = 0.2
+	attacker_org_damage_modifier = 0.1
+	defender_org_damage_modifier = -0.1
+	phase = operational_desctruction
+}
+
+tactic_Delay3 = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = operational_desctruction
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+	countered_by = tactic_Operational_Destruction
+
+	attacker = 0.2
+	defender = 0.2
+	attacker_movement_speed = -0.75
+	attacker_org_damage_modifier = -0.25
+	defender_org_damage_modifier = -0.3
+	phase = withdrawal
+}
+
+tactic_Breakout = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = operational_desctruction
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+	countered_by = tactic_Envelopement3
+
+	attacker = 0.1
+	defender = 0.25
+	attacker_movement_speed = -0.5
+	defender_org_damage_modifier = -0.6
+	phase = breakthrough
+}
+
+tactic_Evasion_Op = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = operational_desctruction
+	}
+	active = yes
+	base = { factor = 4 }
+	picture = defense
+
+	attacker = -0.7
+	defender = -0.6
+	attacker_movement_speed = -0.25
+	attacker_org_damage_modifier = 0.2
+	defender_org_damage_modifier = 0.8
+	phase = withdrawal
+}
+
+
+######### URBAN WARFARE PHASE 6 #########
+
+tactic_Urban_Bombardment2 = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = urban_warfare
+		terrain = urban
+	}
+	active = yes
+	weight = { 
+		factor = 320 
+	}
+	picture = attack
+	countered_by = tactic_Urban_Concealment2
+
+	attacker = -0.6
+	defender = -0.65
+	combat_width = -0.35
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = 0.45
+	phase = urban_warfare
+}
+
+tactic_Siege_Local_Strongpoint = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = urban_warfare
+		terrain = urban
+	}
+	active = yes
+	weight = { 
+		factor = 320 
+	}
+	picture = attack
+
+	attacker = -0.6
+	defender = -0.55
+	attacker_org_damage_modifier = -0.25
+	defender_org_damage_modifier = 0.4
+	phase = urban_warfare
+}
+
+tactic_Siege_Citadel = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = urban_warfare
+		terrain = urban
+	}
+	active = yes
+	weight = { 
+		factor = 320 
+	}
+	picture = attack
+
+	attacker = -0.65
+	defender = -0.55
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = 0.45
+	phase = urban_warfare
+}
+
+tactic_Bounding_Overwatch = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = urban_warfare
+		terrain = urban
+	}
+	active = yes
+	weight = { 
+		factor = 320 
+	}
+	picture = attack
+	countered_by = tactic_Makeshift_Barricades
+
+	attacker = -0.55
+	defender = -0.6
+	combat_width = 0.3
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = 0.4
+	phase = urban_warfare
+}
+
+tactic_Urban_Infiltration = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = urban_warfare
+		terrain = urban
+	}
+	active = yes
+	weight = { 
+		factor = 320 
+	}
+	picture = attack
+	countered_by = tactic_Street_to_Street_Defense
+
+	attacker = -0.7
+	defender = -0.65
+	combat_width = 0.15
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = 0.55
+	phase = urban_warfare 
+}
+
+tactic_Door_to_Door_Assault = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = urban_warfare
+		terrain = urban
+	}
+	active = yes
+	weight = { 
+		factor = 320 
+	}
+	picture = attack
+	countered_by = tactic_Mouse_Holing
+
+	attacker = -0.45
+	defender = -0.5
+	combat_width = 0.05
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = 0.45
+	phase = urban_warfare
+}
+
+tactic_Underground_Assault = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = urban_warfare
+		terrain = urban
+	}
+	active = yes
+	weight = { 
+		factor = 320 
+	}
+	picture = attack
+
+	attacker = -0.45
+	defender = -0.5
+	combat_width = 0.1
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = 0.5
+	phase = urban_warfare
+}
+
+tactic_Street_to_Street_Assault = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = urban_warfare
+		terrain = urban
+	}
+	active = yes
+	weight = { 
+		factor = 320 
+	}
+	picture = attack
+	countered_by = tactic_Door_to_Door_Defense
+
+	attacker = -0.4
+	defender = -0.45
+	combat_width = -0.05
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = 0.4
+	phase = urban_warfare
+}
+
+tactic_Clearing_Operations = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = urban_warfare
+		terrain = urban
+	}
+	active = yes
+	weight = { 
+		factor = 320 
+	}
+	picture = attack
+
+	attacker = -0.75
+	defender = -0.7
+	combat_width = -0.5
+	attacker_org_damage_modifier = -0.5
+	defender_org_damage_modifier = -0.4
+	phase = urban_warfare
+}
+
+tactic_Hardpoint_Bypass = {
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = urban_warfare
+		terrain = urban
+	}
+	active = yes
+	weight = { 
+		factor = 320 
+	}
+	picture = attack
+
+	attacker = -0.5
+	defender = -0.65
+	combat_width = -0.2
+	attacker_org_damage_modifier = -0.4
+	defender_org_damage_modifier = 0.45
+	phase = urban_warfare
+}
+
+tactic_Urban_Counter_Attack = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = urban_warfare
+		terrain = urban
+	}
+	active = yes
+	weight = { 
+		factor = 320 
+	}
+	picture = defense
+
+	attacker = -0.3
+	defender = -0.25
+	combat_width = -0.35
+	attacker_org_damage_modifier = 0.3
+	defender_org_damage_modifier = -0.4
+	phase = urban_warfare
+}
+
+tactic_Defend_Local_Strongpoint = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = urban_warfare
+		terrain = urban
+	}
+	active = yes
+	weight = { 
+		factor = 320 
+	}
+	picture = defense
+	countered_by = tactic_Siege_Local_Strongpoint
+
+	attacker = -0.5
+	defender = -0.5
+	combat_width = -0.2
+	attacker_org_damage_modifier = 0.4
+	defender_org_damage_modifier = -0.4
+	phase = urban_warfare
+}
+
+tactic_Defend_Citadel = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = urban_warfare
+		terrain = urban
+	}
+	active = yes
+	weight = { 
+		factor = 320 
+	}
+	picture = defense
+	countered_by = tactic_Siege_Citadel
+
+	attacker = -0.5
+	defender = -0.45
+	combat_width = -0.3
+	attacker_org_damage_modifier = 0.45
+	defender_org_damage_modifier = -0.4
+	phase = urban_warfare
+}
+
+tactic_Urban_Concealment2 = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = urban_warfare
+		terrain = urban
+	}
+	active = yes
+	weight = { 
+		factor = 320 
+	}
+	picture = defense
+	countered_by = tactic_Clearing_Operations
+
+	attacker = -0.6
+	defender = -0.6
+	combat_width = -0.2
+	attacker_org_damage_modifier = 0.2
+	defender_org_damage_modifier = -0.5
+	phase = urban_warfare
+}
+
+tactic_Makeshift_Barricades = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = urban_warfare
+		terrain = urban
+	}
+	active = yes
+	weight = { 
+		factor = 320 
+	}
+	picture = defense
+	countered_by = tactic_Hardpoint_Bypass
+
+	attacker = -0.7
+	defender = -0.6
+	attacker_org_damage_modifier = 0.4
+	defender_org_damage_modifier = -0.6
+	phase = urban_warfare
+}
+
+tactic_Mouse_Holing = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = urban_warfare
+		terrain = urban
+	}
+	active = yes
+	weight = { 
+		factor = 320 
+	}
+	picture = defense
+
+	attacker = -0.6
+	defender = -0.45
+	combat_width = -0.1
+	attacker_org_damage_modifier = 0.5
+	defender_org_damage_modifier = -0.2
+	phase = urban_warfare 
+}
+
+tactic_Door_to_Door_Defense = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = urban_warfare
+		terrain = urban
+	}
+	active = yes
+	weight = { 
+		factor = 320 
+	}
+	picture = defense
+	countered_by = tactic_Bounding_Overwatch
+
+	attacker = -0.5
+	defender = -0.45
+	combat_width = -0.2
+	attacker_org_damage_modifier = 0.2
+	defender_org_damage_modifier = -0.2
+	phase = urban_warfare
+}
+
+tactic_Tactical_WithdrawUrb = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = urban_warfare
+		terrain = urban
+	}
+	active = yes
+	weight = { 
+		factor = 320 
+	}
+	picture = defense
+
+	attacker = -0.55
+	defender = -0.7
+	combat_width = -0.25
+	attacker_org_damage_modifier = -0.3
+	defender_org_damage_modifier = 0.6
+	phase = urban_warfare
+}
+
+tactic_Underground_Defense = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = urban_warfare
+		terrain = urban
+	}
+	active = yes
+	weight = { 
+		factor = 320 
+	}
+	picture = defense
+
+	attacker = -0.55
+	defender = -0.5
+	combat_width = -0.05
+	attacker_org_damage_modifier = 0.35
+	defender_org_damage_modifier = -0.4
+	phase = urban_warfare
+}
+
+tactic_Street_to_Street_Defense = {
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = urban_warfare
+		terrain = urban
+	}
+	active = yes
+	weight = { 
+		factor = 320 
+	}
+	picture = defense
+	countered_by = tactic_Urban_Infiltration
+
+	attacker = -0.65
+	defender = -0.6
+	attacker_org_damage_modifier = 0.1
+	defender_org_damage_modifier = -0.3
+	phase = urban_warfare
+}
+
