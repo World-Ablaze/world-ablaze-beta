@@ -1498,6 +1498,18 @@ NDefines.NFactions.AI_MAX_POWER_PROJECTION_SCORE = 0									-- Max AI score for
 
 --- NDoctrines ---
 NDefines.NDoctrines.BASE_MASTERY_GAIN_TARGET_MANPOWER = 500000.0           				-- Beyond this amount of manpower contributing to mastery, mastery gain will start having diminishing returns (see doctrines documentation)
-NDefines.NDoctrines.TRAINING_MASTERY_GAIN_FACTOR = 0.02									-- How much training contributes to doctrine mastery relative to combat/missions
+NDefines.NDoctrines.TRAINING_MASTERY_GAIN_FACTOR = 0.03									-- How much training contributes to doctrine mastery relative to combat/missions
 NDefines.NDoctrines.MASTERY_BANK_MAX = 0                               					-- The maximum amount of mastery that can be banked
 NDefines.NDoctrines.MILITARY_ATTACHE_MASTERY_TRANSFER_FACTOR = 0.1         				-- For each mastery track, military attaches will add this fraction of their visiting country's mastery gain (from units only) in that track
+NDefines.NDoctrines.NAVAL_MISSION_MASTERY_GAIN_FACTORS = {  -- Mastery gain from naval missions is reduced, just like training
+	0.0, -- HOLD
+	0.04, -- PATROL
+	0.04, -- STRIKE FORCE
+	0.04, -- CONVOY RAIDING
+	0.04, -- CONVOY ESCORT
+	0.02, -- MINES PLANTING
+	0.02, -- MINES SWEEPING
+	0.0, -- TRAIN # NOT USED - handled by TRAINING_MASTERY_GAIN_FACTOR
+	0.0, -- RESERVE_FLEET
+	0.0, -- NAVAL_INVASION_SUPPORT
+}
