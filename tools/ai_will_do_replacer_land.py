@@ -511,9 +511,9 @@ def get_special_forces_type(triggers: list[str]) -> Optional[str]:
     """
     sf_types = []
     for trigger in triggers:
-        if 'paratrooper' in trigger.lower():
+        if 'paratrooper_horse_batallion_line' in trigger.lower():
             sf_types.append('paratroopers')
-        elif 'marine' in trigger.lower():
+        elif 'marine_horse_batallion_line' in trigger.lower():
             sf_types.append('marines')
         elif 'mountaineer' in trigger.lower():
             sf_types.append('mountaineers')
@@ -601,14 +601,14 @@ def get_reachable_triggers(
                 filtered_child_triggers = set()
                 for trigger in child_triggers:
                     trigger_lower = trigger.lower()
-                    if current_sf_type == 'paratroopers' and 'paratrooper' in trigger_lower:
+                    if current_sf_type == 'paratroopers' and 'paratrooper_horse_batallion_line' in trigger_lower:
                         filtered_child_triggers.add(trigger)
-                    elif current_sf_type == 'marines' and 'marine' in trigger_lower:
+                    elif current_sf_type == 'marines' and 'marine_horse_batallion_line' in trigger_lower:
                         filtered_child_triggers.add(trigger)
                     elif current_sf_type == 'mountaineers' and 'mountaineer' in trigger_lower:
                         filtered_child_triggers.add(trigger)
                     # Always include non-special-forces triggers (like date modifiers, etc.)
-                    elif 'paratrooper' not in trigger_lower and 'marine' not in trigger_lower and 'mountaineer' not in trigger_lower:
+                    elif 'paratrooper_horse_batallion_line' not in trigger_lower and 'marine_horse_batallion_line' not in trigger_lower and 'mountaineer' not in trigger_lower:
                         filtered_child_triggers.add(trigger)
                 triggers.update(filtered_child_triggers)
             else:
@@ -630,7 +630,7 @@ def determine_special_forces_types(tech_name: str, categories: list[str], depend
     for cat in categories:
         if cat in CATEGORY_TO_TRIGGER:
             trigger = CATEGORY_TO_TRIGGER[cat]
-            if 'special_forces' in trigger.lower() or 'paratrooper' in trigger.lower() or 'marine' in trigger.lower() or 'mountaineer' in trigger.lower():
+            if 'special_forces' in trigger.lower() or 'paratrooper_horse_batallion_line' in trigger.lower() or 'marine_horse_batallion_line' in trigger.lower() or 'mountaineer' in trigger.lower():
                 sf_categories_found.add(cat)
                 if trigger not in triggers:
                     triggers.append(trigger)
@@ -660,7 +660,7 @@ def determine_special_forces_types(tech_name: str, categories: list[str], depend
     # If no triggers found from categories/dependencies, try tech name patterns
     if not triggers:
         for pattern, trigger in TECH_NAME_PATTERNS:
-            if 'paratrooper' in trigger.lower() or 'marine' in trigger.lower() or 'mountaineer' in trigger.lower():
+            if 'paratrooper_horse_batallion_line' in trigger.lower() or 'marine_horse_batallion_line' in trigger.lower() or 'mountaineer' in trigger.lower():
                 if re.search(pattern, tech_name, re.IGNORECASE):
                     if trigger not in triggers:
                         triggers.append(trigger)
@@ -728,7 +728,7 @@ def determine_trigger(tech_name: str, categories: list[str], file_path: Optional
         if filename == 'special_forces_doctrine.txt':
             if re.search(r'paratrooper|paratroopers|paras_', tech_name, re.IGNORECASE):
                 return "WA_AI_RESEARCH_needs_paratroopers"
-            elif re.search(r'marine|marines', tech_name, re.IGNORECASE):
+            elif re.search(r'marine_horse_batallion_line|marines', tech_name, re.IGNORECASE):
                 return "WA_AI_RESEARCH_needs_marines"
             elif re.search(r'mountaineer|mountaineers|ski_troops|rangers', tech_name, re.IGNORECASE):
                 return "WA_AI_RESEARCH_needs_mountaineers"

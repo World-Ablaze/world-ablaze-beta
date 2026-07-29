@@ -19,7 +19,7 @@ raid_type_id = {
 
 	category = raid_category_id
 
-	custom_map_icon = GFX_ref [Optional] - override for the automatic icon lookup (if this is not set, will look for "GFX_raid_type_icon_{raid_name} )" 
+	custom_map_icon = GFX_ref [Optional] - override for the automatic icon lookup (if this is not set, will look for "GFX_raid_type_icon_{raid_name} )"
     custom_terrain_icon = GFX_ref [Optional] - override for the automatic background based on target province terrain
 	target_loc_key = LOC_KEY #[Optional] - Custom loc key for overriding the target name. Use $LOCATION$ inside the loc key if you want to include the location name (state or VP).
 
@@ -43,7 +43,7 @@ raid_type_id = {
 		#	4. If still not found, the game will try to find the default_entity_name
 		entity = entity_name
 		default_entity = default_entity_name
-		
+
 		# Tells the game to use specific equipment's model as raid unit
 		# NOTE - only air equipment is currently supported!
 		equipment = air_transport
@@ -100,7 +100,7 @@ raid_type_id = {
 		# Use FROM to refer to the target country, e.g. to require being at war
 		# var:target_state and var:target_province can also be used when applicable
 	}
-	
+
 	# Optional launchable trigger
 	# The scope is the country controlling the starting point used for raid, for example:
 	#  - the country that controls the territory where the starting base is located
@@ -119,7 +119,7 @@ raid_type_id = {
 				is_coastal = yes # Optional
 			}
 			state = { <triggers> }
-	
+
     # Conditions on the starting point:
     starting_point = {
         types = { air_base, naval_base, rocket_site, carrier, submarine }
@@ -135,7 +135,7 @@ raid_type_id = {
 	unit_requirements = {
 		# Battalions...
 		battalion_types = {  # Optional
-			mountaineers = { min = 2 }
+			mountaineer_horse_batallion_line = { min = 2 }
 		}
 
 		# ... or equipment...
@@ -282,7 +282,7 @@ failure = {
 Note that *actor_effects* and *victim_effects* both use the same scope, but separating them allows for
 easily separating them for UI purposes (showing separate lists of how the actor and victim country were affected by the outcome)
 
-As another note on the terminology of these outcomes, unfortunately there were some changes to the naming during development which were not properly consolidated in time. 
+As another note on the terminology of these outcomes, unfortunately there were some changes to the naming during development which were not properly consolidated in time.
 **Failure**, **Critical Failure** and **Disaster** all refer to the same thing (the worst outcome).
 
 # Success Chance Formulas & Modifiers

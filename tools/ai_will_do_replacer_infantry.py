@@ -105,7 +105,7 @@ class InfantryFileProcessor(BaseFileProcessor):
         for cat in categories:
             if cat in category_map:
                 trigger = category_map[cat]
-                if 'paratrooper' in trigger.lower() or 'marine' in trigger.lower() or 'mountaineer' in trigger.lower():
+                if 'paratrooper_horse_batallion_line' in trigger.lower() or 'marine_horse_batallion_line' in trigger.lower() or 'mountaineer_horse_batallion_line' in trigger.lower():
                     if trigger not in triggers:
                         triggers.append(trigger)
 

@@ -1,16 +1,16 @@
 # What is a Project ?
 Special projects are about researching projects in Facilities to get equipment and other bonuses.
-Special projects are divided in several Specializations. Each Specialization has a tree of researchable projects. 
+Special projects are divided in several Specializations. Each Specialization has a tree of researchable projects.
 One entry in this DB is one node in those trees.
 
 # Phases of a Project
 
 Researching a Project is divided in several phases.
 
-* Establishing phase : 
+* Establishing phase :
 will need to go through that phase when start or re-starting a project
 will start from beginning of the phase if cancelled in the middle
-* Initial research phase : 
+* Initial research phase :
 will need to go through that phase only once - if project cancelled after it's done, it won't go through it again
 if cancelled in the middle, will remember where it was
 * Prototyping phase :
@@ -44,7 +44,7 @@ my_project_token = {
 	# if trigger returns false, the project is hidden
 	# scope: project. FROM: country
 	visible = { ... }
-	
+
 	# Optional
 	# Cost of breakthrough points to start project.
 	# Can consist of several breakthrough points from different specializations.
@@ -74,7 +74,7 @@ my_project_token = {
     	# if name provided, use TAG_name_loc_key if it exists. if not use name_loc_key (where TAG is the tag of the project owner)
     	# if localization key TAG_my_project_token exists, use it
     	# else use loc key my_project_token
-	
+
 		# Optional
 		# Localization key used for the long description of the Project
 		# The localization key is localized with the following localization scope objects:
@@ -85,7 +85,7 @@ my_project_token = {
     	# if localization key TAG_my_project_token_desc exists, use it (!! Note the _desc suffix)
     	# else use loc key my_project_token_desc
 	}
-	
+
 	# Optional
 	# GFX key of the icon used to illustrate the Project
 	icon = GFX_icon
@@ -93,12 +93,12 @@ my_project_token = {
     # if gfx key GFX_TAG_my_project_token exists, use it
     # if gfx key GFX_my_project_token exists, use it
     # else use GFX_PLACEHOLDER_sp_project_icon
-	
+
 	# Optional
 	# GFX key of the background texture of the project when it is being researched
 	# overrides the one set at Specialization level
 	blueprint_image = GFX_generic_tank_blueprint_background
-	
+
 	# At least 1 is Mandatory (and not 0)
 	# Number of days needed to complete each phase
 	# default is 0
@@ -112,11 +112,11 @@ my_project_token = {
 	resource_cost = {
 		resources = { steel=5 rubber=12 ... }
 	}
-	
+
 	# Optional: Defaults to defined default, if set to 0 a log error is produced and complexity is set to default.
 	# Amount of progress gained each prototype iteration.
 	complexity = 10
-	
+
 	# Optional
 	# The weight for the probability of the reward being empty
 	# default is set by define NProject::DEFAULT_EMPTY_REWARD_WEIGHT
@@ -146,7 +146,7 @@ my_project_token = {
 	ai_will_do = {
 		...
 	}
-	
+
 	# Optional
 	# Project will appear only if all parents are completed
 	# use other Projects' token
@@ -154,14 +154,14 @@ my_project_token = {
 		my_other_project_token
 		another_project_token
 	}
-	
+
 	# Optional
 	# Bonus given when the Project is fully researched (i.e. at the end of the last Prototyping phase)
 	project_output = {
 		# output content, detailed below
 		[...]
 	}
-	
+
 	# Optional array
 	# Rewards for when one iteration in the prototype phase is completed
 	# "Unique rewards" are only reachable by the containing project.
@@ -190,7 +190,7 @@ my_project_token = {
 
 # Example of output
 
-This is the output for either : 
+This is the output for either :
 * the project output on completion
 * or the prototype rewards when iterating
 
@@ -234,7 +234,7 @@ project_output/iteration_output = {
 		equipment_variant_token
 	}
 
-	# Optional array 
+	# Optional array
 	# Enable equipment modules - cf. game/common/units/equipment/modules
 	enable_equipment_modules = {
 		# Only enabled if limit is empty or returns true
@@ -258,7 +258,7 @@ project_output/iteration_output = {
 			soft_attack = 0.05
 			hard_attack = 0.05
 		}
-		motorized = {
+		infantry_heavy_motorized_battalion_line = {
 			soft_attack = 0.05
 		}
 	}
