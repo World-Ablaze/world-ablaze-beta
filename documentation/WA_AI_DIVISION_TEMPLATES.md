@@ -113,7 +113,7 @@ WA_AI_TEMPLATES_GENERIC_MEDIUM_ARMOR_30_MEC_MOT = {
 			mechanized = 7
 		}
 		support = {
-			engineer_med_tank_company_divisional = 1
+			engineer_med_tank_battalion_divisional = 1
 			maintenance_med_tank_company_divisional = 1
 			recon_light_tank_company_divisional = 1
 			field_hospital_mot_company_divisional = 1
