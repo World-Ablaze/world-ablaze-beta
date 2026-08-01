@@ -3118,6 +3118,40 @@ focus_tree = {
 		}
 	}
 
+	# Southern branch A - placeholder shown while the GEAC settlement is undecided.
+	# Same slot as JAP_exploit_the_south (B) and JAP_develop_the_south (C); swapped via allow_branch.
+	focus = {
+		id = JAP_southern_course_undecided
+		icon = GFX_goal_unknown
+		prerequisite = { focus = JAP_greater_east_asia_settlement }
+		x = 0
+		y = 1
+		relative_position_id = JAP_greater_east_asia_settlement
+
+		cost = 4
+
+		allow_branch = {
+			NOT = { has_country_flag = JAP_geac_exploitation_path }
+			NOT = { has_country_flag = JAP_geac_independence_path }
+		}
+
+		ai_will_do = {
+			factor = 0
+		}
+
+		available = {
+			hidden_trigger = { always = no }
+		}
+
+		completion_reward = {
+			custom_effect_tooltip = JAP_geas_if_exploitation_tt
+			custom_effect_tooltip = JAP_exploit_the_south_tt
+			custom_effect_tooltip = JAP_geas_if_independence_tt
+			custom_effect_tooltip = JAP_develop_the_south_tt
+		}
+	}
+
+	# Southern branch B - exploitation course
 	focus = {
 		id = JAP_exploit_the_south
 		icon = GFX_goal_JAP_exploit_the_south
@@ -3127,7 +3161,10 @@ focus_tree = {
 		relative_position_id = JAP_greater_east_asia_settlement
 
 		cost = 4
-		dynamic = yes
+
+		allow_branch = {
+			has_country_flag = JAP_geac_exploitation_path
+		}
 
 		ai_will_do = {
 			factor = 10
@@ -3154,44 +3191,74 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			if = {
-				limit = { has_country_flag = JAP_geac_exploitation_path }
-				custom_effect_tooltip = JAP_exploit_the_south_tt
-			}
-			else_if = {
-				limit = { has_country_flag = JAP_geac_independence_path }
-				custom_effect_tooltip = JAP_exploit_the_south_invest_tt
-				hidden_effect = {
-					every_country = {
-						limit = {
-							is_subject_of = ROOT
-							OR = {
-								tag = IPP
-								tag = IPM
-								tag = IPI
-								tag = IPB
-								tag = IPV
-								tag = IPC
-								tag = IPL
-							}
-						}
-						capital_scope = {
-							add_extra_state_shared_building_slots = 1
-							add_building_construction = {
-								type = industrial_complex
-								level = 1
-								instant_build = yes
-							}
-						}
+			custom_effect_tooltip = JAP_exploit_the_south_tt
+		}
+	}
+
+	# Southern branch C - independence course
+	focus = {
+		id = JAP_develop_the_south
+		icon = GFX_goal_generic_construct_civ_factory
+		prerequisite = { focus = JAP_greater_east_asia_settlement }
+		x = 0
+		y = 1
+		relative_position_id = JAP_greater_east_asia_settlement
+
+		cost = 4
+
+		allow_branch = {
+			has_country_flag = JAP_geac_independence_path
+		}
+
+		ai_will_do = {
+			factor = 10
+		}
+
+		available = {
+			OR = {
+				336 = {
+					CONTROLLER = {
+						is_in_faction_with = JAP
+					}
+				}
+				672 = {
+					CONTROLLER = {
+						is_in_faction_with = JAP
+					}
+				}
+				327 = {
+					CONTROLLER = {
+						is_in_faction_with = JAP
 					}
 				}
 			}
-			else = {
-				# Undecided - preview both courses, KR plan_edit style
-				custom_effect_tooltip = JAP_geas_if_exploitation_tt
-				custom_effect_tooltip = JAP_exploit_the_south_tt
-				custom_effect_tooltip = JAP_geas_if_independence_tt
-				custom_effect_tooltip = JAP_exploit_the_south_invest_tt
+		}
+
+		completion_reward = {
+			custom_effect_tooltip = JAP_develop_the_south_tt
+			hidden_effect = {
+				every_country = {
+					limit = {
+						is_subject_of = ROOT
+						OR = {
+							tag = IPP
+							tag = IPM
+							tag = IPI
+							tag = IPB
+							tag = IPV
+							tag = IPC
+							tag = IPL
+						}
+					}
+					capital_scope = {
+						add_extra_state_shared_building_slots = 1
+						add_building_construction = {
+							type = industrial_complex
+							level = 1
+							instant_build = yes
+						}
+					}
+				}
 			}
 		}
 	}
@@ -3227,6 +3294,7 @@ focus_tree = {
 				set_country_flag = JAP_geac_independence_path
 				custom_effect_tooltip = JAP_geas_independence_tt
 				hidden_effect = {
+					mark_focus_tree_layout_dirty = yes
 					every_country = {
 						limit = {
 							is_subject_of = ROOT
@@ -3239,6 +3307,7 @@ focus_tree = {
 				set_country_flag = JAP_geac_exploitation_path
 				custom_effect_tooltip = JAP_geas_exploitation_tt
 				hidden_effect = {
+					mark_focus_tree_layout_dirty = yes
 					every_country = {
 						limit = {
 							is_subject_of = ROOT
@@ -3295,7 +3364,9 @@ focus_tree = {
 	focus = {
 		id = JAP_leverage_indonesian_workforce
 		icon = GFX_goal_JAP_leverage_indonesian_workforce
-		dynamic = yes
+		allow_branch = {
+			has_country_flag = JAP_geac_exploitation_path
+		}
 		prerequisite = { focus = JAP_exploit_the_south }
 		x = -1
 		y = 1
@@ -3368,36 +3439,15 @@ focus_tree = {
                     add_idea = JAP_ministry_of_greater_east_asia_idea_5
                 }
             }
-			if = {
-				limit = { has_country_flag = JAP_geac_exploitation_path }
-				every_state = {
-					limit = {
-						is_core_of = IND
-						OR = {
-							is_controlled_by = JAP
-							is_controlled_by = IPI
-						}
-					}
-					add_compliance = -10
-				}
-			}
-			else_if = {
+			every_state = {
 				limit = {
-					NOT = { has_country_flag = JAP_geac_independence_path }
-				}
-				custom_effect_tooltip = JAP_geas_if_exploitation_tt
-				effect_tooltip = {
-					every_state = {
-						limit = {
-							is_core_of = IND
-							OR = {
-								is_controlled_by = JAP
-								is_controlled_by = IPI
-							}
-						}
-						add_compliance = -10
+					is_core_of = IND
+					OR = {
+						is_controlled_by = JAP
+						is_controlled_by = IPI
 					}
 				}
+				add_compliance = -10
 			}
 		}
 	}
@@ -3405,7 +3455,9 @@ focus_tree = {
 	focus = {
 		id = JAP_leverage_manchurian_workforce
 		icon = GFX_goal_JAP_leverage_manchurian_workforce
-		dynamic = yes
+		allow_branch = {
+			has_country_flag = JAP_geac_exploitation_path
+		}
 		prerequisite = { focus = JAP_exploit_the_south }
 		x = -3
 		y = 1
@@ -3478,22 +3530,8 @@ focus_tree = {
                     add_idea = JAP_ministry_of_greater_east_asia_idea_5
                 }
             }
-			if = {
-				limit = { has_country_flag = JAP_geac_exploitation_path }
-				MAN = {
-					add_stability = -0.1
-				}
-			}
-			else_if = {
-				limit = {
-					NOT = { has_country_flag = JAP_geac_independence_path }
-				}
-				custom_effect_tooltip = JAP_geas_if_exploitation_tt
-				effect_tooltip = {
-					MAN = {
-						add_stability = -0.1
-					}
-				}
+			MAN = {
+				add_stability = -0.1
 			}
 		}
 	}
@@ -3501,7 +3539,9 @@ focus_tree = {
 	focus = {
 		id = JAP_leverage_indian_workforce
 		icon = GFX_goal_JAP_leverage_indian_workforce
-		dynamic = yes
+		allow_branch = {
+			has_country_flag = JAP_geac_exploitation_path
+		}
 		prerequisite = { focus = JAP_exploit_the_south }
 		x = 1
 		y = 1
@@ -3574,36 +3614,15 @@ focus_tree = {
                     add_idea = JAP_ministry_of_greater_east_asia_idea_5
                 }
             }
-			if = {
-				limit = { has_country_flag = JAP_geac_exploitation_path }
-				every_state = {
-					limit = {
-						is_core_of = RAJ
-						OR = {
-							is_controlled_by = JAP
-							is_controlled_by = IPR
-						}
-					}
-					add_compliance = -10
-				}
-			}
-			else_if = {
+			every_state = {
 				limit = {
-					NOT = { has_country_flag = JAP_geac_independence_path }
-				}
-				custom_effect_tooltip = JAP_geas_if_exploitation_tt
-				effect_tooltip = {
-					every_state = {
-						limit = {
-							is_core_of = RAJ
-							OR = {
-								is_controlled_by = JAP
-								is_controlled_by = IPR
-							}
-						}
-						add_compliance = -10
+					is_core_of = RAJ
+					OR = {
+						is_controlled_by = JAP
+						is_controlled_by = IPR
 					}
 				}
+				add_compliance = -10
 			}
 		}
 	}
@@ -3611,7 +3630,9 @@ focus_tree = {
 	focus = {
 		id = JAP_leverage_korean_workforce
 		icon = GFX_goal_JAP_leverage_korean_workforce
-		dynamic = yes
+		allow_branch = {
+			has_country_flag = JAP_geac_exploitation_path
+		}
 		prerequisite = { focus = JAP_exploit_the_south }
 		x = 3
 		y = 1
@@ -3687,29 +3708,339 @@ focus_tree = {
                     add_idea = JAP_ministry_of_greater_east_asia_idea_5
                 }
             }
+			every_state = {
+				limit = {
+					is_core_of = KOR
+					is_controlled_by = JAP
+				}
+				add_compliance = -10
+			}
+		}
+	}
+
+	# Southern branch C children - labor agreements (same rewards as branch B, no backlash penalties)
+	focus = {
+		id = JAP_indonesian_labor_agreement
+		icon = GFX_goal_JAP_leverage_indonesian_workforce
+		allow_branch = {
+			has_country_flag = JAP_geac_independence_path
+		}
+		prerequisite = { focus = JAP_develop_the_south }
+		x = -1
+		y = 1
+		relative_position_id = JAP_develop_the_south
+
+		cost = 4
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			country_exists = IPI
+			has_completed_focus = JAP_national_defence_state
+		}
+
+		completion_reward = {
 			if = {
-				limit = { has_country_flag = JAP_geac_exploitation_path }
-				every_state = {
-					limit = {
-						is_core_of = KOR
-						is_controlled_by = JAP
+				limit = {
+					NOT = {
+						has_completed_focus = JAP_ministry_of_greater_east_asia
 					}
-					add_compliance = -10
+				}
+				swap_ideas = {
+					remove_idea = JAP_ministry_of_greater_east_asia_idea
+					add_idea = JAP_ministry_of_greater_east_asia_idea_2
 				}
 			}
 			else_if = {
 				limit = {
-					NOT = { has_country_flag = JAP_geac_independence_path }
-				}
-				custom_effect_tooltip = JAP_geas_if_exploitation_tt
-				effect_tooltip = {
-					every_state = {
-						limit = {
-							is_core_of = KOR
-							is_controlled_by = JAP
+					has_completed_focus = JAP_ministry_of_greater_east_asia
+					NOT = {
+						OR = {
+							has_idea = JAP_ministry_of_greater_east_asia_idea_2
+							has_idea = JAP_ministry_of_greater_east_asia_idea_3
+							has_idea = JAP_ministry_of_greater_east_asia_idea_4
+							has_idea = JAP_ministry_of_greater_east_asia_idea_5
 						}
-						add_compliance = -10
 					}
+				}
+				swap_ideas = {
+					remove_idea = JAP_ministry_of_greater_east_asia_idea
+					add_idea = JAP_ministry_of_greater_east_asia_idea_2
+				}
+			}
+			else_if = {
+				limit = {
+					has_idea = JAP_ministry_of_greater_east_asia_idea_2
+				}
+				swap_ideas = {
+					remove_idea = JAP_ministry_of_greater_east_asia_idea_2
+					add_idea = JAP_ministry_of_greater_east_asia_idea_3
+				}
+			}
+			else_if = {
+				limit = {
+					has_idea = JAP_ministry_of_greater_east_asia_idea_3
+				}
+				swap_ideas = {
+					remove_idea = JAP_ministry_of_greater_east_asia_idea_3
+					add_idea = JAP_ministry_of_greater_east_asia_idea_4
+				}
+			}
+			else_if = {
+				limit = {
+					has_idea = JAP_ministry_of_greater_east_asia_idea_4
+				}
+				swap_ideas = {
+					remove_idea = JAP_ministry_of_greater_east_asia_idea_4
+					add_idea = JAP_ministry_of_greater_east_asia_idea_5
+				}
+			}
+		}
+	}
+
+	focus = {
+		id = JAP_manchurian_labor_agreement
+		icon = GFX_goal_JAP_leverage_manchurian_workforce
+		allow_branch = {
+			has_country_flag = JAP_geac_independence_path
+		}
+		prerequisite = { focus = JAP_develop_the_south }
+		x = -3
+		y = 1
+		relative_position_id = JAP_develop_the_south
+
+		cost = 2
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			country_exists = MAN
+			has_completed_focus = JAP_national_defence_state
+		}
+
+		completion_reward = {
+			if = {
+				limit = {
+					NOT = {
+						has_completed_focus = JAP_ministry_of_greater_east_asia
+					}
+				}
+				swap_ideas = {
+					remove_idea = JAP_ministry_of_greater_east_asia_idea
+					add_idea = JAP_ministry_of_greater_east_asia_idea_2
+				}
+			}
+			else_if = {
+				limit = {
+					has_completed_focus = JAP_ministry_of_greater_east_asia
+					NOT = {
+						OR = {
+							has_idea = JAP_ministry_of_greater_east_asia_idea_2
+							has_idea = JAP_ministry_of_greater_east_asia_idea_3
+							has_idea = JAP_ministry_of_greater_east_asia_idea_4
+							has_idea = JAP_ministry_of_greater_east_asia_idea_5
+						}
+					}
+				}
+				swap_ideas = {
+					remove_idea = JAP_ministry_of_greater_east_asia_idea
+					add_idea = JAP_ministry_of_greater_east_asia_idea_2
+				}
+			}
+			else_if = {
+				limit = {
+					has_idea = JAP_ministry_of_greater_east_asia_idea_2
+				}
+				swap_ideas = {
+					remove_idea = JAP_ministry_of_greater_east_asia_idea_2
+					add_idea = JAP_ministry_of_greater_east_asia_idea_3
+				}
+			}
+			else_if = {
+				limit = {
+					has_idea = JAP_ministry_of_greater_east_asia_idea_3
+				}
+				swap_ideas = {
+					remove_idea = JAP_ministry_of_greater_east_asia_idea_3
+					add_idea = JAP_ministry_of_greater_east_asia_idea_4
+				}
+			}
+			else_if = {
+				limit = {
+					has_idea = JAP_ministry_of_greater_east_asia_idea_4
+				}
+				swap_ideas = {
+					remove_idea = JAP_ministry_of_greater_east_asia_idea_4
+					add_idea = JAP_ministry_of_greater_east_asia_idea_5
+				}
+			}
+		}
+	}
+
+	focus = {
+		id = JAP_indian_labor_agreement
+		icon = GFX_goal_JAP_leverage_indian_workforce
+		allow_branch = {
+			has_country_flag = JAP_geac_independence_path
+		}
+		prerequisite = { focus = JAP_develop_the_south }
+		x = 1
+		y = 1
+		relative_position_id = JAP_develop_the_south
+
+		cost = 4
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			country_exists = IPR
+			has_completed_focus = JAP_national_defence_state
+		}
+
+		completion_reward = {
+			if = {
+				limit = {
+					NOT = {
+						has_completed_focus = JAP_ministry_of_greater_east_asia
+					}
+				}
+				swap_ideas = {
+					remove_idea = JAP_ministry_of_greater_east_asia_idea
+					add_idea = JAP_ministry_of_greater_east_asia_idea_2
+				}
+			}
+			else_if = {
+				limit = {
+					has_completed_focus = JAP_ministry_of_greater_east_asia
+					NOT = {
+						OR = {
+							has_idea = JAP_ministry_of_greater_east_asia_idea_2
+							has_idea = JAP_ministry_of_greater_east_asia_idea_3
+							has_idea = JAP_ministry_of_greater_east_asia_idea_4
+							has_idea = JAP_ministry_of_greater_east_asia_idea_5
+						}
+					}
+				}
+				swap_ideas = {
+					remove_idea = JAP_ministry_of_greater_east_asia_idea
+					add_idea = JAP_ministry_of_greater_east_asia_idea_2
+				}
+			}
+			else_if = {
+				limit = {
+					has_idea = JAP_ministry_of_greater_east_asia_idea_2
+				}
+				swap_ideas = {
+					remove_idea = JAP_ministry_of_greater_east_asia_idea_2
+					add_idea = JAP_ministry_of_greater_east_asia_idea_3
+				}
+			}
+			else_if = {
+				limit = {
+					has_idea = JAP_ministry_of_greater_east_asia_idea_3
+				}
+				swap_ideas = {
+					remove_idea = JAP_ministry_of_greater_east_asia_idea_3
+					add_idea = JAP_ministry_of_greater_east_asia_idea_4
+				}
+			}
+			else_if = {
+				limit = {
+					has_idea = JAP_ministry_of_greater_east_asia_idea_4
+				}
+				swap_ideas = {
+					remove_idea = JAP_ministry_of_greater_east_asia_idea_4
+					add_idea = JAP_ministry_of_greater_east_asia_idea_5
+				}
+			}
+		}
+	}
+
+	focus = {
+		id = JAP_korean_labor_agreement
+		icon = GFX_goal_JAP_leverage_korean_workforce
+		allow_branch = {
+			has_country_flag = JAP_geac_independence_path
+		}
+		prerequisite = { focus = JAP_develop_the_south }
+		x = 3
+		y = 1
+		relative_position_id = JAP_develop_the_south
+
+		cost = 2
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+			has_completed_focus = JAP_national_defence_state
+			NOT = {
+				has_completed_focus = JAP_fully_integrate_korea
+			}
+		}
+
+		completion_reward = {
+			add_manpower = 110000
+			if = {
+				limit = {
+					NOT = {
+						has_completed_focus = JAP_ministry_of_greater_east_asia
+					}
+				}
+				swap_ideas = {
+					remove_idea = JAP_ministry_of_greater_east_asia_idea
+					add_idea = JAP_ministry_of_greater_east_asia_idea_2
+				}
+			}
+			else_if = {
+				limit = {
+					has_completed_focus = JAP_ministry_of_greater_east_asia
+					NOT = {
+						OR = {
+							has_idea = JAP_ministry_of_greater_east_asia_idea_2
+							has_idea = JAP_ministry_of_greater_east_asia_idea_3
+							has_idea = JAP_ministry_of_greater_east_asia_idea_4
+							has_idea = JAP_ministry_of_greater_east_asia_idea_5
+						}
+					}
+				}
+				swap_ideas = {
+					remove_idea = JAP_ministry_of_greater_east_asia_idea
+					add_idea = JAP_ministry_of_greater_east_asia_idea_2
+				}
+			}
+			else_if = {
+				limit = {
+					has_idea = JAP_ministry_of_greater_east_asia_idea_2
+				}
+				swap_ideas = {
+					remove_idea = JAP_ministry_of_greater_east_asia_idea_2
+					add_idea = JAP_ministry_of_greater_east_asia_idea_3
+				}
+			}
+			else_if = {
+				limit = {
+					has_idea = JAP_ministry_of_greater_east_asia_idea_3
+				}
+				swap_ideas = {
+					remove_idea = JAP_ministry_of_greater_east_asia_idea_3
+					add_idea = JAP_ministry_of_greater_east_asia_idea_4
+				}
+			}
+			else_if = {
+				limit = {
+					has_idea = JAP_ministry_of_greater_east_asia_idea_4
+				}
+				swap_ideas = {
+					remove_idea = JAP_ministry_of_greater_east_asia_idea_4
+					add_idea = JAP_ministry_of_greater_east_asia_idea_5
 				}
 			}
 		}
