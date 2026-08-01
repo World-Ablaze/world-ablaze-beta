@@ -2799,15 +2799,24 @@ focus_tree = {
 		}
 
 		completion_reward = {
-			333 = {
-				add_resource = {
-					type = rubber
-					amount = 8
+			336 = {
+				add_extra_state_shared_building_slots = 2
+				add_building_construction = {
+					type = dockyard
+					level = 2
+					instant_build = yes
 				}
-				add_resource = {
-					type = tungsten
-					amount = 4
+				add_building_construction = {
+					type = naval_base
+					level = 2
+					instant_build = yes
+					province = 12299
 				}
+			}
+			add_equipment_to_stockpile = {
+				type = convoy_1
+				amount = 150
+				producer = JAP
 			}
 			hidden_effect = {
 				country_event = { id = jap_rework.3 }
@@ -3104,8 +3113,7 @@ focus_tree = {
 
 		completion_reward = {
 			IPR = {
-				add_political_power = 100
-				add_war_support = 0.1
+				add_ideas = IPR_indian_national_army
 			}
 		}
 	}
@@ -3148,6 +3156,54 @@ focus_tree = {
 			custom_effect_tooltip = JAP_exploit_the_south_tt
 		}
 	}
+
+	# Dynamic settlement focus - resolves the fate of the Co-Prosperity Sphere
+	# based on how many large resolutions Japan passed at the GEAC (KR plan_edit style)
+	focus = {
+		id = JAP_greater_east_asia_settlement
+		icon = GFX_goal_generic_political_pressure
+		prerequisite = { focus = JAP_exploit_the_south }
+		x = 0
+		y = 2
+		relative_position_id = JAP_exploit_the_south
+
+		cost = 5
+		dynamic = yes
+
+		ai_will_do = {
+			factor = 10
+		}
+
+		available = {
+			has_country_flag = JAP_geac_conference_held
+			num_subjects > 0
+		}
+
+		completion_reward = {
+			custom_effect_tooltip = JAP_geas_goodwill_status_tt
+			if = {
+				limit = {
+					check_variable = { JAP_geac_goodwill > 4 }
+				}
+				set_country_flag = JAP_geac_independence_path
+				custom_effect_tooltip = JAP_geas_independence_tt
+			}
+			else = {
+				set_country_flag = JAP_geac_exploitation_path
+				custom_effect_tooltip = JAP_geas_exploitation_tt
+				hidden_effect = {
+					every_country = {
+						limit = {
+							is_subject_of = ROOT
+							has_idea = JAP_PUP_path_to_autonomy
+						}
+						remove_ideas = JAP_PUP_path_to_autonomy
+					}
+				}
+			}
+		}
+	}
+
 	focus = {
 		id = JAP_the_greater_east_asia_conference
 		icon = GFX_goal_JAP_support_the_kodoha_faction
