@@ -213,12 +213,12 @@ def _get_special_forces_type(triggers: list[str]) -> Optional[str]:
     sf_types = []
     for trigger in triggers:
         trigger_lower = trigger.lower()
-        if 'paratrooper_horse_batallion_line' in trigger_lower:
+        if 'paratrooper_horse_battalion_line' in trigger_lower:
             sf_types.append('paratroopers')
-        elif 'marine_horse_batallion_line' in trigger_lower:
+        elif 'marine_horse_battalion_line' in trigger_lower:
             sf_types.append('marines')
         elif 'mountaineer' in trigger_lower:
-            sf_types.append('mountaineer_horse_batallion_line')
+            sf_types.append('mountaineer_horse_battalion_line')
 
     if len(set(sf_types)) == 1:
         return sf_types[0]
@@ -234,14 +234,14 @@ def _filter_sf_triggers(triggers: set[str], sf_type: str) -> set[str]:
         trigger_lower = trigger.lower()
 
         # Include if it matches our SF type
-        if sf_type == 'paratroopers' and 'paratrooper_horse_batallion_line' in trigger_lower:
+        if sf_type == 'paratroopers' and 'paratrooper_horse_battalion_line' in trigger_lower:
             filtered.add(trigger)
-        elif sf_type == 'marines' and 'marine_horse_batallion_line' in trigger_lower:
+        elif sf_type == 'marines' and 'marine_horse_battalion_line' in trigger_lower:
             filtered.add(trigger)
-        elif sf_type == 'mountaineers' and 'mountaineer_horse_batallion_line' in trigger_lower:
+        elif sf_type == 'mountaineers' and 'mountaineer_horse_battalion_line' in trigger_lower:
             filtered.add(trigger)
         # Include non-SF triggers
-        elif 'paratrooper_horse_batallion_line' not in trigger_lower and 'marine_horse_batallion_line' not in trigger_lower and 'mountaineer_horse_batallion_line' not in trigger_lower:
+        elif 'paratrooper_horse_battalion_line' not in trigger_lower and 'marine_horse_battalion_line' not in trigger_lower and 'mountaineer_horse_battalion_line' not in trigger_lower:
             filtered.add(trigger)
 
     return filtered
