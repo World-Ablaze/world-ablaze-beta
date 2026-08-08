@@ -60,7 +60,10 @@ NDefines.NTrade.ANTI_MONOPOLY_TRADE_FACTOR = 0										-- This is added to the 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Characters
 
 
-NDefines.NCharacter.OFFICER_CORP_ADVISOR_ENTRIES_IN_MENU = { "high_command", "theorist", "army_theorist", "navy_theorist", "air_theorist", "army_chief", "air_chief", "navy_chief" }
+-- WA splits vanilla's single "theorist" slot into army/navy/air_theorist (see common/idea_tags/00_idea.txt).
+-- The legacy "theorist" entry must not be listed here: the slot no longer exists, so the officer corps view
+-- asks for a "theorist_cost_factor" modifier that was never registered (lexer.cpp "dynamic token does not exist").
+NDefines.NCharacter.OFFICER_CORP_ADVISOR_ENTRIES_IN_MENU = { "high_command", "army_theorist", "navy_theorist", "air_theorist", "army_chief", "air_chief", "navy_chief" }
 --NDefines.NCharacter.DEFAULT_PP_COST_FOR_POLITICAL_ADVISOR = 100
 NDefines.NCharacter.ADVISOR_PROMOTION_COST = 5										-- Cost to promote someone to advisor
 NDefines.NCharacter.SPECIALIST_ADVISOR_MIN_RANK = 3
