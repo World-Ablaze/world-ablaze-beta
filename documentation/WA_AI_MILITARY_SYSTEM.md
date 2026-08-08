@@ -73,8 +73,9 @@ This is the master legend. For each `ai_strategy` `type` currently in use, it st
 | `front_unit_request` | Sums per area | Additive | n/a | -1500 to +200 |
 | `area_priority` | Sums per area | Additive | n/a | -200 to +200 |
 | `theatre_distribution_demand_increase` | Sums per area | Additive | n/a | 0 to +500 |
-| `force_concentration_front_factor` | Sums | Additive | n/a | 0.0 to 2.0 |
-| `force_concentration_target_weight` | Sums per target | Additive | n/a | 0 to 100 |
+| `force_concentration_factor` | Sums, added to define `AIFC_UNIT_RATIO_BASE` (0.15) | Additive | n/a | -100 (hard off) to +25, in percentage points |
+| `force_concentration_front_factor` | Sums | Additive | n/a | -100 to +100 (plain percent) |
+| `force_concentration_target_weight` | Sums per target | Additive | n/a | -100 to +100 (plain percent) |
 | `front_armor_score` | Sums | Additive | n/a | 0 to +50 |
 | `strategic_air_importance` | Sums per area | Additive | n/a | 0 to +500 |
 | `garrison` | Max wins; large negatives force-off | Additive (with negative-override convention) | n/a | -5000 (force off) or 0 to 200 |

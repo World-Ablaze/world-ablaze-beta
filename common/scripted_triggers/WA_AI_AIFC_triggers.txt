@@ -1,0 +1,141 @@
+############################################################################################################
+#	World Ablaze AI mod - AI Force Concentration (AIFC) - Triggers Module
+############################################################################################################
+#	AIFC is the vanilla engine feature that lets the AI mass its *surplus* divisions on a narrow
+#	offensive axis instead of spreading them evenly along a front. See:
+#		common/ai_strategy/WA_AI_MILITARY_DEFAULT_FRONT_aifc.txt   (the strategy layer + full design notes)
+#		common/scripted_effects/WA_AI_AIFC_core.txt                (weekly sector selection)
+#		common/scripted_effects/WA_AI_AIFC_helpers.txt             (candidate scoring)
+#
+#	THIS FILE IS THE CONTROL PANEL.
+#	Every behavioural switch for AIFC lives here so that turning the system on/off, or narrowing
+#	which countries it applies to, is a one-file edit and never requires touching ai_strategy blocks.
+############################################################################################################
+
+### AIFC eligibility constants (must match common/scripted_effects/WA_AI_AIFC_core.txt)
+@WA_AI_AIFC_MIN_STATES = 2			# Skip micro-nations; nothing to concentrate with
+@WA_AI_AIFC_MAX_SURRENDER = 0.35	# Skip countries already collapsing
+
+
+############################################################################################################
+#	MASTER SWITCH - does this country use the WA AIFC system at all?
+#	THIS = COUNTRY
+#
+#	Default: every country. The doctrine ladder is cheap (pure ai_strategy, no scripted work) so there
+#	is no performance reason to restrict it.
+#
+#	To change behaviour, edit THIS TRIGGER ONLY. Ready-made alternatives are listed below - swap the
+#	body of the trigger for one of them.
+#
+#		Disable AIFC entirely (restores pre-rework behaviour):
+#			always = no
+#
+#		Majors only:
+#			is_major = yes
+#
+#		Human players excluded (AI only):
+#			is_ai = yes
+#
+#		Everyone except a specific country:
+#			NOT = { original_tag = SOV }
+############################################################################################################
+
+WA_AI_AIFC_enabled = {
+	always = yes
+}
+
+
+############################################################################################################
+#	SECTOR ENGINE SWITCH - does this country get a dynamically selected offensive axis?
+#	THIS = COUNTRY
+#
+#	This gates the only *expensive* part of AIFC: the weekly scripted sector selection in
+#	WA_AI_AIFC_core.txt. The doctrine ladder and posture layers keep working even when this is off;
+#	the AI then concentrates using the engine's own target scoring instead of a scripted axis.
+#
+#	Turn this off first if AIFC is ever suspected of costing performance.
+#
+#		Disable the sector engine, keep the ladder:
+#			always = no
+#
+#		Majors only (cheapest useful setting):
+#			is_major = yes
+############################################################################################################
+
+WA_AI_AIFC_sector_engine_enabled = {
+	WA_AI_AIFC_enabled = yes
+	is_ai = yes
+}
+
+
+############################################################################################################
+#	ELIGIBILITY - is it worth running sector selection for this country right now?
+#	THIS = COUNTRY
+#
+#	Cheap pre-checks only. Mirrors the railway system's on_weekly eligibility gate. Anything expensive
+#	belongs inside the effect, not here.
+############################################################################################################
+
+WA_AI_AIFC_should_select_sector = {
+	WA_AI_AIFC_sector_engine_enabled = yes
+	has_war = yes
+	has_capitulated = no
+	num_of_controlled_states > @WA_AI_AIFC_MIN_STATES
+	surrender_progress < @WA_AI_AIFC_MAX_SURRENDER
+	any_enemy_country = { exists = yes }
+}
+
+
+############################################################################################################
+#	Does this country currently hold a valid sector?
+#	THIS = COUNTRY
+############################################################################################################
+
+WA_AI_AIFC_has_sector = {
+	check_variable = { WA_AI_AIFC_sector_states^num > 0 }
+}
+
+
+############################################################################################################
+#	DEFENSIVE POSTURE - should this country stop concentrating and hold a linear front?
+#	THIS = COUNTRY
+#
+#	This replaces the old blanket `force_concentration_factor = -100` in common/ai_strategy/default.txt,
+#	which disabled AIFC for every country except GER for the entire game. The intent behind that switch
+#	(SOV linear defence, no Saar offensive, no Maginot suicide) is expressed here as a *situation*, so it
+#	turns itself off again once the situation improves.
+#
+#	Any one of these is enough to drop into linear-defence mode.
+############################################################################################################
+
+WA_AI_AIFC_posture_defensive = {
+	OR = {
+		# Collapsing - every division is needed on the line, none can be held back for a push.
+		surrender_progress > 0.2
+
+		# Home area under pressure while we are short of equipment: concentrating would strip the line.
+		AND = {
+			WA_AI_MILITARY_home_threatened = yes
+			check_variable = { WA_AI_fielded_eq_ratio < 0.9 }
+		}
+
+		# Explicitly ordered to hold by another WA AI system.
+		has_country_flag = WA_AI_AIFC_hold_the_line
+	}
+}
+
+
+############################################################################################################
+#	OFFENSIVE POSTURE - is this country in a position to exploit a concentrated push?
+#	THIS = COUNTRY
+#
+#	Used to grant a bonus on top of the doctrine ladder. Deliberately conservative: the ladder alone
+#	should already produce a usable concentration, this is the "we are winning, press it" case.
+############################################################################################################
+
+WA_AI_AIFC_posture_offensive = {
+	NOT = { WA_AI_AIFC_posture_defensive = yes }
+	has_war = yes
+	surrender_progress < 0.05
+	check_variable = { WA_AI_fielded_eq_ratio > 0.95 }
+}

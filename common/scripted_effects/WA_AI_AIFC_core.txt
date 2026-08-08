@@ -1,0 +1,143 @@
+############################################################################################################
+#	World Ablaze AI mod - AI Force Concentration (AIFC) - Core Module
+#	Entry point, sector lifecycle, staleness detection
+############################################################################################################
+#	System overview and value bands: common/ai_strategy/WA_AI_MILITARY_DEFAULT_FRONT_aifc.txt
+#	Behavioural switches:            common/scripted_triggers/WA_AI_AIFC_triggers.txt
+#	Candidate scoring:               common/scripted_effects/WA_AI_AIFC_helpers.txt
+#
+#	WHAT THIS PRODUCES
+#	------------------
+#	Two persistent country arrays, consumed by the Layer 4 ai_strategy blocks through state_trigger:
+#
+#		WA_AI_AIFC_sector_states       the corridor - enemy-held states forming the chosen offensive axis
+#		WA_AI_AIFC_sector_objectives   the deep targets inside that corridor
+#
+#	Plus two bookkeeping variables:
+#
+#		WA_AI_AIFC_sector_anchor       state ID the sector was built around
+#		WA_AI_AIFC_sector_age          weeks since selection, drives forced re-evaluation
+#
+#	WHY ARRAYS AND NOT HARDCODED STATE LISTS
+#	----------------------------------------
+#	The engine re-evaluates AIFC every AIFC_UPDATE_FREQUENCY_DAYS (5) and calls the ai_strategy
+#	state_trigger per candidate state, per front. Anything expensive in that trigger is paid hundreds of
+#	times. So all the thinking happens here, once a week, and the strategy layer only does a single
+#	is_in_array lookup. This is the same split Expert AI uses and it is the reason its triggers are
+#	one-liners.
+#
+#	CADENCE
+#	-------
+#	Called from common/on_actions/WA_AI_misc_on_actions.txt on_weekly, behind
+#	WA_AI_AIFC_should_select_sector.
+############################################################################################################
+
+### AIFC eligibility constants (must match common/scripted_triggers/WA_AI_AIFC_triggers.txt)
+@WA_AI_AIFC_MIN_STATES = 2			# Skip micro-nations; nothing to concentrate with
+@WA_AI_AIFC_MAX_SURRENDER = 0.35	# Skip countries already collapsing
+
+### AIFC sector constants (must match common/scripted_effects/WA_AI_AIFC_helpers.txt)
+@WA_AI_AIFC_SECTOR_MAX_AGE = 4		# Weeks before a sector is re-evaluated regardless of validity
+
+
+############################################################################################################
+#	ENTRY POINT - weekly sector maintenance
+#	ROOT = country scope
+#
+#	Three outcomes:
+#		not eligible          -> clear any sector, so Layer 4 goes inert and the engine falls back to
+#		                         its own target scoring rather than pushing at a stale axis
+#		sector still good     -> age it and do nothing
+#		sector stale/invalid  -> re-select
+############################################################################################################
+
+WA_AI_AIFC_update_sector = {
+
+	if = {
+		limit = { NOT = { WA_AI_AIFC_should_select_sector = yes } }
+
+		WA_AI_AIFC_clear_sector = yes
+	}
+	else = {
+		# Age the existing sector. A country with no sector is treated as maximally stale so that the
+		# first eligible week always selects one.
+		if = {
+			limit = { has_variable = WA_AI_AIFC_sector_age }
+			add_to_variable = { WA_AI_AIFC_sector_age = 1 }
+		}
+		else = {
+			set_variable = { WA_AI_AIFC_sector_age = 99 }
+		}
+
+		WA_AI_AIFC_check_sector_valid = yes		# >>> _aifc_sector_valid
+
+		if = {
+			limit = {
+				OR = {
+					# Nothing selected yet
+					NOT = { check_variable = { WA_AI_AIFC_sector_states^num > 0 } }
+					# Timed refresh - keeps the AI from committing forever to a dead axis
+					check_variable = { WA_AI_AIFC_sector_age > @WA_AI_AIFC_SECTOR_MAX_AGE }
+					# The front moved, or we took the corridor
+					check_variable = { _aifc_sector_valid < 1 }
+				}
+			}
+
+			WA_AI_AIFC_select_sector = yes
+
+			if = {
+				limit = { has_country_flag = WA_AI_AIFC_logging }
+				log = "[GetYear] [GetMonth] | AI | [Root.GetName] | AIFC: sector re-selected, anchor=[?WA_AI_AIFC_sector_anchor] corridor=[?WA_AI_AIFC_sector_states^num]"
+			}
+		}
+	}
+}
+
+
+############################################################################################################
+#	Wipe the sector and its bookkeeping
+#	ROOT = country scope
+#
+#	Called when the country stops being eligible, and at the head of every re-selection. Leaving a stale
+#	corridor in place is worse than having none: the Layer 4 pairing suppresses everything OUTSIDE the
+#	corridor, so a corridor we already captured would suppress all remaining real targets.
+############################################################################################################
+
+WA_AI_AIFC_clear_sector = {
+
+	clear_array = WA_AI_AIFC_sector_states
+	clear_array = WA_AI_AIFC_sector_objectives
+	clear_variable = WA_AI_AIFC_sector_anchor
+	clear_variable = WA_AI_AIFC_sector_age
+}
+
+
+############################################################################################################
+#	Is the current sector still a live front?
+#	ROOT = country scope >>> _aifc_sector_valid (0 or 1)
+#
+#	Valid means: at least one state we control still borders at least one enemy-held state that is in the
+#	corridor. That single check catches both failure modes - the corridor was captured (no longer enemy
+#	held) and the front moved away (no longer adjacent to us).
+#
+#	Follows the WA_AI_PC_has_land_border_with_enemy pattern from the railway primitives.
+############################################################################################################
+
+WA_AI_AIFC_check_sector_valid = {
+
+	set_temp_variable = { _aifc_sector_valid = 0 }
+
+	if = {
+		limit = { check_variable = { WA_AI_AIFC_sector_states^num > 0 } }
+
+		every_controlled_state = {
+			limit = {
+				any_neighbor_state = {
+					CONTROLLER = { has_war_with = ROOT }
+					is_in_array = { ROOT.WA_AI_AIFC_sector_states = THIS.id }
+				}
+			}
+			set_temp_variable = { _aifc_sector_valid = 1 }
+		}
+	}
+}

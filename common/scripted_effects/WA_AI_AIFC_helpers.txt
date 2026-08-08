@@ -1,0 +1,216 @@
+############################################################################################################
+#	World Ablaze AI mod - AI Force Concentration (AIFC) - Helpers Module
+#	Candidate collection, scoring, and sector construction
+############################################################################################################
+#	System overview and value bands: common/ai_strategy/WA_AI_MILITARY_DEFAULT_FRONT_aifc.txt
+#	Lifecycle and cadence:           common/scripted_effects/WA_AI_AIFC_core.txt
+#	Behavioural switches:            common/scripted_triggers/WA_AI_AIFC_triggers.txt
+#
+#	SELECTION MODEL
+#	---------------
+#	One sector per country. Chosen once a week, at most, and only when the previous one went stale.
+#
+#		1. Collect every enemy-held state that touches territory we control. These are the only places a
+#		   ground offensive can actually begin, which keeps the candidate set naturally small.
+#		2. Score each on how good a breakthrough point it is - terrain, how thinly it is held, and what
+#		   is behind it worth taking.
+#		3. The winner becomes the anchor. The corridor is the anchor plus its enemy-held neighbours,
+#		   capped at @WA_AI_AIFC_SECTOR_MAX_STATES.
+#		4. Objectives are the anchor plus the best-scoring state in the corridor - the depth target the
+#		   push aims for rather than merely the point it enters at.
+#
+#	Deliberately NOT modelled in this version, to keep the weekly cost bounded:
+#		- distance weighting (every candidate is adjacent to us by construction, so it adds little)
+#		- multi-hop pathing into the enemy rear (WA_AI_PATHFIND_get_path exists if this is ever wanted)
+#		- coordinating sectors between faction members
+#
+#	DEPENDENCY
+#	----------
+#	Reuses WA_AI_PC_get_state_id from WA_AI_CONSTRUCTION_PRIORITY_railway_primitives.txt. It is a generic
+#	state-scope -> numeric-ID primitive despite the railway prefix; do not duplicate it here.
+############################################################################################################
+
+### AIFC sector constants (must match common/scripted_effects/WA_AI_AIFC_core.txt)
+@WA_AI_AIFC_SECTOR_MAX_STATES = 8	# Corridor cap. Every entry costs on each Layer 4 is_in_array lookup.
+
+
+############################################################################################################
+#	Select one sector for ROOT
+#	ROOT = country scope
+#	Writes: WA_AI_AIFC_sector_states, WA_AI_AIFC_sector_objectives,
+#	        WA_AI_AIFC_sector_anchor, WA_AI_AIFC_sector_age
+############################################################################################################
+
+WA_AI_AIFC_select_sector = {
+
+	WA_AI_AIFC_clear_sector = yes
+
+	clear_temp_array = _aifc_cand
+
+	############################################################
+	# 1. Candidate collection - enemy-held states in contact
+	############################################################
+
+	every_controlled_state = {
+		every_neighbor_state = {
+			limit = {
+				CONTROLLER = { has_war_with = ROOT }
+			}
+
+			WA_AI_PC_get_state_id = yes
+			set_temp_variable = { _aifc_sid = state_id_ }
+
+			if = {
+				limit = { NOT = { is_in_array = { _aifc_cand = _aifc_sid } } }
+				add_to_temp_array = { _aifc_cand = _aifc_sid }
+			}
+		}
+	}
+
+	############################################################
+	# 2. Score candidates, keep the single best
+	############################################################
+
+	set_temp_variable = { _aifc_best_id = 0 }
+	set_temp_variable = { _aifc_best_score = -9999 }
+
+	for_each_loop = { array = _aifc_cand value = _aifc_c
+
+		set_temp_variable = { _aifc_target = _aifc_c }
+		WA_AI_AIFC_score_state = yes		# >>> _aifc_score
+
+		if = {
+			limit = { check_variable = { _aifc_score > _aifc_best_score } }
+			set_temp_variable = { _aifc_best_score = _aifc_score }
+			set_temp_variable = { _aifc_best_id = _aifc_c }
+		}
+	}
+
+	############################################################
+	# 3 + 4. Build the corridor and pick the depth objective
+	############################################################
+
+	if = {
+		limit = { check_variable = { _aifc_best_id > 0 } }
+
+		set_variable = { WA_AI_AIFC_sector_anchor = _aifc_best_id }
+		set_variable = { WA_AI_AIFC_sector_age = 0 }
+
+		add_to_array = { WA_AI_AIFC_sector_states = _aifc_best_id }
+		add_to_array = { WA_AI_AIFC_sector_objectives = _aifc_best_id }
+
+		# Corridor: enemy-held neighbours of the anchor.
+		set_temp_variable = { _aifc_depth_id = 0 }
+		set_temp_variable = { _aifc_depth_score = -9999 }
+
+		var:_aifc_best_id = {
+			every_neighbor_state = {
+				limit = {
+					CONTROLLER = { has_war_with = ROOT }
+				}
+
+				WA_AI_PC_get_state_id = yes
+				set_temp_variable = { _aifc_nid = state_id_ }
+
+				if = {
+					limit = {
+						check_variable = { ROOT.WA_AI_AIFC_sector_states^num < @WA_AI_AIFC_SECTOR_MAX_STATES }
+						NOT = { is_in_array = { ROOT.WA_AI_AIFC_sector_states = _aifc_nid } }
+					}
+
+					ROOT = { add_to_array = { WA_AI_AIFC_sector_states = _aifc_nid } }
+
+					# Track the most valuable corridor state as the depth objective.
+					set_temp_variable = { _aifc_target = _aifc_nid }
+					ROOT = { WA_AI_AIFC_score_state = yes }
+
+					if = {
+						limit = { check_variable = { _aifc_score > _aifc_depth_score } }
+						set_temp_variable = { _aifc_depth_score = _aifc_score }
+						set_temp_variable = { _aifc_depth_id = _aifc_nid }
+					}
+				}
+			}
+		}
+
+		if = {
+			limit = { check_variable = { _aifc_depth_id > 0 } }
+			add_to_array = { WA_AI_AIFC_sector_objectives = _aifc_depth_id }
+		}
+	}
+	else = {
+		# No land contact with any enemy - amphibious or air war only. Leave the sector empty so Layer 4
+		# stays inert rather than suppressing targets the engine could otherwise use.
+		WA_AI_AIFC_clear_sector = yes
+	}
+
+	clear_temp_array = _aifc_cand
+}
+
+
+############################################################################################################
+#	Score one enemy state as a breakthrough point
+#	ROOT = country scope, _aifc_target = state ID  >>> _aifc_score
+#
+#	Baseline 100, adjusted by three questions:
+#		Can armour move through it?   terrain, from precomputed province data
+#		Is it thinly held?            division density - the point of a schwerpunkt is to hit a weak seam
+#		Is it worth taking?           industry, and whether it is occupied territory rather than core
+#
+#	All terrain data is read from globals in country scope, so only the density and industry checks pay
+#	for a scope change.
+############################################################################################################
+
+WA_AI_AIFC_score_state = {
+
+	set_temp_variable = { _aifc_score = 100 }
+
+	############################################################
+	# Terrain of the state's main settlement - can we exploit here?
+	############################################################
+
+	set_temp_variable = { _aifc_vp_prov = global.WA_AI_MAP_state_vp_province^_aifc_target }
+	set_temp_variable = { _aifc_terrain = global.WA_AI_MAP_province_terrain_type^_aifc_vp_prov }
+
+	if = { limit = { check_variable = { _aifc_terrain = global.WA_AI_MAP_PROV_TYPE_plains } }   add_to_temp_variable = { _aifc_score = 30 } }
+	if = { limit = { check_variable = { _aifc_terrain = global.WA_AI_MAP_PROV_TYPE_desert } }   add_to_temp_variable = { _aifc_score = 20 } }
+	if = { limit = { check_variable = { _aifc_terrain = global.WA_AI_MAP_PROV_TYPE_hills } }    subtract_from_temp_variable = { _aifc_score = 10 } }
+	if = { limit = { check_variable = { _aifc_terrain = global.WA_AI_MAP_PROV_TYPE_forest } }   subtract_from_temp_variable = { _aifc_score = 15 } }
+	if = { limit = { check_variable = { _aifc_terrain = global.WA_AI_MAP_PROV_TYPE_urban } }    subtract_from_temp_variable = { _aifc_score = 20 } }
+	if = { limit = { check_variable = { _aifc_terrain = global.WA_AI_MAP_PROV_TYPE_jungle } }   subtract_from_temp_variable = { _aifc_score = 35 } }
+	if = { limit = { check_variable = { _aifc_terrain = global.WA_AI_MAP_PROV_TYPE_marsh } }    subtract_from_temp_variable = { _aifc_score = 40 } }
+	if = { limit = { check_variable = { _aifc_terrain = global.WA_AI_MAP_PROV_TYPE_mountain } } subtract_from_temp_variable = { _aifc_score = 50 } }
+
+	############################################################
+	# Garrison density and strategic value
+	############################################################
+
+	var:_aifc_target = {
+
+		# A thin seam is the whole point. A heavily stacked state is where a concentrated push dies.
+		if = {
+			limit = { CONTROLLER = { divisions_in_state = { state = PREV size < 3 } } }
+			ROOT = { add_to_temp_variable = { _aifc_score = 40 } }
+		}
+		else_if = {
+			limit = { CONTROLLER = { divisions_in_state = { state = PREV size > 7 } } }
+			ROOT = { subtract_from_temp_variable = { _aifc_score = 40 } }
+		}
+
+		# Industry behind the line is worth reaching.
+		if = {
+			limit = { arms_factory > 0 }
+			ROOT = { add_to_temp_variable = { _aifc_score = 15 } }
+		}
+		if = {
+			limit = { industrial_complex > 1 }
+			ROOT = { add_to_temp_variable = { _aifc_score = 15 } }
+		}
+
+		# Occupied territory resists less than the defender's own core.
+		if = {
+			limit = { NOT = { is_core_of = CONTROLLER } }
+			ROOT = { add_to_temp_variable = { _aifc_score = 20 } }
+		}
+	}
+}

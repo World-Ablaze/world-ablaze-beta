@@ -1,0 +1,393 @@
+############################################################################################################
+# WA AI Military V2 - DEFAULT_FRONT_aifc
+############################################################################################################
+# Every ai_strategy in this file has type ∈ { force_concentration_factor, force_concentration_front_factor,
+# force_concentration_target_weight }. Canonical domain: FRONT.
+# See documentation/WA_AI_MILITARY_TYPES_REFERENCE.md.
+############################################################################################################
+#
+#                          AI FORCE CONCENTRATION (AIFC) - SYSTEM REFERENCE
+#
+# WHAT AIFC IS
+# ------------
+# A vanilla engine feature. After a front's *minimum* unit needs are met, the engine may pull a share of
+# the leftover ("non-essential") divisions off the line and mass them into a concentrated push along a
+# chosen axis. It is the difference between an AI that grinds evenly across 2000 km and one that forms a
+# schwerpunkt.
+#
+# The engine exposes three ai_strategy types (documented in vanilla common/ai_strategy/_documentation.md):
+#
+#   force_concentration_factor          Percentage POINTS added to define AIFC_UNIT_RATIO_BASE (0.15).
+#                                       value = 20  ->  15 + 20 = 35 % of surplus units may concentrate.
+#                                       Reaching -15 or below switches AIFC off entirely.
+#   force_concentration_front_factor    Percentage modifier on a front's priority score for receiving the
+#                                       concentrated push. value = 50 means +50 %.
+#                                       Supports `ratio` - only applies if the strategy's targets cover
+#                                       more than that fraction of the front.
+#   force_concentration_target_weight   Percentage modifier on an individual state's score as an
+#                                       offensive objective. value = -60 means -60 %.
+#
+# Both targeted types accept tag / state / strategic_region / area / country_trigger / state_trigger.
+# Inside state_trigger: THIS = the state, FROM = the enemy country, FROM.FROM = us.
+#
+# Related defines (common/defines/00_defines.lua, NOT overridden by WA):
+#   AIFC_UNIT_RATIO_BASE = 0.15         the floor every country starts from
+#   AIFC_UPDATE_FREQUENCY_DAYS = 5      how often the engine re-evaluates - keep state_trigger bodies cheap
+#   AIFC_MAX_NR_FRONTS = 4              how many fronts compete for the push
+#
+#
+# WHY WA HAS ITS OWN SYSTEM
+# -------------------------
+# Vanilla drives AIFC from common/ai_strategy/doctrines.txt, where each land doctrine branch adds
+# force_concentration_factor as the player advances (Mobile Warfare climbing to 70 %). WA replaced the
+# whole doctrine tree - grand doctrines are auftragstaktik / deep_battle / british_professionalism /
+# overwhelming_firepower / noria_tactics / rapid_decision / bushido / integrated_strategy, and the shared
+# progression tracks are tier_0..tier_3 of artillery / armour / infantry / operations. None of vanilla's
+# doctrine tokens exist here, so none of vanilla's AIFC blocks could ever fire.
+#
+# The ladder below is that system rebuilt on WA's own doctrines. It gates on `has_doctrine` and
+# `has_completed_track`, never on country tags, so it covers every country automatically - including
+# minors, subjects and released nations, which all land on integrated_strategy.
+#
+#
+# LAYER MODEL
+# -----------
+#   Layer 1  DOCTRINE LADDER   force_concentration_factor      how much surplus MAY concentrate
+#   Layer 2  POSTURE           force_concentration_factor      should we concentrate AT ALL right now
+#   Layer 3  SECTOR ENGINE     (scripted, WA_AI_AIFC_core.txt) WHERE the schwerpunkt is
+#   Layer 4  CONSUMPTION       front_factor + target_weight    push there, and NOT elsewhere
+#
+# Layers 1, 2 and 4 live in this file. Layer 3 lives in common/scripted_effects/WA_AI_AIFC_core.txt and
+# publishes two country arrays that Layer 4 reads:
+#
+#   WA_AI_AIFC_sector_states       the corridor - enemy states forming the chosen axis
+#   WA_AI_AIFC_sector_objectives   the deep targets inside that corridor
+#
+# Every behavioural switch is in common/scripted_triggers/WA_AI_AIFC_triggers.txt. Do not add gating
+# conditions to the blocks below; add them to WA_AI_AIFC_enabled or WA_AI_AIFC_sector_engine_enabled.
+#
+#
+# THE PAIRING RULE
+# ----------------
+# force_concentration_front_factor and force_concentration_target_weight are RELATIVE scores. Boosting a
+# target without suppressing its alternatives barely moves the outcome - which is why WA's old +200 and
+# +80 entries produced no visible behaviour. Every boost in Layer 4 is therefore paired with a matching
+# suppression of everything outside the sector. If you add a new AIFC block anywhere in the mod, pair it.
+#
+#
+# VALUE BANDS - stay inside these
+# -------------------------------
+#   force_concentration_factor          -100 (hard off) .. +25   (percentage points on a 15 % base)
+#   force_concentration_front_factor    -100 .. +100             (plain percent; below -100 is meaningless)
+#   force_concentration_target_weight   -100 .. +100             (use -99 for catch-all suppression, see below)
+#
+# The catch-all target suppression uses -99 rather than -100 deliberately: it must leave a non-zero
+# fallback so the AI still has a valid objective on the tick where a sector array is momentarily empty.
+#
+#
+# RESULTING CEILINGS (base 15 % + doctrine + full tracks)
+# -------------------------------------------------------
+#   auftragstaktik (GER)             51 %
+#   deep_battle (SOV)                47 %
+#   bushido (JAP)                    47 %
+#   rapid_decision (ITA)             47 %
+#   overwhelming_firepower (USA)     44 %
+#   integrated_strategy (all minors) 44 %
+#   british_professionalism (ENG)    42 %
+#   noria_tactics (FRA)              39 %   - no doctrine base by design; France holds, it does not lunge
+#   any country, 1936, no tracks     20 %
+#
+############################################################################################################
+
+
+############################################################################################################
+# LAYER 1 - DOCTRINE LADDER
+############################################################################################################
+# One base block per grand doctrine, then shared increments per completed progression track.
+# noria_tactics deliberately has no base block: France's doctrine is rotation and defence, so it starts
+# at the engine floor and only climbs through the armour/operations tracks.
+############################################################################################################
+
+WA_AI_MILITARY_AIFC_ladder_auftragstaktik = {
+	enable = {
+		WA_AI_AIFC_enabled = yes
+		has_doctrine = auftragstaktik
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = force_concentration_factor
+		value = 12
+	}
+}
+
+WA_AI_MILITARY_AIFC_ladder_deep_battle = {
+	enable = {
+		WA_AI_AIFC_enabled = yes
+		has_doctrine = deep_battle
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = force_concentration_factor
+		value = 8
+	}
+}
+
+WA_AI_MILITARY_AIFC_ladder_bushido = {
+	enable = {
+		WA_AI_AIFC_enabled = yes
+		has_doctrine = bushido
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = force_concentration_factor
+		value = 8
+	}
+}
+
+WA_AI_MILITARY_AIFC_ladder_rapid_decision = {
+	enable = {
+		WA_AI_AIFC_enabled = yes
+		has_doctrine = rapid_decision
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = force_concentration_factor
+		value = 8
+	}
+}
+
+WA_AI_MILITARY_AIFC_ladder_overwhelming_firepower = {
+	enable = {
+		WA_AI_AIFC_enabled = yes
+		has_doctrine = overwhelming_firepower
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = force_concentration_factor
+		value = 5
+	}
+}
+
+WA_AI_MILITARY_AIFC_ladder_integrated_strategy = {
+	enable = {
+		WA_AI_AIFC_enabled = yes
+		has_doctrine = integrated_strategy
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = force_concentration_factor
+		value = 5
+	}
+}
+
+WA_AI_MILITARY_AIFC_ladder_british_professionalism = {
+	enable = {
+		WA_AI_AIFC_enabled = yes
+		has_doctrine = british_professionalism
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = force_concentration_factor
+		value = 3
+	}
+}
+
+
+############################################################################################################
+# LAYER 1b - SHARED TRACK INCREMENTS
+############################################################################################################
+# All eight grand doctrines share the same tier_N tracks, so these apply to every country regardless of
+# which doctrine it took. Armour and operations are the two tracks that represent the ability to form and
+# exploit a breakthrough; infantry and artillery deliberately grant nothing here.
+# Note: tier_0_operations does not exist in WA's track set - operations starts at tier 1.
+############################################################################################################
+
+WA_AI_MILITARY_AIFC_track_armour_1 = {
+	enable = {
+		WA_AI_AIFC_enabled = yes
+		has_completed_track = tier_1_armour
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = force_concentration_factor
+		value = 4
+	}
+}
+
+WA_AI_MILITARY_AIFC_track_armour_2 = {
+	enable = {
+		WA_AI_AIFC_enabled = yes
+		has_completed_track = tier_2_armour
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = force_concentration_factor
+		value = 4
+	}
+}
+
+WA_AI_MILITARY_AIFC_track_armour_3 = {
+	enable = {
+		WA_AI_AIFC_enabled = yes
+		has_completed_track = tier_3_armour
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = force_concentration_factor
+		value = 4
+	}
+}
+
+WA_AI_MILITARY_AIFC_track_operations_1 = {
+	enable = {
+		WA_AI_AIFC_enabled = yes
+		has_completed_track = tier_1_operations
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = force_concentration_factor
+		value = 4
+	}
+}
+
+WA_AI_MILITARY_AIFC_track_operations_2 = {
+	enable = {
+		WA_AI_AIFC_enabled = yes
+		has_completed_track = tier_2_operations
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = force_concentration_factor
+		value = 4
+	}
+}
+
+WA_AI_MILITARY_AIFC_track_operations_3 = {
+	enable = {
+		WA_AI_AIFC_enabled = yes
+		has_completed_track = tier_3_operations
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = force_concentration_factor
+		value = 4
+	}
+}
+
+
+############################################################################################################
+# LAYER 2 - POSTURE
+############################################################################################################
+# Replaces the old blanket DEFAULT_force_concentration kill switch in common/ai_strategy/default.txt,
+# which set force_concentration_factor = -100 for every country except GER, permanently, from 1936.
+#
+# The intent behind that switch was sound - some countries, some of the time, should hold a linear front
+# rather than mass for a push. Expressed as a situation instead of a permanent global floor, it turns
+# itself back off when the situation improves.
+############################################################################################################
+
+WA_AI_MILITARY_AIFC_posture_hold_the_line = {
+	enable = {
+		WA_AI_AIFC_enabled = yes
+		WA_AI_AIFC_posture_defensive = yes
+	}
+	abort_when_not_enabled = yes
+
+	# -100 on a 15 %..51 % total drives the ratio to zero: no surplus is withheld from the line.
+	ai_strategy = {
+		type = force_concentration_factor
+		value = -100
+	}
+}
+
+WA_AI_MILITARY_AIFC_posture_press_the_advantage = {
+	enable = {
+		WA_AI_AIFC_enabled = yes
+		WA_AI_AIFC_posture_offensive = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = force_concentration_factor
+		value = 8
+	}
+}
+
+
+############################################################################################################
+# LAYER 4 - CONSUMPTION OF THE SCRIPTED SECTOR, WITH PAIRING
+############################################################################################################
+# Reads the two arrays published weekly by WA_AI_AIFC_update_sector (WA_AI_AIFC_core.txt).
+#
+# PERFORMANCE CONTRACT: every state_trigger below is a single is_in_array lookup and nothing more. The
+# engine evaluates these per candidate state, per front, every AIFC_UPDATE_FREQUENCY_DAYS (5). All
+# scoring work happens once a week in the scripted effect and lands in the array. Never put a scope walk,
+# a divisions_in_state check, or arithmetic in these triggers.
+#
+# If the sector engine is disabled, WA_AI_AIFC_has_sector is false, this whole block is inert, and the
+# engine falls back to its own internal target scoring. Layers 1 and 2 keep working.
+############################################################################################################
+
+WA_AI_MILITARY_AIFC_sector_push = {
+	enable = {
+		WA_AI_AIFC_enabled = yes
+		WA_AI_AIFC_has_sector = yes
+		has_war = yes
+	}
+	abort_when_not_enabled = yes
+
+	### FRONT FACTOR - which front receives the concentrated push.
+	# ratio = 0.25: only bid for this front once the sector covers a quarter of it, so a one-state
+	# sliver of a 30-state front does not hijack the whole allocation.
+	ai_strategy = {
+		type = force_concentration_front_factor
+		ratio = 0.25
+		value = 50
+		state_trigger = {
+			is_in_array = { FROM.FROM.WA_AI_AIFC_sector_states = THIS.id }
+		}
+	}
+
+	# PAIRED SUPPRESSION - every front that is not our chosen axis.
+	ai_strategy = {
+		type = force_concentration_front_factor
+		value = -50
+		state_trigger = {
+			NOT = { is_in_array = { FROM.FROM.WA_AI_AIFC_sector_states = THIS.id } }
+		}
+	}
+
+	### TARGET WEIGHT - what inside that front the push actually aims at.
+	ai_strategy = {
+		type = force_concentration_target_weight
+		value = 50
+		state_trigger = {
+			is_in_array = { FROM.FROM.WA_AI_AIFC_sector_objectives = THIS.id }
+		}
+	}
+
+	# PAIRED SUPPRESSION - deliberately keyed on sector_states, not sector_objectives. The objectives are
+	# a subset of the corridor; suppressing everything outside the corridor leaves the whole corridor
+	# viable while the objectives stand out inside it. -99 rather than -100 keeps a non-zero fallback so
+	# the AI is never left with no scoring target at all.
+	ai_strategy = {
+		type = force_concentration_target_weight
+		value = -99
+		state_trigger = {
+			NOT = { is_in_array = { FROM.FROM.WA_AI_AIFC_sector_states = THIS.id } }
+		}
+	}
+}

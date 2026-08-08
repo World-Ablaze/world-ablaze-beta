@@ -11,6 +11,7 @@ This is the **single source of truth** for which domain file every `ai_strategy`
 | `front_unit_request` | FRONT | `_FRONT` | Sizes division allocation against an enemy front. |
 | `front_control` | FRONT | `_FRONT` | Per-area passive/active mode for an existing front. |
 | `front_armor_score` | FRONT | `_FRONT` | Front-line armour scoring. |
+| `force_concentration_factor` | FRONT | `_FRONT` | AIFC master ratio. Percentage points added to define `AIFC_UNIT_RATIO_BASE` (0.15). Owned by the AIFC system - see below. |
 | `force_concentration_front_factor` | FRONT | `_FRONT` | Front allocator concentration tuning. |
 | `force_concentration_target_weight` | FRONT | `_FRONT` | Front allocator target weighting. |
 | `force_ratio` | FRONT | `_FRONT` | Front allocator ratio bias. |
@@ -171,6 +172,25 @@ For each type: total count, where it currently appears (counts per file), recomm
 - Currently in: FRA 2, ITA 1, GER 2.
 - Target: Country (DIPLOMACY domain).
 - Policy: **Exclusive per target**.
+
+### AI Force Concentration (AIFC) - all three `force_concentration_*` types
+
+The AIFC types are owned by a dedicated subsystem and should not be added ad hoc. Before adding any
+`force_concentration_*` entry anywhere, read the system reference in the header of
+`common/ai_strategy/WA_AI_MILITARY_DEFAULT_FRONT_aifc.txt`.
+
+- Generic layer (doctrine ladder, posture, dynamic sector consumption):
+  `common/ai_strategy/WA_AI_MILITARY_DEFAULT_FRONT_aifc.txt`
+- Sector selection (weekly, scripted): `common/scripted_effects/WA_AI_AIFC_core.txt`, `..._helpers.txt`
+- All behavioural switches: `common/scripted_triggers/WA_AI_AIFC_triggers.txt`
+- Country overrides that survive: GER (`GER.txt` legacy + `..._COUNTRY_GER_FRONT.txt`), FRA
+  (`..._COUNTRY_FRA_FRONT.txt`). GER's entries are still split across the legacy vanilla-named file and
+  its `_FRONT` file; consolidating them is outstanding work.
+
+**The pairing rule.** `force_concentration_front_factor` and `force_concentration_target_weight` are
+relative scores. A boost with no matching suppression of the alternatives does close to nothing - this is
+why WA's pre-rework `+200` and `+80` entries produced no visible behaviour. Pair every new boost with a
+suppression of everything outside the intended target set.
 
 ### `force_concentration_target_weight` (5)
 
