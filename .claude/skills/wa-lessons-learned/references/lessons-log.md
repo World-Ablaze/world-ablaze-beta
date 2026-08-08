@@ -161,6 +161,14 @@ Entries dated 2026-08-08 were reconstructed from code archaeology (`# Fix NN:` c
 - **Rule:** Filter blanket character transfers with `limit = { is_advisor = no }` unless moving the advisors is actually the intent. Transferring the AI's generated advisors is rarely worth anything to the receiving country anyway.
 - **Evidence:** `common/on_actions/100_wa_on_actions.txt` `on_capitulation` TUG → XSM. The sibling GNS → GER block a few lines below has the same shape and the same latent warning.
 
+### Frame 0 of an army icon sheet must stay a generic, tintable icon
+
+- **Date:** 2026-08-08
+- **Symptom:** Every army icon in the theatre panel drawn plain white instead of the country's map colour, for all countries — while army *group* icons stayed correctly coloured.
+- **Cause:** `gfx/army_icons/army_icons.txt` lists one `icon = {}` block per frame of the matching `.dds`, in frame order. An icon with no `color_override` line is tinted with the country colour at runtime — that is why vanilla ships its generic symbols (shield, castle, spade, anchor…) as flat greyscale on frames 0-14. `color_override = no` means "keep the texture's own colours" and belongs on named historical insignia, which are authored pre-coloured. The third-party pack in this repo (399 frames instead of vanilla's 81, added in `25e92838e`) inserted 36 Japanese insignia *ahead* of vanilla's generic block, pushing the generics to frames 36-49 and 161-175. Frame 0 became `"Infantry"` — a white NATO symbol carrying `color_override = no` and gated `available = { tag = JAP tag = USA }`. Frame 0 is what an army gets when nothing has been chosen, and that default ignores the `available = {}` gate, so every country's armies rendered it untinted. The army-group sheet kept a generic tintable frame 0, which is why group icons were unaffected.
+- **Rule:** Frame 0 of each `gfx = ...` block must be a generic icon with no `color_override` line. Do not fix this by stripping the flag from greyscale historical insignia — many are legitimately monochrome (Panzer division runes, British formation signs) and are meant to render in their own colours; stripping it there is wrong even though it also removes white. Fix it by moving a generic icon onto frame 0, which means editing the `.dds` sheets and the `.txt` together since the two are index-locked.
+- **Evidence:** `gfx/army_icons/army_icons.txt`; sprite frame counts in `interface/theatreselector_ai.gfx` (399/19) override `interface/theatreselector.gfx` (81/6) because `_ai` sorts later; `interface/theatreselector.gui:73` `orders_group_item` draws `GFX_theatre_army_shield`.
+
 ## Working in this repo
 
 ### Match tabs exactly when editing
