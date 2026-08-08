@@ -135,7 +135,7 @@ raid_type_id = {
 	unit_requirements = {
 		# Battalions...
 		battalion_types = {  # Optional
-			mountaineer_horse_batallion_line = { min = 2 }
+			mountaineer_horse_battalion_line = { min = 2 }
 		}
 
 		# ... or equipment...
