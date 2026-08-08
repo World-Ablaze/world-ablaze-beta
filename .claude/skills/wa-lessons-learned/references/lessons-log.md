@@ -129,6 +129,38 @@ Entries dated 2026-08-08 were reconstructed from code archaeology (`# Fix NN:` c
 - **Rule:** When adding a character used only by a later event or focus, add the matching `recruit_character` — in `history/countries/` if the character should exist from 1936, or in the event's own effect block if a start-of-game entry would show an unwanted greyed-out advisor slot. Role-less placeholder characters are recruited at start by convention (see `AST_iven_mackay`, `SPR_anarchist_commune`).
 - **Evidence:** `history/countries/SPR - Spain.txt:278` (`SPR_julian_gorkin`, used by four `add_country_leader_role` calls in `events/LAR_Spain.txt`); `events/wa_chi_events.txt` `chi_armor.822` (`CHI_huang_guangrei`).
 
+### Never delete an inherited template by a name the annexing country also owns
+
+- **Date:** 2026-08-08
+- **Symptom:** A large part of the German AI army vanished a day or two after the Anschluss.
+- **Cause:** `delete_unit_template_and_units` matches on the template *name string*, and `annex_country = { transfer_troops = yes }` merges the target's templates into the annexer's list without renaming collisions. `ger_armor.904` cleaned up the inherited Austrian templates by name, and with Götterdämmerung installed Austria's OOB (`history/units/AUS_ww_1936.txt`) named its line infantry `"Infanterie Division"` — byte-identical to Germany's own template in `GER_1936.txt` / `GER_1936_land_nsb.txt`. The cleanup therefore destroyed the German line infantry too. Without `disband = yes` the equipment and manpower were destroyed rather than returned. The non-DLC OOB `AUS_1936.txt` used `"Oster Infanterie Division"` and was unaffected, so the bug only reproduced on one DLC branch. It was masked in intent by `ger_armor.901`, which would have deleted GER's starting templates in 1936 — but it is gated on `has_country_flag = infantry_template_ger`, a flag no file in the repo ever sets, so it never fires and GER still holds the vanilla template names in 1938.
+- **Rule:** Templates deleted by name after an annexation must carry a name unique to the *donor* country. Before adding a `delete_unit_template_and_units` line, grep the annexer's `history/units/*.txt` for that exact name. Keep every DLC branch of a country's OOB using the same template names, so a cleanup written against one branch is correct for all of them. Always pass `disband = yes` unless destroying the equipment is the intent.
+- **Evidence:** `events/WA_AI_GER.txt` `ger_armor.904`; `history/units/AUS_ww_1936.txt` vs `history/units/AUS_1936.txt`; `history/countries/AUS - Austria.txt:3-16` (the Götterdämmerung OOB branch); `events/Germany.txt` `germany.4` (`annex_country = { target = AUS transfer_troops = yes }`). The correct pattern is the rest of the family — `ger_armor.903` and `GER_trash_template_fix` in `common/decisions/z_WA_ai_GER.txt` — which only name donor-unique templates (`"Oster Infanterie Division"`, `"Pesi Divize"`, `"French Heavy Tank Division"`).
+
+### A scripted division template must not name equipment the country cannot design
+
+- **Date:** 2026-08-08
+- **Symptom:** `equipmentpool.cpp: Trying to fill variant where none exist from type: anti_tank_equipment belonging to Australia`, repeated once per spawned division and paired with the same line for `anti_air_equipment`.
+- **Cause:** `create_unit` asks the equipment pool to fill every sub-unit in the template. A sub-unit whose archetype has no unlocked *variant* for that country produces this line. Sub-unit availability and equipment availability are two different gates: a `division_template = { ... }` effect happily places a company the country has no design for. `AST_create_australian_infantry_division_template` was copied from `WA_AI_TEMPLATES_GENERIC_HEAVY_INFANTRY_30_MIX_MOT`, which carries AT battalions plus AT and AA companies — but `WA_AI_RESEARCH_needs_anti_tank` and `_needs_anti_air` are false for a non-major before 1940, and `history/countries/AST - Australia.txt` starts with `eng_heavy_anti_air_1` and `eng_heavy_artillery_1` but no light AA and no AT line.
+- **Rule:** Before writing a scripted `division_template`, check each sub-unit's equipment archetype against the country's `set_technology` block and against the matching `WA_AI_RESEARCH_needs_*` trigger. Where the archetype is not guaranteed, build the base template with `division_template` and bolt the conditional part on with `add_units_to_division_template` under `limit = { has_design_based_on = <archetype> }`. Note that `heavy_anti_air_equipment` / `heavy_artillery_equipment` are separate archetypes from `anti_air_equipment` / `artillery_equipment` — having one says nothing about the other.
+- **Evidence:** `common/scripted_effects/AST_scripted_effects.txt`; `common/scripted_triggers/WA_AI_RESEARCH_army.txt:44` and `:59`; `common/scripted_effects/WA_AI_DIVISION_CREATOR_effects.txt:85-95` uses the same `has_design_based_on` gate before spawning.
+
+### Two support companies sharing `same_support_type` cannot coexist in one template
+
+- **Date:** 2026-08-08
+- **Symptom:** `effectimplementation.cpp: add_units_to_division_template Not allowed to add support regiment (Military Police) to template Camicie Nere` — a rejection, not a parse error, so the rest of the effect still applies.
+- **Cause:** WA defines several themed variants of the same support role — `military_police_horse_company_divisional`, `ss_officers_mot_company_divisional`, `blackshirt_officers_mot_company_divisional`, `garde_imperiale_officers_mot_company_divisional`, `nkvd_commissars_officers_mot_company_divisional` — all carrying `same_support_type = divisional_military_police` in `common/units/support_military_police.txt`. The engine allows one per template. `"Camicie Nere"` ships with the blackshirt officers company in its OOB, so `ITA_strengthen_the_blackshirts` could never add a plain MP company on top. The free support slot in the column is irrelevant; the check is on the support type, not on space.
+- **Rule:** Before adding a support company to an existing template, grep that sub-unit's `same_support_type` and check no sub-unit already in the template shares it. The themed officer companies are the usual trap because their names do not contain `military_police`.
+- **Evidence:** `common/national_focus/italy.txt` `ITA_strengthen_the_blackshirts`; `history/units/ITA_1936_land_nsb.txt:52-60`; `common/units/support_military_police.txt:56, 114, 216, 318, 424, 526`.
+
+### `set_nationality` fails on characters that already hold an advisor role
+
+- **Date:** 2026-08-08
+- **Symptom:** `character.cpp: set_nationality: <generated name> already has an advisor role with slot type intelligence_minister`, one line per character, from a blanket `every_character = { set_nationality = X }`.
+- **Cause:** `set_nationality` re-adds the character's roles on the destination country, and the engine refuses a second advisor role in a slot the character already occupies. The characters that trip it are usually the generic advisors the AI hired rather than anything the mod authored — TUG's three scripted characters are a country leader and two commanders, and transferred cleanly.
+- **Rule:** Filter blanket character transfers with `limit = { is_advisor = no }` unless moving the advisors is actually the intent. Transferring the AI's generated advisors is rarely worth anything to the receiving country anyway.
+- **Evidence:** `common/on_actions/100_wa_on_actions.txt` `on_capitulation` TUG → XSM. The sibling GNS → GER block a few lines below has the same shape and the same latent warning.
+
 ## Working in this repo
 
 ### Match tabs exactly when editing
