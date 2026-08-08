@@ -2,6 +2,19 @@
 
 Guidance for AI coding agents working in this repository.
 
+## Agent Skills
+
+`.claude/skills/` contains task-scoped skills that carry the working knowledge needed while editing. Claude Code loads them automatically; other agents should read the relevant `SKILL.md` directly. This file remains the authoritative system-ownership index — the skills route to it.
+
+| Skill | Use it for |
+| --- | --- |
+| `.claude/skills/wa-orientation/SKILL.md` | Entry point. Repo layout, `replace_path` hazards, routing a task to its owner, validation matrix. |
+| `.claude/skills/wa-pdxscript/SKILL.md` | PDXScript syntax, scopes, variables/arrays, `@` constants, `meta_trigger`, silent-failure pitfalls. |
+| `.claude/skills/wa-ai-systems/SKILL.md` | `WA_AI_*` architecture: cadence, CONFIG archetypes, core/strategies/helpers/primitives split, military 4-layer model, railway queue. |
+| `.claude/skills/wa-testing/SKILL.md` | Built-in `tests/` bundles and the `WA_TEST_*` scripted harness. |
+| `.claude/skills/wa-tooling/SKILL.md` | Map generators, `ai_will_do` replacers, dry-run discipline. |
+| `.claude/skills/wa-lessons-learned/SKILL.md` | Known gotchas (`references/lessons-log.md`) and the protocol for recording new ones. |
+
 ## Project Context
 
 World Ablaze Beta is a Hearts of Iron IV gameplay overhaul mod. The repository root is the mod root loaded by HOI4.
