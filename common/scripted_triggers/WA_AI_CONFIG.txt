@@ -359,6 +359,15 @@ WA_AI_CONFIG_focus_on_cruiser_submarines = {
 # Determine if a country needs to focus on land units
 # ============================================================================
 
+# NOTE: these three DIVISIONS_use_* triggers are country IDENTITY markers, not production switches.
+# They are also read by WA_AI_CONFIG_DIVISIONS_uses_motorized_hq (which drives
+# history/general/taog_hq_template.txt), WA_AI_RESEARCH_needs_maintenance_company and
+# WA_AI_RESEARCH_needs_mechanized. Widening them changes army HQ templates and research weighting for
+# every country, not just the production mix.
+#
+# To change how much armour/motorised/mechanised the AI BUILDS, edit the gates in
+# common/scripted_triggers/WA_AI_TEMPLATES_triggers.txt (WA_AI_TEMPLATES_use_*_templates) and the
+# ratios in common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_army_composition.txt instead.
 WA_AI_CONFIG_DIVISIONS_use_armored_divisions = {
 	OR = {
 		original_tag = ENG
@@ -442,6 +451,29 @@ WA_AI_CONFIG_DIVISIONS_use_line_support = {
 				original_tag = YUG
 				original_tag = GRE
 			}
+		}
+	}
+}
+
+# True when the country's army XP income is structurally penalised.
+# Reads the aggregate country modifier, so it covers national spirits, dynamic
+# modifiers and advisors alike, and it closes again by itself once the penalty is
+# lifted. Used to keep "nice to have" template roles shut for countries that cannot
+# fund a second design on top of their line infantry.
+# Catches SOV (purge + red army), CHI/PRC, MAN, JAP, NZL, TUR, BUL, BEL.
+# Does NOT catch a normal GER/ENG/USA/FRA run - their negative XP spirits are
+# civil-war or transient-only.
+WA_AI_CONFIG_has_penalised_army_xp_gain = {
+	OR = {
+		check_variable = {
+			var = modifier@experience_gain_army_factor
+			value = -0.05
+			compare = less_than
+		}
+		check_variable = {
+			var = modifier@experience_gain_factor
+			value = -0.05
+			compare = less_than
 		}
 	}
 }

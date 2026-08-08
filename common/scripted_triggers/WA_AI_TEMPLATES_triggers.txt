@@ -51,7 +51,29 @@ WA_AI_TEMPLATES_use_mountaineers = {
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 }
 
+############################################################################################################
+# ARMOURED / MOBILE PRODUCTION GATES
+############################################################################################################
+# If you ever want to bring more countries into armour/motorised/mechanised production, LOWER the
+# num_of_military_factories thresholds below. Do not remove the OR branches, and do not replace a gate
+# with `always = yes` - these gates are read well beyond production:
+#
+#	use_armor_templates       -> 8 research triggers in WA_AI_RESEARCH_tanks.txt
+#	use_mechanized_templates  -> template design in WA_AI_TEMPLATES_effects.txt, WA_AI_PRODUCTION_tanks.txt
+#	use_motorized_templates   -> template design in WA_AI_TEMPLATES_effects.txt
+#
+# Making any of them unconditionally true would put every country in the world on tank research.
+#
+# Likewise, do NOT widen the WA_AI_CONFIG_DIVISIONS_use_*_divisions triggers: those are country identity
+# markers that drive army HQ templates (uses_motorized_hq -> history/general/taog_hq_template.txt) and
+# research weighting. Tune the thresholds here instead.
+############################################################################################################
+
+# The fallback branch treats motorised as a SUBSTITUTE for armour/mechanised, not a complement: a country
+# only reaches it if it fields neither. Countries that should field motorised alongside armour must be
+# marked via WA_AI_CONFIG_DIVISIONS_use_motorized_divisions instead.
 WA_AI_TEMPLATES_use_motorized_templates = {
+	WA_AI_TEMPLATES_has_motorized_unlocked = yes
 	OR = {
 		WA_AI_CONFIG_DIVISIONS_use_motorized_divisions = yes
 		AND = {
@@ -63,6 +85,13 @@ WA_AI_TEMPLATES_use_motorized_templates = {
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 }
 
+# Motorised was the only division type with no tech floor - it had been hard-disabled worldwide via
+# WA_AI_CONFIG_DIVISIONS_use_motorized_divisions = always no, so it never needed one. Added for parity
+# with every other type, so a country cannot spend part of its ratio on divisions it cannot build.
+WA_AI_TEMPLATES_has_motorized_unlocked = {
+	has_tech = motorised_infantry
+}
+
 WA_AI_TEMPLATES_use_mechanized_templates = {
 	WA_AI_TEMPLATES_has_mechanized_unlocked = yes
 	OR = {
@@ -70,6 +99,15 @@ WA_AI_TEMPLATES_use_mechanized_templates = {
 		num_of_military_factories > 100
 	}
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
+	# A country with a penalised army XP income cannot afford a mechanized design
+	# alongside its infantry and armor designs before the war economy matures.
+	# Without this, SOV picked up WA_MECHANIZED_TEMPLATE in 1939 off the mil-factory
+	# branch and spent XP it needed for its rifle division on a mech design it never
+	# fielded.
+	OR = {
+		date > 1942.1.1
+		NOT = { WA_AI_CONFIG_has_penalised_army_xp_gain = yes }
+	}
 }
 
 WA_AI_TEMPLATES_use_armor_templates = {
@@ -114,7 +152,7 @@ WA_AI_TEMPLATES_use_modern_armor = {
 
 WA_AI_TEMPLATES_switch_from_light_to_medium_armor = {
 	WA_AI_TEMPLATES_use_armor_templates = yes
-	date > 1940.1.1
+	date > 1939.1.1
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 }
 
