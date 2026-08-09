@@ -25,12 +25,17 @@ WA_AI_priority_construction_strategies = {
 			WA_AI_resource_extraction = yes
 
 			WA_AI_fortify_strategic_islands = yes
-
-			WA_AI_build_uk_air_hosting_capacity = yes
 		}
 
 		# WA_AI_convert_MIC_to_CIC_industrial_expansion = yes not needed in WA
 	}
+
+	# Deliberately outside the active_projects/affordability gates: ENG's queue
+	# permanently holds ~20 railway projects, so the < 5 gate above can never open
+	# for the host nation, and the UK capacity deficit grounds the whole allied
+	# air war (campaign 5709c8b9: the entire USAAF parked stateside). The strategy
+	# bounds itself via _project_queue_max and the per-state level cap.
+	WA_AI_build_uk_air_hosting_capacity = yes
 }
 
 ### priority construction strategies
@@ -767,6 +772,25 @@ WA_AI_fortify_strategic_islands = {
 	}
 }
 
+# Adds THIS country's deployed land-based planes (the wings that would compete
+# for UK basing: fighters, bombers, patrol and scouts - carrier airframes
+# excluded) to the temp variable _faction_planes_. Callers must initialize
+# _faction_planes_ first. Country scope.
+WA_AI_PC_add_deployed_land_planes = {
+	add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@small_fighter_airframe }
+	add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@small_fighter_multirole_airframe }
+	add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@small_fighter_interceptor_airframe }
+	add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@small_bomber_airframe }
+	add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_fighter_airframe }
+	add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_fighter_multirole_airframe }
+	add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_bomber_airframe }
+	add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_heavy_bomber_airframe }
+	add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@fast_bomber_airframe }
+	add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_scout_airframe }
+	add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@large_bomber_airframe }
+	add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@large_maritime_patrol_airframe }
+}
+
 # Keep enough air base capacity in central/southern England to host the whole
 # faction's aviation (RAF + USAAF + minors). Without this the allied AI parks
 # its air force in America: the UK bases in range of the front fill up and the
@@ -774,7 +798,10 @@ WA_AI_fortify_strategic_islands = {
 # Atlantic.
 # ENG builds as host nation. USA acts as backup builder (air_base has
 # allied_build = yes) whenever ENG cannot act on the deficit itself: ENG is
-# player-controlled, its PC queue is full, or it lacks civilian factories.
+# player-controlled or lacks civilian factories. This strategy is called outside
+# the dispatcher's active_projects/affordability gates (see the caller): ENG's
+# queue is permanently railway-saturated, so a busy-queue gate would kill the
+# host-nation branch for the whole war.
 # ROOT = ENG or USA. Called from WA_AI_priority_construction_strategies
 # (WA_AI_background.1, ~2 day cadence, AI only).
 WA_AI_build_uk_air_hosting_capacity = {
@@ -787,7 +814,6 @@ WA_AI_build_uk_air_hosting_capacity = {
 		limit = {
 			has_war = yes
 			any_enemy_country = { capital_scope = { is_on_continent = europe } }
-			check_variable = { ROOT.WA_AI_PC_active_projects < 5 }
 			num_of_civilian_factories_available_for_projects > 15
 			OR = {
 				original_tag = ENG
@@ -798,7 +824,6 @@ WA_AI_build_uk_air_hosting_capacity = {
 					ENG = {
 						OR = {
 							is_ai = no
-							check_variable = { WA_AI_PC_active_projects > 4 }
 							num_of_civilian_factories_available_for_projects < 16
 						}
 					}
@@ -807,10 +832,16 @@ WA_AI_build_uk_air_hosting_capacity = {
 		}
 
 		### how many planes the faction may want to base in the UK
+		# num_deployed_planes cannot be read as a set_temp_variable rvalue (campaign
+		# 5709c8b9: every other gate provably passed and the deficit branch never
+		# fired). The per-airframe form num_deployed_planes_with_type@X is script-
+		# readable (mission_calculations_effects.txt relies on it), so sum the
+		# land-based airframes via WA_AI_PC_add_deployed_land_planes.
 
-		set_temp_variable = { _faction_planes_ = num_deployed_planes }
+		set_temp_variable = { _faction_planes_ = 0 }
+		WA_AI_PC_add_deployed_land_planes = yes
 		for_each_scope_loop = { array = allies
-			add_to_temp_variable = { _faction_planes_ = num_deployed_planes }
+			WA_AI_PC_add_deployed_land_planes = yes
 		}
 
 		set_temp_variable = { _uk_target_capacity_ = _faction_planes_ }
