@@ -14,6 +14,7 @@ Guidance for AI coding agents working in this repository.
 | `.claude/skills/wa-testing/SKILL.md` | Built-in `tests/` bundles and the `WA_TEST_*` scripted harness. |
 | `.claude/skills/wa-tooling/SKILL.md` | Map generators, `ai_will_do` replacers, dry-run discipline. |
 | `.claude/skills/wa-lessons-learned/SKILL.md` | Known gotchas (`references/lessons-log.md`) and the protocol for recording new ones. |
+| `.claude/skills/wa-savegame-analysis/SKILL.md` | Reading HOI4 savegames: campaign identity, extracting variables/ideas/flags, cross-save trends. |
 
 ## Project Context
 
