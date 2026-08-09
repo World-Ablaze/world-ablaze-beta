@@ -94,7 +94,26 @@ WA_AI_lend_lease = {
 
 			PREV = {
 				OR = {
-					WA_AI_democratic_nation = yes
+					AND = {
+						WA_AI_democratic_nation = yes
+
+						# Non-intervention: democracies stay out of other countries' civil wars
+						# unless the enemy side is itself fascist- or communist-aligned. This is
+						# the Spanish Civil War case - the Republic's enemy rules as neutrality,
+						# so ENG/FRA/USA no longer drip-feed the Republicans while the
+						# Non-Intervention Committee is supposedly in force. A democratic side
+						# fighting openly fascist or communist rebels still gets aid.
+						OR = {
+							has_civil_war = no
+
+							any_enemy_country = {
+								OR = {
+									WA_AI_fascist_nation = yes
+									WA_AI_communist_nation = yes
+								}
+							}
+						}
+					}
 
 					AND = {
 						WA_AI_communist_nation = yes
@@ -194,6 +213,23 @@ WA_AI_lend_lease = {
 						any_country = {
 							OR = { tag = PREV is_in_faction_with = PREV is_subject_of = PREV has_war_together_with = PREV }
 							any_neighbor_country = { OR = { tag = ROOT is_in_faction_with = ROOT is_subject_of = ROOT has_war_together_with = ROOT } }
+						}
+					}
+
+					# Fascist sponsors back the anti-leftist side of a civil war (Spanish Civil
+					# War pattern: Nationalist Spain rules as neutrality, so the fascist-target
+					# leg above never matches it). Purely dynamic gate - any nonaligned civil-war
+					# belligerent whose enemy is democratic- or communist-aligned qualifies, in
+					# any timeline.
+					AND = {
+						WA_AI_nonaligned_nation = yes
+						has_civil_war = yes
+
+						any_enemy_country = {
+							OR = {
+								WA_AI_democratic_nation = yes
+								WA_AI_communist_nation = yes
+							}
 						}
 					}
 

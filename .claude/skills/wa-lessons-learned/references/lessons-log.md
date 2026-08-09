@@ -327,3 +327,39 @@ restored in GER.txt with load-bearing comments. Treat any future deletion of for
 blocks from country files as a change that REQUIRES a launch test, and keep the repro harness
 (scratchpad hoi4_repro.py pattern: --start_tag launch + crashes-folder watch) - it turns a
 "game crashes, no error logged" report into a ~1-minute-per-probe bisect.
+
+## 2026-08-09 - The Spanish Civil War was decided by the WA_AI lend-lease drip, not by opening strength
+
+**Symptom:** Republicans (D02) win the SCW in every campaign, even after ea7abaf7f front-loaded
+the Nationalists (opening reinforcement, retargeted front_control, trimmed International
+Brigades). Post-fix campaign c9ab1062: SPR was WINNING in Jan 1939 (19 states vs 7, more
+divisions, more manpower) and still lost a 6-year war by 1942.9.
+
+**Cause (layered, all verified against saves SWE_1937_11_18_05 / SWE_1939_01_02_22):**
+- `WA_AI_lend_lease` (WA_AI_LEND_LEASE_triggers.txt) let democratic senders relieve any
+  democratic target - D02 held `WA_AI_lend_lease_from_ENG/FRA/USA` flags all war and pulled
+  6-24k rifles/week whenever it starved. The fascist-sender branch required the target to be
+  `WA_AI_fascist_nation`, and Nationalist Spain rules as **neutrality** (fascism popularity never
+  exceeds it), so GER/ITA never qualified: SPR had zero relief donors for six years.
+- The volunteer defines (`VOLUNTEERS_PER_TARGET_PROVINCE = 0.005`) cap sponsors at ~1-2 token
+  divisions; the sponsor commitment idea `SPA_spanish_civil_war_commitments` (GER/POR) had **no
+  send_volunteer_size**, unlike its ITA twin (+3) and POR's own idea (+3) - the GER leg of the
+  aid chain was tension-discounts only.
+- lar_spain.2 gives every Republican "División de Infantería" two extra artillery slots via
+  `add_units_to_division_template` (all six options) with no Nationalist equivalent, and
+  `SPR_soviet_volunteer_airforce` hands the Republicans 300 free fighters with no volunteer gate
+  and no Nationalist mirror.
+
+**Rule:** when a war's outcome reverses months after the last balance change, audit the FLOWS
+(lend-lease relief, timed-idea expiry, focus-tree exhaustion), not the opening state - a one-shot
+opening buff cannot outweigh a permanent weekly supply channel. And when an ideology-gated WA_AI
+rule must catch a country, check the country's RULING party against `WA_AI_*_nation` semantics:
+popularity-plurality only reclassifies a neutrality government when the other ideology is
+strictly largest.
+
+**Evidence:** campaign c9ab1062 probes (D02 `WA_AI_lend_lease_from_ENG/FRA/USA` flags vs none on
+SPR; SPR focus tree idle + single-line production by 1939.1); fix commit following ea7abaf7f
+(WA_AI_LEND_LEASE_triggers.txt fascist/democratic branches, WA_SPA_civil_war_effects.txt
+artillery parity, decisions/SPR.txt SPA_german_volunteer_airforce). A send_volunteer_size = 3
+on SPA_spanish_civil_war_commitments was proposed for parity with the ITA/POR sponsor ideas but
+deliberately not adopted - GER/POR sponsors stay at the define-capped 1-2 token volunteers.
