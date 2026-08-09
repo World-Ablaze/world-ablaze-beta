@@ -143,6 +143,19 @@ WA_AI_AIFC_select_sector = {
 		set_variable = { WA_AI_AIFC_sector_anchor = _aifc_best_id }
 		set_variable = { WA_AI_AIFC_sector_age = 0 }
 
+		# Publish who the sector is against: the anchor's controller, stored as a country id on ROOT
+		# and marked with a per-owner flag on the enemy. The flag is what ai_strategy country_trigger
+		# blocks can read cheaply (armor-follows-schwerpunkt in WA_AI_MILITARY_DEFAULT_FRONT_aifc.txt);
+		# clearing happens in WA_AI_AIFC_clear_sector, which runs at the head of every re-selection.
+		var:_aifc_best_id = {
+			CONTROLLER = {
+				ROOT = { set_variable = { WA_AI_AIFC_sector_enemy = PREV.id } }
+			}
+		}
+		var:WA_AI_AIFC_sector_enemy = {
+			set_country_flag = WA_AI_AIFC_sector_enemy_of_@PREV
+		}
+
 		add_to_array = { WA_AI_AIFC_sector_states = _aifc_best_id }
 		add_to_array = { WA_AI_AIFC_sector_objectives = _aifc_best_id }
 

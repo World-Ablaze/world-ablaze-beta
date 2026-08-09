@@ -142,10 +142,11 @@ For each type: total count, where it currently appears (counts per file), recomm
 - Currently in: ALLIES 28, FRA 6.
 - Target: Faction for ALLIES (FRONT domain) and Country for FRA.
 
-### `front_armor_score` (20)
+### `front_armor_score` (25)
 
-- Currently in: SOV 13, GER 7.
-- Target: Country (FRONT domain). Possibly Default for major-continental archetype if pattern repeats elsewhere in Phase 4.
+- Currently in: SOV 13, GER 7, ALLIES 2 (`armor_to_european_front`: +500 GER / +100 ITA for western-allies majors), USA 1 (`armor_europe_first`: -300 JAP), DEFAULT 2 (`AIFC_armor_follows_schwerpunkt`: +400 toward the AIFC sector enemy / -150 elsewhere, tag-free via the `WA_AI_AIFC_sector_enemy_of_<TAG>` flag - works for any country with tanks in any world state).
+- Target: Country (FRONT domain); Faction for coalition-wide armour steering; Default for the AIFC-driven generic rule.
+- Note: this type was inert mod-wide until commit af705e640 added `front_role_override = offence` to the armour/mechanized/motorized role blocks in `common/ai_templates` - the engine keys armour front assignment on those roles.
 
 ### `strategic_air_importance` (18)
 

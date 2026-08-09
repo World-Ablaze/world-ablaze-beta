@@ -216,8 +216,15 @@ regardless of local superiority (the 1944 France passivity bug).
 Published state per AI country: `WA_AI_MILITARY_posture` (0 = hold, 1 = execute, 2 = attrition grind),
 `WA_AI_MILITARY_posture_vs_<TAG>` per major enemy, and the `WA_AI_AIFC_hold_the_line` flag while the hard
 brake is engaged (which also drops AIFC into linear defence). Level 1 keys on
-`fighting_army_strength_ratio` (engaged armies only - expeditionary forces count wherever they stand);
-level 2 fires when the enemy is at maximum mobilization with a nearly dry manpower pool while our faction
+`fighting_army_strength_ratio` (the engine's quality-weighted estimate) OR on the front-local branch:
+the divisions our side actually has standing on the shared contact line outweigh the enemy divisions
+across it by 1.5x (banded `divisions_in_state` counting, armour double-weighted; skipped when the
+pairwise ratio already passes). The local branch is load-bearing - the pairwise ratio compares one
+country against the enemy's whole fighting army, so without it no Allied member except the USA ever
+passed vs Germany and the coalition never attacked together (July 1944 diagnosis: ENG at level 1 vs
+every Axis minor, 0 vs GER/ITA/JAP). It is deliberately local rather than a global force sum: global
+counts are quality-blind and mix separate wars (Burma divisions voting on France, Germany's
+SOV-facing army inflating the denominator the western Allies face). Level 2 fires when the enemy is at maximum mobilization with a nearly dry manpower pool while our faction
 holds a deep reserve - attrition is then profitable even at odds below the level-1 bar, executed
 `careful`. The long-orphaned `WA_AI_defensive_front_strategy` low-equipment flag
 (`WA_AI_misc_effects.txt`) is the primary hard-brake input and now has a Default-layer `front_control`

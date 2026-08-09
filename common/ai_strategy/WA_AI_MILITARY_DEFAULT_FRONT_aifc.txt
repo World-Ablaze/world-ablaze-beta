@@ -63,6 +63,10 @@
 #   WA_AI_AIFC_sector_states       the corridor - enemy states forming the chosen axis
 #   WA_AI_AIFC_sector_objectives   the deep targets inside that corridor
 #
+# plus the sector's enemy, published as WA_AI_AIFC_sector_enemy (country id on the owner) and as a
+# WA_AI_AIFC_sector_enemy_of_<TAG> flag on that enemy - consumed by the tag-free
+# armor-follows-schwerpunkt block at the bottom of this file.
+#
 # Sector selection anchors on land contact. Countries with no enemy-adjacent controlled state of their
 # own fall through to an expeditionary pass (Fix 28, WA_AI_AIFC_helpers.txt) that anchors on faction or
 # subject-relation territory holding at least 3 ROOT divisions - without it, an expeditionary power such
@@ -396,6 +400,55 @@ WA_AI_MILITARY_AIFC_sector_push = {
 		value = -99
 		state_trigger = {
 			NOT = { is_in_array = { FROM.FROM.WA_AI_AIFC_sector_states = THIS.id } }
+		}
+	}
+}
+
+
+# purpose: armour follows the schwerpunkt, for EVERY country that owns tanks - the generic complement
+#          to the tag-keyed front_armor_score steering (SOV/GER/ALLIES entries). The sector engine
+#          publishes who the chosen corridor is against (WA_AI_AIFC_sector_enemy_of_<TAG> flag on the
+#          enemy, set in WA_AI_AIFC_helpers.txt, retracted in WA_AI_AIFC_clear_sector); this block
+#          pulls the owner's armour to that enemy's front and eases it off every other front. Fully
+#          tag-free, so it works in ahistorical games where the fronts are whoever the world produced.
+#          Values sit below the faction/country steering entries (+500 GER etc.), which add on top
+#          where both apply - the schwerpunkt bias must not override an explicit historical rule.
+#          Note: front_armor_score targeting via country_trigger relies on the strategy system's
+#          generic country targeting (same field front_control uses); if error.log ever objects to
+#          it, the fallback is a Country-layer id-keyed generation of this rule.
+# range:   -150 to +400
+# policy:  Additive per enemy front
+# domain:  FRONT
+WA_AI_MILITARY_AIFC_armor_follows_schwerpunkt = {
+	enable = {
+		WA_AI_AIFC_enabled = yes
+		WA_AI_AIFC_has_sector = yes
+		has_war = yes
+		has_army_size = {
+			size > 2
+			type = armor
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_armor_score
+		value = 400
+		country_trigger = {
+			has_war_with = ROOT
+			has_country_flag = WA_AI_AIFC_sector_enemy_of_@ROOT
+		}
+	}
+
+	# PAIRED SUPPRESSION - armour eases off the fronts that are not the chosen axis. Milder than the
+	# boost so an explicit faction/country entry (or plain terrain scoring on a good front) can still
+	# hold armour elsewhere when it has reason to.
+	ai_strategy = {
+		type = front_armor_score
+		value = -150
+		country_trigger = {
+			has_war_with = ROOT
+			NOT = { has_country_flag = WA_AI_AIFC_sector_enemy_of_@ROOT }
 		}
 	}
 }

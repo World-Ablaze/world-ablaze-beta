@@ -28,7 +28,9 @@
 
 ### Posture eligibility constants (must match common/scripted_effects/WA_AI_MILITARY_posture_effects.txt)
 @WA_AI_POSTURE_MIN_EQ = 0.9			# fielded-equipment ratio required to order any execution
-@WA_AI_POSTURE_BRAKE_SURRENDER = 0.2	# collapsing countries hold the line with everything
+@WA_AI_POSTURE_BRAKE_SURRENDER = 0.2	# lost ground brakes only a weakened army (see hard-brake trigger)
+@WA_AI_POSTURE_BRAKE_SURRENDER_HARD = 0.45	# near-capitulation brakes unconditionally
+@WA_AI_POSTURE_BRAKE_MIN_MP = 150000	# manpower floor for the weakened-army test (matches MIN_OWN_MP)
 
 
 ############################################################################################################
@@ -77,7 +79,19 @@ WA_AI_MILITARY_posture_hard_brake = {
 			check_variable = { WA_AI_fielded_eq_ratio < @WA_AI_POSTURE_MIN_EQ }
 		}
 
-		surrender_progress > @WA_AI_POSTURE_BRAKE_SURRENDER
+		# Lost ground brakes only an army that is also materially weakened. Surrender progress alone
+		# must not latch the brake: 1943-44 SOV sits above 0.2 for years with 350+ divisions at full
+		# equipment, and braking it locked out the entire Soviet counterattack arc (Aug 1944 finding).
+		AND = {
+			surrender_progress > @WA_AI_POSTURE_BRAKE_SURRENDER
+			OR = {
+				check_variable = { WA_AI_fielded_eq_ratio < @WA_AI_POSTURE_MIN_EQ }
+				has_manpower < @WA_AI_POSTURE_BRAKE_MIN_MP
+			}
+		}
+
+		# Near-capitulation is different: two more cities and the war is over, every division holds.
+		surrender_progress > @WA_AI_POSTURE_BRAKE_SURRENDER_HARD
 
 		# Deliberately no fuel condition: fuel_ratio sits near zero for low-industry countries whose
 		# infantry armies attack fine without it (China vs Japan). Add a fuel brake only if it can be
