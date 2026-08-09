@@ -10,12 +10,22 @@
 # Phase 2 split: FRONT domain blocks.
 # Phase 2 split: FRONT domain blocks.
 
-WA_AI_MILITARY_SPA_nationalist_northern_push = {
+# Replaces WA_AI_MILITARY_SPA_nationalist_northern_push.
+# The old block aimed front_control at states 796 (Cantabria) and 864 (Pais Vasco) and
+# expired 1937.1.1. Under the La Resistance split those two states are transferred to the
+# Nationalists at war start (events/LAR_Spain.txt, both branches), so the orders pointed at
+# territory SPA already held, and SPA then had no front_control order at all between
+# 1937.1.1 and the 1938.1.1 broad push - the decisive year of the civil war.
+# Retargeted onto the three strategic regions that actually contain Republican territory
+# (289 Northern Spain holds Madrid, 41 Southern Spain holds Granada/Cordoba,
+# 216 Eastern Spain holds Catalonia/Valencia/Murcia) and extended to close the gap.
+WA_AI_MILITARY_SPA_nationalist_early_push = {
 	enable = {
 		OR = {
 			tag = SPA
+			tag = SPR
 		}
-		date < 1937.1.1
+		date < 1938.1.1
 		OR = {
 			has_government = fascism
 			has_government = neutrality
@@ -23,23 +33,39 @@ WA_AI_MILITARY_SPA_nationalist_northern_push = {
 		NOT = {
 			has_global_flag = scw_over
 		}
+		# Preserve WA_AI_MILITARY_SPR_dont_attack_at_startup_of_civil_war: no offensive
+		# orders during the three-day settling window after the split.
+		NOT = {
+			has_global_flag = SPR_civil_war_startup
+		}
 	}
 
 	abort_when_not_enabled = yes
 
+	# Madrid axis - the main effort.
 	ai_strategy = {
 		type = front_control
-		state = 796
+		strategic_region = 289
 		ordertype = front
-		execution_type = rush
+		execution_type = balanced
 		execute_order = yes
 	}
 
+	# Andalusia - link up the Army of Africa bridgehead with the northern armies.
 	ai_strategy = {
 		type = front_control
-		state = 864
+		strategic_region = 41
 		ordertype = front
-		execution_type = rush
+		execution_type = balanced
+		execute_order = yes
+	}
+
+	# Aragon toward Catalonia - secondary, held rather than pushed in the first year.
+	ai_strategy = {
+		type = front_control
+		strategic_region = 216
+		ordertype = front
+		execution_type = careful
 		execute_order = yes
 	}
 }
