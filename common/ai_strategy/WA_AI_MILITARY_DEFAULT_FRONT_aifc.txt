@@ -64,8 +64,10 @@
 #   WA_AI_AIFC_sector_objectives   the deep targets inside that corridor
 #
 # plus the sector's enemy, published as WA_AI_AIFC_sector_enemy (country id on the owner) and as a
-# WA_AI_AIFC_sector_enemy_of_<TAG> flag on that enemy - consumed by the tag-free
-# armor-follows-schwerpunkt block at the bottom of this file.
+# WA_AI_AIFC_sector_enemy_of_<TAG> flag on that enemy. The variable drives the scripted
+# armor-follows-schwerpunkt steering (WA_AI_AIFC_armor_reconcile in the helpers - see the note at the
+# bottom of this file on why that rule could not be an ai_strategy block); the flag is a public marker
+# with no current consumer.
 #
 # Sector selection anchors on land contact and is front-first: each candidate's launching pad (ROOT's
 # own divisions in the adjacent friendly states) is measured, the strongest pad names the MAIN ENEMY,
@@ -411,50 +413,23 @@ WA_AI_MILITARY_AIFC_sector_push = {
 }
 
 
-# purpose: armour follows the schwerpunkt, for EVERY country that owns tanks - the generic complement
-#          to the tag-keyed front_armor_score steering (SOV/GER/ALLIES entries). The sector engine
-#          publishes who the chosen corridor is against (WA_AI_AIFC_sector_enemy_of_<TAG> flag on the
-#          enemy, set in WA_AI_AIFC_helpers.txt, retracted in WA_AI_AIFC_clear_sector); this block
-#          pulls the owner's armour to that enemy's front and eases it off every other front. Fully
-#          tag-free, so it works in ahistorical games where the fronts are whoever the world produced.
-#          Values sit below the faction/country steering entries (+500 GER etc.), which add on top
-#          where both apply - the schwerpunkt bias must not override an explicit historical rule.
-#          Note: front_armor_score targeting via country_trigger relies on the strategy system's
-#          generic country targeting (same field front_control uses); if error.log ever objects to
-#          it, the fallback is a Country-layer id-keyed generation of this rule.
-# range:   -150 to +400
-# policy:  Additive per enemy front
-# domain:  FRONT
-WA_AI_MILITARY_AIFC_armor_follows_schwerpunkt = {
-	enable = {
-		WA_AI_AIFC_enabled = yes
-		WA_AI_AIFC_has_sector = yes
-		has_war = yes
-		has_army_size = {
-			size > 2
-			type = armor
-		}
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = front_armor_score
-		value = 400
-		country_trigger = {
-			has_war_with = ROOT
-			has_country_flag = WA_AI_AIFC_sector_enemy_of_@ROOT
-		}
-	}
-
-	# PAIRED SUPPRESSION - armour eases off the fronts that are not the chosen axis. Milder than the
-	# boost so an explicit faction/country entry (or plain terrain scoring on a good front) can still
-	# hold armour elsewhere when it has reason to.
-	ai_strategy = {
-		type = front_armor_score
-		value = -150
-		country_trigger = {
-			has_war_with = ROOT
-			NOT = { has_country_flag = WA_AI_AIFC_sector_enemy_of_@ROOT }
-		}
-	}
-}
+############################################################################################################
+# RELOCATED - armor-follows-schwerpunkt now lives in script (WA_AI_AIFC_armor_reconcile, helpers)
+############################################################################################################
+# The ai_strategy block that stood here pulled every tank-owning country's armour toward the AIFC
+# sector enemy (+400) and eased it off every other front (-150), targeted tag-free through
+#   country_trigger = { has_country_flag = WA_AI_AIFC_sector_enemy_of_@ROOT }
+# It never parsed: country_trigger / state_trigger are only accepted by the front-targeted strategy
+# types (front_control, front_unit_request, invasion_unit_request - documentation.info lines 228-266)
+# and by the force_concentration_* types Layer 4 uses. front_armor_score is id-keyed only - every
+# other user in this mod writes `id = "GER"` - so a runtime-chosen target cannot be expressed in an
+# ai_strategy file at all ("Unexpected token: country_trigger", ai_strategy.cpp).
+#
+# The rule now lives as scripted add_ai_strategy emission with a dynamic id:
+#   common/scripted_effects/WA_AI_AIFC_helpers.txt   WA_AI_AIFC_armor_reconcile + entry emitters
+#   common/scripted_effects/WA_AI_AIFC_core.txt      called at the end of every weekly update_sector
+#   common/scripted_triggers/WA_AI_AIFC_triggers.txt WA_AI_AIFC_armor_steering_enabled (the switch)
+# Same values (+400 boost / -150 paired suppression), same tag-free coverage, and it reads
+# WA_AI_AIFC_sector_enemy directly. The WA_AI_AIFC_sector_enemy_of_<TAG> flag is still published as
+# a public marker but the steering no longer depends on it.
+############################################################################################################

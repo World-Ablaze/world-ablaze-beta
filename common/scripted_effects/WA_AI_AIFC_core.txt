@@ -18,6 +18,10 @@
 #		WA_AI_AIFC_sector_anchor       state ID the sector was built around
 #		WA_AI_AIFC_sector_age          weeks since selection, drives forced re-evaluation
 #
+#	And, downstream of the sector, dynamic front_armor_score strategy entries steering armour toward
+#	the sector enemy (WA_AI_AIFC_armor_reconcile in the helpers, called at the end of every weekly
+#	update - the type is id-keyed so this cannot be a static ai_strategy block).
+#
 #	WHY ARRAYS AND NOT HARDCODED STATE LISTS
 #	----------------------------------------
 #	The engine re-evaluates AIFC every AIFC_UPDATE_FREQUENCY_DAYS (5) and calls the ai_strategy
@@ -94,6 +98,13 @@ WA_AI_AIFC_update_sector = {
 			}
 		}
 	}
+
+	# Armour steering follows whatever the maintenance above decided. Runs every weekly tick, not just
+	# on re-selection: it diffs applied front_armor_score entries against the current sector enemy and
+	# war set (WA_AI_AIFC_armor_reconcile, helpers), so a stable sector reconciles to zero work while
+	# enemies joining/leaving the war are picked up within a week. Also handles full retirement when
+	# the branch above cleared the sector or steering became ineligible.
+	WA_AI_AIFC_armor_reconcile = yes
 }
 
 
@@ -113,9 +124,10 @@ WA_AI_AIFC_clear_sector = {
 	clear_variable = WA_AI_AIFC_sector_anchor
 	clear_variable = WA_AI_AIFC_sector_age
 
-	# Retract the sector-enemy marker flag (set in WA_AI_AIFC_select_sector, consumed by the
-	# armor-follows-schwerpunkt block in WA_AI_MILITARY_DEFAULT_FRONT_aifc.txt). Leaving it on a
-	# stale enemy would keep pulling our armour toward a front we abandoned.
+	# Retract the sector-enemy marker flag (set in WA_AI_AIFC_select_sector). The armour steering
+	# that reads the sector enemy (WA_AI_AIFC_armor_reconcile, helpers) works off the
+	# WA_AI_AIFC_sector_enemy variable cleared just below; the flag is a cheap public marker kept
+	# in sync for any future ai_strategy country_trigger consumer on a type that supports one.
 	if = {
 		limit = { has_variable = WA_AI_AIFC_sector_enemy }
 		var:WA_AI_AIFC_sector_enemy = {

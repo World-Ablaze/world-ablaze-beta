@@ -144,9 +144,11 @@ For each type: total count, where it currently appears (counts per file), recomm
 
 ### `front_armor_score` (25)
 
-- Currently in: SOV 13, GER 7, ALLIES 2 (`armor_to_european_front`: +500 GER / +100 ITA for western-allies majors), USA 1 (`armor_europe_first`: -300 JAP), DEFAULT 2 (`AIFC_armor_follows_schwerpunkt`: +400 toward the AIFC sector enemy / -150 elsewhere, tag-free via the `WA_AI_AIFC_sector_enemy_of_<TAG>` flag - works for any country with tanks in any world state).
-- Target: Country (FRONT domain); Faction for coalition-wide armour steering; Default for the AIFC-driven generic rule.
+- Currently in: SOV 13, GER 7, ALLIES 2 (`armor_to_european_front`: +500 GER / +100 ITA for western-allies majors), USA 1 (`armor_europe_first`: -300 JAP).
+- Target: Country (FRONT domain); Faction for coalition-wide armour steering.
 - Note: this type was inert mod-wide until commit af705e640 added `front_role_override = offence` to the armour/mechanized/motorized role blocks in `common/ai_templates` - the engine keys armour front assignment on those roles.
+- **`front_armor_score` is id-keyed only.** It accepts `id = "TAG"` and nothing else - no `tag`, `state`, `strategic_region`, `area`, `country_trigger` or `state_trigger`. The DEFAULT-layer `AIFC_armor_follows_schwerpunkt` entry tried to target it with `country_trigger` and never parsed (`ai_strategy.cpp: Unexpected token: country_trigger`). Only `front_control`, `front_unit_request` and `invasion_unit_request` take the generic country/state targeting fields (see `common/ai_strategy/documentation.info` lines 228-266); the `force_concentration_*` types additionally take `state_trigger`.
+- The tag-free AIFC armour steering (+400 toward the sector enemy / -150 toward every other war enemy) is therefore **scripted, not an ai_strategy block**: `WA_AI_AIFC_armor_reconcile` in `common/scripted_effects/WA_AI_AIFC_helpers.txt` emits `add_ai_strategy = { type = front_armor_score id = <runtime tag> ... }` via `meta_effect` weekly, retiring entries by exact negation (there is no `remove_ai_strategy`). Switch: `WA_AI_AIFC_armor_steering_enabled` in `WA_AI_AIFC_triggers.txt`. These scripted instances stack additively with the static SOV/GER/ALLIES/USA entries above, sitting below them by design.
 
 ### `strategic_air_importance` (18)
 

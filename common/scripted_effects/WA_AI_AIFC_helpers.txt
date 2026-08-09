@@ -1,6 +1,6 @@
 ############################################################################################################
 #	World Ablaze AI mod - AI Force Concentration (AIFC) - Helpers Module
-#	Candidate collection, scoring, and sector construction
+#	Candidate collection, scoring, sector construction, and armour steering (front_armor_score emission)
 ############################################################################################################
 #	System overview and value bands: common/ai_strategy/WA_AI_MILITARY_DEFAULT_FRONT_aifc.txt
 #	Lifecycle and cadence:           common/scripted_effects/WA_AI_AIFC_core.txt
@@ -373,4 +373,234 @@ WA_AI_AIFC_score_state = {
 			ROOT = { add_to_temp_variable = { _aifc_score = 20 } }
 		}
 	}
+}
+
+
+############################################################################################################
+#	ARMOR-FOLLOWS-SCHWERPUNKT - scripted front_armor_score steering
+############################################################################################################
+#	Pulls ROOT's armour toward the sector enemy (+400) and eases it off every other war enemy's front
+#	(-150), tag-free, for any country in any world state. Switch: WA_AI_AIFC_armor_steering_enabled in
+#	WA_AI_AIFC_triggers.txt.
+#
+#	WHY SCRIPT AND NOT AN ai_strategy FILE
+#	--------------------------------------
+#	front_armor_score is id-keyed only - it accepts id = "TAG" and none of the generic targeting fields
+#	(the country_trigger version in WA_AI_MILITARY_DEFAULT_FRONT_aifc.txt never parsed:
+#	"Unexpected token: country_trigger"). A dynamic target therefore needs add_ai_strategy with a tag
+#	that is only known at runtime, which is what the meta_effect emitters below do: [?var.GetTag]
+#	renders the country id in WA_AI_AIFC_sector_enemy as its literal tag inside the compiled effect
+#	(same idiom as ASG_scripted_effects.txt tag curves and the railway [?state_id_] array access).
+#
+#	RECONCILIATION MODEL
+#	--------------------
+#	There is no remove_ai_strategy, and front_armor_score entries are additive per id - so an entry is
+#	"retired" by adding its exact negation, and the books must track what is currently applied:
+#
+#		WA_AI_AIFC_armor_boost        country id currently holding the +400 entry (absent = none)
+#		WA_AI_AIFC_armor_suppressed   array of country ids currently holding a -150 entry
+#
+#	WA_AI_AIFC_armor_reconcile runs every weekly tick (end of WA_AI_AIFC_update_sector) and diffs the
+#	books against the desired state. Unchanged entries are NOT touched - a stable sector against a
+#	stable enemy set reconciles to zero work. Entries churn only when the sector enemy changes, a new
+#	enemy joins the war, an enemy leaves it, or the steering switch flips.
+#
+#	ENTRY ACCUMULATION (accepted, bounded)
+#	--------------------------------------
+#	Every churn leaves a +X/-X pair of strategy instances on the country, serialized in the save.
+#	Sectors re-select at most every @WA_AI_AIFC_SECTOR_MAX_AGE weeks and the enemy only changes on a
+#	subset of re-selections, so a full campaign accumulates at most a few hundred inert paired entries
+#	per major - accepted as the cost of there being no remove effect.
+#
+#	KNOWN GAP: a tracked country that ceases to exist (annexed) cannot receive the negation entry -
+#	the emitter is skipped and its live entry goes stale. If that tag later revives into a war with
+#	ROOT it carries a stale +-400/150 bias until the next enemy change reconciles it. Rare and
+#	self-correcting; noted here so nobody hunts it as a mystery.
+#
+#	VALUES are literals inside the meta_effect text blocks (runtime-compiled text does not see
+#	file-scoped @constants). BOOST = 400, SUPPRESS = -150 - the same band the removed ai_strategy
+#	version used: below the explicit faction/country steering entries (+500 GER etc.), which add on
+#	top where both apply, so the schwerpunkt bias never overrides an explicit historical rule.
+############################################################################################################
+
+############################################################
+# Entry emitters
+# ROOT = country scope, _aifc_armor_id = target country id
+# Each adds ONE front_armor_score instance on ROOT. Callers
+# own the bookkeeping; these just emit.
+############################################################
+
+WA_AI_AIFC_armor_add_boost = {
+	meta_effect = {
+		text = {
+			add_ai_strategy = { type = front_armor_score id = [ETAG] value = 400 }
+		}
+		ETAG = "[?_aifc_armor_id.GetTag]"
+	}
+}
+
+WA_AI_AIFC_armor_cancel_boost = {
+	meta_effect = {
+		text = {
+			add_ai_strategy = { type = front_armor_score id = [ETAG] value = -400 }
+		}
+		ETAG = "[?_aifc_armor_id.GetTag]"
+	}
+}
+
+WA_AI_AIFC_armor_add_suppress = {
+	meta_effect = {
+		text = {
+			add_ai_strategy = { type = front_armor_score id = [ETAG] value = -150 }
+		}
+		ETAG = "[?_aifc_armor_id.GetTag]"
+	}
+}
+
+WA_AI_AIFC_armor_cancel_suppress = {
+	meta_effect = {
+		text = {
+			add_ai_strategy = { type = front_armor_score id = [ETAG] value = 150 }
+		}
+		ETAG = "[?_aifc_armor_id.GetTag]"
+	}
+}
+
+
+############################################################################################################
+#	Reconcile applied armour steering against the current sector
+#	ROOT = country scope
+#	Reads:  WA_AI_AIFC_sector_enemy (absent = no sector), WA_AI_AIFC_armor_steering_enabled
+#	Writes: WA_AI_AIFC_armor_boost, WA_AI_AIFC_armor_suppressed, and front_armor_score entries on ROOT
+############################################################################################################
+
+WA_AI_AIFC_armor_reconcile = {
+
+	# Desired boost target: the sector enemy, if steering applies at all. 0 = steer nothing, which
+	# retires everything below - covering sector loss, war end, armour loss, and the master switch.
+	set_temp_variable = { _aifc_want = 0 }
+	if = {
+		limit = {
+			WA_AI_AIFC_armor_steering_enabled = yes
+			has_variable = WA_AI_AIFC_sector_enemy
+		}
+		set_temp_variable = { _aifc_want = WA_AI_AIFC_sector_enemy }
+	}
+
+	set_temp_variable = { _aifc_cur = 0 }
+	if = {
+		limit = { has_variable = WA_AI_AIFC_armor_boost }
+		set_temp_variable = { _aifc_cur = WA_AI_AIFC_armor_boost }
+	}
+
+	set_temp_variable = { _aifc_armor_changed = 0 }
+
+	############################################################
+	# 1. Boost target changed - retire the old, install the new
+	############################################################
+
+	if = {
+		limit = { NOT = { check_variable = { _aifc_want = _aifc_cur } } }
+		set_temp_variable = { _aifc_armor_changed = 1 }
+
+		if = {
+			limit = { check_variable = { _aifc_cur > 0 } }
+			set_temp_variable = { _aifc_armor_id = _aifc_cur }
+			if = {
+				limit = { var:_aifc_armor_id = { exists = yes } }
+				WA_AI_AIFC_armor_cancel_boost = yes
+			}
+			clear_variable = WA_AI_AIFC_armor_boost
+		}
+
+		if = {
+			limit = { check_variable = { _aifc_want > 0 } }
+			set_temp_variable = { _aifc_armor_id = _aifc_want }
+			WA_AI_AIFC_armor_add_boost = yes
+			set_variable = { WA_AI_AIFC_armor_boost = _aifc_want }
+			# If the new target was under suppression (yesterday's secondary front is today's
+			# schwerpunkt), the rebuild loop below retires that -150 - the "id == want" arm - so
+			# the target's net lands at exactly +400.
+		}
+	}
+
+	############################################################
+	# 2. Retire suppressions that no longer apply
+	#    (enemy left the war, became the boost target, or
+	#     steering itself turned off)
+	############################################################
+	# Rebuild rather than remove-in-place: copy the books to a temp array, clear them, and re-add
+	# only the entries that survive. Avoids remove_from_array's value form, which has no usage
+	# precedent in this mod - if it ever failed silently, a stale id would be re-cancelled +150 on
+	# every weekly tick, an unbounded positive drift on that enemy's armour score.
+
+	clear_temp_array = _aifc_supp_old
+	for_each_loop = { array = WA_AI_AIFC_armor_suppressed value = _aifc_sid_v
+		add_to_temp_array = { _aifc_supp_old = _aifc_sid_v }
+	}
+	clear_array = WA_AI_AIFC_armor_suppressed
+
+	for_each_loop = { array = _aifc_supp_old value = _aifc_sid_v
+		if = {
+			limit = {
+				OR = {
+					check_variable = { _aifc_want < 1 }
+					check_variable = { _aifc_sid_v = _aifc_want }
+					NOT = {
+						var:_aifc_sid_v = {
+							exists = yes
+							has_war_with = ROOT
+						}
+					}
+				}
+			}
+			# Retire: emit the negation (skipped for an annexed tag - see KNOWN GAP above) and
+			# do not re-add to the books.
+			set_temp_variable = { _aifc_armor_id = _aifc_sid_v }
+			if = {
+				limit = { var:_aifc_sid_v = { exists = yes } }
+				WA_AI_AIFC_armor_cancel_suppress = yes
+			}
+			set_temp_variable = { _aifc_armor_changed = 1 }
+		}
+		else = {
+			# Keep: entry still valid, back into the books untouched.
+			add_to_array = { WA_AI_AIFC_armor_suppressed = _aifc_sid_v }
+		}
+	}
+
+	############################################################
+	# 3. Suppress war enemies not yet tracked
+	#    Only while a boost is installed - suppression without a
+	#    boost is exactly the unpaired case the header forbids.
+	############################################################
+
+	if = {
+		limit = { check_variable = { _aifc_want > 0 } }
+		every_enemy_country = {
+			set_temp_variable = { _aifc_eid = THIS.id }
+			if = {
+				limit = {
+					NOT = { check_variable = { _aifc_eid = _aifc_want } }
+					NOT = { is_in_array = { ROOT.WA_AI_AIFC_armor_suppressed = _aifc_eid } }
+				}
+				set_temp_variable = { _aifc_armor_id = _aifc_eid }
+				ROOT = {
+					WA_AI_AIFC_armor_add_suppress = yes
+					add_to_array = { WA_AI_AIFC_armor_suppressed = _aifc_eid }
+				}
+				set_temp_variable = { _aifc_armor_changed = 1 }
+			}
+		}
+	}
+
+	if = {
+		limit = {
+			has_country_flag = WA_AI_AIFC_logging
+			check_variable = { _aifc_armor_changed > 0 }
+		}
+		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | AIFC: armor steering reconciled, boost_id=[?WA_AI_AIFC_armor_boost] suppressed=[?WA_AI_AIFC_armor_suppressed^num]"
+	}
+
+	clear_temp_array = _aifc_supp_old
 }

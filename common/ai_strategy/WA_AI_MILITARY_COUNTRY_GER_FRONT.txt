@@ -1845,7 +1845,15 @@ WA_AI_MILITARY_GER_no_army_on_nationalist_spain_border = {
 
 	ai_strategy = {
 		type = front_unit_request
-		tag = SPA
+		# SPA is a country tag ALIAS (common/country_tag_aliases/tag_aliases.txt: original_tag = SPR
+		# + SPR_nationalist_spain_flag), not a real tag in common/country_tags. The `tag =` payload of
+		# an ai_strategy is resolved against the static tag list at load time, so `tag = SPA` threw
+		# "SPA - is not in the tag list" / "invalid tag SPA" and killed the parse of this block.
+		# country_trigger is evaluated at runtime in the enemy country's scope, where the alias
+		# resolves normally - same targeting, no load-time tag lookup.
+		country_trigger = {
+			tag = SPA
+		}
 		value = -100 # economy: was -1000
 	}
 }
