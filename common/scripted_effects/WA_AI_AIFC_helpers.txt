@@ -12,8 +12,13 @@
 #
 #		1. Collect every enemy-held state that touches territory we control. These are the only places a
 #		   ground offensive can actually begin, which keeps the candidate set naturally small.
-#		2. Score each on how good a breakthrough point it is - terrain, how thinly it is held, and what
-#		   is behind it worth taking.
+#		1c. Measure each candidate's launching pad - our own divisions in the friendly states next to it -
+#		   and let the strongest pad pick the MAIN ENEMY. Campaign 5709c8b9 showed why: scoring that only
+#		   looked at the defender sent GER's schwerpunkt to Kurdufan and SOV's to Finland while both
+#		   armies massed at Rzhev. A schwerpunkt follows our mass; a thin seam on a front we are not
+#		   actually on is not a schwerpunkt (same front-local lesson as the posture calculus).
+#		2. Score each candidate ON THAT FRONT on how good a breakthrough point it is - terrain, how
+#		   thinly it is held, what is behind it worth taking - plus its own launching pad.
 #		3. The winner becomes the anchor. The corridor is the anchor plus its enemy-held neighbours,
 #		   capped at @WA_AI_AIFC_SECTOR_MAX_STATES.
 #		4. Objectives are the anchor plus the best-scoring state in the corridor - the depth target the
@@ -77,8 +82,12 @@ WA_AI_AIFC_select_sector = {
 	# itself has a meaningful ground presence. Gated on the native scan coming up empty so the extra
 	# state walk is only ever paid by countries that need it.
 
+	# Gate relaxed from "no native candidate at all" to "fewer than 3": campaign 5709c8b9 showed a
+	# single token native contact (one captured island) suppressing the fallback entirely, leaving an
+	# expeditionary power's real army - fighting from allied soil on another continent - sector-less
+	# or anchored on the irrelevant native candidate.
 	if = {
-		limit = { check_variable = { _aifc_cand^num < 1 } }
+		limit = { check_variable = { _aifc_cand^num < 3 } }
 
 		every_country = {
 			limit = {
@@ -115,21 +124,107 @@ WA_AI_AIFC_select_sector = {
 	}
 
 	############################################################
-	# 2. Score candidates, keep the single best
+	# 1c. Launching pads and the main enemy
 	############################################################
+	# Per candidate: band-count ROOT's own divisions in the adjacent friendly states (own or, for
+	# expeditionary powers, faction/subject-relation controlled - mirrors the Fix 28 scopes). The
+	# candidate with the strongest pad names the MAIN ENEMY; only that enemy's candidates compete for
+	# the anchor. This is what keeps the schwerpunkt on the front where the army actually stands
+	# instead of the thinnest seam anywhere in the world (campaign 5709c8b9: GER->Kurdufan,
+	# SOV->Finland, armour at Rzhev).
+	# _aifc_pad_arr and _aifc_ctrl_arr are index-aligned with _aifc_cand.
+
+	clear_temp_array = _aifc_pad_arr
+	clear_temp_array = _aifc_ctrl_arr
+
+	set_temp_variable = { _aifc_main_enemy = 0 }
+	set_temp_variable = { _aifc_max_pad = 0 }
+
+	for_each_loop = { array = _aifc_cand value = _aifc_c
+
+		set_temp_variable = { _aifc_pad = 0 }
+
+		var:_aifc_c = {
+			every_neighbor_state = {
+				limit = {
+					OR = {
+						is_controlled_by = ROOT
+						CONTROLLER = {
+							OR = {
+								is_in_faction_with = ROOT
+								is_subject_of = ROOT
+								ROOT = { is_subject_of = PREV }
+							}
+						}
+					}
+				}
+
+				if = {
+					limit = { ROOT = { divisions_in_state = { state = PREV size > 9 } } }
+					add_to_temp_variable = { _aifc_pad = 3 }
+				}
+				else_if = {
+					limit = { ROOT = { divisions_in_state = { state = PREV size > 4 } } }
+					add_to_temp_variable = { _aifc_pad = 2 }
+				}
+				else_if = {
+					limit = { ROOT = { divisions_in_state = { state = PREV size > 0 } } }
+					add_to_temp_variable = { _aifc_pad = 1 }
+				}
+			}
+
+			CONTROLLER = {
+				ROOT = { set_temp_variable = { _aifc_ctrl = PREV.id } }
+			}
+		}
+
+		add_to_temp_array = { _aifc_pad_arr = _aifc_pad }
+		add_to_temp_array = { _aifc_ctrl_arr = _aifc_ctrl }
+
+		if = {
+			limit = { check_variable = { _aifc_pad > _aifc_max_pad } }
+			set_temp_variable = { _aifc_max_pad = _aifc_pad }
+			set_temp_variable = { _aifc_main_enemy = _aifc_ctrl }
+		}
+	}
+
+	############################################################
+	# 2. Score the main enemy's candidates, keep the single best
+	############################################################
+	# _aifc_main_enemy = 0 means no candidate has any launching pad (all fronts remote); fall back to
+	# scoring everything rather than selecting nothing.
 
 	set_temp_variable = { _aifc_best_id = 0 }
 	set_temp_variable = { _aifc_best_score = -9999 }
 
-	for_each_loop = { array = _aifc_cand value = _aifc_c
-
-		set_temp_variable = { _aifc_target = _aifc_c }
-		WA_AI_AIFC_score_state = yes		# >>> _aifc_score
+	for_each_loop = { array = _aifc_cand index = _aifc_i value = _aifc_c
 
 		if = {
-			limit = { check_variable = { _aifc_score > _aifc_best_score } }
-			set_temp_variable = { _aifc_best_score = _aifc_score }
-			set_temp_variable = { _aifc_best_id = _aifc_c }
+			limit = {
+				OR = {
+					check_variable = { _aifc_main_enemy = 0 }
+					check_variable = { _aifc_ctrl_arr^_aifc_i = _aifc_main_enemy }
+				}
+			}
+
+			set_temp_variable = { _aifc_target = _aifc_c }
+			WA_AI_AIFC_score_state = yes		# >>> _aifc_score
+
+			# Launching-pad bonus: among this front's entry points, prefer the ones our divisions can
+			# actually pour through. 5 per band step, capped at 60.
+			set_temp_variable = { _aifc_pad_bonus = _aifc_pad_arr^_aifc_i }
+			multiply_temp_variable = { _aifc_pad_bonus = 5 }
+			if = {
+				limit = { check_variable = { _aifc_pad_bonus > 60 } }
+				set_temp_variable = { _aifc_pad_bonus = 60 }
+			}
+			add_to_temp_variable = { _aifc_score = _aifc_pad_bonus }
+
+			if = {
+				limit = { check_variable = { _aifc_score > _aifc_best_score } }
+				set_temp_variable = { _aifc_best_score = _aifc_score }
+				set_temp_variable = { _aifc_best_id = _aifc_c }
+			}
 		}
 	}
 
@@ -205,6 +300,8 @@ WA_AI_AIFC_select_sector = {
 	}
 
 	clear_temp_array = _aifc_cand
+	clear_temp_array = _aifc_pad_arr
+	clear_temp_array = _aifc_ctrl_arr
 }
 
 
