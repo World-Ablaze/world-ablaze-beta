@@ -91,6 +91,8 @@ WA_AI_PC_can_afford_project = {
 
 	@AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL = 0.35
 	@AI_MIN_NUM_OF_FACTORIES_TO_ASSIGN_ON_PROJECT = 20
+	# must match @AI_PC_STABLE_BASE_FRACTION in common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_core.txt
+	@AI_PC_STABLE_BASE_FRACTION = 0.30
 
 	# check that the ai can afford to assign factories to a new project
 	set_temp_variable = { max_factories_on_projects = ROOT.num_of_civilian_factories_available_for_projects }
@@ -100,7 +102,25 @@ WA_AI_PC_can_afford_project = {
 	set_temp_variable = { min_factories_on_projects = ROOT.WA_AI_PC_assigned_factories_total }
 	add_to_temp_variable = { min_factories_on_projects = @AI_MIN_NUM_OF_FACTORIES_TO_ASSIGN_ON_PROJECT }
 
-	check_variable = { min_factories_on_projects < max_factories_on_projects }
+	# Fix: mirror the stable-base floor used by WA_AI_PC_assign_factories. Without it this gate
+	# repeats the self-referential expression (available_for_projects reads 0 once the vanilla
+	# queue saturates) and stays closed forever after the allocation has decayed - even when
+	# assign_factories would happily fund a new project from the floored base.
+	set_temp_variable = { _pc_floor_max = ROOT.num_of_civilian_factories }
+	multiply_temp_variable = { _pc_floor_max = @AI_PC_STABLE_BASE_FRACTION }
+	multiply_temp_variable = { _pc_floor_max = @AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL }
+
+	OR = {
+		check_variable = { min_factories_on_projects < max_factories_on_projects }
+		AND = {
+			ROOT = {
+				num_of_civilian_factories > 19
+				has_capitulated = no
+				surrender_progress < 0.3
+			}
+			check_variable = { min_factories_on_projects < _pc_floor_max }
+		}
+	}
 }
 
 # THIS = STATE, PREV = BUILDER, _project_building_type, _project_province_id
@@ -176,6 +196,10 @@ WA_AI_PC_building_slot_available_for_type = {
 
 	else_if = { limit = { check_variable = { _project_building_type = 8 } }
 
+		# The shared-slot fallbacks below bypass the include_locked tech gate, so check the
+		# unlock tech explicitly - without it a country lacking synth_oil_experiments passes
+		# the slot check for a building it cannot construct.
+		ROOT = { has_tech = synth_oil_experiments }
 		OR = {
 			free_building_slots = { building = synthetic_refinery size > 0 include_locked = no }
 			free_building_slots = { building = industrial_complex size > 0 include_locked = no }

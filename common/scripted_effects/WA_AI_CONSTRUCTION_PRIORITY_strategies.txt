@@ -16,6 +16,8 @@ WA_AI_priority_construction_strategies = {
 
 			WA_AI_build_refinery_resource_shortage_aluminium = yes
 
+			WA_AI_build_refinery_resource_shortage_rubber = yes
+
 			WA_AI_build_supply_line_GER_SOV = yes
 
 			WA_AI_build_supply_line_JAP_RAJ = yes
@@ -161,37 +163,16 @@ WA_AI_build_refinery_resource_shortage_rubber = {
 
 			# resource shortage
 			check_variable = { WA_AI_resource_rubber_shortage_months = 3 }
+
+			# Synthetic refineries consume 60 coal/level and, unlike steel/aluminium, have no
+			# hydro variant to fall back on: only build when coal is comfortable, otherwise the
+			# refinery would feed the coal/steel shortage it competes with. The shortage counter
+			# above still ticks either way - it also drives rubber prospecting decisions.
+			check_variable = { resource@coal > 50 }
+			check_variable = { resource_imported@coal < 20 }
 		}
 
 		WA_AI_priority_queue_synthetic_refinery = yes
-	}
-
-	###
-
-	else_if = {
-		limit = {
-			check_variable = { ROOT.WA_AI_PC_active_projects < 5 }
-
-			NOT = { num_of_civilian_factories_available_for_projects < 20 }
-
-			# resource shortage
-			check_variable = { WA_AI_resource_steel_shortage_months = 3 }
-
-			# over 50% of factories are mil
-			num_of_factories > 0
-			set_temp_variable = { mil_factories = num_of_military_factories }
-			divide_temp_variable = { mil_factories = num_of_factories }
-			check_variable = { mil_factories > 0.4 }
-
-			# no factory slots left
-			NOT = {
-				any_of_scopes = { array = controlled_states
-					WA_AI_available_SHARED = yes
-				}
-			}
-		}
-
-		WA_AI_priority_convert_MIC_to_CIC = yes
 	}
 }
 

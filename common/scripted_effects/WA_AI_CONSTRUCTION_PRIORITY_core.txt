@@ -221,6 +221,13 @@ WA_AI_PC_get_building_cost = {
 	}
 }
 
+### Allocation base constants (must match common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt)
+@AI_PC_ALLOC_FRACTION = 0.35			# share of the reconstructed available pool given to projects
+@AI_PC_STABLE_BASE_FRACTION = 0.30		# floor: share of TOTAL civs the base can never drop below
+@AI_PC_ALLOC_HARD_CAP_FRACTION = 0.5	# ceiling: allocation can never exceed this share of total civs
+@AI_PC_STALL_CANCEL_WEEKS = 25			# weeks a project may sit with 0 factories before the stall sweep cancels it
+@AI_PC_STALL_MIN_QUEUE = 5				# stall sweep only fires when the queue is longer than this
+
 ### Dynamic Queue System - Assign factories to projects
 # THIS = country
 # Allocates available factories to projects from the top of the queue
@@ -228,6 +235,26 @@ WA_AI_PC_assign_factories = {
 	# Calculate available factories BEFORE resetting (add back currently assigned to get true available)
 	set_temp_variable = { available_factories_ = num_of_civilian_factories_available_for_projects }
 	add_to_temp_variable = { available_factories_ = WA_AI_PC_assigned_factories_total }
+
+	# Fix: break the self-referential decay loop. Once the vanilla construction queue absorbs all
+	# civs, num_of_civilian_factories_available_for_projects reads 0 and the recurrence becomes
+	# T(n+1) = 0.35 * T(n) - pure geometric decay to the clamp floor of 1 (observed: GER 100 -> 9
+	# -> 1 over 1943-45, stranding the whole queue). Floor the base at a fraction of TOTAL civilian
+	# factories - a number this system's own output cannot influence. Gated so a genuinely
+	# collapsing economy degrades to the old behaviour instead of reserving factories it can't spare.
+	if = {
+		limit = {
+			check_variable = { WA_AI_PC_queue^num > 0 }
+			num_of_civilian_factories > 19
+			has_capitulated = no
+			surrender_progress < 0.3
+		}
+		set_temp_variable = { _pc_stable_base = num_of_civilian_factories }
+		multiply_temp_variable = { _pc_stable_base = @AI_PC_STABLE_BASE_FRACTION }
+		if = { limit = { check_variable = { available_factories_ < _pc_stable_base } }
+			set_temp_variable = { available_factories_ = _pc_stable_base }
+		}
+	}
 
 	if = { limit = { has_country_flag = WA_AI_construction_logging }
 		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC_ASSIGN: queue=[?WA_AI_PC_queue^num] raw_avail=[?available_factories_]"
@@ -238,7 +265,15 @@ WA_AI_PC_assign_factories = {
 		multiply_temp_variable = { available_factories_ = WA_AI_PC_override_max_factories_factor }
 	}
 	else = {
-		multiply_temp_variable = { available_factories_ = 0.35 }
+		multiply_temp_variable = { available_factories_ = @AI_PC_ALLOC_FRACTION }
+	}
+
+	# Hard ceiling: the floor above must never drive civilian_factory_use past half the civ pool
+	# (civilian_factory_use competes with consumer goods and trade).
+	set_temp_variable = { _pc_alloc_cap = num_of_civilian_factories }
+	multiply_temp_variable = { _pc_alloc_cap = @AI_PC_ALLOC_HARD_CAP_FRACTION }
+	if = { limit = { check_variable = { available_factories_ > _pc_alloc_cap } }
+		set_temp_variable = { available_factories_ = _pc_alloc_cap }
 	}
 
 	if = { limit = { has_country_flag = WA_AI_construction_logging }
@@ -351,6 +386,11 @@ WA_AI_PC_assign_factories = {
 	# Update total only once at the end, then force single modifier update
 	set_variable = { WA_AI_PC_assigned_factories_total = _new_total }
 
+	# Resync the strategy-gate counter with reality: WA_AI_PC_active_projects is maintained by
+	# +1/-1 bookkeeping with no reconciliation, and a desync (e.g. the debug queue-clear path)
+	# permanently opens or closes every < 5 strategy gate.
+	set_variable = { WA_AI_PC_active_projects = WA_AI_PC_queue^num }
+
 	if = { limit = { has_country_flag = WA_AI_construction_logging }
 		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC_ASSIGN: TOTAL=[?WA_AI_PC_assigned_factories_total]"
 	}
@@ -366,17 +406,36 @@ WA_AI_PC_update_project_progress = {
 	set_temp_variable = { _remaining_days = 7 }
 	set_temp_variable = { _progress_iterations = 0 }
 
-	# Cleanup pass: complete any stuck projects with progress <= 0 or cost = 0
+	# Cleanup pass: complete finished projects, and REMOVE broken ones.
+	# Broken = target_state 0 (WA_AI_PC_complete_project_by_id no-ops on those, so they could
+	# never leave the queue) or cost <= 0 (a failed cost lookup - routing it through completion
+	# would spawn a free instant building). Both go straight to WA_AI_PC_end_project_by_id.
 	clear_temp_array = _cleanup_project_ids
+	clear_temp_array = _orphan_project_ids
 	for_each_loop = { array = WA_AI_PC_queue value = _project_id
 		if = {
 			limit = {
 				OR = {
-					NOT = { check_variable = { WA_AI_PC_progress^_project_id > 0 } }
+					check_variable = { WA_AI_PC_target_state^_project_id = 0 }
 					NOT = { check_variable = { WA_AI_PC_project_cost^_project_id > 0 } }
 				}
 			}
+			add_to_temp_array = { _orphan_project_ids = _project_id }
+		}
+		else_if = {
+			limit = { NOT = { check_variable = { WA_AI_PC_progress^_project_id > 0 } } }
 			add_to_temp_array = { _cleanup_project_ids = _project_id }
+		}
+	}
+	if = {
+		limit = { check_variable = { _orphan_project_ids^num > 0 } }
+		for_each_loop = { array = _orphan_project_ids value = _project_id
+			if = { limit = { has_country_flag = WA_AI_construction_logging }
+				set_temp_variable = { _dbg_state = WA_AI_PC_target_state^_project_id }
+				set_temp_variable = { _dbg_cost = WA_AI_PC_project_cost^_project_id }
+				log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC CLEANUP: removing broken proj=[?_project_id] state=[?_dbg_state] cost=[?_dbg_cost]"
+			}
+			WA_AI_PC_end_project_by_id = yes
 		}
 	}
 	if = {
@@ -389,7 +448,15 @@ WA_AI_PC_update_project_progress = {
 			}
 			WA_AI_PC_complete_project_by_id = yes
 		}
-		# Reassign factories after cleanup
+	}
+	# Reassign factories after any cleanup
+	if = {
+		limit = {
+			OR = {
+				check_variable = { _orphan_project_ids^num > 0 }
+				check_variable = { _cleanup_project_ids^num > 0 }
+			}
+		}
 		WA_AI_PC_assign_factories = yes
 	}
 
@@ -487,6 +554,36 @@ WA_AI_PC_update_project_progress = {
 			WA_AI_PC_complete_project_by_id = yes
 			WA_AI_PC_assign_factories = yes
 		}
+	}
+
+	# Stall sweep: a project that ends week after week with 0 assigned factories is being starved
+	# by higher-priority queue entries. Left alone it blocks the queue forever (the < 5 strategy
+	# gate counts it as active). Cancel after @AI_PC_STALL_CANCEL_WEEKS starved weeks, but only
+	# while the queue is long enough that losing the project is clearly the lesser evil.
+	clear_temp_array = _cancel_projects_IDS
+	for_each_loop = { array = WA_AI_PC_queue value = _project_id
+		if = {
+			limit = { NOT = { check_variable = { WA_AI_PC_assigned_factories^_project_id > 0 } } }
+			add_to_variable = { WA_AI_PC_stall_weeks^_project_id = 1 }
+			if = {
+				limit = {
+					check_variable = { WA_AI_PC_stall_weeks^_project_id > @AI_PC_STALL_CANCEL_WEEKS }
+					check_variable = { WA_AI_PC_queue^num > @AI_PC_STALL_MIN_QUEUE }
+				}
+				add_to_temp_array = { _cancel_projects_IDS = _project_id }
+			}
+		}
+		else = {
+			set_variable = { WA_AI_PC_stall_weeks^_project_id = 0 }
+		}
+	}
+	if = {
+		limit = { check_variable = { _cancel_projects_IDS^num > 0 } }
+		if = { limit = { has_country_flag = WA_AI_construction_logging }
+			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC STALL SWEEP: cancelling [?_cancel_projects_IDS^num] starved projects"
+		}
+		WA_AI_PC_cancel_projects = yes
+		WA_AI_PC_assign_factories = yes
 	}
 }
 
@@ -586,6 +683,7 @@ WA_AI_PC_end_project_by_id = {
 	clear_variable = WA_AI_PC_priority^_project_id
 	clear_variable = WA_AI_PC_assigned_factories^_project_id
 	clear_variable = WA_AI_PC_type_id^_project_id
+	clear_variable = WA_AI_PC_stall_weeks^_project_id
 }
 
 ### Cancel multiple projects at once
