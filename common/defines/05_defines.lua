@@ -1254,16 +1254,16 @@ NDefines.NAI.MAX_THREAT_FOR_FIRST_YEAR_CIVILIAN_MODE = 10 							-- above this t
 NDefines.NAI.MAX_FUEL_CONSUMPTION_RATIO_FOR_NAVY_TRAINING = 0.2						-- ai will use at most this ratio of affordable fuel for naval training
 NDefines.NAI.MAX_FULLY_TRAINED_SHIP_RATIO_FOR_TRAINING = 0.8						-- ai will not train a taskforce if fully trained ships are above this ratio
 
-NDefines.NAI.MAX_UNITS_FACTOR_FRONT_ORDER = 3.0										-- Factor for max number of units to assign to area front orders
-NDefines.NAI.DESIRED_UNITS_FACTOR_FRONT_ORDER = 3.0									-- Factor for desired number of units to assign to area front orders
-NDefines.NAI.MIN_UNITS_FACTOR_FRONT_ORDER = 2.0										-- Factor for min number of units to assign to area front orders
+NDefines.NAI.MAX_UNITS_FACTOR_FRONT_ORDER = 1.0										-- Factor for max number of units to assign to area front orders (economy E8: vanilla restored, was 3.0 - inflated every front's demand 3x and kept the theatre distributor in permanent triage)
+NDefines.NAI.DESIRED_UNITS_FACTOR_FRONT_ORDER = 1.1									-- Factor for desired number of units to assign to area front orders (economy E8: vanilla restored, was 3.0)
+NDefines.NAI.MIN_UNITS_FACTOR_FRONT_ORDER = 1.0										-- Factor for min number of units to assign to area front orders (economy E8: vanilla restored, was 2.0)
 
 NDefines.NAI.PLAN_ACTIVATION_SUPERIORITY_AGGRO = 10.0         					    -- How aggressive a country is in activating a plan based on how superiour their force is.
 
 --NDefines.NAI.PLAN_VALUE_BONUS_FOR_MOVING_UNITS = 0.5								-- AI plans gets a bonus when units are not moving and ready to fight
 NDefines.NAI.MIN_INVASION_PLAN_VALUE_TO_EXECUTE = 0.05								-- ai will only activate invasions if it is above this
 
-NDefines.NAI.ENTRENCHMENT_WEIGHT = 10.0												-- AI should favour units with less entrenchment when assigning units around.
+NDefines.NAI.ENTRENCHMENT_WEIGHT = 2.0												-- AI should favour units with less entrenchment when assigning units around. (economy E8: vanilla restored, was 10.0 - 5x vanilla caused churn of dug-in units)
 
 ----------- AI Battleplan Execution
 ----------- AI Executes plan if PLAN_FACTION_STRONG_TO_EXECUTE and PLAN_FACTION_STRONG_TO_EXECUTE are both met, will cancel the plan if PLAN_FACTION_WEAK_TO_ABORT is met, wont reenable plan until first two are met again
@@ -1301,13 +1301,13 @@ NDefines.NAI.ORDER_ASSIGNMENT_DISTANCE_FACTOR = 100.0								-- When the AI assi
 
 NDefines.NAI.FRONT_EVAL_UNIT_ACCURACY = 0.95										-- scale how stupid ai will act on fronts. 0 is potato
 NDefines.NAI.EXTRA_NAVY_INTEL_FOR_CONVOY_RAIDING = 1.0                   			-- this amount of intel is added to navy intel while ai is assigning convoy raiding mission
-NDefines.NAI.GARRISON_FRACTION = 0.05												-- How large part of a front should always be holding the line rather than advancing at the enemy
+NDefines.NAI.GARRISON_FRACTION = 0.0												-- How large part of a front should always be holding the line rather than advancing at the enemy (economy E8: vanilla restored, was 0.05)
 
 NDefines.NAI.FRONT_TERRAIN_DEFENSE_FACTOR = 1.0										-- Multiplier applied to unit defense modifier for terrain on front province multiplied by terrain importance
 NDefines.NAI.FRONT_TERRAIN_ATTACK_FACTOR = 2.0										-- Multiplier applied to unit attack modifier for terrain on enemy front province multiplied by terrain importance
 NDefines.NAI.FALLBACK_LOSING_FACTOR = 0.0 					              		   	-- The lower this number  the longer the AI will hold the line before sending them to the fallback line
 NDefines.NAI.PLAN_MIN_SIZE_FOR_FALLBACK = 50000										-- A country with less provinces than this will not draw fallback plans  but rather station their troops along the front
-NDefines.NAI.UNIT_ASSIGNMENT_TERRAIN_IMPORTANCE = 0.05								-- Terrain score for units are multiplied by this when the AI is deciding which front they should be assigned to
+NDefines.NAI.UNIT_ASSIGNMENT_TERRAIN_IMPORTANCE = 10.0								-- Terrain score for units are multiplied by this when the AI is deciding which front they should be assigned to (economy E8: vanilla restored, was 0.05 - terrain matching was effectively disabled)
 
 NDefines.NAI.MICRO_POCKET_SIZE = 6													-- Pockets with a size equal to or lower than this will be mocroed by the AI, for efficiency.
 NDefines.NAI.POCKET_DISTANCE_MAX = 10000											-- shortest square distance we bother about chasing pockets
@@ -1351,7 +1351,7 @@ NDefines.NAI.PRODUCTION_CARRIER_PLANE_BUFFER_RATIO = 5								-- in additional t
 NDefines.NAI.PRODUCTION_CARRIER_PLANE_PRODUCTION_BOOST_TO_BUFFER = 4.0 				-- production of carrier planes will go up by this ratio if we lack buffers
 
 NDefines.NAI.MAX_SUPPLY_DIVISOR = 0.75												-- To make sure the AI does not overdeploy divisions. Higher number means more supply per unit.
-NDefines.NAI.FRONT_UNITS_CAP_FACTOR = 10.0											-- A factor applied to total front size and supply use. Primarily effects small fronts
+NDefines.NAI.FRONT_UNITS_CAP_FACTOR = 15.0											-- A factor applied to total front size and supply use. Primarily effects small fronts
 
 NDefines.NAI.RESEARCH_BONUS_FACTOR = 4.0
 NDefines.NAI.MAX_AHEAD_RESEARCH_PENALTY = 2	            							-- max ahead of tiem penalty ai will pick ever
