@@ -236,9 +236,9 @@ def main():
                         add("E4-buffer-always-on", block, line,
                             "put_unit_buffers with enable = always yes")
                 elif t in FORCE_CONCENTRATION_TYPES:
-                    if path.name != AIFC_FILE:
+                    if path.name != AIFC_FILE and "# aifc-tuning:" not in block.text:
                         add("E5-aifc-ownership", block, line,
-                            f"{t} written outside {AIFC_FILE}")
+                            f"{t} written outside {AIFC_FILE} without '# aifc-tuning:' justification")
                 elif t == "front_armor_score" and v is not None:
                     if not (-150 <= v <= 400):
                         add("E6-front_armor_score-range", block, line,
