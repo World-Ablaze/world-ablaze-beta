@@ -391,6 +391,18 @@ WA_AI_PC_assign_factories = {
 	# permanently opens or closes every < 5 strategy gate.
 	set_variable = { WA_AI_PC_active_projects = WA_AI_PC_queue^num }
 
+	# Fix 29b companion: non-railway count for the strategy gates. Railways queue up to 5
+	# segments per route at top priority; counting them against the < 5 gate permanently
+	# blocked all radar/refinery/supply-line work for any country with a railway corridor
+	# queued (observed on ENG and JAP for most of the campaign).
+	set_temp_variable = { _nonrail_count = 0 }
+	for_each_loop = { array = WA_AI_PC_queue value = _count_proj_id
+		if = { limit = { NOT = { check_variable = { WA_AI_PC_building_type^_count_proj_id = 13 } } }
+			add_to_temp_variable = { _nonrail_count = 1 }
+		}
+	}
+	set_variable = { WA_AI_PC_active_nonrail_projects = _nonrail_count }
+
 	if = { limit = { has_country_flag = WA_AI_construction_logging }
 		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC_ASSIGN: TOTAL=[?WA_AI_PC_assigned_factories_total]"
 	}
@@ -663,6 +675,9 @@ WA_AI_PC_end_project_by_id = {
 	# Remove from queue
 	remove_from_array = { array = WA_AI_PC_queue value = _project_id }
 	subtract_from_variable = { WA_AI_PC_active_projects = 1 }
+	if = { limit = { NOT = { check_variable = { WA_AI_PC_building_type^_project_id = 13 } } }
+		subtract_from_variable = { WA_AI_PC_active_nonrail_projects = 1 }
+	}
 	# Factory total is recalculated by WA_AI_PC_assign_factories after all completions
 
 	# Remove from state tracking (per-country array stores project IDs)
@@ -945,6 +960,12 @@ WA_AI_PC_start_project = {
 				# Add to queue
 				add_to_array = { WA_AI_PC_queue = _project_id }
 				add_to_variable = { WA_AI_PC_active_projects = 1 }
+				# Keep the non-railway gate counter live between weekly resyncs (strategies run
+				# from a 2-day background event, so waiting for assign_factories would let them
+				# over-queue within a week)
+				if = { limit = { NOT = { check_variable = { WA_AI_PC_building_type^_project_id = 13 } } }
+					add_to_variable = { WA_AI_PC_active_nonrail_projects = 1 }
+				}
 
 				# Track in state (per-country array stores project IDs)
 				PREV = {

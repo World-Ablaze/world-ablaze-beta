@@ -22,7 +22,8 @@
 
 ### Country eligibility (checked in on_weekly)
 @WA_AI_PC_railway_MIN_STATES = 5             # Minimum controlled states to run
-@WA_AI_PC_railway_MAX_SURRENDER = 0.3        # Skip if surrender progress > 30%
+@WA_AI_PC_railway_MAX_SURRENDER = 0.3        # Skip if surrender progress > 30%...
+@WA_AI_PC_railway_RECOVERY_MIN_STATES = 20   # ...unless civs > MIN_CIVS_PEACE and states > this (war economy intact)
 @WA_AI_PC_railway_MINOR_CIV_THRESHOLD = 50   # Minor nations bypass if civs > this
 
 ### Route caps per execution
@@ -30,7 +31,11 @@
 @WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY = 4   # Max routes per enemy country
 
 ### Caching thresholds
-@WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD = 3   # Skip recalculation if queue has 3+ projects (any type)
+# Fix 29b: counts RAILWAY projects only (was: whole queue, any type - so 3 radar/refinery
+# projects suppressed railway queueing forever; observed on USA, pinned at 5 non-rail projects
+# 1942-44 with zero railways ever queued). One route is up to 5 segments, so the old value of 3
+# was also smaller than a single corridor.
+@WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD = 12  # Skip recalculation if 12+ railway projects queued
 
 ### Priority modifiers
 @WA_AI_PC_railway_PARTIAL_PATH_PRIORITY_FACTOR = 0.7  # Partial paths (dead-ends) get 70% priority
@@ -77,10 +82,12 @@ WA_AI_PC_railway = {
 				has_capitulated = no
 			}
 
-			### Skip recalculation if queue already has enough projects (any type)
+			### Skip recalculation only if the queue already holds enough RAILWAY projects (Fix 29b)
+			set_temp_variable = { _get_queued_num_building_type = global.WA_AI_PC_RAIL }
+			WA_AI_PC_get_total_queued_num = yes
 			if = {
 				limit = {
-					check_variable = { WA_AI_PC_queue^num < @WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD }
+					check_variable = { queued_type_num_ < @WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD }
 				}
 
 				### Execute all applicable strategies

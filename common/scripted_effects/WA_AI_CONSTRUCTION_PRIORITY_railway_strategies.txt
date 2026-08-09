@@ -109,14 +109,12 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 								limit = { check_variable = { target_landmass = capital_landmass } }
 								# Same landmass: use capital as route start
 								set_temp_variable = { route_start = default_route_start }
-								# Calculate max level on this route, target max+1
-								set_temp_variable = { _route_path_array = pathfind_prov_path_ }
-								WA_AI_PC_get_max_railway_level_on_route = yes
-								set_temp_variable = { route_level = _max_route_level_ }
-								add_to_temp_variable = { route_level = 1 }
-								if = { limit = { check_variable = { route_level > 5 } }
-									set_temp_variable = { route_level = 5 }
-								}
+								# Fix 29: the max-level-on-route calculation moved to after the pathfind
+								# below (it used to read the PREVIOUS target's path, or nothing, so every
+								# land route targeted level 1 and queued no segments). Until then, floor
+								# at the default level; _route_level_from_path marks it for recompute.
+								set_temp_variable = { route_level = default_route_level }
+								set_temp_variable = { _route_level_from_path = 1 }
 							}
 							else = {
 								# Different landmass: find nearest receiving port via distance-limited search
@@ -129,6 +127,7 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 								# Note: For overseas routes, overseas_max_railway_level_ comes from port analysis
 								# and already considers the bottleneck, so we use it directly
 								set_temp_variable = { route_level = overseas_max_railway_level_ }
+								set_temp_variable = { _route_level_from_path = 0 }
 
 								# Queue port upgrade if it's the bottleneck
 								if = {
@@ -203,6 +202,7 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 													}
 													set_temp_variable = { route_start = overseas_route_start_ }
 													set_temp_variable = { route_level = overseas_max_railway_level_ }
+													set_temp_variable = { _route_level_from_path = 0 }	# Fix 29: level now owned by port analysis
 													set_temp_variable = { _direct_success = pathfind_prov_success_ }
 													if = {
 														limit = {
@@ -214,6 +214,10 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 													}
 												}
 												else = {
+													# Fix 29: the fallback pathfind overwrote pathfind_prov_path_, so the
+													# direct route's path is gone - keep the default_route_level floor
+													# instead of levelling from the wrong corridor.
+													set_temp_variable = { _route_level_from_path = 0 }
 													if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
 														ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: [Prev.GetName] overseas fallback also PARTIAL — keeping direct route" }
 													}
@@ -223,6 +227,23 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 
 										if = {
 											limit = { check_variable = { _direct_success > 0 } }
+
+											# Fix 29: level the route from the path we ACTUALLY found (fresh
+											# pathfind_prov_path_), target max segment + 1. Empty/1-node paths
+											# keep the default_route_level floor set above.
+											if = {
+												limit = {
+													check_variable = { _route_level_from_path = 1 }
+													check_variable = { pathfind_prov_path_^num > 1 }
+												}
+												WA_AI_PC_get_max_railway_level_on_route = yes
+												set_temp_variable = { route_level = _max_route_level_ }
+												add_to_temp_variable = { route_level = 1 }
+												if = { limit = { check_variable = { route_level > 5 } }
+													set_temp_variable = { route_level = 5 }
+												}
+											}
+
 											add_to_temp_array = { railway_start_provinces_ = route_start }
 											add_to_temp_array = { railway_end_provinces_ = supply_hub_province_ }
 											add_to_temp_array = { railway_target_levels_ = route_level }
@@ -304,20 +325,16 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 							if = {
 								limit = { check_variable = { target_landmass = capital_landmass } }
 								set_temp_variable = { route_start = default_route_start }
-								# Calculate max level on this route, target max+1
-								set_temp_variable = { _route_path_array = pathfind_prov_path_ }
-								WA_AI_PC_get_max_railway_level_on_route = yes
-								set_temp_variable = { route_level = _max_route_level_ }
-								add_to_temp_variable = { route_level = 1 }
-								if = { limit = { check_variable = { route_level > 5 } }
-									set_temp_variable = { route_level = 5 }
-								}
+								# Fix 29: level computed after the pathfind below; floor at default
+								set_temp_variable = { route_level = default_route_level }
+								set_temp_variable = { _route_level_from_path = 1 }
 							}
 							else = {
 								set_temp_variable = { _target_state_for_port_search = _target_state_id }
 								ROOT = { WA_AI_PC_analyze_overseas_supply_chain = yes }
 								set_temp_variable = { route_start = overseas_route_start_ }
 								set_temp_variable = { route_level = overseas_max_railway_level_ }
+								set_temp_variable = { _route_level_from_path = 0 }
 
 								if = {
 									limit = {
@@ -385,6 +402,7 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 													}
 													set_temp_variable = { route_start = overseas_route_start_ }
 													set_temp_variable = { route_level = overseas_max_railway_level_ }
+													set_temp_variable = { _route_level_from_path = 0 }	# Fix 29: level now owned by port analysis
 													set_temp_variable = { _direct_success = pathfind_prov_success_ }
 													if = {
 														limit = {
@@ -396,6 +414,8 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 													}
 												}
 												else = {
+													# Fix 29: fallback pathfind overwrote pathfind_prov_path_ - keep the floor
+													set_temp_variable = { _route_level_from_path = 0 }
 													if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
 														ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: puppet [Prev.GetName] overseas fallback also PARTIAL — keeping direct route" }
 													}
@@ -405,6 +425,21 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 
 										if = {
 											limit = { check_variable = { _direct_success > 0 } }
+
+											# Fix 29: level the route from the actual fresh path (see site above)
+											if = {
+												limit = {
+													check_variable = { _route_level_from_path = 1 }
+													check_variable = { pathfind_prov_path_^num > 1 }
+												}
+												WA_AI_PC_get_max_railway_level_on_route = yes
+												set_temp_variable = { route_level = _max_route_level_ }
+												add_to_temp_variable = { route_level = 1 }
+												if = { limit = { check_variable = { route_level > 5 } }
+													set_temp_variable = { route_level = 5 }
+												}
+											}
+
 											add_to_temp_array = { railway_start_provinces_ = route_start }
 											add_to_temp_array = { railway_end_provinces_ = supply_hub_province_ }
 											add_to_temp_array = { railway_target_levels_ = route_level }
@@ -933,18 +968,9 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 						limit = { check_variable = { target_landmass = capital_landmass } }
 						# Same landmass: use capital as route start
 						set_temp_variable = { route_start = default_route_start }
-						# Calculate max level on this route, target max+1
-						set_temp_variable = { _route_path_array = pathfind_prov_path_ }
-						WA_AI_PC_get_max_railway_level_on_route = yes
-						set_temp_variable = { route_level = _max_route_level_ }
-						add_to_temp_variable = { route_level = 1 }
-						if = { limit = { check_variable = { route_level > 5 } }
-							set_temp_variable = { route_level = 5 }
-						}
-						# For prewar, cap at default level (5)
-						if = { limit = { check_variable = { route_level > default_route_level } }
-							set_temp_variable = { route_level = default_route_level }
-						}
+						# Fix 29: level computed after the pathfind below; floor at default
+						set_temp_variable = { route_level = default_route_level }
+						set_temp_variable = { _route_level_from_path = 1 }
 					}
 					else = {
 						# Different landmass: find nearest receiving port via distance-limited search
@@ -953,6 +979,7 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 						ROOT = { WA_AI_PC_analyze_overseas_supply_chain = yes }
 						set_temp_variable = { route_start = overseas_route_start_ }
 						set_temp_variable = { route_level = overseas_max_railway_level_ }
+						set_temp_variable = { _route_level_from_path = 0 }
 						# Cap at default prewar level
 						if = { limit = { check_variable = { route_level > default_route_level } }
 							set_temp_variable = { route_level = default_route_level }
@@ -1009,6 +1036,7 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 										}
 										set_temp_variable = { route_start = overseas_route_start_ }
 										set_temp_variable = { route_level = overseas_max_railway_level_ }
+										set_temp_variable = { _route_level_from_path = 0 }	# Fix 29: level now owned by port analysis
 										# Cap at prewar level
 										if = { limit = { check_variable = { route_level > default_route_level } }
 											set_temp_variable = { route_level = default_route_level }
@@ -1022,11 +1050,33 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 											add_to_temp_array = { railway_port_upgrades_ = overseas_receiving_port_state_ }
 										}
 									}
+									else = {
+										# Fix 29: fallback pathfind overwrote pathfind_prov_path_ - keep the floor
+										set_temp_variable = { _route_level_from_path = 0 }
+									}
 								}
 							}
 
 							if = {
 								limit = { check_variable = { _direct_success > 0 } }
+
+								# Fix 29: level the route from the actual fresh path, capped at prewar level
+								if = {
+									limit = {
+										check_variable = { _route_level_from_path = 1 }
+										check_variable = { pathfind_prov_path_^num > 1 }
+									}
+									WA_AI_PC_get_max_railway_level_on_route = yes
+									set_temp_variable = { route_level = _max_route_level_ }
+									add_to_temp_variable = { route_level = 1 }
+									if = { limit = { check_variable = { route_level > 5 } }
+										set_temp_variable = { route_level = 5 }
+									}
+									if = { limit = { check_variable = { route_level > default_route_level } }
+										set_temp_variable = { route_level = default_route_level }
+									}
+								}
+
 								add_to_temp_array = { railway_start_provinces_ = route_start }
 								add_to_temp_array = { railway_end_provinces_ = supply_hub_province_ }
 								add_to_temp_array = { railway_target_levels_ = route_level }

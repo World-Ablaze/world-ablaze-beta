@@ -1158,27 +1158,31 @@ WA_AI_PC_create_frontier_port = { # _frontier_province_id >>> frontier_port_crea
 }
 
 ############################################################################################################
-#	NEW HELPER: Get Maximum Railway Level on Route
-#	Input: _route_path_array (array of provinces along the route from pathfinding)
+#	HELPER: Get Maximum Railway Level on Route
+#	Input: pathfind_prov_path_ (province path from the most recent WA_AI_PATHFIND_PROV_get_path call -
+#	       call this AFTER the pathfind for the route you are levelling, never before)
 #	Output: _max_route_level_ (highest level found on any segment in the route)
 #	Purpose: Find the max level segment in a route to sync all segments to max+1
+#	Fix 29: used to read a `_route_path_array` scalar "copy" of the path (set_temp_variable does not
+#	copy arrays, and the callers assigned it before pathfinding anyway), so it always returned 0 and
+#	every land route targeted level 1 - which existing rail satisfied, so nothing was ever queued.
 ############################################################################################################
 
 WA_AI_PC_get_max_railway_level_on_route = {
 	# Initialize max to 0
 	set_temp_variable = { _max_route_level_ = 0 }
 
-	# Iterate through route path array to find all segments
-	for_each_loop = { array = _route_path_array index = seg_i value = seg_prov
+	# Iterate through the fresh pathfind result to find all segments
+	for_each_loop = { array = pathfind_prov_path_ index = seg_i value = seg_prov
 		# Calculate next index (segment endpoint)
 		set_temp_variable = { next_seg_i = seg_i }
 		add_to_temp_variable = { next_seg_i = 1 }
 
 		# Only process if there's a next segment (prevents index out of bounds)
-		if = { limit = { check_variable = { next_seg_i < _route_path_array^num } }
+		if = { limit = { check_variable = { next_seg_i < pathfind_prov_path_^num } }
 			# Get endpoint of this segment
-			set_temp_variable = { seg_start = _route_path_array^seg_i }
-			set_temp_variable = { seg_end = _route_path_array^next_seg_i }
+			set_temp_variable = { seg_start = pathfind_prov_path_^seg_i }
+			set_temp_variable = { seg_end = pathfind_prov_path_^next_seg_i }
 
 			# Read the current level of this segment from global array
 			meta_effect = {

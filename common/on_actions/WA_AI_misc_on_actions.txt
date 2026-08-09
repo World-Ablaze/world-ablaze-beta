@@ -7,6 +7,7 @@
 @WA_AI_PC_railway_MIN_STATES = 5             # Minimum controlled states to run
 @WA_AI_PC_railway_MAX_SURRENDER = 0.3        # Skip if surrender progress > 30%
 @WA_AI_PC_railway_MINOR_CIV_THRESHOLD = 50   # Minor nations bypass if civs > this
+@WA_AI_PC_railway_RECOVERY_MIN_STATES = 20   # Surrender-gate escape hatch: still-functioning war economy
 
 on_actions = {
 	on_daily = {
@@ -145,11 +146,29 @@ on_actions = {
 						}
 						# Minimum state count - skip tiny nations
 						num_of_controlled_states > @WA_AI_PC_railway_MIN_STATES
-						# Skip countries losing badly
-						surrender_progress < @WA_AI_PC_railway_MAX_SURRENDER
+						# Skip countries losing badly - UNLESS the war economy still works.
+						# surrender_progress measures VP loss, not capability: SOV crossed 30% in
+						# Oct 1942 with ~180 states and 300+ divisions and was locked out of railway
+						# building for the entire eastern war (until territorial recovery in 1945).
+						OR = {
+							surrender_progress < @WA_AI_PC_railway_MAX_SURRENDER
+							AND = {
+								num_of_civilian_factories > @WA_AI_PC_railway_MIN_CIVS_PEACE
+								num_of_controlled_states > @WA_AI_PC_railway_RECOVERY_MIN_STATES
+							}
+						}
 					}
 					if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: on_weekly eligibility PASSED - calling WA_AI_PC_railway" }
 					WA_AI_PC_railway = yes
+				}
+				else = {
+					# Keep the interval counter ticking while ineligible, so a country that
+					# recovers eligibility fires on its first eligible week instead of waiting
+					# out up to 8 remaining weeks of a frozen interval.
+					if = {
+						limit = { check_variable = { WA_AI_PC_railway_INTERVAL_counter > 0 } }
+						subtract_from_variable = { WA_AI_PC_railway_INTERVAL_counter = 1 }
+					}
 				}
 
 				### AI Force Concentration - weekly sector maintenance

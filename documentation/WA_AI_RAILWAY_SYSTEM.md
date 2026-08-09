@@ -59,11 +59,12 @@ All files are in `common/scripted_effects/`.
 @WA_AI_PC_railway_MIN_CIVS = 50            # Base minimum civilian factories
 @WA_AI_PC_railway_MIN_CIVS_PEACE = 75      # Higher threshold during peace
 @WA_AI_PC_railway_MIN_STATES = 5           # Minimum controlled states
-@WA_AI_PC_railway_MAX_SURRENDER = 0.3      # Skip if surrender progress > 30%
+@WA_AI_PC_railway_MAX_SURRENDER = 0.3      # Skip if surrender progress > 30% (see escape hatch below)
+@WA_AI_PC_railway_RECOVERY_MIN_STATES = 20 # Escape hatch: run anyway if civs > 75 and states > 20
 @WA_AI_PC_railway_MINOR_CIV_THRESHOLD = 50 # Minor nations bypass eligibility above this
 @WA_AI_PC_railway_MAX_ROUTES_TOTAL = 8     # Max routes processed per execution
 @WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY = 4 # Max routes per enemy country
-@WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD = 3 # Skip recalculation if queue >= 3
+@WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD = 12 # Skip recalculation if 12+ RAILWAY projects queued (Fix 29b: counts type 13 only)
 @WA_AI_PC_railway_PARTIAL_PATH_PRIORITY_FACTOR = 0.7  # Partial paths get 70% priority
 ```
 
@@ -101,10 +102,16 @@ The railway system runs inside `on_weekly` (`WA_AI_misc_on_actions.txt`, lines 1
 | Civilian factories | >= 75 (`@MIN_CIVS_PEACE`) | Always eligible |
 | Country status | Must be major, OR at war, OR have 50+ civs | Always eligible |
 | Controlled states | >= 5 | >= 5 |
-| Surrender progress | < 30% | < 30% |
+| Surrender progress | < 30%, OR (civs > 75 AND states > 20) | same |
 | AI only | Yes | Yes |
 
 During war, the civilian factory threshold inside `WA_AI_PC_railway` itself is 50 * 0.6 = 30 civs.
+
+Notes on the surrender gate: `surrender_progress` measures VP loss, not capability - the escape
+hatch (`@WA_AI_PC_railway_RECOVERY_MIN_STATES`) keeps a large power with an intact war economy
+building rail even past 30% (the 1942-45 SOV case). While a country is ineligible, the interval
+counter keeps ticking down in the on_action's `else` branch, so a recovering country fires on its
+first eligible week instead of waiting out a frozen interval.
 
 ## Priority Construction System Architecture
 
