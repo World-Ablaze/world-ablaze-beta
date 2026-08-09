@@ -236,7 +236,10 @@ WA_AI_AIFC_select_sector = {
 		limit = { check_variable = { _aifc_best_id > 0 } }
 
 		set_variable = { WA_AI_AIFC_sector_anchor = _aifc_best_id }
-		set_variable = { WA_AI_AIFC_sector_age = 0 }
+		# Age starts at 1, not 0: a variable stored at 0 fails has_variable/check_variable > 0 guards,
+		# which made the weekly ageing in WA_AI_AIFC_core.txt treat a fresh sector as "no sector" and
+		# re-select every week. 1..MAX_AGE = live sector; 0/absent = no sector.
+		set_variable = { WA_AI_AIFC_sector_age = 1 }
 
 		# Publish who the sector is against: the anchor's controller, stored as a country id on ROOT
 		# and marked with a per-owner flag on the enemy. The flag is what ai_strategy country_trigger

@@ -215,41 +215,12 @@ WA_AI_defensive_front_strategy = {
 			clr_country_flag = WA_AI_defensive_front_strategy
 		}
 
-		### weak vs countries
-
-		every_enemy_country = {
-
-			if = {
-				limit = {
-					ROOT = {
-						NOT = { is_in_array = { WA_AI_defensive_front_strategy_at = PREV.id } }
-
-						alliance_strength_ratio < 0.5
-						strength_ratio = { tag = PREV ratio < 0.25 }
-					}
-				}
-
-				log = "[GetYear] [GetMonth] | AI | [Root.GetName] | stopping attacks vs [This.GetTag] (weak)"
-
-				ROOT = { add_to_array = { WA_AI_defensive_front_strategy_at = PREV.id } }
-			}
-			else_if = {
-				limit = {
-					ROOT = {
-						is_in_array = { WA_AI_defensive_front_strategy_at = PREV.id }
-
-						NOT = {
-							alliance_strength_ratio < 0.5
-							strength_ratio = { tag = PREV ratio < 0.25 }
-						}
-					}
-				}
-
-				log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CANCEL stopping attacks vs [This.GetTag] (weak)"
-
-				ROOT = { remove_from_array = { WA_AI_defensive_front_strategy_at = PREV.id } }
-			}
-		}
+		# Removed: the per-enemy WA_AI_defensive_front_strategy_at array (introduced in bd11fde6b, WIP)
+		# was write-only - no ai_strategy block or trigger ever consumed it. Per-enemy defensive posture
+		# is owned by the posture system (WA_AI_MILITARY_posture_vs_<TAG>), which has better inputs.
+		# Only the country-wide flag above is consumed (WA_AI_MILITARY_DEFAULT_FRONT_control.txt,
+		# WA_AI_MILITARY_posture_triggers.txt).
+		clear_array = WA_AI_defensive_front_strategy_at
 	}
 }
 
@@ -842,7 +813,9 @@ WA_AI_update_training_modifier = {
 
 	# Reset
 	set_variable = { WA_AI_minimum_training_level = 0 }
-	set_variable = { WA_AI_training_time_factor = 0 }
+	# Save hygiene: WA_AI_training_time_factor was a modifier slot that never had add logic
+	# (born unused in 248aa116c); clear the orphan from old saves.
+	clear_variable = WA_AI_training_time_factor
 
 	### DOCTRINE BONUS (one applies)
 

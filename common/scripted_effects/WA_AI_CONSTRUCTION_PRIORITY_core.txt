@@ -55,6 +55,10 @@ WA_AI_PC_set_global_variables = {
 WA_AI_PC_get_new_project_ID = {
 	# Find first empty slot in target_state array (value = 0)
 	set_temp_variable = { new_project_ = -1 }
+	# Temp vars persist across calls within one execution chain: without this reset, the second and
+	# later calls (e.g. multi-segment railway queueing) inherit _found_id = 1 from the previous call,
+	# break after element 0, and append a new slot instead of reusing a free one.
+	set_temp_variable = { _found_id = 0 }
 
 	for_each_loop = { array = WA_AI_PC_target_state index = _idx value = _val break = _found_id
 		if = { limit = { check_variable = { _val = 0 } }

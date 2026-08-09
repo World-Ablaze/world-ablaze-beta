@@ -36,8 +36,9 @@
 @WA_AI_AIFC_MIN_STATES = 2			# Skip micro-nations; nothing to concentrate with
 @WA_AI_AIFC_MAX_SURRENDER = 0.35	# Skip countries already collapsing
 
-### AIFC sector constants (must match common/scripted_effects/WA_AI_AIFC_helpers.txt)
+### AIFC sector constants (declared only here; helpers has no copy)
 @WA_AI_AIFC_SECTOR_MAX_AGE = 4		# Weeks before a sector is re-evaluated regardless of validity
+									# (age is 1-based: selected at 1, re-selected when age exceeds this)
 
 
 ############################################################################################################
@@ -60,9 +61,11 @@ WA_AI_AIFC_update_sector = {
 	}
 	else = {
 		# Age the existing sector. A country with no sector is treated as maximally stale so that the
-		# first eligible week always selects one.
+		# first eligible week always selects one. The age is 1-based (set to 1 on selection in
+		# WA_AI_AIFC_helpers.txt): 0/absent both mean "no sector" here, so a zero-valued age can never
+		# be mistaken for a live one - has_variable is unreliable for a counter whose range includes 0.
 		if = {
-			limit = { has_variable = WA_AI_AIFC_sector_age }
+			limit = { check_variable = { WA_AI_AIFC_sector_age > 0 } }
 			add_to_variable = { WA_AI_AIFC_sector_age = 1 }
 		}
 		else = {
