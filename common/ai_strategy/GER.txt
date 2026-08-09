@@ -794,9 +794,35 @@ ignore_scandanavia_until_france_is_dealt_with = {
 #	}
 #}
 
-# Phase 7c: GER_fall_gelb retired - both entries were force_concentration_front_factor, deleted per
-# economy E5 (only WA_AI_MILITARY_DEFAULT_FRONT_aifc.txt writes force_concentration_*; these legacy
-# boosts fought the AIFC sector catch-all).
+# Phase 7c originally retired GER_fall_gelb (economy E5 - AIFC owns force_concentration_*).
+# RESTORED as a load-bearing exception: with this block AND the war_with_soviets
+# force_concentration entries both removed, the game CTDs deterministically during
+# database load (EXCEPTION_ACCESS_VIOLATION, bisected 2026-08-09 across ~20
+# instrumented launches; at HEAD BOTH restores are required - restoring only one
+# still crashes. Engine mechanism unknown; the crash is content-combination-sensitive,
+# not syntax). Do NOT delete either without re-running the launch-crash repro.
+# aifc-tuning: AIFC remains the generic concentration writer.
+GER_fall_gelb = {
+	allowed = {
+		tag = GER
+	}
+	enable = {
+		has_war_with = BEL
+		BEL = { has_capitulated = no }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = force_concentration_front_factor
+		tag = BEL
+		value = 100
+	}
+	ai_strategy = {
+		type = force_concentration_front_factor
+		tag = LUX
+		value = 100
+	}
+}
 
 yugo_war_goal = {
 	allowed = {
@@ -1423,6 +1449,20 @@ war_with_soviets = {
 		value = 500
 	}
 
+	ai_strategy = {
+		type = force_concentration_front_factor
+		tag = SOV
+		value = 100
+	}
+
+	ai_strategy = {
+		type = force_concentration_target_weight
+		state = 206 #Minsk
+
+		value = 80 # +80%
+	}
+
+	# RESTORED (see GER_fall_gelb comment above - load-bearing against a DB-load CTD)
 	# Phase 7c: force_concentration entries deleted (economy E5 - AIFC owns concentration);
 	# area_priority entries relocated to WA_AI_MILITARY_COUNTRY_GER_THEATRE.txt (barbarossa_opening).
 }

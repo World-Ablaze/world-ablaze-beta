@@ -299,3 +299,31 @@ Entries dated 2026-08-08 were reconstructed from code archaeology (`# Fix NN:` c
 - **Cause:** PDXScript here is tab-indented; string-matching edits that assume spaces do not match, and mixed indentation breaks the visual structure reviewers rely on.
 - **Rule:** Copy the exact whitespace from the file when constructing an edit, include enough surrounding context to be unique, and never reformat blocks you are not changing — especially generated or parser-managed `ai_will_do` sections.
 - **Evidence:** Repository-wide convention; `AGENTS.md` editing rule 12.
+
+## 2026-08-09 - Deleting ai_strategy force_concentration blocks can CTD the game at database load
+
+**Symptom:** deterministic EXCEPTION_ACCESS_VIOLATION ~15s into game boot (during country-history
+load, before the menu), after commit d5fde822e removed legacy force_concentration_* blocks from
+country ai_strategy files (Phase 7c "AIFC owns concentration").
+
+**Diagnosis method:** automated bisect harness - launch `hoi4.exe --debug --start_tag=BHU`
+headlessly, watch the crashes/ folder for a new dump vs in-game lines in game.log (crash = 15s,
+survive = ~55s per cycle). ~20 launches: commit bisect -> file bisect (GER.txt alone reproduces)
+-> hunk bisect -> surgical byte-level variants.
+
+**Findings that defy a simple rule:**
+- At d5fde822e, the minimal crashing pair was: GER_fall_gelb block deleted AND war_with_soviets'
+  six entries stripped. EITHER one alone survived. At later HEAD (after 4917890f5/1a3eb868a),
+  restoring only fall_gelb still crashed - BOTH restores were needed.
+- Not syntax: every variant was brace-balanced and parsed fine in isolation.
+- Not "zero force_concentration entries": a surgical file with all three front_factor entries
+  removed (containers kept) survived.
+- Not empty containers (GER_roles was always empty and fine), not the AIFC file (crash persists
+  with it removed), not file size or parse-chunk offset (padding at top or bottom changes nothing).
+
+**Conclusion:** the engine crash is sensitive to the combined shape of the strategy DB in a way we
+could not reduce further. GER_fall_gelb and the war_with_soviets force_concentration entries are
+restored in GER.txt with load-bearing comments. Treat any future deletion of force_concentration_*
+blocks from country files as a change that REQUIRES a launch test, and keep the repro harness
+(scratchpad hoi4_repro.py pattern: --start_tag launch + crashes-folder watch) - it turns a
+"game crashes, no error logged" report into a ~1-minute-per-probe bisect.
