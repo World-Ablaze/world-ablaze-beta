@@ -2,66 +2,11 @@
 #	World Ablaze AI mod - scripted law AI effects - WA CONVERSION ONGOING - ECONOMY LAW DONE
 ############################################################################################################
 
-# pp stored separately for important things
-WA_AI_store_PP = {
-
-	### find the highest law cost and store enough pp for it
-
-	set_variable = { WA_AI_max_stored_pp = 150 }
-
-	set_temp_variable = { WA_AI_eco_law_cost = modifier@economy_cost_factor }
-	add_to_temp_variable = { WA_AI_eco_law_cost = 1 }
-	multiply_temp_variable = { WA_AI_eco_law_cost = 150 }
-
-	set_temp_variable = { WA_AI_man_law_cost = modifier@mobilization_laws_cost_factor }
-	add_to_temp_variable = { WA_AI_man_law_cost = 1 }
-	multiply_temp_variable = { WA_AI_man_law_cost = 100 }
-
-	set_temp_variable = { WA_AI_tra_law_cost = modifier@trade_laws_cost_factor }
-	add_to_temp_variable = { WA_AI_tra_law_cost = 1 }
-	multiply_temp_variable = { WA_AI_tra_law_cost = 150 }
-
-	if = { limit = { check_variable = { WA_AI_eco_law_cost > WA_AI_max_stored_pp } } set_variable = { WA_AI_max_stored_pp = WA_AI_eco_law_cost } }
-	if = { limit = { check_variable = { WA_AI_man_law_cost > WA_AI_max_stored_pp } } set_variable = { WA_AI_max_stored_pp = WA_AI_man_law_cost } }
-	if = { limit = { check_variable = { WA_AI_tra_law_cost > WA_AI_max_stored_pp } } set_variable = { WA_AI_max_stored_pp = WA_AI_tra_law_cost } }
-
-    if = {
-		limit = {
-			has_political_power > 16
-
-			check_variable = { WA_AI_stored_PP < WA_AI_max_stored_pp }
-
-			### priorities
-
-			NOT = {
-				WA_AI_pp_advisor_prio = yes
-				# WA_AI_can_take_women_in_the_workforce = yes
-				OR = {
-					AND = {
-						tag = FRA
-						date < 1940.10.1
-						is_historical_focus_on = yes
-					}
-					AND = {
-						tag = JAP
-						date < 1940.10.1
-						is_historical_focus_on = yes
-					}
-					AND = {
-						tag = GER
-						date < 1940.10.1
-						is_historical_focus_on = yes
-					}
-
-				}
-			}
-		}
-
-		add_political_power = -15
-
-		add_to_variable = { WA_AI_stored_PP = 15 }
-	}
-}
+# Removed: WA_AI_store_PP. It deducted real political power into WA_AI_stored_PP, a variable no
+# system ever read or spent (the scripted law changes below are applied with add_ideas, which is
+# free) - so it silently destroyed ~150-210 PP per AI country in the early game and resumed
+# whenever law cost modifiers raised the computed cap. If a PP reserve is ever reintroduced, the
+# stored value must actually be spent by the consumers it is reserved for.
 
 ### law upgrade scripted AI
 

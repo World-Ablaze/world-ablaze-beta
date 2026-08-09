@@ -25,7 +25,12 @@ WA_AI_recruit_general = {
 		add_to_temp_variable = { WA_AI_recruit_cost = 1 }
 	}
 
-	multiply_temp_variable = { WA_AI_recruit_cost = 5 }
+	# recruitment is paid in command power, mirroring NDefines.NPolitics.ARMY_LEADER_COST
+	# (2 x existing leaders). This previously charged political power at 5 x roster size,
+	# which silently consumed a major's entire wartime PP income (ENG: 225+ PP per general).
+	# The ratio gate below already prevents recruit spam, so the cost is clamped for majors.
+	multiply_temp_variable = { WA_AI_recruit_cost = 2 }
+	clamp_temp_variable = { var = WA_AI_recruit_cost min = 10 max = 50 }
 
 	### recruit a general
 
@@ -35,11 +40,11 @@ WA_AI_recruit_general = {
 				check_variable = { WA_AI_divisions_to_generals_ratio > 18 }
 				check_variable = { WA_AI_general_count < 3 } # get at least 3
 			}
-			NOT = { check_variable = { political_power < WA_AI_recruit_cost } }
+			NOT = { check_variable = { command_power < WA_AI_recruit_cost } }
 		}
 
 		multiply_temp_variable = { WA_AI_recruit_cost = -1 }
-		add_political_power = WA_AI_recruit_cost
+		add_command_power = WA_AI_recruit_cost
 
 		create_corps_commander = {
 			skill = 1
@@ -82,25 +87,33 @@ WA_AI_recruit_marshal = {
 			add_to_temp_variable = { WA_AI_recruit_cost = 1 }
 		}
 
-		multiply_temp_variable = { WA_AI_recruit_cost = 5 }
+		# see WA_AI_recruit_general - recruitment is paid in command power, not political power
+		multiply_temp_variable = { WA_AI_recruit_cost = 2 }
+		clamp_temp_variable = { var = WA_AI_recruit_cost min = 10 max = 50 }
+
+		# total = recruitment cost + 30 command power promotion cost
+		set_temp_variable = { WA_AI_marshal_total_cost = WA_AI_recruit_cost }
+		add_to_temp_variable = { WA_AI_marshal_total_cost = 30 }
 
 		if = { # recruit a new marshal
 			limit = {
-				NOT = { check_variable = { political_power < WA_AI_recruit_cost } } # recruitment cost
-				NOT = { command_power < 30 } # promotion cost
+				NOT = { check_variable = { command_power < WA_AI_marshal_total_cost } }
 			}
 
-			multiply_temp_variable = { WA_AI_recruit_cost = -1 }
-			add_political_power = WA_AI_recruit_cost
-			add_command_power = -30
+			multiply_temp_variable = { WA_AI_marshal_total_cost = -1 }
+			add_command_power = WA_AI_marshal_total_cost
 
 			create_field_marshal = {
 				skill = 1
 			}
 
 			if = { limit = { has_country_flag = WA_AI_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RECRUIT: marshal" }
+		}
 
-			else = { # promote a general
+		else = { # cannot afford a new marshal - promote an existing general instead
+			# (this block was previously nested as the else of the logging if above, so every
+			# scripted marshal recruit with logging off ALSO promoted a general to marshal,
+			# creating a second marshal and burning an extra 15-30 command power)
 
 				set_temp_variable = { WA_AI_general_count = 0 }
 				set_temp_variable = { WA_AI_divs_per_general = num_divisions }
@@ -153,5 +166,4 @@ WA_AI_recruit_marshal = {
 				}
 			}
 		}
-	}
 }
