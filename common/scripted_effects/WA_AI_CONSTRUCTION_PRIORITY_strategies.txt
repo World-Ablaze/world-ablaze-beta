@@ -25,6 +25,8 @@ WA_AI_priority_construction_strategies = {
 			WA_AI_resource_extraction = yes
 
 			WA_AI_fortify_strategic_islands = yes
+
+			WA_AI_build_uk_air_hosting_capacity = yes
 		}
 
 		# WA_AI_convert_MIC_to_CIC_industrial_expansion = yes not needed in WA
@@ -760,6 +762,121 @@ WA_AI_fortify_strategic_islands = {
 				set_temp_variable = { _project_queue_num = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
+			}
+		}
+	}
+}
+
+# Keep enough air base capacity in central/southern England to host the whole
+# faction's aviation (RAF + USAAF + minors). Without this the allied AI parks
+# its air force in America: the UK bases in range of the front fill up and the
+# engine finds no free capacity worth rebasing to, so the wings never cross the
+# Atlantic.
+# ENG builds as host nation. USA acts as backup builder (air_base has
+# allied_build = yes) whenever ENG cannot act on the deficit itself: ENG is
+# player-controlled, its PC queue is full, or it lacks civilian factories.
+# ROOT = ENG or USA. Called from WA_AI_priority_construction_strategies
+# (WA_AI_background.1, ~2 day cadence, AI only).
+WA_AI_build_uk_air_hosting_capacity = {
+
+	@UK_AIR_CAPACITY_PER_LEVEL = 100	# NDefines.NBuildings.AIRBASE_CAPACITY_MULT (05_defines.lua)
+	@UK_AIR_TARGET_LEVEL_CAP = 12		# per-state cap, leaves slots for other buildings
+	@UK_AIR_HOSTED_FACTION_SHARE = 0.5	# share of the faction's planes the UK should be able to host
+
+	if = {
+		limit = {
+			has_war = yes
+			any_enemy_country = { capital_scope = { is_on_continent = europe } }
+			check_variable = { ROOT.WA_AI_PC_active_projects < 5 }
+			num_of_civilian_factories_available_for_projects > 15
+			OR = {
+				original_tag = ENG
+				AND = {
+					original_tag = USA
+					is_in_faction_with = ENG
+					# only step in when ENG cannot act on the deficit itself
+					ENG = {
+						OR = {
+							is_ai = no
+							check_variable = { WA_AI_PC_active_projects > 4 }
+							num_of_civilian_factories_available_for_projects < 16
+						}
+					}
+				}
+			}
+		}
+
+		### how many planes the faction may want to base in the UK
+
+		set_temp_variable = { _faction_planes_ = num_deployed_planes }
+		for_each_scope_loop = { array = allies
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes }
+		}
+
+		set_temp_variable = { _uk_target_capacity_ = _faction_planes_ }
+		multiply_temp_variable = { _uk_target_capacity_ = @UK_AIR_HOSTED_FACTION_SHARE }
+
+		### capacity already built or queued in the hosting states
+
+		set_temp_variable = { _uk_hosting_capacity_ = 0 }
+		every_state = {
+			limit = {
+				WA_AI_uk_air_hosting_state = yes
+				OR = {
+					is_controlled_by = ROOT
+					CONTROLLER = { is_in_faction_with = ROOT }
+				}
+			}
+			add_to_temp_variable = { _uk_hosting_capacity_ = building_level@air_base }
+		}
+		for_each_loop = { array = WA_AI_PC_queue value = _uk_air_proj_id_
+			if = { limit = { check_variable = { WA_AI_PC_building_type^_uk_air_proj_id_ = 2 } }
+				add_to_temp_variable = { _uk_hosting_capacity_ = 1 }
+			}
+		}
+		multiply_temp_variable = { _uk_hosting_capacity_ = @UK_AIR_CAPACITY_PER_LEVEL }
+
+		if = { limit = { check_variable = { _uk_target_capacity_ > _uk_hosting_capacity_ } }
+
+			### expand the least-developed hosting state first
+
+			set_temp_variable = { _project_building_type = 2 }
+			set_temp_variable = { _uk_air_best_level_ = @UK_AIR_TARGET_LEVEL_CAP }
+			set_temp_variable = { _uk_air_best_state_ = -1 }
+			every_state = {
+				limit = {
+					WA_AI_uk_air_hosting_state = yes
+					check_variable = { building_level@air_base < @UK_AIR_TARGET_LEVEL_CAP }
+					OR = {
+						AND = {
+							is_controlled_by = ROOT
+							WA_AI_available_AIR = yes
+							WA_AI_PC_can_build_project = yes
+						}
+						AND = {
+							NOT = { is_controlled_by = ROOT }
+							WA_AI_available_AIR_allied = yes
+							NOT = { WA_AI_PC_has_same_type_project_here = yes }
+						}
+					}
+				}
+				if = { limit = { check_variable = { building_level@air_base < _uk_air_best_level_ } }
+					set_temp_variable = { _uk_air_best_level_ = building_level@air_base }
+					set_temp_variable = { _uk_air_best_state_ = THIS.id }
+				}
+			}
+
+			if = { limit = { check_variable = { _uk_air_best_state_ > -1 } }
+				var:_uk_air_best_state_ = {
+					set_temp_variable = { _project_building_type = 2 }
+					set_temp_variable = { _project_province_id = 0 }
+					set_temp_variable = { _project_target_state = 0 }
+					set_temp_variable = { _project_priority = 100 }
+					set_temp_variable = { _project_queue_num = 1 }
+					set_temp_variable = { _project_queue_max = 3 }
+					set_temp_variable = { _project_target_level = @UK_AIR_TARGET_LEVEL_CAP }
+					WA_AI_PC_start_project = yes
+				}
 			}
 		}
 	}
