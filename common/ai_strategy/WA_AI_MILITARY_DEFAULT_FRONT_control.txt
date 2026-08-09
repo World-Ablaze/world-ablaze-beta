@@ -45,3 +45,31 @@ WA_AI_MILITARY_EXEC_no_stockpiles_stop = {
 		manual_attack = no
 	}
 }
+
+
+# purpose: emergency stop - a country flagged critically low on fielded equipment stops executing
+#          attack orders on every front until it recovers. Consumer of the long-orphaned
+#          WA_AI_defensive_front_strategy flag (WA_AI_misc_effects.txt: set below 0.6 fielded
+#          equipment, cleared above 0.9), which logged "stopping attacks" since 1936 but did nothing.
+# range:   n/a (front_control)
+# policy:  Exclusive per front - priority 500 outranks the posture exec/grind blocks (300) in
+#          WA_AI_MILITARY_FACTION_ALLIES_FRONT.txt, and yields to no_stockpiles_stop above (10000).
+# domain:  FRONT
+WA_AI_MILITARY_EXEC_low_equipment_hold = {
+	enable = {
+		has_war = yes
+		has_country_flag = WA_AI_defensive_front_strategy
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_control
+		country_trigger = { has_war_with = ROOT }
+		ratio = 0
+		priority = 500
+		ordertype = front
+		execution_type = careful
+		execute_order = no
+		manual_attack = no
+	}
+}

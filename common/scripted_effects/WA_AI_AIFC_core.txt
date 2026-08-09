@@ -139,5 +139,36 @@ WA_AI_AIFC_check_sector_valid = {
 			}
 			set_temp_variable = { _aifc_sector_valid = 1 }
 		}
+
+		# Fix 28: expeditionary sectors (selected via the 1b fallback in WA_AI_AIFC_helpers.txt) are
+		# anchored on allied-controlled soil that every_controlled_state cannot see. Mirror check:
+		# the corridor stays valid while it touches faction/subject territory holding ROOT divisions.
+		# Gated on the native pass failing so the extra country walk is only paid when needed.
+		if = {
+			limit = { check_variable = { _aifc_sector_valid < 1 } }
+
+			every_country = {
+				limit = {
+					NOT = { tag = ROOT }
+					has_capitulated = no
+					OR = {
+						is_in_faction_with = ROOT
+						is_subject_of = ROOT
+						ROOT = { is_subject_of = PREV }
+					}
+				}
+
+				every_controlled_state = {
+					limit = {
+						ROOT = { divisions_in_state = { state = PREV size > 2 } }
+						any_neighbor_state = {
+							CONTROLLER = { has_war_with = ROOT }
+							is_in_array = { ROOT.WA_AI_AIFC_sector_states = THIS.id }
+						}
+					}
+					set_temp_variable = { _aifc_sector_valid = 1 }
+				}
+			}
+		}
 	}
 }

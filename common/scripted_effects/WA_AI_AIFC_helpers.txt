@@ -68,6 +68,53 @@ WA_AI_AIFC_select_sector = {
 	}
 
 	############################################################
+	# 1b. Expeditionary fallback - no native land contact
+	############################################################
+	# Fix 28: every_controlled_state cannot see allied-controlled soil, so an expeditionary power
+	# fighting entirely from a faction member's territory (USA in liberated France) never found an
+	# anchor and never got a sector. Same scope trap as railway Fixes 24/25/27 (puppets/controllers).
+	# Fallback: enemy states in contact with faction-member or subject-relation territory where ROOT
+	# itself has a meaningful ground presence. Gated on the native scan coming up empty so the extra
+	# state walk is only ever paid by countries that need it.
+
+	if = {
+		limit = { check_variable = { _aifc_cand^num < 1 } }
+
+		every_country = {
+			limit = {
+				NOT = { tag = ROOT }
+				has_capitulated = no
+				OR = {
+					is_in_faction_with = ROOT
+					is_subject_of = ROOT
+					ROOT = { is_subject_of = PREV }
+				}
+			}
+
+			every_controlled_state = {
+				limit = {
+					# ROOT has boots on this allied ground - at least 3 of its own divisions.
+					ROOT = { divisions_in_state = { state = PREV size > 2 } }
+				}
+
+				every_neighbor_state = {
+					limit = {
+						CONTROLLER = { has_war_with = ROOT }
+					}
+
+					WA_AI_PC_get_state_id = yes
+					set_temp_variable = { _aifc_sid = state_id_ }
+
+					if = {
+						limit = { NOT = { is_in_array = { _aifc_cand = _aifc_sid } } }
+						add_to_temp_array = { _aifc_cand = _aifc_sid }
+					}
+				}
+			}
+		}
+	}
+
+	############################################################
 	# 2. Score candidates, keep the single best
 	############################################################
 

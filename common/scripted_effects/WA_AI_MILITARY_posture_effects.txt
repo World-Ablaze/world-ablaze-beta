@@ -1,0 +1,339 @@
+############################################################################################################
+#	World Ablaze AI mod - Military Offensive Posture - Effects Module
+#	Weekly per-country calculus: is executing battle plans useful, and against whom?
+############################################################################################################
+#	Switches and thresholds:  common/scripted_triggers/WA_AI_MILITARY_posture_triggers.txt
+#	Cadence:                  on_weekly in common/on_actions/WA_AI_misc_on_actions.txt, behind the
+#	                          is_ai + has_capitulated gate, next to WA_AI_AIFC_update_sector.
+#
+#	WHAT THIS PRODUCES (country scope)
+#	----------------------------------
+#		WA_AI_MILITARY_posture           0 = hold, 1 = execute plans, 2 = attrition grind
+#		WA_AI_MILITARY_posture_vs_<TAG>  same levels, per major enemy (tag-substituted variable name)
+#		WA_AI_AIFC_hold_the_line flag    set while the hard brake is on (AIFC then stops concentrating)
+#		WA_AI_MILITARY_cas_prev          internal: own casualties_k baseline for the weekly delta
+#		WA_AI_MILITARY_cas_prev_<TAG>    internal: per-enemy casualties_k baseline, stored per observer
+#
+#	POSTURE LEVELS
+#	--------------
+#	1 (execute)  We can win the battles: fielded equipment healthy and our FIGHTING army strength vs this
+#	             enemy is near parity or better. fighting_army_strength_ratio counts only armies actually
+#	             engaged, so a Pacific war does not dilute a European verdict the way the old
+#	             alliance_strength_ratio gate did. The bar drops further when the enemy's line is hollow
+#	             (their fielded equipment far below target).
+#	2 (grind)    Attrition is profitable even at bad odds: the enemy is at maximum mobilization with a
+#	             nearly empty manpower pool while our own faction has deep reserves. Consumers execute
+#	             with execution_type = careful - bleed them, do not lunge.
+#	0 (hold)     Neither case, or the hard brake (critically low equipment / collapsing / no fuel).
+#
+#	SECONDARY INPUTS (both formerly listed as deferred extensions, now implemented)
+#	------------------------------------------------------------------------------
+#	Casualty exchange rate: weekly deltas of casualties_k, own and per enemy, against baselines
+#	stored on the observer. A measured favourable exchange (enemy losing >= XR_GRIND times our rate)
+#	substitutes for the dry-pool test and unlocks level 2; an unfavourable one (< XR_VETO) vetoes
+#	level 2 entirely. Quiet fronts, first observations, and stale baselines (clamp) yield no signal.
+#	Known distortion: casualties_k is global across all of a country's fronts, so a multi-front
+#	enemy's losses elsewhere leak into the delta - the own-losses floor keeps observers who are not
+#	actually fighting from acting on it.
+#
+#	Air superiority: WA_AI_calc_air_force_sizes per-enemy sizes vs our own planes+fighter stockpile.
+#	Clear superiority (> AIR_SUPERIOR ratio) lowers the level-1 bar to the hollow bar; clear
+#	inferiority (< AIR_INFERIOR) vetoes level 1. The grind is deliberately exempt from the air veto -
+#	infantry attrition works without the sky (China vs Japan is the type case).
+#
+#	Deliberately NOT modelled in this version, to keep the weekly cost bounded (extend here if wanted):
+#		- scripted per-front local superiority scan (fighting_army_strength_ratio already covers
+#		  expeditionary armies wherever they stand, which was the main gap)
+#
+#	NOTE ON STALE PER-ENEMY VARIABLES: WA_AI_MILITARY_posture_vs_<TAG> lingers after a peace. Every
+#	consumer must therefore also gate on has_war_with = <TAG>. Documented at each consumer.
+############################################################################################################
+
+### Posture constants (must match common/scripted_triggers/WA_AI_MILITARY_posture_triggers.txt)
+@WA_AI_POSTURE_MIN_EQ = 0.9				# fielded-equipment ratio required to order any execution
+@WA_AI_POSTURE_EXEC_RATIO = 0.85		# fighting-strength ratio vs enemy to execute (engine favours defenders)
+@WA_AI_POSTURE_EXEC_RATIO_HOLLOW = 0.7	# lower bar when the enemy's army is badly under-equipped
+@WA_AI_POSTURE_HOLLOW_EQ = 0.75			# enemy fielded-equipment ratio below this counts as hollow
+@WA_AI_POSTURE_GRIND_RATIO = 0.5		# never grind below this fighting-strength ratio - that is suicide, not attrition
+@WA_AI_POSTURE_GRIND_ENEMY_MP = 500000	# enemy manpower pool below this counts as nearly dry
+@WA_AI_POSTURE_GRIND_MP_EDGE = 4		# our faction pool must be this many times the enemy pool
+@WA_AI_POSTURE_MIN_OWN_MP = 150000		# never order offensives with our own pool below this
+
+### Casualty exchange-rate constants (effects-file only; deltas are in casualties_k thousands)
+@WA_AI_POSTURE_XR_MIN_OWN = 0.5			# own weekly losses below this carry no exchange-rate signal
+@WA_AI_POSTURE_XR_MIN_VOLUME = 3		# combined weekly losses below this carry no signal either
+@WA_AI_POSTURE_XR_GRIND = 2				# enemy weekly losses this many times ours unlocks the grind without a dry pool
+@WA_AI_POSTURE_XR_VETO = 0.25			# enemy weekly losses below this fraction of ours vetoes the grind
+										# (1/GRIND_MP_EDGE: the break-even exchange the 4x pool edge can still pay for)
+@WA_AI_POSTURE_XR_CLAMP = 25			# ratios above this are stale-baseline noise (war just resumed), not signal
+
+### Air-superiority constants (effects-file only; sizes per WA_AI_calc_air_force_sizes semantics)
+@WA_AI_POSTURE_AIR_SUPERIOR = 1.5		# own/enemy air ratio above this lowers the exec bar to the hollow bar
+@WA_AI_POSTURE_AIR_INFERIOR = 0.4		# own/enemy air ratio below this vetoes level-1 execution (grind unaffected)
+@WA_AI_POSTURE_AIR_MIN_PLANES = 500		# air forces smaller than this can neither unlock nor veto
+
+
+############################################################################################################
+#	ENTRY POINT - weekly posture update
+#	ROOT = country scope
+############################################################################################################
+
+WA_AI_MILITARY_update_posture = {
+
+	if = {
+		limit = { NOT = { WA_AI_MILITARY_should_update_posture = yes } }
+
+		WA_AI_MILITARY_clear_posture = yes
+		clr_country_flag = WA_AI_AIFC_hold_the_line
+	}
+	else_if = {
+		limit = { WA_AI_MILITARY_posture_hard_brake = yes }
+
+		if = {
+			limit = { NOT = { has_country_flag = WA_AI_AIFC_hold_the_line } }
+			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | POSTURE: hard brake on - holding the line"
+		}
+
+		WA_AI_MILITARY_clear_posture = yes
+		set_country_flag = WA_AI_AIFC_hold_the_line
+	}
+	else = {
+
+		if = {
+			limit = { has_country_flag = WA_AI_AIFC_hold_the_line }
+			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | POSTURE: hard brake released"
+			clr_country_flag = WA_AI_AIFC_hold_the_line
+		}
+
+		### Casualty exchange-rate input: weekly delta of our own losses. casualties_k is monotonic
+		### and frozen at peace, so the baseline needs no staleness handling for the peace case; weeks
+		### skipped by the hard brake fold into the next delta, which then reads as a multi-week
+		### average rate - still a valid signal. First observation (no baseline yet) yields no signal
+		### (-1) instead of a full-history delta.
+
+		set_temp_variable = { _post_own_cas_delta = -1 }
+		if = {
+			limit = { has_variable = WA_AI_MILITARY_cas_prev }
+			set_temp_variable = { _post_own_cas_delta = casualties_k }
+			subtract_from_temp_variable = { _post_own_cas_delta = WA_AI_MILITARY_cas_prev }
+		}
+		set_variable = { WA_AI_MILITARY_cas_prev = casualties_k }
+
+		### Air-superiority input. WA_AI_calc_air_force_sizes (WA_AI_misc_effects.txt) publishes an
+		### air_force_size_<TAG> temp variable per enemy (deployed planes + fighter stockpile). Our
+		### own side is computed directly with the same formula - the helper's friendly accumulator
+		### counts allies from unrelated theatres, which is not what a per-enemy verdict wants.
+
+		WA_AI_calc_air_force_sizes = yes
+		set_temp_variable = { _post_own_air = num_deployed_planes }
+		add_to_temp_variable = { _post_own_air = num_equipment@small_fighter_airframe }
+
+		### Faction manpower pool (thousands), for the attrition edge test. Own pool counts too.
+		### Temp variables are context-global across scope changes (established AIFC-helpers idiom),
+		### so members add into the shared accumulator directly.
+
+		set_temp_variable = { _post_faction_mp_k = manpower_k }
+
+		every_country = {
+			limit = {
+				is_in_faction_with = ROOT
+				NOT = { tag = ROOT }
+				has_capitulated = no
+			}
+
+			add_to_temp_variable = { _post_faction_mp_k = manpower_k }
+		}
+
+		### Per-enemy verdicts. Minors are skipped: front execution targets majors and
+		### near-majors; a one-state enemy never justifies its own posture entry.
+
+		set_temp_variable = { _post_overall = 0 }
+
+		every_enemy_country = {
+			limit = {
+				exists = yes
+				has_capitulated = no
+				OR = {
+					is_major = yes
+					num_of_controlled_states > 4
+				}
+			}
+
+			set_temp_variable = { _post_level = 0 }
+
+			# Enemy fielded-equipment ratio, computed from engine getters so it also works when the
+			# enemy is the human player (WA_AI_fielded_eq_ratio only exists for AI countries).
+			set_temp_variable = { _post_enemy_eq = 1 }
+			if = {
+				limit = { check_variable = { num_target_equipment_in_armies_k@infantry_equipment > 1 } }
+				set_temp_variable = { _post_enemy_eq = num_equipment_in_armies_k@infantry_equipment }
+				divide_temp_variable = { _post_enemy_eq = num_target_equipment_in_armies_k@infantry_equipment }
+			}
+
+			# Enemy manpower state for the attrition test, read here where the scope is cheap.
+			set_temp_variable = { _post_enemy_dry = 0 }
+			if = {
+				limit = {
+					NOT = { conscription_ratio < 0.99 }		# at maximum mobilization for their laws
+					has_manpower < @WA_AI_POSTURE_GRIND_ENEMY_MP
+				}
+				set_temp_variable = { _post_enemy_dry = 1 }
+			}
+			set_temp_variable = { _post_enemy_mp_edge = manpower_k }
+			multiply_temp_variable = { _post_enemy_mp_edge = @WA_AI_POSTURE_GRIND_MP_EDGE }
+
+			# Enemy weekly casualty delta, baseline stored per observer (on ROOT, tag-substituted).
+			# The enemy's casualties variable is global across all their fronts - a deliberate proxy;
+			# the volume floor and clamp below keep the worst distortions out.
+			set_temp_variable = { _post_enemy_cas_now = casualties_k }
+			set_temp_variable = { _post_enemy_cas_delta = -1 }
+			ROOT = {
+				if = {
+					limit = { has_variable = WA_AI_MILITARY_cas_prev_@PREV }
+					set_temp_variable = { _post_enemy_cas_delta = _post_enemy_cas_now }
+					subtract_from_temp_variable = { _post_enemy_cas_delta = WA_AI_MILITARY_cas_prev_@PREV }
+				}
+				set_variable = { WA_AI_MILITARY_cas_prev_@PREV = _post_enemy_cas_now }
+			}
+
+			# Exchange-rate verdict: 1 = favourable (unlocks the grind without a dry pool),
+			# -1 = unfavourable (vetoes the grind - we are the ones bleeding), 0 = no signal
+			# (quiet front, first observation, or a stale baseline blowing past the clamp).
+			set_temp_variable = { _post_xr_signal = 0 }
+			if = {
+				limit = {
+					check_variable = { _post_own_cas_delta > @WA_AI_POSTURE_XR_MIN_OWN }
+					NOT = { check_variable = { _post_enemy_cas_delta < 0 } }
+				}
+				set_temp_variable = { _post_cas_volume = _post_own_cas_delta }
+				add_to_temp_variable = { _post_cas_volume = _post_enemy_cas_delta }
+				if = {
+					limit = { check_variable = { _post_cas_volume > @WA_AI_POSTURE_XR_MIN_VOLUME } }
+					set_temp_variable = { _post_xr = _post_enemy_cas_delta }
+					divide_temp_variable = { _post_xr = _post_own_cas_delta }
+					if = {
+						limit = {
+							check_variable = { _post_xr > @WA_AI_POSTURE_XR_GRIND }
+							check_variable = { _post_xr < @WA_AI_POSTURE_XR_CLAMP }
+						}
+						set_temp_variable = { _post_xr_signal = 1 }
+					}
+					else_if = {
+						limit = { check_variable = { _post_xr < @WA_AI_POSTURE_XR_VETO } }
+						set_temp_variable = { _post_xr_signal = -1 }
+					}
+				}
+			}
+
+			# Air state vs this enemy: 1 = superiority (exec bar drops to the hollow bar), -1 =
+			# inferiority (vetoes level-1 execution; the grind is unaffected - infantry attrition
+			# works without the air, China vs Japan being the type case). Small air forces on
+			# either side produce no verdict.
+			set_temp_variable = { _post_air_state = 0 }
+			set_temp_variable = { _post_enemy_air = air_force_size_@THIS }
+			set_temp_variable = { _post_air_edge = _post_enemy_air }
+			multiply_temp_variable = { _post_air_edge = @WA_AI_POSTURE_AIR_SUPERIOR }
+			set_temp_variable = { _post_air_floor = _post_enemy_air }
+			multiply_temp_variable = { _post_air_floor = @WA_AI_POSTURE_AIR_INFERIOR }
+			if = {
+				limit = {
+					check_variable = { _post_own_air > @WA_AI_POSTURE_AIR_MIN_PLANES }
+					check_variable = { _post_own_air > _post_air_edge }
+				}
+				set_temp_variable = { _post_air_state = 1 }
+			}
+			else_if = {
+				limit = {
+					check_variable = { _post_enemy_air > @WA_AI_POSTURE_AIR_MIN_PLANES }
+					check_variable = { _post_own_air < _post_air_floor }
+				}
+				set_temp_variable = { _post_air_state = -1 }
+			}
+
+			### Level 1 - execute: we can win the battles.
+
+			if = {
+				limit = {
+					# No plan execution into enemy air supremacy - the battles are not winnable
+					# whatever the ground ratio says.
+					NOT = { check_variable = { _post_air_state = -1 } }
+					ROOT = {
+						check_variable = { WA_AI_fielded_eq_ratio > @WA_AI_POSTURE_MIN_EQ }
+						has_manpower > @WA_AI_POSTURE_MIN_OWN_MP
+						OR = {
+							fighting_army_strength_ratio = { tag = PREV ratio > @WA_AI_POSTURE_EXEC_RATIO }
+							AND = {
+								# The lower bar applies when the enemy's line is hollow OR we own the sky.
+								OR = {
+									check_variable = { _post_enemy_eq < @WA_AI_POSTURE_HOLLOW_EQ }
+									check_variable = { _post_air_state = 1 }
+								}
+								fighting_army_strength_ratio = { tag = PREV ratio > @WA_AI_POSTURE_EXEC_RATIO_HOLLOW }
+							}
+						}
+					}
+				}
+				set_temp_variable = { _post_level = 1 }
+			}
+
+			### Level 2 - attrition grind: the enemy is out of men, we are not. Worth pressing even
+			### at odds that fail the level-1 bar, but never below GRIND_RATIO.
+
+			else_if = {
+				limit = {
+					# A measured unfavourable exchange rate vetoes the grind: losing men faster
+					# than the enemy is not attrition, whatever the manpower ledgers say.
+					NOT = { check_variable = { _post_xr_signal = -1 } }
+					OR = {
+						AND = {
+							check_variable = { _post_enemy_dry = 1 }
+							check_variable = { _post_faction_mp_k > _post_enemy_mp_edge }
+						}
+						# A measured favourable exchange rate substitutes for the dry-pool test:
+						# the ledger projection is unnecessary when the front is already proving it.
+						check_variable = { _post_xr_signal = 1 }
+					}
+					ROOT = {
+						check_variable = { WA_AI_fielded_eq_ratio > @WA_AI_POSTURE_MIN_EQ }
+						has_manpower > @WA_AI_POSTURE_MIN_OWN_MP
+						fighting_army_strength_ratio = { tag = PREV ratio > @WA_AI_POSTURE_GRIND_RATIO }
+					}
+				}
+				set_temp_variable = { _post_level = 2 }
+			}
+
+			ROOT = {
+				# Log only on change; the variable comparison doubles as the change detector.
+				if = {
+					limit = { NOT = { check_variable = { WA_AI_MILITARY_posture_vs_@PREV = _post_level } } }
+					log = "[GetYear] [GetMonth] | AI | [Root.GetName] | POSTURE: vs [Prev.GetName] -> [?_post_level]"
+				}
+				set_variable = { WA_AI_MILITARY_posture_vs_@PREV = _post_level }
+			}
+
+			if = {
+				limit = { check_variable = { _post_level > _post_overall } }
+				set_temp_variable = { _post_overall = _post_level }
+			}
+		}
+
+		set_variable = { WA_AI_MILITARY_posture = _post_overall }
+	}
+}
+
+
+############################################################################################################
+#	Reset posture to hold
+#	ROOT = country scope
+#
+#	Per-enemy WA_AI_MILITARY_posture_vs_<TAG> variables are NOT cleared here (tag-substituted names
+#	cannot be enumerated); consumers gate on has_war_with, which makes stale entries inert.
+#	Casualty baselines (WA_AI_MILITARY_cas_prev / _cas_prev_<TAG>) also persist deliberately:
+#	casualties_k is monotonic, so a kept baseline stays correct across pauses, while clearing one
+#	would turn the next delta into a full-history spike.
+############################################################################################################
+
+WA_AI_MILITARY_clear_posture = {
+
+	set_variable = { WA_AI_MILITARY_posture = 0 }
+}

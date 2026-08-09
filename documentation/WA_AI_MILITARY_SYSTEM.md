@@ -193,3 +193,57 @@ Phase 1 (this document): documentation and contract only. No script edits.
 | 6 | Validation harness: parity tests under `tests/`, optional in-game logging effect that dumps active strategies per AI per tick. | None. |
 
 Each phase is a separate PR. Do not pre-empt later phases inside earlier ones.
+
+---
+
+## 9. Offensive posture system (scripted support layer)
+
+`front_control` execution vs a major enemy is not gated on raw `ai_strategy` triggers but on a weekly
+scripted verdict, the **offensive posture** - the answer to "is executing battle plans useful right now,
+and against whom?". Rationale: the engine's `alliance_strength_ratio` compares worldwide faction strength,
+which permanently disabled the Allied `execute_order` blocks in any late war with a full-strength Axis,
+regardless of local superiority (the 1944 France passivity bug).
+
+| Piece | File |
+| --- | --- |
+| Thresholds and switches (control panel) | `common/scripted_triggers/WA_AI_MILITARY_posture_triggers.txt` |
+| Weekly calculus and publication | `common/scripted_effects/WA_AI_MILITARY_posture_effects.txt` |
+| Cadence | `on_weekly` in `common/on_actions/WA_AI_misc_on_actions.txt` |
+| Consumers (Faction layer) | `WA_AI_MILITARY_ALLIES_exec_vs_germany` / `_grind_vs_germany` and `WA_AI_MILITARY_ALLIES_downfall_push_FRONT` (ALLIES), `WA_AI_MILITARY_AXIS_exec_vs_sov` / `_grind_vs_sov` (AXIS), `WA_AI_MILITARY_CHINA_FRONT_exec_vs_japan` / `_grind_vs_japan` (CHINA_FRONT) |
+| Consumers (Country layer) | `WA_AI_MILITARY_SOV_counterattack` (SOV vs GER), `WA_AI_MILITARY_JAP_chinese_war_4` + the posture-0 fallback in `_chinese_war_3` (JAP vs CHI) |
+| Consumers (Default layer) | `WA_AI_MILITARY_EXEC_low_equipment_hold` |
+
+Published state per AI country: `WA_AI_MILITARY_posture` (0 = hold, 1 = execute, 2 = attrition grind),
+`WA_AI_MILITARY_posture_vs_<TAG>` per major enemy, and the `WA_AI_AIFC_hold_the_line` flag while the hard
+brake is engaged (which also drops AIFC into linear defence). Level 1 keys on
+`fighting_army_strength_ratio` (engaged armies only - expeditionary forces count wherever they stand);
+level 2 fires when the enemy is at maximum mobilization with a nearly dry manpower pool while our faction
+holds a deep reserve - attrition is then profitable even at odds below the level-1 bar, executed
+`careful`. The long-orphaned `WA_AI_defensive_front_strategy` low-equipment flag
+(`WA_AI_misc_effects.txt`) is the primary hard-brake input and now has a Default-layer `front_control`
+consumer.
+
+Two secondary inputs refine the verdicts (constants at the top of the effects file):
+
+- **Casualty exchange rate** - weekly deltas of `casualties_k` (own, and per enemy against baselines
+  stored on the observer: `WA_AI_MILITARY_cas_prev` / `_cas_prev_<TAG>`). A measured favourable
+  exchange substitutes for the dry-pool test and unlocks level 2; an unfavourable one vetoes level 2.
+  Quiet fronts, first observations, and stale baselines produce no signal. Baselines persist across
+  peace deliberately (`casualties_k` is monotonic).
+- **Air superiority** - per-enemy sizes from `WA_AI_calc_air_force_sizes` vs own planes + fighter
+  stockpile. Clear superiority lowers the level-1 bar to the hollow bar; clear inferiority vetoes
+  level 1. The grind is exempt from the air veto (infantry attrition works without the sky).
+
+Not every `execute_order = yes` is posture-gated, by design. Scripted historical war openings
+(Barbarossa 1941-42, Japan's 1937-40 China pushes, the southern-expansion timetable), pushes against
+minor enemies (posture publishes no verdict for them), home-territory defence
+(`WA_AI_MILITARY_JAP_operation_downfall`), island-hopping onto lightly-held states, and the
+flag-coordinated `WA_AI_MILITARY_SOV_coordinate_offensive` all stay unconditional - the posture
+calculus would either stall them at war start (no engaged armies yet, so
+`fighting_army_strength_ratio` reads near zero) or add nothing.
+
+Authoring rule: a new `execute_order = yes` block against a major enemy should gate on
+`check_variable = { WA_AI_MILITARY_posture_vs_<TAG> = <level> }` (plus `has_war_with` - per-enemy posture
+variables linger after a peace) rather than re-deriving strength conditions inline. Pair level 1 with
+`execution_type = balanced` and level 2 with `execution_type = careful` + `manual_attack = yes`, as the
+existing Faction-layer pairs do.

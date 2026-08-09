@@ -124,21 +124,22 @@ WA_AI_MILITARY_ALLIES_commonwealth_north_africa_support_FRONT = {
 
 
 
+# purpose: make Allied fronts facing Germany actually execute their attack orders when the weekly
+#          posture calculus says battles are winnable. The old gate here (alliance_strength_ratio > 2)
+#          compared WORLDWIDE faction strength and never fired in a late war with a full-strength Axis,
+#          leaving the Allies passive in France with crushing local superiority. Posture level 1 uses
+#          fighting_army_strength_ratio, which counts only engaged armies. Equipment and manpower
+#          floors live inside the calculus (WA_AI_MILITARY_posture_effects.txt).
+#          Stale-variable note: posture_vs_GER lingers after a peace, so has_war_with = GER stays here.
+# range:   n/a (front_control)
+# policy:  Exclusive per front - priority 300; mutually exclusive with the grind block below by
+#          posture level; outranked by the level-500/10000 emergency stops in DEFAULT_FRONT_control.
+# domain:  FRONT
 WA_AI_MILITARY_ALLIES_exec_vs_germany = {
 	enable = {
 		WA_AI_MILITARY_is_allies_member = yes
 		has_war_with = GER
-		OR = {
-			AND = {
-				date < 1941.1.1
-				alliance_strength_ratio > 3
-			}
-			AND = {
-				date > 1941.1.1
-				alliance_strength_ratio > 2
-			}
-		}
-		check_variable = { WA_AI_fielded_eq_ratio > 0.9 }
+		check_variable = { WA_AI_MILITARY_posture_vs_GER = 1 }
 	}
 	abort_when_not_enabled = yes
 
@@ -150,6 +151,34 @@ WA_AI_MILITARY_ALLIES_exec_vs_germany = {
 		ordertype = front
 		execution_type = balanced
 		execute_order = yes
+	}
+}
+
+
+# purpose: attrition grind vs Germany - posture level 2 means Germany is at maximum mobilization with
+#          a nearly dry manpower pool while the Allies hold a deep reserve, so pressing attacks pays
+#          even at odds below the level-1 bar. Careful execution: bleed, do not lunge.
+# range:   n/a (front_control)
+# policy:  Exclusive per front - priority 300; mutually exclusive with the exec block above by
+#          posture level (the calculus emits exactly one level per enemy).
+# domain:  FRONT
+WA_AI_MILITARY_ALLIES_grind_vs_germany = {
+	enable = {
+		WA_AI_MILITARY_is_allies_member = yes
+		has_war_with = GER
+		check_variable = { WA_AI_MILITARY_posture_vs_GER = 2 }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_control
+		tag = GER
+		ratio = 0.2
+		priority = 300
+		ordertype = front
+		execution_type = careful
+		execute_order = yes
+		manual_attack = yes
 	}
 }
 
@@ -678,6 +707,15 @@ WA_AI_MILITARY_ALLIES_dday_push = {
 
 
 # Phase 6 split from WA_AI_MILITARY_ALLIES_downfall_push (FRONT domain)
+# purpose: execute the home-islands push once a foothold exists AND the weekly posture calculus says
+#          battles vs Japan are winnable (level 1, usually via the hollow-line bar late war) or the
+#          IJA is manpower-dry (level 2). Prevents feeding a beachhead into an intact defence.
+#          fighting_army_strength_ratio counts Japan's China armies too, so the level-1 bar is mostly
+#          reached through the hollow-equipment path - by the downfall stage that is the normal case.
+#          Stale-variable note: posture_vs_JAP lingers after a peace, so has_war_with = JAP stays here.
+# range:   n/a (front_control)
+# policy:  Exclusive per front; outranked by the level-500/10000 emergency stops in DEFAULT_FRONT_control.
+# domain:  FRONT
 WA_AI_MILITARY_ALLIES_downfall_push_FRONT = {
 
 	allowed = {
@@ -685,6 +723,7 @@ WA_AI_MILITARY_ALLIES_downfall_push_FRONT = {
 	}
 	enable = {
 		has_war_with = JAP
+		check_variable = { WA_AI_MILITARY_posture_vs_JAP > 0 }
 		NOT = {
 			JAP = {
 				AND = {
@@ -932,12 +971,11 @@ WA_AI_MILITARY_ALLIES_dday_fire_FRONT = {
 		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
 	}
 	enable = {
-		NOT = {
-			AND = {
-				date > 1944.12.1
-				has_war_with = JAP
-			}
-		}
+		# Was: NOT = { date > 1944.12.1 AND has_war_with = JAP } - a hard calendar cutoff meant to free
+		# forces for the Pacific, which instead switched off all France invasion execution in any
+		# campaign where the European war ran long. Replaced with the situational exit below: stay live
+		# until Germany is actually breaking, then release for the Pacific.
+		NOT = { GER = { surrender_progress > 0.5 } }
 		has_war_with = GER
 		WA_AI_MILITARY_is_allies_member = yes
 		NOT = {

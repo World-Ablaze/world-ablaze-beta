@@ -122,10 +122,21 @@ WA_AI_MILITARY_AXIS_minors_stay_out_of_france = {
 
 
 
+# purpose: make Axis fronts facing the Soviet Union execute their attack orders when the weekly
+#          posture calculus says battles are winnable (WA_AI_MILITARY_posture_effects.txt). Was
+#          unconditionally on, which kept a broken 1943+ Ostheer lunging into a superior Red Army;
+#          with the gate, the date-phased Barbarossa blocks below (priority 0) carry the scripted
+#          1941-42 opening and this block only re-fires when the front is actually winnable.
+#          Stale-variable note: posture_vs_SOV lingers after a peace, so has_war_with = SOV stays here.
+# range:   n/a (front_control)
+# policy:  Exclusive per front - priority 300; mutually exclusive with the grind block below by
+#          posture level; outranked by the level-500/10000 emergency stops in DEFAULT_FRONT_control.
+# domain:  FRONT
 WA_AI_MILITARY_AXIS_exec_vs_sov = {
 	enable = {
 		WA_AI_MILITARY_is_axis_member = yes
 		has_war_with = SOV
+		check_variable = { WA_AI_MILITARY_posture_vs_SOV = 1 }
 	}
 	abort_when_not_enabled = yes
 
@@ -137,6 +148,35 @@ WA_AI_MILITARY_AXIS_exec_vs_sov = {
 		ordertype = front
 		execution_type = balanced
 		execute_order = yes
+	}
+}
+
+
+# purpose: attrition grind vs the Soviet Union - posture level 2 means the Soviets are at maximum
+#          mobilization with a nearly dry manpower pool while the Axis holds a deep reserve, so
+#          pressing attacks pays even at odds below the level-1 bar. Careful execution: bleed,
+#          do not lunge.
+# range:   n/a (front_control)
+# policy:  Exclusive per front - priority 300; mutually exclusive with the exec block above by
+#          posture level (the calculus emits exactly one level per enemy).
+# domain:  FRONT
+WA_AI_MILITARY_AXIS_grind_vs_sov = {
+	enable = {
+		WA_AI_MILITARY_is_axis_member = yes
+		has_war_with = SOV
+		check_variable = { WA_AI_MILITARY_posture_vs_SOV = 2 }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_control
+		tag = SOV
+		ratio = 0.2
+		priority = 300
+		ordertype = front
+		execution_type = careful
+		execute_order = yes
+		manual_attack = yes
 	}
 }
 

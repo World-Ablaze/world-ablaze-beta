@@ -1,0 +1,86 @@
+############################################################################################################
+#	World Ablaze AI mod - Military Offensive Posture - Triggers Module
+############################################################################################################
+#	The posture system answers one question per AI country, per week: "is executing battle plans
+#	useful right now, and against whom?" It replaces the old global gate on
+#	WA_AI_MILITARY_ALLIES_exec_vs_germany (alliance_strength_ratio > 2), which compared WORLDWIDE
+#	faction strength and therefore never fired in a late war where the Axis fields as many divisions
+#	as the Allies - even with crushing local superiority in France.
+#
+#	Calculus and publication:  common/scripted_effects/WA_AI_MILITARY_posture_effects.txt
+#	Consumers:                 common/ai_strategy/WA_AI_MILITARY_FACTION_ALLIES_FRONT.txt (exec/grind vs GER, downfall push vs JAP)
+#	                           common/ai_strategy/WA_AI_MILITARY_FACTION_AXIS_FRONT.txt (exec/grind vs SOV)
+#	                           common/ai_strategy/WA_AI_MILITARY_FACTION_CHINA_FRONT_FRONT.txt (exec/grind vs JAP)
+#	                           common/ai_strategy/WA_AI_MILITARY_COUNTRY_SOV_FRONT.txt (counterattack window vs GER)
+#	                           common/ai_strategy/WA_AI_MILITARY_COUNTRY_JAP_FRONT.txt (1944 Ichi-Go vs CHI)
+#	                           common/ai_strategy/WA_AI_MILITARY_DEFAULT_FRONT_control.txt (low-equipment hold)
+#	Cadence:                   on_weekly in common/on_actions/WA_AI_misc_on_actions.txt
+#
+#	Published state (country scope):
+#		var  WA_AI_MILITARY_posture          0 = hold, 1 = execute plans, 2 = attrition grind
+#		var  WA_AI_MILITARY_posture_vs_<TAG> per-enemy posture level, one variable per major enemy
+#		flag WA_AI_AIFC_hold_the_line        set while the hard brake is on, so AIFC stops concentrating
+#		                                     (this system is the designated writer of that flag - see
+#		                                     WA_AI_AIFC_posture_defensive in WA_AI_AIFC_triggers.txt)
+#
+#	THIS FILE IS THE CONTROL PANEL. Thresholds and switches live here; arithmetic lives in the effect.
+############################################################################################################
+
+### Posture eligibility constants (must match common/scripted_effects/WA_AI_MILITARY_posture_effects.txt)
+@WA_AI_POSTURE_MIN_EQ = 0.9			# fielded-equipment ratio required to order any execution
+@WA_AI_POSTURE_BRAKE_SURRENDER = 0.2	# collapsing countries hold the line with everything
+
+
+############################################################################################################
+#	MASTER SWITCH - does this country use the posture system at all?
+#	THIS = COUNTRY
+#
+#	Default: every AI country. To restrict, edit THIS TRIGGER ONLY (AIFC-style):
+#		Majors only:            is_major = yes
+#		Disable entirely:       always = no
+############################################################################################################
+
+WA_AI_MILITARY_posture_enabled = {
+	is_ai = yes
+}
+
+
+############################################################################################################
+#	ELIGIBILITY - is it worth running the weekly calculus for this country right now?
+#	THIS = COUNTRY
+############################################################################################################
+
+WA_AI_MILITARY_should_update_posture = {
+	WA_AI_MILITARY_posture_enabled = yes
+	has_war = yes
+	has_capitulated = no
+	any_enemy_country = { exists = yes }
+}
+
+
+############################################################################################################
+#	HARD BRAKE - conditions under which no offensive execution is ever ordered, whatever the odds.
+#	THIS = COUNTRY
+#
+#	WA_AI_defensive_front_strategy is the long-standing low-equipment emergency flag from
+#	WA_AI_misc_effects.txt (set below 0.6 fielded equipment, cleared above 0.9 - built-in hysteresis).
+#	Until this system existed it had no consumer; it is now the primary brake input.
+############################################################################################################
+
+WA_AI_MILITARY_posture_hard_brake = {
+	OR = {
+		has_country_flag = WA_AI_defensive_front_strategy
+
+		# Home front collapsing while short on equipment: hold everything.
+		AND = {
+			WA_AI_MILITARY_home_threatened = yes
+			check_variable = { WA_AI_fielded_eq_ratio < @WA_AI_POSTURE_MIN_EQ }
+		}
+
+		surrender_progress > @WA_AI_POSTURE_BRAKE_SURRENDER
+
+		# Deliberately no fuel condition: fuel_ratio sits near zero for low-industry countries whose
+		# infantry armies attack fine without it (China vs Japan). Add a fuel brake only if it can be
+		# scoped to mechanized armies.
+	}
+}
