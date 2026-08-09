@@ -15,9 +15,9 @@ WA_AI_lend_lease = {
 	ROOT = {
 		has_capitulated = no
 
+		# (a WA_AI_supports_@<target> escape-hatch flag used to sit in this OR; it was never
+		# set anywhere in the mod, so the branch was dead - removed)
 		OR = {
-			has_country_flag = WA_AI_supports_@PREV
-
 			AND = {
 				WA_AI_special_lend_lease_rules_SENDER = yes
 
@@ -277,9 +277,9 @@ WA_AI_lend_lease = {
 
 		set_temp_variable = { t1 = THIS.id }
 
+		# (a WA_AI_receives_support_@<target> escape-hatch flag used to sit in this OR; it was
+		# never set anywhere in the mod, so the branch was dead - removed)
 		OR = {
-			has_country_flag = WA_AI_receives_support_@THIS
-
 			AND = {
 				WA_AI_special_lend_lease_rules_TARGET = yes
 
@@ -375,7 +375,9 @@ WA_AI_lend_lease = {
 
 WA_AI_special_lend_lease_rules_SENDER = {
 
-	# GER should focus on stockpiling for itself
+	# GER should focus on stockpiling for itself - UNLESS it is sitting on a clear exportable
+	# surplus. Without the escape this gate held for the whole war (SOV alive, communist, not
+	# allied) while GER hoarded 330k rifles next to allies running an equipment debt.
 	if = {
 		limit = {
 			original_tag = GER
@@ -383,6 +385,7 @@ WA_AI_special_lend_lease_rules_SENDER = {
 		}
 
 		OR = {
+			WA_AI_LEND_LEASE_has_exportable_surplus = yes
 			SOV = { has_capitulated = yes }
 			SOV = { exists = no }
 			SOV = { is_subject = yes }
@@ -400,7 +403,7 @@ WA_AI_special_lend_lease_rules_SENDER = {
 		has_army_manpower = { size > 550000 }
 	}
 
-	# SOV should focus on stockpiling for itself
+	# SOV should focus on stockpiling for itself - same surplus escape as GER above
 	if = {
 		limit = {
 			original_tag = SOV
@@ -408,6 +411,7 @@ WA_AI_special_lend_lease_rules_SENDER = {
 		}
 
 		OR = {
+			WA_AI_LEND_LEASE_has_exportable_surplus = yes
 			GER = { has_capitulated = yes }
 			GER = { exists = no }
 			GER = { is_subject = yes }
@@ -468,7 +472,7 @@ WA_AI_special_lend_lease_rules_TARGET = {
 		}
 	}
 
-	# SOV should focus on stockpiling for itself
+	# SOV should focus on stockpiling for itself - same surplus escape as the SENDER side
 	if = {
 		limit = {
 			ROOT = { original_tag = SOV }
@@ -477,6 +481,7 @@ WA_AI_special_lend_lease_rules_TARGET = {
 		}
 
 		OR = {
+			ROOT = { WA_AI_LEND_LEASE_has_exportable_surplus = yes }
 			GER = { has_capitulated = yes }
 			GER = { exists = no }
 			GER = { is_subject = yes }
@@ -539,4 +544,35 @@ WA_AI_special_lend_lease_rules_TARGET = {
 			}
 		}
 	}
+}
+######################################################
+#	LEND-LEASE CAPABILITY TRIGGERS
+#	Capability questions, not tag questions: any country in any timeline
+#	qualifies purely on its stockpile and war state.
+######################################################
+
+# THIS = potential sender. True when the stockpile clearly exceeds what its own army
+# can absorb - the "GER hoards 330k rifles while its ally runs an equipment debt" case.
+WA_AI_LEND_LEASE_has_exportable_surplus = {
+	has_equipment = { infantry_equipment > 100000 }
+	has_equipment = { support_equipment > 20000 }
+}
+
+# THIS = potential recipient. True when fighting a war on an empty reserve.
+WA_AI_LEND_LEASE_is_starving = {
+	has_war = yes
+	NOT = { has_equipment = { infantry_equipment > 10000 } }
+}
+
+# THIS = candidate recipient, PREV = potential sender.
+# The whole surplus-relief policy in one tag-agnostic question: am I a starving
+# co-belligerent faction-mate of a sender that is sitting on an exportable surplus?
+# Consumed by WA_AI_LEND_LEASE_surplus_relief in
+# common/scripted_effects/WA_AI_lend_lease_effects.txt (weekly direct transfer).
+WA_AI_LEND_LEASE_should_receive_relief = {
+	NOT = { tag = PREV }
+	is_in_faction_with = PREV
+	has_war_together_with = PREV
+	WA_AI_LEND_LEASE_is_starving = yes
+	PREV = { WA_AI_LEND_LEASE_has_exportable_surplus = yes }
 }

@@ -132,3 +132,34 @@ WA_AI_clear_lend_lease_targets = { # THIS = SENDER
 		clear_array = WA_AI_lend_lease_targets
 	}
 }
+### Surplus relief - direct equipment transfer to starving faction allies (weekly)
+# ROOT = sender (AI; the weekly call site is inside the is_ai gate).
+# Fully tag-agnostic: all policy lives in WA_AI_LEND_LEASE_should_receive_relief
+# (common/scripted_triggers/WA_AI_LEND_LEASE_triggers.txt - starving co-belligerent
+# faction-mate of a sender with an exportable surplus, any faction, any timeline).
+# Implemented as send_equipment rather than send_lend_lease_desire because the desire
+# ai_strategy type needs a literal country id, which would hardcode tags into strategy
+# files. Self-regulating: the transfer stops when the recipient stops being starving
+# (> 10k infantry equipment) or the sender stops having a surplus.
+WA_AI_LEND_LEASE_surplus_relief = {
+	if = {
+		limit = { WA_AI_LEND_LEASE_has_exportable_surplus = yes }
+
+		every_other_country = {
+			limit = { WA_AI_LEND_LEASE_should_receive_relief = yes }
+
+			set_temp_variable = { _relief_target_id = THIS.id }
+			ROOT = {
+				meta_effect = {
+					text = {
+						send_equipment = { equipment = infantry_equipment amount = 6000 target = [TGT] }
+						send_equipment = { equipment = support_equipment amount = 1200 target = [TGT] }
+					}
+					TGT = "[?_relief_target_id.GetTag]"
+				}
+
+				if = { limit = { has_country_flag = WA_AI_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | LEND-LEASE: surplus relief sent to [Prev.GetName]" }
+			}
+		}
+	}
+}
