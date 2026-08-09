@@ -132,34 +132,72 @@ WA_AI_clear_lend_lease_targets = { # THIS = SENDER
 		clear_array = WA_AI_lend_lease_targets
 	}
 }
-### Surplus relief - direct equipment transfer to starving faction allies (weekly)
-# ROOT = sender (AI; the weekly call site is inside the is_ai gate).
-# Fully tag-agnostic: all policy lives in WA_AI_LEND_LEASE_should_receive_relief
-# (common/scripted_triggers/WA_AI_LEND_LEASE_triggers.txt - starving co-belligerent
-# faction-mate of a sender with an exportable surplus, any faction, any timeline).
-# Implemented as send_equipment rather than send_lend_lease_desire because the desire
-# ai_strategy type needs a literal country id, which would hardcode tags into strategy
-# files. Self-regulating: the transfer stops when the recipient stops being starving
-# (> 10k infantry equipment) or the sender stops having a surplus.
-WA_AI_LEND_LEASE_surplus_relief = {
+### Surplus relief - direct equipment transfer from a hoarding ally (weekly)
+# ROOT = RECIPIENT (AI; the weekly call site is inside the is_ai gate).
+# Pull, not push: the starving country selects ONE donor per week and the send runs in
+# the donor's scope with target = ROOT - the repo's most-proven dynamic-target form
+# (no meta_effect, no tag rendering, nothing that can silently fail to compile; the
+# previous push version resolved a temp variable across a scope switch and used the
+# unproven `equipment =` parameter, either of which can no-op silently).
+# random_other_country (not every_) caps intake at one donor per recipient per week,
+# and per-transfer re-reads of the donor's stockpile stop a donor the moment it drops
+# below its own floor, even mid-tick across several recipients.
+# Policy lives in WA_AI_LEND_LEASE_should_receive_relief_{infantry,support}
+# (common/scripted_triggers/WA_AI_LEND_LEASE_triggers.txt), per-archetype so a sender
+# with only rifles to spare ships only rifles. Amounts are tiered by donor surplus -
+# a 300k-rifle hoarder dripping 6000/week while an ally collapses is not relief.
+WA_AI_LEND_LEASE_request_surplus_relief = {
 	if = {
-		limit = { WA_AI_LEND_LEASE_has_exportable_surplus = yes }
-
-		every_other_country = {
-			limit = { WA_AI_LEND_LEASE_should_receive_relief = yes }
-
-			set_temp_variable = { _relief_target_id = THIS.id }
-			ROOT = {
-				meta_effect = {
-					text = {
-						send_equipment = { equipment = infantry_equipment amount = 6000 target = [TGT] }
-						send_equipment = { equipment = support_equipment amount = 1200 target = [TGT] }
-					}
-					TGT = "[?_relief_target_id.GetTag]"
-				}
-
-				if = { limit = { has_country_flag = WA_AI_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | LEND-LEASE: surplus relief sent to [Prev.GetName]" }
+		limit = {
+			OR = {
+				WA_AI_LEND_LEASE_is_starving_infantry = yes
+				WA_AI_LEND_LEASE_is_starving_support = yes
 			}
+		}
+
+		random_other_country = {
+			limit = {
+				OR = {
+					PREV = { WA_AI_LEND_LEASE_should_receive_relief_infantry = yes }
+					PREV = { WA_AI_LEND_LEASE_should_receive_relief_support = yes }
+				}
+			}
+
+			# --- infantry leg (THIS = donor, PREV/ROOT = recipient) ---
+			if = {
+				limit = { PREV = { WA_AI_LEND_LEASE_should_receive_relief_infantry = yes } }
+
+				if = {
+					limit = { has_equipment = { infantry_equipment > 299999 } }
+					send_equipment = { type = infantry_equipment amount = 24000 target = ROOT }
+				}
+				else_if = {
+					limit = { has_equipment = { infantry_equipment > 149999 } }
+					send_equipment = { type = infantry_equipment amount = 12000 target = ROOT }
+				}
+				else = {
+					send_equipment = { type = infantry_equipment amount = 6000 target = ROOT }
+				}
+			}
+
+			# --- support leg ---
+			if = {
+				limit = { PREV = { WA_AI_LEND_LEASE_should_receive_relief_support = yes } }
+
+				if = {
+					limit = { has_equipment = { support_equipment > 59999 } }
+					send_equipment = { type = support_equipment amount = 4800 target = ROOT }
+				}
+				else_if = {
+					limit = { has_equipment = { support_equipment > 29999 } }
+					send_equipment = { type = support_equipment amount = 2400 target = ROOT }
+				}
+				else = {
+					send_equipment = { type = support_equipment amount = 1200 target = ROOT }
+				}
+			}
+
+			if = { limit = { ROOT = { has_country_flag = WA_AI_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | LEND-LEASE: surplus relief received from [This.GetName]" }
 		}
 	}
 }

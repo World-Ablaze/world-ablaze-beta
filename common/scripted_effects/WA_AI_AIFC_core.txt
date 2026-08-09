@@ -163,7 +163,12 @@ WA_AI_AIFC_check_sector_valid = {
 					is_in_array = { ROOT.WA_AI_AIFC_sector_states = THIS.id }
 				}
 			}
-			set_temp_variable = { _aifc_sector_valid = 1 }
+			# The ROOT hop is load-bearing: temp variables are scope-owned, so a bare
+			# set_temp_variable here writes to the STATE and the country-scope reader at the
+			# call site never sees it - validity read 0 every week and the sector re-selected
+			# weekly for the system's whole life (campaign c9ab1062: sector_age 1 in 40/40
+			# observations). Same trap as railway Fixes 24/25/27.
+			ROOT = { set_temp_variable = { _aifc_sector_valid = 1 } }
 		}
 
 		# Fix 28: expeditionary sectors (selected via the 1b fallback in WA_AI_AIFC_helpers.txt) are
@@ -192,7 +197,8 @@ WA_AI_AIFC_check_sector_valid = {
 							is_in_array = { ROOT.WA_AI_AIFC_sector_states = THIS.id }
 						}
 					}
-					set_temp_variable = { _aifc_sector_valid = 1 }
+					# ROOT hop load-bearing - see the native pass above
+					ROOT = { set_temp_variable = { _aifc_sector_valid = 1 } }
 				}
 			}
 		}
