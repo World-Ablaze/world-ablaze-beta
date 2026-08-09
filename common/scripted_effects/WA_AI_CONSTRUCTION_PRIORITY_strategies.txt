@@ -772,25 +772,6 @@ WA_AI_fortify_strategic_islands = {
 	}
 }
 
-# Adds THIS country's deployed land-based planes (the wings that would compete
-# for UK basing: fighters, bombers, patrol and scouts - carrier airframes
-# excluded) to the temp variable _faction_planes_. Callers must initialize
-# _faction_planes_ first. Country scope.
-WA_AI_PC_add_deployed_land_planes = {
-	add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@small_fighter_airframe }
-	add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@small_fighter_multirole_airframe }
-	add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@small_fighter_interceptor_airframe }
-	add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@small_bomber_airframe }
-	add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_fighter_airframe }
-	add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_fighter_multirole_airframe }
-	add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_bomber_airframe }
-	add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_heavy_bomber_airframe }
-	add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@fast_bomber_airframe }
-	add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_scout_airframe }
-	add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@large_bomber_airframe }
-	add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@large_maritime_patrol_airframe }
-}
-
 # Keep enough air base capacity in central/southern England to host the whole
 # faction's aviation (RAF + USAAF + minors). Without this the allied AI parks
 # its air force in America: the UK bases in range of the front fill up and the
@@ -809,6 +790,22 @@ WA_AI_build_uk_air_hosting_capacity = {
 	@UK_AIR_CAPACITY_PER_LEVEL = 100	# NDefines.NBuildings.AIRBASE_CAPACITY_MULT (05_defines.lua)
 	@UK_AIR_TARGET_LEVEL_CAP = 12		# per-state cap, leaves slots for other buildings
 	@UK_AIR_HOSTED_FACTION_SHARE = 0.5	# share of the faction's planes the UK should be able to host
+
+	# DIAGNOSIS INSTRUMENTATION (campaign 0e7e7852: the strategy produced zero
+	# projects on a build that verifiably contained it, and saves cannot show why -
+	# temp variables are not stored). The WA_AI_uk_air_dbg_* persistent variables
+	# make each stage readable from the next test campaign's saves:
+	#   dbg_called   pulses that reached this effect (ENG/USA only)
+	#   dbg_planes   faction plane count of the last gated pulse
+	#   dbg_capacity hosting capacity of the last gated pulse
+	#   dbg_best     -2 = no deficit, -1 = deficit but no eligible state, else state id
+	#   dbg_started  projects actually queued
+	# Absence of dbg_called = dispatcher never calls us; dbg_called without the
+	# others = the main gate never passed. Remove once the system is verified.
+	if = {
+		limit = { OR = { original_tag = ENG original_tag = USA } }
+		add_to_variable = { WA_AI_uk_air_dbg_called = 1 }
+	}
 
 	if = {
 		limit = {
@@ -835,13 +832,37 @@ WA_AI_build_uk_air_hosting_capacity = {
 		# num_deployed_planes cannot be read as a set_temp_variable rvalue (campaign
 		# 5709c8b9: every other gate provably passed and the deficit branch never
 		# fired). The per-airframe form num_deployed_planes_with_type@X is script-
-		# readable (mission_calculations_effects.txt relies on it), so sum the
-		# land-based airframes via WA_AI_PC_add_deployed_land_planes.
+		# readable (mission_calculations_effects.txt relies on it). The sums are
+		# INLINED deliberately - a helper effect is a newly registered name, which a
+		# console reload cannot pick up and which added an unprovable failure class
+		# to the 0e7e7852 test round; inline statements carry no such risk.
 
 		set_temp_variable = { _faction_planes_ = 0 }
-		WA_AI_PC_add_deployed_land_planes = yes
+		add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@small_fighter_airframe }
+		add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@small_fighter_multirole_airframe }
+		add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@small_fighter_interceptor_airframe }
+		add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@small_bomber_airframe }
+		add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_fighter_airframe }
+		add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_fighter_multirole_airframe }
+		add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_bomber_airframe }
+		add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_heavy_bomber_airframe }
+		add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@fast_bomber_airframe }
+		add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_scout_airframe }
+		add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@large_bomber_airframe }
+		add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@large_maritime_patrol_airframe }
 		for_each_scope_loop = { array = allies
-			WA_AI_PC_add_deployed_land_planes = yes
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@small_fighter_airframe }
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@small_fighter_multirole_airframe }
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@small_fighter_interceptor_airframe }
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@small_bomber_airframe }
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_fighter_airframe }
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_fighter_multirole_airframe }
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_bomber_airframe }
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_heavy_bomber_airframe }
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@fast_bomber_airframe }
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_scout_airframe }
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@large_bomber_airframe }
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@large_maritime_patrol_airframe }
 		}
 
 		set_temp_variable = { _uk_target_capacity_ = _faction_planes_ }
@@ -866,6 +887,10 @@ WA_AI_build_uk_air_hosting_capacity = {
 			}
 		}
 		multiply_temp_variable = { _uk_hosting_capacity_ = @UK_AIR_CAPACITY_PER_LEVEL }
+
+		set_variable = { WA_AI_uk_air_dbg_planes = _faction_planes_ }
+		set_variable = { WA_AI_uk_air_dbg_capacity = _uk_hosting_capacity_ }
+		set_variable = { WA_AI_uk_air_dbg_best = -2 }
 
 		if = { limit = { check_variable = { _uk_target_capacity_ > _uk_hosting_capacity_ } }
 
@@ -897,7 +922,10 @@ WA_AI_build_uk_air_hosting_capacity = {
 				}
 			}
 
+			set_variable = { WA_AI_uk_air_dbg_best = _uk_air_best_state_ }
+
 			if = { limit = { check_variable = { _uk_air_best_state_ > -1 } }
+				add_to_variable = { WA_AI_uk_air_dbg_started = 1 }
 				var:_uk_air_best_state_ = {
 					set_temp_variable = { _project_building_type = 2 }
 					set_temp_variable = { _project_province_id = 0 }
