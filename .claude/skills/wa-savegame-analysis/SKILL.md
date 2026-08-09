@@ -1,11 +1,23 @@
 ---
 name: wa-savegame-analysis
-description: Navigating and extracting data from HOI4 savegames to verify World Ablaze behaviour in real campaigns — selecting saves, determining which saves belong to the same campaign, and reading variables, ideas, flags, politics, and ai_strategy state out of 60–150MB save files. Use this whenever a task involves checking what actually happened in a game (as opposed to what the script says should happen), tracking how a value or idea evolved over months/years of a campaign, or debugging AI misbehaviour reported from a playthrough. Never open a savegame with Read or plain grep — this skill's streaming script is the only practical way in.
+description: Navigating and extracting data from HOI4 savegames to verify World Ablaze behaviour in real campaigns — selecting saves, determining which saves belong to the same campaign, and reading variables, ideas, flags, politics, and ai_strategy state out of 60–150MB save files. Use this whenever a task involves checking what actually happened in a game (as opposed to what the script says should happen), tracking how a value or idea evolved over months/years of a campaign, or debugging AI misbehaviour reported from a playthrough. Never open a savegame with Read or plain grep — this skill's streaming script is the only practical way in — and run the exploration in subagents so the bulky output never enters the main context.
 ---
 
 # WA savegame analysis
 
 Savegames are the ground truth for how the mod actually behaved in a campaign. Use them to verify AI systems (did the variable get set? did the idea get applied? when?), to trace trends over in-game time, and to debug reports from playthroughs.
+
+## Context discipline — subagents do the exploring
+
+Savegame output is bulky even through the script: a `campaigns` listing over a real save dir runs hundreds of lines, and `section`/`var`/`ideas` output scales with what you ask for. The main agent must not run exploration commands inline — delegate to subagents (Explore for read-only extraction) and keep only the distilled result:
+
+1. **Selection pass** — one subagent runs `campaigns` (plus `meta` where needed), filters to relevant mods and save file dates, and returns a *compact shortlist*: campaign id, save filenames with in-game dates and player tags, and any branched-timeline warnings. Subagents cannot talk to the user, so ambiguity comes back to the main agent, which resolves it with AskUserQuestion.
+2. **Extraction pass** — one subagent per independent question (different campaigns, countries, or systems can run as parallel subagents). The prompt must be self-contained: tell it to read this SKILL.md first, then give the exact save files, country tag, section/pattern, and the shape of the answer you want (date-vs-value table, idea presence matrix, matched lines only).
+3. The main agent interprets the distilled results against the owning mod system (see `wa-ai-systems` for cadence).
+
+Every extraction subagent prompt should end with an instruction like: *"Return only the distilled table/findings and any anomalies you noticed. Do not echo raw command output, section dumps, or file contents."*
+
+Inline exception: a single `meta FILE` on an already-known file is small enough to run directly. Everything else — `campaigns`, `sections`, `section`, `var`, `ideas`, `flags` — runs inside a subagent.
 
 ## The helper script
 
@@ -71,9 +83,9 @@ Countries live in `countries={ TAG={ … } }`. Useful depth-2 sections inside a 
 
 ## Trend workflow
 
-1. `campaigns` → identify the campaign (confirm with the user if ambiguous) and list its saves date-ordered.
-2. Pass the chosen files to `var` / `ideas` in one call — output is already date-sorted, one line per save per hit.
-3. Present the trend as a small date-vs-value table and interpret it against the owning system's cadence (see `wa-ai-systems` for which pulse writes what).
+1. Selection subagent: `campaigns` → identify the campaign and its date-ordered saves; main agent confirms with the user if ambiguous.
+2. Extraction subagent: pass the chosen files to `var` / `ideas` in one call — output is already date-sorted, one line per save per hit — and have it return the trend as a small date-vs-value table.
+3. Main agent interprets the table against the owning system's cadence (see `wa-ai-systems` for which pulse writes what).
 
 Example — how ITA's resource-need assessment evolved across a campaign:
 
