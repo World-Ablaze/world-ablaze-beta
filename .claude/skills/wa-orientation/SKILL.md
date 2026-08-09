@@ -85,9 +85,11 @@ These are the rules that produce silent, hard-to-diagnose breakage when violated
 1. **Smallest correct change.** This is a large replacement mod. A broad rewrite in a replaced folder can remove unrelated vanilla content.
 2. **Preserve tabs.** Existing PDXScript is tab-indented. Do not reformat blocks you are not changing, and never reformat generated or parser-managed `ai_will_do` sections.
 3. **Do not hand-edit generated files.** `common/scripted_effects/WA_AI_MAP_*` data, `_GENERATED_` localisation, and tool-managed `ai_will_do` blocks are outputs. Change the generator (see `wa-tooling`) and regenerate.
-4. **Country tags belong in country-scoped places.** Archetype-driven rules go through `WA_AI_CONFIG.txt` triggers, not copied tag lists. In `common/ai_strategy/WA_AI_MILITARY_*`, `tag =` / `original_tag =` as a *gating* term is forbidden outside Country-layer files.
-5. **Keep the prefixes.** `WA_` for gameplay content, `WA_AI_` for AI systems, `WA_TEST_` for test harnesses. Generic names collide with vanilla and DLC.
-6. **Check brace balance before finishing.** HOI4 reports most parse errors only at game launch, so nothing in your toolchain will catch it for you.
+4. **Country tags live in `WA_AI_CONFIG.txt` — nowhere else.** All country classification goes through CONFIG archetype triggers; before writing `tag =` / `original_tag =` anywhere else, reformulate the rule as an archetype question. The Country layer (`WA_AI_MILITARY_COUNTRY_<TAG>*`, `events/WA_AI_<TAG>.txt`, `common/ai_equipment/<TAG>_*`) is the sole sanctioned exception, for behaviour genuinely unique to one nation.
+5. **AI behaviour must survive ahistorical games.** Gate on dynamic game state (faction, wars, ideology, archetype, geography), never on the assumption that the historical script played out. A rule that only fires on the historical path leaves the AI with no behaviour when the game diverges — see `wa-ai-systems` § "Design for ahistorical games".
+6. **Impact analysis before changing existing AI systems.** Enumerate all callers, identify who reaches the code, walk historical and ahistorical scenarios through the change, check `# Fix NN:` comments and `wa-lessons-learned`, and state the regression risk. Prefer additive gated changes over rewrites of shared paths — see `wa-ai-systems` § "Changing an existing system".
+7. **Keep the prefixes.** `WA_` for gameplay content, `WA_AI_` for AI systems, `WA_TEST_` for test harnesses. Generic names collide with vanilla and DLC.
+8. **Check brace balance before finishing.** HOI4 reports most parse errors only at game launch, so nothing in your toolchain will catch it for you.
 
 ```powershell
 $text = Get-Content common\scripted_effects\SOME_FILE.txt -Raw
@@ -96,7 +98,7 @@ $close = ([regex]::Matches($text, '\}')).Count
 "open=$open close=$close delta=$($open-$close)"
 ```
 
-7. **Update the doc when you change a documented system.** The railway and military systems have specs that agents are told to trust; a stale spec is worse than none.
+9. **Update the doc when you change a documented system.** The railway and military systems have specs that agents are told to trust; a stale spec is worse than none.
 
 ## Validation, by change type
 

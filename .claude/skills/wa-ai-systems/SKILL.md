@@ -1,11 +1,17 @@
 ---
 name: wa-ai-systems
-description: Architecture of the World Ablaze `WA_AI_*` systems — the startup/daily/weekly/monthly cadence, the WA_AI_CONFIG archetype triggers that replace country-tag lists, the core/strategies/helpers/primitives file split, the priority-construction and railway queue, the 4-layer military ai_strategy model, and the map/pathfinding data layer. Use this whenever you add, change, debug, or explain AI behaviour — construction, railways, military strategy, invasions, templates, production, research weighting, lend-lease, espionage — and whenever deciding *where* a new AI rule belongs. Getting the layer or the cadence wrong produces AI that looks fine in the diff and misbehaves for the entire campaign, so route through this before writing.
+description: Architecture and design philosophy of the World Ablaze `WA_AI_*` systems — the startup/daily/weekly/monthly cadence, the WA_AI_CONFIG archetype triggers that replace country-tag lists, the core/strategies/helpers/primitives file split, the priority-construction and railway queue, the 4-layer military ai_strategy model, the map/pathfinding data layer, the rule that AI behaviour must work in historical AND ahistorical setups without gaps, and the impact-analysis checklist required before changing any existing AI system. Use this whenever you add, change, debug, or explain AI behaviour — construction, railways, military strategy, invasions, templates, production, research weighting, lend-lease, espionage — and whenever deciding *where* a new AI rule belongs. Getting the layer or the cadence wrong produces AI that looks fine in the diff and misbehaves for the entire campaign, so route through this before writing.
 ---
 
 # WA AI systems
 
 `AGENTS.md` holds the full system→files table. This skill is the architecture you need in your head while working: how AI code is scheduled, how it is layered, and where a new rule belongs.
+
+Three design principles govern all AI work here (full statement in `AGENTS.md` § AI Design Philosophy):
+
+1. **Setup-agnostic, no gaps** — behaviour must work in historical *and* ahistorical games; gate on dynamic game state, never on the assumption that history played out. See "Design for ahistorical games" below.
+2. **Tags only in CONFIG** — country classification goes through `WA_AI_CONFIG.txt` archetype triggers; the Country layer is the sole, justified exception.
+3. **Impact analysis before changing existing systems** — see "Changing an existing system" below.
 
 ## Naming tells you the layer
 
@@ -51,6 +57,35 @@ Rules of thumb for adding recurring work:
 - Geography: `WA_AI_CONFIG_MILITARY_is_<region>`
 
 If your rule genuinely needs a new category, **add the trigger to `WA_AI_CONFIG.txt`** and use it — that keeps the tag list in one auditable place instead of spreading across 187 ai_strategy files.
+
+Before writing a tag anywhere else, reformulate the rule as an archetype question: not "is this Germany?" but "is this a major Axis land power with a western border threat?". If the question can be asked that way, it belongs in CONFIG. The Country layer exists only for behaviour genuinely unique to one nation, and even then ask the archetype question first.
+
+## Design for ahistorical games
+
+The mod supports historical and ahistorical setups; AI code that assumes the historical script leaves *gaps* — countries or situations with no behaviour at all — the moment a game diverges. This is the most common way otherwise-correct AI code fails in real campaigns.
+
+Concretely:
+
+- **Gate on state, not on story.** Faction membership (`WA_AI_MILITARY_is_<faction>_member`), `has_war_with`, ideology, capability, and geography are dynamic and survive divergence. "It is 1941 so Barbarossa is coming" does not. If an `enable = {}` only becomes true on the historical path, the block is a gap generator.
+- **Every situation needs a floor.** For each behaviour, ask: *what does a country in this situation do if none of the specific rules match?* If the answer is "nothing", add or extend a Default-layer / generic fallback so the AI degrades to sane generic play instead of no play. This is why the layer model is Default-first: the Default layer *is* the gap prevention.
+- **Historical mode tunes, it does not gate existence.** `WA_AI_DIFFICULTY_is_historical` and similar may adjust weights, timings, or aggression — but a behaviour that exists only under historical mode (or only under ahistorical) needs an explicit justification, because whichever mode lacks it has a gap.
+- **Test the divergent scenario in your head.** When writing or reviewing a rule, walk at least one ahistorical case through it: the target country never joins its historical faction, the war starts two years late, the historical victim already capitulated. If the rule misfires or goes silent, restate its gate in terms of the actual strategic situation.
+- **Composition over special cases.** A new situation should be covered because archetype triggers and shared effects compose to cover it, not because someone hand-wrote a rule for that situation. If covering a scenario requires a new one-off block, check whether the real fix is a more general archetype trigger.
+
+## Changing an existing system
+
+Existing AI code is load-bearing and misbehaves silently — a regression surfaces as a country playing badly three in-game years later, not as an error at launch. Redundant-looking code usually encodes a case that already broke (the `# Fix NN:` changelog convention). So changes to existing triggers, effects, and strategy blocks carry a burden of proof that new code does not.
+
+Before modifying anything that already exists:
+
+1. **Enumerate the blast radius.** Grep the trigger/effect/flag/variable name across `common/` and `events/` — every caller, every reader, every file that redeclares a related `@` constant. A trigger with six callers is six behaviours you are changing.
+2. **Identify who reaches it.** Which countries, archetypes, and cadences hit this code path? A change that is right for majors may wreck minors sharing the same Default-layer block.
+3. **Walk both setups through the change.** Trace the historical scenario *and* at least one ahistorical one. A fix tuned on a historical test game can open a gap in divergent games.
+4. **Check the paper trail.** Surrounding `# Fix NN:` comments, `wa-lessons-learned`, and the system's doc in `documentation/` — the case the current code encodes is usually written down somewhere.
+5. **Prefer additive, gated changes.** A new branch behind a discriminating trigger regresses nothing when the trigger is false; an in-place rewrite of a shared path puts every caller at risk. Reserve rewrites for when the analysis shows the old behaviour is wrong for *all* callers.
+6. **State the regression risk.** Your summary of the change must say what could break and why you believe it won't — "no risk" is a claim to substantiate with the caller list, not a default.
+
+If the change is motivated by observed misbehaviour, diagnose before implementing — confirm what the AI actually sees (control vs ownership, subject scoping, landmass boundaries) before changing what it does. The first hypothesis is usually wrong here.
 
 ## Military ai_strategy — the 4-layer model
 
