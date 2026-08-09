@@ -59,6 +59,28 @@ WA_AI_PRODUCTION_build_army_mechanized = {
 	WA_AI_TEMPLATES_use_mechanized_templates = yes
 }
 
+# Expeditionary mechanized majors (currently only the USA, per
+# WA_AI_CONFIG_DIVISIONS_is_expeditionary_mechanized_major: huge fuel and industry,
+# no threatened land border) fight overseas, not at home. Their late-war army
+# should be mostly mobile - infantry capped around 30% of the role_ratio total.
+# Fires in historical games unconditionally; in non-historical games only after
+# 1942 and only while no enemy actually sits on the border.
+WA_AI_PRODUCTION_build_army_expeditionary_mechanization = {
+	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
+	WA_AI_PRODUCTION_army_composition_is_enabled = yes
+	# Requires the mechanized role to be active, so the extra ratio is never
+	# assigned to a role the country cannot design or build yet.
+	WA_AI_PRODUCTION_build_army_mechanized = yes
+	WA_AI_CONFIG_DIVISIONS_is_expeditionary_mechanized_major = yes
+	OR = {
+		WA_AI_DIFFICULTY_is_historical = yes
+		AND = {
+			date > 1942.1.1
+			NOT = { any_neighbor_country = { has_war_with = ROOT } }
+		}
+	}
+}
+
 # ============================================================================
 # SPECIAL FORCES COMPOSITION TRIGGERS
 # ============================================================================

@@ -286,7 +286,7 @@ Army composition triggers:
 
 - Master: `WA_AI_PRODUCTION_army_composition_is_enabled`.
 - Armor: `WA_AI_PRODUCTION_build_army_light_armor`, `WA_AI_PRODUCTION_build_army_medium_armor`, `WA_AI_PRODUCTION_build_army_heavy_armor`, `WA_AI_PRODUCTION_build_army_modern_armor`.
-- Mobile: `WA_AI_PRODUCTION_build_army_motorized`, `WA_AI_PRODUCTION_build_army_mechanized`.
+- Mobile: `WA_AI_PRODUCTION_build_army_motorized`, `WA_AI_PRODUCTION_build_army_mechanized`, `WA_AI_PRODUCTION_build_army_expeditionary_mechanization` (extra -30 infantry / +30 mechanized shift for `WA_AI_CONFIG_DIVISIONS_is_expeditionary_mechanized_major` countries, currently only the USA — historical games, or post-1942 with no enemy on the border — capping infantry near 30% of the ratio total).
 - Special forces: `WA_AI_PRODUCTION_build_army_marines`, `WA_AI_PRODUCTION_build_army_mountaineers`.
 - Garrison and support: `WA_AI_PRODUCTION_build_army_garrison`, `WA_AI_PRODUCTION_build_army_cavalry`.
 
