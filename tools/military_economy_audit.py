@@ -186,12 +186,14 @@ def main():
             has_front_domain = any(
                 s["type"] in FRONT_DOMAIN_TYPES for s in strategies)
 
-            # E10: gating
-            if strategies and not block_has_enable(block):
-                add("E10-no-enable", block, block.line, "block has no enable")
-            elif enable_always_yes(block) and "# always-on:" not in block.text:
-                add("E10-always-yes", block, block.line,
-                    "enable = always yes without '# always-on:' justification")
+            # E10: gating (scoped to blocks carrying front-domain types - the
+            # economy's remit; legacy production/research blocks are not lintable here)
+            if has_front_domain:
+                if not block_has_enable(block):
+                    add("E10-no-enable", block, block.line, "block has no enable")
+                elif enable_always_yes(block) and "# always-on:" not in block.text:
+                    add("E10-always-yes", block, block.line,
+                        "enable = always yes without '# always-on:' justification")
 
             # E9: legacy containment
             if not is_wa_file and has_front_domain:
