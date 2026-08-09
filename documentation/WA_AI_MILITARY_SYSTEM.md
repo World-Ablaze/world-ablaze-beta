@@ -68,6 +68,11 @@ Names follow the pattern `WA_AI_MILITARY_<LAYER>_<DOMAIN>[_<TAG>].txt` for milit
 
 This is the master legend. For each `ai_strategy` `type` currently in use, it states how the engine combines values, whether the WA system treats the type as **Additive** (multiple layers may contribute) or **Exclusive** (only one layer should set it), and the precedence rule when Exclusive.
 
+> **Value ranges:** the "Typical range" column below is descriptive (Phase 1 snapshot). The
+> **normative** ranges and value-economy rules are in `WA_AI_MILITARY_ECONOMY.md` (Phase 7
+> contract), linted by `tools/military_economy_audit.py`. Where the two disagree, the economy
+> document wins for new and modified blocks.
+
 | Type | Engine combination | Policy | Precedence (if Exclusive) | Typical range |
 | --- | --- | --- | --- | --- |
 | `front_unit_request` | Sums per area | Additive | n/a | -1500 to +200 |
