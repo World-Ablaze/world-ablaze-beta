@@ -1868,3 +1868,97 @@ WA_AI_MILITARY_GER_no_army_on_swiss_border = {
 		value = -1000
 	}
 }
+
+############################################################################################################
+# Phase 7c relocations from legacy GER.txt (behaviour parity - gates copied verbatim).
+############################################################################################################
+
+# purpose: armour leads the Poland opening (relocated from legacy GER.txt war_with_poland; its
+#          force_concentration_target_weight sibling was deleted per economy E5 - AIFC owns concentration)
+# range:   +100
+# policy:  Additive
+# domain:  FRONT
+WA_AI_MILITARY_GER_poland_war_armor_FRONT = {
+	allowed = {
+		tag = GER
+	}
+	enable = {
+		has_completed_focus = GER_danzig_or_war
+		country_exists = POL
+	}
+	abort = {
+		OR = {
+			NOT = { country_exists = NOR }
+			NOR = { has_capitulated = yes }
+			date > 1940.5.10
+			has_war_with = HOL
+			has_war_with = BEL
+			has_war_with = LUX
+		}
+	}
+
+	ai_strategy = {
+		type = front_armor_score
+		id = "POL"
+		value = 100
+	}
+}
+
+# purpose: armour leads the rush on Holland once Poland falls (relocated from legacy GER.txt
+#          GER_make_sure_holland_is_ganked_asap)
+# range:   +100
+# policy:  Additive
+# domain:  FRONT
+WA_AI_MILITARY_GER_holland_rush_armor_FRONT = {
+	allowed = {
+		tag = GER
+	}
+	enable = {
+		has_war_with = POL
+		POL = { has_capitulated = yes }
+	}
+	abort = {
+		OR = {
+			POL = { has_capitulated = no }
+			HOL = { has_capitulated = yes }
+		}
+	}
+
+	ai_strategy = {
+		type = front_armor_score
+		id = "HOL"
+		value = 100
+	}
+}
+
+# purpose: armour leads against Belgium while France is the priority (relocated from legacy GER.txt
+#          ignore_scandanavia_until_france_is_dealt_with)
+# range:   +100
+# policy:  Additive
+# domain:  FRONT
+WA_AI_MILITARY_GER_belgium_armor_FRONT = {
+	allowed = {
+		tag = GER
+	}
+	enable = {
+		has_war_with = NOR
+		has_war_with = FRA
+		NOR = { has_capitulated = yes }
+		OR = {
+			NOT = { has_war_with = SWE }
+			SWE = { has_capitulated = yes }
+		}
+	}
+	abort = {
+		OR = {
+			FRA = { has_capitulated = yes }
+			NOR = { has_capitulated = no }
+		}
+	}
+
+	ai_strategy = {
+		type = front_armor_score
+		id = "BEL"
+		value = 100
+	}
+}
