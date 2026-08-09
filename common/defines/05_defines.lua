@@ -353,11 +353,11 @@ NDefines.NMilitary.MAX_HQ_SUPPORT_HEIGHT = 4										-- Max height of support i
 NDefines.NMilitary.MAX_HQ_REGIMENTAL_SUPPORT_WIDTH = 0								-- Max width of regimental supports in division designer (Army HQ templates).
 NDefines.NMilitary.MAX_HQ_REGIMENTAL_SUPPORT_HEIGHT = 0								-- Max height of regimental supports in division designer (Army HQ templates).
 NDefines.NMilitary.REGIMENTAL_SUPPORT_REQUIRED_BATTALIONS = { 3, 3, 3 }				-- For each regimental support row, how many battalions are required in the regiment to be able to place a support in that row.
-NDefines.NMilitary.AI_BATTALION_BUILD_ORDER = { 	1,  6,  11, 16, 21,				-- When the AI is deciding where to place battalions, it tries to place it in the position with the lowest number according to this grid.
-													2,  7,  12, 17, 22,
-													3,  8,  13, 18, 23,
-													4,  9,  14, 19, 24,
-													5,  10, 15, 20, 25 }
+NDefines.NMilitary.AI_BATTALION_BUILD_ORDER = {	1,  4,  7,  10, 13,                 -- When the AI is deciding where to place battalions, it tries to place it in the position with the lowest number according to this grid.
+												2,  5,  8,  11, 14,
+												3,  6,  9,  12, 15,
+												16, 18, 20, 22, 24,
+												17, 19, 21, 23, 25 }
 
 NDefines.NMilitary.BASE_DIVISION_BRIGADE_GROUP_COST = 10							--Base XP cost to unlock a regiment slot,
 NDefines.NMilitary.BASE_DIVISION_BRIGADE_CHANGE_COST = 5							--Base XP cost to change a regiment column.
