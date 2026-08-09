@@ -274,6 +274,14 @@ Entries dated 2026-08-08 were reconstructed from code archaeology (`# Fix NN:` c
 - **Rule:** When a `put_unit_buffers` garrison must hold against competing front demand, give it its own `order_id` and set `subtract_fronts_from_need = no` explicitly — and remember that with a dedicated order_id the `ratio` becomes "of total armies" for that pool alone, so size it per sector (the 2026-08-09 rebalance: north_france 0.12, benelux 0.06, others 0.05-0.06) rather than copying 0.25 everywhere.
 - **Evidence:** Campaign 5709c8b9 division placement per save (31→10→4→3 in the wall states 1941-1944); `common/ai_strategy/documentation.info` lines 199-226; festung blocks in the same file as the working counter-example.
 
+### A mid-session reload cannot register newly added scripted effects - stale-process test campaigns silently run pre-fix code
+
+- **Date:** 2026-08-09
+- **Symptom:** Observer campaign 0e7e7852, run specifically to verify the six fixes committed at 16:27, reproduced the UK-airbase failure exactly (flat level-4 bases, zero type-2 PC projects, USAAF stateside) even though the fixed files were verifiably on disk and hash-identical in the launcher's mod copy before the campaign started at 16:33.
+- **Cause:** The HOI4 process had been launched at 14:58, before the edits existed. A mid-session database reload at 15:48 applied edited *bodies* of existing scripted effects and defined_texts, but could not register the *newly added* effect name — `error.log`: `Unknown effect-type: WA_AI_PC_add_deployed_land_planes` — so the airbase strategy computed nothing all campaign. Whether modified/new `ai_strategy` blocks were picked up by the reload is equally unproven, which invalidated that round's put_unit_buffers and front_unit_request verdicts too. `error.log` is wiped at every launch, so its first-line timestamp is the process launch time.
+- **Rule:** A verification campaign only counts if the game process was launched *after* the fix files reached the mod directory. Before trusting a run: compare `error.log`'s first-line timestamp (`Documents\Paradox Interactive\Hearts of Iron IV\logs\error.log`) against the mod file mtimes, and grep it for `Unknown effect-type`/`Invalid effect` naming anything the fix added. Any fix that introduces a NEW scripted effect, trigger, or ai_strategy block requires a full game restart — console reload is only trustworthy for edits to already-registered names, and even then verify behaviourally.
+- **Evidence:** `error.log` lines ~2877-2886 (15:48:06 reload failure) vs campaign saves written 16:33-17:45 in the same process; template fix c4dd6cf44 (edited existing names) verifiably active in the same campaign while airbase fix ead132476 (new effect name) was not.
+
 ## Working in this repo
 
 ### Match tabs exactly when editing
