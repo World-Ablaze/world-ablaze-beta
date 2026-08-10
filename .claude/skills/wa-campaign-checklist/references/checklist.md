@@ -255,6 +255,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **History:**
   - NOT YET TESTED — fix and its instrumentation postdate every campaign in the registry.
   - 2026-08-10 · `66d6b53c` · NOT YET TESTED (fix not in build) — **bug presence confirmed pre-fix**: JAP `diplomacy` carried MAL ×4 + USA ×3 + UKO ×1 stacks at 1942.1 (i.e. JAP invaded Malaya at −100% and fought USA at −75% attack), and an AST ×1 stack persisting unchanged 1942.6 → 1945.6 — the permanent-residue signature. GER showed zero residue in 11 saves despite Weserübung (Norway fell 1940.3.1 via another path).
+  - 2026-08-10 · `2b607968` (local, fix IN build) · **FAILED — the stacking half is cured, the removal half is still dead.** dbg at 1943.7.15: ENG 2/2, USA 3/3, GER 2/2, JAP 6/6 adds/active, `_removes` absent (=0) everywhere; live −25% stacks include **GER→SOV since ~1941** (Eastern-Front-scale distortion) and USA/ENG→ITA from Husky. Root cause: `WA_AI_invasions.1` is queued `days = 14` from the *target's* scope and its trigger needs `FROM = { has_relation_modifier target = ROOT }` — FROM does not arrive as the invader on a delayed event, the `is_triggered_only` trigger fails silently, nothing is ever removed. Fix direction: store the invader id on the target (or fire the delayed event on the invader with the target stored) so removal doesn't depend on delayed-event FROM.
 
 ### R15. Air forces deploy to contested theatres
 
@@ -265,7 +266,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **Threshold:** 5 (behavioural — basing shares over time).
 - **Streak:** 0
 - **History:**
-  - NOT YET TESTED — fix postdates every campaign in the registry.
+  - 2026-08-10 · `2b607968` (local, fix loaded mid-campaign 1943.3, probed 1943.7.15) · FAILED with caveats — USA at 71.7% CONUS (worse than the 62% baseline), **zero** USA planes in the contested Italy/Med theatre; ENG's 30% Med deployment is real but attributable to pre-existing ENG.txt specials; GER 70% east by engine combat terms, zero over Italy. Caveats: only 2.5 game-months since load; migration IS live (1 000-plane Newfoundland→Azores→Madeira ferry chain, ENG wings on Sicily 5 days post-landing); Med bases possibly RAF-saturated. **Suspected binding gap: no friendly in-range air-base capacity — the air-base-construction follow-up is the dependency to test next.** Re-score on a from-start campaign before concluding the pull values are wrong.
 
 ---
 
