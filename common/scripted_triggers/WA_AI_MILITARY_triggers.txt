@@ -265,6 +265,43 @@ WA_AI_MILITARY_ENG_africa_hostile_presence = {
 	}
 }
 
+# Force-balance verdict for an offensive toward the Egyptian anchor of the North-African front.
+# ROOT = the country contemplating the offensive (called from ai_strategy enable and event triggers,
+# where ROOT is that country). Generic by design: any attacker pushing toward Egypt can consume it,
+# and the enemy is whoever actually controls the Egypt-side anchor states - never a hardcoded tag.
+# True when at least one war enemy controlling East Egypt (same anchor set as
+# WA_AI_MILITARY_ENG_holds_east_egypt) either:
+#   (a) has a published weekly posture verdict > 0 vs us (WA_AI_MILITARY_posture_effects.txt -
+#       carries the front-local division-count branch, the equipment/manpower floors, and the
+#       air-inferiority veto), or
+#   (b) never receives a verdict at all (the posture calculus skips enemies that are neither major
+#       nor >4 controlled states; pushes against such minors stay unconditional per
+#       WA_AI_MILITARY_SYSTEM.md section 9).
+# When the balance turns, the weekly verdict drops to 0, this trigger goes false, and the consumer
+# aborts - the front falls back to whatever defensive behaviour is otherwise active. The hard-brake
+# case (posture_vs_<TAG> lingering > 0 while the brake is on) is covered by the priority-500/10000
+# emergency stops in WA_AI_MILITARY_DEFAULT_FRONT_control.txt, which outrank every consumer of this
+# trigger. Stale-after-peace verdicts are inert here: any_enemy_country only scopes countries we are
+# currently at war with.
+WA_AI_MILITARY_north_africa_offensive_viable = {
+	any_enemy_country = {
+		has_capitulated = no
+		OR = {
+			controls_state = 446
+			controls_state = 447
+			controls_state = 453
+		}
+		OR = {
+			# Enemy too small for a posture verdict: no variable is ever published, attack unconditionally.
+			AND = {
+				is_major = no
+				NOT = { num_of_controlled_states > 4 }
+			}
+			ROOT = { check_variable = { WA_AI_MILITARY_posture_vs_@PREV > 0 } }
+		}
+	}
+}
+
 WA_AI_MILITARY_is_minor_country = {
 	NOT = { WA_AI_CONFIG_is_major_country = yes }
 }

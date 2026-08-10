@@ -88,7 +88,7 @@ For each type: total count, where it currently appears (counts per file), recomm
 
 - Currently in: GER 25, CHI 19, JAP 19, SOV 18, USA 17, AXIS 14, CAN 14, SPA 10, ITA 10, CHINA_FRONT 6, FIN 3, FRA 3, CZE 3, ALLIES 33, ENG 2, TUR 2, GRE 2, ROM 1, SAF 1, YUG 1, RAJ 1, SPR 4, DEFAULT_FRONT_control 2.
 - Target: Default for the global passive/active baseline; Country for per-area overrides.
-- Posture-gated writers: the exec/grind pairs `ALLIES_exec_vs_germany`/`_grind_vs_germany`, `AXIS_exec_vs_sov`/`_grind_vs_sov`, `CHINA_FRONT_exec_vs_japan`/`_grind_vs_japan` (each pair mutually exclusive by posture level), `ALLIES_downfall_push_FRONT`, `SOV_counterattack`, `JAP_chinese_war_4` (with `_chinese_war_3` as its posture-0 fallback), and the Default-layer `EXEC_low_equipment_hold` brake all consume the weekly offensive-posture verdict - see section 9 of `WA_AI_MILITARY_SYSTEM.md` before adding new `execute_order = yes` blocks.
+- Posture-gated writers: the exec/grind pairs `ALLIES_exec_vs_germany`/`_grind_vs_germany`, `AXIS_exec_vs_sov`/`_grind_vs_sov`, `CHINA_FRONT_exec_vs_japan`/`_grind_vs_japan` (each pair mutually exclusive by posture level), `ALLIES_downfall_push_FRONT`, `SOV_counterattack`, `JAP_chinese_war_4` (with `_chinese_war_3` as its posture-0 fallback), `ITA_north_africa_offensive_exec_FRONT` (via the controller-dynamic `WA_AI_MILITARY_north_africa_offensive_viable` trigger), and the Default-layer `EXEC_low_equipment_hold` brake all consume the weekly offensive-posture verdict - see section 9 of `WA_AI_MILITARY_SYSTEM.md` before adding new `execute_order = yes` blocks.
 - Policy: **Exclusive per area**. Phase 5 mutual-exclusion needed.
 
 ### `invade` (197)
