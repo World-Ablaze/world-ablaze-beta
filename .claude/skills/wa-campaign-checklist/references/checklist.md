@@ -115,7 +115,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 
 ### R1. AIFC sector_age cycles 1–5
 
-- **Fix under test:** `4bfea363d` (1-based sector age) then `128cc7995` (validity scope leak) — **both failed to cure it**. Next step is live-log instrumentation on a running game, not another source patch.
+- **Fix under test:** `4bfea363d` (1-based sector age) then `128cc7995` (validity scope leak) — **both failed to cure it** (both patched real-but-downstream defects). **Root-cause hypothesis identified 2026-08-10 (~85% confidence, pending live confirmation):** `WA_AI_AIFC_check_sector_valid` compares plain map-data state ids against `THIS.id` (scope-encoded for states) in `is_in_array` — equality can never hold, validity is permanently 0, weekly re-pick resets age to 1. Same mixed comparison sits in the four Layer-4 `state_trigger`s (`WA_AI_MILITARY_DEFAULT_FRONT_aifc.txt:380/389/398/410`) — the whole consumption layer may never have functioned. A 5-edit live diagnostic protocol (body-only logging edits, no new effect names, `-debug` restart) with a 5-outcome decision matrix is ready. Side-finding: the "armor accumulators ~10 800" from the `66d6b53c` analysis are serialized country scope refs, NOT growing sums — retract that anomaly.
 - **Pass:** `wa_ai_aifc_sector_age` observed cycling through values 1–5 across a campaign's saves, not pinned at 1.
 - **Probe:** `var <major TAG> "^wa_ai_aifc_sector_age" <saves...>` across the campaign.
 - **Threshold:** 5 (behavioural — commitment-window dynamics over time).
@@ -194,11 +194,11 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 
 - **Fix under test:** `24ffda1ac` (pathfinder param rename revived the strategy).
 - **Pass:** type-1 projects appear targeting North Africa (ENG/ITA), GER→SOV, and JAP→RAJ routes.
-- **Probe:** `var <TAG> "^wa_ai_pc_building_type"` plus target state/province vars on ENG, GER, JAP.
+- **Probe:** `var <TAG> "^wa_ai_pc_building_type"` plus target state/province vars on ENG, GER, JAP. **Probe caveat (2026-08-10):** type-1 is also produced by resource-INF (`WA_AI_priority_queue_INF_resource` queues infrastructure on resource/steel-mill states) — a type-1 on a home steel state is NOT supply-line evidence. Until the supply-line strategy stamps its own project-type id, only a type-1 on a *corridor* state (between capital and the named front) counts.
 - **Threshold:** 3 (narrow queue/target probe).
 - **Streak:** 0
 - **History:**
-  - 2026-08-10 · `66d6b53c` · FAILED — the strategy runs but targets wrong or not at all. ENG: exactly **one** type-1 project in the whole campaign, targeting state 860 (Norfolk, England) — never North Africa. JAP: **zero** type-1 projects 1942–44 (queue is all type 13/14) — the RAJ leg never queued. GER: type-1 present (states 855/42/810, paired with type-4) but one 1943.6 slot shows build_time 1 473 days at 0 assigned factories — a dead slot squatting the queue.
+  - 2026-08-10 · `66d6b53c` · FAILED — investigation showed **zero supply-line-origin projects for any country all campaign**; every observed type-1 was resource-INF (ENG's Norfolk = AI-built steel mill; GER's 855/42/810 = steel/radar states). Root causes found by audit: the type-1 pathfinder walks only ROOT-controlled states while the NA corridor anchors are subject-owned (Cairo=UKE, Tripoli=ITL — path dies at iteration 1; and the subjects can't afford projects); JAP is dispatcher-gated (type-14 port projects count toward the `<5 non-rail` gate, permanently false for the archipelago) with a hardcoded Shanghai anchor that could never reach Burma under the 75-pop A* cap; plus shared `break` temp-variable pollution can abort the A* in gate-open pulses.
 
 ### R10. USA army composition recovers
 
@@ -234,11 +234,11 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 
 - **Fix under test:** `a5ea1fb84` (ENG `africa_war_2` X-AND-NOT-X restored from pre-split `a6fee253d`).
 - **Pass:** ENG reaches the `africa_war_2` posture and the North Africa front actually moves. Pre-fix baseline: +2 provinces in 24 months.
-- **Probe:** ENG ai_strategy state in the `ai` section; state-level owner/controller of Libya/Egypt (446–452, 458) across war-time saves (province granularity does not exist in saves).
+- **Probe:** state-level owner/controller of Libya/Egypt (446–452, 458) across war-time saves (province granularity does not exist in saves). Do NOT probe file-defined `ai_strategy` blocks in the `ai` section — they never serialize; only `add_ai_strategy` residue does (the `persistent_strategy type=83` entries are AIFC `front_armor_score`, id-keyed by **country** id, not region id).
 - **Threshold:** 5 (behavioural front outcome). Interacts with R9 (NA supply lines) — score independently.
 - **Streak:** 0
 - **History:**
-  - 2026-08-10 · `66d6b53c` · FAILED — Libya/Egypt state control shows **zero changes from 1940.9 through 1943.6** (33 months frozen, worse than the +2-provinces baseline); by 1944.6 only two non-contiguous flips (Derna→ENG from the east, Tripoli→FRA from the west) with Sirte/Benghasi still Axis. **Root-cause lead:** ENG's region-priority log (`persistent_strategy` type=83) pins Libya (215) at −150 in every sample and never touches Egypt/Sahara, while ENG's only +400 priorities are Eastern Ukraine (270) and North Central China (278) — nonsensical for the UK; find what writes those before patching `africa_war_2` again.
+  - 2026-08-10 · `66d6b53c` · FAILED — Libya/Egypt state control shows **zero changes from 1940.9 through 1943.6** (33 months frozen, worse than the +2-provinces baseline); by 1944.6 only two non-contiguous flips (Derna→ENG from the east, Tripoli→FRA from the west) with Sirte/Benghasi still Axis. **Root cause found by audit (2026-08-10):** (a) the restored `africa_war_2` gate is STILL dead — its `NOT = { <state list> }` is a NOR over the same states as the `OR`, a contradiction inherited from the original `a6fee253d` text; the fix under test cannot fire, in any campaign. (b) ITA has no offensive engine in NA at all (zero `front_unit_request`/`front_control` vs ENG in its Country file). (c) AIFC armor steering suppresses the Mediterranean enemy at −150 weekly once the schwerpunkt moves elsewhere (the earlier "+400 Eastern Ukraine/N.C. China" reading was a mis-decode: type=83 ids are country ids). Re-fix required before this item can pass.
 
 ### R14. Scripted-invasion attack penalty does not stack
 
