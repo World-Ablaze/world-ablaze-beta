@@ -1,0 +1,285 @@
+############################################################################################################
+# WA AI Military V2 - DEFAULT_AIR theatres
+############################################################################################################
+# Canonical domain: AIR (strategic_air_importance, land-theatre-facing).
+# Sea-facing strategic_air_importance rules stay in WA_AI_NAVAL_* files; see
+# documentation/WA_AI_MILITARY_SYSTEM.md section 3 and WA_AI_MILITARY_TYPES_REFERENCE.md.
+#
+# WHY THIS FILE EXISTS
+# The engine distributes air wings across strategic regions by importance = engine terms
+# (own combats x100, own armies x25; a stocked main front in active combat scores ~35,000)
+# PLUS scripted strategic_air_importance. This mod's replace_path removed vanilla's
+# Europe/theatre push guidance and, before this file, the only scripted pulls were a handful
+# of country/faction specials (ENG.txt D-Day/Husky, GER/ITA/SOV blocks, NAVAL downfall/sealion).
+# Result observed in campaign 66d6b53c: the USAAF kept 8,595 of 13,791 planes in the
+# continental US through 1944 - no generic rule ever asked any country to base air where its
+# side was actually fighting.
+#
+# DESIGN
+# One block per air theatre (a bounded list of strategic regions). A block enables when the
+# theatre is CONTESTED for the country - an enemy controls land there AND the country's side
+# (itself, an ally, a subject or a co-belligerent) controls land there - detection lives in
+# WA_AI_MILITARY_AIR_theatre_contested_* (common/scripted_triggers/WA_AI_MILITARY_triggers.txt).
+# Purely dynamic-state gating: works identically for any country, any faction line-up,
+# historical or ahistorical. Countries whose CAPITAL sits inside the theatre are excluded -
+# defending the homeland is already the engine's job (combats/armies terms), and the exclusion
+# prevents pile-on-at-home overstacking (the RAF pattern).
+#
+# A scripted weekly-emission architecture (the AIFC armor meta_effect pattern) was rejected:
+# strategic_air_importance is region-id-keyed, and no WA_AI_MAP_* generated data provides a
+# state-to-strategic-region lookup, so a scripted variant would need new generated map data
+# for no added expressiveness - the theatre list below is bounded and declarative.
+#
+# VALUE ECONOMY (+10,000 per region)
+# ~30% of a hot main front (~35,000): wins against idle rear regions (armies-only terms are a
+# few thousand), loses to any active home front, and is well below the existing emergency
+# family (+100k..+500k D-Day/Husky/sealion pushes) and the suppression family (-250k..-1M
+# ENG/GER negatives) - this file can never out-shout either. Matches the +10k standing pulls
+# already in WA_AI_NAVAL_COUNTRY_ENG/ITA (North Africa emphasis).
+#
+# KNOWN LIMITS
+# - A pull toward a theatre where the country's side holds no in-range air-base capacity is
+#   inert (the engine only rebases into friendly capacity). Acceptable: the pull activates the
+#   moment basing appears. Air-base CONSTRUCTION on active fronts is a separate follow-up in
+#   the construction system, deliberately out of scope here.
+# - Japan Home Islands (154) is deliberately absent: WA_AI_NAVAL_FACTION_ALLIES_downfall_push
+#   and JAP_anti_bombing already own that region's air economy.
+# - China's interior regions are deliberately absent: every likely participant fights there
+#   with its capital/armies in-theatre (engine terms dominate), and JAP country blocks already
+#   tune that air war.
+# - Burma (189) / Thailand (340) carry a -50,000 suppression for western Allies at war with
+#   Germany from ENG.txt Allies_dont_bomb_random_places; for those countries the +10k here is
+#   intentionally dominated until that block aborts.
+############################################################################################################
+
+# purpose: base air power forward into the North Africa / Mediterranean coast theatre while it is contested by our side and an enemy
+# range:   +10000 per strategic region (engine main-front reference ~35000)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_DEFAULT_AIR_north_africa = {
+	enable = {
+		has_war = yes
+		surrender_progress < 0.1
+		# skip token air forces (WA air scale is ~1/3 vanilla)
+		has_deployed_air_force_size = { size > 99 }
+		# home defence is the engine's job - no extra pull onto your own capital theatre
+		NOT = { capital_scope = { OR = { region = 182 region = 126 region = 329 region = 215 region = 328 region = 128 } } }
+		WA_AI_MILITARY_AIR_theatre_contested_north_africa = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = strategic_air_importance id = 182 value = 10000 } # Morocco
+	ai_strategy = { type = strategic_air_importance id = 126 value = 10000 } # Algeria
+	ai_strategy = { type = strategic_air_importance id = 329 value = 10000 } # Tunisia
+	ai_strategy = { type = strategic_air_importance id = 215 value = 10000 } # Libya
+	ai_strategy = { type = strategic_air_importance id = 328 value = 10000 } # Cyrenaica
+	ai_strategy = { type = strategic_air_importance id = 128 value = 10000 } # Egypt
+}
+
+# purpose: base air power forward into the Italian peninsula theatre while it is contested by our side and an enemy
+# range:   +10000 per strategic region (engine main-front reference ~35000)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_DEFAULT_AIR_italy = {
+	enable = {
+		has_war = yes
+		surrender_progress < 0.1
+		# skip token air forces (WA air scale is ~1/3 vanilla)
+		has_deployed_air_force_size = { size > 99 }
+		# home defence is the engine's job - no extra pull onto your own capital theatre
+		NOT = { capital_scope = { OR = { region = 21 region = 23 region = 238 } } }
+		WA_AI_MILITARY_AIR_theatre_contested_italy = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = strategic_air_importance id = 21 value = 10000 } # Northern Italy
+	ai_strategy = { type = strategic_air_importance id = 23 value = 10000 } # Central Italy
+	ai_strategy = { type = strategic_air_importance id = 238 value = 10000 } # Southern Italy
+}
+
+# purpose: base air power forward into the Western Europe (France / Benelux) theatre while it is contested by our side and an enemy
+# range:   +10000 per strategic region (engine main-front reference ~35000)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_DEFAULT_AIR_western_europe = {
+	enable = {
+		has_war = yes
+		surrender_progress < 0.1
+		# skip token air forces (WA air scale is ~1/3 vanilla)
+		has_deployed_air_force_size = { size > 99 }
+		# home defence is the engine's job - no extra pull onto your own capital theatre
+		NOT = { capital_scope = { OR = { region = 239 region = 19 region = 290 region = 20 region = 5 } } }
+		WA_AI_MILITARY_AIR_theatre_contested_western_europe = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = strategic_air_importance id = 239 value = 10000 } # Northern France
+	ai_strategy = { type = strategic_air_importance id = 19 value = 10000 } # Central France
+	ai_strategy = { type = strategic_air_importance id = 290 value = 10000 } # Western France
+	ai_strategy = { type = strategic_air_importance id = 20 value = 10000 } # Southern France
+	ai_strategy = { type = strategic_air_importance id = 5 value = 10000 } # Benelux
+}
+
+# purpose: base air power forward into the Scandinavia (Norway) theatre while it is contested by our side and an enemy
+# range:   +10000 per strategic region (engine main-front reference ~35000)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_DEFAULT_AIR_scandinavia = {
+	enable = {
+		has_war = yes
+		surrender_progress < 0.1
+		# skip token air forces (WA air scale is ~1/3 vanilla)
+		has_deployed_air_force_size = { size > 99 }
+		# home defence is the engine's job - no extra pull onto your own capital theatre
+		NOT = { capital_scope = { OR = { region = 11 region = 297 region = 191 } } }
+		WA_AI_MILITARY_AIR_theatre_contested_scandinavia = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = strategic_air_importance id = 11 value = 10000 } # Southern Norway
+	ai_strategy = { type = strategic_air_importance id = 297 value = 10000 } # Central Norway
+	ai_strategy = { type = strategic_air_importance id = 191 value = 10000 } # Northern Norway
+}
+
+# purpose: base air power forward into the Balkans / Greece theatre while it is contested by our side and an enemy
+# range:   +10000 per strategic region (engine main-front reference ~35000)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_DEFAULT_AIR_balkans = {
+	enable = {
+		has_war = yes
+		surrender_progress < 0.1
+		# skip token air forces (WA air scale is ~1/3 vanilla)
+		has_deployed_air_force_size = { size > 99 }
+		# home defence is the engine's job - no extra pull onto your own capital theatre
+		NOT = { capital_scope = { OR = { region = 24 region = 25 region = 26 region = 27 region = 295 } } }
+		WA_AI_MILITARY_AIR_theatre_contested_balkans = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = strategic_air_importance id = 24 value = 10000 } # Western Balkans
+	ai_strategy = { type = strategic_air_importance id = 25 value = 10000 } # Greece
+	ai_strategy = { type = strategic_air_importance id = 26 value = 10000 } # Eastern Balkans
+	ai_strategy = { type = strategic_air_importance id = 27 value = 10000 } # Northern Balkans
+	ai_strategy = { type = strategic_air_importance id = 295 value = 10000 } # Southern Balkans
+}
+
+# purpose: base air power forward into the Eastern Europe (Poland / Baltics / Ukraine) theatre while it is contested by our side and an enemy
+# range:   +10000 per strategic region (engine main-front reference ~35000)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_DEFAULT_AIR_eastern_europe = {
+	enable = {
+		has_war = yes
+		surrender_progress < 0.1
+		# skip token air forces (WA air scale is ~1/3 vanilla)
+		has_deployed_air_force_size = { size > 99 }
+		# home defence is the engine's job - no extra pull onto your own capital theatre
+		NOT = { capital_scope = { OR = { region = 296 region = 37 region = 39 region = 131 region = 130 region = 270 } } }
+		WA_AI_MILITARY_AIR_theatre_contested_eastern_europe = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = strategic_air_importance id = 296 value = 10000 } # Poland
+	ai_strategy = { type = strategic_air_importance id = 37 value = 10000 } # Baltic States
+	ai_strategy = { type = strategic_air_importance id = 39 value = 10000 } # Western Belorussia
+	ai_strategy = { type = strategic_air_importance id = 131 value = 10000 } # Belarus
+	ai_strategy = { type = strategic_air_importance id = 130 value = 10000 } # Western Ukraine
+	ai_strategy = { type = strategic_air_importance id = 270 value = 10000 } # Eastern Ukraine
+}
+
+# purpose: base air power forward into the Middle East (Levant / Iraq / Anatolia) theatre while it is contested by our side and an enemy
+# range:   +10000 per strategic region (engine main-front reference ~35000)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_DEFAULT_AIR_middle_east = {
+	enable = {
+		has_war = yes
+		surrender_progress < 0.1
+		# skip token air forces (WA air scale is ~1/3 vanilla)
+		has_deployed_air_force_size = { size > 99 }
+		# home defence is the engine's job - no extra pull onto your own capital theatre
+		NOT = { capital_scope = { OR = { region = 28 region = 348 region = 259 region = 129 } } }
+		WA_AI_MILITARY_AIR_theatre_contested_middle_east = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = strategic_air_importance id = 28 value = 10000 } # Southern Levant
+	ai_strategy = { type = strategic_air_importance id = 348 value = 10000 } # Northern Levant
+	ai_strategy = { type = strategic_air_importance id = 259 value = 10000 } # Iraq
+	ai_strategy = { type = strategic_air_importance id = 129 value = 10000 } # Asia Minor
+}
+
+# purpose: base air power forward into the Burma / Eastern India theatre while it is contested by our side and an enemy
+# range:   +10000 per strategic region (engine main-front reference ~35000)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_DEFAULT_AIR_burma_india = {
+	enable = {
+		has_war = yes
+		surrender_progress < 0.1
+		# skip token air forces (WA air scale is ~1/3 vanilla)
+		has_deployed_air_force_size = { size > 99 }
+		# home defence is the engine's job - no extra pull onto your own capital theatre
+		NOT = { capital_scope = { OR = { region = 189 region = 141 } } }
+		WA_AI_MILITARY_AIR_theatre_contested_burma_india = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = strategic_air_importance id = 189 value = 10000 } # Burma
+	ai_strategy = { type = strategic_air_importance id = 141 value = 10000 } # Eastern India
+}
+
+# purpose: base air power forward into the South East Asia (Indochina / Malaya / Indies) theatre while it is contested by our side and an enemy
+# range:   +10000 per strategic region (engine main-front reference ~35000)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_DEFAULT_AIR_southeast_asia = {
+	enable = {
+		has_war = yes
+		surrender_progress < 0.1
+		# skip token air forces (WA air scale is ~1/3 vanilla)
+		has_deployed_air_force_size = { size > 99 }
+		# home defence is the engine's job - no extra pull onto your own capital theatre
+		NOT = { capital_scope = { OR = { region = 142 region = 340 region = 188 region = 187 region = 234 region = 159 region = 287 region = 158 } } }
+		WA_AI_MILITARY_AIR_theatre_contested_southeast_asia = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = strategic_air_importance id = 142 value = 10000 } # South East Asia (Indochina)
+	ai_strategy = { type = strategic_air_importance id = 340 value = 10000 } # Thailand
+	ai_strategy = { type = strategic_air_importance id = 188 value = 10000 } # Malaya
+	ai_strategy = { type = strategic_air_importance id = 187 value = 10000 } # Sumatra
+	ai_strategy = { type = strategic_air_importance id = 234 value = 10000 } # Northern Borneo
+	ai_strategy = { type = strategic_air_importance id = 159 value = 10000 } # Southern Borneo
+	ai_strategy = { type = strategic_air_importance id = 287 value = 10000 } # Java
+	ai_strategy = { type = strategic_air_importance id = 158 value = 10000 } # Sunda Islands
+}
+
+# purpose: base air power forward into the Pacific island chains theatre while it is contested by our side and an enemy
+# range:   +10000 per strategic region (engine main-front reference ~35000)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_DEFAULT_AIR_pacific_islands = {
+	enable = {
+		has_war = yes
+		surrender_progress < 0.1
+		# skip token air forces (WA air scale is ~1/3 vanilla)
+		has_deployed_air_force_size = { size > 99 }
+		# home defence is the engine's job - no extra pull onto your own capital theatre
+		NOT = { capital_scope = { OR = { region = 160 region = 167 region = 83 region = 97 region = 227 region = 350 region = 94 region = 225 region = 349 region = 353 } } }
+		WA_AI_MILITARY_AIR_theatre_contested_pacific_islands = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = strategic_air_importance id = 160 value = 10000 } # Philippines
+	ai_strategy = { type = strategic_air_importance id = 167 value = 10000 } # New Guinea
+	ai_strategy = { type = strategic_air_importance id = 83 value = 10000 } # Solomon Islands
+	ai_strategy = { type = strategic_air_importance id = 97 value = 10000 } # Marshall Islands
+	ai_strategy = { type = strategic_air_importance id = 227 value = 10000 } # Micronesian Islands
+	ai_strategy = { type = strategic_air_importance id = 350 value = 10000 } # Mariana Islands
+	ai_strategy = { type = strategic_air_importance id = 94 value = 10000 } # W. Mariana Region
+	ai_strategy = { type = strategic_air_importance id = 225 value = 10000 } # E. Mariana Region
+	ai_strategy = { type = strategic_air_importance id = 349 value = 10000 } # Hawaii
+	ai_strategy = { type = strategic_air_importance id = 353 value = 10000 } # New Caledonia
+}

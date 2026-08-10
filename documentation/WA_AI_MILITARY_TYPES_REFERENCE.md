@@ -27,7 +27,7 @@ This is the **single source of truth** for which domain file every `ai_strategy`
 | `naval_invasion_dominance_weight` | NAVAL | `WA_AI_NAVAL_*` | Fleet emphasis on supremacy along active invasion paths. |
 | `naval_invasion_support_priority` | NAVAL | `WA_AI_NAVAL_*` | Priority for naval invasion support in a sea region. |
 | `strike_force_home_base` | NAVAL | `WA_AI_NAVAL_*` | Designates a base as fleet home. |
-| `strategic_air_importance` | NAVAL | `WA_AI_NAVAL_*` | Strategic air emphasis (sea-facing). |
+| `strategic_air_importance` | NAVAL / AIR | `WA_AI_NAVAL_*` (sea-facing) or `_AIR` (land-theatre-facing) | Strategic air emphasis per strategic region. |
 | `conquer` | DIPLOMACY | `_DIPLOMACY` | Inter-country posture: targets to subdue. |
 | `antagonize` | DIPLOMACY | `_DIPLOMACY` | Inter-country posture: increase friction. |
 | `protect` | DIPLOMACY | `_DIPLOMACY` | Inter-country posture: prioritise survival of an ally. |
@@ -150,10 +150,11 @@ For each type: total count, where it currently appears (counts per file), recomm
 - **`front_armor_score` is id-keyed only.** It accepts `id = "TAG"` and nothing else - no `tag`, `state`, `strategic_region`, `area`, `country_trigger` or `state_trigger`. The DEFAULT-layer `AIFC_armor_follows_schwerpunkt` entry tried to target it with `country_trigger` and never parsed (`ai_strategy.cpp: Unexpected token: country_trigger`). Only `front_control`, `front_unit_request` and `invasion_unit_request` take the generic country/state targeting fields (see `common/ai_strategy/documentation.info` lines 228-266); the `force_concentration_*` types additionally take `state_trigger`.
 - The tag-free AIFC armour steering (+400 toward the sector enemy / -150 toward every other war enemy) is therefore **scripted, not an ai_strategy block**: `WA_AI_AIFC_armor_reconcile` in `common/scripted_effects/WA_AI_AIFC_helpers.txt` emits `add_ai_strategy = { type = front_armor_score id = <runtime tag> ... }` via `meta_effect` weekly, retiring entries by exact negation (there is no `remove_ai_strategy`). Switch: `WA_AI_AIFC_armor_steering_enabled` in `WA_AI_AIFC_triggers.txt`. These scripted instances stack additively with the static SOV/GER/ALLIES/USA entries above, sitting below them by design.
 
-### `strategic_air_importance` (18)
+### `strategic_air_importance` (28)
 
-- Currently in: GER 8, ALLIES 4, ITA 3, ENG 2, SOV 1.
-- Target: Country (NAVAL or FRONT depending on whether the rule is sea-facing).
+- Currently in: GER 8, ALLIES 4, ITA 3, ENG 2, SOV 1 (legacy country/faction specials), plus 10 generic theatre blocks in `WA_AI_MILITARY_DEFAULT_AIR_theatres.txt`.
+- Target: Country (NAVAL when sea-facing); Default for the generic land-theatre pulls (AIR domain).
+- The Default layer (`WA_AI_MILITARY_DEFAULT_AIR_theatres.txt`) provides the standing +10,000 "base air where your side is fighting" pull per contested theatre region, gated by `WA_AI_MILITARY_AIR_theatre_contested_*` (dynamic both-sides-control-land detection, no tags). The legacy ENG/GER emergency (+100k..+500k) and suppression (-250k..-1M) families intentionally dominate it wherever they apply. Engine-side terms: own combats x100, own armies x25; a stocked main front in active combat scores ~35,000.
 
 ### `antagonize` (8)
 

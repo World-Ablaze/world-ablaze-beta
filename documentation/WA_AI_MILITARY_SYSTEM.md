@@ -47,6 +47,7 @@ Every country and every faction with content in more than one domain is split in
 | Front | `_FRONT` | `front_unit_request`, `front_control`, `front_armor_score`, `force_concentration_front_factor`, `force_concentration_target_weight`, `force_ratio`, `infantry`, `garrison` (small/normal cases) |
 | Invasion | `_INVASION` | `invasion_unit_request`, `invade`, `naval_invasion_focus` |
 | Naval | `WA_AI_NAVAL_*` | `naval_avoid_region`, `naval_convoy_raid_region`, `naval_dominance`, `naval_mission_threshold`, `strike_force_home_base`, `naval_invasion_dominance_weight`, `naval_invasion_support_priority`, `strategic_air_importance` (when the rule is sea-facing) |
+| Air | `_AIR` | `strategic_air_importance` (when the rule is land-theatre-facing). Generic theatre pulls live in `WA_AI_MILITARY_DEFAULT_AIR_theatres.txt`; contest detection in `WA_AI_MILITARY_AIR_theatre_contested_*` (`WA_AI_MILITARY_triggers.txt`) |
 | Diplomacy | `_DIPLOMACY` | `conquer`, `antagonize`, `protect`, `contain`, `ignore`, `ignore_claim`, `declare_war`, `diplo_action_desire`, `diplo_action_acceptance`, `dont_defend_ally_borders`, `force_defend_ally_borders` |
 | Theatre | `_THEATRE` | `theatre_distribution_demand_increase`, `area_priority`, `put_unit_buffers`, `spare_unit_factor` |
 | Garrison | `_GARRISON` | Only when garrison rules for one country are large enough to warrant their own file; otherwise garrison stays inside `_FRONT` |
@@ -82,7 +83,7 @@ This is the master legend. For each `ai_strategy` `type` currently in use, it st
 | `force_concentration_front_factor` | Sums | Additive | n/a | -100 to +100 (plain percent) |
 | `force_concentration_target_weight` | Sums per target | Additive | n/a | -100 to +100 (plain percent) |
 | `front_armor_score` | Sums | Additive | n/a | 0 to +50 |
-| `strategic_air_importance` | Sums per area | Additive | n/a | 0 to +500 |
+| `strategic_air_importance` | Sums per strategic region, on top of engine terms (own combats x100, own armies x25; hot main front ~35,000) | Additive | n/a | +10,000 standing theatre pull (DEFAULT_AIR); +100k to +500k emergency pushes; -250k to -1M suppressions |
 | `garrison` | Max wins; large negatives force-off | Additive (with negative-override convention) | n/a | -5000 (force off) or 0 to 200 |
 | `infantry` | Sums | Additive | n/a | 0 to 100 |
 | `spare_unit_factor` | Sums | Additive | n/a | 0.0 to 1.0 |
