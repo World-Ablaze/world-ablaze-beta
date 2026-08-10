@@ -411,10 +411,21 @@ WA_AI_convert_MIC_to_CIC_industrial_expansion = {
 
 WA_AI_build_supply_line = {
 
-	set_temp_variable = { pathfind_start = supply_line_start }
-	set_temp_variable = { pathfind_target = supply_line_target }
-	set_temp_variable = { pathfind_type = 1 }
+	# Fix: these three inputs were passed WITHOUT the underscore prefix the pathfinder
+	# reads (_pathfind_start/_pathfind_target/_pathfind_type in
+	# WA_AI_pathfinding_effects.txt), so the A* ran from an unset scope and this whole
+	# effect - and all three strategies built on it (North Africa infrastructure,
+	# GER->SOV and JAP->RAJ supply lines) - has been silent dead code since authoring:
+	# zero type-1 supply-line projects in 8 in-game years of campaign 9be92c89.
+	# (Outputs pathfind_success / pathfind_path_ carry no prefix and were correct.)
+	set_temp_variable = { _pathfind_start = supply_line_start }
+	set_temp_variable = { _pathfind_target = supply_line_target }
+	set_temp_variable = { _pathfind_type = 1 }
 	WA_AI_PATHFIND_get_path = yes
+
+	if = { limit = { has_country_flag = WA_AI_construction_logging }
+		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | SUPPLY LINE: [?supply_line_start] -> [?supply_line_target] success=[?pathfind_success]"
+	}
 
 	if = { limit = { check_variable = { pathfind_success = 1 } }
 
@@ -876,38 +887,43 @@ WA_AI_build_uk_air_hosting_capacity = {
 		if = { limit = { check_variable = { _uk_target_capacity_ > _uk_hosting_capacity_ } }
 
 			### expand the least-developed hosting state first
+			# Fix: the old two-pass select stored THIS.id from STATE scope and compared it
+			# to a -1 sentinel in country scope - the stored value is scope-encoded, the
+			# `> -1` guard never passed, and campaign 9be92c89's instrumentation shows
+			# dbg_started absent for the entire war (RAF 3.2x overstacked, zero USAAF wings
+			# ever based in Britain). Fifth occurrence of the state-scope temp trap (AIFC,
+			# railway Fixes 24/25/27 lineage). Level-ladder instead: try level 0 upward,
+			# start the project directly in state scope (WA_AI_PC_start_project's documented
+			# contract: THIS = state, PREV = builder country), report via a ROOT-hopped
+			# plain integer flag.
 
 			set_temp_variable = { _project_building_type = 2 }
-			set_temp_variable = { _uk_air_best_level_ = @UK_AIR_TARGET_LEVEL_CAP }
-			set_temp_variable = { _uk_air_best_state_ = -1 }
-			every_state = {
+			set_temp_variable = { _uk_air_started_ = 0 }
+			set_temp_variable = { _uk_air_try_level_ = 0 }
+			while_loop_effect = {
 				limit = {
-					WA_AI_uk_air_hosting_state = yes
-					check_variable = { building_level@air_base < @UK_AIR_TARGET_LEVEL_CAP }
-					OR = {
-						AND = {
-							is_controlled_by = ROOT
-							WA_AI_available_AIR = yes
-							WA_AI_PC_can_build_project = yes
-						}
-						AND = {
-							NOT = { is_controlled_by = ROOT }
-							WA_AI_available_AIR_allied = yes
-							NOT = { WA_AI_PC_has_same_type_project_here = yes }
+					check_variable = { _uk_air_started_ < 1 }
+					check_variable = { _uk_air_try_level_ < @UK_AIR_TARGET_LEVEL_CAP }
+				}
+
+				random_state = {
+					limit = {
+						WA_AI_uk_air_hosting_state = yes
+						check_variable = { building_level@air_base = _uk_air_try_level_ }
+						OR = {
+							AND = {
+								is_controlled_by = ROOT
+								WA_AI_available_AIR = yes
+								WA_AI_PC_can_build_project = yes
+							}
+							AND = {
+								NOT = { is_controlled_by = ROOT }
+								WA_AI_available_AIR_allied = yes
+								NOT = { WA_AI_PC_has_same_type_project_here = yes }
+							}
 						}
 					}
-				}
-				if = { limit = { check_variable = { building_level@air_base < _uk_air_best_level_ } }
-					set_temp_variable = { _uk_air_best_level_ = building_level@air_base }
-					set_temp_variable = { _uk_air_best_state_ = THIS.id }
-				}
-			}
 
-			set_variable = { WA_AI_uk_air_dbg_best = _uk_air_best_state_ }
-
-			if = { limit = { check_variable = { _uk_air_best_state_ > -1 } }
-				add_to_variable = { WA_AI_uk_air_dbg_started = 1 }
-				var:_uk_air_best_state_ = {
 					set_temp_variable = { _project_building_type = 2 }
 					set_temp_variable = { _project_province_id = 0 }
 					set_temp_variable = { _project_target_state = 0 }
@@ -916,7 +932,17 @@ WA_AI_build_uk_air_hosting_capacity = {
 					set_temp_variable = { _project_queue_max = 3 }
 					set_temp_variable = { _project_target_level = @UK_AIR_TARGET_LEVEL_CAP }
 					WA_AI_PC_start_project = yes
+
+					ROOT = {
+						set_temp_variable = { _uk_air_started_ = 1 }
+						# dbg_best now records the LEVEL a project was started at (-2 = no deficit,
+						# unchanged; no start with a deficit leaves it -2 as before)
+						set_variable = { WA_AI_uk_air_dbg_best = _uk_air_try_level_ }
+						add_to_variable = { WA_AI_uk_air_dbg_started = 1 }
+					}
 				}
+
+				add_to_temp_variable = { _uk_air_try_level_ = 1 }
 			}
 		}
 	}
