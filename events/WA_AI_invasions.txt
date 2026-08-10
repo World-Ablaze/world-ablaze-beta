@@ -15,6 +15,32 @@
 #########################################################################################
 #########################################################################################
 
+# Fix 33: removed 68 dead `set_temp_variable = { _divisions_per_province = N }` +
+# `WA_AI_DIVISION_adjust_invasion_for_difficulty` pairs across 44 events, plus 5 orphaned
+# ADJUST calls. Read this before "restoring" any of them.
+#
+# HOW THE DEAD PAIRS GOT THERE (it was NOT a nerf pass). The original authoring commit
+# 2aaec3200 already wrote TWO dpp assignments per landing - a header pair, and one just
+# before the spawn - with the SAME value, so the header was redundant from day one but
+# harmless. 608177207 ("spawned templates re org") then split each landing into an infantry
+# wave and a `_division_template = 4` (#Armor) wave, editing only the pre-spawn assignment.
+# The headers were left at their pre-refactor value and became dead: the second assignment
+# overwrites raw, so even the doubled ADJUST does not compound. Nothing else in the mod
+# reads `_divisions_per_province` (only adjust_invasion_for_difficulty and spawn_invasion),
+# and only `_invasion_state` / `clear_temp_array` / `add_to_temp_array` sit between the two
+# pairs - which is what made every header pair provably dead.
+#
+# THE INVARIANT TO PRESERVE: exactly one dpp assignment per wave, immediately followed by
+# its ADJUST, immediately before that wave's spawn. An ADJUST with no assignment in front of
+# it multiplies whatever value is already there - which on hard/competitive-hard doubles an
+# already-doubled value. That was live in .41 (Timor): 3 -> 6 -> 12 divisions in a single
+# province on hard. Never write a bare ADJUST.
+#
+# The armor wave is deliberately lighter than the infantry wave, and several operations
+# encode a size-PRESERVING split (2/province x 1 wave == 1/province x 2 waves). A lone
+# `= 1` in front of an armor spawn is therefore design, not residue - see .47/.5 for the
+# regression that reading it as residue caused.
+
 # Expiry of the naval-invasion attack penalty applied by WA_AI_DIVISION_spawn_invasion.
 # Fix 32 (follow-up to 17505d9a9; campaign 2b607968 FAILED the R14 probe): the previous
 # version was fired ON the target and read the invader out of FROM — but FROM does not
@@ -2682,8 +2708,6 @@ country_event = {
 			WA_AI_DIVISION_spawn_invasion = yes
 			set_temp_variable = { _division_template = 1 }
 
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-
 			set_temp_variable = { _invasion_state = 667 } # Lesser Sunda Islands
 			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 1355 } # (SW Timor)
@@ -3112,8 +3136,6 @@ country_event = {
 				115 = { is_controlled_by_ROOT_or_ally = yes } # Sicily
 			}
 
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 156 } # Calabria
 			clear_temp_array = _invasion_state_provinces
@@ -3129,8 +3151,6 @@ country_event = {
 
 			set_temp_variable = { _division_template = 1 }
 
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 11998 }
 			add_to_temp_array = { _invasion_state_provinces = 6979  }
@@ -3146,8 +3166,6 @@ country_event = {
 			set_temp_variable = { _division_template = 4 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 1 }
 
 			set_temp_variable = { _divisions_per_province = 1 }
@@ -3160,8 +3178,6 @@ country_event = {
 			set_temp_variable = { _division_template = 4 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 1 }
 		}
 		else_if = {
@@ -3231,8 +3247,6 @@ country_event = {
 				115 = { is_controlled_by_ROOT_or_ally = yes } # Sicily
 			}
 
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 117 } # Campania
 			clear_temp_array = _invasion_state_provinces
@@ -3314,8 +3328,6 @@ country_event = {
 				115 = { is_controlled_by_ROOT_or_ally = yes } # Sicily
 			}
 
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 2 } # Latium
 			clear_temp_array = _invasion_state_provinces
@@ -3332,8 +3344,6 @@ country_event = {
 
 			set_temp_variable = { _division_template = 1 }
 
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 11846 }
 			add_to_temp_array = { _invasion_state_provinces = 6862  }
@@ -3347,8 +3357,6 @@ country_event = {
 			set_temp_variable = { _division_template = 4 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 1 }
 
 			set_temp_variable = { _divisions_per_province = 1 }
@@ -3361,8 +3369,6 @@ country_event = {
 			set_temp_variable = { _division_template = 4 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 1 }
 		}
 		else_if = {
@@ -3433,8 +3439,6 @@ country_event = {
 				859 = { is_controlled_by_ROOT_or_ally = yes } # Dorset
 			}
 
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			# Lower Normandy (Gold / Juno beaches)
 			set_temp_variable = { _invasion_state = 15 } # Lower Normandy
@@ -3453,8 +3457,6 @@ country_event = {
 
 			set_temp_variable = { _division_template = 1 }
 
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 11535 }
 			add_to_temp_array = { _invasion_state_provinces = 13848 }
@@ -3468,8 +3470,6 @@ country_event = {
 			set_temp_variable = { _division_template = 4 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 1 }
 
 			# Upper Normandy (Sword beach)
@@ -3485,8 +3485,6 @@ country_event = {
 			set_temp_variable = { _division_template = 4 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 1 }
 
 			clear_temp_array = _invasion_state_provinces
@@ -3501,8 +3499,6 @@ country_event = {
 			set_temp_variable = { _division_template = 4 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 1 }
 		}
 		else_if = {
@@ -3574,13 +3570,10 @@ country_event = {
 				surrender_progress < 0.1
 
 			}
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			# Gibraltar condition - only land from Med if Gibraltar is held by allies
 			if = {
 				limit = { NOT = { any_enemy_country = { controls_state = 118 } } }
-				set_temp_variable = { _divisions_per_province = 2 }
-				WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 				set_temp_variable = { _invasion_state = 459 } # Algiers
 				clear_temp_array = _invasion_state_provinces
 				add_to_temp_array = { _invasion_state_provinces = 7132  } # (Algiers)
@@ -3589,15 +3582,15 @@ country_event = {
 				add_to_temp_array = { _invasion_state_provinces = 1145  }
 				add_to_temp_array = { _invasion_state_provinces = 11939 }
 				add_to_temp_array = { _invasion_state_provinces = 9964  }
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
-			WA_AI_DIVISION_spawn_invasion = yes
+				set_temp_variable = { _divisions_per_province = 1 }
+				WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+				set_temp_variable = { _division_template = 1 }
+				WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _division_template = 4 }
-			WA_AI_DIVISION_spawn_invasion = yes
+				set_temp_variable = { _division_template = 4 }
+				WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _division_template = 1 }
+				set_temp_variable = { _division_template = 1 }
 			}
 		}
 		else_if = {
@@ -3671,10 +3664,14 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				458 = { is_controlled_by_ROOT_or_ally = yes } # Tunisia
 			}
-			# Fix 32: a later "= 1" re-set (plus a duplicate difficulty re-adjust) overwrote
-			# this before any spawn, halving Husky to 12 divisions. Intended size restored:
-			# 2/province x 6 provinces x 2 waves = 24.
-			set_temp_variable = { _divisions_per_province = 2 }
+			# Fix 33: reverts the Husky half of Fix 32. The `_divisions_per_province = 1` that Fix 32
+			# deleted as an accidental override was introduced by 608177207 TOGETHER with the second
+			# `_division_template = 4` (#Armor) wave, as a size-PRESERVING infantry/armor split:
+			# 2/province x 1 wave became 1/province x 2 waves. Total was 1x6 + 1x6 = 12 at the
+			# original authoring commit 2aaec3200 and at every commit since, and the five siblings that
+			# share this idiom (.4, .32, .35, .46, .75) are all still at 1/province. Fix 32 read the `1`
+			# as dead code and restored `2`, silently doubling this landing to 24 divisions.
+			set_temp_variable = { _divisions_per_province = 1 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 1032 } # Southern Sicily
@@ -3775,8 +3772,6 @@ country_event = {
 
 			set_temp_variable = { _invasion_state = 737 } # Bismarck
 			clear_temp_array = _invasion_state_provinces
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			add_to_temp_array = { _invasion_state_provinces = 7339 }
 			add_to_temp_array = { _invasion_state_provinces = 4352 }
 			add_to_temp_array = { _invasion_state_provinces = 10206 }
@@ -3858,8 +3853,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				430 = { is_controlled_by_ROOT_or_ally = yes } # East Bengal
 			}
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 288 } # Burma
 			clear_temp_array = _invasion_state_provinces
@@ -3868,8 +3861,6 @@ country_event = {
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 7 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 1 }
 
 		}
@@ -4041,10 +4032,14 @@ country_event = {
 				458 = { is_controlled_by_ROOT_or_ally = yes } # Tunisia
 
 			}
-			# Fix 32: a later "= 1" re-set (plus a duplicate difficulty re-adjust) overwrote
-			# this before any spawn, halving Husky to 8 divisions. Intended size restored:
-			# 2/province x 4 provinces x 2 waves = 16.
-			set_temp_variable = { _divisions_per_province = 2 }
+			# Fix 33: reverts the Husky half of Fix 32. The `_divisions_per_province = 1` that Fix 32
+			# deleted as an accidental override was introduced by 608177207 TOGETHER with the second
+			# `_division_template = 4` (#Armor) wave, as a size-PRESERVING infantry/armor split:
+			# 2/province x 1 wave became 1/province x 2 waves. Total was 1x4 + 1x4 = 8 at the
+			# original authoring commit 2aaec3200 and at every commit since, and the five siblings that
+			# share this idiom (.4, .32, .35, .46, .75) are all still at 1/province. Fix 32 read the `1`
+			# as dead code and restored `2`, silently doubling this landing to 16 divisions.
+			set_temp_variable = { _divisions_per_province = 1 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 115 } # Northern Sicily
@@ -4134,8 +4129,6 @@ country_event = {
 				127 = { is_controlled_by_ROOT_or_ally = yes } # Sussex
 
 			}
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 461 } # Casablanca
 			clear_temp_array = _invasion_state_provinces
@@ -4164,8 +4157,6 @@ country_event = {
 			set_temp_variable = { _division_template = 4 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 1 }
 
 		}
@@ -4341,8 +4332,6 @@ country_event = {
 				458 = { is_controlled_by_ROOT_or_ally = yes } # Tunisia
 				115 = { is_controlled_by_ROOT_or_ally = yes } # Northern Sicily
 			}
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 117 } # Campania
 			clear_temp_array = _invasion_state_provinces
@@ -4432,8 +4421,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				115 = { is_controlled_by_ROOT_or_ally = yes } # Northern Sicily
 			}
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 2 } # Latium
 			clear_temp_array = _invasion_state_provinces
@@ -4452,8 +4439,6 @@ country_event = {
 
 			set_temp_variable = { _invasion_state = 2 } # Latium
 			clear_temp_array = _invasion_state_provinces
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			add_to_temp_array = { _invasion_state_provinces = 11846 }
 			add_to_temp_array = { _invasion_state_provinces = 923 }
 			add_to_temp_array = { _invasion_state_provinces = 6862 }
@@ -4467,8 +4452,6 @@ country_event = {
 			set_temp_variable = { _division_template = 4 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 1 }
 
 		}
@@ -4544,8 +4527,6 @@ country_event = {
 				459 = { is_controlled_by_ROOT_or_ally = yes } # Algiers
 				156 = { is_controlled_by_ROOT_or_ally = yes } # Calabria
 			}
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 21 } # Provence
 			clear_temp_array = _invasion_state_provinces
@@ -4564,8 +4545,6 @@ country_event = {
 
 			set_temp_variable = { _invasion_state = 21 } # Provence
 			clear_temp_array = _invasion_state_provinces
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			add_to_temp_array = { _invasion_state_provinces = 11849 }
 			set_temp_variable = { _divisions_per_province = 2 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
@@ -4577,8 +4556,6 @@ country_event = {
 			set_temp_variable = { _division_template = 4 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 1 }
 
 		}
@@ -4653,8 +4630,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
 			}
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 634 } # Solomon Islands
 			clear_temp_array = _invasion_state_provinces
@@ -4742,8 +4717,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
 			}
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 1004 } # North East Papua
 			clear_temp_array = _invasion_state_provinces
@@ -4831,8 +4804,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				463 = { is_controlled_by_ROOT_or_ally = yes } # Alaska mainland
 			}
-			set_temp_variable = { _divisions_per_province = 5 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 463 } # Alaska
 			clear_temp_array = _invasion_state_provinces
@@ -4921,8 +4892,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
 			}
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 1004 } # North East Papua
 			clear_temp_array = _invasion_state_provinces
@@ -5010,8 +4979,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
 			}
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 634 } # Solomon Islands
 			clear_temp_array = _invasion_state_provinces
@@ -5100,8 +5067,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
 			}
-			set_temp_variable = { _divisions_per_province = 5 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 639 } # Gilbert Islands
 			clear_temp_array = _invasion_state_provinces
@@ -5189,8 +5154,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
 			}
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 737 } # Bismarck
 			clear_temp_array = _invasion_state_provinces
@@ -5279,8 +5242,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				629 = { is_controlled_by_ROOT_or_ally = yes } # Hawaii
 			}
-			set_temp_variable = { _divisions_per_province = 5 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 633 } # Marshall Islands
 			clear_temp_array = _invasion_state_provinces
@@ -5368,8 +5329,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				629 = { is_controlled_by_ROOT_or_ally = yes } # Hawaii
 			}
-			set_temp_variable = { _divisions_per_province = 5 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 633 } # Marshall Islands
 			clear_temp_array = _invasion_state_provinces
@@ -5457,8 +5416,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
 			}
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 737 } # Bismarck
 			clear_temp_array = _invasion_state_provinces
@@ -5546,8 +5503,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
 			}
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 737 } # Bismarck
 			clear_temp_array = _invasion_state_provinces
@@ -5635,8 +5590,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				1004 = { is_controlled_by_ROOT_or_ally = yes } # North East Papua
 			}
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 1002 } # North West Papua
 			clear_temp_array = _invasion_state_provinces
@@ -5725,8 +5678,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				1004 = { is_controlled_by_ROOT_or_ally = yes } # North East Papua
 			}
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 1002 } # North West Papua
 			clear_temp_array = _invasion_state_provinces
@@ -5815,8 +5766,6 @@ country_event = {
 				633 = { is_controlled_by_ROOT_or_ally = yes } # Marshall Islands
 				631 = { is_controlled_by_ROOT_or_ally = yes } # Midway Island
 			}
-			set_temp_variable = { _divisions_per_province = 5 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 646 } # Saipan
 			clear_temp_array = _invasion_state_provinces
@@ -5905,8 +5854,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				646 = { is_controlled_by_ROOT_or_ally = yes } # Saipan
 			}
-			set_temp_variable = { _divisions_per_province = 5 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 863 } # Tinian
 			clear_temp_array = _invasion_state_provinces
@@ -5922,8 +5869,6 @@ country_event = {
 			set_temp_variable = { _division_template = 9 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 5 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 638 } # Guam
 			clear_temp_array = _invasion_state_provinces
@@ -6012,8 +5957,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				1004 = { is_controlled_by_ROOT_or_ally = yes } # North East Papua
 			}
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 669 } # South West Papua
 			clear_temp_array = _invasion_state_provinces
@@ -6102,8 +6045,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				647 = { is_controlled_by_ROOT_or_ally = yes } # Palau
 			}
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 625 } # Samar
 			clear_temp_array = _invasion_state_provinces
@@ -6192,8 +6133,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				646 = { is_controlled_by_ROOT_or_ally = yes } # Saipan
 			}
-			set_temp_variable = { _divisions_per_province = 5 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 647 } # Palau
 			clear_temp_array = _invasion_state_provinces
@@ -6282,8 +6221,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				1002 = { is_controlled_by_ROOT_or_ally = yes } # North West Papua
 			}
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 668 } # The Moluccas
 			clear_temp_array = _invasion_state_provinces
@@ -6381,8 +6318,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				647 = { is_controlled_by_ROOT_or_ally = yes } # Palau
 			}
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 624 } # Central Islands
 			clear_temp_array = _invasion_state_provinces
@@ -6470,8 +6405,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				624 = { is_controlled_by_ROOT_or_ally = yes } # Central Islands
 			}
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 623 } # Luzon
 			clear_temp_array = _invasion_state_provinces
@@ -6560,8 +6493,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				624 = { is_controlled_by_ROOT_or_ally = yes } # Central Islands
 			}
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 626 } # Palawan
 			clear_temp_array = _invasion_state_provinces
@@ -6576,8 +6507,6 @@ country_event = {
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 9 }
 			WA_AI_DIVISION_spawn_invasion = yes
-
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 627 } # Mindanao
 			clear_temp_array = _invasion_state_provinces
@@ -6667,8 +6596,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				625 = { is_controlled_by_ROOT_or_ally = yes } # Samar
 			}
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 628 } # Cebu
 			clear_temp_array = _invasion_state_provinces
@@ -6683,8 +6610,6 @@ country_event = {
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 9 }
 			WA_AI_DIVISION_spawn_invasion = yes
-
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 624 } # Central Islands
 			clear_temp_array = _invasion_state_provinces
@@ -6773,8 +6698,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				646 = { is_controlled_by_ROOT_or_ally = yes } # Saipan
 			}
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 645 } # Iwo Jima
 			clear_temp_array = _invasion_state_provinces
@@ -6876,8 +6799,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				645 = { is_controlled_by_ROOT_or_ally = yes } # Iwo Jima
 			}
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 526 } # Okinawa
 			clear_temp_array = _invasion_state_provinces
@@ -6965,8 +6886,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				628 = { is_controlled_by_ROOT_or_ally = yes } # Cebu
 			}
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 627 } # Mindanao
 			clear_temp_array = _invasion_state_provinces
@@ -7065,8 +6984,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				647 = { is_controlled_by_ROOT_or_ally = yes } # Palau
 			}
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 334 } # Kalimantan
 			clear_temp_array = _invasion_state_provinces
@@ -7080,8 +6997,6 @@ country_event = {
 			set_temp_variable = { _division_template = 9 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 333 } # North Borneo
 			clear_temp_array = _invasion_state_provinces
@@ -7172,8 +7087,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				526 = { is_controlled_by_ROOT_or_ally = yes } # Okinawa
 			}
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 1089 } # Minami Kyushu
 			clear_temp_array = _invasion_state_provinces
@@ -7188,8 +7101,6 @@ country_event = {
 			set_temp_variable = { _division_template = 9 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 530 } # Shikoku
 			clear_temp_array = _invasion_state_provinces
@@ -7205,8 +7116,6 @@ country_event = {
 			set_temp_variable = { _division_template = 9 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 282 } # Kanto
 			clear_temp_array = _invasion_state_provinces
@@ -7313,8 +7222,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
 			}
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 1004 } # North East Papua
 			clear_temp_array = _invasion_state_provinces
@@ -7323,8 +7230,6 @@ country_event = {
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 7 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 1 }
 
 		}
@@ -7399,8 +7304,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
 			}
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 737 } # Bismarck
 			clear_temp_array = _invasion_state_provinces
@@ -7409,8 +7312,6 @@ country_event = {
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 7 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 1 }
 
 		}
@@ -7485,8 +7386,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
 			}
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 737 } # Bismarck
 			clear_temp_array = _invasion_state_provinces
@@ -7496,8 +7395,6 @@ country_event = {
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 7 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 1 }
 
 		}
@@ -7581,8 +7478,6 @@ country_event = {
 			add_to_temp_array = { _invasion_state_provinces = 7415 } # Tarakan
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-
 			set_temp_variable = { _invasion_state = 333 } # North Borneo
 			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 7371 } # Brunei
@@ -7590,8 +7485,6 @@ country_event = {
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 7 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 1 }
 
 		}
@@ -7667,8 +7560,6 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				647 = { is_controlled_by_ROOT_or_ally = yes } # Palau
 			}
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 334 } # Kalimantan
 			clear_temp_array = _invasion_state_provinces
@@ -7677,8 +7568,6 @@ country_event = {
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 7 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 1 }
 
 		}
