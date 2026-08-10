@@ -245,9 +245,9 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 
 ### R14. Scripted-invasion attack penalty does not stack
 
-- **Fix under test:** `17505d9a9` (guard on `has_relation_modifier` in `WA_AI_DIVISION_spawn_invasion`; `WA_AI_invasions.1` re-scoped to fire ON the target with `FROM` = invader; removed the `is_ai` / historical gates and the `most_recent_invasion_target` scalar).
+- **Fix under test:** `17505d9a9` (stacking guard — verified working on `2b607968`) + `76dde84ed` (**Fix 32** — expiry re-homed to the INVADER: delayed events lose FROM, so the old target-side event never removed anything; pending pairs tracked in `WA_AI_invasions_pending_targets`, wholesale-cleared on expiry with a documented ≤14-day early-clear tradeoff; Husky restored to 24 ENG / 16 USA).
 - **Bug being fixed:** `WA_AI_invasions_modifier` (`attack_bonus_against = -0.25`) was added once per `WA_AI_DIVISION_spawn_invasion` call, not once per invasion. The expiry event then read a single overwritten scalar and cleared it on its first fire, leaving permanent stacks.
-- **Pass:** on every major that runs scripted invasions (GER, JAP at minimum), `wa_ai_invasions_dbg_active` is **0 in every save**, and `wa_ai_invasions_dbg_adds` is **> 0** by mid-war with `adds == removes`. `adds == 0` means no invasion ever fired in that campaign → `NOT CHECKED`, not PASSED. A transient `_active = 1` or `2` in a save that happens to land inside a 14-day landing window is a PASSED with the caveat noted; `_active ≥ 3`, or any non-zero value that persists across consecutive monthly saves, is FAILED.
+- **Pass:** wherever `dbg_adds > 0` on a major: (a) `dbg_removes > 0`; (b) `dbg_active = 0` in every save more than 14 days after that country's last scripted landing (transient 1–2 inside a window = PASSED with caveat); (c) `adds − removes` ≤ targets annexed mid-window (investigate if > 2); (d) the diplomacy grep for `WA_AI_invasions_modifier` and the `wa_ai_invasions_pending_targets` array are both empty outside landing windows. `adds == 0` everywhere → NOT CHECKED. FAILED on the `2b607968` signature (`removes = 0` while `adds > 0`) or any persistent non-zero `active`. **Husky sub-probe (Fix 32):** landing-month save shows ~24 ENG divisions in 1032 and ~16 USA in 115 (normal difficulty).
 - **Probe:** `var JAP "^wa_ai_invasions_dbg" <saves...>` and the same for GER, across 1940–1945 saves. **JAP is the reliable probe target** (see `66d6b53c` history: GER's Norway operation did not route through `WA_AI_DIVISION_spawn_invasion` there — Weserübung left zero residue on GER while JAP carried heavy stacks). Cross-check a suspected failure against the live modifier: `section <save> JAP diplomacy --grep "WA_AI_invasions_modifier" --max-lines 0` — invader-side storage.
 - **Why instrumentation:** the penalty's natural fingerprint lives only 14 days and monthly saves almost never land inside that window; the `*_dbg_*` counters exist so the probe is reliable on monthly cadence.
 - **Threshold:** 3 (narrow variable probe — `_active` returning to 0 is a direct state check, not a behavioural outcome).
@@ -267,6 +267,28 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **Streak:** 0
 - **History:**
   - 2026-08-10 · `2b607968` (local, fix loaded mid-campaign 1943.3, probed 1943.7.15) · FAILED with caveats — USA at 71.7% CONUS (worse than the 62% baseline), **zero** USA planes in the contested Italy/Med theatre; ENG's 30% Med deployment is real but attributable to pre-existing ENG.txt specials; GER 70% east by engine combat terms, zero over Italy. Caveats: only 2.5 game-months since load; migration IS live (1 000-plane Newfoundland→Azores→Madeira ferry chain, ENG wings on Sicily 5 days post-landing); Med bases possibly RAF-saturated. **Suspected binding gap: no friendly in-range air-base capacity — the air-base-construction follow-up is the dependency to test next.** Re-score on a from-start campaign before concluding the pull values are wrong.
+
+### R16. Theatre air-base construction fills contested theatres without overbuilding
+
+- **Fix under test:** commit pending on `ai-rework` (**`WA_AI_build_theatre_air_bases`** in `WA_AI_CONSTRUCTION_PRIORITY_strategies.txt — PC type-2 projects in contested-theatre member states via the `WA_AI_MILITARY_AIR_theatre_state_*` triggers; side-wide capacity-deficit gate at 25% of side planes / theatre; level ladder to 4 per state; allied-build branch). This is R15's declared dependency — score both, independently.
+- **Pass:** build fingerprint `wa_ai_thair_dbg_called > 0` on USA/ENG/JAP once at war (absence = pre-fix build, probe void). Then: `wa_ai_thair_dbg_started > 0` on at least one major with a contested theatre, with type-2 PC projects on theatre member states; behavioural: for the side fighting the Pacific war, summed air-base levels across the island-chain states (629, 634, 633, 639/643/725, 638/646/863, 1001–1004, 327/623–628) rise from the `66d6b53c` flatline, individual states reaching 2–4 by ~1944. **Overproduction guard (the guardrail is part of the pass):** `dbg_active` drops to 0 on later saves once side capacity meets the target (levels plateau, not monotonic to slot-cap); minors sharing the theatre (e.g. CAN) show `dbg_started` at 0 or a small fraction of the majors'; no type-2 project from this system ever appears OUTSIDE a theatre member state (a Vladivostok/home-soil air-base spree = FAIL).
+- **Probe:** `var <TAG> "^wa_ai_thair_dbg" <saves...>` on USA/ENG/JAP/CAN; `var <TAG> "^wa_ai_pc_building_type"` + target-state vars to attribute type-2 projects to member states; state `air_base` building levels on the island-chain states across saves. Retire the `WA_AI_thair_dbg_*` instrumentation with this item.
+- **Launch-validation note:** needs the boot test (F9) before the next campaign: `divide_temp_variable` by an `@` constant, temp-variable reads inside `every_state`/`random_state` limits, and the `state = <id>` membership idiom (already proven in `WA_AI_fortify_strategic_islands`) at this OR-list size.
+- **Threshold:** 5 (behavioural — capacity appearing AND plateauing is the outcome).
+- **Streak:** 0
+- **History:**
+  - NOT YET TESTED — fix postdates every campaign in the registry.
+
+### R17. Italian campaign: Sicily held, mainland reached, Axis defends
+
+- **Fix under test:** `f99217c39` (hold-Sicily bridge blocks, USA suppression window, `fall_achse` flag fix, ITA home buffer 0.15) + the Husky size restore in `76dde84ed`.
+- **Pass:** next campaign with a successful Husky: (1) Allied divisions on Sicily (115+1032) ≥ 15 two weeks after both states flip, Sicily never recaptured; (2) USA divisions present in region 238 during the bridge window (suppressions inert in-window); (3) USA divisions on the Italian mainland by 1943.9; (4) once GER sets `GER_fall_achse_prepared` (not at war with ITA), GER divisions in northern Italy (158/162/159/161/160/736/856/157/2) > 0 within 60 days; (5) ITA pre-invasion garrison on 115/1032/117/156 lighter than the `2b607968` baseline but non-zero.
+- **Probe:** state controllers + division locations for the listed states across 1943.7–1943.10 saves; GER flag `GER_fall_achse_prepared` set-date; division-location counts per the province lists in `history/states/`.
+- **Watch item (regression risk from the fix):** the reactivated fall_achse buffers let GER park up to 0.2 army-fraction in N. Italy while fighting SOV — watch eastern-front density; and the 0.15 buffer also lightens Campania/Calabria (Avalanche zone), single shared ratio.
+- **Threshold:** 5 (behavioural campaign outcome).
+- **Streak:** 0
+- **History:**
+  - NOT YET TESTED — fixes postdate every campaign in the registry.
 
 ---
 
