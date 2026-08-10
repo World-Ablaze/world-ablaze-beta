@@ -254,8 +254,26 @@ WA_AI_AIFC_select_sector = {
 			set_country_flag = WA_AI_AIFC_sector_enemy_of_@PREV
 		}
 
+		# Fix 31 verification telemetry - remove when checklist item R1 retires.
+		if = {
+			limit = { is_major = yes }
+			log = "AIFC-DIAG | [Root.GetName] | selected: anchor=[?WA_AI_AIFC_sector_anchor] enemy=[?WA_AI_AIFC_sector_enemy.GetName]"
+		}
+
 		add_to_array = { WA_AI_AIFC_sector_states = _aifc_best_id }
 		add_to_array = { WA_AI_AIFC_sector_objectives = _aifc_best_id }
+		# Fix 31: engine-encoded twins for the Layer 4 state_triggers. Their is_in_array
+		# compares against THIS.id of a state, which is the engine-encoded scope reference,
+		# not the plain map-data id (live-confirmed: anchor=228 vs scoped=-10737.41596) - so
+		# Layer 4 needs arrays stored in the SAME encoding. PREV.id through a ROOT hop stores
+		# exactly that encoding. Kept in lockstep with the plain arrays; cleared together in
+		# WA_AI_AIFC_clear_sector.
+		var:_aifc_best_id = {
+			ROOT = {
+				add_to_array = { WA_AI_AIFC_sector_states_ref = PREV.id }
+				add_to_array = { WA_AI_AIFC_sector_objectives_ref = PREV.id }
+			}
+		}
 
 		# Corridor: enemy-held neighbours of the anchor.
 		set_temp_variable = { _aifc_depth_id = 0 }
@@ -276,7 +294,11 @@ WA_AI_AIFC_select_sector = {
 						NOT = { is_in_array = { ROOT.WA_AI_AIFC_sector_states = _aifc_nid } }
 					}
 
-					ROOT = { add_to_array = { WA_AI_AIFC_sector_states = _aifc_nid } }
+					ROOT = {
+						add_to_array = { WA_AI_AIFC_sector_states = _aifc_nid }
+						# Fix 31: encoded twin (PREV = the neighbour state) - see anchor site
+						add_to_array = { WA_AI_AIFC_sector_states_ref = PREV.id }
+					}
 
 					# Track the most valuable corridor state as the depth objective.
 					set_temp_variable = { _aifc_target = _aifc_nid }
@@ -294,6 +316,10 @@ WA_AI_AIFC_select_sector = {
 		if = {
 			limit = { check_variable = { _aifc_depth_id > 0 } }
 			add_to_array = { WA_AI_AIFC_sector_objectives = _aifc_depth_id }
+			# Fix 31: encoded twin - see anchor site
+			var:_aifc_depth_id = {
+				ROOT = { add_to_array = { WA_AI_AIFC_sector_objectives_ref = PREV.id } }
+			}
 		}
 	}
 	else = {
@@ -596,10 +622,13 @@ WA_AI_AIFC_armor_reconcile = {
 
 	if = {
 		limit = {
-			has_country_flag = WA_AI_AIFC_logging
+			# AIFC-DIAG (temporary, do not commit): widened from WA_AI_AIFC_logging to is_major
+			is_major = yes
 			check_variable = { _aifc_armor_changed > 0 }
 		}
-		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | AIFC: armor steering reconciled, boost_id=[?WA_AI_AIFC_armor_boost] suppressed=[?WA_AI_AIFC_armor_suppressed^num]"
+		# AIFC-DIAG: boost_raw numeric vs boost_name readable proves whether the stored value is a
+		# serialized country scope reference (raw prints 10791.3-style, name prints the country).
+		log = "AIFC-DIAG | [Root.GetName] | armor: boost_raw=[?WA_AI_AIFC_armor_boost] boost_name=[?WA_AI_AIFC_armor_boost.GetName] supp_n=[?WA_AI_AIFC_armor_suppressed^num]"
 	}
 
 	clear_temp_array = _aifc_supp_old

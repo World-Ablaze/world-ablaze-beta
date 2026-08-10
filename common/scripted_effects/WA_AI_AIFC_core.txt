@@ -78,6 +78,13 @@ WA_AI_AIFC_update_sector = {
 
 		WA_AI_AIFC_check_sector_valid = yes		# >>> _aifc_sector_valid
 
+		# Fix 31 verification telemetry - remove when checklist item R1 retires.
+		# Healthy: age climbs 2..5 with valid=1, re-selection only at age > 4.
+		if = {
+			limit = { is_major = yes }
+			log = "AIFC-DIAG | [GetDateText] | [Root.GetName] | entry: age=[?WA_AI_AIFC_sector_age] corridor=[?WA_AI_AIFC_sector_states^num] anchor=[?WA_AI_AIFC_sector_anchor] valid=[?_aifc_sector_valid]"
+		}
+
 		if = {
 			limit = {
 				OR = {
@@ -119,8 +126,18 @@ WA_AI_AIFC_update_sector = {
 
 WA_AI_AIFC_clear_sector = {
 
+	# Fix 31 verification telemetry - remove when checklist item R1 retires.
+	if = {
+		limit = { is_major = yes }
+		log = "AIFC-DIAG | [GetDateText] | [Root.GetName] | clear_sector"
+	}
+
 	clear_array = WA_AI_AIFC_sector_states
 	clear_array = WA_AI_AIFC_sector_objectives
+	# Fix 31: engine-encoded twins consumed by the Layer 4 state_triggers
+	# (WA_AI_MILITARY_DEFAULT_FRONT_aifc.txt) - kept in lockstep with the plain arrays.
+	clear_array = WA_AI_AIFC_sector_states_ref
+	clear_array = WA_AI_AIFC_sector_objectives_ref
 	clear_variable = WA_AI_AIFC_sector_anchor
 	clear_variable = WA_AI_AIFC_sector_age
 
@@ -156,50 +173,48 @@ WA_AI_AIFC_check_sector_valid = {
 	if = {
 		limit = { check_variable = { WA_AI_AIFC_sector_states^num > 0 } }
 
-		every_controlled_state = {
-			limit = {
-				any_neighbor_state = {
-					CONTROLLER = { has_war_with = ROOT }
-					is_in_array = { ROOT.WA_AI_AIFC_sector_states = THIS.id }
-				}
-			}
-			# The ROOT hop is load-bearing: temp variables are scope-owned, so a bare
-			# set_temp_variable here writes to the STATE and the country-scope reader at the
-			# call site never sees it - validity read 0 every week and the sector re-selected
-			# weekly for the system's whole life (campaign c9ab1062: sector_age 1 in 40/40
-			# observations). Same trap as railway Fixes 24/25/27.
-			ROOT = { set_temp_variable = { _aifc_sector_valid = 1 } }
-		}
+		# Fix 31 (R1): the old passes tested corridor membership with
+		#   is_in_array = { ROOT.WA_AI_AIFC_sector_states = THIS.id }
+		# but the corridor arrays hold PLAIN map-data ids while THIS.id yields the engine-encoded
+		# scope reference - live-confirmed 1943.3 (anchor=228 vs scoped=-10737.41596): equality
+		# never held, validity was permanently 0 and the sector re-selected weekly for the
+		# system's whole life (sector_age pinned at 1 in every campaign since creation; fixes
+		# 4bfea363d and 128cc7995 patched real-but-downstream defects). Never compare a plain
+		# stored id against .id of a scope - walk the corridor array and ask each state directly.
+		# The array is capped at @WA_AI_AIFC_SECTOR_MAX_STATES, so this is at most 8 state hops.
+		for_each_loop = {
+			array = WA_AI_AIFC_sector_states
+			value = _aifc_v_sid
 
-		# Fix 28: expeditionary sectors (selected via the 1b fallback in WA_AI_AIFC_helpers.txt) are
-		# anchored on allied-controlled soil that every_controlled_state cannot see. Mirror check:
-		# the corridor stays valid while it touches faction/subject territory holding ROOT divisions.
-		# Gated on the native pass failing so the extra country walk is only paid when needed.
-		if = {
-			limit = { check_variable = { _aifc_sector_valid < 1 } }
-
-			every_country = {
+			if = {
 				limit = {
-					NOT = { tag = ROOT }
-					has_capitulated = no
-					OR = {
-						is_in_faction_with = ROOT
-						is_subject_of = ROOT
-						ROOT = { is_subject_of = PREV }
-					}
-				}
-
-				every_controlled_state = {
-					limit = {
-						ROOT = { divisions_in_state = { state = PREV size > 2 } }
-						any_neighbor_state = {
-							CONTROLLER = { has_war_with = ROOT }
-							is_in_array = { ROOT.WA_AI_AIFC_sector_states = THIS.id }
+					# stop scanning once proven valid
+					check_variable = { _aifc_sector_valid < 1 }
+					var:_aifc_v_sid = {
+						# still enemy-held...
+						CONTROLLER = { has_war_with = ROOT }
+						OR = {
+							# ...and our frontline still touches it (native case)
+							any_neighbor_state = { is_controlled_by = ROOT }
+							# Fix 28 mirror: expeditionary sectors - the corridor also stays
+							# valid while it borders faction/subject territory holding ROOT
+							# divisions (anchored on allied soil the native case cannot see).
+							any_neighbor_state = {
+								CONTROLLER = {
+									NOT = { tag = ROOT }
+									has_capitulated = no
+									OR = {
+										is_in_faction_with = ROOT
+										is_subject_of = ROOT
+										ROOT = { is_subject_of = PREV }
+									}
+								}
+								ROOT = { divisions_in_state = { state = PREV size > 2 } }
+							}
 						}
 					}
-					# ROOT hop load-bearing - see the native pass above
-					ROOT = { set_temp_variable = { _aifc_sector_valid = 1 } }
 				}
+				set_temp_variable = { _aifc_sector_valid = 1 }
 			}
 		}
 	}
