@@ -1,17 +1,41 @@
 ############################################################################################################
 #	World Ablaze AI mod - scripted AI effects - PATHFINDING
 #	Updated for World Ablaze with provincial pathfinding for railway building
+#
+#	Two pathfinders live here:
+#	- State-level A* (WA_AI_PATHFIND_*): used by the supply-line strategies
+#	  (WA_AI_build_supply_line in WA_AI_CONSTRUCTION_PRIORITY_strategies.txt - sole caller).
+#	  Type 1 walks ROOT + subject + faction controlled states (Fix 30).
+#	- Province-level A* (WA_AI_PATHFIND_PROV_*): used by the railway system.
+#	  Types 0/1/2 all walk ROOT + allied + subject controlled provinces (since 9aef32f41).
+#
+#	Fix 30 (R9, campaign 66d6b53c): the state-level type-1 neighbor filter was ROOT-only since
+#	the original supply system (bd11fde6b) and was never included in the 9aef32f41 puppet fix,
+#	which only touched the provincial pathfinder. Both North Africa corridor anchors are
+#	subject-owned (Cairo 446 = UKE, Tripoli 448 = ITL), so the A* died at iteration 1 for
+#	ENG/ITA. Type 1 now matches the provincial traversal semantics. Fix 30 also gave both
+#	state-level loops explicit break variables: they used the shared `break` temp variable,
+#	which (a) other queue/scoring effects leave set within the same pulse, aborting the A*
+#	instantly, and (b) leaked `break = 1` back to the caller on success, aborting the caller's
+#	own path walk.
 ############################################################################################################
 
 ###########################################
-#	State-level pathfinding (legacy)
+#	State-level pathfinding (supply lines)
 ###########################################
 
-WA_AI_PATHFIND_get_path = { # _pathfind_start, _pathfind_target, _pathfind_type
+WA_AI_PATHFIND_get_path = { # _pathfind_start, _pathfind_target, _pathfind_type >>> pathfind_success, pathfind_path_
 
 	if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_detailed_logging } } every_state = { set_variable = { WA_AI_debug_value = 0 } } }
 
 	if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PATHFIND: START - [?_pathfind_start.GetName] -> [?_pathfind_target.GetName] - type [?_pathfind_type]" }
+
+	# Fix 30 break hygiene: neutralize `break` pollution left by earlier effects in the same
+	# pulse - every default-break loop below (neighbor scan, open-list scan, path reversal)
+	# would otherwise abort before its first iteration. This pathfinder's own loops use
+	# explicit break variables and never set `break` themselves.
+	set_temp_variable = { break = 0 }
+	set_temp_variable = { pathfind_success = 0 }
 
 	var:_pathfind_start = {
 		clear_variable = WA_AI_PATHFIND_g_score
@@ -20,7 +44,8 @@ WA_AI_PATHFIND_get_path = { # _pathfind_start, _pathfind_target, _pathfind_type
 
 	add_to_temp_array = { open_list = _pathfind_start }
 
-	while_loop_effect = { limit = { check_variable = { its < 75 } check_variable = { open_list^num > 0 } }
+	set_temp_variable = { _pathfind_break = 0 }
+	while_loop_effect = { break = _pathfind_break limit = { check_variable = { its < 75 } check_variable = { open_list^num > 0 } }
 
 		WA_AI_PATHFIND_get_lowest_from_open_list = yes
 
@@ -32,7 +57,7 @@ WA_AI_PATHFIND_get_path = { # _pathfind_start, _pathfind_target, _pathfind_type
 
 			WA_AI_PATHFIND_build_path = yes
 
-			set_temp_variable = { break = 1 }
+			set_temp_variable = { _pathfind_break = 1 }
 		}
 		else = {
 
@@ -112,13 +137,22 @@ WA_AI_PATHFIND_get_neighbors = {
 
 	clear_temp_array = neighbors
 
-	# supply line - outdated
+	# supply line - walks ROOT + subject + faction controlled states.
+	# Fix 30: was `is_controlled_by = ROOT` since the original supply system - never updated
+	# when the provincial pathfinder gained subject traversal (9aef32f41). With subject-owned
+	# corridor anchors (Cairo 446 = UKE, Tripoli 448 = ITL) the A* died at iteration 1.
 	if = { limit = { check_variable = { _pathfind_type = 1 } }
 
 		every_neighbor_state = {
 			limit = {
 				impassable = no
-				is_controlled_by = ROOT
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
 			}
 
 			add_to_temp_array = { neighbors = THIS.id }
@@ -210,12 +244,15 @@ WA_AI_PATHFIND_build_path = {
 	clear_temp_array = pathfind_path_
 
 	set_temp_variable = { its2 = 0 }
-	while_loop_effect = { limit = { check_variable = { its2 < 50 } }
+	# Fix 30: explicit break variable - the shared `break` leaked to the caller and killed its
+	# subsequent default-break loops (the supply-line path walk never ran even on success).
+	set_temp_variable = { _pf_build_break = 0 }
+	while_loop_effect = { break = _pf_build_break limit = { check_variable = { its2 < 50 } }
 
 		if = { limit = { check_variable = { current = _pathfind_start } }
 
 			set_temp_variable = { pathfind_success = 1 }
-			set_temp_variable = { break = 1 }
+			set_temp_variable = { _pf_build_break = 1 }
 		}
 
 		var:current = {

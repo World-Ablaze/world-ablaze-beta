@@ -173,7 +173,7 @@ The interval counter is managed inside `WA_AI_PC_railway` (`railway_core.txt`, l
   - Skips states already at railway level 5
   - Handles cross-landmass targets via overseas supply chain analysis (cached per landmass)
   - Queues port upgrades for bottlenecked overseas routes
-- Pathfinds (type 2 = ROOT-controlled provinces only, allows partial paths)
+- Pathfinds (type 2 = ROOT + allied + subject provinces, allows partial paths)
 - Sorts all targets by enemy threat (factories + divisions*5) via `WA_AI_PC_railway_score_and_sort_by_enemy_threat`
 - Default route level: 5, priority: 9999
 
@@ -217,7 +217,7 @@ The interval counter is managed inside `WA_AI_PC_railway` (`railway_core.txt`, l
 **Land Target Handling:**
 - Builds level 3 railways to border states with supply hubs
 - Skips states already at level 3+ railways
-- Pathfinding validation (type 2, ROOT-only provinces)
+- Pathfinding validation (type 2, ROOT + allied + subject provinces)
 
 **Overseas Target Handling:**
 - Only if ROOT has coastal access (prevents landlocked nations like Hungary from running overseas logic)
@@ -229,7 +229,7 @@ The interval counter is managed inside `WA_AI_PC_railway` (`railway_core.txt`, l
 
 After strategies populate the output arrays, the core processes each route:
 
-1. **Pathfinding**: A* via `WA_AI_PATHFIND_PROV_get_path` with `_pathfind_prov_type = 2` (ROOT-only) and `_pathfind_prov_allow_partial = 1`
+1. **Pathfinding**: A* via `WA_AI_PATHFIND_PROV_get_path` with `_pathfind_prov_type = 2` (ROOT + allied + subject provinces since `9aef32f41`) and `_pathfind_prov_allow_partial = 1`
 2. **Partial path handling**: Dead-end paths at coastal provinces trigger `WA_AI_PC_create_frontier_port` (queues port construction)
 3. **Segment creation**: For each segment in the path, calls `WA_AI_PC_start_railway_project`
 4. **Stale project validation**: Existing queued projects are checked; those targeting states no longer on the frontline are cancelled
@@ -313,18 +313,43 @@ Uses A* algorithm via `WA_AI_PATHFIND_PROV_get_path`:
 - Input: `_pathfind_prov_start`, `_pathfind_prov_end`, `_pathfind_prov_type`
 - Output: `pathfind_prov_path_` array of province IDs
 
-### Pathfinding Types
+### Provincial Pathfinding Types (`WA_AI_PATHFIND_PROV_get_path`)
+
+Since commit `9aef32f41` ("pathfinding bug when puppet isn't in faction"), all three provincial
+types share the same neighbor filter — ROOT + allied (faction) + subject controlled provinces —
+and differ only in cost model:
 
 | Type | Neighbor Filter | Cost Model | Use Case |
 |------|-----------------|------------|----------|
-| 0 | ROOT + allies | Distance only | General pathfinding |
-| 1 | ROOT + allies | Distance + terrain | Defensible positions |
-| **2** | **ROOT only** | **Railway cost reduction** | **Railway building** |
+| 0 | ROOT + allies + subjects | Distance only | General pathfinding |
+| 1 | ROOT + allies + subjects | Distance + terrain | Defensible positions |
+| **2** | **ROOT + allies + subjects** | **Railway cost reduction** | **Railway building** |
 
 **All railway strategies use type 2**, which:
-- Restricts to ROOT-controlled provinces only (no allied territory)
 - Applies cost reduction for existing railways: `cost = base_cost / (railway_level + 1)`
-- Ensures railways are only built through own territory
+- Can route through allied and subject territory (`build_railway` is a map modification and
+  works regardless of the controller)
+
+### State-Level Pathfinding Types (`WA_AI_PATHFIND_get_path`)
+
+The state-level A* is used only by the supply-line strategies
+(`WA_AI_build_supply_line` in `WA_AI_CONSTRUCTION_PRIORITY_strategies.txt`).
+- Input: `_pathfind_start`, `_pathfind_target`, `_pathfind_type` (state IDs)
+- Output: `pathfind_success`, `pathfind_path_` array of state IDs
+- Capped at 75 A* iterations — anchors must be reasonably close to the target front.
+
+| Type | Neighbor Filter | Cost Model | Use Case |
+|------|-----------------|------------|----------|
+| 1 | ROOT + subjects + faction (Fix 30) | Distance / infrastructure preference | Supply-line infrastructure |
+| other | ROOT only | Distance | Unused (legacy default) |
+
+Type 1 succeeds either on reaching the target state or on reaching a state adjacent to
+territory controlled by the target's controller (the front line). Fix 30 (R9, campaign
+66d6b53c): the type-1 filter had been ROOT-only since the original supply system and was never
+covered by the `9aef32f41` provincial fix — with subject-owned corridor anchors (Cairo 446 =
+UKE, Tripoli 448 = ITL) the A* died at iteration 1. Both state-level loops now use explicit
+break variables (`_pathfind_break`, `_pf_build_break`) instead of the shared `break` temp
+variable, which other effects in the same pulse pollute.
 
 ## Peace Handling
 

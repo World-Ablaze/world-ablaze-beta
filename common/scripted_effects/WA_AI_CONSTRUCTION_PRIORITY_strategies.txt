@@ -65,14 +65,25 @@ WA_AI_important_radar_constructions = {
 
 WA_AI_improve_north_africa_infrastructure = {
 
+	# Fix 30 (R9): both corridor anchors are subject-owned at start (Tripoli 448 = ITL,
+	# Cairo 446 = UKE). The old tag gate fired for the subjects too, but a subject never
+	# passes the dispatcher's WA_AI_PC_can_afford_project, and the overlord's A* died on the
+	# subject-controlled start state. Controller-aware selection instead: whichever country
+	# controls its corridor end - directly or through a subject - builds toward the other
+	# end, provided the far end is not on its own side. Corridor definition unchanged
+	# (448 Tripoli <-> 446 Cairo).
+
 	if = {
 		limit = {
-			OR = {
-				tag = ITA
-				tag = ITL
-			}
-
 			date > 1937.6.1
+			448 = { CONTROLLER = { OR = { tag = ROOT is_subject_of = ROOT } } } # tripoli is ours
+			446 = { # cairo is not
+				CONTROLLER = {
+					NOT = { tag = ROOT }
+					NOT = { is_subject_of = ROOT }
+					NOT = { is_in_faction_with = ROOT }
+				}
+			}
 		}
 
 		set_temp_variable = { supply_line_start = 448.id } # tripoli
@@ -82,11 +93,15 @@ WA_AI_improve_north_africa_infrastructure = {
 
 	if = {
 		limit = {
-			OR = {
-				tag = ENG
-				tag = UKE
-			}
 			date > 1937.6.1
+			446 = { CONTROLLER = { OR = { tag = ROOT is_subject_of = ROOT } } } # cairo is ours
+			448 = { # tripoli is not
+				CONTROLLER = {
+					NOT = { tag = ROOT }
+					NOT = { is_subject_of = ROOT }
+					NOT = { is_in_faction_with = ROOT }
+				}
+			}
 		}
 
 		set_temp_variable = { supply_line_start = 446.id }
@@ -384,9 +399,43 @@ WA_AI_build_supply_line_JAP_RAJ = {
 			has_war_with = RAJ
 		}
 
-		613 = { set_temp_variable = { supply_line_start = THIS.id } }
-		439 = { set_temp_variable = { supply_line_target = THIS.id } }
-		WA_AI_build_supply_line = yes
+		# Fix 30 (R9): the old hardcoded start 613 (N. Shanghai) could never reach Delhi 439
+		# within the A*'s 75-iteration cap. Dynamic anchor instead: BFS outward from the
+		# target and take the nearest ROOT-or-subject-controlled state on the SAME landmass
+		# (BFS waves are emitted nearest-first; every_neighbor_state can cross straits, the
+		# landmass check filters those hits). No anchor found = JAP holds no ground near the
+		# RAJ front = no supply line, which is the correct null behaviour.
+		set_temp_variable = { _origin_state_id = 439 } # delhi
+		set_temp_variable = { _max_distance = 10 }
+		WA_AI_PC_railway_get_states_within_distance = yes # >>> states_within_distance_
+
+		set_temp_variable = { _sl_target_state_ = 439 }
+		set_temp_variable = { _sl_target_landmass_ = global.WA_AI_MAP_state_landmass^_sl_target_state_ }
+		set_temp_variable = { _sl_anchor_found_ = 0 }
+		for_each_loop = { array = states_within_distance_ value = _sl_cand_ break = _sl_anchor_found_
+			if = {
+				limit = { check_variable = { global.WA_AI_MAP_state_landmass^_sl_cand_ = _sl_target_landmass_ } }
+				var:_sl_cand_ = {
+					if = {
+						limit = {
+							CONTROLLER = {
+								OR = {
+									tag = ROOT
+									is_subject_of = ROOT
+								}
+							}
+						}
+						set_temp_variable = { supply_line_start = THIS.id }
+						set_temp_variable = { _sl_anchor_found_ = 1 }
+					}
+				}
+			}
+		}
+
+		if = { limit = { check_variable = { _sl_anchor_found_ = 1 } }
+			set_temp_variable = { supply_line_target = _sl_target_state_ }
+			WA_AI_build_supply_line = yes
+		}
 	}
 }
 
@@ -411,6 +460,23 @@ WA_AI_convert_MIC_to_CIC_industrial_expansion = {
 
 WA_AI_build_supply_line = {
 
+	# Fix 30 break hygiene: earlier strategies in the same pulse (refinery/AA queue
+	# functions, scoring loops) leave the shared `break` temp variable at 1; the
+	# default-break loops below (path walk, front exploration) would then abort before
+	# their first iteration. The pathfinder resets it too, but reset here so THIS effect
+	# is safe regardless of call order.
+	set_temp_variable = { break = 0 }
+	set_temp_variable = { building_path_to_front = 0 }
+
+	# Fix 30 instrumentation (campaign 66d6b53c: zero supply-line projects all war, and
+	# resource-INF shares building type 1, so saves could not tell the two apart).
+	# Persistent, save-visible (lowercased in saves); remove once the system is verified.
+	#   WA_AI_supply_line_dbg_called      pulses that reached this effect
+	#   WA_AI_supply_line_dbg_pf_ok       pulses whose A* returned success
+	#   WA_AI_supply_line_dbg_queued      infrastructure projects actually queued here
+	#   WA_AI_supply_line_dbg_last_state  state id of the last queued project
+	add_to_variable = { WA_AI_supply_line_dbg_called = 1 }
+
 	# Fix: these three inputs were passed WITHOUT the underscore prefix the pathfinder
 	# reads (_pathfind_start/_pathfind_target/_pathfind_type in
 	# WA_AI_pathfinding_effects.txt), so the A* ran from an unset scope and this whole
@@ -428,6 +494,8 @@ WA_AI_build_supply_line = {
 	}
 
 	if = { limit = { check_variable = { pathfind_success = 1 } }
+
+		add_to_variable = { WA_AI_supply_line_dbg_pf_ok = 1 }
 
 		# Set up project parameters for infrastructure building
 		set_temp_variable = { _project_building_type = 1 }
@@ -459,7 +527,13 @@ WA_AI_build_supply_line = {
 
 		if = { limit = { check_variable = { building_path_to_front = 1 } }
 
+			set_temp_variable = { _sl_before_ = WA_AI_PC_active_projects }
 			var:target_id = { WA_AI_PC_start_project = yes }
+			# start_project may no-op (duplicate, level cap) - count only real queue growth
+			if = { limit = { check_variable = { WA_AI_PC_active_projects > _sl_before_ } }
+				add_to_variable = { WA_AI_supply_line_dbg_queued = 1 }
+				set_variable = { WA_AI_supply_line_dbg_last_state = target_id }
+			}
 		}
 
 		### build along the front
@@ -490,7 +564,16 @@ WA_AI_build_supply_line = {
 					# max infrastructure
 					if = { limit = { WA_AI_PC_can_build_project = yes }
 
+						set_temp_variable = { _sl_before_ = ROOT.WA_AI_PC_active_projects }
 						WA_AI_PC_start_project = yes
+						if = { limit = { check_variable = { ROOT.WA_AI_PC_active_projects > _sl_before_ } }
+							# Plain state id via the map-data primitive - a scope-hopped PREV.id
+							# stores the engine-encoded reference, not the numeric id (R1 lesson).
+							# ROOT.-prefixed targets so the RHS temps stay readable in state scope.
+							WA_AI_PC_get_state_id = yes # >>> state_id_
+							add_to_variable = { ROOT.WA_AI_supply_line_dbg_queued = 1 }
+							set_variable = { ROOT.WA_AI_supply_line_dbg_last_state = state_id_ }
+						}
 
 						set_temp_variable = { break = 1 }
 					}
@@ -499,7 +582,13 @@ WA_AI_build_supply_line = {
 					else = {
 						every_neighbor_state = {
 							limit = {
-								is_controlled_by = ROOT
+								# Fix 30: also walk the front through subject-controlled states
+								# (WA_AI_PC_can_build_project already accepts them; a ROOT-only
+								# walk filtered the whole UKE/ITL corridor back out)
+								OR = {
+									is_controlled_by = ROOT
+									CONTROLLER = { is_subject_of = ROOT }
+								}
 
 								NOT = { is_in_array = { front_states = THIS.id } }
 

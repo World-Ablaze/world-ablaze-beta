@@ -395,9 +395,21 @@ WA_AI_PC_assign_factories = {
 	# segments per route at top priority; counting them against the < 5 gate permanently
 	# blocked all radar/refinery/supply-line work for any country with a railway corridor
 	# queued (observed on ENG and JAP for most of the campaign).
+	# Fix 30: naval bases (type 14) are queued exclusively by the railway system (port
+	# upgrades, frontier ports) and are excluded for the same reason - an archipelago power
+	# like JAP otherwise holds the < 5 gate permanently shut with port projects.
+	# Must stay in sync with the two +1/-1 bookkeeping sites below (start/end project).
 	set_temp_variable = { _nonrail_count = 0 }
 	for_each_loop = { array = WA_AI_PC_queue value = _count_proj_id
-		if = { limit = { NOT = { check_variable = { WA_AI_PC_building_type^_count_proj_id = 13 } } }
+		if = {
+			limit = {
+				NOT = {
+					OR = {
+						check_variable = { WA_AI_PC_building_type^_count_proj_id = 13 }
+						check_variable = { WA_AI_PC_building_type^_count_proj_id = 14 }
+					}
+				}
+			}
 			add_to_temp_variable = { _nonrail_count = 1 }
 		}
 	}
@@ -675,7 +687,17 @@ WA_AI_PC_end_project_by_id = {
 	# Remove from queue
 	remove_from_array = { array = WA_AI_PC_queue value = _project_id }
 	subtract_from_variable = { WA_AI_PC_active_projects = 1 }
-	if = { limit = { NOT = { check_variable = { WA_AI_PC_building_type^_project_id = 13 } } }
+	# Fix 30: types 13 AND 14 excluded from the nonrail gate counter (must match the resync
+	# in WA_AI_PC_assign_factories and the increment in WA_AI_PC_start_project)
+	if = {
+		limit = {
+			NOT = {
+				OR = {
+					check_variable = { WA_AI_PC_building_type^_project_id = 13 }
+					check_variable = { WA_AI_PC_building_type^_project_id = 14 }
+				}
+			}
+		}
 		subtract_from_variable = { WA_AI_PC_active_nonrail_projects = 1 }
 	}
 	# Factory total is recalculated by WA_AI_PC_assign_factories after all completions
@@ -963,7 +985,17 @@ WA_AI_PC_start_project = {
 				# Keep the non-railway gate counter live between weekly resyncs (strategies run
 				# from a 2-day background event, so waiting for assign_factories would let them
 				# over-queue within a week)
-				if = { limit = { NOT = { check_variable = { WA_AI_PC_building_type^_project_id = 13 } } }
+				# Fix 30: types 13 AND 14 excluded (must match the resync in
+				# WA_AI_PC_assign_factories and the decrement in WA_AI_PC_end_project_by_id)
+				if = {
+					limit = {
+						NOT = {
+							OR = {
+								check_variable = { WA_AI_PC_building_type^_project_id = 13 }
+								check_variable = { WA_AI_PC_building_type^_project_id = 14 }
+							}
+						}
+					}
 					add_to_variable = { WA_AI_PC_active_nonrail_projects = 1 }
 				}
 
