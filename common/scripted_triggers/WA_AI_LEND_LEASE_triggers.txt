@@ -592,17 +592,19 @@ WA_AI_special_lend_lease_rules_TARGET = {
 #	with only rifles to spare now ships only rifles.
 ######################################################
 
-# THIS = potential sender. Observed mid-war peaks: USA 115.8k inf / 6.8k sup,
-# SOV 94.6k / 25.0k, hoarding 1945-GER 330k / 170k. Thresholds set so USA/SOV
-# realistically cross the leg they genuinely have spare.
+# THIS = potential sender. Calibrated twice: first against USA 115.8k / SOV 94.6k
+# peaks, then LOWERED after campaign 9be92c89 showed no Axis donor ever crossing
+# 60k (RCZ topped at 59.5k, GER at 45.1k) while four allies ran literal-zero rifle
+# stockpiles for three years. 35k inf is still 3.5x the starving line, so a donor
+# can never starve itself into recipiency.
 WA_AI_LEND_LEASE_has_exportable_surplus_infantry = {
 	has_capitulated = no
-	has_equipment = { infantry_equipment > 59999 }
+	has_equipment = { infantry_equipment > 34999 }
 }
 
 WA_AI_LEND_LEASE_has_exportable_surplus_support = {
 	has_capitulated = no
-	has_equipment = { support_equipment > 9999 }
+	has_equipment = { support_equipment > 5999 }
 }
 
 # Convenience OR for the SENDER/TARGET policy gates above in this file, which only
@@ -616,8 +618,9 @@ WA_AI_LEND_LEASE_has_exportable_surplus = {
 
 # THIS = potential recipient. One trigger per archetype - deliberately NOT OR'd into
 # a single is_starving: a country starving only of support must not thereby qualify
-# for rifles it does not need. Support line = 1/5 of the infantry line, matching the
-# rough template consumption ratio.
+# for rifles it does not need. Support line raised to 4k after 9be92c89 showed
+# HUN/ROM/BUL/ITA permanently PINNED in the 2-4k band - that band is where the
+# 1200/week drip parks them, not a healthy state.
 WA_AI_LEND_LEASE_is_starving_infantry = {
 	has_war = yes
 	NOT = { has_equipment = { infantry_equipment > 10000 } }
@@ -625,7 +628,7 @@ WA_AI_LEND_LEASE_is_starving_infantry = {
 
 WA_AI_LEND_LEASE_is_starving_support = {
 	has_war = yes
-	NOT = { has_equipment = { support_equipment > 2000 } }
+	NOT = { has_equipment = { support_equipment > 3999 } }
 }
 
 # THIS = candidate recipient, PREV = potential donor.
@@ -641,10 +644,9 @@ WA_AI_LEND_LEASE_relief_pair_is_valid = {
 		has_capitulated = no
 	}
 	OR = {
-		AND = {
-			is_in_faction_with = PREV
-			has_war_together_with = PREV
-		}
+		# A common enemy suffices - requiring same-faction excluded co-belligerents
+		# (FIN starved beside a GER surplus, CHI beside SOV's 101k, campaign 9be92c89)
+		has_war_together_with = PREV
 		has_country_flag = WA_AI_lend_lease_from_@PREV
 	}
 }
