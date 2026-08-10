@@ -83,25 +83,45 @@ WA_AI_PRODUCTION_DEFAULT_build_army_motorized = {
 }
 
 # Mechanized: infantry -20, mechanized +20
+# The NOT below makes this the base tier only: expeditionary majors get the -30/+30
+# block instead of stacking both (stacked, USA's infantry want went NEGATIVE - -25%
+# of 575 wanted divisions in campaign 9be92c89 - and it stopped training entirely).
+# The exclusion lives HERE and not in the trigger because the expeditionary trigger
+# itself requires WA_AI_PRODUCTION_build_army_mechanized - putting a NOT in the
+# trigger would recurse.
 WA_AI_PRODUCTION_DEFAULT_build_army_mechanized = {
-	enable = { WA_AI_PRODUCTION_build_army_mechanized = yes }
+	enable = {
+		WA_AI_PRODUCTION_build_army_mechanized = yes
+		NOT = { WA_AI_PRODUCTION_build_army_expeditionary_mechanization = yes }
+	}
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = role_ratio id = infantry value = -20 }
 	ai_strategy = { type = role_ratio id = mechanized value = 20 }
 }
 
-# Expeditionary mechanization: infantry -30, mechanized +30
-# Caps infantry near 30% of the role_ratio total for expeditionary mechanized
-# majors (currently only the USA). With every other USA modifier active the
-# infantry share lands at 100 -10 armor -10 light-to-medium switch -10 mechanized
-# -5 marines -5 garrison -30 here = 30 (20 once modern armor activates).
+# Expeditionary mechanization: infantry -30, mechanized +30. REPLACES the base
+# mechanized block above (mutually exclusive), it does not stack on it.
+# Post-fix invariant (USA with everything active): 100 -20 medium -20 modern
+# -30 here -10 marines -5 garrison = -5, recovered to +10 by the infantry floor
+# below. Without modern armor: +15. Non-expeditionary majors are untouched by
+# this block and by the floor (GER/SOV stay at their previous arithmetic).
 WA_AI_PRODUCTION_DEFAULT_build_army_expeditionary_mechanization = {
 	enable = { WA_AI_PRODUCTION_build_army_expeditionary_mechanization = yes }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = role_ratio id = infantry value = -30 }
 	ai_strategy = { type = role_ratio id = mechanized value = 30 }
+}
+
+# Infantry floor: insurance against the role_ratio residual going negative again.
+# Only reachable on the deepest modifier stack (expeditionary + modern armor,
+# currently USA-only), so it cannot move any other country's composition.
+WA_AI_PRODUCTION_DEFAULT_build_army_infantry_floor = {
+	enable = { WA_AI_PRODUCTION_build_army_infantry_floor = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = role_ratio id = infantry value = 15 }
 }
 
 # ============================================================================
