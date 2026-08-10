@@ -16,35 +16,68 @@
 #########################################################################################
 
 # Expiry of the naval-invasion attack penalty applied by WA_AI_DIVISION_spawn_invasion.
-# Fired ON the invasion target 14 days after the landing: ROOT = target, FROM = invader.
-# Deliberately ungated (no is_ai / historical check): this event only ever REMOVES a penalty,
-# and any trigger that can fail would strand -25% attack on FROM for the rest of the campaign.
+# Fix 32 (follow-up to 17505d9a9; campaign 2b607968 FAILED the R14 probe): the previous
+# version was fired ON the target and read the invader out of FROM — but FROM does not
+# survive a delayed country_event, so the trigger failed silently and no penalty was ever
+# removed (dbg_removes stayed 0 while GER/USA/ENG/JAP carried the -25% for years).
+# Now fired ON the INVADER itself (ROOT = invader; FROM is not used at all) 14 days after
+# each new penalty add. The modifier is stored invader-side (invader's diplomacy toward the
+# target), so the invader can remove it without knowing who fired the event: it walks its
+# own WA_AI_invasions_pending_targets array (recorded at add time) and clears it wholesale.
+# Tradeoff of the wholesale clear: if the same invader adds a SECOND penalty (against a
+# different target) less than 14 days after a previous add, the earlier expiry event also
+# clears the newer pair early — bounded loss of at most 14 days of penalty, self-healing
+# (the newer pair's own event then no-ops on the empty array), and strictly better than the
+# permanent penalty this replaces. Exact per-pair lifetimes would need an add-date stored
+# per entry, and this codebase maintains no global day counter to stamp one with.
+# Deliberately ungated (no trigger at all): this event only ever REMOVES penalties, and any
+# trigger that can fail would strand -25% attack on the invader for the rest of the campaign.
 country_event = {
 	id = WA_AI_invasions.1
 	hidden = yes
 
 	is_triggered_only = yes
 
-	trigger = {
-		FROM = {
-			has_relation_modifier = {
-				target = ROOT
-				modifier = WA_AI_invasions_modifier
-			}
-		}
-	}
-
 	immediate = {
-		FROM = {
-			remove_relation_modifier = {
-				target = ROOT
-				modifier = WA_AI_invasions_modifier
-			}
-			# Probe instrumentation (campaign checklist R14) — mirrors the increment in
-			# WA_AI_DIVISION_spawn_invasion. _active must fall back to 0 between landings.
-			add_to_variable = { WA_AI_invasions_dbg_removes = 1 }
+		# THIS = ROOT = invader (event fired on self by WA_AI_DIVISION_spawn_invasion)
+		for_each_loop = {
+			array = WA_AI_invasions_pending_targets
+			value = _pending_target
+			# _active counts pairs inside their 14-day window; decrement unconditionally —
+			# even if the target was annexed meanwhile (modifier GC'd with the relation),
+			# this pair's window is over. Keeps active = adds - expired pairs, returning to
+			# 0 outside landing windows regardless of annexations.
 			subtract_from_variable = { WA_AI_invasions_dbg_active = 1 }
+			if = {
+				limit = {
+					meta_trigger = {
+						text = {
+							has_relation_modifier = {
+								target = [COUNTRY_TAG]
+								modifier = WA_AI_invasions_modifier
+							}
+						}
+						COUNTRY_TAG = "[?_pending_target.GetTag]"
+						# debug = yes
+					}
+				}
+				meta_effect = {
+					text = {
+						remove_relation_modifier = {
+							target = [COUNTRY_TAG]
+							modifier = WA_AI_invasions_modifier
+						}
+					}
+					COUNTRY_TAG = "[?_pending_target.GetTag]"
+					# debug = yes
+				}
+				# Probe instrumentation (campaign checklist R14) — mirrors the increment in
+				# WA_AI_DIVISION_spawn_invasion. removes counts actual modifier removals, so
+				# adds - removes = pairs whose target died before expiry (accepted residual).
+				add_to_variable = { WA_AI_invasions_dbg_removes = 1 }
+			}
 		}
+		clear_array = WA_AI_invasions_pending_targets
 	}
 }
 
@@ -3638,6 +3671,9 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				458 = { is_controlled_by_ROOT_or_ally = yes } # Tunisia
 			}
+			# Fix 32: a later "= 1" re-set (plus a duplicate difficulty re-adjust) overwrote
+			# this before any spawn, halving Husky to 12 divisions. Intended size restored:
+			# 2/province x 6 provinces x 2 waves = 24.
 			set_temp_variable = { _divisions_per_province = 2 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
@@ -3649,8 +3685,6 @@ country_event = {
 			add_to_temp_array = { _invasion_state_provinces = 13539 }
 			add_to_temp_array = { _invasion_state_provinces = 1009 }
 			add_to_temp_array = { _invasion_state_provinces = 13541 }
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 1 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
@@ -4007,6 +4041,9 @@ country_event = {
 				458 = { is_controlled_by_ROOT_or_ally = yes } # Tunisia
 
 			}
+			# Fix 32: a later "= 1" re-set (plus a duplicate difficulty re-adjust) overwrote
+			# this before any spawn, halving Husky to 8 divisions. Intended size restored:
+			# 2/province x 4 provinces x 2 waves = 16.
 			set_temp_variable = { _divisions_per_province = 2 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
@@ -4016,8 +4053,6 @@ country_event = {
 			add_to_temp_array = { _invasion_state_provinces = 10074 }
 			add_to_temp_array = { _invasion_state_provinces = 1156  }
 			add_to_temp_array = { _invasion_state_provinces = 3857  }
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 1 }
 			WA_AI_DIVISION_spawn_invasion = yes
 

@@ -2273,22 +2273,29 @@ WA_AI_DIVISION_spawn_invasion = {
 					# debug = yes
 				}
 			}
-			# The cleanup event is fired ON the target country, so it carries its own target
-			# through FROM (ROOT = target, FROM = invader). A single country-scoped variable
-			# could not survive two invasions against different targets in the same 14 days.
+			# Fix 32 (follow-up to 17505d9a9; campaign 2b607968 FAILED the R14 probe): the
+			# cleanup event used to be fired ON the target and read the invader from FROM —
+			# but FROM does not survive a delayed country_event, so the removal never ran and
+			# every penalty was permanent. The cleanup event is now fired on OURSELF (the
+			# invader — the side the relation modifier is stored on), and the pending pair is
+			# recorded in the WA_AI_invasions_pending_targets array so WA_AI_invasions.1 can
+			# find its targets without any event-scope link. Handles multiple simultaneous
+			# targets per invader; see the event header for the wholesale-clear tradeoff.
 			meta_effect = {
 				text = {
 					add_relation_modifier = {
 						target = [COUNTRY_TAG]
 						modifier = WA_AI_invasions_modifier
 					}
-					[COUNTRY_TAG] = {
-						country_event = { id = WA_AI_invasions.1 days = 14 }
-					}
 				}
 				COUNTRY_TAG = "[?_target_country.GetTag]"
 				# debug = yes
 			}
+			# THIS = ROOT = invader here (the create_unit meta_effect above already assumes
+			# ROOT = invader). Persistent (non-temp) array: it must survive until the delayed
+			# event fires; WA_AI_invasions.1 clears it.
+			add_to_array = { WA_AI_invasions_pending_targets = _target_country }
+			country_event = { id = WA_AI_invasions.1 days = 14 }
 			# Probe instrumentation (campaign checklist R14). The penalty only lives 14 days, so
 			# it is almost never caught in a monthly save; these counters make it observable.
 			# _active is incremented here and decremented by WA_AI_invasions.1, so it must fall
