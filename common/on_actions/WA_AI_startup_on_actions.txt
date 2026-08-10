@@ -45,10 +45,11 @@ on_actions = {
 			}
 		}
 
-		# One-shot save migrations.
-		# on_startup fires on a new game AND on every savegame load, which is what lets these repair state
-		# a campaign is already carrying from a bug fixed later in script. Each migration carries its own
-		# global-flag guard and sets it on the way out, so this block is inert from the second load on.
+		# One-shot save migrations - NEW-GAME path only.
+		# on_startup does NOT re-fire when a savegame is loaded (measured 2026-08-10, campaign 2b607968:
+		# a migration wired here alone set no flag at all on load). The load path is the on_daily hook in
+		# WA_AI_misc_on_actions.txt; this call exists so a fresh campaign is marked migrated on day 0 and
+		# never pays for a sweep. Same global-flag guard, so the two call sites cannot both do work.
 		# See common/scripted_effects/WA_AI_MIGRATION_effects.txt.
 		effect = {
 			random_country = {

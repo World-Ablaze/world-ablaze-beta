@@ -9,10 +9,17 @@
 #	House rules for every migration in this file:
 #	  1. Guarded by its own global flag (`WA_AI_<system>_migration_<N>_done`), set on the way OUT, so it
 #	     runs at most once per savegame and never again on a save that has already been migrated.
-#	  2. Called from `on_startup` (common/on_actions/WA_AI_startup_on_actions.txt). HOI4 fires on_startup
-#	     both when a new game begins AND every time a savegame is loaded - which is exactly what makes a
-#	     load-time migration possible, and exactly why the flag guard is mandatory.
-#	  3. Safe on a brand-new game: the sweep finds nothing to repair and the flag is set on day 1, so the
+#	  2. Called from TWO places, both carrying the same guard:
+#	       - `on_daily` in common/on_actions/WA_AI_misc_on_actions.txt - the LOAD path, and the one that
+#	         actually matters. **`on_startup` does NOT re-fire when a savegame is loaded** - measured
+#	         2026-08-10 against campaign 2b607968 (migration wired to on_startup only, mod path / script
+#	         parse / process restart all verified clean, and the unconditional `set_global_flag` at the end
+#	         of the effect never landed in the re-saved file). Do not "simplify" this back to on_startup.
+#	         on_daily fires once per country per day; the flag guard is what turns ~100 invocations per
+#	         tick into one sweep plus 99 flag tests, and one flag test per country-day thereafter.
+#	       - `on_startup` in common/on_actions/WA_AI_startup_on_actions.txt - the NEW-GAME path, so a fresh
+#	         campaign is marked migrated on day 0 and never pays for a sweep it cannot need.
+#	  3. Safe on a brand-new game: the sweep finds nothing to repair and the flag is set on day 0, so the
 #	     migration is permanently inert for that campaign. No date test is used to detect "new game" -
 #	     a wasted no-op sweep is cheaper than a wrong guess about the start date.
 #	  4. Never removes anything the current (fixed) code still depends on beyond a bounded, documented

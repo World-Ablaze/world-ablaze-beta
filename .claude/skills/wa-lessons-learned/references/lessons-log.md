@@ -427,3 +427,62 @@ would silently freeze USA's laws). Audit before "cleaning up".
 **Evidence:** R10 re-analysis 2026-08-10 (campaign 66d6b53c: USA extensive at 1943.8 via the
 vacuous path; `WA_AI_LAW_triggers.txt:15-22` ladder, `:1097` gate; the real ramp limiter was the
 2% law + `conscription_ratio >= 0.99` wait at `:1111`).
+
+## 2026-08-10 - "Dead" duplicated code may be the ONLY record of the design intent
+
+**Symptom:** `events/WA_AI_invasions.txt` carried 68 pairs of
+`set_temp_variable = { _divisions_per_province = N }` + `WA_AI_DIVISION_adjust_invasion_for_difficulty`
+that were overwritten before any spawn. It read as a mass-nerf pass done by inserting overrides,
+so Fix 32 "restored" the header value on Husky (`.47`/`.5`) - doubling those two landings from
+12/8 to 24/16 divisions.
+
+**Cause:** the header pair was duplicated boilerplate present with a MATCHING value at the
+original authoring commit (`2aaec3200`) - redundant from day one, harmless. A later pass
+(`608177207`, "spawned templates re org") split each landing into an infantry wave and a
+`_division_template = 4` (#Armor) wave and edited only the pre-spawn assignment, deliberately
+at half the value so the total stayed constant. The header kept the pre-refactor number. So the
+value that looked like an accidental override *was the design*, and the value that looked
+original was the stale one. Direction matters: vs `2aaec3200` the later passes were net BUFFS
+(the `.51`-`.83` island family went 1 -> 4 divisions), not nerfs.
+
+**Rule:** before deciding which of two competing values in duplicated code is authoritative,
+reconstruct the value at the ORIGINAL authoring commit and diff forward commit by commit. If
+both copies started equal, the one that was *edited* is the intent and the untouched one is
+stale - the opposite of the usual "the later insertion is the hack" instinct. Cheap test: total
+divisions before and after the suspicious commit. A total that is exactly preserved across a
+structural change (1 wave of N -> 2 waves of N/2) is a deliberate size-preserving refactor, not
+a bug. Also: a bare `adjust_invasion_for_difficulty` with no assignment in front of it multiplies
+whatever is already there, so on hard it doubles an already-doubled value (`.41` Timor: 3 -> 6
+-> 12 in one province).
+
+**Evidence:** Fix 33 (this session). 81 events inventoried; 79 provably behaviour-neutral after
+the purge, only `.47`/`.5` changed size (revert of Fix 32). Checklist probe R18.
+
+---
+
+## `on_startup` does not re-fire when a savegame is loaded
+
+**Symptom:** a one-shot save migration (`WA_AI_invasions_migration_1`, purging the pre-Fix-32
+permanent invasion penalties) was wired into `common/on_actions/WA_AI_startup_on_actions.txt` on
+the stated assumption that `on_startup` runs both on a new game and on every save load. Loading
+the target campaign and re-saving produced *nothing*: no `WA_AI_invasions_migration_1_done`
+global flag, `wa_ai_invasions_dbg_active` still 2/2/1/6 on GER/USA/ENG/JAP, all seven stranded
+relation modifiers still live.
+
+**Cause:** `on_startup` fires on new game only (HOI4 1.19.2). Everything else in the chain was
+correct, which is what made it look like a script bug: `World Ablaze BETA.mod` really does point
+at the repo, `error.log` was free of script errors, and the process restart was properly ordered
+(files 23:38, process 23:54:40, save 23:57:03). The first attempt had ALSO been invalid for a
+duller reason - a process started nine minutes before the files existed - so the real cause was
+only isolated on the second, clean run.
+
+**Rule:** anything that must run in an already-started campaign belongs on a recurring pulse
+(`on_daily` in `WA_AI_misc_on_actions.txt`), guarded by a global flag; `on_startup` covers the
+new-game path only. Keep both call sites when a behaviour needs both — one shared guard means
+they cannot both do the work. Diagnostic shortcut for "did my effect run at all?": put an
+*unconditional* `set_global_flag` at the end of the effect body. If the flag is absent the body
+never executed, which cleanly separates "not invoked" from "invoked but silently no-oped" —
+without it, this would have been mistaken for a bad `meta_effect` and debugged in the wrong file.
+
+**Evidence:** campaign `2b607968`, 2026-08-10. Checklist R14 migration sub-probe records both
+process caveats.
