@@ -852,6 +852,49 @@ WA_AI_MILITARY_ALLIES_sicily_push_FRONT = {
 }
 
 
+# purpose: "hold Sicily" bridge (FRONT half) - keep divisions flowing to the Sicily/Calabria region
+#          in the window after the faction side has taken all of Sicily but before the mainland toe
+#          falls; all husky support aborts at capture and the island garrison starved (campaign
+#          2b607968). Fires on faction control of 115+1032 with an enemy still in Calabria (156);
+#          fully controller/faction-gated, no dates or enemy tags, so it also covers ahistorical
+#          Italian campaigns. +50 sits above the sicily_push_FRONT +25 trickle and offsets the
+#          USA-side suppressions that are windowed off in the same condition
+#          (WA_AI_MILITARY_USA_sicily_push / _unit_clumping_fix_2_south_italy). THEATRE-domain twin:
+#          WA_AI_MILITARY_ALLIES_hold_sicily_bridge_THEATRE.
+# range:   0 to +200 (percent factor, per WA_AI_MILITARY_ECONOMY.md E2)
+# policy:  Additive per area
+# domain:  FRONT
+WA_AI_MILITARY_ALLIES_hold_sicily_bridge_FRONT = {
+
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
+	enable = {
+		has_war = yes
+		115 = {
+			OR = {
+				is_controlled_by = ROOT
+				CONTROLLER = { is_in_faction_with = ROOT }
+			}
+		}
+		1032 = {
+			OR = {
+				is_controlled_by = ROOT
+				CONTROLLER = { is_in_faction_with = ROOT }
+			}
+		}
+		156 = { CONTROLLER = { has_war_with = ROOT } }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 238
+		value = 50
+	}
+}
+
+
 
 WA_AI_MILITARY_ALLIES_africa_push = { #########Allied ai likes sitting around in the desert
 	# always-on: pre-economy behaviour kept at Phase 8 parity - revisit with campaign evidence.

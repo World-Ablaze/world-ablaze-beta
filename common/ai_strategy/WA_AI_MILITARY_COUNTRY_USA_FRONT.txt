@@ -335,6 +335,39 @@ WA_AI_MILITARY_USA_unit_clumping_fix_2 = {
 		state = 633
 		value = -100 # economy: was -225
 	}
+}
+
+
+# Split from WA_AI_MILITARY_USA_unit_clumping_fix_2 (2026-08-10): the south_italy leg of the
+# clumping fix keeps its original always-on intent EXCEPT during the hold-Sicily bridge window -
+# Allied side controls all of Sicily (115+1032) while an enemy still holds Calabria (156). In
+# campaign 2b607968 this suppression (with the sicily_push -50) starved the USA Husky contingent
+# after the landing succeeded. Outside the window the -35 applies exactly as before, preserving
+# the clumping fix. See WA_AI_MILITARY_ALLIES_hold_sicily_bridge_FRONT/_THEATRE.
+WA_AI_MILITARY_USA_unit_clumping_fix_2_south_italy = {
+	allowed = {
+		tag = USA
+	}
+	enable = {
+		NOT = {
+			AND = {
+				115 = {
+					OR = {
+						is_controlled_by = ROOT
+						CONTROLLER = { is_in_faction_with = ROOT }
+					}
+				}
+				1032 = {
+					OR = {
+						is_controlled_by = ROOT
+						CONTROLLER = { is_in_faction_with = ROOT }
+					}
+				}
+				156 = { CONTROLLER = { has_war_with = ROOT } }
+			}
+		}
+	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = front_unit_request
@@ -411,6 +444,28 @@ WA_AI_MILITARY_USA_sicily_push = {
 		}
 		has_war_with = ITA
 		has_global_flag = fall_of_france
+		# Hold-Sicily bridge window (campaign 2b607968): while the Allied side controls all of
+		# Sicily (115+1032) but an enemy still holds Calabria (156), this region-238 suppression
+		# must not apply - it starved the post-Husky island garrison. Outside that window (before
+		# the landing, or after the mainland toe falls) the suppression resumes unchanged.
+		# See WA_AI_MILITARY_ALLIES_hold_sicily_bridge_FRONT/_THEATRE.
+		NOT = {
+			AND = {
+				115 = {
+					OR = {
+						is_controlled_by = ROOT
+						CONTROLLER = { is_in_faction_with = ROOT }
+					}
+				}
+				1032 = {
+					OR = {
+						is_controlled_by = ROOT
+						CONTROLLER = { is_in_faction_with = ROOT }
+					}
+				}
+				156 = { CONTROLLER = { has_war_with = ROOT } }
+			}
+		}
 	}
 	abort_when_not_enabled = yes
 

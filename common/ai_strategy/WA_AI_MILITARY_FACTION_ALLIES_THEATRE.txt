@@ -638,6 +638,58 @@ WA_AI_MILITARY_ALLIES_husky_prep_THEATRE = {
 	}
 }
 
+
+# purpose: "hold Sicily" bridge - every husky support block above aborts the moment the Axis no
+#          longer controls both Sicily states (their enable requires Axis control of 115 AND 1032),
+#          which left the island garrison unsupported between the landing and the scripted mainland
+#          follow-up (campaign 2b607968: USA contingent died, ENG held Sicily alone vs the ITA
+#          counterattack). This block takes over exactly when the husky blocks die: faction side
+#          controls all of Sicily, an enemy still controls Calabria (156). Gate is fully
+#          controller/faction-based - no dates, no Axis/ITA tags - so it also covers ahistorical
+#          Italian campaigns. south_italy (+800, single-region area) carries the fight; italy (+400,
+#          2 regions) stages the jump north. Sized below the aborting husky pull (+1000 each) and
+#          well below the strategic-bombing germany-area pulls (+4000) so it bridges without
+#          out-shouting the Germany priorities. FRONT-domain twin:
+#          WA_AI_MILITARY_ALLIES_hold_sicily_bridge_FRONT.
+# range:   0 to +1000 (narrow areas, per WA_AI_MILITARY_ECONOMY.md E1)
+# policy:  Additive per area
+# domain:  THEATRE
+WA_AI_MILITARY_ALLIES_hold_sicily_bridge_THEATRE = {
+
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
+	enable = {
+		has_war = yes
+		115 = {
+			OR = {
+				is_controlled_by = ROOT
+				CONTROLLER = { is_in_faction_with = ROOT }
+			}
+		}
+		1032 = {
+			OR = {
+				is_controlled_by = ROOT
+				CONTROLLER = { is_in_faction_with = ROOT }
+			}
+		}
+		156 = { CONTROLLER = { has_war_with = ROOT } }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = area_priority
+		id = south_italy
+		value = 800
+	}
+	ai_strategy = {
+		type = area_priority
+		id = italy
+		value = 400
+	}
+}
+
+
 # purpose: the Allies do not commit ground forces to South America (relocated Phase 7c from legacy
 #          ENG.txt ENG_ignore_south_america - it had no tag gate, so it was always a Faction rule)
 # range:   -5000 (saturated legacy value; Phase 8 renormalises toward net 0 against the +100 baseline)
