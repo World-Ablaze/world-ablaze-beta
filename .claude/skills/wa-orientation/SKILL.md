@@ -28,6 +28,8 @@ Check `descriptor.mod` when unsure whether a folder is replaced — it is a flat
 | Writing or fixing tests, `tests/*.txt` bundles, `WA_TEST_*` harnesses, reading test logs | skill `wa-testing` |
 | Python tooling: map generators, `ai_will_do` replacers, prospecting analyzers, DLC splitter | skill `wa-tooling` |
 | A gotcha that already bit someone; also where to record a new one | skill `wa-lessons-learned` |
+| Reading savegames: campaign identity, extracting variables/ideas/flags from 60–150MB saves | skill `wa-savegame-analysis` |
+| Scoring an analysed test campaign against the living verification checklist; adding a probe when a fix ships | skill `wa-campaign-checklist` |
 | Full system-ownership table, editing rules, validation matrix | `AGENTS.md` (repo root) |
 
 `AGENTS.md` is the authoritative index of systems and their owning files. These skills do not replace it — they carry the working knowledge an agent needs *while* editing, and point back to `AGENTS.md` and `documentation/` for the full spec.
