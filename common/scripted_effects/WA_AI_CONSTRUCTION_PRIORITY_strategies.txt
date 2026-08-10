@@ -38,6 +38,11 @@ WA_AI_priority_construction_strategies = {
 	# air war (campaign 5709c8b9: the entire USAAF parked stateside). The strategy
 	# bounds itself via _project_queue_max and the per-state level cap.
 	WA_AI_build_uk_air_hosting_capacity = yes
+
+	# Same outside-the-gates rationale: the countries whose theatre pulls go inert
+	# (USA, ENG, JAP) keep railway-saturated queues. Self-bounded by a side-wide
+	# capacity-deficit gate, _project_queue_max and the per-state level cap.
+	WA_AI_build_theatre_air_bases = yes
 }
 
 ### priority construction strategies
@@ -1032,6 +1037,329 @@ WA_AI_build_uk_air_hosting_capacity = {
 				}
 
 				add_to_temp_variable = { _uk_air_try_level_ = 1 }
+			}
+		}
+	}
+}
+
+# Build/upgrade air bases inside air theatres that are CONTESTED for ROOT, so the
+# strategic_air_importance pulls in common/ai_strategy/WA_AI_MILITARY_DEFAULT_AIR_theatres.txt
+# have friendly capacity to rebase into - the engine only rebases wings into in-range friendly
+# air-base capacity, so a pull toward a theatre with no basing is inert (that file's KNOWN
+# LIMITS names this effect as the follow-up). Campaign 66d6b53c: the USAAF kept 8,595 of
+# 13,791 planes in the continental US - no basing existed along the Pacific island chain.
+# Theatre membership comes from the WA_AI_MILITARY_AIR_theatre_state_* triggers
+# (common/scripted_triggers/WA_AI_MILITARY_triggers.txt), which must-match the contested lists.
+#
+# NEED GUARDRAILS (all generic, no tags):
+# 1. Theatre-scoped sites: projects can only start in theatre member states - this effect can
+#    never build on home soil outside a contested theatre (a Canada at peace-depth in its own
+#    hemisphere is structurally unreachable).
+# 2. Side-wide capacity deficit: a contested theatre only qualifies while the SIDE's existing
+#    + ROOT-queued air-base capacity across that theatre's states is below
+#    @THEATRE_AIR_HOSTED_SHARE of the side's deployed planes. Capacity counts every state
+#    controlled by ROOT, a faction ally or a co-belligerent (same own-side definition as the
+#    contested triggers), so once anyone on the side has built enough, every other member
+#    stops queuing - a minor never piles onto a theatre its majors already covered, and a
+#    co-belligerent outside the faction (e.g. a 1945 SOV vs JAP) sees the US capacity and
+#    stays idle.
+# 3. Token air forces never enter (<= 99 deployed planes, WA air scale ~1/3 vanilla): a
+#    country with no meaningful aviation has no basing need of its own.
+# 4. Per-state cap: the level ladder stops selecting a state at @THEATRE_AIR_TARGET_LEVEL,
+#    and always raises the least-developed member state first, so capacity spreads 0->4
+#    across the chain instead of stacking one level-10 island.
+#
+# ROOT = any AI country. Called from WA_AI_priority_construction_strategies
+# (WA_AI_background.1, ~2 day cadence, AI only), outside the dispatcher's
+# active_projects/affordability gates for the same reason as the UK hosting strategy above
+# (railway-saturated queues would permanently close the < 5 gate for exactly the countries
+# this exists for); bounded instead by _project_queue_max, the deficit gate and the
+# civilian-factory floor below.
+WA_AI_build_theatre_air_bases = {
+
+	@THEATRE_AIR_CAPACITY_PER_LEVEL = 100	# NDefines.NBuildings.AIRBASE_CAPACITY_MULT (05_defines.lua)
+	@THEATRE_AIR_TARGET_LEVEL = 4			# per-state ladder cap: the 2-4 level goal
+	@THEATRE_AIR_QUEUE_MAX = 3				# max concurrent air-base projects (matches UK hosting)
+	@THEATRE_AIR_HOSTED_SHARE = 0.25		# share of the side's planes one theatre should be able to host
+
+	if = {
+		limit = {
+			has_war = yes
+			surrender_progress < 0.1
+			# guardrail 3: skip token air forces - same floor as the theatre pulls
+			has_deployed_air_force_size = { size > 99 }
+			num_of_civilian_factories_available_for_projects > 15
+		}
+
+		# DIAGNOSIS INSTRUMENTATION (savegame-readable; same rationale as the UK hosting
+		# dbg family above - temp variables are invisible in saves). Remove once verified.
+		#   dbg_called   pulses that passed the outer gate
+		#   dbg_target   side capacity target in levels, last gated pulse
+		#   dbg_active   contested theatres still in deficit, last gated pulse
+		#   dbg_best     ladder level of the last started project
+		#   dbg_started  projects actually queued
+		add_to_variable = { WA_AI_thair_dbg_called = 1 }
+
+		### pass 1 - which theatres are contested for us
+
+		set_temp_variable = { _thair_naf_ = 0 }
+		if = { limit = { WA_AI_MILITARY_AIR_theatre_contested_north_africa = yes } set_temp_variable = { _thair_naf_ = 1 } }
+		set_temp_variable = { _thair_ita_ = 0 }
+		if = { limit = { WA_AI_MILITARY_AIR_theatre_contested_italy = yes } set_temp_variable = { _thair_ita_ = 1 } }
+		set_temp_variable = { _thair_weu_ = 0 }
+		if = { limit = { WA_AI_MILITARY_AIR_theatre_contested_western_europe = yes } set_temp_variable = { _thair_weu_ = 1 } }
+		set_temp_variable = { _thair_sca_ = 0 }
+		if = { limit = { WA_AI_MILITARY_AIR_theatre_contested_scandinavia = yes } set_temp_variable = { _thair_sca_ = 1 } }
+		set_temp_variable = { _thair_bal_ = 0 }
+		if = { limit = { WA_AI_MILITARY_AIR_theatre_contested_balkans = yes } set_temp_variable = { _thair_bal_ = 1 } }
+		set_temp_variable = { _thair_eeu_ = 0 }
+		if = { limit = { WA_AI_MILITARY_AIR_theatre_contested_eastern_europe = yes } set_temp_variable = { _thair_eeu_ = 1 } }
+		set_temp_variable = { _thair_mde_ = 0 }
+		if = { limit = { WA_AI_MILITARY_AIR_theatre_contested_middle_east = yes } set_temp_variable = { _thair_mde_ = 1 } }
+		set_temp_variable = { _thair_bur_ = 0 }
+		if = { limit = { WA_AI_MILITARY_AIR_theatre_contested_burma_india = yes } set_temp_variable = { _thair_bur_ = 1 } }
+		set_temp_variable = { _thair_sea_ = 0 }
+		if = { limit = { WA_AI_MILITARY_AIR_theatre_contested_southeast_asia = yes } set_temp_variable = { _thair_sea_ = 1 } }
+		set_temp_variable = { _thair_pac_ = 0 }
+		if = { limit = { WA_AI_MILITARY_AIR_theatre_contested_pacific_islands = yes } set_temp_variable = { _thair_pac_ = 1 } }
+
+		set_temp_variable = { _thair_any_ = _thair_naf_ }
+		add_to_temp_variable = { _thair_any_ = _thair_ita_ }
+		add_to_temp_variable = { _thair_any_ = _thair_weu_ }
+		add_to_temp_variable = { _thair_any_ = _thair_sca_ }
+		add_to_temp_variable = { _thair_any_ = _thair_bal_ }
+		add_to_temp_variable = { _thair_any_ = _thair_eeu_ }
+		add_to_temp_variable = { _thair_any_ = _thair_mde_ }
+		add_to_temp_variable = { _thair_any_ = _thair_bur_ }
+		add_to_temp_variable = { _thair_any_ = _thair_sea_ }
+		add_to_temp_variable = { _thair_any_ = _thair_pac_ }
+
+		if = { limit = { check_variable = { _thair_any_ > 0 } }
+
+			### pass 2 - guardrail 2: side capacity per contested theatre vs the side's need
+
+			# side's deployed air force (num_deployed_planes is not script-readable; the
+			# per-airframe sums are INLINED for the reasons documented in
+			# WA_AI_build_uk_air_hosting_capacity above)
+			set_temp_variable = { _thair_planes_ = 0 }
+			add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@small_fighter_airframe }
+			add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@small_fighter_multirole_airframe }
+			add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@small_fighter_interceptor_airframe }
+			add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@small_bomber_airframe }
+			add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@medium_fighter_airframe }
+			add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@medium_fighter_multirole_airframe }
+			add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@medium_bomber_airframe }
+			add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@medium_heavy_bomber_airframe }
+			add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@fast_bomber_airframe }
+			add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@medium_scout_airframe }
+			add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@large_bomber_airframe }
+			add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@large_maritime_patrol_airframe }
+			for_each_scope_loop = { array = allies
+				add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@small_fighter_airframe }
+				add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@small_fighter_multirole_airframe }
+				add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@small_fighter_interceptor_airframe }
+				add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@small_bomber_airframe }
+				add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@medium_fighter_airframe }
+				add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@medium_fighter_multirole_airframe }
+				add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@medium_bomber_airframe }
+				add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@medium_heavy_bomber_airframe }
+				add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@fast_bomber_airframe }
+				add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@medium_scout_airframe }
+				add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@large_bomber_airframe }
+				add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@large_maritime_patrol_airframe }
+			}
+
+			# capacity target per theatre, in air-base LEVELS
+			set_temp_variable = { _thair_target_ = _thair_planes_ }
+			multiply_temp_variable = { _thair_target_ = @THEATRE_AIR_HOSTED_SHARE }
+			divide_temp_variable = { _thair_target_ = @THEATRE_AIR_CAPACITY_PER_LEVEL }
+
+			# capacity the side already holds (or ROOT already queued) per contested theatre.
+			# Membership lists are disjoint, so the attribution chain is exact. Allies' PC
+			# queues are not visible cross-country - the bounded overshoot (each builder caps
+			# itself at @THEATRE_AIR_QUEUE_MAX projects) is accepted.
+			set_temp_variable = { _thair_cap_naf_ = 0 }
+			set_temp_variable = { _thair_cap_ita_ = 0 }
+			set_temp_variable = { _thair_cap_weu_ = 0 }
+			set_temp_variable = { _thair_cap_sca_ = 0 }
+			set_temp_variable = { _thair_cap_bal_ = 0 }
+			set_temp_variable = { _thair_cap_eeu_ = 0 }
+			set_temp_variable = { _thair_cap_mde_ = 0 }
+			set_temp_variable = { _thair_cap_bur_ = 0 }
+			set_temp_variable = { _thair_cap_sea_ = 0 }
+			set_temp_variable = { _thair_cap_pac_ = 0 }
+			every_state = {
+				limit = {
+					OR = {
+						AND = { check_variable = { _thair_naf_ = 1 } WA_AI_MILITARY_AIR_theatre_state_north_africa = yes }
+						AND = { check_variable = { _thair_ita_ = 1 } WA_AI_MILITARY_AIR_theatre_state_italy = yes }
+						AND = { check_variable = { _thair_weu_ = 1 } WA_AI_MILITARY_AIR_theatre_state_western_europe = yes }
+						AND = { check_variable = { _thair_sca_ = 1 } WA_AI_MILITARY_AIR_theatre_state_scandinavia = yes }
+						AND = { check_variable = { _thair_bal_ = 1 } WA_AI_MILITARY_AIR_theatre_state_balkans = yes }
+						AND = { check_variable = { _thair_eeu_ = 1 } WA_AI_MILITARY_AIR_theatre_state_eastern_europe = yes }
+						AND = { check_variable = { _thair_mde_ = 1 } WA_AI_MILITARY_AIR_theatre_state_middle_east = yes }
+						AND = { check_variable = { _thair_bur_ = 1 } WA_AI_MILITARY_AIR_theatre_state_burma_india = yes }
+						AND = { check_variable = { _thair_sea_ = 1 } WA_AI_MILITARY_AIR_theatre_state_southeast_asia = yes }
+						AND = { check_variable = { _thair_pac_ = 1 } WA_AI_MILITARY_AIR_theatre_state_pacific_islands = yes }
+					}
+					CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } }
+				}
+
+				set_temp_variable = { _thair_state_levels_ = building_level@air_base }
+				if = {
+					limit = {
+						any_of = { array = WA_AI_PC_projects_in_state_of_@ROOT value = v_thair_proj
+							check_variable = { ROOT.WA_AI_PC_building_type^v_thair_proj = 2 }
+						}
+					}
+					add_to_temp_variable = { _thair_state_levels_ = 1 }
+				}
+
+				if = { limit = { WA_AI_MILITARY_AIR_theatre_state_north_africa = yes } add_to_temp_variable = { _thair_cap_naf_ = _thair_state_levels_ } }
+				else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_italy = yes } add_to_temp_variable = { _thair_cap_ita_ = _thair_state_levels_ } }
+				else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_western_europe = yes } add_to_temp_variable = { _thair_cap_weu_ = _thair_state_levels_ } }
+				else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_scandinavia = yes } add_to_temp_variable = { _thair_cap_sca_ = _thair_state_levels_ } }
+				else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_balkans = yes } add_to_temp_variable = { _thair_cap_bal_ = _thair_state_levels_ } }
+				else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_eastern_europe = yes } add_to_temp_variable = { _thair_cap_eeu_ = _thair_state_levels_ } }
+				else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_middle_east = yes } add_to_temp_variable = { _thair_cap_mde_ = _thair_state_levels_ } }
+				else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_burma_india = yes } add_to_temp_variable = { _thair_cap_bur_ = _thair_state_levels_ } }
+				else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_southeast_asia = yes } add_to_temp_variable = { _thair_cap_sea_ = _thair_state_levels_ } }
+				else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_pacific_islands = yes } add_to_temp_variable = { _thair_cap_pac_ = _thair_state_levels_ } }
+			}
+
+			set_temp_variable = { _thair_contested_ct_ = _thair_any_ }
+
+			# a theatre stays eligible only while the side's capacity is below the target
+			if = { limit = { check_variable = { _thair_naf_ = 1 } NOT = { check_variable = { _thair_cap_naf_ < _thair_target_ } } } set_temp_variable = { _thair_naf_ = 0 } }
+			if = { limit = { check_variable = { _thair_ita_ = 1 } NOT = { check_variable = { _thair_cap_ita_ < _thair_target_ } } } set_temp_variable = { _thair_ita_ = 0 } }
+			if = { limit = { check_variable = { _thair_weu_ = 1 } NOT = { check_variable = { _thair_cap_weu_ < _thair_target_ } } } set_temp_variable = { _thair_weu_ = 0 } }
+			if = { limit = { check_variable = { _thair_sca_ = 1 } NOT = { check_variable = { _thair_cap_sca_ < _thair_target_ } } } set_temp_variable = { _thair_sca_ = 0 } }
+			if = { limit = { check_variable = { _thair_bal_ = 1 } NOT = { check_variable = { _thair_cap_bal_ < _thair_target_ } } } set_temp_variable = { _thair_bal_ = 0 } }
+			if = { limit = { check_variable = { _thair_eeu_ = 1 } NOT = { check_variable = { _thair_cap_eeu_ < _thair_target_ } } } set_temp_variable = { _thair_eeu_ = 0 } }
+			if = { limit = { check_variable = { _thair_mde_ = 1 } NOT = { check_variable = { _thair_cap_mde_ < _thair_target_ } } } set_temp_variable = { _thair_mde_ = 0 } }
+			if = { limit = { check_variable = { _thair_bur_ = 1 } NOT = { check_variable = { _thair_cap_bur_ < _thair_target_ } } } set_temp_variable = { _thair_bur_ = 0 } }
+			if = { limit = { check_variable = { _thair_sea_ = 1 } NOT = { check_variable = { _thair_cap_sea_ < _thair_target_ } } } set_temp_variable = { _thair_sea_ = 0 } }
+			if = { limit = { check_variable = { _thair_pac_ = 1 } NOT = { check_variable = { _thair_cap_pac_ < _thair_target_ } } } set_temp_variable = { _thair_pac_ = 0 } }
+
+			set_temp_variable = { _thair_any_ = _thair_naf_ }
+			add_to_temp_variable = { _thair_any_ = _thair_ita_ }
+			add_to_temp_variable = { _thair_any_ = _thair_weu_ }
+			add_to_temp_variable = { _thair_any_ = _thair_sca_ }
+			add_to_temp_variable = { _thair_any_ = _thair_bal_ }
+			add_to_temp_variable = { _thair_any_ = _thair_eeu_ }
+			add_to_temp_variable = { _thair_any_ = _thair_mde_ }
+			add_to_temp_variable = { _thair_any_ = _thair_bur_ }
+			add_to_temp_variable = { _thair_any_ = _thair_sea_ }
+			add_to_temp_variable = { _thair_any_ = _thair_pac_ }
+
+			set_variable = { WA_AI_thair_dbg_target = _thair_target_ }
+			set_variable = { WA_AI_thair_dbg_active = _thair_any_ }
+
+			# TEMP R16 live-test logging - remove with the WA_AI_thair_dbg_* family
+			if = { limit = { check_variable = { _thair_any_ > 0 } }
+				log = "[GetYear] [GetMonth] | AI | [Root.GetName] | THEATRE AIR: [?_thair_any_|.0] deficit theatre(s) of [?_thair_contested_ct_|.0] contested, side target [?_thair_target_|.0] levels"
+			}
+			else = {
+				log = "[GetYear] [GetMonth] | AI | [Root.GetName] | THEATRE AIR: all [?_thair_contested_ct_|.0] contested theatre(s) at capacity (target [?_thair_target_|.0]) - guardrail hold"
+			}
+
+			if = { limit = { check_variable = { _thair_any_ > 0 } }
+
+				### pass 3 - guardrail 4: level ladder, raise the least-developed eligible
+				### member state first (level-ladder + ROOT-hopped flag per the state-scope
+				### temp trap documented in the UK strategy above)
+
+				# _project_building_type must be set BEFORE the ladder: the limit triggers
+				# below (WA_AI_PC_can_build_project / WA_AI_PC_has_same_type_project_here)
+				# read it
+				set_temp_variable = { _project_building_type = 2 }
+				set_temp_variable = { _thair_started_ = 0 }
+				set_temp_variable = { _thair_try_level_ = 0 }
+				while_loop_effect = {
+					limit = {
+						check_variable = { _thair_started_ < 1 }
+						check_variable = { _thair_try_level_ < @THEATRE_AIR_TARGET_LEVEL }
+					}
+
+					random_state = {
+						limit = {
+							OR = {
+								AND = { check_variable = { _thair_naf_ = 1 } WA_AI_MILITARY_AIR_theatre_state_north_africa = yes }
+								AND = { check_variable = { _thair_ita_ = 1 } WA_AI_MILITARY_AIR_theatre_state_italy = yes }
+								AND = { check_variable = { _thair_weu_ = 1 } WA_AI_MILITARY_AIR_theatre_state_western_europe = yes }
+								AND = { check_variable = { _thair_sca_ = 1 } WA_AI_MILITARY_AIR_theatre_state_scandinavia = yes }
+								AND = { check_variable = { _thair_bal_ = 1 } WA_AI_MILITARY_AIR_theatre_state_balkans = yes }
+								AND = { check_variable = { _thair_eeu_ = 1 } WA_AI_MILITARY_AIR_theatre_state_eastern_europe = yes }
+								AND = { check_variable = { _thair_mde_ = 1 } WA_AI_MILITARY_AIR_theatre_state_middle_east = yes }
+								AND = { check_variable = { _thair_bur_ = 1 } WA_AI_MILITARY_AIR_theatre_state_burma_india = yes }
+								AND = { check_variable = { _thair_sea_ = 1 } WA_AI_MILITARY_AIR_theatre_state_southeast_asia = yes }
+								AND = { check_variable = { _thair_pac_ = 1 } WA_AI_MILITARY_AIR_theatre_state_pacific_islands = yes }
+							}
+							check_variable = { building_level@air_base = _thair_try_level_ }
+							OR = {
+								AND = {	# our own territory
+									is_controlled_by = ROOT
+									WA_AI_available_AIR = yes
+									WA_AI_PC_can_build_project = yes
+								}
+								AND = {	# subject territory (the engine allows overlord construction in subjects; PC validates the same)
+									CONTROLLER = { is_subject_of = ROOT }
+									WA_AI_PC_can_build_project = yes
+								}
+								AND = {	# faction ally's territory (air_base has allied_build = yes),
+										# only when the controller cannot act on the deficit itself
+									NOT = { is_controlled_by = ROOT }
+									NOT = { CONTROLLER = { is_subject_of = ROOT } }
+									WA_AI_available_AIR_allied = yes
+									CONTROLLER = {
+										OR = {
+											is_ai = no
+											num_of_civilian_factories_available_for_projects < 16
+										}
+									}
+									NOT = { WA_AI_PC_has_same_type_project_here = yes }
+								}
+							}
+						}
+
+						set_temp_variable = { _project_building_type = 2 }
+						set_temp_variable = { _project_province_id = 0 }
+						set_temp_variable = { _project_target_state = 0 }
+						set_temp_variable = { _project_priority = 100 }
+						set_temp_variable = { _project_queue_num = 1 }
+						set_temp_variable = { _project_queue_max = @THEATRE_AIR_QUEUE_MAX }
+						set_temp_variable = { _project_target_level = @THEATRE_AIR_TARGET_LEVEL }
+						set_temp_variable = { _thair_qnum_before_ = ROOT.WA_AI_PC_queue^num }
+						WA_AI_PC_start_project = yes
+
+						# Fix: WA_AI_PC_start_project can decline internally (queue_max, same-type
+						# dedup, province duplicate) with no return signal - live test 2b607968
+						# showed dbg_started over-counting (AST 19 "starts", empty queue) and ENG's
+						# theatre starts permanently no-oping against a type-2 queue_max already
+						# filled by UK-hosting projects. Only count a start (and stop the ladder)
+						# when the queue actually grew; a declined start lets the ladder try the
+						# next level instead of silently ending the pulse.
+						if = {
+							limit = { ROOT = { check_variable = { WA_AI_PC_queue^num > _thair_qnum_before_ } } }
+
+							# TEMP R16 live-test logging - remove with the WA_AI_thair_dbg_* family
+							log = "[GetYear] [GetMonth] | AI | [Root.GetName] | THEATRE AIR: air_base project started at level [?_thair_try_level_|.0] in [This.GetID] [This.GetName]"
+
+							ROOT = {
+								set_temp_variable = { _thair_started_ = 1 }
+								set_variable = { WA_AI_thair_dbg_best = _thair_try_level_ }
+								add_to_variable = { WA_AI_thair_dbg_started = 1 }
+							}
+						}
+					}
+
+					add_to_temp_variable = { _thair_try_level_ = 1 }
+				}
+
+				# TEMP R16 live-test logging - remove with the WA_AI_thair_dbg_* family
+				if = { limit = { check_variable = { _thair_started_ < 1 } }
+					log = "[GetYear] [GetMonth] | AI | [Root.GetName] | THEATRE AIR: deficit but no eligible member state (ladder exhausted at level [?_thair_try_level_|.0])"
+				}
 			}
 		}
 	}
