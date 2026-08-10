@@ -13,6 +13,7 @@ Protocol for scoring, retiring, and adding items: see `../SKILL.md`. Streak = co
 | `9be92c89` | cloud, `dlcs=30` | all-AI observer 1936–1946.12 | 2026-08-10 |
 | `cbca536d` | local, `dlcs=191999` | SOV control run, full DLC | 2026-08-10 |
 | `66d6b53c` | cloud, `dlcs=257535` (LaR+AAT confirmed active) | BHU observer, 113 monthly saves 1936.2–1945.6 (truncated, war unresolved), HOI4 1.19.2; build through `083b224ac`, no R14 fix | 2026-08-10 |
+| `2b607968` | local, full DLC | GER player campaign used for the R1 live-diagnostic + Fix 31 verification (1943.2–1943.5 saves) | 2026-08-10 |
 
 **DLC note (supersedes the old `dlcs=30` assumption):** the cloud box now ships `dlcs=257535` — La Résistance and Arms Against Tyranny both behaviourally confirmed in `66d6b53c` (LaR SCW flags, AAT MIO lines). Always read the save header's `dlcs=` per campaign instead of assuming by machine.
 
@@ -120,11 +121,12 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **Pass:** `wa_ai_aifc_sector_age` observed cycling through values 1–5 across a campaign's saves, not pinned at 1.
 - **Probe:** `var <major TAG> "^wa_ai_aifc_sector_age" <saves...>` across the campaign. On a local run: `AIFC-DIAG` lines in game.log (is_major-gated telemetry shipped with Fix 31 — healthy is age climbing 2..5 with valid=1, re-selection only at age > 4; remove the telemetry when this item retires). Also check `wa_ai_aifc_sector_states_ref` exists alongside the plain array (encoded twins populated).
 - **Threshold:** 5 (behavioural — commitment-window dynamics over time).
-- **Streak:** 0
+- **Streak:** 1
 - **History:**
   - 2026-08-09 · `0e7e7852` · FAILED — age pinned at 1 all campaign.
   - 2026-08-10 · `9be92c89` · FAILED — still pinned at 1 after the ROOT-hop fix; reproduced on `cbca536d` too.
-  - 2026-08-10 · `66d6b53c` · FAILED — GER 14/14 samples at age 1 while `sector_anchor` moves (28→731→193→205→245→258→22): the loop runs and re-picks, but the age is reset instead of incremented; variable entirely absent in two snapshots (mid-clear). SOV identical. **New related evidence:** SOV `wa_ai_aifc_armor_boost` ≈ 10 791 with all 22 `_suppressed` entries clustered ~10 780–10 797 — an armor-steering accumulator that never resets, same reset-vs-increment defect family.
+  - 2026-08-10 · `66d6b53c` · FAILED — GER 14/14 samples at age 1 while `sector_anchor` moves (28→731→193→205→245→258→22): the loop runs and re-picks, but the age is reset instead of incremented; variable entirely absent in two snapshots (mid-clear). SOV identical. (The "armor accumulator" side-observation was later retracted — serialized scope refs.)
+  - 2026-08-10 · `2b607968` (local, Fix 31 build) · PASSED — live telemetry over 6 weekly pulses: all majors age 2→3→4→5 with valid=1, re-selection exactly at age>4 (GER re-anchors 228→195 on 1943.5.3, then ages again); USA correctly inert (no land contact). Save 1943.5.11: GER `sector_age=3` (first >1 ever seen in a save), `sector_states_ref` populated (3 encoded refs = corridor size). Layer-4 encoding-match still unverified (residual check above).
 
 ### R3. Land majors queue type-13 railways
 
