@@ -363,3 +363,67 @@ SPR; SPR focus tree idle + single-line production by 1939.1); fix commit followi
 artillery parity, decisions/SPR.txt SPA_german_volunteer_airforce). A send_volunteer_size = 3
 on SPA_spanish_civil_war_commitments was proposed for parity with the ITA/POR sponsor ideas but
 deliberately not adopted - GER/POR sponsors stay at the define-capped 1-2 token volunteers.
+
+## 2026-08-10 - .id of a scope is an engine-encoded reference, never a plain map-data id
+
+**Symptom:** `WA_AI_AIFC_sector_age` pinned at 1 in every campaign since the AIFC system shipped,
+across two fix attempts (4bfea363d, 128cc7995) that each patched a real but downstream defect.
+The weekly sector loop demonstrably ran (anchor moved, arrays repopulated) yet validity read 0
+every pulse.
+
+**Cause (live-confirmed 1943.3 local run, decision-point telemetry):** the validity check tested
+corridor membership with `is_in_array = { ROOT.WA_AI_AIFC_sector_states = THIS.id }`. The array
+holds PLAIN ids from generated map data (`WA_AI_PC_get_state_id`), while `THIS.id` / a
+scope-hopped `PREV.id` yields the engine-encoded scope reference - observed `anchor=228` vs
+`scoped=-10737.41596`, DIFFERS on 108/108 samples across all majors. Equality can never hold.
+The same mixed comparison sat in all four Layer-4 `state_trigger`s, where it made the boosts
+dead and the NOT-suppressions uniform (a relative no-op - which is why nothing ever LOOKED
+broken). Corollary: values like `10791.3` or `-10737.4` in saved variables are serialized scope
+references, not runaway accumulators - decode before reporting an anomaly.
+
+**Rule:** never compare `.id` of a scope against a plain stored id, in script triggers OR
+ai_strategy state_triggers. Encoding-consistent comparisons are fine (`THIS.id` vs stored
+`THIS.id`, pathfinding closed_list pattern). To test membership of the current state in a
+plain-id array, invert: walk the array with `for_each_loop` + `var:` scoping and use native
+triggers. If an engine-side state_trigger genuinely needs the comparison, publish a twin array
+stored via ROOT-hopped `PREV.id` (Fix 31, 9778316f2) so both sides carry the same encoding.
+
+**Evidence:** AIFC-DIAG telemetry protocol (session 2026-08-10); `WA_AI_MAP_effects.txt:202`
+("THIS.id doesn't work for states"); `WA_AI_CONSTRUCTION_PRIORITY_strategies.txt` UK-air fix
+comment (scope-encoded sentinel, campaign 9be92c89).
+
+## 2026-08-10 - The shared `break` temp variable leaks across effects - even on success
+
+**Symptom:** the supply-line strategy produced zero projects in every campaign (66d6b53c audit)
+even in pulses where its gates were open and, once traversal was fixed, even when the A* found a
+path.
+
+**Cause:** `while_loop_effect`/`for_each_loop` default their break condition to the shared temp
+variable `break`. Queue functions set plain `break = 1` after queueing and nothing resets it, so
+any later default-break loop in the same pulse aborts before its first iteration. Worse, the
+state-level A* itself set `break = 1` on BOTH exit paths - including success - so the caller's
+own path-walk loop died immediately after a successful pathfind (Fix 30, 84528ae47).
+
+**Rule:** in any reusable effect, give every loop an explicit break variable
+(`break = _myeffect_break`) and reset `break = 0` at the effect head if callers may run after
+other strategies in the same pulse. Sixth member of the temp-variable trap lineage (railway
+Fixes 24/25/27, AIFC hop comments).
+
+## 2026-08-10 - An if/else_if ladder with no matching branch is vacuously TRUE
+
+**Symptom:** USA upgraded its conscription law via `WA_AI_upgrade_conscription_law` even though
+`WA_AI_can_upgrade_manpower_law` has no branch for `USA_selective_service` - the trigger passed
+by falling through the whole ladder.
+
+**Cause:** in PDXScript trigger context, an `if = { limit = {...} ... }` whose limit fails
+contributes true; a ladder keyed on "current law idea" where the country's law matches no branch
+therefore allows everything. USA's law progression works only by this accident.
+
+**Rule:** every if/else_if ladder keyed on an enumerable (law ideas, archetypes) needs either an
+explicit branch per member or a terminal `else = { always = no }` - and adding that terminal else
+to an existing ladder is a BEHAVIOUR CHANGE for every country on an unlisted member (here: it
+would silently freeze USA's laws). Audit before "cleaning up".
+
+**Evidence:** R10 re-analysis 2026-08-10 (campaign 66d6b53c: USA extensive at 1943.8 via the
+vacuous path; `WA_AI_LAW_triggers.txt:15-22` ladder, `:1097` gate; the real ramp limiter was the
+2% law + `conscription_ratio >= 0.99` wait at `:1111`).

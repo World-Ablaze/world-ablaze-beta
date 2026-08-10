@@ -80,7 +80,7 @@ Protocol for scoring, retiring, and adding items: see `../SKILL.md`. Streak = co
 
 - **Pass:** Nationalist Spain wins the SCW, ideally by ~1939.
 - **DLC-gated:** scoreable only when La Résistance is active — **read the save's `dlcs=` per campaign** (the cloud box now has LaR: `dlcs=257535` since `66d6b53c`; the old `dlcs=30` cloud runs were N/A). Note the mod defines only `SPR` + dynamic `D01`–`D59` tags — LaR presence is proven by `SPA_`-prefixed LaR flags and D02 activation, not by SPA/SPB/SPC/SPD tag existence.
-- **Probe:** global flag `spanish_civil_war` (still set = unresolved); SPR `politics` (Nationalists = neutrality) vs D02 (Republicans, democratic) alive-ness across saves.
+- **Probe:** global flag `spanish_civil_war` (still set = unresolved); SPR `politics` (Nationalists = neutrality) vs D02 (Republicans, democratic) alive-ness across saves. **S1-fix sub-probe (`d5d88061d`, civil-war brake exemption):** neither Spanish belligerent has `WA_AI_defensive_front_strategy` acting as a permanent veto — for each side, either the flag is absent in ≥1 mid-war save, or `wa_ai_fielded_eq_ratio` ≥ 0.5 in a save where front battles are occurring; corroborate with rising casualties on both sides (flat casualties = still frozen). If the SCW still deadlocks WITH S1 confirmed working, escalate to the shelved options (N1/N2/N4 balance nudges, B1/B3 scripted resolution backstops — see the 2026-08-10 SCW investigation).
 - **Streak:** 0
 - **History:**
   - 2026-08-09 · `c9ab1062` · N/A (DLC) — cloud non-LaR path; Republican win #3 was a dead-code artefact, not balance evidence.
@@ -115,9 +115,10 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 
 ### R1. AIFC sector_age cycles 1–5
 
-- **Fix under test:** `4bfea363d` (1-based sector age) then `128cc7995` (validity scope leak) — **both failed to cure it** (both patched real-but-downstream defects). **Root-cause hypothesis identified 2026-08-10 (~85% confidence, pending live confirmation):** `WA_AI_AIFC_check_sector_valid` compares plain map-data state ids against `THIS.id` (scope-encoded for states) in `is_in_array` — equality can never hold, validity is permanently 0, weekly re-pick resets age to 1. Same mixed comparison sits in the four Layer-4 `state_trigger`s (`WA_AI_MILITARY_DEFAULT_FRONT_aifc.txt:380/389/398/410`) — the whole consumption layer may never have functioned. A 5-edit live diagnostic protocol (body-only logging edits, no new effect names, `-debug` restart) with a 5-outcome decision matrix is ready. Side-finding: the "armor accumulators ~10 800" from the `66d6b53c` analysis are serialized country scope refs, NOT growing sums — retract that anomaly.
+- **Fix under test:** `9778316f2` (Fix 31). Root cause **live-confirmed 2026-08-10** on a 1943.3 local run: the validity check compared plain map-data ids against `THIS.id` (engine-encoded scope reference — observed `anchor=228` vs `scoped=-10737.41596`, DIFFERS on 108/108 samples) — equality never held, validity 0 every week, weekly re-pick reset age to 1. Fix 31 rewrites validity as a corridor-array walk and publishes engine-encoded `*_ref` twin arrays for the four Layer-4 `state_trigger`s (which had the same mixed comparison — boosts never matched, NOT-suppressions uniform no-op). Prior attempts `4bfea363d`/`128cc7995` patched real-but-downstream defects. Side-note kept for honesty: the "armor accumulators ~10 800" anomaly was retracted — serialized country scope refs, not growing sums.
+- **Layer-4 residual check:** the `*_ref` twins assume engine trigger-context `THIS.id` matches script-side ROOT-hopped `PREV.id` encoding; if wrong, Layer 4 stays at the old relative no-op (not worse). Verify via the 5-minute observation from the R1 analysis (temporarily −50→−100 on the front suppression: uniform collapse = encoding still mismatched) or front-behaviour deltas in the next campaign.
 - **Pass:** `wa_ai_aifc_sector_age` observed cycling through values 1–5 across a campaign's saves, not pinned at 1.
-- **Probe:** `var <major TAG> "^wa_ai_aifc_sector_age" <saves...>` across the campaign.
+- **Probe:** `var <major TAG> "^wa_ai_aifc_sector_age" <saves...>` across the campaign. On a local run: `AIFC-DIAG` lines in game.log (is_major-gated telemetry shipped with Fix 31 — healthy is age climbing 2..5 with valid=1, re-selection only at age > 4; remove the telemetry when this item retires). Also check `wa_ai_aifc_sector_states_ref` exists alongside the plain array (encoded twins populated).
 - **Threshold:** 5 (behavioural — commitment-window dynamics over time).
 - **Streak:** 0
 - **History:**
@@ -192,8 +193,8 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 
 ### R9. Supply-line construction targets the right corridors
 
-- **Fix under test:** `24ffda1ac` (pathfinder param rename revived the strategy).
-- **Pass:** type-1 projects appear targeting North Africa (ENG/ITA), GER→SOV, and JAP→RAJ routes.
+- **Fix under test:** `24ffda1ac` (pathfinder param rename) then `84528ae47` (**Fix 30** — subject/faction traversal for the state-level A*, break hygiene incl. the success-leak, controller-aware NA anchors, dynamic JAP anchor, type-14 excluded from the `<5` nonrail gate, `wa_ai_supply_line_dbg_*` instrumentation).
+- **Pass:** build fingerprint `wa_ai_supply_line_dbg_called > 0` on ENG or ITA post-1937.6 (absence = pre-Fix-30 build, probe void). Then: ENG or ITA shows `dbg_pf_ok > 0` AND `dbg_queued > 0` with `dbg_last_state` in the NA corridor by ~1938–39; GER shows `dbg_queued > 0` within ~3 months of the GER–SOV war. JAP: `dbg_called > 0` while at war with RAJ; `dbg_queued = 0` is PASS only if JAP holds no ground within 10 BFS states of Delhi, FAIL otherwise. FAILED if `dbg_called > 0` with `dbg_pf_ok = 0` everywhere (A* still dead) or `dbg_pf_ok > 0` with `dbg_queued = 0` everywhere (queueing broken). Secondary: JAP produces type-2/3/4 projects after war start (nonrail gate actually unblocked). Retire the `WA_AI_supply_line_dbg_*` instrumentation with this item.
 - **Probe:** `var <TAG> "^wa_ai_pc_building_type"` plus target state/province vars on ENG, GER, JAP. **Probe caveat (2026-08-10):** type-1 is also produced by resource-INF (`WA_AI_priority_queue_INF_resource` queues infrastructure on resource/steel-mill states) — a type-1 on a home steel state is NOT supply-line evidence. Until the supply-line strategy stamps its own project-type id, only a type-1 on a *corridor* state (between capital and the named front) counts.
 - **Threshold:** 3 (narrow queue/target probe).
 - **Streak:** 0
@@ -232,8 +233,8 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 
 ### R13. North Africa front moves
 
-- **Fix under test:** `a5ea1fb84` (ENG `africa_war_2` X-AND-NOT-X restored from pre-split `a6fee253d`).
-- **Pass:** ENG reaches the `africa_war_2` posture and the North Africa front actually moves. Pre-fix baseline: +2 provinces in 24 months.
+- **Fix under test:** `a5ea1fb84` (no-op — restored gate was self-contradictory) then `71e729d05` (**ITA offensive engine**: +60 `front_unit_request` on north_africa + posture-gated `front_control` toward Egypt, dbg stamps `ita_armor.915/.916`). The ENG-side re-fix of `africa_war_2` and the AIFC −150 suppression contract are still open follow-ups.
+- **Pass:** build fingerprint `wa_ai_ita_dbg_r13_na_front = 1` on ITA after the ITA–ENG war starts; `wa_ai_ita_dbg_r13_na_offensive = 1` at least once. Behavioural (the point): Libya/Egypt state control (446–453, 663) changes hands at least once in either direction within 12 months of the desert war starting. No-suicide guard: with `posture_vs` at 0 for 3+ consecutive monthly saves, ITA's Libya holdings don't shrink >2 states/quarter while its defensive flag is set. Pre-fix baseline: 33 months frozen.
 - **Probe:** state-level owner/controller of Libya/Egypt (446–452, 458) across war-time saves (province granularity does not exist in saves). Do NOT probe file-defined `ai_strategy` blocks in the `ai` section — they never serialize; only `add_ai_strategy` residue does (the `persistent_strategy type=83` entries are AIFC `front_armor_score`, id-keyed by **country** id, not region id).
 - **Threshold:** 5 (behavioural front outcome). Interacts with R9 (NA supply lines) — score independently.
 - **Streak:** 0
@@ -252,6 +253,17 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **History:**
   - NOT YET TESTED — fix and its instrumentation postdate every campaign in the registry.
   - 2026-08-10 · `66d6b53c` · NOT YET TESTED (fix not in build) — **bug presence confirmed pre-fix**: JAP `diplomacy` carried MAL ×4 + USA ×3 + UKO ×1 stacks at 1942.1 (i.e. JAP invaded Malaya at −100% and fought USA at −75% attack), and an AST ×1 stack persisting unchanged 1942.6 → 1945.6 — the permanent-residue signature. GER showed zero residue in 11 saves despite Weserübung (Norway fell 1940.3.1 via another path).
+
+### R15. Air forces deploy to contested theatres
+
+- **Fix under test:** `edb746d17` (generic Default-layer AIR domain: 10 theatre blocks, +10k per strategic region while contested — enemy AND own side both hold anchor states; capital-theatre excluded).
+- **Pass:** by 1943.6 USA has ≥25% of deployed planes based outside the continental US, with USA wings at bases in NA/Mediterranean states (446/447/452, 458–460, 115/117/156) or Pacific island states (629 Hawaii, 634 Solomons, 633 Marshalls, 639/643/725 Micronesia, 1001–1004 New Guinea, 327/623–628 Philippines). Secondary: ENG's home-based RAF share does not increase vs the `66d6b53c` baseline; GER gains air presence over a contested Normandy post-landing. Baseline to beat: USA 62% CONUS (8 595/13 791).
+- **Probe:** walk the top-level `strategic_air` block — wings → `air_base` id → `state=` — classify CONUS vs overseas per wing; count per theatre. (Carrier decks are the `air_base` blocks without `state=` — exclude them from this count.)
+- **Launch-validation note:** two parse-risk constructs need the boot test (F9) before the next campaign: `has_deployed_air_force_size` without `type`, and `region = <id>` inside `capital_scope`. If the size trigger proves type-mandatory, drop that gate line.
+- **Threshold:** 5 (behavioural — basing shares over time).
+- **Streak:** 0
+- **History:**
+  - NOT YET TESTED — fix postdates every campaign in the registry.
 
 ---
 
