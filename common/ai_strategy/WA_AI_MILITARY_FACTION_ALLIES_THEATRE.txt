@@ -641,16 +641,22 @@ WA_AI_MILITARY_ALLIES_husky_prep_THEATRE = {
 
 # purpose: "hold Sicily" bridge - every husky support block above aborts the moment the Axis no
 #          longer controls both Sicily states (their enable requires Axis control of 115 AND 1032),
-#          which left the island garrison unsupported between the landing and the scripted mainland
+#          which left the island unsupported between the landing and the scripted mainland
 #          follow-up (campaign 2b607968: USA contingent died, ENG held Sicily alone vs the ITA
-#          counterattack). This block takes over exactly when the husky blocks die: faction side
-#          controls all of Sicily, an enemy still controls Calabria (156). Gate is fully
+#          counterattack). This block takes over exactly when the husky blocks die: the faction side
+#          controls 115 OR 1032 and an enemy still controls Calabria (156). The OR is deliberate -
+#          the husky gate is an AND, so it dies at the FIRST captured Sicily state; requiring both
+#          here left the landing itself in a support hole (measured 1943.7.15, campaign 2b607968:
+#          1032 Allied / 115 still ITA, husky aborted, this bridge asleep, USA net -25 on region 238
+#          from its own suppressions, and 32 Allied divisions parked in fresh Sardinia/Calabria/
+#          Dodecanese invasion plans while 13 fought on the island). Gate is fully
 #          controller/faction-based - no dates, no Axis/ITA tags - so it also covers ahistorical
 #          Italian campaigns. south_italy (+800, single-region area) carries the fight; italy (+400,
 #          2 regions) stages the jump north. Sized below the aborting husky pull (+1000 each) and
 #          well below the strategic-bombing germany-area pulls (+4000) so it bridges without
-#          out-shouting the Germany priorities. FRONT-domain twin:
-#          WA_AI_MILITARY_ALLIES_hold_sicily_bridge_FRONT.
+#          out-shouting the Germany priorities; husky and this block never overlap, one starts where
+#          the other stops. FRONT-domain twin: WA_AI_MILITARY_ALLIES_hold_sicily_bridge_FRONT (keep
+#          the enable conditions of the two twins and of the two USA windows identical).
 # range:   0 to +1000 (narrow areas, per WA_AI_MILITARY_ECONOMY.md E1)
 # policy:  Additive per area
 # domain:  THEATRE
@@ -661,16 +667,18 @@ WA_AI_MILITARY_ALLIES_hold_sicily_bridge_THEATRE = {
 	}
 	enable = {
 		has_war = yes
-		115 = {
-			OR = {
-				is_controlled_by = ROOT
-				CONTROLLER = { is_in_faction_with = ROOT }
+		OR = {
+			115 = {
+				OR = {
+					is_controlled_by = ROOT
+					CONTROLLER = { is_in_faction_with = ROOT }
+				}
 			}
-		}
-		1032 = {
-			OR = {
-				is_controlled_by = ROOT
-				CONTROLLER = { is_in_faction_with = ROOT }
+			1032 = {
+				OR = {
+					is_controlled_by = ROOT
+					CONTROLLER = { is_in_faction_with = ROOT }
+				}
 			}
 		}
 		156 = { CONTROLLER = { has_war_with = ROOT } }
