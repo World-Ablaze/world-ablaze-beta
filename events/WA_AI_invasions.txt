@@ -15,6 +15,10 @@
 #########################################################################################
 #########################################################################################
 
+# Expiry of the naval-invasion attack penalty applied by WA_AI_DIVISION_spawn_invasion.
+# Fired ON the invasion target 14 days after the landing: ROOT = target, FROM = invader.
+# Deliberately ungated (no is_ai / historical check): this event only ever REMOVES a penalty,
+# and any trigger that can fail would strand -25% attack on FROM for the rest of the campaign.
 country_event = {
 	id = WA_AI_invasions.1
 	hidden = yes
@@ -22,32 +26,25 @@ country_event = {
 	is_triggered_only = yes
 
 	trigger = {
-		is_ai = yes
-		WA_AI_DIFFICULTY_is_historical = yes
-		meta_trigger = {
-			text = {
-				has_relation_modifier = {
-					target = [COUNTRY_TAG]
-					modifier = WA_AI_invasions_modifier
-				}
+		FROM = {
+			has_relation_modifier = {
+				target = ROOT
+				modifier = WA_AI_invasions_modifier
 			}
-			COUNTRY_TAG = "[?most_recent_invasion_target.GetTag]"
-			# debug = yes
 		}
 	}
 
 	immediate = {
-		meta_effect = {
-			text = {
-				remove_relation_modifier = {
-					target = [COUNTRY_TAG]
-					modifier = WA_AI_invasions_modifier
-				}
+		FROM = {
+			remove_relation_modifier = {
+				target = ROOT
+				modifier = WA_AI_invasions_modifier
 			}
-			COUNTRY_TAG = "[?most_recent_invasion_target.GetTag]"
-			# debug = yes
+			# Probe instrumentation (campaign checklist R14) — mirrors the increment in
+			# WA_AI_DIVISION_spawn_invasion. _active must fall back to 0 between landings.
+			add_to_variable = { WA_AI_invasions_dbg_removes = 1 }
+			subtract_from_variable = { WA_AI_invasions_dbg_active = 1 }
 		}
-		clear_variable = most_recent_invasion_target
 	}
 }
 

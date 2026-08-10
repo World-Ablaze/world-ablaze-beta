@@ -2254,19 +2254,49 @@ WA_AI_DIVISION_spawn_invasion = {
 				# debug = yes
 			}
 		}
-		# Manually apply an attack penalty to emulate the in-battle naval invasion stat penalty
-		meta_effect = {
-			text = {
-				add_relation_modifier = {
-					target = [COUNTRY_TAG]
-					modifier = WA_AI_invasions_modifier
+		# Manually apply an attack penalty to emulate the in-battle naval invasion stat penalty.
+		# Guarded on has_relation_modifier: relation modifiers STACK, and one invasion operation
+		# makes several WA_AI_DIVISION_spawn_invasion calls (Weserubung makes six, one per landing
+		# state). Unguarded this accumulated to -150% attack instead of the intended -25%.
+		if = {
+			limit = {
+				meta_trigger = {
+					text = {
+						NOT = {
+							has_relation_modifier = {
+								target = [COUNTRY_TAG]
+								modifier = WA_AI_invasions_modifier
+							}
+						}
+					}
+					COUNTRY_TAG = "[?_target_country.GetTag]"
+					# debug = yes
 				}
 			}
-			COUNTRY_TAG = "[?_target_country.GetTag]"
-			# debug = yes
+			# The cleanup event is fired ON the target country, so it carries its own target
+			# through FROM (ROOT = target, FROM = invader). A single country-scoped variable
+			# could not survive two invasions against different targets in the same 14 days.
+			meta_effect = {
+				text = {
+					add_relation_modifier = {
+						target = [COUNTRY_TAG]
+						modifier = WA_AI_invasions_modifier
+					}
+					[COUNTRY_TAG] = {
+						country_event = { id = WA_AI_invasions.1 days = 14 }
+					}
+				}
+				COUNTRY_TAG = "[?_target_country.GetTag]"
+				# debug = yes
+			}
+			# Probe instrumentation (campaign checklist R14). The penalty only lives 14 days, so
+			# it is almost never caught in a monthly save; these counters make it observable.
+			# _active is incremented here and decremented by WA_AI_invasions.1, so it must fall
+			# back to 0 between landings. A permanently non-zero _active means penalties are
+			# stacking or the expiry event is not reaching its target.
+			add_to_variable = { WA_AI_invasions_dbg_adds = 1 }
+			add_to_variable = { WA_AI_invasions_dbg_active = 1 }
 		}
-		set_variable = { most_recent_invasion_target = _target_country }
-		country_event = { id = WA_AI_invasions.1 days = 14 }
 	}
 	else_if = {
 		limit = {
