@@ -476,13 +476,37 @@ at the repo, `error.log` was free of script errors, and the process restart was 
 duller reason - a process started nine minutes before the files existed - so the real cause was
 only isolated on the second, clean run.
 
-**Rule:** anything that must run in an already-started campaign belongs on a recurring pulse
-(`on_daily` in `WA_AI_misc_on_actions.txt`), guarded by a global flag; `on_startup` covers the
-new-game path only. Keep both call sites when a behaviour needs both — one shared guard means
-they cannot both do the work. Diagnostic shortcut for "did my effect run at all?": put an
-*unconditional* `set_global_flag` at the end of the effect body. If the flag is absent the body
-never executed, which cleanly separates "not invoked" from "invoked but silently no-oped" —
-without it, this would have been mistaken for a bad `meta_effect` and debugged in the wrong file.
+**Rule (two parts, and the second is the one that was got wrong twice):**
+
+1. *There is no load-time hook.* `on_startup` covers new games only, so anything that must touch
+an already-started campaign has to come from a recurring pulse (`on_daily` and friends in
+`WA_AI_misc_on_actions.txt`) or from the console. Do not assume a "runs when the save opens"
+on_action exists — it does not.
+
+2. *A one-shot repair does not belong on a pulse either.* The reflex after finding (1) is to
+move the migration to `on_daily` behind a global-flag guard. That was done, then reverted: it
+makes every campaign forever pay a gameplay-tick hook, and an O(n²) `meta_trigger` sweep, so a
+handful of legacy saves can be repaired once. **Migrations live in
+`common/scripted_effects/WA_AI_MIGRATION_effects.txt` and are invoked by hand from the console
+(`effect WA_AI_invasions_migration_1 = yes`).** A one-off maintenance action on one specific
+save is console work, not mod behaviour. The distinction to apply: recurring *behaviour* earns a
+hook; one-shot *maintenance* does not.
+
+Consequences for how such an effect is written — a console tool is not an on_action effect:
+- **No `has_global_flag` guard.** The guard only ever existed to stop a pulse re-running. A
+  manual tool that silently does nothing on the second invocation is a trap. Make it idempotent
+  instead (the second sweep finds nothing to remove), and *accumulate* its counter rather than
+  assigning it, so re-running cannot erase the record of what the first run repaired.
+- **Still set a flag, but as a record, not a gate** — it is the only thing that distinguishes
+  "swept, save was already clean" from "never swept" when both leave the country variables
+  identical.
+- **`log = "... [?var] ..."`** so the operator sees the outcome in `logs/game.log` immediately,
+  instead of saving the game and parsing a 120 MB file to find out whether anything happened.
+
+**Diagnostic shortcut worth reusing:** put an *unconditional* `set_global_flag` at the end of an
+effect body while debugging. If the flag is absent, the body never executed — that cleanly
+separates "never invoked" from "invoked but silently no-oped". Without it, this would have been
+read as a broken `meta_effect` and debugged in the wrong file entirely.
 
 **Evidence:** campaign `2b607968`, 2026-08-10. Checklist R14 migration sub-probe records both
-process caveats.
+process caveats (stale process, and the absence of a load-time hook).
