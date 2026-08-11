@@ -581,3 +581,338 @@ process caveats (stale process, and the absence of a load-time hook).
   give-up-flag pattern already used by the invasion events.
 - **Evidence:** `763488d04` (bug) → `e944259a3` (fix), `events/WA_AI_invasions.txt` events
   `.85`/`.86`; user-observed in-game 2026-08-11.
+
+
+### A self-arming fix cannot re-arm state that is already dead
+
+- **Date:** 2026-08-11
+- **Symptom:** Fix 35 (`a03fc502b`) makes a dead-ended war-bond ladder re-arm itself: when
+  `upgrade_warbonds` finds no swap possible it activates a 30-day retry watcher. It is correct,
+  it was verified, and it does **nothing at all** for the campaign that motivated it — JAP is
+  still parked on Series_B after resuming that save on the fixed build.
+- **Cause:** the fix's arming site sits *inside the code path the bug prevents from running*.
+  `upgrade_warbonds` is only reached from `check_and_fire_auto_warbond_event`, fired at
+  `warbonds_mission`'s terminal timeout (or from an `afo_event.23` answer). A country that has
+  already dead-ended has no mission left to time out, so it never calls the effect that would
+  arm its own recovery. The fix cures countries that dead-end *after* it ships; those that
+  dead-ended *before* it shipped are frozen forever on a build that contains the fix.
+- **Rule:** when a fix takes the form "on failure, arm a retry", ask what re-enters the arming
+  site — and specifically whether an *already-failed* instance ever does. If the answer is no,
+  the fix is non-retroactive by construction and needs a companion one-shot migration
+  (`common/scripted_effects/WA_AI_MIGRATION_effects.txt`, console-invoked). The general test,
+  applicable to every fix in this repo: **enumerate the state the fix never reaches.** Script
+  fixes are re-parsed at launch and apply to a live save, but only along code paths that still
+  execute; latched, parked or already-consumed state is invisible to them. A fix that only
+  changes what happens at a *transition* (a landing, a mission timeout, a capture) cannot repair
+  a save that is already past that transition.
+- **Corollary for detection:** the parked signature is usually expressible as a trigger, because
+  the post-fix build makes it unreachable — here "holds Series_A..F, not issuing, no retry
+  mission" is impossible on a healthy post-fix country, which is exactly what makes it a safe,
+  idempotent migration filter. Look for that "impossible on the fixed build" predicate; it is
+  both the detector and the idempotency guard.
+- **Evidence:** `WA_AI_warbonds_migration_1` (this session), checklist R20 migration sub-probe.
+  Same shape as the Fix 32 / `WA_AI_invasions_migration_1` case above — that one is now two
+  instances of the pattern, not a one-off.
+
+
+### `surrender_progress` is not a capability test — and a fixed idiom does not fix its copies
+
+- **Date:** 2026-08-11
+- **Symptom:** in campaign `911bed3c` the Soviet Union had **no AIFC force-concentration sector
+  at all** from 1942.9 to the end of the campaign (3.7 game-years) while fighting for its life:
+  every `wa_ai_aifc_sector_*` variable absent, armour steering gone with it, and the front
+  reversed (Moscow fell 1944.1, Stalingrad 1944.5). The same defect appeared in the previous
+  campaign as a single-snapshot blip and was written off as noise.
+- **Cause:** `WA_AI_AIFC_should_select_sector` gates on `surrender_progress < 0.35`
+  (`common/scripted_triggers/WA_AI_AIFC_triggers.txt:17,79-86`). `surrender_progress` is a pure
+  **VP-loss** metric, so it measures how much territory you have lost, not whether you can still
+  fight. A big country being invaded crosses the threshold with a full army intact — and because
+  WA raises the Soviet capitulation limit, it sits above the threshold *permanently* without
+  capitulating. The weekly pulse then takes the "not eligible → clear" branch forever and the
+  entire selection body is never re-entered.
+- **The part that matters:** this exact bug had **already been diagnosed and fixed one day
+  earlier, in the railway system** — `3c55b9d17` (Fix 29/29b), whose comment reads *"surrender_progress
+  measures VP loss, not capability: SOV crossed 30% in Oct 1942 with ~180 states and 300+
+  divisions and was locked out of railway building for the entire eastern war."* AIFC was
+  authored the day before that fix and deliberately copied the then-current railway gate; its own
+  comment says *"Mirrors the railway system's on_weekly eligibility gate"*. The copy inherited the
+  bug, the fix landed only on the original, and nothing linked them.
+- **Rule:** when you copy a gate, trigger or dispatcher from a sibling system, **record the
+  source commit in a comment and check whether the source has since been fixed** — a comment
+  saying "mirrors X" is a standing dependency, not a decoration. When you fix a shared-idiom bug,
+  `grep` the codebase for the idiom (here: `surrender_progress`) before closing it out; a fix
+  applied to one copy of a duplicated gate leaves the others silently broken. Duplication in this
+  repo is normal and often correct (`@` constants are file-scoped, effects are copied between
+  systems) — which is exactly why fixes do not propagate on their own.
+- **Domain corollary:** treat `surrender_progress` as *unfit* for any "is this country capable"
+  test. It answers "how close to capitulating", which for a country with a raised surrender limit
+  is a state it can occupy indefinitely. Gate on capability (divisions, factories, controlled
+  states, equipment ratio) instead. Note the same metric also drives
+  `WA_AI_AIFC_posture_defensive` (`> 0.2`) and `posture_offensive` (`< 0.05`), so a losing major
+  is forced into linear defence months before it loses its sector entirely.
+- **Evidence:** checklist item R27; `WA_AI_AIFC_core.txt:61-65,127-155`,
+  `WA_AI_AIFC_helpers.txt:508-514`, the already-fixed sibling gate at
+  `WA_AI_misc_on_actions.txt:149-163`. Puppet-scope was investigated as the lead hypothesis and
+  **refuted** — RBL/RUK are at war with SOV, so puppet-held states are valid enemy corridors.
+
+- **Scope correction (same day, after a full trace):** the entry above was written from the AIFC
+  *sector* gate alone. That gate is real but it is **not** the load-bearing one, and the general
+  lesson is bigger than "a copy missed a fix". `surrender_progress` is read as a fitness test in
+  roughly a dozen places, and campaign `911bed3c` walked SOV through all of them in sequence:
+  `> 0.05` (`WA_AI_MILITARY_triggers.txt:110`, `home_threatened`) latched a **priority-10000
+  `front_control` with `execute_order = no`** from ~Sep 1941 — a total offensive veto that
+  outranks every Country-layer block, all of which carry no `priority` field at all (= 0);
+  `> 0.2` unconditional (`WA_AI_AIFC_triggers.txt:114`) published
+  `force_concentration_factor = -100`, far below the engine's −15 hard-off point, killing AIFC
+  outright from ~Dec 1941; `< 0.35` (`:84`) then wiped the sector in Sep 1942 — **nine months
+  after AIFC had already stopped working**, which is why the dramatic-looking save signature
+  (every `wa_ai_aifc_sector_*` variable vanishing) is a symptom marker and not the cause;
+  `> 0.45` unconditional (`WA_AI_MILITARY_posture_triggers.txt:102`) re-latched the brake in
+  1944. Alongside those, `< 0.1` locked SOV out of theatre air bases for the entire eastern war
+  and `< 0.3` out of all three synthetic refineries and the PC stable-base floor.
+- **The diagnostic lesson, which is the transferable one:** when several gates share a metric,
+  the most *visible* failure is usually not the earliest one. The sector wipe was easy to see
+  because it deletes variables from the save; the −100 concentration factor left no save-visible
+  trace at all and preceded it by nine months. **Order the gates by when they first tripped, not
+  by how loud their fingerprint is** — and get that ordering before proposing a fix, or you will
+  fix the symptom and leave the country just as broken.
+- **The precedent that makes this inexcusable:** `WA_AI_MILITARY_posture_triggers.txt:87-99` had
+  *already* been refined so `surrender_progress > 0.2` alone cannot latch the hard brake, with a
+  comment citing "1943-44 SOV sits above 0.2 for years with 350+ divisions".
+  `WA_AI_AIFC_triggers.txt:114` is the identical pattern and never got the same treatment. Two
+  independent misses of the same insight in the same subsystem family.
+- **Rule:** treat `surrender_progress` as answering only "how close is this country to
+  capitulating", never "can this country still fight". For a country whose capitulation limit is
+  raised by script (SOV via `sov_the_politburo_max_surrender_limit_offset`), it is a state the
+  country can occupy **indefinitely** — so every bare `surrender_progress` threshold is a
+  potential permanent lockout, not a temporary emergency mode. Gate on capability instead
+  (divisions, factories, controlled states, `wa_ai_fielded_eq_ratio`), or pair the metric with a
+  capability term as the posture brake already does. Before adding one, `grep surrender_progress`
+  across `common/` and check what the country you care about will look like at 0.4.
+- **Corollary — recovery must be reachable.** SOV recovered materially in 1943 (`fielded_eq_ratio`
+  0.995, brake released, posture 1) and *still* had AIFC off and no sector, because those two
+  gates keyed on the one metric that never recovers. A brake whose release condition cannot be
+  met by getting stronger is not a brake, it is a death spiral.
+- **Resolution (2026-08-11, Fix 43):** the four permanent capability-blind predicates were reworked —
+  the standalone `sp > 0.2` AIFC branch deleted, the `sp > 0.45` posture tier paired with
+  `WA_AI_MILITARY_army_still_operational`, the sector gate given the railway escape hatch, and the
+  offensive bonus rekeyed onto `WA_AI_MILITARY_posture`. The posture system is now the single writer of
+  "we are collapsing" and every brake releases on recovery. Details and the two-direction validation
+  record are in checklist R27; the *self-releasing* sp gates (air bases, refineries, PC floor,
+  `home_threatened` itself) were left alone and are still worth re-measuring.
+
+
+### `num_of_available_civilian_factories` reads ~0 once the vanilla queue saturates
+
+- **Date:** 2026-08-11
+- **Symptom:** `WA_AI_C.10`, the recurring construction event that carries almost all of WA's
+  factory-queueing logic, silently stopped firing for ENG in **January 1943** and never fired
+  again for the remaining 3.3 game-years. Nothing in the save says so directly — the only visible
+  trace is that counters downstream of it (`WA_AI_overext_dbg_mic_redirects_*`) never increment,
+  and ENG built **zero** civilian factories and zero infrastructure in the British Isles across
+  the entire campaign while its arms factories went 72 → 377.
+- **Cause:** the on-action gate at `common/on_actions/WA_AI_misc_on_actions.txt:68-88` opens on
+  the bare engine variable `num_of_available_civilian_factories > 1`. Once the vanilla AI
+  saturates the construction queue, that variable reads ~0 — permanently, for any late-war major.
+  The two other clauses (a construction-timer flag, a per-country date) were demonstrably
+  satisfied: the timer flag is **absent** from the saves from 1944.6 on.
+- **This was already known and already worked around — on a different path.** Fix 40's own
+  comment says it outright (`common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_strategies.txt:309-311`:
+  *"the bare engine variable reads ~0 once the vanilla queue saturates"*) and shipped
+  `WA_AI_PC_has_project_civs_16/_20` (`common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt:150-162`)
+  as the floored replacement. The five bare gates *inside* the PC system were converted; the
+  on-action gate that feeds the entire standard construction system was not. `WA_AI_C.100` is
+  dead for the same reason.
+- **Rule:** never gate a recurring AI pulse on a bare engine "available factories" reading. Use
+  the floored `WA_AI_PC_has_project_civs_*` triggers, or any capability measure that does not
+  collapse when the engine queue is full. More generally — **when you fix an idiom, fix every
+  instance of it, including the ones outside the file you are editing.** This is the second
+  instance of the same omission found in one campaign (see the `surrender_progress` entry above:
+  the posture brake was refined, its AIFC twin was not; the railway surrender gate got an escape
+  hatch, the AIFC sector gate did not). Two different metrics, three copies, same failure shape.
+- **Diagnostic corollary — a silent on-action is nearly invisible.** An event that stops firing
+  leaves no error, no flag and no variable; it is detectable only by the *absence* of increments
+  in counters that live downstream of it. When a fix "does nothing" and its own instrumentation is
+  absent rather than zero, check whether the event that owns the call site is still firing at all
+  before touching the fix's logic. The arithmetic that proves it: ENG's C.10 branch would emit
+  ≥8 `WA_AI_queue_MIC` calls per firing, so a single firing in 34 flagged months would have left
+  a counter behind.
+- **Corollary on brake placement.** Fix 39 brakes *queue insertion*, but ENG's military factories
+  were bulk-ordered by `fire_only_once` events (C.60–C.64, 220 `queue_MIC` calls, all before
+  1943.1) and drained through the engine queue for the next three years — growth decayed +46,
+  +45, +17, +5. Even a correctly-wired insertion-time brake would have caught nothing. **Before
+  writing a brake, check when the decisions it gates are actually made**; if they are made in
+  bulk by one-shot events, the lever has to act on the committed pipeline
+  (`WA_AI_priority_convert_MIC_to_CIC`), not on new insertions.
+- **Evidence:** checklist R24 (`911bed3c`); confirmed independently by two separate audits, one
+  from the ENG-economy side and one from the brake side. USA fingerprint that clinches it:
+  `_mic_redirects_cic` 49 → 64 = exactly the 15 `WA_AI_queue_MIC` calls in the one-shot
+  `WA_AI_C.78`, after which its counters froze forever.
+
+
+### A multi-child `NOT = { A B C }` is a NOR, and it has now killed two systems
+
+- **Date:** 2026-08-11
+- **Symptom:** `WA_AI_can_take_limited_exports` never granted the law to a single AI country —
+  **zero grants across 21 countries over the full 1936–1946 campaign `911bed3c`** — while the
+  sibling branches of the same `else_if` chain fired normally (seven countries flipped between
+  `free_trade` and `export_focus` mid-campaign). Every country observed holding `limited_exports`
+  got it from `history/countries/` at game start or from a national-focus reward, never from
+  `WA_AI_upgrade_trade_law`.
+- **Cause:** three multi-child `NOT` blocks sitting as direct children of the trigger
+  (`common/scripted_triggers/WA_AI_LAW_triggers.txt:1953-1967`). HOI4 evaluates
+  `NOT = { A B C }` as **NOR** — true only when *none* of the children is true — not as
+  `NOT (A AND B AND C)`. So `NOT = { is_major = no  is_in_faction = yes  has_war = yes }` means
+  "major AND not in a faction AND **not at war**", while `NOT = { is_major = no  has_war = no }`
+  nine lines below means "major AND **at war**". `has_war` is required to be true and false at
+  once: the trigger is unsatisfiable for every country at every date, and nothing about tag,
+  date or world state escapes it.
+- **This is the second confirmed instance.** The first is `africa_war_2`
+  (`common/ai_strategy/WA_AI_MILITARY_COUNTRY_ENG_FRONT.txt:399-410`), where an `OR` over states
+  450/663/451 is followed by `NOT = { 450 663 451 550 910 271 }` — dead in every campaign, and
+  the reason a shipped R13 fix could never fire. That case is also the one that **discriminates
+  the two readings**: under the naive `NOT(A AND B)` reading it is perfectly satisfiable, and it
+  was observed dead. So the NOR reading is settled by behaviour, not by documentation.
+- **Rule:** write `NOT = { OR = { A B C } }` when you mean "none of these", and
+  `NOT = { AND = { A B C } }` when you mean "not all of these". **Never leave a bare multi-child
+  `NOT`** — it reads like the second and behaves like the first. When reviewing, treat every
+  multi-child `NOT` as a defect until proven otherwise, and check specifically for two clauses
+  that constrain the *same* variable in opposite directions: that is the signature of an UNSAT
+  trigger, and it produces no error, no log line and no fingerprint — only a behaviour that
+  silently never happens. The authors of this very file knew the idiom: where they wanted "not
+  any of these" they wrote `NOT = { OR = { … } }` explicitly at `:1639`, `:1815-1818`,
+  `:1916-1934`. The bare ones are the outliers.
+- **Detection recipe that works:** a dead gate is invisible in isolation, but it shows up as a
+  *branch that never produces an outcome while its siblings do*. `ideas <TAG>` across a campaign
+  for every value the ladder can take, on ~20 countries, settles it in one pass — and always
+  check whether the observed holders acquired the state through the code path under test or
+  through `history/`, a focus, or an event, before crediting the path.
+- **Evidence:** checklist R28 (trade-law ladder, this session) and R13's `africa_war_2` audit
+  (2026-08-10).
+
+
+### A resource controller that switches off consumers erases its own demand signal
+
+- **Date:** 2026-08-11
+- **Symptom:** ENG ran its aluminium industry down from 12 active refineries to 1 (12 levels left
+  inactive) over 1944-46 while its own ratio-based shortage detector read **zero bauxite
+  shortage**, and while the USA sat on 9 978 units of bauxite flagged for export and shipped 409.
+  Nobody in the chain knew anything was wrong.
+- **Cause — the general shape, which is the transferable part:** the `*_inactive` building twins
+  carry no `local_resources_*` **and no `country_modifiers`**, so a deactivated refinery consumes
+  nothing as well as producing nothing. Both legs of the need detector therefore move the *wrong
+  way* when the controller acts: `resource@bauxite` rises toward zero as each refinery closes, and
+  `resource_imported@bauxite` falls because the engine stops buying the ore. **The act of coping
+  with the shortage deletes the evidence of the shortage.** Worse, the ratio detector
+  (`WA_AI_check_resource_shortages`, deficit > 5% of need) divides by `resource_consumed@X`, which
+  the shutdown also shrinks — so the denominator and numerator collapse together and the ratio
+  reads healthy. Measured: 489 consumed, −14.2 balance, ratio 0.028 < 0.05 ⇒ shortage 0.
+- **Rule:** whenever a controller responds to scarcity by *reducing demand* (switching off
+  consumers, cancelling production lines, disbanding units), check what that does to the metric
+  the rest of the AI uses to detect the same scarcity. If the metric is a net balance or a
+  consumed-vs-available ratio, the controller is a negative feedback loop on its own alarm. The
+  demand signal has to be computed from **intended** capacity (built levels, desired lines), not
+  from realised consumption, or it goes silent exactly when the problem is worst.
+- **Second rule — setpoint overlap.** The shutdown loop closed refineries until the balance
+  reached ≥ −26; the restart decision required > −1. The band [−26, −1] is a trap the controller
+  deliberately parks in: once anything switches off, nothing switches it back on without an
+  external shock. Measured futility: 30 shutdown firings against 26 restart firings over two game
+  years with the inactive count never falling. **When you write a hysteresis pair, verify the
+  release condition is reachable from the state the trip condition leaves you in.** Same family as
+  the `surrender_progress` death-spiral entry above.
+- **Third rule — a player-only maintenance path is a landmine for AI countries.** The refinery
+  counters (`total_X_mill`, `open_X_target`, `current_X_mills`) are refreshed only under
+  `is_ai = no`, so for every AI country they are frozen at their `on_startup` values for the whole
+  campaign — ENG read 31/31/31 at 1946.4 against 70 real steel refineries. Any code that later
+  *acts* on those counters treats a 1936 snapshot as current. Here the GUI's Refresh button does
+  exactly that: it runs `recalculate_*` and then `manage_*`, whose "close down to target" loop
+  culled ~39 steel and ~13 aluminium refineries in one click on a 1944 AI save. **If a variable is
+  maintained only for the player, either gate every consumer on `is_ai = no` too, or maintain it
+  for everyone — never leave a stale value reachable by a live code path.**
+- **Detection note:** none of this is visible in a savegame through any WA variable. There is no
+  trigger, effect or telemetry metric anywhere in the mod that reads `*_refinery_inactive`; the
+  only way to see it is to sum the inactive building levels out of the `states` block by hand.
+  **Instrumentation is a prerequisite for this class of fix, not a follow-up to it** — a
+  self-concealing failure cannot be verified by the same metric it conceals itself from.
+- **Evidence:** checklist R29; campaign `911bed3c`; user in-game observation on the 1944.4 ENG
+  save that started the investigation.
+
+
+### The HOI4 trade AI buys to reach equilibrium, never to build a reserve
+
+- **Date:** 2026-08-11
+- **The fact:** the engine's trade AI imports only enough to bring `resource@X` to **~0** at the
+  current instant. It does not anticipate demand, does not stockpile, and will never accumulate a
+  surplus in order to make some future action affordable. A country sitting at `resource@bauxite`
+  = +1 will **not** import its way to +50 so that it can switch a refinery back on.
+- **Why this matters, and the mistake it caused:** faced with the R29 refinery deadlock (AI
+  refineries switch off and never come back), the obvious-looking fix was to gate the
+  reactivation decisions on *affordability* — "only restart a mill if I can already feed it",
+  i.e. `resource@bauxite > 32 + margin`. That is correct control theory and **completely wrong
+  for this engine**: the threshold is unreachable by construction, because nothing in the game
+  ever pushes an AI's balance to +42. The fix would have frozen every AI refinery off
+  permanently — strictly worse than the bug it replaced. Written, then reverted before it shipped.
+- **The corollary that makes the existing design make sense:** the break-even gates
+  (`resource@bauxite > -1`) in `reactivate_*_refineries_ai` are not sloppy — they are the only
+  reachable bar in a world where the AI lives at zero. The intended flow is **speculative**:
+  switch a mill on, let it open a deficit, and let the trade AI import to cover it. Consumption
+  is what *creates* the import; the import never precedes the consumption. Any "check you can
+  afford it first" gate inverts that causality and deadlocks.
+- **Where the real defect lives, therefore:** in the *race*, not in the threshold. A restarted
+  aluminium mill drops the balance by 32 instantly, while the trade AI needs time to respond;
+  `bauxite_shortage_ai` activates at `< -26` on a 9-day timeout and closes a mill if the gap has
+  not closed. Campaign `911bed3c` shows the signature — 26 reactivation firings against 30
+  shutdown firings over two game-years with the inactive count never moving. It was flapping, not
+  frozen. A fix has to give the trade response time to land (a grace period after enabling, or a
+  cancel condition the trade AI can actually satisfy), not raise the bar to enter.
+- **Rule:** before writing any AI gate of the form "only act when resource X is comfortably
+  positive", remember the AI has no mechanism to *become* comfortably positive. Gate on a
+  reachable state (at or near equilibrium, a deficit shrinking, a partner having stock to sell),
+  and handle the transient the action itself creates by protecting it, not by preventing it.
+- **Diagnostic corollary:** a mechanism that fires often but changes nothing is flapping, not
+  dead. Two counters moving together (26 restarts / 30 shutdowns) with a flat outcome is the
+  fingerprint — and it points at a race or a hysteresis gap, never at an unreachable gate. An
+  unreachable gate produces one counter at zero, not two counters in lockstep.
+- **Evidence:** user correction, 2026-08-11, on the R29 fix attempt; checklist R29 defect C.
+
+
+### A correct idiom can become wrong when copied, if its correctness rests on the data
+
+- **Date:** 2026-08-11
+- **Symptom:** `manage_alu_mills` mis-counted how much bauxite and coal each refinery closure
+  frees — over-crediting 3 bauxite per plain closure and 5 coal per hydro closure — so its loop
+  exited early and closed fewer mills than the deficit required.
+- **Cause, and the interesting part:** the code is a faithful copy of `manage_steel_mills`, which
+  is **correct**. That routine uses a neat idiom: pre-charge the cost of the variant its *first*
+  branch handles, then patch the difference inside whichever branch actually fires
+  (`-15 coal` when it closes a hydro instead of a plain mill). The idiom works for steel because
+  `hydro_steel_refinery` differs from `steel_refinery` on **exactly one axis, by exactly 15**.
+  Aluminium's hydro variant differs on **two** axes — bauxite 32 → 35 *and* coal 20 → 0 — so a
+  single one-axis patch cannot express it, whatever value you put in it. The copied code was not
+  sloppy; it was structurally incapable of being right.
+- **Rule:** before copying a numeric idiom between two systems, state out loud the property of
+  the *data* that makes it correct in the source, then check that property holds in the target.
+  "Pre-charge one variant and patch the delta" is only valid when the delta is one-dimensional.
+  If the variants differ on more axes than the patch has terms, either give the patch a term per
+  axis (what Fix 42 did: +3 bauxite *and* −20 coal in the hydro branch) or charge each branch its
+  own full cost — verbosity beats a silently wrong invariant.
+- **Caveat found while fixing it, which reverses the naive advice:** in this particular loop the
+  pre-charge is not a stylistic choice, it is the **termination guarantee**. The enclosing `if`
+  checks that a refinery exists only once, before the loop; once the last mill has been closed no
+  branch can fire, so if the temp variables were advanced only inside the branches they would stop
+  moving while the loop condition stayed true — an infinite loop. Advancing them unconditionally
+  at the top means every iteration makes progress whether or not anything was closed. **Before
+  "simplifying" an unconditional counter update out of a `while_loop_effect`, check whether it is
+  the only thing that guarantees the loop ends.** That is now noted in the code itself.
+- **Corollary on direction, worth knowing when triaging:** two arithmetic bugs in the same system
+  can point opposite ways. The shortage missions in `_economy_fatigue.txt` **under**-credited
+  (25 where the building frees 32), so their loop ran long and closed **too many** mills — that
+  is what reduced ENG's aluminium industry to 1 active level of 16. `manage_alu_mills`
+  **over**-credited, so it closed **too few**. Same system, same kind of error, opposite
+  consequences; do not assume one diagnosis transfers to the sibling routine.
+- **Where the duplication is now documented:** a header block above the refinery definitions in
+  `common/buildings/00_buildings.txt` lists every site that copies a `country_resource_cost_*`
+  value, plus a per-building reminder. PDXScript cannot read a building's modifiers back, so this
+  duplication is unavoidable and the sync is manual — a mismatch throws no error, it just makes
+  the controller close too many or too few.
+- **Evidence:** Fix 42 (2026-08-11); checklist R29 defect C-bis.
