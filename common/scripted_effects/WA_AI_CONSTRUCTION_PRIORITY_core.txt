@@ -226,7 +226,6 @@ WA_AI_PC_get_building_cost = {
 @AI_PC_STABLE_BASE_FRACTION = 0.30		# floor: share of TOTAL civs the base can never drop below
 @AI_PC_ALLOC_HARD_CAP_FRACTION = 0.5	# ceiling: allocation can never exceed this share of total civs
 @AI_PC_STALL_CANCEL_WEEKS = 25			# weeks a project may sit with 0 factories before the stall sweep cancels it
-@AI_PC_STALL_MIN_QUEUE = 5				# stall sweep only fires when the queue is longer than this
 
 ### Dynamic Queue System - Assign factories to projects
 # THIS = country
@@ -353,6 +352,23 @@ WA_AI_PC_assign_factories = {
 				NOT = { check_variable = { WA_AI_PC_target_state^_project_id = 0 } }
 				# Check progress remaining
 				check_variable = { WA_AI_PC_progress^_project_id > 0 }
+				# Fix 34: never feed factories to a project whose target state is hostile-controlled.
+				# WA_AI_PC_complete_project_by_id refuses to spawn the building there anyway, so
+				# every civ-week spent was pure waste (observed: ROM air base in lost state 143,
+				# campaign 2b607968). Progress freezes instead; the stall counter then ages the
+				# project into the sweep below, and a recapture within the window resumes the
+				# build with progress intact. Same controller test as the completion path
+				# (ROOT = builder country in every call chain - weekly on_action and recursion).
+				var:WA_AI_PC_target_state^_project_id = {
+					CONTROLLER = {
+						OR = {
+							tag = ROOT
+							is_in_faction_with = ROOT
+							is_subject_of = ROOT
+							ROOT = { is_subject_of = PREV }
+						}
+					}
+				}
 			}
 
 			set_temp_variable = { assign_amount = available_factories_ }
@@ -582,8 +598,14 @@ WA_AI_PC_update_project_progress = {
 
 	# Stall sweep: a project that ends week after week with 0 assigned factories is being starved
 	# by higher-priority queue entries. Left alone it blocks the queue forever (the < 5 strategy
-	# gate counts it as active). Cancel after @AI_PC_STALL_CANCEL_WEEKS starved weeks, but only
-	# while the queue is long enough that losing the project is clearly the lesser evil.
+	# gate counts it as active). Cancel after @AI_PC_STALL_CANCEL_WEEKS starved weeks.
+	# Fix 34: gate on factories actually flowing (assigned total > 0), not on queue length > 5.
+	# The old queue gate assumed a short queue drains and the starved project gets its turn -
+	# false when the railway system replenishes prio-9999 segments every cycle (observed: ROM,
+	# queue of 4, two projects starved 17+ weeks, campaign 2b607968). It also allowed 5 starved
+	# nonrail projects to lock every < 5 strategy gate shut with the sweep unable to fire.
+	# Total = 0 (economic collapse / full occupation) still cancels nothing: no project is
+	# being outranked when nobody gets factories, so starvation proves nothing there.
 	clear_temp_array = _cancel_projects_IDS
 	for_each_loop = { array = WA_AI_PC_queue value = _project_id
 		if = {
@@ -592,7 +614,7 @@ WA_AI_PC_update_project_progress = {
 			if = {
 				limit = {
 					check_variable = { WA_AI_PC_stall_weeks^_project_id > @AI_PC_STALL_CANCEL_WEEKS }
-					check_variable = { WA_AI_PC_queue^num > @AI_PC_STALL_MIN_QUEUE }
+					check_variable = { WA_AI_PC_assigned_factories_total > 0 }
 				}
 				add_to_temp_array = { _cancel_projects_IDS = _project_id }
 			}

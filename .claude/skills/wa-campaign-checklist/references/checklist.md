@@ -306,6 +306,17 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **History:**
   - NOT YET TESTED — fix postdates every campaign in the registry.
 
+### R19. Starved priority-construction projects age out; no factories burn in hostile states (Fix 34)
+
+- **Fix under test:** Fix 34 on `ai-rework` (`WA_AI_CONSTRUCTION_PRIORITY_core.txt`). Two parts: (a) the stall sweep's `queue^num > 5` gate replaced with `WA_AI_PC_assigned_factories_total > 0` — a project starved of factories for 25+ weeks is now cancelled whenever factories were flowing to *other* projects, regardless of queue length; (b) `WA_AI_PC_assign_factories` skips projects whose target state is hostile-controlled (same controller test as the completion path), freezing their progress instead of burning civ-weeks toward a completion that spawns nothing.
+- **Bug being fixed:** `2b607968` @ 1943.9.1: ROM queue `[6,1,7,0]` — naval base slot 7 (prio 5000, 3000/3000, stall 17w) and air base slot 0 (prio 100, target state 143 no longer ROM-controlled, stall 17w, ~140 civ-days already burned) both starved behind prio-9999 railway segments, with the sweep unreachable at queue=4 ≤ 5. The old gate also allowed 5 starved nonrail projects to lock every `< 5` strategy gate shut permanently.
+- **Pass:** on any campaign save carrying the fix, mid/late war: (1) no AI country has a queued project with `wa_ai_pc_stall_weeks^id > 26` while its `wa_ai_pc_assigned_factories_total > 0`; (2) no queued project whose target state is enemy-controlled has `wa_ai_pc_assigned_factories^id > 0`; (3) negative guard — a country with `assigned_factories_total = 0` (collapse/full occupation) keeps its stalled queue uncancelled: stall_weeks > 26 with total = 0 is correct behaviour there, not a failure; (4) railway construction still completes normally (the sweep must not eat live low-priority projects the week before they'd get factories — spot-check that cancelled ids were genuinely starved 25+ consecutive weeks via logging or save deltas).
+- **Probe:** extract `wa_ai_pc_queue`, `wa_ai_pc_stall_weeks`, `wa_ai_pc_assigned_factories`, `wa_ai_pc_assigned_factories_total`, `wa_ai_pc_target_state` for all majors plus 2–3 occupied/front-line minors (ROM is the reference case); cross-check target-state controllers in the save's `states={}` block.
+- **Threshold:** 3 (narrow — direct variable observation, no behavioural judgement).
+- **Streak:** 0
+- **History:**
+  - NOT YET TESTED — fix postdates every campaign in the registry.
+
 ---
 
 ## Recurring cosmetic anomalies — check here before reporting a "finding"
