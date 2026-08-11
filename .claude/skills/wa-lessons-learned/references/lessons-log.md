@@ -510,3 +510,55 @@ read as a broken `meta_effect` and debugged in the wrong file entirely.
 
 **Evidence:** campaign `2b607968`, 2026-08-10. Checklist R14 migration sub-probe records both
 process caveats (stale process, and the absence of a load-time hook).
+
+### Liberated territory goes to the poorest ally — and every PC selector refuses to build there
+
+- **Date:** 2026-08-11
+- **Symptom:** D-Day succeeds, then the European war stalls for two years (campaign `31eaf7e6`: GER
+  undefeated at 1946.6). At 1944.7 the Normandy supply hubs sit at 18–31 demand vs **5 capacity**;
+  Cherbourg and Le Havre are naval_base healthy-level **0**; nobody repairs or builds anything.
+- **Cause:** Two stacked mechanisms. (1) Liberating an ally's owned states hands control to that
+  ally — Normandy went to Free France (capital **Algiers**, 30 civ levels, `economy_fatigue_68`),
+  so the supply net has no land path to a capital and hangs off level-1 ports: capacity
+  5 = `NAVAL_BASE_FLOW 0.0 + NAVAL_FLOW_PER_LEVEL 5.0 × 1` (`common/defines/05_defines.lua:937-938`).
+  (2) Every WA_AI PC *target selector* is ROOT/subject-gated in six places
+  (`railway_strategies.txt:59-60/95/279-314/565-566/582/674/755/783`,
+  `WA_AI_CONSTRUCTION_triggers.txt:127-133`, `railway_helpers.txt:1029/1105`), so ENG (217 civs)
+  and USA (462 civs) structurally cannot raise the port, the rails, or the infrastructure of a
+  Free-France-controlled beachhead — while FRA burns its only 15 factories on a GER-controlled
+  Brittany rail and dead Paris queue entries (the Fix 34 bug class).
+- **Rule:** Before assuming the builder will control the territory a system is meant to serve,
+  walk the liberation case: owned-by-ally states revert to the ally. The *executor* already
+  permits faction builds (`WA_AI_PC_start_project` accepts `is_in_faction_with`,
+  `core.txt:906`; `supply_node`/`rail_way`/`naval_base` are `allied_build = yes`; pathfinder
+  type 2 walks allied provinces) — only the selectors exclude allies. New coalition-serving
+  construction should gate on `is_in_faction_with` like the UK-hosting and theatre-air-base
+  strategies already do (`strategies.txt:960-967`, `:1205`). Note `_project_build_for_ally = 1`
+  is set at `railway_core.txt:66` and read nowhere — designed, never implemented.
+- **Evidence:** campaign `31eaf7e6` save `1944.7_Jul.hoi4`; checklist F5/R9 entries 2026-08-11.
+
+### The warbond ladder dead-ends when a series completes at fatigue 0
+
+- **Date:** 2026-08-11
+- **Symptom:** JAP frozen on `Series_B_bonds` from 1938.2 to campaign end (`31eaf7e6`);
+  `economic_fatigue` ratchets 0→93; `economy_fatigue_93` applies `local_resources_factor -0.215`;
+  the iron-deficit AI (`iron_shortage_ai`, `_economy_fatigue.txt:304`) then loops
+  `disable_steel_mill` until **23 of 25 refineries are inactive** — steel 0 across 202 JAP
+  factory lines at 1944.6 and the Japanese war economy is dead. USA, CHI and FRA are parked on
+  Series C by the same trap; only GER and ENG reach G.
+- **Cause:** `upgrade_warbonds` (`Economy_Fatigue_scripted_effects.txt:859-926`) gates every
+  series swap on `check_variable = { economic_fatigue > 0 }` — evaluated on the terminal mission
+  tick, immediately after `economy_fatigue_level_down_1` just spent ten ticks driving fatigue
+  toward 0. A country that fully succeeds at its current series is thereby disqualified from the
+  next one, and when the swap no-ops **`activate_mission = warbonds_mission` is never re-issued**:
+  no retry, no re-evaluation, ai_will_do is 0 below fatigue 10 (`zzz_ministries.txt:378-381` etc.),
+  so the state is a permanent dead-end. Aggravating data bug: JAP starts idea/variable desynced —
+  `economy_fatigue_5` idea but `set_variable = { economic_fatigue = 0 }`
+  (`history/countries/JAP - Japan.txt:155/171`; FIN and YUG have the same desync).
+- **Rule:** A one-shot ladder step whose precondition the *previous* step actively destroys needs
+  either the guard removed or a recurring re-evaluation path — never "check once at the terminal
+  tick". When an idea has a paired tracking variable, the history files must initialise both to
+  the same value; grep for the pair when auditing a country's start state.
+- **Evidence:** save trace 1937.9→1944.7 (Series A 1937.9 → B 1937.11 → 10/10 at 1938.2 with
+  fatigue 0 → stuck); cross-country table at 1944.7 (GER/ENG=G, USA/CHI/FRA=C, JAP=B);
+  checklist R11/F6 entries 2026-08-11.
