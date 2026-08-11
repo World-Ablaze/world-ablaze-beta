@@ -366,6 +366,16 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **History:**
   - NOT YET TESTED — fix postdates every campaign in the registry.
 
+### R23. Allied air-base funding unlocked (Fixes 37-38 + floored gates)
+
+- **Fix under test:** `506d670de`. Four legs: per-state type-2 level accounting in `WA_AI_PC_start_project` (Fix 37) + uk_air capacity scoped to hosting states; host-is-funding gate via new weekly `WA_AI_PC_air_factories_assigned` (Fix 38) on the uk_air USA arm and the theatre allied arm; stable-base floor on the five bare `available_for_projects` gates (new `WA_AI_PC_has_project_civs_16/_20` — also unlocks the three refinery strategies and, for free, the existing mil→civ conversion arms); RESOURCE_NEEDS aluminium spelling + trade-percentage accumulator clear.
+- **Pass:** in the next Allied-war campaign: (1) `wa_ai_pc_air_factories_assigned` present on AI majors (build fingerprint); (2) **coexistence proof (Fix 37):** some save shows a country's PC queue holding type-2 projects targeting BOTH a UK hosting state and a non-UK theatre state (impossible pre-fix once 3 UK slots were queued); (3) **funding-gate proof (Fix 38):** in a save where ENG `wa_ai_pc_air_factories_assigned = 0` while at war, USA's queue holds ≥1 type-2 project targeting a hosting state (123/859/127/857/126/961/125/860/338/128/129) and USA `wa_ai_uk_air_dbg_started > 0`; (4) **refinery unlock:** at least one saturated-queue country (ENG the reference) queues a type-8/11/12/15/16 project when its shortage counter is 3 (pre-fix: arithmetically impossible); (5) **outcome (shared with R8/R15):** USAAF wings based in UK states pre-D-Day without cheats; (6) `civilian_factories_trade_percentage` ≤ ~1.0 on sampled countries (accumulator no longer drifts).
+- **Probe:** `var <TAG> "^wa_ai_pc_(air_factories_assigned|building_type|target_state)"` + `var <TAG> "civilian_factories_trade_percentage"` on ENG/USA across war saves; cross-read R8/R15/R16.
+- **Threshold:** 3 (narrow variable/queue observations; criterion 5 is scored under R8/R15, cite here).
+- **Streak:** 0
+- **History:**
+  - NOT YET TESTED — fix postdates every campaign in the registry.
+
 ---
 
 ## Recurring cosmetic anomalies — check here before reporting a "finding"
