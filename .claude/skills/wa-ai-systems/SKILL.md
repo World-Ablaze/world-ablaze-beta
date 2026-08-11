@@ -140,7 +140,7 @@ var: WA_AI_PC_priority^X
 
 Weekly cycle:
 
-1. `WA_AI_PC_assign_factories` — reset assignments, allocate ~35% of available civs, fill from the top of the queue (max 15/project).
+1. `WA_AI_PC_assign_factories` — reset assignments, allocate ~35% of available civs, then sort the queue by `WA_AI_PC_priority` and fill **winner-takes-most** from the top: each project takes `clamp(all remaining, 1, 20)`, so the highest-priority project absorbs the whole pool up to 20 and lower projects usually get nothing until it completes. Projects whose target state is hostile-controlled are skipped entirely (`Fix 34`) — their progress freezes rather than burning civ-weeks on a building that cannot spawn.
 2. `WA_AI_PC_update_project_progress` — `progress -= speed * factories * 7`; complete at `<= 0`.
 3. `WA_AI_PC_railway` — runs only when its interval counter hits 0 (8 weeks at war, 12 at peace), then queues new projects.
 
