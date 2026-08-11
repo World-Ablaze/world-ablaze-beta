@@ -376,6 +376,16 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **History:**
   - NOT YET TESTED — fix postdates every campaign in the registry.
 
+### R24. Industrial overextension brake fires and substitutes (Fix 39)
+
+- **Fix under test:** `d729372f9`. Monthly hysteresis flag `WA_AI_industry_overextended_flag` (TRIP: ≥2 of steel/aluminium/rubber/tungsten/chromium at needs=3 with `resource@X < 0`, mils>civs, total factories>100; RELEASE: <2 at needs≥2); `WA_AI_queue_MIC` substitutes under the flag (synth refinery when tech+domestic coal+law≥war_economy, else CIC); research unlock via `WA_AI_RESEARCH_needs_synth_oil/_synth_rubber` OR-branches; new oil writer for `WA_AI_needs_oil` (oil prospecting weights now live — expected campaign-visible change); last two bare `<20` conversion gates floored.
+- **Pass:** (1) ENG by ~1943.9: flag set, `wa_ai_overext_dbg_active > 0`, `wa_ai_overext_dbg_mic_redirects_cic` climbing (and `_refinery ≥ 1` given ENG's coal/tech/law); (2) behavioural: ENG active mil-line factory count plateaus ~380-400 instead of the `31eaf7e6` climb to 429, AND ENG UK-isles civilian IC finally moves off its 161 flatline; (3) negative controls: USA and SOV never carry the flag, `dbg_active` absent/0 all campaign; (4) oil writer live: `wa_ai_needs_oil > 0` on at least one oil-importing AI major by ~1941; (5) no country shows zero construction while flagged (the substitution guarantee).
+- **Probe:** `var <TAG> "^wa_ai_(overext_dbg|needs_oil|industry_overextended)"` on ENG/USA/SOV/GER/JAP across war saves; ENG mil-line count via `production → military_lines` summed `active_factories`; UK-isles IC sum per the R23/economy method. Criteria (1)/(3)/(4)/(5) are narrow; (2) is behavioural corroboration — cite under F8 if it moves army-supply outcomes.
+- **Threshold:** 3 (narrow variable probes; criterion 2 informs but does not gate retirement).
+- **Streak:** 0
+- **History:**
+  - NOT YET TESTED — fix postdates every campaign in the registry.
+
 ---
 
 ## Recurring cosmetic anomalies — check here before reporting a "finding"
