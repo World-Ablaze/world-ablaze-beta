@@ -3500,6 +3500,19 @@ country_event = {
 			WA_AI_DIVISION_spawn_invasion = yes
 
 			set_temp_variable = { _division_template = 1 }
+
+			# Mulberry B: artificial harbour at Sword beach (13851 has no real port).
+			# Level 5 = 25 supply (NAVAL_FLOW_PER_LEVEL 5.0); removed after 4 months
+			# by WA_AI_invasions.84, mirroring the floating-harbor lifetime.
+			1016 = { # Upper Normandy
+				set_building_level = {
+					type = naval_base
+					province = { id = 13851 }
+					level = 5
+					instant_build = yes
+				}
+			}
+			country_event = { id = WA_AI_invasions.84 days = 120 }
 		}
 		else_if = {
 			limit = {
@@ -4258,6 +4271,19 @@ country_event = {
 			add_to_temp_array = { _invasion_state_provinces = 13849 }
 			set_temp_variable = { _division_template = 6 }
 			WA_AI_DIVISION_spawn_invasion = yes
+
+			# Mulberry A: artificial harbour at the Omaha-sector beach (3579 has no real port).
+			# Level 5 = 25 supply (NAVAL_FLOW_PER_LEVEL 5.0); removed after 4 months
+			# by WA_AI_invasions.84, mirroring the floating-harbor lifetime.
+			15 = { # Lower Normandy
+				set_building_level = {
+					type = naval_base
+					province = { id = 3579 }
+					level = 5
+					instant_build = yes
+				}
+			}
+			country_event = { id = WA_AI_invasions.84 days = 120 }
 		}
 		else_if = {
 			limit = {
@@ -7595,6 +7621,37 @@ country_event = {
 				has_country_flag = { flag = WA_AI_invasions.83_flag days > 179 }
 			}
 			clr_country_flag = WA_AI_invasions.83_flag
+		}
+	}
+}
+
+# Mulberry dismantling: removes the two artificial D-Day harbours spawned by
+# WA_AI_invasions.2 (Mulberry A, province 3579) and .34 (Mulberry B, province 13851)
+# 120 days after the landing. Both spawners schedule this event, so it can fire
+# twice - set_building_level to 0 is idempotent, the second firing is a no-op.
+# By D+120 the beachhead either has its real ports repaired or has failed anyway.
+country_event = {
+	id = WA_AI_invasions.84
+	hidden = yes
+
+	is_triggered_only = yes
+
+	immediate = {
+		15 = { # Lower Normandy
+			set_building_level = {
+				type = naval_base
+				province = { id = 3579 }
+				level = 0
+				instant_build = yes
+			}
+		}
+		1016 = { # Upper Normandy
+			set_building_level = {
+				type = naval_base
+				province = { id = 13851 }
+				level = 0
+				instant_build = yes
+			}
 		}
 	}
 }
