@@ -190,7 +190,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 
 ### R8. UK air hosting works
 
-- **Fix under test:** `24ffda1ac` (level-ladder rewrite) + instrumentation `57d6136dd`.
+- **Fix under test:** `24ffda1ac` (level-ladder rewrite) + instrumentation `57d6136dd` + `124b2a3b6` (demand side: `Allies_dday_air` pre-arms 1944.2.1 with `Allies_dont_logi_strike_during_bob` standing down in step — +200k on region 239 live from February, so southern-England capacity finally has a pull to fill). New sub-probe: USAAF wings based in the UK at a **1944.3–1944.5 save** (pre-landing window), not just at 1944.6.
 - **Pass:** `wa_ai_uk_air_dbg_started > 0` on ENG; type-2 (air base) projects queued; USAAF wings based in the UK pre-D-Day.
 - **Probe:** `var ENG "^wa_ai_uk_air_dbg" <saves...>`; `var ENG "^wa_ai_pc_building_type"`; USA wing basing via the top-level `strategic_air` block (wings → `air_base` id → `state=`; see R12 note).
 - **Threshold:** 5 (behavioural — the wing-basing outcome is the point; the dbg variable alone is not a pass).
@@ -276,7 +276,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 
 ### R15. Air forces deploy to contested theatres
 
-- **Fix under test:** `edb746d17` (generic Default-layer AIR domain: 10 theatre blocks, +10k per strategic region while contested — enemy AND own side both hold anchor states; capital-theatre excluded).
+- **Fix under test:** `edb746d17` (generic Default-layer AIR domain: 10 theatre blocks — enemy AND own side both hold anchor states; capital-theatre excluded) + `124b2a3b6` (pulls raised +10k→+50k AND the ENG.txt Allied suppression family retuned −250k…−1M → −2k…−40k, making the Allied European ledger net-positive in every contested region — worst case Poland/296 = +2k; this removes the `31eaf7e6` root cause). Watch item from the retune: +50k exceeds the engine's hot-front ~35k reference — air abandoning an active non-capital home front for a foreign contested theatre would be the over-correction signature.
 - **Pass:** by 1943.6 USA has ≥25% of deployed planes based outside the continental US, with USA wings at bases in NA/Mediterranean states (446/447/452, 458–460, 115/117/156) or Pacific island states (629 Hawaii, 634 Solomons, 633 Marshalls, 639/643/725 Micronesia, 1001–1004 New Guinea, 327/623–628 Philippines). Secondary: ENG's home-based RAF share does not increase vs the `66d6b53c` baseline; GER gains air presence over a contested Normandy post-landing. Baseline to beat: USA 62% CONUS (8 595/13 791).
 - **Probe:** walk the top-level `strategic_air` block — wings → `air_base` id → `state=` — classify CONUS vs overseas per wing; count per theatre. (Carrier decks are the `air_base` blocks without `state=` — exclude them from this count.)
 - **Launch-validation note:** two parse-risk constructs need the boot test (F9) before the next campaign: `has_deployed_air_force_size` without `type`, and `region = <id>` inside `capital_scope`. If the size trigger proves type-mandatory, drop that gate line.
@@ -341,6 +341,17 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **Bug being fixed:** campaign `31eaf7e6` — JAP completed Series_B at fatigue 0 in 1938.2 and stayed there to 1945 while fatigue ratcheted to 93 → `local_resources_factor −0.215` → iron deficit → `iron_shortage_ai` disabled 23/25 steel refineries → steel 0 across 202 factory lines. USA/CHI/FRA parked on Series_C by the same trap; only GER/ENG reached G.
 - **Pass:** (1) no major at war with `economic_fatigue > 30` for 6+ months still holds the same bond series it completed — JAP specifically progresses past Series_B (probe: `ideas JAP <saves> --match "Series_"` across 1939–1944, plus `var JAP "^economic_fatigue"`); (2) at least one country shows `wa_warbonds_retry_upgrades ≥ 1` (fingerprint that the retry path fired; absent everywhere on a run where no ladder ever dead-ends is NOT a failure — check criterion 1 first); (3) no regression: GER/ENG still reach Series_F/G on the historical arc; (4) downstream: JAP active steel refineries stay > inactive ones through 1944 (`steel_refinery` vs `steel_refinery_inactive` in JAP-controlled states) — the economic collapse this fix targets does not recur.
 - **Threshold:** 3 (narrow — idea/variable observation; criterion 4 is the behavioural corroboration, judge it as evidence not as a separate gate).
+- **Streak:** 0
+- **History:**
+  - NOT YET TESTED — fix postdates every campaign in the registry.
+
+### R21. Port demolition is capped and gated (Fix 36)
+
+- **Fix under test:** `b74f91889` (Fix 36). The `GER_nero_decree` on_action demolition (`100_wa_on_actions.txt`, `on_state_control_changed`) now requires the capturer to be at war with GER, fires once per state (state flag `WA_port_demolished`), and deals `clamp(level−3, 0, 4)` naval-base damage instead of a flat 10; the `scorch_earth` decision's naval_base component shares the cap and the flag guard. Ports ≤3 untouched.
+- **Bug being fixed:** `fc76d9038` made demolition unconditional and total — campaign `31eaf7e6` had Brest 10→0 healthy, Cherbourg/Le Havre 5→0 at capture, starving the D-Day beachhead (F5/R9 chain).
+- **Pass:** in the first campaign where the Allies capture Nero-decree French ports: (1) each captured port state with pre-capture level >3 carries `WA_port_demolished` and its naval_base shows healthy ≥ level−4 (concretely Brest ≥6 healthy, Cherbourg/Le Havre ≥3 healthy at the first post-flip save — combat damage on top is the accepted deviation, judge with the province `buildings` healthy value); (2) states with ports ≤3 (e.g. Loire 13853 level 2) carry NO flag and NO demolition; (3) no `WA_port_demolished` on any state that never flipped from Axis to an at-war-with-GER controller (ROOT gate leak check); (4) no port shows healthy < level−4 attributable to script (stacking guard held).
+- **Probe:** top-level `provinces={}` block — `naval_base` level/healthy_levels for 6449 Cherbourg, 9434 Le Havre, 3552 Brest, 13853 in the first post-capture save; state flags via `flags` on the owning states (15, 1016, 14, 30).
+- **Threshold:** 3 (narrow — direct building-state observation).
 - **Streak:** 0
 - **History:**
   - NOT YET TESTED — fix postdates every campaign in the registry.
