@@ -2917,10 +2917,42 @@ war_measures = {
 					}
 				}
 				if = {
-					limit = { naval_base > 0 }
-					damage_building = {
-						type = naval_base
-						damage = 10
+					# Scope here: FROM = the scorched state. Shares the WA_port_demolished guard with the
+					# GER_nero_decree on_state_control_changed effect (100_wa_on_actions.txt) so the two
+					# mechanisms cannot stack past the demolition cap.
+					limit = {
+						naval_base > 3 # ports at level 3 or below are not demolished at all
+						NOT = { has_state_flag = WA_port_demolished }
+					}
+					set_state_flag = WA_port_demolished
+					# Demolition cap: lose at most 4 levels, keep at least 3 pre-demolition levels.
+					# damage = clamp(naval_base - 3, 0, 4)
+					if = {
+						limit = { naval_base > 6 }
+						damage_building = {
+							type = naval_base
+							damage = 4
+						}
+					}
+					else_if = {
+						limit = { naval_base > 5 }
+						damage_building = {
+							type = naval_base
+							damage = 3
+						}
+					}
+					else_if = {
+						limit = { naval_base > 4 }
+						damage_building = {
+							type = naval_base
+							damage = 2
+						}
+					}
+					else = { # naval_base = 4 (outer limit guarantees > 3)
+						damage_building = {
+							type = naval_base
+							damage = 1
+						}
 					}
 				}
 				if = {

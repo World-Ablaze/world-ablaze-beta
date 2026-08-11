@@ -3310,6 +3310,7 @@ on_actions = {
 			}
 		}
 		effect = {
+			# Nero decree port demolition. Scopes here: ROOT = new controller, FROM = old controller, FROM.FROM = the state changing hands.
 			if = {
 				limit = {
 					GER = {
@@ -3323,14 +3324,44 @@ on_actions = {
 							is_subject_of = GER
 						}
 					}
+					ROOT = {
+						has_war_with = GER # only enemy captures demolish - Axis-internal transfers, puppet spawns and RK handovers do not
+					}
 					FROM.FROM = {
-						naval_base > 0
+						naval_base > 3 # ports at level 3 or below are not demolished at all
+						NOT = { has_state_flag = WA_port_demolished } # each state is scorched once, not on every front flip
 					}
 				}
 				FROM.FROM = {
-					damage_building = {
-						type = naval_base
-						damage = 10
+					set_state_flag = WA_port_demolished
+					# Demolition cap: lose at most 4 levels, keep at least 3 pre-demolition levels.
+					# damage = clamp(naval_base - 3, 0, 4)
+					if = {
+						limit = { naval_base > 6 }
+						damage_building = {
+							type = naval_base
+							damage = 4
+						}
+					}
+					else_if = {
+						limit = { naval_base > 5 }
+						damage_building = {
+							type = naval_base
+							damage = 3
+						}
+					}
+					else_if = {
+						limit = { naval_base > 4 }
+						damage_building = {
+							type = naval_base
+							damage = 2
+						}
+					}
+					else = { # naval_base = 4 (outer limit guarantees > 3)
+						damage_building = {
+							type = naval_base
+							damage = 1
+						}
 					}
 				}
 			}
