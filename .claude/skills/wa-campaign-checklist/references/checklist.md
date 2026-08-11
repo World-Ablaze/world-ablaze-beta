@@ -111,10 +111,11 @@ Protocol for scoring, retiring, and adding items: see `../SKILL.md`. Streak = co
 ### F9. Game boots
 
 - **Pass:** the build the campaign runs on launches without CTD. Scored per build, before the campaign: run the launch harness after any commit touching `force_concentration` blocks in country ai_strategy files — the deterministic-CTD lesson is that `GER_fall_gelb` + `war_with_soviets` fc entries are load-bearing (see comments in `common/ai_strategy/GER.txt` and the `d69eef2fa` incident).
-- **Streak:** 1
+- **Streak:** 3
 - **History:**
   - 2026-08-10 · `66d6b53c` · PASSED — build through `083b224ac` booted on the cloud box and ran 9.5 game-years without CTD. (HEAD adds only `17505d9a9` + docs on top; boot-test HEAD before the next campaign anyway.)
   - 2026-08-11 · `31eaf7e6` · PASSED — the 2026-08-11 stack (Fixes 30–33, R15/R16/R17) booted on the cloud box and ran 10.4 game-years without CTD; R15's two flagged parse-risk constructs cleared in campaign conditions.
+  - 2026-08-11 · build through `5c85cd41a` (Fixes 35–40: warbonds retry, ratio repair, air-ledger retune + dday_air pre-arm, port-demolition cap, Mulberries, allied-funding package, overextension brake, refinery unlock) + the WA_TLM working-tree changes · PASSED — boot-tested by a parallel session; user-confirmed. Clear for the next cloud campaign.
 
 ---
 
@@ -157,7 +158,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 
 - **Fix under test:** `5d2663848` + Tier 1 composition work.
 - **Pass:** GER and SOV fielded armor+mech share >18% of the army.
-- **Probe:** `units` composition sampling for GER and SOV in mid/late-war saves. **Probe gap found 2026-08-10:** no `wa_ai_template*` variable is ever written to saves, and divisions reference templates by numeric id only — composition share is not recoverable from a save. Add a script-side `*_dbg_*` armor-share counter before this item can be scored again.
+- **Probe:** `savegame.py tlm GER <last-save>` and `tlm SOV <last-save>` — read the quarterly `wa_tlm_comp_armor_mech_pct_hist` series (instrumentation shipped 2026-08-11, WA_TLM pilot: banded `has_army_size` ladder, monthly gauges + quarterly ring buffer on majors; see `documentation/WA_TLM_TELEMETRY_SYSTEM.md` §6). Pass: GER **and** SOV ≥ 18 at some sampled quarter of 1942+. Absence contract: no `wa_tlm_*` namespace = pre-TLM build, probe void. **First-campaign sanity cross-check before scoring:** `wa_tlm_comp_armor` = 0 on a country with known fielded tanks means the `has_army_size` type token silently failed — mark NOT CHECKED and fix the ladder, do not score. *(Probe gap history 2026-08-10: no `wa_ai_template*` variable ever reached saves and divisions reference templates by numeric id only — composition was unrecoverable from a save; this instrumentation is the fix.)*
 - **Threshold:** 5 (behavioural).
 - **Streak:** 1
 - **History:**
@@ -382,6 +383,17 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **Pass:** (1) ENG by ~1943.9: flag set, `wa_ai_overext_dbg_active > 0`, `wa_ai_overext_dbg_mic_redirects_cic` climbing (and `_refinery ≥ 1` given ENG's coal/tech/law); (2) behavioural: ENG active mil-line factory count plateaus ~380-400 instead of the `31eaf7e6` climb to 429, AND ENG UK-isles civilian IC finally moves off its 161 flatline; (3) negative controls: USA and SOV never carry the flag, `dbg_active` absent/0 all campaign; (4) oil writer live: `wa_ai_needs_oil > 0` on at least one oil-importing AI major by ~1941; (5) no country shows zero construction while flagged (the substitution guarantee).
 - **Probe:** `var <TAG> "^wa_ai_(overext_dbg|needs_oil|industry_overextended)"` on ENG/USA/SOV/GER/JAP across war saves; ENG mil-line count via `production → military_lines` summed `active_factories`; UK-isles IC sum per the R23/economy method. Criteria (1)/(3)/(4)/(5) are narrow; (2) is behavioural corroboration — cite under F8 if it moves army-supply outcomes.
 - **Threshold:** 3 (narrow variable probes; criterion 2 informs but does not gate retirement).
+- **Streak:** 0
+- **History:**
+  - NOT YET TESTED — fix postdates every campaign in the registry.
+
+### R25. PC refinery strategies fire for import-strangled countries (Fix 40)
+
+- **Fix under test:** `5c85cd41a`. Refinery strategies moved outside the dispatcher's `can_afford` umbrella (option B); filtered two-pass state draw (`WA_AI_refinery_region_priority` home-first, then owned+safe wide pass); explicit `_project_queue_max = 1`; input self-sufficiency (aluminium arms need domestic bauxite, steel arms domestic iron). No new instrumentation — probes read existing PC queue variables.
+- **Pass:** (1) ENG (reference import-strangled major) queues ≥1 project of type 8/15/11 at some point 1942–45 (`wa_ai_pc_building_type` — zero across all of `31eaf7e6`); (2) counters live: ENG's `wa_ai_resource_*_shortage_months` change value across saves instead of freezing; (3) **negative guard (D2):** ENG never queues type 16/12 and gains no `aluminium_refinery` levels while its `resource@bauxite` is negative — a type-16 ENG project is a FAIL; same check on convoy-fed JAP for steel/aluminium; (4) bound: no country holds >1 queued project of the same refinery type simultaneously; (5) wide pass: ≥1 refinery targets an owned state outside the builder's home area (proves pass 2 fires); (6) Fix 39 unbroken: an overextended country shows `wa_ai_overext_dbg_mic_redirects_refinery > 0` with a type-8 project in the same save.
+- **Probe:** `var <TAG> "^wa_ai_pc_(building_type|target_state)"` + `"^wa_ai_resource_.*_shortage_months"` + `"^wa_ai_overext_dbg"` on ENG/USA/JAP across war saves; state `aluminium_refinery`/`steel_refinery` building levels for (3).
+- **Watch item:** D2's absolute import thresholds (`< 40`) may over-block very large mostly-domestic industries — if NO country ever builds a steel mill, revisit the threshold before failing the item.
+- **Threshold:** 3 (narrow queue/variable probes).
 - **Streak:** 0
 - **History:**
   - NOT YET TESTED — fix postdates every campaign in the registry.
