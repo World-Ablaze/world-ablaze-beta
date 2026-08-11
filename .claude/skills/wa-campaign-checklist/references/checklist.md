@@ -345,6 +345,16 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **History:**
   - NOT YET TESTED — fix postdates every campaign in the registry.
 
+### R22. Mulberry harbours spawn at D-Day and dismantle on schedule (Fix 36b)
+
+- **Fix under test:** `763488d04`. Two level-5 naval bases set instantly at the scripted landing — province 3579 (Mulberry A, `WA_AI_invasions.2`) and 13851 (Mulberry B, `.34`) — removed 120 days later by `WA_AI_invasions.84` (idempotent double-fire by design).
+- **Pass:** in the first campaign with a scripted D-Day: (1) the first post-landing save shows `naval_base` level 5 at provinces 3579 and 13851 (top-level `provinces={}` block); (2) a save ≥5 months post-landing shows them back at 0 (dismantled); (3) beachhead supply corroboration — the landing does not repeat the `31eaf7e6` capacity-5 starvation signature (Normandy hubs' demand/capacity gap closes vs that baseline, judged qualitatively with R21's port-healthy read).
+- **Probe:** `provinces={}` naval_base levels at 3579/13851 in the landing-month save +1 and +5 months; cross-read R21 (Cherbourg/Le Havre healthy) and F5.
+- **Threshold:** 3 (narrow — building levels at fixed provinces and dates).
+- **Streak:** 0
+- **History:**
+  - NOT YET TESTED — fix postdates every campaign in the registry.
+
 ### R21. Port demolition is capped and gated (Fix 36)
 
 - **Fix under test:** `b74f91889` (Fix 36). The `GER_nero_decree` on_action demolition (`100_wa_on_actions.txt`, `on_state_control_changed`) now requires the capturer to be at war with GER, fires once per state (state flag `WA_port_demolished`), and deals `clamp(level−3, 0, 4)` naval-base damage instead of a flat 10; the `scorch_earth` decision's naval_base component shares the cap and the flag guard. Ports ≤3 untouched.
