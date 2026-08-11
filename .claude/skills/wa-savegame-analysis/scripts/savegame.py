@@ -13,6 +13,8 @@ Commands:
   var TAG PATTERN FILE...       matching country variables across saves, date-ordered (trends)
   ideas TAG FILE... [--match]   active ideas (+ timed_idea days) across saves, date-ordered
   flags FILE [TAG] [--match]    global flags (no TAG) or country flags, with set-dates
+  tlm TAG FILE... [--match]     WA_TLM telemetry dashboard: scalars + decoded ring buffers
+                                (clock values -> dates; see documentation/WA_TLM_TELEMETRY_SYSTEM.md)
 """
 import argparse
 import io
@@ -304,6 +306,66 @@ def cmd_flags(args):
         print(f"{name}\tvalue={value}\tset={date}")
 
 
+def _tlm_date(clock):
+    """WA_TLM clock (months since 1936.1) -> 'YYYY.MM'."""
+    m = int(round(clock))
+    return f"{1936 + m // 12}.{1 + m % 12}"
+
+
+def cmd_tlm(args):
+    """WA_TLM telemetry: scalars, stamps decoded to dates, ring buffers paired
+    with the wa_tlm_hist_t axis. Namespace contract (absence semantics, types):
+    documentation/WA_TLM_TELEMETRY_SYSTEM.md."""
+    pat = re.compile(args.match) if args.match else None
+    for meta, f in sorted_by_date([resolve(f) for f in args.files]):
+        date = meta.get("date", "?")
+        with open_save(f) as fh:
+            sec = extract_section(fh, args.tag, "variables")
+        print(f"=== {date}  {args.tag}  ({os.path.basename(f)}) ===")
+        if not sec:
+            print("  (no variables section - country dead or never scripted)")
+            continue
+        scalars, arrays = {}, {}
+        for line in (l.strip() for l in sec[1:-1]):
+            m = re.match(r"^(wa_tlm_[a-z0-9_]+?)(?:\^(\d+|num))?=(-?[\d.]+)$", line)
+            if not m:
+                continue
+            name, idx, val = m.group(1), m.group(2), float(m.group(3))
+            if idx is None:
+                scalars[name] = val
+            elif idx != "num":
+                arrays.setdefault(name, {})[int(idx)] = val
+        if not scalars and not arrays:
+            print("  (no wa_tlm_* variables - build predates WA_TLM: probe void, not FAILED)")
+            continue
+        for name in sorted(scalars):
+            if pat and not pat.search(name):
+                continue
+            val = scalars[name]
+            if name.endswith("_t") and val > 0:
+                print(f"  {name}={val:g}  ({_tlm_date(val)})")
+            else:
+                print(f"  {name}={val:g}")
+        axis = arrays.pop("wa_tlm_hist_t", None)
+        for name in sorted(arrays):
+            if pat and not pat.search(name):
+                continue
+            series = arrays[name]
+            print(f"  series {name} ({len(series)} samples):")
+            if axis is None:
+                print("    (!) no wa_tlm_hist_t axis found - printing raw indices")
+                for i in sorted(series):
+                    print(f"    [{i}]  {series[i]:g}")
+                continue
+            if len(axis) != len(series):
+                print(f"    (!) axis/series length mismatch ({len(axis)} vs {len(series)}) - "
+                      "pairing is unreliable, report as instrumentation bug")
+            for i in sorted(series):
+                t = axis.get(i)
+                label = _tlm_date(t) if t is not None else f"[{i}]"
+                print(f"    {label:>9}  {series[i]:g}")
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -353,6 +415,12 @@ def main():
     s.add_argument("tag", nargs="?")
     s.add_argument("--match", help="only flag names matching this regex")
     s.set_defaults(fn=cmd_flags)
+
+    s = sub.add_parser("tlm", help="WA_TLM telemetry dashboard for a country")
+    s.add_argument("tag")
+    s.add_argument("files", nargs="+")
+    s.add_argument("--match", help="only metric names matching this regex")
+    s.set_defaults(fn=cmd_tlm)
 
     args = p.parse_args()
     args.fn(args)

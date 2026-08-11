@@ -34,6 +34,7 @@ If a FAILED reveals a *new* defect (not the one the item tracks), that's a findi
 
 - **FUNDAMENTAL** items define what a healthy campaign looks like (the WW2 arc, no-pathology invariants, the game boots). They are **never removed**, keep accumulating history forever, and their streak is informational only.
 - **RETIREABLE** items verify a specific shipped fix. Each carries a retirement threshold chosen when the item is created: **3 consecutive PASSED** for narrow probes (a variable exists, a factory count clears a floor), **5 consecutive PASSED** for behavioural outcomes (a front moves, an army composition stays sane). When the streak reaches the threshold, **delete the item** from the checklist in the same session, noting the retirement in the commit message. If the fix was subtle enough to deserve a permanent record, its durable rule belongs in `wa-lessons-learned` — the checklist is a working queue, not an archive.
+- **Retiring an item also retires its instrumentation, in the same session.** Delete the item's probe write sites, init lines, and registry row (`WA_TLM_r<NN>_*` per `documentation/WA_TLM_TELEMETRY_SYSTEM.md` §3.7; legacy `*_dbg_*` families likewise — several items carry an explicit "retire the instrumentation with this item" note). Orphaned telemetry that keeps writing after its consumer is gone is the failure mode the WA_TLM registry exists to prevent. **Exception — promotion:** before deleting, apply the standing-vs-probe test (doc §3.8). If analysis sessions used the metric beyond the item's own pass/fail (it fed a FUNDAMENTAL item, it replaced a multi-save parse), promote it to a standing `WA_TLM_<system>_*` name with a registry row instead of deleting it, and say so in the retirement commit.
 
 ## Adding items — every fix ships with a probe
 
@@ -41,7 +42,7 @@ When a fix commit lands on the AI/balance stack, add a RETIREABLE item **in the 
 
 - State the pass criterion concretely (thresholds, dates, tags/archetypes) and the exact probe (`savegame.py` command or section+pattern) an extraction subagent can run without further context.
 - Cite the fix commit hash, choose 3 or 5 for the threshold and say which and why.
-- If the fix has no natural save-visible fingerprint, add a `*_dbg_*` persistent variable to the fix itself so the probe exists (see memory `test-campaigns-cloud-machine`).
+- If the fix has no natural save-visible fingerprint, add instrumentation to the fix itself so the probe exists (see memory `test-campaigns-cloud-machine`). New instrumentation follows the WA_TLM standard (`documentation/WA_TLM_TELEMETRY_SYSTEM.md`): a `WA_TLM_r<NN>_*` metric registered there, zero-initialised, counters incremented only on *verified* effect (never on code-path entry), stamps as `_first_t`/`_last_t` pairs (a lone `fire_only_once` stamp over-affirms). Probe with `savegame.py tlm TAG <saves>`. Existing `*_dbg_*` families stay as they are and retire with their items.
 - Initial status is `NOT YET TESTED`, streak 0.
 
 New FUNDAMENTAL items are rare and are a design statement — add one only when the definition of a healthy campaign genuinely grows (e.g. a Pacific-termination chain finally exists and must keep working).

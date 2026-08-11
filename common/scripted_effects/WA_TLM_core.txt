@@ -1,0 +1,144 @@
+############################################################################################################
+#	WA_TLM - save-visible telemetry for AI systems
+#
+#	Design + registry + honesty rules: documentation/WA_TLM_TELEMETRY_SYSTEM.md
+#	Retrieval: savegame.py `tlm TAG FILE...` (regex ^wa_tlm_ on the country's variables)
+#
+#	RESERVED NAMESPACE: everything prefixed WA_TLM_ is telemetry. It is WRITE-ONLY
+#	from the mod's point of view - no gameplay/AI logic may ever read a WA_TLM_
+#	variable. Saves lowercase variable names: the save-side namespace is wa_tlm_.
+#
+#	Wiring:
+#	  on_startup  (WA_AI_startup_on_actions.txt) - global clock = 0, WA_TLM_init_country for every country
+#	  on_monthly  (WA_AI_misc_on_actions.txt)    - WA_TLM_tick_clock + WA_TLM_monthly_sample, is_ai gated
+############################################################################################################
+
+# Bump when the registered metric set changes; the sampler re-inits on mismatch so
+# new metrics exist at 0 even on campaigns resumed on a newer build.
+@WA_TLM_VERSION = 1
+
+############################################################################################################
+#	Clock - global.WA_TLM_clock = months elapsed since 1936.1
+#	Scope: any country (called from the per-country monthly pulse; the timed global
+#	flag guarantees exactly one increment per calendar month).
+############################################################################################################
+WA_TLM_tick_clock = {
+	if = { limit = { NOT = { has_global_flag = WA_TLM_clock_ticked } }
+		set_global_flag = { flag = WA_TLM_clock_ticked value = 1 days = 20 }
+		add_to_variable = { global.WA_TLM_clock = 1 }
+	}
+}
+
+############################################################################################################
+#	Init - zero every registered metric + stamp the version.
+#	Scope: country. Called at startup for every country and lazily from the monthly
+#	sampler for tags created mid-game (civil wars, releases).
+#	The zero-init is the absence contract: namespace absent = pre-TLM build;
+#	metric 0 with _last_t 0 = never sampled; metric 0 with _last_t > 0 = real zero.
+############################################################################################################
+WA_TLM_init_country = {
+	set_variable = { WA_TLM_version = @WA_TLM_VERSION }
+
+	# composition (pilot, consumer: checklist R6 / F8)
+	set_variable = { WA_TLM_comp_div_total = 0 }
+	set_variable = { WA_TLM_comp_armor = 0 }
+	set_variable = { WA_TLM_comp_mech = 0 }
+	set_variable = { WA_TLM_comp_armor_mech_pct = 0 }
+	set_variable = { WA_TLM_comp_last_t = 0 }
+	clear_array = WA_TLM_hist_t
+	clear_array = WA_TLM_comp_armor_mech_pct_hist
+}
+
+############################################################################################################
+#	Monthly sampler - dispatch. Scope: country, is_ai gated by the caller.
+############################################################################################################
+WA_TLM_monthly_sample = {
+	if = { limit = { NOT = { check_variable = { WA_TLM_version = @WA_TLM_VERSION } } }
+		WA_TLM_init_country = yes
+	}
+	WA_TLM_sample_composition = yes
+}
+
+############################################################################################################
+#	Composition sample (pilot - fills the R6 probe gap: no save-visible army
+#	composition metric existed; divisions reference templates by numeric id only).
+#
+#	Script has no numeric divisions-by-type getter, so armor/mech counts are
+#	BANDED: an ascending has_army_size threshold ladder stores the highest floor
+#	passed. has_army_size counts divisions by dominant type = "fielded share" in
+#	R6's sense. type = infantry/motorized precedent: common/decisions/GER_factions.txt:155.
+#	Boot-check note (F9): if armor/mechanized were invalid type tokens the ladder
+#	would read 0 on countries with known tanks - do not score R6 off a reading
+#	that fails that sanity cross-check on the first instrumented campaign.
+############################################################################################################
+WA_TLM_sample_composition = {
+	# tlm: comp_div_total - gauge, all AI countries - consumer: R6/F8 (standing)
+	set_variable = { WA_TLM_comp_div_total = num_divisions }
+
+	# tlm: comp_last_t - sample stamp (absence contract, doc 3.5). Written with the
+	# WIDEST gauge of the family, not inside the major gate - otherwise a minor's
+	# genuine zero reads as "never sampled" (found in the 1936.4 smoke test: BHU).
+	set_variable = { WA_TLM_comp_last_t = global.WA_TLM_clock }
+
+	# The ladders and the ring buffer are major-gated (cost discipline, doc 3.4);
+	# R6 scores GER/SOV, and the archetype covers every candidate.
+	if = { limit = { WA_AI_CONFIG_is_major_country = yes }
+
+		# tlm: comp_armor - banded gauge - consumer: R6 (standing)
+		set_temp_variable = { _tlm_armor_ = 0 }
+		if = { limit = { has_army_size = { size > 4 type = armor } } set_temp_variable = { _tlm_armor_ = 5 } }
+		if = { limit = { has_army_size = { size > 9 type = armor } } set_temp_variable = { _tlm_armor_ = 10 } }
+		if = { limit = { has_army_size = { size > 14 type = armor } } set_temp_variable = { _tlm_armor_ = 15 } }
+		if = { limit = { has_army_size = { size > 19 type = armor } } set_temp_variable = { _tlm_armor_ = 20 } }
+		if = { limit = { has_army_size = { size > 29 type = armor } } set_temp_variable = { _tlm_armor_ = 30 } }
+		if = { limit = { has_army_size = { size > 39 type = armor } } set_temp_variable = { _tlm_armor_ = 40 } }
+		if = { limit = { has_army_size = { size > 59 type = armor } } set_temp_variable = { _tlm_armor_ = 60 } }
+		if = { limit = { has_army_size = { size > 79 type = armor } } set_temp_variable = { _tlm_armor_ = 80 } }
+		if = { limit = { has_army_size = { size > 119 type = armor } } set_temp_variable = { _tlm_armor_ = 120 } }
+		if = { limit = { has_army_size = { size > 159 type = armor } } set_temp_variable = { _tlm_armor_ = 160 } }
+		if = { limit = { has_army_size = { size > 239 type = armor } } set_temp_variable = { _tlm_armor_ = 240 } }
+		if = { limit = { has_army_size = { size > 319 type = armor } } set_temp_variable = { _tlm_armor_ = 320 } }
+		set_variable = { WA_TLM_comp_armor = _tlm_armor_ }
+
+		# tlm: comp_mech - banded gauge - consumer: R6 (standing)
+		set_temp_variable = { _tlm_mech_ = 0 }
+		if = { limit = { has_army_size = { size > 4 type = mechanized } } set_temp_variable = { _tlm_mech_ = 5 } }
+		if = { limit = { has_army_size = { size > 9 type = mechanized } } set_temp_variable = { _tlm_mech_ = 10 } }
+		if = { limit = { has_army_size = { size > 14 type = mechanized } } set_temp_variable = { _tlm_mech_ = 15 } }
+		if = { limit = { has_army_size = { size > 19 type = mechanized } } set_temp_variable = { _tlm_mech_ = 20 } }
+		if = { limit = { has_army_size = { size > 29 type = mechanized } } set_temp_variable = { _tlm_mech_ = 30 } }
+		if = { limit = { has_army_size = { size > 39 type = mechanized } } set_temp_variable = { _tlm_mech_ = 40 } }
+		if = { limit = { has_army_size = { size > 59 type = mechanized } } set_temp_variable = { _tlm_mech_ = 60 } }
+		if = { limit = { has_army_size = { size > 79 type = mechanized } } set_temp_variable = { _tlm_mech_ = 80 } }
+		if = { limit = { has_army_size = { size > 119 type = mechanized } } set_temp_variable = { _tlm_mech_ = 120 } }
+		if = { limit = { has_army_size = { size > 159 type = mechanized } } set_temp_variable = { _tlm_mech_ = 160 } }
+		if = { limit = { has_army_size = { size > 239 type = mechanized } } set_temp_variable = { _tlm_mech_ = 240 } }
+		if = { limit = { has_army_size = { size > 319 type = mechanized } } set_temp_variable = { _tlm_mech_ = 320 } }
+		set_variable = { WA_TLM_comp_mech = _tlm_mech_ }
+
+		# tlm: comp_armor_mech_pct - derived gauge, 100 * (armor + mech) / total - consumer: R6 (standing)
+		set_temp_variable = { _tlm_am_ = _tlm_armor_ }
+		add_to_temp_variable = { _tlm_am_ = _tlm_mech_ }
+		multiply_temp_variable = { _tlm_am_ = 100 }
+		if = { limit = { check_variable = { WA_TLM_comp_div_total > 0 } }
+			divide_temp_variable = { _tlm_am_ = WA_TLM_comp_div_total }
+		}
+		else = {
+			set_temp_variable = { _tlm_am_ = 0 }
+		}
+		set_variable = { WA_TLM_comp_armor_mech_pct = _tlm_am_ }
+
+		# Quarterly ring buffer, shared time axis, depth 44 (= 11 game-years).
+		# Push value and axis on the SAME tick or every later pairing shifts (doc 4, risk ii).
+		set_temp_variable = { _tlm_q_ = global.WA_TLM_clock }
+		modulo_temp_variable = { _tlm_q_ = 3 }
+		if = { limit = { check_variable = { _tlm_q_ = 0 } }
+			add_to_array = { array = WA_TLM_hist_t value = global.WA_TLM_clock }
+			add_to_array = { array = WA_TLM_comp_armor_mech_pct_hist value = WA_TLM_comp_armor_mech_pct }
+			if = { limit = { check_variable = { WA_TLM_hist_t^num > 44 } }
+				remove_from_array = { array = WA_TLM_hist_t index = 0 }
+				remove_from_array = { array = WA_TLM_comp_armor_mech_pct_hist index = 0 }
+			}
+		}
+	}
+}

@@ -59,6 +59,7 @@ Read the relevant one before changing a documented system; several are explicitl
 | `documentation/WA_AI_RAILWAY_SYSTEM_EDGE_CASES.md`, `_TEST_CASES.md` | Debugging railway behaviour or extending its test suite. |
 | `documentation/WA_AI_DIVISION_TEMPLATES.md` | Template / division-creator work. |
 | `documentation/PDXSCRIPT_LANGUAGE_NOTES.md` | Language questions — backing reference for `wa-pdxscript`. |
+| `documentation/WA_TLM_TELEMETRY_SYSTEM.md` | Adding any save-visible probe, counter, or metric (the `WA_TLM_` namespace read by campaign-analysis agents). §7 is the author checklist. |
 | `documentation/HOI4_TESTS_AND_TRIGGERS_NOTES.md`, `WA_TEST_WRITING_GUIDELINES.md` | Test work — backing reference for `wa-testing`. |
 
 ## Finding the owner of a behaviour
@@ -90,7 +91,7 @@ These are the rules that produce silent, hard-to-diagnose breakage when violated
 4. **Country tags live in `WA_AI_CONFIG.txt` — nowhere else.** All country classification goes through CONFIG archetype triggers; before writing `tag =` / `original_tag =` anywhere else, reformulate the rule as an archetype question. The Country layer (`WA_AI_MILITARY_COUNTRY_<TAG>*`, `events/WA_AI_<TAG>.txt`, `common/ai_equipment/<TAG>_*`) is the sole sanctioned exception, for behaviour genuinely unique to one nation.
 5. **AI behaviour must survive ahistorical games.** Gate on dynamic game state (faction, wars, ideology, archetype, geography), never on the assumption that the historical script played out. A rule that only fires on the historical path leaves the AI with no behaviour when the game diverges — see `wa-ai-systems` § "Design for ahistorical games".
 6. **Impact analysis before changing existing AI systems.** Enumerate all callers, identify who reaches the code, walk historical and ahistorical scenarios through the change, check `# Fix NN:` comments and `wa-lessons-learned`, and state the regression risk. Prefer additive gated changes over rewrites of shared paths — see `wa-ai-systems` § "Changing an existing system".
-7. **Keep the prefixes.** `WA_` for gameplay content, `WA_AI_` for AI systems, `WA_TEST_` for test harnesses. Generic names collide with vanilla and DLC.
+7. **Keep the prefixes.** `WA_` for gameplay content, `WA_AI_` for AI systems, `WA_TEST_` for test harnesses, `WA_TLM_` for save-visible telemetry (reserved and write-only — gameplay logic never reads it). Generic names collide with vanilla and DLC.
 8. **Check brace balance before finishing.** HOI4 reports most parse errors only at game launch, so nothing in your toolchain will catch it for you.
 
 ```powershell

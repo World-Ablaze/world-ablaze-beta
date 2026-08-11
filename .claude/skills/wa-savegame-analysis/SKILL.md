@@ -37,6 +37,7 @@ python .claude/skills/wa-savegame-analysis/scripts/savegame.py <command>
 | `var TAG PATTERN FILE...` | Country variables matching a regex, across several saves, date-ordered — the trend command. |
 | `ideas TAG FILE... [--match RE]` | Active ideas (+ `timed_idea` days remaining, ruling party, political power) across saves, date-ordered. |
 | `flags FILE [TAG] [--match RE]` | Global flags (no TAG) or country flags, each with value and set-date. |
+| `tlm TAG FILE... [--match RE]` | WA_TLM telemetry dashboard: scalars (stamps decoded to dates) + ring-buffer series paired with the `wa_tlm_hist_t` axis. Contract and metric registry: `documentation/WA_TLM_TELEMETRY_SYSTEM.md`. |
 
 Bare filenames resolve against the default save dir: `~\Documents\Paradox Interactive\Hearts of Iron IV\save games`. Files are 60–150MB / ~4.4M lines — never Read one, never load one into memory, and don't trust shell `grep` here (the rtk proxy mangles its output; the script or a streaming Python one-liner is the reliable path).
 
@@ -80,6 +81,23 @@ Countries live in `countries={ TAG={ … } }`. Useful depth-2 sections inside a 
 - The save's own indentation lies: malformed blocks put braces at column 0 mid-file. The script counts braces instead of trusting indentation; do the same in any ad-hoc parsing.
 - Line numbers of anchors (`countries={`, a tag block) differ per save — never reuse offsets across files.
 - Saves are snapshots at in-game hour granularity. A weekly-cadence AI value observed in a save was computed at the most recent pulse before the save date, not at the save date itself.
+
+## WA_TLM telemetry (builds from 2026-08-11 on)
+
+Instrumented builds carry a standardized `wa_tlm_*` namespace on every country
+(design: `documentation/WA_TLM_TELEMETRY_SYSTEM.md`). Three things change how you probe:
+
+- **Trends may not need multi-save parsing.** Ring-buffer series (`*_hist` paired with
+  `wa_tlm_hist_t`) carry up to 11 game-years of quarterly samples inside the *latest* save —
+  run `tlm TAG <last-save>` before planning an 8-save `var` sweep.
+- **Absence is tri-state and trustworthy:** no `wa_tlm_*` at all = pre-TLM build (probe
+  void, never FAILED); metric 0 with `_last_t` 0 = code path never sampled; metric 0 with
+  `_last_t` > 0 = a real zero reading.
+- Time is encoded as `global.WA_TLM_clock` = months since 1936.1; the `tlm` command decodes
+  it (`101` → `1944.6`). Raw `var` output shows undecoded clock values.
+
+Legacy `wa_ai_*_dbg_*` families remain per-fix and retire with their checklist items —
+probe them exactly as each item's `Probe:` line says.
 
 ## Trend workflow
 
