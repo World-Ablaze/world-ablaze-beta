@@ -218,6 +218,7 @@ regardless of local superiority (the 1944 France passivity bug).
 | Consumers (Faction layer) | `WA_AI_MILITARY_ALLIES_exec_vs_germany` / `_grind_vs_germany` and `WA_AI_MILITARY_ALLIES_downfall_push_FRONT` (ALLIES), `WA_AI_MILITARY_AXIS_exec_vs_sov` / `_grind_vs_sov` (AXIS), `WA_AI_MILITARY_CHINA_FRONT_exec_vs_japan` / `_grind_vs_japan` (CHINA_FRONT) |
 | Consumers (Country layer) | `WA_AI_MILITARY_SOV_counterattack` (SOV vs GER), `WA_AI_MILITARY_JAP_chinese_war_4` + the posture-0 fallback in `_chinese_war_3` (JAP vs CHI), `WA_AI_MILITARY_ITA_north_africa_offensive_exec_FRONT` (ITA vs the East-Egypt controller, via `WA_AI_MILITARY_north_africa_offensive_viable`) |
 | Consumers (Default layer) | `WA_AI_MILITARY_EXEC_low_equipment_hold` |
+| Consumers (AIFC) | `WA_AI_AIFC_posture_offensive` reads the `WA_AI_MILITARY_posture` aggregate; `WA_AI_AIFC_posture_defensive` reads the `WA_AI_AIFC_hold_the_line` flag |
 
 Published state per AI country: `WA_AI_MILITARY_posture` (0 = hold, 1 = execute, 2 = attrition grind),
 `WA_AI_MILITARY_posture_vs_<TAG>` per major enemy, and the `WA_AI_AIFC_hold_the_line` flag while the hard
@@ -235,6 +236,18 @@ holds a deep reserve - attrition is then profitable even at odds below the level
 `careful`. The long-orphaned `WA_AI_defensive_front_strategy` low-equipment flag
 (`WA_AI_misc_effects.txt`) is the primary hard-brake input and now has a Default-layer `front_control`
 consumer.
+
+**This system is the single writer of "we are collapsing" (Fix 43).** Every hard-brake branch pairs lost
+ground with a capability term, so the brake releases when the country recovers: the `> 0.2` tier pairs
+with equipment-or-manpower, and the near-capitulation `> 0.45` tier pairs with
+`WA_AI_MILITARY_army_still_operational` (>40 divisions AND >20 controlled states AND the manpower floor
+AND `WA_AI_fielded_eq_ratio` > 0.9 - a four-term conjunction, because equipment alone calls a
+fully-equipped 3-division rump operational). Other systems consume the verdict rather than re-deriving
+one; AIFC in particular reads the published `WA_AI_AIFC_hold_the_line` flag and the
+`WA_AI_MILITARY_posture` aggregate. **Do not gate AI capability on `surrender_progress` anywhere.** It
+measures VP loss, so a country with a script-raised capitulation limit occupies any threshold
+indefinitely - the USSR held above 0.2 for four game-years in campaign `911bed3c` with 350-400
+divisions at full equipment, and every bare threshold it crossed became a permanent lockout.
 
 Two secondary inputs refine the verdicts (constants at the top of the effects file):
 

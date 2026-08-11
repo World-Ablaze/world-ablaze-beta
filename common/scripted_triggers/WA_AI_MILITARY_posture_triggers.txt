@@ -32,8 +32,12 @@
 ### Posture eligibility constants (must match common/scripted_effects/WA_AI_MILITARY_posture_effects.txt)
 @WA_AI_POSTURE_MIN_EQ = 0.9			# fielded-equipment ratio required to order any execution
 @WA_AI_POSTURE_BRAKE_SURRENDER = 0.2	# lost ground brakes only a weakened army (see hard-brake trigger)
-@WA_AI_POSTURE_BRAKE_SURRENDER_HARD = 0.45	# near-capitulation brakes unconditionally
+@WA_AI_POSTURE_BRAKE_SURRENDER_HARD = 0.45	# near-capitulation brakes an army that is not still operational
 @WA_AI_POSTURE_BRAKE_MIN_MP = 150000	# manpower floor for the weakened-army test (matches MIN_OWN_MP)
+
+### "Army still operational" constants (triggers-file only; no effects-file twin)
+@WA_AI_POSTURE_ALIVE_MIN_DIV = 40		# fewer deployed divisions than this is a rump, not an army
+@WA_AI_POSTURE_ALIVE_MIN_STATES = 20	# state base below this cannot sustain one (matches the railway hatch)
 
 
 ############################################################################################################
@@ -98,11 +102,59 @@ WA_AI_MILITARY_posture_hard_brake = {
 			}
 		}
 
-		# Near-capitulation is different: two more cities and the war is over, every division holds.
-		surrender_progress > @WA_AI_POSTURE_BRAKE_SURRENDER_HARD
+		# Near-capitulation: two more cities and the war is over, every division holds - UNLESS the army
+		# is still a real army. Fix 43: this branch used to be unconditional, which re-latched the brake
+		# permanently on SOV from ~1944.5 in campaign 911bed3c while it fielded 368 divisions at 0.977
+		# fielded equipment (Stalingrad fell 1944.5.21). It is the same mistake the 0.2 branch above was
+		# already corrected for; surrender_progress answers "how close to capitulating", never "can this
+		# country still fight", and for a country with a script-raised capitulation limit it is a state
+		# that can be occupied indefinitely.
+		AND = {
+			surrender_progress > @WA_AI_POSTURE_BRAKE_SURRENDER_HARD
+			NOT = { WA_AI_MILITARY_army_still_operational = yes }
+		}
 
 		# Deliberately no fuel condition: fuel_ratio sits near zero for low-industry countries whose
 		# infantry armies attack fine without it (China vs Japan). Add a fuel brake only if it can be
 		# scoped to mechanized armies.
 	}
+}
+
+
+############################################################################################################
+#	Is this still a functioning army, whatever the map says?
+#	THIS = COUNTRY
+#
+#	The capability counterweight to surrender_progress, used to keep the near-capitulation brake above
+#	from latching on a country that has lost ground but not its army (Fix 43). Deliberately a FOUR-term
+#	conjunction - each term catches a collapse the others miss, validated against campaign 911bed3c:
+#
+#		divisions   France's 1941-45 rump ran 7 -> 1 divisions at a fielded-equipment ratio as high as
+#		            0.991 (a handful of units, fully equipped). Equipment alone would have called that
+#		            army operational. This is the term that catches it.
+#		states      A country reduced to a few states cannot sustain an army even if it currently has
+#		            one; 20 is lifted verbatim from the validated railway escape hatch
+#		            (WA_AI_misc_on_actions.txt:157).
+#		manpower    An army on paper with no pool behind it cannot take losses; same floor as the
+#		            weakened-army test above.
+#		equipment   France 1940.6 (112 divisions, ratio 0.701) and Italy from 1944.6 (74 divisions,
+#		            ratio 0.734) are hollow armies and must still brake. This is the term that catches
+#		            them - and it is what makes the release reachable by RECOVERING, which is the whole
+#		            point: SOV 1943.6 (388 div, 0.995) and 1944.6 (368 div, 0.977) pass here.
+#
+#	Threshold margin in that dataset: dying armies sit at 16-37 divisions, live ones at 74+, so 40 has
+#	roughly 2x headroom in both directions. 0.9 is @WA_AI_POSTURE_MIN_EQ, the bar the rest of this system
+#	already uses to order any execution.
+#
+#	has_variable guard: an absent ratio means the background MTTH event has not fired for this tag yet.
+#	Absent therefore reads as "not proven operational" and the brake stays on - the conservative
+#	direction, and the opposite of the guards above, where absent must not read as 0.
+############################################################################################################
+
+WA_AI_MILITARY_army_still_operational = {
+	has_army_size = { size > @WA_AI_POSTURE_ALIVE_MIN_DIV }
+	num_of_controlled_states > @WA_AI_POSTURE_ALIVE_MIN_STATES
+	has_manpower > @WA_AI_POSTURE_BRAKE_MIN_MP
+	has_variable = WA_AI_fielded_eq_ratio
+	check_variable = { WA_AI_fielded_eq_ratio > @WA_AI_POSTURE_MIN_EQ }
 }

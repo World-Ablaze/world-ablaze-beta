@@ -57,6 +57,9 @@
 #
 #	NOTE ON STALE PER-ENEMY VARIABLES: WA_AI_MILITARY_posture_vs_<TAG> lingers after a peace. Every
 #	consumer must therefore also gate on has_war_with = <TAG>. Documented at each consumer.
+#	Since Fix 43 the entries ARE retracted for current enemies whenever the posture is reset (peace,
+#	ineligibility, or the hard brake) - see WA_AI_MILITARY_clear_posture. The has_war_with rule still
+#	stands: it is what makes the surviving post-peace entries inert.
 ############################################################################################################
 
 ### Posture constants (must match common/scripted_triggers/WA_AI_MILITARY_posture_triggers.txt)
@@ -472,9 +475,25 @@ WA_AI_MILITARY_update_posture = {
 #	Reset posture to hold
 #	ROOT = country scope
 #
-#	Per-enemy WA_AI_MILITARY_posture_vs_<TAG> variables are NOT cleared here (tag-substituted names
-#	cannot be enumerated); consumers gate on has_war_with, which makes stale entries inert.
-#	Casualty baselines (WA_AI_MILITARY_cas_prev / _cas_prev_<TAG>) also persist deliberately:
+#	Fix 43: this used to zero only the aggregate, on the argument that per-enemy
+#	WA_AI_MILITARY_posture_vs_<TAG> entries cannot be enumerated (tag-substituted names) and that
+#	consumers gating on has_war_with make stale entries inert. That argument holds for the PEACE path
+#	and not for the HARD BRAKE path - under the brake we are still at war with exactly the enemies whose
+#	entries are stale, so has_war_with gates nothing. Campaign 911bed3c: SOV at 1944.6 and 1945.6 read
+#	posture = 0 while posture_vs_GER stayed at 1, leaving WA_AI_MILITARY_SOV_counterattack
+#	(WA_AI_MILITARY_COUNTRY_SOV_FRONT.txt:757) executing with manual_attack = yes while the brake
+#	believed it had stopped everything. It also explains the long-standing "aggregate 0 while every
+#	posture_vs_* reads 1" anomaly in the saves.
+#
+#	every_enemy_country enumerates CURRENT enemies, which is all this path needs; entries left by
+#	former enemies stay stale and stay inert, exactly as the original note describes. The limit mirrors
+#	the writer's population filter (WA_AI_MILITARY_update_posture) so no zero-valued variable is created
+#	for a minor the writer would never have written - minus its has_capitulated test, so an enemy that
+#	capitulated while we were braked still gets its entry retracted. A stale 1 can therefore only
+#	survive on an enemy that has since shrunk below the writer's own size bar, i.e. one we have all but
+#	conquered - which is not a case where suppressing our own attack is wanted.
+#
+#	Casualty baselines (WA_AI_MILITARY_cas_prev / _cas_prev_<TAG>) still persist deliberately:
 #	casualties_k is monotonic, so a kept baseline stays correct across pauses, while clearing one
 #	would turn the next delta into a full-history spike.
 ############################################################################################################
@@ -482,6 +501,23 @@ WA_AI_MILITARY_update_posture = {
 WA_AI_MILITARY_clear_posture = {
 
 	set_variable = { WA_AI_MILITARY_posture = 0 }
+
+	every_enemy_country = {
+		limit = {
+			exists = yes
+			OR = {
+				is_major = yes
+				num_of_controlled_states > 4
+			}
+		}
+
+		# THIS = the enemy. Inside the ROOT block PREV is the enemy again, so the substituted name and
+		# the owning scope both match the write site in WA_AI_MILITARY_update_posture exactly - this is
+		# a deliberate copy of that idiom, not an equivalent-looking rewrite.
+		ROOT = {
+			set_variable = { WA_AI_MILITARY_posture_vs_@PREV = 0 }
+		}
+	}
 }
 
 

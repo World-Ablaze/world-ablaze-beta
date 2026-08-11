@@ -14,7 +14,9 @@
 
 ### AIFC eligibility constants (must match common/scripted_effects/WA_AI_AIFC_core.txt)
 @WA_AI_AIFC_MIN_STATES = 2			# Skip micro-nations; nothing to concentrate with
-@WA_AI_AIFC_MAX_SURRENDER = 0.35	# Skip countries already collapsing
+@WA_AI_AIFC_MAX_SURRENDER = 0.35	# Skip countries already collapsing...
+@WA_AI_AIFC_RECOVERY_MIN_STATES = 20	# ...unless the army is intact: states above this AND
+@WA_AI_AIFC_RECOVERY_MIN_DIV = 40		# divisions above this (Fix 43 escape hatch, see below)
 
 
 ############################################################################################################
@@ -72,8 +74,10 @@ WA_AI_AIFC_sector_engine_enabled = {
 #	ELIGIBILITY - is it worth running sector selection for this country right now?
 #	THIS = COUNTRY
 #
-#	Cheap pre-checks only. Mirrors the railway system's on_weekly eligibility gate. Anything expensive
-#	belongs inside the effect, not here.
+#	Cheap pre-checks only. Mirrors the railway system's on_weekly eligibility gate
+#	(common/on_actions/WA_AI_misc_on_actions.txt:149-163). That gate was given a recovery escape hatch
+#	by Fix 29/29b (3c55b9d17); this copy is kept in step with it - if the railway hatch changes, change
+#	this one too. Anything expensive belongs inside the effect, not here.
 ############################################################################################################
 
 WA_AI_AIFC_should_select_sector = {
@@ -81,8 +85,22 @@ WA_AI_AIFC_should_select_sector = {
 	has_war = yes
 	has_capitulated = no
 	num_of_controlled_states > @WA_AI_AIFC_MIN_STATES
-	surrender_progress < @WA_AI_AIFC_MAX_SURRENDER
 	any_enemy_country = { exists = yes }
+
+	# Fix 43: surrender_progress measures VP LOSS, not capability. A big country under invasion crosses
+	# 0.35 with its whole army intact, and a country whose capitulation limit is raised by script (SOV via
+	# sov_the_politburo_max_surrender_limit_offset) sits above it INDEFINITELY - so the bare threshold is a
+	# permanent lockout, not a temporary emergency mode. Campaign 911bed3c: SOV lost its sector in 1942.9
+	# and never got another one, while fielding 350-400 divisions at 0.99 fielded-equipment ratio.
+	# The escape hatch is the railway system's, transplanted: territory lost is irrelevant while the army
+	# and the state base are still there. A genuinely collapsing rump fails both terms and is still skipped.
+	OR = {
+		surrender_progress < @WA_AI_AIFC_MAX_SURRENDER
+		AND = {
+			num_of_controlled_states > @WA_AI_AIFC_RECOVERY_MIN_STATES
+			has_army_size = { size > @WA_AI_AIFC_RECOVERY_MIN_DIV }
+		}
+	}
 }
 
 
@@ -106,23 +124,39 @@ WA_AI_AIFC_has_sector = {
 #	turns itself off again once the situation improves.
 #
 #	Any one of these is enough to drop into linear-defence mode.
+#
+#	Fix 43 - "we are collapsing" now has a SINGLE WRITER. This trigger used to carry a standalone
+#	`surrender_progress > 0.2` branch, which published force_concentration_factor = -100 (far below the
+#	engine's -15 hard-off point) on a pure VP-loss metric with no capability term. In campaign 911bed3c
+#	that killed AIFC for the USSR from ~Dec 1941 to the end of the game - through the whole of 1943, when
+#	SOV was at 388 divisions and 0.995 fielded equipment and materially able to attack. A brake whose
+#	release condition cannot be met by getting stronger is not a brake, it is a death spiral.
+#	The identical pattern in WA_AI_MILITARY_posture_triggers.txt:87-99 had ALREADY been refined so that
+#	surrender progress alone cannot latch the hard brake; that refinement was never mirrored here.
+#	It is now: the posture system owns the "we are collapsing" verdict (it pairs lost ground with an
+#	equipment/manpower term and publishes WA_AI_AIFC_hold_the_line), and this trigger consumes that flag
+#	instead of re-deriving a worse version of it. Do not re-add a bare surrender_progress branch here.
 ############################################################################################################
 
 WA_AI_AIFC_posture_defensive = {
 	OR = {
-		# Collapsing - every division is needed on the line, none can be held back for a push.
-		surrender_progress > 0.2
-
 		# Home area under pressure while we are short of equipment: concentrating would strip the line.
 		# has_variable guard: the ratio is computed by a background MTTH event, so a freshly spawned
 		# tag has no value yet - absent must read as "unknown", not as 0 (= critically low).
+		# 0.9 is @WA_AI_POSTURE_MIN_EQ from WA_AI_MILITARY_posture_triggers.txt, written out because
+		# @ constants are file-scoped - keep the two in step. This is now the only self-releasing
+		# capability term in this trigger; it has no hysteresis, so if a campaign ever shows a country
+		# flapping across 0.9 (fc swinging -100 <-> +8 every 5 days) the mitigation is a dead band
+		# (brake below 0.88, release above 0.92). Do NOT substitute the WA_AI_defensive_front_strategy
+		# flag for it: that flag trips at 0.6 and would not have braked SOV-1941 at all.
 		AND = {
 			WA_AI_MILITARY_home_threatened = yes
 			has_variable = WA_AI_fielded_eq_ratio
 			check_variable = { WA_AI_fielded_eq_ratio < 0.9 }
 		}
 
-		# Explicitly ordered to hold by another WA AI system.
+		# Explicitly ordered to hold by the offensive posture system, which is the designated writer of
+		# this flag (WA_AI_MILITARY_posture_effects.txt) and the single authority on "we are collapsing".
 		has_country_flag = WA_AI_AIFC_hold_the_line
 	}
 }
@@ -134,12 +168,24 @@ WA_AI_AIFC_posture_defensive = {
 #
 #	Used to grant a bonus on top of the doctrine ladder. Deliberately conservative: the ladder alone
 #	should already produce a usable concentration, this is the "we are winning, press it" case.
+#
+#	Fix 43: the "we are winning" test was `surrender_progress < 0.05` - i.e. "we have lost almost no
+#	victory points", which excludes every country that has been invaded and pushed back, however
+#	completely it has since recovered. It is now the posture system's own weekly verdict:
+#	WA_AI_MILITARY_posture > 0 means "there is at least one enemy we can beat right now" (level 1
+#	execute or level 2 grind), derived from fighting strength, front-local division counts, equipment,
+#	manpower, casualty exchange and air superiority. That aggregate was computed every week and had
+#	ZERO consumers before this change; it is exactly the question being asked here.
+#
+#	Reads 0 when absent, which is the safe direction: a country whose posture has never been computed
+#	(human player - the posture system is is_ai gated - or an AI not yet at war) gets no bonus rather
+#	than an unearned one.
 ############################################################################################################
 
 WA_AI_AIFC_posture_offensive = {
 	NOT = { WA_AI_AIFC_posture_defensive = yes }
 	has_war = yes
-	surrender_progress < 0.05
+	check_variable = { WA_AI_MILITARY_posture > 0 }
 	check_variable = { WA_AI_fielded_eq_ratio > 0.95 }
 }
 
