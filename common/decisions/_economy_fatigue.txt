@@ -3098,6 +3098,73 @@ economy_decisions = {
 		}
 	}
 
+	# Fix: warbonds ladder retry. Armed by upgrade_warbonds when a series finished issuing
+	# but the next series could not start (typically because the final warbonds_mission
+	# wave drove economic_fatigue to 0, failing every upgrade guard - see campaign
+	# 31eaf7e6, JAP parked on Series_B while fatigue ratcheted to 93). Every 30 days it
+	# re-calls check_and_fire_auto_warbond_event once fatigue has climbed past 9 again
+	# (same threshold as the Series idea ai_will_do gate), and stops when the next series
+	# starts issuing (mission completes), the ladder is finished (Series_G), repayment
+	# starts, the player opted out (no_auto_upgrade_warbonds), or no series is held.
+	warbonds_upgrade_retry_mission = {
+		icon = hol_attract_foreign_investors
+
+		allowed = {
+			always = no
+		}
+
+		# Completes silently as soon as the next bond series starts issuing.
+		available = {
+			has_country_flag = issuing_war_bonds
+		}
+
+		days_mission_timeout = 30
+		is_good = yes
+
+		complete_effect = {
+		}
+
+		timeout_effect = {
+			hidden_effect = {
+				if = {
+					# Keep retrying only while the ladder can still progress.
+					limit = {
+						NOT = { has_country_flag = repaying_war_bonds }
+						NOT = { has_country_flag = no_auto_upgrade_warbonds }
+						NOT = { has_idea = Series_G_bonds }
+						NOT = { has_idea = No_bonds }
+						OR = {
+							has_idea = Series_A_bonds
+							has_idea = Series_B_bonds
+							has_idea = Series_C_bonds
+							has_idea = Series_D_bonds
+							has_idea = Series_E_bonds
+							has_idea = Series_F_bonds
+						}
+					}
+					if = {
+						limit = {
+							check_variable = { economic_fatigue > 9 }
+						}
+						check_and_fire_auto_warbond_event = yes
+					}
+					if = {
+						# Upgrade fired this cycle (issuing_war_bonds set by the new
+						# series' on_add): count it for savegame probes and stop -
+						# the normal mission chain has taken over again.
+						limit = { has_country_flag = issuing_war_bonds }
+						add_to_variable = { wa_warbonds_retry_upgrades = 1 }
+					}
+					else = {
+						# Not yet (fatigue still low, or the player was asked via
+						# afo_event.23 and has not answered) - keep watching.
+						activate_mission = warbonds_upgrade_retry_mission
+					}
+				}
+			}
+		}
+	}
+
 	############################################################################################### ECONOMY
 
 	economy_fatigue_protectionist_policies_mission = {
