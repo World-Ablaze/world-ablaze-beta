@@ -202,6 +202,86 @@ buildings = {
 		}
 	}
 
+
+##################################################################################################
+# REFINERY INPUT COSTS - DUPLICATED IN SCRIPT. CHANGE HERE => CHANGE ALL SITES BELOW.
+##################################################################################################
+# The country_resource_cost_* values on the five refinery buildings below are NOT read back by
+# the scripts that switch refineries on and off - those scripts hard-code their own copies of the
+# same numbers to predict how much of a resource a closure will free or an opening will consume.
+# PDXScript cannot read a building's modifiers, so the duplication is unavoidable; keeping it in
+# step is manual. A mismatch does not error - it silently makes the controller close too many or
+# too few mills (campaign 911bed3c: the bauxite mission credited 25 instead of 32 and over-closed
+# ENG's aluminium industry to 1 active level out of 16).
+#
+# EVERY SITE THAT COPIES THESE VALUES, as of 2026-08-11:
+#
+#  common/decisions/_economy_fatigue.txt - shortage missions, credit per mill CLOSED:
+#      iron_shortage        (player) ~L288/292   iron 25 / coal 20     <- steel_refinery
+#      iron_shortage_ai              ~L351/355   iron 25 / coal 20     <- steel_refinery
+#      bauxite_shortage     (player) ~L418/427   bauxite 32 / coal 20  <- aluminium_refinery
+#      bauxite_shortage_ai           ~L485/494   bauxite 32 / coal 20  <- aluminium_refinery
+#      coal_shortage        (player) ~L543       coal 60               <- synthetic_refinery
+#      coal_shortage_ai              ~L591       coal 60               <- synthetic_refinery
+#
+#  common/scripted_effects/WA_scripted_effects.txt - calculate_resource_deficite (~L7724-7789),
+#  the GUI's 'how much would I need to hit my target' projection. Player-only, same pulse as
+#  manage_*. Uses iron 25 / coal 20, bauxite 35 / coal 20, synth coal 60. NOTE: its bauxite 35
+#  (~L7762) is charged against open_alu_mill_target without distinguishing plain (32) from hydro
+#  (35) - a display over-estimate of 3 per pending plain mill. Left as-is 2026-08-11 with the
+#  rest of the player path; fix with the Refresh close-to-stale-target defect, not separately.
+#
+#  localisation/english/buildings_l_english.yml - the player-facing tooltips spell the costs out
+#  in prose, a fifth copy with no link to anything: steel_refinery_desc, aluminium_refinery_desc,
+#  hydro_steel_refinery_desc, hydro_aluminium_refinery_desc, synthetic_refinery_desc (~L40-94).
+#  aluminium_refinery_desc read '15 COAL AND 35 BAUXITE' until 2026-08-11 - the same wrong pair
+#  the scripts used, so the whole toolchain agreed with itself and disagreed with the building.
+#
+#  common/scripted_effects/WA_scripted_effects.txt - manage_* (player-only path, also run by the
+#  Refresh button in common/scripted_guis/refineries_window_scripted_gui.txt):
+#      manage_steel_mills   Pre-charges the cost of the variant its FIRST branch handles, then
+#                           patches the others in the branch that knows which one it picked:
+#                           closing ~L6844/6848 iron 25 / coal 20 (plain) with ~L6892/6931
+#                           -15 coal => hydro's 5; opening ~L6965/6969 iron 25 / coal 5 (hydro)
+#                           with ~L7008/7047 -15 more coal => plain's 20. This works because
+#                           hydro_steel differs from steel ONLY in coal, and by exactly 15.
+#      manage_alu_mills     Same scheme, but hydro differs in BOTH bauxite (32 -> 35) AND coal
+#                           (20 -> 0), so one 15-coal patch cannot express it. Corrected by
+#                           Fix 42 (2026-08-11) to charge plain and patch hydro on both axes:
+#                           closing ~L7195/7199 pre-charges bauxite 32 / coal 20, hydro branches
+#                           ~L7243/7288 add +3 bauxite and take back all 20 coal;
+#                           opening ~L7330 pre-debits bauxite 35 (hydro), plain branches
+#                           ~L7364/7408 add +3 bauxite back and debit coal 20.
+#                           Before the fix it pre-charged bauxite 35 on a path that closes a
+#                           32-cost mill and netted coal +5 where hydro frees none - both
+#                           OVER-stated the resource moved, so that loop exited early and closed
+#                           too FEW mills. Note that is the opposite direction to the shortage
+#                           missions' old bug, which under-credited and closed too MANY.
+#
+# If you change a cost above, the two schemes react differently: manage_* needs BOTH its
+# pre-charge and its variant patch re-derived (the patch is a difference between variants, not
+# an absolute), while the shortage missions in _economy_fatigue.txt each carry one absolute
+# value per resource. Re-check the hydro-vs-plain difference, not just the number you changed.
+#
+# CONTROL THRESHOLDS ARE ALSO DERIVED FROM THESE COSTS - not just the credit values above.
+# For iron and bauxite the input cost is deliberately equal to the TRADE QUANTUM (what one
+# civilian factory buys: 25 iron, 32 bauxite - see the header of common/resources/00_resources.txt).
+# The AI refinery controller bids by opening ONE refinery to create exactly one factory's worth of
+# import demand, so if you change iron 25 or bauxite 32 here you must re-derive, in
+# common/decisions/_economy_fatigue.txt:
+#   reactivate_steel_refineries_ai       available   resource@iron    > -25
+#   reactivate_aluminium_refineries_ai   available   resource@bauxite > -32
+#   iron_shortage_ai      available > -25   activation < -26   loop limit tempIron    < -26
+#   bauxite_shortage_ai   available > -32   activation < -33   loop limit tempBauxite < -33
+# and ideally the cic values in 00_resources.txt, to keep the alignment. Getting this wrong does
+# not error: bauxite carried IRON's -26/-25 for years (its quantum is 32, not 25), which made the
+# reopen gate unreachable and closed two mills per refusal instead of one. Fix 44, 2026-08-11.
+#
+# The refinery OUTPUT (local_resources_aluminium 15, _steel 25, _rubber 5) is NOT duplicated
+# anywhere in script - verified 2026-08-11. Only the input costs and the thresholds above are.
+## Line numbers drift - grep for 'tempBauxite', 'tempIron', 'tempCoal', 'disable_aluminium_mill'
+# and 'disable_steel_mill' rather than trusting them.
+##################################################################################################
 	synthetic_refinery = {
 		show_on_map = 1
 		base_cost = 18000
@@ -217,6 +297,7 @@ buildings = {
 				fuel_gain_from_states = 2.0 #per hour
 			}
 		}
+		# coal 60 - duplicated in script, see the header at the top of this refinery block.
 		country_modifiers = {
 			modifiers = {
 				country_resource_cost_coal = 60
@@ -241,6 +322,7 @@ buildings = {
 			shares_slots = yes
 			state_max = 15
 		}
+		# iron 25 / coal 20 - duplicated in script, see the header at the top of this refinery block.
 		country_modifiers = {
 			modifiers = {
 				country_resource_cost_iron = 25
@@ -262,6 +344,7 @@ buildings = {
 			shares_slots = yes
 			state_max = 15
 		}
+		# iron 25 / coal 5 - duplicated in script, see the header at the top of this refinery block.
 		country_modifiers = {
 			modifiers = {
 				country_resource_cost_iron = 25
@@ -283,6 +366,7 @@ buildings = {
 			shares_slots = yes
 			state_max = 15
 		}
+		# bauxite 32 / coal 20 - duplicated in script, see the header at the top of this refinery block.
 		country_modifiers = {
 			modifiers = {
 				country_resource_cost_bauxite = 32
@@ -304,6 +388,7 @@ buildings = {
 			shares_slots = yes
 			state_max = 15
 		}
+		# bauxite 35, no coal - duplicated in script, see the header at the top of this refinery block.
 		country_modifiers = {
 			modifiers = {
 				country_resource_cost_bauxite = 35

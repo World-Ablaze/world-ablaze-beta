@@ -916,3 +916,106 @@ process caveats (stale process, and the absence of a load-time hook).
   duplication is unavoidable and the sync is manual — a mismatch throws no error, it just makes
   the controller close too many or too few.
 - **Evidence:** Fix 42 (2026-08-11); checklist R29 defect C-bis.
+
+
+### In a multi-tier resource economy, "nothing consumes X" is evidence of design, not absence
+
+- **Date:** 2026-08-11
+- **Symptom:** an architecture review concluded that WA's refinery shutdown mechanic "mitigates
+  nothing" for iron and bauxite, and proposed retiring it. That would have destroyed the mod's
+  resource balance.
+- **The evidence, which was correct:** grepping `common/units/equipment/` for resource
+  declarations gives steel 2630, tungsten 1702, chromium 1291, aluminium 1115, coal 1075,
+  rubber 831 — and **iron 1, bauxite 1**, both from `trade_fix_equipment_0`
+  (`ship_hull_heavy.txt:693-719`), a dummy at `build_cost_ic = 99999999` that exists only to make
+  the resource visible to the trade AI. Since the engine's `PRODUCTION_RESOURCE_LACK_PENALTY`
+  only bites on production lines whose equipment declares the missing resource, an iron or
+  bauxite deficit carries **no direct engine penalty**. All true.
+- **The inference, which was wrong:** "therefore a deficit is harmless, therefore the mechanic is
+  flavour." WA runs a **two-tier economy** — iron + coal -> steel, bauxite + coal -> aluminium —
+  and a raw tier is *by definition* never declared by end products. The grep result was the
+  signature of the design, read as its absence. And because the engine has **no concept of a
+  building that cannot run without its input**, the scripted on/off is the *only* thing making
+  the raw tier bind at all: delete it and refineries produce steel and aluminium regardless of ore.
+- **Rule:** when a resource, flag or variable appears to be consumed by nothing, ask **"what does
+  it enable?"** before concluding it is inert. Trace one hop downstream. In a layered economy the
+  most load-bearing inputs are precisely the ones with no direct consumers — that is what makes
+  them inputs. The same trap applies to any intermediate: a variable read only by one trigger, a
+  building that only feeds another building, a flag only another flag tests.
+- **Corollary on engine gaps:** "the engine applies no penalty here" is not an argument that
+  nothing should. It is often the *reason* a mod scripts something — the script exists to express
+  a rule the engine cannot. Before proposing removal of a scripted enforcement, establish what
+  the engine would do in its absence, not merely what it does alongside it.
+- **Process note:** the wrong conclusion survived three parallel investigations and reached a
+  written design document, because every agent was asked to verify the *evidence* and none was
+  asked to challenge the *framing*. When a review concludes that a long-standing mechanic is
+  pointless, that conclusion deserves an explicit adversarial pass before it is written down —
+  the prior should be that it encodes something not yet understood.
+- **Evidence:** `documentation/WA_REFINERY_CONTROLLER_REVIEW.md` §1 (and its withdrawn option
+  O1); user correction, 2026-08-11.
+
+
+### Read `common/defines/` before quoting any engine constant — this mod overrides them
+
+- **Date:** 2026-08-11
+- **Symptom:** an analysis wrote into the campaign checklist that a telemetry gauge's `×100`
+  multiplier was wrong and should be 200, on the strength of remembered vanilla behaviour. The
+  gauge was correct and the correction was the error.
+- **Cause:** `common/defines/` is one of the ~70 `replace_path` folders. WA sets
+  `NDefines.NBuildings.AIRBASE_CAPACITY_MULT = 100` (`common/defines/05_defines.lua:173`), half of
+  vanilla's 200, and the strategy file's `@UK_AIR_CAPACITY_PER_LEVEL = 100`
+  (`WA_AI_CONSTRUCTION_PRIORITY_strategies.txt:951`) is a deliberate mirror of it. Vanilla
+  knowledge about *any* engine constant is a hypothesis here, not a fact.
+- **Rule:** grep `common/defines/` for the constant before asserting an engine value, exactly as
+  you already grep the install's `documentation/modifiers_documentation.md` before claiming a
+  modifier is scoped wrong. Generalise: for anything the engine "just does" — define, modifier
+  scope, default flag on a `put_unit_buffers` field — the mod's own replaced copy is the oracle,
+  and remembered vanilla is only a prior. Same reflex, three different oracles.
+- **Evidence:** `common/defines/05_defines.lua:173`; checklist anomaly entry "This mod sets
+  `AIRBASE_CAPACITY_MULT = 100`, not vanilla's 200"; the doc note it corrects.
+
+
+### A probe caveat recorded on one member of a twin pair says nothing about the twin
+
+- **Date:** 2026-08-11
+- **Symptom:** `wa_ai_uk_air_dbg_started` was read as "projects built" and produced a 3.5×
+  over-statement (ENG 115 + USA 61 = 176 "starts" against ~47 air-base levels of real capacity
+  growth) — in a session where the checklist already carried an explicit over-count warning for
+  the counter's sibling.
+- **Cause:** the two counters are copies of one pattern in one file. `wa_ai_thair_dbg_started`
+  (`WA_AI_CONSTRUCTION_PRIORITY_strategies.txt:1440-1451`) was given a queue-growth guard after
+  the `2b607968` over-count was found; `wa_ai_uk_air_dbg_started` (`:1126-1127`) still increments
+  unconditionally after `WA_AI_PC_start_project`, which declines silently on `queue_max`, on
+  same-type dedup and on a duplicate province. The written caveat sat on the *fixed* one, which
+  read as reassurance about the family rather than a warning about the other member.
+- **Rule:** when a caveat, fix or guard is recorded against one of two sibling constructs, open
+  the sibling's write site in the same pass and record the answer either way — "twin checked,
+  same guard present" is a useful line. A guard is evidence about exactly the lines it is on.
+  This is the same shape as the `# Fix NN:` lesson (later fixes revoke earlier ones) and the
+  NOR/`surrender_progress` families: in this codebase, one instance of a pattern is never the
+  whole population.
+- **Evidence:** `WA_AI_CONSTRUCTION_PRIORITY_strategies.txt:1126-1127` vs `:1440-1451`;
+  `documentation/WA_TLM_TELEMETRY_SYSTEM.md` §2.1 registry rows for both counters.
+
+
+### Never conclude a code defect from a structural or grep scan — read the block
+
+- **Date:** 2026-08-11
+- **Symptom:** four arithmetic "mismatches" were reported in the refinery `manage_*` routines
+  from the proximity of numeric literals to call sites. **Three of them did not exist.**
+  `manage_steel_mills` is correct on all four paths, and one `−15` that looked like a wrong
+  constant is a deliberate variant patch.
+- **Cause:** the scan compared a building's `country_resource_cost_*` against the nearest literal
+  in the controller and flagged every difference. It could not see the idiom the literals belong
+  to — pre-charge the plain variant's cost at the top of the loop, then patch the delta inside
+  whichever branch actually fired — under which a `−15` sitting next to a `20` is the *correct*
+  expression of a variant that costs 5. Structural scans read tokens; correctness lives in the
+  control flow between them.
+- **Rule:** a grep, a diff-shaped audit or a "these two numbers differ" scan may only ever produce
+  **candidates**. Before any of them is written down as a defect, read the enclosing block top to
+  bottom and state the invariant it maintains. Report the candidates that survive and say
+  explicitly which ones you checked and cleared — a cleared candidate is a finding too, and it is
+  what stops the next session re-raising it.
+- **Evidence:** `common/scripted_effects/WA_scripted_effects.txt` `manage_steel_mills` (correct)
+  vs `manage_alu_mills` (the one real defect, Fix 42); checklist R29 duplication-hazard entry,
+  corrected 2026-08-11 "after reading the code rather than scanning it".
