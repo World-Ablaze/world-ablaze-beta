@@ -562,3 +562,22 @@ process caveats (stale process, and the absence of a load-time hook).
 - **Evidence:** save trace 1937.9→1944.7 (Series A 1937.9 → B 1937.11 → 10/10 at 1938.2 with
   fatigue 0 → stuck); cross-country table at 1944.7 (GER/ENG=G, USA/CHI/FRA=C, JAP=B);
   checklist R11/F6 entries 2026-08-11.
+
+### Buildings placed in a landing's immediate predate the state-control flip
+
+- **Date:** 2026-08-11
+- **Symptom:** The scripted D-Day Mulberry harbours (level-5 naval bases at the beach provinces)
+  were destroyed the moment they appeared: the Nero-decree port demolition hit them at landing.
+- **Cause:** The harbour was built in the same `immediate` as `WA_AI_DIVISION_spawn_invasion`.
+  Spawning sets province controllers, and the engine resolves the *state*-control flip
+  afterwards — `on_state_control_changed` (where the Nero demolition lives) then fires and sees
+  the brand-new building as part of the state being captured. Anything created at landing time
+  exists *before* every on-flip effect runs.
+- **Rule:** Never create or upgrade buildings in the landing event itself when an
+  `on_state_control_changed` effect can damage them. Defer placement to a follow-up event gated
+  on the state being ROOT/ally-controlled — the flip effects are synchronous with the flip, so
+  once the state reads as yours they have already resolved (and Fix 36's `WA_port_demolished`
+  once-per-state flag keeps later re-flips from re-demolishing). Use the retry-every-N-days +
+  give-up-flag pattern already used by the invasion events.
+- **Evidence:** `763488d04` (bug) → `e944259a3` (fix), `events/WA_AI_invasions.txt` events
+  `.85`/`.86`; user-observed in-game 2026-08-11.

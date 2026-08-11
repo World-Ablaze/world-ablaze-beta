@@ -347,9 +347,9 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 
 ### R22. Mulberry harbours spawn at D-Day and dismantle on schedule (Fix 36b)
 
-- **Fix under test:** `763488d04`. Two level-5 naval bases set instantly at the scripted landing — province 3579 (Mulberry A, `WA_AI_invasions.2`) and 13851 (Mulberry B, `.34`) — removed 120 days later by `WA_AI_invasions.84` (idempotent double-fire by design).
-- **Pass:** in the first campaign with a scripted D-Day: (1) the first post-landing save shows `naval_base` level 5 at provinces 3579 and 13851 (top-level `provinces={}` block); (2) a save ≥5 months post-landing shows them back at 0 (dismantled); (3) beachhead supply corroboration — the landing does not repeat the `31eaf7e6` capacity-5 starvation signature (Normandy hubs' demand/capacity gap closes vs that baseline, judged qualitatively with R21's port-healthy read).
-- **Probe:** `provinces={}` naval_base levels at 3579/13851 in the landing-month save +1 and +5 months; cross-read R21 (Cherbourg/Le Havre healthy) and F5.
+- **Fix under test:** `763488d04` + `e944259a3` (sequencing fix — the first cut built the harbour in the landing immediate, BEFORE the state-control flip, so the Nero demolition caught it; placement now waits in `WA_AI_invasions.85`/`.86` until state 15 / 1016 is ROOT/ally-controlled, retrying 3-daily, giving up at landing+45d; dismantle `.84` is scheduled 120d from placement and clears both provinces). Two level-5 naval bases — province 3579 (Mulberry A) and 13851 (Mulberry B).
+- **Pass:** in the first campaign with a scripted D-Day: (1) the first save AFTER each state flips to the Allies shows `naval_base` level 5 **healthy 5** at 3579 (state 15 flipped) / 13851 (state 1016 flipped) — healthy < 5 there means the Nero sequencing regressed; (2) a save ≥5 months after placement shows both back at 0 (dismantled); (3) beachhead supply corroboration — the landing does not repeat the `31eaf7e6` capacity-5 starvation signature (judged with R21's port-healthy read); (4) if a state never flips within 45 days, its Mulberry correctly never appears (give-up path).
+- **Probe:** `provinces={}` naval_base level+healthy at 3579/13851 in the first post-flip save and +5 months; state controllers of 15/1016 to date the flips; cross-read R21 (Cherbourg/Le Havre healthy) and F5.
 - **Threshold:** 3 (narrow — building levels at fixed provinces and dates).
 - **Streak:** 0
 - **History:**
