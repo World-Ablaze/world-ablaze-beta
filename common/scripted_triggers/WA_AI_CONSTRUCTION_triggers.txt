@@ -123,6 +123,44 @@ WA_AI_PC_can_afford_project = {
 	}
 }
 
+# THIS = country. Stable civilian-factory availability for PC strategy gates.
+# num_of_civilian_factories_available_for_projects reads ~0 whenever the vanilla
+# construction queue is saturated - the same self-referential collapse fixed in
+# WA_AI_PC_can_afford_project above. Each gate passes when EITHER the engine
+# reports real spare civs above the threshold, OR the stable floored base
+# (@AI_PC_STABLE_BASE_FRACTION * @AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL
+# = 10.5% of TOTAL civs, the pool WA_AI_PC_assign_factories will actually
+# allocate from) clears the same threshold. Two named variants because PDXScript
+# triggers cannot take a threshold argument without meta_trigger - keep both
+# bodies in sync.
+WA_AI_PC_has_project_civs_16 = {	# passes at 16+ civs (replaces bare "> 15" gates)
+	set_temp_variable = { _pc_civ_floor_ = num_of_civilian_factories }
+	multiply_temp_variable = { _pc_civ_floor_ = @AI_PC_STABLE_BASE_FRACTION }
+	multiply_temp_variable = { _pc_civ_floor_ = @AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL }
+	OR = {
+		num_of_civilian_factories_available_for_projects > 15
+		AND = {
+			has_capitulated = no
+			surrender_progress < 0.3
+			check_variable = { _pc_civ_floor_ > 15 }
+		}
+	}
+}
+
+WA_AI_PC_has_project_civs_20 = {	# passes at 20+ civs (replaces bare "NOT ... < 20" gates)
+	set_temp_variable = { _pc_civ_floor_ = num_of_civilian_factories }
+	multiply_temp_variable = { _pc_civ_floor_ = @AI_PC_STABLE_BASE_FRACTION }
+	multiply_temp_variable = { _pc_civ_floor_ = @AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL }
+	OR = {
+		num_of_civilian_factories_available_for_projects > 19
+		AND = {
+			has_capitulated = no
+			surrender_progress < 0.3
+			check_variable = { _pc_civ_floor_ > 19 }
+		}
+	}
+}
+
 # THIS = STATE, PREV = BUILDER, _project_building_type, _project_province_id
 WA_AI_PC_can_build_project = {
 	OR = {

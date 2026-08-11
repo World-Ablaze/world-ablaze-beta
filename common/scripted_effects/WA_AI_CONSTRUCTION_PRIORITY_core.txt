@@ -230,6 +230,11 @@ WA_AI_PC_get_building_cost = {
 ### Dynamic Queue System - Assign factories to projects
 # THIS = country
 # Allocates available factories to projects from the top of the queue
+# Persistent outputs (resynced on every pass): WA_AI_PC_assigned_factories_total,
+# WA_AI_PC_active_projects, WA_AI_PC_active_nonrail_projects, and
+# WA_AI_PC_air_factories_assigned (Fix 38: civs actually assigned to air-base
+# [building_type 2] slots this pass; read CROSS-COUNTRY by the allied air-base
+# builder gates in WA_AI_CONSTRUCTION_PRIORITY_strategies.txt).
 WA_AI_PC_assign_factories = {
 	# Calculate available factories BEFORE resetting (add back currently assigned to get true available)
 	set_temp_variable = { available_factories_ = num_of_civilian_factories_available_for_projects }
@@ -284,6 +289,15 @@ WA_AI_PC_assign_factories = {
 		set_variable = { WA_AI_PC_assigned_factories^_project_id = 0 }
 	}
 	set_temp_variable = { _new_total = 0 }
+	# Fix 38: persistent per-country output - civilian factories assigned to air-base
+	# (building_type 2) projects this pass. Read cross-country ("is the host actually
+	# funding air bases?") by WA_AI_build_uk_air_hosting_capacity and
+	# WA_AI_build_theatre_air_bases, so it must be a real variable, not a temp. An
+	# unset read is 0 = "not funding", which fails open toward the rich ally stepping
+	# in. Rewritten on every pass for every AI country reaching this effect (weekly
+	# on_action, is_ai = yes + has_capitulated = no; also the mid-week completion and
+	# railway recursion paths).
+	set_variable = { WA_AI_PC_air_factories_assigned = 0 }
 
 	# Sort queue by priority (descending - highest priority first)
 	# Step 1: Build temp arrays for sorting
@@ -378,6 +392,10 @@ WA_AI_PC_assign_factories = {
 			set_variable = { WA_AI_PC_assigned_factories^_project_id = assign_amount }
 			add_to_temp_variable = { _new_total = assign_amount }
 			subtract_from_temp_variable = { available_factories_ = assign_amount }
+			# Fix 38: accumulate the air-base share of the assignment (see reset above)
+			if = { limit = { check_variable = { WA_AI_PC_building_type^_project_id = 2 } }
+				add_to_variable = { WA_AI_PC_air_factories_assigned = assign_amount }
+			}
 
 			if = { limit = { has_country_flag = WA_AI_construction_logging }
 				set_temp_variable = { _dbg_state = WA_AI_PC_target_state^_project_id }
@@ -916,11 +934,31 @@ WA_AI_PC_start_project = {
 
 			# Get current queued amount for this building type (for queue_max check)
 			# Also check for province-level duplicates (naval bases, supply hubs, etc.)
+			# Fix 37: resolve THIS state's id up front so the loop below can also count
+			# same-type projects targeting THIS state only (_queued_here_). The
+			# target-level test must use the per-state count: the old country-wide
+			# queued_amount_ made 3 queued UK air-base projects read as +3 levels on an
+			# unrelated Pacific candidate state and reject it (campaign 31eaf7e6).
+			# queued_amount_ itself stays country-wide - that is the intended semantic
+			# of the queue_max per-country budget. Same state-id resolution idiom as
+			# the target-state fallback further down.
+			set_temp_variable = { _level_check_state_ = _project_target_state }
+			if = { limit = { NOT = { check_variable = { _level_check_state_ > 0 } } }
+				PREV = {
+					set_temp_variable = { _lvl_first_prov_ = global.WA_AI_MAP_state_province_ids@THIS^0 }
+					set_temp_variable = { _level_check_state_ = global.WA_AI_MAP_province_state_id^_lvl_first_prov_ }
+				}
+			}
 			set_temp_variable = { queued_amount_ = 0 }
+			set_temp_variable = { _queued_here_ = 0 }
 			set_temp_variable = { _province_already_queued = 0 }
 			for_each_loop = { array = WA_AI_PC_queue value = _check_proj_id
 				if = { limit = { check_variable = { WA_AI_PC_building_type^_check_proj_id = _project_building_type } }
 					add_to_temp_variable = { queued_amount_ = 1 }
+					# Fix 37: per-state count for the target-level test
+					if = { limit = { check_variable = { WA_AI_PC_target_state^_check_proj_id = _level_check_state_ } }
+						add_to_temp_variable = { _queued_here_ = 1 }
+					}
 					# Check for province-level duplicate (same type + same province)
 					if = {
 						limit = {
@@ -954,8 +992,9 @@ WA_AI_PC_start_project = {
 						set_temp_variable = { final_building_level_ = building_level@radar_station }
 					}
 				}
-				# Add already queued projects to effective level
-				add_to_temp_variable = { final_building_level_ = queued_amount_ }
+				# Fix 37: add only projects already queued FOR THIS STATE to the
+				# effective level (was queued_amount_, the country-wide type total)
+				add_to_temp_variable = { final_building_level_ = _queued_here_ }
 			}
 
 			# Create up to _project_queue_num projects

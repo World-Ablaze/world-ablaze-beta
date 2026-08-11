@@ -179,7 +179,9 @@ WA_AI_build_refinery_resource_shortage_rubber = {
 		limit = {
 			check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 }
 
-			NOT = { num_of_civilian_factories_available_for_projects < 20 }
+			# floored availability, was NOT = { ...available_for_projects < 20 }: the
+			# bare engine variable reads ~0 once the vanilla queue saturates
+			WA_AI_PC_has_project_civs_20 = yes
 
 			# resource shortage
 			check_variable = { WA_AI_resource_rubber_shortage_months = 3 }
@@ -232,7 +234,9 @@ WA_AI_build_refinery_resource_shortage_steel = {
 		limit = {
 			check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 }
 
-			NOT = { num_of_civilian_factories_available_for_projects < 20 }
+			# floored availability, was NOT = { ...available_for_projects < 20 }: the
+			# bare engine variable reads ~0 once the vanilla queue saturates
+			WA_AI_PC_has_project_civs_20 = yes
 
 			# resource shortage
 			check_variable = { WA_AI_resource_steel_shortage_months = 3 }
@@ -316,7 +320,9 @@ WA_AI_build_refinery_resource_shortage_aluminium = {
 		limit = {
 			check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 }
 
-			NOT = { num_of_civilian_factories_available_for_projects < 20 }
+			# floored availability, was NOT = { ...available_for_projects < 20 }: the
+			# bare engine variable reads ~0 once the vanilla queue saturates
+			WA_AI_PC_has_project_civs_20 = yes
 
 			# resource shortage
 			check_variable = { WA_AI_resource_aluminium_shortage_months = 3 }
@@ -897,16 +903,25 @@ WA_AI_build_uk_air_hosting_capacity = {
 		limit = {
 			has_war = yes
 			any_enemy_country = { capital_scope = { is_on_continent = europe } }
-			num_of_civilian_factories_available_for_projects > 15
+			# floored availability: the bare engine variable reads ~0 once the vanilla
+			# queue saturates (see WA_AI_PC_has_project_civs_16)
+			WA_AI_PC_has_project_civs_16 = yes
 			OR = {
 				original_tag = ENG
 				AND = {
 					original_tag = USA
 					is_in_faction_with = ENG
-					# only step in when ENG cannot act on the deficit itself
+					# only step in when ENG cannot or will not act on the deficit itself:
+					# player-controlled, not actually funding air bases, or genuinely poor.
+					# Fix 38 (campaign 31eaf7e6): the old capability-only civ test blocked
+					# the USA for the whole war while ENG's own air slots ran at 0 assigned
+					# factories in 4 of 5 sampled saves - having civs available is not the
+					# same as spending them on air bases. WA_AI_PC_air_factories_assigned
+					# is written for every AI country by WA_AI_PC_assign_factories (weekly).
 					ENG = {
 						OR = {
 							is_ai = no
+							check_variable = { WA_AI_PC_air_factories_assigned < 1 }
 							num_of_civilian_factories_available_for_projects < 16
 						}
 					}
@@ -968,7 +983,15 @@ WA_AI_build_uk_air_hosting_capacity = {
 			add_to_temp_variable = { _uk_hosting_capacity_ = building_level@air_base }
 		}
 		for_each_loop = { array = WA_AI_PC_queue value = _uk_air_proj_id_
-			if = { limit = { check_variable = { WA_AI_PC_building_type^_uk_air_proj_id_ = 2 } }
+			if = {
+				limit = {
+					check_variable = { WA_AI_PC_building_type^_uk_air_proj_id_ = 2 }
+					# Fix 37 companion (campaign 31eaf7e6): only air-base projects actually
+					# targeting a UK hosting state count as claimed UK capacity - the USA's
+					# Pacific-theatre air projects sitting in the same queue were inflating
+					# it by +100 capacity each and masking the real deficit.
+					var:WA_AI_PC_target_state^_uk_air_proj_id_ = { WA_AI_uk_air_hosting_state = yes }
+				}
 				add_to_temp_variable = { _uk_hosting_capacity_ = 1 }
 			}
 		}
@@ -1088,7 +1111,9 @@ WA_AI_build_theatre_air_bases = {
 			surrender_progress < 0.1
 			# guardrail 3: skip token air forces - same floor as the theatre pulls
 			has_deployed_air_force_size = { size > 99 }
-			num_of_civilian_factories_available_for_projects > 15
+			# floored availability: the bare engine variable reads ~0 once the vanilla
+			# queue saturates (see WA_AI_PC_has_project_civs_16)
+			WA_AI_PC_has_project_civs_16 = yes
 		}
 
 		# DIAGNOSIS INSTRUMENTATION (savegame-readable; same rationale as the UK hosting
@@ -1307,13 +1332,17 @@ WA_AI_build_theatre_air_bases = {
 									WA_AI_PC_can_build_project = yes
 								}
 								AND = {	# faction ally's territory (air_base has allied_build = yes),
-										# only when the controller cannot act on the deficit itself
+										# only when the controller cannot or will not act on the
+										# deficit itself: player-controlled, not actually funding
+										# air bases, or genuinely poor. Fix 38 (campaign 31eaf7e6):
+										# capability is not funding - see the UK hosting gate above.
 									NOT = { is_controlled_by = ROOT }
 									NOT = { CONTROLLER = { is_subject_of = ROOT } }
 									WA_AI_available_AIR_allied = yes
 									CONTROLLER = {
 										OR = {
 											is_ai = no
+											check_variable = { WA_AI_PC_air_factories_assigned < 1 }
 											num_of_civilian_factories_available_for_projects < 16
 										}
 									}
