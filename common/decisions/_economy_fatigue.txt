@@ -535,12 +535,36 @@ economy_decisions = {
 
 		complete_effect = {
 			custom_effect_tooltip = bauxite_shortage_avoided_tt
+			# Fix 45: the bid was ACCEPTED - the market answered and the balance came back
+			# above -32, which is what cancelled this mission. No outstanding bid to retreat.
+			clear_variable = WA_AI_bauxite_bid_hydro
 		}
 
 		timeout_effect = {
 			custom_effect_tooltip = bauxite_shortage_tt
 			set_temp_variable = { tempBauxite = resource@bauxite }
 			set_temp_variable = { tempCoal = resource@coal }
+			# Fix 45: retreat on the variant the bid opened. The reopen decision prefers
+			# hydro (35 bauxite, no coal) while this loop closes plain first (32 bauxite),
+			# so a hydro bid retreated 3 bauxite short of where it started. Repeated, that
+			# walks the balance down 3 per cycle into [-33, -32] - below the reopen gate
+			# (> -32) and above this mission's arm (< -33), where NEITHER arm of the
+			# controller acts - while swapping active plain mills for hydro ones at zero
+			# change in aluminium output. Matching the retreat to the bid makes cost equal
+			# credit in every case, and keeps the coal-sparing hydro preference intact.
+			# The iron pair needs none of this: hydro_steel_refinery costs the same 25 iron
+			# as the plain variant, so its bid and retreat already cancel exactly. Do NOT
+			# mirror this to the steel loops - same reason their ordering was left alone in
+			# Fix 43 (see documentation/WA_REFINERY_CONTROLLER_REVIEW.md 3.3).
+			# Read once and clear: the marker steers only the FIRST closure of a retreat,
+			# after which plain-first resumes. An external collapse that closes several
+			# mills is not a bid being refused and must not be steered by one.
+			set_temp_variable = { _wa_bid_was_hydro_ = 0 }
+			if = {
+				limit = { has_variable = WA_AI_bauxite_bid_hydro }
+				set_temp_variable = { _wa_bid_was_hydro_ = WA_AI_bauxite_bid_hydro }
+				clear_variable = WA_AI_bauxite_bid_hydro
+			}
 			while_loop_effect = {
 				limit = {
 					OR = {
@@ -565,17 +589,43 @@ economy_decisions = {
 					var = tempCoal
 					value = 20
 				}
+				# Fix 45: an outstanding HYDRO bid retreats on a hydro mill, so the 35 bauxite
+				# it spent comes back as 35. Gated on the bauxite leg for the same termination
+				# reason as the fallback below, and it clears its own marker so only the first
+				# closure of this pass is steered.
+				if = {
+					limit = {
+						check_variable = { _wa_bid_was_hydro_ = 1 }
+						check_variable = { _wa_shortage_bauxite_leg_ = 1 }
+						any_controlled_state = { hydro_aluminium_refinery > 0 }
+					}
+					random_controlled_state = {
+						limit = { hydro_aluminium_refinery > 0 }
+						disable_hydro_aluminium_mill = yes
+					}
+					# hydro_aluminium_refinery frees bauxite 35 and NO coal; the pre-charge booked the plain 32/20.
+					add_to_temp_variable = {
+						var = tempBauxite
+						value = 3
+					}
+					subtract_from_temp_variable = {
+						var = tempCoal
+						value = 20
+					}
+					set_temp_variable = { _wa_bid_was_hydro_ = 0 }
+				}
 				# Fix 43: the shortage loops could only ever close the PLAIN variant while the
 				# reactivate decisions PREFER hydro. A country left holding only hydro mills had a
 				# mission that re-armed every 9 days and closed nothing - campaign 911bed3c, ENG ran
 				# 3 hydro aluminium levels (105 bauxite) for ~21 months while 12 plain levels sat
 				# inactive and the deficit never cleared. Both variants must be closable.
-				if = {
+				else_if = {
 					limit = { any_controlled_state = { aluminium_refinery > 0 } }
 					random_controlled_state = {
 						limit = { aluminium_refinery > 0 }
 						disable_aluminium_mill = yes
 					}
+					set_temp_variable = { _wa_bid_was_hydro_ = 0 }
 				}
 				else_if = {
 					limit = {
@@ -2654,6 +2704,12 @@ economy_decisions = {
 		cost = 0
 
 		complete_effect = {
+			# Fix 45: record which variant this bid opened, so bauxite_shortage_ai's timeout
+			# retreats on the same one. Hydro costs 35 bauxite and plain 32; the retreat loop
+			# closes plain first, so a hydro bid used to come back 3 short and the balance
+			# drifted into the [-33, -32] gap between the reopen gate and the mission's arm,
+			# where neither controller acts. Written on EVERY branch (never left stale from an
+			# earlier bid); absent or 0 both mean "retreat plain-first", the prior behaviour.
 			IF = {
 				limit = {
 					any_controlled_state = {
@@ -2661,6 +2717,7 @@ economy_decisions = {
 						is_core_of = ROOT
 					}
 				}
+				set_variable = { WA_AI_bauxite_bid_hydro = 1 }
 				random_controlled_state = {
 					limit = {
 						hydro_aluminium_refinery_inactive > 0
@@ -2679,6 +2736,7 @@ economy_decisions = {
 						is_core_of = ROOT
 					}
 				}
+				set_variable = { WA_AI_bauxite_bid_hydro = 0 }
 				random_controlled_state = {
 					limit = {
 						aluminium_refinery_inactive > 0
@@ -2696,6 +2754,7 @@ economy_decisions = {
 						hydro_aluminium_refinery_inactive > 0
 					}
 				}
+				set_variable = { WA_AI_bauxite_bid_hydro = 1 }
 				random_controlled_state = {
 					limit = {
 						hydro_aluminium_refinery_inactive > 0
@@ -2707,6 +2766,9 @@ economy_decisions = {
 				}
 			}
 			else = {
+				# No `any_controlled_state` guard on this branch, so nothing may open here;
+				# a 0 written without an opening is the safe default (plain-first retreat).
+				set_variable = { WA_AI_bauxite_bid_hydro = 0 }
 				random_controlled_state = {
 					limit = {
 						aluminium_refinery_inactive > 0

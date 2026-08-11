@@ -221,6 +221,39 @@ State must persist across ticks (which bid is outstanding, how long it has been 
 
 **The measurement that comes next:** with bids now possible, watch whether a bid is ever *accepted* — i.e. whether `imported@bauxite` rises during the verdict window. Only then does D become the live question.
 
+### 5.2a The bid and the retreat must be the same size (Fix 45, shipped 2026-08-11)
+
+A consequence of §1.1's *"Z is simply the size of the bid being made"* that the
+implementation did not honour. The reopen decision prefers **hydro** (35 bauxite, no
+coal); the retreat loop closes **plain** first (32 bauxite). So a hydro bid came back
+3 bauxite short of where it started, and repetition walked the balance into
+**[−33, −32]** — below the reopen gate and above the mission's arm, **a band where
+neither arm acts**. Each cycle also swapped an active plain mill for a hydro one at
+zero change in aluminium output, so it was churn as well as drift.
+
+**Fix 45:** the reopen records which variant it opened (`WA_AI_bauxite_bid_hydro`,
+written on every branch so it is never stale); the retreat reads it once, clears it,
+and closes that variant first. Cost equals credit exactly, and the coal-sparing hydro
+preference is kept. The marker steers only the **first** closure of a pass — an
+external collapse closing several mills is not a refused bid (§5.1's FLOOR case, still
+unbuilt) and must not be steered by one.
+
+Iron needs none of this: `hydro_steel_refinery` costs the same 25 iron as plain, so its
+bid and retreat already cancel — the third appearance of the one-axis/two-axis
+asymmetry that also produced Fix 42. **Do not mirror Fix 45 to the steel loops.**
+
+Three alternatives were rejected and are recorded so they are not re-proposed: moving
+the mission arm to `< -32` closes the band but makes a hydro bid close **two** mills;
+reordering the reopen to plain-first equalises the sizes but spends 20 coal per bid
+where hydro spends none, against §1.5; and widening the gate to `> -35` cannot work at
+all, because a 3-unit mismatch between a 35-cost bid and a 32-credit retreat is not
+expressible in fixed thresholds.
+
+`WA_AI_bauxite_bid_hydro` is control state, not telemetry — it is read by gameplay
+logic, so it is deliberately **not** a `WA_TLM_` name. It is nonetheless save-visible
+(`wa_ai_bauxite_bid_hydro`), which is what makes R29's Fix 45 sub-probe free, and it is
+the first piece of the persistent outstanding-bid bookkeeping §5.1 calls for.
+
 ### 5.3 Variant choice should follow the scarcer input
 
 `aluminium_refinery` costs 32 bauxite + 20 coal; `hydro_aluminium_refinery` costs 35 bauxite + **no coal**. So when coal is tight, hydro is the correct mill to open, and when bauxite is tight, plain is. The current fixed preference (hydro first on reopen, plain first on close) encodes neither. Note also that opening any plain mill spends 20 coal — the bid arm needs a **real coal guard**, since coal is the opposite controller (§1.5) and its deficit is catastrophic.
@@ -234,7 +267,7 @@ State must persist across ticks (which bid is outstanding, how long it has been 
 1. **Measure D** (§5.2). Everything below is conditional on it.
 2. **Instrument** — a `WA_TLM_` metric for active-vs-inactive levels per family, plus `savegame.py buildings`, so bids and their verdicts are visible in a campaign. *(The `savegame.py` half is already scoped as a separate task.)*
 3. **Fix 43 — done.** Both variants are now closable (§3.3), so a country holding only hydro mills is no longer stuck.
-4. **Correct the parameters**: D from the measurement, the reopen gate from `> -1` to a bid-room test at X, and split FLOOR out of the shutdown loop.
+4. **Correct the parameters**: ~~the reopen gate from `> -1` to a bid-room test at X~~ — **done, Fix 44**; ~~make the retreat the same size as the bid~~ — **done, Fix 45 (§5.2a)**; still open: **D** from the measurement, and **split FLOOR out of the shutdown loop** (an external collapse is not a refused bid and currently runs through the bid logic).
 5. **Then** revisit variant choice (§5.3) and the coal guard.
 
 ### 5.6 Recorded as withdrawn

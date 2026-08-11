@@ -1019,3 +1019,38 @@ process caveats (stale process, and the absence of a load-time hook).
 - **Evidence:** `common/scripted_effects/WA_scripted_effects.txt` `manage_steel_mills` (correct)
   vs `manage_alu_mills` (the one real defect, Fix 42); checklist R29 duplication-hazard entry,
   corrected 2026-08-11 "after reading the code rather than scanning it".
+
+
+### A controller that advances and retreats must move the same distance both ways
+
+- **Date:** 2026-08-11
+- **Symptom:** none observed yet — found by re-reading the refinery controller after Fixes 42-44
+  landed. The aluminium bid arm opens a mill to create trade demand and closes it again if the
+  market does not answer, and the two halves disagreed by 3 units.
+- **Cause:** the two halves pick **different variants**. `reactivate_aluminium_refineries_ai`
+  prefers `hydro_aluminium_refinery` (35 bauxite, no coal — the preference exists to protect coal,
+  which is the resource WA cannot tolerate a deficit in); the retreat loop in `bauxite_shortage_ai`
+  closes the plain `aluminium_refinery` first (32 bauxite). So every hydro round trip ended 3
+  bauxite below where it started, and repetition walked the balance into `[-33, -32]` — below the
+  reopen gate (`> -32`) and above the mission's arm (`< -33`), **a band where neither arm of the
+  controller acts.** It also swapped active plain mills for hydro ones at zero change in output.
+- **Rule:** in any open/close, advance/retreat, allocate/release pair, state the size of the step
+  each half takes and check they are equal **for every variant either half can pick**. If the two
+  halves choose their target independently, they will eventually choose differently, and the
+  residue accumulates. The fix that works is to make the retreat follow the advance (record what
+  was taken and give back the same thing); fixes that only move a threshold cannot work, because
+  a fixed constant cannot absorb a difference that depends on which variant was chosen.
+- **Corollary — where these bands hide:** a hysteresis pair is normally checked by asking "is the
+  release condition reachable from the state the trip leaves you in?" That check passes here for
+  the *plain* path and fails only for the hydro one. **Run the reachability check once per variant,
+  not once per pair.**
+- **Why iron was immune, which is how the asymmetry was spotted:** `hydro_steel_refinery` costs the
+  same 25 iron as the plain variant, so its bid and retreat cancel whatever gets picked. Aluminium's
+  hydro differs from plain on **two** axes (bauxite 32→35, coal 20→0). That is the same one-axis
+  vs two-axis distinction that caused Fix 42 — third appearance in this one system. When a family
+  has a "safe" member and a "broken" member, the safe one is usually safe by arithmetic accident,
+  so it is evidence about its own numbers only.
+- **Evidence:** Fix 45 (`common/decisions/_economy_fatigue.txt`, `WA_AI_bauxite_bid_hydro`);
+  checklist R29 defect H; `documentation/WA_REFINERY_CONTROLLER_REVIEW.md` §5.2a. Witness
+  configuration in campaign `911bed3c`: RIT at 1946.4 holds 2 hydro-inactive + 3 plain-active +
+  10 plain-inactive aluminium levels.
