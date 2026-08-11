@@ -52,8 +52,8 @@ All files are in `common/scripted_effects/`.
 
 ```
 @WA_AI_PC_railway_TYPE_ID = 13              # Building type identifier for railways
-@WA_AI_PC_railway_PRIO = 9999              # Wartime priority (highest)
-@WA_AI_PC_railway_PRIO_PREWAR = 5000       # Pre-war preparation priority
+@WA_AI_PC_railway_PRIO = 1000              # Wartime priority (highest band; Fix 41 compressed 9999 -> 1000)
+@WA_AI_PC_railway_PRIO_PREWAR = 500        # Pre-war preparation priority (Fix 41 compressed 5000 -> 500)
 @WA_AI_PC_railway_INTERVAL_PEACE = 12      # Runs every 12 weeks during peace (~3 months)
 @WA_AI_PC_railway_INTERVAL_WAR = 8         # Runs every 8 weeks during war (~2 months)
 @WA_AI_PC_railway_MIN_CIVS = 50            # Base minimum civilian factories
@@ -88,7 +88,7 @@ All files are in `common/scripted_effects/`.
 
 ```
 @WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY = 4   # Redeclared (file-scoped)
-@WA_AI_PC_railway_PRIO_PREWAR = 5000          # Redeclared (file-scoped)
+@WA_AI_PC_railway_PRIO_PREWAR = 500           # Redeclared (file-scoped)
 ```
 
 **Note:** HOI4 `@` constants are file-scoped, so required constants are redeclared in each file that uses them.
@@ -175,7 +175,7 @@ The interval counter is managed inside `WA_AI_PC_railway` (`railway_core.txt`, l
   - Queues port upgrades for bottlenecked overseas routes
 - Pathfinds (type 2 = ROOT + allied + subject provinces, allows partial paths)
 - Sorts all targets by enemy threat (factories + divisions*5) via `WA_AI_PC_railway_score_and_sort_by_enemy_threat`
-- Default route level: 5, priority: 9999
+- Default route level: 5, priority: 1000 (`@WA_AI_PC_railway_PRIO`; Fix 41 band compression)
 
 **Example:** Germany vs Soviet Union
 - Germany borders SOV → builds railways from Berlin to each frontline supply hub
@@ -223,7 +223,7 @@ The interval counter is managed inside `WA_AI_PC_railway` (`railway_core.txt`, l
 - Only if ROOT has coastal access (prevents landlocked nations like Hungary from running overseas logic)
 - Upgrades home port infrastructure via overseas supply chain analysis (cached per landmass)
 
-**Route priority:** 5000 (`@WA_AI_PC_railway_PRIO_PREWAR`)
+**Route priority:** 500 (`@WA_AI_PC_railway_PRIO_PREWAR`; Fix 41 band compression)
 
 ## Route Processing Pipeline (`railway_core.txt`, lines 85-200)
 

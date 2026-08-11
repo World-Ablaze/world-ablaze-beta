@@ -15,7 +15,7 @@
 
 # Bump when the registered metric set changes; the sampler re-inits on mismatch so
 # new metrics exist at 0 even on campaigns resumed on a newer build.
-@WA_TLM_VERSION = 1
+@WA_TLM_VERSION = 2
 
 ############################################################################################################
 #	Clock - global.WA_TLM_clock = months elapsed since 1936.1
@@ -30,23 +30,36 @@ WA_TLM_tick_clock = {
 }
 
 ############################################################################################################
-#	Init - zero every registered metric + stamp the version.
-#	Scope: country. Called at startup for every country and lazily from the monthly
-#	sampler for tags created mid-game (civil wars, releases).
-#	The zero-init is the absence contract: namespace absent = pre-TLM build;
-#	metric 0 with _last_t 0 = never sampled; metric 0 with _last_t > 0 = real zero.
+#	Init - PRESERVING zero-init: each metric is created at 0 only if absent, then
+#	the version is stamped. Scope: country. Called at startup for every country and
+#	lazily from the monthly sampler for tags created mid-game (civil wars, releases).
+#
+#	The has_variable guards are load-bearing, not defensive noise: counters write at
+#	event sites at ANY cadence, so a mid-game tag can accumulate counter values
+#	BEFORE its first monthly pulse runs this init (e.g. the weekly-written
+#	WA_TLM_pc_aging_* pair) - an unconditional zero-init would wipe them. Same
+#	mechanism preserves ring-buffer history across a version-bump re-init on
+#	resumed campaigns. On a fresh start nothing exists and the guards are no-ops.
+#	The zero-init is the absence contract: namespace absent = pre-TLM build (or a
+#	mid-game tag inside its first month); metric 0 with _last_t 0 = never sampled;
+#	metric 0 with _last_t > 0 = real zero.
 ############################################################################################################
 WA_TLM_init_country = {
 	set_variable = { WA_TLM_version = @WA_TLM_VERSION }
 
 	# composition (pilot, consumer: checklist R6 / F8)
-	set_variable = { WA_TLM_comp_div_total = 0 }
-	set_variable = { WA_TLM_comp_armor = 0 }
-	set_variable = { WA_TLM_comp_mech = 0 }
-	set_variable = { WA_TLM_comp_armor_mech_pct = 0 }
-	set_variable = { WA_TLM_comp_last_t = 0 }
-	clear_array = WA_TLM_hist_t
-	clear_array = WA_TLM_comp_armor_mech_pct_hist
+	if = { limit = { NOT = { has_variable = WA_TLM_comp_div_total } } set_variable = { WA_TLM_comp_div_total = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_comp_armor } } set_variable = { WA_TLM_comp_armor = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_comp_mech } } set_variable = { WA_TLM_comp_mech = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_comp_armor_mech_pct } } set_variable = { WA_TLM_comp_armor_mech_pct = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_comp_last_t } } set_variable = { WA_TLM_comp_last_t = 0 } }
+	# ring buffers: no clear - arrays create themselves on first add_to_array, and
+	# clearing on re-init is exactly the history wipe the guards exist to prevent
+
+	# PC overtake lane (Fix 41, consumer: checklist R26; write sites in
+	# WA_AI_PC_assign_factories, WA_AI_CONSTRUCTION_PRIORITY_core.txt)
+	if = { limit = { NOT = { has_variable = WA_TLM_pc_aging_grants } } set_variable = { WA_TLM_pc_aging_grants = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_pc_aging_reval_cancels } } set_variable = { WA_TLM_pc_aging_reval_cancels = 0 } }
 }
 
 ############################################################################################################

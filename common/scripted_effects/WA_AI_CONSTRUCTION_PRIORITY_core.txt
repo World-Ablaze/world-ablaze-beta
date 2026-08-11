@@ -227,6 +227,25 @@ WA_AI_PC_get_building_cost = {
 @AI_PC_ALLOC_HARD_CAP_FRACTION = 0.5	# ceiling: allocation can never exceed this share of total civs
 @AI_PC_STALL_CANCEL_WEEKS = 25			# weeks a project may sit with 0 factories before the stall sweep cancels it
 
+### Fix 41: priority bands + anti-starvation overtake lane (campaign 31eaf7e6: prio-9999
+### railway segments replenished every cycle absorbed the whole pool 20-at-a-time; prio-100
+### air bases sat at 0 factories until the week-25 stall sweep cancelled them, the strategies
+### re-queued them, and the cycle repeated - a livelock, never a completion).
+###
+### PRIORITY BAND TABLE (every _project_priority in the PC system belongs to one band):
+###   1000  rail-war        @WA_AI_PC_railway_PRIO (railway_core/helpers; x1.1 high-route = 1100 cap)
+###    500  rail-prewar     @WA_AI_PC_railway_PRIO_PREWAR (railway_core/helpers/strategies)
+###    250  strategic       the three shortage-driven refinery families (WA_AI_CONSTRUCTION_queue_functions.txt)
+###    100  default         everything else (radar, air bases, supply lines, MIC/CIC, ...)
+### The rail bands still outrank everything (relative order unchanged); compression just keeps
+### the numbers in one auditable scale. Starvation itself is fixed by the overtake lane below,
+### NOT by aging priorities upward - a blanket aging boost was rejected because it would fund
+### geographically obsolete projects and bury new projects under aged debt.
+@AI_PC_AGING_LANE_WEEKS = 12			# stalled weeks before a project qualifies for the overtake lane
+@AI_PC_AGING_LANE_MAX_CANDIDATES = 3	# revalidation attempts per pass (cost cap)
+@AI_PC_PRIO_LEGACY_MAX = 1100			# highest legitimate post-Fix-41 priority (rail-war x1.1)
+@AI_PC_PRIO_RAIL_WAR = 1000				# clamp target for legacy pre-Fix-41 priorities
+
 ### Dynamic Queue System - Assign factories to projects
 # THIS = country
 # Allocates available factories to projects from the top of the queue
@@ -236,6 +255,18 @@ WA_AI_PC_get_building_cost = {
 # [building_type 2] slots this pass; read CROSS-COUNTRY by the allied air-base
 # builder gates in WA_AI_CONSTRUCTION_PRIORITY_strategies.txt).
 WA_AI_PC_assign_factories = {
+	# Fix 41: resumed-save migration - idempotent clamp of legacy pre-Fix-41 priorities.
+	# A save queued under the old 9999/5000 scale carries rails at 9999 (or 10998.9 with the
+	# x1.1 high-route multiplier) that would permanently outrank every new 1000-band rail.
+	# Anything above @AI_PC_PRIO_LEGACY_MAX (1100, the highest value this build can write)
+	# is by definition legacy and is clamped to the rail-war band. One O(queue) loop, no-op
+	# on every pass after the first, and on fresh campaigns.
+	for_each_loop = { array = WA_AI_PC_queue value = _migr_proj_id
+		if = { limit = { check_variable = { WA_AI_PC_priority^_migr_proj_id > @AI_PC_PRIO_LEGACY_MAX } }
+			set_variable = { WA_AI_PC_priority^_migr_proj_id = @AI_PC_PRIO_RAIL_WAR }
+		}
+	}
+
 	# Calculate available factories BEFORE resetting (add back currently assigned to get true available)
 	set_temp_variable = { available_factories_ = num_of_civilian_factories_available_for_projects }
 	add_to_temp_variable = { available_factories_ = WA_AI_PC_assigned_factories_total }
@@ -357,11 +388,152 @@ WA_AI_PC_assign_factories = {
 		}
 	}
 
+	# Fix 41: anti-starvation OVERTAKE LANE - runs BEFORE the winner-takes-most fill.
+	# The single most-starved project (highest WA_AI_PC_stall_weeks, and at least
+	# @AI_PC_AGING_LANE_WEEKS of them) is revalidated (WA_AI_PC_project_still_relevant,
+	# WA_AI_CONSTRUCTION_triggers.txt); if still relevant it is served min(20, pool)
+	# factories ahead of the sorted fill. If revalidation FAILS the project is cancelled
+	# on the spot (same machinery as the Fix 34 stall sweep, so all queue bookkeeping
+	# stays coherent) and the next-most-starved candidate is tried, at most
+	# @AI_PC_AGING_LANE_MAX_CANDIDATES per pass.
+	#
+	# Invariants:
+	#   - at most ONE project is overtaking at any time, and it diverts at most 20 factories;
+	#   - a served project gets assigned_factories > 0, so the weekly stall maintenance in
+	#     WA_AI_PC_update_project_progress resets its stall_weeks to 0 and it LEAVES the lane
+	#     (the next-most-starved project becomes eligible on a later week);
+	#   - empty pool => the selection block is skipped => empty lane => the Fix 34 stall
+	#     sweep keeps its week-25 backstop role unchanged;
+	#   - candidates must pass the same target-valid / progress / friendly-controller tests
+	#     as the fill: a project frozen on hostile-controlled ground (Fix 34) is NOT lane
+	#     material - it is deliberately left to recapture-or-sweep, not cancelled early.
+	#
+	# Re-entry policy: candidate SELECTION (and its revalidation cost) runs only on the first
+	# assign_factories call of the weekly effect chain - the main weekly pass - latched by the
+	# chain-persistent temp _pc_lane_selected_ (temp variables persist across nested scripted-
+	# effect calls within one execution chain; see WA_AI_PC_get_new_project_ID). The GRANT is
+	# re-applied on every re-entry (cleanup / mid-week completion / stall sweep re-call
+	# assign_factories, which resets all assignments), otherwise the first re-entry would
+	# silently strip the laned project back to 0 factories and void the week.
+	if = { limit = { NOT = { check_variable = { _pc_lane_selected_ = 1 } } }
+		set_temp_variable = { _pc_lane_selected_ = 1 }
+		set_temp_variable = { _pc_lane_proj_ = -1 }
+		if = {
+			limit = {
+				check_variable = { available_factories_ > 0 }
+				check_variable = { WA_AI_PC_queue^num > 0 }
+			}
+			set_temp_variable = { _lane_tries_ = 0 }
+			set_temp_variable = { _lane_done_ = 0 }
+			while_loop_effect = {
+				limit = {
+					check_variable = { _lane_done_ = 0 }
+					check_variable = { _lane_tries_ < @AI_PC_AGING_LANE_MAX_CANDIDATES }
+				}
+				add_to_temp_variable = { _lane_tries_ = 1 }
+
+				# most-starved eligible candidate (ties: first found). Cancelled candidates
+				# left the queue, so each rescan naturally moves to the next one.
+				set_temp_variable = { _lane_best_ = -1 }
+				set_temp_variable = { _lane_best_weeks_ = 0 }
+				for_each_loop = { array = WA_AI_PC_queue value = _lane_scan_
+					if = {
+						limit = {
+							check_variable = { WA_AI_PC_stall_weeks^_lane_scan_ > _lane_best_weeks_ }
+							NOT = { check_variable = { WA_AI_PC_stall_weeks^_lane_scan_ < @AI_PC_AGING_LANE_WEEKS } }
+							NOT = { check_variable = { WA_AI_PC_target_state^_lane_scan_ = 0 } }
+							check_variable = { WA_AI_PC_progress^_lane_scan_ > 0 }
+							# same Fix 34 controller test as the fill below - hostile-frozen
+							# projects wait for recapture or the sweep, never the lane
+							var:WA_AI_PC_target_state^_lane_scan_ = {
+								CONTROLLER = {
+									OR = {
+										tag = ROOT
+										is_in_faction_with = ROOT
+										is_subject_of = ROOT
+										ROOT = { is_subject_of = PREV }
+									}
+								}
+							}
+						}
+						set_temp_variable = { _lane_best_ = _lane_scan_ }
+						set_temp_variable = { _lane_best_weeks_ = WA_AI_PC_stall_weeks^_lane_scan_ }
+					}
+				}
+
+				if = { limit = { check_variable = { _lane_best_ < 0 } }
+					set_temp_variable = { _lane_done_ = 1 }
+				}
+				else = {
+					set_temp_variable = { _reval_project_id = _lane_best_ }
+					if = { limit = { WA_AI_PC_project_still_relevant = yes }
+						set_temp_variable = { _pc_lane_proj_ = _lane_best_ }
+						set_temp_variable = { _lane_done_ = 1 }
+						if = { limit = { has_country_flag = WA_AI_construction_logging }
+							log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC LANE: proj=[?_lane_best_] starved [?_lane_best_weeks_] weeks - revalidated, overtaking"
+						}
+					}
+					else = {
+						# revalidation failed: cancel NOW instead of letting the week-25 sweep
+						# find it - the project is geographically/strategically obsolete
+						if = { limit = { has_country_flag = WA_AI_construction_logging }
+							log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC LANE: proj=[?_lane_best_] starved [?_lane_best_weeks_] weeks - revalidation FAILED, cancelling"
+						}
+						clear_temp_array = _cancel_projects_IDS
+						add_to_temp_array = { _cancel_projects_IDS = _lane_best_ }
+						WA_AI_PC_cancel_projects = yes
+						# tlm: pc_aging_reval_cancels - counter, per revalidation-cancel (the
+						# cancel above is the verified effect) - consumer: R26
+						add_to_variable = { WA_TLM_pc_aging_reval_cancels = 1 }
+					}
+				}
+			}
+		}
+	}
+
+	# Fix 41: lane GRANT - every pass, so re-entries do not strip the laned project.
+	# Re-checks the project is still live (it may have completed mid-week, which is
+	# exactly what triggers a re-entry). Control cannot flip inside one effect chain,
+	# so the selection-time controller test is not repeated here.
+	if = {
+		limit = {
+			NOT = { check_variable = { _pc_lane_proj_ < 0 } }
+			check_variable = { available_factories_ > 0 }
+			is_in_array = { WA_AI_PC_queue = _pc_lane_proj_ }
+			NOT = { check_variable = { WA_AI_PC_target_state^_pc_lane_proj_ = 0 } }
+			check_variable = { WA_AI_PC_progress^_pc_lane_proj_ > 0 }
+		}
+		set_temp_variable = { assign_amount = available_factories_ }
+		clamp_temp_variable = { var = assign_amount min = 1 max = 20 }
+		round_temp_variable = assign_amount
+		set_variable = { WA_AI_PC_assigned_factories^_pc_lane_proj_ = assign_amount }
+		add_to_temp_variable = { _new_total = assign_amount }
+		subtract_from_temp_variable = { available_factories_ = assign_amount }
+		# Fix 38 accumulator: the laned project counts toward the air share like any other
+		if = { limit = { check_variable = { WA_AI_PC_building_type^_pc_lane_proj_ = 2 } }
+			add_to_variable = { WA_AI_PC_air_factories_assigned = assign_amount }
+		}
+		# tlm: pc_aging_grants - counter, ONLY when the lane actually assigned >= 1 factory
+		# (the set_variable above is the verified effect); latched so the same weekly grant
+		# is not recounted on re-entry re-grants - consumer: R26
+		if = { limit = { NOT = { check_variable = { _pc_lane_counted_ = 1 } } }
+			set_temp_variable = { _pc_lane_counted_ = 1 }
+			add_to_variable = { WA_TLM_pc_aging_grants = 1 }
+		}
+		if = { limit = { has_country_flag = WA_AI_construction_logging }
+			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC LANE: proj=[?_pc_lane_proj_] granted [?assign_amount] factories ahead of the fill"
+		}
+	}
+
 	# Assign to projects from top of queue
+	# Fix 41: the laned project (_pc_lane_proj_, -1 when no lane) is excluded - it was
+	# already served above and must not be double-assigned (the set_variable here would
+	# otherwise overwrite its grant and double-count it in _new_total).
 	for_each_loop = { array = WA_AI_PC_queue value = _project_id break = _assign_break
 		if = {
 			limit = {
 				check_variable = { available_factories_ > 0 }
+				NOT = { check_variable = { _project_id = _pc_lane_proj_ } }
 				# Check state is still valid
 				NOT = { check_variable = { WA_AI_PC_target_state^_project_id = 0 } }
 				# Check progress remaining

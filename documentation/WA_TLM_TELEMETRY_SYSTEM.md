@@ -136,20 +136,25 @@ relative offsets and anchor them against the save dates.
 
 ### 3.5 Initialisation and the absence contract
 
-`WA_TLM_init_country` sets **every registered metric to 0** and stamps
+`WA_TLM_init_country` is a **preserving** zero-init: it creates each registered
+metric at 0 *only if absent* (`has_variable` guard per line), then stamps
 `WA_TLM_version = <N>`. Called from `on_startup` for every country, and lazily from
-the monthly sampler (`NOT = { has_variable = WA_TLM_version }`) for tags created
-mid-game (civil wars, releases). This makes absence tri-state and unambiguous:
+the monthly sampler (version mismatch check) for tags created mid-game (civil wars,
+releases). The guards are load-bearing: counters write at event sites at any
+cadence, so a mid-game tag can accumulate counter values **before** its first
+monthly pulse runs the init — an unconditional zero-init would wipe them; the same
+mechanism preserves ring-buffer history across a version-bump re-init on resumed
+campaigns. This makes absence tri-state and unambiguous:
 
 | Observation in save | Meaning |
 | --- | --- |
-| no `wa_tlm_*` at all | build predates WA_TLM (or v-mismatch) — **probe void**, never FAILED |
+| no `wa_tlm_*` at all | build predates WA_TLM — **probe void**, never FAILED. One exception: a tag created mid-game shows nothing (or only event-written counters, no `wa_tlm_version`) until its **first monthly pulse** — check the tag's creation date before reading absence as a build statement. |
 | `wa_tlm_version` present, metric = 0, `_last_t` = 0 | instrumented, code path never sampled/fired for this country |
 | metric = 0, `_last_t` > 0 | sampled, genuinely zero — a real reading |
 
-Bump `WA_TLM_version` when the registered-metric set changes; the sampler re-runs
-init on version mismatch so new metrics exist at 0 on old campaigns resumed on a
-new build.
+Bump `WA_TLM_version` when metrics are **added**; the sampler re-runs init on
+version mismatch so the new metrics exist at 0 on old campaigns resumed on a new
+build — existing values and ring buffers survive (preserving init).
 
 ### 3.6 Honesty rules (each one is a documented past failure)
 
@@ -175,11 +180,9 @@ new build.
   protocol enforces this — the agent retiring the item is the agent deleting the
   instrumentation. Before deleting, run the §3.8 promotion test.
 - **Version bumps on addition only.** Removing metrics does NOT bump
-  `WA_TLM_version`: stale `wa_tlm_*` leftovers in old saves are inert and
-  self-identifying, whereas a bump forces `WA_TLM_init_country` to re-run on
-  resumed campaigns — and full re-init **clears the ring buffers**, destroying
-  accumulated history mid-campaign. Accept that cost only when new metrics must
-  exist at 0 on resumed saves.
+  `WA_TLM_version`: stale `wa_tlm_*` leftovers in old saves and resumed campaigns
+  are inert and self-identifying, and a needless re-init pass buys nothing. (A
+  bump is otherwise harmless since the init is preserving — §3.5.)
 - Standing metrics are permanent until the design question they answer disappears;
   removing one is a design decision recorded here.
 - The rule already in `wa-campaign-checklist/SKILL.md` — "if the fix has no natural
@@ -258,6 +261,8 @@ per series — trivial at depth 44, but do not raise depth casually.
 | `WA_TLM_comp_armor_mech_pct` | gauge (derived) | monthly, majors | R6 | v1 |
 | `WA_TLM_comp_last_t` | stamp | monthly, all AI (written with the family's widest gauge — a stamp inside a narrower gate breaks the absence contract for the excluded countries) | R6 absence contract | v1 |
 | `WA_TLM_comp_armor_mech_pct_hist` | ring | quarterly, majors | R6 trend | v1 |
+| `WA_TLM_pc_aging_grants` | counter | on verified lane grant (weekly PC allocator, `WA_AI_PC_assign_factories`) | R26 (PC allocator health) | v2 |
+| `WA_TLM_pc_aging_reval_cancels` | counter | on revalidation-cancel (same site) | R26 | v2 |
 
 ## 6. Pilot: army composition (checklist gap R6)
 

@@ -398,6 +398,109 @@ WA_AI_PC_building_slot_available = {
 	}
 }
 
+# Fix 41: overtake-lane revalidation - "is this starved project still worth building?"
+# THIS = ROOT = builder country. Input: _reval_project_id (temp) = PC project index.
+# Called by the anti-starvation lane in WA_AI_PC_assign_factories
+# (WA_AI_CONSTRUCTION_PRIORITY_core.txt) before diverting factories to a project that
+# has been starved >= @AI_PC_AGING_LANE_WEEKS; a FAIL cancels the project on the spot.
+# Dispatches on WA_AI_PC_building_type^_reval_project_id. Every geographic branch is
+# dynamic game state (control, war, contested theatres) - no historical-path assumption,
+# so it behaves identically in historical and ahistorical games.
+WA_AI_PC_project_still_relevant = {
+	# 13/14 rail family: still ours (ROOT or ROOT subject - rails serve OUR supply net)
+	# AND still near a live front (kills the Romanian-border project after the front
+	# moved to Moscow; spares the still-contested Libya corridor).
+	if = {
+		limit = {
+			OR = {
+				check_variable = { WA_AI_PC_building_type^_reval_project_id = 13 }
+				check_variable = { WA_AI_PC_building_type^_reval_project_id = 14 }
+			}
+		}
+		var:WA_AI_PC_target_state^_reval_project_id = {
+			CONTROLLER = {
+				OR = {
+					tag = ROOT
+					is_subject_of = ROOT
+				}
+			}
+			any_neighbor_state = { CONTROLLER = { has_war_with = ROOT } }
+		}
+	}
+	# 2 air bases: friendly ground (ROOT or faction ally - air_base has allied_build)
+	# AND a reason to base there: the UK hosting belt, or membership in a theatre that
+	# is currently contested for ROOT (same state/contested trigger pairs the theatre
+	# air-base builder uses; the pairs must-match, WA_AI_MILITARY_triggers.txt).
+	else_if = {
+		limit = { check_variable = { WA_AI_PC_building_type^_reval_project_id = 2 } }
+		var:WA_AI_PC_target_state^_reval_project_id = {
+			CONTROLLER = {
+				OR = {
+					tag = ROOT
+					is_in_faction_with = ROOT
+				}
+			}
+			OR = {
+				WA_AI_uk_air_hosting_state = yes
+				AND = { WA_AI_MILITARY_AIR_theatre_state_north_africa = yes		ROOT = { WA_AI_MILITARY_AIR_theatre_contested_north_africa = yes } }
+				AND = { WA_AI_MILITARY_AIR_theatre_state_italy = yes			ROOT = { WA_AI_MILITARY_AIR_theatre_contested_italy = yes } }
+				AND = { WA_AI_MILITARY_AIR_theatre_state_western_europe = yes	ROOT = { WA_AI_MILITARY_AIR_theatre_contested_western_europe = yes } }
+				AND = { WA_AI_MILITARY_AIR_theatre_state_scandinavia = yes		ROOT = { WA_AI_MILITARY_AIR_theatre_contested_scandinavia = yes } }
+				AND = { WA_AI_MILITARY_AIR_theatre_state_balkans = yes			ROOT = { WA_AI_MILITARY_AIR_theatre_contested_balkans = yes } }
+				AND = { WA_AI_MILITARY_AIR_theatre_state_eastern_europe = yes	ROOT = { WA_AI_MILITARY_AIR_theatre_contested_eastern_europe = yes } }
+				AND = { WA_AI_MILITARY_AIR_theatre_state_middle_east = yes		ROOT = { WA_AI_MILITARY_AIR_theatre_contested_middle_east = yes } }
+				AND = { WA_AI_MILITARY_AIR_theatre_state_burma_india = yes		ROOT = { WA_AI_MILITARY_AIR_theatre_contested_burma_india = yes } }
+				AND = { WA_AI_MILITARY_AIR_theatre_state_southeast_asia = yes	ROOT = { WA_AI_MILITARY_AIR_theatre_contested_southeast_asia = yes } }
+				AND = { WA_AI_MILITARY_AIR_theatre_state_pacific_islands = yes	ROOT = { WA_AI_MILITARY_AIR_theatre_contested_pacific_islands = yes } }
+			}
+		}
+	}
+	# 8 synthetic refinery: rubber still needed (>= 2 of 3 on the monthly needs counter,
+	# WA_AI_misc_effects.txt) - never geographic; a refinery pays off wherever it stands.
+	else_if = {
+		limit = { check_variable = { WA_AI_PC_building_type^_reval_project_id = 8 } }
+		check_variable = { WA_AI_needs_rubber > 1 }
+	}
+	# 11/15 steel mills (hydro/plain): steel still needed - never geographic.
+	else_if = {
+		limit = {
+			OR = {
+				check_variable = { WA_AI_PC_building_type^_reval_project_id = 11 }
+				check_variable = { WA_AI_PC_building_type^_reval_project_id = 15 }
+			}
+		}
+		check_variable = { WA_AI_needs_steel > 1 }
+	}
+	# 12/16 aluminium smelters (hydro/plain): aluminium still needed - never geographic.
+	else_if = {
+		limit = {
+			OR = {
+				check_variable = { WA_AI_PC_building_type^_reval_project_id = 12 }
+				check_variable = { WA_AI_PC_building_type^_reval_project_id = 16 }
+			}
+		}
+		check_variable = { WA_AI_needs_aluminium > 1 }
+	}
+	# default (1 infra, 3 AA, 4 radar, 5/6/7 factories, 9/10 conversions): the target
+	# state is still on our side - the minimum bar for any building to ever spawn.
+	# A project with target_state 0 passes: we cannot judge what we cannot locate, and
+	# the orphan-cleanup pass in WA_AI_PC_update_project_progress owns that case.
+	else = {
+		if = {
+			limit = { check_variable = { WA_AI_PC_target_state^_reval_project_id > 0 } }
+			var:WA_AI_PC_target_state^_reval_project_id = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_in_faction_with = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+		}
+	}
+}
+
 ### forts
 
 WA_AI_has_naval_base = {

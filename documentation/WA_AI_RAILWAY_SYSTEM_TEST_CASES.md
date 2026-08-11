@@ -205,20 +205,20 @@ Day values are `global.num_days` counts. Cross-reference with lifecycle log line
 **Location:** `WA_TEST_railway.txt` lines 328-380
 **Type:** Deferred
 
-**What it validates:** During peacetime, railway projects with pre-war priority (5000) appear when Japan has wargoals, justifications, or claims.
+**What it validates:** During peacetime, railway projects with pre-war priority (500, Fix 41 band compression) appear when Japan has wargoals, justifications, or claims.
 
 **Auto-skips when:** Japan is already at war (fail_code=99). Best tested at game start (1936).
 
 **Check logic:**
 1. Verify at least one railway project exists
-2. Verify at least one project has priority = 5000 (`@WA_AI_PC_railway_PRIO_PREWAR`)
+2. Verify at least one project has priority = 500 (`@WA_AI_PC_railway_PRIO_PREWAR`)
 
 **Fail codes:**
 | Code | Meaning |
 |------|---------|
 | 1 | Already at war (skipped) |
 | 2 | No railway projects in queue |
-| 3 | No projects with pre-war priority (5000) |
+| 3 | No projects with pre-war priority (500) |
 
 ---
 
@@ -458,7 +458,7 @@ OR = {
 - `STRATEGY_prewar_preparation` triggers (`strategies.txt` line 560)
 - Poland found via `ROOT = { is_justifying_wargoal_against = PREV }` or `has_wargoal_against` (lines 615-616)
 - Level 3 railways queued (line 568: `default_route_level = 3`)
-- Priority 5000 (line 569: `route_priority = @WA_AI_PC_railway_PRIO_PREWAR`)
+- Priority 500 (line 569: `route_priority = @WA_AI_PC_railway_PRIO_PREWAR`)
 
 ---
 
