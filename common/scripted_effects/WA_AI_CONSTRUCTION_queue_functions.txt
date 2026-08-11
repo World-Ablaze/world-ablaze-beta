@@ -52,31 +52,111 @@ WA_AI_queue_CIC_2 = {
 }
 
 # military factories
+# Fix 39: when the country is industrially overextended (WA_AI_industry_overextended,
+# hysteresis flag maintained monthly by WA_AI_update_industry_overextension in
+# WA_AI_misc_effects.txt) additional MICs buy ~zero throughput (campaign 31eaf7e6:
+# ENG went 379->429 active mil lines 1943.6->1944.6 while running deficits on 5
+# resources). Substitute instead of queueing the MIC - see WA_AI_overext_substitute_MIC
+# below. Callers, all safe to substitute at the funnel: WA_AI_C.0 startup bootstrap
+# (the flag cannot be set before the first monthly evaluation, and a mid-game
+# re-fire under overextension SHOULD substitute), WA_AI_C.10 recurring construction
+# branches, and the WA_AI_queue_NIC no-coastal-slot fallback below.
 WA_AI_queue_MIC = {
 
-	if = { limit = { check_variable = { WA_AI_has_shared_slot_scores = 0 } }
+	if = { limit = { WA_AI_industry_overextended = yes }
 
-		WA_AI_get_shared_slot_scores = yes
+		WA_AI_overext_substitute_MIC = yes
 	}
+	else = {
 
-	for_each_scope_loop = { array = WA_AI_shared_slot_scores
+		if = { limit = { check_variable = { WA_AI_has_shared_slot_scores = 0 } }
 
-		if = {
-			limit = {
-				WA_AI_available_SHARED = yes
-				infrastructure > 3
+			WA_AI_get_shared_slot_scores = yes
+		}
+
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+			if = {
+				limit = {
+					WA_AI_available_SHARED = yes
+					infrastructure > 3
+				}
+
+				WA_AI_add_MIC = yes
+				set_temp_variable = { break = 1 }
+			}
+		}
+
+		if = { limit = { check_variable = { break = 0 } }
+
+			WA_AI_queue_INF = yes
+		}
+	}
+}
+
+# Fix 39: substitution cascade for WA_AI_queue_MIC under industry overextension.
+# THIS = ROOT = country (same scope contract as WA_AI_queue_MIC).
+# Refinery leg gates: synth tech researched; input self-sufficiency on coal (same
+# form as WA_AI_build_refinery_resource_shortage_rubber - refineries eat 60 coal/
+# level, only build on domestic coal); economy law at war economy or above
+# (WA economy ladder in common/ideas/_economic.txt: undisturbed_isolation <
+# isolation < civilian_economy < low_economic_mobilisation <
+# partial_economic_mobilisation < war_economy < tot_economic_mobilisation <
+# over_mobilisation). Dedup: the refinery leg is skipped while a type-8 (synthetic
+# refinery) project already sits in WA_AI_PC_queue, so the cascade cannot pile on
+# top of WA_AI_build_refinery_resource_shortage_rubber's own type-8 queueing; the
+# per-state same-type check inside WA_AI_PC_can_build_project still applies below.
+# If the refinery leg does not start a project (queue unchanged - no eligible
+# state), falls through to the CIC leg: a substituted call never builds nothing
+# beyond what WA_AI_queue_CIC itself guarantees (it has its own INF fallback).
+# Debug counters (persistent country variables, savegame-visible):
+#   WA_AI_overext_dbg_mic_redirects_refinery, WA_AI_overext_dbg_mic_redirects_cic
+WA_AI_overext_substitute_MIC = {
+
+	set_temp_variable = { _overext_queued_ = 0 }
+
+	if = {
+		limit = {
+			has_tech = synth_oil_experiments
+
+			# input self-sufficiency (same test as WA_AI_build_refinery_resource_shortage_rubber)
+			check_variable = { resource@coal > 50 }
+			check_variable = { resource_imported@coal < 20 }
+
+			# economy law at or above war economy
+			OR = {
+				has_idea = war_economy
+				has_idea = tot_economic_mobilisation
+				has_idea = over_mobilisation
 			}
 
-			WA_AI_add_MIC = yes
-			set_temp_variable = { break = 1 }
+			# dedup: no synthetic refinery (type 8) already in the PC queue
+			NOT = {
+				any_of = { array = WA_AI_PC_queue value = v_overext_
+					check_variable = { WA_AI_PC_building_type^v_overext_ = 8 }
+				}
+			}
+		}
+
+		set_temp_variable = { _overext_q_before_ = WA_AI_PC_queue^num }
+		WA_AI_priority_queue_synthetic_refinery = yes
+
+		if = { limit = { check_variable = { WA_AI_PC_queue^num > _overext_q_before_ } }
+
+			set_temp_variable = { _overext_queued_ = 1 }
+			add_to_variable = { WA_AI_overext_dbg_mic_redirects_refinery = 1 }
+			if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: overextended - MIC redirected to synthetic refinery" }
 		}
 	}
 
-	if = { limit = { check_variable = { break = 0 } }
+	if = { limit = { check_variable = { _overext_queued_ = 0 } }
 
-		WA_AI_queue_INF = yes
+		WA_AI_queue_CIC = yes
+		add_to_variable = { WA_AI_overext_dbg_mic_redirects_cic = 1 }
+		if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: overextended - MIC redirected to CIC" }
 	}
 }
+
 WA_AI_queue_MIC_2 = {
 
 	if = { limit = { check_variable = { WA_AI_has_shared_slot_scores = 0 } }
