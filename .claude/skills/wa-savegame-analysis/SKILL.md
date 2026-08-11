@@ -17,7 +17,7 @@ Savegame output is bulky even through the script: a `campaigns` listing over a r
 
 Every extraction subagent prompt should end with an instruction like: *"Return only the distilled table/findings and any anomalies you noticed. Do not echo raw command output, section dumps, or file contents."*
 
-Inline exception: a single `meta FILE` on an already-known file is small enough to run directly. Everything else — `campaigns`, `sections`, `section`, `var`, `ideas`, `flags` — runs inside a subagent.
+Inline exception: a single `meta FILE` on an already-known file is small enough to run directly, as is `army TAG FILE...` (one line per save). Everything else — `campaigns`, `sections`, `section`, `var`, `ideas`, `flags`, `tlm`, `resources`, `buildings`, `decisions` — runs inside a subagent.
 
 ## The helper script
 
@@ -38,6 +38,10 @@ python .claude/skills/wa-savegame-analysis/scripts/savegame.py <command>
 | `ideas TAG FILE... [--match RE]` | Active ideas (+ `timed_idea` days remaining, ruling party, political power) across saves, date-ordered. |
 | `flags FILE [TAG] [--match RE]` | Global flags (no TAG) or country flags, each with value and set-date. |
 | `tlm TAG FILE... [--match RE]` | WA_TLM telemetry dashboard: scalars (stamps decoded to dates) + ring-buffer series paired with the `wa_tlm_hist_t` axis. Contract and metric registry: `documentation/WA_TLM_TELEMETRY_SYSTEM.md`. |
+| `army TAG FILE...` | **Deployed** division count — `division={` blocks inside `units` only — with `num_armies_for_training` and `wa_tlm_comp_div_total` as cross-checks. Never hand-count divisions; see the units-scoping gotcha below. |
+| `resources TAG FILE...` | Per-resource ledger: `produced`, `transfer_overlord_subject`, `imported`, net available (`to_use[0]`), unmet demand (`to_use[2]`), `to_export`, actually `exported`, plus the balance identity's residual. |
+| `buildings TAG FILE... [--match RE]` | Building levels summed over states, **owned vs controlled** columns, with each `*_inactive` twin listed under its active counterpart. This is how refinery on/off becomes visible (R29). |
+| `decisions TAG FILE... [--match RE]` | Decodes `decision_status`, labelling each entry kind separately: live `active_*`/`decision_to_*` entries carry a `days` countdown; `random_item` entries carry a **cumulative fire counter**. |
 
 Bare filenames resolve against the default save dir: `~\Documents\Paradox Interactive\Hearts of Iron IV\save games`. Files are 60–150MB / ~4.4M lines — never Read one, never load one into memory, and don't trust shell `grep` here (the rtk proxy mangles its output; the script or a streaming Python one-liner is the reliable path).
 
@@ -81,6 +85,10 @@ Countries live in `countries={ TAG={ … } }`. Useful depth-2 sections inside a 
 - The save's own indentation lies: malformed blocks put braces at column 0 mid-file. The script counts braces instead of trusting indentation; do the same in any ad-hoc parsing.
 - Line numbers of anchors (`countries={`, a tag block) differ per save — never reuse offsets across files.
 - Saves are snapshots at in-game hour granularity. A weekly-cadence AI value observed in a save was computed at the most recent pulse before the save date, not at the save date itself.
+- **`division={` blocks live in two sibling sections — count only the ones in `units`.** `experience_status` holds `xp_by_template` entries whose `division={ id= type= }` references are *siblings* of `units`, not nested inside it, so a whole-country-block count over-reports by 8–10% (USA 1944.1 = 97 total vs **80** deployed; SOV 1942.6 = 409 vs **373**). Use the `army` command. Its two cross-checks are not equivalent: `wa_tlm_comp_div_total` matches the units-only count (20/21 tag×date cells checked on `911bed3c`, one 1-division monthly-sample lag), while `num_armies_for_training` tracks it only while the army is stable and **overstates during losses** (ITA 1946.4: 28.0 vs 16 deployed).
+- **`resource@X` in script reads NET available, not `produced`.** The ledger's `to_use[0]` is what the trigger sees. A negative `produced` line with positive `imported` / `transfer_overlord_subject` is still a *positive* `resource@X` — ENG 1942.6 is `produced.bauxite = −329`, `imported = +320`, `transfer = +19`, net **+10**. Scoring a `resource@X` guard off the `produced` line alone nearly produced a false FAIL on checklist item R25. Use the `resources` command, which prints all seven columns side by side.
+- **`decision_status` mixes two entry kinds whose numbers mean different things.** `active_timed_decision={ decision= days= state= }` exists **only while live**: with `state=active`, `days` is time *remaining* (≤ the decision's `days_mission_timeout`); with `state=failed` or `re_enable_cooldown` the same field is a **re-arm cooldown on a different clock** — verified unrelated to the timeout (`economy_fatigue_export_focus_mission` has `days_mission_timeout = 70` and shows `days=13` when failed; `iron_shortage_ai` has timeout 9 and shows 12). `random_item={ decision= count= target= }` is not a state and not days at all — `count` is a **monotone cumulative fire counter**, and it is the field to read for "how many times did this decision fire". Conflating the two has already happened twice in one session; use the `decisions` command, which labels them apart.
+- **A state block omits `controller=` when the controller is the owner.** Reading it literally makes a country look like it controls only its conquests (ENG 1946.4: 3 "controlled" states instead of 75). The `buildings` command defaults controller to owner; do the same in ad-hoc parsing.
 
 ## WA_TLM telemetry (builds from 2026-08-11 on)
 
@@ -109,6 +117,14 @@ Example — how ITA's resource-need assessment evolved across a campaign:
 
 ```bash
 python .claude/skills/wa-savegame-analysis/scripts/savegame.py var ITA "^wa_ai_needs_" GER_1939_05_13_13.hoi4 GER_1940_05_22_03.hoi4 GER_1943_03_02_02.hoi4
+```
+
+Example — the R29 refinery-shutdown shape (park on/off, the ledger behind it, and how often the two controllers fought over it):
+
+```bash
+python .claude/skills/wa-savegame-analysis/scripts/savegame.py buildings ENG 1944.4_Apr.hoi4 1946.4_Apr.hoi4 --match refinery
+python .claude/skills/wa-savegame-analysis/scripts/savegame.py resources ENG 1944.4_Apr.hoi4 1946.4_Apr.hoi4
+python .claude/skills/wa-savegame-analysis/scripts/savegame.py decisions ENG 1946.4_Apr.hoi4 --match "bauxite_shortage_ai|reactivate_aluminium"
 ```
 
 Example — whether the WA_AI cheat ideas were still on GER by 1943:

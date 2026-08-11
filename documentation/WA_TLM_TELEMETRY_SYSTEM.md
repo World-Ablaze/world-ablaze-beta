@@ -66,6 +66,44 @@ standing metrics and per-fix probes alike — uses WA_TLM. Do not rename live fa
 mid-stream: the checklist probes reference them verbatim and old campaigns carry the
 old names.
 
+### 2.1 Semantics registry for the legacy `*_dbg_*` counters
+
+§3 below is the written contract for `WA_TLM_*`. The older `*_dbg_*` families never
+had one, and that gap is what allowed two plausible-but-wrong numbers to be reported
+in a single analysis session. This registry is the contract for them, retroactively:
+what each counter counts, what it does **not** count, whether it is zero-initialised,
+and any known miscount. **Nothing here changes the code** — the families keep their
+behaviour and retire with their items (see the migration policy above). Rows are added
+whenever a family's real semantics are established by reading its write site.
+
+**The general rule, and the one that inverts conclusions if you get it backwards:**
+
+| Namespace | Zero-init? | An *absent* name in a save means |
+| --- | --- | --- |
+| `wa_tlm_*` | **yes** — `WA_TLM_init_country`, `WA_TLM_core.txt:61-62` | build predates WA_TLM (or a mid-game tag before its first monthly pulse) — **probe void**. A `wa_tlm_*` present at **0 is a real zero reading.** |
+| `wa_ai_*_dbg_*` | **no** — bare `add_to_variable` / `set_variable`, no init pass | **never incremented** — which is a *result*, not a probe gap. A `_dbg_` name at 0 is essentially unreachable; absence is what "zero" looks like. |
+
+Reading an absent `*_dbg_*` as "instrumentation missing" turns a confirmed failure
+into an unscoreable one; reading an absent `wa_tlm_*` as "genuinely zero" turns a
+pre-instrumentation build into a FAILED. Check which namespace you are in first.
+
+| Counter | Counts | Does **not** count | Zero-init | Known miscount / trap |
+| --- | --- | --- | --- | --- |
+| `wa_ai_uk_air_dbg_called` | entries into `WA_AI_build_uk_air_hosting_capacity` (`WA_AI_CONSTRUCTION_PRIORITY_strategies.txt:968`), weekly PC pulse | anything about outcomes — a call in surplus increments it too | no | — |
+| `wa_ai_uk_air_dbg_planes` | gauge: faction deployed planes at the last call (`:1069`) | — | no (`set_variable`) | overwritten weekly; meaningless without the save's date |
+| `wa_ai_uk_air_dbg_capacity` | gauge: (air-base levels in UK hosting states **+** ROOT-queued type-2 projects targeting one) **× 100** (`:1043-1070`) | capacity outside the hosting states; other countries' queues (Fix 37 companion excluded USA Pacific projects) | no (`set_variable`) | **The ×100 is correct for this mod** — `common/defines/05_defines.lua:173` sets `AIRBASE_CAPACITY_MULT = 100` (vanilla is 200). Do **not** "correct" it to 200. |
+| `wa_ai_uk_air_dbg_best` | the ladder level a project was started at (`:1126`) | — | no (`set_variable`) | **`-2` means "no deficit / satisfied"** (`:1071`), i.e. the system reporting health. It is not an error code and not a failure. A deficit pulse that starts nothing also leaves `-2`. |
+| `wa_ai_uk_air_dbg_started` | **weekly pulses spent in deficit** — the level ladder exits on the first matched state, so at most one increment per pulse (`:1088-1128`) | projects actually created, and air-base levels built | no | **Over-counts.** `:1126-1127` increments unconditionally after `WA_AI_PC_start_project`, which declines silently on `queue_max` / same-type dedup / duplicate province. Campaign `911bed3c` at 1946.4: ENG 115 + USA 61 = **176** recorded "starts" against a UK-hosting capacity that grew 4 000 → 8 700, i.e. **~47 air-base levels**. Cross-check against building levels (`savegame.py buildings`), never read it as projects built. |
+| `wa_ai_thair_dbg_started` | theatre air-base projects that **verifiably entered the queue** | declined starts | no | **The trap is the asymmetry:** this twin *does* carry the queue-growth guard (`:1440-1451`, added after the `2b607968` over-count), its UK counterpart above does not. A caveat recorded against one member of a twin pair says nothing about the other — check the other write site. |
+| `wa_ai_thair_dbg_{called,target,active,best}` | as the uk_air equivalents, theatre-scoped (`:1130-1392`) | — | no | — |
+| `wa_ai_supply_line_dbg_{called,pf_ok,queued}` | entries / A\* successes / queued corridor projects (`:558, :578, :614, :654`) | — | no | Absence is the **result**, not a gap: on `911bed3c` `_pf_ok`/`_queued`/`_last_state` are absent on every tag at every sample, which *is* the finding — the state-level A\* returned success zero times all campaign (R9). |
+| `wa_ai_supply_line_dbg_last_state` | gauge: last state a corridor project was queued on (`:615`) | — | no (`set_variable`) | — |
+| `wa_ai_overext_dbg_active` | **months** the overextension flag has been set — `+1 per monthly evaluation while the flag is up` (`WA_AI_misc_effects.txt:718`) | current state | no | **A monotone counter, not a boolean.** `= 34` means "flagged for 34 months", not "overextended = true". |
+| `wa_ai_overext_dbg_mic_redirects_{cic,refinery}` | MIC queue calls actually substituted (`WA_AI_CONSTRUCTION_queue_functions.txt:147, :155`) | queue calls the brake declined to reach | no | Absence means **the substitution never ran**, not that the probe is missing — that is exactly how R24's "brake never bit for ENG" was established. |
+| `wa_ai_invasions_dbg_{adds,removes,active}` | scripted-invasion penalty applications / removals / live count (`WA_AI_DIVISION_CREATOR_effects.txt:2304-2305`, `events/WA_AI_invasions.txt:76, :103`) | — | no (but `_active` is `set_variable = 0` by the migration sweep, `WA_AI_MIGRATION_effects.txt:158-159`) | `WA_AI_invasions_migration_1` books a `_removes` per purged pair, so `adds − removes` is **deliberately falsified** across a migration — see R14's documented caveat. |
+| `wa_ai_ita_dbg_r13_{na_front,na_offensive}` | one-shot `fire_only_once` stamps (`events/WA_AI_ITA.txt:188-253`) | persistence — the gate holding once says nothing about it holding after | no | The §3.6 rule 2 failure mode in its original form; R13 asks for weekly counters to replace them. |
+| `wa_ai_aifc_sector_*` (`_states`, `_objectives`, `_anchor`, `_age`, `_enemy`, `_ref` twins) | live AIFC sector state — **not a counter family**, listed here because it is read the same way | — | n/a | Cleared with `clear_variable` / `clear_array` (`WA_AI_AIFC_core.txt:138-156`), so a country with no sector reads as **absent, not 0**. "Sector absent" is the real signal (R27); do not read it as an unwritten probe. |
+
 ## 3. The WA_TLM standard
 
 ### 3.1 Namespace
