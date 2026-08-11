@@ -398,6 +398,16 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **History:**
   - NOT YET TESTED — fix postdates every campaign in the registry.
 
+### R26. PC overtake lane serves starved projects; revalidation filters (Fix 41)
+
+- **Fix under test:** `f4ef2b059`. Priority rebanding (rail-war 1000 / prewar 500 / strategic refineries 250 / default 100, resumed-save clamp); single overtake lane in `assign_factories` (most-starved project with stall ≥ 12 weeks, revalidated, granted ≤20 factories ahead of the fill, max 3 candidates/pass); type-dispatched revalidation `WA_AI_PC_project_still_relevant` cancelling irrelevant projects immediately through the Fix 34 sweep machinery. Instrumentation: WA_TLM v2 metrics `wa_tlm_pc_aging_grants` / `wa_tlm_pc_aging_reval_cancels` (probe with `savegame.py tlm`; `wa_tlm_version < 2` = pre-fix build, probe VOID).
+- **Pass:** (1) `wa_tlm_pc_aging_grants ≥ 3` on at least one railway-saturated major (ENG the reference); (2) livelock broken: that country completes ≥1 air-base or refinery PC project post-1942 (zero across `31eaf7e6`), and no project of a country with `assigned_factories_total > 0` shows `stall_weeks` beyond ~22 in sampled saves (the lane serves before the week-25 sweep); (3) `wa_tlm_pc_aging_reval_cancels > 0` somewhere (revalidation filtering) with `grants ≥ reval_cancels` on ENG (the lane serves more than it culls); (4) negative guard: no cancellation of a rail project whose target still borders enemy-controlled territory (live fronts spared — cross-read the NA corridor if the desert war is again long-running); (5) rails still dominate: ENG rail share of assigned factories stays >85% outside lane weeks.
+- **Probe:** `savegame.py tlm ENG/USA/GER <saves>`; `var <TAG> "^wa_ai_pc_(stall_weeks|assigned_factories|building_type)"` for (2)/(5); stall-sweep cancellations of prio-100 projects should drop sharply vs `31eaf7e6`.
+- **Threshold:** 5 (behavioural — the lane's steady-state balance over a campaign is the outcome, not a one-shot variable).
+- **Streak:** 0
+- **History:**
+  - NOT YET TESTED — fix postdates every campaign in the registry.
+
 ---
 
 ## Recurring cosmetic anomalies — check here before reporting a "finding"
