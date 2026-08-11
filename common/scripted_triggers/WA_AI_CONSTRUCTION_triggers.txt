@@ -618,6 +618,37 @@ WA_AI_region_priority = {
 	}
 }
 
+# THIS = STATE, ROOT = builder country.
+# Fix 40: refinery-only site criteria, split off from WA_AI_region_priority so the
+# two-pass refinery draw (WA_AI_priority_queue_*_refinery in
+# WA_AI_CONSTRUCTION_queue_functions.txt) can widen without touching the shared
+# trigger, which also drives four construction SCORING multipliers
+# (WA_AI_CONSTRUCTION_scoring.txt:84/140/230/539).
+#
+# PASS 1 - the preferred site set. Deliberately delegates to WA_AI_region_priority
+# instead of restating `is_in_home_area = yes`: that keeps SOV (central Russia) and
+# CHI (western China) on their existing safe-interior rule rather than silently
+# widening them to their whole home area, which for SOV would include the Far East.
+WA_AI_refinery_region_priority = {
+	WA_AI_region_priority = yes
+}
+
+# PASS 2 - widened fallback, used only when pass 1 drew no eligible state
+# (campaign 31eaf7e6: ENG's home area was saturated, so a home-area-only draw could
+# never place a refinery for the whole war). Owned territory only - no allied or
+# occupied land - and not directly on a hostile border, so a refinery is never
+# started in a state the enemy can walk into next month. Slot availability is NOT
+# retested here: every call site already runs WA_AI_PC_can_build_project in the same
+# limit block, which covers control, the free type slot and the same-type dedup.
+WA_AI_refinery_region_priority_wide = {
+	is_owned_by = ROOT
+	NOT = {
+		any_neighbor_state = {
+			CONTROLLER = { has_war_with = ROOT }
+		}
+	}
+}
+
 WA_AI_central_russia = {
 	OR = {
 		region = 653

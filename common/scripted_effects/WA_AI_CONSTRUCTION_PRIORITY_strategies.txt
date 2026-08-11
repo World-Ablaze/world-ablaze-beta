@@ -12,12 +12,6 @@ WA_AI_priority_construction_strategies = {
 
 			WA_AI_important_radar_constructions = yes
 
-			WA_AI_build_refinery_resource_shortage_steel = yes
-
-			WA_AI_build_refinery_resource_shortage_aluminium = yes
-
-			WA_AI_build_refinery_resource_shortage_rubber = yes
-
 			WA_AI_build_supply_line_GER_SOV = yes
 
 			WA_AI_build_supply_line_JAP_RAJ = yes
@@ -31,6 +25,28 @@ WA_AI_priority_construction_strategies = {
 
 		# WA_AI_convert_MIC_to_CIC_industrial_expansion = yes not needed in WA
 	}
+
+	# Fix 40 (campaign 31eaf7e6): the three refinery strategies moved OUT of the
+	# gated block above. WA_AI_PC_can_afford_project needs assigned + 20 < 0.35 *
+	# (free + assigned), i.e. roughly 2.9x more free civs than the 20-factory step -
+	# for an import-strangled ENG (198 civs, permanently saturated queue, free civs
+	# reading ~0) that threshold is unreachable, so the whole refinery branch was
+	# dead for exactly the countries a refinery exists for: ENG's shortage counters
+	# sat pinned at 3 for the entire war with zero refinery projects ever queued.
+	# Same rationale as the two air strategies below, and the counters themselves
+	# also froze behind the gate, which starved the prospecting triggers that read
+	# them (WA_AI_RESOURCE_NEEDS_triggers.txt).
+	# Self-bounding without the dispatcher gates: WA_AI_PC_has_project_civs_20 +
+	# has_capitulated/surrender guards inside each strategy, the shortage_months = 3
+	# requirement, the per-strategy active_nonrail < 5 gate, and the explicit
+	# _project_queue_max = 1 in each queue function (Fix 40 in
+	# WA_AI_CONSTRUCTION_queue_functions.txt) - at most ONE refinery project of a
+	# given type in flight per country.
+	WA_AI_build_refinery_resource_shortage_steel = yes
+
+	WA_AI_build_refinery_resource_shortage_aluminium = yes
+
+	WA_AI_build_refinery_resource_shortage_rubber = yes
 
 	# Deliberately outside the active_projects/affordability gates: ENG's queue
 	# permanently holds ~20 railway projects, so the < 5 gate above can never open
@@ -179,6 +195,12 @@ WA_AI_build_refinery_resource_shortage_rubber = {
 		limit = {
 			check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 }
 
+			# Fix 40: the dispatcher's WA_AI_PC_can_afford_project used to carry these two
+			# for the whole refinery branch; this strategy now runs outside that gate, so
+			# it states them itself (same guards the air strategies carry).
+			has_capitulated = no
+			surrender_progress < 0.3
+
 			# floored availability, was NOT = { ...available_for_projects < 20 }: the
 			# bare engine variable reads ~0 once the vanilla queue saturates
 			WA_AI_PC_has_project_civs_20 = yes
@@ -234,12 +256,27 @@ WA_AI_build_refinery_resource_shortage_steel = {
 		limit = {
 			check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 }
 
+			# Fix 40: guards inherited from the dispatcher's WA_AI_PC_can_afford_project,
+			# which this strategy no longer runs behind.
+			has_capitulated = no
+			surrender_progress < 0.3
+
 			# floored availability, was NOT = { ...available_for_projects < 20 }: the
 			# bare engine variable reads ~0 once the vanilla queue saturates
 			WA_AI_PC_has_project_civs_20 = yes
 
 			# resource shortage
 			check_variable = { WA_AI_resource_steel_shortage_months = 3 }
+
+			# Fix 40 - input self-sufficiency, same form as the synthetic branch's coal
+			# test: a steel mill converts IRON into steel, it does not create iron. A
+			# country running an iron deficit, or covering its iron from imports the same
+			# blockade/convoy war is already strangling, converts nothing and has simply
+			# spent 10-12.5k IC to move the shortage one link up the chain - importing the
+			# finished steel is strictly cheaper. Domestic iron non-negative and imports
+			# below 40 (the aluminium branch below uses the identical shape on bauxite).
+			check_variable = { resource@iron > -1 }
+			check_variable = { resource_imported@iron < 40 }
 		}
 
 		# Choose between hydro and non-hydro based on coal availability
@@ -262,6 +299,12 @@ WA_AI_build_refinery_resource_shortage_steel = {
 	else_if = {
 		limit = {
 			check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 }
+
+			# Fix 40: the MIC->CIC conversion leg keeps its ORIGINAL reachability. Only the
+			# refinery branch above was shown to be wrongly starved by the dispatcher gate;
+			# restating can_afford here means moving the strategy out of the dispatcher
+			# cannot widen industry conversion as a side effect.
+			WA_AI_PC_can_afford_project = yes
 
 			# floored availability, was NOT = { ...available_for_projects < 20 }: the
 			# bare engine variable reads ~0 once the vanilla queue saturates
@@ -322,12 +365,30 @@ WA_AI_build_refinery_resource_shortage_aluminium = {
 		limit = {
 			check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 }
 
+			# Fix 40: guards inherited from the dispatcher's WA_AI_PC_can_afford_project,
+			# which this strategy no longer runs behind.
+			has_capitulated = no
+			surrender_progress < 0.3
+
 			# floored availability, was NOT = { ...available_for_projects < 20 }: the
 			# bare engine variable reads ~0 once the vanilla queue saturates
 			WA_AI_PC_has_project_civs_20 = yes
 
 			# resource shortage
 			check_variable = { WA_AI_resource_aluminium_shortage_months = 3 }
+
+			# Fix 40 - input self-sufficiency (campaign 31eaf7e6: ENG ran resource@bauxite
+			# -236 to -387 for the whole war). A smelter converts BAUXITE into aluminium.
+			# Building one on IMPORTED bauxite buys nothing the import market was not
+			# already selling: the same convoys now carry ore instead of metal, while the
+			# 10-12.5k IC (~18 in-game years of payback at the aluminium a smelter yields,
+			# and far longer once the extra bauxite imports are priced in) is spent up
+			# front - importing the finished aluminium is strictly cheaper. Only build on
+			# domestic ore: bauxite balance non-negative AND bauxite imports below 40.
+			# Applies to BOTH arms below (type 16 smelter and type 12 hydro smelter) - the
+			# hydro variant saves coal, not bauxite.
+			check_variable = { resource@bauxite > -1 }
+			check_variable = { resource_imported@bauxite < 40 }
 		}
 
 		# Choose between hydro and non-hydro based on coal availability
@@ -350,6 +411,10 @@ WA_AI_build_refinery_resource_shortage_aluminium = {
 	else_if = {
 		limit = {
 			check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 }
+
+			# Fix 40: the MIC->CIC conversion leg keeps its ORIGINAL reachability - see the
+			# identical note in WA_AI_build_refinery_resource_shortage_steel above.
+			WA_AI_PC_can_afford_project = yes
 
 			# floored availability, was NOT = { ...available_for_projects < 20 }: the
 			# bare engine variable reads ~0 once the vanilla queue saturates

@@ -664,18 +664,76 @@ WA_AI_priority_convert_MIC_to_CIC = {
 	}
 }
 
+# Fix 40 (campaign 31eaf7e6) - three changes shared by all five refinery queue
+# functions below (types 8 synthetic / 11 hydro steel / 12 hydro aluminium /
+# 15 steel / 16 aluminium; mapping per WA_AI_PC_get_build_speed and
+# WA_AI_PC_get_building_cost in WA_AI_CONSTRUCTION_PRIORITY_core.txt):
+#
+# 1. FILTERED DRAW. The old form was a BARE random_scope_in_array over
+#    controlled_states with the eligibility test in an inner `if`: the engine drew
+#    ONE state per pulse and then usually discarded it, so the hit rate was
+#    (eligible states / controlled states) - under 9% for a 1943 ENG holding tens
+#    of controlled states with a handful of buildable ones. The tests now live in
+#    `limit`, the engine's own filtered form (same shape as the radar strategy in
+#    WA_AI_CONSTRUCTION_PRIORITY_strategies.txt), so the draw can only land on an
+#    eligible state.
+#
+# 2. EXPLICIT _project_queue_max = 1. These functions set _project_queue_num but
+#    never _project_queue_max, so WA_AI_PC_start_project inherited whatever an
+#    earlier caller left in that shared temp variable (3 from the two air
+#    strategies, 5 from the railway core, 0 = unlimited from the railway helpers).
+#    One refinery project of a given type in flight per country is the intended
+#    budget, and it is now also what bounds these strategies, which since Fix 40
+#    run outside the dispatcher's affordability gate. _project_target_state and
+#    _project_target_level are zeroed in the same spirit: a stale non-zero
+#    target_state would redirect the project to an entirely unrelated state.
+#
+# 3. TWO-PASS SITE SELECTION. Pass 1 keeps the historical home-area criterion
+#    (WA_AI_refinery_region_priority - a thin wrapper over WA_AI_region_priority,
+#    so SOV/CHI keep their central-Russia / western-China rule). If pass 1 queued
+#    nothing - detected by queue growth, the same idiom Fix 39 uses in
+#    WA_AI_overext_substitute_MIC above - pass 2 retries over the widened set
+#    (WA_AI_refinery_region_priority_wide: ROOT-owned and not on a hostile
+#    border). A saturated home area was the second reason ENG never built a
+#    refinery: every home-area state already held one or had no free shared slot.
+#
+# Contract preserved for Fix 39: a successful queue is still visible as growth of
+# WA_AI_PC_queue within the same call, so WA_AI_overext_substitute_MIC's
+# before/after delta around WA_AI_priority_queue_synthetic_refinery still detects
+# success (both passes end in WA_AI_PC_start_project, which is what grows it).
+#
+# THIS = ROOT = country for all five (called from
+# WA_AI_build_refinery_resource_shortage_* and, for the synthetic one, from
+# WA_AI_overext_substitute_MIC).
+
 WA_AI_priority_queue_synthetic_refinery = {
 
-		if = { limit = { check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 } }
+	if = { limit = { check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 } }
 
 		set_temp_variable = { _project_building_type = 8 }
 		set_temp_variable = { _project_province_id = 0 }
 		set_temp_variable = { _project_priority = 100 }
 		set_temp_variable = { _project_queue_num = 1 }
+		# Fix 40: explicit bounds / leak hygiene - see the header note above
+		set_temp_variable = { _project_queue_max = 1 }
+		set_temp_variable = { _project_target_state = 0 }
+		set_temp_variable = { _project_target_level = 0 }
 
+		set_temp_variable = { _refinery_q_before_ = WA_AI_PC_queue^num }
+
+		# Fix 40 pass 1 - preferred sites (filtered draw)
 		random_scope_in_array = { array = controlled_states
+			limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority = yes }
 
-			if = { limit = { WA_AI_PC_can_build_project = yes WA_AI_region_priority = yes}
+			WA_AI_PC_start_project = yes
+			set_temp_variable = { break = 1 }
+		}
+
+		# Fix 40 pass 2 - widened sites, only when pass 1 queued nothing
+		if = { limit = { NOT = { check_variable = { WA_AI_PC_queue^num > _refinery_q_before_ } } }
+
+			random_scope_in_array = { array = controlled_states
+				limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority_wide = yes }
 
 				WA_AI_PC_start_project = yes
 				set_temp_variable = { break = 1 }
@@ -686,16 +744,32 @@ WA_AI_priority_queue_synthetic_refinery = {
 
 WA_AI_priority_queue_hydro_steel_refinery = {
 
-		if = { limit = { check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 } }
+	if = { limit = { check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 } }
 
 		set_temp_variable = { _project_building_type = 11 }
 		set_temp_variable = { _project_province_id = 0 }
 		set_temp_variable = { _project_priority = 100 }
 		set_temp_variable = { _project_queue_num = 1 }
+		# Fix 40: explicit bounds / leak hygiene - see the header note above
+		set_temp_variable = { _project_queue_max = 1 }
+		set_temp_variable = { _project_target_state = 0 }
+		set_temp_variable = { _project_target_level = 0 }
 
+		set_temp_variable = { _refinery_q_before_ = WA_AI_PC_queue^num }
+
+		# Fix 40 pass 1 - preferred sites (filtered draw)
 		random_scope_in_array = { array = controlled_states
+			limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority = yes }
 
-			if = { limit = { WA_AI_PC_can_build_project = yes WA_AI_region_priority = yes}
+			WA_AI_PC_start_project = yes
+			set_temp_variable = { break = 1 }
+		}
+
+		# Fix 40 pass 2 - widened sites, only when pass 1 queued nothing
+		if = { limit = { NOT = { check_variable = { WA_AI_PC_queue^num > _refinery_q_before_ } } }
+
+			random_scope_in_array = { array = controlled_states
+				limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority_wide = yes }
 
 				WA_AI_PC_start_project = yes
 				set_temp_variable = { break = 1 }
@@ -712,10 +786,26 @@ WA_AI_priority_queue_hydro_aluminium_refinery = {
 		set_temp_variable = { _project_province_id = 0 }
 		set_temp_variable = { _project_priority = 100 }
 		set_temp_variable = { _project_queue_num = 1 }
+		# Fix 40: explicit bounds / leak hygiene - see the header note above
+		set_temp_variable = { _project_queue_max = 1 }
+		set_temp_variable = { _project_target_state = 0 }
+		set_temp_variable = { _project_target_level = 0 }
 
+		set_temp_variable = { _refinery_q_before_ = WA_AI_PC_queue^num }
+
+		# Fix 40 pass 1 - preferred sites (filtered draw)
 		random_scope_in_array = { array = controlled_states
+			limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority = yes }
 
-			if = { limit = { WA_AI_PC_can_build_project = yes WA_AI_region_priority = yes}
+			WA_AI_PC_start_project = yes
+			set_temp_variable = { break = 1 }
+		}
+
+		# Fix 40 pass 2 - widened sites, only when pass 1 queued nothing
+		if = { limit = { NOT = { check_variable = { WA_AI_PC_queue^num > _refinery_q_before_ } } }
+
+			random_scope_in_array = { array = controlled_states
+				limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority_wide = yes }
 
 				WA_AI_PC_start_project = yes
 				set_temp_variable = { break = 1 }
@@ -732,10 +822,26 @@ WA_AI_priority_queue_steel_refinery = {
 		set_temp_variable = { _project_province_id = 0 }
 		set_temp_variable = { _project_priority = 100 }
 		set_temp_variable = { _project_queue_num = 1 }
+		# Fix 40: explicit bounds / leak hygiene - see the header note above
+		set_temp_variable = { _project_queue_max = 1 }
+		set_temp_variable = { _project_target_state = 0 }
+		set_temp_variable = { _project_target_level = 0 }
 
+		set_temp_variable = { _refinery_q_before_ = WA_AI_PC_queue^num }
+
+		# Fix 40 pass 1 - preferred sites (filtered draw)
 		random_scope_in_array = { array = controlled_states
+			limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority = yes }
 
-			if = { limit = { WA_AI_PC_can_build_project = yes WA_AI_region_priority = yes }
+			WA_AI_PC_start_project = yes
+			set_temp_variable = { break = 1 }
+		}
+
+		# Fix 40 pass 2 - widened sites, only when pass 1 queued nothing
+		if = { limit = { NOT = { check_variable = { WA_AI_PC_queue^num > _refinery_q_before_ } } }
+
+			random_scope_in_array = { array = controlled_states
+				limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority_wide = yes }
 
 				WA_AI_PC_start_project = yes
 				set_temp_variable = { break = 1 }
@@ -752,10 +858,26 @@ WA_AI_priority_queue_aluminium_refinery = {
 		set_temp_variable = { _project_province_id = 0 }
 		set_temp_variable = { _project_priority = 100 }
 		set_temp_variable = { _project_queue_num = 1 }
+		# Fix 40: explicit bounds / leak hygiene - see the header note above
+		set_temp_variable = { _project_queue_max = 1 }
+		set_temp_variable = { _project_target_state = 0 }
+		set_temp_variable = { _project_target_level = 0 }
 
+		set_temp_variable = { _refinery_q_before_ = WA_AI_PC_queue^num }
+
+		# Fix 40 pass 1 - preferred sites (filtered draw)
 		random_scope_in_array = { array = controlled_states
+			limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority = yes }
 
-			if = { limit = { WA_AI_PC_can_build_project = yes WA_AI_region_priority = yes }
+			WA_AI_PC_start_project = yes
+			set_temp_variable = { break = 1 }
+		}
+
+		# Fix 40 pass 2 - widened sites, only when pass 1 queued nothing
+		if = { limit = { NOT = { check_variable = { WA_AI_PC_queue^num > _refinery_q_before_ } } }
+
+			random_scope_in_array = { array = controlled_states
+				limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority_wide = yes }
 
 				WA_AI_PC_start_project = yes
 				set_temp_variable = { break = 1 }
