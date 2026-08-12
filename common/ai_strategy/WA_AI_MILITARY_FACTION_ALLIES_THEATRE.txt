@@ -97,6 +97,24 @@ WA_AI_MILITARY_ALLIES_commonwealth_north_africa_support_THEATRE = {
 
 
 # Phase 6 split from WA_AI_MILITARY_ALLIES_no_italy_invasion_early (THEATRE domain)
+# purpose: deprioritise the Italian theatre in the two windows where the bloc should NOT be putting
+#          weight there - before Husky is possible at all (pre-Jul 1943) and during D-Day staging
+#          (1944.3.1 - 1944.6.6). It is a *timing* brake, not a success brake.
+#          FIX (2026-08-12, campaign 9a4cd657): a third enable branch used to arm this the moment the
+#          Allies held Sicily (115 + 1032) AND Calabria (156), with no upper bound - so succeeding at
+#          the bridgehead permanently deprioritised the theatre the bridgehead had just opened.
+#          Combined with the hold-Sicily bridge dying on the same event, capturing Calabria swung
+#          area_priority italy -600 / south_italy -800 in one instant, and the Allied advance stopped
+#          at a 1.49 force advantage (documentation/WA_ITALIAN_THEATRE_REVIEW.md section 1).
+#          That branch is pre-WA legacy carried since 2023 (git log -S "has_full_control_of_state =
+#          156"); the "matched pair with a handover" framing in the sibling comments is retrospective
+#          - only the bridge side was ever designed. Branch removed here. Its worst case was
+#          ahistorical: with Italy Allied from 1936 the branch is true from turn one, so the bloc
+#          permanently deprioritised defending its own ally's homeland.
+#          The INVASION twin keeps all three branches deliberately - see the note there.
+# range:   -200 to +1000 (narrow area, 2 strategic regions, per WA_AI_MILITARY_ECONOMY.md E1)
+# policy:  Additive per area
+# domain:  THEATRE
 WA_AI_MILITARY_ALLIES_no_italy_invasion_early_THEATRE = {
 
 	allowed = {
@@ -120,20 +138,6 @@ WA_AI_MILITARY_ALLIES_no_italy_invasion_early_THEATRE = {
 				date < 1944.6.6
 			}
 			date < 1943.7.1
-			AND = {
-				any_country = {
-					WA_AI_MILITARY_is_allies_member = yes
-					has_full_control_of_state = 115
-				}
-				any_country = {
-					WA_AI_MILITARY_is_allies_member = yes
-					has_full_control_of_state = 1032
-				}
-				any_country = {
-					WA_AI_MILITARY_is_allies_member = yes
-					has_full_control_of_state = 156
-				}
-			}
 		}
 	}
 	abort_when_not_enabled = yes
@@ -694,6 +698,50 @@ WA_AI_MILITARY_ALLIES_hold_sicily_bridge_THEATRE = {
 		type = area_priority
 		id = italy
 		value = 400
+	}
+}
+
+# purpose: successor to the hold-Sicily bridge - carries the theatre from the fall of Calabria to the
+#          end of the Italian campaign. The bridge (above) covers landing -> toe secured and dies on
+#          "enemy no longer holds 156"; before this block existed nothing took over, so the theatre
+#          economy fell off a cliff at the exact moment the mainland campaign began (campaign
+#          9a4cd657: Allied advance halted at a 1.49 force advantage, then reversed;
+#          documentation/WA_ITALIAN_THEATRE_REVIEW.md section 1). Deliberately mutually exclusive
+#          with the bridge - the NOT on 156 below means the two never both apply, so the additive
+#          area_priority cannot double-count and the bridge's sizing rationale (below the +1000
+#          husky pull, well below the +4000 germany pulls) still holds.
+#          Weighting is the mirror of the bridge's: the bridge front-loads south_italy (+800) because
+#          the fight is on the island and the toe; here the fight has moved north, so italy carries
+#          +400 and south_italy drops to a +100 rear-area floor rather than pulling divisions back.
+#          Gate is controller/faction-based with no dates and no enemy tags - it works for any
+#          ahistorical Italian campaign, including one where a non-faction co-belligerent holds the
+#          foothold (WA_AI_MILITARY_italy_theatre_contested counts has_war_together_with, which the
+#          bridge blocks do not).
+# range:   -200 to +1000 (narrow areas, 2 and 1 strategic regions, per WA_AI_MILITARY_ECONOMY.md E1)
+# policy:  Additive per area
+# domain:  THEATRE
+# FRONT-domain twin: WA_AI_MILITARY_ALLIES_italy_mainland_push_FRONT (keep the enable identical).
+WA_AI_MILITARY_ALLIES_italy_mainland_push_THEATRE = {
+
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
+	enable = {
+		has_war = yes
+		WA_AI_MILITARY_italy_theatre_contested = yes
+		NOT = { 156 = { CONTROLLER = { has_war_with = ROOT } } }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = area_priority
+		id = italy
+		value = 400
+	}
+	ai_strategy = {
+		type = area_priority
+		id = south_italy
+		value = 100
 	}
 }
 

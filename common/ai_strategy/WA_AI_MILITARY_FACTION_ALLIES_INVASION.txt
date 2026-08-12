@@ -190,9 +190,24 @@ WA_AI_MILITARY_ALLIES_dday_hold = {
 					is_ai = yes
 				}
 			}
+			# FIX (2026-08-12, campaign 9a4cd657): this branch used to be the bare pair
+			# "date > 1944.12.1 AND has_war_with = JAP", which has no exit condition at all - from
+			# December 1944 onward the western bloc was PERMANENTLY forbidden to invade Germany or
+			# France while Japan was still in the war. In 9a4cd657 the Allied presence in
+			# metropolitan France went 69 divisions (1944.9) to ZERO (1944.10) and was never
+			# re-attempted for the remaining 18 months, with this suppression armed throughout
+			# (documentation/WA_ITALIAN_THEATRE_REVIEW.md section 3.2).
+			# This is the same construct WA_AI_MILITARY_ALLIES_dday_fire_FRONT already had refactored
+			# away for the same reason - see its comment: the calendar gate "switched off all France
+			# invasion execution in any campaign where the European war ran long". dday_fire got the
+			# situational exit; dday_hold never did. Same fix applied here, mirrored: the Pacific
+			# pivot may only switch off European invasions once Germany is actually breaking.
+			# The surrender_progress term reads the ENEMY's collapse, not our own capability, so it
+			# is not the R27 anti-pattern - do not "clean it up" on a grep of that rule.
 			AND = {
 				date > 1944.12.1
 				has_war_with = JAP
+				GER = { surrender_progress > 0.5 }
 			}
 			date < 1942.1.1
 			AND = {
@@ -432,6 +447,23 @@ WA_AI_MILITARY_ALLIES_minor_allies_dont_invade = {
 
 
 # Phase 6 split from WA_AI_MILITARY_ALLIES_no_italy_invasion_early (INVASION domain)
+# purpose: stop the bloc scattering naval invasions around Italy and the Adriatic. The third enable
+#          branch (Allies hold 115 + 1032 + 156) is the anti-scatter rule and is KEPT DELIBERATELY,
+#          unlike in the THEATRE twin where the same branch was removed on 2026-08-12: once a land
+#          route up the peninsula exists, further amphibious operations against Italy compete with it
+#          for the same divisions. The failure this prevents is measured - campaign 2b607968 at
+#          1943.7.15 had 32 Allied divisions parked in fresh Sardinia / Calabria / Dodecanese
+#          invasion plans while 13 fought on Sicily (see WA_AI_MILITARY_ALLIES_hold_sicily_bridge_*).
+#          Commit 2e3686fa1 is explicit that the INVASION domain must keep dying at first capture.
+#          What was wrong was the THEATRE twin using the same branch to cut *theatre priority*, which
+#          starves the land campaign the branch assumes is happening. Suppressing redundant landings
+#          and deprioritising the theatre are different decisions and no longer share a gate.
+#          NOTE the payload also carries Balkan and anti-Sealion-mirror policy (invade YUG / ALB /
+#          ENG): changing this enable changes those too. That coupling is why the fix went to the
+#          THEATRE side only.
+# range:   invade 0 to -2000 per target; invasion_unit_request -100 to +200
+# policy:  Additive per target
+# domain:  INVASION
 WA_AI_MILITARY_ALLIES_no_italy_invasion_early_INVASION = {
 
 	allowed = {

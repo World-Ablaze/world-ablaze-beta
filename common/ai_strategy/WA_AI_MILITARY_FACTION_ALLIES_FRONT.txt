@@ -63,10 +63,24 @@ WA_AI_MILITARY_ALLIES_europe_first = {
 
 
 
+# purpose: density brake on the Italian mainland (regions 21 + 23) while the bloc is at war with
+#          Italy - the peninsula is narrow and the front cannot use unlimited divisions.
+#          FIX (2026-08-12, campaign 9a4cd657): this block and its _after_flip sibling had NO
+#          `allowed` clause, so the brake reached every Allies member while every compensating
+#          Italian boost is limited to ENG/USA/CAN - the suppression audience was strictly wider than
+#          the boost audience. Scoped to the same trio, and given the principle-4 escape hatch below.
+# range:   -100 to +200 (percent factor, per WA_AI_MILITARY_ECONOMY.md E2)
+# policy:  Additive per area
+# domain:  FRONT
 WA_AI_MILITARY_ALLIES_avoid_italy_overstack = {
+
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
 	enable = {
 		WA_AI_MILITARY_is_allies_member = yes
 		has_war_with = ITA
+		NOT = { WA_AI_MILITARY_owns_italy_mainland = yes }
 	}
 	abort_when_not_enabled = yes
 
@@ -79,11 +93,33 @@ WA_AI_MILITARY_ALLIES_avoid_italy_overstack = {
 
 
 
+# purpose: the same density brake once Italy has changed sides - replaces the -40 above, which keys
+#          on has_war_with = ITA and switches off at the flip. Heavier because the co-belligerent
+#          Italian army now holds part of the frontage itself.
+#          THREE FIXES (2026-08-12, campaign 9a4cd657):
+#          (a) `allowed` added - see the sibling above; the brake reached every Allies member.
+#          (b) Escape hatch added. -80 is veto-class (<= -50), and WA_AI_MILITARY_ECONOMY.md
+#              principle 4 states "a veto that can apply to the country whose homeland it covers is a
+#              starvation bug by construction". Co-belligerent Italy satisfies
+#              WA_AI_MILITARY_is_allies_member, so it was braking its own defence of its own soil by
+#              80 - while Germany was simultaneously arming +100/+100 on the same two regions from
+#              the same event (WA_AI_MILITARY_COUNTRY_GER_FRONT.txt GER_frontline_requests_6).
+#          (c) `has_government = democratic` dropped. Italy can leave the Axis on a non-democratic
+#              path; on that path the -40 died and the -80 never armed, i.e. the brake silently did
+#              not exist. Gating coalition behaviour on one ideology breaks AGENTS.md design
+#              principle 1 (setup-agnostic). Membership plus war with Germany is the real condition.
+# range:   -100 to +200 (percent factor, per WA_AI_MILITARY_ECONOMY.md E2)
+# policy:  Additive per area
+# domain:  FRONT
 WA_AI_MILITARY_ALLIES_avoid_italy_overstack_after_flip = {
+
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
 	enable = {
 		WA_AI_MILITARY_is_allies_member = yes
+		NOT = { WA_AI_MILITARY_owns_italy_mainland = yes }
 		ITA = {
-			has_government = democratic
 			WA_AI_MILITARY_is_allies_member = yes
 			has_war_with = GER
 		}
@@ -898,6 +934,80 @@ WA_AI_MILITARY_ALLIES_hold_sicily_bridge_FRONT = {
 		type = front_unit_request
 		strategic_region = 238
 		value = 50
+	}
+}
+
+# purpose: FRONT half of the bridge's successor - keeps divisions flowing to the Italian mainland
+#          from the fall of Calabria to the end of the campaign. See the THEATRE twin
+#          (WA_AI_MILITARY_ALLIES_italy_mainland_push_THEATRE) for the full rationale; keep the two
+#          enable blocks identical. Targets regions 21 and 23 because that is where the fight goes
+#          after the toe falls - region 238 is handled by the bridge while the toe is contested and
+#          becomes rear area afterwards.
+#          Sized at +60 so that a USA carrying the always-on region-23 -65 and the -80 overstack
+#          brake is not left at a net veto on the one theatre it is supposed to be fighting in; the
+#          E2 ceiling is +200 and out-bidding by stacking additive blocks is explicitly the mechanism
+#          that broke the German side of this theatre, so this is a floor-raise, not an arms race.
+# range:   -100 to +200 (percent factor, per WA_AI_MILITARY_ECONOMY.md E2)
+# policy:  Additive per area
+# domain:  FRONT
+WA_AI_MILITARY_ALLIES_italy_mainland_push_FRONT = {
+
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
+	enable = {
+		has_war = yes
+		WA_AI_MILITARY_italy_theatre_contested = yes
+		NOT = { 156 = { CONTROLLER = { has_war_with = ROOT } } }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 21
+		value = 60
+	}
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 23
+		value = 60
+	}
+}
+
+# purpose: keep the western bloc committed to the Italian front once Italy is co-belligerent.
+#          Re-homed here 2026-08-12 from WA_AI_MILITARY_ENG_war_against_ITA_3_FRONT
+#          (WA_AI_MILITARY_COUNTRY_ENG_FRONT.txt), which was the ONLY post-flip Italian positive in
+#          the mod and applied to England alone. Campaign 9a4cd657: after the Italian defection ENG
+#          netted +20 on regions 21/23 and the USA netted -145, and the theatre became visibly
+#          British - USA 0-4 divisions in Italy through 1945 against ENG's 26-36. That was not an
+#          emergent effect, it was one block existing for one country. This is coalition behaviour,
+#          so per WA_AI_MILITARY_SYSTEM.md it belongs at the highest shared layer; the Country copy
+#          was deleted in the same commit rather than left to stack additively on top of this one.
+#          Values carried over unchanged from the ENG original (+100 / +100).
+# range:   -100 to +200 (percent factor, per WA_AI_MILITARY_ECONOMY.md E2)
+# policy:  Additive per area
+# domain:  FRONT
+WA_AI_MILITARY_ALLIES_italy_cobelligerent_support_FRONT = {
+
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
+	enable = {
+		has_war_with = GER
+		is_in_faction_with = ITA
+		date > 1942.1.1
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		area = italy
+		value = 100
+	}
+	ai_strategy = {
+		type = front_unit_request
+		area = south_italy
+		value = 100
 	}
 }
 
