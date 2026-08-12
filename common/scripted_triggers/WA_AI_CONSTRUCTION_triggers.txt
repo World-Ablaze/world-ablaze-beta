@@ -193,10 +193,54 @@ WA_AI_PC_can_build_project = {
 }
 
 # THIS = STATE, PREV = BUILDER, _project_building_type, _project_province_id
-# Checks if we already have a project of the same type in this state
+# Checks if ANY builder already has a project of the same type in this state.
+# Fix 46: was ROOT-only. WA_AI_PC_projects_in_state_of_@ROOT is keyed by builder, so for the
+# building types with allied_build = yes (air_base, infrastructure) the host nation and its
+# ally each saw an empty array for the other and both queued the same state - campaign
+# 9a4cd657 1944.7 had ENG and USA simultaneously funding an air base in state 126 and in
+# state 860, and the UK-hosting capacity gate then counted the same state twice as "claimed".
+# The second term is the builder-agnostic counter maintained by WA_AI_PC_start_project /
+# WA_AI_PC_end_project_by_id. The original ROOT-array term is KEPT deliberately: on a save
+# resumed from a pre-Fix-46 build the counter starts at 0 for every in-flight project, and
+# without it the guard would regress to nothing until the whole legacy queue drains.
 WA_AI_PC_has_same_type_project_here = {
-	any_of = { array = WA_AI_PC_projects_in_state_of_@ROOT value = v_proj
-		check_variable = { ROOT.WA_AI_PC_building_type^v_proj = _project_building_type }
+	OR = {
+		any_of = { array = WA_AI_PC_projects_in_state_of_@ROOT value = v_proj
+			check_variable = { ROOT.WA_AI_PC_building_type^v_proj = _project_building_type }
+		}
+		check_variable = { WA_AI_PC_state_type_projects^_project_building_type > 0 }
+	}
+}
+
+### Fix 47: air-base priority band gate
+# THIS/ROOT = builder country. TRUE when this country - or a faction partner it can build
+# for (air_base has allied_build = yes) - fields an air force large enough that BASING is a
+# plausible constraint on deploying it, rather than airframes or pilots.
+#
+# Why a bare size test is the right gate, with no capacity term of its own: every air-base
+# project in the PC queue was created by a strategy that ALREADY proved a capacity deficit
+# (WA_AI_build_uk_air_hosting_capacity's hosting-capacity gate, WA_AI_build_theatre_air_bases'
+# side-wide per-theatre gate). Re-deriving the deficit here would re-run a faction-wide
+# 12-airframe sum inside a trigger evaluated per candidate state. The project's existence is
+# the deficit evidence; this trigger only asks whether the air force behind it is worth
+# outranking a refinery for.
+#
+# has_deployed_air_force_size is the engine's own counter - num_deployed_planes is not
+# readable as a set_temp_variable rvalue (campaign 5709c8b9), which is why both strategies
+# inline 12 per-airframe sums, and why this gate deliberately uses the trigger form instead.
+#
+# Thresholds are absolute, on WA's air scale (~1/3 vanilla; the strategies' own token floor
+# is 99 deployed planes). No major clears them before ~1940, so early-war construction
+# ordering is unchanged and the blast radius is confined to the mid/late war, which is when
+# the overstacking this fixes actually appears.
+@AI_PC_AIR_PRIO_OWN_PLANES = 500		# own air force big enough to outrank the strategic band
+@AI_PC_AIR_PRIO_ALLY_PLANES = 1000		# or a faction partner whose air force we host
+WA_AI_PC_air_force_needs_basing_priority = {
+	OR = {
+		has_deployed_air_force_size = { size > @AI_PC_AIR_PRIO_OWN_PLANES }
+		any_allied_country = {
+			has_deployed_air_force_size = { size > @AI_PC_AIR_PRIO_ALLY_PLANES }
+		}
 	}
 }
 

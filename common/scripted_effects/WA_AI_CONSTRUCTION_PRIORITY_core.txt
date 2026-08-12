@@ -235,8 +235,16 @@ WA_AI_PC_get_building_cost = {
 ### PRIORITY BAND TABLE (every _project_priority in the PC system belongs to one band):
 ###   1000  rail-war        @WA_AI_PC_railway_PRIO (railway_core/helpers; x1.1 high-route = 1100 cap)
 ###    500  rail-prewar     @WA_AI_PC_railway_PRIO_PREWAR (railway_core/helpers/strategies)
+###    300  air-basing      Fix 47: air bases queued by WA_AI_build_uk_air_hosting_capacity or
+###                         WA_AI_build_theatre_air_bases *while* the builder (or a faction
+###                         partner it hosts) fields an air force past
+###                         WA_AI_PC_air_force_needs_basing_priority. Deliberately ABOVE the
+###                         strategic band and BELOW rail-prewar: an air force that cannot be
+###                         based is inert in a way a rubber shortage is not, but the rail
+###                         livelock this table was written to fix must stay fixed. Reverts to
+###                         100 on its own once the air force shrinks back under the gate.
 ###    250  strategic       the three shortage-driven refinery families (WA_AI_CONSTRUCTION_queue_functions.txt)
-###    100  default         everything else (radar, air bases, supply lines, MIC/CIC, ...)
+###    100  default         everything else (radar, air bases at rest, supply lines, MIC/CIC, ...)
 ### The rail bands still outrank everything (relative order unchanged); compression just keeps
 ### the numbers in one auditable scale. Starvation itself is fixed by the overtake lane below,
 ### NOT by aging priorities upward - a blanket aging boost was rejected because it would fund
@@ -915,9 +923,21 @@ WA_AI_PC_end_project_by_id = {
 	# Factory total is recalculated by WA_AI_PC_assign_factories after all completions
 
 	# Remove from state tracking (per-country array stores project IDs)
+	# Fix 46: the builder-agnostic counter added by WA_AI_PC_start_project is decremented in
+	# the same block, through the same var: accessor, so the pair can never desync. Read the
+	# type into a temp FIRST - building_type is cleared a few lines below, and an indexed
+	# variable cannot be resolved from inside the state scope once it is gone. The > 0 guard
+	# makes this idempotent and safe on saves resumed from a pre-Fix-46 build, where in-flight
+	# projects were queued without an increment and would otherwise drive the counter negative
+	# (a negative counter reads as "no project here" and would silently disable the guard).
+	set_temp_variable = { _pc_end_btype_ = WA_AI_PC_building_type^_project_id }
 	if = { limit = { NOT = { check_variable = { WA_AI_PC_target_state^_project_id = 0 } } }
 		var:WA_AI_PC_target_state^_project_id = {
 			remove_from_array = { array = WA_AI_PC_projects_in_state_of_@ROOT value = _project_id }
+			if = {
+				limit = { check_variable = { WA_AI_PC_state_type_projects^_pc_end_btype_ > 0 } }
+				subtract_from_variable = { WA_AI_PC_state_type_projects^_pc_end_btype_ = 1 }
+			}
 		}
 	}
 
@@ -1081,12 +1101,44 @@ WA_AI_PC_add_finished_building_by_id = {
 # THIS = state, PREV = builder country
 # Input: _project_building_type, _project_province_id, _project_connect_id,
 #        _project_priority, _project_queue_num, _project_queue_max, _project_target_level, _project_type_id
+# Optional input: _project_queue_max_scoped (Fix 47) - see the latch immediately below
 # Creates projects and adds them to the dynamic queue
 WA_AI_PC_start_project = {
 	# Debug: log entry
 	ROOT = { if = { limit = { has_country_flag = WA_AI_construction_logging }
 		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC START_PROJECT ENTRY: type=[?_project_building_type] state=[PREV.GetName] prov=[?_project_province_id]->[?_project_connect_id]"
 	} }
+
+	# Fix 47: OPT-IN queue_max scoping, latched and immediately cleared.
+	#
+	# By default _project_queue_max is a country-wide budget over the BUILDING TYPE
+	# (queued_amount_ below counts every queued project of the same type, whatever
+	# created it). For building type 2 that put two unrelated strategies on one
+	# 3-slot budget: WA_AI_build_uk_air_hosting_capacity and WA_AI_build_theatre_air_bases
+	# compete first-come-first-served, and campaign 911bed3c caught the consequence -
+	# both of ENG's air slots held Pacific theatre projects at 1943.6 (the exact pulse
+	# the UK deficit reopened), and all three USA slots were non-UK at 1945.6. Fix 47's
+	# priority band cannot arbitrate this: UK and theatre air bases now sit in the SAME
+	# band, so only the slot budget decides. Setting _project_queue_max_scoped = 1 makes
+	# queue_max count only projects carrying the caller's own _project_type_id, giving
+	# each strategy an independent budget.
+	#
+	# CLEAR-ON-READ on the opt-in switch only. It is a shared temp that persists across the
+	# whole execution chain, and this codebase has already been bitten by exactly that:
+	# WA_AI_CONSTRUCTION_queue_functions.txt:681-689 records refinery projects inheriting
+	# "3 from the two air strategies, 5 from the railway core, 0 from the railway helpers"
+	# because they set _project_queue_num but not _project_queue_max. Latching the switch and
+	# zeroing the original means the 30 call sites that never set it CANNOT inherit an
+	# opted-in state - unscoped stays structurally the default.
+	#
+	# _project_type_id is deliberately NOT cleared the same way. It is still an input below:
+	# the scoped queue budget compares it at :1194 and the new project persists it at :1281.
+	# Clearing it here would strip the caller's tag before either use, collapsing the independent
+	# type-20/type-21 air budgets back together. Callers that introduce a private tag retire it
+	# caller-side. Fix 50 separately pins railway stale-project validation to type 13, so a port
+	# helper's type-14 tag can no longer redirect that validator.
+	set_temp_variable = { _qmax_scoped_ = _project_queue_max_scoped }
+	set_temp_variable = { _project_queue_max_scoped = 0 }
 
 	# Validate location is controlled
 	if = {
@@ -1126,7 +1178,22 @@ WA_AI_PC_start_project = {
 			set_temp_variable = { _province_already_queued = 0 }
 			for_each_loop = { array = WA_AI_PC_queue value = _check_proj_id
 				if = { limit = { check_variable = { WA_AI_PC_building_type^_check_proj_id = _project_building_type } }
-					add_to_temp_variable = { queued_amount_ = 1 }
+					# Fix 47: queued_amount_ backs the queue_max budget. Unscoped (default) it
+					# stays a country-wide count over the building type - unchanged semantics
+					# for every existing caller. Scoped, it counts only projects tagged with
+					# the caller's own type_id, so two strategies sharing a building type get
+					# independent budgets. _queued_here_ and the province-duplicate test below
+					# are deliberately NOT scoped: those guard against building twice in one
+					# place, which is wrong no matter which strategy queued the other project.
+					if = {
+						limit = {
+							OR = {
+								NOT = { check_variable = { _qmax_scoped_ = 1 } }
+								check_variable = { WA_AI_PC_type_id^_check_proj_id = _project_type_id }
+							}
+						}
+						add_to_temp_variable = { queued_amount_ = 1 }
+					}
 					# Fix 37: per-state count for the target-level test
 					if = { limit = { check_variable = { WA_AI_PC_target_state^_check_proj_id = _level_check_state_ } }
 						add_to_temp_variable = { _queued_here_ = 1 }
@@ -1236,6 +1303,20 @@ WA_AI_PC_start_project = {
 					add_to_array = { WA_AI_PC_projects_in_state_of_@ROOT = _project_id }
 				}
 
+				# Fix 46: BUILDER-AGNOSTIC per-state, per-building-type project counter.
+				# WA_AI_PC_projects_in_state_of_@ROOT above is keyed by builder, so an allied
+				# builder (any building with allied_build = yes - air_base, infrastructure)
+				# cannot see the host nation's project in the same state, and vice versa.
+				# Campaign 9a4cd657 1944.7: ENG and USA were each funding an air base in
+				# state 126 AND state 860 at the same time, one of the two guaranteed to be
+				# wasted civ-weeks. WA_AI_PC_has_same_type_project_here reads this counter.
+				# Written through var:WA_AI_PC_target_state (NOT PREV) so the increment uses
+				# the identical accessor as the decrement in WA_AI_PC_end_project_by_id -
+				# PREV is a province scope on the railway path and would desync the pair.
+				var:WA_AI_PC_target_state^_project_id = {
+					add_to_variable = { WA_AI_PC_state_type_projects^_project_building_type = 1 }
+				}
+
 				# Update counters for next iteration
 				add_to_temp_variable = { final_building_level_ = 1 }
 				add_to_temp_variable = { queued_amount_ = 1 }
@@ -1249,4 +1330,3 @@ WA_AI_PC_start_project = {
 	} # end ROOT
 	} # end if (controlled)
 }
-

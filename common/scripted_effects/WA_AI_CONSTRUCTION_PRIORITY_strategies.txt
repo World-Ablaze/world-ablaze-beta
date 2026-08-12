@@ -61,6 +61,19 @@ WA_AI_priority_construction_strategies = {
 	WA_AI_build_theatre_air_bases = yes
 }
 
+### Priority bands used by the strategies in this file. @ constants are file-scoped in HOI4
+### script, so these are a REDECLARATION of the band table that
+### common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_core.txt owns - keep the two in sync.
+@AI_PC_PRIO_DEFAULT = 100			# radar, supply lines, MIC/CIC, air bases at rest
+@AI_PC_PRIO_AIR_BASING = 300		# Fix 47: air bases while the air force outgrows its basing
+
+### Strategy type ids (WA_AI_PC_type_id), used with _project_queue_max_scoped so that two
+### strategies queuing the SAME building type get independent queue_max budgets. 13 and 14
+### are taken by the railway system (railway_core/helpers); keep this block and those in
+### one numbering space.
+@AI_PC_TYPE_ID_UK_AIR = 20			# Fix 47: WA_AI_build_uk_air_hosting_capacity
+@AI_PC_TYPE_ID_THEATRE_AIR = 21		# Fix 47: WA_AI_build_theatre_air_bases
+
 ### priority construction strategies
 
 WA_AI_important_radar_constructions = {
@@ -950,7 +963,27 @@ WA_AI_build_uk_air_hosting_capacity = {
 
 	@UK_AIR_CAPACITY_PER_LEVEL = 100	# NDefines.NBuildings.AIRBASE_CAPACITY_MULT (05_defines.lua)
 	@UK_AIR_TARGET_LEVEL_CAP = 12		# per-state cap, leaves slots for other buildings
-	@UK_AIR_HOSTED_FACTION_SHARE = 0.5	# share of the faction's planes the UK should be able to host
+	# Fix 47: 0.5 -> 0.65. Measured on campaign 9a4cd657 (1944.7): 20,503 faction planes
+	# against 7,100 capacity - 71 levels held-or-queued across the 11 hosting states, where
+	# the old 0.5 asked for 103. The strategy was correctly reporting a 32-level shortfall
+	# and still could not host the RAF+USAAF, because half the faction's aviation is the
+	# wrong target once the whole Western Front stages out of Britain. 0.65 asks for 133.
+	#
+	# STRUCTURAL CEILING: 11 hosting states x @UK_AIR_TARGET_LEVEL_CAP = 132 levels, so the
+	# ceiling and not this share is what ultimately bounds the build - it cannot run away.
+	# The two are deliberately close: 0.65 keeps the gate open all the way to the ceiling at
+	# 1944 plane counts, rather than closing early on a temporary dip after air losses and
+	# stalling the ladder short of the target. The cost of that choice is that air bases
+	# hold the 300 band (see the band table in ..._core.txt) for as long as the deficit
+	# stands, which for ENG means its shortage refineries run on the Fix 41 overtake lane
+	# instead of the sorted fill. Drop to 0.60 (target 123, under the ceiling) if the
+	# refineries need their band back more than the RAF needs the last 10 levels.
+	@UK_AIR_HOSTED_FACTION_SHARE = 0.65	# share of the faction's planes the UK should be able to host
+	# Fix 47: civs/pass a host must put on air bases (2 full 20-civ slots) before an allied
+	# builder stands down. @ constants are file-scoped, so this is declared here but is used
+	# ONLY by WA_AI_build_theatre_air_bases further down - this UK strategy deliberately has
+	# no host-funding gate at all (see its USA branch for why the two differ).
+	@AI_PC_AIR_HOST_FUNDING_FLOOR = 40
 
 	# DIAGNOSIS INSTRUMENTATION (campaign 0e7e7852: the strategy produced zero
 	# projects on a build that verifiably contained it, and saves cannot show why -
@@ -980,20 +1013,37 @@ WA_AI_build_uk_air_hosting_capacity = {
 				AND = {
 					original_tag = USA
 					is_in_faction_with = ENG
-					# only step in when ENG cannot or will not act on the deficit itself:
-					# player-controlled, not actually funding air bases, or genuinely poor.
-					# Fix 38 (campaign 31eaf7e6): the old capability-only civ test blocked
-					# the USA for the whole war while ENG's own air slots ran at 0 assigned
-					# factories in 4 of 5 sampled saves - having civs available is not the
-					# same as spending them on air bases. WA_AI_PC_air_factories_assigned
-					# is written for every AI country by WA_AI_PC_assign_factories (weekly).
-					ENG = {
-						OR = {
-							is_ai = no
-							check_variable = { WA_AI_PC_air_factories_assigned < 1 }
-							num_of_civilian_factories_available_for_projects < 16
-						}
-					}
+					# Fix 47: NO host-condition gate. The USA co-builds until the hosting
+					# target is met, whatever ENG's economy is doing.
+					#
+					# History of this gate, because the shape keeps failing the same way.
+					# Originally it was a capability test on ENG's civs; Fix 38 (campaign
+					# 31eaf7e6) showed that blocked the USA for the whole war while ENG's own
+					# air slots ran at 0 assigned factories in 4 of 5 sampled saves - having
+					# civs is not the same as spending them - and replaced it with
+					# "ENG assigns < 1 civ to air". Campaign 9a4cd657 then showed that closing
+					# too: ENG sat at exactly 1 air civ in 1944.7 with the faction 32 levels
+					# short, so the USA - which supplied 585 of the 874 air civ-months measured
+					# over 1942-44 - was locked out by a single factory. Promoting air bases to
+					# the 300 band would have made that permanent, since ENG now almost always
+					# assigns something. A rate test (>= 2 full slots) was the next iteration
+					# and is still the wrong shape: any host-spending threshold makes the
+					# ALLY's participation a function of the HOST's budget rather than of the
+					# shortfall the ally exists to cover.
+					#
+					# What makes dropping it safe now is Fix 46: WA_AI_PC_has_same_type_project_here
+					# became builder-agnostic, so ENG and USA can no longer queue the same state
+					# (they demonstrably did, in state 126 and state 860 simultaneously). With
+					# collisions impossible, two builders working the same 11-state set is pure
+					# added throughput. The deficit branch below (_uk_target_capacity_ >
+					# _uk_hosting_capacity_) is the only stop condition either builder needs -
+					# it closes for BOTH of them the moment the target is met.
+					#
+					# WA_AI_build_theatre_air_bases deliberately KEEPS its host-funding gate
+					# (@AI_PC_AIR_HOST_FUNDING_FLOOR): it spans every faction member across ten
+					# theatres, where an ungated ally would pile into every partner's contested
+					# theatre at once. This strategy is a two-builder, eleven-state special case
+					# with a known 60-level shortfall, so it does not need that brake.
 				}
 			}
 		}
@@ -1072,6 +1122,36 @@ WA_AI_build_uk_air_hosting_capacity = {
 
 		if = { limit = { check_variable = { _uk_target_capacity_ > _uk_hosting_capacity_ } }
 
+			### Fix 47: lift the host's PC allocation ceiling while the deficit stands.
+			# Measured on campaign 9a4cd657: ENG's PC pool ran 32-87 civs (mean 52) across
+			# 1942-44 while the derived uncommitted-civ figure sat at 59-162 EVERY sampled
+			# month and never once hit the 0.30 floor. ENG was not civ-poor - it was holding
+			# idle factories that @AI_PC_ALLOC_FRACTION (0.35) forbade PC from touching, and
+			# air bases were losing the 35% it did get to the 250-band refineries. Raising
+			# the host's share is what lets it fund basing AND its shortage refineries
+			# instead of trading one for the other.
+			#
+			# WA_AI_PC_override_max_factories_factor is the existing per-country escape hatch
+			# (WA_AI_PC_assign_factories reads it in place of @AI_PC_ALLOC_FRACTION), chosen
+			# over editing that global constant so this cannot change construction for every
+			# other AI in the game.
+			#
+			# HAZARD - the flag and its variable are SHARED with the railway system
+			# (WA_AI_CONSTRUCTION_PRIORITY_railway_core.txt sets the same pair). The value
+			# here is deliberately identical to railway's 0.5: with matching values the two
+			# writers are idempotent and the 30-day refresh from either keeps it live. Do not
+			# diverge the numbers without giving each system its own flag, or they will
+			# alternate on a last-writer-wins timer.
+			#
+			# Self-releasing: the 30-day flag is only refreshed while this deficit branch
+			# runs, so allocation falls back to 0.35 within a month of the target being met.
+			# Host only - the ally is funding its own projects out of its own pool.
+			if = {
+				limit = { original_tag = ENG }
+				set_country_flag = { flag = WA_AI_PC_override_max_factories_factor value = 1 days = 30 }
+				set_variable = { WA_AI_PC_override_max_factories_factor = 0.5 }
+			}
+
 			### expand the least-developed hosting state first
 			# Fix: the old two-pass select stored THIS.id from STATE scope and compared it
 			# to a -1 sentinel in country scope - the stored value is scope-encoded, the
@@ -1086,11 +1166,23 @@ WA_AI_build_uk_air_hosting_capacity = {
 			set_temp_variable = { _project_building_type = 2 }
 			set_temp_variable = { _uk_air_started_ = 0 }
 			set_temp_variable = { _uk_air_try_level_ = 0 }
+
+			# Fix 47: band selection, resolved ONCE in country scope - the trigger is a
+			# faction scan and must not run per candidate state inside the ladder below.
+			set_temp_variable = { _uk_air_prio_ = @AI_PC_PRIO_DEFAULT }
+			if = {
+				limit = { WA_AI_PC_air_force_needs_basing_priority = yes }
+				set_temp_variable = { _uk_air_prio_ = @AI_PC_PRIO_AIR_BASING }
+			}
 			while_loop_effect = {
 				limit = {
 					check_variable = { _uk_air_started_ < 1 }
 					check_variable = { _uk_air_try_level_ < @UK_AIR_TARGET_LEVEL_CAP }
 				}
+
+				# Fix 46: queue depth before the attempt, so dbg_started below can count
+				# projects actually QUEUED rather than sites merely found (see the counter).
+				set_temp_variable = { _uk_air_qnum_before_ = WA_AI_PC_queue^num }
 
 				random_state = {
 					limit = {
@@ -1106,6 +1198,18 @@ WA_AI_build_uk_air_hosting_capacity = {
 								NOT = { is_controlled_by = ROOT }
 								WA_AI_available_AIR_allied = yes
 								NOT = { WA_AI_PC_has_same_type_project_here = yes }
+								# Fix 46: the ally must pass the SAME free-slot test the host
+								# nation gets via WA_AI_PC_can_build_project above. Without it an
+								# allied builder could queue a 2000-IC air base into a state with
+								# no free shared slot, fund it at up to 20 civs for weeks, and
+								# then have WA_AI_PC_complete_project_by_id refuse to spawn the
+								# building (its own WA_AI_PC_building_slot_available gate) -
+								# the whole build silently discarded. Air bases compete for state
+								# slots with arms factories, which ENG builds by the hundred in
+								# exactly these states, so a full state is the normal case, not
+								# an edge case. Same trigger, same _project_building_type = 2 set
+								# above the ladder, so queue-time and completion-time agree.
+								WA_AI_PC_building_slot_available_for_type = yes
 							}
 						}
 					}
@@ -1113,18 +1217,43 @@ WA_AI_build_uk_air_hosting_capacity = {
 					set_temp_variable = { _project_building_type = 2 }
 					set_temp_variable = { _project_province_id = 0 }
 					set_temp_variable = { _project_target_state = 0 }
-					set_temp_variable = { _project_priority = 100 }
+					set_temp_variable = { _project_priority = _uk_air_prio_ }
 					set_temp_variable = { _project_queue_num = 1 }
 					set_temp_variable = { _project_queue_max = 3 }
+					# Fix 47: these 3 slots are the UK strategy's OWN budget. Before, queue_max
+					# counted every type-2 project country-wide, so theatre air bases elsewhere
+					# consumed the UK allowance - on 911bed3c both of ENG's slots held Pacific
+					# projects on the very pulse the UK deficit reopened.
+					set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_UK_AIR }
+					set_temp_variable = { _project_queue_max_scoped = 1 }
 					set_temp_variable = { _project_target_level = @UK_AIR_TARGET_LEVEL_CAP }
 					WA_AI_PC_start_project = yes
+					# Fix 47: hand the shared temp back. Core clears _project_queue_max_scoped
+					# itself but must NOT clear _project_type_id (railway_core reads it back
+					# across its own start_project calls - see the note there), so the tag is
+					# retired here instead. Without this, the next type-2 caller that does not
+					# set a type_id - WA_AI_fortify_strategic_islands is one - would inherit
+					# @AI_PC_TYPE_ID_UK_AIR and be counted against the UK budget.
+					set_temp_variable = { _project_type_id = 0 }
 
 					ROOT = {
+						# _uk_air_started_ latches on SITE FOUND, not on queue success: if
+						# WA_AI_PC_start_project refused (queue max, duplicate), the next level
+						# up would be refused for the same reason, so the ladder still stops.
 						set_temp_variable = { _uk_air_started_ = 1 }
 						# dbg_best now records the LEVEL a project was started at (-2 = no deficit,
 						# unchanged; no start with a deficit leaves it -2 as before)
 						set_variable = { WA_AI_uk_air_dbg_best = _uk_air_try_level_ }
-						add_to_variable = { WA_AI_uk_air_dbg_started = 1 }
+						# Fix 46: gate the counter on the queue actually growing. The old
+						# unconditional increment counted eligible SITES FOUND, not projects
+						# queued, and over-reported by ~4x (campaign 9a4cd657 1944.7: ENG 97 +
+						# USA 39 "starts" against 34 air-base levels delivered UK-wide). Same
+						# form as WA_AI_thair_dbg_started in WA_AI_build_theatre_air_bases, which
+						# has always been gated this way - the two counters are now comparable.
+						if = {
+							limit = { check_variable = { WA_AI_PC_queue^num > _uk_air_qnum_before_ } }
+							add_to_variable = { WA_AI_uk_air_dbg_started = 1 }
+						}
 					}
 				}
 
@@ -1363,6 +1492,14 @@ WA_AI_build_theatre_air_bases = {
 				### member state first (level-ladder + ROOT-hopped flag per the state-scope
 				### temp trap documented in the UK strategy above)
 
+				# Fix 47: band selection, resolved ONCE in country scope - the trigger is a
+				# faction scan and must not run per candidate state inside the ladder below.
+				set_temp_variable = { _thair_prio_ = @AI_PC_PRIO_DEFAULT }
+				if = {
+					limit = { WA_AI_PC_air_force_needs_basing_priority = yes }
+					set_temp_variable = { _thair_prio_ = @AI_PC_PRIO_AIR_BASING }
+				}
+
 				# _project_building_type must be set BEFORE the ladder: the limit triggers
 				# below (WA_AI_PC_can_build_project / WA_AI_PC_has_same_type_project_here)
 				# read it
@@ -1405,17 +1542,27 @@ WA_AI_build_theatre_air_bases = {
 										# deficit itself: player-controlled, not actually funding
 										# air bases, or genuinely poor. Fix 38 (campaign 31eaf7e6):
 										# capability is not funding - see the UK hosting gate above.
+										# Fix 47: `< 1` became a RATE test for the reason documented
+										# on that gate - once air bases hold the 300 band the host
+										# almost always assigns SOME civ, and a spending-anything
+										# test would lock the ally out permanently.
 									NOT = { is_controlled_by = ROOT }
 									NOT = { CONTROLLER = { is_subject_of = ROOT } }
 									WA_AI_available_AIR_allied = yes
 									CONTROLLER = {
 										OR = {
 											is_ai = no
-											check_variable = { WA_AI_PC_air_factories_assigned < 1 }
+											check_variable = { WA_AI_PC_air_factories_assigned < @AI_PC_AIR_HOST_FUNDING_FLOOR }
 											num_of_civilian_factories_available_for_projects < 16
 										}
 									}
 									NOT = { WA_AI_PC_has_same_type_project_here = yes }
+									# Fix 46: same free-slot test the own/subject branches get via
+									# WA_AI_PC_can_build_project - see the UK hosting branch for
+									# the full rationale. Without it the allied builder funds a
+									# project that WA_AI_PC_complete_project_by_id will refuse to
+									# spawn for want of a slot.
+									WA_AI_PC_building_slot_available_for_type = yes
 								}
 							}
 						}
@@ -1423,12 +1570,18 @@ WA_AI_build_theatre_air_bases = {
 						set_temp_variable = { _project_building_type = 2 }
 						set_temp_variable = { _project_province_id = 0 }
 						set_temp_variable = { _project_target_state = 0 }
-						set_temp_variable = { _project_priority = 100 }
+						set_temp_variable = { _project_priority = _thair_prio_ }
 						set_temp_variable = { _project_queue_num = 1 }
 						set_temp_variable = { _project_queue_max = @THEATRE_AIR_QUEUE_MAX }
+						# Fix 47: own budget, independent of the UK hosting strategy's - see
+						# the matching pair there.
+						set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_THEATRE_AIR }
+						set_temp_variable = { _project_queue_max_scoped = 1 }
 						set_temp_variable = { _project_target_level = @THEATRE_AIR_TARGET_LEVEL }
 						set_temp_variable = { _thair_qnum_before_ = ROOT.WA_AI_PC_queue^num }
 						WA_AI_PC_start_project = yes
+						# Fix 47: retire the tag - see the matching note in the UK strategy.
+						set_temp_variable = { _project_type_id = 0 }
 
 						# Fix: WA_AI_PC_start_project can decline internally (queue_max, same-type
 						# dedup, province duplicate) with no return signal - live test 2b607968
