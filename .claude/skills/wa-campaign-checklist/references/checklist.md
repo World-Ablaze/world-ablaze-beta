@@ -6,6 +6,7 @@ Headline: **Fix 43 worked, and it worked completely — the Eastern Front is won
 The delivery legs keep passing and three retire this campaign (R11, R14, R18). The refinery repair landed: R29's flapping signature is gone, bids are placed and answered, and ENG's 1943-45 park collapse does not recur. The demand legs still fail: R15/R8 basing (USA Pacific air is one 100-plane wing for six consecutive samples), R9 (A* still returns success zero times, 3rd campaign), R13 (North Africa regressed — lost `911bed3c`'s one bidirectional exchange), R24, R28, and R7b — where the diagnosis has genuinely moved (see that item: the donor/recipient windows **did** overlap once and still nothing shipped).
 
 **Build state for the NEXT campaign (2026-08-12, after `9a4cd657`):** Fixes 42-45 are now **tested** — R27 PASSED (the headline result), R29's two new sub-probes largely passed while the item still fails on its unfixed half. **Fixes 46-49 are still uncommitted and still untested**: commit them, boot-test the combined build (five `ai_equipment` files, the new `WA_AI_EQUIPMENT_*` trigger/effect family, and the `wa_tlm_version` 2→3 bump), then run a campaign to score R30-R33 against the pre-fix control readings now recorded in those items. Priority for the *next* fix cycle is the Allied-basing family (R15/R8) — see the F5 headline: the German demand channel works and the Allied one does not, which is a narrower target than anything R27 was chasing.
+**Boot-status update (2026-08-12):** the user launched the current local working-tree build carrying Fixes 46-50 and reported **no new entry in `error.log`**. The parse/launch debt for the `WA_AI_EQUIPMENT_*` priority modifiers and generated tank-frontier blocks is therefore discharged. Behavioural campaign probes R30-R35 remain untested.
 
 **Superseded build notes, retained for the fix rationale (2026-08-11):** `1b08151df` carries **Fixes 42, 43, 44** on the refinery controller (arithmetic, hydro closability, bid gates re-derived to the trade quantum) — F9 boot-tested and clear. The working tree adds **Fix 45** (retreat on the variant the bid opened — defect H below), which is **NOT yet boot-tested**: re-run the launch harness before the next cloud campaign. R29 now carries Fix 44 and Fix 45 sub-probes, both needing **no new instrumentation**: watch whether bauxite `produced` ever changes month-to-month, and whether `wa_ai_bauxite_bid_hydro` appears. The design rationale behind all three lives in `documentation/WA_REFINERY_CONTROLLER_REVIEW.md`, and **§1 of that document must be read before touching this system** — the functional need inverts what a code-only reading concludes.
 The working tree also adds **Fix 46** (SOV submarine design priorities — new item **R30**). No boot test is owed for it on its own: the change is three numeric `factor` values and one `ship_radar` token added to an existing `allowed_modules` list in `common/ai_equipment/SOV_naval.txt`, all constructs already used by sibling designs in the same group; brace balance verified (delta 0). It carries **no new instrumentation** — R30 is answered entirely from save-native production lines and fleet composition.
@@ -146,8 +147,9 @@ Protocol for scoring, retiring, and adding items: see `../SKILL.md`. Streak = co
 ### F9. Game boots
 
 - **Pass:** the build the campaign runs on launches without CTD. Scored per build, before the campaign: run the launch harness after any commit touching `force_concentration` blocks in country ai_strategy files — the deterministic-CTD lesson is that `GER_fall_gelb` + `war_with_soviets` fc entries are load-bearing (see comments in `common/ai_strategy/GER.txt` and the `d69eef2fa` incident).
-- **Streak:** 5
+- **Streak:** 6
 - **History:**
+  - 2026-08-12 · current local working tree (Fixes 46-50) · PASSED — user-confirmed launch with no new `error.log` entry. This clears the first in-game parse/load test of the `WA_AI_EQUIPMENT_*` scripted-trigger modifiers and the generated parallel-tank-frontier blocks; it does not score R30-R35's behavioural legs.
   - 2026-08-10 · `66d6b53c` · PASSED — build through `083b224ac` booted on the cloud box and ran 9.5 game-years without CTD. (HEAD adds only `17505d9a9` + docs on top; boot-test HEAD before the next campaign anyway.)
   - 2026-08-11 · `31eaf7e6` · PASSED — the 2026-08-11 stack (Fixes 30–33, R15/R16/R17) booted on the cloud box and ran 10.4 game-years without CTD; R15's two flagged parse-risk constructs cleared in campaign conditions.
   - 2026-08-11 · build through `5c85cd41a` (Fixes 35–40: warbonds retry, ratio repair, air-ledger retune + dday_air pre-arm, port-demolition cap, Mulberries, allied-funding package, overextension brake, refinery unlock) + the WA_TLM working-tree changes · PASSED — boot-tested by a parallel session; user-confirmed. Clear for the next cloud campaign.
@@ -708,6 +710,45 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
   2. **Outcome leg.** Allied divisions in metropolitan France do not sit at **0 for more than 3 consecutive months** while GER is uncapitulated and the Allies hold ≥1 European foothold elsewhere. The `9a4cd657` reading is 18 consecutive months at zero.
 - **Probe:** divisions-per-state walk over the 24 metropolitan French states per month from the D-Day month to campaign end (the method used for the review's §3.2 table — `units`-scoped, cross-checked against `savegame.py army`); plus GER `surrender_progress` at each sample to decide whether leg 1 is scoreable or `N/A`. No new instrumentation — both legs are save-native.
 - **Threshold:** 5 (behavioural — whether a theatre stays re-enterable over the back half of a campaign is an outcome, not a variable reading).
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **History:**
+  - *(none yet)*
+
+### R35. Parallel tank branches select the best researched and affordable design (Fix 50)
+
+- **Fix under test:** Fix 50 — competitive-frontier generation for 11 branched
+  tank roles in `ENG/FRA/GER/JAP/SOV/USA_tank.txt` (authored 2026-08-12,
+  commit hash TBD). The selector derives topology from technology `path` edges,
+  ranks every design sharing the role, neutralises old file-order supersession
+  hooks, and keeps lower positive-priority fallbacks. Resource-heavy ranks are
+  held by the latched `WA_AI_EQUIPMENT_can_absorb_*_shock_*` gates. The canonical
+  regression is USA medium tanks: the real branches are Sherman and T20/T23,
+  not `Sherman -> T20 -> T23`; the generated order is **M4A3E8 > M4A2 > T23 >
+  T20 > M4A1 > M3 Lee > M2**.
+- **Pass, three legs:** (1) after USA has researched M4A2 and T20/T23, its
+  `land_medium_tank` production line resolves to M4A2 or M4A3E8, never T20/T23;
+  (2) with `usa_medium_tank_chassis_3_3` researched, an open
+  `WA_AI_EQUIPMENT_tun_small_ok` latch selects M4A3E8, while a closed latch
+  exposes M4A2 rather than leaving the role empty; (3) across the other ten
+  branched groups, every active line resolves to the highest-ranked researched
+  design whose resource hold is open, or to a lower/emergency fallback — zero
+  branched roles with researched designs may have no production candidate.
+- **Probe:** save-native; no WA_TLM added. For USA plus ENG/FRA/GER/JAP/SOV,
+  dump each country's `production` and technology/flag sections at 1940.6,
+  1942.6, 1944.6 and campaign end. Resolve every `equipment_variant_index`
+  through the top-level `equipments={}` registry (a name grep on `production`
+  alone returns MIO names and is invalid). Compare the resolved chassis/design
+  against `tools/equipment_evaluator/output/parallel_branch_decisions.md`, but
+  first filter that ranking to researched enable techs and discard any rank
+  whose required `WA_AI_EQUIPMENT_*_ok` country flag is absent. Explicitly
+  report USA's medium line, `WA_AI_EQUIPMENT_tun_small_ok`, and whether
+  `usa_medium_tank_chassis_3_2`, `_3_3`, `_4`, `_5` are researched at each
+  date. Build fingerprint: git ancestry must include Fix 50; generated
+  `WA_EQUIPGEN_BEGIN ... kind=priority_factor` comments do not serialize into
+  saves and are not a save-native fingerprint.
+- **Threshold:** 3 (narrow — the result is a discrete equipment-variant choice
+  after resolving tech and latch state, not an emergent campaign outcome).
 - **Streak:** 0
 - **Status:** NOT YET TESTED
 - **History:**

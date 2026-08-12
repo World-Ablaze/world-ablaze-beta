@@ -2633,6 +2633,24 @@ JAP_naval_carrier_light = {
 	}
 }
 
+# Fix 48: design priority in this group must follow CAPABILITY, not hull index.
+# Same defect class as Fix 46 on SOV_naval.txt. The jap_submarine_hull_N numbering is
+# class-historical, not a quality ladder (all stats common/units/equipment/ship_hull_submarine.txt):
+#   hull_1 Ro     - ocean-going small,  range 4840, str 20, cost  420 (jap_submarine_1, 1918 - start tech)
+#   hull_2 Kaidai - ocean-going fleet,  range 5820, str 36, cost 1160 (jap_submarine_2, 1920 - start tech)
+#   hull_3 Otsu   - ocean-going fleet,  range 7500, str 52, cost 1700 (jap_submarine_3, 1937)
+#   hull_4 Hei    - ocean-going fleet,  range 7500, str 52, cost 1700 (jap_submarine_4, 1938)
+#                   strictly better than Otsu: 4 torpedo slots vs 3, radar fitted by default
+#   hull_5 Ro-101 - COASTAL,            range 2580, str 12, cost  240 (jap_submarine_5, 1941)
+#   hull_6 Ha-201 - COASTAL midget,     range 2320, str  8, cost  120 (jap_submarine_6, 1944)
+# The old ascending ladder (10 / 60 / 70 / 70 / 80 / 90) made the two COASTAL hulls the
+# highest-priority designs in the group from 1941 and 1944 - JAP carries the base
+# naval_submarine role_ratio of 25 (WA_AI_PRODUCTION_DEFAULT_navy.txt:7) with no cancelling
+# profile, so the submarine line really does flip to 2580 km / 2320 km boats for the second
+# half of the Pacific war, where the whole point of the role is reaching Allied shipping lanes.
+# Ordering is now range-and-strength first: Hei > Otsu > Kaidai > Ro >> the two coastal hulls.
+# The coastal designs are kept enabled rather than deleted so the hulls still have a design
+# entry; their priorities put them below every ocean-going option.
 JAP_naval_submarine = {
 	category = naval
 
@@ -2709,15 +2727,23 @@ JAP_naval_submarine = {
 			}
 		}
 
+		# Fix 48: ship_radar added. jap_submarine_hull_2 has a fixed_ship_radar_slot
+		# (common/units/equipment/ship_hull_submarine.txt:2067) that this design could never fill.
+		# Same gap Fix 46 closed on the SOV Shchuka, and it matters here because Kaidai is JAP's
+		# best submarine until jap_submarine_3 lands in 1937. Left out of target_variant on
+		# purpose so the match semantics of the block are unchanged before radar is researched.
 		allowed_modules = {
+			ship_radar
 			sub_2_torpedo_tube
 		}
 	}
 
 	submarine_3 = {
 
+		# Fix 48: promoted from 70 -> 120. Otsu is the first 7500 km hull and the intended
+		# wartime mainstay from 1937 until Hei arrives; it must outrank both coastal designs.
 		priority = {
-			factor = 70
+			factor = 120
 			modifier = {
 				factor = 1
 			}
@@ -2747,8 +2773,11 @@ JAP_naval_submarine = {
 
 	submarine_4 = {
 
+		# Fix 48: promoted from 70 -> 140, above Otsu. Hei has identical hull stats to Otsu but a
+		# fourth torpedo slot and radar in its default fit, so it strictly dominates it from 1938;
+		# the old ladder tied them at 70 and left the choice to engine tie-breaking.
 		priority = {
-			factor = 70
+			factor = 140
 			modifier = {
 				factor = 1
 			}
@@ -2780,8 +2809,13 @@ JAP_naval_submarine = {
 
 	submarine_5 = {
 
+		# Fix 48: demoted from 80 -> 5. Ro-101 is a coastal boat (2580 range, 12 strength, two
+		# torpedo slots) and must never outrank the 7500 km hulls for the naval_submarine role.
+		# It was the top-priority design from 1941, i.e. for the whole Pacific submarine campaign.
+		# Kept enabled rather than deleted so the hull retains a design entry; 5 puts it below
+		# every ocean-going option including submarine_default (Ro, 10).
 		priority = {
-			factor = 80
+			factor = 5
 			modifier = {
 				factor = 1
 			}
@@ -2813,8 +2847,11 @@ JAP_naval_submarine = {
 
 	submarine_6 = {
 
+		# Fix 48: demoted from 90 -> 3, below Ro-101. Ha-201 is a coastal midget (2320 range,
+		# 8 strength, ONE torpedo slot) and was the top-priority design in the group from 1944.
+		# Lowest factor in the group: it is the weakest hull JAP can build for this role.
 		priority = {
-			factor = 90
+			factor = 3
 			modifier = {
 				factor = 1
 			}

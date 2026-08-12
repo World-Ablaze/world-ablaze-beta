@@ -1572,6 +1572,17 @@ SOV_naval_carrier = {
 	}
 }
 
+# Fix 46: design priority in this group must follow CAPABILITY, not hull index.
+# The sov_submarine_hull_N numbering is class-historical, not a quality ladder:
+#   hull_1 Shchuka  - medium ocean-going, range 3820, str 14, cost 260  (tech 1930, start tech)
+#   hull_2 Pravda   - fleet boat,        range 3720, str 38, cost 1020 (tech 1934, start tech)
+#   hull_3 Malyutka - COASTAL midget,    range 1640, str  6, cost 100  (tech 1936, start tech)
+#   hull_4 Whiskey  - post-war,          range 5060, str 22, cost 980  (tech 1948, out of reach)
+# The old ascending ladder (10 / 60 / 120 / 140) therefore made the coastal Malyutka the
+# highest-priority REACHABLE design from 1936.1.1 (SOV starts with sov_submarine_3 researched,
+# history/countries/SOV - Soviet Union.txt:152) and Whiskey is 1948, so SOV spent the whole
+# war building 1640-range coastal boats as ~100% of its naval output.
+# Shchuka is now the mainstay, Pravda the heavy alternative, Malyutka a residual option.
 SOV_naval_submarine = {
 	category = naval
 
@@ -1596,8 +1607,10 @@ SOV_naval_submarine = {
 
 	submarine_default = {
 
+		# Fix 46: promoted from 10 -> 120. Shchuka is SOV's ocean-going medium boat and the
+		# best strength-per-IC hull in the group; it is the intended wartime mainstay.
 		priority = {
-			factor = 10
+			factor = 120
 			modifier = {
 				factor = 1
 			}
@@ -1619,7 +1632,13 @@ SOV_naval_submarine = {
 			}
 		}
 
+		# Fix 46: ship_radar added. sov_submarine_hull_1 has a fixed_ship_radar_slot
+		# (common/units/equipment/ship_hull_submarine.txt:2832) that this design could never
+		# fill; harmless while Shchuka was a 10-priority also-ran, not acceptable now that it
+		# is the mainstay for the whole war. Left out of target_variant on purpose so the
+		# match semantics of the block are unchanged before radar is researched.
 		allowed_modules = {
+			ship_radar
 			sub_2_torpedo_tube
 		}
 	}
@@ -1658,8 +1677,13 @@ SOV_naval_submarine = {
 
 	submarine_3 = {
 
+		# Fix 46: demoted from 120 -> 5. Malyutka is a coastal boat (1640 range, 6 strength,
+		# two single sub_torpedo_tube slots) and must never outrank the ocean-going hulls for
+		# the naval_submarine role. Kept enabled rather than deleted: SOV starts with 49 of them
+		# (history/units/SOV_1936_naval_mtg.txt) and removing the design would leave that part
+		# of the fleet with no design entry at all. Priority 5 keeps it below submarine_default.
 		priority = {
-			factor = 120
+			factor = 5
 			modifier = {
 				factor = 1
 			}

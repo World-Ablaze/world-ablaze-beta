@@ -42,7 +42,7 @@ Save-visible persistent families (grep `_dbg_` across `common/` and `events/`):
 | `WA_AI_uk_air_dbg_{called,planes,capacity,best,started}` | `WA_AI_CONSTRUCTION_PRIORITY_strategies.txt:892-1062` | counters + gauges (unstamped) | weekly PC pulse | R8, R23 | live; retire with items |
 | `WA_AI_thair_dbg_{called,target,active,best,started}` | same file `:1130-1392` | counters + gauges | weekly PC pulse | R16 | live; over-count bug fixed; "retire with item" noted in code |
 | `WA_AI_supply_line_dbg_{called,pf_ok,queued,last_state}` | same file `:489-590` | counters + gauge | weekly PC pulse | R9 | live |
-| `WA_AI_invasions_dbg_{adds,removes,active}` | `events/WA_AI_invasions.txt`, `WA_AI_DIVISION_CREATOR_effects.txt:2304`, `WA_AI_MIGRATION_effects.txt` | counters + gauge | event-driven | R14 | live; **migration deliberately falsifies adds−removes** (documented caveat in R14) |
+| `WA_AI_invasions_dbg_{adds,removes,active}` | `events/WA_AI_invasions.txt`, `WA_AI_DIVISION_CREATOR_effects.txt:2304`, `WA_AI_MIGRATION_effects.txt` | counters + gauge | event-driven | **R14 — RETIRED 2026-08-12** (streak 3/3 on `9a4cd657`) | **consumer gone; disposition owed.** Split verdict under §3.8: `_adds`/`_removes` are pure probes → delete; `_active` was used beyond R14 (the stranded-invasions finding, `wa-lessons-learned/references/lessons-log.md:469`) → **promote** to a standing `WA_TLM_invasion_active` gauge with its own row. Deferred until after the Fixes 46-49 validation campaign so the edit does not risk the invasion system mid-cycle. Caveat while it lives: **migration deliberately falsifies adds−removes** |
 | `wa_ai_ita_dbg_r13_{na_front,na_offensive}` (+`_r13` scratch) | `events/WA_AI_ITA.txt:188-253` | one-shot stamps | fire_only_once | R13 | live but **inadequate** — R13 explicitly asks for weekly counters to replace them |
 | `WA_AI_overext_dbg_{active,mic_redirects_refinery,mic_redirects_cic}` | `WA_AI_misc_effects.txt:661-718`, `WA_AI_CONSTRUCTION_queue_functions.txt:113-155` | counters | monthly / on queue call | **none yet** (fix in flight, uncommitted) | needs its checklist probe at commit time |
 
@@ -100,7 +100,7 @@ pre-instrumentation build into a FAILED. Check which namespace you are in first.
 | `wa_ai_supply_line_dbg_last_state` | gauge: last state a corridor project was queued on (`:615`) | — | no (`set_variable`) | — |
 | `wa_ai_overext_dbg_active` | **months** the overextension flag has been set — `+1 per monthly evaluation while the flag is up` (`WA_AI_misc_effects.txt:718`) | current state | no | **A monotone counter, not a boolean.** `= 34` means "flagged for 34 months", not "overextended = true". |
 | `wa_ai_overext_dbg_mic_redirects_{cic,refinery}` | MIC queue calls actually substituted (`WA_AI_CONSTRUCTION_queue_functions.txt:147, :155`) | queue calls the brake declined to reach | no | Absence means **the substitution never ran**, not that the probe is missing — that is exactly how R24's "brake never bit for ENG" was established. |
-| `wa_ai_invasions_dbg_{adds,removes,active}` | scripted-invasion penalty applications / removals / live count (`WA_AI_DIVISION_CREATOR_effects.txt:2304-2305`, `events/WA_AI_invasions.txt:76, :103`) | — | no (but `_active` is `set_variable = 0` by the migration sweep, `WA_AI_MIGRATION_effects.txt:158-159`) | `WA_AI_invasions_migration_1` books a `_removes` per purged pair, so `adds − removes` is **deliberately falsified** across a migration — see R14's documented caveat. |
+| `wa_ai_invasions_dbg_{adds,removes,active}` **(consumer R14 retired 2026-08-12 — see §3.7 row for the split delete/promote disposition)** | scripted-invasion penalty applications / removals / live count (`WA_AI_DIVISION_CREATOR_effects.txt:2304-2305`, `events/WA_AI_invasions.txt:76, :103`) | — | no (but `_active` is `set_variable = 0` by the migration sweep, `WA_AI_MIGRATION_effects.txt:158-159`) | `WA_AI_invasions_migration_1` books a `_removes` per purged pair, so `adds − removes` is **deliberately falsified** across a migration — see R14's documented caveat. |
 | `wa_ai_ita_dbg_r13_{na_front,na_offensive}` | one-shot `fire_only_once` stamps (`events/WA_AI_ITA.txt:188-253`) | persistence — the gate holding once says nothing about it holding after | no | The §3.6 rule 2 failure mode in its original form; R13 asks for weekly counters to replace them. |
 | `wa_ai_aifc_sector_*` (`_states`, `_objectives`, `_anchor`, `_age`, `_enemy`, `_ref` twins) | live AIFC sector state — **not a counter family**, listed here because it is read the same way | — | n/a | Cleared with `clear_variable` / `clear_array` (`WA_AI_AIFC_core.txt:138-156`), so a country with no sector reads as **absent, not 0**. "Sector absent" is the real signal (R27); do not read it as an unwritten probe. |
 
@@ -301,6 +301,25 @@ per series — trivial at depth 44, but do not raise depth casually.
 | `WA_TLM_comp_armor_mech_pct_hist` | ring | quarterly, majors | R6 trend | v1 |
 | `WA_TLM_pc_aging_grants` | counter | on verified lane grant (weekly PC allocator, `WA_AI_PC_assign_factories`) | R26 (PC allocator health) | v2 |
 | `WA_TLM_pc_aging_reval_cancels` | counter | on revalidation-cancel (same site) | R26 | v2 |
+| `WA_TLM_r47_lrange_n` | counter | monthly, all AI (`WA_AI_EQUIPMENT_update_context_flags`) | R31 | v3 |
+| `WA_TLM_r47_lrange_first_t` / `_last_t` | stamps | same site | R31 | v3 |
+| `WA_TLM_r47_alu_large_n` | counter | monthly, all AI (same site) | R32 | v3 |
+| `WA_TLM_r47_alu_large_first_t` / `_last_t` | stamps | same site | R32 | v3 |
+
+**Fix 47 probe semantics.** Both counters are *months the gate was OPEN*, sampled
+**after** the latch update so they read the flag exactly as the `ai_equipment`
+priority modifiers will see it that month — a verified state, not code-path entry
+(§3.6 rule 1). The paired `_n` counter is what makes persistence measurable; the
+`_first_t` stamp alone would over-affirm the way R13's `fire_only_once` stamps did
+(rule 2). `_first_t` is written under a `_n = 1` guard, so a gate that opened at
+clock 0 (1936.1) stamps 0 — read `_n > 0` first, not `_first_t > 0`. Only the two
+gates the pilots consume are instrumented; the steel pair and the
+strategic-bombing latch carry no probe, because a `WA_TLM_` write with no registry
+consumer is an orphan (rule 6). Second signal for validating the first campaign's
+readings: `savegame.py resources <TAG>` net aluminium against `r47_alu_large_*`
+(the gate must only be open in months whose net balance clears +50), and the
+production-line/variant reading for `r47_lrange_*` (SOV's `air_fighter_mr` line
+must sit on the long-range variant exactly while the latch is up).
 
 ## 6. Pilot: army composition (checklist gap R6)
 

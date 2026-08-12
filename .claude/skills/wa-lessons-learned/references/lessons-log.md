@@ -1054,3 +1054,78 @@ process caveats (stale process, and the absence of a load-time hook).
   checklist R29 defect H; `documentation/WA_REFINERY_CONTROLLER_REVIEW.md` §5.2a. Witness
   configuration in campaign `911bed3c`: RIT at 1946.4 holds 2 hydro-inactive + 3 plain-active +
   10 plain-inactive aluminium levels.
+
+### An idempotent writer also needs an idempotent analysis view
+
+- **Date:** 2026-08-12
+- **Symptom:** Replaying one equipment-generator plan was a clean no-op, but
+  analysing the generated files changed 54 redesign verdicts and proposed 26
+  new resource gates. Textual idempotence passed while end-to-end idempotence
+  failed.
+- **Cause:** The evaluator read its own generated module choices as original
+  mod data. The redesign had repaired the deficient stat, so the next analysis
+  saw a different transition and produced second-order decisions.
+- **Rule:** When generated output is also analysis input, ownership markers
+  must carry enough baseline information to reconstruct a logical pre-generation
+  view. Test `analyse -> apply -> analyse -> empty plan`, not merely
+  `apply the same plan twice`. Also normalize line endings in memory when
+  matching source spans, then preserve the file's original BOM and newline
+  convention on write.
+- **Evidence:** `tools/equipment_evaluator/owned_source.py`,
+  `generation/apply.py`, and `test_generation.py`.
+
+### Never infer modular-equipment succession from ai_equipment file order
+
+- **Date:** 2026-08-12
+- **Symptom:** The equipment evaluator reported `M4A3E8 Sherman -> T20 -> T23` and proposed retaining the Sherman against both as if they were consecutive generations.
+- **Cause:** `common/ai_equipment/USA_tank.txt` stores every design serving `land_medium_tank` in one ordered group, while `common/technologies/armor_usa.txt` branches from the M3 Lee into independent Sherman and T20 lines. A later Pershing convergence and reciprocal visual `path` edges can also create a false path back into the other branch if traversal crosses another design group.
+- **Rule:** For modular equipment with explicit enable techs, derive succession from the technology graph, stop at the nearest design unlock on every branch, and treat any unlock owned by another ai_equipment group as a traversal barrier. File order is formatting, not topology.
+- **Evidence:** `common/technologies/armor_usa.txt` (`usa_medium_tank_chassis_2`, `_3`, `_4`, `_5`, `usa_modern_tank_chassis_1`); `common/ai_equipment/USA_tank.txt` (`USA_medium_tanks`); `tools/equipment_evaluator/technology_graph.py`.
+
+### A hard quality threshold must not remove the only production floor
+
+- **Date:** 2026-08-12
+- **Symptom:** The first competitive-frontier dry run rejected early British
+  and Soviet tanks whose reliability was below the configured minimum, which
+  could leave their shared production role with no selectable researched design.
+- **Cause:** The offline quality threshold was treated as an unconditional
+  runtime blacklist without asking whether a compliant successor was available.
+- **Rule:** In a generated equipment selector, a below-threshold but resolvable
+  design is an emergency fallback, not a rejection. Give it the lowest positive
+  priority so it serves the role until a compliant model unlocks; withhold the
+  whole frontier if a design cannot be resolved safely.
+- **Evidence:** `tools/equipment_evaluator/ground.py` (`FrontierDecision`,
+  `_evaluate_frontier`) and the ENG/SOV rows in
+  `tools/equipment_evaluator/output/ground_equipment_report.md`.
+
+### Validate redesign legality before scoring its stats
+
+- **Date:** 2026-08-12
+- **Symptom:** A tank redesign dry run improved reliability by proposing an
+  empty required engine slot, and another proposal duplicated a module whose
+  chassis cap permits only one copy.
+- **Cause:** The ground redesign search scored candidate stats without applying
+  the slot's `required` property or the airframe's effective
+  `module_count_limit` declarations.
+- **Rule:** A modular-equipment redesign candidate enters scoring only after
+  required-slot, allowed-category, count-limit and runtime-resource-gate
+  validation. Optional slots alone may become `empty`. Validate the generated
+  raw `target_variant`, not only the analyser's logical pre-generation view.
+- **Evidence:** `tools/equipment_evaluator/ground.py::_redesign`,
+  `parse_equipment.py::count_limit_violations`, and
+  `test_generation.py::test_frontier_redesigns_keep_required_slots_and_count_limits_legal`.
+
+### Drop byte-identical generator patches before planning
+
+- **Date:** 2026-08-12
+- **Symptom:** A frontier migration applied every real edit correctly, but a
+  second apply reported four unchanged GER priority blocks as pending after a
+  neighbouring edit changed the file fingerprint.
+- **Cause:** Reconciliation emitted before/after blocks that were byte-for-byte
+  identical. The apply result counted them as operations although no textual
+  state could distinguish pending from applied.
+- **Rule:** Filter `original == replacement` before assigning operation IDs or
+  source fingerprints. An idempotent apply protocol cannot represent a no-op as
+  a state transition.
+- **Evidence:** `tools/equipment_evaluator/generation/planner.py::build_plan`
+  and `test_generation.py::test_planner_drops_byte_identical_reconciliation_patches`.

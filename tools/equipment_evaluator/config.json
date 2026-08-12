@@ -1,0 +1,387 @@
+{
+  "_comment": [
+    "Config for tools/equipment_evaluator (AIR DOMAIN, REPORT-ONLY).",
+    "Every knob the decision algorithm reads lives here. Nothing in this file",
+    "is written back to the mod - the evaluator never modifies mod content."
+  ],
+
+  "stat_model": {
+    "_comment": "See stats.py for the derivation of the stacking formula.",
+    "multiply_base_only": false,
+    "thrust_weight_agility_factor": 1.0
+  },
+
+  "range_targets": {
+    "_comment": "Minimum acceptable air_range (km) for a generation transition to clear the range gate. 'default' applies to any role not listed.",
+    "default": 1000,
+    "air_fighter": 1000,
+    "air_fighter_mr": 1000,
+    "air_fighter_int": 1000,
+    "air_heavy_fighter": 1000,
+    "air_night_fighter": 1000,
+    "air_cv_fighter": 1000,
+    "air_cas": 1000,
+    "air_cv_cas": 1000,
+    "air_naval_bomber": 1000,
+    "air_cv_naval_bomber": 1000,
+    "air_light_bomber": 1000,
+    "air_tactical_bomber": 1000,
+    "air_strategic_bomber": 1000,
+    "air_maritime_patrol": 1000,
+    "air_scout_plane": 1000
+  },
+
+  "role_missions": {
+    "_comment": [
+      "Primary HOI4 air mission each role is scored as flying. This selects",
+      "which `mission_type_stats` blocks on a module apply (radar surface",
+      "detection, torpedo naval_strike_targetting, interception air_attack,",
+      "ordnance agility penalties). One mission per role, not a set: a design",
+      "is scored as if doing one job, and applying every overlapping block",
+      "would double-count. Both sides of a transition use the same mission,",
+      "so the comparison stays fair whichever mission is chosen."
+    ],
+    "default": "air_superiority",
+    "air_fighter": "air_superiority",
+    "air_fighter_mr": "air_superiority",
+    "air_fighter_int": "interception",
+    "air_heavy_fighter": "interception",
+    "air_night_fighter": "interception",
+    "air_cv_fighter": "air_superiority",
+    "air_cas": "cas",
+    "air_cv_cas": "cas",
+    "air_naval_bomber": "naval_bomber",
+    "air_cv_naval_bomber": "naval_bomber",
+    "air_light_bomber": "cas",
+    "air_tactical_bomber": "cas",
+    "air_strategic_bomber": "strategic_bomber",
+    "air_maritime_patrol": "naval_patrol",
+    "air_scout_plane": "recon"
+  },
+
+  "role_weights": {
+    "_comment": [
+      "Signed weights over stats. Score of a design vs another is",
+      "  gain = SUM_s w_s * (new_s - old_s) / max(|old_s|, floor_s)",
+      "normalised by SUM |w_s|, so gain is a dimensionless fraction.",
+      "Negative weight = lower is better (cost). air_range is deliberately",
+      "absent: it is the gate, not a scored stat."
+    ],
+    "default": {
+      "air_attack": 0.25,
+      "air_defence": 0.20,
+      "air_agility": 0.20,
+      "maximum_speed": 0.20,
+      "reliability": 0.05,
+      "build_cost_ic": -0.10
+    },
+    "air_fighter": {
+      "air_attack": 0.30,
+      "air_defence": 0.20,
+      "air_agility": 0.25,
+      "maximum_speed": 0.15,
+      "build_cost_ic": -0.10
+    },
+    "air_fighter_mr": {
+      "air_attack": 0.26,
+      "air_defence": 0.18,
+      "air_agility": 0.20,
+      "maximum_speed": 0.14,
+      "air_ground_attack": 0.12,
+      "build_cost_ic": -0.10
+    },
+    "air_fighter_int": {
+      "air_attack": 0.32,
+      "air_defence": 0.20,
+      "air_agility": 0.18,
+      "maximum_speed": 0.20,
+      "build_cost_ic": -0.10
+    },
+    "air_cv_fighter": {
+      "air_attack": 0.30,
+      "air_defence": 0.20,
+      "air_agility": 0.25,
+      "maximum_speed": 0.15,
+      "build_cost_ic": -0.10
+    },
+    "air_heavy_fighter": {
+      "air_attack": 0.30,
+      "air_defence": 0.22,
+      "air_agility": 0.13,
+      "maximum_speed": 0.20,
+      "build_cost_ic": -0.15
+    },
+    "air_night_fighter": {
+      "air_attack": 0.30,
+      "air_defence": 0.22,
+      "air_agility": 0.13,
+      "maximum_speed": 0.20,
+      "build_cost_ic": -0.15
+    },
+    "air_cas": {
+      "air_ground_attack": 0.45,
+      "air_defence": 0.20,
+      "air_agility": 0.10,
+      "maximum_speed": 0.10,
+      "air_attack": 0.05,
+      "build_cost_ic": -0.10
+    },
+    "air_cv_cas": {
+      "air_ground_attack": 0.45,
+      "air_defence": 0.20,
+      "air_agility": 0.10,
+      "maximum_speed": 0.10,
+      "air_attack": 0.05,
+      "build_cost_ic": -0.10
+    },
+    "air_naval_bomber": {
+      "naval_strike_attack": 0.40,
+      "naval_strike_targetting": 0.20,
+      "air_defence": 0.15,
+      "maximum_speed": 0.10,
+      "air_agility": 0.05,
+      "build_cost_ic": -0.10
+    },
+    "air_cv_naval_bomber": {
+      "naval_strike_attack": 0.40,
+      "naval_strike_targetting": 0.20,
+      "air_defence": 0.15,
+      "maximum_speed": 0.10,
+      "air_agility": 0.05,
+      "build_cost_ic": -0.10
+    },
+    "air_light_bomber": {
+      "air_ground_attack": 0.30,
+      "air_bombing": 0.25,
+      "air_defence": 0.18,
+      "maximum_speed": 0.12,
+      "build_cost_ic": -0.15
+    },
+    "air_tactical_bomber": {
+      "air_ground_attack": 0.28,
+      "air_bombing": 0.27,
+      "air_defence": 0.18,
+      "maximum_speed": 0.12,
+      "build_cost_ic": -0.15
+    },
+    "air_strategic_bomber": {
+      "air_bombing": 0.50,
+      "air_defence": 0.20,
+      "maximum_speed": 0.10,
+      "reliability": 0.05,
+      "build_cost_ic": -0.15
+    },
+    "air_maritime_patrol": {
+      "surface_detection": 0.35,
+      "sub_detection": 0.25,
+      "air_defence": 0.15,
+      "maximum_speed": 0.10,
+      "build_cost_ic": -0.15
+    },
+    "air_scout_plane": {
+      "maximum_speed": 0.35,
+      "air_defence": 0.25,
+      "air_agility": 0.20,
+      "build_cost_ic": -0.20
+    }
+  },
+
+  "stat_relative_floors": {
+    "_comment": "Denominator floor per stat when computing relative change, so a 0 -> small change does not produce an infinite gain.",
+    "default": 1.0,
+    "air_attack": 2.0,
+    "air_defence": 2.0,
+    "air_agility": 5.0,
+    "maximum_speed": 50.0,
+    "air_ground_attack": 2.0,
+    "air_bombing": 2.0,
+    "naval_strike_attack": 2.0,
+    "naval_strike_targetting": 1.0,
+    "surface_detection": 1.0,
+    "sub_detection": 1.0,
+    "reliability": 0.1,
+    "build_cost_ic": 2.0
+  },
+
+  "switch": {
+    "_comment": [
+      "min_net_gain: weighted gain (fraction) below which a new generation that",
+      "  DOES clear the range gate is only a marginal improvement (noted, still SWITCH).",
+      "range_override_gain: gain required to adopt a new generation that MISSES the",
+      "  range target and cannot be redesigned to reach it. Below this -> KEEP_OLD.",
+      "  Many 1930s airframes physically cannot reach 1000 km; this is what stops the",
+      "  tool from freezing every early-war line on its first design.",
+      "redesign_min_gain: minimum gain of the redesigned variant over the OLD",
+      "  generation for SWITCH_REDESIGNED to be preferred over KEEP_OLD.",
+      "max_redesign_sacrifice: how much weighted combat score the range-restoring",
+      "  variant may give up relative to the new default design before the redesign",
+      "  is rejected as 'range at any price' (it is still reported in the CSV).",
+      "range_recovery_max_sacrifice: the range gate is otherwise one-sided - it",
+      "  checks only the NEW design, and air_range is deliberately not a scored",
+      "  stat, so a step that lifts a design OVER the target reads as a pure",
+      "  regression (it was marking the mod's own Fix 47 / Fix 49 long-range",
+      "  variants KEEP_OLD). When the old design was below target and the new one",
+      "  is at or above it, the step is adopted provided it gives up no more than",
+      "  this much weighted combat score - the same 'range at any price' guard",
+      "  max_redesign_sacrifice applies to the redesign search."
+    ],
+    "min_net_gain": 0.05,
+    "range_override_gain": 0.05,
+    "redesign_min_gain": 0.0,
+    "max_redesign_sacrifice": 0.25,
+    "range_recovery_max_sacrifice": 0.25
+  },
+
+  "resource_significance": {
+    "_comment": "Per-unit resource increase (new minus old) at or above which a switch is flagged SWITCH_CONDITIONAL so it can be gated on economy state at runtime.",
+    "default": 1.0,
+    "steel": 1.0,
+    "aluminium": 2.0,
+    "rubber": 1.0,
+    "tungsten": 1.0,
+    "chromium": 1.0,
+    "oil": 1.0,
+    "coal": 2.0
+  },
+
+  "runtime_resource_gates": ["steel", "aluminium", "chromium", "tungsten"],
+
+  "frontier_priority": {
+    "_comment": [
+      "Descending multipliers applied to the group's historical maximum design factor.",
+      "The geometric 1/3/10 ladder makes the best affordable design dominant even if",
+      "the engine treats priority as a weight, while every lower rank remains a live fallback."
+    ],
+    "relative_ladder": [1.0, 0.3, 0.1, 0.03, 0.01, 0.003, 0.001, 0.0003, 0.0001, 0.00003, 0.00001, 0.000003]
+  },
+
+  "production_efficiency": {
+    "_comment": [
+      "Line-efficiency retention factors mirror common/defines/05_defines.lua.",
+      "A full switch below full_switch_min_retention is forbidden by default:",
+      "keep mature lines and put only newly available factories on the new model.",
+      "efficiency_penalty_weight converts the immediate lost-output fraction into",
+      "the same dimensionless space as the weighted equipment gain."
+    ],
+    "variant_retention": 0.95,
+    "parent_retention": 0.95,
+    "family_retention": 0.90,
+    "archetype_retention": 0.75,
+    "unrelated_retention": 0.10,
+    "full_switch_min_retention": 0.90,
+    "efficiency_penalty_weight": 0.50,
+    "penalty_free_retention": 0.90,
+    "low_retention_min_gain": 0.10
+  },
+
+  "infantry": {
+    "_comment": "Infantry-equipment scoring. Negative build_cost_ic means cheaper is better.",
+    "min_adjusted_gain": 0.02,
+    "weights": {
+      "soft_attack": 0.30,
+      "hard_attack": 0.05,
+      "breakthrough": 0.15,
+      "defense": 0.25,
+      "ap_attack": 0.05,
+      "reliability": 0.10,
+      "build_cost_ic": -0.10
+    }
+  },
+
+  "ground": {
+    "_comment": [
+      "Complete integrated scoring for tanks, artillery and vehicles.",
+      "Thresholds are hard minimums. Tanks may search legal non-armament module",
+      "replacements to recover them; non-modular equipment cannot be redesigned."
+    ],
+    "min_adjusted_gain": 0.02,
+    "tanks": {
+      "max_candidates_per_slot": 32,
+      "weights": {
+        "default": {
+          "soft_attack": 0.20, "hard_attack": 0.10, "ap_attack": 0.10,
+          "breakthrough": 0.18, "defense": 0.08, "armor_value": 0.12,
+          "maximum_speed": 0.08, "reliability": 0.08,
+          "build_cost_ic": -0.06
+        },
+        "land_medium_tank_destroyer": {
+          "hard_attack": 0.28, "ap_attack": 0.25, "armor_value": 0.12,
+          "breakthrough": 0.08, "maximum_speed": 0.07, "reliability": 0.08,
+          "build_cost_ic": -0.12
+        },
+        "land_medium_tank_artillery": {
+          "soft_attack": 0.42, "breakthrough": 0.12, "defense": 0.08,
+          "maximum_speed": 0.08, "reliability": 0.10, "build_cost_ic": -0.20
+        },
+        "land_medium_tank_anti_air": {
+          "air_attack": 0.45, "maximum_speed": 0.10, "reliability": 0.12,
+          "armor_value": 0.08, "build_cost_ic": -0.25
+        }
+      },
+      "thresholds": {
+        "default": { "reliability": 0.75, "maximum_speed": 4.0 },
+        "land_light_tank": { "maximum_speed": 6.0 },
+        "land_light_tank_destroyer": { "maximum_speed": 5.0 },
+        "land_modern_tank": { "maximum_speed": 6.0 }
+      }
+    },
+    "artillery": {
+      "weights": {
+        "default": {
+          "soft_attack": 0.28, "hard_attack": 0.12, "ap_attack": 0.12,
+          "breakthrough": 0.10, "defense": 0.10, "reliability": 0.10,
+          "build_cost_ic": -0.18
+        },
+        "anti_tank_equipment": {
+          "hard_attack": 0.32, "ap_attack": 0.30, "reliability": 0.10,
+          "build_cost_ic": -0.28
+        },
+        "anti_air_equipment": {
+          "air_attack": 0.42, "hard_attack": 0.08, "reliability": 0.10,
+          "build_cost_ic": -0.30
+        }
+      },
+      "thresholds": { "default": { "reliability": 0.70 } }
+    },
+    "vehicles": {
+      "weights": {
+        "default": {
+          "maximum_speed": 0.18, "reliability": 0.20, "defense": 0.12,
+          "breakthrough": 0.12, "hardness": 0.12, "armor_value": 0.08,
+          "soft_attack": 0.05, "hard_attack": 0.05, "build_cost_ic": -0.08
+        }
+      },
+      "thresholds": {
+        "default": { "reliability": 0.75, "maximum_speed": 6.0 },
+        "motorized_equipment": { "maximum_speed": 10.0 }
+      }
+    }
+  },
+
+  "redesign": {
+    "_comment": [
+      "Module search that tries to restore range on the new airframe.",
+      "candidate_scope: 'country' = modules referenced anywhere in this",
+      "  country's own *_planes.txt at or before the new generation index,",
+      "  plus every module whose name has no country prefix (generic).",
+      "max_slot_changes: how many slots may be altered at once.",
+      "range_module_categories: category name substrings that mark a module as",
+      "  range-relevant (fuel/drop tanks). Engine swaps are handled separately."
+    ],
+    "enabled": true,
+    "candidate_scope": "country",
+    "max_slot_changes": 2,
+    "allow_engine_swap": true,
+    "range_module_categories": ["extra_fuel", "drop_tanks", "fuel_tank"],
+    "max_candidates_per_slot": 24
+  },
+
+  "paths": {
+    "_comment": "All paths are relative to the mod root (auto-detected as tools/../ unless --mod-root is given).",
+    "ai_equipment_dir": "common/ai_equipment",
+    "equipment_dir": "common/units/equipment",
+    "modules_dir": "common/units/equipment/modules",
+    "airframe_globs": ["*plane*.txt"],
+    "module_globs": ["00_plane_modules*.txt", "*plane_modules*.txt"]
+  }
+}

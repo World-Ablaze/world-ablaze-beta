@@ -1,0 +1,278 @@
+###############################################################################
+# WA_AI_EQUIPMENT - runtime context triggers for the ai_equipment designers
+#
+# Fix 47. Owner of the design-context question: "given what this country is
+# actually doing right now, is the newest researched design the RIGHT one?"
+#
+# WHY THIS FILE EXISTS
+# The ai_equipment design groups (common/ai_equipment/*.txt) kill every older
+# design with a blanket `has_tech = <next tech> -> factor = 0` modifier, so the
+# AI always builds the newest researched airframe even when that airframe is
+# worse in its situation (shorter legs than the front needs, or a per-unit
+# resource cost the economy cannot carry). The `priority = { modifier = {} }`
+# blocks accept country-scope triggers, which is the control point. This file
+# is the trigger vocabulary those modifiers speak.
+#
+# SCOPE: every trigger here is COUNTRY scope (THIS = ROOT = the designing
+# country). None of them are valid in state or unit scope.
+#
+# NO COUNTRY TAGS. Per AGENTS.md rule 4 all classification goes through
+# WA_AI_CONFIG.txt archetypes; everything below is dynamic game state
+# (resource balances, wars, borders, enemy air composition) plus one CONFIG
+# archetype call. The ai_equipment country files that CONSUME these triggers
+# are the sanctioned Country layer - the triggers themselves are generic and
+# work for whichever country a shared design group is offered to.
+#
+# TWO TIERS - read this before using a name from this file
+#
+#   *_headroom_* / air_war_wants_range / enemy_fields_strategic_bombers
+#       INSTANTANEOUS readings. They flicker. Only WA_AI_EQUIPMENT_effects.txt
+#       (the monthly latching effect) may call them.
+#
+#   can_absorb_* / needs_long_range_air / faces_strategic_bombing
+#       PUBLIC, LATCHED. These read the timed country flags maintained monthly
+#       by WA_AI_EQUIPMENT_update_context_flags. ai_equipment priorities call
+#       ONLY these. Switching an ai_equipment design costs air/army XP and
+#       re-tools a production line, so a gate that chatters week to week is
+#       worse than no gate at all.
+#
+# FAIL-SAFE DIRECTION (deliberate). The latches are POSITIVE: the flag being
+# absent means "not confirmed". If the monthly effect never runs for a country
+# (a human player, or a tag created mid-game before its first monthly pulse)
+# every public trigger below reads FALSE, which means:
+#   - can_absorb_*        -> the expensive new design stays gated off (safe)
+#   - needs_long_range_air -> the vanilla "newest design wins" behaviour (status quo)
+# Neither failure mode is worse than the pre-Fix-47 behaviour.
+#
+# Consumers: common/ai_equipment/SOV_planes.txt (SOV_fighter_mr, Pilot A),
+#            common/ai_equipment/ENG_planes.txt (ENG_heavy_strategic_bomber, Pilot B).
+# Writer of the latches: common/scripted_effects/WA_AI_EQUIPMENT_effects.txt.
+###############################################################################
+
+
+###############################################################################
+# TIER 1 - INSTANTANEOUS READINGS (latching effect only, never ai_equipment)
+###############################################################################
+
+### Resource headroom
+#
+# `resource@<r>` is the country's NET daily balance: domestic production plus
+# imports plus subject transfers minus consumption. It is the same reading
+# WA_AI_check_resource_needs uses (common/scripted_effects/WA_AI_misc_effects.txt),
+# and it is what the analysis tooling calls the "net" column - NOT gross
+# domestic production (see the checklist's recurring-anomalies note).
+#
+# THRESHOLD SEMANTICS. An ai_equipment design switch changes the per-unit
+# resource cost of an equipment archetype, and HOI4 charges that cost PER
+# ASSIGNED MILITARY FACTORY PER DAY. So a +2 aluminium/unit design change on a
+# 30-factory line is a +60/day step change in draw, not +2.
+#   _small : headroom for a ~10-20/day extra draw and still land non-negative.
+#            > 20 (strict; HOI4 has no >=) => at least 21/day spare.
+#   _large : headroom for a ~40+/day extra draw with a cushion left over.
+#            > 50 => at least 51/day spare, ~10/day left after a 40/day step.
+#
+# WHY THERE IS NO `WA_AI_needs_<r>` LEG. WA_AI_needs_steel / _aluminium ratchet
+# to 3 on the IMPORT leg alone (resource_imported@steel > 15 / @aluminium > 10),
+# so any import-dependent major - exactly the countries these gates are for -
+# sits pinned at 3 permanently even while running a healthy positive net
+# balance. Using it as a veto would nail the gate shut forever, which is worse
+# than the bug being fixed. The fragility guard is WA_AI_industry_overextended
+# instead (Fix 39): a monthly, already-hysteretic flag meaning "2+ war
+# resources pinned at need 3 AND still net-negative after imports AND mil-heavy
+# AND large" - i.e. an economy that genuinely cannot take another draw.
+
+# THIS = country
+WA_AI_EQUIPMENT_steel_headroom_small = {
+	check_variable = { resource@steel > 20 }
+	NOT = { WA_AI_industry_overextended = yes }
+}
+
+# THIS = country
+WA_AI_EQUIPMENT_steel_headroom_large = {
+	check_variable = { resource@steel > 50 }
+	NOT = { WA_AI_industry_overextended = yes }
+}
+
+# THIS = country
+WA_AI_EQUIPMENT_aluminium_headroom_small = {
+	check_variable = { resource@aluminium > 20 }
+	NOT = { WA_AI_industry_overextended = yes }
+}
+
+# THIS = country
+WA_AI_EQUIPMENT_aluminium_headroom_large = {
+	check_variable = { resource@aluminium > 50 }
+	NOT = { WA_AI_industry_overextended = yes }
+}
+
+### Chromium and tungsten - the JET-ERA pair
+#
+# Added for the jet supersession step. Every jet engine module in the mod
+# carries `build_cost_resources = { aluminium N chromium N tungsten N }` where N
+# is the engine multiplicity, so a piston -> jet generation step is a 0 -> 2 or
+# 0 -> 4 per-unit appearance of TWO resources the airframe previously did not
+# consume at all. That is a different shape from the steel/aluminium gates
+# above, which throttle an increase in something already being drawn.
+#
+# LOWER THRESHOLDS THAN STEEL/ALUMINIUM, DELIBERATELY. Chromium and tungsten
+# are low-volume strategic resources: a country running a healthy war economy
+# holds far less net chromium than net steel, so reusing the >20 / >50 bars
+# would nail the jet gate shut for every country in every game. The bars below
+# are scaled to the same *number of factories* the steel/aluminium ones assume,
+# not to the same absolute tonnage:
+#   _small : > 5  => enough for a ~2/unit step on a modest line.
+#   _large : > 15 => enough for a ~4/unit step with a cushion left over.
+#
+# Same `NOT = { WA_AI_industry_overextended = yes }` fragility guard, same
+# reasoning as the steel/aluminium block: `resource@<r>` is the NET daily
+# balance, and WA_AI_needs_<r> is unusable as a veto because it ratchets on the
+# import leg alone.
+
+# THIS = country
+WA_AI_EQUIPMENT_chromium_headroom_small = {
+	check_variable = { resource@chromium > 5 }
+	NOT = { WA_AI_industry_overextended = yes }
+}
+
+# THIS = country
+WA_AI_EQUIPMENT_chromium_headroom_large = {
+	check_variable = { resource@chromium > 15 }
+	NOT = { WA_AI_industry_overextended = yes }
+}
+
+# THIS = country
+WA_AI_EQUIPMENT_tungsten_headroom_small = {
+	check_variable = { resource@tungsten > 5 }
+	NOT = { WA_AI_industry_overextended = yes }
+}
+
+# THIS = country
+WA_AI_EQUIPMENT_tungsten_headroom_large = {
+	check_variable = { resource@tungsten > 15 }
+	NOT = { WA_AI_industry_overextended = yes }
+}
+
+### Does the air war plausibly need range?
+#
+# THIS = country. Three independent legs, any one is enough - each describes a
+# real situation in which a short-legged airframe cannot reach the fight. All
+# three are dynamic: none of them assumes the historical script ran.
+#
+#   (a) ARCHETYPE. A strategic-bombing air force flies deep and needs fighters
+#       that can go with the bombers. WA_AI_CONFIG_is_strategic_bombing_airforce
+#       is the existing CONFIG classifier.
+#   (b) OVERSEAS WAR. At war, and NOT sharing a land border with any enemy -
+#       the whole air war is flown across water from bases that are by
+#       construction far from the target. This is the literal "no land border
+#       with any enemy" reading; a coalition war that merely includes one
+#       distant co-belligerent does NOT trip it.
+#   (c) DEEP THEATRE. At war while holding a very large contiguous land area,
+#       so the capital/industrial core and the active fronts are thousands of
+#       kilometres apart and airfields sit far behind the line. 79 controlled
+#       states is the "continental holding" bar: SOV starts at ~154 owned
+#       states and USA at ~92, while GER (37) and ENG (30) only reach it after
+#       large conquests - at which point the statement is true of them too.
+#       A cheap proxy chosen deliberately over a real capital-to-front distance
+#       computation, which would need the MAP/pathfinding effects and cannot
+#       run inside a trigger.
+WA_AI_EQUIPMENT_air_war_wants_range = {
+	OR = {
+		WA_AI_CONFIG_is_strategic_bombing_airforce = yes
+		AND = {
+			has_war = yes
+			NOT = { any_enemy_country = { is_neighbor_of = ROOT } }
+		}
+		AND = {
+			has_war = yes
+			num_of_controlled_states > 79
+		}
+	}
+}
+
+### Does some enemy actually field a strategic bomber force?
+#
+# THIS = country. CAPABILITY question, deliberately NOT the same thing as
+# WA_AI_CONFIG_faces_strategic_bombing, which is a tag/archetype CLASSIFIER
+# ("is this the sort of country that gets bombed"). This one measures the
+# enemy's actual fielded park, so it is false before the bombers exist and
+# true for whoever ends up on the receiving end in a divergent game.
+#
+# has_war = yes is checked FIRST so the any_enemy_country walk is skipped
+# entirely at peace. `num_deployed_planes_with_type@<archetype>` is the
+# established idiom in this repo (see common/decisions/ITA.txt,
+# common/military_industrial_organization/organizations/*). large_bomber_airframe
+# and large_heavy_bomber_airframe are the two strategic-bomber archetypes
+# (common/units/equipment/plane_airframes.txt:2105 / :2292).
+WA_AI_EQUIPMENT_enemy_fields_strategic_bombers = {
+	has_war = yes
+	any_enemy_country = {
+		OR = {
+			check_variable = { num_deployed_planes_with_type@large_bomber_airframe > 199 }
+			check_variable = { num_deployed_planes_with_type@large_heavy_bomber_airframe > 99 }
+		}
+	}
+}
+
+
+###############################################################################
+# TIER 2 - PUBLIC LATCHED TRIGGERS (this is what ai_equipment calls)
+#
+# Flags are written by WA_AI_EQUIPMENT_update_context_flags on the existing
+# monthly AI pulse. Latch lifetimes and the open/close asymmetry are documented
+# at the write site; the short version:
+#   can_absorb_*          two consecutive confirming months to OPEN, 180 days
+#                         to close. Opening is the expensive direction.
+#   needs_long_range_air  opens on the first confirming month, 180 days to
+#                         close. Over-serving range is cheap; losing it is not.
+#   faces_strategic_bombing  same shape as needs_long_range_air.
+###############################################################################
+
+# THIS = country
+WA_AI_EQUIPMENT_can_absorb_steel_shock_small = {
+	has_country_flag = WA_AI_EQUIPMENT_steel_small_ok
+}
+
+# THIS = country
+WA_AI_EQUIPMENT_can_absorb_steel_shock_large = {
+	has_country_flag = WA_AI_EQUIPMENT_steel_large_ok
+}
+
+# THIS = country
+WA_AI_EQUIPMENT_can_absorb_aluminium_shock_small = {
+	has_country_flag = WA_AI_EQUIPMENT_alu_small_ok
+}
+
+# THIS = country
+WA_AI_EQUIPMENT_can_absorb_aluminium_shock_large = {
+	has_country_flag = WA_AI_EQUIPMENT_alu_large_ok
+}
+
+# THIS = country
+WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = {
+	has_country_flag = WA_AI_EQUIPMENT_chr_small_ok
+}
+
+# THIS = country
+WA_AI_EQUIPMENT_can_absorb_chromium_shock_large = {
+	has_country_flag = WA_AI_EQUIPMENT_chr_large_ok
+}
+
+# THIS = country
+WA_AI_EQUIPMENT_can_absorb_tungsten_shock_small = {
+	has_country_flag = WA_AI_EQUIPMENT_tun_small_ok
+}
+
+# THIS = country
+WA_AI_EQUIPMENT_can_absorb_tungsten_shock_large = {
+	has_country_flag = WA_AI_EQUIPMENT_tun_large_ok
+}
+
+# THIS = country
+WA_AI_EQUIPMENT_needs_long_range_air = {
+	has_country_flag = WA_AI_EQUIPMENT_lrange_ok
+}
+
+# THIS = country
+WA_AI_EQUIPMENT_faces_strategic_bombing = {
+	has_country_flag = WA_AI_EQUIPMENT_stratbomb_ok
+}
