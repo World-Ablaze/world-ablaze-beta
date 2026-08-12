@@ -180,8 +180,7 @@ WA_AI_PC_railway = {
 
 				### Validate queued projects - cancel any that are no longer on valid paths
 				### This cleans up stale projects when frontlines shift or territory is lost
-					set_temp_variable = { _strategy_id = _project_type_id }
-					WA_AI_PC_validate_queued_provincial_projects = yes
+					WA_AI_PC_railway_validate_queued_projects = yes
 
 				### Process port upgrades for overseas operations
 					if = { limit = { check_variable = { railway_port_upgrades_^num > 0 } }
@@ -211,6 +210,16 @@ WA_AI_PC_railway = {
 	else = {
 		add_to_variable = { WA_AI_PC_railway_INTERVAL_counter = -1 }
 	}
+}
+
+### Fix 50: Validate only railway-owned projects, regardless of the last project helper called.
+# ROOT = BUILDER, _valid_provinces array (temp)
+WA_AI_PC_railway_validate_queued_projects = {
+	# Frontier-port creation writes _project_type_id = 14 into the shared temp. Pinning the
+	# generic validator to the railway constant prevents a last partial route from making it
+	# validate/cancel ports while leaving stale railway projects untouched.
+	set_temp_variable = { _strategy_id = @WA_AI_PC_railway_TYPE_ID }
+	WA_AI_PC_validate_queued_provincial_projects = yes
 }
 
 ############################################################################################################

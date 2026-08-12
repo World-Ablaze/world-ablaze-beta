@@ -232,7 +232,7 @@ After strategies populate the output arrays, the core processes each route:
 1. **Pathfinding**: A* via `WA_AI_PATHFIND_PROV_get_path` with `_pathfind_prov_type = 2` (ROOT + allied + subject provinces since `9aef32f41`) and `_pathfind_prov_allow_partial = 1`
 2. **Partial path handling**: Dead-end paths at coastal provinces trigger `WA_AI_PC_create_frontier_port` (queues port construction)
 3. **Segment creation**: For each segment in the path, calls `WA_AI_PC_start_railway_project`
-4. **Stale project validation**: Existing queued projects are checked; those targeting states no longer on the frontline are cancelled
+4. **Stale project validation**: Existing queued railway projects (`type_id = 13`) are checked; those targeting provinces no longer on a valid path are cancelled. Fix 50 pins this filter to the railway constant instead of the shared `_project_type_id` temp, which frontier-port creation temporarily changes to 14.
 5. **Port upgrades**: Processed via `WA_AI_PC_process_port_upgrades` (builds naval bases via PC system, capped at level 9 since L5 railways bottleneck at 44 supply)
 6. **Factory override**: When railway projects are queued, sets override flag to allocate up to 50% extra factory capacity for 30 days
 
@@ -243,6 +243,7 @@ After strategies populate the output arrays, the core processes each route:
 | Function | Line | Description |
 |----------|------|-------------|
 | `WA_AI_PC_railway` | 43 | Main entry point. Manages interval, checks eligibility, dispatches strategies, processes routes. |
+| `WA_AI_PC_railway_validate_queued_projects` | ~216 | Pins stale-project validation to railway `type_id = 13`, isolating it from shared project-input temporaries. |
 | `WA_AI_PC_railway_STRATEGIES` | 209 | Strategy dispatcher. Gets capital info, checks enemy types, calls strategies. |
 
 ### Strategies (`railway_strategies.txt`)
