@@ -14,6 +14,7 @@
 
 ### AIFC eligibility constants (must match common/scripted_effects/WA_AI_AIFC_core.txt)
 @WA_AI_AIFC_MIN_STATES = 2			# Skip micro-nations; nothing to concentrate with
+@WA_AI_AIFC_MIN_DIV = 12			# ...and skip armies too small to HAVE a surplus (Fix 56, see below)
 @WA_AI_AIFC_MAX_SURRENDER = 0.35	# Skip countries already collapsing...
 @WA_AI_AIFC_RECOVERY_MIN_STATES = 20	# ...unless the army is intact: states above this AND
 @WA_AI_AIFC_RECOVERY_MIN_DIV = 40		# divisions above this (Fix 43 escape hatch, see below)
@@ -86,6 +87,36 @@ WA_AI_AIFC_should_select_sector = {
 	has_capitulated = no
 	num_of_controlled_states > @WA_AI_AIFC_MIN_STATES
 	any_enemy_country = { exists = yes }
+
+	# FIX 56 (2026-08-13, campaign 02bd4445): a schwerpunkt needs a SURPLUS to concentrate, and every
+	# term above this one measures TERRITORY, not capability. num_of_controlled_states > 2 is satisfied
+	# by a Reichskommissariat with nine states and zero divisions - at 1944.9 that is literally what
+	# happened: IPI, RBE, RGR and RNO each held a 2-4 state corridor with an army of ZERO, and 10 of the
+	# 28 sector holders that month could not have executed one. It is the same mistake Fix 43 removed
+	# from surrender_progress just below (VP loss is not capability), repeated with a different proxy.
+	# has_army_size already appears in that Fix 43 escape hatch, but only as the second arm of an OR,
+	# where it can never do anything but WIDEN the gate.
+	#
+	# The cost this removes is CPU, not behaviour - checked and confirmed inert: Layer 4 writes only
+	# ROOT-scoped force_concentration_* values, which modulate a surplus a 0-division army does not
+	# have; armour steering is separately gated on has_army_size type = armor; AIFC writes no
+	# front_control, invade or unit_request. The real saving is not the wasted sectors, it is that a
+	# country with NO sector re-selects EVERY week (WA_AI_AIFC_core.txt, the "nothing selected yet"
+	# branch), and the Fix 28 expeditionary fallback it then reaches is an UNCAPPED
+	# every_country/every_controlled_state/every_neighbor_state walk over ~800 states. France ran that
+	# walk ~250 consecutive weeks in 02bd4445 and produced nothing; ~32 tags were in that bucket.
+	#
+	# DO NOT gate this on WA_AI_MILITARY_posture instead. Posture reads 0 for GERMANY at 1944.6,
+	# 1944.9, 1945.6 and 1946.1 while it holds a live sector with 250-285 divisions - a posture gate
+	# would strip the schwerpunkt from the mod's main attacker.
+	#
+	# Threshold: measured blast radius at > 4 was 10 of 28 holders at 1944.9, no major affected,
+	# nearest survivor MEN at 11 divisions. Set to 12 by user decision (2026-08-13), which is tighter
+	# than the measured set: it additionally drops MEN (11) and the marginal FRS/ITL (6) and YUN (8).
+	# No major falls below it in any sampled save - the smallest at-war major reading is ITA at 19.
+	# Small genuine belligerents (FIN in the Winter War, GRE, YUG) were NOT measured at this bar; if a
+	# future campaign shows one of them losing a sector it wanted, this constant is the place to relax.
+	has_army_size = { size > @WA_AI_AIFC_MIN_DIV }
 
 	# Fix 43: surrender_progress measures VP LOSS, not capability. A big country under invasion crosses
 	# 0.35 with its whole army intact, and a country whose capitulation limit is raised by script (SOV via
