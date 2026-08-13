@@ -22,7 +22,12 @@
 # The metric SET is unchanged; the bump exists so a save can be told apart:
 # wa_tlm_version = 4 means nav_screens / nav_port_pct / nav_port_pct_hist are
 # artefacts and must not be scored; = 5 means they are measurements.
-@WA_TLM_VERSION = 5
+# v6 (2026-08-13): adds the standing WA_TLM_post_* family - offensive-posture level-1
+# exchange-rate observations, written per (country, enemy, week) at the posture calculus
+# in WA_AI_MILITARY_posture_effects.txt, NOT by the monthly sampler below. Additive: no
+# existing metric changes meaning, so v5 readings stay valid. A save at wa_tlm_version < 6
+# simply lacks the family - score it NOT CHECKED, never FAILED.
+@WA_TLM_VERSION = 6
 
 ############################################################################################################
 #	Clock - global.WA_TLM_clock = months elapsed since 1936.1
@@ -88,6 +93,19 @@ WA_TLM_init_country = {
 	if = { limit = { NOT = { has_variable = WA_TLM_nav_port_screens } } set_variable = { WA_TLM_nav_port_screens = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_nav_port_pct } } set_variable = { WA_TLM_nav_port_pct = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_nav_last_t } } set_variable = { WA_TLM_nav_last_t = 0 } }
+
+	# offensive posture (standing, consumer: the level-1 exchange-rate question - see the write
+	# site in WA_AI_MILITARY_posture_effects.txt, inside every_enemy_country. Counters are per
+	# (country, enemy, week), NOT per month, so they are incremented at the posture calculus and
+	# not by the monthly sampler below. The three xr buckets are cumulative and nested:
+	# lt25 subset of lt50 subset of lt100, all with post_exec_xr_n as their denominator.)
+	if = { limit = { NOT = { has_variable = WA_TLM_post_exec_n } } set_variable = { WA_TLM_post_exec_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_post_exec_xr_n } } set_variable = { WA_TLM_post_exec_xr_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_post_exec_xr_lt100 } } set_variable = { WA_TLM_post_exec_xr_lt100 = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_post_exec_xr_lt50 } } set_variable = { WA_TLM_post_exec_xr_lt50 = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_post_exec_xr_lt25 } } set_variable = { WA_TLM_post_exec_xr_lt25 = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_post_grind_n } } set_variable = { WA_TLM_post_grind_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_post_last_t } } set_variable = { WA_TLM_post_last_t = 0 } }
 	# WA_TLM_nav_hist_t / WA_TLM_nav_port_pct_hist: arrays, no init (see the comment
 	# above - clearing on re-init is the history wipe the guards exist to prevent)
 }

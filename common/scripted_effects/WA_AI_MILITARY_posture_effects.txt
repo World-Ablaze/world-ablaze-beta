@@ -62,8 +62,28 @@
 #	stands: it is what makes the surviving post-peace entries inert.
 ############################################################################################################
 
+### FIX 55 (2026-08-13, campaign 02bd4445) - MIN_EQ is a cliff, so it now has hysteresis.
+###	Both level 1 and level 2 gate on WA_AI_fielded_eq_ratio > MIN_EQ, and the two blocks that
+###	consume the result - WA_AI_MILITARY_ALLIES_exec_vs_germany (posture 1) and _grind_vs_germany
+###	(posture 2) in common/ai_strategy/WA_AI_MILITARY_FACTION_ALLIES_FRONT.txt - both carry
+###	abort_when_not_enabled = yes. So a single crossing of one threshold retracts EVERY
+###	front_control ... execute_order = yes the western Allies hold against Germany, at once.
+###	In 02bd4445 that is exactly what happened: ENG's ratio went 0.947 (1945.8) -> 0.887 (1945.9),
+###	posture_vs_GER fell 2 -> 0, and 13 metropolitan French states flipped inside that one month
+###	with NO battle behind it (Allied divisions in France 130 -> 121, German 132 -> 123). The
+###	unordered front was then rolled up: -105 Allied divisions over four months against -9 German.
+###	It is reversible - ENG recovered to 0.915 by 1946.1, posture returned to 2 - which is what
+###	identifies the gate rather than the fighting as the cause.
+###	Aggravating condition, deliberately NOT changed here: enemy air supremacy vetoes level 1
+###	outright (_post_air_state = -1), and the Luftwaffe held ~2:1 over France for the whole
+###	liberation, so ENG was riding the level-2 grind alone with no fallback under it.
+###	The fix is the minimum that covers the observed case: 0.887 clears MIN_EQ_HOLD, so a country
+###	already attacking keeps its orders while it recovers, and one that is not attacking still has
+###	to earn the full 0.9 to start. Do NOT collapse the two constants back into one.
+
 ### Posture constants (must match common/scripted_triggers/WA_AI_MILITARY_posture_triggers.txt)
-@WA_AI_POSTURE_MIN_EQ = 0.9				# fielded-equipment ratio required to order any execution
+@WA_AI_POSTURE_MIN_EQ = 0.9				# fielded-equipment ratio required to ENTER an offensive posture
+@WA_AI_POSTURE_MIN_EQ_HOLD = 0.85		# ...and to KEEP one already held (Fix 55 hysteresis, see below)
 @WA_AI_POSTURE_EXEC_RATIO = 0.85		# fighting-strength ratio vs enemy to execute (engine favours defenders)
 @WA_AI_POSTURE_EXEC_RATIO_HOLLOW = 0.7	# lower bar when the enemy's army is badly under-equipped
 @WA_AI_POSTURE_HOLLOW_EQ = 0.75			# enemy fielded-equipment ratio below this counts as hollow
@@ -338,6 +358,11 @@ WA_AI_MILITARY_update_posture = {
 			# -1 = unfavourable (vetoes the grind - we are the ones bleeding), 0 = no signal
 			# (quiet front, first observation, or a stale baseline blowing past the clamp).
 			set_temp_variable = { _post_xr_signal = 0 }
+			# _post_xr_valid: does _post_xr hold a real ratio for THIS enemy this week?
+			# Needed because _post_xr is only written inside the volume guard below, and unlike
+			# _post_xr_signal it is NOT reset per iteration - reading it unguarded would pick up
+			# the previous enemy's ratio. Telemetry-only; no behavioural consumer.
+			set_temp_variable = { _post_xr_valid = 0 }
 			if = {
 				limit = {
 					check_variable = { _post_own_cas_delta > @WA_AI_POSTURE_XR_MIN_OWN }
@@ -349,6 +374,7 @@ WA_AI_MILITARY_update_posture = {
 					limit = { check_variable = { _post_cas_volume > @WA_AI_POSTURE_XR_MIN_VOLUME } }
 					set_temp_variable = { _post_xr = _post_enemy_cas_delta }
 					divide_temp_variable = { _post_xr = _post_own_cas_delta }
+					set_temp_variable = { _post_xr_valid = 1 }
 					if = {
 						limit = {
 							check_variable = { _post_xr > @WA_AI_POSTURE_XR_GRIND }
@@ -396,7 +422,16 @@ WA_AI_MILITARY_update_posture = {
 					# whatever the ground ratio says.
 					NOT = { check_variable = { _post_air_state = -1 } }
 					ROOT = {
-						check_variable = { WA_AI_fielded_eq_ratio > @WA_AI_POSTURE_MIN_EQ }
+						# Fix 55: hysteresis. Entering an offensive costs MIN_EQ; holding one already
+						# under way costs only MIN_EQ_HOLD. PREV is the enemy country here, the same
+						# tag substitution the write site below uses.
+						OR = {
+							check_variable = { WA_AI_fielded_eq_ratio > @WA_AI_POSTURE_MIN_EQ }
+							AND = {
+								check_variable = { WA_AI_MILITARY_posture_vs_@PREV > 0 }
+								check_variable = { WA_AI_fielded_eq_ratio > @WA_AI_POSTURE_MIN_EQ_HOLD }
+							}
+						}
 						has_manpower > @WA_AI_POSTURE_MIN_OWN_MP
 						OR = {
 							fighting_army_strength_ratio = { tag = PREV ratio > @WA_AI_POSTURE_EXEC_RATIO }
@@ -438,7 +473,14 @@ WA_AI_MILITARY_update_posture = {
 						check_variable = { _post_xr_signal = 1 }
 					}
 					ROOT = {
-						check_variable = { WA_AI_fielded_eq_ratio > @WA_AI_POSTURE_MIN_EQ }
+						# Fix 55: same hysteresis as level 1 - see the comment there.
+						OR = {
+							check_variable = { WA_AI_fielded_eq_ratio > @WA_AI_POSTURE_MIN_EQ }
+							AND = {
+								check_variable = { WA_AI_MILITARY_posture_vs_@PREV > 0 }
+								check_variable = { WA_AI_fielded_eq_ratio > @WA_AI_POSTURE_MIN_EQ_HOLD }
+							}
+						}
 						has_manpower > @WA_AI_POSTURE_MIN_OWN_MP
 						OR = {
 							fighting_army_strength_ratio = { tag = PREV ratio > @WA_AI_POSTURE_GRIND_RATIO }
@@ -458,6 +500,57 @@ WA_AI_MILITARY_update_posture = {
 					log = "[GetYear] [GetMonth] | AI | [Root.GetName] | POSTURE: vs [Prev.GetName] -> [?_post_level]"
 				}
 				set_variable = { WA_AI_MILITARY_posture_vs_@PREV = _post_level }
+
+				########################################################################################
+				# tlm: post_* - standing family, any AI country, one observation per (country, enemy,
+				# week). WRITE-ONLY - nothing in this file or any other may read these back.
+				#
+				# THE QUESTION THEY EXIST TO ANSWER: level 1 (execute) has NO exchange-rate veto -
+				# _post_xr_signal = -1 is tested only in the level-2 limit below. So a country with the
+				# numbers at the contact line keeps ordering balanced attacks no matter how badly the
+				# trade is going, until its fielded_eq_ratio collapses. Whether that actually bites in
+				# a real campaign is UNKNOWN: it was established by reading the code, never measured,
+				# and the scored campaigns are AI-vs-AI where nobody deliberately fortifies a line.
+				# _post_xr is a temp and has never been serialized, and the save-native substitute
+				# (war_relation casualty ledgers) is stored one-sided and already produced one
+				# confidently wrong 13:1 reading - so this cannot be answered from existing saves.
+				#
+				# HOW TO READ IT: post_exec_xr_n is the denominator (level-1 observations that had a
+				# usable ratio). The three buckets are CUMULATIVE and nested - lt25 is a subset of
+				# lt50 is a subset of lt100. Their share of post_exec_xr_n says where a level-1 veto
+				# threshold should sit, if one is wanted at all. If lt100 is near zero across a
+				# campaign the defect is theoretical and no fix is warranted.
+				# lt25 specifically counts observations that WOULD already have fired the existing
+				# @WA_AI_POSTURE_XR_VETO bar, had that bar applied to level 1.
+				########################################################################################
+				if = {
+					limit = { check_variable = { _post_level = 1 } }
+					add_to_variable = { WA_TLM_post_exec_n = 1 }
+					if = {
+						limit = { check_variable = { _post_xr_valid = 1 } }
+						add_to_variable = { WA_TLM_post_exec_xr_n = 1 }
+						if = {
+							limit = { check_variable = { _post_xr < 1 } }
+							add_to_variable = { WA_TLM_post_exec_xr_lt100 = 1 }
+						}
+						if = {
+							limit = { check_variable = { _post_xr < 0.5 } }
+							add_to_variable = { WA_TLM_post_exec_xr_lt50 = 1 }
+						}
+						if = {
+							limit = { check_variable = { _post_xr < @WA_AI_POSTURE_XR_VETO } }
+							add_to_variable = { WA_TLM_post_exec_xr_lt25 = 1 }
+						}
+					}
+				}
+				if = {
+					limit = { check_variable = { _post_level = 2 } }
+					add_to_variable = { WA_TLM_post_grind_n = 1 }
+				}
+				# Sample stamp (absence contract, WA_TLM doc 3.5). Written on every observation
+				# whatever the level, so a present-and-0 counter is distinguishable from a code path
+				# that never ran.
+				set_variable = { WA_TLM_post_last_t = global.WA_TLM_clock }
 			}
 
 			if = {

@@ -315,6 +315,11 @@ per series — trivial at depth 44, but do not raise depth casually.
 | `WA_TLM_nav_port_screens` | gauge (banded, reads LOW) | monthly, `WA_AI_CONFIG_MILITARY_is_major_naval` | R36 | v4 |
 | `WA_TLM_nav_port_pct` | gauge (derived) | monthly, naval majors | R36 headline | v4, **valid from v5** |
 | `WA_TLM_nav_hist_t` + `WA_TLM_nav_port_pct_hist` | ring + **own** axis | quarterly, naval majors | R36 trend | v4, **valid from v5** |
+| `WA_TLM_post_exec_n` | counter | **weekly, per (country, enemy)** at the posture calculus (`WA_AI_MILITARY_posture_effects.txt`, inside `every_enemy_country`) — NOT the monthly sampler | posture level-1 exchange-rate question | v6 |
+| `WA_TLM_post_exec_xr_n` | counter | same site, level-1 observations that had a usable ratio | **denominator for the three buckets below** | v6 |
+| `WA_TLM_post_exec_xr_lt100` / `_lt50` / `_lt25` | counters | same site | **cumulative and nested** (lt25 ⊂ lt50 ⊂ lt100); where a level-1 veto threshold should sit, if one is wanted | v6 |
+| `WA_TLM_post_grind_n` | counter | same site, level-2 observations | context: how often the careful mode is actually reached | v6 |
+| `WA_TLM_post_last_t` | stamp | same site, written on **every** observation whatever the level | `post_*` absence contract | v6 |
 
 **v4 naval readings are artefacts — do not score them.** `nav_screens` and
 `nav_convoys` were written from `num_ships_with_type@screen_ship` and
