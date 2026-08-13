@@ -1129,3 +1129,44 @@ process caveats (stale process, and the absence of a load-time hook).
   a state transition.
 - **Evidence:** `tools/equipment_evaluator/generation/planner.py::build_plan`
   and `test_generation.py::test_planner_drops_byte_identical_reconciliation_patches`.
+
+### Strategic-region ids are WA's own — vanilla and the wiki give wrong names
+
+- **Date:** 2026-08-13
+- **Symptom:** A naval diagnosis reported that `WA_AI_NAVAL_COUNTRY_ENG_protect_home`
+  avoids region 18 (English Channel) and 368 (Bristol Channel). The reader could not
+  find either region and challenged it. The id→name mapping turned out to be right —
+  but only by luck of which lookup had been used — and re-reading the block to prove it
+  exposed a *second*, worse error in the same claim: id 18 carries `value = -10000`,
+  a negative avoid weight, which **attracts** the fleet rather than repelling it. Two
+  independent ways to be wrong about one line.
+- **Cause:** three separate identifiers exist per region and they do **not** always
+  agree — the filename number in `map/strategicregions/`, the `id =` inside the block,
+  and the `name = STRATEGICREGION_<n>` localisation key. Only the `id =` is what
+  `naval_avoid_region`, `naval_convoy_raid_region`, a fleet's `strategic_region={}` in
+  a savegame, and every other script reference mean. On top of that, **WA replaces the
+  whole table**: 383 regions against vanilla's 304, 79 ids that do not exist in vanilla
+  at all, and existing ids repurposed (vanilla 241 = Dasht-e Kavir, WA 241 = Irish Sea;
+  vanilla 249 = Yunnan, WA 249 = Alboran Sea). 365 / 368 / 369 are WA-only — looking
+  them up in vanilla or on the wiki returns nothing, which is exactly what happened.
+  Two mod files also have a filename that contradicts their own id:
+  `237-Azores Region.txt` carries `id = 112` and `name = STRATEGICREGION_237`, and
+  `112-Far South Pacific.txt` carries `id = 237` — so id 112 displays as "Azores
+  Region" in game and id 237 as "Far South Pacific". Four more (`380.txt`-`383.txt`)
+  are unnamed.
+- **Rule:** resolve a region id as **id → `name =` token → localisation**, reading the
+  mod's `map/strategicregions/` only. Never infer a region from a filename, never from
+  vanilla's table, never from the wiki. State the id *and* the resolved name whenever
+  you report one, so a wrong resolution is visible instead of silent.
+- **Second rule, from the same claim:** `naval_avoid_region` values are **signed**, and
+  a negative value is an *attractor*. Never bulk-extract `id =` from these blocks
+  without its `value =` — ENG id 18 (`-10000`) and USA id 42 (`-2000`, twice) invert
+  under an id-only reading, and an audit that misses the sign concludes the opposite of
+  what the script does.
+- **Evidence:** `map/strategicregions/` (383 blocks) vs the game install's 304;
+  `localisation/replace/english/strategic_region_names_l_english.yml`; checklist item
+  R36's early-war baseline, whose first draft called ids 29/48/112 "central Atlantic"
+  when they are Strait of Sicily, African Coast and Azores Region;
+  `WA_AI_NAVAL_COUNTRY_ENG.txt:42-64` for the signed-value half.
+- **Helper:** `.claude/skills/wa-savegame-analysis/scripts/regions.py <id>…` does the
+  three-step resolution; `--grep <regex>` searches by name.

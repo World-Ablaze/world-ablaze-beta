@@ -25,6 +25,7 @@ Commands:
 import argparse
 import io
 import os
+import collections
 import re
 import sys
 import zipfile
@@ -413,14 +414,30 @@ def cmd_tlm(args):
                 print(f"  {name}={val:g}  ({_tlm_date(val)})")
             else:
                 print(f"  {name}={val:g}")
-        axis = arrays.pop("wa_tlm_hist_t", None)
+        # Families may run their own axis when they sample under a different gate
+        # (a shared axis + a gate mismatch desynchronises index i for every series
+        # on it). Pick the most specific axis whose prefix the series shares:
+        # wa_tlm_nav_port_pct_hist -> wa_tlm_nav_hist_t, falling back to wa_tlm_hist_t.
+        axes = {n: arrays.pop(n) for n in list(arrays) if n.endswith("_hist_t")}
+
+        def axis_for(series_name):
+            best = None
+            for n in axes:
+                prefix = n[:-len("hist_t")]          # "wa_tlm_" or "wa_tlm_nav_"
+                if series_name.startswith(prefix) and (best is None or len(n) > len(best)):
+                    best = n
+            return best
+
         for name in sorted(arrays):
             if pat and not pat.search(name):
                 continue
             series = arrays[name]
-            print(f"  series {name} ({len(series)} samples):")
+            axis_name = axis_for(name)
+            axis = axes.get(axis_name)
+            print(f"  series {name} ({len(series)} samples"
+                  + (f", axis {axis_name}" if axis_name else "") + "):")
             if axis is None:
-                print("    (!) no wa_tlm_hist_t axis found - printing raw indices")
+                print("    (!) no matching *_hist_t axis found - printing raw indices")
                 for i in sorted(series):
                     print(f"    [{i}]  {series[i]:g}")
                 continue
@@ -757,6 +774,161 @@ def cmd_decisions(args):
                 print(f"     {chunk}")
 
 
+# Naval mission ids. The save stores `mission={ mission=N }` as a bare enum with no
+# name anywhere in the game files; this map was derived empirically on campaign
+# bec4d829 (2026-08-13) and every entry has a signature you can re-verify:
+#   0  no mission   - no accessible_regions; only state a neutral (SWE/POR) ever shows
+#   1  patrol       - carries spotting_region/hours_in_spotting_region + radar
+#   2  strike force - carrier/battleship task forces, navy_engagement_rule=4
+#   3  convoy raid  - 5-boat submarine task forces, never a single screen in them
+#   4  convoy escort- war-only, peaks 1942-44, regions == the country's own
+#                     high `required_convoys` regions in strategic_navy
+#   7  training     - the only mission any major runs in 1936-1939
+#   8  reserve/none - no regions; holds the fleets auto-named "Reserve fleet"
+# 5 and 6 (mine planting / sweeping, in some order) were never observed in use.
+# Treat 0 and 8 alike: both mean the task force is parked in port.
+_NAVAL_MISSIONS = {
+    "0": "none", "1": "patrol", "2": "strike", "3": "raid",
+    "4": "escort", "5": "mine?", "6": "mine?", "7": "train", "8": "reserve",
+}
+_NAVAL_IDLE = ("none", "reserve")
+# screen_ship category per common/units/ship_*.txt: these are the escort hulls.
+_NAVAL_SCREENS = ("destroyer", "frigate", "light_cruiser")
+
+
+def _parse_fleets(units_lines):
+    """[{name, leader, regions, tfs:[{mission, name, ships:Counter}]}] from a
+    country `units` section. Fleets and task forces are brace-counted, and ship
+    blocks are skipped wholesale so their inner `name=`/`location=` fields cannot
+    be mistaken for task-force fields."""
+    fleets = []
+    fleet = tf = None
+    fdepth = tdepth = sdepth = mdepth = None
+    in_regions = False
+    for line in units_lines:
+        st = line.strip()
+        delta = line.count("{") - line.count("}")
+        # --- dispatch on the state this line is read in. Opening lines set their
+        # level's depth to 0; the single bookkeeping pass below adds delta once, so
+        # no depth is ever incremented twice for the same line.
+        if fleet is None:
+            if not st.startswith("fleet={"):
+                continue
+            fleet = {"name": None, "leader": False, "regions": [], "tfs": []}
+            fleets.append(fleet)
+            fdepth = 0
+            in_regions = False
+        elif sdepth is not None:                    # inside ship={}
+            # depth 1 ONLY: a ship's history holds sunk_ship={} kill records that
+            # carry their own definition= (the VICTIM's hull). Counting those makes
+            # every successful sub-hunting destroyer read as a submarine - it is what
+            # produced the bogus "ENG has 204 cruiser_submarines" reading (2026-08-13).
+            if sdepth == 1 and st.startswith("definition="):
+                tf["ships"][st.split("=", 1)[1]] += 1
+        elif tf is not None:                        # inside task_force={}
+            if st.startswith("ship={"):
+                sdepth = 0
+            elif mdepth is not None:                # inside mission={}
+                if st.startswith("mission="):
+                    tf["mission"] = _NAVAL_MISSIONS.get(st.split("=")[1], st.split("=")[1])
+            elif st.startswith("mission={"):
+                mdepth = 0
+            elif st.startswith("name=") and tf["name"] is None:
+                tf["name"] = st.split("=", 1)[1].strip('"')
+        else:                                       # fleet level
+            if st.startswith("task_force={"):
+                tf = {"mission": None, "name": None, "ships": collections.Counter()}
+                fleet["tfs"].append(tf)
+                tdepth = 0
+            elif st.startswith("leader={"):
+                fleet["leader"] = True
+            elif st.startswith("name=") and fleet["name"] is None:
+                fleet["name"] = st.split("=", 1)[1].strip('"')
+            elif st.startswith("strategic_region={"):
+                in_regions = True
+            elif in_regions:
+                if st.startswith("}"):
+                    in_regions = False
+                else:
+                    fleet["regions"] += st.replace("}", "").split()
+        # --- one depth update per line, innermost level closed first
+        fdepth += delta
+        if mdepth is not None:
+            mdepth += delta
+            if mdepth <= 0:
+                mdepth = None
+        if sdepth is not None:
+            sdepth += delta
+            if sdepth <= 0:
+                sdepth = None
+        if tdepth is not None:
+            tdepth += delta
+            if tdepth <= 0:
+                tdepth = tf = None
+        if fdepth <= 0:
+            fdepth = fleet = None
+    return fleets
+
+
+def cmd_navy(args):
+    """Fleet / task-force / mission breakdown. The mission split is NOT visible to
+    PDXScript (no trigger reads a task force's mission), so this command is the only
+    way to answer "is the AI actually escorting convoys" - WA_TLM covers the outcome
+    side (convoy threat, convoy war-support malus) but never the assignment side."""
+    print("# mission ids are empirically mapped - see _NAVAL_MISSIONS in this file.")
+    print("# 'idle' = mission none|reserve (parked in port). screens = "
+          + "+".join(_NAVAL_SCREENS) + ".")
+    for meta, f in sorted_by_date([resolve(f) for f in args.files]):
+        date = meta.get("date", "?")
+        with open_save(f) as fh:
+            secs = collect_sections(fh, args.tag, ("units",))
+        if "units" not in secs:
+            print(f"{date}\t({os.path.basename(f)}: no units section for {args.tag})")
+            continue
+        fleets = _parse_fleets(secs["units"])
+        per = collections.defaultdict(collections.Counter)
+        total = collections.Counter()
+        idle_led = idle_unled = ships_led = ships_unled = 0
+        for fl in fleets:
+            n = sum(sum(t["ships"].values()) for t in fl["tfs"])
+            idle = sum(sum(t["ships"].values()) for t in fl["tfs"]
+                       if t["mission"] in _NAVAL_IDLE or t["mission"] is None)
+            if fl["leader"]:
+                ships_led += n
+                idle_led += idle
+            else:
+                ships_unled += n
+                idle_unled += idle
+            for t in fl["tfs"]:
+                per[t["mission"] or "none"].update(t["ships"])
+                total.update(t["ships"])
+
+        def scr(c):
+            return sum(v for k, v in c.items() if k in _NAVAL_SCREENS)
+
+        ships = sum(total.values())
+        idle = idle_led + idle_unled
+        led = sum(1 for x in fleets if x["leader"])
+        print(f"{date}\t{args.tag}\tships={ships} (screens {scr(total)})\t"
+              f"fleets={len(fleets)} ({led} with admiral, {len(fleets) - led} without)")
+        order = sorted(per, key=lambda m: (m in _NAVAL_IDLE, m))
+        cells = [f"{m}={sum(per[m].values())}({scr(per[m])}scr)" for m in order]
+        print("        missions: " + "  ".join(cells))
+        pct = (100.0 * idle / ships) if ships else 0.0
+        share = (100.0 * idle_unled / idle) if idle else 0.0
+        print(f"        idle={idle} ({pct:.0f}% of the navy); "
+              f"{idle_unled} of them ({share:.0f}%) sit in fleets with NO admiral "
+              f"[admiral-led fleets: {ships_led} ships, {idle_led} idle]")
+        if args.fleets:
+            for fl in fleets:
+                mm = collections.Counter(t["mission"] or "none" for t in fl["tfs"])
+                n = sum(sum(t["ships"].values()) for t in fl["tfs"])
+                print("          %-34s adm=%-3s tf=%-3d ships=%-4d regions=%-2d %s"
+                      % ((fl["name"] or "")[:34], "yes" if fl["leader"] else "NO",
+                         len(fl["tfs"]), n, len(fl["regions"]),
+                         " ".join(f"{k}:{v}" for k, v in sorted(mm.items()))))
+
+
 def _wrap(text, width):
     out, line = [], ""
     for word in text.split():
@@ -830,6 +1002,12 @@ def main():
     s.add_argument("tag")
     s.add_argument("files", nargs="+")
     s.set_defaults(fn=cmd_army)
+
+    s = sub.add_parser("navy", help="fleet/task-force/mission breakdown across saves")
+    s.add_argument("tag")
+    s.add_argument("files", nargs="+")
+    s.add_argument("--fleets", action="store_true", help="one line per fleet")
+    s.set_defaults(fn=cmd_navy)
 
     s = sub.add_parser("resources", help="per-resource ledger across saves")
     s.add_argument("tag")
