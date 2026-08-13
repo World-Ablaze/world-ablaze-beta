@@ -268,13 +268,32 @@ WA_AI_NAVAL_FACTION_ALLIES_trade_through_cape = {
 # range:   0 to +2000
 # policy:  Additive per region
 # domain:  NAVAL
+#
+# Fix 52 (2026-08-13, checklist R36): removed
+#   NOT = { WA_AI_MILITARY_COUNTRY_owns_naval_atlantic_corridor = yes }
+# from this block and from its two siblings below. That trigger resolves to a plain
+# tag list (ENG / USA / GER), so the whole three-part Atlantic escort plan - pull onto
+# the corridors here, push off the mid-ocean gaps in *_off_corridor_avoidance - was
+# disabled for exactly the two navies able to run it. The effective recipients were
+# CAN / RAJ / AST / NZL: 27 hulls in the 1942.6 save of campaign bec4d829, mostly at
+# anchor, while the USN held 559 ships and put ZERO escorts in the Atlantic (its four
+# escort task forces sat in the Gulf of Aden, the Solomon Sea, the Algerian coast and
+# the central NE Pacific). The exclusion was not a de-duplication of Country-layer
+# work: `naval_dominance` is Additive per region (WA_AI_MILITARY_SYSTEM.md), the USA
+# naval file carries no naval_dominance at all, ENG carries exactly one (Alboran), and
+# the only mod-wide strategy touching a north-corridor region for the USA is an
+# avoid=2000 on 244. GER's presence in the excluded list is dead weight here - it can
+# never pass the `allowed` gate - which is what shows the trigger to be a geopolitical
+# classification rather than a "these already have their own plan" list.
+# The situational trigger this enable was reaching for, WA_AI_MILITARY_FACTION_owns_
+# naval_atlantic_corridor, exists and is referenced nowhere; it is deliberately left
+# unused rather than swapped in, so this fix changes WHO is eligible and nothing else.
 WA_AI_NAVAL_FACTION_ALLIES_atlantic_north_corridor = {
 	allowed = {
 		WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = yes
 	}
 	enable = {
 		WA_AI_MILITARY_allies_at_war_with_axis = yes
-		NOT = { WA_AI_MILITARY_COUNTRY_owns_naval_atlantic_corridor = yes }
 	}
 	abort_when_not_enabled = yes
 
@@ -286,6 +305,12 @@ WA_AI_NAVAL_FACTION_ALLIES_atlantic_north_corridor = {
 	ai_strategy = { type = naval_dominance id = 243 value = 80 } # Icelandic Basin
 	ai_strategy = { type = naval_dominance id = 244 value = 80 } # Greenland Iceland Rise
 	ai_strategy = { type = naval_dominance id = 44 value = 80 }  # Denmark Strait
+
+	ai_strategy = {
+		type = naval_mission_threshold
+		id = MISSION_CONVOY_ESCORT
+		value = 5000
+	}
 }
 
 # purpose: keep Allied Atlantic routing inside the southern corridor when Iberia/Morocco are safe
@@ -297,9 +322,9 @@ WA_AI_NAVAL_FACTION_ALLIES_atlantic_south_corridor = {
 		WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = yes
 	}
 	enable = {
+		# Fix 52: owner exclusion removed - see the north-corridor block above.
 		WA_AI_MILITARY_allies_at_war_with_axis = yes
 		WA_AI_MILITARY_axis_does_not_control_spain_or_morocco = yes
-		NOT = { WA_AI_MILITARY_COUNTRY_owns_naval_atlantic_corridor = yes }
 	}
 	abort_when_not_enabled = yes
 
@@ -323,8 +348,10 @@ WA_AI_NAVAL_FACTION_ALLIES_atlantic_off_corridor_avoidance = {
 		WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = yes
 	}
 	enable = {
+		# Fix 52: owner exclusion removed - see the north-corridor block above. This is
+		# the suppression half of the pair; shipping it without the boost (or the boost
+		# without it) is the unpaired-value mistake the AIFC header warns about.
 		WA_AI_MILITARY_allies_at_war_with_axis = yes
-		NOT = { WA_AI_MILITARY_COUNTRY_owns_naval_atlantic_corridor = yes }
 	}
 	abort_when_not_enabled = yes
 
