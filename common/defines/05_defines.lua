@@ -1077,11 +1077,22 @@ NDefines.NAI.CANCEL_INVASION_COMBAT_MIN_DURATION_HOURS = 720    					-- Only all
 
 NDefines.NAI.MISSING_CONVOYS_BOOST_FACTOR = 0.0										-- The more convoys a country is missing, the more resources it diverts to cover this.						-- If the enemy has a navy at least these many times stronger that the own, don't bother invading
 
-NDefines.NAI.CONVOY_ESCORT_MUL_FROM_NO_CONVOYS = 0 									-- score multiplier when no convoys are around
-NDefines.NAI.CONVOY_ESCORT_SCORE_FROM_CONVOYS = 0            				    	-- score for each convoy you have in area
-NDefines.NAI.REGION_CONVOY_DANGER_DAILY_DECAY = 5									-- When convoys are sunk it generates threat in the region which the AI uses to prio nalval missions
-NDefines.NAI.NAVAL_MISSION_ESCORT_NEAR_OWNED = 0									-- Extra escort mission score near owned provinces
-NDefines.NAI.NAVAL_MISSION_ESCORT_NEAR_CONTROLLED = 0								-- Extra escort mission score near controlled provinces
+-- Fix 53b (2026-08-13, checklist R36): the four escort SCORE terms below were all
+-- zeroed, so a convoy-escort mission could score points from nothing except transient
+-- region convoy danger, while patrol kept its full vanilla score (WA does not override
+-- NAVAL_MISSION_PATROL_NEAR_OWNED = 500 / _NEAR_CONTROLLED = 140 - the overrides are
+-- commented out at the bottom of this section, so vanilla's values apply). Escort must
+-- still clear a mission threshold of 100, so with every score term at 0 it fired only
+-- where U-boats had just made a massacre, and lapsed again as that threat decayed -
+-- which is exactly R36's observed shape: escort share that tracks nothing but recent
+-- sinkings, swings 20-140 hulls month to month, and regresses late-war as raiding falls
+-- off while the navy grows. Restored to the vanilla 1.18 values so escort scores
+-- structurally (proportional to convoys present) instead of reactively.
+NDefines.NAI.CONVOY_ESCORT_MUL_FROM_NO_CONVOYS = 0.02								-- score multiplier when no convoys are around  [Fix 53b: was 0, vanilla 0.02]
+NDefines.NAI.CONVOY_ESCORT_SCORE_FROM_CONVOYS = 15          				    	-- score for each convoy you have in area  [Fix 53b: was 0, vanilla 15]
+NDefines.NAI.REGION_CONVOY_DANGER_DAILY_DECAY = 5									-- When convoys are sunk it generates threat in the region which the AI uses to prio nalval missions  [vanilla 2 - left alone; see the Fix 53b note above, escort no longer depends on this term]
+NDefines.NAI.NAVAL_MISSION_ESCORT_NEAR_OWNED = 300									-- Extra escort mission score near owned provinces  [Fix 53b: was 0, vanilla 300]
+NDefines.NAI.NAVAL_MISSION_ESCORT_NEAR_CONTROLLED = 200								-- Extra escort mission score near controlled provinces  [Fix 53b: was 0, vanilla 200]
 
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_MINE_LAYING = 0.05							-- maximum ratio of screens forces to be used in mine laying
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_MINE_SWEEPING = 0.05 						-- maximum ratio of screens forces to be used in mine sweeping
@@ -1105,6 +1116,13 @@ NDefines.NAI.MIN_SUPPORT_SHIP_RATIO = 1.0                   						-- if support 
 NDefines.NAI.MIN_MAIN_SHIP_RATIO_TO_REINFORCE = 0.5        	 						-- the main ships will be tried to reinforce this level.
 NDefines.NAI.MIN_SUPPORT_SHIP_RATIO_TO_REINFORCE = 0.9    		 					-- the support ships will be tried to reinforce this level.
 NDefines.NAI.MIN_MAIN_SHIP_TO_SPARE = 1.0                   						-- can only steal ships from a task force if their main ship ratio is above this.
+-- R36 candidate 2, NOT changed by Fix 53b - re-measure before touching it. Vanilla is
+-- 1.0, and this line's own comment states the intent: it stops the engine's convoy-
+-- defense allocator from pulling screens out of existing task forces. That is the
+-- mechanism behind "the 300-ship region-less holding fleets are never tapped for
+-- escort", but Fix 53b removes the reason the allocator was idle in the first place
+-- (escort scored 0, so it never asked). Only lower this if escort share rises after
+-- 53b and then plateaus below MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MIN (0.3).
 NDefines.NAI.MIN_SUPPORT_SHIP_TO_SPARE = 3.0               							-- can only steal ships from a task force if their support ship ratio is above this. Prevents MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX from stealing ships.
 NDefines.NAI.MIN_MAIN_SHIP_RATIO_TO_MERGE = 0.7            							-- try merge task force if main ship ratio is lower than this.
 NDefines.NAI.MAX_MAIN_SHIP_RATIO_TO_MERGE = 1.001          							-- if resulting main ship ratio would be at most this, allow merging into this task force.
@@ -1115,7 +1133,14 @@ NDefines.NAI.MAX_MISSION_PER_TASKFORCE = {  -- max mission region/taskforce rati
 	1.5, -- PATROL
 	6, -- STRIKE FORCE
 	1.5, -- CONVOY RAIDING
-	1, -- CONVOY ESCORT
+	-- Fix 53b (2026-08-13, checklist R36): was 1, vanilla is 4. At 1 an escort task
+	-- force may cover a single strategic region, so covering N regions costs N task
+	-- forces - against a hard cap of MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX
+	-- (0.7) of all screen task forces. That ceiling is what R36's coverage leg was
+	-- measuring: ENG covered 15 of its 42 convoy-demand regions and the USA 5 of 63.
+	-- Patrol sits at 1.5 and convoy raiding at 1.5 here, so escort was the single
+	-- most region-hungry mission in the mod.
+	4, -- CONVOY ESCORT
 	2, -- MINES PLANTING
 	2, -- MINES SWEEPING
 	0, -- TRAIN
@@ -1134,6 +1159,15 @@ NDefines.NAI.REGION_THREAT_LEVEL_TO_BLOCK_REGION = 25 * 1000						-- How much th
 --NDefines.NAI.NAVAL_MISSION_PATROL_NEAR_CONTROLLED = 0								-- Extra patrol mission score near controlled provinces
 
 NDefines.NAI.NAVAL_DOCKYARDS_SHIP_FACTOR = 2										-- The extent to which number of dockyards play into amount of sips a nation wants
+-- R36 candidate 3, NOT changed by Fix 53b - highest blast radius of the three, change
+-- it on its own or not at all. Vanilla is 25. Missions and strategic-region assignment
+-- are FLEET-level properties (a task force flies a mission only if its fleet holds at
+-- least one strategic_region - measured with no exceptions across 10 game-years of
+-- campaign bec4d829), so the number of fleets IS the number of region-holding slots the
+-- AI has to work with. Tripling the merge target trebles fleet size and thirds that
+-- count, and it is the most direct explanation on file for "99-100% of idle tonnage
+-- sits in one or two giant region-less holding fleets". Re-measure fleet counts after
+-- Fix 53b before touching this: restoring escort scoring should itself force splits.
 NDefines.NAI.NAVY_PREFERED_MAX_SIZE = 80											-- AI will generally attempt to merge fleets into this size, but as a soft limit.
 NDefines.NAI.SUB_TASKFORCE_MAX_SHIP_COUNT = 5										-- optimum sub count for sub taskforces
 NDefines.NAI.PRODUCTION_MAX_PROGRESS_TO_SWITCH_NAVAL = 0.09							-- AI will not replace ships being built by newer types if progress is above this

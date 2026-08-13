@@ -15,7 +15,14 @@
 
 # Bump when the registered metric set changes; the sampler re-inits on mismatch so
 # new metrics exist at 0 even on campaigns resumed on a newer build.
-@WA_TLM_VERSION = 4
+#
+# v5 (2026-08-13, R36): nav_screens and nav_convoys were reading invalid engine
+# tokens and returned a silent 0 for the whole of v4, which also forced
+# nav_port_pct - and every quarterly nav_port_pct_hist sample - to a hard-coded 0.
+# The metric SET is unchanged; the bump exists so a save can be told apart:
+# wa_tlm_version = 4 means nav_screens / nav_port_pct / nav_port_pct_hist are
+# artefacts and must not be scored; = 5 means they are measurements.
+@WA_TLM_VERSION = 5
 
 ############################################################################################################
 #	Clock - global.WA_TLM_clock = months elapsed since 1936.1
@@ -203,17 +210,53 @@ WA_TLM_sample_navy = {
 	if = { limit = { has_navy_size = { size > 0 } }
 
 		# tlm: nav_ships / nav_screens / nav_subs / nav_convoys - gauges, any AI navy
-		# - consumer: R36 (standing). screen_ship is the sub-unit category shared by
-		# destroyer/frigate/light_cruiser (common/units/ship_*.txt), i.e. the escort hulls.
+		# - consumer: R36 (standing).
+		#
+		# num_ships_with_type@ takes a SUB-UNIT DEF TYPE or one of the four engine
+		# aggregates carrier / capital / screen / submarine (dynamic_variables_
+		# documentation.md). It does NOT take `screen_ship` - that is the sub-unit
+		# CATEGORY name from common/units/ship_*.txt - and `convoy` is not a ship at
+		# all (convoys are equipment; there is no common/units/ship_convoy.txt).
+		# Both wrong tokens returned a silent 0 on every country through v4, which
+		# also forced nav_port_pct and its whole ring buffer to the else = 0 branch.
+		# Verified in-save on campaign 02bd4445: @submarine and num_ships are exact
+		# to the hull, @screen_ship and @convoy read 0 on ENG/USA/GER/JAP.
+		#
+		# nav_screens is summed from the three concrete hull types rather than the
+		# @screen aggregate on purpose: destroyer + frigate + light_cruiser is the
+		# exact set carrying `type = screen_ship` in this mod, and it is also what
+		# savegame.py's `navy` command counts as `screens=` (_NAVAL_SCREENS), so
+		# R36's "nav_screens must equal the command's screens= exactly" cross-check
+		# stays an identity instead of depending on an engine aggregate's membership.
 		set_variable = { WA_TLM_nav_ships = num_ships }
-		set_variable = { WA_TLM_nav_screens = num_ships_with_type@screen_ship }
+		set_variable = { WA_TLM_nav_screens = num_ships_with_type@destroyer }
+		add_to_variable = { WA_TLM_nav_screens = num_ships_with_type@frigate }
+		add_to_variable = { WA_TLM_nav_screens = num_ships_with_type@light_cruiser }
 		set_variable = { WA_TLM_nav_subs = num_ships_with_type@submarine }
-		set_variable = { WA_TLM_nav_convoys = num_ships_with_type@convoy }
+		# convoy is an equipment archetype, so it is read with num_equipment@, the
+		# idiom used for every other archetype in this repo (WA_AI_DIVISION_CREATOR_
+		# effects.txt, 100_wa_on_actions.txt). UNVERIFIED IN-GAME until the F9 boot
+		# check below - if it reads 0 on ENG in a war year while nav_ships is
+		# non-zero, the token filter failed again and the metric must be dropped,
+		# not scored. Same discipline as the composition ladder's boot-check note.
+		set_variable = { WA_TLM_nav_convoys = num_equipment@convoy }
 
 		# tlm: nav_conv_threat / nav_conv_ws - gauges, any AI navy - consumer: R36
-		# (standing). Both engine values are 0-1; stored x100 so the save shows
-		# integers-ish. conv_threat = how dangerous our convoy routes are,
+		# (standing). Both tokens ARE valid variable reads (dynamic_variables_
+		# documentation.md lists both, auto-generated from the same-named triggers);
+		# both engine values are 0-1, stored x100 so the save shows integers-ish.
+		# conv_threat = how dangerous our convoy routes are.
 		# conv_ws = the war-support malus our sunk convoys have already cost us.
+		# READING NOTE for conv_ws, which read 0 on all four majors on 02bd4445
+		# after 11 500 sinkings: that is a REAL zero, not a bad token. The engine
+		# penalty is a rate, not a lifetime tally - it accrues at most
+		# CONVOYS_BEING_RAIDED_WAR_SUPPORT_PENALTY_SCALE / WEEKLY (-0.01) per week
+		# from convoys being raided RIGHT NOW and decays 0.025/week
+		# (05_defines.lua:134-137), capped at -0.3 total. Observable range is
+		# therefore 0-30 in this metric's units, and it returns to ~0 within a
+		# couple of months of the raiding stopping. Cumulative losses are not
+		# visible here; use nav_conv_killed (the raider side) and the save's
+		# convoy efficiency instead.
 		set_variable = { WA_TLM_nav_conv_threat = convoy_threat }
 		multiply_variable = { WA_TLM_nav_conv_threat = 100 }
 		set_variable = { WA_TLM_nav_conv_ws = has_convoys_war_support }

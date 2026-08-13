@@ -1170,3 +1170,271 @@ process caveats (stale process, and the absence of a load-time hook).
   `WA_AI_NAVAL_COUNTRY_ENG.txt:42-64` for the signed-value half.
 - **Helper:** `.claude/skills/wa-savegame-analysis/scripts/regions.py <id>…` does the
   three-step resolution; `--grep <regex>` searches by name.
+
+### `num_ships_with_type@` takes hull types, not the `screen_ship` category — and `convoy` is not a ship
+
+- **Symptom:** `WA_TLM_nav_screens = num_ships_with_type@screen_ship` and
+  `WA_TLM_nav_convoys = num_ships_with_type@convoy` returned **0 on every country, in
+  every save, for the whole life of WA_TLM v4**. No parse error, no log line. Because
+  `nav_port_pct` divides by `nav_screens`, the zero propagated: the derived metric took
+  its `else = 0` branch, so the headline number *and* all 40 quarterly
+  `nav_port_pct_hist` samples were a hard-coded constant. Checklist item R36's
+  designated independent cross-check silently did not exist on that build.
+- **Cause:** the engine's own reference
+  (`<install>/documentation/dynamic_variables_documentation.md`) says the target "can be
+  a sub unit def type or one of carrier, capital, screen, submarine". `screen_ship` is
+  neither: it is the **sub-unit category** written as `type = { screen_ship }` inside
+  `common/units/ship_destroyer.txt` / `ship_frigate.txt` / `ship_light_cruiser.txt`. The
+  aggregate spelling is `screen`. `convoy` fails for a different reason — convoys are an
+  **equipment archetype**, not a hull; there is no `common/units/ship_convoy.txt`, and the
+  country-scope read is `num_equipment@convoy`.
+- **Rule:** before writing `num_ships_with_type@X`, confirm X is either a filename-backed
+  sub-unit in `common/units/ship_*.txt` or one of the four aggregates. Category names read
+  as 0. And when a metric is a *sum over hull types*, prefer the explicit sum over the
+  aggregate if any consumer compares it to a savegame parse — `savegame.py navy` defines
+  `screens = destroyer + frigate + light_cruiser`, so summing those three makes the
+  cross-check an identity instead of a dependency on aggregate membership.
+- **Generalisation — the token oracle.** The game install's `documentation/` folder is the
+  authority for *four* separate questions, and each has caught a wrong claim in this repo:
+  `modifiers_documentation.md` for which scopes a modifier is legal in,
+  `dynamic_variables_documentation.md` for **which tokens can be read into a variable**,
+  and `triggers_documentation.md` / `effects_documentation.md` for the rest. Grep the
+  relevant one before asserting that a token works or that a zero is real.
+- **Corollary for zeros:** a WA_TLM metric reading 0 has three possible meanings — never
+  instrumented, real zero, or *bad token*. Only the first two are covered by the absence
+  contract. When a fix corrects a token, **bump `WA_TLM_version`** even though the metric
+  set is unchanged, so analysts can tell an artefact save from a measurement save.
+- **Evidence:** `WA_TLM_core.txt` v4 → v5; campaign `02bd4445`, where `@submarine` and
+  `num_ships` are exact to the hull while `@screen_ship` and `@convoy` read 0 on
+  ENG/USA/GER/JAP; correct in-repo usages at `common/national_focus/usa.txt:12486-12593`
+  and `common/scripted_effects/WA_AI_misc_effects.txt:770-778`.
+
+### `naval_mission_threshold` is a bar, not a priority — positive SUPPRESSES the mission
+
+- **Symptom:** WA's Atlantic escort plan
+  (`WA_AI_NAVAL_FACTION_ALLIES_atlantic_north_corridor`) ended with
+  `naval_mission_threshold MISSION_CONVOY_ESCORT value = 5000` — a block whose entire
+  purpose is to make the Allies escort the Atlantic convoy corridor, ending with an
+  instruction not to escort it. It read as a boost to two separate passes, and the
+  session brief for R36 repeated the same misreading about the JAP line.
+- **Cause:** the value is added to the **score bar a mission must clear** before the AI
+  will assign it, so *higher = less of that mission*. Vanilla states this in its own
+  comment: `JAP.txt:970` writes `value = 150 #puts our threshold at 250` (engine base
+  100) inside a block named `conserve_fuel_for_usa_fight` that exists to *stop* escorting.
+  WA's own `WA_AI_NAVAL_DEFAULT_legacy_AI_naval_mission_fix` writes patrol and strike
+  force **negative** under the comment "Fixes the AI not putting out its strike force and
+  patrols" — the same convention, read the other way.
+- **Second rule, from the same block:** the type is **Additive per mission**
+  (`WA_AI_MILITARY_SYSTEM.md:106`, documented range −100..+100), and **both the quoted
+  and the bare id spelling are legal** (vanilla uses bare at `ENG.txt:1379`, quoted at
+  `JAP.txt:970`). `legacy_AI_naval_mission_fix` wrote each id twice, once quoted once
+  bare, which looked like belt-and-braces and was in fact a **doubling**: patrol ran at
+  −2000 and strike force at −1000. Any `ai_strategy` type marked Additive in the spec
+  will sum duplicate writes — never assume a repeated `id =` is idempotent, and never
+  assume quoting changes the key.
+- **Rule:** when auditing a `naval_mission_threshold`, read it as "how much harder/easier
+  did we make this mission", state the resulting bar against the engine base of 100, and
+  check the block's stated purpose against the sign. A value outside the documented
+  ±100 band is a smell on its own — +5000 is 50× the ceiling.
+- **Evidence:** checklist R36, Fix 53a; `WA_AI_NAVAL_FACTION_ALLIES.txt`,
+  `WA_AI_NAVAL_DEFAULT.txt:576`, `WA_AI_NAVAL_COUNTRY_JAP.txt:304`.
+
+## 2026-08-13 - `obsolete=yes` on an equipment explains nothing: it is not an archetype rule and it does not gate production
+
+- **Date:** 2026-08-13
+- **Symptom:** Fixes 46, 48, 50 and 51 all failed together (checklist R30/R31/R33/R35) and a
+  single shared cause looked settled: in every case the equipment the mod wanted built
+  carried `obsolete=yes` in the savegame's top-level `equipments={}` registry while the
+  type it wanted avoided was the only non-obsolete member of its chain. The proposed fix
+  was to re-parent the unwanted chassis out of the wanted one's descent line so the
+  equipment graph would match the branching technology graph.
+- **Cause:** the premise does not survive measurement. Two independent readings of
+  campaign `02bd4445` kill both halves of it:
+  1. **It is not an archetype-uniqueness rule.** 288 of 3 540 (creator, archetype) groups
+     in the final save hold **two or more** non-obsolete members - up to six - including
+     five members of one strictly linear parent chain (ENG's `usa_hv_inf_3..6`). JAP's
+     `jap_cruiser_submarine_hull_2` is non-obsolete while the strictly newer `_3`/`_4`/`_5`
+     are obsolete, the exact reverse of the rule. Parentless roots
+     (`generic_destroyer_hull_*`) never go obsolete at all.
+  2. **It does not gate production.** 7.0% of production lines and **9.6% of assigned
+     factories** in the final save run obsolete-flagged equipment, and the share *rises*
+     across the campaign (3.6% → 4.9% → 7.0% of lines). USA runs 68 factories on the
+     obsolete `tank_usa_medium_chassis_3` and 75 on the obsolete `usa_mechanized_equipment_4`.
+     By the final save USA's own `tank_usa_medium_chassis_6` - the chassis it was building
+     on six lines and 439 factories - is *itself* flagged obsolete.
+  The flag correlates with supersession (94.7% agreement with "some enabled equipment of the
+  same creator has you in its parent ancestry") because supersession and obsolescence share
+  a cause, not because the flag drives selection. It is a UI/weighting marker.
+- **Rule:** an `obsolete=yes` reading is **descriptive, never causal**. Do not build a fix on
+  it, and do not conclude "the AI cannot build X" from it - go and read the production
+  lines. More generally: when a shared explanation fits several failures at once, find the
+  case where the two candidate mechanisms *disagree* before acting on it. Here every
+  observed chain was linear, so "parent-ancestry supersession" and "newest of archetype"
+  were indistinguishable - and both turned out to be irrelevant to the actual failure.
+  The discriminator already existed in the shipped saves (90 fork points in the equipment
+  `parent` graph) and cost one extraction pass; the proposed re-parenting would have been a
+  content change to `tank_chassis.txt` and `ship_hull_submarine.txt` that fixed nothing.
+- **Evidence:** campaign `02bd4445` (build `313633035`, confirmed by `wa_tlm_version = 4`
+  present from the first save plus linear git ancestry through `e3629b3f0` → `a2744825d`
+  → `88e516780`); checklist R30/R33/R35 history for 2026-08-13.
+
+## 2026-08-13 - `resource@X` reads net available MINUS unmet demand, not the net column
+
+- **Date:** 2026-08-13
+- **Symptom:** R32's `WA_AI_EQUIPMENT_can_absorb_aluminium_shock_large` latch (`resource@aluminium > 50`)
+  stayed shut on ENG for the whole campaign while the savegame's net aluminium read +185 to
+  +976/day. With the resource bar apparently cleared by 16x, the only remaining term in the
+  trigger was `NOT = { WA_AI_industry_overextended = yes }`, so Fix 39's fragility guard was
+  written up as a design collision that nailed ENG's latches shut permanently.
+- **Cause:** `resource@X` is `to_use[0] + to_use[2]` - net available **minus** unmet demand -
+  not `to_use[0]`. ENG's aluminium at 1942.6 is net 807.3, deficit −799.0, **effective +8.3**
+  against a `> 50` bar. The latch was failing on the resource value itself and Fix 39 never
+  came into it: the latch shut in 1938.11, 57 months before ENG's overextension flag was
+  first set, and `wa_ai_overext_dbg_active` is absent for ENG/SOV/USA/GER at every sampled
+  date before 1944. **Fix 39 is exonerated.**
+- **Rule:** score every `resource@X` guard on **net + deficit** (`savegame.py resources` now
+  prints it as the `EFFECTIVE` column). Two failure modes stack here and both have burned a
+  scoring session: reading `produced` alone (nearly a false FAIL on R25) and reading `net`
+  alone (a false accusation against Fix 39). Related and more general: **a rule induced from
+  a single resource is not a rule.** The superseded "net alone" wording was drawn from ENG
+  *bauxite* in the very same save, whose deficit happens to be −1.0 so both readings agree
+  there; the aluminium row two lines below it disagreed by a factor of 97.
+- **Evidence:** campaign `02bd4445`, 36 discriminating (country, date, resource, bar) cells
+  across ENG/SOV/USA/GER at 1939.6 / 1941.6 / 1942.6 - all consistent with net+deficit, none
+  with net, pass/fail bracketing the `> 5` / `> 15` / `> 20` / `> 50` bars to within one unit
+  (PASS at 6.0, 21.0, 26.0, 28.0; FAIL at 4.0, 9.0, 14.0, 14.2, 15.0). Triggers at
+  `common/scripted_triggers/WA_AI_EQUIPMENT_triggers.txt:86-152`; corrected in
+  `.claude/skills/wa-savegame-analysis/SKILL.md` and `scripts/savegame.py`.
+
+## 2026-08-13 - `production_upgrade_desire_offset` waives a stockpile-surplus check on an EXISTING line; it cannot choose what a new line builds
+
+- **Date:** 2026-08-13
+- **Symptom:** Fix 51 moved the whole equipment-selection package onto
+  `production_upgrade_desire_offset` (57 entries over 11 tank frontiers, plus the SOV
+  submarine pair), on the reasoning that `ai_equipment` `priority` is the design layer and
+  this is the production-line layer. Campaign `02bd4445` then reproduced every failure
+  exactly: SOV ran the coastal Malyutka in **all 120 saves**, JAP held a coastal line for
+  the last 39 months, USA converged on T23 across six lines and 439 factories. Nothing
+  moved by a single factory.
+- **Cause:** the type does something narrower than its use assumed. Vanilla's own comment
+  on it, at `common/ai_strategy/SOV.txt:360` in the game install, reads: *"100 essentially
+  means we don't require a stockpile surplus"*. It offsets the **desire to upgrade an
+  existing production line** onto a newer equipment, and what it modulates is the
+  stockpile-surplus threshold that upgrade normally waits for. Two consequences that
+  invalidate the way WA used it:
+  1. **`+100` on an older/wanted design is a no-op.** You never "upgrade" a line *to* an
+     older chassis, so roughly half of Fix 51's emitted entries could never do anything.
+  2. **It never sees line CREATION.** The observed failures are new lines being opened on
+     the unwanted equipment (USA jumps M3 Lee straight to T20 and later opens *new* T23
+     lines; SOV opens fresh Malyutka lines), not existing lines drifting newer. A `-100`
+     cannot stop a line that was never an upgrade.
+  Expert AI 5.0 uses the type 46 times and every use fits the real semantics: each `-100`
+  is gated on a stockpile condition (`enable = { has_equipment = { infantry_equipment <
+  10000 } }`) and holds an *existing* line on the old rifle until the stockpile fills, with
+  a comment that says the point is not spending XP yet
+  (`EAI_PRODUCTION_equipment_strategies.txt`). It is a "don't upgrade yet" knob, and that
+  is exactly what it is named.
+- **Rule:** before adopting an `ai_strategy` type, find a **vanilla or Expert AI use of it
+  and read what that use is trying to achieve** - not just its type name and id shape. The
+  id form matching (an equipment token, which WA got right) proves nothing about whether
+  the lever answers your question. Here the type name contains the answer: *upgrade*
+  desire. Related: `equipment_variant_production_factor` is not the alternative either -
+  vanilla only ever gives it an **archetype** id (`medium_tank_chassis`,
+  `large_plane_airframe`), so it cannot discriminate between two chassis of the same
+  archetype.
+- **Evidence:** game install `common/ai_strategy/SOV.txt:357-366` (the comment) and
+  `_documentation.md` (the type is listed but never described); Expert AI 5.0
+  `common/ai_strategy/EAI_PRODUCTION_equipment_strategies.txt`; checklist R30/R33/R35
+  history for campaign `02bd4445`. See also the sibling entry on `obsolete=yes`, which was
+  the other candidate explanation and is equally dead.
+
+## 2026-08-13 - An `ai_equipment` priority ladder must stay inside the range the engine is observed to honour
+
+- **Date:** 2026-08-13
+- **Symptom:** `SOV_heavy_tanks` (13 ranks) emitted `factor = 0.000009` at its floor, and
+  four other frontiers bottomed out between `0.001` and `0.01`.
+- **Cause:** the generated ladder is geometric (`1 / 0.3 / 0.1 / 0.03 / ...`) applied to the
+  group's historical maximum, so its span grows as `3^ranks`. A ≥3x step on every one of 12
+  steps needs a 531 441x span, while only 100x is available above any sane floor. The
+  bottom rungs then land where the engine's fixed-point script numbers cannot distinguish
+  them from `0` - and `factor = 0` in `ai_equipment` means *never pick this design*, so the
+  ladder was enforcing dominance by **disabling the emergency fallbacks it existed to
+  protect**. External calibration: the smallest priority factor in **all of vanilla
+  `ai_equipment` is 0.1**, and in Expert AI 5.0 it is 0.5.
+- **Rule:** when generating engine-facing numbers, bound them by the range the engine is
+  *observed* to use, not by what the arithmetic produces - and when two invariants cannot
+  both hold (here "≥3x between every rank" and "never emit an unrepresentable factor"),
+  keep the one whose violation is a **correctness** failure and relax the one whose
+  violation is a **fidelity** failure. The fix keeps every rank above the knee at its exact
+  geometric value and re-spaces only the underflowing tail down to a configurable floor, so
+  dominance is untouched where it decides anything.
+- **Evidence:** `tools/equipment_evaluator/ground.py::_frontier_priority`,
+  `config.json` `frontier_priority.floor`, tests in `test_generation.py::FrontierLadderTests`;
+  25 factors rescaled across `FRA/GER/JAP/SOV/USA_tank.txt`.
+
+## 2026-08-13 - Check what a technology LEADS TO before suppressing it, and suppress it from ai_strategy, not from ai_will_do
+
+- **Date:** 2026-08-13
+- **Symptom:** with the design layer and the production-line layer both settled negatively,
+  the remaining way to stop the AI building an unwanted chassis is to stop it researching
+  the branch. The obvious implementation - `ai_will_do = { factor = 0 }` on the two USA
+  techs - was already written up as the plan.
+- **Cause:** two independent traps, both invisible in the diff that plan would have produced.
+  1. **Downstream stranding.** `usa_medium_tank_chassis_5` (T23) leads to
+     `usa_modern_tank_chassis_1` (M26 Pershing), and the entire USA heavy line (chassis 2-7)
+     hangs off that in turn - **15 equipment tokens** would have gone with it. The same shape
+     on the SOV side: `sov_medium_tank_chassis_5` (T-43) gates the whole T-44 -> T-54 modern
+     line. Both survived only because the technology graph forks *and rejoins*:
+     `usa_modern_tank_chassis_1` is also reachable from `usa_medium_tank_chassis_3_3`
+     (M4A3E8) and `sov_modern_tank_chassis_1` from `sov_medium_tank_chassis_3_4` (T 34 85) -
+     the very branches being steered onto. Had the fork not rejoined, the fix would have
+     traded a medium-tank preference for the loss of every USA heavy and modern tank, and
+     nothing in the campaign that motivated it would have shown that.
+  2. **Wrong file to edit.** Technology `ai_will_do` blocks are **tool-managed**
+     (`tools/ai_will_do_replacer_all.py`, `tools/ai_replacer_base/`; every WA tech carries the
+     same generated shape - `factor = 1` plus a `WA_AI_RESEARCH_needs_*` modifier and a date
+     gate). A hand-written `factor = 0` there survives until the next regeneration and then
+     vanishes silently. The `ai_strategy` type **`research_weight_factor`** does the same job
+     from outside that pipeline, and is documented: *"Factor the ai_will_do value for the
+     specified technology with this. (50 means 50 % increase, -30 means 30 % decrease)"*, so
+     `-100` zeroes the weight.
+- **Rule:** before suppressing any technology, compute its **transitive downstream reach**
+  and the **in-edges of everything in that reach** - the suppression is safe only if every
+  stranded node has another live path. State the equipment that would be lost, not just the
+  tech. And when the natural target file is generated, look for an `ai_strategy` type that
+  expresses the same intent; editing generated output is a fix with a shelf life.
+- **Evidence:** Fix 54, `common/ai_strategy/WA_AI_RESEARCH_COUNTRY_{USA,SOV,JAP}.txt`,
+  checklist R37; game install `common/ai_strategy/_documentation.md` for
+  `research_weight_factor`; `common/technologies/armor_usa.txt:2935,2993`,
+  `armor_sov.txt:3053`, `naval_jap.txt:3987,4038`.
+
+## 2026-08-13 - A missing ai_equipment design is invisible everywhere, and it frames the AI for a decision it made correctly
+
+- **Date:** 2026-08-13
+- **Symptom:** checklist R35 recorded "ENG medium 1944.6 & 1946.4 Cromwell (100) -> **Comet**"
+  as one of six faulty frontiers - the AI ignoring the mod's ranking and building the newest
+  chassis. `WA_AI_PRODUCTION_COUNTRY_ENG_TANKS.txt` looked consistent with that reading: a
+  single `+100` on the Cromwell, `enable = always`, and no suppressions at all.
+- **Cause:** `tank_eng_medium_chassis_5` (Comet) had **no design in any ENG `ai_equipment`
+  group**. `ai_equipment` only steers equipment it has a design for, so the engine
+  auto-designed the Comet and built it outside the ranking, outside the
+  `WA_AI_EQUIPMENT_*` resource gates, and outside the emitted
+  `production_upgrade_desire_offset` blocks. The generator had ranked 7 designs while the AI
+  was building an 8th it had never heard of - and it emitted a lone `+100` not because the
+  emitter was broken but because, among the designs it could see, the Cromwell really was
+  top rank with nothing newer to suppress. **Once the design was authored, the evaluator
+  ranked the Comet PRIMARY, above the Cromwell (+1.224 vs +1.157): the AI had been right and
+  the mod was wrong.** The tell was there all along - `medium_tank_7` (Cromwell) already
+  carried `modifier = { has_tech = eng_medium_tank_chassis_5 ... factor = 0 }`, a
+  supersession pointing at a Comet design that was never written.
+- **Rule:** a coverage gap in the design layer is invisible in **every** output the
+  generator produces - the role looks fully covered and simply ranks its top design first.
+  So before recording "the AI ignored our ranking", check that the equipment it actually
+  built **has a design at all** (`tools/equipment_evaluator --domain tanks` now reports
+  these into `output/coverage_gaps.md`). Corollary for authoring: a design's supersession
+  hook must point at the next chassis **in the same role**. The Comet's successor tech
+  `eng_modern_tank_chassis_1` belongs to `ENG_modern_tanks`, and hooking a medium design to
+  it would empty the medium role the moment modern tanks are researched.
+- **Evidence:** Fix 55, `common/ai_equipment/ENG_tank.txt` `medium_tank_8`; checklist R35
+  Comet sub-probe and its retraction; `output/coverage_gaps.md` (39 -> 38 gaps, 11 -> 10 in
+  branched roles).

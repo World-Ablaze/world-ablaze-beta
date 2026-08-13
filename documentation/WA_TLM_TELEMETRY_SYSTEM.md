@@ -305,14 +305,34 @@ per series — trivial at depth 44, but do not raise depth casually.
 | `WA_TLM_r47_lrange_first_t` / `_last_t` | stamps | same site | R31 | v3 |
 | `WA_TLM_r47_alu_large_n` | counter | monthly, all AI (same site) | R32 | v3 |
 | `WA_TLM_r47_alu_large_first_t` / `_last_t` | stamps | same site | R32 | v3 |
-| `WA_TLM_nav_ships` / `_screens` / `_subs` / `_convoys` | gauges | monthly, any AI with a hull | R36, convoy-war questions | v4 |
+| `WA_TLM_nav_ships` / `_subs` | gauges | monthly, any AI with a hull | R36, convoy-war questions | v4 |
+| `WA_TLM_nav_screens` | gauge (destroyer + frigate + light_cruiser) | monthly, any AI with a hull | R36 | v4, **valid from v5** |
+| `WA_TLM_nav_convoys` | gauge (`num_equipment@convoy`) | monthly, any AI with a hull | R36 | v4, **valid from v5, unverified until F9** |
 | `WA_TLM_nav_conv_threat` | gauge (engine 0-1, stored ×100) | monthly, any AI with a hull | R36 | v4 |
-| `WA_TLM_nav_conv_ws` | gauge (engine 0-1, stored ×100) | monthly, any AI with a hull | R36 | v4 |
+| `WA_TLM_nav_conv_ws` | gauge (engine 0-1, stored ×100; observable range 0-30, a RATE not a tally) | monthly, any AI with a hull | R36 | v4 |
 | `WA_TLM_nav_conv_killed` | gauge (engine cumulative) | monthly, any AI with a hull | R36 | v4 |
 | `WA_TLM_nav_last_t` | stamp | monthly, any AI with a hull (widest gauge of the family) | R36 absence contract | v4 |
 | `WA_TLM_nav_port_screens` | gauge (banded, reads LOW) | monthly, `WA_AI_CONFIG_MILITARY_is_major_naval` | R36 | v4 |
-| `WA_TLM_nav_port_pct` | gauge (derived) | monthly, naval majors | R36 headline | v4 |
-| `WA_TLM_nav_hist_t` + `WA_TLM_nav_port_pct_hist` | ring + **own** axis | quarterly, naval majors | R36 trend | v4 |
+| `WA_TLM_nav_port_pct` | gauge (derived) | monthly, naval majors | R36 headline | v4, **valid from v5** |
+| `WA_TLM_nav_hist_t` + `WA_TLM_nav_port_pct_hist` | ring + **own** axis | quarterly, naval majors | R36 trend | v4, **valid from v5** |
+
+**v4 naval readings are artefacts — do not score them.** `nav_screens` and
+`nav_convoys` were written from `num_ships_with_type@screen_ship` and
+`…@convoy`. Neither is a legal target: the engine accepts a **sub-unit def type**
+(`destroyer`, `frigate`, `light_cruiser`, `heavy_cruiser`, `battleship`, `carrier`,
+`light_carrier`, `submarine`, `cruiser_submarine`) or one of the four aggregates
+`carrier` / `capital` / `screen` / `submarine` — `screen_ship` is the sub-unit
+*category* name from `common/units/ship_*.txt`, and `convoy` is not a ship at all
+(convoys are equipment; there is no `common/units/ship_convoy.txt`). Both returned
+a silent 0 for every country on every v4 save, which in turn forced `nav_port_pct`
+down its `else = 0` branch, so **`nav_port_pct` and all 40 quarterly
+`nav_port_pct_hist` samples on a v4 save are a hard-coded constant, not a
+measurement**. Confirmed in-save on campaign `02bd4445`: `@submarine` and
+`num_ships` are exact to the hull while `@screen_ship` and `@convoy` read 0 on
+ENG/USA/GER/JAP. Fixed in v5 — `nav_screens` sums the three concrete hull types
+and `nav_convoys` uses `num_equipment@convoy`. **Absence contract for this family
+is therefore version-gated: `wa_tlm_version < 5` ⇒ `nav_screens`, `nav_port_pct`
+and `nav_port_pct_hist` are NOT CHECKED, never FAILED.**
 
 **Fix 47 probe semantics.** Both counters are *months the gate was OPEN*, sampled
 **after** the latch update so they read the flag exactly as the `ai_equipment`
@@ -368,10 +388,24 @@ What it does carry:
 - **Outcome, invisible in the save:** `nav_conv_threat` (engine convoy danger, 0-1),
   `nav_conv_ws` (war-support malus already paid for sunk convoys), `nav_conv_killed`
   (convoys this country destroyed — the raider end of the same ledger). None of these
-  are stored in readable form in a savegame.
-- **Inventory:** `nav_ships` / `nav_screens` / `nav_subs` / `nav_convoys` via
-  `num_ships_with_type@…`. `screen_ship` is the sub-unit category shared by
-  destroyer + frigate + light_cruiser (`common/units/ship_*.txt`) — the escort hulls.
+  are stored in readable form in a savegame. **`nav_conv_ws` is a rate, not a
+  lifetime tally**: the engine accrues at most −0.01 war support per week from
+  convoys being raided *right now* and decays the accumulated penalty by 0.025/week,
+  capped at −0.3 total (`05_defines.lua:134-137`). Its observable range in this
+  metric's units is 0-30 and it falls back to ~0 within a couple of months of the
+  raiding stopping — so a 0 on a country that has lost thousands of convoys over the
+  campaign is a **real zero**, not a bad token (`has_convoys_war_support` and
+  `convoy_threat` are both listed as legal variable reads in the engine's
+  `dynamic_variables_documentation.md`). For cumulative loss, use `nav_conv_killed`
+  from the raider's side plus the save's convoy efficiency.
+- **Inventory:** `nav_ships` / `nav_screens` / `nav_subs` / `nav_convoys`.
+  `nav_screens` is the explicit sum `destroyer + frigate + light_cruiser` — the exact
+  set carrying `type = screen_ship` in `common/units/ship_*.txt`, and also exactly
+  what `savegame.py navy` counts as `screens=` (`_NAVAL_SCREENS`), which keeps R36's
+  "must match exactly" cross-check an identity rather than a dependency on an engine
+  aggregate's membership. `nav_convoys` uses `num_equipment@convoy` because convoys
+  are an equipment archetype, not a hull. See the v4-artefact note in §5 before
+  reading any of these off an older save.
 - **An independent "they are in port" reading:** `nav_port_screens` sums a per-state
   floor ladder over `ships_in_state_ports` on our own naval-base states, and
   `nav_port_pct` divides it by `nav_screens`. This is the cross-check that does **not**
@@ -392,13 +426,20 @@ Standing, not a probe, under §3.8 criteria 2 and 3: the question "what share of
 navy is at sea" is system health rather than one fix's mechanism, and answering it
 already cost a full multi-save streaming parse (2026-08-13 session).
 
-**Second signal for the first instrumented campaign** (F9 boot check first — three
-tokens are unverified in-game: `num_ships_with_type@screen_ship`, `@convoy`, and
-`convoy_threat`/`has_convoys_war_support` read as variables; an unknown token errors at
-parse, a silent 0 on ENG in 1942 means the token filter failed and the metric must not
-be scored): `savegame.py navy ENG <same save>` must agree with `nav_port_pct` to within
-the ladder's floor error, and `nav_screens` must match the command's `screens=` count
-exactly.
+**Second signal for the first instrumented campaign:** `savegame.py navy ENG <same
+save>` must agree with `nav_port_pct` to within the ladder's floor error, and
+`nav_screens` must match the command's `screens=` count exactly.
+
+**F9 boot check still owed, and now narrowed to one token.** `convoy_threat` and
+`has_convoys_war_support` are confirmed legal variable reads against the engine's
+`dynamic_variables_documentation.md`, and the v5 `nav_screens` sum uses only
+sub-unit def types already proven in this repo (`WA_AI_misc_effects.txt:770-778`,
+`common/national_focus/usa.txt:12486-12593`). The one unverified token left is
+**`num_equipment@convoy`** — the archetype form is the repo's standard idiom for
+every other archetype, but no in-game reading exists yet. Boot check: launch to
+1936, and on any country with convoys confirm `wa_tlm_nav_convoys > 0` while
+`wa_tlm_nav_ships > 0`. If it reads 0, the archetype target failed; drop the metric
+and its registry row rather than shipping a second silent zero.
 
 ## 7. Adding a metric — checklist for authors
 

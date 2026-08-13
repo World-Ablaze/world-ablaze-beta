@@ -305,11 +305,52 @@ WA_AI_NAVAL_FACTION_ALLIES_atlantic_north_corridor = {
 	ai_strategy = { type = naval_dominance id = 243 value = 80 } # Icelandic Basin
 	ai_strategy = { type = naval_dominance id = 244 value = 80 } # Greenland Iceland Rise
 	ai_strategy = { type = naval_dominance id = 44 value = 80 }  # Denmark Strait
+}
+
+# purpose: let Allied convoy-escort missions clear their score bar at all
+# range:   -100 to 0
+# policy:  Additive per mission
+# domain:  NAVAL
+#
+# Fix 53a (2026-08-13, checklist R36). This line used to live inside the
+# north-corridor block above as
+#     ai_strategy = { type = naval_mission_threshold id = MISSION_CONVOY_ESCORT value = 5000 }
+# which is sign-inverted against that block's own stated purpose. A POSITIVE
+# naval_mission_threshold RAISES the bar a mission's score must clear before the AI
+# will assign it - vanilla's own JAP block says so in as many words
+# (`value = 150 #puts our threshold at 250`, in a block named
+# conserve_fuel_for_usa_fight whose whole job is to stop escorting), and WA's
+# WA_AI_NAVAL_DEFAULT_legacy_AI_naval_mission_fix drives patrol/strike NEGATIVE with
+# the comment "Fixes the AI not putting out its strike force and patrols". So the
+# Atlantic escort plan was ending with "and never escort": +5000 against an engine
+# base of 100, i.e. 50x the type's documented ceiling (WA_AI_MILITARY_SYSTEM.md:106
+# gives the range as -100 to +100), and undocumented in the block's own header, which
+# declares "range: 0 to +2000 / Additive per region" and describes naval_dominance only.
+# Before Fix 52 this reached CAN/RAJ/AST/NZL - the 27 hulls "mostly at anchor" in R36's
+# opening reading - and Fix 52, by removing the ENG/USA/GER exclusion, handed it to the
+# two navies the whole item is about. It is split out into its own block rather than
+# deleted-in-place because a country-wide mission threshold is not a per-region rule and
+# does not belong in a block named for a corridor.
+#
+# -100 is the documented floor, not a guess at a magic number: it puts the escort bar at
+# 0 (base 100 - 100), i.e. any positive escort score assigns the mission, which is the
+# same permissiveness WA already grants patrol and strike force. Deliberately NOT matched
+# to those blocks' out-of-range -500/-1000; if escort share still fails R36's 25% leg
+# after Fix 53b restores the escort SCORE terms, going further negative is the next step,
+# and keeping this one in spec is what makes that a readable next experiment.
+WA_AI_NAVAL_FACTION_ALLIES_convoy_escort_threshold = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = yes
+	}
+	enable = {
+		WA_AI_MILITARY_allies_at_war_with_axis = yes
+	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = naval_mission_threshold
-		id = MISSION_CONVOY_ESCORT
-		value = 5000
+		id = "MISSION_CONVOY_ESCORT"
+		value = -100
 	}
 }
 
