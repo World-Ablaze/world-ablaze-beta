@@ -76,8 +76,11 @@ WA_AI_CONFIG_is_minor_country = {
 
 WA_AI_CONFIG_is_in_allies = {
 	OR = {
+		# Fix 63 (2026-08-14): `is_in_faction_with = USA` was listed twice. Harmless
+		# to the engine - an OR of a term with itself - but this trigger gates a
+		# large share of the Allied AI, so a reader checking it should not have to
+		# wonder whether the third line was meant to be a third country.
 		is_in_faction_with = ENG
-		is_in_faction_with = USA
 		is_in_faction_with = USA
 	}
 }
@@ -989,6 +992,15 @@ WA_AI_CONFIG_MILITARY_is_western_invasion_pool = {
 
 # Allied countries that should inherit coalition naval routing through Suez/Cape
 # and Atlantic corridors.
+#
+# Fix 61 (2026-08-14, checklist R36): added FRA and SAF. Both are Allied Atlantic
+# powers by geography - FRA has a real fleet in 1936-40 and Atlantic ports, SAF sits
+# on the Cape leg - and until this fix their mid-ocean gap avoidance came from
+# WA_AI_NAVAL_COUNTRY_ENG_legacy_ENG_azores_safe, a Country-layer block that had no
+# `allowed` gate and therefore leaked to the whole faction. That block is removed in
+# the same commit, so without this line they would have been left with no Atlantic
+# routing at all. Adding them here re-homes the coverage at the layer that owns it
+# rather than restoring the leak.
 WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = {
 	OR = {
 		original_tag = ENG
@@ -997,6 +1009,8 @@ WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = {
 		original_tag = AST
 		original_tag = NZL
 		original_tag = USA
+		original_tag = FRA
+		original_tag = SAF
 	}
 }
 

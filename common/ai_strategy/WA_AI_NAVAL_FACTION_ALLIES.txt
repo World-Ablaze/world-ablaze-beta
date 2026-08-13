@@ -71,7 +71,7 @@ WA_AI_NAVAL_FACTION_ALLIES_sicily_push = {
 
 	ai_strategy = {
 		type = naval_avoid_region
-		id = 18 #Baleric Sea
+		id = 219 #Baleric Sea
 		value = 2000
 	}
 }
@@ -139,9 +139,13 @@ WA_AI_NAVAL_FACTION_ALLIES_azores_fallen = {
 	}
 	enable = {
 		WA_AI_MILITARY_is_allies_member = yes # anyone in allies
-		NOT = {
-			tag = USA
-		}
+		# Fix 61 (2026-08-14): `NOT = { tag = USA }` removed. This block and the
+		# deleted ENG_legacy_ENG_azores_safe were a pair and both excluded the USA;
+		# with the safe branch gone the exclusion had no counterpart left, and it
+		# had become actively harmful: the south corridor now PULLS every corridor
+		# user toward 112 at -1000, so the USN was the one navy being drawn into the
+		# Azores with no deterrent at all once the islands fell. Removing it also
+		# leaves this file with no `tag =` gating term of any kind.
 		698 = { CONTROLLER = { has_war_with = ROOT } }
 	}
 	abort_when_not_enabled = yes
@@ -151,10 +155,16 @@ WA_AI_NAVAL_FACTION_ALLIES_azores_fallen = {
 		id = 47
 		value = 2000
 	}
+	# Fix 61 (2026-08-14): 1000 -> 2000, to survive the corridor pull introduced by
+	# Fix 60. The south corridor writes -1000 on 112 and does not check who holds
+	# the islands, so at the old value the two summed to exactly ZERO: the moment
+	# the Azores fell, the deterrent vanished completely rather than being reduced.
+	# At 2000 the net is +1000 - the intended reading, and the same reading the
+	# block's sibling 47 entry already had.
 	ai_strategy = {
 		type = naval_avoid_region
 		id = 112
-		value = 1000
+		value = 2000
 	}
 }
 
@@ -301,10 +311,40 @@ WA_AI_NAVAL_FACTION_ALLIES_atlantic_north_corridor = {
 	ai_strategy = { type = naval_dominance id = 55 value = 80 }  # Newfoundland Sea
 	ai_strategy = { type = naval_dominance id = 50 value = 80 }  # Labrador Sea
 	ai_strategy = { type = naval_dominance id = 247 value = 80 } # Labrador Basin
-	ai_strategy = { type = naval_dominance id = 36 value = 80 }  # Greenland
+	# Fix 59 (2026-08-14): dropped `id = 36` (Greenland). Checked against
+	# map/definition.csv: all 8 of its provinces are type `land`, so the region can
+	# carry no naval dominance and the entry was inert. The waters it was reaching
+	# for are already in this list - 44 Denmark Strait and 244 Greenland Iceland
+	# Rise to the east, 50 Labrador Sea and 247 Labrador Basin to the west - so the
+	# corridor loses no coverage.
 	ai_strategy = { type = naval_dominance id = 243 value = 80 } # Icelandic Basin
 	ai_strategy = { type = naval_dominance id = 244 value = 80 } # Greenland Iceland Rise
 	ai_strategy = { type = naval_dominance id = 44 value = 80 }  # Denmark Strait
+
+	# Fix 60 (2026-08-14, checklist R36): the pull half of the pair.
+	# Until now this plan only ever PUSHED - naval_dominance says "we want presence
+	# here", and atlantic_off_corridor_avoidance puts +1000 on the mid-ocean gaps -
+	# but nothing pulled fleets ONTO the corridor, so the only naval_avoid_region
+	# values any corridor region ever saw were the legacy Country-layer walls
+	# pointing the other way (+2000 on 244 from USA_legacy_USA_smart_pacific_fleet
+	# and again from ENG_legacy_ENG_atlantic_sea_zone_corridors, +2000 on 57 from
+	# USA_legacy_USA_smart_atlantic_fleet). A negative naval_avoid_region is an
+	# attraction in this engine and it is WA's own established idiom for it -
+	# ENG_protect_home uses -10000 on the English Channel and the USA Torch blocks
+	# use -2000 on the Bay of Biscay. -1000 is chosen to mirror the +1000 that
+	# off_corridor_avoidance puts on the gaps, so the plan reads as one symmetric
+	# pair rather than two unrelated magnitudes; this is the same "every boost
+	# paired with a suppression" rule the AIFC header states, applied in reverse.
+	# It does NOT by itself beat the legacy walls (244 nets +3000 for the USA until
+	# those are retired) - that is the follow-up pass, and this value is sized for
+	# the world after it, not against it.
+	ai_strategy = { type = naval_avoid_region id = 43 value = -1000 }  # Western Approaches
+	ai_strategy = { type = naval_avoid_region id = 55 value = -1000 }  # Newfoundland Sea
+	ai_strategy = { type = naval_avoid_region id = 50 value = -1000 }  # Labrador Sea
+	ai_strategy = { type = naval_avoid_region id = 247 value = -1000 } # Labrador Basin
+	ai_strategy = { type = naval_avoid_region id = 243 value = -1000 } # Icelandic Basin
+	ai_strategy = { type = naval_avoid_region id = 244 value = -1000 } # Greenland Iceland Rise
+	ai_strategy = { type = naval_avoid_region id = 44 value = -1000 }  # Denmark Strait
 }
 
 # purpose: let Allied convoy-escort missions clear their score bar at all
@@ -358,6 +398,24 @@ WA_AI_NAVAL_FACTION_ALLIES_convoy_escort_threshold = {
 # range:   0 to +2000
 # policy:  Additive per region
 # domain:  NAVAL
+#
+# Fix 59 (2026-08-14): the Azores term was `id = 237`, which is NOT the Azores.
+# Strategic region ids and their STRATEGICREGION_<n> localisation keys line up for
+# 381 of the map's 383 regions - the two exceptions are exactly this pair:
+#   map/strategicregions/237-Azores Region.txt  declares  id = 112
+#   map/strategicregions/112-Far South Pacific.txt declares id = 237
+# so id 112 displays as "Azores Region" and id 237 as "Far South Pacific". The
+# filename prefix is the loc key, not the id. The corridor plan was therefore
+# putting a south-Atlantic dominance term in the far South Pacific, leaving the
+# real Azores with no dominance at all, and stacking it against the avoid = 2000
+# that WA_AI_NAVAL_COUNTRY_ENG_legacy_ENG_ignore_japan_until_germany_is_dealt_with
+# puts on 237 (correct there - that block is a Pacific avoidance list).
+# The legacy files had this right all along: ENG's strike_force_home_base id = 112
+# (#Azores) and this file's own azores_fallen avoid on 112 both target the Azores.
+# Note for the follow-up pass: USA_legacy_USA_operation_torch_landing and
+# USA_legacy_USA_invade_the_axis_avoid_regions_france both avoid 112 at 2000, so
+# the USN now carries dominance 70 and an avoid wall on the same region in those
+# windows. That is a Country-layer wall to retire, not a reason to revert this id.
 WA_AI_NAVAL_FACTION_ALLIES_atlantic_south_corridor = {
 	allowed = {
 		WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = yes
@@ -371,13 +429,35 @@ WA_AI_NAVAL_FACTION_ALLIES_atlantic_south_corridor = {
 
 	ai_strategy = { type = naval_dominance id = 54 value = 70 }  # Eastern Seaboard
 	ai_strategy = { type = naval_dominance id = 57 value = 70 }  # Sargasso Sea
-	ai_strategy = { type = naval_dominance id = 237 value = 70 } # Azores Region
+	ai_strategy = { type = naval_dominance id = 112 value = 70 } # Azores Region (Fix 59: was 237 = Far South Pacific)
 	ai_strategy = { type = naval_dominance id = 47 value = 70 }  # Iberian Coast
 	ai_strategy = { type = naval_dominance id = 48 value = 70 }  # African Coast
 	ai_strategy = { type = naval_dominance id = 61 value = 70 }  # Cap Verde Plain
 	ai_strategy = { type = naval_dominance id = 371 value = 70 } # East Caribbean Sea
 	ai_strategy = { type = naval_dominance id = 370 value = 70 } # Antillas Mayores
 	ai_strategy = { type = naval_dominance id = 53 value = 70 }  # West Caribbean Sea
+
+	# Fix 60 (2026-08-14, checklist R36): the pull half of the pair - see the long
+	# note in atlantic_north_corridor above for why -1000 and why it is paired.
+	# Two interactions worth stating rather than discovering in a save:
+	#  - 47 and 48 are also written by spanish_waters_unsafe at +2000, but that
+	#    block requires WA_AI_MILITARY_axis_controls_spain_or_morocco while this one
+	#    requires its negation, so the two can never be live at once.
+	#  - 112 is written by azores_fallen when the Azores are hostile, and this block
+	#    does NOT check Azores control, so both can be live together. Net +1000:
+	#    a corridor we still consider ours, but do not sail into while the enemy
+	#    holds the islands. That netting is why Fix 61 had to raise azores_fallen's
+	#    112 term from 1000 to 2000 - against this -1000 the old value cancelled to
+	#    exactly zero and the deterrent disappeared instead of shrinking.
+	ai_strategy = { type = naval_avoid_region id = 54 value = -1000 }  # Eastern Seaboard
+	ai_strategy = { type = naval_avoid_region id = 57 value = -1000 }  # Sargasso Sea
+	ai_strategy = { type = naval_avoid_region id = 112 value = -1000 } # Azores Region
+	ai_strategy = { type = naval_avoid_region id = 47 value = -1000 }  # Iberian Coast
+	ai_strategy = { type = naval_avoid_region id = 48 value = -1000 }  # African Coast
+	ai_strategy = { type = naval_avoid_region id = 61 value = -1000 }  # Cap Verde Plain
+	ai_strategy = { type = naval_avoid_region id = 371 value = -1000 } # East Caribbean Sea
+	ai_strategy = { type = naval_avoid_region id = 370 value = -1000 } # Antillas Mayores
+	ai_strategy = { type = naval_avoid_region id = 53 value = -1000 }  # West Caribbean Sea
 }
 
 # purpose: make non-corridor Atlantic regions unattractive to Allied fleets
@@ -411,7 +491,7 @@ WA_AI_NAVAL_FACTION_ALLIES_atlantic_off_corridor_avoidance = {
 # range:   0 to +2000
 # policy:  Additive per region
 # domain:  NAVAL
-WA_AI_NAVAL_FACTION_ALLIES_south_corridor_unsafe = {
+WA_AI_NAVAL_FACTION_ALLIES_spanish_waters_unsafe = {
 	allowed = {
 		WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = yes
 	}
@@ -425,4 +505,290 @@ WA_AI_NAVAL_FACTION_ALLIES_south_corridor_unsafe = {
 	ai_strategy = { type = naval_avoid_region id = 48 value = 2000 }  # African Coast
 	ai_strategy = { type = naval_avoid_region id = 249 value = 2000 } # Alboran Sea
 	ai_strategy = { type = naval_avoid_region id = 68 value = 2000 }  # Algerian Coast
+}
+
+# purpose: contest the Gibraltar approaches, where the Allied southern route enters the Med
+# range:   0 to 100
+# policy:  Additive per region
+# domain:  NAVAL
+#
+# Fix 60 (2026-08-14, checklist R36). The Atlantic plan stopped at the Iberian
+# Coast (47). Everything the convoys do after that - Alboran, then the Algerian
+# Coast, then east - was covered by exactly one thing mod-wide: an avoid = 2000 in
+# spanish_waters_unsafe for when the route is already lost. There was no "hold this
+# open" term anywhere, so the southern half of the escort problem had no plan at
+# all, only a contingency. This block is that term, and it is the strict complement
+# of spanish_waters_unsafe: that one requires the Axis to hold Spain or Morocco,
+# this one requires the negation, so they can never both be live.
+# Gibraltar itself is gated on the state, not on a tag or a date: if the Rock's
+# controller is at war with us, the approaches are not a corridor, they are a trap.
+#
+# ENG note (deliberate, not an oversight): ENG's Country-layer Gibraltar block
+# already writes naval_dominance id = 249 value = 100, so ENG reads 170 on Alboran
+# while both are live. naval_dominance is documented Additive per region, so this
+# is legal and it is directionally right - Alboran genuinely is Britain's highest
+# priority sea in that theatre. It does exceed the type's documented 0-100 band,
+# which is why the Country-layer line is on the promotion list for the follow-up
+# pass rather than being deleted here: retiring it in the same commit that
+# introduces this block would change ENG's Gibraltar behaviour on two axes at once
+# and make the campaign unreadable.
+WA_AI_NAVAL_FACTION_ALLIES_gibraltar_approaches = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = yes
+	}
+	enable = {
+		WA_AI_MILITARY_allies_at_war_with_axis = yes
+		WA_AI_MILITARY_axis_does_not_control_spain_or_morocco = yes
+		118 = { CONTROLLER = { NOT = { has_war_with = ROOT } } } # Gibraltar
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = naval_dominance id = 249 value = 70 } # Alboran Sea
+	ai_strategy = { type = naval_dominance id = 68 value = 70 }  # Algerian Coast
+
+	ai_strategy = { type = naval_avoid_region id = 249 value = -1000 } # Alboran Sea
+	ai_strategy = { type = naval_avoid_region id = 68 value = -1000 }  # Algerian Coast
+}
+
+# purpose: give Allied strike forces an eastern-Atlantic anchorage on the corridor
+# range:   boolean per region
+# policy:  Exclusive per region (Country > Faction > Default)
+# domain:  NAVAL
+#
+# Fix 60 (2026-08-14, checklist R36). Before this block the Faction layer set no
+# strike_force_home_base at all: every anchorage in the mod was Country-layer, and
+# on the Allied side that meant ENG's home waters (16 North Sea, 365 Southern
+# Bight, 18 English Channel) plus the Azores and Gibraltar, and the USA's Pacific
+# set. 43 Western Approaches - the region the north corridor rates highest and the
+# actual Battle of the Atlantic anchorage - was claimed by nobody.
+# No key collision: none of the Country-layer Allied blocks writes 43, so this
+# block needs no ownership gate. Kept separate from the western anchorages below
+# because the two answer different questions (who can base at the European end vs
+# who can base at the American end) and should be able to fail independently.
+WA_AI_NAVAL_FACTION_ALLIES_atlantic_home_base_eastern = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = yes
+	}
+	enable = {
+		WA_AI_MILITARY_allies_at_war_with_axis = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = strike_force_home_base id = 43 } # Western Approaches
+}
+
+# purpose: give Allied strike forces a western-Atlantic anchorage on the corridor
+# range:   boolean per region
+# policy:  Exclusive per region (Country > Faction > Default)
+# domain:  NAVAL
+#
+# Fix 60 (2026-08-14, checklist R36). The western anchorages are gated on the
+# country's capital actually being in North America rather than on a tag list, so
+# they reach the USA and CAN and nobody who would have to cross the ocean to use
+# them. This is the archetype form the CONFIG rule asks for, and it is also the
+# honest one: the rule really is geographic.
+#
+# Why this matters for R36 specifically: USA_legacy_USA_protect_eastern_Waters is
+# the only thing in the mod that gives the USN an Atlantic anchorage, and its
+# enable requires Britain to have fallen or the USA to be fighting the Axis from
+# outside the Allies - so in the historical case the USN has NO Atlantic strike
+# force home base for the whole war. That is the same shape as the four USN escort
+# task forces R36 found parked in the Gulf of Aden, the Solomon Sea, the Algerian
+# coast and the central NE Pacific: nothing anchored them on the corridor.
+# The Exclusive-per-region contract is honoured through
+# WA_AI_MILITARY_country_owns_sfhb_55 / _54, which are true only while that
+# Country-layer block is itself live - see the note on them in
+# WA_AI_MILITARY_PHASE5_ownership_triggers.txt for why they are situational and
+# not the bare tag test the rest of that file uses.
+WA_AI_NAVAL_FACTION_ALLIES_atlantic_home_base_western = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = yes
+	}
+	enable = {
+		WA_AI_MILITARY_allies_at_war_with_axis = yes
+		capital_scope = { is_on_continent = north_america }
+		NOT = { WA_AI_MILITARY_country_owns_sfhb_55 = yes }
+		NOT = { WA_AI_MILITARY_country_owns_sfhb_54 = yes }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = strike_force_home_base id = 55 } # Newfoundland Sea
+	ai_strategy = { type = strike_force_home_base id = 54 } # Eastern Seaboard
+}
+
+############################################################################################################
+# Fix 62 (2026-08-14, checklist R36) - promotions from the Country layer.
+############################################################################################################
+# The five blocks below were duplicated or mis-layered in the ENG and USA naval
+# files. Three of them (war_against_axis, german_bight, the Baltic trap) existed
+# TWICE with the same payload and near-identical enables; two more lived in the
+# COUNTRY_ENG file behind multi-tag `allowed` lists, which is Faction-layer content
+# wearing a Country-layer name. Promotion is per WA_AI_MILITARY_SYSTEM.md: prefer
+# the highest shared layer, and never duplicate the same block at two layers.
+#
+# Gating uses archetype triggers, never tag lists. Where an enable carried a
+# historical assumption that would silently disable the rule in an ahistorical
+# game, it has been dropped and the drop is noted on the block - that is design
+# principle 1 (no gaps when the script diverges), and each such change strictly
+# WIDENS coverage rather than restricting it.
+
+# purpose: keep Allied fleets out of the Italian coastal seas while Italy holds Sicily
+# range:   0 to +2000
+# policy:  Additive per region
+# domain:  NAVAL
+#
+# Fix 62: promoted from WA_AI_NAVAL_COUNTRY_ENG_legacy_ENG_war_against_axis and
+# WA_AI_NAVAL_COUNTRY_USA_legacy_USA_war_against_axis, which were identical down to
+# the region list and the enable - only the `allowed` tag differed. That pair is
+# exactly what WA_AI_CONFIG_MILITARY_is_anglo_major (ENG + USA) exists to express.
+WA_AI_NAVAL_FACTION_ALLIES_italian_coastal_seas = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_anglo_major = yes
+	}
+	enable = {
+		OR = {
+			has_war_with = ITA
+			has_war_with = GER
+		}
+		any_enemy_country = { has_full_control_of_state = 115 } # Northern Sicily
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = naval_avoid_region id = 373 value = 2000 } # Ligurian Sea
+	ai_strategy = { type = naval_avoid_region id = 169 value = 2000 } # Tyrrhenian Sea
+	ai_strategy = { type = naval_avoid_region id = 168 value = 2000 } # Adriatic Sea
+}
+
+# purpose: keep Allied fleets out of the German Bight while the enemy holds Hamburg
+# range:   0 to +2000
+# policy:  Additive per region
+# domain:  NAVAL
+#
+# Fix 62: promoted from the ENG and USA `german_bight` blocks, same payload.
+# Two enable differences resolved rather than merged:
+#  - each version asked whether state 803 Hamburg was controlled by someone in
+#    faction with ITSELF (`is_in_faction_with = ENG` / `= USA`). Rewritten as the
+#    generic "not one of us", which is what both meant and which also covers the
+#    case of an Allied member that is in neither of those two factions.
+#  - the USA version added `OR = { ... date < 1942.3.1 }`, i.e. avoid it
+#    unconditionally before March 1942. Dropped as redundant: before that date the
+#    Germans hold Hamburg in every timeline where this block can fire at all, so
+#    the ownership test already returns the same answer.
+# `GER = { has_government = fascism }` is kept - it is the block's actual subject
+# (a hostile Germany), not a historical-path assumption about who fights whom.
+WA_AI_NAVAL_FACTION_ALLIES_german_bight = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_anglo_major = yes
+	}
+	enable = {
+		GER = { has_government = fascism }
+		NOT = {
+			803 = { # Hamburg
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = naval_avoid_region id = 242 value = 2000 } # German Bight
+}
+
+# purpose: keep Allied fleets out of the Baltic, which is a trap for a non-Baltic navy
+# range:   0 to +2000
+# policy:  Additive per region
+# domain:  NAVAL
+#
+# Fix 62: promoted from WA_AI_NAVAL_COUNTRY_ENG_legacy_ENG_USA_baltic_trap, whose
+# `allowed` was already the two-tag list `ENG or USA` - a Faction rule in a Country
+# file, and its name said so. Widened to all Allied corridor users: the Skagerrak
+# and the Baltic proper are a trap for any navy that has to enter them through the
+# Danish straits, which is every Allied navy and no Axis or Soviet one. It stays
+# Allies-scoped for exactly that reason and is NOT a DEFAULT-layer rule - GER and
+# SOV need the Baltic.
+WA_AI_NAVAL_FACTION_ALLIES_baltic_trap = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = yes
+	}
+	enable = {
+		OR = {
+			has_war = yes
+			threat > 0.35
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = naval_avoid_region id = 251 value = 2000 } # Gulf of Bothnia
+	ai_strategy = { type = naval_avoid_region id = 9 value = 2000 }   # Upper Baltic
+	ai_strategy = { type = naval_avoid_region id = 206 value = 2000 } # Lower Baltic
+	ai_strategy = { type = naval_avoid_region id = 321 value = 2000 } # Gulf of Finland
+	ai_strategy = { type = naval_avoid_region id = 207 value = 2000 } # Danish Belt
+	ai_strategy = { type = naval_avoid_region id = 250 value = 2000 } # Skagerrak
+}
+
+# purpose: keep Allied fleets out of the Bay of Biscay while the enemy holds the French Atlantic coast
+# range:   0 to +2000
+# policy:  Additive per region
+# domain:  NAVAL
+#
+# Fix 62: promoted from WA_AI_NAVAL_COUNTRY_ENG_legacy_ENG_dday_avoid_regions_france.
+# Its `allowed` was an eight-tag list - ENG, FRA, USA, RAJ, CAN, SAF, AST, NZL -
+# which is now exactly WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user after
+# Fix 61 added FRA and SAF to it. Not a coincidence: both lists are answering the
+# same question, "which Allied navies operate in the Atlantic".
+#
+# `GER = { has_war_with = ENG }` DROPPED from the enable. The four state checks
+# below already establish that the French Atlantic coast is held by someone at war
+# with us, which is the entire subject of the rule; the Germany-versus-Britain test
+# added nothing on the historical path and silently disabled the rule everywhere
+# else - an Italian- or Soviet-held French coast, a Britain already out of the war,
+# a Germany that never went fascist. Design principle 1: gate on dynamic state, not
+# on the assumption that the historical script ran.
+WA_AI_NAVAL_FACTION_ALLIES_enemy_holds_french_atlantic_coast = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = yes
+	}
+	enable = {
+		WA_AI_MILITARY_is_allies_member = yes
+		14 = { CONTROLLER = { has_war_with = ROOT } }
+		30 = { CONTROLLER = { has_war_with = ROOT } }
+		23 = { CONTROLLER = { has_war_with = ROOT } }
+		19 = { CONTROLLER = { has_war_with = ROOT } }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = naval_avoid_region id = 42 value = 2000 } # Bay of Biscay
+}
+
+# purpose: keep Allied fleets off the Norwegian coast while the enemy holds it
+# range:   0 to +2000
+# policy:  Additive per region
+# domain:  NAVAL
+#
+# Fix 62: promoted from WA_AI_NAVAL_COUNTRY_ENG_legacy_ENG_dday_avoid_regions_norway,
+# same eight-tag list and the same dropped `GER = { has_war_with = ENG }` test -
+# see the Biscay block above for both.
+WA_AI_NAVAL_FACTION_ALLIES_enemy_holds_norwegian_coast = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = yes
+	}
+	enable = {
+		WA_AI_MILITARY_is_allies_member = yes
+		878 = { CONTROLLER = { has_war_with = ROOT } }
+		144 = { CONTROLLER = { has_war_with = ROOT } }
+		143 = { CONTROLLER = { has_war_with = ROOT } }
+		142 = { CONTROLLER = { has_war_with = ROOT } }
+		1017 = { CONTROLLER = { has_war_with = ROOT } }
+		1018 = { CONTROLLER = { has_war_with = ROOT } }
+		1019 = { CONTROLLER = { has_war_with = ROOT } }
+		1020 = { CONTROLLER = { has_war_with = ROOT } }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = naval_avoid_region id = 174 value = 2000 } # Voring Plateau
 }

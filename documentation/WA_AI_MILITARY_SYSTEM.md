@@ -100,8 +100,8 @@ This is the master legend. For each `ai_strategy` `type` currently in use, it st
 | `invade` | Sums per target | Additive per target | n/a | 0 to 200 |
 | `conquer` | Sums per target | Additive per target | n/a | 0 to 200 |
 | `antagonize` | Sums per target | Additive per target | n/a | 0 to 200 |
-| `naval_avoid_region` | Sums per region | Additive per region | n/a | 0 to +500 |
-| `naval_convoy_raid_region` | Sums per region | Additive per region | n/a | 0 to +500 |
+| `naval_avoid_region` | Sums per region | Additive per region | n/a | -10000 to +2000 — see the convention note below |
+| `naval_convoy_raid_region` | Sums per region | Additive per region | n/a | -1000 to +1000 (negative = suppress raiding there) |
 | `naval_dominance` | Sums per region/area | Additive per region | n/a | 0 to 100 |
 | `naval_mission_threshold` | Sums per mission | Additive | n/a | -100 to +100 |
 | `naval_invasion_dominance_weight` | Sums | Additive | n/a | 0 to +100 |
@@ -115,6 +115,18 @@ This is the master legend. For each `ai_strategy` `type` currently in use, it st
 
 - **Additive** means the engine combines values from multiple `ai_strategy` blocks (typically by sum, sometimes by max). Layers may safely contribute to the same key. Tuning differences between layers are by design.
 - **Exclusive** means the WA system enforces single-layer ownership for a given key (target, area, ally, region, mode). The engine may still technically allow multiple writers, but stacking writers produces unpredictable behaviour. Phase 5 will introduce mutual-exclusion triggers to enforce this; until then, authors must hold the precedence rule manually.
+- `naval_avoid_region` **is signed, and a negative value is an attraction, not a weaker avoidance.** Reading only the region id will mislead you. Corrected 2026-08-14 (Fix 63): the range column previously read "0 to +500", which no file in the mod has ever respected. Measured across the 402 entries actually in `common/ai_strategy/`, the values in use are `2000` (326 entries), `1000` (29), `100` (23), `-1000` (18), `200` (3), `-2000` (2) and `-10000` (1). The working convention is therefore:
+
+  | Value | Meaning |
+  | --- | --- |
+  | `100` – `200` | soft nudge; the AI still deploys there routinely |
+  | `1000` | soft wall — the paired suppression half of a corridor plan |
+  | `2000` | hard wall — "do not go here", the mod's default deterrent |
+  | `-1000` | the pull half of a corridor plan (`WA_AI_NAVAL_FACTION_ALLIES` corridors) |
+  | `-2000` / `-10000` | force a route open (USA Torch, `ENG_protect_home` on the Channel) |
+
+  Because the type is Additive per region, **always sum every writer for a region before concluding what the AI will do** — a `-2000` "open this route" can be, and in the Bay of Biscay case is, silently outvoted by three `+2000` walls. `WA_AI_NAVAL_COUNTRY_USA_operation_torch_preparation` carries a worked example of that arithmetic in its header comment.
+- `naval_dominance` values in use are 70–80 (18 entries), well inside the documented 0–100. Sums may still exceed 100 when layers stack; that is legal but should be called out at the site.
 - `garrison` uses a **negative-override convention**: a single block of `value = -5000` is the documented way to force garrison off in a state, and is treated as authoritative regardless of other writers. This is how `WA_AI_MILITARY_COUNTRY_SPR.txt:143-144` disables garrison in a specific configuration.
 - `declare_war`, `diplo_action_desire`, and `diplo_action_acceptance` are Country-only by convention: the Default and Faction layers should never push a country to declare war or accept diplomacy; that decision belongs in the country's own file.
 
