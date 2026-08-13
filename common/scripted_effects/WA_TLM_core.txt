@@ -15,7 +15,7 @@
 
 # Bump when the registered metric set changes; the sampler re-inits on mismatch so
 # new metrics exist at 0 even on campaigns resumed on a newer build.
-@WA_TLM_VERSION = 3
+@WA_TLM_VERSION = 4
 
 ############################################################################################################
 #	Clock - global.WA_TLM_clock = months elapsed since 1936.1
@@ -69,6 +69,20 @@ WA_TLM_init_country = {
 	if = { limit = { NOT = { has_variable = WA_TLM_r47_alu_large_n } } set_variable = { WA_TLM_r47_alu_large_n = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r47_alu_large_first_t } } set_variable = { WA_TLM_r47_alu_large_first_t = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r47_alu_large_last_t } } set_variable = { WA_TLM_r47_alu_large_last_t = 0 } }
+
+	# naval / convoy war (standing, consumer: checklist R36 + any convoy-war question)
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_ships } } set_variable = { WA_TLM_nav_ships = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_screens } } set_variable = { WA_TLM_nav_screens = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_subs } } set_variable = { WA_TLM_nav_subs = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_convoys } } set_variable = { WA_TLM_nav_convoys = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_conv_threat } } set_variable = { WA_TLM_nav_conv_threat = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_conv_ws } } set_variable = { WA_TLM_nav_conv_ws = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_conv_killed } } set_variable = { WA_TLM_nav_conv_killed = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_port_screens } } set_variable = { WA_TLM_nav_port_screens = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_port_pct } } set_variable = { WA_TLM_nav_port_pct = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_last_t } } set_variable = { WA_TLM_nav_last_t = 0 } }
+	# WA_TLM_nav_hist_t / WA_TLM_nav_port_pct_hist: arrays, no init (see the comment
+	# above - clearing on re-init is the history wipe the guards exist to prevent)
 }
 
 ############################################################################################################
@@ -79,6 +93,7 @@ WA_TLM_monthly_sample = {
 		WA_TLM_init_country = yes
 	}
 	WA_TLM_sample_composition = yes
+	WA_TLM_sample_navy = yes
 }
 
 ############################################################################################################
@@ -160,6 +175,124 @@ WA_TLM_sample_composition = {
 			if = { limit = { check_variable = { WA_TLM_hist_t^num > 44 } }
 				remove_from_array = { array = WA_TLM_hist_t index = 0 }
 				remove_from_array = { array = WA_TLM_comp_armor_mech_pct_hist index = 0 }
+			}
+		}
+	}
+}
+
+############################################################################################################
+#	Naval / convoy-war sample (fills the R36 gap).
+#
+#	What this can and cannot see. A task force's MISSION is not exposed to script -
+#	no trigger reads it - so "how many escorts are actually escorting" is only
+#	answerable from the save (`savegame.py navy TAG FILE...`, which brace-parses
+#	units -> fleet -> task_force -> mission). This sampler therefore covers the two
+#	things the save does NOT hand over cheaply:
+#	  (a) the OUTCOME of escorting - engine-computed convoy threat, the convoy-loss
+#	      war-support malus, and cumulative convoy kills; none of these are stored in
+#	      a readable form in the save;
+#	  (b) an INDEPENDENT reading of "the escorts are sitting in port", via
+#	      ships_in_state_ports, which does not depend on the empirically-derived
+#	      mission-id map the `navy` command relies on. If the two disagree, the
+#	      mission map is what is wrong.
+#
+#	Scope: country, is_ai gated by the caller. Cheap gauges run for anyone with a
+#	hull; the per-state port ladder is gated to the six naval majors (doc 3.4).
+############################################################################################################
+WA_TLM_sample_navy = {
+	if = { limit = { has_navy_size = { size > 0 } }
+
+		# tlm: nav_ships / nav_screens / nav_subs / nav_convoys - gauges, any AI navy
+		# - consumer: R36 (standing). screen_ship is the sub-unit category shared by
+		# destroyer/frigate/light_cruiser (common/units/ship_*.txt), i.e. the escort hulls.
+		set_variable = { WA_TLM_nav_ships = num_ships }
+		set_variable = { WA_TLM_nav_screens = num_ships_with_type@screen_ship }
+		set_variable = { WA_TLM_nav_subs = num_ships_with_type@submarine }
+		set_variable = { WA_TLM_nav_convoys = num_ships_with_type@convoy }
+
+		# tlm: nav_conv_threat / nav_conv_ws - gauges, any AI navy - consumer: R36
+		# (standing). Both engine values are 0-1; stored x100 so the save shows
+		# integers-ish. conv_threat = how dangerous our convoy routes are,
+		# conv_ws = the war-support malus our sunk convoys have already cost us.
+		set_variable = { WA_TLM_nav_conv_threat = convoy_threat }
+		multiply_variable = { WA_TLM_nav_conv_threat = 100 }
+		set_variable = { WA_TLM_nav_conv_ws = has_convoys_war_support }
+		multiply_variable = { WA_TLM_nav_conv_ws = 100 }
+
+		# tlm: nav_conv_killed - gauge (engine-side cumulative), any AI navy -
+		# consumer: R36 (standing). Convoys THIS country destroyed: the raider side
+		# of the same ledger, so an escort failure can be read from both ends.
+		set_variable = { WA_TLM_nav_conv_killed = convoys_destroyed }
+
+		# tlm: nav_last_t - sample stamp (absence contract, doc 3.5). Written with the
+		# widest gauge of the family, never inside the naval-major gate.
+		set_variable = { WA_TLM_nav_last_t = global.WA_TLM_clock }
+
+		if = { limit = { WA_AI_CONFIG_MILITARY_is_major_naval = yes }
+
+			# tlm: nav_port_screens - banded gauge, naval majors - consumer: R36
+			# (standing). Screens sitting in our own naval-base states, summed over
+			# states with a per-state floor ladder (ships_in_state_ports is a trigger,
+			# not a getter). Reads LOW by construction: a state holding 39 screens
+			# books 20. That is the honest direction - it cannot manufacture an
+			# idle-fleet problem that is not there.
+			set_variable = { WA_TLM_nav_port_screens = 0 }
+			every_owned_state = {
+				limit = {
+					is_coastal = yes
+					naval_base > 0
+					is_controlled_by = PREV
+				}
+				# Country scope; `state = PREV` then points back at the state, the
+				# idiom vanilla uses in common/decisions/ITA.txt (human torpedo raid).
+				PREV = {
+					if = { limit = { ships_in_state_ports = { type = screen_ship size > 79 state = PREV } }
+						add_to_variable = { WA_TLM_nav_port_screens = 80 }
+					}
+					else_if = { limit = { ships_in_state_ports = { type = screen_ship size > 39 state = PREV } }
+						add_to_variable = { WA_TLM_nav_port_screens = 40 }
+					}
+					else_if = { limit = { ships_in_state_ports = { type = screen_ship size > 19 state = PREV } }
+						add_to_variable = { WA_TLM_nav_port_screens = 20 }
+					}
+					else_if = { limit = { ships_in_state_ports = { type = screen_ship size > 9 state = PREV } }
+						add_to_variable = { WA_TLM_nav_port_screens = 10 }
+					}
+					else_if = { limit = { ships_in_state_ports = { type = screen_ship size > 4 state = PREV } }
+						add_to_variable = { WA_TLM_nav_port_screens = 5 }
+					}
+					else_if = { limit = { ships_in_state_ports = { type = screen_ship size > 0 state = PREV } }
+						add_to_variable = { WA_TLM_nav_port_screens = 1 }
+					}
+				}
+			}
+
+			# tlm: nav_port_pct - derived gauge, 100 * port_screens / screens -
+			# consumer: R36 (standing). This is THE headline number: what share of the
+			# escort force is parked at home this month.
+			set_temp_variable = { _tlm_pp_ = WA_TLM_nav_port_screens }
+			multiply_temp_variable = { _tlm_pp_ = 100 }
+			if = { limit = { check_variable = { WA_TLM_nav_screens > 0 } }
+				divide_temp_variable = { _tlm_pp_ = WA_TLM_nav_screens }
+			}
+			else = {
+				set_temp_variable = { _tlm_pp_ = 0 }
+			}
+			set_variable = { WA_TLM_nav_port_pct = _tlm_pp_ }
+
+			# Quarterly ring buffer on its OWN axis. It must not share WA_TLM_hist_t:
+			# that axis is pushed under WA_AI_CONFIG_is_major_country, a different
+			# country set, and any gate mismatch desynchronises index i from the axis
+			# for every series on it (doc 4, risk ii). Depth 44 = 11 game-years.
+			set_temp_variable = { _tlm_nq_ = global.WA_TLM_clock }
+			modulo_temp_variable = { _tlm_nq_ = 3 }
+			if = { limit = { check_variable = { _tlm_nq_ = 0 } }
+				add_to_array = { array = WA_TLM_nav_hist_t value = global.WA_TLM_clock }
+				add_to_array = { array = WA_TLM_nav_port_pct_hist value = WA_TLM_nav_port_pct }
+				if = { limit = { check_variable = { WA_TLM_nav_hist_t^num > 44 } }
+					remove_from_array = { array = WA_TLM_nav_hist_t index = 0 }
+					remove_from_array = { array = WA_TLM_nav_port_pct_hist index = 0 }
+				}
 			}
 		}
 	}

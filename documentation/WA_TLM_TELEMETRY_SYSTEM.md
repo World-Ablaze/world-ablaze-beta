@@ -305,6 +305,14 @@ per series — trivial at depth 44, but do not raise depth casually.
 | `WA_TLM_r47_lrange_first_t` / `_last_t` | stamps | same site | R31 | v3 |
 | `WA_TLM_r47_alu_large_n` | counter | monthly, all AI (same site) | R32 | v3 |
 | `WA_TLM_r47_alu_large_first_t` / `_last_t` | stamps | same site | R32 | v3 |
+| `WA_TLM_nav_ships` / `_screens` / `_subs` / `_convoys` | gauges | monthly, any AI with a hull | R36, convoy-war questions | v4 |
+| `WA_TLM_nav_conv_threat` | gauge (engine 0-1, stored ×100) | monthly, any AI with a hull | R36 | v4 |
+| `WA_TLM_nav_conv_ws` | gauge (engine 0-1, stored ×100) | monthly, any AI with a hull | R36 | v4 |
+| `WA_TLM_nav_conv_killed` | gauge (engine cumulative) | monthly, any AI with a hull | R36 | v4 |
+| `WA_TLM_nav_last_t` | stamp | monthly, any AI with a hull (widest gauge of the family) | R36 absence contract | v4 |
+| `WA_TLM_nav_port_screens` | gauge (banded, reads LOW) | monthly, `WA_AI_CONFIG_MILITARY_is_major_naval` | R36 | v4 |
+| `WA_TLM_nav_port_pct` | gauge (derived) | monthly, naval majors | R36 headline | v4 |
+| `WA_TLM_nav_hist_t` + `WA_TLM_nav_port_pct_hist` | ring + **own** axis | quarterly, naval majors | R36 trend | v4 |
 
 **Fix 47 probe semantics.** Both counters are *months the gate was OPEN*, sampled
 **after** the latch update so they read the flag exactly as the `ai_equipment`
@@ -344,6 +352,53 @@ divisions whose dominant type matches*, which is what R6's "fielded share" means
 Probe (goes to checklist R6): `tlm GER <last-save>` → the quarterly
 `comp_armor_mech_pct` series; pass if GER and SOV ≥ 18 at any sampled quarter of
 1942+. Absence contract per §3.5.
+
+## 6b. Naval / convoy war (checklist gap R36, v4)
+
+**The split is deliberate: this family measures the OUTCOME of escorting, never the
+assignment.** A task force's mission is not exposed to script — there is no trigger
+that reads it (`has_active_mission` is an operation trigger, not a naval one) — so
+"how many escorts are actually on convoy escort" is answerable *only* from the save,
+via `savegame.py navy TAG FILE...` (added the same session; it brace-parses
+`units → fleet → task_force → mission` and maps the bare mission enum). Telemetry that
+pretended to answer it would be inventing a number, so it does not try.
+
+What it does carry:
+
+- **Outcome, invisible in the save:** `nav_conv_threat` (engine convoy danger, 0-1),
+  `nav_conv_ws` (war-support malus already paid for sunk convoys), `nav_conv_killed`
+  (convoys this country destroyed — the raider end of the same ledger). None of these
+  are stored in readable form in a savegame.
+- **Inventory:** `nav_ships` / `nav_screens` / `nav_subs` / `nav_convoys` via
+  `num_ships_with_type@…`. `screen_ship` is the sub-unit category shared by
+  destroyer + frigate + light_cruiser (`common/units/ship_*.txt`) — the escort hulls.
+- **An independent "they are in port" reading:** `nav_port_screens` sums a per-state
+  floor ladder over `ships_in_state_ports` on our own naval-base states, and
+  `nav_port_pct` divides it by `nav_screens`. This is the cross-check that does **not**
+  depend on the empirically-derived mission-id map: if the save says 69% idle and
+  `nav_port_pct` says ~10%, the mission map is wrong, not the game. The ladder floors
+  each state (39 screens book 20), so the metric reads **low** — it cannot manufacture
+  an idle-fleet problem that is not there.
+
+Two contract points specific to this family. It runs on its **own** ring axis
+(`WA_TLM_nav_hist_t`): the composition axis is pushed under
+`WA_AI_CONFIG_is_major_country` and this series under
+`WA_AI_CONFIG_MILITARY_is_major_naval`, and a gate mismatch on a shared axis
+desynchronises index *i* for every series on it (§4, risk ii). And `nav_last_t` is
+written with the widest gauge of the family, never inside the naval-major gate, so a
+minor's genuine zero does not read as "never sampled" (§3.5).
+
+Standing, not a probe, under §3.8 criteria 2 and 3: the question "what share of the
+navy is at sea" is system health rather than one fix's mechanism, and answering it
+already cost a full multi-save streaming parse (2026-08-13 session).
+
+**Second signal for the first instrumented campaign** (F9 boot check first — three
+tokens are unverified in-game: `num_ships_with_type@screen_ship`, `@convoy`, and
+`convoy_threat`/`has_convoys_war_support` read as variables; an unknown token errors at
+parse, a silent 0 on ENG in 1942 means the token filter failed and the metric must not
+be scored): `savegame.py navy ENG <same save>` must agree with `nav_port_pct` to within
+the ladder's floor error, and `nav_screens` must match the command's `screens=` count
+exactly.
 
 ## 7. Adding a metric — checklist for authors
 
