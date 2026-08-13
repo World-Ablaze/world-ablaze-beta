@@ -1,0 +1,97 @@
+############################################################################################################
+# WA AI Research - COUNTRY_USA
+############################################################################################################
+# Fix 57 (2026-08-13, checklist R35): suppress the T20/T23 branch so the USA builds Shermans.
+#
+# WHY THIS IS THE RESEARCH LAYER AND NOT A PRODUCTION ONE
+# ------------------------------------------------------
+# Campaign 02bd4445 converged the USA `land_medium_tank` role on T23 - six lines, 439
+# factories at 1946.1 - and never built a single Sherman, and it did so with BOTH of the
+# other candidate levers already shipped and live:
+#   * `ai_equipment` priority (Fix 50) is the DESIGN layer; it does not decide what a
+#     production line makes.
+#   * `production_upgrade_desire_offset` (Fix 51) offsets the desire to UPGRADE an existing
+#     line, gating on the stockpile surplus that upgrade waits for - vanilla's own comment
+#     at common/ai_strategy/SOV.txt:360 reads "100 essentially means we don't require a
+#     stockpile surplus". A `+100` on an older wanted chassis is therefore a no-op (you never
+#     upgrade *to* an older type), and the type never sees line CREATION - which is the actual
+#     failure here, since the USA jumps M3 Lee -> T20 and later opens *new* T23 lines.
+# So the only lever that reaches this behaviour is not building the branch at all. This is
+# also Expert AI 5.0's primary method.
+#
+# WHY THIS STRANDS NOTHING - the check that has to be done before any research suppression
+# ------------------------------------------------------------------------------------
+# `usa_medium_tank_chassis_5` (T23) leads to `usa_modern_tank_chassis_1` (M26 Pershing), and
+# the whole USA heavy line (chassis 2-7) hangs off that in turn - 15 equipment tokens. Cutting
+# a tech that is the sole path to them would trade a medium-tank preference for the loss of
+# every USA heavy and modern tank.
+# It is NOT the sole path: `usa_modern_tank_chassis_1` is also reachable from
+# `usa_medium_tank_chassis_3_3` (M4A3E8), i.e. from the Sherman branch we are steering onto.
+# The technology graph genuinely forks and both prongs rejoin at the modern line.
+#
+# Known cost, accepted: pre-fix the USA reached the modern line through T23 (researched
+# 1943.5.25); it now reaches it through M4A3E8 (1944.2.7 in that campaign), so US modern
+# tanks arrive later. The `research_weight_factor` boost below exists to keep that now-sole
+# path prioritised.
+
+
+# purpose: stop the USA researching the T20/T23 dead-end branch so its medium lines stay on the Sherman
+# range:   -100 (documented as "100 % decrease" of the technology's ai_will_do weight)
+# policy:  Country layer; no other layer writes research weights for these techs
+# always-on: the branch is a property of the equipment, not of the strategic situation - there is
+#            no game state in which the mod wants the USA to field T20s or T23s over M4A2/M4A3E8.
+WA_AI_RESEARCH_COUNTRY_USA_skip_t20_t23 = {
+
+	allowed = {
+		original_tag = USA
+	}
+	enable = {
+		always = yes
+	}
+	# Permanently on by design, so there is nothing to abort on. Stated explicitly because
+	# the engine warns on a strategy with no abort condition at all (ai_strategy.cpp:6907).
+	abort = {
+		always = no
+	}
+
+	# T20 - enables tank_usa_medium_chassis_5
+	ai_strategy = {
+		type = research_weight_factor
+		id = usa_medium_tank_chassis_4
+		value = -100
+	}
+
+	# T23 - enables tank_usa_medium_chassis_6, the chassis that took all 439 factories
+	ai_strategy = {
+		type = research_weight_factor
+		id = usa_medium_tank_chassis_5
+		value = -100
+	}
+}
+
+# purpose: keep the Sherman branch prioritised, because it is now the ONLY route to
+#          usa_modern_tank_chassis_1 and from there to the entire USA heavy line
+# range:   +100
+# policy:  Country layer; pairs with the suppression above and must not be removed without it
+# always-on: same reasoning - this is the mod's chosen medium-tank line for the USA in every setup.
+WA_AI_RESEARCH_COUNTRY_USA_prefer_sherman_line = {
+
+	allowed = {
+		original_tag = USA
+	}
+	enable = {
+		always = yes
+	}
+	# Permanently on by design, so there is nothing to abort on. Stated explicitly because
+	# the engine warns on a strategy with no abort condition at all (ai_strategy.cpp:6907).
+	abort = {
+		always = no
+	}
+
+	# M4A3E8 - enables tank_usa_medium_chassis_4_2 and leads to usa_modern_tank_chassis_1
+	ai_strategy = {
+		type = research_weight_factor
+		id = usa_medium_tank_chassis_3_3
+		value = 100
+	}
+}

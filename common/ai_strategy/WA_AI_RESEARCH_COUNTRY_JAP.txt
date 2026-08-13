@@ -1,0 +1,61 @@
+############################################################################################################
+# WA AI Research - COUNTRY_JAP
+############################################################################################################
+# Fix 57 (2026-08-13, checklist R33): suppress the coastal submarine hulls so JAP keeps
+# building ocean-going boats.
+#
+# Campaign 02bd4445: JAP's single `naval_submarine` line climbs correctly to
+# `jap_submarine_hull_4` (Hei, 7500 km / str 52), then flips to the coastal
+# `jap_submarine_hull_5` (Ro-101, 2580 km / str 12) at 1942.11 and on to
+# `jap_submarine_hull_6` (Ha-201, 2320 km / str 8) from 1944.5 - a live coastal line for the
+# last 39 months of the campaign. Fix 48 had already re-ordered the `ai_equipment` priority
+# ladder to 10/60/120/140/5/3 and the flip date moved by one month, i.e. a 28x priority
+# inversion changed nothing: that is the design layer, and it does not decide what a
+# production line makes.
+#
+# STRANDING CHECK (mandatory before suppressing any technology):
+# `jap_submarine_5` leads only to `jap_submarine_6`, and `jap_submarine_6` is a terminal leaf
+# with no outgoing path edges and no other technology reachable from it. Suppressing both
+# costs exactly the two coastal hulls and nothing else - this is the cleanest of the three
+# Fix 57 cases. `jap_submarine_4` (Hei) is untouched and remains the intended mainstay.
+#
+# Both hulls are suppressed explicitly rather than relying on the first block gating the
+# second: `research_weight_factor` biases a choice, it does not hard-lock a prerequisite, so
+# an AI that reaches `jap_submarine_5` some other way must still not want `jap_submarine_6`.
+
+
+# purpose: stop JAP researching the coastal Ro-101 / Ha-201 hulls, which are strictly
+#          dominated for its ocean-going submarine doctrine
+# range:   -100 (documented as "100 % decrease" of the technology's ai_will_do weight)
+# policy:  Country layer; no other layer writes research weights for these techs
+# always-on: 2580 km / str 12 and 2320 km / str 8 are worse than the 7500 km / str 52 Hei on
+#            every axis JAP's submarine role scores, in every setup - there is no game state
+#            in which the mod wants these hulls.
+WA_AI_RESEARCH_COUNTRY_JAP_skip_coastal_submarines = {
+
+	allowed = {
+		original_tag = JAP
+	}
+	enable = {
+		always = yes
+	}
+	# Permanently on by design, so there is nothing to abort on. Stated explicitly because
+	# the engine warns on a strategy with no abort condition at all (ai_strategy.cpp:6907).
+	abort = {
+		always = no
+	}
+
+	# Ro-101 - enables jap_submarine_hull_5 (coastal, 2580 km, str 12)
+	ai_strategy = {
+		type = research_weight_factor
+		id = jap_submarine_5
+		value = -100
+	}
+
+	# Ha-201 - enables jap_submarine_hull_6 (coastal, 2320 km, str 8)
+	ai_strategy = {
+		type = research_weight_factor
+		id = jap_submarine_6
+		value = -100
+	}
+}

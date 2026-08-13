@@ -1403,7 +1403,7 @@ process caveats (stale process, and the absence of a load-time hook).
   stranded node has another live path. State the equipment that would be lost, not just the
   tech. And when the natural target file is generated, look for an `ai_strategy` type that
   expresses the same intent; editing generated output is a fix with a shelf life.
-- **Evidence:** Fix 54, `common/ai_strategy/WA_AI_RESEARCH_COUNTRY_{USA,SOV,JAP}.txt`,
+- **Evidence:** Fix 57, `common/ai_strategy/WA_AI_RESEARCH_COUNTRY_{USA,SOV,JAP}.txt`,
   checklist R37; game install `common/ai_strategy/_documentation.md` for
   `research_weight_factor`; `common/technologies/armor_usa.txt:2935,2993`,
   `armor_sov.txt:3053`, `naval_jap.txt:3987,4038`.
@@ -1435,6 +1435,6 @@ process caveats (stale process, and the absence of a load-time hook).
   hook must point at the next chassis **in the same role**. The Comet's successor tech
   `eng_modern_tank_chassis_1` belongs to `ENG_modern_tanks`, and hooking a medium design to
   it would empty the medium role the moment modern tanks are researched.
-- **Evidence:** Fix 55, `common/ai_equipment/ENG_tank.txt` `medium_tank_8`; checklist R35
+- **Evidence:** Fix 58, `common/ai_equipment/ENG_tank.txt` `medium_tank_8`; checklist R35
   Comet sub-probe and its retraction; `output/coverage_gaps.md` (39 -> 38 gaps, 11 -> 10 in
   branched roles).
