@@ -14,7 +14,8 @@ from equipment_evaluator.generation.adapters import tank_emitter_transition
 from equipment_evaluator.generation.apply import apply_plan, verify_plan
 from equipment_evaluator.generation.planner import (OperationPlan, ReplaceOperation,
                                                      build_plan, select_patches)
-from equipment_evaluator.ground import TankEvaluator
+from equipment_evaluator.ground import (TankEvaluator, _frontier_priority,
+                                        _nominal_frontier_priority)
 from equipment_evaluator.owned_source import logical_source
 from equipment_evaluator.parse_ai_equipment import parse_country_file
 
@@ -207,9 +208,25 @@ class GenerationTests(unittest.TestCase):
             ordered = sorted(rows, key=lambda row: row.rank, reverse=True)
             self.assertEqual(max(row.priority_factor for row in rows),
                              ordered[0].priority_factor, key)
-            self.assertTrue(all(
-                better.priority_factor / worse.priority_factor >= 3.0 - 1e-9
-                for better, worse in zip(ordered, ordered[1:])), key)
+            # Two invariants, deliberately split at the floor. They cannot both
+            # hold everywhere on a deep frontier: SOV_heavy_tanks has 13 ranks
+            # from an anchor of 10, so >=3x on all 12 steps demands a 531441x
+            # span where only 100x is available above the floor. The old test
+            # asserted >=3x throughout and bought it with `factor = 0.000009`
+            # rungs the engine cannot distinguish from 0 - i.e. it enforced
+            # dominance by disabling the emergency fallbacks it was protecting.
+            floor = cfg.frontier_priority_floor
+            anchor = ordered[0].priority_factor
+            for distance, (better, worse) in enumerate(zip(ordered, ordered[1:])):
+                self.assertGreater(better.priority_factor, worse.priority_factor,
+                                   key)   # ordering holds everywhere
+                self.assertGreaterEqual(worse.priority_factor, floor - 1e-9, key)
+                # Above the knee the ladder is untouched, so dominance is still
+                # exact where it decides anything.
+                if _nominal_frontier_priority(anchor, distance + 1, cfg) > floor:
+                    self.assertGreaterEqual(
+                        better.priority_factor / worse.priority_factor,
+                        3.0 - 1e-9, key)
             by_name = {row.design: row for row in rows}
             for row in rows:
                 if row.fallback_design:
@@ -397,6 +414,90 @@ class ProductionStrategyTests(unittest.TestCase):
         self.assertEqual("0.00003", _pdx_num(3e-05))
         self.assertEqual("100", _pdx_num(100.0))
         self.assertEqual("0", _pdx_num(0))
+
+
+class FrontierLadderTests(unittest.TestCase):
+    """The ladder must never emit a factor the engine reads as 0.
+
+    SOV_heavy_tanks (13 ranks, anchor 10) bottomed out at `factor = 0.000009`,
+    which is indistinguishable from `0` in fixed-point script numbers - and
+    `factor = 0` means *never pick this design*, destroying the emergency
+    fallback the frontier exists to guarantee.
+    """
+
+    def setUp(self) -> None:
+        self.cfg = load_config()
+
+    def _ladder(self, anchor: float, count: int):
+        return [_frontier_priority(anchor, rank, count, self.cfg)
+                for rank in range(count, 0, -1)]
+
+    def test_deep_frontier_never_underflows_the_floor(self):
+        values = self._ladder(10.0, 13)             # SOV_heavy_tanks
+        self.assertAlmostEqual(self.cfg.frontier_priority_floor, values[-1])
+        for value in values:
+            self.assertGreaterEqual(value, self.cfg.frontier_priority_floor)
+
+    def test_ladder_stays_strictly_descending_after_pdx_rounding(self):
+        for anchor, count in ((10.0, 13), (100.0, 9), (100.0, 11),
+                              (2000.0, 13), (100.0, 7), (100.0, 2)):
+            rendered = [float(_pdx_num(round(v, 3)))
+                        for v in self._ladder(anchor, count)]
+            for better, worse in zip(rendered, rendered[1:]):
+                self.assertGreater(
+                    better, worse,
+                    f"anchor={anchor} count={count} ladder collapsed: {rendered}")
+
+    def test_dominance_at_the_top_is_never_diluted(self):
+        """Only the underflowing tail may move; the knee and above are exact."""
+        values = self._ladder(10.0, 13)
+        self.assertEqual([10.0, 3.0, 1.0, 0.3], [round(v, 6) for v in values[:4]])
+        # A frontier that already fits is untouched end to end.
+        self.assertEqual([100.0, 30.0, 10.0, 3.0, 1.0, 0.3, 0.1],
+                         [round(v, 6) for v in self._ladder(100.0, 7)])
+
+
+class CoverageAuditTests(unittest.TestCase):
+    """The audit that catches chassis the design layer never describes.
+
+    Campaign `02bd4445` (2026-08-13): ENG builds `tank_eng_medium_chassis_5`
+    (Comet) with 30+ factories from 1944.6 while `ENG_medium_tanks` stops at the
+    Cromwell, so the emitted production-strategy file carries a lone `+100` and
+    no suppression at all.  A gap in the design layer is invisible in every
+    other output the evaluator produces - it looks exactly like a role that is
+    fully covered and simply ranks its top design first.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cfg = load_config(None)
+        evaluator = TankEvaluator(MOD_ROOT, cfg)
+        evaluator.evaluate(None)
+        cls.gaps = evaluator.coverage_gaps
+
+    def test_eng_comet_is_reported_as_a_branched_role_gap(self):
+        comet = [g for g in self.gaps
+                 if g.equipment == "tank_eng_medium_chassis_5"]
+        self.assertEqual(1, len(comet), "the Comet must be reported exactly once")
+        self.assertEqual("ENG_medium_tanks", comet[0].group)
+        self.assertEqual("medium_tank_chassis", comet[0].archetype)
+        self.assertTrue(comet[0].branched,
+                        "ENG_medium_tanks is a branched role, so its gap "
+                        "invalidates the emitted TANKS strategy file")
+
+    def test_a_gap_is_never_something_the_country_already_covers(self):
+        """The audit is a country-level question, not a per-group one."""
+        covered_by_some_group = {"tank_eng_medium_chassis_4_2",
+                                 "tank_usa_medium_chassis_6",
+                                 "tank_sov_medium_chassis_3_4"}
+        reported = {gap.equipment for gap in self.gaps}
+        self.assertEqual(set(), reported & covered_by_some_group)
+
+    def test_ghosts_and_unresearchable_data_are_not_gaps(self):
+        for gap in self.gaps:
+            self.assertNotIn("ghost", gap.equipment)
+            self.assertTrue(gap.unlock_tech,
+                            f"{gap.equipment} reported with no unlocking tech")
 
 
 if __name__ == "__main__":

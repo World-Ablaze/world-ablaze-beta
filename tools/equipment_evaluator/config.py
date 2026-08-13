@@ -105,6 +105,27 @@ class Config:
                 "relative_ladder",
                 [1.0, 0.3, 0.1, 0.03, 0.01, 0.003, 0.001, 0.0003, 0.0001])]
 
+    @property
+    def frontier_priority_floor(self) -> float:
+        """Smallest `factor` the ladder is allowed to emit.
+
+        A pure geometric ladder underflows on deep frontiers: SOV_heavy_tanks
+        has 13 ranks, so its floor lands at `factor = 0.000009`.  Two things go
+        wrong down there.  The engine's script numbers are fixed-point, so a
+        value that small is indistinguishable from `0` - and `factor = 0` means
+        *never pick this design*, which silently destroys the emergency-fallback
+        invariant the frontier exists to guarantee.  Second, nothing in the
+        ecosystem operates at that scale: the smallest priority factor in all of
+        vanilla `ai_equipment` is **0.1**, and in Expert AI 5.0 it is **0.5**, so
+        a six-orders-of-magnitude ladder is extrapolating far outside any range
+        the engine has been observed to honour.
+
+        0.1 therefore matches vanilla's own floor. Ranks above the knee keep
+        their exact geometric value, so raising or lowering this only ever
+        re-spaces the tail that would otherwise underflow.
+        """
+        return float(self.raw.get("frontier_priority", {}).get("floor", 0.1))
+
     # -- production efficiency / infantry -------------------------------
     @property
     def efficiency_model(self) -> EfficiencyModel:
@@ -218,6 +239,11 @@ class Config:
             problems.append("frontier_priority.relative_ladder must stay positive")
         elif any(new >= old for old, new in zip(ladder, ladder[1:])):
             problems.append("frontier_priority.relative_ladder must be strictly descending")
+        floor = self.frontier_priority_floor
+        if floor <= 0:
+            problems.append("frontier_priority.floor must be positive - a factor of 0 "
+                            "means 'never build this design', which is the failure the "
+                            "floor exists to prevent")
         return problems
 
 

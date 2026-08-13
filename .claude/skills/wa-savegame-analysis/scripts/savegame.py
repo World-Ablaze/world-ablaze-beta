@@ -536,14 +536,19 @@ def _parse_resources(sec):
 
 
 def cmd_resources(args):
-    print("# WARNING: `resource@X` in script reads the NET AVAILABLE column "
-          "(to_use[0]), NOT `produced`.")
-    print("#   A negative `produced` with positive imports/transfers is still a "
-          "POSITIVE resource@X")
-    print("#   (ENG 1942.6: produced -329, imported +320, transfer +19 -> net ~+10). "
-          "Never score a")
-    print("#   resource@X guard off the produced line alone - that nearly produced a "
-          "false FAIL on R25.")
+    print("# WARNING: `resource@X` in script reads the `effective` column below "
+          "= net + deficit")
+    print("#   (to_use[0] + to_use[2]), NOT `produced` and NOT `net` alone. "
+          "Measured 2026-08-13")
+    print("#   on campaign 02bd4445: 36 discriminating WA_AI_EQUIPMENT latch "
+          "readings all side with")
+    print("#   net+deficit, zero with net. ENG aluminium 1942.6 is net 807.3, "
+          "deficit -799.0,")
+    print("#   effective +8.3 - which is why its `> 50` gate stayed shut while "
+          "the net column")
+    print("#   looked like 16x headroom. The older `net alone` rule was drawn "
+          "from ENG bauxite,")
+    print("#   whose deficit happened to be -1.0 so both readings coincided.")
     print("# net = to_use[0] (available now) | deficit = to_use[2] (unmet demand, "
           "negative)")
     print("# identity: produced + transfer + imported = net + to_export; `resid` is "
@@ -573,19 +578,23 @@ def cmd_resources(args):
             print("  (resources section carries no ledger blocks)")
             continue
         print(f"  {'resource':<11}{'produced':>11}{'transfer':>10}{'imported':>11}"
-              f"{'net':>11}{'deficit':>10}{'to_export':>11}{'exported':>10}{'resid':>8}")
+              f"{'net':>11}{'deficit':>10}{'EFFECTIVE':>11}{'to_export':>11}"
+              f"{'exported':>10}{'resid':>8}")
         for r in sorted(names):
             prod = flat.get("produced", {}).get(r, 0.0)
             tr = flat.get("transfer_overlord_subject", {}).get(r, 0.0)
             imp = flat.get("imported", {}).get(r, 0.0)
             av = net.get(r, 0.0)
             dfc = deficit.get(r, 0.0)
+            # What `check_variable = { resource@<r> > N }` actually compares.
+            effective = av + dfc
             exp_t = flat.get("to_export", {}).get(r, 0.0)
             exp_a = flat.get("exported", {}).get(r, 0.0)
             resid = (prod + tr + imp) - (av + exp_t)
             mark = " !" if abs(resid) > 1.0 else ""
             print(f"  {r:<11}{prod:>11.1f}{tr:>10.1f}{imp:>11.1f}{av:>11.1f}"
-                  f"{dfc:>10.1f}{exp_t:>11.1f}{exp_a:>10.1f}{resid:>8.1f}{mark}")
+                  f"{dfc:>10.1f}{effective:>11.1f}{exp_t:>11.1f}{exp_a:>10.1f}"
+                  f"{resid:>8.1f}{mark}")
 
 
 def _state_buildings(lines):

@@ -483,6 +483,24 @@ listed in the generated report rather than silently dropping a transition.
 
 ## Known limitations / generator coverage
 
+* **The design layer can be missing the chassis the AI actually builds — run the
+  coverage audit.** `ai_equipment` only steers equipment it has a design for.
+  When a technology inside a role unlocks a chassis the role's group never
+  mentions, the engine auto-designs and builds it, and the ranking, the
+  `WA_AI_EQUIPMENT_*` resource gates and the emitted
+  `production_upgrade_desire_offset` blocks all miss it. A `--domain tanks` run
+  now reports these and writes `output/coverage_gaps.md`; as of 2026-08-13 there
+  are **39, of which 11 sit in a branched role**. The case that exposed it: ENG
+  builds `tank_eng_medium_chassis_5` (Comet) with 30+ factories from 1944.6
+  while `ENG_medium_tanks` stops at the Cromwell — so
+  `WA_AI_PRODUCTION_COUNTRY_ENG_TANKS.txt` emits one `+100` and no suppression,
+  and the frontier is moot from 1944 on. **A gap is invisible in every other
+  output**: the role looks fully covered and simply ranks its top design first.
+  Closing one means *authoring the missing design* so the evaluator can rank it.
+  The audit deliberately does **not** auto-suppress an uncovered chassis — it has
+  not been scored, so a blanket `-100` would be an unevaluated guess, the same
+  reasoning `emit_linear` uses when it refuses to decide for shared equipment
+  buckets.
 * **Generator coverage is intentionally narrower than analysis coverage.** Air
   and modular-tank `SWITCH_CONDITIONAL`, `SWITCH_REDESIGNED`, and linear
   `KEEP_OLD` ladders are encodable. Branched modular-tank groups use a complete

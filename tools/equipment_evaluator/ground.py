@@ -104,21 +104,53 @@ def _threshold_failures(stats: Dict[str, float], thresholds: Dict[str, float]) -
             for stat, minimum in thresholds.items() if stats.get(stat, 0.0) < minimum]
 
 
+def _nominal_frontier_priority(anchor: float, distance: int, cfg: Config) -> float:
+    ladder = cfg.frontier_priority_ladder
+    if distance < len(ladder):
+        return anchor * ladder[distance]
+    # Future-proof unusually large frontiers without ever producing zero.
+    return anchor * ladder[-1] * (0.3 ** (distance - len(ladder) + 1))
+
+
 def _frontier_priority(anchor: float, rank: int, count: int, cfg: Config) -> float:
     """Map a quality rank onto the configured descending dominance ladder.
 
     `rank == count` is the primary and preserves the group's historical
     maximum. Lower ranks remain positive fallbacks, but are separated by about
     3x/10x steps instead of sharing an arbitrary linear probability mass.
+
+    The tail is re-spaced when the pure geometric ladder would underflow past
+    `frontier_priority_floor`.  Ranks above the knee keep their exact geometric
+    value - dominance is a property of the *top* of the ladder, and that is
+    where it must not be diluted - while everything below is redistributed
+    geometrically to land exactly on the floor.  Those ranks are all emergency
+    fallbacks whose only requirements are "ordered" and "not zero"; the old
+    behaviour gave them `factor = 0.000009`, which the engine's fixed-point
+    script numbers cannot distinguish from `factor = 0`, i.e. *never build this*
+    - the exact opposite of an emergency fallback.  A group whose ladder already
+    fits above the floor is untouched.
     """
-    distance_from_primary = count - rank
-    ladder = cfg.frontier_priority_ladder
-    if distance_from_primary < len(ladder):
-        multiplier = ladder[distance_from_primary]
-    else:
-        # Future-proof unusually large frontiers without ever producing zero.
-        multiplier = ladder[-1] * (0.3 ** (distance_from_primary - len(ladder) + 1))
-    return anchor * multiplier
+    distance = count - rank
+    deepest = count - 1
+    floor = cfg.frontier_priority_floor
+    if deepest <= 0 or _nominal_frontier_priority(anchor, deepest, cfg) >= floor:
+        return _nominal_frontier_priority(anchor, distance, cfg)
+    if _nominal_frontier_priority(anchor, 0, cfg) <= floor:
+        # The group's own historical maximum is at or below the floor; there is
+        # no room to re-space into, so leave the caller's data alone rather than
+        # inventing an ordering.
+        return _nominal_frontier_priority(anchor, distance, cfg)
+    knee = max(d for d in range(deepest + 1)
+               if _nominal_frontier_priority(anchor, d, cfg) > floor)
+    if distance <= knee:
+        return _nominal_frontier_priority(anchor, distance, cfg)
+    knee_value = _nominal_frontier_priority(anchor, knee, cfg)
+    ratio = (floor / knee_value) ** (1.0 / (deepest - knee))
+    # 3 decimals: the re-spaced band is a fallback ORDER, and twelve significant
+    # digits of it would be noise in a file a human has to read. Ranks above the
+    # knee are returned unrounded so a group whose ladder already fits stays
+    # byte-identical to what is on disk.
+    return round(knee_value * (ratio ** (distance - knee)), 3)
 
 
 def _final_verdict(gain: float, retention: float, significant: Dict[str, float],
@@ -168,6 +200,28 @@ def evaluate_tech_ground(mod_root: Path, cfg: Config, domain: str,
     return out
 
 
+@dataclass
+class CoverageGap:
+    """An equipment token a role can research but no design in it describes.
+
+    `ai_equipment` only steers equipment it has a design for.  When a technology
+    inside a role unlocks a chassis the role's group never mentions, the engine
+    falls back to its own auto-designer: the mod's ranking, its resource gates
+    and its production-line offsets all miss that chassis, and the AI happily
+    builds it.  ENG's Comet (`tank_eng_medium_chassis_5`) is the case that
+    exposed this - `ENG_medium_tanks` stops at Cromwell, so the whole frontier
+    is moot from 1944 on and the emitted strategy file carries no suppression
+    for the chassis the AI actually runs.
+    """
+    country: str
+    group: str
+    role: str
+    equipment: str
+    archetype: str
+    unlock_tech: str
+    branched: bool
+
+
 class TankEvaluator:
     def __init__(self, mod_root: Path, cfg: Config) -> None:
         self.root, self.cfg = mod_root, cfg
@@ -182,6 +236,86 @@ class TankEvaluator:
         self.availability: Dict[str, Dict[str, float]] = {}
         self.tech_graph = TechnologyGraph(mod_root, self.diag)
         self.frontier_decisions: List[FrontierDecision] = []
+        self.coverage_gaps: List[CoverageGap] = []
+        self._children: Optional[Dict[str, List[str]]] = None
+
+    def _coverage_gaps(self, group, designs, country_covered: Set[str],
+                       branched: bool) -> List[CoverageGap]:
+        """Equipment this role can research that no design in it describes.
+
+        Walk forward from the group's own unlock techs along `path` edges and
+        collect every `enable_equipments` token of the same archetype as one of
+        the group's designs.  Anything not covered by ANY of the country's
+        groups is a hole in the design layer: the engine auto-designs it, and
+        the ranking, the resource gates and the emitted
+        `production_upgrade_desire_offset` blocks all miss it.
+
+        Reported, never auto-suppressed.  The evaluator has not scored these
+        designs - it cannot know whether the uncovered chassis is better or
+        worse than the group's primary - and blanket `-100` on an unevaluated
+        chassis is exactly the kind of unilateral decision `emit_linear`
+        already refuses to make for shared equipment buckets.
+        """
+        archetypes = {af.archetype for af in
+                      (self.db.airframes.get(d.airframe) for d in designs)
+                      if af and af.archetype}
+        if not archetypes:
+            return []
+        own = {d.airframe for d in designs if d.airframe}
+        reachable = self.tech_graph.reachable(
+            tech for design in designs for tech in design.enable_techs)
+        candidates = {token for tech in reachable
+                      for token in self.tech_graph.enables.get(tech, ())}
+        # Two independent routes to the same question, unioned on purpose: a
+        # chassis can be missed by the tech walk (its unlock sits on a `path`
+        # branch that does not leave this group) and still be a descendant of a
+        # covered chassis in the equipment graph, or vice versa. Either signal
+        # alone under-reports, and the ENG medium chain shows both shapes.
+        candidates |= self._equipment_descendants(own)
+        enabled_by = self.tech_graph.enabled_by()
+        gaps: List[CoverageGap] = []
+        for token in sorted(candidates):
+            if token in country_covered or "ghost" in token:
+                continue
+            airframe = self.db.airframes.get(token)
+            if not airframe or airframe.archetype not in archetypes:
+                continue
+            unlocks = enabled_by.get(token)
+            # Never unlocked by any technology: unreachable data, not a gap.
+            if not unlocks:
+                continue
+            gaps.append(CoverageGap(
+                group.country, group.name, group.role, token,
+                airframe.archetype, sorted(unlocks)[0], branched))
+        return gaps
+
+    def _equipment_descendants(self, roots: Set[str]) -> Set[str]:
+        """Everything downstream of *roots* along `parent =`, ghosts traversed.
+
+        The mod's "ghost" spacer chassis carry the chain across generations and
+        are never enabled by a tech, so the walk must pass THROUGH them while
+        the caller filters them out of the result.
+        """
+        children = self._children_index()
+        out: Set[str] = set()
+        frontier = list(roots)
+        while frontier:
+            node = frontier.pop()
+            for child in children.get(node, ()):
+                if child in out:
+                    continue
+                out.add(child)
+                frontier.append(child)
+        return out - roots
+
+    def _children_index(self) -> Dict[str, List[str]]:
+        if self._children is None:
+            index: Dict[str, List[str]] = {}
+            for name, airframe in self.db.airframes.items():
+                if airframe.parent:
+                    index.setdefault(airframe.parent, []).append(name)
+            self._children = index
+        return self._children
 
     def _ancestor(self, old: str, new: str) -> bool:
         target, cur, seen = old.lower(), new, set()
@@ -309,6 +443,12 @@ class TankEvaluator:
                 tech for candidate_group in groups
                 for design in candidate_group.designs for tech in design.enable_techs
             }
+            # Coverage is a COUNTRY-level question: a chassis described by any of
+            # this country's groups is steered, whichever group owns it.
+            country_covered = {
+                design.airframe for candidate_group in groups
+                for design in candidate_group.designs if design.airframe
+            }
             for group in groups:
                 role = group.role
                 designs = [d for d in group.designs if d.airframe]
@@ -316,6 +456,9 @@ class TankEvaluator:
                     continue
                 graph = self.tech_graph.design_graph(group, stop_techs)
                 group.technology_edges = list(graph.edges)
+                self.coverage_gaps.extend(
+                    self._coverage_gaps(group, designs, country_covered,
+                                        graph.branched))
                 by_name = {design.name: design for design in designs}
                 adjacency = graph.adjacency()
 
@@ -480,6 +623,41 @@ class TankEvaluator:
                        if failures else [])))
             previous = item
         return sorted(rows, key=lambda row: (row.rank, row.design))
+
+
+def write_coverage_audit(out_dir: Path, gaps: List[CoverageGap]) -> None:
+    """List every chassis a role can research but no design in it describes."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    lines = [
+        "# ai_equipment coverage gaps",
+        "",
+        "Every equipment token unlocked by a technology reachable from inside an",
+        "`ai_equipment` group, of the same archetype as that group's designs, and",
+        "described by **no design in any group of that country**.",
+        "",
+        "The AI still builds these: with no design to match, the engine falls back to",
+        "its own auto-designer. The evaluator's ranking, the `WA_AI_EQUIPMENT_*`",
+        "resource gates and the emitted `production_upgrade_desire_offset` blocks all",
+        "miss them, so a role whose newest chassis is uncovered is steered only until",
+        "that chassis is researched, and unsteered afterwards.",
+        "",
+        "**Branched roles are listed first**: those are the ones",
+        "`WA_AI_PRODUCTION_COUNTRY_<TAG>_TANKS.txt` claims to control.",
+        "",
+        "Closing a gap means authoring the missing design in the group (which lets the",
+        "evaluator rank it), not suppressing the chassis - nothing here has been scored,",
+        "so a blanket `-100` would be an unevaluated guess.",
+        "",
+        "| country | group | role | uncovered equipment | archetype | unlocked by | branched role |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for gap in sorted(gaps, key=lambda g: (not g.branched, g.country, g.group,
+                                           g.equipment)):
+        lines.append(f"| {gap.country} | {gap.group} | {gap.role} | "
+                     f"`{gap.equipment}` | {gap.archetype} | `{gap.unlock_tech}` | "
+                     f"{'YES' if gap.branched else 'no'} |")
+    lines.append("")
+    (out_dir / "coverage_gaps.md").write_text("\n".join(lines), encoding="utf-8")
 
 
 def write_ground_reports(out_dir: Path, rows: List[GroundTransition],

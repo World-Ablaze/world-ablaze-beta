@@ -147,6 +147,7 @@ from equipment_evaluator.efficiency_audit import (evaluate_efficiency_domains,
                                                   write_efficiency_audit)
 from equipment_evaluator.infantry import evaluate_infantry, write_infantry_reports
 from equipment_evaluator.ground import (TankEvaluator, evaluate_tech_ground,
+                                        write_coverage_audit,
                                         write_ground_reports)
 from equipment_evaluator.generation import (PLAN_SCOPES, apply_plan, build_plan,
                                             load_plan, select_patches,
@@ -296,10 +297,12 @@ def main(argv: List[str] = None) -> int:
     ground_rows = []
     infantry_rows = []
     tank_frontiers = []
+    coverage_gaps = []
     if args.domain in ("tanks", "all"):
         tank_evaluator = TankEvaluator(mod_root, cfg)
         ground_rows += tank_evaluator.evaluate(selected)
         tank_frontiers = tank_evaluator.frontier_decisions
+        coverage_gaps = tank_evaluator.coverage_gaps
     if args.domain in ("artillery", "all"):
         ground_rows += evaluate_tech_ground(
             mod_root, cfg, "artillery",
@@ -325,6 +328,18 @@ def main(argv: List[str] = None) -> int:
         print(f"  Report                : {out_dir / 'ground_equipment_report.md'}")
         if tank_frontiers:
             print(f"  Parallel branches     : {out_dir / 'parallel_branch_decisions.md'}")
+        if coverage_gaps:
+            write_coverage_audit(out_dir, coverage_gaps)
+            branched = [g for g in coverage_gaps if g.branched]
+            print(f"  COVERAGE GAPS         : {len(coverage_gaps)} chassis researchable "
+                  f"inside a role that no design describes "
+                  f"({len(branched)} of them in a BRANCHED role)")
+            for gap in branched[:12]:
+                print(f"    - {gap.country}/{gap.group}: {gap.equipment} "
+                      f"(unlocked by {gap.unlock_tech})")
+            if len(branched) > 12:
+                print(f"    ... and {len(branched) - 12} more")
+            print(f"  Coverage report       : {out_dir / 'coverage_gaps.md'}")
 
     # Infantry is independent of ai_equipment design groups: technology file
     # order is the unlock chain and infantry.txt owns the parent/family links.

@@ -250,9 +250,21 @@
     "_comment": [
       "Descending multipliers applied to the group's historical maximum design factor.",
       "The geometric 1/3/10 ladder makes the best affordable design dominant even if",
-      "the engine treats priority as a weight, while every lower rank remains a live fallback."
+      "the engine treats priority as a weight, while every lower rank remains a live fallback.",
+      "",
+      "`floor` is the smallest factor the ladder may emit. A pure geometric ladder underflows",
+      "on deep frontiers - SOV_heavy_tanks has 13 ranks and used to bottom out at 0.000009,",
+      "which the engine's fixed-point script numbers cannot tell apart from 0, i.e. 'never",
+      "build this' rather than 'emergency fallback'. 0.1 is vanilla's own smallest",
+      "ai_equipment factor (Expert AI 5.0 never goes below 0.5), so it keeps the ladder inside",
+      "the range the engine is actually observed to honour instead of extrapolating six orders",
+      "of magnitude past it. Only rungs that would underflow are re-spaced; every rank above",
+      "the knee keeps its exact geometric value, so dominance at the top is never diluted.",
+      "Lower this to 0.01 if the flattened fallback band turns out to matter - the trade-off is",
+      "ordering fidelity among emergency fallbacks against staying inside observed engine range."
     ],
-    "relative_ladder": [1.0, 0.3, 0.1, 0.03, 0.01, 0.003, 0.001, 0.0003, 0.0001, 0.00003, 0.00001, 0.000003]
+    "relative_ladder": [1.0, 0.3, 0.1, 0.03, 0.01, 0.003, 0.001, 0.0003, 0.0001, 0.00003, 0.00001, 0.000003],
+    "floor": 0.1
   },
 
   "production_efficiency": {

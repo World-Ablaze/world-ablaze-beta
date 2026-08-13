@@ -46,6 +46,12 @@ class TechnologyGraph:
 
     def __init__(self, mod_root: Path, diag: Diagnostics) -> None:
         self.edges: Dict[str, Set[str]] = {}
+        # tech -> the equipment tokens its `enable_equipments` unlocks. This is
+        # the only record of what a country can BUILD once a tech lands, and it
+        # is what makes an ai_equipment coverage gap detectable: a token unlocked
+        # inside a role but described by no design in that role's group is built
+        # by the engine's own auto-designer, bypassing the whole design layer.
+        self.enables: Dict[str, Set[str]] = {}
         self.diag = diag
         tech_dir = mod_root / "common/technologies"
         for path in sorted(tech_dir.glob("*.txt")):
@@ -64,6 +70,31 @@ class TechnologyGraph:
                     target = value.get_str("leads_to_tech")
                     if target:
                         self.edges.setdefault(tech_name, set()).add(target)
+                for _key, _op, value in tech.all("enable_equipments"):
+                    if not isinstance(value, Node):
+                        continue
+                    for token in value.scalars():
+                        self.enables.setdefault(tech_name, set()).add(token)
+
+    def enabled_by(self) -> Dict[str, Set[str]]:
+        """Equipment token -> the techs whose `enable_equipments` unlock it."""
+        out: Dict[str, Set[str]] = {}
+        for tech, tokens in self.enables.items():
+            for token in tokens:
+                out.setdefault(token, set()).add(tech)
+        return out
+
+    def reachable(self, starts: Iterable[str]) -> Set[str]:
+        """Every tech reachable forward along `path` edges, starts included."""
+        seen: Set[str] = set()
+        frontier = [tech for tech in starts if tech]
+        while frontier:
+            tech = frontier.pop()
+            if tech in seen:
+                continue
+            seen.add(tech)
+            frontier.extend(self.edges.get(tech, ()))
+        return seen
 
     def design_graph(self, group: DesignGroup,
                      stop_techs: Iterable[str] = ()) -> DesignGraph:
