@@ -1112,18 +1112,30 @@ NDefines.NAI.MIN_CAPITALS_FOR_CARRIER_TASKFORCE = 10								-- carrier fleets wi
 NDefines.NAI.CAPITALS_TO_CARRIER_RATIO = 1.0										-- capital to carrier count in carrier taskfoces
 
 NDefines.NAI.MIN_MAIN_SHIP_RATIO = 0.3                      						-- if main ship ratio is below this, steal other ships.
-NDefines.NAI.MIN_SUPPORT_SHIP_RATIO = 1.0                   						-- if support ship ratio is below this, steal other ships.
+NDefines.NAI.MIN_SUPPORT_SHIP_RATIO = 0.7                   						-- if support ship ratio is below this, steal other ships.  [Fix 54: was 1.0, vanilla 0.7 - see the valve note on MIN_SUPPORT_SHIP_TO_SPARE below]
 NDefines.NAI.MIN_MAIN_SHIP_RATIO_TO_REINFORCE = 0.5        	 						-- the main ships will be tried to reinforce this level.
 NDefines.NAI.MIN_SUPPORT_SHIP_RATIO_TO_REINFORCE = 0.9    		 					-- the support ships will be tried to reinforce this level.
 NDefines.NAI.MIN_MAIN_SHIP_TO_SPARE = 1.0                   						-- can only steal ships from a task force if their main ship ratio is above this.
--- R36 candidate 2, NOT changed by Fix 53b - re-measure before touching it. Vanilla is
--- 1.0, and this line's own comment states the intent: it stops the engine's convoy-
--- defense allocator from pulling screens out of existing task forces. That is the
--- mechanism behind "the 300-ship region-less holding fleets are never tapped for
--- escort", but Fix 53b removes the reason the allocator was idle in the first place
--- (escort scored 0, so it never asked). Only lower this if escort share rises after
--- 53b and then plateaus below MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MIN (0.3).
-NDefines.NAI.MIN_SUPPORT_SHIP_TO_SPARE = 3.0               							-- can only steal ships from a task force if their support ship ratio is above this. Prevents MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX from stealing ships.
+-- Fix 54 (2026-08-13, checklist R36): was 3.0, vanilla 1.0. The pre-registered
+-- condition written here by Fix 53b - "only lower this if escort share rises and then
+-- plateaus below MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MIN (0.3)" - was met on the
+-- 1942.10 paired probe of campaign 02bd4445: escort doubled (40 -> 80 hulls at an
+-- identical date, v4 vs v6 build) and settled at 13% of screens, against an engine
+-- floor of 30%. Scoring is no longer the binding constraint; screen reallocation is.
+--
+-- This value and MIN_SUPPORT_SHIP_RATIO above are ONE mechanism and were set in the
+-- same commit (8b736abd1, 2024-12-20). Together they are a ONE-WAY VALVE:
+--   fill a task force's screens up to 1.0 of its desired complement (vanilla 0.7),
+--   release screens from it only above 3.0 (vanilla 1.0).
+-- Vanilla's band is 0.7 -> 1.0; WA's was 1.0 -> 3.0. Any screen that ever joins a
+-- strike, patrol or parked task force is captured for good, which is what ENG's
+-- 282-340-ship admiral-less holding fleet is made of, and why escort assignment
+-- REGRESSES late war: rebuilt strike forces absorb the escorts and never give them
+-- back. Both halves restored to vanilla; changing only one leaves the ratchet.
+--
+-- Blast radius is bounded to ship reallocation between a country's own task forces -
+-- it does not touch mission scoring, thresholds, region assignment or production.
+NDefines.NAI.MIN_SUPPORT_SHIP_TO_SPARE = 1.0               							-- can only steal ships from a task force if their support ship ratio is above this.  [Fix 54: was 3.0, vanilla 1.0]
 NDefines.NAI.MIN_MAIN_SHIP_RATIO_TO_MERGE = 0.7            							-- try merge task force if main ship ratio is lower than this.
 NDefines.NAI.MAX_MAIN_SHIP_RATIO_TO_MERGE = 1.001          							-- if resulting main ship ratio would be at most this, allow merging into this task force.
 NDefines.NAI.MAIN_SHIP_RATIO_TO_SPLIT = 1.8                 						-- if main ship ratio in a task force is larger than this, split it. (If a carrier TF wants 4 carriers (see defines above), but it has more than [this * 4] carriers, then we try to split the TF.)
