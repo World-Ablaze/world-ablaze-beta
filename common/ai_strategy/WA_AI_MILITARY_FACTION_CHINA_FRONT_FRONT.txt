@@ -75,17 +75,33 @@ WA_AI_MILITARY_CHINA_FRONT_careful_exec_vs_japan = {
 #          exclusive with the grind block below by posture level; outranked by the level-500/10000
 #          emergency stops in DEFAULT_FRONT_control.
 # domain:  FRONT
+# FIX 54 (2026-08-13): generalised off the literal tag JAP. The posture calculus publishes a verdict
+# per enemy but this block could read only one of them, so Japanese collaborator states were invisible
+# to it. Note the sibling WA_AI_MILITARY_CHINA_FRONT_careful_exec_vs_collaborators below still names
+# RNC explicitly - it is a non-executing baseline hold, not a posture consumer, and is left alone.
+# See WA_AI_MILITARY_ALLIES_exec_vs_germany in the ALLIES_FRONT file for the full argument and the
+# deliberate widening it carries.
 WA_AI_MILITARY_CHINA_FRONT_exec_vs_japan = {
 	enable = {
 		WA_AI_MILITARY_is_china_front_member = yes
-		has_war_with = JAP
-		check_variable = { WA_AI_MILITARY_posture_vs_JAP = 1 }
+		WA_AI_MILITARY_posture_has_execute_target = yes
 	}
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = front_control
-		tag = JAP
+		country_trigger = {
+			has_war_with = ROOT
+			has_capitulated = no
+			OR = {
+				# Too small for a posture verdict - see WA_AI_MILITARY_posture_has_execute_target.
+				AND = {
+					is_major = no
+					NOT = { num_of_controlled_states > 4 }
+				}
+				ROOT = { check_variable = { WA_AI_MILITARY_posture_vs_@PREV = 1 } }
+			}
+		}
 		ratio = 0.1
 		priority = 340
 		ordertype = front
@@ -102,17 +118,23 @@ WA_AI_MILITARY_CHINA_FRONT_exec_vs_japan = {
 # policy:  Exclusive per front - priority 340 outranks the level-0 hold (330); mutually exclusive
 #          with the exec block above by posture level (the calculus emits exactly one level per enemy).
 # domain:  FRONT
+# FIX 54: generalised off the literal tag JAP - see the exec block above. No "too small" branch here
+# on purpose: an enemy with no published verdict reads 0, never 2, so exec and grind stay mutually
+# exclusive exactly as before.
 WA_AI_MILITARY_CHINA_FRONT_grind_vs_japan = {
 	enable = {
 		WA_AI_MILITARY_is_china_front_member = yes
-		has_war_with = JAP
-		check_variable = { WA_AI_MILITARY_posture_vs_JAP = 2 }
+		WA_AI_MILITARY_posture_has_grind_target = yes
 	}
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = front_control
-		tag = JAP
+		country_trigger = {
+			has_war_with = ROOT
+			has_capitulated = no
+			ROOT = { check_variable = { WA_AI_MILITARY_posture_vs_@PREV = 2 } }
+		}
 		ratio = 0.1
 		priority = 340
 		ordertype = front

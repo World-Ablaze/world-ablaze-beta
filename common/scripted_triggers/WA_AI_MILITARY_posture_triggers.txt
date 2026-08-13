@@ -158,3 +158,49 @@ WA_AI_MILITARY_army_still_operational = {
 	has_variable = WA_AI_fielded_eq_ratio
 	check_variable = { WA_AI_fielded_eq_ratio > @WA_AI_POSTURE_MIN_EQ }
 }
+
+
+############################################################################################################
+#	FIX 54 - "is there ANY enemy worth executing against?"
+#	THIS = COUNTRY
+#
+#	Enable-side companions to the generalised front_control consumers. Until Fix 54 those six blocks
+#	(ALLIES/AXIS/CHINA_FRONT x exec/grind) each named ONE enemy tag in both their enable and their
+#	payload, which is why German puppets were never attacked: the posture calculus publishes a verdict
+#	per enemy, but nothing downstream could read more than one of them. These triggers are the
+#	tag-free enable; the payload side is an inline country_trigger on each block.
+#
+#	SCOPE NOTE: inside any_enemy_country, scoping back to ROOT makes PREV resolve to the candidate
+#	enemy, so WA_AI_MILITARY_posture_vs_@PREV names that enemy's verdict. Same idiom, same position
+#	(an ai_strategy enable), as WA_AI_MILITARY_north_africa_offensive_viable in
+#	WA_AI_MILITARY_triggers.txt - which is where it was proven.
+#
+#	THE "TOO SMALL" BRANCH IS LOAD-BEARING, NOT DEFENSIVE. The posture loop only processes enemies
+#	that are `is_major = yes OR num_of_controlled_states > 4`
+#	(WA_AI_MILITARY_posture_effects.txt, every_enemy_country limit), so no variable is EVER published
+#	for a four-state minor. German puppets are exactly that population - campaign 02bd4445 ends with
+#	RCZ on 4 controlled states and RBE on 5 - so without this branch the generalisation would still
+#	not reach RCZ, which is the case it was written for. Absent variables read as 0, so a too-small
+#	enemy can never satisfy the level-2 test: exec and grind stay mutually exclusive, and the branch
+#	deliberately lives on the EXECUTE trigger only.
+############################################################################################################
+
+WA_AI_MILITARY_posture_has_execute_target = {
+	any_enemy_country = {
+		has_capitulated = no
+		OR = {
+			AND = {
+				is_major = no
+				NOT = { num_of_controlled_states > 4 }
+			}
+			ROOT = { check_variable = { WA_AI_MILITARY_posture_vs_@PREV = 1 } }
+		}
+	}
+}
+
+WA_AI_MILITARY_posture_has_grind_target = {
+	any_enemy_country = {
+		has_capitulated = no
+		ROOT = { check_variable = { WA_AI_MILITARY_posture_vs_@PREV = 2 } }
+	}
+}
