@@ -1,12 +1,15 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import itertools
 import unittest
 
 from equipment_evaluator.config import load_config
 from equipment_evaluator.decide import SWITCH_CONDITIONAL, Transition
 from equipment_evaluator.decision_manifest import sha256_bytes
 from equipment_evaluator.diagnostics import Diagnostics
-from equipment_evaluator.emit import Emitter, GATE_TRIGGERS
+from equipment_evaluator.emit import Emitter, GATE_TRIGGERS, _pdx_num
+from equipment_evaluator.generation.production_strategy import (
+    _step_gates, build_group_blocks, emit_linear)
 from equipment_evaluator.generation.adapters import tank_emitter_transition
 from equipment_evaluator.generation.apply import apply_plan, verify_plan
 from equipment_evaluator.generation.planner import (OperationPlan, ReplaceOperation,
@@ -269,6 +272,131 @@ class GenerationTests(unittest.TestCase):
         self.assertFalse(emitter.patches)
         self.assertTrue(any("already hand-gated" in item.reason
                             for item in emitter.blocked))
+
+
+class ProductionStrategyTests(unittest.TestCase):
+    """The production-line layer (ai_strategy production_upgrade_desire_offset).
+
+    `ai_equipment` priority is the design layer and does not decide what a
+    running line produces - campaign `bec4d829` failed R30/R31/R32/R33/R35 on
+    that confusion.  These tests pin the two properties the emitted strategy
+    has to have: every reachable gate state names exactly one wanted design,
+    and no gate state leaves a branched role with nothing to build.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cfg = load_config(MOD_ROOT / "tools/equipment_evaluator/config.json")
+        evaluator = TankEvaluator(MOD_ROOT, cfg)
+        evaluator.evaluate(None)
+        cls.rows = evaluator.frontier_decisions
+        cls.groups = {}
+        for row in cls.rows:
+            cls.groups.setdefault((row.country, row.group), []).append(row)
+
+    def _gate_states(self, ordered):
+        gates = {row.rank: set(_step_gates(row)) for row in ordered}
+        universe = sorted(set().union(*gates.values())) if gates else []
+        for size in range(len(universe) + 1):
+            for combo in itertools.combinations(universe, size):
+                yield set(combo), gates
+
+    def test_equipment_token_is_carried(self):
+        """The `id` of every strategy comes from target_variant `type =`."""
+        missing = [f"{r.country}/{r.group}/{r.design}"
+                   for r in self.rows if not r.equipment_type]
+        self.assertEqual([], missing)
+
+    def test_no_gate_state_empties_a_branched_role(self):
+        """R35 leg (3): a closed gate must expose a fallback, never a hole."""
+        for (country, group), rows in sorted(self.groups.items()):
+            ordered = sorted(rows, key=lambda r: r.rank)
+            for open_gates, gates in self._gate_states(ordered):
+                reachable = [r for r in ordered if gates[r.rank] <= open_gates]
+                self.assertTrue(
+                    reachable,
+                    f"{country}/{group} has no candidate with gates "
+                    f"{sorted(open_gates)}")
+
+    def test_emitted_blocks_are_exactly_the_reachable_winners(self):
+        """One +100 per gate state - never zero, never two competing."""
+        for (country, group), rows in sorted(self.groups.items()):
+            ordered = sorted(rows, key=lambda r: r.rank)
+            winners = set()
+            for open_gates, gates in self._gate_states(ordered):
+                reachable = [r for r in ordered if gates[r.rank] <= open_gates]
+                if reachable:
+                    winners.add(max(reachable, key=lambda r: r.rank).design)
+            lines, _ = build_group_blocks(rows)
+            text = "\n".join(lines)
+            emitted = {r.design for r in ordered
+                       if f"_{r.group}_{r.design} = {{" in text}
+            self.assertEqual(
+                winners, emitted,
+                f"{country}/{group}: emitted {sorted(emitted)} but "
+                f"{sorted(winners)} are reachable winners")
+
+    def test_usa_medium_is_the_canonical_regression(self):
+        """M4A3E8 with tungsten, M4A2 without - never T20/T23."""
+        rows = self.groups[("USA", "USA_medium_tanks")]
+        lines, _ = build_group_blocks(rows)
+        text = "\n".join(lines)
+        want = [ln for ln in lines if "value = 100" in ln]
+        self.assertEqual(2, len(want), "expected exactly two wanted designs")
+        # M4A3E8 is tank_usa_medium_chassis_4_2, M4A2 is _4, T20 _5, T23 _6.
+        self.assertIn("id = tank_usa_medium_chassis_4_2", text)
+        self.assertIn("id = tank_usa_medium_chassis_4", text)
+        self.assertIn("WA_AI_EQUIPMENT_can_absorb_tungsten_shock_small", text)
+        for prototype in ("tank_usa_medium_chassis_5", "tank_usa_medium_chassis_6"):
+            block = text.split(f"id = {prototype}\n")[1].splitlines()[0]
+            self.assertIn("value = -100", block,
+                          f"{prototype} must be suppressed, not wanted")
+
+    def test_linear_chain_suppression_rules(self):
+        """KEEP_OLD/CONDITIONAL suppress; SWITCH-reachable and non-tags do not."""
+        rows = [
+            {"country": "USA", "group": "art", "old": "a1", "new": "a2",
+             "old_label": "A1", "new_label": "A2", "verdict": "KEEP_OLD",
+             "gates": [], "reason": ""},
+            {"country": "USA", "group": "art", "old": "b1", "new": "b2",
+             "old_label": "B1", "new_label": "B2",
+             "verdict": "SWITCH_CONDITIONAL",
+             "gates": ["WA_AI_EQUIPMENT_can_absorb_steel_shock_small"],
+             "reason": ""},
+            # reached by a plain SWITCH elsewhere -> must NOT be suppressed
+            {"country": "USA", "group": "art", "old": "c1", "new": "c2",
+             "old_label": "C1", "new_label": "C2", "verdict": "KEEP_OLD",
+             "gates": [], "reason": ""},
+            {"country": "USA", "group": "art", "old": "c0", "new": "c2",
+             "old_label": "C0", "new_label": "C2", "verdict": "SWITCH",
+             "gates": [], "reason": ""},
+            # shared equipment bucket, not a country tag -> must NOT be emitted
+            {"country": "GENERIC", "group": "art", "old": "g1", "new": "g2",
+             "old_label": "G1", "new_label": "G2", "verdict": "KEEP_OLD",
+             "gates": [], "reason": ""},
+        ]
+        with TemporaryDirectory() as tmp:
+            files, skipped = emit_linear(tmp, "artillery", rows, apply=False)
+        self.assertEqual(
+            ["common/ai_strategy/WA_AI_PRODUCTION_COUNTRY_USA_ARTILLERY.txt"],
+            sorted(files))
+        text = files["common/ai_strategy/WA_AI_PRODUCTION_COUNTRY_USA_ARTILLERY.txt"]
+        self.assertIn("id = a2", text)
+        self.assertIn("id = b2", text)
+        self.assertIn("NOT = { WA_AI_EQUIPMENT_can_absorb_steel_shock_small = yes }",
+                      text)
+        self.assertNotIn("id = c2", text)
+        self.assertNotIn("GENERIC", str(files))
+        self.assertEqual(2, len(skipped))
+        self.assertEqual(2, text.count("value = -100"))
+        self.assertEqual(0, text.count("value = 100"))
+
+    def test_no_scientific_notation_reaches_pdxscript(self):
+        """`factor = 9e-06` is read as 9 by the HOI4 parser - see _pdx_num."""
+        self.assertEqual("0.000009", _pdx_num(9e-06))
+        self.assertEqual("0.00003", _pdx_num(3e-05))
+        self.assertEqual("100", _pdx_num(100.0))
+        self.assertEqual("0", _pdx_num(0))
 
 
 if __name__ == "__main__":

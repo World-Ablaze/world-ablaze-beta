@@ -1,0 +1,67 @@
+############################################################################################################
+# WA AI Production - COUNTRY_JAP
+############################################################################################################
+# Country layer, HAND-WRITTEN. The equipment evaluator has no naval domain (no *_ships.txt, no `naval`
+# value on --domain), so submarine policy cannot be generated and lives here.
+# Generated tank policy is in WA_AI_PRODUCTION_COUNTRY_JAP_TANKS.txt - do not merge the two files.
+#
+# Fix 51 - JAP builds ocean-going submarines, not coastal ones. Production-line layer.
+# Read the header of WA_AI_PRODUCTION_COUNTRY_SOV.txt for the full rationale.
+#
+# What campaign `bec4d829` showed (checklist R33). Fix 48 re-ordered this group's priorities to
+# 10 / 60 / 120 / 140 / 5 / 3 - Hei above Otsu, both coastal hulls demoted to near-zero - and the group
+# carries NO supersession chain at all, so nothing was zeroing the Hei. The AI switched anyway:
+#
+#   jap_submarine_hull_4 (Hei)      7500 km, str 52, 1700 IC   built to 1942.9
+#   jap_submarine_hull_5 (Ro-101)   COASTAL 2580 km, str 12     built from ~1942.12
+#   jap_submarine_hull_6 (Ha-201)   COASTAL 2320 km, str  8     built from 1944.6 to campaign end
+#
+# The flip dates reproduced the two pre-fix campaigns to within a month (`9a4cd657` 1942.12,
+# `a8b29e09` 1943.1), i.e. a 28x priority inversion changed nothing measurable. That is the cleanest
+# proof in the whole campaign that `ai_equipment` priority is the design layer, not this one.
+#
+# Research suppression WOULD also work here, unlike SOV: jap_submarine_5 (1941) and jap_submarine_6
+# (1944) are ordinary researched techs, JAP starts with only _1 and _2, and _6 is terminal so nothing
+# downstream is lost. That lever is deliberately NOT used yet - one mechanism at a time, so the
+# campaign reading is attributable. If this file works, research suppression becomes redundant here;
+# if it does not, it is the fallback plan.
+
+
+# Fix 51: never convert a submarine line onto a coastal hull.
+#
+# Both coastal boats are strictly dominated for the naval_submarine role: less than half the range of
+# the 7500 km hulls and a third of the strength. Hei stays positive so the AI has somewhere to go.
+# JAP allocated a single factory to this role for the entire campaign, so the fleet signal will stay
+# weak either way - score R33 on which hull the line sits on, not on hull counts.
+WA_AI_PRODUCTION_COUNTRY_JAP_ocean_going_submarines = {
+
+	allowed = {
+		original_tag = JAP
+	}
+	enable = {
+		always = yes
+	}
+
+	abort_when_not_enabled = yes
+
+	# Hei - the intended wartime mainstay, 7500 km with a fourth torpedo slot.
+	ai_strategy = {
+		type = production_upgrade_desire_offset
+		id = jap_submarine_hull_4
+		value = 100
+	}
+
+	# Ro-101 - coastal, 2580 km.
+	ai_strategy = {
+		type = production_upgrade_desire_offset
+		id = jap_submarine_hull_5
+		value = -100
+	}
+
+	# Ha-201 - coastal midget, 2320 km.
+	ai_strategy = {
+		type = production_upgrade_desire_offset
+		id = jap_submarine_hull_6
+		value = -100
+	}
+}

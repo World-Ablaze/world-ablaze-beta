@@ -71,6 +71,19 @@ class FrontierDecision:
     redesign_stats: Dict[str, float] = field(default_factory=dict)
     fallback_design: str = ""
     notes: List[str] = field(default_factory=list)
+    # `type =` of the design's target_variant, i.e. the EQUIPMENT token
+    # (`tank_usa_medium_chassis_6`), which is what an ai_strategy
+    # `production_upgrade_desire_offset` takes as its `id`.  Distinct from
+    # `design` (the ai_equipment block name, `medium_tank_7`) and from
+    # `unlock_tech` (the TECHNOLOGY token, `usa_medium_tank_chassis_5`) - the
+    # three numbering schemes do not line up and confusing them silently
+    # targets the wrong tank.
+    equipment_type: str = ""
+    # Position of the design inside its ai_equipment group.  These files are
+    # written oldest-first, so a higher index means a newer chassis - which is
+    # exactly what the engine prefers by default and what the production
+    # strategy has to suppress when the frontier ranks it lower.
+    file_index: int = 0
 
 
 def _weighted_gain(old: Dict[str, float], new: Dict[str, float],
@@ -462,6 +475,7 @@ class TankEvaluator:
                 failed_thresholds=failures,
                 redesign_changes=changes,
                 redesign_stats=scored if changes else {}, fallback_design=fallback,
+                equipment_type=design.airframe or "", file_index=design.index,
                 notes=(["kept as a low-priority role floor until a compliant design unlocks"]
                        if failures else [])))
             previous = item

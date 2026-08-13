@@ -39,6 +39,110 @@ from equipment_evaluator.parse_ai_equipment import (DesignGroup, discover_countr
                                                     parse_country_file)
 from equipment_evaluator.parse_equipment import EquipmentDB, find_files
 from equipment_evaluator.emit import Emitter
+from equipment_evaluator.generation.production_strategy import (
+    emit as production_strategy_emit,
+    emit_linear as production_strategy_emit_linear)
+
+
+def _gates_for(significant, cfg) -> list:
+    """Runtime gate symbols for a significant-resource-increase mapping."""
+    from equipment_evaluator.emit import _gate_for
+    gates = []
+    for resource, delta in sorted((significant or {}).items()):
+        gate = _gate_for(resource, delta)
+        if gate and gate not in gates:
+            gates.append(gate)
+    return gates
+
+
+def _linear_rows(kind, rows, cfg) -> list:
+    """Normalise the three unrelated transition dataclasses onto one shape.
+
+    Air carries `from_airframe`/`to_airframe`; artillery/vehicles carry raw
+    equipment token names in `old`/`new`; infantry carries `LandEquipment`
+    objects and - unlike the other two - throws its significant-resource
+    mapping away (infantry.py:247), so it is recomputed here from
+    `resource_delta`.
+    """
+    from equipment_evaluator.decision_policy import significant_increases
+    out = []
+    for t in rows:
+        if kind == "air":
+            old_tok, new_tok = t.from_airframe, t.to_airframe
+            old_lab, new_lab = t.from_label, t.to_label
+            group, significant = t.role, t.res_significant
+        elif kind == "infantry":
+            old_tok, new_tok = t.old.name, t.new.name
+            old_lab, new_lab = t.old.name, t.new.name
+            group = t.technology_file
+            significant = significant_increases(
+                t.resource_delta, cfg.resource_threshold)
+        else:                                   # artillery / vehicles
+            old_tok, new_tok = t.old, t.new
+            old_lab, new_lab = t.old, t.new
+            group, significant = t.role, t.significant_resources
+        if not old_tok or not new_tok:
+            continue
+        out.append({
+            "country": t.country, "group": group,
+            "old": old_tok, "new": new_tok,
+            "old_label": old_lab, "new_label": new_lab,
+            "verdict": t.verdict,
+            "gates": (_gates_for(significant, cfg)
+                      if t.verdict == "SWITCH_CONDITIONAL" else []),
+            "reason": "; ".join(getattr(t, "notes", []) or [])[:160],
+        })
+    return out
+
+
+def emit_production_strategy(args, mod_root, out_dir, tank_frontiers) -> None:
+    """Render (and optionally write) the production-line strategy files."""
+    if not tank_frontiers:
+        print("\nProduction strategy: no branched tank frontiers evaluated "
+              "(need --domain tanks or all).")
+        return
+    files, skipped = production_strategy_emit(
+        str(mod_root), tank_frontiers, apply=args.apply_production_strategy)
+    preview_dir = out_dir / "production_strategy"
+    preview_dir.mkdir(parents=True, exist_ok=True)
+    for rel, text in sorted(files.items()):
+        (preview_dir / Path(rel).name).write_text(text, encoding="utf-8")
+    verb = "WROTE into common/" if args.apply_production_strategy else "DRY RUN"
+    entries = sum(text.count("ai_strategy = {") for text in files.values())
+    print(f"\nProduction strategy ({verb}): {len(files)} file(s), "
+          f"{entries} ai_strategy entries")
+    for rel in sorted(files):
+        print(f"  {rel}")
+    print(f"  Preview               : {preview_dir}")
+    if skipped:
+        print(f"  Unreachable ranks ({len(skipped)}) - reported, not emitted:")
+        for note in skipped:
+            print(f"    - {note}")
+
+
+def emit_linear_strategy(args, mod_root, out_dir, cfg, kind, rows) -> None:
+    """Emit the KEEP_OLD / SWITCH_CONDITIONAL suppressions of a linear domain."""
+    if not args.emit_production_strategy and not args.apply_production_strategy:
+        return
+    normalised = _linear_rows(kind, rows, cfg)
+    if not normalised:
+        return
+    files, skipped = production_strategy_emit_linear(
+        str(mod_root), kind, normalised, apply=args.apply_production_strategy)
+    preview_dir = out_dir / "production_strategy"
+    preview_dir.mkdir(parents=True, exist_ok=True)
+    for rel, text in sorted(files.items()):
+        (preview_dir / Path(rel).name).write_text(text, encoding="utf-8")
+    verb = "WROTE into common/" if args.apply_production_strategy else "DRY RUN"
+    entries = sum(text.count("ai_strategy = {") for text in files.values())
+    considered = len(normalised)
+    print(f"\nProduction strategy - {kind} ({verb}): {len(files)} file(s), "
+          f"{entries} suppressions out of {considered} transitions")
+    for rel in sorted(files):
+        print(f"  {rel}")
+    if skipped:
+        print(f"  Not suppressed ({len(skipped)}): a plain SWITCH also reaches "
+              f"the successor, or a duplicate step")
 from equipment_evaluator.efficiency_audit import (evaluate_efficiency_domains,
                                                   write_efficiency_audit)
 from equipment_evaluator.infantry import evaluate_infantry, write_infantry_reports
@@ -102,6 +206,15 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Also write a reviewable ai_equipment patch document to "
                         "<output>/emit_ai_equipment.md. DRY RUN - still writes "
                         "nothing into common/.")
+    p.add_argument("--emit-production-strategy", action="store_true",
+                   help="Render the branched tank roles as ai_strategy "
+                        "`production_upgrade_desire_offset` files "
+                        "(common/ai_strategy/WA_AI_PRODUCTION_COUNTRY_<TAG>_TANKS.txt) "
+                        "into <output>/production_strategy/. DRY RUN - writes "
+                        "nothing into common/ unless --apply-production-strategy.")
+    p.add_argument("--apply-production-strategy", action="store_true",
+                   help="Write the files rendered by --emit-production-strategy "
+                        "into common/ai_strategy/. Modifies mod files.")
     p.add_argument("--generate-plan", action="store_true",
                    help="Write deterministic decision manifest and operation plan. "
                         "Requires --domain all; does not modify common/.")
@@ -225,8 +338,21 @@ def main(argv: List[str] = None) -> int:
             print(f"  {verdict:<21} : {infantry_counts.get(verdict, 0)}")
         print(f"  CSV                   : {out_dir / 'infantry_equipment_transitions.csv'}")
         print(f"  Markdown              : {out_dir / 'infantry_equipment_report.md'}")
-        if args.domain == "infantry":
-            return 0
+    # Every non-air domain is fully evaluated by this point, so the hook sits
+    # ahead of BOTH early returns - `--domain infantry` and `--domain tanks`
+    # are the cheap ways to regenerate one domain without a full air pass.
+    # Air runs its own call further down, once `transitions` exists.
+    if args.emit_production_strategy or args.apply_production_strategy:
+        emit_production_strategy(args, mod_root, out_dir, tank_frontiers)
+        for linear in ("artillery", "vehicles"):
+            emit_linear_strategy(
+                args, mod_root, out_dir, cfg, linear,
+                [row for row in ground_rows if row.domain == linear])
+        emit_linear_strategy(args, mod_root, out_dir, cfg,
+                             "infantry", infantry_rows)
+
+    if args.domain == "infantry":
+        return 0
 
     if args.domain in ("tanks", "artillery", "vehicles"):
         return 0
@@ -353,6 +479,8 @@ def main(argv: List[str] = None) -> int:
         "airframe_count": len(db.airframes),
         "module_count": len(db.modules),
     }
+    emit_linear_strategy(args, mod_root, out_dir, cfg, "air", transitions)
+
     write_csv(csv_path, transitions, cfg)
     write_markdown(md_path, transitions, diag, cfg, meta)
 

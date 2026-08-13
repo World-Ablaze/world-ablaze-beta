@@ -255,7 +255,7 @@ class Emitter:
             # original is recorded so logical_source() can reconstruct the
             # pre-generator analysis input after application.
             if ed.priority_factor is not None:
-                detail = f"{ed.priority_factor:.12g}"
+                detail = _pdx_num(ed.priority_factor)
                 marker = _marker_id(country, group, design, "priority_factor", detail)
                 if ed.rebuild_priority or f"id={marker}" not in raw:
                     out = []
@@ -263,7 +263,7 @@ class Emitter:
                     for ln in lines:
                         if not replaced and ln.strip().startswith("factor ="):
                             ind = _leading_ws(ln)
-                            original = f"{float(ed.original_priority_factor or 0):.12g}"
+                            original = _pdx_num(ed.original_priority_factor or 0)
                             out.append(f"{ind}# WA_EQUIPGEN_BEGIN id={marker} "
                                        f"kind=priority_factor schema=1 mode=replace "
                                        f"original={original}")
@@ -371,7 +371,7 @@ class Emitter:
 
         expected = []
         for name, row in row_by_name.items():
-            detail = f"{row.priority_factor:.12g}"
+            detail = _pdx_num(row.priority_factor)
             expected.append(_marker_id(group.country, group.name, name,
                                        "priority_factor", detail))
             for tech in by_name[name].supersede_techs:
@@ -764,6 +764,19 @@ def _marker_id(country: str, group: str, design: str, kind: str, detail: str) ->
     """PDX-comment-safe stable ownership id."""
     clean = lambda value: "".join(ch if ch.isalnum() or ch in "_-" else "_" for ch in value)
     return clean(f"{country}:{group}:{design}:{kind}:{detail}")
+
+
+def _pdx_num(value: float) -> str:
+    """Format a number the way PDXScript can actually read it.
+
+    `f"{x:.12g}"` switches to scientific notation below ~1e-5 ("9e-06"), and
+    the HOI4 parser does not understand it - it reads the mantissa and stops,
+    so `factor = 9e-06` is loaded as `factor = 9`.  That inverted the bottom of
+    the SOV_heavy_tanks ladder (the T 35 emergency floor outranked IS 8/IS 4/
+    IS 3) until campaign `bec4d829` surfaced it.  Always emit plain decimal.
+    """
+    text = f"{float(value):.12f}".rstrip("0").rstrip(".")
+    return text or "0"
 
 
 def _leading_ws(line: str) -> str:
