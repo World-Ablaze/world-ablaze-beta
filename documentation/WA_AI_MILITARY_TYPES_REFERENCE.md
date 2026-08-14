@@ -152,9 +152,10 @@ For each type: total count, where it currently appears (counts per file), recomm
 
 ### `strategic_air_importance` (28)
 
-- Currently in: GER 8, ALLIES 4, ITA 3, ENG 2, SOV 1 (legacy country/faction specials), plus 10 generic theatre blocks in `WA_AI_MILITARY_DEFAULT_AIR_theatres.txt`.
-- Target: Country (NAVAL when sea-facing); Default for the generic land-theatre pulls (AIR domain).
+- Currently in: GER 8, ALLIES 4, ITA 3, ENG 2, SOV 1 (legacy country/faction specials), plus 10 generic theatre blocks in `WA_AI_MILITARY_DEFAULT_AIR_theatres.txt` and 3 Faction-layer blocks in `WA_AI_MILITARY_FACTION_ALLIES_AIR.txt`.
+- Target: Country (NAVAL when sea-facing); Default for the generic land-theatre pulls (AIR domain); Faction for coalition bombing-campaign policy.
 - The Default layer (`WA_AI_MILITARY_DEFAULT_AIR_theatres.txt`) provides the standing +10,000 "base air where your side is fighting" pull per contested theatre region, gated by `WA_AI_MILITARY_AIR_theatre_contested_*` (dynamic both-sides-control-land detection, no tags). The legacy ENG/GER emergency (+100k..+500k) and suppression (-250k..-1M) families intentionally dominate it wherever they apply. Engine-side terms: own combats x100, own armies x25; a stocked main front in active combat scores ~35,000.
+- **Faction layer — the Allied Reich bombing ladder.** `WA_AI_MILITARY_FACTION_ALLIES_AIR.txt` owns the western coalition's avoidance of German air space (strategic regions 6/7/8/296 near ring, 294/38 deep ring). Its three blocks are rungs on a **deployed-strategic-bomber count**, not dates: each enables below its own threshold and aborts above the next one, so the net suppression walks from -60,000 down to 0 (near ring) / -80,000 down to 0 (deep ring) as the coalition arms, with hysteresis at every boundary. Thresholds (299/450/700/900, grounded in campaign `973154a7`) and the Reich ring state lists live in `WA_AI_MILITARY_triggers.txt` under "AIR - Allied Reich bombing ladder" — change the campaign there, never in the strategy blocks. All three rungs also abort on `WA_AI_MILITARY_AIR_theatre_contested_germany`, the setup-agnostic replacement for the old `date > 1944.2.1` backstop: `strategic_air_importance` suppresses *every* mission in a region, so it must lift the moment friendly armies are fighting on German soil. This file replaced legacy ENG.txt `Allies_bombing_germany_is_too_costly`, `allies_avoid_bombing_austria_prussia` and `ENG_FRA_allies_avoid_bombing_GER` (Phase 7c).
 
 ### `antagonize` (8)
 

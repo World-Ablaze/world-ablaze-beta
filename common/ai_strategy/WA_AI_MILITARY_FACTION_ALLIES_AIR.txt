@@ -1,0 +1,155 @@
+############################################################################################################
+# WA AI Military V2 - FACTION_ALLIES_AIR
+############################################################################################################
+# Canonical domain: AIR (strategic_air_importance, land-theatre-facing).
+# See documentation/WA_AI_MILITARY_SYSTEM.md sections 2-4 and WA_AI_MILITARY_TYPES_REFERENCE.md.
+#
+# WHAT THIS FILE OWNS
+# The Allied strategic bombing campaign against the Reich: how hard the western coalition is told
+# to stay away from German air space, and when that avoidance is released. It replaces three
+# legacy ENG.txt blocks, relocated here as Faction-layer content (Phase 7c):
+#
+#   ENG_FRA_allies_avoid_bombing_GER        -> WA_AI_MILITARY_ALLIES_AIR_reich_blackout
+#   Allies_bombing_germany_is_too_costly    -> WA_AI_MILITARY_ALLIES_AIR_reich_raid_too_costly
+#   allies_avoid_bombing_austria_prussia    -> WA_AI_MILITARY_ALLIES_AIR_reich_deep_out_of_reach
+#
+# THE LADDER
+# Every switch is a deployed-strategic-bomber count, coalition-wide. All four thresholds and both
+# ring definitions live in common/scripted_triggers/WA_AI_MILITARY_triggers.txt (section "AIR -
+# Allied Reich bombing ladder"); tune the campaign there, never by editing the values below.
+# The legacy blocks decided the same question with dates (a blackout until 1941.10.1, a
+# suppression until a 1944.2.1 hard backstop) plus a USA-only tech gate - assumptions that hold
+# only on the historical path. Capability gating gives the same historical shape while still
+# producing sane play when the Allies arm early, arm late, or never arm at all.
+#
+# Rungs are additive and deliberately overlap, so the net walks down one step at a time. Each
+# rung enables below its own bar and aborts above the NEXT bar, which gives free hysteresis: a
+# fleet oscillating around a threshold does not flip the campaign on and off week to week.
+#
+#   coalition strat bombers |  near ring (6/7/8/296)  |  deep ring (294/38)
+#   ------------------------+-------------------------+---------------------
+#   0   - 450               |  -60,000                |  -80,000
+#   451 - 700               |  -40,000                |  -60,000
+#   701 - 900               |        0                |  -20,000
+#   901 +                   |        0                |        0
+#
+# The deep ring lags the near ring by one rung. That is the old B-17 range gate
+# (allies_avoid_bombing_austria_prussia, which keyed on a USA tech the AI never researched in
+# time and therefore carried a hardcoded 1944.2.1 backstop) restated as capability: a coalition
+# fielding 700+ heavy bombers has the generation that reaches Vienna; one fielding 350 does not.
+#
+# VALUE ECONOMY
+# The contract set by the ENG.txt suppression retune holds: the deepest contested-theatre pull is
+# +50,000 per region (WA_AI_MILITARY_DEFAULT_AIR_theatres.txt) and the engine's hot-main-front
+# reference is ~35,000. A -60,000 net therefore keeps the region off the target list against
+# standing pulls while staying far below the emergency family (+100k Husky / +200k D-Day), which
+# must keep precedence. The legacy -500,000 and -1,000,000 values these blocks carried were black
+# holes in the sense of WA_AI_MILITARY_ECONOMY.md principle 2: nothing in the ledger could ever
+# out-vote them, so every other air signal over Europe was unreadable.
+#
+# LEDGER - other writers on these regions, none of which live in this file:
+# - WA_AI_MILITARY_DEFAULT_AIR_theatres.txt has NO Germany block by design (the capital-theatre
+#   exclusion, and the engine's own combat/army terms, already cover the Reich once fronts reach
+#   it). The rings below are therefore the only standing scripted weight on 6/7/8/294/38.
+# - ENG.txt Allies_avoid_bombing_occupied_allies adds -8,000 on 296 (Poland) while an enemy holds
+#   France; ENG.txt Allies_dont_bomb_random_places adds -40,000 on 22 (Czechoslovakia). Both stay
+#   where they are - their target sets are occupied-ally and out-of-theatre, not the Reich.
+# - ENG.txt Allies_avoid_bombing_occupied_uk pushes +20,000 on 6/8/38 and +200,000 on 294 in the
+#   UK-has-fallen branch. Under the legacy -500,000 blackout that push was arithmetically dead;
+#   against the -60,000/-80,000 here it now wins, which is what that block always intended.
+# - WA_AI_MILITARY_COUNTRY_ENG_THEATRE.txt WA_AI_MILITARY_ENG_strategic_bombing_focus_THEATRE is
+#   the positive half of the campaign, but it writes area_priority, not strategic_air_importance -
+#   a different axis. It is unaffected by this file and must stay in sync with it.
+############################################################################################################
+
+
+# purpose: keep the coalition out of German air space entirely while it has no bomber arm to send
+# range:   -20000 per strategic region (engine main-front reference ~35000)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_reich_blackout = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
+	enable = {
+		WA_AI_MILITARY_is_allies_member = yes
+		WA_AI_MILITARY_AIR_enemy_holds_germany = yes
+		NOT = { WA_AI_MILITARY_AIR_allies_bombers_reach_nucleus = yes }
+	}
+	abort = {
+		OR = {
+			WA_AI_MILITARY_AIR_allies_bombers_reach_raid_force = yes
+			WA_AI_MILITARY_AIR_theatre_contested_germany = yes
+			NOT = { WA_AI_MILITARY_AIR_enemy_holds_germany = yes }
+		}
+	}
+
+	# near ring
+	ai_strategy = { type = strategic_air_importance id = 6 value = -20000 }		# North-West Germany
+	ai_strategy = { type = strategic_air_importance id = 7 value = -20000 }		# Western Germany
+	ai_strategy = { type = strategic_air_importance id = 8 value = -20000 }		# Eastern Germany
+	ai_strategy = { type = strategic_air_importance id = 296 value = -20000 }	# Poland
+	# deep ring
+	ai_strategy = { type = strategic_air_importance id = 294 value = -20000 }	# Austria
+	ai_strategy = { type = strategic_air_importance id = 38 value = -20000 }		# Prussia
+}
+
+
+# purpose: hold the raid down to mild avoidance while the bomber arm is still too small to absorb
+#          the losses over the Reich; a contested theatre elsewhere out-shouts it
+# range:   -40000 per strategic region (engine main-front reference ~35000)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_reich_raid_too_costly = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
+	enable = {
+		WA_AI_MILITARY_is_allies_member = yes
+		WA_AI_MILITARY_AIR_enemy_holds_germany = yes
+		NOT = { WA_AI_MILITARY_AIR_allies_bombers_reach_raid_force = yes }
+	}
+	abort = {
+		OR = {
+			WA_AI_MILITARY_AIR_allies_bombers_reach_deep = yes
+			WA_AI_MILITARY_AIR_theatre_contested_germany = yes
+			NOT = { WA_AI_MILITARY_AIR_enemy_holds_germany = yes }
+		}
+	}
+
+	# near ring
+	ai_strategy = { type = strategic_air_importance id = 6 value = -40000 }		# North-West Germany
+	ai_strategy = { type = strategic_air_importance id = 7 value = -40000 }		# Western Germany
+	ai_strategy = { type = strategic_air_importance id = 8 value = -40000 }		# Eastern Germany
+	ai_strategy = { type = strategic_air_importance id = 296 value = -40000 }	# Poland
+	# deep ring
+	ai_strategy = { type = strategic_air_importance id = 294 value = -40000 }	# Austria
+	ai_strategy = { type = strategic_air_importance id = 38 value = -40000 }		# Prussia
+}
+
+
+# purpose: keep the deepest Reich targets off the list one rung longer than the near ring - the
+#          old B-17 range gate, restated as bomber-force capability instead of a USA tech + date
+# range:   -20000 per strategic region (engine main-front reference ~35000)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_reich_deep_out_of_reach = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
+	enable = {
+		WA_AI_MILITARY_is_allies_member = yes
+		WA_AI_MILITARY_AIR_enemy_holds_germany = yes
+		NOT = { WA_AI_MILITARY_AIR_allies_bombers_reach_deep = yes }
+	}
+	abort = {
+		OR = {
+			WA_AI_MILITARY_AIR_allies_bombers_reach_deep_off = yes
+			WA_AI_MILITARY_AIR_theatre_contested_germany = yes
+			NOT = { WA_AI_MILITARY_AIR_enemy_holds_germany = yes }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 294 value = -20000 }	# Austria
+	ai_strategy = { type = strategic_air_importance id = 38 value = -20000 }		# Prussia
+}

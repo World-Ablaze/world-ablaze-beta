@@ -1495,3 +1495,160 @@ WA_AI_MILITARY_AIR_theatre_state_pacific_islands = {
 		state = 635 state = 734																		# New Caledonia (353)
 	}
 }
+
+
+############################################################################################################
+# AIR - Allied Reich bombing ladder
+############################################################################################################
+# Consumer: common/ai_strategy/WA_AI_MILITARY_FACTION_ALLIES_AIR.txt
+#
+# ALL BEHAVIOURAL SWITCHES FOR THE ALLIED BOMBING CAMPAIGN LIVE HERE. Change the campaign by
+# moving the four thresholds below or the ring membership further down - never by editing the
+# strategy blocks (same contract as WA_AI_AIFC_triggers.txt and WA_AI_LANDING_triggers.txt).
+#
+# WHY A LADDER
+# Before this, "does the coalition bomb Germany" was decided by a date pair (a -500,000 blackout
+# until 1941.10.1, then a -40,000 suppression until a 1944.2.1 hard backstop) plus a USA-only tech
+# gate. That is a historical-script assumption: in a game where the Allies arm early, late, or
+# never, the dates fire anyway and the air campaign is either grounded while a raid force sits
+# idle, or released while there is nothing to release. The question the dates were proxying for
+# is a capability question - "does our side field enough heavy bombers to raid the Reich and
+# absorb the losses" - so the ladder asks it directly.
+#
+# THRESHOLDS (deployed strategic_bomber wings, WA force scale ~1/3 vanilla)
+# Grounded in campaign 973154a7 (see commit 439c4106d): ENG and USA both cross 450 during late
+# 1942 / early 1943 and never fall back under 300; ENG peaks ~750 then attrites to ~550 by late
+# 1944. Vanilla's 900/1500/2100 numbers are unreachable at this scale and are the reason the
+# original blocks never released.
+@WA_AI_AIR_BOMBER_NUCLEUS = 299			# at/below this there is no bomber arm at all
+@WA_AI_AIR_BOMBER_RAID_FORCE = 450		# a raid force able to reach Germany proper
+@WA_AI_AIR_BOMBER_DEEP_REACH = 700		# ...and to reach Austria / Prussia (the old B-17 range gate)
+@WA_AI_AIR_BOMBER_DEEP_REACH_OFF = 900	# deep-target avoidance fully retired
+#
+# Coalition-wide by design: the metric is "any one partner fields this much", not ROOT's own arm.
+# CAN fields zero strategic bombers for an entire campaign; without the any_allied_country branch
+# it would go on suppressing the target regions its own faction is raiding. A country in no
+# faction sees only itself, which is the correct setup-agnostic floor.
+
+WA_AI_MILITARY_AIR_allies_bombers_reach_nucleus = {
+	OR = {
+		has_deployed_air_force_size = { size > @WA_AI_AIR_BOMBER_NUCLEUS type = strategic_bomber }
+		any_allied_country = {
+			has_deployed_air_force_size = { size > @WA_AI_AIR_BOMBER_NUCLEUS type = strategic_bomber }
+		}
+	}
+}
+
+WA_AI_MILITARY_AIR_allies_bombers_reach_raid_force = {
+	OR = {
+		has_deployed_air_force_size = { size > @WA_AI_AIR_BOMBER_RAID_FORCE type = strategic_bomber }
+		any_allied_country = {
+			has_deployed_air_force_size = { size > @WA_AI_AIR_BOMBER_RAID_FORCE type = strategic_bomber }
+		}
+	}
+}
+
+WA_AI_MILITARY_AIR_allies_bombers_reach_deep = {
+	OR = {
+		has_deployed_air_force_size = { size > @WA_AI_AIR_BOMBER_DEEP_REACH type = strategic_bomber }
+		any_allied_country = {
+			has_deployed_air_force_size = { size > @WA_AI_AIR_BOMBER_DEEP_REACH type = strategic_bomber }
+		}
+	}
+}
+
+WA_AI_MILITARY_AIR_allies_bombers_reach_deep_off = {
+	OR = {
+		has_deployed_air_force_size = { size > @WA_AI_AIR_BOMBER_DEEP_REACH_OFF type = strategic_bomber }
+		any_allied_country = {
+			has_deployed_air_force_size = { size > @WA_AI_AIR_BOMBER_DEEP_REACH_OFF type = strategic_bomber }
+		}
+	}
+}
+
+# ---------------------------------------------------------------------------------------------
+# Reich ring occupancy - Germany proper, strategic regions 6 / 7 / 8
+# ---------------------------------------------------------------------------------------------
+# State lists derived from map/strategicregions + history/states by the same method that produced
+# the WA_AI_MILITARY_AIR_theatre_contested_* lists above, and verified to reproduce them exactly.
+#
+# DELIBERATELY EXCLUDED: 99 (Jutland) and 871 (Nord-Schleswig) are Danish states that sit inside
+# strategic region 6. Counting them on the own-side half would let a co-belligerent Denmark read
+# as "we hold ground in the Reich" while nobody has broken in. For the same reason the ring stops
+# at Germany proper and does not extend into region 38 (Prussia, which contains Polish Poznan /
+# Katowice / Pomorskie / Gdynia) or region 296 (Poland) - those are held by Allied co-belligerents
+# on day one of the war and would trip the contested test in September 1939.
+WA_AI_MILITARY_AIR_enemy_holds_germany = {
+	OR = {
+		# North-West Germany (6)
+		56 = { CONTROLLER = { has_war_with = ROOT } }		# Weser-Ems
+		57 = { CONTROLLER = { has_war_with = ROOT } }		# Westfalen
+		58 = { CONTROLLER = { has_war_with = ROOT } }		# Schleswig-Holstein
+		59 = { CONTROLLER = { has_war_with = ROOT } }		# Niedersachsen
+		803 = { CONTROLLER = { has_war_with = ROOT } }		# Hamburg
+		# Western Germany (7)
+		42 = { CONTROLLER = { has_war_with = ROOT } }		# Moselland
+		50 = { CONTROLLER = { has_war_with = ROOT } }		# Wuerttemberg
+		51 = { CONTROLLER = { has_war_with = ROOT } }		# Western Rhineland
+		52 = { CONTROLLER = { has_war_with = ROOT } }		# Oberbayern
+		53 = { CONTROLLER = { has_war_with = ROOT } }		# Niederbayern
+		54 = { CONTROLLER = { has_war_with = ROOT } }		# Franken
+		55 = { CONTROLLER = { has_war_with = ROOT } }		# Hessen
+		799 = { CONTROLLER = { has_war_with = ROOT } }		# Eastern Rhineland
+		800 = { CONTROLLER = { has_war_with = ROOT } }		# Saarland
+		801 = { CONTROLLER = { has_war_with = ROOT } }		# Baden
+		# Eastern Germany (8)
+		60 = { CONTROLLER = { has_war_with = ROOT } }		# Thueringen
+		61 = { CONTROLLER = { has_war_with = ROOT } }		# Mecklenburg
+		62 = { CONTROLLER = { has_war_with = ROOT } }		# Vorpommern
+		64 = { CONTROLLER = { has_war_with = ROOT } }		# S. Brandenburg
+		65 = { CONTROLLER = { has_war_with = ROOT } }		# Sachsen
+		802 = { CONTROLLER = { has_war_with = ROOT } }		# Anhalt
+		804 = { CONTROLLER = { has_war_with = ROOT } }		# W. Berlin
+		810 = { CONTROLLER = { has_war_with = ROOT } }		# E. Berlin
+		996 = { CONTROLLER = { has_war_with = ROOT } }		# N. Brandenburg
+	}
+}
+
+# Own-side presence: ROOT, a faction ally, or anyone fighting the same war (subjects,
+# co-belligerents - this is what lets a Red Army foothold release the RAF suppression).
+WA_AI_MILITARY_AIR_allies_hold_germany = {
+	OR = {
+		# North-West Germany (6)
+		56 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		57 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		58 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		59 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		803 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		# Western Germany (7)
+		42 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		50 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		51 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		52 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		53 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		54 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		55 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		799 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		800 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		801 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		# Eastern Germany (8)
+		60 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		61 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		62 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		64 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		65 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		802 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		804 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		810 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		996 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+	}
+}
+
+# The ground war has reached the Reich. This is the setup-agnostic replacement for the old
+# date > 1944.2.1 hard backstop: once our own side holds German soil, every bombing-campaign
+# suppression must lift regardless of bomber count, because strategic_air_importance suppresses
+# ALL missions in a region - close air support for the armies fighting there included.
+WA_AI_MILITARY_AIR_theatre_contested_germany = {
+	WA_AI_MILITARY_AIR_enemy_holds_germany = yes
+	WA_AI_MILITARY_AIR_allies_hold_germany = yes
+}

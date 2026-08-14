@@ -505,96 +505,15 @@ ENG_no_random_construction = {
 	}
 }
 
-######SUPPRESSION RETUNE (this block + Allies_avoid_bombing_occupied_allies / Allies_bomb_germany / Allies_bomb_germany_2 / Allies_dont_bomb_random_places):
+######SUPPRESSION RETUNE (Allies_avoid_bombing_occupied_allies / Allies_bomb_germany / Allies_bomb_germany_2 / Allies_dont_bomb_random_places):
 ######the old -250k..-1M values made the Allied strategic_air_importance ledger net-negative across all of Europe 1940-1944, leaving the
 ######contested-theatre pulls (WA_AI_MILITARY_DEFAULT_AIR_theatres.txt, +50k) and the UK hosting capacity inert. New contract: suppression is
 ######MILD avoidance a contested theatre overrides. Tier map (~/25, clean thousands): -1M -> -40k, -750k -> -30k, -500k -> -20k,
 ######-250k -> -8k (not -10k, so the deepest stack -40k + -8k on region 296 stays strictly under the +50k pull), -50k -> -2k.
-Allies_bombing_germany_is_too_costly = {
-	allowed = {
-		OR = {
-			original_tag = USA
-			original_tag = ENG
-			original_tag = CAN
-		}
-	}
-	enable = {
-		date > 1941.10.1
-		has_war_with = GER
-		has_deployed_air_force_size = { size < 300 type = strategic_bomber } ######WA air forces are ~1/3 vanilla scale (AIRBASE_CAPACITY_MULT halved) - vanilla's 900 enable was near-permanent here
-	}
-	abort = {
-		OR = {
-			date > 1944.2.1 ######hard backstop for all three tags (CAN had no abort at all) - the -1M suppresses ALL missions in these regions, so it must never outlive the escorted-raid era and the land push into Germany
-			has_deployed_air_force_size = { size > 450 type = strategic_bomber } ######WA scale: ENG peaked ~750 then attrited to ~550 by late 1944, so vanilla's 2100/1500 aborts never fired and the RAF never flew over Germany
-			any_allied_country = { ######faction-wide: once any ally masses the raid force (USA crosses 450 in late 1942) the campaign is on, and partners with small bomber arms (CAN fields zero strat bombers all campaign) must stop suppressing the shared target regions for their own air force
-				has_deployed_air_force_size = { size > 450 type = strategic_bomber }
-			}
-		}
-	}
-
-	ai_strategy = {
-		type = strategic_air_importance
-		id = 6
-		value = -40000 #value of stocked main front in active combat is usually around 35,000
-	}
-	ai_strategy = {
-		type = strategic_air_importance
-		id = 7
-		value = -40000 #value of stocked main front in active combat is usually around 35,000
-	}
-	ai_strategy = {
-		type = strategic_air_importance
-		id = 8
-		value = -40000 #value of stocked main front in active combat is usually around 35,000
-	}
-	ai_strategy = {
-		type = strategic_air_importance
-		id = 294
-		value = -40000 #value of stocked main front in active combat is usually around 35,000
-	}
-	ai_strategy = {
-		type = strategic_air_importance
-		id = 38
-		value = -40000 #value of stocked main front in active combat is usually around 35,000
-	}
-	ai_strategy = {
-		type = strategic_air_importance
-		id = 296
-		value = -40000 #value of stocked main front in active combat is usually around 35,000
-	}
-}
-
-allies_avoid_bombing_austria_prussia = { ######b17 doesnt have enough range
-	allowed = {
-		OR = {
-			original_tag = ENG
-			original_tag = USA
-		}
-	}
-	enable = {
-		date < 1944.2.1 ######backstop: usa_strategic_bomber_5 is a start_year 1944 tech the AI researches far too late (tier 2 in an Oct 1944 campaign), so the tech gate alone never lifts this in time
-		OR = {
-			is_in_faction_with = ENG
-			is_subject_of = ENG
-		}
-		NOT = {
-			USA = { has_tech = usa_strategic_bomber_5 }
-		}
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = strategic_air_importance
-		id = 294
-		value = -500000 #value of stocked main front in active combat is usually around 35,000
-	}
-	ai_strategy = {
-		type = strategic_air_importance
-		id = 38
-		value = -500000 #value of stocked main front in active combat is usually around 35,000
-	}
-}
+######
+######MOVED: Allies_bombing_germany_is_too_costly, allies_avoid_bombing_austria_prussia and ENG_FRA_allies_avoid_bombing_GER (below) are now
+######the bomber-count ladder in common/ai_strategy/WA_AI_MILITARY_FACTION_ALLIES_AIR.txt, with its switches in WA_AI_MILITARY_triggers.txt.
+######The Reich regions 6/7/8/294/38/296 belong to that file; the blocks remaining here write only occupied-ally and out-of-theatre regions.
 
 battle_of_britain_priority = {
 	allowed = {
@@ -852,69 +771,14 @@ Commonwealth_stop_soviet_from_falling = {
 	}
 }
 
-ENG_FRA_allies_avoid_bombing_GER = {
-	allowed = {
-		OR = {
-			original_tag = ENG
-			original_tag = FRA
-			original_tag = CAN
-			original_tag = RAJ
-			original_tag = AST
-		}
-	}
-	enable = {
-		OR = {
-			is_in_faction_with = ENG
-			is_subject_of = ENG
-		}
-		date < 1941.10.1
-		has_war_with = GER
-	}
-	abort_when_not_enabled = yes
+######MOVED to WA_AI_MILITARY_FACTION_ALLIES_AIR.txt: ENG_FRA_allies_avoid_bombing_GER was the date<1941.10.1 half of the Reich blackout
+######(regions 6/7/8/294/38/296 at -500k), now WA_AI_MILITARY_ALLIES_AIR_reich_blackout gated on the coalition bomber count instead of a date.
+######Two of its regions did NOT move, because they are not the Reich and already carry their own writer here:
+###### - 22 (Czechoslovakia) keeps the -40k it gets from Allies_dont_bomb_random_places below.
+###### - 11 (Southern Norway) keeps the -20k it gets from Allies_avoid_bombing_occupied_allies below.
+######Both therefore go from -500k to their retuned tier during 1939-1941 rather than losing all avoidance.
 
-	ai_strategy = {
-		type = strategic_air_importance
-		id = 6
-		value = -500000 #value of stocked main front in active combat is usually around 35,000
-	}
-	ai_strategy = {
-		type = strategic_air_importance
-		id = 7
-		value = -500000 #value of stocked main front in active combat is usually around 35,000
-	}
-	ai_strategy = {
-		type = strategic_air_importance
-		id = 8
-		value = -500000 #value of stocked main front in active combat is usually around 35,000
-	}
-	ai_strategy = {
-		type = strategic_air_importance
-		id = 294
-		value = -500000 #value of stocked main front in active combat is usually around 35,000
-	}
-	ai_strategy = {
-		type = strategic_air_importance
-		id = 22
-		value = -500000 #value of stocked main front in active combat is usually around 35,000
-	}
-	ai_strategy = {
-		type = strategic_air_importance
-		id = 38
-		value = -500000 #value of stocked main front in active combat is usually around 35,000
-	}
-	ai_strategy = {
-		type = strategic_air_importance
-		id = 296
-		value = -500000 #value of stocked main front in active combat is usually around 35,000
-	}
-	ai_strategy = {
-		type = strategic_air_importance
-		id = 11
-		value = -500000 #value of stocked main front in active combat is usually around 35,000
-	}
-}
-
-######retuned -500k/-250k -> -20k/-8k: mild avoidance only - see the retune banner above Allies_bombing_germany_is_too_costly
+######retuned -500k/-250k -> -20k/-8k: mild avoidance only - see the SUPPRESSION RETUNE banner above battle_of_britain_priority
 Allies_avoid_bombing_occupied_allies = {
 	allowed = {
 		OR = {
@@ -1220,7 +1084,7 @@ Allies_avoid_bombing_occupied_uk = {
 	}
 }
 
-######retuned -750k/-500k -> -30k/-20k (154 kept at -7500, already outside the family range): mild avoidance only - see the retune banner above Allies_bombing_germany_is_too_costly
+######retuned -750k/-500k -> -30k/-20k (154 kept at -7500, already outside the family range): mild avoidance only - see the SUPPRESSION RETUNE banner above battle_of_britain_priority
 Allies_bomb_germany = {
 	allowed = {
 		OR = {
@@ -1306,7 +1170,7 @@ Allies_bomb_germany = {
 	}
 }
 
-######retuned -500k -> -20k: mild avoidance only - a contested Italy theatre (+50k on 21/23/238) now out-shouts this - see the retune banner above Allies_bombing_germany_is_too_costly
+######retuned -500k -> -20k: mild avoidance only - a contested Italy theatre (+50k on 21/23/238) now out-shouts this - see the SUPPRESSION RETUNE banner above battle_of_britain_priority
 Allies_bomb_germany_2 = {
 	allowed = {
 		OR = {
@@ -1365,7 +1229,7 @@ Allies_bomb_germany_2 = {
 	}
 }
 
-######retuned -1M/-500k/-50k -> -40k/-20k/-2k: mild avoidance only - Burma (189) / Thailand (340) are no longer dominated when their theatres are contested - see the retune banner above Allies_bombing_germany_is_too_costly
+######retuned -1M/-500k/-50k -> -40k/-20k/-2k: mild avoidance only - Burma (189) / Thailand (340) are no longer dominated when their theatres are contested - see the SUPPRESSION RETUNE banner above battle_of_britain_priority
 Allies_dont_bomb_random_places = {
 	allowed = {
 		OR = {
