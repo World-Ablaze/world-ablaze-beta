@@ -175,12 +175,41 @@ The first pulse on which C.10 may fire for the USA is the first pulse on which t
 shut, and it never reopens. `wa_tlm_r48_prebuild_synth_n` will read **0** for the USA in every
 campaign. ENG is excluded on the same mechanism, though ENG fails the import term anyway (row above).
 
-**Not fixed here, because the narrow fix is a design decision.** Exempting the prebuild case from the
-exclusion would let C.10 fire early for ENG/USA, and C.10's *other* branches — the reactive refinery
-paths, the MIC/CIC conversions — would then also run before those dates, which is what the exclusion
-exists to prevent. The options are (a) hoist the proactive lane out of C.10 into its own host,
-(b) narrow the dispatcher exclusion so it gates only C.10's other branches, or (c) accept the lane as
-JAP/SOV-only and re-aim the fix. **Do not score R48 against the USA until one is chosen.**
+### 3.4c RESOLVED by Fix 80 (2026-08-15) — option (b), after measuring the exposure
+
+Three options were on the table: (a) hoist the proactive lane out of C.10 into its own host,
+(b) narrow the dispatcher exclusion, (c) accept the lane as JAP/SOV-only. **(b) was chosen after
+establishing what the exclusion actually protects**, which nobody had done — it is inherited from
+Expert AI, predates the EAI → WA rename (`bd11fde6b`), and no WA commit states its purpose.
+
+**The change is one term.** The exclusion stays, with an escape: `OR = { <the existing NOT block>,
+WA_AI_CONSTRUCTION_should_pre_build_synth_rubber = yes }`. The escape therefore only opens on the
+days the pre-build lane actually wants to build.
+
+**Exposure, measured branch by branch rather than assumed.** C.10 has 16 branches; on an escape day
+the pre-build lane is not the only one that evaluates, so each was checked:
+
+| Branch | Status on an escape day | Why |
+| --- | --- | --- |
+| Reactive refinery | shut | mutually exclusive by construction — needs `rubber < 0`, the lane needs `>= 0` |
+| Steel refinery | shut | USA steel effective **+392** (1940.6) and **+31** (1941.6) against a `< -20` bar |
+| Aluminium smelter | shut | USA aluminium effective **+7** and **+17**, same bar |
+| AA | shut | needs an enemy with deployed strategic/tactical bombers |
+| Air base | shut | needs 1 000 deployed planes |
+| Fuel silo | shut | excludes USA by name |
+| ENG programme | n/a | `original_tag = ENG` |
+| Generic tail | shut | an **empty `else_if`** for GER/ITA/USA/JAP — already a deliberate no-op |
+| **Resource-state infrastructure** | **opens** | the only one |
+
+The single branch that newly opens builds infrastructure on resource states, and the USA carries
+`wa_ai_needs_aluminium = 3` from 1940. That is behaviour the blanket gate was suppressing, not a
+regression introduced here.
+
+**ENG is unaffected in practice.** It owns Malaya, imports 0 rubber across the whole positive-balance
+stretch, and therefore never satisfies the pre-build trigger — the escape never opens for it, and its
+large tag-specific build programme stays behind the date gate untouched.
+
+**R48's USA legs are scoreable again.** The probe is unchanged.
 
 ### 3.5 Instrumentation
 
