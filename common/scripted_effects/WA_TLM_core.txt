@@ -31,7 +31,36 @@
 # monthly naval sampler under the existing nav_* gate and stamped by nav_last_t. Additive: no
 # existing metric changes meaning, so v5/v6 readings stay valid. A save at wa_tlm_version < 7
 # simply lacks the metric - score it NOT CHECKED, never FAILED.
-@WA_TLM_VERSION = 7
+# v8 (2026-08-14, Fix 51 / R8): adds the WA_TLM_r8_uk_air_* probe family - the south-first
+# UK air-base ordering probe, written at the queue site in WA_AI_uk_air_queue_site
+# (WA_AI_CONSTRUCTION_PRIORITY_strategies.txt) on the same verified-effect gate as
+# wa_ai_uk_air_dbg_started, NOT by the monthly sampler below. Additive: no existing metric
+# changes meaning, so v5/v6/v7 readings stay valid. A save at wa_tlm_version < 8 simply
+# lacks the family - score it NOT CHECKED, never FAILED.
+# v9 (2026-08-14, R43): adds WA_TLM_nav_cv_f / _n / _hulls - deployed carrier fighters,
+# deployed carrier naval bombers and the carrier-hull aggregate, written by the monthly
+# naval sampler under the existing nav_* gate and stamped by nav_last_t. They are the three
+# quantities Fix 66's saturation gate compares, sampled so a save can tell "the gate's token
+# read 0 and the brake was never live" apart from "the brake armed". Additive: no existing
+# metric changes meaning, so v5-v8 readings stay valid. A save at wa_tlm_version < 9 simply
+# lacks the metrics - score it NOT CHECKED, never FAILED.
+# v10 (2026-08-14, R44): adds the WA_TLM_r44_freeze_* probe family - scripted-landing invasion
+# freeze stamps, written at the marker site (WA_AI_LANDING_stamp_freeze_west / _east,
+# WA_AI_LANDING_effects.txt) on the flag write itself, NOT by the monthly sampler below. The
+# west/east split is the metric that answers whether a European landing would have frozen the
+# Pacific. Additive: no existing metric changes meaning, so v5-v9 readings stay valid. A save at
+# wa_tlm_version < 10 simply lacks the family - score it NOT CHECKED, never FAILED.
+# v11 (2026-08-14, R46): adds the WA_TLM_r74_ally_rail_* probe family - coalition logistics
+# routes. Written at the route-accept site in WA_AI_PC_railway_land_consider_frontline
+# (WA_AI_CONSTRUCTION_PRIORITY_railway_strategies.txt), NOT by the monthly sampler: _routes_n
+# counts every land-war route accepted, _ally_n only those whose target state is controlled by
+# neither ROOT nor a subject of ROOT - i.e. the routes that were structurally impossible before
+# Fix 74. The pair is what discriminates "the ally leg fired" from "the country queued rail at
+# all"; a build where _routes_n climbs and _ally_n stays 0 means the selector widened but no
+# ally frontline ever qualified. Additive: no existing metric changes meaning, so v5-v10
+# readings stay valid. A save at wa_tlm_version < 11 simply lacks the family - score it
+# NOT CHECKED, never FAILED.
+@WA_TLM_VERSION = 11
 
 ############################################################################################################
 #	Clock - global.WA_TLM_clock = months elapsed since 1936.1
@@ -86,6 +115,17 @@ WA_TLM_init_country = {
 	if = { limit = { NOT = { has_variable = WA_TLM_r47_alu_large_first_t } } set_variable = { WA_TLM_r47_alu_large_first_t = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r47_alu_large_last_t } } set_variable = { WA_TLM_r47_alu_large_last_t = 0 } }
 
+	# UK air-base build ORDER (Fix 51, consumer: checklist R8 concentration leg; write
+	# site in WA_AI_uk_air_queue_site, WA_AI_CONSTRUCTION_PRIORITY_strategies.txt).
+	# Mean rank = _rank_sum / (_q_n - _fallback_n); fallback queues carry rank 0 and are
+	# excluded from the sum and the max on purpose. _fallback_n > 0 is the drift alarm
+	# between WA_AI_uk_air_hosting_state and global.WA_AI_uk_air_priority_states.
+	if = { limit = { NOT = { has_variable = WA_TLM_r8_uk_air_q_n } } set_variable = { WA_TLM_r8_uk_air_q_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r8_uk_air_rank_sum } } set_variable = { WA_TLM_r8_uk_air_rank_sum = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r8_uk_air_rank_max } } set_variable = { WA_TLM_r8_uk_air_rank_max = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r8_uk_air_fallback_n } } set_variable = { WA_TLM_r8_uk_air_fallback_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r8_uk_air_last_t } } set_variable = { WA_TLM_r8_uk_air_last_t = 0 } }
+
 	# naval / convoy war (standing, consumer: checklist R36 + any convoy-war question)
 	if = { limit = { NOT = { has_variable = WA_TLM_nav_ships } } set_variable = { WA_TLM_nav_ships = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_nav_screens } } set_variable = { WA_TLM_nav_screens = 0 } }
@@ -101,6 +141,33 @@ WA_TLM_init_country = {
 	# cruiser-submarine routing (Fix 64, consumer: checklist R41; write site in WA_TLM_sample_navy,
 	# same gate and same stamp (nav_last_t) as the nav_* family it sits in)
 	if = { limit = { NOT = { has_variable = WA_TLM_r64_csubs } } set_variable = { WA_TLM_r64_csubs = 0 } }
+
+	# carrier-aviation saturation (Fix 66, consumer: checklist R43; write site in
+	# WA_TLM_sample_navy, same gate and same stamp (nav_last_t) as the nav_* family)
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_cv_f } } set_variable = { WA_TLM_nav_cv_f = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_cv_n } } set_variable = { WA_TLM_nav_cv_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_cv_hulls } } set_variable = { WA_TLM_nav_cv_hulls = 0 } }
+
+	# scripted-landing invasion freeze (consumer: checklist R44; write sites in
+	# WA_AI_LANDING_stamp_freeze_west / _stamp_freeze_east, WA_AI_LANDING_effects.txt).
+	# Counters are per stamped country per landing operation, written at the flag write and NOT by
+	# the monthly sampler; _freeze_n = _freeze_west_n + _freeze_east_n by construction.
+	if = { limit = { NOT = { has_variable = WA_TLM_r44_freeze_n } } set_variable = { WA_TLM_r44_freeze_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r44_freeze_west_n } } set_variable = { WA_TLM_r44_freeze_west_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r44_freeze_east_n } } set_variable = { WA_TLM_r44_freeze_east_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r44_freeze_first_t } } set_variable = { WA_TLM_r44_freeze_first_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r44_freeze_last_t } } set_variable = { WA_TLM_r44_freeze_last_t = 0 } }
+
+	# coalition logistics routes (Fix 74, consumer: checklist R46; write site in
+	# WA_AI_PC_railway_land_consider_frontline, WA_AI_CONSTRUCTION_PRIORITY_railway_strategies.txt).
+	# Counters are per ACCEPTED land-war route, incremented where the route is appended to
+	# railway_end_provinces_ - not on entry to the effect, so a candidate that fails pathfinding
+	# is not counted. _ally_n is the subset whose target state is controlled by neither ROOT nor a
+	# subject of ROOT; _ally_n <= _routes_n by construction.
+	if = { limit = { NOT = { has_variable = WA_TLM_r74_ally_rail_routes_n } } set_variable = { WA_TLM_r74_ally_rail_routes_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r74_ally_rail_ally_n } } set_variable = { WA_TLM_r74_ally_rail_ally_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r74_ally_rail_first_t } } set_variable = { WA_TLM_r74_ally_rail_first_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r74_ally_rail_last_t } } set_variable = { WA_TLM_r74_ally_rail_last_t = 0 } }
 
 	# offensive posture (standing, consumer: the level-1 exchange-rate question - see the write
 	# site in WA_AI_MILITARY_posture_effects.txt, inside every_enemy_country. Counters are per
@@ -277,6 +344,31 @@ WA_TLM_sample_navy = {
 		# the token is fine and the fix failed; BOTH 0 means the token is bad and neither reading
 		# may be scored - the v4 nav_screens failure mode.
 		set_variable = { WA_TLM_r64_csubs = num_ships_with_type@cruiser_submarine }
+
+		# tlm: nav_cv_f / nav_cv_n / nav_cv_hulls - gauges, any AI with a hull - consumer:
+		# R43 (Fix 66, the carrier-plane saturation brake). These are the EXACT three
+		# quantities Fix 66's gate compares, sampled at the same values the gate sees, and
+		# they exist to settle one question the outcome alone cannot answer.
+		#
+		# Fix 66 fails SAFE: an unresolvable token reads 0, 0 never exceeds a bar, the brake
+		# never trips and behaviour is unchanged - which is indistinguishable from "the brake
+		# armed and the AI over-built anyway" if you only look at the plane counts. These
+		# three separate the cases outright:
+		#   nav_cv_f = nav_cv_n = 0 on a carrier major in a war year  -> the token is bad,
+		#     the brake was never live, and NOTHING about Fix 66 may be scored (this is the
+		#     v4 nav_screens failure mode repeating, on the same class of token).
+		#   nav_cv_f / _n populated                                   -> the gate saw real
+		#     numbers; compare them against the bars for nav_cv_hulls to say whether the
+		#     brake SHOULD have tripped, then read the production lines to say whether it did.
+		# nav_cv_hulls is also the independent check on the hull banding: it is the same
+		# `type = carrier` aggregate the gate bands on, so a save says directly whether the
+		# aggregate counts light carriers (compare against savegame.py navy's carrier +
+		# light_carrier split - JAP is the discriminating case at 15 + 5).
+		# The plane tokens are archetype-spelled, the idiom already live at
+		# common/decisions/ITA.txt:957 on this very archetype. UNVERIFIED nonetheless.
+		set_variable = { WA_TLM_nav_cv_f = num_deployed_planes_with_type@cv_small_fighter_airframe }
+		set_variable = { WA_TLM_nav_cv_n = num_deployed_planes_with_type@cv_small_naval_bomber_airframe }
+		set_variable = { WA_TLM_nav_cv_hulls = num_ships_with_type@carrier }
 		# convoy is an equipment archetype, so it is read with num_equipment@, the
 		# idiom used for every other archetype in this repo (WA_AI_DIVISION_CREATOR_
 		# effects.txt, 100_wa_on_actions.txt). UNVERIFIED IN-GAME until the F9 boot
