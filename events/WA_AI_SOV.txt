@@ -574,43 +574,6 @@ country_event = {
 }
 
 country_event = {
-	id = sov_armor.917
-	hidden = yes
-
-	mean_time_to_happen = { days = 2 }
-
-	fire_only_once = yes
-
-	trigger = {
-		tag = SOV
-		is_ai = yes
-		date > 1942.1.1
-		has_war = yes
-		has_deployed_air_force_size = { size < 4000 type = fighter }
-	}
-
-	immediate = {
-		add_timed_idea = { idea = soviet_ai_air days = 360 }
-		if = {
-			limit = {
-				has_template = "Soviet Medium Tank Division"
-			}
-			add_units_to_division_template = {
-				template_name = "Soviet Medium Tank Division"
-				regiments = {
-					medium_armor_battalion_line = 0
-					medium_armor_battalion_line = 1
-					medium_armor_battalion_line = 2
-				}
-			}
-		}
-	}
-
-	option = {}
-}
-
-
-country_event = {
 	id = sov_armor.927
 	hidden = yes
 
@@ -733,5 +696,93 @@ country_event = {
 	immediate = {
 		add_war_support = 0.5
 		activate_advisor = georgy_zhukov
+	}
+}
+############################################################################################################
+# Fix 70 (2026-08-14, checklist R31): force the long-range La-5FN into existence.
+#
+# THE PROBLEM THIS SOLVES IS "NEVER CREATED", NOT "CREATED AND NOT SELECTED".
+# Fix 47 added `fighter_mr_7_lr` to common/ai_equipment/SOV_planes.txt - the La-5FN retuned to
+# 1017 km with `internal_slot_1 = fuel_tanks_medium` and the bomb rack removed - and gated it
+# behind the WA_AI_EQUIPMENT_needs_long_range_air latch. Three campaigns later
+# (bec4d829, 02bd4445, f9321934) the design has never once been instantiated. On f9321934 the
+# final save's `equipments={}` registry holds 7 535 entries, 178 of them designed variants,
+# and among them EXACTLY ONE `SOV_la_5fn_airframe` design - the stock short-range one carrying
+# `self_sealing_fuel_tanks_small` - with zero variants named "long range" anywhere. Meanwhile
+# the latch itself was wide open the whole time (`wa_tlm_r47_lrange_n = 72`, first 1939.10,
+# last 1946.8), and 17 other registry entries do carry `fuel_tanks_medium`, so neither the
+# gate nor the module is the obstacle.
+#
+# The obstacle is that the engine does not create a second design on an archetype it already
+# holds a design for - both La-5FN designs share `SOV_la_5fn_airframe` - so `fighter_mr_7_lr`
+# could never be reached by any amount of priority tuning in front of it. Expert AI 5.0 gates
+# its groups on `has_design_based_on` precisely to exploit that behaviour.
+#
+# So this creates the variant explicitly and EARLY, with `allow_without_tech = yes`, which the
+# vanilla documentation defines as "create the variant even if the type hasn't been unlocked
+# yet". Creating it in 1936 guarantees it pre-dates any engine auto-design of the airframe.
+# `fighter_mr_7_lr`'s `target_variant` (match_value 1000) then MATCHES an existing design
+# instead of having to create one, and its Fix 47 priority ladder finally has something to
+# select. The modules below are copied verbatim from that `target_variant` block; if one is
+# ever changed, change both or the match breaks silently.
+#
+# WHY AN EVENT AND NOT `on_research_complete`. The repo's existing idiom for creating a SOV
+# fighter variant is `on_research_complete` on the technology itself (see
+# common/technologies/air_techs_sov.txt:1589, "Lavochkin LaGG-3-35"). That hook was rejected
+# here for two reasons. First, it fires at the same instant the airframe unlocks, so it is in
+# a race with the engine's own auto-design and nothing documents which runs first - whereas
+# creating the variant years early cannot lose that race. Second, `on_research_complete` fires
+# for human players too; this event is `is_ai`-gated, so a SOV player's design list is
+# untouched. Note the LaGG-3 site above currently FAILS at runtime - `logs/error.log` carries
+# `equipment_effects.cpp:814 ... 'Lavochkin LaGG-3-35' - Equipment category differs from that
+# of the type` - which is a separate live defect, not something this fix inherits, but it is
+# also the exact error class to watch for on the boot test of this block.
+#
+# `mark_older_equipment_obsolete` is deliberately left at its default of `no`: the stock
+# short-range La-5FN (`fighter_mr_7`) is the intended design whenever the range latch is shut,
+# and obsoleting it would remove the mod's own off-gate default. (It would also achieve
+# nothing on its own - `obsolete=yes` does not gate AI production; see wa-lessons-learned.)
+############################################################################################################
+country_event = {
+	id = sov_armor.980
+	hidden = yes
+
+	mean_time_to_happen = { days = 1 }
+
+	fire_only_once = yes
+
+	# Gated on sov_fighter_ad_tech_1 rather than firing on day 1, because
+	# `allow_without_tech = yes` waives the AIRFRAME's tech and nothing else: the
+	# MODULES must already be unlocked or the creation drops them or fails outright.
+	# `fuel_tanks_medium` comes from sov_fighter_ad_tech_1 (the I-15 tech, start_year
+	# 1936), which is the same tech fighter_mr_7_lr's own `enable` waits on. SOV takes
+	# it years before sov_fighter_multirole_ad_tech_7 (1943.1.16 in f9321934), so this
+	# still creates the design long before the La-5FN airframe exists and cannot lose
+	# the race against an engine auto-design.
+	trigger = {
+		tag = SOV
+		is_ai = yes
+		has_tech = sov_fighter_ad_tech_1
+	}
+
+	immediate = {
+		create_equipment_variant = {
+			name = "Lavochkin La-5FN (long range)"
+			type = SOV_la_5fn_airframe
+			allow_without_tech = yes
+			modules = {
+				fighter_role_slot = ordnance_equipment
+				nose_slot_1 = SOV_cannon_20mm_shvak_2x_nose_prop
+				wing_mount_slot_1 = empty
+				internal_slot_1 = fuel_tanks_medium
+				fixed_construction_slot = mixed_construction
+				fixed_engine_type_slot = SOV_engine_shvetsov_m_82fn_1x
+				fixed_armour_slot = armour_light_seat
+				fixed_protection_slot_1 = self_sealing_fuel_tanks
+				fixed_protection_slot_2 = armoured_glass_light
+				fixed_ammo_slot = ammo_apit
+				fixed_crew_slot_1 = empty
+			}
+		}
 	}
 }
