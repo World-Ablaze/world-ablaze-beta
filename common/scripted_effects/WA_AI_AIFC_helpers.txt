@@ -86,13 +86,43 @@ WA_AI_AIFC_select_sector = {
 	# single token native contact (one captured island) suppressing the fallback entirely, leaving an
 	# expeditionary power's real army - fighting from allied soil on another continent - sector-less
 	# or anchored on the irrelevant native candidate.
+
+	# FIX 65 (2026-08-14, campaign f9321934): the ally filter used to carry `has_capitulated = no`,
+	# which is the one country in the faction whose soil an expeditionary army is MOST likely to be
+	# standing on. `has_capitulated` answers "did this government fall", NOT "does this country still
+	# exist" and NOT "is this territory usable": a capitulated tag keeps its faction membership, keeps
+	# owning and controlling territory, and REGAINS CONTROL OF LIBERATED HOME SOIL while still
+	# reporting capitulated = yes. So the liberator fights its whole campaign on ground the filter
+	# throws away.
+	#
+	# Measured: ENG held NO sector from 1944.5 to 1946.7 - ~118 consecutive weeks, 116-143 divisions,
+	# standing execute orders vs GER - because it controlled zero continental states of its own (its
+	# only land contact, Italian North Africa, had been ANNEXED, and Italy had changed sides) while
+	# every large concentration it had sat on FRA-controlled soil: 735 French Alpes, then 15 Lower
+	# Normandy (15-17 divisions) and 1 Corsica. FRA read capitulated = yes in EVERY save of that
+	# campaign while owning 60 states and controlling 50. Empty candidate array -> _aifc_best_id = 0 ->
+	# clear_sector, every week, for the entire Western campaign.
+	#
+	# The term was never load-bearing. The real guard is the divisions_in_state test below: ROOT must
+	# have >2 of its OWN divisions standing on that ground, which excludes a capitulated ally's
+	# territory we are not actually on. `exists = yes` replaces it to keep dead tags out of the walk -
+	# that is the check the old term was reaching for. The launching-pad measurement in section 1c
+	# below was written in the SAME commit as this block (4ffb8e442, Fix 28) and already omits the
+	# capitulation test, which is the tell that it was an incidental paste of the "usable ally" idiom.
+	#
+	# Keep in lockstep with the Fix 28 validity mirror in WA_AI_AIFC_core.txt - if selection may
+	# anchor on a capitulated ally's front, validity must accept the same one, or the sector is
+	# invalidated the week after it is chosen and the country churns forever.
+	#
+	# NOT a fix for any front. AIFC issues no attack orders and Layers 1-2 are not sector-gated, so
+	# this restores a scripted AXIS, not concentration itself. Do not expect front movement from it.
 	if = {
 		limit = { check_variable = { _aifc_cand^num < 3 } }
 
 		every_country = {
 			limit = {
 				NOT = { tag = ROOT }
-				has_capitulated = no
+				exists = yes
 				OR = {
 					is_in_faction_with = ROOT
 					is_subject_of = ROOT

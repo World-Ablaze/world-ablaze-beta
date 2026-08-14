@@ -81,10 +81,16 @@ WA_AI_PC_railway = {
 			multiply_temp_variable = { _min_civs_required = 0.6 }  # 30 civs during war
 		}
 
+		# Fix 75: `has_capitulated = no` removed. It was the third of three gates on the same word
+		# (weekly block, on_weekly eligibility filter, here), and with the first two gone this one
+		# would have silently reimposed the lockout one level down. Capability decides instead: the
+		# civ-factory floor below, plus WA_AI_PC_country_can_build_own_logistics at the call site.
+		# A capitulated rump still fails those on its own merits - FRA on f9321934 has 21 civs
+		# against a wartime floor of 30 - so this does not hand the railway system to a corpse; it
+		# stops refusing it to a capitulated country whose war economy is genuinely intact.
 		if = {
 			limit = {
 				num_of_civilian_factories > _min_civs_required
-				has_capitulated = no
 			}
 
 			### Skip recalculation only if the queue already holds enough RAILWAY projects (Fix 29b)

@@ -2,12 +2,11 @@
 #	World Ablaze AI mod - on_actions
 ############################################################################################################
 
-### Railway eligibility constants (must match WA_AI_CONSTRUCTION_PRIORITY_railway_core.txt)
-@WA_AI_PC_railway_MIN_CIVS_PEACE = 75        # Higher threshold during peace
-@WA_AI_PC_railway_MIN_STATES = 5             # Minimum controlled states to run
-@WA_AI_PC_railway_MAX_SURRENDER = 0.3        # Skip if surrender progress > 30%
-@WA_AI_PC_railway_MINOR_CIV_THRESHOLD = 50   # Minor nations bypass if civs > this
-@WA_AI_PC_railway_RECOVERY_MIN_STATES = 20   # Surrender-gate escape hatch: still-functioning war economy
+### Fix 75: the railway eligibility constants that used to be redeclared here are gone. The filter
+### block that read them is now the scripted trigger WA_AI_PC_country_can_build_own_logistics
+### (common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt), which owns its own copies - so this
+### file no longer participates in the "@ constants are file-scoped, keep the copies in sync"
+### contract at all. WA_AI_CONSTRUCTION_PRIORITY_railway_core.txt remains authoritative.
 
 on_actions = {
 	on_daily = {
@@ -109,20 +108,49 @@ on_actions = {
 			}
 
 			### Priority Construction System - Weekly Update
+			#
+			# FIX 75 (2026-08-14, campaign f9321934): the block gate was `is_ai = yes` +
+			# `has_capitulated = no`. It is now `is_ai = yes` + `exists = yes`, and the three calls
+			# that genuinely need the capitulation test carry it individually (training modifier,
+			# offensive posture, lend-lease relief). Statement ORDER is unchanged - that is why the
+			# gate moved onto the calls instead of the block being split in two.
+			#
+			# Root cause it fixes: `WA_AI_priority_construction_strategies` fires from
+			# WA_AI_background.1 gated only on `is_ai = yes`, so a capitulated country kept QUEUEING
+			# projects while never assigning factories to them or progressing them - the queue was
+			# write-only. FRA on f9321934 sat on 14 projects byte-identical across 12 months
+			# (assigned_factories and progress frozen mid-value), 10 of them railways aimed at
+			# GER-held metropolitan France, with 21 civ factories idle and 49 controlled states
+			# including the whole Maghreb. `has_capitulated` answers "did this government fall", not
+			# "can this country build" - same category error R27 records for surrender_progress.
+			#
+			# Safety already in place for the newly-iterated population: Fix 34's controller test in
+			# WA_AI_PC_assign_factories refuses factories to any project whose target state is
+			# hostile-controlled, so the France-aimed fossils stay frozen rather than burning civ
+			# weeks; the Fix 41 aging lane then revalidates them and cancels what is obsolete, which
+			# is how the queue self-cleans. WA_AI_PC_complete_project_by_id applies the same
+			# controller test before spawning anything. `exists = yes` keeps annexed corpses out (the
+			# open question Fix 68 flagged as unverified) at the cost of one cheap trigger.
 			if = {
 				limit = {
 					is_ai = yes
-					has_capitulated = no
+					exists = yes
 				}
 
 				### AI Training Modifier System
+				# Still capitulation-gated: this trains divisions, which is not what a fallen
+				# government should be doing with the pulse.
 				if = {
-					limit = {
-						NOT = { has_dynamic_modifier = { modifier = WA_AI_training_modifier } }
+					limit = { has_capitulated = no }
+
+					if = {
+						limit = {
+							NOT = { has_dynamic_modifier = { modifier = WA_AI_training_modifier } }
+						}
+						add_dynamic_modifier = { modifier = WA_AI_training_modifier }
 					}
-					add_dynamic_modifier = { modifier = WA_AI_training_modifier }
+					WA_AI_update_training_modifier = yes
 				}
-				WA_AI_update_training_modifier = yes
 
 				# Dynamic factory allocation to projects
 				WA_AI_PC_assign_factories = yes
@@ -130,34 +158,13 @@ on_actions = {
 				# Update construction progress and complete finished projects
 				WA_AI_PC_update_project_progress = yes
 
-				### Railway building - with eligibility filters to reduce processing
+				### Railway building - with eligibility filters to reduce processing.
+				# Fix 75: the filter block that used to be inlined here now lives in
+				# WA_AI_PC_country_can_build_own_logistics (WA_AI_CONSTRUCTION_triggers.txt), terms
+				# and thresholds unchanged. It is the same judgement Fix 74's ally leg needs, and
+				# two hand-maintained copies of it were already listed as a drift risk on R46.
 				if = {
-					limit = {
-						# Higher peacetime industrial threshold (75 civs) - war uses lower threshold inside effect
-						OR = {
-							has_war = yes
-							num_of_civilian_factories > @WA_AI_PC_railway_MIN_CIVS_PEACE
-						}
-						# Skip minor countries unless at war or rich
-						OR = {
-							is_major = yes
-							has_war = yes
-							num_of_civilian_factories > @WA_AI_PC_railway_MINOR_CIV_THRESHOLD
-						}
-						# Minimum state count - skip tiny nations
-						num_of_controlled_states > @WA_AI_PC_railway_MIN_STATES
-						# Skip countries losing badly - UNLESS the war economy still works.
-						# surrender_progress measures VP loss, not capability: SOV crossed 30% in
-						# Oct 1942 with ~180 states and 300+ divisions and was locked out of railway
-						# building for the entire eastern war (until territorial recovery in 1945).
-						OR = {
-							surrender_progress < @WA_AI_PC_railway_MAX_SURRENDER
-							AND = {
-								num_of_civilian_factories > @WA_AI_PC_railway_MIN_CIVS_PEACE
-								num_of_controlled_states > @WA_AI_PC_railway_RECOVERY_MIN_STATES
-							}
-						}
-					}
+					limit = { WA_AI_PC_country_can_build_own_logistics = yes }
 					if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: on_weekly eligibility PASSED - calling WA_AI_PC_railway" }
 					WA_AI_PC_railway = yes
 				}
@@ -171,23 +178,65 @@ on_actions = {
 					}
 				}
 
-				### AI Force Concentration - weekly sector maintenance
-				# Eligibility lives in WA_AI_AIFC_should_select_sector; the effect no-ops (and clears any
-				# stale sector) when the country does not qualify. Switches: WA_AI_AIFC_triggers.txt.
-				# Note: this call site is already inside the is_ai = yes gate above.
+				### Offensive posture and lend-lease relief - both still capitulation-gated (Fix 75).
+				# Posture publishes an "attack now" verdict for front_control blocks and lend-lease
+				# pulls equipment from allies; neither is something a fallen government should be
+				# doing, and unlike PC neither has a controller test protecting it downstream.
+				if = {
+					limit = { has_capitulated = no }
+
+					### Offensive posture - weekly "should we execute battle plans" verdict
+					# Publishes WA_AI_MILITARY_posture / _posture_vs_<TAG>, consumed by front_control blocks.
+					# Eligibility lives in WA_AI_MILITARY_should_update_posture; the effect no-ops when the
+					# country does not qualify. Switches: WA_AI_MILITARY_posture_triggers.txt.
+					WA_AI_MILITARY_update_posture = yes
+
+					### Lend-lease surplus relief - pull a transfer from a hoarding ally
+					# ROOT = recipient; no-ops unless ROOT is starving (per archetype). Policy
+					# triggers live in WA_AI_LEND_LEASE_triggers.txt, effect in
+					# WA_AI_lend_lease_effects.txt; donors are required to be AI by the pair trigger.
+					WA_AI_LEND_LEASE_request_surplus_relief = yes
+				}
+			}
+
+			### AI Force Concentration - weekly sector maintenance
+			# Eligibility lives in WA_AI_AIFC_should_select_sector; the effect no-ops (and clears any
+			# stale sector) when the country does not qualify. Switches: WA_AI_AIFC_triggers.txt.
+			#
+			# FIX 68 (2026-08-14, campaign f9321934): this call used to sit inside the Priority
+			# Construction block above, which is gated `is_ai = yes` + `has_capitulated = no`. That made
+			# WA_AI_AIFC_core.txt's "not eligible -> clear sector" branch UNREACHABLE for exactly the
+			# population it was written for: a capitulated country was never iterated, so its sector could
+			# not age, could not be revalidated, and could not be cleared. It simply froze at whatever was
+			# selected the week before the capital fell. FRA carried its May-1940 sector (anchor = 34
+			# Wallonie, age = 4) byte-identical through SEVEN samples spanning 1942.6 -> 1946.8 while alive
+			# and controlling 50 states, and surfaced on checklist R39 leg 1 as a 5-division sector holder
+			# that Fix 56's `has_army_size` term could never reach. Annexed tags (DEN, SHA, SIC, PER, BRM
+			# on 02bd4445) show the same frozen sectors; whether THAT half is also fixed here depends on
+			# whether on_weekly iterates non-existent countries at all, which is UNVERIFIED - do not claim
+			# it without checking a save. Harmless either way: the tags do not exist and nothing reads them.
+			#
+			# Lifted to its own `is_ai = yes` block rather than deleting `has_capitulated = no` from the
+			# block above: that word is load-bearing for everything else in it - the AI training modifier,
+			# PC factory assignment, PC project progress, the railway queue, offensive posture and
+			# lend-lease relief would ALL newly run for every capitulated tag, a far larger blast radius
+			# than the defect being fixed. AIFC is the only one of the seven whose effect is DESIGNED to be
+			# entered while ineligible, so it is the only one that can safely move out.
+			#
+			# Cost for the newly-iterated tags is a failed cheap trigger (has_capitulated is the 3rd
+			# conjunct, ahead of every scope walk) plus an idempotent clear - four clear_array, two
+			# clear_variable - and an armour reconcile that finds empty books after the first pass. The
+			# expensive selection body is NOT reached: it lives behind the else branch.
+			#
+			# NOTE this does not give a capitulated country a sector - `has_capitulated = no` still stands
+			# in WA_AI_AIFC_should_select_sector, which is where that judgement belongs. It gives it a
+			# CLEARED one. If a campaign ever shows a capitulated-but-recovered major (a liberated France
+			# fielding a real army) that visibly wants a schwerpunkt, relax the term in the trigger file -
+			# not here.
+			if = {
+				limit = { is_ai = yes }
+
 				WA_AI_AIFC_update_sector = yes
-
-				### Offensive posture - weekly "should we execute battle plans" verdict
-				# Publishes WA_AI_MILITARY_posture / _posture_vs_<TAG>, consumed by front_control blocks.
-				# Eligibility lives in WA_AI_MILITARY_should_update_posture; the effect no-ops when the
-				# country does not qualify. Switches: WA_AI_MILITARY_posture_triggers.txt.
-				WA_AI_MILITARY_update_posture = yes
-
-				### Lend-lease surplus relief - pull a transfer from a hoarding ally
-				# ROOT = recipient; no-ops unless ROOT is starving (per archetype). Policy
-				# triggers live in WA_AI_LEND_LEASE_triggers.txt, effect in
-				# WA_AI_lend_lease_effects.txt; donors are required to be AI by the pair trigger.
-				WA_AI_LEND_LEASE_request_surplus_relief = yes
 			}
 		}
 		effect = {
