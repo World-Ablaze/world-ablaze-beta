@@ -8,3 +8,135 @@ WA_AI_PRODUCTION_carrier_planes_major = {
 	WA_AI_PRODUCTION_production_carrier_planes_base_ratios = yes
 	has_navy_size = { size > 3 unit = carrier }
 }
+
+# ============================================================================
+# Fix 66 - carrier-plane saturation brake
+# ============================================================================
+# WHY THIS EXISTS. Carrier-plane output is set ENTIRELY by the
+# equipment_production_min_factories floors in WA_AI_PRODUCTION_DEFAULT_cv_plane.txt,
+# and those floors are deck-blind. Measured on campaign f9321934 at 1944.6 AND 1946.8:
+# every carrier-fighter and carrier-naval-bomber line of ENG, JAP and USA ran at
+# requested = active = EXACTLY 8 factories - the additive sum of the base floor (2)
+# and the carrier-major floor (6) - at both dates. Six independent cells, one number.
+# Meanwhile USA's carrier fleet grew 4 -> 47 hulls and JAP's froze at 20. Same
+# production, opposite absorption:
+#
+#   1946.8   on deck   on land   land:deck   cv share of the whole air force
+#   JAP       1 380     8 619      6.25          75%   (92% of the land pile has NO mission)
+#   ENG         969     2 026      2.09          52%   (94% no mission)
+#   USA       4 040     1 800      0.45          36%
+#
+# The engine ALREADY sizes carrier-plane demand from deck capacity
+# (00_defines.lua:2796, WANTED_CARRIER_PLANES_PER_CARRIER_CAPACITY_FACTOR = 1.5,
+# minus the carrier planes already sitting in airwings - which includes the ones
+# parked on land). So a saturated country's engine demand is already ZERO and the
+# floor is the only thing still building. This brake removes the floor once carrier
+# aviation has clearly outgrown the decks.
+#
+# It deliberately does NOT touch unit_ratio. Per common/ai_strategy/documentation.info
+# (### UNIT RATIOS, AIR) land-based and carrier plane types are pooled COMPLETELY
+# SEPARATELY, and unit_ratio only splits an already-computed pool total between the
+# cv roles - it cannot raise the total and therefore cannot over-build. The
+# cv_fighter 150 / cv_naval_bomber 100 split from a5ea1fb84 stays as written.
+#
+# PER-ROLE ON PURPOSE. ENG's surplus is naval bombers (1 799 of its 2 026 land pile)
+# while its carrier fighters are genuinely scarce (227); a combined test would brake
+# the wrong half. Each role's floor is gated on that role's own saturation.
+#
+# THE BARS. Deck capacity in this mod measures 57-86 planes per hull (f9321934
+# 1946.8: JAP 1380/20, ENG 969/17, USA 4040/47 - all three have a land surplus, so
+# their decks are full and on-deck == capacity). Taking ~75/hull and the 150:100
+# unit_ratio split gives ~45 fighter and ~30 naval-bomber deck slots per hull. The
+# bars are set at 2x that (90 fighter / 60 naval-bomber per hull), i.e. well ABOVE
+# the engine's own 1.5x target, so the brake trips only on genuine surplus and never
+# on a fleet that is merely well supplied. Banded on hull count using each band's
+# UPPER bound, which biases every band towards NOT braking. Only upper bounds are
+# needed: every smaller band also applies to a small fleet, so the OR naturally
+# selects the tightest applicable bar.
+#
+# Against the measured data the bars brake exactly the right things:
+#   JAP (20 hulls, bars 3510/2340): fighters 4 159 TRIP, naval bombers 5 840 TRIP
+#   ENG (17 hulls, bars 1710/1140): fighters   727 keep, naval bombers 2 268 TRIP
+#   USA (47 hulls, bars 5400/3600): fighters 2 430 keep, naval bombers 3 310 keep
+# - which is the required shape: the one navy that is getting it right is untouched.
+#
+# FAILURE MODE IS SAFE BY CONSTRUCTION. If num_deployed_planes_with_type@ does not
+# resolve for these archetypes it reads 0 (the v4 nav_screens failure mode), 0 never
+# exceeds a bar, no clause fires, the brake never trips, and behaviour is EXACTLY
+# what it is today. It cannot empty a deck. The token is not a guess - the same
+# spelling on the same archetype is already live at common/decisions/ITA.txt:957 -
+# but it is not proven either, and WA_TLM_nav_cv_f / _n / _hulls exist to tell
+# "token read 0" apart from "brake worked". See checklist R43.
+#
+# has_navy_size uses `type = carrier` (the engine aggregate, as
+# WA_AI_CONFIG_needs_cv_planes does) rather than `unit = carrier`, so light carriers
+# count towards the hull band where the aggregate includes them. That is the
+# conservative choice: more hulls = a higher bar = less braking. None of the three
+# measured countries changes verdict either way.
+# ============================================================================
+
+WA_AI_PRODUCTION_carrier_planes_saturated_fighter = {
+	OR = {
+		AND = {
+			NOT = { has_navy_size = { size > 4 type = carrier } }
+			check_variable = { num_deployed_planes_with_type@cv_small_fighter_airframe > 360 }
+		}
+		AND = {
+			NOT = { has_navy_size = { size > 9 type = carrier } }
+			check_variable = { num_deployed_planes_with_type@cv_small_fighter_airframe > 810 }
+		}
+		AND = {
+			NOT = { has_navy_size = { size > 19 type = carrier } }
+			check_variable = { num_deployed_planes_with_type@cv_small_fighter_airframe > 1710 }
+		}
+		AND = {
+			NOT = { has_navy_size = { size > 39 type = carrier } }
+			check_variable = { num_deployed_planes_with_type@cv_small_fighter_airframe > 3510 }
+		}
+		check_variable = { num_deployed_planes_with_type@cv_small_fighter_airframe > 5400 }
+	}
+}
+
+WA_AI_PRODUCTION_carrier_planes_saturated_nav_bomber = {
+	OR = {
+		AND = {
+			NOT = { has_navy_size = { size > 4 type = carrier } }
+			check_variable = { num_deployed_planes_with_type@cv_small_naval_bomber_airframe > 240 }
+		}
+		AND = {
+			NOT = { has_navy_size = { size > 9 type = carrier } }
+			check_variable = { num_deployed_planes_with_type@cv_small_naval_bomber_airframe > 540 }
+		}
+		AND = {
+			NOT = { has_navy_size = { size > 19 type = carrier } }
+			check_variable = { num_deployed_planes_with_type@cv_small_naval_bomber_airframe > 1140 }
+		}
+		AND = {
+			NOT = { has_navy_size = { size > 39 type = carrier } }
+			check_variable = { num_deployed_planes_with_type@cv_small_naval_bomber_airframe > 2340 }
+		}
+		check_variable = { num_deployed_planes_with_type@cv_small_naval_bomber_airframe > 3600 }
+	}
+}
+
+# The four floor gates consumed by WA_AI_PRODUCTION_DEFAULT_cv_plane.txt.
+# Base = "has a deck at all"; major = "has a deck fleet the 2-factory floor cannot feed".
+WA_AI_PRODUCTION_carrier_planes_floor_fighter = {
+	WA_AI_PRODUCTION_production_carrier_planes_base_ratios = yes
+	WA_AI_PRODUCTION_carrier_planes_saturated_fighter = no
+}
+
+WA_AI_PRODUCTION_carrier_planes_floor_nav_bomber = {
+	WA_AI_PRODUCTION_production_carrier_planes_base_ratios = yes
+	WA_AI_PRODUCTION_carrier_planes_saturated_nav_bomber = no
+}
+
+WA_AI_PRODUCTION_carrier_planes_major_fighter = {
+	WA_AI_PRODUCTION_carrier_planes_major = yes
+	WA_AI_PRODUCTION_carrier_planes_saturated_fighter = no
+}
+
+WA_AI_PRODUCTION_carrier_planes_major_nav_bomber = {
+	WA_AI_PRODUCTION_carrier_planes_major = yes
+	WA_AI_PRODUCTION_carrier_planes_saturated_nav_bomber = no
+}
