@@ -1264,7 +1264,7 @@ NDefines.NAI.RECON_PLANES_STRATEGIC = 50                     	 					-- scale on 
 
 NDefines.NAI.AI_FRACTION_OF_FIGHTERS_RESERVED_FOR_INTERCEPTION = 0.0				-- Percentage of fighters we reserve for interception vs AS
 
-NDefines.NAI.DAYS_BETWEEN_AIR_PRIORITIES_UPDATE = 2									-- Amount of days between air ai updates priorities for air wings ( from 1 to N )
+NDefines.NAI.DAYS_BETWEEN_AIR_PRIORITIES_UPDATE = 5 --was 2							-- Amount of days between air ai updates priorities for air wings ( from 1 to N )
 
 NDefines.NAI.LAND_COMBAT_GUIDE_DISTANCE = 0.0										-- Distance within whch we'll care a bit more about sending planes regardless of whether our boiz are dying
 
