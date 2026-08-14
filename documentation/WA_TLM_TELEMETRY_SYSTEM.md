@@ -53,7 +53,6 @@ exactly the discoverability problem TLM removes):
 | --- | --- | --- | --- |
 | `wa_warbonds_retry_upgrades` | `common/decisions/_economy_fatigue.txt:3156` | R20 | no prefix, invisible to a `_dbg_` grep |
 | `global.WA_AI_invasions_migration_1_purged` | `WA_AI_MIGRATION_effects.txt:168` | R14 sub-probe | **global** — serializes near line ~4.96M of the save; a truncated scan misses it |
-| `AIFC-DIAG` log lines | `WA_AI_AIFC_core.txt:85,132`, `WA_AI_AIFC_helpers.txt:260,625,631` | R1 (local runs only) | log-based, useless on cloud saves; `:625` carries a "do not commit" comment that was committed — retire with R1 |
 
 Not save-visible (out of scope, fine as-is): the `_dbg_*` **temp** variables in
 `zz_debug_effects.txt` and `WA_AI_CONSTRUCTION_PRIORITY_core.txt` are log-formatting
@@ -301,11 +300,27 @@ per series — trivial at depth 44, but do not raise depth casually.
 | `WA_TLM_comp_armor_mech_pct_hist` | ring | quarterly, majors | R6 trend | v1 |
 | `WA_TLM_pc_aging_grants` | counter | on verified lane grant (weekly PC allocator, `WA_AI_PC_assign_factories`) | R26 (PC allocator health) | v2 |
 | `WA_TLM_pc_aging_reval_cancels` | counter | on revalidation-cancel (same site) | R26 | v2 |
+| `WA_TLM_pc_built_n` | counter | **at the spawn site** in `WA_AI_PC_add_finished_building_by_id`, gated on `_build_type` being inside the 1..16 range the effect's own ladder covers — NOT the monthly sampler | standing — the **success** half of the PC termination ledger. A building actually appeared | v14 |
+| `WA_TLM_pc_built_by_type^<code>` | counter, **indexed by building type** | same site | standing — "did the air bases ever finish" in one read. **Deliberately not zero-initialised**: an absent index means this country never completed that type, which is unambiguous because the zero-init'd `pc_built_n` beside it witnesses the family's presence. Codes are the `WA_AI_PC_building_type` set (2 = air_base, 4 = radar, 13 = railway, 14 = naval_base, …) | v14 |
+| `WA_TLM_pc_refused_n` | counter | **at the completion site** in `WA_AI_PC_complete_project_by_id`, in the `else` of the two spawn branches | standing — **the failure mode that had no fingerprint at all**: a project that reached progress ≤ 0, i.e. was fully paid for in civ-weeks, and was then denied its building and discarded. From outside it is indistinguishable from a completion | v14 |
+| `WA_TLM_pc_refused_ctrl_n` | counter | same site, subset | standing — the refusals caused by **control** of the target state, testing each branch's own controller rule (allied-buildable types accept faction/subject ground; factory types demand direct control). `_refused_n − _refused_ctrl_n` is therefore "friendly ground, no free building slot" | v14 |
+| `WA_TLM_pc_sweep_n` | counter | **at the sweep decision** in `WA_AI_PC_update_project_progress` (`@AI_PC_STALL_CANCEL_WEEKS` = 30) | standing — the counter whose absence forced checklist R19 to be held rather than retired. Everything added to `_cancel_projects_IDS` there is unconditionally ended by the `WA_AI_PC_cancel_projects` call below it | v14 |
+| `WA_TLM_pc_orphan_n` | counter | **after `end_project_by_id`** in the broken-project cleanup of `WA_AI_PC_update_project_progress` (`target_state = 0` or `cost ≤ 0`) | standing — bookkeeping corruption, as distinct from a strategic cancel | v14 |
+| `WA_TLM_pc_stale_n` | counter | **at the cancel decision** in `WA_AI_PC_validate_queued_provincial_projects` | standing — route-selector churn: a queued project whose target province left the strategy's current valid path set. **This is the reason the pre-v14 counters could not explain.** On `be18f9c7`, GER's railway queue fell 80 → 24 → 2 across 1944.6–1945.2 while `pc_aging_reval_cancels` moved 50 → 64 and no project ever reached the 30-week sweep bar (max observed stall 26) | v14 |
+| `WA_TLM_pc_lost_n` | counter | **at the cancel site** in `on_state_control_changed` (`WA_AI_misc_on_actions.txt`), written on the OLD controller, incremented by `_cancel_projects_IDS^num` immediately before the cancel call clears the array | standing — projects lost because the ground changed hands. Expected to dominate for any country losing territory, and previously invisible | v14 |
+| `WA_TLM_pc_peace_n` | counter | **after `end_project_by_id`** in the `on_peace` railway purge (Fix 5/19, same file) | standing — kept apart from `pc_stale_n` on purpose: a peace purge is correct behaviour clearing an obsolete frontline, a stale-path cancel is the selector changing its mind mid-war | v14 |
+| `WA_TLM_pc_queued_t^<project id>` | stamp, **indexed by project id** | **at the queue-write site** in `WA_AI_PC_start_project`; cleared with the slot in `WA_AI_PC_end_project_by_id` (ids are recycled, so the clear is load-bearing) | standing — the clock at which a project entered the queue, and **the only record of queue age anywhere in the system**. `WA_AI_PC_stall_weeks` is not a substitute: it resets to 0 every week a project is funded, so it is the current starvation streak, and the two diverge on exactly the projects worth asking about. Lives in the telemetry namespace rather than as a `wa_ai_pc_*` field precisely so that writing it may read `global.WA_TLM_clock` — a gameplay field fed from the clock would be gameplay reading telemetry (§3.1). Not zero-initialised (indexed); absent = slot free, or queued on a pre-v14 build. `savegame.py pc` prints it as `age_m` against `pc_last_t` | v14 |
+| `WA_TLM_pc_queue` / `_civs` / `_civs_avail` / `_assigned` | gauges | monthly, all AI (`WA_TLM_sample_pc`) | standing — queue depth, `num_of_civilian_factories`, `num_of_civilian_factories_available_for_projects`, `WA_AI_PC_assigned_factories_total`. **`_civs_avail` exists nowhere else**: the engine does not serialize it, so the allocation base was previously unrecoverable from any save | v14 |
+| `WA_TLM_pc_alloc_base` | gauge | same site | standing — `_civs_avail + _assigned`, the pool `WA_AI_PC_assign_factories` reconstructs before applying its fraction. Deliberately does **not** bake in the `@AI_PC_STABLE_BASE_FRACTION` floor or `@AI_PC_ALLOC_HARD_CAP_FRACTION` ceiling — both are functions of `pc_civs`, sampled beside it, and baking them in would hide the case where the floor is what is funding the queue | v14 |
+| `WA_TLM_pc_share_pct` | gauge (derived) | same site | standing — `100 × assigned / civs`, PC's share of the country's whole civilian industry | v14 |
+| `WA_TLM_pc_avail_share_pct` | gauge (derived) | same site | standing — `100 × assigned / alloc_base`, PC's share of what it was **allowed** to take. Read against the fraction in force that month (40, or `WA_AI_PC_override_max_factories_factor × 100` while its country flag is live — `savegame.py pc` prints which): at the fraction = pool-bound; well under = the fill found no eligible project; over = the stable-base floor is carrying the queue | v14 |
+| `WA_TLM_pc_last_t` | stamp | monthly, all AI (written with the family's widest gauges, never inside the major gate) | `pc_*` absence contract | v14 |
+| `WA_TLM_pc_hist_t` + `_pc_queue_hist` / `_pc_share_pct_hist` / `_pc_avail_share_pct_hist` | ring + **own** axis | quarterly, `WA_AI_CONFIG_is_major_country` | standing — PC trend inside one save. Own axis rather than `WA_TLM_hist_t`: the composition family happens to use the same gate today, and sharing an axis would make that a permanent coupling (§4, risk ii) | v14 |
 | `WA_TLM_r47_lrange_n` | counter | monthly, all AI (`WA_AI_EQUIPMENT_update_context_flags`) | R31 | v3 |
 | `WA_TLM_r47_lrange_first_t` / `_last_t` | stamps | same site | R31 | v3 |
 | `WA_TLM_r47_alu_large_n` | counter | monthly, all AI (same site) | R32 | v3 |
 | `WA_TLM_r47_alu_large_first_t` / `_last_t` | stamps | same site | R32 | v3 |
-| `WA_TLM_nav_ships` / `_subs` | gauges | monthly, any AI with a hull | R36, convoy-war questions | v4 |
+| `WA_TLM_nav_ships` / `_subs` | gauges (`num_ships` / `num_ships_with_type@submarine`) | monthly, any AI with a hull | R36, convoy-war questions. **`_subs` is INCLUSIVE of cruiser submarines** — `submarine` is an engine aggregate as well as a sub-unit def name, and the aggregate wins (settled `be18f9c7` 2026-08-14: SOV 101 = 93 cruiser + 8 plain, GER 18 = 14 + 4, both matching `r64_csubs` exactly). Plain hulls = `_subs` − `r64_csubs`; never read `_subs` as the plain-boat count | v4 |
 | `WA_TLM_nav_screens` | gauge (destroyer + frigate + light_cruiser) | monthly, any AI with a hull | R36 | v4, **valid from v5** |
 | `WA_TLM_nav_convoys` | gauge (`num_equipment@convoy`) | monthly, any AI with a hull | R36 | v4, **valid from v5, unverified until F9** |
 | `WA_TLM_nav_conv_threat` | gauge (engine 0-1, stored ×100) | monthly, any AI with a hull | R36 | v4 |
@@ -320,12 +335,14 @@ per series — trivial at depth 44, but do not raise depth casually.
 | `WA_TLM_post_exec_xr_lt100` / `_lt50` / `_lt25` | counters | same site | **cumulative and nested** (lt25 ⊂ lt50 ⊂ lt100); where a level-1 veto threshold should sit, if one is wanted | v6 |
 | `WA_TLM_post_grind_n` | counter | same site, level-2 observations | context: how often the careful mode is actually reached | v6 |
 | `WA_TLM_post_last_t` | stamp | same site, written on **every** observation whatever the level | `post_*` absence contract | v6 |
-| `WA_TLM_r64_csubs` | gauge (`num_ships_with_type@cruiser_submarine`) | monthly, any AI with a hull (`WA_TLM_sample_navy`, same gate and `nav_last_t` stamp as the `nav_*` family) | R41 — read against `WA_TLM_nav_subs`; **GER is the built-in control**, it has been on the cruiser role since before Fix 64, so GER = 0 too means a bad token, not a failed fix | v7 |
+| `WA_TLM_r64_csubs` | gauge (`num_ships_with_type@cruiser_submarine`) | monthly, any AI with a hull (`WA_TLM_sample_navy`, same gate and `nav_last_t` stamp as the `nav_*` family) | R41 — read against `WA_TLM_nav_subs`, which it is a **SUBSET of, not a sibling series**: `nav_subs` counts these hulls too (settled `be18f9c7` 2026-08-14), so the plain-boat count is `nav_subs − r64_csubs`. **GER is the built-in control**, it has been on the cruiser role since before Fix 64, so GER = 0 too means a bad token, not a failed fix | v7 |
 | `WA_TLM_r8_uk_air_q_n` | counter | **per verified queue** in `WA_AI_uk_air_queue_site` (`WA_AI_CONSTRUCTION_PRIORITY_strategies.txt`), on the same queue-growth gate as `wa_ai_uk_air_dbg_started` — NOT the monthly sampler. ENG/USA only in practice | R8 concentration leg — **denominator** | v8 |
 | `WA_TLM_r8_uk_air_rank_sum` | counter (aggregate) | same site, only when rank > 0 | R8 — **mean rank = `_rank_sum / (_q_n − _fallback_n)`**. 1 = Kent … 11 = Cornwall, so LOWER is more concentrated in the south. Pre-Fix-51 behaviour (random among the least-developed states) would tend to 6.0 | v8 |
 | `WA_TLM_r8_uk_air_rank_max` | gauge (running max, `check_variable >` guard) | same site, only when rank > 0 | R8 — how far north the build ever reached. Rises only as southern ranks cap out or run out of building slots | v8 |
 | `WA_TLM_r8_uk_air_fallback_n` | counter | same site, only when rank = 0 (queued by the unordered fallback tail) | R8 — **drift alarm.** Non-zero means either every ranked state was capped/unbuildable, or `WA_AI_uk_air_hosting_state` and `global.WA_AI_uk_air_priority_states` disagree. Deliberately excluded from `_rank_sum` / `_rank_max` | v8 |
 | `WA_TLM_r8_uk_air_last_t` | stamp | same site, every verified queue | R8 absence contract + persistence (a `_q_n` with no `_last_t` movement is a dead builder, not a satisfied one) | v8 |
+| `WA_TLM_r8_air_lane_grants` | counter | **at the reservation grant** in `WA_AI_PC_assign_factories` (`WA_AI_CONSTRUCTION_PRIORITY_core.txt`), one per WEEK the Fix 78 lane actually assigned ≥ 1 factory to a band-300 air-base project; chain-latched against re-entry re-grants exactly like `pc_aging_grants`. Not the monthly sampler | R8 Fix-78 leg — **counts funded WEEKS, not factories.** It exists because the snapshot gauge `wa_ai_pc_air_factories_assigned` under-samples at monthly cadence: `be18f9c7` read ENG **0 in 20 of 30 months** while whatever funding did occur fell between saves. `_grants = 0` across a deficit window is unambiguous starvation; a non-zero `_grants` with a 0 snapshot is normal | v15 |
+| `WA_TLM_r8_air_lane_last_t` | stamp | same site, every verified grant | R8 Fix-78 leg — persistence. `_grants` climbing with a frozen `_last_t` cannot happen (same write); a frozen `_last_t` while the deficit stands means the lane stopped being reached — check `WA_AI_PC_air_basing_reserve` is still being refreshed | v15 |
 | `WA_TLM_r44_freeze_n` | counter | **at the flag write** in `WA_AI_LANDING_stamp_freeze_west` / `_east` (`WA_AI_LANDING_effects.txt`) — one per stamped country per landing operation, NOT the monthly sampler. Written on the invader and on every AI faction member | R44 — **denominator**; `_n = _west_n + _east_n` by construction | v10 |
 | `WA_TLM_r44_freeze_west_n` / `_east_n` | counters | same site | R44 — **the theatre split is the point.** A Pacific-fighting country whose `_east_n` is large is a country a blanket faction-wide freeze would have stalled; comparing USA's `_west_n` against `_east_n` is the direct measurement of the cost the theatre scoping avoids | v10 |
 | `WA_TLM_r44_freeze_first_t` / `_last_t` | stamps | same site | R44 — persistence. `_first_t` is written under an `_n = 1` guard, so read `_n > 0` before trusting it (a stamp at clock 0 is a legitimate 0) | v10 |
@@ -333,7 +350,10 @@ per series — trivial at depth 44, but do not raise depth casually.
 | `WA_TLM_r74_ally_rail_ally_n` | counter | same site, only when the target state is controlled by neither ROOT nor a subject of ROOT | R46 — **the metric Fix 74 exists for.** `_ally_n <= _routes_n` by construction. `_routes_n > 0` with `_ally_n = 0` means the selector widened but no ally frontline ever qualified — a different failure from `_routes_n = 0` (no rail at all) | v11 |
 | `WA_TLM_r74_ally_rail_first_t` / `_last_t` | stamps | same site | R46 — persistence and timing. `_first_t` is written under a `= 0` guard, so read `_routes_n > 0` before trusting it. `_last_t` frozen while a front is live is the "selector went quiet" alarm | v11 |
 | `WA_TLM_nav_cv_f` / `_n` | gauges (`num_deployed_planes_with_type@cv_small_fighter_airframe` / `@cv_small_naval_bomber_airframe`) | monthly, any AI with a hull (`WA_TLM_sample_navy`, same gate and `nav_last_t` stamp as the `nav_*` family) | R43 — the two quantities Fix 66's saturation gate compares, sampled at the values the gate sees. **Both 0 on a carrier major in a war year means the token is bad and the brake was never live** — nothing about Fix 66 may be scored (the v4 `nav_screens` failure mode, same class of token) | v9 |
-| `WA_TLM_nav_cv_hulls` | gauge (`num_ships_with_type@carrier`) | same site | R43 — the hull count Fix 66 bands on, and the independent check on whether the `carrier` **aggregate** includes light carriers: compare against `savegame.py navy`'s `carrier` + `light_carrier` split (JAP is the discriminating case, 15 + 5) | v9 |
+| `WA_TLM_nav_cv_hulls` | gauge (`num_ships_with_type@carrier`) | same site | R43 — the hull count Fix 66 bands on. **SETTLED `be18f9c7` 2026-08-14: the `carrier` aggregate DOES include light carriers** — JAP 21 = 16 fleet + 5 light, ENG 20 = 18 + 2, USA 52 = 52 + 0. So the bands count a light deck at the weight of a fleet deck and are correspondingly loose for a light-heavy fleet (under-brakes, the safe direction) | v9 |
+| `WA_TLM_r31_lrvar_t` | **invocation** stamp | **at the event site**, country event `sov_armor.980` (`events/WA_AI_SOV.txt`), once per campaign on the day SOV's `create_equipment_variant` for the long-range La-5FN runs — SOV only, NOT the monthly sampler | R31 — **only meaningful read against the `equipments={}` registry, because `create_equipment_variant` returns nothing.** `0` + no "Lavochkin La-5FN (long range)" entry = the event never fired (trigger/tech problem, debug the event); `> 0` + no entry = the effect was **rejected by the engine** (R31 branch (a) — the `ordnance_equipment` / `allowed_types` question in the shared equipment files, not this site); `> 0` + entry present = the design exists and the verdict moves to the selection layer. `0` is unambiguous as "never" here: the gating tech `sov_fighter_multirole_ad_tech_7` is a 1943 tech, so clock 0 is unreachable | v12 |
+| `WA_TLM_r48_prebuild_synth_n` | counter | **one write site** — the `WA_AI_C.10` refinery `else_if` (`events/WA_AI_construction.txt`), verified by `break = 1` after `WA_AI_queue_REF`. NOT the monthly sampler. A second site in `WA_AI_build_refinery_resource_shortage_rubber` was prototyped and removed pre-ship (no measurable beneficiary — ENG, GER and ITA never qualify for the lane at all; reason recorded at that call site), so every increment is unambiguously one C.10 pre-build | R48 — **the whole point is that this counter can only move while `resource@rubber >= 0`.** Any non-zero reading is a refinery started *before* the shortage. Read it against `savegame.py buildings <TAG> --match refinery`: `n > 0` with the park still at 0 means construction is in flight, not that the lane failed | v13 |
+| `WA_TLM_r48_prebuild_synth_first_t` / `_last_t` | stamps | same sites | R48 — **timing is the pass criterion, not the count.** `_first_t` must land *before* the country's rubber balance first goes negative; compare it against the `resources` sweep. Written under a `= 0` guard, so read `_n > 0` before trusting `_first_t` (clock 0 = 1936.1 is a legitimate value). `_last_t` frozen far below `_first_t + ` the pre-war span means the lane armed once and went quiet | v13 |
 
 **v4 naval readings are artefacts — do not score them.** `nav_screens` and
 `nav_convoys` were written from `num_ships_with_type@screen_ship` and
@@ -459,6 +479,87 @@ every other archetype, but no in-game reading exists yet. Boot check: launch to
 1936, and on any country with convoys confirm `wa_tlm_nav_convoys > 0` while
 `wa_tlm_nav_ships > 0`. If it reads 0, the archetype target failed; drop the metric
 and its registry row rather than shipping a second silent zero.
+
+## 6c. Priority construction (standing, v14)
+
+**The split with `savegame.py pc` is the whole design, and it runs the opposite way
+from §6b.** The PC queue *is* fully readable from a savegame — it is a country-scope
+array (`wa_ai_pc_queue`) plus ~11 parallel indexed families keyed by project id — and
+the `pc` subcommand decodes it per project, labelling building-type and priority-band
+codes by name. So the queue snapshot needs no telemetry, and duplicating it here would
+be pure cost. This family covers only what a save physically cannot hand over:
+
+- **The allocation base.** `num_of_civilian_factories_available_for_projects` is not
+  serialized anywhere in a save. A save can approximate total civ industry by summing
+  `industrial_complex` levels over controlled states — the `pc` command does — but that
+  is an upper bound on `num_of_civilian_factories` and says nothing about how much of it
+  the *vanilla* construction queue had already absorbed, which is exactly the number
+  `WA_AI_PC_assign_factories` multiplies by `@AI_PC_ALLOC_FRACTION`. "PC is using 7% of
+  GER's civ industry" and "PC took its full 40% of what it was offered" are both true of
+  1944.6 on `be18f9c7`, and only the second one is actionable. `pc_civs_avail`,
+  `pc_alloc_base` and `pc_avail_share_pct` are that reading.
+- **Why a project left the queue.** A savegame shows what is in the queue, never what
+  used to be. Departures were a single unattributable number: on `be18f9c7` GER's railway
+  queue fell 80 → 24 → 2 across 1944.6–1945.2 while the only two counters that existed
+  (`pc_aging_grants`, `pc_aging_reval_cancels`) moved by 14 combined, and the stall
+  counters never reached the 30-week sweep bar (max observed 26) — so neither of the two
+  documented cancel paths explains ~90% of it. The termination ledger closes this: eight
+  counters, one per exit path, and their **sum is the total number of departures** because
+  between them they cover every caller of `WA_AI_PC_end_project_by_id` and
+  `WA_AI_PC_cancel_projects` outside the `WA_TEST_` harness. A gap between that sum and
+  the observed shrinkage means a new exit path shipped without its counter.
+- **How long a project has been queued.** The queue records no entry time. `stall_weeks`
+  looks like an age and is not one — it resets to 0 every week a project receives factories
+  — so `pc_queued_t` is added as a per-slot stamp. It is the one metric here that is
+  per-project rather than aggregate, and it earns that because the aggregate form of the
+  question ("median age of the railway queue") is computed *from* it at read time, whereas
+  the reverse is impossible.
+- **A trend inside one save.** Monthly saves each carry a queue snapshot, so a multi-save
+  `pc` sweep already works — it just costs a ~100 MB streaming parse per save per question.
+  The quarterly ring collapses that to one read.
+
+Two readings this family deliberately does **not** attempt. It does not count *queue
+additions* — `WA_AI_PC_start_project` declines silently on `queue_max`, same-type dedup
+and duplicate-province tests, and instrumenting "attempted" against "accepted" there
+would re-run the `wa_ai_uk_air_dbg_started` over-count (§2.1) at thirty call sites; the
+queue's composition is readable directly instead. And it does not carry a per-type
+factory breakdown, because `savegame.py pc` already prints assigned factories grouped by
+building type from the queue itself.
+
+**Standing, not probes, under §3.8 criteria 2 and 3.** Queue depth, factory share and
+termination causes are system health, not one fix's mechanism; and the 2026-08-14 scoring
+session established the extraction cost — the queue-collapse question, the ENG air-base
+starvation question (R8/R23) and the R19 stall-artefact question each cost a bespoke
+multi-save parse, and R19 has been held at 3/3 rather than retired specifically because
+its criterion (4) was not computable from a save.
+
+**Cost.** Eight variable reads, two divides, and quarterly three array pushes for majors
+— cheaper than the composition ladder next door (26 `has_army_size` evaluations). The
+termination counters are one `add_to_variable` each on paths that only run when a project
+actually leaves the queue.
+
+**Precise statement of the loop cost, because the earlier blanket claim ("nothing is written
+inside the per-project queue loops") was false and a future author would have relied on it.**
+Three of the eight termination counters *are* written inside a loop: `pc_sweep_n`
+(`WA_AI_CONSTRUCTION_PRIORITY_core.txt:947`, inside `for_each_loop = { array =
+WA_AI_PC_queue }`), `pc_stale_n` (`:1166`, same array) and `pc_orphan_n` (`:800`, inside
+`for_each_loop = { array = _orphan_project_ids }`). Each executes only on its loop's rare
+cancel branch, so the measured cost is negligible — but the family is internally
+inconsistent, since `pc_lost_n` (`WA_AI_misc_on_actions.txt:449`) takes the aggregate form
+`add_to_variable = { … = <array>^num }` after the loop. **If you add a ninth counter, use the
+aggregate form**, and prefer converting these three to it whenever this code is next touched
+for another reason.
+
+**F9 boot check owed, and cheap — there is no token risk here.**
+`num_of_civilian_factories` and `num_of_civilian_factories_available_for_projects` are
+both read by `WA_AI_PC_assign_factories` itself, so a bad token would have broken the
+allocator years ago; the indexed-counter write is the same idiom as
+`WA_AI_PC_state_type_projects^_project_building_type`. Boot check: launch to 1936 and
+confirm on any AI country that `wa_tlm_pc_civs > 0` and `wa_tlm_pc_last_t` is present.
+**Second signal for the first instrumented campaign:** `pc_built_by_type^13` against the
+growth in `savegame.py buildings TAG --match rail`, and `pc_avail_share_pct` against the
+`alloc override` line `savegame.py pc` prints for the same month — a country with the
+override flag live should read near 50–60, not 40.
 
 ## 7. Adding a metric — checklist for authors
 
