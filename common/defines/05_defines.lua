@@ -1077,7 +1077,7 @@ NDefines.NAI.CANCEL_INVASION_COMBAT_MIN_DURATION_HOURS = 720    					-- Only all
 
 NDefines.NAI.MISSING_CONVOYS_BOOST_FACTOR = 0.0										-- The more convoys a country is missing, the more resources it diverts to cover this.						-- If the enemy has a navy at least these many times stronger that the own, don't bother invading
 
-AI_TASKFORCE_REQUIRED_RESERVE_RATIO = 0.05	-- Fraction of required TF optimal composition held in reserve for reinforcement (rounded up per type)
+NDefines.NAI.AI_TASKFORCE_REQUIRED_RESERVE_RATIO = 0.05	-- Fraction of required TF optimal composition held in reserve for reinforcement (rounded up per type)
 -- Fix 53b (2026-08-13, checklist R36): the four escort SCORE terms below were all
 -- zeroed, so a convoy-escort mission could score points from nothing except transient
 -- region convoy danger, while patrol kept its full vanilla score (WA does not override
