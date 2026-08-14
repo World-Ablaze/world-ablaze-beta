@@ -998,6 +998,78 @@ country_event = {
 			WA_AI_queue_REF = yes
 		}
 
+		# Fix 76 (campaign be18f9c7) - PROACTIVE synthetic-rubber lane.
+		#
+		# Strictly additive: the reactive branch above is byte-unchanged and this
+		# else_if can only run when that branch did NOT. The two are mutually
+		# exclusive at the trigger level too - the reactive branch needs
+		# `resource@rubber < 0`, the proactive trigger needs `resource@rubber > -1`
+		# (WA_AI_CONSTRUCTION_should_pre_build_synth_rubber,
+		# common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt, which is where
+		# every behavioural switch for this lane lives - change it there, not here).
+		#
+		# WHY THIS HOST, and why it is the ONLY one. On be18f9c7 the USA built all 41
+		# of its synthetic refinery levels through this branch and ZERO through priority
+		# construction (no type-8 project in its PC queue at 1940.6, 1943.6 or 1946.7),
+		# and `wa_ai_overext_dbg_mic_redirects_refinery` was absent on all five majors
+		# for the whole 10.5-year campaign. A mirror branch in
+		# WA_AI_build_refinery_resource_shortage_rubber was prototyped for ENG and
+		# removed: ENG never satisfies the trigger at all (it owns Malaya, so it imports
+		# zero rubber for as long as its balance is positive). Reason recorded in full at
+		# that call site.
+		#
+		# ONE level per firing, against the reactive branch's two: this is speculative
+		# capacity bought before the shortage exists, so it ramps rather than binges.
+		# C.10's own re-arm timer (WA_AI_construction_timer, 75-1000 days) is the
+		# cadence bound; the trigger's self-limiting import term is the volume bound.
+		else_if = {
+			limit = {
+				WA_AI_CONSTRUCTION_should_pre_build_synth_rubber = yes
+
+				# A SPECULATIVE build must never demolish existing industry. When
+				# WA_AI_queue_REF's slot loop finds nothing it falls through to a
+				# MIC-replacement leg that removes an arms_factory to make room
+				# (WA_AI_CONSTRUCTION_queue_functions.txt). That trade is defensible for
+				# the REACTIVE branch above - the country is already short - but not for a
+				# refinery bought years before the shortage. Requiring a genuinely free
+				# site up front keeps the pre-build lane out of that leg entirely. Same
+				# terms as the loop's own limit; the any_of_scopes + WA_AI_available_SHARED
+				# idiom is the one the MIC->CIC legs already use in
+				# WA_AI_CONSTRUCTION_PRIORITY_strategies.txt.
+				any_of_scopes = { array = controlled_states
+					is_core_of = ROOT
+					WA_AI_available_REF = yes
+					WA_AI_available_SHARED = yes
+				}
+			}
+
+			# `break` is caller-managed shared temp state here: WA_AI_queue_REF's
+			# for_each_scope_loop uses it as its break variable AND reads it after the
+			# loop, but never zeroes it on entry. Zeroing is therefore REQUIRED for the
+			# call to do anything (a stale 1 breaks the loop immediately), and the incoming
+			# value is saved and restored so nothing later in this event can see a value it
+			# would not have seen without this branch.
+			set_temp_variable = { _r48_break_in_ = break }
+			set_temp_variable = { break = 0 }
+			WA_AI_queue_REF = yes
+
+			# tlm: WA_TLM_r48_prebuild_synth_n / _first_t / _last_t - consumer: checklist R48.
+			# Incremented only on VERIFIED effect: WA_AI_queue_REF sets break = 1 only after
+			# an add_building_construction actually ran, never on entry.
+			if = { limit = { check_variable = { break = 1 } }
+				add_to_variable = { WA_TLM_r48_prebuild_synth_n = 1 }
+				if = { limit = { check_variable = { WA_TLM_r48_prebuild_synth_first_t = 0 } }
+					set_variable = { WA_TLM_r48_prebuild_synth_first_t = global.WA_TLM_clock }
+				}
+				set_variable = { WA_TLM_r48_prebuild_synth_last_t = global.WA_TLM_clock }
+
+				if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: pre-building synthetic refinery ahead of rubber shortage" }
+			}
+
+			# restore - this branch must be invisible to everything downstream
+			set_temp_variable = { break = _r48_break_in_ }
+		}
+
 		# else_if = { limit = { fuel_ratio < 0.25 NOT = {is_in_faction_with = USA}}
 
 		# 	WA_AI_queue_REF = yes

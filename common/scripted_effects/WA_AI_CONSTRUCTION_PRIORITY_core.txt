@@ -1,4 +1,4 @@
-############################################################################################################
+﻿############################################################################################################
 #	World Ablaze AI mod - Priority Construction System - Core Module
 #	Project management system: queue, factory assignment, progress tracking, completion
 ############################################################################################################
@@ -561,15 +561,113 @@ WA_AI_PC_assign_factories = {
 		}
 	}
 
+	# Fix 78: AIR-BASING RESERVATION LANE - one slot for the air-basing band, ahead of the
+	# rail fill, only while WA_AI_PC_air_basing_reserve is set (30-day flag, refreshed by
+	# WA_AI_build_uk_air_hosting_capacity's deficit branch and by nothing else).
+	#
+	# The starvation this exists for, measured on campaign be18f9c7: ENG's band-300 air-base
+	# projects held 0 factories in 20 of 30 sampled months of 1942.1-1944.6 (and its
+	# dbg_started counter froze at 17 for nine straight months), because the sorted fill
+	# spends the whole pool on band-1000 rails and the Fix 41 lane serves ONE project a week
+	# across the entire queue - a starving air project waits ~12+ weeks for its lane turn.
+	# The single month ENG's rail queue was short (1943.5, one rail queued), its air projects
+	# got 53 factories - the pool was never the constraint, the ordering was. Meanwhile the
+	# 3-slot UK budget stayed occupied by the unfunded projects, so no new sites could be
+	# queued either: funding starvation and ordering throughput are the same defect.
+	#
+	# Why not raise the air band above rail instead: the Fix 41 band table deliberately keeps
+	# rail-war above air-basing (the livelock that table fixed must stay fixed). A reservation
+	# of at most ONE 20-civ slot leaves the band order intact for everything else, mirrors the
+	# proven Fix 41 lane machinery (chain-latched selection, per-pass re-grant), and
+	# self-releases within 30 days of the deficit closing.
+	#
+	# Selection: first type-2 project above the strategic band (priority > 250) in the
+	# already-sorted queue = the highest-priority air-basing project. Same liveness and
+	# Fix 34 controller tests as the fill; skips the Fix 41 lane's pick (already served).
+	if = { limit = { NOT = { check_variable = { _pc_air_lane_selected_ = 1 } } }
+		set_temp_variable = { _pc_air_lane_selected_ = 1 }
+		set_temp_variable = { _pc_air_lane_proj_ = -1 }
+		if = {
+			limit = {
+				has_country_flag = WA_AI_PC_air_basing_reserve
+				check_variable = { available_factories_ > 0 }
+			}
+			for_each_loop = { array = WA_AI_PC_queue value = _air_lane_scan_
+				if = {
+					limit = {
+						check_variable = { _pc_air_lane_proj_ < 0 }
+						NOT = { check_variable = { _air_lane_scan_ = _pc_lane_proj_ } }
+						check_variable = { WA_AI_PC_building_type^_air_lane_scan_ = 2 }
+						check_variable = { WA_AI_PC_priority^_air_lane_scan_ > 250 }
+						NOT = { check_variable = { WA_AI_PC_target_state^_air_lane_scan_ = 0 } }
+						check_variable = { WA_AI_PC_progress^_air_lane_scan_ > 0 }
+						var:WA_AI_PC_target_state^_air_lane_scan_ = {
+							CONTROLLER = {
+								OR = {
+									tag = ROOT
+									is_in_faction_with = ROOT
+									is_subject_of = ROOT
+									ROOT = { is_subject_of = PREV }
+								}
+							}
+						}
+					}
+					set_temp_variable = { _pc_air_lane_proj_ = _air_lane_scan_ }
+				}
+			}
+		}
+	}
+
+	# Fix 78: reservation GRANT - every pass, same re-entry contract as the Fix 41 grant
+	# above (a re-entry resets all assignments; without the re-grant the reserved project
+	# would be silently stripped back to 0 and the week voided).
+	if = {
+		limit = {
+			NOT = { check_variable = { _pc_air_lane_proj_ < 0 } }
+			check_variable = { available_factories_ > 0 }
+			is_in_array = { WA_AI_PC_queue = _pc_air_lane_proj_ }
+			NOT = { check_variable = { WA_AI_PC_target_state^_pc_air_lane_proj_ = 0 } }
+			check_variable = { WA_AI_PC_progress^_pc_air_lane_proj_ > 0 }
+		}
+		set_temp_variable = { assign_amount = available_factories_ }
+		clamp_temp_variable = { var = assign_amount min = 1 max = 20 }
+		round_temp_variable = assign_amount
+		set_variable = { WA_AI_PC_assigned_factories^_pc_air_lane_proj_ = assign_amount }
+		add_to_temp_variable = { _new_total = assign_amount }
+		subtract_from_temp_variable = { available_factories_ = assign_amount }
+		# Fix 38 accumulator: type 2 by construction of the selection above
+		add_to_variable = { WA_AI_PC_air_factories_assigned = assign_amount }
+		# tlm: r8_air_lane_grants / _first_t / _last_t - counter + stamp, ONLY when the
+		# reservation actually assigned >= 1 factory (the set_variable above is the verified
+		# effect); latched so re-entry re-grants of the same weekly grant are not recounted,
+		# same shape as pc_aging_grants - consumer: checklist R8 (Fix 78 leg). Retire with it.
+		if = { limit = { NOT = { check_variable = { _pc_air_lane_counted_ = 1 } } }
+			set_temp_variable = { _pc_air_lane_counted_ = 1 }
+			add_to_variable = { WA_TLM_r8_air_lane_grants = 1 }
+			# _first_t is stamped once (0 = never granted; the clock is >= 1 from 1936.2, so the
+			# init value cannot collide with a real reading). R8 Fix-78 leg asks WHEN the lane
+			# started funding against ENG's 1942.1-1944.6 deficit window, not just how often.
+			if = { limit = { check_variable = { WA_TLM_r8_air_lane_first_t = 0 } }
+				set_variable = { WA_TLM_r8_air_lane_first_t = global.WA_TLM_clock }
+			}
+			set_variable = { WA_TLM_r8_air_lane_last_t = global.WA_TLM_clock }
+		}
+		if = { limit = { has_country_flag = WA_AI_construction_logging }
+			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC AIR LANE: proj=[?_pc_air_lane_proj_] granted [?assign_amount] factories ahead of the fill"
+		}
+	}
+
 	# Assign to projects from top of queue
 	# Fix 41: the laned project (_pc_lane_proj_, -1 when no lane) is excluded - it was
 	# already served above and must not be double-assigned (the set_variable here would
 	# otherwise overwrite its grant and double-count it in _new_total).
+	# Fix 78: the air-reservation project is excluded for the same reason.
 	for_each_loop = { array = WA_AI_PC_queue value = _project_id break = _assign_break
 		if = {
 			limit = {
 				check_variable = { available_factories_ > 0 }
 				NOT = { check_variable = { _project_id = _pc_lane_proj_ } }
+				NOT = { check_variable = { _project_id = _pc_air_lane_proj_ } }
 				# Check state is still valid
 				NOT = { check_variable = { WA_AI_PC_target_state^_project_id = 0 } }
 				# Check progress remaining
@@ -702,6 +800,10 @@ WA_AI_PC_update_project_progress = {
 				log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC CLEANUP: removing broken proj=[?_project_id] state=[?_dbg_state] cost=[?_dbg_cost]"
 			}
 			WA_AI_PC_end_project_by_id = yes
+			# tlm: pc_orphan_n - counter, one per BROKEN project removed (target_state 0
+			# or cost <= 0). Written AFTER end_project_by_id, so it counts removals and not
+			# candidates - consumer: standing (the PC termination ledger)
+			add_to_variable = { WA_TLM_pc_orphan_n = 1 }
 		}
 	}
 	if = {
@@ -843,6 +945,12 @@ WA_AI_PC_update_project_progress = {
 					check_variable = { WA_AI_PC_assigned_factories_total > 0 }
 				}
 				add_to_temp_array = { _cancel_projects_IDS = _project_id }
+				# tlm: pc_sweep_n - counter, one per project the week-30 stall sweep cancels.
+				# Everything added to _cancel_projects_IDS here is unconditionally ended by
+				# the WA_AI_PC_cancel_projects call a few lines below (its ^num > 0 guard is
+				# satisfied by this very add), so this is the cancel, not an attempt at one -
+				# consumer: standing (the PC termination ledger)
+				add_to_variable = { WA_TLM_pc_sweep_n = 1 }
 			}
 		}
 		else = {
@@ -923,6 +1031,44 @@ WA_AI_PC_complete_project_by_id = {
 				# Spawn the building
 				WA_AI_PC_add_finished_building_by_id = yes
 			}
+			# tlm: pc_refused_n / pc_refused_ctrl_n - counters, one per project that reached
+			# progress <= 0 (fully PAID FOR) and was then denied its building by the two tests
+			# above, after which WA_AI_PC_end_project_by_id discards it anyway. These are the
+			# silent failure the whole system had no fingerprint for: from outside, a refused
+			# project is indistinguishable from one that completed. The _ctrl_n subset repeats
+			# each branch's OWN controller test so the split is exact - a strategic building
+			# refused on allied ground is a slot problem, while a factory-type building on the
+			# same ground is a control problem - and the remainder (_refused_n - _refused_ctrl_n)
+			# is therefore "friendly ground, no free building slot".
+			# Runs only on refusals, so the duplicated trigger costs nothing in the common case.
+			# consumer: standing (the PC termination ledger)
+			else = {
+				ROOT = { add_to_variable = { WA_TLM_pc_refused_n = 1 } }
+				if = {
+					limit = {
+						OR = {
+							AND = {
+								check_variable = { _can_build_in_allied = 1 }
+								NOT = {
+									CONTROLLER = {
+										OR = {
+											tag = ROOT
+											is_in_faction_with = ROOT
+											is_subject_of = ROOT
+											ROOT = { is_subject_of = PREV }
+										}
+									}
+								}
+							}
+							AND = {
+								check_variable = { _can_build_in_allied = 0 }
+								NOT = { CONTROLLER = { tag = ROOT } }
+							}
+						}
+					}
+					ROOT = { add_to_variable = { WA_TLM_pc_refused_ctrl_n = 1 } }
+				}
+			}
 		}
 
 		WA_AI_PC_end_project_by_id = yes
@@ -981,6 +1127,11 @@ WA_AI_PC_end_project_by_id = {
 	clear_variable = WA_AI_PC_assigned_factories^_project_id
 	clear_variable = WA_AI_PC_type_id^_project_id
 	clear_variable = WA_AI_PC_stall_weeks^_project_id
+	# tlm: pc_queued_t - cleared with the slot it belongs to. Slot ids are recycled by
+	# WA_AI_PC_get_new_project_ID, so a stale stamp left here would date the NEXT project to
+	# occupy this id (and start_project overwrites it anyway - this clear is what keeps a
+	# free slot from reading as an ancient queued one).
+	clear_variable = WA_TLM_pc_queued_t^_project_id
 }
 
 ### Cancel multiple projects at once
@@ -1010,6 +1161,30 @@ WA_AI_PC_validate_queued_provincial_projects = {
 				NOT = { is_in_array = { _valid_provinces = WA_AI_PC_target_province^_project_id } }
 			}
 			add_to_temp_array = { _cancel_projects_IDS = _project_id }
+			# tlm: pc_stale_n - counter, one per queued project cancelled because its target
+			# province left the strategy's current valid path set (railway routes, type 13 via
+			# Fix 50). Same verified-effect argument as pc_sweep_n: the WA_AI_PC_cancel_projects
+			# call below ends every id added here.
+			#
+			# WHY THIS COUNTER EXISTS, stated without prejudging the answer (corrected
+			# 2026-08-15): GER's railway queue fell 80 -> 24 -> 2 across 1944.6-1945.2 on
+			# campaign be18f9c7 and the aging lane did not do it (wa_tlm_pc_aging_reval_cancels
+			# was FROZEN at 64 across the collapse). Two candidates remain and the shipped
+			# comments used to assert BOTH: the 30-week stall sweep (WA_AI_PC_QUEUE_FAIRNESS_
+			# DIAGNOSIS.md §2.1 argues the terminal cohort died there, and rebuts the "stall
+			# pinned at 26" reading as a monthly-sampling artefact) and this stale-path
+			# validator. `pc_sweep_n` and `pc_stale_n` exist precisely to separate them on the
+			# NEXT campaign - do not read either comment as the established cause.
+			#
+			# WATCH ITEM, because Fix 77 widened this path: the skip gate now opens on the
+			# LIVE queue count, so this validator runs on far more pulses, against a queue at
+			# its admission cap. If a pulse recomputes routes that miss the half-built
+			# segments, they are cancelled and their paid-for progress is discarded; and if
+			# every WA_AI_PATHFIND_PROV_get_path fails, `_valid_provinces` is EMPTY and this
+			# block cancels 100% of type-13 projects in one call. A pc_stale_n spike that
+			# tracks a type-13 collapse is that scenario, not evidence about 1944.
+			# consumer: standing (the PC termination ledger)
+			add_to_variable = { WA_TLM_pc_stale_n = 1 }
 		}
 	}
 
@@ -1029,6 +1204,29 @@ WA_AI_PC_validate_queued_provincial_projects = {
 # THIS = state, _project_id >>> spawns the building
 WA_AI_PC_add_finished_building_by_id = {
 	set_temp_variable = { _build_type = ROOT.WA_AI_PC_building_type^_project_id }
+
+	# tlm: pc_built_n / pc_built_by_type - counters, one per building this system actually
+	# spawns. THIS = state, ROOT = builder, so both are written on the builder country.
+	# The 1..16 guard is not a formality: it is exactly the range the ladder below covers,
+	# so the counter increments if and only if one of its add_building_construction /
+	# build_railway branches fires. An out-of-range _build_type falls through the whole
+	# ladder silently and must not be counted as a build (honesty rule 1 - verified effect,
+	# never code-path entry).
+	# pc_built_by_type is INDEXED by the building type code, which makes "did the air bases
+	# ever actually finish" one read instead of sixteen metrics. Absence of an index means
+	# this country has never completed that type - unambiguous, because the family's
+	# presence witness is the zero-initialised pc_built_n beside it.
+	# consumer: standing (the PC termination ledger; the success half of it)
+	if = {
+		limit = {
+			check_variable = { _build_type > 0 }
+			check_variable = { _build_type < 17 }
+		}
+		ROOT = {
+			add_to_variable = { WA_TLM_pc_built_n = 1 }
+			add_to_variable = { WA_TLM_pc_built_by_type^_build_type = 1 }
+		}
+	}
 
 	if = { limit = { check_variable = { _build_type = 1 } }
 		add_building_construction = { type = infrastructure level = 1 instant_build = yes }
@@ -1305,6 +1503,19 @@ WA_AI_PC_start_project = {
 				set_variable = { WA_AI_PC_building_type^_project_id = _project_building_type }
 				set_variable = { WA_AI_PC_priority^_project_id = _project_priority }
 				set_variable = { WA_AI_PC_type_id^_project_id = _project_type_id }
+
+				# tlm: pc_queued_t - stamp, INDEXED by project id: the clock at which this
+				# slot entered the queue, cleared with the rest of the slot in
+				# WA_AI_PC_end_project_by_id. Telemetry rather than system state precisely so
+				# that reading global.WA_TLM_clock here stays legal - a wa_ai_* field fed from
+				# the clock would be gameplay reading telemetry, which the namespace forbids.
+				# It is what makes queue AGE readable at all: nothing else in the queue records
+				# when a project arrived. WA_AI_PC_stall_weeks is not a substitute - it resets
+				# to 0 every time a project is funded for a week, so it measures the current
+				# starvation streak, not time in the queue, and the two diverge exactly on the
+				# projects worth asking about.
+				# consumer: standing (queue-age questions; `savegame.py pc` prints age_m)
+				set_variable = { WA_TLM_pc_queued_t^_project_id = global.WA_TLM_clock }
 
 				# Add to queue
 				add_to_array = { WA_AI_PC_queue = _project_id }

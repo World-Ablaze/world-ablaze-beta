@@ -437,7 +437,18 @@ on_actions = {
 
 					# Cancel invalid projects
 					if = { limit = { check_variable = { _cancel_projects_IDS^num > 0 } }
-						FROM = { WA_AI_PC_cancel_projects = yes }
+						FROM = {
+							# tlm: pc_lost_n - counter, projects the OLD controller loses because
+							# the state changed hands and the new controller is not a party it may
+							# build through. Added before the cancel call because that call clears
+							# _cancel_projects_IDS; it ends every id in the array unconditionally,
+							# so the count is the cancel. This is the dominant termination reason
+							# for a country losing ground, and nothing else distinguishes it from
+							# a project that completed - consumer: standing (the PC termination
+							# ledger)
+							add_to_variable = { WA_TLM_pc_lost_n = _cancel_projects_IDS^num }
+							WA_AI_PC_cancel_projects = yes
+						}
 					}
 				}
 			}
@@ -515,6 +526,13 @@ on_actions = {
 					if = { limit = { check_variable = { _found_railway = 1 } }
 						WA_AI_PC_end_project_by_id = yes
 						add_to_temp_variable = { _cancel_count = 1 }
+						# tlm: pc_peace_n - counter, railway projects (type 13) purged by the
+						# Fix 5/19 on_peace sweep. Written after end_project_by_id, so it counts
+						# removals. Kept apart from pc_stale_n because the two answer different
+						# questions: peace purges are correct behaviour clearing an obsolete
+						# frontline, stale-path cancels are the route selector changing its mind
+						# mid-war - consumer: standing (the PC termination ledger)
+						add_to_variable = { WA_TLM_pc_peace_n = 1 }
 					}
 					else = {
 						# No more railway projects

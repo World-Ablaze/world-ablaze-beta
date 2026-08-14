@@ -231,6 +231,33 @@ WA_AI_build_refinery_resource_shortage_rubber = {
 
 		WA_AI_priority_queue_synthetic_refinery = yes
 	}
+
+	# Fix 76 (campaign be18f9c7): a PROACTIVE pre-build else_if was prototyped here as a
+	# second host for WA_AI_CONSTRUCTION_should_pre_build_synth_rubber and REMOVED before
+	# shipping - it had no measurable beneficiary. Recorded so the same idea is not
+	# re-proposed on the same wrong premise.
+	#
+	# The premise was "ENG's C.10 is silent (checklist R24), so ENG needs a priority-
+	# construction host for the pre-build lane". The campaign refutes it. That trigger
+	# needs rubber IMPORTS above its floor while the balance is still non-negative, and
+	# ENG is never in that state at any sampled date: it owns Malaya, so it imports
+	# ZERO rubber across the whole 1936.6-1941.6 positive-balance stretch, and every
+	# date on which it does import (1942.6+, 106-210) already carries a negative balance
+	# and belongs to the reactive branch above. GER never qualifies either - its rubber
+	# imports are 0 from 1938 on, because it is pre-built BY HAND at startup (the
+	# original_tag = GER block in events/WA_AI_construction.txt adds 22 refinery levels,
+	# park 4 -> 36 by 1940.6). ITA clears the rubber terms three times and is correctly
+	# rejected by the coal guard every time - it imports 700-1600 coal. The only
+	# qualifying tags in the campaign are USA, JAP and SOV: USA reaches C.10, and JAP
+	# and SOV already raise healthy synthetic parks unaided (0 -> 4 and 13 -> 55).
+	#
+	# The lane therefore lives at ONE site, the WA_AI_C.10 refinery block in
+	# events/WA_AI_construction.txt. If a future campaign shows a QUALIFYING country
+	# whose C.10 is silent, re-adding an else_if here is the fix - but bring the
+	# measurement, and note that this strategy's own `active_nonrail < 5` gate is shut
+	# on exactly the big saturated-queue countries such an argument would invoke (the
+	# USA's queue held 5 / 8 / 6 non-rail projects, mostly radar, at the three dates
+	# sampled).
 }
 
 
@@ -1133,7 +1160,11 @@ WA_AI_build_uk_air_hosting_capacity = {
 	#   dbg_called   pulses that reached this effect (ENG/USA only)
 	#   dbg_planes   faction plane count of the last gated pulse
 	#   dbg_capacity hosting capacity of the last gated pulse
-	#   dbg_best     -2 = no deficit, -1 = deficit but no eligible state, else state id
+	#   dbg_best     -2 = no deficit; -1 = deficit open but this pulse queued nothing
+	#                (Fix 78 - budget full or every eligible site blocked); else the
+	#                AIR-BASE LEVEL of the site queued this pulse (see queue_site).
+	#                Single-pulse snapshot - a monthly save reads the LAST pulse only;
+	#                trend questions belong to dbg_started, which is cumulative.
 	#   dbg_started  projects actually queued
 	# Absence of dbg_called = dispatcher never calls us; dbg_called without the
 	# others = the main gate never passed. Remove once the system is verified.
@@ -1262,6 +1293,23 @@ WA_AI_build_uk_air_hosting_capacity = {
 		set_variable = { WA_AI_uk_air_dbg_best = -2 }
 
 		if = { limit = { check_variable = { _uk_target_capacity_ > _uk_hosting_capacity_ } }
+
+			# Fix 78: restore the legend's -1 ("deficit open, nothing queued this pulse").
+			# The -2 pre-set above dates from before Fix 51 and had silently become the
+			# resting value of BOTH "no deficit" and "deficit but the walk queued nothing",
+			# which is exactly the ambiguity that had campaign be18f9c7's scoring read five
+			# months of healthy-but-budget-full pulses as "no buildable site found". The
+			# queue-site helper still overwrites this with the site's level when it fires.
+			set_variable = { WA_AI_uk_air_dbg_best = -1 }
+
+			# Fix 78: reserve ONE allocator slot for the air-basing band while the deficit
+			# stands. Read by the reservation lane in WA_AI_PC_assign_factories
+			# (WA_AI_CONSTRUCTION_PRIORITY_core.txt) - see the full rationale there. Set for
+			# whichever builder runs this branch (host and ally alike): the ally's air
+			# projects normally win its fill anyway, so the reservation is only load-bearing
+			# for the rail-saturated host, but gating it on the host tag would be a tag test
+			# this file does not need. Same 30-day self-release shape as the override below.
+			set_country_flag = { flag = WA_AI_PC_air_basing_reserve value = 1 days = 30 }
 
 			### Fix 47: lift the host's PC allocation ceiling while the deficit stands.
 			# Measured on campaign 9a4cd657: ENG's PC pool ran 32-87 civs (mean 52) across

@@ -9,6 +9,18 @@
 # (authoritative) and WA_AI_CONSTRUCTION_PRIORITY_railway_strategies.txt (PREWAR)
 @WA_AI_PC_railway_PRIO = 1000
 @WA_AI_PC_railway_PRIO_PREWAR = 500
+# Fix 77: admission cap on queued type-13 segments, country-wide. Equal BY DESIGN to
+# @WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD in WA_AI_CONSTRUCTION_PRIORITY_railway_core.txt
+# (authoritative for the pair's meaning): "a full queue is 12". One recalculation used to
+# queue every segment of up to 8 routes at once - campaign be18f9c7 GER 1944.6 queued 80
+# segments in a single pulse, of which at most 5 ever held factories at any moment, and the
+# 12+ queue then locked the skip threshold shut for 6+ months, so route recalculation AND
+# stale-path validation both stopped exactly when the front was moving fastest. The cap keeps the
+# queue at the threshold: it drains below 12 within an interval, so every interval recomputes
+# routes, validates the survivors, and tops back up. Throughput is unchanged - the winner-
+# takes-most allocator never funds more than ~pool/20 segments anyway; segments not admitted
+# this pulse are re-derived from the CURRENT front next pulse instead of rotting in the queue.
+@WA_AI_PC_railway_MAX_QUEUED = 12
 @WA_AI_PC_railway_THEATRE_SEPARATION_DISTANCE = 10
 
 ### Supply Flow Formula Constants (from game mechanics)
@@ -952,7 +964,12 @@ WA_AI_PC_start_railway_project = { # THIS = state, _project_province_id, _projec
 		set_temp_variable = { _project_building_type = 13 }
 		set_temp_variable = { _project_type_id = @WA_AI_PC_railway_TYPE_ID }
 		set_temp_variable = { _project_queue_num = 1 }
-		set_temp_variable = { _project_queue_max = 0 }  # No max per segment
+		# Fix 77: was 0 ("No max per segment") - the one uncapped path into the PC queue.
+		# WA_AI_PC_start_project counts queued type-13 country-wide (unscoped queued_amount_),
+		# so this bounds the WHOLE railway family across every strategy that funnels through
+		# this helper (land war, overseas, prewar). See the constant's header for the measured
+		# case and the threshold relationship.
+		set_temp_variable = { _project_queue_max = @WA_AI_PC_railway_MAX_QUEUED }
 		set_temp_variable = { _project_target_level = 0 }  # Already checked above
 		# Set state ID using province mapping (states don't have .id property)
 		set_temp_variable = { _project_target_state = global.WA_AI_MAP_province_state_id^_project_province_id }

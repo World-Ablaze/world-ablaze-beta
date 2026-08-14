@@ -40,7 +40,11 @@
 # projects suppressed railway queueing forever; observed on USA, pinned at 5 non-rail projects
 # 1942-44 with zero railways ever queued). One route is up to 5 segments, so the old value of 3
 # was also smaller than a single corridor.
-@WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD = 12  # Skip recalculation if 12+ railway projects queued
+@WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD = 12  # Skip recalculation if 12+ LIVE railway projects queued
+# Fix 77: this is now also the ADMISSION cap - @WA_AI_PC_railway_MAX_QUEUED in
+# WA_AI_CONSTRUCTION_PRIORITY_railway_helpers.txt is deliberately the same 12 ("a full queue
+# is 12"). Change them together or the queue either can never fill (cap < threshold never
+# skips) or re-grows past the threshold it is supposed to respect (cap > threshold).
 
 ### Priority modifiers
 @WA_AI_PC_railway_PARTIAL_PATH_PRIORITY_FACTOR = 0.7  # Partial paths (dead-ends) get 70% priority
@@ -93,12 +97,45 @@ WA_AI_PC_railway = {
 				num_of_civilian_factories > _min_civs_required
 			}
 
-			### Skip recalculation only if the queue already holds enough RAILWAY projects (Fix 29b)
-			set_temp_variable = { _get_queued_num_building_type = global.WA_AI_PC_RAIL }
-			WA_AI_PC_get_total_queued_num = yes
+			### Skip recalculation only if the queue already holds enough LIVE railway projects (Fix 29b)
+			# Fix 77: the count excludes projects whose target state is hostile-controlled.
+			# On campaign be18f9c7, 20 GER segments queued onto friendly ground at 1944.6 had
+			# their states flip to SOV/FRA/YUG control by 1944.10 and then sat DEAD in the
+			# queue until the 30-week stall sweep (Fix 34's backstop) cleared them in 1945.2 -
+			# and for those months they held queued_type_num_ >= 12, so this very gate kept
+			# route recalculation AND stale-path validation switched off while the front was
+			# collapsing. Dead weight must not count as a full queue. Once the gate passes,
+			# the validation call below cancels those projects the same run (their provinces
+			# cannot lie on any recomputed path - the pathfinder only walks friendly ground),
+			# so the queue heals within one interval instead of ~31 weeks.
+			# Controller test = the Fix 34 test used by the allocator fill and the completion
+			# path; a project those paths would refuse to fund or spawn is not "live" here.
+			# The admission cap in WA_AI_PC_start_railway_project still counts ALL type-13
+			# (dead included), so the first pulse after a mass flip validates-and-cancels but
+			# queues nothing new; fresh segments follow on the next interval.
+			set_temp_variable = { _rail_live_queued_ = 0 }
+			for_each_loop = { array = WA_AI_PC_queue value = _rail_cnt_proj_
+				if = {
+					limit = {
+						check_variable = { WA_AI_PC_building_type^_rail_cnt_proj_ = 13 }
+						NOT = { check_variable = { WA_AI_PC_target_state^_rail_cnt_proj_ = 0 } }
+						var:WA_AI_PC_target_state^_rail_cnt_proj_ = {
+							CONTROLLER = {
+								OR = {
+									tag = ROOT
+									is_in_faction_with = ROOT
+									is_subject_of = ROOT
+									ROOT = { is_subject_of = PREV }
+								}
+							}
+						}
+					}
+					add_to_temp_variable = { _rail_live_queued_ = 1 }
+				}
+			}
 			if = {
 				limit = {
-					check_variable = { queued_type_num_ < @WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD }
+					check_variable = { _rail_live_queued_ < @WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD }
 				}
 
 				### Execute all applicable strategies
@@ -203,7 +240,18 @@ WA_AI_PC_railway = {
 							check_variable = { queued_type_num_ > 0 }
 						}
 						set_country_flag = { flag = WA_AI_PC_override_max_factories_factor value = 1 days = 30 }
-						set_variable = { WA_AI_PC_override_max_factories_factor = 0.5 }
+						# 0.5 -> 0.6 (2026-08-15). This flag/variable pair is DELIBERATELY SHARED with
+						# WA_AI_build_uk_air_hosting_capacity (WA_AI_CONSTRUCTION_PRIORITY_strategies.txt),
+						# whose own HAZARD comment states the two writers must hold IDENTICAL values or
+						# they alternate on a last-writer-wins 30-day timer. Fix 47 raised the UK-air
+						# writer to 0.6 and this one was left at 0.5, so campaign be18f9c7 ran with the
+						# pair diverged; Fix 77 then opened the skip gate on the live count, which makes
+						# THIS writer run on far more pulses and stamp 0.5 over the UK-air 0.6 during
+						# exactly the window Fix 78 exists to fund. Aligned to 0.6 rather than reverting
+						# the UK-air writer, because 0.6 is the value Fix 47 chose deliberately and the
+						# one checklist R8 probe 4 asserts. Do not diverge these again without giving
+						# each system its own flag.
+						set_variable = { WA_AI_PC_override_max_factories_factor = 0.6 }
 					}
 
 					###
