@@ -47,7 +47,7 @@ Every country and every faction with content in more than one domain is split in
 | Front | `_FRONT` | `front_unit_request`, `front_control`, `front_armor_score`, `force_concentration_front_factor`, `force_concentration_target_weight`, `force_ratio`, `infantry`, `garrison` (small/normal cases) |
 | Invasion | `_INVASION` | `invasion_unit_request`, `invade`, `naval_invasion_focus` |
 | Naval | `WA_AI_NAVAL_*` | `naval_avoid_region`, `naval_convoy_raid_region`, `naval_dominance`, `naval_mission_threshold`, `strike_force_home_base`, `naval_invasion_dominance_weight`, `naval_invasion_support_priority`, `strategic_air_importance` (when the rule is sea-facing) |
-| Air | `_AIR` | `strategic_air_importance` (when the rule is land-theatre-facing). Generic theatre pulls live in `WA_AI_MILITARY_DEFAULT_AIR_theatres.txt`; contest detection in `WA_AI_MILITARY_AIR_theatre_contested_*` (`WA_AI_MILITARY_triggers.txt`). The companion state-membership triggers `WA_AI_MILITARY_AIR_theatre_state_*` (same file, must-match the contested lists) feed `WA_AI_build_theatre_air_bases` in the construction system, which builds the air-base capacity the pulls need — a pull with no friendly basing in range is inert. |
+| Air | `_AIR` | `strategic_air_importance` (when the rule is land-theatre-facing). Generic theatre pulls live in `WA_AI_MILITARY_DEFAULT_AIR_theatres.txt`; coalition bombing-campaign policy in `WA_AI_MILITARY_FACTION_ALLIES_AIR.txt` (the Reich ladder, gated on deployed strategic-bomber count rather than dates — thresholds and rings in `WA_AI_MILITARY_triggers.txt`); contest detection in `WA_AI_MILITARY_AIR_theatre_contested_*` (`WA_AI_MILITARY_triggers.txt`). The companion state-membership triggers `WA_AI_MILITARY_AIR_theatre_state_*` (same file, must-match the contested lists) feed `WA_AI_build_theatre_air_bases` in the construction system, which builds the air-base capacity the pulls need — a pull with no friendly basing in range is inert. |
 | Diplomacy | `_DIPLOMACY` | `conquer`, `antagonize`, `protect`, `contain`, `ignore`, `ignore_claim`, `declare_war`, `diplo_action_desire`, `diplo_action_acceptance`, `dont_defend_ally_borders`, `force_defend_ally_borders` |
 | Theatre | `_THEATRE` | `theatre_distribution_demand_increase`, `area_priority`, `put_unit_buffers`, `spare_unit_factor` |
 | Garrison | `_GARRISON` | Only when garrison rules for one country are large enough to warrant their own file; otherwise garrison stays inside `_FRONT` |
@@ -179,6 +179,7 @@ common/ai_strategy/
   WA_AI_MILITARY_FACTION_ALLIES_INVASION.txt
   WA_AI_MILITARY_FACTION_ALLIES_DIPLOMACY.txt
   WA_AI_MILITARY_FACTION_ALLIES_THEATRE.txt
+  WA_AI_MILITARY_FACTION_ALLIES_AIR.txt
   WA_AI_MILITARY_FACTION_AXIS_FRONT.txt
   WA_AI_MILITARY_FACTION_AXIS_DIPLOMACY.txt
   WA_AI_MILITARY_FACTION_COMINTERN_FRONT.txt
@@ -285,3 +286,69 @@ Authoring rule: a new `execute_order = yes` block against a major enemy should g
 variables linger after a peace) rather than re-deriving strength conditions inline. Pair level 1 with
 `execution_type = balanced` and level 2 with `execution_type = careful` + `manual_attack = yes`, as the
 existing Faction-layer pairs do.
+
+---
+
+## 10. Scripted-landing invasion freeze (scripted support layer)
+
+When a country **executes** a WA-scripted amphibious landing, AI-planned naval invasions are suppressed
+across that country's whole faction for 90 days, so the scripted operation is not diluted by the engine
+opening a competing beachhead at the same time.
+
+| Piece | File |
+| --- | --- |
+| Switches, window length, macro-theatre definitions (control panel) | `common/scripted_triggers/WA_AI_LANDING_triggers.txt` |
+| Marker (stamps the freeze faction-wide) | `common/scripted_effects/WA_AI_LANDING_effects.txt` |
+| Call site | `common/scripted_effects/WA_AI_DIVISION_CREATOR_effects.txt`, inside `WA_AI_DIVISION_spawn_invasion` |
+| Consumers (Default layer) | `common/ai_strategy/WA_AI_MILITARY_DEFAULT_INVASION_landing_freeze.txt` |
+| Probe | checklist R44, `WA_TLM_r44_freeze_*` (telemetry doc §5) |
+
+**The marker is generic, and that is the whole point.** All ~90 scripted operations in
+`events/WA_AI_invasions.txt` - Weserübung, Beowulf, Mercury, the entire Japanese Pacific opening, Torch,
+Husky, Avalanche, Shingle, Neptune/D-Day, Dragoon, Watchtower, Downfall - execute through the single
+scripted effect `WA_AI_DIVISION_spawn_invasion`, so the freeze is stamped once, there, with no
+per-operation wiring and no reference to a date or a country tag. A rule keyed on D-Day specifically would
+be exactly the historical-path-only behaviour `AGENTS.md` design principle 1 forbids.
+
+**Execution, not enablement.** An `ai_strategy` block cannot set a flag, and a landing's `enable` turning
+true is not the same event as a landing happening - every operation re-fires itself every 7 days until its
+preconditions hold, so "enabled" is true for months before anything lands. `spawn_invasion` is the only
+place that knows divisions have actually been created on an enemy beach. The call sits inside that
+effect's existing `has_relation_modifier` guard, which collapses a multi-wave operation into one stamp per
+(invader, target, 14 days).
+
+**The suppression lever is `invasion_unit_request`, and the choice is forced.** Of the three
+INVASION-domain types, `naval_invasion_focus` is a boolean priority rather than a brake; `invade` is keyed
+per target country, which cannot express "not in this theatre" (Germany and Japan each span several
+theatres, so an `invade` freeze is either an enumeration that goes stale or a blanket); and
+`invasion_unit_request` is the only one accepting a geographic scope (`documentation.info:250-266` -
+`tag` / `state` / `strategic_region` / `area` / `country_trigger` / `state_trigger`, tested against the
+invasion **target**) and the only one that throttles what an invasion order may request rather than which
+country looks attractive. `state_trigger` acceptance on this type is established in-repo -
+`WA_AI_MILITARY_DEFAULT_FRONT_aifc.txt:442`.
+
+**Value is -200, deliberately.** The type is Additive over a base of 100, so -200 already floors the
+request at zero - the same magnitude `WA_AI_MILITARY_INV_freeze_when_home_threatened` uses for the same
+job. Staying at -200 rather than -2000 is load-bearing: `WA_AI_MILITARY_ALLIES_dday_prep_INVASION` puts
++1000 on states 15 and 1016 while it assembles Normandy, and Anzio (1944.1.21, europe) lands inside that
+prep window. At -200 the boosted beach still nets +800; a -2000 blanket would flatten a deliberate
+Faction-layer plan. **A scripted operation that names its own beach must outrank a generic brake.**
+
+**Theatre-scoped by default, blanket one switch away.** The freeze is split into two macro-theatres by the
+landing state's continent (WEST = europe + africa + middle_east, EAST = asia + australia; the Americas
+deliberately map to neither). `is_on_continent` rather than strategic regions, because WA replaces the
+whole region table and region ids are a documented source of wrong claims. Setting
+`WA_AI_LANDING_freeze_is_faction_wide` to `always = yes` gives the literal faction-wide form and switches
+the two theatre blocks off, so the modes never stack.
+
+The measurement behind that default: `WA_KDE_AI_effects.txt` schedules **17 USA scripted landings in 1944
+alone** plus 9 in 1945, and the largest gap between two consecutive Allied landings in 1944 is **89 days**.
+A 90-day blanket freeze would therefore hold the Allied faction frozen **continuously from 1944.1.21 into
+1946** - a two-year lockout on AI invasion planning, not an occasional stall. Splitting by theatre is what
+keeps D-Day from freezing the Pacific.
+
+**Superseded on the same change:** `AI_naval_invasion_fix` in `common/decisions/z_WA_ai_fixes.txt` - a
+USA/ENG-only, 1944.2.1-1944.3.15 hard-dated decision whose payload `naval_invasion_capacity = -50` its
+author believed dead. It is not dead (the modifier is live in 1.18.0), which means it had been zeroing
+both countries' invasion capacity - Pacific included - for ~40 days every campaign. Removed; the removal
+comment in that file carries the full reasoning and the behaviour delta.

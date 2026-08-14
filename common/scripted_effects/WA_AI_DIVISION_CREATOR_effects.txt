@@ -2303,6 +2303,20 @@ WA_AI_DIVISION_spawn_invasion = {
 			# stacking or the expiry event is not reaching its target.
 			add_to_variable = { WA_AI_invasions_dbg_adds = 1 }
 			add_to_variable = { WA_AI_invasions_dbg_active = 1 }
+
+			# Scripted-landing invasion freeze (see common/scripted_triggers/WA_AI_LANDING_triggers.txt).
+			# This is the mod's single marker point for "a WA-scripted amphibious landing has just
+			# EXECUTED" - every operation in events/WA_AI_invasions.txt reaches it, and it is on the
+			# verified path (divisions already created above), not on an `enable` turning true.
+			#
+			# Deliberately placed INSIDE this has_relation_modifier guard rather than next to the
+			# create_unit loop: the guard already collapses an operation's several spawn waves into one
+			# event per (invader, target, 14 days), which is exactly the granularity the freeze wants -
+			# one faction-wide sweep per landing instead of one per wave, and a probe counter that
+			# counts landings rather than waves. Accepted cost of sharing the guard: a second, unrelated
+			# landing against the SAME target inside 14 days does not restart the 90-day clock. Bounded
+			# (at most 14 days of a 90-day window) and never silently extends the freeze.
+			WA_AI_LANDING_register_scripted_landing = yes
 		}
 	}
 	else_if = {
