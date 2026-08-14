@@ -284,12 +284,6 @@ WA_AI_AIFC_select_sector = {
 			set_country_flag = WA_AI_AIFC_sector_enemy_of_@PREV
 		}
 
-		# Fix 31 verification telemetry - remove when checklist item R1 retires.
-		if = {
-			limit = { is_major = yes }
-			log = "AIFC-DIAG | [Root.GetName] | selected: anchor=[?WA_AI_AIFC_sector_anchor] enemy=[?WA_AI_AIFC_sector_enemy.GetName]"
-		}
-
 		add_to_array = { WA_AI_AIFC_sector_states = _aifc_best_id }
 		add_to_array = { WA_AI_AIFC_sector_objectives = _aifc_best_id }
 		# Fix 31: engine-encoded twins for the Layer 4 state_triggers. Their is_in_array
@@ -549,16 +543,12 @@ WA_AI_AIFC_armor_reconcile = {
 		set_temp_variable = { _aifc_cur = WA_AI_AIFC_armor_boost }
 	}
 
-	set_temp_variable = { _aifc_armor_changed = 0 }
-
 	############################################################
 	# 1. Boost target changed - retire the old, install the new
 	############################################################
 
 	if = {
 		limit = { NOT = { check_variable = { _aifc_want = _aifc_cur } } }
-		set_temp_variable = { _aifc_armor_changed = 1 }
-
 		if = {
 			limit = { check_variable = { _aifc_cur > 0 } }
 			set_temp_variable = { _aifc_armor_id = _aifc_cur }
@@ -617,7 +607,6 @@ WA_AI_AIFC_armor_reconcile = {
 				limit = { var:_aifc_sid_v = { exists = yes } }
 				WA_AI_AIFC_armor_cancel_suppress = yes
 			}
-			set_temp_variable = { _aifc_armor_changed = 1 }
 		}
 		else = {
 			# Keep: entry still valid, back into the books untouched.
@@ -645,20 +634,8 @@ WA_AI_AIFC_armor_reconcile = {
 					WA_AI_AIFC_armor_add_suppress = yes
 					add_to_array = { WA_AI_AIFC_armor_suppressed = _aifc_eid }
 				}
-				set_temp_variable = { _aifc_armor_changed = 1 }
 			}
 		}
-	}
-
-	if = {
-		limit = {
-			# AIFC-DIAG (temporary, do not commit): widened from WA_AI_AIFC_logging to is_major
-			is_major = yes
-			check_variable = { _aifc_armor_changed > 0 }
-		}
-		# AIFC-DIAG: boost_raw numeric vs boost_name readable proves whether the stored value is a
-		# serialized country scope reference (raw prints 10791.3-style, name prints the country).
-		log = "AIFC-DIAG | [Root.GetName] | armor: boost_raw=[?WA_AI_AIFC_armor_boost] boost_name=[?WA_AI_AIFC_armor_boost.GetName] supp_n=[?WA_AI_AIFC_armor_suppressed^num]"
 	}
 
 	clear_temp_array = _aifc_supp_old
