@@ -336,9 +336,29 @@ WA_AI_CONFIG_focus_on_minelayers = {
 	}
 }
 
+# Fix 64: SOV added. Routing a submarine navy through this trigger moves its production
+# from the naval_submarine role to the cruiser_submarine role: WA_AI_PRODUCTION_focus_on_submarines
+# (WA_AI_PRODUCTION_navy.txt:22) excludes members of this list, so the country picks up
+# WA_DEFAULT_production_navy_main_focus_on_cruiser_submarines instead, which takes
+# naval_submarine to 0 (base 25 - 25) and cruiser_submarine to 100.
+# For SOV that is the only lever that reaches the defect R30/Fix 51 could not: the coastal
+# Malyutka (sov_submarine_hull_3, range 1640 / str 6) is the highest-priority REACHABLE design
+# of the naval_submarine role, its tech is a 1936 START tech so research suppression is
+# impossible, and both the design layer (Fix 46) and production_upgrade_desire_offset (Fix 51)
+# were tried and moved nothing. Emptying the role is what remains.
+# Preconditions checked before adding SOV (all already true, nothing else was needed):
+#   - designs: SOV_naval_cruiser_submarine exists (ai_equipment/SOV_naval.txt), 5 hulls
+#   - techs: SOV starts with sov_cruiser_submarine_1..4 researched (history/countries/SOV:153-156)
+#   - fleet: 19 cruiser submarines in the 1936 OOB, so the role is not created from nothing
+#   - missions: ConvoyRaiding_2 (ai_navy/taskforce/generic_taskforce_templates.txt) is a
+#     cruiser_submarine-composition task force, so the boats built here get put to sea
+# Side effect, accepted: WA_AI_RESEARCH_needs_cruiser_submarines (WA_AI_RESEARCH_naval.txt:120)
+# reads this trigger, so SOV now weights cruiser-sub research. Only sov_cruiser_submarine_5
+# (Zulu, 1948) is left to research, so the practical effect is nil.
 WA_AI_CONFIG_focus_on_cruiser_submarines = {
 	OR = {
 		original_tag = GER
+		original_tag = SOV
 	}
 }
 

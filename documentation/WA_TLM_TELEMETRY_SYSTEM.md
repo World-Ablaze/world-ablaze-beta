@@ -320,6 +320,7 @@ per series — trivial at depth 44, but do not raise depth casually.
 | `WA_TLM_post_exec_xr_lt100` / `_lt50` / `_lt25` | counters | same site | **cumulative and nested** (lt25 ⊂ lt50 ⊂ lt100); where a level-1 veto threshold should sit, if one is wanted | v6 |
 | `WA_TLM_post_grind_n` | counter | same site, level-2 observations | context: how often the careful mode is actually reached | v6 |
 | `WA_TLM_post_last_t` | stamp | same site, written on **every** observation whatever the level | `post_*` absence contract | v6 |
+| `WA_TLM_r64_csubs` | gauge (`num_ships_with_type@cruiser_submarine`) | monthly, any AI with a hull (`WA_TLM_sample_navy`, same gate and `nav_last_t` stamp as the `nav_*` family) | R41 — read against `WA_TLM_nav_subs`; **GER is the built-in control**, it has been on the cruiser role since before Fix 64, so GER = 0 too means a bad token, not a failed fix | v7 |
 
 **v4 naval readings are artefacts — do not score them.** `nav_screens` and
 `nav_convoys` were written from `num_ships_with_type@screen_ship` and

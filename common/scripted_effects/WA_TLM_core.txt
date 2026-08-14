@@ -27,7 +27,11 @@
 # in WA_AI_MILITARY_posture_effects.txt, NOT by the monthly sampler below. Additive: no
 # existing metric changes meaning, so v5 readings stay valid. A save at wa_tlm_version < 6
 # simply lacks the family - score it NOT CHECKED, never FAILED.
-@WA_TLM_VERSION = 6
+# v7 (2026-08-14, R41): adds WA_TLM_r64_csubs, the cruiser-submarine hull count, written by the
+# monthly naval sampler under the existing nav_* gate and stamped by nav_last_t. Additive: no
+# existing metric changes meaning, so v5/v6 readings stay valid. A save at wa_tlm_version < 7
+# simply lacks the metric - score it NOT CHECKED, never FAILED.
+@WA_TLM_VERSION = 7
 
 ############################################################################################################
 #	Clock - global.WA_TLM_clock = months elapsed since 1936.1
@@ -93,6 +97,10 @@ WA_TLM_init_country = {
 	if = { limit = { NOT = { has_variable = WA_TLM_nav_port_screens } } set_variable = { WA_TLM_nav_port_screens = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_nav_port_pct } } set_variable = { WA_TLM_nav_port_pct = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_nav_last_t } } set_variable = { WA_TLM_nav_last_t = 0 } }
+
+	# cruiser-submarine routing (Fix 64, consumer: checklist R41; write site in WA_TLM_sample_navy,
+	# same gate and same stamp (nav_last_t) as the nav_* family it sits in)
+	if = { limit = { NOT = { has_variable = WA_TLM_r64_csubs } } set_variable = { WA_TLM_r64_csubs = 0 } }
 
 	# offensive posture (standing, consumer: the level-1 exchange-rate question - see the write
 	# site in WA_AI_MILITARY_posture_effects.txt, inside every_enemy_country. Counters are per
@@ -251,6 +259,24 @@ WA_TLM_sample_navy = {
 		add_to_variable = { WA_TLM_nav_screens = num_ships_with_type@frigate }
 		add_to_variable = { WA_TLM_nav_screens = num_ships_with_type@light_cruiser }
 		set_variable = { WA_TLM_nav_subs = num_ships_with_type@submarine }
+
+		# tlm: r64_csubs - gauge, any AI with a hull - consumer: R41 (Fix 64, SOV routed from the
+		# naval_submarine role to the cruiser_submarine role). Read against WA_TLM_nav_subs, which
+		# is the other half of the same question: the fix passes when SOV's csubs climb while its
+		# subs stay flat at the 1936 OOB.
+		# `cruiser_submarine` is a sub-unit def type (common/units/ship_cruiser_submarine.txt) and
+		# is listed as a legal num_ships_with_type@ target in doc 5.
+		# UNVERIFIED, and R41 says how to settle it on the first campaign that carries v7: BOTH
+		# sub-unit defs carry `type = { submarine }`, and `submarine` is simultaneously a def name
+		# and one of the four engine aggregates - so nav_subs above may or may not already include
+		# these hulls. Do not assume either way. If nav_subs turns out to equal subs + csubs, read
+		# this metric as a SHARE of nav_subs, not as an independent series; the numbers are the
+		# same either way, only the arithmetic changes.
+		# SECOND SIGNAL (doc 7.5), and it is free: GER has been routed to the cruiser_submarine
+		# role since before this fix, so GER is the built-in control. GER > 0 with SOV = 0 means
+		# the token is fine and the fix failed; BOTH 0 means the token is bad and neither reading
+		# may be scored - the v4 nav_screens failure mode.
+		set_variable = { WA_TLM_r64_csubs = num_ships_with_type@cruiser_submarine }
 		# convoy is an equipment archetype, so it is read with num_equipment@, the
 		# idiom used for every other archetype in this repo (WA_AI_DIVISION_CREATOR_
 		# effects.txt, 100_wa_on_actions.txt). UNVERIFIED IN-GAME until the F9 boot

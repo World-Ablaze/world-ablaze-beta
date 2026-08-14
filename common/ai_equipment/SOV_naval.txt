@@ -1745,6 +1745,23 @@ SOV_naval_submarine = {
 	}
 }
 
+# Fix 64: this group stops being a spare wheel and becomes SOV's ENTIRE submarine output.
+# WA_AI_CONFIG_focus_on_cruiser_submarines now lists SOV, which takes the naval_submarine role
+# to 0 and cruiser_submarine to 100 (WA_AI_PRODUCTION_DEFAULT_navy.txt:54) - the only lever left
+# after Fix 46 (design layer) and Fix 51 (production_upgrade_desire_offset) both failed to move
+# a single factory off the coastal Malyutka; see checklist R30 -> R41.
+# The ladder here had the same class-historical-index defect as SOV_naval_submarine, harmless
+# while nothing selected out of this group and load-bearing the moment it does:
+#   hull_1 Dekabrist range 4560, str 28, cost 1240, spd 14.0, vis 17  (1928, start tech)
+#   hull_2 Leninets  range 5820, str 28, cost 1440, spd 18.0, vis 17  (1930, start tech)
+#   hull_3 S/Sred.   range 5620, str 22, cost 1000, spd 19.5, vis 14  (1934, start tech)
+#   hull_4 K         range 7500, str 52, cost 3080, spd 22.5, vis 14  (1936, start tech)
+#   hull_5 Zulu      range 8000, str 48, cost 2600, spd 18.0, vis 12  (1948, OUT OF REACH)
+# The old 10/60/90/120/140 ramp made the K the highest-priority reachable design, i.e. SOV would
+# have spent the war building the most expensive boat on its list - 59 IC per strength point
+# against the S's 45, at 3080 IC a hull on a yard count that never exceeds ~20. The S is the
+# cheapest hull in the group, ties the K on visibility, and its 5620 km covers every sea SOV can
+# actually reach; the K stays available as the long-range minority, not the default.
 SOV_naval_cruiser_submarine = {
 	category = naval
 
@@ -1831,8 +1848,12 @@ SOV_naval_cruiser_submarine = {
 
 	cruiser_submarine_3 = {
 
+		# Fix 64: promoted from 90 -> 120, the top of the reachable ladder. The S (Srednyaya) is
+		# the mainstay: cheapest hull in the group (1000 IC), best cost-per-strength (45), lowest
+		# visibility band (14) and 5620 km of range - enough for the Northern Fleet and the
+		# Pacific, which are the only SOV theatres where range is not wasted.
 		priority = {
-			factor = 90
+			factor = 120
 			modifier = {
 				factor = 1
 			}
@@ -1863,8 +1884,12 @@ SOV_naval_cruiser_submarine = {
 
 	cruiser_submarine_4 = {
 
+		# Fix 64: demoted from 120 -> 90, below the S. The K is the best boat in the group on
+		# paper (7500 km, str 52, 22.5 kn) and the worst buy: 3080 IC, 59 IC per strength point,
+		# ~12x a Shchuka for one hull. Kept enabled and second so it stays reachable as the
+		# long-range option rather than becoming the default the whole navy is spent on.
 		priority = {
-			factor = 120
+			factor = 90
 			modifier = {
 				factor = 1
 			}
