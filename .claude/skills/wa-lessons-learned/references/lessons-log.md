@@ -96,6 +96,15 @@ Entries dated 2026-08-08 were reconstructed from code archaeology (`# Fix NN:` c
 - **Rule:** Treat files in replaced folders as the complete content of that category. A parse error or an over-eager deletion can silently drop unrelated definitions. Check brace balance before finishing any edit in `common/`, `events/`, or `tests/`.
 - **Evidence:** `descriptor.mod`; `AGENTS.md` "Project Context".
 
+### A `replace_path` folder the mod only partly populates silently deletes the rest
+
+- **Date:** 2026-08-14
+- **Symptom:** `equipment_effects.cpp:814` — `common/national_focus/bulgaria.txt:3551: create_equipment_variant': 'Drazki Class' - Invalid name group 'BUL_DD_HISTORICAL'.` The group is standard vanilla content and reads as though it must exist.
+- **Cause:** `descriptor.mod` declares `replace_path="common/units/names_ships"`, but the mod ships only **12** files there against vanilla's **~65**. Every country outside those 12 therefore has *no* ship name groups in the running game. The general shape: a replaced folder that the mod populates *selectively* is not a curated subset, it is a deletion of everything else — and the deletion is invisible in the diff, because nothing was ever deleted from the repo.
+- **Rule:** For any `replace_path` folder, "the mod has files here" is not the same as "the category is covered". Before referencing a vanilla-defined name from mod script, check the folder is fully populated: `ls` the mod folder against the vanilla folder and diff the filename sets. When you add a reference to something vanilla defines in a replaced folder, restoring the vanilla file into the mod is the fix, not renaming the reference.
+- **Corollary about logs:** the engine reports these only when the referencing code *runs*. Five of the six live bad references in this sweep sat behind focuses and decisions the campaign never took, so `error.log` showed one. **Treat a runtime log as a lower bound on a defect class, never as its inventory** — grep the whole repo for the construct and validate every site. In debug, `research all` on a tagged country is a cheap way to force every `on_research_complete` body to execute at once.
+- **Evidence:** `descriptor.mod:84`; checklist R45; the six references were `BUL_DD_HISTORICAL`, `ICE_CA_HISTORICAL`, `NOR_DD_HISTORICAL` ×2, `POR_DD_HISTORICAL` ×3, `POR_CL_HISTORICAL` ×3.
+
 ### Documentation drifts from source
 
 - **Date:** 2026-08-08 (recorded)
@@ -536,6 +545,12 @@ process caveats (stale process, and the absence of a load-time hook).
   strategies already do (`strategies.txt:960-967`, `:1205`). Note `_project_build_for_ally = 1`
   is set at `railway_core.txt:66` and read nowhere — designed, never implemented.
 - **Evidence:** campaign `31eaf7e6` save `1944.7_Jul.hoi4`; checklist F5/R9 entries 2026-08-11.
+- **RESOLVED 2026-08-14 by Fix 74** (checklist R46), after the same defect resurfaced in a second
+  theatre: campaign `f9321934` at 1944.3 had the whole Maghreb FRA-controlled with rail 1-2 at the
+  Tripoli front, ENG-held Egypt at rail 5, and **zero railway projects on ENG or USA for the entire
+  campaign**. The selectors now go through `WA_AI_PC_can_build_logistics_here` /
+  `WA_AI_PC_is_logistics_build_partner`, gated on the ally being unable to build for itself. The
+  capitulated-ally half of the cause is deliberately still open - see R46's "Explicitly NOT fixed".
 
 ### The warbond ladder dead-ends when a series completes at fatigue 0
 
@@ -1404,7 +1419,7 @@ process caveats (stale process, and the absence of a load-time hook).
   tech. And when the natural target file is generated, look for an `ai_strategy` type that
   expresses the same intent; editing generated output is a fix with a shelf life.
 - **Evidence:** Fix 57, `common/ai_strategy/WA_AI_RESEARCH_COUNTRY_{USA,SOV,JAP}.txt`,
-  checklist R37; game install `common/ai_strategy/_documentation.md` for
+  checklist R40 (opened as R37, renumbered 2026-08-14); game install `common/ai_strategy/_documentation.md` for
   `research_weight_factor`; `common/technologies/armor_usa.txt:2935,2993`,
   `armor_sov.txt:3053`, `naval_jap.txt:3987,4038`.
 
@@ -1438,3 +1453,195 @@ process caveats (stale process, and the absence of a load-time hook).
 - **Evidence:** Fix 58, `common/ai_equipment/ENG_tank.txt` `medium_tank_8`; checklist R35
   Comet sub-probe and its retraction; `output/coverage_gaps.md` (39 -> 38 gaps, 11 -> 10 in
   branched roles).
+
+
+### `has_capitulated = no` on an ALLY hides the ground an expeditionary army is standing on
+
+- **Date:** 2026-08-14
+- **Symptom:** in campaign `f9321934` Britain held **no AIFC sector at all from May 1944 to July
+  1946** — every `wa_ai_aifc_*` variable absent for ~118 consecutive weeks — while fielding
+  116–143 divisions, holding standing level-1 execute orders against Germany, and having 15–17 of
+  those divisions physically standing in Lower Normandy. France, meanwhile, held a sector frozen
+  byte-identical (`anchor=34` Wallonie, `age=4`) from 1940 to the last save.
+- **Cause:** two separate sites, one word. (1) The Fix 28 expeditionary fallback in
+  `WA_AI_AIFC_helpers.txt:92-101` walks `every_country` filtered on `has_capitulated = no` before
+  looking for allied soil ROOT has ≥3 divisions on. **FRA carried `capitulated=yes` for the entire
+  campaign while owning 60 states and controlling 50** — including the liberated French soil the
+  whole British expeditionary army was standing on. The filter skipped FRA, the candidate array
+  came back empty, and the effect fell through to `WA_AI_AIFC_clear_sector` every single week.
+  (2) The weekly caller itself, `WA_AI_misc_on_actions.txt:112-116`, wraps the call in
+  `is_ai = yes` + `has_capitulated = no` **on ROOT**, so FRA was never iterated at all and its
+  1940 sector could neither age nor clear.
+- **Why it is not obvious:** "capitulated" reads as "dead", and the AIFC comments treat the two as
+  synonyms ("harmless — the tags do not exist"). In HOI4 they are not synonyms: a capitulated tag
+  keeps its faction membership, keeps owning and controlling territory, and **regains control of
+  liberated home soil** while still reporting `capitulated=yes`. A liberating ally therefore fights
+  its whole campaign on the territory of a country every capitulation filter is throwing away. The
+  same commit that added the filter (`4ffb8e442`, Fix 28) **omitted it 60 lines later** in the
+  launching-pad measurement (`helpers:147-160`), which is the tell that it was an incidental paste
+  of the "usable ally" idiom rather than a designed rule.
+- **Rule:** `has_capitulated` answers "did this country's government fall", never "is this
+  country's territory usable" and never "does this country still exist". Before filtering an ally
+  on it, ask which of the three questions you actually mean. For *existence* use `exists = yes`;
+  for *usable territory* use the thing you actually need (`is_in_faction_with`, controller checks,
+  and above all ROOT's own `divisions_in_state`, which is the real guard here — a capitulated
+  ally's territory ROOT is not standing on is excluded by that term anyway). Same family as the
+  `surrender_progress` lesson above: a *status* metric substituted for a *capability* one, and a
+  release condition the country cannot reach by recovering.
+- **Not a fix for the front, and do not sell it as one.** AIFC issues no attack orders, and Layers
+  1–2 (`force_concentration_factor`) are not sector-gated, so the missing sector cost ENG a
+  *scripted axis*, not its concentration. A Normandy-anchored sector would have published +50 front
+  factor / +50 target weight there and −50/−99 everywhere else — i.e. pushed **more** divisions into
+  a state that already held 42→79 Allied divisions against ~11 defenders. Diagnose the blast radius
+  of the layer before promoting a correlation to a cause.
+- **Evidence:** checklist R39 (2026-08-14 diagnosis entry, campaign `f9321934`) and R42 (the fix);
+  **Fix 65** removed the ally-side filter at `WA_AI_AIFC_helpers.txt` section 1b and its lockstep
+  twin in `WA_AI_AIFC_core.txt` (Fix 28 validity mirror), replacing it with `exists = yes`; the
+  unfiltered launching-pad twin at `helpers` section 1c needed no change. **Fix 68** handled the
+  ROOT-scoped copy at `WA_AI_misc_on_actions.txt` by **moving the call, not deleting the word**:
+  `WA_AI_AIFC_update_sector` now sits in its own `is_ai = yes` block instead of inside the
+  `is_ai = yes` + `has_capitulated = no` Priority-Construction block, so the effect's own
+  "not eligible -> clear" branch becomes reachable while the other six calls in that block stay gated.
+- **Second-order rule, from the shape of Fix 68:** when an effect is *designed* to be entered while
+  ineligible - "the effect no-ops and clears any stale sector when the country does not qualify" -
+  then hosting it inside a shared eligibility gate **silently deletes its cleanup path** for exactly
+  the population that needs it. The gate and the effect's own trigger were testing the same thing, so
+  the outer one looked redundant and was in fact load-bearing in the wrong direction. Check where a
+  self-gating effect is *called from* before trusting its "no-ops when ineligible" comment.
+  Cleanest confirmation: ENG's sector returns at 1946.8 anchored on **47 Thessaly** in the same
+  month it acquires **187 Aegean Islands**, whose province 3401 carries the map's only special
+  adjacency to Thessaly's 7127 (`map/adjacencies.csv`) — native contact, restored one state at a time.
+
+## 2026-08-14 - `equipment_production_min_factories` is need-blind AND additive across blocks, so a flat factory count on every line of every country is the fingerprint of a floor, not of demand
+
+- **Symptom:** carrier navies built far more `cv_*` aircraft than their decks could hold and
+  parked the surplus on land airfields — campaign `f9321934`, JAP finishing at 8 619 carrier
+  planes on land against 1 380 on deck (6.25:1, 75% of its whole air force), ENG at 2.09:1
+  with **52% of the RAF being naval aviation**. 92% of JAP's and 94% of ENG's land-parked
+  carrier planes carried **no mission at all**, so it was waste, not an improvised shore role.
+- **The reading that pointed at the cause, and it was a shape, not a number.** Every
+  carrier-fighter and carrier-naval-bomber production line of ENG, JAP and USA ran at
+  `requested_factories = active_factories =` **exactly 8**, at 1944.6 *and* at 1946.8. Six
+  independent cells, one number, across three economies of wildly different size — and 8 is
+  exactly `2 + 6`, the base floor plus the carrier-major floor in
+  `WA_AI_PRODUCTION_DEFAULT_cv_plane.txt`. USA's carrier-CAS line sat at exactly 1, its own
+  lone floor. **`ai_strategy` values of the same type and id from several enabled blocks sum**,
+  and vanilla's own comment says the type *"Forces the AI to allocate this many factories …
+  it doesn't take into account how many factories are actually available"*
+  (`common/ai_strategy/documentation.info:410`). A flat, identical, cross-country factory count
+  is therefore a floor signature; demand-driven allocation never looks like that.
+- **Why the obvious lever was the wrong one, twice over.** The instinct is to cut
+  `ai_equipment` `priority` on the `cv_*` design groups. It would have done nothing: those
+  groups declare **dedicated roles** (`air_cv_fighter`, `air_cv_naval_bomber`), so they never
+  compete with a land role, and priority chooses *which airframe gets designed*, never *how
+  many get built* — the same design-layer error already recorded after `bec4d829`. The second
+  instinct, cutting `unit_ratio`, is also wrong: `documentation.info` (### UNIT RATIOS, AIR)
+  says land-based and carrier plane types are pooled **completely separately**, and the carrier
+  pool total is computed by the engine from deck capacity × 1.5
+  (`WANTED_CARRIER_PLANES_PER_CARRIER_CAPACITY_FACTOR`, `00_defines.lua:2796`) **minus the
+  carrier planes already in airwings, land-parked ones included**. `unit_ratio` only splits
+  that total between the cv roles, so it cannot raise it. Which yields the punchline: a
+  saturated country's engine demand is **already zero** and the floor is the only thing still
+  building. `equipment_production_factor` was no escape either — its documented id namespace is
+  `script_enum_equipment_category`, which contains no `cv_*` entry at all.
+- **Rule:** before tuning any production-volume lever, ask *which layer sets the volume*.
+  `ai_equipment` priority = which design. `unit_ratio` = the split within an engine-computed
+  pool. `equipment_production_factor` = a percentage of computed need, so it self-zeroes.
+  `equipment_production_min_factories` = an unconditional, additive, need-blind override, and
+  it is the **only** one of the four that can keep building after demand reaches zero. If a
+  fix has to stop over-production, it almost certainly has to gate a min-factories floor.
+- **Corollary for gating it:** a rule keyed on fleet *size* could not have worked here. JAP
+  (4.83× the engine's target, 20 hulls) and USA (0.96×, 47 hulls) are both large carrier
+  fleets; the discriminator is planes-vs-decks, which forces an actual plane count
+  (`num_deployed_planes_with_type@<archetype>`). Where the measurement is unproven, build the
+  gate so an unresolvable token reads 0 and the brake simply never trips — then behaviour
+  degrades to today's, never to something worse. **Fix 66**, checklist **R43**.
+- **Evidence:** checklist R43; `.claude/skills/wa-savegame-analysis/scripts/cvair.py`.
+
+## 2026-08-14 - `air_lines` does not exist in the 1.19.2 save format: aircraft production lines are in `military_lines`
+
+- **Symptom / contradiction:** `wa-savegame-analysis`'s gotcha list says production lines live
+  in **three** sibling blocks, `military_lines`, `naval_lines` and `air_lines`, and that naming
+  only `military_lines` "silently returns zero submarine and zero aircraft lines". Scanning all
+  three names explicitly across six (country, date) cells of `f9321934` found **zero
+  occurrences of `air_lines` in any country block**, and every aircraft line — carrier and
+  land, ENG/JAP/USA — inside `military_lines`. The third sibling that does exist is
+  `general_lines`, and it holds buildings.
+- **Status: not resolved, deliberately.** The submarine half of the original gotcha is
+  consistent with this (subs are in `naval_lines`, so `military_lines` alone does miss them);
+  the aircraft half is not. Whether the old note was a wrong generalisation or the block name
+  changed between game versions has **not** been established, so the SKILL.md gotcha was left
+  standing rather than silently rewritten.
+- **Rule:** scope a production scan to `military_lines` **and** `naval_lines` **and**
+  `air_lines`, and have it **report which block names it actually found**. Naming a block that
+  does not exist fails silently and returns a confident zero — which on this question reads as
+  "the AI never built any aircraft". Never conclude "the AI does not build X" from an empty
+  result without first confirming the block you scoped to is present in the file.
+- **Evidence:** checklist R43's probe, step 3.
+
+## 2026-08-14 - A shadow cost table that matches VANILLA is still a bug: check what the mod re-priced, not just whether the numbers look principled
+
+- **Symptom:** the AI's priority-construction system (`WA_AI_PC_get_building_cost`) charged
+  `170 + 130 * (1 + existing level)` for a railway segment. Reviewed against
+  `common/buildings/00_buildings.txt` — where `rail_way` is `base_cost = 800`,
+  `per_level_extra_cost = 0` — it looked like an invented, undocumented model: wrong shape
+  (escalating where the engine is flat), wrong magnitude (300 for a fresh segment against 800),
+  no `# Fix NN:` rationale, and contradicting the system's own scoring constant
+  (`@WA_AI_PC_RAILWAY_BASE_COST = 800  # flat per segment`). The first audit wrote it up as
+  "UNRECONCILED, origin unknown, introduced whole by `cad27bfbd`".
+- **Cause:** 170 and 130 are **vanilla's** `rail_way` `base_cost` and `per_level_extra_cost`,
+  exactly. The block was a faithful copy of the base game and was correct the day it was
+  written. WA later re-priced `rail_way` to a flat 800 (1000 → 800 in `42b53eccb`, Oct 2023,
+  "Decreased the cost of railroads") and nobody updated the AI's shadow table, so for ~3 years
+  the AI bought rail at the base game's price — 37% of the mod's. Reading the vanilla install's
+  `00_buildings.txt` settled in one command what the repo alone could not.
+- **Rule:** in a mod that `replace_path`s a vanilla folder, a constant that disagrees with the
+  mod's data is **not evidence that someone invented it** — diff it against the *vanilla* file
+  before writing "origin unknown". The default history of any such mismatch is "copied from
+  vanilla, then vanilla-side data was re-tuned and the copy drifted", and that reframing changes
+  the fix: you are not designing a model, you are re-syncing one, and the correct new value is
+  whatever the mod's data says today. Generally: **whenever mod script hardcodes a number that
+  also exists in a replaced vanilla data file, the vanilla file is a required source in the
+  audit, not an optional one.** The install ships its own `documentation/` too
+  (`effects_documentation.md`, `modifiers_documentation.md`) — see the modifier-scope oracle.
+- **Corollary that generalises past this case:** a *shadow* system — one that recomputes a game
+  value in script instead of asking the engine — has no failure mode that surfaces at parse
+  time or in a log. It silently diverges the moment its source data moves. Every such table
+  needs a comment naming its source file, which is now on
+  `WA_AI_PC_set_global_variables`. The same audit found air base (250 vs 300), radar (500 vs
+  2500) and naval base (3000 vs 10000) drifted the same way, all in the same table.
+- **Evidence:** **Fix 72** (air base / radar / naval base) and **Fix 73** (railway) in
+  `common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_core.txt`; checklist **R8** and **R19**;
+  vanilla `rail_way` at `<install>/common/buildings/00_buildings.txt`.
+
+### A loop inside `for_each_scope_loop` runs in the ITERATED scope, not ROOT
+
+- **Date:** 2026-08-14
+- **Symptom:** none, for three years. `WA_AI_PC_railway_STRATEGY_land_war`'s Fix 27 puppet-frontline
+  scan produced no routes in any campaign, and nobody noticed because the ROOT loop above it
+  produced plenty.
+- **Cause:** the effect's shape was
+
+  ```txt
+  for_each_scope_loop = { array = _relevant_enemies_      # THIS = the ENEMY from here on
+      if = { limit = { ... }
+          ROOT = { every_controlled_state = { ... } }     # explicit, correct
+          every_subject_country = { ... }                 # NO wrapper -> the ENEMY's subjects
+      }
+  }
+  ```
+
+  The sibling loop above it carries an explicit `ROOT = {}`, which is exactly what makes the missing
+  one invisible on a read: the two look like a matched pair. `every_subject_country` bound to the
+  enemy, so the body's own acceptance test (`controller = { is_subject_of = ROOT }`) could never pass
+  and ROOT never controlled those hub provinces. Dead from the day it was written.
+- **Rule:** inside a `for_each_scope_loop` / `every_*` block, **every** country-level iterator needs an
+  explicit scope wrapper — write `ROOT = { every_subject_country = { … } }` even when it reads as
+  redundant. When auditing, don't check the iterator against the *nearest* wrapper; check it against
+  the innermost enclosing **scope-changing** construct. A `# Fix NN:` comment on a block is not
+  evidence the block ever ran: confirm it in a save or with a counter before treating it as covered.
+- **Detection:** a fix whose behaviour has never once been observed in a campaign is the tell. If a
+  loop's acceptance test is structurally unsatisfiable in its actual scope, it is dead code wearing a
+  changelog comment.
+- **Evidence:** `WA_AI_CONSTRUCTION_PRIORITY_railway_strategies.txt`, found while implementing Fix 74;
+  checklist R46 leg 3 verifies the revival.
