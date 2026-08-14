@@ -665,7 +665,7 @@ process caveats (stale process, and the absence of a load-time hook).
   states, equipment ratio) instead. Note the same metric also drives
   `WA_AI_AIFC_posture_defensive` (`> 0.2`) and `posture_offensive` (`< 0.05`), so a losing major
   is forced into linear defence months before it loses its sector entirely.
-- **Evidence:** checklist item R27; `WA_AI_AIFC_core.txt:61-65,127-155`,
+- **Evidence:** checklist item R27 (retired 2026-08-14 at 5/5); `WA_AI_AIFC_core.txt:61-65,127-155`,
   `WA_AI_AIFC_helpers.txt:508-514`, the already-fixed sibling gate at
   `WA_AI_misc_on_actions.txt:149-163`. Puppet-scope was investigated as the lead hypothesis and
   **refuted** — RBL/RUK are at war with SOV, so puppet-held states are valid enemy corridors.
@@ -713,7 +713,7 @@ process caveats (stale process, and the absence of a load-time hook).
   `WA_AI_MILITARY_army_still_operational`, the sector gate given the railway escape hatch, and the
   offensive bonus rekeyed onto `WA_AI_MILITARY_posture`. The posture system is now the single writer of
   "we are collapsing" and every brake releases on recovery. Details and the two-direction validation
-  record are in checklist R27; the *self-releasing* sp gates (air bases, refineries, PC floor,
+  record are in checklist R27 (retired 2026-08-14 at 5/5; see this log and `documentation/WA_AI_MILITARY_SYSTEM.md` §9); the *self-releasing* sp gates (air bases, refineries, PC floor,
   `home_threatened` itself) were left alone and are still worth re-measuring.
 
 
@@ -1645,3 +1645,119 @@ process caveats (stale process, and the absence of a load-time hook).
   changelog comment.
 - **Evidence:** `WA_AI_CONSTRUCTION_PRIORITY_railway_strategies.txt`, found while implementing Fix 74;
   checklist R46 leg 3 verifies the revival.
+
+### An annihilated tag keeps stale country variables that read as live values
+
+- **Date:** 2026-08-14
+- **Symptom:** on campaign `be18f9c7`, GER's final save (1946.7) reports a 4-project Priority
+  Construction queue with `wa_ai_pc_assigned_factories_total = 14`, `wa_ai_fielded_eq_ratio =
+  0.93313`, an intact `wa_tlm_*` block and a `ruling_party` that had flipped from fascism to
+  communism. Every one of those readings describes a country that no longer exists: GER holds
+  **0 owned and 0 controlled states from 1945.7 onward** and has **no `units` section** in any
+  of the 13 saves from 1945.7 to 1946.7.
+- **Cause:** a country block is never removed from a save when the country is annihilated - only
+  its territory, army and the AI systems that write to it stop. Every variable keeps its last
+  written value forever. GER's whole variable set freezes at the **same** boundary (1945.6 →
+  1945.7): `wa_tlm_comp_last_t` and `wa_tlm_nav_last_t` both pin at **113** (1945.6) while live
+  tags read 126, and `wa_ai_fielded_eq_ratio` is byte-identical across 13 consecutive saves. The
+  values are not corrupt and not zero - they are a **1945.6 snapshot wearing a 1946.7 filename**,
+  which is exactly what makes them dangerous: a probe reading "the last save" gets a plausible,
+  well-formed, twelve-months-stale number and nothing in the output says so.
+- **Rule:** before trusting any country variable on a late-campaign save, **prove the tag is still
+  alive**: owned states > 0, or a `units` section present, or - cheapest on an instrumented build -
+  the family's own `*_last_t` stamp equal to the live tags' stamp. Byte-identical values across
+  consecutive saves are the tell; so is an aggregate that disagrees with its own array (GER's
+  `assigned_factories_total = 14` while every `wa_ai_pc_assigned_factories^0..^3` reads **0**).
+  When a dead tag is the *subject* of a probe, run it on the tag's last live save instead, and say
+  in the evidence line which save that was.
+- **Detection:** any late-save reading that looks reasonable for a country that should be dead.
+  This is a different failure from the `wa_ai_aifc_*` frozen-sector case already recorded in the
+  checklist (R39/R42): that one is a **live** tag whose weekly on_action skips it, this one is a
+  tag with nothing left to iterate. Both produce frozen variables; only the first is fixable in
+  script.
+- **Evidence:** campaign `be18f9c7` (build `d683fb022`), GER on `1945.6_Jun.hoi4` (last live save)
+  vs `1945.7_Jul.hoi4` … `1946.7_Jul.hoi4`; checklist R41's GER cruiser-submarine control, which
+  has to be read on 1945.6 for exactly this reason.
+
+### `first_nuke_dropped` records the LATEST nuke, not the first
+
+- **Date:** 2026-08-14
+- **Symptom:** campaign `be18f9c7` stamps `JAP_nuke_1` at **1945.12.5.23** but the global flag
+  `first_nuke_dropped` at **1946.5.18.24** - the same instant as `JAP_nuke_2`, and **164 days**
+  after the first bomb actually fell.
+- **Cause:** in `common/on_actions/00_on_actions.txt`, `on_nuke_drop` sets the flag with **no
+  guard** (`set_global_flag = first_nuke_dropped`, ~line 207) while the two JAP flags immediately
+  below it are each wrapped in `NOT = { has_global_flag = … }`. Re-setting an already-set global
+  flag refreshes its recorded date, so the save stores the date of the **most recent** drop. The
+  flag's *presence* is correct from the first bomb; only its date is wrong, and the name says
+  otherwise. **Inherited from vanilla** - vanilla's own copy sets it unguarded too, then tests
+  `NOT = { has_global_flag = first_nuke_dropped }` on the very next line, a branch that can never
+  be true.
+- **Rule:** a global flag's set-date is only a first-occurrence timestamp if the `set_global_flag`
+  is guarded by its own `NOT = { has_global_flag = … }`. Before dating **any** event from a flag,
+  read the write site and check for that guard - and prefer a flag that is written once by
+  construction (WA's `*_nuke_1` shape) as the timeline anchor. The same applies to `set_country_flag`.
+- **Detection:** two flags from one on_action sharing an instant when they describe different
+  events. If a "first X" flag's date equals a "second X" flag's date, the first one is unguarded.
+- **Evidence:** `common/on_actions/00_on_actions.txt:205-232`; the only in-repo reader is
+  `common/national_focus/soviet.txt:15543`, which tests **presence**, not date - so no gameplay
+  behaviour is wrong today and this is an analysis trap first. Guarding the set (or reading
+  `JAP_nuke_1`) is the fix if a date consumer is ever written.
+
+### An absent indexed variable is indistinguishable from a zero one - check presence before reading a cohort as "reset"
+
+- **Date:** 2026-08-14
+- **Symptom:** campaign `be18f9c7`, GER 1944.6: **80 railway projects all reading
+  `wa_ai_pc_stall_weeks = 0`** simultaneously. Read as a queue-wide *stall-counter reset*, which
+  had been on the R19 watch list as a suspected instrumentation bug for **four consecutive
+  campaigns** (SOV 13@13, JAP 27@14, GER 69@18, SOV 36@24...). If real, it meant R19's central
+  criterion was measuring an artefact and the mechanism under test might never have run.
+- **Cause:** there was no reset and no bug. `WA_AI_PC_start_project` never initialises
+  `WA_AI_PC_stall_weeks^id`, `WA_AI_PC_assigned_factories^id` or `WA_AI_PC_build_time^id` - those
+  are written first by the weekly maintenance pass. `check_variable` reads an absent variable as
+  **0**, and a savegame simply omits it, so a freshly enqueued cohort and a reset cohort look
+  identical. The 80 projects were a **mass enqueue**: all 80 (province, connect) pairs were new
+  versus the previous month, which held zero type-13. Stalls synchronise **iff** the projects were
+  never funded - the control is JAP 1946.7, whose 13 *partially built* survivors carry fully
+  desynchronised stalls (0,1,3,4,5,10,11,12,13,20,21,21,22).
+- **Rule:** when several slots of an indexed variable share a suspiciously uniform value, test
+  whether the variable **exists** before interpreting the value. In a save that means grepping for
+  the `name^index` key itself, not reading a parsed 0. More generally: any per-record field not
+  written at record creation is unreadable as state until its first maintenance pass, so
+  **initialise indexed fields at `add_to_array` time** if a reader (or an analyst) will ever
+  compare them across records.
+- **Detection:** a uniform value across many slots, together with the *other* per-record fields
+  being equally uniform. Real aging desynchronises; creation does not.
+- **Evidence:** `common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_core.txt` -
+  `WA_AI_PC_start_project` sets target/cost/progress/type/priority but no stall or assignment
+  field; the counters are first written in `WA_AI_PC_update_project_progress`. Checklist R19's
+  "synchronised stall counter" watch item is closed by this entry.
+
+### A single-pulse debug variable is not a multi-month state - and a shared resting value hides which branch you are in
+
+- **Date:** 2026-08-14
+- **Symptom:** campaign `be18f9c7` scored "`wa_ai_uk_air_dbg_best = -2` persists **5 consecutive
+  months** for USA (1943.2-1943.6), i.e. the deficit branch was entered and **no buildable site was
+  found**" - which pointed the whole UK air-base diagnosis at state eligibility (building slots,
+  a leaked per-state project counter). Both hypotheses were false: 33 of 33 state x save cells
+  were clean, and air bases have their own `state_max` cap and never compete for shared slots.
+- **Cause:** two compounding traps. (1) `WA_AI_uk_air_dbg_best` is **reset at the top of every
+  gated pulse** (~2-day cadence) and overwritten only when a site is actually queued, so a monthly
+  save reports **one pulse**, not the month. `dbg_started` advanced **+1 in every one of those five
+  months** - the builder was healthy throughout. (2) The reset value `-2` was documented as "no
+  deficit" while the deficit branch left it untouched when it queued nothing, so `-2` had silently
+  become the resting value of *two different states*: "satisfied" and "deficit open, budget full".
+- **Rule:** a debug/telemetry variable that is re-initialised every pulse can only ever be read as
+  a snapshot; **trend questions must go to a cumulative counter** (`dbg_started`, `WA_TLM_*_n`),
+  which cannot fall between saves. And when a variable encodes branch identity, every branch needs
+  its **own** sentinel - a shared resting value across two branches is unfalsifiable by
+  construction. Corollary for authors: pair every such gauge with a counter, and state the cadence
+  in the legend next to the sentinels.
+- **Detection:** a sentinel that appears at a *sample rate* rather than in runs matched by other
+  evidence; or a counter that advances while the gauge claims nothing happened. Those two
+  statements contradicting each other means the gauge is per-pulse.
+- **Evidence:** `WA_AI_build_uk_air_hosting_capacity` in
+  `common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_strategies.txt` - the `dbg_best = -2`
+  pre-set sits above the deficit branch. Fix 78 splits the legend (`-1` = deficit open, nothing
+  queued this pulse) and adds the cumulative `WA_TLM_r8_air_lane_grants`. Checklist R8's metric
+  note is recut accordingly.
