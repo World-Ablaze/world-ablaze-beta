@@ -21,6 +21,9 @@ Commands:
                                 *_inactive twins shown next to their active counterpart
   decisions TAG FILE... [--match]  decoded decision_status: live entries (days) vs the
                                 random_item cumulative fire counters, labelled separately
+  pc TAG FILE... [--match]      priority-construction queue: per-project table (building
+                                type, strategy tag and priority band by NAME) + a
+                                per-country summary with the civ-factory share
 """
 import argparse
 import io
@@ -938,6 +941,365 @@ def cmd_navy(args):
                          " ".join(f"{k}:{v}" for k, v in sorted(mm.items()))))
 
 
+# --- priority construction (PC) ---------------------------------------------
+#
+# The PC queue is a country-scope array (wa_ai_pc_queue) of project ids plus ~11
+# parallel indexed variable families keyed by that id. Owner:
+# common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_core.txt.
+
+# wa_ai_pc_building_type -> what WA_AI_PC_add_finished_building_by_id actually
+# spawns. SOURCE OF TRUTH is that effect's ladder, not the cost table above it in
+# the same file (the cost table shares the numbering but prices 9/10 as
+# conversions and says nothing about which building appears).
+_PC_BUILDING = {
+    1: "infrastructure", 2: "air_base", 3: "anti_air", 4: "radar",
+    5: "arms_factory", 6: "industrial_cx", 7: "dockyard", 8: "synth_refinery",
+    9: "conv_mil2civ", 10: "conv_civ2mil", 11: "hydro_steel", 12: "hydro_alu",
+    13: "railway", 14: "naval_base", 15: "steel_refinery", 16: "alu_refinery",
+}
+
+# wa_ai_pc_type_id is the STRATEGY tag, not the building type. Only callers that
+# need an independent _project_queue_max budget set one (Fix 47); most call sites
+# leave it 0, so "-" is the normal reading, not a missing value.
+_PC_TYPE_ID = {
+    0: "-",                # unscoped: shares the country-wide per-building budget
+    13: "rail",            # @WA_AI_PC_railway_TYPE_ID  (railway_core / _helpers)
+    14: "port",            # frontier-port helper       (railway_helpers)
+    20: "uk_air",          # @AI_PC_TYPE_ID_UK_AIR      (strategies)
+    21: "theatre_air",     # @AI_PC_TYPE_ID_THEATRE_AIR (strategies)
+}
+
+# Fix 41 priority band table (core.txt:263-283, redeclared strategies.txt:67-75 -
+# @ constants are file-scoped). 1100 = rail-war x1.1 for a high-value route and is
+# the highest value a post-Fix-41 build can write; anything above it is a legacy
+# pre-Fix-41 priority that the next assign_factories pass clamps to 1000.
+_PC_BANDS = ((1100, "rail-war+"), (1000, "rail-war"), (500, "rail-prewar"),
+             (300, "air-basing"), (250, "strategic"), (100, "default"))
+
+# Allocation constants, core.txt:253-256 (mirrored in WA_AI_CONSTRUCTION_triggers.txt).
+_PC_ALLOC_FRACTION = 0.40
+_PC_STABLE_BASE_FRACTION = 0.30
+_PC_ALLOC_HARD_CAP_FRACTION = 0.50
+_PC_STALL_CANCEL_WEEKS = 30
+_PC_AGING_LANE_WEEKS = 12
+_PC_MAX_PER_PROJECT = 20
+
+# Families cleared by WA_AI_PC_end_project_by_id and never initialised by
+# WA_AI_PC_start_project: an index is absent until something writes it.
+_PC_SPARSE = ("assigned_factories", "stall_weeks", "build_time")
+
+
+def _pc_band(prio):
+    if prio is None:
+        return "?"
+    if prio > 1100:
+        return "LEGACY!"
+    for floor, name in _PC_BANDS:
+        if prio >= floor:
+            return name
+    return "sub-default"
+
+
+def _pc_parse_vars(sec):
+    """(scalars, families) over the PC namespaces of a `variables` section.
+
+    Both wa_ai_pc_* (system state) and wa_tlm_pc_* (telemetry) are collected: the
+    per-project queue-entry stamp lives in the telemetry namespace on purpose, so
+    that writing it may read global.WA_TLM_clock.
+
+    families[name][index] = value. An array's declared length is kept in scalars
+    as "name^num" so a queue whose ^num disagrees with its element count stays
+    visible instead of being silently normalised."""
+    scalars, families = {}, {}
+    for line in (l.strip() for l in sec[1:-1]):
+        m = re.match(r"^(wa_(?:ai|tlm)_pc_[a-z0-9_]+?)(?:\^(\d+|num))?=(-?[\d.]+)$",
+                     line)
+        if not m:
+            continue
+        name, idx, val = m.group(1), m.group(2), float(m.group(3))
+        if idx is None:
+            scalars[name] = val
+        elif idx == "num":
+            scalars[name + "^num"] = val
+        else:
+            families.setdefault(name, {})[int(idx)] = val
+    return scalars, families
+
+
+def _pc_num(v, absent="-"):
+    """Absent -> '-', present -> the number. Keeping the two apart is the point of
+    this command: script reads an absent variable as 0 (check_variable), and so
+    does a naive parse, which is how "80 railway projects all at stall_weeks 0"
+    got reported for a queue where the stall counter had simply never been
+    written for any of them."""
+    return absent if v is None else f"{v:g}"
+
+
+def _pc_int(v, absent="-"):
+    """Rounded reading for the columns whose script value carries fractional
+    noise (progress decays by speed*factories*days; build_time is that divided
+    again). The fraction is never the question being asked."""
+    return absent if v is None else f"{v:.0f}"
+
+
+def _pc_median(vals):
+    s = sorted(vals)
+    return s[len(s) // 2]
+
+
+def cmd_pc(args):
+    """Priority-construction queue: per-project table + per-country summary."""
+    print("# Rows are in QUEUE ORDER. WA_AI_PC_assign_factories rebuilds wa_ai_pc_queue "
+          "sorted by")
+    print("#   priority descending and then fills winner-takes-most from the top - "
+          f"min(pool, {_PC_MAX_PER_PROJECT})")
+    print("#   each - so the funded projects are the head of the queue and everything "
+          "below them sits")
+    print("#   at 0 until they complete. The order is only sorted AS OF the last assign "
+          "pass, though:")
+    print("#   the strategies run from a 2-day background event and APPEND, so a save "
+          "taken mid-week")
+    print("#   shows a sorted prefix plus an unsorted tail of projects that have never "
+          "been costed for")
+    print("#   factories. The 'appended since the last assignment pass' line below counts "
+          "that tail -")
+    print("#   read it before concluding that a high-priority project is being starved.")
+    print("# ABSENT IS NOT ZERO for fact/stall/eta. WA_AI_PC_start_project does not "
+          "initialise those")
+    print("#   three families and WA_AI_PC_end_project_by_id clears them, so '-' means "
+          "'never written")
+    print("#   for this project' - never funded, or never yet seen by a weekly stall "
+          "sweep - while '0'")
+    print("#   means a pass ran and wrote zero. Script cannot tell them apart "
+          "(check_variable reads")
+    print("#   absent as 0); this command can, and the difference is what separates an "
+          "aged-out")
+    print("#   project from a freshly requeued one.")
+    print("# age_m is MONTHS IN THE QUEUE, from wa_tlm_pc_queued_t (a WA_TLM v14+ metric) "
+          "against the")
+    print("#   country's wa_tlm_pc_last_t. It reads '-' on older builds, where queue age "
+          "is recorded")
+    print("#   nowhere at all. Do not substitute the stall column for it: stall_weeks "
+          "resets to 0 every")
+    print("#   time a project is funded for a week, so it is the current starvation "
+          "streak, and the two")
+    print("#   diverge on exactly the projects worth asking about.")
+    print("# eta_d is wa_ai_pc_build_time, days left at the CURRENT assignment. It is "
+          "only refreshed")
+    print("#   for projects that had factories this week, so it is printed only for "
+          "those; on an")
+    print("#   unfunded project the stored value is a stale reading from whenever it "
+          "last had any.")
+    print("# civ = industrial_complex levels in states this tag CONTROLS. It is an UPPER "
+          "BOUND on the")
+    print("#   engine's num_of_civilian_factories (occupied-territory factories are only "
+          "partly")
+    print("#   available) and it is NOT the pool PC may touch. The real allocation base, "
+          "the engine's")
+    print("#   num_of_civilian_factories_available_for_projects, is not serialized "
+          "anywhere in a save -")
+    print("#   read wa_tlm_pc_civs_avail / wa_tlm_pc_alloc_base on instrumented builds "
+          "(`tlm TAG FILE`).")
+    for meta, f in sorted_by_date([resolve(f) for f in args.files]):
+        date = meta.get("date", "?")
+        civ = 0
+        with open_save(f) as fh:
+            # states={} precedes countries={} in every save, so the state sweep and
+            # the country sections share one pass over the file.
+            for _sid, lines in iter_state_blocks(fh):
+                if not lines:
+                    continue
+                b, _owner, controller = _state_buildings(lines)
+                if controller == args.tag:
+                    civ += b.get("industrial_complex", 0)
+            secs = collect_sections(fh, args.tag, ("variables", "flags"))
+        print(f"=== {date}  {args.tag}  ({os.path.basename(f)}) ===")
+        if "variables" not in secs:
+            print("  (no variables section - country dead or never scripted)")
+            continue
+        scalars, fam = _pc_parse_vars(secs["variables"])
+        if not scalars and not fam:
+            print("  (no wa_ai_pc_* variables - PC never initialised for this country)")
+            continue
+
+        queue = fam.get("wa_ai_pc_queue", {})
+        order = [int(queue[i]) for i in sorted(queue)]
+
+        def val(family, pid):
+            return fam.get("wa_ai_pc_" + family, {}).get(pid)
+
+        # Queue age in months. wa_tlm_pc_queued_t is the clock when the slot entered
+        # the queue (v14+); wa_tlm_pc_last_t is the clock at the country's last monthly
+        # sample, i.e. "now" to within a month - the save's own date is not on the same
+        # axis. Absent on pre-v14 builds, where age is simply not recorded anywhere.
+        now_t = scalars.get("wa_tlm_pc_last_t")
+        queued = fam.get("wa_tlm_pc_queued_t", {})
+
+        def age(pid):
+            q = queued.get(pid)
+            return None if q is None or now_t is None else max(0.0, now_t - q)
+
+        # --- summary -------------------------------------------------------
+        total = scalars.get("wa_ai_pc_assigned_factories_total")
+        air = scalars.get("wa_ai_pc_air_factories_assigned")
+        active = scalars.get("wa_ai_pc_active_projects")
+        nonrail = scalars.get("wa_ai_pc_active_nonrail_projects")
+        summed = sum(v for v in (val("assigned_factories", p) for p in order)
+                     if v is not None)
+        print(f"  queue={len(order)} projects   assigned_factories_total="
+              f"{_pc_num(total)} (per-project sum {summed:g})   "
+              f"air_factories_assigned={_pc_num(air)}")
+        if total is not None and abs(total - summed) > 0.5:
+            print(f"  (!) assigned_factories_total ({total:g}) disagrees with the "
+                  f"per-project sum ({summed:g}) - the aggregate is stale. On a tag "
+                  "with no states and no units this is the annihilated-country freeze: "
+                  "the country block survives and every variable in it keeps its last "
+                  "live value")
+        cap = _PC_ALLOC_HARD_CAP_FRACTION * civ
+        floor = _PC_STABLE_BASE_FRACTION * civ
+        share = f"{100.0 * summed / civ:.1f}%" if civ else "n/a"
+        capshare = f"{100.0 * summed / cap:.0f}%" if cap else "n/a"
+        print(f"  civ levels controlled={civ}   PC is using {share} of them   "
+              f"({capshare} of the {cap:.0f}-factory hard ceiling; stable-base floor "
+              f"{floor:.0f})")
+        ovr = scalars.get("wa_ai_pc_override_max_factories_factor")
+        live = re.search(r"WA_AI_PC_override_max_factories_factor=\{\s*value=(-?\d+)"
+                         r'\s*(?:date="([^"]+)")?', "".join(secs.get("flags", [])))
+        if ovr is not None or live:
+            state = (f"flag LIVE (set {live.group(2)}) -> base x{_pc_num(ovr)}"
+                     if live else
+                     f"flag EXPIRED -> base x{_PC_ALLOC_FRACTION} "
+                     f"(stale variable {_pc_num(ovr)} is inert without the flag)")
+            print(f"  alloc override: {state}")
+        else:
+            print(f"  alloc override: none -> base x{_PC_ALLOC_FRACTION} "
+                  "(@AI_PC_ALLOC_FRACTION)")
+        if active is not None and active != len(order):
+            print(f"  (!) wa_ai_pc_active_projects={active:g} but the queue holds "
+                  f"{len(order)} - the +1/-1 bookkeeping has desynced (it is "
+                  "resynced on the next assign_factories pass)")
+        print(f"  gate counters: active_projects={_pc_num(active)} "
+              f"active_nonrail={_pc_num(nonrail)} "
+              "(nonrail excludes types 13/14 and feeds the `< 5` strategy gates)")
+
+        # --- per building type ---------------------------------------------
+        groups = collections.OrderedDict()
+        for pid in order:
+            bt = val("building_type", pid)
+            key = int(bt) if bt is not None else -1
+            groups.setdefault(key, []).append(pid)
+        if groups:
+            print(f"  {'building type':<20}{'n':>4}{'funded':>8}{'civs':>6}   "
+                  f"{'priority bands':<30}{'stall wks min/med/max':<26}age_m med")
+        for key in sorted(groups, key=lambda k: -len(groups[k])):
+            pids = groups[key]
+            label = f"{_PC_BUILDING.get(key, 'type ' + str(key))}({key})"
+            facts = [val("assigned_factories", p) for p in pids]
+            funded = sum(1 for v in facts if v)
+            civs = sum(v for v in facts if v)
+            bands = collections.Counter(_pc_band(val("priority", p)) for p in pids)
+            bandtxt = " ".join(f"{b}x{c}" for b, c in bands.most_common())
+            st = [v for v in (val("stall_weeks", p) for p in pids) if v is not None]
+            sttxt = (f"{min(st):g}/{_pc_median(st):g}/{max(st):g}"
+                     f" ({len(st)}/{len(pids)} written)"
+                     if st else f"- (0/{len(pids)} written)")
+            ag = [v for v in (age(p) for p in pids) if v is not None]
+            agtxt = f"{_pc_median(ag):.0f}" if ag else "-"
+            print(f"  {label:<20}{len(pids):>4}{funded:>8}{civs:>6.0f}   "
+                  f"{bandtxt:<30}{sttxt:<26}{agtxt}")
+        tags = collections.Counter(
+            _PC_TYPE_ID.get(int(val("type_id", p) or 0), f"id {val('type_id', p):g}")
+            for p in order)
+        if tags:
+            print("  strategy tags (wa_ai_pc_type_id): "
+                  + "  ".join(f"{k}x{v}" for k, v in tags.most_common()))
+
+        # --- anomalies ------------------------------------------------------
+        # Length of the descending-priority prefix = what the last assign pass saw.
+        # Everything after it was appended by a strategy since, and has never been
+        # eligible for factories: an unfunded project inside the tail is NOT starved.
+        tail = 0
+        for i in range(1, len(order)):
+            if (val("priority", order[i]) or 0) > (val("priority", order[i - 1]) or 0):
+                tail = len(order) - i
+                break
+        if tail:
+            print(f"  {tail} project(s) appended since the last assignment pass "
+                  "(queue order breaks its descending-priority sort there) - they have "
+                  "not yet been eligible for factories, so 0/'-' there is expected")
+        for family in _PC_SPARSE:
+            missing = sum(1 for p in order if val(family, p) is None)
+            if missing and missing == len(order) and len(order) > 4:
+                print(f"  (!) wa_ai_pc_{family} is absent for ALL {missing} queued "
+                      "projects - that code path has not run for this country since "
+                      "the queue was last rebuilt; the value is unknown, not 0")
+        st_all = [v for v in (val("stall_weeks", p) for p in order) if v is not None]
+        if len(st_all) > 4 and len(set(st_all)) == 1:
+            print(f"  (!) every written stall counter reads {st_all[0]:g} - a "
+                  "synchronised whole-queue reset, so per-project age is not "
+                  "measurable from this save alone")
+        aged = [p for p in order
+                if (val("stall_weeks", p) or 0) > _PC_STALL_CANCEL_WEEKS]
+        if aged:
+            print(f"  (!) {len(aged)} project(s) past the {_PC_STALL_CANCEL_WEEKS}-week "
+                  "stall-sweep bar are still queued - the sweep only fires when "
+                  "assigned_factories_total > 0")
+        lane = [p for p in order
+                if _PC_AGING_LANE_WEEKS <= (val("stall_weeks", p) or 0)]
+        if lane:
+            print(f"  {len(lane)} project(s) at or past the {_PC_AGING_LANE_WEEKS}-week "
+                  "overtake-lane bar (one is served per weekly pass)")
+        broken = [p for p in order if not val("target_state", p)]
+        if broken:
+            print(f"  (!) {len(broken)} queued project(s) carry target_state 0/absent - "
+                  "the cleanup pass removes these as broken")
+        slots = fam.get("wa_ai_pc_target_state", {})
+        orphans = [i for i, v in slots.items() if v and i not in order]
+        if orphans:
+            print(f"  (!) {len(orphans)} slot(s) hold a target_state but are not in the "
+                  f"queue: {orphans[:12]}{' ...' if len(orphans) > 12 else ''} - "
+                  "leaked slots, reusable only after target_state returns to 0")
+
+        # --- per-project table ----------------------------------------------
+        pat = re.compile(args.match) if args.match else None
+        rows = []
+        for rank, pid in enumerate(order):
+            bt = val("building_type", pid)
+            btn = _PC_BUILDING.get(int(bt), f"type{bt:g}") if bt is not None else "?"
+            tid = val("type_id", pid)
+            tidn = _PC_TYPE_ID.get(int(tid), f"id{tid:g}") if tid is not None else "?"
+            prio = val("priority", pid)
+            cost = val("project_cost", pid)
+            prog = val("progress", pid)
+            done = (f"{100.0 * (cost - prog) / cost:.0f}%"
+                    if cost and prog is not None else "-")
+            label = f"{btn} {tidn} {_pc_band(prio)}"
+            if pat and not pat.search(label):
+                continue
+            rows.append((rank, pid, btn, tidn, val("target_state", pid),
+                         val("target_province", pid), val("connect_province", pid),
+                         prio, val("assigned_factories", pid), prog, cost, done,
+                         val("stall_weeks", pid), val("build_time", pid), age(pid)))
+        if not rows:
+            print("  (no projects matched)" if pat else "  (queue empty)")
+            continue
+        print(f"  {'#':>3} {'id':>4}  {'building':<15}{'tag':<12}{'state':>6}"
+              f"{'prov':>7}{'->prov':>7}{'prio':>7}{'fact':>5}"
+              f"{'progress':>10}{'cost':>8}{'done':>6}{'stall':>6}{'eta_d':>7}"
+              f"{'age_m':>6}")
+        shown = rows if not args.limit else rows[: args.limit]
+        for (rank, pid, btn, tidn, state, prov, conn, prio, fact, prog, cost,
+             done, stall, eta, agem) in shown:
+            print(f"  {rank:>3} {pid:>4}  {btn:<15}{tidn:<12}{_pc_num(state):>6}"
+                  f"{_pc_num(prov, '0'):>7}{_pc_num(conn, '0'):>7}{_pc_num(prio):>7}"
+                  f"{_pc_num(fact):>5}{_pc_int(prog):>10}{_pc_int(cost):>8}"
+                  f"{done:>6}{_pc_num(stall):>6}{_pc_int(eta) if fact else '-':>7}"
+                  f"{_pc_int(agem):>6}")
+        if len(shown) < len(rows):
+            print(f"  ... {len(rows) - len(shown)} more project(s); "
+                  "use --limit 0 or --match")
+
+
 def _wrap(text, width):
     out, line = [], ""
     for word in text.split():
@@ -1034,6 +1396,16 @@ def main():
     s.add_argument("files", nargs="+")
     s.add_argument("--match", help="only decision names matching this regex")
     s.set_defaults(fn=cmd_decisions)
+
+    s = sub.add_parser("pc", help="priority-construction queue and factory share")
+    s.add_argument("tag")
+    s.add_argument("files", nargs="+")
+    s.add_argument("--match", help="only projects whose "
+                                   "'<building> <strategy tag> <priority band>' label "
+                                   "matches this regex (e.g. railway, uk_air, rail-war)")
+    s.add_argument("--limit", type=int, default=30,
+                   help="cap project rows per save, 0 = unlimited (default 30)")
+    s.set_defaults(fn=cmd_pc)
 
     args = p.parse_args()
     args.fn(args)
