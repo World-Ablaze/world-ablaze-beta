@@ -1077,6 +1077,7 @@ NDefines.NAI.CANCEL_INVASION_COMBAT_MIN_DURATION_HOURS = 720    					-- Only all
 
 NDefines.NAI.MISSING_CONVOYS_BOOST_FACTOR = 0.0										-- The more convoys a country is missing, the more resources it diverts to cover this.						-- If the enemy has a navy at least these many times stronger that the own, don't bother invading
 
+AI_TASKFORCE_REQUIRED_RESERVE_RATIO = 0.05	-- Fraction of required TF optimal composition held in reserve for reinforcement (rounded up per type)
 -- Fix 53b (2026-08-13, checklist R36): the four escort SCORE terms below were all
 -- zeroed, so a convoy-escort mission could score points from nothing except transient
 -- region convoy danger, while patrol kept its full vanilla score (WA does not override
@@ -1090,7 +1091,8 @@ NDefines.NAI.MISSING_CONVOYS_BOOST_FACTOR = 0.0										-- The more convoys a c
 -- structurally (proportional to convoys present) instead of reactively.
 NDefines.NAI.CONVOY_ESCORT_MUL_FROM_NO_CONVOYS = 0.02								-- score multiplier when no convoys are around  [Fix 53b: was 0, vanilla 0.02]
 NDefines.NAI.CONVOY_ESCORT_SCORE_FROM_CONVOYS = 15          				    	-- score for each convoy you have in area  [Fix 53b: was 0, vanilla 15]
-NDefines.NAI.REGION_CONVOY_DANGER_DAILY_DECAY = 5									-- When convoys are sunk it generates threat in the region which the AI uses to prio nalval missions  [vanilla 2 - left alone; see the Fix 53b note above, escort no longer depends on this term]
+NDefines.NAI.REGION_CONVOY_DANGER_DAILY_DECAY = 5 --5	
+NDefines.NAI.REGION_THREAT_PER_SUNK_CONVOY = 50 --25								-- When convoys are sunk it generates threat in the region which the AI uses to prio nalval missions  [vanilla 2 - left alone; see the Fix 53b note above, escort no longer depends on this term]
 NDefines.NAI.NAVAL_MISSION_ESCORT_NEAR_OWNED = 300									-- Extra escort mission score near owned provinces  [Fix 53b: was 0, vanilla 300]
 NDefines.NAI.NAVAL_MISSION_ESCORT_NEAR_CONTROLLED = 200								-- Extra escort mission score near controlled provinces  [Fix 53b: was 0, vanilla 200]
 
@@ -1160,7 +1162,7 @@ NDefines.NAI.MAX_MISSION_PER_TASKFORCE = {  -- max mission region/taskforce rati
 	10, -- NAVAL INVASION SUPPORT
 }
 
-NDefines.NAI.MAX_PATROL_TO_STRIKE_FORCE_RATIO = 4.0									-- maximum patrol/strike force ratio
+NDefines.NAI.MAX_PATROL_TO_STRIKE_FORCE_RATIO = 3.0									-- maximum patrol/strike force ratio --was 4
 
 --Need to find good values, 1 convoy sunk generates 25 threat
 NDefines.NAI.REGION_THREAT_LEVEL_TO_AVOID_REGION = 25 * 1000						-- How much threat must be generated in region ( by REGION_THREAT_PER_SUNK_CONVOY ) so the AI will decide to mark the region as avoid
