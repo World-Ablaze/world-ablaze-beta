@@ -589,19 +589,86 @@ WA_AI_no_enemy_border = {
 
 # THIS = state. Central and southern England states expected to host the
 # faction's aviation (within fighter range of northern France / Low Countries).
+#
+# Fix 51: THE ORDER OF THIS LIST IS THE BUILD PRIORITY - south-east first. It is the
+# authoritative geography statement, and it is mirrored id-for-id (and rank-for-rank)
+# by WA_AI_uk_air_hosting_priority_init in
+# common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_strategies.txt, which loads it
+# into global.WA_AI_uk_air_priority_states. The list genuinely has to exist twice:
+# @ constants are file-scoped, and a state-scope membership test cannot be built from
+# a plain-id array (comparing THIS.id against a stored plain id never matches - see
+# the .id scope-encoding entry in wa-lessons-learned). MEMBERSHIP stays owned here:
+# the selector re-tests this trigger on every array candidate and falls back to an
+# unordered scan over it, so if the two ever drift, a state can lose its RANK but
+# never its eligibility. Change one, change the other.
+#
+# Ranking method (verified 2026-08-14, not inherited): mean pixel distance from each
+# state's provinces (generated WA_AI_MAP province coordinates) to the target set the
+# header names - Vlaanderen/Holland/Nord-Pas-de-Calais, Picardy/Upper+Lower Normandy/
+# Brittany, Ile de France/Paris. Mean, not nearest: these fields have to cover the
+# whole Northern-France + Low-Countries theatre, not one landing beach.
+#   857 101.8 | 961 110.0 | 127 114.9 | 125 113.1 | 126 113.5 | 860 117.6
+#   859 137.3 | 338 133.4 | 129 133.3 | 128 143.6 | 123 151.8
+# Two ranks are judgement, not arithmetic:
+#  - 127 Sussex is placed above 961 South London despite a 5px worse mean (inside the
+#    noise of a province-centroid measure) because it is the better NEAREST field
+#    (56.2 vs 58.3) and is coastal - the forward Channel fighter position.
+#  - 123 Cornwall is placed LAST although it is the second most southerly state by
+#    latitude. Its seaward frontage is Biscay and Brittany, not the Channel narrows:
+#    its distance to the Calais/Belgium arc is 118.8, second-worst of the eleven and
+#    worse than Warwickshire's 100.8. It is a Coastal Command position, not a
+#    Northern-France cover position.
+# States NOT in this list that hold ENG air bases in campaigns (122 Wales, 858
+# Berkshire, 130 Yorkshire) are left out deliberately - adding states raises the
+# structural ceiling (11 x @UK_AIR_TARGET_LEVEL_CAP), and checklist R8 says not to do
+# that until the basing OUTCOME (R15) justifies more capacity. Berkshire measures
+# better than Gloucestershire (122.4 vs 133.4) and is the first candidate if that
+# ever changes.
 WA_AI_uk_air_hosting_state = {
 	OR = {
-		state = 123 # Cornwall
-		state = 859 # Dorset
-		state = 127 # Sussex
-		state = 857 # Kent
-		state = 126 # North London
-		state = 961 # South London
-		state = 125 # Essex
-		state = 860 # Norfolk
-		state = 338 # Gloucestershire
-		state = 128 # Warwickshire
-		state = 129 # Leicestershire
+		state = 857 # rank  1 - Kent
+		state = 127 # rank  2 - Sussex
+		state = 961 # rank  3 - South London
+		state = 125 # rank  4 - Essex
+		state = 126 # rank  5 - North London
+		state = 860 # rank  6 - Norfolk
+		state = 859 # rank  7 - Dorset
+		state = 338 # rank  8 - Gloucestershire
+		state = 129 # rank  9 - Leicestershire
+		state = 128 # rank 10 - Warwickshire
+		state = 123 # rank 11 - Cornwall
+	}
+}
+
+# THIS = state, ROOT = builder country. Input: _project_building_type (= 2).
+# Fix 51: the "can this builder put another air-base level here" test, extracted so the
+# ordered south-first walk and its unordered fallback in
+# WA_AI_build_uk_air_hosting_capacity cannot drift apart. Body is unchanged from the
+# level-ladder's inline limit - see the Fix 46 comment there for why the allied branch
+# must repeat the host's free-slot test.
+WA_AI_uk_air_site_buildable = {
+	OR = {
+		AND = {
+			is_controlled_by = ROOT
+			WA_AI_available_AIR = yes
+			WA_AI_PC_can_build_project = yes
+		}
+		AND = {
+			NOT = { is_controlled_by = ROOT }
+			WA_AI_available_AIR_allied = yes
+			NOT = { WA_AI_PC_has_same_type_project_here = yes }
+			# Fix 46: the ally must pass the SAME free-slot test the host nation gets
+			# via WA_AI_PC_can_build_project above. Without it an allied builder could
+			# queue a 2000-IC air base into a state with no free shared slot, fund it at
+			# up to 20 civs for weeks, and then have WA_AI_PC_complete_project_by_id
+			# refuse to spawn the building (its own WA_AI_PC_building_slot_available
+			# gate) - the whole build silently discarded. Air bases compete for state
+			# slots with arms factories, which ENG builds by the hundred in exactly
+			# these states, so a full state is the normal case, not an edge case. Same
+			# trigger, same _project_building_type = 2, so queue-time and
+			# completion-time agree.
+			WA_AI_PC_building_slot_available_for_type = yes
+		}
 	}
 }
 
@@ -950,4 +1017,129 @@ WA_AI_PC_state_has_railway_at_level_3 = {
 		state = THIS
 		level = 3
 	}
+}
+
+############################################################################################################
+#	Fix 74: coalition logistics - who may build rail/ports on whose soil
+#
+#	The PC *executor* has always accepted allied ground: WA_AI_PC_start_project passes on
+#	CONTROLLER = { is_in_faction_with = ROOT } (PRIORITY_core.txt), the Fix 34 controller test in
+#	WA_AI_PC_assign_factories and the completion path do the same, supply_node/rail_way/naval_base
+#	are all allied_build = yes, and provincial pathfinder type 2 walks allied provinces. Only the
+#	*selectors* were ROOT-or-subject gated, so a corridor that ended up on an ally's soil had no
+#	builder at all. Observed twice: Free-France Normandy (campaign 31eaf7e6, lessons-log) and
+#	FRA-controlled Tunisia (campaign f9321934, 1944.3 - rail 1-2 at the Tripoli front while
+#	ENG-held Egypt ran rail 5, and ENG/USA queued zero railway projects all campaign).
+#
+#	The ally leg is deliberately NOT "any faction member". It fires only where the controller
+#	cannot run the railway system for itself, which is exactly the population the gap was about
+#	and keeps two healthy allies out of each other's rail networks.
+############################################################################################################
+
+# Railway eligibility thresholds. @ constants are file-scoped; before Fix 75 these lived in
+# BOTH common/on_actions/WA_AI_misc_on_actions.txt (as an inline limit block) and
+# WA_AI_CONSTRUCTION_PRIORITY_railway_core.txt, with a "must match" comment holding them together.
+# The on_action copy is now gone - it calls the trigger below instead - so only railway_core.txt
+# (authoritative, it also owns the constants the effect body itself reads) and this file carry them.
+@WA_AI_PC_railway_MIN_CIVS_PEACE = 75
+@WA_AI_PC_railway_MINOR_CIV_THRESHOLD = 50
+@WA_AI_PC_railway_MIN_STATES = 5
+@WA_AI_PC_railway_MAX_SURRENDER = 0.3
+@WA_AI_PC_railway_RECOVERY_MIN_STATES = 20
+
+# THIS = country. Is this country able to run the railway system for itself?
+#
+# Fix 75: this IS the on_weekly railway eligibility gate, lifted verbatim out of
+# WA_AI_misc_on_actions.txt so that the on_action and Fix 74's ally leg cannot drift apart - they
+# were two hand-maintained copies of the same judgement, and R46 already listed that as a
+# regression risk.
+#
+# `has_capitulated` is deliberately NOT a term here. It answers "did this government fall", not
+# "can this country build" - the same category error R27 records for surrender_progress. A
+# capitulated tag keeps its territory, its factions and its factories; what decides whether rail is
+# worth building is the capability terms below. FRA on f9321934 fails this trigger anyway (21 civs
+# against a 75-civ recovery hatch it needs because its surrender_progress is pinned high), which is
+# why Fix 74's ally leg still fires for it and ENG/USA build the Tunisian rail.
+WA_AI_PC_country_can_build_own_logistics = {
+	# Higher peacetime industrial threshold - war uses a lower one inside WA_AI_PC_railway
+	OR = {
+		has_war = yes
+		num_of_civilian_factories > @WA_AI_PC_railway_MIN_CIVS_PEACE
+	}
+	# Skip minor countries unless at war or rich
+	OR = {
+		is_major = yes
+		has_war = yes
+		num_of_civilian_factories > @WA_AI_PC_railway_MINOR_CIV_THRESHOLD
+	}
+	# Minimum state count - skip tiny nations
+	num_of_controlled_states > @WA_AI_PC_railway_MIN_STATES
+	# Skip countries losing badly - UNLESS the war economy still works.
+	# surrender_progress measures VP loss, not capability: SOV crossed 30% in Oct 1942 with ~180
+	# states and 300+ divisions and was locked out of railway building for the entire eastern war.
+	OR = {
+		surrender_progress < @WA_AI_PC_railway_MAX_SURRENDER
+		AND = {
+			num_of_civilian_factories > @WA_AI_PC_railway_MIN_CIVS_PEACE
+			num_of_controlled_states > @WA_AI_PC_railway_RECOVERY_MIN_STATES
+		}
+	}
+}
+
+# THIS = country. Negation, for Fix 74's ally leg: an ally ROOT may build logistics FOR is one that
+# cannot build them itself. Defined as the strict complement so the two can never disagree.
+WA_AI_PC_country_cannot_build_own_logistics = {
+	NOT = { WA_AI_PC_country_can_build_own_logistics = yes }
+}
+
+# THIS = state, ROOT = builder country. True when ROOT may queue logistics construction here.
+# Superset of the two pre-Fix-74 tests: ROOT-controlled (the old ROOT loop) and subject-controlled
+# (Fix 27's puppet loop), plus the new ally leg.
+WA_AI_PC_can_build_logistics_here = {
+	OR = {
+		is_controlled_by = ROOT
+		CONTROLLER = { is_subject_of = ROOT }
+		AND = {
+			CONTROLLER = { is_in_faction_with = ROOT }
+			CONTROLLER = { WA_AI_PC_country_cannot_build_own_logistics = yes }
+		}
+	}
+}
+
+# THIS = country, ROOT = builder country. Countries whose controlled states ROOT may treat as its
+# own when selecting logistics targets: itself, its subjects, and faction allies that cannot build
+# for themselves. Country-scoped twin of WA_AI_PC_can_build_logistics_here, for the selectors that
+# iterate `every_country = { limit = { ... } every_controlled_state = { ... } }` rather than states.
+WA_AI_PC_is_logistics_build_partner = {
+	exists = yes
+	OR = {
+		tag = ROOT
+		is_subject_of = ROOT
+		AND = {
+			is_in_faction_with = ROOT
+			WA_AI_PC_country_cannot_build_own_logistics = yes
+		}
+	}
+}
+
+# THIS = state, ROOT = builder country. Cheap membership test for the land-war railway strategy:
+# is this state a frontline worth a route against the enemy currently being processed?
+# Reads the chain-global temps the strategy sets per enemy (_routes_for_this_enemy, the per-enemy
+# route budget; _current_enemy_tag; _check_railway_level, the level at which a frontline is "done").
+# Extracted by Fix 74 so all three candidate populations - ROOT's states, subject states and
+# dependent-ally states - are filtered identically before the shared body runs.
+WA_AI_PC_railway_land_frontline_candidate = {
+	### Skip if we already have enough routes for this enemy
+	check_variable = { _routes_for_this_enemy < 4 }	# @WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY
+	# State borders this specific enemy (or the enemy's puppets)
+	any_neighbor_state = {
+		OR = {
+			is_controlled_by = var:_current_enemy_tag
+			controller = { is_subject_of = var:_current_enemy_tag }
+		}
+	}
+	# State has a supply hub (proper check)
+	WA_AI_PC_state_has_supply_hub = yes
+	# Skip states that already have level 5 railways (native check - includes focus/event built)
+	NOT = { WA_AI_PC_state_has_railway_at_level = yes }
 }

@@ -84,6 +84,20 @@ All files are in `common/scripted_effects/`.
 @WA_AI_PC_RAILWAY_SEGMENTS_PER_STATE = 3              # Estimated segments per state
 ```
 
+**The three cost constants above are SCORING constants** — they price candidate routes and ports so
+`WA_AI_PC_score_port_candidate` can compare them. The price a project is actually *charged*
+comes from `WA_AI_PC_get_building_cost` (`..._PRIORITY_core.txt`), which is a separate table.
+**Since Fix 73 (2026-08-14) the two agree**; before that, charging used vanilla's `rail_way`
+numbers (`170 + 130 × level`) while scoring used this mod's flat 800, so the system chose
+routes at one price and paid for them at another. Charged prices today:
+
+| Project type | Charged | Source |
+|---|---|---|
+| 13 railway | **800 flat per province connection**, one connection per project | `rail_way` `base_cost = 800`, `per_level_extra_cost = 0` |
+| 14 naval base | **10000 flat** | `naval_base` `base_cost = 10000`; the real `per_level_extra_cost = -556` taper is modelled in scoring only, not in charging |
+
+If `common/buildings/00_buildings.txt` is re-priced, **both** tables must be updated.
+
 ### Strategy Constants (`railway_strategies.txt`, lines 7-8)
 
 ```
@@ -95,7 +109,11 @@ All files are in `common/scripted_effects/`.
 
 ## Eligibility Filters
 
-The railway system runs inside `on_weekly` (`WA_AI_misc_on_actions.txt`, lines 110-145). Before `WA_AI_PC_railway` is called, the following filters apply:
+The railway system runs inside `on_weekly` (`WA_AI_misc_on_actions.txt`). Since **Fix 75** the filter
+block is the scripted trigger **`WA_AI_PC_country_can_build_own_logistics`**
+(`common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt`) rather than an inline `limit` — terms and
+thresholds unchanged, but it is now a single definition shared with Fix 74's ally leg, which needs
+exactly the same judgement. Before `WA_AI_PC_railway` is called:
 
 | Condition | Peace | War |
 |-----------|-------|-----|
@@ -106,6 +124,11 @@ The railway system runs inside `on_weekly` (`WA_AI_misc_on_actions.txt`, lines 1
 | AI only | Yes | Yes |
 
 During war, the civilian factory threshold inside `WA_AI_PC_railway` itself is 50 * 0.6 = 30 civs.
+
+**Capitulation is not a filter (Fix 75).** `has_capitulated = no` used to appear at *three* levels —
+the weekly PC block gate, this eligibility filter, and again inside `WA_AI_PC_railway` — and all three
+are gone. A capitulated country keeps its territory, its faction and its factories; whether rail is
+worth building there is decided by the capability terms above. See "Capitulated countries" below.
 
 Notes on the surrender gate: `surrender_progress` measures VP loss, not capability - the escape
 hatch (`@WA_AI_PC_railway_RECOVERY_MIN_STATES`) keeps a large power with an intact war economy
@@ -167,15 +190,32 @@ The interval counter is managed inside `WA_AI_PC_railway` (`railway_core.txt`, l
 
 **Behavior:**
 - Uses `WA_AI_PC_railway_get_relevant_enemies` to pre-filter enemies (majors, 50+ factories, or direct border)
-- For each relevant enemy ROOT directly borders (via `WA_AI_PC_railway_country_borders_enemy`):
-  - Finds frontline controlled states with supply hubs bordering that enemy
+- For each relevant enemy ROOT directly borders (via `WA_AI_PC_railway_country_borders_enemy`), it walks
+  **three candidate populations in order** (Fix 74), each filtered by
+  `WA_AI_PC_railway_land_frontline_candidate` and then handed to the single shared body
+  `WA_AI_PC_railway_land_consider_frontline`:
+  1. ROOT's own controlled states
+  2. ROOT's subjects' controlled states (Fix 27)
+  3. **faction allies that cannot build their own logistics** (Fix 74) — see "Coalition logistics" below
+  The order is load-bearing: the per-enemy route budget (`@WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY`)
+  is consumed top-down, so ROOT's own soil always outranks a subject's and a subject's an ally's.
+- The shared body then:
   - Skips single-node states (detected via `WA_AI_PC_coastal_state_is_single_node`)
-  - Skips states already at railway level 5
-  - Handles cross-landmass targets via overseas supply chain analysis (cached per landmass)
+  - Requires the supply-hub **province** to be held by ROOT or by the state's controller (province
+    control diverges from state control on contested fronts)
+  - Handles cross-landmass targets via overseas supply chain analysis (per target since Fix 26)
   - Queues port upgrades for bottlenecked overseas routes
 - Pathfinds (type 2 = ROOT + allied + subject provinces, allows partial paths)
 - Sorts all targets by enemy threat (factories + divisions*5) via `WA_AI_PC_railway_score_and_sort_by_enemy_threat`
 - Default route level: 5, priority: 1000 (`@WA_AI_PC_railway_PRIO`; Fix 41 band compression)
+
+**Fix 74 scope correction — Fix 27 had never run.** The subject loop used to sit inside
+`for_each_scope_loop = { array = _relevant_enemies_ }` *without* a `ROOT = {}` wrapper, so
+`every_subject_country` iterated the **enemy's** puppets. Its own acceptance test
+(`controller = { is_subject_of = ROOT }`) can never pass there, and ROOT does not control those
+hub provinces, so the loop produced nothing from the day it was written. It is now explicitly
+`ROOT = { every_subject_country = { … } }`. Expect subject frontlines (UKE Egypt, ITL Libya,
+RAJ Burma) to start receiving routes for the first time.
 
 **Example:** Germany vs Soviet Union
 - Germany borders SOV → builds railways from Berlin to each frontline supply hub
@@ -225,6 +265,85 @@ The interval counter is managed inside `WA_AI_PC_railway` (`railway_core.txt`, l
 
 **Route priority:** 500 (`@WA_AI_PC_railway_PRIO_PREWAR`; Fix 41 band compression)
 
+## Coalition logistics — building on an ally's soil (Fix 74)
+
+The PC **executor** has always accepted allied ground: `WA_AI_PC_start_project` passes on
+`CONTROLLER = { is_in_faction_with = ROOT }`, the Fix 34 controller test in
+`WA_AI_PC_assign_factories` and the completion path do the same, `supply_node` / `rail_way` /
+`naval_base` are all `allied_build = yes`, and provincial pathfinder type 2 walks allied provinces.
+Only the **selectors** were ROOT-or-subject gated, so a corridor that ended up on an ally's soil had
+no builder at all. `_project_build_for_ally = 1` has been set in `railway_core.txt` since the
+original design and read nowhere — Fix 74 is that intent, implemented.
+
+Three triggers in `common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt` carry the policy:
+
+| Trigger | Scope | Answers |
+|---|---|---|
+| `WA_AI_PC_country_cannot_build_own_logistics` | country | Is this country locked out of the railway system? (capitulated, or below the civ/state eligibility thresholds) |
+| `WA_AI_PC_can_build_logistics_here` | state, ROOT = builder | May ROOT queue logistics on this state? (ROOT-controlled, subject-controlled, or dependent-ally-controlled) |
+| `WA_AI_PC_is_logistics_build_partner` | country, ROOT = builder | Country-scoped twin, for selectors that iterate `every_country → every_controlled_state` |
+
+**The ally leg is deliberately not "any faction member."** It fires only where the controller cannot
+run the railway system for itself. That is exactly the population the gap was about — a capitulated
+ally keeps its territory and faction membership but the whole weekly PC block is gated
+`has_capitulated = no`, so its queue simply fossilises — and it keeps two healthy majors out of each
+other's rail networks. **The eligibility literals in that trigger are a third redeclaration of
+`@WA_AI_PC_railway_MIN_CIVS` / `_MIN_STATES`** (`@` constants are file-scoped); `railway_core.txt` is
+authoritative and `WA_AI_misc_on_actions.txt` holds the second copy — change one, change all three.
+
+Sites made ally-aware: the land-war candidate walk (above), all three overseas Part-B scans
+(beachhead candidate, beachhead validation, frontline targets), both port searches
+(`WA_AI_PC_get_best_port_on_landmass`, `WA_AI_PC_get_best_port_near_state` — which also folds away
+their duplicated Fix 28 subject loops), `WA_AI_PC_process_port_upgrades` and
+`WA_AI_PC_create_frontier_port`.
+
+The port searches matter as much as the target selector: without them a route *to* ally soil still
+starts from ROOT's own nearest port, so an ENG route to FRA-held Tunisia would begin at Alexandria
+and have to pathfind across Italian Libya while Bizerte (naval base 5) sits at the target.
+
+**Evidence** (campaign `f9321934`, 1944.3): the Maghreb — Tunisia 458, Algiers 459, Constantine 460,
+Casablanca 461, Marrakech 462 — is FRA-controlled; Egypt 446/447 is ENG. Egypt runs rail 5 on
+provinces 3996/4055/10031 while Tunisia sits at 1–2 with supply hubs at 11921/11969. ENG and USA held
+**zero** railway projects for the entire campaign, their interval counters advancing on schedule (the
+pass fires and finds nothing). FRA, capitulated, held 14 fossil projects byte-identical for 12 months,
+every one aimed at German-held metropolitan France. Same root cause as the Free-French Normandy
+beachhead on campaign `31eaf7e6`.
+
+## Capitulated countries (Fix 75)
+
+Before Fix 75 the weekly PC block was gated `is_ai = yes` + `has_capitulated = no`, while
+`WA_AI_priority_construction_strategies` fires from `WA_AI_background.1` gated only on `is_ai = yes`.
+A capitulated country therefore kept **queueing** projects while never assigning factories to them or
+progressing them — the queue was write-only, and froze at whatever it held the week the capital fell.
+FRA on `f9321934` sat on 14 projects byte-identical across 12 months (`assigned_factories` and
+`progress` stuck mid-value), 10 of them railways aimed at GER-held metropolitan France, while holding
+49 controlled states — the whole Maghreb — and 21 idle civ factories.
+
+The block gate is now `is_ai = yes` + `exists = yes`. Statement order is unchanged; the three calls
+that genuinely need the capitulation test carry it individually:
+
+| Call | Capitulation-gated after Fix 75? | Why |
+|---|---|---|
+| `WA_AI_update_training_modifier` | **Yes** | Trains divisions — not a fallen government's business |
+| `WA_AI_PC_assign_factories` | No | Fix 34's controller test already refuses hostile-controlled targets |
+| `WA_AI_PC_update_project_progress` | No | `WA_AI_PC_complete_project_by_id` applies the same controller test |
+| `WA_AI_PC_railway` | No | Capability terms decide (see the eligibility table) |
+| `WA_AI_MILITARY_update_posture` | **Yes** | Publishes an "attack now" verdict; no downstream controller test |
+| `WA_AI_LEND_LEASE_request_surplus_relief` | **Yes** | Pulls equipment from allies; no downstream controller test |
+
+`exists = yes` keeps annexed corpses out — the question Fix 68 flagged as unverified — for the cost of
+one cheap trigger.
+
+**What this does and does not give a capitulated country.** It unfreezes the queue: the fossils age,
+the Fix 41 lane revalidates them, and obsolete ones are cancelled, which in turn unfreezes
+`WA_AI_PC_active_nonrail_projects` and reopens the `WA_AI_priority_construction_strategies` dispatcher
+for soil the country still controls. It does **not** generally hand it the railway system — for any
+capitulated country the binding term is the surrender gate, whose escape hatch needs 75 civs, so a
+rump like FRA (21 civs) still fails. That is deliberate: Fix 75 removes *capitulation* as a
+disqualifier, it does not lower the capability bars. Whether `surrender_progress` should gate this at
+all is the open question R27 owns; the Tunisian rail itself comes from Fix 74's ally leg, which keeps
+firing for exactly the countries that fail here.
+
 ## Route Processing Pipeline (`railway_core.txt`, lines 85-200)
 
 After strategies populate the output arrays, the core processes each route:
@@ -250,7 +369,8 @@ After strategies populate the output arrays, the core processes each route:
 
 | Function | Line | Description |
 |----------|------|-------------|
-| `WA_AI_PC_railway_STRATEGY_land_war` | 18 | Land war: capital → frontline supply hubs per direct-border enemy. |
+| `WA_AI_PC_railway_STRATEGY_land_war` | 20 | Land war: capital → frontline supply hubs per direct-border enemy. Dispatches the three candidate populations (Fix 74). |
+| `WA_AI_PC_railway_land_consider_frontline` | 143 | Fix 74: the shared per-state body, THIS = frontline state, ROOT = builder. Was duplicated between the ROOT loop and the Fix 27 subject loop; the two copies differed only in the supply-hub acceptance test. |
 | `WA_AI_PC_railway_STRATEGY_overseas_war` | 236 | Overseas war: home port + beachhead expansion. |
 | `WA_AI_PC_railway_get_scripted_override_targets` | 536 | Scripted override targets (e.g., GER→SOV). |
 | `WA_AI_PC_railway_STRATEGY_prewar_preparation` | 560 | Pre-war: wargoal/claim/override targets at level 3. |

@@ -946,6 +946,126 @@ WA_AI_fortify_strategic_islands = {
 	}
 }
 
+# Fix 51: south-first build order for the UK hosting states.
+#
+# MIRROR - must match WA_AI_uk_air_hosting_state in
+# common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt, id for id AND rank for
+# rank. That trigger carries the ranking method, the measured distances and the two
+# judgement calls (Sussex above South London; Cornwall last); read it before editing
+# either. The duplication is forced: @ constants do not cross files, and a plain-id
+# array cannot be membership-tested from state scope (the .id scope-encoding lesson).
+# Drift is survivable in one direction only, which is why the trigger stays
+# authoritative for membership - see the fallback at the bottom of the walk.
+#
+# Scope: any country (state ids are data). Writes global.WA_AI_uk_air_priority_states
+# and stamps @UK_AIR_PRIORITY_VERSION. Called lazily from
+# WA_AI_build_uk_air_hosting_capacity on a version mismatch, so a campaign resumed on
+# a build with a different order rebuilds the array instead of keeping a stale one.
+# BUMP @UK_AIR_PRIORITY_VERSION whenever the order or the membership changes.
+@UK_AIR_PRIORITY_VERSION = 1
+WA_AI_uk_air_hosting_priority_init = {
+	clear_array = global.WA_AI_uk_air_priority_states
+	add_to_array = { global.WA_AI_uk_air_priority_states = 857 }	# rank  1 - Kent
+	add_to_array = { global.WA_AI_uk_air_priority_states = 127 }	# rank  2 - Sussex
+	add_to_array = { global.WA_AI_uk_air_priority_states = 961 }	# rank  3 - South London
+	add_to_array = { global.WA_AI_uk_air_priority_states = 125 }	# rank  4 - Essex
+	add_to_array = { global.WA_AI_uk_air_priority_states = 126 }	# rank  5 - North London
+	add_to_array = { global.WA_AI_uk_air_priority_states = 860 }	# rank  6 - Norfolk
+	add_to_array = { global.WA_AI_uk_air_priority_states = 859 }	# rank  7 - Dorset
+	add_to_array = { global.WA_AI_uk_air_priority_states = 338 }	# rank  8 - Gloucestershire
+	add_to_array = { global.WA_AI_uk_air_priority_states = 129 }	# rank  9 - Leicestershire
+	add_to_array = { global.WA_AI_uk_air_priority_states = 128 }	# rank 10 - Warwickshire
+	add_to_array = { global.WA_AI_uk_air_priority_states = 123 }	# rank 11 - Cornwall
+	set_variable = { global.WA_AI_uk_air_priority_version = @UK_AIR_PRIORITY_VERSION }
+}
+
+# Fix 51: queue ONE air-base level in this state. Extracted from the old level ladder
+# so the ordered south-first walk and its unordered fallback tail go through a single
+# code path and cannot diverge.
+#
+# THIS = state (already passed WA_AI_uk_air_hosting_state + WA_AI_uk_air_site_buildable
+# + the level cap), PREV = ROOT = builder country.
+# Inputs, all set by the caller in country scope:
+#   _uk_air_prio_        priority band, resolved once per pulse (Fix 47)
+#   _uk_air_level_cap_   @UK_AIR_TARGET_LEVEL_CAP, passed in because that constant is
+#                        declared inside WA_AI_build_uk_air_hosting_capacity's body
+#   _uk_air_rank_        1-11 = south-first rank of this state, 0 = unranked fallback
+#   _uk_air_qnum_before_ WA_AI_PC_queue^num sampled immediately before the call
+# Output: _uk_air_started_ = 1 (latch + loop break).
+WA_AI_uk_air_queue_site = {
+
+	# capture the pre-build level HERE, in state scope: WA_AI_uk_air_dbg_best keeps its
+	# documented meaning ("the level a project was started at"; -2 = no deficit), which
+	# checklist R8's probes read verbatim. The new south-first RANK goes to the WA_TLM
+	# rows below instead of overloading a live legacy gauge.
+	set_temp_variable = { _uk_air_site_level_ = building_level@air_base }
+
+	set_temp_variable = { _project_building_type = 2 }
+	set_temp_variable = { _project_province_id = 0 }
+	set_temp_variable = { _project_target_state = 0 }
+	set_temp_variable = { _project_priority = _uk_air_prio_ }
+	set_temp_variable = { _project_queue_num = 1 }
+	set_temp_variable = { _project_queue_max = 3 }
+	# Fix 47: these 3 slots are the UK strategy's OWN budget. Before, queue_max
+	# counted every type-2 project country-wide, so theatre air bases elsewhere
+	# consumed the UK allowance - on 911bed3c both of ENG's slots held Pacific
+	# projects on the very pulse the UK deficit reopened.
+	set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_UK_AIR }
+	set_temp_variable = { _project_queue_max_scoped = 1 }
+	set_temp_variable = { _project_target_level = _uk_air_level_cap_ }
+	WA_AI_PC_start_project = yes
+	# Fix 47: hand the shared temp back. Core clears _project_queue_max_scoped
+	# itself but must NOT clear _project_type_id (railway_core reads it back
+	# across its own start_project calls - see the note there), so the tag is
+	# retired here instead. Without this, the next type-2 caller that does not
+	# set a type_id - WA_AI_fortify_strategic_islands is one - would inherit
+	# @AI_PC_TYPE_ID_UK_AIR and be counted against the UK budget.
+	set_temp_variable = { _project_type_id = 0 }
+
+	ROOT = {
+		# _uk_air_started_ latches on SITE FOUND, not on queue success: if
+		# WA_AI_PC_start_project refused (queue max, duplicate), the next candidate
+		# would be refused for the same reason, so the walk still stops.
+		set_temp_variable = { _uk_air_started_ = 1 }
+		set_variable = { WA_AI_uk_air_dbg_best = _uk_air_site_level_ }
+
+		# Fix 46: gate the counters on the queue actually growing. The old
+		# unconditional increment counted eligible SITES FOUND, not projects
+		# queued, and over-reported by ~4x (campaign 9a4cd657 1944.7: ENG 97 +
+		# USA 39 "starts" against 34 air-base levels delivered UK-wide). Same
+		# form as WA_AI_thair_dbg_started in WA_AI_build_theatre_air_bases, which
+		# has always been gated this way - the two counters are now comparable.
+		# Every WA_TLM row below hangs off this same verified-effect gate (§3.6 r1).
+		if = {
+			limit = { check_variable = { WA_AI_PC_queue^num > _uk_air_qnum_before_ } }
+			add_to_variable = { WA_AI_uk_air_dbg_started = 1 }
+
+			# tlm: WA_TLM_r8_uk_air_q_n / _rank_sum / _rank_max / _fallback_n / _last_t
+			# consumer: checklist R8 (concentration leg). Retire with R8.
+			add_to_variable = { WA_TLM_r8_uk_air_q_n = 1 }
+			set_variable = { WA_TLM_r8_uk_air_last_t = global.WA_TLM_clock }
+			if = {
+				limit = { check_variable = { _uk_air_rank_ > 0 } }
+				add_to_variable = { WA_TLM_r8_uk_air_rank_sum = _uk_air_rank_ }
+				if = {
+					limit = { check_variable = { _uk_air_rank_ > WA_TLM_r8_uk_air_rank_max } }
+					set_variable = { WA_TLM_r8_uk_air_rank_max = _uk_air_rank_ }
+				}
+			}
+			# explicit inverse rather than `else`: the branch above ends in a nested `if`,
+			# and an `else` placed after a trailing nested `if` is exactly the binding trap
+			# recorded in wa-lessons-learned (the marshal-recruit else).
+			if = {
+				# rank 0 = queued by the unranked fallback tail, so it is deliberately
+				# kept out of _rank_sum / _rank_max (see the registry row for the
+				# mean-rank denominator).
+				limit = { NOT = { check_variable = { _uk_air_rank_ > 0 } } }
+				add_to_variable = { WA_TLM_r8_uk_air_fallback_n = 1 }
+			}
+		}
+	}
+}
+
 # Keep enough air base capacity in central/southern England to host the whole
 # faction's aviation (RAF + USAAF + minors). Without this the allied AI parks
 # its air force in America: the UK bases in range of the front fill up and the
@@ -969,16 +1089,37 @@ WA_AI_build_uk_air_hosting_capacity = {
 	# and still could not host the RAF+USAAF, because half the faction's aviation is the
 	# wrong target once the whole Western Front stages out of Britain. 0.65 asks for 133.
 	#
-	# STRUCTURAL CEILING: 11 hosting states x @UK_AIR_TARGET_LEVEL_CAP = 132 levels, so the
-	# ceiling and not this share is what ultimately bounds the build - it cannot run away.
-	# The two are deliberately close: 0.65 keeps the gate open all the way to the ceiling at
-	# 1944 plane counts, rather than closing early on a temporary dip after air losses and
-	# stalling the ladder short of the target. The cost of that choice is that air bases
-	# hold the 300 band (see the band table in ..._core.txt) for as long as the deficit
-	# stands, which for ENG means its shortage refineries run on the Fix 41 overtake lane
-	# instead of the sorted fill. Drop to 0.60 (target 123, under the ceiling) if the
-	# refineries need their band back more than the RAF needs the last 10 levels.
-	@UK_AIR_HOSTED_FACTION_SHARE = 0.65	# share of the faction's planes the UK should be able to host
+	# 0.65 -> 1.0 (2026-08-14, campaign f9321934). 0.65 STILL stood the strategy down
+	# 14 months before D-Day. Measured at 1944.6.1: capacity 7,000 (70 levels) against
+	# 10,021 faction planes, so the 0.65 target of 6,514 was already satisfied - dbg_best
+	# read -2 ("no deficit") continuously from 1942.7, and the last UK air project of the
+	# entire campaign started 1943.4. The build stopped at 70 of the 132-level ceiling
+	# (53%) with 30% of Allied aviation unhoused. Any share < 1.0 declares victory while
+	# part of the faction's air force still has nowhere in Britain to stand; 1.0 is the
+	# only value that means what the strategy's own header says it means.
+	#
+	# STRUCTURAL CEILING: 11 hosting states x @UK_AIR_TARGET_LEVEL_CAP = 132 levels
+	# (13,200 capacity), so the ceiling and not this share is what ultimately bounds the
+	# build - it still cannot run away. At 1944 plane counts (10,021) the 1.0 target is
+	# REACHABLE, which 0.65 was not asking for; beyond ~13,200 faction planes the deficit
+	# becomes permanent by construction.
+	#
+	# ACCEPTED COST, made permanent by this change: air bases hold the 300 band (see the
+	# band table in ..._core.txt) for as long as the deficit stands, so from the point the
+	# faction passes ~13,200 planes ENG's shortage refineries run on the Fix 41 overtake
+	# lane instead of the sorted fill, permanently rather than temporarily. On f9321934
+	# that threshold falls in 1945. If the refineries turn out to need their band back more
+	# than the RAF needs the last levels, lower this - do NOT raise @UK_AIR_TARGET_LEVEL_CAP
+	# or extend the state list, which checklist R8 forbids until R15 justifies more capacity.
+	#
+	# WHAT THIS CANNOT FIX, stated up front: at 1944.6.1 the island already held 10,100
+	# capacity against 8,033 aircraft - ~2,067 FREE - while the USAAF kept just 500 of its
+	# 5,431 land-based aircraft in Britain (9%) and Norfolk sat at 112/700. Every south-
+	# eastern field was RAF-saturated (Kent 600/600, Essex 700/700, Sussex 700/600 - over-
+	# stacked), so the shortage is positional, not just aggregate. More levels only help if
+	# Fix 51's south-first walk puts them where the invasion is; the USAAF's own basing
+	# decision (R15) may still be the binding constraint.
+	@UK_AIR_HOSTED_FACTION_SHARE = 1.0	# share of the faction's planes the UK should be able to host
 	# Fix 47: civs/pass a host must put on air bases (2 full 20-civ slots) before an allied
 	# builder stands down. @ constants are file-scoped, so this is declared here but is used
 	# ONLY by WA_AI_build_theatre_air_bases further down - this UK strategy deliberately has
@@ -1126,7 +1267,7 @@ WA_AI_build_uk_air_hosting_capacity = {
 			# Measured on campaign 9a4cd657: ENG's PC pool ran 32-87 civs (mean 52) across
 			# 1942-44 while the derived uncommitted-civ figure sat at 59-162 EVERY sampled
 			# month and never once hit the 0.30 floor. ENG was not civ-poor - it was holding
-			# idle factories that @AI_PC_ALLOC_FRACTION (0.35) forbade PC from touching, and
+			# idle factories that @AI_PC_ALLOC_FRACTION (0.40) forbade PC from touching, and
 			# air bases were losing the 35% it did get to the 250-band refineries. Raising
 			# the host's share is what lets it fund basing AND its shortage refineries
 			# instead of trading one for the other.
@@ -1149,115 +1290,112 @@ WA_AI_build_uk_air_hosting_capacity = {
 			if = {
 				limit = { original_tag = ENG }
 				set_country_flag = { flag = WA_AI_PC_override_max_factories_factor value = 1 days = 30 }
-				set_variable = { WA_AI_PC_override_max_factories_factor = 0.5 }
+				set_variable = { WA_AI_PC_override_max_factories_factor = 0.6 }
 			}
 
-			### expand the least-developed hosting state first
-			# Fix: the old two-pass select stored THIS.id from STATE scope and compared it
-			# to a -1 sentinel in country scope - the stored value is scope-encoded, the
-			# `> -1` guard never passed, and campaign 9be92c89's instrumentation shows
-			# dbg_started absent for the entire war (RAF 3.2x overstacked, zero USAAF wings
-			# ever based in Britain). Fifth occurrence of the state-scope temp trap (AIFC,
-			# railway Fixes 24/25/27 lineage). Level-ladder instead: try level 0 upward,
-			# start the project directly in state scope (WA_AI_PC_start_project's documented
-			# contract: THIS = state, PREV = builder country), report via a ROOT-hopped
-			# plain integer flag.
+			### Fix 51: fill the SOUTH-EAST first, only move north once it is capped
+			#
+			# What this replaces and why. The selector used to be a LEVEL ladder: walk
+			# _uk_air_try_level_ from 0 upward and take a random hosting state sitting at
+			# exactly that level. That is "expand the least-developed state first" - a
+			# LEVELLING rule - and it did exactly what it said. Campaign f9321934 (HEAD
+			# 289f1318f) at 1946.8: 98 levels spread across 11 states, ~8.9 each against a
+			# cap of 12, and the two largest ENG plane concentrations were Gloucestershire
+			# (827) and Warwickshire (460) - the two states FURTHEST from France. A wing at
+			# Kent covers Northern France; the same wing at Leicestershire does not.
+			#
+			# This does NOT add capacity. The ceiling is 11 x @UK_AIR_TARGET_LEVEL_CAP = 132
+			# levels either way and the deficit is a production race this change does not
+			# win (f9321934: 9 800 capacity vs 15 174 faction planes at 1946.8). What it buys
+			# is RANGE and mission efficiency for whatever capacity does get built.
+			#
+			# The level ladder's own reason for existing is preserved. It was written
+			# (campaign 9be92c89) to replace a two-pass select that stored THIS.id from STATE
+			# scope and compared it to a -1 sentinel in country scope - the stored value is
+			# scope-encoded, the guard never passed, and the strategy queued nothing for the
+			# entire war. Fifth occurrence of the state-scope temp trap (AIFC, railway Fixes
+			# 24/25/27 lineage). Nothing below stores or compares a scope id: the walk is
+			# over PLAIN ids from a global array, entered with `var:`, and the project starts
+			# directly in state scope per WA_AI_PC_start_project's contract
+			# (THIS = state, PREV = builder country) - the same idiom as railway_core's
+			# `var:_state_for_project = { WA_AI_PC_start_railway_project = yes }`.
+			#
+			# Why a top-priority state cannot stall the walk: the moment ANY builder queues
+			# an air base in it, WA_AI_PC_has_same_type_project_here (builder-agnostic since
+			# Fix 46) makes it fail WA_AI_uk_air_site_buildable, so the next pulse falls
+			# through to the next rank. Southern states also run out of BUILDING SLOTS -
+			# they hold ENG's arms factories - and the free-slot terms inside that same
+			# trigger fall through identically. The walk never stalls on a full state.
 
 			set_temp_variable = { _project_building_type = 2 }
 			set_temp_variable = { _uk_air_started_ = 0 }
-			set_temp_variable = { _uk_air_try_level_ = 0 }
+			# passed to WA_AI_uk_air_queue_site: @ constants are file-scoped AND this one
+			# is declared inside this effect's body, so the helper cannot name it directly
+			set_temp_variable = { _uk_air_level_cap_ = @UK_AIR_TARGET_LEVEL_CAP }
 
 			# Fix 47: band selection, resolved ONCE in country scope - the trigger is a
-			# faction scan and must not run per candidate state inside the ladder below.
+			# faction scan and must not run per candidate state inside the walk below.
 			set_temp_variable = { _uk_air_prio_ = @AI_PC_PRIO_DEFAULT }
 			if = {
 				limit = { WA_AI_PC_air_force_needs_basing_priority = yes }
 				set_temp_variable = { _uk_air_prio_ = @AI_PC_PRIO_AIR_BASING }
 			}
-			while_loop_effect = {
-				limit = {
-					check_variable = { _uk_air_started_ < 1 }
-					check_variable = { _uk_air_try_level_ < @UK_AIR_TARGET_LEVEL_CAP }
-				}
 
+			# Fix 51: build the ordered list once per game. check_variable reads an absent
+			# global as 0, so a fresh start and a campaign resumed from a pre-Fix-51 build
+			# both take this branch; a later order change takes it again via the version.
+			if = {
+				limit = { NOT = { check_variable = { global.WA_AI_uk_air_priority_version = @UK_AIR_PRIORITY_VERSION } } }
+				WA_AI_uk_air_hosting_priority_init = yes
+			}
+
+			set_temp_variable = { _uk_air_rank_ = 0 }
+			for_each_loop = {
+				array = global.WA_AI_uk_air_priority_states
+				value = _uk_air_sid_
+				# named break, never the shared default `break` temp - queue functions set
+				# plain `break = 1` and never reset it (Fix 30 lesson)
+				break = _uk_air_started_
+
+				add_to_temp_variable = { _uk_air_rank_ = 1 }
 				# Fix 46: queue depth before the attempt, so dbg_started below can count
 				# projects actually QUEUED rather than sites merely found (see the counter).
 				set_temp_variable = { _uk_air_qnum_before_ = WA_AI_PC_queue^num }
 
+				var:_uk_air_sid_ = {
+					if = {
+						limit = {
+							# re-tested per candidate: the trigger, not this array, owns
+							# membership, so an id dropped from the trigger is filtered out here
+							WA_AI_uk_air_hosting_state = yes
+							check_variable = { building_level@air_base < @UK_AIR_TARGET_LEVEL_CAP }
+							WA_AI_uk_air_site_buildable = yes
+						}
+						WA_AI_uk_air_queue_site = yes
+					}
+				}
+			}
+
+			# Fix 51: fallback tail - unordered scan over the SAME membership trigger,
+			# reached only when the ordered walk queued nothing. This is what makes the
+			# duplicated list safe: an id present in WA_AI_uk_air_hosting_state but missing
+			# from the array loses its rank and gets built last, instead of never being
+			# built at all. In a consistent build it fires only when every ranked state is
+			# capped or unbuildable, in which case it also finds nothing - one wasted
+			# random_state scan on a pulse that was going to do nothing anyway.
+			# WA_TLM_r8_uk_air_fallback_n counts it, so drift is visible in the next campaign.
+			if = {
+				limit = { check_variable = { _uk_air_started_ < 1 } }
+				set_temp_variable = { _uk_air_rank_ = 0 }	# 0 = unranked, see the TLM rows
+				set_temp_variable = { _uk_air_qnum_before_ = WA_AI_PC_queue^num }
 				random_state = {
 					limit = {
 						WA_AI_uk_air_hosting_state = yes
-						check_variable = { building_level@air_base = _uk_air_try_level_ }
-						OR = {
-							AND = {
-								is_controlled_by = ROOT
-								WA_AI_available_AIR = yes
-								WA_AI_PC_can_build_project = yes
-							}
-							AND = {
-								NOT = { is_controlled_by = ROOT }
-								WA_AI_available_AIR_allied = yes
-								NOT = { WA_AI_PC_has_same_type_project_here = yes }
-								# Fix 46: the ally must pass the SAME free-slot test the host
-								# nation gets via WA_AI_PC_can_build_project above. Without it an
-								# allied builder could queue a 2000-IC air base into a state with
-								# no free shared slot, fund it at up to 20 civs for weeks, and
-								# then have WA_AI_PC_complete_project_by_id refuse to spawn the
-								# building (its own WA_AI_PC_building_slot_available gate) -
-								# the whole build silently discarded. Air bases compete for state
-								# slots with arms factories, which ENG builds by the hundred in
-								# exactly these states, so a full state is the normal case, not
-								# an edge case. Same trigger, same _project_building_type = 2 set
-								# above the ladder, so queue-time and completion-time agree.
-								WA_AI_PC_building_slot_available_for_type = yes
-							}
-						}
+						check_variable = { building_level@air_base < @UK_AIR_TARGET_LEVEL_CAP }
+						WA_AI_uk_air_site_buildable = yes
 					}
-
-					set_temp_variable = { _project_building_type = 2 }
-					set_temp_variable = { _project_province_id = 0 }
-					set_temp_variable = { _project_target_state = 0 }
-					set_temp_variable = { _project_priority = _uk_air_prio_ }
-					set_temp_variable = { _project_queue_num = 1 }
-					set_temp_variable = { _project_queue_max = 3 }
-					# Fix 47: these 3 slots are the UK strategy's OWN budget. Before, queue_max
-					# counted every type-2 project country-wide, so theatre air bases elsewhere
-					# consumed the UK allowance - on 911bed3c both of ENG's slots held Pacific
-					# projects on the very pulse the UK deficit reopened.
-					set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_UK_AIR }
-					set_temp_variable = { _project_queue_max_scoped = 1 }
-					set_temp_variable = { _project_target_level = @UK_AIR_TARGET_LEVEL_CAP }
-					WA_AI_PC_start_project = yes
-					# Fix 47: hand the shared temp back. Core clears _project_queue_max_scoped
-					# itself but must NOT clear _project_type_id (railway_core reads it back
-					# across its own start_project calls - see the note there), so the tag is
-					# retired here instead. Without this, the next type-2 caller that does not
-					# set a type_id - WA_AI_fortify_strategic_islands is one - would inherit
-					# @AI_PC_TYPE_ID_UK_AIR and be counted against the UK budget.
-					set_temp_variable = { _project_type_id = 0 }
-
-					ROOT = {
-						# _uk_air_started_ latches on SITE FOUND, not on queue success: if
-						# WA_AI_PC_start_project refused (queue max, duplicate), the next level
-						# up would be refused for the same reason, so the ladder still stops.
-						set_temp_variable = { _uk_air_started_ = 1 }
-						# dbg_best now records the LEVEL a project was started at (-2 = no deficit,
-						# unchanged; no start with a deficit leaves it -2 as before)
-						set_variable = { WA_AI_uk_air_dbg_best = _uk_air_try_level_ }
-						# Fix 46: gate the counter on the queue actually growing. The old
-						# unconditional increment counted eligible SITES FOUND, not projects
-						# queued, and over-reported by ~4x (campaign 9a4cd657 1944.7: ENG 97 +
-						# USA 39 "starts" against 34 air-base levels delivered UK-wide). Same
-						# form as WA_AI_thair_dbg_started in WA_AI_build_theatre_air_bases, which
-						# has always been gated this way - the two counters are now comparable.
-						if = {
-							limit = { check_variable = { WA_AI_PC_queue^num > _uk_air_qnum_before_ } }
-							add_to_variable = { WA_AI_uk_air_dbg_started = 1 }
-						}
-					}
+					WA_AI_uk_air_queue_site = yes
 				}
-
-				add_to_temp_variable = { _uk_air_try_level_ = 1 }
 			}
 		}
 	}
