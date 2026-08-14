@@ -35,44 +35,47 @@
 # path prioritised.
 
 
-# purpose: stop the USA researching the T20/T23 dead-end branch so its medium lines stay on the Sherman
-# range:   -100 (documented as "100 % decrease" of the technology's ai_will_do weight)
-# policy:  Country layer; no other layer writes research weights for these techs
-# always-on: the branch is a property of the equipment, not of the strategic situation - there is
-#            no game state in which the mod wants the USA to field T20s or T23s over M4A2/M4A3E8.
-WA_AI_RESEARCH_COUNTRY_USA_skip_t20_t23 = {
+# FIX 69 (2026-08-14, checklist R40/R35) - THE SUPPRESSION HALF OF FIX 57 IS GONE FROM HERE.
+# ==========================================================================================
+# `research_weight_factor = -100` on `usa_medium_tank_chassis_4`/`_5` used to live in this
+# file. It did not work, and the failure is a property of the LEVER, not of the value:
+# campaign f9321934 researched T20 on 1942.9.17 and T23 on 1943.12.26 and then ran six-to-
+# seven concurrent T23 lines at ~440 factories to the end of the campaign, never building a
+# single Sherman in 127 monthly saves.
+#
+# Why re-tuning the value would have been a wasted campaign. The token factors the
+# technology's `ai_will_do` score (vanilla `_documentation.md:603`). Every WA technology's
+# `ai_will_do` is written as `factor = 1` plus `factor = 0` gates, so at any moment most of
+# the AI's menu already scores zero - and `0 x anything` is still zero. Down-weighting can
+# only reorder a menu that has something positive left on it. The dates say that is exactly
+# the state the AI was in: the USA took T20 in the very month it carried
+# `WA_AI_unused_research_slots` (set 1942.9.1) and T23 in the very month it carried it again
+# (set 1943.12.1). Vanilla's own strongest suppression is `-500` (HUN `air_torpedoe_1`), but
+# under the documented formula `-100` already reaches zero and `-500` only clamps there.
+#
+# The replacement is a HARD gate on the technologies themselves - `allow = { NOT = { is_ai =
+# yes } }` in `common/technologies/armor_usa.txt` - which is the construct vanilla uses for
+# the same job (`jungle_warfare` in vanilla `common/technologies/infantry.txt` carries
+# `allow = { always = no }`, "only from focus!!!"). It gates on `is_ai` alone, so it needs no
+# country tag and leaves human players free to research T20/T23 normally. Placing it in a
+# technology file is safe despite that folder being tool-managed: the replacer locates and
+# rewrites only the `ai_will_do` block (`tools/ai_replacer_base/block_finder.py:61-101`), so
+# an `allow` sibling survives regeneration - which removes the reason Fix 57 avoided this
+# folder in the first place.
+#
+# STRANDING, re-verified from the graph rather than inherited from Fix 57's comment:
+# `usa_modern_tank_chassis_1` has TWO incoming `leads_to_tech` edges -
+# `usa_medium_tank_chassis_3_3` (M4A3E8) and `usa_medium_tank_chassis_5` (T23). Gating T23
+# leaves the M4A3E8 prong, and the USA researched M4A3E8 on 1944.1.17 in f9321934, so the
+# route is live and not theoretical. The boost below is what keeps it prioritised and MUST
+# NOT be removed independently of the gate.
 
-	allowed = {
-		original_tag = USA
-	}
-	enable = {
-		always = yes
-	}
-	# Permanently on by design, so there is nothing to abort on. Stated explicitly because
-	# the engine warns on a strategy with no abort condition at all (ai_strategy.cpp:6907).
-	abort = {
-		always = no
-	}
-
-	# T20 - enables tank_usa_medium_chassis_5
-	ai_strategy = {
-		type = research_weight_factor
-		id = usa_medium_tank_chassis_4
-		value = -100
-	}
-
-	# T23 - enables tank_usa_medium_chassis_6, the chassis that took all 439 factories
-	ai_strategy = {
-		type = research_weight_factor
-		id = usa_medium_tank_chassis_5
-		value = -100
-	}
-}
 
 # purpose: keep the Sherman branch prioritised, because it is now the ONLY route to
 #          usa_modern_tank_chassis_1 and from there to the entire USA heavy line
 # range:   +100
-# policy:  Country layer; pairs with the suppression above and must not be removed without it
+# policy:  Country layer; pairs with the Fix 69 `allow` gate on usa_medium_tank_chassis_4/_5 in
+#          common/technologies/armor_usa.txt and must not be removed without it
 # always-on: same reasoning - this is the mod's chosen medium-tank line for the USA in every setup.
 WA_AI_RESEARCH_COUNTRY_USA_prefer_sherman_line = {
 

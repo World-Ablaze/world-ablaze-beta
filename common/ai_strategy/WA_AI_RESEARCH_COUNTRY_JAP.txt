@@ -1,61 +1,32 @@
 ############################################################################################################
 # WA AI Research - COUNTRY_JAP
 ############################################################################################################
-# Fix 57 (2026-08-13, checklist R33): suppress the coastal submarine hulls so JAP keeps
-# building ocean-going boats.
+# THIS FILE INTENTIONALLY DECLARES NO STRATEGIES. It is kept as a tombstone so that a grep for
+# WA_AI_RESEARCH_COUNTRY_JAP lands on the explanation rather than on nothing.
 #
-# Campaign 02bd4445: JAP's single `naval_submarine` line climbs correctly to
-# `jap_submarine_hull_4` (Hei, 7500 km / str 52), then flips to the coastal
-# `jap_submarine_hull_5` (Ro-101, 2580 km / str 12) at 1942.11 and on to
-# `jap_submarine_hull_6` (Ha-201, 2320 km / str 8) from 1944.5 - a live coastal line for the
-# last 39 months of the campaign. Fix 48 had already re-ordered the `ai_equipment` priority
-# ladder to 10/60/120/140/5/3 and the flip date moved by one month, i.e. a 28x priority
-# inversion changed nothing: that is the design layer, and it does not decide what a
-# production line makes.
+# FIX 69 (2026-08-14, checklist R40/R33) - FIX 57's JAP HALF MOVED TO THE TECHNOLOGY FILE.
+# =======================================================================================
+# This file used to carry `research_weight_factor = -100` on `jap_submarine_5` (Ro-101) and
+# `jap_submarine_6` (Ha-201), the two coastal hulls. It did not work. Campaign f9321934:
+# both were researched anyway - Ro-101 on 1942.10.26 and Ha-201 on 1944.9.28 - and JAP's
+# single `naval_submarine` line sat on the coastal `hull_5` from 1943.10 and the coastal
+# `hull_6` from 1944.12 through to the final save, 35 consecutive months on a coastal boat
+# against an `ai_equipment` ladder Fix 48 had already re-ordered to 10/60/120/140/5/3.
 #
-# STRANDING CHECK (mandatory before suppressing any technology):
-# `jap_submarine_5` leads only to `jap_submarine_6`, and `jap_submarine_6` is a terminal leaf
-# with no outgoing path edges and no other technology reachable from it. Suppressing both
-# costs exactly the two coastal hulls and nothing else - this is the cleanest of the three
-# Fix 57 cases. `jap_submarine_4` (Hei) is untouched and remains the intended mainstay.
+# The failure is a property of the lever rather than of the value chosen: the token factors
+# the technology's `ai_will_do` score, every WA `ai_will_do` is `factor = 1` plus `factor = 0`
+# gates, so the AI's menu is mostly zeros already and `0 x anything` is still zero. The full
+# argument, including why vanilla's stronger `-500` would not have helped either, is in the
+# sibling file WA_AI_RESEARCH_COUNTRY_USA.txt.
 #
-# Both hulls are suppressed explicitly rather than relying on the first block gating the
-# second: `research_weight_factor` biases a choice, it does not hard-lock a prerequisite, so
-# an AI that reaches `jap_submarine_5` some other way must still not want `jap_submarine_6`.
-
-
-# purpose: stop JAP researching the coastal Ro-101 / Ha-201 hulls, which are strictly
-#          dominated for its ocean-going submarine doctrine
-# range:   -100 (documented as "100 % decrease" of the technology's ai_will_do weight)
-# policy:  Country layer; no other layer writes research weights for these techs
-# always-on: 2580 km / str 12 and 2320 km / str 8 are worse than the 7500 km / str 52 Hei on
-#            every axis JAP's submarine role scores, in every setup - there is no game state
-#            in which the mod wants these hulls.
-WA_AI_RESEARCH_COUNTRY_JAP_skip_coastal_submarines = {
-
-	allowed = {
-		original_tag = JAP
-	}
-	enable = {
-		always = yes
-	}
-	# Permanently on by design, so there is nothing to abort on. Stated explicitly because
-	# the engine warns on a strategy with no abort condition at all (ai_strategy.cpp:6907).
-	abort = {
-		always = no
-	}
-
-	# Ro-101 - enables jap_submarine_hull_5 (coastal, 2580 km, str 12)
-	ai_strategy = {
-		type = research_weight_factor
-		id = jap_submarine_5
-		value = -100
-	}
-
-	# Ha-201 - enables jap_submarine_hull_6 (coastal, 2320 km, str 8)
-	ai_strategy = {
-		type = research_weight_factor
-		id = jap_submarine_6
-		value = -100
-	}
-}
+# Replacement: a hard `allow = { NOT = { is_ai = yes } }` on both technologies in
+# common/technologies/naval_jap.txt - the construct vanilla itself uses to make a technology
+# unresearchable (`jungle_warfare`, vanilla common/technologies/infantry.txt).
+#
+# Nothing is stranded and this is the cleanest of the three Fix 69 cases: `jap_submarine_5`
+# leads only to `jap_submarine_6`, which is a terminal leaf with no outgoing path edges, so
+# the entire cost of the gate is exactly those two coastal hulls. `jap_submarine_4` (Hei,
+# 7500 km / str 52) is untouched and remains the intended mainstay.
+#
+# JAP needs no `+100` counterpart. Unlike USA and SOV, nothing downstream depended on the
+# gated branch, so there is no now-sole path that needs prioritising.
