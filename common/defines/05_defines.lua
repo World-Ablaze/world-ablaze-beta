@@ -533,7 +533,7 @@ NDefines.NAir.AIR_INVASION_PREPARE_DAYS = 30										-- base days needed to pre
 NDefines.NAir.AIR_INVASION_PLAN_CAP = 1												-- base cap of airborne invasions can be planned at the same time
 NDefines.NAir.BASE_AIR_INVASION_DIVISION_CAP = 1									-- base cap of divisions that can be assigned in a airborne invasion
 
-NDefines.NAir.AI_ALLOWED_PLANES_KEPT_IN_RESERVE = 0.0								--AI allowed planes is reduced by this percentage. Overflow will be distributed to the next valid order. Worst case, this will result in this % of planes no being assigned any order.
+NDefines.NAir.AI_ALLOWED_PLANES_KEPT_IN_RESERVE = 0.1								--AI allowed planes is reduced by this percentage. Overflow will be distributed to the next valid order. Worst case, this will result in this % of planes no being assigned any order.
 
 NDefines.NAir.LEND_LEASED_EQUIPMENT_EXPERIENCE_GAIN = 0.0							-- Value used for equipment
 
