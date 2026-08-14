@@ -9,7 +9,7 @@ from equipment_evaluator.decision_manifest import sha256_bytes
 from equipment_evaluator.diagnostics import Diagnostics
 from equipment_evaluator.emit import Emitter, GATE_TRIGGERS, _pdx_num
 from equipment_evaluator.generation.production_strategy import (
-    _step_gates, build_group_blocks, emit_linear)
+    _chain_rank, _step_gates, build_group_blocks, emit_linear)
 from equipment_evaluator.generation.adapters import tank_emitter_transition
 from equipment_evaluator.generation.apply import apply_plan, verify_plan
 from equipment_evaluator.generation.planner import (OperationPlan, ReplaceOperation,
@@ -407,6 +407,81 @@ class ProductionStrategyTests(unittest.TestCase):
         self.assertEqual(2, len(skipped))
         self.assertEqual(2, text.count("value = -100"))
         self.assertEqual(0, text.count("value = 100"))
+
+    def test_sealed_node_releases_its_newest_successor(self):
+        """A node whose every successor is KEEP_OLD must not become a sink.
+
+        The USA `usa_inf_3` case from campaign 5078fe10: three producible
+        successors, all suppressed, so the AI held a 1939 rifle for the whole
+        war and `usa_inf_6`/`_7`/`_8` became unreachable dead blocks.
+        """
+        rows = [
+            {"country": "USA", "group": "inf", "old": "usa_inf_3",
+             "new": "usa_inf_4", "old_label": "3", "new_label": "4",
+             "verdict": "KEEP_OLD", "gates": [], "reason": ""},
+            {"country": "USA", "group": "inf", "old": "usa_inf_3",
+             "new": "usa_inf_5", "old_label": "3", "new_label": "5",
+             "verdict": "KEEP_OLD", "gates": [], "reason": ""},
+            {"country": "USA", "group": "inf", "old": "usa_inf_3",
+             "new": "usa_inf_9", "old_label": "3", "new_label": "9",
+             "verdict": "KEEP_OLD", "gates": [], "reason": ""},
+        ]
+        with TemporaryDirectory() as tmp:
+            files, skipped = emit_linear(tmp, "infantry", rows, apply=False)
+        text = files["common/ai_strategy/WA_AI_PRODUCTION_COUNTRY_USA_INFANTRY.txt"]
+        self.assertIn("id = usa_inf_4", text)
+        self.assertIn("id = usa_inf_5", text)
+        self.assertNotIn("id = usa_inf_9", text,
+                         "newest successor of a sealed node must stay reachable")
+        self.assertEqual(1, len(skipped))
+        self.assertIn("every successor of usa_inf_3 was KEEP_OLD", skipped[0])
+
+    def test_single_successor_keep_old_still_suppresses(self):
+        """"Keep the Sherman" is the point of KEEP_OLD - do not undo it.
+
+        A plain linear step must stay suppressed; only a node with SEVERAL
+        blocked successors counts as sealed.
+        """
+        rows = [
+            {"country": "USA", "group": "veh", "old": "lvt_1", "new": "lvt_2",
+             "old_label": "1", "new_label": "2", "verdict": "KEEP_OLD",
+             "gates": [], "reason": ""},
+            {"country": "USA", "group": "veh", "old": "lvt_2", "new": "lvt_3",
+             "old_label": "2", "new_label": "3", "verdict": "KEEP_OLD",
+             "gates": [], "reason": ""},
+        ]
+        with TemporaryDirectory() as tmp:
+            files, skipped = emit_linear(tmp, "vehicles", rows, apply=False)
+        text = files["common/ai_strategy/WA_AI_PRODUCTION_COUNTRY_USA_VEHICLES.txt"]
+        self.assertIn("id = lvt_2", text)
+        self.assertIn("id = lvt_3", text)
+        self.assertEqual([], skipped)
+
+    def test_sealed_node_ignores_gated_and_switch_escapes(self):
+        """A SWITCH_CONDITIONAL successor is already an escape - not a sink."""
+        rows = [
+            {"country": "USA", "group": "art", "old": "n1", "new": "n2",
+             "old_label": "1", "new_label": "2", "verdict": "KEEP_OLD",
+             "gates": [], "reason": ""},
+            {"country": "USA", "group": "art", "old": "n1", "new": "n3",
+             "old_label": "1", "new_label": "3",
+             "verdict": "SWITCH_CONDITIONAL",
+             "gates": ["WA_AI_EQUIPMENT_can_absorb_steel_shock_small"],
+             "reason": ""},
+        ]
+        with TemporaryDirectory() as tmp:
+            files, skipped = emit_linear(tmp, "artillery", rows, apply=False)
+        text = files["common/ai_strategy/WA_AI_PRODUCTION_COUNTRY_USA_ARTILLERY.txt"]
+        self.assertIn("id = n2", text)
+        self.assertIn("id = n3", text)
+        self.assertEqual([], skipped)
+
+    def test_chain_rank_orders_multi_part_suffixes(self):
+        self.assertLess(_chain_rank("usa_inf_4"), _chain_rank("usa_inf_9"))
+        self.assertLess(_chain_rank("tank_usa_medium_chassis_4"),
+                        _chain_rank("tank_usa_medium_chassis_4_2"))
+        self.assertLess(_chain_rank("tank_usa_medium_chassis_4_2"),
+                        _chain_rank("tank_usa_medium_chassis_5"))
 
     def test_no_scientific_notation_reaches_pdxscript(self):
         """`factor = 9e-06` is read as 9 by the HOI4 parser - see _pdx_num."""

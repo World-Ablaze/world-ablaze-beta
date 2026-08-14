@@ -222,3 +222,39 @@ WA_AI_MILITARY_CAN_garrison_dover = {
 		subtract_fronts_from_need = yes
 	}
 }
+
+
+############################################################################################################
+# Fix 71 - Canada actually joins the western front
+############################################################################################################
+# Campaign 5078fe10: CAN fielded 18-19 divisions and committed EXACTLY ZERO of them to France or the
+# Low Countries for the entire war, while its rifle stockpile grew to 74 013 - larger than the USA's.
+#
+# Why: this file only ever asked for units in Britain. Three put_unit_buffers on area = britain and
+# one negative area_priority on benelux, and nothing else. WA_AI_MILITARY_CAN_focus_on_europe (in
+# the FRONT file) does write front_unit_request 200 on north_france / france / benelux / germany,
+# but a front request bids for units that are ALREADY IN the theatre; theatre distribution decides
+# how many ever get there. With no theatre demand for Europe, CAN's whole army stayed home and the
+# front request bid against an empty pool.
+#
+# id is a STATE id and targets the theatre CONTAINING it (common/ai_strategy/documentation.info:313-318).
+# 15 = Lower Normandy, i.e. the France theatre - the landing area in every western-front scenario.
+# Value 6 matches the largest theatre demand any country in this mod carries (USA's Hawaii).
+WA_AI_MILITARY_CAN_theatre_boost_europe = {
+	allowed = {
+		tag = CAN
+	}
+	enable = {
+		has_war = yes
+		WA_AI_MILITARY_has_western_foothold = yes
+		any_enemy_country = { capital_scope = { is_on_continent = europe } }
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = theatre_distribution_demand_increase
+		id = 15
+		value = 6
+	}
+}

@@ -56,6 +56,7 @@ from __future__ import annotations
 
 import io
 import os
+import re
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 from ..emit import _gate_for
@@ -305,6 +306,65 @@ def _verdict_blocks(tag: str, domain: str, rows: Sequence[dict]) -> List[str]:
     return lines
 
 
+def _chain_rank(name: str) -> Tuple:
+    """Order two successors of the same node by generation.
+
+    Equipment chains in this mod are numerically suffixed - ``usa_inf_9``,
+    ``tank_usa_medium_chassis_4_2`` - so the trailing numeric components order
+    them.  Names carrying no digit at all sort first and fall back to the raw
+    string, which keeps the key total.
+    """
+    parts = re.findall(r"\d+", name)
+    return (bool(parts), tuple(int(p) for p in parts), name)
+
+
+def _released_from_sealed_nodes(
+        rows: Sequence[dict],
+        approved: Dict[Tuple[str, str], bool]) -> set:
+    """Successors that must NOT be suppressed because their node is a sink.
+
+    A KEEP_OLD pins a production line onto ``old``.  That is a legitimate,
+    deliberate verdict - "keep the Sherman" is exactly this - for as long as
+    ``old`` still has SOME successor the chain can eventually take.  When a node
+    has SEVERAL successors and every one of them is KEEP_OLD, the node becomes a
+    sink instead: no route out of it exists, everything downstream is dead code,
+    and the country is frozen on that equipment for the rest of the game.
+
+    Campaign ``5078fe10`` is the case this guard exists for.  ``usa_inf_3`` (a
+    1939 rifle) has three producible successors - ``usa_inf_4``, ``usa_inf_5``
+    and, through ``ghost_usa_inf_3``, ``usa_inf_9`` - and all three were emitted
+    at ``-100 / always = yes``.  The USA held 94 factories on that 1939 rifle for
+    the entire war, while ``usa_hv_inf_5`` next to it in the same file stayed
+    fully current; ``usa_inf_6``/``_7``/``_8`` became unreachable dead blocks.
+
+    A SINGLE-successor node is deliberately NOT treated as sealed: that is a
+    plain linear chain, and stopping it is the whole point of KEEP_OLD.  Nor is a
+    node with a SWITCH_CONDITIONAL successor, which already offers a gated escape.
+
+    Of a sealed node's successors the NEWEST is released, so KEEP_OLD keeps its
+    literal meaning - "do not take the next step" - while the chain stays
+    reachable and the country ends up on the best equipment rather than the one
+    the evaluator was least sure about.  Releasing the *nearest* successor
+    instead would be the more conservative reading; change ``max`` to ``min``
+    here if a campaign shows the jump is too large a resource shock.
+    """
+    successors: Dict[Tuple[str, str], List[dict]] = {}
+    for row in rows:
+        successors.setdefault((row["country"], row["old"]), []).append(row)
+
+    released: set = set()
+    for (country, _old), succs in successors.items():
+        if len(succs) < 2:
+            continue
+        if any(r["verdict"] != "KEEP_OLD" for r in succs):
+            continue
+        if any(approved.get((country, r["new"])) for r in succs):
+            continue
+        newest = max(succs, key=lambda r: _chain_rank(r["new"]))
+        released.add((country, newest["new"]))
+    return released
+
+
 def emit_linear(mod_root: str, domain: str, rows: Iterable[dict],
                 apply: bool = False) -> Tuple[Dict[str, str], List[str]]:
     """Emit the KEEP_OLD / SWITCH_CONDITIONAL suppressions of a linear domain.
@@ -316,7 +376,11 @@ def emit_linear(mod_root: str, domain: str, rows: Iterable[dict],
     suppressed: the chain offers a legitimate route onto it, and a blanket -100
     would strand the role.  This is the linear analogue of the branched
     emitter's "no gate state may empty a role" invariant.
+
+    Nor is the newest successor of a SEALED node - one whose every successor was
+    KEEP_OLD - suppressed; see :func:`_released_from_sealed_nodes`.
     """
+    rows = list(rows)
     by_country: Dict[str, List[dict]] = {}
     approved: Dict[Tuple[str, str], bool] = {}
     collected: List[dict] = []
@@ -326,6 +390,8 @@ def emit_linear(mod_root: str, domain: str, rows: Iterable[dict],
             approved[key] = True
         elif row["verdict"] in ("KEEP_OLD", "SWITCH_CONDITIONAL"):
             collected.append(row)
+
+    released = _released_from_sealed_nodes(rows, approved)
 
     skipped: List[str] = []
     seen: set = set()
@@ -345,6 +411,12 @@ def emit_linear(mod_root: str, domain: str, rows: Iterable[dict],
             skipped.append(
                 f"{row['country']}/{row['group']}/{row['new']}: not suppressed - "
                 f"another predecessor reaches it with a plain SWITCH")
+            continue
+        if key in released:
+            skipped.append(
+                f"{row['country']}/{row['group']}/{row['new']}: not suppressed - "
+                f"every successor of {row['old']} was KEEP_OLD; releasing the "
+                f"newest keeps the chain reachable")
             continue
         if key in seen:
             skipped.append(

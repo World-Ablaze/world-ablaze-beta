@@ -1525,6 +1525,21 @@ WA_AI_MILITARY_AIR_theatre_state_pacific_islands = {
 @WA_AI_AIR_BOMBER_DEEP_REACH = 700		# ...and to reach Austria / Prussia (the old B-17 range gate)
 @WA_AI_AIR_BOMBER_DEEP_REACH_OFF = 900	# deep-target avoidance fully retired
 #
+# HANDOVER (Fix 71). The four bars above only ever LIFT avoidance. Nothing then pulls the bomber
+# arm ONTO the Reich: with every rung aborted the net on 6/7/8/294/38/296 is exactly 0, and the
+# engine's own front-following terms decide targets instead. Campaign 5078fe10 is the proof - the
+# ladder released fully between 1943.12 and 1944.4 and never re-armed, yet in the 22 months that
+# followed the RAF flew every single strategic-bombing sortie over France, Italy and the Balkans
+# and not one over a German region, while German factory levels rose from 453 to 602. The pull
+# below closes that gap: it turns ON at @WA_AI_AIR_BOMBER_RAID_FORCE, the same bar the near-ring
+# suppression turns OFF at, so the two compose into a handover instead of leaving a hole.
+#
+# @WA_AI_AIR_BOMBER_OWN_ARM gates the pull on ROOT's OWN bomber count, unlike the coalition-wide
+# bars above. strategic_air_importance suppresses and boosts EVERY mission in a region, so a
+# fighter-only air force given the pull would send its fighters to Germany instead of its front.
+# A country with no bomber arm of its own must stay out of it.
+@WA_AI_AIR_BOMBER_OWN_ARM = 99			# ROOT's own deployed heavies before it joins the raid
+#
 # Coalition-wide by design: the metric is "any one partner fields this much", not ROOT's own arm.
 # CAN fields zero strategic bombers for an entire campaign; without the any_allied_country branch
 # it would go on suppressing the target regions its own faction is raiding. A country in no
@@ -1651,4 +1666,20 @@ WA_AI_MILITARY_AIR_allies_hold_germany = {
 WA_AI_MILITARY_AIR_theatre_contested_germany = {
 	WA_AI_MILITARY_AIR_enemy_holds_germany = yes
 	WA_AI_MILITARY_AIR_allies_hold_germany = yes
+}
+
+# ---------------------------------------------------------------------------------------------
+# Handover rung (Fix 71) - the positive half of the campaign
+# ---------------------------------------------------------------------------------------------
+# See the HANDOVER note under the thresholds at the top of this section for why this exists.
+# Consumer: WA_AI_MILITARY_ALLIES_AIR_reich_raid_pull / _reich_deep_raid_pull.
+#
+# Deliberately NOT gated on the ground war reaching Germany: the whole point of a strategic
+# bombing campaign is that it precedes the armies. WA_AI_MILITARY_AIR_theatre_contested_germany
+# stays what it always was - the backstop that lifts every suppression once the fronts arrive.
+WA_AI_MILITARY_AIR_allies_should_raid_reich = {
+	WA_AI_MILITARY_AIR_enemy_holds_germany = yes
+	WA_AI_MILITARY_AIR_allies_bombers_reach_raid_force = yes
+	has_deployed_air_force_size = { size > @WA_AI_AIR_BOMBER_OWN_ARM type = strategic_bomber }
+	surrender_progress < 0.1
 }
