@@ -444,6 +444,18 @@ on_actions = {
 	on_state_control_changed = { #ROOT is new controller #FROM is old controller #FROM.FROM is state ID
 		effect = {
 
+			# Fix 81: the engine drops the old controller's construction queue in this state, so the
+			# per-state "built + queued refinery levels" sums (WA_AI_committed_<X>, building_adders)
+			# would over-count for the new controller. Dropping the TTL flags makes WA_AI_available_<X>
+			# fall back to the built level and the next WA_AI_add_<X> rebase the sum.
+			FROM.FROM = {
+				clr_state_flag = WA_AI_committed_REF_recent
+				clr_state_flag = WA_AI_committed_SR_recent
+				clr_state_flag = WA_AI_committed_HSR_recent
+				clr_state_flag = WA_AI_committed_AR_recent
+				clr_state_flag = WA_AI_committed_HAR_recent
+			}
+
 			FROM.FROM = {
 				# Check if old controller (FROM) has any projects in this state
 				if = { limit = { check_variable = { WA_AI_PC_projects_in_state_of_@FROM^num > 0 } }

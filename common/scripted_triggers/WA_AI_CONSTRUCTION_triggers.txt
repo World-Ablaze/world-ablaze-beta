@@ -10,13 +10,19 @@
 # shared slots than the cap therefore stays "available" forever once the cap is
 # hit, `add_building_construction` silently no-ops, and because that state also
 # stays #1 in WA_AI_shared_slot_scores the whole building type stalls country-wide.
-# The check is `built + queued < cap`. Built = building_level@X. Queued = the
-# state variable WA_AI_queued_<X>, incremented by WA_AI_add_<X> (building_adders)
-# and reconciled by WA_AI_reconcile_queued_refineries (queue_functions), which
-# subtracts completed levels since the last look. A level-only check is NOT
-# enough: a refinery takes months to finish, so a state stays below the cap on
-# built level while its queue is already full, and every pulse in between keeps
-# feeding it - the stall just lasts until the batch completes instead of forever.
+# The check is `built < cap` AND `committed < cap`, where committed = built + queued is the
+# state variable WA_AI_committed_<X> maintained by WA_AI_add_<X> (building_adders). The SUM is
+# what makes this cheap: a completion moves one level from queued to built and leaves the sum
+# unchanged, so nothing has to be reconciled on any cadence (cut 2 tracked queued + last_level
+# and reconciled from the level delta at C.10 pulses - a state whose line finished between
+# pulses read stale, and a country whose lane sits behind WA_AI_construction_timer never
+# reconciled at all). A built-level-only check is NOT enough either: the level rises only when
+# a refinery FINISHES (months), so a state stays below the cap on built level while its queue
+# is already full and every pulse in between keeps feeding it.
+# `committed` is trusted only while the state flag WA_AI_committed_<X>_recent is live (TTL in
+# building_adders): once no add has happened for that long, nothing can still be queued, so
+# `built < cap` alone decides and the next add rebases the sum. That is the only path by which a
+# CANCELLED construction is forgotten - script cannot see the construction queue.
 # MUST MATCH `level_cap.state_max` in common/buildings/00_buildings.txt.
 @WA_AI_REF_STATE_MAX = 6
 @WA_AI_SR_STATE_MAX = 15
@@ -70,10 +76,12 @@ WA_AI_available_SHARED = {
 }
 
 WA_AI_available_REF = {
-	# Fix 81: built + queued < cap (see header)
-	set_temp_variable = { _wa_committed_ = building_level@synthetic_refinery }
-	add_to_temp_variable = { _wa_committed_ = WA_AI_queued_REF }
-	check_variable = { _wa_committed_ < @WA_AI_REF_STATE_MAX }
+	# Fix 81: built < cap, and committed (= built + queued) < cap while the TTL flag is live (see header)
+	check_variable = { building_level@synthetic_refinery < @WA_AI_REF_STATE_MAX }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_REF_recent }
+		check_variable = { WA_AI_committed_REF < @WA_AI_REF_STATE_MAX }
+	}
 	free_building_slots = { building = synthetic_refinery size > 0 include_locked = no }
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
 }
@@ -89,37 +97,45 @@ WA_AI_available_SILO = {
 }
 
 WA_AI_available_HSR = {
-	# Fix 81: built + queued < cap (see header)
-	set_temp_variable = { _wa_committed_ = building_level@hydro_steel_refinery }
-	add_to_temp_variable = { _wa_committed_ = WA_AI_queued_HSR }
-	check_variable = { _wa_committed_ < @WA_AI_HSR_STATE_MAX }
+	# Fix 81: built < cap, and committed (= built + queued) < cap while the TTL flag is live (see header)
+	check_variable = { building_level@hydro_steel_refinery < @WA_AI_HSR_STATE_MAX }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_HSR_recent }
+		check_variable = { WA_AI_committed_HSR < @WA_AI_HSR_STATE_MAX }
+	}
 	free_building_slots = { building = hydro_steel_refinery size > 0 include_locked = no }
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
 }
 
 WA_AI_available_SR = {
-	# Fix 81: built + queued < cap (see header)
-	set_temp_variable = { _wa_committed_ = building_level@steel_refinery }
-	add_to_temp_variable = { _wa_committed_ = WA_AI_queued_SR }
-	check_variable = { _wa_committed_ < @WA_AI_SR_STATE_MAX }
+	# Fix 81: built < cap, and committed (= built + queued) < cap while the TTL flag is live (see header)
+	check_variable = { building_level@steel_refinery < @WA_AI_SR_STATE_MAX }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_SR_recent }
+		check_variable = { WA_AI_committed_SR < @WA_AI_SR_STATE_MAX }
+	}
 	free_building_slots = { building = steel_refinery size > 0 include_locked = no }
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
 }
 
 WA_AI_available_AR = {
-	# Fix 81: built + queued < cap (see header)
-	set_temp_variable = { _wa_committed_ = building_level@aluminium_refinery }
-	add_to_temp_variable = { _wa_committed_ = WA_AI_queued_AR }
-	check_variable = { _wa_committed_ < @WA_AI_AR_STATE_MAX }
+	# Fix 81: built < cap, and committed (= built + queued) < cap while the TTL flag is live (see header)
+	check_variable = { building_level@aluminium_refinery < @WA_AI_AR_STATE_MAX }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_AR_recent }
+		check_variable = { WA_AI_committed_AR < @WA_AI_AR_STATE_MAX }
+	}
 	free_building_slots = { building = aluminium_refinery size > 0 include_locked = no }
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
 }
 
 WA_AI_available_HAR = {
-	# Fix 81: built + queued < cap (see header)
-	set_temp_variable = { _wa_committed_ = building_level@hydro_aluminium_refinery }
-	add_to_temp_variable = { _wa_committed_ = WA_AI_queued_HAR }
-	check_variable = { _wa_committed_ < @WA_AI_HAR_STATE_MAX }
+	# Fix 81: built < cap, and committed (= built + queued) < cap while the TTL flag is live (see header)
+	check_variable = { building_level@hydro_aluminium_refinery < @WA_AI_HAR_STATE_MAX }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_HAR_recent }
+		check_variable = { WA_AI_committed_HAR < @WA_AI_HAR_STATE_MAX }
+	}
 	free_building_slots = { building = hydro_aluminium_refinery size > 0 include_locked = no }
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
 }
