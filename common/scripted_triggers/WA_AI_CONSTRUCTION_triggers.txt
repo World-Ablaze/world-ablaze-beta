@@ -141,6 +141,62 @@ WA_AI_available_HAR = {
 }
 
 
+### Fix 88: per-line depth cap for the breadth-first queue passes (WA_AI_CONSTRUCTION_queue_functions.txt).
+# THIS = state. True when fewer than @WA_AI_QUEUE_DEPTH_<X> levels of X are queued-but-unbuilt on this
+# state, read as WA_AI_committed_<X> - building_level@X (Fix 81 sum). A lapsed TTL flag means the sum is
+# no longer trusted, so depth is treated as 0. Only the breadth passes use this; the verbatim fallback
+# pass does not, so a country whose every candidate is at depth still queues where it always did.
+@WA_AI_QUEUE_DEPTH_REF = 3
+@WA_AI_QUEUE_DEPTH_SR = 3
+@WA_AI_QUEUE_DEPTH_HSR = 3
+@WA_AI_QUEUE_DEPTH_AR = 3
+@WA_AI_QUEUE_DEPTH_HAR = 3
+
+WA_AI_queue_depth_ok_REF = {
+	set_temp_variable = { _wa_depth_ = WA_AI_committed_REF }
+	subtract_from_temp_variable = { _wa_depth_ = building_level@synthetic_refinery }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_REF_recent }
+		check_variable = { _wa_depth_ < @WA_AI_QUEUE_DEPTH_REF }
+	}
+}
+
+WA_AI_queue_depth_ok_SR = {
+	set_temp_variable = { _wa_depth_ = WA_AI_committed_SR }
+	subtract_from_temp_variable = { _wa_depth_ = building_level@steel_refinery }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_SR_recent }
+		check_variable = { _wa_depth_ < @WA_AI_QUEUE_DEPTH_SR }
+	}
+}
+
+WA_AI_queue_depth_ok_HSR = {
+	set_temp_variable = { _wa_depth_ = WA_AI_committed_HSR }
+	subtract_from_temp_variable = { _wa_depth_ = building_level@hydro_steel_refinery }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_HSR_recent }
+		check_variable = { _wa_depth_ < @WA_AI_QUEUE_DEPTH_HSR }
+	}
+}
+
+WA_AI_queue_depth_ok_AR = {
+	set_temp_variable = { _wa_depth_ = WA_AI_committed_AR }
+	subtract_from_temp_variable = { _wa_depth_ = building_level@aluminium_refinery }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_AR_recent }
+		check_variable = { _wa_depth_ < @WA_AI_QUEUE_DEPTH_AR }
+	}
+}
+
+WA_AI_queue_depth_ok_HAR = {
+	set_temp_variable = { _wa_depth_ = WA_AI_committed_HAR }
+	subtract_from_temp_variable = { _wa_depth_ = building_level@hydro_aluminium_refinery }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_HAR_recent }
+		check_variable = { _wa_depth_ < @WA_AI_QUEUE_DEPTH_HAR }
+	}
+}
+
 ### priority construction AI
 
 WA_AI_PC_can_afford_project = {

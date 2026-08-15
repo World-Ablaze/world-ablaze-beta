@@ -5,6 +5,52 @@
 
 ### functions for AI construction
 
+# Fix 88: breadth-first placement. The engine merges same-(state, building) adds into ONE
+# construction line (amount = N); a line takes at most 15 civilian factories and builds its
+# levels serially, so a burst of N WA_AI_queue_<X> calls that all break on the same top-scored
+# state produces one slow line instead of N parallel ones (reporter: "US has ~20 parallel lines,
+# I queued 20 alu mills and it occupies 2 or 3"). Every shared-slot queue function now walks the
+# score-sorted array in three passes: (1) the first K eligible states, skipping the ones already
+# picked this pulse; (2) if all K were picked, wrap around; (3) if nothing is eligible under the
+# breadth/depth rules, the pre-Fix-88 loop verbatim - no country can build LESS than before.
+# K = ceil(civs / @WA_AI_BF_CIVS_PER_LINE), clamped to [1, @WA_AI_BF_MAX_K]: the number of lines
+# the country can actually feed. Score order still decides WHICH K states are candidates; breadth
+# only decides how a burst spreads among them. Refinery types add a per-line depth cap
+# (WA_AI_queue_depth_ok_<X>, WA_AI_CONSTRUCTION_triggers.txt) so a line is known to finish within
+# D builds. CIC/MIC/NIC have no per-state queue tracking, so they get breadth only. Not applied to
+# the non-shared queues (RADAR/AIR/AA/SILO/INF): different arrays, small caps - out of scope.
+# WA_AI_bf_k and WA_AI_bf_picked_<X> are TEMP (execution-scoped = one event fire = one burst).
+# num_of_civilian_factories (TOTAL) on purpose - *_available_for_projects reads ~0 once the
+# vanilla queue saturates (see lessons-log).
+# The new loops break on their own _wa_bf_break_ (zeroed at each pass) and still set the plain
+# `break = 1` on every add, so the downstream contract (queue_INF fallback, MIC-replacement legs,
+# R48's save/restore) is unchanged whatever the engine does with `break` on loop entry.
+# Cadence (reviewer concern): C.10 is gated on idle civs > 1 AND re-arms for 75-1000 days after a
+# firing, so absorbing more idle civs per firing does not lower the firing rate - the timer already
+# closes it. Timeline, 300-civ major, one C.10 firing with 20 CIC calls: t0 old = 1 line x 15 civs
+# (deep, 20 serial builds), new = 20 lines x 15 civs = 300 civs; t1 (next day) old: idle civs > 1
+# but the timer blocks C.10 anyway; t2 = first completion: old 1 CIC, new 20 CIC. Same civs, same
+# firings, ~K times the throughput. A 20-civ minor has K = 2 and behaves as before.
+# Bulk fire_only_once bursts are the largest change: WA_AI_C.72 (USA 1940.7, 354 MIC calls) went
+# 8 lines x 15 = 120 civs to 20 lines x 15 = 300 civs for the duration - that IS the build order's
+# intent (its author is the reporter), and priority construction keeps its floored share.
+# CIC/MIC/NIC get NO depth cap: they have no per-state queue tracking (Fix 81 only tracks the five
+# refinery types), their state_max is 45 so depth cannot stall them, and the "when will it finish"
+# control the reporter asked for comes from breadth alone (K lines finish K levels per build time).
+# Adding per-state tracking for them is a separate change if the reporter still wants a depth knob.
+@WA_AI_BF_CIVS_PER_LINE = 15
+@WA_AI_BF_MAX_K = 20
+
+# ROOT = THIS = country. Computes WA_AI_bf_k once per pulse (same "compute if 0" idiom as
+# WA_AI_has_shared_slot_scores).
+WA_AI_queue_breadth_prepare = {
+	if = { limit = { check_variable = { WA_AI_bf_k = 0 } }
+		set_temp_variable = { WA_AI_bf_k = num_of_civilian_factories }
+		divide_temp_variable = { WA_AI_bf_k = @WA_AI_BF_CIVS_PER_LINE }
+		clamp_temp_variable = { var = WA_AI_bf_k min = 1 max = @WA_AI_BF_MAX_K }
+	}
+}
+
 # civilian factories
 WA_AI_queue_CIC = {
 
@@ -13,16 +59,69 @@ WA_AI_queue_CIC = {
 		WA_AI_get_shared_slot_scores = yes
 	}
 
-	for_each_scope_loop = { array = WA_AI_shared_slot_scores
-
+	# Fix 88: breadth-first within the top-K scored states (see WA_AI_queue_breadth_prepare).
+	# Pass 1 - the first K eligible states, skipping those already picked this pulse.
+	WA_AI_queue_breadth_prepare = yes
+	set_temp_variable = { _wa_bf_break_ = 0 }
+	set_temp_variable = { _wa_bf_rank_ = 0 }
+	for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
 		if = {
 			limit = {
 				WA_AI_available_SHARED = yes
 				infrastructure > 3
 			}
+			if = {
+				limit = {
+					check_variable = { _wa_bf_rank_ < WA_AI_bf_k }
+					NOT = { is_in_array = { array = WA_AI_bf_picked_CIC value = THIS.id } }
+				}
+				WA_AI_add_CIC = yes
+				add_to_temp_array = { WA_AI_bf_picked_CIC = THIS.id }
+				set_temp_variable = { _wa_bf_break_ = 1 }
+				set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+			}
+			add_to_temp_variable = { _wa_bf_rank_ = 1 }
+		}
+	}
 
-			WA_AI_add_CIC = yes
-			set_temp_variable = { break = 1 }
+	# Pass 2 - every top-K state was picked this pulse already: wrap around.
+	if = { limit = { check_variable = { _wa_bf_break_ = 0 } }
+		clear_temp_array = WA_AI_bf_picked_CIC
+		set_temp_variable = { _wa_bf_rank_ = 0 }
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
+			if = {
+				limit = {
+					WA_AI_available_SHARED = yes
+					infrastructure > 3
+				}
+				if = {
+					limit = {
+						check_variable = { _wa_bf_rank_ < WA_AI_bf_k }
+						NOT = { is_in_array = { array = WA_AI_bf_picked_CIC value = THIS.id } }
+					}
+					WA_AI_add_CIC = yes
+					add_to_temp_array = { WA_AI_bf_picked_CIC = THIS.id }
+					set_temp_variable = { _wa_bf_break_ = 1 }
+					set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+				}
+				add_to_temp_variable = { _wa_bf_rank_ = 1 }
+			}
+		}
+	}
+
+	# Pass 3 - nothing eligible under the breadth/depth rules: the pre-Fix-88 loop, verbatim.
+	if = { limit = { check_variable = { _wa_bf_break_ = 0 } }
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+			if = {
+				limit = {
+					WA_AI_available_SHARED = yes
+					infrastructure > 3
+				}
+
+				WA_AI_add_CIC = yes
+				set_temp_variable = { break = 1 }
+			}
 		}
 	}
 
@@ -38,15 +137,66 @@ WA_AI_queue_CIC_2 = {
 		WA_AI_get_shared_slot_scores = yes
 	}
 
-	for_each_scope_loop = { array = WA_AI_shared_slot_scores
-
+	# Fix 88: breadth-first within the top-K scored states (see WA_AI_queue_breadth_prepare).
+	# Pass 1 - the first K eligible states, skipping those already picked this pulse.
+	WA_AI_queue_breadth_prepare = yes
+	set_temp_variable = { _wa_bf_break_ = 0 }
+	set_temp_variable = { _wa_bf_rank_ = 0 }
+	for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
 		if = {
 			limit = {
 				WA_AI_available_SHARED = yes
 			}
+			if = {
+				limit = {
+					check_variable = { _wa_bf_rank_ < WA_AI_bf_k }
+					NOT = { is_in_array = { array = WA_AI_bf_picked_CIC value = THIS.id } }
+				}
+				WA_AI_add_CIC = yes
+				add_to_temp_array = { WA_AI_bf_picked_CIC = THIS.id }
+				set_temp_variable = { _wa_bf_break_ = 1 }
+				set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+			}
+			add_to_temp_variable = { _wa_bf_rank_ = 1 }
+		}
+	}
 
-			WA_AI_add_CIC = yes
-			set_temp_variable = { break = 1 }
+	# Pass 2 - every top-K state was picked this pulse already: wrap around.
+	if = { limit = { check_variable = { _wa_bf_break_ = 0 } }
+		clear_temp_array = WA_AI_bf_picked_CIC
+		set_temp_variable = { _wa_bf_rank_ = 0 }
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
+			if = {
+				limit = {
+					WA_AI_available_SHARED = yes
+				}
+				if = {
+					limit = {
+						check_variable = { _wa_bf_rank_ < WA_AI_bf_k }
+						NOT = { is_in_array = { array = WA_AI_bf_picked_CIC value = THIS.id } }
+					}
+					WA_AI_add_CIC = yes
+					add_to_temp_array = { WA_AI_bf_picked_CIC = THIS.id }
+					set_temp_variable = { _wa_bf_break_ = 1 }
+					set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+				}
+				add_to_temp_variable = { _wa_bf_rank_ = 1 }
+			}
+		}
+	}
+
+	# Pass 3 - nothing eligible under the breadth/depth rules: the pre-Fix-88 loop, verbatim.
+	if = { limit = { check_variable = { _wa_bf_break_ = 0 } }
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+			if = {
+				limit = {
+					WA_AI_available_SHARED = yes
+				}
+
+				WA_AI_add_CIC = yes
+				set_temp_variable = { break = 1 }
+			}
 		}
 	}
 }
@@ -74,16 +224,69 @@ WA_AI_queue_MIC = {
 			WA_AI_get_shared_slot_scores = yes
 		}
 
-		for_each_scope_loop = { array = WA_AI_shared_slot_scores
-
+		# Fix 88: breadth-first within the top-K scored states (see WA_AI_queue_breadth_prepare).
+		# Pass 1 - the first K eligible states, skipping those already picked this pulse.
+		WA_AI_queue_breadth_prepare = yes
+		set_temp_variable = { _wa_bf_break_ = 0 }
+		set_temp_variable = { _wa_bf_rank_ = 0 }
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
 			if = {
 				limit = {
 					WA_AI_available_SHARED = yes
 					infrastructure > 3
 				}
+				if = {
+					limit = {
+						check_variable = { _wa_bf_rank_ < WA_AI_bf_k }
+						NOT = { is_in_array = { array = WA_AI_bf_picked_MIC value = THIS.id } }
+					}
+					WA_AI_add_MIC = yes
+					add_to_temp_array = { WA_AI_bf_picked_MIC = THIS.id }
+					set_temp_variable = { _wa_bf_break_ = 1 }
+					set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+				}
+				add_to_temp_variable = { _wa_bf_rank_ = 1 }
+			}
+		}
 
-				WA_AI_add_MIC = yes
-				set_temp_variable = { break = 1 }
+		# Pass 2 - every top-K state was picked this pulse already: wrap around.
+		if = { limit = { check_variable = { _wa_bf_break_ = 0 } }
+			clear_temp_array = WA_AI_bf_picked_MIC
+			set_temp_variable = { _wa_bf_rank_ = 0 }
+			for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
+				if = {
+					limit = {
+						WA_AI_available_SHARED = yes
+						infrastructure > 3
+					}
+					if = {
+						limit = {
+							check_variable = { _wa_bf_rank_ < WA_AI_bf_k }
+							NOT = { is_in_array = { array = WA_AI_bf_picked_MIC value = THIS.id } }
+						}
+						WA_AI_add_MIC = yes
+						add_to_temp_array = { WA_AI_bf_picked_MIC = THIS.id }
+						set_temp_variable = { _wa_bf_break_ = 1 }
+						set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+					}
+					add_to_temp_variable = { _wa_bf_rank_ = 1 }
+				}
+			}
+		}
+
+		# Pass 3 - nothing eligible under the breadth/depth rules: the pre-Fix-88 loop, verbatim.
+		if = { limit = { check_variable = { _wa_bf_break_ = 0 } }
+			for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+				if = {
+					limit = {
+						WA_AI_available_SHARED = yes
+						infrastructure > 3
+					}
+
+					WA_AI_add_MIC = yes
+					set_temp_variable = { break = 1 }
+				}
 			}
 		}
 
@@ -164,15 +367,66 @@ WA_AI_queue_MIC_2 = {
 		WA_AI_get_shared_slot_scores = yes
 	}
 
-	for_each_scope_loop = { array = WA_AI_shared_slot_scores
-
+	# Fix 88: breadth-first within the top-K scored states (see WA_AI_queue_breadth_prepare).
+	# Pass 1 - the first K eligible states, skipping those already picked this pulse.
+	WA_AI_queue_breadth_prepare = yes
+	set_temp_variable = { _wa_bf_break_ = 0 }
+	set_temp_variable = { _wa_bf_rank_ = 0 }
+	for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
 		if = {
 			limit = {
 				WA_AI_available_SHARED = yes
 			}
+			if = {
+				limit = {
+					check_variable = { _wa_bf_rank_ < WA_AI_bf_k }
+					NOT = { is_in_array = { array = WA_AI_bf_picked_MIC value = THIS.id } }
+				}
+				WA_AI_add_MIC = yes
+				add_to_temp_array = { WA_AI_bf_picked_MIC = THIS.id }
+				set_temp_variable = { _wa_bf_break_ = 1 }
+				set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+			}
+			add_to_temp_variable = { _wa_bf_rank_ = 1 }
+		}
+	}
 
-			WA_AI_add_MIC = yes
-			set_temp_variable = { break = 1 }
+	# Pass 2 - every top-K state was picked this pulse already: wrap around.
+	if = { limit = { check_variable = { _wa_bf_break_ = 0 } }
+		clear_temp_array = WA_AI_bf_picked_MIC
+		set_temp_variable = { _wa_bf_rank_ = 0 }
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
+			if = {
+				limit = {
+					WA_AI_available_SHARED = yes
+				}
+				if = {
+					limit = {
+						check_variable = { _wa_bf_rank_ < WA_AI_bf_k }
+						NOT = { is_in_array = { array = WA_AI_bf_picked_MIC value = THIS.id } }
+					}
+					WA_AI_add_MIC = yes
+					add_to_temp_array = { WA_AI_bf_picked_MIC = THIS.id }
+					set_temp_variable = { _wa_bf_break_ = 1 }
+					set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+				}
+				add_to_temp_variable = { _wa_bf_rank_ = 1 }
+			}
+		}
+	}
+
+	# Pass 3 - nothing eligible under the breadth/depth rules: the pre-Fix-88 loop, verbatim.
+	if = { limit = { check_variable = { _wa_bf_break_ = 0 } }
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+			if = {
+				limit = {
+					WA_AI_available_SHARED = yes
+				}
+
+				WA_AI_add_MIC = yes
+				set_temp_variable = { break = 1 }
+			}
 		}
 	}
 }
@@ -185,16 +439,69 @@ WA_AI_queue_NIC = {
 		WA_AI_get_shared_slot_scores = yes
 	}
 
-	for_each_scope_loop = { array = WA_AI_shared_slot_scores
-
+	# Fix 88: breadth-first within the top-K scored states (see WA_AI_queue_breadth_prepare).
+	# Pass 1 - the first K eligible states, skipping those already picked this pulse.
+	WA_AI_queue_breadth_prepare = yes
+	set_temp_variable = { _wa_bf_break_ = 0 }
+	set_temp_variable = { _wa_bf_rank_ = 0 }
+	for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
 		if = {
 			limit = {
 				is_coastal = yes
 				WA_AI_available_SHARED = yes
 			}
+			if = {
+				limit = {
+					check_variable = { _wa_bf_rank_ < WA_AI_bf_k }
+					NOT = { is_in_array = { array = WA_AI_bf_picked_NIC value = THIS.id } }
+				}
+				WA_AI_add_NIC = yes
+				add_to_temp_array = { WA_AI_bf_picked_NIC = THIS.id }
+				set_temp_variable = { _wa_bf_break_ = 1 }
+				set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+			}
+			add_to_temp_variable = { _wa_bf_rank_ = 1 }
+		}
+	}
 
-			WA_AI_add_NIC = yes
-			set_temp_variable = { break = 1 }
+	# Pass 2 - every top-K state was picked this pulse already: wrap around.
+	if = { limit = { check_variable = { _wa_bf_break_ = 0 } }
+		clear_temp_array = WA_AI_bf_picked_NIC
+		set_temp_variable = { _wa_bf_rank_ = 0 }
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
+			if = {
+				limit = {
+					is_coastal = yes
+					WA_AI_available_SHARED = yes
+				}
+				if = {
+					limit = {
+						check_variable = { _wa_bf_rank_ < WA_AI_bf_k }
+						NOT = { is_in_array = { array = WA_AI_bf_picked_NIC value = THIS.id } }
+					}
+					WA_AI_add_NIC = yes
+					add_to_temp_array = { WA_AI_bf_picked_NIC = THIS.id }
+					set_temp_variable = { _wa_bf_break_ = 1 }
+					set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+				}
+				add_to_temp_variable = { _wa_bf_rank_ = 1 }
+			}
+		}
+	}
+
+	# Pass 3 - nothing eligible under the breadth/depth rules: the pre-Fix-88 loop, verbatim.
+	if = { limit = { check_variable = { _wa_bf_break_ = 0 } }
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+			if = {
+				limit = {
+					is_coastal = yes
+					WA_AI_available_SHARED = yes
+				}
+
+				WA_AI_add_NIC = yes
+				set_temp_variable = { break = 1 }
+			}
 		}
 	}
 
@@ -212,17 +519,74 @@ WA_AI_queue_REF = {
 		WA_AI_get_shared_slot_scores = yes
 	}
 
-	for_each_scope_loop = { array = WA_AI_shared_slot_scores
-
+	# Fix 88: breadth-first within the top-K scored states (see WA_AI_queue_breadth_prepare).
+	# Pass 1 - the first K eligible states, skipping those already picked this pulse.
+	WA_AI_queue_breadth_prepare = yes
+	set_temp_variable = { _wa_bf_break_ = 0 }
+	set_temp_variable = { _wa_bf_rank_ = 0 }
+	for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
 		if = {
 			limit = {
 				is_core_of = ROOT
 				WA_AI_available_REF = yes
 				WA_AI_available_SHARED = yes
+				WA_AI_queue_depth_ok_REF = yes # Fix 88 depth cap
 			}
+			if = {
+				limit = {
+					check_variable = { _wa_bf_rank_ < WA_AI_bf_k }
+					NOT = { is_in_array = { array = WA_AI_bf_picked_REF value = THIS.id } }
+				}
+				WA_AI_add_REF = yes
+				add_to_temp_array = { WA_AI_bf_picked_REF = THIS.id }
+				set_temp_variable = { _wa_bf_break_ = 1 }
+				set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+			}
+			add_to_temp_variable = { _wa_bf_rank_ = 1 }
+		}
+	}
 
-			WA_AI_add_REF = yes
-			set_temp_variable = { break = 1 }
+	# Pass 2 - every top-K state was picked this pulse already: wrap around.
+	if = { limit = { check_variable = { _wa_bf_break_ = 0 } }
+		clear_temp_array = WA_AI_bf_picked_REF
+		set_temp_variable = { _wa_bf_rank_ = 0 }
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
+			if = {
+				limit = {
+					is_core_of = ROOT
+					WA_AI_available_REF = yes
+					WA_AI_available_SHARED = yes
+					WA_AI_queue_depth_ok_REF = yes # Fix 88 depth cap
+				}
+				if = {
+					limit = {
+						check_variable = { _wa_bf_rank_ < WA_AI_bf_k }
+						NOT = { is_in_array = { array = WA_AI_bf_picked_REF value = THIS.id } }
+					}
+					WA_AI_add_REF = yes
+					add_to_temp_array = { WA_AI_bf_picked_REF = THIS.id }
+					set_temp_variable = { _wa_bf_break_ = 1 }
+					set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+				}
+				add_to_temp_variable = { _wa_bf_rank_ = 1 }
+			}
+		}
+	}
+
+	# Pass 3 - nothing eligible under the breadth/depth rules: the pre-Fix-88 loop, verbatim.
+	if = { limit = { check_variable = { _wa_bf_break_ = 0 } }
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+			if = {
+				limit = {
+					is_core_of = ROOT
+					WA_AI_available_REF = yes
+					WA_AI_available_SHARED = yes
+				}
+
+				WA_AI_add_REF = yes
+				set_temp_variable = { break = 1 }
+			}
 		}
 	}
 
@@ -367,17 +731,74 @@ WA_AI_queue_HSR = {
 		WA_AI_get_shared_slot_scores = yes
 	}
 
-	for_each_scope_loop = { array = WA_AI_shared_slot_scores
-
+	# Fix 88: breadth-first within the top-K scored states (see WA_AI_queue_breadth_prepare).
+	# Pass 1 - the first K eligible states, skipping those already picked this pulse.
+	WA_AI_queue_breadth_prepare = yes
+	set_temp_variable = { _wa_bf_break_ = 0 }
+	set_temp_variable = { _wa_bf_rank_ = 0 }
+	for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
 		if = {
 			limit = {
 				is_core_of = ROOT
 				WA_AI_available_HSR = yes
 				WA_AI_available_SHARED = yes
+				WA_AI_queue_depth_ok_HSR = yes # Fix 88 depth cap
 			}
+			if = {
+				limit = {
+					check_variable = { _wa_bf_rank_ < WA_AI_bf_k }
+					NOT = { is_in_array = { array = WA_AI_bf_picked_HSR value = THIS.id } }
+				}
+				WA_AI_add_HSR = yes
+				add_to_temp_array = { WA_AI_bf_picked_HSR = THIS.id }
+				set_temp_variable = { _wa_bf_break_ = 1 }
+				set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+			}
+			add_to_temp_variable = { _wa_bf_rank_ = 1 }
+		}
+	}
 
-			WA_AI_add_HSR = yes
-			set_temp_variable = { break = 1 }
+	# Pass 2 - every top-K state was picked this pulse already: wrap around.
+	if = { limit = { check_variable = { _wa_bf_break_ = 0 } }
+		clear_temp_array = WA_AI_bf_picked_HSR
+		set_temp_variable = { _wa_bf_rank_ = 0 }
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
+			if = {
+				limit = {
+					is_core_of = ROOT
+					WA_AI_available_HSR = yes
+					WA_AI_available_SHARED = yes
+					WA_AI_queue_depth_ok_HSR = yes # Fix 88 depth cap
+				}
+				if = {
+					limit = {
+						check_variable = { _wa_bf_rank_ < WA_AI_bf_k }
+						NOT = { is_in_array = { array = WA_AI_bf_picked_HSR value = THIS.id } }
+					}
+					WA_AI_add_HSR = yes
+					add_to_temp_array = { WA_AI_bf_picked_HSR = THIS.id }
+					set_temp_variable = { _wa_bf_break_ = 1 }
+					set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+				}
+				add_to_temp_variable = { _wa_bf_rank_ = 1 }
+			}
+		}
+	}
+
+	# Pass 3 - nothing eligible under the breadth/depth rules: the pre-Fix-88 loop, verbatim.
+	if = { limit = { check_variable = { _wa_bf_break_ = 0 } }
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+			if = {
+				limit = {
+					is_core_of = ROOT
+					WA_AI_available_HSR = yes
+					WA_AI_available_SHARED = yes
+				}
+
+				WA_AI_add_HSR = yes
+				set_temp_variable = { break = 1 }
+			}
 		}
 	}
 
@@ -419,17 +840,74 @@ WA_AI_queue_SR = {
 		WA_AI_get_shared_slot_scores = yes
 	}
 
-	for_each_scope_loop = { array = WA_AI_shared_slot_scores
-
+	# Fix 88: breadth-first within the top-K scored states (see WA_AI_queue_breadth_prepare).
+	# Pass 1 - the first K eligible states, skipping those already picked this pulse.
+	WA_AI_queue_breadth_prepare = yes
+	set_temp_variable = { _wa_bf_break_ = 0 }
+	set_temp_variable = { _wa_bf_rank_ = 0 }
+	for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
 		if = {
 			limit = {
 				is_core_of = ROOT
 				WA_AI_available_SR = yes
 				WA_AI_available_SHARED = yes
+				WA_AI_queue_depth_ok_SR = yes # Fix 88 depth cap
 			}
+			if = {
+				limit = {
+					check_variable = { _wa_bf_rank_ < WA_AI_bf_k }
+					NOT = { is_in_array = { array = WA_AI_bf_picked_SR value = THIS.id } }
+				}
+				WA_AI_add_SR = yes
+				add_to_temp_array = { WA_AI_bf_picked_SR = THIS.id }
+				set_temp_variable = { _wa_bf_break_ = 1 }
+				set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+			}
+			add_to_temp_variable = { _wa_bf_rank_ = 1 }
+		}
+	}
 
-			WA_AI_add_SR = yes
-			set_temp_variable = { break = 1 }
+	# Pass 2 - every top-K state was picked this pulse already: wrap around.
+	if = { limit = { check_variable = { _wa_bf_break_ = 0 } }
+		clear_temp_array = WA_AI_bf_picked_SR
+		set_temp_variable = { _wa_bf_rank_ = 0 }
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
+			if = {
+				limit = {
+					is_core_of = ROOT
+					WA_AI_available_SR = yes
+					WA_AI_available_SHARED = yes
+					WA_AI_queue_depth_ok_SR = yes # Fix 88 depth cap
+				}
+				if = {
+					limit = {
+						check_variable = { _wa_bf_rank_ < WA_AI_bf_k }
+						NOT = { is_in_array = { array = WA_AI_bf_picked_SR value = THIS.id } }
+					}
+					WA_AI_add_SR = yes
+					add_to_temp_array = { WA_AI_bf_picked_SR = THIS.id }
+					set_temp_variable = { _wa_bf_break_ = 1 }
+					set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+				}
+				add_to_temp_variable = { _wa_bf_rank_ = 1 }
+			}
+		}
+	}
+
+	# Pass 3 - nothing eligible under the breadth/depth rules: the pre-Fix-88 loop, verbatim.
+	if = { limit = { check_variable = { _wa_bf_break_ = 0 } }
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+			if = {
+				limit = {
+					is_core_of = ROOT
+					WA_AI_available_SR = yes
+					WA_AI_available_SHARED = yes
+				}
+
+				WA_AI_add_SR = yes
+				set_temp_variable = { break = 1 }
+			}
 		}
 	}
 
@@ -471,17 +949,74 @@ WA_AI_queue_HAR = {
 		WA_AI_get_shared_slot_scores = yes
 	}
 
-	for_each_scope_loop = { array = WA_AI_shared_slot_scores
-
+	# Fix 88: breadth-first within the top-K scored states (see WA_AI_queue_breadth_prepare).
+	# Pass 1 - the first K eligible states, skipping those already picked this pulse.
+	WA_AI_queue_breadth_prepare = yes
+	set_temp_variable = { _wa_bf_break_ = 0 }
+	set_temp_variable = { _wa_bf_rank_ = 0 }
+	for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
 		if = {
 			limit = {
 				is_core_of = ROOT
 				WA_AI_available_HAR = yes # Fix 81: was WA_AI_available_REF (copy-paste) - gated HAR on the synth-refinery slot check
 				WA_AI_available_SHARED = yes
+				WA_AI_queue_depth_ok_HAR = yes # Fix 88 depth cap
 			}
+			if = {
+				limit = {
+					check_variable = { _wa_bf_rank_ < WA_AI_bf_k }
+					NOT = { is_in_array = { array = WA_AI_bf_picked_HAR value = THIS.id } }
+				}
+				WA_AI_add_HAR = yes
+				add_to_temp_array = { WA_AI_bf_picked_HAR = THIS.id }
+				set_temp_variable = { _wa_bf_break_ = 1 }
+				set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+			}
+			add_to_temp_variable = { _wa_bf_rank_ = 1 }
+		}
+	}
 
-			WA_AI_add_HAR = yes
-			set_temp_variable = { break = 1 }
+	# Pass 2 - every top-K state was picked this pulse already: wrap around.
+	if = { limit = { check_variable = { _wa_bf_break_ = 0 } }
+		clear_temp_array = WA_AI_bf_picked_HAR
+		set_temp_variable = { _wa_bf_rank_ = 0 }
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
+			if = {
+				limit = {
+					is_core_of = ROOT
+					WA_AI_available_HAR = yes # Fix 81: was WA_AI_available_REF (copy-paste) - gated HAR on the synth-refinery slot check
+					WA_AI_available_SHARED = yes
+					WA_AI_queue_depth_ok_HAR = yes # Fix 88 depth cap
+				}
+				if = {
+					limit = {
+						check_variable = { _wa_bf_rank_ < WA_AI_bf_k }
+						NOT = { is_in_array = { array = WA_AI_bf_picked_HAR value = THIS.id } }
+					}
+					WA_AI_add_HAR = yes
+					add_to_temp_array = { WA_AI_bf_picked_HAR = THIS.id }
+					set_temp_variable = { _wa_bf_break_ = 1 }
+					set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+				}
+				add_to_temp_variable = { _wa_bf_rank_ = 1 }
+			}
+		}
+	}
+
+	# Pass 3 - nothing eligible under the breadth/depth rules: the pre-Fix-88 loop, verbatim.
+	if = { limit = { check_variable = { _wa_bf_break_ = 0 } }
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+			if = {
+				limit = {
+					is_core_of = ROOT
+					WA_AI_available_HAR = yes # Fix 81: was WA_AI_available_REF (copy-paste) - gated HAR on the synth-refinery slot check
+					WA_AI_available_SHARED = yes
+				}
+
+				WA_AI_add_HAR = yes
+				set_temp_variable = { break = 1 }
+			}
 		}
 	}
 
@@ -523,17 +1058,74 @@ WA_AI_queue_AR = {
 		WA_AI_get_shared_slot_scores = yes
 	}
 
-	for_each_scope_loop = { array = WA_AI_shared_slot_scores
-
+	# Fix 88: breadth-first within the top-K scored states (see WA_AI_queue_breadth_prepare).
+	# Pass 1 - the first K eligible states, skipping those already picked this pulse.
+	WA_AI_queue_breadth_prepare = yes
+	set_temp_variable = { _wa_bf_break_ = 0 }
+	set_temp_variable = { _wa_bf_rank_ = 0 }
+	for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
 		if = {
 			limit = {
 				is_core_of = ROOT
 				WA_AI_available_AR = yes
 				WA_AI_available_SHARED = yes
+				WA_AI_queue_depth_ok_AR = yes # Fix 88 depth cap
 			}
+			if = {
+				limit = {
+					check_variable = { _wa_bf_rank_ < WA_AI_bf_k }
+					NOT = { is_in_array = { array = WA_AI_bf_picked_AR value = THIS.id } }
+				}
+				WA_AI_add_AR = yes
+				add_to_temp_array = { WA_AI_bf_picked_AR = THIS.id }
+				set_temp_variable = { _wa_bf_break_ = 1 }
+				set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+			}
+			add_to_temp_variable = { _wa_bf_rank_ = 1 }
+		}
+	}
 
-			WA_AI_add_AR = yes
-			set_temp_variable = { break = 1 }
+	# Pass 2 - every top-K state was picked this pulse already: wrap around.
+	if = { limit = { check_variable = { _wa_bf_break_ = 0 } }
+		clear_temp_array = WA_AI_bf_picked_AR
+		set_temp_variable = { _wa_bf_rank_ = 0 }
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
+			if = {
+				limit = {
+					is_core_of = ROOT
+					WA_AI_available_AR = yes
+					WA_AI_available_SHARED = yes
+					WA_AI_queue_depth_ok_AR = yes # Fix 88 depth cap
+				}
+				if = {
+					limit = {
+						check_variable = { _wa_bf_rank_ < WA_AI_bf_k }
+						NOT = { is_in_array = { array = WA_AI_bf_picked_AR value = THIS.id } }
+					}
+					WA_AI_add_AR = yes
+					add_to_temp_array = { WA_AI_bf_picked_AR = THIS.id }
+					set_temp_variable = { _wa_bf_break_ = 1 }
+					set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+				}
+				add_to_temp_variable = { _wa_bf_rank_ = 1 }
+			}
+		}
+	}
+
+	# Pass 3 - nothing eligible under the breadth/depth rules: the pre-Fix-88 loop, verbatim.
+	if = { limit = { check_variable = { _wa_bf_break_ = 0 } }
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores
+
+			if = {
+				limit = {
+					is_core_of = ROOT
+					WA_AI_available_AR = yes
+					WA_AI_available_SHARED = yes
+				}
+
+				WA_AI_add_AR = yes
+				set_temp_variable = { break = 1 }
+			}
 		}
 	}
 
