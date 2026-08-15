@@ -3,6 +3,15 @@
 #	Simple building spawner functions for standard construction AI
 ############################################################################################################
 
+# Fix 81: how long a queued refinery level is presumed to still be in the construction queue.
+# When no add happened on the state for this long, WA_AI_reconcile_queued_refineries zeroes the
+# counter - the only path by which a CANCELLED construction (state lost, queue cleared) is
+# forgotten, since script has no completion/cancellation hook. Must comfortably exceed the
+# slowest plausible refinery build (10-12.5k IC at WA construction speed). Too short = the
+# stall this fix removes comes back briefly on that state; too long = a state whose queue was
+# cancelled stays excluded that much longer. Err long.
+@WA_AI_QUEUED_REFINERY_TTL_DAYS = 1000
+
 WA_AI_add_CIC = {
 	if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: WA_AI_add_CIC in [This.GetID] [This.GetName]" }
 	add_building_construction = { type = industrial_complex level = 1 instant_build = no }
@@ -20,26 +29,81 @@ WA_AI_add_NIC = {
 
 WA_AI_add_REF = {
 	if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: WA_AI_add_REF in [This.GetID] [This.GetName]" }
+	# Fix 81: count the queued level so WA_AI_available_REF can enforce built + queued < state cap.
+	# Counted only when the add can actually land (same test the queue loops use), so the
+	# hard-coded state sites in WA_AI_construction.txt that spam this on a full state do not inflate it.
+	WA_AI_reconcile_queued_refineries = yes
+	if = { limit = { WA_AI_available_REF = yes }
+		if = { limit = { NOT = { check_variable = { WA_AI_queued_REF > 0 } } } # first queued level: baseline the built count
+			set_variable = { WA_AI_last_level_REF = building_level@synthetic_refinery }
+		}
+		add_to_variable = { WA_AI_queued_REF = 1 }
+		set_state_flag = { flag = WA_AI_queued_REF_recent value = 1 days = @WA_AI_QUEUED_REFINERY_TTL_DAYS }
+	}
 	add_building_construction = { type = synthetic_refinery level = 1 instant_build = no }
 }
 
 WA_AI_add_HSR = {
 	if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: WA_AI_add_HSR in [This.GetID] [This.GetName]" }
+	# Fix 81: count the queued level so WA_AI_available_HSR can enforce built + queued < state cap.
+	# Counted only when the add can actually land (same test the queue loops use), so the
+	# hard-coded state sites in WA_AI_construction.txt that spam this on a full state do not inflate it.
+	WA_AI_reconcile_queued_refineries = yes
+	if = { limit = { WA_AI_available_HSR = yes }
+		if = { limit = { NOT = { check_variable = { WA_AI_queued_HSR > 0 } } } # first queued level: baseline the built count
+			set_variable = { WA_AI_last_level_HSR = building_level@hydro_steel_refinery }
+		}
+		add_to_variable = { WA_AI_queued_HSR = 1 }
+		set_state_flag = { flag = WA_AI_queued_HSR_recent value = 1 days = @WA_AI_QUEUED_REFINERY_TTL_DAYS }
+	}
 	add_building_construction = { type = hydro_steel_refinery level = 1 instant_build = no }
 }
 
 WA_AI_add_SR = {
 	if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: WA_AI_add_SR in [This.GetID] [This.GetName]" }
+	# Fix 81: count the queued level so WA_AI_available_SR can enforce built + queued < state cap.
+	# Counted only when the add can actually land (same test the queue loops use), so the
+	# hard-coded state sites in WA_AI_construction.txt that spam this on a full state do not inflate it.
+	WA_AI_reconcile_queued_refineries = yes
+	if = { limit = { WA_AI_available_SR = yes }
+		if = { limit = { NOT = { check_variable = { WA_AI_queued_SR > 0 } } } # first queued level: baseline the built count
+			set_variable = { WA_AI_last_level_SR = building_level@steel_refinery }
+		}
+		add_to_variable = { WA_AI_queued_SR = 1 }
+		set_state_flag = { flag = WA_AI_queued_SR_recent value = 1 days = @WA_AI_QUEUED_REFINERY_TTL_DAYS }
+	}
 	add_building_construction = { type = steel_refinery level = 1 instant_build = no }
 }
 
 WA_AI_add_HAR = {
 	if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: WA_AI_add_HAR in [This.GetID] [This.GetName]" }
+	# Fix 81: count the queued level so WA_AI_available_HAR can enforce built + queued < state cap.
+	# Counted only when the add can actually land (same test the queue loops use), so the
+	# hard-coded state sites in WA_AI_construction.txt that spam this on a full state do not inflate it.
+	WA_AI_reconcile_queued_refineries = yes
+	if = { limit = { WA_AI_available_HAR = yes }
+		if = { limit = { NOT = { check_variable = { WA_AI_queued_HAR > 0 } } } # first queued level: baseline the built count
+			set_variable = { WA_AI_last_level_HAR = building_level@hydro_aluminium_refinery }
+		}
+		add_to_variable = { WA_AI_queued_HAR = 1 }
+		set_state_flag = { flag = WA_AI_queued_HAR_recent value = 1 days = @WA_AI_QUEUED_REFINERY_TTL_DAYS }
+	}
 	add_building_construction = { type = hydro_aluminium_refinery level = 1 instant_build = no }
 }
 
 WA_AI_add_AR = {
 	if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: WA_AI_add_AR in [This.GetID] [This.GetName]" }
+	# Fix 81: count the queued level so WA_AI_available_AR can enforce built + queued < state cap.
+	# Counted only when the add can actually land (same test the queue loops use), so the
+	# hard-coded state sites in WA_AI_construction.txt that spam this on a full state do not inflate it.
+	WA_AI_reconcile_queued_refineries = yes
+	if = { limit = { WA_AI_available_AR = yes }
+		if = { limit = { NOT = { check_variable = { WA_AI_queued_AR > 0 } } } # first queued level: baseline the built count
+			set_variable = { WA_AI_last_level_AR = building_level@aluminium_refinery }
+		}
+		add_to_variable = { WA_AI_queued_AR = 1 }
+		set_state_flag = { flag = WA_AI_queued_AR_recent value = 1 days = @WA_AI_QUEUED_REFINERY_TTL_DAYS }
+	}
 	add_building_construction = { type = aluminium_refinery level = 1 instant_build = no }
 }
 
