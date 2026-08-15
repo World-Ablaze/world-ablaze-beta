@@ -1091,8 +1091,44 @@ NDefines.NAI.AI_TASKFORCE_REQUIRED_RESERVE_RATIO = 0.05	-- Fraction of required 
 -- structurally (proportional to convoys present) instead of reactively.
 NDefines.NAI.CONVOY_ESCORT_MUL_FROM_NO_CONVOYS = 0.02								-- score multiplier when no convoys are around  [Fix 53b: was 0, vanilla 0.02]
 NDefines.NAI.CONVOY_ESCORT_SCORE_FROM_CONVOYS = 15          				    	-- score for each convoy you have in area  [Fix 53b: was 0, vanilla 15]
-NDefines.NAI.REGION_CONVOY_DANGER_DAILY_DECAY = 5 --5
-NDefines.NAI.REGION_THREAT_PER_SUNK_CONVOY = 50 --25								-- When convoys are sunk it generates threat in the region which the AI uses to prio nalval missions  [vanilla 2 - left alone; see the Fix 53b note above, escort no longer depends on this term]
+-- Fix 86 (2026-08-15, checklist R36, campaign af003548). Fix 53b's note on the next line
+-- said "escort no longer depends on this term"; the save says otherwise. At 1944.6 the USN
+-- ran 63 convoy-demand regions (72-215 convoys each on 44/55/243/247/54) with the 53b score
+-- terms live, 22 pure-screen 20-hull task forces parked at Norfolk with mission 0, 14 idle
+-- admirals, fuel 100% - and ZERO escort task forces. ENG in the same save escorted exactly
+-- its per_region_danger set (7 of 8 regions with danger > 0, none without), and the USA's
+-- own convoy_escort_presence_history shows it DID escort 48/69/243 for hundreds of ticks
+-- and dropped each one as its danger decayed to 0. Escort objectives are therefore created
+-- where a country's OWN convoys were recently sunk, and only there; the score terms rank
+-- objectives that already exist. The Kriegsmarine sinks British convoys (ENG danger 22 825
+-- on 43, 21 775 on 243) and almost no American ones (USA 385 on 43, 10-35 elsewhere), so the
+-- USN has nothing to react to and parks - the R36 shape for six campaigns.
+-- Two engine terms govern that reaction, both changed here to make escort respond to ANY
+-- recent loss instead of only to sustained slaughter:
+--   REGION_CONVOY_DANGER_DAILY_DECAY  5 -> 4  (vanilla 2; WA's 5 is uncommented and dates from
+--     the initial commit). Danger memory now outlives the gap between sinkings a little
+--     longer; the bigger lever is the per-sinking threat below.
+--   REGION_THREAT_PER_SUNK_CONVOY   50 -> 100 (vanilla 2, WA 50 since 2020). Playtest note
+--     2026-08-16: the mission assigner behaves inconsistently while a region's threat sits
+--     around 50 - one sinking now lands at 100, clear of that band, and decays through it
+--     in ~12 days instead of starting inside it.
+--   CONVOY_DANGER_FOR_MAX_IMPORTANCE 400 -> 50 (below; vanilla 400, WA never overrode it).
+--     Protection importance saturates at ONE sunk convoy (REGION_THREAT_PER_SUNK_CONVOY = 100)
+--     rather than eight - a navy that loses little still gets a full-strength objective on
+--     the region where it lost it.
+-- Blast radius: convoy-danger memory and escort-importance scaling only. Region AVOIDANCE
+-- reads REGION_THREAT_LEVEL_TO_AVOID/BLOCK_REGION (25 000, far above anything a decay change
+-- reaches) and is unaffected; the escort share stays capped by
+-- MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MIN/MAX (0.3-0.7); raiding, patrol and strike
+-- scoring do not read either term. Symmetric: GER and JAP get the same responsiveness.
+-- Pre-registered read (R36): USA per_region_danger non-zero on >= 4 Atlantic corridor
+-- regions at the first wartime summer save, and >= 1 USA escort task force holding a
+-- corridor region (43/44/55/243/247) at 3 consecutive 6-month anchors. If USA escort stays
+-- at 0 with these two in place, the objective generator is not danger-driven either and the
+-- next probe is the ai_strategy-invisible engine path, not another define.
+NDefines.NAI.REGION_CONVOY_DANGER_DAILY_DECAY = 4 --5  [Fix 86: was 5, vanilla 2; 4 chosen (not 2) so memory lengthens without hoarding - see the 100-per-sinking note below]
+NDefines.NAI.REGION_THREAT_PER_SUNK_CONVOY = 100 --25								-- When convoys are sunk it generates threat in the region which the AI uses to prio nalval missions  [Fix 86: was 50, vanilla 2. 100 so that ONE sinking already sits above the ~50 band where the mission assigner was observed to flip between assignments (playtest note 2026-08-16); pairs with CONVOY_DANGER_FOR_MAX_IMPORTANCE = 50 below, so a single loss saturates the protection importance outright]
+NDefines.NAI.CONVOY_DANGER_FOR_MAX_IMPORTANCE = 50								-- convoy danger at which the protection importance saturates  [Fix 86: vanilla 400, not previously overridden]
 NDefines.NAI.NAVAL_MISSION_ESCORT_NEAR_OWNED = 300									-- Extra escort mission score near owned provinces  [Fix 53b: was 0, vanilla 300]
 NDefines.NAI.NAVAL_MISSION_ESCORT_NEAR_CONTROLLED = 200								-- Extra escort mission score near controlled provinces  [Fix 53b: was 0, vanilla 200]
 
