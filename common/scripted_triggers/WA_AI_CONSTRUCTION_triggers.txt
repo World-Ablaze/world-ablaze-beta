@@ -4,6 +4,23 @@
 
 ### available construction slots
 
+# Fix 81: per-building state caps for the shared-slot refineries.
+# `free_building_slots = { building = X size > 0 }` only reports the SHARED pool;
+# it does not consult X's own `level_cap.state_max`. A state with more free
+# shared slots than the cap therefore stays "available" forever once the cap is
+# hit, `add_building_construction` silently no-ops, and because that state also
+# stays #1 in WA_AI_shared_slot_scores the whole building type stalls country-wide.
+# The `< cap` level checks below drop a full state out of the candidate set.
+# Residual: buildings still in the queue are not counted (script cannot read the
+# construction queue), so at most one pulse's worth (2 calls) can overshoot before
+# the level catches up - bounded and self-healing, not a stall.
+# MUST MATCH `level_cap.state_max` in common/buildings/00_buildings.txt.
+@WA_AI_REF_STATE_MAX = 6
+@WA_AI_SR_STATE_MAX = 15
+@WA_AI_HSR_STATE_MAX = 15
+@WA_AI_AR_STATE_MAX = 15
+@WA_AI_HAR_STATE_MAX = 15
+
 WA_AI_available_AIR = {
 	ROOT = { has_full_control_of_state = PREV }
 
@@ -50,6 +67,7 @@ WA_AI_available_SHARED = {
 }
 
 WA_AI_available_REF = {
+	synthetic_refinery < @WA_AI_REF_STATE_MAX # Fix 81
 	free_building_slots = { building = synthetic_refinery size > 0 include_locked = no }
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
 }
@@ -65,21 +83,25 @@ WA_AI_available_SILO = {
 }
 
 WA_AI_available_HSR = {
+	hydro_steel_refinery < @WA_AI_HSR_STATE_MAX # Fix 81
 	free_building_slots = { building = hydro_steel_refinery size > 0 include_locked = no }
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
 }
 
 WA_AI_available_SR = {
+	steel_refinery < @WA_AI_SR_STATE_MAX # Fix 81
 	free_building_slots = { building = steel_refinery size > 0 include_locked = no }
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
 }
 
 WA_AI_available_AR = {
+	aluminium_refinery < @WA_AI_AR_STATE_MAX # Fix 81
 	free_building_slots = { building = aluminium_refinery size > 0 include_locked = no }
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
 }
 
 WA_AI_available_HAR = {
+	hydro_aluminium_refinery < @WA_AI_HAR_STATE_MAX # Fix 81
 	free_building_slots = { building = hydro_aluminium_refinery size > 0 include_locked = no }
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
 }

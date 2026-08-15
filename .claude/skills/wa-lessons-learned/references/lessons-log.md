@@ -1761,3 +1761,12 @@ process caveats (stale process, and the absence of a load-time hook).
   pre-set sits above the deficit branch. Fix 78 splits the legend (`-1` = deficit open, nothing
   queued this pulse) and adds the cumulative `WA_TLM_r8_air_lane_grants`. Checklist R8's metric
   note is recut accordingly.
+
+### A UTF-8 BOM in a scripted_effects file kills the whole file - and the error log points at the wrong line
+
+- **Date:** 2026-08-15
+- **Symptom:** `error.log`: `unexpected token in file: "common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_core.txt" near line: 10 (  )`, followed by `( = )` and a cascade of `( } )` at later lines. The file read as syntactically perfect; braces balanced 874/874.
+- **Cause:** commit `fc9fc5fab` re-saved the file with a UTF-8 BOM (`EF BB BF`). The parser for `common/scripted_effects/` and `common/scripted_triggers/` treats the BOM as a token, so the first key (`WA_AI_PC_set_global_variables`, line 10) is where it reports, and every `=`/`}` afterwards desyncs. The whole priority-construction cost table and queue init silently failed to load. The token in the log is the invisible U+FEFF itself - it renders as `(  )`.
+- **Rule:** script files under `common/` and `events/` are BOM-free UTF-8; only `localisation/**/*.yml` takes a BOM (AGENTS.md rule 16). Editors/tools defaulting to "UTF-8 with BOM" reintroduce it on the next save - the fix recurred within minutes when another writer touched the file.
+- **Detection:** `unexpected token ... near line: N (  )` with an *empty-looking* token, on the file's first key, in a file that reads fine. Check the first three bytes: `head -c 3 file | xxd -p` -> `efbbbf` = bad. `git cat-file -p <rev>:<file> | head -c 3` finds the commit that introduced it.
+- **Evidence:** local `logs/error.log` 2026-08-15 00:52; the errors began the run after `fc9fc5fab`, and every prior revision back to 2026-02 started with `23 23 23` (`###`).
