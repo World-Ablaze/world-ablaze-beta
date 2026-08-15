@@ -7,6 +7,27 @@ description: Hard-won gotchas from working on the World Ablaze HOI4 mod — the 
 
 The catalogue lives in `references/lessons-log.md`. Read it when debugging; append to it when you learn something.
 
+## Consulting the log without reading it — the `wa-lessons-reviewer` subagent
+
+The log is ~1800 lines and grows with every fix. Reading it inline to check one decision spends
+main-agent context on entries that do not apply. Instead, **before committing to a fix design, a
+change to an existing system, or an analysis conclusion**, send the decision to the
+`wa-lessons-reviewer` subagent (`.claude/agents/wa-lessons-reviewer.md`, read-only). Give it:
+
+- the decision itself in 3–10 lines (what changes, where, why), including any claim you are
+  making about the residual ("bounded", "rare", "self-heals") and any alternative you rejected;
+- the names involved (system, effects/triggers, buildings, variables, `Fix NN`).
+
+It returns a ≤40-line verdict: the lessons that apply with COMPLIES/CONFLICTS per entry, the
+AGENTS.md (f)/(g) checks (bound-without-timeline, replaced proposal without refutation), the
+two-states-of-one-object check, and the concrete actions required. Treat CONFLICT as blocking —
+either change the design or write down why the lesson does not apply this time. Other agents
+(Codex, non-Claude tools) do the same by reading that agent file as a checklist and running it
+in whatever isolated context they have.
+
+This is a **pre-commit** check, not a replacement for reading the log while diagnosing — when you
+are debugging, you still read the entries the reviewer names.
+
 ## The five that come up most
 
 **1. Puppet territory is not yours.** `every_controlled_state` iterates only states the country controls *directly* — subject/puppet land is controlled by the puppet. Any system that should cover an overlord's whole sphere must also walk `every_subject_country`. This is the single most repeated bug in the railway system.
