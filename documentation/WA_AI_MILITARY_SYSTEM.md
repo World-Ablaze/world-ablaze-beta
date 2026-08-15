@@ -238,7 +238,11 @@ Published state per AI country: `WA_AI_MILITARY_posture` (0 = hold, 1 = execute,
 brake is engaged (which also drops AIFC into linear defence). Level 1 keys on
 `fighting_army_strength_ratio` (the engine's quality-weighted estimate) OR on the front-local branch:
 the divisions our side actually has standing on the shared contact line outweigh the enemy divisions
-across it by 1.5x (banded `divisions_in_state` counting, armour double-weighted; skipped when the
+across it by 1.5x to START executing and by 1.1x to KEEP executing once under way (Fix 83, campaign
+`af003548`: the single 1.5 bar retracted every western execute order the month Germany reinforced
+Normandy 26 → 95 divisions against 121 Allied — 1.27 — with the equipment ratio at 0.93+, and the
+unordered beachhead was rolled back 6 → 2 states; the enter/hold pair mirrors Fix 55's equipment
+gate) (banded `divisions_in_state` counting, armour double-weighted; skipped when the
 pairwise ratio already passes). The local branch is load-bearing - the pairwise ratio compares one
 country against the enemy's whole fighting army, so without it no Allied member except the USA ever
 passed vs Germany and the coalition never attacked together (July 1944 diagnosis: ENG at level 1 vs

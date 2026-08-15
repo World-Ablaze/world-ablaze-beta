@@ -108,7 +108,18 @@
 # makes funded-weeks cumulative and therefore un-missable. Additive: no existing metric
 # changes meaning, so v5-v14 readings stay valid. A save at wa_tlm_version < 15 simply lacks
 # the pair - score it NOT CHECKED, never FAILED.
-@WA_TLM_VERSION = 15
+# v16 (2026-08-15, Fix 83 / R51): adds WA_TLM_r51_local_hold_n / _first_t / _last_t - level-1
+# posture verdicts that ONLY the new front-local hold band delivered (local count between
+# LOCAL_RATIO_HOLD and LOCAL_RATIO with an execute entry already held, and no other level-1
+# route open). Written at the level-1 site in WA_AI_MILITARY_update_posture
+# (WA_AI_MILITARY_posture_effects.txt), NOT by the monthly sampler. VERIFIED effect: without
+# Fix 83 each counted observation would have read posture 0. It exists because the D-Day
+# rollback on af003548 was invisible to every prior metric - posture flipped 1 -> 0 -> 1 with
+# the equipment ratio at 0.93+ and the air veto silent - so "did the hold band ever bite" is
+# unanswerable from the posture_vs_* snapshots alone. Additive: no existing metric changes
+# meaning, so v5-v15 readings stay valid. A save at wa_tlm_version < 16 simply lacks the
+# family - score it NOT CHECKED, never FAILED.
+@WA_TLM_VERSION = 16
 
 ############################################################################################################
 #	Clock - global.WA_TLM_clock = months elapsed since 1936.1
@@ -245,6 +256,15 @@ WA_TLM_init_country = {
 	if = { limit = { NOT = { has_variable = WA_TLM_r8_air_lane_grants } } set_variable = { WA_TLM_r8_air_lane_grants = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r8_air_lane_first_t } } set_variable = { WA_TLM_r8_air_lane_first_t = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r8_air_lane_last_t } } set_variable = { WA_TLM_r8_air_lane_last_t = 0 } }
+
+	# posture front-local hold band (Fix 83, consumer: checklist R51; write site is the level-1
+	# verdict in WA_AI_MILITARY_update_posture, WA_AI_MILITARY_posture_effects.txt). Counts
+	# level-1 observations that ONLY the hold band delivered - one per (country, enemy, week).
+	# _first_t is load-bearing: R51 asks whether the band bit DURING a contested landing window,
+	# not merely whether it ever bit.
+	if = { limit = { NOT = { has_variable = WA_TLM_r51_local_hold_n } } set_variable = { WA_TLM_r51_local_hold_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r51_local_hold_first_t } } set_variable = { WA_TLM_r51_local_hold_first_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r51_local_hold_last_t } } set_variable = { WA_TLM_r51_local_hold_last_t = 0 } }
 
 	# naval / convoy war (standing, consumer: checklist R36 + any convoy-war question)
 	if = { limit = { NOT = { has_variable = WA_TLM_nav_ships } } set_variable = { WA_TLM_nav_ships = 0 } }

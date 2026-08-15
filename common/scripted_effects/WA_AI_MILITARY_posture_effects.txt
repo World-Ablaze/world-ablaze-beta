@@ -86,6 +86,27 @@
 ###	already attacking keeps its orders while it recovers, and one that is not attacking still has
 ###	to earn the full 0.9 to start. Do NOT collapse the two constants back into one.
 
+### FIX 83 (2026-08-15, campaign af003548) - the FRONT-LOCAL ratio is a cliff too, so it now has hysteresis.
+###	Fix 55 gave the equipment gate an enter/hold pair and left the front-local branch as a single
+###	bar: LOCAL_RATIO = 1.5 both to start executing AND to keep executing. That is the D-Day rollback
+###	mechanism on af003548, and it is not the equipment cliff: ENG and USA both read
+###	posture_vs_GER 1 (1944.7) -> 0 (1944.8) -> 0 (1944.9) -> 1 (1944.10) with fielded_eq_ratio
+###	never below 0.930, the pairwise ratio hopeless as always for a coalition member (USA 107 vs
+###	GER 291 divisions), and the global air veto not firing (GER 14 109 x 0.4 = 5 644 < ENG ~8 900).
+###	What moved was the LOCAL count: 121 Allied vs 95 German divisions in France at 1944.8 = 1.27,
+###	under 1.5, the month Germany reinforced Normandy 26 -> 95 -> 142 divisions from an already-
+###	quiet Eastern front. Both western majors dropped every front_control ... execute_order = yes
+###	against Germany at once (abort_when_not_enabled), the unordered beachhead went 6 states ->
+###	2 in a month, and stayed on those 2 states for 20 of the next 22 months.
+###	Same shape as Fix 55, same minimal remedy: a country ALREADY executing against this enemy
+###	keeps its orders while its side still outweighs the enemy across the line by LOCAL_RATIO_HOLD;
+###	one that is not yet executing still has to earn the full LOCAL_RATIO to start. 1.1 is "still
+###	ahead on the ground" - at 1944.9's 82 vs 142 (0.58) the hold band correctly releases too, so
+###	this does not order attacks into a counter-offensive that has already overturned the count.
+###	Do NOT collapse the two constants back into one, and do not lower LOCAL_RATIO itself: the
+###	entry bar was tuned so a 1939 France does not attack into the Westwall on a marginal count.
+###	Probe: WA_TLM_r51_local_hold_* (checklist R51).
+
 ### Posture constants (must match common/scripted_triggers/WA_AI_MILITARY_posture_triggers.txt)
 @WA_AI_POSTURE_MIN_EQ = 0.9				# fielded-equipment ratio required to ENTER an offensive posture
 @WA_AI_POSTURE_MIN_EQ_HOLD = 0.85		# ...and to KEEP one already held (Fix 55 hysteresis, see below)
@@ -93,7 +114,8 @@
 @WA_AI_POSTURE_EXEC_RATIO_HOLLOW = 0.7	# lower bar when the enemy's army is badly under-equipped
 @WA_AI_POSTURE_HOLLOW_EQ = 0.75			# enemy fielded-equipment ratio below this counts as hollow
 @WA_AI_POSTURE_GRIND_RATIO = 0.5		# never grind below this fighting-strength ratio - that is suicide, not attrition
-@WA_AI_POSTURE_LOCAL_RATIO = 1.5		# our-side divisions on the shared front vs the enemy's, to execute
+@WA_AI_POSTURE_LOCAL_RATIO = 1.5		# our-side divisions on the shared front vs the enemy's, to START executing
+@WA_AI_POSTURE_LOCAL_RATIO_HOLD = 1.1	# ...and to KEEP executing once under way (Fix 83 hysteresis, see above)
 @WA_AI_POSTURE_LOCAL_GRIND_RATIO = 1.2	# same comparison as an alternative floor for the grind
 @WA_AI_POSTURE_LOCAL_MAX_STATES = 12	# cap on enemy front states scanned per enemy (cost bound)
 @WA_AI_POSTURE_GRIND_ENEMY_MP = 500000	# enemy manpower pool below this counts as nearly dry
@@ -342,6 +364,11 @@ WA_AI_MILITARY_update_posture = {
 
 			set_temp_variable = { _post_local_edge = _post_local_enemy }
 			multiply_temp_variable = { _post_local_edge = @WA_AI_POSTURE_LOCAL_RATIO }
+			# Fix 83: the hold bar - see the constants header. Both edges are 0 when the local
+			# scan was skipped (pairwise ratio already passes), and 0 > 0 is false, so neither
+			# branch can fire off an unscanned line.
+			set_temp_variable = { _post_local_edge_hold = _post_local_enemy }
+			multiply_temp_variable = { _post_local_edge_hold = @WA_AI_POSTURE_LOCAL_RATIO_HOLD }
 			set_temp_variable = { _post_local_grind_floor = _post_local_enemy }
 			multiply_temp_variable = { _post_local_grind_floor = @WA_AI_POSTURE_LOCAL_GRIND_RATIO }
 
@@ -453,11 +480,49 @@ WA_AI_MILITARY_update_posture = {
 							# joins the push - the pairwise ratio compares one country against the
 							# enemy's whole fighting army and no coalition member but the largest
 							# could ever pass it against a major.
-							check_variable = { _post_local_friendly > _post_local_edge }
+							# Fix 83: enter at LOCAL_RATIO, hold at LOCAL_RATIO_HOLD while already
+							# executing against this enemy - same enter/hold shape as the Fix 55
+							# equipment pair above. PREV is the enemy, as at the write site.
+							OR = {
+								check_variable = { _post_local_friendly > _post_local_edge }
+								AND = {
+									check_variable = { WA_AI_MILITARY_posture_vs_@PREV > 0 }
+									check_variable = { _post_local_friendly > _post_local_edge_hold }
+								}
+							}
 						}
 					}
 				}
 				set_temp_variable = { _post_level = 1 }
+
+				# tlm: WA_TLM_r51_local_hold_n / _first_t / _last_t - consumer: checklist R51.
+				# Counts a level-1 verdict that ONLY the Fix 83 hold band delivered: the local count is
+				# inside (edge_hold, edge], the entry we are holding was > 0, and no other level-1 route
+				# was open - the local scan only runs when the pairwise EXEC_RATIO branch failed (see the
+				# cost gate above), so the remaining route to exclude is the hollow/air-lowered pairwise
+				# bar. VERIFIED effect: without the hold band this observation would have read 0.
+				if = {
+					limit = {
+						NOT = { check_variable = { _post_local_friendly > _post_local_edge } }
+						check_variable = { _post_local_friendly > _post_local_edge_hold }
+						NOT = {
+							AND = {
+								OR = {
+									check_variable = { _post_enemy_eq < @WA_AI_POSTURE_HOLLOW_EQ }
+									check_variable = { _post_air_state = 1 }
+								}
+								ROOT = { fighting_army_strength_ratio = { tag = PREV ratio > @WA_AI_POSTURE_EXEC_RATIO_HOLLOW } }
+							}
+						}
+					}
+					ROOT = {
+						add_to_variable = { WA_TLM_r51_local_hold_n = 1 }
+						if = { limit = { check_variable = { WA_TLM_r51_local_hold_first_t = 0 } }
+							set_variable = { WA_TLM_r51_local_hold_first_t = global.WA_TLM_clock }
+						}
+						set_variable = { WA_TLM_r51_local_hold_last_t = global.WA_TLM_clock }
+					}
+				}
 			}
 
 			### Level 2 - attrition grind: the enemy is out of men, we are not. Worth pressing even
