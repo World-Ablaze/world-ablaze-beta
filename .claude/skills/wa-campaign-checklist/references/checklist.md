@@ -1264,3 +1264,22 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **Status:** NOT YET TESTED
 - **History:**
   - NOT YET TESTED — fix postdates every campaign in the registry.
+
+### R50. The Narvik landing of Weserübung holds (Fix 82)
+
+- **Opened 2026-08-15** from a player report ("the scripted German invasion of Norway fails on the Narvik landing every time"). Code reading of `events/WA_AI_invasions.txt` (`WA_AI_invasions.3`, fired 1940.4.9 by `WA_KDE_yearly_event_fire_1940`): the Nord-Norge (state 144) wave was the only Weserübung wave with **one province and 2 divisions** (Vestlandet 3×2, Trøndelag 2×2, Østlandet 3×2 motorised), dropped on province 192 — the very province where NOR's *6. Divisjon* starts (`history/units/NOR_1936.txt`) — in a 19-province mountain state with no land link to the southern beachheads. The displaced 6th Division plus the Finnmark brigade retook the port.
+- **Fix under test:** Fix 82. Nord-Norge wave is now a contiguous three-province pocket — 192 Narvik, 3034 (coastal, west) and 13878 (inland); all three are mutually adjacent per `WA_AI_MAP_province_connections` — **2 divisions on Narvik, 1 on each flank** (4 total, 20-width infantry, template 7; two spawn calls each with its own dpp assignment + ADJUST, dpp reset to 2 afterwards) at `_start_experience = 0.7` instead of the 0.45 default, reset right after the wave. Weserübung's designed national delta moves from **22 to 24** on normal (44 → 48 on hard); the R18 retired note's "22 designed" is the pre-Fix-82 figure. Also stripped a pre-existing UTF-8 BOM from `events/WA_AI_invasions.txt` (was loading anyway — the events parser is BOM-tolerant — but rule 16 forbids it).
+- **Precondition:** GER is AI, historical difficulty, at war with NOR on 1940.4.9 with NOR controlling 1018 and GER/ally controlling Jutland (99) — the existing `.3` gate. If GER never fights NOR in 1940, NOT CHECKED.
+- **Pass, two legs:**
+  1. **Delivery leg.** At the 1940.5.1 save, GER's Norway division delta over April is ≥ 24 (per-state counts are a floor; the national delta is the validated metric — see R18), and provinces 192, 3034, 13878 are GER-controlled at 1940.5.1.
+  2. **Hold leg (the fix itself).** Province 192 (Narvik) is controlled by GER or a GER ally at **each** of the 1940.6.1, 1940.7.1 and 1940.8.1 saves, or NOR has capitulated by 1940.8.1. A 192 that flips back to NOR/ENG/FRA at any of those saves while NOR is still fighting is a FAIL.
+- **Probe:** `savegame.py` province-controller read for 192/3034/13878 on the 1940.4/5/6/7/8 saves; GER unit count in states 144/142/143/110/1017/1020 at 1940.4.1 vs 1940.5.1 for the delta. **Absence contract:** builds predating Fix 82 are NOT YET TESTED, never FAILED.
+- **Threshold:** 3 (a discrete province-control fact per campaign).
+- **Deliberately NOT done, and why:**
+  - **No fourth province (13879), no 2-per-flank.** Nord-Norge is unsupplied except through Narvik's port; 4 divisions on normal / 8 on hard is the ceiling the port can plausibly feed. Wider or deeper stacks would just bleed org.
+  - **No change to `history/units/GER_Norway.txt`** (5th/6th Gebirgsjäger placed at 192/3034 by `den_armor.6`/`ger_armor.928`) — separate mechanism, untouched.
+- **Regression watch:** if a campaign shows GER's Norway delta at 1940.5.1 near 22 rather than 24 (or 44 rather than 48 on hard) the extra provinces did not spawn — check the `create_unit` meta_effect log for 3034/13878.
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **History:**
+  - NOT YET TESTED — fix postdates every campaign in the registry.

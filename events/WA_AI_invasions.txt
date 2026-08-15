@@ -1,4 +1,4 @@
-﻿add_namespace = WA_AI_invasions
+add_namespace = WA_AI_invasions
 #########################################################################################
 #########################################################################################
 #########################################################################################
@@ -199,11 +199,33 @@ country_event = {
 			add_to_temp_array = { _invasion_state_provinces = 107 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
+			# Fix 82: the Narvik landing was the only Weserübung wave with a single province and
+			# 2 divisions (Vestlandet 3x2, Trondelag 2x2), dropped on the one province where NOR's
+			# 6. Divisjon starts (history/units/NOR_1936.txt) in a 19-province mountain state with
+			# no land link to the southern beachheads - it was pushed back into the sea in every
+			# campaign. Now a contiguous three-province pocket (192 Narvik + 3034 coastal west +
+			# 13878 inland, all mutually adjacent): 2 divisions on Narvik itself, 1 on each flank
+			# (4 total on normal, 8 on hard), at Gebirgsjäger veteran experience. Two spawn calls
+			# because _divisions_per_province applies to every province of one call - each keeps
+			# the Fix 33 invariant (assignment + ADJUST immediately before its spawn). dpp is set
+			# back to 2 and _start_experience to the spawn_invasion default right after, so the
+			# Ostlandet motorised wave is unchanged.
+			set_temp_variable = { _start_experience = 0.7 }
 			set_temp_variable = { _invasion_state = 144 } # Nord-Norge
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 192 }
+			add_to_temp_array = { _invasion_state_provinces = 192 } # Narvik
 			WA_AI_DIVISION_spawn_invasion = yes
 
+			set_temp_variable = { _divisions_per_province = 1 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 3034 } # coastal flank, west
+			add_to_temp_array = { _invasion_state_provinces = 13878 } # inland flank
+			WA_AI_DIVISION_spawn_invasion = yes
+			set_temp_variable = { _start_experience = 0.45 }
+
+			set_temp_variable = { _divisions_per_province = 2 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 2 }
 
 			set_temp_variable = { _invasion_state = 110 } #Ostlandet
