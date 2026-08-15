@@ -1807,6 +1807,24 @@ process caveats (stale process, and the absence of a load-time hook).
 - **Detection:** `unexpected token ... near line: N (  )` with an *empty-looking* token, on the file's first key, in a file that reads fine. Check the first three bytes: `head -c 3 file | xxd -p` -> `efbbbf` = bad. `git cat-file -p <rev>:<file> | head -c 3` finds the commit that introduced it.
 - **Evidence:** local `logs/error.log` 2026-08-15 00:52; the errors began the run after `fc9fc5fab`, and every prior revision back to 2026-02 started with `23 23 23` (`###`).
 
+### A situational invasion suppression needs an exit condition, or it becomes a permanent lock (checklist R34, retired)
+
+- **Date:** 2026-08-15 (rule dates from 2026-08-12; retired from the campaign checklist at 5/5 after `af003548`)
+- **Symptom:** campaign `9a4cd657` - Allied divisions in metropolitan France 69 (1944.9) -> 0 (1944.10) and never re-attempted for the remaining 18 months while GER held only 23-25 divisions there.
+- **Cause:** branch 2 of `ALLIES_dday_hold` (`common/ai_strategy/WA_AI_MILITARY_FACTION_ALLIES_INVASION.txt`) was the bare pair `date > 1944.12.1` AND `has_war_with = JAP`, with no exit term. From December 1944 onward, with Japan still at war, every western major was permanently under `invade GER/FRA/RFR -2000`. `abort_when_not_enabled = yes` cannot help a branch whose enable never turns false.
+- **Rule:** any `ai_strategy` block that *suppresses* an operation on a situational cue (a date, an ally in the war, a landing having fired) must carry a term that reads the situation ending - the enemy's collapse (`surrender_progress`, state share), the war ending, or a scripted flag that is cleared. Read the ENEMY's state for the exit, never own capability (the R27 anti-pattern). Mirror of the situational exit `ALLIES_dday_fire_FRONT` already carried.
+- **Detection:** a `value=-2000` (or any large negative) `invade`/`front` entry present in a country's `ai` section across consecutive late-war saves while that country holds a foothold and the enemy is far from collapse; on the ground, a theatre the AI *could* re-enter staying at zero divisions for 3+ months.
+- **Evidence:** fix verified on `a8b29e09`, `bec4d829`, `02bd4445`, `be18f9c7`, `af003548` (no `-2000` invade suppression on ENG/USA at 1945.1/1945.6 in any of them; France never at zero after the landing). Note the item measured re-enterability only - `af003548` passed it while the western front sat frozen on two states for 18 months (posture front-local ratio, a different gate).
+
+### Convoy-escort objectives are created by a country's OWN recent convoy losses - score terms rank them, they do not create them
+
+- **Date:** 2026-08-15 (campaign `af003548`, checklist R36, Fix 86)
+- **Symptom:** the USN ran 0% of its screens on convoy escort at three anchors across six campaigns with 22 pure-screen task forces parked, 14 idle admirals and full fuel, while ENG escorted 17-60% - and every naval `ai_strategy` that pushes escort (the -100 escort bar, corridor `naval_dominance`, no `naval_avoid_region` on the corridor) already reached the USA. Fix 53b had restored the vanilla escort SCORE terms with the note "escort no longer depends on this term" about `REGION_THREAT_PER_SUNK_CONVOY`.
+- **Cause:** ENG's escort set is exactly its `per_region_danger` set (7 of 8 danger regions escorted, none without); the USA's `convoy_escort_presence_history` shows it escorted 48/69/243 while those regions carried danger and dropped each as danger decayed to 0. Vanilla's own comment on `CONVOY_DANGER_FOR_MAX_IMPORTANCE` says protection importance "will scale with convoy danger" - the objective exists only where the country's own convoys were sunk recently. The Kriegsmarine sinks British convoys, not American ones, so the USN has nothing to react to.
+- **Rule:** never read "the score terms are non-zero" as "objectives will be generated". For any engine mission whose importance scales with an accumulated per-country signal (danger, threat), a country that does not accumulate the signal will not run the mission whatever the scores say. Diagnose from the engine-state block (`strategic_navy` → `per_region_danger`, `convoy_escort_presence_history`), not from the `ai_strategy` layer, and check whether WA overrode the decay/saturation of the signal (WA had `REGION_CONVOY_DANGER_DAILY_DECAY = 5`, vanilla 2, uncommented since 2020).
+- **Detection:** one navy escorting exactly where it bleeds and another with the same script reach escorting nowhere; `presence_history` entries flipping to -1 as danger decays.
+- **Evidence:** `af003548` 1944.6/1942.6 `strategic_navy` blocks for USA/ENG; R36 Fix-86 leg carries the pre-registered read.
+
 ### `free_building_slots` ignores a shared-slot building's own `state_max` - and a built-level check is not a queue check (Fix 81)
 
 - **Date:** 2026-08-15 (community report on Discord, two cuts the same day)
