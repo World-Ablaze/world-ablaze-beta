@@ -6,7 +6,7 @@
 ### functions for AI construction
 
 # Fix 88: breadth-first placement. The engine merges same-(state, building) adds into ONE
-# construction line (amount = N); a line takes at most 15 civilian factories and builds its
+# construction line (amount = N); a line takes at most MAX_CIV_FACTORIES_PER_LINE (WA: 20) civilian factories and builds its
 # levels serially, so a burst of N WA_AI_queue_<X> calls that all break on the same top-scored
 # state produces one slow line instead of N parallel ones (reporter: "US has ~20 parallel lines,
 # I queued 20 alu mills and it occupies 2 or 3"). Every shared-slot queue function now walks the
@@ -27,18 +27,24 @@
 # R48's save/restore) is unchanged whatever the engine does with `break` on loop entry.
 # Cadence (reviewer concern): C.10 is gated on idle civs > 1 AND re-arms for 75-1000 days after a
 # firing, so absorbing more idle civs per firing does not lower the firing rate - the timer already
-# closes it. Timeline, 300-civ major, one C.10 firing with 20 CIC calls: t0 old = 1 line x 15 civs
-# (deep, 20 serial builds), new = 20 lines x 15 civs = 300 civs; t1 (next day) old: idle civs > 1
+# closes it. Timeline, 300-civ major (K = 15), one C.10 firing with 20 CIC calls: t0 old = 1 line x 20 civs
+# (deep, 20 serial builds), new = 15 lines x 20 civs = 300 civs; t1 (next day) old: idle civs > 1
 # but the timer blocks C.10 anyway; t2 = first completion: old 1 CIC, new 20 CIC. Same civs, same
 # firings, ~K times the throughput. A 20-civ minor has K = 2 and behaves as before.
 # Bulk fire_only_once bursts are the largest change: WA_AI_C.72 (USA 1940.7, 354 MIC calls) went
-# 8 lines x 15 = 120 civs to 20 lines x 15 = 300 civs for the duration - that IS the build order's
+# 8 lines x 20 = 160 civs to ~18 lines x 20 = 360 civs for the duration - that IS the build order's
 # intent (its author is the reporter), and priority construction keeps its floored share.
 # CIC/MIC/NIC get NO depth cap: they have no per-state queue tracking (Fix 81 only tracks the five
 # refinery types), their state_max is 45 so depth cannot stall them, and the "when will it finish"
 # control the reporter asked for comes from breadth alone (K lines finish K levels per build time).
 # Adding per-state tracking for them is a separate change if the reporter still wants a depth knob.
-@WA_AI_BF_CIVS_PER_LINE = 15
+# MUST MATCH NDefines.NProduction.MAX_CIV_FACTORIES_PER_LINE in common/defines/05_defines.lua (WA = 20,
+# vanilla 15) - it is the divisor that turns "civs" into "lines the country can feed".
+@WA_AI_BF_CIVS_PER_LINE = 20
+# Hard ceiling on breadth, independent of civ count. Rank K+1.. of the score order is never used by
+# the breadth passes even for a 600-civ USA; a burst larger than K wraps around inside the top K.
+# It bounds two costs of breadth: how far down the score order (infra, supply, exposure) a burst may
+# reach, and how many civs one burst may take from the engine's own queue and the PC lane at once.
 @WA_AI_BF_MAX_K = 20
 
 # ROOT = THIS = country. Computes WA_AI_bf_k once per pulse (same "compute if 0" idiom as
