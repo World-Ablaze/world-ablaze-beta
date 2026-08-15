@@ -21,8 +21,26 @@
 # alone (written monthly by WA_AI_misc_effects.txt).
 
 # Check if AI has any shortage of a resource (OR: critical need OR 3+ months history)
+# Coal is strategic (every synthetic refinery burns it): prospect PROACTIVELY
+# while the effective balance is under +100, not only once it is negative.
+# resource@coal is net-available minus unmet demand (see wa-savegame-analysis).
+# What resource@coal measures: extraction X, minus the trade law's export share
+# (already gone, not counted here), minus own consumption. The engine trade AI
+# only imports when that number is NEGATIVE, to bring it back to ~0 - it never
+# builds a reserve. So "< 100" is a genuine proactive bar: it fires for a
+# producer whose retained surplus is under 100 (and for an importer parked at
+# ~0), and stops for a producer keeping 100+ after export share and use. GER
+# late 1943 (+15 000) is far above it. See the lessons log entry "resource@X
+# and the engine trade AI" before changing the threshold.
+# The gauge (resource@) carries the peacetime/proactive case; the WA_AI_needs
+# counter (0..3, monthly ramp) carries the wartime shortage case.
+# Since 2026-08-15 the prospecting ai_will_do blocks have base weight 0 and this
+# trigger is the only thing that gives the coal decisions any weight for ROOT's
+# own sake, so a country sitting on +15 000 coal (GER, late 1943) no longer
+# re-prospects its states just because civs and PP are free.
 WA_AI_should_prospect_resource_coal = {
 	OR = {
+		check_variable = { resource@coal < 100 }
 		check_variable = { WA_AI_needs_coal > 1 }
 		check_variable = { WA_AI_resource_coal_shortage_months > 0 }
 	}
@@ -172,15 +190,16 @@ WA_AI_allies_need_bauxite = {
 # Proactive Layer: Check if AI is a strategic exporter
 ###############################################################################
 
-# Strategic exporters maintain high production during peace
-# Hardcoded list from trade laws + dynamic Free Trade detection
+# Strategic exporters maintain high production during peace.
+# WHO is an exporter lives in WA_AI_CONFIG.txt (WA_AI_CONFIG_is_strategic_<r>_exporter);
+# this file only adds the capability conditions (peace + a trade posture that
+# actually sells). Read by the "Proactive: Strategic exporter boost" modifier
+# that tools/needs_aware_generator.py emits into every tungsten / rubber / oil
+# prospecting decision (add = 100 on a base of 0).
 
 WA_AI_is_strategic_tungsten_exporter = {
 	has_war = no
-	OR = {
-		tag = SWE
-		tag = POR
-	}
+	WA_AI_CONFIG_is_strategic_tungsten_exporter = yes
 	OR = {
 		has_idea = free_trade
 		has_completed_focus = POR_extraction_industries  # POR focus requirement
@@ -189,26 +208,14 @@ WA_AI_is_strategic_tungsten_exporter = {
 
 WA_AI_is_strategic_rubber_exporter = {
 	has_war = no
-	OR = {
-		tag = MAL
-		tag = INS
-		tag = BRA
-	}
-	OR = {
-		has_idea = free_trade
-	}
+	WA_AI_CONFIG_is_strategic_rubber_exporter = yes
+	has_idea = free_trade
 }
 
 WA_AI_is_strategic_oil_exporter = {
 	has_war = no
-	OR = {
-		tag = IRQ
-		tag = BRA
-		tag = UKO  # UK Oil fields
-	}
-	OR = {
-		has_idea = free_trade
-	}
+	WA_AI_CONFIG_is_strategic_oil_exporter = yes
+	has_idea = free_trade
 }
 
 # Generic dynamic exporter: any country with Free Trade law and surplus factories

@@ -891,6 +891,42 @@ process caveats (stale process, and the absence of a load-time hook).
 - **Evidence:** user correction, 2026-08-11, on the R29 fix attempt; checklist R29 defect C.
 
 
+### `resource@X` is the retained domestic surplus — the "AI lives at zero" rule is for importers only
+
+- **Date:** 2026-08-16
+- **The fact (owner's model of the trade system):** a country extracts X of a resource; the
+  trade law reserves an export share E of it (that share is gone from the country's own books);
+  own consumption comes off the rest. `resource@X` is what remains: **X − export share −
+  consumption**. The engine trade AI reacts **only when that number is negative**, importing just
+  enough to bring it back to ~0. A producer whose retained surplus is +50 is not an importer, is
+  not pushed to 0, and stays at +50 — the previous entry's "the AI lives at zero" describes the
+  *importer* branch of this arithmetic, not every country.
+- **The mistake it caused (2026-08-16, coal prospecting):** the proposal was "prospect coal
+  proactively while `resource@coal < 100`". The lessons reviewer — and the main agent, who
+  accepted it — over-generalised the entry above into "the trade AI parks every non-exporter at
+  ~0, so `< 100` is true for everyone and only excludes 100+ net exporters, i.e. *keep
+  prospecting until you export 100+*". Wrong twice: (a) a domestic producer with 0 < surplus <
+  100 sits exactly where the bar means it to; (b) the +100 is a *retained* surplus, measured
+  after the export share has been taken — it is not "exporting 100". Prospecting is domestic
+  extraction, so it raises precisely this number; the bar is reachable and self-limiting. The
+  owner corrected the framing before it shipped; the trigger comment was rewritten.
+- **The second fact, easy to miss:** coal, iron and bauxite are **WA-native resources**, not
+  vanilla ones. The engine AI's handling of them is incomplete — that is *why* the mod carries
+  scripted machinery around them (`coal_shortage_ai`, the `WA_AI_needs_<r>` counters, the
+  prospecting layers). Do not assume the vanilla-resource trade behaviour (import-to-zero,
+  partner search) transfers to them; read the save ledger. GER on `af003548` holds an
+  `imported = 0` coal column next to a −3 200…−3 700 unmet-demand column for eight consecutive
+  months while sitting on +15 000 net — a vanilla resource would not show that shape.
+- **Rule:** before scoring any `resource@X` threshold, say which branch the country is in —
+  *importer* (parked at ~0 by the engine, thresholds above 0 unreachable *by trade*) or
+  *producer* (retained surplus is real, reachable *by extraction/prospecting*, and thresholds
+  above 0 are meaningful). "The AI lives at zero" applies to the first branch only. And for
+  WA-native resources, verify the engine even imports (ledger `imported` column) before
+  reasoning from vanilla trade behaviour at all.
+- **Evidence:** user correction 2026-08-16 on the coal-prospecting change; `savegame.py
+  resources GER 1943.7_Jul.hoi4 … 1944.1_Jan.hoi4` on campaign `af003548`.
+
+
 ### A correct idiom can become wrong when copied, if its correctness rests on the data
 
 - **Date:** 2026-08-11
