@@ -445,10 +445,30 @@ on_actions = {
 		effect = {
 
 			# Fix 81: the engine drops the old controller's construction queue in this state, so the
-			# per-state "built + queued refinery levels" sums (WA_AI_committed_<X>, building_adders)
+			# per-state "built + queued levels" sums (WA_AI_committed_<X>, building_adders; Fix 88 added CIC/MIC/NIC)
 			# would over-count for the new controller. Dropping the TTL flags makes WA_AI_available_<X>
 			# fall back to the built level and the next WA_AI_add_<X> rebase the sum.
 			FROM.FROM = {
+				# tlm: WA_TLM_sq_ctrl_reset_n (standing, family sq) on the OLD controller - counted only when a
+				# live flag was actually dropped. Consumer: R49 (cancellation path).
+				if = {
+					limit = {
+						OR = {
+							has_state_flag = WA_AI_committed_CIC_recent
+							has_state_flag = WA_AI_committed_MIC_recent
+							has_state_flag = WA_AI_committed_NIC_recent
+							has_state_flag = WA_AI_committed_REF_recent
+							has_state_flag = WA_AI_committed_SR_recent
+							has_state_flag = WA_AI_committed_HSR_recent
+							has_state_flag = WA_AI_committed_AR_recent
+							has_state_flag = WA_AI_committed_HAR_recent
+						}
+					}
+					FROM = { add_to_variable = { WA_TLM_sq_ctrl_reset_n = 1 } }
+				}
+				clr_state_flag = WA_AI_committed_CIC_recent
+				clr_state_flag = WA_AI_committed_MIC_recent
+				clr_state_flag = WA_AI_committed_NIC_recent
 				clr_state_flag = WA_AI_committed_REF_recent
 				clr_state_flag = WA_AI_committed_SR_recent
 				clr_state_flag = WA_AI_committed_HSR_recent

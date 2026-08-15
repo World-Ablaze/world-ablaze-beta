@@ -316,6 +316,14 @@ per series — trivial at depth 44, but do not raise depth casually.
 | `WA_TLM_pc_avail_share_pct` | gauge (derived) | same site | standing — `100 × assigned / alloc_base`, PC's share of what it was **allowed** to take. Read against the fraction in force that month (40, or `WA_AI_PC_override_max_factories_factor × 100` while its country flag is live — `savegame.py pc` prints which): at the fraction = pool-bound; well under = the fill found no eligible project; over = the stable-base floor is carrying the queue | v14 |
 | `WA_TLM_pc_last_t` | stamp | monthly, all AI (written with the family's widest gauges, never inside the major gate) | `pc_*` absence contract | v14 |
 | `WA_TLM_pc_hist_t` + `_pc_queue_hist` / `_pc_share_pct_hist` / `_pc_avail_share_pct_hist` | ring + **own** axis | quarterly, `WA_AI_CONFIG_is_major_country` | standing — PC trend inside one save. Own axis rather than `WA_TLM_hist_t`: the composition family happens to use the same gate today, and sharing an axis would make that a permanent coupling (§4, risk ii) | v14 |
+| `WA_TLM_sq_adds_n` | counter | `WA_AI_add_<X>` (building_adders), all eight shared-slot types, only when `WA_AI_available_<X>` passed and the add was issued | standing — family **sq** (standard construction queue); R49, R53 | v17 |
+| `WA_TLM_sq_adds_by_type^i` | counter (indexed 0 CIC · 1 MIC · 2 NIC · 3 REF · 4 SR · 5 HSR · 6 AR · 7 HAR; not zero-initialised, `sq_adds_n` is the witness) | same site | standing — per-type split of the above | v17 |
+| `WA_TLM_sq_first_t` / `_last_t` | stamps | same site | standing — family absence contract | v17 |
+| `WA_TLM_sq_tier_a_n` / `_b_n` / `_c_n` / `_d_n` | counters | `WA_AI_bf_record` after a selection add (queue_functions) — A breadth, B wrap-around, C over-depth breadth, D pre-Fix-88 fallback | standing — R53 spread leg; `d_n / adds_n` = how often breadth was exhausted | v17 |
+| `WA_TLM_sq_k_max` | max-aggregate gauge | same site, `check_variable >` guard | standing — widest K ever used | v17 |
+| `WA_TLM_sq_k` | gauge | monthly, all AI (`WA_TLM_sample_sq`) — `clamp(ceil((civs − PC assigned)/20), 1, 20)`, same arithmetic as `WA_AI_queue_breadth_prepare` | standing — R53 K reading | v17 |
+| `WA_TLM_sq_rebase_down_n` | counter | `WA_AI_add_<X>` when the TTL flag had lapsed and `committed > built` (the sum is being rebased down = a cancelled/lost queue forgotten) | standing — R49 cancellation path | v17 |
+| `WA_TLM_sq_ctrl_reset_n` | counter | `on_state_control_changed` on the OLD controller, only when a live `WA_AI_committed_<X>_recent` flag was dropped | standing — R49 control-change path | v17 |
 | `WA_TLM_r47_lrange_n` | counter | monthly, all AI (`WA_AI_EQUIPMENT_update_context_flags`) | R31 | v3 |
 | `WA_TLM_r47_lrange_first_t` / `_last_t` | stamps | same site | R31 | v3 |
 | `WA_TLM_r47_alu_large_n` | counter | monthly, all AI (same site) | R32 | v3 |
@@ -562,6 +570,38 @@ confirm on any AI country that `wa_tlm_pc_civs > 0` and `wa_tlm_pc_last_t` is pr
 growth in `savegame.py buildings TAG --match rail`, and `pc_avail_share_pct` against the
 `alloc override` line `savegame.py pc` prints for the same month — a country with the
 override flag live should read near 50–60, not 40.
+
+## 6d. Standard construction queue (standing, v17)
+
+The scripted standard queue (`events/WA_AI_construction.txt` → `WA_AI_queue_<X>` → `WA_AI_add_<X>`)
+places buildings by walking the score-sorted `WA_AI_shared_slot_scores`. Two fixes made its
+placement observable: **Fix 81** keeps a per-state sum `WA_AI_committed_<X>` = built + queued (a
+completion leaves it unchanged, so nothing is reconciled) so `free_building_slots` no longer
+admits a state whose queue is already at the building's `state_max`; **Fix 88** spreads a burst of
+calls across the top-K states (K = lines the country can feed) with a per-line depth preference,
+four tiers deep, the last tier being the pre-fix pick.
+
+What the save already shows and this family does **not** duplicate: the engine queue
+(`production/general_lines`, per state, `amount`, `created_date`) and the sums + TTL flags on the
+state blocks (`wa_ai_committed_<x>`, `WA_AI_committed_<X>_recent`) — `refq3.py` / `lines.py` join
+them. What it cannot show and this family covers: **which tier** placed each add (was breadth ever
+exhausted → `tier_d_n`), **how wide** the country was allowed to go (`sq_k`, `sq_k_max`), whether the
+two forgetting paths of the sum ever ran (`rebase_down_n`, `ctrl_reset_n`), and a per-type add
+ledger (`adds_by_type`) that a save can only reconstruct by diffing `general_lines` across
+consecutive saves — lines merge and complete between snapshots, so that diff undercounts.
+
+Honesty (§3.6): `adds_n` counts *availability passed + add issued* — the same evidence level as the
+sum itself, since script cannot read the engine queue; a refused add (state at the real cap the
+sum did not know about — engine-AI lines are invisible to it) is counted. `tier_*` are written only
+after the selection produced a target and the adder ran. `rebase_down_n` / `ctrl_reset_n` count the
+set/clear that actually happened. Second signal for the first instrumented campaign: `adds_n`
+against the number of adder-made lines × amount in `general_lines` created in the same window
+(should match within the merge/complete lag), and `sq_k` against `ceil((civs − pc_assigned)/20)`
+computed from `pc_civs`.
+
+Standing, not probes, under §3.8 criteria 2 and 3: every AI country runs this queue every
+campaign, and the R49/R53 local scorings (2026-08-15/16) each required a bespoke general_lines
+join to answer "how deep / how wide did it place".
 
 ## 7. Adding a metric — checklist for authors
 

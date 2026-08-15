@@ -4,7 +4,7 @@
 
 ### available construction slots
 
-# Fix 81: per-building state caps for the shared-slot refineries.
+# Fix 81: per-building state caps for the shared-slot buildings (refineries; Fix 88 added CIC/MIC/NIC).
 # `free_building_slots = { building = X size > 0 }` only reports the SHARED pool;
 # it does not consult X's own `level_cap.state_max`. A state with more free
 # shared slots than the cap therefore stays "available" forever once the cap is
@@ -29,6 +29,10 @@
 @WA_AI_HSR_STATE_MAX = 15
 @WA_AI_AR_STATE_MAX = 15
 @WA_AI_HAR_STATE_MAX = 15
+# Fix 88: the three factory types join the same standard (industrial_complex / arms_factory / dockyard).
+@WA_AI_CIC_STATE_MAX = 45
+@WA_AI_MIC_STATE_MAX = 45
+@WA_AI_NIC_STATE_MAX = 45
 
 WA_AI_available_AIR = {
 	ROOT = { has_full_control_of_state = PREV }
@@ -75,6 +79,44 @@ WA_AI_available_SHARED = {
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
 }
 
+# Fix 88: industrial_complex at the Fix 81 standard - built < cap and committed (= built + queued) < cap while the
+# TTL flag is live. The queue loops add this to their WA_AI_available_SHARED test; the hard-coded
+# state sites go through WA_AI_add_CIC, which counts only when this passes.
+WA_AI_available_CIC = {
+	check_variable = { building_level@industrial_complex < @WA_AI_CIC_STATE_MAX }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_CIC_recent }
+		check_variable = { WA_AI_committed_CIC < @WA_AI_CIC_STATE_MAX }
+	}
+	free_building_slots = { building = industrial_complex size > 0 include_locked = no }
+	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
+}
+
+# Fix 88: arms_factory at the Fix 81 standard - built < cap and committed (= built + queued) < cap while the
+# TTL flag is live. The queue loops add this to their WA_AI_available_SHARED test; the hard-coded
+# state sites go through WA_AI_add_MIC, which counts only when this passes.
+WA_AI_available_MIC = {
+	check_variable = { building_level@arms_factory < @WA_AI_MIC_STATE_MAX }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_MIC_recent }
+		check_variable = { WA_AI_committed_MIC < @WA_AI_MIC_STATE_MAX }
+	}
+	free_building_slots = { building = arms_factory size > 0 include_locked = no }
+	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
+}
+
+# Fix 88: dockyard at the Fix 81 standard - built < cap and committed (= built + queued) < cap while the
+# TTL flag is live. The queue loops add this to their WA_AI_available_SHARED test; the hard-coded
+# state sites go through WA_AI_add_NIC, which counts only when this passes.
+WA_AI_available_NIC = {
+	check_variable = { building_level@dockyard < @WA_AI_NIC_STATE_MAX }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_NIC_recent }
+		check_variable = { WA_AI_committed_NIC < @WA_AI_NIC_STATE_MAX }
+	}
+	free_building_slots = { building = dockyard size > 0 include_locked = no }
+	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
+}
 WA_AI_available_REF = {
 	# Fix 81: built < cap, and committed (= built + queued) < cap while the TTL flag is live (see header)
 	check_variable = { building_level@synthetic_refinery < @WA_AI_REF_STATE_MAX }
@@ -83,11 +125,6 @@ WA_AI_available_REF = {
 		check_variable = { WA_AI_committed_REF < @WA_AI_REF_STATE_MAX }
 	}
 	free_building_slots = { building = synthetic_refinery size > 0 include_locked = no }
-	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
-}
-
-WA_AI_available_NIC = {
-	free_building_slots = { building = dockyard size > 0 include_locked = no }
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
 }
 
@@ -141,16 +178,49 @@ WA_AI_available_HAR = {
 }
 
 
-### Fix 88: per-line depth cap for the breadth-first queue passes (WA_AI_CONSTRUCTION_queue_functions.txt).
+### Fix 88: per-line depth cap for the breadth-first selection (WA_AI_CONSTRUCTION_queue_functions.txt).
 # THIS = state. True when fewer than @WA_AI_QUEUE_DEPTH_<X> levels of X are queued-but-unbuilt on this
 # state, read as WA_AI_committed_<X> - building_level@X (Fix 81 sum). A lapsed TTL flag means the sum is
-# no longer trusted, so depth is treated as 0. Only the breadth passes use this; the verbatim fallback
-# pass does not, so a country whose every candidate is at depth still queues where it always did.
+# no longer trusted, so depth is treated as 0. Depth is a PREFERENCE in the selection (tiers A/B before
+# C/D), never a wall - a burst larger than K x depth keeps spreading, and the tier-D fallback is the
+# pre-Fix-88 pick. Depth is the "I know when this line finishes" knob: a line finishes within
+# depth x T(one level at MAX_CIV_FACTORIES_PER_LINE civs); civ count does not change per-line speed,
+# only K (number of lines) scales with civs - which is why depth is a constant and K is not.
+@WA_AI_QUEUE_DEPTH_CIC = 3
+@WA_AI_QUEUE_DEPTH_MIC = 3
+@WA_AI_QUEUE_DEPTH_NIC = 3
 @WA_AI_QUEUE_DEPTH_REF = 3
 @WA_AI_QUEUE_DEPTH_SR = 3
 @WA_AI_QUEUE_DEPTH_HSR = 3
 @WA_AI_QUEUE_DEPTH_AR = 3
 @WA_AI_QUEUE_DEPTH_HAR = 3
+
+WA_AI_queue_depth_ok_CIC = {
+	set_temp_variable = { _wa_depth_ = WA_AI_committed_CIC }
+	subtract_from_temp_variable = { _wa_depth_ = building_level@industrial_complex }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_CIC_recent }
+		check_variable = { _wa_depth_ < @WA_AI_QUEUE_DEPTH_CIC }
+	}
+}
+
+WA_AI_queue_depth_ok_MIC = {
+	set_temp_variable = { _wa_depth_ = WA_AI_committed_MIC }
+	subtract_from_temp_variable = { _wa_depth_ = building_level@arms_factory }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_MIC_recent }
+		check_variable = { _wa_depth_ < @WA_AI_QUEUE_DEPTH_MIC }
+	}
+}
+
+WA_AI_queue_depth_ok_NIC = {
+	set_temp_variable = { _wa_depth_ = WA_AI_committed_NIC }
+	subtract_from_temp_variable = { _wa_depth_ = building_level@dockyard }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_NIC_recent }
+		check_variable = { _wa_depth_ < @WA_AI_QUEUE_DEPTH_NIC }
+	}
+}
 
 WA_AI_queue_depth_ok_REF = {
 	set_temp_variable = { _wa_depth_ = WA_AI_committed_REF }

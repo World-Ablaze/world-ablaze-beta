@@ -119,7 +119,17 @@
 # unanswerable from the posture_vs_* snapshots alone. Additive: no existing metric changes
 # meaning, so v5-v15 readings stay valid. A save at wa_tlm_version < 16 simply lacks the
 # family - score it NOT CHECKED, never FAILED.
-@WA_TLM_VERSION = 16
+# v17 (2026-08-16, Fix 81 cut 3 + Fix 88 / R49, R53): adds the STANDING family WA_TLM_sq_* (sq =
+# standard construction queue, events/WA_AI_construction.txt via WA_AI_queue_<X> / WA_AI_add_<X>).
+# The save shows the engine queue (production/general_lines) and the per-state sums
+# (wa_ai_committed_<x>) but not HOW an add was placed: which selection tier (breadth A / wrap B /
+# over-depth C / old-behaviour fallback D), how wide K was, whether the TTL rebase or the
+# control-change reset ever fired. Counters at the write sites (adds_n / adds_by_type^i /
+# tier_a..d_n / rebase_down_n / ctrl_reset_n / k_max, first_t / last_t) plus a monthly gauge
+# sq_k. Standing under 3.8 criterion 3 (system health of a queue every AI country runs) and
+# criterion 2 (the R49/R53 local scorings each needed a bespoke general_lines join). Additive; a
+# save at wa_tlm_version < 17 lacks the family - score NOT CHECKED, never FAILED.
+@WA_TLM_VERSION = 17
 
 ############################################################################################################
 #	Clock - global.WA_TLM_clock = months elapsed since 1936.1
@@ -323,6 +333,21 @@ WA_TLM_init_country = {
 	if = { limit = { NOT = { has_variable = WA_TLM_post_last_t } } set_variable = { WA_TLM_post_last_t = 0 } }
 	# WA_TLM_nav_hist_t / WA_TLM_nav_port_pct_hist: arrays, no init (see the comment
 	# above - clearing on re-init is the history wipe the guards exist to prevent)
+
+	# standard construction queue - Fix 81 cut 3 / Fix 88 (standing, family sq; consumers R49, R53).
+	# adds_by_type^i (0 CIC, 1 MIC, 2 NIC, 3 REF, 4 SR, 5 HSR, 6 AR, 7 HAR) is INDEXED and deliberately
+	# not zero-initialised - adds_n beside it is the presence witness (same trade as pc_built_by_type).
+	if = { limit = { NOT = { has_variable = WA_TLM_sq_adds_n } } set_variable = { WA_TLM_sq_adds_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_sq_first_t } } set_variable = { WA_TLM_sq_first_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_sq_last_t } } set_variable = { WA_TLM_sq_last_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_sq_tier_a_n } } set_variable = { WA_TLM_sq_tier_a_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_sq_tier_b_n } } set_variable = { WA_TLM_sq_tier_b_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_sq_tier_c_n } } set_variable = { WA_TLM_sq_tier_c_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_sq_tier_d_n } } set_variable = { WA_TLM_sq_tier_d_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_sq_k_max } } set_variable = { WA_TLM_sq_k_max = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_sq_k } } set_variable = { WA_TLM_sq_k = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_sq_rebase_down_n } } set_variable = { WA_TLM_sq_rebase_down_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_sq_ctrl_reset_n } } set_variable = { WA_TLM_sq_ctrl_reset_n = 0 } }
 }
 
 ############################################################################################################
@@ -335,6 +360,7 @@ WA_TLM_monthly_sample = {
 	WA_TLM_sample_composition = yes
 	WA_TLM_sample_navy = yes
 	WA_TLM_sample_pc = yes
+	WA_TLM_sample_sq = yes
 }
 
 ############################################################################################################
@@ -731,5 +757,23 @@ WA_TLM_sample_navy = {
 				}
 			}
 		}
+	}
+}
+
+############################################################################################################
+#	Standard-construction-queue sample (standing, family sq; Fix 88). One gauge: the breadth K the
+#	queue functions would use this month = clamp(ceil((civs - PC-assigned) / MAX_CIV_FACTORIES_PER_LINE),
+#	1, 20) - the same arithmetic as WA_AI_queue_breadth_prepare (queue_functions), duplicated here
+#	because that effect writes a TEMP and telemetry must never be read by gameplay. If the two
+#	constants there change, change them here (20 / 20).
+#	Everything else in the family is a counter written at its event site (adders / selection /
+#	on_state_control_changed) - see the v17 note at the top of this file.
+WA_TLM_sample_sq = {
+	if = { limit = { is_ai = yes }
+		set_temp_variable = { _tlm_sq_k_ = num_of_civilian_factories }
+		subtract_from_temp_variable = { _tlm_sq_k_ = WA_AI_PC_assigned_factories_total }
+		divide_temp_variable = { _tlm_sq_k_ = 20 }
+		clamp_temp_variable = { var = _tlm_sq_k_ min = 1 max = 20 }
+		set_variable = { WA_TLM_sq_k = _tlm_sq_k_ }
 	}
 }
