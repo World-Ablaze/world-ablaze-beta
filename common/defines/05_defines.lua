@@ -1091,7 +1091,7 @@ NDefines.NAI.AI_TASKFORCE_REQUIRED_RESERVE_RATIO = 0.05	-- Fraction of required 
 -- structurally (proportional to convoys present) instead of reactively.
 NDefines.NAI.CONVOY_ESCORT_MUL_FROM_NO_CONVOYS = 0.02								-- score multiplier when no convoys are around  [Fix 53b: was 0, vanilla 0.02]
 NDefines.NAI.CONVOY_ESCORT_SCORE_FROM_CONVOYS = 15          				    	-- score for each convoy you have in area  [Fix 53b: was 0, vanilla 15]
-NDefines.NAI.REGION_CONVOY_DANGER_DAILY_DECAY = 5 --5	
+NDefines.NAI.REGION_CONVOY_DANGER_DAILY_DECAY = 5 --5
 NDefines.NAI.REGION_THREAT_PER_SUNK_CONVOY = 50 --25								-- When convoys are sunk it generates threat in the region which the AI uses to prio nalval missions  [vanilla 2 - left alone; see the Fix 53b note above, escort no longer depends on this term]
 NDefines.NAI.NAVAL_MISSION_ESCORT_NEAR_OWNED = 300									-- Extra escort mission score near owned provinces  [Fix 53b: was 0, vanilla 300]
 NDefines.NAI.NAVAL_MISSION_ESCORT_NEAR_CONTROLLED = 200								-- Extra escort mission score near controlled provinces  [Fix 53b: was 0, vanilla 200]
@@ -1236,6 +1236,12 @@ NDefines.NAI.LAND_DEFENSE_INTERSEPTORS_PER_PLANE = 0								-- Amount of air int
 NDefines.NAI.LAND_DEFENSE_SUPPLY_HUB_IMPORTANCE = 80								-- Strategic importance of supply hubs
 NDefines.NAI.LAND_DEFENSE_AA_IMPORTANCE_FACTOR = 1.0								-- Factor of AA influence on strategic importance ( 0.0 - 1.0 )
 NDefines.NAI.LAND_DEFENSE_INFRA_IMPORTANCE_FACTOR = 70								-- Factor of infrastructure influence on strategic importance ( 0.0 - 1.0 )
+
+NDefines.NAI.LAND_DEFENSE_SAM_MISSILE_IMPORTANCE_FACTOR = 0							-- Importance factor of using sam missiles for regions strategic importance. Higher value will increase the usage
+
+NDefines.NAI.GUN_EMPLACEMENT_MIN_ASSIGN_SCORE = 10000000							-- Minimum total score for region to be considered for gun emplacement air missions
+NDefines.NAI.GUN_EMPLACEMENT_MIN_PRIO_ASSIGN_SCORE = 10000000						-- Minimum total score for region to be considered for critical gun emplacement air missions
+NDefines.NAI.GUN_EMPLACEMENT_ASSIGN_SCORE_REDUCTION_PER_ASSIGNMENT = 0				-- each assigned gun emplacement reduces the score of a region by this amount
 
 NDefines.NAI.LAND_COMBAT_AIR_SUPERIORITY_IMPORTANCE = 2.0 							-- Strategic importance of air superiority ( amount of enemy planes in area )
 NDefines.NAI.LAND_COMBAT_OUR_ARMIES_AIR_IMPORTANCE = 25 							-- Strategic importance of our armies
