@@ -1,4 +1,4 @@
-add_namespace = WA_AI_invasions
+﻿add_namespace = WA_AI_invasions
 #########################################################################################
 #########################################################################################
 #########################################################################################
@@ -15,95 +15,39 @@ add_namespace = WA_AI_invasions
 #########################################################################################
 #########################################################################################
 
-# Fix 33: removed 68 dead `set_temp_variable = { _divisions_per_province = N }` +
-# `WA_AI_DIVISION_adjust_invasion_for_difficulty` pairs across 44 events, plus 5 orphaned
-# ADJUST calls. Read this before "restoring" any of them.
-#
-# HOW THE DEAD PAIRS GOT THERE (it was NOT a nerf pass). The original authoring commit
-# 2aaec3200 already wrote TWO dpp assignments per landing - a header pair, and one just
-# before the spawn - with the SAME value, so the header was redundant from day one but
-# harmless. 608177207 ("spawned templates re org") then split each landing into an infantry
-# wave and a `_division_template = 4` (#Armor) wave, editing only the pre-spawn assignment.
-# The headers were left at their pre-refactor value and became dead: the second assignment
-# overwrites raw, so even the doubled ADJUST does not compound. Nothing else in the mod
-# reads `_divisions_per_province` (only adjust_invasion_for_difficulty and spawn_invasion),
-# and only `_invasion_state` / `clear_temp_array` / `add_to_temp_array` sit between the two
-# pairs - which is what made every header pair provably dead.
-#
-# THE INVARIANT TO PRESERVE: exactly one dpp assignment per wave, immediately followed by
-# its ADJUST, immediately before that wave's spawn. An ADJUST with no assignment in front of
-# it multiplies whatever value is already there - which on hard/competitive-hard doubles an
-# already-doubled value. That was live in .41 (Timor): 3 -> 6 -> 12 divisions in a single
-# province on hard. Never write a bare ADJUST.
-#
-# The armor wave is deliberately lighter than the infantry wave, and several operations
-# encode a size-PRESERVING split (2/province x 1 wave == 1/province x 2 waves). A lone
-# `= 1` in front of an armor spawn is therefore design, not residue - see .47/.5 for the
-# regression that reading it as residue caused.
-
-# Expiry of the naval-invasion attack penalty applied by WA_AI_DIVISION_spawn_invasion.
-# Fix 32 (follow-up to 17505d9a9; campaign 2b607968 FAILED the R14 probe): the previous
-# version was fired ON the target and read the invader out of FROM — but FROM does not
-# survive a delayed country_event, so the trigger failed silently and no penalty was ever
-# removed (dbg_removes stayed 0 while GER/USA/ENG/JAP carried the -25% for years).
-# Now fired ON the INVADER itself (ROOT = invader; FROM is not used at all) 14 days after
-# each new penalty add. The modifier is stored invader-side (invader's diplomacy toward the
-# target), so the invader can remove it without knowing who fired the event: it walks its
-# own WA_AI_invasions_pending_targets array (recorded at add time) and clears it wholesale.
-# Tradeoff of the wholesale clear: if the same invader adds a SECOND penalty (against a
-# different target) less than 14 days after a previous add, the earlier expiry event also
-# clears the newer pair early — bounded loss of at most 14 days of penalty, self-healing
-# (the newer pair's own event then no-ops on the empty array), and strictly better than the
-# permanent penalty this replaces. Exact per-pair lifetimes would need an add-date stored
-# per entry, and this codebase maintains no global day counter to stamp one with.
-# Deliberately ungated (no trigger at all): this event only ever REMOVES penalties, and any
-# trigger that can fail would strand -25% attack on the invader for the rest of the campaign.
 country_event = {
 	id = WA_AI_invasions.1
 	hidden = yes
 
 	is_triggered_only = yes
 
-	immediate = {
-		# THIS = ROOT = invader (event fired on self by WA_AI_DIVISION_spawn_invasion)
-		for_each_loop = {
-			array = WA_AI_invasions_pending_targets
-			value = _pending_target
-			# _active counts pairs inside their 14-day window; decrement unconditionally —
-			# even if the target was annexed meanwhile (modifier GC'd with the relation),
-			# this pair's window is over. Keeps active = adds - expired pairs, returning to
-			# 0 outside landing windows regardless of annexations.
-			subtract_from_variable = { WA_AI_invasions_dbg_active = 1 }
-			if = {
-				limit = {
-					meta_trigger = {
-						text = {
-							has_relation_modifier = {
-								target = [COUNTRY_TAG]
-								modifier = WA_AI_invasions_modifier
-							}
-						}
-						COUNTRY_TAG = "[?_pending_target.GetTag]"
-						# debug = yes
-					}
+	trigger = {
+		is_ai = yes
+		WA_AI_DIFFICULTY_is_historical = yes
+		meta_trigger = {
+			text = {
+				has_relation_modifier = {
+					target = [COUNTRY_TAG]
+					modifier = WA_AI_invasions_modifier
 				}
-				meta_effect = {
-					text = {
-						remove_relation_modifier = {
-							target = [COUNTRY_TAG]
-							modifier = WA_AI_invasions_modifier
-						}
-					}
-					COUNTRY_TAG = "[?_pending_target.GetTag]"
-					# debug = yes
-				}
-				# Probe instrumentation (campaign checklist R14) — mirrors the increment in
-				# WA_AI_DIVISION_spawn_invasion. removes counts actual modifier removals, so
-				# adds - removes = pairs whose target died before expiry (accepted residual).
-				add_to_variable = { WA_AI_invasions_dbg_removes = 1 }
 			}
+			COUNTRY_TAG = "[?most_recent_invasion_target.GetTag]"
+			# debug = yes
 		}
-		clear_array = WA_AI_invasions_pending_targets
+	}
+
+	immediate = {
+		meta_effect = {
+			text = {
+				remove_relation_modifier = {
+					target = [COUNTRY_TAG]
+					modifier = WA_AI_invasions_modifier
+				}
+			}
+			COUNTRY_TAG = "[?most_recent_invasion_target.GetTag]"
+			# debug = yes
+		}
+		clear_variable = most_recent_invasion_target
 	}
 }
 
@@ -199,33 +143,11 @@ country_event = {
 			add_to_temp_array = { _invasion_state_provinces = 107 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			# Fix 82: the Narvik landing was the only Weserübung wave with a single province and
-			# 2 divisions (Vestlandet 3x2, Trondelag 2x2), dropped on the one province where NOR's
-			# 6. Divisjon starts (history/units/NOR_1936.txt) in a 19-province mountain state with
-			# no land link to the southern beachheads - it was pushed back into the sea in every
-			# campaign. Now a contiguous three-province pocket (192 Narvik + 3034 coastal west +
-			# 13878 inland, all mutually adjacent): 2 divisions on Narvik itself, 1 on each flank
-			# (4 total on normal, 8 on hard), at Gebirgsjäger veteran experience. Two spawn calls
-			# because _divisions_per_province applies to every province of one call - each keeps
-			# the Fix 33 invariant (assignment + ADJUST immediately before its spawn). dpp is set
-			# back to 2 and _start_experience to the spawn_invasion default right after, so the
-			# Ostlandet motorised wave is unchanged.
-			set_temp_variable = { _start_experience = 0.7 }
 			set_temp_variable = { _invasion_state = 144 } # Nord-Norge
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 192 } # Narvik
+			add_to_temp_array = { _invasion_state_provinces = 192 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 3034 } # coastal flank, west
-			add_to_temp_array = { _invasion_state_provinces = 13878 } # inland flank
-			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _start_experience = 0.45 }
-
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 2 }
 
 			set_temp_variable = { _invasion_state = 110 } #Ostlandet
@@ -345,84 +267,84 @@ country_event = {
 }
 
 # Invasion of Gogland
-#country_event = {
-#	id = WA_AI_invasions.39
-#	hidden = yes
-#
-#	is_triggered_only = yes
-#
-#	trigger = {
-#		is_ai = yes
-#		WA_AI_DIFFICULTY_is_historical = yes
-#	}
-#
-#	immediate = {
-#		# Get target country tag
-#		146 = { # Viipurin Karjala
-#			CONTROLLER = {
-#				set_temp_variable = { _target_country = id }
-#			}
-#		}
-#
-#		if = {
-#			limit = {
-#				# Triggers for invasion target country and states
-#				var:_target_country = {
-#					has_war_with = ROOT
-#					controls_state = 146 # Viipurin Karjala
-#				}
-#
-#				# PLAYER ONLY seazone check
-#				if = {
-#					limit = {
-#						var:_target_country = { is_ai = no }
-#						NOT = { has_country_flag = { flag = WA_AI_invasions.39_flag days > 179 } }
-#					}
-#					NOT = { has_enemy_naval_control = 321 } # Gulf of Finland
-#				}
-#
-#				# Triggers for invasion launch country
-#				surrender_progress < 0.1
-#
-#				# Triggers for 'invasion launch states'
-#				208 = { is_controlled_by_ROOT_or_ally = yes } # Luga
-#			}
-#			set_temp_variable = { _divisions_per_province = 2 }
-#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-#
-#			set_temp_variable = { _invasion_state = 146 } # Viipurin Karjala
-#			clear_temp_array = _invasion_state_provinces
-#			add_to_temp_array = { _invasion_state_provinces = 13290 }
-#			WA_AI_DIVISION_spawn_invasion = yes
-#
-#		}
-#		else_if = {
-#			limit = {
-#				# Only refire if the invasion target is still valid
-#				var:_target_country = {
-#					has_war_with = ROOT
-#					controls_state = 146 # Viipurin Karjala
-#				}
-#			}
-#			country_event = { id = WA_AI_invasions.39 days = 7 }
-#		}
-#
-#		# Seazone control delay mechanic
-#		if = {
-#			limit = {
-#				has_enemy_naval_control = 321 # Gulf of Finland
-#				NOT = { has_country_flag = WA_AI_invasions.39_flag }
-#			}
-#			set_country_flag = WA_AI_invasions.39_flag
-#		}
-#		else_if = {
-#			limit = {
-#				has_country_flag = { flag = WA_AI_invasions.39_flag days > 179 }
-#			}
-#			clr_country_flag = WA_AI_invasions.39_flag
-#		}
-#	}
-#}
+country_event = {
+	id = WA_AI_invasions.39
+	hidden = yes
+
+	is_triggered_only = yes
+
+	trigger = {
+		is_ai = yes
+		WA_AI_DIFFICULTY_is_historical = yes
+	}
+
+	immediate = {
+		# Get target country tag
+		146 = { # Viipurin Karjala
+			OWNER = {
+				set_temp_variable = { _target_country = id }
+			}
+		}
+
+		if = {
+			limit = {
+				# Triggers for invasion target country and states
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_province = 13290 # Gogland
+				}
+
+				# PLAYER ONLY seazone check
+				if = {
+					limit = {
+						var:_target_country = { is_ai = no }
+						NOT = { has_country_flag = { flag = WA_AI_invasions.39_flag days > 179 } }
+					}
+					NOT = { has_enemy_naval_control = 321 } # Gulf of Finland
+				}
+
+				# Triggers for invasion launch country
+				surrender_progress < 0.1
+
+				# Triggers for 'invasion launch states'
+				208 = { is_controlled_by_ROOT_or_ally = yes } # Luga
+			}
+			set_temp_variable = { _divisions_per_province = 2 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _invasion_state = 146 } # Viipurin Karjala
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 13290 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+		}
+		else_if = {
+			limit = {
+				# Only refire if the invasion target is still valid
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_province = 13290 # Gogland
+				}
+			}
+			country_event = { id = WA_AI_invasions.39 days = 7 }
+		}
+
+		# Seazone control delay mechanic
+		if = {
+			limit = {
+				has_enemy_naval_control = 321 # Gulf of Finland
+				NOT = { has_country_flag = WA_AI_invasions.39_flag }
+			}
+			set_country_flag = WA_AI_invasions.39_flag
+		}
+		else_if = {
+			limit = {
+				has_country_flag = { flag = WA_AI_invasions.39_flag days > 179 }
+			}
+			clr_country_flag = WA_AI_invasions.39_flag
+		}
+	}
+}
 
 # Operation Mercury
 country_event = {
@@ -580,14 +502,13 @@ country_event = {
 			set_temp_variable = { _invasion_state = 592 } # Guangzhou
 			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 1047 }
-			add_to_temp_array = { _invasion_state_provinces = 7108 }
+			add_to_temp_array = { _invasion_state_provinces = 11938 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 			set_temp_variable = { _invasion_state = 593 } # Guangdong
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 9938 }
 			add_to_temp_array = { _invasion_state_provinces = 7108 }
-			add_to_temp_array = { _invasion_state_provinces = 9978 }
+			add_to_temp_array = { _invasion_state_provinces = 4050 }
 			WA_AI_DIVISION_spawn_invasion = yes
 		}
 		else_if = {
@@ -673,8 +594,11 @@ country_event = {
 			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 1038  }
 			add_to_temp_array = { _invasion_state_provinces = 11990  }
-			add_to_temp_array = { _invasion_state_provinces = 11963  }
-			add_to_temp_array = { _invasion_state_provinces = 994  }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _invasion_state = 931 } # Hainan
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 4160  }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 		}
@@ -729,8 +653,11 @@ country_event = {
 			limit = {
 				var:_target_country = {
 					has_war_with = ROOT
-					controls_state = 595 # Fujian
-					controls_state = 596 # Zhejiang
+					OR = {
+						controls_state = 593 # Guangdong
+						controls_state = 595 # Fujian
+						controls_state = 596 # Zhejiang
+					}
 				}
 
 				if = {
@@ -750,35 +677,52 @@ country_event = {
 
 			set_temp_variable = { _division_template = 10 }
 
-			set_temp_variable = { _invasion_state = 595 } # Fujian
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 7071  }
-			add_to_temp_array = { _invasion_state_provinces = 10010 }
-			add_to_temp_array = { _invasion_state_provinces = 11986 }
-			add_to_temp_array = { _invasion_state_provinces = 4196  }
-			add_to_temp_array = { _invasion_state_provinces = 13777 }
-			WA_AI_DIVISION_spawn_invasion = yes
+			if = {
+				limit = { var:_target_country = { controls_state = 593 } } # Guangdong
+				set_temp_variable = { _invasion_state = 593 } # Guangdong
+				clear_temp_array = _invasion_state_provinces
+				add_to_temp_array = { _invasion_state_provinces = 9938 }
+				add_to_temp_array = { _invasion_state_provinces = 9978 }
+				WA_AI_DIVISION_spawn_invasion = yes
+			}
 
-			set_temp_variable = { _invasion_state = 596 } # Zhejiang
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 7191  }
-			add_to_temp_array = { _invasion_state_provinces = 9974  }
-			add_to_temp_array = { _invasion_state_provinces = 14259 }
-			add_to_temp_array = { _invasion_state_provinces = 14260 }
-			add_to_temp_array = { _invasion_state_provinces = 1055  }
-			add_to_temp_array = { _invasion_state_provinces = 7058  }
-			add_to_temp_array = { _invasion_state_provinces = 13776 }
-			add_to_temp_array = { _invasion_state_provinces = 14257 }
-			add_to_temp_array = { _invasion_state_provinces = 4013  }
-			add_to_temp_array = { _invasion_state_provinces = 4099  }
-			WA_AI_DIVISION_spawn_invasion = yes
+			if = {
+				limit = { var:_target_country = { controls_state = 595 } } # Fujian
+				set_temp_variable = { _invasion_state = 595 } # Fujian
+				clear_temp_array = _invasion_state_provinces
+				add_to_temp_array = { _invasion_state_provinces = 7071  }
+				add_to_temp_array = { _invasion_state_provinces = 10010 }
+				add_to_temp_array = { _invasion_state_provinces = 10093 }
+				add_to_temp_array = { _invasion_state_provinces = 11986 }
+				add_to_temp_array = { _invasion_state_provinces = 4196  }
+				add_to_temp_array = { _invasion_state_provinces = 13777 }
+				add_to_temp_array = { _invasion_state_provinces = 4169  }
+				WA_AI_DIVISION_spawn_invasion = yes
+			}
+
+			if = {
+				limit = { var:_target_country = { controls_state = 596 } } # Zhejiang
+				set_temp_variable = { _invasion_state = 596 } # Zhejiang
+				clear_temp_array = _invasion_state_provinces
+				add_to_temp_array = { _invasion_state_provinces = 9974  }
+				add_to_temp_array = { _invasion_state_provinces = 7058  }
+				add_to_temp_array = { _invasion_state_provinces = 13776 }
+				add_to_temp_array = { _invasion_state_provinces = 14257 }
+				add_to_temp_array = { _invasion_state_provinces = 1055  }
+				add_to_temp_array = { _invasion_state_provinces = 4013  }
+				add_to_temp_array = { _invasion_state_provinces = 4099  }
+				WA_AI_DIVISION_spawn_invasion = yes
+			}
 		}
 		else_if = {
 			limit = {
 				var:_target_country = {
 					has_war_with = ROOT
-					controls_state = 595 # Fujian
-					controls_state = 596 # Zhejiang
+					OR = {
+						controls_state = 593 # Guangdong
+						controls_state = 595 # Fujian
+						controls_state = 596 # Zhejiang
+					}
 				}
 			}
 			country_event = { id = WA_AI_invasions.8 days = 7 }
@@ -837,29 +781,20 @@ country_event = {
 				}
 
 				surrender_progress < 0.1
-				524 = { is_controlled_by_ROOT_or_ally = yes } # Taiwan
+				286 = { is_controlled_by_ROOT_or_ally = yes } # Cocinchina
 			}
 
 			set_temp_variable = { _divisions_per_province = 2 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
+			set_temp_variable = { _division_template = 10 }
+
 			set_temp_variable = { _invasion_state = 862 } # Malay peninsula
 			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 7329  }
-			add_to_temp_array = { _invasion_state_provinces = 10297 }
-			set_temp_variable = { _division_template = 10 }
-			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 12199 }
-			add_to_temp_array = { _invasion_state_provinces = 1376  }
-			add_to_temp_array = { _invasion_state_provinces = 4412  }
-			set_temp_variable = { _division_template = 10 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
+
 		}
 		else_if = {
 			limit = {
@@ -927,23 +862,17 @@ country_event = {
 				684 = { is_controlled_by_ROOT_or_ally = yes } # Caroline Islands
 			}
 
-			set_temp_variable = { _divisions_per_province = 5 }
+			set_temp_variable = { _divisions_per_province = 3 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 10 }
 
 			set_temp_variable = { _invasion_state = 638 } # Guam
 			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 12140 }
-			set_temp_variable = { _division_template = 10 }
-			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
-
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 13261 }
-			set_temp_variable = { _division_template = 10 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
+
 		}
 		else_if = {
 			limit = {
@@ -1014,12 +943,12 @@ country_event = {
 			set_temp_variable = { _divisions_per_province = 5 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
+			set_temp_variable = { _division_template = 10 }
+
 			set_temp_variable = { _invasion_state = 632 } # Wake Island
 			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 13047 }
-			set_temp_variable = { _division_template = 10 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
 		}
 		else_if = {
 			limit = {
@@ -1087,16 +1016,18 @@ country_event = {
 				684 = { is_controlled_by_ROOT_or_ally = yes } # Caroline Islands
 			}
 
-			set_temp_variable = { _divisions_per_province = 5 }
+			set_temp_variable = { _divisions_per_province = 2 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 10 }
 
 			set_temp_variable = { _invasion_state = 639 } # Gilbert Islands
 			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 13021 }
 			add_to_temp_array = { _invasion_state_provinces = 13020 }
-			set_temp_variable = { _division_template = 10 }
+			add_to_temp_array = { _invasion_state_provinces = 13022 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
+
 		}
 		else_if = {
 			limit = {
@@ -1164,29 +1095,19 @@ country_event = {
 				524 = { is_controlled_by_ROOT_or_ally = yes } # Taiwan
 			}
 
-			set_temp_variable = { _divisions_per_province = 3 }
+			set_temp_variable = { _divisions_per_province = 2 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 10 } #11
 
 			set_temp_variable = { _invasion_state = 623 } # Luzon
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 1415  }
-			set_temp_variable = { _division_template = 10 }
-			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 12213 }
-			add_to_temp_array = { _invasion_state_provinces = 4368  }
 			add_to_temp_array = { _invasion_state_provinces = 4101  }
+			add_to_temp_array = { _invasion_state_provinces = 4368  }
 			add_to_temp_array = { _invasion_state_provinces = 10241 }
-			add_to_temp_array = { _invasion_state_provinces = 10280 }
-			add_to_temp_array = { _invasion_state_provinces = 12253 }
 			add_to_temp_array = { _invasion_state_provinces = 4350  }
-			set_temp_variable = { _division_template = 10 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
 		}
 		else_if = {
 			limit = {
@@ -1229,7 +1150,7 @@ country_event = {
 
 	immediate = {
 		# Get target country tag
-		623 = { # Luzon
+		624 = { # Legazpi
 			CONTROLLER = {
 				set_temp_variable = { _target_country = id }
 			}
@@ -1239,7 +1160,7 @@ country_event = {
 			limit = {
 				var:_target_country = {
 					has_war_with = ROOT
-					controls_state = 623 # Luzon
+					controls_state = 624 # Legazpi
 				}
 
 				if = {
@@ -1251,38 +1172,31 @@ country_event = {
 				}
 
 				surrender_progress < 0.1
-				524 = { is_controlled_by_ROOT_or_ally = yes } # Taiwan
+				647 = { is_controlled_by_ROOT_or_ally = yes } # Palau
 			}
 
-			set_temp_variable = { _divisions_per_province = 3 }
+			set_temp_variable = { _divisions_per_province = 2 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
-			set_temp_variable = { _invasion_state = 623 } # Luzon
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 1415  }
-			set_temp_variable = { _division_template = 10 }
-			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
+			set_temp_variable = { _division_template = 10 } #11
 
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+			set_temp_variable = { _invasion_state = 624 } # Legazpi
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 12213 }
-			add_to_temp_array = { _invasion_state_provinces = 4368  }
-			add_to_temp_array = { _invasion_state_provinces = 4101  }
-			add_to_temp_array = { _invasion_state_provinces = 10241 }
-			add_to_temp_array = { _invasion_state_provinces = 10280 }
-			add_to_temp_array = { _invasion_state_provinces = 12253 }
-			add_to_temp_array = { _invasion_state_provinces = 4350  }
-			set_temp_variable = { _division_template = 10 }
+			add_to_temp_array = { _invasion_state_provinces = 4228  }
+			add_to_temp_array = { _invasion_state_provinces = 4337  }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
+
+			set_temp_variable = { _invasion_state = 625 } # Samar
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 1311  }
+			WA_AI_DIVISION_spawn_invasion = yes
+
 		}
 		else_if = {
 			limit = {
 				var:_target_country = {
 					has_war_with = ROOT
-					controls_state = 623 # Luzon
+					controls_state = 624 # Legazpi
 				}
 			}
 			country_event = { id = WA_AI_invasions.14 days = 7 }
@@ -1344,28 +1258,25 @@ country_event = {
 				286 = { is_controlled_by_ROOT_or_ally = yes } # Cochinchina
 			}
 
-			set_temp_variable = { _divisions_per_province = 3 }
+			set_temp_variable = { _divisions_per_province = 2 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 10 } #11
 
 			set_temp_variable = { _invasion_state = 333 } # Borneo
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 13931 }
-			set_temp_variable = { _division_template = 10 }
-			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 1208  }
-			add_to_temp_array = { _invasion_state_provinces = 7371  }
+			add_to_temp_array = { _invasion_state_provinces = 1208 }
 			add_to_temp_array = { _invasion_state_provinces = 12905 }
-			add_to_temp_array = { _invasion_state_provinces = 13930 }
-			add_to_temp_array = { _invasion_state_provinces = 7387  }
+			add_to_temp_array = { _invasion_state_provinces = 7371 }
 			add_to_temp_array = { _invasion_state_provinces = 12171 }
-			set_temp_variable = { _division_template = 10 }
+			add_to_temp_array = { _invasion_state_provinces = 7387 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
+
+			set_temp_variable = { _invasion_state = 334 } # Kalimantan
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 13930 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
 		}
 		else_if = {
 			limit = {
@@ -1436,26 +1347,15 @@ country_event = {
 			set_temp_variable = { _divisions_per_province = 3 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
+			set_temp_variable = { _division_template = 10 } #11
+
 			set_temp_variable = { _invasion_state = 623 } # Luzon
 			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 1415  }
-			set_temp_variable = { _division_template = 10 }
+			add_to_temp_array = { _invasion_state_provinces = 10280  }
+			add_to_temp_array = { _invasion_state_provinces = 12253  }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
 
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 12213 }
-			add_to_temp_array = { _invasion_state_provinces = 4368  }
-			add_to_temp_array = { _invasion_state_provinces = 4101  }
-			add_to_temp_array = { _invasion_state_provinces = 10241 }
-			add_to_temp_array = { _invasion_state_provinces = 10280 }
-			add_to_temp_array = { _invasion_state_provinces = 12253 }
-			add_to_temp_array = { _invasion_state_provinces = 4350  }
-			set_temp_variable = { _division_template = 10 }
-			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
 		}
 		else_if = {
 			limit = {
@@ -1523,29 +1423,18 @@ country_event = {
 				647 = { is_controlled_by_ROOT_or_ally = yes } # Palau
 			}
 
-			set_temp_variable = { _divisions_per_province = 3 }
+			set_temp_variable = { _divisions_per_province = 2 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 10 } #11
 
 			set_temp_variable = { _invasion_state = 627 } # Mindanao
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 1421  }
-			set_temp_variable = { _division_template = 10 }
-			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 4241  }
-			add_to_temp_array = { _invasion_state_provinces = 10243 }
-			add_to_temp_array = { _invasion_state_provinces = 4399  }
-			add_to_temp_array = { _invasion_state_provinces = 1234  }
 			add_to_temp_array = { _invasion_state_provinces = 7284  }
-			add_to_temp_array = { _invasion_state_provinces = 10214 }
-			add_to_temp_array = { _invasion_state_provinces = 10300 }
-			set_temp_variable = { _division_template = 10 }
+			add_to_temp_array = { _invasion_state_provinces = 1234  }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
+
 		}
 		else_if = {
 			limit = {
@@ -1575,94 +1464,93 @@ country_event = {
 }
 
 # Invasion of Bataan
-country_event = {
-	id = WA_AI_invasions.18
-	hidden = yes
-
-	is_triggered_only = yes
-
-	trigger = {
-		is_ai = yes
-		WA_AI_DIFFICULTY_is_historical = yes
-	}
-
-	immediate = {
-		# Get target country tag
-		623 = { # Luzon
-			CONTROLLER = {
-				set_temp_variable = { _target_country = id }
-			}
-		}
-
-		if = {
-			limit = {
-				var:_target_country = {
-					has_war_with = ROOT
-					controls_state = 623 # Luzon
-				}
-
-				if = {
-					limit = {
-						var:_target_country = { is_ai = no }
-						NOT = { has_country_flag = { flag = WA_AI_invasions.18_flag days > 179 } }
-					}
-					NOT = { has_enemy_naval_control = 75 } # South China Sea
-				}
-
-				surrender_progress < 0.1
-				623 = { is_controlled_by_ROOT_or_ally = yes } # Luzon (JAP-held provinces)
-			}
-
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-
-			set_temp_variable = { _invasion_state = 623 } # Luzon / Bataan
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 1415  }
-			set_temp_variable = { _division_template = 10 }
-			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 12213 }
-			add_to_temp_array = { _invasion_state_provinces = 4368  }
-			add_to_temp_array = { _invasion_state_provinces = 4101  }
-			add_to_temp_array = { _invasion_state_provinces = 10241 }
-			add_to_temp_array = { _invasion_state_provinces = 10280 }
-			add_to_temp_array = { _invasion_state_provinces = 12253 }
-			add_to_temp_array = { _invasion_state_provinces = 4350  }
-			set_temp_variable = { _division_template = 10 }
-			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
-		}
-		else_if = {
-			limit = {
-				var:_target_country = {
-					has_war_with = ROOT
-					controls_state = 623 # Luzon
-				}
-			}
-			country_event = { id = WA_AI_invasions.18 days = 7 }
-		}
-
-		# Seazone control delay mechanic
-		if = {
-			limit = {
-				has_enemy_naval_control = 75 # South China Sea
-				NOT = { has_country_flag = WA_AI_invasions.18_flag }
-			}
-			set_country_flag = WA_AI_invasions.18_flag
-		}
-		else_if = {
-			limit = {
-				has_country_flag = { flag = WA_AI_invasions.18_flag days > 179 }
-			}
-			clr_country_flag = WA_AI_invasions.18_flag
-		}
-	}
-}
+#country_event = {
+#	id = WA_AI_invasions.18
+#	hidden = yes
+#
+#	is_triggered_only = yes
+#
+#	trigger = {
+#		is_ai = yes
+#		WA_AI_DIFFICULTY_is_historical = yes
+#	}
+#
+#	immediate = {
+#		# Get target country tag
+#		623 = { # Luzon
+#			CONTROLLER = {
+#				set_temp_variable = { _target_country = id }
+#			}
+#		}
+#
+#		if = {
+#			limit = {
+#				var:_target_country = {
+#					has_war_with = ROOT
+#					controls_state = 623 # Luzon
+#				}
+#
+#				if = {
+#					limit = {
+#						var:_target_country = { is_ai = no }
+#						NOT = { has_country_flag = { flag = WA_AI_invasions.18_flag days > 179 } }
+#					}
+#					NOT = { has_enemy_naval_control = 75 } # South China Sea
+#				}
+#
+#				surrender_progress < 0.1
+#				623 = { is_controlled_by_ROOT_or_ally = yes } # Luzon (JAP-held provinces)
+#			}
+#
+#			set_temp_variable = { _divisions_per_province = 3 }
+#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+#
+#			set_temp_variable = { _division_template = 10 }
+#			set_temp_variable = { _invasion_state = 623 } # Luzon / Bataan
+#			clear_temp_array = _invasion_state_provinces
+#			add_to_temp_array = { _invasion_state_provinces = 1415  }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#			set_temp_variable = { _division_template = 1 }
+#
+#			set_temp_variable = { _divisions_per_province = 1 }
+#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+#			set_temp_variable = { _division_template = 10 }
+#			clear_temp_array = _invasion_state_provinces
+#			add_to_temp_array = { _invasion_state_provinces = 12213 }
+#			add_to_temp_array = { _invasion_state_provinces = 4368  }
+#			add_to_temp_array = { _invasion_state_provinces = 4101  }
+#			add_to_temp_array = { _invasion_state_provinces = 10241 }
+#			add_to_temp_array = { _invasion_state_provinces = 10280 }
+#			add_to_temp_array = { _invasion_state_provinces = 12253 }
+#			add_to_temp_array = { _invasion_state_provinces = 4350  }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#		}
+#		else_if = {
+#			limit = {
+#				var:_target_country = {
+#					has_war_with = ROOT
+#					controls_state = 623 # Luzon
+#				}
+#			}
+#			country_event = { id = WA_AI_invasions.18 days = 7 }
+#		}
+#
+#		# Seazone control delay mechanic
+#		if = {
+#			limit = {
+#				has_enemy_naval_control = 75 # South China Sea
+#				NOT = { has_country_flag = WA_AI_invasions.18_flag }
+#			}
+#			set_country_flag = WA_AI_invasions.18_flag
+#		}
+#		else_if = {
+#			limit = {
+#				has_country_flag = { flag = WA_AI_invasions.18_flag days > 179 }
+#			}
+#			clr_country_flag = WA_AI_invasions.18_flag
+#		}
+#	}
+#}
 
 # Invasion of Tarakan
 country_event = {
@@ -1700,27 +1588,20 @@ country_event = {
 				}
 
 				surrender_progress < 0.1
-				286 = { is_controlled_by_ROOT_or_ally = yes } # Cochinchina
+				627 = { is_controlled_by_ROOT_or_ally = yes } # Mindano
 			}
 
 			set_temp_variable = { _divisions_per_province = 1 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
+			set_temp_variable = { _division_template = 10 } #11
+
 			set_temp_variable = { _invasion_state = 334 } # Kalimantan
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 10325 } # (Tarakan port)
-			add_to_temp_array = { _invasion_state_provinces = 7231  }
-			set_temp_variable = { _division_template = 10 }
-			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
-
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 10325 }
 			add_to_temp_array = { _invasion_state_provinces = 1404  }
-			set_temp_variable = { _division_template = 10 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
+
 		}
 		else_if = {
 			limit = {
@@ -1781,30 +1662,24 @@ country_event = {
 						var:_target_country = { is_ai = no }
 						NOT = { has_country_flag = { flag = WA_AI_invasions.20_flag days > 179 } }
 					}
-					NOT = { has_enemy_naval_control = 93 } # Banda Sea
+					NOT = { has_enemy_naval_control = 280 } # celebes Sea
 				}
 
 				surrender_progress < 0.1
-				286 = { is_controlled_by_ROOT_or_ally = yes } # Cochinchina
+				627 = { is_controlled_by_ROOT_or_ally = yes } # Mindano phi
 			}
-
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-
-			set_temp_variable = { _invasion_state = 673 } # Sulawesi
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 10153 } # (Manado port)
-			set_temp_variable = { _division_template = 10 }
-			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
 
 			set_temp_variable = { _divisions_per_province = 1 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 10 } #11
+
+			set_temp_variable = { _invasion_state = 673 } # Sulawesi
 			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 10153 }
 			add_to_temp_array = { _invasion_state_provinces = 10197 }
-			set_temp_variable = { _division_template = 10 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
+
 		}
 		else_if = {
 			limit = {
@@ -1819,7 +1694,7 @@ country_event = {
 		# Seazone control delay mechanic
 		if = {
 			limit = {
-				has_enemy_naval_control = 93 # Banda Sea
+				has_enemy_naval_control = 280 # celebes sea
 				NOT = { has_country_flag = WA_AI_invasions.20_flag }
 			}
 			set_country_flag = WA_AI_invasions.20_flag
@@ -1829,6 +1704,84 @@ country_event = {
 				has_country_flag = { flag = WA_AI_invasions.20_flag days > 179 }
 			}
 			clr_country_flag = WA_AI_invasions.20_flag
+		}
+	}
+}
+
+#Invasion of Pontianak
+country_event = {
+	id = WA_AI_invasions.86
+	hidden = yes
+
+	is_triggered_only = yes
+
+	trigger = {
+		is_ai = yes
+		WA_AI_DIFFICULTY_is_historical = yes
+	}
+
+	immediate = {
+		# Get target country tag
+		334 = { # Kalimantan
+			CONTROLLER = {
+				set_temp_variable = { _target_country = id }
+			}
+		}
+
+		if = {
+			limit = {
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 334 # Kalimantan
+				}
+
+				if = {
+					limit = {
+						var:_target_country = { is_ai = no }
+						NOT = { has_country_flag = { flag = WA_AI_invasions.86_flag days > 179 } }
+					}
+					NOT = { has_enemy_naval_control = 252 } # Selat karimata
+				}
+
+				surrender_progress < 0.1
+				286 = { is_controlled_by_ROOT_or_ally = yes } # Cochinchina
+			}
+
+			set_temp_variable = { _divisions_per_province = 1 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 10 } #11
+
+			set_temp_variable = { _invasion_state = 334 } # Kalimantan
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 1316  }
+			add_to_temp_array = { _invasion_state_provinces = 10282 }
+			add_to_temp_array = { _invasion_state_provinces = 4279  }
+			WA_AI_DIVISION_spawn_invasion = yes
+		}
+		else_if = {
+			limit = {
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 334 # Kalimantan
+				}
+			}
+			country_event = { id = WA_AI_invasions.86 days = 7 }
+		}
+
+		# Seazone control delay mechanic
+		if = {
+			limit = {
+				has_enemy_naval_control = 252 # Selat Karimata
+				NOT = { has_country_flag = WA_AI_invasions.86_flag }
+			}
+			set_country_flag = WA_AI_invasions.86_flag
+		}
+		else_if = {
+			limit = {
+				has_country_flag = { flag = WA_AI_invasions.86_flag days > 179 }
+			}
+			clr_country_flag = WA_AI_invasions.86_flag
 		}
 	}
 }
@@ -1865,27 +1818,24 @@ country_event = {
 						var:_target_country = { is_ai = no }
 						NOT = { has_country_flag = { flag = WA_AI_invasions.21_flag days > 179 } }
 					}
-					NOT = { has_enemy_naval_control = 252 } # Selat Karimata
+					NOT = { has_enemy_naval_control = 309 } # Java sea
 				}
 
 				surrender_progress < 0.1
-				286 = { is_controlled_by_ROOT_or_ally = yes } # Cochinchina
+				627 = { is_controlled_by_ROOT_or_ally = yes } # Mindano phi
 			}
 
 			set_temp_variable = { _divisions_per_province = 1 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
+			set_temp_variable = { _division_template = 10 } #11
+
 			set_temp_variable = { _invasion_state = 334 } # Kalimantan
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 10237 } # (Balikpapan port)
-			add_to_temp_array = { _invasion_state_provinces = 1316  }
-			add_to_temp_array = { _invasion_state_provinces = 4279  }
-			add_to_temp_array = { _invasion_state_provinces = 10282 }
+			add_to_temp_array = { _invasion_state_provinces = 10237 }
 			add_to_temp_array = { _invasion_state_provinces = 12196 }
 			add_to_temp_array = { _invasion_state_provinces = 12225 }
-			set_temp_variable = { _division_template = 10 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
 		}
 		else_if = {
 			limit = {
@@ -1900,7 +1850,7 @@ country_event = {
 		# Seazone control delay mechanic
 		if = {
 			limit = {
-				has_enemy_naval_control = 252 # Selat Karimata
+				has_enemy_naval_control = 309 # Java sea
 				NOT = { has_country_flag = WA_AI_invasions.21_flag }
 			}
 			set_country_flag = WA_AI_invasions.21_flag
@@ -1956,16 +1906,17 @@ country_event = {
 			set_temp_variable = { _divisions_per_province = 1 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
+			set_temp_variable = { _division_template = 10 } #11
+
 			set_temp_variable = { _invasion_state = 737 } # Bismarck
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 7251  } # (Rabaul)
+			add_to_temp_array = { _invasion_state_provinces = 7251  }
 			add_to_temp_array = { _invasion_state_provinces = 4352  }
-			add_to_temp_array = { _invasion_state_provinces = 7339  } # (Kavieng)
-			add_to_temp_array = { _invasion_state_provinces = 1361  }
-			add_to_temp_array = { _invasion_state_provinces = 10166 }
-			set_temp_variable = { _division_template = 10 }
+			add_to_temp_array = { _invasion_state_provinces = 7339  }
+			add_to_temp_array = { _invasion_state_provinces = 4421  }
+			add_to_temp_array = { _invasion_state_provinces = 1286  }
+			add_to_temp_array = { _invasion_state_provinces = 1329  }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
 		}
 		else_if = {
 			limit = {
@@ -2030,26 +1981,21 @@ country_event = {
 				}
 
 				surrender_progress < 0.1
-				286 = { is_controlled_by_ROOT_or_ally = yes } # Cochinchina
+				627 = { is_controlled_by_ROOT_or_ally = yes } # Mindano phi
 			}
 
 			set_temp_variable = { _divisions_per_province = 1 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
+			set_temp_variable = { _division_template = 10 } #11
+
 			set_temp_variable = { _invasion_state = 673 } # Sulawesi
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 4564  } # (Kendari)
+			add_to_temp_array = { _invasion_state_provinces = 4564  }
 			add_to_temp_array = { _invasion_state_provinces = 4537  }
 			add_to_temp_array = { _invasion_state_provinces = 12444 }
-			set_temp_variable = { _division_template = 10 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
 
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 10450 }
-			set_temp_variable = { _division_template = 10 }
-			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
 		}
 		else_if = {
 			limit = {
@@ -2114,21 +2060,19 @@ country_event = {
 				}
 
 				surrender_progress < 0.1
-				286 = { is_controlled_by_ROOT_or_ally = yes } # Cochinchina
+				627 = { is_controlled_by_ROOT_or_ally = yes } # Mindano phi
 			}
 
 			set_temp_variable = { _divisions_per_province = 1 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
+			set_temp_variable = { _division_template = 10 } #11
+
 			set_temp_variable = { _invasion_state = 668 } # The Moluccas
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 1574  } # (Ambon port)
-			add_to_temp_array = { _invasion_state_provinces = 1419  }
-			add_to_temp_array = { _invasion_state_provinces = 10141 }
+			add_to_temp_array = { _invasion_state_provinces = 1574  }
 			add_to_temp_array = { _invasion_state_provinces = 10409 }
-			set_temp_variable = { _division_template = 10 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
 		}
 		else_if = {
 			limit = {
@@ -2157,7 +2101,86 @@ country_event = {
 	}
 }
 
-# Invasion of Sumatra
+# Makassar
+country_event = {
+	id = WA_AI_invasions.84
+	hidden = yes
+
+	is_triggered_only = yes
+
+	trigger = {
+		is_ai = yes
+		WA_AI_DIFFICULTY_is_historical = yes
+	}
+
+	immediate = {
+		# Get target country tag
+		673 = { # Sulawesi
+			CONTROLLER = {
+				set_temp_variable = { _target_country = id }
+			}
+		}
+
+		if = {
+			limit = {
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 673 # Sulawesi
+				}
+
+				if = {
+					limit = {
+						var:_target_country = { is_ai = no }
+						NOT = { has_country_flag = { flag = WA_AI_invasions.84_flag days > 179 } }
+					}
+					NOT = { has_enemy_naval_control = 93 } # Banda Sea
+				}
+
+				surrender_progress < 0.1
+				627 = { is_controlled_by_ROOT_or_ally = yes } # Mindano phi
+			}
+
+			set_temp_variable = { _divisions_per_province = 1 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 10 } #11
+
+			set_temp_variable = { _invasion_state = 673 } # Sulawesi
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 10263 }
+			add_to_temp_array = { _invasion_state_provinces = 1589  }
+			add_to_temp_array = { _invasion_state_provinces = 4349  }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+		}
+		else_if = {
+			limit = {
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 673 # Sulawesi
+				}
+			}
+			country_event = { id = WA_AI_invasions.84 days = 7 }
+		}
+
+		# Seazone control delay mechanic
+		if = {
+			limit = {
+				has_enemy_naval_control = 93 # Banda Sea
+				NOT = { has_country_flag = WA_AI_invasions.84_flag }
+			}
+			set_country_flag = WA_AI_invasions.84_flag
+		}
+		else_if = {
+			limit = {
+				has_country_flag = { flag = WA_AI_invasions.84_flag days > 179 }
+			}
+			clr_country_flag = WA_AI_invasions.84_flag
+		}
+	}
+}
+
+# Invasion of Palembang
 country_event = {
 	id = WA_AI_invasions.25
 	hidden = yes
@@ -2196,17 +2219,25 @@ country_event = {
 				286 = { is_controlled_by_ROOT_or_ally = yes } # Cochinchina
 			}
 
-			set_temp_variable = { _divisions_per_province = 1 }
+			set_temp_variable = { _divisions_per_province = 2 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 10 } #11
 
 			set_temp_variable = { _invasion_state = 672 } # Sumatra
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 12268 } # (Palembang port)
+			add_to_temp_array = { _invasion_state_provinces = 12268 }
 			add_to_temp_array = { _invasion_state_provinces = 1401  }
 			add_to_temp_array = { _invasion_state_provinces = 4364  }
-			set_temp_variable = { _division_template = 10 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
+
+			set_temp_variable = { _division_template = 6 }
+
+			set_temp_variable = { _invasion_state = 672 } # Sumatra
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 10322 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
 		}
 		else_if = {
 			limit = {
@@ -2271,53 +2302,31 @@ country_event = {
 				}
 
 				surrender_progress < 0.1
-				336 = { is_controlled_by_ROOT_or_ally = yes } # Singapore
+				334 = { is_controlled_by_ROOT_or_ally = yes } # Kalimantan
+				673 = { is_controlled_by_ROOT_or_ally = yes } # Sulawesi
 			}
 
-			set_temp_variable = { _divisions_per_province = 2 }
+			set_temp_variable = { _divisions_per_province = 3 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
-			# West Java (Batavia area)
+			# West Java
+			set_temp_variable = { _division_template = 10 }
+
 			set_temp_variable = { _invasion_state = 335 } # Java
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 7381  } # (Batavia port)
-			set_temp_variable = { _division_template = 10 }
-			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
-
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 7381  }
 			add_to_temp_array = { _invasion_state_provinces = 10279 }
 			add_to_temp_array = { _invasion_state_provinces = 12249 }
-			set_temp_variable = { _division_template = 10 }
-			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
-
-			# East Java (Soerabaja area)
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 4608  } # (Soerabaja port)
-			set_temp_variable = { _division_template = 10 }
-			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
-
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 4608  }
 			add_to_temp_array = { _invasion_state_provinces = 4390  }
-			set_temp_variable = { _division_template = 10 }
-			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 10479 }
-			set_temp_variable = { _division_template = 10 }
+			add_to_temp_array = { _invasion_state_provinces = 4306 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
+
+			set_temp_variable = { _invasion_state = 672 } # Sumatra
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 1342  }
+			WA_AI_DIVISION_spawn_invasion = yes
 		}
 		else_if = {
 			limit = {
@@ -2378,7 +2387,7 @@ country_event = {
 						var:_target_country = { is_ai = no }
 						NOT = { has_country_flag = { flag = WA_AI_invasions.27_flag days > 179 } }
 					}
-					NOT = { has_enemy_naval_control = 84 } # Bismarck Sea
+					NOT = { has_enemy_naval_control = 354 } # Solomon Sea
 				}
 
 				surrender_progress < 0.1
@@ -2388,21 +2397,17 @@ country_event = {
 			set_temp_variable = { _divisions_per_province = 1 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
+			set_temp_variable = { _division_template = 10 } #11
+
 			set_temp_variable = { _invasion_state = 1004 } # North East Papua
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 12237 } # (Lae port)
+			add_to_temp_array = { _invasion_state_provinces = 12237 }
 			add_to_temp_array = { _invasion_state_provinces = 12154 }
-			add_to_temp_array = { _invasion_state_provinces = 12240 }
-			add_to_temp_array = { _invasion_state_provinces = 1389  }
 			add_to_temp_array = { _invasion_state_provinces = 4418  }
 			add_to_temp_array = { _invasion_state_provinces = 7365  }
-			add_to_temp_array = { _invasion_state_provinces = 7614  }
 			add_to_temp_array = { _invasion_state_provinces = 10251 }
 			add_to_temp_array = { _invasion_state_provinces = 12193 }
-			add_to_temp_array = { _invasion_state_provinces = 12400 }
-			set_temp_variable = { _division_template = 10 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
 		}
 		else_if = {
 			limit = {
@@ -2417,7 +2422,7 @@ country_event = {
 		# Seazone control delay mechanic
 		if = {
 			limit = {
-				has_enemy_naval_control = 84 # Bismarck Sea
+				has_enemy_naval_control = 354 # Solomon Sea
 				NOT = { has_country_flag = WA_AI_invasions.27_flag }
 			}
 			set_country_flag = WA_AI_invasions.27_flag
@@ -2463,26 +2468,32 @@ country_event = {
 						var:_target_country = { is_ai = no }
 						NOT = { has_country_flag = { flag = WA_AI_invasions.28_flag days > 179 } }
 					}
-					NOT = { has_enemy_naval_control = 335 } # Andaman Sea
+					NOT = { has_enemy_naval_control = 72 } # strats of malacca
 				}
 
 				surrender_progress < 0.1
 				336 = { is_controlled_by_ROOT_or_ally = yes } # Singapore
 			}
 
-			set_temp_variable = { _divisions_per_province = 1 }
+			set_temp_variable = { _divisions_per_province = 2 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 10 } #11
 
 			set_temp_variable = { _invasion_state = 672 } # Sumatra
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 1648  } # (Sabang port)
+			add_to_temp_array = { _invasion_state_provinces = 1648  }
 			add_to_temp_array = { _invasion_state_provinces = 4652  }
-			add_to_temp_array = { _invasion_state_provinces = 8360  }
+			add_to_temp_array = { _invasion_state_provinces = 7673  }
 			add_to_temp_array = { _invasion_state_provinces = 10509 }
-			add_to_temp_array = { _invasion_state_provinces = 12488 }
-			set_temp_variable = { _division_template = 10 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
+
+			set_temp_variable = { _division_template = 6 }
+
+			set_temp_variable = { _invasion_state = 672 } # Sumatra
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 10502 }
+			WA_AI_DIVISION_spawn_invasion = yes
 		}
 		else_if = {
 			limit = {
@@ -2497,7 +2508,7 @@ country_event = {
 		# Seazone control delay mechanic
 		if = {
 			limit = {
-				has_enemy_naval_control = 335 # Andaman Sea
+				has_enemy_naval_control = 72 # strats of malacca
 				NOT = { has_country_flag = WA_AI_invasions.28_flag }
 			}
 			set_country_flag = WA_AI_invasions.28_flag
@@ -2550,16 +2561,17 @@ country_event = {
 				336 = { is_controlled_by_ROOT_or_ally = yes } # Singapore
 			}
 
-			set_temp_variable = { _divisions_per_province = 5 }
+			set_temp_variable = { _divisions_per_province = 1 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 10 }
 
 			set_temp_variable = { _invasion_state = 733 } # Andaman
 			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 12251 }
 			add_to_temp_array = { _invasion_state_provinces = 13571 }
-			set_temp_variable = { _division_template = 10 }
+			add_to_temp_array = { _invasion_state_provinces = 10321 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
 		}
 		else_if = {
 			limit = {
@@ -2624,18 +2636,18 @@ country_event = {
 				}
 
 				surrender_progress < 0.1
-				555 = { is_controlled_by_ROOT_or_ally = yes } # Kuril Islands
+				282 = { is_controlled_by_ROOT_or_ally = yes } # Tokyo
 			}
 
 			set_temp_variable = { _divisions_per_province = 5 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
+			set_temp_variable = { _division_template = 10 }
+
 			set_temp_variable = { _invasion_state = 650 } # Attu Island
 			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 13067 }
-			set_temp_variable = { _division_template = 10 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
 		}
 		else_if = {
 			limit = {
@@ -2690,7 +2702,6 @@ country_event = {
 				var:_target_country = {
 					has_war_with = ROOT
 					controls_state = 721 # Portuguese Timor
-					controls_state = 667 # Lesser Sunda Islands
 				}
 
 				# PLAYER ONLY seazone check
@@ -2706,46 +2717,26 @@ country_event = {
 				surrender_progress < 0.1
 
 				# Triggers for 'invasion launch states'
-				286 = { is_controlled_by_ROOT_or_ally = yes } # Cochinchina
+				335 = { is_controlled_by_ROOT_or_ally = yes } # Java
 			}
 			set_temp_variable = { _divisions_per_province = 1 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
+			set_temp_variable = { _division_template = 10 } #11
+
 			set_temp_variable = { _invasion_state = 721 } # Portuguese Timor
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 12190 } # (Dili)
+			add_to_temp_array = { _invasion_state_provinces = 12190 }
 			add_to_temp_array = { _invasion_state_provinces = 1326 }
 			add_to_temp_array = { _invasion_state_provinces = 12206 }
 			add_to_temp_array = { _invasion_state_provinces = 13001 }
-			set_temp_variable = { _division_template = 10 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
-
-			set_temp_variable = { _invasion_state = 721 } # Portuguese Timor
-			clear_temp_array = _invasion_state_provinces
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			add_to_temp_array = { _invasion_state_provinces = 12178 }
-			set_temp_variable = { _division_template = 10 }
-			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
 
 			set_temp_variable = { _invasion_state = 667 } # Lesser Sunda Islands
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 1355 } # (SW Timor)
-			set_temp_variable = { _division_template = 10 }
+			add_to_temp_array = { _invasion_state_provinces = 1355 }
+			add_to_temp_array = { _invasion_state_provinces = 4358 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
-
-			set_temp_variable = { _invasion_state = 667 } # Lesser Sunda Islands
-			clear_temp_array = _invasion_state_provinces
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			add_to_temp_array = { _invasion_state_provinces = 10175 }
-			add_to_temp_array = { _invasion_state_provinces = 12234 }
-			set_temp_variable = { _division_template = 10 }
-			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
 
 		}
 		else_if = {
@@ -2754,7 +2745,6 @@ country_event = {
 				var:_target_country = {
 					has_war_with = ROOT
 					controls_state = 721 # Portuguese Timor
-					controls_state = 667 # Lesser Sunda Islands
 				}
 			}
 			country_event = { id = WA_AI_invasions.41 days = 7 }
@@ -2820,15 +2810,15 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				335 = { is_controlled_by_ROOT_or_ally = yes } # Java
 			}
-			set_temp_variable = { _divisions_per_province = 5 }
+			set_temp_variable = { _divisions_per_province = 1 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 10 }
 
 			set_temp_variable = { _invasion_state = 711 } # Christmas Island
 			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 13005 }
-			set_temp_variable = { _division_template = 10 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
 
 		}
 		else_if = {
@@ -2902,17 +2892,21 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				737 = { is_controlled_by_ROOT_or_ally = yes } # Bismarck
 			}
-			set_temp_variable = { _divisions_per_province = 1 }
+			set_temp_variable = { _divisions_per_province = 2 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
+			set_temp_variable = { _division_template = 10 } #11
 			set_temp_variable = { _invasion_state = 634 } # Solomon Islands
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 1269 } # (Guadalcanal)
+			add_to_temp_array = { _invasion_state_provinces = 1269 }
 			add_to_temp_array = { _invasion_state_provinces = 4226 }
 			add_to_temp_array = { _invasion_state_provinces = 10234 }
-			set_temp_variable = { _division_template = 10 }
+			add_to_temp_array = { _invasion_state_provinces = 1358 }
+			add_to_temp_array = { _invasion_state_provinces = 4378 }
+			add_to_temp_array = { _invasion_state_provinces = 4292 }
+			add_to_temp_array = { _invasion_state_provinces = 10319 }
+			add_to_temp_array = { _invasion_state_provinces = 10291 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
 
 		}
 		else_if = {
@@ -2989,12 +2983,12 @@ country_event = {
 			set_temp_variable = { _divisions_per_province = 5 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
+			set_temp_variable = { _division_template = 10 }
+
 			set_temp_variable = { _invasion_state = 725 } # Nauru
 			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 13038 }
-			set_temp_variable = { _division_template = 10 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
 
 		}
 		else_if = {
@@ -3026,84 +3020,85 @@ country_event = {
 }
 
 # Invasion of Kiska
-country_event = {
-	id = WA_AI_invasions.45
-	hidden = yes
+#country_event = {
+#	id = WA_AI_invasions.45
+#	hidden = yes
+#
+#	is_triggered_only = yes
+#
+#	trigger = {
+#		is_ai = yes
+#		WA_AI_DIFFICULTY_is_historical = yes
+#	}
+#
+#	immediate = {
+#		# Get target country tag
+#		463 = { # Alaska
+#			CONTROLLER = {
+#				set_temp_variable = { _target_country = id }
+#			}
+#		}
+#
+#		if = {
+#			limit = {
+#				# Triggers for invasion target country and states
+#				var:_target_country = {
+#					has_war_with = ROOT
+#					controls_state = 463 # Alaska
+#				}
+#
+#				# PLAYER ONLY seazone check
+#				if = {
+#					limit = {
+#						var:_target_country = { is_ai = no }
+#						NOT = { has_country_flag = { flag = WA_AI_invasions.45_flag days > 179 } }
+#					}
+#					NOT = { has_enemy_naval_control = 33 } # Alaska
+#				}
+#
+#				# Triggers for invasion launch country
+#				surrender_progress < 0.1
+#			}
+#			set_temp_variable = { _divisions_per_province = 5 }
+#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+#
+#			set_temp_variable = { _division_template = 10 }
+#			set_temp_variable = { _invasion_state = 463 } # Alaska
+#			clear_temp_array = _invasion_state_provinces
+#			add_to_temp_array = { _invasion_state_provinces = 1135 } # (Kiska)
+#			add_to_temp_array = { _invasion_state_provinces = 13090 } # (Aleutians)
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#		}
+#		else_if = {
+#			limit = {
+#				# Only refire if the invasion target is still valid
+#				var:_target_country = {
+#					has_war_with = ROOT
+#					controls_state = 463 # Alaska
+#				}
+#			}
+#			country_event = { id = WA_AI_invasions.45 days = 7 }
+#		}
+#
+#		# Seazone control delay mechanic
+#		if = {
+#			limit = {
+#				has_enemy_naval_control = 33 # Alaska
+#				NOT = { has_country_flag = WA_AI_invasions.45_flag }
+#			}
+#			set_country_flag = WA_AI_invasions.45_flag
+#		}
+#		else_if = {
+#			limit = {
+#				has_country_flag = { flag = WA_AI_invasions.45_flag days > 179 }
+#			}
+#			clr_country_flag = WA_AI_invasions.45_flag
+#		}
+#	}
+#}
 
-	is_triggered_only = yes
 
-	trigger = {
-		is_ai = yes
-		WA_AI_DIFFICULTY_is_historical = yes
-	}
-
-	immediate = {
-		# Get target country tag
-		463 = { # Alaska
-			CONTROLLER = {
-				set_temp_variable = { _target_country = id }
-			}
-		}
-
-		if = {
-			limit = {
-				# Triggers for invasion target country and states
-				var:_target_country = {
-					has_war_with = ROOT
-					controls_state = 463 # Alaska
-				}
-
-				# PLAYER ONLY seazone check
-				if = {
-					limit = {
-						var:_target_country = { is_ai = no }
-						NOT = { has_country_flag = { flag = WA_AI_invasions.45_flag days > 179 } }
-					}
-					NOT = { has_enemy_naval_control = 33 } # Alaska
-				}
-
-				# Triggers for invasion launch country
-				surrender_progress < 0.1
-			}
-			set_temp_variable = { _divisions_per_province = 5 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-
-			set_temp_variable = { _invasion_state = 463 } # Alaska
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 1135 } # (Kiska)
-			add_to_temp_array = { _invasion_state_provinces = 13090 } # (Aleutians)
-			set_temp_variable = { _division_template = 10 }
-			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
-
-		}
-		else_if = {
-			limit = {
-				# Only refire if the invasion target is still valid
-				var:_target_country = {
-					has_war_with = ROOT
-					controls_state = 463 # Alaska
-				}
-			}
-			country_event = { id = WA_AI_invasions.45 days = 7 }
-		}
-
-		# Seazone control delay mechanic
-		if = {
-			limit = {
-				has_enemy_naval_control = 33 # Alaska
-				NOT = { has_country_flag = WA_AI_invasions.45_flag }
-			}
-			set_country_flag = WA_AI_invasions.45_flag
-		}
-		else_if = {
-			limit = {
-				has_country_flag = { flag = WA_AI_invasions.45_flag days > 179 }
-			}
-			clr_country_flag = WA_AI_invasions.45_flag
-		}
-	}
-}
 #########################################################################################
 #########################################################################################
 #########################################################################################
@@ -3119,6 +3114,7 @@ country_event = {
 #########################################################################################
 #########################################################################################
 #########################################################################################
+
 # Operation Slapstick
 country_event = {
 	id = WA_AI_invasions.31
@@ -3155,52 +3151,30 @@ country_event = {
 				}
 
 				surrender_progress < 0.1
-				115 = { is_controlled_by_ROOT_or_ally = yes } # Sicily
+				1032 = { is_controlled_by_ROOT_or_ally = yes } # Sicily
 			}
+			set_temp_variable = { _divisions_per_province = 1 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
+			set_temp_variable = { _division_template = 1 }
 
 			set_temp_variable = { _invasion_state = 156 } # Calabria
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 11837 } # (Taranto)
-			add_to_temp_array = { _invasion_state_provinces = 12066 }
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
+			add_to_temp_array = { _invasion_state_provinces = 11837 }
+			add_to_temp_array = { _invasion_state_provinces = 9856 }
+			add_to_temp_array = { _invasion_state_provinces = 10027 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 			set_temp_variable = { _division_template = 4 }
-			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _division_template = 1 }
-
+			set_temp_variable = { _invasion_state = 156 } # Calabria
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 11998 }
-			add_to_temp_array = { _invasion_state_provinces = 6979  }
-			add_to_temp_array = { _invasion_state_provinces = 9784  }
-			add_to_temp_array = { _invasion_state_provinces = 9856  }
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
+			add_to_temp_array = { _invasion_state_provinces = 11837 }
+			add_to_temp_array = { _invasion_state_provinces = 9856 }
+			add_to_temp_array = { _invasion_state_provinces = 10027 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 4 }
-			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _division_template = 1 }
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 9990  }
-			set_temp_variable = { _division_template = 1 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _division_template = 4 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _division_template = 1 }
 		}
 		else_if = {
 			limit = {
@@ -3230,197 +3204,193 @@ country_event = {
 }
 
 # Operation Avalanche
-country_event = {
-	id = WA_AI_invasions.32
-	hidden = yes
-
-	is_triggered_only = yes
-
-	trigger = {
-		is_ai = yes
-		WA_AI_DIFFICULTY_is_historical = yes
-	}
-
-	immediate = {
-		# Get target country tag
-		117 = { # Campania
-			CONTROLLER = {
-				set_temp_variable = { _target_country = id }
-			}
-		}
-
-		if = {
-			limit = {
-				var:_target_country = {
-					has_war_with = ROOT
-					controls_state = 117 # Campania
-				}
-
-				if = {
-					limit = {
-						var:_target_country = { is_ai = no }
-						NOT = { has_country_flag = { flag = WA_AI_invasions.32_flag days > 179 } }
-					}
-					NOT = { has_enemy_naval_control = 169 } # Tyrrhenian Sea
-				}
-
-				surrender_progress < 0.1
-				458 = { is_controlled_by_ROOT_or_ally = yes } # Tunisia
-				115 = { is_controlled_by_ROOT_or_ally = yes } # Sicily
-			}
-
-
-			set_temp_variable = { _invasion_state = 117 } # Campania
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 9826 } # (Salerno)
-			add_to_temp_array = { _invasion_state_provinces = 819  } # (Naples)
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _division_template = 4 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _division_template = 1 }
-		}
-		else_if = {
-			limit = {
-				var:_target_country = {
-					has_war_with = ROOT
-					controls_state = 117 # Campania
-				}
-			}
-			country_event = { id = WA_AI_invasions.32 days = 7 }
-		}
-
-		# Seazone control delay mechanic
-		if = {
-			limit = {
-				has_enemy_naval_control = 169 # Tyrrhenian Sea
-				NOT = { has_country_flag = WA_AI_invasions.32_flag }
-			}
-			set_country_flag = WA_AI_invasions.32_flag
-		}
-		else_if = {
-			limit = {
-				has_country_flag = { flag = WA_AI_invasions.32_flag days > 179 }
-			}
-			clr_country_flag = WA_AI_invasions.32_flag
-		}
-	}
-}
+#country_event = {
+#	id = WA_AI_invasions.32
+#	hidden = yes
+#
+#	is_triggered_only = yes
+#
+#	trigger = {
+#		is_ai = yes
+#		WA_AI_DIFFICULTY_is_historical = yes
+#	}
+#
+#	immediate = {
+#		# Get target country tag
+#		117 = { # Campania
+#			CONTROLLER = {
+#				set_temp_variable = { _target_country = id }
+#			}
+#		}
+#
+#		if = {
+#			limit = {
+#				var:_target_country = {
+#					has_war_with = ROOT
+#					controls_state = 117 # Campania
+#				}
+#
+#				if = {
+#					limit = {
+#						var:_target_country = { is_ai = no }
+#						NOT = { has_country_flag = { flag = WA_AI_invasions.32_flag days > 179 } }
+#					}
+#					NOT = { has_enemy_naval_control = 169 } # Tyrrhenian Sea
+#				}
+#
+#				surrender_progress < 0.1
+#				458 = { is_controlled_by_ROOT_or_ally = yes } # Tunisia
+#				115 = { is_controlled_by_ROOT_or_ally = yes } # Sicily
+#			}
+#
+#			set_temp_variable = { _invasion_state = 117 } # Campania
+#			clear_temp_array = _invasion_state_provinces
+#			add_to_temp_array = { _invasion_state_provinces = 9826 } # (Salerno)
+#			add_to_temp_array = { _invasion_state_provinces = 819  } # (Naples)
+#			set_temp_variable = { _divisions_per_province = 1 }
+#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+#			set_temp_variable = { _division_template = 1 }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#			set_temp_variable = { _division_template = 4 }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#		}
+#		else_if = {
+#			limit = {
+#				var:_target_country = {
+#					has_war_with = ROOT
+#					controls_state = 117 # Campania
+#				}
+#			}
+#			country_event = { id = WA_AI_invasions.32 days = 7 }
+#		}
+#
+#		# Seazone control delay mechanic
+#		if = {
+#			limit = {
+#				has_enemy_naval_control = 169 # Tyrrhenian Sea
+#				NOT = { has_country_flag = WA_AI_invasions.32_flag }
+#			}
+#			set_country_flag = WA_AI_invasions.32_flag
+#		}
+#		else_if = {
+#			limit = {
+#				has_country_flag = { flag = WA_AI_invasions.32_flag days > 179 }
+#			}
+#			clr_country_flag = WA_AI_invasions.32_flag
+#		}
+#	}
+#}
 
 # Operation Shingle
-country_event = {
-	id = WA_AI_invasions.33
-	hidden = yes
+#country_event = {
+#	id = WA_AI_invasions.33
+#	hidden = yes
+#
+#	is_triggered_only = yes
+#
+#	trigger = {
+#		is_ai = yes
+#		WA_AI_DIFFICULTY_is_historical = yes
+#	}
+#
+#	immediate = {
+#		# Get target country tag
+#		2 = { # Latium
+#			CONTROLLER = {
+#				set_temp_variable = { _target_country = id }
+#			}
+#		}
+#
+#		if = {
+#			limit = {
+#				var:_target_country = {
+#					has_war_with = ROOT
+#					controls_state = 2 # Latium
+#				}
+#
+#				if = {
+#					limit = {
+#						var:_target_country = { is_ai = no }
+#						NOT = { has_country_flag = { flag = WA_AI_invasions.33_flag days > 179 } }
+#					}
+#					NOT = { has_enemy_naval_control = 169 } # Tyrrhenian Sea
+#				}
+#
+#				surrender_progress < 0.1
+#				115 = { is_controlled_by_ROOT_or_ally = yes } # Sicily
+#			}
+#
+#			set_temp_variable = { _invasion_state = 2 } # Latium
+#			clear_temp_array = _invasion_state_provinces
+#			add_to_temp_array = { _invasion_state_provinces = 11751 }
+#			set_temp_variable = { _divisions_per_province = 2 }
+#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+#			set_temp_variable = { _division_template = 1 }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#			set_temp_variable = { _divisions_per_province = 1 }
+#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+#			set_temp_variable = { _division_template = 4 }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#			set_temp_variable = { _division_template = 1 }
+#
+#			clear_temp_array = _invasion_state_provinces
+#			add_to_temp_array = { _invasion_state_provinces = 11846 }
+#			add_to_temp_array = { _invasion_state_provinces = 6862  }
+#			add_to_temp_array = { _invasion_state_provinces = 13257 }
+#			add_to_temp_array = { _invasion_state_provinces = 13259 }
+#			set_temp_variable = { _divisions_per_province = 1 }
+#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+#			set_temp_variable = { _division_template = 1 }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#			set_temp_variable = { _division_template = 4 }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#			set_temp_variable = { _division_template = 1 }
+#
+#			set_temp_variable = { _divisions_per_province = 1 }
+#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+#			set_temp_variable = { _division_template = 1 }
+#			clear_temp_array = _invasion_state_provinces
+#			add_to_temp_array = { _invasion_state_provinces = 923   }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#			set_temp_variable = { _division_template = 4 }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#		}
+#		else_if = {
+#			limit = {
+#				var:_target_country = {
+#					has_war_with = ROOT
+#					controls_state = 2 # Latium
+#				}
+#			}
+#			country_event = { id = WA_AI_invasions.33 days = 7 }
+#		}
+#
+#		# Seazone control delay mechanic
+#		if = {
+#			limit = {
+#				has_enemy_naval_control = 169 # Tyrrhenian Sea
+#				NOT = { has_country_flag = WA_AI_invasions.33_flag }
+#			}
+#			set_country_flag = WA_AI_invasions.33_flag
+#		}
+#		else_if = {
+#			limit = {
+#				has_country_flag = { flag = WA_AI_invasions.33_flag days > 179 }
+#			}
+#			clr_country_flag = WA_AI_invasions.33_flag
+#		}
+#	}
+#}
 
-	is_triggered_only = yes
-
-	trigger = {
-		is_ai = yes
-		WA_AI_DIFFICULTY_is_historical = yes
-	}
-
-	immediate = {
-		# Get target country tag
-		2 = { # Latium
-			CONTROLLER = {
-				set_temp_variable = { _target_country = id }
-			}
-		}
-
-		if = {
-			limit = {
-				var:_target_country = {
-					has_war_with = ROOT
-					controls_state = 2 # Latium
-				}
-
-				if = {
-					limit = {
-						var:_target_country = { is_ai = no }
-						NOT = { has_country_flag = { flag = WA_AI_invasions.33_flag days > 179 } }
-					}
-					NOT = { has_enemy_naval_control = 169 } # Tyrrhenian Sea
-				}
-
-				surrender_progress < 0.1
-				115 = { is_controlled_by_ROOT_or_ally = yes } # Sicily
-			}
-
-
-			set_temp_variable = { _invasion_state = 2 } # Latium
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 11751 }
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 4 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _division_template = 1 }
-
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 11846 }
-			add_to_temp_array = { _invasion_state_provinces = 6862  }
-			add_to_temp_array = { _invasion_state_provinces = 13257 }
-			add_to_temp_array = { _invasion_state_provinces = 13259 }
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _division_template = 4 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _division_template = 1 }
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 923   }
-			set_temp_variable = { _division_template = 1 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _division_template = 4 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _division_template = 1 }
-		}
-		else_if = {
-			limit = {
-				var:_target_country = {
-					has_war_with = ROOT
-					controls_state = 2 # Latium
-				}
-			}
-			country_event = { id = WA_AI_invasions.33 days = 7 }
-		}
-
-		# Seazone control delay mechanic
-		if = {
-			limit = {
-				has_enemy_naval_control = 169 # Tyrrhenian Sea
-				NOT = { has_country_flag = WA_AI_invasions.33_flag }
-			}
-			set_country_flag = WA_AI_invasions.33_flag
-		}
-		else_if = {
-			limit = {
-				has_country_flag = { flag = WA_AI_invasions.33_flag days > 179 }
-			}
-			clr_country_flag = WA_AI_invasions.33_flag
-		}
-	}
-}
-
-# Operation Neptune
+# Operation Neptune d-day uk
 country_event = {
 	id = WA_AI_invasions.34
 	hidden = yes
@@ -3445,7 +3415,6 @@ country_event = {
 				var:_target_country = {
 					has_war_with = ROOT
 					controls_state = 15   # Lower Normandy
-					controls_state = 1016 # Upper Normandy
 				}
 
 				if = {
@@ -3458,83 +3427,68 @@ country_event = {
 
 				surrender_progress < 0.1
 				127 = { is_controlled_by_ROOT_or_ally = yes } # Sussex
-				859 = { is_controlled_by_ROOT_or_ally = yes } # Dorset
 			}
+			set_temp_variable = { _divisions_per_province = 2 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
+			set_temp_variable = { _division_template = 1 }
 
-			# Lower Normandy (Gold / Juno beaches)
 			set_temp_variable = { _invasion_state = 15 } # Lower Normandy
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 6449  }
-			add_to_temp_array = { _invasion_state_provinces = 6599  }
-			add_to_temp_array = { _invasion_state_provinces = 13849 }
-			add_to_temp_array = { _invasion_state_provinces = 9550  }
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
+			add_to_temp_array = { _invasion_state_provinces = 6599 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _division_template = 4 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _division_template = 1 }
-
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 11535 }
-			add_to_temp_array = { _invasion_state_provinces = 13848 }
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 4 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _division_template = 1 }
-
-			# Upper Normandy (Sword beach)
 			set_temp_variable = { _invasion_state = 1016 } # Upper Normandy
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 9434  }
 			add_to_temp_array = { _invasion_state_provinces = 13851 }
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 			set_temp_variable = { _division_template = 4 }
-			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _division_template = 1 }
-
+			set_temp_variable = { _invasion_state = 15 } # Lower Normandy
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 13852 }
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
+			add_to_temp_array = { _invasion_state_provinces = 6599 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 4 }
+			set_temp_variable = { _invasion_state = 1016 } # Upper Normandy
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 13851 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _division_template = 1 }
+			set_temp_variable = { _division_template = 6 }
 
-			# Mulberry B (Sword beach, 13851): spawned by WA_AI_invasions.86 only once
-			# state 1016 is ROOT/ally-controlled - building it in this immediate would
-			# predate the state-control flip and get caught by the Nero-decree port
-			# demolition that fires on that flip.
-			country_event = { id = WA_AI_invasions.86 days = 3 }
+			set_temp_variable = { _invasion_state = 15 } # Lower Normandy
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 11521 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+
+			CAN = {
+				if = {
+					limit = {
+						var:_target_country = {
+							has_war_with = ROOT
+						}
+						is_ai = yes
+					}
+					set_temp_variable = { _divisions_per_province = 1 }
+					WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+					set_temp_variable = { _division_template = 1 }
+
+					set_temp_variable = { _invasion_state = 15 } # Lower Normandy
+					clear_temp_array = _invasion_state_provinces
+					add_to_temp_array = { _invasion_state_provinces = 6599 }
+					WA_AI_DIVISION_spawn_invasion = yes
+				}
+			}
+
 		}
 		else_if = {
 			limit = {
 				var:_target_country = {
 					has_war_with = ROOT
 					controls_state = 15   # Lower Normandy
-					controls_state = 1016 # Upper Normandy
 				}
 			}
 			country_event = { id = WA_AI_invasions.34 days = 7 }
@@ -3557,7 +3511,7 @@ country_event = {
 	}
 }
 
-# Operation Torch
+# Operation Torch east
 country_event = {
 	id = WA_AI_invasions.46
 	hidden = yes
@@ -3596,30 +3550,43 @@ country_event = {
 
 				# Triggers for invasion launch country
 				surrender_progress < 0.1
+				118 = { is_controlled_by_ROOT_or_ally = yes } # Gibraltar
 
 			}
 
-			# Gibraltar condition - only land from Med if Gibraltar is held by allies
-			if = {
-				limit = { NOT = { any_enemy_country = { controls_state = 118 } } }
-				set_temp_variable = { _invasion_state = 459 } # Algiers
-				clear_temp_array = _invasion_state_provinces
-				add_to_temp_array = { _invasion_state_provinces = 7132  } # (Algiers)
-				add_to_temp_array = { _invasion_state_provinces = 4116  }
-				add_to_temp_array = { _invasion_state_provinces = 11923 }
-				add_to_temp_array = { _invasion_state_provinces = 1145  }
-				add_to_temp_array = { _invasion_state_provinces = 11939 }
-				add_to_temp_array = { _invasion_state_provinces = 9964  }
-				set_temp_variable = { _divisions_per_province = 1 }
-				WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-				set_temp_variable = { _division_template = 1 }
-				WA_AI_DIVISION_spawn_invasion = yes
+			set_temp_variable = { _divisions_per_province = 1 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
-				set_temp_variable = { _division_template = 4 }
-				WA_AI_DIVISION_spawn_invasion = yes
+			set_temp_variable = { _division_template = 1 }
 
-				set_temp_variable = { _division_template = 1 }
-			}
+			set_temp_variable = { _invasion_state = 459 } # Algiers
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 1145  }
+			add_to_temp_array = { _invasion_state_provinces = 11939 }
+			add_to_temp_array = { _invasion_state_provinces = 9964  }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _division_template = 4 }
+
+			set_temp_variable = { _invasion_state = 459 } # Algiers
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 1145  }
+			add_to_temp_array = { _invasion_state_provinces = 11939 }
+			add_to_temp_array = { _invasion_state_provinces = 9964  }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _divisions_per_province = 2 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 7 }
+
+			set_temp_variable = { _invasion_state = 459 } # Algiers
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 7132  }
+			add_to_temp_array = { _invasion_state_provinces = 4116  }
+			add_to_temp_array = { _invasion_state_provinces = 11923 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
 		}
 		else_if = {
 			limit = {
@@ -3649,7 +3616,7 @@ country_event = {
 	}
 }
 
-# Operation Husky
+# Operation Husky east
 country_event = {
 	id = WA_AI_invasions.47
 	hidden = yes
@@ -3692,31 +3659,33 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				458 = { is_controlled_by_ROOT_or_ally = yes } # Tunisia
 			}
-			# Fix 33: reverts the Husky half of Fix 32. The `_divisions_per_province = 1` that Fix 32
-			# deleted as an accidental override was introduced by 608177207 TOGETHER with the second
-			# `_division_template = 4` (#Armor) wave, as a size-PRESERVING infantry/armor split:
-			# 2/province x 1 wave became 1/province x 2 waves. Total was 1x6 + 1x6 = 12 at the
-			# original authoring commit 2aaec3200 and at every commit since, and the five siblings that
-			# share this idiom (.4, .32, .35, .46, .75) are all still at 1/province. Fix 32 read the `1`
-			# as dead code and restored `2`, silently doubling this landing to 24 divisions.
 			set_temp_variable = { _divisions_per_province = 1 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
+			set_temp_variable = { _division_template = 1 }
+
 			set_temp_variable = { _invasion_state = 1032 } # Southern Sicily
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 7059 }
-			add_to_temp_array = { _invasion_state_provinces = 4014 }
-			add_to_temp_array = { _invasion_state_provinces = 7147 }
-			add_to_temp_array = { _invasion_state_provinces = 13539 }
-			add_to_temp_array = { _invasion_state_provinces = 1009 }
+			add_to_temp_array = { _invasion_state_provinces = 4014  }
+			add_to_temp_array = { _invasion_state_provinces = 1009  }
 			add_to_temp_array = { _invasion_state_provinces = 13541 }
-			set_temp_variable = { _division_template = 1 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 			set_temp_variable = { _division_template = 4 }
+
+			set_temp_variable = { _invasion_state = 1032 } # Southern Sicily
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 4014  }
+			add_to_temp_array = { _invasion_state_provinces = 1009  }
+			add_to_temp_array = { _invasion_state_provinces = 13541 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _division_template = 1 }
+			set_temp_variable = { _division_template = 6 }
+
+			set_temp_variable = { _invasion_state = 115 } # Northern Sicily
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 13540 }
+			WA_AI_DIVISION_spawn_invasion = yes
 
 		}
 		else_if = {
@@ -3747,178 +3716,176 @@ country_event = {
 	}
 }
 
-# Operation Battleaxe
-country_event = {
-	id = WA_AI_invasions.48
-	hidden = yes
-
-	is_triggered_only = yes
-
-	trigger = {
-		is_ai = yes
-		WA_AI_DIFFICULTY_is_historical = yes
-	}
-
-	immediate = {
-		# Get target country tag
-		737 = { # Bismarck
-			CONTROLLER = {
-				set_temp_variable = { _target_country = id }
-			}
-		}
-
-		if = {
-			limit = {
-				# Triggers for invasion target country and states
-				var:_target_country = {
-					has_war_with = ROOT
-					controls_state = 737 # Bismarck
-				}
-
-				# PLAYER ONLY seazone check
-				if = {
-					limit = {
-						var:_target_country = { is_ai = no }
-						NOT = { has_country_flag = { flag = WA_AI_invasions.48_flag days > 179 } }
-					}
-					NOT = { has_enemy_naval_control = 84 } # Bismarck Sea
-				}
-
-				# Triggers for invasion launch country
-				surrender_progress < 0.1
-
-				# Triggers for 'invasion launch states'
-				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
-			}
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-
-			set_temp_variable = { _invasion_state = 737 } # Bismarck
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 7324 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _invasion_state = 737 } # Bismarck
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 7339 }
-			add_to_temp_array = { _invasion_state_provinces = 4352 }
-			add_to_temp_array = { _invasion_state_provinces = 10206 }
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
-			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
-
-		}
-		else_if = {
-			limit = {
-				# Only refire if the invasion target is still valid
-				var:_target_country = {
-					has_war_with = ROOT
-					controls_state = 737 # Bismarck
-				}
-			}
-			country_event = { id = WA_AI_invasions.48 days = 7 }
-		}
-
-		# Seazone control delay mechanic
-		if = {
-			limit = {
-				has_enemy_naval_control = 84 # Bismarck Sea
-				NOT = { has_country_flag = WA_AI_invasions.48_flag }
-			}
-			set_country_flag = WA_AI_invasions.48_flag
-		}
-		else_if = {
-			limit = {
-				has_country_flag = { flag = WA_AI_invasions.48_flag days > 179 }
-			}
-			clr_country_flag = WA_AI_invasions.48_flag
-		}
-	}
-}
+## Operation Battleaxe
+#country_event = {
+#	id = WA_AI_invasions.48
+#	hidden = yes
+#
+#	is_triggered_only = yes
+#
+#	trigger = {
+#		is_ai = yes
+#		WA_AI_DIFFICULTY_is_historical = yes
+#	}
+#
+#	immediate = {
+#		# Get target country tag
+#		737 = { # Bismarck
+#			CONTROLLER = {
+#				set_temp_variable = { _target_country = id }
+#			}
+#		}
+#
+#		if = {
+#			limit = {
+#				# Triggers for invasion target country and states
+#				var:_target_country = {
+#					has_war_with = ROOT
+#					controls_state = 737 # Bismarck
+#				}
+#
+#				# PLAYER ONLY seazone check
+#				if = {
+#					limit = {
+#						var:_target_country = { is_ai = no }
+#						NOT = { has_country_flag = { flag = WA_AI_invasions.48_flag days > 179 } }
+#					}
+#					NOT = { has_enemy_naval_control = 84 } # Bismarck Sea
+#				}
+#
+#				# Triggers for invasion launch country
+#				surrender_progress < 0.1
+#
+#				# Triggers for 'invasion launch states'
+#				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
+#			}
+#			set_temp_variable = { _divisions_per_province = 3 }
+#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+#
+#			set_temp_variable = { _invasion_state = 737 } # Bismarck
+#			clear_temp_array = _invasion_state_provinces
+#			add_to_temp_array = { _invasion_state_provinces = 7324 }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#			set_temp_variable = { _invasion_state = 737 } # Bismarck
+#			clear_temp_array = _invasion_state_provinces
+#			add_to_temp_array = { _invasion_state_provinces = 7339 }
+#			add_to_temp_array = { _invasion_state_provinces = 4352 }
+#			add_to_temp_array = { _invasion_state_provinces = 10206 }
+#			set_temp_variable = { _divisions_per_province = 3 }
+#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+#			set_temp_variable = { _division_template = 7 }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#		}
+#		else_if = {
+#			limit = {
+#				# Only refire if the invasion target is still valid
+#				var:_target_country = {
+#					has_war_with = ROOT
+#					controls_state = 737 # Bismarck
+#				}
+#			}
+#			country_event = { id = WA_AI_invasions.48 days = 7 }
+#		}
+#
+#		# Seazone control delay mechanic
+#		if = {
+#			limit = {
+#				has_enemy_naval_control = 84 # Bismarck Sea
+#				NOT = { has_country_flag = WA_AI_invasions.48_flag }
+#			}
+#			set_country_flag = WA_AI_invasions.48_flag
+#		}
+#		else_if = {
+#			limit = {
+#				has_country_flag = { flag = WA_AI_invasions.48_flag days > 179 }
+#			}
+#			clr_country_flag = WA_AI_invasions.48_flag
+#		}
+#	}
+#}
 
 # Operation Matador
-country_event = {
-	id = WA_AI_invasions.49
-	hidden = yes
-
-	is_triggered_only = yes
-
-	trigger = {
-		is_ai = yes
-		WA_AI_DIFFICULTY_is_historical = yes
-	}
-
-	immediate = {
-		# Get target country tag
-		288 = { # Burma
-			CONTROLLER = {
-				set_temp_variable = { _target_country = id }
-			}
-		}
-
-		if = {
-			limit = {
-				# Triggers for invasion target country and states
-				var:_target_country = {
-					has_war_with = ROOT
-					controls_state = 288 # Burma
-				}
-
-				# PLAYER ONLY seazone check
-				if = {
-					limit = {
-						var:_target_country = { is_ai = no }
-						NOT = { has_country_flag = { flag = WA_AI_invasions.49_flag days > 179 } }
-					}
-					NOT = { has_enemy_naval_control = 335 } # Andaman Sea
-				}
-
-				# Triggers for invasion launch country
-				surrender_progress < 0.1
-
-				# Triggers for 'invasion launch states'
-				430 = { is_controlled_by_ROOT_or_ally = yes } # East Bengal
-			}
-
-			set_temp_variable = { _invasion_state = 288 } # Burma
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 3651 }
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
-			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
-
-		}
-		else_if = {
-			limit = {
-				# Only refire if the invasion target is still valid
-				var:_target_country = {
-					has_war_with = ROOT
-					controls_state = 288 # Burma
-				}
-			}
-			country_event = { id = WA_AI_invasions.49 days = 7 }
-		}
-
-		# Seazone control delay mechanic
-		if = {
-			limit = {
-				has_enemy_naval_control = 335 # Andaman Sea
-				NOT = { has_country_flag = WA_AI_invasions.49_flag }
-			}
-			set_country_flag = WA_AI_invasions.49_flag
-		}
-		else_if = {
-			limit = {
-				has_country_flag = { flag = WA_AI_invasions.49_flag days > 179 }
-			}
-			clr_country_flag = WA_AI_invasions.49_flag
-		}
-	}
-}
+#country_event = {
+#	id = WA_AI_invasions.49
+#	hidden = yes
+#
+#	is_triggered_only = yes
+#
+#	trigger = {
+#		is_ai = yes
+#		WA_AI_DIFFICULTY_is_historical = yes
+#	}
+#
+#	immediate = {
+#		# Get target country tag
+#		288 = { # Burma
+#			CONTROLLER = {
+#				set_temp_variable = { _target_country = id }
+#			}
+#		}
+#
+#		if = {
+#			limit = {
+#				# Triggers for invasion target country and states
+#				var:_target_country = {
+#					has_war_with = ROOT
+#					controls_state = 288 # Burma
+#				}
+#
+#				# PLAYER ONLY seazone check
+#				if = {
+#					limit = {
+#						var:_target_country = { is_ai = no }
+#						NOT = { has_country_flag = { flag = WA_AI_invasions.49_flag days > 179 } }
+#					}
+#					NOT = { has_enemy_naval_control = 335 } # Andaman Sea
+#				}
+#
+#				# Triggers for invasion launch country
+#				surrender_progress < 0.1
+#
+#				# Triggers for 'invasion launch states'
+#				430 = { is_controlled_by_ROOT_or_ally = yes } # East Bengal
+#			}
+#
+#			set_temp_variable = { _invasion_state = 288 } # Burma
+#			clear_temp_array = _invasion_state_provinces
+#			add_to_temp_array = { _invasion_state_provinces = 3651 }
+#			set_temp_variable = { _divisions_per_province = 3 }
+#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+#			set_temp_variable = { _division_template = 7 }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#		}
+#		else_if = {
+#			limit = {
+#				# Only refire if the invasion target is still valid
+#				var:_target_country = {
+#					has_war_with = ROOT
+#					controls_state = 288 # Burma
+#				}
+#			}
+#			country_event = { id = WA_AI_invasions.49 days = 7 }
+#		}
+#
+#		# Seazone control delay mechanic
+#		if = {
+#			limit = {
+#				has_enemy_naval_control = 335 # Andaman Sea
+#				NOT = { has_country_flag = WA_AI_invasions.49_flag }
+#			}
+#			set_country_flag = WA_AI_invasions.49_flag
+#		}
+#		else_if = {
+#			limit = {
+#				has_country_flag = { flag = WA_AI_invasions.49_flag days > 179 }
+#			}
+#			clr_country_flag = WA_AI_invasions.49_flag
+#		}
+#	}
+#}
 
 # Operation Dracula
 country_event = {
@@ -3961,15 +3928,16 @@ country_event = {
 				surrender_progress < 0.1
 
 				# Triggers for 'invasion launch states'
-				430 = { is_controlled_by_ROOT_or_ally = yes } # East Bengal
+				431 = { is_controlled_by_ROOT_or_ally = yes } # west Bengal
 			}
-			set_temp_variable = { _divisions_per_province = 2 }
+			set_temp_variable = { _divisions_per_province = 3 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
 			set_temp_variable = { _invasion_state = 288 } # Burma
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 1330 } # (Rangoon)
-			add_to_temp_array = { _invasion_state_provinces = 12090 }
+			add_to_temp_array = { _invasion_state_provinces = 1330 }
+			add_to_temp_array = { _invasion_state_provinces = 10267 }
+			add_to_temp_array = { _invasion_state_provinces = 12127 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 		}
@@ -4016,7 +3984,7 @@ country_event = {
 #########################################################################################
 #########################################################################################
 
-# Operation Husky
+# Operation Husky west
 country_event = {
 	id = WA_AI_invasions.5
 	hidden = yes
@@ -4030,7 +3998,7 @@ country_event = {
 
 	immediate = {
 		# Get target country tag
-		115 = { # Northern Sicily
+		1032 = { # Southern Sicily
 			CONTROLLER = {
 				set_temp_variable = { _target_country = id }
 			}
@@ -4041,7 +4009,7 @@ country_event = {
 				# Triggers for invasion target country and states
 				var:_target_country = {
 					has_war_with = ROOT
-					controls_state = 115  # Northern Sicily (western landings)
+					controls_state = 1032  # Southern Sicily
 				}
 
 				# PLAYER ONLY seazone check
@@ -4060,36 +4028,41 @@ country_event = {
 				458 = { is_controlled_by_ROOT_or_ally = yes } # Tunisia
 
 			}
-			# Fix 33: reverts the Husky half of Fix 32. The `_divisions_per_province = 1` that Fix 32
-			# deleted as an accidental override was introduced by 608177207 TOGETHER with the second
-			# `_division_template = 4` (#Armor) wave, as a size-PRESERVING infantry/armor split:
-			# 2/province x 1 wave became 1/province x 2 waves. Total was 1x4 + 1x4 = 8 at the
-			# original authoring commit 2aaec3200 and at every commit since, and the five siblings that
-			# share this idiom (.4, .32, .35, .46, .75) are all still at 1/province. Fix 32 read the `1`
-			# as dead code and restored `2`, silently doubling this landing to 16 divisions.
 			set_temp_variable = { _divisions_per_province = 1 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 
-			set_temp_variable = { _invasion_state = 115 } # Northern Sicily
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 4159  }
-			add_to_temp_array = { _invasion_state_provinces = 10074 }
-			add_to_temp_array = { _invasion_state_provinces = 1156  }
-			add_to_temp_array = { _invasion_state_provinces = 3857  }
 			set_temp_variable = { _division_template = 1 }
+
+			set_temp_variable = { _invasion_state = 1032 } # Southern Sicily
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 13539 }
+			add_to_temp_array = { _invasion_state_provinces = 7059  }
+			add_to_temp_array = { _invasion_state_provinces = 7147  }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 			set_temp_variable = { _division_template = 4 }
+
+			set_temp_variable = { _invasion_state = 1032 } # Southern Sicily
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 13539 }
+			add_to_temp_array = { _invasion_state_provinces = 7059  }
+			add_to_temp_array = { _invasion_state_provinces = 7147  }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _division_template = 1 }
+			set_temp_variable = { _division_template = 6 }
+
+			set_temp_variable = { _invasion_state = 115 } # Northern Sicily
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 1156 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
 		}
 		else_if = {
 			limit = {
 				# Only refire if the invasion target is still valid
 				var:_target_country = {
 					has_war_with = ROOT
-					controls_state = 115  # Northern Sicily
+					controls_state = 1032  # Southern Sicily
 				}
 			}
 			country_event = { id = WA_AI_invasions.5 days = 7 }
@@ -4112,7 +4085,7 @@ country_event = {
 	}
 }
 
-# Operation Torch
+# Operation Torch west
 country_event = {
 	id = WA_AI_invasions.4
 	hidden = yes
@@ -4138,7 +4111,6 @@ country_event = {
 				var:_target_country = {
 					has_war_with = ROOT
 					controls_state = 461 # Casablanca
-					controls_state = 462 # Marrakech
 				}
 
 				# PLAYER ONLY seazone check
@@ -4154,9 +4126,26 @@ country_event = {
 				surrender_progress < 0.1
 
 				# Triggers for 'invasion launch states'
-				127 = { is_controlled_by_ROOT_or_ally = yes } # Sussex
+				123 = { is_controlled_by_ROOT_or_ally = yes } # Cornwall
 
 			}
+
+			if = {
+   				limit = {
+        			118 = {	#Gibralta
+           				is_controlled_by_enemy = yes
+       				}
+    			}
+    			set_temp_variable = { _divisions_per_province = 3 }
+
+			}
+			else = {
+    			set_temp_variable = { _divisions_per_province = 1 }
+
+			}
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 1 }
 
 			set_temp_variable = { _invasion_state = 461 } # Casablanca
 			clear_temp_array = _invasion_state_provinces
@@ -4165,27 +4154,30 @@ country_event = {
 			add_to_temp_array = { _invasion_state_provinces = 10070 }
 			add_to_temp_array = { _invasion_state_provinces = 14133 }
 			add_to_temp_array = { _invasion_state_provinces = 11943 }
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
 			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _division_template = 4 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _division_template = 1 }
 
 			set_temp_variable = { _invasion_state = 462 } # Marrakech
 			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 1102 }
 			add_to_temp_array = { _invasion_state_provinces = 7203 }
-			set_temp_variable = { _division_template = 1 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 			set_temp_variable = { _division_template = 4 }
+
+			set_temp_variable = { _invasion_state = 461 } # Casablanca
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 7069 }
+			add_to_temp_array = { _invasion_state_provinces = 14134 }
+			add_to_temp_array = { _invasion_state_provinces = 10070 }
+			add_to_temp_array = { _invasion_state_provinces = 14133 }
+			add_to_temp_array = { _invasion_state_provinces = 11943 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _division_template = 1 }
+			set_temp_variable = { _invasion_state = 462 } # Marrakech
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 1102 }
+			add_to_temp_array = { _invasion_state_provinces = 7203 }
+			WA_AI_DIVISION_spawn_invasion = yes
 
 		}
 		else_if = {
@@ -4194,7 +4186,6 @@ country_event = {
 				var:_target_country = {
 					has_war_with = ROOT
 					controls_state = 461 # Casablanca
-					controls_state = 462 # Marrakech
 				}
 			}
 			country_event = { id = WA_AI_invasions.4 days = 7 }
@@ -4217,7 +4208,7 @@ country_event = {
 	}
 }
 
-# DDay
+# DDay USA
 country_event = {
 	id = WA_AI_invasions.2
 	hidden = yes
@@ -4243,7 +4234,6 @@ country_event = {
 				var:_target_country = {
 					has_war_with = ROOT
 					controls_state = 15 # Lower Normandy
-					controls_state = 1016 # Upper Normandy
 				}
 
 				# PLAYER ONLY seazone check
@@ -4260,38 +4250,36 @@ country_event = {
 
 				# Triggers for 'invasion launch states'
 				127 = { is_controlled_by_ROOT_or_ally = yes } # Sussex
-				859 = { is_controlled_by_ROOT_or_ally = yes } # Dorset
-
 				# Other misc triggers for overall game state
 				# Allies control africa? Italy?
-
 			}
 			# Account for checking for more defenses with any_province_building_level?
+
 			set_temp_variable = { _divisions_per_province = 2 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 1 }
 
 			set_temp_variable = { _invasion_state = 15 } #Lower Normandy
 			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 3579 }
 			add_to_temp_array = { _invasion_state_provinces = 11535 }
-			set_temp_variable = { _division_template = 1 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 			set_temp_variable = { _division_template = 4 }
+
+			set_temp_variable = { _invasion_state = 15 } #Lower Normandy
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 3579 }
+			add_to_temp_array = { _invasion_state_provinces = 11535 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 4 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+			set_temp_variable = { _division_template = 6 }
+
+			set_temp_variable = { _invasion_state = 15 } #Lower Normandy
 			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 13849 }
-			set_temp_variable = { _division_template = 6 }
 			WA_AI_DIVISION_spawn_invasion = yes
-
-			# Mulberry A (Omaha-sector beach, 3579): spawned by WA_AI_invasions.85 only
-			# once state 15 is ROOT/ally-controlled - building it in this immediate
-			# would predate the state-control flip and get caught by the Nero-decree
-			# port demolition that fires on that flip.
-			country_event = { id = WA_AI_invasions.85 days = 3 }
 		}
 		else_if = {
 			limit = {
@@ -4363,9 +4351,23 @@ country_event = {
 				surrender_progress < 0.1
 
 				# Triggers for 'invasion launch states'
-				458 = { is_controlled_by_ROOT_or_ally = yes } # Tunisia
 				115 = { is_controlled_by_ROOT_or_ally = yes } # Northern Sicily
 			}
+			set_temp_variable = { _divisions_per_province = 1 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 1 }
+
+			set_temp_variable = { _invasion_state = 117 } # Campania
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 851 }
+			add_to_temp_array = { _invasion_state_provinces = 3958 }
+			add_to_temp_array = { _invasion_state_provinces = 955 }
+			add_to_temp_array = { _invasion_state_provinces = 819 }
+			add_to_temp_array = { _invasion_state_provinces = 9826 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _division_template = 4 }
 
 			set_temp_variable = { _invasion_state = 117 } # Campania
 			clear_temp_array = _invasion_state_provinces
@@ -4373,15 +4375,14 @@ country_event = {
 			add_to_temp_array = { _invasion_state_provinces = 3958 }
 			add_to_temp_array = { _invasion_state_provinces = 3968 }
 			add_to_temp_array = { _invasion_state_provinces = 955 }
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _division_template = 4 }
-			WA_AI_DIVISION_spawn_invasion = yes
+			set_temp_variable = { _division_template = 6 }
 
-			set_temp_variable = { _division_template = 1 }
+			set_temp_variable = { _invasion_state = 117 } # Campania
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 6972 }
+			WA_AI_DIVISION_spawn_invasion = yes
 
 		}
 		else_if = {
@@ -4455,19 +4456,8 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				115 = { is_controlled_by_ROOT_or_ally = yes } # Northern Sicily
 			}
-
-			set_temp_variable = { _invasion_state = 2 } # Latium
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 11751 }
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
 			set_temp_variable = { _divisions_per_province = 1 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 4 }
-			WA_AI_DIVISION_spawn_invasion = yes
 
 			set_temp_variable = { _division_template = 1 }
 
@@ -4475,18 +4465,15 @@ country_event = {
 			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 11846 }
 			add_to_temp_array = { _invasion_state_provinces = 923 }
-			add_to_temp_array = { _invasion_state_provinces = 6862 }
-			add_to_temp_array = { _invasion_state_provinces = 13257 }
-			add_to_temp_array = { _invasion_state_provinces = 13259 }
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 			set_temp_variable = { _division_template = 4 }
-			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _division_template = 1 }
+			set_temp_variable = { _invasion_state = 2 } # Latium
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 11846 }
+			add_to_temp_array = { _invasion_state_provinces = 923 }
+			WA_AI_DIVISION_spawn_invasion = yes
 
 		}
 		else_if = {
@@ -4559,39 +4546,29 @@ country_event = {
 
 				# Triggers for 'invasion launch states'
 				459 = { is_controlled_by_ROOT_or_ally = yes } # Algiers
-				156 = { is_controlled_by_ROOT_or_ally = yes } # Calabria
 			}
+			set_temp_variable = { _divisions_per_province = 2 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 4 }
 
 			set_temp_variable = { _invasion_state = 21 } # Provence
 			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 911 }
 			add_to_temp_array = { _invasion_state_provinces = 11834 }
 			add_to_temp_array = { _invasion_state_provinces = 3928 }
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
+			add_to_temp_array = { _invasion_state_provinces = 11849 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _division_template = 4 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _division_template = 1 }
+			set_temp_variable = { _division_template = 3 }
 
 			set_temp_variable = { _invasion_state = 21 } # Provence
 			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 911 }
+			add_to_temp_array = { _invasion_state_provinces = 11834 }
+			add_to_temp_array = { _invasion_state_provinces = 3928 }
 			add_to_temp_array = { _invasion_state_provinces = 11849 }
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
 			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 4 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _division_template = 1 }
-
 		}
 		else_if = {
 			limit = {
@@ -4665,20 +4642,16 @@ country_event = {
 				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
 			}
 
+			set_temp_variable = { _divisions_per_province = 2 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 8 } #12
+
 			set_temp_variable = { _invasion_state = 634 } # Solomon Islands
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 1269 } # Guadalcanal
-
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
+			add_to_temp_array = { _invasion_state_provinces = 1269 }
+			add_to_temp_array = { _invasion_state_provinces = 4292 }
 			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 8 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
 		}
 		else_if = {
 			limit = {
@@ -4742,7 +4715,7 @@ country_event = {
 						var:_target_country = { is_ai = no }
 						NOT = { has_country_flag = { flag = WA_AI_invasions.52_flag days > 179 } }
 					}
-					NOT = { has_enemy_naval_control = 167 } # New Guinea
+					NOT = { has_enemy_naval_control = 354 } # Solomon Sea
 				}
 
 				# Triggers for invasion launch country
@@ -4752,18 +4725,14 @@ country_event = {
 				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
 			}
 
+			set_temp_variable = { _divisions_per_province = 2 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 8 } #12
+
 			set_temp_variable = { _invasion_state = 1004 } # North East Papua
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 10260 } # south of Lae
-
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 8 }
+			add_to_temp_array = { _invasion_state_provinces = 4418 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 		}
@@ -4781,7 +4750,7 @@ country_event = {
 		# Seazone control delay mechanic
 		if = {
 			limit = {
-				has_enemy_naval_control = 167 # New Guinea
+				has_enemy_naval_control = 354 # Solomon Sea
 				NOT = { has_country_flag = WA_AI_invasions.52_flag }
 			}
 			set_country_flag = WA_AI_invasions.52_flag
@@ -4796,92 +4765,92 @@ country_event = {
 }
 
 # Operation Cottage
-country_event = {
-	id = WA_AI_invasions.53
-	hidden = yes
-
-	is_triggered_only = yes
-
-	trigger = {
-		is_ai = yes
-		WA_AI_DIFFICULTY_is_historical = yes
-	}
-
-	immediate = {
-		# Get target country tag
-		1135 = { # Kiska island province
-			CONTROLLER = {
-				set_temp_variable = { _target_country = id }
-			}
-		}
-
-		if = {
-			limit = {
-				# Triggers for invasion target country and states
-				var:_target_country = {
-					has_war_with = ROOT
-					controls_state = 463 # Alaska
-				}
-
-				# PLAYER ONLY seazone check
-				if = {
-					limit = {
-						var:_target_country = { is_ai = no }
-						NOT = { has_country_flag = { flag = WA_AI_invasions.53_flag days > 179 } }
-					}
-					NOT = { has_enemy_naval_control = 33 } # Alaska
-				}
-
-				# Triggers for invasion launch country
-				surrender_progress < 0.1
-
-				# Triggers for 'invasion launch states'
-				463 = { is_controlled_by_ROOT_or_ally = yes } # Alaska mainland
-			}
-
-			set_temp_variable = { _invasion_state = 463 } # Alaska
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 1135 } # Kiska island
-			add_to_temp_array = { _invasion_state_provinces = 13090 } # Kiska island
-
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 8 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-		}
-		else_if = {
-			limit = {
-				# Only refire if the invasion target is still valid
-				var:_target_country = {
-					has_war_with = ROOT
-					controls_state = 463 # Alaska
-				}
-			}
-			country_event = { id = WA_AI_invasions.53 days = 7 }
-		}
-
-		# Seazone control delay mechanic
-		if = {
-			limit = {
-				has_enemy_naval_control = 33 # Alaska
-				NOT = { has_country_flag = WA_AI_invasions.53_flag }
-			}
-			set_country_flag = WA_AI_invasions.53_flag
-		}
-		else_if = {
-			limit = {
-				has_country_flag = { flag = WA_AI_invasions.53_flag days > 179 }
-			}
-			clr_country_flag = WA_AI_invasions.53_flag
-		}
-	}
-}
+#country_event = {
+#	id = WA_AI_invasions.53
+#	hidden = yes
+#
+#	is_triggered_only = yes
+#
+#	trigger = {
+#		is_ai = yes
+#		WA_AI_DIFFICULTY_is_historical = yes
+#	}
+#
+#	immediate = {
+#		# Get target country tag
+#		1135 = { # Kiska island province
+#			CONTROLLER = {
+#				set_temp_variable = { _target_country = id }
+#			}
+#		}
+#
+#		if = {
+#			limit = {
+#				# Triggers for invasion target country and states
+#				var:_target_country = {
+#					has_war_with = ROOT
+#					controls_state = 463 # Alaska
+#				}
+#
+#				# PLAYER ONLY seazone check
+#				if = {
+#					limit = {
+#						var:_target_country = { is_ai = no }
+#						NOT = { has_country_flag = { flag = WA_AI_invasions.53_flag days > 179 } }
+#					}
+#					NOT = { has_enemy_naval_control = 33 } # Alaska
+#				}
+#
+#				# Triggers for invasion launch country
+#				surrender_progress < 0.1
+#
+#				# Triggers for 'invasion launch states'
+#				463 = { is_controlled_by_ROOT_or_ally = yes } # Alaska mainland
+#			}
+#
+#			set_temp_variable = { _invasion_state = 463 } # Alaska
+#			clear_temp_array = _invasion_state_provinces
+#			add_to_temp_array = { _invasion_state_provinces = 1135 } # Kiska island
+#			add_to_temp_array = { _invasion_state_provinces = 13090 } # Kiska island
+#
+#			set_temp_variable = { _divisions_per_province = 3 }
+#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+#			set_temp_variable = { _division_template = 1 }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#			set_temp_variable = { _divisions_per_province = 2 }
+#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+#			set_temp_variable = { _division_template = 8 }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#		}
+#		else_if = {
+#			limit = {
+#				# Only refire if the invasion target is still valid
+#				var:_target_country = {
+#					has_war_with = ROOT
+#					controls_state = 463 # Alaska
+#				}
+#			}
+#			country_event = { id = WA_AI_invasions.53 days = 7 }
+#		}
+#
+#		# Seazone control delay mechanic
+#		if = {
+#			limit = {
+#				has_enemy_naval_control = 33 # Alaska
+#				NOT = { has_country_flag = WA_AI_invasions.53_flag }
+#			}
+#			set_country_flag = WA_AI_invasions.53_flag
+#		}
+#		else_if = {
+#			limit = {
+#				has_country_flag = { flag = WA_AI_invasions.53_flag days > 179 }
+#			}
+#			clr_country_flag = WA_AI_invasions.53_flag
+#		}
+#	}
+#}
 
 # Operation Postern
 country_event = {
@@ -4917,7 +4886,7 @@ country_event = {
 						var:_target_country = { is_ai = no }
 						NOT = { has_country_flag = { flag = WA_AI_invasions.54_flag days > 179 } }
 					}
-					NOT = { has_enemy_naval_control = 167 } # New Guinea
+					NOT = { has_enemy_naval_control = 354 } # Solomon Sea
 				}
 
 				# Triggers for invasion launch country
@@ -4927,18 +4896,21 @@ country_event = {
 				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
 			}
 
+			set_temp_variable = { _divisions_per_province = 2 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 8 } #12
+
 			set_temp_variable = { _invasion_state = 1004 } # North East Papua
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 12237 } # Lae
-
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
+			add_to_temp_array = { _invasion_state_provinces = 12237 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 8 }
+			set_temp_variable = { _division_template = 6 }
+
+			set_temp_variable = { _invasion_state = 1004 } # North East Papua
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 12193 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 		}
@@ -4956,7 +4928,7 @@ country_event = {
 		# Seazone control delay mechanic
 		if = {
 			limit = {
-				has_enemy_naval_control = 167 # New Guinea
+				has_enemy_naval_control = 354 # Solomon Sea
 				NOT = { has_country_flag = WA_AI_invasions.54_flag }
 			}
 			set_country_flag = WA_AI_invasions.54_flag
@@ -5014,19 +4986,17 @@ country_event = {
 				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
 			}
 
+			set_temp_variable = { _divisions_per_province = 2 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 8 } #12
+
 			set_temp_variable = { _invasion_state = 634 } # Solomon Islands
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 1085 } # north Bougainville
-			add_to_temp_array = { _invasion_state_provinces = 1358 } # north Bougainville
-
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 8 }
+			add_to_temp_array = { _invasion_state_provinces = 4226 }
+			add_to_temp_array = { _invasion_state_provinces = 4378 }
+			add_to_temp_array = { _invasion_state_provinces = 1358 }
+			add_to_temp_array = { _invasion_state_provinces = 10234}
 			WA_AI_DIVISION_spawn_invasion = yes
 
 		}
@@ -5102,20 +5072,17 @@ country_event = {
 				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
 			}
 
-			set_temp_variable = { _invasion_state = 639 } # Gilbert Islands
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 13021 } # Tarawa atoll
-
 			set_temp_variable = { _divisions_per_province = 3 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
-			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 8 }
-			WA_AI_DIVISION_spawn_invasion = yes
+			set_temp_variable = { _division_template = 9 } #13
 
+			set_temp_variable = { _invasion_state = 639 } # Gilbert Islands
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 13021 }
+			add_to_temp_array = { _invasion_state_provinces = 13020 }
+			add_to_temp_array = { _invasion_state_provinces = 13022 }
+			WA_AI_DIVISION_spawn_invasion = yes
 		}
 		else_if = {
 			limit = {
@@ -5146,92 +5113,92 @@ country_event = {
 }
 
 # Operation Director/Backhander
-country_event = {
-	id = WA_AI_invasions.57
-	hidden = yes
-
-	is_triggered_only = yes
-
-	trigger = {
-		is_ai = yes
-		WA_AI_DIFFICULTY_is_historical = yes
-	}
-
-	immediate = {
-		# Get target country tag
-		737 = { # Bismarck
-			CONTROLLER = {
-				set_temp_variable = { _target_country = id }
-			}
-		}
-
-		if = {
-			limit = {
-				# Triggers for invasion target country and states
-				var:_target_country = {
-					has_war_with = ROOT
-					controls_state = 737 # Bismarck
-				}
-
-				# PLAYER ONLY seazone check
-				if = {
-					limit = {
-						var:_target_country = { is_ai = no }
-						NOT = { has_country_flag = { flag = WA_AI_invasions.57_flag days > 179 } }
-					}
-					NOT = { has_enemy_naval_control = 84 } # Bismarck Sea
-				}
-
-				# Triggers for invasion launch country
-				surrender_progress < 0.1
-
-				# Triggers for 'invasion launch states'
-				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
-			}
-
-			set_temp_variable = { _invasion_state = 737 } # Bismarck
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 1286 } # SW New Britain - Arawe
-			add_to_temp_array = { _invasion_state_provinces = 1329 } # SW New Britain
-
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 8 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-		}
-		else_if = {
-			limit = {
-				# Only refire if the invasion target is still valid
-				var:_target_country = {
-					has_war_with = ROOT
-					controls_state = 737 # Bismarck
-				}
-			}
-			country_event = { id = WA_AI_invasions.57 days = 7 }
-		}
-
-		# Seazone control delay mechanic
-		if = {
-			limit = {
-				has_enemy_naval_control = 84 # Bismarck Sea
-				NOT = { has_country_flag = WA_AI_invasions.57_flag }
-			}
-			set_country_flag = WA_AI_invasions.57_flag
-		}
-		else_if = {
-			limit = {
-				has_country_flag = { flag = WA_AI_invasions.57_flag days > 179 }
-			}
-			clr_country_flag = WA_AI_invasions.57_flag
-		}
-	}
-}
+#country_event = {
+#	id = WA_AI_invasions.57
+#	hidden = yes
+#
+#	is_triggered_only = yes
+#
+#	trigger = {
+#		is_ai = yes
+#		WA_AI_DIFFICULTY_is_historical = yes
+#	}
+#
+#	immediate = {
+#		# Get target country tag
+#		737 = { # Bismarck
+#			CONTROLLER = {
+#				set_temp_variable = { _target_country = id }
+#			}
+#		}
+#
+#		if = {
+#			limit = {
+#				# Triggers for invasion target country and states
+#				var:_target_country = {
+#					has_war_with = ROOT
+#					controls_state = 737 # Bismarck
+#				}
+#
+#				# PLAYER ONLY seazone check
+#				if = {
+#					limit = {
+#						var:_target_country = { is_ai = no }
+#						NOT = { has_country_flag = { flag = WA_AI_invasions.57_flag days > 179 } }
+#					}
+#					NOT = { has_enemy_naval_control = 84 } # Bismarck Sea
+#				}
+#
+#				# Triggers for invasion launch country
+#				surrender_progress < 0.1
+#
+#				# Triggers for 'invasion launch states'
+#				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
+#			}
+#
+#			set_temp_variable = { _invasion_state = 737 } # Bismarck
+#			clear_temp_array = _invasion_state_provinces
+#			add_to_temp_array = { _invasion_state_provinces = 1286 } # SW New Britain - Arawe
+#			add_to_temp_array = { _invasion_state_provinces = 1329 } # SW New Britain
+#
+#			set_temp_variable = { _divisions_per_province = 3 }
+#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+#			set_temp_variable = { _division_template = 7 }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#			set_temp_variable = { _divisions_per_province = 1 }
+#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+#			set_temp_variable = { _division_template = 8 }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#		}
+#		else_if = {
+#			limit = {
+#				# Only refire if the invasion target is still valid
+#				var:_target_country = {
+#					has_war_with = ROOT
+#					controls_state = 737 # Bismarck
+#				}
+#			}
+#			country_event = { id = WA_AI_invasions.57 days = 7 }
+#		}
+#
+#		# Seazone control delay mechanic
+#		if = {
+#			limit = {
+#				has_enemy_naval_control = 84 # Bismarck Sea
+#				NOT = { has_country_flag = WA_AI_invasions.57_flag }
+#			}
+#			set_country_flag = WA_AI_invasions.57_flag
+#		}
+#		else_if = {
+#			limit = {
+#				has_country_flag = { flag = WA_AI_invasions.57_flag days > 179 }
+#			}
+#			clr_country_flag = WA_AI_invasions.57_flag
+#		}
+#	}
+#}
 
 # Operation Flintlock
 country_event = {
@@ -5247,8 +5214,8 @@ country_event = {
 
 	immediate = {
 		# Get target country tag
-		633 = { # Marshall Islands
-			CONTROLLER = {
+		633 = { # marshal islands
+			OWNER = {
 				set_temp_variable = { _target_country = id }
 			}
 		}
@@ -5258,7 +5225,7 @@ country_event = {
 				# Triggers for invasion target country and states
 				var:_target_country = {
 					has_war_with = ROOT
-					controls_state = 633 # Marshall Islands
+					controls_province = 13041 # Kwajalein
 				}
 
 				# PLAYER ONLY seazone check
@@ -5274,21 +5241,18 @@ country_event = {
 				surrender_progress < 0.1
 
 				# Triggers for 'invasion launch states'
-				629 = { is_controlled_by_ROOT_or_ally = yes } # Hawaii
+				639 = { is_controlled_by_ROOT_or_ally = yes } # Gilbert islands
 			}
-
-			set_temp_variable = { _invasion_state = 633 } # Marshall Islands
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 13041 } # Kwajalein atoll
 
 			set_temp_variable = { _divisions_per_province = 3 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
-			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 9 }
+
+			set_temp_variable = { _invasion_state = 633 } # Marshall Islands
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 13041 }
+			add_to_temp_array = { _invasion_state_provinces = 13044 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 		}
@@ -5297,7 +5261,7 @@ country_event = {
 				# Only refire if the invasion target is still valid
 				var:_target_country = {
 					has_war_with = ROOT
-					controls_state = 633 # Marshall Islands
+					controls_province = 13041 # Kwajalein
 				}
 			}
 			country_event = { id = WA_AI_invasions.58 days = 7 }
@@ -5334,8 +5298,8 @@ country_event = {
 
 	immediate = {
 		# Get target country tag
-		633 = { # Marshall Islands
-			CONTROLLER = {
+		633 = { # marshal islands
+			OWNER = {
 				set_temp_variable = { _target_country = id }
 			}
 		}
@@ -5345,7 +5309,7 @@ country_event = {
 				# Triggers for invasion target country and states
 				var:_target_country = {
 					has_war_with = ROOT
-					controls_state = 633 # Marshall Islands
+					controls_province = 13046 # Eniwetok
 				}
 
 				# PLAYER ONLY seazone check
@@ -5361,21 +5325,17 @@ country_event = {
 				surrender_progress < 0.1
 
 				# Triggers for 'invasion launch states'
-				629 = { is_controlled_by_ROOT_or_ally = yes } # Hawaii
+				639 = { is_controlled_by_ROOT_or_ally = yes } # Gilbert islands
 			}
-
-			set_temp_variable = { _invasion_state = 633 } # Marshall Islands
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 13046 } # Eniwetok atoll
 
 			set_temp_variable = { _divisions_per_province = 3 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
-			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 9 }
+
+			set_temp_variable = { _invasion_state = 633 } # Marshall Islands
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 13046 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 		}
@@ -5384,7 +5344,7 @@ country_event = {
 				# Only refire if the invasion target is still valid
 				var:_target_country = {
 					has_war_with = ROOT
-					controls_state = 633 # Marshall Islands
+					controls_province = 13046 # Eniwetok
 				}
 			}
 			country_event = { id = WA_AI_invasions.59 days = 7 }
@@ -5451,18 +5411,14 @@ country_event = {
 				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
 			}
 
-			set_temp_variable = { _invasion_state = 737 } # Bismarck
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 7339 } # Los Negros / Admiralty Islands
-
 			set_temp_variable = { _divisions_per_province = 3 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
-			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 9 }
+			set_temp_variable = { _division_template = 9 } #13
+
+			set_temp_variable = { _invasion_state = 737 } # Bismarck
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 7339 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 		}
@@ -5495,91 +5451,91 @@ country_event = {
 }
 
 # Operation Appease
-country_event = {
-	id = WA_AI_invasions.61
-	hidden = yes
-
-	is_triggered_only = yes
-
-	trigger = {
-		is_ai = yes
-		WA_AI_DIFFICULTY_is_historical = yes
-	}
-
-	immediate = {
-		# Get target country tag
-		737 = { # Bismarck
-			CONTROLLER = {
-				set_temp_variable = { _target_country = id }
-			}
-		}
-
-		if = {
-			limit = {
-				# Triggers for invasion target country and states
-				var:_target_country = {
-					has_war_with = ROOT
-					controls_state = 737 # Bismarck
-				}
-
-				# PLAYER ONLY seazone check
-				if = {
-					limit = {
-						var:_target_country = { is_ai = no }
-						NOT = { has_country_flag = { flag = WA_AI_invasions.61_flag days > 179 } }
-					}
-					NOT = { has_enemy_naval_control = 84 } # Bismarck Sea
-				}
-
-				# Triggers for invasion launch country
-				surrender_progress < 0.1
-
-				# Triggers for 'invasion launch states'
-				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
-			}
-
-			set_temp_variable = { _invasion_state = 737 } # Bismarck
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 4304 } # Bismarck province 4304
-
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 9 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-		}
-		else_if = {
-			limit = {
-				# Only refire if the invasion target is still valid
-				var:_target_country = {
-					has_war_with = ROOT
-					controls_state = 737 # Bismarck
-				}
-			}
-			country_event = { id = WA_AI_invasions.61 days = 7 }
-		}
-
-		# Seazone control delay mechanic
-		if = {
-			limit = {
-				has_enemy_naval_control = 84 # Bismarck Sea
-				NOT = { has_country_flag = WA_AI_invasions.61_flag }
-			}
-			set_country_flag = WA_AI_invasions.61_flag
-		}
-		else_if = {
-			limit = {
-				has_country_flag = { flag = WA_AI_invasions.61_flag days > 179 }
-			}
-			clr_country_flag = WA_AI_invasions.61_flag
-		}
-	}
-}
+#country_event = {
+#	id = WA_AI_invasions.61
+#	hidden = yes
+#
+#	is_triggered_only = yes
+#
+#	trigger = {
+#		is_ai = yes
+#		WA_AI_DIFFICULTY_is_historical = yes
+#	}
+#
+#	immediate = {
+#		# Get target country tag
+#		737 = { # Bismarck
+#			CONTROLLER = {
+#				set_temp_variable = { _target_country = id }
+#			}
+#		}
+#
+#		if = {
+#			limit = {
+#				# Triggers for invasion target country and states
+#				var:_target_country = {
+#					has_war_with = ROOT
+#					controls_state = 737 # Bismarck
+#				}
+#
+#				# PLAYER ONLY seazone check
+#				if = {
+#					limit = {
+#						var:_target_country = { is_ai = no }
+#						NOT = { has_country_flag = { flag = WA_AI_invasions.61_flag days > 179 } }
+#					}
+#					NOT = { has_enemy_naval_control = 84 } # Bismarck Sea
+#				}
+#
+#				# Triggers for invasion launch country
+#				surrender_progress < 0.1
+#
+#				# Triggers for 'invasion launch states'
+#				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
+#			}
+#
+#			set_temp_variable = { _invasion_state = 737 } # Bismarck
+#			clear_temp_array = _invasion_state_provinces
+#			add_to_temp_array = { _invasion_state_provinces = 4304 } # Bismarck province 4304
+#
+#			set_temp_variable = { _divisions_per_province = 3 }
+#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+#			set_temp_variable = { _division_template = 7 }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#			set_temp_variable = { _divisions_per_province = 1 }
+#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+#			set_temp_variable = { _division_template = 9 }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#		}
+#		else_if = {
+#			limit = {
+#				# Only refire if the invasion target is still valid
+#				var:_target_country = {
+#					has_war_with = ROOT
+#					controls_state = 737 # Bismarck
+#				}
+#			}
+#			country_event = { id = WA_AI_invasions.61 days = 7 }
+#		}
+#
+#		# Seazone control delay mechanic
+#		if = {
+#			limit = {
+#				has_enemy_naval_control = 84 # Bismarck Sea
+#				NOT = { has_country_flag = WA_AI_invasions.61_flag }
+#			}
+#			set_country_flag = WA_AI_invasions.61_flag
+#		}
+#		else_if = {
+#			limit = {
+#				has_country_flag = { flag = WA_AI_invasions.61_flag days > 179 }
+#			}
+#			clr_country_flag = WA_AI_invasions.61_flag
+#		}
+#	}
+#}
 
 # Operation Reckless/Persecuter
 country_event = {
@@ -5615,31 +5571,31 @@ country_event = {
 						var:_target_country = { is_ai = no }
 						NOT = { has_country_flag = { flag = WA_AI_invasions.62_flag days > 179 } }
 					}
-					NOT = { has_enemy_naval_control = 167 } # New Guinea
+					NOT = { has_enemy_naval_control = 84 } # Bismark Sea
 				}
 
 				# Triggers for invasion launch country
 				surrender_progress < 0.1
 
 				# Triggers for 'invasion launch states'
-				1004 = { is_controlled_by_ROOT_or_ally = yes } # North East Papua
+				634 = { is_controlled_by_ROOT_or_ally = yes } # Solomon islands
 			}
+
+			set_temp_variable = { _divisions_per_province = 2 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 9 } #13
 
 			set_temp_variable = { _invasion_state = 1002 } # North West Papua
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 12371 } # Hollandia
-			add_to_temp_array = { _invasion_state_provinces = 4468 } # Hollandia area
-
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
+			add_to_temp_array = { _invasion_state_provinces = 12371 }
+			add_to_temp_array = { _invasion_state_provinces = 7529 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 9 }
+			set_temp_variable = { _invasion_state = 1004 } # North East Papua
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 10423 }
 			WA_AI_DIVISION_spawn_invasion = yes
-
 		}
 		else_if = {
 			limit = {
@@ -5655,7 +5611,7 @@ country_event = {
 		# Seazone control delay mechanic
 		if = {
 			limit = {
-				has_enemy_naval_control = 167 # New Guinea
+				has_enemy_naval_control = 84 # Bismark Sea
 				NOT = { has_country_flag = WA_AI_invasions.62_flag }
 			}
 			set_country_flag = WA_AI_invasions.62_flag
@@ -5670,91 +5626,91 @@ country_event = {
 }
 
 # Invasion of Biak
-country_event = {
-	id = WA_AI_invasions.63
-	hidden = yes
-
-	is_triggered_only = yes
-
-	trigger = {
-		is_ai = yes
-		WA_AI_DIFFICULTY_is_historical = yes
-	}
-
-	immediate = {
-		# Get target country tag
-		1002 = { # North West Papua
-			CONTROLLER = {
-				set_temp_variable = { _target_country = id }
-			}
-		}
-
-		if = {
-			limit = {
-				# Triggers for invasion target country and states
-				var:_target_country = {
-					has_war_with = ROOT
-					controls_state = 1002 # North West Papua
-				}
-
-				# PLAYER ONLY seazone check
-				if = {
-					limit = {
-						var:_target_country = { is_ai = no }
-						NOT = { has_country_flag = { flag = WA_AI_invasions.63_flag days > 179 } }
-					}
-					NOT = { has_enemy_naval_control = 167 } # New Guinea
-				}
-
-				# Triggers for invasion launch country
-				surrender_progress < 0.1
-
-				# Triggers for 'invasion launch states'
-				1004 = { is_controlled_by_ROOT_or_ally = yes } # North East Papua
-			}
-
-			set_temp_variable = { _invasion_state = 1002 } # North West Papua
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 7542 } # Biak
-
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 9 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-		}
-		else_if = {
-			limit = {
-				# Only refire if the invasion target is still valid
-				var:_target_country = {
-					has_war_with = ROOT
-					controls_state = 1002 # North West Papua
-				}
-			}
-			country_event = { id = WA_AI_invasions.63 days = 7 }
-		}
-
-		# Seazone control delay mechanic
-		if = {
-			limit = {
-				has_enemy_naval_control = 167 # New Guinea
-				NOT = { has_country_flag = WA_AI_invasions.63_flag }
-			}
-			set_country_flag = WA_AI_invasions.63_flag
-		}
-		else_if = {
-			limit = {
-				has_country_flag = { flag = WA_AI_invasions.63_flag days > 179 }
-			}
-			clr_country_flag = WA_AI_invasions.63_flag
-		}
-	}
-}
+#country_event = {
+#	id = WA_AI_invasions.63
+#	hidden = yes
+#
+#	is_triggered_only = yes
+#
+#	trigger = {
+#		is_ai = yes
+#		WA_AI_DIFFICULTY_is_historical = yes
+#	}
+#
+#	immediate = {
+#		# Get target country tag
+#		1002 = { # North West Papua
+#			CONTROLLER = {
+#				set_temp_variable = { _target_country = id }
+#			}
+#		}
+#
+#		if = {
+#			limit = {
+#				# Triggers for invasion target country and states
+#				var:_target_country = {
+#					has_war_with = ROOT
+#					controls_state = 1002 # North West Papua
+#				}
+#
+#				# PLAYER ONLY seazone check
+#				if = {
+#					limit = {
+#						var:_target_country = { is_ai = no }
+#						NOT = { has_country_flag = { flag = WA_AI_invasions.63_flag days > 179 } }
+#					}
+#					NOT = { has_enemy_naval_control = 167 } # New Guinea
+#				}
+#
+#				# Triggers for invasion launch country
+#				surrender_progress < 0.1
+#
+#				# Triggers for 'invasion launch states'
+#				1004 = { is_controlled_by_ROOT_or_ally = yes } # North East Papua
+#			}
+#
+#			set_temp_variable = { _invasion_state = 1002 } # North West Papua
+#			clear_temp_array = _invasion_state_provinces
+#			add_to_temp_array = { _invasion_state_provinces = 7542 } # Biak
+#
+#			set_temp_variable = { _divisions_per_province = 2 }
+#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+#			set_temp_variable = { _division_template = 1 }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#			set_temp_variable = { _divisions_per_province = 1 }
+#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+#			set_temp_variable = { _division_template = 9 }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#		}
+#		else_if = {
+#			limit = {
+#				# Only refire if the invasion target is still valid
+#				var:_target_country = {
+#					has_war_with = ROOT
+#					controls_state = 1002 # North West Papua
+#				}
+#			}
+#			country_event = { id = WA_AI_invasions.63 days = 7 }
+#		}
+#
+#		# Seazone control delay mechanic
+#		if = {
+#			limit = {
+#				has_enemy_naval_control = 167 # New Guinea
+#				NOT = { has_country_flag = WA_AI_invasions.63_flag }
+#			}
+#			set_country_flag = WA_AI_invasions.63_flag
+#		}
+#		else_if = {
+#			limit = {
+#				has_country_flag = { flag = WA_AI_invasions.63_flag days > 179 }
+#			}
+#			clr_country_flag = WA_AI_invasions.63_flag
+#		}
+#	}
+#}
 
 # Operation Forager
 country_event = {
@@ -5798,21 +5754,16 @@ country_event = {
 
 				# Triggers for 'invasion launch states'
 				633 = { is_controlled_by_ROOT_or_ally = yes } # Marshall Islands
-				631 = { is_controlled_by_ROOT_or_ally = yes } # Midway Island
 			}
+
+			set_temp_variable = { _divisions_per_province = 5 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 9 }
 
 			set_temp_variable = { _invasion_state = 646 } # Saipan
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 3995 } # Saipan island
-
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 9 }
+			add_to_temp_array = { _invasion_state_provinces = 3995 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 		}
@@ -5870,7 +5821,6 @@ country_event = {
 				var:_target_country = {
 					has_war_with = ROOT
 					controls_state = 863 # Tinian
-					controls_state = 638 # Guam
 				}
 
 				# PLAYER ONLY seazone check
@@ -5886,36 +5836,23 @@ country_event = {
 				surrender_progress < 0.1
 
 				# Triggers for 'invasion launch states'
-				646 = { is_controlled_by_ROOT_or_ally = yes } # Saipan
+				633 = { is_controlled_by_ROOT_or_ally = yes } # Marshall Islands
 			}
+
+			set_temp_variable = { _divisions_per_province = 3 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 9 }
 
 			set_temp_variable = { _invasion_state = 863 } # Tinian
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 13024 } # Tinian island
-
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
+			add_to_temp_array = { _invasion_state_provinces = 13024 }
 			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 9 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
 
 			set_temp_variable = { _invasion_state = 638 } # Guam
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 12140 } # Guam island
-
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 9 }
+			add_to_temp_array = { _invasion_state_provinces = 12140 }
+			add_to_temp_array = { _invasion_state_provinces = 13261 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 		}
@@ -5962,7 +5899,7 @@ country_event = {
 
 	immediate = {
 		# Get target country tag
-		669 = { # South West Papua
+		1002 = { # North West Papua
 			CONTROLLER = {
 				set_temp_variable = { _target_country = id }
 			}
@@ -5973,7 +5910,7 @@ country_event = {
 				# Triggers for invasion target country and states
 				var:_target_country = {
 					has_war_with = ROOT
-					controls_state = 669 # South West Papua
+					controls_state = 1002 # North West Papua
 				}
 
 				# PLAYER ONLY seazone check
@@ -5982,7 +5919,7 @@ country_event = {
 						var:_target_country = { is_ai = no }
 						NOT = { has_country_flag = { flag = WA_AI_invasions.66_flag days > 179 } }
 					}
-					NOT = { has_enemy_naval_control = 167 } # New Guinea
+					NOT = { has_enemy_naval_control = 84 } # Bismark Sea
 				}
 
 				# Triggers for invasion launch country
@@ -5992,28 +5929,23 @@ country_event = {
 				1004 = { is_controlled_by_ROOT_or_ally = yes } # North East Papua
 			}
 
-			set_temp_variable = { _invasion_state = 669 } # South West Papua
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 4593 } # Sorong area
-			add_to_temp_array = { _invasion_state_provinces = 7627 } # Sorong area
-
 			set_temp_variable = { _divisions_per_province = 3 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
-			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 9 }
-			WA_AI_DIVISION_spawn_invasion = yes
+			set_temp_variable = { _division_template = 9 } #13
 
+			set_temp_variable = { _invasion_state = 1002 } # South West Papua
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 4468 }
+			add_to_temp_array = { _invasion_state_provinces = 12315 }
+			WA_AI_DIVISION_spawn_invasion = yes
 		}
 		else_if = {
 			limit = {
 				# Only refire if the invasion target is still valid
 				var:_target_country = {
 					has_war_with = ROOT
-					controls_state = 669 # South West Papua
+					controls_state = 1002 # North West Papua
 				}
 			}
 			country_event = { id = WA_AI_invasions.66 days = 7 }
@@ -6022,7 +5954,7 @@ country_event = {
 		# Seazone control delay mechanic
 		if = {
 			limit = {
-				has_enemy_naval_control = 167 # New Guinea
+				has_enemy_naval_control = 84 # Bismark Sea
 				NOT = { has_country_flag = WA_AI_invasions.66_flag }
 			}
 			set_country_flag = WA_AI_invasions.66_flag
@@ -6070,31 +6002,27 @@ country_event = {
 						var:_target_country = { is_ai = no }
 						NOT = { has_country_flag = { flag = WA_AI_invasions.67_flag days > 179 } }
 					}
-					NOT = { has_enemy_naval_control = 160 } # Philippines
+					NOT = { has_enemy_naval_control = 78 } # S.Philippines Sea
 				}
 
 				# Triggers for invasion launch country
 				surrender_progress < 0.1
 
 				# Triggers for 'invasion launch states'
-				647 = { is_controlled_by_ROOT_or_ally = yes } # Palau
+				638 = { is_controlled_by_ROOT_or_ally = yes } # Palau
 			}
+
+			set_temp_variable = { _divisions_per_province = 2 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 9 } #13
 
 			set_temp_variable = { _invasion_state = 625 } # Samar
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 1224 } # Samar coast
-			add_to_temp_array = { _invasion_state_provinces = 1311 } # Samar coast
-
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
+			add_to_temp_array = { _invasion_state_provinces = 1224 }
+			add_to_temp_array = { _invasion_state_provinces = 4373 }
+			add_to_temp_array = { _invasion_state_provinces = 4269 }
 			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 9 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
 		}
 		else_if = {
 			limit = {
@@ -6110,7 +6038,7 @@ country_event = {
 		# Seazone control delay mechanic
 		if = {
 			limit = {
-				has_enemy_naval_control = 160 # Philippines
+				has_enemy_naval_control = 78 # S.Philippines Sea
 				NOT = { has_country_flag = WA_AI_invasions.67_flag }
 			}
 			set_country_flag = WA_AI_invasions.67_flag
@@ -6168,19 +6096,15 @@ country_event = {
 				646 = { is_controlled_by_ROOT_or_ally = yes } # Saipan
 			}
 
+			set_temp_variable = { _divisions_per_province = 3 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 9 }
+
 			set_temp_variable = { _invasion_state = 647 } # Palau
 			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 4357 } # Palau island
 			add_to_temp_array = { _invasion_state_provinces = 12103 } # Palau island
-
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 9 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 		}
@@ -6256,28 +6180,16 @@ country_event = {
 				1002 = { is_controlled_by_ROOT_or_ally = yes } # North West Papua
 			}
 
-			set_temp_variable = { _invasion_state = 668 } # The Moluccas
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 1419 } # Moluccas coast
-
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
 			set_temp_variable = { _divisions_per_province = 1 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 9 }
-			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _division_template = 9 } #13
 
 			set_temp_variable = { _invasion_state = 668 } # The Moluccas
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 7369 } # Moluccas coast
+			add_to_temp_array = { _invasion_state_provinces = 7413 }
+			add_to_temp_array = { _invasion_state_provinces = 10141 }
 
-			set_temp_variable = { _division_template = 1 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _division_template = 9 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 		}
@@ -6306,6 +6218,76 @@ country_event = {
 			}
 			clr_country_flag = WA_AI_invasions.69_flag
 		}
+	}
+}
+
+#Operation Market Garden Para
+country_event = {
+	id = WA_AI_invasions.85
+	hidden = yes
+
+	is_triggered_only = yes
+
+	trigger = {
+		is_ai = yes
+		WA_AI_DIFFICULTY_is_historical = yes
+	}
+
+	immediate = {
+		# Get target country tag
+		7 = { # Holland
+			CONTROLLER = {
+				set_temp_variable = { _target_country = id }
+			}
+		}
+
+		if = {
+			limit = {
+				# Triggers for invasion target country and states
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 7 # Holland
+				}
+
+				# PLAYER ONLY seazone check
+
+				# Triggers for invasion launch country
+				surrender_progress < 0.1
+
+				# Triggers for 'invasion launch states'
+				6 = { is_controlled_by_ROOT_or_ally = yes } # North West Papua
+			}
+
+			set_temp_variable = { _divisions_per_province = 2 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 6 }
+
+			set_temp_variable = { _invasion_state = 35 } # Noord Brabant
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 6496  }
+			add_to_temp_array = { _invasion_state_provinces = 11456 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _invasion_state = 36 } # Friesland
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 9363  }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+		}
+		else_if = {
+			limit = {
+				# Only refire if the invasion target is still valid
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 7 # Holland
+				}
+			}
+			country_event = { id = WA_AI_invasions.85 days = 7 }
+		}
+
+		# Seazone control delay mechanic
+
 	}
 }
 
@@ -6343,7 +6325,7 @@ country_event = {
 						var:_target_country = { is_ai = no }
 						NOT = { has_country_flag = { flag = WA_AI_invasions.70_flag days > 179 } }
 					}
-					NOT = { has_enemy_naval_control = 160 } # Philippines
+					NOT = { has_enemy_naval_control = 80 } # Sulu Sea
 				}
 
 				# Triggers for invasion launch country
@@ -6353,18 +6335,16 @@ country_event = {
 				647 = { is_controlled_by_ROOT_or_ally = yes } # Palau
 			}
 
+			set_temp_variable = { _divisions_per_province = 2 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 9 } #13
+
 			set_temp_variable = { _invasion_state = 624 } # Central Islands
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 4288 } # Calapan / Mindoro
-
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 9 }
+			add_to_temp_array = { _invasion_state_provinces = 4288 }
+			add_to_temp_array = { _invasion_state_provinces = 13400 }
+			add_to_temp_array = { _invasion_state_provinces = 10272 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 		}
@@ -6382,7 +6362,7 @@ country_event = {
 		# Seazone control delay mechanic
 		if = {
 			limit = {
-				has_enemy_naval_control = 160 # Philippines
+				has_enemy_naval_control = 80 # Sulu Sea
 				NOT = { has_country_flag = WA_AI_invasions.70_flag }
 			}
 			set_country_flag = WA_AI_invasions.70_flag
@@ -6430,28 +6410,26 @@ country_event = {
 						var:_target_country = { is_ai = no }
 						NOT = { has_country_flag = { flag = WA_AI_invasions.71_flag days > 179 } }
 					}
-					NOT = { has_enemy_naval_control = 160 } # Philippines
+					NOT = { has_enemy_naval_control = 75 } # South China Sea
 				}
 
 				# Triggers for invasion launch country
 				surrender_progress < 0.1
 
 				# Triggers for 'invasion launch states'
-				624 = { is_controlled_by_ROOT_or_ally = yes } # Central Islands
+				647 = { is_controlled_by_ROOT_or_ally = yes } # Palau
 			}
+
+			set_temp_variable = { _divisions_per_province = 3 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 9 } #13
 
 			set_temp_variable = { _invasion_state = 623 } # Luzon
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 1415 } # Dagupan
-
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 9 }
+			add_to_temp_array = { _invasion_state_provinces = 1415  }
+			add_to_temp_array = { _invasion_state_provinces = 10280 }
+			add_to_temp_array = { _invasion_state_provinces = 12253 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 		}
@@ -6469,7 +6447,7 @@ country_event = {
 		# Seazone control delay mechanic
 		if = {
 			limit = {
-				has_enemy_naval_control = 160 # Philippines
+				has_enemy_naval_control =  75 # South China Sea
 				NOT = { has_country_flag = WA_AI_invasions.71_flag }
 			}
 			set_country_flag = WA_AI_invasions.71_flag
@@ -6509,7 +6487,6 @@ country_event = {
 				var:_target_country = {
 					has_war_with = ROOT
 					controls_state = 626 # Palawan
-					controls_state = 627 # Mindanao
 				}
 
 				# PLAYER ONLY seazone check
@@ -6518,42 +6495,33 @@ country_event = {
 						var:_target_country = { is_ai = no }
 						NOT = { has_country_flag = { flag = WA_AI_invasions.72_flag days > 179 } }
 					}
-					NOT = { has_enemy_naval_control = 160 } # Philippines
+					NOT = { has_enemy_naval_control = 80 } # Sulu Sea
 				}
 
 				# Triggers for invasion launch country
 				surrender_progress < 0.1
 
 				# Triggers for 'invasion launch states'
-				624 = { is_controlled_by_ROOT_or_ally = yes } # Central Islands
+				647 = { is_controlled_by_ROOT_or_ally = yes } # Palau
 			}
-
-			set_temp_variable = { _invasion_state = 626 } # Palawan
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 4429 } # Puerto Princesa
-
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 9 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _invasion_state = 627 } # Mindanao
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 12116 } # Zamboanga
 
 			set_temp_variable = { _divisions_per_province = 3 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
+
+			set_temp_variable = { _division_template = 9 } #13
+
+			set_temp_variable = { _invasion_state = 626 } # Palawan
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 4429  }
+			add_to_temp_array = { _invasion_state_provinces = 10145 }
+			add_to_temp_array = { _invasion_state_provinces = 13933 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 9 }
+			set_temp_variable = { _invasion_state = 627 } # Mindano
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 1421  }
+			add_to_temp_array = { _invasion_state_provinces = 4399  }
+			add_to_temp_array = { _invasion_state_provinces = 10184 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 		}
@@ -6563,7 +6531,6 @@ country_event = {
 				var:_target_country = {
 					has_war_with = ROOT
 					controls_state = 626 # Palawan
-					controls_state = 627 # Mindanao
 				}
 			}
 			country_event = { id = WA_AI_invasions.72 days = 7 }
@@ -6572,7 +6539,7 @@ country_event = {
 		# Seazone control delay mechanic
 		if = {
 			limit = {
-				has_enemy_naval_control = 160 # Philippines
+				has_enemy_naval_control = 80 # Sulu Sea
 				NOT = { has_country_flag = WA_AI_invasions.72_flag }
 			}
 			set_country_flag = WA_AI_invasions.72_flag
@@ -6612,7 +6579,6 @@ country_event = {
 				var:_target_country = {
 					has_war_with = ROOT
 					controls_state = 628 # Cebu
-					controls_state = 624 # Central Islands
 				}
 
 				# PLAYER ONLY seazone check
@@ -6621,42 +6587,25 @@ country_event = {
 						var:_target_country = { is_ai = no }
 						NOT = { has_country_flag = { flag = WA_AI_invasions.73_flag days > 179 } }
 					}
-					NOT = { has_enemy_naval_control = 160 } # Philippines
+					NOT = { has_enemy_naval_control = 80 } # Sulu Sea
 				}
 
 				# Triggers for invasion launch country
 				surrender_progress < 0.1
 
 				# Triggers for 'invasion launch states'
-				625 = { is_controlled_by_ROOT_or_ally = yes } # Samar
+				647 = { is_controlled_by_ROOT_or_ally = yes } # Palau
 			}
+
+			set_temp_variable = { _divisions_per_province = 3 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 9 } #13
 
 			set_temp_variable = { _invasion_state = 628 } # Cebu
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 1261 } # Cebu
-
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 9 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _invasion_state = 624 } # Central Islands
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 4228 } # Capiz / Panay
-
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 9 }
+			add_to_temp_array = { _invasion_state_provinces = 1368 }
+			add_to_temp_array = { _invasion_state_provinces = 12118 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 		}
@@ -6666,7 +6615,6 @@ country_event = {
 				var:_target_country = {
 					has_war_with = ROOT
 					controls_state = 628 # Cebu
-					controls_state = 624 # Central Islands
 				}
 			}
 			country_event = { id = WA_AI_invasions.73 days = 7 }
@@ -6675,7 +6623,7 @@ country_event = {
 		# Seazone control delay mechanic
 		if = {
 			limit = {
-				has_enemy_naval_control = 160 # Philippines
+				has_enemy_naval_control = 80 # Sulu Sea
 				NOT = { has_country_flag = WA_AI_invasions.73_flag }
 			}
 			set_country_flag = WA_AI_invasions.73_flag
@@ -6733,33 +6681,26 @@ country_event = {
 				646 = { is_controlled_by_ROOT_or_ally = yes } # Saipan
 			}
 
-			set_temp_variable = { _invasion_state = 645 } # Iwo Jima
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 13025 } # Iwo Jima
-
-			set_temp_variable = { _divisions_per_province = 3 }
+			set_temp_variable = { _divisions_per_province = 5 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
-			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 9 }
-			WA_AI_DIVISION_spawn_invasion = yes
 
 			set_temp_variable = { _invasion_state = 645 } # Iwo Jima
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 13262 } # Iwo Jima island
+			add_to_temp_array = { _invasion_state_provinces = 13262 }
+			WA_AI_DIVISION_spawn_invasion = yes
 
 			set_temp_variable = { _divisions_per_province = 3 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
+
+			set_temp_variable = { _division_template = 9 } #13
+
+			set_temp_variable = { _invasion_state = 645 } # Iwo Jima
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 13025 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 9 }
-			WA_AI_DIVISION_spawn_invasion = yes
 
 		}
 		else_if = {
@@ -6824,28 +6765,29 @@ country_event = {
 						var:_target_country = { is_ai = no }
 						NOT = { has_country_flag = { flag = WA_AI_invasions.75_flag days > 179 } }
 					}
-					NOT = { has_enemy_naval_control = 240 } # South Sea of Japan
+					NOT = { has_enemy_naval_control = 94 } # W. Mariana Region
 				}
 
 				# Triggers for invasion launch country
 				surrender_progress < 0.1
 
 				# Triggers for 'invasion launch states'
-				645 = { is_controlled_by_ROOT_or_ally = yes } # Iwo Jima
+				646 = { is_controlled_by_ROOT_or_ally = yes } # Saipan
 			}
+
+			set_temp_variable = { _divisions_per_province = 2 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 9 }
 
 			set_temp_variable = { _invasion_state = 526 } # Okinawa
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 11932 } # Naha
-			add_to_temp_array = { _invasion_state_provinces = 1123 } # Okinawa coast
-			add_to_temp_array = { _invasion_state_provinces = 7115 } # Okinawa
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _division_template = 9 }
+			add_to_temp_array = { _invasion_state_provinces = 11932 }
+			add_to_temp_array = { _invasion_state_provinces = 5008 }
+			add_to_temp_array = { _invasion_state_provinces = 13271 }
+			add_to_temp_array = { _invasion_state_provinces = 8185 }
+			add_to_temp_array = { _invasion_state_provinces = 13995 }
+			add_to_temp_array = { _invasion_state_provinces = 13994 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 		}
@@ -6863,7 +6805,7 @@ country_event = {
 		# Seazone control delay mechanic
 		if = {
 			limit = {
-				has_enemy_naval_control = 240 # South Sea of Japan
+				has_enemy_naval_control = 94 # W. Mariana Region
 				NOT = { has_country_flag = WA_AI_invasions.75_flag }
 			}
 			set_country_flag = WA_AI_invasions.75_flag
@@ -6911,7 +6853,7 @@ country_event = {
 						var:_target_country = { is_ai = no }
 						NOT = { has_country_flag = { flag = WA_AI_invasions.76_flag days > 179 } }
 					}
-					NOT = { has_enemy_naval_control = 160 } # Philippines
+					NOT = { has_enemy_naval_control = 80 } # Sulu Sea
 				}
 
 				# Triggers for invasion launch country
@@ -6921,28 +6863,16 @@ country_event = {
 				628 = { is_controlled_by_ROOT_or_ally = yes } # Cebu
 			}
 
-			set_temp_variable = { _invasion_state = 627 } # Mindanao
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 4399 } # Cagayan de Oro area
-
-			set_temp_variable = { _divisions_per_province = 3 }
+			set_temp_variable = { _divisions_per_province = 2 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
-			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 9 }
-			WA_AI_DIVISION_spawn_invasion = yes
+			set_temp_variable = { _division_template = 9 } #13
 
 			set_temp_variable = { _invasion_state = 627 } # Mindanao
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 10184 } # Cotabato area
-
-			set_temp_variable = { _division_template = 1 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _division_template = 9 }
+			add_to_temp_array = { _invasion_state_provinces = 10243 }
+			add_to_temp_array = { _invasion_state_provinces = 10214 }
+			add_to_temp_array = { _invasion_state_provinces = 10300 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 		}
@@ -6960,7 +6890,7 @@ country_event = {
 		# Seazone control delay mechanic
 		if = {
 			limit = {
-				has_enemy_naval_control = 160 # Philippines
+				has_enemy_naval_control = 80 # Sulu Sea
 				NOT = { has_country_flag = WA_AI_invasions.76_flag }
 			}
 			set_country_flag = WA_AI_invasions.76_flag
@@ -6988,7 +6918,7 @@ country_event = {
 
 	immediate = {
 		# Get target country tag
-		334 = { # Kalimantan
+		333 = { # North Borneo
 			CONTROLLER = {
 				set_temp_variable = { _target_country = id }
 			}
@@ -6999,7 +6929,6 @@ country_event = {
 				# Triggers for invasion target country and states
 				var:_target_country = {
 					has_war_with = ROOT
-					controls_state = 334 # Kalimantan
 					controls_state = 333 # North Borneo
 				}
 
@@ -7009,7 +6938,7 @@ country_event = {
 						var:_target_country = { is_ai = no }
 						NOT = { has_country_flag = { flag = WA_AI_invasions.77_flag days > 179 } }
 					}
-					NOT = { has_enemy_naval_control = 159 } # Southern Borneo
+					NOT = { has_enemy_naval_control = 231 } # Riau Archipelqgo
 				}
 
 				# Triggers for invasion launch country
@@ -7019,31 +6948,21 @@ country_event = {
 				647 = { is_controlled_by_ROOT_or_ally = yes } # Palau
 			}
 
-			set_temp_variable = { _invasion_state = 334 } # Kalimantan
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 7415 } # Tarakan
-
 			set_temp_variable = { _divisions_per_province = 1 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
-			WA_AI_DIVISION_spawn_invasion = yes
 
-			set_temp_variable = { _division_template = 9 }
-			WA_AI_DIVISION_spawn_invasion = yes
+			set_temp_variable = { _division_template = 9 } #13
 
+			set_temp_variable = { _invasion_state = 334 } # Kalimantan
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 10325 }
+			add_to_temp_array = { _invasion_state_provinces = 1404 }
+			WA_AI_DIVISION_spawn_invasion = yes
 
 			set_temp_variable = { _invasion_state = 333 } # North Borneo
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 7371 } # Brunei
-
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 9 }
+			add_to_temp_array = { _invasion_state_provinces = 7371 }
+			add_to_temp_array = { _invasion_state_provinces = 12171 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 		}
@@ -7052,7 +6971,6 @@ country_event = {
 				# Only refire if the invasion target is still valid
 				var:_target_country = {
 					has_war_with = ROOT
-					controls_state = 334 # Kalimantan
 					controls_state = 333 # North Borneo
 				}
 			}
@@ -7062,7 +6980,7 @@ country_event = {
 		# Seazone control delay mechanic
 		if = {
 			limit = {
-				has_enemy_naval_control = 159 # Southern Borneo
+				has_enemy_naval_control = 231 # Riau Archipelqgo
 				NOT = { has_country_flag = WA_AI_invasions.77_flag }
 			}
 			set_country_flag = WA_AI_invasions.77_flag
@@ -7077,124 +6995,122 @@ country_event = {
 }
 
 # Operation Downfall
-country_event = {
-	id = WA_AI_invasions.78
-	hidden = yes
-
-	is_triggered_only = yes
-
-	trigger = {
-		is_ai = yes
-		WA_AI_DIFFICULTY_is_historical = yes
-	}
-
-	immediate = {
-		# Get target country tag
-		1089 = { # Minami Kyushu
-			CONTROLLER = {
-				set_temp_variable = { _target_country = id }
-			}
-		}
-
-		if = {
-			limit = {
-				# Triggers for invasion target country and states
-				var:_target_country = {
-					has_war_with = ROOT
-					controls_state = 1089 # Minami Kyushu
-					controls_state = 530 # Shikoku
-					controls_state = 282 # Kanto
-				}
-
-				# PLAYER ONLY seazone check
-				if = {
-					limit = {
-						var:_target_country = { is_ai = no }
-						NOT = { has_country_flag = { flag = WA_AI_invasions.78_flag days > 179 } }
-					}
-					NOT = { has_enemy_naval_control = 154 } # Home Islands
-				}
-
-				# Triggers for invasion launch country
-				surrender_progress < 0.1
-
-				# Triggers for 'invasion launch states'
-				526 = { is_controlled_by_ROOT_or_ally = yes } # Okinawa
-			}
-
-			set_temp_variable = { _invasion_state = 1089 } # Minami Kyushu
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 4102 } # Kagoshima
-			add_to_temp_array = { _invasion_state_provinces = 1183 } # Kyushu coast
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _division_template = 9 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-
-			set_temp_variable = { _invasion_state = 530 } # Shikoku
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 4179 } # Matsuyama
-
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 9 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-
-			set_temp_variable = { _invasion_state = 282 } # Kanto
-			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 9998 } # Yokohama
-
-			set_temp_variable = { _divisions_per_province = 2 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 1 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-			set_temp_variable = { _divisions_per_province = 1 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 9 }
-			WA_AI_DIVISION_spawn_invasion = yes
-
-		}
-		else_if = {
-			limit = {
-				# Only refire if the invasion target is still valid
-				var:_target_country = {
-					has_war_with = ROOT
-					controls_state = 1089 # Minami Kyushu
-					controls_state = 530 # Shikoku
-					controls_state = 282 # Kanto
-				}
-			}
-			country_event = { id = WA_AI_invasions.78 days = 7 }
-		}
-
-		# Seazone control delay mechanic
-		if = {
-			limit = {
-				has_enemy_naval_control = 154 # Home Islands
-				NOT = { has_country_flag = WA_AI_invasions.78_flag }
-			}
-			set_country_flag = WA_AI_invasions.78_flag
-		}
-		else_if = {
-			limit = {
-				has_country_flag = { flag = WA_AI_invasions.78_flag days > 179 }
-			}
-			clr_country_flag = WA_AI_invasions.78_flag
-		}
-	}
-}
+#country_event = {
+#	id = WA_AI_invasions.78
+#	hidden = yes
+#
+#	is_triggered_only = yes
+#
+#	trigger = {
+#		is_ai = yes
+#		WA_AI_DIFFICULTY_is_historical = yes
+#	}
+#
+#	immediate = {
+#		# Get target country tag
+#		1089 = { # Minami Kyushu
+#			CONTROLLER = {
+#				set_temp_variable = { _target_country = id }
+#			}
+#		}
+#
+#		if = {
+#			limit = {
+#				# Triggers for invasion target country and states
+#				var:_target_country = {
+#					has_war_with = ROOT
+#					controls_state = 1089 # Minami Kyushu
+#					controls_state = 530 # Shikoku
+#					controls_state = 282 # Kanto
+#				}
+#
+#				# PLAYER ONLY seazone check
+#				if = {
+#					limit = {
+#						var:_target_country = { is_ai = no }
+#						NOT = { has_country_flag = { flag = WA_AI_invasions.78_flag days > 179 } }
+#					}
+#					NOT = { has_enemy_naval_control = 154 } # Home Islands
+#				}
+#
+#				# Triggers for invasion launch country
+#				surrender_progress < 0.1
+#
+#				# Triggers for 'invasion launch states'
+#				526 = { is_controlled_by_ROOT_or_ally = yes } # Okinawa
+#			}
+#
+#			set_temp_variable = { _invasion_state = 1089 } # Minami Kyushu
+#			clear_temp_array = _invasion_state_provinces
+#			add_to_temp_array = { _invasion_state_provinces = 4102 } # Kagoshima
+#			add_to_temp_array = { _invasion_state_provinces = 1183 } # Kyushu coast
+#
+#			set_temp_variable = { _divisions_per_province = 1 }
+#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+#			set_temp_variable = { _division_template = 1 }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#			set_temp_variable = { _division_template = 9 }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#			set_temp_variable = { _invasion_state = 530 } # Shikoku
+#			clear_temp_array = _invasion_state_provinces
+#			add_to_temp_array = { _invasion_state_provinces = 4179 } # Matsuyama
+#
+#			set_temp_variable = { _divisions_per_province = 3 }
+#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+#			set_temp_variable = { _division_template = 7 }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#			set_temp_variable = { _divisions_per_province = 1 }
+#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+#			set_temp_variable = { _division_template = 9 }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#			set_temp_variable = { _invasion_state = 282 } # Kanto
+#			clear_temp_array = _invasion_state_provinces
+#			add_to_temp_array = { _invasion_state_provinces = 9998 } # Yokohama
+#
+#			set_temp_variable = { _divisions_per_province = 2 }
+#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+#			set_temp_variable = { _division_template = 1 }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#			set_temp_variable = { _divisions_per_province = 1 }
+#			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+#			set_temp_variable = { _division_template = 9 }
+#			WA_AI_DIVISION_spawn_invasion = yes
+#
+#		}
+#		else_if = {
+#			limit = {
+#				# Only refire if the invasion target is still valid
+#				var:_target_country = {
+#					has_war_with = ROOT
+#					controls_state = 1089 # Minami Kyushu
+#					controls_state = 530 # Shikoku
+#					controls_state = 282 # Kanto
+#				}
+#			}
+#			country_event = { id = WA_AI_invasions.78 days = 7 }
+#		}
+#
+#		# Seazone control delay mechanic
+#		if = {
+#			limit = {
+#				has_enemy_naval_control = 154 # Home Islands
+#				NOT = { has_country_flag = WA_AI_invasions.78_flag }
+#			}
+#			set_country_flag = WA_AI_invasions.78_flag
+#		}
+#		else_if = {
+#			limit = {
+#				has_country_flag = { flag = WA_AI_invasions.78_flag days > 179 }
+#			}
+#			clr_country_flag = WA_AI_invasions.78_flag
+#		}
+#	}
+#}
 
 #########################################################################################
 #########################################################################################
@@ -7247,7 +7163,7 @@ country_event = {
 						var:_target_country = { is_ai = no }
 						NOT = { has_country_flag = { flag = WA_AI_invasions.79_flag days > 179 } }
 					}
-					NOT = { has_enemy_naval_control = 167 } # New Guinea
+					NOT = { has_enemy_naval_control = 354 } # Solomon Sea
 				}
 
 				# Triggers for invasion launch country
@@ -7257,14 +7173,17 @@ country_event = {
 				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
 			}
 
+			set_temp_variable = { _divisions_per_province = 1 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 7 }
+
 			set_temp_variable = { _invasion_state = 1004 } # North East Papua
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 12237 } # Lae
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
+			add_to_temp_array = { _invasion_state_provinces = 12237 }
+			add_to_temp_array = { _invasion_state_provinces = 7365 }
+			add_to_temp_array = { _invasion_state_provinces = 10251 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
 
 		}
 		else_if = {
@@ -7281,7 +7200,7 @@ country_event = {
 		# Seazone control delay mechanic
 		if = {
 			limit = {
-				has_enemy_naval_control = 167 # New Guinea
+				has_enemy_naval_control = 354 # Solomon Sea
 				NOT = { has_country_flag = WA_AI_invasions.79_flag }
 			}
 			set_country_flag = WA_AI_invasions.79_flag
@@ -7339,14 +7258,15 @@ country_event = {
 				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
 			}
 
+			set_temp_variable = { _divisions_per_province = 2 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 7 }
+
 			set_temp_variable = { _invasion_state = 737 } # Bismarck
 			clear_temp_array = _invasion_state_provinces
 			add_to_temp_array = { _invasion_state_provinces = 4304 } # Bismarck province 4304
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
 
 		}
 		else_if = {
@@ -7421,15 +7341,16 @@ country_event = {
 				1039 = { is_controlled_by_ROOT_or_ally = yes } # Auckland
 			}
 
+			set_temp_variable = { _divisions_per_province = 2 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 7 }
+
 			set_temp_variable = { _invasion_state = 737 } # Bismarck
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 4352 } # south of Rabaul
-			add_to_temp_array = { _invasion_state_provinces = 4421 } # south of Rabaul
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
+			add_to_temp_array = { _invasion_state_provinces = 1286 }
+			add_to_temp_array = { _invasion_state_provinces = 10206 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
 
 		}
 		else_if = {
@@ -7474,7 +7395,7 @@ country_event = {
 
 	immediate = {
 		# Get target country tag
-		334 = { # Kalimantan
+		333 = { # North Borneo
 			CONTROLLER = {
 				set_temp_variable = { _target_country = id }
 			}
@@ -7485,7 +7406,6 @@ country_event = {
 				# Triggers for invasion target country and states
 				var:_target_country = {
 					has_war_with = ROOT
-					controls_state = 334 # Kalimantan
 					controls_state = 333 # North Borneo
 				}
 
@@ -7495,7 +7415,7 @@ country_event = {
 						var:_target_country = { is_ai = no }
 						NOT = { has_country_flag = { flag = WA_AI_invasions.82_flag days > 179 } }
 					}
-					NOT = { has_enemy_naval_control = 159 } # Southern Borneo
+					NOT = { has_enemy_naval_control = 231 } # Riau Archipelqgo
 				}
 
 				# Triggers for invasion launch country
@@ -7504,22 +7424,23 @@ country_event = {
 				# Triggers for 'invasion launch states'
 				647 = { is_controlled_by_ROOT_or_ally = yes } # Palau
 			}
-			set_temp_variable = { _divisions_per_province = 2 }
+
+			set_temp_variable = { _divisions_per_province = 1 }
 			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 7 }
 
 			set_temp_variable = { _invasion_state = 334 } # Kalimantan
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 7415 } # Tarakan
+			add_to_temp_array = { _invasion_state_provinces = 10325 }
+			add_to_temp_array = { _invasion_state_provinces = 1404 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
 			set_temp_variable = { _invasion_state = 333 } # North Borneo
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 7371 } # Brunei
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
+			add_to_temp_array = { _invasion_state_provinces = 7371 }
+			add_to_temp_array = { _invasion_state_provinces = 12171 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
 
 		}
 		else_if = {
@@ -7527,7 +7448,6 @@ country_event = {
 				# Only refire if the invasion target is still valid
 				var:_target_country = {
 					has_war_with = ROOT
-					controls_state = 334 # Kalimantan
 					controls_state = 333 # North Borneo
 				}
 			}
@@ -7537,7 +7457,7 @@ country_event = {
 		# Seazone control delay mechanic
 		if = {
 			limit = {
-				has_enemy_naval_control = 159 # Southern Borneo
+				has_enemy_naval_control = 231 # Riau Archipelqgo
 				NOT = { has_country_flag = WA_AI_invasions.82_flag }
 			}
 			set_country_flag = WA_AI_invasions.82_flag
@@ -7595,19 +7515,20 @@ country_event = {
 				647 = { is_controlled_by_ROOT_or_ally = yes } # Palau
 			}
 
+			set_temp_variable = { _divisions_per_province = 1 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 7 }
+
 			set_temp_variable = { _invasion_state = 334 } # Kalimantan
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 10237 } # Balikpapan
-			set_temp_variable = { _divisions_per_province = 3 }
-			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
-			set_temp_variable = { _division_template = 7 }
+			add_to_temp_array = { _invasion_state_provinces = 10237 }
+			add_to_temp_array = { _invasion_state_provinces = 12196 }
+			add_to_temp_array = { _invasion_state_provinces = 12225 }
 			WA_AI_DIVISION_spawn_invasion = yes
-			set_temp_variable = { _division_template = 1 }
-
 		}
 		else_if = {
 			limit = {
-				# Only refire if the invasion target is still valid
 				var:_target_country = {
 					has_war_with = ROOT
 					controls_state = 334 # Kalimantan
@@ -7629,118 +7550,6 @@ country_event = {
 				has_country_flag = { flag = WA_AI_invasions.83_flag days > 179 }
 			}
 			clr_country_flag = WA_AI_invasions.83_flag
-		}
-	}
-}
-
-# Mulberry dismantling: removes the two artificial D-Day harbours placed by
-# WA_AI_invasions.85 (Mulberry A, province 3579) and .86 (Mulberry B, province
-# 13851) 120 days after each was built. Both spawners schedule this event, so it
-# can fire twice - set_building_level to 0 is idempotent, the second firing is a
-# no-op on the province already cleared and removes the other harbour if built.
-country_event = {
-	id = WA_AI_invasions.84
-	hidden = yes
-
-	is_triggered_only = yes
-
-	immediate = {
-		15 = { # Lower Normandy
-			set_building_level = {
-				type = naval_base
-				province = { id = 3579 }
-				level = 0
-				instant_build = yes
-			}
-		}
-		1016 = { # Upper Normandy
-			set_building_level = {
-				type = naval_base
-				province = { id = 13851 }
-				level = 0
-				instant_build = yes
-			}
-		}
-	}
-}
-
-# Mulberry A placement. Scheduled by WA_AI_invasions.2 at the landing; waits for
-# state 15 to be ROOT/ally-controlled so the Nero-decree demolition (which fires
-# synchronously on the state-control flip, once per state) has already resolved
-# before the harbour exists. Retries every 3 days, gives up 45 days after the
-# landing (beachhead failed). Level 5 = 25 supply (NAVAL_FLOW_PER_LEVEL 5.0).
-country_event = {
-	id = WA_AI_invasions.85
-	hidden = yes
-
-	is_triggered_only = yes
-
-	immediate = {
-		if = {
-			limit = {
-				NOT = { has_country_flag = WA_AI_invasions.85_flag }
-			}
-			set_country_flag = WA_AI_invasions.85_flag
-		}
-
-		if = {
-			limit = {
-				15 = { is_controlled_by_ROOT_or_ally = yes } # Lower Normandy
-			}
-			15 = {
-				set_building_level = {
-					type = naval_base
-					province = { id = 3579 }
-					level = 5
-					instant_build = yes
-				}
-			}
-			country_event = { id = WA_AI_invasions.84 days = 120 }
-		}
-		else_if = {
-			limit = {
-				NOT = { has_country_flag = { flag = WA_AI_invasions.85_flag days > 45 } }
-			}
-			country_event = { id = WA_AI_invasions.85 days = 3 }
-		}
-	}
-}
-
-# Mulberry B placement. Scheduled by WA_AI_invasions.34 at the landing; same
-# wait-for-capture logic as .85, for state 1016 / province 13851.
-country_event = {
-	id = WA_AI_invasions.86
-	hidden = yes
-
-	is_triggered_only = yes
-
-	immediate = {
-		if = {
-			limit = {
-				NOT = { has_country_flag = WA_AI_invasions.86_flag }
-			}
-			set_country_flag = WA_AI_invasions.86_flag
-		}
-
-		if = {
-			limit = {
-				1016 = { is_controlled_by_ROOT_or_ally = yes } # Upper Normandy
-			}
-			1016 = {
-				set_building_level = {
-					type = naval_base
-					province = { id = 13851 }
-					level = 5
-					instant_build = yes
-				}
-			}
-			country_event = { id = WA_AI_invasions.84 days = 120 }
-		}
-		else_if = {
-			limit = {
-				NOT = { has_country_flag = { flag = WA_AI_invasions.86_flag days > 45 } }
-			}
-			country_event = { id = WA_AI_invasions.86 days = 3 }
 		}
 	}
 }
