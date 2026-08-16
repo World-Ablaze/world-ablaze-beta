@@ -162,13 +162,13 @@ When you add a field to such a record, you must add it in **every** place the re
 @WA_AI_PC_railway_PRIO = 9999
 ```
 
-They do **not** cross file boundaries. If two files need the same constant, redeclare it in both — and add a comment saying which file is authoritative, as `WA_AI_misc_on_actions.txt` does:
+They do **not** cross file boundaries. If two files need the same constant, redeclare it in both — add a comment saying which file is authoritative, as `WA_AI_CONSTRUCTION_triggers.txt` does for the railway eligibility block:
 
 ```txt
 ### Railway eligibility constants (must match WA_AI_CONSTRUCTION_PRIORITY_railway_core.txt)
 ```
 
-If you change such a constant, grep the value's name across the repo and update every declaration. A desynced duplicate is a silent behaviour split.
+**and register the pair** in `tools/constants_registry.json` (owner + mirrors + what it governs). The comment is for the human; `python tools/check_constants.py` is what actually holds the contract — a "must match" comment alone let the PC affordability gate sit at 0.35 while the allocator funded at 0.40 (Fix 90). If you change such a constant, run the checker; it names every copy. Renames are per file. See skill `wa-constants-registry` for the family table and the member kinds.
 
 ## meta_trigger / meta_effect
 
@@ -220,6 +220,6 @@ Hidden AI background events still need `option = {}`. `is_triggered_only = yes` 
 - Are `>` / `<` boundaries off by the intended day/unit?
 - Is an implicit AND doing what you think, or did you mean `OR`?
 - Do all temp variables and temp arrays get cleared on every exit path?
-- Are `@` constants consistent across every file that declares them?
+- Are `@` constants consistent across every file that declares them? (`python tools/check_constants.py`, and a new shared one is registered)
 - Do braces balance? (See the PowerShell one-liner in `wa-orientation`.)
 - If the file is in a `replace_path` folder, is it complete and parseable — nothing accidentally deleted?

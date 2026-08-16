@@ -96,16 +96,15 @@ routes at one price and paid for them at another. Charged prices today:
 | 13 railway | **800 flat per province connection**, one connection per project | `rail_way` `base_cost = 800`, `per_level_extra_cost = 0` |
 | 14 naval base | **10000 flat** | `naval_base` `base_cost = 10000`; the real `per_level_extra_cost = -556` taper is modelled in scoring only, not in charging |
 
-If `common/buildings/00_buildings.txt` is re-priced, **both** tables must be updated.
+If `common/buildings/00_buildings.txt` is re-priced, **both** tables must be updated — `python tools/check_constants.py` (groups `cost_*`) reports the mismatch.
 
-### Strategy Constants (`railway_strategies.txt`, lines 7-8)
+### Strategy Constants (`railway_strategies.txt` header)
 
 ```
-@WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY = 4   # Redeclared (file-scoped)
 @WA_AI_PC_railway_PRIO_PREWAR = 500           # Redeclared (file-scoped)
 ```
 
-**Note:** HOI4 `@` constants are file-scoped, so required constants are redeclared in each file that uses them.
+**Note:** HOI4 `@` constants are file-scoped, so required constants are redeclared in each file that uses them. `railway_core.txt`'s header block is the authoritative declaration ("control panel"); the copies in `railway_helpers.txt`, `railway_strategies.txt` and `common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt` (the eligibility filter `WA_AI_PC_country_can_run_railway_system` and the per-enemy route budget in `WA_AI_PC_railway_land_frontline_candidate` are the *readers* of the eligibility five and of `MAX_ROUTES_PER_ENEMY`) are mirrors registered in `tools/constants_registry.json`. `python tools/check_constants.py` fails when any copy disagrees — including the shadow-price table above against `00_buildings.txt`. (Until 2026-08-16 `railway_strategies.txt` also redeclared `MAX_ROUTES_PER_ENEMY`; nothing there read it, so it was removed.)
 
 ## Eligibility Filters
 

@@ -189,14 +189,13 @@ country_event = {
 	is_triggered_only = yes
 
 	immediate = {
-		if = { limit = { check_variable = { ROOT.WA_AI_PC_active_projects < 5 }  }
-
-			if = { limit = { WA_AI_PC_can_afford_project = yes }
-
-				set_country_flag = WA_priority_construction_debug
-
-			}
-
+		# Fix 90b (2026-08-16): this probe mirrored the pre-2026-01 PC admission pair
+		# (`active_projects < 5` + WA_AI_PC_can_afford_project); both are gone from the engine and the
+		# trigger is deleted (epitaph in WA_AI_CONSTRUCTION_triggers.txt). Admission is free in the
+		# dynamic queue - the flag now just records that the PC has anything queued. No caller fires
+		# this event anywhere in the mod; kept only so the debug namespace stays contiguous.
+		if = { limit = { check_variable = { ROOT.WA_AI_PC_queue^num > 0 } }
+			set_country_flag = WA_priority_construction_debug
 		}
 	}
 
@@ -259,19 +258,21 @@ country_event = {
 
 	immediate = {
 		# debug mirror of WA_AI_PC_can_afford_project - keep in sync with
-		# common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt (incl. the stable-base floor)
-		@AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL = 0.35
+		# common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt (incl. the stable-base floor).
+		# 2026-08-16: was 0.35 (drifted from Fix 90's 0.40); registered in tools/constants_registry.json
+		# (pc_alloc_fraction) so `python tools/check_constants.py` catches the next drift.
+		@AI_PC_ALLOC_FRACTION = 0.40
 		@AI_MIN_NUM_OF_FACTORIES_TO_ASSIGN_ON_PROJECT = 20
 		@AI_PC_STABLE_BASE_FRACTION = 0.30
 
 		# check that the ai can afford to assign factories to a new project
 		set_temp_variable = { max_factories_on_projects = ROOT.num_of_civilian_factories_available_for_projects }
 		add_to_temp_variable = { max_factories_on_projects = ROOT.WA_AI_PC_assigned_factories_total }
-		multiply_temp_variable = { max_factories_on_projects = @AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL }
+		multiply_temp_variable = { max_factories_on_projects = @AI_PC_ALLOC_FRACTION }
 
 		set_temp_variable = { _pc_floor_max = ROOT.num_of_civilian_factories }
 		multiply_temp_variable = { _pc_floor_max = @AI_PC_STABLE_BASE_FRACTION }
-		multiply_temp_variable = { _pc_floor_max = @AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL }
+		multiply_temp_variable = { _pc_floor_max = @AI_PC_ALLOC_FRACTION }
 		if = {
 			limit = {
 				ROOT = { num_of_civilian_factories > 19 has_capitulated = no surrender_progress < 0.3 }

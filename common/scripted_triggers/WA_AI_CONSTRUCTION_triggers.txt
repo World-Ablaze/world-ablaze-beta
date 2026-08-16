@@ -269,56 +269,43 @@ WA_AI_queue_depth_ok_HAR = {
 
 ### priority construction AI
 
-WA_AI_PC_can_afford_project = {
+# WA_AI_PC_can_afford_project was DELETED here on 2026-08-16 (Fix 90b, campaign af003548). It was
+# the affordability half of the PRE-2026-01 engine's admission gate (the other half was the
+# `active_projects < 5` slot test of the fixed 5-slot project array): back then admitting a
+# project COMMITTED its civs on the spot (WA_AI_PC_start_project computed them from the same
+# formula), so "assigned + 20 < 0.35 x (engine_available + assigned)" was a real question. The
+# dynamic queue made admission free - WA_AI_PC_assign_factories funds from the sorted queue every
+# week, each strategy's _project_queue_max bounds the clutter, the Fix 41/78 lanes serve
+# starvation and the 30-week sweep drops what never funds - so the trigger only ever re-asked,
+# one week early, the question the fill answers. It had been repaired twice (the 0.30 floor
+# mirror, the 0.35 -> 0.40 resync) to keep it from closing forever on saturated queues, and its
+# last three readers were the same story: dead on saturated majors, redundant on slack ones.
+# The MIC->CIC conversion legs it braked now carry an explicit budget instead
+# (@AI_PC_QMAX_MIC_TO_CIC in WA_AI_CONSTRUCTION_queue_functions.txt), and the C.10 vanilla-queue
+# infra function no longer double-admits into the PC (WA_AI_resource_extraction owns that).
+# The two allocator constants below survive because the floored gates that follow read them.
 
-	@AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL = 0.35
-	@AI_MIN_NUM_OF_FACTORIES_TO_ASSIGN_ON_PROJECT = 20
-	# must match @AI_PC_STABLE_BASE_FRACTION in common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_core.txt
-	@AI_PC_STABLE_BASE_FRACTION = 0.30
-
-	# check that the ai can afford to assign factories to a new project
-	set_temp_variable = { max_factories_on_projects = ROOT.num_of_civilian_factories_available_for_projects }
-	add_to_temp_variable = { max_factories_on_projects = ROOT.WA_AI_PC_assigned_factories_total }
-	multiply_temp_variable = { max_factories_on_projects = @AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL }
-
-	set_temp_variable = { min_factories_on_projects = ROOT.WA_AI_PC_assigned_factories_total }
-	add_to_temp_variable = { min_factories_on_projects = @AI_MIN_NUM_OF_FACTORIES_TO_ASSIGN_ON_PROJECT }
-
-	# Fix: mirror the stable-base floor used by WA_AI_PC_assign_factories. Without it this gate
-	# repeats the self-referential expression (available_for_projects reads 0 once the vanilla
-	# queue saturates) and stays closed forever after the allocation has decayed - even when
-	# assign_factories would happily fund a new project from the floored base.
-	set_temp_variable = { _pc_floor_max = ROOT.num_of_civilian_factories }
-	multiply_temp_variable = { _pc_floor_max = @AI_PC_STABLE_BASE_FRACTION }
-	multiply_temp_variable = { _pc_floor_max = @AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL }
-
-	OR = {
-		check_variable = { min_factories_on_projects < max_factories_on_projects }
-		AND = {
-			ROOT = {
-				num_of_civilian_factories > 19
-				has_capitulated = no
-				surrender_progress < 0.3
-			}
-			check_variable = { min_factories_on_projects < _pc_floor_max }
-		}
-	}
-}
+### Allocation base constants (must match common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_core.txt)
+### REGISTRY: tools/constants_registry.json (pc_alloc_fraction, pc_stable_base_fraction) -
+### `python tools/check_constants.py` verifies the copies agree.
+@AI_PC_ALLOC_FRACTION = 0.40				# MUST MATCH core.txt @AI_PC_ALLOC_FRACTION (was 0.35 until Fix 90, 2026-08-16)
+@AI_PC_STABLE_BASE_FRACTION = 0.30			# MUST MATCH core.txt @AI_PC_STABLE_BASE_FRACTION
 
 # THIS = country. Stable civilian-factory availability for PC strategy gates.
 # num_of_civilian_factories_available_for_projects reads ~0 whenever the vanilla
-# construction queue is saturated - the same self-referential collapse fixed in
-# WA_AI_PC_can_afford_project above. Each gate passes when EITHER the engine
+# construction queue is saturated - a self-referential collapse (the PC's own
+# allocation is part of what saturates it). Each gate passes when EITHER the engine
 # reports real spare civs above the threshold, OR the stable floored base
-# (@AI_PC_STABLE_BASE_FRACTION * @AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL
-# = 10.5% of TOTAL civs, the pool WA_AI_PC_assign_factories will actually
-# allocate from) clears the same threshold. Two named variants because PDXScript
-# triggers cannot take a threshold argument without meta_trigger - keep both
-# bodies in sync.
+# (@AI_PC_STABLE_BASE_FRACTION * @AI_PC_ALLOC_FRACTION
+# = 12% of TOTAL civs since Fix 90 - was 10.5% at 0.35 - the pool WA_AI_PC_assign_factories will actually
+# allocate from) clears the same threshold. Three named variants because PDXScript
+# triggers cannot take a threshold argument without meta_trigger - keep the
+# bodies in sync. Fix 90b (2026-08-16) retired the last bare engine-token gates in the
+# PC strategies (radar > 15, islands > 19, resource extraction > 30) onto these.
 WA_AI_PC_has_project_civs_16 = {	# passes at 16+ civs (replaces bare "> 15" gates)
 	set_temp_variable = { _pc_civ_floor_ = num_of_civilian_factories }
 	multiply_temp_variable = { _pc_civ_floor_ = @AI_PC_STABLE_BASE_FRACTION }
-	multiply_temp_variable = { _pc_civ_floor_ = @AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL }
+	multiply_temp_variable = { _pc_civ_floor_ = @AI_PC_ALLOC_FRACTION }
 	OR = {
 		num_of_civilian_factories_available_for_projects > 15
 		AND = {
@@ -332,13 +319,27 @@ WA_AI_PC_has_project_civs_16 = {	# passes at 16+ civs (replaces bare "> 15" gate
 WA_AI_PC_has_project_civs_20 = {	# passes at 20+ civs (replaces bare "NOT ... < 20" gates)
 	set_temp_variable = { _pc_civ_floor_ = num_of_civilian_factories }
 	multiply_temp_variable = { _pc_civ_floor_ = @AI_PC_STABLE_BASE_FRACTION }
-	multiply_temp_variable = { _pc_civ_floor_ = @AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL }
+	multiply_temp_variable = { _pc_civ_floor_ = @AI_PC_ALLOC_FRACTION }
 	OR = {
 		num_of_civilian_factories_available_for_projects > 19
 		AND = {
 			has_capitulated = no
 			surrender_progress < 0.3
 			check_variable = { _pc_civ_floor_ > 19 }
+		}
+	}
+}
+
+WA_AI_PC_has_project_civs_31 = {	# passes at 31+ civs (replaces the bare "> 30" gate of WA_AI_resource_extraction)
+	set_temp_variable = { _pc_civ_floor_ = num_of_civilian_factories }
+	multiply_temp_variable = { _pc_civ_floor_ = @AI_PC_STABLE_BASE_FRACTION }
+	multiply_temp_variable = { _pc_civ_floor_ = @AI_PC_ALLOC_FRACTION }
+	OR = {
+		num_of_civilian_factories_available_for_projects > 30
+		AND = {
+			has_capitulated = no
+			surrender_progress < 0.3
+			check_variable = { _pc_civ_floor_ > 30 }
 		}
 	}
 }
@@ -1230,12 +1231,18 @@ WA_AI_PC_state_has_railway_at_level_3 = {
 # BOTH common/on_actions/WA_AI_misc_on_actions.txt (as an inline limit block) and
 # WA_AI_CONSTRUCTION_PRIORITY_railway_core.txt, with a "must match" comment holding them together.
 # The on_action copy is now gone - it calls the trigger below instead - so only railway_core.txt
-# (authoritative, it also owns the constants the effect body itself reads) and this file carry them.
+# (authoritative: its constants block is the railway control panel the docs point at) and this
+# file carry them. REGISTRY: tools/constants_registry.json (railway_eligibility_* and
+# railway_max_routes_per_enemy) - `python tools/check_constants.py` verifies the copies agree.
 @WA_AI_PC_railway_MIN_CIVS_PEACE = 75
 @WA_AI_PC_railway_MINOR_CIV_THRESHOLD = 50
 @WA_AI_PC_railway_MIN_STATES = 5
 @WA_AI_PC_railway_MAX_SURRENDER = 0.3
 @WA_AI_PC_railway_RECOVERY_MIN_STATES = 20
+# Per-enemy route budget read by WA_AI_PC_railway_land_frontline_candidate below. Until 2026-08-16
+# that test carried the bare literal 4 with a comment naming this constant, while the two
+# declarations (railway_core, railway_strategies) had no reader at all.
+@WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY = 4
 
 # THIS = country. Is this country able to run the railway system for itself?
 #
@@ -1320,7 +1327,7 @@ WA_AI_PC_is_logistics_build_partner = {
 # dependent-ally states - are filtered identically before the shared body runs.
 WA_AI_PC_railway_land_frontline_candidate = {
 	### Skip if we already have enough routes for this enemy
-	check_variable = { _routes_for_this_enemy < 4 }	# @WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY
+	check_variable = { _routes_for_this_enemy < @WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY }
 	# State borders this specific enemy (or the enemy's puppets)
 	any_neighbor_state = {
 		OR = {

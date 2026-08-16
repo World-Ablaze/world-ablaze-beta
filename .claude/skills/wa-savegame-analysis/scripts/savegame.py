@@ -967,17 +967,24 @@ _PC_TYPE_ID = {
     14: "port",            # frontier-port helper       (railway_helpers)
     20: "uk_air",          # @AI_PC_TYPE_ID_UK_AIR      (strategies)
     21: "theatre_air",     # @AI_PC_TYPE_ID_THEATRE_AIR (strategies)
+    23: "islands",         # @AI_PC_TYPE_ID_ISLANDS     (strategies, Fix 90)
+    24: "supply_line",     # @AI_PC_TYPE_ID_SUPPLY_LINE (strategies, Fix 90b)
+    25: "inf_resource",    # @AI_PC_TYPE_ID_INF_RESOURCE (queue_functions, Fix 90b)
 }
 
-# Fix 41 priority band table (core.txt:263-283, redeclared strategies.txt:67-75 -
-# @ constants are file-scoped). 1100 = rail-war x1.1 for a high-value route and is
-# the highest value a post-Fix-41 build can write; anything above it is a legacy
-# pre-Fix-41 priority that the next assign_factories pass clamps to 1000.
+# Fix 41 priority band table (owned by WA_AI_CONSTRUCTION_PRIORITY_core.txt, redeclared
+# in strategies.txt / queue_functions.txt / railway_* - @ constants are file-scoped).
+# 1100 = rail-war x1.1 for a high-value route and is the highest value a post-Fix-41
+# build can write; anything above it is a legacy pre-Fix-41 priority that the next
+# assign_factories pass clamps to 1000.
+# REGISTRY: every value in _PC_TYPE_ID, _PC_BANDS and the _PC_* allocation constants
+# below is a mirror registered in tools/constants_registry.json;
+# `python tools/check_constants.py` fails when the script and this table disagree.
 _PC_BANDS = ((1100, "rail-war+"), (1000, "rail-war"), (500, "rail-prewar"),
              (350, "air-front"), (300, "air-basing"), (250, "strategic"),
              (100, "default"))
 
-# Allocation constants, core.txt:253-256 (mirrored in WA_AI_CONSTRUCTION_triggers.txt).
+# Allocation constants, core.txt (mirrored in WA_AI_CONSTRUCTION_triggers.txt).
 _PC_ALLOC_FRACTION = 0.40
 _PC_STABLE_BASE_FRACTION = 0.30
 _PC_ALLOC_HARD_CAP_FRACTION = 0.50

@@ -62,6 +62,22 @@
 
 # ROOT = THIS = country. Computes WA_AI_bf_k once per pulse (same "compute if 0" idiom as
 # WA_AI_has_shared_slot_scores).
+### Fix 90 (2026-08-16): explicit per-strategy budgets replacing the legacy dispatcher `< 5` gate
+### (and, Fix 90b, the deleted WA_AI_PC_can_afford_project brake on the MIC->CIC conversion legs).
+@AI_PC_QMAX_INF_RESOURCE = 2		# resource-state infrastructure projects (type 1) in flight per country (scoped to type_id 25)
+@AI_PC_QMAX_MIC_TO_CIC = 1			# MIC->CIC conversion projects (type 9) in flight per country - THE brake on industry conversion
+### Strategy type id for the scoped type-1 budget above. Numbering space shared with
+### WA_AI_CONSTRUCTION_PRIORITY_strategies.txt (20 uk air, 21 theatre air, 23 islands, 24 supply
+### line) and the railway files (13/14); savegame.py _PC_TYPE_IDS names them for `pc` output.
+@AI_PC_TYPE_ID_INF_RESOURCE = 25	# Fix 90b: WA_AI_priority_queue_INF_resource
+
+### Fix 41 priority bands used by the PC queue functions in this file. @ constants are file-scoped:
+### these REDECLARE the band table that WA_AI_CONSTRUCTION_PRIORITY_core.txt owns (registered in
+### tools/constants_registry.json - `python tools/check_constants.py`). Until 2026-08-16 the same
+### numbers were bare literals at each call site.
+@AI_PC_PRIO_DEFAULT = 100			# radar / supply-line infrastructure
+@AI_PC_PRIO_STRATEGIC = 250			# the shortage-driven refinery families (steel / aluminium / rubber)
+
 WA_AI_queue_breadth_prepare = {
 	if = { limit = { check_variable = { WA_AI_bf_k = 0 } }
 		set_temp_variable = { WA_AI_bf_k = num_of_civilian_factories }
@@ -538,48 +554,61 @@ WA_AI_queue_INF_resource = {
 		WA_AI_get_resource_slot_scores = yes
 	}
 
-	if = { limit = { check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 } WA_AI_PC_can_afford_project = yes }
+	# Fix 90b (2026-08-16): this vanilla build-list function used to double-admit into the PC -
+	# `if { active_nonrail < 5 AND WA_AI_PC_can_afford_project } WA_AI_priority_queue_INF_resource
+	# else <vanilla add>` - both gates being the pre-2026-01 engine's admission pair (see the
+	# epitaph in WA_AI_CONSTRUCTION_triggers.txt). The PC route already has an owner: the dispatcher
+	# strategy WA_AI_resource_extraction (every 2 days, floored civ gate, needs = 3) calls the same
+	# WA_AI_priority_queue_INF_resource. So this function now does what its caller (WA_AI_C.10)
+	# asks of it - one vanilla infrastructure add per call - and never skips it in favour of a PC
+	# project. C.10 fires only with spare vanilla civs, which is exactly the regime a vanilla add
+	# is for.
+	for_each_scope_loop = { array = WA_AI_resource_slot_scores
 
-		WA_AI_priority_queue_INF_resource = yes
-	}
-	else = {
-
-		for_each_scope_loop = { array = WA_AI_resource_slot_scores
-
-			if = {
-				limit = {
-					WA_AI_available_INF = yes
-				}
-
-				WA_AI_add_INF = yes
-				set_temp_variable = { break = 1 }
+		if = {
+			limit = {
+				WA_AI_available_INF = yes
 			}
+
+			WA_AI_add_INF = yes
+			set_temp_variable = { break = 1 }
 		}
 	}
 }
+# PC resource-state infrastructure. Sole caller: WA_AI_resource_extraction (dispatcher).
 WA_AI_priority_queue_INF_resource = {
 
-	if = { limit = { check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 } }
 
-		if = { limit = { check_variable = { WA_AI_has_resource_slot_scores = 0 } }
+	if = { limit = { check_variable = { WA_AI_has_resource_slot_scores = 0 } }
 
-			WA_AI_get_resource_slot_scores = yes
-		}
+		WA_AI_get_resource_slot_scores = yes
+	}
 
-		set_temp_variable = { _project_building_type = 1 }
-		set_temp_variable = { _project_province_id = 0 }
-		set_temp_variable = { _project_priority = 100 }
-		set_temp_variable = { _project_queue_num = 1 }
+	set_temp_variable = { _project_building_type = 1 }
+	set_temp_variable = { _project_province_id = 0 }
+	set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
+	set_temp_variable = { _project_queue_num = 1 }
+	# Fix 90: explicit budget - this function used to be bounded only by the dispatcher's legacy < 5 gate.
+	# Fix 90b: scoped to its own type_id - WA_AI_build_supply_line also creates building type 1
+	# (type_id 24); unscoped, the two budgets counted each other's projects. _project_queue_max_scoped
+	# is clear-on-read in WA_AI_PC_start_project (armed right before the single call below);
+	# _project_type_id persists and is retired at the end of this function.
+	set_temp_variable = { _project_queue_max = @AI_PC_QMAX_INF_RESOURCE }
+	set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_INF_RESOURCE }
+	set_temp_variable = { _project_target_state = 0 }
+	set_temp_variable = { _project_target_level = 0 }
 
-		for_each_scope_loop = { array = WA_AI_resource_slot_scores
+	for_each_scope_loop = { array = WA_AI_resource_slot_scores
 
-			if = { limit = { WA_AI_PC_can_build_project = yes }
+		if = { limit = { WA_AI_PC_can_build_project = yes }
 
-				WA_AI_PC_start_project = yes
-				set_temp_variable = { break = 1 }
-			}
+			set_temp_variable = { _project_queue_max_scoped = 1 }
+			WA_AI_PC_start_project = yes
+			set_temp_variable = { break = 1 }
 		}
 	}
+
+	set_temp_variable = { _project_type_id = 0 }
 }
 
 #WA refineries
@@ -917,25 +946,51 @@ WA_AI_queue_AA = {
 # mil to civ conversion
 WA_AI_priority_convert_MIC_to_CIC = {
 
-	if = { limit = { check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 } }
+	# Fix 90b (2026-08-16): the brake on industry conversion is the explicit budget below, nothing
+	# else. Callers: the MIC->CIC else_if legs of WA_AI_build_refinery_resource_shortage_steel /
+	# _aluminium (WA_AI_CONSTRUCTION_PRIORITY_strategies.txt) - reached only with shortage_months = 3,
+	# mil share > 0.4 and no free shared slot anywhere. Until today those legs were gated by
+	# WA_AI_PC_can_afford_project (Fix 40 kept it there so the conversion "could not widen as a side
+	# effect") and this function by its own `active_nonrail < 5` - both halves of the pre-2026-01
+	# engine's admission gate, both deleted. can_afford was dead on saturated majors (the countries
+	# that meet the mil-share / no-slot terms) and redundant on slack ones (a band-100 project is
+	# funded iff the pool has slack after the higher bands - the fill's own answer). What bounds
+	# conversion now:
+	#   - @AI_PC_QMAX_MIC_TO_CIC = 1 : ONE type-9 project in flight per country, across both callers
+	#     (unscoped budget over building type 9, whose only creator is this function);
+	#   - the MIC is removed at COMPLETION (WA_AI_PC_complete_project), never at admission - a queued
+	#     project that the fill never funds removes nothing;
+	#   - band 100 (@AI_PC_PRIO_DEFAULT): on a saturated major (ENG-like: pool eaten by rail/air) it
+	#     never funds - it sits 30 weeks, the stall sweep drops it, the leg re-queues it 2 days
+	#     later, forever: a permanent 1-slot clutter, MIC count unchanged. Do NOT read this leg as
+	#     the industry-overextension lever - it is inert exactly where overextension lives.
+	#   - on a slack country: funded at <= 20 civs, ~80 days per 8000-IC conversion, so at most one
+	#     MIC -> CIC per ~3 months while shortage = 3 AND mil share > 0.4 AND no free slot persist;
+	#     each conversion lowers the mil share toward the 0.4 floor, which ends it.
+	# This function never set _project_queue_max before (it inherited 2 or 3 from whichever strategy
+	# ran last - the Fix 40 leak) nor zeroed target_state / target_level / type_id (a leaked type_id
+	# 24/25 would now eat a scoped budget of exactly 1) - same leak hygiene as the refinery
+	# functions below.
+	if = { limit = { check_variable = { WA_AI_has_mil_to_civ_conversion_slot_scores = 0 } }
 
-		if = { limit = { check_variable = { WA_AI_has_mil_to_civ_conversion_slot_scores = 0 } }
+		WA_AI_get_mil_to_civ_conversion_slot_scores = yes
+	}
 
-			WA_AI_get_mil_to_civ_conversion_slot_scores = yes
-		}
+	set_temp_variable = { _project_building_type = 9 }
+	set_temp_variable = { _project_province_id = 0 }
+	set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
+	set_temp_variable = { _project_queue_num = 1 }
+	set_temp_variable = { _project_queue_max = @AI_PC_QMAX_MIC_TO_CIC }
+	set_temp_variable = { _project_target_state = 0 }
+	set_temp_variable = { _project_target_level = 0 }
+	set_temp_variable = { _project_type_id = 0 }
 
-		set_temp_variable = { _project_building_type = 9 }
-		set_temp_variable = { _project_province_id = 0 }
-		set_temp_variable = { _project_priority = 100 }
-		set_temp_variable = { _project_queue_num = 1 }
+	for_each_scope_loop = { array = WA_AI_mil_to_civ_conversion_slot_scores
 
-		for_each_scope_loop = { array = WA_AI_mil_to_civ_conversion_slot_scores
+		if = { limit = { WA_AI_PC_can_build_project = yes }
 
-			if = { limit = { WA_AI_PC_can_build_project = yes }
-
-				WA_AI_PC_start_project = yes
-				set_temp_variable = { break = 1 }
-			}
+			WA_AI_PC_start_project = yes
+			set_temp_variable = { break = 1 }
 		}
 	}
 }
@@ -981,189 +1036,199 @@ WA_AI_priority_convert_MIC_to_CIC = {
 # THIS = ROOT = country for all five (called from
 # WA_AI_build_refinery_resource_shortage_* and, for the synthetic one, from
 # WA_AI_overext_substitute_MIC).
+#
+# Fix 90 (2026-08-16, campaign af003548): the `ROOT.WA_AI_PC_active_nonrail_projects < 5`
+# gate these five functions (and the three strategies that call them) carried is REMOVED.
+# It was the admission cap of the PRE-2026-01 priority-construction engine, whose project
+# list was a fixed 5-slot array (`resize_array = { array = WA_AI_PC_project_array size = 5 }`
+# in the pre-38d57a137 WA_AI_CONSTRUCTION_effects.txt) - `< 5` meant "a slot is free". The
+# dynamic queue replaced the array; Fix 29b made the count non-rail; nothing ever made it
+# band-aware, so it counted default-band radars against a strategic-band refinery. Measured
+# on af003548: the USA's PC queue held 5-8 non-rail projects (4-6 radars) at every anchor
+# 1941.6-1945.6 and built ZERO refinery levels of any type through the PC in ten years
+# (built_by_type^8/11/12/15/16 absent) while its rubber ran -400 to -530. The two air
+# strategies had already bypassed the same gate for the same reason (Fix 47 / Fix 85).
+# What still bounds these functions: _project_queue_max = 1 per type (at most five refinery
+# projects of any kind in flight per country, ~100 civs), the shortage_months = 3 requirement,
+# the coal guard, WA_AI_PC_has_project_civs_20, and the sorted fill (band 250 sits below air
+# 300 and rail 500/1000, above the default band). Pre-registered cost, from the af003548
+# ledger: the USA's tail radar projects (12-20 civs each) at band 100. The dispatcher's own
+# `< 5` in WA_AI_priority_construction_strategies is gone too; every default-band strategy
+# now carries an explicit _project_queue_max (radar 3, supply lines 3, resource infra 2,
+# islands 2 per building type on their own type_id, MIC->CIC conversion 1) - see the note there.
 
 WA_AI_priority_queue_synthetic_refinery = {
 
-	if = { limit = { check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 } }
 
-		set_temp_variable = { _project_building_type = 8 }
-		set_temp_variable = { _project_province_id = 0 }
-		# Fix 41: strategic band (250) - a shortage-driven refinery outranks default-100
-		# projects but never a war railway; band table in WA_AI_CONSTRUCTION_PRIORITY_core.txt
-		set_temp_variable = { _project_priority = 250 }
-		set_temp_variable = { _project_queue_num = 1 }
-		# Fix 40: explicit bounds / leak hygiene - see the header note above
-		set_temp_variable = { _project_queue_max = 1 }
-		set_temp_variable = { _project_target_state = 0 }
-		set_temp_variable = { _project_target_level = 0 }
+	set_temp_variable = { _project_building_type = 8 }
+	set_temp_variable = { _project_province_id = 0 }
+	# Fix 41: strategic band (250) - a shortage-driven refinery outranks default-100
+	# projects but never a war railway; band table in WA_AI_CONSTRUCTION_PRIORITY_core.txt
+	set_temp_variable = { _project_priority = @AI_PC_PRIO_STRATEGIC }
+	set_temp_variable = { _project_queue_num = 1 }
+	# Fix 40: explicit bounds / leak hygiene - see the header note above
+	set_temp_variable = { _project_queue_max = 1 }
+	set_temp_variable = { _project_target_state = 0 }
+	set_temp_variable = { _project_target_level = 0 }
 
-		set_temp_variable = { _refinery_q_before_ = WA_AI_PC_queue^num }
+	set_temp_variable = { _refinery_q_before_ = WA_AI_PC_queue^num }
 
-		# Fix 40 pass 1 - preferred sites (filtered draw)
+	# Fix 40 pass 1 - preferred sites (filtered draw)
+	random_scope_in_array = { array = controlled_states
+		limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority = yes }
+
+		WA_AI_PC_start_project = yes
+		set_temp_variable = { break = 1 }
+	}
+
+	# Fix 40 pass 2 - widened sites, only when pass 1 queued nothing
+	if = { limit = { NOT = { check_variable = { WA_AI_PC_queue^num > _refinery_q_before_ } } }
+
 		random_scope_in_array = { array = controlled_states
-			limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority = yes }
+			limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority_wide = yes }
 
 			WA_AI_PC_start_project = yes
 			set_temp_variable = { break = 1 }
-		}
-
-		# Fix 40 pass 2 - widened sites, only when pass 1 queued nothing
-		if = { limit = { NOT = { check_variable = { WA_AI_PC_queue^num > _refinery_q_before_ } } }
-
-			random_scope_in_array = { array = controlled_states
-				limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority_wide = yes }
-
-				WA_AI_PC_start_project = yes
-				set_temp_variable = { break = 1 }
-			}
 		}
 	}
 }
 
 WA_AI_priority_queue_hydro_steel_refinery = {
 
-	if = { limit = { check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 } }
 
-		set_temp_variable = { _project_building_type = 11 }
-		set_temp_variable = { _project_province_id = 0 }
-		# Fix 41: strategic band (250) - see the synthetic-refinery note above
-		set_temp_variable = { _project_priority = 250 }
-		set_temp_variable = { _project_queue_num = 1 }
-		# Fix 40: explicit bounds / leak hygiene - see the header note above
-		set_temp_variable = { _project_queue_max = 1 }
-		set_temp_variable = { _project_target_state = 0 }
-		set_temp_variable = { _project_target_level = 0 }
+	set_temp_variable = { _project_building_type = 11 }
+	set_temp_variable = { _project_province_id = 0 }
+	# Fix 41: strategic band (250) - see the synthetic-refinery note above
+	set_temp_variable = { _project_priority = @AI_PC_PRIO_STRATEGIC }
+	set_temp_variable = { _project_queue_num = 1 }
+	# Fix 40: explicit bounds / leak hygiene - see the header note above
+	set_temp_variable = { _project_queue_max = 1 }
+	set_temp_variable = { _project_target_state = 0 }
+	set_temp_variable = { _project_target_level = 0 }
 
-		set_temp_variable = { _refinery_q_before_ = WA_AI_PC_queue^num }
+	set_temp_variable = { _refinery_q_before_ = WA_AI_PC_queue^num }
 
-		# Fix 40 pass 1 - preferred sites (filtered draw)
+	# Fix 40 pass 1 - preferred sites (filtered draw)
+	random_scope_in_array = { array = controlled_states
+		limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority = yes }
+
+		WA_AI_PC_start_project = yes
+		set_temp_variable = { break = 1 }
+	}
+
+	# Fix 40 pass 2 - widened sites, only when pass 1 queued nothing
+	if = { limit = { NOT = { check_variable = { WA_AI_PC_queue^num > _refinery_q_before_ } } }
+
 		random_scope_in_array = { array = controlled_states
-			limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority = yes }
+			limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority_wide = yes }
 
 			WA_AI_PC_start_project = yes
 			set_temp_variable = { break = 1 }
-		}
-
-		# Fix 40 pass 2 - widened sites, only when pass 1 queued nothing
-		if = { limit = { NOT = { check_variable = { WA_AI_PC_queue^num > _refinery_q_before_ } } }
-
-			random_scope_in_array = { array = controlled_states
-				limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority_wide = yes }
-
-				WA_AI_PC_start_project = yes
-				set_temp_variable = { break = 1 }
-			}
 		}
 	}
 }
 
 WA_AI_priority_queue_hydro_aluminium_refinery = {
 
-	if = { limit = { check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 } }
 
-		set_temp_variable = { _project_building_type = 12 }
-		set_temp_variable = { _project_province_id = 0 }
-		# Fix 41: strategic band (250) - see the synthetic-refinery note above
-		set_temp_variable = { _project_priority = 250 }
-		set_temp_variable = { _project_queue_num = 1 }
-		# Fix 40: explicit bounds / leak hygiene - see the header note above
-		set_temp_variable = { _project_queue_max = 1 }
-		set_temp_variable = { _project_target_state = 0 }
-		set_temp_variable = { _project_target_level = 0 }
+	set_temp_variable = { _project_building_type = 12 }
+	set_temp_variable = { _project_province_id = 0 }
+	# Fix 41: strategic band (250) - see the synthetic-refinery note above
+	set_temp_variable = { _project_priority = @AI_PC_PRIO_STRATEGIC }
+	set_temp_variable = { _project_queue_num = 1 }
+	# Fix 40: explicit bounds / leak hygiene - see the header note above
+	set_temp_variable = { _project_queue_max = 1 }
+	set_temp_variable = { _project_target_state = 0 }
+	set_temp_variable = { _project_target_level = 0 }
 
-		set_temp_variable = { _refinery_q_before_ = WA_AI_PC_queue^num }
+	set_temp_variable = { _refinery_q_before_ = WA_AI_PC_queue^num }
 
-		# Fix 40 pass 1 - preferred sites (filtered draw)
+	# Fix 40 pass 1 - preferred sites (filtered draw)
+	random_scope_in_array = { array = controlled_states
+		limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority = yes }
+
+		WA_AI_PC_start_project = yes
+		set_temp_variable = { break = 1 }
+	}
+
+	# Fix 40 pass 2 - widened sites, only when pass 1 queued nothing
+	if = { limit = { NOT = { check_variable = { WA_AI_PC_queue^num > _refinery_q_before_ } } }
+
 		random_scope_in_array = { array = controlled_states
-			limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority = yes }
+			limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority_wide = yes }
 
 			WA_AI_PC_start_project = yes
 			set_temp_variable = { break = 1 }
-		}
-
-		# Fix 40 pass 2 - widened sites, only when pass 1 queued nothing
-		if = { limit = { NOT = { check_variable = { WA_AI_PC_queue^num > _refinery_q_before_ } } }
-
-			random_scope_in_array = { array = controlled_states
-				limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority_wide = yes }
-
-				WA_AI_PC_start_project = yes
-				set_temp_variable = { break = 1 }
-			}
 		}
 	}
 }
 
 WA_AI_priority_queue_steel_refinery = {
 
-	if = { limit = { check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 } }
 
-		set_temp_variable = { _project_building_type = 15 }
-		set_temp_variable = { _project_province_id = 0 }
-		# Fix 41: strategic band (250) - see the synthetic-refinery note above
-		set_temp_variable = { _project_priority = 250 }
-		set_temp_variable = { _project_queue_num = 1 }
-		# Fix 40: explicit bounds / leak hygiene - see the header note above
-		set_temp_variable = { _project_queue_max = 1 }
-		set_temp_variable = { _project_target_state = 0 }
-		set_temp_variable = { _project_target_level = 0 }
+	set_temp_variable = { _project_building_type = 15 }
+	set_temp_variable = { _project_province_id = 0 }
+	# Fix 41: strategic band (250) - see the synthetic-refinery note above
+	set_temp_variable = { _project_priority = @AI_PC_PRIO_STRATEGIC }
+	set_temp_variable = { _project_queue_num = 1 }
+	# Fix 40: explicit bounds / leak hygiene - see the header note above
+	set_temp_variable = { _project_queue_max = 1 }
+	set_temp_variable = { _project_target_state = 0 }
+	set_temp_variable = { _project_target_level = 0 }
 
-		set_temp_variable = { _refinery_q_before_ = WA_AI_PC_queue^num }
+	set_temp_variable = { _refinery_q_before_ = WA_AI_PC_queue^num }
 
-		# Fix 40 pass 1 - preferred sites (filtered draw)
+	# Fix 40 pass 1 - preferred sites (filtered draw)
+	random_scope_in_array = { array = controlled_states
+		limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority = yes }
+
+		WA_AI_PC_start_project = yes
+		set_temp_variable = { break = 1 }
+	}
+
+	# Fix 40 pass 2 - widened sites, only when pass 1 queued nothing
+	if = { limit = { NOT = { check_variable = { WA_AI_PC_queue^num > _refinery_q_before_ } } }
+
 		random_scope_in_array = { array = controlled_states
-			limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority = yes }
+			limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority_wide = yes }
 
 			WA_AI_PC_start_project = yes
 			set_temp_variable = { break = 1 }
-		}
-
-		# Fix 40 pass 2 - widened sites, only when pass 1 queued nothing
-		if = { limit = { NOT = { check_variable = { WA_AI_PC_queue^num > _refinery_q_before_ } } }
-
-			random_scope_in_array = { array = controlled_states
-				limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority_wide = yes }
-
-				WA_AI_PC_start_project = yes
-				set_temp_variable = { break = 1 }
-			}
 		}
 	}
 }
 
 WA_AI_priority_queue_aluminium_refinery = {
 
-	if = { limit = { check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 } }
 
-		set_temp_variable = { _project_building_type = 16 }
-		set_temp_variable = { _project_province_id = 0 }
-		# Fix 41: strategic band (250) - see the synthetic-refinery note above
-		set_temp_variable = { _project_priority = 250 }
-		set_temp_variable = { _project_queue_num = 1 }
-		# Fix 40: explicit bounds / leak hygiene - see the header note above
-		set_temp_variable = { _project_queue_max = 1 }
-		set_temp_variable = { _project_target_state = 0 }
-		set_temp_variable = { _project_target_level = 0 }
+	set_temp_variable = { _project_building_type = 16 }
+	set_temp_variable = { _project_province_id = 0 }
+	# Fix 41: strategic band (250) - see the synthetic-refinery note above
+	set_temp_variable = { _project_priority = @AI_PC_PRIO_STRATEGIC }
+	set_temp_variable = { _project_queue_num = 1 }
+	# Fix 40: explicit bounds / leak hygiene - see the header note above
+	set_temp_variable = { _project_queue_max = 1 }
+	set_temp_variable = { _project_target_state = 0 }
+	set_temp_variable = { _project_target_level = 0 }
 
-		set_temp_variable = { _refinery_q_before_ = WA_AI_PC_queue^num }
+	set_temp_variable = { _refinery_q_before_ = WA_AI_PC_queue^num }
 
-		# Fix 40 pass 1 - preferred sites (filtered draw)
+	# Fix 40 pass 1 - preferred sites (filtered draw)
+	random_scope_in_array = { array = controlled_states
+		limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority = yes }
+
+		WA_AI_PC_start_project = yes
+		set_temp_variable = { break = 1 }
+	}
+
+	# Fix 40 pass 2 - widened sites, only when pass 1 queued nothing
+	if = { limit = { NOT = { check_variable = { WA_AI_PC_queue^num > _refinery_q_before_ } } }
+
 		random_scope_in_array = { array = controlled_states
-			limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority = yes }
+			limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority_wide = yes }
 
 			WA_AI_PC_start_project = yes
 			set_temp_variable = { break = 1 }
-		}
-
-		# Fix 40 pass 2 - widened sites, only when pass 1 queued nothing
-		if = { limit = { NOT = { check_variable = { WA_AI_PC_queue^num > _refinery_q_before_ } } }
-
-			random_scope_in_array = { array = controlled_states
-				limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority_wide = yes }
-
-				WA_AI_PC_start_project = yes
-				set_temp_variable = { break = 1 }
-			}
 		}
 	}
 }

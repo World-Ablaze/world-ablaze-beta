@@ -250,6 +250,8 @@ WA_AI_PC_get_building_cost = {
 }
 
 ### Allocation base constants (must match common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt)
+### REGISTRY: tools/constants_registry.json owns the must-match list for everything in this block, the
+### band table below and the cost globals above - `python tools/check_constants.py` verifies every copy.
 @AI_PC_ALLOC_FRACTION = 0.40			# share of the reconstructed available pool given to projects
 @AI_PC_STABLE_BASE_FRACTION = 0.30		# floor: share of TOTAL civs the base can never drop below
 @AI_PC_ALLOC_HARD_CAP_FRACTION = 0.50   # ceiling: allocation can never exceed this share of total civs
@@ -382,7 +384,7 @@ WA_AI_PC_assign_factories = {
 
 
 	if = { limit = { has_country_flag = WA_AI_construction_logging }
-		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC_ASSIGN: after_35pct=[?available_factories_]"
+		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC_ASSIGN: after_alloc_fraction=[?available_factories_]"
 	}
 
 	# Reset all project factory assignments (use temp for new total)
@@ -1404,9 +1406,11 @@ WA_AI_PC_add_finished_building_by_id = {
 }
 
 ### projects
-
-@AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL = 0.35
-@AI_MIN_NUM_OF_FACTORIES_TO_ASSIGN_ON_PROJECT = 20
+# (Fix 90: the two constants that used to be declared here - @AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL
+#  0.35 and @AI_MIN_NUM_OF_FACTORIES_TO_ASSIGN_ON_PROJECT 20 - were unused in this file and out of step with
+#  @AI_PC_ALLOC_FRACTION above. They belonged to the pre-2026-01 admission gate WA_AI_PC_can_afford_project,
+#  deleted by Fix 90b the same day (epitaph in WA_AI_CONSTRUCTION_triggers.txt); the fraction lives on there
+#  under the name @AI_PC_ALLOC_FRACTION, registered in tools/constants_registry.json.)
 
 ### Dynamic Queue System - Start Project
 # THIS = state, PREV = builder country

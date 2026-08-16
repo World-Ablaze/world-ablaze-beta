@@ -17,6 +17,7 @@ If you are about to edit one of these, stop and find the generator instead:
 | `ai_will_do` blocks in `common/technologies/*.txt` | `tools/ai_will_do_replacer_all.py` and the per-domain replacers |
 | `ai_will_do` blocks in `common/decisions/_resource_prospecting.txt` | `tools/ai_will_do_replacer_prospecting.py`, `needs_aware_generator.py`, `prospecting_decision_analyzer.py` |
 | `localisation/**/*_GENERATED_*.yml` | their generator workflow |
+| `.claude/skills/wa-constants-registry/references/registry.md` | `python tools/check_constants.py --markdown` (from `tools/constants_registry.json`) |
 
 Hand-editing is acceptable only when there is genuinely no viable generator path — and then say so in a comment, because the next regeneration will overwrite it.
 
@@ -104,6 +105,7 @@ Read that document before changing the pipeline itself.
 
 | Path | Purpose |
 | --- | --- |
+| `tools/check_constants.py` + `tools/constants_registry.json` | Constants registry checker: drift / phantom mirrors / unread copies across file-scoped `@` constants, `05_defines.lua`, `00_buildings.txt` and `savegame.py`. Stdlib only, exit 1 on ERROR. Run before committing `WA_AI_*` script (skill `wa-constants-registry`). |
 | `tools/dlc_splitter/` | Lexer/parser/AST/splitter for detecting and separating DLC-gated content. Has its own `__main__.py`. |
 | `tools/core/` | Shared CLI, CSV parsers, file IO, logging config. |
 | `tools/misc/ai_will_do_date_updater.py` | Conservative date-only updater — changes date modifiers without touching trigger logic. Prefer this when a date is all you need. |

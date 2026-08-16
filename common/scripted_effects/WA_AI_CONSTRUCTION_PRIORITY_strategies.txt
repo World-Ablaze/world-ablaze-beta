@@ -6,28 +6,50 @@
 WA_AI_priority_construction_strategies = {
 
 
-	if = { limit = { check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 }  }
+	# Fix 90 (2026-08-16, campaign af003548): the `active_nonrail < 5` admission gate that used
+	# to wrap this block is GONE. It was the admission cap of the PRE-2026-01 engine, whose
+	# project list was a fixed 5-slot array (`resize_array = { array = WA_AI_PC_project_array
+	# size = 5 }` before 38d57a137) - `< 5` meant "a slot is free". The dynamic queue replaced
+	# the array, Fix 29b made the count non-rail, and nothing ever made it band-aware, so it
+	# counted default-band radars against strategic-band refineries and shut the USA out of PC
+	# refineries for ten years. Every strategy now carries its OWN budget instead:
+	#   radar            _project_queue_max = @AI_PC_QMAX_RADAR (was: leaked from earlier callers)
+	#   supply lines     _project_queue_max = @AI_PC_QMAX_SUPPLY_LINE (type 1, three callers)
+	#   resource infra   @AI_PC_QMAX_INF_RESOURCE in WA_AI_priority_queue_INF_resource
+	#   islands          own type_id @AI_PC_TYPE_ID_ISLANDS, @AI_PC_QMAX_ISLANDS per building type
+	#   refineries       _project_queue_max = 1 per type (Fix 40), gate removed from all 8 sites
+	# The WA_AI_PC_can_afford_project block that used to wrap the same five strategies is gone
+	# with it, and so is the trigger itself (Fix 90b, same day - its epitaph is in
+	# WA_AI_CONSTRUCTION_triggers.txt). Same lineage: in the old engine admitting a project
+	# COMMITTED its 20 civs, so "can we afford one more" was a real question; in the dynamic queue
+	# admission costs nothing - the sorted fill funds or makes wait, the lanes serve starvation,
+	# and each strategy's _project_queue_max bounds the clutter (radar 3 + supply 3 + infra 2 +
+	# islands 2/type + MIC->CIC 1 = at most ~11 unfunded band-100 projects, swept at 30 weeks).
+	# The gate had been repaired twice already (the 0.30 floor mirror, the 0.35 -> 0.40 resync)
+	# to keep it from closing forever on saturated queues - the usual signature of a guard whose
+	# premise is gone - and its last readers (the MIC->CIC conversion legs below, the C.10 infra
+	# add) were dead on saturated majors and redundant on slack ones; each got an explicit budget
+	# or lost its duplicate PC route instead. The strategies' remaining civ gates are the FLOORED
+	# WA_AI_PC_has_project_civs_16/_20/_31 (the bare engine token reads ~0 on a saturated queue).
+	# So the dispatcher is now flat: every strategy admits on its own terms and its own budget;
+	# the band table decides who is funded.
 
-		if = { limit = { WA_AI_PC_can_afford_project = yes }
+	WA_AI_important_radar_constructions = yes
 
-			WA_AI_important_radar_constructions = yes
+	WA_AI_build_supply_line_GER_SOV = yes
 
-			WA_AI_build_supply_line_GER_SOV = yes
+	WA_AI_build_supply_line_JAP_RAJ = yes
 
-			WA_AI_build_supply_line_JAP_RAJ = yes
+	WA_AI_improve_north_africa_infrastructure = yes
 
-			WA_AI_improve_north_africa_infrastructure = yes
+	WA_AI_resource_extraction = yes
 
-			WA_AI_resource_extraction = yes
+	WA_AI_fortify_strategic_islands = yes
 
-			WA_AI_fortify_strategic_islands = yes
-		}
-
-		# WA_AI_convert_MIC_to_CIC_industrial_expansion = yes not needed in WA
-	}
+	# WA_AI_convert_MIC_to_CIC_industrial_expansion = yes not needed in WA
 
 	# Fix 40 (campaign 31eaf7e6): the three refinery strategies moved OUT of the
-	# gated block above. WA_AI_PC_can_afford_project needs assigned + 20 < 0.35 *
+	# gated block above. WA_AI_PC_can_afford_project (deleted by Fix 90b) needed assigned + 20 < 0.35 *
 	# (free + assigned), i.e. roughly 2.9x more free civs than the 20-factory step -
 	# for an import-strangled ENG (198 civs, permanently saturated queue, free civs
 	# reading ~0) that threshold is unreachable, so the whole refinery branch was
@@ -38,7 +60,7 @@ WA_AI_priority_construction_strategies = {
 	# them (WA_AI_RESOURCE_NEEDS_triggers.txt).
 	# Self-bounding without the dispatcher gates: WA_AI_PC_has_project_civs_20 +
 	# has_capitulated/surrender guards inside each strategy, the shortage_months = 3
-	# requirement, the per-strategy active_nonrail < 5 gate, and the explicit
+	# requirement (the per-strategy active_nonrail < 5 gate was removed by Fix 90), and the explicit
 	# _project_queue_max = 1 in each queue function (Fix 40 in
 	# WA_AI_CONSTRUCTION_queue_functions.txt) - at most ONE refinery project of a
 	# given type in flight per country.
@@ -82,6 +104,17 @@ WA_AI_priority_construction_strategies = {
 ### one numbering space.
 @AI_PC_TYPE_ID_UK_AIR = 20			# Fix 47: WA_AI_build_uk_air_hosting_capacity
 @AI_PC_TYPE_ID_THEATRE_AIR = 21		# Fix 47: WA_AI_build_theatre_air_bases
+@AI_PC_TYPE_ID_ISLANDS = 23			# Fix 90: WA_AI_fortify_strategic_islands (own budget per building type)
+@AI_PC_TYPE_ID_SUPPLY_LINE = 24		# Fix 90b: WA_AI_build_supply_line - type 1, budget independent of resource infra
+									# (25 = WA_AI_priority_queue_INF_resource, declared in WA_AI_CONSTRUCTION_queue_functions.txt;
+									#  savegame.py _PC_TYPE_IDS names 20/21/23/24/25 - keep the three lists in one numbering space)
+
+### Fix 90 (2026-08-16): explicit per-strategy budgets replacing the legacy dispatcher `< 5` gate.
+### Values chosen to reproduce the observed healthy footprint, not to widen it: on af003548 the USA
+### held 4-6 radar projects at every anchor (the gate's whole allowance), ENG 1-2 supply lines.
+@AI_PC_QMAX_RADAR = 3				# radar projects (type 4) in flight per country
+@AI_PC_QMAX_SUPPLY_LINE = 3			# supply-line infrastructure projects (type 1) in flight per country (scoped to type_id 24)
+@AI_PC_QMAX_ISLANDS = 2				# island fortification projects per building type (scoped to type_id 23)
 
 ### priority construction strategies
 
@@ -89,16 +122,18 @@ WA_AI_important_radar_constructions = {
 
 	if = {
 		limit = {
-			check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 }
 			threat > 0.3
-			num_of_civilian_factories_available_for_projects > 15
+			# Fix 90b: floored (was the bare `available_for_projects > 15`, which reads ~0 on a saturated queue)
+			WA_AI_PC_has_project_civs_16 = yes
 			any_of_scopes = { array = controlled_states WA_AI_radar_location_2 = yes WA_AI_available_RADAR = yes }
 		}
 
 		set_temp_variable = { _project_building_type = 4 }
 		set_temp_variable = { _project_province_id = 0 }
-		set_temp_variable = { _project_priority = 100 }
+		set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
 		set_temp_variable = { _project_queue_num = 1 }
+		# Fix 90: explicit budget (this strategy never set one and inherited a leaked value)
+		set_temp_variable = { _project_queue_max = @AI_PC_QMAX_RADAR }
 		set_temp_variable = { _project_target_level = 0 } # no cap, tech-limited
 		random_scope_in_array = { array = controlled_states limit = { WA_AI_radar_location_2 = yes WA_AI_available_RADAR = yes WA_AI_PC_can_build_project = yes }
 			WA_AI_PC_start_project = yes
@@ -157,7 +192,11 @@ WA_AI_resource_extraction = {
 
 	if = {
 		limit = {
-			num_of_civilian_factories_available_for_projects > 30
+			# Fix 90b: floored (was the bare `available_for_projects > 30`, which reads ~0 on a saturated
+			# queue). This strategy is now the ONLY admission route for PC resource infrastructure -
+			# WA_AI_queue_INF_resource (the C.10 vanilla build list) used to double-admit into the same
+			# queue function behind the deleted WA_AI_PC_can_afford_project and now only does vanilla adds.
+			WA_AI_PC_has_project_civs_31 = yes
 
 			# any state exists with significant resources and there is a need for it
 			any_of_scopes = { array = controlled_states
@@ -215,7 +254,7 @@ WA_AI_build_refinery_resource_shortage_rubber = {
 
 	if = {
 		limit = {
-			check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 }
+			# Fix 90: legacy `active_nonrail < 5` admission gate removed here (see WA_AI_CONSTRUCTION_queue_functions.txt)
 
 			# Fix 40: the dispatcher's WA_AI_PC_can_afford_project used to carry these two
 			# for the whole refinery branch; this strategy now runs outside that gate, so
@@ -305,7 +344,7 @@ WA_AI_build_refinery_resource_shortage_steel = {
 
 	if = {
 		limit = {
-			check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 }
+			# Fix 90: legacy `active_nonrail < 5` admission gate removed here (see WA_AI_CONSTRUCTION_queue_functions.txt)
 
 			# Fix 40: guards inherited from the dispatcher's WA_AI_PC_can_afford_project,
 			# which this strategy no longer runs behind.
@@ -349,13 +388,19 @@ WA_AI_build_refinery_resource_shortage_steel = {
 
 	else_if = {
 		limit = {
-			check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 }
+			# Fix 90: legacy `active_nonrail < 5` admission gate removed here (see WA_AI_CONSTRUCTION_queue_functions.txt)
 
-			# Fix 40: the MIC->CIC conversion leg keeps its ORIGINAL reachability. Only the
-			# refinery branch above was shown to be wrongly starved by the dispatcher gate;
-			# restating can_afford here means moving the strategy out of the dispatcher
-			# cannot widen industry conversion as a side effect.
-			WA_AI_PC_can_afford_project = yes
+			# Fix 40 had restated the dispatcher's WA_AI_PC_can_afford_project here so that moving
+			# the strategy out of the dispatcher "cannot widen industry conversion as a side effect".
+			# Fix 90b (2026-08-16) deleted that trigger: on saturated majors (the countries that
+			# actually meet the mil-share / no-free-slot terms below) it was false essentially always
+			# in wartime, so the leg was dead there; on a slack country it re-asked, one week early,
+			# the question the fill answers for a band-100 project. The brake on conversion is now
+			# EXPLICIT: WA_AI_priority_convert_MIC_to_CIC carries _project_queue_max =
+			# @AI_PC_QMAX_MIC_TO_CIC (1 conversion project in flight per country, MIC removed only at
+			# completion), and the two guards below are stated the way the refinery branch states them.
+			has_capitulated = no
+			surrender_progress < 0.3
 
 			# floored availability, was NOT = { ...available_for_projects < 20 }: the
 			# bare engine variable reads ~0 once the vanilla queue saturates
@@ -414,7 +459,7 @@ WA_AI_build_refinery_resource_shortage_aluminium = {
 
 	if = {
 		limit = {
-			check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 }
+			# Fix 90: legacy `active_nonrail < 5` admission gate removed here (see WA_AI_CONSTRUCTION_queue_functions.txt)
 
 			# Fix 40: guards inherited from the dispatcher's WA_AI_PC_can_afford_project,
 			# which this strategy no longer runs behind.
@@ -461,11 +506,12 @@ WA_AI_build_refinery_resource_shortage_aluminium = {
 
 	else_if = {
 		limit = {
-			check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 }
+			# Fix 90: legacy `active_nonrail < 5` admission gate removed here (see WA_AI_CONSTRUCTION_queue_functions.txt)
 
-			# Fix 40: the MIC->CIC conversion leg keeps its ORIGINAL reachability - see the
+			# Fix 90b: WA_AI_PC_can_afford_project deleted, brake = @AI_PC_QMAX_MIC_TO_CIC - see the
 			# identical note in WA_AI_build_refinery_resource_shortage_steel above.
-			WA_AI_PC_can_afford_project = yes
+			has_capitulated = no
+			surrender_progress < 0.3
 
 			# floored availability, was NOT = { ...available_for_projects < 20 }: the
 			# bare engine variable reads ~0 once the vanilla queue saturates
@@ -631,8 +677,16 @@ WA_AI_build_supply_line = {
 		# Set up project parameters for infrastructure building
 		set_temp_variable = { _project_building_type = 1 }
 		set_temp_variable = { _project_province_id = 0 }
-		set_temp_variable = { _project_priority = 100 }
+		set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
 		set_temp_variable = { _project_queue_num = 1 }
+		# Fix 90: explicit budget for type-1 supply-line projects (three callers share it).
+		# Fix 90b: scoped to this strategy's own type_id - WA_AI_priority_queue_INF_resource also
+		# creates building type 1 (budget @AI_PC_QMAX_INF_RESOURCE, type_id 25); unscoped, the two
+		# counted each other's projects. _project_queue_max_scoped is clear-on-read in
+		# WA_AI_PC_start_project, so it is re-armed before EACH start call below; _project_type_id
+		# persists and is cleared at the end of this block (same discipline as the islands strategy).
+		set_temp_variable = { _project_queue_max = @AI_PC_QMAX_SUPPLY_LINE }
+		set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_SUPPLY_LINE }
 
 		### build a route to the front
 
@@ -659,6 +713,7 @@ WA_AI_build_supply_line = {
 		if = { limit = { check_variable = { building_path_to_front = 1 } }
 
 			set_temp_variable = { _sl_before_ = WA_AI_PC_active_projects }
+			set_temp_variable = { _project_queue_max_scoped = 1 }
 			var:target_id = { WA_AI_PC_start_project = yes }
 			# start_project may no-op (duplicate, level cap) - count only real queue growth
 			if = { limit = { check_variable = { WA_AI_PC_active_projects > _sl_before_ } }
@@ -696,6 +751,7 @@ WA_AI_build_supply_line = {
 					if = { limit = { WA_AI_PC_can_build_project = yes }
 
 						set_temp_variable = { _sl_before_ = ROOT.WA_AI_PC_active_projects }
+						set_temp_variable = { _project_queue_max_scoped = 1 }
 						WA_AI_PC_start_project = yes
 						if = { limit = { check_variable = { ROOT.WA_AI_PC_active_projects > _sl_before_ } }
 							# Plain state id via the map-data primitive - a scope-hopped PREV.id
@@ -749,6 +805,9 @@ WA_AI_build_supply_line = {
 				}
 			}
 		}
+
+		# Fix 90b: retire this strategy's type_id caller-side (see the note at the parameter block)
+		set_temp_variable = { _project_type_id = 0 }
 	}
 }
 
@@ -761,7 +820,7 @@ WA_AI_fortify_strategic_islands = {
 		limit = {
 			tag = JAP
 			has_war = yes
-			num_of_civilian_factories_available_for_projects > 19
+			WA_AI_PC_has_project_civs_20 = yes	# Fix 90b: floored (was the bare `available_for_projects > 19`)
 		}
 
 		every_controlled_state = {
@@ -779,28 +838,40 @@ WA_AI_fortify_strategic_islands = {
 			if = { limit = { WA_AI_available_RADAR = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 4 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
 				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
+				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
+				set_temp_variable = { _project_type_id = 0 }
 			}
 
 			if = { limit = { WA_AI_available_AA = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 3 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
 				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
+				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
+				set_temp_variable = { _project_type_id = 0 }
 			}
 
 			if = { limit = { WA_AI_available_AIR = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 2 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
 				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
+				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
+				set_temp_variable = { _project_type_id = 0 }
 			}
 		}
 	}
@@ -810,7 +881,7 @@ WA_AI_fortify_strategic_islands = {
 		limit = {
 			tag = USA
 			has_war = yes
-			num_of_civilian_factories_available_for_projects > 19
+			WA_AI_PC_has_project_civs_20 = yes	# Fix 90b: floored (was the bare `available_for_projects > 19`)
 		}
 
 		every_controlled_state = {
@@ -829,28 +900,40 @@ WA_AI_fortify_strategic_islands = {
 			if = { limit = { WA_AI_available_RADAR = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 4 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
 				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
+				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
+				set_temp_variable = { _project_type_id = 0 }
 			}
 
 			if = { limit = { WA_AI_available_AA = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 3 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
 				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
+				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
+				set_temp_variable = { _project_type_id = 0 }
 			}
 
 			if = { limit = { WA_AI_available_AIR = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 2 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
 				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
+				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
+				set_temp_variable = { _project_type_id = 0 }
 			}
 		}
 	}
@@ -860,7 +943,7 @@ WA_AI_fortify_strategic_islands = {
 		limit = {
 			tag = ENG
 			has_war = yes
-			num_of_civilian_factories_available_for_projects > 19
+			WA_AI_PC_has_project_civs_20 = yes	# Fix 90b: floored (was the bare `available_for_projects > 19`)
 		}
 
 		every_controlled_state = {
@@ -877,28 +960,40 @@ WA_AI_fortify_strategic_islands = {
 			if = { limit = { WA_AI_available_RADAR = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 4 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
 				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
+				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
+				set_temp_variable = { _project_type_id = 0 }
 			}
 
 			if = { limit = { WA_AI_available_AA = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 3 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
 				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
+				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
+				set_temp_variable = { _project_type_id = 0 }
 			}
 
 			if = { limit = { WA_AI_available_AIR = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 2 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
 				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
+				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
+				set_temp_variable = { _project_type_id = 0 }
 			}
 		}
 	}
@@ -908,7 +1003,7 @@ WA_AI_fortify_strategic_islands = {
 		limit = {
 			tag = FRA
 			has_war = yes
-			num_of_civilian_factories_available_for_projects > 19
+			WA_AI_PC_has_project_civs_20 = yes	# Fix 90b: floored (was the bare `available_for_projects > 19`)
 		}
 
 		every_controlled_state = {
@@ -917,28 +1012,40 @@ WA_AI_fortify_strategic_islands = {
 			if = { limit = { WA_AI_available_RADAR = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 4 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
 				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
+				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
+				set_temp_variable = { _project_type_id = 0 }
 			}
 
 			if = { limit = { WA_AI_available_AA = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 3 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
 				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
+				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
+				set_temp_variable = { _project_type_id = 0 }
 			}
 
 			if = { limit = { WA_AI_available_AIR = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 2 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
 				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
+				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
+				set_temp_variable = { _project_type_id = 0 }
 			}
 		}
 	}
@@ -948,7 +1055,7 @@ WA_AI_fortify_strategic_islands = {
 		limit = {
 			tag = SPR
 			has_war = yes
-			num_of_civilian_factories_available_for_projects > 19
+			WA_AI_PC_has_project_civs_20 = yes	# Fix 90b: floored (was the bare `available_for_projects > 19`)
 		}
 
 		every_controlled_state = {
@@ -957,28 +1064,40 @@ WA_AI_fortify_strategic_islands = {
 			if = { limit = { WA_AI_available_RADAR = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 4 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
 				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
+				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
+				set_temp_variable = { _project_type_id = 0 }
 			}
 
 			if = { limit = { WA_AI_available_AA = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 3 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
 				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
+				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
+				set_temp_variable = { _project_type_id = 0 }
 			}
 
 			if = { limit = { WA_AI_available_AIR = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 2 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = 100 }
+				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
 				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
+				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
+				set_temp_variable = { _project_type_id = 0 }
 			}
 		}
 	}

@@ -28,6 +28,7 @@ Check `descriptor.mod` when unsure whether a folder is replaced — it is a flat
 | Writing or fixing tests, `tests/*.txt` bundles, `WA_TEST_*` harnesses, reading test logs | skill `wa-testing` |
 | Python tooling: map generators, `ai_will_do` replacers, prospecting analyzers, DLC splitter | skill `wa-tooling` |
 | A gotcha that already bit someone; also where to record a new one | skill `wa-lessons-learned` |
+| Any `@` constant, engine define or building fact that is declared in more than one place — which copy is the owner, and the checker that catches drift | skill `wa-constants-registry` |
 | Reading savegames: campaign identity, extracting variables/ideas/flags from 60–150MB saves | skill `wa-savegame-analysis` |
 | Scoring an analysed test campaign against the living verification checklist; adding a probe when a fix ships | skill `wa-campaign-checklist` |
 | Full system-ownership table, editing rules, validation matrix | `AGENTS.md` (repo root) |
@@ -110,6 +111,7 @@ You cannot run HOI4 from the shell, so pick the strongest check the change allow
 | Change | Check |
 | --- | --- |
 | Any PDXScript edit | Brace balance, scope correctness, name collisions, event ID/namespace validity — by inspection. |
+| Any `@` constant, `05_defines.lua`, `00_buildings.txt` cost/cap, `savegame.py` `_PC_*` table, or `WA_AI_*` effect/trigger commit | `python tools/check_constants.py` (exit 0). Then the `wa-architecture-reviewer` + `wa-lessons-reviewer` subagents in parallel for the change itself. |
 | Map / pathfinding / railway data | `python run_generators.py <name> --dry-run` from `tools/`, then without `--dry-run` only if the diff is intended. |
 | Technology or prospecting `ai_will_do` | Run the replacer in dry-run, inspect the diff, confirm nested modifiers and indentation survived. |
 | AI outcome behaviour | Built-in test bundles in `tests/`; results land in the HOI4 user directory under `logs/tests/tests_<timestamp>.log`. |

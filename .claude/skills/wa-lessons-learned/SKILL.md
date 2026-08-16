@@ -32,7 +32,7 @@ are debugging, you still read the entries the reviewer names.
 
 **1. Puppet territory is not yours.** `every_controlled_state` iterates only states the country controls *directly* — subject/puppet land is controlled by the puppet. Any system that should cover an overlord's whole sphere must also walk `every_subject_country`. This is the single most repeated bug in the railway system.
 
-**2. `@` constants are file-scoped, and some are deliberately duplicated.** `WA_AI_misc_on_actions.txt` redeclares the railway eligibility constants with a `# must match ...` comment. Changing one declaration and not the other is a silent behaviour split. Grep the constant name before editing it.
+**2. `@` constants are file-scoped, and some are deliberately duplicated.** The railway eligibility five, the PC allocation fraction, the Fix 41 bands, the posture thresholds and the shadow prices all exist in two or more files with `# must match ...` comments — and the comment held nothing: the PC affordability gate sat at 0.35 while the allocator funded at 0.40 (Fix 90). Every such pair is now a registered group in `tools/constants_registry.json`; run `python tools/check_constants.py` before committing, and register any new shared constant (skill `wa-constants-registry`; log entry "A 'must match' comment is not a mechanism").
 
 **3. `# Fix NN:` comments are a changelog, and later fixes revoke earlier ones.** `Fix 27` revokes `Fix 25`. Code that looks redundant is usually encoding a case that broke. Read the surrounding Fix comments before removing anything.
 
