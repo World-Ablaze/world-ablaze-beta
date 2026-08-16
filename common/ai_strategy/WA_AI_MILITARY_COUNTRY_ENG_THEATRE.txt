@@ -143,7 +143,7 @@ WA_AI_MILITARY_ENG_bef_in_europe_THEATRE = {
 	ai_strategy = {
 		type = area_priority
 		id = north_france
-		value = 5000
+		value = 1000 # economy: was 5000
 	}
 	ai_strategy = {
 		type = put_unit_buffers
@@ -155,7 +155,7 @@ WA_AI_MILITARY_ENG_bef_in_europe_THEATRE = {
 			29
 		}
 
-		ratio = 1.0
+		ratio = 0.25 # economy: was 1
 
 		area = north_france
 
@@ -217,8 +217,27 @@ WA_AI_MILITARY_ENG_africa_war_2_THEATRE = {
 			447 = { is_controlled_by = UKE }
 			453 = { is_controlled_by = UKE }
 		}
-		WA_AI_MILITARY_ENG_africa_hostile_presence = yes
-		NOT = { WA_AI_MILITARY_ENG_africa_hostile_presence = yes }
+		# Phase 6 collapsed the original block's TWO different state lists into the
+		# same shared trigger, producing X AND NOT X - the block was unreachable since
+		# the refactor. Restored from pre-split a6fee253d: the Libyan core still has
+		# enemies (any of Benghasi/Cyrenaica/Derna) but the enemy does NOT hold the
+		# whole western desert - i.e. the active advance phase of the desert campaign.
+		OR = {
+			450 = { CONTROLLER = { has_war_with = ROOT } }
+			663 = { CONTROLLER = { has_war_with = ROOT } }
+			451 = { CONTROLLER = { has_war_with = ROOT } }
+		}
+		NOT = {
+			450 = { CONTROLLER = { has_war_with = ROOT } }
+			663 = { CONTROLLER = { has_war_with = ROOT } }
+			451 = { CONTROLLER = { has_war_with = ROOT } }
+			550 = { CONTROLLER = { has_war_with = ROOT } }
+			910 = { CONTROLLER = { has_war_with = ROOT } }
+			271 = { CONTROLLER = { has_war_with = ROOT } }
+			909 = { CONTROLLER = { has_war_with = ROOT } }
+			559 = { CONTROLLER = { has_war_with = ROOT } }
+			269 = { CONTROLLER = { has_war_with = ROOT } }
+		}
 		surrender_progress < 0.05
 	}
 	abort_when_not_enabled = yes
@@ -320,11 +339,10 @@ WA_AI_MILITARY_ENG_protect_home_THEATRE = {
 		original_tag = ENG
 	}
 	enable = {
-		always = yes
+		# economy E4: buffers may not be always-on; hoarding at peace is pointless
+		has_war = yes
 	}
-	abort = {
-		always = no
-	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = put_unit_buffers
@@ -344,7 +362,7 @@ WA_AI_MILITARY_ENG_protect_home_THEATRE = {
 			130
 		}
 
-		ratio = 2.6
+		ratio = 0.25 # economy: was 2.6
 
 		area = britain
 
@@ -383,7 +401,7 @@ WA_AI_MILITARY_ENG_protect_home_THEATRE = {
 		area = spain
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
 	}
 	ai_strategy = {
 		type = put_unit_buffers
@@ -548,7 +566,7 @@ WA_AI_MILITARY_ENG_protect_africa = {
 			923
 		}
 
-		ratio = 1.2
+		ratio = 0.25 # economy: was 1.2
 
 		area = north_africa
 
@@ -597,7 +615,7 @@ WA_AI_MILITARY_ENG_protect_ireland = {
 			113
 		}
 
-		ratio = 0.3
+		ratio = 0.25 # economy: was 0.3
 
 		area = ireland
 
@@ -656,7 +674,7 @@ WA_AI_MILITARY_ENG_germany_is_winning = {
 			130
 		}
 
-		ratio = 0.75
+		ratio = 0.5 # siege: invasion of Britain imminent - home line hoard (was 0.75)
 
 		area = britain
 
@@ -731,7 +749,7 @@ WA_AI_MILITARY_ENG_germany_has_won = {
 			468
 		}
 
-		ratio = 8.0
+		ratio = 1.0 # siege: government-in-exile last stand in Canada (was 8)
 
 		area = canada
 
@@ -771,47 +789,47 @@ WA_AI_MILITARY_ENG_all_in_THEATRE = {
 	ai_strategy = {
 		type = area_priority
 		id = britain
-		value = 5000
+		value = 200 # economy: was 5000
 	}
 	ai_strategy = {
 		type = area_priority
 		id = britain_coast
-		value = 5000
+		value = 200 # economy: was 5000
 	}
 	ai_strategy = {
 		type = area_priority
 		id = north_africa
-		value = -5000
+		value = -200 # economy: was -5000
 	}
 	ai_strategy = {
 		type = area_priority
 		id = south_africa
-		value = -5000
+		value = -200 # economy: was -5000
 	}
 	ai_strategy = {
 		type = area_priority
 		id = middle_east
-		value = -5000
+		value = -200 # economy: was -5000
 	}
 	ai_strategy = {
 		type = area_priority
 		id = mediterranean
-		value = -5000
+		value = -200 # economy: was -5000
 	}
 	ai_strategy = {
 		type = area_priority
 		id = east_asia
-		value = -5000
+		value = -200 # economy: was -5000
 	}
 	ai_strategy = {
 		type = area_priority
 		id = malaysia
-		value = -5000
+		value = -200 # economy: was -5000
 	}
 	ai_strategy = {
 		type = area_priority
 		id = asia
-		value = -5000
+		value = -200 # economy: was -5000
 	}
 }
 
@@ -868,9 +886,9 @@ WA_AI_MILITARY_ENG_defense_of_el_alamein = {
 			447
 		}
 
-		ratio = 0.8
+		ratio = 0.5 # siege: El Alamein fortress line (was 0.8)
 
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
 	}
 }
 
@@ -904,6 +922,121 @@ WA_AI_MILITARY_ENG_defense_of_kuwait= {
 
 		ratio = 0.08
 
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
+	}
+}
+
+# purpose: steer the strategic-bombing focus onto the Axis home areas and pull it off China /
+#          South America (relocated Phase 7c verbatim from legacy ENG.txt
+#          ENG_bomb_the_hell_out_of_the_axis).
+# range:   -2000 to +4000 (saturated legacy values, E1 worklist)
+# policy:  Additive per area
+# domain:  THEATRE
+# WARNING: this block is coupled to the allied strategic bombing campaign (commit 439c4106d
+#          "unground the allied strategic bombing campaign over Germany"). Do not clamp these
+#          values in the Phase 8 pass without re-testing the air campaign in a campaign save.
+WA_AI_MILITARY_ENG_strategic_bombing_focus_THEATRE = {
+	allowed = {
+		tag = ENG
+	}
+	enable = {
+		has_war_with = GER
+		OR = {
+			GER = { has_war_with = USA }
+			date > 1940.6.1
+		}
+	}
+	abort = {
+		NOT = { GER = { has_war_with = ENG } }
+	}
+
+	ai_strategy = {
+		type = area_priority
+		id = germany
+		value = 4000 #more focus here
+	}
+
+	ai_strategy = {
+		type = area_priority
+		id = prussia
+		value = 4000 #more focus here
+	}
+
+	ai_strategy = {
+		type = area_priority
+		id = austria
+		value = 4000 #more focus here
+	}
+
+	ai_strategy = {
+		type = area_priority
+		id = north_france
+		value = 1000 #more focus here
+	}
+
+	ai_strategy = {
+		type = area_priority
+		id = france
+		value = 1000 #more focus here
+	}
+
+	ai_strategy = {
+		type = area_priority
+		id = south_france
+		value = 1000 #more focus here
+	}
+
+	ai_strategy = {
+		type = area_priority
+		id = benelux
+		value = 1000 #more focus here
+	}
+
+	ai_strategy = {
+		type = area_priority
+		id = italy
+		value = 1000 #more focus here
+	}
+
+	ai_strategy = {
+		type = area_priority
+		id = south_italy
+		value = 1000 #more focus here
+	}
+
+	ai_strategy = {
+		type = area_priority
+		id = north_china
+		value = -2000
+	}
+
+	ai_strategy = {
+		type = area_priority
+		id = shanghai_china
+		value = -2000
+	}
+
+	ai_strategy = {
+		type = area_priority
+		id = east_china
+		value = -2000
+	}
+
+	ai_strategy = {
+		type = area_priority
+		id = south_china
+		value = -2000
+	}
+
+	ai_strategy = {
+		type = area_priority
+		id = asia
+		value = -1000
+	}
+
+	ai_strategy = {
+		type = area_priority
+		id = south_america
+		value = -1000
 	}
 }

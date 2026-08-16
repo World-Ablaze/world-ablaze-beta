@@ -72,27 +72,27 @@ WA_AI_MILITARY_ITA_stop_crowding_up_the_soviet_line_FRONT = {
 	ai_strategy = {
 		type = front_unit_request
 		area = south_russia
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 	ai_strategy = {
 		type = front_unit_request
 		area = caucasus
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 	ai_strategy = {
 		type = front_unit_request
 		area = north_russia
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 	ai_strategy = {
 		type = front_unit_request
 		area = west_russia
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 	ai_strategy = {
 		type = front_unit_request
 		area = crimea
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 }
 
@@ -118,7 +118,7 @@ WA_AI_MILITARY_ITA_switzerland_FRONT = {
 	ai_strategy = {
 		type = front_unit_request
 		tag = SWI
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 }
 
@@ -204,7 +204,7 @@ WA_AI_MILITARY_ITA_crush_ethiopia_1_FRONT = {
 	ai_strategy = {
 		type = front_unit_request
 		tag = ETH
-		value = 500
+		value = 200 # economy: was 500
 	}
 }
 
@@ -232,7 +232,7 @@ WA_AI_MILITARY_ITA_crush_ethiopia_2_FRONT = {
 	ai_strategy = {
 		type = front_unit_request
 		tag = ETH
-		value = 500
+		value = 200 # economy: was 500
 	}
 }
 
@@ -350,12 +350,12 @@ WA_AI_MILITARY_ITA_war_against_ENG_FRONT = {
 
 	ai_strategy = {
 		type = garrison
-		value = -1000
+		value = -5000 # economy: was -1000
 	}
 	ai_strategy = {
 		type = garrison
 		id = ITA
-		value = -2000
+		value = -5000 # economy: was -2000
 	}
 }
 
@@ -394,5 +394,108 @@ WA_AI_MILITARY_ITA_end_the_struggle_in_ethiopia_FRONT = {
 		ordertype = front
 		execution_type = rush
 		execute_order = yes
+	}
+}
+
+
+# purpose: R13 - Italy mans the North-African front. Audit finding (campaign 66d6b53c): ITA had zero
+#          offensive front content toward Egypt - no front_unit_request, no execute_order vs the
+#          Egypt-side enemy - and the desert front froze for 33 months. This block supplies the
+#          divisions whenever Italy (or its ITL subject) holds a Libyan foothold and is at war with
+#          whoever controls East Egypt; controller-based so it works ahistorically (any enemy in
+#          Egypt, not hardcoded ENG). Deliberately NOT balance-gated: when the offensive is off the
+#          divisions still have to hold the line. Home threat aborts it - Africa is triaged away
+#          when the mainland is at risk (same reflex as the abandon_north_africa THEATRE rule).
+# range:   +60 (E2 [-100, +200])
+# policy:  Additive per area
+# domain:  FRONT
+WA_AI_MILITARY_ITA_north_africa_offensive_units_FRONT = {
+
+	allowed = {
+		tag = ITA
+	}
+	enable = {
+		# Libyan foothold, own or ITL subject (state set of war_against_ENG above, plus Derna 663)
+		OR = {
+			448 = { is_controlled_by = ITA }
+			449 = { is_controlled_by = ITA }
+			450 = { is_controlled_by = ITA }
+			451 = { is_controlled_by = ITA }
+			663 = { is_controlled_by = ITA }
+			448 = { is_controlled_by = ITL }
+			449 = { is_controlled_by = ITL }
+			450 = { is_controlled_by = ITL }
+			451 = { is_controlled_by = ITL }
+			663 = { is_controlled_by = ITL }
+		}
+		# At war with whoever controls East Egypt (anchor set of WA_AI_MILITARY_ENG_holds_east_egypt)
+		OR = {
+			446 = { CONTROLLER = { has_war_with = ROOT } }
+			447 = { CONTROLLER = { has_war_with = ROOT } }
+			453 = { CONTROLLER = { has_war_with = ROOT } }
+		}
+		NOT = { WA_AI_MILITARY_home_threatened = yes }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		area = north_africa
+		value = 60
+	}
+}
+
+
+# purpose: R13 - execute battle plans toward Egypt while the force balance supports it.
+#          WA_AI_MILITARY_north_africa_offensive_viable consumes the weekly posture calculus
+#          (posture_vs_<controller of East Egypt> > 0, or an enemy too small for a verdict). When
+#          the balance turns unfavourable the verdict drops to 0, this block aborts, and the front
+#          falls back to defence - the +60 unit request above stays up so the line remains manned.
+#          Levels 1 and 2 both qualify; balanced execution is intended either way
+#          (WA_AI_MILITARY_SOV_counterattack precedent).
+#          Priority 100 on purpose: above an unset Country default of 0 (SPA lesson), below the
+#          500/10000 equipment emergency stops in DEFAULT_FRONT_control - losing to
+#          low_equipment_hold while starving is correct behaviour.
+# range:   n/a (front_control)
+# policy:  Exclusive per area (sole ITA-scope writer for area north_africa); outranked by the
+#          level-500/10000 emergency stops in DEFAULT_FRONT_control.
+# domain:  FRONT
+WA_AI_MILITARY_ITA_north_africa_offensive_exec_FRONT = {
+
+	allowed = {
+		tag = ITA
+	}
+	enable = {
+		# Same geographic gate as the unit-request block above
+		OR = {
+			448 = { is_controlled_by = ITA }
+			449 = { is_controlled_by = ITA }
+			450 = { is_controlled_by = ITA }
+			451 = { is_controlled_by = ITA }
+			663 = { is_controlled_by = ITA }
+			448 = { is_controlled_by = ITL }
+			449 = { is_controlled_by = ITL }
+			450 = { is_controlled_by = ITL }
+			451 = { is_controlled_by = ITL }
+			663 = { is_controlled_by = ITL }
+		}
+		OR = {
+			446 = { CONTROLLER = { has_war_with = ROOT } }
+			447 = { CONTROLLER = { has_war_with = ROOT } }
+			453 = { CONTROLLER = { has_war_with = ROOT } }
+		}
+		NOT = { WA_AI_MILITARY_home_threatened = yes }
+		WA_AI_MILITARY_north_africa_offensive_viable = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_control
+		area = north_africa
+		priority = 100
+		ordertype = front
+		execution_type = balanced
+		execute_order = yes
+		manual_attack = yes
 	}
 }

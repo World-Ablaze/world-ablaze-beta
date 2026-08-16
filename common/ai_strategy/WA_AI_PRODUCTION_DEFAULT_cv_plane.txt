@@ -4,22 +4,77 @@
 # These strategies are used to control the production of cv planes
 # Due to how AI calculations work in HOI4,
 # unit_roles define also AI CV squadrons compositions.
+#
+# Fix 66 (2026-08-14) split the min-factory floors out of the two blocks below
+# into four per-role blocks so each floor can be braked independently once that
+# role's carrier aviation has outgrown the decks. The rationale, the measurements
+# and the bar derivation live in the header of
+# common/scripted_triggers/WA_AI_PRODUCTION_carrier_planes.txt - read it before
+# touching any number here. Scored by checklist R43.
 # ============================================================================
 
+# Ratios raised from 50/50 after campaign 9be92c89: cv_fighter at unit_ratio 50 lost
+# every factory-allocation contest against land fighter (300) and sat pinned at the
+# 2-factory floor for four years - USA carrier fighter wings averaged 4.8/10 planes
+# while its nav bombers (whose land rival is only 10) reached 14 factories and 8.0/10.
+# Incremental step (150/100), not the old system's 300: re-tune after an observer run.
+#
+# Re-tuned after observer run f9321934: NOT CHANGED, deliberately. unit_ratio only
+# splits an already-computed pool between the cv roles and cannot raise the total
+# (documentation.info, ### UNIT RATIOS / AIR: land-based and carrier plane types are
+# pooled completely separately), so it is not the over-build lever. The over-build
+# was the deck-blind min-factory floors below.
 WA_DEFAULT_production_carrier_planes_base_ratios = {
     enable = {
-        NOT = {
-            WA_AI_CONFIG_is_still_using_old_ai_navy_system = yes
-        }
         WA_AI_PRODUCTION_production_carrier_planes_base_ratios = yes
     }
     abort_when_not_enabled = yes
 
-    ai_strategy = { type = unit_ratio id = cv_fighter value = 50 }
-    ai_strategy = { type = unit_ratio id = cv_naval_bomber value = 50 }
+    ai_strategy = { type = unit_ratio id = cv_fighter value = 150 }
+    ai_strategy = { type = unit_ratio id = cv_naval_bomber value = 100 }
     ai_strategy = { type = unit_ratio id = cv_cas value = -1000 }
+}
 
-    #Those min factories are to force AI to modernize its planes if requirements is met.
+# Those min factories are to force AI to modernize its planes if requirements is met.
+# Fix 66: gated per role on that role not being saturated. When the gate closes the
+# floor disappears and the role falls back to the engine's own deck-derived demand,
+# which for a saturated country is already zero - that is the whole point.
+WA_DEFAULT_production_carrier_planes_floor_fighter = {
+    enable = {
+        WA_AI_PRODUCTION_carrier_planes_floor_fighter = yes
+    }
+    abort_when_not_enabled = yes
+
     ai_strategy = { type = equipment_production_min_factories  id = cv_fighter	value = 2 }
+}
+
+WA_DEFAULT_production_carrier_planes_floor_nav_bomber = {
+    enable = {
+        WA_AI_PRODUCTION_carrier_planes_floor_nav_bomber = yes
+    }
+    abort_when_not_enabled = yes
+
     ai_strategy = { type = equipment_production_min_factories  id = cv_naval_bomber	value = 2 }
+}
+
+# Carrier majors (a real deck fleet to feed) get a higher floor; minors keep the
+# 2-factory default above. These values are ADDITIVE with the base floor - the two
+# together are what produced the flat 8 factories measured on every carrier line of
+# ENG/JAP/USA at both 1944.6 and 1946.8 in campaign f9321934.
+WA_DEFAULT_production_carrier_planes_major_fighter = {
+    enable = {
+        WA_AI_PRODUCTION_carrier_planes_major_fighter = yes
+    }
+    abort_when_not_enabled = yes
+
+    ai_strategy = { type = equipment_production_min_factories  id = cv_fighter	value = 5 }
+}
+
+WA_DEFAULT_production_carrier_planes_major_nav_bomber = {
+    enable = {
+        WA_AI_PRODUCTION_carrier_planes_major_nav_bomber = yes
+    }
+    abort_when_not_enabled = yes
+
+    ai_strategy = { type = equipment_production_min_factories  id = cv_naval_bomber	value = 5 }
 }

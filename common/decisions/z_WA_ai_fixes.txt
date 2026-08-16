@@ -410,46 +410,30 @@ political_actions = {
         }
 	}
 
-	AI_naval_invasion_fix = { #######Forcefully deletes random invasions to make dday prep work
-
-		icon = generic_operation
-
-        allowed = {
-            always = yes
-        }
-
-        available = {
-			OR = {
-				tag = USA
-				tag = ENG
-			}
-        }
-
-        visible = {
-        	is_ai = yes
-			date < 1944.3.15
-			date > 1944.2.1
-        }
-
-        cost = 0
-        days_remove = 40
-        fire_only_once = yes
-
-        remove_trigger = {
-        	date > 1944.3.15
-        }
-
-        modifier = {
-        	naval_invasion_capacity = -50 #doesnt work anymore new modifier
-        }
-
-        ai_will_do = {
-			factor = 5000
-		}
-
-		complete_effect = {
-        }
-	}
+	# REMOVED 2026-08-14 - AI_naval_invasion_fix ("Forcefully deletes random invasions to make dday prep
+	# work"), superseded by the generic scripted-landing invasion freeze
+	# (common/scripted_triggers/WA_AI_LANDING_triggers.txt, documentation/WA_AI_MILITARY_SYSTEM.md sec.10).
+	#
+	# What it was: available to tag USA or ENG only, visible only 1944.2.1 < date < 1944.3.15,
+	# fire_only_once, days_remove = 40, payload `naval_invasion_capacity = -50`.
+	#
+	# Its own author's comment said the modifier was dead. IT WAS NOT: naval_invasion_capacity is a live
+	# modifier in 1.18.0 (the game install's documentation/modifiers_documentation.md:3843, category
+	# naval; vanilla drives it from ~10 dynamic modifiers), so this decision has been silently zeroing
+	# USA's and ENG's entire naval-invasion capacity for ~40 days every campaign.
+	#
+	# Why it goes rather than stays:
+	#  - It is exactly what AGENTS.md design principles 1 and 2 forbid: a two-tag list plus a six-week
+	#    hard-coded 1944 date window. It does nothing at all for a Torch that happens in 1943, a Norway
+	#    landing instead of a Normandy, an Axis landing in Britain, or any ahistorical timeline.
+	#  - Its lever is indiscriminate. naval_invasion_capacity is country-wide, so in Feb-Mar 1944 it also
+	#    killed the USA's Pacific invasion planning, which was never the intent.
+	#  - The targeted version of its job already exists and is better aimed:
+	#    WA_AI_MILITARY_ALLIES_dday_prep_INVASION (1944.3.1-1944.6.6) suppresses the competing invasion
+	#    targets by name (invade -2000 / invasion_unit_request -10000 per state) while BOOSTING the
+	#    Normandy states, which a blanket capacity of zero cannot do.
+	# Behaviour delta, stated rather than hidden: between 1944.2.1 and 1944.3.1 - the ~4 weeks before the
+	# prep block opens - the Allies now keep their invasion capacity instead of losing it wholesale.
 
 	ai_reassignment_trait_fix = {
 		icon = generic_construction

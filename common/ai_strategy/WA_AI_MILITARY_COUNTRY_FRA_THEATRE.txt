@@ -38,7 +38,7 @@ WA_AI_MILITARY_FRA_pre_fall_rot_THEATRE = {
 			785
 		}
 
-		ratio = 1.0
+		ratio = 0.5 # siege: last line before the fall of France (was 1)
 
 		area = north_france
 
@@ -90,7 +90,7 @@ WA_AI_MILITARY_FRA_garrison_the_maginot = {
 			28
 		}
 
-		ratio = 0.8
+		ratio = 0.5 # siege: Maginot fortress line (was 0.8)
 
 		area = france
 
@@ -164,22 +164,22 @@ WA_AI_MILITARY_FRA_protect_the_homeland_THEATRE = {
 	ai_strategy = {
 		type = area_priority
 		id = east_asia
-		value = -500 # dont suicide in the east
+		value = -200 # economy: was -500
 	}
 	ai_strategy = {
 		type = area_priority
 		id = malaysia
-		value = -5000 # dont suicide in the east
+		value = -200 # economy: was -5000
 	}
 	ai_strategy = {
 		type = area_priority
 		id = south_africa
-		value = -5000
+		value = -200 # economy: was -5000
 	}
 	ai_strategy = {
 		type = area_priority
 		id = central_africa
-		value = -5000
+		value = -200 # economy: was -5000
 	}
 }
 
@@ -206,9 +206,97 @@ WA_AI_MILITARY_FRA_paris_commune_sit_tight = {
 			16
 		}
 
-		ratio = 2
+		ratio = 1 # siege: civil-war enclave holds its ground (was 2)
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
+	}
+}
+
+# purpose: France's standing strategic tilt, converted from the legacy absolute frame
+#          (FRA_area_priority, which had no baseline underneath it) to deltas against the flat
+#          +100 baseline in WA_AI_MILITARY_DEFAULT_THEATRE.txt. Same nets for listed areas;
+#          unlisted areas (all of Russia, the Balkans, China...) previously sat at 0 and now
+#          sit at baseline parity.
+# range:   -150 to +410 (deltas; france is a single-region narrow area, within the narrow allowance)
+# policy:  Additive per area
+# domain:  THEATRE
+# always-on: static continental posture of the original tag - the tilt encodes geography, not
+#            a situation; situational shifts layer on top of it.
+WA_AI_MILITARY_FRA_area_tilt_THEATRE = {
+	allowed = {
+		original_tag = FRA
+	}
+	enable = {
+		always = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = area_priority id = france value = 410 }
+	ai_strategy = { type = area_priority id = benelux value = 10 }
+	ai_strategy = { type = area_priority id = germany value = 10 }
+	ai_strategy = { type = area_priority id = canada value = -90 }
+	ai_strategy = { type = area_priority id = usa_east value = -90 }
+	ai_strategy = { type = area_priority id = usa_central value = -90 }
+	ai_strategy = { type = area_priority id = usa_west value = -90 }
+	ai_strategy = { type = area_priority id = south_america value = -90 }
+	ai_strategy = { type = area_priority id = middle_east value = -90 }
+	ai_strategy = { type = area_priority id = asia value = -100 }
+	ai_strategy = { type = area_priority id = south_africa value = -150 }
+	ai_strategy = { type = area_priority id = central_africa value = -150 }
+	ai_strategy = { type = area_priority id = north_africa value = -50 }
+	ai_strategy = { type = area_priority id = north_pacific value = -110 }
+	ai_strategy = { type = area_priority id = central_pacific value = -110 }
+	ai_strategy = { type = area_priority id = south_pacific value = -110 }
+	ai_strategy = { type = area_priority id = oceania value = -150 }
+	ai_strategy = { type = area_priority id = australia_new_zealand value = -150 }
+}
+
+# purpose: nothing goes to sub-Saharan Africa while Germany prepares to attack west (relocated Phase 7c from legacy FRA.txt FRA_protect_the_homeland)
+# range:   -500 per area (saturated legacy value, E1 worklist)
+# policy:  Additive per area
+# domain:  THEATRE
+WA_AI_MILITARY_FRA_homeland_over_africa_THEATRE = {
+	allowed = {
+		original_tag = FRA
+	}
+	enable = {
+		NOT = {
+			is_in_faction_with = BEL
+		}
+		NOT = {
+			is_in_faction_with = GER
+		}
+		OR = {
+			GER = {
+				focus_progress = {
+					focus = GER_western_war_plans
+					progress > 0
+				}
+			}
+			GER = {
+				has_completed_focus = GER_western_war_plans
+			}
+		}
+		FRA = { has_full_control_of_state = 28 }
+	}
+	abort = {
+		OR = {
+			is_in_faction_with = BEL
+			is_in_faction_with = GER
+			NOT = { FRA = { has_full_control_of_state = 28 } }
+		}
+	}
+
+	ai_strategy = {
+		type = area_priority
+		id = south_africa
+		value = -200 # economy: was -500
+	}
+
+	ai_strategy = {
+		type = area_priority
+		id = central_africa
+		value = -200 # economy: was -500
 	}
 }

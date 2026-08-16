@@ -306,7 +306,7 @@ WA_AI_MILITARY_JAP_shanghai_request = {
 		type = front_unit_request
 
 		area = shanghai_china
-		value = 250
+		value = 200 # economy: was 250
 	}
 }
 
@@ -412,11 +412,16 @@ WA_AI_MILITARY_JAP_chinese_war_3 = {
 	}
 	enable = {
 		has_war_with = CHI
-		NOT = {
-			AND = {
-				date > 1944.4.19
-				date < 1944.12.31
+		# Yields the 1944 Ichi-Go window to chinese_war_4 only while the posture calculus says the
+		# offensive is winnable; when posture_vs_CHI = 0 this careful hold stays up instead.
+		OR = {
+			NOT = {
+				AND = {
+					date > 1944.4.19
+					date < 1944.12.31
+				}
 			}
+			NOT = { check_variable = { WA_AI_MILITARY_posture_vs_CHI > 0 } }
 		}
 		OR = {
 			date > 1941.1.1
@@ -443,6 +448,15 @@ WA_AI_MILITARY_JAP_chinese_war_3 = {
 
 
 
+# purpose: the 1944 Ichi-Go offensive - now gated on the weekly posture calculus so a Japan whose
+#          army is already wrecked by the Pacific war does not lunge into China anyway. Level 1
+#          (hollow Chinese line) or level 2 (Chinese manpower dry) both fire the historical push;
+#          at level 0 chinese_war_3 keeps the careful hold up instead.
+#          Stale-variable note: posture_vs_CHI lingers after a peace, so has_war_with = CHI stays here.
+# range:   n/a (front_control)
+# policy:  Exclusive per front (Country layer) - mutually exclusive with chinese_war_3 by date window
+#          and posture level; outranked by the level-500/10000 emergency stops in DEFAULT_FRONT_control.
+# domain:  FRONT
 WA_AI_MILITARY_JAP_chinese_war_4 = {
 	allowed = {
 		tag = JAP
@@ -453,6 +467,7 @@ WA_AI_MILITARY_JAP_chinese_war_4 = {
 			date > 1944.4.19
 			date < 1944.12.31
 		}
+		check_variable = { WA_AI_MILITARY_posture_vs_CHI > 0 }
 	}
 	abort_when_not_enabled = yes
 
@@ -717,7 +732,7 @@ WA_AI_MILITARY_JAP_protect_the_emperor = {
 		type = front_unit_request
 
 		area = japan
-		value = 1000
+		value = 200 # economy: was 1000
 	}
 }
 
@@ -926,7 +941,7 @@ WA_AI_MILITARY_JAP_chinese_prep_2_FRONT = {
 		type = front_unit_request
 
 		area = shanghai_china
-		value = 250
+		value = 200 # economy: was 250
 	}
 	ai_strategy = {
 		type = front_unit_request

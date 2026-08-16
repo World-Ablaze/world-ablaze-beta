@@ -5668,12 +5668,35 @@ country_event = {
 				}
 				SWI = { transfer_state = PREV }
 			}
+			# French-core states Italy owns (Savoy 735 / Nice 1 handed over by Vichy in ita_armor.818/819,
+			# or conquered outright in an ahistorical game) go back to France by ownership.
+			# 2026-08-16 fix: they must NOT also go to France by CONTROL while France is still at war
+			# with Italy's former faction leader - that handed the Allies an instant enclave deep in
+			# the Axis rear (Vichy already annexed by GER via Case Anton). Historically Germany took
+			# over the Italian occupation zone in Sept 1943, so the ex-faction leader occupies the
+			# state instead and the Italian troops are pulled out. Ahistorical path (no such war)
+			# is unchanged: France owns and controls.
 			every_state = {
 				limit = {
 					is_owned_by = ITA
 					is_core_of = FRA
 				}
 				FRA = { transfer_state = PREV }
+				if = {
+					limit = {
+						event_target:italy_new_enemy_target = {
+							has_war_with = FRA
+							has_capitulated = no
+						}
+					}
+					teleport_armies = {
+						limit = {
+							tag = ITA
+						}
+						to_state_array = owned_controlled_states
+					}
+					event_target:italy_new_enemy_target = { set_state_controller = PREV }
+				}
 			}
 			every_state = {
 				limit = {

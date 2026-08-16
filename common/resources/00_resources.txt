@@ -1,3 +1,40 @@
+##################################################################################################
+# cic = civilian factories per unit imported. ITS INVERSE IS THE TRADE QUANTUM: 1/cic is how many
+# units ONE civilian factory buys, and trade is committed in whole factories - so a deficit
+# smaller than one quantum has no purchase that can fill it.
+#
+#   bauxite  cic 0.03125 -> 32 units per civ factory      coal  cic 0.010  -> 100
+#   iron     cic 0.04    -> 25                            oil   cic 0.05   -> 20
+#   steel / tungsten / chromium  0.0625 -> 16             aluminium / rubber  0.1 -> 10
+#
+# DELIBERATE ALIGNMENT, iron and bauxite only: one refinery consumes exactly one quantum.
+#   steel_refinery      iron    25  ==  25 per civ
+#   aluminium_refinery  bauxite 32  ==  32 per civ
+#   (commit 29f2c1d59: "bauxite trade is 32 for 1 civ, alum mils use 32 bauxite")
+#
+# That alignment is the basis of the AI refinery controller. Iron and bauxite have no direct
+# engine consumer - only the trade_fix_equipment_0 dummy declares them - so the AI imports them
+# only when the deficit is deep enough to register. The controller therefore opens ONE refinery
+# on purpose to create exactly one civilian factory's worth of demand: a bid. Full rationale in
+# documentation/WA_REFINERY_CONTROLLER_REVIEW.md.
+#
+# IF YOU CHANGE cic FOR IRON OR BAUXITE, re-derive every one of these by hand - none of them
+# reads this file (common/decisions/_economy_fatigue.txt):
+#   reactivate_steel_refineries_ai       available   resource@iron    > -25   <- one quantum
+#   reactivate_aluminium_refineries_ai   available   resource@bauxite > -32   <- one quantum
+#   iron_shortage_ai      available > -25   activation < -26   loop limit tempIron    < -26
+#   bauxite_shortage_ai   available > -32   activation < -33   loop limit tempBauxite < -33
+#
+# Why each must move together: the reopen gate is 'is there room for a bid', so it IS the quantum.
+# The mission is the verdict timer on that bid, so it must arm one quantum deep - and its loop
+# limit must sit just past the quantum so a refused bid closes exactly ONE mill, not two.
+# The refinery INPUT costs are duplicated separately again; see the header in
+# common/buildings/00_buildings.txt for that list.
+#
+# Coal is NOT part of this scheme. Its controller clears the deficit rather than holding one,
+# because a coal shortage stops production outright (BASE_FACTORY_SPEED = 0.0 in 05_defines.lua).
+##################################################################################################
+
 resources = {
 
 	oil = {

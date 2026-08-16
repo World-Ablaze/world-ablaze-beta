@@ -2422,10 +2422,63 @@ ENG_strategic_bomber = {
 		}
 	}
 	strategic_bomber_1 = {		# H.P. Hampden Mk I
+		# Fix 49 - closes the role bypass Fix 47 left open. ENG_heavy_strategic_bomber
+		# and THIS group both serve air_strategic_bomber, so gating only the Lancaster
+		# (Fix 47 / checklist R32) capped nothing: the AI could satisfy the same role
+		# out of this group at the same 7 aluminium / unit, ungated, from 1940 - two
+		# years EARLIER than the Lancaster step it was supposed to be waiting for.
+		# Fix 49 puts the whole 7-aluminium generation of this group behind the same
+		# latched gate, which is what makes the cap a ROLE cap.
+		#
+		# MEASURED PER-UNIT COST (archetype large_bomber_airframe contributes
+		# aluminium 1 / coal 5 / rubber 2; the rest is module build_cost_resources.
+		# Checked against large_heavy_bomber_airframe, which the Fix 47 blocks below
+		# use: the two archetypes contribute the SAME 1/5/2, so the two groups'
+		# numbers are directly comparable and the whole step is the engine module):
+		#
+		#   Hampden Mk I    metal_construction 2 Al + Pegasus XVIII 2x  2 Al
+		#                   => 5 aluminium, 5 coal, 2 rubber ; ~31.1 IC/unit ; 2482 km
+		#   Stirling B Mk I metal_construction 2 Al + Hercules XI 4x    4 Al
+		#                   => 7 aluminium, 5 coal, 2 rubber ; ~59.6 IC/unit ;  950 km
+		#   Halifax B Mk II metal_construction 2 Al + Merlin XX 4x      4 Al
+		#                   => 7 aluminium ; ~56.4 IC/unit ; 1778 km
+		#   Halifax B Mk III metal_construction 2 Al + Hercules XVI 4x  4 Al
+		#                   => 7 aluminium ; ~62.0 IC/unit ; 2036 km
+		#   Windsor B Mk II metal_construction 2 Al + Merlin 68A/85 4x  4 Al
+		#                   => 7 aluminium ; ~62.4 IC/unit ; 3340 km
+		#
+		#   => the step is Hampden -> Stirling: +2 aluminium (+40%) and +28.5 IC
+		#      (+92%) per unit, and it is simply the 2-engine -> 4-engine module
+		#      change (2 Al -> 4 Al), the same mechanism as Manchester -> Lancaster.
+		#      Everything from the Stirling onwards sits at 7, so gating the Stirling
+		#      alone would just move the bypass one generation along - the Halifaxes
+		#      have to sit behind the gate too.
+		#      HOI4 charges equipment resources PER ASSIGNED MILITARY FACTORY PER DAY
+		#      and this group's own priority already requires
+		#      num_of_military_factories > 179, so this is a +40..+80 aluminium/day
+		#      step change => the "large" gate, same one Fix 47 used.
+		#
+		# The Hampden is the design that keeps the role served while the gate is shut:
+		# 5 aluminium, and 2482 km of range (the best in the group until the Windsor).
+		# It bombs far worse than a Halifax - that is the cost of not having the
+		# aluminium, which is the point of the gate, not a side effect of it.
 		priority = {
 			factor = 100
+			# Fix 49: was unconditional (Stirling researched => stop building
+			# Hampdens). The supersession now WAITS for the economy to be able to carry
+			# the +40% aluminium draw, exactly as heavy_strategic_bomber_2 does.
 			modifier = {
 				has_tech = eng_strategic_bomber_ad_tech_2
+				WA_AI_EQUIPMENT_can_absorb_aluminium_shock_large = yes
+				factor = 0 #let's not waste XP here
+			}
+			# Fix 49: hard cutoff at the escape tech. eng_strategic_bomber_ad_tech_5
+			# unlocks the Windsor (strategic_bomber_5), which is deliberately UNGATED -
+			# see the note there - so from that point the gate is bypassed on both
+			# sides and keeping a 1938 airframe alive would buy nothing and cost a lot.
+			# Same arrangement as heavy_strategic_bomber_2 / the Lincoln.
+			modifier = {
+				has_tech = eng_strategic_bomber_ad_tech_5
 				factor = 0 #let's not waste XP here
 			}
 		}
@@ -2453,11 +2506,31 @@ ENG_strategic_bomber = {
 		}
 	}
 	strategic_bomber_2 = {		# Short Stirling B Mk I
+		# Fix 49 - the gated new generation, and the design the +2 aluminium step
+		# actually lands on (arithmetic on strategic_bomber_1). It is also a RANGE
+		# collapse: 2482 km -> 950 km, i.e. this airframe drops under the 1000 km bar
+		# the whole contextual-design work is measured against, which is why
+		# strategic_bomber_2_lr exists below.
 		priority = {
 			factor = 100
 			modifier = {
 				has_tech = eng_strategic_bomber_ad_tech_3
 				factor = 0 #let's not waste XP here
+			}
+			# Fix 49: the aluminium gate. Shut => this design is unavailable and
+			# strategic_bomber_1 keeps its 100, so the role is still served.
+			modifier = {
+				NOT = { WA_AI_EQUIPMENT_can_absorb_aluminium_shock_large = yes }
+				factor = 0
+			}
+			# Fix 49: when the air war wants range this design is DEMOTED, not zeroed
+			# (the SOV_fighter_mr / fighter_mr_7 arrangement from Fix 47). If the
+			# long-range variant cannot be built - its fuel-tank module is unlocked by
+			# other branches of the air tree, not this one - 950 km is still better
+			# than nothing, and a group with every design at 0 is a gap, not a fix.
+			modifier = {
+				WA_AI_EQUIPMENT_needs_long_range_air = yes
+				factor = 0.1
 			}
 		}
 		history = yes
@@ -2486,12 +2559,110 @@ ENG_strategic_bomber = {
 
 		}
 	}
+	strategic_bomber_2_lr = {		# Short Stirling B Mk I (long range) - Fix 49
+		# Fix 49 - the added long-range variant, following the fighter_mr_7_lr pattern
+		# in SOV_planes.txt. Same ENG_stirling_airframe as strategic_bomber_2, one
+		# module changed:
+		#   internal_slot_1  ENG_machinegun_77mm_browning_1x_mounted_rear
+		#                    -> self_sealing_fuel_tanks_small
+		#                    (category extra_fuel, which this slot allows; add_stats
+		#                    air_range = 120, build_cost_ic 0.80 against the turret's
+		#                    0.20. No module_count_limit applies - the airframe only
+		#                    caps mixed_construction, fuel_tanks_large and
+		#                    self_sealing_fuel_tanks_large.)
+		#   Range: airframe base 1302 km, design multiplier 0.73 (the 4x Hercules
+		#   carries air_range = 0.36). (1302 + 0) x 0.73 = 950 km stock;
+		#   (1302 + 120) x 0.73 = 1038 km here - i.e. the one rear gun position is
+		#   exactly what puts this airframe under the 1000 km bar. The price is that
+		#   gun position; ENG keeps four other defensive mounts on this design.
+		#
+		# IT CARRIES THE ALUMINIUM GATE TOO. Both modules are resource-free, so this
+		# variant costs the SAME 7 aluminium / unit as strategic_bomber_2. Gating the
+		# stock Stirling and not this one would re-open the bypass Fix 49 exists to
+		# close - a long-range escape hatch is not an economic one.
+		priority = {
+			factor = 100
+			# Fix 49: same supersession rule as the base design - the Halifax restores
+			# range on its own (1778 km) and makes this variant pointless.
+			modifier = {
+				has_tech = eng_strategic_bomber_ad_tech_3
+				factor = 0 #let's not waste XP here
+			}
+			# Fix 49: the aluminium gate, identical to strategic_bomber_2's.
+			modifier = {
+				NOT = { WA_AI_EQUIPMENT_can_absorb_aluminium_shock_large = yes }
+				factor = 0
+			}
+			# Fix 49: this variant exists ONLY while the air war wants range. Off the
+			# gate it must not compete with strategic_bomber_2 at all, or the AI would
+			# burn air XP on two designs for one role.
+			modifier = {
+				NOT = { WA_AI_EQUIPMENT_needs_long_range_air = yes }
+				factor = 0
+			}
+			# Fix 49: on the gate it must clearly beat the demoted stock Stirling (10).
+			modifier = {
+				WA_AI_EQUIPMENT_needs_long_range_air = yes
+				factor = 3
+			}
+		}
+		# Fix 49: self_sealing_fuel_tanks_small is NOT unlocked anywhere on the
+		# strategic-bomber branch - ENG gets it from the fighter/CAS/heavy-fighter/
+		# naval-bomber 1940 techs listed below (air_techs_eng.txt). The explicit enable
+		# makes the fallback deterministic instead of relying on a silent design-match
+		# failure: if none of these is researched this design is unusable and the
+		# demoted stock Stirling (or the retained Hampden, if the aluminium gate is
+		# shut) takes over.
+		enable = {
+			OR = {
+				has_tech = eng_fighter_multirole_ad_tech_2
+				has_tech = eng_heavy_fighter_ad_tech_1
+				has_tech = eng_attacker_ad_tech_1
+				has_tech = eng_cas_ad_tech_5
+				has_tech = eng_cv_naval_bomber_ad_tech_2
+			}
+		}
+		name = "Short Stirling B Mk I (long range)"
+		history = yes
+		target_variant = {
+			match_value = 1000
+			type = ENG_stirling_airframe
+			modules = {
+				nose_slot_1 = bomb_sights_hi_alt_0
+				nose_slot_2 = ENG_machinegun_77mm_browning_2x_ball
+				defensive_armament_slot_1 = ENG_machinegun_77mm_browning_2x_ball_rear
+				defensive_armament_slot_2 = ENG_machinegun_77mm_browning_4x_ball_rear
+				fuselage_mount_slot_1 = bomb_1840kg_bomb_bay
+				fuselage_mount_slot_2 = bomb_1840kg_bomb_bay
+				fuselage_mount_slot_3 = bomb_920kg_bomb_bay
+				wing_mount_slot_1 = bomb_1380kg_bomb_bay
+				internal_slot_1 = self_sealing_fuel_tanks_small
+				fixed_construction_slot = metal_construction
+				fixed_engine_type_slot = ENG_engine_bristol_hercules_xi_4x
+				fixed_armour_slot = armour_heavy_seat_cowl
+				fixed_protection_slot_1 = empty
+				fixed_protection_slot_2 = fire_suppression
+				fixed_crew_slot_1 = empty
+			}
+		}
+		allowed_modules = {
+
+		}
+	}
 	strategic_bomber_3 = {		# Halifax B Mk II
+		# Fix 49: 7 aluminium / unit, same as the Stirling - the aluminium step is
+		# already paid by the time this design appears, so leaving it ungated would
+		# hand the AI the whole bypass back one tech later.
 		priority = {
 			factor = 100
 			modifier = {
 				has_tech = eng_strategic_bomber_ad_tech_4
 				factor = 0 #let's not waste XP here
+			}
+			# Fix 49: same aluminium gate as strategic_bomber_2.
+			modifier = {
+				NOT = { WA_AI_EQUIPMENT_can_absorb_aluminium_shock_large = yes }
+				factor = 0
 			}
 		}
 		history = yes
@@ -2523,11 +2694,19 @@ ENG_strategic_bomber = {
 		}
 	}
 	strategic_bomber_4 = {		# Halifax B Mk III
+		# Fix 49: 7 aluminium / unit, and the last design of the gated generation -
+		# eng_strategic_bomber_ad_tech_5 (the tech that supersedes it) is the escape
+		# tech, so this is where the gate ends.
 		priority = {
 			factor = 100
 			modifier = {
 				has_tech = eng_strategic_bomber_ad_tech_5
 				factor = 0 #let's not waste XP here
+			}
+			# Fix 49: same aluminium gate as strategic_bomber_2.
+			modifier = {
+				NOT = { WA_AI_EQUIPMENT_can_absorb_aluminium_shock_large = yes }
+				factor = 0
 			}
 		}
 		history = yes
@@ -2559,6 +2738,14 @@ ENG_strategic_bomber = {
 		}
 	}
 	strategic_bomber_5 = {		# Windsor B Mk II
+		# Fix 49: deliberately UNGATED - the escape valve, the same role the Lincoln
+		# plays for ENG_heavy_strategic_bomber. Same 7 aluminium / unit as the
+		# Stirling and the Halifaxes, but eng_strategic_bomber_ad_tech_5 is a 1946
+		# tech: by then the question the gate answers ("can the wartime economy absorb
+		# the 2-engine -> 4-engine step") is settled either way, and this block
+		# guarantees the group always ends up on a modern airframe even if the
+		# aluminium gate never opens for the whole campaign. strategic_bomber_1's
+		# hard cutoff on this same tech is the other half of that arrangement.
 		priority = {
 			factor = 100
 			modifier = {
@@ -2676,10 +2863,48 @@ ENG_heavy_strategic_bomber = {
 		}
 	}
 	heavy_strategic_bomber_2 = {		# Avro Manchester Mk IA
+		# Fix 47 - PILOT B, previous generation. Manchester -> Lancaster is the
+		# only airframe transition in ENG's strategic-bomber lineage that carries a
+		# real per-unit resource step, and it is the one an AI researching on
+		# schedule takes in 1943-44 (eng_heavy_strategic_bomber_ad_tech_3,
+		# start_year 1942).
+		#
+		# MEASURED DELTA (archetype large_heavy_bomber_airframe contributes
+		# aluminium 1 / coal 5 / rubber 2 to both; the rest is module
+		# build_cost_resources):
+		#
+		#   Manchester Mk IA  metal_construction 2 Al + Vulture I 2x 2 Al
+		#                     => 5 aluminium, 5 coal, 2 rubber ; ~45.4 IC/unit
+		#   Lancaster B Mk I  metal_construction 2 Al + Merlin XX 4x 4 Al
+		#                     => 7 aluminium, 5 coal, 2 rubber ; ~58.1 IC/unit
+		#
+		#   => +2 aluminium (+40%) and +12.7 IC (+28%) per unit. HOI4 charges
+		#      equipment resources PER ASSIGNED MILITARY FACTORY PER DAY, so on the
+		#      ~20-40 factories ENG puts on heavy bombers (its group priority
+		#      already requires num_of_military_factories > 179) this is a
+		#      +40..+80 aluminium/day step change => the "large" gate.
+		#
+		# NOTE FOR THE GENERATOR: the shock resource here is ALUMINIUM, not steel.
+		# In this mod plane modules cost aluminium/coal/rubber; the only plane
+		# modules that cost steel are the `*_engine`-suffixed heavy armour variants,
+		# which no ENG bomber design uses. Steel is a land/naval resource here
+		# (documentation/WA_REFINERY_CONTROLLER_REVIEW.md's two-tier economy).
 		priority = {
 			factor = 100
+			# Fix 47: was unconditional (Lancaster researched => stop building
+			# Manchesters). The supersession now WAITS for the economy to be able to
+			# carry the +40% aluminium draw.
 			modifier = {
 				has_tech = eng_heavy_strategic_bomber_ad_tech_3
+				WA_AI_EQUIPMENT_can_absorb_aluminium_shock_large = yes
+				factor = 0 #let's not waste XP here
+			}
+			# Fix 47: hard cutoff. Once the Lincoln generation is available the
+			# gate is bypassed on both sides (heavy_strategic_bomber_4 is ungated by
+			# design - see the note there), so keeping a 1940 airframe alive into
+			# 1945 would buy nothing and cost a lot.
+			modifier = {
+				has_tech = eng_heavy_strategic_bomber_ad_tech_4
 				factor = 0 #let's not waste XP here
 			}
 		}
@@ -2708,11 +2933,19 @@ ENG_heavy_strategic_bomber = {
 		}
 	}
 	heavy_strategic_bomber_3 = {		# Lancaster B Mk I
+		# Fix 47 - PILOT B, the gated new generation. 7 aluminium / unit against the
+		# Manchester's 5 (arithmetic on heavy_strategic_bomber_2).
 		priority = {
 			factor = 100
 			modifier = {
 				has_tech = eng_heavy_strategic_bomber_ad_tech_3_1
 				factor = 0 #let's not waste XP here
+			}
+			# Fix 47: the aluminium gate. Shut => this design is unavailable and
+			# heavy_strategic_bomber_2 keeps its 100, so the role is still served.
+			modifier = {
+				NOT = { WA_AI_EQUIPMENT_can_absorb_aluminium_shock_large = yes }
+				factor = 0
 			}
 		}
 		history = yes
@@ -2743,11 +2976,21 @@ ENG_heavy_strategic_bomber = {
 		}
 	}
 	heavy_strategic_bomber_3_1 = {		# Lancaster B Mk I late
+		# Fix 47 - PILOT B. Same airframe and the same 7 aluminium / unit as
+		# heavy_strategic_bomber_3, and its tech (eng_heavy_strategic_bomber_ad_tech_3_1,
+		# start_year 1943) follows the Lancaster's within months. Gating only the
+		# first Lancaster block would therefore be a gate that expires almost
+		# immediately - the whole Lancaster GENERATION has to sit behind it.
 		priority = {
 			factor = 100
 			modifier = {
 				has_tech = eng_heavy_strategic_bomber_ad_tech_4
 				factor = 0 #let's not waste XP here
+			}
+			# Fix 47: same aluminium gate as heavy_strategic_bomber_3.
+			modifier = {
+				NOT = { WA_AI_EQUIPMENT_can_absorb_aluminium_shock_large = yes }
+				factor = 0
 			}
 		}
 		name = "Lancaster B Mk I (late)"
@@ -2779,6 +3022,13 @@ ENG_heavy_strategic_bomber = {
 		}
 	}
 	heavy_strategic_bomber_4 = {		# Lincoln B Mk II
+		# Fix 47: deliberately UNGATED. Same 7 aluminium / unit as the Lancaster,
+		# but eng_heavy_strategic_bomber_ad_tech_4 is a 1945 tech - by then the
+		# question the gate answers ("can the 1943 economy absorb the 4-engine
+		# step") is settled either way, and this block is the escape valve that
+		# guarantees the group always ends up on a modern airframe even if the
+		# aluminium gate never opens. heavy_strategic_bomber_2's hard cutoff on the
+		# same tech is the other half of that arrangement.
 		priority = {
 			factor = 100
 			modifier = {

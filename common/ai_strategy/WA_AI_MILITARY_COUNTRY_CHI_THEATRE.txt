@@ -75,7 +75,7 @@ WA_AI_MILITARY_CHI_guard_kunming = {
 		area = south_china
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
 	}
 }
 
@@ -137,7 +137,7 @@ WA_AI_MILITARY_CHI_guard_nanning = {
 		area = south_china
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
 	}
 }
 
@@ -202,7 +202,7 @@ WA_AI_MILITARY_CHI_guard_wuhan = {
 		area = south_china
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
 	}
 }
 
@@ -254,7 +254,7 @@ WA_AI_MILITARY_CHI_guard_changde_changsha = {
 		area = south_china
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
 	}
 
 	ai_strategy = {
@@ -273,7 +273,7 @@ WA_AI_MILITARY_CHI_guard_changde_changsha = {
 		area = south_china
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
 	}
 }
 
@@ -372,7 +372,7 @@ WA_AI_MILITARY_CHI_guard_chonqing = {
 		area = south_china
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
 	}
 }
 
@@ -426,7 +426,7 @@ WA_AI_MILITARY_CHI_guard_chengdu = {
 		area = south_china
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
 	}
 }
 
@@ -480,7 +480,7 @@ WA_AI_MILITARY_CHI_guard_sichuan = {
 		area = south_china
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
 	}
 }
 
@@ -491,7 +491,8 @@ WA_AI_MILITARY_CHI_guard_ports = {
 		original_tag = CHI
 	}
 	enable = {
-		always = yes
+		# economy E4: buffers may not be always-on; hoarding at peace is pointless
+		has_war = yes
 	}
 
 	abort_when_not_enabled = yes
@@ -513,7 +514,7 @@ WA_AI_MILITARY_CHI_guard_ports = {
 		ratio = 0.03
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
 	}
 }
 
@@ -524,7 +525,8 @@ WA_AI_MILITARY_CHI_guard_ports_2 = {
 		original_tag = CHI
 	}
 	enable = {
-		always = yes
+		# economy E4: buffers may not be always-on; hoarding at peace is pointless
+		has_war = yes
 	}
 
 	abort_when_not_enabled = yes
@@ -542,7 +544,7 @@ WA_AI_MILITARY_CHI_guard_ports_2 = {
 		ratio = 0.01
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no
+		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
 	}
 }
 
@@ -568,10 +570,38 @@ WA_AI_MILITARY_CHI_taiwan_fortress = {
 			524
 		}
 
-		ratio = 0.4
+		ratio = 0.25 # economy: was 0.4
 
 		area = china_coast
 
 		subtract_invasions_from_need = no
+	}
+}
+
+# purpose: in the united front, the PRC holds the north while the NRA weights the south (relocated Phase 7c verbatim from legacy CHI.txt CHI_you_should_not_defend_the_PRC)
+# range:   -50 / +500 (E1 worklist above +200)
+# policy:  Additive per area
+# domain:  THEATRE
+WA_AI_MILITARY_CHI_united_front_south_THEATRE = {
+	allowed = {
+		original_tag = CHI
+	}
+	enable = {
+		country_exists = PRC
+		NOT = { has_war_with = PRC }
+		is_in_faction_with = PRC
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = area_priority
+		id = north_china
+		value = -50
+	}
+
+	ai_strategy = {
+		type = area_priority
+		id = south_china
+		value = 200 # economy: was 500
 	}
 }

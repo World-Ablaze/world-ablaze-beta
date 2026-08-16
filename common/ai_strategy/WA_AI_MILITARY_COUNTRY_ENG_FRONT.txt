@@ -139,31 +139,14 @@ WA_AI_MILITARY_ENG_help_Greece_if_Africa_safe_FRONT = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_ENG_war_against_ITA_3 (FRONT domain)
-WA_AI_MILITARY_ENG_war_against_ITA_3_FRONT = {
-
-	allowed = {
-		tag = ENG
-	}
-	enable = {
-		has_war_with = GER
-		is_in_faction_with = ITA
-		date > 1942.1.1
-	}
-
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = front_unit_request
-		area = italy
-		value = 100
-	}
-	ai_strategy = {
-		type = front_unit_request
-		area = south_italy
-		value = 100
-	}
-}
+# WA_AI_MILITARY_ENG_war_against_ITA_3_FRONT was RE-HOMED 2026-08-12 to the Faction layer as
+# WA_AI_MILITARY_ALLIES_italy_cobelligerent_support_FRONT
+# (common/ai_strategy/WA_AI_MILITARY_FACTION_ALLIES_FRONT.txt), values unchanged (+100 italy /
+# +100 south_italy, same enable). It was the only post-flip Italian positive in the mod and applied
+# to England alone, which is why campaign 9a4cd657 shows ENG at +20 and the USA at -145 on regions
+# 21/23 after the Italian defection. Deleted here rather than kept, because Faction and Country
+# copies of an Additive type would stack and hand ENG +200 - see WA_AI_MILITARY_SYSTEM.md on not
+# duplicating a block across layers. Do not re-add an ENG-specific version; tune the Faction block.
 
 
 # Phase 6 split from WA_AI_MILITARY_ENG_bef_in_europe (FRONT domain)
@@ -210,17 +193,17 @@ WA_AI_MILITARY_ENG_bef_in_europe_FRONT = {
 	ai_strategy = {
 		type = front_unit_request
 		strategic_region = 7
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 	ai_strategy = {
 		type = front_unit_request
 		strategic_region = 20
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 	ai_strategy = {
 		type = front_unit_request
 		strategic_region = 21
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 }
 
@@ -248,55 +231,55 @@ WA_AI_MILITARY_ENG_bef_in_europe_leave_FRONT = {
 		type = front_unit_request
 
 		strategic_region = 7
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 	ai_strategy = {
 		type = front_unit_request
 
 		strategic_region = 6
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 	ai_strategy = {
 		type = front_unit_request
 
 		strategic_region = 20
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 	ai_strategy = {
 		type = front_unit_request
 
 		strategic_region = 21
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 	ai_strategy = {
 		type = front_unit_request
 
 		strategic_region = 5
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 	ai_strategy = {
 		type = front_unit_request
 
 		area = france
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 	ai_strategy = {
 		type = front_unit_request
 
 		area = west_france
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 	ai_strategy = {
 		type = front_unit_request
 
 		area = south_france
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 	ai_strategy = {
 		type = front_unit_request
 
 		area = north_france
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 }
 
@@ -365,7 +348,7 @@ WA_AI_MILITARY_ENG_africa_war_1 = {
 	ai_strategy = {
 		type = front_unit_request
 		area = central_africa
-		value = -200
+		value = -100 # economy: was -200
 	}
 
 	ai_strategy = {
@@ -391,8 +374,27 @@ WA_AI_MILITARY_ENG_africa_war_2_FRONT = {
 			447 = { is_controlled_by = UKE }
 			453 = { is_controlled_by = UKE }
 		}
-		WA_AI_MILITARY_ENG_africa_hostile_presence = yes
-		NOT = { WA_AI_MILITARY_ENG_africa_hostile_presence = yes }
+		# Phase 6 collapsed the original block's TWO different state lists into the
+		# same shared trigger, producing X AND NOT X - the block was unreachable since
+		# the refactor. Restored from pre-split a6fee253d: the Libyan core still has
+		# enemies (any of Benghasi/Cyrenaica/Derna) but the enemy does NOT hold the
+		# whole western desert - i.e. the active advance phase of the desert campaign.
+		OR = {
+			450 = { CONTROLLER = { has_war_with = ROOT } }
+			663 = { CONTROLLER = { has_war_with = ROOT } }
+			451 = { CONTROLLER = { has_war_with = ROOT } }
+		}
+		NOT = {
+			450 = { CONTROLLER = { has_war_with = ROOT } }
+			663 = { CONTROLLER = { has_war_with = ROOT } }
+			451 = { CONTROLLER = { has_war_with = ROOT } }
+			550 = { CONTROLLER = { has_war_with = ROOT } }
+			910 = { CONTROLLER = { has_war_with = ROOT } }
+			271 = { CONTROLLER = { has_war_with = ROOT } }
+			909 = { CONTROLLER = { has_war_with = ROOT } }
+			559 = { CONTROLLER = { has_war_with = ROOT } }
+			269 = { CONTROLLER = { has_war_with = ROOT } }
+		}
 		surrender_progress < 0.05
 	}
 	abort_when_not_enabled = yes
@@ -469,7 +471,7 @@ WA_AI_MILITARY_ENG_soviets_are_no_threat = {
 	ai_strategy = {
 		type = front_unit_request
 		tag = SOV
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 }
 
@@ -585,14 +587,14 @@ WA_AI_MILITARY_ENG_sealion_is_happening_2 = {
 		type = front_unit_request
 
 		strategic_region = 1
-		value = 1000
+		value = 200 # economy: was 1000
 	}
 
 	ai_strategy = {
 		type = front_unit_request
 
 		strategic_region = 2
-		value = 650
+		value = 200 # economy: was 650
 	}
 }
 
@@ -616,7 +618,7 @@ WA_AI_MILITARY_ENG_red_hand_FRONT = {
 		type = front_unit_request
 
 		area = ireland
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 }
 
@@ -656,6 +658,7 @@ WA_AI_MILITARY_ENG_focus_on_land_War_in_north_africa_FRONT = {
 
 # Phase 6 split from WA_AI_MILITARY_ENG_protect_home (FRONT domain)
 WA_AI_MILITARY_ENG_protect_home_FRONT = {
+	# always-on: home-defence floor: intentional static defensive bias, peace and war alike (Additive front_unit_request).
 
 	allowed = {
 		original_tag = ENG
@@ -675,11 +678,11 @@ WA_AI_MILITARY_ENG_protect_home_FRONT = {
 	ai_strategy = {
 		type = garrison
 		id = "ENG"
-		value = -200
+		value = 0 # economy: was -200
 	}
 	ai_strategy = {
 		type = garrison
-		value = -110
+		value = 0 # economy: was -110
 	}
 }
 
@@ -715,6 +718,41 @@ WA_AI_MILITARY_ENG_all_in_FRONT = {
 	ai_strategy = {
 		type = front_unit_request
 		area = britain
-		value = 500
+		value = 200 # economy: was 500
+	}
+}
+
+# purpose: British armour weighted toward the Axis majors while the home isles are safe (relocated
+#          Phase 7c from legacy ENG.txt ENG_tanks_in_africa, gates verbatim)
+# range:   +100 per enemy
+# policy:  Additive
+# domain:  FRONT
+WA_AI_MILITARY_ENG_tanks_vs_axis_majors_FRONT = {
+	allowed = {
+		tag = ENG
+	}
+	enable = {
+		NOT = {
+			surrender_progress > 0
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_armor_score
+		id = "ITL"
+		value = 100
+	}
+
+	ai_strategy = {
+		type = front_armor_score
+		id = "ITA"
+		value = 100
+	}
+
+	ai_strategy = {
+		type = front_armor_score
+		id = "GER"
+		value = 100
 	}
 }

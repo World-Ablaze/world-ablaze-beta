@@ -5,8 +5,22 @@
 
 ### Constants (file-scoped, must be redeclared)
 @WA_AI_PC_railway_TYPE_ID = 13
-@WA_AI_PC_railway_PRIO = 9999
-@WA_AI_PC_railway_PRIO_PREWAR = 5000
+# Fix 41: band compression, was 9999/5000 - must match WA_AI_CONSTRUCTION_PRIORITY_railway_core.txt
+# (authoritative) and WA_AI_CONSTRUCTION_PRIORITY_railway_strategies.txt (PREWAR)
+@WA_AI_PC_railway_PRIO = 1000
+@WA_AI_PC_railway_PRIO_PREWAR = 500
+# Fix 77: admission cap on queued type-13 segments, country-wide. Equal BY DESIGN to
+# @WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD in WA_AI_CONSTRUCTION_PRIORITY_railway_core.txt
+# (authoritative for the pair's meaning): "a full queue is 12". One recalculation used to
+# queue every segment of up to 8 routes at once - campaign be18f9c7 GER 1944.6 queued 80
+# segments in a single pulse, of which at most 5 ever held factories at any moment, and the
+# 12+ queue then locked the skip threshold shut for 6+ months, so route recalculation AND
+# stale-path validation both stopped exactly when the front was moving fastest. The cap keeps the
+# queue at the threshold: it drains below 12 within an interval, so every interval recomputes
+# routes, validates the survivors, and tops back up. Throughput is unchanged - the winner-
+# takes-most allocator never funds more than ~pool/20 segments anyway; segments not admitted
+# this pulse are re-derived from the CURRENT front next pulse instead of rotting in the queue.
+@WA_AI_PC_railway_MAX_QUEUED = 12
 @WA_AI_PC_railway_THEATRE_SEPARATION_DISTANCE = 10
 
 ### Supply Flow Formula Constants (from game mechanics)
@@ -565,42 +579,26 @@ WA_AI_PC_get_best_port_on_landmass = { # _search_landmass >>> best_port_level_, 
 	set_temp_variable = { best_port_state_ = 0 }
 	set_temp_variable = { best_port_supply_ = 0 }
 
-	every_controlled_state = {
-		WA_AI_PC_get_state_id = yes
-		set_temp_variable = { _this_state_id = state_id_ }
-
-		if = {
-			limit = {
-				check_variable = { global.WA_AI_MAP_state_landmass^_this_state_id = _search_landmass }
-				is_coastal = yes
-			}
-
-			# Get the naval base province and level
-			WA_AI_PC_railway_get_naval_base_province = yes
-
-			if = {
-				limit = {
-					check_variable = { naval_base_province_ > 0 }
-					check_variable = { naval_base_level_ > best_port_level_ }
-				}
-				set_temp_variable = { best_port_level_ = naval_base_level_ }
-				set_temp_variable = { best_port_state_ = _this_state_id }
-				set_temp_variable = { best_port_province_ = naval_base_province_ }
-			}
-		}
-	}
-
-	# Fix 28: Also search puppet/subject states for ports on this landmass
-	every_subject_country = {
+	# Fix 28 searched ROOT's states and then, in a duplicated loop, its subjects'.
+	# Fix 74 folds both into one walk and adds the third population: faction allies that cannot
+	# build their own logistics. Without the ally leg a route TO ally soil is still started from
+	# ROOT's own nearest port - e.g. an ENG route to FRA-held Tunisia would begin at Alexandria
+	# and have to pathfind across Italian Libya, while Bizerte (naval base 5) sits at the target.
+	every_country = {
+		limit = { WA_AI_PC_is_logistics_build_partner = yes }
 		every_controlled_state = {
 			WA_AI_PC_get_state_id = yes
 			set_temp_variable = { _this_state_id = state_id_ }
+
 			if = {
 				limit = {
 					check_variable = { global.WA_AI_MAP_state_landmass^_this_state_id = _search_landmass }
 					is_coastal = yes
 				}
+
+				# Get the naval base province and level
 				WA_AI_PC_railway_get_naval_base_province = yes
+
 				if = {
 					limit = {
 						check_variable = { naval_base_province_ > 0 }
@@ -646,39 +644,20 @@ WA_AI_PC_get_best_port_near_state = { # _target_state_for_port, _port_search_rad
 	set_temp_variable = { best_port_state_ = 0 }
 	set_temp_variable = { best_port_supply_ = 0 }
 
-	every_controlled_state = {
-		WA_AI_PC_get_state_id = yes
-		set_temp_variable = { _ps_state_id = state_id_ }
-		if = {
-			limit = {
-				# Must be on same landmass as target
-				check_variable = { global.WA_AI_MAP_state_landmass^_ps_state_id = _ps_target_lm }
-				# Must be within BFS search radius
-				is_in_array = { states_within_distance_ = _ps_state_id }
-				is_coastal = yes
-			}
-			WA_AI_PC_railway_get_naval_base_province = yes
-			if = {
-				limit = {
-					check_variable = { naval_base_province_ > 0 }
-					check_variable = { naval_base_level_ > best_port_level_ }
-				}
-				set_temp_variable = { best_port_level_ = naval_base_level_ }
-				set_temp_variable = { best_port_state_ = _ps_state_id }
-				set_temp_variable = { best_port_province_ = naval_base_province_ }
-			}
-		}
-	}
-
-	# Fix 28: Also search puppet/subject states for ports
-	# e.g. Italian Libya (ITL) has Tripoli port level 5, closer to Derna than Eritrea
-	every_subject_country = {
+	# Fix 28 added a duplicated subject loop here (e.g. Italian Libya's Tripoli port level 5 is
+	# closer to Derna than Eritrea). Fix 74 folds it back into one walk and adds dependent faction
+	# allies, so a receiving port can be the ally port sitting at the target - Bizerte for Tunisia,
+	# Cherbourg for Normandy - instead of ROOT's nearest own port a theatre away.
+	every_country = {
+		limit = { WA_AI_PC_is_logistics_build_partner = yes }
 		every_controlled_state = {
 			WA_AI_PC_get_state_id = yes
 			set_temp_variable = { _ps_state_id = state_id_ }
 			if = {
 				limit = {
+					# Must be on same landmass as target
 					check_variable = { global.WA_AI_MAP_state_landmass^_ps_state_id = _ps_target_lm }
+					# Must be within BFS search radius
 					is_in_array = { states_within_distance_ = _ps_state_id }
 					is_coastal = yes
 				}
@@ -985,7 +964,12 @@ WA_AI_PC_start_railway_project = { # THIS = state, _project_province_id, _projec
 		set_temp_variable = { _project_building_type = 13 }
 		set_temp_variable = { _project_type_id = @WA_AI_PC_railway_TYPE_ID }
 		set_temp_variable = { _project_queue_num = 1 }
-		set_temp_variable = { _project_queue_max = 0 }  # No max per segment
+		# Fix 77: was 0 ("No max per segment") - the one uncapped path into the PC queue.
+		# WA_AI_PC_start_project counts queued type-13 country-wide (unscoped queued_amount_),
+		# so this bounds the WHOLE railway family across every strategy that funnels through
+		# this helper (land war, overseas, prewar). See the constant's header for the measured
+		# case and the threshold relationship.
+		set_temp_variable = { _project_queue_max = @WA_AI_PC_railway_MAX_QUEUED }
 		set_temp_variable = { _project_target_level = 0 }  # Already checked above
 		# Set state ID using province mapping (states don't have .id property)
 		set_temp_variable = { _project_target_state = global.WA_AI_MAP_province_state_id^_project_province_id }
@@ -1026,7 +1010,10 @@ WA_AI_PC_process_port_upgrades = {
 		var:_port_state = {
 			if = {
 				limit = {
-					is_controlled_by = ROOT
+					# Fix 74: was is_controlled_by = ROOT. naval_base is allied_build = yes and
+					# WA_AI_PC_start_project already accepts allied ground, so the receiving port
+					# of an ally-soil corridor is upgradable - it just had no selector.
+					WA_AI_PC_can_build_logistics_here = yes
 					is_coastal = yes
 					# Only upgrade if below max useful level (L9 already exceeds L5 railway capacity)
 					NOT = { naval_base > 8 }
@@ -1102,7 +1089,9 @@ WA_AI_PC_create_frontier_port = { # _frontier_province_id >>> frontier_port_crea
 		var:_frontier_state_id = {
 			if = {
 				limit = {
-					is_controlled_by = ROOT
+					# Fix 74: was is_controlled_by = ROOT - a partial route that dead-ends on an
+					# ally's coast is exactly the beachhead case a frontier port exists for.
+					WA_AI_PC_can_build_logistics_here = yes
 					is_coastal = yes
 				}
 
@@ -1158,27 +1147,31 @@ WA_AI_PC_create_frontier_port = { # _frontier_province_id >>> frontier_port_crea
 }
 
 ############################################################################################################
-#	NEW HELPER: Get Maximum Railway Level on Route
-#	Input: _route_path_array (array of provinces along the route from pathfinding)
+#	HELPER: Get Maximum Railway Level on Route
+#	Input: pathfind_prov_path_ (province path from the most recent WA_AI_PATHFIND_PROV_get_path call -
+#	       call this AFTER the pathfind for the route you are levelling, never before)
 #	Output: _max_route_level_ (highest level found on any segment in the route)
 #	Purpose: Find the max level segment in a route to sync all segments to max+1
+#	Fix 29: used to read a `_route_path_array` scalar "copy" of the path (set_temp_variable does not
+#	copy arrays, and the callers assigned it before pathfinding anyway), so it always returned 0 and
+#	every land route targeted level 1 - which existing rail satisfied, so nothing was ever queued.
 ############################################################################################################
 
 WA_AI_PC_get_max_railway_level_on_route = {
 	# Initialize max to 0
 	set_temp_variable = { _max_route_level_ = 0 }
 
-	# Iterate through route path array to find all segments
-	for_each_loop = { array = _route_path_array index = seg_i value = seg_prov
+	# Iterate through the fresh pathfind result to find all segments
+	for_each_loop = { array = pathfind_prov_path_ index = seg_i value = seg_prov
 		# Calculate next index (segment endpoint)
 		set_temp_variable = { next_seg_i = seg_i }
 		add_to_temp_variable = { next_seg_i = 1 }
 
 		# Only process if there's a next segment (prevents index out of bounds)
-		if = { limit = { check_variable = { next_seg_i < _route_path_array^num } }
+		if = { limit = { check_variable = { next_seg_i < pathfind_prov_path_^num } }
 			# Get endpoint of this segment
-			set_temp_variable = { seg_start = _route_path_array^seg_i }
-			set_temp_variable = { seg_end = _route_path_array^next_seg_i }
+			set_temp_variable = { seg_start = pathfind_prov_path_^seg_i }
+			set_temp_variable = { seg_end = pathfind_prov_path_^next_seg_i }
 
 			# Read the current level of this segment from global array
 			meta_effect = {

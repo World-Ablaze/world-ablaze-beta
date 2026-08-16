@@ -6,15 +6,11 @@
 WA_AI_priority_construction_strategies = {
 
 
-	if = { limit = { check_variable = { ROOT.WA_AI_PC_active_projects < 5 }  }
+	if = { limit = { check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 }  }
 
 		if = { limit = { WA_AI_PC_can_afford_project = yes }
 
 			WA_AI_important_radar_constructions = yes
-
-			WA_AI_build_refinery_resource_shortage_steel = yes
-
-			WA_AI_build_refinery_resource_shortage_aluminium = yes
 
 			WA_AI_build_supply_line_GER_SOV = yes
 
@@ -29,7 +25,63 @@ WA_AI_priority_construction_strategies = {
 
 		# WA_AI_convert_MIC_to_CIC_industrial_expansion = yes not needed in WA
 	}
+
+	# Fix 40 (campaign 31eaf7e6): the three refinery strategies moved OUT of the
+	# gated block above. WA_AI_PC_can_afford_project needs assigned + 20 < 0.35 *
+	# (free + assigned), i.e. roughly 2.9x more free civs than the 20-factory step -
+	# for an import-strangled ENG (198 civs, permanently saturated queue, free civs
+	# reading ~0) that threshold is unreachable, so the whole refinery branch was
+	# dead for exactly the countries a refinery exists for: ENG's shortage counters
+	# sat pinned at 3 for the entire war with zero refinery projects ever queued.
+	# Same rationale as the two air strategies below, and the counters themselves
+	# also froze behind the gate, which starved the prospecting triggers that read
+	# them (WA_AI_RESOURCE_NEEDS_triggers.txt).
+	# Self-bounding without the dispatcher gates: WA_AI_PC_has_project_civs_20 +
+	# has_capitulated/surrender guards inside each strategy, the shortage_months = 3
+	# requirement, the per-strategy active_nonrail < 5 gate, and the explicit
+	# _project_queue_max = 1 in each queue function (Fix 40 in
+	# WA_AI_CONSTRUCTION_queue_functions.txt) - at most ONE refinery project of a
+	# given type in flight per country.
+	WA_AI_build_refinery_resource_shortage_steel = yes
+
+	WA_AI_build_refinery_resource_shortage_aluminium = yes
+
+	WA_AI_build_refinery_resource_shortage_rubber = yes
+
+	# Deliberately outside the active_projects/affordability gates: ENG's queue
+	# permanently holds ~20 railway projects, so the < 5 gate above can never open
+	# for the host nation, and the UK capacity deficit grounds the whole allied
+	# air war (campaign 5709c8b9: the entire USAAF parked stateside). The strategy
+	# bounds itself via _project_queue_max and the per-state level cap.
+	WA_AI_build_uk_air_hosting_capacity = yes
+
+	# Same outside-the-gates rationale: the countries whose theatre pulls go inert
+	# (USA, ENG, JAP) keep railway-saturated queues. Self-bounded by a side-wide
+	# capacity-deficit gate, _project_queue_max and the per-state level cap.
+	WA_AI_build_theatre_air_bases = yes
 }
+
+### Priority bands used by the strategies in this file. @ constants are file-scoped in HOI4
+### script, so these are a REDECLARATION of the band table that
+### common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_core.txt owns - keep the two in sync.
+@AI_PC_PRIO_DEFAULT = 100			# radar, supply lines, MIC/CIC, air bases at rest
+@AI_PC_PRIO_AIR_BASING = 300		# Fix 47: air bases while the air force outgrows its basing
+@AI_PC_PRIO_AIR_FRONT = 350			# Fix 85: theatre air bases where ROOT's own divisions stand (see WA_AI_build_theatre_air_bases)
+### Fix 87b (2026-08-16, campaign af003548 v17 probe): the UK hosting builder's concurrent-project
+### budget, not civs, is what caps UK air-base throughput (106 -> 112 levels in 3 months on
+### cloud, v16 and v17 alike, byte-identical per state, while the second air-lane slot funded 14
+### weeks and the USA held 267 idle civs). One UK level is ~1 month of one 20-civ project, so
+### throughput = concurrent projects. The budget widens while the published deficit is deep.
+@UK_AIR_QUEUE_MAX = 3				# UK hosting: concurrent air-base projects per builder (Fix 47 value)
+@UK_AIR_QUEUE_MAX_DEEP = 5			# ...while WA_AI_PC_air_deficit_pct > @UK_AIR_DEEP_DEFICIT_PCT
+@UK_AIR_DEEP_DEFICIT_PCT = 20		# must match @AI_PC_AIR_LANE_2ND_SLOT_PCT in ..._core.txt
+
+### Strategy type ids (WA_AI_PC_type_id), used with _project_queue_max_scoped so that two
+### strategies queuing the SAME building type get independent queue_max budgets. 13 and 14
+### are taken by the railway system (railway_core/helpers); keep this block and those in
+### one numbering space.
+@AI_PC_TYPE_ID_UK_AIR = 20			# Fix 47: WA_AI_build_uk_air_hosting_capacity
+@AI_PC_TYPE_ID_THEATRE_AIR = 21		# Fix 47: WA_AI_build_theatre_air_bases
 
 ### priority construction strategies
 
@@ -37,7 +89,7 @@ WA_AI_important_radar_constructions = {
 
 	if = {
 		limit = {
-			check_variable = { ROOT.WA_AI_PC_active_projects < 5 }
+			check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 }
 			threat > 0.3
 			num_of_civilian_factories_available_for_projects > 15
 			any_of_scopes = { array = controlled_states WA_AI_radar_location_2 = yes WA_AI_available_RADAR = yes }
@@ -56,14 +108,25 @@ WA_AI_important_radar_constructions = {
 
 WA_AI_improve_north_africa_infrastructure = {
 
+	# Fix 30 (R9): both corridor anchors are subject-owned at start (Tripoli 448 = ITL,
+	# Cairo 446 = UKE). The old tag gate fired for the subjects too, but a subject never
+	# passes the dispatcher's WA_AI_PC_can_afford_project, and the overlord's A* died on the
+	# subject-controlled start state. Controller-aware selection instead: whichever country
+	# controls its corridor end - directly or through a subject - builds toward the other
+	# end, provided the far end is not on its own side. Corridor definition unchanged
+	# (448 Tripoli <-> 446 Cairo).
+
 	if = {
 		limit = {
-			OR = {
-				tag = ITA
-				tag = ITL
-			}
-
 			date > 1937.6.1
+			448 = { CONTROLLER = { OR = { tag = ROOT is_subject_of = ROOT } } } # tripoli is ours
+			446 = { # cairo is not
+				CONTROLLER = {
+					NOT = { tag = ROOT }
+					NOT = { is_subject_of = ROOT }
+					NOT = { is_in_faction_with = ROOT }
+				}
+			}
 		}
 
 		set_temp_variable = { supply_line_start = 448.id } # tripoli
@@ -73,11 +136,15 @@ WA_AI_improve_north_africa_infrastructure = {
 
 	if = {
 		limit = {
-			OR = {
-				tag = ENG
-				tag = UKE
-			}
 			date > 1937.6.1
+			446 = { CONTROLLER = { OR = { tag = ROOT is_subject_of = ROOT } } } # cairo is ours
+			448 = { # tripoli is not
+				CONTROLLER = {
+					NOT = { tag = ROOT }
+					NOT = { is_subject_of = ROOT }
+					NOT = { is_in_faction_with = ROOT }
+				}
+			}
 		}
 
 		set_temp_variable = { supply_line_start = 446.id }
@@ -148,44 +215,58 @@ WA_AI_build_refinery_resource_shortage_rubber = {
 
 	if = {
 		limit = {
-			check_variable = { ROOT.WA_AI_PC_active_projects < 5 }
+			check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 }
 
-			NOT = { num_of_civilian_factories_available_for_projects < 20 }
+			# Fix 40: the dispatcher's WA_AI_PC_can_afford_project used to carry these two
+			# for the whole refinery branch; this strategy now runs outside that gate, so
+			# it states them itself (same guards the air strategies carry).
+			has_capitulated = no
+			surrender_progress < 0.3
+
+			# floored availability, was NOT = { ...available_for_projects < 20 }: the
+			# bare engine variable reads ~0 once the vanilla queue saturates
+			WA_AI_PC_has_project_civs_20 = yes
 
 			# resource shortage
 			check_variable = { WA_AI_resource_rubber_shortage_months = 3 }
+
+			# Synthetic refineries consume 60 coal/level and, unlike steel/aluminium, have no
+			# hydro variant to fall back on: only build when coal is comfortable, otherwise the
+			# refinery would feed the coal/steel shortage it competes with. The shortage counter
+			# above still ticks either way - it also drives rubber prospecting decisions.
+			check_variable = { resource@coal > 50 }
+			check_variable = { resource_imported@coal < 20 }
 		}
 
 		WA_AI_priority_queue_synthetic_refinery = yes
 	}
 
-	###
-
-	else_if = {
-		limit = {
-			check_variable = { ROOT.WA_AI_PC_active_projects < 5 }
-
-			NOT = { num_of_civilian_factories_available_for_projects < 20 }
-
-			# resource shortage
-			check_variable = { WA_AI_resource_steel_shortage_months = 3 }
-
-			# over 50% of factories are mil
-			num_of_factories > 0
-			set_temp_variable = { mil_factories = num_of_military_factories }
-			divide_temp_variable = { mil_factories = num_of_factories }
-			check_variable = { mil_factories > 0.4 }
-
-			# no factory slots left
-			NOT = {
-				any_of_scopes = { array = controlled_states
-					WA_AI_available_SHARED = yes
-				}
-			}
-		}
-
-		WA_AI_priority_convert_MIC_to_CIC = yes
-	}
+	# Fix 76 (campaign be18f9c7): a PROACTIVE pre-build else_if was prototyped here as a
+	# second host for WA_AI_CONSTRUCTION_should_pre_build_synth_rubber and REMOVED before
+	# shipping - it had no measurable beneficiary. Recorded so the same idea is not
+	# re-proposed on the same wrong premise.
+	#
+	# The premise was "ENG's C.10 is silent (checklist R24), so ENG needs a priority-
+	# construction host for the pre-build lane". The campaign refutes it. That trigger
+	# needs rubber IMPORTS above its floor while the balance is still non-negative, and
+	# ENG is never in that state at any sampled date: it owns Malaya, so it imports
+	# ZERO rubber across the whole 1936.6-1941.6 positive-balance stretch, and every
+	# date on which it does import (1942.6+, 106-210) already carries a negative balance
+	# and belongs to the reactive branch above. GER never qualifies either - its rubber
+	# imports are 0 from 1938 on, because it is pre-built BY HAND at startup (the
+	# original_tag = GER block in events/WA_AI_construction.txt adds 22 refinery levels,
+	# park 4 -> 36 by 1940.6). ITA clears the rubber terms three times and is correctly
+	# rejected by the coal guard every time - it imports 700-1600 coal. The only
+	# qualifying tags in the campaign are USA, JAP and SOV: USA reaches C.10, and JAP
+	# and SOV already raise healthy synthetic parks unaided (0 -> 4 and 13 -> 55).
+	#
+	# The lane therefore lives at ONE site, the WA_AI_C.10 refinery block in
+	# events/WA_AI_construction.txt. If a future campaign shows a QUALIFYING country
+	# whose C.10 is silent, re-adding an else_if here is the fix - but bring the
+	# measurement, and note that this strategy's own `active_nonrail < 5` gate is shut
+	# on exactly the big saturated-queue countries such an argument would invoke (the
+	# USA's queue held 5 / 8 / 6 non-rail projects, mostly radar, at the three dates
+	# sampled).
 }
 
 
@@ -222,12 +303,29 @@ WA_AI_build_refinery_resource_shortage_steel = {
 
 	if = {
 		limit = {
-			check_variable = { ROOT.WA_AI_PC_active_projects < 5 }
+			check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 }
 
-			NOT = { num_of_civilian_factories_available_for_projects < 20 }
+			# Fix 40: guards inherited from the dispatcher's WA_AI_PC_can_afford_project,
+			# which this strategy no longer runs behind.
+			has_capitulated = no
+			surrender_progress < 0.3
+
+			# floored availability, was NOT = { ...available_for_projects < 20 }: the
+			# bare engine variable reads ~0 once the vanilla queue saturates
+			WA_AI_PC_has_project_civs_20 = yes
 
 			# resource shortage
 			check_variable = { WA_AI_resource_steel_shortage_months = 3 }
+
+			# Fix 40 - input self-sufficiency, same form as the synthetic branch's coal
+			# test: a steel mill converts IRON into steel, it does not create iron. A
+			# country running an iron deficit, or covering its iron from imports the same
+			# blockade/convoy war is already strangling, converts nothing and has simply
+			# spent 10-12.5k IC to move the shortage one link up the chain - importing the
+			# finished steel is strictly cheaper. Domestic iron non-negative and imports
+			# below 40 (the aluminium branch below uses the identical shape on bauxite).
+			check_variable = { resource@iron > -1 }
+			check_variable = { resource_imported@iron < 40 }
 		}
 
 		# Choose between hydro and non-hydro based on coal availability
@@ -249,9 +347,17 @@ WA_AI_build_refinery_resource_shortage_steel = {
 
 	else_if = {
 		limit = {
-			check_variable = { ROOT.WA_AI_PC_active_projects < 5 }
+			check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 }
 
-			NOT = { num_of_civilian_factories_available_for_projects < 20 }
+			# Fix 40: the MIC->CIC conversion leg keeps its ORIGINAL reachability. Only the
+			# refinery branch above was shown to be wrongly starved by the dispatcher gate;
+			# restating can_afford here means moving the strategy out of the dispatcher
+			# cannot widen industry conversion as a side effect.
+			WA_AI_PC_can_afford_project = yes
+
+			# floored availability, was NOT = { ...available_for_projects < 20 }: the
+			# bare engine variable reads ~0 once the vanilla queue saturates
+			WA_AI_PC_has_project_civs_20 = yes
 
 			# resource shortage
 			check_variable = { WA_AI_resource_steel_shortage_months = 3 }
@@ -306,12 +412,32 @@ WA_AI_build_refinery_resource_shortage_aluminium = {
 
 	if = {
 		limit = {
-			check_variable = { ROOT.WA_AI_PC_active_projects < 5 }
+			check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 }
 
-			NOT = { num_of_civilian_factories_available_for_projects < 20 }
+			# Fix 40: guards inherited from the dispatcher's WA_AI_PC_can_afford_project,
+			# which this strategy no longer runs behind.
+			has_capitulated = no
+			surrender_progress < 0.3
+
+			# floored availability, was NOT = { ...available_for_projects < 20 }: the
+			# bare engine variable reads ~0 once the vanilla queue saturates
+			WA_AI_PC_has_project_civs_20 = yes
 
 			# resource shortage
 			check_variable = { WA_AI_resource_aluminium_shortage_months = 3 }
+
+			# Fix 40 - input self-sufficiency (campaign 31eaf7e6: ENG ran resource@bauxite
+			# -236 to -387 for the whole war). A smelter converts BAUXITE into aluminium.
+			# Building one on IMPORTED bauxite buys nothing the import market was not
+			# already selling: the same convoys now carry ore instead of metal, while the
+			# 10-12.5k IC (~18 in-game years of payback at the aluminium a smelter yields,
+			# and far longer once the extra bauxite imports are priced in) is spent up
+			# front - importing the finished aluminium is strictly cheaper. Only build on
+			# domestic ore: bauxite balance non-negative AND bauxite imports below 40.
+			# Applies to BOTH arms below (type 16 smelter and type 12 hydro smelter) - the
+			# hydro variant saves coal, not bauxite.
+			check_variable = { resource@bauxite > -1 }
+			check_variable = { resource_imported@bauxite < 40 }
 		}
 
 		# Choose between hydro and non-hydro based on coal availability
@@ -333,9 +459,15 @@ WA_AI_build_refinery_resource_shortage_aluminium = {
 
 	else_if = {
 		limit = {
-			check_variable = { ROOT.WA_AI_PC_active_projects < 5 }
+			check_variable = { ROOT.WA_AI_PC_active_nonrail_projects < 5 }
 
-			NOT = { num_of_civilian_factories_available_for_projects < 20 }
+			# Fix 40: the MIC->CIC conversion leg keeps its ORIGINAL reachability - see the
+			# identical note in WA_AI_build_refinery_resource_shortage_steel above.
+			WA_AI_PC_can_afford_project = yes
+
+			# floored availability, was NOT = { ...available_for_projects < 20 }: the
+			# bare engine variable reads ~0 once the vanilla queue saturates
+			WA_AI_PC_has_project_civs_20 = yes
 
 			# resource shortage
 			check_variable = { WA_AI_resource_aluminium_shortage_months = 3 }
@@ -396,9 +528,43 @@ WA_AI_build_supply_line_JAP_RAJ = {
 			has_war_with = RAJ
 		}
 
-		613 = { set_temp_variable = { supply_line_start = THIS.id } }
-		439 = { set_temp_variable = { supply_line_target = THIS.id } }
-		WA_AI_build_supply_line = yes
+		# Fix 30 (R9): the old hardcoded start 613 (N. Shanghai) could never reach Delhi 439
+		# within the A*'s 75-iteration cap. Dynamic anchor instead: BFS outward from the
+		# target and take the nearest ROOT-or-subject-controlled state on the SAME landmass
+		# (BFS waves are emitted nearest-first; every_neighbor_state can cross straits, the
+		# landmass check filters those hits). No anchor found = JAP holds no ground near the
+		# RAJ front = no supply line, which is the correct null behaviour.
+		set_temp_variable = { _origin_state_id = 439 } # delhi
+		set_temp_variable = { _max_distance = 10 }
+		WA_AI_PC_railway_get_states_within_distance = yes # >>> states_within_distance_
+
+		set_temp_variable = { _sl_target_state_ = 439 }
+		set_temp_variable = { _sl_target_landmass_ = global.WA_AI_MAP_state_landmass^_sl_target_state_ }
+		set_temp_variable = { _sl_anchor_found_ = 0 }
+		for_each_loop = { array = states_within_distance_ value = _sl_cand_ break = _sl_anchor_found_
+			if = {
+				limit = { check_variable = { global.WA_AI_MAP_state_landmass^_sl_cand_ = _sl_target_landmass_ } }
+				var:_sl_cand_ = {
+					if = {
+						limit = {
+							CONTROLLER = {
+								OR = {
+									tag = ROOT
+									is_subject_of = ROOT
+								}
+							}
+						}
+						set_temp_variable = { supply_line_start = THIS.id }
+						set_temp_variable = { _sl_anchor_found_ = 1 }
+					}
+				}
+			}
+		}
+
+		if = { limit = { check_variable = { _sl_anchor_found_ = 1 } }
+			set_temp_variable = { supply_line_target = _sl_target_state_ }
+			WA_AI_build_supply_line = yes
+		}
 	}
 }
 
@@ -423,12 +589,42 @@ WA_AI_convert_MIC_to_CIC_industrial_expansion = {
 
 WA_AI_build_supply_line = {
 
-	set_temp_variable = { pathfind_start = supply_line_start }
-	set_temp_variable = { pathfind_target = supply_line_target }
-	set_temp_variable = { pathfind_type = 1 }
+	# Fix 30 break hygiene: earlier strategies in the same pulse (refinery/AA queue
+	# functions, scoring loops) leave the shared `break` temp variable at 1; the
+	# default-break loops below (path walk, front exploration) would then abort before
+	# their first iteration. The pathfinder resets it too, but reset here so THIS effect
+	# is safe regardless of call order.
+	set_temp_variable = { break = 0 }
+	set_temp_variable = { building_path_to_front = 0 }
+
+	# Fix 30 instrumentation (campaign 66d6b53c: zero supply-line projects all war, and
+	# resource-INF shares building type 1, so saves could not tell the two apart).
+	# Persistent, save-visible (lowercased in saves); remove once the system is verified.
+	#   WA_AI_supply_line_dbg_called      pulses that reached this effect
+	#   WA_AI_supply_line_dbg_pf_ok       pulses whose A* returned success
+	#   WA_AI_supply_line_dbg_queued      infrastructure projects actually queued here
+	#   WA_AI_supply_line_dbg_last_state  state id of the last queued project
+	add_to_variable = { WA_AI_supply_line_dbg_called = 1 }
+
+	# Fix: these three inputs were passed WITHOUT the underscore prefix the pathfinder
+	# reads (_pathfind_start/_pathfind_target/_pathfind_type in
+	# WA_AI_pathfinding_effects.txt), so the A* ran from an unset scope and this whole
+	# effect - and all three strategies built on it (North Africa infrastructure,
+	# GER->SOV and JAP->RAJ supply lines) - has been silent dead code since authoring:
+	# zero type-1 supply-line projects in 8 in-game years of campaign 9be92c89.
+	# (Outputs pathfind_success / pathfind_path_ carry no prefix and were correct.)
+	set_temp_variable = { _pathfind_start = supply_line_start }
+	set_temp_variable = { _pathfind_target = supply_line_target }
+	set_temp_variable = { _pathfind_type = 1 }
 	WA_AI_PATHFIND_get_path = yes
 
+	if = { limit = { has_country_flag = WA_AI_construction_logging }
+		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | SUPPLY LINE: [?supply_line_start] -> [?supply_line_target] success=[?pathfind_success]"
+	}
+
 	if = { limit = { check_variable = { pathfind_success = 1 } }
+
+		add_to_variable = { WA_AI_supply_line_dbg_pf_ok = 1 }
 
 		# Set up project parameters for infrastructure building
 		set_temp_variable = { _project_building_type = 1 }
@@ -460,7 +656,13 @@ WA_AI_build_supply_line = {
 
 		if = { limit = { check_variable = { building_path_to_front = 1 } }
 
+			set_temp_variable = { _sl_before_ = WA_AI_PC_active_projects }
 			var:target_id = { WA_AI_PC_start_project = yes }
+			# start_project may no-op (duplicate, level cap) - count only real queue growth
+			if = { limit = { check_variable = { WA_AI_PC_active_projects > _sl_before_ } }
+				add_to_variable = { WA_AI_supply_line_dbg_queued = 1 }
+				set_variable = { WA_AI_supply_line_dbg_last_state = target_id }
+			}
 		}
 
 		### build along the front
@@ -491,7 +693,16 @@ WA_AI_build_supply_line = {
 					# max infrastructure
 					if = { limit = { WA_AI_PC_can_build_project = yes }
 
+						set_temp_variable = { _sl_before_ = ROOT.WA_AI_PC_active_projects }
 						WA_AI_PC_start_project = yes
+						if = { limit = { check_variable = { ROOT.WA_AI_PC_active_projects > _sl_before_ } }
+							# Plain state id via the map-data primitive - a scope-hopped PREV.id
+							# stores the engine-encoded reference, not the numeric id (R1 lesson).
+							# ROOT.-prefixed targets so the RHS temps stay readable in state scope.
+							WA_AI_PC_get_state_id = yes # >>> state_id_
+							add_to_variable = { ROOT.WA_AI_supply_line_dbg_queued = 1 }
+							set_variable = { ROOT.WA_AI_supply_line_dbg_last_state = state_id_ }
+						}
 
 						set_temp_variable = { break = 1 }
 					}
@@ -500,7 +711,13 @@ WA_AI_build_supply_line = {
 					else = {
 						every_neighbor_state = {
 							limit = {
-								is_controlled_by = ROOT
+								# Fix 30: also walk the front through subject-controlled states
+								# (WA_AI_PC_can_build_project already accepts them; a ROOT-only
+								# walk filtered the whole UKE/ITL corridor back out)
+								OR = {
+									is_controlled_by = ROOT
+									CONTROLLER = { is_subject_of = ROOT }
+								}
 
 								NOT = { is_in_array = { front_states = THIS.id } }
 
@@ -760,6 +977,974 @@ WA_AI_fortify_strategic_islands = {
 				set_temp_variable = { _project_queue_num = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
+			}
+		}
+	}
+}
+
+# Fix 51: south-first build order for the UK hosting states.
+#
+# MIRROR - must match WA_AI_uk_air_hosting_state in
+# common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt, id for id AND rank for
+# rank. That trigger carries the ranking method, the measured distances and the two
+# judgement calls (Sussex above South London; Cornwall last); read it before editing
+# either. The duplication is forced: @ constants do not cross files, and a plain-id
+# array cannot be membership-tested from state scope (the .id scope-encoding lesson).
+# Drift is survivable in one direction only, which is why the trigger stays
+# authoritative for membership - see the fallback at the bottom of the walk.
+#
+# Scope: any country (state ids are data). Writes global.WA_AI_uk_air_priority_states
+# and stamps @UK_AIR_PRIORITY_VERSION. Called lazily from
+# WA_AI_build_uk_air_hosting_capacity on a version mismatch, so a campaign resumed on
+# a build with a different order rebuilds the array instead of keeping a stale one.
+# BUMP @UK_AIR_PRIORITY_VERSION whenever the order or the membership changes.
+@UK_AIR_PRIORITY_VERSION = 1
+WA_AI_uk_air_hosting_priority_init = {
+	clear_array = global.WA_AI_uk_air_priority_states
+	add_to_array = { global.WA_AI_uk_air_priority_states = 857 }	# rank  1 - Kent
+	add_to_array = { global.WA_AI_uk_air_priority_states = 127 }	# rank  2 - Sussex
+	add_to_array = { global.WA_AI_uk_air_priority_states = 961 }	# rank  3 - South London
+	add_to_array = { global.WA_AI_uk_air_priority_states = 125 }	# rank  4 - Essex
+	add_to_array = { global.WA_AI_uk_air_priority_states = 126 }	# rank  5 - North London
+	add_to_array = { global.WA_AI_uk_air_priority_states = 860 }	# rank  6 - Norfolk
+	add_to_array = { global.WA_AI_uk_air_priority_states = 859 }	# rank  7 - Dorset
+	add_to_array = { global.WA_AI_uk_air_priority_states = 338 }	# rank  8 - Gloucestershire
+	add_to_array = { global.WA_AI_uk_air_priority_states = 129 }	# rank  9 - Leicestershire
+	add_to_array = { global.WA_AI_uk_air_priority_states = 128 }	# rank 10 - Warwickshire
+	add_to_array = { global.WA_AI_uk_air_priority_states = 123 }	# rank 11 - Cornwall
+	set_variable = { global.WA_AI_uk_air_priority_version = @UK_AIR_PRIORITY_VERSION }
+}
+
+# Fix 51: queue ONE air-base level in this state. Extracted from the old level ladder
+# so the ordered south-first walk and its unordered fallback tail go through a single
+# code path and cannot diverge.
+#
+# THIS = state (already passed WA_AI_uk_air_hosting_state + WA_AI_uk_air_site_buildable
+# + the level cap), PREV = ROOT = builder country.
+# Inputs, all set by the caller in country scope:
+#   _uk_air_prio_        priority band, resolved once per pulse (Fix 47)
+#   _uk_air_level_cap_   @UK_AIR_TARGET_LEVEL_CAP, passed in because that constant is
+#                        declared inside WA_AI_build_uk_air_hosting_capacity's body
+#   _uk_air_rank_        1-11 = south-first rank of this state, 0 = unranked fallback
+#   _uk_air_qnum_before_ WA_AI_PC_queue^num sampled immediately before the call
+# Output: _uk_air_started_ = 1 (latch + loop break).
+WA_AI_uk_air_queue_site = {
+
+	# capture the pre-build level HERE, in state scope: WA_AI_uk_air_dbg_best keeps its
+	# documented meaning ("the level a project was started at"; -2 = no deficit), which
+	# checklist R8's probes read verbatim. The new south-first RANK goes to the WA_TLM
+	# rows below instead of overloading a live legacy gauge.
+	set_temp_variable = { _uk_air_site_level_ = building_level@air_base }
+
+	set_temp_variable = { _project_building_type = 2 }
+	set_temp_variable = { _project_province_id = 0 }
+	set_temp_variable = { _project_target_state = 0 }
+	set_temp_variable = { _project_priority = _uk_air_prio_ }
+	set_temp_variable = { _project_queue_num = 1 }
+	set_temp_variable = { _project_queue_max = @UK_AIR_QUEUE_MAX }
+	# Fix 87b: widen the budget while the deficit is deep (see the constants at the top)
+	if = { limit = { ROOT = { check_variable = { WA_AI_PC_air_deficit_pct > @UK_AIR_DEEP_DEFICIT_PCT } } }
+		set_temp_variable = { _project_queue_max = @UK_AIR_QUEUE_MAX_DEEP }
+	}
+	# Fix 47: these 3 slots are the UK strategy's OWN budget. Before, queue_max
+	# counted every type-2 project country-wide, so theatre air bases elsewhere
+	# consumed the UK allowance - on 911bed3c both of ENG's slots held Pacific
+	# projects on the very pulse the UK deficit reopened.
+	set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_UK_AIR }
+	set_temp_variable = { _project_queue_max_scoped = 1 }
+	set_temp_variable = { _project_target_level = _uk_air_level_cap_ }
+	WA_AI_PC_start_project = yes
+	# Fix 47: hand the shared temp back. Core clears _project_queue_max_scoped
+	# itself but must NOT clear _project_type_id (railway_core reads it back
+	# across its own start_project calls - see the note there), so the tag is
+	# retired here instead. Without this, the next type-2 caller that does not
+	# set a type_id - WA_AI_fortify_strategic_islands is one - would inherit
+	# @AI_PC_TYPE_ID_UK_AIR and be counted against the UK budget.
+	set_temp_variable = { _project_type_id = 0 }
+
+	ROOT = {
+		# _uk_air_started_ latches on SITE FOUND, not on queue success: if
+		# WA_AI_PC_start_project refused (queue max, duplicate), the next candidate
+		# would be refused for the same reason, so the walk still stops.
+		set_temp_variable = { _uk_air_started_ = 1 }
+		set_variable = { WA_AI_uk_air_dbg_best = _uk_air_site_level_ }
+
+		# Fix 46: gate the counters on the queue actually growing. The old
+		# unconditional increment counted eligible SITES FOUND, not projects
+		# queued, and over-reported by ~4x (campaign 9a4cd657 1944.7: ENG 97 +
+		# USA 39 "starts" against 34 air-base levels delivered UK-wide). Same
+		# form as WA_AI_thair_dbg_started in WA_AI_build_theatre_air_bases, which
+		# has always been gated this way - the two counters are now comparable.
+		# Every WA_TLM row below hangs off this same verified-effect gate (§3.6 r1).
+		if = {
+			limit = { check_variable = { WA_AI_PC_queue^num > _uk_air_qnum_before_ } }
+			add_to_variable = { WA_AI_uk_air_dbg_started = 1 }
+
+			# tlm: WA_TLM_r8_uk_air_q_n / _rank_sum / _rank_max / _fallback_n / _last_t
+			# consumer: checklist R8 (concentration leg). Retire with R8.
+			add_to_variable = { WA_TLM_r8_uk_air_q_n = 1 }
+			set_variable = { WA_TLM_r8_uk_air_last_t = global.WA_TLM_clock }
+			if = {
+				limit = { check_variable = { _uk_air_rank_ > 0 } }
+				add_to_variable = { WA_TLM_r8_uk_air_rank_sum = _uk_air_rank_ }
+				if = {
+					limit = { check_variable = { _uk_air_rank_ > WA_TLM_r8_uk_air_rank_max } }
+					set_variable = { WA_TLM_r8_uk_air_rank_max = _uk_air_rank_ }
+				}
+			}
+			# explicit inverse rather than `else`: the branch above ends in a nested `if`,
+			# and an `else` placed after a trailing nested `if` is exactly the binding trap
+			# recorded in wa-lessons-learned (the marshal-recruit else).
+			if = {
+				# rank 0 = queued by the unranked fallback tail, so it is deliberately
+				# kept out of _rank_sum / _rank_max (see the registry row for the
+				# mean-rank denominator).
+				limit = { NOT = { check_variable = { _uk_air_rank_ > 0 } } }
+				add_to_variable = { WA_TLM_r8_uk_air_fallback_n = 1 }
+			}
+		}
+	}
+}
+
+# Keep enough air base capacity in central/southern England to host the whole
+# faction's aviation (RAF + USAAF + minors). Without this the allied AI parks
+# its air force in America: the UK bases in range of the front fill up and the
+# engine finds no free capacity worth rebasing to, so the wings never cross the
+# Atlantic.
+# ENG builds as host nation. USA acts as backup builder (air_base has
+# allied_build = yes) whenever ENG cannot act on the deficit itself: ENG is
+# player-controlled or lacks civilian factories. This strategy is called outside
+# the dispatcher's active_projects/affordability gates (see the caller): ENG's
+# queue is permanently railway-saturated, so a busy-queue gate would kill the
+# host-nation branch for the whole war.
+# ROOT = ENG or USA. Called from WA_AI_priority_construction_strategies
+# (WA_AI_background.1, ~2 day cadence, AI only).
+WA_AI_build_uk_air_hosting_capacity = {
+
+	@UK_AIR_CAPACITY_PER_LEVEL = 100	# NDefines.NBuildings.AIRBASE_CAPACITY_MULT (05_defines.lua)
+	@UK_AIR_TARGET_LEVEL_CAP = 12		# per-state cap, leaves slots for other buildings
+	# Fix 47: 0.5 -> 0.65. Measured on campaign 9a4cd657 (1944.7): 20,503 faction planes
+	# against 7,100 capacity - 71 levels held-or-queued across the 11 hosting states, where
+	# the old 0.5 asked for 103. The strategy was correctly reporting a 32-level shortfall
+	# and still could not host the RAF+USAAF, because half the faction's aviation is the
+	# wrong target once the whole Western Front stages out of Britain. 0.65 asks for 133.
+	#
+	# 0.65 -> 1.0 (2026-08-14, campaign f9321934). 0.65 STILL stood the strategy down
+	# 14 months before D-Day. Measured at 1944.6.1: capacity 7,000 (70 levels) against
+	# 10,021 faction planes, so the 0.65 target of 6,514 was already satisfied - dbg_best
+	# read -2 ("no deficit") continuously from 1942.7, and the last UK air project of the
+	# entire campaign started 1943.4. The build stopped at 70 of the 132-level ceiling
+	# (53%) with 30% of Allied aviation unhoused. Any share < 1.0 declares victory while
+	# part of the faction's air force still has nowhere in Britain to stand; 1.0 is the
+	# only value that means what the strategy's own header says it means.
+	#
+	# STRUCTURAL CEILING: 11 hosting states x @UK_AIR_TARGET_LEVEL_CAP = 132 levels
+	# (13,200 capacity), so the ceiling and not this share is what ultimately bounds the
+	# build - it still cannot run away. At 1944 plane counts (10,021) the 1.0 target is
+	# REACHABLE, which 0.65 was not asking for; beyond ~13,200 faction planes the deficit
+	# becomes permanent by construction.
+	#
+	# ACCEPTED COST, made permanent by this change: air bases hold the 300 band (see the
+	# band table in ..._core.txt) for as long as the deficit stands, so from the point the
+	# faction passes ~13,200 planes ENG's shortage refineries run on the Fix 41 overtake
+	# lane instead of the sorted fill, permanently rather than temporarily. On f9321934
+	# that threshold falls in 1945. If the refineries turn out to need their band back more
+	# than the RAF needs the last levels, lower this - do NOT raise @UK_AIR_TARGET_LEVEL_CAP
+	# or extend the state list, which checklist R8 forbids until R15 justifies more capacity.
+	#
+	# WHAT THIS CANNOT FIX, stated up front: at 1944.6.1 the island already held 10,100
+	# capacity against 8,033 aircraft - ~2,067 FREE - while the USAAF kept just 500 of its
+	# 5,431 land-based aircraft in Britain (9%) and Norfolk sat at 112/700. Every south-
+	# eastern field was RAF-saturated (Kent 600/600, Essex 700/700, Sussex 700/600 - over-
+	# stacked), so the shortage is positional, not just aggregate. More levels only help if
+	# Fix 51's south-first walk puts them where the invasion is; the USAAF's own basing
+	# decision (R15) may still be the binding constraint.
+	@UK_AIR_HOSTED_FACTION_SHARE = 1.0	# share of the faction's planes the UK should be able to host
+	# Fix 87 / P6 (2026-08-16, campaign af003548): the engine books air-base capacity per WING
+	# at land_air_wing_size (100 / tac 200 / strat 300 / scout 25), not per plane present, and
+	# script can only count planes. Measured 1944.7: the 11 hosting states read 77 % full in
+	# planes and 90 % nominal, 7 of 11 at exactly 100.0 %. Dividing the plane count by the
+	# observed fill converts the target to wing slots; 0.9 is the measured wing fill of a
+	# war-year air force (fill gap grows with attrition, so this understates late-war need).
+	@UK_AIR_NOMINAL_FILL = 0.9			# planes present / nominal wing slots
+	# Fix 87 / P1: above this deficit the allocator opens a SECOND air-lane slot
+	# (WA_AI_PC_assign_factories reads WA_AI_PC_air_deficit_pct, published below).
+	# Deliberately a published state variable, not a dbg one - gameplay must not read dbg_*.
+	# Fix 47: civs/pass a host must put on air bases (2 full 20-civ slots) before an allied
+	# builder stands down. @ constants are file-scoped, so this is declared here but is used
+	# ONLY by WA_AI_build_theatre_air_bases further down - this UK strategy deliberately has
+	# no host-funding gate at all (see its USA branch for why the two differ).
+	@AI_PC_AIR_HOST_FUNDING_FLOOR = 40
+
+	# DIAGNOSIS INSTRUMENTATION (campaign 0e7e7852: the strategy produced zero
+	# projects on a build that verifiably contained it, and saves cannot show why -
+	# temp variables are not stored). The WA_AI_uk_air_dbg_* persistent variables
+	# make each stage readable from the next test campaign's saves:
+	#   dbg_called   pulses that reached this effect (ENG/USA only)
+	#   dbg_planes   faction plane count of the last gated pulse
+	#   dbg_capacity hosting capacity of the last gated pulse
+	#   dbg_best     -2 = no deficit; -1 = deficit open but this pulse queued nothing
+	#                (Fix 78 - budget full or every eligible site blocked); else the
+	#                AIR-BASE LEVEL of the site queued this pulse (see queue_site).
+	#                Single-pulse snapshot - a monthly save reads the LAST pulse only;
+	#                trend questions belong to dbg_started, which is cumulative.
+	#   dbg_started  projects actually queued
+	# Absence of dbg_called = dispatcher never calls us; dbg_called without the
+	# others = the main gate never passed. Remove once the system is verified.
+	if = {
+		limit = { OR = { original_tag = ENG original_tag = USA } }
+		add_to_variable = { WA_AI_uk_air_dbg_called = 1 }
+	}
+
+	if = {
+		limit = {
+			has_war = yes
+			any_enemy_country = { capital_scope = { is_on_continent = europe } }
+			# floored availability: the bare engine variable reads ~0 once the vanilla
+			# queue saturates (see WA_AI_PC_has_project_civs_16)
+			WA_AI_PC_has_project_civs_16 = yes
+			OR = {
+				original_tag = ENG
+				AND = {
+					original_tag = USA
+					is_in_faction_with = ENG
+					# Fix 47: NO host-condition gate. The USA co-builds until the hosting
+					# target is met, whatever ENG's economy is doing.
+					#
+					# History of this gate, because the shape keeps failing the same way.
+					# Originally it was a capability test on ENG's civs; Fix 38 (campaign
+					# 31eaf7e6) showed that blocked the USA for the whole war while ENG's own
+					# air slots ran at 0 assigned factories in 4 of 5 sampled saves - having
+					# civs is not the same as spending them - and replaced it with
+					# "ENG assigns < 1 civ to air". Campaign 9a4cd657 then showed that closing
+					# too: ENG sat at exactly 1 air civ in 1944.7 with the faction 32 levels
+					# short, so the USA - which supplied 585 of the 874 air civ-months measured
+					# over 1942-44 - was locked out by a single factory. Promoting air bases to
+					# the 300 band would have made that permanent, since ENG now almost always
+					# assigns something. A rate test (>= 2 full slots) was the next iteration
+					# and is still the wrong shape: any host-spending threshold makes the
+					# ALLY's participation a function of the HOST's budget rather than of the
+					# shortfall the ally exists to cover.
+					#
+					# What makes dropping it safe now is Fix 46: WA_AI_PC_has_same_type_project_here
+					# became builder-agnostic, so ENG and USA can no longer queue the same state
+					# (they demonstrably did, in state 126 and state 860 simultaneously). With
+					# collisions impossible, two builders working the same 11-state set is pure
+					# added throughput. The deficit branch below (_uk_target_capacity_ >
+					# _uk_hosting_capacity_) is the only stop condition either builder needs -
+					# it closes for BOTH of them the moment the target is met.
+					#
+					# WA_AI_build_theatre_air_bases deliberately KEEPS its host-funding gate
+					# (@AI_PC_AIR_HOST_FUNDING_FLOOR): it spans every faction member across ten
+					# theatres, where an ungated ally would pile into every partner's contested
+					# theatre at once. This strategy is a two-builder, eleven-state special case
+					# with a known 60-level shortfall, so it does not need that brake.
+				}
+			}
+		}
+
+		### how many planes the faction may want to base in the UK
+		# num_deployed_planes cannot be read as a set_temp_variable rvalue (campaign
+		# 5709c8b9: every other gate provably passed and the deficit branch never
+		# fired). The per-airframe form num_deployed_planes_with_type@X is script-
+		# readable (mission_calculations_effects.txt relies on it). The sums are
+		# INLINED deliberately - a helper effect is a newly registered name, which a
+		# console reload cannot pick up and which added an unprovable failure class
+		# to the 0e7e7852 test round; inline statements carry no such risk.
+
+		set_temp_variable = { _faction_planes_ = 0 }
+		add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@small_fighter_airframe }
+		add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@small_fighter_multirole_airframe }
+		add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@small_fighter_interceptor_airframe }
+		add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@small_bomber_airframe }
+		add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_fighter_airframe }
+		add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_fighter_multirole_airframe }
+		add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_bomber_airframe }
+		add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_heavy_bomber_airframe }
+		add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@fast_bomber_airframe }
+		add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_scout_airframe }
+		add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@large_bomber_airframe }
+		add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@large_maritime_patrol_airframe }
+		for_each_scope_loop = { array = allies
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@small_fighter_airframe }
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@small_fighter_multirole_airframe }
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@small_fighter_interceptor_airframe }
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@small_bomber_airframe }
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_fighter_airframe }
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_fighter_multirole_airframe }
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_bomber_airframe }
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_heavy_bomber_airframe }
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@fast_bomber_airframe }
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@medium_scout_airframe }
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@large_bomber_airframe }
+			add_to_temp_variable = { _faction_planes_ = num_deployed_planes_with_type@large_maritime_patrol_airframe }
+		}
+
+		set_temp_variable = { _uk_target_capacity_ = _faction_planes_ }
+		multiply_temp_variable = { _uk_target_capacity_ = @UK_AIR_HOSTED_FACTION_SHARE }
+		# Fix 87 / P6: planes -> nominal wing slots (see the constant)
+		divide_temp_variable = { _uk_target_capacity_ = @UK_AIR_NOMINAL_FILL }
+
+		### capacity already built or queued in the hosting states
+
+		set_temp_variable = { _uk_hosting_capacity_ = 0 }
+		every_state = {
+			limit = {
+				WA_AI_uk_air_hosting_state = yes
+				OR = {
+					is_controlled_by = ROOT
+					CONTROLLER = { is_in_faction_with = ROOT }
+				}
+			}
+			add_to_temp_variable = { _uk_hosting_capacity_ = building_level@air_base }
+		}
+		for_each_loop = { array = WA_AI_PC_queue value = _uk_air_proj_id_
+			if = {
+				limit = {
+					check_variable = { WA_AI_PC_building_type^_uk_air_proj_id_ = 2 }
+					# Fix 37 companion (campaign 31eaf7e6): only air-base projects actually
+					# targeting a UK hosting state count as claimed UK capacity - the USA's
+					# Pacific-theatre air projects sitting in the same queue were inflating
+					# it by +100 capacity each and masking the real deficit.
+					var:WA_AI_PC_target_state^_uk_air_proj_id_ = { WA_AI_uk_air_hosting_state = yes }
+				}
+				add_to_temp_variable = { _uk_hosting_capacity_ = 1 }
+			}
+		}
+		multiply_temp_variable = { _uk_hosting_capacity_ = @UK_AIR_CAPACITY_PER_LEVEL }
+
+		set_variable = { WA_AI_uk_air_dbg_planes = _faction_planes_ }
+		set_variable = { WA_AI_uk_air_dbg_capacity = _uk_hosting_capacity_ }
+		set_variable = { WA_AI_uk_air_dbg_best = -2 }
+
+		# Fix 87 / P1: publish the deficit as a percentage of built-or-queued capacity -
+		# 0 when there is none. Read by the allocator's second air-lane slot
+		# (WA_AI_CONSTRUCTION_PRIORITY_core.txt) and by savegame analysis. Overwritten every
+		# gated pulse, so a save reads the last pulse (snapshot, like dbg_capacity).
+		set_variable = { WA_AI_PC_air_deficit_pct = 0 }
+		if = {
+			limit = {
+				check_variable = { _uk_target_capacity_ > _uk_hosting_capacity_ }
+				check_variable = { _uk_hosting_capacity_ > 0 }
+			}
+			set_variable = { WA_AI_PC_air_deficit_pct = _uk_target_capacity_ }
+			subtract_from_variable = { WA_AI_PC_air_deficit_pct = _uk_hosting_capacity_ }
+			multiply_variable = { WA_AI_PC_air_deficit_pct = 100 }
+			divide_variable = { WA_AI_PC_air_deficit_pct = _uk_hosting_capacity_ }
+		}
+
+		if = { limit = { check_variable = { _uk_target_capacity_ > _uk_hosting_capacity_ } }
+
+			# Fix 78: restore the legend's -1 ("deficit open, nothing queued this pulse").
+			# The -2 pre-set above dates from before Fix 51 and had silently become the
+			# resting value of BOTH "no deficit" and "deficit but the walk queued nothing",
+			# which is exactly the ambiguity that had campaign be18f9c7's scoring read five
+			# months of healthy-but-budget-full pulses as "no buildable site found". The
+			# queue-site helper still overwrites this with the site's level when it fires.
+			set_variable = { WA_AI_uk_air_dbg_best = -1 }
+
+			# Fix 78: reserve ONE allocator slot for the air-basing band while the deficit
+			# stands. Read by the reservation lane in WA_AI_PC_assign_factories
+			# (WA_AI_CONSTRUCTION_PRIORITY_core.txt) - see the full rationale there. Set for
+			# whichever builder runs this branch (host and ally alike): the ally's air
+			# projects normally win its fill anyway, so the reservation is only load-bearing
+			# for the rail-saturated host, but gating it on the host tag would be a tag test
+			# this file does not need. Same 30-day self-release shape as the override below.
+			set_country_flag = { flag = WA_AI_PC_air_basing_reserve value = 1 days = 30 }
+
+			### Fix 47: lift the host's PC allocation ceiling while the deficit stands.
+			# Measured on campaign 9a4cd657: ENG's PC pool ran 32-87 civs (mean 52) across
+			# 1942-44 while the derived uncommitted-civ figure sat at 59-162 EVERY sampled
+			# month and never once hit the 0.30 floor. ENG was not civ-poor - it was holding
+			# idle factories that @AI_PC_ALLOC_FRACTION (0.40) forbade PC from touching, and
+			# air bases were losing the 35% it did get to the 250-band refineries. Raising
+			# the host's share is what lets it fund basing AND its shortage refineries
+			# instead of trading one for the other.
+			#
+			# WA_AI_PC_override_max_factories_factor is the existing per-country escape hatch
+			# (WA_AI_PC_assign_factories reads it in place of @AI_PC_ALLOC_FRACTION), chosen
+			# over editing that global constant so this cannot change construction for every
+			# other AI in the game.
+			#
+			# HAZARD - the flag and its variable are SHARED with the railway system
+			# (WA_AI_CONSTRUCTION_PRIORITY_railway_core.txt sets the same pair). The value
+			# here is deliberately identical to railway's 0.5: with matching values the two
+			# writers are idempotent and the 30-day refresh from either keeps it live. Do not
+			# diverge the numbers without giving each system its own flag, or they will
+			# alternate on a last-writer-wins timer.
+			#
+			# Self-releasing: the 30-day flag is only refreshed while this deficit branch
+			# runs, so allocation falls back to 0.35 within a month of the target being met.
+			# Host only - the ally is funding its own projects out of its own pool.
+			if = {
+				limit = { original_tag = ENG }
+				set_country_flag = { flag = WA_AI_PC_override_max_factories_factor value = 1 days = 30 }
+				set_variable = { WA_AI_PC_override_max_factories_factor = 0.6 }
+			}
+
+			### Fix 51: fill the SOUTH-EAST first, only move north once it is capped
+			#
+			# What this replaces and why. The selector used to be a LEVEL ladder: walk
+			# _uk_air_try_level_ from 0 upward and take a random hosting state sitting at
+			# exactly that level. That is "expand the least-developed state first" - a
+			# LEVELLING rule - and it did exactly what it said. Campaign f9321934 (HEAD
+			# 289f1318f) at 1946.8: 98 levels spread across 11 states, ~8.9 each against a
+			# cap of 12, and the two largest ENG plane concentrations were Gloucestershire
+			# (827) and Warwickshire (460) - the two states FURTHEST from France. A wing at
+			# Kent covers Northern France; the same wing at Leicestershire does not.
+			#
+			# This does NOT add capacity. The ceiling is 11 x @UK_AIR_TARGET_LEVEL_CAP = 132
+			# levels either way and the deficit is a production race this change does not
+			# win (f9321934: 9 800 capacity vs 15 174 faction planes at 1946.8). What it buys
+			# is RANGE and mission efficiency for whatever capacity does get built.
+			#
+			# The level ladder's own reason for existing is preserved. It was written
+			# (campaign 9be92c89) to replace a two-pass select that stored THIS.id from STATE
+			# scope and compared it to a -1 sentinel in country scope - the stored value is
+			# scope-encoded, the guard never passed, and the strategy queued nothing for the
+			# entire war. Fifth occurrence of the state-scope temp trap (AIFC, railway Fixes
+			# 24/25/27 lineage). Nothing below stores or compares a scope id: the walk is
+			# over PLAIN ids from a global array, entered with `var:`, and the project starts
+			# directly in state scope per WA_AI_PC_start_project's contract
+			# (THIS = state, PREV = builder country) - the same idiom as railway_core's
+			# `var:_state_for_project = { WA_AI_PC_start_railway_project = yes }`.
+			#
+			# Why a top-priority state cannot stall the walk: the moment ANY builder queues
+			# an air base in it, WA_AI_PC_has_same_type_project_here (builder-agnostic since
+			# Fix 46) makes it fail WA_AI_uk_air_site_buildable, so the next pulse falls
+			# through to the next rank. Southern states also run out of BUILDING SLOTS -
+			# they hold ENG's arms factories - and the free-slot terms inside that same
+			# trigger fall through identically. The walk never stalls on a full state.
+
+			set_temp_variable = { _project_building_type = 2 }
+			set_temp_variable = { _uk_air_started_ = 0 }
+			# passed to WA_AI_uk_air_queue_site: @ constants are file-scoped AND this one
+			# is declared inside this effect's body, so the helper cannot name it directly
+			set_temp_variable = { _uk_air_level_cap_ = @UK_AIR_TARGET_LEVEL_CAP }
+
+			# Fix 47: band selection, resolved ONCE in country scope - the trigger is a
+			# faction scan and must not run per candidate state inside the walk below.
+			set_temp_variable = { _uk_air_prio_ = @AI_PC_PRIO_DEFAULT }
+			if = {
+				limit = { WA_AI_PC_air_force_needs_basing_priority = yes }
+				set_temp_variable = { _uk_air_prio_ = @AI_PC_PRIO_AIR_BASING }
+			}
+
+			# Fix 51: build the ordered list once per game. check_variable reads an absent
+			# global as 0, so a fresh start and a campaign resumed from a pre-Fix-51 build
+			# both take this branch; a later order change takes it again via the version.
+			if = {
+				limit = { NOT = { check_variable = { global.WA_AI_uk_air_priority_version = @UK_AIR_PRIORITY_VERSION } } }
+				WA_AI_uk_air_hosting_priority_init = yes
+			}
+
+			set_temp_variable = { _uk_air_rank_ = 0 }
+			for_each_loop = {
+				array = global.WA_AI_uk_air_priority_states
+				value = _uk_air_sid_
+				# named break, never the shared default `break` temp - queue functions set
+				# plain `break = 1` and never reset it (Fix 30 lesson)
+				break = _uk_air_started_
+
+				add_to_temp_variable = { _uk_air_rank_ = 1 }
+				# Fix 46: queue depth before the attempt, so dbg_started below can count
+				# projects actually QUEUED rather than sites merely found (see the counter).
+				set_temp_variable = { _uk_air_qnum_before_ = WA_AI_PC_queue^num }
+
+				var:_uk_air_sid_ = {
+					if = {
+						limit = {
+							# re-tested per candidate: the trigger, not this array, owns
+							# membership, so an id dropped from the trigger is filtered out here
+							WA_AI_uk_air_hosting_state = yes
+							check_variable = { building_level@air_base < @UK_AIR_TARGET_LEVEL_CAP }
+							WA_AI_uk_air_site_buildable = yes
+						}
+						WA_AI_uk_air_queue_site = yes
+					}
+				}
+			}
+
+			# Fix 51: fallback tail - unordered scan over the SAME membership trigger,
+			# reached only when the ordered walk queued nothing. This is what makes the
+			# duplicated list safe: an id present in WA_AI_uk_air_hosting_state but missing
+			# from the array loses its rank and gets built last, instead of never being
+			# built at all. In a consistent build it fires only when every ranked state is
+			# capped or unbuildable, in which case it also finds nothing - one wasted
+			# random_state scan on a pulse that was going to do nothing anyway.
+			# WA_TLM_r8_uk_air_fallback_n counts it, so drift is visible in the next campaign.
+			if = {
+				limit = { check_variable = { _uk_air_started_ < 1 } }
+				set_temp_variable = { _uk_air_rank_ = 0 }	# 0 = unranked, see the TLM rows
+				set_temp_variable = { _uk_air_qnum_before_ = WA_AI_PC_queue^num }
+				random_state = {
+					limit = {
+						WA_AI_uk_air_hosting_state = yes
+						check_variable = { building_level@air_base < @UK_AIR_TARGET_LEVEL_CAP }
+						WA_AI_uk_air_site_buildable = yes
+					}
+					WA_AI_uk_air_queue_site = yes
+				}
+			}
+		}
+	}
+}
+
+# Build/upgrade air bases inside air theatres that are CONTESTED for ROOT, so the
+# strategic_air_importance pulls in common/ai_strategy/WA_AI_MILITARY_DEFAULT_AIR_theatres.txt
+# have friendly capacity to rebase into - the engine only rebases wings into in-range friendly
+# air-base capacity, so a pull toward a theatre with no basing is inert (that file's KNOWN
+# LIMITS names this effect as the follow-up). Campaign 66d6b53c: the USAAF kept 8,595 of
+# 13,791 planes in the continental US - no basing existed along the Pacific island chain.
+# Theatre membership comes from the WA_AI_MILITARY_AIR_theatre_state_* triggers
+# (common/scripted_triggers/WA_AI_MILITARY_triggers.txt), which must-match the contested lists.
+#
+# NEED GUARDRAILS (all generic, no tags):
+# 1. Theatre-scoped sites: projects can only start in theatre member states - this effect can
+#    never build on home soil outside a contested theatre (a Canada at peace-depth in its own
+#    hemisphere is structurally unreachable).
+# 2. Side-wide capacity deficit: a contested theatre only qualifies while the SIDE's existing
+#    + ROOT-queued air-base capacity across that theatre's states is below
+#    @THEATRE_AIR_HOSTED_SHARE of the side's deployed planes. Capacity counts every state
+#    controlled by ROOT, a faction ally or a co-belligerent (same own-side definition as the
+#    contested triggers), so once anyone on the side has built enough, every other member
+#    stops queuing - a minor never piles onto a theatre its majors already covered, and a
+#    co-belligerent outside the faction (e.g. a 1945 SOV vs JAP) sees the US capacity and
+#    stays idle.
+# 3. Token air forces never enter (<= 99 deployed planes, WA air scale ~1/3 vanilla): a
+#    country with no meaningful aviation has no basing need of its own.
+# 4. Per-state cap: the level ladder stops selecting a state at @THEATRE_AIR_TARGET_LEVEL,
+#    and always raises the least-developed member state first, so capacity spreads 0->4
+#    across the chain instead of stacking one level-10 island.
+#
+# FIX 85 (2026-08-15, campaign af003548) - GROUND-COMMITTED THEATRES FIRST.
+#    Measured after D-Day: Western Europe was contested and in deficit for USA and ENG at
+#    every save 1944.7-1945.9 (allied-held capacity 21 levels vs a 26-36 level target), the
+#    builder ran every pulse (dbg_called +4-5/month, dbg_active 4-6) - and dbg_started FROZE
+#    for both majors for 8 months (USA 38, ENG 25). USA never queued a single air base in
+#    France (its theatre picks were 163 Balkans, 1002 New Guinea, 1033 Indochina); ENG queued
+#    two, states 24 and 785 in 1944.7, both level 0, both starved at 0 factories for five
+#    months behind level-8->12 UK bases in the same 300 band, then purged. Net capacity on
+#    Allied-controlled French soil: 700 planes (15 at level 4, 1016 at level 3). The USAAF's
+#    9 000 land-based planes stayed in the continental US, 92-94% without a mission.
+#    Two causes, both in this effect: (a) random_state draws uniformly over EVERY deficit
+#    theatre's states from ladder rung 0, so a landing theatre whose only allied states are
+#    already at level 3-4 loses the draw to Pacific/Balkan level-0 islands every pulse; (b) a
+#    theatre_air project shares the 300 band with uk_air and, sorted behind it, never gets a
+#    factory. The remedy keeps every guardrail and adds one discriminator that needs no
+#    theatre list and no tag: does ROOT have divisions standing in the theatre?
+#      - COMMITTED theatre = a deficit theatre with >= 1 ROOT division on a side-controlled
+#        member state (folded into the pass-2 state walk, so no extra scan). While any
+#        committed theatre is in deficit, the ladder draws ONLY from committed theatres.
+#      - The per-state cap rises to @THEATRE_AIR_TARGET_LEVEL_COMMITTED there: a beachhead
+#        of two states must host what ten islands would spread.
+#      - Priority @AI_PC_PRIO_AIR_FRONT (350): above uk_air (300) inside the Fix 78 lane and
+#        the sorted fill, below rail-prewar (500), so the Fix 41 band order is untouched.
+#    Nothing changes for a country with no divisions in any deficit theatre (the Pacific
+#    island-chain case this effect was written for keeps its uniform spread).
+#    Probe: WA_TLM_r52_thair_front_* (checklist R52).
+#
+# ROOT = any AI country. Called from WA_AI_priority_construction_strategies
+# (WA_AI_background.1, ~2 day cadence, AI only), outside the dispatcher's
+# active_projects/affordability gates for the same reason as the UK hosting strategy above
+# (railway-saturated queues would permanently close the < 5 gate for exactly the countries
+# this exists for); bounded instead by _project_queue_max, the deficit gate and the
+# civilian-factory floor below.
+WA_AI_build_theatre_air_bases = {
+
+	@THEATRE_AIR_CAPACITY_PER_LEVEL = 100	# NDefines.NBuildings.AIRBASE_CAPACITY_MULT (05_defines.lua)
+	@THEATRE_AIR_TARGET_LEVEL = 4			# per-state ladder cap: the 2-4 level goal
+	@THEATRE_AIR_TARGET_LEVEL_COMMITTED = 8	# Fix 85: ladder cap where ROOT's own divisions stand (a two-state beachhead)
+	@THEATRE_AIR_QUEUE_MAX = 3				# max concurrent air-base projects (matches UK hosting)
+	@THEATRE_AIR_HOSTED_SHARE = 0.25		# share of the side's planes one theatre should be able to host
+
+	if = {
+		limit = {
+			has_war = yes
+			surrender_progress < 0.1
+			# guardrail 3: skip token air forces - same floor as the theatre pulls
+			has_deployed_air_force_size = { size > 99 }
+			# floored availability: the bare engine variable reads ~0 once the vanilla
+			# queue saturates (see WA_AI_PC_has_project_civs_16)
+			WA_AI_PC_has_project_civs_16 = yes
+		}
+
+		# DIAGNOSIS INSTRUMENTATION (savegame-readable; same rationale as the UK hosting
+		# dbg family above - temp variables are invisible in saves). Remove once verified.
+		#   dbg_called   pulses that passed the outer gate
+		#   dbg_target   side capacity target in levels, last gated pulse
+		#   dbg_active   contested theatres still in deficit, last gated pulse
+		#   dbg_best     ladder level of the last started project
+		#   dbg_started  projects actually queued
+		add_to_variable = { WA_AI_thair_dbg_called = 1 }
+
+		### pass 1 - which theatres are contested for us
+
+		set_temp_variable = { _thair_naf_ = 0 }
+		if = { limit = { WA_AI_MILITARY_AIR_theatre_contested_north_africa = yes } set_temp_variable = { _thair_naf_ = 1 } }
+		set_temp_variable = { _thair_ita_ = 0 }
+		if = { limit = { WA_AI_MILITARY_AIR_theatre_contested_italy = yes } set_temp_variable = { _thair_ita_ = 1 } }
+		set_temp_variable = { _thair_weu_ = 0 }
+		if = { limit = { WA_AI_MILITARY_AIR_theatre_contested_western_europe = yes } set_temp_variable = { _thair_weu_ = 1 } }
+		set_temp_variable = { _thair_sca_ = 0 }
+		if = { limit = { WA_AI_MILITARY_AIR_theatre_contested_scandinavia = yes } set_temp_variable = { _thair_sca_ = 1 } }
+		set_temp_variable = { _thair_bal_ = 0 }
+		if = { limit = { WA_AI_MILITARY_AIR_theatre_contested_balkans = yes } set_temp_variable = { _thair_bal_ = 1 } }
+		set_temp_variable = { _thair_eeu_ = 0 }
+		if = { limit = { WA_AI_MILITARY_AIR_theatre_contested_eastern_europe = yes } set_temp_variable = { _thair_eeu_ = 1 } }
+		set_temp_variable = { _thair_mde_ = 0 }
+		if = { limit = { WA_AI_MILITARY_AIR_theatre_contested_middle_east = yes } set_temp_variable = { _thair_mde_ = 1 } }
+		set_temp_variable = { _thair_bur_ = 0 }
+		if = { limit = { WA_AI_MILITARY_AIR_theatre_contested_burma_india = yes } set_temp_variable = { _thair_bur_ = 1 } }
+		set_temp_variable = { _thair_sea_ = 0 }
+		if = { limit = { WA_AI_MILITARY_AIR_theatre_contested_southeast_asia = yes } set_temp_variable = { _thair_sea_ = 1 } }
+		set_temp_variable = { _thair_pac_ = 0 }
+		if = { limit = { WA_AI_MILITARY_AIR_theatre_contested_pacific_islands = yes } set_temp_variable = { _thair_pac_ = 1 } }
+
+		set_temp_variable = { _thair_any_ = _thair_naf_ }
+		add_to_temp_variable = { _thair_any_ = _thair_ita_ }
+		add_to_temp_variable = { _thair_any_ = _thair_weu_ }
+		add_to_temp_variable = { _thair_any_ = _thair_sca_ }
+		add_to_temp_variable = { _thair_any_ = _thair_bal_ }
+		add_to_temp_variable = { _thair_any_ = _thair_eeu_ }
+		add_to_temp_variable = { _thair_any_ = _thair_mde_ }
+		add_to_temp_variable = { _thair_any_ = _thair_bur_ }
+		add_to_temp_variable = { _thair_any_ = _thair_sea_ }
+		add_to_temp_variable = { _thair_any_ = _thair_pac_ }
+
+		if = { limit = { check_variable = { _thair_any_ > 0 } }
+
+			### pass 2 - guardrail 2: side capacity per contested theatre vs the side's need
+
+			# side's deployed air force (num_deployed_planes is not script-readable; the
+			# per-airframe sums are INLINED for the reasons documented in
+			# WA_AI_build_uk_air_hosting_capacity above)
+			set_temp_variable = { _thair_planes_ = 0 }
+			add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@small_fighter_airframe }
+			add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@small_fighter_multirole_airframe }
+			add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@small_fighter_interceptor_airframe }
+			add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@small_bomber_airframe }
+			add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@medium_fighter_airframe }
+			add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@medium_fighter_multirole_airframe }
+			add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@medium_bomber_airframe }
+			add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@medium_heavy_bomber_airframe }
+			add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@fast_bomber_airframe }
+			add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@medium_scout_airframe }
+			add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@large_bomber_airframe }
+			add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@large_maritime_patrol_airframe }
+			for_each_scope_loop = { array = allies
+				add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@small_fighter_airframe }
+				add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@small_fighter_multirole_airframe }
+				add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@small_fighter_interceptor_airframe }
+				add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@small_bomber_airframe }
+				add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@medium_fighter_airframe }
+				add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@medium_fighter_multirole_airframe }
+				add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@medium_bomber_airframe }
+				add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@medium_heavy_bomber_airframe }
+				add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@fast_bomber_airframe }
+				add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@medium_scout_airframe }
+				add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@large_bomber_airframe }
+				add_to_temp_variable = { _thair_planes_ = num_deployed_planes_with_type@large_maritime_patrol_airframe }
+			}
+
+			# capacity target per theatre, in air-base LEVELS
+			set_temp_variable = { _thair_target_ = _thair_planes_ }
+			multiply_temp_variable = { _thair_target_ = @THEATRE_AIR_HOSTED_SHARE }
+			divide_temp_variable = { _thair_target_ = @THEATRE_AIR_CAPACITY_PER_LEVEL }
+
+			# capacity the side already holds (or ROOT already queued) per contested theatre.
+			# Membership lists are disjoint, so the attribution chain is exact. Allies' PC
+			# queues are not visible cross-country - the bounded overshoot (each builder caps
+			# itself at @THEATRE_AIR_QUEUE_MAX projects) is accepted.
+			set_temp_variable = { _thair_cap_naf_ = 0 }
+			set_temp_variable = { _thair_cap_ita_ = 0 }
+			set_temp_variable = { _thair_cap_weu_ = 0 }
+			set_temp_variable = { _thair_cap_sca_ = 0 }
+			set_temp_variable = { _thair_cap_bal_ = 0 }
+			set_temp_variable = { _thair_cap_eeu_ = 0 }
+			set_temp_variable = { _thair_cap_mde_ = 0 }
+			set_temp_variable = { _thair_cap_bur_ = 0 }
+			set_temp_variable = { _thair_cap_sea_ = 0 }
+			set_temp_variable = { _thair_cap_pac_ = 0 }
+			# Fix 85: ground commitment per theatre - does ROOT have divisions standing on a
+			# side-controlled member state? Detected inside the same walk below.
+			set_temp_variable = { _thair_own_naf_ = 0 }
+			set_temp_variable = { _thair_own_ita_ = 0 }
+			set_temp_variable = { _thair_own_weu_ = 0 }
+			set_temp_variable = { _thair_own_sca_ = 0 }
+			set_temp_variable = { _thair_own_bal_ = 0 }
+			set_temp_variable = { _thair_own_eeu_ = 0 }
+			set_temp_variable = { _thair_own_mde_ = 0 }
+			set_temp_variable = { _thair_own_bur_ = 0 }
+			set_temp_variable = { _thair_own_sea_ = 0 }
+			set_temp_variable = { _thair_own_pac_ = 0 }
+			every_state = {
+				limit = {
+					OR = {
+						AND = { check_variable = { _thair_naf_ = 1 } WA_AI_MILITARY_AIR_theatre_state_north_africa = yes }
+						AND = { check_variable = { _thair_ita_ = 1 } WA_AI_MILITARY_AIR_theatre_state_italy = yes }
+						AND = { check_variable = { _thair_weu_ = 1 } WA_AI_MILITARY_AIR_theatre_state_western_europe = yes }
+						AND = { check_variable = { _thair_sca_ = 1 } WA_AI_MILITARY_AIR_theatre_state_scandinavia = yes }
+						AND = { check_variable = { _thair_bal_ = 1 } WA_AI_MILITARY_AIR_theatre_state_balkans = yes }
+						AND = { check_variable = { _thair_eeu_ = 1 } WA_AI_MILITARY_AIR_theatre_state_eastern_europe = yes }
+						AND = { check_variable = { _thair_mde_ = 1 } WA_AI_MILITARY_AIR_theatre_state_middle_east = yes }
+						AND = { check_variable = { _thair_bur_ = 1 } WA_AI_MILITARY_AIR_theatre_state_burma_india = yes }
+						AND = { check_variable = { _thair_sea_ = 1 } WA_AI_MILITARY_AIR_theatre_state_southeast_asia = yes }
+						AND = { check_variable = { _thair_pac_ = 1 } WA_AI_MILITARY_AIR_theatre_state_pacific_islands = yes }
+					}
+					CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } }
+				}
+
+				set_temp_variable = { _thair_state_levels_ = building_level@air_base }
+				if = {
+					limit = {
+						any_of = { array = WA_AI_PC_projects_in_state_of_@ROOT value = v_thair_proj
+							check_variable = { ROOT.WA_AI_PC_building_type^v_thair_proj = 2 }
+						}
+					}
+					add_to_temp_variable = { _thair_state_levels_ = 1 }
+				}
+
+				if = { limit = { WA_AI_MILITARY_AIR_theatre_state_north_africa = yes } add_to_temp_variable = { _thair_cap_naf_ = _thair_state_levels_ } }
+				else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_italy = yes } add_to_temp_variable = { _thair_cap_ita_ = _thair_state_levels_ } }
+				else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_western_europe = yes } add_to_temp_variable = { _thair_cap_weu_ = _thair_state_levels_ } }
+				else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_scandinavia = yes } add_to_temp_variable = { _thair_cap_sca_ = _thair_state_levels_ } }
+				else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_balkans = yes } add_to_temp_variable = { _thair_cap_bal_ = _thair_state_levels_ } }
+				else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_eastern_europe = yes } add_to_temp_variable = { _thair_cap_eeu_ = _thair_state_levels_ } }
+				else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_middle_east = yes } add_to_temp_variable = { _thair_cap_mde_ = _thair_state_levels_ } }
+				else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_burma_india = yes } add_to_temp_variable = { _thair_cap_bur_ = _thair_state_levels_ } }
+				else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_southeast_asia = yes } add_to_temp_variable = { _thair_cap_sea_ = _thair_state_levels_ } }
+				else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_pacific_islands = yes } add_to_temp_variable = { _thair_cap_pac_ = _thair_state_levels_ } }
+
+				# Fix 85: ROOT's own divisions on this side-controlled member state = ground
+				# commitment to its theatre. PREV = the state inside the ROOT block (same idiom
+				# as WA_AI_MILITARY_posture_count_state_divs).
+				if = {
+					limit = { ROOT = { divisions_in_state = { state = PREV size > 0 } } }
+					if = { limit = { WA_AI_MILITARY_AIR_theatre_state_north_africa = yes } set_temp_variable = { _thair_own_naf_ = 1 } }
+					else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_italy = yes } set_temp_variable = { _thair_own_ita_ = 1 } }
+					else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_western_europe = yes } set_temp_variable = { _thair_own_weu_ = 1 } }
+					else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_scandinavia = yes } set_temp_variable = { _thair_own_sca_ = 1 } }
+					else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_balkans = yes } set_temp_variable = { _thair_own_bal_ = 1 } }
+					else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_eastern_europe = yes } set_temp_variable = { _thair_own_eeu_ = 1 } }
+					else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_middle_east = yes } set_temp_variable = { _thair_own_mde_ = 1 } }
+					else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_burma_india = yes } set_temp_variable = { _thair_own_bur_ = 1 } }
+					else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_southeast_asia = yes } set_temp_variable = { _thair_own_sea_ = 1 } }
+					else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_pacific_islands = yes } set_temp_variable = { _thair_own_pac_ = 1 } }
+				}
+			}
+
+			set_temp_variable = { _thair_contested_ct_ = _thair_any_ }
+
+			# a theatre stays eligible only while the side's capacity is below the target
+			if = { limit = { check_variable = { _thair_naf_ = 1 } NOT = { check_variable = { _thair_cap_naf_ < _thair_target_ } } } set_temp_variable = { _thair_naf_ = 0 } }
+			if = { limit = { check_variable = { _thair_ita_ = 1 } NOT = { check_variable = { _thair_cap_ita_ < _thair_target_ } } } set_temp_variable = { _thair_ita_ = 0 } }
+			if = { limit = { check_variable = { _thair_weu_ = 1 } NOT = { check_variable = { _thair_cap_weu_ < _thair_target_ } } } set_temp_variable = { _thair_weu_ = 0 } }
+			if = { limit = { check_variable = { _thair_sca_ = 1 } NOT = { check_variable = { _thair_cap_sca_ < _thair_target_ } } } set_temp_variable = { _thair_sca_ = 0 } }
+			if = { limit = { check_variable = { _thair_bal_ = 1 } NOT = { check_variable = { _thair_cap_bal_ < _thair_target_ } } } set_temp_variable = { _thair_bal_ = 0 } }
+			if = { limit = { check_variable = { _thair_eeu_ = 1 } NOT = { check_variable = { _thair_cap_eeu_ < _thair_target_ } } } set_temp_variable = { _thair_eeu_ = 0 } }
+			if = { limit = { check_variable = { _thair_mde_ = 1 } NOT = { check_variable = { _thair_cap_mde_ < _thair_target_ } } } set_temp_variable = { _thair_mde_ = 0 } }
+			if = { limit = { check_variable = { _thair_bur_ = 1 } NOT = { check_variable = { _thair_cap_bur_ < _thair_target_ } } } set_temp_variable = { _thair_bur_ = 0 } }
+			if = { limit = { check_variable = { _thair_sea_ = 1 } NOT = { check_variable = { _thair_cap_sea_ < _thair_target_ } } } set_temp_variable = { _thair_sea_ = 0 } }
+			if = { limit = { check_variable = { _thair_pac_ = 1 } NOT = { check_variable = { _thair_cap_pac_ < _thair_target_ } } } set_temp_variable = { _thair_pac_ = 0 } }
+
+			# Fix 85: if any DEFICIT theatre is ground-committed, restrict the ladder to the
+			# committed ones. Own flags are only meaningful on theatres still in deficit, so
+			# they are ANDed with the surviving deficit flags first.
+			set_temp_variable = { _thair_committed_ = 0 }
+			if = { limit = { check_variable = { _thair_naf_ = 1 } check_variable = { _thair_own_naf_ = 1 } } set_temp_variable = { _thair_committed_ = 1 } }
+			if = { limit = { check_variable = { _thair_ita_ = 1 } check_variable = { _thair_own_ita_ = 1 } } set_temp_variable = { _thair_committed_ = 1 } }
+			if = { limit = { check_variable = { _thair_weu_ = 1 } check_variable = { _thair_own_weu_ = 1 } } set_temp_variable = { _thair_committed_ = 1 } }
+			if = { limit = { check_variable = { _thair_sca_ = 1 } check_variable = { _thair_own_sca_ = 1 } } set_temp_variable = { _thair_committed_ = 1 } }
+			if = { limit = { check_variable = { _thair_bal_ = 1 } check_variable = { _thair_own_bal_ = 1 } } set_temp_variable = { _thair_committed_ = 1 } }
+			if = { limit = { check_variable = { _thair_eeu_ = 1 } check_variable = { _thair_own_eeu_ = 1 } } set_temp_variable = { _thair_committed_ = 1 } }
+			if = { limit = { check_variable = { _thair_mde_ = 1 } check_variable = { _thair_own_mde_ = 1 } } set_temp_variable = { _thair_committed_ = 1 } }
+			if = { limit = { check_variable = { _thair_bur_ = 1 } check_variable = { _thair_own_bur_ = 1 } } set_temp_variable = { _thair_committed_ = 1 } }
+			if = { limit = { check_variable = { _thair_sea_ = 1 } check_variable = { _thair_own_sea_ = 1 } } set_temp_variable = { _thair_committed_ = 1 } }
+			if = { limit = { check_variable = { _thair_pac_ = 1 } check_variable = { _thair_own_pac_ = 1 } } set_temp_variable = { _thair_committed_ = 1 } }
+			if = { limit = { check_variable = { _thair_committed_ = 1 } }
+				if = { limit = { check_variable = { _thair_own_naf_ = 0 } } set_temp_variable = { _thair_naf_ = 0 } }
+				if = { limit = { check_variable = { _thair_own_ita_ = 0 } } set_temp_variable = { _thair_ita_ = 0 } }
+				if = { limit = { check_variable = { _thair_own_weu_ = 0 } } set_temp_variable = { _thair_weu_ = 0 } }
+				if = { limit = { check_variable = { _thair_own_sca_ = 0 } } set_temp_variable = { _thair_sca_ = 0 } }
+				if = { limit = { check_variable = { _thair_own_bal_ = 0 } } set_temp_variable = { _thair_bal_ = 0 } }
+				if = { limit = { check_variable = { _thair_own_eeu_ = 0 } } set_temp_variable = { _thair_eeu_ = 0 } }
+				if = { limit = { check_variable = { _thair_own_mde_ = 0 } } set_temp_variable = { _thair_mde_ = 0 } }
+				if = { limit = { check_variable = { _thair_own_bur_ = 0 } } set_temp_variable = { _thair_bur_ = 0 } }
+				if = { limit = { check_variable = { _thair_own_sea_ = 0 } } set_temp_variable = { _thair_sea_ = 0 } }
+				if = { limit = { check_variable = { _thair_own_pac_ = 0 } } set_temp_variable = { _thair_pac_ = 0 } }
+			}
+			set_variable = { WA_AI_thair_dbg_committed = _thair_committed_ }
+
+			set_temp_variable = { _thair_any_ = _thair_naf_ }
+			add_to_temp_variable = { _thair_any_ = _thair_ita_ }
+			add_to_temp_variable = { _thair_any_ = _thair_weu_ }
+			add_to_temp_variable = { _thair_any_ = _thair_sca_ }
+			add_to_temp_variable = { _thair_any_ = _thair_bal_ }
+			add_to_temp_variable = { _thair_any_ = _thair_eeu_ }
+			add_to_temp_variable = { _thair_any_ = _thair_mde_ }
+			add_to_temp_variable = { _thair_any_ = _thair_bur_ }
+			add_to_temp_variable = { _thair_any_ = _thair_sea_ }
+			add_to_temp_variable = { _thair_any_ = _thair_pac_ }
+
+			set_variable = { WA_AI_thair_dbg_target = _thair_target_ }
+			set_variable = { WA_AI_thair_dbg_active = _thair_any_ }
+
+			# TEMP R16 live-test logging - remove with the WA_AI_thair_dbg_* family
+			if = { limit = { check_variable = { _thair_any_ > 0 } }
+				log = "[GetYear] [GetMonth] | AI | [Root.GetName] | THEATRE AIR: [?_thair_any_|.0] deficit theatre(s) of [?_thair_contested_ct_|.0] contested, side target [?_thair_target_|.0] levels"
+			}
+			else = {
+				log = "[GetYear] [GetMonth] | AI | [Root.GetName] | THEATRE AIR: all [?_thair_contested_ct_|.0] contested theatre(s) at capacity (target [?_thair_target_|.0]) - guardrail hold"
+			}
+
+			if = { limit = { check_variable = { _thair_any_ > 0 } }
+
+				### pass 3 - guardrail 4: level ladder, raise the least-developed eligible
+				### member state first (level-ladder + ROOT-hopped flag per the state-scope
+				### temp trap documented in the UK strategy above)
+
+				# Fix 47: band selection, resolved ONCE in country scope - the trigger is a
+				# faction scan and must not run per candidate state inside the ladder below.
+				set_temp_variable = { _thair_prio_ = @AI_PC_PRIO_DEFAULT }
+				if = {
+					limit = { WA_AI_PC_air_force_needs_basing_priority = yes }
+					set_temp_variable = { _thair_prio_ = @AI_PC_PRIO_AIR_BASING }
+					# Fix 85: a ground-committed theatre outranks uk_air inside the air lane
+					if = {
+						limit = { check_variable = { _thair_committed_ = 1 } }
+						set_temp_variable = { _thair_prio_ = @AI_PC_PRIO_AIR_FRONT }
+					}
+				}
+				# Fix 85: ladder cap - the beachhead cap where ROOT's divisions stand
+				set_temp_variable = { _thair_level_cap_ = @THEATRE_AIR_TARGET_LEVEL }
+				if = {
+					limit = { check_variable = { _thair_committed_ = 1 } }
+					set_temp_variable = { _thair_level_cap_ = @THEATRE_AIR_TARGET_LEVEL_COMMITTED }
+				}
+
+				# _project_building_type must be set BEFORE the ladder: the limit triggers
+				# below (WA_AI_PC_can_build_project / WA_AI_PC_has_same_type_project_here)
+				# read it
+				set_temp_variable = { _project_building_type = 2 }
+				set_temp_variable = { _thair_started_ = 0 }
+				set_temp_variable = { _thair_try_level_ = 0 }
+				while_loop_effect = {
+					limit = {
+						check_variable = { _thair_started_ < 1 }
+						check_variable = { _thair_try_level_ < _thair_level_cap_ }
+					}
+
+					random_state = {
+						limit = {
+							OR = {
+								AND = { check_variable = { _thair_naf_ = 1 } WA_AI_MILITARY_AIR_theatre_state_north_africa = yes }
+								AND = { check_variable = { _thair_ita_ = 1 } WA_AI_MILITARY_AIR_theatre_state_italy = yes }
+								AND = { check_variable = { _thair_weu_ = 1 } WA_AI_MILITARY_AIR_theatre_state_western_europe = yes }
+								AND = { check_variable = { _thair_sca_ = 1 } WA_AI_MILITARY_AIR_theatre_state_scandinavia = yes }
+								AND = { check_variable = { _thair_bal_ = 1 } WA_AI_MILITARY_AIR_theatre_state_balkans = yes }
+								AND = { check_variable = { _thair_eeu_ = 1 } WA_AI_MILITARY_AIR_theatre_state_eastern_europe = yes }
+								AND = { check_variable = { _thair_mde_ = 1 } WA_AI_MILITARY_AIR_theatre_state_middle_east = yes }
+								AND = { check_variable = { _thair_bur_ = 1 } WA_AI_MILITARY_AIR_theatre_state_burma_india = yes }
+								AND = { check_variable = { _thair_sea_ = 1 } WA_AI_MILITARY_AIR_theatre_state_southeast_asia = yes }
+								AND = { check_variable = { _thair_pac_ = 1 } WA_AI_MILITARY_AIR_theatre_state_pacific_islands = yes }
+							}
+							check_variable = { building_level@air_base = _thair_try_level_ }
+							OR = {
+								AND = {	# our own territory
+									is_controlled_by = ROOT
+									WA_AI_available_AIR = yes
+									WA_AI_PC_can_build_project = yes
+								}
+								AND = {	# subject territory (the engine allows overlord construction in subjects; PC validates the same)
+									CONTROLLER = { is_subject_of = ROOT }
+									WA_AI_PC_can_build_project = yes
+								}
+								AND = {	# faction ally's territory (air_base has allied_build = yes),
+										# only when the controller cannot or will not act on the
+										# deficit itself: player-controlled, not actually funding
+										# air bases, or genuinely poor. Fix 38 (campaign 31eaf7e6):
+										# capability is not funding - see the UK hosting gate above.
+										# Fix 47: `< 1` became a RATE test for the reason documented
+										# on that gate - once air bases hold the 300 band the host
+										# almost always assigns SOME civ, and a spending-anything
+										# test would lock the ally out permanently.
+									NOT = { is_controlled_by = ROOT }
+									NOT = { CONTROLLER = { is_subject_of = ROOT } }
+									WA_AI_available_AIR_allied = yes
+									CONTROLLER = {
+										OR = {
+											is_ai = no
+											check_variable = { WA_AI_PC_air_factories_assigned < @AI_PC_AIR_HOST_FUNDING_FLOOR }
+											num_of_civilian_factories_available_for_projects < 16
+										}
+									}
+									NOT = { WA_AI_PC_has_same_type_project_here = yes }
+									# Fix 46: same free-slot test the own/subject branches get via
+									# WA_AI_PC_can_build_project - see the UK hosting branch for
+									# the full rationale. Without it the allied builder funds a
+									# project that WA_AI_PC_complete_project_by_id will refuse to
+									# spawn for want of a slot.
+									WA_AI_PC_building_slot_available_for_type = yes
+								}
+							}
+						}
+
+						set_temp_variable = { _project_building_type = 2 }
+						set_temp_variable = { _project_province_id = 0 }
+						set_temp_variable = { _project_target_state = 0 }
+						set_temp_variable = { _project_priority = _thair_prio_ }
+						set_temp_variable = { _project_queue_num = 1 }
+						set_temp_variable = { _project_queue_max = @THEATRE_AIR_QUEUE_MAX }
+						# Fix 47: own budget, independent of the UK hosting strategy's - see
+						# the matching pair there.
+						set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_THEATRE_AIR }
+						set_temp_variable = { _project_queue_max_scoped = 1 }
+						set_temp_variable = { _project_target_level = _thair_level_cap_ }
+						set_temp_variable = { _thair_qnum_before_ = ROOT.WA_AI_PC_queue^num }
+						WA_AI_PC_start_project = yes
+						# Fix 47: retire the tag - see the matching note in the UK strategy.
+						set_temp_variable = { _project_type_id = 0 }
+
+						# Fix: WA_AI_PC_start_project can decline internally (queue_max, same-type
+						# dedup, province duplicate) with no return signal - live test 2b607968
+						# showed dbg_started over-counting (AST 19 "starts", empty queue) and ENG's
+						# theatre starts permanently no-oping against a type-2 queue_max already
+						# filled by UK-hosting projects. Only count a start (and stop the ladder)
+						# when the queue actually grew; a declined start lets the ladder try the
+						# next level instead of silently ending the pulse.
+						if = {
+							limit = { ROOT = { check_variable = { WA_AI_PC_queue^num > _thair_qnum_before_ } } }
+
+							# TEMP R16 live-test logging - remove with the WA_AI_thair_dbg_* family
+							log = "[GetYear] [GetMonth] | AI | [Root.GetName] | THEATRE AIR: air_base project started at level [?_thair_try_level_|.0] in [This.GetID] [This.GetName]"
+
+							ROOT = {
+								set_temp_variable = { _thair_started_ = 1 }
+								set_variable = { WA_AI_thair_dbg_best = _thair_try_level_ }
+								add_to_variable = { WA_AI_thair_dbg_started = 1 }
+
+								# tlm: WA_TLM_r52_thair_front_n / _first_t / _last_t - consumer:
+								# checklist R52. VERIFIED effect only (the queue grew, above), and
+								# only when the Fix 85 committed rule was in force for this start.
+								if = { limit = { check_variable = { _thair_committed_ = 1 } }
+									add_to_variable = { WA_TLM_r52_thair_front_n = 1 }
+									if = { limit = { check_variable = { WA_TLM_r52_thair_front_first_t = 0 } }
+										set_variable = { WA_TLM_r52_thair_front_first_t = global.WA_TLM_clock }
+									}
+									set_variable = { WA_TLM_r52_thair_front_last_t = global.WA_TLM_clock }
+								}
+							}
+						}
+					}
+
+					add_to_temp_variable = { _thair_try_level_ = 1 }
+				}
+
+				# TEMP R16 live-test logging - remove with the WA_AI_thair_dbg_* family
+				if = { limit = { check_variable = { _thair_started_ < 1 } }
+					log = "[GetYear] [GetMonth] | AI | [Root.GetName] | THEATRE AIR: deficit but no eligible member state (ladder exhausted at level [?_thair_try_level_|.0])"
+				}
 			}
 		}
 	}

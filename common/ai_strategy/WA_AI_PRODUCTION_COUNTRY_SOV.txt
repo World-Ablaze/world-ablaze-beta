@@ -1,0 +1,69 @@
+############################################################################################################
+# WA AI Production - COUNTRY_SOV
+############################################################################################################
+# Country layer. Every ai_strategy here has type = production_upgrade_desire_offset, whose `id` is an
+# equipment TYPE (not an archetype, not an ai_equipment design name).
+#
+# Fix 51 - THE PRODUCTION-LINE LAYER.
+#
+# Why this file exists. Fix 46 re-ordered the `priority.factor` values inside
+# common/ai_equipment/SOV_naval.txt (Shchuka 10 -> 120, Malyutka 120 -> 5) and campaign `bec4d829`
+# showed it changed NOTHING: every SOV submarine line sat on sov_submarine_hull_3 (Malyutka, coastal,
+# 1640 km) at all 13 sampled saves, 1936.2 -> 1946.4, and the fleet went 49 -> 702 boats while the
+# Shchuka never left its 39-boat 1936 baseline.
+#
+# The reason is that `ai_equipment` priority is the DESIGN layer. Vanilla's own
+# common/ai_equipment/_documentation.md:36 defines it as the priority "for creating a design in this
+# group or for creating or upgrading equipment to use one of these designs". It does not decide which
+# equipment type a running production line produces. That is `production_upgrade_desire_offset` -
+# stock vanilla (common/ai_strategy/SOV.txt:357, ENG.txt:478, GER.txt:3388, CHI.txt:160), already used
+# in this mod by SOV_dont_build_shit_guns (SOV.txt:2714) and CHI_dont_upgrade_to_weapons_2_too_early.
+# Vanilla's comment on the positive direction: "100 essentially means we don't require a stockpile
+# surplus". Expert AI 5.0 uses the negative direction 46 times at -100 as its keep-the-old-type knob.
+#
+# Research gating - the other lever - CANNOT help here: sov_submarine_3 (Malyutka) is a START tech,
+# already researched at 1936.1.1 (history/countries/SOV - Soviet union.txt:152, STA:104). SOV owns the
+# coastal boat before the first pulse of any AI system, so there is no research to withhold. That is
+# what makes SOV the decisive test of this lever.
+#
+# STATUS: THIS IS AN EXPERIMENT. It is deliberately the narrowest possible change - two ai_strategy
+# entries on one country, no triggers, no new file dependencies - so that a campaign reading is
+# unambiguous. Checklist item R30 scores it. If SOV's submarine lines move off hull_3, the lever works
+# and the equipment_evaluator's emit stage is re-targeted onto it; if they do not, the whole
+# contextual-equipment approach needs a different mechanism and this file is deleted.
+
+
+# Fix 51: SOV builds ocean-going submarines, not coastal ones - production-line layer.
+#
+# sov_submarine_hull_1 (Shchuka)  3820 km, str 14, 260 IC  <- the intended wartime mainstay
+# sov_submarine_hull_3 (Malyutka) 1640 km, str  6, 100 IC  <- coastal, what the AI actually built
+#
+# Paired on purpose: a negative offset alone only makes the AI reluctant to CONVERT lines onto the
+# Malyutka, which does nothing for lines that already sit there (SOV starts the game on them - the
+# 1936.2 save already shows 2 factories on hull_3). The positive offset on the Shchuka is what gives
+# the AI a reason to move the other way. Both are needed for the test to be meaningful.
+WA_AI_PRODUCTION_COUNTRY_SOV_ocean_going_submarines = {
+
+	allowed = {
+		original_tag = SOV
+	}
+	enable = {
+		always = yes
+	}
+
+	abort_when_not_enabled = yes
+
+	# Willing to convert lines onto the Shchuka without waiting for a stockpile surplus.
+	ai_strategy = {
+		type = production_upgrade_desire_offset
+		id = sov_submarine_hull_1
+		value = 100
+	}
+
+	# Do not convert lines onto the coastal Malyutka.
+	ai_strategy = {
+		type = production_upgrade_desire_offset
+		id = sov_submarine_hull_3
+		value = -100
+	}
+}

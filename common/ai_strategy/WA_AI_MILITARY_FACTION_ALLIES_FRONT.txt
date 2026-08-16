@@ -57,16 +57,30 @@ WA_AI_MILITARY_ALLIES_europe_first = {
 	ai_strategy = {
 		type = front_unit_request
 		area = WA_AI_MILITARY_sink_southeast_asia_regions
-		value = -200
+		value = -100 # economy: was -200
 	}
 }
 
 
 
+# purpose: density brake on the Italian mainland (regions 21 + 23) while the bloc is at war with
+#          Italy - the peninsula is narrow and the front cannot use unlimited divisions.
+#          FIX (2026-08-12, campaign 9a4cd657): this block and its _after_flip sibling had NO
+#          `allowed` clause, so the brake reached every Allies member while every compensating
+#          Italian boost is limited to ENG/USA/CAN - the suppression audience was strictly wider than
+#          the boost audience. Scoped to the same trio, and given the principle-4 escape hatch below.
+# range:   -100 to +200 (percent factor, per WA_AI_MILITARY_ECONOMY.md E2)
+# policy:  Additive per area
+# domain:  FRONT
 WA_AI_MILITARY_ALLIES_avoid_italy_overstack = {
+
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
 	enable = {
 		WA_AI_MILITARY_is_allies_member = yes
 		has_war_with = ITA
+		NOT = { WA_AI_MILITARY_owns_italy_mainland = yes }
 	}
 	abort_when_not_enabled = yes
 
@@ -79,11 +93,33 @@ WA_AI_MILITARY_ALLIES_avoid_italy_overstack = {
 
 
 
+# purpose: the same density brake once Italy has changed sides - replaces the -40 above, which keys
+#          on has_war_with = ITA and switches off at the flip. Heavier because the co-belligerent
+#          Italian army now holds part of the frontage itself.
+#          THREE FIXES (2026-08-12, campaign 9a4cd657):
+#          (a) `allowed` added - see the sibling above; the brake reached every Allies member.
+#          (b) Escape hatch added. -80 is veto-class (<= -50), and WA_AI_MILITARY_ECONOMY.md
+#              principle 4 states "a veto that can apply to the country whose homeland it covers is a
+#              starvation bug by construction". Co-belligerent Italy satisfies
+#              WA_AI_MILITARY_is_allies_member, so it was braking its own defence of its own soil by
+#              80 - while Germany was simultaneously arming +100/+100 on the same two regions from
+#              the same event (WA_AI_MILITARY_COUNTRY_GER_FRONT.txt GER_frontline_requests_6).
+#          (c) `has_government = democratic` dropped. Italy can leave the Axis on a non-democratic
+#              path; on that path the -40 died and the -80 never armed, i.e. the brake silently did
+#              not exist. Gating coalition behaviour on one ideology breaks AGENTS.md design
+#              principle 1 (setup-agnostic). Membership plus war with Germany is the real condition.
+# range:   -100 to +200 (percent factor, per WA_AI_MILITARY_ECONOMY.md E2)
+# policy:  Additive per area
+# domain:  FRONT
 WA_AI_MILITARY_ALLIES_avoid_italy_overstack_after_flip = {
+
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
 	enable = {
 		WA_AI_MILITARY_is_allies_member = yes
+		NOT = { WA_AI_MILITARY_owns_italy_mainland = yes }
 		ITA = {
-			has_government = democratic
 			WA_AI_MILITARY_is_allies_member = yes
 			has_war_with = GER
 		}
@@ -124,32 +160,127 @@ WA_AI_MILITARY_ALLIES_commonwealth_north_africa_support_FRONT = {
 
 
 
+# purpose: make Allied fronts facing Germany actually execute their attack orders when the weekly
+#          posture calculus says battles are winnable. The old gate here (alliance_strength_ratio > 2)
+#          compared WORLDWIDE faction strength and never fired in a late war with a full-strength Axis,
+#          leaving the Allies passive in France with crushing local superiority. Posture level 1 uses
+#          fighting_army_strength_ratio, which counts only engaged armies. Equipment and manpower
+#          floors live inside the calculus (WA_AI_MILITARY_posture_effects.txt).
+#          FIX 54 (2026-08-13, campaign 02bd4445): the target is no longer the literal tag GER.
+#          The posture calculus publishes a verdict PER enemy, but this block could only ever read
+#          one of them, so anything held by a German puppet was invisible to it - state 29
+#          Nord-Pas-de-Calais is owned AND controlled by RBE, and 17/28/32 in eastern France were
+#          never taken in 21 monthly samples while 138 Allied divisions stood in France. The literal
+#          `tag = GER` is replaced by a country_trigger that reads the per-enemy verdict, which
+#          covers RBE/RCZ/RBL/VIC and every ahistorical enemy for free, and removes the need for any
+#          region list. `has_war_with = GER` goes with it - the stale-variable note below is now
+#          handled by the country_trigger's own has_war_with = ROOT term.
+#          WIDENING, stated deliberately: an Allied member now also executes against non-German
+#          enemies where the posture says the battles are winnable (ENG vs JAP in Burma, say), which
+#          the tag-scoped version never did. That is the intended generic behaviour, but it IS new.
+#          The name is kept for this step only; Fix 54 stage 2 collapses these three faction pairs
+#          into one Default-layer pair, at which point the block disappears.
+# range:   n/a (front_control)
+# policy:  Exclusive per front - priority 300; mutually exclusive with the grind block below by
+#          posture level; outranked by the level-500/10000 emergency stops in DEFAULT_FRONT_control.
+# domain:  FRONT
 WA_AI_MILITARY_ALLIES_exec_vs_germany = {
 	enable = {
 		WA_AI_MILITARY_is_allies_member = yes
-		has_war_with = GER
-		OR = {
-			AND = {
-				date < 1941.1.1
-				alliance_strength_ratio > 3
-			}
-			AND = {
-				date > 1941.1.1
-				alliance_strength_ratio > 2
-			}
-		}
-		check_variable = { WA_AI_fielded_eq_ratio > 0.9 }
+		WA_AI_MILITARY_posture_has_execute_target = yes
 	}
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = front_control
-		tag = GER
+		country_trigger = {
+			has_war_with = ROOT
+			has_capitulated = no
+			OR = {
+				# Too small for a posture verdict - the calculus never publishes one for a
+				# non-major on <= 4 states, which is precisely the German puppet population.
+				# See WA_AI_MILITARY_posture_has_execute_target for the full argument.
+				AND = {
+					is_major = no
+					NOT = { num_of_controlled_states > 4 }
+				}
+				ROOT = { check_variable = { WA_AI_MILITARY_posture_vs_@PREV = 1 } }
+			}
+		}
 		ratio = 0.2
 		priority = 300
 		ordertype = front
 		execution_type = balanced
 		execute_order = yes
+	}
+}
+
+
+# purpose: pull Western Allied armour to the fronts facing Germany (and secondarily Italy). Without
+#          any front_armor_score entry, allied tanks spread across every front by default terrain
+#          scoring - Pacific islands included - and the AIFC schwerpunkt in France formed as pure
+#          infantry despite large US tank parks (Aug 1944 finding). SOV steers its armour with
+#          +/-1000 entries; the Western Allies had none. Values are engine armour-score modifiers
+#          per enemy front, same mechanism as ASSIGN_TANKS_TO_WAR_FRONT (see commit af705e640,
+#          which made this type functional at all).
+# range:   +100 to +500
+# policy:  Additive per enemy front
+# domain:  FRONT
+WA_AI_MILITARY_ALLIES_armor_to_european_front = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
+	enable = {
+		WA_AI_MILITARY_is_allies_member = yes
+		has_war_with = GER
+		NOT = { WA_AI_MILITARY_home_threatened = yes }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_armor_score
+		id = "GER"
+		value = 400 # economy: was 500
+	}
+
+	ai_strategy = {
+		type = front_armor_score
+		id = "ITA"
+		value = 100
+	}
+}
+
+
+# purpose: attrition grind vs Germany - posture level 2 means Germany is at maximum mobilization with
+#          a nearly dry manpower pool while the Allies hold a deep reserve, so pressing attacks pays
+#          even at odds below the level-1 bar. Careful execution: bleed, do not lunge.
+#          FIX 54: generalised off the literal tag GER - see the exec block above for the argument.
+#          No "too small" branch here on purpose: an enemy with no published verdict reads 0, never
+#          2, so exec and grind stay mutually exclusive exactly as before.
+# range:   n/a (front_control)
+# policy:  Exclusive per front - priority 300; mutually exclusive with the exec block above by
+#          posture level (the calculus emits exactly one level per enemy).
+# domain:  FRONT
+WA_AI_MILITARY_ALLIES_grind_vs_germany = {
+	enable = {
+		WA_AI_MILITARY_is_allies_member = yes
+		WA_AI_MILITARY_posture_has_grind_target = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_control
+		country_trigger = {
+			has_war_with = ROOT
+			has_capitulated = no
+			ROOT = { check_variable = { WA_AI_MILITARY_posture_vs_@PREV = 2 } }
+		}
+		ratio = 0.2
+		priority = 300
+		ordertype = front
+		execution_type = careful
+		execute_order = yes
+		manual_attack = yes
 	}
 }
 
@@ -185,7 +316,7 @@ WA_AI_MILITARY_ALLIES_allied_minors_make_way = {
 	ai_strategy = {
 		type = front_unit_request
 		strategic_region = 217
-		value = -2000
+		value = -100 # economy: was -2000
 	}
 
 	ai_strategy = {
@@ -197,7 +328,7 @@ WA_AI_MILITARY_ALLIES_allied_minors_make_way = {
 	ai_strategy = {
 		type = front_unit_request
 		area = central_africa
-		value = -2000
+		value = -100 # economy: was -2000
 	}
 
 	ai_strategy = {
@@ -230,7 +361,7 @@ WA_AI_MILITARY_ALLIES_ignore_syria = {
 	ai_strategy = {
 		type = front_unit_request
 		area = syria
-		value = -4000
+		value = -100 # economy: was -4000
 	}
 }
 
@@ -250,7 +381,7 @@ WA_AI_MILITARY_ALLIES_ignore_iraq = {
 	ai_strategy = {
 		type = front_unit_request
 		area = iraq
-		value = -4000
+		value = -100 # economy: was -4000
 	}
 }
 
@@ -333,7 +464,7 @@ WA_AI_MILITARY_ALLIES_gibraltar_clumping_fix = {
 	ai_strategy = {
 		type = front_unit_request
 		strategic_region = 41
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 }
 
@@ -479,14 +610,14 @@ WA_AI_MILITARY_ALLIES_sealion_defense = {
 		type = front_unit_request
 		state = 136
 		strategic_region = 3
-		value = -2000
+		value = -100 # economy: was -2000
 	}
 
 	ai_strategy = {
 		type = front_unit_request
 		state = 120
 		strategic_region = 3
-		value = -2000
+		value = -100 # economy: was -2000
 	}
 }
 
@@ -507,17 +638,17 @@ WA_AI_MILITARY_ALLIES_dont_get_stuck_in_berlin = {
 	ai_strategy = {
 		type = front_unit_request
 		state = 996
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 	ai_strategy = {
 		type = front_unit_request
 		state = 810
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 	ai_strategy = {
 		type = front_unit_request
 		state = 64
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 }
 
@@ -678,6 +809,15 @@ WA_AI_MILITARY_ALLIES_dday_push = {
 
 
 # Phase 6 split from WA_AI_MILITARY_ALLIES_downfall_push (FRONT domain)
+# purpose: execute the home-islands push once a foothold exists AND the weekly posture calculus says
+#          battles vs Japan are winnable (level 1, usually via the hollow-line bar late war) or the
+#          IJA is manpower-dry (level 2). Prevents feeding a beachhead into an intact defence.
+#          fighting_army_strength_ratio counts Japan's China armies too, so the level-1 bar is mostly
+#          reached through the hollow-equipment path - by the downfall stage that is the normal case.
+#          Stale-variable note: posture_vs_JAP lingers after a peace, so has_war_with = JAP stays here.
+# range:   n/a (front_control)
+# policy:  Exclusive per front; outranked by the level-500/10000 emergency stops in DEFAULT_FRONT_control.
+# domain:  FRONT
 WA_AI_MILITARY_ALLIES_downfall_push_FRONT = {
 
 	allowed = {
@@ -685,6 +825,7 @@ WA_AI_MILITARY_ALLIES_downfall_push_FRONT = {
 	}
 	enable = {
 		has_war_with = JAP
+		check_variable = { WA_AI_MILITARY_posture_vs_JAP > 0 }
 		NOT = {
 			JAP = {
 				AND = {
@@ -778,8 +919,133 @@ WA_AI_MILITARY_ALLIES_sicily_push_FRONT = {
 }
 
 
+# purpose: "hold Sicily" bridge (FRONT half) - keep divisions flowing to the Sicily/Calabria region
+#          from the moment a beachhead exists until the mainland toe falls; all husky support
+#          aborts as soon as the Axis loses either Sicily state (their enable needs Axis control of
+#          115 AND 1032) and the island garrison starved (campaign 2b607968). Fires on faction
+#          control of 115 OR 1032 with an enemy still in Calabria (156) - the OR is deliberate: with
+#          AND this block only woke after the whole island had fallen, leaving the landing itself
+#          unsupported (measured 1943.7.15, campaign 2b607968: 1032 Allied / 115 still ITA, husky
+#          aborted, bridge asleep, 32 Allied divisions siphoned into fresh Sardinia/Calabria/
+#          Dodecanese invasion plans while 13 fought on the island). Fully controller/faction-gated,
+#          no dates or enemy tags, so it also covers ahistorical Italian campaigns. +50 sits above
+#          the sicily_push_FRONT +25 trickle and offsets the USA-side suppressions that are windowed
+#          off in the same condition (WA_AI_MILITARY_USA_sicily_push /
+#          _unit_clumping_fix_2_south_italy - keep all four conditions identical). THEATRE-domain
+#          twin: WA_AI_MILITARY_ALLIES_hold_sicily_bridge_THEATRE.
+# range:   0 to +200 (percent factor, per WA_AI_MILITARY_ECONOMY.md E2)
+# policy:  Additive per area
+# domain:  FRONT
+WA_AI_MILITARY_ALLIES_hold_sicily_bridge_FRONT = {
+
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
+	enable = {
+		has_war = yes
+		OR = {
+			115 = {
+				OR = {
+					is_controlled_by = ROOT
+					CONTROLLER = { is_in_faction_with = ROOT }
+				}
+			}
+			1032 = {
+				OR = {
+					is_controlled_by = ROOT
+					CONTROLLER = { is_in_faction_with = ROOT }
+				}
+			}
+		}
+		156 = { CONTROLLER = { has_war_with = ROOT } }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 238
+		value = 50
+	}
+}
+
+# purpose: FRONT half of the bridge's successor - keeps divisions flowing to the Italian mainland
+#          from the fall of Calabria to the end of the campaign. See the THEATRE twin
+#          (WA_AI_MILITARY_ALLIES_italy_mainland_push_THEATRE) for the full rationale; keep the two
+#          enable blocks identical. Targets regions 21 and 23 because that is where the fight goes
+#          after the toe falls - region 238 is handled by the bridge while the toe is contested and
+#          becomes rear area afterwards.
+#          Sized at +60 so that a USA carrying the always-on region-23 -65 and the -80 overstack
+#          brake is not left at a net veto on the one theatre it is supposed to be fighting in; the
+#          E2 ceiling is +200 and out-bidding by stacking additive blocks is explicitly the mechanism
+#          that broke the German side of this theatre, so this is a floor-raise, not an arms race.
+# range:   -100 to +200 (percent factor, per WA_AI_MILITARY_ECONOMY.md E2)
+# policy:  Additive per area
+# domain:  FRONT
+WA_AI_MILITARY_ALLIES_italy_mainland_push_FRONT = {
+
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
+	enable = {
+		has_war = yes
+		WA_AI_MILITARY_italy_theatre_contested = yes
+		NOT = { 156 = { CONTROLLER = { has_war_with = ROOT } } }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 21
+		value = 60
+	}
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 23
+		value = 60
+	}
+}
+
+# purpose: keep the western bloc committed to the Italian front once Italy is co-belligerent.
+#          Re-homed here 2026-08-12 from WA_AI_MILITARY_ENG_war_against_ITA_3_FRONT
+#          (WA_AI_MILITARY_COUNTRY_ENG_FRONT.txt), which was the ONLY post-flip Italian positive in
+#          the mod and applied to England alone. Campaign 9a4cd657: after the Italian defection ENG
+#          netted +20 on regions 21/23 and the USA netted -145, and the theatre became visibly
+#          British - USA 0-4 divisions in Italy through 1945 against ENG's 26-36. That was not an
+#          emergent effect, it was one block existing for one country. This is coalition behaviour,
+#          so per WA_AI_MILITARY_SYSTEM.md it belongs at the highest shared layer; the Country copy
+#          was deleted in the same commit rather than left to stack additively on top of this one.
+#          Values carried over unchanged from the ENG original (+100 / +100).
+# range:   -100 to +200 (percent factor, per WA_AI_MILITARY_ECONOMY.md E2)
+# policy:  Additive per area
+# domain:  FRONT
+WA_AI_MILITARY_ALLIES_italy_cobelligerent_support_FRONT = {
+
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
+	enable = {
+		has_war_with = GER
+		is_in_faction_with = ITA
+		date > 1942.1.1
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		area = italy
+		value = 100
+	}
+	ai_strategy = {
+		type = front_unit_request
+		area = south_italy
+		value = 100
+	}
+}
+
+
 
 WA_AI_MILITARY_ALLIES_africa_push = { #########Allied ai likes sitting around in the desert
+	# always-on: pre-economy behaviour kept at Phase 8 parity - revisit with campaign evidence.
 	allowed = {
 		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
 	}
@@ -932,12 +1198,11 @@ WA_AI_MILITARY_ALLIES_dday_fire_FRONT = {
 		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
 	}
 	enable = {
-		NOT = {
-			AND = {
-				date > 1944.12.1
-				has_war_with = JAP
-			}
-		}
+		# Was: NOT = { date > 1944.12.1 AND has_war_with = JAP } - a hard calendar cutoff meant to free
+		# forces for the Pacific, which instead switched off all France invasion execution in any
+		# campaign where the European war ran long. Replaced with the situational exit below: stay live
+		# until Germany is actually breaking, then release for the Pacific.
+		NOT = { GER = { surrender_progress > 0.5 } }
 		has_war_with = GER
 		WA_AI_MILITARY_is_allies_member = yes
 		NOT = {
@@ -1118,7 +1383,7 @@ WA_AI_MILITARY_ALLIES_azores_fallen_FRONT = {
 	ai_strategy = {
 		type = front_unit_request
 		tag = POA
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 }
 

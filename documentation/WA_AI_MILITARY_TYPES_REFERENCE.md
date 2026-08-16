@@ -11,6 +11,7 @@ This is the **single source of truth** for which domain file every `ai_strategy`
 | `front_unit_request` | FRONT | `_FRONT` | Sizes division allocation against an enemy front. |
 | `front_control` | FRONT | `_FRONT` | Per-area passive/active mode for an existing front. |
 | `front_armor_score` | FRONT | `_FRONT` | Front-line armour scoring. |
+| `force_concentration_factor` | FRONT | `_FRONT` | AIFC master ratio. Percentage points added to define `AIFC_UNIT_RATIO_BASE` (0.15). Owned by the AIFC system - see below. |
 | `force_concentration_front_factor` | FRONT | `_FRONT` | Front allocator concentration tuning. |
 | `force_concentration_target_weight` | FRONT | `_FRONT` | Front allocator target weighting. |
 | `force_ratio` | FRONT | `_FRONT` | Front allocator ratio bias. |
@@ -26,7 +27,7 @@ This is the **single source of truth** for which domain file every `ai_strategy`
 | `naval_invasion_dominance_weight` | NAVAL | `WA_AI_NAVAL_*` | Fleet emphasis on supremacy along active invasion paths. |
 | `naval_invasion_support_priority` | NAVAL | `WA_AI_NAVAL_*` | Priority for naval invasion support in a sea region. |
 | `strike_force_home_base` | NAVAL | `WA_AI_NAVAL_*` | Designates a base as fleet home. |
-| `strategic_air_importance` | NAVAL | `WA_AI_NAVAL_*` | Strategic air emphasis (sea-facing). |
+| `strategic_air_importance` | NAVAL / AIR | `WA_AI_NAVAL_*` (sea-facing) or `_AIR` (land-theatre-facing) | Strategic air emphasis per strategic region. |
 | `conquer` | DIPLOMACY | `_DIPLOMACY` | Inter-country posture: targets to subdue. |
 | `antagonize` | DIPLOMACY | `_DIPLOMACY` | Inter-country posture: increase friction. |
 | `protect` | DIPLOMACY | `_DIPLOMACY` | Inter-country posture: prioritise survival of an ally. |
@@ -85,8 +86,9 @@ For each type: total count, where it currently appears (counts per file), recomm
 
 ### `front_control` (208)
 
-- Currently in: GER 25, CHI 19, JAP 19, SOV 18, USA 17, AXIS 14, CAN 14, SPA 10, ITA 10, CHINA_FRONT 6, FIN 3, FRA 3, CZE 3, ALLIES 32, ENG 2, TUR 2, GRE 2, ROM 1, SAF 1, YUG 1, RAJ 1, SPR 4, FRONT_execution 1.
+- Currently in: GER 25, CHI 19, JAP 19, SOV 18, USA 17, AXIS 14, CAN 14, SPA 10, ITA 10, CHINA_FRONT 6, FIN 3, FRA 3, CZE 3, ALLIES 33, ENG 2, TUR 2, GRE 2, ROM 1, SAF 1, YUG 1, RAJ 1, SPR 4, DEFAULT_FRONT_control 2.
 - Target: Default for the global passive/active baseline; Country for per-area overrides.
+- Posture-gated writers: the exec/grind pairs `ALLIES_exec_vs_germany`/`_grind_vs_germany`, `AXIS_exec_vs_sov`/`_grind_vs_sov`, `CHINA_FRONT_exec_vs_japan`/`_grind_vs_japan` (each pair mutually exclusive by posture level), `ALLIES_downfall_push_FRONT`, `SOV_counterattack`, `JAP_chinese_war_4` (with `_chinese_war_3` as its posture-0 fallback), `ITA_north_africa_offensive_exec_FRONT` (via the controller-dynamic `WA_AI_MILITARY_north_africa_offensive_viable` trigger), and the Default-layer `EXEC_low_equipment_hold` brake all consume the weekly offensive-posture verdict - see section 9 of `WA_AI_MILITARY_SYSTEM.md` before adding new `execute_order = yes` blocks.
 - Policy: **Exclusive per area**. Phase 5 mutual-exclusion needed.
 
 ### `invade` (197)
@@ -140,15 +142,20 @@ For each type: total count, where it currently appears (counts per file), recomm
 - Currently in: ALLIES 28, FRA 6.
 - Target: Faction for ALLIES (FRONT domain) and Country for FRA.
 
-### `front_armor_score` (20)
+### `front_armor_score` (25)
 
-- Currently in: SOV 13, GER 7.
-- Target: Country (FRONT domain). Possibly Default for major-continental archetype if pattern repeats elsewhere in Phase 4.
+- Currently in: SOV 13, GER 7, ALLIES 2 (`armor_to_european_front`: +500 GER / +100 ITA for western-allies majors), USA 1 (`armor_europe_first`: -300 JAP).
+- Target: Country (FRONT domain); Faction for coalition-wide armour steering.
+- Note: this type was inert mod-wide until commit af705e640 added `front_role_override = offence` to the armour/mechanized/motorized role blocks in `common/ai_templates` - the engine keys armour front assignment on those roles.
+- **`front_armor_score` is id-keyed only.** It accepts `id = "TAG"` and nothing else - no `tag`, `state`, `strategic_region`, `area`, `country_trigger` or `state_trigger`. The DEFAULT-layer `AIFC_armor_follows_schwerpunkt` entry tried to target it with `country_trigger` and never parsed (`ai_strategy.cpp: Unexpected token: country_trigger`). Only `front_control`, `front_unit_request` and `invasion_unit_request` take the generic country/state targeting fields (see `common/ai_strategy/documentation.info` lines 228-266); the `force_concentration_*` types additionally take `state_trigger`.
+- The tag-free AIFC armour steering (+400 toward the sector enemy / -150 toward every other war enemy) is therefore **scripted, not an ai_strategy block**: `WA_AI_AIFC_armor_reconcile` in `common/scripted_effects/WA_AI_AIFC_helpers.txt` emits `add_ai_strategy = { type = front_armor_score id = <runtime tag> ... }` via `meta_effect` weekly, retiring entries by exact negation (there is no `remove_ai_strategy`). Switch: `WA_AI_AIFC_armor_steering_enabled` in `WA_AI_AIFC_triggers.txt`. These scripted instances stack additively with the static SOV/GER/ALLIES/USA entries above, sitting below them by design.
 
-### `strategic_air_importance` (18)
+### `strategic_air_importance` (28)
 
-- Currently in: GER 8, ALLIES 4, ITA 3, ENG 2, SOV 1.
-- Target: Country (NAVAL or FRONT depending on whether the rule is sea-facing).
+- Currently in: GER 8, ALLIES 4, ITA 3, ENG 2, SOV 1 (legacy country/faction specials), plus 10 generic theatre blocks in `WA_AI_MILITARY_DEFAULT_AIR_theatres.txt` and 3 Faction-layer blocks in `WA_AI_MILITARY_FACTION_ALLIES_AIR.txt`.
+- Target: Country (NAVAL when sea-facing); Default for the generic land-theatre pulls (AIR domain); Faction for coalition bombing-campaign policy.
+- The Default layer (`WA_AI_MILITARY_DEFAULT_AIR_theatres.txt`) provides the standing +10,000 "base air where your side is fighting" pull per contested theatre region, gated by `WA_AI_MILITARY_AIR_theatre_contested_*` (dynamic both-sides-control-land detection, no tags). The legacy ENG/GER emergency (+100k..+500k) and suppression (-250k..-1M) families intentionally dominate it wherever they apply. Engine-side terms: own combats x100, own armies x25; a stocked main front in active combat scores ~35,000.
+- **Faction layer — the Allied Reich bombing ladder.** `WA_AI_MILITARY_FACTION_ALLIES_AIR.txt` owns the western coalition's avoidance of German air space (strategic regions 6/7/8/296 near ring, 294/38 deep ring). Its three blocks are rungs on a **deployed-strategic-bomber count**, not dates: each enables below its own threshold and aborts above the next one, so the net suppression walks from -60,000 down to 0 (near ring) / -80,000 down to 0 (deep ring) as the coalition arms, with hysteresis at every boundary. Thresholds (299/450/700/900, grounded in campaign `973154a7`) and the Reich ring state lists live in `WA_AI_MILITARY_triggers.txt` under "AIR - Allied Reich bombing ladder" — change the campaign there, never in the strategy blocks. All three rungs also abort on `WA_AI_MILITARY_AIR_theatre_contested_germany`, the setup-agnostic replacement for the old `date > 1944.2.1` backstop: `strategic_air_importance` suppresses *every* mission in a region, so it must lift the moment friendly armies are fighting on German soil. This file replaced legacy ENG.txt `Allies_bombing_germany_is_too_costly`, `allies_avoid_bombing_austria_prussia` and `ENG_FRA_allies_avoid_bombing_GER` (Phase 7c).
 
 ### `antagonize` (8)
 
@@ -171,6 +178,25 @@ For each type: total count, where it currently appears (counts per file), recomm
 - Currently in: FRA 2, ITA 1, GER 2.
 - Target: Country (DIPLOMACY domain).
 - Policy: **Exclusive per target**.
+
+### AI Force Concentration (AIFC) - all three `force_concentration_*` types
+
+The AIFC types are owned by a dedicated subsystem and should not be added ad hoc. Before adding any
+`force_concentration_*` entry anywhere, read the system reference in the header of
+`common/ai_strategy/WA_AI_MILITARY_DEFAULT_FRONT_aifc.txt`.
+
+- Generic layer (doctrine ladder, posture, dynamic sector consumption):
+  `common/ai_strategy/WA_AI_MILITARY_DEFAULT_FRONT_aifc.txt`
+- Sector selection (weekly, scripted): `common/scripted_effects/WA_AI_AIFC_core.txt`, `..._helpers.txt`
+- All behavioural switches: `common/scripted_triggers/WA_AI_AIFC_triggers.txt`
+- Country overrides that survive: GER (`GER.txt` legacy + `..._COUNTRY_GER_FRONT.txt`), FRA
+  (`..._COUNTRY_FRA_FRONT.txt`). GER's entries are still split across the legacy vanilla-named file and
+  its `_FRONT` file; consolidating them is outstanding work.
+
+**The pairing rule.** `force_concentration_front_factor` and `force_concentration_target_weight` are
+relative scores. A boost with no matching suppression of the alternatives does close to nothing - this is
+why WA's pre-rework `+200` and `+80` entries produced no visible behaviour. Pair every new boost with a
+suppression of everything outside the intended target set.
 
 ### `force_concentration_target_weight` (5)
 

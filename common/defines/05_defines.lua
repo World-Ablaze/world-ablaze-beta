@@ -60,7 +60,10 @@ NDefines.NTrade.ANTI_MONOPOLY_TRADE_FACTOR = 0										-- This is added to the 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Characters
 
 
-NDefines.NCharacter.OFFICER_CORP_ADVISOR_ENTRIES_IN_MENU = { "high_command", "theorist", "army_theorist", "navy_theorist", "air_theorist", "army_chief", "air_chief", "navy_chief" }
+-- WA splits vanilla's single "theorist" slot into army/navy/air_theorist (see common/idea_tags/00_idea.txt).
+-- The legacy "theorist" entry must not be listed here: the slot no longer exists, so the officer corps view
+-- asks for a "theorist_cost_factor" modifier that was never registered (lexer.cpp "dynamic token does not exist").
+NDefines.NCharacter.OFFICER_CORP_ADVISOR_ENTRIES_IN_MENU = { "high_command", "army_theorist", "navy_theorist", "air_theorist", "army_chief", "air_chief", "navy_chief" }
 --NDefines.NCharacter.DEFAULT_PP_COST_FOR_POLITICAL_ADVISOR = 100
 NDefines.NCharacter.ADVISOR_PROMOTION_COST = 5										-- Cost to promote someone to advisor
 NDefines.NCharacter.SPECIALIST_ADVISOR_MIN_RANK = 3
@@ -350,11 +353,11 @@ NDefines.NMilitary.MAX_HQ_SUPPORT_HEIGHT = 4										-- Max height of support i
 NDefines.NMilitary.MAX_HQ_REGIMENTAL_SUPPORT_WIDTH = 0								-- Max width of regimental supports in division designer (Army HQ templates).
 NDefines.NMilitary.MAX_HQ_REGIMENTAL_SUPPORT_HEIGHT = 0								-- Max height of regimental supports in division designer (Army HQ templates).
 NDefines.NMilitary.REGIMENTAL_SUPPORT_REQUIRED_BATTALIONS = { 3, 3, 3 }				-- For each regimental support row, how many battalions are required in the regiment to be able to place a support in that row.
-NDefines.NMilitary.AI_BATTALION_BUILD_ORDER = { 	1,  6,  11, 16, 21,				-- When the AI is deciding where to place battalions, it tries to place it in the position with the lowest number according to this grid.
-													2,  7,  12, 17, 22,
-													3,  8,  13, 18, 23,
-													4,  9,  14, 19, 24,
-													5,  10, 15, 20, 25 }
+NDefines.NMilitary.AI_BATTALION_BUILD_ORDER = {	1,  4,  7,  10, 13,                 -- When the AI is deciding where to place battalions, it tries to place it in the position with the lowest number according to this grid.
+												2,  5,  8,  11, 14,
+												3,  6,  9,  12, 15,
+												16, 18, 20, 22, 24,
+												17, 19, 21, 23, 25 }
 
 NDefines.NMilitary.BASE_DIVISION_BRIGADE_GROUP_COST = 10							--Base XP cost to unlock a regiment slot,
 NDefines.NMilitary.BASE_DIVISION_BRIGADE_CHANGE_COST = 5							--Base XP cost to change a regiment column.
@@ -530,7 +533,7 @@ NDefines.NAir.AIR_INVASION_PREPARE_DAYS = 30										-- base days needed to pre
 NDefines.NAir.AIR_INVASION_PLAN_CAP = 1												-- base cap of airborne invasions can be planned at the same time
 NDefines.NAir.BASE_AIR_INVASION_DIVISION_CAP = 1									-- base cap of divisions that can be assigned in a airborne invasion
 
-NDefines.NAir.AI_ALLOWED_PLANES_KEPT_IN_RESERVE = 0.0								--AI allowed planes is reduced by this percentage. Overflow will be distributed to the next valid order. Worst case, this will result in this % of planes no being assigned any order.
+NDefines.NAir.AI_ALLOWED_PLANES_KEPT_IN_RESERVE = 0.1								--AI allowed planes is reduced by this percentage. Overflow will be distributed to the next valid order. Worst case, this will result in this % of planes no being assigned any order.
 
 NDefines.NAir.LEND_LEASED_EQUIPMENT_EXPERIENCE_GAIN = 0.0							-- Value used for equipment
 
@@ -1074,11 +1077,60 @@ NDefines.NAI.CANCEL_INVASION_COMBAT_MIN_DURATION_HOURS = 720    					-- Only all
 
 NDefines.NAI.MISSING_CONVOYS_BOOST_FACTOR = 0.0										-- The more convoys a country is missing, the more resources it diverts to cover this.						-- If the enemy has a navy at least these many times stronger that the own, don't bother invading
 
-NDefines.NAI.CONVOY_ESCORT_MUL_FROM_NO_CONVOYS = 0 									-- score multiplier when no convoys are around
-NDefines.NAI.CONVOY_ESCORT_SCORE_FROM_CONVOYS = 0            				    	-- score for each convoy you have in area
-NDefines.NAI.REGION_CONVOY_DANGER_DAILY_DECAY = 5									-- When convoys are sunk it generates threat in the region which the AI uses to prio nalval missions
-NDefines.NAI.NAVAL_MISSION_ESCORT_NEAR_OWNED = 0									-- Extra escort mission score near owned provinces
-NDefines.NAI.NAVAL_MISSION_ESCORT_NEAR_CONTROLLED = 0								-- Extra escort mission score near controlled provinces
+NDefines.NAI.AI_TASKFORCE_REQUIRED_RESERVE_RATIO = 0.05	-- Fraction of required TF optimal composition held in reserve for reinforcement (rounded up per type)
+-- Fix 53b (2026-08-13, checklist R36): the four escort SCORE terms below were all
+-- zeroed, so a convoy-escort mission could score points from nothing except transient
+-- region convoy danger, while patrol kept its full vanilla score (WA does not override
+-- NAVAL_MISSION_PATROL_NEAR_OWNED = 500 / _NEAR_CONTROLLED = 140 - the overrides are
+-- commented out at the bottom of this section, so vanilla's values apply). Escort must
+-- still clear a mission threshold of 100, so with every score term at 0 it fired only
+-- where U-boats had just made a massacre, and lapsed again as that threat decayed -
+-- which is exactly R36's observed shape: escort share that tracks nothing but recent
+-- sinkings, swings 20-140 hulls month to month, and regresses late-war as raiding falls
+-- off while the navy grows. Restored to the vanilla 1.18 values so escort scores
+-- structurally (proportional to convoys present) instead of reactively.
+NDefines.NAI.CONVOY_ESCORT_MUL_FROM_NO_CONVOYS = 0.02								-- score multiplier when no convoys are around  [Fix 53b: was 0, vanilla 0.02]
+NDefines.NAI.CONVOY_ESCORT_SCORE_FROM_CONVOYS = 15          				    	-- score for each convoy you have in area  [Fix 53b: was 0, vanilla 15]
+-- Fix 86 (2026-08-15, checklist R36, campaign af003548). Fix 53b's note on the next line
+-- said "escort no longer depends on this term"; the save says otherwise. At 1944.6 the USN
+-- ran 63 convoy-demand regions (72-215 convoys each on 44/55/243/247/54) with the 53b score
+-- terms live, 22 pure-screen 20-hull task forces parked at Norfolk with mission 0, 14 idle
+-- admirals, fuel 100% - and ZERO escort task forces. ENG in the same save escorted exactly
+-- its per_region_danger set (7 of 8 regions with danger > 0, none without), and the USA's
+-- own convoy_escort_presence_history shows it DID escort 48/69/243 for hundreds of ticks
+-- and dropped each one as its danger decayed to 0. Escort objectives are therefore created
+-- where a country's OWN convoys were recently sunk, and only there; the score terms rank
+-- objectives that already exist. The Kriegsmarine sinks British convoys (ENG danger 22 825
+-- on 43, 21 775 on 243) and almost no American ones (USA 385 on 43, 10-35 elsewhere), so the
+-- USN has nothing to react to and parks - the R36 shape for six campaigns.
+-- Two engine terms govern that reaction, both changed here to make escort respond to ANY
+-- recent loss instead of only to sustained slaughter:
+--   REGION_CONVOY_DANGER_DAILY_DECAY  5 -> 4  (vanilla 2; WA's 5 is uncommented and dates from
+--     the initial commit). Danger memory now outlives the gap between sinkings a little
+--     longer; the bigger lever is the per-sinking threat below.
+--   REGION_THREAT_PER_SUNK_CONVOY   50 -> 100 (vanilla 2, WA 50 since 2020). Playtest note
+--     2026-08-16: the mission assigner behaves inconsistently while a region's threat sits
+--     around 50 - one sinking now lands at 100, clear of that band, and decays through it
+--     in ~12 days instead of starting inside it.
+--   CONVOY_DANGER_FOR_MAX_IMPORTANCE 400 -> 50 (below; vanilla 400, WA never overrode it).
+--     Protection importance saturates at ONE sunk convoy (REGION_THREAT_PER_SUNK_CONVOY = 100)
+--     rather than eight - a navy that loses little still gets a full-strength objective on
+--     the region where it lost it.
+-- Blast radius: convoy-danger memory and escort-importance scaling only. Region AVOIDANCE
+-- reads REGION_THREAT_LEVEL_TO_AVOID/BLOCK_REGION (25 000, far above anything a decay change
+-- reaches) and is unaffected; the escort share stays capped by
+-- MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MIN/MAX (0.3-0.7); raiding, patrol and strike
+-- scoring do not read either term. Symmetric: GER and JAP get the same responsiveness.
+-- Pre-registered read (R36): USA per_region_danger non-zero on >= 4 Atlantic corridor
+-- regions at the first wartime summer save, and >= 1 USA escort task force holding a
+-- corridor region (43/44/55/243/247) at 3 consecutive 6-month anchors. If USA escort stays
+-- at 0 with these two in place, the objective generator is not danger-driven either and the
+-- next probe is the ai_strategy-invisible engine path, not another define.
+NDefines.NAI.REGION_CONVOY_DANGER_DAILY_DECAY = 4 --5  [Fix 86: was 5, vanilla 2; 4 chosen (not 2) so memory lengthens without hoarding - see the 100-per-sinking note below]
+NDefines.NAI.REGION_THREAT_PER_SUNK_CONVOY = 100 --25								-- When convoys are sunk it generates threat in the region which the AI uses to prio nalval missions  [Fix 86: was 50, vanilla 2. 100 so that ONE sinking already sits above the ~50 band where the mission assigner was observed to flip between assignments (playtest note 2026-08-16); pairs with CONVOY_DANGER_FOR_MAX_IMPORTANCE = 50 below, so a single loss saturates the protection importance outright]
+NDefines.NAI.CONVOY_DANGER_FOR_MAX_IMPORTANCE = 50								-- convoy danger at which the protection importance saturates  [Fix 86: vanilla 400, not previously overridden]
+NDefines.NAI.NAVAL_MISSION_ESCORT_NEAR_OWNED = 300									-- Extra escort mission score near owned provinces  [Fix 53b: was 0, vanilla 300]
+NDefines.NAI.NAVAL_MISSION_ESCORT_NEAR_CONTROLLED = 200								-- Extra escort mission score near controlled provinces  [Fix 53b: was 0, vanilla 200]
 
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_MINE_LAYING = 0.05							-- maximum ratio of screens forces to be used in mine laying
 NDefines.NAI.MAX_SCREEN_TASKFORCES_FOR_MINE_SWEEPING = 0.05 						-- maximum ratio of screens forces to be used in mine sweeping
@@ -1098,11 +1150,30 @@ NDefines.NAI.MIN_CAPITALS_FOR_CARRIER_TASKFORCE = 10								-- carrier fleets wi
 NDefines.NAI.CAPITALS_TO_CARRIER_RATIO = 1.0										-- capital to carrier count in carrier taskfoces
 
 NDefines.NAI.MIN_MAIN_SHIP_RATIO = 0.3                      						-- if main ship ratio is below this, steal other ships.
-NDefines.NAI.MIN_SUPPORT_SHIP_RATIO = 1.0                   						-- if support ship ratio is below this, steal other ships.
+NDefines.NAI.MIN_SUPPORT_SHIP_RATIO = 0.7                   						-- if support ship ratio is below this, steal other ships.  [Fix 54: was 1.0, vanilla 0.7 - see the valve note on MIN_SUPPORT_SHIP_TO_SPARE below]
 NDefines.NAI.MIN_MAIN_SHIP_RATIO_TO_REINFORCE = 0.5        	 						-- the main ships will be tried to reinforce this level.
 NDefines.NAI.MIN_SUPPORT_SHIP_RATIO_TO_REINFORCE = 0.9    		 					-- the support ships will be tried to reinforce this level.
 NDefines.NAI.MIN_MAIN_SHIP_TO_SPARE = 1.0                   						-- can only steal ships from a task force if their main ship ratio is above this.
-NDefines.NAI.MIN_SUPPORT_SHIP_TO_SPARE = 3.0               							-- can only steal ships from a task force if their support ship ratio is above this. Prevents MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX from stealing ships.
+-- Fix 54 (2026-08-13, checklist R36): was 3.0, vanilla 1.0. The pre-registered
+-- condition written here by Fix 53b - "only lower this if escort share rises and then
+-- plateaus below MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MIN (0.3)" - was met on the
+-- 1942.10 paired probe of campaign 02bd4445: escort doubled (40 -> 80 hulls at an
+-- identical date, v4 vs v6 build) and settled at 13% of screens, against an engine
+-- floor of 30%. Scoring is no longer the binding constraint; screen reallocation is.
+--
+-- This value and MIN_SUPPORT_SHIP_RATIO above are ONE mechanism and were set in the
+-- same commit (8b736abd1, 2024-12-20). Together they are a ONE-WAY VALVE:
+--   fill a task force's screens up to 1.0 of its desired complement (vanilla 0.7),
+--   release screens from it only above 3.0 (vanilla 1.0).
+-- Vanilla's band is 0.7 -> 1.0; WA's was 1.0 -> 3.0. Any screen that ever joins a
+-- strike, patrol or parked task force is captured for good, which is what ENG's
+-- 282-340-ship admiral-less holding fleet is made of, and why escort assignment
+-- REGRESSES late war: rebuilt strike forces absorb the escorts and never give them
+-- back. Both halves restored to vanilla; changing only one leaves the ratchet.
+--
+-- Blast radius is bounded to ship reallocation between a country's own task forces -
+-- it does not touch mission scoring, thresholds, region assignment or production.
+NDefines.NAI.MIN_SUPPORT_SHIP_TO_SPARE = 1.0               							-- can only steal ships from a task force if their support ship ratio is above this.  [Fix 54: was 3.0, vanilla 1.0]
 NDefines.NAI.MIN_MAIN_SHIP_RATIO_TO_MERGE = 0.7            							-- try merge task force if main ship ratio is lower than this.
 NDefines.NAI.MAX_MAIN_SHIP_RATIO_TO_MERGE = 1.001          							-- if resulting main ship ratio would be at most this, allow merging into this task force.
 NDefines.NAI.MAIN_SHIP_RATIO_TO_SPLIT = 1.8                 						-- if main ship ratio in a task force is larger than this, split it. (If a carrier TF wants 4 carriers (see defines above), but it has more than [this * 4] carriers, then we try to split the TF.)
@@ -1112,7 +1183,14 @@ NDefines.NAI.MAX_MISSION_PER_TASKFORCE = {  -- max mission region/taskforce rati
 	1.5, -- PATROL
 	6, -- STRIKE FORCE
 	1.5, -- CONVOY RAIDING
-	1, -- CONVOY ESCORT
+	-- Fix 53b (2026-08-13, checklist R36): was 1, vanilla is 4. At 1 an escort task
+	-- force may cover a single strategic region, so covering N regions costs N task
+	-- forces - against a hard cap of MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MAX
+	-- (0.7) of all screen task forces. That ceiling is what R36's coverage leg was
+	-- measuring: ENG covered 15 of its 42 convoy-demand regions and the USA 5 of 63.
+	-- Patrol sits at 1.5 and convoy raiding at 1.5 here, so escort was the single
+	-- most region-hungry mission in the mod.
+	4, -- CONVOY ESCORT
 	2, -- MINES PLANTING
 	2, -- MINES SWEEPING
 	0, -- TRAIN
@@ -1120,7 +1198,7 @@ NDefines.NAI.MAX_MISSION_PER_TASKFORCE = {  -- max mission region/taskforce rati
 	10, -- NAVAL INVASION SUPPORT
 }
 
-NDefines.NAI.MAX_PATROL_TO_STRIKE_FORCE_RATIO = 4.0									-- maximum patrol/strike force ratio
+NDefines.NAI.MAX_PATROL_TO_STRIKE_FORCE_RATIO = 3.0									-- maximum patrol/strike force ratio --was 4
 
 --Need to find good values, 1 convoy sunk generates 25 threat
 NDefines.NAI.REGION_THREAT_LEVEL_TO_AVOID_REGION = 25 * 1000						-- How much threat must be generated in region ( by REGION_THREAT_PER_SUNK_CONVOY ) so the AI will decide to mark the region as avoid
@@ -1131,6 +1209,15 @@ NDefines.NAI.REGION_THREAT_LEVEL_TO_BLOCK_REGION = 25 * 1000						-- How much th
 --NDefines.NAI.NAVAL_MISSION_PATROL_NEAR_CONTROLLED = 0								-- Extra patrol mission score near controlled provinces
 
 NDefines.NAI.NAVAL_DOCKYARDS_SHIP_FACTOR = 2										-- The extent to which number of dockyards play into amount of sips a nation wants
+-- R36 candidate 3, NOT changed by Fix 53b - highest blast radius of the three, change
+-- it on its own or not at all. Vanilla is 25. Missions and strategic-region assignment
+-- are FLEET-level properties (a task force flies a mission only if its fleet holds at
+-- least one strategic_region - measured with no exceptions across 10 game-years of
+-- campaign bec4d829), so the number of fleets IS the number of region-holding slots the
+-- AI has to work with. Tripling the merge target trebles fleet size and thirds that
+-- count, and it is the most direct explanation on file for "99-100% of idle tonnage
+-- sits in one or two giant region-less holding fleets". Re-measure fleet counts after
+-- Fix 53b before touching this: restoring escort scoring should itself force splits.
 NDefines.NAI.NAVY_PREFERED_MAX_SIZE = 80											-- AI will generally attempt to merge fleets into this size, but as a soft limit.
 NDefines.NAI.SUB_TASKFORCE_MAX_SHIP_COUNT = 5										-- optimum sub count for sub taskforces
 NDefines.NAI.PRODUCTION_MAX_PROGRESS_TO_SWITCH_NAVAL = 0.09							-- AI will not replace ships being built by newer types if progress is above this
@@ -1186,6 +1273,12 @@ NDefines.NAI.LAND_DEFENSE_SUPPLY_HUB_IMPORTANCE = 80								-- Strategic importa
 NDefines.NAI.LAND_DEFENSE_AA_IMPORTANCE_FACTOR = 1.0								-- Factor of AA influence on strategic importance ( 0.0 - 1.0 )
 NDefines.NAI.LAND_DEFENSE_INFRA_IMPORTANCE_FACTOR = 70								-- Factor of infrastructure influence on strategic importance ( 0.0 - 1.0 )
 
+NDefines.NAI.LAND_DEFENSE_SAM_MISSILE_IMPORTANCE_FACTOR = 0							-- Importance factor of using sam missiles for regions strategic importance. Higher value will increase the usage
+
+NDefines.NAI.GUN_EMPLACEMENT_MIN_ASSIGN_SCORE = 10000000							-- Minimum total score for region to be considered for gun emplacement air missions
+NDefines.NAI.GUN_EMPLACEMENT_MIN_PRIO_ASSIGN_SCORE = 10000000						-- Minimum total score for region to be considered for critical gun emplacement air missions
+NDefines.NAI.GUN_EMPLACEMENT_ASSIGN_SCORE_REDUCTION_PER_ASSIGNMENT = 0				-- each assigned gun emplacement reduces the score of a region by this amount
+
 NDefines.NAI.LAND_COMBAT_AIR_SUPERIORITY_IMPORTANCE = 2.0 							-- Strategic importance of air superiority ( amount of enemy planes in area )
 NDefines.NAI.LAND_COMBAT_OUR_ARMIES_AIR_IMPORTANCE = 25 							-- Strategic importance of our armies
 NDefines.NAI.LAND_COMBAT_OUR_COMBATS_AIR_IMPORTANCE = 100							-- Strategic importance of our armies in the combats
@@ -1213,7 +1306,7 @@ NDefines.NAI.RECON_PLANES_STRATEGIC = 50                     	 					-- scale on 
 
 NDefines.NAI.AI_FRACTION_OF_FIGHTERS_RESERVED_FOR_INTERCEPTION = 0.0				-- Percentage of fighters we reserve for interception vs AS
 
-NDefines.NAI.DAYS_BETWEEN_AIR_PRIORITIES_UPDATE = 2									-- Amount of days between air ai updates priorities for air wings ( from 1 to N )
+NDefines.NAI.DAYS_BETWEEN_AIR_PRIORITIES_UPDATE = 5 --was 2							-- Amount of days between air ai updates priorities for air wings ( from 1 to N )
 
 NDefines.NAI.LAND_COMBAT_GUIDE_DISTANCE = 0.0										-- Distance within whch we'll care a bit more about sending planes regardless of whether our boiz are dying
 
@@ -1251,16 +1344,16 @@ NDefines.NAI.MAX_THREAT_FOR_FIRST_YEAR_CIVILIAN_MODE = 10 							-- above this t
 NDefines.NAI.MAX_FUEL_CONSUMPTION_RATIO_FOR_NAVY_TRAINING = 0.2						-- ai will use at most this ratio of affordable fuel for naval training
 NDefines.NAI.MAX_FULLY_TRAINED_SHIP_RATIO_FOR_TRAINING = 0.8						-- ai will not train a taskforce if fully trained ships are above this ratio
 
-NDefines.NAI.MAX_UNITS_FACTOR_FRONT_ORDER = 3.0										-- Factor for max number of units to assign to area front orders
-NDefines.NAI.DESIRED_UNITS_FACTOR_FRONT_ORDER = 3.0									-- Factor for desired number of units to assign to area front orders
-NDefines.NAI.MIN_UNITS_FACTOR_FRONT_ORDER = 2.0										-- Factor for min number of units to assign to area front orders
+NDefines.NAI.MAX_UNITS_FACTOR_FRONT_ORDER = 1.0										-- Factor for max number of units to assign to area front orders (economy E8: vanilla restored, was 3.0 - inflated every front's demand 3x and kept the theatre distributor in permanent triage)
+NDefines.NAI.DESIRED_UNITS_FACTOR_FRONT_ORDER = 1.1									-- Factor for desired number of units to assign to area front orders (economy E8: vanilla restored, was 3.0)
+NDefines.NAI.MIN_UNITS_FACTOR_FRONT_ORDER = 1.0										-- Factor for min number of units to assign to area front orders (economy E8: vanilla restored, was 2.0)
 
 NDefines.NAI.PLAN_ACTIVATION_SUPERIORITY_AGGRO = 10.0         					    -- How aggressive a country is in activating a plan based on how superiour their force is.
 
 --NDefines.NAI.PLAN_VALUE_BONUS_FOR_MOVING_UNITS = 0.5								-- AI plans gets a bonus when units are not moving and ready to fight
 NDefines.NAI.MIN_INVASION_PLAN_VALUE_TO_EXECUTE = 0.05								-- ai will only activate invasions if it is above this
 
-NDefines.NAI.ENTRENCHMENT_WEIGHT = 10.0												-- AI should favour units with less entrenchment when assigning units around.
+NDefines.NAI.ENTRENCHMENT_WEIGHT = 2.0												-- AI should favour units with less entrenchment when assigning units around. (economy E8: vanilla restored, was 10.0 - 5x vanilla caused churn of dug-in units)
 
 ----------- AI Battleplan Execution
 ----------- AI Executes plan if PLAN_FACTION_STRONG_TO_EXECUTE and PLAN_FACTION_STRONG_TO_EXECUTE are both met, will cancel the plan if PLAN_FACTION_WEAK_TO_ABORT is met, wont reenable plan until first two are met again
@@ -1298,13 +1391,13 @@ NDefines.NAI.ORDER_ASSIGNMENT_DISTANCE_FACTOR = 100.0								-- When the AI assi
 
 NDefines.NAI.FRONT_EVAL_UNIT_ACCURACY = 0.95										-- scale how stupid ai will act on fronts. 0 is potato
 NDefines.NAI.EXTRA_NAVY_INTEL_FOR_CONVOY_RAIDING = 1.0                   			-- this amount of intel is added to navy intel while ai is assigning convoy raiding mission
-NDefines.NAI.GARRISON_FRACTION = 0.05												-- How large part of a front should always be holding the line rather than advancing at the enemy
+NDefines.NAI.GARRISON_FRACTION = 0.0												-- How large part of a front should always be holding the line rather than advancing at the enemy (economy E8: vanilla restored, was 0.05)
 
 NDefines.NAI.FRONT_TERRAIN_DEFENSE_FACTOR = 1.0										-- Multiplier applied to unit defense modifier for terrain on front province multiplied by terrain importance
 NDefines.NAI.FRONT_TERRAIN_ATTACK_FACTOR = 2.0										-- Multiplier applied to unit attack modifier for terrain on enemy front province multiplied by terrain importance
 NDefines.NAI.FALLBACK_LOSING_FACTOR = 0.0 					              		   	-- The lower this number  the longer the AI will hold the line before sending them to the fallback line
 NDefines.NAI.PLAN_MIN_SIZE_FOR_FALLBACK = 50000										-- A country with less provinces than this will not draw fallback plans  but rather station their troops along the front
-NDefines.NAI.UNIT_ASSIGNMENT_TERRAIN_IMPORTANCE = 0.05								-- Terrain score for units are multiplied by this when the AI is deciding which front they should be assigned to
+NDefines.NAI.UNIT_ASSIGNMENT_TERRAIN_IMPORTANCE = 10.0								-- Terrain score for units are multiplied by this when the AI is deciding which front they should be assigned to (economy E8: vanilla restored, was 0.05 - terrain matching was effectively disabled)
 
 NDefines.NAI.MICRO_POCKET_SIZE = 6													-- Pockets with a size equal to or lower than this will be mocroed by the AI, for efficiency.
 NDefines.NAI.POCKET_DISTANCE_MAX = 10000											-- shortest square distance we bother about chasing pockets
@@ -1317,16 +1410,16 @@ NDefines.NAI.START_TRAINING_EQUIPMENT_LEVEL = 0.9									-- ai will not start t
 NDefines.NAI.STOP_TRAINING_EQUIPMENT_LEVEL = 0.85            						-- ai will not train if equipment drops below this level
 NDefines.NAI.STOP_TRAINING_ACTIVE_COMBAT_RATIO = 0.05            					-- ai halts all training when more than this share of its divisions are in active combat (reinforce instead)
 NDefines.NAI.DEPLOY_MIN_TRAINING_SURRENDER_FACTOR = 1.0								-- Required percentage of training (1.0 = 100%) for AI to deploy unit in wartime while surrender progress is higher than 0
-NDefines.NAI.DEPLOY_MIN_EQUIPMENT_SURRENDER_FACTOR = 1.0							-- Required percentage of equipment (1.0 = 100%) for AI to deploy unit in wartime while surrender progress is higher than 0
+NDefines.NAI.DEPLOY_MIN_EQUIPMENT_SURRENDER_FACTOR = 0.85							-- Required percentage of equipment (1.0 = 100%) for AI to deploy unit in wartime while surrender progress is higher than 0
 NDefines.NAI.DEPLOY_MIN_TRAINING_PEACE_FACTOR = 1.0									-- Required percentage of training (1.0 = 100%) for AI to deploy unit in peacetime
-NDefines.NAI.DEPLOY_MIN_EQUIPMENT_PEACE_FACTOR = 1.0								-- Required percentage of equipment (1.0 = 100%) for AI to deploy unit in peacetime
+NDefines.NAI.DEPLOY_MIN_EQUIPMENT_PEACE_FACTOR = 0.95								-- Required percentage of equipment (1.0 = 100%) for AI to deploy unit in peacetime
 NDefines.NAI.DEPLOY_MIN_TRAINING_WAR_FACTOR = 1.0									-- Required percentage of training (1.0 = 100%) for AI to deploy unit in wartime
-NDefines.NAI.DEPLOY_MIN_EQUIPMENT_WAR_FACTOR = 1.0									-- Required percentage of equipment (1.0 = 100%) for AI to deploy unit in wartime
+NDefines.NAI.DEPLOY_MIN_EQUIPMENT_WAR_FACTOR = 0.9									-- Required percentage of equipment (1.0 = 100%) for AI to deploy unit in wartime
 
 NDefines.NAI.UPGRADE_DIVISION_RELUCTANCE = 7										-- How often to consider upgrading to new templates for units in the field
-NDefines.NAI.UPGRADE_PERCENTAGE_OF_FORCES = 1.0										-- How big part of the army that should be considered for upgrading
+NDefines.NAI.UPGRADE_PERCENTAGE_OF_FORCES = 0.25									-- How big part of the army that should be considered for upgrading
 
-NDefines.NAI.UPGRADES_DEFICIT_LIMIT_DAYS = 30	                    				-- Ai will avoid upgrading units in the field to new templates if it takes longer than this to fullfill their equipment need
+NDefines.NAI.UPGRADES_DEFICIT_LIMIT_DAYS = 90	                    				-- Ai will avoid upgrading units in the field to new templates if it takes longer than this to fullfill their equipment need
 
 NDefines.NAI.MAX_AVAILABLE_MANPOWER_RATIO_TO_BUFFER_WARTIME = 0.4					-- deployment will try to buffer a ratio of manpower (for reinforcements) during war time
 NDefines.NAI.MAX_AVAILABLE_MANPOWER_RATIO_TO_BUFFER_PEACETIME = 0.01				-- deployment will try to buffer a ratio of manpower (for reinforcements) during peace time
@@ -1348,7 +1441,7 @@ NDefines.NAI.PRODUCTION_CARRIER_PLANE_BUFFER_RATIO = 5								-- in additional t
 NDefines.NAI.PRODUCTION_CARRIER_PLANE_PRODUCTION_BOOST_TO_BUFFER = 4.0 				-- production of carrier planes will go up by this ratio if we lack buffers
 
 NDefines.NAI.MAX_SUPPLY_DIVISOR = 0.75												-- To make sure the AI does not overdeploy divisions. Higher number means more supply per unit.
-NDefines.NAI.FRONT_UNITS_CAP_FACTOR = 10.0											-- A factor applied to total front size and supply use. Primarily effects small fronts
+NDefines.NAI.FRONT_UNITS_CAP_FACTOR = 15.0											-- A factor applied to total front size and supply use. Primarily effects small fronts
 
 NDefines.NAI.RESEARCH_BONUS_FACTOR = 4.0
 NDefines.NAI.MAX_AHEAD_RESEARCH_PENALTY = 2	            							-- max ahead of tiem penalty ai will pick ever

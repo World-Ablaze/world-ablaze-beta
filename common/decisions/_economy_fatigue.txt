@@ -291,11 +291,31 @@ economy_decisions = {
 					var = tempCoal
 					value = 20
 				}
-				random_controlled_state = {
-					limit = {
-						steel_refinery > 0
+				# Fix 43: the shortage loops could only ever close the PLAIN variant while the
+				# reactivate decisions PREFER hydro. A country left holding only hydro mills had a
+				# mission that re-armed every 9 days and closed nothing - campaign 911bed3c, ENG ran
+				# 3 hydro aluminium levels (105 bauxite) for ~21 months while 12 plain levels sat
+				# inactive and the deficit never cleared. Both variants must be closable.
+				if = {
+					limit = { any_controlled_state = { steel_refinery > 0 } }
+					random_controlled_state = {
+						limit = { steel_refinery > 0 }
+						disable_steel_mill = yes
 					}
-					disable_steel_mill = yes
+				}
+				else_if = {
+					limit = {
+						any_controlled_state = { hydro_steel_refinery > 0 }
+					}
+					random_controlled_state = {
+						limit = { hydro_steel_refinery > 0 }
+						disable_hydro_steel_mill = yes
+					}
+					# hydro_steel_refinery frees iron 25 / coal 5; the pre-charge booked the plain 25/20, so take back 15 coal.
+					subtract_from_temp_variable = {
+						var = tempCoal
+						value = 15
+					}
 				}
 			}
 		}
@@ -354,11 +374,31 @@ economy_decisions = {
 					var = tempCoal
 					value = 20
 				}
-				random_controlled_state = {
-					limit = {
-						steel_refinery > 0
+				# Fix 43: the shortage loops could only ever close the PLAIN variant while the
+				# reactivate decisions PREFER hydro. A country left holding only hydro mills had a
+				# mission that re-armed every 9 days and closed nothing - campaign 911bed3c, ENG ran
+				# 3 hydro aluminium levels (105 bauxite) for ~21 months while 12 plain levels sat
+				# inactive and the deficit never cleared. Both variants must be closable.
+				if = {
+					limit = { any_controlled_state = { steel_refinery > 0 } }
+					random_controlled_state = {
+						limit = { steel_refinery > 0 }
+						disable_steel_mill = yes
 					}
-					disable_steel_mill = yes
+				}
+				else_if = {
+					limit = {
+						any_controlled_state = { hydro_steel_refinery > 0 }
+					}
+					random_controlled_state = {
+						limit = { hydro_steel_refinery > 0 }
+						disable_hydro_steel_mill = yes
+					}
+					# hydro_steel_refinery frees iron 25 / coal 5; the pre-charge booked the plain 25/20, so take back 15 coal.
+					subtract_from_temp_variable = {
+						var = tempCoal
+						value = 15
+					}
 				}
 			}
 		}
@@ -408,19 +448,57 @@ economy_decisions = {
 						check_variable = { tempCoal < 0 }
 					}
 				}
+				# Fix 42: credit what the building actually frees, not less.
+				# aluminium_refinery costs bauxite 32 / coal 20 (common/buildings/00_buildings.txt);
+				# this loop credited 25 / 15, so it under-counted every closure and kept shutting
+				# mills that were already unnecessary. The iron and coal missions in this same file
+				# credit their true costs (25/20 and 60) - the bauxite pair was the outlier.
+				# Fix 43: record which leg drove this iteration BEFORE the pre-charge moves the
+				# counters - afterwards tempBauxite no longer reflects the entry condition.
+				set_temp_variable = { _wa_shortage_bauxite_leg_ = 0 }
+				if = { limit = { check_variable = { tempBauxite < 0 } } set_temp_variable = { _wa_shortage_bauxite_leg_ = 1 } }
 				add_to_temp_variable = {
 					var = tempBauxite
-					value = 25
+					value = 32
 				}
 				add_to_temp_variable = {
 					var = tempCoal
-					value = 15
+					value = 20
 				}
-				random_controlled_state = {
-					limit = {
-						aluminium_refinery > 0
+				# Fix 43: the shortage loops could only ever close the PLAIN variant while the
+				# reactivate decisions PREFER hydro. A country left holding only hydro mills had a
+				# mission that re-armed every 9 days and closed nothing - campaign 911bed3c, ENG ran
+				# 3 hydro aluminium levels (105 bauxite) for ~21 months while 12 plain levels sat
+				# inactive and the deficit never cleared. Both variants must be closable.
+				if = {
+					limit = { any_controlled_state = { aluminium_refinery > 0 } }
+					random_controlled_state = {
+						limit = { aluminium_refinery > 0 }
+						disable_aluminium_mill = yes
 					}
-					disable_aluminium_mill = yes
+				}
+				else_if = {
+					limit = {
+						# Only while the BAUXITE leg drives: a hydro closure frees no coal, so on a
+						# coal-driven pass it would close mills that cannot help - and since the patch
+						# below takes back all 20 coal, tempCoal would stop advancing and this
+						# while_loop_effect would never terminate.
+						check_variable = { _wa_shortage_bauxite_leg_ = 1 }
+						any_controlled_state = { hydro_aluminium_refinery > 0 }
+					}
+					random_controlled_state = {
+						limit = { hydro_aluminium_refinery > 0 }
+						disable_hydro_aluminium_mill = yes
+					}
+					# hydro_aluminium_refinery frees bauxite 35 and NO coal; the pre-charge booked the plain 32/20.
+					add_to_temp_variable = {
+						var = tempBauxite
+						value = 3
+					}
+					subtract_from_temp_variable = {
+						var = tempCoal
+						value = 20
+					}
 				}
 			}
 		}
@@ -431,13 +509,13 @@ economy_decisions = {
 		icon = aluminium
 
 		available = {
-			check_variable = { resource@bauxite > -25 }
+			check_variable = { resource@bauxite > -32 }
 			hidden_trigger = {
 				is_ai = yes
 			}
 		}
 		activation = {
-			check_variable = { resource@bauxite < -26 }
+			check_variable = { resource@bauxite < -33 }
 			OR = {
 				any_controlled_state = {
 					hydro_aluminium_refinery > 0
@@ -457,32 +535,120 @@ economy_decisions = {
 
 		complete_effect = {
 			custom_effect_tooltip = bauxite_shortage_avoided_tt
+			# Fix 45: the bid was ACCEPTED - the market answered and the balance came back
+			# above -32, which is what cancelled this mission. No outstanding bid to retreat.
+			clear_variable = WA_AI_bauxite_bid_hydro
 		}
 
 		timeout_effect = {
 			custom_effect_tooltip = bauxite_shortage_tt
 			set_temp_variable = { tempBauxite = resource@bauxite }
 			set_temp_variable = { tempCoal = resource@coal }
+			# Fix 45: retreat on the variant the bid opened. The reopen decision prefers
+			# hydro (35 bauxite, no coal) while this loop closes plain first (32 bauxite),
+			# so a hydro bid retreated 3 bauxite short of where it started. Repeated, that
+			# walks the balance down 3 per cycle into [-33, -32] - below the reopen gate
+			# (> -32) and above this mission's arm (< -33), where NEITHER arm of the
+			# controller acts - while swapping active plain mills for hydro ones at zero
+			# change in aluminium output. Matching the retreat to the bid makes cost equal
+			# credit in every case, and keeps the coal-sparing hydro preference intact.
+			# The iron pair needs none of this: hydro_steel_refinery costs the same 25 iron
+			# as the plain variant, so its bid and retreat already cancel exactly. Do NOT
+			# mirror this to the steel loops - same reason their ordering was left alone in
+			# Fix 43 (see documentation/WA_REFINERY_CONTROLLER_REVIEW.md 3.3).
+			# Read once and clear: the marker steers only the FIRST closure of a retreat,
+			# after which plain-first resumes. An external collapse that closes several
+			# mills is not a bid being refused and must not be steered by one.
+			set_temp_variable = { _wa_bid_was_hydro_ = 0 }
+			if = {
+				limit = { has_variable = WA_AI_bauxite_bid_hydro }
+				set_temp_variable = { _wa_bid_was_hydro_ = WA_AI_bauxite_bid_hydro }
+				clear_variable = WA_AI_bauxite_bid_hydro
+			}
 			while_loop_effect = {
 				limit = {
 					OR = {
-						check_variable = { tempBauxite < -26 }
+						check_variable = { tempBauxite < -33 }
 						check_variable = { tempCoal < -61 }
 					}
 				}
+				# Fix 42: credit what the building actually frees, not less.
+				# aluminium_refinery costs bauxite 32 / coal 20 (common/buildings/00_buildings.txt);
+				# this loop credited 25 / 15, so it under-counted every closure and kept shutting
+				# mills that were already unnecessary. The iron and coal missions in this same file
+				# credit their true costs (25/20 and 60) - the bauxite pair was the outlier.
+				# Fix 43: record which leg drove this iteration BEFORE the pre-charge moves the
+				# counters - afterwards tempBauxite no longer reflects the entry condition.
+				set_temp_variable = { _wa_shortage_bauxite_leg_ = 0 }
+				if = { limit = { check_variable = { tempBauxite < -33 } } set_temp_variable = { _wa_shortage_bauxite_leg_ = 1 } }
 				add_to_temp_variable = {
 					var = tempBauxite
-					value = 25
+					value = 32
 				}
 				add_to_temp_variable = {
 					var = tempCoal
-					value = 15
+					value = 20
 				}
-				random_controlled_state = {
+				# Fix 45: an outstanding HYDRO bid retreats on a hydro mill, so the 35 bauxite
+				# it spent comes back as 35. Gated on the bauxite leg for the same termination
+				# reason as the fallback below, and it clears its own marker so only the first
+				# closure of this pass is steered.
+				if = {
 					limit = {
-						aluminium_refinery > 0
+						check_variable = { _wa_bid_was_hydro_ = 1 }
+						check_variable = { _wa_shortage_bauxite_leg_ = 1 }
+						any_controlled_state = { hydro_aluminium_refinery > 0 }
 					}
-					disable_aluminium_mill = yes
+					random_controlled_state = {
+						limit = { hydro_aluminium_refinery > 0 }
+						disable_hydro_aluminium_mill = yes
+					}
+					# hydro_aluminium_refinery frees bauxite 35 and NO coal; the pre-charge booked the plain 32/20.
+					add_to_temp_variable = {
+						var = tempBauxite
+						value = 3
+					}
+					subtract_from_temp_variable = {
+						var = tempCoal
+						value = 20
+					}
+					set_temp_variable = { _wa_bid_was_hydro_ = 0 }
+				}
+				# Fix 43: the shortage loops could only ever close the PLAIN variant while the
+				# reactivate decisions PREFER hydro. A country left holding only hydro mills had a
+				# mission that re-armed every 9 days and closed nothing - campaign 911bed3c, ENG ran
+				# 3 hydro aluminium levels (105 bauxite) for ~21 months while 12 plain levels sat
+				# inactive and the deficit never cleared. Both variants must be closable.
+				else_if = {
+					limit = { any_controlled_state = { aluminium_refinery > 0 } }
+					random_controlled_state = {
+						limit = { aluminium_refinery > 0 }
+						disable_aluminium_mill = yes
+					}
+					set_temp_variable = { _wa_bid_was_hydro_ = 0 }
+				}
+				else_if = {
+					limit = {
+						# Only while the BAUXITE leg drives: a hydro closure frees no coal, so on a
+						# coal-driven pass it would close mills that cannot help - and since the patch
+						# below takes back all 20 coal, tempCoal would stop advancing and this
+						# while_loop_effect would never terminate.
+						check_variable = { _wa_shortage_bauxite_leg_ = 1 }
+						any_controlled_state = { hydro_aluminium_refinery > 0 }
+					}
+					random_controlled_state = {
+						limit = { hydro_aluminium_refinery > 0 }
+						disable_hydro_aluminium_mill = yes
+					}
+					# hydro_aluminium_refinery frees bauxite 35 and NO coal; the pre-charge booked the plain 32/20.
+					add_to_temp_variable = {
+						var = tempBauxite
+						value = 3
+					}
+					subtract_from_temp_variable = {
+						var = tempCoal
+						value = 20
+					}
 				}
 			}
 		}
@@ -2328,7 +2494,14 @@ economy_decisions = {
 					hydro_steel_refinery_inactive > 0
 				}
 			}
-			check_variable = { resource@iron > -1}
+			# Fix 44: bid room, not deficit cleared. `> -1` demanded the deficit be ERASED
+			# before reopening, so the country could never hold more than one quantum of
+			# deficit at a time - and a bid needs two: the standing one plus the bid itself.
+			# Iron trades at 25 per civilian factory (00_resources.txt cic 0.04), and one
+			# refinery consumes the same 25, so a deficit shallower than 25 has no whole-factory
+			# purchase that fills it. Campaign 911bed3c: ENG oscillated between -30 and +2 for
+			# 19 months, never once deepening past a quantum - it never placed a bid at all.
+			check_variable = { resource@iron > -25 }
 			check_variable = { resource@coal > -1}
 			OR = {
 				check_variable = { resource_imported@steel > 0 }
@@ -2477,7 +2650,14 @@ economy_decisions = {
 					hydro_aluminium_refinery_inactive > 0
 				}
 			}
-			check_variable = { resource@bauxite > -1}
+			# Fix 44: bid room, not deficit cleared. `> -1` demanded the deficit be ERASED
+			# before reopening, so the country could never hold more than one quantum of
+			# deficit at a time - and a bid needs two: the standing one plus the bid itself.
+			# Bauxite trades at 32 per civilian factory (00_resources.txt cic 0.03125), and one
+			# refinery consumes the same 32, so a deficit shallower than 32 has no whole-factory
+			# purchase that fills it. Campaign 911bed3c: ENG oscillated between -30 and +2 for
+			# 19 months, never once deepening past a quantum - it never placed a bid at all.
+			check_variable = { resource@bauxite > -32 }
 			check_variable = { resource@coal > -1}
 			OR = {
 				check_variable = { resource_imported@aluminium > 0 }
@@ -2524,6 +2704,12 @@ economy_decisions = {
 		cost = 0
 
 		complete_effect = {
+			# Fix 45: record which variant this bid opened, so bauxite_shortage_ai's timeout
+			# retreats on the same one. Hydro costs 35 bauxite and plain 32; the retreat loop
+			# closes plain first, so a hydro bid used to come back 3 short and the balance
+			# drifted into the [-33, -32] gap between the reopen gate and the mission's arm,
+			# where neither controller acts. Written on EVERY branch (never left stale from an
+			# earlier bid); absent or 0 both mean "retreat plain-first", the prior behaviour.
 			IF = {
 				limit = {
 					any_controlled_state = {
@@ -2531,6 +2717,7 @@ economy_decisions = {
 						is_core_of = ROOT
 					}
 				}
+				set_variable = { WA_AI_bauxite_bid_hydro = 1 }
 				random_controlled_state = {
 					limit = {
 						hydro_aluminium_refinery_inactive > 0
@@ -2549,6 +2736,7 @@ economy_decisions = {
 						is_core_of = ROOT
 					}
 				}
+				set_variable = { WA_AI_bauxite_bid_hydro = 0 }
 				random_controlled_state = {
 					limit = {
 						aluminium_refinery_inactive > 0
@@ -2566,6 +2754,7 @@ economy_decisions = {
 						hydro_aluminium_refinery_inactive > 0
 					}
 				}
+				set_variable = { WA_AI_bauxite_bid_hydro = 1 }
 				random_controlled_state = {
 					limit = {
 						hydro_aluminium_refinery_inactive > 0
@@ -2577,6 +2766,9 @@ economy_decisions = {
 				}
 			}
 			else = {
+				# No `any_controlled_state` guard on this branch, so nothing may open here;
+				# a 0 written without an opening is the safe default (plain-first retreat).
+				set_variable = { WA_AI_bauxite_bid_hydro = 0 }
 				random_controlled_state = {
 					limit = {
 						aluminium_refinery_inactive > 0
@@ -3094,6 +3286,73 @@ economy_decisions = {
 			else = {
 				set_variable = { warbonds_current_iteration = _warbonds_iteration }
 				activate_mission = warbonds_mission
+			}
+		}
+	}
+
+	# Fix: warbonds ladder retry. Armed by upgrade_warbonds when a series finished issuing
+	# but the next series could not start (typically because the final warbonds_mission
+	# wave drove economic_fatigue to 0, failing every upgrade guard - see campaign
+	# 31eaf7e6, JAP parked on Series_B while fatigue ratcheted to 93). Every 30 days it
+	# re-calls check_and_fire_auto_warbond_event once fatigue has climbed past 9 again
+	# (same threshold as the Series idea ai_will_do gate), and stops when the next series
+	# starts issuing (mission completes), the ladder is finished (Series_G), repayment
+	# starts, the player opted out (no_auto_upgrade_warbonds), or no series is held.
+	warbonds_upgrade_retry_mission = {
+		icon = hol_attract_foreign_investors
+
+		allowed = {
+			always = no
+		}
+
+		# Completes silently as soon as the next bond series starts issuing.
+		available = {
+			has_country_flag = issuing_war_bonds
+		}
+
+		days_mission_timeout = 30
+		is_good = yes
+
+		complete_effect = {
+		}
+
+		timeout_effect = {
+			hidden_effect = {
+				if = {
+					# Keep retrying only while the ladder can still progress.
+					limit = {
+						NOT = { has_country_flag = repaying_war_bonds }
+						NOT = { has_country_flag = no_auto_upgrade_warbonds }
+						NOT = { has_idea = Series_G_bonds }
+						NOT = { has_idea = No_bonds }
+						OR = {
+							has_idea = Series_A_bonds
+							has_idea = Series_B_bonds
+							has_idea = Series_C_bonds
+							has_idea = Series_D_bonds
+							has_idea = Series_E_bonds
+							has_idea = Series_F_bonds
+						}
+					}
+					if = {
+						limit = {
+							check_variable = { economic_fatigue > 9 }
+						}
+						check_and_fire_auto_warbond_event = yes
+					}
+					if = {
+						# Upgrade fired this cycle (issuing_war_bonds set by the new
+						# series' on_add): count it for savegame probes and stop -
+						# the normal mission chain has taken over again.
+						limit = { has_country_flag = issuing_war_bonds }
+						add_to_variable = { wa_warbonds_retry_upgrades = 1 }
+					}
+					else = {
+						# Not yet (fatigue still low, or the player was asked via
+						# afo_event.23 and has not answered) - keep watching.
+						activate_mission = warbonds_upgrade_retry_mission
+					}
+				}
 			}
 		}
 	}

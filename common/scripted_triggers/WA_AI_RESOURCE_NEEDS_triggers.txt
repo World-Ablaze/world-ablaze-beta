@@ -14,9 +14,33 @@
 # Reactive Layer: Check if AI needs resources
 ###############################################################################
 
+# NOTE (audit 2026-08-11): WA_AI_resource_<r>_shortage_months is only written for
+# rubber, steel and aluminium (WA_AI_CONSTRUCTION_PRIORITY_strategies.txt). The
+# shortage-months leg of the other reactive triggers below reads a variable that
+# is never written (always 0 = false); those triggers work through WA_AI_needs_<r>
+# alone (written monthly by WA_AI_misc_effects.txt).
+
 # Check if AI has any shortage of a resource (OR: critical need OR 3+ months history)
+# Coal is strategic (every synthetic refinery burns it): prospect PROACTIVELY
+# while the effective balance is under +100, not only once it is negative.
+# resource@coal is net-available minus unmet demand (see wa-savegame-analysis).
+# What resource@coal measures: extraction X, minus the trade law's export share
+# (already gone, not counted here), minus own consumption. The engine trade AI
+# only imports when that number is NEGATIVE, to bring it back to ~0 - it never
+# builds a reserve. So "< 100" is a genuine proactive bar: it fires for a
+# producer whose retained surplus is under 100 (and for an importer parked at
+# ~0), and stops for a producer keeping 100+ after export share and use. GER
+# late 1943 (+15 000) is far above it. See the lessons log entry "resource@X
+# and the engine trade AI" before changing the threshold.
+# The gauge (resource@) carries the peacetime/proactive case; the WA_AI_needs
+# counter (0..3, monthly ramp) carries the wartime shortage case.
+# Since 2026-08-15 the prospecting ai_will_do blocks have base weight 0 and this
+# trigger is the only thing that gives the coal decisions any weight for ROOT's
+# own sake, so a country sitting on +15 000 coal (GER, late 1943) no longer
+# re-prospects its states just because civs and PP are free.
 WA_AI_should_prospect_resource_coal = {
 	OR = {
+		check_variable = { resource@coal < 100 }
 		check_variable = { WA_AI_needs_coal > 1 }
 		check_variable = { WA_AI_resource_coal_shortage_months > 0 }
 	}
@@ -24,6 +48,10 @@ WA_AI_should_prospect_resource_coal = {
 
 WA_AI_should_prospect_resource_oil = {
 	OR = {
+		# WA_AI_needs_oil is written since Fix 39 (oil arm added 2026-08-11 to
+		# WA_AI_check_resource_needs in WA_AI_misc_effects.txt; thresholds 40/40,
+		# matching coal). WA_AI_resource_oil_shortage_months is STILL never written
+		# (always 0) - this trigger works through WA_AI_needs_oil alone.
 		check_variable = { WA_AI_needs_oil > 1 }
 		check_variable = { WA_AI_resource_oil_shortage_months > 0 }
 	}
@@ -45,8 +73,14 @@ WA_AI_should_prospect_resource_steel = {
 
 WA_AI_should_prospect_resource_aluminum = {
 	OR = {
-		check_variable = { WA_AI_needs_aluminum > 1 }
-		check_variable = { WA_AI_resource_aluminum_shortage_months > 0 }
+		# fixed audit 2026-08-11: the writers use the British spelling
+		# (WA_AI_needs_aluminium in WA_AI_misc_effects.txt,
+		# WA_AI_resource_aluminium_shortage_months in
+		# WA_AI_CONSTRUCTION_PRIORITY_strategies.txt); the American-spelled reads
+		# here were never written, so this trigger was permanently false. The
+		# trigger NAME keeps the American spelling its callers use.
+		check_variable = { WA_AI_needs_aluminium > 1 }
+		check_variable = { WA_AI_resource_aluminium_shortage_months > 0 }
 	}
 }
 
@@ -94,6 +128,8 @@ WA_AI_allies_need_coal = {
 WA_AI_allies_need_oil = {
 	any_other_country = {
 		is_in_faction_with = ROOT
+		# WA_AI_needs_oil is written since Fix 39 (oil arm in
+		# WA_AI_check_resource_needs, WA_AI_misc_effects.txt) - live trigger now.
 		check_variable = { WA_AI_needs_oil = 3 }
 	}
 }
@@ -115,7 +151,9 @@ WA_AI_allies_need_steel = {
 WA_AI_allies_need_aluminum = {
 	any_other_country = {
 		is_in_faction_with = ROOT
-		check_variable = { WA_AI_needs_aluminum = 3 }
+		# fixed audit 2026-08-11: writer uses the British spelling (see the
+		# reactive aluminium trigger above)
+		check_variable = { WA_AI_needs_aluminium = 3 }
 	}
 }
 
@@ -152,15 +190,16 @@ WA_AI_allies_need_bauxite = {
 # Proactive Layer: Check if AI is a strategic exporter
 ###############################################################################
 
-# Strategic exporters maintain high production during peace
-# Hardcoded list from trade laws + dynamic Free Trade detection
+# Strategic exporters maintain high production during peace.
+# WHO is an exporter lives in WA_AI_CONFIG.txt (WA_AI_CONFIG_is_strategic_<r>_exporter);
+# this file only adds the capability conditions (peace + a trade posture that
+# actually sells). Read by the "Proactive: Strategic exporter boost" modifier
+# that tools/needs_aware_generator.py emits into every tungsten / rubber / oil
+# prospecting decision (add = 100 on a base of 0).
 
 WA_AI_is_strategic_tungsten_exporter = {
 	has_war = no
-	OR = {
-		tag = SWE
-		tag = POR
-	}
+	WA_AI_CONFIG_is_strategic_tungsten_exporter = yes
 	OR = {
 		has_idea = free_trade
 		has_completed_focus = POR_extraction_industries  # POR focus requirement
@@ -169,26 +208,14 @@ WA_AI_is_strategic_tungsten_exporter = {
 
 WA_AI_is_strategic_rubber_exporter = {
 	has_war = no
-	OR = {
-		tag = MAL
-		tag = INS
-		tag = BRA
-	}
-	OR = {
-		has_idea = free_trade
-	}
+	WA_AI_CONFIG_is_strategic_rubber_exporter = yes
+	has_idea = free_trade
 }
 
 WA_AI_is_strategic_oil_exporter = {
 	has_war = no
-	OR = {
-		tag = IRQ
-		tag = BRA
-		tag = UKO  # UK Oil fields
-	}
-	OR = {
-		has_idea = free_trade
-	}
+	WA_AI_CONFIG_is_strategic_oil_exporter = yes
+	has_idea = free_trade
 }
 
 # Generic dynamic exporter: any country with Free Trade law and surplus factories

@@ -30,6 +30,7 @@ All code references use the current refactored file structure:
 | 10 | No pre-war pathfinding | Medium | Occasional | FIXED (Fix 23) |
 | 11 | Enemy puppet frontlines | Medium | Occasional | OUTSTANDING |
 | 12 | Single beachhead per continent | Medium | Occasional | DESIGN LIMITATION |
+| 13 | Frontier-port type leak into railway validation | High | Occasional | FIXED (Fix 50) |
 
 ---
 
@@ -117,6 +118,18 @@ if = {
     # Only queue if path exists
 }
 ```
+
+---
+
+### EDGE CASE 13: Frontier-Port Type Leak Into Railway Validation (Fix 50)
+
+**Location:** `core.txt` route post-processing and `helpers.txt` (`WA_AI_PC_create_frontier_port`)
+
+**Issue:** Railway validation previously copied `_project_type_id` from a shared temporary. A partial route ending at a new frontier port changed that temp from railway type 13 to naval-base type 14. When this was the last relevant write in the route loop, validation skipped stale railways and instead considered unrelated port projects for cancellation.
+
+**Fix Applied:** The post-processing call now sets `_strategy_id` directly from `@WA_AI_PC_railway_TYPE_ID`. Port helpers remain free to tag their own queued projects as type 14, but their shared scratch state can no longer change which project family the railway validator owns.
+
+**Regression boundary:** The generic validator is unchanged and has no other callers. Historical and ahistorical routes use the same constant-based filter.
 
 ---
 
@@ -232,3 +245,4 @@ This is actually FIXED in the current code. The frontline detection at line 66-7
 | 23 | No pre-war pathfinding | Invalid railway queues | Added pathfinding validation to pre-war targets |
 | 24 | Owned vs controlled | Inconsistent border/frontline | Changed to `every_controlled_state` consistently |
 | 25 | Puppet false borders | Illogical railway decisions | Removed puppet border extension from border check |
+| 50 | Frontier-port type leak | Port cancellations; stale railways retained | Pinned stale-project validation to railway type 13 |

@@ -510,7 +510,7 @@ WA_AI_NAVAL_DEFAULT_legacy_DONT_GET_TRAPPED_HERE_avoid_sea_region_368_area = {
 
 
 # Migrated from common/ai_strategy/wa_default.txt:1578-1610
-WA_AI_NAVAL_DEFAULT_legacy_DONT_GET_TRAPPED_HERE_avoid_sea_region_241_area = {
+WA_AI_NAVAL_DEFAULT_legacy_DONT_GET_TRAPPED_HERE_block_sea_region_241_area = {
 	enable = {
 		has_navy_size = {
 			size > 9
@@ -533,6 +533,15 @@ WA_AI_NAVAL_DEFAULT_legacy_DONT_GET_TRAPPED_HERE_avoid_sea_region_241_area = {
 		NOT = {
 			122 = { CONTROLLER = { is_subject_of = ROOT } }
 		}
+		NOT = {
+			120 = { CONTROLLER = { tag = ROOT } }
+		}
+		NOT = {
+			120 = { CONTROLLER = { is_in_faction_with = ROOT } }
+		}
+		NOT = {
+			120 = { CONTROLLER = { is_subject_of = ROOT } }
+		}
 	}
 
 	abort_when_not_enabled = yes
@@ -543,6 +552,35 @@ WA_AI_NAVAL_DEFAULT_legacy_DONT_GET_TRAPPED_HERE_avoid_sea_region_241_area = {
 		value = 2000
 	}
 }
+
+# WA_AI_NAVAL_DEFAULT_legacy_DONT_GET_TRAPPED_HERE_avoid_sea_region_241_area = {
+# 	enable = {
+# 		has_navy_size = {
+# 			size > 9
+# 		}
+# 		AND = {
+# 			OR = {
+# 				133 = { CONTROLLER = { tag = ROOT } }
+# 				133 = { CONTROLLER = { is_in_faction_with = ROOT } }
+# 				133 = { CONTROLLER = { is_subject_of = ROOT } }
+# 			}
+# 			OR = {
+# 				122 = { CONTROLLER = { tag = ROOT } }
+# 				122 = { CONTROLLER = { is_in_faction_with = ROOT } }
+# 				122 = { CONTROLLER = { is_subject_of = ROOT } }
+# 			}
+# 		}
+
+# 	}
+
+# 	abort_when_not_enabled = yes
+
+# 	ai_strategy = {
+# 		type = naval_avoid_region
+# 		id = 241
+# 		value = 2000
+# 	}
+# }
 
 
 # Migrated from common/ai_strategy/wa_default.txt:1612-1635
@@ -573,6 +611,19 @@ WA_AI_NAVAL_DEFAULT_legacy_DONT_GET_TRAPPED_HERE_avoid_sea_region_323_area = {
 
 
 # Migrated from common/ai_strategy/wa_default.txt:1676-1705
+#
+# Fix 53a (2026-08-13, checklist R36): de-duplicated. Each id was written TWICE,
+# once quoted and once bare. Both spellings are accepted by the engine (vanilla uses
+# the bare form at ENG.txt:1379 and the quoted form at JAP.txt:970), and
+# naval_mission_threshold is documented Additive per mission
+# (WA_AI_MILITARY_SYSTEM.md:106), so the pairs SUMMED: strike force was running at
+# -1000 and patrol at -2000, double the intended values and 10-20x the type's
+# documented -100..+100 range. Against an engine base of 100 that put patrol's bar at
+# -1900 while convoy escort's stayed at +100 - the asymmetry behind R36's "USA runs 88
+# ships on patrol across its own convoy coasts against 51 on escort". The intended
+# single values are kept as-is (still out of the documented range, still permissive
+# enough for the block's stated purpose) so this change removes an artefact without
+# also re-tuning the two missions it was aimed at.
 WA_AI_NAVAL_DEFAULT_legacy_AI_naval_mission_fix = { ##Fixes the AI not putting out its strike force and patrols
 	enable = {
 		always = yes
@@ -583,18 +634,6 @@ WA_AI_NAVAL_DEFAULT_legacy_AI_naval_mission_fix = { ##Fixes the AI not putting o
 	    type = naval_mission_threshold
 	    id = "MISSION_STRIKE_FORCE"
 	    value = -500
-	}
-
-	ai_strategy = {
-	    type = naval_mission_threshold
-	    id = MISSION_STRIKE_FORCE
-	    value = -500
-	}
-
-	ai_strategy = {
-	    type = naval_mission_threshold
-	    id = MISSION_PATROL
-	    value = -1000
 	}
 
 	ai_strategy = {

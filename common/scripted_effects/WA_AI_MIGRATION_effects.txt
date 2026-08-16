@@ -1,0 +1,182 @@
+############################################################################################################
+#	World Ablaze AI mod - one-shot save migrations
+#
+#	Home for run-once effects that repair state a savegame is already carrying because of a bug that has
+#	since been fixed in script. A script fix only ever cures NEW occurrences; anything the bug already
+#	wrote into an in-progress campaign stays there until something removes it. That "something" lives here.
+#
+#	>>> THESE ARE MANUAL TOOLS. Nothing here is wired to an on_action, and nothing here should be. <<<
+#
+#	Invoke from the in-game console, from any country (these effects only need *a* country scope to run
+#	`every_country` from):
+#
+#	    effect WA_AI_invasions_migration_1 = yes
+#
+#	Why manual rather than automatic:
+#	  - `on_startup` does NOT re-fire when a savegame is loaded (measured 2026-08-10 against campaign
+#	    2b607968: the migration wired there alone left no global flag in the re-saved file, with the mod
+#	    path, the script parse and the process restart all verified clean). So the obvious automatic hook
+#	    does not work at all - see .claude/skills/wa-lessons-learned/references/lessons-log.md.
+#	  - The hooks that DO run in a loaded save are the recurring pulses, and paying an O(n^2) sweep out of
+#	    a gameplay tick - on every campaign, forever, to repair a handful of legacy saves - is the wrong
+#	    trade. A migration is a one-off maintenance action on a specific save; the console is where one-off
+#	    maintenance actions belong.
+#
+#	House rules for every migration in this file:
+#	  1. Idempotent. Running it twice must be harmless: the second run finds nothing to repair and changes
+#	     nothing. No `has_global_flag` guard - a manual tool that silently does nothing is a trap.
+#	  2. Leaves a fingerprint in the save: a global flag saying it ran, and a global counter saying how much
+#	     it repaired (accumulated across runs, never overwritten). Both are what the checklist probes read.
+#	  3. Logs its result with `log = ...` so the console operator sees the outcome in game.log immediately,
+#	     without saving the game and parsing the file.
+#	  4. Never removes anything the current (fixed) code still depends on beyond a bounded, documented
+#	     loss - see the pending-array note in migration 1.
+#
+#	A migration is retired (deleted from this file) once no supported save can still predate the fix it
+#	repairs.
+############################################################################################################
+
+
+############################################################################################################
+#	MIGRATION 1 - purge stranded WA_AI_invasions_modifier relation modifiers
+#
+#	Repairs: the pre-Fix-32 permanent naval-invasion attack penalty.
+#	Fix 32 = 76dde84ed (follow-up to 17505d9a9), see events/WA_AI_invasions.txt and
+#	common/scripted_effects/WA_AI_DIVISION_CREATOR_effects.txt (WA_AI_DIVISION_spawn_invasion).
+#
+#	The bug: WA_AI_DIVISION_spawn_invasion adds `WA_AI_invasions_modifier` (attack_bonus_against = -0.25),
+#	stored INVADER-side (the invader's diplomacy entry toward the target), and schedules WA_AI_invasions.1
+#	to take it off 14 days later. Before Fix 32 that expiry event was fired ON THE TARGET and identified
+#	the invader through FROM - which does not survive a delayed country_event - so its trigger failed
+#	silently and NOTHING was ever removed. Every penalty ever applied in a pre-Fix-32 campaign is still on
+#	the invader, permanently. Observed on campaign 2b607968: GER carrying -25% attack against SOV since
+#	1941, USA/ENG against ITA since Husky, JAP against several Pacific targets.
+#
+#	Why Fix 32 alone cannot heal those saves: the fixed removal path walks the invader's
+#	WA_AI_invasions_pending_targets array, which is only written at add time by the FIXED code. Pairs
+#	created before the fix have no array entry, so nothing will ever look for them. They need this sweep.
+#
+#	Cost: O(existing countries^2) meta_trigger evaluations (~100x100 in a mid-war save), once, at load.
+#	Accepted deliberately - HOI4 script exposes no iterator over a country's relation modifiers
+#	(`has_relation_modifier` is a point query only), so the pair set cannot be enumerated any other way,
+#	and this runs alongside WA_AI_MAP_startup which is far heavier. Non-existent countries are skipped for
+#	free: `every_country` only iterates existing countries, and the engine garbage-collects the relation
+#	(and its modifiers) when a country is annexed - so annexed invaders/targets need no handling.
+############################################################################################################
+
+# THIS = any country scope. Console-invoked (`effect WA_AI_invasions_migration_1 = yes`); the host
+#        country is never touched as a country - it only provides a scope to run `every_country` from.
+# Inputs:  none.
+# Outputs: global flag WA_AI_invasions_migration_1_done (this save has been swept at least once) and
+#          global variable WA_AI_invasions_migration_1_purged (pairs cleaned, ACCUMULATED across runs -
+#          probe fingerprint for checklist R14). Also writes the count to game.log.
+# Re-runnable: a second run finds nothing left to remove, adds 0 to the counter and changes no country
+#        state. Deliberately NOT guarded by its own flag - a manual tool that silently no-ops is a trap.
+WA_AI_invasions_migration_1 = {
+	set_temp_variable = { _mig_purged_total = 0 }
+
+	####################################################################################################
+	# Pass A - snapshot every existing country id into a temp array.
+	# The sweep needs the TARGET's tag as a literal token inside a meta_trigger/meta_effect, and the
+	# only way to produce one is `[?<var>.GetTag]` off a variable holding a country id (same mechanism
+	# WA_AI_invasions.1 and WA_AI_DIVISION_spawn_invasion use). Snapshotting first lets pass B stay in
+	# the INVADER's scope for the whole inner loop, so the temp variable the meta blocks read is set in
+	# the very scope that reads it - no cross-scope variable path inside a meta block.
+	####################################################################################################
+	clear_temp_array = _mig_scan
+	every_country = {
+		# THIS = candidate target. Temp arrays are execution-local, not scope-local, so _mig_scan built
+		# here is visible from the other scopes of this same effect run (same idiom as
+		# `updated_volunteer_targets` in WA_AI_volunteer_effects.txt).
+		add_to_temp_array = { _mig_scan = THIS.id }
+	}
+
+	####################################################################################################
+	# Pass B - for every country, remove any WA_AI_invasions_modifier it still holds toward anyone.
+	####################################################################################################
+	every_country = {
+		# THIS = candidate INVADER. The modifier is stored invader-side, so `remove_relation_modifier`
+		# must run here, with the target passed as a literal tag.
+		for_each_loop = {
+			array = _mig_scan
+			value = _mig_target
+			# _mig_target = a country id; [?_mig_target.GetTag] resolves it to a literal tag token.
+			# The self-pair (invader == target) needs no guard: a country never holds a relation
+			# modifier toward itself, so has_relation_modifier is simply false for it.
+			if = {
+				limit = {
+					meta_trigger = {
+						text = {
+							has_relation_modifier = {
+								target = [COUNTRY_TAG]
+								modifier = WA_AI_invasions_modifier
+							}
+						}
+						COUNTRY_TAG = "[?_mig_target.GetTag]"
+						# debug = yes
+					}
+				}
+				meta_effect = {
+					text = {
+						remove_relation_modifier = {
+							target = [COUNTRY_TAG]
+							modifier = WA_AI_invasions_modifier
+						}
+					}
+					COUNTRY_TAG = "[?_mig_target.GetTag]"
+					# debug = yes
+				}
+				# Counter coherence (campaign checklist R14). The R14 probe reads adds/removes/active
+				# and expects `adds - removes` to equal only the pairs whose target was annexed inside
+				# its 14-day window. This migration DELIBERATELY falsifies that reading for pre-fix
+				# pairs: it books a "remove" for a modifier that was never removed by a real expiry,
+				# only by this bulk purge. That is the intended trade - a migrated save then shows
+				# adds ~= removes and active = 0, i.e. the clean post-fix signature, and every
+				# subsequent (post-fix) invasion is accounted for honestly by WA_AI_invasions.1.
+				# A save whose counters were audited pre-migration cannot be compared to the same save
+				# post-migration; score R14 on the run's own later saves, not across the migration.
+				add_to_variable = { WA_AI_invasions_dbg_removes = 1 }
+				add_to_temp_variable = { _mig_purged_total = 1 }
+			}
+		}
+	}
+
+	####################################################################################################
+	# Pass C - counter and pending-array coherence.
+	####################################################################################################
+	every_country = {
+		# THIS = any country.
+		# _active counts pairs currently inside their 14-day window. After pass B no pre-fix pair can
+		# still be live, and pass C also drops any post-fix pending pair (below), so 0 is the truth for
+		# every country here - and the R14 pass condition "active = 0 outside a landing window" becomes
+		# checkable from the first post-migration save.
+		if = {
+			limit = { has_variable = WA_AI_invasions_dbg_active }
+			set_variable = { WA_AI_invasions_dbg_active = 0 }
+		}
+		# Drop any pending pair recorded by the FIXED code. Bounded loss, documented: if this save was
+		# taken by a post-Fix-32 build inside a live 14-day window, that pair's penalty is removed by
+		# pass B (or was already gone) and its bookkeeping is dropped here, so the invader loses at most
+		# the remainder of one legitimate 14-day penalty - strictly less harmful than the permanent
+		# penalty this migration exists to clear, and self-healing: WA_AI_invasions.1 is still queued
+		# for it, finds an empty array, and no-ops. No-op on countries that never had the array.
+		clear_array = WA_AI_invasions_pending_targets
+	}
+
+	# Probe fingerprint (checklist R14). ACCUMULATED, not assigned: a second console run must not erase
+	# the record of what the first one repaired. 0 after the only run means the save was already clean.
+	add_to_variable = { global.WA_AI_invasions_migration_1_purged = _mig_purged_total }
+
+	# Marks the save as swept. Not a guard - nothing reads it to decide whether to run (see the file
+	# header); it exists so a probe can tell "swept, nothing to clean" apart from "never swept", which
+	# read identically on the country variables alone.
+	set_global_flag = WA_AI_invasions_migration_1_done
+
+	# Console feedback: the operator invoked this by hand and should not have to save the game and parse
+	# the file to learn whether it did anything. Appears in logs/game.log.
+	# Interpolation limited to the `[?var]` form the mod already uses (see common/raids/WA_air_raids_day.txt);
+	# game.log stamps its own date prefix, so no date promotion is needed here.
+	log = "WA_AI migration 1 (invasion penalties): purged [?_mig_purged_total] stranded pair(s)."
+
+	clear_temp_array = _mig_scan
+}

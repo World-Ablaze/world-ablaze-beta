@@ -15,8 +15,8 @@ The railway system includes an automated in-game test suite that runs 8 function
 | File | Purpose |
 |------|---------|
 | `common/scripted_effects/WA_TEST_railway_framework.txt` (~433 lines) | Generic test framework: state management, pass/fail marking, timeout, print function |
-| `common/scripted_effects/WA_TEST_railway.txt` (~720 lines) | Railway test suite: 8 tests with launch/check pairs |
-| `events/wa_events_test.txt` (~55 lines) | Periodic checker event (`wa_test.100`) |
+| `common/scripted_effects/WA_TEST_railway.txt` | Railway test suite: 14 registered slots with launch/check pairs |
+| `events/wa_events_test.txt` | Periodic checker event (`wa_test.100`) |
 | `common/scripted_effects/zz_debug_effects.txt` | Console commands: `d_WA_TEST_railway`, `d_WA_TEST_results` |
 | `common/decisions/_debug_decisions.txt` | Debug decisions for launching/viewing tests |
 
@@ -76,7 +76,7 @@ effect d_WA_TEST_results           # Same as above, with log confirmation
 `WA_TEST_init` only resets tests that are NOT already PASSED. This means:
 - **Run 1 at peace (1936)**: Tests 003/007/008 pass immediately, 004 is ONGOING, 001/002/006 skip
 - **Run 2 at war (~1937.7+)**: Previously PASSED tests stay green, tests 001/002/005/006 now launch
-- **Result**: All 8 tests can show PASSED after two runs at different game states
+- **Result**: State-dependent tests can accumulate PASSED results across runs at different game states
 
 ### Execution Flow
 
@@ -89,7 +89,7 @@ WA_TEST_railway_suite (scopes to JAP)
   +-- WA_TEST_init (reset non-PASSED tests only)
   +-- Enable logging, force interval=0
   +-- Clear existing railway projects (type 13 only)
-  +-- WA_TEST_railway_launch_all (launch all 8 tests)
+  +-- WA_TEST_railway_launch_all (launch all registered tests)
   +-- Schedule wa_test.100 in 7 days
   |
   v
@@ -98,7 +98,7 @@ on_weekly fires (existing on_actions)
   |
   v
 wa_test.100 (7 days later, then every 28 days)
-  +-- WA_TEST_check_timeout on all 8 tests
+  +-- WA_TEST_check_timeout on all registered tests
   +-- WA_TEST_railway_check_all (per-test check logic)
   +-- If any ONGOING: re-fire in 28 days
   +-- If all resolved: log final results, clear suite flag
@@ -133,7 +133,7 @@ Day values are `global.num_days` counts. Cross-reference with lifecycle log line
 
 ---
 
-### The 8 Automated Tests
+### The 8 Original Automated Tests
 
 #### TEST 001: Land War Strategy
 
@@ -205,20 +205,20 @@ Day values are `global.num_days` counts. Cross-reference with lifecycle log line
 **Location:** `WA_TEST_railway.txt` lines 328-380
 **Type:** Deferred
 
-**What it validates:** During peacetime, railway projects with pre-war priority (5000) appear when Japan has wargoals, justifications, or claims.
+**What it validates:** During peacetime, railway projects with pre-war priority (500, Fix 41 band compression) appear when Japan has wargoals, justifications, or claims.
 
 **Auto-skips when:** Japan is already at war (fail_code=99). Best tested at game start (1936).
 
 **Check logic:**
 1. Verify at least one railway project exists
-2. Verify at least one project has priority = 5000 (`@WA_AI_PC_railway_PRIO_PREWAR`)
+2. Verify at least one project has priority = 500 (`@WA_AI_PC_railway_PRIO_PREWAR`)
 
 **Fail codes:**
 | Code | Meaning |
 |------|---------|
 | 1 | Already at war (skipped) |
 | 2 | No railway projects in queue |
-| 3 | No projects with pre-war priority (5000) |
+| 3 | No projects with pre-war priority (500) |
 
 ---
 
@@ -321,6 +321,29 @@ Day values are `global.num_days` counts. Cross-reference with lifecycle log line
 
 ---
 
+#### TEST 014: Railway Validation Type Isolation (Fix 50)
+
+**Location:** `WA_TEST_railway.txt` (`WA_TEST_RW_014_launch`)
+**Type:** Immediate, synthetic queue unit test
+
+**What it validates:** The production wrapper `WA_AI_PC_railway_validate_queued_projects` always validates railway `type_id = 13`, even when `_project_type_id` has been left at 14 by frontier-port creation.
+
+**Check logic:**
+1. Add one synthetic off-path railway project (`type_id = 13`) and one synthetic off-path port project (`type_id = 14`) to JAP's PC queue.
+2. Set the shared `_project_type_id` temp to 14, reproducing the Fix 50 failure precondition.
+3. Call the same wrapper used by `WA_AI_PC_railway`.
+4. Pass only if the railway project was cancelled, the port project survived, and `_strategy_id = 13`.
+5. Remove whichever synthetic projects remain, restoring the live queue on both pass and fail paths.
+
+**Fail codes:**
+| Code | Meaning |
+|------|---------|
+| 1 | Stale railway project survived validation |
+| 2 | Port project was incorrectly cancelled |
+| 3 | Validator strategy ID was not pinned to 13 |
+
+---
+
 ### Test Coverage Matrix
 
 | System Component | Tests |
@@ -333,6 +356,7 @@ Day values are `global.num_days` counts. Cross-reference with lifecycle log line
 | Home port selection | 006 |
 | Queue data integrity | 005 |
 | Railway filtering (Ryukyu) | 003 |
+| Railway/port validation isolation | 014 |
 
 ---
 
@@ -458,7 +482,7 @@ OR = {
 - `STRATEGY_prewar_preparation` triggers (`strategies.txt` line 560)
 - Poland found via `ROOT = { is_justifying_wargoal_against = PREV }` or `has_wargoal_against` (lines 615-616)
 - Level 3 railways queued (line 568: `default_route_level = 3`)
-- Priority 5000 (line 569: `route_priority = @WA_AI_PC_railway_PRIO_PREWAR`)
+- Priority 500 (line 569: `route_priority = @WA_AI_PC_railway_PRIO_PREWAR`)
 
 ---
 
@@ -656,6 +680,7 @@ OR = {
 - [ ] TEST 006: Home Port Selection (PASSED at war)
 - [ ] TEST 007: Supply Chain Analysis (PASSED anytime)
 - [ ] TEST 008: Single-Node Detection (PASSED anytime)
+- [ ] TEST 014: Railway Validation Type Isolation (PASSED immediately)
 
 ### Manual Verification
 - [ ] TC-001 through TC-005: Basic functionality
@@ -668,4 +693,4 @@ OR = {
 ### Two-Run Coverage Pattern
 1. **Run 1 at peace (1936):** Tests 003/004/005/007/008 should resolve. Tests 001/002/006 skip.
 2. **Run 2 at war (~1937.7+):** Previously PASSED tests preserved. Tests 001/002/005/006 now launch.
-3. **Final check:** All 8 tests should show PASSED after both runs.
+3. **Final check:** Every non-migrated registered test should be PASSED after its preconditions have been exercised.

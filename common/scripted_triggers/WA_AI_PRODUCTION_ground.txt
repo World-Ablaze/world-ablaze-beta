@@ -47,6 +47,18 @@ WA_AI_PRODUCTION_build_infantry_stockpile_low = {
 	}
 }
 
+# Reserve effectively empty while at war - the "ITA runs an equipment debt from 1941" case.
+# The low tier's floors (5 inf / 2 support factories) are no-ops for a major already running
+# 50 factories on infantry; this tier adds real pressure when the buffer is actually gone.
+WA_AI_PRODUCTION_build_infantry_stockpile_critical = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	has_war = yes
+	OR = {
+		has_equipment = { infantry_equipment < 2000 }
+		has_equipment = { support_equipment < 1000 }
+	}
+}
+
 # ============================================================================
 # ARTILLERY TRIGGERS
 # ============================================================================
@@ -117,3 +129,35 @@ WA_AI_PRODUCTION_build_trains_reduce_factor = {
 	# Reduce train production factor for countries that don't need many trains
 }
 
+
+# ============================================================================
+# AMPHIBIOUS MECHANIZED (AMTRAC) TRIGGERS
+# ============================================================================
+# The archetype previously had NO production strategy at all: campaign 9be92c89
+# showed USA running 1 amtrac factory against templates consuming 3-8 amtrac
+# battalions per division. The purge-flag guard prevents oscillation with the
+# surplus purge decision in common/decisions/z_WA_ai.txt.
+
+WA_AI_PRODUCTION_build_amphibious_mech = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	WA_AI_TEMPLATES_use_marines = yes
+	WA_AI_TEMPLATES_has_amphibious_mechanized_unlocked = yes
+	has_war = yes
+	NOT = { has_country_flag = AI_purge_amphibious_mechanized_equipment_production }
+}
+
+WA_AI_PRODUCTION_amphibious_min_factories_small = {
+	WA_AI_PRODUCTION_build_amphibious_mech = yes
+	num_of_military_factories < 100
+}
+
+WA_AI_PRODUCTION_amphibious_min_factories_medium = {
+	WA_AI_PRODUCTION_build_amphibious_mech = yes
+	num_of_military_factories > 99
+	num_of_military_factories < 300
+}
+
+WA_AI_PRODUCTION_amphibious_min_factories_large = {
+	WA_AI_PRODUCTION_build_amphibious_mech = yes
+	num_of_military_factories > 299
+}

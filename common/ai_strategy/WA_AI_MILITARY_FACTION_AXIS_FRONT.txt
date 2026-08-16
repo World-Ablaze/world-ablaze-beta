@@ -36,22 +36,22 @@ WA_AI_MILITARY_AXIS_stop_crowding_up_the_soviet_line_FRONT = {
 	ai_strategy = {
 		type = front_unit_request
 		area = west_russia
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 	ai_strategy = {
 		type = front_unit_request
 		area = south_russia
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 	ai_strategy = {
 		type = front_unit_request
 		area = caucasus
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 	ai_strategy = {
 		type = front_unit_request
 		area = north_russia
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 }
 
@@ -68,17 +68,17 @@ WA_AI_MILITARY_AXIS_minors_avoid_africa_and_iran_FRONT = {
 	ai_strategy = {
 		type = front_unit_request
 		area = north_africa
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 	ai_strategy = {
 		type = front_unit_request
 		area = asia
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 	ai_strategy = {
 		type = front_unit_request
 		area = WA_AI_MILITARY_sink_africa_regions
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 }
 
@@ -98,45 +98,106 @@ WA_AI_MILITARY_AXIS_minors_stay_out_of_france = {
 	ai_strategy = {
 		type = front_unit_request
 		strategic_region = 239
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 
 	ai_strategy = {
 		type = front_unit_request
 		strategic_region = 19
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 
 	ai_strategy = {
 		type = front_unit_request
 		strategic_region = 290
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 
 	ai_strategy = {
 		type = front_unit_request
 		strategic_region = 5
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 }
 
 
 
+# purpose: make Axis fronts facing the Soviet Union execute their attack orders when the weekly
+#          posture calculus says battles are winnable (WA_AI_MILITARY_posture_effects.txt). Was
+#          unconditionally on, which kept a broken 1943+ Ostheer lunging into a superior Red Army;
+#          with the gate, the date-phased Barbarossa blocks below (priority 0) carry the scripted
+#          1941-42 opening and this block only re-fires when the front is actually winnable.
+#          Stale-variable note: posture_vs_SOV lingers after a peace, so has_war_with = SOV stays here.
+# range:   n/a (front_control)
+# policy:  Exclusive per front - priority 300; mutually exclusive with the grind block below by
+#          posture level; outranked by the level-500/10000 emergency stops in DEFAULT_FRONT_control.
+# domain:  FRONT
+# FIX 54 (2026-08-13): generalised off the literal tag SOV. The posture calculus publishes a verdict
+# per enemy but this block could read only one of them, so Soviet-aligned minors and any ahistorical
+# enemy were invisible to it. See WA_AI_MILITARY_ALLIES_exec_vs_germany in the ALLIES_FRONT file for
+# the full argument and the deliberate widening it carries. Name kept for this step; stage 2 collapses
+# the three faction pairs into one Default-layer pair.
 WA_AI_MILITARY_AXIS_exec_vs_sov = {
 	enable = {
 		WA_AI_MILITARY_is_axis_member = yes
-		has_war_with = SOV
+		WA_AI_MILITARY_posture_has_execute_target = yes
 	}
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = front_control
-		tag = SOV
+		country_trigger = {
+			has_war_with = ROOT
+			has_capitulated = no
+			OR = {
+				# Too small for a posture verdict - see WA_AI_MILITARY_posture_has_execute_target.
+				AND = {
+					is_major = no
+					NOT = { num_of_controlled_states > 4 }
+				}
+				ROOT = { check_variable = { WA_AI_MILITARY_posture_vs_@PREV = 1 } }
+			}
+		}
 		ratio = 0.2
 		priority = 300
 		ordertype = front
 		execution_type = balanced
 		execute_order = yes
+	}
+}
+
+
+# purpose: attrition grind vs the Soviet Union - posture level 2 means the Soviets are at maximum
+#          mobilization with a nearly dry manpower pool while the Axis holds a deep reserve, so
+#          pressing attacks pays even at odds below the level-1 bar. Careful execution: bleed,
+#          do not lunge.
+# range:   n/a (front_control)
+# policy:  Exclusive per front - priority 300; mutually exclusive with the exec block above by
+#          posture level (the calculus emits exactly one level per enemy).
+# domain:  FRONT
+# FIX 54: generalised off the literal tag SOV - see the exec block above. No "too small" branch here
+# on purpose: an enemy with no published verdict reads 0, never 2, so exec and grind stay mutually
+# exclusive exactly as before.
+WA_AI_MILITARY_AXIS_grind_vs_sov = {
+	enable = {
+		WA_AI_MILITARY_is_axis_member = yes
+		WA_AI_MILITARY_posture_has_grind_target = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_control
+		country_trigger = {
+			has_war_with = ROOT
+			has_capitulated = no
+			ROOT = { check_variable = { WA_AI_MILITARY_posture_vs_@PREV = 2 } }
+		}
+		ratio = 0.2
+		priority = 300
+		ordertype = front
+		execution_type = careful
+		execute_order = yes
+		manual_attack = yes
 	}
 }
 
@@ -175,25 +236,25 @@ WA_AI_MILITARY_AXIS_run_fools_you_are_encircled = {
 	ai_strategy = {
 		type = front_unit_request
 		area = caucasus
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 
 	ai_strategy = {
 		type = front_unit_request
 		strategic_region = 134
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 
 	ai_strategy = {
 		type = front_unit_request
 		strategic_region = 135
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 
 	ai_strategy = {
 		type = front_unit_request
 		area = asia
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 }
 
@@ -221,19 +282,19 @@ WA_AI_MILITARY_AXIS_run_fools_you_are_encircled_3 = {
 	ai_strategy = {
 		type = front_unit_request
 		state = 963
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 
 	ai_strategy = {
 		type = front_unit_request
 		state = 13
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 
 	ai_strategy = {
 		type = front_unit_request
 		state = 962
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 }
 
@@ -278,13 +339,13 @@ WA_AI_MILITARY_AXIS_war_with_soviets_barbarossa  = {
 	ai_strategy = {
 		type = front_unit_request
 		state = 137
-		value = 1000
+		value = 200 # economy: was 1000
 	}
 
 	ai_strategy = {
 		type = front_unit_request
 		strategic_region = 30
-		value = 1000
+		value = 200 # economy: was 1000
 	}
 
 	ai_strategy = {
@@ -491,23 +552,24 @@ WA_AI_MILITARY_AXIS_stop_shuffling = {
 		type = front_unit_request
 
 		area = switzerland
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 	ai_strategy = {
 		type = front_unit_request
 		area = asia
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 	ai_strategy = {
 		type = front_unit_request
 		area = spain
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 }
 
 
 # Phase 6 split from WA_AI_MILITARY_AXIS_minors_no_finland (FRONT domain)
 WA_AI_MILITARY_AXIS_minors_no_finland_FRONT = {
+	# always-on: static geographic constraint - Axis minors never man the Finnish front; no situational gate applies.
 
 	allowed = {
 		OR = {
@@ -529,7 +591,7 @@ WA_AI_MILITARY_AXIS_minors_no_finland_FRONT = {
 	ai_strategy = {
 		type = front_unit_request
 		tag = FIN
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 }
 
@@ -623,12 +685,12 @@ WA_AI_MILITARY_AXIS_help_germany_FRONT = {
 	ai_strategy = {
 		type = front_unit_request
 		strategic_region = 326
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 	ai_strategy = {
 		type = front_unit_request
 		strategic_region = 13
-		value = -1000
+		value = -100 # economy: was -1000
 	}
 }
 
@@ -702,6 +764,6 @@ WA_AI_MILITARY_AXIS_abandon_east_africa_FRONT = {
 	ai_strategy = {
 		type = front_unit_request
 		area = central_africa
-		value = -5000
+		value = -100 # economy: was -5000
 	}
 }

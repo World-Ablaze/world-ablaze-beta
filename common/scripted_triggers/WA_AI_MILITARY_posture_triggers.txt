@@ -1,0 +1,206 @@
+############################################################################################################
+#	World Ablaze AI mod - Military Offensive Posture - Triggers Module
+############################################################################################################
+#	The posture system answers one question per AI country, per week: "is executing battle plans
+#	useful right now, and against whom?" It replaces the old global gate on
+#	WA_AI_MILITARY_ALLIES_exec_vs_germany (alliance_strength_ratio > 2), which compared WORLDWIDE
+#	faction strength and therefore never fired in a late war where the Axis fields as many divisions
+#	as the Allies - even with crushing local superiority in France.
+#
+#	Calculus and publication:  common/scripted_effects/WA_AI_MILITARY_posture_effects.txt
+#	Consumers:                 common/ai_strategy/WA_AI_MILITARY_FACTION_ALLIES_FRONT.txt (exec/grind vs GER, downfall push vs JAP)
+#	                           common/ai_strategy/WA_AI_MILITARY_FACTION_AXIS_FRONT.txt (exec/grind vs SOV)
+#	                           common/ai_strategy/WA_AI_MILITARY_FACTION_CHINA_FRONT_FRONT.txt (exec/grind vs JAP)
+#	                           common/ai_strategy/WA_AI_MILITARY_COUNTRY_SOV_FRONT.txt (counterattack window vs GER)
+#	                           common/ai_strategy/WA_AI_MILITARY_COUNTRY_JAP_FRONT.txt (1944 Ichi-Go vs CHI)
+#	                           common/ai_strategy/WA_AI_MILITARY_COUNTRY_ITA_FRONT.txt (North-Africa offensive vs the
+#	                               East-Egypt controller, via WA_AI_MILITARY_north_africa_offensive_viable
+#	                               in WA_AI_MILITARY_triggers.txt)
+#	                           common/ai_strategy/WA_AI_MILITARY_DEFAULT_FRONT_control.txt (low-equipment hold)
+#	Cadence:                   on_weekly in common/on_actions/WA_AI_misc_on_actions.txt
+#
+#	Published state (country scope):
+#		var  WA_AI_MILITARY_posture          0 = hold, 1 = execute plans, 2 = attrition grind
+#		var  WA_AI_MILITARY_posture_vs_<TAG> per-enemy posture level, one variable per major enemy
+#		flag WA_AI_AIFC_hold_the_line        set while the hard brake is on, so AIFC stops concentrating
+#		                                     (this system is the designated writer of that flag - see
+#		                                     WA_AI_AIFC_posture_defensive in WA_AI_AIFC_triggers.txt)
+#
+#	THIS FILE IS THE CONTROL PANEL. Thresholds and switches live here; arithmetic lives in the effect.
+############################################################################################################
+
+### Posture eligibility constants (must match common/scripted_effects/WA_AI_MILITARY_posture_effects.txt)
+@WA_AI_POSTURE_MIN_EQ = 0.9			# fielded-equipment ratio required to order any execution
+@WA_AI_POSTURE_BRAKE_SURRENDER = 0.2	# lost ground brakes only a weakened army (see hard-brake trigger)
+@WA_AI_POSTURE_BRAKE_SURRENDER_HARD = 0.45	# near-capitulation brakes an army that is not still operational
+@WA_AI_POSTURE_BRAKE_MIN_MP = 150000	# manpower floor for the weakened-army test (matches MIN_OWN_MP)
+
+### "Army still operational" constants (triggers-file only; no effects-file twin)
+@WA_AI_POSTURE_ALIVE_MIN_DIV = 40		# fewer deployed divisions than this is a rump, not an army
+@WA_AI_POSTURE_ALIVE_MIN_STATES = 20	# state base below this cannot sustain one (matches the railway hatch)
+
+
+############################################################################################################
+#	MASTER SWITCH - does this country use the posture system at all?
+#	THIS = COUNTRY
+#
+#	Default: every AI country. To restrict, edit THIS TRIGGER ONLY (AIFC-style):
+#		Majors only:            is_major = yes
+#		Disable entirely:       always = no
+############################################################################################################
+
+WA_AI_MILITARY_posture_enabled = {
+	is_ai = yes
+}
+
+
+############################################################################################################
+#	ELIGIBILITY - is it worth running the weekly calculus for this country right now?
+#	THIS = COUNTRY
+############################################################################################################
+
+WA_AI_MILITARY_should_update_posture = {
+	WA_AI_MILITARY_posture_enabled = yes
+	has_war = yes
+	has_capitulated = no
+	any_enemy_country = { exists = yes }
+}
+
+
+############################################################################################################
+#	HARD BRAKE - conditions under which no offensive execution is ever ordered, whatever the odds.
+#	THIS = COUNTRY
+#
+#	WA_AI_defensive_front_strategy is the long-standing low-equipment emergency flag from
+#	WA_AI_misc_effects.txt (set below 0.6 fielded equipment, cleared above 0.9 - built-in hysteresis).
+#	Until this system existed it had no consumer; it is now the primary brake input.
+############################################################################################################
+
+WA_AI_MILITARY_posture_hard_brake = {
+	OR = {
+		has_country_flag = WA_AI_defensive_front_strategy
+
+		# Home front collapsing while short on equipment: hold everything.
+		# has_variable guard: absent ratio (background event not fired yet) means "unknown", not 0.
+		AND = {
+			WA_AI_MILITARY_home_threatened = yes
+			has_variable = WA_AI_fielded_eq_ratio
+			check_variable = { WA_AI_fielded_eq_ratio < @WA_AI_POSTURE_MIN_EQ }
+		}
+
+		# Lost ground brakes only an army that is also materially weakened. Surrender progress alone
+		# must not latch the brake: 1943-44 SOV sits above 0.2 for years with 350+ divisions at full
+		# equipment, and braking it locked out the entire Soviet counterattack arc (Aug 1944 finding).
+		AND = {
+			surrender_progress > @WA_AI_POSTURE_BRAKE_SURRENDER
+			OR = {
+				AND = {
+					has_variable = WA_AI_fielded_eq_ratio
+					check_variable = { WA_AI_fielded_eq_ratio < @WA_AI_POSTURE_MIN_EQ }
+				}
+				has_manpower < @WA_AI_POSTURE_BRAKE_MIN_MP
+			}
+		}
+
+		# Near-capitulation: two more cities and the war is over, every division holds - UNLESS the army
+		# is still a real army. Fix 43: this branch used to be unconditional, which re-latched the brake
+		# permanently on SOV from ~1944.5 in campaign 911bed3c while it fielded 368 divisions at 0.977
+		# fielded equipment (Stalingrad fell 1944.5.21). It is the same mistake the 0.2 branch above was
+		# already corrected for; surrender_progress answers "how close to capitulating", never "can this
+		# country still fight", and for a country with a script-raised capitulation limit it is a state
+		# that can be occupied indefinitely.
+		AND = {
+			surrender_progress > @WA_AI_POSTURE_BRAKE_SURRENDER_HARD
+			NOT = { WA_AI_MILITARY_army_still_operational = yes }
+		}
+
+		# Deliberately no fuel condition: fuel_ratio sits near zero for low-industry countries whose
+		# infantry armies attack fine without it (China vs Japan). Add a fuel brake only if it can be
+		# scoped to mechanized armies.
+	}
+}
+
+
+############################################################################################################
+#	Is this still a functioning army, whatever the map says?
+#	THIS = COUNTRY
+#
+#	The capability counterweight to surrender_progress, used to keep the near-capitulation brake above
+#	from latching on a country that has lost ground but not its army (Fix 43). Deliberately a FOUR-term
+#	conjunction - each term catches a collapse the others miss, validated against campaign 911bed3c:
+#
+#		divisions   France's 1941-45 rump ran 7 -> 1 divisions at a fielded-equipment ratio as high as
+#		            0.991 (a handful of units, fully equipped). Equipment alone would have called that
+#		            army operational. This is the term that catches it.
+#		states      A country reduced to a few states cannot sustain an army even if it currently has
+#		            one; 20 is lifted verbatim from the validated railway escape hatch
+#		            (WA_AI_misc_on_actions.txt:157).
+#		manpower    An army on paper with no pool behind it cannot take losses; same floor as the
+#		            weakened-army test above.
+#		equipment   France 1940.6 (112 divisions, ratio 0.701) and Italy from 1944.6 (74 divisions,
+#		            ratio 0.734) are hollow armies and must still brake. This is the term that catches
+#		            them - and it is what makes the release reachable by RECOVERING, which is the whole
+#		            point: SOV 1943.6 (388 div, 0.995) and 1944.6 (368 div, 0.977) pass here.
+#
+#	Threshold margin in that dataset: dying armies sit at 16-37 divisions, live ones at 74+, so 40 has
+#	roughly 2x headroom in both directions. 0.9 is @WA_AI_POSTURE_MIN_EQ, the bar the rest of this system
+#	already uses to order any execution.
+#
+#	has_variable guard: an absent ratio means the background MTTH event has not fired for this tag yet.
+#	Absent therefore reads as "not proven operational" and the brake stays on - the conservative
+#	direction, and the opposite of the guards above, where absent must not read as 0.
+############################################################################################################
+
+WA_AI_MILITARY_army_still_operational = {
+	has_army_size = { size > @WA_AI_POSTURE_ALIVE_MIN_DIV }
+	num_of_controlled_states > @WA_AI_POSTURE_ALIVE_MIN_STATES
+	has_manpower > @WA_AI_POSTURE_BRAKE_MIN_MP
+	has_variable = WA_AI_fielded_eq_ratio
+	check_variable = { WA_AI_fielded_eq_ratio > @WA_AI_POSTURE_MIN_EQ }
+}
+
+
+############################################################################################################
+#	FIX 54 - "is there ANY enemy worth executing against?"
+#	THIS = COUNTRY
+#
+#	Enable-side companions to the generalised front_control consumers. Until Fix 54 those six blocks
+#	(ALLIES/AXIS/CHINA_FRONT x exec/grind) each named ONE enemy tag in both their enable and their
+#	payload, which is why German puppets were never attacked: the posture calculus publishes a verdict
+#	per enemy, but nothing downstream could read more than one of them. These triggers are the
+#	tag-free enable; the payload side is an inline country_trigger on each block.
+#
+#	SCOPE NOTE: inside any_enemy_country, scoping back to ROOT makes PREV resolve to the candidate
+#	enemy, so WA_AI_MILITARY_posture_vs_@PREV names that enemy's verdict. Same idiom, same position
+#	(an ai_strategy enable), as WA_AI_MILITARY_north_africa_offensive_viable in
+#	WA_AI_MILITARY_triggers.txt - which is where it was proven.
+#
+#	THE "TOO SMALL" BRANCH IS LOAD-BEARING, NOT DEFENSIVE. The posture loop only processes enemies
+#	that are `is_major = yes OR num_of_controlled_states > 4`
+#	(WA_AI_MILITARY_posture_effects.txt, every_enemy_country limit), so no variable is EVER published
+#	for a four-state minor. German puppets are exactly that population - campaign 02bd4445 ends with
+#	RCZ on 4 controlled states and RBE on 5 - so without this branch the generalisation would still
+#	not reach RCZ, which is the case it was written for. Absent variables read as 0, so a too-small
+#	enemy can never satisfy the level-2 test: exec and grind stay mutually exclusive, and the branch
+#	deliberately lives on the EXECUTE trigger only.
+############################################################################################################
+
+WA_AI_MILITARY_posture_has_execute_target = {
+	any_enemy_country = {
+		has_capitulated = no
+		OR = {
+			AND = {
+				is_major = no
+				NOT = { num_of_controlled_states > 4 }
+			}
+			ROOT = { check_variable = { WA_AI_MILITARY_posture_vs_@PREV = 1 } }
+		}
+	}
+}
+
+WA_AI_MILITARY_posture_has_grind_target = {
+	any_enemy_country = {
+		has_capitulated = no
+		ROOT = { check_variable = { WA_AI_MILITARY_posture_vs_@PREV = 2 } }
+	}
+}

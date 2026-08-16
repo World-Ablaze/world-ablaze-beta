@@ -15,9 +15,9 @@ WA_AI_lend_lease = {
 	ROOT = {
 		has_capitulated = no
 
+		# (a WA_AI_supports_@<target> escape-hatch flag used to sit in this OR; it was never
+		# set anywhere in the mod, so the branch was dead - removed)
 		OR = {
-			has_country_flag = WA_AI_supports_@PREV
-
 			AND = {
 				WA_AI_special_lend_lease_rules_SENDER = yes
 
@@ -94,7 +94,26 @@ WA_AI_lend_lease = {
 
 			PREV = {
 				OR = {
-					WA_AI_democratic_nation = yes
+					AND = {
+						WA_AI_democratic_nation = yes
+
+						# Non-intervention: democracies stay out of other countries' civil wars
+						# unless the enemy side is itself fascist- or communist-aligned. This is
+						# the Spanish Civil War case - the Republic's enemy rules as neutrality,
+						# so ENG/FRA/USA no longer drip-feed the Republicans while the
+						# Non-Intervention Committee is supposedly in force. A democratic side
+						# fighting openly fascist or communist rebels still gets aid.
+						OR = {
+							has_civil_war = no
+
+							any_enemy_country = {
+								OR = {
+									WA_AI_fascist_nation = yes
+									WA_AI_communist_nation = yes
+								}
+							}
+						}
+					}
 
 					AND = {
 						WA_AI_communist_nation = yes
@@ -197,6 +216,23 @@ WA_AI_lend_lease = {
 						}
 					}
 
+					# Fascist sponsors back the anti-leftist side of a civil war (Spanish Civil
+					# War pattern: Nationalist Spain rules as neutrality, so the fascist-target
+					# leg above never matches it). Purely dynamic gate - any nonaligned civil-war
+					# belligerent whose enemy is democratic- or communist-aligned qualifies, in
+					# any timeline.
+					AND = {
+						WA_AI_nonaligned_nation = yes
+						has_civil_war = yes
+
+						any_enemy_country = {
+							OR = {
+								WA_AI_democratic_nation = yes
+								WA_AI_communist_nation = yes
+							}
+						}
+					}
+
 					is_in_faction_with = ROOT
 
 					has_war_together_with = ROOT
@@ -277,9 +313,9 @@ WA_AI_lend_lease = {
 
 		set_temp_variable = { t1 = THIS.id }
 
+		# (a WA_AI_receives_support_@<target> escape-hatch flag used to sit in this OR; it was
+		# never set anywhere in the mod, so the branch was dead - removed)
 		OR = {
-			has_country_flag = WA_AI_receives_support_@THIS
-
 			AND = {
 				WA_AI_special_lend_lease_rules_TARGET = yes
 
@@ -375,7 +411,9 @@ WA_AI_lend_lease = {
 
 WA_AI_special_lend_lease_rules_SENDER = {
 
-	# GER should focus on stockpiling for itself
+	# GER should focus on stockpiling for itself - UNLESS it is sitting on a clear exportable
+	# surplus. Without the escape this gate held for the whole war (SOV alive, communist, not
+	# allied) while GER hoarded 330k rifles next to allies running an equipment debt.
 	if = {
 		limit = {
 			original_tag = GER
@@ -383,6 +421,7 @@ WA_AI_special_lend_lease_rules_SENDER = {
 		}
 
 		OR = {
+			WA_AI_LEND_LEASE_has_exportable_surplus = yes
 			SOV = { has_capitulated = yes }
 			SOV = { exists = no }
 			SOV = { is_subject = yes }
@@ -400,7 +439,7 @@ WA_AI_special_lend_lease_rules_SENDER = {
 		has_army_manpower = { size > 550000 }
 	}
 
-	# SOV should focus on stockpiling for itself
+	# SOV should focus on stockpiling for itself - same surplus escape as GER above
 	if = {
 		limit = {
 			original_tag = SOV
@@ -408,6 +447,7 @@ WA_AI_special_lend_lease_rules_SENDER = {
 		}
 
 		OR = {
+			WA_AI_LEND_LEASE_has_exportable_surplus = yes
 			GER = { has_capitulated = yes }
 			GER = { exists = no }
 			GER = { is_subject = yes }
@@ -468,7 +508,7 @@ WA_AI_special_lend_lease_rules_TARGET = {
 		}
 	}
 
-	# SOV should focus on stockpiling for itself
+	# SOV should focus on stockpiling for itself - same surplus escape as the SENDER side
 	if = {
 		limit = {
 			ROOT = { original_tag = SOV }
@@ -477,6 +517,7 @@ WA_AI_special_lend_lease_rules_TARGET = {
 		}
 
 		OR = {
+			ROOT = { WA_AI_LEND_LEASE_has_exportable_surplus = yes }
 			GER = { has_capitulated = yes }
 			GER = { exists = no }
 			GER = { is_subject = yes }
@@ -539,4 +580,88 @@ WA_AI_special_lend_lease_rules_TARGET = {
 			}
 		}
 	}
+}
+######################################################
+#	LEND-LEASE CAPABILITY TRIGGERS
+#	Capability questions, not tag questions: any country in any timeline
+#	qualifies purely on its stockpile and war state.
+#
+#	Per-archetype split (campaign c9ab1062 calibration): support equipment tracks
+#	only 5-25% of infantry stockpile, so the old "inf > 100k AND sup > 20k"
+#	conjunction was effectively "inf > 400k" and never passed for anyone. A sender
+#	with only rifles to spare now ships only rifles.
+######################################################
+
+# THIS = potential sender. Calibrated twice: first against USA 115.8k / SOV 94.6k
+# peaks, then LOWERED after campaign 9be92c89 showed no Axis donor ever crossing
+# 60k (RCZ topped at 59.5k, GER at 45.1k) while four allies ran literal-zero rifle
+# stockpiles for three years. 35k inf is still 3.5x the starving line, so a donor
+# can never starve itself into recipiency.
+WA_AI_LEND_LEASE_has_exportable_surplus_infantry = {
+	has_capitulated = no
+	has_equipment = { infantry_equipment > 34999 }
+}
+
+WA_AI_LEND_LEASE_has_exportable_surplus_support = {
+	has_capitulated = no
+	has_equipment = { support_equipment > 5999 }
+}
+
+# Convenience OR for the SENDER/TARGET policy gates above in this file, which only
+# ask "is this hoarder allowed to export at all".
+WA_AI_LEND_LEASE_has_exportable_surplus = {
+	OR = {
+		WA_AI_LEND_LEASE_has_exportable_surplus_infantry = yes
+		WA_AI_LEND_LEASE_has_exportable_surplus_support = yes
+	}
+}
+
+# THIS = potential recipient. One trigger per archetype - deliberately NOT OR'd into
+# a single is_starving: a country starving only of support must not thereby qualify
+# for rifles it does not need. Support line raised to 4k after 9be92c89 showed
+# HUN/ROM/BUL/ITA permanently PINNED in the 2-4k band - that band is where the
+# 1200/week drip parks them, not a healthy state.
+WA_AI_LEND_LEASE_is_starving_infantry = {
+	has_war = yes
+	NOT = { has_equipment = { infantry_equipment > 10000 } }
+}
+
+WA_AI_LEND_LEASE_is_starving_support = {
+	has_war = yes
+	NOT = { has_equipment = { support_equipment > 3999 } }
+}
+
+# THIS = candidate recipient, PREV = potential donor.
+# PREV = { is_ai = yes } is load-bearing: under the pull model the donor scope is not
+# behind any is_ai gate, and an AI must never strip a human player's stockpile.
+# The WA_AI_lend_lease_from_@ flag path reuses the pair the ordinary lend-lease
+# targeting system already chose (USA->ENG 1940-41 style, pre-faction).
+WA_AI_LEND_LEASE_relief_pair_is_valid = {
+	NOT = { tag = PREV }
+	has_capitulated = no
+	PREV = {
+		is_ai = yes
+		has_capitulated = no
+	}
+	OR = {
+		# A common enemy suffices - requiring same-faction excluded co-belligerents
+		# (FIN starved beside a GER surplus, CHI beside SOV's 101k, campaign 9be92c89)
+		has_war_together_with = PREV
+		has_country_flag = WA_AI_lend_lease_from_@PREV
+	}
+}
+
+# THIS = candidate recipient, PREV = potential donor. Consumed by
+# WA_AI_LEND_LEASE_request_surplus_relief in
+# common/scripted_effects/WA_AI_lend_lease_effects.txt (weekly pull transfer).
+WA_AI_LEND_LEASE_should_receive_relief_infantry = {
+	WA_AI_LEND_LEASE_relief_pair_is_valid = yes
+	WA_AI_LEND_LEASE_is_starving_infantry = yes
+	PREV = { WA_AI_LEND_LEASE_has_exportable_surplus_infantry = yes }
+}
+
+WA_AI_LEND_LEASE_should_receive_relief_support = {
+	WA_AI_LEND_LEASE_relief_pair_is_valid = yes
+	WA_AI_LEND_LEASE_is_starving_support = yes
+	PREV = { WA_AI_LEND_LEASE_has_exportable_surplus_support = yes }
 }

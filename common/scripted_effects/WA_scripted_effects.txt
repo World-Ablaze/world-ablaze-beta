@@ -7188,9 +7188,22 @@ manage_alu_mills = {
 					check_variable = { tempCoal < 0 }
 				}
 			}
+			# Fix 42: pre-charge the PLAIN aluminium_refinery cost (bauxite 32 / coal 20) and let
+			# each hydro branch patch itself (+3 bauxite, -20 coal => hydro's true 35 / 0), the way
+			# manage_steel_mills does. It used to pre-charge bauxite 35 - hydro's cost - while the
+			# first branch closes a plain mill, over-crediting 3 bauxite per closure.
+			#
+			# WHY PRE-CHARGE AT ALL, rather than charging the exact cost inside each branch: the
+			# pre-charge is this loop's TERMINATION GUARANTEE. The outer if only checks that a
+			# refinery exists once, before the loop. Once the last mill is closed no branch can fire,
+			# and if the temp variables were only advanced inside the branches they would stop
+			# moving while the loop condition (tempBauxite < 0 or tempCoal < 0) stayed true - an
+			# infinite loop. Advancing them unconditionally here means every iteration makes
+			# progress whether or not anything was actually closed. Do not 'simplify' this by moving
+			# the charge into the branches without adding an explicit exit.
 			add_to_temp_variable = {
 				var = tempBauxite
-				value = 35
+				value = 32
 			}
 			add_to_temp_variable = {
 				var = tempCoal
@@ -7236,9 +7249,15 @@ manage_alu_mills = {
 					}
 					disable_hydro_aluminium_mill = yes
 				}
+				# Fix 42: hydro_aluminium_refinery frees bauxite 35 and NO coal. Correct the plain
+				# pre-charge: +3 bauxite, and take back all 20 coal (was -15, which netted +5).
+				add_to_temp_variable = {
+					var = tempBauxite
+					value = 3
+				}
 				subtract_from_temp_variable = {
 					var = tempCoal
-					value = 15
+					value = 20
 				}
 				subtract_from_variable = {
 					current_alu_mills = 1
@@ -7275,9 +7294,15 @@ manage_alu_mills = {
 					}
 					disable_hydro_aluminium_mill = yes
 				}
+				# Fix 42: hydro_aluminium_refinery frees bauxite 35 and NO coal. Correct the plain
+				# pre-charge: +3 bauxite, and take back all 20 coal (was -15, which netted +5).
+				add_to_temp_variable = {
+					var = tempBauxite
+					value = 3
+				}
 				subtract_from_temp_variable = {
 					var = tempCoal
-					value = 15
+					value = 20
 				}
 				subtract_from_variable = {
 					current_alu_mills = 1
@@ -7348,6 +7373,11 @@ manage_alu_mills = {
 					}
 					enable_aluminium_mill = yes
 				}
+				# Fix 42: the loop pre-debits bauxite 35 (hydro's cost); a plain mill costs 32.
+				add_to_temp_variable = {
+					var = tempBauxite
+					value = 3
+				}
 				subtract_from_temp_variable = {
 					var = tempCoal
 					value = 20
@@ -7386,6 +7416,11 @@ manage_alu_mills = {
 						aluminium_refinery_inactive > 0
 					}
 					enable_aluminium_mill = yes
+				}
+				# Fix 42: the loop pre-debits bauxite 35 (hydro's cost); a plain mill costs 32.
+				add_to_temp_variable = {
+					var = tempBauxite
+					value = 3
 				}
 				subtract_from_temp_variable = {
 					var = tempCoal
@@ -7754,7 +7789,11 @@ calculate_resource_deficite = {
 }
 
 civilian_factories_trade_percentage = {
-	clear_variable = civilian_factories_used_for_trade
+	# Fix (audit 2026-08-11): this used to clear civilian_factories_used_for_trade,
+	# a variable that exists nowhere else in the repo, so the real accumulator below
+	# was never reset and the displayed trade percentage drifted upward on every
+	# weekly recalculation.
+	clear_variable = civilian_factories_trade_percentage
 
 	set_temp_variable = { tmp_civ = resource_imported@oil }
 	divide_temp_variable = { tmp_civ = 20 } # 20 oil / civ

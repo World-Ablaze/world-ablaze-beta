@@ -65,6 +65,86 @@ WA_AI_MILITARY_CHINA_FRONT_careful_exec_vs_japan = {
 }
 
 
+# purpose: make China-front members execute their attack orders against Japan when the weekly posture
+#          calculus says battles are winnable (WA_AI_MILITARY_posture_effects.txt) - typically once
+#          Japan's line goes hollow (fielded equipment collapsing) late in the war. The careful
+#          non-executing block above stays the posture-0 hold.
+#          Stale-variable note: posture_vs_JAP lingers after a peace, so has_war_with = JAP stays here.
+# range:   n/a (front_control)
+# policy:  Exclusive per front - priority 340 outranks the level-0 hold above (330); mutually
+#          exclusive with the grind block below by posture level; outranked by the level-500/10000
+#          emergency stops in DEFAULT_FRONT_control.
+# domain:  FRONT
+# FIX 54 (2026-08-13): generalised off the literal tag JAP. The posture calculus publishes a verdict
+# per enemy but this block could read only one of them, so Japanese collaborator states were invisible
+# to it. Note the sibling WA_AI_MILITARY_CHINA_FRONT_careful_exec_vs_collaborators below still names
+# RNC explicitly - it is a non-executing baseline hold, not a posture consumer, and is left alone.
+# See WA_AI_MILITARY_ALLIES_exec_vs_germany in the ALLIES_FRONT file for the full argument and the
+# deliberate widening it carries.
+WA_AI_MILITARY_CHINA_FRONT_exec_vs_japan = {
+	enable = {
+		WA_AI_MILITARY_is_china_front_member = yes
+		WA_AI_MILITARY_posture_has_execute_target = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_control
+		country_trigger = {
+			has_war_with = ROOT
+			has_capitulated = no
+			OR = {
+				# Too small for a posture verdict - see WA_AI_MILITARY_posture_has_execute_target.
+				AND = {
+					is_major = no
+					NOT = { num_of_controlled_states > 4 }
+				}
+				ROOT = { check_variable = { WA_AI_MILITARY_posture_vs_@PREV = 1 } }
+			}
+		}
+		ratio = 0.1
+		priority = 340
+		ordertype = front
+		execution_type = balanced
+		execute_order = yes
+	}
+}
+
+
+# purpose: attrition grind vs Japan - posture level 2 means Japan is at maximum mobilization with a
+#          nearly dry manpower pool while the China front holds a deep reserve, which is the
+#          expected Chinese endgame: bleed the IJA with careful attacks rather than lunging.
+# range:   n/a (front_control)
+# policy:  Exclusive per front - priority 340 outranks the level-0 hold (330); mutually exclusive
+#          with the exec block above by posture level (the calculus emits exactly one level per enemy).
+# domain:  FRONT
+# FIX 54: generalised off the literal tag JAP - see the exec block above. No "too small" branch here
+# on purpose: an enemy with no published verdict reads 0, never 2, so exec and grind stay mutually
+# exclusive exactly as before.
+WA_AI_MILITARY_CHINA_FRONT_grind_vs_japan = {
+	enable = {
+		WA_AI_MILITARY_is_china_front_member = yes
+		WA_AI_MILITARY_posture_has_grind_target = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_control
+		country_trigger = {
+			has_war_with = ROOT
+			has_capitulated = no
+			ROOT = { check_variable = { WA_AI_MILITARY_posture_vs_@PREV = 2 } }
+		}
+		ratio = 0.1
+		priority = 340
+		ordertype = front
+		execution_type = careful
+		execute_order = yes
+		manual_attack = yes
+	}
+}
+
+
 
 WA_AI_MILITARY_CHINA_FRONT_careful_exec_vs_collaborators = {
 	enable = {

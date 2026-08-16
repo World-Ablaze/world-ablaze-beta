@@ -30,7 +30,7 @@ WA_AI_calc_air_force_sizes = {
 
 	for_each_scope_loop = { array = allies
 
-		set_temp_variable = { friendly_air_force_size = num_deployed_planes }
+		add_to_temp_variable = { friendly_air_force_size = num_deployed_planes }
 		add_to_temp_variable = { friendly_air_force_size = num_equipment@small_fighter_airframe }
 	}
 
@@ -215,41 +215,12 @@ WA_AI_defensive_front_strategy = {
 			clr_country_flag = WA_AI_defensive_front_strategy
 		}
 
-		### weak vs countries
-
-		every_enemy_country = {
-
-			if = {
-				limit = {
-					ROOT = {
-						NOT = { is_in_array = { WA_AI_defensive_front_strategy_at = PREV.id } }
-
-						alliance_strength_ratio < 0.5
-						strength_ratio = { tag = PREV ratio < 0.25 }
-					}
-				}
-
-				log = "[GetYear] [GetMonth] | AI | [Root.GetName] | stopping attacks vs [This.GetTag] (weak)"
-
-				ROOT = { add_to_array = { WA_AI_defensive_front_strategy_at = PREV.id } }
-			}
-			else_if = {
-				limit = {
-					ROOT = {
-						is_in_array = { WA_AI_defensive_front_strategy_at = PREV.id }
-
-						NOT = {
-							alliance_strength_ratio < 0.5
-							strength_ratio = { tag = PREV ratio < 0.25 }
-						}
-					}
-				}
-
-				log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CANCEL stopping attacks vs [This.GetTag] (weak)"
-
-				ROOT = { remove_from_array = { WA_AI_defensive_front_strategy_at = PREV.id } }
-			}
-		}
+		# Removed: the per-enemy WA_AI_defensive_front_strategy_at array (introduced in bd11fde6b, WIP)
+		# was write-only - no ai_strategy block or trigger ever consumed it. Per-enemy defensive posture
+		# is owned by the posture system (WA_AI_MILITARY_posture_vs_<TAG>), which has better inputs.
+		# Only the country-wide flag above is consumed (WA_AI_MILITARY_DEFAULT_FRONT_control.txt,
+		# WA_AI_MILITARY_posture_triggers.txt).
+		clear_array = WA_AI_defensive_front_strategy_at
 	}
 }
 
@@ -638,6 +609,29 @@ WA_AI_check_resource_needs = {
 	clamp_variable = { var = WA_AI_needs_iron min = 0 max = 3 }
 	if = { limit = { has_country_flag = WA_AI_resources_logging check_variable = { WA_AI_needs_iron = 3 } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RESOURCES: needs iron" }
 
+	### oil
+
+	# Fix 39: oil arm added (audit 2026-08-11: WA_AI_needs_oil was read by the oil
+	# prospecting triggers in WA_AI_RESOURCE_NEEDS_triggers.txt but never written -
+	# always 0, so those triggers were permanently false). Same form as the eight
+	# arms above; thresholds match coal (40) because oil is a high-volume resource
+	# and the lower thresholds would ratchet every import-dependent minor to 3.
+	# Also read by WA_AI_RESEARCH_needs_synth_oil (WA_AI_RESEARCH_industry.txt).
+
+	if = {
+		limit = {
+			OR = {
+				check_variable = { resource@oil < -40 }
+				check_variable = { resource_imported@oil > 40 }
+			}
+		}
+
+		add_to_variable = { WA_AI_needs_oil = 1 }
+	}
+	else = { subtract_from_variable = { WA_AI_needs_oil = 1 } }
+	clamp_variable = { var = WA_AI_needs_oil min = 0 max = 3 }
+	if = { limit = { has_country_flag = WA_AI_resources_logging check_variable = { WA_AI_needs_oil = 3 } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RESOURCES: needs OIL" }
+
 	##################################################################################
 
 	### allied resource needs
@@ -652,6 +646,76 @@ WA_AI_check_resource_needs = {
 		if = { limit = { check_variable = { resource@coal < -20 } } 	    ROOT = { set_country_flag = { flag = WA_AI_allies_need_coal value = 1 days = 30 } } }
 		if = { limit = { check_variable = { resource@bauxite < -20 } }   	ROOT = { set_country_flag = { flag = WA_AI_allies_need_bauxite value = 1 days = 30 } } }
 		if = { limit = { check_variable = { resource@iron < -20 } }     	ROOT = { set_country_flag = { flag = WA_AI_allies_need_iron value = 1 days = 30 } } }
+	}
+}
+
+# Fix 39: industry overextension hysteresis flag.
+# Scope: country (THIS = ROOT = evaluated country). Called MONTHLY from
+# on_monthly in common/on_actions/WA_AI_misc_on_actions.txt (is_ai gated there).
+# Inputs:  WA_AI_needs_steel/aluminium/rubber/tungsten/chromium (written by
+#          WA_AI_check_resource_needs above on a ~2-day cadence, clamped 0-3),
+#          resource@<r> post-import balances, factory counts.
+# Outputs: country flag WA_AI_industry_overextended_flag - read by
+#          WA_AI_industry_overextended (WA_AI_CONSTRUCTION_triggers.txt) and by
+#          WA_AI_RESEARCH_needs_synth_oil/_rubber (WA_AI_RESEARCH_industry.txt);
+#          WA_AI_overext_dbg_active - persistent debug counter, +1 per monthly
+#          evaluation while the flag is set (savegame-visible probe).
+# TRIP    (set flag):   2+ of {steel, aluminium, rubber, tungsten, chromium} at
+#                       needs = 3 AND still net-negative AFTER imports; AND
+#                       mil factories > civ factories; AND mil+civ > 100.
+#                       All state-based - no tags, no is_major: a resource-rich
+#                       country grown big never trips, any overextended one does.
+# RELEASE (clear flag): fewer than 2 of those resources at needs >= 2.
+# Between the two thresholds the flag keeps its previous state (hysteresis).
+WA_AI_update_industry_overextension = {
+
+	### trip signal: sustained max need AND still short after imports
+
+	set_temp_variable = { _overext_trip_ = 0 }
+	if = { limit = { check_variable = { WA_AI_needs_steel = 3 } 	check_variable = { resource@steel < 0 } } 		add_to_temp_variable = { _overext_trip_ = 1 } }
+	if = { limit = { check_variable = { WA_AI_needs_aluminium = 3 } check_variable = { resource@aluminium < 0 } } 	add_to_temp_variable = { _overext_trip_ = 1 } }
+	if = { limit = { check_variable = { WA_AI_needs_rubber = 3 } 	check_variable = { resource@rubber < 0 } } 		add_to_temp_variable = { _overext_trip_ = 1 } }
+	if = { limit = { check_variable = { WA_AI_needs_tungsten = 3 } 	check_variable = { resource@tungsten < 0 } } 	add_to_temp_variable = { _overext_trip_ = 1 } }
+	if = { limit = { check_variable = { WA_AI_needs_chromium = 3 } 	check_variable = { resource@chromium < 0 } } 	add_to_temp_variable = { _overext_trip_ = 1 } }
+
+	### release signal: sustained need still present (post-import deficit not required)
+
+	set_temp_variable = { _overext_release_ = 0 }
+	if = { limit = { check_variable = { WA_AI_needs_steel > 1 } } 		add_to_temp_variable = { _overext_release_ = 1 } }
+	if = { limit = { check_variable = { WA_AI_needs_aluminium > 1 } } 	add_to_temp_variable = { _overext_release_ = 1 } }
+	if = { limit = { check_variable = { WA_AI_needs_rubber > 1 } } 		add_to_temp_variable = { _overext_release_ = 1 } }
+	if = { limit = { check_variable = { WA_AI_needs_tungsten > 1 } } 	add_to_temp_variable = { _overext_release_ = 1 } }
+	if = { limit = { check_variable = { WA_AI_needs_chromium > 1 } } 	add_to_temp_variable = { _overext_release_ = 1 } }
+
+	### scale guards (state-based, no tags)
+
+	set_temp_variable = { _overext_mils_ = num_of_military_factories }
+	set_temp_variable = { _overext_civs_ = num_of_civilian_factories }
+	set_temp_variable = { _overext_total_ = _overext_mils_ }
+	add_to_temp_variable = { _overext_total_ = _overext_civs_ }
+
+	if = {
+		limit = {
+			check_variable = { _overext_trip_ > 1 }
+			check_variable = { _overext_mils_ > _overext_civs_ }
+			check_variable = { _overext_total_ > 100 }
+		}
+
+		if = { limit = { has_country_flag = WA_AI_resources_logging NOT = { has_country_flag = WA_AI_industry_overextended_flag } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RESOURCES: industry overextended - MIC substitution active" }
+		set_country_flag = WA_AI_industry_overextended_flag
+	}
+	else_if = {
+		limit = {
+			has_country_flag = WA_AI_industry_overextended_flag
+			check_variable = { _overext_release_ < 2 }
+		}
+
+		clr_country_flag = WA_AI_industry_overextended_flag
+		if = { limit = { has_country_flag = WA_AI_resources_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RESOURCES: industry overextension released" }
+	}
+
+	if = { limit = { has_country_flag = WA_AI_industry_overextended_flag }
+		add_to_variable = { WA_AI_overext_dbg_active = 1 }
 	}
 }
 
@@ -842,7 +906,9 @@ WA_AI_update_training_modifier = {
 
 	# Reset
 	set_variable = { WA_AI_minimum_training_level = 0 }
-	set_variable = { WA_AI_training_time_factor = 0 }
+	# Save hygiene: WA_AI_training_time_factor was a modifier slot that never had add logic
+	# (born unused in 248aa116c); clear the orphan from old saves.
+	clear_variable = WA_AI_training_time_factor
 
 	### DOCTRINE BONUS (one applies)
 

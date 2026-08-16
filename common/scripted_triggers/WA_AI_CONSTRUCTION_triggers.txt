@@ -4,8 +4,48 @@
 
 ### available construction slots
 
+# Fix 81: per-building state caps for the shared-slot buildings (refineries; Fix 88 added CIC/MIC/NIC).
+# `free_building_slots = { building = X size > 0 }` only reports the SHARED pool;
+# it does not consult X's own `level_cap.state_max`. A state with more free
+# shared slots than the cap therefore stays "available" forever once the cap is
+# hit, `add_building_construction` silently no-ops, and because that state also
+# stays #1 in WA_AI_shared_slot_scores the whole building type stalls country-wide.
+# The check is `built < cap` AND `committed < cap`, where committed = built + queued is the
+# state variable WA_AI_committed_<X> maintained by WA_AI_add_<X> (building_adders). The SUM is
+# what makes this cheap: a completion moves one level from queued to built and leaves the sum
+# unchanged, so nothing has to be reconciled on any cadence (cut 2 tracked queued + last_level
+# and reconciled from the level delta at C.10 pulses - a state whose line finished between
+# pulses read stale, and a country whose lane sits behind WA_AI_construction_timer never
+# reconciled at all). A built-level-only check is NOT enough either: the level rises only when
+# a refinery FINISHES (months), so a state stays below the cap on built level while its queue
+# is already full and every pulse in between keeps feeding it.
+# `committed` is trusted only while the state flag WA_AI_committed_<X>_recent is live (TTL in
+# building_adders): once no add has happened for that long, nothing can still be queued, so
+# `built < cap` alone decides and the next add rebases the sum. That is the only path by which a
+# CANCELLED construction is forgotten - script cannot see the construction queue.
+# MUST MATCH `level_cap.state_max` in common/buildings/00_buildings.txt.
+@WA_AI_REF_STATE_MAX = 6
+@WA_AI_SR_STATE_MAX = 15
+@WA_AI_HSR_STATE_MAX = 15
+@WA_AI_AR_STATE_MAX = 15
+@WA_AI_HAR_STATE_MAX = 15
+# Fix 88: the three factory types join the same standard (industrial_complex / arms_factory / dockyard).
+@WA_AI_CIC_STATE_MAX = 45
+@WA_AI_MIC_STATE_MAX = 45
+@WA_AI_NIC_STATE_MAX = 45
+
 WA_AI_available_AIR = {
 	ROOT = { has_full_control_of_state = PREV }
+
+	free_building_slots = { building = air_base size > 0 include_locked = no }
+	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
+}
+
+# THIS = state, ROOT = builder. Allied-territory variant: air_base has
+# allied_build = yes, so a faction member can build it in an ally's state.
+# Used by WA_AI_build_uk_air_hosting_capacity.
+WA_AI_available_AIR_allied = {
+	CONTROLLER = { is_in_faction_with = ROOT }
 
 	free_building_slots = { building = air_base size > 0 include_locked = no }
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
@@ -39,13 +79,52 @@ WA_AI_available_SHARED = {
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
 }
 
-WA_AI_available_REF = {
-	free_building_slots = { building = synthetic_refinery size > 0 include_locked = no }
+# Fix 88: industrial_complex at the Fix 81 standard - built < cap and committed (= built + queued) < cap while the
+# TTL flag is live. The queue loops add this to their WA_AI_available_SHARED test; the hard-coded
+# state sites go through WA_AI_add_CIC, which counts only when this passes.
+WA_AI_available_CIC = {
+	check_variable = { building_level@industrial_complex < @WA_AI_CIC_STATE_MAX }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_CIC_recent }
+		check_variable = { WA_AI_committed_CIC < @WA_AI_CIC_STATE_MAX }
+	}
+	free_building_slots = { building = industrial_complex size > 0 include_locked = no }
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
 }
 
+# Fix 88: arms_factory at the Fix 81 standard - built < cap and committed (= built + queued) < cap while the
+# TTL flag is live. The queue loops add this to their WA_AI_available_SHARED test; the hard-coded
+# state sites go through WA_AI_add_MIC, which counts only when this passes.
+WA_AI_available_MIC = {
+	check_variable = { building_level@arms_factory < @WA_AI_MIC_STATE_MAX }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_MIC_recent }
+		check_variable = { WA_AI_committed_MIC < @WA_AI_MIC_STATE_MAX }
+	}
+	free_building_slots = { building = arms_factory size > 0 include_locked = no }
+	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
+}
+
+# Fix 88: dockyard at the Fix 81 standard - built < cap and committed (= built + queued) < cap while the
+# TTL flag is live. The queue loops add this to their WA_AI_available_SHARED test; the hard-coded
+# state sites go through WA_AI_add_NIC, which counts only when this passes.
 WA_AI_available_NIC = {
+	check_variable = { building_level@dockyard < @WA_AI_NIC_STATE_MAX }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_NIC_recent }
+		check_variable = { WA_AI_committed_NIC < @WA_AI_NIC_STATE_MAX }
+	}
 	free_building_slots = { building = dockyard size > 0 include_locked = no }
+	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
+}
+WA_AI_available_REF = {
+	# Fix 81: built < cap, and committed (= built + queued) < cap while the TTL flag is live (see header)
+	check_variable = { building_level@synthetic_refinery < @WA_AI_REF_STATE_MAX }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_REF_recent }
+		check_variable = { WA_AI_committed_REF < @WA_AI_REF_STATE_MAX }
+	}
+	free_building_slots = { building = synthetic_refinery size > 0 include_locked = no }
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
 }
 
@@ -55,25 +134,138 @@ WA_AI_available_SILO = {
 }
 
 WA_AI_available_HSR = {
+	# Fix 81: built < cap, and committed (= built + queued) < cap while the TTL flag is live (see header)
+	check_variable = { building_level@hydro_steel_refinery < @WA_AI_HSR_STATE_MAX }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_HSR_recent }
+		check_variable = { WA_AI_committed_HSR < @WA_AI_HSR_STATE_MAX }
+	}
 	free_building_slots = { building = hydro_steel_refinery size > 0 include_locked = no }
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
 }
 
 WA_AI_available_SR = {
+	# Fix 81: built < cap, and committed (= built + queued) < cap while the TTL flag is live (see header)
+	check_variable = { building_level@steel_refinery < @WA_AI_SR_STATE_MAX }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_SR_recent }
+		check_variable = { WA_AI_committed_SR < @WA_AI_SR_STATE_MAX }
+	}
 	free_building_slots = { building = steel_refinery size > 0 include_locked = no }
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
 }
 
 WA_AI_available_AR = {
+	# Fix 81: built < cap, and committed (= built + queued) < cap while the TTL flag is live (see header)
+	check_variable = { building_level@aluminium_refinery < @WA_AI_AR_STATE_MAX }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_AR_recent }
+		check_variable = { WA_AI_committed_AR < @WA_AI_AR_STATE_MAX }
+	}
 	free_building_slots = { building = aluminium_refinery size > 0 include_locked = no }
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
 }
 
 WA_AI_available_HAR = {
+	# Fix 81: built < cap, and committed (= built + queued) < cap while the TTL flag is live (see header)
+	check_variable = { building_level@hydro_aluminium_refinery < @WA_AI_HAR_STATE_MAX }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_HAR_recent }
+		check_variable = { WA_AI_committed_HAR < @WA_AI_HAR_STATE_MAX }
+	}
 	free_building_slots = { building = hydro_aluminium_refinery size > 0 include_locked = no }
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
 }
 
+
+### Fix 88: per-line depth cap for the breadth-first selection (WA_AI_CONSTRUCTION_queue_functions.txt).
+# THIS = state. True when fewer than @WA_AI_QUEUE_DEPTH_<X> levels of X are queued-but-unbuilt on this
+# state, read as WA_AI_committed_<X> - building_level@X (Fix 81 sum). A lapsed TTL flag means the sum is
+# no longer trusted, so depth is treated as 0. Depth is a PREFERENCE in the selection (tiers A/B before
+# C/D), never a wall - a burst larger than K x depth keeps spreading, and the tier-D fallback is the
+# pre-Fix-88 pick. Depth is the "I know when this line finishes" knob: a line finishes within
+# depth x T(one level at MAX_CIV_FACTORIES_PER_LINE civs); civ count does not change per-line speed,
+# only K (number of lines) scales with civs - which is why depth is a constant and K is not.
+@WA_AI_QUEUE_DEPTH_CIC = 3
+@WA_AI_QUEUE_DEPTH_MIC = 3
+@WA_AI_QUEUE_DEPTH_NIC = 3
+@WA_AI_QUEUE_DEPTH_REF = 3
+@WA_AI_QUEUE_DEPTH_SR = 3
+@WA_AI_QUEUE_DEPTH_HSR = 3
+@WA_AI_QUEUE_DEPTH_AR = 3
+@WA_AI_QUEUE_DEPTH_HAR = 3
+
+WA_AI_queue_depth_ok_CIC = {
+	set_temp_variable = { _wa_depth_ = WA_AI_committed_CIC }
+	subtract_from_temp_variable = { _wa_depth_ = building_level@industrial_complex }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_CIC_recent }
+		check_variable = { _wa_depth_ < @WA_AI_QUEUE_DEPTH_CIC }
+	}
+}
+
+WA_AI_queue_depth_ok_MIC = {
+	set_temp_variable = { _wa_depth_ = WA_AI_committed_MIC }
+	subtract_from_temp_variable = { _wa_depth_ = building_level@arms_factory }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_MIC_recent }
+		check_variable = { _wa_depth_ < @WA_AI_QUEUE_DEPTH_MIC }
+	}
+}
+
+WA_AI_queue_depth_ok_NIC = {
+	set_temp_variable = { _wa_depth_ = WA_AI_committed_NIC }
+	subtract_from_temp_variable = { _wa_depth_ = building_level@dockyard }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_NIC_recent }
+		check_variable = { _wa_depth_ < @WA_AI_QUEUE_DEPTH_NIC }
+	}
+}
+
+WA_AI_queue_depth_ok_REF = {
+	set_temp_variable = { _wa_depth_ = WA_AI_committed_REF }
+	subtract_from_temp_variable = { _wa_depth_ = building_level@synthetic_refinery }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_REF_recent }
+		check_variable = { _wa_depth_ < @WA_AI_QUEUE_DEPTH_REF }
+	}
+}
+
+WA_AI_queue_depth_ok_SR = {
+	set_temp_variable = { _wa_depth_ = WA_AI_committed_SR }
+	subtract_from_temp_variable = { _wa_depth_ = building_level@steel_refinery }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_SR_recent }
+		check_variable = { _wa_depth_ < @WA_AI_QUEUE_DEPTH_SR }
+	}
+}
+
+WA_AI_queue_depth_ok_HSR = {
+	set_temp_variable = { _wa_depth_ = WA_AI_committed_HSR }
+	subtract_from_temp_variable = { _wa_depth_ = building_level@hydro_steel_refinery }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_HSR_recent }
+		check_variable = { _wa_depth_ < @WA_AI_QUEUE_DEPTH_HSR }
+	}
+}
+
+WA_AI_queue_depth_ok_AR = {
+	set_temp_variable = { _wa_depth_ = WA_AI_committed_AR }
+	subtract_from_temp_variable = { _wa_depth_ = building_level@aluminium_refinery }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_AR_recent }
+		check_variable = { _wa_depth_ < @WA_AI_QUEUE_DEPTH_AR }
+	}
+}
+
+WA_AI_queue_depth_ok_HAR = {
+	set_temp_variable = { _wa_depth_ = WA_AI_committed_HAR }
+	subtract_from_temp_variable = { _wa_depth_ = building_level@hydro_aluminium_refinery }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_HAR_recent }
+		check_variable = { _wa_depth_ < @WA_AI_QUEUE_DEPTH_HAR }
+	}
+}
 
 ### priority construction AI
 
@@ -81,6 +273,8 @@ WA_AI_PC_can_afford_project = {
 
 	@AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL = 0.35
 	@AI_MIN_NUM_OF_FACTORIES_TO_ASSIGN_ON_PROJECT = 20
+	# must match @AI_PC_STABLE_BASE_FRACTION in common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_core.txt
+	@AI_PC_STABLE_BASE_FRACTION = 0.30
 
 	# check that the ai can afford to assign factories to a new project
 	set_temp_variable = { max_factories_on_projects = ROOT.num_of_civilian_factories_available_for_projects }
@@ -90,7 +284,191 @@ WA_AI_PC_can_afford_project = {
 	set_temp_variable = { min_factories_on_projects = ROOT.WA_AI_PC_assigned_factories_total }
 	add_to_temp_variable = { min_factories_on_projects = @AI_MIN_NUM_OF_FACTORIES_TO_ASSIGN_ON_PROJECT }
 
-	check_variable = { min_factories_on_projects < max_factories_on_projects }
+	# Fix: mirror the stable-base floor used by WA_AI_PC_assign_factories. Without it this gate
+	# repeats the self-referential expression (available_for_projects reads 0 once the vanilla
+	# queue saturates) and stays closed forever after the allocation has decayed - even when
+	# assign_factories would happily fund a new project from the floored base.
+	set_temp_variable = { _pc_floor_max = ROOT.num_of_civilian_factories }
+	multiply_temp_variable = { _pc_floor_max = @AI_PC_STABLE_BASE_FRACTION }
+	multiply_temp_variable = { _pc_floor_max = @AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL }
+
+	OR = {
+		check_variable = { min_factories_on_projects < max_factories_on_projects }
+		AND = {
+			ROOT = {
+				num_of_civilian_factories > 19
+				has_capitulated = no
+				surrender_progress < 0.3
+			}
+			check_variable = { min_factories_on_projects < _pc_floor_max }
+		}
+	}
+}
+
+# THIS = country. Stable civilian-factory availability for PC strategy gates.
+# num_of_civilian_factories_available_for_projects reads ~0 whenever the vanilla
+# construction queue is saturated - the same self-referential collapse fixed in
+# WA_AI_PC_can_afford_project above. Each gate passes when EITHER the engine
+# reports real spare civs above the threshold, OR the stable floored base
+# (@AI_PC_STABLE_BASE_FRACTION * @AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL
+# = 10.5% of TOTAL civs, the pool WA_AI_PC_assign_factories will actually
+# allocate from) clears the same threshold. Two named variants because PDXScript
+# triggers cannot take a threshold argument without meta_trigger - keep both
+# bodies in sync.
+WA_AI_PC_has_project_civs_16 = {	# passes at 16+ civs (replaces bare "> 15" gates)
+	set_temp_variable = { _pc_civ_floor_ = num_of_civilian_factories }
+	multiply_temp_variable = { _pc_civ_floor_ = @AI_PC_STABLE_BASE_FRACTION }
+	multiply_temp_variable = { _pc_civ_floor_ = @AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL }
+	OR = {
+		num_of_civilian_factories_available_for_projects > 15
+		AND = {
+			has_capitulated = no
+			surrender_progress < 0.3
+			check_variable = { _pc_civ_floor_ > 15 }
+		}
+	}
+}
+
+WA_AI_PC_has_project_civs_20 = {	# passes at 20+ civs (replaces bare "NOT ... < 20" gates)
+	set_temp_variable = { _pc_civ_floor_ = num_of_civilian_factories }
+	multiply_temp_variable = { _pc_civ_floor_ = @AI_PC_STABLE_BASE_FRACTION }
+	multiply_temp_variable = { _pc_civ_floor_ = @AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL }
+	OR = {
+		num_of_civilian_factories_available_for_projects > 19
+		AND = {
+			has_capitulated = no
+			surrender_progress < 0.3
+			check_variable = { _pc_civ_floor_ > 19 }
+		}
+	}
+}
+
+### industry overextension
+
+# THIS = country. Fix 39: reads the persistent hysteresis flag maintained MONTHLY
+# by WA_AI_update_industry_overextension (common/scripted_effects/WA_AI_misc_effects.txt,
+# called from on_monthly in WA_AI_misc_on_actions.txt). The expensive evaluation
+# lives in the monthly effect - this trigger is cheap at call sites. When true,
+# the country runs a mil-heavy industry with sustained post-import deficits on 2+
+# war resources, so additional MICs buy ~zero throughput (campaign 31eaf7e6: ENG
+# went 379->429 active mil lines 1943.6->1944.6 while short on 5 resources).
+# Consumed by WA_AI_queue_MIC's substitution cascade (WA_AI_CONSTRUCTION_queue_functions.txt).
+WA_AI_industry_overextended = {
+	has_country_flag = WA_AI_industry_overextended_flag
+}
+
+### synthetic-rubber pre-build (PROACTIVE layer)
+
+# Fix 76 (campaign be18f9c7). THIS = country.
+#
+# WHAT THIS IS. Every existing synthetic-refinery build path in the mod is REACTIVE -
+# it requires `resource@rubber < 0`, i.e. the deficit must already exist:
+#   * events/WA_AI_construction.txt (WA_AI_C.10 refinery branch)  -> WA_AI_queue_REF
+#   * WA_AI_build_refinery_resource_shortage_rubber                -> type-8 PC project
+#   * WA_AI_overext_substitute_MIC's refinery leg                  -> type-8 PC project
+# A synthetic_refinery costs 18 000 IC and yields 5 rubber/level, so a park large
+# enough to matter takes years to raise. Starting the clock on the day the deficit
+# opens guarantees the country spends the whole war behind its own demand curve.
+# Measured on be18f9c7: USA rubber went NEGATIVE at 1942.6 (imports cut 86 -> 0) and
+# its FIRST synthetic refinery level appeared at 1944.6 - 24 months late - reaching
+# 41 levels (205 rubber/day) only by 1946.6, still against a -387 balance.
+#
+# THE LEADING SIGNAL IS IMPORT DEPENDENCE, and it is available years earlier.
+# `resource_imported@rubber` is the volume a country is covering from someone else's
+# territory: it is exactly the volume that disappears when a war, a blockade or a
+# faction realignment cuts the route, and it says so while the balance is still
+# healthy. On the same campaign the USA read imports 60 at 1940.6 and 86 at 1941.6
+# with a POSITIVE balance both times - this trigger arms there, ~2 years before the
+# shock and ~4 years before the AI actually built anything.
+#
+# WHY IT IS SETUP-AGNOSTIC (AGENTS.md principle 1). No dates, no tags, no faction or
+# ideology terms, no assumption that Pearl Harbor happened. A country that never
+# loses its supplier keeps a healthy balance, its imports fall as domestic synthetic
+# output replaces them, and the trigger closes itself (see the self-limiting note
+# below). A country whose crisis arrives in 1938 or 1944 instead is served on the
+# same terms. Contrast the reactive C.10 branch, which additionally carries a hard
+# `date > 1941.1.1` - a story gate that is silent in any game whose rubber crisis
+# comes early. This trigger deliberately carries no such term.
+#
+# THE PROACTIVE AND REACTIVE LANES ARE MUTUALLY EXCLUSIVE BY CONSTRUCTION.
+# `resource@rubber > -1` means this fires only while the balance is still non-
+# negative; every reactive path requires it to be negative. So no call site can
+# double-queue, and this trigger can never widen the reactive behaviour it sits
+# beside - it only covers the window the reactive paths structurally cannot see.
+#
+# SELF-LIMITING, so it needs no capacity counter. Each level added raises domestic
+# rubber production, the engine's trade AI then buys less, `resource_imported@rubber`
+# falls, and the trigger shuts off on its own once the park can stand in for the
+# imports. That is why there is no country-scope level count here: summing
+# synthetic_refinery over every owned state on a 2-day pulse would cost far more than
+# the feedback loop it would replace.
+#
+# COAL GUARD IS MANDATORY, not defensive coding. A synthetic_refinery burns 60 coal
+# per level (common/buildings/00_buildings.txt) and coal is the one resource whose
+# deficit is catastrophic rather than tolerable - WA sets BASE_FACTORY_SPEED = 0.0
+# against POWERED_FACTORY_SPEED = 2.5, so an unpowered factory produces literally
+# zero (documentation/WA_REFINERY_CONTROLLER_REVIEW.md 1.5). Same two terms, same
+# values, as the reactive rubber strategy and the overextension cascade already use.
+#
+# WHO ACTUALLY QUALIFIES, measured on be18f9c7 (rubber balance >= 0 AND imports over
+# the floor AND the coal guard satisfied, at any sampled date 1936.6-1946.7):
+#   USA  yes - 1940.6, 1941.6. The motivating case, and the one that needs this.
+#   JAP  yes - 1937.6 to 1940.6. Already raises a park unaided (0 -> 4).
+#   SOV  yes - 1938.6 to 1941.12. Already raises a park unaided (13 -> 55).
+#   ENG  NEVER - it owns Malaya, so it imports 0 rubber for the whole 1936-1941
+#        positive-balance stretch; once Malaya falls the balance is negative and the
+#        REACTIVE paths own it. A pre-build lane cannot help a country whose supply
+#        is domestic right up to the moment it is conquered.
+#   GER  NEVER - rubber imports 0 from 1938 on, because GER is pre-built BY HAND:
+#        the original_tag = GER startup block in events/WA_AI_construction.txt adds
+#        22 refinery levels, park 4 -> 36 by 1940.6. This trigger is the generic,
+#        tag-free form of exactly that behaviour.
+#   ITA  NEVER - clears the rubber terms three times, rejected by the coal guard
+#        every time (it imports 700-1600 coal). The guard doing its job.
+#
+# consumer: WA_AI_C.10 refinery branch (events/WA_AI_construction.txt) - ONE site.
+#           A second host in WA_AI_build_refinery_resource_shortage_rubber was
+#           prototyped and removed; the reason is recorded at that call site.
+# probe:    WA_TLM_r48_prebuild_synth_* (checklist R48)
+
+# Import volume at which a country counts as structurally rubber-import-dependent.
+# Sits above the 10 used by WA_AI_check_resource_needs' import leg so ordinary trade
+# noise does not arm an 18 000-IC building; measured to arm the USA in mid-1940.
+@AI_SYNTH_PREBUILD_IMPORT_FLOOR = 20
+# Relevance floor - a country that barely consumes rubber has nothing to protect.
+# Same value the reactive C.10 branch uses.
+@AI_SYNTH_PREBUILD_CONSUMED_FLOOR = 9
+
+WA_AI_CONSTRUCTION_should_pre_build_synth_rubber = {
+
+	has_tech = synth_oil_experiments
+
+	# capability guards, same pair the neighbouring refinery strategies carry
+	has_capitulated = no
+	surrender_progress < 0.3
+
+	# the rubber actually matters to this economy
+	check_variable = { resource_consumed@rubber > @AI_SYNTH_PREBUILD_CONSUMED_FLOOR }
+
+	# PRE-shortage lane only - hands over to the reactive paths the moment the
+	# balance turns, so the two can never both queue for the same country.
+	# Was `> -1` (2026-08-14), which did NOT implement that invariant: `>` is
+	# strict, so the whole band -1 < rubber < 0 satisfied both this term and the
+	# reactive paths' `< 0`, and a country sitting at -0.5 could queue refineries
+	# from both lanes at once. `NOT = { ... < 0 }` is exactly "not negative".
+	NOT = { check_variable = { resource@rubber < 0 } }
+
+	# the leading signal: covering demand from someone else's territory
+	check_variable = { resource_imported@rubber > @AI_SYNTH_PREBUILD_IMPORT_FLOOR }
+
+	# coal guard - 60 coal per level, and coal deficits are not survivable
+	check_variable = { resource@coal > 50 }
+	check_variable = { resource_imported@coal < 20 }
+
+	# scale: only an economy that can absorb an 18 000-IC building speculatively.
+	# Floored variant, because the bare engine availability reads ~0 once the
+	# vanilla construction queue saturates (the Fix 40 finding).
+	WA_AI_PC_has_project_civs_20 = yes
 }
 
 # THIS = STATE, PREV = BUILDER, _project_building_type, _project_province_id
@@ -111,10 +489,54 @@ WA_AI_PC_can_build_project = {
 }
 
 # THIS = STATE, PREV = BUILDER, _project_building_type, _project_province_id
-# Checks if we already have a project of the same type in this state
+# Checks if ANY builder already has a project of the same type in this state.
+# Fix 46: was ROOT-only. WA_AI_PC_projects_in_state_of_@ROOT is keyed by builder, so for the
+# building types with allied_build = yes (air_base, infrastructure) the host nation and its
+# ally each saw an empty array for the other and both queued the same state - campaign
+# 9a4cd657 1944.7 had ENG and USA simultaneously funding an air base in state 126 and in
+# state 860, and the UK-hosting capacity gate then counted the same state twice as "claimed".
+# The second term is the builder-agnostic counter maintained by WA_AI_PC_start_project /
+# WA_AI_PC_end_project_by_id. The original ROOT-array term is KEPT deliberately: on a save
+# resumed from a pre-Fix-46 build the counter starts at 0 for every in-flight project, and
+# without it the guard would regress to nothing until the whole legacy queue drains.
 WA_AI_PC_has_same_type_project_here = {
-	any_of = { array = WA_AI_PC_projects_in_state_of_@ROOT value = v_proj
-		check_variable = { ROOT.WA_AI_PC_building_type^v_proj = _project_building_type }
+	OR = {
+		any_of = { array = WA_AI_PC_projects_in_state_of_@ROOT value = v_proj
+			check_variable = { ROOT.WA_AI_PC_building_type^v_proj = _project_building_type }
+		}
+		check_variable = { WA_AI_PC_state_type_projects^_project_building_type > 0 }
+	}
+}
+
+### Fix 47: air-base priority band gate
+# THIS/ROOT = builder country. TRUE when this country - or a faction partner it can build
+# for (air_base has allied_build = yes) - fields an air force large enough that BASING is a
+# plausible constraint on deploying it, rather than airframes or pilots.
+#
+# Why a bare size test is the right gate, with no capacity term of its own: every air-base
+# project in the PC queue was created by a strategy that ALREADY proved a capacity deficit
+# (WA_AI_build_uk_air_hosting_capacity's hosting-capacity gate, WA_AI_build_theatre_air_bases'
+# side-wide per-theatre gate). Re-deriving the deficit here would re-run a faction-wide
+# 12-airframe sum inside a trigger evaluated per candidate state. The project's existence is
+# the deficit evidence; this trigger only asks whether the air force behind it is worth
+# outranking a refinery for.
+#
+# has_deployed_air_force_size is the engine's own counter - num_deployed_planes is not
+# readable as a set_temp_variable rvalue (campaign 5709c8b9), which is why both strategies
+# inline 12 per-airframe sums, and why this gate deliberately uses the trigger form instead.
+#
+# Thresholds are absolute, on WA's air scale (~1/3 vanilla; the strategies' own token floor
+# is 99 deployed planes). No major clears them before ~1940, so early-war construction
+# ordering is unchanged and the blast radius is confined to the mid/late war, which is when
+# the overstacking this fixes actually appears.
+@AI_PC_AIR_PRIO_OWN_PLANES = 500		# own air force big enough to outrank the strategic band
+@AI_PC_AIR_PRIO_ALLY_PLANES = 1000		# or a faction partner whose air force we host
+WA_AI_PC_air_force_needs_basing_priority = {
+	OR = {
+		has_deployed_air_force_size = { size > @AI_PC_AIR_PRIO_OWN_PLANES }
+		any_allied_country = {
+			has_deployed_air_force_size = { size > @AI_PC_AIR_PRIO_ALLY_PLANES }
+		}
 	}
 }
 
@@ -166,6 +588,10 @@ WA_AI_PC_building_slot_available_for_type = {
 
 	else_if = { limit = { check_variable = { _project_building_type = 8 } }
 
+		# The shared-slot fallbacks below bypass the include_locked tech gate, so check the
+		# unlock tech explicitly - without it a country lacking synth_oil_experiments passes
+		# the slot check for a building it cannot construct.
+		ROOT = { has_tech = synth_oil_experiments }
 		OR = {
 			free_building_slots = { building = synthetic_refinery size > 0 include_locked = no }
 			free_building_slots = { building = industrial_complex size > 0 include_locked = no }
@@ -312,6 +738,109 @@ WA_AI_PC_building_slot_available = {
 	}
 }
 
+# Fix 41: overtake-lane revalidation - "is this starved project still worth building?"
+# THIS = ROOT = builder country. Input: _reval_project_id (temp) = PC project index.
+# Called by the anti-starvation lane in WA_AI_PC_assign_factories
+# (WA_AI_CONSTRUCTION_PRIORITY_core.txt) before diverting factories to a project that
+# has been starved >= @AI_PC_AGING_LANE_WEEKS; a FAIL cancels the project on the spot.
+# Dispatches on WA_AI_PC_building_type^_reval_project_id. Every geographic branch is
+# dynamic game state (control, war, contested theatres) - no historical-path assumption,
+# so it behaves identically in historical and ahistorical games.
+WA_AI_PC_project_still_relevant = {
+	# 13/14 rail family: still ours (ROOT or ROOT subject - rails serve OUR supply net)
+	# AND still near a live front (kills the Romanian-border project after the front
+	# moved to Moscow; spares the still-contested Libya corridor).
+	if = {
+		limit = {
+			OR = {
+				check_variable = { WA_AI_PC_building_type^_reval_project_id = 13 }
+				check_variable = { WA_AI_PC_building_type^_reval_project_id = 14 }
+			}
+		}
+		var:WA_AI_PC_target_state^_reval_project_id = {
+			CONTROLLER = {
+				OR = {
+					tag = ROOT
+					is_subject_of = ROOT
+				}
+			}
+			any_neighbor_state = { CONTROLLER = { has_war_with = ROOT } }
+		}
+	}
+	# 2 air bases: friendly ground (ROOT or faction ally - air_base has allied_build)
+	# AND a reason to base there: the UK hosting belt, or membership in a theatre that
+	# is currently contested for ROOT (same state/contested trigger pairs the theatre
+	# air-base builder uses; the pairs must-match, WA_AI_MILITARY_triggers.txt).
+	else_if = {
+		limit = { check_variable = { WA_AI_PC_building_type^_reval_project_id = 2 } }
+		var:WA_AI_PC_target_state^_reval_project_id = {
+			CONTROLLER = {
+				OR = {
+					tag = ROOT
+					is_in_faction_with = ROOT
+				}
+			}
+			OR = {
+				WA_AI_uk_air_hosting_state = yes
+				AND = { WA_AI_MILITARY_AIR_theatre_state_north_africa = yes		ROOT = { WA_AI_MILITARY_AIR_theatre_contested_north_africa = yes } }
+				AND = { WA_AI_MILITARY_AIR_theatre_state_italy = yes			ROOT = { WA_AI_MILITARY_AIR_theatre_contested_italy = yes } }
+				AND = { WA_AI_MILITARY_AIR_theatre_state_western_europe = yes	ROOT = { WA_AI_MILITARY_AIR_theatre_contested_western_europe = yes } }
+				AND = { WA_AI_MILITARY_AIR_theatre_state_scandinavia = yes		ROOT = { WA_AI_MILITARY_AIR_theatre_contested_scandinavia = yes } }
+				AND = { WA_AI_MILITARY_AIR_theatre_state_balkans = yes			ROOT = { WA_AI_MILITARY_AIR_theatre_contested_balkans = yes } }
+				AND = { WA_AI_MILITARY_AIR_theatre_state_eastern_europe = yes	ROOT = { WA_AI_MILITARY_AIR_theatre_contested_eastern_europe = yes } }
+				AND = { WA_AI_MILITARY_AIR_theatre_state_middle_east = yes		ROOT = { WA_AI_MILITARY_AIR_theatre_contested_middle_east = yes } }
+				AND = { WA_AI_MILITARY_AIR_theatre_state_burma_india = yes		ROOT = { WA_AI_MILITARY_AIR_theatre_contested_burma_india = yes } }
+				AND = { WA_AI_MILITARY_AIR_theatre_state_southeast_asia = yes	ROOT = { WA_AI_MILITARY_AIR_theatre_contested_southeast_asia = yes } }
+				AND = { WA_AI_MILITARY_AIR_theatre_state_pacific_islands = yes	ROOT = { WA_AI_MILITARY_AIR_theatre_contested_pacific_islands = yes } }
+			}
+		}
+	}
+	# 8 synthetic refinery: rubber still needed (>= 2 of 3 on the monthly needs counter,
+	# WA_AI_misc_effects.txt) - never geographic; a refinery pays off wherever it stands.
+	else_if = {
+		limit = { check_variable = { WA_AI_PC_building_type^_reval_project_id = 8 } }
+		check_variable = { WA_AI_needs_rubber > 1 }
+	}
+	# 11/15 steel mills (hydro/plain): steel still needed - never geographic.
+	else_if = {
+		limit = {
+			OR = {
+				check_variable = { WA_AI_PC_building_type^_reval_project_id = 11 }
+				check_variable = { WA_AI_PC_building_type^_reval_project_id = 15 }
+			}
+		}
+		check_variable = { WA_AI_needs_steel > 1 }
+	}
+	# 12/16 aluminium smelters (hydro/plain): aluminium still needed - never geographic.
+	else_if = {
+		limit = {
+			OR = {
+				check_variable = { WA_AI_PC_building_type^_reval_project_id = 12 }
+				check_variable = { WA_AI_PC_building_type^_reval_project_id = 16 }
+			}
+		}
+		check_variable = { WA_AI_needs_aluminium > 1 }
+	}
+	# default (1 infra, 3 AA, 4 radar, 5/6/7 factories, 9/10 conversions): the target
+	# state is still on our side - the minimum bar for any building to ever spawn.
+	# A project with target_state 0 passes: we cannot judge what we cannot locate, and
+	# the orphan-cleanup pass in WA_AI_PC_update_project_progress owns that case.
+	else = {
+		if = {
+			limit = { check_variable = { WA_AI_PC_target_state^_reval_project_id > 0 } }
+			var:WA_AI_PC_target_state^_reval_project_id = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_in_faction_with = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+		}
+	}
+}
+
 ### forts
 
 WA_AI_has_naval_base = {
@@ -353,6 +882,91 @@ WA_AI_no_enemy_border = {
 }
 
 ### air base
+
+# THIS = state. Central and southern England states expected to host the
+# faction's aviation (within fighter range of northern France / Low Countries).
+#
+# Fix 51: THE ORDER OF THIS LIST IS THE BUILD PRIORITY - south-east first. It is the
+# authoritative geography statement, and it is mirrored id-for-id (and rank-for-rank)
+# by WA_AI_uk_air_hosting_priority_init in
+# common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_strategies.txt, which loads it
+# into global.WA_AI_uk_air_priority_states. The list genuinely has to exist twice:
+# @ constants are file-scoped, and a state-scope membership test cannot be built from
+# a plain-id array (comparing THIS.id against a stored plain id never matches - see
+# the .id scope-encoding entry in wa-lessons-learned). MEMBERSHIP stays owned here:
+# the selector re-tests this trigger on every array candidate and falls back to an
+# unordered scan over it, so if the two ever drift, a state can lose its RANK but
+# never its eligibility. Change one, change the other.
+#
+# Ranking method (verified 2026-08-14, not inherited): mean pixel distance from each
+# state's provinces (generated WA_AI_MAP province coordinates) to the target set the
+# header names - Vlaanderen/Holland/Nord-Pas-de-Calais, Picardy/Upper+Lower Normandy/
+# Brittany, Ile de France/Paris. Mean, not nearest: these fields have to cover the
+# whole Northern-France + Low-Countries theatre, not one landing beach.
+#   857 101.8 | 961 110.0 | 127 114.9 | 125 113.1 | 126 113.5 | 860 117.6
+#   859 137.3 | 338 133.4 | 129 133.3 | 128 143.6 | 123 151.8
+# Two ranks are judgement, not arithmetic:
+#  - 127 Sussex is placed above 961 South London despite a 5px worse mean (inside the
+#    noise of a province-centroid measure) because it is the better NEAREST field
+#    (56.2 vs 58.3) and is coastal - the forward Channel fighter position.
+#  - 123 Cornwall is placed LAST although it is the second most southerly state by
+#    latitude. Its seaward frontage is Biscay and Brittany, not the Channel narrows:
+#    its distance to the Calais/Belgium arc is 118.8, second-worst of the eleven and
+#    worse than Warwickshire's 100.8. It is a Coastal Command position, not a
+#    Northern-France cover position.
+# States NOT in this list that hold ENG air bases in campaigns (122 Wales, 858
+# Berkshire, 130 Yorkshire) are left out deliberately - adding states raises the
+# structural ceiling (11 x @UK_AIR_TARGET_LEVEL_CAP), and checklist R8 says not to do
+# that until the basing OUTCOME (R15) justifies more capacity. Berkshire measures
+# better than Gloucestershire (122.4 vs 133.4) and is the first candidate if that
+# ever changes.
+WA_AI_uk_air_hosting_state = {
+	OR = {
+		state = 857 # rank  1 - Kent
+		state = 127 # rank  2 - Sussex
+		state = 961 # rank  3 - South London
+		state = 125 # rank  4 - Essex
+		state = 126 # rank  5 - North London
+		state = 860 # rank  6 - Norfolk
+		state = 859 # rank  7 - Dorset
+		state = 338 # rank  8 - Gloucestershire
+		state = 129 # rank  9 - Leicestershire
+		state = 128 # rank 10 - Warwickshire
+		state = 123 # rank 11 - Cornwall
+	}
+}
+
+# THIS = state, ROOT = builder country. Input: _project_building_type (= 2).
+# Fix 51: the "can this builder put another air-base level here" test, extracted so the
+# ordered south-first walk and its unordered fallback in
+# WA_AI_build_uk_air_hosting_capacity cannot drift apart. Body is unchanged from the
+# level-ladder's inline limit - see the Fix 46 comment there for why the allied branch
+# must repeat the host's free-slot test.
+WA_AI_uk_air_site_buildable = {
+	OR = {
+		AND = {
+			is_controlled_by = ROOT
+			WA_AI_available_AIR = yes
+			WA_AI_PC_can_build_project = yes
+		}
+		AND = {
+			NOT = { is_controlled_by = ROOT }
+			WA_AI_available_AIR_allied = yes
+			NOT = { WA_AI_PC_has_same_type_project_here = yes }
+			# Fix 46: the ally must pass the SAME free-slot test the host nation gets
+			# via WA_AI_PC_can_build_project above. Without it an allied builder could
+			# queue a 2000-IC air base into a state with no free shared slot, fund it at
+			# up to 20 civs for weeks, and then have WA_AI_PC_complete_project_by_id
+			# refuse to spawn the building (its own WA_AI_PC_building_slot_available
+			# gate) - the whole build silently discarded. Air bases compete for state
+			# slots with arms factories, which ENG builds by the hundred in exactly
+			# these states, so a full state is the normal case, not an edge case. Same
+			# trigger, same _project_building_type = 2, so queue-time and
+			# completion-time agree.
+			WA_AI_PC_building_slot_available_for_type = yes
+		}
+	}
+}
 
 WA_AI_airbase_priority = {
 	OR = {
@@ -514,6 +1128,37 @@ WA_AI_region_priority = {
 	}
 }
 
+# THIS = STATE, ROOT = builder country.
+# Fix 40: refinery-only site criteria, split off from WA_AI_region_priority so the
+# two-pass refinery draw (WA_AI_priority_queue_*_refinery in
+# WA_AI_CONSTRUCTION_queue_functions.txt) can widen without touching the shared
+# trigger, which also drives four construction SCORING multipliers
+# (WA_AI_CONSTRUCTION_scoring.txt:84/140/230/539).
+#
+# PASS 1 - the preferred site set. Deliberately delegates to WA_AI_region_priority
+# instead of restating `is_in_home_area = yes`: that keeps SOV (central Russia) and
+# CHI (western China) on their existing safe-interior rule rather than silently
+# widening them to their whole home area, which for SOV would include the Far East.
+WA_AI_refinery_region_priority = {
+	WA_AI_region_priority = yes
+}
+
+# PASS 2 - widened fallback, used only when pass 1 drew no eligible state
+# (campaign 31eaf7e6: ENG's home area was saturated, so a home-area-only draw could
+# never place a refinery for the whole war). Owned territory only - no allied or
+# occupied land - and not directly on a hostile border, so a refinery is never
+# started in a state the enemy can walk into next month. Slot availability is NOT
+# retested here: every call site already runs WA_AI_PC_can_build_project in the same
+# limit block, which covers control, the free type slot and the same-type dedup.
+WA_AI_refinery_region_priority_wide = {
+	is_owned_by = ROOT
+	NOT = {
+		any_neighbor_state = {
+			CONTROLLER = { has_war_with = ROOT }
+		}
+	}
+}
+
 WA_AI_central_russia = {
 	OR = {
 		region = 653
@@ -668,4 +1313,129 @@ WA_AI_PC_state_has_railway_at_level_3 = {
 		state = THIS
 		level = 3
 	}
+}
+
+############################################################################################################
+#	Fix 74: coalition logistics - who may build rail/ports on whose soil
+#
+#	The PC *executor* has always accepted allied ground: WA_AI_PC_start_project passes on
+#	CONTROLLER = { is_in_faction_with = ROOT } (PRIORITY_core.txt), the Fix 34 controller test in
+#	WA_AI_PC_assign_factories and the completion path do the same, supply_node/rail_way/naval_base
+#	are all allied_build = yes, and provincial pathfinder type 2 walks allied provinces. Only the
+#	*selectors* were ROOT-or-subject gated, so a corridor that ended up on an ally's soil had no
+#	builder at all. Observed twice: Free-France Normandy (campaign 31eaf7e6, lessons-log) and
+#	FRA-controlled Tunisia (campaign f9321934, 1944.3 - rail 1-2 at the Tripoli front while
+#	ENG-held Egypt ran rail 5, and ENG/USA queued zero railway projects all campaign).
+#
+#	The ally leg is deliberately NOT "any faction member". It fires only where the controller
+#	cannot run the railway system for itself, which is exactly the population the gap was about
+#	and keeps two healthy allies out of each other's rail networks.
+############################################################################################################
+
+# Railway eligibility thresholds. @ constants are file-scoped; before Fix 75 these lived in
+# BOTH common/on_actions/WA_AI_misc_on_actions.txt (as an inline limit block) and
+# WA_AI_CONSTRUCTION_PRIORITY_railway_core.txt, with a "must match" comment holding them together.
+# The on_action copy is now gone - it calls the trigger below instead - so only railway_core.txt
+# (authoritative, it also owns the constants the effect body itself reads) and this file carry them.
+@WA_AI_PC_railway_MIN_CIVS_PEACE = 75
+@WA_AI_PC_railway_MINOR_CIV_THRESHOLD = 50
+@WA_AI_PC_railway_MIN_STATES = 5
+@WA_AI_PC_railway_MAX_SURRENDER = 0.3
+@WA_AI_PC_railway_RECOVERY_MIN_STATES = 20
+
+# THIS = country. Is this country able to run the railway system for itself?
+#
+# Fix 75: this IS the on_weekly railway eligibility gate, lifted verbatim out of
+# WA_AI_misc_on_actions.txt so that the on_action and Fix 74's ally leg cannot drift apart - they
+# were two hand-maintained copies of the same judgement, and R46 already listed that as a
+# regression risk.
+#
+# `has_capitulated` is deliberately NOT a term here. It answers "did this government fall", not
+# "can this country build" - the same category error R27 records for surrender_progress. A
+# capitulated tag keeps its territory, its factions and its factories; what decides whether rail is
+# worth building is the capability terms below. FRA on f9321934 fails this trigger anyway (21 civs
+# against a 75-civ recovery hatch it needs because its surrender_progress is pinned high), which is
+# why Fix 74's ally leg still fires for it and ENG/USA build the Tunisian rail.
+WA_AI_PC_country_can_build_own_logistics = {
+	# Higher peacetime industrial threshold - war uses a lower one inside WA_AI_PC_railway
+	OR = {
+		has_war = yes
+		num_of_civilian_factories > @WA_AI_PC_railway_MIN_CIVS_PEACE
+	}
+	# Skip minor countries unless at war or rich
+	OR = {
+		is_major = yes
+		has_war = yes
+		num_of_civilian_factories > @WA_AI_PC_railway_MINOR_CIV_THRESHOLD
+	}
+	# Minimum state count - skip tiny nations
+	num_of_controlled_states > @WA_AI_PC_railway_MIN_STATES
+	# Skip countries losing badly - UNLESS the war economy still works.
+	# surrender_progress measures VP loss, not capability: SOV crossed 30% in Oct 1942 with ~180
+	# states and 300+ divisions and was locked out of railway building for the entire eastern war.
+	OR = {
+		surrender_progress < @WA_AI_PC_railway_MAX_SURRENDER
+		AND = {
+			num_of_civilian_factories > @WA_AI_PC_railway_MIN_CIVS_PEACE
+			num_of_controlled_states > @WA_AI_PC_railway_RECOVERY_MIN_STATES
+		}
+	}
+}
+
+# THIS = country. Negation, for Fix 74's ally leg: an ally ROOT may build logistics FOR is one that
+# cannot build them itself. Defined as the strict complement so the two can never disagree.
+WA_AI_PC_country_cannot_build_own_logistics = {
+	NOT = { WA_AI_PC_country_can_build_own_logistics = yes }
+}
+
+# THIS = state, ROOT = builder country. True when ROOT may queue logistics construction here.
+# Superset of the two pre-Fix-74 tests: ROOT-controlled (the old ROOT loop) and subject-controlled
+# (Fix 27's puppet loop), plus the new ally leg.
+WA_AI_PC_can_build_logistics_here = {
+	OR = {
+		is_controlled_by = ROOT
+		CONTROLLER = { is_subject_of = ROOT }
+		AND = {
+			CONTROLLER = { is_in_faction_with = ROOT }
+			CONTROLLER = { WA_AI_PC_country_cannot_build_own_logistics = yes }
+		}
+	}
+}
+
+# THIS = country, ROOT = builder country. Countries whose controlled states ROOT may treat as its
+# own when selecting logistics targets: itself, its subjects, and faction allies that cannot build
+# for themselves. Country-scoped twin of WA_AI_PC_can_build_logistics_here, for the selectors that
+# iterate `every_country = { limit = { ... } every_controlled_state = { ... } }` rather than states.
+WA_AI_PC_is_logistics_build_partner = {
+	exists = yes
+	OR = {
+		tag = ROOT
+		is_subject_of = ROOT
+		AND = {
+			is_in_faction_with = ROOT
+			WA_AI_PC_country_cannot_build_own_logistics = yes
+		}
+	}
+}
+
+# THIS = state, ROOT = builder country. Cheap membership test for the land-war railway strategy:
+# is this state a frontline worth a route against the enemy currently being processed?
+# Reads the chain-global temps the strategy sets per enemy (_routes_for_this_enemy, the per-enemy
+# route budget; _current_enemy_tag; _check_railway_level, the level at which a frontline is "done").
+# Extracted by Fix 74 so all three candidate populations - ROOT's states, subject states and
+# dependent-ally states - are filtered identically before the shared body runs.
+WA_AI_PC_railway_land_frontline_candidate = {
+	### Skip if we already have enough routes for this enemy
+	check_variable = { _routes_for_this_enemy < 4 }	# @WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY
+	# State borders this specific enemy (or the enemy's puppets)
+	any_neighbor_state = {
+		OR = {
+			is_controlled_by = var:_current_enemy_tag
+			controller = { is_subject_of = var:_current_enemy_tag }
+		}
+	}
+	# State has a supply hub (proper check)
+	WA_AI_PC_state_has_supply_hub = yes
+	# Skip states that already have level 5 railways (native check - includes focus/event built)
+	NOT = { WA_AI_PC_state_has_railway_at_level = yes }
 }

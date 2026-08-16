@@ -204,6 +204,17 @@ WA_TEST_RW_init = {
 		set_variable = { WA_TEST_RW_end_day^13 = 0 }
 	}
 
+	# Test 14
+	if = { limit = { check_variable = { WA_TEST_RW_state^14 = @WA_TEST_RW_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 014: preserving previous PASS"
+	}
+	else = {
+		set_variable = { WA_TEST_RW_state^14 = @WA_TEST_RW_NOT_LAUNCHED }
+		set_variable = { WA_TEST_RW_fail_code^14 = 0 }
+		set_variable = { WA_TEST_RW_launch_day^14 = 0 }
+		set_variable = { WA_TEST_RW_end_day^14 = 0 }
+	}
+
 	set_variable = { WA_TEST_RW_suite_start_day = global.num_days }
 	add_to_variable = { WA_TEST_RW_suite_run_count = 1 }
 }
@@ -308,6 +319,13 @@ WA_TEST_RW_log_summary = {
 	else_if = { limit = { check_variable = { WA_TEST_RW_state^13 = @WA_TEST_RW_FAILED } check_variable = { WA_TEST_RW_fail_code^13 = 99 } } add_to_temp_variable = { _wt_count_skipped = 1 } }
 	else_if = { limit = { check_variable = { WA_TEST_RW_state^13 = @WA_TEST_RW_FAILED } } add_to_temp_variable = { _wt_count_failed = 1 } }
 	else_if = { limit = { check_variable = { WA_TEST_RW_state^13 = @WA_TEST_RW_ONGOING } } add_to_temp_variable = { _wt_count_ongoing = 1 } }
+	else = { add_to_temp_variable = { _wt_count_not_launched = 1 } }
+
+	# Test 14
+	if = { limit = { check_variable = { WA_TEST_RW_state^14 = @WA_TEST_RW_PASSED } } add_to_temp_variable = { _wt_count_passed = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^14 = @WA_TEST_RW_FAILED } check_variable = { WA_TEST_RW_fail_code^14 = 99 } } add_to_temp_variable = { _wt_count_skipped = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^14 = @WA_TEST_RW_FAILED } } add_to_temp_variable = { _wt_count_failed = 1 } }
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^14 = @WA_TEST_RW_ONGOING } } add_to_temp_variable = { _wt_count_ongoing = 1 } }
 	else = { add_to_temp_variable = { _wt_count_not_launched = 1 } }
 
 	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW SUMMARY: [?_wt_count_passed] PASSED, [?_wt_count_failed] FAILED, [?_wt_count_skipped] SKIPPED, [?_wt_count_ongoing] ONGOING, [?_wt_count_not_launched] NOT_LAUNCHED"
@@ -628,6 +646,29 @@ WA_TEST_RW_print = {
 			log = "  013 | ITA Kenya Route Block  | NOT_LAUNCHED |    [?_wt_fc] | -        | -"
 		}
 
+		### Test 014
+		set_temp_variable = { _wt_s = WA_TEST_RW_state^14 }
+		set_temp_variable = { _wt_fc = WA_TEST_RW_fail_code^14 }
+		set_temp_variable = { _wt_ld = WA_TEST_RW_launch_day^14 }
+		subtract_from_temp_variable = { _wt_ld = WA_TEST_RW_suite_start_day }
+		set_temp_variable = { _wt_ed = WA_TEST_RW_end_day^14 }
+		subtract_from_temp_variable = { _wt_ed = WA_TEST_RW_suite_start_day }
+		if = { limit = { check_variable = { _wt_s = 2 } }
+			log = "  014 | Railway Type Isolation  | PASSED      |    [?_wt_fc] | +[?_wt_ld]d    | +[?_wt_ed]d"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 3 } check_variable = { _wt_fc = 99 } }
+			log = "  014 | Railway Type Isolation  | SKIPPED     |   [?_wt_fc] | -        | -"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 3 } }
+			log = "  014 | Railway Type Isolation  | FAILED      |   [?_wt_fc] | +[?_wt_ld]d    | +[?_wt_ed]d"
+		}
+		else_if = { limit = { check_variable = { _wt_s = 1 } }
+			log = "  014 | Railway Type Isolation  | ONGOING     |    [?_wt_fc] | +[?_wt_ld]d    | -"
+		}
+		else = {
+			log = "  014 | Railway Type Isolation  | NOT_LAUNCHED |    [?_wt_fc] | -        | -"
+		}
+
 			log = "---------------------------------------------------------------------"
 			WA_TEST_RW_log_summary = yes
 			log = "  Fail codes: 98=TIMEOUT, 99=SKIPPED"
@@ -704,6 +745,7 @@ WA_TEST_RW_launch_all = {
 	WA_TEST_RW_011_launch = yes
 	WA_TEST_RW_012_launch = yes
 	WA_TEST_RW_013_launch = yes
+	WA_TEST_RW_014_launch = yes
 }
 
 WA_TEST_RW_check_all = {
@@ -736,6 +778,8 @@ WA_TEST_RW_check_all = {
 	WA_TEST_RW_check_timeout = yes
 	set_temp_variable = { _wt_test_id = 13 }
 	WA_TEST_RW_check_timeout = yes
+	set_temp_variable = { _wt_test_id = 14 }
+	WA_TEST_RW_check_timeout = yes
 
 	# Individual test checks (only evaluates tests still ONGOING)
 	WA_TEST_RW_001_check = yes
@@ -751,6 +795,7 @@ WA_TEST_RW_check_all = {
 	WA_TEST_RW_011_check = yes
 	WA_TEST_RW_012_check = yes
 	WA_TEST_RW_013_check = yes
+	WA_TEST_RW_014_check = yes
 }
 
 ############################################################################################################
@@ -1041,7 +1086,9 @@ WA_TEST_RW_004_check = {
 				add_to_temp_variable = { _wt_railway_count = 1 }
 
 				if = {
-					limit = { check_variable = { WA_AI_PC_priority^_wt_proj = 5000 } }
+					# Fix 41: prewar band compressed 5000 -> 500 (@WA_AI_PC_railway_PRIO_PREWAR,
+					# WA_AI_CONSTRUCTION_PRIORITY_railway_core.txt)
+					limit = { check_variable = { WA_AI_PC_priority^_wt_proj = 500 } }
 					add_to_temp_variable = { _wt_prewar_count = 1 }
 				}
 			}
@@ -1725,6 +1772,116 @@ WA_TEST_RW_013_launch = {
 WA_TEST_RW_013_check = {
 	# Test 013 resolves in launch phase (unit test), nothing to check
 	# Timeout handler will catch if stuck in ONGOING state
+}
+
+############################################################################################################
+#	TEST 014: Railway Validation Type Isolation (Fix 50 verification)
+#	Mimic a frontier-port helper leaving _project_type_id = 14, then verify the production
+#	railway-validation wrapper cancels an off-path railway project but preserves an off-path port.
+#	Resolves immediately (unit test)
+#	Fail codes: 1=stale railway survived, 2=port was cancelled, 3=validator strategy was not 13
+############################################################################################################
+
+WA_TEST_RW_014_launch = {
+	set_temp_variable = { _wt_test_id = 14 }
+
+	if = { limit = { check_variable = { WA_TEST_RW_state^14 = @WA_TEST_RW_PASSED } }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 014: already PASSED, skipping re-launch"
+	}
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^14 = @WA_TEST_RW_FAILED } }
+		# Already resolved
+	}
+	else_if = { limit = { check_variable = { WA_TEST_RW_state^14 = @WA_TEST_RW_ONGOING } }
+		# Already running
+	}
+	else = {
+		set_variable = { WA_TEST_RW_state^14 = @WA_TEST_RW_ONGOING }
+		set_variable = { WA_TEST_RW_launch_day^14 = global.num_days }
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 014 (Railway Type Isolation): LAUNCHED"
+
+		# Add one synthetic stale railway project. State 282 is only a valid scope holder;
+		# the deliberately impossible province id keeps the project outside _valid_provinces.
+		WA_AI_PC_get_new_project_ID = yes
+		set_temp_variable = { _wt_rail_proj = new_project_ }
+		set_variable = { WA_AI_PC_target_state^_wt_rail_proj = 282 }
+		set_variable = { WA_AI_PC_target_province^_wt_rail_proj = 900001 }
+		set_variable = { WA_AI_PC_building_type^_wt_rail_proj = 13 }
+		set_variable = { WA_AI_PC_type_id^_wt_rail_proj = 13 }
+		add_to_array = { WA_AI_PC_queue = _wt_rail_proj }
+		add_to_variable = { WA_AI_PC_active_projects = 1 }
+
+		# Add one synthetic port project that must not be owned by railway validation.
+		WA_AI_PC_get_new_project_ID = yes
+		set_temp_variable = { _wt_port_proj = new_project_ }
+		set_variable = { WA_AI_PC_target_state^_wt_port_proj = 282 }
+		set_variable = { WA_AI_PC_target_province^_wt_port_proj = 900002 }
+		set_variable = { WA_AI_PC_building_type^_wt_port_proj = 14 }
+		set_variable = { WA_AI_PC_type_id^_wt_port_proj = 14 }
+		add_to_array = { WA_AI_PC_queue = _wt_port_proj }
+		add_to_variable = { WA_AI_PC_active_projects = 1 }
+
+		# Mirror the production start path's state bookkeeping so end_project removes exactly
+		# the two synthetic increments and cannot disturb a real counter already present here.
+		282 = {
+			add_to_array = { WA_AI_PC_projects_in_state_of_@ROOT = _wt_rail_proj }
+			add_to_array = { WA_AI_PC_projects_in_state_of_@ROOT = _wt_port_proj }
+			add_to_variable = { WA_AI_PC_state_type_projects^13 = 1 }
+			add_to_variable = { WA_AI_PC_state_type_projects^14 = 1 }
+		}
+
+		clear_temp_array = _valid_provinces
+		add_to_temp_array = { _valid_provinces = 900003 }
+		set_temp_variable = { _project_type_id = 14 }
+		WA_AI_PC_railway_validate_queued_projects = yes
+
+		set_temp_variable = { _wt_rail_present = 0 }
+		set_temp_variable = { _wt_port_present = 0 }
+		for_each_loop = { array = WA_AI_PC_queue value = _wt_proj
+			if = { limit = { check_variable = { _wt_proj = _wt_rail_proj } }
+				set_temp_variable = { _wt_rail_present = 1 }
+			}
+			if = { limit = { check_variable = { _wt_proj = _wt_port_proj } }
+				set_temp_variable = { _wt_port_present = 1 }
+			}
+		}
+
+		if = { limit = { check_variable = { _strategy_id = 13 } }
+			if = { limit = { check_variable = { _wt_rail_present = 0 } }
+				if = { limit = { check_variable = { _wt_port_present = 1 } }
+					WA_TEST_RW_mark_passed = yes
+					log = "[GetYear] [GetMonth] | TEST | [This.GetName] | RW TEST 014: PASS - railway validation stayed on type 13 and preserved type 14"
+				}
+				else = {
+					set_temp_variable = { _wt_fail_code = 2 }
+					WA_TEST_RW_mark_failed = yes
+				}
+			}
+			else = {
+				set_temp_variable = { _wt_fail_code = 1 }
+				WA_TEST_RW_mark_failed = yes
+			}
+		}
+		else = {
+			set_temp_variable = { _wt_fail_code = 3 }
+			WA_TEST_RW_mark_failed = yes
+		}
+
+		# Restore the live queue and shared temps on both pass and fail paths.
+		if = { limit = { check_variable = { _wt_rail_present = 1 } }
+			set_temp_variable = { _project_id = _wt_rail_proj }
+			WA_AI_PC_end_project_by_id = yes
+		}
+		if = { limit = { check_variable = { _wt_port_present = 1 } }
+			set_temp_variable = { _project_id = _wt_port_proj }
+			WA_AI_PC_end_project_by_id = yes
+		}
+		set_temp_variable = { _project_type_id = 0 }
+		set_temp_variable = { _strategy_id = 0 }
+	}
+}
+
+WA_TEST_RW_014_check = {
+	# Test 014 resolves in launch phase (unit test), nothing to check
 }
 
 ############################################################################################################

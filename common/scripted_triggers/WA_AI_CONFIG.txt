@@ -76,8 +76,11 @@ WA_AI_CONFIG_is_minor_country = {
 
 WA_AI_CONFIG_is_in_allies = {
 	OR = {
+		# Fix 63 (2026-08-14): `is_in_faction_with = USA` was listed twice. Harmless
+		# to the engine - an OR of a term with itself - but this trigger gates a
+		# large share of the Allied AI, so a reader checking it should not have to
+		# wonder whether the third line was meant to be a third country.
 		is_in_faction_with = ENG
-		is_in_faction_with = USA
 		is_in_faction_with = USA
 	}
 }
@@ -277,24 +280,10 @@ WA_AI_CONFIG_is_escort_navy = {
 	}
 }
 
-# ============================================================================
-# OLD NAVY SYSTEM CONFIGURATIONS
-# ============================================================================
-# These triggers determine if a country is still using the old ai navy system
-# As the system is tested, and countries are updated, this will be removed
-# ============================================================================
-WA_AI_CONFIG_is_still_using_old_ai_navy_system = {
-	# OR = {
-	# 	# original_tag = USA
-	# 	# original_tag = JAP
-	# 	# original_tag = GER
-	# 	# original_tag = SOV
-	# 	# original_tag = ITA
-	# 	# original_tag = FRA
-	# 	# original_tag = ENG
-	# }
-	always = no
-}
+# (The old-navy-system migration gate WA_AI_CONFIG_is_still_using_old_ai_navy_system
+# was retired in Tier 1 fix 1.8: it had been `always = no` for every country, which
+# left the old cv-plane production blocks as dead code and their USA counterweight
+# suppressions live - the root cause of carrier-fighter starvation in 9be92c89.)
 
 WA_AI_CONFIG_needs_cv_planes = {
 	has_navy_size = { type = carrier size > 0 }
@@ -347,9 +336,29 @@ WA_AI_CONFIG_focus_on_minelayers = {
 	}
 }
 
+# Fix 64: SOV added. Routing a submarine navy through this trigger moves its production
+# from the naval_submarine role to the cruiser_submarine role: WA_AI_PRODUCTION_focus_on_submarines
+# (WA_AI_PRODUCTION_navy.txt:22) excludes members of this list, so the country picks up
+# WA_DEFAULT_production_navy_main_focus_on_cruiser_submarines instead, which takes
+# naval_submarine to 0 (base 25 - 25) and cruiser_submarine to 100.
+# For SOV that is the only lever that reaches the defect R30/Fix 51 could not: the coastal
+# Malyutka (sov_submarine_hull_3, range 1640 / str 6) is the highest-priority REACHABLE design
+# of the naval_submarine role, its tech is a 1936 START tech so research suppression is
+# impossible, and both the design layer (Fix 46) and production_upgrade_desire_offset (Fix 51)
+# were tried and moved nothing. Emptying the role is what remains.
+# Preconditions checked before adding SOV (all already true, nothing else was needed):
+#   - designs: SOV_naval_cruiser_submarine exists (ai_equipment/SOV_naval.txt), 5 hulls
+#   - techs: SOV starts with sov_cruiser_submarine_1..4 researched (history/countries/SOV:153-156)
+#   - fleet: 19 cruiser submarines in the 1936 OOB, so the role is not created from nothing
+#   - missions: ConvoyRaiding_2 (ai_navy/taskforce/generic_taskforce_templates.txt) is a
+#     cruiser_submarine-composition task force, so the boats built here get put to sea
+# Side effect, accepted: WA_AI_RESEARCH_needs_cruiser_submarines (WA_AI_RESEARCH_naval.txt:120)
+# reads this trigger, so SOV now weights cruiser-sub research. Only sov_cruiser_submarine_5
+# (Zulu, 1948) is left to research, so the practical effect is nil.
 WA_AI_CONFIG_focus_on_cruiser_submarines = {
 	OR = {
 		original_tag = GER
+		original_tag = SOV
 	}
 }
 
@@ -359,6 +368,15 @@ WA_AI_CONFIG_focus_on_cruiser_submarines = {
 # Determine if a country needs to focus on land units
 # ============================================================================
 
+# NOTE: these three DIVISIONS_use_* triggers are country IDENTITY markers, not production switches.
+# They are also read by WA_AI_CONFIG_DIVISIONS_uses_motorized_hq (which drives
+# history/general/taog_hq_template.txt), WA_AI_RESEARCH_needs_maintenance_company and
+# WA_AI_RESEARCH_needs_mechanized. Widening them changes army HQ templates and research weighting for
+# every country, not just the production mix.
+#
+# To change how much armour/motorised/mechanised the AI BUILDS, edit the gates in
+# common/scripted_triggers/WA_AI_TEMPLATES_triggers.txt (WA_AI_TEMPLATES_use_*_templates) and the
+# ratios in common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_army_composition.txt instead.
 WA_AI_CONFIG_DIVISIONS_use_armored_divisions = {
 	OR = {
 		original_tag = ENG
@@ -391,6 +409,27 @@ WA_AI_CONFIG_DIVISIONS_use_mechanized_divisions = {
 		original_tag = AST
 		original_tag = SAF
 	}
+}
+
+# Army HQ (TAOG) line-battalion type.
+# Rule: a country that fields motorized, mechanized or armored divisions gets a
+# motorized army HQ so the staff keeps up with the spearhead; everyone else gets
+# an infantry HQ. Consumed by history/general/taog_hq_template.txt.
+WA_AI_CONFIG_DIVISIONS_uses_motorized_hq = {
+	OR = {
+		WA_AI_CONFIG_DIVISIONS_use_armored_divisions = yes
+		WA_AI_CONFIG_DIVISIONS_use_motorized_divisions = yes
+		WA_AI_CONFIG_DIVISIONS_use_mechanized_divisions = yes
+	}
+}
+
+# Countries whose late-war army should be mostly mechanized: huge fuel reserves,
+# a very large industry, and no threatened land border to hold (unlike GER/SOV,
+# who must line long fronts with infantry). Currently only the USA qualifies -
+# ENG lacks the fuel and industrial margin, CAN/AST/SAF lack the industry.
+# Consumed by WA_AI_PRODUCTION_build_army_expeditionary_mechanization.
+WA_AI_CONFIG_DIVISIONS_is_expeditionary_mechanized_major = {
+	original_tag = USA
 }
 
 WA_AI_CONFIG_DIVISIONS_use_default_templates = {
@@ -430,6 +469,29 @@ WA_AI_CONFIG_DIVISIONS_use_line_support = {
 				original_tag = YUG
 				original_tag = GRE
 			}
+		}
+	}
+}
+
+# True when the country's army XP income is structurally penalised.
+# Reads the aggregate country modifier, so it covers national spirits, dynamic
+# modifiers and advisors alike, and it closes again by itself once the penalty is
+# lifted. Used to keep "nice to have" template roles shut for countries that cannot
+# fund a second design on top of their line infantry.
+# Catches SOV (purge + red army), CHI/PRC, MAN, JAP, NZL, TUR, BUL, BEL.
+# Does NOT catch a normal GER/ENG/USA/FRA run - their negative XP spirits are
+# civil-war or transient-only.
+WA_AI_CONFIG_has_penalised_army_xp_gain = {
+	OR = {
+		check_variable = {
+			var = modifier@experience_gain_army_factor
+			value = -0.05
+			compare = less_than
+		}
+		check_variable = {
+			var = modifier@experience_gain_factor
+			value = -0.05
+			compare = less_than
 		}
 	}
 }
@@ -950,6 +1012,15 @@ WA_AI_CONFIG_MILITARY_is_western_invasion_pool = {
 
 # Allied countries that should inherit coalition naval routing through Suez/Cape
 # and Atlantic corridors.
+#
+# Fix 61 (2026-08-14, checklist R36): added FRA and SAF. Both are Allied Atlantic
+# powers by geography - FRA has a real fleet in 1936-40 and Atlantic ports, SAF sits
+# on the Cape leg - and until this fix their mid-ocean gap avoidance came from
+# WA_AI_NAVAL_COUNTRY_ENG_legacy_ENG_azores_safe, a Country-layer block that had no
+# `allowed` gate and therefore leaked to the whole faction. That block is removed in
+# the same commit, so without this line they would have been left with no Atlantic
+# routing at all. Adding them here re-homes the coverage at the layer that owns it
+# rather than restoring the leak.
 WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = {
 	OR = {
 		original_tag = ENG
@@ -958,6 +1029,8 @@ WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = {
 		original_tag = AST
 		original_tag = NZL
 		original_tag = USA
+		original_tag = FRA
+		original_tag = SAF
 	}
 }
 
@@ -1025,5 +1098,38 @@ WA_AI_CONFIG_MILITARY_is_south_american = {
 		tag = CAY
 		tag = INS
 		tag = MAL
+	}
+}
+
+# ============================================================================
+# RESOURCE ECONOMY CONFIGURATIONS
+# ============================================================================
+# Countries whose economy is built around EXPORTING one resource. Read by the
+# proactive layer of the prospecting decisions through the capability triggers
+# WA_AI_is_strategic_<r>_exporter (WA_AI_RESOURCE_NEEDS_triggers.txt), which add
+# the war / trade-law conditions. Classification only here - no capability
+# checks. Moved out of the generated ai_will_do blocks 2026-08-15.
+# ============================================================================
+
+WA_AI_CONFIG_is_strategic_tungsten_exporter = {
+	OR = {
+		original_tag = SWE
+		original_tag = POR
+	}
+}
+
+WA_AI_CONFIG_is_strategic_rubber_exporter = {
+	OR = {
+		original_tag = MAL
+		original_tag = INS
+		original_tag = BRA
+	}
+}
+
+WA_AI_CONFIG_is_strategic_oil_exporter = {
+	OR = {
+		original_tag = IRQ
+		original_tag = BRA
+		original_tag = UKO
 	}
 }

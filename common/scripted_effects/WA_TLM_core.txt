@@ -1,0 +1,809 @@
+############################################################################################################
+#	WA_TLM - save-visible telemetry for AI systems
+#
+#	Design + registry + honesty rules: documentation/WA_TLM_TELEMETRY_SYSTEM.md
+#	Retrieval: savegame.py `tlm TAG FILE...` (regex ^wa_tlm_ on the country's variables)
+#
+#	RESERVED NAMESPACE: everything prefixed WA_TLM_ is telemetry. It is WRITE-ONLY
+#	from the mod's point of view - no gameplay/AI logic may ever read a WA_TLM_
+#	variable. Saves lowercase variable names: the save-side namespace is wa_tlm_.
+#
+#	Wiring:
+#	  on_startup  (WA_AI_startup_on_actions.txt) - global clock = 0, WA_TLM_init_country for every country
+#	  on_monthly  (WA_AI_misc_on_actions.txt)    - WA_TLM_tick_clock + WA_TLM_monthly_sample, is_ai gated
+############################################################################################################
+
+# Bump when the registered metric set changes; the sampler re-inits on mismatch so
+# new metrics exist at 0 even on campaigns resumed on a newer build.
+#
+# v5 (2026-08-13, R36): nav_screens and nav_convoys were reading invalid engine
+# tokens and returned a silent 0 for the whole of v4, which also forced
+# nav_port_pct - and every quarterly nav_port_pct_hist sample - to a hard-coded 0.
+# The metric SET is unchanged; the bump exists so a save can be told apart:
+# wa_tlm_version = 4 means nav_screens / nav_port_pct / nav_port_pct_hist are
+# artefacts and must not be scored; = 5 means they are measurements.
+# v6 (2026-08-13): adds the standing WA_TLM_post_* family - offensive-posture level-1
+# exchange-rate observations, written per (country, enemy, week) at the posture calculus
+# in WA_AI_MILITARY_posture_effects.txt, NOT by the monthly sampler below. Additive: no
+# existing metric changes meaning, so v5 readings stay valid. A save at wa_tlm_version < 6
+# simply lacks the family - score it NOT CHECKED, never FAILED.
+# v7 (2026-08-14, R41): adds WA_TLM_r64_csubs, the cruiser-submarine hull count, written by the
+# monthly naval sampler under the existing nav_* gate and stamped by nav_last_t. Additive: no
+# existing metric changes meaning, so v5/v6 readings stay valid. A save at wa_tlm_version < 7
+# simply lacks the metric - score it NOT CHECKED, never FAILED.
+# v8 (2026-08-14, Fix 51 / R8): adds the WA_TLM_r8_uk_air_* probe family - the south-first
+# UK air-base ordering probe, written at the queue site in WA_AI_uk_air_queue_site
+# (WA_AI_CONSTRUCTION_PRIORITY_strategies.txt) on the same verified-effect gate as
+# wa_ai_uk_air_dbg_started, NOT by the monthly sampler below. Additive: no existing metric
+# changes meaning, so v5/v6/v7 readings stay valid. A save at wa_tlm_version < 8 simply
+# lacks the family - score it NOT CHECKED, never FAILED.
+# v9 (2026-08-14, R43): adds WA_TLM_nav_cv_f / _n / _hulls - deployed carrier fighters,
+# deployed carrier naval bombers and the carrier-hull aggregate, written by the monthly
+# naval sampler under the existing nav_* gate and stamped by nav_last_t. They are the three
+# quantities Fix 66's saturation gate compares, sampled so a save can tell "the gate's token
+# read 0 and the brake was never live" apart from "the brake armed". Additive: no existing
+# metric changes meaning, so v5-v8 readings stay valid. A save at wa_tlm_version < 9 simply
+# lacks the metrics - score it NOT CHECKED, never FAILED.
+# v10 (2026-08-14, R44): adds the WA_TLM_r44_freeze_* probe family - scripted-landing invasion
+# freeze stamps, written at the marker site (WA_AI_LANDING_stamp_freeze_west / _east,
+# WA_AI_LANDING_effects.txt) on the flag write itself, NOT by the monthly sampler below. The
+# west/east split is the metric that answers whether a European landing would have frozen the
+# Pacific. Additive: no existing metric changes meaning, so v5-v9 readings stay valid. A save at
+# wa_tlm_version < 10 simply lacks the family - score it NOT CHECKED, never FAILED.
+# v11 (2026-08-14, R46): adds the WA_TLM_r74_ally_rail_* probe family - coalition logistics
+# routes. Written at the route-accept site in WA_AI_PC_railway_land_consider_frontline
+# (WA_AI_CONSTRUCTION_PRIORITY_railway_strategies.txt), NOT by the monthly sampler: _routes_n
+# counts every land-war route accepted, _ally_n only those whose target state is controlled by
+# neither ROOT nor a subject of ROOT - i.e. the routes that were structurally impossible before
+# Fix 74. The pair is what discriminates "the ally leg fired" from "the country queued rail at
+# all"; a build where _routes_n climbs and _ally_n stays 0 means the selector widened but no
+# ally frontline ever qualified. Additive: no existing metric changes meaning, so v5-v10
+# readings stay valid. A save at wa_tlm_version < 11 simply lacks the family - score it
+# NOT CHECKED, never FAILED.
+# v12 (2026-08-14, Fix 79 / R31): adds WA_TLM_r31_lrvar_t - the clock at which SOV's
+# sov_armor.980 (events/WA_AI_SOV.txt) INVOKED create_equipment_variant for the long-range
+# La-5FN. Written at the event site, NOT by the monthly sampler. It is an invocation stamp,
+# not a success stamp - create_equipment_variant returns nothing - so it is only meaningful
+# READ AGAINST the equipments={} registry: 0 + no registry entry = the event never fired;
+# > 0 + no registry entry = the effect was rejected by the engine. 0 is unambiguous as
+# "never" because the gating tech (sov_fighter_multirole_ad_tech_7) is a 1943 tech.
+# Additive: no existing metric changes meaning, so v5-v11 readings stay valid. A save at
+# wa_tlm_version < 12 simply lacks the metric - score it NOT CHECKED, never FAILED.
+# v13 (2026-08-14, Fix 76 / R48): adds the WA_TLM_r48_prebuild_synth_* probe family -
+# synthetic refineries queued by the PROACTIVE rubber lane, i.e. before the country is in
+# a rubber deficit at all. ONE write site: the WA_AI_C.10 refinery branch
+# (events/WA_AI_construction.txt), counting VERIFIED effect only (break = 1 after
+# WA_AI_queue_REF). NOT written by the monthly sampler. A second write site in
+# WA_AI_build_refinery_resource_shortage_rubber was prototyped and removed before shipping
+# for want of a measurable beneficiary - reason recorded at that call site - so this counter
+# is unambiguous: every increment is one C.10 pre-build. Read it against savegame.py
+# `buildings <TAG> --match refinery`: n > 0 with the
+# park still at 0 means the queue accepted the project and construction has not finished.
+# Additive: no existing metric changes meaning, so v5-v12 readings stay valid. A save at
+# wa_tlm_version < 13 simply lacks the family - score it NOT CHECKED, never FAILED.
+# v14 (2026-08-14): adds the standing WA_TLM_pc_* family - priority-construction health.
+# Two halves. (a) A TERMINATION LEDGER: every way a project can leave the queue now has a
+# counter at its own decision site - built / refused / swept / stale-path / orphaned /
+# lost-with-the-state / peace-purged, alongside the pre-existing pc_aging_reval_cancels - so
+# departures = the sum of those eight and "the queue shrank by 56 projects" stops being an
+# unattributable event. It was one: on campaign be18f9c7 GER's railway queue fell 80 -> 24 -> 2
+# across 1944.6-1945.2 while the only two counters that existed moved by 14 combined.
+# (b) ALLOCATION gauges, monthly: the engine's
+# num_of_civilian_factories_available_for_projects is not serialized into a savegame at all,
+# so "what share of the pool PC was ALLOWED to touch did it take" - a different and more
+# diagnostic number than its share of total civ industry, which a save can approximate from
+# state building levels - was not recoverable by any means. (c) WA_TLM_pc_queued_t, a
+# per-slot queue-entry stamp, because the queue records no entry time and the field that
+# looks like one (WA_AI_PC_stall_weeks) resets every time a project is funded. Additive: no existing metric
+# changes meaning, so v5-v13 readings stay valid. A save at wa_tlm_version < 14 simply lacks
+# the family - score it NOT CHECKED, never FAILED, and fall back to `savegame.py pc TAG
+# FILE...`, which reads the queue itself and needs no instrumentation.
+# v15 (2026-08-14, Fix 78 / R8): adds WA_TLM_r8_air_lane_grants / _last_t - the air-basing
+# reservation lane in WA_AI_PC_assign_factories (WA_AI_CONSTRUCTION_PRIORITY_core.txt),
+# counting the weeks the lane actually assigned >= 1 factory to a band-300 air-base project
+# while WA_AI_PC_air_basing_reserve stood. Written at the grant site, chain-latched exactly
+# like pc_aging_grants, NOT by the monthly sampler. It exists because the snapshot gauge
+# wa_ai_pc_air_factories_assigned under-samples at monthly cadence - be18f9c7 read ENG 0 in
+# 20 of 30 months while intermittent funding weeks were invisible between saves; the counter
+# makes funded-weeks cumulative and therefore un-missable. Additive: no existing metric
+# changes meaning, so v5-v14 readings stay valid. A save at wa_tlm_version < 15 simply lacks
+# the pair - score it NOT CHECKED, never FAILED.
+# v16 (2026-08-15, Fix 83 / R51): adds WA_TLM_r51_local_hold_n / _first_t / _last_t - level-1
+# posture verdicts that ONLY the new front-local hold band delivered (local count between
+# LOCAL_RATIO_HOLD and LOCAL_RATIO with an execute entry already held, and no other level-1
+# route open). Written at the level-1 site in WA_AI_MILITARY_update_posture
+# (WA_AI_MILITARY_posture_effects.txt), NOT by the monthly sampler. VERIFIED effect: without
+# Fix 83 each counted observation would have read posture 0. It exists because the D-Day
+# rollback on af003548 was invisible to every prior metric - posture flipped 1 -> 0 -> 1 with
+# the equipment ratio at 0.93+ and the air veto silent - so "did the hold band ever bite" is
+# unanswerable from the posture_vs_* snapshots alone. Additive: no existing metric changes
+# meaning, so v5-v15 readings stay valid. A save at wa_tlm_version < 16 simply lacks the
+# family - score it NOT CHECKED, never FAILED.
+# v17 also (2026-08-16, Fix 85 / R52; the v17 bump itself is Fix 88's): adds WA_TLM_r52_thair_front_n / _first_t / _last_t -
+# theatre air-base project STARTS made under the ground-committed rule in
+# WA_AI_build_theatre_air_bases (the ladder restricted to deficit theatres where ROOT's own
+# divisions stand). Written at the verified start site (queue grew), NOT by the monthly
+# sampler. It exists because af003548's dbg_started froze for 8 months after D-Day on both
+# western majors while the builder ran every pulse - the legacy dbg family says "nothing
+# started", this says whether the new rule was the thing that started something. Additive;
+# a save at wa_tlm_version < 17 lacks them - score NOT CHECKED, never FAILED.
+# v17 (2026-08-16, Fix 81 cut 3 + Fix 88 / R49, R53): adds the STANDING family WA_TLM_sq_* (sq =
+# standard construction queue, events/WA_AI_construction.txt via WA_AI_queue_<X> / WA_AI_add_<X>).
+# The save shows the engine queue (production/general_lines) and the per-state sums
+# (wa_ai_committed_<x>) but not HOW an add was placed: which selection tier (breadth A / wrap B /
+# over-depth C / old-behaviour fallback D), how wide K was, whether the TTL rebase or the
+# control-change reset ever fired. Counters at the write sites (adds_n / adds_by_type^i /
+# tier_a..d_n / rebase_down_n / ctrl_reset_n / k_max, first_t / last_t) plus a monthly gauge
+# sq_k. Standing under 3.8 criterion 3 (system health of a queue every AI country runs) and
+# criterion 2 (the R49/R53 local scorings each needed a bespoke general_lines join). Additive; a
+# save at wa_tlm_version < 17 lacks the family - score NOT CHECKED, never FAILED.
+# v17 also (2026-08-16, Fix 87 / R54): adds WA_TLM_r54_air_lane2_grants / _first_t / _last_t
+# (weeks the SECOND air-lane slot funded >= 1 factory). Written at the grant site in
+# WA_AI_PC_assign_factories (WA_AI_CONSTRUCTION_PRIORITY_core.txt), latched per pass like
+# r8_air_lane_grants, NOT by the monthly sampler. The WA_TLM_r54_air_headroom_* family that
+# shipped beside it the same day was REMOVED with P2 the same day (v17 local probe: it drew on
+# ENG, never on the USA); a save carrying those names is a P2 build. Additive; a save at
+# wa_tlm_version < 17 lacks the family - score NOT CHECKED, never FAILED.
+@WA_TLM_VERSION = 17
+
+############################################################################################################
+#	Clock - global.WA_TLM_clock = months elapsed since 1936.1
+#	Scope: any country (called from the per-country monthly pulse; the timed global
+#	flag guarantees exactly one increment per calendar month).
+############################################################################################################
+WA_TLM_tick_clock = {
+	if = { limit = { NOT = { has_global_flag = WA_TLM_clock_ticked } }
+		set_global_flag = { flag = WA_TLM_clock_ticked value = 1 days = 20 }
+		add_to_variable = { global.WA_TLM_clock = 1 }
+	}
+}
+
+############################################################################################################
+#	Init - PRESERVING zero-init: each metric is created at 0 only if absent, then
+#	the version is stamped. Scope: country. Called at startup for every country and
+#	lazily from the monthly sampler for tags created mid-game (civil wars, releases).
+#
+#	The has_variable guards are load-bearing, not defensive noise: counters write at
+#	event sites at ANY cadence, so a mid-game tag can accumulate counter values
+#	BEFORE its first monthly pulse runs this init (e.g. the weekly-written
+#	WA_TLM_pc_aging_* pair) - an unconditional zero-init would wipe them. Same
+#	mechanism preserves ring-buffer history across a version-bump re-init on
+#	resumed campaigns. On a fresh start nothing exists and the guards are no-ops.
+#	The zero-init is the absence contract: namespace absent = pre-TLM build (or a
+#	mid-game tag inside its first month); metric 0 with _last_t 0 = never sampled;
+#	metric 0 with _last_t > 0 = real zero.
+############################################################################################################
+WA_TLM_init_country = {
+	set_variable = { WA_TLM_version = @WA_TLM_VERSION }
+
+	# composition (pilot, consumer: checklist R6 / F8)
+	if = { limit = { NOT = { has_variable = WA_TLM_comp_div_total } } set_variable = { WA_TLM_comp_div_total = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_comp_armor } } set_variable = { WA_TLM_comp_armor = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_comp_mech } } set_variable = { WA_TLM_comp_mech = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_comp_armor_mech_pct } } set_variable = { WA_TLM_comp_armor_mech_pct = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_comp_last_t } } set_variable = { WA_TLM_comp_last_t = 0 } }
+	# ring buffers: no clear - arrays create themselves on first add_to_array, and
+	# clearing on re-init is exactly the history wipe the guards exist to prevent
+
+	# PC overtake lane (Fix 41, consumer: checklist R26; write sites in
+	# WA_AI_PC_assign_factories, WA_AI_CONSTRUCTION_PRIORITY_core.txt)
+	if = { limit = { NOT = { has_variable = WA_TLM_pc_aging_grants } } set_variable = { WA_TLM_pc_aging_grants = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_pc_aging_reval_cancels } } set_variable = { WA_TLM_pc_aging_reval_cancels = 0 } }
+
+	# PC termination ledger (standing, consumer: any "why did the queue shrink" question).
+	# One counter per way a project can leave WA_AI_PC_queue, each written at its own decision
+	# site and NOT by the monthly sampler below:
+	#   pc_built_n      WA_AI_PC_add_finished_building_by_id  (a building was spawned)
+	#   pc_refused_n    WA_AI_PC_complete_project_by_id       (fully paid for, denied the building)
+	#   pc_sweep_n      WA_AI_PC_update_project_progress      (30-week stall sweep)
+	#   pc_orphan_n     WA_AI_PC_update_project_progress      (target_state 0 / cost <= 0)
+	#   pc_stale_n      WA_AI_PC_validate_queued_provincial_projects
+	#   pc_lost_n       on_state_control_changed              (ground changed hands)
+	#   pc_peace_n      on_peace                              (Fix 5/19 railway purge)
+	#   pc_aging_reval_cancels                                (above, Fix 41 overtake lane)
+	# Together these are EVERY caller of WA_AI_PC_end_project_by_id and WA_AI_PC_cancel_projects
+	# outside the WA_TEST_ harness, so their sum is the total number of departures. A gap
+	# between that sum and the observed queue shrinkage means a new exit path was added
+	# without its counter.
+	# pc_built_by_type is INDEXED by building type code (1..16) and is deliberately NOT
+	# zero-initialised: sixteen init lines per country to say "never built one" is the wrong
+	# trade when pc_built_n beside it is the family's presence witness. An absent index means
+	# this country has never completed that type.
+	if = { limit = { NOT = { has_variable = WA_TLM_pc_built_n } } set_variable = { WA_TLM_pc_built_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_pc_refused_n } } set_variable = { WA_TLM_pc_refused_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_pc_refused_ctrl_n } } set_variable = { WA_TLM_pc_refused_ctrl_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_pc_sweep_n } } set_variable = { WA_TLM_pc_sweep_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_pc_orphan_n } } set_variable = { WA_TLM_pc_orphan_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_pc_stale_n } } set_variable = { WA_TLM_pc_stale_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_pc_lost_n } } set_variable = { WA_TLM_pc_lost_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_pc_peace_n } } set_variable = { WA_TLM_pc_peace_n = 0 } }
+
+	# PC queue + allocation gauges (standing, consumer: the civ-factory share questions).
+	# Written by WA_TLM_sample_pc below. pc_civs_avail is the one reading that exists nowhere
+	# else: the engine's num_of_civilian_factories_available_for_projects is not serialized
+	# into a savegame, so without this metric the allocation base can only be guessed at.
+	if = { limit = { NOT = { has_variable = WA_TLM_pc_queue } } set_variable = { WA_TLM_pc_queue = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_pc_civs } } set_variable = { WA_TLM_pc_civs = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_pc_civs_avail } } set_variable = { WA_TLM_pc_civs_avail = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_pc_assigned } } set_variable = { WA_TLM_pc_assigned = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_pc_alloc_base } } set_variable = { WA_TLM_pc_alloc_base = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_pc_share_pct } } set_variable = { WA_TLM_pc_share_pct = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_pc_avail_share_pct } } set_variable = { WA_TLM_pc_avail_share_pct = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_pc_last_t } } set_variable = { WA_TLM_pc_last_t = 0 } }
+	# WA_TLM_pc_queued_t^<project id>: per-slot queue-entry stamp, written by
+	# WA_AI_PC_start_project and cleared by WA_AI_PC_end_project_by_id. Indexed, so no init
+	# line - absence means the slot is free (or the project was queued on a pre-v14 build).
+
+	# ai_equipment design-context gates (Fix 47, consumers: checklist R31/R32;
+	# write sites in WA_AI_EQUIPMENT_update_context_flags, WA_AI_EQUIPMENT_effects.txt)
+	if = { limit = { NOT = { has_variable = WA_TLM_r47_lrange_n } } set_variable = { WA_TLM_r47_lrange_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r47_lrange_first_t } } set_variable = { WA_TLM_r47_lrange_first_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r47_lrange_last_t } } set_variable = { WA_TLM_r47_lrange_last_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r47_alu_large_n } } set_variable = { WA_TLM_r47_alu_large_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r47_alu_large_first_t } } set_variable = { WA_TLM_r47_alu_large_first_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r47_alu_large_last_t } } set_variable = { WA_TLM_r47_alu_large_last_t = 0 } }
+
+	# proactive synthetic-rubber pre-build (Fix 76, consumer: checklist R48; SINGLE write site:
+	# the WA_AI_C.10 refinery branch, events/WA_AI_construction.txt). A second site in
+	# WA_AI_build_refinery_resource_shortage_rubber was considered and REMOVED before shipping
+	# (see WA_AI_CONSTRUCTION_PRIORITY_strategies.txt), so every increment is unambiguously one
+	# C.10 pre-build - do not apportion the count across two lanes.
+	# Counter is BUILD-STARTED, not build-finished - pair it with a buildings sweep.
+	if = { limit = { NOT = { has_variable = WA_TLM_r48_prebuild_synth_n } } set_variable = { WA_TLM_r48_prebuild_synth_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r48_prebuild_synth_first_t } } set_variable = { WA_TLM_r48_prebuild_synth_first_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r48_prebuild_synth_last_t } } set_variable = { WA_TLM_r48_prebuild_synth_last_t = 0 } }
+
+	# long-range La-5FN variant creation (Fix 79, consumer: checklist R31; write site in
+	# country event sov_armor.980, events/WA_AI_SOV.txt). INVOCATION stamp, not a success
+	# stamp - only meaningful read against the equipments={} registry (see the v12 note above).
+	# Written for SOV only; every other country keeps the 0 this init gives it.
+	if = { limit = { NOT = { has_variable = WA_TLM_r31_lrvar_t } } set_variable = { WA_TLM_r31_lrvar_t = 0 } }
+
+	# UK air-base build ORDER (Fix 51, consumer: checklist R8 concentration leg; write
+	# site in WA_AI_uk_air_queue_site, WA_AI_CONSTRUCTION_PRIORITY_strategies.txt).
+	# Mean rank = _rank_sum / (_q_n - _fallback_n); fallback queues carry rank 0 and are
+	# excluded from the sum and the max on purpose. _fallback_n > 0 is the drift alarm
+	# between WA_AI_uk_air_hosting_state and global.WA_AI_uk_air_priority_states.
+	if = { limit = { NOT = { has_variable = WA_TLM_r8_uk_air_q_n } } set_variable = { WA_TLM_r8_uk_air_q_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r8_uk_air_rank_sum } } set_variable = { WA_TLM_r8_uk_air_rank_sum = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r8_uk_air_rank_max } } set_variable = { WA_TLM_r8_uk_air_rank_max = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r8_uk_air_fallback_n } } set_variable = { WA_TLM_r8_uk_air_fallback_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r8_uk_air_last_t } } set_variable = { WA_TLM_r8_uk_air_last_t = 0 } }
+
+	# air-basing reservation lane (Fix 78, consumer: checklist R8 Fix-78 leg; write site is
+	# the reservation grant in WA_AI_PC_assign_factories, WA_AI_CONSTRUCTION_PRIORITY_core.txt).
+	# Counts funded WEEKS (chain-latched), not factories - pair with the snapshot gauge
+	# wa_ai_pc_air_factories_assigned for the amount.
+	# _first_t is load-bearing here and not boilerplate: R8's Fix-78 leg asks WHEN the lane
+	# started funding, not just how often. ENG's deficit window is 1942.1-1944.6, so a terminal
+	# read of _grants + a rolling _last_t alone cannot separate "funded steadily from 1942"
+	# (fix works) from "did nothing until the deficit closed, then funded a dead lane".
+	if = { limit = { NOT = { has_variable = WA_TLM_r8_air_lane_grants } } set_variable = { WA_TLM_r8_air_lane_grants = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r8_air_lane_first_t } } set_variable = { WA_TLM_r8_air_lane_first_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r8_air_lane_last_t } } set_variable = { WA_TLM_r8_air_lane_last_t = 0 } }
+
+	# air-basing throughput (Fix 87, consumer: checklist R54; write sites are the two air-lane
+	# grant in WA_AI_PC_assign_factories, WA_AI_CONSTRUCTION_PRIORITY_core.txt). lane2_grants =
+	# funded WEEKS of the second slot, chain-latched per pass. (headroom_civs removed with P2.)
+	if = { limit = { NOT = { has_variable = WA_TLM_r54_air_lane2_grants } } set_variable = { WA_TLM_r54_air_lane2_grants = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r54_air_lane2_first_t } } set_variable = { WA_TLM_r54_air_lane2_first_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r54_air_lane2_last_t } } set_variable = { WA_TLM_r54_air_lane2_last_t = 0 } }
+
+	# posture front-local hold band (Fix 83, consumer: checklist R51; write site is the level-1
+	# verdict in WA_AI_MILITARY_update_posture, WA_AI_MILITARY_posture_effects.txt). Counts
+	# level-1 observations that ONLY the hold band delivered - one per (country, enemy, week).
+	# _first_t is load-bearing: R51 asks whether the band bit DURING a contested landing window,
+	# not merely whether it ever bit.
+	if = { limit = { NOT = { has_variable = WA_TLM_r51_local_hold_n } } set_variable = { WA_TLM_r51_local_hold_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r51_local_hold_first_t } } set_variable = { WA_TLM_r51_local_hold_first_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r51_local_hold_last_t } } set_variable = { WA_TLM_r51_local_hold_last_t = 0 } }
+
+	# theatre air bases on a ground-committed theatre (Fix 85, consumer: checklist R52; write
+	# site is the verified start in WA_AI_build_theatre_air_bases,
+	# WA_AI_CONSTRUCTION_PRIORITY_strategies.txt). Counts STARTS made while the committed rule
+	# was in force - pair with `pc TAG --match air_base` for where they landed.
+	if = { limit = { NOT = { has_variable = WA_TLM_r52_thair_front_n } } set_variable = { WA_TLM_r52_thair_front_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r52_thair_front_first_t } } set_variable = { WA_TLM_r52_thair_front_first_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r52_thair_front_last_t } } set_variable = { WA_TLM_r52_thair_front_last_t = 0 } }
+
+	# naval / convoy war (standing, consumer: checklist R36 + any convoy-war question)
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_ships } } set_variable = { WA_TLM_nav_ships = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_screens } } set_variable = { WA_TLM_nav_screens = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_subs } } set_variable = { WA_TLM_nav_subs = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_convoys } } set_variable = { WA_TLM_nav_convoys = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_conv_threat } } set_variable = { WA_TLM_nav_conv_threat = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_conv_ws } } set_variable = { WA_TLM_nav_conv_ws = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_conv_killed } } set_variable = { WA_TLM_nav_conv_killed = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_port_screens } } set_variable = { WA_TLM_nav_port_screens = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_port_pct } } set_variable = { WA_TLM_nav_port_pct = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_last_t } } set_variable = { WA_TLM_nav_last_t = 0 } }
+
+	# cruiser-submarine routing (Fix 64, consumer: checklist R41; write site in WA_TLM_sample_navy,
+	# same gate and same stamp (nav_last_t) as the nav_* family it sits in)
+	if = { limit = { NOT = { has_variable = WA_TLM_r64_csubs } } set_variable = { WA_TLM_r64_csubs = 0 } }
+
+	# carrier-aviation saturation (Fix 66, consumer: checklist R43; write site in
+	# WA_TLM_sample_navy, same gate and same stamp (nav_last_t) as the nav_* family)
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_cv_f } } set_variable = { WA_TLM_nav_cv_f = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_cv_n } } set_variable = { WA_TLM_nav_cv_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nav_cv_hulls } } set_variable = { WA_TLM_nav_cv_hulls = 0 } }
+
+	# scripted-landing invasion freeze (consumer: checklist R44; write sites in
+	# WA_AI_LANDING_stamp_freeze_west / _stamp_freeze_east, WA_AI_LANDING_effects.txt).
+	# Counters are per stamped country per landing operation, written at the flag write and NOT by
+	# the monthly sampler; _freeze_n = _freeze_west_n + _freeze_east_n by construction.
+	if = { limit = { NOT = { has_variable = WA_TLM_r44_freeze_n } } set_variable = { WA_TLM_r44_freeze_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r44_freeze_west_n } } set_variable = { WA_TLM_r44_freeze_west_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r44_freeze_east_n } } set_variable = { WA_TLM_r44_freeze_east_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r44_freeze_first_t } } set_variable = { WA_TLM_r44_freeze_first_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r44_freeze_last_t } } set_variable = { WA_TLM_r44_freeze_last_t = 0 } }
+
+	# coalition logistics routes (Fix 74, consumer: checklist R46; write site in
+	# WA_AI_PC_railway_land_consider_frontline, WA_AI_CONSTRUCTION_PRIORITY_railway_strategies.txt).
+	# Counters are per ACCEPTED land-war route, incremented where the route is appended to
+	# railway_end_provinces_ - not on entry to the effect, so a candidate that fails pathfinding
+	# is not counted. _ally_n is the subset whose target state is controlled by neither ROOT nor a
+	# subject of ROOT; _ally_n <= _routes_n by construction.
+	if = { limit = { NOT = { has_variable = WA_TLM_r74_ally_rail_routes_n } } set_variable = { WA_TLM_r74_ally_rail_routes_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r74_ally_rail_ally_n } } set_variable = { WA_TLM_r74_ally_rail_ally_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r74_ally_rail_first_t } } set_variable = { WA_TLM_r74_ally_rail_first_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r74_ally_rail_last_t } } set_variable = { WA_TLM_r74_ally_rail_last_t = 0 } }
+
+	# offensive posture (standing, consumer: the level-1 exchange-rate question - see the write
+	# site in WA_AI_MILITARY_posture_effects.txt, inside every_enemy_country. Counters are per
+	# (country, enemy, week), NOT per month, so they are incremented at the posture calculus and
+	# not by the monthly sampler below. The three xr buckets are cumulative and nested:
+	# lt25 subset of lt50 subset of lt100, all with post_exec_xr_n as their denominator.)
+	if = { limit = { NOT = { has_variable = WA_TLM_post_exec_n } } set_variable = { WA_TLM_post_exec_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_post_exec_xr_n } } set_variable = { WA_TLM_post_exec_xr_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_post_exec_xr_lt100 } } set_variable = { WA_TLM_post_exec_xr_lt100 = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_post_exec_xr_lt50 } } set_variable = { WA_TLM_post_exec_xr_lt50 = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_post_exec_xr_lt25 } } set_variable = { WA_TLM_post_exec_xr_lt25 = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_post_grind_n } } set_variable = { WA_TLM_post_grind_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_post_last_t } } set_variable = { WA_TLM_post_last_t = 0 } }
+	# WA_TLM_nav_hist_t / WA_TLM_nav_port_pct_hist: arrays, no init (see the comment
+	# above - clearing on re-init is the history wipe the guards exist to prevent)
+
+	# standard construction queue - Fix 81 cut 3 / Fix 88 (standing, family sq; consumers R49, R53).
+	# adds_by_type^i (0 CIC, 1 MIC, 2 NIC, 3 REF, 4 SR, 5 HSR, 6 AR, 7 HAR) is INDEXED and deliberately
+	# not zero-initialised - adds_n beside it is the presence witness (same trade as pc_built_by_type).
+	if = { limit = { NOT = { has_variable = WA_TLM_sq_adds_n } } set_variable = { WA_TLM_sq_adds_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_sq_first_t } } set_variable = { WA_TLM_sq_first_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_sq_last_t } } set_variable = { WA_TLM_sq_last_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_sq_tier_a_n } } set_variable = { WA_TLM_sq_tier_a_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_sq_tier_b_n } } set_variable = { WA_TLM_sq_tier_b_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_sq_tier_c_n } } set_variable = { WA_TLM_sq_tier_c_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_sq_tier_d_n } } set_variable = { WA_TLM_sq_tier_d_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_sq_k_max } } set_variable = { WA_TLM_sq_k_max = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_sq_k } } set_variable = { WA_TLM_sq_k = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_sq_rebase_down_n } } set_variable = { WA_TLM_sq_rebase_down_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_sq_ctrl_reset_n } } set_variable = { WA_TLM_sq_ctrl_reset_n = 0 } }
+}
+
+############################################################################################################
+#	Monthly sampler - dispatch. Scope: country, is_ai gated by the caller.
+############################################################################################################
+WA_TLM_monthly_sample = {
+	if = { limit = { NOT = { check_variable = { WA_TLM_version = @WA_TLM_VERSION } } }
+		WA_TLM_init_country = yes
+	}
+	WA_TLM_sample_composition = yes
+	WA_TLM_sample_navy = yes
+	WA_TLM_sample_pc = yes
+	WA_TLM_sample_sq = yes
+}
+
+############################################################################################################
+#	Priority-construction sample (standing; §3.8 criteria 2 and 3).
+#
+#	What this can and cannot see, and why the split falls where it does. The QUEUE itself is
+#	fully readable from a savegame - it is a country-scope array plus ~11 parallel indexed
+#	families - and `savegame.py pc TAG FILE...` decodes it, per project, with the building
+#	type and priority band by name. Duplicating that here as telemetry would be pure cost.
+#
+#	Two things the save cannot give up, and they are all this sampler covers:
+#	  (a) num_of_civilian_factories_available_for_projects. The engine never serializes it.
+#	      A save can approximate total civ industry by summing industrial_complex levels over
+#	      controlled states, but that is an upper bound on num_of_civilian_factories and says
+#	      nothing about how much of it the vanilla construction queue had already absorbed -
+#	      which IS the number WA_AI_PC_assign_factories multiplies by @AI_PC_ALLOC_FRACTION.
+#	      "PC is using 7% of civ industry" and "PC took its full 40% of what it was offered"
+#	      are both true of the same month and only the second one is actionable.
+#	  (b) A trend inside one save (the ring buffer). Monthly saves already carry a queue
+#	      snapshot each, so the multi-save sweep works - it just costs a ~100 MB streaming
+#	      parse per save per question.
+#
+#	Cost: eight variable reads, two divides, and quarterly three array pushes for majors.
+#	Cheaper than the composition ladder next door (26 has_army_size evaluations). Nothing is
+#	written on the weekly PC pulse itself - the termination counters live on paths that only
+#	run when a project actually leaves the queue, never inside the per-project queue loops,
+#	which are the system's hot path.
+#
+#	Token risk: none. num_of_civilian_factories and
+#	num_of_civilian_factories_available_for_projects are both read by
+#	WA_AI_PC_assign_factories itself (WA_AI_CONSTRUCTION_PRIORITY_core.txt), so a bad token
+#	here would have broken the allocator years ago. F9 boot check is still owed and is
+#	correspondingly cheap: on any 1936 AI country, wa_tlm_pc_civs > 0 and wa_tlm_pc_last_t
+#	present.
+#
+#	Scope: country, is_ai gated by the caller.
+############################################################################################################
+WA_TLM_sample_pc = {
+	# tlm: pc_queue / pc_civs / pc_civs_avail / pc_assigned - gauges, all AI countries -
+	# consumer: standing (queue depth and the civ-factory share questions)
+	set_variable = { WA_TLM_pc_queue = WA_AI_PC_queue^num }
+	set_variable = { WA_TLM_pc_civs = num_of_civilian_factories }
+	set_variable = { WA_TLM_pc_civs_avail = num_of_civilian_factories_available_for_projects }
+	set_variable = { WA_TLM_pc_assigned = WA_AI_PC_assigned_factories_total }
+
+	# tlm: pc_alloc_base - gauge. The pool WA_AI_PC_assign_factories reconstructs before it
+	# applies the fraction: currently-free civs PLUS the ones PC is already holding (the
+	# allocator adds its own assignments back precisely because they are not "free" until it
+	# releases them). This is the honest denominator for "share of AVAILABLE civs".
+	# It deliberately does NOT model the @AI_PC_STABLE_BASE_FRACTION floor or the
+	# @AI_PC_ALLOC_HARD_CAP_FRACTION ceiling: both are functions of pc_civs, which is sampled
+	# beside it, so an analyst can apply them - and baking them in would hide the case where
+	# the floor is what is actually funding the queue.
+	set_variable = { WA_TLM_pc_alloc_base = WA_TLM_pc_civs_avail }
+	add_to_variable = { WA_TLM_pc_alloc_base = WA_TLM_pc_assigned }
+
+	# tlm: pc_share_pct - derived gauge, 100 * assigned / civs. Share of the country's whole
+	# civilian industry that this shadow construction system is consuming.
+	set_temp_variable = { _tlm_pcs_ = WA_TLM_pc_assigned }
+	multiply_temp_variable = { _tlm_pcs_ = 100 }
+	if = { limit = { check_variable = { WA_TLM_pc_civs > 0 } }
+		divide_temp_variable = { _tlm_pcs_ = WA_TLM_pc_civs }
+	}
+	else = {
+		set_temp_variable = { _tlm_pcs_ = 0 }
+	}
+	set_variable = { WA_TLM_pc_share_pct = _tlm_pcs_ }
+
+	# tlm: pc_avail_share_pct - derived gauge, 100 * assigned / alloc_base. THE diagnostic
+	# number of this family. Read it against the fraction actually in force that month
+	# (@AI_PC_ALLOC_FRACTION = 40, or WA_AI_PC_override_max_factories_factor x100 while its
+	# country flag is live - `savegame.py pc` prints which):
+	#   at the fraction        -> PC took everything it was allowed; the queue is pool-bound
+	#   well under it          -> the fill could not place factories: no eligible project
+	#                             (hostile-controlled targets, Fix 34) or an empty queue
+	#   over it                -> the stable-base floor is carrying the queue, i.e. the
+	#                             vanilla construction queue has absorbed the free civs
+	set_temp_variable = { _tlm_pca_ = WA_TLM_pc_assigned }
+	multiply_temp_variable = { _tlm_pca_ = 100 }
+	if = { limit = { check_variable = { WA_TLM_pc_alloc_base > 0 } }
+		divide_temp_variable = { _tlm_pca_ = WA_TLM_pc_alloc_base }
+	}
+	else = {
+		set_temp_variable = { _tlm_pca_ = 0 }
+	}
+	set_variable = { WA_TLM_pc_avail_share_pct = _tlm_pca_ }
+
+	# tlm: pc_last_t - sample stamp (absence contract, doc 3.5). Written with the widest
+	# gauges of the family - all AI countries - never inside the major gate below, so a
+	# minor's genuine "queue empty, zero factories" does not read as "never sampled".
+	set_variable = { WA_TLM_pc_last_t = global.WA_TLM_clock }
+
+	# Quarterly ring buffer on its OWN axis (depth 44 = 11 game-years). It must not share
+	# WA_TLM_hist_t: that axis is pushed by the composition sampler, and although the gate
+	# below happens to be the same trigger today, a shared axis makes the two families'
+	# gates a permanent coupling - any later divergence desynchronises index i for every
+	# series on it (doc 4, risk ii). The gauges above stay ungated; only the history is
+	# major-only, which is where the save-weight is.
+	if = { limit = { WA_AI_CONFIG_is_major_country = yes }
+		set_temp_variable = { _tlm_pcq_ = global.WA_TLM_clock }
+		modulo_temp_variable = { _tlm_pcq_ = 3 }
+		if = { limit = { check_variable = { _tlm_pcq_ = 0 } }
+			add_to_array = { array = WA_TLM_pc_hist_t value = global.WA_TLM_clock }
+			add_to_array = { array = WA_TLM_pc_queue_hist value = WA_TLM_pc_queue }
+			add_to_array = { array = WA_TLM_pc_share_pct_hist value = WA_TLM_pc_share_pct }
+			add_to_array = { array = WA_TLM_pc_avail_share_pct_hist value = WA_TLM_pc_avail_share_pct }
+			if = { limit = { check_variable = { WA_TLM_pc_hist_t^num > 44 } }
+				remove_from_array = { array = WA_TLM_pc_hist_t index = 0 }
+				remove_from_array = { array = WA_TLM_pc_queue_hist index = 0 }
+				remove_from_array = { array = WA_TLM_pc_share_pct_hist index = 0 }
+				remove_from_array = { array = WA_TLM_pc_avail_share_pct_hist index = 0 }
+			}
+		}
+	}
+}
+
+############################################################################################################
+#	Composition sample (pilot - fills the R6 probe gap: no save-visible army
+#	composition metric existed; divisions reference templates by numeric id only).
+#
+#	Script has no numeric divisions-by-type getter, so armor/mech counts are
+#	BANDED: an ascending has_army_size threshold ladder stores the highest floor
+#	passed. has_army_size counts divisions by dominant type = "fielded share" in
+#	R6's sense. type = infantry/motorized precedent: common/decisions/GER_factions.txt:155.
+#	Boot-check note (F9): if armor/mechanized were invalid type tokens the ladder
+#	would read 0 on countries with known tanks - do not score R6 off a reading
+#	that fails that sanity cross-check on the first instrumented campaign.
+############################################################################################################
+WA_TLM_sample_composition = {
+	# tlm: comp_div_total - gauge, all AI countries - consumer: R6/F8 (standing)
+	set_variable = { WA_TLM_comp_div_total = num_divisions }
+
+	# tlm: comp_last_t - sample stamp (absence contract, doc 3.5). Written with the
+	# WIDEST gauge of the family, not inside the major gate - otherwise a minor's
+	# genuine zero reads as "never sampled" (found in the 1936.4 smoke test: BHU).
+	set_variable = { WA_TLM_comp_last_t = global.WA_TLM_clock }
+
+	# The ladders and the ring buffer are major-gated (cost discipline, doc 3.4);
+	# R6 scores GER/SOV, and the archetype covers every candidate.
+	if = { limit = { WA_AI_CONFIG_is_major_country = yes }
+
+		# tlm: comp_armor - banded gauge - consumer: R6 (standing)
+		set_temp_variable = { _tlm_armor_ = 0 }
+		if = { limit = { has_army_size = { size > 4 type = armor } } set_temp_variable = { _tlm_armor_ = 5 } }
+		if = { limit = { has_army_size = { size > 9 type = armor } } set_temp_variable = { _tlm_armor_ = 10 } }
+		if = { limit = { has_army_size = { size > 14 type = armor } } set_temp_variable = { _tlm_armor_ = 15 } }
+		if = { limit = { has_army_size = { size > 19 type = armor } } set_temp_variable = { _tlm_armor_ = 20 } }
+		if = { limit = { has_army_size = { size > 29 type = armor } } set_temp_variable = { _tlm_armor_ = 30 } }
+		if = { limit = { has_army_size = { size > 39 type = armor } } set_temp_variable = { _tlm_armor_ = 40 } }
+		if = { limit = { has_army_size = { size > 59 type = armor } } set_temp_variable = { _tlm_armor_ = 60 } }
+		if = { limit = { has_army_size = { size > 79 type = armor } } set_temp_variable = { _tlm_armor_ = 80 } }
+		if = { limit = { has_army_size = { size > 119 type = armor } } set_temp_variable = { _tlm_armor_ = 120 } }
+		if = { limit = { has_army_size = { size > 159 type = armor } } set_temp_variable = { _tlm_armor_ = 160 } }
+		if = { limit = { has_army_size = { size > 239 type = armor } } set_temp_variable = { _tlm_armor_ = 240 } }
+		if = { limit = { has_army_size = { size > 319 type = armor } } set_temp_variable = { _tlm_armor_ = 320 } }
+		set_variable = { WA_TLM_comp_armor = _tlm_armor_ }
+
+		# tlm: comp_mech - banded gauge - consumer: R6 (standing)
+		set_temp_variable = { _tlm_mech_ = 0 }
+		if = { limit = { has_army_size = { size > 4 type = mechanized } } set_temp_variable = { _tlm_mech_ = 5 } }
+		if = { limit = { has_army_size = { size > 9 type = mechanized } } set_temp_variable = { _tlm_mech_ = 10 } }
+		if = { limit = { has_army_size = { size > 14 type = mechanized } } set_temp_variable = { _tlm_mech_ = 15 } }
+		if = { limit = { has_army_size = { size > 19 type = mechanized } } set_temp_variable = { _tlm_mech_ = 20 } }
+		if = { limit = { has_army_size = { size > 29 type = mechanized } } set_temp_variable = { _tlm_mech_ = 30 } }
+		if = { limit = { has_army_size = { size > 39 type = mechanized } } set_temp_variable = { _tlm_mech_ = 40 } }
+		if = { limit = { has_army_size = { size > 59 type = mechanized } } set_temp_variable = { _tlm_mech_ = 60 } }
+		if = { limit = { has_army_size = { size > 79 type = mechanized } } set_temp_variable = { _tlm_mech_ = 80 } }
+		if = { limit = { has_army_size = { size > 119 type = mechanized } } set_temp_variable = { _tlm_mech_ = 120 } }
+		if = { limit = { has_army_size = { size > 159 type = mechanized } } set_temp_variable = { _tlm_mech_ = 160 } }
+		if = { limit = { has_army_size = { size > 239 type = mechanized } } set_temp_variable = { _tlm_mech_ = 240 } }
+		if = { limit = { has_army_size = { size > 319 type = mechanized } } set_temp_variable = { _tlm_mech_ = 320 } }
+		set_variable = { WA_TLM_comp_mech = _tlm_mech_ }
+
+		# tlm: comp_armor_mech_pct - derived gauge, 100 * (armor + mech) / total - consumer: R6 (standing)
+		set_temp_variable = { _tlm_am_ = _tlm_armor_ }
+		add_to_temp_variable = { _tlm_am_ = _tlm_mech_ }
+		multiply_temp_variable = { _tlm_am_ = 100 }
+		if = { limit = { check_variable = { WA_TLM_comp_div_total > 0 } }
+			divide_temp_variable = { _tlm_am_ = WA_TLM_comp_div_total }
+		}
+		else = {
+			set_temp_variable = { _tlm_am_ = 0 }
+		}
+		set_variable = { WA_TLM_comp_armor_mech_pct = _tlm_am_ }
+
+		# Quarterly ring buffer, shared time axis, depth 44 (= 11 game-years).
+		# Push value and axis on the SAME tick or every later pairing shifts (doc 4, risk ii).
+		set_temp_variable = { _tlm_q_ = global.WA_TLM_clock }
+		modulo_temp_variable = { _tlm_q_ = 3 }
+		if = { limit = { check_variable = { _tlm_q_ = 0 } }
+			add_to_array = { array = WA_TLM_hist_t value = global.WA_TLM_clock }
+			add_to_array = { array = WA_TLM_comp_armor_mech_pct_hist value = WA_TLM_comp_armor_mech_pct }
+			if = { limit = { check_variable = { WA_TLM_hist_t^num > 44 } }
+				remove_from_array = { array = WA_TLM_hist_t index = 0 }
+				remove_from_array = { array = WA_TLM_comp_armor_mech_pct_hist index = 0 }
+			}
+		}
+	}
+}
+
+############################################################################################################
+#	Naval / convoy-war sample (fills the R36 gap).
+#
+#	What this can and cannot see. A task force's MISSION is not exposed to script -
+#	no trigger reads it - so "how many escorts are actually escorting" is only
+#	answerable from the save (`savegame.py navy TAG FILE...`, which brace-parses
+#	units -> fleet -> task_force -> mission). This sampler therefore covers the two
+#	things the save does NOT hand over cheaply:
+#	  (a) the OUTCOME of escorting - engine-computed convoy threat, the convoy-loss
+#	      war-support malus, and cumulative convoy kills; none of these are stored in
+#	      a readable form in the save;
+#	  (b) an INDEPENDENT reading of "the escorts are sitting in port", via
+#	      ships_in_state_ports, which does not depend on the empirically-derived
+#	      mission-id map the `navy` command relies on. If the two disagree, the
+#	      mission map is what is wrong.
+#
+#	Scope: country, is_ai gated by the caller. Cheap gauges run for anyone with a
+#	hull; the per-state port ladder is gated to the six naval majors (doc 3.4).
+############################################################################################################
+WA_TLM_sample_navy = {
+	if = { limit = { has_navy_size = { size > 0 } }
+
+		# tlm: nav_ships / nav_screens / nav_subs / nav_convoys - gauges, any AI navy
+		# - consumer: R36 (standing).
+		#
+		# num_ships_with_type@ takes a SUB-UNIT DEF TYPE or one of the four engine
+		# aggregates carrier / capital / screen / submarine (dynamic_variables_
+		# documentation.md). It does NOT take `screen_ship` - that is the sub-unit
+		# CATEGORY name from common/units/ship_*.txt - and `convoy` is not a ship at
+		# all (convoys are equipment; there is no common/units/ship_convoy.txt).
+		# Both wrong tokens returned a silent 0 on every country through v4, which
+		# also forced nav_port_pct and its whole ring buffer to the else = 0 branch.
+		# Verified in-save on campaign 02bd4445: @submarine and num_ships are exact
+		# to the hull, @screen_ship and @convoy read 0 on ENG/USA/GER/JAP.
+		#
+		# nav_screens is summed from the three concrete hull types rather than the
+		# @screen aggregate on purpose: destroyer + frigate + light_cruiser is the
+		# exact set carrying `type = screen_ship` in this mod, and it is also what
+		# savegame.py's `navy` command counts as `screens=` (_NAVAL_SCREENS), so
+		# R36's "nav_screens must equal the command's screens= exactly" cross-check
+		# stays an identity instead of depending on an engine aggregate's membership.
+		set_variable = { WA_TLM_nav_ships = num_ships }
+		set_variable = { WA_TLM_nav_screens = num_ships_with_type@destroyer }
+		add_to_variable = { WA_TLM_nav_screens = num_ships_with_type@frigate }
+		add_to_variable = { WA_TLM_nav_screens = num_ships_with_type@light_cruiser }
+		set_variable = { WA_TLM_nav_subs = num_ships_with_type@submarine }
+
+		# tlm: r64_csubs - gauge, any AI with a hull - consumer: R41 (Fix 64, SOV routed from the
+		# naval_submarine role to the cruiser_submarine role). Read against WA_TLM_nav_subs, which
+		# is the other half of the same question: the fix passes when SOV's csubs climb while its
+		# subs stay flat at the 1936 OOB.
+		# `cruiser_submarine` is a sub-unit def type (common/units/ship_cruiser_submarine.txt) and
+		# is listed as a legal num_ships_with_type@ target in doc 5.
+		# SETTLED 2026-08-14 on campaign be18f9c7: nav_subs above IS inclusive of these hulls, so
+		# this metric is a SHARE of nav_subs, not an independent series. Both sub-unit defs carry
+		# `type = { submarine }` and `submarine` is simultaneously a def name and one of the four
+		# engine aggregates - the aggregate wins. Measured against hull-resolved fleets: SOV
+		# nav_subs 101 = 93 cruiser + 8 plain, GER 18 = 14 + 4, r64_csubs matching the cruiser
+		# count exactly in both. Plain hulls = nav_subs - r64_csubs; never read nav_subs as the
+		# plain-boat count.
+		# SECOND SIGNAL (doc 7.5), and it is free: GER has been routed to the cruiser_submarine
+		# role since before this fix, so GER is the built-in control. GER > 0 with SOV = 0 means
+		# the token is fine and the fix failed; BOTH 0 means the token is bad and neither reading
+		# may be scored - the v4 nav_screens failure mode.
+		set_variable = { WA_TLM_r64_csubs = num_ships_with_type@cruiser_submarine }
+
+		# tlm: nav_cv_f / nav_cv_n / nav_cv_hulls - gauges, any AI with a hull - consumer:
+		# R43 (Fix 66, the carrier-plane saturation brake). These are the EXACT three
+		# quantities Fix 66's gate compares, sampled at the same values the gate sees, and
+		# they exist to settle one question the outcome alone cannot answer.
+		#
+		# Fix 66 fails SAFE: an unresolvable token reads 0, 0 never exceeds a bar, the brake
+		# never trips and behaviour is unchanged - which is indistinguishable from "the brake
+		# armed and the AI over-built anyway" if you only look at the plane counts. These
+		# three separate the cases outright:
+		#   nav_cv_f = nav_cv_n = 0 on a carrier major in a war year  -> the token is bad,
+		#     the brake was never live, and NOTHING about Fix 66 may be scored (this is the
+		#     v4 nav_screens failure mode repeating, on the same class of token).
+		#   nav_cv_f / _n populated                                   -> the gate saw real
+		#     numbers; compare them against the bars for nav_cv_hulls to say whether the
+		#     brake SHOULD have tripped, then read the production lines to say whether it did.
+		# nav_cv_hulls is also the independent check on the hull banding: it is the same
+		# `type = carrier` aggregate the gate bands on. SETTLED 2026-08-14 on campaign be18f9c7 -
+		# the aggregate DOES count light carriers: JAP 21 = 16 fleet + 5 light, ENG 20 = 18 + 2,
+		# USA 52 = 52 + 0. So a light deck bands at the weight of a fleet deck and the per-hull
+		# bars run loose for a light-heavy fleet - it under-brakes, which is the safe direction.
+		# The plane tokens are archetype-spelled, the idiom already live at
+		# common/decisions/ITA.txt:957 on this very archetype. UNVERIFIED nonetheless.
+		set_variable = { WA_TLM_nav_cv_f = num_deployed_planes_with_type@cv_small_fighter_airframe }
+		set_variable = { WA_TLM_nav_cv_n = num_deployed_planes_with_type@cv_small_naval_bomber_airframe }
+		set_variable = { WA_TLM_nav_cv_hulls = num_ships_with_type@carrier }
+		# convoy is an equipment archetype, so it is read with num_equipment@, the
+		# idiom used for every other archetype in this repo (WA_AI_DIVISION_CREATOR_
+		# effects.txt, 100_wa_on_actions.txt). UNVERIFIED IN-GAME until the F9 boot
+		# check below - if it reads 0 on ENG in a war year while nav_ships is
+		# non-zero, the token filter failed again and the metric must be dropped,
+		# not scored. Same discipline as the composition ladder's boot-check note.
+		set_variable = { WA_TLM_nav_convoys = num_equipment@convoy }
+
+		# tlm: nav_conv_threat / nav_conv_ws - gauges, any AI navy - consumer: R36
+		# (standing). Both tokens ARE valid variable reads (dynamic_variables_
+		# documentation.md lists both, auto-generated from the same-named triggers);
+		# both engine values are 0-1, stored x100 so the save shows integers-ish.
+		# conv_threat = how dangerous our convoy routes are.
+		# conv_ws = the war-support malus our sunk convoys have already cost us.
+		# READING NOTE for conv_ws, which read 0 on all four majors on 02bd4445
+		# after 11 500 sinkings: that is a REAL zero, not a bad token. The engine
+		# penalty is a rate, not a lifetime tally - it accrues at most
+		# CONVOYS_BEING_RAIDED_WAR_SUPPORT_PENALTY_SCALE / WEEKLY (-0.01) per week
+		# from convoys being raided RIGHT NOW and decays 0.025/week
+		# (05_defines.lua:134-137), capped at -0.3 total. Observable range is
+		# therefore 0-30 in this metric's units, and it returns to ~0 within a
+		# couple of months of the raiding stopping. Cumulative losses are not
+		# visible here; use nav_conv_killed (the raider side) and the save's
+		# convoy efficiency instead.
+		set_variable = { WA_TLM_nav_conv_threat = convoy_threat }
+		multiply_variable = { WA_TLM_nav_conv_threat = 100 }
+		set_variable = { WA_TLM_nav_conv_ws = has_convoys_war_support }
+		multiply_variable = { WA_TLM_nav_conv_ws = 100 }
+
+		# tlm: nav_conv_killed - gauge (engine-side cumulative), any AI navy -
+		# consumer: R36 (standing). Convoys THIS country destroyed: the raider side
+		# of the same ledger, so an escort failure can be read from both ends.
+		set_variable = { WA_TLM_nav_conv_killed = convoys_destroyed }
+
+		# tlm: nav_last_t - sample stamp (absence contract, doc 3.5). Written with the
+		# widest gauge of the family, never inside the naval-major gate.
+		set_variable = { WA_TLM_nav_last_t = global.WA_TLM_clock }
+
+		if = { limit = { WA_AI_CONFIG_MILITARY_is_major_naval = yes }
+
+			# tlm: nav_port_screens - banded gauge, naval majors - consumer: R36
+			# (standing). Screens sitting in our own naval-base states, summed over
+			# states with a per-state floor ladder (ships_in_state_ports is a trigger,
+			# not a getter). Reads LOW by construction: a state holding 39 screens
+			# books 20. That is the honest direction - it cannot manufacture an
+			# idle-fleet problem that is not there.
+			set_variable = { WA_TLM_nav_port_screens = 0 }
+			every_owned_state = {
+				limit = {
+					is_coastal = yes
+					naval_base > 0
+					is_controlled_by = PREV
+				}
+				# Country scope; `state = PREV` then points back at the state, the
+				# idiom vanilla uses in common/decisions/ITA.txt (human torpedo raid).
+				PREV = {
+					if = { limit = { ships_in_state_ports = { type = screen_ship size > 79 state = PREV } }
+						add_to_variable = { WA_TLM_nav_port_screens = 80 }
+					}
+					else_if = { limit = { ships_in_state_ports = { type = screen_ship size > 39 state = PREV } }
+						add_to_variable = { WA_TLM_nav_port_screens = 40 }
+					}
+					else_if = { limit = { ships_in_state_ports = { type = screen_ship size > 19 state = PREV } }
+						add_to_variable = { WA_TLM_nav_port_screens = 20 }
+					}
+					else_if = { limit = { ships_in_state_ports = { type = screen_ship size > 9 state = PREV } }
+						add_to_variable = { WA_TLM_nav_port_screens = 10 }
+					}
+					else_if = { limit = { ships_in_state_ports = { type = screen_ship size > 4 state = PREV } }
+						add_to_variable = { WA_TLM_nav_port_screens = 5 }
+					}
+					else_if = { limit = { ships_in_state_ports = { type = screen_ship size > 0 state = PREV } }
+						add_to_variable = { WA_TLM_nav_port_screens = 1 }
+					}
+				}
+			}
+
+			# tlm: nav_port_pct - derived gauge, 100 * port_screens / screens -
+			# consumer: R36 (standing). This is THE headline number: what share of the
+			# escort force is parked at home this month.
+			set_temp_variable = { _tlm_pp_ = WA_TLM_nav_port_screens }
+			multiply_temp_variable = { _tlm_pp_ = 100 }
+			if = { limit = { check_variable = { WA_TLM_nav_screens > 0 } }
+				divide_temp_variable = { _tlm_pp_ = WA_TLM_nav_screens }
+			}
+			else = {
+				set_temp_variable = { _tlm_pp_ = 0 }
+			}
+			set_variable = { WA_TLM_nav_port_pct = _tlm_pp_ }
+
+			# Quarterly ring buffer on its OWN axis. It must not share WA_TLM_hist_t:
+			# that axis is pushed under WA_AI_CONFIG_is_major_country, a different
+			# country set, and any gate mismatch desynchronises index i from the axis
+			# for every series on it (doc 4, risk ii). Depth 44 = 11 game-years.
+			set_temp_variable = { _tlm_nq_ = global.WA_TLM_clock }
+			modulo_temp_variable = { _tlm_nq_ = 3 }
+			if = { limit = { check_variable = { _tlm_nq_ = 0 } }
+				add_to_array = { array = WA_TLM_nav_hist_t value = global.WA_TLM_clock }
+				add_to_array = { array = WA_TLM_nav_port_pct_hist value = WA_TLM_nav_port_pct }
+				if = { limit = { check_variable = { WA_TLM_nav_hist_t^num > 44 } }
+					remove_from_array = { array = WA_TLM_nav_hist_t index = 0 }
+					remove_from_array = { array = WA_TLM_nav_port_pct_hist index = 0 }
+				}
+			}
+		}
+	}
+}
+
+############################################################################################################
+#	Standard-construction-queue sample (standing, family sq; Fix 88). One gauge: the breadth K the
+#	queue functions would use this month = clamp(ceil((civs - PC-assigned) / MAX_CIV_FACTORIES_PER_LINE),
+#	1, 20) - the same arithmetic as WA_AI_queue_breadth_prepare (queue_functions), duplicated here
+#	because that effect writes a TEMP and telemetry must never be read by gameplay. If the two
+#	constants there change, change them here (20 / 20).
+#	Everything else in the family is a counter written at its event site (adders / selection /
+#	on_state_control_changed) - see the v17 note at the top of this file.
+WA_TLM_sample_sq = {
+	if = { limit = { is_ai = yes }
+		set_temp_variable = { _tlm_sq_k_ = num_of_civilian_factories }
+		subtract_from_temp_variable = { _tlm_sq_k_ = WA_AI_PC_assigned_factories_total }
+		divide_temp_variable = { _tlm_sq_k_ = 20 }
+		clamp_temp_variable = { var = _tlm_sq_k_ min = 1 max = 20 }
+		set_variable = { WA_TLM_sq_k = _tlm_sq_k_ }
+	}
+}

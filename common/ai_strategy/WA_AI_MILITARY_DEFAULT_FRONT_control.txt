@@ -28,9 +28,28 @@
 
 WA_AI_MILITARY_EXEC_no_stockpiles_stop = {
 	enable = {
-		WA_AI_MILITARY_home_threatened = yes
 		has_war = yes
-		check_variable = { WA_AI_fielded_eq_ratio < 0.9 }
+		# has_variable guard: absent ratio (background event not fired yet, e.g. a freshly spawned
+		# tag at war) must not read as 0 and freeze every front at priority 10000.
+		has_variable = WA_AI_fielded_eq_ratio
+		OR = {
+			# Normal case: home front threatened while short on fielded equipment.
+			AND = {
+				NOT = { has_civil_war = yes }
+				WA_AI_MILITARY_home_threatened = yes
+				check_variable = { WA_AI_fielded_eq_ratio < 0.9 }
+			}
+			# Fix S1 (SCW stall, campaign 66d6b53c): a civil-war belligerent controls only part of
+			# its cores, so home_threatened (surrender_progress > 0.05) is its PERMANENT default
+			# condition for the entire war - on both sides - and this brake became a nine-year
+			# attack veto. For civil-war countries the brake is rebased on equipment alone, at a
+			# harsher floor (0.5 < flag-set 0.6 < the 0.9 used above): still stop when genuinely
+			# starved, never because "home is threatened" - it always is.
+			AND = {
+				has_civil_war = yes
+				check_variable = { WA_AI_fielded_eq_ratio < 0.5 }
+			}
+		}
 	}
 	abort_when_not_enabled = yes
 
@@ -39,6 +58,51 @@ WA_AI_MILITARY_EXEC_no_stockpiles_stop = {
 		country_trigger = { has_war_with = ROOT }
 		ratio = 0
 		priority = 10000
+		ordertype = front
+		execution_type = careful
+		execute_order = no
+		manual_attack = no
+	}
+}
+
+
+# purpose: emergency stop - a country flagged critically low on fielded equipment stops executing
+#          attack orders on every front until it recovers. Consumer of the long-orphaned
+#          WA_AI_defensive_front_strategy flag (WA_AI_misc_effects.txt: set below 0.6 fielded
+#          equipment, cleared above 0.9), which logged "stopping attacks" since 1936 but did nothing.
+#          Civil-war belligerents bypass the flag and use a direct equipment floor instead (Fix S1).
+# range:   n/a (front_control)
+# policy:  Exclusive per front - priority 500 outranks the posture exec/grind blocks (300) in
+#          WA_AI_MILITARY_FACTION_ALLIES_FRONT.txt, and yields to no_stockpiles_stop above (10000).
+# domain:  FRONT
+WA_AI_MILITARY_EXEC_low_equipment_hold = {
+	enable = {
+		has_war = yes
+		OR = {
+			AND = {
+				NOT = { has_civil_war = yes }
+				has_country_flag = WA_AI_defensive_front_strategy
+			}
+			# Fix S1 (SCW stall, campaign 66d6b53c): the flag's clear threshold (fielded ratio
+			# > 0.9, WA_AI_misc_effects.txt) is unreachable for a civil-war economy, so once
+			# latched the flag vetoed attacks for the entire war. Civil-war countries bypass the
+			# flag hysteresis and hold only while genuinely starved, on the same 0.5 floor as
+			# no_stockpiles_stop above (has_variable guard per ECONOMY rule 2.7: absent must not
+			# read as critically low).
+			AND = {
+				has_civil_war = yes
+				has_variable = WA_AI_fielded_eq_ratio
+				check_variable = { WA_AI_fielded_eq_ratio < 0.5 }
+			}
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_control
+		country_trigger = { has_war_with = ROOT }
+		ratio = 0
+		priority = 500
 		ordertype = front
 		execution_type = careful
 		execute_order = no

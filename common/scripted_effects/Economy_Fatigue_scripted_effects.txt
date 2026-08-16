@@ -914,13 +914,40 @@ upgrade_warbonds = {
 	}
 	else_if = {
 		limit = {
-			has_idea = Series_G_bonds
+			has_idea = Series_F_bonds
 			WA_series_g_bonds_trigger = yes
 			check_variable = { economic_fatigue > 0 }
 		}
 		swap_ideas = {
 			remove_idea = Series_F_bonds
 			add_idea = Series_G_bonds
+		}
+	}
+	# Fix: retry path for a dead-ended bond ladder. warbonds_mission's terminal timeout
+	# drives economic_fatigue down and then immediately calls this effect, so when the
+	# final wave lands at fatigue 0 every guard above fails and nothing re-arms - the
+	# country parks on its current series forever even when fatigue later climbs back
+	# (campaign 31eaf7e6: JAP stuck on Series_B from 1938 while fatigue ratcheted to 93).
+	# If we still hold a non-terminal series and no swap fired, arm a low-frequency
+	# retry mission that re-checks once fatigue passes 9 again. Player intent is
+	# respected: the retry goes back through check_and_fire_auto_warbond_event, which
+	# no-ops under no_auto_upgrade_warbonds and only asks (afo_event.23) otherwise.
+	else_if = {
+		limit = {
+			NOT = { has_country_flag = issuing_war_bonds }
+			NOT = { has_country_flag = repaying_war_bonds }
+			NOT = { has_country_flag = no_auto_upgrade_warbonds }
+			OR = {
+				has_idea = Series_A_bonds
+				has_idea = Series_B_bonds
+				has_idea = Series_C_bonds
+				has_idea = Series_D_bonds
+				has_idea = Series_E_bonds
+				has_idea = Series_F_bonds
+			}
+		}
+		hidden_effect = {
+			activate_mission = warbonds_upgrade_retry_mission
 		}
 	}
 }
