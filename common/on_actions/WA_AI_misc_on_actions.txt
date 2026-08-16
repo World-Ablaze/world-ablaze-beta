@@ -70,50 +70,27 @@ on_actions = {
 						NOT = {
 							has_country_flag = WA_AI_construction_timer
 						}
-						# Fix 80 (2026-08-15, checklist R48): the ENG/USA date exclusion below is
-						# INHERITED FROM EXPERT AI - it predates the EAI -> WA rename (bd11fde6b) and
-						# no WA commit ever states what it protects. Fix 76 put the proactive
-						# synthetic-rubber lane inside WA_AI_C.10, so this exclusion made that lane
-						# DEAD for the two countries it was written for: measured on campaign
-						# be18f9c7 the trigger is armed at 1940.6 (rubber effective +9.0, imported
-						# 60) and 1941.6 (+4.0, 86) - both months this gate blocks - and at 1942.6,
-						# the first month it opens, the balance is already -168.0 with imports at 0,
-						# so the lane's own pre-shortage terms are false and never reopen again.
-						#
-						# The escape is the pre-build trigger itself, NOT a removal of the gate.
-						# What that actually exposes was measured branch by branch rather than
-						# assumed, because C.10 has 16 of them:
-						#   - the reactive refinery branch is mutually exclusive with the pre-build
-						#     lane by construction (it needs rubber < 0, the lane needs >= 0);
-						#   - the steel and aluminium branches stay shut on their own terms in the
-						#     escape window (USA steel effective +392 at 1940.6 and +31 at 1941.6
-						#     against a < -20 bar; aluminium +7 and +17);
-						#   - the AA, air-base and fuel-silo branches are gated on capability and
-						#     the fuel silo excludes USA by name;
-						#   - the generic tail is an EMPTY else_if for GER/ITA/USA/JAP, i.e. already
-						#     a deliberate no-op.
-						# The one branch that does newly open for the USA is the resource-state
-						# infrastructure lane, and the USA carries WA_AI_needs_aluminium = 3 from
-						# 1940 - that is the behaviour this blanket gate was suppressing, not a
-						# regression.
-						#
-						# ENG is unaffected in practice: it owns Malaya, imports 0 rubber, and so
-						# never satisfies the pre-build trigger - the escape never opens for it and
-						# its large tag-specific build programme stays behind the date gate.
-						OR = {
-							NOT = {
-								OR = {
-									AND = {
-										tag = ENG
-										date < 1942.1.1
-									}
-									AND = {
-										tag = USA
-										date < 1942.6.1
-									}
+						# Fix 80 (2026-08-15) added `OR = { <this exclusion is false>  WA_AI_CONSTRUCTION_
+						# should_pre_build_synth_rubber = yes }` here so the proactive synthetic-rubber lane
+						# hosted in WA_AI_C.10 could be dispatched inside the ENG/USA date exclusion; Fix 84
+						# (2026-08-16, never committed) widened the same escape to the idle-civ gate above.
+						# The lane was RETIRED 2026-08-16 (its host starved in the vanilla queue and the
+						# USA's proactive synthetic build moved outside WA_AI - see
+						# documentation/WA_SYNTHETIC_RUBBER_PREBUILD.md), so both escapes are gone and the
+						# gate is back to its pre-Fix-76 shape. The
+						# exclusion itself is inherited from Expert AI (predates the EAI -> WA rename
+						# bd11fde6b) and is left as it was.
+						NOT = {
+							OR = {
+								AND = {
+									tag = ENG
+									date < 1942.1.1
+								}
+								AND = {
+									tag = USA
+									date < 1942.6.1
 								}
 							}
-							WA_AI_CONSTRUCTION_should_pre_build_synth_rubber = yes
 						}
 					}
 					country_event = WA_AI_C.10

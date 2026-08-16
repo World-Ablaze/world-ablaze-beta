@@ -211,9 +211,46 @@ large tag-specific build programme stays behind the date gate untouched.
 
 **R48's USA legs are scoreable again.** The probe is unchanged.
 
+### 3.4d Fix 84 (2026-08-16, never committed) — the escape was nested under a second gate
+
+The first campaign carrying Fix 80 (`af003548`) still read `_n = 0`. Re-reading the trigger's terms
+against the saves: all true for the USA at 1941.9 / 1942.1 (rubber +26.7 / +10.0, imported 106.7 / 92.0,
+coal +8 415 / +7 007, tech since 1936.6, civs_20 floored) with the timer flag absent — the on_daily gate
+was false on `num_of_available_civilian_factories > 1`, the idle-civ throttle Fix 80's OR sat *under*.
+Fix 84 lifted the escape above it and added dispatch counters (`r48_c10_fire_n` / `_escape_n`). Retested
+on a 1941.9 fork: `escape_n = 2 = fire_n`, `prebuild_synth_n = 2` (1941.7 / 1941.9) — the lane fired.
+
+### 3.4e RETIRED (2026-08-16) — the lane is removed; the USA's proactive synthetic build moves outside WA_AI
+
+The same fork, read at 1942.4 and 1942.6: **USA `synthetic_refinery` = 0 levels** with rubber effective
+−59 / −43. The two lane adds *were* in the USA's vanilla construction queue — `created_date 1941.7.7`
+amount 2 cost 18 000 priority 50, `1941.9.1.5` amount 2 priority 32→29 — and at 1942.6.6 the second read
+**`produced = 49.7` of 18 000**: nine months at 0.3 % behind the AI's own mil/civ builds. The reactive
+branch's 1942.3.3 adds (amount 3 ×3) sat beside them, and on the cloud path the first level landed
+1943.6 — 15 months later. Detection, dispatch and the add all worked; `add_building_construction` then
+parked the refinery. **A script-queued build on a saturated AI queue is not a build.**
+
+A priority-construction host was designed (Fix 89: one type-8 project at a time on its own budget,
+band strategic 250, outside the `active_nonrail < 5` gate) and **not shipped**: the USA's proactive
+synthetic build is being handled by an industrial-planning rework outside WA_AI, which makes a 2-level-
+per-year WA_AI lane redundant for its only measured beneficiary (ENG never qualifies, GER is hand-built,
+JAP/SOV raise parks unaided). The lane was therefore retired the same day: trigger
+`WA_AI_CONSTRUCTION_should_pre_build_synth_rubber` deleted, the C.10 `else_if` host removed (pointer
+comment kept), the Fix 80 dispatch escape removed (gate back to its pre-Fix-76 shape), Fix 84 dropped
+unmerged, `WA_TLM_r48_prebuild_synth_*` inits deleted. Checklist R48 sits in the retirement ledger as
+SUPERSEDED.
+
+What survives for rubber inside WA_AI is the **reactive** PC strategy `WA_AI_build_refinery_resource_shortage_rubber`
+— and it is worth stating why it built **zero** USA synthetic levels over the whole `af003548` campaign:
+it is gated on `ROOT.WA_AI_PC_active_nonrail_projects < 5` (twice — in the strategy and again in
+`WA_AI_priority_queue_synthetic_refinery`), and the USA's PC queue holds 5–8 non-rail projects (radar) at
+every measured date; behind that gate it also needs `WA_AI_resource_rubber_shortage_months = 3` and queues
+ONE project at a time. Whether that gate should open for a country in deep deficit is a decision that
+belongs with the industrial-planning owner, not here.
+
 ### 3.5 Instrumentation
 
-`WA_TLM_r48_prebuild_synth_n` / `_first_t` / `_last_t`, registered in `WA_TLM_TELEMETRY_SYSTEM.md` §5, zero-initialised in `WA_TLM_init_country`, `wa_tlm_version` ≥ 13. Both write sites count **verified effect only** — `break = 1` after `WA_AI_queue_REF` at the C.10 site, `WA_AI_PC_queue` growth at the PC site (the Fix 39/40 idiom) — never on entry to the code path.
+`WA_TLM_r48_prebuild_synth_n` / `_first_t` / `_last_t`, registered in `WA_TLM_TELEMETRY_SYSTEM.md` §5, zero-initialised in `WA_TLM_init_country`, `wa_tlm_version` ≥ 13. **Retired 2026-08-16** with the lane (inits deleted). While it lived, the single write site was the C.10 branch, counting verified effect only (`break = 1` after `WA_AI_queue_REF`).
 
 The counter is *build-started*, not build-finished; read it against `savegame.py buildings <TAG> --match refinery`.
 

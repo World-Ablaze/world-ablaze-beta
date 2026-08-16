@@ -357,119 +357,13 @@ WA_AI_industry_overextended = {
 	has_country_flag = WA_AI_industry_overextended_flag
 }
 
-### synthetic-rubber pre-build (PROACTIVE layer)
+# The proactive synthetic-rubber lane (Fix 76 trigger WA_AI_CONSTRUCTION_should_pre_build_synth_rubber,
+# Fix 80/84 dispatch escapes, Fix 89 PC host) was RETIRED 2026-08-16 without shipping 89: the
+# USA's proactive synthetic build is being handled by an industrial-planning rework outside
+# WA_AI, and the af003548 1941.9 fork had shown the vanilla-queue host starving its adds
+# (produced 49.7 / 18 000 after 9 months). History: documentation/WA_SYNTHETIC_RUBBER_PREBUILD.md,
+# checklist ledger (R48).
 
-# Fix 76 (campaign be18f9c7). THIS = country.
-#
-# WHAT THIS IS. Every existing synthetic-refinery build path in the mod is REACTIVE -
-# it requires `resource@rubber < 0`, i.e. the deficit must already exist:
-#   * events/WA_AI_construction.txt (WA_AI_C.10 refinery branch)  -> WA_AI_queue_REF
-#   * WA_AI_build_refinery_resource_shortage_rubber                -> type-8 PC project
-#   * WA_AI_overext_substitute_MIC's refinery leg                  -> type-8 PC project
-# A synthetic_refinery costs 18 000 IC and yields 5 rubber/level, so a park large
-# enough to matter takes years to raise. Starting the clock on the day the deficit
-# opens guarantees the country spends the whole war behind its own demand curve.
-# Measured on be18f9c7: USA rubber went NEGATIVE at 1942.6 (imports cut 86 -> 0) and
-# its FIRST synthetic refinery level appeared at 1944.6 - 24 months late - reaching
-# 41 levels (205 rubber/day) only by 1946.6, still against a -387 balance.
-#
-# THE LEADING SIGNAL IS IMPORT DEPENDENCE, and it is available years earlier.
-# `resource_imported@rubber` is the volume a country is covering from someone else's
-# territory: it is exactly the volume that disappears when a war, a blockade or a
-# faction realignment cuts the route, and it says so while the balance is still
-# healthy. On the same campaign the USA read imports 60 at 1940.6 and 86 at 1941.6
-# with a POSITIVE balance both times - this trigger arms there, ~2 years before the
-# shock and ~4 years before the AI actually built anything.
-#
-# WHY IT IS SETUP-AGNOSTIC (AGENTS.md principle 1). No dates, no tags, no faction or
-# ideology terms, no assumption that Pearl Harbor happened. A country that never
-# loses its supplier keeps a healthy balance, its imports fall as domestic synthetic
-# output replaces them, and the trigger closes itself (see the self-limiting note
-# below). A country whose crisis arrives in 1938 or 1944 instead is served on the
-# same terms. Contrast the reactive C.10 branch, which additionally carries a hard
-# `date > 1941.1.1` - a story gate that is silent in any game whose rubber crisis
-# comes early. This trigger deliberately carries no such term.
-#
-# THE PROACTIVE AND REACTIVE LANES ARE MUTUALLY EXCLUSIVE BY CONSTRUCTION.
-# `resource@rubber > -1` means this fires only while the balance is still non-
-# negative; every reactive path requires it to be negative. So no call site can
-# double-queue, and this trigger can never widen the reactive behaviour it sits
-# beside - it only covers the window the reactive paths structurally cannot see.
-#
-# SELF-LIMITING, so it needs no capacity counter. Each level added raises domestic
-# rubber production, the engine's trade AI then buys less, `resource_imported@rubber`
-# falls, and the trigger shuts off on its own once the park can stand in for the
-# imports. That is why there is no country-scope level count here: summing
-# synthetic_refinery over every owned state on a 2-day pulse would cost far more than
-# the feedback loop it would replace.
-#
-# COAL GUARD IS MANDATORY, not defensive coding. A synthetic_refinery burns 60 coal
-# per level (common/buildings/00_buildings.txt) and coal is the one resource whose
-# deficit is catastrophic rather than tolerable - WA sets BASE_FACTORY_SPEED = 0.0
-# against POWERED_FACTORY_SPEED = 2.5, so an unpowered factory produces literally
-# zero (documentation/WA_REFINERY_CONTROLLER_REVIEW.md 1.5). Same two terms, same
-# values, as the reactive rubber strategy and the overextension cascade already use.
-#
-# WHO ACTUALLY QUALIFIES, measured on be18f9c7 (rubber balance >= 0 AND imports over
-# the floor AND the coal guard satisfied, at any sampled date 1936.6-1946.7):
-#   USA  yes - 1940.6, 1941.6. The motivating case, and the one that needs this.
-#   JAP  yes - 1937.6 to 1940.6. Already raises a park unaided (0 -> 4).
-#   SOV  yes - 1938.6 to 1941.12. Already raises a park unaided (13 -> 55).
-#   ENG  NEVER - it owns Malaya, so it imports 0 rubber for the whole 1936-1941
-#        positive-balance stretch; once Malaya falls the balance is negative and the
-#        REACTIVE paths own it. A pre-build lane cannot help a country whose supply
-#        is domestic right up to the moment it is conquered.
-#   GER  NEVER - rubber imports 0 from 1938 on, because GER is pre-built BY HAND:
-#        the original_tag = GER startup block in events/WA_AI_construction.txt adds
-#        22 refinery levels, park 4 -> 36 by 1940.6. This trigger is the generic,
-#        tag-free form of exactly that behaviour.
-#   ITA  NEVER - clears the rubber terms three times, rejected by the coal guard
-#        every time (it imports 700-1600 coal). The guard doing its job.
-#
-# consumer: WA_AI_C.10 refinery branch (events/WA_AI_construction.txt) - ONE site.
-#           A second host in WA_AI_build_refinery_resource_shortage_rubber was
-#           prototyped and removed; the reason is recorded at that call site.
-# probe:    WA_TLM_r48_prebuild_synth_* (checklist R48)
-
-# Import volume at which a country counts as structurally rubber-import-dependent.
-# Sits above the 10 used by WA_AI_check_resource_needs' import leg so ordinary trade
-# noise does not arm an 18 000-IC building; measured to arm the USA in mid-1940.
-@AI_SYNTH_PREBUILD_IMPORT_FLOOR = 20
-# Relevance floor - a country that barely consumes rubber has nothing to protect.
-# Same value the reactive C.10 branch uses.
-@AI_SYNTH_PREBUILD_CONSUMED_FLOOR = 9
-
-WA_AI_CONSTRUCTION_should_pre_build_synth_rubber = {
-
-	has_tech = synth_oil_experiments
-
-	# capability guards, same pair the neighbouring refinery strategies carry
-	has_capitulated = no
-	surrender_progress < 0.3
-
-	# the rubber actually matters to this economy
-	check_variable = { resource_consumed@rubber > @AI_SYNTH_PREBUILD_CONSUMED_FLOOR }
-
-	# PRE-shortage lane only - hands over to the reactive paths the moment the
-	# balance turns, so the two can never both queue for the same country.
-	# Was `> -1` (2026-08-14), which did NOT implement that invariant: `>` is
-	# strict, so the whole band -1 < rubber < 0 satisfied both this term and the
-	# reactive paths' `< 0`, and a country sitting at -0.5 could queue refineries
-	# from both lanes at once. `NOT = { ... < 0 }` is exactly "not negative".
-	NOT = { check_variable = { resource@rubber < 0 } }
-
-	# the leading signal: covering demand from someone else's territory
-	check_variable = { resource_imported@rubber > @AI_SYNTH_PREBUILD_IMPORT_FLOOR }
-
-	# coal guard - 60 coal per level, and coal deficits are not survivable
-	check_variable = { resource@coal > 50 }
-	check_variable = { resource_imported@coal < 20 }
-
-	# scale: only an economy that can absorb an 18 000-IC building speculatively.
-	# Floored variant, because the bare engine availability reads ~0 once the
-	# vanilla construction queue saturates (the Fix 40 finding).
-	WA_AI_PC_has_project_civs_20 = yes
-}
 
 # THIS = STATE, PREV = BUILDER, _project_building_type, _project_province_id
 WA_AI_PC_can_build_project = {
