@@ -591,8 +591,8 @@ OR = {
 **Scenario:** Railway queue already has 3+ projects.
 
 **Expected:**
-- `@QUEUE_SKIP_THRESHOLD = 3` check (core.txt line 33)
-- If `queued_type_num_ >= 3`, skip strategy execution
+- `constant:wa_ai_railway.routes.queue_full = 12` check (railway_core, Fix 29b: counts LIVE type-13 projects only; the same key is the Fix 77 admission cap)
+- If the live railway queue is >= 12, skip strategy execution
 - Prevents over-queuing when projects are still in progress
 
 ---

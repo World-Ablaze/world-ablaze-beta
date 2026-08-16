@@ -1,0 +1,94 @@
+####################################################################################################
+#	World Ablaze AI - RAILWAY priority-construction constants (the railway 'control panel').
+#	Read from script with `constant:wa_ai_railway.<group>.<key>` (HOI4 1.18 script constants). One
+#	declaration visible from railway_core / helpers / strategies AND from WA_AI_CONSTRUCTION_triggers.txt
+#	(eligibility filter, per-enemy route budget) - the file-scoped `@` copies that had to be kept in
+#	sync by hand are gone (2026-08-16). Bands and the type id are PC-wide: constant:wa_ai_pc.prio.rail_war
+#	/ .rail_prewar / constant:wa_ai_pc.type_id.rail (wa_ai_pc.txt). Cost mirrors of 00_buildings.txt are
+#	tracked by tools/constants_registry.json - run `python tools/check_constants.py` after editing.
+#	Full restart (not `reload`) when tuning: the game reloads this database separately from the scripts.
+#	System doc: documentation/WA_AI_RAILWAY_SYSTEM.md.
+####################################################################################################
+
+wa_ai_railway = {
+	schema = {
+		any_key = yes
+		data = {
+			{
+				any_key = yes
+				data = fixed_point
+			}
+		}
+	}
+
+	# WA_AI_PC_railway run interval, in weeks (the counter is decremented by the weekly pulse).
+	interval = {
+		peace_weeks = 12	# ~6 months during peace
+		              # was @WA_AI_PC_railway_INTERVAL_PEACE
+		war_weeks   = 8	# ~3 months during war
+		              # was @WA_AI_PC_railway_INTERVAL_WAR
+	}
+
+	# Which countries run the railway system - WA_AI_PC_country_can_run_railway_system (triggers file, on_weekly)
+	# and the civ floor inside WA_AI_PC_railway (railway_core). Fix 43 escape hatch = recovery_min_states.
+	eligibility = {
+		min_civs            = 50	# base civ minimum inside the run (war threshold = 60% of this)
+		                      # was @WA_AI_PC_railway_MIN_CIVS
+		min_civs_peace      = 75	# higher threshold during peace
+		                      # was @WA_AI_PC_railway_MIN_CIVS_PEACE
+		min_states          = 5	# minimum controlled states to run
+		                      # was @WA_AI_PC_railway_MIN_STATES
+		max_surrender       = 0.3	# skip above this surrender progress...
+		                      # was @WA_AI_PC_railway_MAX_SURRENDER
+		recovery_min_states = 20	# ...unless civs > min_civs_peace and states > this (war economy intact, Fix 43)
+		                      # was @WA_AI_PC_railway_RECOVERY_MIN_STATES
+		minor_civ_threshold = 50	# minor nations bypass the state gate above this many civs
+		                      # was @WA_AI_PC_railway_MINOR_CIV_THRESHOLD
+	}
+
+	# Route caps per execution and queue sizing. queue_full is BOTH the recalculation-skip threshold
+	# (railway_core, Fix 29b: live type-13 projects only) AND the Fix 77 admission cap on queued segments
+	# (railway_helpers) - they were two @ names 'equal BY DESIGN'; one key makes the design structural.
+	routes = {
+		max_total                    = 8	# max routes processed per run
+		                               # was @WA_AI_PC_railway_MAX_ROUTES_TOTAL
+		max_per_enemy                = 4	# max routes per enemy country (enforced by WA_AI_PC_railway_land_frontline_candidate)
+		                               # was @WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY
+		queue_full                   = 12	# 'a full queue is 12' - skip recalculation at/above, and never admit past it (Fix 77)
+		                               # was @WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD, @WA_AI_PC_railway_MAX_QUEUED
+		partial_path_priority_factor = 0.7	# partial paths (dead-ends) get 70% priority
+		                               # was @WA_AI_PC_railway_PARTIAL_PATH_PRIORITY_FACTOR
+		theatre_separation_distance  = 10	# helpers: distance beyond which two targets are separate theatres
+		                               # was @WA_AI_PC_railway_THEATRE_SEPARATION_DISTANCE
+	}
+
+	# Supply-throughput model used to size ports against railways (railway_helpers).
+	supply = {
+		railway_base              = 4	# railway throughput = base + per_level x level
+		                            # was @WA_AI_PC_SUPPLY_RAILWAY_BASE
+		railway_per_level         = 8	# L1=12, L2=20, L3=28, L4=36, L5=44
+		                            # was @WA_AI_PC_SUPPLY_RAILWAY_PER_LEVEL
+		port_per_level            = 5	# port throughput = level x 5
+		                            # was @WA_AI_PC_SUPPLY_PORT_PER_LEVEL
+		port_max_useful_level     = 9	# L5 railway = 44 supply, L9 port = 45
+		                            # was @WA_AI_PC_PORT_MAX_USEFUL_LEVEL
+		home_port_search_distance = 5	# max BFS distance from capital
+		                            # was @WA_AI_PC_HOME_PORT_SEARCH_DISTANCE
+		home_port_target_supply   = 44	# target supply capacity (L5 railway)
+		                            # was @WA_AI_PC_HOME_PORT_TARGET_SUPPLY
+	}
+
+	# Route SCORING costs (railway_helpers). MUST MATCH common/buildings/00_buildings.txt - registered
+	# (cost_rail_way / cost_naval_base / cost_naval_base_per_level) so the checker reports a re-price.
+	cost = {
+		railway_base               = 800	# rail_way.base_cost (flat per segment)
+		                             # was @WA_AI_PC_RAILWAY_BASE_COST
+		naval_base_base            = 10000	# naval_base.base_cost
+		                             # was @WA_AI_PC_NAVAL_BASE_BASE_COST
+		naval_base_per_level       = -556	# naval_base.per_level_extra_cost (negative taper)
+		                             # was @WA_AI_PC_NAVAL_BASE_PER_LEVEL_COST
+		railway_segments_per_state = 3	# estimated railway segments per state
+		                             # was @WA_AI_PC_RAILWAY_SEGMENTS_PER_STATE
+	}
+
+}

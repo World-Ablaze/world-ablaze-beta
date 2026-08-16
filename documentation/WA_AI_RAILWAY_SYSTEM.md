@@ -48,40 +48,41 @@ All files are in `common/scripted_effects/`.
 
 ## System Parameters
 
-### Core Constants (`railway_core.txt`, lines 11-36)
+Since 2026-08-16 every railway number is a HOI4 1.18 **script constant** in
+`common/script_constants/wa_ai_railway.txt`, read as `constant:wa_ai_railway.<group>.<key>` from
+`railway_core`, `railway_helpers`, `railway_strategies` **and** `common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt`
+(the on_weekly eligibility filter `WA_AI_PC_country_can_build_own_logistics` and the per-enemy route
+budget in `WA_AI_PC_railway_land_frontline_candidate`). One declaration, no per-file `@` copies to keep
+in sync (see skill `wa-constants-registry`; the file carries a `# was @OLD_NAME` line per key). The
+type id and the priority bands are PC-wide: `constant:wa_ai_pc.type_id.rail` (13),
+`constant:wa_ai_pc.prio.rail_war` (1000, Fix 41 compressed 9999 -> 1000; x1.1 high-route multiplier
+on top) and `constant:wa_ai_pc.prio.rail_prewar` (500, was 5000) in `wa_ai_pc.txt`.
 
 ```
-constant:wa_ai_pc.type_id.rail = 13              # Building type identifier for railways
-constant:wa_ai_pc.prio.rail_war = 1000              # Wartime priority (highest band; Fix 41 compressed 9999 -> 1000)
-constant:wa_ai_pc.prio.rail_prewar = 500        # Pre-war preparation priority (Fix 41 compressed 5000 -> 500)
-@WA_AI_PC_railway_INTERVAL_PEACE = 12      # Runs every 12 weeks during peace (~3 months)
-@WA_AI_PC_railway_INTERVAL_WAR = 8         # Runs every 8 weeks during war (~2 months)
-@WA_AI_PC_railway_MIN_CIVS = 50            # Base minimum civilian factories
-@WA_AI_PC_railway_MIN_CIVS_PEACE = 75      # Higher threshold during peace
-@WA_AI_PC_railway_MIN_STATES = 5           # Minimum controlled states
-@WA_AI_PC_railway_MAX_SURRENDER = 0.3      # Skip if surrender progress > 30% (see escape hatch below)
-@WA_AI_PC_railway_RECOVERY_MIN_STATES = 20 # Escape hatch: run anyway if civs > 75 and states > 20
-@WA_AI_PC_railway_MINOR_CIV_THRESHOLD = 50 # Minor nations bypass eligibility above this
-@WA_AI_PC_railway_MAX_ROUTES_TOTAL = 8     # Max routes processed per execution
-@WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY = 4 # Max routes per enemy country
-@WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD = 12 # Skip recalculation if 12+ RAILWAY projects queued (Fix 29b: counts type 13 only)
-@WA_AI_PC_railway_PARTIAL_PATH_PRIORITY_FACTOR = 0.7  # Partial paths get 70% priority
-```
-
-### Helper Constants (`railway_helpers.txt`, lines 7-28)
-
-```
-@WA_AI_PC_railway_THEATRE_SEPARATION_DISTANCE = 10   # BFS distance for separate theatres
-@WA_AI_PC_SUPPLY_RAILWAY_BASE = 4                    # Railway throughput base
-@WA_AI_PC_SUPPLY_RAILWAY_PER_LEVEL = 8               # Per level: L1=12, L2=20, L3=28, L4=36, L5=44
-@WA_AI_PC_SUPPLY_PORT_PER_LEVEL = 5                  # Port throughput: level * 5
-@WA_AI_PC_PORT_MAX_USEFUL_LEVEL = 9                  # L5 railway = 44 supply, L9 port = 45 (exceeds railway)
-@WA_AI_PC_HOME_PORT_SEARCH_DISTANCE = 5              # Max BFS from capital for home port
-@WA_AI_PC_HOME_PORT_TARGET_SUPPLY = 44               # Target supply (L5 railway = 44)
-@WA_AI_PC_RAILWAY_BASE_COST = 800                    # Rail segment base cost
-@WA_AI_PC_NAVAL_BASE_BASE_COST = 10000               # Naval base base cost
-@WA_AI_PC_NAVAL_BASE_PER_LEVEL_COST = -556            # Naval base per-level (decreasing)
-@WA_AI_PC_RAILWAY_SEGMENTS_PER_STATE = 3              # Estimated segments per state
+wa_ai_railway.interval.peace_weeks = 12      # runs every 12 weeks during peace
+wa_ai_railway.interval.war_weeks   = 8       # every 8 weeks during war
+wa_ai_railway.eligibility.min_civs = 50      # base civ minimum inside the run (war = 60% of this)
+wa_ai_railway.eligibility.min_civs_peace = 75
+wa_ai_railway.eligibility.min_states = 5
+wa_ai_railway.eligibility.max_surrender = 0.3     # skip above (see escape hatch below)
+wa_ai_railway.eligibility.recovery_min_states = 20 # hatch: run anyway if civs > 75 and states > 20
+wa_ai_railway.eligibility.minor_civ_threshold = 50 # minors bypass the state gate above this
+wa_ai_railway.routes.max_total = 8           # routes processed per execution
+wa_ai_railway.routes.max_per_enemy = 4       # routes per enemy country
+wa_ai_railway.routes.queue_full = 12         # skip recalculation at/above (Fix 29b: live type-13 only)
+                                             # AND the Fix 77 admission cap - one key, was two @ names
+wa_ai_railway.routes.partial_path_priority_factor = 0.7
+wa_ai_railway.routes.theatre_separation_distance = 10
+wa_ai_railway.supply.railway_base = 4        # throughput = base + per_level x level
+wa_ai_railway.supply.railway_per_level = 8   # L1=12, L2=20, L3=28, L4=36, L5=44
+wa_ai_railway.supply.port_per_level = 5      # port throughput = level x 5
+wa_ai_railway.supply.port_max_useful_level = 9
+wa_ai_railway.supply.home_port_search_distance = 5
+wa_ai_railway.supply.home_port_target_supply = 44
+wa_ai_railway.cost.railway_base = 800        # rail_way.base_cost (registered mirror of 00_buildings)
+wa_ai_railway.cost.naval_base_base = 10000   # naval_base.base_cost
+wa_ai_railway.cost.naval_base_per_level = -556
+wa_ai_railway.cost.railway_segments_per_state = 3
 ```
 
 **The three cost constants above are SCORING constants** — they price candidate routes and ports so
@@ -98,13 +99,9 @@ routes at one price and paid for them at another. Charged prices today:
 
 If `common/buildings/00_buildings.txt` is re-priced, **both** tables must be updated — `python tools/check_constants.py` (groups `cost_*`) reports the mismatch.
 
-### Strategy Constants (`railway_strategies.txt` header)
+### Strategy / helper / trigger files
 
-```
-constant:wa_ai_pc.prio.rail_prewar = 500           # Redeclared (file-scoped)
-```
-
-**Note:** HOI4 `@` constants are file-scoped, so required constants are redeclared in each file that uses them. `railway_core.txt`'s header block is the authoritative declaration ("control panel"); the copies in `railway_helpers.txt`, `railway_strategies.txt` and `common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt` (the eligibility filter `WA_AI_PC_country_can_run_railway_system` and the per-enemy route budget in `WA_AI_PC_railway_land_frontline_candidate` are the *readers* of the eligibility five and of `MAX_ROUTES_PER_ENEMY`) are mirrors registered in `tools/constants_registry.json`. `python tools/check_constants.py` fails when any copy disagrees — including the shadow-price table above against `00_buildings.txt`. (Until 2026-08-16 `railway_strategies.txt` also redeclared `MAX_ROUTES_PER_ENEMY`; nothing there read it, so it was removed.)
+They declare no constants of their own any more; they read the script constants above.
 
 ## Eligibility Filters
 
@@ -130,7 +127,7 @@ are gone. A capitulated country keeps its territory, its faction and its factori
 worth building there is decided by the capability terms above. See "Capitulated countries" below.
 
 Notes on the surrender gate: `surrender_progress` measures VP loss, not capability - the escape
-hatch (`@WA_AI_PC_railway_RECOVERY_MIN_STATES`) keeps a large power with an intact war economy
+hatch (`constant:wa_ai_railway.eligibility.recovery_min_states`) keeps a large power with an intact war economy
 building rail even past 30% (the 1942-45 SOV case). While a country is ineligible, the interval
 counter keeps ticking down in the on_action's `else` branch, so a recovering country fires on its
 first eligible week instead of waiting out a frozen interval.
@@ -176,8 +173,8 @@ on_weekly:
 ### Interval Behavior
 
 The interval counter is managed inside `WA_AI_PC_railway` (`railway_core.txt`, line 43):
-- **At war**: Counter resets to `@WA_AI_PC_railway_INTERVAL_WAR` (8 weeks, ~2 months)
-- **At peace**: Counter resets to `@WA_AI_PC_railway_INTERVAL_PEACE` (12 weeks, ~3 months)
+- **At war**: Counter resets to `constant:wa_ai_railway.interval.war_weeks` (8 weeks, ~2 months)
+- **At peace**: Counter resets to `constant:wa_ai_railway.interval.peace_weeks` (12 weeks, ~3 months)
 - Counter decrements by 1 each weekly call
 - Execution occurs when counter reaches 0
 
@@ -196,7 +193,7 @@ The interval counter is managed inside `WA_AI_PC_railway` (`railway_core.txt`, l
   1. ROOT's own controlled states
   2. ROOT's subjects' controlled states (Fix 27)
   3. **faction allies that cannot build their own logistics** (Fix 74) — see "Coalition logistics" below
-  The order is load-bearing: the per-enemy route budget (`@WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY`)
+  The order is load-bearing: the per-enemy route budget (`constant:wa_ai_railway.routes.max_per_enemy`)
   is consumed top-down, so ROOT's own soil always outranks a subject's and a subject's an ally's.
 - The shared body then:
   - Skips single-node states (detected via `WA_AI_PC_coastal_state_is_single_node`)
@@ -286,9 +283,9 @@ Three triggers in `common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt` car
 run the railway system for itself. That is exactly the population the gap was about — a capitulated
 ally keeps its territory and faction membership but the whole weekly PC block is gated
 `has_capitulated = no`, so its queue simply fossilises — and it keeps two healthy majors out of each
-other's rail networks. **The eligibility literals in that trigger are a third redeclaration of
-`@WA_AI_PC_railway_MIN_CIVS` / `_MIN_STATES`** (`@` constants are file-scoped); `railway_core.txt` is
-authoritative and `WA_AI_misc_on_actions.txt` holds the second copy — change one, change all three.
+other's rail networks. **The eligibility terms in that trigger read the same script constants
+(`constant:wa_ai_railway.eligibility.*`) as `railway_core.txt`** — since 2026-08-16 there is one
+declaration (`common/script_constants/wa_ai_railway.txt`), not three copies to change together.
 
 Sites made ally-aware: the land-war candidate walk (above), all three overseas Part-B scans
 (beachhead candidate, beachhead validation, frontline targets), both port searches

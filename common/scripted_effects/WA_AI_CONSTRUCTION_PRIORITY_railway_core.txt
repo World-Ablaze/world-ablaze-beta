@@ -8,51 +8,24 @@
 ### Railway Building - HIGHEST PRIORITY
 ### Performance-optimized: limits which countries run and caps routes calculated
 ###
-### CONSTANTS CONTROL PANEL. This block is the authoritative declaration of the railway constants;
-### the copies in railway_helpers / railway_strategies / WA_AI_CONSTRUCTION_triggers.txt (eligibility
-### filter, per-enemy route budget) are mirrors registered in tools/constants_registry.json -
-### `python tools/check_constants.py` fails when any copy disagrees. Some names below are only READ
-### by a mirror file (the eligibility five, MAX_ROUTES_PER_ENEMY); they stay declared here on purpose
-### as the reference point the docs describe.
-
-# Type id and priority bands are PC-wide script constants since 2026-08-16:
-# constant:wa_ai_pc.type_id.rail (13), constant:wa_ai_pc.prio.rail_war (1000, Fix 41 band
-# compression, was 9999) and constant:wa_ai_pc.prio.rail_prewar (500, was 5000) in
-# common/script_constants/wa_ai_pc.txt - one declaration read by railway_core / helpers /
-# strategies and the allocator alike. The x1.1 high-route multiplier in railway_strategies still
-# applies on top (1000 -> 1100). Full band table: comment above WA_AI_PC_assign_factories (core.txt).
-
-### Interval control (weeks)
-@WA_AI_PC_railway_INTERVAL_PEACE = 12        # 6 months during peace
-@WA_AI_PC_railway_INTERVAL_WAR = 8          # 3 months during war
-
-### Industrial requirements
-@WA_AI_PC_railway_MIN_CIVS = 50              # Base minimum (war threshold = 60% of this)
-@WA_AI_PC_railway_MIN_CIVS_PEACE = 75        # Higher threshold during peace
-
-### Country eligibility (checked in on_weekly)
-@WA_AI_PC_railway_MIN_STATES = 5             # Minimum controlled states to run
-@WA_AI_PC_railway_MAX_SURRENDER = 0.3        # Skip if surrender progress > 30%...
-@WA_AI_PC_railway_RECOVERY_MIN_STATES = 20   # ...unless civs > MIN_CIVS_PEACE and states > this (war economy intact)
-@WA_AI_PC_railway_MINOR_CIV_THRESHOLD = 50   # Minor nations bypass if civs > this
-
-### Route caps per execution
-@WA_AI_PC_railway_MAX_ROUTES_TOTAL = 8       # Max routes processed per run
-@WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY = 4   # Max routes per enemy country
-
-### Caching thresholds
-# Fix 29b: counts RAILWAY projects only (was: whole queue, any type - so 3 radar/refinery
-# projects suppressed railway queueing forever; observed on USA, pinned at 5 non-rail projects
-# 1942-44 with zero railways ever queued). One route is up to 5 segments, so the old value of 3
-# was also smaller than a single corridor.
-@WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD = 12  # Skip recalculation if 12+ LIVE railway projects queued
-# Fix 77: this is now also the ADMISSION cap - @WA_AI_PC_railway_MAX_QUEUED in
-# WA_AI_CONSTRUCTION_PRIORITY_railway_helpers.txt is deliberately the same 12 ("a full queue
-# is 12"). Change them together or the queue either can never fill (cap < threshold never
-# skips) or re-grows past the threshold it is supposed to respect (cap > threshold).
-
-### Priority modifiers
-@WA_AI_PC_railway_PARTIAL_PATH_PRIORITY_FACTOR = 0.7  # Partial paths (dead-ends) get 70% priority
+### CONSTANTS CONTROL PANEL -> common/script_constants/wa_ai_railway.txt (since 2026-08-16).
+### The railway numbers - run interval, country eligibility (Fix 43 hatch), route caps, queue size,
+### supply model, scoring costs - are HOI4 script constants read as constant:wa_ai_railway.<group>.<key>
+### from this file, railway_helpers, railway_strategies AND WA_AI_CONSTRUCTION_triggers.txt (the
+### on_weekly eligibility filter and the per-enemy route budget test), so there are no per-file `@`
+### copies to keep in sync any more. Type id and priority bands are PC-wide: constant:wa_ai_pc.type_id.rail
+### (13), constant:wa_ai_pc.prio.rail_war (1000, Fix 41 band compression, was 9999) and
+### constant:wa_ai_pc.prio.rail_prewar (500, was 5000) in wa_ai_pc.txt; the x1.1 high-route multiplier
+### in railway_strategies still applies on top (1000 -> 1100). Full band table: comment above
+### WA_AI_PC_assign_factories (core.txt).
+###
+### Fix 29b / Fix 77 - constant:wa_ai_railway.routes.queue_full (12) is BOTH the recalculation-skip
+### threshold below (counts LIVE type-13 projects only - was: whole queue, any type, so 3 radar/refinery
+### projects suppressed railway queueing forever; observed on USA, pinned at 5 non-rail projects
+### 1942-44 with zero railways ever queued; one route is up to 5 segments, so the old value of 3 was
+### also smaller than a single corridor) AND the Fix 77 admission cap on queued segments in
+### railway_helpers ("a full queue is 12"). They used to be two @ names that had to be changed
+### together (cap < threshold never skips; cap > threshold re-grows past it) - one key now.
 
 ############################################################################################################
 #	ENTRY POINT
@@ -70,10 +43,10 @@ WA_AI_PC_railway = {
 		### Dynamic interval - longer during peace, shorter during war
 		if = {
 			limit = { has_war = yes }
-			set_variable = { WA_AI_PC_railway_INTERVAL_counter = @WA_AI_PC_railway_INTERVAL_WAR }
+			set_variable = { WA_AI_PC_railway_INTERVAL_counter = constant:wa_ai_railway.interval.war_weeks }
 		}
 		else = {
-			set_variable = { WA_AI_PC_railway_INTERVAL_counter = @WA_AI_PC_railway_INTERVAL_PEACE }
+			set_variable = { WA_AI_PC_railway_INTERVAL_counter = constant:wa_ai_railway.interval.peace_weeks }
 		}
 
 		set_temp_variable = { _project_building_type = global.WA_AI_PC_RAIL }
@@ -84,7 +57,7 @@ WA_AI_PC_railway = {
 		set_temp_variable = { _project_queue_max = 5 }
 
 		### Industrial base requirement: 50+ civilian factories (30+ during war)
-		set_temp_variable = { _min_civs_required = @WA_AI_PC_railway_MIN_CIVS }
+		set_temp_variable = { _min_civs_required = constant:wa_ai_railway.eligibility.min_civs }
 		if = {
 			limit = { has_war = yes }
 			multiply_temp_variable = { _min_civs_required = 0.6 }  # 30 civs during war
@@ -122,7 +95,7 @@ WA_AI_PC_railway = {
 			for_each_loop = { array = WA_AI_PC_queue value = _rail_cnt_proj_
 				if = {
 					limit = {
-						check_variable = { WA_AI_PC_building_type^_rail_cnt_proj_ = 13 }
+						check_variable = { WA_AI_PC_building_type^_rail_cnt_proj_ = constant:wa_ai_pc.type_id.rail }
 						NOT = { check_variable = { WA_AI_PC_target_state^_rail_cnt_proj_ = 0 } }
 						var:WA_AI_PC_target_state^_rail_cnt_proj_ = {
 							CONTROLLER = {
@@ -140,7 +113,7 @@ WA_AI_PC_railway = {
 			}
 			if = {
 				limit = {
-					check_variable = { _rail_live_queued_ < @WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD }
+					check_variable = { _rail_live_queued_ < constant:wa_ai_railway.routes.queue_full }
 				}
 
 				### Execute all applicable strategies
@@ -158,7 +131,7 @@ WA_AI_PC_railway = {
 					for_each_loop = { array = railway_end_provinces_ index = railway_i value = railway_v break = railway_b
 
 						### Break if max routes reached (use > with value-1 since >= not supported)
-						set_temp_variable = { _max_routes_minus_one = @WA_AI_PC_railway_MAX_ROUTES_TOTAL }
+						set_temp_variable = { _max_routes_minus_one = constant:wa_ai_railway.routes.max_total }
 						subtract_from_temp_variable = { _max_routes_minus_one = 1 }
 						if = {
 							limit = { check_variable = { _routes_processed > _max_routes_minus_one } }
@@ -176,7 +149,7 @@ WA_AI_PC_railway = {
 								set_temp_variable = { _route_priority = railway_priorities_^railway_i }
 								if = {
 									limit = { check_variable = { pathfind_prov_success_ = 2 } }
-									multiply_temp_variable = { _route_priority = @WA_AI_PC_railway_PARTIAL_PATH_PRIORITY_FACTOR }
+									multiply_temp_variable = { _route_priority = constant:wa_ai_railway.routes.partial_path_priority_factor }
 								}
 
 								for_each_loop = { array = pathfind_prov_path_ index = path_i value = path_v break = path_b

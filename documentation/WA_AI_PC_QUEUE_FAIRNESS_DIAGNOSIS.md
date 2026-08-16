@@ -125,7 +125,7 @@ and the cohort died at 30.
 
 ### 2.2 Why nothing noticed for 4–6 months
 
-`@WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD = 12` skips route recalculation **and**
+`constant:wa_ai_railway.routes.queue_full = 12` skips route recalculation **and**
 `WA_AI_PC_railway_validate_queued_projects` whenever 12+ type-13 projects are queued — counting
 **dead** projects toward that total. The dead cohort therefore kept switched off the very
 mechanism that would have cancelled it, for the entire collapse.
@@ -147,7 +147,7 @@ uncapped path into the PC queue. One recalculation queues every segment of up to
 
 ### 2.4 Fix 77 — cap admission, and count only live work
 
-- **(a)** `_project_queue_max = @WA_AI_PC_railway_MAX_QUEUED` (12) in
+- **(a)** `_project_queue_max = constant:wa_ai_railway.routes.queue_full` (12) in
   `WA_AI_PC_start_railway_project`. `WA_AI_PC_start_project` counts queued type-13 country-wide
   (unscoped `queued_amount_`), so this bounds the whole railway family across land-war, overseas
   and prewar strategies at once.
@@ -172,7 +172,7 @@ next interval instead of rotting against a front that has moved.
 | --- | --- | --- |
 | `WA_AI_PC_start_railway_project` | `WA_AI_PC_railway` (core, per path segment); railway strategies via the same path | Segments beyond 12 queued type-13 are declined instead of queued. |
 | `_project_queue_max` | Read only by `WA_AI_PC_start_project`'s `while_loop_effect` guard | Set immediately before the call and consumed there; no other caller inherits it (each of the ~35 call sites sets its own, and the shared-temp trap is the documented reason they must). |
-| `@WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD` | Only the skip gate in `WA_AI_PC_railway` | Now compared against a live count. |
+| `constant:wa_ai_railway.routes.queue_full` | Only the skip gate in `WA_AI_PC_railway` | Now compared against a live count. |
 | `queued_type_num_` / `WA_AI_PC_get_total_queued_num` | Second call site in `WA_AI_PC_railway` (the override-flag block) sets both its own inputs | Unaffected — the removed first call did not feed it. |
 
 **Who reaches it:** every AI country passing `WA_AI_PC_country_can_build_own_logistics` on the
@@ -238,7 +238,7 @@ never on date, tag or faction.
 2. *More frequent recalculation costs CPU.* The gate now opens more often, so pathfinding runs more
    often — up to once per interval per eligible country instead of being suppressed for months.
    This is the intended behaviour restored, and it is bounded by the unchanged
-   `@WA_AI_PC_railway_MAX_ROUTES_TOTAL = 8`. The new live-count loop is O(queue) on a weekly
+   `constant:wa_ai_railway.routes.max_total = 8`. The new live-count loop is O(queue) on a weekly
    cadence, negligible beside the existing sorting and progress loops.
 3. *The live-count controller test runs per queued project per week.* Same shape and cost as the
    Fix 34 test already in the allocator fill, on the same cadence.

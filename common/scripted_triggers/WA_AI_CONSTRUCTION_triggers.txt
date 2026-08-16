@@ -295,7 +295,7 @@ WA_AI_queue_depth_ok_HAR = {
 # 2026-08-16 after Fix 90b: nine hand copies -> one trigger. Deliberately WITHOUT a civ-count
 # term: the callers that need "and big enough" (the allocator's constant:wa_ai_pc.alloc.min_economy_civs, the
 # floored gates' thresholds) say so themselves. The railway system keeps its own
-# @WA_AI_PC_railway_MAX_SURRENDER (same 0.3 today, separate control panel by design).
+# constant:wa_ai_railway.eligibility.max_surrender (same 0.3 today, separate control panel by design).
 WA_AI_PC_economy_alive = {
 	has_capitulated = no
 	surrender_progress < constant:wa_ai_pc.alloc.max_surrender
@@ -1232,22 +1232,13 @@ WA_AI_PC_state_has_railway_at_level_3 = {
 #	and keeps two healthy allies out of each other's rail networks.
 ############################################################################################################
 
-# Railway eligibility thresholds. @ constants are file-scoped; before Fix 75 these lived in
-# BOTH common/on_actions/WA_AI_misc_on_actions.txt (as an inline limit block) and
-# WA_AI_CONSTRUCTION_PRIORITY_railway_core.txt, with a "must match" comment holding them together.
-# The on_action copy is now gone - it calls the trigger below instead - so only railway_core.txt
-# (authoritative: its constants block is the railway control panel the docs point at) and this
-# file carry them. REGISTRY: tools/constants_registry.json (railway_eligibility_* and
-# railway_max_routes_per_enemy) - `python tools/check_constants.py` verifies the copies agree.
-@WA_AI_PC_railway_MIN_CIVS_PEACE = 75
-@WA_AI_PC_railway_MINOR_CIV_THRESHOLD = 50
-@WA_AI_PC_railway_MIN_STATES = 5
-@WA_AI_PC_railway_MAX_SURRENDER = 0.3
-@WA_AI_PC_railway_RECOVERY_MIN_STATES = 20
-# Per-enemy route budget read by WA_AI_PC_railway_land_frontline_candidate below. Until 2026-08-16
-# that test carried the bare literal 4 with a comment naming this constant, while the two
-# declarations (railway_core, railway_strategies) had no reader at all.
-@WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY = 4
+# Railway eligibility thresholds and the per-enemy route budget are read here as
+# constant:wa_ai_railway.eligibility.* / routes.max_per_enemy (common/script_constants/wa_ai_railway.txt).
+# History: before Fix 75 they lived in BOTH WA_AI_misc_on_actions.txt (inline limit block) and
+# railway_core.txt with a "must match" comment; Fix 75 made the on_action call the trigger below;
+# the 2026-08-16 registry cleanup found the per-enemy budget enforced by a bare literal 4 next to
+# a comment naming a constant nothing read - and the same day the shared `@` copies became one
+# script-constant declaration, which is why there is nothing to keep in sync any more.
 
 # THIS = country. Is this country able to run the railway system for itself?
 #
@@ -1266,24 +1257,24 @@ WA_AI_PC_country_can_build_own_logistics = {
 	# Higher peacetime industrial threshold - war uses a lower one inside WA_AI_PC_railway
 	OR = {
 		has_war = yes
-		num_of_civilian_factories > @WA_AI_PC_railway_MIN_CIVS_PEACE
+		num_of_civilian_factories > constant:wa_ai_railway.eligibility.min_civs_peace
 	}
 	# Skip minor countries unless at war or rich
 	OR = {
 		is_major = yes
 		has_war = yes
-		num_of_civilian_factories > @WA_AI_PC_railway_MINOR_CIV_THRESHOLD
+		num_of_civilian_factories > constant:wa_ai_railway.eligibility.minor_civ_threshold
 	}
 	# Minimum state count - skip tiny nations
-	num_of_controlled_states > @WA_AI_PC_railway_MIN_STATES
+	num_of_controlled_states > constant:wa_ai_railway.eligibility.min_states
 	# Skip countries losing badly - UNLESS the war economy still works.
 	# surrender_progress measures VP loss, not capability: SOV crossed 30% in Oct 1942 with ~180
 	# states and 300+ divisions and was locked out of railway building for the entire eastern war.
 	OR = {
-		surrender_progress < @WA_AI_PC_railway_MAX_SURRENDER
+		surrender_progress < constant:wa_ai_railway.eligibility.max_surrender
 		AND = {
-			num_of_civilian_factories > @WA_AI_PC_railway_MIN_CIVS_PEACE
-			num_of_controlled_states > @WA_AI_PC_railway_RECOVERY_MIN_STATES
+			num_of_civilian_factories > constant:wa_ai_railway.eligibility.min_civs_peace
+			num_of_controlled_states > constant:wa_ai_railway.eligibility.recovery_min_states
 		}
 	}
 }
@@ -1332,7 +1323,7 @@ WA_AI_PC_is_logistics_build_partner = {
 # dependent-ally states - are filtered identically before the shared body runs.
 WA_AI_PC_railway_land_frontline_candidate = {
 	### Skip if we already have enough routes for this enemy
-	check_variable = { _routes_for_this_enemy < @WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY }
+	check_variable = { _routes_for_this_enemy < constant:wa_ai_railway.routes.max_per_enemy }
 	# State borders this specific enemy (or the enemy's puppets)
 	any_neighbor_state = {
 		OR = {

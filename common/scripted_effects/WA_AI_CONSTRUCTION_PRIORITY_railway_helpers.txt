@@ -3,11 +3,12 @@
 #	Extracted from WA_AI_CONSTRUCTION_PRIORITY_strategies_misc.txt for single responsibility
 ############################################################################################################
 
-### Constants (file-scoped `@` - the type id and the Fix 41 bands moved to script constants
-### constant:wa_ai_pc.type_id.rail / prio.rail_war / prio.rail_prewar on 2026-08-16)
-# Fix 77: admission cap on queued type-13 segments, country-wide. Equal BY DESIGN to
-# @WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD in WA_AI_CONSTRUCTION_PRIORITY_railway_core.txt
-# (authoritative for the pair's meaning): "a full queue is 12". One recalculation used to
+### Constants: this file declares none since 2026-08-16 - it reads constant:wa_ai_railway.* (queue
+### size, supply model, scoring costs; common/script_constants/wa_ai_railway.txt) and the PC-wide
+### constant:wa_ai_pc.type_id.rail / prio.rail_war / prio.rail_prewar (wa_ai_pc.txt).
+# Fix 77: admission cap on queued type-13 segments, country-wide = constant:wa_ai_railway.routes.queue_full,
+# the SAME key railway_core uses as its recalculation-skip threshold ("a full queue is 12" - it
+# used to be two @ names equal by design). One recalculation used to
 # queue every segment of up to 8 routes at once - campaign be18f9c7 GER 1944.6 queued 80
 # segments in a single pulse, of which at most 5 ever held factories at any moment, and the
 # 12+ queue then locked the skip threshold shut for 6+ months, so route recalculation AND
@@ -16,26 +17,9 @@
 # routes, validates the survivors, and tops back up. Throughput is unchanged - the winner-
 # takes-most allocator never funds more than ~pool/20 segments anyway; segments not admitted
 # this pulse are re-derived from the CURRENT front next pulse instead of rotting in the queue.
-@WA_AI_PC_railway_MAX_QUEUED = 12
-@WA_AI_PC_railway_THEATRE_SEPARATION_DISTANCE = 10
 
-### Supply Flow Formula Constants (from game mechanics)
-@WA_AI_PC_SUPPLY_RAILWAY_BASE = 4				# Railway throughput: BASE + PER_LEVEL * level
-@WA_AI_PC_SUPPLY_RAILWAY_PER_LEVEL = 8			# L1=12, L2=20, L3=28, L4=36, L5=44
-@WA_AI_PC_SUPPLY_PORT_PER_LEVEL = 5				# Port throughput: level * 5
-@WA_AI_PC_PORT_MAX_USEFUL_LEVEL = 9				# L5 railway = 44 supply, L9 port = 45 supply (already exceeds railway)
-
-### Home Port Search Parameters
-@WA_AI_PC_HOME_PORT_SEARCH_DISTANCE = 5			# Max BFS distance from capital
-@WA_AI_PC_HOME_PORT_TARGET_SUPPLY = 44			# Target supply capacity (L5 railway = 44)
-
-### Building Costs (from 00_buildings.txt)
-@WA_AI_PC_RAILWAY_BASE_COST = 800				# rail_way.base_cost (flat per segment)
-@WA_AI_PC_NAVAL_BASE_BASE_COST = 10000			# naval_base.base_cost
-@WA_AI_PC_NAVAL_BASE_PER_LEVEL_COST = -556		# naval_base.per_level_extra_cost (decreases!)
-
-### Cost Estimation Parameters
-@WA_AI_PC_RAILWAY_SEGMENTS_PER_STATE = 3		# Estimated railway segments per state
+### Supply-flow model, home-port search, building costs (from 00_buildings.txt, registered
+### mirrors) and cost estimation: constant:wa_ai_railway.supply.* / .cost.* - see wa_ai_railway.txt.
 
 ############################################################################################################
 #	NEW HELPER: Continent Detection (eliminates 5 duplications)
@@ -70,7 +54,7 @@ WA_AI_PC_railway_find_best_home_port = {
 
 	# Use configurable search distance
 	set_temp_variable = { _origin_state_id = capital_state_id }
-	set_temp_variable = { _max_distance = @WA_AI_PC_HOME_PORT_SEARCH_DISTANCE }
+	set_temp_variable = { _max_distance = constant:wa_ai_railway.supply.home_port_search_distance }
 	WA_AI_PC_railway_get_states_within_distance = yes
 
 	# Also check capital state itself (distance 0)
@@ -112,8 +96,8 @@ WA_AI_PC_railway_find_best_home_port = {
 							set_temp_variable = { _bfs_distance = _dist_idx }
 							add_to_temp_variable = { _bfs_distance = 1 }
 							# Cap at max distance
-							if = { limit = { check_variable = { _bfs_distance > @WA_AI_PC_HOME_PORT_SEARCH_DISTANCE } }
-								set_temp_variable = { _bfs_distance = @WA_AI_PC_HOME_PORT_SEARCH_DISTANCE }
+							if = { limit = { check_variable = { _bfs_distance > constant:wa_ai_railway.supply.home_port_search_distance } }
+								set_temp_variable = { _bfs_distance = constant:wa_ai_railway.supply.home_port_search_distance }
 							}
 						}
 						set_temp_variable = { _found_dist = 1 }
@@ -176,7 +160,7 @@ WA_AI_PC_check_theatre_separation = {
 
 			# Check if candidate is within BFS distance of existing beachhead
 			set_temp_variable = { _origin_state_id = _existing_bh_state }
-			set_temp_variable = { _max_distance = @WA_AI_PC_railway_THEATRE_SEPARATION_DISTANCE }
+			set_temp_variable = { _max_distance = constant:wa_ai_railway.routes.theatre_separation_distance }
 			WA_AI_PC_railway_get_states_within_distance = yes
 
 			# Include origin state in check
@@ -693,8 +677,8 @@ WA_AI_PC_calculate_supply_bottleneck = { # _supply_a, _supply_b >>> bottleneck_s
 WA_AI_PC_supply_to_railway_level = { # _supply_capacity >>> max_railway_level_
 	# Formula: level = (supply - BASE) / PER_LEVEL, clamped to 0-5
 	set_temp_variable = { max_railway_level_ = _supply_capacity }
-	subtract_from_temp_variable = { max_railway_level_ = @WA_AI_PC_SUPPLY_RAILWAY_BASE }
-	divide_temp_variable = { max_railway_level_ = @WA_AI_PC_SUPPLY_RAILWAY_PER_LEVEL }
+	subtract_from_temp_variable = { max_railway_level_ = constant:wa_ai_railway.supply.railway_base }
+	divide_temp_variable = { max_railway_level_ = constant:wa_ai_railway.supply.railway_per_level }
 
 	# Clamp to valid range
 	if = { limit = { check_variable = { max_railway_level_ < 0 } }
@@ -709,23 +693,23 @@ WA_AI_PC_supply_to_railway_level = { # _supply_capacity >>> max_railway_level_
 ### Formula: BASE + PER_LEVEL * level (e.g., 4 + 8*level)
 WA_AI_PC_calculate_railway_supply = { # _railway_level >>> railway_supply_
 	set_temp_variable = { railway_supply_ = _railway_level }
-	multiply_temp_variable = { railway_supply_ = @WA_AI_PC_SUPPLY_RAILWAY_PER_LEVEL }
-	add_to_temp_variable = { railway_supply_ = @WA_AI_PC_SUPPLY_RAILWAY_BASE }
+	multiply_temp_variable = { railway_supply_ = constant:wa_ai_railway.supply.railway_per_level }
+	add_to_temp_variable = { railway_supply_ = constant:wa_ai_railway.supply.railway_base }
 }
 
 ### Calculate port supply capacity for a given level
 ### Formula: level * PER_LEVEL (e.g., level * 5)
 WA_AI_PC_calculate_port_supply = { # _port_level >>> port_supply_
 	set_temp_variable = { port_supply_ = _port_level }
-	multiply_temp_variable = { port_supply_ = @WA_AI_PC_SUPPLY_PORT_PER_LEVEL }
+	multiply_temp_variable = { port_supply_ = constant:wa_ai_railway.supply.port_per_level }
 }
 
 ### Calculate minimum railway level needed for target supply
 ### Inverse of: supply = BASE + PER_LEVEL * level
 WA_AI_PC_supply_to_target_railway = { # _target_supply >>> target_railway_level_
 	set_temp_variable = { target_railway_level_ = _target_supply }
-	subtract_from_temp_variable = { target_railway_level_ = @WA_AI_PC_SUPPLY_RAILWAY_BASE }
-	divide_temp_variable = { target_railway_level_ = @WA_AI_PC_SUPPLY_RAILWAY_PER_LEVEL }
+	subtract_from_temp_variable = { target_railway_level_ = constant:wa_ai_railway.supply.railway_base }
+	divide_temp_variable = { target_railway_level_ = constant:wa_ai_railway.supply.railway_per_level }
 	# Round up by adding 0.99 before implicit floor
 	add_to_temp_variable = { target_railway_level_ = 0.99 }
 	round_temp_variable = target_railway_level_
@@ -743,7 +727,7 @@ WA_AI_PC_supply_to_target_railway = { # _target_supply >>> target_railway_level_
 ### Inverse of: supply = level * PER_LEVEL
 WA_AI_PC_supply_to_target_port = { # _target_supply >>> target_port_level_
 	set_temp_variable = { target_port_level_ = _target_supply }
-	divide_temp_variable = { target_port_level_ = @WA_AI_PC_SUPPLY_PORT_PER_LEVEL }
+	divide_temp_variable = { target_port_level_ = constant:wa_ai_railway.supply.port_per_level }
 	# Round up by adding 0.99 before implicit floor
 	add_to_temp_variable = { target_port_level_ = 0.99 }
 	round_temp_variable = target_port_level_
@@ -766,11 +750,11 @@ WA_AI_PC_supply_to_target_port = { # _target_supply >>> target_port_level_
 WA_AI_PC_estimate_railway_cost = { # _bfs_distance, _target_level >>> estimated_railway_cost_
 	# Estimate total segments: distance * segments_per_state
 	set_temp_variable = { estimated_segments_ = _bfs_distance }
-	multiply_temp_variable = { estimated_segments_ = @WA_AI_PC_RAILWAY_SEGMENTS_PER_STATE }
+	multiply_temp_variable = { estimated_segments_ = constant:wa_ai_railway.cost.railway_segments_per_state }
 
 	# Total cost: segments * base_cost * target_level (higher levels need more upgrades)
 	set_temp_variable = { estimated_railway_cost_ = estimated_segments_ }
-	multiply_temp_variable = { estimated_railway_cost_ = @WA_AI_PC_RAILWAY_BASE_COST }
+	multiply_temp_variable = { estimated_railway_cost_ = constant:wa_ai_railway.cost.railway_base }
 	multiply_temp_variable = { estimated_railway_cost_ = _target_level }
 }
 
@@ -796,8 +780,8 @@ WA_AI_PC_calculate_port_upgrade_cost = { # _current_port_level, _target_port_lev
 
 			# Cost for this level: base + per_level * current_level
 			set_temp_variable = { _level_cost = _upgrade_level }
-			multiply_temp_variable = { _level_cost = @WA_AI_PC_NAVAL_BASE_PER_LEVEL_COST }
-			add_to_temp_variable = { _level_cost = @WA_AI_PC_NAVAL_BASE_BASE_COST }
+			multiply_temp_variable = { _level_cost = constant:wa_ai_railway.cost.naval_base_per_level }
+			add_to_temp_variable = { _level_cost = constant:wa_ai_railway.cost.naval_base_base }
 
 			add_to_temp_variable = { port_upgrade_cost_ = _level_cost }
 			add_to_temp_variable = { _upgrade_level = 1 }
@@ -810,7 +794,7 @@ WA_AI_PC_calculate_port_upgrade_cost = { # _current_port_level, _target_port_lev
 ### Score = achievable_supply * 100000 - total_cost
 WA_AI_PC_score_port_candidate = { # _candidate_port_level, _bfs_distance >>> port_score_
 	# Calculate target levels from configured target supply
-	set_temp_variable = { _target_supply = @WA_AI_PC_HOME_PORT_TARGET_SUPPLY }
+	set_temp_variable = { _target_supply = constant:wa_ai_railway.supply.home_port_target_supply }
 	WA_AI_PC_supply_to_target_railway = yes
 	WA_AI_PC_supply_to_target_port = yes
 
@@ -965,7 +949,7 @@ WA_AI_PC_start_railway_project = { # THIS = state, _project_province_id, _projec
 		# so this bounds the WHOLE railway family across every strategy that funnels through
 		# this helper (land war, overseas, prewar). See the constant's header for the measured
 		# case and the threshold relationship.
-		set_temp_variable = { _project_queue_max = @WA_AI_PC_railway_MAX_QUEUED }
+		set_temp_variable = { _project_queue_max = constant:wa_ai_railway.routes.queue_full }
 		set_temp_variable = { _project_target_level = 0 }  # Already checked above
 		# Set state ID using province mapping (states don't have .id property)
 		set_temp_variable = { _project_target_state = global.WA_AI_MAP_province_state_id^_project_province_id }
@@ -1029,7 +1013,7 @@ WA_AI_PC_process_port_upgrades = {
 					set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.rail_prewar }  # Lower priority for upgrades
 					set_temp_variable = { _project_queue_num = 1 }
 					set_temp_variable = { _project_queue_max = 0 }
-					set_temp_variable = { _project_target_level = @WA_AI_PC_PORT_MAX_USEFUL_LEVEL }
+					set_temp_variable = { _project_target_level = constant:wa_ai_railway.supply.port_max_useful_level }
 					set_temp_variable = { _project_target_state = _port_state }
 
 					WA_AI_PC_start_project = yes
@@ -1121,7 +1105,7 @@ WA_AI_PC_create_frontier_port = { # _frontier_province_id >>> frontier_port_crea
 					set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.rail_war }  # Same priority as railway
 					set_temp_variable = { _project_queue_num = 1 }
 					set_temp_variable = { _project_queue_max = 0 }
-					set_temp_variable = { _project_target_level = @WA_AI_PC_PORT_MAX_USEFUL_LEVEL }
+					set_temp_variable = { _project_target_level = constant:wa_ai_railway.supply.port_max_useful_level }
 					set_temp_variable = { _project_target_state = _frontier_state_id }
 
 					WA_AI_PC_start_project = yes
