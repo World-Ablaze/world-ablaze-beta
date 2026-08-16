@@ -22,17 +22,17 @@
   "groups": [
     {
       "id": "pc_alloc_fraction",
-      "governs": "share of the reconstructed civ pool WA_AI_PC_assign_factories may fund per pass; the affordability gate (WA_AI_PC_can_afford_project) and the civs_16/_20 floors must judge at the SAME fraction or they refuse projects the fill would pay for (Fix 90)",
+      "governs": "share of the reconstructed civ pool WA_AI_PC_assign_factories may fund per pass; the floored civ gates WA_AI_PC_has_project_civs_16/_20/_31 must judge at the SAME fraction or they refuse projects the fill would pay for (Fix 90; the affordability gate WA_AI_PC_can_afford_project that also read it was deleted by Fix 90b)",
       "owner": {"file": "common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_core.txt", "kind": "pdx_const", "name": "@AI_PC_ALLOC_FRACTION"},
       "mirrors": [
         {"file": "common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt", "kind": "pdx_const", "name": "@AI_PC_ALLOC_FRACTION"},
-        {"file": "events/wa_events_debug.txt", "kind": "pdx_const", "name": "@AI_PC_ALLOC_FRACTION", "note": "debug mirror of WA_AI_PC_can_afford_project"},
+        {"file": "events/wa_events_debug.txt", "kind": "pdx_const", "name": "@AI_PC_ALLOC_FRACTION", "note": "inline debug copy of the deleted WA_AI_PC_can_afford_project formula (wa_debug.9)"},
         {"file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py", "kind": "py_assign", "name": "_PC_ALLOC_FRACTION"}
       ]
     },
     {
       "id": "pc_stable_base_fraction",
-      "governs": "floor on the PC allocation base as a share of TOTAL civs (breaks the 0.35^n decay once the vanilla queue absorbs the pool); the affordability gate mirrors it",
+      "governs": "floor on the PC allocation base as a share of TOTAL civs (breaks the 0.35^n decay once the vanilla queue absorbs the pool); the floored civ gates in WA_AI_CONSTRUCTION_triggers.txt and the wa_debug.9 debug copy mirror it",
       "owner": {"file": "common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_core.txt", "kind": "pdx_const", "name": "@AI_PC_STABLE_BASE_FRACTION"},
       "mirrors": [
         {"file": "common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt", "kind": "pdx_const", "name": "@AI_PC_STABLE_BASE_FRACTION"},
@@ -66,10 +66,9 @@
     },
     {
       "id": "pc_max_civs_per_project",
-      "governs": "the per-project civ clamp in the PC fill (one 'slot' = this many civs); the affordability gate asks for one full slot of headroom",
+      "governs": "the per-project civ clamp in the PC fill (one 'slot' = this many civs); the wa_debug.9 debug copy of the deleted affordability gate asks for one full slot of headroom",
       "owner": {"file": "common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_core.txt", "kind": "regex", "pattern": "clamp_temp_variable = \\{ var = assign_amount min = 1 max = (\\d+) \\}"},
       "mirrors": [
-        {"file": "common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt", "kind": "pdx_const", "name": "@AI_MIN_NUM_OF_FACTORIES_TO_ASSIGN_ON_PROJECT"},
         {"file": "events/wa_events_debug.txt", "kind": "pdx_const", "name": "@AI_MIN_NUM_OF_FACTORIES_TO_ASSIGN_ON_PROJECT"},
         {"file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py", "kind": "py_assign", "name": "_PC_MAX_PER_PROJECT"}
       ]
@@ -209,6 +208,22 @@
       "owner": {"file": "common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_strategies.txt", "kind": "pdx_const", "name": "@AI_PC_TYPE_ID_ISLANDS"},
       "mirrors": [
         {"file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py", "kind": "py_literal_has", "name": "_PC_TYPE_ID", "value": 23}
+      ]
+    },
+    {
+      "id": "pc_type_id_supply_line",
+      "governs": "strategy tag of WA_AI_build_supply_line (Fix 90b) - building type 1, budget @AI_PC_QMAX_SUPPLY_LINE scoped so resource infra (25) and supply lines stop counting each other; savegame reader label 'supply_line'",
+      "owner": {"file": "common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_strategies.txt", "kind": "pdx_const", "name": "@AI_PC_TYPE_ID_SUPPLY_LINE"},
+      "mirrors": [
+        {"file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py", "kind": "py_literal_has", "name": "_PC_TYPE_ID", "value": 24}
+      ]
+    },
+    {
+      "id": "pc_type_id_inf_resource",
+      "governs": "strategy tag of WA_AI_priority_queue_INF_resource (Fix 90b) - building type 1, budget @AI_PC_QMAX_INF_RESOURCE scoped; savegame reader label 'inf_resource'",
+      "owner": {"file": "common/scripted_effects/WA_AI_CONSTRUCTION_queue_functions.txt", "kind": "pdx_const", "name": "@AI_PC_TYPE_ID_INF_RESOURCE"},
+      "mirrors": [
+        {"file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py", "kind": "py_literal_has", "name": "_PC_TYPE_ID", "value": 25}
       ]
     },
     {
