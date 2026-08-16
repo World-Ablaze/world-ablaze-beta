@@ -21,33 +21,46 @@ country_event = {
 
 	is_triggered_only = yes
 
-	trigger = {
-		is_ai = yes
-		WA_AI_DIFFICULTY_is_historical = yes
-		meta_trigger = {
-			text = {
-				has_relation_modifier = {
-					target = [COUNTRY_TAG]
-					modifier = WA_AI_invasions_modifier
-				}
-			}
-			COUNTRY_TAG = "[?most_recent_invasion_target.GetTag]"
-			# debug = yes
-		}
-	}
-
 	immediate = {
-		meta_effect = {
-			text = {
-				remove_relation_modifier = {
-					target = [COUNTRY_TAG]
-					modifier = WA_AI_invasions_modifier
+		# THIS = ROOT = invader (event fired on self by WA_AI_DIVISION_spawn_invasion)
+		for_each_loop = {
+			array = WA_AI_invasions_pending_targets
+			value = _pending_target
+			# _active counts pairs inside their 14-day window; decrement unconditionally —
+			# even if the target was annexed meanwhile (modifier GC'd with the relation),
+			# this pair's window is over. Keeps active = adds - expired pairs, returning to
+			# 0 outside landing windows regardless of annexations.
+			subtract_from_variable = { WA_AI_invasions_dbg_active = 1 }
+			if = {
+				limit = {
+					meta_trigger = {
+						text = {
+							has_relation_modifier = {
+								target = [COUNTRY_TAG]
+								modifier = WA_AI_invasions_modifier
+							}
+						}
+						COUNTRY_TAG = "[?_pending_target.GetTag]"
+						# debug = yes
+					}
 				}
+				meta_effect = {
+					text = {
+						remove_relation_modifier = {
+							target = [COUNTRY_TAG]
+							modifier = WA_AI_invasions_modifier
+						}
+					}
+					COUNTRY_TAG = "[?_pending_target.GetTag]"
+					# debug = yes
+				}
+				# Probe instrumentation (campaign checklist R14) — mirrors the increment in
+				# WA_AI_DIVISION_spawn_invasion. removes counts actual modifier removals, so
+				# adds - removes = pairs whose target died before expiry (accepted residual).
+				add_to_variable = { WA_AI_invasions_dbg_removes = 1 }
 			}
-			COUNTRY_TAG = "[?most_recent_invasion_target.GetTag]"
-			# debug = yes
 		}
-		clear_variable = most_recent_invasion_target
+		clear_array = WA_AI_invasions_pending_targets
 	}
 }
 
@@ -143,11 +156,26 @@ country_event = {
 			add_to_temp_array = { _invasion_state_provinces = 107 }
 			WA_AI_DIVISION_spawn_invasion = yes
 
+			set_temp_variable = { _start_experience = 0.7 }
+
 			set_temp_variable = { _invasion_state = 144 } # Nord-Norge
 			clear_temp_array = _invasion_state_provinces
-			add_to_temp_array = { _invasion_state_provinces = 192 }
+			add_to_temp_array = { _invasion_state_provinces = 192 } # Narvik
 			WA_AI_DIVISION_spawn_invasion = yes
 
+			set_temp_variable = { _divisions_per_province = 1 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _invasion_state = 144 } # Nord-Norge
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 3034 }
+			add_to_temp_array = { _invasion_state_provinces = 3145 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _start_experience = 0.45 }
+
+			set_temp_variable = { _divisions_per_province = 2 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
 			set_temp_variable = { _division_template = 2 }
 
 			set_temp_variable = { _invasion_state = 110 } #Ostlandet
