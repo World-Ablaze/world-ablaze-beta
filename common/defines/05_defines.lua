@@ -1267,8 +1267,6 @@ NDefines.NAI.LAND_DEFENSE_AIR_SUPERIORITY_IMPORTANCE = 2.0							-- Strategic im
 NDefines.NAI.LAND_DEFENSE_CIVIL_FACTORY_IMPORTANCE = 150							-- Strategic importance of civil factories
 NDefines.NAI.LAND_DEFENSE_MILITARY_FACTORY_IMPORTANCE = 200							-- Strategic importance of military factories
 NDefines.NAI.LAND_DEFENSE_FIGHERS_PER_PLANE = 2.0									-- Amount of air superiority planes requested per enemy plane
-NDefines.NAI.LAND_DEFENSE_INTERSEPTORS_PER_BOMBERS = 2.0							-- Amount of air interceptor planes requested per enemy bomber
-NDefines.NAI.LAND_DEFENSE_INTERSEPTORS_PER_PLANE = 0								-- Amount of air interceptor planes requested per enemy plane (non bomber)
 NDefines.NAI.LAND_DEFENSE_SUPPLY_HUB_IMPORTANCE = 80								-- Strategic importance of supply hubs
 NDefines.NAI.LAND_DEFENSE_AA_IMPORTANCE_FACTOR = 1.0								-- Factor of AA influence on strategic importance ( 0.0 - 1.0 )
 NDefines.NAI.LAND_DEFENSE_INFRA_IMPORTANCE_FACTOR = 70								-- Factor of infrastructure influence on strategic importance ( 0.0 - 1.0 )
@@ -1283,33 +1281,33 @@ NDefines.NAI.LAND_COMBAT_AIR_SUPERIORITY_IMPORTANCE = 2.0 							-- Strategic im
 NDefines.NAI.LAND_COMBAT_OUR_ARMIES_AIR_IMPORTANCE = 25 							-- Strategic importance of our armies
 NDefines.NAI.LAND_COMBAT_OUR_COMBATS_AIR_IMPORTANCE = 100							-- Strategic importance of our armies in the combats
 NDefines.NAI.LAND_COMBAT_IMPORTANCE_SCALE = 5 										-- Lend combat total importance scale (every land combat score get's multiplied by it)
-NDefines.NAI.LAND_COMBAT_FIGHTERS_PER_PLANE = 1.2									-- Amount of air superiority planes requested per enemy plane
+NDefines.NAI.LAND_COMBAT_FIGHTERS_PER_PLANE = 2.0									-- Amount of air superiority planes requested per enemy plane
 NDefines.NAI.LAND_COMBAT_CAS_PER_ENEMY_ARMY = 100									-- Amount of CAS planes requested per enemy army
-NDefines.NAI.AIR_SUPERIORITY_FOR_FRIENDLY_CAS_RATIO = 0.0							-- Demand at least this proportion of our cas planes as air superiority regardless of other needs
+NDefines.NAI.AIR_SUPERIORITY_FOR_FRIENDLY_CAS_RATIO = 1.0							-- Demand at least this proportion of our cas planes as air superiority regardless of other needs
 NDefines.NAI.LAND_COMBAT_CAS_PLANES_PER_ENEMY_ARMY_LIMIT = 1500						-- Limit of CAS planes requested by enemy armies
 NDefines.NAI.LAND_COMBAT_ANTI_LOGISTICS_PER_ENEMY_ARMY = 0    						-- Amount of CAS planes requested per enemy army for anti-logistics
 NDefines.NAI.LAND_COMBAT_CAS_PER_COMBAT = 300										-- Amount of CAS requested per combat, 90cw x 3 cas per cw
 NDefines.NAI.LAND_COMBAT_BOMBERS_PER_LAND_FORT_LEVEL = 30							-- Amount of bomber planes requested per enemy land fort level
 NDefines.NAI.LAND_COMBAT_MIN_EXCORT_WINGS = 3										-- Min amount of airwings requested to excort operations
-NDefines.NAI.LAND_COMBAT_INTERCEPT_PER_PLANE = 0									-- Amount of interception planes requested per enemy plane
+NDefines.NAI.LAND_COMBAT_INTERCEPT_PER_PLANE = 0.5									-- Amount of interception planes requested per enemy plane
 
 NDefines.NAI.NAVAL_COMBAT_TRANSFER_AIR_IMPORTANCE = 500.0							-- Naval combat involving enemy land units
 
-NDefines.NAI.STR_BOMB_AIR_SUPERIORITY_IMPORTANCE = 0.0								-- Strategic importance of air superiority ( amount of enemy planes in area )
+NDefines.NAI.STR_BOMB_AIR_SUPERIORITY_IMPORTANCE = 0.10								-- Strategic importance of air superiority ( amount of enemy planes in area )
 
 NDefines.NAI.STR_BOMB_MIN_ENEMY_FIGHTERS_IN_AREA = 2800								-- If amount of enemy fighters is higher than this mission won't perform
-NDefines.NAI.STR_BOMB_FIGHTERS_PER_PLANE = 50.0										-- Amount of air superiority planes requested per enemy plane
-NDefines.NAI.STR_BOMB_MIN_EXCORT_PLANES = 100										-- Min amount of planes requested to excort operations
+NDefines.NAI.STR_BOMB_FIGHTERS_PER_PLANE = 1.5									-- Amount of air superiority planes requested per enemy plane
+NDefines.NAI.STR_BOMB_MIN_EXCORT_PLANES = 500										-- Min amount of planes requested to excort operations
 NDefines.NAI.RECON_PLANES_NAVAL = 500                           					-- scale on recon for naval areas
 NDefines.NAI.RECON_PLANES_LAND_COMBAT = 25                   	 					-- scale on recon for land combat areas
 NDefines.NAI.RECON_PLANES_STRATEGIC = 50                     	 					-- scale on recon for strategic areas
 
-NDefines.NAI.AI_FRACTION_OF_FIGHTERS_RESERVED_FOR_INTERCEPTION = 0.0				-- Percentage of fighters we reserve for interception vs AS
+NDefines.NAI.AI_FRACTION_OF_FIGHTERS_RESERVED_FOR_INTERCEPTION = 0.25				-- Percentage of fighters we reserve for interception vs AS
+NDefines.NAI.LAND_DEFENSE_INTERCEPTORS_PER_PLANE = 0.5
+NDefines.NAI.LAND_DEFENSE_INTERCEPTORS_PER_BOMBERS = 0.5						-- vanilla key is plural (INTERCEPTORS_PER_BOMBERS, vanilla 0.8); the old mod lines were spelt INTERSEPTORS and never applied
 
-NDefines.NAI.DAYS_BETWEEN_AIR_PRIORITIES_UPDATE = 5 --was 2							-- Amount of days between air ai updates priorities for air wings ( from 1 to N )
-
-NDefines.NAI.LAND_COMBAT_GUIDE_DISTANCE = 0.0										-- Distance within whch we'll care a bit more about sending planes regardless of whether our boiz are dying
-
+NDefines.NAI.DAYS_BETWEEN_AIR_PRIORITIES_UPDATE = 2							-- Amount of days between air ai updates priorities for air wings ( from 1 to N )
+NDefines.NAI.MAX_AIR_REGIONS_TO_CARE_ABOUT = 15
 ------------------------------------------------- END
 
 NDefines.NAI.UNLOCK_SPIRIT_AI_WILL_DO_FACTOR = 200              					-- Factor for scripted ai_will_do value
