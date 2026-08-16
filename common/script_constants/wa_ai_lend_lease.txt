@@ -1,0 +1,117 @@
+####################################################################################################
+#	World Ablaze AI - LEND-LEASE SURPLUS RELIEF constants (Fix 92, 2026-08-16).
+#	Read from script with `constant:wa_ai_lend_lease.<archetype>.<key>` (HOI4 1.18 script
+#	constants). One row per equipment archetype the relief system moves; the effect
+#	(WA_AI_lend_lease_effects.txt) and the triggers (WA_AI_LEND_LEASE_triggers.txt) hold no
+#	numbers of their own. Full restart, not `reload`, when tuning (the game reloads this
+#	database separately from the scripts that read it).
+#
+#	Keys, all read against the FREE stockpile (`num_equipment@<archetype>`, = has_equipment):
+#	  donor_floor  the donor never goes below this; also the "has an exportable surplus" bar
+#	  starve       a recipient at war below this is starving of that archetype
+#	  base         tier-1 amount per weekly pull
+#	  tier2/tier4  donor stock above which the pull is x2 / x4 base (never below donor_floor)
+#	infantry / support rows are the pre-Fix-92 values (35k/10k/6k, 6k/4k/1.2k) unchanged; the
+#	other rows are first calibrations - see documentation/WA_AI_LEND_LEASE_RELIEF_DESIGN.md.
+#	Waste bound: the amount is clamped to (starve + base - recipient stock), so an archetype the
+#	recipient does not field accumulates at most `starve + base` units, once, then the pull stops
+#	- the reason no "does it consume this" gate exists (design §3).
+#	The archetype index (idx) is the WA_TLM_llr_sent_n^idx position - keep it stable; the TLM
+#	arrays are sized 10 (idx 0 unused) in WA_TLM_core.txt - grow them if a 10th row is added.
+####################################################################################################
+
+wa_ai_lend_lease = {
+	schema = {
+		any_key = yes
+		data = {
+			{
+				any_key = yes
+				data = fixed_point
+			}
+		}
+	}
+
+	# idx 1 - infantry_equipment (rifles). Was WA_AI_LEND_LEASE_*_infantry literals 34999/10000/6000
+	# and the 49999/99999 tier bars in the effect.
+	infantry = {
+		donor_floor = 34999
+		starve = 10000
+		base = 6000
+		tier2 = 49999
+		tier4 = 99999
+	}
+
+	# idx 2 - heavy_infantry_equipment. Complementary to rifles in this mod (a division needs
+	# both), NEVER summed with them (modder ruling 2026-08-16). GER's line small-arm is this
+	# archetype (17-40k held 1943-45 on a232d96c) - the surplus R7b never saw.
+	heavy_infantry = {
+		donor_floor = 20000
+		starve = 6000
+		base = 3000
+		tier2 = 30000
+		tier4 = 60000
+	}
+
+	# idx 3 - support_equipment. Was 5999/3999/1200 and 14999/29999.
+	support = {
+		donor_floor = 5999
+		starve = 3999
+		base = 1200
+		tier2 = 14999
+		tier4 = 29999
+	}
+
+	# idx 4 - artillery_equipment
+	artillery = {
+		donor_floor = 4000
+		starve = 1000
+		base = 500
+		tier2 = 8000
+		tier4 = 16000
+	}
+
+	# idx 5 - heavy_artillery_equipment
+	heavy_artillery = {
+		donor_floor = 2000
+		starve = 400
+		base = 200
+		tier2 = 4000
+		tier4 = 8000
+	}
+
+	# idx 6 - anti_tank_equipment
+	anti_tank = {
+		donor_floor = 2000
+		starve = 500
+		base = 250
+		tier2 = 4000
+		tier4 = 8000
+	}
+
+	# idx 7 - anti_air_equipment
+	anti_air = {
+		donor_floor = 2000
+		starve = 500
+		base = 250
+		tier2 = 4000
+		tier4 = 8000
+	}
+
+	# idx 8 - motorized_equipment (trucks; also the engine's motorised supply)
+	motorized = {
+		donor_floor = 6000
+		starve = 1500
+		base = 750
+		tier2 = 12000
+		tier4 = 24000
+	}
+
+	# idx 9 - train_equipment (rail supply)
+	train = {
+		donor_floor = 300
+		starve = 60
+		base = 30
+		tier2 = 600
+		tier4 = 1200
+	}
+}

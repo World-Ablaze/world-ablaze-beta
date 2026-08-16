@@ -135,3 +135,45 @@ country_event = {
 
 	option = {}
 }
+
+############################################################################################################
+#	Boot test - meta_effect send_equipment with a VARIABLE archetype, amount and target
+#	(design probe for the lend-lease relief v2, documentation/WA_AI_LEND_LEASE_RELIEF_DESIGN.md §5 option C).
+#	Console: `tag GER` (the event runs in the DONOR's scope) then `event wa_test.300`.
+#	Expected: game.log lines "LLR BOOT TEST" with the rendered archetype and amount, then
+#	ROM's stockpile gains 500 infantry_equipment, 250 heavy_infantry_equipment, 100 artillery_equipment
+#	and 20 train_equipment with creator = GER (check in ROM's logistics view or a save's
+#	production -> equipments). If the log lines print but the stock does not move, the rendered
+#	`type =` did not compile and option C is dead - use the generator (option A).
+############################################################################################################
+
+country_event = {
+	id = wa_test.300
+
+	hidden = yes
+	is_triggered_only = yes
+
+	immediate = {
+		set_temp_variable = { _llr_target = ROM.id }
+
+		# archetype index -> literal, the 2-line-per-archetype table option C relies on
+		set_temp_variable = { _llr_arch_idx = 1 }
+		set_temp_variable = { _llr_amount = 500 }
+		WA_TEST_LLR_send_one = yes
+
+		set_temp_variable = { _llr_arch_idx = 2 }
+		set_temp_variable = { _llr_amount = 250 }
+		WA_TEST_LLR_send_one = yes
+
+		set_temp_variable = { _llr_arch_idx = 3 }
+		set_temp_variable = { _llr_amount = 100 }
+		WA_TEST_LLR_send_one = yes
+
+		set_temp_variable = { _llr_arch_idx = 4 }
+		set_temp_variable = { _llr_amount = 20 }
+		WA_TEST_LLR_send_one = yes
+	}
+
+	option = {}
+}
+

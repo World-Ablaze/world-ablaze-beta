@@ -582,82 +582,196 @@ WA_AI_special_lend_lease_rules_TARGET = {
 	}
 }
 ######################################################
-#	LEND-LEASE CAPABILITY TRIGGERS
-#	Capability questions, not tag questions: any country in any timeline
-#	qualifies purely on its stockpile and war state.
+#	LEND-LEASE SURPLUS RELIEF - CAPABILITY TRIGGERS (Fix 92, 2026-08-16)
+#	Capability questions, not tag questions: any country in any timeline qualifies purely
+#	on its stockpile, war state and geography.
 #
-#	Per-archetype split (campaign c9ab1062 calibration): support equipment tracks
-#	only 5-25% of infantry stockpile, so the old "inf > 100k AND sup > 20k"
-#	conjunction was effectively "inf > 400k" and never passed for anyone. A sender
-#	with only rifles to spare now ships only rifles.
+#	One trigger PAIR per equipment archetype, generated from one shape - the numbers live in
+#	common/script_constants/wa_ai_lend_lease.txt (constant:wa_ai_lend_lease.<row>.*), the
+#	archetype token is the only literal. Archetypes are COMPLEMENTARY (a WA division needs
+#	rifles AND heavy infantry equipment AND support ...), so no trigger ever sums two of them
+#	and a country short of one gets that one (modder ruling 2026-08-16, campaign a232d96c /
+#	checklist R7b: the old rifle-only gate could not see GER's heavy-infantry surplus).
+#	Reads `num_equipment@<archetype>` = the FREE stockpile (same quantity has_equipment reads),
+#	through check_variable so the bars can be script constants (validated context).
+#
+#	Per-archetype split history: support tracks only 5-25% of infantry (campaign c9ab1062),
+#	so a single "inf AND sup" gate never passed; the infantry donor bar was lowered 60k -> 35k
+#	after 9be92c89 (no Axis donor ever crossed 60k while four allies ran zero-rifle stockpiles);
+#	the support starving line was raised 2k -> 4k after 9be92c89 (the 1200/week drip parked
+#	HUN/ROM/BUL/ITA in the 2-4k band). Those numbers are unchanged in the constants file.
 ######################################################
-
-# THIS = potential sender. Calibrated twice: first against USA 115.8k / SOV 94.6k
-# peaks, then LOWERED after campaign 9be92c89 showed no Axis donor ever crossing
-# 60k (RCZ topped at 59.5k, GER at 45.1k) while four allies ran literal-zero rifle
-# stockpiles for three years. 35k inf is still 3.5x the starving line, so a donor
-# can never starve itself into recipiency.
+# THIS = potential donor. Surplus of infantry_equipment above its floor.
 WA_AI_LEND_LEASE_has_exportable_surplus_infantry = {
 	has_capitulated = no
-	has_equipment = { infantry_equipment > 34999 }
+	check_variable = { num_equipment@infantry_equipment > constant:wa_ai_lend_lease.infantry.donor_floor }
 }
 
+# THIS = potential recipient. Starving of infantry_equipment: at war and below the line.
+WA_AI_LEND_LEASE_is_starving_infantry = {
+	has_war = yes
+	check_variable = { num_equipment@infantry_equipment < constant:wa_ai_lend_lease.infantry.starve }
+}
+# THIS = potential donor. Surplus of heavy_infantry_equipment above its floor.
+WA_AI_LEND_LEASE_has_exportable_surplus_heavy_infantry = {
+	has_capitulated = no
+	check_variable = { num_equipment@heavy_infantry_equipment > constant:wa_ai_lend_lease.heavy_infantry.donor_floor }
+}
+
+# THIS = potential recipient. Starving of heavy_infantry_equipment: at war and below the line.
+WA_AI_LEND_LEASE_is_starving_heavy_infantry = {
+	has_war = yes
+	check_variable = { num_equipment@heavy_infantry_equipment < constant:wa_ai_lend_lease.heavy_infantry.starve }
+}
+# THIS = potential donor. Surplus of support_equipment above its floor.
 WA_AI_LEND_LEASE_has_exportable_surplus_support = {
 	has_capitulated = no
-	has_equipment = { support_equipment > 5999 }
+	check_variable = { num_equipment@support_equipment > constant:wa_ai_lend_lease.support.donor_floor }
 }
 
-# Convoys (2026-08-16, added when AI convoy production was re-enabled and the free-convoy
-# cheat decisions removed in 8643389d5). A donor at 2000+ convoys can lose 1000 and still
-# run every route it has; the tiers in the effect leave it at >= 1750 in the worst case.
-# Deliberately NOT part of WA_AI_LEND_LEASE_has_exportable_surplus below - that OR gates
-# whether GER/SOV may export AT ALL, and a convoy surplus must not unlock rifle exports.
-WA_AI_LEND_LEASE_has_exportable_surplus_convoys = {
+# THIS = potential recipient. Starving of support_equipment: at war and below the line.
+WA_AI_LEND_LEASE_is_starving_support = {
+	has_war = yes
+	check_variable = { num_equipment@support_equipment < constant:wa_ai_lend_lease.support.starve }
+}
+# THIS = potential donor. Surplus of artillery_equipment above its floor.
+WA_AI_LEND_LEASE_has_exportable_surplus_artillery = {
 	has_capitulated = no
-	has_equipment = { convoy > 1999 }
+	check_variable = { num_equipment@artillery_equipment > constant:wa_ai_lend_lease.artillery.donor_floor }
 }
 
-# Convenience OR for the SENDER/TARGET policy gates above in this file, which only
-# ask "is this hoarder allowed to export at all".
+# THIS = potential recipient. Starving of artillery_equipment: at war and below the line.
+WA_AI_LEND_LEASE_is_starving_artillery = {
+	has_war = yes
+	check_variable = { num_equipment@artillery_equipment < constant:wa_ai_lend_lease.artillery.starve }
+}
+# THIS = potential donor. Surplus of heavy_artillery_equipment above its floor.
+WA_AI_LEND_LEASE_has_exportable_surplus_heavy_artillery = {
+	has_capitulated = no
+	check_variable = { num_equipment@heavy_artillery_equipment > constant:wa_ai_lend_lease.heavy_artillery.donor_floor }
+}
+
+# THIS = potential recipient. Starving of heavy_artillery_equipment: at war and below the line.
+WA_AI_LEND_LEASE_is_starving_heavy_artillery = {
+	has_war = yes
+	check_variable = { num_equipment@heavy_artillery_equipment < constant:wa_ai_lend_lease.heavy_artillery.starve }
+}
+# THIS = potential donor. Surplus of anti_tank_equipment above its floor.
+WA_AI_LEND_LEASE_has_exportable_surplus_anti_tank = {
+	has_capitulated = no
+	check_variable = { num_equipment@anti_tank_equipment > constant:wa_ai_lend_lease.anti_tank.donor_floor }
+}
+
+# THIS = potential recipient. Starving of anti_tank_equipment: at war and below the line.
+WA_AI_LEND_LEASE_is_starving_anti_tank = {
+	has_war = yes
+	check_variable = { num_equipment@anti_tank_equipment < constant:wa_ai_lend_lease.anti_tank.starve }
+}
+# THIS = potential donor. Surplus of anti_air_equipment above its floor.
+WA_AI_LEND_LEASE_has_exportable_surplus_anti_air = {
+	has_capitulated = no
+	check_variable = { num_equipment@anti_air_equipment > constant:wa_ai_lend_lease.anti_air.donor_floor }
+}
+
+# THIS = potential recipient. Starving of anti_air_equipment: at war and below the line.
+WA_AI_LEND_LEASE_is_starving_anti_air = {
+	has_war = yes
+	check_variable = { num_equipment@anti_air_equipment < constant:wa_ai_lend_lease.anti_air.starve }
+}
+# THIS = potential donor. Surplus of motorized_equipment above its floor.
+WA_AI_LEND_LEASE_has_exportable_surplus_motorized = {
+	has_capitulated = no
+	check_variable = { num_equipment@motorized_equipment > constant:wa_ai_lend_lease.motorized.donor_floor }
+}
+
+# THIS = potential recipient. Starving of motorized_equipment: at war and below the line.
+WA_AI_LEND_LEASE_is_starving_motorized = {
+	has_war = yes
+	check_variable = { num_equipment@motorized_equipment < constant:wa_ai_lend_lease.motorized.starve }
+}
+# THIS = potential donor. Surplus of train_equipment above its floor.
+WA_AI_LEND_LEASE_has_exportable_surplus_train = {
+	has_capitulated = no
+	check_variable = { num_equipment@train_equipment > constant:wa_ai_lend_lease.train.donor_floor }
+}
+
+# THIS = potential recipient. Starving of train_equipment: at war and below the line.
+WA_AI_LEND_LEASE_is_starving_train = {
+	has_war = yes
+	check_variable = { num_equipment@train_equipment < constant:wa_ai_lend_lease.train.starve }
+}
+# THIS = candidate recipient. Any archetype short - the cheap pre-gate of the weekly pull
+# (the pull itself re-tests per archetype in the donor's scope).
+WA_AI_LEND_LEASE_is_starving_any = {
+	has_war = yes
+	OR = {
+		WA_AI_LEND_LEASE_is_starving_infantry = yes
+		WA_AI_LEND_LEASE_is_starving_heavy_infantry = yes
+		WA_AI_LEND_LEASE_is_starving_support = yes
+		WA_AI_LEND_LEASE_is_starving_artillery = yes
+		WA_AI_LEND_LEASE_is_starving_heavy_artillery = yes
+		WA_AI_LEND_LEASE_is_starving_anti_tank = yes
+		WA_AI_LEND_LEASE_is_starving_anti_air = yes
+		WA_AI_LEND_LEASE_is_starving_motorized = yes
+		WA_AI_LEND_LEASE_is_starving_train = yes
+	}
+}
+
+# Convenience OR for the SENDER/TARGET policy gates above in this file, which only ask
+# "is this hoarder allowed to export at all". Rifles, heavy infantry equipment or support -
+# heavy infantry added with Fix 92 (GER's line small-arm is that archetype).
 WA_AI_LEND_LEASE_has_exportable_surplus = {
 	OR = {
 		WA_AI_LEND_LEASE_has_exportable_surplus_infantry = yes
+		WA_AI_LEND_LEASE_has_exportable_surplus_heavy_infantry = yes
 		WA_AI_LEND_LEASE_has_exportable_surplus_support = yes
 	}
 }
 
-# THIS = potential recipient. One trigger per archetype - deliberately NOT OR'd into
-# a single is_starving: a country starving only of support must not thereby qualify
-# for rifles it does not need. Support line raised to 4k after 9be92c89 showed
-# HUN/ROM/BUL/ITA permanently PINNED in the 2-4k band - that band is where the
-# 1200/week drip parks them, not a healthy state.
-WA_AI_LEND_LEASE_is_starving_infantry = {
-	has_war = yes
-	NOT = { has_equipment = { infantry_equipment > 10000 } }
-}
-
-WA_AI_LEND_LEASE_is_starving_support = {
-	has_war = yes
-	NOT = { has_equipment = { support_equipment > 3999 } }
-}
-
-# Convoys: below ~200 an overseas power cannot import, supply an island garrison or
-# open ordinary lend-lease (WA_AI_lend_lease above only STARTS an overseas lease when
-# the target passes `stockpile_ratio = { archetype = convoy ratio > 50 }`, whose meaning
-# for the convoy archetype is undocumented). The 200 here is an independent calibration:
-# it happens to equal NDefines.NAI.MINIMUM_CONVOY_TO_ASK_LEND_LEASE and tier 0's low bar
-# in WA_AI_PRODUCTION_DEFAULT_navy.txt today, but nothing requires the three to move
-# together and no reader depends on their equality. Production covers the steady state
-# (at 700 IC per convoy a 1-13 dockyard floor is 3-34 convoys a year - see the throughput
-# note in that file); this leg is the bridge for a country whose stock was sunk faster
-# than that. Only ask when a sea route matters at all - a landlocked country with a
-# token shipyard has no use for 250 convoys.
-WA_AI_LEND_LEASE_is_starving_convoys = {
-	has_war = yes
-	has_equipment = { convoy < 200 }
+# THIS = candidate recipient, PREV = potential donor. TRUE when the donor can serve at least
+# one archetype the recipient is short of - the `limit` of the weekly random_other_country
+# pick. Deliberately does NOT contain the land-access path (an A* per candidate would be
+# run for every country every week); the path is tested once, on the picked donor, in the
+# effect. If the pick fails the path, that recipient gets nothing this week and
+# WA_TLM_llr_path_refused_n says so.
+WA_AI_LEND_LEASE_donor_can_serve = {
 	OR = {
-		num_of_naval_factories > 0
-		any_owned_state = { is_coastal = yes }
+		AND = {
+			WA_AI_LEND_LEASE_is_starving_infantry = yes
+			PREV = { WA_AI_LEND_LEASE_has_exportable_surplus_infantry = yes }
+		}
+		AND = {
+			WA_AI_LEND_LEASE_is_starving_heavy_infantry = yes
+			PREV = { WA_AI_LEND_LEASE_has_exportable_surplus_heavy_infantry = yes }
+		}
+		AND = {
+			WA_AI_LEND_LEASE_is_starving_support = yes
+			PREV = { WA_AI_LEND_LEASE_has_exportable_surplus_support = yes }
+		}
+		AND = {
+			WA_AI_LEND_LEASE_is_starving_artillery = yes
+			PREV = { WA_AI_LEND_LEASE_has_exportable_surplus_artillery = yes }
+		}
+		AND = {
+			WA_AI_LEND_LEASE_is_starving_heavy_artillery = yes
+			PREV = { WA_AI_LEND_LEASE_has_exportable_surplus_heavy_artillery = yes }
+		}
+		AND = {
+			WA_AI_LEND_LEASE_is_starving_anti_tank = yes
+			PREV = { WA_AI_LEND_LEASE_has_exportable_surplus_anti_tank = yes }
+		}
+		AND = {
+			WA_AI_LEND_LEASE_is_starving_anti_air = yes
+			PREV = { WA_AI_LEND_LEASE_has_exportable_surplus_anti_air = yes }
+		}
+		AND = {
+			WA_AI_LEND_LEASE_is_starving_motorized = yes
+			PREV = { WA_AI_LEND_LEASE_has_exportable_surplus_motorized = yes }
+		}
+		AND = {
+			WA_AI_LEND_LEASE_is_starving_train = yes
+			PREV = { WA_AI_LEND_LEASE_has_exportable_surplus_train = yes }
+		}
 	}
 }
 
@@ -666,6 +780,8 @@ WA_AI_LEND_LEASE_is_starving_convoys = {
 # behind any is_ai gate, and an AI must never strip a human player's stockpile.
 # The WA_AI_lend_lease_from_@ flag path reuses the pair the ordinary lend-lease
 # targeting system already chose (USA->ENG 1940-41 style, pre-faction).
+# LAND ACCESS (Fix 92) is NOT here - it is a state A* run once per picked donor in
+# WA_AI_LEND_LEASE_request_surplus_relief; this trigger is the cheap half of the pair test.
 WA_AI_LEND_LEASE_relief_pair_is_valid = {
 	NOT = { tag = PREV }
 	has_capitulated = no
@@ -679,25 +795,4 @@ WA_AI_LEND_LEASE_relief_pair_is_valid = {
 		has_war_together_with = PREV
 		has_country_flag = WA_AI_lend_lease_from_@PREV
 	}
-}
-
-# THIS = candidate recipient, PREV = potential donor. Consumed by
-# WA_AI_LEND_LEASE_request_surplus_relief in
-# common/scripted_effects/WA_AI_lend_lease_effects.txt (weekly pull transfer).
-WA_AI_LEND_LEASE_should_receive_relief_infantry = {
-	WA_AI_LEND_LEASE_relief_pair_is_valid = yes
-	WA_AI_LEND_LEASE_is_starving_infantry = yes
-	PREV = { WA_AI_LEND_LEASE_has_exportable_surplus_infantry = yes }
-}
-
-WA_AI_LEND_LEASE_should_receive_relief_support = {
-	WA_AI_LEND_LEASE_relief_pair_is_valid = yes
-	WA_AI_LEND_LEASE_is_starving_support = yes
-	PREV = { WA_AI_LEND_LEASE_has_exportable_surplus_support = yes }
-}
-
-WA_AI_LEND_LEASE_should_receive_relief_convoys = {
-	WA_AI_LEND_LEASE_relief_pair_is_valid = yes
-	WA_AI_LEND_LEASE_is_starving_convoys = yes
-	PREV = { WA_AI_LEND_LEASE_has_exportable_surplus_convoys = yes }
 }

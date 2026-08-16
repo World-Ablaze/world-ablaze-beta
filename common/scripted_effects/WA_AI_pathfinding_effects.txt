@@ -6,6 +6,9 @@
 #	- State-level A* (WA_AI_PATHFIND_*): used by the supply-line strategies
 #	  (WA_AI_build_supply_line in WA_AI_CONSTRUCTION_PRIORITY_strategies.txt - sole caller).
 #	  Type 1 walks ROOT + subject + faction controlled states (Fix 30).
+#	  Type 3 (Fix 92) walks recipient(ROOT) + donor(var:_llr_donor) + subjects of either +
+#	  faction/co-belligerents of ROOT - the lend-lease relief land-access test
+#	  (WA_AI_LEND_LEASE_relief_land_access, WA_AI_lend_lease_effects.txt).
 #	- Province-level A* (WA_AI_PATHFIND_PROV_*): used by the railway system.
 #	  Types 0/1/2 all walk ROOT + allied + subject controlled provinces (since 9aef32f41).
 #
@@ -151,6 +154,34 @@ WA_AI_PATHFIND_get_neighbors = {
 						tag = ROOT
 						is_subject_of = ROOT
 						is_in_faction_with = ROOT
+					}
+				}
+			}
+
+			add_to_temp_array = { neighbors = THIS.id }
+		}
+	}
+
+	# Fix 92 (lend-lease surplus relief land access, WA_AI_lend_lease_effects.txt): ROOT = the
+	# RECIPIENT (pull scope), var:_llr_donor = the picked donor. Walks states controlled by the
+	# recipient, the donor, a subject of either, or a faction member / co-belligerent of the
+	# recipient - "an overland truck convoy through friendly ground". Additive: types 0/1/2 are
+	# untouched. Requires _llr_donor to be set by the caller (it is, in the same effect).
+	else_if = { limit = { check_variable = { _pathfind_type = 3 } }
+
+		every_neighbor_state = {
+			limit = {
+				impassable = no
+				OR = {
+					is_controlled_by = ROOT
+					is_controlled_by = var:_llr_donor
+					CONTROLLER = {
+						OR = {
+							is_subject_of = ROOT
+							is_subject_of = var:_llr_donor
+							is_in_faction_with = ROOT
+							has_war_together_with = ROOT
+						}
 					}
 				}
 			}

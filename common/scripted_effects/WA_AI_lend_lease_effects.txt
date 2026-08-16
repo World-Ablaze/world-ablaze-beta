@@ -132,96 +132,365 @@ WA_AI_clear_lend_lease_targets = { # THIS = SENDER
 		clear_array = WA_AI_lend_lease_targets
 	}
 }
-### Surplus relief - direct equipment transfer from a hoarding ally (weekly)
+### Surplus relief - direct equipment transfer from a neighbouring ally (weekly) - Fix 92 (2026-08-16)
 # ROOT = RECIPIENT (AI; the weekly call site is inside the is_ai gate).
-# Pull, not push: the starving country selects ONE donor per week and the send runs in
-# the donor's scope with target = ROOT - the repo's most-proven dynamic-target form
-# (no meta_effect, no tag rendering, nothing that can silently fail to compile; the
-# previous push version resolved a temp variable across a scope switch and used the
-# unproven `equipment =` parameter, either of which can no-op silently).
-# random_other_country (not every_) caps intake at one donor per recipient per week,
-# and per-transfer re-reads of the donor's stockpile stop a donor the moment it drops
-# below its own floor, even mid-tick across several recipients.
-# Policy lives in WA_AI_LEND_LEASE_should_receive_relief_{infantry,support,convoys}
-# (common/scripted_triggers/WA_AI_LEND_LEASE_triggers.txt), per-archetype so a sender
-# with only rifles to spare ships only rifles. Amounts are tiered by donor surplus -
-# a 300k-rifle hoarder dripping 6000/week while an ally collapses is not relief.
-# Convoy leg (2026-08-16): added with the removal of the free-convoy cheat decisions
-# (8643389d5) - a USA sitting on thousands of convoys hands 250-1000 to an ally that is
-# nearly out (USA -> ENG 1940-41 style); production tiers in WA_AI_PRODUCTION_DEFAULT_navy.txt
-# rebuild the steady state, this bridges the sunk-faster-than-built case.
+# Pull, not push: the starving country selects ONE donor per week (random_other_country caps
+# intake at one donor per recipient per week) and every send runs in the DONOR's scope with
+# target = ROOT. Per-transfer re-reads of the donor's stockpile stop a donor the moment it
+# drops to its own floor, even mid-tick across several recipients.
+#
+# The system imitates an OVERLAND truck convoy, so it fires only when a state path exists
+# between the two CAPITALS that crosses nothing but territory controlled by the recipient,
+# the donor, a subject of either, or a faction member / co-belligerent of the recipient
+# (modder ruling 2026-08-16). Anything by sea (USA->ENG, USA->SOV, CAN->SOV) is the engine's
+# native lend-lease, never this. Same landmass is NOT enough (Eurasia is one landmass). The
+# path is the state-level A* (WA_AI_PATHFIND_get_path, type 3) run ONCE per picked donor,
+# cached in _llr_path_ok for every leg; it is deliberately not in the pick's `limit`.
+#
+# Archetypes are COMPLEMENTARY (rifles AND heavy infantry AND support ...) - one leg per
+# archetype, never a sum; policy per leg lives in WA_AI_LEND_LEASE_triggers.txt and the
+# numbers in common/script_constants/wa_ai_lend_lease.txt. Amounts are tiered by donor
+# surplus (base / x2 / x4) and clamped so the donor never dips under its floor - a 300k-rifle
+# hoarder dripping 6000/week while an ally collapses is not relief.
+#
+# Form (validated by boot test wa_test.300 on 2026-08-16): the archetype token stays a literal
+# per leg (nothing can render it from an index - scripted-loc rendering does not see the
+# scope's variables inside meta_effect, and an unparsable has_equipment meta_trigger evaluates
+# TRUE), while amount and target are rendered from variables (the exact form the boot test proved).
+# Do not "factor" further.
+#
+# Telemetry (WA_TLM v18): llr_starving_n / llr_donor_selected_n / llr_path_refused_n on the RECIPIENT,
+# llr_sent_n^idx / llr_sent_amount^idx on the DONOR (idx = row order of the constants file),
+# llr_first_t / llr_last_t on both - counted on the verified send only, never on entry.
 WA_AI_LEND_LEASE_request_surplus_relief = {
 	if = {
-		limit = {
-			OR = {
-				WA_AI_LEND_LEASE_is_starving_infantry = yes
-				WA_AI_LEND_LEASE_is_starving_support = yes
-				WA_AI_LEND_LEASE_is_starving_convoys = yes
-			}
-		}
+		limit = { WA_AI_LEND_LEASE_is_starving_any = yes }
+
+		# tlm: llr_starving_n - weeks this recipient was short of at least one archetype (the pull
+		# was entered). With donor_selected_n it says whether the lottery ever found a candidate.
+		add_to_variable = { WA_TLM_llr_starving_n = 1 }
 
 		random_other_country = {
 			limit = {
-				OR = {
-					PREV = { WA_AI_LEND_LEASE_should_receive_relief_infantry = yes }
-					PREV = { WA_AI_LEND_LEASE_should_receive_relief_support = yes }
-					PREV = { WA_AI_LEND_LEASE_should_receive_relief_convoys = yes }
-				}
+				PREV = { WA_AI_LEND_LEASE_relief_pair_is_valid = yes }
+				PREV = { WA_AI_LEND_LEASE_donor_can_serve = yes }
 			}
 
-			# --- infantry leg (THIS = donor, PREV/ROOT = recipient) ---
+			# THIS = donor, ROOT = recipient from here on
+			set_temp_variable = { _llr_donor = THIS.id }
+			# tlm: llr_donor_selected_n - the lottery picked a donor (path not yet tested). Standing family llr, consumer R7b.
+			ROOT = { add_to_variable = { WA_TLM_llr_donor_selected_n = 1 } }
+
+			WA_AI_LEND_LEASE_relief_land_access = yes
+
 			if = {
-				limit = { PREV = { WA_AI_LEND_LEASE_should_receive_relief_infantry = yes } }
-
-				if = {
-					limit = { has_equipment = { infantry_equipment > 99999 } }
-					send_equipment = { type = infantry_equipment amount = 24000 target = ROOT }
-				}
-				else_if = {
-					limit = { has_equipment = { infantry_equipment > 49999 } }
-					send_equipment = { type = infantry_equipment amount = 12000 target = ROOT }
-				}
-				else = {
-					send_equipment = { type = infantry_equipment amount = 6000 target = ROOT }
-				}
+				limit = { check_variable = { _llr_path_ok = 1 } }
+				WA_AI_LEND_LEASE_relief_leg_infantry = yes
+				WA_AI_LEND_LEASE_relief_leg_heavy_infantry = yes
+				WA_AI_LEND_LEASE_relief_leg_support = yes
+				WA_AI_LEND_LEASE_relief_leg_artillery = yes
+				WA_AI_LEND_LEASE_relief_leg_heavy_artillery = yes
+				WA_AI_LEND_LEASE_relief_leg_anti_tank = yes
+				WA_AI_LEND_LEASE_relief_leg_anti_air = yes
+				WA_AI_LEND_LEASE_relief_leg_motorized = yes
+				WA_AI_LEND_LEASE_relief_leg_train = yes
 			}
-
-			# --- support leg ---
-			if = {
-				limit = { PREV = { WA_AI_LEND_LEASE_should_receive_relief_support = yes } }
-
-				if = {
-					limit = { has_equipment = { support_equipment > 29999 } }
-					send_equipment = { type = support_equipment amount = 4800 target = ROOT }
-				}
-				else_if = {
-					limit = { has_equipment = { support_equipment > 14999 } }
-					send_equipment = { type = support_equipment amount = 2400 target = ROOT }
-				}
-				else = {
-					send_equipment = { type = support_equipment amount = 1200 target = ROOT }
-				}
+			else = {
+				# tlm: llr_path_refused_n - the picked donor has no land path to us. Standing family llr, consumer R7b.
+				ROOT = { add_to_variable = { WA_TLM_llr_path_refused_n = 1 } }
+				if = { limit = { ROOT = { has_country_flag = WA_AI_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | LEND-LEASE: relief from [This.GetName] refused - no land access between capitals" }
 			}
-
-			# --- convoy leg (archetype `convoy`, same form as the legs above) ---
-			# Tiers keep the donor >= 1750 after the worst case (floor 2000, send 250).
-			if = {
-				limit = { PREV = { WA_AI_LEND_LEASE_should_receive_relief_convoys = yes } }
-
-				if = {
-					limit = { has_equipment = { convoy > 4999 } }
-					send_equipment = { type = convoy amount = 1000 target = ROOT }
-				}
-				else_if = {
-					limit = { has_equipment = { convoy > 2999 } }
-					send_equipment = { type = convoy amount = 500 target = ROOT }
-				}
-				else = {
-					send_equipment = { type = convoy amount = 250 target = ROOT }
-				}
-			}
-
-			if = { limit = { ROOT = { has_country_flag = WA_AI_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | LEND-LEASE: surplus relief received from [This.GetName]" }
 		}
+	}
+}
+
+# THIS = donor, ROOT = recipient. Sets _llr_path_ok = 1 when a state path exists from the
+# recipient's capital state to the donor's capital state through friendly territory
+# (pathfind type 3, WA_AI_pathfinding_effects.txt). Conservative: any failure (75-iteration
+# cap, missing capital) reads as no access.
+WA_AI_LEND_LEASE_relief_land_access = {
+	set_temp_variable = { _llr_path_ok = 0 }
+	set_temp_variable = { _pathfind_start = 0 }
+	set_temp_variable = { _pathfind_target = 0 }
+	ROOT = { capital_scope = { set_temp_variable = { _pathfind_start = THIS.id } } }
+	capital_scope = { set_temp_variable = { _pathfind_target = THIS.id } }
+	if = {
+		limit = {
+			# .id of a state scope is an engine-encoded reference (can be negative) - test against
+			# the 0 we initialised, never with > 0 (lessons log)
+			NOT = { check_variable = { _pathfind_start = 0 } }
+			NOT = { check_variable = { _pathfind_target = 0 } }
+		}
+		set_temp_variable = { _pathfind_type = 3 }
+		WA_AI_PATHFIND_get_path = yes
+		if = { limit = { check_variable = { pathfind_success = 1 } }
+			set_temp_variable = { _llr_path_ok = 1 }
+		}
+	}
+}
+
+# THIS = donor, ROOT = recipient. Generic tier rule shared by every leg. Inputs (temp):
+# _llr_donor_stock, _llr_recipient_stock, _llr_floor, _llr_starve, _llr_base, _llr_tier2,
+# _llr_tier4. Output: _llr_amount (0 = do not send). The donor never dips under its floor.
+WA_AI_LEND_LEASE_relief_compute_amount = {
+	set_temp_variable = { _llr_amount = 0 }
+	if = {
+		limit = {
+			check_variable = { _llr_recipient_stock < _llr_starve }
+			check_variable = { _llr_donor_stock > _llr_floor }
+		}
+		set_temp_variable = { _llr_amount = _llr_base }
+		if = { limit = { check_variable = { _llr_donor_stock > _llr_tier4 } }
+			multiply_temp_variable = { _llr_amount = 4 }
+		}
+		else_if = { limit = { check_variable = { _llr_donor_stock > _llr_tier2 } }
+			multiply_temp_variable = { _llr_amount = 2 }
+		}
+		set_temp_variable = { _llr_headroom = _llr_donor_stock }
+		subtract_from_temp_variable = { _llr_headroom = _llr_floor }
+		if = { limit = { check_variable = { _llr_amount > _llr_headroom } }
+			set_temp_variable = { _llr_amount = _llr_headroom }
+		}
+		# never over-relieve: fill the recipient to its starve line plus one base, no more -
+		# bounds the waste on an archetype the recipient does not field to starve + base, once
+		set_temp_variable = { _llr_need = _llr_starve }
+		add_to_temp_variable = { _llr_need = _llr_base }
+		subtract_from_temp_variable = { _llr_need = _llr_recipient_stock }
+		if = { limit = { check_variable = { _llr_amount > _llr_need } }
+			set_temp_variable = { _llr_amount = _llr_need }
+		}
+		if = { limit = { check_variable = { _llr_amount < 1 } }
+			set_temp_variable = { _llr_amount = 0 }
+		}
+	}
+}
+
+# THIS = donor, ROOT = recipient. Telemetry + log after a VERIFIED send: the leg re-reads the
+# recipient's free stock after the meta_effect (_llr_recipient_after) and this records only if it
+# rose above the pre-send read (_llr_recipient_stock); a silent meta failure lands in
+# llr_send_failed_n instead of inflating llr_sent_n.
+# tlm: llr_sent_n^idx / llr_sent_amount^idx / llr_send_failed_n (donor) + llr_first_t / llr_last_t
+# (both sides). Standing family llr, consumer R7b.
+WA_AI_LEND_LEASE_relief_record = {
+	# a tag created after startup has no WA_TLM_init_country pass - size the arrays here too
+	if = { limit = { NOT = { has_variable = WA_TLM_llr_sent_n } } resize_array = { array = WA_TLM_llr_sent_n size = 10 value = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_llr_sent_amount } } resize_array = { array = WA_TLM_llr_sent_amount size = 10 value = 0 } }
+	if = {
+		limit = { NOT = { check_variable = { _llr_recipient_after > _llr_recipient_stock } } }
+		add_to_variable = { WA_TLM_llr_send_failed_n = 1 }
+		if = { limit = { ROOT = { has_country_flag = WA_AI_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | LEND-LEASE: relief archetype [?_llr_arch_idx] x [?_llr_amount] from [This.GetName] did NOT land (stock unchanged) - meta send failed?" }
+	}
+	else = {
+	add_to_variable = { WA_TLM_llr_sent_n^_llr_arch_idx = 1 }
+	add_to_variable = { WA_TLM_llr_sent_amount^_llr_arch_idx = _llr_amount }
+	if = { limit = { check_variable = { WA_TLM_llr_first_t = 0 } } set_variable = { WA_TLM_llr_first_t = global.WA_TLM_clock } }
+	set_variable = { WA_TLM_llr_last_t = global.WA_TLM_clock }
+	ROOT = {
+		if = { limit = { check_variable = { WA_TLM_llr_first_t = 0 } } set_variable = { WA_TLM_llr_first_t = global.WA_TLM_clock } }
+		set_variable = { WA_TLM_llr_last_t = global.WA_TLM_clock }
+	}
+	if = { limit = { ROOT = { has_country_flag = WA_AI_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | LEND-LEASE: surplus relief archetype [?_llr_arch_idx] x [?_llr_amount] received from [This.GetName]" }
+	}
+}
+
+# --- per-archetype legs. THIS = donor, ROOT = recipient. One shape, the archetype token and
+# --- the constants row are the only differences. Add a row = copy one leg + one constants row
+# --- + register the idx in WA_TLM_core (llr arrays) and the checklist probe.
+
+WA_AI_LEND_LEASE_relief_leg_infantry = {
+	set_temp_variable = { _llr_arch_idx = 1 }
+	set_temp_variable = { _llr_donor_stock = num_equipment@infantry_equipment }
+	ROOT = { set_temp_variable = { _llr_recipient_stock = num_equipment@infantry_equipment } }
+	set_temp_variable = { _llr_floor = constant:wa_ai_lend_lease.infantry.donor_floor }
+	set_temp_variable = { _llr_starve = constant:wa_ai_lend_lease.infantry.starve }
+	set_temp_variable = { _llr_base = constant:wa_ai_lend_lease.infantry.base }
+	set_temp_variable = { _llr_tier2 = constant:wa_ai_lend_lease.infantry.tier2 }
+	set_temp_variable = { _llr_tier4 = constant:wa_ai_lend_lease.infantry.tier4 }
+	WA_AI_LEND_LEASE_relief_compute_amount = yes
+	if = {
+		limit = { check_variable = { _llr_amount > 0 } }
+		meta_effect = {
+			text = { send_equipment = { type = infantry_equipment amount = [AMT] target = [TGT] } }
+			AMT = "[?_llr_amount]"
+			TGT = "[ROOT.GetTag]"
+		}
+		ROOT = { set_temp_variable = { _llr_recipient_after = num_equipment@infantry_equipment } }
+		WA_AI_LEND_LEASE_relief_record = yes
+	}
+}
+
+WA_AI_LEND_LEASE_relief_leg_heavy_infantry = {
+	set_temp_variable = { _llr_arch_idx = 2 }
+	set_temp_variable = { _llr_donor_stock = num_equipment@heavy_infantry_equipment }
+	ROOT = { set_temp_variable = { _llr_recipient_stock = num_equipment@heavy_infantry_equipment } }
+	set_temp_variable = { _llr_floor = constant:wa_ai_lend_lease.heavy_infantry.donor_floor }
+	set_temp_variable = { _llr_starve = constant:wa_ai_lend_lease.heavy_infantry.starve }
+	set_temp_variable = { _llr_base = constant:wa_ai_lend_lease.heavy_infantry.base }
+	set_temp_variable = { _llr_tier2 = constant:wa_ai_lend_lease.heavy_infantry.tier2 }
+	set_temp_variable = { _llr_tier4 = constant:wa_ai_lend_lease.heavy_infantry.tier4 }
+	WA_AI_LEND_LEASE_relief_compute_amount = yes
+	if = {
+		limit = { check_variable = { _llr_amount > 0 } }
+		meta_effect = {
+			text = { send_equipment = { type = heavy_infantry_equipment amount = [AMT] target = [TGT] } }
+			AMT = "[?_llr_amount]"
+			TGT = "[ROOT.GetTag]"
+		}
+		ROOT = { set_temp_variable = { _llr_recipient_after = num_equipment@heavy_infantry_equipment } }
+		WA_AI_LEND_LEASE_relief_record = yes
+	}
+}
+
+WA_AI_LEND_LEASE_relief_leg_support = {
+	set_temp_variable = { _llr_arch_idx = 3 }
+	set_temp_variable = { _llr_donor_stock = num_equipment@support_equipment }
+	ROOT = { set_temp_variable = { _llr_recipient_stock = num_equipment@support_equipment } }
+	set_temp_variable = { _llr_floor = constant:wa_ai_lend_lease.support.donor_floor }
+	set_temp_variable = { _llr_starve = constant:wa_ai_lend_lease.support.starve }
+	set_temp_variable = { _llr_base = constant:wa_ai_lend_lease.support.base }
+	set_temp_variable = { _llr_tier2 = constant:wa_ai_lend_lease.support.tier2 }
+	set_temp_variable = { _llr_tier4 = constant:wa_ai_lend_lease.support.tier4 }
+	WA_AI_LEND_LEASE_relief_compute_amount = yes
+	if = {
+		limit = { check_variable = { _llr_amount > 0 } }
+		meta_effect = {
+			text = { send_equipment = { type = support_equipment amount = [AMT] target = [TGT] } }
+			AMT = "[?_llr_amount]"
+			TGT = "[ROOT.GetTag]"
+		}
+		ROOT = { set_temp_variable = { _llr_recipient_after = num_equipment@support_equipment } }
+		WA_AI_LEND_LEASE_relief_record = yes
+	}
+}
+
+WA_AI_LEND_LEASE_relief_leg_artillery = {
+	set_temp_variable = { _llr_arch_idx = 4 }
+	set_temp_variable = { _llr_donor_stock = num_equipment@artillery_equipment }
+	ROOT = { set_temp_variable = { _llr_recipient_stock = num_equipment@artillery_equipment } }
+	set_temp_variable = { _llr_floor = constant:wa_ai_lend_lease.artillery.donor_floor }
+	set_temp_variable = { _llr_starve = constant:wa_ai_lend_lease.artillery.starve }
+	set_temp_variable = { _llr_base = constant:wa_ai_lend_lease.artillery.base }
+	set_temp_variable = { _llr_tier2 = constant:wa_ai_lend_lease.artillery.tier2 }
+	set_temp_variable = { _llr_tier4 = constant:wa_ai_lend_lease.artillery.tier4 }
+	WA_AI_LEND_LEASE_relief_compute_amount = yes
+	if = {
+		limit = { check_variable = { _llr_amount > 0 } }
+		meta_effect = {
+			text = { send_equipment = { type = artillery_equipment amount = [AMT] target = [TGT] } }
+			AMT = "[?_llr_amount]"
+			TGT = "[ROOT.GetTag]"
+		}
+		ROOT = { set_temp_variable = { _llr_recipient_after = num_equipment@artillery_equipment } }
+		WA_AI_LEND_LEASE_relief_record = yes
+	}
+}
+
+WA_AI_LEND_LEASE_relief_leg_heavy_artillery = {
+	set_temp_variable = { _llr_arch_idx = 5 }
+	set_temp_variable = { _llr_donor_stock = num_equipment@heavy_artillery_equipment }
+	ROOT = { set_temp_variable = { _llr_recipient_stock = num_equipment@heavy_artillery_equipment } }
+	set_temp_variable = { _llr_floor = constant:wa_ai_lend_lease.heavy_artillery.donor_floor }
+	set_temp_variable = { _llr_starve = constant:wa_ai_lend_lease.heavy_artillery.starve }
+	set_temp_variable = { _llr_base = constant:wa_ai_lend_lease.heavy_artillery.base }
+	set_temp_variable = { _llr_tier2 = constant:wa_ai_lend_lease.heavy_artillery.tier2 }
+	set_temp_variable = { _llr_tier4 = constant:wa_ai_lend_lease.heavy_artillery.tier4 }
+	WA_AI_LEND_LEASE_relief_compute_amount = yes
+	if = {
+		limit = { check_variable = { _llr_amount > 0 } }
+		meta_effect = {
+			text = { send_equipment = { type = heavy_artillery_equipment amount = [AMT] target = [TGT] } }
+			AMT = "[?_llr_amount]"
+			TGT = "[ROOT.GetTag]"
+		}
+		ROOT = { set_temp_variable = { _llr_recipient_after = num_equipment@heavy_artillery_equipment } }
+		WA_AI_LEND_LEASE_relief_record = yes
+	}
+}
+
+WA_AI_LEND_LEASE_relief_leg_anti_tank = {
+	set_temp_variable = { _llr_arch_idx = 6 }
+	set_temp_variable = { _llr_donor_stock = num_equipment@anti_tank_equipment }
+	ROOT = { set_temp_variable = { _llr_recipient_stock = num_equipment@anti_tank_equipment } }
+	set_temp_variable = { _llr_floor = constant:wa_ai_lend_lease.anti_tank.donor_floor }
+	set_temp_variable = { _llr_starve = constant:wa_ai_lend_lease.anti_tank.starve }
+	set_temp_variable = { _llr_base = constant:wa_ai_lend_lease.anti_tank.base }
+	set_temp_variable = { _llr_tier2 = constant:wa_ai_lend_lease.anti_tank.tier2 }
+	set_temp_variable = { _llr_tier4 = constant:wa_ai_lend_lease.anti_tank.tier4 }
+	WA_AI_LEND_LEASE_relief_compute_amount = yes
+	if = {
+		limit = { check_variable = { _llr_amount > 0 } }
+		meta_effect = {
+			text = { send_equipment = { type = anti_tank_equipment amount = [AMT] target = [TGT] } }
+			AMT = "[?_llr_amount]"
+			TGT = "[ROOT.GetTag]"
+		}
+		ROOT = { set_temp_variable = { _llr_recipient_after = num_equipment@anti_tank_equipment } }
+		WA_AI_LEND_LEASE_relief_record = yes
+	}
+}
+
+WA_AI_LEND_LEASE_relief_leg_anti_air = {
+	set_temp_variable = { _llr_arch_idx = 7 }
+	set_temp_variable = { _llr_donor_stock = num_equipment@anti_air_equipment }
+	ROOT = { set_temp_variable = { _llr_recipient_stock = num_equipment@anti_air_equipment } }
+	set_temp_variable = { _llr_floor = constant:wa_ai_lend_lease.anti_air.donor_floor }
+	set_temp_variable = { _llr_starve = constant:wa_ai_lend_lease.anti_air.starve }
+	set_temp_variable = { _llr_base = constant:wa_ai_lend_lease.anti_air.base }
+	set_temp_variable = { _llr_tier2 = constant:wa_ai_lend_lease.anti_air.tier2 }
+	set_temp_variable = { _llr_tier4 = constant:wa_ai_lend_lease.anti_air.tier4 }
+	WA_AI_LEND_LEASE_relief_compute_amount = yes
+	if = {
+		limit = { check_variable = { _llr_amount > 0 } }
+		meta_effect = {
+			text = { send_equipment = { type = anti_air_equipment amount = [AMT] target = [TGT] } }
+			AMT = "[?_llr_amount]"
+			TGT = "[ROOT.GetTag]"
+		}
+		ROOT = { set_temp_variable = { _llr_recipient_after = num_equipment@anti_air_equipment } }
+		WA_AI_LEND_LEASE_relief_record = yes
+	}
+}
+
+WA_AI_LEND_LEASE_relief_leg_motorized = {
+	set_temp_variable = { _llr_arch_idx = 8 }
+	set_temp_variable = { _llr_donor_stock = num_equipment@motorized_equipment }
+	ROOT = { set_temp_variable = { _llr_recipient_stock = num_equipment@motorized_equipment } }
+	set_temp_variable = { _llr_floor = constant:wa_ai_lend_lease.motorized.donor_floor }
+	set_temp_variable = { _llr_starve = constant:wa_ai_lend_lease.motorized.starve }
+	set_temp_variable = { _llr_base = constant:wa_ai_lend_lease.motorized.base }
+	set_temp_variable = { _llr_tier2 = constant:wa_ai_lend_lease.motorized.tier2 }
+	set_temp_variable = { _llr_tier4 = constant:wa_ai_lend_lease.motorized.tier4 }
+	WA_AI_LEND_LEASE_relief_compute_amount = yes
+	if = {
+		limit = { check_variable = { _llr_amount > 0 } }
+		meta_effect = {
+			text = { send_equipment = { type = motorized_equipment amount = [AMT] target = [TGT] } }
+			AMT = "[?_llr_amount]"
+			TGT = "[ROOT.GetTag]"
+		}
+		ROOT = { set_temp_variable = { _llr_recipient_after = num_equipment@motorized_equipment } }
+		WA_AI_LEND_LEASE_relief_record = yes
+	}
+}
+
+WA_AI_LEND_LEASE_relief_leg_train = {
+	set_temp_variable = { _llr_arch_idx = 9 }
+	set_temp_variable = { _llr_donor_stock = num_equipment@train_equipment }
+	ROOT = { set_temp_variable = { _llr_recipient_stock = num_equipment@train_equipment } }
+	set_temp_variable = { _llr_floor = constant:wa_ai_lend_lease.train.donor_floor }
+	set_temp_variable = { _llr_starve = constant:wa_ai_lend_lease.train.starve }
+	set_temp_variable = { _llr_base = constant:wa_ai_lend_lease.train.base }
+	set_temp_variable = { _llr_tier2 = constant:wa_ai_lend_lease.train.tier2 }
+	set_temp_variable = { _llr_tier4 = constant:wa_ai_lend_lease.train.tier4 }
+	WA_AI_LEND_LEASE_relief_compute_amount = yes
+	if = {
+		limit = { check_variable = { _llr_amount > 0 } }
+		meta_effect = {
+			text = { send_equipment = { type = train_equipment amount = [AMT] target = [TGT] } }
+			AMT = "[?_llr_amount]"
+			TGT = "[ROOT.GetTag]"
+		}
+		ROOT = { set_temp_variable = { _llr_recipient_after = num_equipment@train_equipment } }
+		WA_AI_LEND_LEASE_relief_record = yes
 	}
 }

@@ -144,7 +144,21 @@
 # shipped beside it the same day was REMOVED with P2 the same day (v17 local probe: it drew on
 # ENG, never on the USA); a save carrying those names is a P2 build. Additive; a save at
 # wa_tlm_version < 17 lacks the family - score NOT CHECKED, never FAILED.
-@WA_TLM_VERSION = 17
+# v18 (2026-08-16, Fix 92 / R7b recut): adds the STANDING family WA_TLM_llr_* (llr = lend-lease
+# surplus relief, WA_AI_LEND_LEASE_request_surplus_relief in WA_AI_lend_lease_effects.txt).
+# The save shows recipient stockpiles by creator= but not WHY nothing moved: whether a donor
+# was ever picked (random_other_country lottery), whether the land-access A* refused the pair,
+# which archetype leg fired and how much. On the RECIPIENT: llr_starving_n (weeks the pull was
+# entered), llr_donor_selected_n,
+# llr_path_refused_n. On the DONOR: llr_sent_n^idx / llr_sent_amount^idx (recorded only when the
+# recipient's free stock ROSE across the send - a silent meta failure counts in llr_send_failed_n) (idx = the row order
+# of common/script_constants/wa_ai_lend_lease.txt: 1 infantry, 2 heavy_infantry, 3 support,
+# 4 artillery, 5 heavy_artillery, 6 anti_tank, 7 anti_air, 8 motorized, 9 train; index 0
+# unused). llr_first_t / llr_last_t on both sides. Counted on the verified send only, never on
+# entry (three campaigns of R7b were scored from stockpile deltas because this did not exist).
+# Standing under 3.8 criterion 3 (a system every AI country runs weekly). Additive; a save at
+# wa_tlm_version < 18 lacks the family - score NOT CHECKED, never FAILED.
+@WA_TLM_VERSION = 18
 
 ############################################################################################################
 #	Clock - global.WA_TLM_clock = months elapsed since 1936.1
@@ -289,6 +303,18 @@ WA_TLM_init_country = {
 	if = { limit = { NOT = { has_variable = WA_TLM_r51_local_hold_n } } set_variable = { WA_TLM_r51_local_hold_n = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r51_local_hold_first_t } } set_variable = { WA_TLM_r51_local_hold_first_t = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r51_local_hold_last_t } } set_variable = { WA_TLM_r51_local_hold_last_t = 0 } }
+
+	# lend-lease surplus relief (Fix 92, consumer: checklist R7b; write sites are
+	# WA_AI_LEND_LEASE_request_surplus_relief / _relief_record, WA_AI_lend_lease_effects.txt).
+	# Arrays sized 10 so idx 1..9 (constants row order) are addressable; idx 0 unused.
+	if = { limit = { NOT = { has_variable = WA_TLM_llr_starving_n } } set_variable = { WA_TLM_llr_starving_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_llr_donor_selected_n } } set_variable = { WA_TLM_llr_donor_selected_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_llr_path_refused_n } } set_variable = { WA_TLM_llr_path_refused_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_llr_send_failed_n } } set_variable = { WA_TLM_llr_send_failed_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_llr_first_t } } set_variable = { WA_TLM_llr_first_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_llr_last_t } } set_variable = { WA_TLM_llr_last_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_llr_sent_n } } resize_array = { array = WA_TLM_llr_sent_n size = 10 value = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_llr_sent_amount } } resize_array = { array = WA_TLM_llr_sent_amount size = 10 value = 0 } }
 
 	# theatre air bases on a ground-committed theatre (Fix 85, consumer: checklist R52; write
 	# site is the verified start in WA_AI_build_theatre_air_bases,
