@@ -448,11 +448,14 @@ on_actions = {
 			# per-state "built + queued levels" sums (WA_AI_committed_<X>, building_adders; Fix 88 added CIC/MIC/NIC)
 			# would over-count for the new controller. Dropping the TTL flags makes WA_AI_available_<X>
 			# fall back to the built level and the next WA_AI_add_<X> rebase the sum.
-			FROM.FROM = {
-				# tlm: WA_TLM_sq_ctrl_reset_n (standing, family sq) on the OLD controller - counted only when a
-				# live flag was actually dropped. Consumer: R49 (cancellation path).
-				if = {
-					limit = {
+			# tlm: WA_TLM_sq_ctrl_reset_n (standing, family sq) on the OLD controller - counted only when a
+			# live flag is actually being dropped. Written from the effect root, where FROM is the old
+			# controller: inside the FROM.FROM state block below, FROM re-binds to the state and the first
+			# cut of this counter landed as a STATE variable (local run BHU_1941_11_18_12: 7 states carried
+			# wa_tlm_sq_ctrl_reset_n = 1, every country read 0). Consumer: R49 (cancellation path).
+			if = {
+				limit = {
+					FROM.FROM = {
 						OR = {
 							has_state_flag = WA_AI_committed_CIC_recent
 							has_state_flag = WA_AI_committed_MIC_recent
@@ -464,8 +467,10 @@ on_actions = {
 							has_state_flag = WA_AI_committed_HAR_recent
 						}
 					}
-					FROM = { add_to_variable = { WA_TLM_sq_ctrl_reset_n = 1 } }
 				}
+				FROM = { add_to_variable = { WA_TLM_sq_ctrl_reset_n = 1 } }
+			}
+			FROM.FROM = {
 				clr_state_flag = WA_AI_committed_CIC_recent
 				clr_state_flag = WA_AI_committed_MIC_recent
 				clr_state_flag = WA_AI_committed_NIC_recent

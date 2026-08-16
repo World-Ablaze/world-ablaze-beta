@@ -321,9 +321,9 @@ per series — trivial at depth 44, but do not raise depth casually.
 | `WA_TLM_sq_first_t` / `_last_t` | stamps | same site | standing — family absence contract | v17 |
 | `WA_TLM_sq_tier_a_n` / `_b_n` / `_c_n` / `_d_n` | counters | `WA_AI_bf_record` after a selection add (queue_functions) — A breadth, B wrap-around, C over-depth breadth, D pre-Fix-88 fallback | standing — R53 spread leg; `d_n / adds_n` = how often breadth was exhausted | v17 |
 | `WA_TLM_sq_k_max` | max-aggregate gauge | same site, `check_variable >` guard | standing — widest K ever used | v17 |
-| `WA_TLM_sq_k` | gauge | monthly, all AI (`WA_TLM_sample_sq`) — `clamp(ceil((civs − PC assigned)/20), 1, 20)`, same arithmetic as `WA_AI_queue_breadth_prepare` | standing — R53 K reading | v17 |
+| `WA_TLM_sq_k` | gauge | monthly, all AI (`WA_TLM_sample_sq`) — `clamp((civs − PC assigned)/20, 1, 20)`, same arithmetic as `WA_AI_queue_breadth_prepare`; stored **fractional** (9.15, 12.8 …), effective K = ceil() because the walk compares an integer rank `<` it | standing — R53 K reading | v17 |
 | `WA_TLM_sq_rebase_down_n` | counter | `WA_AI_add_<X>` when the TTL flag had lapsed and `committed > built` (the sum is being rebased down = a cancelled/lost queue forgotten) | standing — R49 cancellation path | v17 |
-| `WA_TLM_sq_ctrl_reset_n` | counter | `on_state_control_changed` on the OLD controller, only when a live `WA_AI_committed_<X>_recent` flag was dropped | standing — R49 control-change path | v17 |
+| `WA_TLM_sq_ctrl_reset_n` | counter | `on_state_control_changed` on the OLD controller (written from the effect root — inside the `FROM.FROM` state block `FROM` re-binds to the state; the first cut landed there, see R49 history), only when a live `WA_AI_committed_<X>_recent` flag is dropped | standing — R49 control-change path | v17 |
 | `WA_TLM_r47_lrange_n` | counter | monthly, all AI (`WA_AI_EQUIPMENT_update_context_flags`) | R31 | v3 |
 | `WA_TLM_r47_lrange_first_t` / `_last_t` | stamps | same site | R31 | v3 |
 | `WA_TLM_r47_alu_large_n` | counter | monthly, all AI (same site) | R32 | v3 |
