@@ -142,16 +142,21 @@ WA_AI_clear_lend_lease_targets = { # THIS = SENDER
 # random_other_country (not every_) caps intake at one donor per recipient per week,
 # and per-transfer re-reads of the donor's stockpile stop a donor the moment it drops
 # below its own floor, even mid-tick across several recipients.
-# Policy lives in WA_AI_LEND_LEASE_should_receive_relief_{infantry,support}
+# Policy lives in WA_AI_LEND_LEASE_should_receive_relief_{infantry,support,convoys}
 # (common/scripted_triggers/WA_AI_LEND_LEASE_triggers.txt), per-archetype so a sender
 # with only rifles to spare ships only rifles. Amounts are tiered by donor surplus -
 # a 300k-rifle hoarder dripping 6000/week while an ally collapses is not relief.
+# Convoy leg (2026-08-16): added with the removal of the free-convoy cheat decisions
+# (8643389d5) - a USA sitting on thousands of convoys hands 250-1000 to an ally that is
+# nearly out (USA -> ENG 1940-41 style); production tiers in WA_AI_PRODUCTION_DEFAULT_navy.txt
+# rebuild the steady state, this bridges the sunk-faster-than-built case.
 WA_AI_LEND_LEASE_request_surplus_relief = {
 	if = {
 		limit = {
 			OR = {
 				WA_AI_LEND_LEASE_is_starving_infantry = yes
 				WA_AI_LEND_LEASE_is_starving_support = yes
+				WA_AI_LEND_LEASE_is_starving_convoys = yes
 			}
 		}
 
@@ -160,6 +165,7 @@ WA_AI_LEND_LEASE_request_surplus_relief = {
 				OR = {
 					PREV = { WA_AI_LEND_LEASE_should_receive_relief_infantry = yes }
 					PREV = { WA_AI_LEND_LEASE_should_receive_relief_support = yes }
+					PREV = { WA_AI_LEND_LEASE_should_receive_relief_convoys = yes }
 				}
 			}
 
@@ -194,6 +200,24 @@ WA_AI_LEND_LEASE_request_surplus_relief = {
 				}
 				else = {
 					send_equipment = { type = support_equipment amount = 1200 target = ROOT }
+				}
+			}
+
+			# --- convoy leg (archetype `convoy`, same form as the legs above) ---
+			# Tiers keep the donor >= 1750 after the worst case (floor 2000, send 250).
+			if = {
+				limit = { PREV = { WA_AI_LEND_LEASE_should_receive_relief_convoys = yes } }
+
+				if = {
+					limit = { has_equipment = { convoy > 4999 } }
+					send_equipment = { type = convoy amount = 1000 target = ROOT }
+				}
+				else_if = {
+					limit = { has_equipment = { convoy > 2999 } }
+					send_equipment = { type = convoy amount = 500 target = ROOT }
+				}
+				else = {
+					send_equipment = { type = convoy amount = 250 target = ROOT }
 				}
 			}
 

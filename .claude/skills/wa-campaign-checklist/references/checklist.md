@@ -1214,6 +1214,22 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **Status:** NOT YET TESTED
 - **History:**
   - NOT YET TESTED — fix postdates every campaign in the registry (`af003548` is the diagnosing campaign).
+### R56. The AI builds and shares convoys now that the free-convoy cheats are gone (Fix 91)
+
+- **Opened 2026-08-16** after `8643389d5` removed the free-convoy decisions (`GER/ENG/USA/SOV/CAN_AI_cant_build_convoys`, `WA_convoy_fix`, `*_is_greedy`, events `sov_armor.610/611/612/902/905/908`, `usa_armor.910`, `ita_armor.914`). Diagnosis: `common/units/equipment/convoys.txt` had carried `can_be_produced = { is_ai = no }` on the archetype and on `convoy_1` since 2024-02-20 (`358e8be12`), so the AI could never open a convoy line, every `WA_DEFAULT_production_convoy_*` block in `WA_AI_PRODUCTION_DEFAULT_navy.txt` was dead code, and the removed cheats were the AI's *only* convoy source. Save evidence (`ENG_1942_06_06_08.hoi4`, pre-fix build): GER 57 dockyards / 126 convoys / no convoy line; ITA 38 dockyards / **0** convoys / no line; USA and JAP no line. `NDefines.NAI.MISSING_CONVOYS_BOOST_FACTOR` is 0.0 in WA (vanilla 50), so the engine's own reflex is off too.
+- **Fix under test:** Fix 91 (three parts, one commit): (1) the two `is_ai = no` gates removed from `convoys.txt`; (2) `WA_AI_PRODUCTION_DEFAULT_navy.txt` convoy section rewritten on `has_equipment` absolute counts — tier 0 (>3 dockyards, <200 convoys -> min 1 dockyard), tiers 1-3 (>20/40/80 dockyards, <500 -> +3 each), a war-time emergency tier (>9 dockyards, <100 -> +3), stops (majors >1000 / minors >300, `equipment_variant_production_factor -200`), bands disjoint; (3) a convoy leg in `WA_AI_LEND_LEASE_request_surplus_relief` — donor >1999 convoys, recipient at war with <200 and a coast/dockyard, `send_equipment` 1000/500/250 by donor tier, triggers `WA_AI_LEND_LEASE_{has_exportable_surplus,is_starving,should_receive_relief}_convoys`.
+- **Pass, three legs:**
+  1. **Production leg.** Every AI major with >20 dockyards and <500 convoys at a sample shows a `convoy` line in its `production` block by the next sample (<= 3 months later), and no AI country that had >3 dockyards sits at 0 convoys for two consecutive samples while at war.
+  2. **Stock leg (the outcome).** `wa_tlm_nav_convoys` on ENG/USA/GER/JAP/ITA/SOV never trends monotonically to 0 across the war; ITA specifically is off zero at every sample from 1941 on. Compare against the pre-fix baseline (ITA 0 in 1942.6).
+  3. **Relief leg.** When an AI ally at war reads <200 convoys while a co-belligerent AI reads >1999, the recipient's convoy count rises by >=250 within one month without a matching production line — the `send_equipment` signature (recipient `production` -> `equipments` `convoy_1` entry with `creator=<donor>`).
+- **Probe:** `savegame.py tlm <TAG> <saves> --match nav_convoys` for the six majors at ~6-month anchors; `savegame.py section <save> <TAG> production --grep convoy` for the line; `savegame.py buildings <TAG> <save> --match dockyard` for the tier the country should be in. **Regression watch:** a major parking >15 dockyards on convoys (the floors sum to 10 at most; the define `CONVOY_MAX_NAV_FACTORIES_PER_LINE = 15` caps the line) — if seen, the engine's own convoy demand is stacking on the floors and the stops need lowering, not the floors.
+- **Expected magnitude (so a PASS is not over-read):** at 700 IC per convoy and 5 IC/dockyard/day, the floors alone yield 3-34 convoys a year per country; the removed cheats gave ENG 1 200/yr and USA 1 800/yr. If leg 2 fails while legs 1 and 3 pass, the volume layer (engine `unit_ratio` pool - the 12 majors in `wa_default.txt` have none) or the convoy IC cost is the lever, not the floors.
+- **Threshold:** 3 (behavioural, discrete "line exists / stock off zero" facts).
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **History:**
+  - NOT YET TESTED — fix postdates every campaign in the registry; `ENG_1942_06_06_08.hoi4` (local, pre-fix) is the baseline.
+
 
 ## Retired and merged items — ledger
 

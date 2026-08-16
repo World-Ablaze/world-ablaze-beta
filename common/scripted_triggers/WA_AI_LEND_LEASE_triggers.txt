@@ -607,6 +607,16 @@ WA_AI_LEND_LEASE_has_exportable_surplus_support = {
 	has_equipment = { support_equipment > 5999 }
 }
 
+# Convoys (2026-08-16, added when AI convoy production was re-enabled and the free-convoy
+# cheat decisions removed in 8643389d5). A donor at 2000+ convoys can lose 1000 and still
+# run every route it has; the tiers in the effect leave it at >= 1750 in the worst case.
+# Deliberately NOT part of WA_AI_LEND_LEASE_has_exportable_surplus below - that OR gates
+# whether GER/SOV may export AT ALL, and a convoy surplus must not unlock rifle exports.
+WA_AI_LEND_LEASE_has_exportable_surplus_convoys = {
+	has_capitulated = no
+	has_equipment = { convoy > 1999 }
+}
+
 # Convenience OR for the SENDER/TARGET policy gates above in this file, which only
 # ask "is this hoarder allowed to export at all".
 WA_AI_LEND_LEASE_has_exportable_surplus = {
@@ -629,6 +639,26 @@ WA_AI_LEND_LEASE_is_starving_infantry = {
 WA_AI_LEND_LEASE_is_starving_support = {
 	has_war = yes
 	NOT = { has_equipment = { support_equipment > 3999 } }
+}
+
+# Convoys: below ~200 an overseas power cannot import, supply an island garrison or
+# open ordinary lend-lease (WA_AI_lend_lease above only STARTS an overseas lease when
+# the target passes `stockpile_ratio = { archetype = convoy ratio > 50 }`, whose meaning
+# for the convoy archetype is undocumented). The 200 here is an independent calibration:
+# it happens to equal NDefines.NAI.MINIMUM_CONVOY_TO_ASK_LEND_LEASE and tier 0's low bar
+# in WA_AI_PRODUCTION_DEFAULT_navy.txt today, but nothing requires the three to move
+# together and no reader depends on their equality. Production covers the steady state
+# (at 700 IC per convoy a 1-13 dockyard floor is 3-34 convoys a year - see the throughput
+# note in that file); this leg is the bridge for a country whose stock was sunk faster
+# than that. Only ask when a sea route matters at all - a landlocked country with a
+# token shipyard has no use for 250 convoys.
+WA_AI_LEND_LEASE_is_starving_convoys = {
+	has_war = yes
+	has_equipment = { convoy < 200 }
+	OR = {
+		num_of_naval_factories > 0
+		any_owned_state = { is_coastal = yes }
+	}
 }
 
 # THIS = candidate recipient, PREV = potential donor.
@@ -664,4 +694,10 @@ WA_AI_LEND_LEASE_should_receive_relief_support = {
 	WA_AI_LEND_LEASE_relief_pair_is_valid = yes
 	WA_AI_LEND_LEASE_is_starving_support = yes
 	PREV = { WA_AI_LEND_LEASE_has_exportable_surplus_support = yes }
+}
+
+WA_AI_LEND_LEASE_should_receive_relief_convoys = {
+	WA_AI_LEND_LEASE_relief_pair_is_valid = yes
+	WA_AI_LEND_LEASE_is_starving_convoys = yes
+	PREV = { WA_AI_LEND_LEASE_has_exportable_surplus_convoys = yes }
 }

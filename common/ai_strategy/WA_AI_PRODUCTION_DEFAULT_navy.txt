@@ -72,18 +72,81 @@ WA_DEFAULT_production_navy_main_focus_on_escorts = {
 ######################################
 #	convoy production
 ######################################
+# AI convoy production was re-enabled on 2026-08-16 (Fix 91). Since 2024-02-20 (358e8be12,
+# commit message "ai", no recorded reason) common/units/equipment/convoys.txt carried
+# `can_be_produced = { is_ai = no }`, so every block in this section was dead code and AI
+# convoys came from the free-stockpile cheat decisions removed in 8643389d5
+# (GER/ENG/USA/SOV/CAN_AI_cant_build_convoys, WA_convoy_fix, *_is_greedy). The likely
+# purpose of that lock - the classic vanilla failure is a navy hogging dockyards on convoys -
+# is covered here by the stop blocks, by CONVOY_MAX_NAV_FACTORIES_PER_LINE = 15 and by
+# NDefines.NAI.MISSING_CONVOYS_BOOST_FACTOR = 0.0 (05_defines.lua; vanilla 50), which keeps
+# the engine's "I am short of convoys, divert dockyards" reflex OFF. Three layers now act:
+#   - VOLUME: the engine's naval unit_ratio pool. wa_default.txt::default_unit_production
+#     gives `unit_ratio convoy = 15` to every country OUTSIDE its 12-tag allowed list; the
+#     12 majors named there (ENG/GER/SOV/USA/JAP/FRA/CHI/ITA/POL/CZE/HUN/SWE) have NO
+#     unit_ratio convoy anywhere and rely on the engine's internal default (unverified in
+#     game - see the follow-up note below).
+#   - FLOOR (this section): equipment_production_min_factories values ACCUMULATE across the
+#     enabled tiers (>3 dockyards -> 1, >20 -> +3, >40 -> +3, >80 -> +3, war+<100 -> +3),
+#     so a line always exists while the stock is low, whatever the pool decides.
+#   - BRAKE: the stop blocks (equipment_variant_production_factor -200) once the stock is
+#     healthy - previously dead code, so its suppression of a unit_ratio-driven line is
+#     itself unverified until a campaign scores checklist R56.
+# Stock is read with has_equipment (absolute convoy count - the form the removed decisions
+# proved in play), NOT stockpile_ratio, whose meaning for the convoy archetype is undocumented.
+# Floor and stop bands are hysteresis pairs whose ON states are mutually exclusive: a floor
+# switches on below its low bar and off above its high bar; the stop switches on above the
+# floor's high bar and off at/below the floor's low bar. Walk it for a minor: 350 -> stop on;
+# falls to 250 -> stop still on, floor cannot enable (needs <200); falls to 190 -> stop off
+# (<=200), floor on; rises to 250 -> floor on, stop cannot enable (needs >300); rises to 320
+# -> floor off (>=300), stop on. Same walk for majors on 500/750/1000.
+# THROUGHPUT (the honest number, AGENTS.md P3(f)): a convoy costs 700 IC (vanilla 70) and a
+# WA dockyard yields 5 IC/day (00_buildings.txt, vanilla 2.5), i.e. 140 dockyard-days per
+# convoy. Floors alone give: 1 dockyard = 2.6/yr, 4 = 10/yr, 7 = 18/yr, 10 = 26/yr,
+# 13 (max, with the emergency tier) = 34/yr. The removed cheats granted ENG 1200/yr, USA
+# 1800/yr, SOV 280/yr, GER 146/yr, CAN 36/yr. So the floors keep a line OPEN; they do not
+# replace the cheat volume - that has to come from the unit_ratio pool (18% of dockyards at
+# 15/85 -> ~47/yr for a 100-dockyard navy) and from the lend-lease relief leg
+# (WA_AI_LEND_LEASE_should_receive_relief_convoys, 250-1000 per weekly pull from a donor
+# above 2000). Whether that is enough against a real submarine campaign is what R56 measures;
+# if it is not, the levers are convoy build_cost_ic and a unit_ratio convoy for the 12
+# majors, NOT bigger floors (need-blind floors are how dockyards get hogged).
+# The 200 low bar of tier 0 and the 200 starving bar of the relief leg are independent
+# calibrations of the same "nearly out" idea; nothing requires them to stay equal.
+# Follow-up needing in-game validation: give the 12 majors a `unit_ratio convoy` (a single
+# always-on block here, moved out of wa_default.txt) - not done in Fix 91 because ENG/GER/USA
+# have no naval unit_ratio at all and the effect of setting one id alone on top of the
+# engine defaults is unknown.
 
-# convoy
+# tier 0 - any country with a shipyard keeps one dockyard on convoys until it holds ~200
+WA_DEFAULT_production_convoy_strategy_0 = {
+	enable = {
+		num_of_naval_factories > 3
+		has_equipment = { convoy < 200 }
+	}
+	abort = {
+		NOT = {
+			AND = {
+				num_of_naval_factories > 3
+				has_equipment = { convoy < 300 }
+			}
+		}
+	}
+
+	ai_strategy = { type = equipment_production_min_factories id = convoy value = 1 }
+}
+
+# tiers 1-3 - larger navies keep a larger convoy line until they hold ~500
 WA_DEFAULT_production_convoy_strategy = {
 	enable = {
 		num_of_naval_factories > 20
-		stockpile_ratio = { archetype = convoy ratio < 500 }
+		has_equipment = { convoy < 500 }
 	}
 	abort = {
 		NOT = {
 			AND = {
 				num_of_naval_factories > 20
-				stockpile_ratio = { archetype = convoy ratio < 750 }
+				has_equipment = { convoy < 750 }
 			}
 		}
 	}
@@ -93,13 +156,13 @@ WA_DEFAULT_production_convoy_strategy = {
 WA_DEFAULT_production_convoy_strategy_2 = {
 	enable = {
 		num_of_naval_factories > 40
-		stockpile_ratio = { archetype = convoy ratio < 500 }
+		has_equipment = { convoy < 500 }
 	}
 	abort = {
 		NOT = {
 			AND = {
 				num_of_naval_factories > 40
-				stockpile_ratio = { archetype = convoy ratio < 750 }
+				has_equipment = { convoy < 750 }
 			}
 		}
 	}
@@ -109,13 +172,36 @@ WA_DEFAULT_production_convoy_strategy_2 = {
 WA_DEFAULT_production_convoy_strategy_3 = {
 	enable = {
 		num_of_naval_factories > 80
-		stockpile_ratio = { archetype = convoy ratio < 500 }
+		has_equipment = { convoy < 500 }
 	}
 	abort = {
 		NOT = {
 			AND = {
 				num_of_naval_factories > 80
-				stockpile_ratio = { archetype = convoy ratio < 750 }
+				has_equipment = { convoy < 750 }
+			}
+		}
+	}
+
+	ai_strategy = { type = equipment_production_min_factories id = convoy value = 3 }
+}
+
+# emergency - at war and nearly out of convoys: every supply/trade/lend-lease route is
+# already collapsing, so add dockyards on top of the tiers above until the stock is back
+# above 250. Gated on having a real shipyard so a 4-dockyard minor is not asked for more
+# than tier 0 already takes.
+WA_DEFAULT_production_convoy_emergency = {
+	enable = {
+		has_war = yes
+		num_of_naval_factories > 9
+		has_equipment = { convoy < 100 }
+	}
+	abort = {
+		NOT = {
+			AND = {
+				has_war = yes
+				num_of_naval_factories > 9
+				has_equipment = { convoy < 250 }
 			}
 		}
 	}
@@ -126,13 +212,13 @@ WA_DEFAULT_production_convoy_strategy_3 = {
 WA_DEFAULT_production_convoy_stop_MAJORS = {
 	enable = {
 		is_major = yes
-		stockpile_ratio = { archetype = convoy ratio > 1000 }
+		has_equipment = { convoy > 1000 }
 	}
 	abort = {
 		NOT = {
 			AND = {
 				is_major = yes
-				stockpile_ratio = { archetype = convoy ratio > 500 }
+				has_equipment = { convoy > 750 }
 			}
 		}
 	}
@@ -142,14 +228,14 @@ WA_DEFAULT_production_convoy_stop_MAJORS = {
 WA_DEFAULT_production_convoy_stop_MINORS = {
 	enable = {
 		is_major = no
-		stockpile_ratio = { archetype = convoy ratio > 200 }
+		has_equipment = { convoy > 300 }
 		num_of_naval_factories > 3
 	}
 	abort = {
 		NOT = {
 			AND = {
 				is_major = no
-				stockpile_ratio = { archetype = convoy ratio > 100 }
+				has_equipment = { convoy > 200 }
 				num_of_naval_factories > 3
 			}
 		}
