@@ -67,6 +67,14 @@ WA_AI_priority_construction_strategies = {
 @AI_PC_PRIO_DEFAULT = 100			# radar, supply lines, MIC/CIC, air bases at rest
 @AI_PC_PRIO_AIR_BASING = 300		# Fix 47: air bases while the air force outgrows its basing
 @AI_PC_PRIO_AIR_FRONT = 350			# Fix 85: theatre air bases where ROOT's own divisions stand (see WA_AI_build_theatre_air_bases)
+### Fix 87b (2026-08-16, campaign af003548 v17 probe): the UK hosting builder's concurrent-project
+### budget, not civs, is what caps UK air-base throughput (106 -> 112 levels in 3 months on
+### cloud, v16 and v17 alike, byte-identical per state, while the second air-lane slot funded 14
+### weeks and the USA held 267 idle civs). One UK level is ~1 month of one 20-civ project, so
+### throughput = concurrent projects. The budget widens while the published deficit is deep.
+@UK_AIR_QUEUE_MAX = 3				# UK hosting: concurrent air-base projects per builder (Fix 47 value)
+@UK_AIR_QUEUE_MAX_DEEP = 5			# ...while WA_AI_PC_air_deficit_pct > @UK_AIR_DEEP_DEFICIT_PCT
+@UK_AIR_DEEP_DEFICIT_PCT = 20		# must match @AI_PC_AIR_LANE_2ND_SLOT_PCT in ..._core.txt
 
 ### Strategy type ids (WA_AI_PC_type_id), used with _project_queue_max_scoped so that two
 ### strategies queuing the SAME building type get independent queue_max budgets. 13 and 14
@@ -1033,7 +1041,11 @@ WA_AI_uk_air_queue_site = {
 	set_temp_variable = { _project_target_state = 0 }
 	set_temp_variable = { _project_priority = _uk_air_prio_ }
 	set_temp_variable = { _project_queue_num = 1 }
-	set_temp_variable = { _project_queue_max = 3 }
+	set_temp_variable = { _project_queue_max = @UK_AIR_QUEUE_MAX }
+	# Fix 87b: widen the budget while the deficit is deep (see the constants at the top)
+	if = { limit = { ROOT = { check_variable = { WA_AI_PC_air_deficit_pct > @UK_AIR_DEEP_DEFICIT_PCT } } }
+		set_temp_variable = { _project_queue_max = @UK_AIR_QUEUE_MAX_DEEP }
+	}
 	# Fix 47: these 3 slots are the UK strategy's OWN budget. Before, queue_max
 	# counted every type-2 project country-wide, so theatre air bases elsewhere
 	# consumed the UK allowance - on 911bed3c both of ENG's slots held Pacific

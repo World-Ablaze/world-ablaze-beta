@@ -259,21 +259,26 @@ WA_AI_PC_get_building_cost = {
 ### for by a MEASURED set of losers.
 ###   P1  a SECOND Fix 78 lane slot while the UK air deficit exceeds @AI_PC_AIR_LANE_2ND_SLOT_PCT
 ###       (WA_AI_PC_air_deficit_pct, published by WA_AI_build_uk_air_hosting_capacity).
-###   P2  both air-lane slots may draw HEADROOM beyond the @AI_PC_ALLOC_FRACTION cut, up to the
-###       0.50 hard cap, while WA_AI_PC_air_basing_reserve stands - i.e. from civs the sorted fill
-###       was never allowed to touch. The measured shape this answers: USA held 187-546 idle civs
-###       (`wa_tlm_pc_civs_avail`) at every 1941-45 anchor because 0.40 x base capped its pool at
-###       100-154 while ENG's pool was 52-137 and fully spent; one UK level (3 200-3 800 IC) is
-###       ~1 month of one 20-civ slot, and ENG+USA together delivered ~2 levels/month against a
-###       faction that grew 8 500 -> 14 000 planes.
+###   P2  (SHIPPED 2026-08-16 AND REMOVED THE SAME DAY - kept here as the record.) Both air-lane
+###       slots could draw HEADROOM beyond the @AI_PC_ALLOC_FRACTION cut up to the hard cap. The
+###       v17 local probe (fork 1944.7.1 -> 1944.10.3) showed it inverted: it drew 25 civ-weeks
+###       on ENG (civs_avail 2 - pure displacement of the vanilla queue) and 0 on the USA (civs_avail
+###       267), because the USA never reaches its fraction cut (assigned 100 vs base 367 x 0.4) -
+###       it lacks fundable projects, not civs. Removed with its WA_TLM_r54_air_headroom_* probes.
+###   (a) Fix 87b: projects whose target state is ENEMY-controlled no longer count against the
+###       per-type / per-strategy queue budget in WA_AI_PC_start_project. They stay queued and
+###       frozen for recapture (Fix 34), but stop holding a slot: on the v17 probe USA 117 Campania
+###       (RIT) and 785 Picardy (GER) sat at the head of the queue at 350, 0 civs, and blocked new
+###       UK sites - USA PC spend fell 140 -> 100 civs with 267 idle.
+###   (b) Fix 87b: the UK hosting builder's concurrent-project budget widens 3 -> 5 while the
+###       deficit is deep (@UK_AIR_QUEUE_MAX_DEEP in ..._strategies.txt) - the v17 probe put UK
+###       levels at 106 -> 112 in 3 months on cloud, v16 and v17 alike, byte-identical per state:
+###       throughput = concurrent projects x ~1 level/month, not civs.
 ### Who pays, from the af003548 ledger: inside the PC fill, an extra 20-civ air slot displaces
 ### ENG's two tail radars + 3 civs of infrastructure (1943.6), ENG's two funded naval bases
 ### (1944.6, nothing else is funded), and nothing in 1945 (ENG pool exhausted, civs_avail = 0);
-### USA's tail radar every time. The headroom draw does NOT displace PC projects - it takes
-### civs from the VANILLA construction queue (mil/civ factories, and for the USA the synthetic
-### refineries that queue built), bounded to 2 slots x 20 civs and to the hard cap.
-### Probes: WA_TLM_r54_air_lane2_grants (weeks the 2nd slot funded), WA_TLM_r54_air_headroom_civs
-### (cumulative civ-weeks drawn beyond the fraction), WA_TLM_r54_*_first_t/_last_t.
+### USA's tail radar every time.
+### Probes: WA_TLM_r54_air_lane2_grants / _first_t / _last_t (weeks the 2nd slot funded).
 @AI_PC_AIR_LANE_2ND_SLOT_PCT = 20		# UK air deficit (% of capacity) above which the 2nd air slot opens
 
 ### Fix 41: priority bands + anti-starvation overtake lane (campaign 31eaf7e6: prio-9999
@@ -375,15 +380,6 @@ WA_AI_PC_assign_factories = {
 		set_temp_variable = { available_factories_ = _pc_alloc_cap }
 	}
 
-	# Fix 87 / P2: HEADROOM the air lanes alone may draw - the gap between the fraction cut
-	# and the hard cap - while an air deficit is open. 0 otherwise. Consumed by the two air-lane
-	# grants below; the sorted fill never sees it.
-	set_temp_variable = { _pc_air_headroom_ = 0 }
-	if = { limit = { has_country_flag = WA_AI_PC_air_basing_reserve }
-		set_temp_variable = { _pc_air_headroom_ = _pc_alloc_cap }
-		subtract_from_temp_variable = { _pc_air_headroom_ = available_factories_ }
-		clamp_temp_variable = { var = _pc_air_headroom_ min = 0 max = 40 }
-	}
 
 	if = { limit = { has_country_flag = WA_AI_construction_logging }
 		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC_ASSIGN: after_35pct=[?available_factories_]"
@@ -634,10 +630,7 @@ WA_AI_PC_assign_factories = {
 		if = {
 			limit = {
 				has_country_flag = WA_AI_PC_air_basing_reserve
-				OR = {
-					check_variable = { available_factories_ > 0 }
-					check_variable = { _pc_air_headroom_ > 0 }
-				}
+				check_variable = { available_factories_ > 0 }
 			}
 			for_each_loop = { array = WA_AI_PC_queue value = _air_lane_scan_
 				if = {
@@ -680,49 +673,20 @@ WA_AI_PC_assign_factories = {
 	# Fix 78: reservation GRANT - every pass, same re-entry contract as the Fix 41 grant
 	# above (a re-entry resets all assignments; without the re-grant the reserved project
 	# would be silently stripped back to 0 and the week voided).
-	# Fix 87 / P2: each air-lane grant is filled from the pool first, then from the headroom
-	# (civs beyond the fraction cut, up to the hard cap). _pc_air_from_pool_ / _pc_air_from_head_
-	# split the grant so the pool and the headroom are each debited exactly once.
 	if = {
 		limit = {
 			NOT = { check_variable = { _pc_air_lane_proj_ < 0 } }
-			OR = {
-				check_variable = { available_factories_ > 0 }
-				check_variable = { _pc_air_headroom_ > 0 }
-			}
+			check_variable = { available_factories_ > 0 }
 			is_in_array = { WA_AI_PC_queue = _pc_air_lane_proj_ }
 			NOT = { check_variable = { WA_AI_PC_target_state^_pc_air_lane_proj_ = 0 } }
 			check_variable = { WA_AI_PC_progress^_pc_air_lane_proj_ > 0 }
 		}
 		set_temp_variable = { assign_amount = available_factories_ }
-		add_to_temp_variable = { assign_amount = _pc_air_headroom_ }
 		clamp_temp_variable = { var = assign_amount min = 1 max = 20 }
 		round_temp_variable = assign_amount
-		set_temp_variable = { _pc_air_from_pool_ = available_factories_ }
-		clamp_temp_variable = { var = _pc_air_from_pool_ min = 0 max = 20 }
-		if = { limit = { check_variable = { _pc_air_from_pool_ > assign_amount } }
-			set_temp_variable = { _pc_air_from_pool_ = assign_amount }
-		}
-		round_temp_variable = _pc_air_from_pool_
-		set_temp_variable = { _pc_air_from_head_ = assign_amount }
-		subtract_from_temp_variable = { _pc_air_from_head_ = _pc_air_from_pool_ }
 		set_variable = { WA_AI_PC_assigned_factories^_pc_air_lane_proj_ = assign_amount }
 		add_to_temp_variable = { _new_total = assign_amount }
-		subtract_from_temp_variable = { available_factories_ = _pc_air_from_pool_ }
-		subtract_from_temp_variable = { _pc_air_headroom_ = _pc_air_from_head_ }
-		if = { limit = { check_variable = { _pc_air_from_head_ > 0 } }
-			# tlm: r54_air_headroom_civs - civ-weeks drawn beyond the fraction cut, the measured
-			# cost of P2 (these civs came out of the vanilla queue). Latched per pass like the
-			# lane counter below. Consumer: checklist R54.
-			if = { limit = { NOT = { check_variable = { _pc_air_head1_counted_ = 1 } } }
-				set_temp_variable = { _pc_air_head1_counted_ = 1 }
-				add_to_variable = { WA_TLM_r54_air_headroom_civs = _pc_air_from_head_ }
-				if = { limit = { check_variable = { WA_TLM_r54_air_headroom_first_t = 0 } }
-					set_variable = { WA_TLM_r54_air_headroom_first_t = global.WA_TLM_clock }
-				}
-				set_variable = { WA_TLM_r54_air_headroom_last_t = global.WA_TLM_clock }
-			}
-		}
+		subtract_from_temp_variable = { available_factories_ = assign_amount }
 		# Fix 38 accumulator: type 2 by construction of the selection above
 		add_to_variable = { WA_AI_PC_air_factories_assigned = assign_amount }
 		# tlm: r8_air_lane_grants / _first_t / _last_t - counter + stamp, ONLY when the
@@ -750,41 +714,18 @@ WA_AI_PC_assign_factories = {
 	if = {
 		limit = {
 			NOT = { check_variable = { _pc_air_lane2_proj_ < 0 } }
-			OR = {
-				check_variable = { available_factories_ > 0 }
-				check_variable = { _pc_air_headroom_ > 0 }
-			}
+			check_variable = { available_factories_ > 0 }
 			is_in_array = { WA_AI_PC_queue = _pc_air_lane2_proj_ }
 			NOT = { check_variable = { WA_AI_PC_target_state^_pc_air_lane2_proj_ = 0 } }
 			check_variable = { WA_AI_PC_progress^_pc_air_lane2_proj_ > 0 }
 		}
 		set_temp_variable = { assign_amount = available_factories_ }
-		add_to_temp_variable = { assign_amount = _pc_air_headroom_ }
 		clamp_temp_variable = { var = assign_amount min = 1 max = 20 }
 		round_temp_variable = assign_amount
-		set_temp_variable = { _pc_air_from_pool_ = available_factories_ }
-		clamp_temp_variable = { var = _pc_air_from_pool_ min = 0 max = 20 }
-		if = { limit = { check_variable = { _pc_air_from_pool_ > assign_amount } }
-			set_temp_variable = { _pc_air_from_pool_ = assign_amount }
-		}
-		round_temp_variable = _pc_air_from_pool_
-		set_temp_variable = { _pc_air_from_head_ = assign_amount }
-		subtract_from_temp_variable = { _pc_air_from_head_ = _pc_air_from_pool_ }
 		set_variable = { WA_AI_PC_assigned_factories^_pc_air_lane2_proj_ = assign_amount }
 		add_to_temp_variable = { _new_total = assign_amount }
-		subtract_from_temp_variable = { available_factories_ = _pc_air_from_pool_ }
-		subtract_from_temp_variable = { _pc_air_headroom_ = _pc_air_from_head_ }
+		subtract_from_temp_variable = { available_factories_ = assign_amount }
 		add_to_variable = { WA_AI_PC_air_factories_assigned = assign_amount }
-		if = { limit = { check_variable = { _pc_air_from_head_ > 0 } }
-			if = { limit = { NOT = { check_variable = { _pc_air_head2_counted_ = 1 } } }
-				set_temp_variable = { _pc_air_head2_counted_ = 1 }
-				add_to_variable = { WA_TLM_r54_air_headroom_civs = _pc_air_from_head_ }
-				if = { limit = { check_variable = { WA_TLM_r54_air_headroom_first_t = 0 } }
-					set_variable = { WA_TLM_r54_air_headroom_first_t = global.WA_TLM_clock }
-				}
-				set_variable = { WA_TLM_r54_air_headroom_last_t = global.WA_TLM_clock }
-			}
-		}
 		# tlm: r54_air_lane2_grants - weeks the SECOND slot funded >= 1 factory (verified by the
 		# set_variable above), latched per pass. Consumer: checklist R54.
 		if = { limit = { NOT = { check_variable = { _pc_air_lane2_counted_ = 1 } } }
@@ -1560,6 +1501,22 @@ WA_AI_PC_start_project = {
 							OR = {
 								NOT = { check_variable = { _qmax_scoped_ = 1 } }
 								check_variable = { WA_AI_PC_type_id^_check_proj_id = _project_type_id }
+							}
+							# Fix 87b (a): a project frozen on ENEMY-controlled ground (Fix 34) does
+							# not hold a budget slot. Same controller test as the fill; state-keyed
+							# projects only (target_state 0 = province project, unchanged).
+							OR = {
+								NOT = { check_variable = { WA_AI_PC_target_state^_check_proj_id > 0 } }
+								var:WA_AI_PC_target_state^_check_proj_id = {
+									CONTROLLER = {
+										OR = {
+											tag = ROOT
+											is_in_faction_with = ROOT
+											is_subject_of = ROOT
+											ROOT = { is_subject_of = PREV }
+										}
+									}
+								}
 							}
 						}
 						add_to_temp_variable = { queued_amount_ = 1 }
