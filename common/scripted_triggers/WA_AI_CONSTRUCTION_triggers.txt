@@ -1329,6 +1329,65 @@ WA_AI_PC_is_logistics_build_partner = {
 	}
 }
 
+### Fix 95 - theatre corridors (WA_AI_PC_railway_corridor_pass, railway_core; node data in
+### WA_AI_CONSTRUCTION_PRIORITY_corridor_data.txt)
+
+# THIS = ROOT = builder country. Input: _corridor_prov (temp) = a corridor node province id.
+# True when the node is ground ROOT may build logistics on: controlled by ROOT, by a subject of
+# ROOT, or by a faction partner that cannot build its own logistics (the Fix 74 ally leg -
+# WA_AI_PC_is_logistics_build_partner is exactly that set, ROOT included). PROVINCE control, never
+# state control: on a contested front the two diverge (663 Cyrenaica ITL-controlled with ENG
+# provinces inside, railway_strategies.txt Fix 74 notes). There is no province-scoped CONTROLLER,
+# hence the any_country walk; 15 nodes every 4 weeks per builder is negligible.
+WA_AI_PC_corridor_node_is_ours = {
+	meta_trigger = {
+		text = {
+			any_country = {
+				WA_AI_PC_is_logistics_build_partner = yes
+				controls_province = [x]
+			}
+		}
+		x = "[?_corridor_prov]"
+	}
+}
+
+# THIS = ROOT = builder country. Input: _corridor_prov. True when the node is held by someone at
+# war with ROOT - the corridor pass reads this over the node list to pick the war (rail_war) or the
+# preparation (rail_prewar) priority band, so a peaceful owner of Libya preps at 500 and the same
+# owner at war with the holder of the next node builds at 1000. Province-level for the same reason
+# as above.
+WA_AI_PC_corridor_node_is_hostile = {
+	meta_trigger = {
+		text = {
+			any_country = {
+				has_war_with = ROOT
+				controls_province = [x]
+			}
+		}
+		x = "[?_corridor_prov]"
+	}
+}
+
+# THIS = ROOT = builder country. Input: _corridor_hostile_n_ (temp) = how many corridor nodes are
+# held by an enemy of ROOT (computed by the pass over the node list). When does the North African
+# corridor pass act at all?
+#  - contested: the theatre is contested for ROOT (delegates to the AIR trigger, which is generic -
+#    an enemy-controlled AND an own-side-controlled state among Morocco..Egypt, no tags);
+#  - preparation: NO corridor node is enemy-held. The pass then only acts where ROOT / a subject /
+#    a partner holds two consecutive nodes, i.e. "the owner of Libya / Egypt / Tunisia prepares its
+#    corridor" (decision 4 of the Fix 95 plan). Keyed on the nodes rather than on has_war = no
+#    because ITA is at war in 1936 (Ethiopia) and would otherwise never prepare Libya.
+# Historical: ENG 1940-43 and ITA 1940-43 pass leg 1; ITA 1936-40 passes leg 2. Ahistorical: a
+# neutral ITA keeps preparing under leg 2, an Axis Egypt keeps building toward Alexandria under
+# leg 1 - no gap on either path. Between the two (at war in the theatre but no own-side state,
+# e.g. ENG after losing all of Egypt) the pass is silent: nothing to connect.
+WA_AI_PC_corridor_theatre_live_north_africa = {
+	OR = {
+		check_variable = { _corridor_hostile_n_ = 0 }
+		WA_AI_MILITARY_AIR_theatre_contested_north_africa = yes
+	}
+}
+
 # THIS = state, ROOT = builder country. Cheap membership test for the land-war railway strategy:
 # is this state a frontline worth a route against the enemy currently being processed?
 # Reads the chain-global temps the strategy sets per enemy (_routes_for_this_enemy, the per-enemy

@@ -971,6 +971,7 @@ _PC_TYPE_ID = {
     23: "islands",         # constant:wa_ai_pc.type_id.islands     (strategies, Fix 90)
     24: "supply_line",     # constant:wa_ai_pc.type_id.supply_line (strategies, Fix 90b)
     25: "inf_resource",    # constant:wa_ai_pc.type_id.inf_resource (queue_functions, Fix 90b)
+    27: "corridor",        # constant:wa_ai_pc.type_id.corridor (railway_core corridor pass, Fix 95)
 }
 
 # Fix 41 priority band table - one declaration, common/script_constants/wa_ai_pc.txt

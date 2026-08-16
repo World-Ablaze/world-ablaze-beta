@@ -36,6 +36,10 @@ WA_AI_PC_railway = {
 
 	if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY ENTRY: interval_counter=[?WA_AI_PC_railway_INTERVAL_counter]" }
 
+	### Fix 95: theatre corridors run on their OWN interval (constant:wa_ai_railway.corridor.interval_weeks),
+	### before and independently of the main pass below - see WA_AI_PC_railway_corridor_pass.
+	WA_AI_PC_railway_corridor_pass = yes
+
 	if = { limit = { check_variable = { WA_AI_PC_railway_INTERVAL_counter = 0 } }
 
 		if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY ENTRY: interval check PASSED - executing" }
@@ -60,7 +64,7 @@ WA_AI_PC_railway = {
 		set_temp_variable = { _min_civs_required = constant:wa_ai_railway.eligibility.min_civs }
 		if = {
 			limit = { has_war = yes }
-			multiply_temp_variable = { _min_civs_required = 0.6 }  # 30 civs during war
+			multiply_temp_variable = { _min_civs_required = constant:wa_ai_railway.eligibility.war_civs_factor }  # 30 civs during war
 		}
 
 		# Fix 75: `has_capitulated = no` removed. It was the third of three gates on the same word
@@ -91,11 +95,17 @@ WA_AI_PC_railway = {
 			# The admission cap in WA_AI_PC_start_railway_project still counts ALL type-13
 			# (dead included), so the first pulse after a mass flip validates-and-cancels but
 			# queues nothing new; fresh segments follow on the next interval.
+			# Fix 95: keyed on the STRATEGY TAG (WA_AI_PC_type_id = rail), no longer on the
+			# building type. Theatre-corridor segments are type-13 too but carry type_id
+			# corridor and have their own scoped budget; counting them here would let a full
+			# corridor queue switch the whole land-war pass off (and vice versa). Every rail
+			# project queued by this helper family has carried type_id 13 since Fix 47, so
+			# the count is unchanged for them.
 			set_temp_variable = { _rail_live_queued_ = 0 }
 			for_each_loop = { array = WA_AI_PC_queue value = _rail_cnt_proj_
 				if = {
 					limit = {
-						check_variable = { WA_AI_PC_building_type^_rail_cnt_proj_ = constant:wa_ai_pc.type_id.rail }
+						check_variable = { WA_AI_PC_type_id^_rail_cnt_proj_ = constant:wa_ai_pc.type_id.rail }
 						NOT = { check_variable = { WA_AI_PC_target_state^_rail_cnt_proj_ = 0 } }
 						var:WA_AI_PC_target_state^_rail_cnt_proj_ = {
 							CONTROLLER = {
@@ -241,6 +251,189 @@ WA_AI_PC_railway = {
 	}
 	else = {
 		add_to_variable = { WA_AI_PC_railway_INTERVAL_counter = -1 }
+	}
+}
+
+############################################################################################################
+#	THEATRE CORRIDOR PASS (Fix 95)
+#	ROOT = builder country. Called every weekly pulse from WA_AI_PC_railway (so it inherits the
+#	on_weekly gate: is_ai, exists, WA_AI_PC_country_can_build_own_logistics). Own interval counter,
+#	own scoped project budget (type_id corridor), own stale-path validation. Selection lives in
+#	WA_AI_PC_railway_STRATEGY_theatre_corridor (railway_strategies); node data in
+#	WA_AI_CONSTRUCTION_PRIORITY_corridor_data.txt; the hub helper in railway_helpers.
+#
+#	Why a separate pass and not four more routes in the main batch: the main pass runs every
+#	8 weeks at war, one type-13 project is one level on one hop and the province-duplicate guard
+#	admits one project per province per pass, so a 20-hop route to level 1 took 24 weeks - the
+#	cadence, not the civ pool, bounded it (Fix 95 plan §5.1). The main pass's route cap
+#	(routes.max_total) and skip gate (routes.queue_full) also stay untouched by construction.
+#	Cost: at most corridor.max_routes_per_run pathfinds per pass per eligible builder.
+#
+#	Stale-path validation is pinned to type_id corridor and fed the provinces of THIS pass's
+#	successful paths plus the node provinces of its hubs. It is skipped when routes were requested
+#	and every pathfind failed (a transient hole would otherwise cancel paid-for progress: the
+#	"_valid_provinces EMPTY cancels 100%" hazard recorded on WA_AI_PC_validate_queued_provincial_
+#	projects). Rails queued here are type-13 and are purged at peace with the rest (misc_on_actions
+#	peace purge, building_type 13 - intended); queued depots (17) are NOT purged - a hub in peace is
+#	preparation, not waste, and the pass will not queue a second one at the same province.
+############################################################################################################
+
+WA_AI_PC_railway_corridor_pass = {
+	if = {
+		limit = { check_variable = { WA_AI_PC_corridor_INTERVAL_counter > 0 } }
+		subtract_from_variable = { WA_AI_PC_corridor_INTERVAL_counter = 1 }
+	}
+	else = {
+		set_variable = { WA_AI_PC_corridor_INTERVAL_counter = constant:wa_ai_railway.corridor.interval_weeks }
+
+		### Same industrial floor as the main pass (50 civs, x0.6 at war) - both sites read the same
+		### two constants, so the two passes cannot drift apart
+		set_temp_variable = { _corridor_min_civs_ = constant:wa_ai_railway.eligibility.min_civs }
+		if = {
+			limit = { has_war = yes }
+			multiply_temp_variable = { _corridor_min_civs_ = constant:wa_ai_railway.eligibility.war_civs_factor }
+		}
+		if = {
+			limit = { num_of_civilian_factories > _corridor_min_civs_ }
+
+			WA_AI_PC_railway_STRATEGY_theatre_corridor = yes
+
+			if = {
+				limit = { check_variable = { corridor_ran_ = 1 } }
+
+				clear_temp_array = _valid_provinces
+				set_temp_variable = { _corridor_routes_done_ = 0 }
+				set_temp_variable = { _corridor_routes_ok_ = 0 }
+				set_temp_variable = { _corridor_seg_admitted_ = 0 }
+				set_temp_variable = { _corridor_depot_admitted_ = 0 }
+				set_temp_variable = { _corridor_port_admitted_ = 0 }
+
+				### Routes: consecutive node pairs both ours - full paths only (no frontier ports in the desert)
+				set_temp_variable = { _corridor_max_minus_one_ = constant:wa_ai_railway.corridor.max_routes_per_run }
+				subtract_from_temp_variable = { _corridor_max_minus_one_ = 1 }
+				for_each_loop = { array = corridor_route_end_ index = _cr_i_ value = _cr_end_ break = _cr_b_
+					if = {
+						limit = { check_variable = { _corridor_routes_done_ > _corridor_max_minus_one_ } }
+						set_temp_variable = { _cr_b_ = 1 }
+					}
+					else = {
+						set_temp_variable = { _pathfind_prov_start = corridor_route_start_^_cr_i_ }
+						set_temp_variable = { _pathfind_prov_end = _cr_end_ }
+						set_temp_variable = { _pathfind_prov_type = 2 }
+						set_temp_variable = { _pathfind_prov_allow_partial = 0 }
+						WA_AI_PATHFIND_PROV_get_path = yes
+						add_to_temp_variable = { _corridor_routes_done_ = 1 }
+						if = {
+							limit = { check_variable = { pathfind_prov_success_ = 1 } }
+							add_to_temp_variable = { _corridor_routes_ok_ = 1 }
+							for_each_loop = { array = pathfind_prov_path_ index = _cp_i_ value = _cp_v_ break = _cp_b_
+								add_to_temp_array = { _valid_provinces = _cp_v_ }
+								set_temp_variable = { _cp_next_ = _cp_i_ }
+								add_to_temp_variable = { _cp_next_ = 1 }
+								if = {
+									limit = { check_variable = { _cp_next_ < pathfind_prov_path_^num } }
+									set_temp_variable = { _project_province_id = _cp_v_ }
+									set_temp_variable = { _project_connect_id = pathfind_prov_path_^_cp_next_ }
+									set_temp_variable = { _project_target_level = corridor_route_level_^_cr_i_ }
+									set_temp_variable = { _project_priority = corridor_route_prio_^_cr_i_ }
+									set_temp_variable = { _corridor_seg_state_ = global.WA_AI_MAP_province_state_id^_cp_v_ }
+									if = {
+										limit = { check_variable = { _corridor_seg_state_ > 0 } }
+										set_temp_variable = { _corridor_q_before_ = WA_AI_PC_queue^num }
+										set_temp_variable = { _railway_family_ = 1 }
+										var:_corridor_seg_state_ = { WA_AI_PC_start_railway_project = yes }
+										if = {
+											limit = { check_variable = { WA_AI_PC_queue^num > _corridor_q_before_ } }
+											add_to_temp_variable = { _corridor_seg_admitted_ = 1 }
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				# Belt and braces: the helper latches-and-zeroes this on entry, but a segment call
+				# skipped by the state-mapping guard would leave a 1 behind for the main pass.
+				set_temp_variable = { _railway_family_ = 0 }
+
+				### Hubs: depots / ports at nodes we hold
+				for_each_loop = { array = corridor_hub_prov_ index = _ch_i_ value = _ch_prov_ break = _ch_b_
+					set_temp_variable = { _hub_prov_ = _ch_prov_ }
+					set_temp_variable = { _hub_kind_ = corridor_hub_kind_^_ch_i_ }
+					set_temp_variable = { _hub_prio_ = corridor_hub_prio_^_ch_i_ }
+					add_to_temp_array = { _valid_provinces = _ch_prov_ }
+					WA_AI_PC_corridor_start_hub = yes
+					if = {
+						limit = { check_variable = { corridor_hub_admitted_ = 1 } }
+						if = {
+							limit = { check_variable = { _hub_kind_ = 17 } }
+							add_to_temp_variable = { _corridor_depot_admitted_ = 1 }
+						}
+						else = {
+							add_to_temp_variable = { _corridor_port_admitted_ = 1 }
+						}
+					}
+				}
+
+				# tlm: r95_corridor_* - counters, one per project the corridor pass ADMITTED (queue grew
+				# across WA_AI_PC_start_project - not per request: queue_max, the province-duplicate guard
+				# and the controller test all refuse silently), split rail segments / depots / ports, with
+				# first_t / last_t stamps. "Built" is NOT this counter: read the map (railway connection
+				# level, supply_node / naval_base at the node) - the checklist item's probe does.
+				# consumer: R60
+				if = {
+					limit = {
+						OR = {
+							check_variable = { _corridor_seg_admitted_ > 0 }
+							check_variable = { _corridor_depot_admitted_ > 0 }
+							check_variable = { _corridor_port_admitted_ > 0 }
+						}
+					}
+					add_to_variable = { WA_TLM_r95_corridor_seg_n = _corridor_seg_admitted_ }
+					add_to_variable = { WA_TLM_r95_corridor_depot_n = _corridor_depot_admitted_ }
+					add_to_variable = { WA_TLM_r95_corridor_port_n = _corridor_port_admitted_ }
+					if = { limit = { check_variable = { WA_TLM_r95_corridor_first_t = 0 } }
+						set_variable = { WA_TLM_r95_corridor_first_t = global.WA_TLM_clock }
+					}
+					set_variable = { WA_TLM_r95_corridor_last_t = global.WA_TLM_clock }
+				}
+
+				### Stale-path validation, pinned to the corridor tag (Fix 50 shape).
+				# Only when the cancel set is COMPLETE: every requested route was pathfound this pass
+				# (a route cap smaller than the list would otherwise cancel the in-progress segments of
+				# the routes it skipped - hence corridor.max_routes_per_run = the whole list) AND at
+				# least one succeeded (or none was requested: the hub-only / nodes-lost case, where the
+				# hub provinces are the valid set and every rail is legitimately stale).
+				if = {
+					limit = {
+						check_variable = { _corridor_routes_done_ = corridor_route_end_^num }
+						OR = {
+							check_variable = { _corridor_routes_done_ = 0 }
+							check_variable = { _corridor_routes_ok_ > 0 }
+						}
+					}
+					set_temp_variable = { _strategy_id = constant:wa_ai_pc.type_id.corridor }
+					WA_AI_PC_validate_queued_provincial_projects = yes
+				}
+				else = {
+					clear_temp_array = _valid_provinces
+				}
+
+				# Fix 50 shape: the last start call above may have been a hub (14/17); put the shared
+				# project temps back on the rail family so nothing downstream reads a hub's type.
+				# _project_queue_max / _project_priority are deliberately NOT restored: they stay
+				# corridor-valued for the rest of this weekly chain, and every downstream PC caller
+				# (the main pass at the top of WA_AI_PC_railway, every strategy in
+				# WA_AI_priority_construction_strategies) sets its own before start_project - the
+				# Fix 47 header records why inheriting them is never relied upon.
+				set_temp_variable = { _project_building_type = constant:wa_ai_pc.type_id.rail }
+				set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.rail }
+
+				if = { limit = { has_country_flag = WA_AI_construction_logging }
+					log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY CORRIDOR: routes ok=[?_corridor_routes_ok_] done=[?_corridor_routes_done_] requested=[?corridor_route_end_^num] hubs=[?corridor_hub_prov_^num], admitted seg=[?_corridor_seg_admitted_] depot=[?_corridor_depot_admitted_] port=[?_corridor_port_admitted_]"
+				}
+			}
+		}
 	}
 }
 

@@ -158,7 +158,16 @@
 # entry (three campaigns of R7b were scored from stockpile deltas because this did not exist).
 # Standing under 3.8 criterion 3 (a system every AI country runs weekly). Additive; a save at
 # wa_tlm_version < 18 lacks the family - score NOT CHECKED, never FAILED.
-@WA_TLM_VERSION = 18
+# v19 (2026-08-16, Fix 95 / R60): adds the WA_TLM_r95_corridor_* probe family - theatre-corridor
+# logistics (WA_AI_PC_railway_corridor_pass, WA_AI_CONSTRUCTION_PRIORITY_railway_core.txt): seg_n /
+# depot_n / port_n count projects the corridor pass ADMITTED into the PC queue (queue length grew
+# across WA_AI_PC_start_project - never per request, which queue_max, the province-duplicate guard
+# and the controller test all refuse silently), plus first_t / last_t. Written at the pass site, NOT
+# by the monthly sampler. "Built" is deliberately not a counter here: the checklist probe reads the
+# map (railway connection level between the nodes, supply_node / naval_base at the node) - a
+# counter that could only say "queued" would be the very ambiguity the produced=/add lesson bans.
+# Additive; a save at wa_tlm_version < 19 lacks the family - score NOT CHECKED, never FAILED.
+@WA_TLM_VERSION = 19
 
 ############################################################################################################
 #	Clock - global.WA_TLM_clock = months elapsed since 1936.1
@@ -366,6 +375,14 @@ WA_TLM_init_country = {
 	if = { limit = { NOT = { has_variable = WA_TLM_r74_ally_rail_ally_n } } set_variable = { WA_TLM_r74_ally_rail_ally_n = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r74_ally_rail_first_t } } set_variable = { WA_TLM_r74_ally_rail_first_t = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r74_ally_rail_last_t } } set_variable = { WA_TLM_r74_ally_rail_last_t = 0 } }
+
+	# r95 theatre-corridor logistics (Fix 95, consumer: checklist R60) - written by
+	# WA_AI_PC_railway_corridor_pass on admitted projects only
+	if = { limit = { NOT = { has_variable = WA_TLM_r95_corridor_seg_n } } set_variable = { WA_TLM_r95_corridor_seg_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r95_corridor_depot_n } } set_variable = { WA_TLM_r95_corridor_depot_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r95_corridor_port_n } } set_variable = { WA_TLM_r95_corridor_port_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r95_corridor_first_t } } set_variable = { WA_TLM_r95_corridor_first_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r95_corridor_last_t } } set_variable = { WA_TLM_r95_corridor_last_t = 0 } }
 
 	# offensive posture (standing, consumer: the level-1 exchange-rate question - see the write
 	# site in WA_AI_MILITARY_posture_effects.txt, inside every_enemy_country. Counters are per

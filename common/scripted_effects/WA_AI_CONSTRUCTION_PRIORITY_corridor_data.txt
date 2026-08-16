@@ -1,0 +1,55 @@
+############################################################################################################
+#	World Ablaze AI mod - Priority Construction - THEATRE CORRIDOR DATA (Fix 95)
+#
+#	Pure data: each effect below fills the corridor node arrays and nothing else. The engine that
+#	consumes them is WA_AI_PC_railway_corridor_pass (railway_core) via
+#	WA_AI_PC_railway_STRATEGY_theatre_corridor (railway_strategies). Read the doc section
+#	"Theatre corridors" in documentation/WA_AI_RAILWAY_SYSTEM.md before adding a corridor.
+#
+#	Contract (temp arrays, cleared here, consumed within the same corridor pass):
+#	  corridor_node_prov_   province id of the node, in corridor order (direction is meaningless -
+#	                        the corridor is SYMMETRIC: whoever holds two consecutive nodes builds the
+#	                        rail between them, so ENG from Egypt, an Ally in Tunisia after Torch, and
+#	                        ITA / GER holding Libya all use the same list)
+#	  corridor_node_depot_  1 = a supply hub (supply_node) is wanted at this node if none exists
+#	  corridor_node_port_   1 = a naval base is wanted at this node if none exists
+#
+#	Rules for a node list:
+#	  - list only the provinces where a DECISION lives (a depot/port attribute, or a junction the
+#	    pathfinder must be forced through); the pathfinder (type 2, no partial) finds the intermediate
+#	    provinces, so Bardia / Sollum / Gazala need no entry;
+#	  - a node with depot_ = 1 must be a province where supply_node is buildable (any land province);
+#	    a node with port_ = 1 must be coastal (naval_base is only_costal);
+#	  - no tag, no date, no side: gating is control + war state, computed by the engine.
+############################################################################################################
+
+# North Africa - the coastal corridor Tunis -> Tripoli -> Benghazi -> Tobruk -> Alexandria.
+# Map facts (2026-08-16, map/railways.txt + history/states): rail exists only Tunis-Sfax-Gabès (L1),
+# 12039-1189-Tripoli (L1), Marsa Matruh-5078 (L1), Marsa Matruh-Alexandria (L1), Alexandria-Cairo (L2);
+# NOTHING between Tripoli (1149) and Marsa Matruh (11967). Existing supply nodes: Tunis, Bizerte, Sfax,
+# Gabès, Tripoli, Sirte, El Agheila, Bengasi, Tobruk, Marsa Matruh, El-Alamein, 5078, Alexandria, Cairo.
+# Missing and wanted: depot Misrata 9980, depot Mechili 10049 (inland, state 663 Cyrenaica), port Medenine
+# 11957 (state 665 Gabès has no naval base). 5078 is the existing unnamed hub of state 960 (Libyan
+# Plateau), NOT Mechili. State 273 Libyan Desert is impassable: the corridor is strictly coastal.
+WA_AI_PC_CORRIDOR_define_north_africa = {
+	clear_temp_array = corridor_node_prov_
+	clear_temp_array = corridor_node_depot_
+	clear_temp_array = corridor_node_port_
+
+	# node                                          depot  port
+	add_to_temp_array = { corridor_node_prov_ = 11969 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	# Tunis        (458)
+	add_to_temp_array = { corridor_node_prov_ = 7005 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	# Gabès        (665)
+	add_to_temp_array = { corridor_node_prov_ = 11957 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 1 }	# Medenine     (665) - port wanted
+	add_to_temp_array = { corridor_node_prov_ = 1149 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	# Tripoli      (448)
+	add_to_temp_array = { corridor_node_prov_ = 9980 }	add_to_temp_array = { corridor_node_depot_ = 1 }	add_to_temp_array = { corridor_node_port_ = 0 }	# Misrata      (448) - depot wanted
+	add_to_temp_array = { corridor_node_prov_ = 4047 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	# Sirte        (449)
+	add_to_temp_array = { corridor_node_prov_ = 4057 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	# El Agheila   (449)
+	add_to_temp_array = { corridor_node_prov_ = 1127 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	# Ajdabiya     (450)
+	add_to_temp_array = { corridor_node_prov_ = 11954 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	# Benghazi     (450)
+	add_to_temp_array = { corridor_node_prov_ = 10049 }	add_to_temp_array = { corridor_node_depot_ = 1 }	add_to_temp_array = { corridor_node_port_ = 0 }	# Mechili      (663) - depot wanted, inland
+	add_to_temp_array = { corridor_node_prov_ = 7082 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	# Derna        (451)
+	add_to_temp_array = { corridor_node_prov_ = 1130 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	# Tobruk       (451)
+	add_to_temp_array = { corridor_node_prov_ = 5078 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	# hub 5078     (960 Libyan Plateau)
+	add_to_temp_array = { corridor_node_prov_ = 11967 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	# Marsa Matruh (452)
+	add_to_temp_array = { corridor_node_prov_ = 4076 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	# Alexandria   (447)
+}

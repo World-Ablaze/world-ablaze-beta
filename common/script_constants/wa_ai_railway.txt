@@ -32,8 +32,9 @@ wa_ai_railway = {
 	# Which countries run the railway system - WA_AI_PC_country_can_run_railway_system (triggers file, on_weekly)
 	# and the civ floor inside WA_AI_PC_railway (railway_core). Fix 43 escape hatch = recovery_min_states.
 	eligibility = {
-		min_civs            = 50	# base civ minimum inside the run (war threshold = 60% of this)
+		min_civs            = 50	# base civ minimum inside the run (war threshold = war_civs_factor x this)
 		                      # was @WA_AI_PC_railway_MIN_CIVS
+		war_civs_factor     = 0.6	# Fix 95: the wartime multiplier on min_civs, read by the main pass AND the corridor pass (was a 0.6 literal)
 		min_civs_peace      = 75	# higher threshold during peace
 		                      # was @WA_AI_PC_railway_MIN_CIVS_PEACE
 		min_states          = 5	# minimum controlled states to run
@@ -60,6 +61,25 @@ wa_ai_railway = {
 		                               # was @WA_AI_PC_railway_PARTIAL_PATH_PRIORITY_FACTOR
 		theatre_separation_distance  = 10	# helpers: distance beyond which two targets are separate theatres
 		                               # was @WA_AI_PC_railway_THEATRE_SEPARATION_DISTANCE
+	}
+
+	# Fix 95 - THEATRE CORRIDORS (WA_AI_PC_railway_corridor_pass in railway_core, strategy
+	# WA_AI_PC_railway_STRATEGY_theatre_corridor in railway_strategies, node data in
+	# WA_AI_CONSTRUCTION_PRIORITY_corridor_data.txt). A corridor is an ordered list of named
+	# province nodes; whoever holds two consecutive nodes (ROOT / subject / Fix-74 partner soil)
+	# queues the rail between them plus the node's missing depot/port. Runs on its OWN interval,
+	# independent of interval.war_weeks: one type-13 project = one level on one hop and the
+	# province-duplicate guard admits one project per province per pass, so at 8-week cadence a
+	# 20-hop route to level 1 took 24 weeks - the pass cadence, not the civ pool, was the bound.
+	corridor = {
+		interval_weeks     = 4	# corridor pass cadence (weeks); the counter ticks on the weekly pulse
+		rail_level         = 2	# target level on every corridor hop (desert corridor: 2 suffices, 3 doubles the ramp)
+		queue_max          = 8	# concurrent corridor projects per builder PER BUILDING TYPE (WA_AI_PC_start_project filters
+		                    	# building_type before the type_id budget): 8 rails + 8 depots + 8 ports at most, tag corridor, Fix 47 scoped
+		max_routes_per_run = 14	# pathfinds per corridor pass = the whole node-pair list of the largest corridor (15 nodes ->
+		                    	# 14 pairs). NOT a rotating window: the pass validates every corridor project against the
+		                    	# routes it pathfound, so a window smaller than the list would cancel the in-progress
+		                    	# segments of the routes it skipped. Hops are 1-5 provinces (A* cap 100), so this is cheap.
 	}
 
 	# Supply-throughput model used to size ports against railways (railway_helpers).

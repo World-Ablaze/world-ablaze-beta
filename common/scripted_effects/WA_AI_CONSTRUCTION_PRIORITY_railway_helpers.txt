@@ -904,6 +904,15 @@ WA_AI_PC_analyze_overseas_supply_chain = { # capital_landmass, target_landmass, 
 ############################################################################################################
 
 WA_AI_PC_start_railway_project = { # THIS = state, _project_province_id, _project_connect_id, _project_target_level, _project_priority
+	# Optional input: _railway_family_ (temp, Fix 95) - 1 = the segment belongs to a THEATRE CORRIDOR
+	# (WA_AI_PC_railway_corridor_pass): tagged constant:wa_ai_pc.type_id.corridor, budgeted by
+	# constant:wa_ai_railway.corridor.queue_max under Fix 47 scoping. Absent / 0 = the legacy rail
+	# family (type_id rail, budget routes.queue_full) - unchanged for every existing caller.
+	# LATCHED AND ZEROED HERE, at the top, before any early return: it is a chain temp, the corridor
+	# sets it before EVERY segment call, and a leaked 1 would otherwise tag the main pass's first
+	# land-war segment as corridor (the exact leak class Fix 47's clear-on-read exists for).
+	set_temp_variable = { _rail_family_latched_ = _railway_family_ }
+	set_temp_variable = { _railway_family_ = 0 }
 
 	# Check if railway already at target level
 	meta_effect = {
@@ -942,14 +951,28 @@ WA_AI_PC_start_railway_project = { # THIS = state, _project_province_id, _projec
 		}
 		# Use new PC system - call WA_AI_PC_start_project
 		set_temp_variable = { _project_building_type = 13 }
-		set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.rail }
 		set_temp_variable = { _project_queue_num = 1 }
-		# Fix 77: was 0 ("No max per segment") - the one uncapped path into the PC queue.
-		# WA_AI_PC_start_project counts queued type-13 country-wide (unscoped queued_amount_),
-		# so this bounds the WHOLE railway family across every strategy that funnels through
-		# this helper (land war, overseas, prewar). See the constant's header for the measured
-		# case and the threshold relationship.
-		set_temp_variable = { _project_queue_max = constant:wa_ai_railway.routes.queue_full }
+		if = {
+			limit = { check_variable = { _rail_family_latched_ = 1 } }
+			# Fix 95: theatre-corridor segment - own tag, own scoped budget (Fix 47 idiom), so the
+			# corridor neither eats land_war's 12 nor is refused because land_war holds 12.
+			set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.corridor }
+			set_temp_variable = { _project_queue_max = constant:wa_ai_railway.corridor.queue_max }
+			set_temp_variable = { _project_queue_max_scoped = 1 }
+		}
+		else = {
+			set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.rail }
+			# Fix 77: was 0 ("No max per segment") - the one uncapped path into the PC queue.
+			# WA_AI_PC_start_project counts queued type-13 country-wide (unscoped queued_amount_),
+			# so this bounds the WHOLE railway family across every strategy that funnels through
+			# this helper (land war, overseas, prewar). See the constant's header for the measured
+			# case and the threshold relationship.
+			# Fix 95: "country-wide" now means every type-13 EXCEPT the corridor's - the skip gate
+			# in railway_core and this budget both key on WA_AI_PC_type_id = rail since Fix 95, and
+			# every pre-Fix-95 rail project already carries that tag, so nothing changes for them.
+			set_temp_variable = { _project_queue_max = constant:wa_ai_railway.routes.queue_full }
+			set_temp_variable = { _project_queue_max_scoped = 1 }
+		}
 		set_temp_variable = { _project_target_level = 0 }  # Already checked above
 		# Set state ID using province mapping (states don't have .id property)
 		set_temp_variable = { _project_target_state = global.WA_AI_MAP_province_state_id^_project_province_id }
@@ -1165,6 +1188,70 @@ WA_AI_PC_get_max_railway_level_on_route = {
 			# Update max if this segment is higher than current max
 			if = { limit = { check_variable = { seg_level > _max_route_level_ } }
 				set_temp_variable = { _max_route_level_ = seg_level }
+			}
+		}
+	}
+}
+
+############################################################################################################
+#	HELPER (Fix 95): queue a theatre-corridor HUB - a supply hub (17) or a naval base (14) - at a
+#	named province, tagged type_id corridor under the corridor's scoped budget.
+#	ROOT = builder country (country scope). Inputs (temp): _hub_prov_ (province id),
+#	_hub_kind_ (17 = supply_node, 14 = naval_base), _hub_prio_ (priority band).
+#	>>> corridor_hub_admitted_ (1 iff WA_AI_PC_start_project grew the queue - the verified effect
+#	    the telemetry counts; "we asked" is not "it was admitted": queue_max, the province-duplicate
+#	    guard and the controller test can all refuse)
+#	Skips silently when the building already exists at that province (a corridor node keeps its
+#	attribute forever; the existence test is what makes the request idempotent), when the state
+#	mapping is missing, or - for a port - when the state is not coastal.
+############################################################################################################
+
+WA_AI_PC_corridor_start_hub = {
+	set_temp_variable = { corridor_hub_admitted_ = 0 }
+	set_temp_variable = { _hub_state_ = global.WA_AI_MAP_province_state_id^_hub_prov_ }
+	if = {
+		limit = { check_variable = { _hub_state_ > 0 } }
+		var:_hub_state_ = {
+			set_temp_variable = { _province_hub_id = _hub_prov_ }
+			set_temp_variable = { _hub_wanted_ = 0 }
+			if = {
+				limit = {
+					check_variable = { _hub_kind_ = 17 }
+					NOT = { WA_AI_PC_prov_has_supply_node = yes }
+				}
+				set_temp_variable = { _hub_wanted_ = 1 }
+			}
+			else_if = {
+				limit = {
+					check_variable = { _hub_kind_ = 14 }
+					is_coastal = yes
+					NOT = { WA_AI_PC_prov_has_naval_base = yes }
+				}
+				set_temp_variable = { _hub_wanted_ = 1 }
+			}
+			if = {
+				limit = { check_variable = { _hub_wanted_ = 1 } }
+				set_temp_variable = { _project_building_type = _hub_kind_ }
+				set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.corridor }
+				set_temp_variable = { _project_province_id = _hub_prov_ }
+				set_temp_variable = { _project_connect_id = 0 }
+				set_temp_variable = { _project_priority = _hub_prio_ }
+				set_temp_variable = { _project_queue_num = 1 }
+				set_temp_variable = { _project_queue_max = constant:wa_ai_railway.corridor.queue_max }
+				set_temp_variable = { _project_queue_max_scoped = 1 }
+				set_temp_variable = { _project_target_level = 1 }
+				set_temp_variable = { _project_target_state = _hub_state_ }
+
+				set_temp_variable = { _hub_q_before_ = ROOT.WA_AI_PC_queue^num }
+				WA_AI_PC_start_project = yes
+				if = {
+					limit = { check_variable = { ROOT.WA_AI_PC_queue^num > _hub_q_before_ } }
+					set_temp_variable = { corridor_hub_admitted_ = 1 }
+				}
+
+				if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
+					ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY CORRIDOR: hub kind=[?_hub_kind_] at province [?_hub_prov_] admitted=[?corridor_hub_admitted_]" }
+				}
 			}
 		}
 	}

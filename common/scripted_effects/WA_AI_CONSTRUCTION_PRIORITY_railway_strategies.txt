@@ -1170,3 +1170,114 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY PREWAR: COMPLETED - [?railway_end_provinces_^num] targets found"
 	}
 }
+
+############################################################################################################
+#	STRATEGY 4: THEATRE CORRIDOR (Fix 95)
+#	Selection only. Reads a corridor node list (WA_AI_CONSTRUCTION_PRIORITY_corridor_data.txt) and
+#	publishes the routes and hubs ROOT should build THIS pass; WA_AI_PC_railway_corridor_pass
+#	(railway_core) does the pathfinding, admission, validation and telemetry.
+#
+#	ROOT = builder country (country scope).
+#	>>> corridor_ran_                          1 = the theatre gate passed and the arrays are meaningful
+#	>>> arr:corridor_route_start_ / _end_       province pairs (consecutive nodes both "ours")
+#	>>> arr:corridor_route_level_ / _prio_      per route
+#	>>> arr:corridor_hub_prov_ / _kind_ / _prio_ hubs to build at a node we hold: kind 17 = supply hub,
+#	                                            14 = naval base
+#
+#	The corridor is SYMMETRIC and tag-free: "ours" is ROOT / a subject / a Fix-74 partner's soil, tested
+#	per PROVINCE (WA_AI_PC_corridor_node_is_ours); the priority band is rail_war when any node is
+#	enemy-held, rail_prewar otherwise (the owner of Libya / Egypt / Tunisia preparing in peace,
+#	decision 4). Sequencing emerges from control: Mechili<->Tobruk is never requested before Mechili is
+#	held, Mechili<->Benghazi never before Benghazi. Cadence and level are constant:wa_ai_railway.corridor.*.
+############################################################################################################
+
+WA_AI_PC_railway_STRATEGY_theatre_corridor = {
+	set_temp_variable = { corridor_ran_ = 0 }
+	clear_temp_array = corridor_route_start_
+	clear_temp_array = corridor_route_end_
+	clear_temp_array = corridor_route_level_
+	clear_temp_array = corridor_route_prio_
+	clear_temp_array = corridor_hub_prov_
+	clear_temp_array = corridor_hub_kind_
+	clear_temp_array = corridor_hub_prio_
+	clear_temp_array = corridor_node_ours_
+
+	### Corridor data (one corridor today; a second theatre = a second define + a second block below)
+	WA_AI_PC_CORRIDOR_define_north_africa = yes
+
+	### Classify every node once: ours (buildable for ROOT) / enemy-held
+	set_temp_variable = { _corridor_hostile_n_ = 0 }
+	set_temp_variable = { _corridor_ours_n_ = 0 }
+	for_each_loop = { array = corridor_node_prov_ value = _corridor_prov break = _cn_b_
+		if = {
+			limit = { WA_AI_PC_corridor_node_is_ours = yes }
+			add_to_temp_array = { corridor_node_ours_ = 1 }
+			add_to_temp_variable = { _corridor_ours_n_ = 1 }
+		}
+		else = {
+			add_to_temp_array = { corridor_node_ours_ = 0 }
+		}
+		if = {
+			limit = { WA_AI_PC_corridor_node_is_hostile = yes }
+			add_to_temp_variable = { _corridor_hostile_n_ = 1 }
+		}
+	}
+
+	if = {
+		limit = {
+			check_variable = { _corridor_ours_n_ > 0 }
+			WA_AI_PC_corridor_theatre_live_north_africa = yes
+		}
+		set_temp_variable = { corridor_ran_ = 1 }
+
+		### Band: war when an enemy holds a node of this corridor, preparation otherwise
+		if = {
+			limit = { check_variable = { _corridor_hostile_n_ > 0 } }
+			set_temp_variable = { _corridor_prio_ = constant:wa_ai_pc.prio.rail_war }
+		}
+		else = {
+			set_temp_variable = { _corridor_prio_ = constant:wa_ai_pc.prio.rail_prewar }
+		}
+
+		### Routes: every consecutive pair of nodes both ours
+		set_temp_variable = { _corridor_last_i_ = corridor_node_prov_^num }
+		subtract_from_temp_variable = { _corridor_last_i_ = 1 }
+		for_each_loop = { array = corridor_node_prov_ index = _ci_ value = _ci_prov_ break = _ci_b_
+			if = {
+				limit = { check_variable = { _ci_ < _corridor_last_i_ } }
+				set_temp_variable = { _ci_next_ = _ci_ }
+				add_to_temp_variable = { _ci_next_ = 1 }
+				if = {
+					limit = {
+						check_variable = { corridor_node_ours_^_ci_ = 1 }
+						check_variable = { corridor_node_ours_^_ci_next_ = 1 }
+					}
+					add_to_temp_array = { corridor_route_start_ = _ci_prov_ }
+					add_to_temp_array = { corridor_route_end_ = corridor_node_prov_^_ci_next_ }
+					add_to_temp_array = { corridor_route_level_ = constant:wa_ai_railway.corridor.rail_level }
+					add_to_temp_array = { corridor_route_prio_ = _corridor_prio_ }
+				}
+			}
+			### Hubs: a depot / port wanted at a node we hold
+			if = {
+				limit = { check_variable = { corridor_node_ours_^_ci_ = 1 } }
+				if = {
+					limit = { check_variable = { corridor_node_depot_^_ci_ = 1 } }
+					add_to_temp_array = { corridor_hub_prov_ = _ci_prov_ }
+					add_to_temp_array = { corridor_hub_kind_ = 17 }
+					add_to_temp_array = { corridor_hub_prio_ = _corridor_prio_ }
+				}
+				if = {
+					limit = { check_variable = { corridor_node_port_^_ci_ = 1 } }
+					add_to_temp_array = { corridor_hub_prov_ = _ci_prov_ }
+					add_to_temp_array = { corridor_hub_kind_ = 14 }
+					add_to_temp_array = { corridor_hub_prio_ = _corridor_prio_ }
+				}
+			}
+		}
+
+		if = { limit = { has_country_flag = WA_AI_construction_logging }
+			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY CORRIDOR: nodes ours=[?_corridor_ours_n_] hostile=[?_corridor_hostile_n_] routes=[?corridor_route_end_^num] hubs=[?corridor_hub_prov_^num] prio=[?_corridor_prio_]"
+		}
+	}
+}
