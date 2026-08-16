@@ -540,6 +540,11 @@ WA_AI_PC_building_slot_available_for_type = {
 	else_if = { limit = { check_variable = { _project_building_type = 14 } }
 		always = yes
 	}
+
+	# Supply hub type 17 (Fix 95) - province building, no state slot
+	else_if = { limit = { check_variable = { _project_building_type = 17 } }
+		always = yes
+	}
 }
 
 WA_AI_PC_building_slot_available = {
@@ -636,6 +641,11 @@ WA_AI_PC_building_slot_available = {
 	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_building_type^ROOT.WA_AI_PC_project_type = 14 } }
 		always = yes
 	}
+
+	# Supply hub type 17 (Fix 95) - province building, no state slot
+	else_if = { limit = { check_variable = { ROOT.WA_AI_PC_building_type^ROOT.WA_AI_PC_project_type = 17 } }
+		always = yes
+	}
 }
 
 # Fix 41: overtake-lane revalidation - "is this starved project still worth building?"
@@ -647,14 +657,17 @@ WA_AI_PC_building_slot_available = {
 # dynamic game state (control, war, contested theatres) - no historical-path assumption,
 # so it behaves identically in historical and ahistorical games.
 WA_AI_PC_project_still_relevant = {
-	# 13/14 rail family: still ours (ROOT or ROOT subject - rails serve OUR supply net)
-	# AND still near a live front (kills the Romanian-border project after the front
-	# moved to Moscow; spares the still-contested Libya corridor).
+	# 13/14/17 rail family: still ours (ROOT, ROOT subject, or - Fix 95, matching the Fix 74
+	# ally leg and the executor's own admission test in WA_AI_PC_start_project - a faction
+	# partner whose soil we are building on) AND still near a live front (kills the
+	# Romanian-border project after the front moved to Moscow; spares the still-contested
+	# Libya corridor).
 	if = {
 		limit = {
 			OR = {
 				check_variable = { WA_AI_PC_building_type^_reval_project_id = 13 }
 				check_variable = { WA_AI_PC_building_type^_reval_project_id = 14 }
+				check_variable = { WA_AI_PC_building_type^_reval_project_id = 17 }
 			}
 		}
 		var:WA_AI_PC_target_state^_reval_project_id = {
@@ -662,6 +675,7 @@ WA_AI_PC_project_still_relevant = {
 				OR = {
 					tag = ROOT
 					is_subject_of = ROOT
+					is_in_faction_with = ROOT
 				}
 			}
 			any_neighbor_state = { CONTROLLER = { has_war_with = ROOT } }

@@ -956,6 +956,7 @@ _PC_BUILDING = {
     5: "arms_factory", 6: "industrial_cx", 7: "dockyard", 8: "synth_refinery",
     9: "conv_mil2civ", 10: "conv_civ2mil", 11: "hydro_steel", 12: "hydro_alu",
     13: "railway", 14: "naval_base", 15: "steel_refinery", 16: "alu_refinery",
+    17: "supply_hub",   # Fix 95: supply_node, province building (corridor depots)
 }
 
 # wa_ai_pc_type_id is the STRATEGY tag, not the building type. Only callers that

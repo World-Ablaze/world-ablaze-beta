@@ -111,6 +111,9 @@ WA_AI_PC_get_build_speed = {
 	else_if = { limit = { check_variable = { _project_building_type = 14 } }
 		add_to_temp_variable = { construction_speed_ = modifier@production_speed_naval_base_factor }
 	}
+	else_if = { limit = { check_variable = { _project_building_type = 17 } }
+		add_to_temp_variable = { construction_speed_ = modifier@production_speed_supply_node_factor }
+	}
 
 	# Add general construction speed modifier
 	add_to_temp_variable = { construction_speed_ = modifier@production_speed_buildings_factor }
@@ -216,6 +219,11 @@ WA_AI_PC_get_building_cost = {
 	}
 	else_if = { limit = { check_variable = { _project_building_type = 14 } }
 		set_temp_variable = { building_cost_ = constant:wa_ai_pc.cost.naval_base }
+	}
+	else_if = { limit = { check_variable = { _project_building_type = 17 } }
+		# Fix 95: supply hub (supply_node), province building. Flat base_cost 10000 (00_buildings.txt);
+		# one project = one hub at _project_province_id, level 1, no upgrades exist for this type.
+		set_temp_variable = { building_cost_ = constant:wa_ai_pc.cost.supply_node }
 	}
 }
 
@@ -790,6 +798,8 @@ WA_AI_PC_assign_factories = {
 	# Fix 30: naval bases (type 14) are queued exclusively by the railway system (port
 	# upgrades, frontier ports) and are excluded for the same reason - an archipelago power
 	# like JAP otherwise holds the < 5 gate permanently shut with port projects.
+	# Fix 95: supply hubs (type 17) are likewise queued only by the railway pass (theatre
+	# corridor depots) and are excluded for the same reason.
 	# Must stay in sync with the two +1/-1 bookkeeping sites below (start/end project).
 	set_temp_variable = { _nonrail_count = 0 }
 	for_each_loop = { array = WA_AI_PC_queue value = _count_proj_id
@@ -799,6 +809,7 @@ WA_AI_PC_assign_factories = {
 					OR = {
 						check_variable = { WA_AI_PC_building_type^_count_proj_id = 13 }
 						check_variable = { WA_AI_PC_building_type^_count_proj_id = 14 }
+						check_variable = { WA_AI_PC_building_type^_count_proj_id = 17 }
 					}
 				}
 			}
@@ -1032,7 +1043,8 @@ WA_AI_PC_complete_project_by_id = {
 		set_variable = { WA_AI_PC_project_type = _project_id }
 
 		# Check if this building type can be built in allied territory
-		# Types: 1=infra, 2=airbase, 3=AA, 4=radar, 13=railway, 14=naval_base
+		# Types: 1=infra, 2=airbase, 3=AA, 4=radar, 13=railway, 14=naval_base, 17=supply_node (Fix 95,
+		# allied_build = yes in 00_buildings.txt)
 		set_temp_variable = { _can_build_in_allied = 0 }
 		if = {
 			limit = {
@@ -1043,6 +1055,7 @@ WA_AI_PC_complete_project_by_id = {
 					check_variable = { WA_AI_PC_building_type^_project_id = 4 }
 					check_variable = { WA_AI_PC_building_type^_project_id = 13 }
 					check_variable = { WA_AI_PC_building_type^_project_id = 14 }
+					check_variable = { WA_AI_PC_building_type^_project_id = 17 }
 				}
 			}
 			set_temp_variable = { _can_build_in_allied = 1 }
@@ -1061,10 +1074,11 @@ WA_AI_PC_complete_project_by_id = {
 							ROOT = { is_subject_of = PREV }
 						}
 					}
-					# Railways and naval_bases don't need slot check, others do
+					# Railways, naval_bases and supply hubs (province buildings) don't need slot check, others do
 					OR = {
 						check_variable = { ROOT.WA_AI_PC_building_type^_project_id = 13 }
 						check_variable = { ROOT.WA_AI_PC_building_type^_project_id = 14 }
+						check_variable = { ROOT.WA_AI_PC_building_type^_project_id = 17 }
 						WA_AI_PC_building_slot_available = yes
 					}
 				}
@@ -1134,13 +1148,14 @@ WA_AI_PC_end_project_by_id = {
 	remove_from_array = { array = WA_AI_PC_queue value = _project_id }
 	subtract_from_variable = { WA_AI_PC_active_projects = 1 }
 	# Fix 30: types 13 AND 14 excluded from the nonrail gate counter (must match the resync
-	# in WA_AI_PC_assign_factories and the increment in WA_AI_PC_start_project)
+	# in WA_AI_PC_assign_factories and the increment in WA_AI_PC_start_project); Fix 95 adds 17.
 	if = {
 		limit = {
 			NOT = {
 				OR = {
 					check_variable = { WA_AI_PC_building_type^_project_id = 13 }
 					check_variable = { WA_AI_PC_building_type^_project_id = 14 }
+					check_variable = { WA_AI_PC_building_type^_project_id = 17 }
 				}
 			}
 		}
@@ -1259,11 +1274,11 @@ WA_AI_PC_add_finished_building_by_id = {
 
 	# tlm: pc_built_n / pc_built_by_type - counters, one per building this system actually
 	# spawns. THIS = state, ROOT = builder, so both are written on the builder country.
-	# The 1..16 guard is not a formality: it is exactly the range the ladder below covers,
+	# The 1..17 guard is not a formality: it is exactly the range the ladder below covers,
 	# so the counter increments if and only if one of its add_building_construction /
 	# build_railway branches fires. An out-of-range _build_type falls through the whole
 	# ladder silently and must not be counted as a build (honesty rule 1 - verified effect,
-	# never code-path entry).
+	# never code-path entry). Fix 95 widened 16 -> 17 together with the supply_node branch.
 	# pc_built_by_type is INDEXED by the building type code, which makes "did the air bases
 	# ever actually finish" one read instead of sixteen metrics. Absence of an index means
 	# this country has never completed that type - unambiguous, because the family's
@@ -1272,7 +1287,7 @@ WA_AI_PC_add_finished_building_by_id = {
 	if = {
 		limit = {
 			check_variable = { _build_type > 0 }
-			check_variable = { _build_type < 17 }
+			check_variable = { _build_type < 18 }
 		}
 		ROOT = {
 			add_to_variable = { WA_TLM_pc_built_n = 1 }
@@ -1366,6 +1381,27 @@ WA_AI_PC_add_finished_building_by_id = {
 
 		if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
 			ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: Naval base built at province [?_port_prov]" }
+		}
+	}
+	else_if = { limit = { check_variable = { _build_type = 17 } }
+		# Fix 95: supply hub (supply_node) at the stored province - same province-keyed idiom as
+		# the naval-base branch above. Level 1 only: supply_node has a single level.
+		set_temp_variable = { _hub_prov = ROOT.WA_AI_PC_target_province^_project_id }
+
+		meta_effect = {
+			text = {
+				add_building_construction = {
+					type = supply_node
+					level = 1
+					province = { id = [PROV] }
+					instant_build = yes
+				}
+			}
+			PROV = "[?_hub_prov]"
+		}
+
+		if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
+			ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: Supply hub built at province [?_hub_prov]" }
 		}
 	}
 }
@@ -1594,13 +1630,14 @@ WA_AI_PC_start_project = {
 				# from a 2-day background event, so waiting for assign_factories would let them
 				# over-queue within a week)
 				# Fix 30: types 13 AND 14 excluded (must match the resync in
-				# WA_AI_PC_assign_factories and the decrement in WA_AI_PC_end_project_by_id)
+				# WA_AI_PC_assign_factories and the decrement in WA_AI_PC_end_project_by_id); Fix 95 adds 17.
 				if = {
 					limit = {
 						NOT = {
 							OR = {
 								check_variable = { WA_AI_PC_building_type^_project_id = 13 }
 								check_variable = { WA_AI_PC_building_type^_project_id = 14 }
+								check_variable = { WA_AI_PC_building_type^_project_id = 17 }
 							}
 						}
 					}
