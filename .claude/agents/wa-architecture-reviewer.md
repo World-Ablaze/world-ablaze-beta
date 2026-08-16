@@ -93,7 +93,7 @@ Do not read savegames, and do not open more code than the change itself referenc
   latched-and-zeroed at the reader; a comment names which.
 - **The affordability gate `WA_AI_PC_can_afford_project` is legacy** — kept as a brake for two
   deliberate readers; do not add readers (header comment in `WA_AI_CONSTRUCTION_triggers.txt`).
-- **PC pays its own price table** (`global.WA_AI_PC_BUILDING_*_COST` from `00_buildings.txt`); a
+- **PC pays its own price table** (`constant:wa_ai_pc.cost.*`, registered mirrors of `00_buildings.txt`); a
   new building type or a cost change is mirrored and registered.
 - **Enemy-held targets stay queued and frozen but hold no budget slot** (Fix 87b); the stall
   sweep cancels at `constant:wa_ai_pc.alloc.stall_cancel_weeks`; a save from an older build is migrated idempotently

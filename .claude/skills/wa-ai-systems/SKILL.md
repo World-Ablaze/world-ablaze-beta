@@ -148,7 +148,7 @@ Three strategies live in `railway_strategies.txt`: **land war** (border enemy), 
 
 Two things to know before editing:
 
-- **Railway constants are duplicated** — the control panel is the header block of `WA_AI_CONSTRUCTION_PRIORITY_railway_core.txt`; the eligibility filter and per-enemy route budget are READ in `WA_AI_CONSTRUCTION_triggers.txt`, the bands in `railway_helpers` / `railway_strategies` — because `@` constants are file-scoped. Every pair is registered in `tools/constants_registry.json`; run `python tools/check_constants.py` after touching any of them (skill `wa-constants-registry`).
+- **AI numbers are script constants** — `common/script_constants/wa_ai_pc.txt` / `wa_ai_railway.txt` / `wa_ai_aifc.txt` / `wa_ai_posture.txt`, read as `constant:wa_ai_<system>.<group>.<key>` from every file (the railway control panel, PC bands / budgets / shadow prices, AIFC and posture thresholds). Retune there, full game restart to see it; never add a per-file `@` copy of a shared number. `python tools/check_constants.py` after touching them (skill `wa-constants-registry`).
 - **Puppet territory is not yours.** `every_controlled_state` skips subject states; several fixes here (`Fix 25`/`Fix 27`) exist purely because of that. See `wa-lessons-learned`.
 
 The `# Fix NN:` comments throughout `railway_helpers.txt` and `railway_strategies.txt` are a deliberate changelog — a later fix can revoke an earlier one (`Fix 27` revokes `Fix 25`). Read the surrounding Fix comments before "simplifying" logic that looks redundant; it usually encodes a case that broke.

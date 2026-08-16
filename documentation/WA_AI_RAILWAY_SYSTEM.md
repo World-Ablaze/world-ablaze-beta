@@ -79,18 +79,20 @@ wa_ai_railway.supply.port_per_level = 5      # port throughput = level x 5
 wa_ai_railway.supply.port_max_useful_level = 9
 wa_ai_railway.supply.home_port_search_distance = 5
 wa_ai_railway.supply.home_port_target_supply = 44
-wa_ai_railway.cost.railway_base = 800        # rail_way.base_cost (registered mirror of 00_buildings)
-wa_ai_railway.cost.naval_base_base = 10000   # naval_base.base_cost
-wa_ai_railway.cost.naval_base_per_level = -556
+wa_ai_railway.cost.naval_base_per_level = -556  # naval_base.per_level_extra_cost (registered mirror of 00_buildings)
 wa_ai_railway.cost.railway_segments_per_state = 3
+wa_ai_pc.cost.railway = 800                  # rail_way.base_cost - PC-wide shadow price, read by scoring AND charging
+wa_ai_pc.cost.naval_base = 10000             # naval_base.base_cost - idem
 ```
 
-**The three cost constants above are SCORING constants** — they price candidate routes and ports so
-`WA_AI_PC_score_port_candidate` can compare them. The price a project is actually *charged*
-comes from `WA_AI_PC_get_building_cost` (`..._PRIORITY_core.txt`), which is a separate table.
-**Since Fix 73 (2026-08-14) the two agree**; before that, charging used vanilla's `rail_way`
-numbers (`170 + 130 × level`) while scoring used this mod's flat 800, so the system chose
-routes at one price and paid for them at another. Charged prices today:
+**Scoring and charging read the same declaration.** `WA_AI_PC_score_port_candidate` /
+`WA_AI_PC_estimate_railway_cost` price candidate routes and ports with `constant:wa_ai_pc.cost.railway`
+/ `.naval_base` (plus the per-level taper above), and `WA_AI_PC_get_building_cost`
+(`..._PRIORITY_core.txt`) charges the same keys. **Fix 73 (2026-08-14) made the two tables agree**
+(before that, charging used vanilla's `rail_way` numbers `170 + 130 × level` while scoring used this
+mod's flat 800, so the system chose routes at one price and paid for them at another); the
+2026-08-16 script-constant migration made them one declaration, so they cannot disagree again.
+Charged prices today:
 
 | Project type | Charged | Source |
 |---|---|---|

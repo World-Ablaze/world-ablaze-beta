@@ -155,20 +155,33 @@ Commands in use: `add_to_array`, `clear_array`, `clear_temp_array`, `for_each_lo
 
 When you add a field to such a record, you must add it in **every** place the record is created, copied, and destroyed — a missing clear leaves stale data that the next project silently inherits.
 
-## `@` constants are file-scoped
+## `@` constants are file-scoped — shared numbers are script constants
 
 ```txt
-constant:wa_ai_pc.type_id.rail = 13
-constant:wa_ai_pc.prio.rail_war = 9999
+@WA_TLM_VERSION = 17          # `@`: text substitution at parse time, visible in THIS file only
+constant:wa_ai_pc.prio.rail_war   # script constant: declared once in common/script_constants/wa_ai_pc.txt,
+                                  # readable from every file (HOI4 1.18)
 ```
 
-They do **not** cross file boundaries. If two files need the same constant, redeclare it in both — add a comment saying which file is authoritative, as `WA_AI_CONSTRUCTION_triggers.txt` does for the railway eligibility block:
+`@` constants do **not** cross file boundaries. Since 2026-08-16 the rule is: a number one file
+reads may stay `@`; a number two files read is a **script constant** — declare it once in
+`common/script_constants/wa_ai_<system>.txt` (`schema = { any_key = yes data = { { any_key = yes data = fixed_point } } }`,
+then `group = { key = value }`) and read `constant:wa_ai_<system>.<group>.<key>`. Never redeclare a `@` in a
+second file with a "must match" comment — that convention held nothing (the PC affordability gate sat
+at 0.35 while the allocator funded at 0.40, Fix 90) and `python tools/check_constants.py` now reports a
+`@` shared between two WA files as an error.
 
-```txt
-### Railway eligibility constants (must match WA_AI_CONSTRUCTION_PRIORITY_railway_core.txt)
-```
+Where `constant:` was validated in-game (full table in skill `wa-constants-registry`): every
+variable context (`set_/check_/multiply_/clamp_temp_variable`, arrays, `global.`), the raw numeric
+triggers the AI uses (`num_of_civilian_factories`, `surrender_progress`, `num_of_controlled_states`,
+`has_army_size`, `has_deployed_air_force_size`, `has_manpower`), from scripted_effects /
+scripted_triggers / events. **Not** in `ai_strategy value =` (parse error). Untested: `has_country_flag
+days >`, `fighting_army_strength_ratio ratio >` — those readers keep `@`. Two traps: the game reloads
+`common/script_constants` separately from the scripts (full restart when tuning, `reload` is not
+enough), and the folder is a `replace_path` (the mod ships its own file set there).
 
-**and register the pair** in `tools/constants_registry.json` (owner + mirrors + what it governs). The comment is for the human; `python tools/check_constants.py` is what actually holds the contract — a "must match" comment alone let the PC affordability gate sit at 0.35 while the allocator funded at 0.40 (Fix 90). If you change such a constant, run the checker; it names every copy. Renames are per file. See skill `wa-constants-registry` for the family table and the member kinds.
+Cross-format copies (`05_defines.lua`, `00_buildings.txt`, `savegame.py`) cannot read `constant:`;
+they are registered in `tools/constants_registry.json` and the checker holds them equal.
 
 ## meta_trigger / meta_effect
 
@@ -220,6 +233,6 @@ Hidden AI background events still need `option = {}`. `is_triggered_only = yes` 
 - Are `>` / `<` boundaries off by the intended day/unit?
 - Is an implicit AND doing what you think, or did you mean `OR`?
 - Do all temp variables and temp arrays get cleared on every exit path?
-- Are `@` constants consistent across every file that declares them? (`python tools/check_constants.py`, and a new shared one is registered)
+- Is every shared number a `constant:` (script constant), every `@` single-file, and does `python tools/check_constants.py` exit 0?
 - Do braces balance? (See the PowerShell one-liner in `wa-orientation`.)
 - If the file is in a `replace_path` folder, is it complete and parseable — nothing accidentally deleted?

@@ -69,10 +69,12 @@ wa_ai_pc = {
 	}
 
 	# WA_AI_PC_type_id strategy tags - ONE numbering space (13/14 railway system, 20+ strategies). A new
-	# tag is added here AND to savegame.py _PC_TYPE_ID (registry). 14 = naval base is global.WA_AI_PC_NAVAL_BASE.
+	# tag is added here AND to savegame.py _PC_TYPE_ID (registry).
 	type_id = {
 		rail         = 13	# railway projects (railway_core / helpers)
-		               # was @WA_AI_PC_railway_TYPE_ID
+		               # was @WA_AI_PC_railway_TYPE_ID, global.WA_AI_PC_RAIL
+		port         = 14	# naval-base projects (railway_helpers frontier-port helper)
+		               # was global.WA_AI_PC_NAVAL_BASE
 		uk_air       = 20	# Fix 47: WA_AI_build_uk_air_hosting_capacity
 		               # was @AI_PC_TYPE_ID_UK_AIR
 		theatre_air  = 21	# Fix 47: WA_AI_build_theatre_air_bases
@@ -131,6 +133,48 @@ wa_ai_pc = {
 		                                 # was @THEATRE_AIR_TARGET_LEVEL_COMMITTED
 		theatre_hosted_share           = 0.25	# share of the side's planes one theatre should host
 		                                 # was @THEATRE_AIR_HOSTED_SHARE
+	}
+
+	# PC SHADOW PRICES. SOURCE OF TRUTH: common/buildings/00_buildings.txt (base_cost / per_level_extra_cost /
+	# base_cost_conversion). PC is a SHADOW construction system - it never pays the engine's price, it pays
+	# this table's, then spawns the building with instant_build; an under-estimate here is free industry for
+	# the AI, so every key is a registered mirror (tools/constants_registry.json cost_*) and
+	# `python tools/check_constants.py` reports a re-price. Per-level components live in
+	# WA_AI_PC_get_building_cost (core.txt), not here. Until 2026-08-16 these were global.WA_AI_PC_BUILDING_*
+	# variables set at startup (and saved in every save); the railway route scorer reads railway / naval_base too.
+	cost = {
+		railway                   = 800		# rail_way.base_cost, flat: per_level_extra_cost is 0 in this mod (vanilla 170/130); charged once per province connection (Fix 73)
+		                            # was global.WA_AI_PC_BUILDING_RAILWAY_COST, @WA_AI_PC_RAILWAY_BASE_COST (railway_helpers scoring)
+		infrastructure            = 3000
+		                            # was global.WA_AI_PC_BUILDING_INFRASTRUCTURE_COST
+		air_base                  = 500
+		                            # was global.WA_AI_PC_BUILDING_AIRBASE_COST
+		anti_air                  = 1200
+		                            # was global.WA_AI_PC_BUILDING_ANTIAIR_COST
+		radar                     = 2000
+		                            # was global.WA_AI_PC_BUILDING_RADAR_COST
+		military_factory          = 7500
+		                            # was global.WA_AI_PC_BUILDING_MILITARY_FACTORY_COST
+		civilian_factory          = 10000
+		                            # was global.WA_AI_PC_BUILDING_CIVILIAN_FACTORY_COST
+		dockyard                  = 10000
+		                            # was global.WA_AI_PC_BUILDING_DOCKYARD_COST
+		synthetic_refinery        = 18000
+		                            # was global.WA_AI_PC_BUILDING_REFINERY_COST
+		hydro_steel_mill          = 12500
+		                            # was global.WA_AI_PC_BUILDING_HYDROPOWEREDSTEELMILL_COST
+		hydro_aluminium_smelter   = 12500
+		                            # was global.WA_AI_PC_BUILDING_HYDROPOWEREDALUMINIUMSMELTER_COST
+		steel_mill                = 10000
+		                            # was global.WA_AI_PC_BUILDING_STEELMILL_COST
+		aluminium_smelter         = 10000
+		                            # was global.WA_AI_PC_BUILDING_ALUMINIUMSMELTER_COST
+		naval_base                = 10000	# Fix 72: naval_base.base_cost, flat - exact at level 0, over-charges upgrades (the -556/level taper is modelled in route SCORING only: railway.cost.naval_base_per_level)
+		                            # was global.WA_AI_PC_BUILDING_NAVAL_BASE_COST, @WA_AI_PC_NAVAL_BASE_BASE_COST (railway_helpers scoring)
+		conversion_mil_to_civ     = 8000	# industrial_complex.base_cost_conversion (conversions read the TARGET building's base_cost_conversion, not base_cost; verified 2026-08-14)
+		                            # was global.WA_AI_PC_CONVERSION_COST_MIL_TO_CIV
+		conversion_civ_to_mil     = 6800	# arms_factory.base_cost_conversion
+		                            # was global.WA_AI_PC_CONVERSION_COST_CIV_TO_MIL
 	}
 
 }

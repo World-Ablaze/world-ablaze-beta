@@ -14,8 +14,8 @@ description: How World Ablaze declares tunable numbers and keeps every copy of a
    threshold used by one trigger family). The moment a second file needs it, it moves to
    script constants.
 3. **A number that also exists in another format is a registered group.** Engine defines
-   (`05_defines.lua`), building facts (`00_buildings.txt` `base_cost` / `state_max`), the PC
-   shadow-price `global.WA_AI_PC_BUILDING_*_COST` table, and the savegame-analysis tables in
+   (`05_defines.lua`), building facts (`00_buildings.txt` `base_cost` / `state_max` — the PC
+   shadow-price table `constant:wa_ai_pc.cost.*` mirrors them), and the savegame-analysis tables in
    `savegame.py` (`_PC_BANDS`, `_PC_TYPE_ID`, `_PC_*`) cannot read `constant:` — they are copies,
    and `tools/constants_registry.json` + `python tools/check_constants.py` is what holds them equal.
 
@@ -45,8 +45,8 @@ Facts to keep in mind:
 
 | Category file (`common/script_constants/`) | Groups | Read by |
 | --- | --- | --- |
-| `wa_ai_pc.txt` — priority construction | `alloc` (fraction 0.40, stable_base 0.30, hard cap 0.50, stall/aging weeks, 20-civ slot, air lane 20 %), `prio` (Fix 41 bands 1100/1000/500/350/300/250/100), `type_id` (13 rail … 25 inf_resource), `qmax` (Fix 90 budgets), `air_prio`, `air` (UK / theatre basing tunables) | `WA_AI_CONSTRUCTION_PRIORITY_core / _strategies / _railway_*`, `queue_functions`, `WA_AI_CONSTRUCTION_triggers.txt`, `wa_events_debug.txt` |
-| `wa_ai_railway.txt` — railway control panel | `interval`, `eligibility` (Fix 43 hatch), `routes` (incl. `queue_full` = skip threshold = admission cap, Fix 77), `supply`, `cost` (mirrors of `00_buildings`, registered) | `railway_core / helpers / strategies`, `WA_AI_CONSTRUCTION_triggers.txt` (eligibility filter, per-enemy budget) |
+| `wa_ai_pc.txt` — priority construction | `alloc` (fraction 0.40, stable_base 0.30, hard cap 0.50, stall/aging weeks, 20-civ slot, air lane 20 %), `prio` (Fix 41 bands 1100/1000/500/350/300/250/100), `type_id` (13 rail, 14 port … 25 inf_resource), `qmax` (Fix 90 budgets), `air_prio`, `air` (UK / theatre basing tunables), `cost` (shadow prices = registered mirrors of `00_buildings.txt`; were `global.WA_AI_PC_BUILDING_*_COST`) | `WA_AI_CONSTRUCTION_PRIORITY_core / _strategies / _railway_*`, `queue_functions`, `WA_AI_CONSTRUCTION_triggers.txt`, `wa_events_debug.txt` |
+| `wa_ai_railway.txt` — railway control panel | `interval`, `eligibility` (Fix 43 hatch), `routes` (incl. `queue_full` = skip threshold = admission cap, Fix 77), `supply`, `cost` (naval-base per-level taper + segment estimate; base prices are `wa_ai_pc.cost.*`) | `railway_core / helpers / strategies`, `WA_AI_CONSTRUCTION_triggers.txt` (eligibility filter, per-enemy budget) |
 | `wa_ai_aifc.txt` | `eligibility`, `sector` | `WA_AI_AIFC_triggers / core / helpers` |
 | `wa_ai_posture.txt` | `enter`, `local`, `manpower`, `brake`, `alive`, `xr`, `air` (three `fighting_army_strength_ratio` bars stay `@` in the effects file — untested context) | `WA_AI_MILITARY_posture_triggers / effects` |
 

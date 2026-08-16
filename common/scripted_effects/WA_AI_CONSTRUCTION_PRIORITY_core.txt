@@ -9,49 +9,19 @@
 
 WA_AI_PC_set_global_variables = {
 
-	### BUILDING CONSTRUCTION COSTS
-	### SOURCE OF TRUTH: common/buildings/00_buildings.txt (base_cost / per_level_extra_cost).
-	### PC is a SHADOW construction system - it never pays the engine's price, it pays this
-	### table's, then spawns the building with instant_build. An under-estimate here is free
-	### industry for the AI, so any change to 00_buildings.txt costs must be mirrored here.
-	### Per-level components live in WA_AI_PC_get_building_cost below, not in these constants.
-
-	### rail_way.base_cost. Flat: per_level_extra_cost is 0 in this mod (vanilla is 170/130).
-	### Charged once per province connection - one connection per type-13 project. Read by the
-	### type-13 branch of WA_AI_PC_get_building_cost since Fix 73; before that it had no reader
-	### and the branch hardcoded vanilla's numbers instead.
-	set_variable = { global.WA_AI_PC_BUILDING_RAILWAY_COST          = 800 }
-	set_variable = { global.WA_AI_PC_BUILDING_INFRASTRUCTURE_COST   = 3000 }
-	set_variable = { global.WA_AI_PC_BUILDING_AIRBASE_COST          = 500 }
-	set_variable = { global.WA_AI_PC_BUILDING_ANTIAIR_COST          = 1200 }
-	set_variable = { global.WA_AI_PC_BUILDING_RADAR_COST            = 2000 }
-	set_variable = { global.WA_AI_PC_BUILDING_MILITARY_FACTORY_COST = 7500 }
-	set_variable = { global.WA_AI_PC_BUILDING_CIVILIAN_FACTORY_COST = 10000 }
-	set_variable = { global.WA_AI_PC_BUILDING_DOCKYARD_COST         = 10000 }
-	set_variable = { global.WA_AI_PC_BUILDING_REFINERY_COST         = 18000 }
-	### Conversions read base_cost_conversion of the TARGET building, not base_cost:
-	### mil->civ = industrial_complex.base_cost_conversion (8000), civ->mil =
-	### arms_factory.base_cost_conversion (6800). Both verified correct 2026-08-14.
-	set_variable = { global.WA_AI_PC_CONVERSION_COST_MIL_TO_CIV     = 8000 }
-	set_variable = { global.WA_AI_PC_CONVERSION_COST_CIV_TO_MIL     = 6800 }
-	set_variable = { global.WA_AI_PC_BUILDING_HYDROPOWEREDSTEELMILL_COST         = 12500 }
-	set_variable = { global.WA_AI_PC_BUILDING_HYDROPOWEREDALUMINIUMSMELTER_COST  = 12500 }
-	set_variable = { global.WA_AI_PC_BUILDING_STEELMILL_COST                     = 10000 }
-	set_variable = { global.WA_AI_PC_BUILDING_ALUMINIUMSMELTER_COST              = 10000 }
-	### Fix 72: was 3000 - a 70% discount on naval_base.base_cost = 10000. Ports are the one
-	### PC building type whose per_level_extra_cost is NEGATIVE (-556), so the true price falls
-	### from 10000 at level 0 to 4996 at level 9; this flat figure is exact at level 0 and
-	### over-charges upgrades. Modelling the taper needs the current port level plumbed into
-	### WA_AI_PC_get_building_cost (naval_base is a PROVINCE building - building_level@naval_base
-	### is not a validated state-scope accessor here). railway_helpers.txt:807 already does the
-	### full taper for candidate SCORING via constant:wa_ai_railway.cost.naval_base_per_level.
-	set_variable = { global.WA_AI_PC_BUILDING_NAVAL_BASE_COST                    = 10000 }
-
-	### BUILDING TYPE IDS
-	set_variable = { global.WA_AI_PC_RAIL = 13 }
-	set_variable = { global.WA_AI_PC_NAVAL_BASE = 14 }
-
-	###
+	### BUILDING CONSTRUCTION COSTS and BUILDING TYPE IDS moved to script constants on 2026-08-16:
+	### constant:wa_ai_pc.cost.* (SOURCE OF TRUTH common/buildings/00_buildings.txt - PC is a SHADOW
+	### construction system that pays that table, then spawns with instant_build; every key is a
+	### registered mirror, `python tools/check_constants.py` reports a re-price) and
+	### constant:wa_ai_pc.type_id.rail / .port. They used to be global.WA_AI_PC_BUILDING_*_COST /
+	### WA_AI_PC_RAIL / WA_AI_PC_NAVAL_BASE variables set here at startup and carried in every save;
+	### a resumed pre-2026-08-16 save still holds those globals, unread. Per-level components live in
+	### WA_AI_PC_get_building_cost below. History worth keeping: rail_way is flat (per_level 0, vanilla
+	### 170/130) and charged once per province connection since Fix 73; conversions read the TARGET
+	### building's base_cost_conversion (8000 / 6800, verified 2026-08-14); naval_base is charged flat
+	### 10000 (Fix 72, was 3000) - exact at level 0, over-charging upgrades because the -556/level taper
+	### needs the port level plumbed in (province building; scoring in railway_helpers models it via
+	### constant:wa_ai_railway.cost.naval_base_per_level).
 
 	every_country = {
 		### Dynamic queue system (replaces fixed 5-slot array)
@@ -163,24 +133,24 @@ WA_AI_PC_get_building_cost = {
 	set_temp_variable = { building_cost_ = 0 }
 
 	if = { limit = { check_variable = { _project_building_type = 1 } }
-		set_temp_variable = { building_cost_ = global.WA_AI_PC_BUILDING_INFRASTRUCTURE_COST }
+		set_temp_variable = { building_cost_ = constant:wa_ai_pc.cost.infrastructure }
 		# Level price effect
 		set_temp_variable = { _level_cost = infrastructure_level }
 		multiply_temp_variable = { _level_cost = 100 }
 		add_to_temp_variable = { building_cost_ = _level_cost }
 	}
 	else_if = { limit = { check_variable = { _project_building_type = 2 } }
-		set_temp_variable = { building_cost_ = global.WA_AI_PC_BUILDING_AIRBASE_COST }
+		set_temp_variable = { building_cost_ = constant:wa_ai_pc.cost.air_base }
 		set_temp_variable = { _level_cost = building_level@air_base }
 		# Fix 72: was 250 - air_base.per_level_extra_cost is 300 (00_buildings.txt:86).
 		multiply_temp_variable = { _level_cost = 300 }
 		add_to_temp_variable = { building_cost_ = _level_cost }
 	}
 	else_if = { limit = { check_variable = { _project_building_type = 3 } }
-		set_temp_variable = { building_cost_ = global.WA_AI_PC_BUILDING_ANTIAIR_COST }
+		set_temp_variable = { building_cost_ = constant:wa_ai_pc.cost.anti_air }
 	}
 	else_if = { limit = { check_variable = { _project_building_type = 4 } }
-		set_temp_variable = { building_cost_ = global.WA_AI_PC_BUILDING_RADAR_COST }
+		set_temp_variable = { building_cost_ = constant:wa_ai_pc.cost.radar }
 		set_temp_variable = { _level_cost = building_level@radar_station }
 		# Fix 72: was 500 - radar_station.per_level_extra_cost is 2500 (00_buildings.txt:117).
 		# Largest of the three drifts: a level-5 station was priced 4500 against a real 14500.
@@ -188,40 +158,40 @@ WA_AI_PC_get_building_cost = {
 		add_to_temp_variable = { building_cost_ = _level_cost }
 	}
 	else_if = { limit = { check_variable = { _project_building_type = 5 } }
-		set_temp_variable = { building_cost_ = global.WA_AI_PC_BUILDING_MILITARY_FACTORY_COST }
+		set_temp_variable = { building_cost_ = constant:wa_ai_pc.cost.military_factory }
 	}
 	else_if = { limit = { check_variable = { _project_building_type = 6 } }
-		set_temp_variable = { building_cost_ = global.WA_AI_PC_BUILDING_CIVILIAN_FACTORY_COST }
+		set_temp_variable = { building_cost_ = constant:wa_ai_pc.cost.civilian_factory }
 	}
 	else_if = { limit = { check_variable = { _project_building_type = 7 } }
-		set_temp_variable = { building_cost_ = global.WA_AI_PC_BUILDING_DOCKYARD_COST }
+		set_temp_variable = { building_cost_ = constant:wa_ai_pc.cost.dockyard }
 	}
 	else_if = { limit = { check_variable = { _project_building_type = 8 } }
-		set_temp_variable = { building_cost_ = global.WA_AI_PC_BUILDING_REFINERY_COST }
+		set_temp_variable = { building_cost_ = constant:wa_ai_pc.cost.synthetic_refinery }
 	}
 	else_if = { limit = { check_variable = { _project_building_type = 9 } }
-		set_temp_variable = { building_cost_ = global.WA_AI_PC_CONVERSION_COST_MIL_TO_CIV }
+		set_temp_variable = { building_cost_ = constant:wa_ai_pc.cost.conversion_mil_to_civ }
 		set_temp_variable = { _conv_factor = modifier@conversion_cost_mil_to_civ_factor }
 		add_to_temp_variable = { _conv_factor = 1.0 }
 		multiply_temp_variable = { building_cost_ = _conv_factor }
 	}
 	else_if = { limit = { check_variable = { _project_building_type = 10 } }
-		set_temp_variable = { building_cost_ = global.WA_AI_PC_CONVERSION_COST_CIV_TO_MIL }
+		set_temp_variable = { building_cost_ = constant:wa_ai_pc.cost.conversion_civ_to_mil }
 		set_temp_variable = { _conv_factor = modifier@conversion_cost_civ_to_mil_factor }
 		add_to_temp_variable = { _conv_factor = 1.0 }
 		multiply_temp_variable = { building_cost_ = _conv_factor }
 	}
 	else_if = { limit = { check_variable = { _project_building_type = 11 } }
-		set_temp_variable = { building_cost_ = global.WA_AI_PC_BUILDING_HYDROPOWEREDSTEELMILL_COST }
+		set_temp_variable = { building_cost_ = constant:wa_ai_pc.cost.hydro_steel_mill }
 	}
 	else_if = { limit = { check_variable = { _project_building_type = 12 } }
-		set_temp_variable = { building_cost_ = global.WA_AI_PC_BUILDING_HYDROPOWEREDALUMINIUMSMELTER_COST }
+		set_temp_variable = { building_cost_ = constant:wa_ai_pc.cost.hydro_aluminium_smelter }
 	}
 	else_if = { limit = { check_variable = { _project_building_type = 15 } }
-		set_temp_variable = { building_cost_ = global.WA_AI_PC_BUILDING_STEELMILL_COST }
+		set_temp_variable = { building_cost_ = constant:wa_ai_pc.cost.steel_mill }
 	}
 	else_if = { limit = { check_variable = { _project_building_type = 16 } }
-		set_temp_variable = { building_cost_ = global.WA_AI_PC_BUILDING_ALUMINIUMSMELTER_COST }
+		set_temp_variable = { building_cost_ = constant:wa_ai_pc.cost.aluminium_smelter }
 	}
 	else_if = { limit = { check_variable = { _project_building_type = 13 } }
 		# Fix 73: was a hardcoded `170 + 130 * (1 + existing connection level)`, plus a
@@ -239,13 +209,13 @@ WA_AI_PC_get_building_cost = {
 		# and use `base + per_level * existing` like the air-base and radar branches above, not
 		# the `(1 + existing)` form removed here, which over-counted by one level.
 		#
-		# This is now the same 800 that railway_helpers.txt:25 (constant:wa_ai_railway.cost.railway_base,
+		# This is now the same 800 that railway_helpers.txt:25 (constant:wa_ai_pc.cost.railway,
 		# "flat per segment") and WA_AI_PC_estimate_railway_cost already use to SCORE routes,
 		# so route selection and route payment finally agree.
-		set_temp_variable = { building_cost_ = global.WA_AI_PC_BUILDING_RAILWAY_COST }
+		set_temp_variable = { building_cost_ = constant:wa_ai_pc.cost.railway }
 	}
 	else_if = { limit = { check_variable = { _project_building_type = 14 } }
-		set_temp_variable = { building_cost_ = global.WA_AI_PC_BUILDING_NAVAL_BASE_COST }
+		set_temp_variable = { building_cost_ = constant:wa_ai_pc.cost.naval_base }
 	}
 }
 
