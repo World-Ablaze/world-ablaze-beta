@@ -58,6 +58,16 @@ carrier deck iff its `air_base` id has **no `state=`** in the depth-1 `air_base=
 anchors strictly on depth because `count=` also occurs one level deeper inside combat-history
 `enemy={}` records — counting both over-reports ENG by 7×. Consumer: checklist R43.
 
+Third companion: `airload.py [--states ids] [--owner TAG] [--tag TAG] [--top N] [--all] <save>…` —
+**air-base LOAD per state: NOMINAL wing slots vs capacity, beside planes present.** The engine
+books capacity per WING at the wing's fixed type size (`land_air_wing_size` in
+`common/units/air.txt`: 100 for every type except tac_bomber 200, strat/heavy_strat 300,
+scout/maritime_patrol 25), not per plane present; a wing's `definition=` is that `sub_units`
+key, so the nominal load is derivable from the save while planes-present is not the load at
+all. Verified on `af003548` 1944.7: 7 of the 11 UK hosting states sit at exactly 100.0 %
+nominal while reading 86–98 % in planes. Consumers: R8, R15, R52 — any "is there room on
+these airfields" question.
+
 Bare filenames resolve against the default save dir: `~\Documents\Paradox Interactive\Hearts of Iron IV\save games`. Files are 60–150MB / ~4.4M lines — never Read one, never load one into memory, and don't trust shell `grep` here (the rtk proxy mangles its output; the script or a streaming Python one-liner is the reliable path).
 
 ## Save formats
@@ -118,6 +128,7 @@ Countries live in `countries={ TAG={ … } }`. Useful depth-2 sections inside a 
 - **Absence of a country variable does not prove a build lacks the fix that writes it — check the write site's scope first.** `WA_AI_PC_state_type_projects` (Fix 46) is written inside `var:WA_AI_PC_target_state^_project_id = { … }`, i.e. **state scope**, so `var ENG` reports it absent on a build that has it. One build-fingerprint pass concluded a whole commit was OUT on that basis and mis-scored the campaign's headline item until a country-scope fingerprint (`wa_ai_pc_type_id` carrying the new tag values) settled it. Prefer fingerprints you have confirmed are written in the scope you are probing.
 - **In the PC queue, an absent per-project variable is not a zero — and three of the families are routinely absent.** `WA_AI_PC_start_project` never initialises `assigned_factories`, `stall_weeks` or `build_time`, and `WA_AI_PC_end_project_by_id` clears them, so a project that has never been funded, or has never yet been through a weekly stall sweep, simply has no entry. Script cannot tell the two apart (`check_variable` reads absent as 0) and neither can a naive parse — which is how "GER 1944.6 has 80 type-13 slots all at exactly 0" was reported for a queue where **none of the 80 carried a stall counter at all**. The `pc` command prints absent as `-` and zero as `0`. On the same save the right reading is "80 railway projects appended since the last assignment pass", which `pc` also states outright.
 - **The queue array is sorted only *as of* the last assignment pass.** `WA_AI_PC_assign_factories` rebuilds `wa_ai_pc_queue` in descending priority order, but the strategies run from a 2-day background event and **append**, so a save taken mid-week shows a sorted prefix plus an unsorted tail. Reading queue position as priority rank across that boundary turns "queued three days ago" into "starved": on `be18f9c7` 1944.6, GER's two funded projects are priority-100 while 80 unfunded priority-1100 railways sit behind them, and nothing is wrong. `pc` reports the tail length explicitly.
+- **Air-base capacity is booked per wing at the wing type's fixed size, not per plane present.** A save carries only `count=` on a wing (= Σ `equipment.amount`, 1 117/1 117 wings on `af003548` 1944.7); the nominal size is `land_air_wing_size` of the wing's `definition=` in `common/units/air.txt`. "Capacity − planes present" therefore over-reads free room by the wings' fill gap and once produced a confident "the UK held 3 800–5 700 spare slots and the USAAF still would not move" — the same states were at exactly 100.0 % nominal. Use `airload.py`, never a plane count, for any room-on-the-airfield question; the builders' `wa_ai_uk_air_dbg_planes` / `_capacity` gauges are plane counts too and read ~10 % under the true load.
 
 ## WA_TLM telemetry (builds from 2026-08-11 on)
 
