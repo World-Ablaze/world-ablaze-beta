@@ -318,16 +318,20 @@ WA_AI_build_refinery_resource_shortage_steel = {
 	if = {
 		limit = {
 			# there is a steel deficit / we have enough industry to invest
+			# Hygiene lot 2026-08-16 (after Fix 90b): the counter measures the SHORTAGE only. It used to
+			# carry a second `OR { num_of_available_civilian_factories > 19 | imported > 80 }` - the civ
+			# term is the bare vanilla-free-civs token that reads ~0 on a saturated queue, so a
+			# blockaded ENG-like major with a real deficit and no imports never reached 3 (the Fix 40
+			# "frozen counter" pattern: it also starves the prospecting triggers that read this
+			# counter). Whether a refinery is affordable is the downstream branch's question
+			# (WA_AI_PC_has_project_civs_20, ore self-sufficiency, queue_max 1). The import arm keeps
+			# its materiality (> 80: a small import bill is not worth a 10-12.5k IC mill).
 			OR = {
 				check_variable = { resource@steel < 0 }
 				AND = {
 					check_variable = { resource@iron > -1 }
-					check_variable = { resource_imported@steel > 0 }
+					check_variable = { resource_imported@steel > 80 }
 				}
-			}
-			OR = {
-				num_of_available_civilian_factories > 19
-				check_variable = { resource_imported@steel > 80 }
 			}
 		}
 
@@ -431,16 +435,20 @@ WA_AI_build_refinery_resource_shortage_aluminium = {
 	if = {
 		limit = {
 			# there is a aluminium deficit
+			# Hygiene lot 2026-08-16 (after Fix 90b): the counter measures the SHORTAGE only. It used to
+			# carry a second `OR { num_of_available_civilian_factories > 19 | imported > 80 }` - the civ
+			# term is the bare vanilla-free-civs token that reads ~0 on a saturated queue, so a
+			# blockaded ENG-like major with a real deficit and no imports never reached 3 (the Fix 40
+			# "frozen counter" pattern: it also starves the prospecting triggers that read this
+			# counter). Whether a refinery is affordable is the downstream branch's question
+			# (WA_AI_PC_has_project_civs_20, ore self-sufficiency, queue_max 1). The import arm keeps
+			# its materiality (> 80: a small import bill is not worth a 10-12.5k IC mill).
 			OR = {
 				check_variable = { resource@aluminium < 0 }
 				AND = {
 					check_variable = { resource@bauxite > -1 }
-					check_variable = { resource_imported@aluminium > 0 }
+					check_variable = { resource_imported@aluminium > 80 }
 				}
-			}
-			OR = {
-				num_of_available_civilian_factories > 19
-				check_variable = { resource_imported@aluminium > 80 }
 			}
 		}
 
