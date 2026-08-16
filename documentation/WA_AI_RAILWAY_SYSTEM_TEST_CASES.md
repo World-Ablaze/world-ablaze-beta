@@ -211,7 +211,7 @@ Day values are `global.num_days` counts. Cross-reference with lifecycle log line
 
 **Check logic:**
 1. Verify at least one railway project exists
-2. Verify at least one project has priority = 500 (`@WA_AI_PC_railway_PRIO_PREWAR`)
+2. Verify at least one project has priority = 500 (`constant:wa_ai_pc.prio.rail_prewar`)
 
 **Fail codes:**
 | Code | Meaning |
@@ -482,7 +482,7 @@ OR = {
 - `STRATEGY_prewar_preparation` triggers (`strategies.txt` line 560)
 - Poland found via `ROOT = { is_justifying_wargoal_against = PREV }` or `has_wargoal_against` (lines 615-616)
 - Level 3 railways queued (line 568: `default_route_level = 3`)
-- Priority 500 (line 569: `route_priority = @WA_AI_PC_railway_PRIO_PREWAR`)
+- Priority 500 (line 569: `route_priority = constant:wa_ai_pc.prio.rail_prewar`)
 
 ---
 

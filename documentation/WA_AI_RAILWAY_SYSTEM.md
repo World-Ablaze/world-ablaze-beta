@@ -51,9 +51,9 @@ All files are in `common/scripted_effects/`.
 ### Core Constants (`railway_core.txt`, lines 11-36)
 
 ```
-@WA_AI_PC_railway_TYPE_ID = 13              # Building type identifier for railways
-@WA_AI_PC_railway_PRIO = 1000              # Wartime priority (highest band; Fix 41 compressed 9999 -> 1000)
-@WA_AI_PC_railway_PRIO_PREWAR = 500        # Pre-war preparation priority (Fix 41 compressed 5000 -> 500)
+constant:wa_ai_pc.type_id.rail = 13              # Building type identifier for railways
+constant:wa_ai_pc.prio.rail_war = 1000              # Wartime priority (highest band; Fix 41 compressed 9999 -> 1000)
+constant:wa_ai_pc.prio.rail_prewar = 500        # Pre-war preparation priority (Fix 41 compressed 5000 -> 500)
 @WA_AI_PC_railway_INTERVAL_PEACE = 12      # Runs every 12 weeks during peace (~3 months)
 @WA_AI_PC_railway_INTERVAL_WAR = 8         # Runs every 8 weeks during war (~2 months)
 @WA_AI_PC_railway_MIN_CIVS = 50            # Base minimum civilian factories
@@ -101,7 +101,7 @@ If `common/buildings/00_buildings.txt` is re-priced, **both** tables must be upd
 ### Strategy Constants (`railway_strategies.txt` header)
 
 ```
-@WA_AI_PC_railway_PRIO_PREWAR = 500           # Redeclared (file-scoped)
+constant:wa_ai_pc.prio.rail_prewar = 500           # Redeclared (file-scoped)
 ```
 
 **Note:** HOI4 `@` constants are file-scoped, so required constants are redeclared in each file that uses them. `railway_core.txt`'s header block is the authoritative declaration ("control panel"); the copies in `railway_helpers.txt`, `railway_strategies.txt` and `common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt` (the eligibility filter `WA_AI_PC_country_can_run_railway_system` and the per-enemy route budget in `WA_AI_PC_railway_land_frontline_candidate` are the *readers* of the eligibility five and of `MAX_ROUTES_PER_ENEMY`) are mirrors registered in `tools/constants_registry.json`. `python tools/check_constants.py` fails when any copy disagrees — including the shadow-price table above against `00_buildings.txt`. (Until 2026-08-16 `railway_strategies.txt` also redeclared `MAX_ROUTES_PER_ENEMY`; nothing there read it, so it was removed.)
@@ -206,7 +206,7 @@ The interval counter is managed inside `WA_AI_PC_railway` (`railway_core.txt`, l
   - Queues port upgrades for bottlenecked overseas routes
 - Pathfinds (type 2 = ROOT + allied + subject provinces, allows partial paths)
 - Sorts all targets by enemy threat (factories + divisions*5) via `WA_AI_PC_railway_score_and_sort_by_enemy_threat`
-- Default route level: 5, priority: 1000 (`@WA_AI_PC_railway_PRIO`; Fix 41 band compression)
+- Default route level: 5, priority: 1000 (`constant:wa_ai_pc.prio.rail_war`; Fix 41 band compression)
 
 **Fix 74 scope correction — Fix 27 had never run.** The subject loop used to sit inside
 `for_each_scope_loop = { array = _relevant_enemies_ }` *without* a `ROOT = {}` wrapper, so
@@ -262,7 +262,7 @@ RAJ Burma) to start receiving routes for the first time.
 - Only if ROOT has coastal access (prevents landlocked nations like Hungary from running overseas logic)
 - Upgrades home port infrastructure via overseas supply chain analysis (cached per landmass)
 
-**Route priority:** 500 (`@WA_AI_PC_railway_PRIO_PREWAR`; Fix 41 band compression)
+**Route priority:** 500 (`constant:wa_ai_pc.prio.rail_prewar`; Fix 41 band compression)
 
 ## Coalition logistics — building on an ally's soil (Fix 74)
 

@@ -38,6 +38,13 @@ What it reports
     INFO   DEAD         same, in a non-WA file (vanilla-derived content)
     INFO   ADVISORY     a group with "policy": "advisory" disagrees - the values
                         are conventionally equal but may diverge deliberately
+    ERROR  SHARED-AT    the same @NAME is declared in several WA_* files (same
+                        value) - since 2026-08-16 shared quantities live in
+                        common/script_constants (`constant:cat.sub.key`, HOI4
+                        1.18), not in per-file copies
+    ERROR  UNRESOLVED   a `constant:x.y.z` reference that no script_constants
+                        file declares (the game would silently read garbage)
+    WARN   UNUSED-CONST a wa_ai_* script constant nothing reads
 
 Stdlib only. Run from anywhere; the repo root is derived from this file.
 """
@@ -223,7 +230,87 @@ def x_regex(text: str, m: dict):
     return hits[0][0], f"{len(hits)} site(s), first line {hits[0][1]}"
 
 
+# ---- HOI4 1.18 script constants (common/script_constants/*.txt, read as `constant:cat.sub.key`) ----
+def parse_pdx_tree(text: str) -> dict:
+    """Minimal PDXScript parser: nested {key: value | dict}. Comments stripped; duplicate keys keep
+    the last one (only the schema block repeats keys and it is skipped by callers)."""
+    toks = re.findall(r'"[^"]*"|[{}=]|[^\s{}=#]+|#[^\n]*', text)
+    toks = [x for x in toks if not x.startswith("#")]
+    pos = 0
+
+    def block():
+        nonlocal pos
+        d = {}
+        while pos < len(toks):
+            tok = toks[pos]
+            if tok == "}":
+                pos += 1
+                return d
+            if pos + 1 < len(toks) and toks[pos + 1] == "=":
+                key = tok
+                pos += 2
+                if toks[pos] == "{":
+                    pos += 1
+                    d[key] = block()
+                else:
+                    d[key] = toks[pos]
+                    pos += 1
+            elif tok == "{":          # anonymous block (schema lists)
+                pos += 1
+                d.setdefault("_anon", []).append(block())
+            else:
+                pos += 1              # bare token, ignore
+        return d
+    return block()
+
+
+_SC_CACHE = {}
+
+
+def script_constants_tree(repo: Path) -> dict:
+    """Union of every category in common/script_constants/*.txt (schema blocks removed)."""
+    key = str(repo)
+    if key in _SC_CACHE:
+        return _SC_CACHE[key]
+    tree = {}
+    d = repo / "common" / "script_constants"
+    if d.is_dir():
+        for path in sorted(d.glob("*.txt")):
+            for cat, body in parse_pdx_tree(read_text(path)).items():
+                if isinstance(body, dict):
+                    body = {k: v for k, v in body.items() if k != "schema"}
+                    tree.setdefault(cat, {}).update(body)
+                    tree[cat]["_file"] = rel(path)
+    _SC_CACHE[key] = tree
+    return tree
+
+
+def sc_lookup(tree: dict, dotted: str):
+    node = tree
+    for part in dotted.split("."):
+        if not isinstance(node, dict) or part not in node:
+            return None
+        node = node[part]
+    return node if not isinstance(node, dict) else None
+
+
+def x_script_constant(text: str, m: dict):
+    v = sc_lookup(script_constants_tree(REPO), m["path"])
+    return (v, "script constant") if v is not None else (None, f"constant `{m['path']}` not declared in common/script_constants")
+
+
+def sc_leaves(tree: dict, prefix=""):
+    for k, v in tree.items():
+        if k in ("_file", "_anon"):
+            continue
+        if isinstance(v, dict):
+            yield from sc_leaves(v, prefix + k + ".")
+        else:
+            yield prefix + k, v
+
+
 EXTRACTORS = {
+    "script_constant": x_script_constant,
     "pdx_const": x_pdx_const,
     "pdx_global": x_pdx_global,
     "pdx_block_key": x_pdx_block_key,
@@ -242,12 +329,16 @@ def member_label(m: dict) -> str:
         what = "regex " + m["pattern"][:40] + ("..." if len(m["pattern"]) > 40 else "")
     elif kind == "py_literal_has":
         what = f"{m['name']}[{m['value']}]"
+    elif kind == "script_constant":
+        what = "constant:" + m["path"]
     else:
         what = m["name"]
     return f"{m['file']} :: {what}"
 
 
 def extract(m: dict, cache: dict):
+    if m["kind"] == "script_constant":
+        return x_script_constant("", m)
     path = REPO / m["file"]
     if not path.exists():
         return None, "FILE MISSING"
@@ -347,8 +438,33 @@ def run(manifest: dict, strict: bool) -> tuple[Report, list]:
         where = "; ".join(f"{p}:{ln}={v}" for p, ln, v in sites_f)
         if len(vals) > 1:
             rep.add("ERROR", "UNREGISTERED", f"{name} declared with DIFFERENT values and no registry group: {where}")
+        elif all(Path(f).name.startswith(("WA_", "wa_")) for f in files):
+            rep.add("ERROR", "SHARED-AT", f"{name} is a file-scoped @ declared in {len(files)} WA files - move it to common/script_constants (constant: prefix), do not keep copies in sync: {where}")
         else:
             rep.add("WARN", "UNREGISTERED", f"{name} declared in {len(files)} files, not registered (implicit must-match): {where}")
+
+    # ---- script constants: unresolved references / unused leaves ---------------
+    tree = script_constants_tree(REPO)
+    ref_re = re.compile(r"constant:([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)+)")
+    refs = defaultdict(list)
+    for root in manifest.get("scan_roots", ["common", "events"]):
+        for path in sorted((REPO / root).rglob("*.txt")):
+            if path.parent.name == "script_constants":
+                continue
+            text = cache.get(path) or read_text(path)
+            for i, line in enumerate(text.splitlines(), 1):
+                for h in ref_re.finditer(strip_comment(line)):
+                    refs[h.group(1)].append(f"{rel(path)}:{i}")
+    for dotted, sites in sorted(refs.items()):
+        if sc_lookup(tree, dotted) is None:
+            rep.add("ERROR", "UNRESOLVED", f"constant:{dotted} is read but not declared in common/script_constants ({sites[0]}" + (f" +{len(sites)-1}" if len(sites) > 1 else "") + ")")
+    watched = tuple(manifest.get("script_constant_prefixes", ["wa_ai_"]))
+    for cat, body in tree.items():
+        if not cat.startswith(watched):
+            continue
+        for leaf, _ in sc_leaves({cat: body}):
+            if leaf not in refs:
+                rep.add("WARN", "UNUSED-CONST", f"constant:{leaf} declared in {body.get('_file','?')} but read nowhere")
 
     # ---- dead declarations -----------------------------------------------------
     allow = {(a["file"], a["name"]): a.get("reason", "") for a in manifest.get("dead_allowlist", [])}

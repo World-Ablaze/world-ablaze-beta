@@ -257,22 +257,18 @@ country_event = {
 	is_triggered_only = yes
 
 	immediate = {
-		# debug mirror of WA_AI_PC_can_afford_project - keep in sync with
-		# common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt (incl. the stable-base floor).
-		# 2026-08-16: was 0.35 (drifted from Fix 90's 0.40); registered in tools/constants_registry.json
-		# (pc_alloc_fraction) so `python tools/check_constants.py` catches the next drift.
-		@AI_PC_ALLOC_FRACTION = 0.40
-		@AI_MIN_NUM_OF_FACTORIES_TO_ASSIGN_ON_PROJECT = 20
-		@AI_PC_STABLE_BASE_FRACTION = 0.30
+		# debug mirror of the (Fix 90b-deleted) WA_AI_PC_can_afford_project arithmetic. Reads the
+		# allocator's script constants (constant:wa_ai_pc.alloc.*) directly since 2026-08-16 - it was a
+		# hand-kept `@` copy that had drifted to 0.35 against the allocator's 0.40.
 
 		# check that the ai can afford to assign factories to a new project
 		set_temp_variable = { max_factories_on_projects = ROOT.num_of_civilian_factories_available_for_projects }
 		add_to_temp_variable = { max_factories_on_projects = ROOT.WA_AI_PC_assigned_factories_total }
-		multiply_temp_variable = { max_factories_on_projects = @AI_PC_ALLOC_FRACTION }
+		multiply_temp_variable = { max_factories_on_projects = constant:wa_ai_pc.alloc.fraction }
 
 		set_temp_variable = { _pc_floor_max = ROOT.num_of_civilian_factories }
-		multiply_temp_variable = { _pc_floor_max = @AI_PC_STABLE_BASE_FRACTION }
-		multiply_temp_variable = { _pc_floor_max = @AI_PC_ALLOC_FRACTION }
+		multiply_temp_variable = { _pc_floor_max = constant:wa_ai_pc.alloc.stable_base_fraction }
+		multiply_temp_variable = { _pc_floor_max = constant:wa_ai_pc.alloc.fraction }
 		if = {
 			limit = {
 				ROOT = { num_of_civilian_factories > 19 has_capitulated = no surrender_progress < 0.3 }
@@ -282,7 +278,7 @@ country_event = {
 		}
 
 		set_temp_variable = { min_factories_on_projects = ROOT.WA_AI_PC_assigned_factories_total }
-		add_to_temp_variable = { min_factories_on_projects = @AI_MIN_NUM_OF_FACTORIES_TO_ASSIGN_ON_PROJECT }
+		add_to_temp_variable = { min_factories_on_projects = constant:wa_ai_pc.alloc.max_civs_per_project }
 
 		if = {
 			limit = {

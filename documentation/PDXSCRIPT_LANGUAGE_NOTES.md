@@ -239,8 +239,8 @@ Common array-related commands in the codebase include `add_to_array`, `clear_arr
 File-scoped constants use `@`:
 
 ```txt
-@WA_AI_PC_railway_TYPE_ID = 13
-@WA_AI_PC_railway_PRIO = 9999
+constant:wa_ai_pc.type_id.rail = 13
+constant:wa_ai_pc.prio.rail_war = 9999
 ```
 
 HOI4 `@` constants are file-scoped. If a constant is needed in multiple files, redeclare it where used or initialize shared data as variables. The railway docs call this out explicitly, and the railway files redeclare strategy constants where needed.

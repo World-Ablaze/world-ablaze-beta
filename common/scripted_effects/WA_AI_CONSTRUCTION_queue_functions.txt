@@ -62,21 +62,11 @@
 
 # ROOT = THIS = country. Computes WA_AI_bf_k once per pulse (same "compute if 0" idiom as
 # WA_AI_has_shared_slot_scores).
-### Fix 90 (2026-08-16): explicit per-strategy budgets replacing the legacy dispatcher `< 5` gate
-### (and, Fix 90b, the deleted WA_AI_PC_can_afford_project brake on the MIC->CIC conversion legs).
-@AI_PC_QMAX_INF_RESOURCE = 2		# resource-state infrastructure projects (type 1) in flight per country (scoped to type_id 25)
-@AI_PC_QMAX_MIC_TO_CIC = 1			# MIC->CIC conversion projects (type 9) in flight per country - THE brake on industry conversion
-### Strategy type id for the scoped type-1 budget above. Numbering space shared with
-### WA_AI_CONSTRUCTION_PRIORITY_strategies.txt (20 uk air, 21 theatre air, 23 islands, 24 supply
-### line) and the railway files (13/14); savegame.py _PC_TYPE_IDS names them for `pc` output.
-@AI_PC_TYPE_ID_INF_RESOURCE = 25	# Fix 90b: WA_AI_priority_queue_INF_resource
-
-### Fix 41 priority bands used by the PC queue functions in this file. @ constants are file-scoped:
-### these REDECLARE the band table that WA_AI_CONSTRUCTION_PRIORITY_core.txt owns (registered in
-### tools/constants_registry.json - `python tools/check_constants.py`). Until 2026-08-16 the same
-### numbers were bare literals at each call site.
-@AI_PC_PRIO_DEFAULT = 100			# radar / supply-line infrastructure
-@AI_PC_PRIO_STRATEGIC = 250			# the shortage-driven refinery families (steel / aluminium / rubber)
+### PC constants read by the queue functions in this file - budgets (Fix 90 / 90b:
+### constant:wa_ai_pc.qmax.inf_resource / .mic_to_cic), the scoped type-1 strategy tag
+### (constant:wa_ai_pc.type_id.inf_resource, one numbering space with strategies.txt and the railway
+### files) and the Fix 41 bands (constant:wa_ai_pc.prio.strategic / .default, bare literals until
+### 2026-08-16) - are HOI4 script constants in common/script_constants/wa_ai_pc.txt.
 
 WA_AI_queue_breadth_prepare = {
 	if = { limit = { check_variable = { WA_AI_bf_k = 0 } }
@@ -586,15 +576,15 @@ WA_AI_priority_queue_INF_resource = {
 
 	set_temp_variable = { _project_building_type = 1 }
 	set_temp_variable = { _project_province_id = 0 }
-	set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
+	set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.default }
 	set_temp_variable = { _project_queue_num = 1 }
 	# Fix 90: explicit budget - this function used to be bounded only by the dispatcher's legacy < 5 gate.
 	# Fix 90b: scoped to its own type_id - WA_AI_build_supply_line also creates building type 1
 	# (type_id 24); unscoped, the two budgets counted each other's projects. _project_queue_max_scoped
 	# is clear-on-read in WA_AI_PC_start_project (armed right before the single call below);
 	# _project_type_id persists and is retired at the end of this function.
-	set_temp_variable = { _project_queue_max = @AI_PC_QMAX_INF_RESOURCE }
-	set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_INF_RESOURCE }
+	set_temp_variable = { _project_queue_max = constant:wa_ai_pc.qmax.inf_resource }
+	set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.inf_resource }
 	set_temp_variable = { _project_target_state = 0 }
 	set_temp_variable = { _project_target_level = 0 }
 
@@ -956,11 +946,11 @@ WA_AI_priority_convert_MIC_to_CIC = {
 	# that meet the mil-share / no-slot terms) and redundant on slack ones (a band-100 project is
 	# funded iff the pool has slack after the higher bands - the fill's own answer). What bounds
 	# conversion now:
-	#   - @AI_PC_QMAX_MIC_TO_CIC = 1 : ONE type-9 project in flight per country, across both callers
+	#   - constant:wa_ai_pc.qmax.mic_to_cic = 1 : ONE type-9 project in flight per country, across both callers
 	#     (unscoped budget over building type 9, whose only creator is this function);
 	#   - the MIC is removed at COMPLETION (WA_AI_PC_complete_project), never at admission - a queued
 	#     project that the fill never funds removes nothing;
-	#   - band 100 (@AI_PC_PRIO_DEFAULT): on a saturated major (ENG-like: pool eaten by rail/air) it
+	#   - band 100 (constant:wa_ai_pc.prio.default): on a saturated major (ENG-like: pool eaten by rail/air) it
 	#     never funds - it sits 30 weeks, the stall sweep drops it, the leg re-queues it 2 days
 	#     later, forever: a permanent 1-slot clutter, MIC count unchanged. Do NOT read this leg as
 	#     the industry-overextension lever - it is inert exactly where overextension lives.
@@ -978,9 +968,9 @@ WA_AI_priority_convert_MIC_to_CIC = {
 
 	set_temp_variable = { _project_building_type = 9 }
 	set_temp_variable = { _project_province_id = 0 }
-	set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
+	set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.default }
 	set_temp_variable = { _project_queue_num = 1 }
-	set_temp_variable = { _project_queue_max = @AI_PC_QMAX_MIC_TO_CIC }
+	set_temp_variable = { _project_queue_max = constant:wa_ai_pc.qmax.mic_to_cic }
 	set_temp_variable = { _project_target_state = 0 }
 	set_temp_variable = { _project_target_level = 0 }
 	set_temp_variable = { _project_type_id = 0 }
@@ -1064,7 +1054,7 @@ WA_AI_priority_queue_synthetic_refinery = {
 	set_temp_variable = { _project_province_id = 0 }
 	# Fix 41: strategic band (250) - a shortage-driven refinery outranks default-100
 	# projects but never a war railway; band table in WA_AI_CONSTRUCTION_PRIORITY_core.txt
-	set_temp_variable = { _project_priority = @AI_PC_PRIO_STRATEGIC }
+	set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.strategic }
 	set_temp_variable = { _project_queue_num = 1 }
 	# Fix 40: explicit bounds / leak hygiene - see the header note above
 	set_temp_variable = { _project_queue_max = 1 }
@@ -1099,7 +1089,7 @@ WA_AI_priority_queue_hydro_steel_refinery = {
 	set_temp_variable = { _project_building_type = 11 }
 	set_temp_variable = { _project_province_id = 0 }
 	# Fix 41: strategic band (250) - see the synthetic-refinery note above
-	set_temp_variable = { _project_priority = @AI_PC_PRIO_STRATEGIC }
+	set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.strategic }
 	set_temp_variable = { _project_queue_num = 1 }
 	# Fix 40: explicit bounds / leak hygiene - see the header note above
 	set_temp_variable = { _project_queue_max = 1 }
@@ -1134,7 +1124,7 @@ WA_AI_priority_queue_hydro_aluminium_refinery = {
 	set_temp_variable = { _project_building_type = 12 }
 	set_temp_variable = { _project_province_id = 0 }
 	# Fix 41: strategic band (250) - see the synthetic-refinery note above
-	set_temp_variable = { _project_priority = @AI_PC_PRIO_STRATEGIC }
+	set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.strategic }
 	set_temp_variable = { _project_queue_num = 1 }
 	# Fix 40: explicit bounds / leak hygiene - see the header note above
 	set_temp_variable = { _project_queue_max = 1 }
@@ -1169,7 +1159,7 @@ WA_AI_priority_queue_steel_refinery = {
 	set_temp_variable = { _project_building_type = 15 }
 	set_temp_variable = { _project_province_id = 0 }
 	# Fix 41: strategic band (250) - see the synthetic-refinery note above
-	set_temp_variable = { _project_priority = @AI_PC_PRIO_STRATEGIC }
+	set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.strategic }
 	set_temp_variable = { _project_queue_num = 1 }
 	# Fix 40: explicit bounds / leak hygiene - see the header note above
 	set_temp_variable = { _project_queue_max = 1 }
@@ -1204,7 +1194,7 @@ WA_AI_priority_queue_aluminium_refinery = {
 	set_temp_variable = { _project_building_type = 16 }
 	set_temp_variable = { _project_province_id = 0 }
 	# Fix 41: strategic band (250) - see the synthetic-refinery note above
-	set_temp_variable = { _project_priority = @AI_PC_PRIO_STRATEGIC }
+	set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.strategic }
 	set_temp_variable = { _project_queue_num = 1 }
 	# Fix 40: explicit bounds / leak hygiene - see the header note above
 	set_temp_variable = { _project_queue_max = 1 }

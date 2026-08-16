@@ -77,8 +77,8 @@ Do not read savegames, and do not open more code than the change itself referenc
   core.txt, every redeclaration, `savegame.py` `_PC_BANDS`, and the registry.
 - **Winner-takes-most.** Allocation walks the priority-sorted queue and funds from the head; a
   band below the head starves unless a lane reserves for it (Fix 41 overtake lane at
-  `@AI_PC_AGING_LANE_WEEKS`, Fix 78 air lane, Fix 87 second slot at
-  `@AI_PC_AIR_LANE_2ND_SLOT_PCT`). A change that puts new work below rail-prewar and expects it to
+  `constant:wa_ai_pc.alloc.aging_lane_weeks`, Fix 78 air lane, Fix 87 second slot at
+  `constant:wa_ai_pc.alloc.air_lane_2nd_slot_pct`). A change that puts new work below rail-prewar and expects it to
   complete must say which lane carries it or why the band is enough.
 - **Every admission path is capped.** Every caller of `WA_AI_PC_start_project` sets
   `_project_queue_max` itself (Fix 40: the temp persists across the execution chain and refinery
@@ -96,7 +96,7 @@ Do not read savegames, and do not open more code than the change itself referenc
 - **PC pays its own price table** (`global.WA_AI_PC_BUILDING_*_COST` from `00_buildings.txt`); a
   new building type or a cost change is mirrored and registered.
 - **Enemy-held targets stay queued and frozen but hold no budget slot** (Fix 87b); the stall
-  sweep cancels at `@AI_PC_STALL_CANCEL_WEEKS`; a save from an older build is migrated idempotently
+  sweep cancels at `constant:wa_ai_pc.alloc.stall_cancel_weeks`; a save from an older build is migrated idempotently
   (Fix 41 clamp) — a change to persistent PC arrays states its resumed-save behaviour.
 - **Standard-queue adds are not builds.** `add_building_construction` into the vanilla queue is
   never the verified effect (`produced=` is); work that must happen goes through PC.

@@ -158,8 +158,8 @@ When you add a field to such a record, you must add it in **every** place the re
 ## `@` constants are file-scoped
 
 ```txt
-@WA_AI_PC_railway_TYPE_ID = 13
-@WA_AI_PC_railway_PRIO = 9999
+constant:wa_ai_pc.type_id.rail = 13
+constant:wa_ai_pc.prio.rail_war = 9999
 ```
 
 They do **not** cross file boundaries. If two files need the same constant, redeclare it in both — add a comment saying which file is authoritative, as `WA_AI_CONSTRUCTION_triggers.txt` does for the railway eligibility block:

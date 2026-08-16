@@ -281,28 +281,24 @@ WA_AI_queue_depth_ok_HAR = {
 # mirror, the 0.35 -> 0.40 resync) to keep it from closing forever on saturated queues, and its
 # last three readers were the same story: dead on saturated majors, redundant on slack ones.
 # The MIC->CIC conversion legs it braked now carry an explicit budget instead
-# (@AI_PC_QMAX_MIC_TO_CIC in WA_AI_CONSTRUCTION_queue_functions.txt), and the C.10 vanilla-queue
+# (constant:wa_ai_pc.qmax.mic_to_cic in WA_AI_CONSTRUCTION_queue_functions.txt), and the C.10 vanilla-queue
 # infra function no longer double-admits into the PC (WA_AI_resource_extraction owns that).
-# The two allocator constants below survive because the floored gates that follow read them.
-
-### Allocation base constants (must match common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_core.txt)
-### REGISTRY: tools/constants_registry.json (pc_alloc_fraction, pc_stable_base_fraction) -
-### `python tools/check_constants.py` verifies the copies agree.
-@AI_PC_ALLOC_FRACTION = 0.40				# MUST MATCH core.txt @AI_PC_ALLOC_FRACTION (was 0.35 until Fix 90, 2026-08-16)
-@AI_PC_STABLE_BASE_FRACTION = 0.30			# MUST MATCH core.txt @AI_PC_STABLE_BASE_FRACTION
+# The floored gates below read the allocator's own numbers - constant:wa_ai_pc.alloc.fraction /
+# .stable_base_fraction / .max_civs_per_project / .max_surrender in common/script_constants/wa_ai_pc.txt,
+# the SAME declaration core.txt reads (script constants since 2026-08-16; the 0.35-vs-0.40 drift of
+# Fix 90 is structurally impossible now).
 
 # THIS = country. "This economy is still standing" - the ONE rule behind every PC admission and
 # allocation gate that used to spell `has_capitulated = no  surrender_progress < 0.3` by hand
 # (allocator floor in WA_AI_CONSTRUCTION_PRIORITY_core.txt, the three floored civ gates below, the
 # refinery / MIC->CIC branches in WA_AI_CONSTRUCTION_PRIORITY_strategies.txt). Hygiene lot
 # 2026-08-16 after Fix 90b: nine hand copies -> one trigger. Deliberately WITHOUT a civ-count
-# term: the callers that need "and big enough" (the allocator's @AI_PC_MIN_ECONOMY_CIVS, the
+# term: the callers that need "and big enough" (the allocator's constant:wa_ai_pc.alloc.min_economy_civs, the
 # floored gates' thresholds) say so themselves. The railway system keeps its own
 # @WA_AI_PC_railway_MAX_SURRENDER (same 0.3 today, separate control panel by design).
-@AI_PC_MAX_SURRENDER = 0.3			# surrender_progress at/above which the PC stops treating the economy as alive
 WA_AI_PC_economy_alive = {
 	has_capitulated = no
-	surrender_progress < @AI_PC_MAX_SURRENDER
+	surrender_progress < constant:wa_ai_pc.alloc.max_surrender
 }
 
 # THIS = country. Stable civilian-factory availability for PC strategy gates.
@@ -310,7 +306,7 @@ WA_AI_PC_economy_alive = {
 # construction queue is saturated - a self-referential collapse (the PC's own
 # allocation is part of what saturates it). Each gate passes when EITHER the engine
 # reports real spare civs above the threshold, OR the stable floored base
-# (@AI_PC_STABLE_BASE_FRACTION * @AI_PC_ALLOC_FRACTION
+# (constant:wa_ai_pc.alloc.stable_base_fraction * constant:wa_ai_pc.alloc.fraction
 # = 12% of TOTAL civs since Fix 90 - was 10.5% at 0.35 - the pool WA_AI_PC_assign_factories will actually
 # allocate from) clears the same threshold. Three named variants because PDXScript
 # triggers cannot take a threshold argument without meta_trigger - keep the
@@ -318,8 +314,8 @@ WA_AI_PC_economy_alive = {
 # PC strategies (radar > 15, islands > 19, resource extraction > 30) onto these.
 WA_AI_PC_has_project_civs_16 = {	# passes at 16+ civs (replaces bare "> 15" gates)
 	set_temp_variable = { _pc_civ_floor_ = num_of_civilian_factories }
-	multiply_temp_variable = { _pc_civ_floor_ = @AI_PC_STABLE_BASE_FRACTION }
-	multiply_temp_variable = { _pc_civ_floor_ = @AI_PC_ALLOC_FRACTION }
+	multiply_temp_variable = { _pc_civ_floor_ = constant:wa_ai_pc.alloc.stable_base_fraction }
+	multiply_temp_variable = { _pc_civ_floor_ = constant:wa_ai_pc.alloc.fraction }
 	OR = {
 		num_of_civilian_factories_available_for_projects > 15
 		AND = {
@@ -331,8 +327,8 @@ WA_AI_PC_has_project_civs_16 = {	# passes at 16+ civs (replaces bare "> 15" gate
 
 WA_AI_PC_has_project_civs_20 = {	# passes at 20+ civs (replaces bare "NOT ... < 20" gates)
 	set_temp_variable = { _pc_civ_floor_ = num_of_civilian_factories }
-	multiply_temp_variable = { _pc_civ_floor_ = @AI_PC_STABLE_BASE_FRACTION }
-	multiply_temp_variable = { _pc_civ_floor_ = @AI_PC_ALLOC_FRACTION }
+	multiply_temp_variable = { _pc_civ_floor_ = constant:wa_ai_pc.alloc.stable_base_fraction }
+	multiply_temp_variable = { _pc_civ_floor_ = constant:wa_ai_pc.alloc.fraction }
 	OR = {
 		num_of_civilian_factories_available_for_projects > 19
 		AND = {
@@ -344,8 +340,8 @@ WA_AI_PC_has_project_civs_20 = {	# passes at 20+ civs (replaces bare "NOT ... < 
 
 WA_AI_PC_has_project_civs_31 = {	# passes at 31+ civs (replaces the bare "> 30" gate of WA_AI_resource_extraction)
 	set_temp_variable = { _pc_civ_floor_ = num_of_civilian_factories }
-	multiply_temp_variable = { _pc_civ_floor_ = @AI_PC_STABLE_BASE_FRACTION }
-	multiply_temp_variable = { _pc_civ_floor_ = @AI_PC_ALLOC_FRACTION }
+	multiply_temp_variable = { _pc_civ_floor_ = constant:wa_ai_pc.alloc.stable_base_fraction }
+	multiply_temp_variable = { _pc_civ_floor_ = constant:wa_ai_pc.alloc.fraction }
 	OR = {
 		num_of_civilian_factories_available_for_projects > 30
 		AND = {
@@ -435,13 +431,11 @@ WA_AI_PC_has_same_type_project_here = {
 # is 99 deployed planes). No major clears them before ~1940, so early-war construction
 # ordering is unchanged and the blast radius is confined to the mid/late war, which is when
 # the overstacking this fixes actually appears.
-@AI_PC_AIR_PRIO_OWN_PLANES = 500		# own air force big enough to outrank the strategic band
-@AI_PC_AIR_PRIO_ALLY_PLANES = 1000		# or a faction partner whose air force we host
 WA_AI_PC_air_force_needs_basing_priority = {
 	OR = {
-		has_deployed_air_force_size = { size > @AI_PC_AIR_PRIO_OWN_PLANES }
+		has_deployed_air_force_size = { size > constant:wa_ai_pc.air_prio.own_planes }
 		any_allied_country = {
-			has_deployed_air_force_size = { size > @AI_PC_AIR_PRIO_ALLY_PLANES }
+			has_deployed_air_force_size = { size > constant:wa_ai_pc.air_prio.ally_planes }
 		}
 	}
 }
@@ -648,7 +642,7 @@ WA_AI_PC_building_slot_available = {
 # THIS = ROOT = builder country. Input: _reval_project_id (temp) = PC project index.
 # Called by the anti-starvation lane in WA_AI_PC_assign_factories
 # (WA_AI_CONSTRUCTION_PRIORITY_core.txt) before diverting factories to a project that
-# has been starved >= @AI_PC_AGING_LANE_WEEKS; a FAIL cancels the project on the spot.
+# has been starved >= constant:wa_ai_pc.alloc.aging_lane_weeks; a FAIL cancels the project on the spot.
 # Dispatches on WA_AI_PC_building_type^_reval_project_id. Every geographic branch is
 # dynamic game state (control, war, contested theatres) - no historical-path assumption,
 # so it behaves identically in historical and ahistorical games.
@@ -822,7 +816,7 @@ WA_AI_no_enemy_border = {
 #    Northern-France cover position.
 # States NOT in this list that hold ENG air bases in campaigns (122 Wales, 858
 # Berkshire, 130 Yorkshire) are left out deliberately - adding states raises the
-# structural ceiling (11 x @UK_AIR_TARGET_LEVEL_CAP), and checklist R8 says not to do
+# structural ceiling (11 x constant:wa_ai_pc.air.uk_target_level_cap), and checklist R8 says not to do
 # that until the basing OUTCOME (R15) justifies more capacity. Berkshire measures
 # better than Gloucestershire (122.4 vs 133.4) and is the first candidate if that
 # ever changes.

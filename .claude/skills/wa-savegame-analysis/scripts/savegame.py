@@ -963,17 +963,17 @@ _PC_BUILDING = {
 # leave it 0, so "-" is the normal reading, not a missing value.
 _PC_TYPE_ID = {
     0: "-",                # unscoped: shares the country-wide per-building budget
-    13: "rail",            # @WA_AI_PC_railway_TYPE_ID  (railway_core / _helpers)
+    13: "rail",            # constant:wa_ai_pc.type_id.rail  (railway_core / _helpers)
     14: "port",            # frontier-port helper       (railway_helpers)
-    20: "uk_air",          # @AI_PC_TYPE_ID_UK_AIR      (strategies)
-    21: "theatre_air",     # @AI_PC_TYPE_ID_THEATRE_AIR (strategies)
-    23: "islands",         # @AI_PC_TYPE_ID_ISLANDS     (strategies, Fix 90)
-    24: "supply_line",     # @AI_PC_TYPE_ID_SUPPLY_LINE (strategies, Fix 90b)
-    25: "inf_resource",    # @AI_PC_TYPE_ID_INF_RESOURCE (queue_functions, Fix 90b)
+    20: "uk_air",          # constant:wa_ai_pc.type_id.uk_air      (strategies)
+    21: "theatre_air",     # constant:wa_ai_pc.type_id.theatre_air (strategies)
+    23: "islands",         # constant:wa_ai_pc.type_id.islands     (strategies, Fix 90)
+    24: "supply_line",     # constant:wa_ai_pc.type_id.supply_line (strategies, Fix 90b)
+    25: "inf_resource",    # constant:wa_ai_pc.type_id.inf_resource (queue_functions, Fix 90b)
 }
 
-# Fix 41 priority band table (owned by WA_AI_CONSTRUCTION_PRIORITY_core.txt, redeclared
-# in strategies.txt / queue_functions.txt / railway_* - @ constants are file-scoped).
+# Fix 41 priority band table - one declaration, common/script_constants/wa_ai_pc.txt
+# (constant:wa_ai_pc.prio.*), read by core / strategies / queue_functions / railway_*.
 # 1100 = rail-war x1.1 for a high-value route and is the highest value a post-Fix-41
 # build can write; anything above it is a legacy pre-Fix-41 priority that the next
 # assign_factories pass clamps to 1000.
@@ -984,7 +984,7 @@ _PC_BANDS = ((1100, "rail-war+"), (1000, "rail-war"), (500, "rail-prewar"),
              (350, "air-front"), (300, "air-basing"), (250, "strategic"),
              (100, "default"))
 
-# Allocation constants, core.txt (mirrored in WA_AI_CONSTRUCTION_triggers.txt).
+# Allocation constants: constant:wa_ai_pc.alloc.* (common/script_constants/wa_ai_pc.txt).
 _PC_ALLOC_FRACTION = 0.40
 _PC_STABLE_BASE_FRACTION = 0.30
 _PC_ALLOC_HARD_CAP_FRACTION = 0.50
@@ -1181,7 +1181,7 @@ def cmd_pc(args):
             print(f"  alloc override: {state}")
         else:
             print(f"  alloc override: none -> base x{_PC_ALLOC_FRACTION} "
-                  "(@AI_PC_ALLOC_FRACTION)")
+                  "(constant:wa_ai_pc.alloc.fraction)")
         if active is not None and active != len(order):
             print(f"  (!) wa_ai_pc_active_projects={active:g} but the queue holds "
                   f"{len(order)} - the +1/-1 bookkeeping has desynced (it is "

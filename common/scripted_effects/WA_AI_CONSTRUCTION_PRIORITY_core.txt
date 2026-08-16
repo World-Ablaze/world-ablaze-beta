@@ -249,22 +249,21 @@ WA_AI_PC_get_building_cost = {
 	}
 }
 
-### Allocation base constants (must match common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt)
-### REGISTRY: tools/constants_registry.json owns the must-match list for everything in this block, the
-### band table below and the cost globals above - `python tools/check_constants.py` verifies every copy.
-@AI_PC_ALLOC_FRACTION = 0.40			# share of the reconstructed available pool given to projects
-@AI_PC_STABLE_BASE_FRACTION = 0.30		# floor: share of TOTAL civs the base can never drop below
-@AI_PC_ALLOC_HARD_CAP_FRACTION = 0.50   # ceiling: allocation can never exceed this share of total civs
-@AI_PC_STALL_CANCEL_WEEKS = 30			# weeks a project may sit with 0 factories before the stall sweep cancels it
-@AI_PC_MIN_ECONOMY_CIVS = 20			# below this many civs the stable-base floor is not applied (a collapsing economy degrades to the raw pool)
-@AI_PC_MAX_CIVS_PER_PROJECT = 20		# per-project civ clamp in the fill (one "slot"); mirrored by savegame.py _PC_MAX_PER_PROJECT - see registry pc_max_civs_per_project
+### Allocation base constants: constant:wa_ai_pc.alloc.* in common/script_constants/wa_ai_pc.txt
+### (fraction 0.40 / stable_base_fraction 0.30 / hard_cap_fraction 0.50 / stall_cancel_weeks /
+### min_economy_civs / max_civs_per_project ...). Since 2026-08-16 they are HOI4 script constants,
+### visible from every file, so the affordability gate in WA_AI_CONSTRUCTION_triggers.txt and the
+### debug mirror read the SAME declaration - no more per-file `@` copies to keep in sync. The band
+### table (constant:wa_ai_pc.prio.*), strategy tags (type_id.*) and budgets (qmax.*) live there too.
+### tools/constants_registry.json still tracks the cross-format mirrors (savegame.py, 00_buildings,
+### 05_defines) - `python tools/check_constants.py`.
 
 ### Fix 87 (2026-08-16, campaign af003548, checklist R54): air-basing gets throughput, paid
 ### for by a MEASURED set of losers.
-###   P1  a SECOND Fix 78 lane slot while the UK air deficit exceeds @AI_PC_AIR_LANE_2ND_SLOT_PCT
+###   P1  a SECOND Fix 78 lane slot while the UK air deficit exceeds constant:wa_ai_pc.alloc.air_lane_2nd_slot_pct
 ###       (WA_AI_PC_air_deficit_pct, published by WA_AI_build_uk_air_hosting_capacity).
 ###   P2  (SHIPPED 2026-08-16 AND REMOVED THE SAME DAY - kept here as the record.) Both air-lane
-###       slots could draw HEADROOM beyond the @AI_PC_ALLOC_FRACTION cut up to the hard cap. The
+###       slots could draw HEADROOM beyond the constant:wa_ai_pc.alloc.fraction cut up to the hard cap. The
 ###       v17 local probe (fork 1944.7.1 -> 1944.10.3) showed it inverted: it drew 25 civ-weeks
 ###       on ENG (civs_avail 2 - pure displacement of the vanilla queue) and 0 on the USA (civs_avail
 ###       267), because the USA never reaches its fraction cut (assigned 100 vs base 367 x 0.4) -
@@ -275,7 +274,7 @@ WA_AI_PC_get_building_cost = {
 ###       (RIT) and 785 Picardy (GER) sat at the head of the queue at 350, 0 civs, and blocked new
 ###       UK sites - USA PC spend fell 140 -> 100 civs with 267 idle.
 ###   (b) Fix 87b: the UK hosting builder's concurrent-project budget widens 3 -> 5 while the
-###       deficit is deep (@UK_AIR_QUEUE_MAX_DEEP in ..._strategies.txt) - the v17 probe put UK
+###       deficit is deep (constant:wa_ai_pc.qmax.uk_air_deep in ..._strategies.txt) - the v17 probe put UK
 ###       levels at 106 -> 112 in 3 months on cloud, v16 and v17 alike, byte-identical per state:
 ###       throughput = concurrent projects x ~1 level/month, not civs.
 ### Who pays, from the af003548 ledger: inside the PC fill, an extra 20-civ air slot displaces
@@ -283,7 +282,6 @@ WA_AI_PC_get_building_cost = {
 ### (1944.6, nothing else is funded), and nothing in 1945 (ENG pool exhausted, civs_avail = 0);
 ### USA's tail radar every time.
 ### Probes: WA_TLM_r54_air_lane2_grants / _first_t / _last_t (weeks the 2nd slot funded).
-@AI_PC_AIR_LANE_2ND_SLOT_PCT = 20		# UK air deficit (% of capacity) above which the 2nd air slot opens
 
 ### Fix 41: priority bands + anti-starvation overtake lane (campaign 31eaf7e6: prio-9999
 ### railway segments replenished every cycle absorbed the whole pool 20-at-a-time; prio-100
@@ -291,8 +289,8 @@ WA_AI_PC_get_building_cost = {
 ### re-queued them, and the cycle repeated - a livelock, never a completion).
 ###
 ### PRIORITY BAND TABLE (every _project_priority in the PC system belongs to one band):
-###   1000  rail-war        @WA_AI_PC_railway_PRIO (railway_core/helpers; x1.1 high-route = 1100 cap)
-###    500  rail-prewar     @WA_AI_PC_railway_PRIO_PREWAR (railway_core/helpers/strategies)
+###   1000  rail-war        constant:wa_ai_pc.prio.rail_war (railway_core/helpers; x1.1 high-route = 1100 cap)
+###    500  rail-prewar     constant:wa_ai_pc.prio.rail_prewar (railway_core/helpers/strategies)
 ###    350  air-front       Fix 85: theatre air bases (WA_AI_build_theatre_air_bases) in a deficit
 ###                         theatre where the builder's OWN divisions stand - a beachhead. Above
 ###                         air-basing so it leads the Fix 78 lane and the sorted fill ahead of
@@ -314,10 +312,6 @@ WA_AI_PC_get_building_cost = {
 ### the numbers in one auditable scale. Starvation itself is fixed by the overtake lane below,
 ### NOT by aging priorities upward - a blanket aging boost was rejected because it would fund
 ### geographically obsolete projects and bury new projects under aged debt.
-@AI_PC_AGING_LANE_WEEKS = 12			# stalled weeks before a project qualifies for the overtake lane
-@AI_PC_AGING_LANE_MAX_CANDIDATES = 3	# revalidation attempts per pass (cost cap)
-@AI_PC_PRIO_LEGACY_MAX = 1100			# highest legitimate post-Fix-41 priority (rail-war x1.1)
-@AI_PC_PRIO_RAIL_WAR = 1000				# clamp target for legacy pre-Fix-41 priorities
 
 ### Dynamic Queue System - Assign factories to projects
 # THIS = country
@@ -331,12 +325,12 @@ WA_AI_PC_assign_factories = {
 	# Fix 41: resumed-save migration - idempotent clamp of legacy pre-Fix-41 priorities.
 	# A save queued under the old 9999/5000 scale carries rails at 9999 (or 10998.9 with the
 	# x1.1 high-route multiplier) that would permanently outrank every new 1000-band rail.
-	# Anything above @AI_PC_PRIO_LEGACY_MAX (1100, the highest value this build can write)
+	# Anything above constant:wa_ai_pc.prio.legacy_max (1100, the highest value this build can write)
 	# is by definition legacy and is clamped to the rail-war band. One O(queue) loop, no-op
 	# on every pass after the first, and on fresh campaigns.
 	for_each_loop = { array = WA_AI_PC_queue value = _migr_proj_id
-		if = { limit = { check_variable = { WA_AI_PC_priority^_migr_proj_id > @AI_PC_PRIO_LEGACY_MAX } }
-			set_variable = { WA_AI_PC_priority^_migr_proj_id = @AI_PC_PRIO_RAIL_WAR }
+		if = { limit = { check_variable = { WA_AI_PC_priority^_migr_proj_id > constant:wa_ai_pc.prio.legacy_max } }
+			set_variable = { WA_AI_PC_priority^_migr_proj_id = constant:wa_ai_pc.prio.rail_war }
 		}
 	}
 
@@ -353,11 +347,11 @@ WA_AI_PC_assign_factories = {
 	if = {
 		limit = {
 			check_variable = { WA_AI_PC_queue^num > 0 }
-			NOT = { num_of_civilian_factories < @AI_PC_MIN_ECONOMY_CIVS }
+			NOT = { num_of_civilian_factories < constant:wa_ai_pc.alloc.min_economy_civs }
 			WA_AI_PC_economy_alive = yes
 		}
 		set_temp_variable = { _pc_stable_base = num_of_civilian_factories }
-		multiply_temp_variable = { _pc_stable_base = @AI_PC_STABLE_BASE_FRACTION }
+		multiply_temp_variable = { _pc_stable_base = constant:wa_ai_pc.alloc.stable_base_fraction }
 		if = { limit = { check_variable = { available_factories_ < _pc_stable_base } }
 			set_temp_variable = { available_factories_ = _pc_stable_base }
 		}
@@ -372,13 +366,13 @@ WA_AI_PC_assign_factories = {
 		multiply_temp_variable = { available_factories_ = WA_AI_PC_override_max_factories_factor }
 	}
 	else = {
-		multiply_temp_variable = { available_factories_ = @AI_PC_ALLOC_FRACTION }
+		multiply_temp_variable = { available_factories_ = constant:wa_ai_pc.alloc.fraction }
 	}
 
 	# Hard ceiling: the floor above must never drive civilian_factory_use past half the civ pool
 	# (civilian_factory_use competes with consumer goods and trade).
 	set_temp_variable = { _pc_alloc_cap = num_of_civilian_factories }
-	multiply_temp_variable = { _pc_alloc_cap = @AI_PC_ALLOC_HARD_CAP_FRACTION }
+	multiply_temp_variable = { _pc_alloc_cap = constant:wa_ai_pc.alloc.hard_cap_fraction }
 	if = { limit = { check_variable = { available_factories_ > _pc_alloc_cap } }
 		set_temp_variable = { available_factories_ = _pc_alloc_cap }
 	}
@@ -463,12 +457,12 @@ WA_AI_PC_assign_factories = {
 
 	# Fix 41: anti-starvation OVERTAKE LANE - runs BEFORE the winner-takes-most fill.
 	# The single most-starved project (highest WA_AI_PC_stall_weeks, and at least
-	# @AI_PC_AGING_LANE_WEEKS of them) is revalidated (WA_AI_PC_project_still_relevant,
+	# constant:wa_ai_pc.alloc.aging_lane_weeks of them) is revalidated (WA_AI_PC_project_still_relevant,
 	# WA_AI_CONSTRUCTION_triggers.txt); if still relevant it is served min(20, pool)
 	# factories ahead of the sorted fill. If revalidation FAILS the project is cancelled
 	# on the spot (same machinery as the Fix 34 stall sweep, so all queue bookkeeping
 	# stays coherent) and the next-most-starved candidate is tried, at most
-	# @AI_PC_AGING_LANE_MAX_CANDIDATES per pass.
+	# constant:wa_ai_pc.alloc.aging_lane_max_candidates per pass.
 	#
 	# Invariants:
 	#   - at most ONE project is overtaking at any time, and it diverts at most 20 factories;
@@ -501,7 +495,7 @@ WA_AI_PC_assign_factories = {
 			while_loop_effect = {
 				limit = {
 					check_variable = { _lane_done_ = 0 }
-					check_variable = { _lane_tries_ < @AI_PC_AGING_LANE_MAX_CANDIDATES }
+					check_variable = { _lane_tries_ < constant:wa_ai_pc.alloc.aging_lane_max_candidates }
 				}
 				add_to_temp_variable = { _lane_tries_ = 1 }
 
@@ -513,7 +507,7 @@ WA_AI_PC_assign_factories = {
 					if = {
 						limit = {
 							check_variable = { WA_AI_PC_stall_weeks^_lane_scan_ > _lane_best_weeks_ }
-							NOT = { check_variable = { WA_AI_PC_stall_weeks^_lane_scan_ < @AI_PC_AGING_LANE_WEEKS } }
+							NOT = { check_variable = { WA_AI_PC_stall_weeks^_lane_scan_ < constant:wa_ai_pc.alloc.aging_lane_weeks } }
 							NOT = { check_variable = { WA_AI_PC_target_state^_lane_scan_ = 0 } }
 							check_variable = { WA_AI_PC_progress^_lane_scan_ > 0 }
 							# same Fix 34 controller test as the fill below - hostile-frozen
@@ -577,7 +571,7 @@ WA_AI_PC_assign_factories = {
 			check_variable = { WA_AI_PC_progress^_pc_lane_proj_ > 0 }
 		}
 		set_temp_variable = { assign_amount = available_factories_ }
-		clamp_temp_variable = { var = assign_amount min = 1 max = @AI_PC_MAX_CIVS_PER_PROJECT }
+		clamp_temp_variable = { var = assign_amount min = 1 max = constant:wa_ai_pc.alloc.max_civs_per_project }
 		round_temp_variable = assign_amount
 		set_variable = { WA_AI_PC_assigned_factories^_pc_lane_proj_ = assign_amount }
 		add_to_temp_variable = { _new_total = assign_amount }
@@ -627,7 +621,7 @@ WA_AI_PC_assign_factories = {
 		# Fix 87 / P1: second slot, only while the published UK air deficit is deep
 		set_temp_variable = { _pc_air_lane2_proj_ = -1 }
 		set_temp_variable = { _pc_air_lane2_open_ = 0 }
-		if = { limit = { check_variable = { WA_AI_PC_air_deficit_pct > @AI_PC_AIR_LANE_2ND_SLOT_PCT } }
+		if = { limit = { check_variable = { WA_AI_PC_air_deficit_pct > constant:wa_ai_pc.alloc.air_lane_2nd_slot_pct } }
 			set_temp_variable = { _pc_air_lane2_open_ = 1 }
 		}
 		if = {
@@ -685,7 +679,7 @@ WA_AI_PC_assign_factories = {
 			check_variable = { WA_AI_PC_progress^_pc_air_lane_proj_ > 0 }
 		}
 		set_temp_variable = { assign_amount = available_factories_ }
-		clamp_temp_variable = { var = assign_amount min = 1 max = @AI_PC_MAX_CIVS_PER_PROJECT }
+		clamp_temp_variable = { var = assign_amount min = 1 max = constant:wa_ai_pc.alloc.max_civs_per_project }
 		round_temp_variable = assign_amount
 		set_variable = { WA_AI_PC_assigned_factories^_pc_air_lane_proj_ = assign_amount }
 		add_to_temp_variable = { _new_total = assign_amount }
@@ -713,7 +707,7 @@ WA_AI_PC_assign_factories = {
 	}
 
 	# Fix 87 / P1: SECOND air-lane grant - same body as the first, for _pc_air_lane2_proj_.
-	# Only exists while WA_AI_PC_air_deficit_pct > @AI_PC_AIR_LANE_2ND_SLOT_PCT (selection above).
+	# Only exists while WA_AI_PC_air_deficit_pct > constant:wa_ai_pc.alloc.air_lane_2nd_slot_pct (selection above).
 	if = {
 		limit = {
 			NOT = { check_variable = { _pc_air_lane2_proj_ < 0 } }
@@ -723,7 +717,7 @@ WA_AI_PC_assign_factories = {
 			check_variable = { WA_AI_PC_progress^_pc_air_lane2_proj_ > 0 }
 		}
 		set_temp_variable = { assign_amount = available_factories_ }
-		clamp_temp_variable = { var = assign_amount min = 1 max = @AI_PC_MAX_CIVS_PER_PROJECT }
+		clamp_temp_variable = { var = assign_amount min = 1 max = constant:wa_ai_pc.alloc.max_civs_per_project }
 		round_temp_variable = assign_amount
 		set_variable = { WA_AI_PC_assigned_factories^_pc_air_lane2_proj_ = assign_amount }
 		add_to_temp_variable = { _new_total = assign_amount }
@@ -780,7 +774,7 @@ WA_AI_PC_assign_factories = {
 			}
 
 			set_temp_variable = { assign_amount = available_factories_ }
-			clamp_temp_variable = { var = assign_amount min = 1 max = @AI_PC_MAX_CIVS_PER_PROJECT }
+			clamp_temp_variable = { var = assign_amount min = 1 max = constant:wa_ai_pc.alloc.max_civs_per_project }
 			round_temp_variable = assign_amount
 
 			set_variable = { WA_AI_PC_assigned_factories^_project_id = assign_amount }
@@ -1014,7 +1008,7 @@ WA_AI_PC_update_project_progress = {
 
 	# Stall sweep: a project that ends week after week with 0 assigned factories is being starved
 	# by higher-priority queue entries. Left alone it blocks the queue forever (the < 5 strategy
-	# gate counts it as active). Cancel after @AI_PC_STALL_CANCEL_WEEKS starved weeks.
+	# gate counts it as active). Cancel after constant:wa_ai_pc.alloc.stall_cancel_weeks starved weeks.
 	# Fix 34: gate on factories actually flowing (assigned total > 0), not on queue length > 5.
 	# The old queue gate assumed a short queue drains and the starved project gets its turn -
 	# false when the railway system replenishes prio-9999 segments every cycle (observed: ROM,
@@ -1029,7 +1023,7 @@ WA_AI_PC_update_project_progress = {
 			add_to_variable = { WA_AI_PC_stall_weeks^_project_id = 1 }
 			if = {
 				limit = {
-					check_variable = { WA_AI_PC_stall_weeks^_project_id > @AI_PC_STALL_CANCEL_WEEKS }
+					check_variable = { WA_AI_PC_stall_weeks^_project_id > constant:wa_ai_pc.alloc.stall_cancel_weeks }
 					check_variable = { WA_AI_PC_assigned_factories_total > 0 }
 				}
 				add_to_temp_array = { _cancel_projects_IDS = _project_id }
@@ -1408,10 +1402,10 @@ WA_AI_PC_add_finished_building_by_id = {
 
 ### projects
 # (Fix 90: the two constants that used to be declared here - @AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL
-#  0.35 and @AI_MIN_NUM_OF_FACTORIES_TO_ASSIGN_ON_PROJECT 20 - were unused in this file and out of step with
-#  @AI_PC_ALLOC_FRACTION above. They belonged to the pre-2026-01 admission gate WA_AI_PC_can_afford_project,
+#  0.35 and constant:wa_ai_pc.alloc.max_civs_per_project 20 - were unused in this file and out of step with
+#  constant:wa_ai_pc.alloc.fraction above. They belonged to the pre-2026-01 admission gate WA_AI_PC_can_afford_project,
 #  deleted by Fix 90b the same day (epitaph in WA_AI_CONSTRUCTION_triggers.txt); the fraction lives on there
-#  under the name @AI_PC_ALLOC_FRACTION, registered in tools/constants_registry.json.)
+#  under the name constant:wa_ai_pc.alloc.fraction, registered in tools/constants_registry.json.)
 
 ### Dynamic Queue System - Start Project
 # THIS = state, PREV = builder country

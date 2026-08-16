@@ -13,10 +13,10 @@ WA_AI_priority_construction_strategies = {
 	# the array, Fix 29b made the count non-rail, and nothing ever made it band-aware, so it
 	# counted default-band radars against strategic-band refineries and shut the USA out of PC
 	# refineries for ten years. Every strategy now carries its OWN budget instead:
-	#   radar            _project_queue_max = @AI_PC_QMAX_RADAR (was: leaked from earlier callers)
-	#   supply lines     _project_queue_max = @AI_PC_QMAX_SUPPLY_LINE (type 1, three callers)
-	#   resource infra   @AI_PC_QMAX_INF_RESOURCE in WA_AI_priority_queue_INF_resource
-	#   islands          own type_id @AI_PC_TYPE_ID_ISLANDS, @AI_PC_QMAX_ISLANDS per building type
+	#   radar            _project_queue_max = constant:wa_ai_pc.qmax.radar (was: leaked from earlier callers)
+	#   supply lines     _project_queue_max = constant:wa_ai_pc.qmax.supply_line (type 1, three callers)
+	#   resource infra   constant:wa_ai_pc.qmax.inf_resource in WA_AI_priority_queue_INF_resource
+	#   islands          own type_id constant:wa_ai_pc.type_id.islands, constant:wa_ai_pc.qmax.islands per building type
 	#   refineries       _project_queue_max = 1 per type (Fix 40), gate removed from all 8 sites
 	# The WA_AI_PC_can_afford_project block that used to wrap the same five strategies is gone
 	# with it, and so is the trigger itself (Fix 90b, same day - its epitaph is in
@@ -83,38 +83,24 @@ WA_AI_priority_construction_strategies = {
 	WA_AI_build_theatre_air_bases = yes
 }
 
-### Priority bands used by the strategies in this file. @ constants are file-scoped in HOI4
-### script, so these are a REDECLARATION of the band table that
-### common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_core.txt owns - keep the two in sync.
-@AI_PC_PRIO_DEFAULT = 100			# radar, supply lines, MIC/CIC, air bases at rest
-@AI_PC_PRIO_AIR_BASING = 300		# Fix 47: air bases while the air force outgrows its basing
-@AI_PC_PRIO_AIR_FRONT = 350			# Fix 85: theatre air bases where ROOT's own divisions stand (see WA_AI_build_theatre_air_bases)
+### Priority bands, strategy type ids, per-strategy budgets and the air-basing tunables used by the
+### strategies in this file are HOI4 script constants since 2026-08-16: constant:wa_ai_pc.prio.* /
+### type_id.* / qmax.* / air.* in common/script_constants/wa_ai_pc.txt - one declaration shared with
+### core.txt, queue_functions.txt and the triggers file (no per-file `@` copies to keep in sync).
 ### Fix 87b (2026-08-16, campaign af003548 v17 probe): the UK hosting builder's concurrent-project
 ### budget, not civs, is what caps UK air-base throughput (106 -> 112 levels in 3 months on
 ### cloud, v16 and v17 alike, byte-identical per state, while the second air-lane slot funded 14
 ### weeks and the USA held 267 idle civs). One UK level is ~1 month of one 20-civ project, so
 ### throughput = concurrent projects. The budget widens while the published deficit is deep.
-@UK_AIR_QUEUE_MAX = 3				# UK hosting: concurrent air-base projects per builder (Fix 47 value)
-@UK_AIR_QUEUE_MAX_DEEP = 5			# ...while WA_AI_PC_air_deficit_pct > @UK_AIR_DEEP_DEFICIT_PCT
-@UK_AIR_DEEP_DEFICIT_PCT = 20		# must match @AI_PC_AIR_LANE_2ND_SLOT_PCT in ..._core.txt
 
-### Strategy type ids (WA_AI_PC_type_id), used with _project_queue_max_scoped so that two
-### strategies queuing the SAME building type get independent queue_max budgets. 13 and 14
-### are taken by the railway system (railway_core/helpers); keep this block and those in
-### one numbering space.
-@AI_PC_TYPE_ID_UK_AIR = 20			# Fix 47: WA_AI_build_uk_air_hosting_capacity
-@AI_PC_TYPE_ID_THEATRE_AIR = 21		# Fix 47: WA_AI_build_theatre_air_bases
-@AI_PC_TYPE_ID_ISLANDS = 23			# Fix 90: WA_AI_fortify_strategic_islands (own budget per building type)
-@AI_PC_TYPE_ID_SUPPLY_LINE = 24		# Fix 90b: WA_AI_build_supply_line - type 1, budget independent of resource infra
-									# (25 = WA_AI_priority_queue_INF_resource, declared in WA_AI_CONSTRUCTION_queue_functions.txt;
-									#  savegame.py _PC_TYPE_IDS names 20/21/23/24/25 - keep the three lists in one numbering space)
+### Strategy type ids (WA_AI_PC_type_id, constant:wa_ai_pc.type_id.*) are used with
+### _project_queue_max_scoped so that two strategies queuing the SAME building type get independent
+### queue_max budgets. One numbering space: 13/14 railway system, 20 uk_air, 21 theatre_air,
+### 23 islands, 24 supply_line, 25 inf_resource; savegame.py _PC_TYPE_ID names them (registry).
 
 ### Fix 90 (2026-08-16): explicit per-strategy budgets replacing the legacy dispatcher `< 5` gate.
 ### Values chosen to reproduce the observed healthy footprint, not to widen it: on af003548 the USA
 ### held 4-6 radar projects at every anchor (the gate's whole allowance), ENG 1-2 supply lines.
-@AI_PC_QMAX_RADAR = 3				# radar projects (type 4) in flight per country
-@AI_PC_QMAX_SUPPLY_LINE = 3			# supply-line infrastructure projects (type 1) in flight per country (scoped to type_id 24)
-@AI_PC_QMAX_ISLANDS = 2				# island fortification projects per building type (scoped to type_id 23)
 
 ### priority construction strategies
 
@@ -130,10 +116,10 @@ WA_AI_important_radar_constructions = {
 
 		set_temp_variable = { _project_building_type = 4 }
 		set_temp_variable = { _project_province_id = 0 }
-		set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
+		set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.default }
 		set_temp_variable = { _project_queue_num = 1 }
 		# Fix 90: explicit budget (this strategy never set one and inherited a leaked value)
-		set_temp_variable = { _project_queue_max = @AI_PC_QMAX_RADAR }
+		set_temp_variable = { _project_queue_max = constant:wa_ai_pc.qmax.radar }
 		set_temp_variable = { _project_target_level = 0 } # no cap, tech-limited
 		random_scope_in_array = { array = controlled_states limit = { WA_AI_radar_location_2 = yes WA_AI_available_RADAR = yes WA_AI_PC_can_build_project = yes }
 			WA_AI_PC_start_project = yes
@@ -399,7 +385,7 @@ WA_AI_build_refinery_resource_shortage_steel = {
 			# in wartime, so the leg was dead there; on a slack country it re-asked, one week early,
 			# the question the fill answers for a band-100 project. The brake on conversion is now
 			# EXPLICIT: WA_AI_priority_convert_MIC_to_CIC carries _project_queue_max =
-			# @AI_PC_QMAX_MIC_TO_CIC (1 conversion project in flight per country, MIC removed only at
+			# constant:wa_ai_pc.qmax.mic_to_cic (1 conversion project in flight per country, MIC removed only at
 			# completion), and the two guards below are stated the way the refinery branch states them.
 			WA_AI_PC_economy_alive = yes
 
@@ -512,7 +498,7 @@ WA_AI_build_refinery_resource_shortage_aluminium = {
 		limit = {
 			# Fix 90: legacy `active_nonrail < 5` admission gate removed here (see WA_AI_CONSTRUCTION_queue_functions.txt)
 
-			# Fix 90b: WA_AI_PC_can_afford_project deleted, brake = @AI_PC_QMAX_MIC_TO_CIC - see the
+			# Fix 90b: WA_AI_PC_can_afford_project deleted, brake = constant:wa_ai_pc.qmax.mic_to_cic - see the
 			# identical note in WA_AI_build_refinery_resource_shortage_steel above.
 			WA_AI_PC_economy_alive = yes
 
@@ -669,16 +655,16 @@ WA_AI_build_supply_line = {
 		# Set up project parameters for infrastructure building
 		set_temp_variable = { _project_building_type = 1 }
 		set_temp_variable = { _project_province_id = 0 }
-		set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
+		set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.default }
 		set_temp_variable = { _project_queue_num = 1 }
 		# Fix 90: explicit budget for type-1 supply-line projects (three callers share it).
 		# Fix 90b: scoped to this strategy's own type_id - WA_AI_priority_queue_INF_resource also
-		# creates building type 1 (budget @AI_PC_QMAX_INF_RESOURCE, type_id 25); unscoped, the two
+		# creates building type 1 (budget constant:wa_ai_pc.qmax.inf_resource, type_id 25); unscoped, the two
 		# counted each other's projects. _project_queue_max_scoped is clear-on-read in
 		# WA_AI_PC_start_project, so it is re-armed before EACH start call below; _project_type_id
 		# persists and is cleared at the end of this block (same discipline as the islands strategy).
-		set_temp_variable = { _project_queue_max = @AI_PC_QMAX_SUPPLY_LINE }
-		set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_SUPPLY_LINE }
+		set_temp_variable = { _project_queue_max = constant:wa_ai_pc.qmax.supply_line }
+		set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.supply_line }
 
 		### build a route to the front
 
@@ -830,10 +816,10 @@ WA_AI_fortify_strategic_islands = {
 			if = { limit = { WA_AI_available_RADAR = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 4 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
+				set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.default }
 				set_temp_variable = { _project_queue_num = 1 }
-				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
-				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max = constant:wa_ai_pc.qmax.islands }
+				set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.islands }
 				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
@@ -843,10 +829,10 @@ WA_AI_fortify_strategic_islands = {
 			if = { limit = { WA_AI_available_AA = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 3 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
+				set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.default }
 				set_temp_variable = { _project_queue_num = 1 }
-				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
-				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max = constant:wa_ai_pc.qmax.islands }
+				set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.islands }
 				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
@@ -856,10 +842,10 @@ WA_AI_fortify_strategic_islands = {
 			if = { limit = { WA_AI_available_AIR = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 2 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
+				set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.default }
 				set_temp_variable = { _project_queue_num = 1 }
-				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
-				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max = constant:wa_ai_pc.qmax.islands }
+				set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.islands }
 				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
@@ -892,10 +878,10 @@ WA_AI_fortify_strategic_islands = {
 			if = { limit = { WA_AI_available_RADAR = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 4 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
+				set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.default }
 				set_temp_variable = { _project_queue_num = 1 }
-				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
-				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max = constant:wa_ai_pc.qmax.islands }
+				set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.islands }
 				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
@@ -905,10 +891,10 @@ WA_AI_fortify_strategic_islands = {
 			if = { limit = { WA_AI_available_AA = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 3 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
+				set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.default }
 				set_temp_variable = { _project_queue_num = 1 }
-				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
-				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max = constant:wa_ai_pc.qmax.islands }
+				set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.islands }
 				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
@@ -918,10 +904,10 @@ WA_AI_fortify_strategic_islands = {
 			if = { limit = { WA_AI_available_AIR = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 2 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
+				set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.default }
 				set_temp_variable = { _project_queue_num = 1 }
-				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
-				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max = constant:wa_ai_pc.qmax.islands }
+				set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.islands }
 				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
@@ -952,10 +938,10 @@ WA_AI_fortify_strategic_islands = {
 			if = { limit = { WA_AI_available_RADAR = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 4 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
+				set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.default }
 				set_temp_variable = { _project_queue_num = 1 }
-				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
-				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max = constant:wa_ai_pc.qmax.islands }
+				set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.islands }
 				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
@@ -965,10 +951,10 @@ WA_AI_fortify_strategic_islands = {
 			if = { limit = { WA_AI_available_AA = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 3 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
+				set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.default }
 				set_temp_variable = { _project_queue_num = 1 }
-				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
-				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max = constant:wa_ai_pc.qmax.islands }
+				set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.islands }
 				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
@@ -978,10 +964,10 @@ WA_AI_fortify_strategic_islands = {
 			if = { limit = { WA_AI_available_AIR = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 2 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
+				set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.default }
 				set_temp_variable = { _project_queue_num = 1 }
-				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
-				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max = constant:wa_ai_pc.qmax.islands }
+				set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.islands }
 				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
@@ -1004,10 +990,10 @@ WA_AI_fortify_strategic_islands = {
 			if = { limit = { WA_AI_available_RADAR = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 4 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
+				set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.default }
 				set_temp_variable = { _project_queue_num = 1 }
-				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
-				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max = constant:wa_ai_pc.qmax.islands }
+				set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.islands }
 				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
@@ -1017,10 +1003,10 @@ WA_AI_fortify_strategic_islands = {
 			if = { limit = { WA_AI_available_AA = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 3 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
+				set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.default }
 				set_temp_variable = { _project_queue_num = 1 }
-				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
-				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max = constant:wa_ai_pc.qmax.islands }
+				set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.islands }
 				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
@@ -1030,10 +1016,10 @@ WA_AI_fortify_strategic_islands = {
 			if = { limit = { WA_AI_available_AIR = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 2 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
+				set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.default }
 				set_temp_variable = { _project_queue_num = 1 }
-				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
-				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max = constant:wa_ai_pc.qmax.islands }
+				set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.islands }
 				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
@@ -1056,10 +1042,10 @@ WA_AI_fortify_strategic_islands = {
 			if = { limit = { WA_AI_available_RADAR = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 4 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
+				set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.default }
 				set_temp_variable = { _project_queue_num = 1 }
-				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
-				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max = constant:wa_ai_pc.qmax.islands }
+				set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.islands }
 				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
@@ -1069,10 +1055,10 @@ WA_AI_fortify_strategic_islands = {
 			if = { limit = { WA_AI_available_AA = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 3 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
+				set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.default }
 				set_temp_variable = { _project_queue_num = 1 }
-				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
-				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max = constant:wa_ai_pc.qmax.islands }
+				set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.islands }
 				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
@@ -1082,10 +1068,10 @@ WA_AI_fortify_strategic_islands = {
 			if = { limit = { WA_AI_available_AIR = yes WA_AI_PC_can_build_project = yes }
 				set_temp_variable = { _project_building_type = 2 }
 				set_temp_variable = { _project_province_id = 0 }
-				set_temp_variable = { _project_priority = @AI_PC_PRIO_DEFAULT }
+				set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.default }
 				set_temp_variable = { _project_queue_num = 1 }
-				set_temp_variable = { _project_queue_max = @AI_PC_QMAX_ISLANDS }
-				set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_ISLANDS }
+				set_temp_variable = { _project_queue_max = constant:wa_ai_pc.qmax.islands }
+				set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.islands }
 				set_temp_variable = { _project_queue_max_scoped = 1 }
 				set_temp_variable = { _project_target_level = 0 }
 				WA_AI_PC_start_project = yes
@@ -1107,11 +1093,10 @@ WA_AI_fortify_strategic_islands = {
 # authoritative for membership - see the fallback at the bottom of the walk.
 #
 # Scope: any country (state ids are data). Writes global.WA_AI_uk_air_priority_states
-# and stamps @UK_AIR_PRIORITY_VERSION. Called lazily from
+# and stamps constant:wa_ai_pc.air.uk_priority_version. Called lazily from
 # WA_AI_build_uk_air_hosting_capacity on a version mismatch, so a campaign resumed on
 # a build with a different order rebuilds the array instead of keeping a stale one.
-# BUMP @UK_AIR_PRIORITY_VERSION whenever the order or the membership changes.
-@UK_AIR_PRIORITY_VERSION = 1
+# BUMP constant:wa_ai_pc.air.uk_priority_version whenever the order or the membership changes.
 WA_AI_uk_air_hosting_priority_init = {
 	clear_array = global.WA_AI_uk_air_priority_states
 	add_to_array = { global.WA_AI_uk_air_priority_states = 857 }	# rank  1 - Kent
@@ -1125,7 +1110,7 @@ WA_AI_uk_air_hosting_priority_init = {
 	add_to_array = { global.WA_AI_uk_air_priority_states = 129 }	# rank  9 - Leicestershire
 	add_to_array = { global.WA_AI_uk_air_priority_states = 128 }	# rank 10 - Warwickshire
 	add_to_array = { global.WA_AI_uk_air_priority_states = 123 }	# rank 11 - Cornwall
-	set_variable = { global.WA_AI_uk_air_priority_version = @UK_AIR_PRIORITY_VERSION }
+	set_variable = { global.WA_AI_uk_air_priority_version = constant:wa_ai_pc.air.uk_priority_version }
 }
 
 # Fix 51: queue ONE air-base level in this state. Extracted from the old level ladder
@@ -1136,7 +1121,7 @@ WA_AI_uk_air_hosting_priority_init = {
 # + the level cap), PREV = ROOT = builder country.
 # Inputs, all set by the caller in country scope:
 #   _uk_air_prio_        priority band, resolved once per pulse (Fix 47)
-#   _uk_air_level_cap_   @UK_AIR_TARGET_LEVEL_CAP, passed in because that constant is
+#   _uk_air_level_cap_   constant:wa_ai_pc.air.uk_target_level_cap, passed in because that constant is
 #                        declared inside WA_AI_build_uk_air_hosting_capacity's body
 #   _uk_air_rank_        1-11 = south-first rank of this state, 0 = unranked fallback
 #   _uk_air_qnum_before_ WA_AI_PC_queue^num sampled immediately before the call
@@ -1154,16 +1139,16 @@ WA_AI_uk_air_queue_site = {
 	set_temp_variable = { _project_target_state = 0 }
 	set_temp_variable = { _project_priority = _uk_air_prio_ }
 	set_temp_variable = { _project_queue_num = 1 }
-	set_temp_variable = { _project_queue_max = @UK_AIR_QUEUE_MAX }
+	set_temp_variable = { _project_queue_max = constant:wa_ai_pc.qmax.uk_air }
 	# Fix 87b: widen the budget while the deficit is deep (see the constants at the top)
-	if = { limit = { ROOT = { check_variable = { WA_AI_PC_air_deficit_pct > @UK_AIR_DEEP_DEFICIT_PCT } } }
-		set_temp_variable = { _project_queue_max = @UK_AIR_QUEUE_MAX_DEEP }
+	if = { limit = { ROOT = { check_variable = { WA_AI_PC_air_deficit_pct > constant:wa_ai_pc.alloc.air_lane_2nd_slot_pct } } }
+		set_temp_variable = { _project_queue_max = constant:wa_ai_pc.qmax.uk_air_deep }
 	}
 	# Fix 47: these 3 slots are the UK strategy's OWN budget. Before, queue_max
 	# counted every type-2 project country-wide, so theatre air bases elsewhere
 	# consumed the UK allowance - on 911bed3c both of ENG's slots held Pacific
 	# projects on the very pulse the UK deficit reopened.
-	set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_UK_AIR }
+	set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.uk_air }
 	set_temp_variable = { _project_queue_max_scoped = 1 }
 	set_temp_variable = { _project_target_level = _uk_air_level_cap_ }
 	WA_AI_PC_start_project = yes
@@ -1172,7 +1157,7 @@ WA_AI_uk_air_queue_site = {
 	# across its own start_project calls - see the note there), so the tag is
 	# retired here instead. Without this, the next type-2 caller that does not
 	# set a type_id - WA_AI_fortify_strategic_islands is one - would inherit
-	# @AI_PC_TYPE_ID_UK_AIR and be counted against the UK budget.
+	# constant:wa_ai_pc.type_id.uk_air and be counted against the UK budget.
 	set_temp_variable = { _project_type_id = 0 }
 
 	ROOT = {
@@ -1234,8 +1219,6 @@ WA_AI_uk_air_queue_site = {
 # (WA_AI_background.1, ~2 day cadence, AI only).
 WA_AI_build_uk_air_hosting_capacity = {
 
-	@UK_AIR_CAPACITY_PER_LEVEL = 100	# NDefines.NBuildings.AIRBASE_CAPACITY_MULT (05_defines.lua)
-	@UK_AIR_TARGET_LEVEL_CAP = 12		# per-state cap, leaves slots for other buildings
 	# Fix 47: 0.5 -> 0.65. Measured on campaign 9a4cd657 (1944.7): 20,503 faction planes
 	# against 7,100 capacity - 71 levels held-or-queued across the 11 hosting states, where
 	# the old 0.5 asked for 103. The strategy was correctly reporting a 32-level shortfall
@@ -1251,7 +1234,7 @@ WA_AI_build_uk_air_hosting_capacity = {
 	# part of the faction's air force still has nowhere in Britain to stand; 1.0 is the
 	# only value that means what the strategy's own header says it means.
 	#
-	# STRUCTURAL CEILING: 11 hosting states x @UK_AIR_TARGET_LEVEL_CAP = 132 levels
+	# STRUCTURAL CEILING: 11 hosting states x constant:wa_ai_pc.air.uk_target_level_cap = 132 levels
 	# (13,200 capacity), so the ceiling and not this share is what ultimately bounds the
 	# build - it still cannot run away. At 1944 plane counts (10,021) the 1.0 target is
 	# REACHABLE, which 0.65 was not asking for; beyond ~13,200 faction planes the deficit
@@ -1262,7 +1245,7 @@ WA_AI_build_uk_air_hosting_capacity = {
 	# faction passes ~13,200 planes ENG's shortage refineries run on the Fix 41 overtake
 	# lane instead of the sorted fill, permanently rather than temporarily. On f9321934
 	# that threshold falls in 1945. If the refineries turn out to need their band back more
-	# than the RAF needs the last levels, lower this - do NOT raise @UK_AIR_TARGET_LEVEL_CAP
+	# than the RAF needs the last levels, lower this - do NOT raise constant:wa_ai_pc.air.uk_target_level_cap
 	# or extend the state list, which checklist R8 forbids until R15 justifies more capacity.
 	#
 	# WHAT THIS CANNOT FIX, stated up front: at 1944.6.1 the island already held 10,100
@@ -1272,22 +1255,19 @@ WA_AI_build_uk_air_hosting_capacity = {
 	# stacked), so the shortage is positional, not just aggregate. More levels only help if
 	# Fix 51's south-first walk puts them where the invasion is; the USAAF's own basing
 	# decision (R15) may still be the binding constraint.
-	@UK_AIR_HOSTED_FACTION_SHARE = 1.0	# share of the faction's planes the UK should be able to host
 	# Fix 87 / P6 (2026-08-16, campaign af003548): the engine books air-base capacity per WING
 	# at land_air_wing_size (100 / tac 200 / strat 300 / scout 25), not per plane present, and
 	# script can only count planes. Measured 1944.7: the 11 hosting states read 77 % full in
 	# planes and 90 % nominal, 7 of 11 at exactly 100.0 %. Dividing the plane count by the
 	# observed fill converts the target to wing slots; 0.9 is the measured wing fill of a
 	# war-year air force (fill gap grows with attrition, so this understates late-war need).
-	@UK_AIR_NOMINAL_FILL = 0.9			# planes present / nominal wing slots
 	# Fix 87 / P1: above this deficit the allocator opens a SECOND air-lane slot
 	# (WA_AI_PC_assign_factories reads WA_AI_PC_air_deficit_pct, published below).
 	# Deliberately a published state variable, not a dbg one - gameplay must not read dbg_*.
 	# Fix 47: civs/pass a host must put on air bases (2 full 20-civ slots) before an allied
-	# builder stands down. @ constants are file-scoped, so this is declared here but is used
-	# ONLY by WA_AI_build_theatre_air_bases further down - this UK strategy deliberately has
+	# builder stands down (constant:wa_ai_pc.alloc.air_host_funding_floor). Used ONLY by
+	# WA_AI_build_theatre_air_bases further down - this UK strategy deliberately has
 	# no host-funding gate at all (see its USA branch for why the two differ).
-	@AI_PC_AIR_HOST_FUNDING_FLOOR = 40
 
 	# DIAGNOSIS INSTRUMENTATION (campaign 0e7e7852: the strategy produced zero
 	# projects on a build that verifiably contained it, and saves cannot show why -
@@ -1348,7 +1328,7 @@ WA_AI_build_uk_air_hosting_capacity = {
 					# it closes for BOTH of them the moment the target is met.
 					#
 					# WA_AI_build_theatre_air_bases deliberately KEEPS its host-funding gate
-					# (@AI_PC_AIR_HOST_FUNDING_FLOOR): it spans every faction member across ten
+					# (constant:wa_ai_pc.alloc.air_host_funding_floor): it spans every faction member across ten
 					# theatres, where an ungated ally would pile into every partner's contested
 					# theatre at once. This strategy is a two-builder, eleven-state special case
 					# with a known 60-level shortfall, so it does not need that brake.
@@ -1394,9 +1374,9 @@ WA_AI_build_uk_air_hosting_capacity = {
 		}
 
 		set_temp_variable = { _uk_target_capacity_ = _faction_planes_ }
-		multiply_temp_variable = { _uk_target_capacity_ = @UK_AIR_HOSTED_FACTION_SHARE }
+		multiply_temp_variable = { _uk_target_capacity_ = constant:wa_ai_pc.air.uk_hosted_faction_share }
 		# Fix 87 / P6: planes -> nominal wing slots (see the constant)
-		divide_temp_variable = { _uk_target_capacity_ = @UK_AIR_NOMINAL_FILL }
+		divide_temp_variable = { _uk_target_capacity_ = constant:wa_ai_pc.air.uk_nominal_fill }
 
 		### capacity already built or queued in the hosting states
 
@@ -1424,7 +1404,7 @@ WA_AI_build_uk_air_hosting_capacity = {
 				add_to_temp_variable = { _uk_hosting_capacity_ = 1 }
 			}
 		}
-		multiply_temp_variable = { _uk_hosting_capacity_ = @UK_AIR_CAPACITY_PER_LEVEL }
+		multiply_temp_variable = { _uk_hosting_capacity_ = constant:wa_ai_pc.air.capacity_per_level }
 
 		set_variable = { WA_AI_uk_air_dbg_planes = _faction_planes_ }
 		set_variable = { WA_AI_uk_air_dbg_capacity = _uk_hosting_capacity_ }
@@ -1469,13 +1449,13 @@ WA_AI_build_uk_air_hosting_capacity = {
 			# Measured on campaign 9a4cd657: ENG's PC pool ran 32-87 civs (mean 52) across
 			# 1942-44 while the derived uncommitted-civ figure sat at 59-162 EVERY sampled
 			# month and never once hit the 0.30 floor. ENG was not civ-poor - it was holding
-			# idle factories that @AI_PC_ALLOC_FRACTION (0.40) forbade PC from touching, and
+			# idle factories that constant:wa_ai_pc.alloc.fraction (0.40) forbade PC from touching, and
 			# air bases were losing the 35% it did get to the 250-band refineries. Raising
 			# the host's share is what lets it fund basing AND its shortage refineries
 			# instead of trading one for the other.
 			#
 			# WA_AI_PC_override_max_factories_factor is the existing per-country escape hatch
-			# (WA_AI_PC_assign_factories reads it in place of @AI_PC_ALLOC_FRACTION), chosen
+			# (WA_AI_PC_assign_factories reads it in place of constant:wa_ai_pc.alloc.fraction), chosen
 			# over editing that global constant so this cannot change construction for every
 			# other AI in the game.
 			#
@@ -1506,7 +1486,7 @@ WA_AI_build_uk_air_hosting_capacity = {
 			# (827) and Warwickshire (460) - the two states FURTHEST from France. A wing at
 			# Kent covers Northern France; the same wing at Leicestershire does not.
 			#
-			# This does NOT add capacity. The ceiling is 11 x @UK_AIR_TARGET_LEVEL_CAP = 132
+			# This does NOT add capacity. The ceiling is 11 x constant:wa_ai_pc.air.uk_target_level_cap = 132
 			# levels either way and the deficit is a production race this change does not
 			# win (f9321934: 9 800 capacity vs 15 174 faction planes at 1946.8). What it buys
 			# is RANGE and mission efficiency for whatever capacity does get built.
@@ -1531,23 +1511,24 @@ WA_AI_build_uk_air_hosting_capacity = {
 
 			set_temp_variable = { _project_building_type = 2 }
 			set_temp_variable = { _uk_air_started_ = 0 }
-			# passed to WA_AI_uk_air_queue_site: @ constants are file-scoped AND this one
-			# is declared inside this effect's body, so the helper cannot name it directly
-			set_temp_variable = { _uk_air_level_cap_ = @UK_AIR_TARGET_LEVEL_CAP }
+			# passed to WA_AI_uk_air_queue_site as a temp (kept from the file-scoped `@` era; the
+			# helper could now read constant:wa_ai_pc.air.uk_target_level_cap itself - left as an
+			# explicit input so the helper's inputs stay visible at the call site)
+			set_temp_variable = { _uk_air_level_cap_ = constant:wa_ai_pc.air.uk_target_level_cap }
 
 			# Fix 47: band selection, resolved ONCE in country scope - the trigger is a
 			# faction scan and must not run per candidate state inside the walk below.
-			set_temp_variable = { _uk_air_prio_ = @AI_PC_PRIO_DEFAULT }
+			set_temp_variable = { _uk_air_prio_ = constant:wa_ai_pc.prio.default }
 			if = {
 				limit = { WA_AI_PC_air_force_needs_basing_priority = yes }
-				set_temp_variable = { _uk_air_prio_ = @AI_PC_PRIO_AIR_BASING }
+				set_temp_variable = { _uk_air_prio_ = constant:wa_ai_pc.prio.air_basing }
 			}
 
 			# Fix 51: build the ordered list once per game. check_variable reads an absent
 			# global as 0, so a fresh start and a campaign resumed from a pre-Fix-51 build
 			# both take this branch; a later order change takes it again via the version.
 			if = {
-				limit = { NOT = { check_variable = { global.WA_AI_uk_air_priority_version = @UK_AIR_PRIORITY_VERSION } } }
+				limit = { NOT = { check_variable = { global.WA_AI_uk_air_priority_version = constant:wa_ai_pc.air.uk_priority_version } } }
 				WA_AI_uk_air_hosting_priority_init = yes
 			}
 
@@ -1570,7 +1551,7 @@ WA_AI_build_uk_air_hosting_capacity = {
 							# re-tested per candidate: the trigger, not this array, owns
 							# membership, so an id dropped from the trigger is filtered out here
 							WA_AI_uk_air_hosting_state = yes
-							check_variable = { building_level@air_base < @UK_AIR_TARGET_LEVEL_CAP }
+							check_variable = { building_level@air_base < constant:wa_ai_pc.air.uk_target_level_cap }
 							WA_AI_uk_air_site_buildable = yes
 						}
 						WA_AI_uk_air_queue_site = yes
@@ -1593,7 +1574,7 @@ WA_AI_build_uk_air_hosting_capacity = {
 				random_state = {
 					limit = {
 						WA_AI_uk_air_hosting_state = yes
-						check_variable = { building_level@air_base < @UK_AIR_TARGET_LEVEL_CAP }
+						check_variable = { building_level@air_base < constant:wa_ai_pc.air.uk_target_level_cap }
 						WA_AI_uk_air_site_buildable = yes
 					}
 					WA_AI_uk_air_queue_site = yes
@@ -1618,7 +1599,7 @@ WA_AI_build_uk_air_hosting_capacity = {
 #    hemisphere is structurally unreachable).
 # 2. Side-wide capacity deficit: a contested theatre only qualifies while the SIDE's existing
 #    + ROOT-queued air-base capacity across that theatre's states is below
-#    @THEATRE_AIR_HOSTED_SHARE of the side's deployed planes. Capacity counts every state
+#    constant:wa_ai_pc.air.theatre_hosted_share of the side's deployed planes. Capacity counts every state
 #    controlled by ROOT, a faction ally or a co-belligerent (same own-side definition as the
 #    contested triggers), so once anyone on the side has built enough, every other member
 #    stops queuing - a minor never piles onto a theatre its majors already covered, and a
@@ -1626,7 +1607,7 @@ WA_AI_build_uk_air_hosting_capacity = {
 #    stays idle.
 # 3. Token air forces never enter (<= 99 deployed planes, WA air scale ~1/3 vanilla): a
 #    country with no meaningful aviation has no basing need of its own.
-# 4. Per-state cap: the level ladder stops selecting a state at @THEATRE_AIR_TARGET_LEVEL,
+# 4. Per-state cap: the level ladder stops selecting a state at constant:wa_ai_pc.air.theatre_target_level,
 #    and always raises the least-developed member state first, so capacity spreads 0->4
 #    across the chain instead of stacking one level-10 island.
 #
@@ -1649,9 +1630,9 @@ WA_AI_build_uk_air_hosting_capacity = {
 #      - COMMITTED theatre = a deficit theatre with >= 1 ROOT division on a side-controlled
 #        member state (folded into the pass-2 state walk, so no extra scan). While any
 #        committed theatre is in deficit, the ladder draws ONLY from committed theatres.
-#      - The per-state cap rises to @THEATRE_AIR_TARGET_LEVEL_COMMITTED there: a beachhead
+#      - The per-state cap rises to constant:wa_ai_pc.air.theatre_target_level_committed there: a beachhead
 #        of two states must host what ten islands would spread.
-#      - Priority @AI_PC_PRIO_AIR_FRONT (350): above uk_air (300) inside the Fix 78 lane and
+#      - Priority constant:wa_ai_pc.prio.air_front (350): above uk_air (300) inside the Fix 78 lane and
 #        the sorted fill, below rail-prewar (500), so the Fix 41 band order is untouched.
 #    Nothing changes for a country with no divisions in any deficit theatre (the Pacific
 #    island-chain case this effect was written for keeps its uniform spread).
@@ -1665,11 +1646,6 @@ WA_AI_build_uk_air_hosting_capacity = {
 # civilian-factory floor below.
 WA_AI_build_theatre_air_bases = {
 
-	@THEATRE_AIR_CAPACITY_PER_LEVEL = 100	# NDefines.NBuildings.AIRBASE_CAPACITY_MULT (05_defines.lua)
-	@THEATRE_AIR_TARGET_LEVEL = 4			# per-state ladder cap: the 2-4 level goal
-	@THEATRE_AIR_TARGET_LEVEL_COMMITTED = 8	# Fix 85: ladder cap where ROOT's own divisions stand (a two-state beachhead)
-	@THEATRE_AIR_QUEUE_MAX = 3				# max concurrent air-base projects (matches UK hosting)
-	@THEATRE_AIR_HOSTED_SHARE = 0.25		# share of the side's planes one theatre should be able to host
 
 	if = {
 		limit = {
@@ -1762,13 +1738,13 @@ WA_AI_build_theatre_air_bases = {
 
 			# capacity target per theatre, in air-base LEVELS
 			set_temp_variable = { _thair_target_ = _thair_planes_ }
-			multiply_temp_variable = { _thair_target_ = @THEATRE_AIR_HOSTED_SHARE }
-			divide_temp_variable = { _thair_target_ = @THEATRE_AIR_CAPACITY_PER_LEVEL }
+			multiply_temp_variable = { _thair_target_ = constant:wa_ai_pc.air.theatre_hosted_share }
+			divide_temp_variable = { _thair_target_ = constant:wa_ai_pc.air.capacity_per_level }
 
 			# capacity the side already holds (or ROOT already queued) per contested theatre.
 			# Membership lists are disjoint, so the attribution chain is exact. Allies' PC
 			# queues are not visible cross-country - the bounded overshoot (each builder caps
-			# itself at @THEATRE_AIR_QUEUE_MAX projects) is accepted.
+			# itself at constant:wa_ai_pc.qmax.theatre_air projects) is accepted.
 			set_temp_variable = { _thair_cap_naf_ = 0 }
 			set_temp_variable = { _thair_cap_ita_ = 0 }
 			set_temp_variable = { _thair_cap_weu_ = 0 }
@@ -1919,21 +1895,21 @@ WA_AI_build_theatre_air_bases = {
 
 				# Fix 47: band selection, resolved ONCE in country scope - the trigger is a
 				# faction scan and must not run per candidate state inside the ladder below.
-				set_temp_variable = { _thair_prio_ = @AI_PC_PRIO_DEFAULT }
+				set_temp_variable = { _thair_prio_ = constant:wa_ai_pc.prio.default }
 				if = {
 					limit = { WA_AI_PC_air_force_needs_basing_priority = yes }
-					set_temp_variable = { _thair_prio_ = @AI_PC_PRIO_AIR_BASING }
+					set_temp_variable = { _thair_prio_ = constant:wa_ai_pc.prio.air_basing }
 					# Fix 85: a ground-committed theatre outranks uk_air inside the air lane
 					if = {
 						limit = { check_variable = { _thair_committed_ = 1 } }
-						set_temp_variable = { _thair_prio_ = @AI_PC_PRIO_AIR_FRONT }
+						set_temp_variable = { _thair_prio_ = constant:wa_ai_pc.prio.air_front }
 					}
 				}
 				# Fix 85: ladder cap - the beachhead cap where ROOT's divisions stand
-				set_temp_variable = { _thair_level_cap_ = @THEATRE_AIR_TARGET_LEVEL }
+				set_temp_variable = { _thair_level_cap_ = constant:wa_ai_pc.air.theatre_target_level }
 				if = {
 					limit = { check_variable = { _thair_committed_ = 1 } }
-					set_temp_variable = { _thair_level_cap_ = @THEATRE_AIR_TARGET_LEVEL_COMMITTED }
+					set_temp_variable = { _thair_level_cap_ = constant:wa_ai_pc.air.theatre_target_level_committed }
 				}
 
 				# _project_building_type must be set BEFORE the ladder: the limit triggers
@@ -1988,7 +1964,7 @@ WA_AI_build_theatre_air_bases = {
 									CONTROLLER = {
 										OR = {
 											is_ai = no
-											check_variable = { WA_AI_PC_air_factories_assigned < @AI_PC_AIR_HOST_FUNDING_FLOOR }
+											check_variable = { WA_AI_PC_air_factories_assigned < constant:wa_ai_pc.alloc.air_host_funding_floor }
 											num_of_civilian_factories_available_for_projects < 16
 										}
 									}
@@ -2008,10 +1984,10 @@ WA_AI_build_theatre_air_bases = {
 						set_temp_variable = { _project_target_state = 0 }
 						set_temp_variable = { _project_priority = _thair_prio_ }
 						set_temp_variable = { _project_queue_num = 1 }
-						set_temp_variable = { _project_queue_max = @THEATRE_AIR_QUEUE_MAX }
+						set_temp_variable = { _project_queue_max = constant:wa_ai_pc.qmax.theatre_air }
 						# Fix 47: own budget, independent of the UK hosting strategy's - see
 						# the matching pair there.
-						set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_THEATRE_AIR }
+						set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.theatre_air }
 						set_temp_variable = { _project_queue_max_scoped = 1 }
 						set_temp_variable = { _project_target_level = _thair_level_cap_ }
 						set_temp_variable = { _thair_qnum_before_ = ROOT.WA_AI_PC_queue^num }

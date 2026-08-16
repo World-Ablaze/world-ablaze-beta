@@ -127,7 +127,7 @@ if = {
 
 **Issue:** Railway validation previously copied `_project_type_id` from a shared temporary. A partial route ending at a new frontier port changed that temp from railway type 13 to naval-base type 14. When this was the last relevant write in the route loop, validation skipped stale railways and instead considered unrelated port projects for cancellation.
 
-**Fix Applied:** The post-processing call now sets `_strategy_id` directly from `@WA_AI_PC_railway_TYPE_ID`. Port helpers remain free to tag their own queued projects as type 14, but their shared scratch state can no longer change which project family the railway validator owns.
+**Fix Applied:** The post-processing call now sets `_strategy_id` directly from `constant:wa_ai_pc.type_id.rail`. Port helpers remain free to tag their own queued projects as type 14, but their shared scratch state can no longer change which project family the railway validator owns.
 
 **Regression boundary:** The generic validator is unchanged and has no other callers. Historical and ahistorical routes use the same constant-based filter.
 

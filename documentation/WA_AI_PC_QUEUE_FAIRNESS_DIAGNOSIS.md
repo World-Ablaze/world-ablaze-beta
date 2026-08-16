@@ -120,7 +120,7 @@ GER type-13 count: **80 (1944.6) → 66 → 45 → 24 → 2 (1945.2)**. Two mech
 **4–6 months** before the backstop reached them.
 
 Note the reported "stall pinned at exactly 26" was a sampling coincidence of the monthly saves;
-the constant is `@AI_PC_STALL_CANCEL_WEEKS = 30` (raised 25 → 30 by Fix 73 in the same commit),
+the constant is `constant:wa_ai_pc.alloc.stall_cancel_weeks = 30` (raised 25 → 30 by Fix 73 in the same commit),
 and the cohort died at 30.
 
 ### 2.2 Why nothing noticed for 4–6 months
