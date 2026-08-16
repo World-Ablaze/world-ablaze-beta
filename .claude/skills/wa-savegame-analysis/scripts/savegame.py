@@ -974,7 +974,8 @@ _PC_TYPE_ID = {
 # the highest value a post-Fix-41 build can write; anything above it is a legacy
 # pre-Fix-41 priority that the next assign_factories pass clamps to 1000.
 _PC_BANDS = ((1100, "rail-war+"), (1000, "rail-war"), (500, "rail-prewar"),
-             (300, "air-basing"), (250, "strategic"), (100, "default"))
+             (350, "air-front"), (300, "air-basing"), (250, "strategic"),
+             (100, "default"))
 
 # Allocation constants, core.txt:253-256 (mirrored in WA_AI_CONSTRUCTION_triggers.txt).
 _PC_ALLOC_FRACTION = 0.40

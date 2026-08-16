@@ -66,6 +66,7 @@ WA_AI_priority_construction_strategies = {
 ### common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_core.txt owns - keep the two in sync.
 @AI_PC_PRIO_DEFAULT = 100			# radar, supply lines, MIC/CIC, air bases at rest
 @AI_PC_PRIO_AIR_BASING = 300		# Fix 47: air bases while the air force outgrows its basing
+@AI_PC_PRIO_AIR_FRONT = 350			# Fix 85: theatre air bases where ROOT's own divisions stand (see WA_AI_build_theatre_air_bases)
 
 ### Strategy type ids (WA_AI_PC_type_id), used with _project_queue_max_scoped so that two
 ### strategies queuing the SAME building type get independent queue_max budgets. 13 and 14
@@ -1476,6 +1477,33 @@ WA_AI_build_uk_air_hosting_capacity = {
 #    and always raises the least-developed member state first, so capacity spreads 0->4
 #    across the chain instead of stacking one level-10 island.
 #
+# FIX 85 (2026-08-15, campaign af003548) - GROUND-COMMITTED THEATRES FIRST.
+#    Measured after D-Day: Western Europe was contested and in deficit for USA and ENG at
+#    every save 1944.7-1945.9 (allied-held capacity 21 levels vs a 26-36 level target), the
+#    builder ran every pulse (dbg_called +4-5/month, dbg_active 4-6) - and dbg_started FROZE
+#    for both majors for 8 months (USA 38, ENG 25). USA never queued a single air base in
+#    France (its theatre picks were 163 Balkans, 1002 New Guinea, 1033 Indochina); ENG queued
+#    two, states 24 and 785 in 1944.7, both level 0, both starved at 0 factories for five
+#    months behind level-8->12 UK bases in the same 300 band, then purged. Net capacity on
+#    Allied-controlled French soil: 700 planes (15 at level 4, 1016 at level 3). The USAAF's
+#    9 000 land-based planes stayed in the continental US, 92-94% without a mission.
+#    Two causes, both in this effect: (a) random_state draws uniformly over EVERY deficit
+#    theatre's states from ladder rung 0, so a landing theatre whose only allied states are
+#    already at level 3-4 loses the draw to Pacific/Balkan level-0 islands every pulse; (b) a
+#    theatre_air project shares the 300 band with uk_air and, sorted behind it, never gets a
+#    factory. The remedy keeps every guardrail and adds one discriminator that needs no
+#    theatre list and no tag: does ROOT have divisions standing in the theatre?
+#      - COMMITTED theatre = a deficit theatre with >= 1 ROOT division on a side-controlled
+#        member state (folded into the pass-2 state walk, so no extra scan). While any
+#        committed theatre is in deficit, the ladder draws ONLY from committed theatres.
+#      - The per-state cap rises to @THEATRE_AIR_TARGET_LEVEL_COMMITTED there: a beachhead
+#        of two states must host what ten islands would spread.
+#      - Priority @AI_PC_PRIO_AIR_FRONT (350): above uk_air (300) inside the Fix 78 lane and
+#        the sorted fill, below rail-prewar (500), so the Fix 41 band order is untouched.
+#    Nothing changes for a country with no divisions in any deficit theatre (the Pacific
+#    island-chain case this effect was written for keeps its uniform spread).
+#    Probe: WA_TLM_r52_thair_front_* (checklist R52).
+#
 # ROOT = any AI country. Called from WA_AI_priority_construction_strategies
 # (WA_AI_background.1, ~2 day cadence, AI only), outside the dispatcher's
 # active_projects/affordability gates for the same reason as the UK hosting strategy above
@@ -1486,6 +1514,7 @@ WA_AI_build_theatre_air_bases = {
 
 	@THEATRE_AIR_CAPACITY_PER_LEVEL = 100	# NDefines.NBuildings.AIRBASE_CAPACITY_MULT (05_defines.lua)
 	@THEATRE_AIR_TARGET_LEVEL = 4			# per-state ladder cap: the 2-4 level goal
+	@THEATRE_AIR_TARGET_LEVEL_COMMITTED = 8	# Fix 85: ladder cap where ROOT's own divisions stand (a two-state beachhead)
 	@THEATRE_AIR_QUEUE_MAX = 3				# max concurrent air-base projects (matches UK hosting)
 	@THEATRE_AIR_HOSTED_SHARE = 0.25		# share of the side's planes one theatre should be able to host
 
@@ -1597,6 +1626,18 @@ WA_AI_build_theatre_air_bases = {
 			set_temp_variable = { _thair_cap_bur_ = 0 }
 			set_temp_variable = { _thair_cap_sea_ = 0 }
 			set_temp_variable = { _thair_cap_pac_ = 0 }
+			# Fix 85: ground commitment per theatre - does ROOT have divisions standing on a
+			# side-controlled member state? Detected inside the same walk below.
+			set_temp_variable = { _thair_own_naf_ = 0 }
+			set_temp_variable = { _thair_own_ita_ = 0 }
+			set_temp_variable = { _thair_own_weu_ = 0 }
+			set_temp_variable = { _thair_own_sca_ = 0 }
+			set_temp_variable = { _thair_own_bal_ = 0 }
+			set_temp_variable = { _thair_own_eeu_ = 0 }
+			set_temp_variable = { _thair_own_mde_ = 0 }
+			set_temp_variable = { _thair_own_bur_ = 0 }
+			set_temp_variable = { _thair_own_sea_ = 0 }
+			set_temp_variable = { _thair_own_pac_ = 0 }
 			every_state = {
 				limit = {
 					OR = {
@@ -1634,6 +1675,23 @@ WA_AI_build_theatre_air_bases = {
 				else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_burma_india = yes } add_to_temp_variable = { _thair_cap_bur_ = _thair_state_levels_ } }
 				else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_southeast_asia = yes } add_to_temp_variable = { _thair_cap_sea_ = _thair_state_levels_ } }
 				else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_pacific_islands = yes } add_to_temp_variable = { _thair_cap_pac_ = _thair_state_levels_ } }
+
+				# Fix 85: ROOT's own divisions on this side-controlled member state = ground
+				# commitment to its theatre. PREV = the state inside the ROOT block (same idiom
+				# as WA_AI_MILITARY_posture_count_state_divs).
+				if = {
+					limit = { ROOT = { divisions_in_state = { state = PREV size > 0 } } }
+					if = { limit = { WA_AI_MILITARY_AIR_theatre_state_north_africa = yes } set_temp_variable = { _thair_own_naf_ = 1 } }
+					else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_italy = yes } set_temp_variable = { _thair_own_ita_ = 1 } }
+					else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_western_europe = yes } set_temp_variable = { _thair_own_weu_ = 1 } }
+					else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_scandinavia = yes } set_temp_variable = { _thair_own_sca_ = 1 } }
+					else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_balkans = yes } set_temp_variable = { _thair_own_bal_ = 1 } }
+					else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_eastern_europe = yes } set_temp_variable = { _thair_own_eeu_ = 1 } }
+					else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_middle_east = yes } set_temp_variable = { _thair_own_mde_ = 1 } }
+					else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_burma_india = yes } set_temp_variable = { _thair_own_bur_ = 1 } }
+					else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_southeast_asia = yes } set_temp_variable = { _thair_own_sea_ = 1 } }
+					else_if = { limit = { WA_AI_MILITARY_AIR_theatre_state_pacific_islands = yes } set_temp_variable = { _thair_own_pac_ = 1 } }
+				}
 			}
 
 			set_temp_variable = { _thair_contested_ct_ = _thair_any_ }
@@ -1649,6 +1707,34 @@ WA_AI_build_theatre_air_bases = {
 			if = { limit = { check_variable = { _thair_bur_ = 1 } NOT = { check_variable = { _thair_cap_bur_ < _thair_target_ } } } set_temp_variable = { _thair_bur_ = 0 } }
 			if = { limit = { check_variable = { _thair_sea_ = 1 } NOT = { check_variable = { _thair_cap_sea_ < _thair_target_ } } } set_temp_variable = { _thair_sea_ = 0 } }
 			if = { limit = { check_variable = { _thair_pac_ = 1 } NOT = { check_variable = { _thair_cap_pac_ < _thair_target_ } } } set_temp_variable = { _thair_pac_ = 0 } }
+
+			# Fix 85: if any DEFICIT theatre is ground-committed, restrict the ladder to the
+			# committed ones. Own flags are only meaningful on theatres still in deficit, so
+			# they are ANDed with the surviving deficit flags first.
+			set_temp_variable = { _thair_committed_ = 0 }
+			if = { limit = { check_variable = { _thair_naf_ = 1 } check_variable = { _thair_own_naf_ = 1 } } set_temp_variable = { _thair_committed_ = 1 } }
+			if = { limit = { check_variable = { _thair_ita_ = 1 } check_variable = { _thair_own_ita_ = 1 } } set_temp_variable = { _thair_committed_ = 1 } }
+			if = { limit = { check_variable = { _thair_weu_ = 1 } check_variable = { _thair_own_weu_ = 1 } } set_temp_variable = { _thair_committed_ = 1 } }
+			if = { limit = { check_variable = { _thair_sca_ = 1 } check_variable = { _thair_own_sca_ = 1 } } set_temp_variable = { _thair_committed_ = 1 } }
+			if = { limit = { check_variable = { _thair_bal_ = 1 } check_variable = { _thair_own_bal_ = 1 } } set_temp_variable = { _thair_committed_ = 1 } }
+			if = { limit = { check_variable = { _thair_eeu_ = 1 } check_variable = { _thair_own_eeu_ = 1 } } set_temp_variable = { _thair_committed_ = 1 } }
+			if = { limit = { check_variable = { _thair_mde_ = 1 } check_variable = { _thair_own_mde_ = 1 } } set_temp_variable = { _thair_committed_ = 1 } }
+			if = { limit = { check_variable = { _thair_bur_ = 1 } check_variable = { _thair_own_bur_ = 1 } } set_temp_variable = { _thair_committed_ = 1 } }
+			if = { limit = { check_variable = { _thair_sea_ = 1 } check_variable = { _thair_own_sea_ = 1 } } set_temp_variable = { _thair_committed_ = 1 } }
+			if = { limit = { check_variable = { _thair_pac_ = 1 } check_variable = { _thair_own_pac_ = 1 } } set_temp_variable = { _thair_committed_ = 1 } }
+			if = { limit = { check_variable = { _thair_committed_ = 1 } }
+				if = { limit = { check_variable = { _thair_own_naf_ = 0 } } set_temp_variable = { _thair_naf_ = 0 } }
+				if = { limit = { check_variable = { _thair_own_ita_ = 0 } } set_temp_variable = { _thair_ita_ = 0 } }
+				if = { limit = { check_variable = { _thair_own_weu_ = 0 } } set_temp_variable = { _thair_weu_ = 0 } }
+				if = { limit = { check_variable = { _thair_own_sca_ = 0 } } set_temp_variable = { _thair_sca_ = 0 } }
+				if = { limit = { check_variable = { _thair_own_bal_ = 0 } } set_temp_variable = { _thair_bal_ = 0 } }
+				if = { limit = { check_variable = { _thair_own_eeu_ = 0 } } set_temp_variable = { _thair_eeu_ = 0 } }
+				if = { limit = { check_variable = { _thair_own_mde_ = 0 } } set_temp_variable = { _thair_mde_ = 0 } }
+				if = { limit = { check_variable = { _thair_own_bur_ = 0 } } set_temp_variable = { _thair_bur_ = 0 } }
+				if = { limit = { check_variable = { _thair_own_sea_ = 0 } } set_temp_variable = { _thair_sea_ = 0 } }
+				if = { limit = { check_variable = { _thair_own_pac_ = 0 } } set_temp_variable = { _thair_pac_ = 0 } }
+			}
+			set_variable = { WA_AI_thair_dbg_committed = _thair_committed_ }
 
 			set_temp_variable = { _thair_any_ = _thair_naf_ }
 			add_to_temp_variable = { _thair_any_ = _thair_ita_ }
@@ -1684,6 +1770,17 @@ WA_AI_build_theatre_air_bases = {
 				if = {
 					limit = { WA_AI_PC_air_force_needs_basing_priority = yes }
 					set_temp_variable = { _thair_prio_ = @AI_PC_PRIO_AIR_BASING }
+					# Fix 85: a ground-committed theatre outranks uk_air inside the air lane
+					if = {
+						limit = { check_variable = { _thair_committed_ = 1 } }
+						set_temp_variable = { _thair_prio_ = @AI_PC_PRIO_AIR_FRONT }
+					}
+				}
+				# Fix 85: ladder cap - the beachhead cap where ROOT's divisions stand
+				set_temp_variable = { _thair_level_cap_ = @THEATRE_AIR_TARGET_LEVEL }
+				if = {
+					limit = { check_variable = { _thair_committed_ = 1 } }
+					set_temp_variable = { _thair_level_cap_ = @THEATRE_AIR_TARGET_LEVEL_COMMITTED }
 				}
 
 				# _project_building_type must be set BEFORE the ladder: the limit triggers
@@ -1695,7 +1792,7 @@ WA_AI_build_theatre_air_bases = {
 				while_loop_effect = {
 					limit = {
 						check_variable = { _thair_started_ < 1 }
-						check_variable = { _thair_try_level_ < @THEATRE_AIR_TARGET_LEVEL }
+						check_variable = { _thair_try_level_ < _thair_level_cap_ }
 					}
 
 					random_state = {
@@ -1763,7 +1860,7 @@ WA_AI_build_theatre_air_bases = {
 						# the matching pair there.
 						set_temp_variable = { _project_type_id = @AI_PC_TYPE_ID_THEATRE_AIR }
 						set_temp_variable = { _project_queue_max_scoped = 1 }
-						set_temp_variable = { _project_target_level = @THEATRE_AIR_TARGET_LEVEL }
+						set_temp_variable = { _project_target_level = _thair_level_cap_ }
 						set_temp_variable = { _thair_qnum_before_ = ROOT.WA_AI_PC_queue^num }
 						WA_AI_PC_start_project = yes
 						# Fix 47: retire the tag - see the matching note in the UK strategy.
@@ -1786,6 +1883,17 @@ WA_AI_build_theatre_air_bases = {
 								set_temp_variable = { _thair_started_ = 1 }
 								set_variable = { WA_AI_thair_dbg_best = _thair_try_level_ }
 								add_to_variable = { WA_AI_thair_dbg_started = 1 }
+
+								# tlm: WA_TLM_r52_thair_front_n / _first_t / _last_t - consumer:
+								# checklist R52. VERIFIED effect only (the queue grew, above), and
+								# only when the Fix 85 committed rule was in force for this start.
+								if = { limit = { check_variable = { _thair_committed_ = 1 } }
+									add_to_variable = { WA_TLM_r52_thair_front_n = 1 }
+									if = { limit = { check_variable = { WA_TLM_r52_thair_front_first_t = 0 } }
+										set_variable = { WA_TLM_r52_thair_front_first_t = global.WA_TLM_clock }
+									}
+									set_variable = { WA_TLM_r52_thair_front_last_t = global.WA_TLM_clock }
+								}
 							}
 						}
 					}
