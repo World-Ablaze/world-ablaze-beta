@@ -291,6 +291,20 @@ WA_AI_queue_depth_ok_HAR = {
 @AI_PC_ALLOC_FRACTION = 0.40				# MUST MATCH core.txt @AI_PC_ALLOC_FRACTION (was 0.35 until Fix 90, 2026-08-16)
 @AI_PC_STABLE_BASE_FRACTION = 0.30			# MUST MATCH core.txt @AI_PC_STABLE_BASE_FRACTION
 
+# THIS = country. "This economy is still standing" - the ONE rule behind every PC admission and
+# allocation gate that used to spell `has_capitulated = no  surrender_progress < 0.3` by hand
+# (allocator floor in WA_AI_CONSTRUCTION_PRIORITY_core.txt, the three floored civ gates below, the
+# refinery / MIC->CIC branches in WA_AI_CONSTRUCTION_PRIORITY_strategies.txt). Hygiene lot
+# 2026-08-16 after Fix 90b: nine hand copies -> one trigger. Deliberately WITHOUT a civ-count
+# term: the callers that need "and big enough" (the allocator's @AI_PC_MIN_ECONOMY_CIVS, the
+# floored gates' thresholds) say so themselves. The railway system keeps its own
+# @WA_AI_PC_railway_MAX_SURRENDER (same 0.3 today, separate control panel by design).
+@AI_PC_MAX_SURRENDER = 0.3			# surrender_progress at/above which the PC stops treating the economy as alive
+WA_AI_PC_economy_alive = {
+	has_capitulated = no
+	surrender_progress < @AI_PC_MAX_SURRENDER
+}
+
 # THIS = country. Stable civilian-factory availability for PC strategy gates.
 # num_of_civilian_factories_available_for_projects reads ~0 whenever the vanilla
 # construction queue is saturated - a self-referential collapse (the PC's own
@@ -309,8 +323,7 @@ WA_AI_PC_has_project_civs_16 = {	# passes at 16+ civs (replaces bare "> 15" gate
 	OR = {
 		num_of_civilian_factories_available_for_projects > 15
 		AND = {
-			has_capitulated = no
-			surrender_progress < 0.3
+			WA_AI_PC_economy_alive = yes
 			check_variable = { _pc_civ_floor_ > 15 }
 		}
 	}
@@ -323,8 +336,7 @@ WA_AI_PC_has_project_civs_20 = {	# passes at 20+ civs (replaces bare "NOT ... < 
 	OR = {
 		num_of_civilian_factories_available_for_projects > 19
 		AND = {
-			has_capitulated = no
-			surrender_progress < 0.3
+			WA_AI_PC_economy_alive = yes
 			check_variable = { _pc_civ_floor_ > 19 }
 		}
 	}
@@ -337,8 +349,7 @@ WA_AI_PC_has_project_civs_31 = {	# passes at 31+ civs (replaces the bare "> 30" 
 	OR = {
 		num_of_civilian_factories_available_for_projects > 30
 		AND = {
-			has_capitulated = no
-			surrender_progress < 0.3
+			WA_AI_PC_economy_alive = yes
 			check_variable = { _pc_civ_floor_ > 30 }
 		}
 	}

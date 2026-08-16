@@ -256,6 +256,8 @@ WA_AI_PC_get_building_cost = {
 @AI_PC_STABLE_BASE_FRACTION = 0.30		# floor: share of TOTAL civs the base can never drop below
 @AI_PC_ALLOC_HARD_CAP_FRACTION = 0.50   # ceiling: allocation can never exceed this share of total civs
 @AI_PC_STALL_CANCEL_WEEKS = 30			# weeks a project may sit with 0 factories before the stall sweep cancels it
+@AI_PC_MIN_ECONOMY_CIVS = 20			# below this many civs the stable-base floor is not applied (a collapsing economy degrades to the raw pool)
+@AI_PC_MAX_CIVS_PER_PROJECT = 20		# per-project civ clamp in the fill (one "slot"); mirrored by savegame.py _PC_MAX_PER_PROJECT - see registry pc_max_civs_per_project
 
 ### Fix 87 (2026-08-16, campaign af003548, checklist R54): air-basing gets throughput, paid
 ### for by a MEASURED set of losers.
@@ -351,9 +353,8 @@ WA_AI_PC_assign_factories = {
 	if = {
 		limit = {
 			check_variable = { WA_AI_PC_queue^num > 0 }
-			num_of_civilian_factories > 19
-			has_capitulated = no
-			surrender_progress < 0.3
+			NOT = { num_of_civilian_factories < @AI_PC_MIN_ECONOMY_CIVS }
+			WA_AI_PC_economy_alive = yes
 		}
 		set_temp_variable = { _pc_stable_base = num_of_civilian_factories }
 		multiply_temp_variable = { _pc_stable_base = @AI_PC_STABLE_BASE_FRACTION }
@@ -576,7 +577,7 @@ WA_AI_PC_assign_factories = {
 			check_variable = { WA_AI_PC_progress^_pc_lane_proj_ > 0 }
 		}
 		set_temp_variable = { assign_amount = available_factories_ }
-		clamp_temp_variable = { var = assign_amount min = 1 max = 20 }
+		clamp_temp_variable = { var = assign_amount min = 1 max = @AI_PC_MAX_CIVS_PER_PROJECT }
 		round_temp_variable = assign_amount
 		set_variable = { WA_AI_PC_assigned_factories^_pc_lane_proj_ = assign_amount }
 		add_to_temp_variable = { _new_total = assign_amount }
@@ -684,7 +685,7 @@ WA_AI_PC_assign_factories = {
 			check_variable = { WA_AI_PC_progress^_pc_air_lane_proj_ > 0 }
 		}
 		set_temp_variable = { assign_amount = available_factories_ }
-		clamp_temp_variable = { var = assign_amount min = 1 max = 20 }
+		clamp_temp_variable = { var = assign_amount min = 1 max = @AI_PC_MAX_CIVS_PER_PROJECT }
 		round_temp_variable = assign_amount
 		set_variable = { WA_AI_PC_assigned_factories^_pc_air_lane_proj_ = assign_amount }
 		add_to_temp_variable = { _new_total = assign_amount }
@@ -722,7 +723,7 @@ WA_AI_PC_assign_factories = {
 			check_variable = { WA_AI_PC_progress^_pc_air_lane2_proj_ > 0 }
 		}
 		set_temp_variable = { assign_amount = available_factories_ }
-		clamp_temp_variable = { var = assign_amount min = 1 max = 20 }
+		clamp_temp_variable = { var = assign_amount min = 1 max = @AI_PC_MAX_CIVS_PER_PROJECT }
 		round_temp_variable = assign_amount
 		set_variable = { WA_AI_PC_assigned_factories^_pc_air_lane2_proj_ = assign_amount }
 		add_to_temp_variable = { _new_total = assign_amount }
@@ -779,7 +780,7 @@ WA_AI_PC_assign_factories = {
 			}
 
 			set_temp_variable = { assign_amount = available_factories_ }
-			clamp_temp_variable = { var = assign_amount min = 1 max = 20 }
+			clamp_temp_variable = { var = assign_amount min = 1 max = @AI_PC_MAX_CIVS_PER_PROJECT }
 			round_temp_variable = assign_amount
 
 			set_variable = { WA_AI_PC_assigned_factories^_project_id = assign_amount }

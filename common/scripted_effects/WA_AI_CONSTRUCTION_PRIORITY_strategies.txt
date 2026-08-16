@@ -46,7 +46,7 @@ WA_AI_priority_construction_strategies = {
 
 	WA_AI_fortify_strategic_islands = yes
 
-	# WA_AI_convert_MIC_to_CIC_industrial_expansion = yes not needed in WA
+	# WA_AI_convert_MIC_to_CIC_industrial_expansion: never dispatched here, deleted 2026-08-16 (see note above WA_AI_build_supply_line)
 
 	# Fix 40 (campaign 31eaf7e6): the three refinery strategies moved OUT of the
 	# gated block above. WA_AI_PC_can_afford_project (deleted by Fix 90b) needed assigned + 20 < 0.35 *
@@ -259,8 +259,7 @@ WA_AI_build_refinery_resource_shortage_rubber = {
 			# Fix 40: the dispatcher's WA_AI_PC_can_afford_project used to carry these two
 			# for the whole refinery branch; this strategy now runs outside that gate, so
 			# it states them itself (same guards the air strategies carry).
-			has_capitulated = no
-			surrender_progress < 0.3
+			WA_AI_PC_economy_alive = yes
 
 			# floored availability, was NOT = { ...available_for_projects < 20 }: the
 			# bare engine variable reads ~0 once the vanilla queue saturates
@@ -348,8 +347,7 @@ WA_AI_build_refinery_resource_shortage_steel = {
 
 			# Fix 40: guards inherited from the dispatcher's WA_AI_PC_can_afford_project,
 			# which this strategy no longer runs behind.
-			has_capitulated = no
-			surrender_progress < 0.3
+			WA_AI_PC_economy_alive = yes
 
 			# floored availability, was NOT = { ...available_for_projects < 20 }: the
 			# bare engine variable reads ~0 once the vanilla queue saturates
@@ -399,8 +397,7 @@ WA_AI_build_refinery_resource_shortage_steel = {
 			# EXPLICIT: WA_AI_priority_convert_MIC_to_CIC carries _project_queue_max =
 			# @AI_PC_QMAX_MIC_TO_CIC (1 conversion project in flight per country, MIC removed only at
 			# completion), and the two guards below are stated the way the refinery branch states them.
-			has_capitulated = no
-			surrender_progress < 0.3
+			WA_AI_PC_economy_alive = yes
 
 			# floored availability, was NOT = { ...available_for_projects < 20 }: the
 			# bare engine variable reads ~0 once the vanilla queue saturates
@@ -463,8 +460,7 @@ WA_AI_build_refinery_resource_shortage_aluminium = {
 
 			# Fix 40: guards inherited from the dispatcher's WA_AI_PC_can_afford_project,
 			# which this strategy no longer runs behind.
-			has_capitulated = no
-			surrender_progress < 0.3
+			WA_AI_PC_economy_alive = yes
 
 			# floored availability, was NOT = { ...available_for_projects < 20 }: the
 			# bare engine variable reads ~0 once the vanilla queue saturates
@@ -510,8 +506,7 @@ WA_AI_build_refinery_resource_shortage_aluminium = {
 
 			# Fix 90b: WA_AI_PC_can_afford_project deleted, brake = @AI_PC_QMAX_MIC_TO_CIC - see the
 			# identical note in WA_AI_build_refinery_resource_shortage_steel above.
-			has_capitulated = no
-			surrender_progress < 0.3
+			WA_AI_PC_economy_alive = yes
 
 			# floored availability, was NOT = { ...available_for_projects < 20 }: the
 			# bare engine variable reads ~0 once the vanilla queue saturates
@@ -616,22 +611,11 @@ WA_AI_build_supply_line_JAP_RAJ = {
 	}
 }
 
-WA_AI_convert_MIC_to_CIC_industrial_expansion = {
-
-	if = {
-		limit = {
-			tag = SOV
-			has_idea = war_economy
-			num_of_military_factories > 30
-			date < 1937.1.1
-			has_war = no
-			num_of_civilian_factories_available_for_projects > 14
-		}
-
-		set_temp_variable = { WA_AI_PC_ignore_factory_limit = 1 }
-		WA_AI_priority_convert_MIC_to_CIC = yes
-	}
-}
+# WA_AI_convert_MIC_to_CIC_industrial_expansion (SOV, pre-1937, war_economy, > 30 MICs) was DELETED
+# 2026-08-16 (PC hygiene lot after Fix 90b): never dispatched ("not needed in WA" since the
+# EAI -> WA port), and it wrote WA_AI_PC_ignore_factory_limit, a pre-2026-01 engine input that
+# no longer has a reader anywhere. If SOV ever needs a peacetime MIC->CIC lane, write it as an
+# archetype question in WA_AI_CONFIG, not a tag test.
 
 ###
 
