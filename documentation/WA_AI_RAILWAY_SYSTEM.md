@@ -18,6 +18,7 @@ All files are in `common/scripted_effects/`.
 | `WA_AI_CONSTRUCTION_PRIORITY_railway_strategies.txt` | ~794 | Three strategy implementations |
 | `WA_AI_CONSTRUCTION_PRIORITY_railway_helpers.txt` | ~1031 | Helper functions (30+): port finding, BFS, supply chain, scoring, project management |
 | `WA_AI_CONSTRUCTION_PRIORITY_railway_primitives.txt` | ~64 | Low-level helpers: state ID lookup, naval base level, land border check |
+| `WA_AI_CONSTRUCTION_PRIORITY_corridor_data.txt` | ~60 | Fix 95: theatre-corridor node lists (pure data; North Africa today) |
 
 ### Supporting Files
 
@@ -61,7 +62,12 @@ on top) and `constant:wa_ai_pc.prio.rail_prewar` (500, was 5000) in `wa_ai_pc.tx
 ```
 wa_ai_railway.interval.peace_weeks = 12      # runs every 12 weeks during peace
 wa_ai_railway.interval.war_weeks   = 8       # every 8 weeks during war
-wa_ai_railway.eligibility.min_civs = 50      # base civ minimum inside the run (war = 60% of this)
+wa_ai_railway.eligibility.min_civs = 50      # base civ minimum inside the run (war = war_civs_factor x this)
+wa_ai_railway.eligibility.war_civs_factor = 0.6  # Fix 95: one declaration for the main pass and the corridor pass
+wa_ai_railway.corridor.interval_weeks = 4    # Fix 95: theatre-corridor pass cadence (own counter)
+wa_ai_railway.corridor.rail_level = 2        # target level on every corridor hop
+wa_ai_railway.corridor.queue_max = 8         # corridor projects in flight per builder per building type (tag 27, scoped)
+wa_ai_railway.corridor.max_routes_per_run = 14  # = the whole node-pair list; NOT a window (validator completeness)
 wa_ai_railway.eligibility.min_civs_peace = 75
 wa_ai_railway.eligibility.min_states = 5
 wa_ai_railway.eligibility.max_surrender = 0.3     # skip above (see escape hatch below)
@@ -306,6 +312,75 @@ provinces 3996/4055/10031 while Tunisia sits at 1–2 with supply hubs at 11921/
 pass fires and finds nothing). FRA, capitulated, held 14 fossil projects byte-identical for 12 months,
 every one aimed at German-held metropolitan France. Same root cause as the Free-French Normandy
 beachhead on campaign `31eaf7e6`.
+
+## Theatre corridors — named-node logistics (Fix 95)
+
+**Why.** The three strategies above derive every route from the capital, the ports and the
+supply-hub discovery, so a theatre whose logistics are *known in advance* — the North African
+coast, one province deep, Tripoli to Alexandria with nothing but sand between the hubs — was never
+railed by anyone: on campaign `66636ff4` Tripoli and Benghazi were still Axis in October 1943 and
+neither side had laid a metre of track between Tripoli (1149) and Marsa Matruh (11967). A corridor
+is the answer: an **ordered list of named province nodes** with a per-node "wants a depot" / "wants a
+port" attribute, and one engine that builds whatever consecutive pair the builder holds.
+
+**Files.**
+
+| Layer | File | What |
+|---|---|---|
+| data | `WA_AI_CONSTRUCTION_PRIORITY_corridor_data.txt` | `WA_AI_PC_CORRIDOR_define_north_africa` fills `corridor_node_prov_` / `_depot_` / `_port_`. Pure data. A second theatre = a second define. |
+| strategy | `railway_strategies.txt` `WA_AI_PC_railway_STRATEGY_theatre_corridor` | classifies every node (ours / enemy-held), applies the theatre gate, publishes routes (`corridor_route_*`) and hubs (`corridor_hub_*`) for this pass |
+| core | `railway_core.txt` `WA_AI_PC_railway_corridor_pass` | own interval counter, civ floor, pathfinding (type 2, **no partial**), segment admission through `WA_AI_PC_start_railway_project` with `_railway_family_ = 1`, hubs through `WA_AI_PC_corridor_start_hub`, stale-path validation pinned to `type_id` corridor, `WA_TLM_r95_corridor_*` |
+| helpers | `railway_helpers.txt` `WA_AI_PC_corridor_start_hub` | queues a supply hub (PC type 17, new in Fix 95 part 1) or a naval base (14) at a named province, idempotent on the building's existence |
+| triggers | `WA_AI_CONSTRUCTION_triggers.txt` `WA_AI_PC_corridor_node_is_ours` / `_is_hostile` / `WA_AI_PC_corridor_theatre_live_north_africa` | province-level control tests over `any_country`; theatre gate = AIR contested trigger OR no enemy on any node (preparation) |
+| constants | `wa_ai_railway.txt` `corridor.*` (`interval_weeks` 4, `rail_level` 2, `queue_max` 8 per building type, `max_routes_per_run` 14 = the whole pair list, so the validator's cancel set is always complete); `wa_ai_pc.txt` `type_id.corridor` 27, `cost.supply_node` | |
+
+**Rules the engine applies — no tag, no date, no side (the corridor is symmetric):**
+
+- A node is *ours* when a country satisfying `WA_AI_PC_is_logistics_build_partner` (ROOT, a subject
+  of ROOT, or a faction ally that `cannot_build_own_logistics` — the Fix 74 leg, so ENG/USA build in
+  Free-French Tunisia and stop the day FRA can build for itself) **controls the province**. State
+  control is never consulted (Cyrenaica 663 was ITL-controlled with ENG provinces inside).
+- The rail between two consecutive nodes is requested only when **both** are ours; the pathfinder
+  runs without partial paths, so a hostile province in between simply postpones the hop — no
+  frontier port is conjured in the desert. Sequencing therefore *emerges from control*:
+  Mechili↔Tobruk is never asked before Mechili is held, Mechili↔Benghazi never before Benghazi.
+- Priority band: `rail_war` (1000) when any node of the corridor is enemy-held, `rail_prewar` (500)
+  otherwise — the owner of Libya / Egypt / Tunisia prepares its corridor in peace. Keyed on the
+  nodes, not on `has_war`, because ITA is at war in 1936 (Ethiopia).
+- Own budget: every corridor project (rail 13, port 14, depot 17) carries `type_id` 27 and is
+  admitted under `_project_queue_max_scoped = 1` against `corridor.queue_max`; the land-war family's
+  `routes.queue_full` skip gate and admission cap are keyed on `type_id = rail` since Fix 95, so the
+  two families never count each other. (Every rail project queued before Fix 95 already carried
+  `type_id` 13, so nothing changes for a resumed save.)
+- Own cadence: `corridor.interval_weeks` (4) instead of the main pass's 8/12. One type-13 project is
+  one level on one hop and the province-duplicate guard admits one project per province per pass, so
+  the pass cadence — not the civ pool — bounds how fast a corridor grows: a 20-hop route reaches
+  level 1 in ~3 passes = 12 weeks (24 at the main cadence), level 2 in ~5.
+- Stale-path validation is run only against the corridor tag and skipped when routes were requested
+  and *every* pathfind failed (a transient hole must not cancel paid-for progress). Peace purges the
+  corridor's rails with every other type-13 (Fix 5/19 sweep) and resets its counter; queued depots
+  survive peace by design.
+
+**Cadence table (t0/t1/t2, war, `queue_max` 8, one +1 level per hop per pass):**
+
+| Route | Hops | Level 1 | Level 2 |
+|---|---|---|---|
+| Tobruk ↔ 5078 | ~4 | 4 wk | 8 wk |
+| Tunis → Gabès (exists L1) | ~7 | — | 4 wk |
+| Gabès → Medenine (+ port ~1 month) | 1 | 4 wk | 8 wk |
+| Tripoli → Benghazi | ~20 | 12 wk | 20 wk |
+| Benghazi → Tobruk via Mechili | ~10 | 8 wk | 12 wk |
+
+Two partners building on the same host soil (ENG + USA on FRA's Tunisia) each see only their own
+queue, so both may add +1 on the same hop in the same pass; `current_level` is read from the built
+global, so the overshoot is bounded at `rail_level + 1` and costs one segment per partner. Accepted.
+
+**Not solved here:** the corridor gives the ground campaign its logistics; it does not put divisions
+in Africa (`66636ff4`: 92/117 ENG divisions under garrison orders, offensive `plan_value = -1`).
+
+**Verification:** checklist item R60; `savegame.py pc <TAG> --match corridor` for the queue side,
+`tlm <TAG> --match r95` for admissions, and the map (railway connection level between two nodes,
+`supply_node` at 10049 / 9980, `naval_base` at 11957) for the built side.
 
 ## Capitulated countries (Fix 75)
 
@@ -585,8 +660,11 @@ The system tracks railway connections at the province level. This creates many v
 ### 2. Continent Detection
 Uses hardcoded continent IDs (1=europe through 7=australia). Middle East is treated as separate from Asia. If HOI4 adds new continents, this needs updating.
 
-### 3. No Dynamic Supply Hub Building
-The system builds railways TO existing supply hubs, but doesn't build new supply hubs in strategic locations.
+### 3. No Dynamic Supply Hub Building (partly lifted by Fix 95)
+The three discovery strategies build railways TO existing supply hubs and never place new ones. Since
+Fix 95 the PC system CAN build a `supply_node` (building type 17) and the theatre-corridor pass does so
+at the nodes its data marks — but only there; there is still no general "where would a hub help"
+selector.
 
 ### 4. Single Capital Start Point
 Land war and pre-war strategies always start from capital province. Doesn't optimize for existing railway network topology.
