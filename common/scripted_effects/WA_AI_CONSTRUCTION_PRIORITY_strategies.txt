@@ -1148,6 +1148,16 @@ WA_AI_build_uk_air_hosting_capacity = {
 	# Fix 51's south-first walk puts them where the invasion is; the USAAF's own basing
 	# decision (R15) may still be the binding constraint.
 	@UK_AIR_HOSTED_FACTION_SHARE = 1.0	# share of the faction's planes the UK should be able to host
+	# Fix 87 / P6 (2026-08-16, campaign af003548): the engine books air-base capacity per WING
+	# at land_air_wing_size (100 / tac 200 / strat 300 / scout 25), not per plane present, and
+	# script can only count planes. Measured 1944.7: the 11 hosting states read 77 % full in
+	# planes and 90 % nominal, 7 of 11 at exactly 100.0 %. Dividing the plane count by the
+	# observed fill converts the target to wing slots; 0.9 is the measured wing fill of a
+	# war-year air force (fill gap grows with attrition, so this understates late-war need).
+	@UK_AIR_NOMINAL_FILL = 0.9			# planes present / nominal wing slots
+	# Fix 87 / P1: above this deficit the allocator opens a SECOND air-lane slot
+	# (WA_AI_PC_assign_factories reads WA_AI_PC_air_deficit_pct, published below).
+	# Deliberately a published state variable, not a dbg one - gameplay must not read dbg_*.
 	# Fix 47: civs/pass a host must put on air bases (2 full 20-civ slots) before an allied
 	# builder stands down. @ constants are file-scoped, so this is declared here but is used
 	# ONLY by WA_AI_build_theatre_air_bases further down - this UK strategy deliberately has
@@ -1260,6 +1270,8 @@ WA_AI_build_uk_air_hosting_capacity = {
 
 		set_temp_variable = { _uk_target_capacity_ = _faction_planes_ }
 		multiply_temp_variable = { _uk_target_capacity_ = @UK_AIR_HOSTED_FACTION_SHARE }
+		# Fix 87 / P6: planes -> nominal wing slots (see the constant)
+		divide_temp_variable = { _uk_target_capacity_ = @UK_AIR_NOMINAL_FILL }
 
 		### capacity already built or queued in the hosting states
 
@@ -1292,6 +1304,22 @@ WA_AI_build_uk_air_hosting_capacity = {
 		set_variable = { WA_AI_uk_air_dbg_planes = _faction_planes_ }
 		set_variable = { WA_AI_uk_air_dbg_capacity = _uk_hosting_capacity_ }
 		set_variable = { WA_AI_uk_air_dbg_best = -2 }
+
+		# Fix 87 / P1: publish the deficit as a percentage of built-or-queued capacity -
+		# 0 when there is none. Read by the allocator's second air-lane slot
+		# (WA_AI_CONSTRUCTION_PRIORITY_core.txt) and by savegame analysis. Overwritten every
+		# gated pulse, so a save reads the last pulse (snapshot, like dbg_capacity).
+		set_variable = { WA_AI_PC_air_deficit_pct = 0 }
+		if = {
+			limit = {
+				check_variable = { _uk_target_capacity_ > _uk_hosting_capacity_ }
+				check_variable = { _uk_hosting_capacity_ > 0 }
+			}
+			set_variable = { WA_AI_PC_air_deficit_pct = _uk_target_capacity_ }
+			subtract_from_variable = { WA_AI_PC_air_deficit_pct = _uk_hosting_capacity_ }
+			multiply_variable = { WA_AI_PC_air_deficit_pct = 100 }
+			divide_variable = { WA_AI_PC_air_deficit_pct = _uk_hosting_capacity_ }
+		}
 
 		if = { limit = { check_variable = { _uk_target_capacity_ > _uk_hosting_capacity_ } }
 

@@ -255,6 +255,27 @@ WA_AI_PC_get_building_cost = {
 @AI_PC_ALLOC_HARD_CAP_FRACTION = 0.50   # ceiling: allocation can never exceed this share of total civs
 @AI_PC_STALL_CANCEL_WEEKS = 30			# weeks a project may sit with 0 factories before the stall sweep cancels it
 
+### Fix 87 (2026-08-16, campaign af003548, checklist R54): air-basing gets throughput, paid
+### for by a MEASURED set of losers.
+###   P1  a SECOND Fix 78 lane slot while the UK air deficit exceeds @AI_PC_AIR_LANE_2ND_SLOT_PCT
+###       (WA_AI_PC_air_deficit_pct, published by WA_AI_build_uk_air_hosting_capacity).
+###   P2  both air-lane slots may draw HEADROOM beyond the @AI_PC_ALLOC_FRACTION cut, up to the
+###       0.50 hard cap, while WA_AI_PC_air_basing_reserve stands - i.e. from civs the sorted fill
+###       was never allowed to touch. The measured shape this answers: USA held 187-546 idle civs
+###       (`wa_tlm_pc_civs_avail`) at every 1941-45 anchor because 0.40 x base capped its pool at
+###       100-154 while ENG's pool was 52-137 and fully spent; one UK level (3 200-3 800 IC) is
+###       ~1 month of one 20-civ slot, and ENG+USA together delivered ~2 levels/month against a
+###       faction that grew 8 500 -> 14 000 planes.
+### Who pays, from the af003548 ledger: inside the PC fill, an extra 20-civ air slot displaces
+### ENG's two tail radars + 3 civs of infrastructure (1943.6), ENG's two funded naval bases
+### (1944.6, nothing else is funded), and nothing in 1945 (ENG pool exhausted, civs_avail = 0);
+### USA's tail radar every time. The headroom draw does NOT displace PC projects - it takes
+### civs from the VANILLA construction queue (mil/civ factories, and for the USA the synthetic
+### refineries that queue built), bounded to 2 slots x 20 civs and to the hard cap.
+### Probes: WA_TLM_r54_air_lane2_grants (weeks the 2nd slot funded), WA_TLM_r54_air_headroom_civs
+### (cumulative civ-weeks drawn beyond the fraction), WA_TLM_r54_*_first_t/_last_t.
+@AI_PC_AIR_LANE_2ND_SLOT_PCT = 20		# UK air deficit (% of capacity) above which the 2nd air slot opens
+
 ### Fix 41: priority bands + anti-starvation overtake lane (campaign 31eaf7e6: prio-9999
 ### railway segments replenished every cycle absorbed the whole pool 20-at-a-time; prio-100
 ### air bases sat at 0 factories until the week-25 stall sweep cancelled them, the strategies
@@ -352,6 +373,16 @@ WA_AI_PC_assign_factories = {
 	multiply_temp_variable = { _pc_alloc_cap = @AI_PC_ALLOC_HARD_CAP_FRACTION }
 	if = { limit = { check_variable = { available_factories_ > _pc_alloc_cap } }
 		set_temp_variable = { available_factories_ = _pc_alloc_cap }
+	}
+
+	# Fix 87 / P2: HEADROOM the air lanes alone may draw - the gap between the fraction cut
+	# and the hard cap - while an air deficit is open. 0 otherwise. Consumed by the two air-lane
+	# grants below; the sorted fill never sees it.
+	set_temp_variable = { _pc_air_headroom_ = 0 }
+	if = { limit = { has_country_flag = WA_AI_PC_air_basing_reserve }
+		set_temp_variable = { _pc_air_headroom_ = _pc_alloc_cap }
+		subtract_from_temp_variable = { _pc_air_headroom_ = available_factories_ }
+		clamp_temp_variable = { var = _pc_air_headroom_ min = 0 max = 40 }
 	}
 
 	if = { limit = { has_country_flag = WA_AI_construction_logging }
@@ -594,16 +625,32 @@ WA_AI_PC_assign_factories = {
 	if = { limit = { NOT = { check_variable = { _pc_air_lane_selected_ = 1 } } }
 		set_temp_variable = { _pc_air_lane_selected_ = 1 }
 		set_temp_variable = { _pc_air_lane_proj_ = -1 }
+		# Fix 87 / P1: second slot, only while the published UK air deficit is deep
+		set_temp_variable = { _pc_air_lane2_proj_ = -1 }
+		set_temp_variable = { _pc_air_lane2_open_ = 0 }
+		if = { limit = { check_variable = { WA_AI_PC_air_deficit_pct > @AI_PC_AIR_LANE_2ND_SLOT_PCT } }
+			set_temp_variable = { _pc_air_lane2_open_ = 1 }
+		}
 		if = {
 			limit = {
 				has_country_flag = WA_AI_PC_air_basing_reserve
-				check_variable = { available_factories_ > 0 }
+				OR = {
+					check_variable = { available_factories_ > 0 }
+					check_variable = { _pc_air_headroom_ > 0 }
+				}
 			}
 			for_each_loop = { array = WA_AI_PC_queue value = _air_lane_scan_
 				if = {
 					limit = {
-						check_variable = { _pc_air_lane_proj_ < 0 }
+						OR = {
+							check_variable = { _pc_air_lane_proj_ < 0 }
+							AND = {
+								check_variable = { _pc_air_lane2_open_ = 1 }
+								check_variable = { _pc_air_lane2_proj_ < 0 }
+							}
+						}
 						NOT = { check_variable = { _air_lane_scan_ = _pc_lane_proj_ } }
+						NOT = { check_variable = { _air_lane_scan_ = _pc_air_lane_proj_ } }
 						check_variable = { WA_AI_PC_building_type^_air_lane_scan_ = 2 }
 						check_variable = { WA_AI_PC_priority^_air_lane_scan_ > 250 }
 						NOT = { check_variable = { WA_AI_PC_target_state^_air_lane_scan_ = 0 } }
@@ -619,7 +666,12 @@ WA_AI_PC_assign_factories = {
 							}
 						}
 					}
-					set_temp_variable = { _pc_air_lane_proj_ = _air_lane_scan_ }
+					if = { limit = { check_variable = { _pc_air_lane_proj_ < 0 } }
+						set_temp_variable = { _pc_air_lane_proj_ = _air_lane_scan_ }
+					}
+					else = {
+						set_temp_variable = { _pc_air_lane2_proj_ = _air_lane_scan_ }
+					}
 				}
 			}
 		}
@@ -628,20 +680,49 @@ WA_AI_PC_assign_factories = {
 	# Fix 78: reservation GRANT - every pass, same re-entry contract as the Fix 41 grant
 	# above (a re-entry resets all assignments; without the re-grant the reserved project
 	# would be silently stripped back to 0 and the week voided).
+	# Fix 87 / P2: each air-lane grant is filled from the pool first, then from the headroom
+	# (civs beyond the fraction cut, up to the hard cap). _pc_air_from_pool_ / _pc_air_from_head_
+	# split the grant so the pool and the headroom are each debited exactly once.
 	if = {
 		limit = {
 			NOT = { check_variable = { _pc_air_lane_proj_ < 0 } }
-			check_variable = { available_factories_ > 0 }
+			OR = {
+				check_variable = { available_factories_ > 0 }
+				check_variable = { _pc_air_headroom_ > 0 }
+			}
 			is_in_array = { WA_AI_PC_queue = _pc_air_lane_proj_ }
 			NOT = { check_variable = { WA_AI_PC_target_state^_pc_air_lane_proj_ = 0 } }
 			check_variable = { WA_AI_PC_progress^_pc_air_lane_proj_ > 0 }
 		}
 		set_temp_variable = { assign_amount = available_factories_ }
+		add_to_temp_variable = { assign_amount = _pc_air_headroom_ }
 		clamp_temp_variable = { var = assign_amount min = 1 max = 20 }
 		round_temp_variable = assign_amount
+		set_temp_variable = { _pc_air_from_pool_ = available_factories_ }
+		clamp_temp_variable = { var = _pc_air_from_pool_ min = 0 max = 20 }
+		if = { limit = { check_variable = { _pc_air_from_pool_ > assign_amount } }
+			set_temp_variable = { _pc_air_from_pool_ = assign_amount }
+		}
+		round_temp_variable = _pc_air_from_pool_
+		set_temp_variable = { _pc_air_from_head_ = assign_amount }
+		subtract_from_temp_variable = { _pc_air_from_head_ = _pc_air_from_pool_ }
 		set_variable = { WA_AI_PC_assigned_factories^_pc_air_lane_proj_ = assign_amount }
 		add_to_temp_variable = { _new_total = assign_amount }
-		subtract_from_temp_variable = { available_factories_ = assign_amount }
+		subtract_from_temp_variable = { available_factories_ = _pc_air_from_pool_ }
+		subtract_from_temp_variable = { _pc_air_headroom_ = _pc_air_from_head_ }
+		if = { limit = { check_variable = { _pc_air_from_head_ > 0 } }
+			# tlm: r54_air_headroom_civs - civ-weeks drawn beyond the fraction cut, the measured
+			# cost of P2 (these civs came out of the vanilla queue). Latched per pass like the
+			# lane counter below. Consumer: checklist R54.
+			if = { limit = { NOT = { check_variable = { _pc_air_head1_counted_ = 1 } } }
+				set_temp_variable = { _pc_air_head1_counted_ = 1 }
+				add_to_variable = { WA_TLM_r54_air_headroom_civs = _pc_air_from_head_ }
+				if = { limit = { check_variable = { WA_TLM_r54_air_headroom_first_t = 0 } }
+					set_variable = { WA_TLM_r54_air_headroom_first_t = global.WA_TLM_clock }
+				}
+				set_variable = { WA_TLM_r54_air_headroom_last_t = global.WA_TLM_clock }
+			}
+		}
 		# Fix 38 accumulator: type 2 by construction of the selection above
 		add_to_variable = { WA_AI_PC_air_factories_assigned = assign_amount }
 		# tlm: r8_air_lane_grants / _first_t / _last_t - counter + stamp, ONLY when the
@@ -664,6 +745,61 @@ WA_AI_PC_assign_factories = {
 		}
 	}
 
+	# Fix 87 / P1: SECOND air-lane grant - same body as the first, for _pc_air_lane2_proj_.
+	# Only exists while WA_AI_PC_air_deficit_pct > @AI_PC_AIR_LANE_2ND_SLOT_PCT (selection above).
+	if = {
+		limit = {
+			NOT = { check_variable = { _pc_air_lane2_proj_ < 0 } }
+			OR = {
+				check_variable = { available_factories_ > 0 }
+				check_variable = { _pc_air_headroom_ > 0 }
+			}
+			is_in_array = { WA_AI_PC_queue = _pc_air_lane2_proj_ }
+			NOT = { check_variable = { WA_AI_PC_target_state^_pc_air_lane2_proj_ = 0 } }
+			check_variable = { WA_AI_PC_progress^_pc_air_lane2_proj_ > 0 }
+		}
+		set_temp_variable = { assign_amount = available_factories_ }
+		add_to_temp_variable = { assign_amount = _pc_air_headroom_ }
+		clamp_temp_variable = { var = assign_amount min = 1 max = 20 }
+		round_temp_variable = assign_amount
+		set_temp_variable = { _pc_air_from_pool_ = available_factories_ }
+		clamp_temp_variable = { var = _pc_air_from_pool_ min = 0 max = 20 }
+		if = { limit = { check_variable = { _pc_air_from_pool_ > assign_amount } }
+			set_temp_variable = { _pc_air_from_pool_ = assign_amount }
+		}
+		round_temp_variable = _pc_air_from_pool_
+		set_temp_variable = { _pc_air_from_head_ = assign_amount }
+		subtract_from_temp_variable = { _pc_air_from_head_ = _pc_air_from_pool_ }
+		set_variable = { WA_AI_PC_assigned_factories^_pc_air_lane2_proj_ = assign_amount }
+		add_to_temp_variable = { _new_total = assign_amount }
+		subtract_from_temp_variable = { available_factories_ = _pc_air_from_pool_ }
+		subtract_from_temp_variable = { _pc_air_headroom_ = _pc_air_from_head_ }
+		add_to_variable = { WA_AI_PC_air_factories_assigned = assign_amount }
+		if = { limit = { check_variable = { _pc_air_from_head_ > 0 } }
+			if = { limit = { NOT = { check_variable = { _pc_air_head2_counted_ = 1 } } }
+				set_temp_variable = { _pc_air_head2_counted_ = 1 }
+				add_to_variable = { WA_TLM_r54_air_headroom_civs = _pc_air_from_head_ }
+				if = { limit = { check_variable = { WA_TLM_r54_air_headroom_first_t = 0 } }
+					set_variable = { WA_TLM_r54_air_headroom_first_t = global.WA_TLM_clock }
+				}
+				set_variable = { WA_TLM_r54_air_headroom_last_t = global.WA_TLM_clock }
+			}
+		}
+		# tlm: r54_air_lane2_grants - weeks the SECOND slot funded >= 1 factory (verified by the
+		# set_variable above), latched per pass. Consumer: checklist R54.
+		if = { limit = { NOT = { check_variable = { _pc_air_lane2_counted_ = 1 } } }
+			set_temp_variable = { _pc_air_lane2_counted_ = 1 }
+			add_to_variable = { WA_TLM_r54_air_lane2_grants = 1 }
+			if = { limit = { check_variable = { WA_TLM_r54_air_lane2_first_t = 0 } }
+				set_variable = { WA_TLM_r54_air_lane2_first_t = global.WA_TLM_clock }
+			}
+			set_variable = { WA_TLM_r54_air_lane2_last_t = global.WA_TLM_clock }
+		}
+		if = { limit = { has_country_flag = WA_AI_construction_logging }
+			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC AIR LANE 2: proj=[?_pc_air_lane2_proj_] granted [?assign_amount] factories ahead of the fill"
+		}
+	}
+
 	# Assign to projects from top of queue
 	# Fix 41: the laned project (_pc_lane_proj_, -1 when no lane) is excluded - it was
 	# already served above and must not be double-assigned (the set_variable here would
@@ -675,6 +811,7 @@ WA_AI_PC_assign_factories = {
 				check_variable = { available_factories_ > 0 }
 				NOT = { check_variable = { _project_id = _pc_lane_proj_ } }
 				NOT = { check_variable = { _project_id = _pc_air_lane_proj_ } }
+				NOT = { check_variable = { _project_id = _pc_air_lane2_proj_ } }	# Fix 87
 				# Check state is still valid
 				NOT = { check_variable = { WA_AI_PC_target_state^_project_id = 0 } }
 				# Check progress remaining
