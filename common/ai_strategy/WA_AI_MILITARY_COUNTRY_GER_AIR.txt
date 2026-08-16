@@ -1,0 +1,76 @@
+############################################################################################################
+# WA AI Military V2 - COUNTRY_GER_AIR
+############################################################################################################
+# Canonical domain: AIR (strategic_air_importance, land-theatre-facing).
+# See documentation/WA_AI_MILITARY_SYSTEM.md sections 2-4 and WA_AI_MILITARY_TYPES_REFERENCE.md.
+#
+# WHAT THIS FILE OWNS (Phase 7e, 2026-08-16)
+# The one German-only air rule of the legacy GER.txt family - the one that cannot be written at the
+# Faction layer because it is keyed on GERMAN strategic-region ids:
+#
+#   ger_defend_against_bombing                             -> WA_AI_MILITARY_GER_AIR_reich_air_defence
+#
+# Its faction-shaped siblings (Phoney-War avoidance, unfronted-France avoidance, British-Isles
+# avoidance) are WA_AI_MILITARY_FACTION_AXIS_AIR.txt. Why Country and not an archetype: the Reich pull
+# writes German region ids (6/7/8), which no other tag can use; any other country's home defence is
+# the engine's LAND_DEFENSE terms.
+#
+# NOT carried over: the +100,000 half of battle_of_france_yes (5 / 19 / 239 from `date > 1940.5.1`
+# until France capitulated). Its job - weight the northern approach over the south - is already done
+# by the standing +50k contested pull (WA_AI_MILITARY_DEFAULT_AIR_theatres.txt, which applies to GER
+# in Western Europe) composed with the Faction-layer -40k on the unfronted south/west
+# (WA_AI_MILITARY_AXIS_AIR_avoid_unfronted_*): north +50k vs south +10k. A Country push on top would
+# have needed a gate that tells the 1940 offensive from a 1944 defence of the same regions (both read
+# "WEU contested, enemy holds the coast, we do not hold Paris") and none exists without a date; and
+# importance only ranks the planes the engine already requests, so the extra +100k bought nothing the
+# +40k differential does not.
+#
+# What changed and why (AGENTS.md principle 1):
+# - `date > 1940.5.1` + `has_war_with = FRA` + `FRA = { has_capitulated = no }` become "Western Europe is
+#   contested, an enemy still holds the Channel coast, our side does not yet hold Paris" - the offensive
+#   is on and not finished, whoever holds France and whenever it starts. (Superseded the same day by
+#   the decision above not to carry the push at all - kept here so the reasoning reads.)
+# - `has_war_with = SOV` + `has_global_flag = fall_of_france` (the two-front proxy for "the western
+#   Allies bomb the Reich") become "an enemy fields a strategic-bomber arm" - the mirror of the Allied
+#   ladder's nucleus bar (@WA_AI_AIR_BOMBER_NUCLEUS in WA_AI_MILITARY_triggers.txt).
+# - REMOVED, not retuned: ger_defend_against_bombing's -1,000,000 on 5 Benelux. Its purpose is recorded
+#   nowhere; it was live from Barbarossa to the end of every campaign, so during the 1944 campaign the
+#   Luftwaffe was forbidden Belgian airspace while the Allies advanced through it (a232d96c: GER 0
+#   planes assigned to region 5 at every sample while 3 689 flew over 239). A home-defence pull does not
+#   need a Benelux blackout; the DEFAULT_AIR contested pull and the engine's front terms decide Benelux.
+#
+# What this file cannot do: strategic_air_importance ranks regions for the planes the engine already
+# requests; it does not create demand (checklist R15 RECUT 2026-08-16).
+############################################################################################################
+
+
+# purpose: keep a standing share of the Luftwaffe over the Reich once an enemy fields a bomber arm able
+#          to raid it - the home-defence pull the engine's per-raid LAND_DEFENSE terms only supply
+#          after the bombers arrive
+# range:   +50000 per strategic region (HEAD carried +10000; the modder raised it to +50000 in the
+#          working tree on 2026-08-16 before this relocation, aligning it with the DEFAULT_AIR standing
+#          tier - kept at that value)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_GER_AIR_reich_air_defence = {
+	allowed = {
+		original_tag = GER
+	}
+	enable = {
+		WA_AI_MILITARY_AIR_actor_enabled = yes
+		has_deployed_air_force_size = { size > 99 }
+		WA_AI_MILITARY_AIR_enemy_fields_bomber_arm = yes			# arm above @WA_AI_AIR_BOMBER_NUCLEUS
+	}
+	# release only once every enemy arm is back under @WA_AI_AIR_ENEMY_BOMBER_ARM_OFF - the ON/OFF band
+	# keeps a bomber count hovering at the bar from flipping the pull every 5-day air update
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_actor_enabled = yes }
+			WA_AI_MILITARY_AIR_enemy_bomber_arm_gone = yes
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 6 value = 50000 }		# North-West Germany
+	ai_strategy = { type = strategic_air_importance id = 7 value = 50000 }		# Western Germany
+	ai_strategy = { type = strategic_air_importance id = 8 value = 50000 }		# Eastern Germany
+}

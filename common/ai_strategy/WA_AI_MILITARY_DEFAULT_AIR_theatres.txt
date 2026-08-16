@@ -6,14 +6,22 @@
 # documentation/WA_AI_MILITARY_SYSTEM.md section 3 and WA_AI_MILITARY_TYPES_REFERENCE.md.
 #
 # WHY THIS FILE EXISTS
-# The engine distributes air wings across strategic regions by importance = engine terms
-# (own combats x100, own armies x25; a stocked main front in active combat scores ~35,000)
-# PLUS scripted strategic_air_importance. This mod's replace_path removed vanilla's
-# Europe/theatre push guidance and, before this file, the only scripted pulls were a handful
-# of country/faction specials (ENG.txt D-Day/Husky, GER/ITA/SOV blocks, NAVAL downfall/sealion).
+# The engine ORDERS strategic regions by importance = engine terms (own combats x100, own
+# armies x25; a stocked main front in active combat scores ~35,000) PLUS scripted
+# strategic_air_importance, and fills the regions in that order with the planes it REQUESTS.
+# The request itself comes only from engine terms - own combats/armies in the region, enemy
+# planes in a combat region, enemy factories for strategic bombing, ships for naval strike -
+# never from the scripted value (verified on campaign a232d96c, 2026-08-16: every USAAF wing
+# based in the continental US carried mission type=0 while Northern France stood at +250k, and
+# USA planes over the theatre tracked USA divisions in France, 0 -> 673 planes, 70 -> ~3 800;
+# checklist R15 RECUT). So a pull here decides WHERE the planes the engine already wants go;
+# it cannot stage an air force into a theatre before the ground war creates the demand.
+# This mod's replace_path removed vanilla's Europe/theatre push guidance and, before this
+# file, the only scripted pulls were a handful of country/faction specials (the Allied family
+# now in WA_AI_MILITARY_FACTION_ALLIES_AIR.txt, GER/ITA/SOV blocks, NAVAL downfall/sealion).
 # Result observed in campaign 66d6b53c: the USAAF kept 8,595 of 13,791 planes in the
-# continental US through 1944 - no generic rule ever asked any country to base air where its
-# side was actually fighting.
+# continental US through 1944 - and the theatre pulls below did not move that number, for the
+# reason above; what moves it is the landing itself.
 #
 # DESIGN
 # One block per air theatre (a bounded list of strategic regions). A block enables when the
@@ -31,20 +39,26 @@
 # for no added expressiveness - the theatre list below is bounded and declarative.
 #
 # VALUE ECONOMY (+50,000 per region)
-# The contract with the ENG.txt Allied suppression family changed: those blocks were retuned
-# from -250k..-1M down to -2k..-40k per region (see the retune banner above
-# Allies_bombing_germany_is_too_costly in ENG.txt) and now express MILD standing avoidance
+# The contract with the Allied suppression family (now WA_AI_MILITARY_ALLIES_AIR_* in
+# WA_AI_MILITARY_FACTION_ALLIES_AIR.txt, Phase 7d) changed: those blocks were retuned
+# from -250k..-1M down to -2k..-40k per region (SUPPRESSION RETUNE tiers, recorded in that
+# file's Phase 7d banner) and now express MILD standing avoidance
 # that a CONTESTED theatre must override - at the old values the Allied ledger was
 # net-negative across all of Europe 1940-1944 and these pulls were inert. +50,000 beats the
-# deepest retuned suppression stack (-48,000 on Poland/296: too_costly -40k + occupied_allies
-# -8k) and the common two-deep stacks (-40,000 on 19/290/20/24/25/295), so a contested region
-# always nets positive against standing avoidance. It stays well below the emergency family
+# common suppression stacks (-40,000 on 19/290/20/24/25/295; -48,000 on Poland/296 once the Reich
+# ladder is at one rung), so a contested region nets positive against standing avoidance - with
+# ONE recorded exception: while the coalition fields under 450 strategic bombers the ladder holds
+# two rungs on 296 (-20k blackout + -40k too_costly) and with the -8k occupied-Europe term Poland
+# reads -68,000, i.e. -18,000 net under this pull. Accepted: a coalition with no bomber arm has
+# nothing to send that far east; the pull wins the moment the ladder releases a rung. It stays well below the emergency family
 # (+100k..+500k D-Day/Husky/sealion pushes), which keeps precedence over theatre pulls.
 # Note: +50k exceeds the engine's hot-main-front reference (~35k), so a contested theatre can
 # now out-rank an active front in a DIFFERENT theatre; the capital-theatre exclusion still
 # prevents pile-on at home, and in-theatre fronts add their engine terms on top of the pull.
 #
 # KNOWN LIMITS
+# - A pull does not create demand (see WHY THIS FILE EXISTS): a country with no ground presence
+#   and no bombing target in the theatre requests no planes there, and the pull moves nothing.
 # - A pull toward a theatre where the country's side holds no in-range air-base capacity is
 #   inert (the engine only rebases into friendly capacity). Mitigated: WA_AI_build_theatre_air_bases
 #   (common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_strategies.txt) builds air bases inside
@@ -57,7 +71,7 @@
 #   with its capital/armies in-theatre (engine terms dominate), and JAP country blocks already
 #   tune that air war.
 # - Burma (189) / Thailand (340) carry a -2,000 suppression (retuned from -50,000) for western
-#   Allies at war with Germany from ENG.txt Allies_dont_bomb_random_places; when those theatres
+#   Allies at war with the Axis from WA_AI_MILITARY_ALLIES_AIR_avoid_out_of_theatre; when those theatres
 #   are contested the +50k here dominates (net +48k), when uncontested the mild avoidance stands.
 ############################################################################################################
 
@@ -67,6 +81,7 @@
 # domain:  AIR
 WA_AI_MILITARY_DEFAULT_AIR_north_africa = {
 	enable = {
+		WA_AI_MILITARY_AIR_actor_enabled = yes
 		has_war = yes
 		surrender_progress < 0.1
 		# skip token air forces (WA air scale is ~1/3 vanilla)
@@ -91,6 +106,7 @@ WA_AI_MILITARY_DEFAULT_AIR_north_africa = {
 # domain:  AIR
 WA_AI_MILITARY_DEFAULT_AIR_italy = {
 	enable = {
+		WA_AI_MILITARY_AIR_actor_enabled = yes
 		has_war = yes
 		surrender_progress < 0.1
 		# skip token air forces (WA air scale is ~1/3 vanilla)
@@ -112,6 +128,7 @@ WA_AI_MILITARY_DEFAULT_AIR_italy = {
 # domain:  AIR
 WA_AI_MILITARY_DEFAULT_AIR_western_europe = {
 	enable = {
+		WA_AI_MILITARY_AIR_actor_enabled = yes
 		has_war = yes
 		surrender_progress < 0.1
 		# skip token air forces (WA air scale is ~1/3 vanilla)
@@ -135,6 +152,7 @@ WA_AI_MILITARY_DEFAULT_AIR_western_europe = {
 # domain:  AIR
 WA_AI_MILITARY_DEFAULT_AIR_scandinavia = {
 	enable = {
+		WA_AI_MILITARY_AIR_actor_enabled = yes
 		has_war = yes
 		surrender_progress < 0.1
 		# skip token air forces (WA air scale is ~1/3 vanilla)
@@ -156,6 +174,7 @@ WA_AI_MILITARY_DEFAULT_AIR_scandinavia = {
 # domain:  AIR
 WA_AI_MILITARY_DEFAULT_AIR_balkans = {
 	enable = {
+		WA_AI_MILITARY_AIR_actor_enabled = yes
 		has_war = yes
 		surrender_progress < 0.1
 		# skip token air forces (WA air scale is ~1/3 vanilla)
@@ -179,6 +198,7 @@ WA_AI_MILITARY_DEFAULT_AIR_balkans = {
 # domain:  AIR
 WA_AI_MILITARY_DEFAULT_AIR_eastern_europe = {
 	enable = {
+		WA_AI_MILITARY_AIR_actor_enabled = yes
 		has_war = yes
 		surrender_progress < 0.1
 		# skip token air forces (WA air scale is ~1/3 vanilla)
@@ -203,6 +223,7 @@ WA_AI_MILITARY_DEFAULT_AIR_eastern_europe = {
 # domain:  AIR
 WA_AI_MILITARY_DEFAULT_AIR_middle_east = {
 	enable = {
+		WA_AI_MILITARY_AIR_actor_enabled = yes
 		has_war = yes
 		surrender_progress < 0.1
 		# skip token air forces (WA air scale is ~1/3 vanilla)
@@ -225,6 +246,7 @@ WA_AI_MILITARY_DEFAULT_AIR_middle_east = {
 # domain:  AIR
 WA_AI_MILITARY_DEFAULT_AIR_burma_india = {
 	enable = {
+		WA_AI_MILITARY_AIR_actor_enabled = yes
 		has_war = yes
 		surrender_progress < 0.1
 		# skip token air forces (WA air scale is ~1/3 vanilla)
@@ -245,6 +267,7 @@ WA_AI_MILITARY_DEFAULT_AIR_burma_india = {
 # domain:  AIR
 WA_AI_MILITARY_DEFAULT_AIR_southeast_asia = {
 	enable = {
+		WA_AI_MILITARY_AIR_actor_enabled = yes
 		has_war = yes
 		surrender_progress < 0.1
 		# skip token air forces (WA air scale is ~1/3 vanilla)
@@ -271,6 +294,7 @@ WA_AI_MILITARY_DEFAULT_AIR_southeast_asia = {
 # domain:  AIR
 WA_AI_MILITARY_DEFAULT_AIR_pacific_islands = {
 	enable = {
+		WA_AI_MILITARY_AIR_actor_enabled = yes
 		has_war = yes
 		surrender_progress < 0.1
 		# skip token air forces (WA air scale is ~1/3 vanilla)

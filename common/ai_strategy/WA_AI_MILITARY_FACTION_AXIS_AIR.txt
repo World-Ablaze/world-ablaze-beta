@@ -1,0 +1,142 @@
+############################################################################################################
+# WA AI Military V2 - FACTION_AXIS_AIR
+############################################################################################################
+# Canonical domain: AIR (strategic_air_importance, land-theatre-facing).
+# See documentation/WA_AI_MILITARY_SYSTEM.md sections 2-4 and WA_AI_MILITARY_TYPES_REFERENCE.md.
+#
+# WHAT THIS FILE OWNS (Phase 7e, 2026-08-16)
+# The coalition-level air policy of the Axis in the West: what every Axis air force is told to avoid
+# while the western front is not open, while the Battle of Britain is not on, and where in France no
+# front exists. It replaces the faction-shaped half of the legacy GER.txt air family:
+#
+#   battle_of_france_no        -> WA_AI_MILITARY_AXIS_AIR_western_front_not_open
+#   battle_of_france_yes (the -1M half on 20 / 290 / 11)
+#                              -> WA_AI_MILITARY_AXIS_AIR_avoid_unfronted_france (11 dropped, see below)
+#   battle_of_britain_no       -> WA_AI_MILITARY_AXIS_AIR_avoid_british_isles
+#
+# The German-only half (the Reich air-defence pull, id-keyed on German regions) is
+# WA_AI_MILITARY_COUNTRY_GER_AIR.txt; the +100k schwerpunkt half of battle_of_france_yes was not carried
+# over (see that file's header: the +50k contested pull composed with the -40k unfronted suppression
+# already yields the north/south differential).
+#
+# What changed and why (AGENTS.md principles 1 and 2):
+# - Gating: the seven-tag list (GER/ITA/ROM/HUN/BUL/FIN/SPR) and `tag = GER OR is_in_faction_with = GER`
+#   become WA_AI_MILITARY_is_axis_member. `date < 1940.5.1` / `date > 1940.11.1`, `has_war_with = FRA`,
+#   `has_war_with = SOV`, `has_capitulated` become state: an enemy holds the Channel coast and our side
+#   holds nothing in Western Europe (front not open); our side holds the coast, an enemy holds London
+#   and we are not fighting the Comintern (Battle of Britain window); our side holds no state of a
+#   French region (no front there). Switches: common/scripted_triggers/WA_AI_MILITARY_triggers.txt,
+#   section "AIR - Axis western front / Battle of Britain / Reich air defence".
+# - Values: the legacy -500,000 / -1,000,000 join the SUPPRESSION RETUNE tiers (-500k -> -20k,
+#   -1M -> -40k): mild avoidance that a contested theatre (+50k, WA_AI_MILITARY_DEFAULT_AIR_theatres.txt)
+#   or the engine's own combat terms override. At the legacy values these blocks were black holes:
+#   battle_of_france_yes's -1M on 11 Southern Norway was live during Weseruebung and cancelled the
+#   Scandinavia theatre pull outright, and battle_of_britain_no's -1M on the Channel/North Sea regions
+#   was live from Barbarossa to the end of the war.
+# - Dropped: 11 Southern Norway from the France block - Norway is the Scandinavia air theatre's
+#   business (WA_AI_MILITARY_DEFAULT_AIR_scandinavia), and a France-offensive block writing Norway was
+#   the bug above, not a design.
+#
+# Every block also reads WA_AI_MILITARY_AIR_actor_enabled (the WA_TEST_air_actors kill switch, always
+# true outside the harness), like the DEFAULT and ALLIES air files.
+#
+# What this family cannot do: strategic_air_importance ranks regions for the planes the engine already
+# requests; it does not create demand (checklist R15 RECUT 2026-08-16). Suppressions here bias planes
+# AWAY from regions where nothing of ours fights; they cannot make a Luftwaffe appear over Britain.
+############################################################################################################
+
+
+# purpose: keep Axis air out of French airspace while an enemy holds the Channel coast and our side holds
+#          nothing in Western Europe - the Phoney War, or any Franco-Axis war whose front has not opened
+# range:   -20000 per strategic region (was -500000)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_AXIS_AIR_western_front_not_open = {
+	enable = {
+		WA_AI_MILITARY_is_axis_member = yes
+		WA_AI_MILITARY_AIR_actor_enabled = yes
+		WA_AI_MILITARY_AIR_channel_coast_enemy_held = yes
+		NOT = { WA_AI_MILITARY_AIR_theatre_contested_western_europe = yes }
+		# a member whose capital sits in France is defending its homeland, not avoiding it
+		NOT = { capital_scope = { OR = { region = 239 region = 19 region = 290 region = 20 region = 5 } } }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = strategic_air_importance id = 19 value = -20000 }	# Central France
+	ai_strategy = { type = strategic_air_importance id = 239 value = -20000 }	# Northern France
+	ai_strategy = { type = strategic_air_importance id = 20 value = -20000 }	# Southern France
+	ai_strategy = { type = strategic_air_importance id = 290 value = -20000 }	# Western France
+}
+
+
+# purpose: while the western front is open, keep Axis air off the French regions where our side holds
+#          no ground - the legacy "battle of France: north, not south" shaping, per region and by state
+#          instead of -1M on the whole south from a date
+# range:   -40000 per strategic region (was -1000000; nets +10k under the +50k contested pull)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_AXIS_AIR_avoid_unfronted_western_france = {
+	enable = {
+		WA_AI_MILITARY_is_axis_member = yes
+		WA_AI_MILITARY_AIR_actor_enabled = yes
+		WA_AI_MILITARY_AIR_theatre_contested_western_europe = yes
+		WA_AI_MILITARY_AIR_enemy_holds_western_france = yes
+		NOT = { WA_AI_MILITARY_AIR_own_side_holds_western_france = yes }
+		NOT = { capital_scope = { OR = { region = 239 region = 19 region = 290 region = 20 region = 5 } } }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = strategic_air_importance id = 290 value = -40000 }	# Western France
+}
+
+# purpose: same, Southern France
+# range:   -40000 per strategic region (was -1000000)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_AXIS_AIR_avoid_unfronted_southern_france = {
+	enable = {
+		WA_AI_MILITARY_is_axis_member = yes
+		WA_AI_MILITARY_AIR_actor_enabled = yes
+		WA_AI_MILITARY_AIR_theatre_contested_western_europe = yes
+		WA_AI_MILITARY_AIR_enemy_holds_southern_france = yes
+		NOT = { WA_AI_MILITARY_AIR_own_side_holds_southern_france = yes }
+		NOT = { capital_scope = { OR = { region = 239 region = 19 region = 290 region = 20 region = 5 } } }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = strategic_air_importance id = 20 value = -40000 }	# Southern France
+}
+
+
+# purpose: keep Axis air out of British airspace and the surrounding waters except during the Battle of
+#          Britain window (our side holds the Channel coast, an enemy holds London, no Comintern land
+#          war) or a live Sealion (sealion_active - set once by ger_armor.1000 in events/WA_AI_GER.txt,
+#          hard difficulty vs a HUMAN England only; in an AI-vs-AI game the window trigger is the only path)
+# range:   -20000 (Channel / Southern Bight / North Sea) and -40000 (British regions, Atlantic
+#          approaches) per strategic region (were -500000 / -1000000)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_AXIS_AIR_avoid_british_isles = {
+	enable = {
+		WA_AI_MILITARY_is_axis_member = yes
+		WA_AI_MILITARY_AIR_actor_enabled = yes
+		NOT = { has_country_flag = sealion_active }
+		NOT = { WA_AI_MILITARY_AIR_battle_of_britain_window = yes }
+		# a member whose capital sits in the British Isles is defending its homeland
+		NOT = { WA_AI_MILITARY_AIR_capital_in_british_isles = yes }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = strategic_air_importance id = 18 value = -20000 }	# English Channel
+	ai_strategy = { type = strategic_air_importance id = 365 value = -20000 }	# Southern Bight
+	ai_strategy = { type = strategic_air_importance id = 16 value = -20000 }	# North Sea
+	ai_strategy = { type = strategic_air_importance id = 1 value = -40000 }		# Southern England
+	ai_strategy = { type = strategic_air_importance id = 2 value = -40000 }		# Northern England
+	ai_strategy = { type = strategic_air_importance id = 3 value = -40000 }		# Scotland
+	ai_strategy = { type = strategic_air_importance id = 4 value = -40000 }		# Ireland
+	ai_strategy = { type = strategic_air_importance id = 369 value = -40000 }	# British Isles
+	ai_strategy = { type = strategic_air_importance id = 42 value = -40000 }	# Bay of Biscay
+	ai_strategy = { type = strategic_air_importance id = 241 value = -40000 }	# Irish Sea
+	ai_strategy = { type = strategic_air_importance id = 43 value = -40000 }	# Western Approaches
+	ai_strategy = { type = strategic_air_importance id = 47 value = -40000 }	# Iberian Coast
+}

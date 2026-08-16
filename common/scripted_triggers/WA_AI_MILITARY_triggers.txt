@@ -1683,3 +1683,340 @@ WA_AI_MILITARY_AIR_allies_should_raid_reich = {
 	has_deployed_air_force_size = { size > @WA_AI_AIR_BOMBER_OWN_ARM type = strategic_bomber }
 	surrender_progress < 0.1
 }
+
+############################################################################################################
+# AIR - Allied Western Europe / Mediterranean state triggers (Phase 7d, 2026-08-16)
+############################################################################################################
+# Switches for the WA_AI_MILITARY_ALLIES_AIR_* blocks that replaced the legacy ENG.txt family
+# (battle_of_britain_priority, Allies_avoid_bombing_occupied_allies, Allies_dont_logi_strike_during_bob,
+# Allies_dday_air, Allies_husky_air, Allies_avoid_bombing_occupied_uk, Allies_bomb_germany,
+# Allies_bomb_germany_2, Allies_dont_bomb_random_places). Those blocks decided the same questions with
+# dates (1943.7-11 Husky, 1944.2-7 D-Day pre-arm) and with `GER = { is_ai = no }`; every switch below is
+# dynamic game state so the family produces the same shape on the historical path and still has
+# behaviour when the war diverges (France never falls, the landing comes in 1943 or 1946, Italy is
+# invaded from the Balkans, Germany is a human player in an ahistorical line-up).
+#
+# THE STATE SETS
+# - Channel coast = the seven states the legacy family keyed on: 14 Brittany, 15 Lower Normandy,
+#   1016 Upper Normandy, 785 Picardy, 19 Loire, 23 Vendee, 30 Poitou (western France sits in the set
+#   because the legacy "France has fallen" test listed it; kept as one set so the ledger reads
+#   identically). "Fully enemy held" is the AND the legacy blocks used ("France has fallen"),
+#   "enemy held" the OR ("there is something to invade").
+# - Far shore = 6 Vlaanderen, 7 Holland, 29 Nord-Pas-de-Calais, 785 Picardy, 1016 Upper Normandy,
+#   15 Lower Normandy, 14 Brittany, 16 Ile-de-France, 855 Paris - the set battle_of_britain_priority
+#   stood down on ("the Allies hold the far shore or Paris").
+# - Home islands lost = London (126) AND Birmingham (128) enemy-held. The legacy block fired on ANY of
+#   20 British states, so a single Sealion beachhead in Kent switched the RAF OFF over southern England
+#   and cancelled WA_AI_NAVAL_FACTION_ALLIES_sealion_is_happening's +500k on the same regions; two inland
+#   industrial states is "the islands are gone", not "a beach is contested".
+#
+# WHAT REPLACES THE DATES
+# - The D-Day pre-arm window (1944.2.1 -> 1944.7.1) becomes STAGING: an overseas Allied army massed in a
+#   Channel-coast county. Read on the a232d96c saves: USA held 9 divisions in Sussex and 7 in Kent on
+#   1944.6.1 (ENG 15 / 11); no overseas ally parks that many there outside an invasion build-up.
+#   ROOT's own divisions count only if ROOT's capital is not in the British Isles (the home army
+#   garrisons Kent every year of the war and must not arm the push in 1940); an overseas partner's
+#   divisions count for everyone in the faction, so ENG gets the push when the USA/CAN stage.
+# - The Husky window (1943.7.1 -> 1943.11.1) becomes the Sicily FOOTHOLD (own side controls 115 or 1032)
+#   while an enemy still holds the mainland toe (156 / 117 / 986).
+#
+# WHAT THIS DOES NOT DO (read before tuning): strategic_air_importance RANKS regions for the planes the
+# engine already requests; it does not create demand. Demand comes from own combats/armies, enemy planes
+# in a combat region, enemy factories (strategic bombing) and ships. Verified on a232d96c: every USAAF
+# wing based in the continental US carried mission type=0 with region 239 at +250k, and USA planes over
+# the theatre tracked USA divisions in France (0 -> 673 planes, 70 -> ~3 800). The push moves the
+# marginal share; it will not stage an air force (checklist R15 RECUT 2026-08-16).
+
+# One overseas ally holding this many divisions in ONE Channel-coast county is an invasion build-up.
+# ON 6: above any area-defence garrison a non-British ally keeps there, below the smallest real staging
+# read (USA 7 in Kent, 9 in Sussex, 1944.6.1 on a232d96c). OFF 2: the push stays armed until the
+# stagers have essentially left (embarked or split below a garrison) - the hysteresis band that keeps
+# a 9-division stack splitting 5/4 across Kent/Sussex from flapping the ledger every 5-day air update.
+# How to tell the assumption is gone: a save where an overseas ally holds > 6 divisions in one of these
+# counties with NO invasion within 6 months (a permanent garrison), or a real staging that never
+# crosses 6 in any single county - re-read the counts, do not widen the list. Read by this file only.
+@WA_AI_AIR_STAGING_DIVISIONS_ON = 6
+@WA_AI_AIR_STAGING_DIVISIONS_OFF = 2
+
+WA_AI_MILITARY_AIR_channel_coast_enemy_held = {
+	OR = {
+		14 = { CONTROLLER = { has_war_with = ROOT } }
+		15 = { CONTROLLER = { has_war_with = ROOT } }
+		1016 = { CONTROLLER = { has_war_with = ROOT } }
+		785 = { CONTROLLER = { has_war_with = ROOT } }
+		19 = { CONTROLLER = { has_war_with = ROOT } }
+		23 = { CONTROLLER = { has_war_with = ROOT } }
+		30 = { CONTROLLER = { has_war_with = ROOT } }
+	}
+}
+
+WA_AI_MILITARY_AIR_channel_coast_fully_enemy_held = {
+	14 = { CONTROLLER = { has_war_with = ROOT } }
+	15 = { CONTROLLER = { has_war_with = ROOT } }
+	1016 = { CONTROLLER = { has_war_with = ROOT } }
+	785 = { CONTROLLER = { has_war_with = ROOT } }
+	19 = { CONTROLLER = { has_war_with = ROOT } }
+	23 = { CONTROLLER = { has_war_with = ROOT } }
+	30 = { CONTROLLER = { has_war_with = ROOT } }
+}
+
+# The far shore is held by a HUMAN enemy - the only case in which a cross-Channel invasion of the
+# home islands is a live threat (the AI never sealions; the legacy block wrote `GER = { is_ai = no }`).
+WA_AI_MILITARY_AIR_channel_coast_enemy_is_human = {
+	OR = {
+		6 = { CONTROLLER = { has_war_with = ROOT is_ai = no } }
+		7 = { CONTROLLER = { has_war_with = ROOT is_ai = no } }
+		29 = { CONTROLLER = { has_war_with = ROOT is_ai = no } }
+		785 = { CONTROLLER = { has_war_with = ROOT is_ai = no } }
+		1016 = { CONTROLLER = { has_war_with = ROOT is_ai = no } }
+		15 = { CONTROLLER = { has_war_with = ROOT is_ai = no } }
+		14 = { CONTROLLER = { has_war_with = ROOT is_ai = no } }
+	}
+}
+
+WA_AI_MILITARY_AIR_allies_hold_far_shore = {
+	OR = {
+		6 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		7 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		29 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		785 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		1016 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		15 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		14 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		16 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		855 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+	}
+}
+
+# ROOT's capital sits in the British Isles (Southern England 1 / Northern England 2 / Scotland 3 /
+# Ireland 4) - the home army's coastal garrison is not an invasion build-up.
+WA_AI_MILITARY_AIR_capital_in_british_isles = {
+	capital_scope = { OR = { region = 1 region = 2 region = 3 region = 4 } }
+}
+
+# An overseas Allied army massed in a Channel-coast county: 857 Kent, 127 Sussex, 859 Dorset,
+# 125 Essex, 961 South London, 126 North London, 123 Cornwall.
+# Exiled governments (Free France, Poland, Norway...) carry their capital to the host's - London - so
+# their stacks in Kent do not arm the push either; only a genuinely overseas ally does (USA, CAN, ...).
+WA_AI_MILITARY_AIR_own_army_staged_on_channel_coast = {
+	NOT = { WA_AI_MILITARY_AIR_capital_in_british_isles = yes }
+	OR = {
+		divisions_in_state = { state = 857 size > @WA_AI_AIR_STAGING_DIVISIONS_ON }
+		divisions_in_state = { state = 127 size > @WA_AI_AIR_STAGING_DIVISIONS_ON }
+		divisions_in_state = { state = 859 size > @WA_AI_AIR_STAGING_DIVISIONS_ON }
+		divisions_in_state = { state = 125 size > @WA_AI_AIR_STAGING_DIVISIONS_ON }
+		divisions_in_state = { state = 961 size > @WA_AI_AIR_STAGING_DIVISIONS_ON }
+		divisions_in_state = { state = 126 size > @WA_AI_AIR_STAGING_DIVISIONS_ON }
+		divisions_in_state = { state = 123 size > @WA_AI_AIR_STAGING_DIVISIONS_ON }
+	}
+}
+
+# The release half of the band: still more than a garrison somewhere on the coast.
+WA_AI_MILITARY_AIR_own_army_still_on_channel_coast = {
+	NOT = { WA_AI_MILITARY_AIR_capital_in_british_isles = yes }
+	OR = {
+		divisions_in_state = { state = 857 size > @WA_AI_AIR_STAGING_DIVISIONS_OFF }
+		divisions_in_state = { state = 127 size > @WA_AI_AIR_STAGING_DIVISIONS_OFF }
+		divisions_in_state = { state = 859 size > @WA_AI_AIR_STAGING_DIVISIONS_OFF }
+		divisions_in_state = { state = 125 size > @WA_AI_AIR_STAGING_DIVISIONS_OFF }
+		divisions_in_state = { state = 961 size > @WA_AI_AIR_STAGING_DIVISIONS_OFF }
+		divisions_in_state = { state = 126 size > @WA_AI_AIR_STAGING_DIVISIONS_OFF }
+		divisions_in_state = { state = 123 size > @WA_AI_AIR_STAGING_DIVISIONS_OFF }
+	}
+}
+
+# Arm: some overseas ally (ROOT or a partner) is massed above the ON bar in one county.
+WA_AI_MILITARY_AIR_allies_staging_on_channel_coast = {
+	OR = {
+		WA_AI_MILITARY_AIR_own_army_staged_on_channel_coast = yes
+		any_allied_country = { WA_AI_MILITARY_AIR_own_army_staged_on_channel_coast = yes }
+	}
+}
+
+# Hold: some overseas ally still holds more than the OFF bar somewhere on the coast.
+WA_AI_MILITARY_AIR_allies_still_staging_on_channel_coast = {
+	OR = {
+		WA_AI_MILITARY_AIR_own_army_still_on_channel_coast = yes
+		any_allied_country = { WA_AI_MILITARY_AIR_own_army_still_on_channel_coast = yes }
+	}
+}
+
+WA_AI_MILITARY_AIR_home_islands_lost = {
+	126 = { CONTROLLER = { has_war_with = ROOT } }
+	128 = { CONTROLLER = { has_war_with = ROOT } }
+}
+
+# Sicily foothold / mainland toe - the Husky -> Avalanche window as state.
+WA_AI_MILITARY_AIR_allies_sicily_foothold = {
+	OR = {
+		115 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		1032 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+	}
+}
+
+WA_AI_MILITARY_AIR_southern_italy_enemy_held = {
+	OR = {
+		156 = { CONTROLLER = { has_war_with = ROOT } }
+		117 = { CONTROLLER = { has_war_with = ROOT } }
+		986 = { CONTROLLER = { has_war_with = ROOT } }
+	}
+}
+
+# Enemy presence anywhere in the Italy air theatre (same state list as
+# WA_AI_MILITARY_AIR_theatre_contested_italy's enemy half; must-match).
+WA_AI_MILITARY_AIR_italy_enemy_held = {
+	OR = {
+		39 = { CONTROLLER = { has_war_with = ROOT } }
+		158 = { CONTROLLER = { has_war_with = ROOT } }
+		159 = { CONTROLLER = { has_war_with = ROOT } }
+		160 = { CONTROLLER = { has_war_with = ROOT } }
+		885 = { CONTROLLER = { has_war_with = ROOT } }
+		2 = { CONTROLLER = { has_war_with = ROOT } }
+		157 = { CONTROLLER = { has_war_with = ROOT } }
+		161 = { CONTROLLER = { has_war_with = ROOT } }
+		162 = { CONTROLLER = { has_war_with = ROOT } }
+		856 = { CONTROLLER = { has_war_with = ROOT } }
+		115 = { CONTROLLER = { has_war_with = ROOT } }
+		117 = { CONTROLLER = { has_war_with = ROOT } }
+		156 = { CONTROLLER = { has_war_with = ROOT } }
+		986 = { CONTROLLER = { has_war_with = ROOT } }
+		1032 = { CONTROLLER = { has_war_with = ROOT } }
+	}
+}
+
+# At war with an Axis member and NOT with the Comintern - the "out of theatre" condition the legacy
+# Allies_dont_bomb_random_places wrote as `has_war_with = GER` + `NOT has_war_with = SOV`.
+WA_AI_MILITARY_AIR_allies_fighting_axis_not_comintern = {
+	WA_AI_MILITARY_allies_at_war_with_axis = yes
+	NOT = { any_enemy_country = { WA_AI_MILITARY_is_comintern_member = yes } }
+}
+
+# Test-harness kill switch (WA_TEST_air_actors.txt): a country carrying WA_TEST_air_muted writes no
+# scripted strategic_air_importance at all - every generic / faction AIR block reads this in its
+# enable. Set only by WA_TEST_air_* console effects; absent in a normal game, so this is always true.
+WA_AI_MILITARY_AIR_actor_enabled = {
+	NOT = { has_country_flag = WA_TEST_air_muted }
+}
+
+############################################################################################################
+# AIR - Axis western front / Battle of Britain / Reich air defence state triggers (Phase 7e, 2026-08-16)
+############################################################################################################
+# Switches for WA_AI_MILITARY_FACTION_AXIS_AIR.txt and WA_AI_MILITARY_COUNTRY_GER_AIR.txt, which
+# replaced the legacy GER.txt air family (battle_of_france_no, battle_of_france_yes, battle_of_britain_no,
+# ger_defend_against_bombing). Those blocks keyed on `date < 1940.5.1` / `date > 1940.5.1` /
+# `date > 1940.11.1`, on `has_war_with = FRA` / `= SOV`, on `has_global_flag = fall_of_france` and on
+# a seven-tag Axis list; every switch below is game state so the same shape appears on the historical
+# path and the family still has behaviour when the war diverges (France attacked in 1941, no Barbarossa,
+# an Axis that never reaches the Channel, an ahistorical Axis line-up).
+#
+# The Channel-coast / far-shore / western-France state sets are shared with the Allied family above -
+# same states read from the other side of the front (an "enemy" test on 14/15/1016/785/19/23/30 is
+# France-under-Allied-control from the Axis view and France-under-Axis-control from the Allied view).
+
+# Own side (ROOT, faction, co-belligerent) holds at least one Channel-coast / western-France state.
+WA_AI_MILITARY_AIR_own_side_holds_channel_coast = {
+	OR = {
+		14 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		15 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		1016 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		785 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		19 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		23 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		30 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+	}
+}
+
+# Own side holds Paris / Ile-de-France - the western offensive has reached its objective.
+WA_AI_MILITARY_AIR_own_side_holds_paris = {
+	OR = {
+		16 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		855 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+	}
+}
+
+# Western France (strategic region 290): 14 Brittany, 19 Loire, 23 Vendee, 30 Poitou - same list as
+# WA_AI_MILITARY_AIR_theatre_contested_western_europe (must-match).
+WA_AI_MILITARY_AIR_own_side_holds_western_france = {
+	OR = {
+		14 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		19 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		23 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		30 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+	}
+}
+WA_AI_MILITARY_AIR_enemy_holds_western_france = {
+	OR = {
+		14 = { CONTROLLER = { has_war_with = ROOT } }
+		19 = { CONTROLLER = { has_war_with = ROOT } }
+		23 = { CONTROLLER = { has_war_with = ROOT } }
+		30 = { CONTROLLER = { has_war_with = ROOT } }
+	}
+}
+
+# Southern France (strategic region 20): 20 21 22 25 26 31 32 33 735 - same list as the WEU theatre.
+WA_AI_MILITARY_AIR_own_side_holds_southern_france = {
+	OR = {
+		20 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		21 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		22 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		25 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		26 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		31 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		32 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		33 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		735 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+	}
+}
+WA_AI_MILITARY_AIR_enemy_holds_southern_france = {
+	OR = {
+		20 = { CONTROLLER = { has_war_with = ROOT } }
+		21 = { CONTROLLER = { has_war_with = ROOT } }
+		22 = { CONTROLLER = { has_war_with = ROOT } }
+		25 = { CONTROLLER = { has_war_with = ROOT } }
+		26 = { CONTROLLER = { has_war_with = ROOT } }
+		31 = { CONTROLLER = { has_war_with = ROOT } }
+		32 = { CONTROLLER = { has_war_with = ROOT } }
+		33 = { CONTROLLER = { has_war_with = ROOT } }
+		735 = { CONTROLLER = { has_war_with = ROOT } }
+	}
+}
+
+# An enemy holds London - "the British home islands are enemy territory" from the Axis view.
+WA_AI_MILITARY_AIR_enemy_holds_london = {
+	126 = { CONTROLLER = { has_war_with = ROOT } }
+}
+
+# The Battle of Britain window as state, replacing "France has fallen AND date < 1940.11.1 AND not at
+# war with SOV": our side holds the Channel coast with no enemy left on it, an enemy holds London, and
+# we are not fighting the Comintern on the continent (the eastern land war is what historically ended
+# the campaign; the November 1940 date was that war's foreshadow, not a fact of its own). Without a
+# Barbarossa the window stays open - the Luftwaffe keeps contesting British airspace, which is the
+# sane ahistorical behaviour (the legacy date closed it whatever the strategic situation).
+WA_AI_MILITARY_AIR_battle_of_britain_window = {
+	WA_AI_MILITARY_AIR_own_side_holds_channel_coast = yes
+	NOT = { WA_AI_MILITARY_AIR_channel_coast_enemy_held = yes }
+	WA_AI_MILITARY_AIR_enemy_holds_london = yes
+	NOT = { any_enemy_country = { WA_AI_MILITARY_is_comintern_member = yes } }
+}
+
+# An enemy fields a strategic-bomber arm - the mirror of the Allied ladder's nucleus bar
+# (@WA_AI_AIR_BOMBER_NUCLEUS, declared above): home air defence becomes worth a standing pull only
+# once someone can actually raid the homeland. Replaces `has_war_with = SOV` + `fall_of_france`.
+WA_AI_MILITARY_AIR_enemy_fields_bomber_arm = {
+	any_enemy_country = {
+		has_deployed_air_force_size = { size > @WA_AI_AIR_BOMBER_NUCLEUS type = strategic_bomber }
+	}
+}
+
+# Release bar of the same pull: every enemy arm back under this. 199 = a third below the 299 arm bar,
+# so a bomber force attriting around the nucleus does not flip the Reich pull every 5-day update; below
+# it no one can mount a raid worth a standing home pull. Read by this file only.
+@WA_AI_AIR_ENEMY_BOMBER_ARM_OFF = 199
+
+WA_AI_MILITARY_AIR_enemy_bomber_arm_gone = {
+	NOT = {
+		any_enemy_country = {
+			has_deployed_air_force_size = { size > @WA_AI_AIR_ENEMY_BOMBER_ARM_OFF type = strategic_bomber }
+		}
+	}
+}
