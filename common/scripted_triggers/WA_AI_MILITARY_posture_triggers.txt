@@ -29,16 +29,10 @@
 #	THIS FILE IS THE CONTROL PANEL. Thresholds and switches live here; arithmetic lives in the effect.
 ############################################################################################################
 
-### Posture eligibility constants (must match common/scripted_effects/WA_AI_MILITARY_posture_effects.txt)
-@WA_AI_POSTURE_MIN_EQ = 0.9			# fielded-equipment ratio required to order any execution
-@WA_AI_POSTURE_BRAKE_SURRENDER = 0.2	# lost ground brakes only a weakened army (see hard-brake trigger)
-@WA_AI_POSTURE_BRAKE_SURRENDER_HARD = 0.45	# near-capitulation brakes an army that is not still operational
-@WA_AI_POSTURE_BRAKE_MIN_MP = 150000	# manpower floor for the weakened-army test (matches MIN_OWN_MP)
-
-### "Army still operational" constants (triggers-file only; no effects-file twin)
-@WA_AI_POSTURE_ALIVE_MIN_DIV = 40		# fewer deployed divisions than this is a rump, not an army
-@WA_AI_POSTURE_ALIVE_MIN_STATES = 20	# state base below this cannot sustain one (matches the railway hatch)
-
+### Posture thresholds: constant:wa_ai_posture.* in common/script_constants/wa_ai_posture.txt (since
+### 2026-08-16). This file reads enter.min_eq, brake.surrender / .surrender_hard, manpower.min_own_mp
+### (the weakened-army floor - same key the effect uses as its own floor) and alive.min_div /
+### .min_states ("army still operational").
 
 ############################################################################################################
 #	MASTER SWITCH - does this country use the posture system at all?
@@ -85,20 +79,20 @@ WA_AI_MILITARY_posture_hard_brake = {
 		AND = {
 			WA_AI_MILITARY_home_threatened = yes
 			has_variable = WA_AI_fielded_eq_ratio
-			check_variable = { WA_AI_fielded_eq_ratio < @WA_AI_POSTURE_MIN_EQ }
+			check_variable = { WA_AI_fielded_eq_ratio < constant:wa_ai_posture.enter.min_eq }
 		}
 
 		# Lost ground brakes only an army that is also materially weakened. Surrender progress alone
 		# must not latch the brake: 1943-44 SOV sits above 0.2 for years with 350+ divisions at full
 		# equipment, and braking it locked out the entire Soviet counterattack arc (Aug 1944 finding).
 		AND = {
-			surrender_progress > @WA_AI_POSTURE_BRAKE_SURRENDER
+			surrender_progress > constant:wa_ai_posture.brake.surrender
 			OR = {
 				AND = {
 					has_variable = WA_AI_fielded_eq_ratio
-					check_variable = { WA_AI_fielded_eq_ratio < @WA_AI_POSTURE_MIN_EQ }
+					check_variable = { WA_AI_fielded_eq_ratio < constant:wa_ai_posture.enter.min_eq }
 				}
-				has_manpower < @WA_AI_POSTURE_BRAKE_MIN_MP
+				has_manpower < constant:wa_ai_posture.manpower.min_own_mp
 			}
 		}
 
@@ -110,7 +104,7 @@ WA_AI_MILITARY_posture_hard_brake = {
 		# country still fight", and for a country with a script-raised capitulation limit it is a state
 		# that can be occupied indefinitely.
 		AND = {
-			surrender_progress > @WA_AI_POSTURE_BRAKE_SURRENDER_HARD
+			surrender_progress > constant:wa_ai_posture.brake.surrender_hard
 			NOT = { WA_AI_MILITARY_army_still_operational = yes }
 		}
 
@@ -133,8 +127,10 @@ WA_AI_MILITARY_posture_hard_brake = {
 #		            0.991 (a handful of units, fully equipped). Equipment alone would have called that
 #		            army operational. This is the term that catches it.
 #		states      A country reduced to a few states cannot sustain an army even if it currently has
-#		            one; 20 is lifted verbatim from the validated railway escape hatch
-#		            (WA_AI_misc_on_actions.txt:157).
+#		            one; 20 (constant:wa_ai_posture.alive.min_states) was lifted from the validated
+#		            railway escape hatch (now constant:wa_ai_railway.eligibility.recovery_min_states,
+#		            read by WA_AI_CONSTRUCTION_triggers.txt) - conventionally equal, separate key,
+#		            advisory registry group recovery_min_states_hatch.
 #		manpower    An army on paper with no pool behind it cannot take losses; same floor as the
 #		            weakened-army test above.
 #		equipment   France 1940.6 (112 divisions, ratio 0.701) and Italy from 1944.6 (74 divisions,
@@ -143,7 +139,7 @@ WA_AI_MILITARY_posture_hard_brake = {
 #		            point: SOV 1943.6 (388 div, 0.995) and 1944.6 (368 div, 0.977) pass here.
 #
 #	Threshold margin in that dataset: dying armies sit at 16-37 divisions, live ones at 74+, so 40 has
-#	roughly 2x headroom in both directions. 0.9 is @WA_AI_POSTURE_MIN_EQ, the bar the rest of this system
+#	roughly 2x headroom in both directions. 0.9 is constant:wa_ai_posture.enter.min_eq, the bar the rest of this system
 #	already uses to order any execution.
 #
 #	has_variable guard: an absent ratio means the background MTTH event has not fired for this tag yet.
@@ -152,11 +148,11 @@ WA_AI_MILITARY_posture_hard_brake = {
 ############################################################################################################
 
 WA_AI_MILITARY_army_still_operational = {
-	has_army_size = { size > @WA_AI_POSTURE_ALIVE_MIN_DIV }
-	num_of_controlled_states > @WA_AI_POSTURE_ALIVE_MIN_STATES
-	has_manpower > @WA_AI_POSTURE_BRAKE_MIN_MP
+	has_army_size = { size > constant:wa_ai_posture.alive.min_div }
+	num_of_controlled_states > constant:wa_ai_posture.alive.min_states
+	has_manpower > constant:wa_ai_posture.manpower.min_own_mp
 	has_variable = WA_AI_fielded_eq_ratio
-	check_variable = { WA_AI_fielded_eq_ratio > @WA_AI_POSTURE_MIN_EQ }
+	check_variable = { WA_AI_fielded_eq_ratio > constant:wa_ai_posture.enter.min_eq }
 }
 
 

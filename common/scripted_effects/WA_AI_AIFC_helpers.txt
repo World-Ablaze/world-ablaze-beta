@@ -20,7 +20,7 @@
 #		2. Score each candidate ON THAT FRONT on how good a breakthrough point it is - terrain, how
 #		   thinly it is held, what is behind it worth taking - plus its own launching pad.
 #		3. The winner becomes the anchor. The corridor is the anchor plus its enemy-held neighbours,
-#		   capped at @WA_AI_AIFC_SECTOR_MAX_STATES.
+#		   capped at constant:wa_ai_aifc.sector.max_states.
 #		4. Objectives are the anchor plus the best-scoring state in the corridor - the depth target the
 #		   push aims for rather than merely the point it enters at.
 #
@@ -35,11 +35,8 @@
 #	state-scope -> numeric-ID primitive despite the railway prefix; do not duplicate it here.
 ############################################################################################################
 
-### AIFC sector constants (declared ONLY here - core.txt has no copy; its comments cite this value
-### by name. The old "must match WA_AI_AIFC_core.txt" note here pointed at a declaration that did
-### not exist - constants-registry cleanup 2026-08-16.)
-@WA_AI_AIFC_SECTOR_MAX_STATES = 8	# Corridor cap. Every entry costs on each Layer 4 is_in_array lookup.
-
+### Constants: constant:wa_ai_aifc.sector.max_states (corridor cap - every entry costs on each Layer 4
+### is_in_array lookup) lives in common/script_constants/wa_ai_aifc.txt since 2026-08-16.
 
 ############################################################################################################
 #	Select one sector for ROOT
@@ -316,7 +313,7 @@ WA_AI_AIFC_select_sector = {
 
 				if = {
 					limit = {
-						check_variable = { ROOT.WA_AI_AIFC_sector_states^num < @WA_AI_AIFC_SECTOR_MAX_STATES }
+						check_variable = { ROOT.WA_AI_AIFC_sector_states^num < constant:wa_ai_aifc.sector.max_states }
 						NOT = { is_in_array = { ROOT.WA_AI_AIFC_sector_states = _aifc_nid } }
 					}
 
@@ -460,7 +457,7 @@ WA_AI_AIFC_score_state = {
 #	ENTRY ACCUMULATION (accepted, bounded)
 #	--------------------------------------
 #	Every churn leaves a +X/-X pair of strategy instances on the country, serialized in the save.
-#	Sectors re-select at most every @WA_AI_AIFC_SECTOR_MAX_AGE weeks and the enemy only changes on a
+#	Sectors re-select at most every constant:wa_ai_aifc.sector.max_age weeks and the enemy only changes on a
 #	subset of re-selections, so a full campaign accumulates at most a few hundred inert paired entries
 #	per major - accepted as the cost of there being no remove effect.
 #

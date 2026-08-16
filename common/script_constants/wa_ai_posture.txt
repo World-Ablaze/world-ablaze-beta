@@ -1,0 +1,96 @@
+####################################################################################################
+#	World Ablaze AI - MILITARY POSTURE constants (offensive execution / grind / brakes).
+#	Read with `constant:wa_ai_posture.<group>.<key>` (HOI4 1.18 script constants) from
+#	WA_AI_MILITARY_posture_triggers.txt (the control panel: eligibility, brakes, 'army still alive') and
+#	WA_AI_MILITARY_posture_effects.txt (arithmetic). Replaces the file-scoped `@` copies (2026-08-16).
+#	Three constants stay as `@` in the effects file on purpose: @WA_AI_POSTURE_EXEC_RATIO /
+#	_EXEC_RATIO_HOLLOW / _GRIND_RATIO are read only by `fighting_army_strength_ratio = { ratio > ... }`,
+#	a trigger the 2026-08-16 constant: probe could not exercise (needs a war) - move them here once
+#	that is validated. Full restart (not `reload`) when tuning.
+####################################################################################################
+
+wa_ai_posture = {
+	schema = {
+		any_key = yes
+		data = {
+			{
+				any_key = yes
+				data = fixed_point
+			}
+		}
+	}
+
+	# Fielded-equipment bars to ENTER / KEEP an offensive posture (Fix 55 hysteresis).
+	enter = {
+		min_eq      = 0.9	# fielded-equipment ratio required to ENTER an offensive posture (trigger + effect twin)
+		              # was @WA_AI_POSTURE_MIN_EQ
+		min_eq_hold = 0.85	# ...and to KEEP one already held (Fix 55 hysteresis)
+		              # was @WA_AI_POSTURE_MIN_EQ_HOLD
+		hollow_eq   = 0.75	# enemy fielded-equipment ratio below this counts as hollow
+		              # was @WA_AI_POSTURE_HOLLOW_EQ
+	}
+
+	# Shared-front division ratios (Fix 83 hysteresis).
+	local = {
+		ratio       = 1.5	# our-side divisions on the shared front vs the enemy's, to START executing
+		              # was @WA_AI_POSTURE_LOCAL_RATIO
+		ratio_hold  = 1.1	# ...and to KEEP executing once under way (Fix 83)
+		              # was @WA_AI_POSTURE_LOCAL_RATIO_HOLD
+		grind_ratio = 1.2	# same comparison as an alternative floor for the grind
+		              # was @WA_AI_POSTURE_LOCAL_GRIND_RATIO
+		max_states  = 12	# cap on enemy front states scanned per enemy (cost bound)
+		              # was @WA_AI_POSTURE_LOCAL_MAX_STATES
+	}
+
+	# Manpower floors and pool comparisons. min_own_mp is read by the effect (never order offensives below)
+	# AND by the trigger file's weakened-army brake test - one number (was two @ names).
+	manpower = {
+		grind_enemy_mp = 500000	# enemy manpower pool below this counts as nearly dry
+		                 # was @WA_AI_POSTURE_GRIND_ENEMY_MP
+		grind_mp_edge  = 4	# our faction pool must be this many times the enemy pool
+		                 # was @WA_AI_POSTURE_GRIND_MP_EDGE
+		min_own_mp     = 150000	# never order offensives with our own pool below this; the brake's weakened-army floor
+		                 # was @WA_AI_POSTURE_MIN_OWN_MP, @WA_AI_POSTURE_BRAKE_MIN_MP
+	}
+
+	# Lost-ground brakes (trigger file).
+	brake = {
+		surrender      = 0.2	# lost ground brakes only a weakened army (see hard-brake trigger)
+		                 # was @WA_AI_POSTURE_BRAKE_SURRENDER
+		surrender_hard = 0.45	# near-capitulation brakes an army that is not still operational
+		                 # was @WA_AI_POSTURE_BRAKE_SURRENDER_HARD
+	}
+
+	# 'Army still operational' test (trigger file).
+	alive = {
+		min_div    = 40	# fewer deployed divisions than this is a rump, not an army
+		             # was @WA_AI_POSTURE_ALIVE_MIN_DIV
+		min_states = 20	# state base below this cannot sustain one (matches the railway/AIFC 20-state hatch)
+		             # was @WA_AI_POSTURE_ALIVE_MIN_STATES
+	}
+
+	# Casualty exchange-rate signal (effects file; deltas in casualties_k thousands).
+	xr = {
+		min_own    = 0.5	# own weekly losses below this carry no exchange-rate signal
+		             # was @WA_AI_POSTURE_XR_MIN_OWN
+		min_volume = 3	# combined weekly losses below this carry no signal either
+		             # was @WA_AI_POSTURE_XR_MIN_VOLUME
+		grind      = 2	# enemy weekly losses this many times ours unlocks the grind without a dry pool
+		             # was @WA_AI_POSTURE_XR_GRIND
+		veto       = 0.25	# enemy weekly losses below this fraction of ours vetoes the grind (1/grind_mp_edge)
+		             # was @WA_AI_POSTURE_XR_VETO
+		clamp      = 25	# ratios above this are stale-baseline noise (war just resumed), not signal
+		             # was @WA_AI_POSTURE_XR_CLAMP
+	}
+
+	# Air-superiority modifiers on the execution bar (effects file).
+	air = {
+		superior   = 1.5	# own/enemy air ratio above this lowers the exec bar to the hollow bar
+		             # was @WA_AI_POSTURE_AIR_SUPERIOR
+		inferior   = 0.4	# own/enemy air ratio below this vetoes level-1 execution (grind unaffected)
+		             # was @WA_AI_POSTURE_AIR_INFERIOR
+		min_planes = 500	# air forces smaller than this can neither unlock nor veto
+		             # was @WA_AI_POSTURE_AIR_MIN_PLANES
+	}
+
+}

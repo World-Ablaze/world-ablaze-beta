@@ -12,13 +12,9 @@
 #	which countries it applies to, is a one-file edit and never requires touching ai_strategy blocks.
 ############################################################################################################
 
-### AIFC eligibility constants (must match common/scripted_effects/WA_AI_AIFC_core.txt)
-@WA_AI_AIFC_MIN_STATES = 2			# Skip micro-nations; nothing to concentrate with
-@WA_AI_AIFC_MIN_DIV = 12			# ...and skip armies too small to HAVE a surplus (Fix 56, see below)
-@WA_AI_AIFC_MAX_SURRENDER = 0.35	# Skip countries already collapsing...
-@WA_AI_AIFC_RECOVERY_MIN_STATES = 20	# ...unless the army is intact: states above this AND
-@WA_AI_AIFC_RECOVERY_MIN_DIV = 40		# divisions above this (Fix 43 escape hatch, see below)
-
+### AIFC eligibility numbers: constant:wa_ai_aifc.eligibility.* in common/script_constants/wa_ai_aifc.txt
+### (min_states 2 / min_div 12 / max_surrender 0.35 / recovery_min_states 20 / recovery_min_div 40).
+### One declaration since 2026-08-16 - this file is where the eligibility test that reads them lives.
 
 ############################################################################################################
 #	MASTER SWITCH - does this country use the WA AIFC system at all?
@@ -75,17 +71,19 @@ WA_AI_AIFC_sector_engine_enabled = {
 #	ELIGIBILITY - is it worth running sector selection for this country right now?
 #	THIS = COUNTRY
 #
-#	Cheap pre-checks only. Mirrors the railway system's on_weekly eligibility gate
-#	(common/on_actions/WA_AI_misc_on_actions.txt:149-163). That gate was given a recovery escape hatch
-#	by Fix 29/29b (3c55b9d17); this copy is kept in step with it - if the railway hatch changes, change
-#	this one too. Anything expensive belongs inside the effect, not here.
+#	Cheap pre-checks only. Same SHAPE as the railway system's eligibility gate
+#	(WA_AI_PC_country_can_build_own_logistics in WA_AI_CONSTRUCTION_triggers.txt since Fix 75; the
+#	recovery escape hatch came from Fix 29/29b, 3c55b9d17). The numbers are AIFC's own
+#	(constant:wa_ai_aifc.eligibility.*), a separate control panel by design - the 20-state hatch is
+#	conventionally equal to the railway / posture ones and the registry's advisory group
+#	recovery_min_states_hatch reports if they diverge. Anything expensive belongs inside the effect.
 ############################################################################################################
 
 WA_AI_AIFC_should_select_sector = {
 	WA_AI_AIFC_sector_engine_enabled = yes
 	has_war = yes
 	has_capitulated = no
-	num_of_controlled_states > @WA_AI_AIFC_MIN_STATES
+	num_of_controlled_states > constant:wa_ai_aifc.eligibility.min_states
 	any_enemy_country = { exists = yes }
 
 	# FIX 56 (2026-08-13, campaign 02bd4445): a schwerpunkt needs a SURPLUS to concentrate, and every
@@ -116,7 +114,7 @@ WA_AI_AIFC_should_select_sector = {
 	# No major falls below it in any sampled save - the smallest at-war major reading is ITA at 19.
 	# Small genuine belligerents (FIN in the Winter War, GRE, YUG) were NOT measured at this bar; if a
 	# future campaign shows one of them losing a sector it wanted, this constant is the place to relax.
-	has_army_size = { size > @WA_AI_AIFC_MIN_DIV }
+	has_army_size = { size > constant:wa_ai_aifc.eligibility.min_div }
 
 	# Fix 43: surrender_progress measures VP LOSS, not capability. A big country under invasion crosses
 	# 0.35 with its whole army intact, and a country whose capitulation limit is raised by script (SOV via
@@ -126,10 +124,10 @@ WA_AI_AIFC_should_select_sector = {
 	# The escape hatch is the railway system's, transplanted: territory lost is irrelevant while the army
 	# and the state base are still there. A genuinely collapsing rump fails both terms and is still skipped.
 	OR = {
-		surrender_progress < @WA_AI_AIFC_MAX_SURRENDER
+		surrender_progress < constant:wa_ai_aifc.eligibility.max_surrender
 		AND = {
-			num_of_controlled_states > @WA_AI_AIFC_RECOVERY_MIN_STATES
-			has_army_size = { size > @WA_AI_AIFC_RECOVERY_MIN_DIV }
+			num_of_controlled_states > constant:wa_ai_aifc.eligibility.recovery_min_states
+			has_army_size = { size > constant:wa_ai_aifc.eligibility.recovery_min_div }
 		}
 	}
 }
@@ -174,8 +172,9 @@ WA_AI_AIFC_posture_defensive = {
 		# Home area under pressure while we are short of equipment: concentrating would strip the line.
 		# has_variable guard: the ratio is computed by a background MTTH event, so a freshly spawned
 		# tag has no value yet - absent must read as "unknown", not as 0 (= critically low).
-		# 0.9 is @WA_AI_POSTURE_MIN_EQ from WA_AI_MILITARY_posture_triggers.txt, written out because
-		# @ constants are file-scoped - keep the two in step. This is now the only self-releasing
+		# The bar is constant:wa_ai_posture.enter.min_eq (0.9) - the posture system's own entry bar, read
+		# from the same declaration (it was a written-out literal 0.9 while `@` constants were
+		# file-scoped). This is now the only self-releasing
 		# capability term in this trigger; it has no hysteresis, so if a campaign ever shows a country
 		# flapping across 0.9 (fc swinging -100 <-> +8 every 5 days) the mitigation is a dead band
 		# (brake below 0.88, release above 0.92). Do NOT substitute the WA_AI_defensive_front_strategy
@@ -183,7 +182,7 @@ WA_AI_AIFC_posture_defensive = {
 		AND = {
 			WA_AI_MILITARY_home_threatened = yes
 			has_variable = WA_AI_fielded_eq_ratio
-			check_variable = { WA_AI_fielded_eq_ratio < 0.9 }
+			check_variable = { WA_AI_fielded_eq_ratio < constant:wa_ai_posture.enter.min_eq }
 		}
 
 		# Explicitly ordered to hold by the offensive posture system, which is the designated writer of

@@ -36,16 +36,10 @@
 #	WA_AI_AIFC_should_select_sector.
 ############################################################################################################
 
-### AIFC eligibility constants live ONLY in common/scripted_triggers/WA_AI_AIFC_triggers.txt
-### (@WA_AI_AIFC_MIN_STATES / _MIN_DIV / _MAX_SURRENDER / _RECOVERY_MIN_STATES / _RECOVERY_MIN_DIV).
-### The trigger file is authoritative - it is where the eligibility test that reads them lives.
-### Until 2026-08-16 this file redeclared all five "must match" copies that nothing here read;
-### an unread mirror is a copy waiting to drift, so they were removed (constants-registry cleanup).
-
-### AIFC sector constants (declared only here; helpers has no copy)
-@WA_AI_AIFC_SECTOR_MAX_AGE = 4		# Weeks before a sector is re-evaluated regardless of validity
-									# (age is 1-based: selected at 1, re-selected when age exceeds this)
-
+### Constants: constant:wa_ai_aifc.* in common/script_constants/wa_ai_aifc.txt (since 2026-08-16).
+### eligibility.* is read by WA_AI_AIFC_triggers.txt (the control panel); sector.max_age (weeks before
+### a sector is re-evaluated regardless of validity; age is 1-based: selected at 1, re-selected when
+### age exceeds it) is read below; sector.max_states by the helpers.
 
 ############################################################################################################
 #	ENTRY POINT - weekly sector maintenance
@@ -86,7 +80,7 @@ WA_AI_AIFC_update_sector = {
 					# Nothing selected yet
 					NOT = { check_variable = { WA_AI_AIFC_sector_states^num > 0 } }
 					# Timed refresh - keeps the AI from committing forever to a dead axis
-					check_variable = { WA_AI_AIFC_sector_age > @WA_AI_AIFC_SECTOR_MAX_AGE }
+					check_variable = { WA_AI_AIFC_sector_age > constant:wa_ai_aifc.sector.max_age }
 					# The front moved, or we took the corridor
 					check_variable = { _aifc_sector_valid < 1 }
 				}
@@ -170,7 +164,7 @@ WA_AI_AIFC_check_sector_valid = {
 		# system's whole life (sector_age pinned at 1 in every campaign since creation; fixes
 		# 4bfea363d and 128cc7995 patched real-but-downstream defects). Never compare a plain
 		# stored id against .id of a scope - walk the corridor array and ask each state directly.
-		# The array is capped at @WA_AI_AIFC_SECTOR_MAX_STATES, so this is at most 8 state hops.
+		# The array is capped at constant:wa_ai_aifc.sector.max_states, so this is at most 8 state hops.
 		for_each_loop = {
 			array = WA_AI_AIFC_sector_states
 			value = _aifc_v_sid

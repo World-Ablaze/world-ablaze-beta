@@ -107,33 +107,17 @@
 ###	entry bar was tuned so a 1939 France does not attack into the Westwall on a marginal count.
 ###	Probe: WA_TLM_r51_local_hold_* (checklist R51).
 
-### Posture constants (must match common/scripted_triggers/WA_AI_MILITARY_posture_triggers.txt)
-@WA_AI_POSTURE_MIN_EQ = 0.9				# fielded-equipment ratio required to ENTER an offensive posture
-@WA_AI_POSTURE_MIN_EQ_HOLD = 0.85		# ...and to KEEP one already held (Fix 55 hysteresis, see below)
+### Posture constants: constant:wa_ai_posture.* in common/script_constants/wa_ai_posture.txt since
+### 2026-08-16 (enter.* / local.* / manpower.* / xr.* / air.* read here; brake.* / alive.* in the
+### trigger file; enter.min_eq and manpower.min_own_mp are read by BOTH files from the one
+### declaration - they used to be `@` twins that had to match).
+### The three below stay file-scoped `@` on purpose: they are read only by
+### `fighting_army_strength_ratio = { ratio > ... }`, a trigger the constant: probe could not
+### exercise (needs a war). Move them to wa_ai_posture.txt once that context is validated.
 @WA_AI_POSTURE_EXEC_RATIO = 0.85		# fighting-strength ratio vs enemy to execute (engine favours defenders)
 @WA_AI_POSTURE_EXEC_RATIO_HOLLOW = 0.7	# lower bar when the enemy's army is badly under-equipped
-@WA_AI_POSTURE_HOLLOW_EQ = 0.75			# enemy fielded-equipment ratio below this counts as hollow
 @WA_AI_POSTURE_GRIND_RATIO = 0.5		# never grind below this fighting-strength ratio - that is suicide, not attrition
-@WA_AI_POSTURE_LOCAL_RATIO = 1.5		# our-side divisions on the shared front vs the enemy's, to START executing
-@WA_AI_POSTURE_LOCAL_RATIO_HOLD = 1.1	# ...and to KEEP executing once under way (Fix 83 hysteresis, see above)
-@WA_AI_POSTURE_LOCAL_GRIND_RATIO = 1.2	# same comparison as an alternative floor for the grind
-@WA_AI_POSTURE_LOCAL_MAX_STATES = 12	# cap on enemy front states scanned per enemy (cost bound)
-@WA_AI_POSTURE_GRIND_ENEMY_MP = 500000	# enemy manpower pool below this counts as nearly dry
-@WA_AI_POSTURE_GRIND_MP_EDGE = 4		# our faction pool must be this many times the enemy pool
-@WA_AI_POSTURE_MIN_OWN_MP = 150000		# never order offensives with our own pool below this
-
-### Casualty exchange-rate constants (effects-file only; deltas are in casualties_k thousands)
-@WA_AI_POSTURE_XR_MIN_OWN = 0.5			# own weekly losses below this carry no exchange-rate signal
-@WA_AI_POSTURE_XR_MIN_VOLUME = 3		# combined weekly losses below this carry no signal either
-@WA_AI_POSTURE_XR_GRIND = 2				# enemy weekly losses this many times ours unlocks the grind without a dry pool
-@WA_AI_POSTURE_XR_VETO = 0.25			# enemy weekly losses below this fraction of ours vetoes the grind
-										# (1/GRIND_MP_EDGE: the break-even exchange the 4x pool edge can still pay for)
-@WA_AI_POSTURE_XR_CLAMP = 25			# ratios above this are stale-baseline noise (war just resumed), not signal
-
-### Air-superiority constants (effects-file only; sizes per WA_AI_calc_air_force_sizes semantics)
-@WA_AI_POSTURE_AIR_SUPERIOR = 1.5		# own/enemy air ratio above this lowers the exec bar to the hollow bar
-@WA_AI_POSTURE_AIR_INFERIOR = 0.4		# own/enemy air ratio below this vetoes level-1 execution (grind unaffected)
-@WA_AI_POSTURE_AIR_MIN_PLANES = 500		# air forces smaller than this can neither unlock nor veto
+### xr.veto = 1/manpower.grind_mp_edge: the break-even exchange the 4x pool edge can still pay for.
 
 
 ############################################################################################################
@@ -238,12 +222,12 @@ WA_AI_MILITARY_update_posture = {
 			if = {
 				limit = {
 					NOT = { conscription_ratio < 0.99 }		# at maximum mobilization for their laws
-					has_manpower < @WA_AI_POSTURE_GRIND_ENEMY_MP
+					has_manpower < constant:wa_ai_posture.manpower.grind_enemy_mp
 				}
 				set_temp_variable = { _post_enemy_dry = 1 }
 			}
 			set_temp_variable = { _post_enemy_mp_edge = manpower_k }
-			multiply_temp_variable = { _post_enemy_mp_edge = @WA_AI_POSTURE_GRIND_MP_EDGE }
+			multiply_temp_variable = { _post_enemy_mp_edge = constant:wa_ai_posture.manpower.grind_mp_edge }
 
 			# Front-local ground weight vs this enemy: divisions actually standing on the shared
 			# contact line, both sides, nothing global. THIS = the enemy here. Two passes anchored on
@@ -274,7 +258,7 @@ WA_AI_MILITARY_update_posture = {
 				# Pass 1: the enemy's front states - controlled by them, touching our side.
 				every_controlled_state = {
 					limit = {
-						check_variable = { _post_enemy_front^num < @WA_AI_POSTURE_LOCAL_MAX_STATES }
+						check_variable = { _post_enemy_front^num < constant:wa_ai_posture.local.max_states }
 						any_neighbor_state = {
 							CONTROLLER = {
 								OR = {
@@ -363,14 +347,14 @@ WA_AI_MILITARY_update_posture = {
 			}
 
 			set_temp_variable = { _post_local_edge = _post_local_enemy }
-			multiply_temp_variable = { _post_local_edge = @WA_AI_POSTURE_LOCAL_RATIO }
+			multiply_temp_variable = { _post_local_edge = constant:wa_ai_posture.local.ratio }
 			# Fix 83: the hold bar - see the constants header. Both edges are 0 when the local
 			# scan was skipped (pairwise ratio already passes), and 0 > 0 is false, so neither
 			# branch can fire off an unscanned line.
 			set_temp_variable = { _post_local_edge_hold = _post_local_enemy }
-			multiply_temp_variable = { _post_local_edge_hold = @WA_AI_POSTURE_LOCAL_RATIO_HOLD }
+			multiply_temp_variable = { _post_local_edge_hold = constant:wa_ai_posture.local.ratio_hold }
 			set_temp_variable = { _post_local_grind_floor = _post_local_enemy }
-			multiply_temp_variable = { _post_local_grind_floor = @WA_AI_POSTURE_LOCAL_GRIND_RATIO }
+			multiply_temp_variable = { _post_local_grind_floor = constant:wa_ai_posture.local.grind_ratio }
 
 			# Enemy weekly casualty delta, baseline stored per observer (on ROOT, tag-substituted).
 			# The enemy's casualties variable is global across all their fronts - a deliberate proxy;
@@ -397,25 +381,25 @@ WA_AI_MILITARY_update_posture = {
 			set_temp_variable = { _post_xr_valid = 0 }
 			if = {
 				limit = {
-					check_variable = { _post_own_cas_delta > @WA_AI_POSTURE_XR_MIN_OWN }
+					check_variable = { _post_own_cas_delta > constant:wa_ai_posture.xr.min_own }
 					NOT = { check_variable = { _post_enemy_cas_delta < 0 } }
 				}
 				set_temp_variable = { _post_cas_volume = _post_own_cas_delta }
 				add_to_temp_variable = { _post_cas_volume = _post_enemy_cas_delta }
 				if = {
-					limit = { check_variable = { _post_cas_volume > @WA_AI_POSTURE_XR_MIN_VOLUME } }
+					limit = { check_variable = { _post_cas_volume > constant:wa_ai_posture.xr.min_volume } }
 					set_temp_variable = { _post_xr = _post_enemy_cas_delta }
 					divide_temp_variable = { _post_xr = _post_own_cas_delta }
 					set_temp_variable = { _post_xr_valid = 1 }
 					if = {
 						limit = {
-							check_variable = { _post_xr > @WA_AI_POSTURE_XR_GRIND }
-							check_variable = { _post_xr < @WA_AI_POSTURE_XR_CLAMP }
+							check_variable = { _post_xr > constant:wa_ai_posture.xr.grind }
+							check_variable = { _post_xr < constant:wa_ai_posture.xr.clamp }
 						}
 						set_temp_variable = { _post_xr_signal = 1 }
 					}
 					else_if = {
-						limit = { check_variable = { _post_xr < @WA_AI_POSTURE_XR_VETO } }
+						limit = { check_variable = { _post_xr < constant:wa_ai_posture.xr.veto } }
 						set_temp_variable = { _post_xr_signal = -1 }
 					}
 				}
@@ -428,19 +412,19 @@ WA_AI_MILITARY_update_posture = {
 			set_temp_variable = { _post_air_state = 0 }
 			set_temp_variable = { _post_enemy_air = air_force_size_@THIS }
 			set_temp_variable = { _post_air_edge = _post_enemy_air }
-			multiply_temp_variable = { _post_air_edge = @WA_AI_POSTURE_AIR_SUPERIOR }
+			multiply_temp_variable = { _post_air_edge = constant:wa_ai_posture.air.superior }
 			set_temp_variable = { _post_air_floor = _post_enemy_air }
-			multiply_temp_variable = { _post_air_floor = @WA_AI_POSTURE_AIR_INFERIOR }
+			multiply_temp_variable = { _post_air_floor = constant:wa_ai_posture.air.inferior }
 			if = {
 				limit = {
-					check_variable = { _post_own_air > @WA_AI_POSTURE_AIR_MIN_PLANES }
+					check_variable = { _post_own_air > constant:wa_ai_posture.air.min_planes }
 					check_variable = { _post_own_air > _post_air_edge }
 				}
 				set_temp_variable = { _post_air_state = 1 }
 			}
 			else_if = {
 				limit = {
-					check_variable = { _post_enemy_air > @WA_AI_POSTURE_AIR_MIN_PLANES }
+					check_variable = { _post_enemy_air > constant:wa_ai_posture.air.min_planes }
 					check_variable = { _post_own_air < _post_air_floor }
 				}
 				set_temp_variable = { _post_air_state = -1 }
@@ -458,19 +442,19 @@ WA_AI_MILITARY_update_posture = {
 						# under way costs only MIN_EQ_HOLD. PREV is the enemy country here, the same
 						# tag substitution the write site below uses.
 						OR = {
-							check_variable = { WA_AI_fielded_eq_ratio > @WA_AI_POSTURE_MIN_EQ }
+							check_variable = { WA_AI_fielded_eq_ratio > constant:wa_ai_posture.enter.min_eq }
 							AND = {
 								check_variable = { WA_AI_MILITARY_posture_vs_@PREV > 0 }
-								check_variable = { WA_AI_fielded_eq_ratio > @WA_AI_POSTURE_MIN_EQ_HOLD }
+								check_variable = { WA_AI_fielded_eq_ratio > constant:wa_ai_posture.enter.min_eq_hold }
 							}
 						}
-						has_manpower > @WA_AI_POSTURE_MIN_OWN_MP
+						has_manpower > constant:wa_ai_posture.manpower.min_own_mp
 						OR = {
 							fighting_army_strength_ratio = { tag = PREV ratio > @WA_AI_POSTURE_EXEC_RATIO }
 							AND = {
 								# The lower bar applies when the enemy's line is hollow OR we own the sky.
 								OR = {
-									check_variable = { _post_enemy_eq < @WA_AI_POSTURE_HOLLOW_EQ }
+									check_variable = { _post_enemy_eq < constant:wa_ai_posture.enter.hollow_eq }
 									check_variable = { _post_air_state = 1 }
 								}
 								fighting_army_strength_ratio = { tag = PREV ratio > @WA_AI_POSTURE_EXEC_RATIO_HOLLOW }
@@ -508,7 +492,7 @@ WA_AI_MILITARY_update_posture = {
 						NOT = {
 							AND = {
 								OR = {
-									check_variable = { _post_enemy_eq < @WA_AI_POSTURE_HOLLOW_EQ }
+									check_variable = { _post_enemy_eq < constant:wa_ai_posture.enter.hollow_eq }
 									check_variable = { _post_air_state = 1 }
 								}
 								ROOT = { fighting_army_strength_ratio = { tag = PREV ratio > @WA_AI_POSTURE_EXEC_RATIO_HOLLOW } }
@@ -545,13 +529,13 @@ WA_AI_MILITARY_update_posture = {
 					ROOT = {
 						# Fix 55: same hysteresis as level 1 - see the comment there.
 						OR = {
-							check_variable = { WA_AI_fielded_eq_ratio > @WA_AI_POSTURE_MIN_EQ }
+							check_variable = { WA_AI_fielded_eq_ratio > constant:wa_ai_posture.enter.min_eq }
 							AND = {
 								check_variable = { WA_AI_MILITARY_posture_vs_@PREV > 0 }
-								check_variable = { WA_AI_fielded_eq_ratio > @WA_AI_POSTURE_MIN_EQ_HOLD }
+								check_variable = { WA_AI_fielded_eq_ratio > constant:wa_ai_posture.enter.min_eq_hold }
 							}
 						}
-						has_manpower > @WA_AI_POSTURE_MIN_OWN_MP
+						has_manpower > constant:wa_ai_posture.manpower.min_own_mp
 						OR = {
 							fighting_army_strength_ratio = { tag = PREV ratio > @WA_AI_POSTURE_GRIND_RATIO }
 							# Local floor: a member too small to pass the pairwise floor still grinds
@@ -591,7 +575,7 @@ WA_AI_MILITARY_update_posture = {
 				# threshold should sit, if one is wanted at all. If lt100 is near zero across a
 				# campaign the defect is theoretical and no fix is warranted.
 				# lt25 specifically counts observations that WOULD already have fired the existing
-				# @WA_AI_POSTURE_XR_VETO bar, had that bar applied to level 1.
+				# constant:wa_ai_posture.xr.veto bar, had that bar applied to level 1.
 				########################################################################################
 				if = {
 					limit = { check_variable = { _post_level = 1 } }
@@ -608,7 +592,7 @@ WA_AI_MILITARY_update_posture = {
 							add_to_variable = { WA_TLM_post_exec_xr_lt50 = 1 }
 						}
 						if = {
-							limit = { check_variable = { _post_xr < @WA_AI_POSTURE_XR_VETO } }
+							limit = { check_variable = { _post_xr < constant:wa_ai_posture.xr.veto } }
 							add_to_variable = { WA_TLM_post_exec_xr_lt25 = 1 }
 						}
 					}
