@@ -344,6 +344,13 @@ port" attribute, and one engine that builds whatever consecutive pair the builde
   runs without partial paths, so a hostile province in between simply postpones the hop — no
   frontier port is conjured in the desert. Sequencing therefore *emerges from control*:
   Mechili↔Tobruk is never asked before Mechili is held, Mechili↔Benghazi never before Benghazi.
+- **Forward port (attacker only).** A node flagged `corridor_node_fwdport_` (Ajdabiya 1127) gets a
+  naval base only when the holder is the *attacker*: the node is ours, its province is **owned by an
+  enemy** (`WA_AI_PC_corridor_node_is_conquered` — we stand on conquered soil), one neighbouring node
+  is enemy-held (the front: blocked at El Agheila 4057) and the other is ours (the rear: Benghazi
+  already fell). Ruling 2026-08-16: the defender on its own soil never builds it — a supply port
+  behind a static line is wasted civs. Symmetric by construction: the Axis holding a UKE-owned
+  Egyptian node flagged the same way would qualify.
 - Priority band: `rail_war` (1000) when any node of the corridor is enemy-held, `rail_prewar` (500)
   otherwise — the owner of Libya / Egypt / Tunisia prepares its corridor in peace. Keyed on the
   nodes, not on `has_war`, because ITA is at war in 1936 (Ethiopia).

@@ -1201,6 +1201,7 @@ WA_AI_PC_railway_STRATEGY_theatre_corridor = {
 	clear_temp_array = corridor_hub_kind_
 	clear_temp_array = corridor_hub_prio_
 	clear_temp_array = corridor_node_ours_
+	clear_temp_array = corridor_node_hostile_
 
 	### Corridor data (one corridor today; a second theatre = a second define + a second block below)
 	WA_AI_PC_CORRIDOR_define_north_africa = yes
@@ -1219,7 +1220,11 @@ WA_AI_PC_railway_STRATEGY_theatre_corridor = {
 		}
 		if = {
 			limit = { WA_AI_PC_corridor_node_is_hostile = yes }
+			add_to_temp_array = { corridor_node_hostile_ = 1 }
 			add_to_temp_variable = { _corridor_hostile_n_ = 1 }
+		}
+		else = {
+			add_to_temp_array = { corridor_node_hostile_ = 0 }
 		}
 	}
 
@@ -1272,6 +1277,43 @@ WA_AI_PC_railway_STRATEGY_theatre_corridor = {
 					add_to_temp_array = { corridor_hub_prov_ = _ci_prov_ }
 					add_to_temp_array = { corridor_hub_kind_ = 14 }
 					add_to_temp_array = { corridor_hub_prio_ = _corridor_prio_ }
+				}
+				### FORWARD port - the attacker's supply port at a spearhead node (user ruling
+				### 2026-08-16: only the faction attacking Libya builds it, never the defender).
+				### Attacker = the node's province is OWNED by an enemy (WA_AI_PC_corridor_node_is_
+				### conquered - we stand on conquered soil); spearhead = one neighbouring node is
+				### enemy-held (the front is right there, e.g. blocked at El Agheila) and the other
+				### neighbouring node is ours (the rear - Benghazi - already fell). A corridor end
+				### node has one neighbour only; that neighbour must be the hostile one.
+				if = {
+					limit = { check_variable = { corridor_node_fwdport_^_ci_ = 1 } }
+					set_temp_variable = { _fwd_front_ = 0 }
+					set_temp_variable = { _fwd_rear_ = 0 }
+					if = {
+						limit = { check_variable = { _ci_ > 0 } }
+						set_temp_variable = { _ci_prev_ = _ci_ }
+						subtract_from_temp_variable = { _ci_prev_ = 1 }
+						if = { limit = { check_variable = { corridor_node_hostile_^_ci_prev_ = 1 } } set_temp_variable = { _fwd_front_ = 1 } }
+						if = { limit = { check_variable = { corridor_node_ours_^_ci_prev_ = 1 } } set_temp_variable = { _fwd_rear_ = 1 } }
+					}
+					if = {
+						limit = { check_variable = { _ci_ < _corridor_last_i_ } }
+						set_temp_variable = { _ci_next_ = _ci_ }
+						add_to_temp_variable = { _ci_next_ = 1 }
+						if = { limit = { check_variable = { corridor_node_hostile_^_ci_next_ = 1 } } set_temp_variable = { _fwd_front_ = 1 } }
+						if = { limit = { check_variable = { corridor_node_ours_^_ci_next_ = 1 } } set_temp_variable = { _fwd_rear_ = 1 } }
+					}
+					set_temp_variable = { _corridor_prov = _ci_prov_ }
+					if = {
+						limit = {
+							check_variable = { _fwd_front_ = 1 }
+							check_variable = { _fwd_rear_ = 1 }
+							WA_AI_PC_corridor_node_is_conquered = yes
+						}
+						add_to_temp_array = { corridor_hub_prov_ = _ci_prov_ }
+						add_to_temp_array = { corridor_hub_kind_ = 14 }
+						add_to_temp_array = { corridor_hub_prio_ = _corridor_prio_ }
+					}
 				}
 			}
 		}

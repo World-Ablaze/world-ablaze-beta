@@ -1368,6 +1368,20 @@ WA_AI_PC_corridor_node_is_hostile = {
 	}
 }
 
+# THIS = ROOT = builder country. Input: _corridor_prov. True when the node's province is OWNED by a
+# country at war with ROOT - i.e. whoever holds it stands on conquered enemy soil. This is the
+# corridor's definition of "the attacker" for forward ports (user ruling 2026-08-16: the attacker is
+# the faction attacking Libya, never the defender on its own ground): ENG holding Ajdabiya (owner ITL,
+# at war with ENG) is the attacker; ITA/ITL holding it is not; a German holding it is not (owner ITL is
+# its ally); the Axis holding an Egyptian node owned by UKE is - symmetric. Owner is read from the
+# province's state (province owner = state owner).
+WA_AI_PC_corridor_node_is_conquered = {
+	check_variable = { global.WA_AI_MAP_province_state_id^_corridor_prov > 0 }
+	var:global.WA_AI_MAP_province_state_id^_corridor_prov = {
+		OWNER = { has_war_with = ROOT }
+	}
+}
+
 # THIS = ROOT = builder country. Input: _corridor_hostile_n_ (temp) = how many corridor nodes are
 # held by an enemy of ROOT (computed by the pass over the node list). When does the North African
 # corridor pass act at all?
