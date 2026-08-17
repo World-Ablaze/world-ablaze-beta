@@ -1,6 +1,16 @@
 ############################################################################################################
 # WA AI Military - custom ai_areas (aliases for front_unit_request / area_priority)
 ############################################################################################################
+# ENGINE EFFECTIVE LIMIT (boot-tested on HOI4 1.19.2): at most 72 ai_area definitions across every file
+# under common/ai_areas. default.txt defines 67, so WA may define at most 5 more. Commit 1b437e397 added the
+# sixth WA alias (73 total): the engine logged no relevant script error and crashed with C0000005 in
+# ai_area.cpp while loading the strategy database. Names, region IDs, overlap and readers were excluded:
+# 72 booted; 73 crashed.
+# This file currently defines 5 aliases (72 total); this exact revision loaded AI strategies and WA
+# on-actions with the process alive on HOI4 1.19.2, with no related error or crash report.
+# Before adding one, count the whole replaced folder; after an engine upgrade, re-prove the boundary with a
+# 72/73 boot pair instead of treating this as version-agnostic.
+############################################################################################################
 # WA_AI_MILITARY_sink_africa_regions - the sub-Saharan drain: regions where a country with a bigger war
 #   somewhere else must never let the front allocator sink divisions (Congo/Cameroon/Chad 183, West
 #   Africa 184/185/338, South Africa 139/140). Read by 13 suppressions (DEFAULT caps/core/archetypes,
@@ -20,7 +30,8 @@
 #   must serve the fronts inside the colony, not the offensive into the Sudan in 217).
 # WA_AI_MILITARY_east_africa_corridor_regions - {380, 381} only: the baseline-bearing subset (17 and 217
 #   already carry the central_africa baseline; listing them twice would double-count it - see the
-#   DEFAULT_THEATRE baseline note).
+#   DEFAULT_THEATRE baseline note). Its database slot comes from expressing the former Southeast-Asia
+#   sink alias as WA_AI_MILITARY_is_southeast_asia_sink_state instead.
 ############################################################################################################
 areas = {
 
@@ -61,37 +72,12 @@ areas = {
 	# (WA_AI_MILITARY_AXIS_tunis_bridge_THEATRE): the orders that MAY DRAW on that garrison are the fronts
 	# inside Tunisia, not the Libyan / Egyptian offensives that share the 7-region default.txt north_africa
 	# blob (same leak Fix 97 closed with east_africa_colony_regions). Also the key of the bridge's
-	# front_unit_request pull. Boot-test owed like the Fix 97 alias.
+	# front_unit_request pull. The 72-area composition containing this alias and the Fix 97 corridor
+	# passed AI-strategy and on-action loading on HOI4 1.19.2; campaign R64 owns buffer behaviour.
 	WA_AI_MILITARY_tunisia_regions = {
 		strategic_regions = {
 			329
 		}
 	}
 
-	WA_AI_MILITARY_sink_southeast_asia_regions = {
-		strategic_regions = {
-			142
-			167
-			196
-			260
-			340
-		}
-	}
-
-	WA_AI_MILITARY_italy_overstack_regions = {
-		strategic_regions = {
-			21
-			23
-		}
-	}
-
-	WA_AI_MILITARY_india_core_regions = {
-		strategic_regions = {
-			31
-			153
-			189
-			300
-			330
-		}
-	}
 }
