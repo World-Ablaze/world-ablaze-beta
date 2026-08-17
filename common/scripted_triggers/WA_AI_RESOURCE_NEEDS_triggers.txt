@@ -38,6 +38,13 @@
 # trigger is the only thing that gives the coal decisions any weight for ROOT's
 # own sake, so a country sitting on +15 000 coal (GER, late 1943) no longer
 # re-prospects its states just because civs and PP are free.
+# Recorded with Fix 100 (2026-08-17), found while diagnosing the cooperative leg,
+# deliberately NOT changed here: (a) the third leg below is DEAD for coal -
+# WA_AI_resource_coal_shortage_months has no writer anywhere in the repo and is absent
+# from every save of campaign 7c7803a8, so this trigger has two live legs, not three;
+# (b) a COUNTRY FLAG named WA_AI_allies_need_coal is set at WA_AI_misc_effects.txt:646
+# on a looser bar (an ally under -20) and is read nowhere - the scripted trigger of the
+# same name below shadows it in every trigger context. Both are pre-existing.
 WA_AI_should_prospect_resource_coal = {
 	OR = {
 		check_variable = { resource@coal < 100 }
@@ -116,9 +123,61 @@ WA_AI_should_prospect_resource_bauxite = {
 ###############################################################################
 # Cooperative Layer: Check if allies have critical resource shortages
 ###############################################################################
+# SIBLING STATUS (recorded 2026-08-17 with Fix 100, deliberately NOT changed):
+# every trigger in this section has the same structure - "any faction ally whose
+# WA_AI_needs_<r> reads 3" - and therefore the same dependency/shortage conflation
+# described below. Only coal has campaign evidence, so only coal is gated.
+# - iron, bauxite: same shape, also WA-native. UNMEASURED - no evidence either way.
+# - steel, aluminium, tungsten, chromium, rubber, oil: same shape but engine-traded.
+#   There the import arm may be a legitimate faction-scarcity signal, because the ore
+#   comes from OUTSIDE the faction rather than from ROOT itself. UNTESTED.
+# Do not convert any of them without a measured ledger; do not assume Fix 100 transfers.
+
+# Fix 100 (2026-08-17): ROOT-side ceiling on the cooperative coal leg.
+# WHAT IT PROTECTS: the 5-civilian-factory prospecting slots of a coal PRODUCER.
+# Without it this leg is permanently true for any faction leader. An ally reaches
+# WA_AI_needs_coal = 3 on EITHER resource@coal < -40 OR resource_imported@coal > 40
+# (WA_AI_check_resource_needs, WA_AI_misc_effects.txt), and the import arm is the
+# HEALTHY state of an importer, not a shortage. Measured on campaign 7c7803a8 at
+# 1943.6: ITA imported 1600 / effective -30, HUN 200 / +11, ROM 400 / +24,
+# BUL 267 / +133, FIN 100 / +2 - 11 of 12 sampled cells held by the import arm alone,
+# while GER ran coal_prospecting 70 times (11 states, 5 concurrent) on an effective
+# balance that climbed 8167 -> 19248 and never came near any own-need threshold.
+# THE ENGINE FACT IT ASSUMES: the trade AI imports only to bring a NEGATIVE balance
+# back to ~0 and never builds a reserve, so a large positive resource@coal is a real
+# retained surplus and extraction cannot be the binding constraint. A producer that
+# already fails to ship what it offers (GER to_export 6928-7419 against exported
+# 100-3167) is delivery-limited, not mine-limited.
+# HOW TO TELL THE FACT IS GONE: an allied coal import line that RISES when a country
+# above this ceiling prospects, or an engine build whose trade AI stockpiles a reserve.
+# MUST STAY ABOVE the 100 of WA_AI_should_prospect_resource_coal above. At or below it
+# this leg becomes a strict subset of the reactive leg and the cooperative layer
+# collapses to nothing. Read by this file only, so a file-scoped @ is legal here.
+@WA_AI_COAL_COOP_CEILING = 500
+
+# ALSO CONSIDERED AND REJECTED: additionally requiring the ally itself to be in
+# deficit (resource@coal < -40 inside the loop). The wa-lessons-reviewer showed this
+# would DELETE the leg rather than narrow it - importing is the coping act, it pushes
+# the ally's balance back toward 0, so a genuinely dependent ally never shows a deficit
+# while trade works (ITA: -30 on 1600 imported). Same unreachable-gate shape as the
+# reverted resource@bauxite > 32 gate.
+# COMPETING PROPOSAL, considered and not taken (AGENTS.md (g)): fix the WRITER's import
+# arm instead. Objection to this fix: it leaves the conflation live for the reactive
+# trigger and the eight siblings above. Mine covers this case because the import arm is
+# CORRECT for the importer's OWN decisions - ITA importing 2000 coal should mine and
+# refine, and the construction/scoring readers of WA_AI_needs_coal rely on that - and is
+# wrong only when a THIRD party reads it as faction-wide scarcity. The defect is in that
+# reading, so the fix belongs at this consumer; moving the writer would change every
+# reader for every country on the evidence of one.
 
 # Check if any faction ally has critical shortage of resource
+# Scope: country. All three call sites are ai_will_do blocks in
+# common/decisions/_resource_prospecting.txt (coal_prospecting,
+# develop_gulf_province_coal_mines, develop_Ukrainian_coal_mines), where the evaluated
+# scope is the country - so the bare check_variable below reads ROOT, exactly as
+# WA_AI_should_prospect_resource_coal does. Keep it OUTSIDE any_other_country.
 WA_AI_allies_need_coal = {
+	check_variable = { resource@coal < @WA_AI_COAL_COOP_CEILING }
 	any_other_country = {
 		is_in_faction_with = ROOT
 		check_variable = { WA_AI_needs_coal = 3 }
