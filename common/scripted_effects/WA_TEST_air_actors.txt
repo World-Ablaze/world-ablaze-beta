@@ -60,14 +60,23 @@ WA_TEST_air_mute_allied_minors = {
 # MUTE + TRANSFER: the small actors hand every deployed wing to the Allies faction leader.
 # Stockpile, army, navy and unit leaders stay where they are.
 WA_TEST_air_consolidate_allied_minors = {
-	random_country = {
+	# The sink is resolved by the same condition twice: HOI4 has no trigger that asks whether a
+	# global event target is set (has_global_event_target is CK2/EU4), so the guard tests the
+	# existence of the leader itself and the target is only saved inside the guarded branch.
+	if = {
 		limit = {
-			is_faction_leader = yes
-			WA_AI_MILITARY_is_allies_member = yes
+			any_country = {
+				is_faction_leader = yes
+				WA_AI_MILITARY_is_allies_member = yes
+			}
 		}
-		save_global_event_target_as = WA_TEST_air_sink
-	}
-	if = { limit = { has_global_event_target = WA_TEST_air_sink }
+		random_country = {
+			limit = {
+				is_faction_leader = yes
+				WA_AI_MILITARY_is_allies_member = yes
+			}
+			save_global_event_target_as = WA_TEST_air_sink
+		}
 		every_country = {
 			limit = {
 				WA_AI_MILITARY_is_allies_member = yes
