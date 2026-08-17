@@ -423,3 +423,29 @@ Open item found on the way: on `0edbc955` every `wa_ai_aifc_*_ref` array (GER, S
 token, so the DEFAULT aifc block's `state_trigger is_in_array = { FROM.FROM.WA_AI_AIFC_sector_*_ref = THIS.id }` pairs may
 have been inert campaign-wide - the sector was computed, the engine-side weighting may not have followed. Separate diagnosis.
 
+---
+
+## 14. The Axis Tunis bridge - garrison a Tunisian port when an enemy lands behind the African front (Fix 99, 2026-08-17)
+
+Campaign `0edbc955` (Nov 1942 - Jun 1943): Torch landed 1942.11.8, Case Anton handed Tunisia 458/1061/665 to Germany within
+days, and not one German division ever stood in Africa (252-263 divisions, 0 in Africa/Sicily in every save); a French division
+walked into Tunis ~5 weeks later. No Axis block named a Tunisian state as a destination, no Axis trigger read Algeria (only the AIR
+contest trigger did), Germany's post-Barbarossa net on the 7-region `north_africa` blob was area +20 / `front_unit_request` -175
+(`war_with_soviets_2` -75, `africa_is_lost` -100 on a `date > 1942.10.1` + Suez calendar), and `libya_bridgehead_held` had no
+Tunisian term, so a Tunis-only foothold read "no bridgehead" and armed Italy's -200 abandon.
+
+| Piece | File |
+| --- | --- |
+| Triggers (control panel, PREV-relative) | `WA_AI_MILITARY_triggers.txt` Fix 99 section: `WA_AI_MILITARY_tunis_bridge_held` (own side controls 458 or 1061), `_maghreb_enemy_landed` (enemy controls an Algerian/Moroccan anchor - the AIR contest lists), `_tunis_bridge_contested` (at war ∧ held ∧ landed - THE gate), `_african_shore_port_held` (Libyan four + Tunis + Bizerte; sibling of `libya_bridgehead_held`, which stays the gate of everything that needs LIBYAN ground). One "our side": self / subject / faction ally / `has_war_together_with` - the last term makes a subject of an ally (ITL) count |
+| Area | `WA_AI_MILITARY_areas.txt` `WA_AI_MILITARY_tunisia_regions` {329} - the buffer's `area` (orders that may draw on it) and the pull's key |
+| Faction AXIS | `WA_AI_MILITARY_FACTION_AXIS_THEATRE.txt` `AXIS_tunis_bridge_THEATRE` (`put_unit_buffers` 458/1061/665, ratio 0.05 ≈ 13 divisions on the 1942 Heer = 5th Panzer Army, order_id 9608, `subtract_fronts_from_need = no`), `WA_AI_MILITARY_FACTION_AXIS_FRONT.txt` `AXIS_tunis_bridge_FRONT` (`front_unit_request strategic_region = 329` +200 - offsets the blob's -175 on the Tunisian front only). Gate: `is_axis_member` ∧ `can_open_secondary_fronts` ∧ NOT `home_threatened` ∧ NOT `italy_homeland_invaded` ∧ `tunis_bridge_contested`; releases when Tunis and Bizerte are lost or the Maghreb is cleared |
+| Country ITA | `africa_pull` / `_reduced` / `abandon_north_africa` re-pointed to `african_shore_port_held` (+ 459/460 in the pull's enemy list); `protect_libya`, the R13 pair, the NAVAL air weights and `ita_armor.915` deliberately KEPT on `libya_bridgehead_held` (they need Libyan ground) |
+| Country GER | `africa_is_lost_FRONT` / `_DIPLOMACY` re-gated `has_war ∧ NOT african_shore_port_held` (was the vanilla-inherited post-El-Alamein calendar; historical walk in the block header: arms 1939.9 inert, releases 1940.6, held through Torch, arms when Tunis + Libya are gone). `GER_focus_on_north_africa_*` (`NOT has_war_with = SOV`) untouched by decision; `GER_ignore_invading_these_countries_FRONT` (no Axis invasion order into north_africa) untouched - the bridge is held by sea-lift into an own port, not re-conquered |
+| Probe | checklist R64, `WA_TLM_r99_tunis_*` (v23) |
+
+Bounded claim (t0 Torch+Anton day 0-5 trigger true / t1 day 7-14 assignment + embarkation / t2 day 21-35 garrison before the ~day-35-50
+walk-in): t1 is a hypothesis about the engine's sea-lift cadence whose only precedent is ENG's Egypt/Malta buffers under naval supremacy -
+R64 leg 1 is its falsifier. Residual: an enemy-controlled strait leaves the buffer unfilled; nothing re-conquers a lost Tunis. Two engine
+assumptions to boot-test: a custom ai_area in `put_unit_buffers` `area`, and a region-keyed `front_unit_request` summing with an
+area-keyed one on the same front. Rejected alternative, recorded: a scripted Axis spawn into Tunis mirroring Torch (Option Q of the
+design note) - historical-mode-only behaviour and a divisions-from-nothing spawn on the Axis side; kept behind a campaign result.

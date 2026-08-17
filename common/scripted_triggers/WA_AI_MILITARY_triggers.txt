@@ -926,6 +926,94 @@ WA_AI_MILITARY_libya_bridgehead_held = {
 }
 
 ############################################################################################################
+# Fix 99 (2026-08-17) - the Axis Tunis bridge (campaign 0edbc955: Torch 1942.11.8, Case Anton handed Tunisia
+# 458/1061/665 to GER within days, and NOT ONE German division ever stood on it - GER 252-263 divisions, 0 in
+# Africa in every save Sep 42 - Jun 43; a French division walked into Tunis ~5 weeks later. Cause: no Axis
+# block names 458/1061/665 as a destination, no Axis trigger reads Algeria/Morocco at all (only the AIR
+# contest trigger does), GER's post-Barbarossa net on the 7-region north_africa blob is area +20 /
+# front_unit_request -175, and libya_bridgehead_held has no Tunisian term so a Tunis-only foothold reads
+# "no bridgehead" and arms Italy's -200 abandon). Same method as Fix 96/97: controller geography, no tag,
+# no date, no flag. PREV-relative from the state scope like the Fix 96 family above.
+#
+# ONE "our side" definition, used by every trigger of this section (review 2026-08-17): the controller is
+# the enquired country, a SUBJECT of it, a faction ally, or anyone at war TOGETHER with it - the last term
+# is what makes a subject of an ALLY count (ITL is ITA's subject and never a faction member: Fix 27 lesson;
+# for GER, ITL's Tripoli must read as "our side's port" from 1940.6 on).
+############################################################################################################
+
+# Our side controls a Tunisian port - Tunis 458 or Bizerte 1061 (the two ports the Axis actually used).
+WA_AI_MILITARY_tunis_bridge_held = {
+	OR = {
+		458 = { CONTROLLER = { OR = { tag = PREV.PREV is_subject_of = PREV.PREV is_in_faction_with = PREV.PREV has_war_together_with = PREV.PREV } } }
+		1061 = { CONTROLLER = { OR = { tag = PREV.PREV is_subject_of = PREV.PREV is_in_faction_with = PREV.PREV has_war_together_with = PREV.PREV } } }
+	}
+}
+
+# An enemy of the enquired country controls Algerian or Moroccan ground - the Torch shape, or any engine
+# landing behind the African front. Same anchor lists as WA_AI_MILITARY_AIR_theatre_contested_north_africa
+# (Algeria 126: 459/460/513/1057; Morocco 182: 290/461/462/783/1055/1056).
+WA_AI_MILITARY_maghreb_enemy_landed = {
+	OR = {
+		459 = { CONTROLLER = { has_war_with = PREV.PREV } }
+		460 = { CONTROLLER = { has_war_with = PREV.PREV } }
+		513 = { CONTROLLER = { has_war_with = PREV.PREV } }
+		1057 = { CONTROLLER = { has_war_with = PREV.PREV } }
+		461 = { CONTROLLER = { has_war_with = PREV.PREV } }
+		462 = { CONTROLLER = { has_war_with = PREV.PREV } }
+		1055 = { CONTROLLER = { has_war_with = PREV.PREV } }
+		1056 = { CONTROLLER = { has_war_with = PREV.PREV } }
+		290 = { CONTROLLER = { has_war_with = PREV.PREV } }
+		783 = { CONTROLLER = { has_war_with = PREV.PREV } }
+	}
+}
+
+# THE gate of the Tunis bridge: at war, our side holds a Tunisian port, an enemy stands in the Maghreb.
+# Releases by itself when Tunis AND Bizerte are lost, or when the Maghreb is cleared. Consumers:
+# WA_AI_MILITARY_AXIS_tunis_bridge_THEATRE / _FRONT, WA_TLM_sample_tunis_bridge.
+WA_AI_MILITARY_tunis_bridge_contested = {
+	has_war = yes
+	WA_AI_MILITARY_tunis_bridge_held = yes
+	WA_AI_MILITARY_maghreb_enemy_landed = yes
+}
+
+# Our side still holds ANY port on the African shore - the four Libyan ports of libya_bridgehead_held PLUS
+# Tunis 458 and Bizerte 1061. Sibling of WA_AI_MILITARY_libya_bridgehead_held, NOT a replacement: that
+# trigger stays the gate of everything that needs LIBYAN ground (the Libya buffer, the R13 offensive from
+# Libya toward Egypt, the Libyan air weights); this one gates "is the African effort still alive at all"
+# (Italy's area pull / abandon pair, the Africa garrison switch, Germany's Africa-is-lost pair). Own /
+# subject port counts always; an ally's (or war-partner's) port counts only while an enemy holds the far
+# shore - East Egypt, Tunisia OR ALGERIA (review 2026-08-17: the far shore of a Tunis bridgehead is Algeria).
+WA_AI_MILITARY_african_shore_port_held = {
+	OR = {
+		448 = { CONTROLLER = { OR = { tag = PREV.PREV is_subject_of = PREV.PREV } } }
+		450 = { CONTROLLER = { OR = { tag = PREV.PREV is_subject_of = PREV.PREV } } }
+		451 = { CONTROLLER = { OR = { tag = PREV.PREV is_subject_of = PREV.PREV } } }
+		663 = { CONTROLLER = { OR = { tag = PREV.PREV is_subject_of = PREV.PREV } } }
+		458 = { CONTROLLER = { OR = { tag = PREV.PREV is_subject_of = PREV.PREV } } }
+		1061 = { CONTROLLER = { OR = { tag = PREV.PREV is_subject_of = PREV.PREV } } }
+		AND = {
+			OR = {
+				446 = { CONTROLLER = { has_war_with = PREV.PREV } }
+				447 = { CONTROLLER = { has_war_with = PREV.PREV } }
+				453 = { CONTROLLER = { has_war_with = PREV.PREV } }
+				458 = { CONTROLLER = { has_war_with = PREV.PREV } }
+				1061 = { CONTROLLER = { has_war_with = PREV.PREV } }
+				459 = { CONTROLLER = { has_war_with = PREV.PREV } }
+				460 = { CONTROLLER = { has_war_with = PREV.PREV } }
+			}
+			OR = {
+				448 = { CONTROLLER = { OR = { is_in_faction_with = PREV.PREV has_war_together_with = PREV.PREV } } }
+				450 = { CONTROLLER = { OR = { is_in_faction_with = PREV.PREV has_war_together_with = PREV.PREV } } }
+				451 = { CONTROLLER = { OR = { is_in_faction_with = PREV.PREV has_war_together_with = PREV.PREV } } }
+				663 = { CONTROLLER = { OR = { is_in_faction_with = PREV.PREV has_war_together_with = PREV.PREV } } }
+				458 = { CONTROLLER = { OR = { is_in_faction_with = PREV.PREV has_war_together_with = PREV.PREV } } }
+				1061 = { CONTROLLER = { OR = { is_in_faction_with = PREV.PREV has_war_together_with = PREV.PREV } } }
+			}
+		}
+	}
+}
+
+############################################################################################################
 # Fix 97 (2026-08-17) - East Africa is a theatre (campaign 0edbc955: Italy LOST the 1936 Ethiopian war, ITS
 # never existed, and every East-Africa rule on both sides keyed on `country_exists = ITS` / `tag = ITS` /
 # a date - so the theatre was fought by the engine alone: 39/61 Italian divisions parked in Eritrea in

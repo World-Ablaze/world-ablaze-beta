@@ -230,3 +230,63 @@ WA_AI_MILITARY_AXIS_italy_theatre_guard_invaded_THEATRE = {
 		value = 200
 	}
 }
+
+############################################################################################################
+# Fix 99 (2026-08-17) - the Axis Tunis bridge. Campaign 0edbc955: Torch landed 1942.11.8, Case Anton handed
+# Tunisia 458/1061/665 to Germany within days, and not one German division ever stood on it (GER 252-263
+# divisions, 0 in Africa in every save Sep 42 - Jun 43); a single French division walked into Tunis ~5 weeks
+# later and 17 Allied divisions followed. Nothing in the mod asked the Axis to hold it: no block names
+# 458/1061/665 as a destination, no Axis trigger reads Algeria (only the AIR contest trigger does), and
+# Germany's post-Barbarossa net on the 7-region north_africa blob is area +20 / front_unit_request -175.
+# Same method as the Italy guard above: the FACTION layer, gated on controller geography
+# (WA_AI_MILITARY_tunis_bridge_contested: at war, our side holds Tunis or Bizerte, an enemy stands in
+# Algeria/Morocco) - no tag, no date, no Case-Anton flag, so an Italian-held Tunis, an engine landing in
+# non-historical mode, or a Germany at peace with the USSR all read the same. Any Axis member that can
+# spare divisions qualifies (WA_AI_MILITARY_can_open_secondary_fronts keeps the minors out, home_threatened
+# / italy_homeland_invaded keep a collapsing member and an invaded Italy out).
+#
+# Ratio 0.05 of the whole army - 13 divisions on the 260-division Heer of 0edbc955, the historical 5th
+# Panzer Army scale (Nehring / von Arnim, Nov 1942); ~2 for Italy. Own order_id 9608, `area` = the minted
+# {329} alias so the Libyan/Egyptian offensive orders of the shared north_africa blob may not draw on the
+# garrison (Fix 97 lesson). Bounded claim (t0 Torch+Anton day 0-5: trigger true, buffer published; t1 day
+# 7-14: assignment and embarkation Sicily/Naples -> Tunis; t2 day 21-35: garrison in place before the
+# ~day-35-50 walk-in) - t1 is a HYPOTHESIS about the engine's sea-lift cadence, its only precedent being
+# ENG's Egypt/Malta buffers under naval supremacy; checklist R63 (>= 6 Axis divisions in 458/1061/665
+# within 60 days of the contest) is the falsifier. Residual: an enemy-controlled strait leaves the buffer
+# unfilled - nothing here re-conquers a lost Tunis (Axis invasion orders into north_africa stay
+# execute_order = no by design, WA_AI_MILITARY_GER_ignore_invading_these_countries_FRONT).
+############################################################################################################
+
+# purpose: our side holds a Tunisian port and an enemy stands in the Maghreb - garrison the bridge
+# range:   0.05 (E4)
+# policy:  Additive per state
+# domain:  THEATRE
+WA_AI_MILITARY_AXIS_tunis_bridge_THEATRE = {
+	enable = {
+		# cheap scalar gates first, the state walks last
+		WA_AI_MILITARY_is_axis_member = yes
+		has_war = yes
+		WA_AI_MILITARY_can_open_secondary_fronts = yes
+		NOT = { WA_AI_MILITARY_home_threatened = yes }
+		NOT = { WA_AI_MILITARY_italy_homeland_invaded = yes }
+		WA_AI_MILITARY_tunis_bridge_contested = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 9608
+		# Tunis, Bizerte, Gabes/Medenine - the three Tunisian states (region 329)
+		states = {
+			458
+			1061
+			665
+		}
+		ratio = 0.05
+		area = WA_AI_MILITARY_tunisia_regions
+		subtract_invasions_from_need = no
+		# pool: the bridge IS the reserve the theatre lacks - a Libyan or eastern front eating it is exactly the
+		# 0edbc955 shape (0 divisions ever assigned to the Tunisian states)
+		subtract_fronts_from_need = no
+	}
+}

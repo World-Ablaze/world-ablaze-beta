@@ -6,22 +6,28 @@
 
 
 # Phase 6 split from WA_AI_MILITARY_GER_africa_is_lost (FRONT domain)
+# purpose: Africa is lost - stop feeding the north_africa front. Fix 99 (2026-08-17): the gate was
+#          `date > 1942.10.1` + ENG/subject/faction controls Suez 923 - a vanilla-inherited post-El-Alamein
+#          CALENDAR (git log -S: present since the initial commit) that armed on 1942.10.1 in every
+#          historical game, five weeks before Torch, and would arm on that date in an ahistorical game where
+#          Suez was never contested. Now: at war and our side (self / subject / ally / war partner) holds NO
+#          port on the African shore - the four Libyan ports plus Tunis/Bizerte
+#          (WA_AI_MILITARY_african_shore_port_held). Historical walk: 1939.9 arms (no Axis port; inert -
+#          Italy neutral, no German presence in Africa is possible), 1940.6 releases (ITL's Tripoli is at war
+#          together with us), held through Torch (Nov 42: net front request on the blob -75, not -175, so
+#          the Fix 99 Tunis bridge is not fighting this veto), arms again when Tunis AND the Libyan ports
+#          are gone (May 43 historically) - and releases if a port is ever retaken.
+# range:   -100 (E2)
+# policy:  Additive per area
+# domain:  FRONT
 WA_AI_MILITARY_GER_africa_is_lost_FRONT = {
 
 	allowed = {
 		tag = GER
 	}
 	enable = {
-		date > 1942.10.1
-		923 = {
-			CONTROLLER = {
-				OR = {
-					tag = ENG
-					is_subject_of = ENG
-					is_in_faction_with = ENG
-				}
-			}
-		}
+		has_war = yes
+		NOT = { WA_AI_MILITARY_african_shore_port_held = yes } # Fix 99: was date > 1942.10.1 + Suez held by ENG
 	}
 
 	abort_when_not_enabled = yes

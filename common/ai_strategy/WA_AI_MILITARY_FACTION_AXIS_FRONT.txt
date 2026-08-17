@@ -851,3 +851,31 @@ WA_AI_MILITARY_AXIS_hold_italy_after_defection_FRONT = {
 		manual_attack = yes
 	}
 }
+
+# purpose: Fix 99 - the Tunis bridge (see WA_AI_MILITARY_AXIS_tunis_bridge_THEATRE for the case): once a
+#          front forms on the Tunisian border it must not be starved by Germany's -175 on the whole
+#          north_africa blob (war_with_soviets_2 -75, africa_is_lost -100) - a region-keyed +200 on 329
+#          alone offsets that to a small positive on the Tunisian front and leaves Libya / Egypt untouched.
+#          ASSUMES the engine sums a strategic_region-keyed request with an area-keyed one on the same
+#          front (documentation.info lists both keys for the type; repo precedent for the region key:
+#          the Italy guard above, COUNTRY_CHI/AST) - boot-test.
+# range:   +200 (E2 ceiling)
+# policy:  Additive per region
+# domain:  FRONT
+WA_AI_MILITARY_AXIS_tunis_bridge_FRONT = {
+	enable = {
+		WA_AI_MILITARY_is_axis_member = yes
+		has_war = yes
+		WA_AI_MILITARY_can_open_secondary_fronts = yes
+		NOT = { WA_AI_MILITARY_home_threatened = yes }
+		NOT = { WA_AI_MILITARY_italy_homeland_invaded = yes }
+		WA_AI_MILITARY_tunis_bridge_contested = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 329
+		value = 200
+	}
+}
