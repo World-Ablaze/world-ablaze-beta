@@ -91,6 +91,15 @@ For each type: total count, where it currently appears (counts per file), recomm
 - Posture-gated writers: the exec/grind pairs `ALLIES_exec_vs_germany`/`_grind_vs_germany`, `AXIS_exec_vs_sov`/`_grind_vs_sov`, `CHINA_FRONT_exec_vs_japan`/`_grind_vs_japan` (each pair mutually exclusive by posture level), `ALLIES_downfall_push_FRONT`, `SOV_counterattack`, `JAP_chinese_war_4` (with `_chinese_war_3` as its posture-0 fallback), `ITA_north_africa_offensive_exec_FRONT` (via the controller-dynamic `WA_AI_MILITARY_north_africa_offensive_viable` trigger), and the Default-layer `EXEC_low_equipment_hold` brake all consume the weekly offensive-posture verdict - see section 9 of `WA_AI_MILITARY_SYSTEM.md` before adding new `execute_order = yes` blocks.
 - Policy: **Exclusive per area**. Phase 5 mutual-exclusion needed.
 
+### `support`
+
+- Currently in: USA 31, SOV 5, SPR 5, GER 3, POR 3, CHI 2, HUN 2, JAP 2, ENG 1, FRA 1, `wa_default` 1, plus the two Faction-layer blocks added by Fix 106 in `WA_AI_MILITARY_FACTION_ALLIES_DIPLOMACY.txt`.
+- Engine description: *“Pursues AI to support a certain country within wars, sending lend lease, volunteers, or expeditionary forces.”* `common/ai_strategy/documentation.info` lists the token and gives **no example for it** - which is how it stays invisible. Grep the token list, not the worked examples, before concluding a script lever does not exist.
+- Target: Country for a nation's own diplomatic preferences; **Faction for coalition behaviour** (a smaller member backing the major it fights under). Not Country-only despite sitting beside `declare_war` in the DIPLOMACY domain - see the note in `WA_AI_MILITARY_SYSTEM.md` §4.
+- Policy: **Additive per target**. Values in use: 100 (nudge), 200, 500 (strong), -1000 (suppress), -2000 / -5000 (hard suppress: `wa_default` toward GER, GER toward SOV).
+- Direction was one-way on the Allied side until Fix 106: every Allied block ran major → someone, none ran Allied minor → major. Minor → major blocks do exist elsewhere (`HUN.txt:131`, HUN → GER 200).
+- **Unresolved:** creates vs ranks expeditionary intent - checklist R70.
+
 ### `invade` (197)
 
 - Currently in: ALLIES 62, USA 54, JAP 25, SOUTH_AMERICA 19, GER 14, AST 6, ENG 4, GRE 4, SOV 4, GER 14, ITA 1, MAN 1, AXIS 1, RCZ 2, RAJ 0, CHINA_FRONT 0.

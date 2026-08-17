@@ -1315,6 +1315,29 @@ NDefines.NAI.UNLOCK_SPIRIT_MODIFIER_FACTOR = 0.0              						-- Factor fo
 NDefines.NAI.UNLOCK_SPIRIT_USE_TRUNCATION_SELECT = true       						-- Whether to use truncation select or roulette-wheel select. Set threshold for truncation select below.
 NDefines.NAI.UNLOCK_SPIRIT_TRUNCATION_SELECT_THRESHOLD = 1.0  						-- Valid between [0.0, 1.0]. When unlocking spirits, select randomly from all spirits with AI score >= VALUE * HighestSpiritScore. To always select the best, set this value to 1.0. To select fully randomly, set this value to 0.0.
 
+-- Expeditionary forces (Fix 106, 2026-08-17). These three are NOT the lever, and a first pass at this
+-- problem nearly retuned them on that mistaken premise - recorded here so the next author does not
+-- repeat it. The lever is the `support` ai_strategy type: "Pursues AI to support a certain country
+-- within wars, sending lend lease, volunteers, or expeditionary forces." It is in the engine's token
+-- list, the mod already uses it 56 times, and `common/ai_strategy/documentation.info` gives no example
+-- for it - which is exactly how it gets missed.
+--
+-- measured: 7c7803a8 (123 monthly saves) - the feature WORKS in this build (SIK->SOV, ITL->ITA,
+-- BUL->ROM lend divisions) and no Allied minor ever lends. The reason is upstream of these latches:
+-- the engine's own `ai/expeditionary_force_data` block, which exists only once it has formed an
+-- intent toward a `tag=`, is ABSENT on AST/NZL/CAN/SAF/RAJ/HOL/FRA at every date - no target was
+-- ever selected, so the casualty test was never reached. In the same campaign every `support` block
+-- runs major -> someone (USA -> ENG/SOV 500, USA -> AST/CHI 100, ENG -> SOV 500); not one Allied
+-- minor supports the major it fights under. Fix 106 adds those blocks; see
+-- WA_AI_MILITARY_FACTION_ALLIES_DIPLOMACY.txt.
+--
+-- Left at their current values deliberately. The sender ratio they test - cumulative casualties over
+-- deployed manpower - reads 0.5 to 4.3 for every Allied contingent by 1943.11 and 0.51 / 0.78 for USA
+-- and ENG themselves, and casualties are MONOTONIC, so 0.1 / 0.25 may well be a one-way latch that
+-- shuts for every belligerent by the third year of a war. That remains a live suspicion, NOT a
+-- finding: it is unobservable until a country actually reaches the test, and none has. Revisit only
+-- once R70 shows `expeditionary_force_data` present on an Allied minor with `do_not_send_forces=yes`
+-- - that reading, and only that reading, makes these numbers the binding constraint.
 NDefines.NAI.MAX_REQUEST_EXPEDITIONARIES_ARMY_RATIO = 0.5							-- AI will not accept expeditionary requests if its expeditions are above this ratio
 NDefines.NAI.CASUALTY_RATIO_TO_PULL_EXPEDITIONARIES_BACK = 0.25						-- AI will pull expeditioniries back if its casualties is aboce this ratio compared to their total deployed manpower
 NDefines.NAI.CASUALTY_RATIO_TO_NOT_SEND_EXPEDITIONARIES = 0.1						-- AI will not send expeditioniries if its casualties is aboce this ratio compared to their total deployed manpower

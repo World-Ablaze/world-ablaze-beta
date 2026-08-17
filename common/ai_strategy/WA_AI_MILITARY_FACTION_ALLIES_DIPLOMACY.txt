@@ -827,3 +827,115 @@ WA_AI_MILITARY_ALLIES_husky_prep_DIPLOMACY = {
 		value = 200
 	}
 }
+
+
+############################################################################################################
+#	Fix 106 - a smaller Allied belligerent backs the major it fights under
+############################################################################################################
+#
+# `support` is the ONLY script-side lever on expeditionary forces. The engine's own description:
+# "Pursues AI to support a certain country within wars, sending lend lease, volunteers, or
+# expeditionary forces." There is no expeditionary ai_strategy type, no scripted effect sends one, and
+# `diplomatic_relation` has no such relation - `transfer_units_fraction` exists but hands over
+# OWNERSHIP permanently (the Fall Achse splitter), which is not a loan. `common/ai_strategy/
+# documentation.info` lists the token and gives no example for it, which is how it stays invisible.
+#
+# measured 7c7803a8 (123 monthly saves): the engine's expeditionary feature WORKS in this build -
+# SIK->SOV, ITL->ITA and BUL->ROM all lend divisions - and no Allied minor ever uses it. What IS
+# established is where the refusal sits: `ai/expeditionary_force_data`, which the engine writes only
+# once it has formed an intent toward a specific tag, is ABSENT on AST, NZL, CAN, SAF, RAJ, HOL and
+# FRA at every date. No target was ever selected, so the two casualty latches in 05_defines.lua were
+# never reached and are not the constraint.
+#
+# THE CAUSAL CLAIM IS A HYPOTHESIS, AND THE POSITIVE CONTROL ARGUES AGAINST IT. No `support` block in
+# the mod names an Allied minor as the SUPPORTER (the sources are CHI, ENG, FRA, GER, HUN, JAP, POR,
+# SOV, SPR, USA, wa_default) - but neither SIK, ITL nor BUL has one either, and all three lend anyway.
+# Lending therefore demonstrably happens at support value 0, and `support` is NOT shown to be the
+# selector. Subject status is not the answer on its own either: SIK and ITL are puppets of their
+# receivers, but RAJ is a subject of ENG and never lends. Correcting an earlier draft of this header:
+# minor -> major support blocks DO exist - HUN.txt:131 is HUN -> GER 200 - they are simply absent
+# from the Allied side and from all three observed lenders.
+#
+# This block is therefore a CHEAP FALSIFIABLE EXPERIMENT, not a diagnosis. The engine's own
+# description of the type says it sends expeditionary forces, no Allied minor carries any support
+# value at all, and R70 leg 1 reads the engine's verdict directly. If support = 200 goes live and
+# `expeditionary_force_data` is STILL absent, the type RANKS rather than CREATES - the same shape as
+# `strategic_air_importance`, which ranks regions for planes the engine already wants - and these two
+# blocks should be REVERTED, not tuned.
+#
+# SIDE EFFECT, deliberate and worth watching: `support` also raises lend-lease and volunteers, and WA
+# already steers those with `send_lend_lease_desire` and 161 `send_volunteers_desire` blocks. An
+# equipment-poor dominion may start shipping to an equipment-rich major. R70 carries the read.
+#
+# Why this matters beyond the transfer itself: a coalition front is drawn per COUNTRY, so the
+# Mediterranean line in that campaign was held by 16-22 separate national front plans averaging
+# 3.9-6.6 divisions each, against 57.8 (GER east) and 96.3 (SOV west) on the mono-national controls -
+# and the engine's execute test is a proportion of ONE order, so a 4-division plan needs 100 % of its
+# divisions above the bar. Expeditionary transfer is the only mechanism that merges those plans.
+#
+# WHY ONLY ENG AND USA. The payload's `id =` takes a literal tag, so the target set has to be
+# enumerated - there is no country_trigger form of this type. ENG and USA are the sufficient set here
+# because they ARE the Allies in this codebase: WA_AI_MILITARY_is_allies_member resolves to
+# `is_in_faction_with = ENG or USA` (WA_AI_CONFIG.txt), so a coalition with neither of them as a
+# belligerent is not an Allies coalition by the mod's own definition and correctly gets nothing here.
+# A future coalition anchored on someone else needs its own Faction file, not a wider block.
+#
+# Probe: checklist R70.
+
+# purpose: a smaller Allies member at war lends its weight to the coalition's major - lend-lease,
+#          volunteers and, the point here, expeditionary divisions that fold into the major's plans
+# range:   0 to +1000 in this mod (100 nudge, 500 strong, -1000 suppress)
+# policy:  Additive per target
+# domain:  DIPLOMACY
+WA_AI_MILITARY_ALLIES_back_the_coalition_major_ENG_DIPLOMACY = {
+	enable = {
+		WA_AI_MILITARY_is_allies_member = yes
+		# ENG and USA are the coalition's own majors - they do not back themselves. Archetype, not a
+		# tag list: CAN is deliberately INSIDE this set (12-16 divisions, its own Mediterranean plans).
+		NOT = { WA_AI_CONFIG_MILITARY_is_anglo_major = yes }
+		has_war = yes
+		ENG = {
+			exists = yes
+			is_in_faction_with = ROOT
+			has_war = yes
+			# The archetype on BOTH halves of the gate, not only the NOT above: if
+			# is_anglo_major is ever widened, this pair stays self-consistent.
+			WA_AI_CONFIG_MILITARY_is_anglo_major = yes
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = support
+		id = "ENG"
+		value = 200
+	}
+}
+
+# purpose: same, toward the other coalition major. Two blocks rather than one so each arms on its own
+#          target's existence - an Allies without a USA, or without an ENG, still gets the behaviour.
+# range:   0 to +1000
+# policy:  Additive per target
+# domain:  DIPLOMACY
+WA_AI_MILITARY_ALLIES_back_the_coalition_major_USA_DIPLOMACY = {
+	enable = {
+		WA_AI_MILITARY_is_allies_member = yes
+		NOT = { WA_AI_CONFIG_MILITARY_is_anglo_major = yes }
+		has_war = yes
+		USA = {
+			exists = yes
+			is_in_faction_with = ROOT
+			has_war = yes
+			# The archetype on BOTH halves of the gate, not only the NOT above: if
+			# is_anglo_major is ever widened, this pair stays self-consistent.
+			WA_AI_CONFIG_MILITARY_is_anglo_major = yes
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = support
+		id = "USA"
+		value = 200
+	}
+}
