@@ -897,7 +897,10 @@ WA_AI_check_resource_needs = {
 # Inputs:  WA_AI_needs_steel/aluminium/rubber/tungsten/chromium (written by
 #          WA_AI_check_resource_needs above on a ~2-day cadence, clamped 0-3),
 #          resource@<r> post-import balances, factory counts.
-# Outputs: country flag WA_AI_industry_overextended_flag - read by
+# Outputs: country flag WA_AI_industry_overextended_flag. Its LARGEST consumer is the
+#          equipment family - all 8 WA_AI_EQUIPMENT_*_headroom_* triggers carry
+#          NOT = { WA_AI_industry_overextended = yes }, so a standing flag stops the
+#          monthly _armed/_ok latch chain and closes ~640 design sites. Also read by
 #          WA_AI_industry_overextended (WA_AI_CONSTRUCTION_triggers.txt) and by
 #          WA_AI_RESEARCH_needs_synth_oil/_rubber (WA_AI_RESEARCH_industry.txt);
 #          WA_AI_overext_dbg_active - persistent debug counter, +1 per monthly
@@ -907,8 +910,30 @@ WA_AI_check_resource_needs = {
 #                       mil factories > civ factories; AND mil+civ > 100.
 #                       All state-based - no tags, no is_major: a resource-rich
 #                       country grown big never trips, any overextended one does.
-# RELEASE (clear flag): fewer than 2 of those resources at needs >= 2.
+# RELEASE (clear flag): fewer than 2 of those resources at needs >= 2 AND still
+#                       net-negative - the same conjunction TRIP uses - held for
+#                       @WA_AI_OVEREXT_RELEASE_MONTHS consecutive monthly evaluations.
 # Between the two thresholds the flag keeps its previous state (hysteresis).
+# WHY THE RELEASE TESTS THE BALANCE (Fix 103). It used to test needs alone, and
+# WA_AI_needs_<r> ratchets to 3 on the IMPORT-VOLUME leg of WA_AI_check_resource_needs,
+# so an import-dependent major never falls below the bar and the flag became a one-way
+# latch. WA_AI_EQUIPMENT_triggers.txt refused to read WA_AI_needs_<r> for exactly that
+# reason and chose this flag as its fragility guard - and the ratchet came back through
+# this release condition. Pairing the balance term cuts it where it re-entered.
+# WHY THE PERSISTENCE. The balance sign moves daily while this runs monthly, so the
+# paired term alone makes the flag chatter across every downstream reader. The dwell is
+# what buys the hysteresis that the needs axis has and the balance axis does not.
+# KNOWN RESIDUAL, deliberately not fixed here: about half the remaining state changes
+# are TRIP re-sets, not releases. TRIP sits on its own 2-of-5 boundary and spikes there
+# for a single month; no release-side term can damp that. Raising the TRIP bar removes
+# it, but the reconstruction that showed this is unreliable at exactly trip == 2, so it
+# is left alone until that is measured properly. See checklist R24.
+# Consecutive monthly evaluations the release condition must hold before the flag clears.
+# Protects ~640 equipment design sites from a flag that would otherwise chatter with the
+# daily balance sign. Assumes this effect stays monthly; if its cadence changes, this is a
+# count of evaluations, not of months. Read by this file only.
+@WA_AI_OVEREXT_RELEASE_MONTHS = 3
+
 WA_AI_update_industry_overextension = {
 
 	### trip signal: sustained max need AND still short after imports
@@ -920,14 +945,23 @@ WA_AI_update_industry_overextension = {
 	if = { limit = { check_variable = { WA_AI_needs_tungsten = 3 } 	check_variable = { resource@tungsten < 0 } } 	add_to_temp_variable = { _overext_trip_ = 1 } }
 	if = { limit = { check_variable = { WA_AI_needs_chromium = 3 } 	check_variable = { resource@chromium < 0 } } 	add_to_temp_variable = { _overext_trip_ = 1 } }
 
-	### release signal: sustained need still present (post-import deficit not required)
+	### release signal: sustained need AND still short after imports (mirrors the trip legs)
 
 	set_temp_variable = { _overext_release_ = 0 }
-	if = { limit = { check_variable = { WA_AI_needs_steel > 1 } } 		add_to_temp_variable = { _overext_release_ = 1 } }
-	if = { limit = { check_variable = { WA_AI_needs_aluminium > 1 } } 	add_to_temp_variable = { _overext_release_ = 1 } }
-	if = { limit = { check_variable = { WA_AI_needs_rubber > 1 } } 		add_to_temp_variable = { _overext_release_ = 1 } }
-	if = { limit = { check_variable = { WA_AI_needs_tungsten > 1 } } 	add_to_temp_variable = { _overext_release_ = 1 } }
-	if = { limit = { check_variable = { WA_AI_needs_chromium > 1 } } 	add_to_temp_variable = { _overext_release_ = 1 } }
+	if = { limit = { check_variable = { WA_AI_needs_steel > 1 } check_variable = { resource@steel < 0 } } 		add_to_temp_variable = { _overext_release_ = 1 } }
+	if = { limit = { check_variable = { WA_AI_needs_aluminium > 1 } check_variable = { resource@aluminium < 0 } } 	add_to_temp_variable = { _overext_release_ = 1 } }
+	if = { limit = { check_variable = { WA_AI_needs_rubber > 1 } check_variable = { resource@rubber < 0 } } 		add_to_temp_variable = { _overext_release_ = 1 } }
+	if = { limit = { check_variable = { WA_AI_needs_tungsten > 1 } check_variable = { resource@tungsten < 0 } } 	add_to_temp_variable = { _overext_release_ = 1 } }
+	if = { limit = { check_variable = { WA_AI_needs_chromium > 1 } check_variable = { resource@chromium < 0 } } 	add_to_temp_variable = { _overext_release_ = 1 } }
+
+	### release dwell: consecutive evaluations the release condition has held
+
+	if = {
+		limit = { check_variable = { _overext_release_ < 2 } }
+		add_to_variable = { WA_AI_overext_release_streak = 1 }
+	}
+	else = { set_variable = { WA_AI_overext_release_streak = 0 } }
+	clamp_variable = { var = WA_AI_overext_release_streak min = 0 max = @WA_AI_OVEREXT_RELEASE_MONTHS }
 
 	### scale guards (state-based, no tags)
 
@@ -945,14 +979,17 @@ WA_AI_update_industry_overextension = {
 
 		if = { limit = { has_country_flag = WA_AI_resources_logging NOT = { has_country_flag = WA_AI_industry_overextended_flag } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RESOURCES: industry overextended - MIC substitution active" }
 		set_country_flag = WA_AI_industry_overextended_flag
+		set_variable = { WA_AI_overext_release_streak = 0 }
 	}
 	else_if = {
 		limit = {
 			has_country_flag = WA_AI_industry_overextended_flag
 			check_variable = { _overext_release_ < 2 }
+			check_variable = { WA_AI_overext_release_streak = @WA_AI_OVEREXT_RELEASE_MONTHS }
 		}
 
 		clr_country_flag = WA_AI_industry_overextended_flag
+		set_variable = { WA_AI_overext_release_streak = 0 }
 		if = { limit = { has_country_flag = WA_AI_resources_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RESOURCES: industry overextension released" }
 	}
 
