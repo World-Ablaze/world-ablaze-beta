@@ -402,6 +402,35 @@ WA_AI_PC_railway_corridor_pass = {
 					set_variable = { WA_TLM_r95_corridor_last_t = global.WA_TLM_clock }
 				}
 
+				# tlm: r103_corridor_* - did splitting PERMISSION from PAYMENT change what this
+				# builder can reach, and did that turn into admitted rail?
+				#   _reach   GAUGE, resampled every pass: hops requestable ONLY because of Fix 103
+				#            (both ends ours, exactly one our charge). Not cumulative - a gauge, because
+				#            "how many hops does the widening currently unlock" is sampled state, and a
+				#            counter here would be a code-path count.
+				#   _orphan  GAUGE, resampled every pass: hops both ends ours and NEITHER our charge.
+				#            After Fix 104 (ally leg tests FUNDING) both ends are then held by partners
+				#            that CAN fund, so each has a foot on the hop and builds it itself - a
+				#            transient reading is normal and means "this hop belongs to someone else".
+				#            The signal is _orphan high WHILE the hop stays unbuilt on the map: the
+				#            owner is not building it either, which is a defect of ITS pass, not of ours.
+				#   _seg_n   counter, VERIFIED EFFECT: rail segments actually admitted (queue grew) on a
+				#            pass the widening contributed to. Never per request.
+				# consumer: R68
+				set_variable = { WA_TLM_r103_corridor_reach = corridor_reach_ }
+				set_variable = { WA_TLM_r103_corridor_orphan = corridor_orphan_ }
+				if = {
+					limit = {
+						check_variable = { corridor_reach_ > 0 }
+						check_variable = { _corridor_seg_admitted_ > 0 }
+					}
+					add_to_variable = { WA_TLM_r103_corridor_seg_n = _corridor_seg_admitted_ }
+					if = { limit = { check_variable = { WA_TLM_r103_corridor_first_t = 0 } }
+						set_variable = { WA_TLM_r103_corridor_first_t = global.WA_TLM_clock }
+					}
+					set_variable = { WA_TLM_r103_corridor_last_t = global.WA_TLM_clock }
+				}
+
 				### Stale-path validation, pinned to the corridor tag (Fix 50 shape).
 				# Only when the cancel set is COMPLETE: every requested route was pathfound this pass
 				# (a route cap smaller than the list would otherwise cancel the in-progress segments of

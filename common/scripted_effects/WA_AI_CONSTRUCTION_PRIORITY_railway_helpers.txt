@@ -949,6 +949,25 @@ WA_AI_PC_start_railway_project = { # THIS = state, _project_province_id, _projec
 		limit = {
 			check_variable = { current_level < _project_target_level }
 		}
+		# tlm: r103_corridor_blocked_n - counter, VERIFIED EFFECT: this corridor segment wanted a
+		# level (the check above passed, so it is neither built nor already queued) and the
+		# state-scoped ADMISSION gate refuses it. That refusal is silent in WA_AI_PC_start_project,
+		# and it is how campaign 7c7803a8's second dead hop (7079 <-> 5078) stayed invisible for 28
+		# months: an ally-held province inside an enemy-controlled state, requested and pathfound
+		# every 4 weeks, never queued. Deliberately placed AFTER the level check - before it, every
+		# already-finished hop on a hostile-state end would book a refusal that never happened.
+		# THIS = state, ROOT = builder here (the two corridor / land-war call sites both scope
+		# `var:_state_for_project = { ... }` / `var:_corridor_seg_state_ = { ... }`), which is the
+		# scope WA_AI_PC_state_controller_allows_admission requires - same trigger the executor
+		# itself calls, so probe and gate cannot drift. Corridor family only: the land-war family
+		# has its own diagnostics and R68 is a corridor item. consumer: R68
+		if = {
+			limit = {
+				check_variable = { _rail_family_latched_ = 1 }
+				NOT = { WA_AI_PC_state_controller_allows_admission = yes }
+			}
+			ROOT = { add_to_variable = { WA_TLM_r103_corridor_blocked_n = 1 } }
+		}
 		# Use new PC system - call WA_AI_PC_start_project
 		set_temp_variable = { _project_building_type = 13 }
 		set_temp_variable = { _project_queue_num = 1 }

@@ -1203,11 +1203,22 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 #	>>> arr:corridor_hub_prov_ / _kind_ / _prio_ hubs to build at a node we hold: kind 17 = supply hub,
 #	                                            14 = naval base
 #
-#	The corridor is SYMMETRIC and tag-free: "ours" is ROOT / a subject / a Fix-74 partner's soil, tested
-#	per PROVINCE (WA_AI_PC_corridor_node_is_ours); the priority band is rail_war when any node is
-#	enemy-held, rail_prewar otherwise (the owner of Libya / Egypt / Tunisia preparing in peace,
-#	decision 4). Sequencing emerges from control: Mechili<->Tobruk is never requested before Mechili is
-#	held, Mechili<->Benghazi never before Benghazi. Cadence and level are constant:wa_ai_railway.corridor.*.
+#	The corridor is SYMMETRIC and tag-free; the priority band is rail_war when any node is enemy-held,
+#	rail_prewar otherwise (the owner of Libya / Egypt / Tunisia preparing in peace, decision 4).
+#	Sequencing emerges from control: Mechili<->Tobruk is never requested before Mechili is held,
+#	Mechili<->Benghazi never before Benghazi. Cadence and level are constant:wa_ai_railway.corridor.*.
+#
+#	Fix 103 - PERMISSION and PAYMENT are two questions, asked separately, both per PROVINCE:
+#	  corridor_node_ours_   WA_AI_PC_corridor_node_is_ours       may ROOT build here? ROOT / subject /
+#	                                                             ANY faction ally
+#	  corridor_node_charge_ WA_AI_PC_corridor_node_is_my_charge  should ROOT pay for it? ROOT / subject /
+#	                                                             a Fix-74 partner (unchanged)
+#	A hop is requested when BOTH ends are ours and AT LEAST ONE is our charge. Before Fix 103 both ends
+#	had to be our charge, so a hop between a healthy ally's node and our own had no builder anywhere
+#	(campaign 7c7803a8, Medenine 11957 <-> Tripoli 1149, unbuilt across all 123 monthly saves).
+#	Hubs keep the charge test ALONE - hub behaviour is unchanged by Fix 103.
+#	The pass gate is _corridor_claim_n_ > 0, the SAME predicate the pre-Fix-103 gate used, so the set of
+#	countries that enter this pass is unchanged: permission alone never admits anyone new.
 ############################################################################################################
 
 WA_AI_PC_railway_STRATEGY_theatre_corridor = {
@@ -1220,14 +1231,18 @@ WA_AI_PC_railway_STRATEGY_theatre_corridor = {
 	clear_temp_array = corridor_hub_kind_
 	clear_temp_array = corridor_hub_prio_
 	clear_temp_array = corridor_node_ours_
+	clear_temp_array = corridor_node_charge_
 	clear_temp_array = corridor_node_hostile_
+	set_temp_variable = { corridor_reach_ = 0 }
+	set_temp_variable = { corridor_orphan_ = 0 }
 
 	### Corridor data (one corridor today; a second theatre = a second define + a second block below)
 	WA_AI_PC_CORRIDOR_define_north_africa = yes
 
-	### Classify every node once: ours (buildable for ROOT) / enemy-held
+	### Classify every node once: ours (ROOT may build) / our charge (ROOT should pay) / enemy-held
 	set_temp_variable = { _corridor_hostile_n_ = 0 }
 	set_temp_variable = { _corridor_ours_n_ = 0 }
+	set_temp_variable = { _corridor_claim_n_ = 0 }
 	for_each_loop = { array = corridor_node_prov_ value = _corridor_prov break = _cn_b_
 		if = {
 			limit = { WA_AI_PC_corridor_node_is_ours = yes }
@@ -1236,6 +1251,14 @@ WA_AI_PC_railway_STRATEGY_theatre_corridor = {
 		}
 		else = {
 			add_to_temp_array = { corridor_node_ours_ = 0 }
+		}
+		if = {
+			limit = { WA_AI_PC_corridor_node_is_my_charge = yes }
+			add_to_temp_array = { corridor_node_charge_ = 1 }
+			add_to_temp_variable = { _corridor_claim_n_ = 1 }
+		}
+		else = {
+			add_to_temp_array = { corridor_node_charge_ = 0 }
 		}
 		if = {
 			limit = { WA_AI_PC_corridor_node_is_hostile = yes }
@@ -1247,9 +1270,15 @@ WA_AI_PC_railway_STRATEGY_theatre_corridor = {
 		}
 	}
 
+	# Fix 103: gated on the CHARGE count, not the permission count. This is the same predicate the
+	# pre-Fix-103 gate used (`_corridor_ours_n_ > 0` when "ours" still meant is_logistics_build_partner),
+	# so the pass-entry population is unchanged. Gating on permission instead would let any faction
+	# member with no stake in the theatre run the whole pass - JAP passes
+	# WA_AI_MILITARY_AIR_theatre_contested_north_africa the moment ENG holds Egypt, and would then
+	# classify, pathfind and run stale-path validation with an empty valid set.
 	if = {
 		limit = {
-			check_variable = { _corridor_ours_n_ > 0 }
+			check_variable = { _corridor_claim_n_ > 0 }
 			WA_AI_PC_corridor_theatre_live_north_africa = yes
 		}
 		set_temp_variable = { corridor_ran_ = 1 }
@@ -1271,20 +1300,45 @@ WA_AI_PC_railway_STRATEGY_theatre_corridor = {
 				limit = { check_variable = { _ci_ < _corridor_last_i_ } }
 				set_temp_variable = { _ci_next_ = _ci_ }
 				add_to_temp_variable = { _ci_next_ = 1 }
+				# Fix 103: permission on BOTH ends, payment on AT LEAST ONE.
 				if = {
 					limit = {
 						check_variable = { corridor_node_ours_^_ci_ = 1 }
 						check_variable = { corridor_node_ours_^_ci_next_ = 1 }
 					}
-					add_to_temp_array = { corridor_route_start_ = _ci_prov_ }
-					add_to_temp_array = { corridor_route_end_ = corridor_node_prov_^_ci_next_ }
-					add_to_temp_array = { corridor_route_level_ = constant:wa_ai_railway.corridor.rail_level }
-					add_to_temp_array = { corridor_route_prio_ = _corridor_prio_ }
+					set_temp_variable = { _hop_charge_n_ = corridor_node_charge_^_ci_ }
+					add_to_temp_variable = { _hop_charge_n_ = corridor_node_charge_^_ci_next_ }
+					if = {
+						limit = { check_variable = { _hop_charge_n_ > 0 } }
+						add_to_temp_array = { corridor_route_start_ = _ci_prov_ }
+						add_to_temp_array = { corridor_route_end_ = corridor_node_prov_^_ci_next_ }
+						add_to_temp_array = { corridor_route_level_ = constant:wa_ai_railway.corridor.rail_level }
+						add_to_temp_array = { corridor_route_prio_ = _corridor_prio_ }
+						# tlm gauge: hops only Fix 103 made requestable - one end is a healthy ally's,
+						# so the pre-Fix-103 both-ends-charge rule refused them. consumer: R68
+						if = {
+							limit = { check_variable = { _hop_charge_n_ = 1 } }
+							add_to_temp_variable = { corridor_reach_ = 1 }
+						}
+					}
+					else = {
+						# tlm gauge: both ends ours, NEITHER our charge. After Fix 104 (the ally leg
+						# tests FUNDING) that means both ends are held by partners that genuinely can
+						# fund - so each has a foot on the hop and builds it itself, and a transient
+						# reading here is normal: the hop belongs to someone else. Sustained high WHILE
+						# the hop stays unbuilt on the map is the real signal - the owner is not
+						# building it either. consumer: R68
+						add_to_temp_variable = { corridor_orphan_ = 1 }
+					}
 				}
 			}
-			### Hubs: a depot / port wanted at a node we hold
+			### Hubs: a depot / port wanted at a node we hold.
+			# Fix 103: CHARGE, not permission - a hub is a whole building on one node, so unlike a hop
+			# there is no "we have a foot on it" half to reason about. Reading the charge array here
+			# leaves hub behaviour identical to the pre-Fix-103 build, which is why Fix 103 cannot
+			# regress R60 leg 3 (the Medenine 11957 naval base on Free-French soil).
 			if = {
-				limit = { check_variable = { corridor_node_ours_^_ci_ = 1 } }
+				limit = { check_variable = { corridor_node_charge_^_ci_ = 1 } }
 				if = {
 					limit = { check_variable = { corridor_node_depot_^_ci_ = 1 } }
 					add_to_temp_array = { corridor_hub_prov_ = _ci_prov_ }
@@ -1304,6 +1358,20 @@ WA_AI_PC_railway_STRATEGY_theatre_corridor = {
 				### enemy-held (the front is right there, e.g. blocked at El Agheila) and the other
 				### neighbouring node is ours (the rear - Benghazi - already fell). A corridor end
 				### node has one neighbour only; that neighbour must be the hostile one.
+				###
+				### Fix 103, per-read decision: the two _fwd_rear_ tests below deliberately keep
+				### reading corridor_node_ours_ (PERMISSION), not the charge array. "Has the rear
+				### fallen to our side" is a question about SIDES - a military fact - not about who
+				### pays; a faction ally standing in Benghazi secures our rear whether or not it could
+				### fund a railway. Intentional widening, not an oversight: before Fix 103 a healthy
+				### ally holding Benghazi read as "not ours" and suppressed the forward port even
+				### though the rear was genuinely secure. The port stays bounded by the three other
+				### terms, all unchanged - the outer gate is CHARGE (we must have a stake in Ajdabiya
+				### itself), one neighbour must be enemy-held, and WA_AI_PC_corridor_node_is_conquered
+				### still restricts it to the attacker on conquered soil, so the defender on its own
+				### ground never gets one. Delta: on campaign 7c7803a8 no forward port was ever
+				### requested by anyone (_port_n = 0 everywhere, R60 leg 2 sub-leg NOT EXERCISED); the
+				### case this opens is ENG holding Ajdabiya with USA or a restored FRA in Benghazi.
 				if = {
 					limit = { check_variable = { corridor_node_fwdport_^_ci_ = 1 } }
 					set_temp_variable = { _fwd_front_ = 0 }
@@ -1338,7 +1406,7 @@ WA_AI_PC_railway_STRATEGY_theatre_corridor = {
 		}
 
 		if = { limit = { has_country_flag = WA_AI_construction_logging }
-			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY CORRIDOR: nodes ours=[?_corridor_ours_n_] hostile=[?_corridor_hostile_n_] routes=[?corridor_route_end_^num] hubs=[?corridor_hub_prov_^num] prio=[?_corridor_prio_]"
+			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY CORRIDOR: nodes ours=[?_corridor_ours_n_] charge=[?_corridor_claim_n_] hostile=[?_corridor_hostile_n_] routes=[?corridor_route_end_^num] reach=[?corridor_reach_] orphan=[?corridor_orphan_] hubs=[?corridor_hub_prov_^num] prio=[?_corridor_prio_]"
 		}
 	}
 }

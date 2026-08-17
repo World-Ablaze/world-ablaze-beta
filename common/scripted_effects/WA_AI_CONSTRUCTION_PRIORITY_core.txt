@@ -1456,15 +1456,18 @@ WA_AI_PC_start_project = {
 	set_temp_variable = { _qmax_scoped_ = _project_queue_max_scoped }
 	set_temp_variable = { _project_queue_max_scoped = 0 }
 
-	# Validate location is controlled
+	# Validate location is controlled.
+	# Fix 103: the three terms that used to be inline here are now the scripted trigger
+	# WA_AI_PC_state_controller_allows_admission (WA_AI_CONSTRUCTION_triggers.txt) - same terms, same
+	# order, THIS = state and ROOT = builder exactly as before. It was named because two other places
+	# have to agree with it and could only do so by copying it: the corridor's province-scoped
+	# selector (WA_AI_PC_is_corridor_side_holder) and the WA_TLM_r103_corridor_blocked_n probe that
+	# counts the segments THIS gate refuses. A copy kept in sync by a comment is not a mechanism.
+	# Do NOT fold the four validity tests in this file (:494 lane, :627 air lane, :743 fill, :1069
+	# completion) into the same trigger: they deliberately carry a fourth term,
+	# `ROOT = { is_subject_of = PREV }`. selector <= admission <= validity - see the trigger header.
 	if = {
-		limit = {
-			OR = {
-				is_controlled_by = ROOT
-				CONTROLLER = { is_in_faction_with = ROOT }
-				CONTROLLER = { is_subject_of = ROOT }
-			}
-		}
+		limit = { WA_AI_PC_state_controller_allows_admission = yes }
 
 		ROOT = {
 			# Default queue_num to 1 if not set

@@ -344,16 +344,55 @@ port" attribute, and one engine that builds whatever consecutive pair the builde
 | strategy | `railway_strategies.txt` `WA_AI_PC_railway_STRATEGY_theatre_corridor` | classifies every node (ours / enemy-held), applies the theatre gate, publishes routes (`corridor_route_*`) and hubs (`corridor_hub_*`) for this pass |
 | core | `railway_core.txt` `WA_AI_PC_railway_corridor_pass` | own interval counter, civ floor, pathfinding (type 2, **no partial**), segment admission through `WA_AI_PC_start_railway_project` with `_railway_family_ = 1`, hubs through `WA_AI_PC_corridor_start_hub`, stale-path validation pinned to `type_id` corridor, `WA_TLM_r95_corridor_*` |
 | helpers | `railway_helpers.txt` `WA_AI_PC_corridor_start_hub` | queues a supply hub (PC type 17, new in Fix 95 part 1) or a naval base (14) at a named province, idempotent on the building's existence |
-| triggers | `WA_AI_CONSTRUCTION_triggers.txt` `WA_AI_PC_corridor_node_is_ours` / `_is_hostile` / `WA_AI_PC_corridor_theatre_live_north_africa` | province-level control tests over `any_country`; theatre gate = AIR contested trigger OR no enemy on any node (preparation) |
+| triggers | `WA_AI_CONSTRUCTION_triggers.txt` `WA_AI_PC_corridor_node_is_ours` (→ `WA_AI_PC_is_corridor_side_holder`) / `_is_my_charge` (→ `WA_AI_PC_is_logistics_build_partner`) / `_is_hostile` / `WA_AI_PC_corridor_theatre_live_north_africa` | province-level control tests over `any_country`; permission vs payment split (Fix 103); theatre gate = AIR contested trigger OR no enemy on any node (preparation) |
+| admission | `WA_AI_CONSTRUCTION_triggers.txt` `WA_AI_PC_state_controller_allows_admission` | the three-term controller gate `WA_AI_PC_start_project` applies, extracted verbatim by Fix 103 so the corridor selector and the `blocked_n` probe agree with it by construction instead of by comment. **`selector ⊆ admission ⊆ validity`** — the lane / air-lane / fill / completion tests at `PRIORITY_core.txt` `:494`, `:627`, `:743`, `:1069` deliberately carry a fourth term `ROOT = { is_subject_of = PREV }` and must not be folded into this trigger |
 | constants | `wa_ai_railway.txt` `corridor.*` (`interval_weeks` 4, `rail_level` 2, `queue_max` 8 per building type, `max_routes_per_run` 14 = the whole pair list, so the validator's cancel set is always complete); `wa_ai_pc.txt` `type_id.corridor` 27, `cost.supply_node` | |
 
 **Rules the engine applies — no tag, no date, no side (the corridor is symmetric):**
 
-- A node is *ours* when a country satisfying `WA_AI_PC_is_logistics_build_partner` (ROOT, a subject
-  of ROOT, or a faction ally that `cannot_build_own_logistics` — the Fix 74 leg, so ENG/USA build in
-  Free-French Tunisia and stop the day FRA can build for itself) **controls the province**. State
+- **Permission and payment are two questions (Fix 103).** Both are tested per **province** — state
   control is never consulted (Cyrenaica 663 was ITL-controlled with ENG provinces inside).
-- The rail between two consecutive nodes is requested only when **both** are ours; the pathfinder
+  - *ours* / **permission** — `WA_AI_PC_corridor_node_is_ours` → `WA_AI_PC_is_corridor_side_holder`:
+    the province is controlled by ROOT, a subject of ROOT, or **any** faction ally. These are the
+    same three terms, in the same order, as the PC **admission** gate
+    `WA_AI_PC_state_controller_allows_admission` that `WA_AI_PC_start_project` applies — a selector
+    wider than admission requests hops the executor refuses in silence, a narrower one refuses hops
+    the executor would have taken.
+  - *my charge* / **payment** — `WA_AI_PC_corridor_node_is_my_charge` →
+    `WA_AI_PC_is_logistics_build_partner`: ROOT, a subject, or a faction ally that
+    `cannot_fund_own_logistics` (so ENG/USA build in Free-French Tunisia and stop the day FRA can pay
+    for itself). **Fix 104 changed that last term** — it was `cannot_build_own_logistics`, the
+    authority test, which has no civ-factory term at war.
+  - Before Fix 103 a single test did both jobs, and a hop between a healthy ally's node and our own
+    had no builder anywhere: on campaign `7c7803a8` **Medenine 11957 ↔ Tripoli 1149** went unbuilt
+    across all 123 monthly saves — GER held Medenine, ITL held Tripoli, ITL is a faction ally of GER
+    that passes `can_build_own_logistics` on `min_states`, and ITL's ~1 civ factory can never clear
+    the corridor's own civ floor. Both hubs sat at the *unconnected* `NODE_INITIAL_SUPPLY_FLOW`
+    baseline of 5 (Gabès 28/5, Medenine 26/5) against Marsa Matruh's 39/20 = `4 + 8×2`.
+- The rail between two consecutive nodes is requested when **both ends are ours and at least one is
+  our charge** (Fix 103; before, both ends had to be our charge). This is what keeps Fix 74's
+  recorded purpose — "keeps two healthy allies out of each other's rail networks" — literally true:
+  a healthy ally's *interior* hops, both ends its own, still have no payer but itself, so no partner
+  touches them; only a hop we already have a foot on crosses the line. It also bounds the duplicate
+  spend to hops that **straddle** two partners' ground, and keeps an out-of-theatre faction member
+  out (JAP passes the North Africa theatre gate the moment ENG holds Egypt, but has permission on
+  ally nodes and charge on none). **Hubs use the charge test alone**, so hub behaviour is unchanged
+  by Fix 103. The pass gate is the charge count, which is the same predicate the pre-Fix-103 gate
+  used — **the set of countries that enter the corridor pass is unchanged**.
+- **That residual is closed by Fix 104.** Fix 103 recorded it and built the detector: `can_build_own_logistics`
+  is a *size* test (`min_states` 5), not a funding test, so ITL — 8 states, ~1 civ factory — read capable
+  while being unable to build for itself, and a hop whose ends were all held by such "capable but
+  unfundable" allies had permission from someone and payment from nobody. Fix 104 gave the charge test
+  its own predicate, `WA_AI_PC_country_cannot_fund_own_logistics` (authority **and** the run's own civ
+  floor), so `WA_AI_PC_is_logistics_build_partner` — which `WA_AI_PC_corridor_node_is_my_charge` reads —
+  now names a payer for those hops. `WA_TLM_r103_corridor_orphan` stays as the detector and is now the
+  *regression* test: it should fall as `WA_TLM_r104_ally_fund_n` rises. Sustained `orphan > 0` with
+  `ally_fund_n = 0` means the split did not take.
+  - Measured case that motivated it (campaign `7c7803a8`): FRA held 46 controlled states with 10–19 civ
+    factories from 1940 to 1944, its PC available-factory share read 0 % for 15 consecutive quarters, and
+    ENG (198 civs) and USA (455) — both fighting in that theatre — were forbidden from building rail on
+    French-held Algeria for the whole war.
+- The pathfinder
   runs without partial paths, so a hostile province in between simply postpones the hop — no
   frontier port is conjured in the desert. Sequencing therefore *emerges from control*:
   Mechili↔Tobruk is never asked before Mechili is held, Mechili↔Benghazi never before Benghazi.
@@ -391,9 +430,43 @@ port" attribute, and one engine that builds whatever consecutive pair the builde
 | Tripoli → Benghazi | ~20 | 12 wk | 20 wk |
 | Benghazi → Tobruk via Mechili | ~10 | 8 wk | 12 wk |
 
-Two partners building on the same host soil (ENG + USA on FRA's Tunisia) each see only their own
-queue, so both may add +1 on the same hop in the same pass; `current_level` is read from the built
-global, so the overshoot is bounded at `rail_level + 1` and costs one segment per partner. Accepted.
+**Duplicate spend when several partners can pay for the same hop** (ENG + USA on FRA's Tunisia; after
+Fix 103, also the partners either side of a straddling hop). The claim previously recorded here — "both
+may add +1 **in the same pass**, bounded at `rail_level + 1`" — was **wrong**, and was corrected in Fix
+103 after both reviewers rejected it. Two facts make the window far wider than one pass:
+`_queued_for_segment` (`railway_helpers.txt:926-938`) scans `ROOT = { for_each_loop = { array =
+WA_AI_PC_queue ... } }` — **ROOT's own queue only** — and `global.WA_AI_PC_railway_connection_level_a^b`
+moves only **at completion**. So a second builder running its pass four weeks later still reads
+`current_level` as unbuilt and queues the hop again.
+
+Segment cost is `constant:wa_ai_pc.cost.railway` = 800 and `_daily_progress = construction_speed_ ×
+assigned_factories` with base speed 1 (`PRIORITY_core.txt:69`), so a segment takes `800 / F` days:
+
+| F (assigned civs) | 20 (alloc clamp) | 10 | 5 | 1 |
+|---|---|---|---|---|
+| Build time | 5.7 wk | 11.4 wk | 22.9 wk | 114 wk |
+
+Against a 4-week pass and a ~4.35-week monthly save, for N qualifying builders on one hop:
+
+| t | Event | global level |
+|---|---|---|
+| t0 | builder A queues the hop | 1 |
+| t0 + 4 wk | each other builder's pass: own-queue dedup is ROOT-scoped and blind to A, global still unbuilt → **each queues its own duplicate** | 1 |
+| t0 + 8 wk | every builder's dedup now sees *its own* project → effective level = target → **no further adds; duplication does not accumulate** | 1 |
+| + build (5.7–114 wk) | first completion | 2 |
+| + build | remaining completions | **2 + (N−1)** |
+
+**Accepted cost, stated:** `N−1` extra 800-cost segments per contested hop and a final level of
+`rail_level + (N−1)`, held for one full build duration. Hard ceiling regardless: `corridor.queue_max`
+= 8 concurrent corridor projects per builder per building type. Fix 103's "≥ 1 end is my charge" rule
+is what keeps N small — it confines contention to hops that straddle two partners' ground (**S = 1**
+on campaign `7c7803a8`: Medenine ↔ Tripoli) instead of every hop on a shared host. Note ITL itself
+satisfies both predicates on the Libyan hops and is excluded only by the corridor's civ floor, i.e.
+by data rather than by rule — so N is a property of the campaign, not a constant.
+
+A cross-builder claim (a global per-segment builder tag with a TTL) was considered and rejected: with
+N small it buys little, and it introduces persistent cross-country state whose expiry is a new failure
+mode of its own.
 
 **Not solved here:** the corridor gives the ground campaign its logistics; it does not put divisions
 in Africa (`66636ff4`: 92/117 ENG divisions under garrison orders, offensive `plan_value = -1`).

@@ -202,6 +202,20 @@
 # COUNT and LENGTH; mean length = lapse_wk / retire_n, which is the number a retirement grace window would
 # have to be sized against and which the entry count alone cannot supply. Additive; a save at
 # wa_tlm_version < 24 lacks the family - score NOT CHECKED, never FAILED.
+# v25 (2026-08-17, Fix 103 / R68): adds the WA_TLM_r103_corridor_* probe family - the theatre
+# corridor's PERMISSION/PAYMENT split (WA_AI_PC_is_corridor_side_holder vs the unchanged Fix 74
+# WA_AI_PC_is_logistics_build_partner). reach and orphan are GAUGES, re-set every corridor pass in
+# WA_AI_PC_railway_corridor_pass: reach = hops requestable only because of Fix 103 (both ends ours,
+# exactly one our charge); orphan = hops both ends ours and neither our charge, which after Fix 104
+# (v26, ally leg tests FUNDING) means both ends belong to partners that CAN fund and will build the
+# hop themselves - so a transient reading is normal, and the signal is orphan high WHILE the hop stays
+# unbuilt on the map, i.e. the owner is not building it either. seg_n is a counter on the VERIFIED
+# effect (rail segments admitted, queue grew) on passes the widening contributed to. blocked_n is a
+# counter written in WA_AI_PC_start_railway_project AFTER the level check, one per corridor segment
+# the state-scoped WA_AI_PC_state_controller_allows_admission gate refuses - the silent refusal that
+# hid campaign 7c7803a8's second dead hop for 28 months; placing it before the level check would
+# have booked refusals for hops that were simply already built. first_t / last_t on the seg_n site
+# only. Additive; a save at wa_tlm_version < 25 lacks the family - score NOT CHECKED, never FAILED.
 # v26 (2026-08-17, Fix 104 / R69): adds WA_TLM_r104_ally_fund_n / _first_t / _last_t - the OTHER half
 # of the split v25 describes. Fix 104 gave the ally leg its own FUNDING test
 # (WA_AI_PC_country_cannot_fund_own_logistics), so the residual r103_corridor_orphan was built to
@@ -218,7 +232,7 @@
 # build can carry the r104_* variables while still reporting an older version. Until both are in,
 # score on the VARIABLES' PRESENCE, not on the version number, and expect r103_corridor_orphan - the
 # paired detector this family is meant to be read against - to be absent.
-@WA_TLM_VERSION = 24
+@WA_TLM_VERSION = 26
 
 ############################################################################################################
 #	Clock - global.WA_TLM_clock = months elapsed since 1936.1
@@ -434,6 +448,12 @@ WA_TLM_init_country = {
 	if = { limit = { NOT = { has_variable = WA_TLM_r95_corridor_port_n } } set_variable = { WA_TLM_r95_corridor_port_n = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r95_corridor_first_t } } set_variable = { WA_TLM_r95_corridor_first_t = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r95_corridor_last_t } } set_variable = { WA_TLM_r95_corridor_last_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r103_corridor_reach } } set_variable = { WA_TLM_r103_corridor_reach = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r103_corridor_orphan } } set_variable = { WA_TLM_r103_corridor_orphan = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r103_corridor_seg_n } } set_variable = { WA_TLM_r103_corridor_seg_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r103_corridor_blocked_n } } set_variable = { WA_TLM_r103_corridor_blocked_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r103_corridor_first_t } } set_variable = { WA_TLM_r103_corridor_first_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r103_corridor_last_t } } set_variable = { WA_TLM_r103_corridor_last_t = 0 } }
 
 	# r104 ally-funded logistics (Fix 104, consumer: checklist R69) - counter written at the queue
 	# append in WA_AI_PC_start_project, not by a sampler

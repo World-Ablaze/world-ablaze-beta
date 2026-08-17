@@ -1244,6 +1244,15 @@ WA_AI_PC_state_has_railway_at_level_3 = {
 #	The ally leg is deliberately NOT "any faction member". It fires only where the controller
 #	cannot run the railway system for itself, which is exactly the population the gap was about
 #	and keeps two healthy allies out of each other's rail networks.
+#
+#	Fix 103 addendum: this trigger answers "does this ally need ME to pay for its logistics?" - a
+#	PAYMENT question. It is NOT the answer to "may I build here?", which is a PERMISSION question
+#	the engine already answers more widely (WA_AI_PC_state_controller_allows_admission below).
+#	The theatre corridor asks both, separately: a hop needs permission on both nodes and payment on
+#	at least one. So this predicate keeps every caller and every semantic it has always had, and
+#	gained a sixth caller (WA_AI_PC_corridor_node_is_my_charge) that uses it for what it measures.
+#	The purpose above survives that literally: a healthy ally's INTERIOR corridor hops - both ends
+#	its own - still have no payer but itself, so no partner builds them.
 ############################################################################################################
 
 # Railway eligibility thresholds and the per-enemy route budget are read here as
@@ -1388,17 +1397,112 @@ WA_AI_PC_is_logistics_build_partner = {
 	}
 }
 
+############################################################################################################
+#	Fix 103: the PC ADMISSION controller gate, named.
+#
+#	THIS = state. ROOT = builder country. True when this state's controller lets ROOT queue a
+#	building here. Extracted VERBATIM from WA_AI_PC_start_project (WA_AI_CONSTRUCTION_PRIORITY_core.txt,
+#	"Validate location is controlled"), which is now its only gameplay reader; behaviour unchanged.
+#	Provenance: this is the Fix 34 controller family - never spend civ-weeks on a building the
+#	engine will refuse to spawn because someone else holds the ground.
+#
+#	Protects: it is the LAST word on whether a queued project is legal. A selector that admits
+#	ground this refuses produces silent, traceless failure - the project is simply never queued
+#	(campaign 7c7803a8: an ITL-held province inside an ENG-controlled state, requested and pathfound
+#	every 4 weeks from 1943.12 to 1946.4, refused without a mark).
+#
+#	Assumes: THREE terms, no capability test - an ally that CAN build for itself still hosts our
+#	construction. Corollary, and the reason this is named: selector <= admission <= validity.
+#	  - selector  = WA_AI_PC_is_corridor_side_holder below (province-scoped, same three terms)
+#	  - admission = this trigger (state-scoped)
+#	  - validity  = the lane / air-lane / fill / completion tests at PRIORITY_core.txt :494, :627,
+#	                :743, :1069, which each carry a FOURTH term, `ROOT = { is_subject_of = PREV }`
+#	                (an overlord's ground is valid for its subject).
+#	The four validity sites are DELIBERATELY NOT this trigger and must not be "synced" to it: doing
+#	so would narrow the lane, the fill and the sweep. Widening admission to four terms instead would
+#	let projects be queued that the engine then refuses.
+#	Fact is gone when: this gate gains or loses a term. Then the corridor selector below and the
+#	WA_TLM_r103_corridor_blocked_n probe both need the same move, in the same commit.
+############################################################################################################
+
+WA_AI_PC_state_controller_allows_admission = {
+	OR = {
+		is_controlled_by = ROOT
+		CONTROLLER = { is_in_faction_with = ROOT }
+		CONTROLLER = { is_subject_of = ROOT }
+	}
+}
+
 ### Fix 95 - theatre corridors (WA_AI_PC_railway_corridor_pass, railway_core; node data in
 ### WA_AI_CONSTRUCTION_PRIORITY_corridor_data.txt)
 
+# THIS = country, ROOT = builder country. Fix 103. PERMISSION: is this holder on ROOT's own side,
+# so that ground it controls is ground ROOT may build corridor logistics on? Country-scoped mirror
+# of WA_AI_PC_state_controller_allows_admission - the same three terms in the same order, because a
+# selector wider than admission requests hops the executor then refuses in silence, and a selector
+# narrower than admission refuses hops the executor would have accepted (that narrowness WAS Fix
+# 103's defect). Deliberately NOT WA_AI_PC_is_logistics_build_partner: that one answers a PAYMENT
+# question ("does this ally need me to pay for it?"), which is a different question and is asked
+# separately by WA_AI_PC_corridor_node_is_my_charge below.
+# Fact is gone when: the admission gate's term list changes - move both together.
+WA_AI_PC_is_corridor_side_holder = {
+	exists = yes
+	OR = {
+		tag = ROOT
+		is_subject_of = ROOT
+		is_in_faction_with = ROOT
+	}
+}
+
 # THIS = ROOT = builder country. Input: _corridor_prov (temp) = a corridor node province id.
-# True when the node is ground ROOT may build logistics on: controlled by ROOT, by a subject of
-# ROOT, or by a faction partner that cannot build its own logistics (the Fix 74 ally leg -
-# WA_AI_PC_is_logistics_build_partner is exactly that set, ROOT included). PROVINCE control, never
-# state control: on a contested front the two diverge (663 Cyrenaica ITL-controlled with ENG
-# provinces inside, railway_strategies.txt Fix 74 notes). There is no province-scoped CONTROLLER,
-# hence the any_country walk; 15 nodes every 4 weeks per builder is negligible.
+# PERMISSION: true when the node is ground ROOT MAY build logistics on - held by ROOT, a subject of
+# ROOT, or any faction ally (WA_AI_PC_is_corridor_side_holder). PROVINCE control, never state
+# control: on a contested front the two diverge (663 Cyrenaica ITL-controlled with ENG provinces
+# inside, railway_strategies.txt Fix 74 notes). There is no province-scoped CONTROLLER, hence the
+# any_country walk; 15 nodes every 4 weeks per builder is negligible.
+#
+# Fix 103: this used to read WA_AI_PC_is_logistics_build_partner, i.e. permission AND payment in one
+# test, so a hop between a healthy ally's node and ours had no builder anywhere. Campaign 7c7803a8:
+# Medenine 11957 (GER-held) <-> Tripoli 1149 (ITL-held, ITL a faction ally of GER that passes
+# can_build_own_logistics on min_states) went unbuilt for all 123 monthly saves, both hubs stuck at
+# the unconnected NODE_INITIAL_SUPPLY_FLOW baseline of 5. The payment half now lives next door.
 WA_AI_PC_corridor_node_is_ours = {
+	meta_trigger = {
+		text = {
+			any_country = {
+				WA_AI_PC_is_corridor_side_holder = yes
+				controls_province = [x]
+			}
+		}
+		x = "[?_corridor_prov]"
+	}
+}
+
+# THIS = ROOT = builder country. Input: _corridor_prov (temp). PAYMENT: true when this node is one
+# ROOT should pay to develop - its own ground, a subject's, or a faction ally's that cannot build
+# its own logistics. Unchanged Fix 74 semantics: WA_AI_PC_is_logistics_build_partner, the exact test
+# WA_AI_PC_corridor_node_is_ours carried before Fix 103.
+#
+# A hop needs permission on BOTH ends and payment on AT LEAST ONE. That is what keeps Fix 74's
+# recorded purpose - "keeps two healthy allies out of each other's rail networks" - literally true
+# while fixing the defect: a healthy ally's INTERIOR hops (both ends its own) still have no payer
+# but itself, so no partner touches them; only a hop we already have a foot on crosses the line.
+# It is also what bounds the duplicate spend to hops that STRADDLE two partners' ground, and what
+# keeps an out-of-theatre faction member (JAP, which passes the North Africa theatre gate the moment
+# ENG holds Egypt) from entering the pass at all - it has permission on ally nodes but charge on none.
+#
+# History: this header used to record a residual - can_build_own_logistics being a SIZE test, so ITL
+# (8 states, ~1 civ factory) read "capable" and blocked payment while being unable to build for
+# itself. Fix 104 CLOSED that residual on the same day, by making the ally leg test funding
+# (WA_AI_PC_country_cannot_fund_own_logistics) instead of authority. Do not re-open it here.
+#
+# What the WA_TLM_r103_corridor_orphan gauge means AFTER Fix 104: a hop both ends ours and neither
+# our charge is now one whose ends are held by partners that genuinely CAN fund - so each of them has
+# a foot on it and will build it itself. A transient positive reading is normal and means "this hop
+# belongs to someone else". The gauge earns its place as the cross-check on that assumption: orphan
+# high AND the hop still unbuilt on the map means the owner is not building it either, which is a
+# real defect of the owner's pass (theatre gate, civ floor, queue), not of this rule.
+WA_AI_PC_corridor_node_is_my_charge = {
 	meta_trigger = {
 		text = {
 			any_country = {
