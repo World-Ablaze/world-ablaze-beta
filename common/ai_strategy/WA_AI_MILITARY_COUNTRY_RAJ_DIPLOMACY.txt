@@ -29,19 +29,12 @@ WA_AI_MILITARY_RAJ_kill_ITS_DIPLOMACY = {
 		NOT = { has_war_with = PER }
 		NOT = { has_war_with = SOV }
 		NOT = { has_war_with = JAP }
-		# Fix 97 (2026-08-17): `date < 1941.5.1` dropped; `country_exists = ITS` is payload-forced (conquer id)
-		# and the ally-border commitments follow the geographic contest instead of the calendar
-		country_exists = ITS
-		has_war_with = ITS
+		# Fix 97 (2026-08-17): `date < 1941.5.1` + `country_exists = ITS` dropped from THIS block - the ally-border
+		# commitments follow the geographic contest; the `conquer ITS` payload moved to its own ITS-gated block below
 		WA_AI_MILITARY_east_africa_theatre_contested = yes
 	}
 	abort_when_not_enabled = yes
 
-	ai_strategy = {
-		type = conquer
-		id = "ITS"
-		value = 500
-	}
 	ai_strategy = {
 		type = force_defend_ally_borders
 		id = "UKE"
@@ -58,3 +51,28 @@ WA_AI_MILITARY_RAJ_kill_ITS_DIPLOMACY = {
 		value = 500
 	}
 }
+
+
+# purpose: Fix 97 - the `conquer ITS` half of the former RAJ_kill_ITS_DIPLOMACY: the type takes a tag id, so
+#          this block is ITS-forced by construction (inert when Italy administers the AOI directly).
+# range:   conquer 500
+# policy:  Additive
+# domain:  DIPLOMACY
+WA_AI_MILITARY_RAJ_conquer_ITS_DIPLOMACY = {
+	allowed = {
+		tag = RAJ
+	}
+	enable = {
+		country_exists = ITS
+		has_war_with = ITS
+		WA_AI_MILITARY_east_africa_theatre_contested = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = conquer
+		id = "ITS"
+		value = 500
+	}
+}
+

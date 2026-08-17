@@ -327,52 +327,11 @@ WA_AI_MILITARY_ENG_africa_war_1 = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_ENG_africa_war_2 (FRONT domain)
-WA_AI_MILITARY_ENG_africa_war_2_FRONT = {
+# Fix 97 review (2026-08-17): WA_AI_MILITARY_ENG_africa_war_2_FRONT DELETED. Its gate had been `OR{450,663,451}
+# AND NOT{450,663,451,...}` (a NOR - X AND NOT X) since the very first authoring (79d64f6ff): the payload was NEVER
+# live in any campaign, and its FRONT value had been flipped to -30 (7619b217a) while dead. Reviving it would
+# have stacked a third +200 north_africa on top of africa_war_3_THEATRE and focus_on_land_War_in_north_africa.
 
-	allowed = {
-		tag = ENG
-	}
-	enable = {
-		OR = {
-			446 = { is_controlled_by = ENG }
-			447 = { is_controlled_by = ENG }
-			453 = { is_controlled_by = ENG }
-			446 = { is_controlled_by = UKE }
-			447 = { is_controlled_by = UKE }
-			453 = { is_controlled_by = UKE }
-		}
-		# Phase 6 collapsed the original block's TWO different state lists into the
-		# same shared trigger, producing X AND NOT X - the block was unreachable since
-		# the refactor. Restored from pre-split a6fee253d: the Libyan core still has
-		# enemies (any of Benghasi/Cyrenaica/Derna) but the enemy does NOT hold the
-		# whole western desert - i.e. the active advance phase of the desert campaign.
-		OR = {
-			450 = { CONTROLLER = { has_war_with = ROOT } }
-			663 = { CONTROLLER = { has_war_with = ROOT } }
-			451 = { CONTROLLER = { has_war_with = ROOT } }
-		}
-		# Fix 97 (2026-08-17): the bare multi-child NOT above was a NOR over the same three Libyan states as
-		# the OR - X AND NOT X, the block never enabled since the Phase-6 split - and it also chained the East-
-		# African states in. Now: the enemy does NOT hold the whole Libyan core (some, not all), and East
-		# Africa is its own theatre (WA_AI_MILITARY_east_africa_*), no longer a term of the desert campaign.
-		NOT = {
-			AND = {
-				450 = { CONTROLLER = { has_war_with = ROOT } }
-				663 = { CONTROLLER = { has_war_with = ROOT } }
-				451 = { CONTROLLER = { has_war_with = ROOT } }
-			}
-		}
-		surrender_progress < 0.05
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = front_unit_request
-		area = north_africa
-		value = -30
-	}
-}
 
 
 # Phase 6 split from WA_AI_MILITARY_ENG_africa_war_3 (FRONT domain)
