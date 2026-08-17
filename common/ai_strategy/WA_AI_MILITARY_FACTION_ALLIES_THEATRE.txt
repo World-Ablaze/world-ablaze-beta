@@ -34,29 +34,9 @@ WA_AI_MILITARY_ALLIES_ignore_raj_until_invasion_THEATRE = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_ALLIES_war_against_ITA_central_africa (THEATRE domain)
-WA_AI_MILITARY_ALLIES_war_against_ITA_central_africa_THEATRE = {
+# Fix 97 (2026-08-17): WA_AI_MILITARY_ALLIES_war_against_ITA_central_africa_THEATRE (north_africa -30, ITS/date
+# gated) DELETED - see WA_AI_MILITARY_ALLIES_east_africa_contested_THEATRE at the end of this file.
 
-	allowed = {
-		WA_AI_CONFIG_MILITARY_is_anglo_major = yes
-	}
-	enable = {
-		OR = {
-			has_war_with = ITA
-			has_war_with = GER
-		}
-		date < 1943.7.1
-		country_exists = ITS
-	}
-
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = area_priority
-		id = north_africa
-		value = -30 #divert resources from el alamein
-	}
-}
 
 
 # Phase 6 split from WA_AI_MILITARY_ALLIES_commonwealth_north_africa_support (THEATRE domain)
@@ -769,3 +749,27 @@ WA_AI_MILITARY_ALLIES_ignore_south_america_THEATRE = {
 		value = -200 # economy: was -5000
 	}
 }
+
+
+# purpose: Fix 97 - theatre weight for a contested East Africa (see the FRONT twin's header). +200 on the
+#          4-region alias; 17/217 also carry the central_africa baseline, 380/381 the corridor baseline -
+#          nothing else positive stacks here for an Allied member (ENG_africa_war_no_RAJ_THEATRE deleted).
+# range:   +200 (E1, 4-region area)
+# policy:  Additive per area
+# domain:  THEATRE
+WA_AI_MILITARY_ALLIES_east_africa_contested_THEATRE = {
+	enable = {
+		WA_AI_MILITARY_is_allies_member = yes
+		has_war = yes
+		NOT = { WA_AI_MILITARY_home_threatened = yes }
+		WA_AI_MILITARY_east_africa_theatre_contested = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = area_priority
+		id = WA_AI_MILITARY_east_africa_regions
+		value = 200
+	}
+}
+

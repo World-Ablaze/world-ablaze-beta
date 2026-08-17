@@ -380,3 +380,25 @@ question that generalises: **who owns this soil, and is an enemy standing on it?
 
 **All triggers are PREV-relative from the state scope, not ROOT-relative**, because `_ally_italy_theatre_*` evaluate them inside `any_allied_country` / `any_subject_country` from another country's scope. The AXIS guard tiers exclude the `at_war_with_italian_homeland_power` case (the `hold_italy_after_defection` block owns it) so the two never stack. Post-code review 2026-08-17 (8 angles) found and fixed: 10-anchor set, ally-port bridgehead, subject RSI, flip window, peace-time floor, invasion-veto gates, Albania belt, Tunisia heuristic, ETH reader relativity. Every state list must match `WA_AI_MILITARY_AIR_theatre_contested_italy` (mainland 10 + Sicily 5). Ratios per state group, summed: owner 0.10 + 0.20 (Sicily/south), 0.15 + 0.10 (mainland anchors), plus the ally's 0.06 or 0.12 - two armies, two pools.
 
+---
+
+## 12. East Africa - a theatre, not a sink (Fix 97, 2026-08-17)
+
+Campaign `0edbc955`: Italy lost the 1936 Ethiopian war, ITS never existed, and every East-Africa rule on both sides
+keyed on `country_exists = ITS` / `tag = ITS` / a date - none fired. Region 17 (Eritrea/Ethiopia/Somalias) sat inside
+`WA_AI_MILITARY_sink_africa_regions`, so ENG netted about -200 there against one +100 diluted over `central_africa`;
+regions 380 (Sudan-South/Darfur) and 381 (Kenya/Uganda/Tanganyika) belonged to no ai_area at all. Italy parked 39/61
+divisions in the AOI in 1940 (engine border-threat reflex against a neutral 40-division Ethiopia) and camped inside the
+Sudan/Kenya out of supply for three years; the Allies never fielded more than one 4-6-division army per axis.
+
+| Piece | File |
+| --- | --- |
+| Areas | `common/ai_areas/WA_AI_MILITARY_areas.txt`: `WA_AI_MILITARY_east_africa_regions` {17,217,380,381} (theatre pulls / brakes / area_priority), `_east_africa_corridor_regions` {380,381} (baseline-bearing subset - 17/217 already carry the central_africa baseline), sink alias without 17 (header sentence records why) |
+| Triggers | `WA_AI_MILITARY_triggers.txt`: `WA_AI_MILITARY_AIR_theatre_contested_east_africa` (+ `_theatre_state_`), `_east_africa_theatre_contested`, `_east_africa_enemy_held` (AOI core), `_holds_east_africa_colony` (self / subject / ally-Italy owns-or-controls 550 or 559 - PREV-relative), `_east_africa_offensive_viable` (the north_africa pattern) |
+| Allied side | `WA_AI_MILITARY_ALLIES_east_africa_contested_FRONT` (+150) / `_THEATRE` (+200) / `_exec_FRONT` (posture-gated) - Faction, every Allies member; replaces the ITS/date `war_against_ITA_central_africa` family and the SAF/RAJ Country execs; RAJ keeps an "Asia first" -100; ENG `africa_war_1` -50 (user decision), `africa_war_no_RAJ_*` deleted, `africa_war_2_*` gate repaired (`X AND NOT X`) |
+| Default | baseline +100 / non-African -90 on the corridor alias; the sinks that mean "stay out" (CAPS x3, european_continental_majors, minors_home_first, COMINTERN x2, CO_PROSPERITY x2, AXIS minors) name the theatre alias explicitly; `naval_majors_global_balance` and the `CORE_secondary_sink` caps do not (ENG/USA may commit when contested); the `italy_ethiopian_war_active` exemption on the two CORE caps was removed with its reason |
+| Axis side | `AXIS_abandon_east_africa_*` gated `holds_east_africa_colony`, aimed at the theatre alias; ITA `east_africa_garrison_THEATRE` (0.10 on 550/559) and `ignore_neutral_ethiopia_DIPLOMACY/_FRONT` |
+| Probe | checklist R62, `WA_TLM_r97_ea_*` |
+
+`NOT = { A B C }` is a **NOR** in PDXScript (see the lessons log) - the `africa_war_2` gate had been `OR{A B C} AND NOT{A B C ...}` since the Phase-6 split. First use of a WA custom ai_area with `area_priority` (the corridor baseline) - boot-test; if unsupported, drop the two baseline/avoid entries and keep the `front_unit_request` pulls.
+

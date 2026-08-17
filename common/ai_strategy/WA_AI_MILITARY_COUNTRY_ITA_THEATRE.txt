@@ -352,3 +352,44 @@ WA_AI_MILITARY_ITA_end_the_struggle_in_ethiopia_THEATRE = {
 		value = 200 # economy: was 500
 	}
 }
+
+
+# purpose: Fix 97 - the East-African colony gets a GARRISON, not half the army. Campaign 0edbc955: with a
+#          neutral 40-division Ethiopia next door and nothing telling the AI otherwise, 39 of 61 Italian
+#          divisions stood in Eritrea/Somaliland in June 1940 (64 %) and two 8-division armies then camped
+#          inside the Sudan/Kenya out of supply for three years. This buffer is the reference "enough":
+#          0.10 of the army on the two colonial states, own order_id, and the AXIS_abandon_east_africa
+#          family (now tag-free) supplies the negative that keeps the rest away.
+# range:   0.10 (E4)
+# policy:  Additive per state
+# domain:  THEATRE
+WA_AI_MILITARY_ITA_east_africa_garrison_THEATRE = {
+	allowed = {
+		tag = ITA
+	}
+	enable = {
+		OR = {
+			has_war = yes
+			any_other_country = { is_major = yes has_war = yes }
+		}
+		WA_AI_MILITARY_ethiopian_war_finished = yes
+		WA_AI_MILITARY_holds_east_africa_colony = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 9607
+		states = {
+			550
+			559
+		}
+		ratio = 0.10
+		area = WA_AI_MILITARY_east_africa_regions
+		subtract_invasions_from_need = no
+		# pool: a colonial garrison must not be eaten by the Sudan/Kenya front the engine opens next door -
+		# that front eating it is exactly how the AOI army ended up inside enemy states out of supply
+		subtract_fronts_from_need = no
+	}
+}
+

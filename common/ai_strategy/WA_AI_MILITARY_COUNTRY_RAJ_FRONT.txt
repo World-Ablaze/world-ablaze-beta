@@ -6,7 +6,7 @@
 
 
 # Phase 6 split from WA_AI_MILITARY_RAJ_kill_ITS (FRONT domain)
-WA_AI_MILITARY_RAJ_kill_ITS_FRONT = {
+WA_AI_MILITARY_RAJ_asia_first_east_africa_FRONT = { # was RAJ_kill_ITS_FRONT (Fix 97)
 
 	allowed = {
 		tag = RAJ
@@ -21,33 +21,23 @@ WA_AI_MILITARY_RAJ_kill_ITS_FRONT = {
 			923 = { is_controlled_by = UKM }
 		}
 		is_in_faction_with = ENG
-		NOT = { is_in_faction_with = ITS }
-		NOT = { has_war_with = PER }
-		NOT = { has_war_with = SOV }
-		NOT = { has_war_with = JAP }
-		country_exists = ITS
-		date < 1941.5.1
-		NOT = {
-			surrender_progress > 0
+		# Fix 97 (2026-08-17): was `NOT war with PER/SOV/JAP` + `country_exists = ITS` + `date < 1941.5.1` with a
+		# +200 pull and an execute toward ITS. The pull and the execute now come from the Faction
+		# WA_AI_MILITARY_ALLIES_east_africa_* family (tag-free); what is India-specific is the recorded
+		# reason for the exclusions - an Asian war comes first - so this block is now the SUPPRESSION side:
+		# while the RAJ fights in Asia it does not send divisions to East Africa.
+		OR = {
+			has_war_with = PER
+			has_war_with = SOV
+			has_war_with = JAP
 		}
 	}
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
-		type = garrison
-		value = 0 # economy: was -70
-	}
-	ai_strategy = {
 		type = front_unit_request
-		tag = ITS
-		value = 200 # economy: was 800
-	}
-	ai_strategy = {
-		type = front_control
-		tag = ITS
-		ordertype = front
-		execution_type = balanced
-		execute_order = yes
+		area = WA_AI_MILITARY_east_africa_regions
+		value = -100 # E2 floor (full veto of the +150 Faction pull is not needed; -100 already nets it to +50)
 	}
 }
 

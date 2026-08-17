@@ -915,3 +915,33 @@ WA_AI_MILITARY_COUNTRY_ITA_DIPLOMACY_legacy_ITA_dont_want_to_invade_FRA_without_
 		value = 1000
 	}
 }
+
+
+# purpose: Fix 97 - a neutral Ethiopia is not a threat to garrison against. Campaign 0edbc955: Italy LOST
+#          the 1936 war, ETH sat on 36-40 idle divisions for ten years, and the engine's border-threat
+#          reflex parked 39 Italian divisions opposite them. `ignore` while ETH exists, is not at war with
+#          us, and fights beside none of our enemies; releases itself the day any of that changes.
+#          Country ITA (the Ethiopian border is Italy's alone); tag literal in payload/gate as the type
+#          requires.
+# range:   ignore 1000 (single writer)
+# policy:  Additive
+# domain:  DIPLOMACY
+WA_AI_MILITARY_ITA_ignore_neutral_ethiopia_DIPLOMACY = {
+	allowed = {
+		tag = ITA
+	}
+	enable = {
+		country_exists = ETH
+		NOT = { has_war_with = ETH }
+		NOT = { ETH = { any_allied_country = { has_war_with = ROOT } } }
+		NOT = { ETH = { any_country = { has_war_with = ROOT has_war_together_with = PREV } } }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = ignore
+		id = "ETH"
+		value = 1000
+	}
+}
+

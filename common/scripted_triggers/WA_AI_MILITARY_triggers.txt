@@ -925,6 +925,151 @@ WA_AI_MILITARY_libya_bridgehead_held = {
 	}
 }
 
+############################################################################################################
+# Fix 97 (2026-08-17) - East Africa is a theatre (campaign 0edbc955: Italy LOST the 1936 Ethiopian war, ITS
+# never existed, and every East-Africa rule on both sides keyed on `country_exists = ITS` / `tag = ITS` /
+# a date - so the theatre was fought by the engine alone: 39/61 Italian divisions parked in Eritrea in
+# 1940, two 8-division armies inside the Sudan/Kenya out of supply for three years, Allies never above
+# one 4-6 division army per axis, AOI taken only by Italy's final collapse). Same method as Fix 96:
+# controller / owner geography, no tags, no dates. Region ids: 17 Eritrea/Ethiopia/Somalias, 217 Southern
+# Egypt-Sudan, 380 Sudan-South/Darfur, 381 Kenya/Uganda/Tanganyika (WA_AI_MILITARY_east_africa_regions).
+############################################################################################################
+
+# Air theatre: East Africa - strategic regions 17 / 217 / 380 / 381. Same shape as the other
+# AIR_theatre_contested_* triggers (enemy presence AND own-side presence over the theatre's states).
+# ROOT-relative like its siblings (they are consumed from `enable` blocks and the air-base builder).
+# MUST MATCH WA_AI_MILITARY_AIR_theatre_state_east_africa below and the WA_TLM_sample_east_africa list.
+WA_AI_MILITARY_AIR_theatre_contested_east_africa = {
+	# enemy presence
+	OR = {
+		550 = { CONTROLLER = { has_war_with = ROOT } }
+		559 = { CONTROLLER = { has_war_with = ROOT } }
+		268 = { CONTROLLER = { has_war_with = ROOT } }
+		269 = { CONTROLLER = { has_war_with = ROOT } }
+		271 = { CONTROLLER = { has_war_with = ROOT } }
+		909 = { CONTROLLER = { has_war_with = ROOT } }
+		910 = { CONTROLLER = { has_war_with = ROOT } }
+		551 = { CONTROLLER = { has_war_with = ROOT } }
+		1097 = { CONTROLLER = { has_war_with = ROOT } }
+		1096 = { CONTROLLER = { has_war_with = ROOT } }
+		1095 = { CONTROLLER = { has_war_with = ROOT } }
+		767 = { CONTROLLER = { has_war_with = ROOT } }
+		549 = { CONTROLLER = { has_war_with = ROOT } }
+		547 = { CONTROLLER = { has_war_with = ROOT } }
+		1100 = { CONTROLLER = { has_war_with = ROOT } }
+		548 = { CONTROLLER = { has_war_with = ROOT } }
+		546 = { CONTROLLER = { has_war_with = ROOT } }
+		1099 = { CONTROLLER = { has_war_with = ROOT } }
+		1101 = { CONTROLLER = { has_war_with = ROOT } }
+	}
+	# own-side presence (ROOT, a faction ally, or anyone fighting the same war)
+	OR = {
+		550 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		559 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		268 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		269 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		271 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		909 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		910 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		551 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		1097 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		1096 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		1095 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		767 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		549 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		547 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		1100 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		548 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		546 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		1099 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		1101 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+	}
+}
+
+# State membership companion (state scope) - must match the list above.
+WA_AI_MILITARY_AIR_theatre_state_east_africa = {
+	OR = {
+		state = 550
+		state = 559
+		state = 268
+		state = 269
+		state = 271
+		state = 909
+		state = 910
+		state = 551
+		state = 1097
+		state = 1096
+		state = 1095
+		state = 767
+		state = 549
+		state = 547
+		state = 1100
+		state = 548
+		state = 546
+		state = 1099
+		state = 1101
+	}
+}
+
+# FRONT/THEATRE alias of the contest question (the AIR_ name is historical, not a scope restriction -
+# see WA_AI_MILITARY_italy_theatre_contested).
+WA_AI_MILITARY_east_africa_theatre_contested = {
+	WA_AI_MILITARY_AIR_theatre_contested_east_africa = yes
+}
+
+# An enemy at war with ROOT holds ground of the AOI core (Eritrea, the Somalias, Ethiopia) - the
+# "there is something to conquer in East Africa" half, independent of whether we already stand there.
+WA_AI_MILITARY_east_africa_enemy_held = {
+	OR = {
+		550 = { CONTROLLER = { has_war_with = ROOT } }
+		559 = { CONTROLLER = { has_war_with = ROOT } }
+		268 = { CONTROLLER = { has_war_with = ROOT } }
+		269 = { CONTROLLER = { has_war_with = ROOT } }
+		271 = { CONTROLLER = { has_war_with = ROOT } }
+		909 = { CONTROLLER = { has_war_with = ROOT } }
+		910 = { CONTROLLER = { has_war_with = ROOT } }
+	}
+}
+
+# The enquired country holds an East-African colony - it, a SUBJECT, or a faction ally owns-or-controls
+# Eritrea 550 or Italian Somaliland 559. PREV-relative (see the Fix 96 note above): reads the country it
+# is evaluated in, also under any_allied_country. Replaces `country_exists = ITS` on the Axis side - the
+# colony is Italian whether it is administered by ITA directly or by a released ITS.
+WA_AI_MILITARY_holds_east_africa_colony = {
+	OR = {
+		550 = { OR = { is_owned_by = PREV is_controlled_by = PREV CONTROLLER = { OR = { is_subject_of = PREV.PREV is_in_faction_with = PREV.PREV } } } }
+		559 = { OR = { is_owned_by = PREV is_controlled_by = PREV CONTROLLER = { OR = { is_subject_of = PREV.PREV is_in_faction_with = PREV.PREV } } } }
+	}
+}
+
+# Force-balance verdict for an offensive into the AOI core - the WA_AI_MILITARY_north_africa_offensive_viable
+# pattern (read its header): an enemy holding AOI ground either has a published posture verdict > 0 vs us,
+# or is too small to receive one (then the push is unconditional). ITA is a major, so against Italy the
+# weekly posture calculus decides - in the 0edbc955 shape (4-6 Allied divisions vs 39) it correctly reads
+# 0 until the front_unit_request pulls have brought the divisions; the exec follows the mass, not the
+# other way round.
+WA_AI_MILITARY_east_africa_offensive_viable = {
+	any_enemy_country = {
+		has_capitulated = no
+		OR = {
+			controls_state = 550
+			controls_state = 559
+			controls_state = 268
+			controls_state = 269
+			controls_state = 271
+			controls_state = 909
+			controls_state = 910
+		}
+		OR = {
+			AND = {
+				is_major = no
+				NOT = { num_of_controlled_states > 6 }
+			}
+			ROOT = { check_variable = { WA_AI_MILITARY_posture_vs_@PREV > 0 } }
+		}
+	}
+}
+
 # Air theatre: Western Europe (France / Benelux) - strategic regions 239 (Northern France), 19 (Central France), 290 (Western France), 20 (Southern France), 5 (Benelux)
 WA_AI_MILITARY_AIR_theatre_contested_western_europe = {
 	# enemy presence

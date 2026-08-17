@@ -175,7 +175,13 @@
 # companion (0 none / 1 threatened / 2 invaded / 3 at war with an Italy) - never the pass criterion
 # by itself. first_t / last_t. Additive; a save at wa_tlm_version < 20 lacks the family - score NOT
 # CHECKED, never FAILED.
-@WA_TLM_VERSION = 20
+# v21 (2026-08-17, Fix 97 / R62): adds the WA_TLM_r97_ea_* probe family - the East-African theatre
+# (WA_AI_MILITARY_ALLIES_east_africa_*, AXIS_abandon_east_africa tag-free, ITA garrison / ignore-ETH).
+# ea_states_manned is a GAUGE of the verified effect - how many of the 19 theatre states hold >= 1 of the
+# country's OWN divisions - sampled monthly on every AI country for which the theatre is contested or
+# that holds the colony. ea_contested is the code-path companion (0/1). first_t / last_t. Additive; a
+# save at wa_tlm_version < 21 lacks the family - score NOT CHECKED, never FAILED.
+@WA_TLM_VERSION = 21
 
 ############################################################################################################
 #	Clock - global.WA_TLM_clock = months elapsed since 1936.1
@@ -399,6 +405,12 @@ WA_TLM_init_country = {
 	if = { limit = { NOT = { has_variable = WA_TLM_r96_italy_first_t } } set_variable = { WA_TLM_r96_italy_first_t = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r96_italy_last_t } } set_variable = { WA_TLM_r96_italy_last_t = 0 } }
 
+	# r97 East-African theatre (Fix 97, consumer: checklist R62) - monthly sampler WA_TLM_sample_east_africa
+	if = { limit = { NOT = { has_variable = WA_TLM_r97_ea_states_manned } } set_variable = { WA_TLM_r97_ea_states_manned = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r97_ea_contested } } set_variable = { WA_TLM_r97_ea_contested = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r97_ea_first_t } } set_variable = { WA_TLM_r97_ea_first_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r97_ea_last_t } } set_variable = { WA_TLM_r97_ea_last_t = 0 } }
+
 	# offensive posture (standing, consumer: the level-1 exchange-rate question - see the write
 	# site in WA_AI_MILITARY_posture_effects.txt, inside every_enemy_country. Counters are per
 	# (country, enemy, week), NOT per month, so they are incremented at the posture calculus and
@@ -442,6 +454,56 @@ WA_TLM_monthly_sample = {
 	WA_TLM_sample_pc = yes
 	WA_TLM_sample_sq = yes
 	WA_TLM_sample_italy_guard = yes
+	WA_TLM_sample_east_africa = yes
+}
+
+############################################################################################################
+#	East-African theatre sample (probe r97 / checklist R62 - Fix 97). Scope: country, is_ai gated by
+#	the caller. Runs only where the theatre is contested for this country or it holds the colony (two
+#	scripted triggers first, so the 19 divisions_in_state reads never run elsewhere).
+#	states_manned is the VERIFIED EFFECT: of the 19 theatre states (list must match
+#	WA_AI_MILITARY_AIR_theatre_contested_east_africa), how many hold >= 1 of this country's own
+#	divisions. contested is the code-path companion (the Faction pull's gate) - never the pass criterion
+#	by itself. first_t stamps the first sampled month with contested = 1 (0-guarded; read _last_t > 0).
+############################################################################################################
+WA_TLM_sample_east_africa = {
+	if = {
+		limit = {
+			OR = {
+				WA_AI_MILITARY_east_africa_theatre_contested = yes
+				WA_AI_MILITARY_holds_east_africa_colony = yes
+			}
+		}
+		# tlm: r97_ea_contested - gauge, code-path companion - consumer R62
+		set_variable = { WA_TLM_r97_ea_contested = 0 }
+		if = { limit = { WA_AI_MILITARY_east_africa_theatre_contested = yes } set_variable = { WA_TLM_r97_ea_contested = 1 } }
+		# tlm: r97_ea_states_manned - gauge, verified effect - consumer R62
+		set_variable = { WA_TLM_r97_ea_states_manned = 0 }
+		if = { limit = { divisions_in_state = { state = 550 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 559 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 268 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 269 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 271 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 909 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 910 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 551 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 1097 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 1096 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 1095 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 767 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 549 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 547 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 1100 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 548 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 546 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 1099 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 1101 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
+		# tlm: r97_ea_first_t / _last_t - stamps - consumer R62
+		if = { limit = { check_variable = { WA_TLM_r97_ea_contested = 1 } check_variable = { WA_TLM_r97_ea_first_t = 0 } }
+			set_variable = { WA_TLM_r97_ea_first_t = global.WA_TLM_clock }
+		}
+		set_variable = { WA_TLM_r97_ea_last_t = global.WA_TLM_clock }
+	}
 }
 
 ############################################################################################################

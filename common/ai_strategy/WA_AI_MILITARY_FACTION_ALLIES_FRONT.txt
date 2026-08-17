@@ -5,29 +5,11 @@
 # Canonical domain: FRONT. See documentation/WA_AI_MILITARY_TYPES_REFERENCE.md.
 
 
-# Phase 6 split from WA_AI_MILITARY_ALLIES_war_against_ITA_central_africa (FRONT domain)
-WA_AI_MILITARY_ALLIES_war_against_ITA_central_africa_FRONT = {
+# Fix 97 (2026-08-17): WA_AI_MILITARY_ALLIES_war_against_ITA_central_africa_FRONT (+100 central_africa, gated
+# `has_war_with = ITA/GER` + `date < 1943.7.1` + `country_exists = ITS`) DELETED - on campaign 0edbc955 ITS never
+# existed (Italy lost the 1936 Ethiopian war) so the whole Allied East-Africa intent never armed; replaced by
+# the tag-free, date-free WA_AI_MILITARY_ALLIES_east_africa_* family at the end of this file.
 
-	allowed = {
-		WA_AI_CONFIG_MILITARY_is_anglo_major = yes
-	}
-	enable = {
-		OR = {
-			has_war_with = ITA
-			has_war_with = GER
-		}
-		date < 1943.7.1
-		country_exists = ITS
-	}
-
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = front_unit_request
-		area = central_africa
-		value = 100
-	}
-}
 
 ############################################################################################################
 # WA Military V2 - Allies Faction Overlay
@@ -1758,3 +1740,64 @@ WA_AI_MILITARY_ALLIES_husky_prep_FRONT = {
 		execution_type = careful
 	}
 }
+
+
+############################################################################################################
+# Fix 97 (2026-08-17) - the East-African theatre, tag-free (read the header of the WA_AI_MILITARY_east_africa_*
+# triggers in WA_AI_MILITARY_triggers.txt). Two blocks: man the theatre while it is contested, and execute
+# there once the weekly force balance allows it. Audience = every Allies member (the sinks that keep the
+# unfit out - home_threatened, not_safe, weak minor - name WA_AI_MILITARY_east_africa_regions explicitly, so
+# the boost and the brakes see the same regions).
+############################################################################################################
+
+# purpose: an enemy holds East-African ground and our side has a foothold in the theatre - send divisions.
+#          +150 on the 4-region alias (17/217/380/381) also covers the Kenya and Sudan approach corridors
+#          that no default.txt area names.
+# range:   +150 (E2)
+# policy:  Additive per area
+# domain:  FRONT
+WA_AI_MILITARY_ALLIES_east_africa_contested_FRONT = {
+	enable = {
+		WA_AI_MILITARY_is_allies_member = yes
+		has_war = yes
+		NOT = { WA_AI_MILITARY_home_threatened = yes }
+		WA_AI_MILITARY_east_africa_theatre_contested = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		area = WA_AI_MILITARY_east_africa_regions
+		value = 150
+	}
+}
+
+# purpose: execute the East-African fronts while the force balance supports it (posture verdict vs the
+#          enemy > 0, or an enemy too small for a verdict). Priority 100: above an unset Country default,
+#          below the 500/10000 equipment stops (R13 precedent). Replaces the SAF `front_control tag = ITS`
+#          (unconditional) and the RAJ one (`date < 1941.5.1`), both deleted.
+# range:   n/a (front_control)
+# policy:  Exclusive per area - sole writer for area = WA_AI_MILITARY_east_africa_regions, ordertype = front
+#          (no Country writer remains, so no Phase-5 slug)
+# domain:  FRONT
+WA_AI_MILITARY_ALLIES_east_africa_exec_FRONT = {
+	enable = {
+		WA_AI_MILITARY_is_allies_member = yes
+		has_war = yes
+		NOT = { WA_AI_MILITARY_home_threatened = yes }
+		WA_AI_MILITARY_east_africa_theatre_contested = yes
+		WA_AI_MILITARY_east_africa_offensive_viable = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_control
+		area = WA_AI_MILITARY_east_africa_regions
+		priority = 100
+		ordertype = front
+		execution_type = balanced
+		execute_order = yes
+		manual_attack = yes
+	}
+}
+
