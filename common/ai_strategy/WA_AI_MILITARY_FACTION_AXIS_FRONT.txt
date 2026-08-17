@@ -767,3 +767,86 @@ WA_AI_MILITARY_AXIS_abandon_east_africa_FRONT = {
 		value = -100 # economy: was -5000
 	}
 }
+
+
+############################################################################################################
+# Fix 96 (2026-08-17) - FRONT twins of the Italian-theatre guard in WA_AI_MILITARY_FACTION_AXIS_THEATRE.txt
+# (read that header). Two situations, both tag-free:
+#   - an Italy in our faction is invaded -> man the Italian front alongside it;
+#   - we are at war with an Italy (the 1943 defection seen from Germany, or any ahistorical war on
+#     the peninsula) -> hold / fight the Italian front. Replaces WA_AI_MILITARY_GER_frontline_requests_6
+#     (`has_war_with = ITA` + `country_exists = RIT`) and WA_AI_MILITARY_GER_fall_achse_c
+#     (`country_trigger = { tag = ITA }`, `date > 1942`), both deleted from COUNTRY_GER_FRONT.
+############################################################################################################
+
+# purpose: an Italy in our faction has an enemy on its cored soil - send divisions to the three
+#          Italian regions (238 Southern, 23 Central, 21 Northern)
+# range:   +150 (E2)
+# policy:  Additive per region
+# domain:  FRONT
+WA_AI_MILITARY_AXIS_italy_theatre_guard_FRONT = {
+	enable = {
+		WA_AI_MILITARY_is_axis_member = yes
+		NOT = { WA_AI_MILITARY_is_italian_homeland_power = yes }
+		WA_AI_MILITARY_ally_italy_theatre_invaded = yes
+		WA_AI_MILITARY_can_open_secondary_fronts = yes
+		NOT = { WA_AI_MILITARY_home_threatened = yes }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 238
+		value = 150
+	}
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 23
+		value = 150
+	}
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 21
+		value = 150
+	}
+}
+
+# purpose: we are at war with an Italy - hold the Italian front (the peninsula is now enemy ground
+#          in our own back yard) and fight it carefully. Unconditional on posture like every
+#          home-adjacent defence (WA_AI_MILITARY_SYSTEM.md 9).
+# range:   +150 (E2); front_control careful/manual, no priority (Faction default), yields to a
+#          Country owner via WA_AI_MILITARY_country_owns_fc_area_italy
+# policy:  Additive (front_unit_request); Exclusive per key (front_control, country-keyed)
+# domain:  FRONT
+WA_AI_MILITARY_AXIS_hold_italy_after_defection_FRONT = {
+	enable = {
+		WA_AI_MILITARY_is_axis_member = yes
+		NOT = { WA_AI_MILITARY_is_italian_homeland_power = yes }
+		WA_AI_MILITARY_at_war_with_italian_homeland_power = yes
+		NOT = { WA_AI_MILITARY_country_owns_fc_area_italy = yes }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 23
+		value = 150
+	}
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 21
+		value = 150
+	}
+	ai_strategy = {
+		type = front_control
+		# the enemy Italy itself, whichever tag it carries (evaluated in the enemy's scope - the
+		# homeland trigger is PREV-relative; ROOT inside country_trigger is the DEFAULT_INVASION precedent)
+		country_trigger = {
+			has_war_with = ROOT
+			WA_AI_MILITARY_is_italian_homeland_power = yes
+		}
+		ordertype = front
+		execution_type = careful
+		manual_attack = yes
+	}
+}

@@ -167,7 +167,15 @@
 # map (railway connection level between the nodes, supply_node / naval_base at the node) - a
 # counter that could only say "queued" would be the very ambiguity the produced=/add lesson bans.
 # Additive; a save at wa_tlm_version < 19 lacks the family - score NOT CHECKED, never FAILED.
-@WA_TLM_VERSION = 19
+# v20 (2026-08-17, Fix 96 / R61): adds the WA_TLM_r96_italy_* probe family - the Italian-theatre
+# home defence / ally guard (WA_AI_MILITARY_REGION_ITALY_*, WA_AI_MILITARY_FACTION_AXIS_THEATRE/FRONT
+# guard pair). states_manned / states_strong are GAUGES of the verified effect - how many of the 15
+# mainland+Sicily states hold >= 1 / >= 4 of the country's OWN divisions - sampled monthly on every
+# AI country that is an Italy, is allied with one, or is at war with one. guard_level is the code-path
+# companion (0 none / 1 threatened / 2 invaded / 3 at war with an Italy) - never the pass criterion
+# by itself. first_t / last_t. Additive; a save at wa_tlm_version < 20 lacks the family - score NOT
+# CHECKED, never FAILED.
+@WA_TLM_VERSION = 20
 
 ############################################################################################################
 #	Clock - global.WA_TLM_clock = months elapsed since 1936.1
@@ -384,6 +392,13 @@ WA_TLM_init_country = {
 	if = { limit = { NOT = { has_variable = WA_TLM_r95_corridor_first_t } } set_variable = { WA_TLM_r95_corridor_first_t = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r95_corridor_last_t } } set_variable = { WA_TLM_r95_corridor_last_t = 0 } }
 
+	# r96 Italian theatre (Fix 96, consumer: checklist R61) - monthly sampler WA_TLM_sample_italy_guard
+	if = { limit = { NOT = { has_variable = WA_TLM_r96_italy_states_manned } } set_variable = { WA_TLM_r96_italy_states_manned = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r96_italy_states_strong } } set_variable = { WA_TLM_r96_italy_states_strong = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r96_italy_guard_level } } set_variable = { WA_TLM_r96_italy_guard_level = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r96_italy_first_t } } set_variable = { WA_TLM_r96_italy_first_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r96_italy_last_t } } set_variable = { WA_TLM_r96_italy_last_t = 0 } }
+
 	# offensive posture (standing, consumer: the level-1 exchange-rate question - see the write
 	# site in WA_AI_MILITARY_posture_effects.txt, inside every_enemy_country. Counters are per
 	# (country, enemy, week), NOT per month, so they are incremented at the posture calculus and
@@ -426,6 +441,80 @@ WA_TLM_monthly_sample = {
 	WA_TLM_sample_navy = yes
 	WA_TLM_sample_pc = yes
 	WA_TLM_sample_sq = yes
+	WA_TLM_sample_italy_guard = yes
+}
+
+############################################################################################################
+#	Italian theatre sample (probe r96 / checklist R61 - Fix 96). Scope: country, is_ai gated by
+#	the caller. Runs only on a country that is an Italy, is allied with one, or is at war with one
+#	(three cheap scripted triggers first, so the 30 divisions_in_state reads never run elsewhere).
+#
+#	states_manned / states_strong are the VERIFIED EFFECT: of the 15 Italian mainland + Sicily
+#	states (list must match WA_AI_MILITARY_italy_homeland_invaded), how many hold >= 1 / >= 4 of
+#	this country's own divisions. divisions_in_state counts ROOT's divisions only. guard_level is
+#	the code-path companion (which tier the geography triggers currently read) and is never the
+#	pass criterion by itself - a level 2 with states_manned = 0 for three months IS the failure.
+#	first_t stamps the first month guard_level > 0 was observed (0-guarded; read _last_t > 0 first).
+############################################################################################################
+WA_TLM_sample_italy_guard = {
+	if = {
+		limit = {
+			OR = {
+				WA_AI_MILITARY_is_italian_homeland_power = yes
+				WA_AI_MILITARY_allied_with_italian_homeland_power = yes
+				WA_AI_MILITARY_at_war_with_italian_homeland_power = yes
+			}
+		}
+		# tlm: r96_italy_guard_level - gauge, code-path companion - consumer R61
+		set_variable = { WA_TLM_r96_italy_guard_level = 0 }
+		if = { limit = { WA_AI_MILITARY_is_italian_homeland_power = yes }
+			if = { limit = { WA_AI_MILITARY_italy_homeland_invaded = yes } set_variable = { WA_TLM_r96_italy_guard_level = 2 } }
+			else_if = { limit = { WA_AI_MILITARY_italy_home_threatened = yes } set_variable = { WA_TLM_r96_italy_guard_level = 1 } }
+		}
+		else = {
+			if = { limit = { WA_AI_MILITARY_at_war_with_italian_homeland_power = yes } set_variable = { WA_TLM_r96_italy_guard_level = 3 } }
+			else_if = { limit = { WA_AI_MILITARY_ally_italy_theatre_invaded = yes } set_variable = { WA_TLM_r96_italy_guard_level = 2 } }
+			else_if = { limit = { WA_AI_MILITARY_ally_italy_theatre_threatened = yes } set_variable = { WA_TLM_r96_italy_guard_level = 1 } }
+		}
+		# tlm: r96_italy_states_manned / _strong - gauges, verified effect - consumer R61
+		set_variable = { WA_TLM_r96_italy_states_manned = 0 }
+		set_variable = { WA_TLM_r96_italy_states_strong = 0 }
+		if = { limit = { divisions_in_state = { state = 39 size > 0 } } add_to_variable = { WA_TLM_r96_italy_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 158 size > 0 } } add_to_variable = { WA_TLM_r96_italy_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 159 size > 0 } } add_to_variable = { WA_TLM_r96_italy_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 160 size > 0 } } add_to_variable = { WA_TLM_r96_italy_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 885 size > 0 } } add_to_variable = { WA_TLM_r96_italy_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 2 size > 0 } } add_to_variable = { WA_TLM_r96_italy_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 157 size > 0 } } add_to_variable = { WA_TLM_r96_italy_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 161 size > 0 } } add_to_variable = { WA_TLM_r96_italy_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 162 size > 0 } } add_to_variable = { WA_TLM_r96_italy_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 856 size > 0 } } add_to_variable = { WA_TLM_r96_italy_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 115 size > 0 } } add_to_variable = { WA_TLM_r96_italy_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 117 size > 0 } } add_to_variable = { WA_TLM_r96_italy_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 156 size > 0 } } add_to_variable = { WA_TLM_r96_italy_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 986 size > 0 } } add_to_variable = { WA_TLM_r96_italy_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 1032 size > 0 } } add_to_variable = { WA_TLM_r96_italy_states_manned = 1 } }
+		if = { limit = { divisions_in_state = { state = 39 size > 3 } } add_to_variable = { WA_TLM_r96_italy_states_strong = 1 } }
+		if = { limit = { divisions_in_state = { state = 158 size > 3 } } add_to_variable = { WA_TLM_r96_italy_states_strong = 1 } }
+		if = { limit = { divisions_in_state = { state = 159 size > 3 } } add_to_variable = { WA_TLM_r96_italy_states_strong = 1 } }
+		if = { limit = { divisions_in_state = { state = 160 size > 3 } } add_to_variable = { WA_TLM_r96_italy_states_strong = 1 } }
+		if = { limit = { divisions_in_state = { state = 885 size > 3 } } add_to_variable = { WA_TLM_r96_italy_states_strong = 1 } }
+		if = { limit = { divisions_in_state = { state = 2 size > 3 } } add_to_variable = { WA_TLM_r96_italy_states_strong = 1 } }
+		if = { limit = { divisions_in_state = { state = 157 size > 3 } } add_to_variable = { WA_TLM_r96_italy_states_strong = 1 } }
+		if = { limit = { divisions_in_state = { state = 161 size > 3 } } add_to_variable = { WA_TLM_r96_italy_states_strong = 1 } }
+		if = { limit = { divisions_in_state = { state = 162 size > 3 } } add_to_variable = { WA_TLM_r96_italy_states_strong = 1 } }
+		if = { limit = { divisions_in_state = { state = 856 size > 3 } } add_to_variable = { WA_TLM_r96_italy_states_strong = 1 } }
+		if = { limit = { divisions_in_state = { state = 115 size > 3 } } add_to_variable = { WA_TLM_r96_italy_states_strong = 1 } }
+		if = { limit = { divisions_in_state = { state = 117 size > 3 } } add_to_variable = { WA_TLM_r96_italy_states_strong = 1 } }
+		if = { limit = { divisions_in_state = { state = 156 size > 3 } } add_to_variable = { WA_TLM_r96_italy_states_strong = 1 } }
+		if = { limit = { divisions_in_state = { state = 986 size > 3 } } add_to_variable = { WA_TLM_r96_italy_states_strong = 1 } }
+		if = { limit = { divisions_in_state = { state = 1032 size > 3 } } add_to_variable = { WA_TLM_r96_italy_states_strong = 1 } }
+		# tlm: r96_italy_first_t / _last_t - stamps - consumer R61
+		if = { limit = { check_variable = { WA_TLM_r96_italy_guard_level > 0 } check_variable = { WA_TLM_r96_italy_first_t = 0 } }
+			set_variable = { WA_TLM_r96_italy_first_t = global.WA_TLM_clock }
+		}
+		set_variable = { WA_TLM_r96_italy_last_t = global.WA_TLM_clock }
+	}
 }
 
 ############################################################################################################

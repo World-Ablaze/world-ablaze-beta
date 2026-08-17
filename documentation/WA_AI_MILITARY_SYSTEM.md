@@ -161,6 +161,8 @@ For Exclusive-policy types, pairs of scripted triggers will guard layers so that
 
 Additive types are never gated by these triggers. Phase 5 will define the exact set of `<exclusive_key>` slugs and generate the trigger pairs; Phase 1 only commits to the contract.
 
+Region-layer writers of an Exclusive key follow the Faction rule (they gate on `NOT = { WA_AI_MILITARY_country_owns_<key> = yes }`); precedence is Country > Faction = Region > Default, and a Faction and a Region block must not write the same key with different intent (Fix 96: `WA_AI_MILITARY_REGION_ITALY_homeland_invaded_exec_FRONT` writes `front_control area = italy / south_italy` for the Italian owner, `WA_AI_MILITARY_AXIS_hold_italy_after_defection_FRONT` writes a country-keyed `front_control` for the owner's enemies - disjoint audiences by construction; slug `WA_AI_MILITARY_country_owns_fc_area_italy`).
+
 ---
 
 ## 7. Target file layout (post-refactor, for reference)
@@ -356,3 +358,25 @@ USA/ENG-only, 1944.2.1-1944.3.15 hard-dated decision whose payload `naval_invasi
 author believed dead. It is not dead (the modifier is live in 1.18.0), which means it had been zeroing
 both countries' invasion capacity - Pacific included - for ~40 days every campaign. Removed; the removal
 comment in that file carries the full reasoning and the behaviour delta.
+
+---
+
+## 11. Italian theatre - geography-gated home defence and ally guard (Fix 96, 2026-08-17)
+
+Campaign `0edbc955` (Oct-Dec 1943): mainland Italy fell to 7-12 Allied divisions because 0-3 Italian and 0-2 German
+divisions stood on it. Every rule of the theatre keyed on a tag, a date or an event - the ITA/ITL Libyan controller lists,
+`date > 1937/1938`, `tag = RIT` always-on, `has_war_with = ITA`, `is_in_faction_with = ITA`, `country_exists = RIT`, and
+Germany's `GER_fall_achse_prepared` flag (stamped 60 days after `ita_armor.893`, i.e. after the fall) - and none asked the only
+question that generalises: **who owns this soil, and is an enemy standing on it?**
+
+| Piece | File |
+| --- | --- |
+| Tag-free triggers (control panel) | `WA_AI_MILITARY_triggers.txt`: `WA_AI_MILITARY_is_italian_homeland_power` (owns AND cores a mainland anchor state), `_italy_homeland_invaded`, `_italy_home_threatened` (invaded, or owned belt ground enemy-held, or Tunisia occupied by a non-owner enemy - never a pre-war enemy holding such as Malta), `_ally_italy_theatre_threatened` / `_invaded`, `_allied_with_` / `_at_war_with_italian_homeland_power`, `_libya_bridgehead_held` (own / subject / ally port), `_ethiopian_war_finished` (war state, was `date > 1938`) |
+| Owner (Region layer, whichever tag is an Italy: ITA on either side of its flip, RIT, a civil-war Italy) | `WA_AI_MILITARY_REGION_ITALY_THEATRE.txt` (floor / threatened buffers + `area_priority`), `WA_AI_MILITARY_REGION_ITALY_FRONT.txt` (`front_unit_request` +200 on 238/23/21 and careful `front_control` while invaded). Replaces `COUNTRY_RIT_FRONT` (deleted). Gates live in `enable`, never `allowed` - `allowed` is evaluated at country creation, before a released RIT owns anything |
+| Owner's Africa effort (Country ITA) | `WA_AI_MILITARY_COUNTRY_ITA_THEATRE.txt`: one +200 while a Libyan port is held and home is safe, +50 when threatened, -200 when no port is held or the mainland is invaded (three stacked +200s and the "all four Libyan states lost" switch are gone); the R13 pair aborts on the geographic threat instead of `surrender_progress` |
+| Ally guard (Faction AXIS) | `WA_AI_MILITARY_FACTION_AXIS_THEATRE.txt` `AXIS_italy_theatre_guard_THEATRE` / `_invaded_THEATRE` (0.06 / 0.12 buffers on the 15 states, own order_id, `subtract_fronts_from_need = no`), `WA_AI_MILITARY_FACTION_AXIS_FRONT.txt` `AXIS_italy_theatre_guard_FRONT` (+150) and `AXIS_hold_italy_after_defection_FRONT` (at war with an Italy). Replaces GER `fall_achse_a/b/c`, `protect_our_weak_underbelly`, `frontline_requests_6` (deleted); the Fall Achse political chain is untouched |
+| Allied side | `avoid_italy_overstack(_after_flip)`, `italy_cobelligerent_support_FRONT`, `ENG_war_against_ITA_3_DIPLOMACY`, `USA_sicily_push`, `ALLIES_sicily_push_FRONT` re-gated on the same triggers; the date-boxed Husky family is out of scope |
+| Probe | checklist R61, `WA_TLM_r96_italy_*` (telemetry doc 5) |
+
+**All triggers are PREV-relative from the state scope, not ROOT-relative**, because `_ally_italy_theatre_*` evaluate them inside `any_allied_country` from another country's scope. Every state list must match `WA_AI_MILITARY_AIR_theatre_contested_italy` (mainland 10 + Sicily 5). Ratios per state group, summed: owner 0.10 + 0.20 (Sicily/south), 0.15 + 0.10 (mainland anchors), plus the ally's 0.06 or 0.12 - two armies, two pools.
+

@@ -2,6 +2,8 @@
 
 **Status:** DIAGNOSED 2026-08-12; **causes 1, 2 and the Normandy sibling FIXED the same day — see §10. Causes 3 and 4 remain open.** Written from campaign `9a4cd657` (cloud, BHU observer, 122 monthly saves 1936.2–1946.3, build HEAD `60c7d8f3c`), cross-read against `31eaf7e6` and `911bed3c`. Owner item: **R17** in `.claude/skills/wa-campaign-checklist/references/checklist.md`.
 
+**2026-08-17 (Fix 96, campaign `0edbc955`):** the Axis half of this theatre was rebuilt tag-free — `RIT_defend_italy`, `GER_fall_achse_a/b/c`, `GER_protect_our_weak_underbelly` and `GER_frontline_requests_6` cited below no longer exist; see `documentation/WA_AI_MILITARY_SYSTEM.md` §11 and checklist R61. The Allied analysis below stands.
+
 **Read this before touching any Italian-theatre `ai_strategy` block.** Three campaigns of R17 failures were scored as landing/garrison problems. They are not. The landings work — R18 confirms every scripted invasion delivers its designed division count, three campaigns running. The theatre reverses for reasons downstream of the landings, and §1 is the one that matters.
 
 ---

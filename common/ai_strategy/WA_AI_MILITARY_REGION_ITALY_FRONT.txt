@@ -1,0 +1,78 @@
+############################################################################################################
+# WA AI Military V2 - REGION_ITALY_FRONT
+############################################################################################################
+# Fix 96 (2026-08-17). FRONT twin of WA_AI_MILITARY_REGION_ITALY_THEATRE.txt - read its header first.
+# Gate is WA_AI_MILITARY_is_italian_homeland_power (evaluated in `enable`, never in `allowed` - see the
+# THEATRE file for why). Replaces WA_AI_MILITARY_RIT_defend_italy (COUNTRY_RIT_FRONT, deleted): that
+# block pulled +200 on 238/23/21 unconditionally for `tag = RIT` alone; this one does it for every
+# Italy, only while an enemy stands on its cored soil.
+# Canonical domain: FRONT. See documentation/WA_AI_MILITARY_TYPES_REFERENCE.md.
+############################################################################################################
+
+# purpose: an enemy stands on the Italian mainland or Sicily - man the home front. The peninsula
+#          is three strategic regions (21 Northern, 23 Central, 238 Southern Italy); +200 on each is
+#          the E2 ceiling and the value RIT_defend_italy carried. Home defence of cored soil is
+#          unconditional on posture (WA_AI_MILITARY_SYSTEM.md 9: home-territory defence stays
+#          unconditional - the posture calculus reads near zero before the armies engage, which is
+#          exactly the moment this must already be pulling).
+# range:   +200 (E2)
+# policy:  Additive per region
+# domain:  FRONT
+WA_AI_MILITARY_REGION_ITALY_homeland_invaded_FRONT = {
+	enable = {
+		WA_AI_MILITARY_italy_homeland_invaded = yes # implies is_italian_homeland_power
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 238
+		value = 200
+	}
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 23
+		value = 200
+	}
+	ai_strategy = {
+		type = front_unit_request
+		strategic_region = 21
+		value = 200
+	}
+}
+
+# purpose: fight for the home soil, do not just man it - execute the Italian fronts, carefully
+#          (the invader normally holds the sea and the air; a rush is how the 1943 Sicily garrison
+#          died). Priority 100: above an unset Country default of 0, below the 500/10000 equipment
+#          emergency stops in DEFAULT_FRONT_control (the R13 precedent).
+# range:   n/a (front_control)
+# policy:  Exclusive per area - Region writer for area = italy / south_italy, ordertype = front.
+#          Yields to a Country-layer owner via WA_AI_MILITARY_country_owns_fc_area_italy
+#          (Phase 5 slug; today CAN, ordertype = invasion).
+# domain:  FRONT
+WA_AI_MILITARY_REGION_ITALY_homeland_invaded_exec_FRONT = {
+	enable = {
+		WA_AI_MILITARY_italy_homeland_invaded = yes
+		NOT = { WA_AI_MILITARY_country_owns_fc_area_italy = yes }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_control
+		area = italy
+		priority = 100
+		ordertype = front
+		execution_type = careful
+		execute_order = yes
+		manual_attack = yes
+	}
+	ai_strategy = {
+		type = front_control
+		area = south_italy
+		priority = 100
+		ordertype = front
+		execution_type = careful
+		execute_order = yes
+		manual_attack = yes
+	}
+}

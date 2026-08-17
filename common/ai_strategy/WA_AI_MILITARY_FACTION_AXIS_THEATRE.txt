@@ -96,3 +96,130 @@ WA_AI_MILITARY_AXIS_abandon_east_africa_THEATRE = {
 		value = -200 # economy: was -5000
 	}
 }
+
+
+############################################################################################################
+# Fix 96 (2026-08-17) - guard an ALLY's Italian theatre. Campaign 0edbc955: Germany kept 0-2
+# divisions in Italy through the whole Oct-Dec 1943 collapse because the only positioning rules
+# were WA_AI_MILITARY_GER_fall_achse_a/b, armed by GER_fall_achse_prepared - a flag the AI mission
+# stamps 60 days after ita_armor.893, i.e. 1943.11.28 here, after Rome had fallen - and
+# GER_protect_our_weak_underbelly, gated on GER holding three FRENCH states. Both deleted; this pair
+# replaces them at the Faction layer, gated on the ally's geography, not on a tag or an event:
+# WA_AI_MILITARY_ally_italy_theatre_threatened / _invaded (an Italy in our faction has lost belt
+# ground / has an enemy on its cored soil). Any Axis member that can spare divisions qualifies -
+# in practice Germany, since WA_AI_MILITARY_can_open_secondary_fronts (>100 div, or >50 with the
+# manpower and a safe home) keeps the minors out and WA_AI_MILITARY_home_threatened keeps a
+# collapsing member out.
+#
+# Ratios (user decision 2026-08-17): 0.06 threatened / 0.12 invaded of the whole army - on the
+# 270-division Heer of 0edbc955 that is 16 then 32 divisions, the historical Fall Achse scale
+# (16 + 8), and the ratio the checklist watch-item on the old 0.2 buffers asked to be reduced.
+# Own order_id 9606, subtract_fronts_from_need = no (see `# pool:`). Summed with the Italian
+# owner's REGION_ITALY tiers the guarded states carry at most 0.30 (owner) + 0.12 (guard) - two
+# different armies, two different pools.
+# The Fall Achse political chain (decisions/GER.txt, ita_armor.896/897, RIT release) is untouched -
+# only the troop positioning no longer waits for it.
+############################################################################################################
+
+# purpose: an Italy in our faction is threatened at home - stage a light guard on its soil
+# range:   0.06 (E4); area_priority +100 on a 2-region area (E1 narrow)
+# policy:  Additive
+# domain:  THEATRE
+WA_AI_MILITARY_AXIS_italy_theatre_guard_THEATRE = {
+	enable = {
+		WA_AI_MILITARY_is_axis_member = yes
+		NOT = { WA_AI_MILITARY_is_italian_homeland_power = yes }
+		WA_AI_MILITARY_ally_italy_theatre_threatened = yes
+		NOT = { WA_AI_MILITARY_ally_italy_theatre_invaded = yes }
+		WA_AI_MILITARY_can_open_secondary_fronts = yes
+		NOT = { WA_AI_MILITARY_home_threatened = yes }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 9606
+		# Italian mainland + Sicily - must match WA_AI_MILITARY_italy_homeland_invaded (15 states)
+		states = {
+			39
+			158
+			159
+			160
+			885
+			2
+			157
+			161
+			162
+			856
+			115
+			117
+			156
+			986
+			1032
+		}
+		ratio = 0.06
+		area = italy
+		subtract_invasions_from_need = no
+		# pool: the guard IS the reserve the peninsula lacks - a front on the Dnieper eating it is the
+		# 0edbc955 shape (Armies "Rome"/"Tyrol" created, filled one division at a time from Russia)
+		subtract_fronts_from_need = no
+	}
+	ai_strategy = {
+		type = area_priority
+		id = italy
+		value = 100
+	}
+}
+
+# purpose: an Italy in our faction has an enemy on its cored soil - the guard becomes a theatre
+# range:   0.12 (E4); area_priority +200 italy / +200 south_italy (E1 narrow)
+# policy:  Additive
+# domain:  THEATRE
+WA_AI_MILITARY_AXIS_italy_theatre_guard_invaded_THEATRE = {
+	enable = {
+		WA_AI_MILITARY_is_axis_member = yes
+		NOT = { WA_AI_MILITARY_is_italian_homeland_power = yes }
+		WA_AI_MILITARY_ally_italy_theatre_invaded = yes
+		WA_AI_MILITARY_can_open_secondary_fronts = yes
+		NOT = { WA_AI_MILITARY_home_threatened = yes }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 9606
+		# must match WA_AI_MILITARY_italy_homeland_invaded (15 states)
+		states = {
+			39
+			158
+			159
+			160
+			885
+			2
+			157
+			161
+			162
+			856
+			115
+			117
+			156
+			986
+			1032
+		}
+		ratio = 0.12
+		area = italy
+		subtract_invasions_from_need = no
+		# pool: see the threatened tier
+		subtract_fronts_from_need = no
+	}
+	ai_strategy = {
+		type = area_priority
+		id = italy
+		value = 200
+	}
+	ai_strategy = {
+		type = area_priority
+		id = south_italy
+		value = 200
+	}
+}

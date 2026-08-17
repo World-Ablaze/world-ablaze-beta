@@ -111,8 +111,20 @@ WA_AI_MILITARY_home_threatened = {
 	}
 }
 
+# Fix 96: was `date > 1938.1.1` - a calendar standing in for "the 1936 conquest of Ethiopia is over".
+# Now the war state itself: the conquest phase is ITA at war with an ETH that stands alone. It ends when
+# ETH is gone, capitulated, no longer at war with ROOT, or has become a coalition partner (a restored
+# 1941-style Ethiopia fighting inside the Allied faction is not the conquest - the East-Africa
+# abandon family must fire then, not stall). Ahistorical no-war games read "finished" from day 1,
+# which is what every reader wants (readers: WA_AI_MILITARY_ITA_protect_home_THEATRE gate,
+# WA_AI_NAVAL_COUNTRY_ITA_protect_home, the AXIS_abandon_east_africa family, italy_ethiopian_war_active).
 WA_AI_MILITARY_ethiopian_war_finished = {
-	date > 1938.1.1
+	OR = {
+		NOT = { country_exists = ETH }
+		NOT = { has_war_with = ETH }
+		ETH = { has_capitulated = yes }
+		ETH = { is_in_faction = yes }
+	}
 }
 
 WA_AI_MILITARY_italy_ethiopian_war_active = {
@@ -712,6 +724,151 @@ WA_AI_MILITARY_owns_italy_mainland = {
 		161 = { is_owned_by = ROOT }
 		162 = { is_owned_by = ROOT }
 		856 = { is_owned_by = ROOT }
+	}
+}
+
+############################################################################################################
+# Fix 96 - the Italian homeland, tag-free (campaign 0edbc955: the peninsula fell Oct-Dec 1943 to 7-12
+# Allied divisions because every Italy rule keyed on tags - ITA/ITL controller lists, `tag = RIT`,
+# `has_war_with = ITA`, GER's Fall Achse flag - and none of them asked the only question that
+# matters: "who owns this soil, and is an enemy standing on it?").
+#
+# Every trigger below is written PREV-relative from the state scope, NOT with ROOT, so it reads
+# the country it is EVALUATED IN: called directly from an `enable = {}` block it reads that
+# country; called inside `any_allied_country = { ... }` / `any_enemy_country = { ... }` it reads the
+# ally / enemy (the reason: WA_AI_MILITARY_ally_italy_theatre_* below iterate allies from GER's or
+# an Allied member's scope, and ROOT there would silently read the iterating country's own
+# ownership - the lessons-reviewer's scope trap on the first draft). Inside `39 = { ... }`
+# PREV is the enquired country; inside its `CONTROLLER = { ... }` PREV.PREV is that same country
+# (FIN_scripted_triggers.txt:183 precedent for the PREV.PREV walk).
+#
+# State lists must match WA_AI_MILITARY_AIR_theatre_contested_italy above (mainland 10 + Sicily 5)
+# and WA_AI_MILITARY_owns_italy_mainland (mainland 10). The belt list is this file's own.
+############################################################################################################
+
+# The enquired country OWNS AND CORES Italian mainland soil - i.e. it is "an Italy": the ITA tag on
+# either side of its 1943 flip (ita_armor.897 keeps the tag), the released fascist rump RIT (cores
+# on every ITA core), or a dynamic-country Italy of the civil-war path. False for a conqueror who
+# annexed the peninsula (owner without core) - it does not inherit Italy's home-defence reflexes.
+# Consumers: WA_AI_MILITARY_REGION_ITALY_* (allowed), the ally/enemy triggers below,
+# WA_TLM_sample_italy_guard.
+WA_AI_MILITARY_is_italian_homeland_power = {
+	OR = {
+		# Northern Italy (21)
+		39 = { is_owned_by = PREV is_core_of = PREV }
+		158 = { is_owned_by = PREV is_core_of = PREV }
+		159 = { is_owned_by = PREV is_core_of = PREV }
+		160 = { is_owned_by = PREV is_core_of = PREV }
+		885 = { is_owned_by = PREV is_core_of = PREV }
+		# Central Italy (23)
+		2 = { is_owned_by = PREV is_core_of = PREV }
+		157 = { is_owned_by = PREV is_core_of = PREV }
+		161 = { is_owned_by = PREV is_core_of = PREV }
+		162 = { is_owned_by = PREV is_core_of = PREV }
+		856 = { is_owned_by = PREV is_core_of = PREV }
+	}
+}
+
+# An enemy at war with the enquired Italy stands on its mainland or Sicilian CORE soil (15 states).
+# Core, not owned, on purpose: the co-belligerent ITA reads "invaded" while GER/RIT hold the north
+# it still cores, and RIT reads "invaded" while the Allies hold the Latium it cores - both should
+# pull to the Italian front, which is exactly what RIT_defend_italy did unconditionally before.
+WA_AI_MILITARY_italy_homeland_invaded = {
+	WA_AI_MILITARY_is_italian_homeland_power = yes
+	OR = {
+		# Northern Italy (21)
+		39 = { is_core_of = PREV CONTROLLER = { has_war_with = PREV.PREV } }
+		158 = { is_core_of = PREV CONTROLLER = { has_war_with = PREV.PREV } }
+		159 = { is_core_of = PREV CONTROLLER = { has_war_with = PREV.PREV } }
+		160 = { is_core_of = PREV CONTROLLER = { has_war_with = PREV.PREV } }
+		885 = { is_core_of = PREV CONTROLLER = { has_war_with = PREV.PREV } }
+		# Central Italy (23)
+		2 = { is_core_of = PREV CONTROLLER = { has_war_with = PREV.PREV } }
+		157 = { is_core_of = PREV CONTROLLER = { has_war_with = PREV.PREV } }
+		161 = { is_core_of = PREV CONTROLLER = { has_war_with = PREV.PREV } }
+		162 = { is_core_of = PREV CONTROLLER = { has_war_with = PREV.PREV } }
+		856 = { is_core_of = PREV CONTROLLER = { has_war_with = PREV.PREV } }
+		# Southern Italy (238)
+		115 = { is_core_of = PREV CONTROLLER = { has_war_with = PREV.PREV } }
+		117 = { is_core_of = PREV CONTROLLER = { has_war_with = PREV.PREV } }
+		156 = { is_core_of = PREV CONTROLLER = { has_war_with = PREV.PREV } }
+		986 = { is_core_of = PREV CONTROLLER = { has_war_with = PREV.PREV } }
+		1032 = { is_core_of = PREV CONTROLLER = { has_war_with = PREV.PREV } }
+	}
+}
+
+# The enquired Italy's home is under threat: it is invaded (above), OR an enemy holds ground of the
+# island / littoral belt it OWNS (Sardinia, Corsica, Zadar, Dodecanese, Albania, Istria, Primorska -
+# lost ground only: an enemy that owned Malta or Corsica before the war is the 1940 baseline and must
+# NOT switch the Africa effort off), OR a foreign army occupies Tunisia (458 + 1061 controlled by an
+# enemy who does not own them - the Torch shape; French Tunisia at war with Italy in June 1940 is
+# controller = owner and does not count). Every term releases by itself when the ground is retaken.
+# Consumers: REGION_ITALY threatened tier, the ITA Africa pull/reduce pair, the R13 abort term.
+WA_AI_MILITARY_italy_home_threatened = {
+	WA_AI_MILITARY_is_italian_homeland_power = yes
+	OR = {
+		WA_AI_MILITARY_italy_homeland_invaded = yes
+		# lost belt ground (owned by the enquired country, held by an enemy)
+		114 = { is_owned_by = PREV CONTROLLER = { has_war_with = PREV.PREV } }
+		1 = { is_owned_by = PREV CONTROLLER = { has_war_with = PREV.PREV } }
+		163 = { is_owned_by = PREV CONTROLLER = { has_war_with = PREV.PREV } }
+		164 = { is_owned_by = PREV CONTROLLER = { has_war_with = PREV.PREV } }
+		44 = { is_owned_by = PREV CONTROLLER = { has_war_with = PREV.PREV } }
+		736 = { is_owned_by = PREV CONTROLLER = { has_war_with = PREV.PREV } }
+		886 = { is_owned_by = PREV CONTROLLER = { has_war_with = PREV.PREV } }
+		# Tunisia occupied by a foreign enemy army (controller at war with us AND not the owner)
+		AND = {
+			458 = { CONTROLLER = { has_war_with = PREV.PREV NOT = { owns_state = 458 } } }
+			1061 = { CONTROLLER = { has_war_with = PREV.PREV NOT = { owns_state = 1061 } } }
+		}
+	}
+}
+
+# A faction ally of the enquired country is an Italy whose home is threatened / invaded. Faction
+# only, not has_war_together_with: this arms put_unit_buffers on Italian soil, which the engine only
+# honours for territory the country may move through, i.e. faction (or subject) territory. The
+# scripted trigger inside evaluates in the ALLY's scope (see the PREV note above).
+# Consumers: WA_AI_MILITARY_AXIS_italy_theatre_guard_*, ALLIES_italy_cobelligerent_support_FRONT.
+WA_AI_MILITARY_ally_italy_theatre_threatened = {
+	any_allied_country = {
+		WA_AI_MILITARY_italy_home_threatened = yes
+	}
+}
+WA_AI_MILITARY_ally_italy_theatre_invaded = {
+	any_allied_country = {
+		WA_AI_MILITARY_italy_homeland_invaded = yes
+	}
+}
+
+# A faction ally of the enquired country is an Italy (replaces `is_in_faction_with = ITA` /
+# `is_in_faction_with = RIT` gates on the GER side).
+WA_AI_MILITARY_allied_with_italian_homeland_power = {
+	any_allied_country = {
+		WA_AI_MILITARY_is_italian_homeland_power = yes
+	}
+}
+
+# The enquired country is at war with an Italy (fascist rump after the flip, co-belligerent Italy
+# from GER's side, or any ahistorical war on the peninsula). Replaces `has_war_with = ITA` +
+# `country_exists = RIT` and `country_trigger = { tag = ITA }` on the GER side.
+WA_AI_MILITARY_at_war_with_italian_homeland_power = {
+	any_enemy_country = {
+		WA_AI_MILITARY_is_italian_homeland_power = yes
+	}
+}
+
+# Our side still holds a Libyan bridgehead port (Tripoli 448, Benghasi 450, Derna 451, Cyrenaica
+# 663) - us, a SUBJECT (Libya is the ITL subject's land, Fix 27 lesson: subjects are not faction
+# members), or a faction ally. The single geographic gate for every "Italy's main effort is Africa"
+# block; replaces the ITA/ITL controller lists. Deliberately says nothing about the home threat -
+# consumers compose it with WA_AI_MILITARY_italy_home_threatened themselves (full pull when held
+# and safe, reduced pull when held but threatened, abandon when not held or invaded).
+WA_AI_MILITARY_libya_bridgehead_held = {
+	OR = {
+		448 = { CONTROLLER = { OR = { tag = PREV.PREV is_subject_of = PREV.PREV is_in_faction_with = PREV.PREV } } }
+		450 = { CONTROLLER = { OR = { tag = PREV.PREV is_subject_of = PREV.PREV is_in_faction_with = PREV.PREV } } }
+		451 = { CONTROLLER = { OR = { tag = PREV.PREV is_subject_of = PREV.PREV is_in_faction_with = PREV.PREV } } }
+		663 = { CONTROLLER = { OR = { tag = PREV.PREV is_subject_of = PREV.PREV is_in_faction_with = PREV.PREV } } }
 	}
 }
 

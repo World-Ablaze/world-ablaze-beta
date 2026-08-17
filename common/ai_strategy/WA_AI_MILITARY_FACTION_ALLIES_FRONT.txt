@@ -79,7 +79,10 @@ WA_AI_MILITARY_ALLIES_avoid_italy_overstack = {
 	}
 	enable = {
 		WA_AI_MILITARY_is_allies_member = yes
-		has_war_with = ITA
+		# Fix 96: was `has_war_with = ITA` - now "at war with an Italy" (any tag: fascist ITA, the RIT
+		# rump, an ahistorical Italian enemy) and not the co-belligerent case handled by the sibling
+		WA_AI_MILITARY_at_war_with_italian_homeland_power = yes
+		NOT = { WA_AI_MILITARY_ally_italy_theatre_invaded = yes }
 		NOT = { WA_AI_MILITARY_owns_italy_mainland = yes }
 	}
 	abort_when_not_enabled = yes
@@ -119,10 +122,10 @@ WA_AI_MILITARY_ALLIES_avoid_italy_overstack_after_flip = {
 	enable = {
 		WA_AI_MILITARY_is_allies_member = yes
 		NOT = { WA_AI_MILITARY_owns_italy_mainland = yes }
-		ITA = {
-			WA_AI_MILITARY_is_allies_member = yes
-			has_war_with = GER
-		}
+		# Fix 96: was `ITA = { is_allies_member ∧ has_war_with = GER }` - a hardcoded tag AND a
+		# hardcoded enemy. Now: an Italy in our faction has an enemy on its cored soil, i.e. its own
+		# army holds part of the peninsula's frontage - whatever the tags on either side.
+		WA_AI_MILITARY_ally_italy_theatre_invaded = yes
 	}
 	abort_when_not_enabled = yes
 
@@ -879,7 +882,12 @@ WA_AI_MILITARY_ALLIES_sicily_push_FRONT = {
 				has_full_control_of_state = 156
 			}
 		}
-		has_war_with = ITA
+		# Fix 96: was `has_war_with = ITA` - now "an enemy holds Sicily" (either Sicilian state), so the
+		# push survives an Italy that changed tag or side and works against any occupier of the island
+		OR = {
+			115 = { CONTROLLER = { has_war_with = ROOT } }
+			1032 = { CONTROLLER = { has_war_with = ROOT } }
+		}
 		has_global_flag = fall_of_france
 	}
 	abort_when_not_enabled = yes
@@ -1024,9 +1032,11 @@ WA_AI_MILITARY_ALLIES_italy_cobelligerent_support_FRONT = {
 		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
 	}
 	enable = {
-		has_war_with = GER
-		is_in_faction_with = ITA
-		date > 1942.1.1
+		# Fix 96: was `has_war_with = GER` + `is_in_faction_with = ITA` + `date > 1942.1.1` - hardcoded
+		# enemy, hardcoded ally tag, and a calendar. Now: an Italy in our faction has an enemy on its
+		# cored soil - the reason the bloc should stay committed to the peninsula, whatever the tags.
+		WA_AI_MILITARY_is_allies_member = yes
+		WA_AI_MILITARY_ally_italy_theatre_invaded = yes
 	}
 	abort_when_not_enabled = yes
 

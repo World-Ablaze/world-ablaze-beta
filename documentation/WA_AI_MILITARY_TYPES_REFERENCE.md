@@ -349,7 +349,7 @@ Scanner artifact: `phase4_dup_scan.py` and `phase4_report.md` (1826 blocks, 153 
 | `WA_AI_MILITARY_COUNTRY_CZE.txt` | 6 | FRONT+DIPLOMACY |
 | `WA_AI_MILITARY_COUNTRY_BUL.txt` | 4 | DIPLOMACY |
 | `WA_AI_MILITARY_COUNTRY_SAF.txt` | 4 | FRONT+THEATRE |
-| `WA_AI_MILITARY_COUNTRY_RIT.txt` | 3 | FRONT |
+| ~~`WA_AI_MILITARY_COUNTRY_RIT.txt`~~ | — | deleted 2026-08-17 (Fix 96): the RSI is served by `WA_AI_MILITARY_REGION_ITALY_FRONT.txt` / `_THEATRE.txt`, gated on `WA_AI_MILITARY_is_italian_homeland_power` |
 | `WA_AI_MILITARY_COUNTRY_HUN.txt` | 2 | DIPLOMACY |
 | `WA_AI_MILITARY_COUNTRY_POL.txt` | 2 | FRONT+DIPLOMACY |
 | `WA_AI_MILITARY_COUNTRY_RNC.txt` | 2 | THEATRE |

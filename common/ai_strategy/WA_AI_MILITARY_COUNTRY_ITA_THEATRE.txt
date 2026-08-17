@@ -140,150 +140,127 @@ WA_AI_MILITARY_ITA_prolong_the_struggle_in_ethiopia_THEATRE = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_ITA_war_against_ENG (THEATRE domain)
-WA_AI_MILITARY_ITA_war_against_ENG_THEATRE = {
-
+# purpose: Fix 96 - Italy's main effort is North Africa WHILE it holds a Libyan bridgehead port and the
+#          home is safe. One source of +200 where three used to stack (war_against_ENG +200 on any
+#          ITA/ITL-held Libyan state, north_africa_focus +200 on `date > 1937` for ever,
+#          hold_africa +200 to 1941 - up to +600 on a 7-region area, E1 ceiling is +200). Fires at
+#          peace too (pre-positioning the Libyan garrison, R60 corridor prep) and at war with whoever
+#          holds East Egypt or Tunisia - controller-based, no ENG/FRA tag, so an ahistorical enemy
+#          in Egypt gets the same effort. Ethiopia's conquest phase keeps precedence (its own +200s).
+# range:   +200 (E1)
+# policy:  Additive per area (sole ITA-scope +200 writer for north_africa; the R13 FRONT pair is
+#          the +60 front_unit_request beside it)
+# domain:  THEATRE
+WA_AI_MILITARY_ITA_africa_pull_THEATRE = {
 	allowed = {
 		tag = ITA
 	}
 	enable = {
+		WA_AI_MILITARY_libya_bridgehead_held = yes
+		NOT = { WA_AI_MILITARY_italy_home_threatened = yes }
+		WA_AI_MILITARY_ethiopian_war_finished = yes
 		OR = {
-			448 = { is_controlled_by = ITA }
-			449 = { is_controlled_by = ITA }
-			450 = { is_controlled_by = ITA }
-			451 = { is_controlled_by = ITA }
-			448 = { is_controlled_by = ITL }
-			449 = { is_controlled_by = ITL }
-			450 = { is_controlled_by = ITL }
-			451 = { is_controlled_by = ITL }
+			has_war = no
+			446 = { CONTROLLER = { has_war_with = ROOT } }
+			447 = { CONTROLLER = { has_war_with = ROOT } }
+			453 = { CONTROLLER = { has_war_with = ROOT } }
+			458 = { CONTROLLER = { has_war_with = ROOT } }
 		}
-		NOT = { has_war_with = ETH }
 	}
-
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = area_priority
 		id = north_africa
-		value = 200 # economy: was 2000
+		value = 200
 	}
 }
 
+# purpose: Fix 96 - the bridgehead is still held but the home is threatened (belt ground lost, Tunisia
+#          occupied): Africa keeps a token pull so the line is not abandoned outright, the home tiers
+#          in WA_AI_MILITARY_REGION_ITALY_THEATRE.txt take the rest. Mutually exclusive with the two
+#          blocks around it by construction (held ∧ threatened ∧ NOT invaded).
+# range:   +50 (E1)
+# policy:  Additive per area
+# domain:  THEATRE
+WA_AI_MILITARY_ITA_africa_pull_reduced_THEATRE = {
+	allowed = {
+		tag = ITA
+	}
+	enable = {
+		WA_AI_MILITARY_libya_bridgehead_held = yes
+		WA_AI_MILITARY_italy_home_threatened = yes
+		NOT = { WA_AI_MILITARY_italy_homeland_invaded = yes }
+	}
+	abort_when_not_enabled = yes
 
-# Phase 6 split from WA_AI_MILITARY_ITA_protect_home (THEATRE domain)
-WA_AI_MILITARY_ITA_protect_home_THEATRE = {
+	ai_strategy = {
+		type = area_priority
+		id = north_africa
+		value = 50
+	}
+}
 
+# purpose: Fix 96 - give up on North Africa: no Libyan bridgehead port left to our side, or an enemy
+#          stands on the Italian mainland / Sicily. Was: ENG/UKE/USA/FRA control ALL FOUR of
+#          448/449/450/451 - a bar the 0edbc955 army never met before it died in place (Libya was
+#          still ITL-held on 1943.10.1 while Sicily, Calabria and Campania were already Allied).
+#          Releases itself when a port is retaken and the home soil is clear.
+# range:   -200 (E1)
+# policy:  Additive per area
+# domain:  THEATRE
+WA_AI_MILITARY_ITA_abandon_north_africa_THEATRE = {
+	allowed = {
+		tag = ITA
+	}
+	enable = {
+		has_war = yes
+		OR = {
+			NOT = { WA_AI_MILITARY_libya_bridgehead_held = yes }
+			WA_AI_MILITARY_italy_homeland_invaded = yes
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = area_priority
+		id = north_africa
+		value = -200
+	}
+}
+
+# purpose: Fix 96 - the Balkan and Libyan garrisons of the former ITA_protect_home block (its Italian
+#          home buffers moved to WA_AI_MILITARY_REGION_ITALY_THEATRE.txt, tag-free, tiered). Gate was
+#          `date > 1938` + (own war or FRA/ENG at war): now the war state itself. Libya buffer only
+#          while a bridgehead port is ours and the home is not invaded (otherwise it is a buffer on
+#          ground we are abandoning).
+# range:   0.10 / 0.15 / 0.25 (E4)
+# policy:  Additive per state
+# domain:  THEATRE
+WA_AI_MILITARY_ITA_protect_periphery_THEATRE = {
 	allowed = {
 		tag = ITA
 	}
 	enable = {
 		WA_AI_MILITARY_ethiopian_war_finished = yes
-		OR = {
-			has_war = yes
-			FRA = {
-				has_war = yes
-			}
-			ENG = {
-				has_war = yes
-			}
-		}
+		has_war = yes
 	}
-
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = put_unit_buffers
-
 		order_id = 1
-
-		# italy
-		states = {
-			158
-			162
-			2
-			856
-		}
-
-		ratio = 0.25 # economy: was 0.8
-
-		area = italy
-
-		subtract_invasions_from_need = no
-	}
-	ai_strategy = {
-		type = put_unit_buffers
-
-		order_id = 1
-
-		# south_italy
-		states = {
-			117
-			156
-			115
-			1032
-		}
-
-		ratio = 0.15 # economy: was 0.8, then 0.25; 2026-08-10 user decision: lighter island garrison (Husky follow-up, campaign 2b607968). NOTE: single shared ratio also covers mainland 117 (Campania) and 156 (Calabria)
-
-		area = south_italy
-
-		subtract_invasions_from_need = no
-	}
-	ai_strategy = {
-		type = put_unit_buffers
-
-		order_id = 1
-
-		# mediterranean
-		states = {
-			114
-		}
-
-		ratio = 0.1
-
-		area = mediterranean
-
-		subtract_invasions_from_need = no
-	}
-	ai_strategy = {
-		type = put_unit_buffers
-
-		order_id = 1
-
-		# north_africa
-		states = {
-			448
-			450
-			451
-		}
-
-		ratio = 0.25 # economy: was 1.2
-
-		area = north_africa
-
-		subtract_invasions_from_need = no
-	}
-	ai_strategy = {
-		type = put_unit_buffers
-
-		order_id = 1
-
 		# central_balkans
 		states = {
 			44
 		}
-
 		ratio = 0.1
-
 		area = central_balkans
-
 		subtract_invasions_from_need = no
 	}
 	ai_strategy = {
 		type = put_unit_buffers
-
 		order_id = 1
-
 		# south_balkans
 		states = {
 			185
@@ -291,11 +268,34 @@ WA_AI_MILITARY_ITA_protect_home_THEATRE = {
 			182
 			164
 		}
-
 		ratio = 0.15
-
 		area = south_balkans
+		subtract_invasions_from_need = no
+	}
+}
+WA_AI_MILITARY_ITA_protect_libya_THEATRE = {
+	allowed = {
+		tag = ITA
+	}
+	enable = {
+		WA_AI_MILITARY_ethiopian_war_finished = yes
+		has_war = yes
+		WA_AI_MILITARY_libya_bridgehead_held = yes
+		NOT = { WA_AI_MILITARY_italy_homeland_invaded = yes }
+	}
+	abort_when_not_enabled = yes
 
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 1
+		# north_africa
+		states = {
+			448
+			450
+			451
+		}
+		ratio = 0.25 # economy: was 1.2
+		area = north_africa
 		subtract_invasions_from_need = no
 	}
 }
@@ -336,119 +336,5 @@ WA_AI_MILITARY_ITA_end_the_struggle_in_ethiopia_THEATRE = {
 		type = area_priority
 		id = central_africa
 		value = 200 # economy: was 500
-	}
-}
-
-# purpose: give up on North Africa once the Egyptian coast is fully enemy-held (relocated Phase 7c from legacy ITA.txt ITA_war_against_ENG_2)
-# range:   -2000 (saturated legacy value, E1 worklist)
-# policy:  Additive per area
-# domain:  THEATRE
-WA_AI_MILITARY_ITA_abandon_north_africa_THEATRE = {
-	allowed = {
-		tag = ITA
-	}
-	enable = {
-		has_war_with = ENG
-		AND = {
-			OR = {
-				448 = { is_controlled_by = ENG }					#Komrade
-				448 = { is_controlled_by = UKE }					#Komrade
-				448 = { is_controlled_by = USA }					#Komrade
-				448 = { is_controlled_by = FRA }					#Komrade
-			}
-			OR = {
-				449 = { is_controlled_by = ENG }					#Komrade
-				449 = { is_controlled_by = UKE }					#Komrade
-				449 = { is_controlled_by = USA }					#Komrade
-				449 = { is_controlled_by = FRA }					#Komrade
-			}
-			OR = {
-				450 = { is_controlled_by = UKE }					#Komrade
-				450 = { is_controlled_by = ENG }					#Komrade
-				450 = { is_controlled_by = USA }					#Komrade
-				450 = { is_controlled_by = FRA }					#Komrade
-			}
-			OR = {
-				451 = { is_controlled_by = UKE }					#Komrade
-				451 = { is_controlled_by = ENG }					#Komrade
-				451 = { is_controlled_by = USA }					#Komrade
-				451 = { is_controlled_by = FRA }					#Komrade
-			}
-		}
-	}
-	abort = {
-		OR = {
-			NOT = { has_war_with = ENG }
-		}
-	}
-
-	ai_strategy = {
-		type = area_priority
-		id = north_africa
-		value = -200 # economy: was -2000
-	}
-}
-
-# purpose: hold North Africa while France is out of the picture (relocated Phase 7c verbatim from legacy ITA.txt)
-# range:   +200 (delta)
-# policy:  Additive per area
-# domain:  THEATRE
-WA_AI_MILITARY_ITA_hold_africa_THEATRE = {
-	allowed = {
-		tag = ITA
-	}
-	enable = {
-		OR = {
-			NOT = { country_exists = ETH }
-			ITS = { is_puppet_of = ITA }
-		}
-		OR = {
-			FRA = { has_capitulated = yes }
-			FRA = { is_in_faction_with = ITA }
-			NOT = { country_exists = FRA }
-		}
-		date < 1941.1.1
-	}
-	abort = {
-		any_owned_state = { is_core_of = ITA NOT = { is_controlled_by = ITA } }
-		date > 1941.1.1
-	}
-
-	ai_strategy = {
-		type = area_priority
-		id = north_africa
-		value = 200
-	}
-}
-
-# purpose: the North African theatre is Italy's main effort against ENG/FRA (relocated Phase 7c from legacy ITA.txt ITA_focus_on_north_africa)
-# range:   +2000 (saturated legacy value, E1 worklist)
-# policy:  Additive per area
-# domain:  THEATRE
-WA_AI_MILITARY_ITA_north_africa_focus_THEATRE = {
-	allowed = {
-		tag = ITA
-	}
-	enable = {
-#		118 = { is_controlled_by = ENG }
-#		OR = {
-#			446 = { is_controlled_by = ENG }
-#			446 = { is_controlled_by = UKE }
-#		}
-		NOT = { is_in_faction_with = ENG }
-		NOT = { is_in_faction_with = FRA }
-		date > 1937.1.1
-		OR = {
-			has_war = no
-			has_war_with = ENG
-			has_war_with = FRA
-		}
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = area_priority
-		id = north_africa
-		value = 200 # economy: was 2000
 	}
 }
