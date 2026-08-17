@@ -491,8 +491,8 @@ WA_AI_AIFC_score_state = {
 #	A grace period on the retirement arm is the candidate fix, but N cannot be picked from these
 #	numbers: each episode emits exactly one retire + one reinstall regardless of how long it lasts, so
 #	517 cannot distinguish 8 short lapses from 8 long ones, and monthly saves cannot resolve a weekly
-#	cadence. That is what the WA_TLM_r65_aifc_arm_* counters below are for - mean episode length is
-#	lapse_wk / retire_n. Do not ship a grace window before reading them (checklist R65).
+#	cadence. That is what the WA_TLM_r67_aifc_arm_* counters below are for - mean episode length is
+#	lapse_wk / retire_n. Do not ship a grace window before reading them (checklist R67).
 #
 #	KNOWN GAP: a tracked country that ceases to exist (annexed) cannot receive the negation entry -
 #	the emitter is skipped and its live entry goes stale. If that tag later revives into a war with
@@ -513,11 +513,11 @@ WA_AI_AIFC_score_state = {
 ############################################################
 
 WA_AI_AIFC_armor_add_boost = {
-	# tlm: WA_TLM_r65_aifc_arm_entries_n - consumer checklist R65. Counts EMITTER INVOCATIONS, which is
+	# tlm: WA_TLM_r67_aifc_arm_entries_n - consumer checklist R67. Counts EMITTER INVOCATIONS, which is
 	# the strongest evidence available: script cannot read back the persistent_strategy list, so there
 	# is no post-hoc confirmation the entry landed (honesty rule 1 met as far as the engine allows).
 	# Second signal that validates it: the save's own type-83 count per major (USA 517 at 1944.6).
-	add_to_variable = { WA_TLM_r65_aifc_arm_entries_n = 1 }
+	add_to_variable = { WA_TLM_r67_aifc_arm_entries_n = 1 }
 	meta_effect = {
 		text = {
 			add_ai_strategy = { type = front_armor_score id = [ETAG] value = 400 }
@@ -527,8 +527,8 @@ WA_AI_AIFC_armor_add_boost = {
 }
 
 WA_AI_AIFC_armor_cancel_boost = {
-	# tlm: WA_TLM_r65_aifc_arm_entries_n - see WA_AI_AIFC_armor_add_boost
-	add_to_variable = { WA_TLM_r65_aifc_arm_entries_n = 1 }
+	# tlm: WA_TLM_r67_aifc_arm_entries_n - see WA_AI_AIFC_armor_add_boost
+	add_to_variable = { WA_TLM_r67_aifc_arm_entries_n = 1 }
 	meta_effect = {
 		text = {
 			add_ai_strategy = { type = front_armor_score id = [ETAG] value = -400 }
@@ -538,8 +538,8 @@ WA_AI_AIFC_armor_cancel_boost = {
 }
 
 WA_AI_AIFC_armor_add_suppress = {
-	# tlm: WA_TLM_r65_aifc_arm_entries_n - see WA_AI_AIFC_armor_add_boost
-	add_to_variable = { WA_TLM_r65_aifc_arm_entries_n = 1 }
+	# tlm: WA_TLM_r67_aifc_arm_entries_n - see WA_AI_AIFC_armor_add_boost
+	add_to_variable = { WA_TLM_r67_aifc_arm_entries_n = 1 }
 	meta_effect = {
 		text = {
 			add_ai_strategy = { type = front_armor_score id = [ETAG] value = -150 }
@@ -549,8 +549,8 @@ WA_AI_AIFC_armor_add_suppress = {
 }
 
 WA_AI_AIFC_armor_cancel_suppress = {
-	# tlm: WA_TLM_r65_aifc_arm_entries_n - see WA_AI_AIFC_armor_add_boost
-	add_to_variable = { WA_TLM_r65_aifc_arm_entries_n = 1 }
+	# tlm: WA_TLM_r67_aifc_arm_entries_n - see WA_AI_AIFC_armor_add_boost
+	add_to_variable = { WA_TLM_r67_aifc_arm_entries_n = 1 }
 	meta_effect = {
 		text = {
 			add_ai_strategy = { type = front_armor_score id = [ETAG] value = 150 }
@@ -589,7 +589,7 @@ WA_AI_AIFC_armor_reconcile = {
 	############################################################
 	# 0. Telemetry - book churn (WRITE-ONLY, read by nothing)
 	############################################################
-	# tlm: WA_TLM_r65_aifc_arm_{lapse_wk,retire_n,install_n} - consumer checklist R65.
+	# tlm: WA_TLM_r67_aifc_arm_{lapse_wk,retire_n,install_n} - consumer checklist R67.
 	# Written HERE and not by WA_TLM_monthly_sample because the churn is WEEKLY: an episode that opens
 	# and closes between two monthly saves is invisible to a monthly snapshot, and that is exactly the
 	# quantity the fix needs (see the ENTRY ACCUMULATION header above).
@@ -601,13 +601,13 @@ WA_AI_AIFC_armor_reconcile = {
 	# mean episode length = lapse_wk / retire_n. That number, and nothing in the save's entry count,
 	# is what a retirement grace window would have to be sized against.
 	set_temp_variable = { _aifc_tlm_book0 = WA_AI_AIFC_armor_suppressed^num }
-	set_temp_variable = { _aifc_tlm_ent0 = WA_TLM_r65_aifc_arm_entries_n }
+	set_temp_variable = { _aifc_tlm_ent0 = WA_TLM_r67_aifc_arm_entries_n }
 	if = {
 		limit = { check_variable = { _aifc_want < 1 } }
-		add_to_variable = { WA_TLM_r65_aifc_arm_lapse_wk = 1 }
+		add_to_variable = { WA_TLM_r67_aifc_arm_lapse_wk = 1 }
 		if = {
 			limit = { check_variable = { _aifc_tlm_book0 > 0 } }
-			add_to_variable = { WA_TLM_r65_aifc_arm_retire_n = 1 }
+			add_to_variable = { WA_TLM_r67_aifc_arm_retire_n = 1 }
 		}
 	}
 
@@ -711,7 +711,7 @@ WA_AI_AIFC_armor_reconcile = {
 	############################################################
 	# 4. Telemetry - close out the tick (WRITE-ONLY)
 	############################################################
-	# tlm: WA_TLM_r65_aifc_arm_{install_n,first_t,last_t} - consumer checklist R65.
+	# tlm: WA_TLM_r67_aifc_arm_{install_n,first_t,last_t} - consumer checklist R67.
 	# install_n is booked on the VERIFIED transition (book was empty at entry, is not now), not on
 	# reaching section 3. The stamps mark weeks that actually EMITTED, so a frozen _last_t beside a
 	# climbing entries_n cannot happen, and _last_t frozen while the country is at war means the
@@ -721,14 +721,14 @@ WA_AI_AIFC_armor_reconcile = {
 			check_variable = { _aifc_tlm_book0 < 1 }
 			check_variable = { WA_AI_AIFC_armor_suppressed^num > 0 }
 		}
-		add_to_variable = { WA_TLM_r65_aifc_arm_install_n = 1 }
+		add_to_variable = { WA_TLM_r67_aifc_arm_install_n = 1 }
 	}
 	if = {
-		limit = { check_variable = { WA_TLM_r65_aifc_arm_entries_n > _aifc_tlm_ent0 } }
-		set_variable = { WA_TLM_r65_aifc_arm_last_t = global.WA_TLM_clock }
+		limit = { check_variable = { WA_TLM_r67_aifc_arm_entries_n > _aifc_tlm_ent0 } }
+		set_variable = { WA_TLM_r67_aifc_arm_last_t = global.WA_TLM_clock }
 		if = {
-			limit = { check_variable = { WA_TLM_r65_aifc_arm_first_t = 0 } }
-			set_variable = { WA_TLM_r65_aifc_arm_first_t = global.WA_TLM_clock }
+			limit = { check_variable = { WA_TLM_r67_aifc_arm_first_t = 0 } }
+			set_variable = { WA_TLM_r67_aifc_arm_first_t = global.WA_TLM_clock }
 		}
 	}
 }
