@@ -18,7 +18,9 @@
 # rubber, steel and aluminium (WA_AI_CONSTRUCTION_PRIORITY_strategies.txt). The
 # shortage-months leg of the other reactive triggers below reads a variable that
 # is never written (always 0 = false); those triggers work through WA_AI_needs_<r>
-# alone (written monthly by WA_AI_misc_effects.txt).
+# alone (written by WA_AI_check_resource_needs, WA_AI_misc_effects.txt, on a ~2-day
+# event - NOT monthly: the ramp to 3 and back takes about six days, so a monthly save
+# can miss whole cycles).
 
 # Check if AI has any shortage of a resource (OR: critical need OR 3+ months history)
 # Coal is strategic (every synthetic refinery burns it): prospect PROACTIVELY
@@ -33,18 +35,14 @@
 # late 1943 (+15 000) is far above it. See the lessons log entry "resource@X
 # and the engine trade AI" before changing the threshold.
 # The gauge (resource@) carries the peacetime/proactive case; the WA_AI_needs
-# counter (0..3, monthly ramp) carries the wartime shortage case.
+# counter (0..3, ~2-day ramp) carries the wartime shortage case.
 # Since 2026-08-15 the prospecting ai_will_do blocks have base weight 0 and this
 # trigger is the only thing that gives the coal decisions any weight for ROOT's
 # own sake, so a country sitting on +15 000 coal (GER, late 1943) no longer
 # re-prospects its states just because civs and PP are free.
-# Recorded with Fix 100 (2026-08-17), found while diagnosing the cooperative leg,
-# deliberately NOT changed here: (a) the third leg below is DEAD for coal -
-# WA_AI_resource_coal_shortage_months has no writer anywhere in the repo and is absent
-# from every save of campaign 7c7803a8, so this trigger has two live legs, not three;
-# (b) a COUNTRY FLAG named WA_AI_allies_need_coal is set at WA_AI_misc_effects.txt:646
-# on a looser bar (an ally under -20) and is read nowhere - the scripted trigger of the
-# same name below shadows it in every trigger context. Both are pre-existing.
+# Two live legs, not three: WA_AI_resource_coal_shortage_months has no writer in the
+# repo. A country flag of the same name as the cooperative trigger is written at
+# WA_AI_misc_effects.txt:646 and read nowhere; the scripted trigger shadows it.
 WA_AI_should_prospect_resource_coal = {
 	OR = {
 		check_variable = { resource@coal < 100 }
@@ -123,159 +121,48 @@ WA_AI_should_prospect_resource_bauxite = {
 ###############################################################################
 # Cooperative Layer: Check if allies have critical resource shortages
 ###############################################################################
-# SIBLING STATUS - MEASURED 2026-08-17, Fix 101 (supersedes the Fix 100 note below).
-# Fix 100 recorded these eight as structurally identical but UNMEASURED and instructed:
-# "Do not convert any of them without a measured ledger; do not assume Fix 100
-# transfers", and for the engine-traded six "the import arm may be a legitimate
-# faction-scarcity signal, because the ore comes from OUTSIDE the faction rather than
-# from ROOT itself. UNTESTED." The ledger now exists (campaign 7c7803a8) and it does
-# not support that reservation: 12 (country, resource) pairs fired prospecting 2-10
-# times while ROOT's OWN effective balance for that resource was POSITIVE and its own
-# WA_AI_needs_<r> read 0 or 1. Strongest, positive at BOTH sampled dates so not a
-# snapshot artefact - USA bauxite +2600 / +2703 (7 fires at 12-16 civs each),
-# HUN bauxite +2089 (ran to its 10-fire state-flag cap at 6 civs, its ally GER reading
-# needs_bauxite = 3), SOV iron +3154 / +2782, JAP bauxite +1089 / +554,
-# SAF chromium +634 / +613, ITA bauxite +728 / +1180, SOV chromium +182 / +459,
-# JAP oil +113 / +213. So all eight are gated below.
-# SHAPE BY PARITY, NO MEASURED HARM CASE: steel and rubber. The other six each have at
-# least one. They are gated on the same shape because the structure is identical and a
-# divergent sibling is the failure the "open the sibling in the same pass" rule names -
-# but a future reader deciding whether the gate earns its keep should know the two were
-# carried by parity, not by evidence.
-# CONTROLS that make "needs 0/1" mean the reactive leg was genuinely off:
-# WA_AI_resource_<r>_shortage_months has a writer ONLY for aluminium / rubber / steel,
-# so for iron, bauxite, chromium, tungsten and oil the reactive leg is definitively off
-# at needs 0/1. POR tungsten and VIC rubber were EXCLUDED from the harm set - both were
-# in no faction at either date, so their cooperative leg cannot fire at all and their
-# positive-balance fires are explained by shortage_months instead.
-# NOT THIS DEFECT, recorded so the next reader does not re-diagnose it: GER fired the
-# Carinthia bauxite decision 10 times at +3346 effective, but with its OWN
-# wa_ai_needs_bauxite = 3 at both dates. That counter is held by the WRITER's import arm
-# (resource_imported@bauxite > 25, WA_AI_misc_effects.txt:586) while GER's bauxite
-# arrives as subject transfer - so it is the REACTIVE leg reading the Fix 100
-# dependency/shortage conflation in the writer, not the cooperative leg. Fixing it means
-# touching the writer, which changes every reader for every country; out of scope here.
-
-# Fix 101 (2026-08-17): ROOT-side surplus bar on the other eight cooperative legs.
-# WHAT IT PROTECTS: the prospecting civilian-factory slots (2-16 per decision) of a
-# country that already holds a positive retained balance of the resource.
-# WHAT A POSITIVE BALANCE DOES *NOT* PROVE - read this before touching the gate.
-# The offered export share is min_export x EXTRACTION: 0.8 free trade / 0.5 export focus
-# / 0.25 limited exports / 0 closed economy (common/ideas/_trade.txt), shifted by national
-# ideas (GER +0.1, SOV +0.25, TUR +0.2, BUL -0.15, generic -0.3). Because that share
-# SCALES WITH EXTRACTION, prospecting raises BOTH ROOT's retained balance AND the tonnage
-# ROOT offers to the market. Verified on GER coal: to_export / produced = 0.281 at 1943.6
-# and 0.298 at 1945.6 - a constant fraction of output. So "ROOT holds a positive balance"
-# does NOT by itself mean extraction is useless to an ally. If a producer's offered share
-# were being bought out, extraction WOULD be the binding constraint on what allies receive
-# and this gate would be backwards. An earlier draft of this header asserted the
-# unconditional form; it was wrong and is recorded here so it is not reintroduced.
-# THE FACT THIS GATE ACTUALLY RESTS ON - measured, not inferred: on campaign 7c7803a8 not
-# one of the eight harm pairs had its offered share bought out. exported / to_export ran
-# ITA bauxite 73-79 % (the highest), HUN bauxite 41 %, USA bauxite 16-25 %, SAF chromium
-# 7-9 %, and FIVE pairs offered literally nothing (to_export = 0: SOV holds no trade-law
-# idea at all in this campaign, JAP is closed_economy, HUN's 1946 output is siphoned by
-# transfer_overlord_subject before any export fraction is computed). Against that, extra
-# extraction grows the unsold pile, not the ally's delivery. The binding limit sits on the
-# delivery side - convoys, routes, buyer wiring - for surplus producers, deficit producers
-# and closed economies alike.
-# HOW TO TELL THE FACT IS GONE - and this is the ONLY falsifier that bears on the gate:
-# exported / to_export climbing toward 100 % for a surplus-holding producer. At that point
-# its offered share IS being bought out, extraction becomes the binding constraint, and
-# this gate must be reconsidered. Measure it with `savegame.py resources <TAG> <save>`,
-# which prints to_export and exported side by side. Do NOT substitute the ally's
-# `imported` line: it can move for reasons that have nothing to do with ROOT.
-# A SHARPER INSTRUMENT EXISTS, deliberately not built here: five of the eight pairs offer
-# to_export = 0, so their extraction can NEVER reach an ally whatever their balance. A gate
-# reading the offered share (or the trade law) directly would catch those by construction
-# instead of by their balance sign. Left for a change that measures it first.
-# THE TWO BRANCHES: an importer sits ON this boundary, and that is fine - an importer is
-# already carried by the reactive leg's own import arm (resource_imported@<r> > 10..40),
-# so the flicker costs it nothing. A producer is the branch this gate is for.
-# WHY ZERO IS NOT A TUNABLE NUMBER: it is the sign boundary, and no absolute bar is
-# derivable from the data - the measured harm spans +6 to +3154 while the resources
-# themselves live on incomparable scales (chromium never exceeds ~+650 in the campaign,
-# rubber reaches +2841). Eight invented ceilings would be the magic-threshold failure.
-# Do not retune it; if it ever needs to move, that is evidence the engine fact above
-# changed, not that the number was wrong.
-# WHAT SURVIVES THE GATE - the cooperative layer is NARROWED, not deleted. It stays live
-# for a ROOT whose own balance sits in the band between zero and the writer's own
-# deficit arm, and which is not yet importing: (-10, 0) for aluminium and rubber,
-# (-15, 0) for steel, tungsten and chromium, (-25, 0) for bauxite and iron, (-40, 0) for
-# oil. Inside that band ROOT is short but has not yet ratcheted needs_<r> above 1, so
-# the cooperative modifier is the only weight - which is the layer's distinct function.
-# THE COST INSIDE THE RAMP (AGENTS.md (f), at the real cadences - the writer runs on a
-# ~2-day event, ai_will_do is evaluated continuously, the counter moves +/-1 per run):
-#   t0  a real shortage opens but imports still cover it -> balance >= 0, needs 0.
-#       This gate blocks the cooperative leg. The reactive leg is also off. Weight 0.
-#   t1  balance goes negative past the writer's arm, needs 1. Gate now OPEN (balance
-#       < 0); reactive still off (needs > 1 required). Cooperative leg carries it.
-#   t2  ~4 days after t1, needs 2 -> reactive leg on, weight granted regardless.
-# So the only window this gate closes that was previously open is t0 - a country with a
-# NON-NEGATIVE balance. That is the harm case by definition, and nothing is lost in it.
-# HOW TO TELL THE FACT IS GONE: an ally's `imported` line for the resource that RISES
-# when a surplus-holding country prospects it.
-# NOT THE SAME QUANTITY AS COAL'S BAR. @WA_AI_COAL_COOP_CEILING below is 500 - a CEILING
-# placed above coal's proactive reactive bar (resource@coal < 100), because without it
-# coal's cooperative layer would be a strict subset of its reactive layer and collapse.
-# These eight have no proactive bar, so their boundary is the sign, not a ceiling. The
-# two numbers are not comparable and must not be harmonised.
+# Each leg asks two things: does an ally need help, and does ROOT have spare capacity to
+# give it. The ally question alone is permanently true - WA_AI_needs_<r> rises on EITHER a
+# deficit OR heavy importing, and heavy importing is the normal state of an importer, not a
+# shortage - so without a ROOT-side term a faction leader prospects for ever.
+#
+# THE TWO BARS DIFFER ON PURPOSE.
+#   coal            resource@coal < 500   a CEILING
+#   the other eight resource@<r>  < 0     a SIGN BOUNDARY
+# Coal alone has a proactive reactive bar (resource@coal < 100), so a zero boundary would
+# make its cooperative leg a subset of its reactive one and delete it; the ceiling leaves it
+# a live 100-500 band. The eight have no proactive bar, so zero is where their distinct
+# function begins. Different quantities - do not harmonise them.
+#
+# ZERO IS NOT TUNABLE. No absolute bar is derivable: the resources live on incomparable
+# scales, so eight hand-picked ceilings would be guesses. If zero ever has to move, the
+# engine fact below changed - the number was not wrong.
+#
+# ENGINE FACT. The trade AI acts only on a negative balance and never stockpiles. But the
+# offered export share is min_export x EXTRACTION (common/ideas/_trade.txt, shifted by
+# national ideas), so it scales with output: a positive balance does NOT by itself prove
+# extraction is useless to an ally. What justifies these gates is the measurement instead -
+# no producer's offered share was being bought out.
+# FALSIFIER: exported / to_export climbing toward 100 % for a surplus-holding producer. Then
+# extraction IS the binding constraint and these gates are backwards. Not the ally's
+# `imported` line, which moves for reasons unrelated to ROOT.
+#
+# REJECTED - putting the deficit test on the ALLY instead of ROOT. Importing is the coping
+# act and pushes the ally's balance back to ~0, so a dependent ally never shows a deficit
+# while trade works: the term would delete the leg, not narrow it.
+# NOT BUILT - a gate reading the offered share or the trade law directly. It would catch a
+# closed_economy country by construction instead of by its balance sign.
+# STEEL - both steel triggers have no reader; no prospecting decision grants steel. Gated for
+# parity only. Rubber has readers but no observed harm case.
+#
+# Evidence and probes: checklist R66, and R65 for coal. Durable rule: lessons-log, "The
+# export share scales with extraction".
 @WA_AI_COOP_ROOT_SURPLUS_BAR = 0
-
-# Fix 100 (2026-08-17): ROOT-side ceiling on the cooperative coal leg.
-# WHAT IT PROTECTS: the 5-civilian-factory prospecting slots of a coal PRODUCER.
-# Without it this leg is permanently true for any faction leader. An ally reaches
-# WA_AI_needs_coal = 3 on EITHER resource@coal < -40 OR resource_imported@coal > 40
-# (WA_AI_check_resource_needs, WA_AI_misc_effects.txt), and the import arm is the
-# HEALTHY state of an importer, not a shortage. Measured on campaign 7c7803a8 at
-# 1943.6: ITA imported 1600 / effective -30, HUN 200 / +11, ROM 400 / +24,
-# BUL 267 / +133, FIN 100 / +2 - 11 of 12 sampled cells held by the import arm alone,
-# while GER ran coal_prospecting 70 times (11 states, 5 concurrent) on an effective
-# balance that climbed 8167 -> 19248 and never came near any own-need threshold.
-# THE ENGINE FACT IT ASSUMES: the trade AI imports only to bring a NEGATIVE balance
-# back to ~0 and never builds a reserve, so a large positive resource@coal is a real
-# retained surplus and extraction cannot be the binding constraint. A producer that
-# already fails to ship what it offers (GER to_export 6928-7419 against exported
-# 100-3167) is delivery-limited, not mine-limited.
-# CAVEAT ADDED 2026-08-17, same day: the sentence above holds ONLY because the ratio was
-# actually measured for coal - GER offered 5502-6928 and shipped 3067 falling to 100, i.e.
-# 56 % down to 1.4 %. It is NOT a general inference from a positive balance. The offered
-# export share is min_export x EXTRACTION, so prospecting raises what a country offers as
-# well as what it retains. Read the "WHAT A POSITIVE BALANCE DOES *NOT* PROVE" block in the
-# Fix 101 header above before reusing this reasoning anywhere.
-# HOW TO TELL THE FACT IS GONE: exported / to_export climbing toward 100 % for a producer
-# above this ceiling - then its offered share IS being bought out and extraction becomes the
-# binding constraint. That ratio, not the ally's `imported` line, is the falsifier.
-# MUST STAY ABOVE the 100 of WA_AI_should_prospect_resource_coal above. At or below it
-# this leg becomes a strict subset of the reactive leg and the cooperative layer
-# collapses to nothing. Read by this file only, so a file-scoped @ is legal here.
-# CROSS-REFERENCE (Fix 101): the other eight cooperative legs use
-# @WA_AI_COOP_ROOT_SURPLUS_BAR = 0 above, which is a SIGN BOUNDARY, not a ceiling. The
-# difference is not drift: coal alone carries a proactive reactive bar (< 100) that a
-# zero boundary would swallow. Do not harmonise the two values.
 @WA_AI_COAL_COOP_CEILING = 500
 
-# ALSO CONSIDERED AND REJECTED: additionally requiring the ally itself to be in
-# deficit (resource@coal < -40 inside the loop). The wa-lessons-reviewer showed this
-# would DELETE the leg rather than narrow it - importing is the coping act, it pushes
-# the ally's balance back toward 0, so a genuinely dependent ally never shows a deficit
-# while trade works (ITA: -30 on 1600 imported). Same unreachable-gate shape as the
-# reverted resource@bauxite > 32 gate.
-# COMPETING PROPOSAL, considered and not taken (AGENTS.md (g)): fix the WRITER's import
-# arm instead. Objection to this fix: it leaves the conflation live for the reactive
-# trigger and the eight siblings above. Mine covers this case because the import arm is
-# CORRECT for the importer's OWN decisions - ITA importing 2000 coal should mine and
-# refine, and the construction/scoring readers of WA_AI_needs_coal rely on that - and is
-# wrong only when a THIRD party reads it as faction-wide scarcity. The defect is in that
-# reading, so the fix belongs at this consumer; moving the writer would change every
-# reader for every country on the evidence of one.
-
-# Check if any faction ally has critical shortage of resource
-# Scope: country. All three call sites are ai_will_do blocks in
-# common/decisions/_resource_prospecting.txt (coal_prospecting,
-# develop_gulf_province_coal_mines, develop_Ukrainian_coal_mines), where the evaluated
-# scope is the country - so the bare check_variable below reads ROOT, exactly as
-# WA_AI_should_prospect_resource_coal does. Keep it OUTSIDE any_other_country.
+# Scope: country. Every call site is an ai_will_do block in
+# common/decisions/_resource_prospecting.txt, so the bare check_variable reads ROOT. Keep it
+# OUTSIDE any_other_country.
 WA_AI_allies_need_coal = {
 	check_variable = { resource@coal < @WA_AI_COAL_COOP_CEILING }
 	any_other_country = {
