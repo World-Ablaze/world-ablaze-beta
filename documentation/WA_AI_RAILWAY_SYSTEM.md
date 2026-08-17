@@ -62,8 +62,10 @@ on top) and `constant:wa_ai_pc.prio.rail_prewar` (500, was 5000) in `wa_ai_pc.tx
 ```
 wa_ai_railway.interval.peace_weeks = 12      # runs every 12 weeks during peace
 wa_ai_railway.interval.war_weeks   = 8       # every 8 weeks during war
-wa_ai_railway.eligibility.min_civs = 50      # base civ minimum inside the run (war = war_civs_factor x this)
-wa_ai_railway.eligibility.war_civs_factor = 0.6  # Fix 95: one declaration for the main pass and the corridor pass
+wa_ai_railway.eligibility.min_civs = 50      # base civ minimum inside the run, peacetime side
+wa_ai_railway.eligibility.min_civs_war = 30  # Fix 104: absolute wartime floor, was min_civs x war_civs_factor (0.6)
+                                             # computed at each site. A scripted TRIGGER cannot multiply, and
+                                             # WA_AI_PC_country_can_fund_own_logistics must read this same floor.
 wa_ai_railway.corridor.interval_weeks = 4    # Fix 95: theatre-corridor pass cadence (own counter)
 wa_ai_railway.corridor.rail_level = 2        # target level on every corridor hop
 wa_ai_railway.corridor.queue_max = 8         # corridor projects in flight per builder per building type (tag 27, scoped)
@@ -116,8 +118,14 @@ They declare no constants of their own any more; they read the script constants 
 The railway system runs inside `on_weekly` (`WA_AI_misc_on_actions.txt`). Since **Fix 75** the filter
 block is the scripted trigger **`WA_AI_PC_country_can_build_own_logistics`**
 (`common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt`) rather than an inline `limit` — terms and
-thresholds unchanged, but it is now a single definition shared with Fix 74's ally leg, which needs
-exactly the same judgement. Before `WA_AI_PC_railway` is called:
+thresholds unchanged. **Fix 104 split it from the ally leg.** That trigger is an *authority* test: at
+war it asks only for `> 5` controlled states and a surrender bar, with no civ-factory term, because the
+run applies its own industrial floor one level down. Fix 74's ally leg needed a different question —
+*can this country pay?* — and is now gated on `WA_AI_PC_country_cannot_fund_own_logistics`
+(authority **and** `num_of_civilian_factories > min_civs_war` at war / `> min_civs_peace` at peace).
+The two were one trigger from Fix 74 to Fix 103, which is why a belligerent under the wartime floor
+read *capable* and locked every ally out of ground it could not develop itself. Before
+`WA_AI_PC_railway` is called:
 
 | Condition | Peace | War |
 |-----------|-------|-----|
@@ -279,13 +287,18 @@ Only the **selectors** were ROOT-or-subject gated, so a corridor that ended up o
 no builder at all. `_project_build_for_ally = 1` has been set in `railway_core.txt` since the
 original design and read nowhere — Fix 74 is that intent, implemented.
 
-Three triggers in `common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt` carry the policy:
+Four triggers in `common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt` carry the policy:
 
 | Trigger | Scope | Answers |
 |---|---|---|
-| `WA_AI_PC_country_cannot_build_own_logistics` | country | Is this country locked out of the railway system? (capitulated, or below the civ/state eligibility thresholds) |
-| `WA_AI_PC_can_build_logistics_here` | state, ROOT = builder | May ROOT queue logistics on this state? (ROOT-controlled, subject-controlled, or dependent-ally-controlled) |
-| `WA_AI_PC_is_logistics_build_partner` | country, ROOT = builder | Country-scoped twin, for selectors that iterate `every_country → every_controlled_state` |
+| `WA_AI_PC_country_can_build_own_logistics` | country | **AUTHORITY.** May this country run the railway system at all? At war: `> 5` controlled states and the surrender bar — **no civ-factory term**, because the run applies its own industrial floor one level down. This is the `on_weekly` entry gate and nothing else. |
+| `WA_AI_PC_country_can_fund_own_logistics` / `_cannot_fund_own_logistics` | country | **FUNDING (Fix 104).** The authority test **and** the floor the run actually applies: `num_of_civilian_factories > min_civs_war` at war, `> min_civs_peace` at peace. Fails on the authority terms too, so a surrender-pinned or tiny ally also reads "cannot fund" — the name is the dominant term, not the only one. |
+| `WA_AI_PC_can_build_logistics_here` | state, ROOT = builder | May ROOT queue logistics on this state? (ROOT-controlled, subject-controlled, or controlled by an ally that **cannot fund**) |
+| `WA_AI_PC_is_logistics_build_partner` | country, ROOT = builder | Country-scoped twin, for selectors that iterate `every_country → every_controlled_state`. Also what Fix 103's `WA_AI_PC_corridor_node_is_my_charge` reads |
+
+`WA_AI_PC_country_cannot_build_own_logistics` — the authority complement, and the ally leg's gate from
+Fix 74 to Fix 103 — was **deleted by Fix 104** once all three readers moved to the funding complement.
+The "capitulated" half of its old description had already been removed by Fix 75.
 
 **The ally leg is deliberately not "any faction member."** It fires only where the controller cannot
 run the railway system for itself. That is exactly the population the gap was about — a capitulated

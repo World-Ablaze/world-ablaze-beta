@@ -1016,6 +1016,26 @@ WA_AI_PC_process_port_upgrades = {
 					# Fix 74: was is_controlled_by = ROOT. naval_base is allied_build = yes and
 					# WA_AI_PC_start_project already accepts allied ground, so the receiving port
 					# of an ally-soil corridor is upgradable - it just had no selector.
+					#
+					# Fix 104 enlarges the population this reaches (any faction ally under the run's
+					# wartime civ floor, not only one that fails the authority test). This site and
+					# the frontier port below set _project_queue_max = 0, i.e. no type budget, so the
+					# widening's exposure is worth stating rather than calling bounded:
+					#   t0, first execution after the widening - the sites are fed by the route pass,
+					#     which is capped at routes.max_total (8) pathfinds per run, so at most 8
+					#     upgrade sites plus the single frontier port are examined. Only the subset
+					#     whose coastal state is newly visible is new.
+					#   t1, +8 weeks (interval.war_weeks, the next execution) - whatever was queued at
+					#     t0 is still queued (a naval base is months of build), and
+					#     WA_AI_PC_start_project's province-duplicate guard refuses the same building
+					#     type on the same province, so the second pass CANNOT re-queue it. No
+					#     accumulation; it adds only genuinely new coastal states.
+					#   t2, +6 months - the population is geographic and shrinking: this site stops at
+					#     naval_base > 8 and the frontier site only fires where there is no port at
+					#     all, so each state leaves the set permanently once served.
+					# The unbounded quantity is therefore the SET of eligible states, which geography
+					# caps, not a per-pass rate. What is still unproven is queue-slot competition
+					# against ROOT's own projects - WA_TLM_r104_ally_fund_n vs wa_tlm_pc_stale_n.
 					WA_AI_PC_can_build_logistics_here = yes
 					is_coastal = yes
 					# Only upgrade if below max useful level (L9 already exceeds L5 railway capacity)
@@ -1094,6 +1114,8 @@ WA_AI_PC_create_frontier_port = { # _frontier_province_id >>> frontier_port_crea
 				limit = {
 					# Fix 74: was is_controlled_by = ROOT - a partial route that dead-ends on an
 					# ally's coast is exactly the beachhead case a frontier port exists for.
+					# Fix 104 widened who counts as a dependent ally here; the t0/t1/t2 bound for
+					# this site and the port-upgrade one above is written at the upgrade site.
 					WA_AI_PC_can_build_logistics_here = yes
 					is_coastal = yes
 				}

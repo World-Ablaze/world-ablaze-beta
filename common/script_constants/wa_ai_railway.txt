@@ -32,9 +32,19 @@ wa_ai_railway = {
 	# Which countries run the railway system - WA_AI_PC_country_can_run_railway_system (triggers file, on_weekly)
 	# and the civ floor inside WA_AI_PC_railway (railway_core). Fix 43 escape hatch = recovery_min_states.
 	eligibility = {
-		min_civs            = 50	# base civ minimum inside the run (war threshold = war_civs_factor x this)
+		min_civs            = 50	# base civ minimum inside the run, peacetime side of the run's own floor
 		                      # was @WA_AI_PC_railway_MIN_CIVS
-		war_civs_factor     = 0.6	# Fix 95: the wartime multiplier on min_civs, read by the main pass AND the corridor pass (was a 0.6 literal)
+		min_civs_war        = 30	# wartime side of the same floor. Fix 104: was min_civs x war_civs_factor
+		                      # (0.6) computed at each call site. It is an absolute now because a scripted
+		                      # TRIGGER cannot multiply, and WA_AI_PC_country_can_fund_own_logistics must
+		                      # read the SAME floor the run applies - a hand-synced second copy is exactly
+		                      # what script constants exist to prevent.
+		                      # The 0.6 ratio is NOT a rule any more and nothing enforces one: the registry
+		                      # only checks equality groups, so a ratio contract here would be prose
+		                      # pretending to be a mechanism. The one invariant a human must hold is
+		                      # min_civs_war <= min_civs - a wartime floor above the peacetime floor would
+		                      # mean a country qualifies in peace and stops qualifying when the war it was
+		                      # preparing for starts.
 		min_civs_peace      = 75	# higher threshold during peace
 		                      # was @WA_AI_PC_railway_MIN_CIVS_PEACE
 		min_states          = 5	# minimum controlled states to run

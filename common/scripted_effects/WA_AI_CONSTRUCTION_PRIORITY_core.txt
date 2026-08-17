@@ -1626,6 +1626,51 @@ WA_AI_PC_start_project = {
 				# Add to queue
 				add_to_array = { WA_AI_PC_queue = _project_id }
 				add_to_variable = { WA_AI_PC_active_projects = 1 }
+
+				# tlm: r104_ally_fund_n / _first_t / _last_t - counter on the VERIFIED effect of
+				# Fix 104: one per LOGISTICS project (building type 13 rail / 14 naval_base /
+				# 17 supply_node - the only types Fix 104's selectors can queue) that entered the
+				# queue on ground held by a faction ally which is neither us nor our subject.
+				# Type-scoped deliberately: air bases, refineries and the rest reach allied ground
+				# through their own rules, and counting them would make the r103_corridor_orphan
+				# comparison below unattributable. It still is not a pure Fix-104 count - the
+				# pre-Fix-104 ally leg and Fix 103's corridor segments write it too - so read it as
+				# "logistics queued on an ally's soil", with the r103 gauge for the attribution.
+				# Before Fix 104 the ally leg was gated on
+				# WA_AI_PC_country_cannot_build_own_logistics, an AUTHORITY test with no civ-factory
+				# term at war, so an ally under the run's own wartime floor read capable and no
+				# partner was allowed onto its soil - FRA on campaign 7c7803a8, 46 controlled states
+				# and 10-19 civ factories, zero funded projects for 15 quarters, ENG and USA locked
+				# out of French-held Algeria the whole time.
+				# Placed HERE and not in the selectors deliberately: the selectors propose far more
+				# than the admission gate and the type budget accept, and 7c7803a8 is precisely the
+				# campaign where "requested" and "queued" diverged for 28 months (see the sibling
+				# r103_corridor_blocked_n note). Read against WA_TLM_r103_corridor_orphan, which
+				# counts hops legal for us and funded by nobody: orphan should fall as this rises.
+				# ROOT is the builder in this scope; WA_AI_PC_target_state^_project_id was set above.
+				# consumer: checklist R69
+				if = {
+					limit = {
+						OR = {
+							check_variable = { _project_building_type = 13 }
+							check_variable = { _project_building_type = 14 }
+							check_variable = { _project_building_type = 17 }
+						}
+						check_variable = { WA_AI_PC_target_state^_project_id > 0 }
+						var:WA_AI_PC_target_state^_project_id = {
+							CONTROLLER = {
+								NOT = { tag = ROOT }
+								NOT = { is_subject_of = ROOT }
+								is_in_faction_with = ROOT
+							}
+						}
+					}
+					add_to_variable = { WA_TLM_r104_ally_fund_n = 1 }
+					if = { limit = { check_variable = { WA_TLM_r104_ally_fund_first_t = 0 } }
+						set_variable = { WA_TLM_r104_ally_fund_first_t = global.WA_TLM_clock }
+					}
+					set_variable = { WA_TLM_r104_ally_fund_last_t = global.WA_TLM_clock }
+				}
 				# Keep the non-railway gate counter live between weekly resyncs (strategies run
 				# from a 2-day background event, so waiting for assign_factories would let them
 				# over-queue within a week)

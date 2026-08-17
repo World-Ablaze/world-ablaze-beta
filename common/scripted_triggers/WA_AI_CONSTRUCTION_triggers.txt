@@ -1293,30 +1293,89 @@ WA_AI_PC_country_can_build_own_logistics = {
 	}
 }
 
-# THIS = country. Negation, for Fix 74's ally leg: an ally ROOT may build logistics FOR is one that
-# cannot build them itself. Defined as the strict complement so the two can never disagree.
-WA_AI_PC_country_cannot_build_own_logistics = {
-	NOT = { WA_AI_PC_country_can_build_own_logistics = yes }
+# Removed by Fix 104: WA_AI_PC_country_cannot_build_own_logistics, the strict complement of the
+# authority test above. It existed for exactly one purpose - Fix 74's ally leg - and all three of its
+# readers (WA_AI_PC_can_build_logistics_here, WA_AI_PC_is_logistics_build_partner, the land-war ally
+# loop in railway_strategies.txt) now call the FUNDING complement below instead. Deleted rather than
+# left in place: a trigger with a name that still reads like the ally leg's gate and no caller is how
+# the next author re-introduces the defect. The authority test itself is untouched and is still the
+# on_weekly entry gate.
+
+# THIS = country. Fix 104 (campaign 7c7803a8). AUTHORITY vs FUNDING - the second half of the split
+# Fix 103 started for the corridor.
+#
+# WA_AI_PC_country_can_build_own_logistics is a SIZE test: at war it asks only for >5 controlled
+# states and a surrender bar, with NO civ-factory term at all. The railway run it authorises applies
+# its own floor one level down (railway_core: min_civs, min_civs_war while at war). Everything in the
+# band "at war, >5 states, under the wartime floor" therefore reads CAPABLE, queues routes it can
+# never fund, and - because Fix 74's ally leg was the strict complement of the authority test - locked
+# every faction partner out of its ground at the same time.
+#
+# Measured on 7c7803a8: FRA held 46 controlled states and 10-19 civ factories from 1940 to 1944, its
+# PC available-factory share read 0 % for 15 consecutive quarters, and ENG and USA - 198 and 455 civs,
+# both fighting in the same theatre - were forbidden from building a metre of rail on French-held
+# Algeria. Fix 103's header records the same defect for ITL (8 states, ~1 civ) and left the
+# WA_TLM_r103_corridor_orphan gauge in place to make it visible; this is the term that closes it.
+#
+# Reads num_of_civilian_factories, the RAW count, deliberately: num_of_available_civilian_factories
+# collapses to ~0 as soon as the vanilla construction queue saturates, which would classify healthy
+# majors as unfundable (lessons log, the available-factories gotcha). The peacetime term matches the
+# authority test's own bar so the two agree at peace.
+#
+# NAME CAVEAT: this is authority AND funding, not funding alone. It also fails on the authority terms -
+# the surrender bar and the > 5 controlled states - so a 200-civ ally pinned above max_surrender reads
+# "cannot fund". That is the pre-Fix-104 behaviour preserved, not a new judgement; the funding term is
+# the one the name is built on because it is the one that was missing.
+WA_AI_PC_country_can_fund_own_logistics = {
+	WA_AI_PC_country_can_build_own_logistics = yes
+	OR = {
+		AND = {
+			has_war = yes
+			num_of_civilian_factories > constant:wa_ai_railway.eligibility.min_civs_war
+		}
+		AND = {
+			has_war = no
+			num_of_civilian_factories > constant:wa_ai_railway.eligibility.min_civs_peace
+		}
+	}
+}
+
+# THIS = country. Fix 104. THE ALLY LEG'S GATE: an ally ROOT may build logistics FOR is one that
+# cannot PAY for them, not merely one that is too small to be allowed to plan them. Strict complement
+# of the funding test, same reason as the pair above - the two can never disagree.
+#
+# Fix 74's recorded purpose - "keeps two healthy allies out of each other's rail networks" - survives
+# literally: a partner with more than the wartime floor of civ factories is still excluded, so USA
+# (455) and ENG (198) never queue into each other. What changes is that a belligerent BELOW that floor
+# is now visible to its allies as what it is.
+WA_AI_PC_country_cannot_fund_own_logistics = {
+	NOT = { WA_AI_PC_country_can_fund_own_logistics = yes }
 }
 
 # THIS = state, ROOT = builder country. True when ROOT may queue logistics construction here.
 # Superset of the two pre-Fix-74 tests: ROOT-controlled (the old ROOT loop) and subject-controlled
-# (Fix 27's puppet loop), plus the new ally leg.
+# (Fix 27's puppet loop), plus the ally leg. Fix 104: the ally leg now asks whether the controller can
+# PAY, not whether it is big enough to be allowed to plan - see the trigger pair above.
 WA_AI_PC_can_build_logistics_here = {
 	OR = {
 		is_controlled_by = ROOT
 		CONTROLLER = { is_subject_of = ROOT }
 		AND = {
 			CONTROLLER = { is_in_faction_with = ROOT }
-			CONTROLLER = { WA_AI_PC_country_cannot_build_own_logistics = yes }
+			CONTROLLER = { WA_AI_PC_country_cannot_fund_own_logistics = yes }
 		}
 	}
 }
 
 # THIS = country, ROOT = builder country. Countries whose controlled states ROOT may treat as its
-# own when selecting logistics targets: itself, its subjects, and faction allies that cannot build
-# for themselves. Country-scoped twin of WA_AI_PC_can_build_logistics_here, for the selectors that
-# iterate `every_country = { limit = { ... } every_controlled_state = { ... } }` rather than states.
+# own when selecting logistics targets: itself, its subjects, and faction allies that cannot FUND
+# their own logistics (Fix 104; was "cannot build"). Country-scoped twin of
+# WA_AI_PC_can_build_logistics_here, for the selectors that iterate
+# `every_country = { limit = { ... } every_controlled_state = { ... } }` rather than states.
+#
+# This is also what WA_AI_PC_corridor_node_is_my_charge reads, so Fix 103's recorded residual - a hop
+# whose ends are all held by "capable but unfundable" allies having permission from someone and
+# payment from nobody - closes here without editing that trigger.
 WA_AI_PC_is_logistics_build_partner = {
 	exists = yes
 	OR = {
@@ -1324,7 +1383,7 @@ WA_AI_PC_is_logistics_build_partner = {
 		is_subject_of = ROOT
 		AND = {
 			is_in_faction_with = ROOT
-			WA_AI_PC_country_cannot_build_own_logistics = yes
+			WA_AI_PC_country_cannot_fund_own_logistics = yes
 		}
 	}
 }

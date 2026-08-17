@@ -95,6 +95,25 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 			### up on an ally's soil had no builder at all. Observed on FRA-held Tunisia and
 			### Free-French Normandy. Restricted to allies that cannot build for themselves so
 			### two healthy majors do not queue into each other's rail networks.
+			###
+			### Fix 104: "cannot build" is now "cannot FUND" - the authority test has no civ-factory
+			### term at war, so a belligerent under the run's own wartime floor (FRA, 10-19 civs and
+			### 46 states on 7c7803a8) read capable and locked its allies out of ground it could not
+			### develop itself. The healthy-majors guarantee is unchanged: anyone above the floor is
+			### still excluded.
+			###
+			### What the widening is and is NOT bounded by, stated apart because the two are different
+			### resources:
+			###   BOUNDED - the per-RUN route list. routes.max_per_enemy (4) is consumed at population
+			###   time inside WA_AI_PC_railway_land_frontline_candidate, and this loop runs THIRD, so
+			###   it only ever sees budget the ROOT and subject loops left; routes.max_total (8) caps
+			###   the pathfinds per execution; the threat re-sort reorders without adding.
+			###   NOT BOUNDED, and deliberately not claimed to be - the QUEUE. routes.queue_full (12)
+			###   is a stock held for months while an 8-week execution re-scores routes, so nothing
+			###   here proves an ally's segments cannot crowd out ROOT's own. On 7c7803a8 ENG already
+			###   carried stale_n 44 and 24 aging-revalidation cancels BEFORE this change. That is
+			###   what WA_TLM_r104_ally_fund_n measures against wa_tlm_pc_stale_n; until a campaign
+			###   reads them, queue-slot competition is unproven, not safe.
 			ROOT = {
 				every_country = {
 					limit = {
@@ -102,7 +121,7 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 						NOT = { tag = ROOT }
 						is_in_faction_with = ROOT
 						NOT = { is_subject_of = ROOT }
-						WA_AI_PC_country_cannot_build_own_logistics = yes
+						WA_AI_PC_country_cannot_fund_own_logistics = yes
 					}
 					every_controlled_state = {
 						limit = { WA_AI_PC_railway_land_frontline_candidate = yes }

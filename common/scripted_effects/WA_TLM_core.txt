@@ -202,6 +202,22 @@
 # COUNT and LENGTH; mean length = lapse_wk / retire_n, which is the number a retirement grace window would
 # have to be sized against and which the entry count alone cannot supply. Additive; a save at
 # wa_tlm_version < 24 lacks the family - score NOT CHECKED, never FAILED.
+# v26 (2026-08-17, Fix 104 / R69): adds WA_TLM_r104_ally_fund_n / _first_t / _last_t - the OTHER half
+# of the split v25 describes. Fix 104 gave the ally leg its own FUNDING test
+# (WA_AI_PC_country_cannot_fund_own_logistics), so the residual r103_corridor_orphan was built to
+# expose - "capable but unfundable" allies whose ground nobody would develop - now has a payer.
+# ally_fund_n is a COUNTER on the VERIFIED effect, written in WA_AI_PC_start_project at the queue
+# append itself (not where the trigger passes): one per project whose target state is controlled by a
+# faction ally that is neither ROOT nor a subject of ROOT, i.e. one project that exists only because
+# of Fix 104. Deliberately NOT placed in the selectors - they propose far more than the admission gate
+# and the type budget accept, and campaign 7c7803a8 is the case where "requested" and "queued" diverge
+# for 28 months. Read it against r103_corridor_orphan: orphan should fall as ally_fund_n rises.
+# Additive; a save at wa_tlm_version < 26 lacks the family - score NOT CHECKED, never FAILED.
+# LANDING NOTE - delete once both halves are in. Fix 103 (v25) and Fix 104 (v26) were built in
+# parallel and commit SEPARATELY, so the @WA_TLM_VERSION bump travels with whichever lands last: a
+# build can carry the r104_* variables while still reporting an older version. Until both are in,
+# score on the VARIABLES' PRESENCE, not on the version number, and expect r103_corridor_orphan - the
+# paired detector this family is meant to be read against - to be absent.
 @WA_TLM_VERSION = 24
 
 ############################################################################################################
@@ -418,6 +434,12 @@ WA_TLM_init_country = {
 	if = { limit = { NOT = { has_variable = WA_TLM_r95_corridor_port_n } } set_variable = { WA_TLM_r95_corridor_port_n = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r95_corridor_first_t } } set_variable = { WA_TLM_r95_corridor_first_t = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r95_corridor_last_t } } set_variable = { WA_TLM_r95_corridor_last_t = 0 } }
+
+	# r104 ally-funded logistics (Fix 104, consumer: checklist R69) - counter written at the queue
+	# append in WA_AI_PC_start_project, not by a sampler
+	if = { limit = { NOT = { has_variable = WA_TLM_r104_ally_fund_n } } set_variable = { WA_TLM_r104_ally_fund_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r104_ally_fund_first_t } } set_variable = { WA_TLM_r104_ally_fund_first_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r104_ally_fund_last_t } } set_variable = { WA_TLM_r104_ally_fund_last_t = 0 } }
 
 	# r96 Italian theatre (Fix 96, consumer: checklist R61) - monthly sampler WA_TLM_sample_italy_guard
 	if = { limit = { NOT = { has_variable = WA_TLM_r96_italy_states_manned } } set_variable = { WA_TLM_r96_italy_states_manned = 0 } }

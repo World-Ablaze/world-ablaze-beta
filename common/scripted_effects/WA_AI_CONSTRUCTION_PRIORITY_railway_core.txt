@@ -64,7 +64,10 @@ WA_AI_PC_railway = {
 		set_temp_variable = { _min_civs_required = constant:wa_ai_railway.eligibility.min_civs }
 		if = {
 			limit = { has_war = yes }
-			multiply_temp_variable = { _min_civs_required = constant:wa_ai_railway.eligibility.war_civs_factor }  # 30 civs during war
+			# Fix 104: the wartime floor is the declared constant min_civs_war, no longer a product
+			# computed here - WA_AI_PC_country_can_fund_own_logistics has to read the same floor from
+			# a trigger, and a scripted trigger cannot multiply.
+			set_temp_variable = { _min_civs_required = constant:wa_ai_railway.eligibility.min_civs_war }
 		}
 
 		# Fix 75: `has_capitulated = no` removed. It was the third of three gates on the same word
@@ -286,12 +289,13 @@ WA_AI_PC_railway_corridor_pass = {
 	else = {
 		set_variable = { WA_AI_PC_corridor_INTERVAL_counter = constant:wa_ai_railway.corridor.interval_weeks }
 
-		### Same industrial floor as the main pass (50 civs, x0.6 at war) - both sites read the same
-		### two constants, so the two passes cannot drift apart
+		### Same industrial floor as the main pass (50 civs, 30 at war) - both sites read the same
+		### two constants, so the two passes cannot drift apart. Fix 104 turned the wartime side into
+		### the declared min_civs_war; WA_AI_PC_country_can_fund_own_logistics reads that same key.
 		set_temp_variable = { _corridor_min_civs_ = constant:wa_ai_railway.eligibility.min_civs }
 		if = {
 			limit = { has_war = yes }
-			multiply_temp_variable = { _corridor_min_civs_ = constant:wa_ai_railway.eligibility.war_civs_factor }
+			set_temp_variable = { _corridor_min_civs_ = constant:wa_ai_railway.eligibility.min_civs_war }
 		}
 		if = {
 			limit = { num_of_civilian_factories > _corridor_min_civs_ }
