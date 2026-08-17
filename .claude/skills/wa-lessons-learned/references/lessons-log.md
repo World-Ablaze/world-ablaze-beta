@@ -937,6 +937,48 @@ process caveats (stale process, and the absence of a load-time hook).
   resources GER 1943.7_Jul.hoi4 … 1944.1_Jan.hoi4` on campaign `af003548`.
 
 
+### The export share scales with extraction — a positive `resource@X` does NOT mean prospecting is useless
+
+- **Date:** 2026-08-17
+- **The missing third branch.** The entry above splits countries into *importer* (parked at ~0)
+  and *producer* (real retained surplus). Both branches describe what `resource@X` means for the
+  country's **own** consumption. Neither says what it means for **an ally**, and that is where the
+  next mistake happened. The offered export share is `min_export × EXTRACTION` — `0.8` free trade,
+  `0.5` export focus, `0.25` limited exports, `0` closed economy (`common/ideas/_trade.txt`),
+  shifted by national ideas (GER `+0.1`, SOV `+0.25`, TUR `+0.2`, BUL `−0.15`, generic `−0.3`).
+  Because that share is a **fraction of output**, raising extraction raises *both* the retained
+  balance *and* the tonnage offered to the market. Measured: GER coal `to_export / produced` =
+  0.281 at 1943.6 and 0.298 at 1945.6 — a constant fraction, exactly as the formula predicts.
+- **The mistake it caused (2026-08-17, Fix 101).** The trigger header asserted "a positive
+  `resource@<r>` is a real retained surplus and EXTRACTION IS NOT THE BINDING CONSTRAINT" and
+  applied it to eight resources. That inference is invalid: if a producer's offered share is being
+  bought out, extraction *is* the binding constraint on what allies receive, positive balance or
+  not, and a gate that blocks prospecting on the balance sign is backwards. The owner caught it by
+  asking the question the header should have answered — "can't a country be in positive balance
+  with 100 % of its exports consumed?"
+- **Why the reviewer did not catch it either.** `wa-lessons-reviewer` checks against *recorded*
+  knowledge, and this branch was not recorded — the entry above stops at the own-consumption
+  reading. It did endorse the phrasing, but **conditioned on measuring `to_export` vs `exported`**;
+  the condition was dropped and the sentence kept. A conditional endorsement carried past its
+  condition is the same failure as a copied idiom carried past its data (entry below).
+- **What actually rescued the fix.** The measurement was then run and the behaviour survived: on
+  `7c7803a8` not one of the eight harm pairs had its offered share bought out — ITA bauxite 73–79 %
+  (highest), HUN bauxite 41 %, USA bauxite 16–25 %, SAF chromium 7–9 %, and **five pairs offered
+  `to_export = 0` outright** (SOV holds no trade-law idea at all, JAP is `closed_economy`, HUN's
+  1946 output is siphoned by `transfer_overlord_subject` before any export fraction is computed).
+  So the gate blocks work that would only have grown unsold piles. Correct outcome, invalid
+  reasoning — the two are not the same thing and the header now says which one it rests on.
+- **Rule:** before claiming extraction is not the binding constraint for a country, read
+  **`exported / to_export`** for that country and that resource (`savegame.py resources <TAG>
+  <save>` prints both). Near 100 % means extraction *is* binding. `to_export = 0` means the
+  country cannot supply an ally at all, whatever its balance — which is a sharper gate than the
+  balance sign, and is still unbuilt. Never infer either from `resource@X` alone, and never from
+  the ally's `imported` column, which moves for reasons unrelated to ROOT.
+- **Evidence:** user correction 2026-08-17 during Fix 101; `savegame.py resources` for USA / HUN /
+  SOV / JAP / SAF / ITA / GER at 1943.6 and 1946.4 on campaign `7c7803a8`;
+  `common/ideas/_trade.txt` `min_export` values.
+
+
 ### A correct idiom can become wrong when copied, if its correctness rests on the data
 
 - **Date:** 2026-08-11
