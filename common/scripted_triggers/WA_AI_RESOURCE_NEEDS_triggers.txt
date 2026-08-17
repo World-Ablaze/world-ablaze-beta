@@ -159,13 +159,36 @@ WA_AI_should_prospect_resource_bauxite = {
 # Fix 101 (2026-08-17): ROOT-side surplus bar on the other eight cooperative legs.
 # WHAT IT PROTECTS: the prospecting civilian-factory slots (2-16 per decision) of a
 # country that already holds a positive retained balance of the resource.
-# THE ENGINE FACT IT ASSUMES: the trade AI acts only on a NEGATIVE balance, importing
-# just enough to bring it back to ~0, and never stockpiles. So a positive resource@<r>
-# is a real retained surplus and EXTRACTION IS NOT THE BINDING CONSTRAINT - the same
-# reasoning as Fix 100, and deliberately NOT "the ally can buy from that surplus":
-# resource@<r> is measured after the trade law's export share has already been taken,
-# so the retained balance and the exportable share are two different pools (GER coal
-# to_export 6928-7419 against exported 100-3167).
+# WHAT A POSITIVE BALANCE DOES *NOT* PROVE - read this before touching the gate.
+# The offered export share is min_export x EXTRACTION: 0.8 free trade / 0.5 export focus
+# / 0.25 limited exports / 0 closed economy (common/ideas/_trade.txt), shifted by national
+# ideas (GER +0.1, SOV +0.25, TUR +0.2, BUL -0.15, generic -0.3). Because that share
+# SCALES WITH EXTRACTION, prospecting raises BOTH ROOT's retained balance AND the tonnage
+# ROOT offers to the market. Verified on GER coal: to_export / produced = 0.281 at 1943.6
+# and 0.298 at 1945.6 - a constant fraction of output. So "ROOT holds a positive balance"
+# does NOT by itself mean extraction is useless to an ally. If a producer's offered share
+# were being bought out, extraction WOULD be the binding constraint on what allies receive
+# and this gate would be backwards. An earlier draft of this header asserted the
+# unconditional form; it was wrong and is recorded here so it is not reintroduced.
+# THE FACT THIS GATE ACTUALLY RESTS ON - measured, not inferred: on campaign 7c7803a8 not
+# one of the eight harm pairs had its offered share bought out. exported / to_export ran
+# ITA bauxite 73-79 % (the highest), HUN bauxite 41 %, USA bauxite 16-25 %, SAF chromium
+# 7-9 %, and FIVE pairs offered literally nothing (to_export = 0: SOV holds no trade-law
+# idea at all in this campaign, JAP is closed_economy, HUN's 1946 output is siphoned by
+# transfer_overlord_subject before any export fraction is computed). Against that, extra
+# extraction grows the unsold pile, not the ally's delivery. The binding limit sits on the
+# delivery side - convoys, routes, buyer wiring - for surplus producers, deficit producers
+# and closed economies alike.
+# HOW TO TELL THE FACT IS GONE - and this is the ONLY falsifier that bears on the gate:
+# exported / to_export climbing toward 100 % for a surplus-holding producer. At that point
+# its offered share IS being bought out, extraction becomes the binding constraint, and
+# this gate must be reconsidered. Measure it with `savegame.py resources <TAG> <save>`,
+# which prints to_export and exported side by side. Do NOT substitute the ally's
+# `imported` line: it can move for reasons that have nothing to do with ROOT.
+# A SHARPER INSTRUMENT EXISTS, deliberately not built here: five of the eight pairs offer
+# to_export = 0, so their extraction can NEVER reach an ally whatever their balance. A gate
+# reading the offered share (or the trade law) directly would catch those by construction
+# instead of by their balance sign. Left for a change that measures it first.
 # THE TWO BRANCHES: an importer sits ON this boundary, and that is fine - an importer is
 # already carried by the reactive leg's own import arm (resource_imported@<r> > 10..40),
 # so the flicker costs it nothing. A producer is the branch this gate is for.
@@ -214,8 +237,15 @@ WA_AI_should_prospect_resource_bauxite = {
 # retained surplus and extraction cannot be the binding constraint. A producer that
 # already fails to ship what it offers (GER to_export 6928-7419 against exported
 # 100-3167) is delivery-limited, not mine-limited.
-# HOW TO TELL THE FACT IS GONE: an allied coal import line that RISES when a country
-# above this ceiling prospects, or an engine build whose trade AI stockpiles a reserve.
+# CAVEAT ADDED 2026-08-17, same day: the sentence above holds ONLY because the ratio was
+# actually measured for coal - GER offered 5502-6928 and shipped 3067 falling to 100, i.e.
+# 56 % down to 1.4 %. It is NOT a general inference from a positive balance. The offered
+# export share is min_export x EXTRACTION, so prospecting raises what a country offers as
+# well as what it retains. Read the "WHAT A POSITIVE BALANCE DOES *NOT* PROVE" block in the
+# Fix 101 header above before reusing this reasoning anywhere.
+# HOW TO TELL THE FACT IS GONE: exported / to_export climbing toward 100 % for a producer
+# above this ceiling - then its offered share IS being bought out and extraction becomes the
+# binding constraint. That ratio, not the ally's `imported` line, is the falsifier.
 # MUST STAY ABOVE the 100 of WA_AI_should_prospect_resource_coal above. At or below it
 # this leg becomes a strict subset of the reactive leg and the cooperative layer
 # collapses to nothing. Read by this file only, so a file-scoped @ is legal here.
