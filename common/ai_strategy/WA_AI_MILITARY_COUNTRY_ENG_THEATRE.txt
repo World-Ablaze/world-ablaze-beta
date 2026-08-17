@@ -425,95 +425,14 @@ WA_AI_MILITARY_ENG_protect_home_THEATRE = {
 
 
 
-WA_AI_MILITARY_ENG_protect_africa = {
-	allowed = {
-		original_tag = ENG
-	}
-	enable = {
-		#NOT = {
-		#	AND = {
-		#		date < 1943.1.1
-		#		OR = {
-		#			casualties_inflicted_by = {
-		#				opponent = GER
-		#				thousands > 500
-		#			}
-		#			casualties_inflicted_by = {
-		#				opponent = ITA
-		#				thousands > 500
-		#			}
-		#		}
-		#	}
-		#}
-		NOT = {
-			OR = {
-				AND = {
-					date > 1944.1.1
-					has_war_with = GER
-					OR = {
-						6 = { CONTROLLER = { is_in_faction_with = ROOT } }
-						29 = { CONTROLLER = { is_in_faction_with = ROOT } }
-						785 = { CONTROLLER = { is_in_faction_with = ROOT } }
-						15 = { CONTROLLER = { is_in_faction_with = ROOT } }
-						14 = { CONTROLLER = { is_in_faction_with = ROOT } }
-						30 = { CONTROLLER = { is_in_faction_with = ROOT } }
-						23 = { CONTROLLER = { is_in_faction_with = ROOT } }
-						19 = { CONTROLLER = { is_in_faction_with = ROOT } }
-						1016 = { CONTROLLER = { is_in_faction_with = ROOT } }
-					}
-				}
-				OR = {
-					any_country = {
-						is_in_faction_with = ENG
-						has_full_control_of_state = 115
-					}
-					any_country = {
-						is_in_faction_with = ENG
-						has_full_control_of_state = 1032
-					}
-				}
-			}
-		}
-	}
-
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = put_unit_buffers
-
-		order_id = 1
-
-		# north_africa
-		states = {
-			452
-			447
-			923
-		}
-
-		ratio = 0.25 # economy: was 1.2
-
-		area = north_africa
-
-		subtract_invasions_from_need = no
-	}
-
-	ai_strategy = {
-		type = put_unit_buffers
-
-		order_id = 1
-
-		# north_africa
-		states = {
-			454
-		}
-
-		ratio = 0.1
-
-		area = north_africa
-
-		subtract_invasions_from_need = no
-	}
-}
+# Fix 102 (2026-08-17): WA_AI_MILITARY_ENG_protect_africa DELETED - both its put_unit_buffers were
+# yielding (no subtract_fronts_from_need => default yes) over area = north_africa, i.e. over the one
+# ai_area that holds ENG's entire land war, so front demand consumed their need. Measured on campaign
+# 7c7803a8 (17 monthly saves 1936.2-1944.6): an order existed in ONE sample - instances 1817
+# {447,452,923} and 1822 {454}, created 1942.11.23/24, one division each, gone by 1943.4. Its states
+# are now carried by WA_AI_MILITARY_ENG_defense_of_el_alamein below, non-yielding and on its own
+# order_id. Same defect fixed in WA_AI_MILITARY_ITA_protect_libya_THEATRE and the two
+# WA_AI_MILITARY_ALLIES_commonwealth_* north_africa blocks.
 
 
 
@@ -759,36 +678,35 @@ WA_AI_MILITARY_ENG_all_in_THEATRE = {
 
 
 
+# purpose: the Egyptian line - Alexandria, Marsa Matruh, the Suez Canal and Palestine held as one
+#          garrison. Replaces WA_AI_MILITARY_ENG_protect_africa (deleted above) and the former
+#          single-state 0.5 hoard on 447.
+# pool:    subtract_fronts_from_need = no - the Nile line must hold while the Libyan front asks for
+#          everything. The default (yes) is exactly what starved the deleted block: front orders in
+#          the buffer's area subtract from its need, and north_africa is where ENG's land war lives.
+# area:    north_africa KEPT on purpose - `area` names the ai_areas whose orders may DRAW on the
+#          buffer, so the Egyptian front can still use these divisions when it attacks; only the
+#          NEED is protected, by subtract_fronts_from_need. Omitting `area` would seal the garrison
+#          (E4: right for a fortress point, wrong for a theatre reserve) - that is the second half of
+#          the old defect, 6-10 divisions frozen on Alexandria alone. No narrower alias is possible:
+#          common/ai_areas is at the boot-measured cap of 72 definitions on HOI4 1.19.2.
+# ratio:   0.25, the E4 normal-garrison bar. The former 0.5 carried a `# siege:` justification that
+#          its own always-on enable never matched (the Fix 100 shape); at 0.25 the ladder does not
+#          apply and the justification is retired rather than restated.
+# order_id 11 - private pool. order_id 1 is shared by eight entries in this file and mixing a
+#          non-yielding member into it is the E4b failure mode.
+# domain:  THEATRE
 WA_AI_MILITARY_ENG_defense_of_el_alamein = {
 	allowed = {
 		original_tag = ENG
 	}
 	enable = {
-		NOT = {
-			AND = {
-				date > 1944.1.1
-				has_war_with = GER
-				any_country = {
-					is_in_faction_with = ENG
-					has_full_control_of_state = 115
-				}
-				any_country = {
-					is_in_faction_with = ENG
-					has_full_control_of_state = 1032
-				}
-				OR = {
-					6 = { CONTROLLER = { is_in_faction_with = ROOT } }
-					29 = { CONTROLLER = { is_in_faction_with = ROOT } }
-					785 = { CONTROLLER = { is_in_faction_with = ROOT } }
-					15 = { CONTROLLER = { is_in_faction_with = ROOT } }
-					14 = { CONTROLLER = { is_in_faction_with = ROOT } }
-					30 = { CONTROLLER = { is_in_faction_with = ROOT } }
-					23 = { CONTROLLER = { is_in_faction_with = ROOT } }
-					19 = { CONTROLLER = { is_in_faction_with = ROOT } }
-					1016 = { CONTROLLER = { is_in_faction_with = ROOT } }
-				}
-			}
+		# war-gated (E4): no garrison hoard in peacetime, but arm before ENG itself is attacked
+		OR = {
+			has_war = yes
+			any_other_country = { is_major = yes has_war = yes }
 		}
+		# our side still holds the anchor
 		447 = {
 			CONTROLLER = {
 				OR = {
@@ -798,21 +716,31 @@ WA_AI_MILITARY_ENG_defense_of_el_alamein = {
 				}
 			}
 		}
+		# somebody hostile holds North African / East African ground - controller geography, no tag,
+		# no date, so it reads correctly in an ahistorical game
+		WA_AI_MILITARY_ENG_africa_hostile_presence = yes
 	}
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = put_unit_buffers
 
-		order_id = 1
+		order_id = 11
 
+		# north_africa - Alexandria / Marsa Matruh / Suez Canal / Palestine
 		states = {
 			447
+			452
+			923
+			454
 		}
 
-		ratio = 0.5 # siege: El Alamein fortress line (was 0.8)
+		ratio = 0.25
 
-		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
+		area = north_africa
+
+		subtract_fronts_from_need = no # pool: the Nile line must hold while the Libyan front asks for everything - the default (yes) is what starved the deleted protect_africa blocks (Fix 102; see header)
+		subtract_invasions_from_need = no
 	}
 }
 

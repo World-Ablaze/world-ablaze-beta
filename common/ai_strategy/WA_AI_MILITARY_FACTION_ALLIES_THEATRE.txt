@@ -40,6 +40,12 @@ WA_AI_MILITARY_ALLIES_ignore_raj_until_invasion_THEATRE = {
 
 
 # Phase 6 split from WA_AI_MILITARY_ALLIES_commonwealth_north_africa_support (THEATRE domain)
+# Fix 102 (2026-08-17): subtract_fronts_from_need was at its default (yes) over area = north_africa,
+#          so the North African front consumed the whole need and this buffer never produced an order.
+#          Measured on campaign 7c7803a8 at 1942.6: AST / SAF / NZL / CAN / RAJ carry six other
+#          scripted buffers between them and ZERO over 446/447/452/454/923. order_id 9101 is already
+#          private inside this file, so only the flag changes. Same defect as
+#          WA_AI_MILITARY_ENG_defense_of_el_alamein and WA_AI_MILITARY_ITA_protect_libya_THEATRE.
 WA_AI_MILITARY_ALLIES_commonwealth_north_africa_support_THEATRE = {
 
 	allowed = {
@@ -71,6 +77,7 @@ WA_AI_MILITARY_ALLIES_commonwealth_north_africa_support_THEATRE = {
 		}
 		ratio = 0.25 # economy: was 0.5
 		area = north_africa
+		subtract_fronts_from_need = no # pool: the dominion contribution to North Africa must survive the North African front, which is the only place it would ever be spent (Fix 102)
 		subtract_invasions_from_need = no
 	}
 }
@@ -245,6 +252,15 @@ WA_AI_MILITARY_ALLIES_commonwealth_stage_usa_east = {
 
 
 
+# Fix 102 (2026-08-17): had subtract_fronts_from_need = yes EXPLICIT over area = north_africa, which
+#          is the strongest form of the defect - it yielded to the one front it existed to support and
+#          produced no order for any dominion in campaign 7c7803a8. Now non-yielding on a private
+#          order_id (9103; 2 was shared semantics with no owner).
+# ratio:   lowered 0.25 -> 0.10 because this block OVERLAPS
+#          WA_AI_MILITARY_ALLIES_commonwealth_north_africa_support_THEATRE on 447/446/923. That block
+#          reaches SAF and RAJ at 0.25; this one reaches every dominion, so at 0.25 SAF and RAJ would
+#          have reserved half their army for Egypt the moment both went live. 0.10 makes it a top-up
+#          for the dominions the other block does not reach, not a second full garrison.
 WA_AI_MILITARY_ALLIES_commonwealth_protect_africa = {
 	allowed = {
 		WA_AI_CONFIG_MILITARY_is_commonwealth_dominion = yes
@@ -282,7 +298,7 @@ WA_AI_MILITARY_ALLIES_commonwealth_protect_africa = {
 	ai_strategy = {
 		type = put_unit_buffers
 
-		order_id = 2
+		order_id = 9103
 
 		# north_africa
 		states = {
@@ -291,12 +307,12 @@ WA_AI_MILITARY_ALLIES_commonwealth_protect_africa = {
 			923
 		}
 
-		ratio = 0.25 # economy: was 2
+		ratio = 0.10 # economy: was 2, then 0.25 (Fix 102: overlaps the SAF/RAJ block, see header)
 
 		area = north_africa
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = yes
+		subtract_fronts_from_need = no # pool: dominion top-up on the Egyptian anchor; yielding to the North African front is what made it produce nothing at all (Fix 102)
 	}
 }
 
