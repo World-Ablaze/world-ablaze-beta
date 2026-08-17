@@ -24,6 +24,12 @@ Commands:
   pc TAG FILE... [--match]      priority-construction queue: per-project table (building
                                 type, strategy tag and priority band by NAME) + a
                                 per-country summary with the civ-factory share
+  control SCOPE FILE...         who really holds the ground: province-level control with
+                                both omitted-field defaults applied, and the states whose
+                                province split contradicts their state controller
+  relations FILE... [--tag]     factions (top-level blocks, leader = members[0]), subjects
+                                (puppet= sits in the OVERLORD's block) and wars, read from
+                                BOTH sides - war_relation is written on one side only
 """
 import argparse
 import io
@@ -43,6 +49,10 @@ META_KEYS = (
     "player", "ideology", "date", "difficulty", "version", "save_version",
     "session", "game_unique_seed", "game_unique_id", "start_date",
 )
+
+# The mod root, four levels up from .claude/skills/wa-savegame-analysis/scripts/.
+REPO = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                    "..", "..", "..", ".."))
 
 
 def resolve(path):
@@ -1310,6 +1320,461 @@ def cmd_pc(args):
                   "use --limit 0 or --match")
 
 
+_MAP_STATE_PROVINCES = os.path.join(
+    REPO, "common", "scripted_effects", "WA_AI_MAP_state_provinces.txt")
+
+_province_state = None
+
+
+def province_state_map():
+    """{province_id: state_id} from the generated WA map data, or {} if unreadable.
+
+    The save cannot answer this: a state block carries owner/controller/buildings but
+    never lists its provinces. Coverage is land provinces only (11 203 of ~14 000), and
+    impassable/wasteland states are absent entirely - callers must report a scope state
+    with no provinces rather than silently treating it as uncontested.
+    """
+    global _province_state
+    if _province_state is None:
+        _province_state = {}
+        try:
+            with io.open(_MAP_STATE_PROVINCES, encoding="utf-8", errors="replace") as fh:
+                for line in fh:
+                    m = re.search(r"WA_AI_MAP_province_state_id\^(\d+) = (\d+)", line)
+                    if m:
+                        _province_state[int(m.group(1))] = int(m.group(2))
+        except OSError:
+            pass
+    return _province_state
+
+
+def iter_province_blocks(fh):
+    """Yield (province_id, lines) for every entry of the top-level provinces={} block.
+
+    Depth-anchored rather than indentation-anchored: this file's sibling rail_way={}
+    block puts its province keys at column 0, so a tab-anchored key regex is not safe
+    over the top-level blocks. provinces={} precedes states={} in the save, so one pass
+    can read this and then hand the same handle to iter_state_blocks.
+    """
+    for line in fh:
+        if line.startswith("provinces={"):
+            break
+    else:
+        return
+    depth, pid, buf, pdepth = 1, None, None, 0
+    for line in fh:
+        if buf is None:
+            m = re.match(r"^\s*(\d+)=\{", line)
+            if m and depth == 1:
+                pid = int(m.group(1))
+                pdepth = line.count("{") - line.count("}")
+                if pdepth <= 0:
+                    yield pid, []
+                    continue
+                buf = []
+                continue
+            depth += line.count("{") - line.count("}")
+            if depth <= 0:
+                return
+            continue
+        pdepth += line.count("{") - line.count("}")
+        if pdepth <= 0:
+            yield pid, buf
+            buf = None
+            continue
+        buf.append(line)
+
+
+def province_body(lines):
+    """(controller_or_None, {building: summed level}) for one province block.
+    Public: rail.py reads province rail levels through this.
+
+    A province omits controller= when its controller is its state's controller, exactly
+    as a state omits it when the controller is the owner. The caller applies the two
+    defaults in order (province -> state controller -> state owner).
+    """
+    ctrl, blds = None, {}
+    bdepth, odepth, name, in_b = 0, 0, None, False
+    for line in lines:
+        s = line.strip()
+        opens = line.count("{") - line.count("}")
+        if not in_b:
+            if odepth == 0 and s.startswith("buildings={"):
+                in_b, bdepth = True, opens
+                continue
+            # Only depth-0 keys are the province's OWN fields. Province blocks do carry
+            # nested sub-blocks (strategic_province_location={}), and reading controller=
+            # at any depth is how the sibling faction parser came to report an
+            # intelligence agency's spymaster title as the faction name. First wins.
+            if odepth == 0 and ctrl is None:
+                m = re.match(r'^controller="(\w+)"', s)
+                if m:
+                    ctrl = m.group(1)
+            odepth += opens
+            continue
+        before = bdepth
+        bdepth += opens
+        if bdepth <= 0:
+            in_b = False
+            continue
+        if before == 1:
+            m = re.match(r"^([a-z_0-9]+)=\{", s)
+            name = m.group(1) if m else None
+        elif before >= 2 and name:
+            m = re.match(r"^level=(-?\d+)", s)
+            if m:
+                blds[name] = blds.get(name, 0) + int(m.group(1))
+    return ctrl, blds
+
+
+def _tally(counter, limit=8):
+    """'GER 271  FRA 41  ITA 12' - descending, ties by tag."""
+    items = sorted(counter.items(), key=lambda kv: (-kv[1], kv[0]))
+    head = "  ".join(f"{t} {n}" for t, n in items[:limit])
+    if len(items) > limit:
+        head += f"  (+{len(items) - limit} more)"
+    return head or "(none)"
+
+
+def cmd_control(args):
+    p2s = province_state_map()
+    if not p2s:
+        sys.exit(f"cannot read {_MAP_STATE_PROVINCES} - province->state join unavailable")
+    s2p = collections.defaultdict(list)
+    for prov, st in p2s.items():
+        s2p[st].append(prov)
+
+    scope = args.scope.strip()
+    owner_scope, want_ids = None, None
+    if ":" in scope:
+        kind, val = scope.split(":", 1)
+        if kind.lower() != "owner":
+            sys.exit("SCOPE is a comma-separated state-id list or 'owner:TAG'")
+        owner_scope = val.upper()
+    else:
+        want_ids = set(int(x) for x in re.findall(r"\d+", scope))
+        if not want_ids:
+            sys.exit("SCOPE is a comma-separated state-id list or 'owner:TAG'")
+
+    print("# Province control, with BOTH omitted-field defaults applied: a province "
+          "omits controller=")
+    print("#   when it matches its state's controller, and a state omits controller= "
+          "when it matches")
+    print("#   its owner. Reading either literally is how a contested theatre reports "
+          "the wrong holder.")
+    print("# The state-controller column is the engine's single-owner label for the "
+          "whole state; when")
+    print("#   the province split disagrees with it, the split is the ground truth.")
+
+    for meta, f in sorted_by_date([resolve(x) for x in args.files]):
+        date = meta.get("date", "?")
+        pctrl, pbld = {}, {}
+        states = {}
+        with open_save(f) as fh:
+            for pid, lines in iter_province_blocks(fh):
+                if not lines or pid not in p2s:
+                    continue
+                c, b = province_body(lines)
+                if c is not None:
+                    pctrl[pid] = c
+                if b and args.buildings:
+                    pbld[pid] = b
+            # provinces={} precedes states={}, so the same handle continues forward.
+            for sid, lines in iter_state_blocks(fh):
+                if not lines:
+                    states[sid] = (None, None)
+                    continue
+                # Reuse the proven state parser instead of a second, looser one - the
+                # buildings dict is discarded here, but there is only one place that can
+                # drift on how owner/controller are anchored.
+                _b, owner, ctrl = _state_buildings(lines)
+                states[sid] = (owner, ctrl)
+
+        if owner_scope:
+            sel = sorted(s for s, (o, _c) in states.items() if o == owner_scope)
+        else:
+            sel = sorted(want_ids)
+
+        st_count, pr_count = collections.Counter(), collections.Counter()
+        bld_by_ctrl = collections.defaultdict(collections.Counter)
+        rows, no_map, missing = [], [], []
+        for sid in sel:
+            if sid not in states:
+                missing.append(sid)
+                continue
+            owner, sctrl = states[sid]
+            st_count[sctrl or "?"] += 1
+            provs = s2p.get(sid, [])
+            if not provs:
+                no_map.append(sid)
+                continue
+            per = collections.Counter()
+            for prov in provs:
+                holder = pctrl.get(prov) or sctrl or owner or "?"
+                per[holder] += 1
+                pr_count[holder] += 1
+                for name, lvl in pbld.get(prov, {}).items():
+                    bld_by_ctrl[holder][name] += lvl
+            if len(per) > 1 or (sctrl and sctrl not in per):
+                rows.append((sid, owner, sctrl, per))
+
+        label = f"owner:{owner_scope}" if owner_scope else f"{len(sel)} state ids"
+        print(f"\n=== {date}  {os.path.basename(f)}  scope={label}  "
+              f"({len(sel)} states, {sum(pr_count.values())} provinces) ===")
+        print(f"  by state controller : {_tally(st_count)}")
+        print(f"  by province control : {_tally(pr_count)}")
+        if missing:
+            print(f"  not present in this save's states={{}}: "
+                  f"{', '.join(str(s) for s in missing)}")
+        if no_map:
+            print(f"  no provinces in the generated map data (impassable/wasteland "
+                  f"states are absent from it): {', '.join(str(s) for s in no_map[:20])}"
+                  f"{' ...' if len(no_map) > 20 else ''}")
+        if rows:
+            print(f"  states whose province split contradicts the state controller "
+                  f"({len(rows)}):")
+            print(f"    {'state':<7}{'owner':<7}{'st.ctrl':<9}provinces by controller")
+            # --limit 0 means unlimited, as in cmd_pc; do not silently print nothing.
+            shown = rows if not args.limit else rows[: args.limit]
+            for sid, owner, sctrl, per in shown:
+                print(f"    {sid:<7}{owner or '?':<7}{sctrl or '?':<9}{_tally(per)}")
+            if len(shown) < len(rows):
+                print(f"    ... {len(rows) - len(shown)} more (raise --limit, 0 = all)")
+        else:
+            print("  no state's province split contradicts its state controller")
+        if args.buildings:
+            names = sorted({n for c in bld_by_ctrl.values() for n in c})
+            print(f"  province-scoped buildings by province controller "
+                  f"(naval_base and rail_way live ONLY here, never in a state block):")
+            print(f"    {'controller':<12}" + "".join(f"{n:>19}" for n in names))
+            for holder in sorted(bld_by_ctrl, key=lambda h: -sum(bld_by_ctrl[h].values())):
+                print(f"    {holder:<12}"
+                      + "".join(f"{bld_by_ctrl[holder].get(n, 0):>19}" for n in names))
+        if args.provinces:
+            print(f"    {'province':<10}{'state':<7}{'holder':<8}explicit?")
+            for sid in sel:
+                if sid not in states:
+                    continue
+                owner, sctrl = states[sid]
+                for prov in sorted(s2p.get(sid, [])):
+                    holder = pctrl.get(prov) or sctrl or owner or "?"
+                    mark = "province" if prov in pctrl else "inherited"
+                    print(f"    {prov:<10}{sid:<7}{holder:<8}{mark}")
+
+
+_REL_KINDS = ("war_relation", "puppet", "lend_lease", "guarantee",
+              "non_aggression_pact", "military_access", "docking_rights")
+_REL_FIELDS = ("first", "second", "start_date", "date")
+
+
+def iter_relations(fh):
+    """Yield (owner, counterpart, kind, fields) for every relation sub-block in every
+    country's diplomacy/active_relations. One pass, depth-tracked.
+
+    Each country lists ~409 counterparts, almost all carrying nothing but cached_sum and
+    attitude; only counterparts with an actual relation sub-block are yielded.
+    """
+    for line in fh:
+        if line.startswith("countries={"):
+            break
+    else:
+        return
+    depth = 1
+    tag = None
+    diplo_d = ar_d = cp_d = kind_d = None
+    cp = kind = None
+    fields = {}
+    for line in fh:
+        s = line.strip()
+        opens = line.count("{") - line.count("}")
+        if kind is not None:
+            m = re.match(r'^(%s)="?([^"\s]*)"?' % "|".join(_REL_FIELDS), s)
+            if m:
+                fields.setdefault(m.group(1), m.group(2))
+        elif cp is not None:
+            m = re.match(r"^(%s)=\{" % "|".join(_REL_KINDS), s)
+            if m:
+                kind, kind_d, fields = m.group(1), depth, {}
+        elif ar_d is not None:
+            m = re.match(r'^"?([A-Z][A-Z0-9]{2})"?=\{', s)
+            if m:
+                cp, cp_d = m.group(1), depth
+        elif diplo_d is not None:
+            if s.startswith("active_relations={"):
+                ar_d = depth
+        elif tag is not None:
+            if s.startswith("diplomacy={"):
+                diplo_d = depth
+        elif depth == 1:
+            m = re.match(r"^\t([A-Z][A-Z0-9]{2})=\{", line)
+            if m:
+                tag = m.group(1)
+        depth += opens
+        # Close contexts innermost-first as the depth falls back past each opener.
+        if kind is not None and depth <= kind_d:
+            yield tag, cp, kind, fields
+            kind, fields = None, {}
+        if cp is not None and depth <= cp_d:
+            cp = None
+        if ar_d is not None and depth <= ar_d:
+            ar_d = None
+        if diplo_d is not None and depth <= diplo_d:
+            diplo_d = None
+        if tag is not None and depth <= 1:
+            tag = None
+        if depth <= 0:
+            return
+
+
+def _faction_block(body):
+    """(name, ideology, [members]) from one faction block's lines, depth-anchored.
+
+    Depth matters twice here. A faction block CONTAINS nested intelligence-agency
+    sub-blocks that carry their own name=, and a faction that was never renamed has no
+    depth-1 name= at all - so a whole-body name grep reads an agency's spymaster title
+    as the faction's name (the Comintern read as "HSpymaster!" until this was anchored).
+    Fall back to the icon, which every faction has.
+    """
+    name = ideo = icon = None
+    members = []
+    depth, in_members = 0, False
+    for line in body:
+        s = line.strip()
+        before = depth
+        depth += line.count("{") - line.count("}")
+        if in_members:
+            if before >= 1:
+                members.extend(re.findall(r'"([A-Z][A-Z0-9]{2})"', s))
+            if depth <= 0:
+                in_members = False
+            continue
+        if before != 0:
+            continue
+        if s.startswith("members={"):
+            members.extend(re.findall(r'"([A-Z][A-Z0-9]{2})"', s))
+            in_members = depth > 0
+            continue
+        m = re.match(r'^name="([^"]*)"', s)
+        if m:
+            name = m.group(1)
+            continue
+        m = re.match(r"^ideology=(\w+)", s)
+        if m:
+            ideo = m.group(1)
+            continue
+        m = re.match(r'^icon="GFX_faction_(?:logo_|icon_)?(\w+)"', s)
+        if m:
+            icon = m.group(1)
+    return name or (icon or "?"), ideo or "?", members
+
+
+def iter_factions(fh):
+    """Yield (name, ideology, [members]) for each top-level faction={} block.
+
+    Faction membership is NOT in a country block, and there is no leader= field -
+    members[0] is the leader (corroborated on 7c7803a8 1943.11: ENG, SOV, GER, CHI, JAP
+    lead the five factions). The faction blocks sit after countries={} in the save.
+    """
+    depth = 0
+    grab = None
+    body = None
+    for line in fh:
+        if grab is None:
+            if depth == 0 and line.startswith("faction={"):
+                grab, body = line.count("{") - line.count("}"), []
+                continue
+            depth += line.count("{") - line.count("}")
+            continue
+        grab += line.count("{") - line.count("}")
+        if grab <= 0:
+            yield _faction_block(body)
+            grab, body = None, None
+            continue
+        body.append(line)
+
+
+def cmd_relations(args):
+    print("# Alliances, subjects and wars, read from BOTH sides. Three layouts, three "
+          "traps:")
+    print("#   faction membership is a TOP-LEVEL faction={} block with no leader= field "
+          "(members[0]")
+    print("#     is the leader), puppet={} sits in the OVERLORD's block, and "
+          "war_relation={} is")
+    print("#     written on ONE side only - so a single-country read silently loses wars.")
+    for meta, f in sorted_by_date([resolve(x) for x in args.files]):
+        rel = collections.defaultdict(list)
+        with open_save(f) as fh:
+            for owner, cp, kind, fields in iter_relations(fh):
+                rel[kind].append((owner, cp, fields))
+            factions = list(iter_factions(fh))
+        print(f"\n=== {meta.get('date', '?')}  {os.path.basename(f)} ===")
+
+        fac_of = {}
+        for name, ideo, members in factions:
+            for tag in members:
+                fac_of[tag] = (name, members[0] if members else "?")
+        if args.tag is None:
+            for name, ideo, members in factions:
+                print(f"  {name:<22} {ideo:<12} leader={members[0] if members else '?':<5}"
+                      f" {len(members)} members: "
+                      f"{' '.join(members[:14])}{' ...' if len(members) > 14 else ''}")
+            for kind in _REL_KINDS:
+                n = len(rel.get(kind, ()))
+                if n:
+                    print(f"  {kind:<22} {n} recorded")
+            continue
+
+        tag = args.tag.upper()
+        fac = fac_of.get(tag)
+        print(f"  faction        : "
+              + (f"{fac[0]} (leader {fac[1]})" if fac else "none"))
+        wars = []
+        for owner, cp, fl in rel.get("war_relation", ()):
+            first, second = fl.get("first"), fl.get("second")
+            if tag not in (first, second):
+                continue
+            other = second if first == tag else first
+            wars.append((other, fl.get("start_date", "?"), owner))
+        if wars:
+            print(f"  at war with    : {len(wars)}")
+            for other, since, owner in sorted(wars, key=lambda w: date_key(w[1])):
+                side = "own block" if owner == tag else f"{owner}'s block ONLY"
+                print(f"    {other:<5} since {since:<16} recorded in {side}")
+            missed = sum(1 for _o, _s, owner in wars if owner != tag)
+            if missed:
+                print(f"    -> {missed} of these are invisible from {tag}'s own block")
+        else:
+            print("  at war with    : none")
+        subs = [cp for owner, cp, _f in rel.get("puppet", ()) if owner == tag]
+        over = [owner for owner, cp, _f in rel.get("puppet", ()) if cp == tag]
+        print(f"  subjects       : {' '.join(sorted(subs)) if subs else 'none'}")
+        print(f"  overlord       : {' '.join(sorted(over)) if over else 'none'}")
+        gave = [cp for owner, cp, fl in rel.get("lend_lease", ()) if fl.get("first") == tag]
+        got = [fl.get("first") for _o, cp, fl in rel.get("lend_lease", ())
+               if fl.get("second") == tag]
+        print(f"  lend-lease to  : {' '.join(sorted(gave)) if gave else 'none'}")
+        print(f"  lend-lease from: {' '.join(sorted(x for x in got if x)) if got else 'none'}")
+        # These four carry no first=/second=, so the only thing the save tells us is WHICH
+        # BLOCK holds the record. That is a serialisation detail, not a direction: a
+        # non_aggression_pact is mutual by nature, and inferring direction from which side
+        # a record sits on is exactly how a lend-lease flow was published inverted (see the
+        # lend-lease gotcha in SKILL.md). Labelled by block, never as "to"/"from".
+        # puppet and lend_lease above ARE directional - their direction is verified.
+        rows = []
+        for kind in ("guarantee", "non_aggression_pact", "military_access",
+                     "docking_rights"):
+            mine = sorted({cp for owner, cp, _f in rel.get(kind, ()) if owner == tag})
+            theirs = sorted({owner for owner, cp, _f in rel.get(kind, ()) if cp == tag})
+            if mine or theirs:
+                rows.append((kind, mine, theirs))
+        if rows:
+            print(f"  --- recorded in {tag}'s own block | recorded in the other side's "
+                  f"block (which side holds the record is NOT a direction) ---")
+            for kind, mine, theirs in rows:
+                print(f"  {kind:<20}: {' '.join(mine) or '-'}   "
+                      f"| {' '.join(theirs) or '-'}")
+
+
 def _wrap(text, width):
     out, line = [], ""
     for word in text.split():
@@ -1416,6 +1881,27 @@ def main():
     s.add_argument("--limit", type=int, default=30,
                    help="cap project rows per save, 0 = unlimited (default 30)")
     s.set_defaults(fn=cmd_pc)
+
+    s = sub.add_parser("control", help="province-level control of a set of states")
+    s.add_argument("scope", metavar="SCOPE",
+                   help="comma-separated state ids (e.g. 16,17,18) or 'owner:TAG' for "
+                        "every state that TAG owns")
+    s.add_argument("files", nargs="+")
+    s.add_argument("--provinces", action="store_true",
+                   help="one row per province: holder, and whether the holder came from "
+                        "the province's own controller= or was inherited")
+    s.add_argument("--buildings", action="store_true",
+                   help="sum the province-scoped buildings (naval_base, rail_way, "
+                        "bunker, coastal_bunker) by province controller")
+    s.add_argument("--limit", type=int, default=30,
+                   help="cap rows in the contradiction table, 0 = all (default 30)")
+    s.set_defaults(fn=cmd_control)
+
+    s = sub.add_parser("relations", help="factions, subjects and wars, read from both sides")
+    s.add_argument("files", nargs="+")
+    s.add_argument("--tag", help="one country's full picture; omit for the faction table "
+                                 "plus a per-kind relation census")
+    s.set_defaults(fn=cmd_relations)
 
     args = p.parse_args()
     args.fn(args)
