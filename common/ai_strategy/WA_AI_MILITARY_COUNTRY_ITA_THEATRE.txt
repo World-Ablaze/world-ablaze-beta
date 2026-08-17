@@ -13,21 +13,12 @@ WA_AI_MILITARY_ITA_crush_ethiopia_1_THEATRE = {
 	}
 	enable = {
 		has_war_with = ETH
-		date < 1937.1.1
-		OR = {
-			AND = {
-				has_game_rule = {
-	 					rule = ITA_ai_behavior
-	 					option = DEFAULT
-	 				}
-			}
-			AND = {
-				has_game_rule = {
-					rule = ITA_ai_behavior
-					option = FASCIST_HISTORICAL
-				}
-			}
-		}
+		# Fix 98 (2026-08-17, campaign 0edbc955): was `date < 1937.1.1` + rule in {DEFAULT, FASCIST_HISTORICAL} -
+		# FASCIST_ALTERNATE / RANDOM had NO execute order vs Ethiopia before 1937, nobody had one after 1938.
+		# Now: every rule option except the deliberately slow DEMOCRATIC / MONARCHIST path (struggle -> prolong
+		# -> end_the_struggle), for as long as the war lasts. crush_ethiopia_2 (the 1937-38 twin) merged here.
+		NOT = { has_game_rule = { rule = ITA_ai_behavior option = DEMOCRATIC } }
+		NOT = { has_game_rule = { rule = ITA_ai_behavior option = MONARCHIST } }
 	}
 	abort_when_not_enabled = yes
 
@@ -44,30 +35,11 @@ WA_AI_MILITARY_ITA_crush_ethiopia_1_THEATRE = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_ITA_crush_ethiopia_2 (THEATRE domain)
-WA_AI_MILITARY_ITA_crush_ethiopia_2_THEATRE = {
+# Fix 98 (2026-08-17): WA_AI_MILITARY_ITA_crush_ethiopia_2_THEATRE (the 1937.1.1-1938.1.1 twin, no rule gate) merged into
+# crush_ethiopia_1_THEATRE above, which now runs for the whole war on every rule except DEMOCRATIC / MONARCHIST. Those two
+# keep struggle/prolong/end_the_struggle (end_the_struggle_THEATRE still carries the +200 area pulls for them; the +200
+# `front_unit_request tag = ETH` of this block is the one thing the DEM/MON 1937-38 window loses).
 
-	allowed = {
-		tag = ITA
-	}
-	enable = {
-		has_war_with = ETH
-		date < 1938.1.1
-		date > 1937.1.1
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = area_priority
-		id = south_africa
-		value = 200 # economy: was 500
-	}
-	ai_strategy = {
-		type = area_priority
-		id = central_africa
-		value = 200 # economy: was 500
-	}
-}
 
 
 # Phase 6 split from WA_AI_MILITARY_ITA_struggle_in_ethiopia (THEATRE domain)
@@ -323,7 +295,7 @@ WA_AI_MILITARY_ITA_end_the_struggle_in_ethiopia_THEATRE = {
 	}
 	enable = {
 		has_war_with = ETH
-		date > 1936.05.17
+		date > 1936.05.15 # Fix 98: was 05.17 - contiguous with struggle/prolong (< 05.16); the two-day hole is closed
 		OR = {
 			AND = {
 				has_game_rule = {

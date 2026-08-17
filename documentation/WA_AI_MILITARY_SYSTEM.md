@@ -402,3 +402,24 @@ Sudan/Kenya out of supply for three years; the Allies never fielded more than on
 
 `NOT = { A B C }` is a **NOR** in PDXScript (see the lessons log) - the `africa_war_2` gate had been `OR{A B C} AND NOT{A B C ...}` since its first authoring. Post-code review (2 angles) fixed: minors/continental archetypes not re-adding the alias, the viable trigger's anchors and bar, THEATRE +100, RAJ conquer split, the buffer's `area`. First use of a WA custom ai_area with `area_priority` (the corridor baseline) - boot-test; if unsupported, drop the two baseline/avoid entries and keep the `front_unit_request` pulls.
 
+---
+
+## 13. The 1936 Ethiopian war - AI Italy attacks the mission's states, on every aggressive rule (Fix 98, 2026-08-17)
+
+Campaign `0edbc955`: Italy lost the war by the `ETH_push_into_ethiopia_mission` timeout (100 days from 1936.5.1; success =
+control of BOTH 910 Amhara AND 909 Somali) while winning 17:1 - the AIFC sector anchored on Addis (271) and drained the
+Somali armies toward Oromia. The only execute block (`crush_ethiopia_1`) was `date < 1937.1.1` + rule ∈ {DEFAULT,
+FASCIST_HISTORICAL}: FASCIST_ALTERNATE / RANDOM had no execute vs Ethiopia before 1937, nobody after 1938.
+
+| Piece | File |
+| --- | --- |
+| Rush for the whole war on every rule except DEMOCRATIC / MONARCHIST | `WA_AI_MILITARY_COUNTRY_ITA_{FRONT,THEATRE,DIPLOMACY}.txt` `crush_ethiopia_1_*` (crush_ethiopia_2 merged) |
+| Objective steering | `WA_AI_MILITARY_ITA_ethiopia_mission_objectives_FRONT` - `# aifc-tuning:` `force_concentration_target_weight` 909/910 +80, 271 -60, `front_unit_request state = 909/910` +50, while either mission state is still Ethiopian. Steering *where* the AI attacks is AIFC's job (ECONOMY rule 6); `front_control state =` only selects which orders a mode applies to and would have been a no-op |
+| DEM/MON slow path | unchanged except the 16-17 May hole (`end_the_struggle` `date > 1936.05.15`) |
+| Not touched (user decisions) | the mission timers / ETH acceptance / dead BBA events; supply ideas or cheats |
+| Probe | checklist R63, `WA_TLM_r98_eth_both_*` |
+
+Open item found on the way: on `0edbc955` every `wa_ai_aifc_*_ref` array (GER, SOV, ENG, ITA) reads `-10737.4x`, an unresolved
+token, so the DEFAULT aifc block's `state_trigger is_in_array = { FROM.FROM.WA_AI_AIFC_sector_*_ref = THIS.id }` pairs may
+have been inert campaign-wide - the sector was computed, the engine-side weighting may not have followed. Separate diagnosis.
+

@@ -1393,6 +1393,23 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
   - 2026-08-17 · `0edbc955` (cloud) · FAILED (baseline, pre-fix) — see "Opened".
 
 
+### R63. AI Italy wins the 1936 Ethiopian war on every aggressive game-rule option — the mission states first, Addis after (Fix 98)
+
+- **Opened 2026-08-17** from campaign `0edbc955`: Italy lost the war on 1936.8.11 by the `ETH_push_into_ethiopia_mission` timeout (100 days from 1936.5.1; success = ITA controls BOTH 910 Amhara AND 909 Somali) while winning 17:1 with 32 divisions in the AOI — the AIFC sector anchored on 271 Addis (objectives {271, 909}) from March to August, the Somali armies drained 11 → 2 divisions toward Oromia, 909 stayed Ethiopian, the scripted peace fired and `ITA_defeat_in_ethiopia_flag` followed. The only execute block was gated `date < 1937.1.1` + rule ∈ {DEFAULT, FASCIST_HISTORICAL} (nothing under FASCIST_ALTERNATE/RANDOM before 1937, nothing for anyone after 1938; DEM/MON had a two-day hole 16–17 May). ETH is a 38-division locked-militia OOB with no focus tree, no AI file, and every buff/malus/volunteer event of `BBA_ItaloEthiopianWar.txt` is dead code.
+- **Fix under test:** Fix 98 (AI-strategy side only — user decisions 2026-08-17: no script change, no supply idea/cheat, DEM/MON keep their slow path): `WA_AI_MILITARY_ITA_crush_ethiopia_1_{FRONT,THEATRE,DIPLOMACY}` gated `has_war_with = ETH` ∧ NOT rule ∈ {DEMOCRATIC, MONARCHIST} for the whole war (crush_ethiopia_2 merged); new `WA_AI_MILITARY_ITA_ethiopia_mission_objectives_FRONT` (`# aifc-tuning:` `force_concentration_target_weight` 909/910 +80, 271 −60, `front_unit_request state = 909/910` +50 while either is still Ethiopian); `end_the_struggle` `date > 1936.05.15` (hole closed).
+- **Pass (three legs):**
+  1. **Objective first.** On the ITA `wa_ai_aifc_sector_objectives` / `_anchor` in the 1936.4–1936.7 saves, 909 or 910 (not 271 alone) is the anchor while either is Ethiopian, and `wa_tlm_r98_eth_both_first_t` decodes to ≤ 1936.7 (both mission states held inside the 100-day window).
+  2. **The war is won.** No `ITA_defeat_in_ethiopia_flag` on ITA; `ETH_forced_ITA_peace_achievement` absent on ETH; ETH annexed / `ITA_establish_ITS` fired by 1937.6 (any aggressive rule option; DEM/MON runs are scored NOT APPLICABLE).
+  3. **No collateral.** ITA divisions in the AOI at 1937.6 ≤ the R62 leg-1 bar (garrison, not the army), and the DEM/MON path still runs struggle → prolong → end_the_struggle contiguously (no execute gap on 16–17 May).
+- **Probe:** `savegame.py tlm ITA <saves> --match r98`; `var ITA "^wa_ai_aifc_sector_(anchor|objectives)" <1936 saves>`; `flags <save> ITA --match "defeat_in_ethiopia|missiolini_conquer|italian_east"`; `flags <save> ETH --match "forced_ITA_peace|hold_"`; state controllers of 909/910/271 monthly.
+- **Fail-tells to record:** anchor still 271 with objectives {271, 909} for ≥ 3 saves after 1936.3 (the target-weight pair is not moving the sector — check the `_ref` arrays: on `0edbc955` every `wa_ai_aifc_*_ref` reads `-10737.4x`, an unresolved token, so the DEFAULT aifc block's `state_trigger is_in_array` pairs may be inert campaign-wide — a separate item); `_both_n = 0` with ITA divisions physically inside 909 (control never flips — supply/org, not steering; that is the design's known limit under the no-supply-change decision); the mission still timing out with both states held (script bar is `controls_state` in ITA scope — verify the flag setter, not the AI).
+- **Threshold:** 3.
+- **Streak:** 0
+- **Status:** NOT YET TESTED — Fix 98 postdates every analysed campaign; the `0edbc955` reading is the FAILED baseline. **Owes an F9 boot test** (`has_game_rule` NOTs in `enable`; the two-state `force_concentration_target_weight` form is the Fall Rot precedent).
+- **History:**
+  - 2026-08-17 · `0edbc955` (cloud) · FAILED (baseline, pre-fix) — see "Opened".
+
+
 ## Retired and merged items — ledger
 
 Working queue, not an archive: an item leaves the sections above when its streak reaches its threshold (retired) or when another item owns its mechanism (merged). Durable rules belong in `wa-lessons-learned`; this ledger keeps the retirement evidence, the pending instrumentation dispositions, and the hand-offs that no live item carries. Full item text is in this file's git history at the date shown.

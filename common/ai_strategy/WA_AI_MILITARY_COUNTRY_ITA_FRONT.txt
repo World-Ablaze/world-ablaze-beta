@@ -176,21 +176,12 @@ WA_AI_MILITARY_ITA_crush_ethiopia_1_FRONT = {
 	}
 	enable = {
 		has_war_with = ETH
-		date < 1937.1.1
-		OR = {
-			AND = {
-				has_game_rule = {
-	 					rule = ITA_ai_behavior
-	 					option = DEFAULT
-	 				}
-			}
-			AND = {
-				has_game_rule = {
-					rule = ITA_ai_behavior
-					option = FASCIST_HISTORICAL
-				}
-			}
-		}
+		# Fix 98 (2026-08-17, campaign 0edbc955): was `date < 1937.1.1` + rule in {DEFAULT, FASCIST_HISTORICAL} -
+		# FASCIST_ALTERNATE / RANDOM had NO execute order vs Ethiopia before 1937, nobody had one after 1938.
+		# Now: every rule option except the deliberately slow DEMOCRATIC / MONARCHIST path (struggle -> prolong
+		# -> end_the_struggle), for as long as the war lasts. crush_ethiopia_2 (the 1937-38 twin) merged here.
+		NOT = { has_game_rule = { rule = ITA_ai_behavior option = DEMOCRATIC } }
+		NOT = { has_game_rule = { rule = ITA_ai_behavior option = MONARCHIST } }
 	}
 	abort_when_not_enabled = yes
 
@@ -209,32 +200,11 @@ WA_AI_MILITARY_ITA_crush_ethiopia_1_FRONT = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_ITA_crush_ethiopia_2 (FRONT domain)
-WA_AI_MILITARY_ITA_crush_ethiopia_2_FRONT = {
+# Fix 98 (2026-08-17): WA_AI_MILITARY_ITA_crush_ethiopia_2_FRONT (the 1937.1.1-1938.1.1 twin, no rule gate) merged into
+# crush_ethiopia_1_FRONT above, which now runs for the whole war on every rule except DEMOCRATIC / MONARCHIST. Those two
+# keep struggle/prolong/end_the_struggle (end_the_struggle_THEATRE still carries the +200 area pulls for them; the +200
+# `front_unit_request tag = ETH` of this block is the one thing the DEM/MON 1937-38 window loses).
 
-	allowed = {
-		tag = ITA
-	}
-	enable = {
-		has_war_with = ETH
-		date < 1938.1.1
-		date > 1937.1.1
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = front_control
-		tag = ETH
-		ordertype = front
-		execution_type = rush
-		execute_order = yes
-	}
-	ai_strategy = {
-		type = front_unit_request
-		tag = ETH
-		value = 200 # economy: was 500
-	}
-}
 
 
 # Phase 6 split from WA_AI_MILITARY_ITA_struggle_in_ethiopia (FRONT domain)
@@ -361,7 +331,7 @@ WA_AI_MILITARY_ITA_end_the_struggle_in_ethiopia_FRONT = {
 	}
 	enable = {
 		has_war_with = ETH
-		date > 1936.05.17
+		date > 1936.05.15 # Fix 98: was 05.17 - contiguous with struggle/prolong (< 05.16); the two-day hole is closed
 		OR = {
 			AND = {
 				has_game_rule = {
@@ -495,6 +465,64 @@ WA_AI_MILITARY_ITA_ignore_neutral_ethiopia_FRONT = {
 		type = front_unit_request
 		tag = ETH
 		value = -100
+	}
+}
+
+
+# purpose: Fix 98 - the Ethiopian war is WON or LOST by two states, not by Addis. The scripted mission
+#          ETH_push_into_ethiopia_mission (common/decisions/ITA.txt, 100 days from 1936.5.1) succeeds only
+#          when Italy controls BOTH Amhara 910 AND Somali 909; on campaign 0edbc955 the AIFC sector anchored
+#          on 271 (Addis, the industry/VP magnet) with objectives {271, 909} from March to August, the Somali
+#          armies drained 11 -> 2 divisions toward Oromia, 909 stayed Ethiopian, the mission timed out and the
+#          scripted peace declared Italy beaten while it was winning 17:1. This block steers the AIFC
+#          objective set at the mission's states while either is still Ethiopian, and brakes Addis until then.
+# aifc-tuning: scripted colonial-war schwerpunkt - complements the AIFC sector engine (which scores
+#          industry / thin seams and therefore Addis) with the mission's own objective; boost and paired
+#          suppression share this block's gate (E5). Fall Rot precedent: WA_AI_MILITARY_GER_fall_rot_*.
+#          `force_concentration_target_weight state =` (literal ids) is the proven form; the sector engine's
+#          own `_ref` arrays read unresolved tokens on this campaign - see the r98 checklist note.
+# range:   +80 / -60 (E5: aifc-tuning); front_unit_request +50 per state (E2 - sums with the +200 tag pull
+#          to +250 on the two Ethiopian segments, stated on purpose: the whole point is that these two
+#          segments outweigh the Addis one)
+# policy:  Additive
+# domain:  FRONT
+WA_AI_MILITARY_ITA_ethiopia_mission_objectives_FRONT = {
+	# aifc-tuning: scripted colonial-war schwerpunkt - steers the AIFC objective set at the mission's two states (909/910) and brakes Addis until they are Italian; boost and suppression share this block's gate.
+	allowed = {
+		tag = ITA
+	}
+	enable = {
+		has_war_with = ETH
+		OR = {
+			NOT = { 909 = { is_controlled_by = ROOT } }
+			NOT = { 910 = { is_controlled_by = ROOT } }
+		}
+		# the aggressive path only - DEM/MON keep their slow, unsteered struggle
+		NOT = { has_game_rule = { rule = ITA_ai_behavior option = DEMOCRATIC } }
+		NOT = { has_game_rule = { rule = ITA_ai_behavior option = MONARCHIST } }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = force_concentration_target_weight
+		state = 909 # Somali - mission state
+		state = 910 # Amhara - mission state
+		value = 80
+	}
+	ai_strategy = {
+		type = force_concentration_target_weight
+		state = 271 # Oromia / Addis - AIFC's natural magnet; braked until the mission states are ours
+		value = -60
+	}
+	ai_strategy = {
+		type = front_unit_request
+		state = 909
+		value = 50
+	}
+	ai_strategy = {
+		type = front_unit_request
+		state = 910
+		value = 50
 	}
 }
 
