@@ -964,22 +964,38 @@ process caveats (stale process, and the absence of a load-time hook).
   reading. It did endorse the phrasing, but **conditioned on measuring `to_export` vs `exported`**;
   the condition was dropped and the sentence kept. A conditional endorsement carried past its
   condition is the same failure as a copied idiom carried past its data (entry below).
-- **What actually rescued the fix.** The measurement was then run and the behaviour survived: on
-  `7c7803a8` not one of the eight harm pairs had its offered share bought out — ITA bauxite 73–79 %
-  (highest), HUN bauxite 41 %, USA bauxite 16–25 %, SAF chromium 7–9 %, and **five pairs offered
-  `to_export = 0` outright** (SOV holds no trade-law idea at all, JAP is `closed_economy`, HUN's
-  1946 output is siphoned by `transfer_overlord_subject` before any export fraction is computed).
-  So the gate blocks work that would only have grown unsold piles. Correct outcome, invalid
-  reasoning — the two are not the same thing and the header now says which one it rests on.
+- **The first measurement looked like a rescue, and it was a sampling artefact.** Checking only the
+  eight harm pairs showed none of them sold out (ITA bauxite 73–79 %, HUN 41 %, USA 16–25 %, SAF
+  7–9 %, five offering `to_export = 0` outright), so the entry originally read "correct outcome,
+  invalid reasoning". **That conclusion was wrong.** Sweeping all 2706 country/resource/date rows
+  instead of the eight cases the fix was built from found **184 rows whose offered share IS bought
+  out, 160 of them (87 %) on a POSITIVE balance** — CAN sells all 1126.7 aluminium it offers on
+  +148, ENG all 216 iron on +201, USA all 177.2 tungsten on +1. Scored against "fire if short OR
+  sold out", the balance-sign gate makes **166 errors, every one of them a refusal to prospect
+  where extraction would have delivered**. The outcome was not correct either. Fix 102 replaced it.
+- **The methodological lesson, which is the durable one.** The first sweep only measured the rows
+  the fix was designed from, so it could confirm the fix and could not falsify it. A gate is scored
+  on the population it will *run* on, not on the cases that motivated it — and the discriminating
+  rows are the ones nobody thought to look at. The same sweep also caught a bad criterion: counting
+  `unsold < quantum` as "sold out" silently included offers *below* one quantum that nobody can
+  buy, which is the opposite state; 415 of the first 459 flags were that artefact.
 - **Rule:** before claiming extraction is not the binding constraint for a country, read
   **`exported / to_export`** for that country and that resource (`savegame.py resources <TAG>
-  <save>` prints both). Near 100 % means extraction *is* binding. `to_export = 0` means the
-  country cannot supply an ally at all, whatever its balance — which is a sharper gate than the
-  balance sign, and is still unbuilt. Never infer either from `resource@X` alone, and never from
-  the ally's `imported` column, which moves for reasons unrelated to ROOT.
-- **Evidence:** user correction 2026-08-17 during Fix 101; `savegame.py resources` for USA / HUN /
-  SOV / JAP / SAF / ITA / GER at 1943.6 and 1946.4 on campaign `7c7803a8`;
-  `common/ideas/_trade.txt` `min_export` values.
+  <save>` prints both). Near 100 % means extraction *is* binding. `to_export = 0` means the country
+  cannot supply an ally at all, whatever its balance. Never infer either from `resource@X` alone,
+  and never from the ally's `imported` column, which moves for reasons unrelated to ROOT. When you
+  test "is the offer sold out", require `to_export >= quantum` first, or a sub-quantum offer passes
+  trivially.
+- **Built, and what it cost.** Fix 102 implements exactly the gate this entry called sharper:
+  `WA_AI_coop_can_supply_<r>`, computed per country in `WA_AI_check_resource_needs`. Since no token
+  exposes `to_export` or `transfer_overlord_subject`, the offered share is estimated as
+  `min_export × resource_produced@<r>`, which carries three biases named at the compute site —
+  subject transfers in are ignored, `min_export` is shifted by traits/ideas/modifiers by up to ±0.3
+  with only the base law value readable, and an output siphoned to an overlord offers nothing. Cost
+  of all three: 9 false fires against 166 false blocks removed.
+- **Evidence:** user correction 2026-08-17 during Fix 101, then the full sweep during Fix 102;
+  `savegame.py resources` over 2706 rows at 1939.9 / 1941.6 / 1943.6 / 1946.4 on campaign
+  `7c7803a8`; `common/ideas/_trade.txt` `min_export`; `common/resources/00_resources.txt` `cic`.
 
 
 ### A correct idiom can become wrong when copied, if its correctness rests on the data
