@@ -123,15 +123,81 @@ WA_AI_should_prospect_resource_bauxite = {
 ###############################################################################
 # Cooperative Layer: Check if allies have critical resource shortages
 ###############################################################################
-# SIBLING STATUS (recorded 2026-08-17 with Fix 100, deliberately NOT changed):
-# every trigger in this section has the same structure - "any faction ally whose
-# WA_AI_needs_<r> reads 3" - and therefore the same dependency/shortage conflation
-# described below. Only coal has campaign evidence, so only coal is gated.
-# - iron, bauxite: same shape, also WA-native. UNMEASURED - no evidence either way.
-# - steel, aluminium, tungsten, chromium, rubber, oil: same shape but engine-traded.
-#   There the import arm may be a legitimate faction-scarcity signal, because the ore
-#   comes from OUTSIDE the faction rather than from ROOT itself. UNTESTED.
-# Do not convert any of them without a measured ledger; do not assume Fix 100 transfers.
+# SIBLING STATUS - MEASURED 2026-08-17, Fix 101 (supersedes the Fix 100 note below).
+# Fix 100 recorded these eight as structurally identical but UNMEASURED and instructed:
+# "Do not convert any of them without a measured ledger; do not assume Fix 100
+# transfers", and for the engine-traded six "the import arm may be a legitimate
+# faction-scarcity signal, because the ore comes from OUTSIDE the faction rather than
+# from ROOT itself. UNTESTED." The ledger now exists (campaign 7c7803a8) and it does
+# not support that reservation: 12 (country, resource) pairs fired prospecting 2-10
+# times while ROOT's OWN effective balance for that resource was POSITIVE and its own
+# WA_AI_needs_<r> read 0 or 1. Strongest, positive at BOTH sampled dates so not a
+# snapshot artefact - USA bauxite +2600 / +2703 (7 fires at 12-16 civs each),
+# HUN bauxite +2089 (ran to its 10-fire state-flag cap at 6 civs, its ally GER reading
+# needs_bauxite = 3), SOV iron +3154 / +2782, JAP bauxite +1089 / +554,
+# SAF chromium +634 / +613, ITA bauxite +728 / +1180, SOV chromium +182 / +459,
+# JAP oil +113 / +213. So all eight are gated below.
+# SHAPE BY PARITY, NO MEASURED HARM CASE: steel and rubber. The other six each have at
+# least one. They are gated on the same shape because the structure is identical and a
+# divergent sibling is the failure the "open the sibling in the same pass" rule names -
+# but a future reader deciding whether the gate earns its keep should know the two were
+# carried by parity, not by evidence.
+# CONTROLS that make "needs 0/1" mean the reactive leg was genuinely off:
+# WA_AI_resource_<r>_shortage_months has a writer ONLY for aluminium / rubber / steel,
+# so for iron, bauxite, chromium, tungsten and oil the reactive leg is definitively off
+# at needs 0/1. POR tungsten and VIC rubber were EXCLUDED from the harm set - both were
+# in no faction at either date, so their cooperative leg cannot fire at all and their
+# positive-balance fires are explained by shortage_months instead.
+# NOT THIS DEFECT, recorded so the next reader does not re-diagnose it: GER fired the
+# Carinthia bauxite decision 10 times at +3346 effective, but with its OWN
+# wa_ai_needs_bauxite = 3 at both dates. That counter is held by the WRITER's import arm
+# (resource_imported@bauxite > 25, WA_AI_misc_effects.txt:586) while GER's bauxite
+# arrives as subject transfer - so it is the REACTIVE leg reading the Fix 100
+# dependency/shortage conflation in the writer, not the cooperative leg. Fixing it means
+# touching the writer, which changes every reader for every country; out of scope here.
+
+# Fix 101 (2026-08-17): ROOT-side surplus bar on the other eight cooperative legs.
+# WHAT IT PROTECTS: the prospecting civilian-factory slots (2-16 per decision) of a
+# country that already holds a positive retained balance of the resource.
+# THE ENGINE FACT IT ASSUMES: the trade AI acts only on a NEGATIVE balance, importing
+# just enough to bring it back to ~0, and never stockpiles. So a positive resource@<r>
+# is a real retained surplus and EXTRACTION IS NOT THE BINDING CONSTRAINT - the same
+# reasoning as Fix 100, and deliberately NOT "the ally can buy from that surplus":
+# resource@<r> is measured after the trade law's export share has already been taken,
+# so the retained balance and the exportable share are two different pools (GER coal
+# to_export 6928-7419 against exported 100-3167).
+# THE TWO BRANCHES: an importer sits ON this boundary, and that is fine - an importer is
+# already carried by the reactive leg's own import arm (resource_imported@<r> > 10..40),
+# so the flicker costs it nothing. A producer is the branch this gate is for.
+# WHY ZERO IS NOT A TUNABLE NUMBER: it is the sign boundary, and no absolute bar is
+# derivable from the data - the measured harm spans +6 to +3154 while the resources
+# themselves live on incomparable scales (chromium never exceeds ~+650 in the campaign,
+# rubber reaches +2841). Eight invented ceilings would be the magic-threshold failure.
+# Do not retune it; if it ever needs to move, that is evidence the engine fact above
+# changed, not that the number was wrong.
+# WHAT SURVIVES THE GATE - the cooperative layer is NARROWED, not deleted. It stays live
+# for a ROOT whose own balance sits in the band between zero and the writer's own
+# deficit arm, and which is not yet importing: (-10, 0) for aluminium and rubber,
+# (-15, 0) for steel, tungsten and chromium, (-25, 0) for bauxite and iron, (-40, 0) for
+# oil. Inside that band ROOT is short but has not yet ratcheted needs_<r> above 1, so
+# the cooperative modifier is the only weight - which is the layer's distinct function.
+# THE COST INSIDE THE RAMP (AGENTS.md (f), at the real cadences - the writer runs on a
+# ~2-day event, ai_will_do is evaluated continuously, the counter moves +/-1 per run):
+#   t0  a real shortage opens but imports still cover it -> balance >= 0, needs 0.
+#       This gate blocks the cooperative leg. The reactive leg is also off. Weight 0.
+#   t1  balance goes negative past the writer's arm, needs 1. Gate now OPEN (balance
+#       < 0); reactive still off (needs > 1 required). Cooperative leg carries it.
+#   t2  ~4 days after t1, needs 2 -> reactive leg on, weight granted regardless.
+# So the only window this gate closes that was previously open is t0 - a country with a
+# NON-NEGATIVE balance. That is the harm case by definition, and nothing is lost in it.
+# HOW TO TELL THE FACT IS GONE: an ally's `imported` line for the resource that RISES
+# when a surplus-holding country prospects it.
+# NOT THE SAME QUANTITY AS COAL'S BAR. @WA_AI_COAL_COOP_CEILING below is 500 - a CEILING
+# placed above coal's proactive reactive bar (resource@coal < 100), because without it
+# coal's cooperative layer would be a strict subset of its reactive layer and collapse.
+# These eight have no proactive bar, so their boundary is the sign, not a ceiling. The
+# two numbers are not comparable and must not be harmonised.
+@WA_AI_COOP_ROOT_SURPLUS_BAR = 0
 
 # Fix 100 (2026-08-17): ROOT-side ceiling on the cooperative coal leg.
 # WHAT IT PROTECTS: the 5-civilian-factory prospecting slots of a coal PRODUCER.
@@ -153,6 +219,10 @@ WA_AI_should_prospect_resource_bauxite = {
 # MUST STAY ABOVE the 100 of WA_AI_should_prospect_resource_coal above. At or below it
 # this leg becomes a strict subset of the reactive leg and the cooperative layer
 # collapses to nothing. Read by this file only, so a file-scoped @ is legal here.
+# CROSS-REFERENCE (Fix 101): the other eight cooperative legs use
+# @WA_AI_COOP_ROOT_SURPLUS_BAR = 0 above, which is a SIGN BOUNDARY, not a ceiling. The
+# difference is not drift: coal alone carries a proactive reactive bar (< 100) that a
+# zero boundary would swallow. Do not harmonise the two values.
 @WA_AI_COAL_COOP_CEILING = 500
 
 # ALSO CONSIDERED AND REJECTED: additionally requiring the ally itself to be in
@@ -185,6 +255,8 @@ WA_AI_allies_need_coal = {
 }
 
 WA_AI_allies_need_oil = {
+	# Fix 101: ROOT holds no positive retained balance (see the section header).
+	check_variable = { resource@oil < @WA_AI_COOP_ROOT_SURPLUS_BAR }
 	any_other_country = {
 		is_in_faction_with = ROOT
 		# WA_AI_needs_oil is written since Fix 39 (oil arm in
@@ -194,6 +266,8 @@ WA_AI_allies_need_oil = {
 }
 
 WA_AI_allies_need_iron = {
+	# Fix 101: ROOT holds no positive retained balance (see the section header).
+	check_variable = { resource@iron < @WA_AI_COOP_ROOT_SURPLUS_BAR }
 	any_other_country = {
 		is_in_faction_with = ROOT
 		check_variable = { WA_AI_needs_iron = 3 }
@@ -201,6 +275,8 @@ WA_AI_allies_need_iron = {
 }
 
 WA_AI_allies_need_steel = {
+	# Fix 101: ROOT holds no positive retained balance (see the section header).
+	check_variable = { resource@steel < @WA_AI_COOP_ROOT_SURPLUS_BAR }
 	any_other_country = {
 		is_in_faction_with = ROOT
 		check_variable = { WA_AI_needs_steel = 3 }
@@ -208,6 +284,8 @@ WA_AI_allies_need_steel = {
 }
 
 WA_AI_allies_need_aluminum = {
+	# Fix 101: ROOT holds no positive retained balance (see the section header).
+	check_variable = { resource@aluminium < @WA_AI_COOP_ROOT_SURPLUS_BAR }
 	any_other_country = {
 		is_in_faction_with = ROOT
 		# fixed audit 2026-08-11: writer uses the British spelling (see the
@@ -217,6 +295,8 @@ WA_AI_allies_need_aluminum = {
 }
 
 WA_AI_allies_need_tungsten = {
+	# Fix 101: ROOT holds no positive retained balance (see the section header).
+	check_variable = { resource@tungsten < @WA_AI_COOP_ROOT_SURPLUS_BAR }
 	any_other_country = {
 		is_in_faction_with = ROOT
 		check_variable = { WA_AI_needs_tungsten = 3 }
@@ -224,6 +304,8 @@ WA_AI_allies_need_tungsten = {
 }
 
 WA_AI_allies_need_chromium = {
+	# Fix 101: ROOT holds no positive retained balance (see the section header).
+	check_variable = { resource@chromium < @WA_AI_COOP_ROOT_SURPLUS_BAR }
 	any_other_country = {
 		is_in_faction_with = ROOT
 		check_variable = { WA_AI_needs_chromium = 3 }
@@ -231,6 +313,8 @@ WA_AI_allies_need_chromium = {
 }
 
 WA_AI_allies_need_rubber = {
+	# Fix 101: ROOT holds no positive retained balance (see the section header).
+	check_variable = { resource@rubber < @WA_AI_COOP_ROOT_SURPLUS_BAR }
 	any_other_country = {
 		is_in_faction_with = ROOT
 		check_variable = { WA_AI_needs_rubber = 3 }
@@ -238,6 +322,8 @@ WA_AI_allies_need_rubber = {
 }
 
 WA_AI_allies_need_bauxite = {
+	# Fix 101: ROOT holds no positive retained balance (see the section header).
+	check_variable = { resource@bauxite < @WA_AI_COOP_ROOT_SURPLUS_BAR }
 	any_other_country = {
 		is_in_faction_with = ROOT
 		check_variable = { WA_AI_needs_bauxite = 3 }
