@@ -632,6 +632,248 @@ WA_AI_check_resource_needs = {
 	clamp_variable = { var = WA_AI_needs_oil min = 0 max = 3 }
 	if = { limit = { has_country_flag = WA_AI_resources_logging check_variable = { WA_AI_needs_oil = 3 } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RESOURCES: needs OIL" }
 
+
+	### cooperative supply capability (Fix 102)
+	#
+	# Answers ONE question per resource: would extra extraction by ROOT actually reach an ally?
+	# Only if ROOT's OFFERED export share is already bought out - trade is committed in whole
+	# civilian factories, so an unsold residue below one quantum has no purchase that can fill it.
+	# Read by WA_AI_allies_need_<r> (WA_AI_RESOURCE_NEEDS_triggers.txt); that trigger cannot do
+	# this arithmetic itself, and it is evaluated per target of a 28-state decision array, so the
+	# work is done once per country here instead.
+	# FAIL-CLOSED: 0 means "cannot supply", which is also what an unwritten variable reads - so a
+	# tag released mid-campaign simply keeps the pre-Fix-102 behaviour until its first pulse.
+	# ESTIMATOR, with three known biases, all measured on campaign 7c7803a8 (2706 rows):
+	#  - the offered share is min_export x (produced + subject transfer); no token exposes the
+	#    transfer, so a country receiving from subjects is UNDER-estimated (ITA bauxite -36 %);
+	#  - min_export is shifted by leader traits, national ideas and dynamic modifiers by up to
+	#    +/-0.3, and only the base law value is readable (CAN measured at 0.835 against a law 0.8);
+	#  - a country whose output is siphoned by transfer_overlord_subject before the share is taken
+	#    offers nothing at all (HUN 1946.4: produced 4563, transfer -4563, offered 0).
+	# Net cost of those biases: 9 false fires and 11 false blocks against 166 false blocks for the
+	# balance-sign gate this replaces.
+	# ASSUMED, NOT PROVEN: that resource_produced@<r> and resource_exported@<r> return the save's
+	# `produced` and `exported` columns. Both tokens ship in WA code already, but their semantics
+	# were not probed in-game - and resource@<r> is precedent for a token meaning something other
+	# than its same-named column.
+	# FALSIFIER: a producer whose exported/to_export approaches 1 while this reads 0.
+
+	set_temp_variable = { _wa_coop_f_ = 0 }
+	if = { limit = { has_idea = free_trade }      set_temp_variable = { _wa_coop_f_ = constant:wa_ai_resource.min_export.free_trade } }
+	else_if = { limit = { has_idea = export_focus }    set_temp_variable = { _wa_coop_f_ = constant:wa_ai_resource.min_export.export_focus } }
+	else_if = { limit = { has_idea = limited_exports } set_temp_variable = { _wa_coop_f_ = constant:wa_ai_resource.min_export.limited_exports } }
+	# closed_economy AND "no trade-law idea at all" land here. Both mean the country offers nothing,
+	# so it can never supply an ally whatever its balance - measured: SOV holds no trade-law idea in
+	# campaign 7c7803a8 and offers 0 of every resource at every date. The branch is explicit so that
+	# "cannot export at all" is a stated case rather than an arithmetic accident, and so a country on
+	# a modded or future law is not silently scored with someone else's fraction.
+	else = { set_temp_variable = { _wa_coop_f_ = constant:wa_ai_resource.min_export.closed_economy } }
+	set_variable = { WA_AI_coop_can_supply_aluminium = 0 }
+	if = {
+		limit = {
+			check_variable = { _wa_coop_f_ > 0 }
+			check_variable = { resource_exported@aluminium > 0 }
+		}
+		set_temp_variable = { _wa_coop_off_ = resource_produced@aluminium }
+		multiply_temp_variable = { _wa_coop_off_ = _wa_coop_f_ }
+		# the offer must be worth at least one quantum, i.e. offered * cic > 1
+		set_temp_variable = { _wa_coop_min_ = _wa_coop_off_ }
+		multiply_temp_variable = { _wa_coop_min_ = constant:wa_ai_resource.cic.aluminium }
+		if = {
+			limit = { check_variable = { _wa_coop_min_ > 1 } }
+			# sold out when the unsold residue is worth less than one quantum
+			subtract_from_temp_variable = { _wa_coop_off_ = resource_exported@aluminium }
+			multiply_temp_variable = { _wa_coop_off_ = constant:wa_ai_resource.cic.aluminium }
+			if = {
+				limit = { check_variable = { _wa_coop_off_ < 1 } }
+				set_variable = { WA_AI_coop_can_supply_aluminium = 1 }
+			}
+		}
+	}
+
+	set_variable = { WA_AI_coop_can_supply_rubber = 0 }
+	if = {
+		limit = {
+			check_variable = { _wa_coop_f_ > 0 }
+			check_variable = { resource_exported@rubber > 0 }
+		}
+		set_temp_variable = { _wa_coop_off_ = resource_produced@rubber }
+		multiply_temp_variable = { _wa_coop_off_ = _wa_coop_f_ }
+		# the offer must be worth at least one quantum, i.e. offered * cic > 1
+		set_temp_variable = { _wa_coop_min_ = _wa_coop_off_ }
+		multiply_temp_variable = { _wa_coop_min_ = constant:wa_ai_resource.cic.rubber }
+		if = {
+			limit = { check_variable = { _wa_coop_min_ > 1 } }
+			# sold out when the unsold residue is worth less than one quantum
+			subtract_from_temp_variable = { _wa_coop_off_ = resource_exported@rubber }
+			multiply_temp_variable = { _wa_coop_off_ = constant:wa_ai_resource.cic.rubber }
+			if = {
+				limit = { check_variable = { _wa_coop_off_ < 1 } }
+				set_variable = { WA_AI_coop_can_supply_rubber = 1 }
+			}
+		}
+	}
+
+	set_variable = { WA_AI_coop_can_supply_steel = 0 }
+	if = {
+		limit = {
+			check_variable = { _wa_coop_f_ > 0 }
+			check_variable = { resource_exported@steel > 0 }
+		}
+		set_temp_variable = { _wa_coop_off_ = resource_produced@steel }
+		multiply_temp_variable = { _wa_coop_off_ = _wa_coop_f_ }
+		# the offer must be worth at least one quantum, i.e. offered * cic > 1
+		set_temp_variable = { _wa_coop_min_ = _wa_coop_off_ }
+		multiply_temp_variable = { _wa_coop_min_ = constant:wa_ai_resource.cic.steel }
+		if = {
+			limit = { check_variable = { _wa_coop_min_ > 1 } }
+			# sold out when the unsold residue is worth less than one quantum
+			subtract_from_temp_variable = { _wa_coop_off_ = resource_exported@steel }
+			multiply_temp_variable = { _wa_coop_off_ = constant:wa_ai_resource.cic.steel }
+			if = {
+				limit = { check_variable = { _wa_coop_off_ < 1 } }
+				set_variable = { WA_AI_coop_can_supply_steel = 1 }
+			}
+		}
+	}
+
+	set_variable = { WA_AI_coop_can_supply_tungsten = 0 }
+	if = {
+		limit = {
+			check_variable = { _wa_coop_f_ > 0 }
+			check_variable = { resource_exported@tungsten > 0 }
+		}
+		set_temp_variable = { _wa_coop_off_ = resource_produced@tungsten }
+		multiply_temp_variable = { _wa_coop_off_ = _wa_coop_f_ }
+		# the offer must be worth at least one quantum, i.e. offered * cic > 1
+		set_temp_variable = { _wa_coop_min_ = _wa_coop_off_ }
+		multiply_temp_variable = { _wa_coop_min_ = constant:wa_ai_resource.cic.tungsten }
+		if = {
+			limit = { check_variable = { _wa_coop_min_ > 1 } }
+			# sold out when the unsold residue is worth less than one quantum
+			subtract_from_temp_variable = { _wa_coop_off_ = resource_exported@tungsten }
+			multiply_temp_variable = { _wa_coop_off_ = constant:wa_ai_resource.cic.tungsten }
+			if = {
+				limit = { check_variable = { _wa_coop_off_ < 1 } }
+				set_variable = { WA_AI_coop_can_supply_tungsten = 1 }
+			}
+		}
+	}
+
+	set_variable = { WA_AI_coop_can_supply_chromium = 0 }
+	if = {
+		limit = {
+			check_variable = { _wa_coop_f_ > 0 }
+			check_variable = { resource_exported@chromium > 0 }
+		}
+		set_temp_variable = { _wa_coop_off_ = resource_produced@chromium }
+		multiply_temp_variable = { _wa_coop_off_ = _wa_coop_f_ }
+		# the offer must be worth at least one quantum, i.e. offered * cic > 1
+		set_temp_variable = { _wa_coop_min_ = _wa_coop_off_ }
+		multiply_temp_variable = { _wa_coop_min_ = constant:wa_ai_resource.cic.chromium }
+		if = {
+			limit = { check_variable = { _wa_coop_min_ > 1 } }
+			# sold out when the unsold residue is worth less than one quantum
+			subtract_from_temp_variable = { _wa_coop_off_ = resource_exported@chromium }
+			multiply_temp_variable = { _wa_coop_off_ = constant:wa_ai_resource.cic.chromium }
+			if = {
+				limit = { check_variable = { _wa_coop_off_ < 1 } }
+				set_variable = { WA_AI_coop_can_supply_chromium = 1 }
+			}
+		}
+	}
+
+	set_variable = { WA_AI_coop_can_supply_coal = 0 }
+	if = {
+		limit = {
+			check_variable = { _wa_coop_f_ > 0 }
+			check_variable = { resource_exported@coal > 0 }
+		}
+		set_temp_variable = { _wa_coop_off_ = resource_produced@coal }
+		multiply_temp_variable = { _wa_coop_off_ = _wa_coop_f_ }
+		# the offer must be worth at least one quantum, i.e. offered * cic > 1
+		set_temp_variable = { _wa_coop_min_ = _wa_coop_off_ }
+		multiply_temp_variable = { _wa_coop_min_ = constant:wa_ai_resource.cic.coal }
+		if = {
+			limit = { check_variable = { _wa_coop_min_ > 1 } }
+			# sold out when the unsold residue is worth less than one quantum
+			subtract_from_temp_variable = { _wa_coop_off_ = resource_exported@coal }
+			multiply_temp_variable = { _wa_coop_off_ = constant:wa_ai_resource.cic.coal }
+			if = {
+				limit = { check_variable = { _wa_coop_off_ < 1 } }
+				set_variable = { WA_AI_coop_can_supply_coal = 1 }
+			}
+		}
+	}
+
+	set_variable = { WA_AI_coop_can_supply_bauxite = 0 }
+	if = {
+		limit = {
+			check_variable = { _wa_coop_f_ > 0 }
+			check_variable = { resource_exported@bauxite > 0 }
+		}
+		set_temp_variable = { _wa_coop_off_ = resource_produced@bauxite }
+		multiply_temp_variable = { _wa_coop_off_ = _wa_coop_f_ }
+		# the offer must be worth at least one quantum, i.e. offered * cic > 1
+		set_temp_variable = { _wa_coop_min_ = _wa_coop_off_ }
+		multiply_temp_variable = { _wa_coop_min_ = constant:wa_ai_resource.cic.bauxite }
+		if = {
+			limit = { check_variable = { _wa_coop_min_ > 1 } }
+			# sold out when the unsold residue is worth less than one quantum
+			subtract_from_temp_variable = { _wa_coop_off_ = resource_exported@bauxite }
+			multiply_temp_variable = { _wa_coop_off_ = constant:wa_ai_resource.cic.bauxite }
+			if = {
+				limit = { check_variable = { _wa_coop_off_ < 1 } }
+				set_variable = { WA_AI_coop_can_supply_bauxite = 1 }
+			}
+		}
+	}
+
+	set_variable = { WA_AI_coop_can_supply_iron = 0 }
+	if = {
+		limit = {
+			check_variable = { _wa_coop_f_ > 0 }
+			check_variable = { resource_exported@iron > 0 }
+		}
+		set_temp_variable = { _wa_coop_off_ = resource_produced@iron }
+		multiply_temp_variable = { _wa_coop_off_ = _wa_coop_f_ }
+		# the offer must be worth at least one quantum, i.e. offered * cic > 1
+		set_temp_variable = { _wa_coop_min_ = _wa_coop_off_ }
+		multiply_temp_variable = { _wa_coop_min_ = constant:wa_ai_resource.cic.iron }
+		if = {
+			limit = { check_variable = { _wa_coop_min_ > 1 } }
+			# sold out when the unsold residue is worth less than one quantum
+			subtract_from_temp_variable = { _wa_coop_off_ = resource_exported@iron }
+			multiply_temp_variable = { _wa_coop_off_ = constant:wa_ai_resource.cic.iron }
+			if = {
+				limit = { check_variable = { _wa_coop_off_ < 1 } }
+				set_variable = { WA_AI_coop_can_supply_iron = 1 }
+			}
+		}
+	}
+
+	set_variable = { WA_AI_coop_can_supply_oil = 0 }
+	if = {
+		limit = {
+			check_variable = { _wa_coop_f_ > 0 }
+			check_variable = { resource_exported@oil > 0 }
+		}
+		set_temp_variable = { _wa_coop_off_ = resource_produced@oil }
+		multiply_temp_variable = { _wa_coop_off_ = _wa_coop_f_ }
+		# the offer must be worth at least one quantum, i.e. offered * cic > 1
+		set_temp_variable = { _wa_coop_min_ = _wa_coop_off_ }
+		multiply_temp_variable = { _wa_coop_min_ = constant:wa_ai_resource.cic.oil }
+		if = {
+			limit = { check_variable = { _wa_coop_min_ > 1 } }
+			# sold out when the unsold residue is worth less than one quantum
+			subtract_from_temp_variable = { _wa_coop_off_ = resource_exported@oil }
+			multiply_temp_variable = { _wa_coop_off_ = constant:wa_ai_resource.cic.oil }
+			if = {
+				limit = { check_variable = { _wa_coop_off_ < 1 } }
+				set_variable = { WA_AI_coop_can_supply_oil = 1 }
+			}
+		}
+	}
 	##################################################################################
 
 	### allied resource needs

@@ -121,50 +121,39 @@ WA_AI_should_prospect_resource_bauxite = {
 ###############################################################################
 # Cooperative Layer: Check if allies have critical resource shortages
 ###############################################################################
-# Each leg asks two things: does an ally need help, and does ROOT have spare capacity to
-# give it. The ally question alone is permanently true - WA_AI_needs_<r> rises on EITHER a
-# deficit OR heavy importing, and heavy importing is the normal state of an importer, not a
-# shortage - so without a ROOT-side term a faction leader prospects for ever.
+# Each leg asks two things: does an ally need help, and could ROOT's extraction actually reach it.
+# The ally question alone is permanently true - WA_AI_needs_<r> rises on EITHER a deficit OR heavy
+# importing, and heavy importing is the normal state of an importer - so a ROOT-side term must exist.
 #
-# THE TWO BARS DIFFER ON PURPOSE.
-#   coal            resource@coal < 500   a CEILING
-#   the other eight resource@<r>  < 0     a SIGN BOUNDARY
-# Coal alone has a proactive reactive bar (resource@coal < 100), so a zero boundary would
-# make its cooperative leg a subset of its reactive one and delete it; the ceiling leaves it
-# a live 100-500 band. The eight have no proactive bar, so zero is where their distinct
-# function begins. Different quantities - do not harmonise them.
+# ROOT can help in exactly two situations, and the trigger tests both:
+#   it is short of the resource itself, or its OFFERED export share is already bought out, so extra
+#   extraction finds a buyer. The second is computed per country in WA_AI_check_resource_needs
+#   (WA_AI_misc_effects.txt) because a trigger read per decision target cannot do that arithmetic;
+#   that header carries the estimator, its three biases and its falsifier.
 #
-# ZERO IS NOT TUNABLE. No absolute bar is derivable: the resources live on incomparable
-# scales, so eight hand-picked ceilings would be guesses. If zero ever has to move, the
-# engine fact below changed - the number was not wrong.
+# WHY NOT THE BALANCE SIGN, WHICH THIS REPLACES (Fixes 100/101, commits 2cf5f214f / ed29adbe5).
+# Those headers asserted "ZERO IS NOT TUNABLE" and listed "a gate reading the offered share or the
+# trade law directly" as NOT BUILT. Both are now overturned by measurement, not by preference: on
+# campaign 7c7803a8, 184 of 2706 country/resource rows have their offered share bought out and 160
+# of those - 87 % - still hold a POSITIVE balance. A sign test blocks every one of them. CAN sells
+# all 1126.7 aluminium it offers on a +148 balance; ENG all 216 iron on +201; USA all 177.2 tungsten
+# on +1. Scored against "fire if short OR sold out", the sign gate makes 166 errors, all of them
+# refusals to prospect where extraction would have delivered; this pair makes 20, and blocks the
+# same 15 of 16 known waste cases. The coal ceiling of 500 goes with it: the sold-out test keeps a
+# selling producer (SAF at +442) and still blocks a hoarding one (GER at +13 396), which is what the
+# ceiling was approximating.
 #
-# ENGINE FACT. The trade AI acts only on a negative balance and never stockpiles. But the
-# offered export share is min_export x EXTRACTION (common/ideas/_trade.txt, shifted by
-# national ideas), so it scales with output: a positive balance does NOT by itself prove
-# extraction is useless to an ally. What justifies these gates is the measurement instead -
-# no producer's offered share was being bought out.
-# FALSIFIER: exported / to_export climbing toward 100 % for a surplus-holding producer. Then
-# extraction IS the binding constraint and these gates are backwards. Not the ally's
-# `imported` line, which moves for reasons unrelated to ROOT.
-#
-# REJECTED - putting the deficit test on the ALLY instead of ROOT. Importing is the coping
-# act and pushes the ally's balance back to ~0, so a dependent ally never shows a deficit
-# while trade works: the term would delete the leg, not narrow it.
-# NOT BUILT - a gate reading the offered share or the trade law directly. It would catch a
-# closed_economy country by construction instead of by its balance sign.
-# STEEL - both steel triggers have no reader; no prospecting decision grants steel. Gated for
-# parity only. Rubber has readers but no observed harm case.
-#
-# Evidence and probes: checklist R66, and R65 for coal. Durable rule: lessons-log, "The
-# export share scales with extraction".
-@WA_AI_COOP_ROOT_SURPLUS_BAR = 0
-@WA_AI_COAL_COOP_CEILING = 500
+# Evidence and probes: checklist R66. Durable rule: lessons-log, "The export share scales with
+# extraction".
 
 # Scope: country. Every call site is an ai_will_do block in
-# common/decisions/_resource_prospecting.txt, so the bare check_variable reads ROOT. Keep it
-# OUTSIDE any_other_country.
+# common/decisions/_resource_prospecting.txt, so the bare check_variable reads ROOT. Keep the
+# ROOT-side OR OUTSIDE any_other_country.
 WA_AI_allies_need_coal = {
-	check_variable = { resource@coal < @WA_AI_COAL_COOP_CEILING }
+	OR = {
+		check_variable = { resource@coal < 0 }
+		check_variable = { WA_AI_coop_can_supply_coal = 1 }
+	}
 	any_other_country = {
 		is_in_faction_with = ROOT
 		check_variable = { WA_AI_needs_coal = 3 }
@@ -172,8 +161,10 @@ WA_AI_allies_need_coal = {
 }
 
 WA_AI_allies_need_oil = {
-	# Fix 101: ROOT holds no positive retained balance (see the section header).
-	check_variable = { resource@oil < @WA_AI_COOP_ROOT_SURPLUS_BAR }
+	OR = {
+		check_variable = { resource@oil < 0 }
+		check_variable = { WA_AI_coop_can_supply_oil = 1 }
+	}
 	any_other_country = {
 		is_in_faction_with = ROOT
 		# WA_AI_needs_oil is written since Fix 39 (oil arm in
@@ -183,8 +174,10 @@ WA_AI_allies_need_oil = {
 }
 
 WA_AI_allies_need_iron = {
-	# Fix 101: ROOT holds no positive retained balance (see the section header).
-	check_variable = { resource@iron < @WA_AI_COOP_ROOT_SURPLUS_BAR }
+	OR = {
+		check_variable = { resource@iron < 0 }
+		check_variable = { WA_AI_coop_can_supply_iron = 1 }
+	}
 	any_other_country = {
 		is_in_faction_with = ROOT
 		check_variable = { WA_AI_needs_iron = 3 }
@@ -192,8 +185,10 @@ WA_AI_allies_need_iron = {
 }
 
 WA_AI_allies_need_steel = {
-	# Fix 101: ROOT holds no positive retained balance (see the section header).
-	check_variable = { resource@steel < @WA_AI_COOP_ROOT_SURPLUS_BAR }
+	OR = {
+		check_variable = { resource@steel < 0 }
+		check_variable = { WA_AI_coop_can_supply_steel = 1 }
+	}
 	any_other_country = {
 		is_in_faction_with = ROOT
 		check_variable = { WA_AI_needs_steel = 3 }
@@ -201,8 +196,10 @@ WA_AI_allies_need_steel = {
 }
 
 WA_AI_allies_need_aluminum = {
-	# Fix 101: ROOT holds no positive retained balance (see the section header).
-	check_variable = { resource@aluminium < @WA_AI_COOP_ROOT_SURPLUS_BAR }
+	OR = {
+		check_variable = { resource@aluminium < 0 }
+		check_variable = { WA_AI_coop_can_supply_aluminium = 1 }
+	}
 	any_other_country = {
 		is_in_faction_with = ROOT
 		# fixed audit 2026-08-11: writer uses the British spelling (see the
@@ -212,8 +209,10 @@ WA_AI_allies_need_aluminum = {
 }
 
 WA_AI_allies_need_tungsten = {
-	# Fix 101: ROOT holds no positive retained balance (see the section header).
-	check_variable = { resource@tungsten < @WA_AI_COOP_ROOT_SURPLUS_BAR }
+	OR = {
+		check_variable = { resource@tungsten < 0 }
+		check_variable = { WA_AI_coop_can_supply_tungsten = 1 }
+	}
 	any_other_country = {
 		is_in_faction_with = ROOT
 		check_variable = { WA_AI_needs_tungsten = 3 }
@@ -221,8 +220,10 @@ WA_AI_allies_need_tungsten = {
 }
 
 WA_AI_allies_need_chromium = {
-	# Fix 101: ROOT holds no positive retained balance (see the section header).
-	check_variable = { resource@chromium < @WA_AI_COOP_ROOT_SURPLUS_BAR }
+	OR = {
+		check_variable = { resource@chromium < 0 }
+		check_variable = { WA_AI_coop_can_supply_chromium = 1 }
+	}
 	any_other_country = {
 		is_in_faction_with = ROOT
 		check_variable = { WA_AI_needs_chromium = 3 }
@@ -230,8 +231,10 @@ WA_AI_allies_need_chromium = {
 }
 
 WA_AI_allies_need_rubber = {
-	# Fix 101: ROOT holds no positive retained balance (see the section header).
-	check_variable = { resource@rubber < @WA_AI_COOP_ROOT_SURPLUS_BAR }
+	OR = {
+		check_variable = { resource@rubber < 0 }
+		check_variable = { WA_AI_coop_can_supply_rubber = 1 }
+	}
 	any_other_country = {
 		is_in_faction_with = ROOT
 		check_variable = { WA_AI_needs_rubber = 3 }
@@ -239,8 +242,10 @@ WA_AI_allies_need_rubber = {
 }
 
 WA_AI_allies_need_bauxite = {
-	# Fix 101: ROOT holds no positive retained balance (see the section header).
-	check_variable = { resource@bauxite < @WA_AI_COOP_ROOT_SURPLUS_BAR }
+	OR = {
+		check_variable = { resource@bauxite < 0 }
+		check_variable = { WA_AI_coop_can_supply_bauxite = 1 }
+	}
 	any_other_country = {
 		is_in_faction_with = ROOT
 		check_variable = { WA_AI_needs_bauxite = 3 }
