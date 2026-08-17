@@ -131,7 +131,8 @@ def iter_ai_strategies(block):
             inside = True
             depth = 0
             entry = {"line": lineno, "raw": [], "type": None, "value": None,
-                     "ratio": None, "subtract_fronts_no": False}
+                     "ratio": None, "subtract_fronts_no": False,
+                     "order_id": None, "areas": []}
         if inside:
             entry["raw"].append(raw)
             m = re.search(r"^\s*type\s*=\s*(\w+)", code)
@@ -143,6 +144,12 @@ def iter_ai_strategies(block):
             m = re.search(r"^\s*ratio\s*=\s*(-?\d+(?:\.\d+)?)", code)
             if m:
                 entry["ratio"] = float(m.group(1))
+            m = re.search(r"^\s*order_id\s*=\s*(\d+)", code)
+            if m:
+                entry["order_id"] = int(m.group(1))
+            m = re.search(r"^\s*area\s*=\s*(\w+)", code)
+            if m:
+                entry["areas"].append(m.group(1))
             if re.search(r"subtract_fronts_from_need\s*=\s*no", code):
                 entry["subtract_fronts_no"] = True
             depth += code.count("{") - code.count("}")
@@ -178,6 +185,14 @@ def main():
     def add(rule, block, line, detail):
         violations.append((rule, str(block.file.relative_to(REPO_ROOT)),
                            line, block.name, detail))
+
+    # E4 aggregate rules need every buffer of a country together, so collect
+    # them per file and evaluate after the per-block pass. One Country-layer
+    # file is one country; shared-layer files (DEFAULT/REGION/FACTION) are
+    # aggregated among themselves, which is an approximation - a country adds
+    # its own file plus the shared blocks it matches, and matching is not
+    # statically decidable.
+    buffers_by_file = {}
 
     for path in sorted(AI_STRATEGY_DIR.glob("*.txt")):
         is_wa_file = path.name.startswith(("WA_AI_MILITARY_", "WA_AI_NAVAL_"))
@@ -235,6 +250,7 @@ def main():
                     if enable_always_yes(block):
                         add("E4-buffer-always-on", block, line,
                             "put_unit_buffers with enable = always yes")
+                    buffers_by_file.setdefault(path, []).append((block, s))
                 elif t in FORCE_CONCENTRATION_TYPES:
                     if path.name != AIFC_FILE and "# aifc-tuning:" not in block.text:
                         add("E5-aifc-ownership", block, line,
@@ -250,6 +266,79 @@ def main():
                     elif v > 200:
                         add("E7-garrison-range", block, line,
                             f"value {v:g} outside [0, +200]")
+
+    # ---- E4 aggregate rules ----
+    # Engine semantics (common/ai_strategy/documentation.info:194-225, confirmed by
+    # the 2026-08-09 Atlantic Wall lesson): put_unit_buffers entries that share an
+    # `order_id` share ONE ratio pool, and `area =` names the areas whose orders may
+    # draw on the buffered units. Two consequences the per-block checks cannot see:
+    #   * a pool whose members disagree on `subtract_fronts_from_need` or on whether
+    #     they declare an `area` has undefined behaviour - one member's flag decides
+    #     for states it was never written for;
+    #   * the ratios a country reserves add up, and economy rule 2.5 ("buffers are
+    #     garrisons, not armies - reserving multiples of the army is never correct")
+    #     is a statement about that total, not about any single block.
+    # A buffer with `subtract_fronts_from_need = yes` (the engine default) shrinks as
+    # fronts demand units, so it cannot starve a front indefinitely. The budget rule
+    # therefore sums the NON-YIELDING pools only - the reservations that never answer
+    # front demand. Ratios are worst-case: `enable` gating is not statically decidable,
+    # so mutually exclusive blocks are counted as if simultaneous.
+    #
+    # ASSUMPTION, not yet verified in a campaign: a pool's size is taken as the LARGEST
+    # ratio among its members. The engine's resolution for several ratios on one
+    # order_id (max / first / last / sum) is unconfirmed - documentation.info:194-225
+    # says only "ratio of same orders ids will be share same ratio". Max is the
+    # conservative reading and matches the 2026-08-09 Atlantic Wall evidence (six
+    # blocks at 0.25 behaved as one 0.25 pool, not as 1.5). Under a summing engine
+    # every budget below would be larger, so a country flagged here is flagged under
+    # either reading - only the printed number moves. Settle it with a campaign probe
+    # (count divisions per area-defence order) before treating the figure as exact.
+    NONYIELD_BUDGET_MAX = 0.75
+
+    for path in sorted(buffers_by_file):
+        pools = {}
+        for block, s in buffers_by_file[path]:
+            pools.setdefault(s["order_id"], []).append((block, s))
+
+        for order_id, members in sorted(
+                pools.items(), key=lambda kv: (kv[0] is None, kv[0])):
+            if len(members) < 2:
+                continue
+            # Only the subtract_fronts_from_need disagreement is checked. An
+            # area-presence disagreement is NOT linted: the engine's behaviour for
+            # an omitted `area` is unverified (documentation.info:217-219 says what
+            # `area` does, never what its absence defaults to), and the GER festung
+            # / SOV Stalin-line families - the 2026-08-09 lesson's own reference
+            # implementation - omit it deliberately. 62 of 154 buffer entries
+            # repo-wide carry no area. Settle it with a campaign probe first.
+            flags = {s["subtract_fronts_no"] for _, s in members}
+            if len(flags) > 1:
+                block, s = members[0]
+                yes = [str(m["line"]) for _, m in members
+                       if not m["subtract_fronts_no"]]
+                no = [str(m["line"]) for _, m in members
+                      if m["subtract_fronts_no"]]
+                add("E4-buffer-pool-mixed", block, s["line"],
+                    f"order_id {order_id} shares one ratio pool across "
+                    f"{len(members)} entries but subtract_fronts_from_need differs "
+                    f"(no at L{','.join(no)}; yes/default at L{','.join(yes)})")
+
+        nonyield = 0.0
+        worst = None
+        for order_id, members in pools.items():
+            if not any(s["subtract_fronts_no"] for _, s in members):
+                continue
+            ratios = [s["ratio"] for _, s in members if s["ratio"] is not None]
+            if not ratios:
+                continue
+            nonyield += max(ratios)
+            if worst is None or max(ratios) > worst[1]:
+                worst = (order_id, max(ratios), members[0])
+        if nonyield > NONYIELD_BUDGET_MAX and worst is not None:
+            block, s = worst[2]
+            add("E4-buffer-country-budget", block, s["line"],
+                f"non-yielding buffer budget {nonyield:g} of the army exceeds "
+                f"{NONYIELD_BUDGET_MAX:g} (largest pool: order_id {worst[0]} at {worst[1]:g})")
 
     # E8: defines
     if DEFINES_FILE.exists():
