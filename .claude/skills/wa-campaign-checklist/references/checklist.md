@@ -1558,7 +1558,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **Streak:** 0
 - **Status:** NOT YET TESTED IN CAMPAIGN — Fix 106 postdates every analysed campaign; the `7c7803a8` reading is the FAILED baseline. **F9 boot test owed** (two deleted script files in `replace_path` folders, a removed call site, and two new Faction-layer blocks).
 - **History:**
-  - 2026-08-17 · `7c7803a8` (cloud) · FAILED (baseline, pre-fix) — see "Opened". 3 expeditionary pairs in 123 saves, all Axis/Comintern; 0 Allied; no `expeditionary_force_data` on any Allied minor at any date; 56 `support` blocks in the mod, none minor → major.
+  - 2026-08-17 · `7c7803a8` (cloud) · FAILED (baseline, pre-fix) — see "Opened". 3 expeditionary pairs in 123 saves, all Axis/Comintern; 0 Allied; no `expeditionary_force_data` on any Allied minor at any date; 56 `support` blocks in the mod, none **Allied** minor → major (minor → major does exist elsewhere: `HUN.txt:131`).
 
 
 ## Retired and merged items — ledger
