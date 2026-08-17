@@ -20,6 +20,8 @@
 # Ratios per block are E4-legal (<= 0.25); summed per state group with the AXIS guard
 # (WA_AI_MILITARY_FACTION_AXIS_THEATRE.txt) they read: Sicily/south 0.10 + 0.20 (+ ally 0.06/0.12),
 # mainland anchors 0.15 + 0.10 (+ ally 0.06/0.12), Sardinia 0.05.
+# Anchors = all 15 states (mainland + Sicily): after the Fall Achse transfer the co-belligerent ITA may own
+# nothing north of Naples, and it must still be an Italy here.
 # Every buffer has its own order_id (floor 9601-9603, threatened 9604-9605 - separate orders, so the
 # tiers stack whatever the engine does with two blocks on one order_id) and
 # subtract_fronts_from_need = no - see `# pool:`.
@@ -36,8 +38,14 @@ WA_AI_MILITARY_REGION_ITALY_home_floor_THEATRE = {
 	# civil-war Italy is created BEFORE their states are transferred, so a static ownership test there
 	# would lock them out for the game. The homeland test lives in `enable` (DEFAULT_INVASION precedent).
 	enable = {
+		# war first (cheap), then the 15-state ownership walk. Arms at our own war OR while any major is
+		# at war - a neutral Italy pre-positions its garrisons during someone else's war (the 1939-40
+		# shape the deleted ITA_protect_home block covered with `FRA/ENG = { has_war }`; review 2026-08-17)
+		OR = {
+			has_war = yes
+			any_other_country = { is_major = yes has_war = yes }
+		}
 		WA_AI_MILITARY_is_italian_homeland_power = yes
-		has_war = yes
 	}
 	abort_when_not_enabled = yes
 
