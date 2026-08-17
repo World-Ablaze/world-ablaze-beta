@@ -193,7 +193,16 @@
 # contested (own side holds Tunis or Bizerte, an enemy stands in Algeria/Morocco). contested is the code-path
 # companion (0/1), never the pass criterion by itself. first_t / last_t. Additive; a save at wa_tlm_version < 23
 # lacks the family - score NOT CHECKED, never FAILED.
-@WA_TLM_VERSION = 23
+# v24 (2026-08-17, R65): adds the WA_TLM_r65_aifc_arm_* probe family - AIFC armour-book churn, written
+# at the WEEKLY reconcile in WA_AI_AIFC_helpers.txt (WA_AI_AIFC_armor_reconcile and its four emitters),
+# NOT by the monthly sampler below: a lapse episode that opens and closes between two monthly saves is
+# invisible to a monthly snapshot. entries_n counts emitter invocations (script cannot read back the
+# persistent_strategy list, so that is the strongest available evidence - second signal is the save's own
+# type-83 count, USA 517 at 1944.6 on campaign 7c7803a8). retire_n / install_n / lapse_wk give episode
+# COUNT and LENGTH; mean length = lapse_wk / retire_n, which is the number a retirement grace window would
+# have to be sized against and which the entry count alone cannot supply. Additive; a save at
+# wa_tlm_version < 24 lacks the family - score NOT CHECKED, never FAILED.
+@WA_TLM_VERSION = 24
 
 ############################################################################################################
 #	Clock - global.WA_TLM_clock = months elapsed since 1936.1
@@ -434,6 +443,17 @@ WA_TLM_init_country = {
 	if = { limit = { NOT = { has_variable = WA_TLM_r99_tunis_contested } } set_variable = { WA_TLM_r99_tunis_contested = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r99_tunis_first_t } } set_variable = { WA_TLM_r99_tunis_first_t = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r99_tunis_last_t } } set_variable = { WA_TLM_r99_tunis_last_t = 0 } }
+
+	# r65 AIFC armour-book churn (consumer: checklist R65) - written by the WEEKLY reconcile
+	# WA_AI_AIFC_armor_reconcile and its four emitters in WA_AI_AIFC_helpers.txt, NOT by the monthly
+	# sampler below. Zero-init matters more than usual here: entries_n is read by its own write site
+	# (a temp snapshot at the head of the reconcile) to decide whether the tick emitted anything.
+	if = { limit = { NOT = { has_variable = WA_TLM_r65_aifc_arm_entries_n } } set_variable = { WA_TLM_r65_aifc_arm_entries_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r65_aifc_arm_retire_n } } set_variable = { WA_TLM_r65_aifc_arm_retire_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r65_aifc_arm_install_n } } set_variable = { WA_TLM_r65_aifc_arm_install_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r65_aifc_arm_lapse_wk } } set_variable = { WA_TLM_r65_aifc_arm_lapse_wk = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r65_aifc_arm_first_t } } set_variable = { WA_TLM_r65_aifc_arm_first_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r65_aifc_arm_last_t } } set_variable = { WA_TLM_r65_aifc_arm_last_t = 0 } }
 
 	# offensive posture (standing, consumer: the level-1 exchange-rate question - see the write
 	# site in WA_AI_MILITARY_posture_effects.txt, inside every_enemy_country. Counters are per

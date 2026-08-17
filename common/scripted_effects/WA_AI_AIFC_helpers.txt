@@ -454,12 +454,45 @@ WA_AI_AIFC_score_state = {
 #	stable enemy set reconciles to zero work. Entries churn only when the sector enemy changes, a new
 #	enemy joins the war, an enemy leaves it, or the steering switch flips.
 #
-#	ENTRY ACCUMULATION (accepted, bounded)
-#	--------------------------------------
-#	Every churn leaves a +X/-X pair of strategy instances on the country, serialized in the save.
-#	Sectors re-select at most every constant:wa_ai_aifc.sector.max_age weeks and the enemy only changes on a
-#	subset of re-selections, so a full campaign accumulates at most a few hundred inert paired entries
-#	per major - accepted as the cost of there being no remove effect.
+#	ENTRY ACCUMULATION - MEASURED, AND LARGER THAN THIS HEADER USED TO CLAIM
+#	------------------------------------------------------------------------
+#	Every churn leaves a +X/-X pair of strategy instances on the country, serialized in the save as
+#	`persistent_strategy={ type=83 id=<country index> value=<+-150|+-400> }`. There is no remove
+#	effect, so nothing ever leaves that list.
+#
+#	This block used to read "the enemy only changes on a subset of re-selections, so a full campaign
+#	accumulates at most a few hundred inert paired entries per major". That was an adjective without a
+#	table and it is FALSE. Measured on campaign 7c7803a8 (observer run, 123 monthly saves):
+#
+#		tag   1942.6   1943.6   1943.11   1944.6      distinct (id,value) pairs at 1944.6
+#		USA        0      240       339      517      64, every one of them 8-9x over
+#		ITA        -        -         -      357      106
+#		GER        -        -         -      219       97
+#		ENG       77       84        84       84       59   <- the healthy shape
+#		JAP        -        -         -       38       38 (max repeat 1)
+#		FRA        -        -         -       18       18 (max repeat 1)
+#
+#	THE CHURN IS NOT "the enemy changed". It is the WHOLE BOOK being retired and reinstalled:
+#	WA_AI_AIFC_select_sector calls WA_AI_AIFC_clear_sector at its head (this file, section head) and
+#	AGAIN on its no-anchor exit, both of which clear WA_AI_AIFC_sector_enemy. The reconcile below then
+#	runs in the same weekly tick with _aifc_want = 0, and its section-2 first arm retires EVERY entry
+#	in the book (+150 x N) plus the boost (-400). The next week a selection succeeds and section 3
+#	reinstalls all of it (-150 x N, +400). With N = 28 tracked enemies that is ~56 entries per
+#	TRANSIENT selection failure. USA's ledger reads -150 = 257 / +150 = 229, difference exactly 28 =
+#	one installed book, i.e. 9 install episodes against 8 retire episodes. At 1943.6 the save caught it
+#	mid-lapse: +150 = -150 = 113 and the book absent.
+#
+#	WHAT IS AND IS NOT HARMED. The NET per country is correct - each suppressed tag nets -150, the
+#	boost target nets +400 - so the AI's armour scoring is NOT mis-steered, and nothing is being
+#	silently dropped by the engine at 517 entries. The cost is list length: the engine sums the list on
+#	every front armour evaluation, and it grows ~250 entries/year on a tag whose selection is unstable.
+#	Save weight is negligible (~500 lines in a ~4.4M-line save).
+#
+#	A grace period on the retirement arm is the candidate fix, but N cannot be picked from these
+#	numbers: each episode emits exactly one retire + one reinstall regardless of how long it lasts, so
+#	517 cannot distinguish 8 short lapses from 8 long ones, and monthly saves cannot resolve a weekly
+#	cadence. That is what the WA_TLM_r65_aifc_arm_* counters below are for - mean episode length is
+#	lapse_wk / retire_n. Do not ship a grace window before reading them (checklist R65).
 #
 #	KNOWN GAP: a tracked country that ceases to exist (annexed) cannot receive the negation entry -
 #	the emitter is skipped and its live entry goes stale. If that tag later revives into a war with
@@ -480,6 +513,11 @@ WA_AI_AIFC_score_state = {
 ############################################################
 
 WA_AI_AIFC_armor_add_boost = {
+	# tlm: WA_TLM_r65_aifc_arm_entries_n - consumer checklist R65. Counts EMITTER INVOCATIONS, which is
+	# the strongest evidence available: script cannot read back the persistent_strategy list, so there
+	# is no post-hoc confirmation the entry landed (honesty rule 1 met as far as the engine allows).
+	# Second signal that validates it: the save's own type-83 count per major (USA 517 at 1944.6).
+	add_to_variable = { WA_TLM_r65_aifc_arm_entries_n = 1 }
 	meta_effect = {
 		text = {
 			add_ai_strategy = { type = front_armor_score id = [ETAG] value = 400 }
@@ -489,6 +527,8 @@ WA_AI_AIFC_armor_add_boost = {
 }
 
 WA_AI_AIFC_armor_cancel_boost = {
+	# tlm: WA_TLM_r65_aifc_arm_entries_n - see WA_AI_AIFC_armor_add_boost
+	add_to_variable = { WA_TLM_r65_aifc_arm_entries_n = 1 }
 	meta_effect = {
 		text = {
 			add_ai_strategy = { type = front_armor_score id = [ETAG] value = -400 }
@@ -498,6 +538,8 @@ WA_AI_AIFC_armor_cancel_boost = {
 }
 
 WA_AI_AIFC_armor_add_suppress = {
+	# tlm: WA_TLM_r65_aifc_arm_entries_n - see WA_AI_AIFC_armor_add_boost
+	add_to_variable = { WA_TLM_r65_aifc_arm_entries_n = 1 }
 	meta_effect = {
 		text = {
 			add_ai_strategy = { type = front_armor_score id = [ETAG] value = -150 }
@@ -507,6 +549,8 @@ WA_AI_AIFC_armor_add_suppress = {
 }
 
 WA_AI_AIFC_armor_cancel_suppress = {
+	# tlm: WA_TLM_r65_aifc_arm_entries_n - see WA_AI_AIFC_armor_add_boost
+	add_to_variable = { WA_TLM_r65_aifc_arm_entries_n = 1 }
 	meta_effect = {
 		text = {
 			add_ai_strategy = { type = front_armor_score id = [ETAG] value = 150 }
@@ -540,6 +584,31 @@ WA_AI_AIFC_armor_reconcile = {
 	if = {
 		limit = { has_variable = WA_AI_AIFC_armor_boost }
 		set_temp_variable = { _aifc_cur = WA_AI_AIFC_armor_boost }
+	}
+
+	############################################################
+	# 0. Telemetry - book churn (WRITE-ONLY, read by nothing)
+	############################################################
+	# tlm: WA_TLM_r65_aifc_arm_{lapse_wk,retire_n,install_n} - consumer checklist R65.
+	# Written HERE and not by WA_TLM_monthly_sample because the churn is WEEKLY: an episode that opens
+	# and closes between two monthly saves is invisible to a monthly snapshot, and that is exactly the
+	# quantity the fix needs (see the ENTRY ACCUMULATION header above).
+	#	lapse_wk  weeks entered with no sector enemy at all       -> numerator of episode LENGTH
+	#	retire_n  weeks that arrive lapsed with a NON-EMPTY book  -> episode COUNT (the book is wiped
+	#	          by section 2 below on exactly these weeks, once per episode - a second lapsed week
+	#	          finds the book already empty and emits nothing)
+	#	install_n weeks the book went from empty to non-empty     -> episode CLOSE
+	# mean episode length = lapse_wk / retire_n. That number, and nothing in the save's entry count,
+	# is what a retirement grace window would have to be sized against.
+	set_temp_variable = { _aifc_tlm_book0 = WA_AI_AIFC_armor_suppressed^num }
+	set_temp_variable = { _aifc_tlm_ent0 = WA_TLM_r65_aifc_arm_entries_n }
+	if = {
+		limit = { check_variable = { _aifc_want < 1 } }
+		add_to_variable = { WA_TLM_r65_aifc_arm_lapse_wk = 1 }
+		if = {
+			limit = { check_variable = { _aifc_tlm_book0 > 0 } }
+			add_to_variable = { WA_TLM_r65_aifc_arm_retire_n = 1 }
+		}
 	}
 
 	############################################################
@@ -638,4 +707,28 @@ WA_AI_AIFC_armor_reconcile = {
 	}
 
 	clear_temp_array = _aifc_supp_old
+
+	############################################################
+	# 4. Telemetry - close out the tick (WRITE-ONLY)
+	############################################################
+	# tlm: WA_TLM_r65_aifc_arm_{install_n,first_t,last_t} - consumer checklist R65.
+	# install_n is booked on the VERIFIED transition (book was empty at entry, is not now), not on
+	# reaching section 3. The stamps mark weeks that actually EMITTED, so a frozen _last_t beside a
+	# climbing entries_n cannot happen, and _last_t frozen while the country is at war means the
+	# reconcile went quiet - which for a healthy tag (ENG) is the expected reading, not an alarm.
+	if = {
+		limit = {
+			check_variable = { _aifc_tlm_book0 < 1 }
+			check_variable = { WA_AI_AIFC_armor_suppressed^num > 0 }
+		}
+		add_to_variable = { WA_TLM_r65_aifc_arm_install_n = 1 }
+	}
+	if = {
+		limit = { check_variable = { WA_TLM_r65_aifc_arm_entries_n > _aifc_tlm_ent0 } }
+		set_variable = { WA_TLM_r65_aifc_arm_last_t = global.WA_TLM_clock }
+		if = {
+			limit = { check_variable = { WA_TLM_r65_aifc_arm_first_t = 0 } }
+			set_variable = { WA_TLM_r65_aifc_arm_first_t = global.WA_TLM_clock }
+		}
+	}
 }
