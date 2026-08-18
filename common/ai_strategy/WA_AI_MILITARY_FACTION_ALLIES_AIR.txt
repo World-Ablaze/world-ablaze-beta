@@ -533,3 +533,338 @@ WA_AI_MILITARY_ALLIES_AIR_avoid_out_of_theatre = {
 	ai_strategy = { type = strategic_air_importance id = 250 value = -20000 }	# Skagerrak
 	ai_strategy = { type = strategic_air_importance id = 207 value = -20000 }	# Danish Belts
 }
+
+
+############################################################################################################
+# A small Allied air force stays over its own soil (2026-08-18)
+############################################################################################################
+# An Allies member fielding 399 aircraft or fewer keeps its whole air force on its own national
+# territory: every foreign air theatre this mod pulls toward is suppressed for it, and the one theatre
+# containing its own capital is left alone.
+#
+# WHY. strategic_air_importance RANKS regions and the engine fills them in that order with the planes
+# it requests (see the WHY THIS FILE EXISTS banner of WA_AI_MILITARY_DEFAULT_AIR_theatres.txt). A
+# coalition minor is ranked by exactly the same +50,000 contested-theatre pull and +100k/+200k
+# emergency pushes as the RAF and the USAAF, so its 200 planes go to the head of a foreign queue and
+# its own airspace gets whatever is left - which, for a small force, is nothing. A major with thousands
+# of planes can afford that; a minor cannot. The bar is the whole rule.
+#
+# WHAT IS SUPPRESSED. The ten air theatres of WA_AI_MILITARY_DEFAULT_AIR_theatres.txt, plus the two
+# region groups this file's own pushes target: the British Isles (home_islands_invasion_threat +200k)
+# and the Reich ring (the raid pull +50k). East Africa is deliberately absent - no scripted air pull
+# points there, so suppressing it would create a black hole with nothing to cancel.
+#
+# WHY NO ARCHETYPE GATE IN allowed. The rest of the suppression family carries
+# WA_AI_CONFIG_MILITARY_is_western_allies_air_power so that a continental member is never told to avoid
+# its own homeland. Here the per-block capital-region exclusion does that job generically, for any
+# member, on any map - and gating on the eight-tag western-allies archetype would exclude precisely the
+# minors this family exists for.
+#
+# WHY -300,000, when Phase 7d retired the -500k black holes. That retune was about avoidance applied to
+# the WHOLE coalition, where a net-negative ledger made every pull inert everywhere. This one applies
+# only to countries with nothing to spare, and each of them keeps one non-suppressed theatre by
+# construction. The value has to dominate or it does nothing: the largest stack a member can see on a
+# suppressed region is +250,000 (this file's t3 row - the Channel push +200k composed with the
+# contested western-Europe pull +50k). -300,000 nets -50,000 there and out-shouts every other pull.
+#
+# LEDGER for a 250-plane Allied minor whose capital is outside Western Europe, on region 239:
+#   t0  no landing, no staging:                 no_foothold -20k + home_only -300k        = -320k
+#   t1  an overseas ally stages, push arms:     +200k - 300k                              = -100k
+#   t2  theatre contested, DEFAULT pull adds:   +200k + 50k - 300k                        =  -50k
+#   t3  the minor rebuilds past 500 planes:     home_only releases, ledger returns to +250k
+#   t4  it attrites back under 400:             home_only re-arms (band: arm 399, release 499)
+#
+# WHAT THIS CANNOT DO. The same limit as every block in this file: it decides WHERE requested planes
+# go, it does not create demand. A minor whose own divisions are fighting abroad still generates engine
+# demand there, and this family now ranks that region below its homeland - that is the intended trade,
+# and the one case where the rule costs something.
+############################################################################################################
+
+# purpose: a small Allied air force never joins the North Africa / Mediterranean air theatre
+# range:   -300000 per strategic region (dominance tier - see the banner)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_only_north_africa = {
+	enable = {
+		WA_AI_MILITARY_AIR_home_only_arm = yes
+		NOT = { capital_scope = { OR = { region = 182 region = 126 region = 329 region = 215 region = 328 region = 128 } } }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_home_only_actor = yes }
+			WA_AI_MILITARY_AIR_home_only_release = yes
+			capital_scope = { OR = { region = 182 region = 126 region = 329 region = 215 region = 328 region = 128 } }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 182 value = -300000 }	# Morocco
+	ai_strategy = { type = strategic_air_importance id = 126 value = -300000 }	# Algeria
+	ai_strategy = { type = strategic_air_importance id = 329 value = -300000 }	# Tunisia
+	ai_strategy = { type = strategic_air_importance id = 215 value = -300000 }	# Libya
+	ai_strategy = { type = strategic_air_importance id = 328 value = -300000 }	# Cyrenaica
+	ai_strategy = { type = strategic_air_importance id = 128 value = -300000 }	# Egypt
+}
+
+# purpose: a small Allied air force never joins the Italian peninsula air theatre
+# range:   -300000 per strategic region
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_only_italy = {
+	enable = {
+		WA_AI_MILITARY_AIR_home_only_arm = yes
+		NOT = { capital_scope = { OR = { region = 21 region = 23 region = 238 } } }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_home_only_actor = yes }
+			WA_AI_MILITARY_AIR_home_only_release = yes
+			capital_scope = { OR = { region = 21 region = 23 region = 238 } }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 21 value = -300000 }	# Northern Italy
+	ai_strategy = { type = strategic_air_importance id = 23 value = -300000 }	# Central Italy
+	ai_strategy = { type = strategic_air_importance id = 238 value = -300000 }	# Southern Italy
+}
+
+# purpose: a small Allied air force never joins the Western Europe (France / Benelux) air theatre
+# range:   -300000 per strategic region
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_only_western_europe = {
+	enable = {
+		WA_AI_MILITARY_AIR_home_only_arm = yes
+		NOT = { capital_scope = { OR = { region = 239 region = 19 region = 290 region = 20 region = 5 } } }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_home_only_actor = yes }
+			WA_AI_MILITARY_AIR_home_only_release = yes
+			capital_scope = { OR = { region = 239 region = 19 region = 290 region = 20 region = 5 } }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 239 value = -300000 }	# Northern France
+	ai_strategy = { type = strategic_air_importance id = 19 value = -300000 }	# Central France
+	ai_strategy = { type = strategic_air_importance id = 290 value = -300000 }	# Western France
+	ai_strategy = { type = strategic_air_importance id = 20 value = -300000 }	# Southern France
+	ai_strategy = { type = strategic_air_importance id = 5 value = -300000 }	# Benelux
+}
+
+# purpose: a small Allied air force never joins the Scandinavia (Norway) air theatre
+# range:   -300000 per strategic region
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_only_scandinavia = {
+	enable = {
+		WA_AI_MILITARY_AIR_home_only_arm = yes
+		NOT = { capital_scope = { OR = { region = 11 region = 297 region = 191 } } }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_home_only_actor = yes }
+			WA_AI_MILITARY_AIR_home_only_release = yes
+			capital_scope = { OR = { region = 11 region = 297 region = 191 } }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 11 value = -300000 }	# Southern Norway
+	ai_strategy = { type = strategic_air_importance id = 297 value = -300000 }	# Central Norway
+	ai_strategy = { type = strategic_air_importance id = 191 value = -300000 }	# Northern Norway
+}
+
+# purpose: a small Allied air force never joins the Balkans / Greece air theatre
+# range:   -300000 per strategic region
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_only_balkans = {
+	enable = {
+		WA_AI_MILITARY_AIR_home_only_arm = yes
+		NOT = { capital_scope = { OR = { region = 24 region = 25 region = 26 region = 27 region = 295 } } }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_home_only_actor = yes }
+			WA_AI_MILITARY_AIR_home_only_release = yes
+			capital_scope = { OR = { region = 24 region = 25 region = 26 region = 27 region = 295 } }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 24 value = -300000 }	# Western Balkans
+	ai_strategy = { type = strategic_air_importance id = 25 value = -300000 }	# Greece
+	ai_strategy = { type = strategic_air_importance id = 26 value = -300000 }	# Eastern Balkans
+	ai_strategy = { type = strategic_air_importance id = 27 value = -300000 }	# Northern Balkans
+	ai_strategy = { type = strategic_air_importance id = 295 value = -300000 }	# Southern Balkans
+}
+
+# purpose: a small Allied air force never joins the Eastern Europe (Poland / Baltics / Ukraine) theatre
+# range:   -300000 per strategic region
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_only_eastern_europe = {
+	enable = {
+		WA_AI_MILITARY_AIR_home_only_arm = yes
+		NOT = { capital_scope = { OR = { region = 296 region = 37 region = 39 region = 131 region = 130 region = 270 } } }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_home_only_actor = yes }
+			WA_AI_MILITARY_AIR_home_only_release = yes
+			capital_scope = { OR = { region = 296 region = 37 region = 39 region = 131 region = 130 region = 270 } }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 296 value = -300000 }	# Poland
+	ai_strategy = { type = strategic_air_importance id = 37 value = -300000 }	# Baltic States
+	ai_strategy = { type = strategic_air_importance id = 39 value = -300000 }	# Western Belorussia
+	ai_strategy = { type = strategic_air_importance id = 131 value = -300000 }	# Belarus
+	ai_strategy = { type = strategic_air_importance id = 130 value = -300000 }	# Western Ukraine
+	ai_strategy = { type = strategic_air_importance id = 270 value = -300000 }	# Eastern Ukraine
+}
+
+# purpose: a small Allied air force never joins the Middle East (Levant / Iraq / Anatolia) theatre
+# range:   -300000 per strategic region
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_only_middle_east = {
+	enable = {
+		WA_AI_MILITARY_AIR_home_only_arm = yes
+		NOT = { capital_scope = { OR = { region = 28 region = 348 region = 259 region = 129 } } }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_home_only_actor = yes }
+			WA_AI_MILITARY_AIR_home_only_release = yes
+			capital_scope = { OR = { region = 28 region = 348 region = 259 region = 129 } }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 28 value = -300000 }	# Southern Levant
+	ai_strategy = { type = strategic_air_importance id = 348 value = -300000 }	# Northern Levant
+	ai_strategy = { type = strategic_air_importance id = 259 value = -300000 }	# Iraq
+	ai_strategy = { type = strategic_air_importance id = 129 value = -300000 }	# Asia Minor
+}
+
+# purpose: a small Allied air force never joins the Burma / Eastern India air theatre
+# range:   -300000 per strategic region
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_only_burma_india = {
+	enable = {
+		WA_AI_MILITARY_AIR_home_only_arm = yes
+		NOT = { capital_scope = { OR = { region = 189 region = 141 } } }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_home_only_actor = yes }
+			WA_AI_MILITARY_AIR_home_only_release = yes
+			capital_scope = { OR = { region = 189 region = 141 } }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 189 value = -300000 }	# Burma
+	ai_strategy = { type = strategic_air_importance id = 141 value = -300000 }	# Eastern India
+}
+
+# purpose: a small Allied air force never joins the South East Asia air theatre
+# range:   -300000 per strategic region
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_only_southeast_asia = {
+	enable = {
+		WA_AI_MILITARY_AIR_home_only_arm = yes
+		NOT = { capital_scope = { OR = { region = 142 region = 340 region = 188 region = 187 region = 234 region = 159 region = 287 region = 158 } } }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_home_only_actor = yes }
+			WA_AI_MILITARY_AIR_home_only_release = yes
+			capital_scope = { OR = { region = 142 region = 340 region = 188 region = 187 region = 234 region = 159 region = 287 region = 158 } }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 142 value = -300000 }	# South East Asia (Indochina)
+	ai_strategy = { type = strategic_air_importance id = 340 value = -300000 }	# Thailand
+	ai_strategy = { type = strategic_air_importance id = 188 value = -300000 }	# Malaya
+	ai_strategy = { type = strategic_air_importance id = 187 value = -300000 }	# Sumatra
+	ai_strategy = { type = strategic_air_importance id = 234 value = -300000 }	# Northern Borneo
+	ai_strategy = { type = strategic_air_importance id = 159 value = -300000 }	# Southern Borneo
+	ai_strategy = { type = strategic_air_importance id = 287 value = -300000 }	# Java
+	ai_strategy = { type = strategic_air_importance id = 158 value = -300000 }	# Sunda Islands
+}
+
+# purpose: a small Allied air force never joins the Pacific island-chain air theatre
+# range:   -300000 per strategic region
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_only_pacific_islands = {
+	enable = {
+		WA_AI_MILITARY_AIR_home_only_arm = yes
+		NOT = { capital_scope = { OR = { region = 160 region = 167 region = 83 region = 97 region = 227 region = 350 region = 94 region = 225 region = 349 region = 353 } } }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_home_only_actor = yes }
+			WA_AI_MILITARY_AIR_home_only_release = yes
+			capital_scope = { OR = { region = 160 region = 167 region = 83 region = 97 region = 227 region = 350 region = 94 region = 225 region = 349 region = 353 } }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 160 value = -300000 }	# Philippines
+	ai_strategy = { type = strategic_air_importance id = 167 value = -300000 }	# New Guinea
+	ai_strategy = { type = strategic_air_importance id = 83 value = -300000 }	# Solomon Islands
+	ai_strategy = { type = strategic_air_importance id = 97 value = -300000 }	# Marshall Islands
+	ai_strategy = { type = strategic_air_importance id = 227 value = -300000 }	# Micronesian Islands
+	ai_strategy = { type = strategic_air_importance id = 350 value = -300000 }	# Mariana Islands
+	ai_strategy = { type = strategic_air_importance id = 94 value = -300000 }	# W. Mariana Region
+	ai_strategy = { type = strategic_air_importance id = 225 value = -300000 }	# E. Mariana Region
+	ai_strategy = { type = strategic_air_importance id = 349 value = -300000 }	# Hawaii
+	ai_strategy = { type = strategic_air_importance id = 353 value = -300000 }	# New Caledonia
+}
+
+# purpose: a small Allied air force is not drawn to the British Isles by the home-islands push
+# range:   -300000 per strategic region
+# policy:  Additive per region (cancels home_islands_invasion_threat +200k for a non-British member)
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_only_british_isles = {
+	enable = {
+		WA_AI_MILITARY_AIR_home_only_arm = yes
+		NOT = { capital_scope = { OR = { region = 1 region = 2 region = 3 region = 4 } } }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_home_only_actor = yes }
+			WA_AI_MILITARY_AIR_home_only_release = yes
+			capital_scope = { OR = { region = 1 region = 2 region = 3 region = 4 } }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 1 value = -300000 }	# Southern England
+	ai_strategy = { type = strategic_air_importance id = 2 value = -300000 }	# Northern England
+	ai_strategy = { type = strategic_air_importance id = 3 value = -300000 }	# Scotland
+	ai_strategy = { type = strategic_air_importance id = 4 value = -300000 }	# Ireland
+}
+
+# purpose: a small Allied air force is not drawn onto the Reich by the coalition raid pull
+# range:   -300000 per strategic region (Poland 296 is covered by the eastern_europe block above)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_only_reich = {
+	enable = {
+		WA_AI_MILITARY_AIR_home_only_arm = yes
+		NOT = { capital_scope = { OR = { region = 6 region = 7 region = 8 region = 294 region = 38 } } }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_home_only_actor = yes }
+			WA_AI_MILITARY_AIR_home_only_release = yes
+			capital_scope = { OR = { region = 6 region = 7 region = 8 region = 294 region = 38 } }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 6 value = -300000 }	# North-West Germany
+	ai_strategy = { type = strategic_air_importance id = 7 value = -300000 }	# South Germany
+	ai_strategy = { type = strategic_air_importance id = 8 value = -300000 }	# Eastern Germany
+	ai_strategy = { type = strategic_air_importance id = 294 value = -300000 }	# Austria
+	ai_strategy = { type = strategic_air_importance id = 38 value = -300000 }	# Prussia
+}

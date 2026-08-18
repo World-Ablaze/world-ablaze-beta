@@ -2483,3 +2483,46 @@ WA_AI_MILITARY_AIR_enemy_bomber_arm_gone = {
 		}
 	}
 }
+
+
+############################################################################################################
+# AIR - a small Allied air force stays over its own soil
+############################################################################################################
+# Switches for the WA_AI_MILITARY_ALLIES_AIR_home_only_* family in
+# common/ai_strategy/WA_AI_MILITARY_FACTION_ALLIES_AIR.txt. Change behaviour here, never in the blocks.
+#
+# What it protects: strategic_air_importance ORDERS strategic regions and the engine fills them in
+# that order with the planes it requests, so a coalition minor ranked into the same foreign theatre as
+# the RAF/USAAF sends its whole force there and leaves nothing over its own territory. Above the bar a
+# country has an air force to spare and keeps every existing pull; at or below it, it has one.
+#
+# Engine fact assumed: has_deployed_air_force_size counts AIRCRAFT, not wings - install
+# documentation/triggers_documentation.md, section has_deployed_air_force_size ("checks for amount of
+# aircrafts"). If that ever reads "wings", every number here is off by ~a factor of 4.
+#
+# Two bars, not one. Air priorities are recomputed every DAYS_BETWEEN_AIR_PRIORITIES_UPDATE (5 days)
+# and a flip rebases the whole force, so a single 400-plane bar would flap a country building or
+# attriting around it. ARM at 399 and below, RELEASE only above 499: inside the band the standing
+# posture holds, whichever side it was entered from.
+@WA_AI_AIR_HOME_ONLY_ARM = 399		# at/below this the whole force stays over home soil
+@WA_AI_AIR_HOME_ONLY_RELEASE = 499	# ...and only a force above this is released to deploy abroad
+
+# Who this family applies to at all. The capital test is what keeps it from being a trap: the family
+# suppresses every foreign theatre and relies on the country's OWN capital theatre being excluded, so a
+# government whose capital is occupied (an exile flying out of an ally's fields) would be told to avoid
+# everywhere it can actually reach. PREV-relative so it survives being read under any_allied_country.
+WA_AI_MILITARY_AIR_home_only_actor = {
+	WA_AI_MILITARY_AIR_actor_enabled = yes
+	WA_AI_MILITARY_is_allies_member = yes
+	has_capitulated = no
+	capital_scope = { is_controlled_by = PREV }
+}
+
+WA_AI_MILITARY_AIR_home_only_arm = {
+	WA_AI_MILITARY_AIR_home_only_actor = yes
+	NOT = { has_deployed_air_force_size = { size > @WA_AI_AIR_HOME_ONLY_ARM } }
+}
+
+WA_AI_MILITARY_AIR_home_only_release = {
+	has_deployed_air_force_size = { size > @WA_AI_AIR_HOME_ONLY_RELEASE }
+}
