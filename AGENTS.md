@@ -2,6 +2,46 @@
 
 Guidance for AI coding agents working in this repository.
 
+## Talking to the user
+
+These rules govern every user-facing message. They are about *how* you write, not *what* you conclude — the content rules below still apply in full.
+
+**Reply in the user's language** (French, currently).
+
+**Answer first.** The verdict is the first thing on screen: at most 5 short lines, one idea per line, the verdict in bold. Everything after it is evidence, and evidence goes in a table, not in prose. No preamble, no restating the question.
+
+**Write for someone who is not a PDXScript expert and is juggling five other sessions.** Short sentences. No jargon without a three-word gloss in parentheses the first time it appears — `put_unit_buffers` (the order that parks reserve divisions on an area). A file path with a line number is not jargon; a system name used without saying what it does is.
+
+**Label every factual claim about how the game or the mod behaved.** One of three tokens, in bold, at the front of the claim:
+
+| Label | Means |
+| --- | --- |
+| **MEASURED** | Read directly out of a savegame, a game file, or a mod file — name the source. |
+| **DERIVED** | Computed or inferred from something MEASURED. Say from what. |
+| **ASSUMED** | Not verified. Plausible, unchecked, or engine behaviour nobody can observe. |
+
+**The three tokens stay in English in every language**, including a French reply: they are labels, not prose, and a translated label drifts into a second vocabulary. The label **replaces hedging**. Do not write "probably", "it seems", "likely", "sans doute" — write **ASSUMED** and keep the sentence direct. An unlabelled claim reads as MEASURED, so an unlabelled guess is a lie.
+
+**The engine is a black box, and unread code is not knowledge.** HOI4's internal AI weighting, its front assignment and its unit-request arbitration are not observable from a save. Anything about them you did not read in a game file is **ASSUMED**, however confident it feels — and so is any mod behaviour whose file you have not opened this session. "The first hypothesis about AI misbehaviour in this codebase is usually wrong" (principle 3) is a statement about how often ASSUMED turns out false.
+
+**Deep detail goes in a file, not in chat.** Long tables, full extraction dumps, multi-page reasoning: write them to the scratchpad or to the owning document and hand the user the link. Chat carries the verdict and the evidence that supports it.
+
+**Subagents obey this too.** A subagent's report back to the main agent carries the same three labels — an unlabelled subagent claim is exactly how a wrong "established fact" enters the pipeline (2026-08-17: the main agent asserted the Italian mainland was still contested; it was 120/120 held, and only the subagent's own reading caught it). When relaying, never upgrade a subagent's DERIVED into a MEASURED.
+
+## One subject at a time
+
+`QUEUE.md` (repo root) holds exactly one **ACTIVE** subject and everything else in **QUEUE**.
+
+- Anything discovered mid-task that is not the ACTIVE subject goes to QUEUE, with what would close
+  it. It does not get fixed on the way past. Opening a second subject means demoting the first to
+  FILE with its state, not carrying both.
+- A QUEUE row without a closing criterion is a wish, not a task.
+- `python tools/check_worklist.py` enforces the one-ACTIVE rule and audits the campaign checklist
+  for the failures that accumulate silently: a `Fix under test` commit no longer reachable from
+  HEAD, a `Status` still reading NOT YET TESTED after the item was scored, an item at its
+  retirement threshold, a campaign scored in histories but missing from the registry, telemetry
+  still writing for a retired item, and how many items are riding along unprobed.
+
 ## Agent Skills
 
 `.claude/skills/` contains task-scoped skills that carry the working knowledge needed while editing. Claude Code loads them automatically; other agents should read the relevant `SKILL.md` directly. This file remains the authoritative system-ownership index — the skills route to it.
@@ -9,6 +49,8 @@ Guidance for AI coding agents working in this repository.
 | Skill | Use it for |
 | --- | --- |
 | `.claude/skills/wa-orientation/SKILL.md` | Entry point. Repo layout, `replace_path` hazards, routing a task to its owner, validation matrix. |
+| `.claude/skills/wa-engine-reference/SKILL.md` | How the ENGINE behaves, from outside this repo: the 1.19.2 game install (effects/triggers/modifiers/defines oracles, vanilla `ai_strategy` usage, `ai_faction_theaters`), the Expert AI 5.0 mod as peer evidence, and the wiki as hypothesis only. Also the replace_path rule that says whether a base-game file is LIVE in WA or was deleted. Read it before asserting any engine fact. |
+| `.claude/skills/wa-diagnosis/SKILL.md` | Going from a symptom to the script line that causes it. The six-box output contract (symptom / measurement / mod state / mod decision / **script line** / engine boundary), the rule that a missing script line makes the report `INCOMPLETE DIAGNOSIS`, and the four techniques that each already caught a wrong conclusion here (competing hypotheses, positive control, closure test, naming the rival). Use it for every "why did the AI do X" question. |
 | `.claude/skills/wa-pdxscript/SKILL.md` | PDXScript syntax, scopes, variables/arrays, `@` constants, `meta_trigger`, silent-failure pitfalls. |
 | `.claude/skills/wa-ai-systems/SKILL.md` | `WA_AI_*` architecture: cadence, CONFIG archetypes, core/strategies/helpers/primitives split, military 4-layer model, railway queue. |
 | `.claude/skills/wa-testing/SKILL.md` | Built-in `tests/` bundles and the `WA_TEST_*` scripted harness. |
@@ -149,6 +191,8 @@ Use the strongest practical validation for the files touched.
 | Paradox script edits | Check brace balance, event IDs, namespaces, scopes, and trigger/effect names manually. HOI4 parser errors often appear only at game launch. |
 | Any `common/script_constants/` edit, `@` constant, `05_defines.lua`, `00_buildings.txt` cost/cap, `savegame.py` `_PC_*` table, or `WA_AI_*` effect/trigger commit | Run `python tools/check_constants.py` (exit 0 required; `--strict` for WARN-clean). Regenerate `.claude/skills/wa-constants-registry/references/registry.md` with `--markdown` when the manifest changed. For structural review of the change itself, run the `wa-architecture-reviewer` and `wa-lessons-reviewer` subagents in parallel. |
 | AI railway, spirit, or stats behavior | Use vanilla HOI4 test bundles in `tests/wa_railway_strict_parity.txt`, `tests/wa_spirits_strict_parity.txt`, and `tests/wa_stats_strict_parity.txt`; inspect HOI4 `logs/tests/tests_<timestamp>.log`. |
+| Any vendored engine doc under `common/**/documentation*`, or a claim citing one | Run `python tools/check_engine_docs.py` (exit 0 required). A doc listed in `tools/engine_docs_manifest.json` is SYNCED and citable; one reported `STALE` is a frozen copy of an older patch - read the install instead. Cite these files by **section name**, never by line number. |
+| Any change to `QUEUE.md`, `references/checklist.md`, or a `WA_TLM_*` write site | Run `python tools/check_worklist.py` (exit 0 required). It is also the pre-flight before scoring a campaign: an item flagged ORPHAN-FIX, STATUS-STALE or NEVER-SCORED is not scoreable as written, and scoring it produces a confident wrong result. |
 | Localisation/UI changes | Launch the game or inspect in-game UI where possible; missing localisation is not caught by Python tooling. |
 
 ## Safe Workflow

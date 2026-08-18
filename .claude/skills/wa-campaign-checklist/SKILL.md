@@ -13,6 +13,24 @@ The point of the mechanism: test campaigns are expensive (multi-hour cloud runs)
 
 Score the checklist **every time a campaign is analysed** with `wa-savegame-analysis` — full audits and narrow bug-hunts alike. On a narrow bug-hunt you still score every item the saves you already opened can answer cheaply; mark the rest `NOT CHECKED` for that campaign rather than guessing.
 
+## Before anything: run the checker
+
+`python tools/check_worklist.py`. It answers, mechanically, the questions a scoring session used to
+answer wrong:
+
+| Code | What it means for this campaign |
+| --- | --- |
+| `ORPHAN-FIX` | the item's fix commit is not in HEAD - it tests code the build does not carry. Do not score it, restate it. |
+| `STATUS-STALE` | Status says NOT YET TESTED while the history already records verdicts. Fix the field before adding to it. |
+| `NEVER-SCORED` | the item has never been scored in any campaign, so its threshold is unreachable. Probe it this pass or say why not. |
+| `RETIRE-DUE` | streak reached the threshold: delete the item and its instrumentation now, per the retirement protocol below. |
+| `REGISTRY-MISSING` | a campaign was scored but never added to the registry table - add it, or every dormancy reading stays wrong. |
+| `TLM-ORPHAN` | telemetry still writing for an item that is gone. |
+| `DORMANT` | how many items are riding along unprobed. Use it to choose what this campaign covers. |
+
+An item the checker flags is not scoreable as written, and scoring it anyway produces a confident
+wrong result - which is how a defective probe becomes a PASSED streak.
+
 ## How to run the checks
 
 1. **Follow `wa-savegame-analysis` discipline.** All probes go through its `savegame.py` script, run inside subagents so bulky output never enters the main context. Batch probes per country/save so one extraction subagent answers several checklist items in one pass.

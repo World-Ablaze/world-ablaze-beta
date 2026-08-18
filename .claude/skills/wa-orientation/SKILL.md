@@ -31,6 +31,8 @@ Check `descriptor.mod` when unsure whether a folder is replaced — it is a flat
 | Any AI number: where it is declared (`common/script_constants/wa_ai_*.txt`, `constant:` prefix), when a `@` is still allowed, the cross-format mirrors (defines / buildings / savegame.py) and the checker that catches drift | skill `wa-constants-registry` |
 | Reading savegames: campaign identity, extracting variables/ideas/flags from 60–150MB saves | skill `wa-savegame-analysis` |
 | Scoring an analysed test campaign against the living verification checklist; adding a probe when a fix ships | skill `wa-campaign-checklist` |
+| How the **engine** behaves rather than how WA scripts it: an effect/trigger/modifier's scope, what an `ai_strategy type =` does, an `NDefines` default, whether a base-game file is live in WA | skill `wa-engine-reference` |
+| **Why** something misbehaved (not what): the AI did not build / attack / defend, a campaign reading looks wrong, a playthrough bug report | skill `wa-diagnosis` |
 | Full system-ownership table, editing rules, validation matrix | `AGENTS.md` (repo root) |
 
 `AGENTS.md` is the authoritative index of systems and their owning files. These skills do not replace it — they carry the working knowledge an agent needs *while* editing, and point back to `AGENTS.md` and `documentation/` for the full spec.
