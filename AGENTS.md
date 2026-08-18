@@ -36,7 +36,10 @@ These rules govern every user-facing message. They are about *how* you write, no
   it. It does not get fixed on the way past. Opening a second subject means demoting the first to
   FILE with its state, not carrying both.
 - A QUEUE row without a closing criterion is a wish, not a task.
-- `python tools/check_worklist.py` enforces the one-ACTIVE rule and audits the campaign checklist
+- `python tools/check_worklist.py` enforces the one-ACTIVE rule, holds the **fix registry**
+  (`tools/fix_registry.json`: one `Fix NN` = one row = one commit reachable from HEAD; a number used in the
+  tree with no row is an error, and a number whose commit cannot be recovered carries a note saying so), and
+  audits the campaign checklist
   for the failures that accumulate silently: a `Fix under test` commit no longer reachable from
   HEAD, a `Status` still reading NOT YET TESTED after the item was scored, an item at its
   retirement threshold, a campaign scored in histories but missing from the registry, telemetry
@@ -195,7 +198,7 @@ Use the strongest practical validation for the files touched.
 | Any `common/script_constants/` edit, `@` constant, `05_defines.lua`, `00_buildings.txt` cost/cap, `savegame.py` `_PC_*` table, or `WA_AI_*` effect/trigger commit | Run `python tools/check_constants.py` (exit 0 required; `--strict` for WARN-clean). Regenerate `.claude/skills/wa-constants-registry/references/registry.md` with `--markdown` when the manifest changed. For structural review of the change itself, run the `wa-architecture-reviewer` and `wa-lessons-reviewer` subagents in parallel. |
 | AI railway, spirit, or stats behavior | Use vanilla HOI4 test bundles in `tests/wa_railway_strict_parity.txt`, `tests/wa_spirits_strict_parity.txt`, and `tests/wa_stats_strict_parity.txt`; inspect HOI4 `logs/tests/tests_<timestamp>.log`. |
 | Any vendored engine doc under `common/**/documentation*`, or a claim citing one | Run `python tools/check_engine_docs.py` (exit 0 required). A doc listed in `tools/engine_docs_manifest.json` is SYNCED and citable; one reported `STALE` is a frozen copy of an older patch - read the install instead. Cite these files by **section name**, never by line number. |
-| Any change to `QUEUE.md`, `references/checklist.md`, or a `WA_TLM_*` write site | Run `python tools/check_worklist.py` (exit 0 required). It is also the pre-flight before scoring a campaign: an item flagged ORPHAN-FIX, STATUS-STALE or NEVER-SCORED is not scoreable as written, and scoring it produces a confident wrong result. |
+| Any change to `QUEUE.md`, `references/checklist.md`, `tools/fix_registry.json`, or a `WA_TLM_*` write site | Run `python tools/check_worklist.py` (exit 0 required). It is also the pre-flight before scoring a campaign: an item flagged ORPHAN-FIX, STATUS-STALE or NEVER-SCORED is not scoreable as written, and scoring it produces a confident wrong result. |
 | Localisation/UI changes | Launch the game or inspect in-game UI where possible; missing localisation is not caught by Python tooling. |
 
 ## Safe Workflow

@@ -31,6 +31,9 @@ checklist.md - each of these is a real 2026-08-17 defect, made mechanical
   WARN   TLM-ORPHAN     a WA_TLM_r<NN>_* write site (NN = the FIX number) that no live
                         checklist item mentions - telemetry writing for a dead consumer.
   WARN   NO-PROBE       a RETIREABLE item with no Probe line: unscoreable by construction.
+  ERROR  FIX-UNREGISTERED a Fix NN used in the tree with no row in tools/fix_registry.json.
+  ERROR  FIX-ORPHAN      a registry row cites a commit HEAD cannot reach.
+  WARN   FIX-UNRESOLVED  a fix number whose implementing commit cannot be recovered.
   ERROR  LEDGER-MISSING an item with no machine-readable Ledger line.
   ERROR  LEDGER-MISMATCH the Ledger and the prose disagree on threshold or streak.
   WARN   STATUS-UNSET   nobody has ever written this item's status down.
@@ -53,6 +56,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 QUEUE = REPO / "QUEUE.md"
 CHECKLIST = REPO / ".claude/skills/wa-campaign-checklist/references/checklist.md"
+FIX_REGISTRY = REPO / "tools/fix_registry.json"
 
 # The day the PROBE-UNRUN rule shipped. Items opened before it are grandfathered - see
 # the rule for why it cannot be applied backwards.
@@ -398,6 +402,60 @@ def check_checklist(rep: Report) -> None:
                     f"item mentions it - retire the instrumentation or promote it (§3.7/§3.8)")
 
 
+def check_fix_registry(rep: Report) -> None:
+    """One fix number = one registry row = one commit that is on HEAD.
+
+    Fix numbers are the only cross-reference this repo has between a code comment, a
+    checklist item and the commit that introduced a behaviour. Nothing held them together:
+    three items shipped carrying a literal `<FILL AT COMMIT>` placeholder that was never
+    written back, and two of those commits can no longer be recovered from git at all
+    because no commit message ever named the fix.
+    """
+    if not FIX_REGISTRY.exists():
+        rep.add("WARN", "NO-FIX-REGISTRY", "tools/fix_registry.json absent")
+        return
+    reg = json.loads(read(FIX_REGISTRY))
+
+    used: dict[str, str] = {}
+    for base in ("common", "events", "documentation", ".claude", "tools"):
+        root = REPO / base
+        if not root.exists():
+            continue
+        for path in root.rglob("*"):
+            if path.suffix not in (".txt", ".md", ".lua"):
+                continue
+            try:
+                body = path.read_text(encoding="utf-8", errors="replace")
+            except Exception:
+                continue
+            # The word boundaries are spelled out and the digit class is literal on purpose.
+            # This line shipped once with a backspace byte where each boundary should have
+            # been: it scanned 2,346 files, matched nothing, and reported a clean result.
+            # A control with an invented Fix 999 is what caught it, not review.
+            for m in re.finditer(r"\bFix ([0-9]{1,3})\b", body):
+                used.setdefault(m.group(1), str(path.relative_to(REPO)).replace("\\", "/"))
+
+    for num, where in sorted(used.items(), key=lambda kv: int(kv[0])):
+        if num not in reg:
+            rep.add("ERROR", "FIX-UNREGISTERED",
+                    f"Fix {num}: used in {where} but absent from tools/fix_registry.json - "
+                    f"a number nothing can resolve to a commit")
+
+    for num, row in sorted(reg.items(), key=lambda kv: int(kv[0])):
+        sha = row.get("commit")
+        if not sha:
+            if not row.get("note"):
+                rep.add("ERROR", "FIX-UNRESOLVED",
+                        f"Fix {num}: registry row has no commit and no note saying why")
+            else:
+                rep.add("WARN", "FIX-UNRESOLVED",
+                        f"Fix {num}: no implementing commit recoverable - {row['note'][:80]}")
+        elif git_state(sha) == "orphan":
+            rep.add("ERROR", "FIX-ORPHAN",
+                    f"Fix {num}: registry cites {sha}, which git knows but HEAD cannot reach - "
+                    f"the fix this number names is not in the build")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -410,6 +468,7 @@ def main() -> int:
     check_queue(rep)
     if not args.queue:
         check_checklist(rep)
+        check_fix_registry(rep)
 
     code = 1 if (rep.count("ERROR") or (args.strict and rep.count("WARN"))) else 0
 
