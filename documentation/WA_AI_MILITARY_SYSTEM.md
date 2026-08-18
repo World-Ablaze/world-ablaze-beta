@@ -195,6 +195,49 @@ outranks routine per-area tuning. `WA_AI_MILITARY_DEFAULT_FRONT_control.txt` sta
 the code site ("priority 500 outranks the posture exec/grind blocks (300) ... and yields to
 `no_stockpiles_stop` above (10000)").
 
+### 6.1.1 The collision, audited (2026-08-18) - and the audit's own errors
+
+The ladder and the layer rule do disagree, but the surface is much smaller than a first pass
+suggests, and a first pass got four of ten rows wrong. Both are recorded here because the wrong
+version was written down before the reviewers took it apart.
+
+Of 81 Country-layer `front_control` blocks below priority 300, only **10** can co-apply with one of
+the 8 Faction posture blocks at 300-340 - the rest target a different enemy or belong to a country
+in no such faction. After correction:
+
+| Block | Prio | Verdict |
+| --- | --- | --- |
+| `GER_germany_protect_the_fatherland_FRONT` | 100 | **real collision.** `tag = SOV ratio = 0.75 careful execute_order = no`, outranked by `AXIS_exec_vs_sov` (300) |
+| `CZE_sit_on_your_forts_FRONT` | 100 | **real collision.** `execute_order = no` (`CZE_FRONT.txt:38`) under `ALLIES_exec_vs_germany` (300) |
+| `FRA_paris_commune_sit_tight_2` | 0 | **real collision**, and a blanket one - no `tag`, no `area`, `execute_order = no` + `manual_attack = no` |
+| `CHI_war_with_JAP_FRONT`, `_AI_FRONT` | 0 | **conditional** - both are holds, but see the resolution question below |
+| `CHI_war_with_JAP_2_FRONT`, `_3` | 0 | **NOT holds.** `_2_` sets no `execute_order` at all; `_3` is `balanced` + `manual_attack = yes` |
+| `CZE_help_france_FRONT` | 100 | **NOT a hold** - `execute_order = yes` (`CZE_FRONT.txt:65`). Aligned with the executor, harmless |
+| `SPR_dont_attack_at_startup_of_civil_war` | 0 | **cannot co-apply.** Gated on `has_global_flag = SPR_civil_war_startup`, a ~3-day 1936 window; `AXIS_exec_vs_sov` needs Axis membership |
+| `SPA_nationalist_all_out_push` | 0 | aligned with the executor (`rush`, `execute_order = yes`), harmless |
+
+**The question the whole audit rests on is unanswered.** `documentation.info` says only "higher prio
+strats will override lower" and, per field, "if set will override". Whether resolution is
+**per-field or whole-block is ASSUMED**. It matters: `CHINA_FRONT_careful_exec_vs_japan` (330) sets
+no `execute_order`, so under per-field resolution it never overrode the CHI holds and two of the
+rows above are not collisions at all. Settle that before acting on any of them.
+
+**Do not fix this by raising the holds above the posture tier.** That was proposed on 2026-08-18 and
+both reviewers returned CONFLICT, for reasons worth keeping:
+
+- It is the re-tiering the paragraph above forbids, proposed by the same session that wrote the
+  paragraph.
+- `GER_germany_protect_the_fatherland_FRONT` enables on a `surrender_progress > 0.05` branch that is
+  **monotonic for a losing Germany**. Above every executor it stops being a hold and becomes a
+  permanent Eastern-Front veto - the shape that killed the Soviet offensive in campaign `911bed3c`.
+- `FRA_paris_commune_sit_tight_2` releases when the civil war ends, which requires somebody to
+  attack. Raised, it is self-latching.
+- The sanctioned mechanism is 6.2: an ownership slug, with the exclusion written **inside the exec
+  block's `country_trigger`** - not in its `enable`, which would disarm the executor against every
+  enemy rather than the owned one.
+- And the effect is currently unscoreable: nothing in a save distinguishes "the hold was overridden"
+  from "the hold never enabled", so any change here needs a probe before it can be verified.
+
 **Consequence you must hold when writing a `front_control` block:** the layer precedence in 6.2 is
 NOT what the engine applies to this type. Wherever no ownership slug gates the pair, a Faction
 posture block at 300 outranks a Country block at 100 or 0. Do not "fix" this by re-tiering by
