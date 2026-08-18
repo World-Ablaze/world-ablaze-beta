@@ -283,8 +283,25 @@ suppression of everything outside the intended target set.
   Bismarck Sea to keep ENG out of Pacific invasions. **ASSUMED** beyond that - no engine text describes
   the parameter, and nothing in WA has ever exercised it.
 - **Why it matters here:** `common/ai_strategy` is a `replace_path` folder, so vanilla's ENG.txt does
-  not run. WA replaced that theatre-sequencing behaviour with nothing. Whether WA wants it is an open
-  question, not a defect - queued, not fixed.
+  not run.
+- **DECISION 2026-08-18: not adopted, and the gap is smaller than "replaced with nothing".** WA does
+  sequence invasion theatres - it just does it on a different axis. Measured in
+  `WA_AI_MILITARY_FACTION_ALLIES_INVASION.txt`: 76 `invade` entries across 12 blocks, **7 of the 12
+  date-gated**, arranged as explicit hold/fire pairs - `ALLIES_norway_invasion_hold_I` /
+  `_fire_I`, `ALLIES_dday_hold`, `ALLIES_no_italy_invasion_early`,
+  `ALLIES_war_against_ITA_north_africa_first`. Values run -5000 / -2000 (50 entries) / -500 / +500 /
+  +1000 / +4000. Mod-wide: **351 `invade`, 46 `invasion_unit_request`, 6 `naval_invasion_focus`,
+  zero of this type.**
+- **The two axes are not the same, and that is the whole trade.** `invade` keys on the **target
+  country**; `naval_invasion_support_priority` keys on the **sea region the invasion path crosses**.
+  Route-keyed expresses "nothing in the Pacific until the Mediterranean is done" in one entry
+  (vanilla writes exactly that: five Med regions at 200, Bismarck Sea at 25 then -100). Target-keyed
+  expresses it by naming every country in the theatre - which is what WA's 50 `-2000` entries and
+  the 16-target `ALLIES_minor_allies_dont_invade` block are doing.
+- **So: enumeration works, and adopting the type would add a mechanism where nothing is broken** -
+  the Fix 77 lesson. Revisit if the enumeration keeps growing, or the day a rule needs to be
+  expressed about a *route* whose destinations are not enumerable in advance. Until then the entry
+  here exists so the next reader knows the lever is real, undocumented, and deliberately unused.
 
 ## Phase 4 audit: cross-layer duplication is mostly by-design
 
