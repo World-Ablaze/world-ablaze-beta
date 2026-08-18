@@ -83,13 +83,14 @@ Protocol for scoring, retiring, and adding items: see `../SKILL.md`. Streak = co
 ## FUNDAMENTAL — never removed
 
 ### F1. WW2 starts on time
-- **Ledger:** `class=FUNDAMENTAL threshold=none streak=13 fix=none status=UNSET`
+- **Ledger:** `class=FUNDAMENTAL threshold=none streak=14 fix=none status=PASSING`
 
 - **Pass:** German–Polish war begins ~1939.9.1 (±4 months).
 - **Probe:** global flags block near top of save (`flags` command, no TAG) — war-start flag set-dates; cross-check GER `diplomacy`.
 - **Note:** the M-R pact focus manpower gate (`GER_mol_rib_pact` needs 1.5M army manpower under limited conscription) is the known variance source — see `campaign-audit-fix-plan` memory root-cause (a). Low priority; Barbarossa's hard date absorbs the delay.
-- **Streak:** 13
+- **Streak:** 14
 - **History:**
+  - 2026-08-18 · `0bbc1f60` · **PASSED** - `GER_has_started_war` set **1939.9.13**, twelve days after the historical date and well inside the +/-4 month window.
   - 2026-08-10 · `9be92c89` · FAILED — war started 1940.1.17, 4.5 months late (outside ±4; M-R manpower gate, known variance).
   - 2026-08-10 · `cbca536d` · PASSED — war started 1939.9.1, on time.
   - 2026-08-10 · `66d6b53c` · PASSED — war started 1939.9.1 exactly (`GER_has_started_war` set 1939.9.1.8; Warsaw fell 1939.10.7).
@@ -106,12 +107,13 @@ Protocol for scoring, retiring, and adding items: see `../SKILL.md`. Streak = co
   - 2026-08-17 · `9d83084c` · PASSED — `GER_has_started_war` + `invade_poland_question` **1939.9.27**, +26 days vs historical, well inside ±4 months; GER↔POL war `start_date` 1939.9.27.9, ENG/FRA/Dominions in the next hour. `fall_of_warsaw_ger` 1939.10.28. Ninth consecutive run with the M-R manpower gate not biting.
 
 ### F2. France falls on time
-- **Ledger:** `class=FUNDAMENTAL threshold=none streak=12 fix=none status=UNSET`
+- **Ledger:** `class=FUNDAMENTAL threshold=none streak=13 fix=none status=PASSING`
 
 - **Pass:** France capitulates ~1940.6 (±3 months).
 - **Probe:** global flags / FRA country block capitulation state; VP control of Paris.
-- **Streak:** 12
+- **Streak:** 13
 - **History:**
+  - 2026-08-18 · `0bbc1f60` · **PASSED** - FRA fields **126 divisions at 1940.7 and 7 at 1940.9**, so the capitulation lands in that window; target ~1940.6 +/-3 months.
   - 2026-08-10 · `9be92c89` · NOT CHECKED — arc completed through German defeat (implies fall of France) but the date was not explicitly recorded; record it next run.
   - 2026-08-10 · `66d6b53c` · PASSED — Paris fell 1940.6.22, capitulation 1940.6.30 (`fall_of_france`), both near-exact historical dates.
   - 2026-08-11 · `31eaf7e6` · PASSED — Paris fell 1940.6.14, `fall_of_france` 1940.6.23 — exactly historical despite the 6-week-late war start.
@@ -127,12 +129,13 @@ Protocol for scoring, retiring, and adding items: see `../SKILL.md`. Streak = co
   - 2026-08-17 · `9d83084c` · PASSED — `fall_of_paris_ger` **1940.6.12**, `fall_of_france` = `the_fall_of_france_global_flag` **1940.6.23** — historical to the day. **Paris is never liberated in this campaign either**: GER holds state 855 in every save through the final 1946.2, and FRA's own army never rebuilds (8 divisions 1943.6 → 6 from 1944.12, of which exactly 2 stand in France).
 
 ### F3. Barbarossa fires
-- **Ledger:** `class=FUNDAMENTAL threshold=none streak=11 fix=none status=UNSET`
+- **Ledger:** `class=FUNDAMENTAL threshold=none streak=12 fix=none status=PASSING`
 
 - **Pass:** GER–SOV war begins. Note it is hard-dated **1941.6.22** in `common/decisions/z_WA_ai_GER.txt` and silently absorbs upstream delays — a pass here says nothing about the war-start timeline.
 - **Probe:** global flags war set-dates; SOV `diplomacy` section.
-- **Streak:** 11
+- **Streak:** 12
 - **History:**
+  - 2026-08-18 · `0bbc1f60` · **PASSED** - Barbarossa fired: `fall_of_kiev` **1941.10.3**, `SOV_ask_for_aid_flag` 1941.10.23, `fall_of_sevastopol` 1942.8.17. Per this item's own caveat the date is hard-coded, so the pass says the war happened, not that the timeline is healthy.
   - 2026-08-10 · `9be92c89` · PASSED — GER–SOV war fired on the anchored date; European war proceeded to conclusion.
   - 2026-08-10 · `66d6b53c` · PASSED — `barbarossa_counter` set 1941.6.22.17; Kiev fell 1941.9.24 (front moving on schedule).
   - 2026-08-11 · `31eaf7e6` · PASSED — war began 1941.6.22 exactly (proxy: GER country flag `SOV_third_five_year_plan_disruptor_flag` 1941.6.22.11; no dedicated global flag exists). Note: the front then ran SLOW — Kiev fell 1942.5.7 (8 months late), Sevastopol 1943.4.12.
@@ -148,12 +151,13 @@ Protocol for scoring, retiring, and adding items: see `../SKILL.md`. Streak = co
   - 2026-08-17 · `9d83084c` · PASSED — hard date: GER↔SOV war `start_date` **1941.6.22.17**; `fall_of_kiev` 1941.8.30. **The caveat cuts the bad way for the third campaign running**: the East never resolves either — SOV first reaches GER-owned soil only at **1946.1** (2 states / 18 provinces) despite running 70–122 divisions per front order, and its Jan-1946 army-group order 4690 still carries `W. Berlin` in its path unreached at the final save. See F5.
 
 ### F4. Pearl Harbor / USA entry
-- **Ledger:** `class=FUNDAMENTAL threshold=none streak=12 fix=none status=UNSET`
+- **Ledger:** `class=FUNDAMENTAL threshold=none streak=13 fix=none status=PASSING`
 
 - **Pass:** USA enters the war ~1941.12 (±3 months).
 - **Probe:** USA `diplomacy` section, global war flags.
-- **Streak:** 12
+- **Streak:** 13
 - **History:**
+  - 2026-08-18 · `0bbc1f60` · **PASSED** - `day_of_infamy_happened` **1941.12.4**, then `fall_of_hong_kong` 1941.12.6, `fall_of_manila` 1942.1.21, `fall_of_singapore` 1942.3.13. Japan's opening ran to schedule.
   - 2026-08-10 · `9be92c89` · PASSED — USA at war in the expected window (exact entry date not recorded; record it next run).
   - 2026-08-10 · `66d6b53c` · PASSED — `day_of_infamy_happened` 1941.12.4 (3 days early).
   - 2026-08-11 · `31eaf7e6` · PASSED — `day_of_infamy_happened` 1941.12.18 (11 days late).
@@ -169,12 +173,13 @@ Protocol for scoring, retiring, and adding items: see `../SKILL.md`. Streak = co
   - 2026-08-17 · `9d83084c` · PASSED — `day_of_infamy_happened` **1941.12.4** (3 days early); GER↔USA war `start_date` 1941.12.5.3. USA reaches 168–186 deployed divisions, but **39 of them hold no order at all by 1946.2** (23 % of the army — see F5 / R51).
 
 ### F5. Germany loses WW2 and the European war ends
-- **Ledger:** `class=FUNDAMENTAL threshold=none streak=0 fix=none status=UNSET`
+- **Ledger:** `class=FUNDAMENTAL threshold=none streak=0 fix=none status=FAILING`
 
 - **Pass:** Germany is defeated and the European war terminates (white-peace chain or capitulation). Historical target ~1945.5; ending at all is the invariant, ending on time is the aspiration.
 - **Probe:** global flags for the German white-peace chain; GER country state in late saves.
 - **Streak:** 0
 - **History:**
+  - 2026-08-18 · `0bbc1f60` · **FAILED - and this is the campaign's headline.** At the last save, **1946.5**, Germany is alive, still fascist, fields **288 divisions** and is **still at war with 37 countries** on a war declared 1939.9.13. Ten years, no termination. For scale on the same save: SOV 413 divisions, JAP 321, USA 216, ENG 131, ITA 122, FRA 9. The European war did not end, and nothing in the save suggests it was about to.
   - 2026-08-10 · `9be92c89` · PASSED — scripted German white-peace chain fired 1946.9. Late vs ~1945.5 target but the war ENDS; lateness traces to the 4.5-month-late war start (F1).
   - 2026-08-10 · `66d6b53c` · NOT CHECKED — campaign truncated at 1945.6 with the war still running: GER uncapitulated and holds Berlin, but D-Day fired on time (1944.6.8), Allies are on German soil and GER carries the terminal-attrition idea set (`death_before_defeat`, `GER_werwolf`, `scraping_the_barrel`, `economy_fatigue_78`). Trajectory plausible for a 1946 white-peace as in `9be92c89`; unresolvable on a truncated run. If later saves of this campaign arrive, re-score.
   - 2026-08-11 · `31eaf7e6` · FAILED — Germany undefeated at campaign end 1946.6: holds Berlin, still occupies 14 FRA + 10 POL states; SOV (468 divisions) controls ZERO German states; Allies hold only 7. Zero global flags after `d_day_happened` 1944.6.8 — the war STALLS rather than merely running late. User-diagnosed proximate cause at 1944.7: the D-Day beachhead has no logistics (Normandy hubs at 18–31 demand vs 5 capacity, territory Free-France-owned) — see R9's dead supply-line construction. Caveat: `9be92c89`'s white-peace chain fired 1946.9, 3 months past this campaign's end, but there the Allies were advancing; here it is a two-year stalemate.
@@ -210,13 +215,14 @@ Protocol for scoring, retiring, and adding items: see `../SKILL.md`. Streak = co
   - 2026-08-16 · `a232d96c` · FAILED (KNOWN GAP) — JAP uncapitulated at 1946.6, **45/63** states, army 319→407 divisions over the last year; one nuke 1946.4.9. Not re-diagnosed.
 
 ### F7. Spanish Civil War: Nationalists win — DLC-gated
-- **Ledger:** `class=FUNDAMENTAL threshold=none streak=9 fix=none status=UNSET`
+- **Ledger:** `class=FUNDAMENTAL threshold=none streak=10 fix=none status=PASSING`
 
 - **Pass:** Nationalist Spain wins the SCW, ideally by ~1939.
 - **DLC-gated:** scoreable only when La Résistance is active — **read the save's `dlcs=` per campaign** (the cloud box now has LaR: `dlcs=257535` since `66d6b53c`; the old `dlcs=30` cloud runs were N/A). Note the mod defines only `SPR` + dynamic `D01`–`D59` tags — LaR presence is proven by `SPA_`-prefixed LaR flags and D02 activation, not by SPA/SPB/SPC/SPD tag existence.
 - **Probe:** global flag `spanish_civil_war` (still set = unresolved); SPR `politics` (Nationalists = neutrality) vs D02 (Republicans, democratic) alive-ness across saves. **S1-fix sub-probe (`d5d88061d`, civil-war brake exemption):** neither Spanish belligerent has `WA_AI_defensive_front_strategy` acting as a permanent veto — for each side, either the flag is absent in ≥1 mid-war save, or `wa_ai_fielded_eq_ratio` ≥ 0.5 in a save where front battles are occurring; corroborate with rising casualties on both sides (flat casualties = still frozen). If the SCW still deadlocks WITH S1 confirmed working, escalate to the shelved options (N1/N2/N4 balance nudges, B1/B3 scripted resolution backstops — see the 2026-08-10 SCW investigation).
-- **Streak:** 9
+- **Streak:** 10
 - **History:**
+  - 2026-08-18 · `0bbc1f60` · **PASSED** - the Nationalists won in **1939.7-8**: D02 (Republicans) fields 24 divisions at 1939.7 and has no army section at 1939.8, and SPR's `ruling_party` moves neutrality -> fascism. `dlcs=257535`, so La Resistance is active and the item is scoreable. **PROBE DEFECT, found here:** this item's probe says the global flag `spanish_civil_war` "still set = unresolved". That flag is **still set at 1946.5**, seven years after the war ended. Reading it alone produces a false FAIL - score the SCW on D02's existence and SPR's ruling party instead.
   - 2026-08-09 · `c9ab1062` · N/A (DLC) — cloud non-LaR path; Republican win #3 was a dead-code artefact, not balance evidence.
   - 2026-08-10 · `9be92c89` · N/A (DLC) — cloud, no LaR.
   - 2026-08-10 · `cbca536d` · PASSED — LaR path, Franco won 1939.3.30; both balance commits' mechanisms fired. Residual: volunteer-airforce decisions never fired on either side.
@@ -255,11 +261,12 @@ Protocol for scoring, retiring, and adding items: see `../SKILL.md`. Streak = co
   - 2026-08-16 · `a232d96c` · FAILED (fill clause; hoard clause NOT CHECKED) — `wa_ai_fielded_eq_ratio` at 1945.6: **JAP 0.861, ITA 0.788** (1946.6: 0.699 / 0.589), both under 0.90 with no exemption; GER 1.000/0.977/0.997, SOV 1.000/0.979/0.986, USA 1.000/1.000/0.995, ENG 0.896/0.951/0.948 at 1941.6/1943.6/1945.6. Divisions (units-only = `wa_tlm_comp_div_total`) 1939.9→1946.6: GER 102/268/277/297/263/283; SOV 158/255/364/407/425/422; **USA 9/11/56/92/192/217 monotone**; ENG 29/63/101/129/153/161; JAP 129/148/315/326/319/407; ITA 65/89/106/97/96/80; FRA 64/8/8/8/7/7. No manpower-pinned-with-falling-divisions signature. Hoard clause unscored again (5th of the last 6 campaigns).
 
 ### F9. Game boots
-- **Ledger:** `class=FUNDAMENTAL threshold=none streak=14 fix=none status=UNSET`
+- **Ledger:** `class=FUNDAMENTAL threshold=none streak=15 fix=none status=PASSING`
 
 - **Pass:** the build the campaign runs on launches without CTD. Scored per build, before the campaign: run the launch harness after any commit touching `force_concentration` blocks in country ai_strategy files — the deterministic-CTD lesson is that `GER_fall_gelb` + `war_with_soviets` fc entries are load-bearing (see comments in `common/ai_strategy/GER.txt` and the `d69eef2fa` incident).
-- **Streak:** 14
+- **Streak:** 15
 - **History:**
+  - 2026-08-18 · `0bbc1f60` · **PASSED** - the build boots and runs: 124 monthly saves, 1936.2 through 1946.5, no truncation.
   - **BOOT-TEST DEBTS of 2026-08-14 — DISCHARGED by `be18f9c7` (entry below):** Fix 71 ship-name groups (`eac96b4f9`, four data-only files under `common/units/names_ships/`), Fixes 69/70 (`496c4dae4` / `69ac9be36`: `allow = { NOT = { is_ai = yes } }` on technologies, `create_equipment_variant … allow_without_tech = yes`). Two pointers worth keeping from the original notes: (a) in debug, `research all` on a tagged major fires **every** `on_research_complete` at once, so one boot enumerates every broken scripted `create_equipment_variant` in the build instead of the handful a campaign stumbles into; (b) `common/technologies/air_techs_sov.txt:1590` fails to create "Lavochkin LaGG-3-35" (*Equipment category differs from that of the type*) — a pre-existing live defect, tracked under R31's history.
   - 2026-08-12 · current local working tree (Fixes 46-50) · PASSED — user-confirmed launch with no new `error.log` entry. This clears the first in-game parse/load test of the `WA_AI_EQUIPMENT_*` scripted-trigger modifiers and the generated parallel-tank-frontier blocks; it does not score R30-R35's behavioural legs.
   - 2026-08-10 · `66d6b53c` · PASSED — build through `083b224ac` booted on the cloud box and ran 9.5 game-years without CTD. (HEAD adds only `17505d9a9` + docs on top; boot-test HEAD before the next campaign anyway.)
