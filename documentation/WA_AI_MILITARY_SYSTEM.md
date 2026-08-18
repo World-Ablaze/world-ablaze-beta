@@ -87,7 +87,7 @@ This is the master legend. For each `ai_strategy` `type` currently in use, it st
 | `garrison` | Max wins; large negatives force-off | Additive (with negative-override convention) | n/a | -5000 (force off) or 0 to 200 |
 | `infantry` | Sums | Additive | n/a | 0 to 100 |
 | `spare_unit_factor` | Sums | Additive | n/a | 0.0 to 1.0 |
-| `front_control` | Per area, last-set wins per mode | **Exclusive per area** | Country > Faction > Default | mode enum |
+| `front_control` | **Native integer precedence: `priority`, default 0, "higher prio strats will override lower"** (`common/ai_strategy/documentation.info` section `front_control`). Ties at equal priority are undocumented. | **Exclusive per area** | Two mechanisms, see §6 | mode enum |
 | `protect` | Boolean per target | **Exclusive per target** | Country > Faction > Default | bool |
 | `ignore` | Boolean per target | **Exclusive per target** | Country > Faction > Default | bool |
 | `ignore_claim` | Boolean per target | **Exclusive per target** | Country > Faction > Default | bool |
@@ -115,7 +115,7 @@ This is the master legend. For each `ai_strategy` `type` currently in use, it st
 ### Notes on the policy column
 
 - **Additive** means the engine combines values from multiple `ai_strategy` blocks (typically by sum, sometimes by max). Layers may safely contribute to the same key. Tuning differences between layers are by design.
-- **Exclusive** means the WA system enforces single-layer ownership for a given key (target, area, ally, region, mode). The engine may still technically allow multiple writers, but stacking writers produces unpredictable behaviour. Phase 5 will introduce mutual-exclusion triggers to enforce this; until then, authors must hold the precedence rule manually.
+- **Exclusive** means the WA system enforces single-layer ownership for a given key (target, area, ally, region, mode). The engine may still technically allow multiple writers, but stacking writers produces unpredictable behaviour. The Phase 5 mutual-exclusion triggers that enforce this **shipped in `d149a204b`** and live in `common/scripted_triggers/WA_AI_MILITARY_PHASE5_ownership_triggers.txt`; §6 is their contract and inventory.
 - `naval_avoid_region` **is signed, and a negative value is an attraction, not a weaker avoidance.** Reading only the region id will mislead you. Corrected 2026-08-14 (Fix 63): the range column previously read "0 to +500", which no file in the mod has ever respected. Measured across the 402 entries actually in `common/ai_strategy/`, the values in use are `2000` (326 entries), `1000` (29), `100` (23), `-1000` (18), `200` (3), `-2000` (2) and `-10000` (1). The working convention is therefore:
 
   | Value | Meaning |
@@ -148,20 +148,74 @@ This is the master legend. For each `ai_strategy` `type` currently in use, it st
    WA_AI_NAVAL_COUNTRY_USA_avoid_black_sea = { ... }
    ```
 4. **Block names must follow** `WA_AI_MILITARY_<LAYER>_<DOMAIN>_<DESCRIPTOR>` for Default/Region/Faction military-domain blocks, `WA_AI_MILITARY_COUNTRY_<TAG>_<DOMAIN>_<DESCRIPTOR>` for Country military-domain blocks, and `WA_AI_NAVAL_<LAYER>[_<TAG_OR_SCOPE>]_<DESCRIPTOR>` for naval blocks. The descriptor is lowercase snake_case and should describe the *behaviour*, not the tag.
-5. **Do not duplicate behaviour across layers.** If a Default rule and a Country rule cover the same intent, the Country rule should either differ meaningfully (Additive types) or replace the Default rule under Phase 5 mutual-exclusion (Exclusive types). For Phase 1, document the duplication in `WA_AI_MILITARY_TYPES_REFERENCE.md` rather than fixing it.
+5. **Do not duplicate behaviour across layers.** If a Default rule and a Country rule cover the same intent, the Country rule should either differ meaningfully (Additive types) or take the Default rule's place through an ownership slug (Exclusive types - §6.2). If neither is possible, document the duplication in `WA_AI_MILITARY_TYPES_REFERENCE.md` rather than leaving it silent.
 6. **Country-specific blocks living in faction files must be re-homed** to `WA_AI_MILITARY_COUNTRY_<TAG>_<DOMAIN>.txt` during Phase 2-4. Until then, keep them where they are but flag them in the types reference.
 
 ---
 
-## 6. Mutual exclusion mechanism (preview, deferred to Phase 5)
+## 6. Mutual exclusion for Exclusive types - two mechanisms, and which one owns what
 
-For Exclusive-policy types, pairs of scripted triggers will guard layers so that the Country layer takes precedence over Faction, and Faction over Default, on a per-key basis (per target, per area, per ally, per region, per mode):
+**Shipped, not planned.** The scripted ownership triggers this section used to defer to "Phase 5"
+live in `common/scripted_triggers/WA_AI_MILITARY_PHASE5_ownership_triggers.txt` since `d149a204b`:
+**50 slugs, all 50 read by at least one `ai_strategy` block, zero orphans** (measured 2026-08-18).
+
+There are two mechanisms in play, and they are not interchangeable.
+
+### 6.1 The engine's own precedence field - `front_control` only
+
+`front_control` carries a native integer: `priority = 0  # Default 0, higher prio strats will
+override lower` (`common/ai_strategy/documentation.info` section `front_control`). It is the only
+Exclusive type in this mod's vocabulary that has one - `protect`, `ignore`, `ignore_claim`,
+`contain`, `naval_invasion_focus`, `strike_force_home_base`, `dont_defend_ally_borders` and
+`force_defend_ally_borders` have no `priority` parameter in either documentation edition. That is
+why the scripted gates cannot be replaced by the engine field: they carry 43 of their 50 slugs for
+types the engine gives no precedence field at all.
+
+**The mod already uses `priority`, and it spends it on a semantic ladder, not a layer ladder.**
+56 of 215 `front_control` blocks set it; the other 159 sit at the default 0. The tiers in use:
+
+| Tier | Layer | Blocks | Meaning |
+| --- | --- | --- | --- |
+| `10000` | Default | 1 | `EXEC_no_stockpiles_stop` - emergency stop, must beat everything |
+| `500` | Default | 1 | `EXEC_low_equipment_hold` - equipment brake |
+| `320` - `340` | Faction | 12 | CHINA_FRONT exec/grind and careful-exec posture blocks |
+| `300` | Faction | 4 | ALLIES / AXIS exec/grind posture blocks (§9) |
+| `100` | Country (18), Faction (20), Region (2) | 40 | ordinary targeted control |
+| `0` (unset) | Country (133), Faction (26) | 159 | everything else |
+
+Read the ladder top-down and it is deliberate: a brake outranks an offensive posture, a posture
+outranks routine per-area tuning. `WA_AI_MILITARY_DEFAULT_FRONT_control.txt` states that intent at
+the code site ("priority 500 outranks the posture exec/grind blocks (300) ... and yields to
+`no_stockpiles_stop` above (10000)").
+
+**Consequence you must hold when writing a `front_control` block:** the layer precedence in 6.2 is
+NOT what the engine applies to this type. Wherever no ownership slug gates the pair, a Faction
+posture block at 300 outranks a Country block at 100 or 0. Do not "fix" this by re-tiering by
+layer - the single integer is already carrying the brake/posture/routine meaning, and a layer
+scheme written into the same field would silently disarm the brakes.
+
+### 6.2 The scripted ownership gates - all nine Exclusive types
+
+For Exclusive-policy types, scripted triggers guard layers so that the Country layer takes
+precedence over Faction, and Faction over Default, on a per-key basis (per target, per area, per
+ally, per region, per mode):
 
 - `WA_AI_MILITARY_country_owns_<exclusive_key> = yes` - Country layer asserts ownership of this key.
 - Faction blocks add `NOT = { WA_AI_MILITARY_country_owns_<exclusive_key> = yes }` to their `enable`.
 - Default blocks add both `NOT = { WA_AI_MILITARY_country_owns_<exclusive_key> = yes }` and `NOT = { WA_AI_MILITARY_faction_owns_<exclusive_key> = yes }`.
 
-Additive types are never gated by these triggers. Phase 5 will define the exact set of `<exclusive_key>` slugs and generate the trigger pairs; Phase 1 only commits to the contract.
+Additive types are never gated by these triggers. The slug inventory as shipped:
+
+| Slug prefix | Type | Slugs | Engine `priority` available? |
+| --- | --- | --- | --- |
+| `ddab_<TAG>` | `dont_defend_ally_borders` | 36 | no |
+| `fc_area_<area>` / `fc_state_<id>` | `front_control` | 7 | yes - see 6.1 |
+| `fdab_<TAG>` / `fdab_target_<area>` | `force_defend_ally_borders` | 4 | no |
+| `sfhb_<region>` | `strike_force_home_base` | 2 | no |
+| `contain_<TAG>` | `contain` | 1 | no |
+
+A slug encodes **ownership, not intention**: add a tag to a trigger only when a Country-layer block
+actually writes that (type, key). The file's own header carries that rule.
 
 Region-layer writers of an Exclusive key follow the Faction rule (they gate on `NOT = { WA_AI_MILITARY_country_owns_<key> = yes }`); precedence is Country > Faction = Region > Default, and a Faction and a Region block must not write the same key with different intent (Fix 96: `WA_AI_MILITARY_REGION_ITALY_homeland_invaded_exec_FRONT` writes `front_control area = italy / south_italy` for the Italian owner, `WA_AI_MILITARY_AXIS_hold_italy_after_defection_FRONT` writes a country-keyed `front_control` for the owner's enemies - disjoint audiences by construction; slug `WA_AI_MILITARY_country_owns_fc_area_italy`).
 
