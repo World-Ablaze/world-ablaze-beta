@@ -75,14 +75,14 @@ NDefines.NCharacter.GENIUS_ADVISOR_MIN_RANK = 7
 
 
 NDefines.NCountry.BASE_RESEARCH_SLOTS = 1
-NDefines.NCountry.SUPPLY_FROM_DAMAGED_INFRA = 0.01              					-- damaged infrastructure counts as this in supply calcs
+-- NDefines.NCountry.SUPPLY_FROM_DAMAGED_INFRA removed: the key is NSupply, not NCountry, so this bound nothing and campaigns always ran at vanilla's 0.15, not the 0.01 written here. Deletion changes no behaviour; user ruling 2026-08-18 is to keep vanilla's 0.15 rather than relocate the 0.01.
 
 NDefines.NCountry.INVASION_REPORT_EXPERATION_DAYS = 30								-- Invasion experation days
 NDefines.NCountry.SUPPLY_CONVOY_FACTOR = 0.3										-- How many convoys each supply needs
 NDefines.NCountry.CONVOY_RANGE_FACTOR = 1.1                     				    -- how much range affects convoy need
 NDefines.NCountry.FUEL_LEASE_CONVOY_RATIO = 0.00005									-- num convoys needed per fuel land lease
 
-NDefines.NCountry.SUPPLY_PORT_LEVEL_THROUGHPUT = 3			    					-- supply throughput per level of naval base
+-- NDefines.NCountry.SUPPLY_PORT_LEVEL_THROUGHPUT removed: the key is NBuildings, not NCountry, so this bound nothing. Vanilla NBuildings value is the same 3 - and it is not the port supply-flow cap (documentation/WA_AI_LOGISTICS_MODEL.md section 4).
 NDefines.NCountry.EVENT_PROCESS_OFFSET = 7											-- Events are checked every X day per country or state (1 is ideal, but CPU heavy)
 
 NDefines.NCountry.AIR_SUPPLY_CONVERSION_SCALE = 0.01								-- Conversion scale for planes to air supply
@@ -92,14 +92,14 @@ NDefines.NCountry.REINFORCEMENT_EQUIPMENT_DELIVERY_SPEED = 0.1						-- Modifier 
 
 NDefines.NCountry.RESISTANCE_STRENGTH_FROM_VP = 0.0015								-- How much strength ticking speed gives each VP score
 
-NDefines.NCountry.POLITICAL_POWER_CAP = 5000.0
+-- NDefines.NCountry.POLITICAL_POWER_CAP removed: absent from 1.19.2, the cap is the pair POLITICAL_POWER_LOWER_CAP / _UPPER_CAP (vanilla -500 / 2000). The 5000 written here never applied; user ruling 2026-08-18 is to keep vanilla rather than port it.
 
 NDefines.NCountry.MAJOR_MIN_FACTORIES = 70											-- need at least these many factories to become a major
 
 NDefines.NCountry.BASE_FUEL_GAIN_PER_OIL = 1.1										-- base amount of fuel gained hourly per excess oil
 NDefines.NCountry.STARTING_FUEL_RATIO = 0.8											-- starting fuel ratio compared to max fuel for countries
 
-NDefines.NCountry.GIE_CAPITULATION_WARSCORE_LEGITIMACY_FACTOR = 4.0 				--Multiplies accumulated warscore with this factor for part of starting legitimacy.
+-- NDefines.NCountry.GIE_CAPITULATION_WARSCORE_LEGITIMACY_FACTOR removed: the engine's key is GIE_CAPITULATION_LEGITIMACY_WARSCORE_FACTOR (same words, different order), vanilla 0.5. The 4.0 written here never applied; user ruling 2026-08-18 is to keep vanilla rather than port it.
 NDefines.NCountry.GIE_EXILE_AIR_START_EXPERIENCE = 300	 							--Starting experience for exile airwings
 NDefines.NCountry.GIE_ESCAPING_DIVISIONS_XP_BOOST = 50.0
 NDefines.NCountry.GIE_ESCAPING_DIVISIONS_EQUIPMENT_RATIO = 0.8 						-- Base equipment ratio on escaped troops.
@@ -118,7 +118,7 @@ NDefines.NCountry.SPECIAL_FORCES_CAP_MIN = 10										-- You can have a minimum
 NDefines.NCountry.BASE_MOBILIZATION_SPEED = 0.01									-- Base speed of manpower mobilization  #in 1/1000 of 1 %
 
 NDefines.NCountry.WAR_SUPPORT_TENSION_IMPACT = 0									-- Total impact of world tension
-NDefines.NCountry.STATE_VALUE_NON_CORE_STATE_FRACTION = 1.0							-- If a state is not a core we assume we will get 50% of the factory slots
+-- NDefines.NCountry.STATE_VALUE_NON_CORE_STATE_FRACTION removed: absent from 1.19.2, no successor. State value is STATE_VALUE_BASE / _BUILDING_SLOTS_MULT / _MANPOWER_FACTOR, none of them overridden here.
 
 NDefines.NCountry.BOMBING_WAR_SUPPORT_PENALTY_SCALE = -0.00015 						-- Scaling of bomber damage to war support impact, will be added weekly as a war support penalty
 NDefines.NCountry.MAX_BOMBING_WEEKLY_WAR_SUPPORT_PENALTY = -0.005					-- Max penalty that will gained per week from bomber's damage
@@ -218,8 +218,8 @@ NDefines.NProduction.EQUIPMENT_MODULE_REMOVE_XP_COST = 2.0							-- XP cost for 
 NDefines.NProduction.LICENSE_IC_COST_YEAR_INCREASE = 0.25							-- IC cost equipment for every year of equipment after 1936
 
 NDefines.NProduction.CONVERSION_SPEED_BONUS = 1.0									-- Modifier to the production speed when converting equipment
-NDefines.NProduction.MIN_NAVAL_EQUIPMENT_CONVERSION_IC_COST_FACTOR = 0.2			-- Fraction of the hull industry cost which is always included in the refitting cost.
-NDefines.NProduction.MIN_LAND_EQUIPMENT_CONVERSION_IC_COST_FACTOR = 0.9				-- Fraction of the chassis industry cost which is always included in the conversion cost.
+-- NDefines.NProduction.MIN_NAVAL_EQUIPMENT_CONVERSION_IC_COST_FACTOR removed: the engine renamed the IC pair BASE_* (the RESOURCE pair below kept MIN_*). WA's 0.2 equalled vanilla BASE_*, so nothing was overridden.
+-- NDefines.NProduction.MIN_LAND_EQUIPMENT_CONVERSION_IC_COST_FACTOR removed: same rename; WA's 0.9 equalled vanilla BASE_LAND_EQUIPMENT_CONVERSION_IC_COST_FACTOR.
 NDefines.NProduction.MIN_NAVAL_EQUIPMENT_CONVERSION_RESOURCE_COST_FACTOR = 0.2		-- Minimum fraction of a naval equipment's strategic resource cost that any conversion will cost.
 NDefines.NProduction.MIN_LAND_EQUIPMENT_CONVERSION_RESOURCE_COST_FACTOR = 0			-- Minimum fraction of a land equipment's strategic resource cost that any conversion will cost.
 
@@ -293,7 +293,7 @@ NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_STATE_VP = {						-- resistance 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Railways
 
 
-NDefines.NRailwayGun.RAILWAY_GUN_RANGE = 15											-- The range of railway guns in pixels
+-- NDefines.NRailwayGun.RAILWAY_GUN_RANGE removed: 1.19.2 has RAILWAY_GUN_POSSIBLE_RANGES = { 30, 15, 45 } and the range is picked by index in the equipment file. WA already selects the 15 there (common/units/equipment/railway_gun.txt, railway_gun_attack_range_index_in_define = 1; vanilla is 0 = 30), so this write was redundant, not just dead.
 NDefines.NRailwayGun.ATTACK_TO_FORTS_MODIFIER_FACTOR = 1.0							-- Forts modifier is calculated by multiplying railway gun attack value with this and dividing by 100
 NDefines.NRailwayGun.ATTACK_TO_ENTRENCHMENT_MODIFIER_FACTOR = 1.39					-- Entrenchment modifier is calculated by multiplying railway gun attack value with this and dividing by 100
 NDefines.NRailwayGun.ATTACK_TO_BOMBARDMENT_MODIFIER_FACTOR = 0						-- Bombardment modifier is calculated by multiplying railway gun attack value with this and dividing by 100
@@ -319,8 +319,8 @@ NDefines.NMilitary.COMBAT_SUPPLY_LACK_ATTACKER_DEFEND = -0.80     					-- defend
 NDefines.NMilitary.COMBAT_SUPPLY_LACK_DEFENDER_ATTACK = -0.60     					-- attack combat penalty for defender if out of supply
 NDefines.NMilitary.COMBAT_SUPPLY_LACK_DEFENDER_DEFEND = -0.40     					-- defend combat penalty for defender if out of supply
 
-NDefines.NMilitary.BASE_COMBAT_WIDTH = 90											-- base combat width
-NDefines.NMilitary.ADDITIONAL_COMBAT_WIDTH = 30										-- more opened up by support attack
+-- NDefines.NMilitary.BASE_COMBAT_WIDTH removed: absent from 1.19.2, combat width is per-terrain now. WA owns common/terrain/00_terrain.txt and already sets plains = 90 there.
+-- NDefines.NMilitary.ADDITIONAL_COMBAT_WIDTH removed: same, superseded by the per-terrain combat_width values.
 
 --NDefines.NMilitary.PLAN_COHESION_WEIGHTS = { 1.0, 40.0, 80.0, 100.0 }				-- for each cohesion setting, how keen on relocating from distance should we be? (default 1.0), higher weight = shorter max distance
 NDefines.NMilitary.COHESION_IMMOBILE_PLANNING_SPEED_MULTIPLIER = 0.25				-- If using the 'immobile' cohesion setting, factor ALL planning speed growth by this
@@ -428,14 +428,14 @@ NDefines.NMilitary.FRONT_MIN_PATH_TO_REDEPLOY = 3									-- If a units path is 
 -----------
 
 NDefines.NMilitary.NON_CORE_SUPPLY_SPEED = -0.7				    					-- we are not running on our own VP supply so need to steal stuff along the way
-NDefines.NMilitary.LAND_COMBAT_COLLATERAL_FACTOR = 0.003							-- Factor to scale collateral damage to infra and forts with.
+-- NDefines.NMilitary.LAND_COMBAT_COLLATERAL_FACTOR removed: the engine split it into LAND_COMBAT_COLLATERAL_FORT_FACTOR (overridden below) and _INFRA_FACTOR (left at vanilla).
 
 NDefines.NMilitary.ATTRITION_DAMAGE_ORG = 0.08					   					-- damage from attrition to Organisation
 NDefines.NMilitary.MAX_OUT_OF_SUPPLY_DAYS = 4 				   						-- how many days of shitty supply until max penalty achieved
 NDefines.NMilitary.OUT_OF_SUPPLY_ATTRITION = 2.0                					-- max attrition when out of supply
 NDefines.NMilitary.OUT_OF_SUPPLY_MORALE = 0                  						-- max org regain reduction from supply
 NDefines.NMilitary.OUT_OF_SUPPLY_SPEED = -1.0                   					-- max speed reduction from supply
-NDefines.NMilitary.COMBAT_SUPPLY_LACK_IMPACT = -0.6									-- combat penalty if out of supply
+-- NDefines.NMilitary.COMBAT_SUPPLY_LACK_IMPACT removed: the engine split it into the four COMBAT_SUPPLY_LACK_{ATTACKER,DEFENDER}_{ATTACK,DEFEND} keys, all four overridden above. Intent it carried (879ccf58b, 2020-12-20): a single -0.6 out-of-supply combat penalty. The four splits are harsher on the attacker (-1.00 / -0.80) and softer on the defender (-0.60 / -0.40), so the wish is superseded, not lost.
 
 NDefines.NMilitary.INFRA_ORG_IMPACT = 0.25											-- scale factor of infra on org regain.
 NDefines.NMilitary.STRATEGIC_REDEPLOY_ORG_RATIO = 0.1								-- Ratio of max org while strategic redeployment
@@ -659,7 +659,7 @@ NDefines.NAir.PORT_STRIKE_DAMAGE_FACTOR = 0.1										-- How much damage is dea
 
 NDefines.NAir.THRUST_WEIGHT_AGILITY_FACTOR = 1										-- For plane designs, additive agility bonus per point of thrust exceeding weight
 NDefines.NAir.MAX_QUICK_WING_SELECTION = 4											-- Max possible selection for airwing quick deploy
-USE_SINGLE_NAVAL_ARMAMENT_CATEGORY = false											-- If true, only the armament module category that inflicts the greatest damage to naval targets will contribute naval strike and port strike mission specific stats. Only modules with both naval_strike_attack and naval_strike_targetting are considered. This is used to prevent torpedo_mounting and bomb_locks stats from stacking.
+NDefines.NAir.USE_SINGLE_NAVAL_ARMAMENT_CATEGORY = false							-- If true, only the armament module category that inflicts the greatest damage to naval targets will contribute naval strike and port strike mission specific stats. Only modules with both naval_strike_attack and naval_strike_targetting are considered. This is used to prevent torpedo_mounting and bomb_locks stats from stacking.
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Navy
 NDefines.NNavy.NAVAL_HEADQUARTER_ADJACENCY = 3										-- How many extra steps of strategic regions from the first the naval headquarter provides benefits.
@@ -785,8 +785,8 @@ NDefines.NNavy.NAVY_PIERCING_THRESHOLD_CRITICAL_VALUES = {							-- 0 armor will
 NDefines.NNavy.BASE_SPOTTING = 1													-- base spotting percentage for navy
 NDefines.NNavy.BASE_SPOTTING_FROM_RADAR = 10										-- base spotting percentage that comes from full radar coverage
 NDefines.NNavy.BASE_SPOTTING_FROM_AIR = 5								-- base spotting percentage that comes from air superiority
-NDefines.NNavy.BASE_SPOTTING_FROM_ACTIVE_NAVY = 20									-- base spotting percentage that comes from ships in area
-NDefines.NNavy.BASE_SPOTTING_ACTIVE_NAVY_MULT = 0.1									-- multiplier for your navies base spotting percentage
+-- NDefines.NNavy.BASE_SPOTTING_FROM_ACTIVE_NAVY removed: the engine's key is BASE_SPOTTING_FROM_NAVY, vanilla 10. The 20 written here never applied; user ruling 2026-08-18 is to keep vanilla rather than port it.
+-- NDefines.NNavy.BASE_SPOTTING_ACTIVE_NAVY_MULT removed: absent from 1.19.2, no successor.
 NDefines.NNavy.BASE_SPOTTING_FROM_DECRYPTION = 20									-- base spotting percentage that comes from decryption, can go negative (enemy decryption is subtracted)
 
 NDefines.NNavy.BASE_GUN_COOLDOWNS = { 												-- number of hours for a gun to be ready after shooting
@@ -1240,7 +1240,7 @@ NDefines.NAI.MINES_PLANTING_PLANES_PER_MAX_DESIRE = 1								-- Amount of air wi
 
 NDefines.NAI.NAVAL_COMBAT_AIR_IMPORTANCE = 500.0
 NDefines.NAI.NAVAL_AIR_SUPERIORITY_IMPORTANCE = 1.0                             	-- Strategic importance of air superiority ( amount of enemy planes in area )
-NDefines.NAI.NAVAL_MIN_EXCORT_WINGS = 5												-- Min amount of airwings requested to excort operations
+NDefines.NAI.NAVAL_MIN_EXCORT_PLANES = 100										-- Min amount of planes requested to excort operations. PROTECTS: naval strikes flying unescorted. ASSUMES the engine counts PLANES - the dead NAVAL_MIN_EXCORT_WINGS = 5 this replaces counted wings, so 100 is a NEW floor (vanilla has none, 0), not a unit conversion; the number is ASSUMED, uncalibrated. WRONG IF: fighter wings sit parked on naval regions while a land front runs short - a need-blind floor keeps asking after demand is met.
 NDefines.NAI.NAVAL_IMPORTANCE_SCALE = 10.0
 NDefines.NAI.MAX_FUEL_CONSUMPTION_RATIO_FOR_AIR_TRAINING = 0.9						-- ai will use at most this ratio of affordable fuel for air training
 NDefines.NAI.NAVAL_FIGHTERS_PER_PLANE = 1.0                                         -- Amounts of air superiority planes requested per enemy plane
@@ -1288,7 +1288,7 @@ NDefines.NAI.LAND_COMBAT_CAS_PLANES_PER_ENEMY_ARMY_LIMIT = 1500						-- Limit of
 NDefines.NAI.LAND_COMBAT_ANTI_LOGISTICS_PER_ENEMY_ARMY = 0    						-- Amount of CAS planes requested per enemy army for anti-logistics
 NDefines.NAI.LAND_COMBAT_CAS_PER_COMBAT = 300										-- Amount of CAS requested per combat, 90cw x 3 cas per cw
 NDefines.NAI.LAND_COMBAT_BOMBERS_PER_LAND_FORT_LEVEL = 30							-- Amount of bomber planes requested per enemy land fort level
-NDefines.NAI.LAND_COMBAT_MIN_EXCORT_WINGS = 3										-- Min amount of airwings requested to excort operations
+NDefines.NAI.LAND_COMBAT_MIN_EXCORT_PLANES = 200									-- Min amount of planes requested to excort operations. PROTECTS: CAS and bombers over a land combat flying unescorted. ASSUMES the engine counts PLANES - the dead LAND_COMBAT_MIN_EXCORT_WINGS = 3 this replaces counted wings; 80 -> 200 is 2.5x, below this block's own scale (WA runs CAS_PER_COMBAT 300 vs vanilla 60, BOMBERS_PER_LAND_FORT_LEVEL 30 vs 6), but still ASSUMED. WRONG IF: escort requests crowd out CAS on the same front.
 NDefines.NAI.LAND_COMBAT_INTERCEPT_PER_PLANE = 0.5									-- Amount of interception planes requested per enemy plane
 
 NDefines.NAI.NAVAL_COMBAT_TRANSFER_AIR_IMPORTANCE = 500.0							-- Naval combat involving enemy land units
@@ -1423,9 +1423,9 @@ NDefines.NAI.UNIT_ASSIGNMENT_TERRAIN_IMPORTANCE = 10.0								-- Terrain score f
 NDefines.NAI.MICRO_POCKET_SIZE = 6													-- Pockets with a size equal to or lower than this will be mocroed by the AI, for efficiency.
 NDefines.NAI.POCKET_DISTANCE_MAX = 10000											-- shortest square distance we bother about chasing pockets
 
-NDefines.NAI.VP_LEVEL_IMPORTANCE_HIGH = 20											-- Victory points with values higher than or equal to this are considered to be of high importance.
+-- NDefines.NAI.VP_LEVEL_IMPORTANCE_HIGH removed: the engine keeps only VP_LEVEL_IMPORTANCE_MEDIUM, overridden below. Intent it carried (f7c81106a, initial commit): a three-rung VP importance ladder 1 / 5 / 20. The engine has one rung now, so the HIGH and LOW tiers are NOT recoverable - if that ladder is wanted back it needs a scripted mechanism, not a define.
 NDefines.NAI.VP_LEVEL_IMPORTANCE_MEDIUM = 5											-- Victory points with values higher than or equal to this are considered to be of medium importance.
-NDefines.NAI.VP_LEVEL_IMPORTANCE_LOW = 1											-- Victory points with values higher than or equal to this are considered to be of low importance.
+-- NDefines.NAI.VP_LEVEL_IMPORTANCE_LOW removed: same, the LOW rung (1) has no engine key either.
 
 NDefines.NAI.START_TRAINING_EQUIPMENT_LEVEL = 0.9									-- ai will not start to train if equipment drops below this level
 NDefines.NAI.STOP_TRAINING_EQUIPMENT_LEVEL = 0.85            						-- ai will not train if equipment drops below this level

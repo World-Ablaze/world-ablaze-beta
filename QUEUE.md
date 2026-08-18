@@ -14,11 +14,7 @@ Enforced by `python tools/check_worklist.py`.
 
 ## ACTIVE
 
-- **`naval_dominance` is out of scale.** Opened 2026-08-18.
-  **Next action:** read the `naval_dominance` section of `common/ai_strategy/documentation.info`,
-  then decide whether the 8 blocks at `value = 1000` are a scale bug or a deliberate override.
-  **Closed when:** every block outside 0–100 is either corrected, or carries a comment saying why
-  it leaves the documented scale.
+- *(none - the last subject closed. Promote one QUEUE row before starting work.)*
 
 ---
 
@@ -36,7 +32,7 @@ Enforced by `python tools/check_worklist.py`.
 | 8 | Structured checklist + semi-automatic scoring | 52 items in prose today; scoring a campaign is redone by hand every time. A structured header would unlock `savegame.py score`. | Decision made: migrate, or accept the prose |
 | 9 | Fix numbering and commit discipline | Fixes 102/103/105 renumbered; one commit rebased off the branch with its content absorbed by an unrelated one. `git blame` lies. | One number = one registry row, checked by a checker |
 | 10 | 18 stale engine docs | Handled by a background task started 2026-08-18. | `check_engine_docs.py` at 0 WARN and its diff report read |
-| 11 | 18 keys `05_defines.lua` assigns that the engine never reads | Found 2026-08-18 while documenting the defines override rule. Lua binds them silently, so each is a tuning value that does nothing. Three shapes: 2 written under the wrong category (`NCountry.SUPPLY_FROM_DAMAGED_INFRA` is `NSupply` in the install, `NCountry.SUPPLY_PORT_LEVEL_THROUGHPUT` is `NBuildings`), 3 near-miss renames (`*_MIN_EXCORT_WINGS` vs the engine's `*_MIN_EXCORT_PLANES`, `RAILWAY_GUN_RANGE` vs `RAILWAY_GUN_POSSIBLE_RANGES`), 13 absent from the whole install (`NMilitary.BASE_COMBAT_WIDTH = 90`, `NCountry.POLITICAL_POWER_CAP`, `NAI.VP_LEVEL_IMPORTANCE_*`, ...). `WA_AI_LOGISTICS_MODEL.md` quotes three of them as live and is wrong by 15x on one (`SUPPLY_FROM_DAMAGED_INFRA`: doc says 0.01, live value is vanilla's 0.15). | Each of the 18 is deleted, moved to its real category or name, or carries a comment naming the patch that removed it - and the three logistics-doc citations are corrected |
+| 11 | `has_deployed_air_force_size` thresholds are labelled wings, the engine counts aircraft | `common/scripted_triggers/WA_AI_MILITARY_triggers.txt:1975` calls the Reich bombing-ladder thresholds (299/450/700/900) "deployed strategic_bomber **wings**"; install `documentation/triggers_documentation.md` section `has_deployed_air_force_size` says "amount of aircrafts". The values were calibrated on campaign 973154a7 so behaviour is right - the word is wrong, and it is the same wings/planes confusion that left two `*_MIN_EXCORT_WINGS` defines dead for years. | The comment says aircraft, and every other WA comment on that trigger family is checked for the same word |
 
 ---
 
@@ -44,6 +40,8 @@ Enforced by `python tools/check_worklist.py`.
 
 | Date | Subject | Trace |
 | --- | --- | --- |
+| 2026-08-18 | 19 dead `05_defines.lua` writes: 17 deleted, 2 renamed to their live engine key with a new value, 1 given its missing `NDefines.NAir.` prefix. Logistics doc was wrong by 15x on `SUPPLY_FROM_DAMAGED_INFRA` | `common/defines/05_defines.lua`, `documentation/WA_AI_LOGISTICS_MODEL.md`, `documentation/WA_AI_MILITARY_SYSTEM.md`, `tools/constants_registry.json`, `lessons-log.md` |
+| 2026-08-18 | `naval_dominance` out of scale: the 8 blocks at 1000 were a self-labelled probe (`289f1318f`) whose question R36 already answered - retired; region 356 moved to the Faction south corridor at 70 with its avoid pair | `WA_AI_NAVAL_COUNTRY_ENG.txt`, `WA_AI_NAVAL_FACTION_ALLIES.txt` |
 | 2026-08-18 | Work queue + checklist decay checker (one ACTIVE, orphan fixes, stale statuses, dormancy) | `QUEUE.md`, `tools/check_worklist.py` |
 | 2026-08-18 | Diagnosis protocol — six boxes; a missing script line makes the report `INCOMPLETE DIAGNOSIS` | `.claude/skills/wa-diagnosis/` |
 | 2026-08-18 | Engine doc `ai_strategy` refreshed 2023-07 → 2024-11 (+291 lines), 20 citations moved to section names, drift checker | `tools/check_engine_docs.py` |

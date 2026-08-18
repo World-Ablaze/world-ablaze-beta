@@ -8,8 +8,16 @@ Scope: what determines whether a division is supplied, and which construction le
 Not in scope: the AI systems themselves - see `WA_AI_RAILWAY_SYSTEM.md` and
 `WA_AI_PC_QUEUE_FAIRNESS_DIAGNOSIS.md`.
 
-Every number below is quoted from this repository with a file:line reference. Where a statement is a
-mechanic rather than a value read from a file, it is marked `[mechanic]` and its source is named.
+Every number below is quoted with a source. A `[:NNN]` link points at this repository's
+`common/defines/05_defines.lua`; a number vanilla owns is cited by section name in the install's
+`common/defines/00_defines.lua`, because `common/defines` is **not** in `descriptor.mod`'s
+`replace_path` list - the install's file loads first and WA's overrides individual keys on top, so a
+key WA does not name still has vanilla's value. Where a statement is a mechanic rather than a value
+read from a file, it is marked `[mechanic]` and its source is named.
+
+**The key NAME is the citation; the `[:NNN]` anchor is only a convenience.** Nothing enforces those
+line numbers, so verify a number by grepping its key in both defines files rather than by following
+the anchor.
 
 ---
 
@@ -85,9 +93,12 @@ flow = NAVAL_BASE_FLOW + NAVAL_FLOW_PER_LEVEL * level
 | Flow | 5 | 10 | 20 | 30 | 40 | **50** |
 
 **Ruling (user, 2026-08-17): the port flow ladder is 5 per level.**
-`NDefines.NCountry.SUPPLY_PORT_LEVEL_THROUGHPUT = 3` ([:85](../common/defines/05_defines.lua#L85))
-exists and is commented "supply throughput per level of naval base", but it is **not** the supply-node
-flow cap and must not be used in the flow model. Do not "correct" the 5 to a 3.
+`SUPPLY_PORT_LEVEL_THROUGHPUT = 3` exists and is commented "supply throughput per level of naval base",
+but it is **not** the supply-node flow cap and must not be used in the flow model. Do not "correct"
+the 5 to a 3. Two mechanical notes added 2026-08-18: the live key is `NDefines.NBuildings`
+(install `common/defines/00_defines.lua`, section `NBuildings`), not `NDefines.NCountry`, and WA's old
+`NCountry` write bound a field nobody reads - it has been removed. Vanilla's value is the same 3, so
+nothing changed.
 
 ### The two ladders compared
 
@@ -153,7 +164,13 @@ Two consequences:
 | Infrastructure | `INFRA_TO_SUPPLY = 1.5` per level | [:978](../common/defines/05_defines.lua#L978) |
 | Victory points | `VP_TO_SUPPLY_BASE = 0.3` | [:979](../common/defines/05_defines.lua#L979) |
 | Floating harbour | `FLOATING_HARBOR_BASE_SUPPLY = 50.0`, 180 days | [:942-943](../common/defines/05_defines.lua#L942) |
-| Damaged infra | counts as `SUPPLY_FROM_DAMAGED_INFRA = 0.01` | [:78](../common/defines/05_defines.lua#L78) |
+| Damaged infra | counts as `SUPPLY_FROM_DAMAGED_INFRA = 0.15` | install `00_defines.lua`, section `NSupply` |
+
+The damaged-infra figure was **0.01** here until 2026-08-18, quoting a WA line that wrote the key
+under `NDefines.NCountry` while the engine reads it under `NDefines.NSupply`. That write bound
+nothing, so every campaign already ran at vanilla's **0.15** - fifteen times what this document
+claimed. Damaged infrastructure is far less punishing than the model assumed. User ruling
+2026-08-18: keep vanilla's 0.15; the dead line was deleted, not relocated.
 
 **The occupied-territory cliff matters for every offensive.** Population supply drops to 2.5% on
 non-core soil ([:935](../common/defines/05_defines.lua#L935)). An attacker advancing into enemy states
@@ -193,7 +210,10 @@ compare them rather than default to raising a level.
 | `SUPPLY_GRACE` | 168 h (7 days) carried, hardcoded | [:460](../common/defines/05_defines.lua#L460) |
 | `OUT_OF_SUPPLY_ATTRITION` | 2.0 max | [:435](../common/defines/05_defines.lua#L435) |
 | `OUT_OF_SUPPLY_SPEED` | -1.0 (immobile) | [:437](../common/defines/05_defines.lua#L437) |
-| `COMBAT_SUPPLY_LACK_IMPACT` | -0.6 | [:438](../common/defines/05_defines.lua#L438) |
+| `COMBAT_SUPPLY_LACK_ATTACKER_ATTACK` | -1.00 | [:317](../common/defines/05_defines.lua#L317) |
+| `COMBAT_SUPPLY_LACK_ATTACKER_DEFEND` | -0.80 | [:318](../common/defines/05_defines.lua#L318) |
+| `COMBAT_SUPPLY_LACK_DEFENDER_ATTACK` | -0.60 | [:319](../common/defines/05_defines.lua#L319) |
+| `COMBAT_SUPPLY_LACK_DEFENDER_DEFEND` | -0.40 | [:320](../common/defines/05_defines.lua#L320) |
 | `NON_CORE_SUPPLY_SPEED` | -0.7 | [:430](../common/defines/05_defines.lua#L430) |
 | `ARMY_MAX_SUPPLY_RATIO_GAIN_PER_HOUR` | 0.33 | [:976](../common/defines/05_defines.lua#L976) |
 
@@ -449,6 +469,7 @@ considered.
 
 | Date | Change |
 | --- | --- |
+| 2026-08-18 | Three citations corrected. `SUPPLY_FROM_DAMAGED_INFRA` was quoted as 0.01 from a WA line that writes it under the wrong category; the live value is vanilla's **0.15** (`NSupply`). `COMBAT_SUPPLY_LACK_IMPACT` does not exist in 1.19.2 - replaced by the four `COMBAT_SUPPLY_LACK_{ATTACKER,DEFENDER}_{ATTACK,DEFEND}` keys WA does override. `SUPPLY_PORT_LEVEL_THROUGHPUT` lives in `NBuildings`, and WA's dead `NCountry` write is gone; the 5/level ruling is unaffected. |
 | 2026-08-17 | Created while designing corridor dimensioning. Rulings recorded: port flow is 5/level (not the `SUPPLY_PORT_LEVEL_THROUGHPUT = 3` define); hubs have no level; range and throughput are separate failure modes with separate levers; hub supply is additive. |
 | 2026-08-18 | §11 SHIPPED as Fix 107. §11.11 added with the three deviations (no §11.3, break-even 20 not 12, presence index not a division count). Measured trigger: campaign `9d83084c`, every corridor hop at level 2 on all 121 saves. |
 | 2026-08-17 | §11 added - corridor dimensioning design frozen. User rulings: build both rails and ports arbitrated by cost per supply point; no ratchet on the target; `supply_per_division = 2.5` as a calibration placeholder. |

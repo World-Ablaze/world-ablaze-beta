@@ -1083,18 +1083,32 @@ process caveats (stale process, and the absence of a load-time hook).
 - **Symptom:** an analysis wrote into the campaign checklist that a telemetry gauge's `×100`
   multiplier was wrong and should be 200, on the strength of remembered vanilla behaviour. The
   gauge was correct and the correction was the error.
-- **Cause:** `common/defines/` is one of the ~70 `replace_path` folders. WA sets
+- **Cause:** WA sets
   `NDefines.NBuildings.AIRBASE_CAPACITY_MULT = 100` (`common/defines/05_defines.lua:173`), half of
   vanilla's 200, and the strategy file's `@UK_AIR_CAPACITY_PER_LEVEL = 100`
   (`WA_AI_CONSTRUCTION_PRIORITY_strategies.txt:951`) is a deliberate mirror of it. Vanilla
   knowledge about *any* engine constant is a hypothesis here, not a fact.
+- **Corrected 2026-08-18 - the mechanism named here was wrong, the rule was right.** This entry said
+  `common/defines/` is a `replace_path` folder. It is **not**: `descriptor.mod` lists 110 paths and
+  `common/defines` is not one of them. Both files load - the install's `00_defines.lua` (3230 keys)
+  first, WA's `05_defines.lua` (849) rebinding individual keys on top - so `05_defines.lua` is a
+  **diff, not a state**. Two consequences the replace_path reading gets backwards: a key WA does not
+  name keeps **vanilla's** value (it is not unset), and a key WA writes under the **wrong**
+  `NDefines.<category>` binds a brand-new Lua field nobody reads and is **silently dead**. That is
+  how 18 WA assignments sat inert for years, one of them making `WA_AI_LOGISTICS_MODEL.md` quote
+  `SUPPLY_FROM_DAMAGED_INFRA` as 0.01 when the live value was vanilla's 0.15. Grep **both** files.
 - **Rule:** grep `common/defines/` for the constant before asserting an engine value, exactly as
   you already grep the install's `documentation/modifiers_documentation.md` before claiming a
   modifier is scoped wrong. Generalise: for anything the engine "just does" — define, modifier
   scope, default flag on a `put_unit_buffers` field — the mod's own replaced copy is the oracle,
-  and remembered vanilla is only a prior. Same reflex, three different oracles.
+  and remembered vanilla is only a prior. Same reflex, three different oracles. **Where the folder
+  is an override layer rather than a replacement - `common/defines` is the one that matters - the
+  oracle is the pair: the install's file for what a key defaults to, WA's for what it changed.**
 - **Evidence:** `common/defines/05_defines.lua:173`; checklist anomaly entry "This mod sets
-  `AIRBASE_CAPACITY_MULT = 100`, not vanilla's 200"; the doc note it corrects.
+  `AIRBASE_CAPACITY_MULT = 100`, not vanilla's 200"; the doc note it corrects. For the 2026-08-18
+  correction: `descriptor.mod` (no `common/defines` entry), install
+  `common/defines/00_defines.lua` at `C:\Jeux\steamapps\common\Hearts of Iron IV` (1.19.2.0), and
+  the `common/defines` section of `.claude/skills/wa-engine-reference/SKILL.md`.
 
 
 ### A probe caveat recorded on one member of a twin pair says nothing about the twin
