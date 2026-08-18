@@ -1473,7 +1473,10 @@ NDefines.NAI.MINIMUM_GOOD_TRADE_RATIO_PER_CIV = 0.5   								-- for each civ fa
 NDefines.NAI.RESOURCE_WANT_PER_MISSING_BALANCE = 10.0								-- negative balance increases the desire on a resource
 NDefines.NAI.RESOURCE_WANT_PER_CONSUMED = 1.0										-- if resource is being used in production, increase the desire
 
-NDefines.NAI.DIPLOMACY_SEND_MAX_FACTION = 0.1										-- Country should not send away more units than this as expeditionaries
+NDefines.NAI.DIPLOMACY_SEND_MAX_FACTION = 0.75										-- Country should not send away more units than this as expeditionaries
+NDefines.NAI.NUM_DAYS_TO_PULL_EXPEDITIONARIES_BACK = 3000 --We don't want AI to shuffle
+NDefines.NAI.CASUALTY_RATIO_TO_PULL_EXPEDITIONARIES_BACK = 0.9  --We don't want AI to shuffle
+NDefines.NAI.CASUALTY_RATIO_TO_NOT_SEND_EXPEDITIONARIES = 0.9	--We don't want AI to shuffle											-- AI will pull expeditioniries back after this many days if its casualties is aboce the ratio compared to their total deployed manpower
 NDefines.NAI.DIPLOMACY_IMPROVE_RELATION_COST_FACTOR = 1000.0						-- Desire to boost relations subtracts the cost multiplied by this
 
 NDefines.NAI.GIVE_STATE_CONTROL_MIN_CONTROLLED = 0									-- AI needs to control more than this number of states before considering giving any away
