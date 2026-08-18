@@ -14,8 +14,6 @@ This is the **single source of truth** for which domain file every `ai_strategy`
 | `force_concentration_factor` | FRONT | `_FRONT` | AIFC master ratio. Percentage points added to define `AIFC_UNIT_RATIO_BASE` (0.15). Owned by the AIFC system - see below. |
 | `force_concentration_front_factor` | FRONT | `_FRONT` | Front allocator concentration tuning. |
 | `force_concentration_target_weight` | FRONT | `_FRONT` | Front allocator target weighting. |
-| `force_ratio` | FRONT | `_FRONT` | Front allocator ratio bias. |
-| `infantry` | FRONT | `_FRONT` | Infantry-specific front bias. |
 | `garrison` | FRONT | `_FRONT` | Occupation force sizing. May move to `_GARRISON` if a country has many entries (currently none do). |
 | `invasion_unit_request` | INVASION | `_INVASION` | Sizes the amphibious-invasion division pool. |
 | `invade` | INVASION | `_INVASION` | Picks invasion targets. |
@@ -25,7 +23,7 @@ This is the **single source of truth** for which domain file every `ai_strategy`
 | `naval_dominance` | NAVAL | `WA_AI_NAVAL_*` | Sea-region or AI-area naval dominance objective. |
 | `naval_mission_threshold` | NAVAL | `WA_AI_NAVAL_*` | Generic naval mission threshold tuning. |
 | `naval_invasion_dominance_weight` | NAVAL | `WA_AI_NAVAL_*` | Fleet emphasis on supremacy along active invasion paths. |
-| `naval_invasion_support_priority` | NAVAL | `WA_AI_NAVAL_*` | Priority for naval invasion support in a sea region. |
+| `naval_invasion_support_priority` | NAVAL | `WA_AI_NAVAL_*` | Ranks sea regions for invasion support. **Real but undocumented** (string present in `hoi4.exe` 1.19.2; absent from both editions of `documentation.info`). **Zero uses in WA** - see the unused-lever note below. |
 | `strike_force_home_base` | NAVAL | `WA_AI_NAVAL_*` | Designates a base as fleet home. |
 | `strategic_air_importance` | NAVAL / AIR | `WA_AI_NAVAL_*` (sea-facing) or `_AIR` (land-theatre-facing) | Strategic air emphasis per strategic region. |
 | `conquer` | DIPLOMACY | `_DIPLOMACY` | Inter-country posture: targets to subdue. |
@@ -148,11 +146,6 @@ For each type: total count, where it currently appears (counts per file), recomm
 - Target: Default for archetype floor (`FRONT_archetypes`); Country for state-specific overrides; `_GARRISON` domain file when a country has many garrison rules (FRA at 15 is the candidate).
 - **Known issue:** `WA_AI_MILITARY_COUNTRY_SPR.txt:143-144` uses the WA-convention `value = -5000` (**not** engine-documented - the type has no engine section) force-off override. Preserve this pattern when migrating; do not collapse it into a regular garrison entry.
 
-### `infantry` (34)
-
-- Currently in: ALLIES 28, FRA 6.
-- Target: Faction for ALLIES (FRONT domain) and Country for FRA.
-
 ### `front_armor_score` (25)
 
 - Currently in: SOV 13, GER 7, ALLIES 2 (`armor_to_european_front`: +500 GER / +100 ITA for western-allies majors), USA 1 (`armor_europe_first`: -300 JAP).
@@ -268,6 +261,22 @@ suppression of everything outside the intended target set.
 - Policy: **Exclusive per target**.
 
 ---
+
+### `naval_invasion_support_priority` (0) - a real lever WA does not pull
+
+- **Currently in: nowhere.** Zero occurrences in `common/ai_strategy/`.
+- **Status: real but undocumented.** Absent from the 2024-11 and the 2023-07 editions of
+  `documentation.info`, so a doc-only check reads it as invented. The literal string is present in
+  `hoi4.exe` (1.19.2) - measured against a control string, which is not - and vanilla's own
+  `common/ai_strategy/ENG.txt` writes 7 entries of it.
+- **Shape, from vanilla's usage only:** `id = <strategic region>`, `value` a weight on the
+  invasion-support objective for invasions whose path crosses that region. Vanilla writes `200` on the
+  five Mediterranean regions to hold ENG's invasions there before 1943.6.1, then `25` and `-100` on the
+  Bismarck Sea to keep ENG out of Pacific invasions. **ASSUMED** beyond that - no engine text describes
+  the parameter, and nothing in WA has ever exercised it.
+- **Why it matters here:** `common/ai_strategy` is a `replace_path` folder, so vanilla's ENG.txt does
+  not run. WA replaced that theatre-sequencing behaviour with nothing. Whether WA wants it is an open
+  question, not a defect - queued, not fixed.
 
 ## Phase 4 audit: cross-layer duplication is mostly by-design
 

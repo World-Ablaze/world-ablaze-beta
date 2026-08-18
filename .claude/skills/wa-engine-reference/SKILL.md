@@ -55,6 +55,7 @@ on. Read `launcher-settings.json` rather than trusting either descriptor.
 | Default value of an `NDefines` key | install `common/defines/00_defines.lua` (396 KB) - the full table. WA's `05_defines.lua` names only a quarter of it; see "`common/defines` is an override layer" below |
 | How the engine groups a faction's members into theatres | install `common/ai_faction_theaters/` + its `_documentation.md` |
 | Vanilla AI plan structure | install `common/ai_strategy_plans/`, and Expert AI's for a second reading |
+| Does this token exist AT ALL, when no doc mentions it? | **grep `hoi4.exe` for the literal string** - and put a control string that cannot exist in the same run, or the test proves nothing. This settled `naval_invasion_support_priority` (2026-08-18): absent from both editions of the type doc, present in the binary, used 7x by vanilla `ENG.txt` - a documentation-only audit had called it an invented type. `force_ratio`, checked the same way, really is absent. **"Not in `_documentation.md`" is not evidence a token does not exist.** |
 
 ## The per-folder documentation layer - the part everyone misses
 

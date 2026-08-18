@@ -65,8 +65,8 @@ a behaviour one.
 | C3 | `naval_dominance` | **CONTRADICTION** | "Sums per region/area", range 0-100, "values in use are 70-80 (18 entries)" | "value = 99 # Percentage between 0 and 100"; a set value, no additive statement | WA-B:106,130 vs ENGINE:672-682; 8 live entries at `value = 1000` in `WA_AI_NAVAL_COUNTRY_ENG.txt:897-918` | **FIXED** - §4 row + note; the 1000s were already retired |
 | C4 | `put_unit_buffers` | **CONTRADICTION** | "Sums per state / Additive per state / range 0 to 100" | `ratio` = share of the country's total armies (0..1); "ratio of same orders ids will be share same ratio" | WA-B:110 vs ENGINE:352-357 | **FIXED** - §4 row, new order_id note, Fix 96 arithmetic corrected |
 | C5 | `theatre_distribution_demand_increase` | **CONTRADICTION** | range "0 to +500" | "value = 10 # Increase desired unit demand by 10" - absolute unit count | WA-B:81 vs ENGINE:386-388 | **FIXED** - §4 row: absolute divisions, 4-10 in use |
-| C6 | `naval_invasion_support_priority` | **CONTRADICTION** | a live NAVAL type with combination rule and range 0..+100 | token does not exist in either doc edition | WA-A:28, WA-B:109 vs ENGINE token list :53-61 | **OPEN** - next QUEUE row |
-| C7 | `force_ratio`, `infantry` | **CONTRADICTION** | FRONT-domain `ai_strategy` types with domains, ranges and counts | neither token exists in either edition | WA-A:17-18, WA-B:47,88 | **OPEN** - next QUEUE row |
+| C6 | `naval_invasion_support_priority` | **AUDIT WAS WRONG - the type is real** | a live NAVAL type with combination rule and range 0..+100 | token does not exist in either doc edition | WA-A:28, WA-B:109 vs ENGINE token list :53-61 | **CORRECTED 2026-08-18** - absent from both doc editions, but present in `hoi4.exe` and used 7x by vanilla `ENG.txt`. "Invented type" withdrawn; row rewritten as a real, undocumented, unused lever |
+| C7 | `force_ratio`, `infantry` | **CONTRADICTION** | FRONT-domain `ai_strategy` types with domains, ranges and counts | neither token exists in either edition | WA-A:17-18, WA-B:47,88 | **FIXED 2026-08-18** - both removed from the domain table, the policy table and 35 `# Phase 6 split:` headers |
 | C8 | `garrison` | **CONTRADICTION** | `value = -5000` is "the documented way to force garrison off" | `garrison` has **no section at all** - bare token-list entry | WA-B:87,131 / WA-A:147 vs ENGINE:45 | **FIXED** - §4 row + note: convention, not engine text |
 | U1 | `area_priority` | UNSUPPORTED | "Sums per area", range -200..+200 | token listed, **no section** in either edition | WA-B:80 | **FIXED** - tagged **I** in §4 |
 | U2 | every "Sums per X" row in the §4 policy table | UNSUPPORTED | 25 types given an explicit engine combination rule | the file states additivity for exactly **one** pair (`avoid_starting_wars` + `conquer`) | WA-B:79-113 vs ENGINE:197-210 | **FIXED** - column renamed and every cell tagged E / I |
@@ -227,7 +227,21 @@ ids are state ids.
 
 ---
 
-## C6 - `naval_invasion_support_priority` does not exist; `supremacy` was renamed
+## C6 - `naval_invasion_support_priority` DOES exist - this row's verdict was wrong
+
+> **Corrected 2026-08-18.** The conclusion below ("It is an invented type") was drawn from the
+> documentation alone. Two measurements overturn it: the literal string
+> `naval_invasion_support_priority` is **present in `hoi4.exe` (1.19.2)** - checked against a control
+> string that is not - and vanilla's own `common/ai_strategy/ENG.txt` writes **7 entries** of it
+> (`id = 29 / 68 / 69 / 169 / 202` at `value = 200`, plus two on the Bismarck Sea). The type is real
+> and undocumented. What survives from the row: WA has **zero uses** of it, and the range/combination
+> WA's docs gave it were invented. The `supremacy` -> `dominance` rename below is unaffected.
+>
+> **Method note:** "absent from `_documentation.md`" is not evidence a token does not exist. The
+> install ships 103 documented types and more than that in the binary. Grep the exe, and check a
+> control string in the same run.
+
+## C6 (original text) - `naval_invasion_support_priority` does not exist; `supremacy` was renamed
 
 **WA-A:28** lists `naval_invasion_support_priority` as a NAVAL type ("Priority for naval invasion
 support in a sea region"); **WA-B:109** gives it a combination rule ("Sums per region") and a range
