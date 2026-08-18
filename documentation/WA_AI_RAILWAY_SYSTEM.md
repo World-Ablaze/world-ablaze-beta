@@ -471,7 +471,24 @@ mode of its own.
 **Not solved here:** the corridor gives the ground campaign its logistics; it does not put divisions
 in Africa (`66636ff4`: 92/117 ENG divisions under garrison orders, offensive `plan_value = -1`).
 
-**Verification:** checklist item R60; `savegame.py pc <TAG> --match corridor` for the queue side,
+**Sizing (Fix 107, 2026-08-18).** The rail target is **computed**, not flat. Every hop used to be asked
+for `constant:wa_ai_railway.corridor.rail_level = 2`; campaign `9d83084c` then measured every corridor
+hop at exactly 2 on all 121 monthly saves, 1940.12 to 1946.2 - the pass was not blocked and not late, it
+had **finished**, and `4 + 8x2` = 20 supply was the ceiling by construction. `WA_AI_PC_corridor_compute_sizing`
+(`railway_helpers`) now totals our side's divisions on the corridor states into a presence index, turns it
+into a demand in supply points, caps it by what our corridor ports can inject (the chain is in **series**),
+and converts that to a level clamped between `corridor.rail_level_floor` (2 - so the change can never
+regress a peacetime corridor) and `corridor.rail_level_cap` (4 = 36 supply - the irreversibility budget,
+since railways cannot be downgraded). A port node is now **raised** toward a computed level instead of only
+being placed when missing - the defect that left Medenine/Gabes at level 1 for 121 saves under three
+successive holders, because FRA placed it in 1936.4 and the existence test refused every later request for
+ever. Which lever moves is a cost arbitration on the pathfound chain length N: port = 2000 per supply
+point (PC charges `cost.naval_base` flat), rail = 100 x N, so at or above `port_break_even_segments` = 20
+the port wins and below it the rail does. **Read `documentation/WA_AI_LOGISTICS_MODEL.md` §11 and §11.11
+before touching any of it** - §11.11 is the authority on the three places the code deviates from the
+frozen design. The presence index is **not** a division count; its header says why and what it biases.
+
+**Verification:** checklist items R60 and R71; `savegame.py pc <TAG> --match corridor` for the queue side,
 `tlm <TAG> --match r95` for admissions, and the map (railway connection level between two nodes,
 `supply_node` at 10049 / 9980, `naval_base` at 11957) for the built side.
 

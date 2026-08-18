@@ -1235,10 +1235,186 @@ WA_AI_PC_get_max_railway_level_on_route = {
 }
 
 ############################################################################################################
+#	HELPER (Fix 107): size the theatre corridor - how much supply does this theatre need, how much can
+#	our ports inject, and what railway / port level does that imply.
+#	ROOT = THIS = builder country. Runs once per corridor pass, AFTER the node classification loop
+#	(it reads corridor_node_ours_). Implements documentation/WA_AI_LOGISTICS_MODEL.md 11.4-11.6.
+#	Inputs (temp arrays, filled by the caller): corridor_node_prov_, corridor_node_ours_.
+#	>>> corridor_presence_ (demand proxy), corridor_demand_, corridor_inject_ (-1 = cap not applied),
+#	    corridor_rail_tgt_ (1..rail_level_cap), corridor_port_tgt_ (0 = no port case open)
+#
+#	Protects against: a flat hardcoded rail target. Campaign 9d83084c measured every corridor hop at
+#	exactly 2 on all 121 saves - the pass was not blocked, it had finished, and 20 supply was the
+#	ceiling by construction while an Allied army group fought on the other end of it.
+#	Assumes: the two engine flow ladders, rail 4 + 8xlevel and port 5xlevel (constant:wa_ai_railway.supply.*,
+#	registered mirrors of 05_defines.lua). ACTUAL supply is not readable from script - nothing in the mod
+#	reads it - so this MODELS flow from levels and can never observe whether it was right. WA_TLM r107
+#	against a campaign map reading is the only validation path.
+#	Fact is gone when: either ladder is retuned, or a script trigger for real supply appears.
+#
+#	corridor_presence_ is NOT a division count and must not be read as one. `divisions_in_state` is a
+#	comparison trigger, so no exact per-state count exists in script; the ladder below is the
+#	WA_AI_MILITARY_posture_count_state_divs idiom (posture_effects.txt) with bucket midpoints instead
+#	of its power weights, and WITHOUT its armour doubling (that is a combat-power proxy, not a supply
+#	one). It is COPIED rather than called on purpose: that effect writes _post_accum, a military-system
+#	temp. Known bias, SUPPOSE: it over-reads a DISPERSED army - the same 25 divisions read ~25 in one
+#	state and ~35 across five - because each state pays its own bucket floor. That bias is upward, i.e.
+#	toward overbuilding, which is the permanent direction; constant:wa_ai_railway.corridor.supply_per_division
+#	is the knob that compensates for it and is a placeholder until a campaign calibrates it.
+############################################################################################################
+
+WA_AI_PC_corridor_compute_sizing = {
+	set_temp_variable = { corridor_presence_ = 0 }
+	set_temp_variable = { corridor_demand_ = 0 }
+	set_temp_variable = { corridor_inject_ = 0 }
+	set_temp_variable = { corridor_rail_tgt_ = constant:wa_ai_railway.corridor.rail_level_floor }
+	set_temp_variable = { corridor_port_tgt_ = 0 }
+	clear_temp_array = _corr_states_
+
+	### Distinct states of the corridor nodes. Deduplicated: two North African nodes share state 665
+	### (Gabes 7005, Medenine 11957) and two more share 448 and 449 - counting a state twice would
+	### inflate the demand proxy by the exact amount of its own garrison.
+	for_each_loop = { array = corridor_node_prov_ value = _cs_prov_
+		set_temp_variable = { _cs_state_ = global.WA_AI_MAP_province_state_id^_cs_prov_ }
+		if = {
+			limit = {
+				check_variable = { _cs_state_ > 0 }
+				NOT = { is_in_array = { _corr_states_ = _cs_state_ } }
+			}
+			add_to_temp_array = { _corr_states_ = _cs_state_ }
+		}
+	}
+
+	### Presence of OUR SIDE on those states. Every side holder counts - a coalition ally's divisions
+	### eat the same corridor's supply as ours. WA_AI_PC_is_corridor_side_holder is the same three-term
+	### permission test the selector uses, reused here so a widening of "our side" moves both together.
+	every_country = {
+		limit = { WA_AI_PC_is_corridor_side_holder = yes }
+		for_each_loop = { array = _corr_states_ value = _cnt_state
+			var:_cnt_state = {
+				if = {
+					limit = { PREV = { divisions_in_state = { state = PREV size > 0 } } }
+					if      = { limit = { PREV = { divisions_in_state = { state = PREV size > 30 } } } ROOT = { add_to_temp_variable = { corridor_presence_ = 35 } } }
+					else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 20 } } } ROOT = { add_to_temp_variable = { corridor_presence_ = 25 } } }
+					else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 15 } } } ROOT = { add_to_temp_variable = { corridor_presence_ = 17 } } }
+					else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 10 } } } ROOT = { add_to_temp_variable = { corridor_presence_ = 12 } } }
+					else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 7 } } }  ROOT = { add_to_temp_variable = { corridor_presence_ = 8 } } }
+					else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 5 } } }  ROOT = { add_to_temp_variable = { corridor_presence_ = 6 } } }
+					else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 3 } } }  ROOT = { add_to_temp_variable = { corridor_presence_ = 4 } } }
+					else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 1 } } }  ROOT = { add_to_temp_variable = { corridor_presence_ = 2 } } }
+					else    = { ROOT = { add_to_temp_variable = { corridor_presence_ = 1 } } }
+				}
+			}
+		}
+	}
+
+	set_temp_variable = { corridor_demand_ = corridor_presence_ }
+	multiply_temp_variable = { corridor_demand_ = constant:wa_ai_railway.corridor.supply_per_division }
+	multiply_temp_variable = { corridor_demand_ = constant:wa_ai_railway.corridor.target_ratio }
+
+	### Injection: what OUR ports on this corridor can put into the network. Per PROVINCE, never per
+	### state (WA_AI_PC_prov_get_naval_base_level's header records why). Injections ADD across nodes
+	### (LOGISTICS_MODEL section 7), so this is a sum, not a max.
+	###
+	### BUILT levels only - a port project in flight is invisible here, and deliberately so. While one
+	### is building, corridor_inject_ under-states the future capacity, the rail target computed from
+	### min(demand, inject) comes out LOWER, and it rises again when the port completes. That is the
+	### safe error direction: railways cannot be downgraded, so under-sizing is recoverable and
+	### over-sizing is not (LOGISTICS_MODEL section 10 rule 3). The sequencing it produces - port first,
+	### rail catching up - is also the correct one. And it cannot loop: the province-duplicate guard in
+	### WA_AI_PC_start_project admits at most one naval-base project per province at a time, so the low
+	### reading cannot turn into a second port request. The RAIL side has the opposite convention on
+	### purpose (WA_AI_PC_start_railway_project adds _queued_for_segment to the current level before
+	### comparing), because there the risk is queueing the same segment twice, not sizing it low.
+	for_each_loop = { array = corridor_node_prov_ index = _inj_i_ value = _inj_prov_
+		if = {
+			limit = { check_variable = { corridor_node_ours_^_inj_i_ = 1 } }
+			set_temp_variable = { _inj_state_ = global.WA_AI_MAP_province_state_id^_inj_prov_ }
+			if = {
+				limit = { check_variable = { _inj_state_ > 0 } }
+				var:_inj_state_ = {
+					set_temp_variable = { _province_hub_id = _inj_prov_ }
+					WA_AI_PC_prov_get_naval_base_level = yes
+					set_temp_variable = { _port_level = prov_naval_base_level_ }
+					WA_AI_PC_calculate_port_supply = yes
+					ROOT = { add_to_temp_variable = { corridor_inject_ = port_supply_ } }
+				}
+			}
+		}
+	}
+
+	### When the injection cap must NOT be applied (LOGISTICS_MODEL section 11.5): the network is also
+	### fed by land and corridor_inject_ under-states it. Two cases, both written as -1 so the probe can
+	### tell "cap not applied" from "we hold no port" - a 0 would conflate them.
+	###   (a) we hold no corridor port at all: min(demand, 0) would pin every target at the floor, which
+	###       is a regression, not a measurement.
+	###   (b) ROOT's capital sits ON the corridor: a native power is supplied overland from its capital
+	###       (CAPITAL_SUPPLY_BASE), which no port on this list carries.
+	set_temp_variable = { _inj_capped_ = 1 }
+	if = { limit = { NOT = { check_variable = { corridor_inject_ > 0 } } }
+		set_temp_variable = { _inj_capped_ = 0 }
+	}
+	# Capital state resolved OUTSIDE the test: WA_AI_PC_get_state_id is an EFFECT and cannot run
+	# inside a limit block. state_id_ is pre-zeroed so a tag with no capital cannot match state 0.
+	set_temp_variable = { state_id_ = 0 }
+	capital_scope = { WA_AI_PC_get_state_id = yes }
+	set_temp_variable = { _corr_cap_state_ = state_id_ }
+	if = {
+		limit = {
+			check_variable = { _corr_cap_state_ > 0 }
+			is_in_array = { _corr_states_ = _corr_cap_state_ }
+		}
+		set_temp_variable = { _inj_capped_ = 0 }
+	}
+	if = { limit = { check_variable = { _inj_capped_ = 0 } }
+		set_temp_variable = { corridor_inject_ = -1 }
+	}
+
+	### Rail target. The chain is in SERIES (LOGISTICS_MODEL section 10 rule 3), so the useful flow is
+	### the minimum of the entry injection and every hop - a level above the weakest link buys nothing.
+	set_temp_variable = { _target_supply = corridor_demand_ }
+	if = {
+		limit = {
+			check_variable = { _inj_capped_ = 1 }
+			check_variable = { corridor_inject_ < corridor_demand_ }
+		}
+		set_temp_variable = { _target_supply = corridor_inject_ }
+	}
+	WA_AI_PC_supply_to_target_railway = yes
+	set_temp_variable = { corridor_rail_tgt_ = target_railway_level_ }
+	if = { limit = { check_variable = { corridor_rail_tgt_ < constant:wa_ai_railway.corridor.rail_level_floor } }
+		set_temp_variable = { corridor_rail_tgt_ = constant:wa_ai_railway.corridor.rail_level_floor }
+	}
+	if = { limit = { check_variable = { corridor_rail_tgt_ > constant:wa_ai_railway.corridor.rail_level_cap } }
+		set_temp_variable = { corridor_rail_tgt_ = constant:wa_ai_railway.corridor.rail_level_cap }
+	}
+
+	### Port target - only when the entry capacity is what binds (LOGISTICS_MODEL section 11.7). Left at
+	### 0 otherwise, which the hub loop reads as "place a missing port at level 1", i.e. the pre-Fix-107
+	### behaviour. WHETHER to act on this target is decided by the chain-length arbitration in
+	### railway_core, not here: this effect runs before the routes are pathfound, so it cannot know N.
+	if = {
+		limit = {
+			check_variable = { _inj_capped_ = 1 }
+			check_variable = { corridor_inject_ < corridor_demand_ }
+		}
+		set_temp_variable = { _target_supply = corridor_demand_ }
+		WA_AI_PC_supply_to_target_port = yes
+		set_temp_variable = { corridor_port_tgt_ = target_port_level_ }
+		if = { limit = { check_variable = { corridor_port_tgt_ > constant:wa_ai_railway.supply.port_max_useful_level } }
+			set_temp_variable = { corridor_port_tgt_ = constant:wa_ai_railway.supply.port_max_useful_level }
+		}
+	}
+}
+
+############################################################################################################
 #	HELPER (Fix 95): queue a theatre-corridor HUB - a supply hub (17) or a naval base (14) - at a
 #	named province, tagged type_id corridor under the corridor's scoped budget.
 #	ROOT = builder country (country scope). Inputs (temp): _hub_prov_ (province id),
-#	_hub_kind_ (17 = supply_node, 14 = naval_base), _hub_prio_ (priority band).
+#	_hub_kind_ (17 = supply_node, 14 = naval_base), _hub_prio_ (priority band),
+#	_hub_target_level_ (Fix 107, ports only: the level to reach; 1 = the pre-Fix-107 "place if
+#	missing" behaviour. ALWAYS set by the caller from the corridor_hub_target_ array - never a
+#	chain temp left over from the previous hub).
 #	>>> corridor_hub_admitted_ (1 iff WA_AI_PC_start_project grew the queue - the verified effect
 #	    the telemetry counts; "we asked" is not "it was admitted": queue_max, the province-duplicate
 #	    guard and the controller test can all refuse)
@@ -1266,9 +1442,27 @@ WA_AI_PC_corridor_start_hub = {
 				limit = {
 					check_variable = { _hub_kind_ = 14 }
 					is_coastal = yes
-					NOT = { WA_AI_PC_prov_has_naval_base = yes }
 				}
-				set_temp_variable = { _hub_wanted_ = 1 }
+				# Fix 107: a port is RAISED, not merely placed. Before, the test was
+				# `NOT = { WA_AI_PC_prov_has_naval_base = yes }`, so a port that existed at level 1
+				# could never be improved by anyone - campaign 9d83084c measured Medenine/Gabes at
+				# level 1 across all 121 saves and three successive holders, because FRA had placed
+				# it in 1936.4 and the existence test then refused every later request for ever.
+				# _hub_target_level_ = 1 reproduces the old behaviour exactly (0 < 1 only when absent).
+				#
+				# THIS is the only gate on repetition that works. WA_AI_PC_start_project's
+				# _project_target_level check is INERT for building type 14: it reads
+				# final_building_level_ only for types 1 / 2 / 4 (PRIORITY_core.txt), so a naval base
+				# always reads 0 there and the target test always passes. The second guard is the
+				# province-duplicate test in the same effect, which admits at most one naval-base
+				# project per province at a time - and since one completed project spawns exactly
+				# +1 level, the pair is what makes a multi-level climb one level per pass instead
+				# of a loop.
+				WA_AI_PC_prov_get_naval_base_level = yes
+				if = {
+					limit = { check_variable = { prov_naval_base_level_ < _hub_target_level_ } }
+					set_temp_variable = { _hub_wanted_ = 1 }
+				}
 			}
 			if = {
 				limit = { check_variable = { _hub_wanted_ = 1 } }

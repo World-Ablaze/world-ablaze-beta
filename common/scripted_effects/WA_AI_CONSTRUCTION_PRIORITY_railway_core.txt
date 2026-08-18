@@ -311,6 +311,11 @@ WA_AI_PC_railway_corridor_pass = {
 				set_temp_variable = { _corridor_seg_admitted_ = 0 }
 				set_temp_variable = { _corridor_depot_admitted_ = 0 }
 				set_temp_variable = { _corridor_port_admitted_ = 0 }
+				set_temp_variable = { _corridor_port_raised_ = 0 }
+				# Fix 107: total provinces on the chains actually pathfound this pass. It is the N of the
+				# port-vs-rail arbitration (LOGISTICS_MODEL section 11.7) - the WHOLE chain, not one hop,
+				# because the chain is in series and a point at the far end costs a level on every link.
+				set_temp_variable = { _corridor_chain_len_ = 0 }
 
 				### Routes: consecutive node pairs both ours - full paths only (no frontier ports in the desert)
 				set_temp_variable = { _corridor_max_minus_one_ = constant:wa_ai_railway.corridor.max_routes_per_run }
@@ -330,6 +335,9 @@ WA_AI_PC_railway_corridor_pass = {
 						if = {
 							limit = { check_variable = { pathfind_prov_success_ = 1 } }
 							add_to_temp_variable = { _corridor_routes_ok_ = 1 }
+							# Fix 107: segments on this route = provinces - 1.
+							add_to_temp_variable = { _corridor_chain_len_ = pathfind_prov_path_^num }
+							subtract_from_temp_variable = { _corridor_chain_len_ = 1 }
 							for_each_loop = { array = pathfind_prov_path_ index = _cp_i_ value = _cp_v_ break = _cp_b_
 								add_to_temp_array = { _valid_provinces = _cp_v_ }
 								set_temp_variable = { _cp_next_ = _cp_i_ }
@@ -365,6 +373,26 @@ WA_AI_PC_railway_corridor_pass = {
 					set_temp_variable = { _hub_prov_ = _ch_prov_ }
 					set_temp_variable = { _hub_kind_ = corridor_hub_kind_^_ch_i_ }
 					set_temp_variable = { _hub_prio_ = corridor_hub_prio_^_ch_i_ }
+					# Fix 107: the level this hub should reach, read from its OWN slot of the parallel
+					# array the strategy filled. Never inherited: the loop re-sets it every iteration,
+					# so a port with no computed target cannot pick up the previous port's.
+					set_temp_variable = { _hub_target_level_ = corridor_hub_target_^_ch_i_ }
+					if = { limit = { check_variable = { _hub_target_level_ < 1 } }
+						set_temp_variable = { _hub_target_level_ = 1 }
+					}
+					# Fix 107 - port-vs-rail arbitration (LOGISTICS_MODEL section 11.7). Raising a port
+					# buys 5 supply for a flat constant:wa_ai_pc.cost.naval_base; raising the rail buys 8
+					# for constant:wa_ai_pc.cost.railway PER LINK of the chain. Below the break-even the
+					# rail is both cheaper per point and far faster to deliver (8 segments may be in
+					# flight at once, a port is one per province and one level per completion), so the
+					# port falls back to level 1 = place it if it is missing, nothing more.
+					if = {
+						limit = {
+							check_variable = { _hub_kind_ = 14 }
+							check_variable = { _corridor_chain_len_ < constant:wa_ai_railway.corridor.port_break_even_segments }
+						}
+						set_temp_variable = { _hub_target_level_ = 1 }
+					}
 					add_to_temp_array = { _valid_provinces = _ch_prov_ }
 					WA_AI_PC_corridor_start_hub = yes
 					if = {
@@ -375,6 +403,12 @@ WA_AI_PC_railway_corridor_pass = {
 						}
 						else = {
 							add_to_temp_variable = { _corridor_port_admitted_ = 1 }
+							# Fix 107: a RAISE is a port admitted at a target above 1, i.e. one that
+							# existed already. Kept apart from _port_admitted_ so the probe can tell
+							# "the new lever fired" from "the old place-if-missing branch fired".
+							if = { limit = { check_variable = { _hub_target_level_ > 1 } }
+								add_to_temp_variable = { _corridor_port_raised_ = 1 }
+							}
 						}
 					}
 				}
@@ -430,6 +464,40 @@ WA_AI_PC_railway_corridor_pass = {
 					}
 					set_variable = { WA_TLM_r103_corridor_last_t = global.WA_TLM_clock }
 				}
+
+				# tlm: r107_sizing_* - Fix 107. What did the sizing model SEE and DECIDE this pass?
+				#   _presence  GAUGE, resampled every pass: the demand proxy over our side's divisions
+				#              in the corridor states. NOT a division count - it is a bucket ladder and
+				#              it over-reads a dispersed army (WA_AI_PC_corridor_compute_sizing header).
+				#   _demand    GAUGE: _presence x supply_per_division x target_ratio, in supply points.
+				#   _inject    GAUGE: what our corridor ports can put in, in supply points.
+				#              **-1 = the cap was deliberately NOT applied** (we hold no corridor port,
+				#              or ROOT's capital sits on the corridor and it is fed overland). 0 would
+				#              conflate that with "our ports inject nothing", which is a different fact.
+				#   _rail_tgt  GAUGE: the level every hop was asked for this pass, after floor and cap.
+				#              This is the metric the MAP validates - `rail.py --corridor` reads the
+				#              built minimum, and the two must converge within a few build durations.
+				#              They diverging is the signal: the model asked and nothing was delivered.
+				#   _chain     GAUGE: provinces on the chains pathfound this pass = the N of the
+				#              port-vs-rail arbitration. Not derivable from the four above, and the only
+				#              way to read WHY the port lever did or did not fire.
+				#   _raise_n   counter, VERIFIED EFFECT: ports admitted at a target ABOVE 1, i.e. a real
+				#              raise of an existing port - the thing that was structurally impossible
+				#              before Fix 107. Never per request: it counts only where the queue grew.
+				# consumer: R71
+				set_variable = { WA_TLM_r107_sizing_presence = corridor_presence_ }
+				set_variable = { WA_TLM_r107_sizing_demand = corridor_demand_ }
+				set_variable = { WA_TLM_r107_sizing_inject = corridor_inject_ }
+				set_variable = { WA_TLM_r107_sizing_rail_tgt = corridor_rail_tgt_ }
+				set_variable = { WA_TLM_r107_sizing_chain = _corridor_chain_len_ }
+				if = {
+					limit = { check_variable = { _corridor_port_raised_ > 0 } }
+					add_to_variable = { WA_TLM_r107_port_raise_n = _corridor_port_raised_ }
+				}
+				if = { limit = { check_variable = { WA_TLM_r107_sizing_first_t = 0 } }
+					set_variable = { WA_TLM_r107_sizing_first_t = global.WA_TLM_clock }
+				}
+				set_variable = { WA_TLM_r107_sizing_last_t = global.WA_TLM_clock }
 
 				### Stale-path validation, pinned to the corridor tag (Fix 50 shape).
 				# Only when the cancel set is COMPLETE: every requested route was pathfound this pass

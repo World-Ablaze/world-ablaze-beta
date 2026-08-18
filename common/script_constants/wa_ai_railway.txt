@@ -83,7 +83,46 @@ wa_ai_railway = {
 	# 20-hop route to level 1 took 24 weeks - the pass cadence, not the civ pool, was the bound.
 	corridor = {
 		interval_weeks     = 4	# corridor pass cadence (weeks); the counter ticks on the weekly pulse
-		rail_level         = 2	# target level on every corridor hop (desert corridor: 2 suffices, 3 doubles the ramp)
+		# Fix 107: rail_level (a flat TARGET of 2) became a floor/cap PAIR around a computed target.
+		# Protects against: sizing with no reference to demand. Campaign 9d83084c measured every
+		# corridor hop at exactly 2 on all 121 saves, 1940.12 to 1946.2 - the system was not blocked,
+		# it had finished, and 4 + 8x2 = 20 supply was the ceiling by construction.
+		# Assumes: the engine railway flow ladder 4 + 8xlevel (supply.railway_* below, registered).
+		# Fact is gone when: that ladder is retuned - then both numbers below mean a different flow.
+		rail_level_floor   = 2	# never size BELOW this. Keeps the change monotone: a corridor with no divisions
+		                    	# on it still gets the pre-Fix-107 level, so a peacetime corridor cannot regress.
+		rail_level_cap     = 4	# never size ABOVE this. Railways cannot be downgraded (LOGISTICS_MODEL section 10
+		                    	# rule 3: overbuilding is permanent, underbuilding is recoverable), so the cap is the
+		                    	# irreversibility budget. 4 = 36 supply. User ruling 2026-08-18, against the campaign
+		                    	# target "Allied victory in North Africa in early 1943".
+		# Demand model (LOGISTICS_MODEL section 11.4). Both are CALIBRATION KNOBS, not measurements.
+		# Protects against: nothing yet - they are the first demand estimate this codebase has.
+		# Assumes: supply_per_division is an average need per division, and that the presence index
+		# WA_AI_PC_corridor_compute_sizing builds is a usable proxy for a division count (it is NOT a
+		# count - it over-reads a dispersed army; see that effect's header).
+		# Fact is gone when: a campaign shows rail targets systematically above or below what the
+		# front actually needed - retune here, not in the effect.
+		supply_per_division = 2.5	# average supply need per division. SUPPOSE, placeholder of 2026-08-17.
+		target_ratio        = 0.4	# target supply ratio = SUPPLY_THRESHOLD_FOR_ARMY_ATTRITION (05_defines.lua):
+		                     	# the NO-ATTRITION floor, not an optimum - combat and speed penalties still
+		                     	# scale below 1.0. Sizing against 1.0 would overbuild permanently.
+		# Port-vs-rail cost arbitration (LOGISTICS_MODEL section 11.7). DERIVED from the prices PC
+		# ACTUALLY CHARGES, which are not the engine's:
+		#   port  = constant:wa_ai_pc.cost.naval_base (10000) FLAT per level / supply.port_per_level (5)  = 2000 per point
+		#   rail  = constant:wa_ai_pc.cost.railway (800) per province connection x N / railway_per_level (8) = 100 x N
+		# N is the WHOLE chain from the entry port to the far node, not one hop: the chain is in SERIES,
+		# so a point at the far end costs a level on EVERY connection (LOGISTICS_MODEL section 10 rule 3).
+		# Break-even: 100 x N = 2000 -> N = 20.
+		# DEVIATION from LOGISTICS_MODEL section 11.7, recorded: that section derived 10-14 from the ENGINE
+		# price with its -556/level taper (constant:wa_ai_railway.cost.naval_base_per_level). PC is a shadow
+		# system - it never pays the engine price, it pays cost.naval_base FLAT (see that key's header, Fix 72),
+		# so the port is dearer than section 11.7 assumed and the break-even moves out.
+		# Protects against: defaulting to one lever. Below 20 the rail is cheaper per point AND ~12x faster
+		# to deliver (800/F days per segment against 10000/F for one port level, and 8 rail segments may be
+		# in flight at once against 1 port per province).
+		# Fact is gone when: cost.naval_base, cost.railway, port_per_level or railway_per_level changes -
+		# RE-DERIVE BY HAND, nothing checks it (noted on cost_naval_base in tools/constants_registry.json).
+		port_break_even_segments = 20	# at or above this many provinces on the chain, raise the PORT; below, the RAIL
 		queue_max          = 8	# concurrent corridor projects per builder PER BUILDING TYPE (WA_AI_PC_start_project filters
 		                    	# building_type before the type_id budget): 8 rails + 8 depots + 8 ports at most, tag corridor, Fix 47 scoped
 		max_routes_per_run = 14	# pathfinds per corridor pass = the whole node-pair list of the largest corridor (15 nodes ->

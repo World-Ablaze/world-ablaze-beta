@@ -265,7 +265,8 @@ These are known gaps, not oversights to be re-discovered:
 
 ## 11. Theatre-corridor dimensioning - frozen design (2026-08-17)
 
-Status: **design frozen, not yet implemented.** Applies to `WA_AI_PC_railway_corridor_pass`
+Status: **SHIPPED 2026-08-18 as Fix 107**, with three recorded deviations - see §11.11, which is the
+authority on what the code actually does where it differs from the text below. Applies to `WA_AI_PC_railway_corridor_pass`
 (`railway_core`) and `WA_AI_PC_railway_STRATEGY_theatre_corridor` (`railway_strategies`) only.
 The land-war / overseas / pre-war passes are out of scope for this iteration.
 
@@ -407,9 +408,47 @@ railway levels, actual port levels) and the front's attrition, not trusting the 
 
 ---
 
+### 11.11 What shipped (Fix 107, 2026-08-18) - and the three deviations
+
+Implemented: §11.4 (demand), §11.5 (injection + guard), §11.6 (computed rail target, no ratchet),
+§11.7 (port-vs-rail arbitration, and a port that can be **raised** rather than only placed).
+Files: `WA_AI_PC_corridor_compute_sizing` and the rewritten `WA_AI_PC_corridor_start_hub` in
+`railway_helpers`, `WA_AI_PC_prov_get_naval_base_level` in `railway_primitives`, the sizing call and the
+`corridor_hub_target_` array in `railway_strategies`, the chain-length accumulator + break-even
+arbitration + `WA_TLM_r107_sizing_*` in `railway_core`, five constants in
+`common/script_constants/wa_ai_railway.txt`. Verification: checklist **R71**.
+
+**Deviation 1 - §11.3 (the three-way `PREP` / `ACTIVE` / `RESOLVED` state) is NOT implemented, and is
+out of scope rather than covered.** The user bounded the 2026-08-18 session to sizing plus probes. The
+defect §11.3 names - "the winner keeps building the whole corridor for the rest of the campaign" - is
+*narrowed* by the demand term (an emptied theatre computes a low target and stops emitting) but not
+*closed*: with `corridor.rail_level_floor = 2` the post-victory behaviour on all 14 hops is exactly
+today's, where §11.3 would have restricted it to the `corridor_node_permanent_` Libyan span. The
+`corridor_node_permanent_` column does not exist. **Do not read the demand term as a substitute.**
+
+**Deviation 2 - §11.7's break-even is 20 segments, not 10-14.** That table priced the port at the
+*engine's* tapered cost. PC is a shadow system: it charges `constant:wa_ai_pc.cost.naval_base` **flat**
+per level (that key's header, Fix 72). Port = 2000 per supply point at every level; rail = 100 x N.
+Break-even 100 x N = 2000 -> N = 20. `N` is the whole chain pathfound in the pass, not one hop.
+
+**Deviation 3 - the demand input is a presence INDEX, not a division count.** §11.4 writes
+`divs_ = SUM staircase(divisions_in_state)` and then multiplies by a per-division constant. Those are
+different units. `divisions_in_state` is comparison-only, so no exact per-state count exists in script;
+the shipped ladder uses bucket midpoints (and drops the posture idiom's armour doubling, a combat-power
+proxy) and is named `corridor_presence_` to stop it being read as a count. **Known bias, SUPPOSE:** it
+over-reads a *dispersed* army - the same 25 divisions read ~25 in one state and ~35 across five, because
+each state pays its own bucket floor. The bias is upward, i.e. toward the permanent direction;
+`supply_per_division` is the knob that absorbs it and stays a placeholder until a campaign calibrates it.
+
+**What §11.10 asked for and did not get:** the probe family is `r107_sizing_*`, not `r97_sizing_*`
+(r97 was taken by the East-African theatre), and it carries a `_chain` gauge §11.10 did not list -
+without it, a pass where the port lever did not fire is indistinguishable from one where it was not
+considered.
+
 ## Changelog
 
 | Date | Change |
 | --- | --- |
 | 2026-08-17 | Created while designing corridor dimensioning. Rulings recorded: port flow is 5/level (not the `SUPPLY_PORT_LEVEL_THROUGHPUT = 3` define); hubs have no level; range and throughput are separate failure modes with separate levers; hub supply is additive. |
+| 2026-08-18 | §11 SHIPPED as Fix 107. §11.11 added with the three deviations (no §11.3, break-even 20 not 12, presence index not a division count). Measured trigger: campaign `9d83084c`, every corridor hop at level 2 on all 121 saves. |
 | 2026-08-17 | §11 added - corridor dimensioning design frozen. User rulings: build both rails and ports arbitrated by cost per supply point; no ratchet on the target; `supply_per_division = 2.5` as a calibration placeholder. |

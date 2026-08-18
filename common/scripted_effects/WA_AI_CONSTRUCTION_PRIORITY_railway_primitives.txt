@@ -40,6 +40,50 @@ WA_AI_PC_get_naval_base_level = {
 }
 
 ############################################################################################################
+#	PRIMITIVE: Get naval base level of ONE PROVINCE (Fix 107)
+#	THIS = state scope (any_province_building_level requires it), _province_hub_id = the province
+#	>>> prov_naval_base_level_ (0-10)
+#
+#	Protects against: reading a port level per STATE when the decision is per NODE.
+#	WA_AI_PC_get_naval_base_level above tests `naval_base > N` in state scope, which answers "the best
+#	port anywhere in this state", not "the port at this province". Two North African corridor nodes
+#	share state 665 (Gabes 7005 and Medenine 11957), so summing the state read over nodes would count
+#	one port twice AND credit the corridor with a port that is not on it.
+#	Assumes: any_province_building_level resolves a single province by id - the same idiom
+#	WA_AI_PC_prov_has_naval_base already relies on (WA_AI_CONSTRUCTION_triggers.txt).
+#	Fact is gone when: that trigger family stops resolving per province - then this ladder is a state
+#	read wearing a province name, and every corridor injection reading is wrong.
+############################################################################################################
+
+WA_AI_PC_prov_get_naval_base_level = {
+	set_temp_variable = { prov_naval_base_level_ = 0 }
+
+	# Descending ladder: the first true test wins, so the average cost is ~2 evaluations on the
+	# level-0/1 provinces that dominate a corridor, not 10.
+	set_temp_variable = { _check_naval_level_minus_one = 9 }
+	if = {
+		limit = { WA_AI_PC_prov_has_naval_base_at_level = yes }
+		set_temp_variable = { prov_naval_base_level_ = 10 }
+	}
+	else = {
+		set_temp_variable = { _pnb_probe_ = 9 }
+		while_loop_effect = {
+			limit = {
+				check_variable = { prov_naval_base_level_ = 0 }
+				check_variable = { _pnb_probe_ > 0 }
+			}
+			set_temp_variable = { _check_naval_level_minus_one = _pnb_probe_ }
+			subtract_from_temp_variable = { _check_naval_level_minus_one = 1 }
+			if = {
+				limit = { WA_AI_PC_prov_has_naval_base_at_level = yes }
+				set_temp_variable = { prov_naval_base_level_ = _pnb_probe_ }
+			}
+			subtract_from_temp_variable = { _pnb_probe_ = 1 }
+		}
+	}
+}
+
+############################################################################################################
 #	PRIMITIVE: Check if ROOT has land border with specified enemy
 #	Uses controlled state neighbor detection
 #	ROOT = country scope, _check_enemy_tag = enemy tag >>> has_land_border_with_enemy_
