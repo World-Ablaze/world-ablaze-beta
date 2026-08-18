@@ -9,7 +9,8 @@ the cleanest case - JAP submarines, a 28x priority inversion in a group with no
 supersession chain at all - the AI's hull-switch dates reproduced the pre-fix
 campaigns to within a month.
 
-Vanilla's own ``common/ai_equipment/_documentation.md:36`` defines `priority` as
+Vanilla's own ``common/ai_equipment/_documentation.info`` (section ``Syntax``,
+the design-group ``priority`` key) defines `priority` as
 the weight "for creating a design in this group or for creating or upgrading
 equipment to use one of these designs".  It is the DESIGN layer.  Which
 equipment type a running production line makes, and whether it converts to a

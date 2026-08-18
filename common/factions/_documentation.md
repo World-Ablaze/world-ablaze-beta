@@ -1,3 +1,19 @@
+<!-- WA-SYNC: vendored copy of the engine's own factions documentation.
+WA-SYNC: source   = <HOI4 install>/common/factions/_documentation.md
+WA-SYNC: edition  = 1.19.2.0 install (the file declares no edition)
+WA-SYNC: game     = 1.19.2.0
+WA-SYNC: synced   = 2026-08-18
+WA-SYNC: Do not hand-edit. Refresh from the install and run `python tools/check_engine_docs.py`.
+WA-SYNC: Cite sections by NAME (`_documentation.md` section `<section title>`), never by line number:
+WA-SYNC: a line number is a silent-drift mechanism, a section name is not.
+WA-SYNC: The previous copy documented a Faction-Upgrade subsystem (`Faction_Upgrade_Id`, `upgrade_research`,
+WA-SYNC: `upgrade_intelligence`, `upgrade_doctrine`) that the engine replaced. The live mechanism is the
+WA-SYNC: `ai_strategy` type `spent_faction_initiative_priority` (ids `program`, `unlock_doctrine_sharing`,
+WA-SYNC: `unlock_faction_commander`) plus four intel-advisor types `become_spymaster`, `become_head_of_crypto`,
+WA-SYNC: `become_head_of_counter_intel`, `become_head_of_operations` - five ai_strategy types this repo had no
+WA-SYNC: record of. Faction goals also gained `group`, `select_effect` and `remove_effect`.
+-->
+
 # Abbreviations
 
 - *FI* - Faction Initiative
@@ -23,6 +39,8 @@ faction_goal_id = {
 		#
 		# SCOPE = faction leader: COUNTRY
 	}
+
+	group = # a categorization used by the UI to allow for filtering. UI asset will be GFX_group and the localization string will be group_FACTION_GOAL_FILTER
 	
 	auto_complete = yes # automatically complete goal if the progress reaches 100%
 	
@@ -45,6 +63,17 @@ faction_goal_id = {
 
 	cancel_effect = {
 		# Effect - runs once if the goal is canceled
+		#
+		# SCOPE = faction leader: COUNTRY
+	}
+
+	select_effect = {
+		# Effect - runs once if the goal is selected, only runs if the goal is selected after game start
+		#
+		# SCOPE = faction leader: COUNTRY
+	}
+	remove_effect = {
+		# Effect - runs once if the goal is removed, only runs if the goal is removed after game start
 		#
 		# SCOPE = faction leader: COUNTRY
 	}
@@ -306,31 +335,6 @@ faction_template_id = {
 
 - *faction_initiative X* - adds X faction initiative (FI) points to current player's faction (shortcut: "fi X")
 
-# Faction Upgrades
-Faction_Upgrade_Id = {
-	name = the localization string key for the screen name while active. will override the group's name
-	desc = the localization string key for the screen description while active. will override the group's desc
-	icon = the icon that will be displayed while active. will override the group's icon
-	upgrade_cost = the amount of faction initiative that it cost to get to this level from the previous one
-	bonus = a numerical value to dictate the boost the country gets based on the type of upgrade
-}
-# Faction Upgrade Group
-Faction_Upgrade_Group_Id = {
-	name = the default localization string key for the screen name
-	desc = the default localization string key for the screen description
-	icon = the default icon that will be displayed 
-	upgrades = {
-		the faction upgrades within this group, this list will be sorted on their bonus
-	}
-
-	display_as_percentage = (default yes) whether to show the value as a percentage or flat value in the UI
-
-   ### List of faction-upgrade-types, that have code support
-	upgrade_research = an upgrade that increases the faction sharing research, first one unlocks the research
-	upgrade_intelligence = an upgrade that makes agency upgrades quicker if another faction member has unlocked the upgrade already
-	upgrade_doctrine = makes the doctrines quicker to unlock if another member in the faction already has the upgrade
-}
-
 # Faction Member Upgrades
 Faction_Member_Upgrade_Id = {
 	name = the localization string key for the screen name while active. will override the group's name
@@ -352,3 +356,51 @@ Faction_Upgrade_Group_Id = {
    ### List of faction-member-upgrade-types, that have code support
 	faction_member_upgrade_manpower = bonus will be the % that you take from your own countries manpower and put into the faction manpower pool
 }
+
+# AI Faction Initiative Spending
+
+AI spending of faction initiative can be affected by AI strategies like such:
+```
+default_add_faction_facility = {
+	enable = {
+		always = yes
+	}
+	abort_when_not_enabled = yes
+	ai_strategy = {
+		type = spent_faction_initiative_priority
+		id = program # <---- This specifies what to spend the Faction Initiative on
+		value = 5
+	}
+}
+```
+Valid ids are:
+```
+program
+unlock_doctrine_sharing
+unlock_faction_commander
+```
+
+Intel Advisors work a bit differently, and use custom AI strategy types, e.g:
+```
+default_become_spymaster_minor = {
+	allowed = {
+		has_dlc = "La Resistance"
+	}
+	enable = {
+		is_major = no
+	}
+	abort_when_not_enabled = yes
+	ai_strategy = {
+		type = become_spymaster
+		value = 2
+	}
+}
+```
+Valid types are:
+```
+become_spymaster
+become_head_of_crypto
+become_head_of_counter_intel
+become_head_of_operations
+```
+Faction Rules initiative spending priority are scripted in the faction rules themselves (ai_will_do)

@@ -1,3 +1,14 @@
+<!-- WA-SYNC: vendored copy of the engine's own grand doctrines documentation.
+WA-SYNC: source   = <HOI4 install>/common/doctrines/grand_doctrines/_documentation.md
+WA-SYNC: edition  = 1.19.2.0 install (the file declares no edition)
+WA-SYNC: game     = 1.19.2.0
+WA-SYNC: synced   = 2026-08-18
+WA-SYNC: Do not hand-edit. Refresh from the install and run `python tools/check_engine_docs.py`.
+WA-SYNC: Cite sections by NAME (`_documentation.md` section `<section title>`), never by line number:
+WA-SYNC: a line number is a silent-drift mechanism, a section name is not.
+WA-SYNC: The previous copy predated `max_track_rows` and `max_track_columns` (both optional, unlimited by default).
+-->
+
 # Grand Doctrines
 
 **Grand doctrines** are at the root of each doctrine *Folder*. The player can choose any available grand doctrine for that folder and activate it by paying an XP cost. Activating a grand doctrine gives immediate effects, like unit stat bonuses or unlocking tactics. Also, activating a grand doctrine makes available its corresponding *Subdoctrine Tracks*. For each track, the grand doctrine has a **Milestone** which is additional reward for completing that track.
@@ -24,6 +35,9 @@ mobile_warfare = {
         armor
         operations
     }
+    
+    max_track_rows = 2 # Optional: unlimited by default
+    max_track_columns = 2 # Optional: unlimited by default
 
     # ACTIVATION EFFECTS - SEE BELOW
 

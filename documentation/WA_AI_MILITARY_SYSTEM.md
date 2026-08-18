@@ -329,7 +329,7 @@ effect's existing `has_relation_modifier` guard, which collapses a multi-wave op
 INVASION-domain types, `naval_invasion_focus` is a boolean priority rather than a brake; `invade` is keyed
 per target country, which cannot express "not in this theatre" (Germany and Japan each span several
 theatres, so an `invade` freeze is either an enumeration that goes stale or a blanket); and
-`invasion_unit_request` is the only one accepting a geographic scope (`documentation.info:250-266` -
+`invasion_unit_request` is the only one accepting a geographic scope (`documentation.info section front_unit_request / invasion_unit_request` -
 `tag` / `state` / `strategic_region` / `area` / `country_trigger` / `state_trigger`, tested against the
 invasion **target**) and the only one that throttles what an invasion order may request rather than which
 country looks attractive. `state_trigger` acceptance on this type is established in-repo -

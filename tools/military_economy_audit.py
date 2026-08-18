@@ -268,7 +268,7 @@ def main():
                             f"value {v:g} outside [0, +200]")
 
     # ---- E4 aggregate rules ----
-    # Engine semantics (common/ai_strategy/documentation.info:194-225, confirmed by
+    # Engine semantics (common/ai_strategy/documentation.info section put_unit_buffers, confirmed by
     # the 2026-08-09 Atlantic Wall lesson): put_unit_buffers entries that share an
     # `order_id` share ONE ratio pool, and `area =` names the areas whose orders may
     # draw on the buffered units. Two consequences the per-block checks cannot see:
@@ -286,7 +286,7 @@ def main():
     #
     # ASSUMPTION, not yet verified in a campaign: a pool's size is taken as the LARGEST
     # ratio among its members. The engine's resolution for several ratios on one
-    # order_id (max / first / last / sum) is unconfirmed - documentation.info:194-225
+    # order_id (max / first / last / sum) is unconfirmed - documentation.info section put_unit_buffers
     # says only "ratio of same orders ids will be share same ratio". Max is the
     # conservative reading and matches the 2026-08-09 Atlantic Wall evidence (six
     # blocks at 0.25 behaved as one 0.25 pool, not as 1.5). Under a summing engine
@@ -306,7 +306,7 @@ def main():
                 continue
             # Only the subtract_fronts_from_need disagreement is checked. An
             # area-presence disagreement is NOT linted: the engine's behaviour for
-            # an omitted `area` is unverified (documentation.info:217-219 says what
+            # an omitted `area` is unverified (documentation.info section put_unit_buffers says what
             # `area` does, never what its absence defaults to), and the GER festung
             # / SOV Stalin-line families - the 2026-08-09 lesson's own reference
             # implementation - omit it deliberately. 62 of 154 buffer entries
