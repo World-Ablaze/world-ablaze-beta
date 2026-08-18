@@ -50,7 +50,7 @@
 # west/east split is the metric that answers whether a European landing would have frozen the
 # Pacific. Additive: no existing metric changes meaning, so v5-v9 readings stay valid. A save at
 # wa_tlm_version < 10 simply lacks the family - score it NOT CHECKED, never FAILED.
-# v11 (2026-08-14, R46): adds the WA_TLM_r74_ally_rail_* probe family - coalition logistics
+# v11 (2026-08-14, R46) [RETIRED 2026-08-18 with R46 - write site, inits and registry rows removed, names free]: adds the WA_TLM_r74_ally_rail_* probe family - coalition logistics
 # routes. Written at the route-accept site in WA_AI_PC_railway_land_consider_frontline
 # (WA_AI_CONSTRUCTION_PRIORITY_railway_strategies.txt), NOT by the monthly sampler: _routes_n
 # counts every land-war route accepted, _ally_n only those whose target state is controlled by
@@ -175,7 +175,7 @@
 # companion (0 none / 1 threatened / 2 invaded / 3 at war with an Italy) - never the pass criterion
 # by itself. first_t / last_t. Additive; a save at wa_tlm_version < 20 lacks the family - score NOT
 # CHECKED, never FAILED.
-# v21 (2026-08-17, Fix 97 / R62): adds the WA_TLM_r97_ea_* probe family - the East-African theatre
+# v21 (2026-08-17, Fix 97 / R62) [RETIRED 2026-08-18 with R62 - write site, inits and registry rows removed, names free]: adds the WA_TLM_r97_ea_* probe family - the East-African theatre
 # (WA_AI_MILITARY_ALLIES_east_africa_*, AXIS_abandon_east_africa tag-free, ITA garrison / ignore-ETH).
 # ea_states_manned is a GAUGE of the verified effect - how many of the 19 theatre states hold >= 1 of the
 # country's OWN divisions - sampled monthly on every AI country for which the theatre is contested or
@@ -438,16 +438,7 @@ WA_TLM_init_country = {
 	if = { limit = { NOT = { has_variable = WA_TLM_r44_freeze_first_t } } set_variable = { WA_TLM_r44_freeze_first_t = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r44_freeze_last_t } } set_variable = { WA_TLM_r44_freeze_last_t = 0 } }
 
-	# coalition logistics routes (Fix 74, consumer: checklist R46; write site in
-	# WA_AI_PC_railway_land_consider_frontline, WA_AI_CONSTRUCTION_PRIORITY_railway_strategies.txt).
-	# Counters are per ACCEPTED land-war route, incremented where the route is appended to
-	# railway_end_provinces_ - not on entry to the effect, so a candidate that fails pathfinding
-	# is not counted. _ally_n is the subset whose target state is controlled by neither ROOT nor a
-	# subject of ROOT; _ally_n <= _routes_n by construction.
-	if = { limit = { NOT = { has_variable = WA_TLM_r74_ally_rail_routes_n } } set_variable = { WA_TLM_r74_ally_rail_routes_n = 0 } }
-	if = { limit = { NOT = { has_variable = WA_TLM_r74_ally_rail_ally_n } } set_variable = { WA_TLM_r74_ally_rail_ally_n = 0 } }
-	if = { limit = { NOT = { has_variable = WA_TLM_r74_ally_rail_first_t } } set_variable = { WA_TLM_r74_ally_rail_first_t = 0 } }
-	if = { limit = { NOT = { has_variable = WA_TLM_r74_ally_rail_last_t } } set_variable = { WA_TLM_r74_ally_rail_last_t = 0 } }
+	# (WA_TLM_r74_ally_rail_* retired 2026-08-18 with checklist item R46; see the v11 note.)
 
 	# r95 theatre-corridor logistics (Fix 95, consumer: checklist R60) - written by
 	# WA_AI_PC_railway_corridor_pass on admitted projects only
@@ -488,11 +479,7 @@ WA_TLM_init_country = {
 	if = { limit = { NOT = { has_variable = WA_TLM_r96_italy_first_t } } set_variable = { WA_TLM_r96_italy_first_t = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r96_italy_last_t } } set_variable = { WA_TLM_r96_italy_last_t = 0 } }
 
-	# r97 East-African theatre (Fix 97, consumer: checklist R62) - monthly sampler WA_TLM_sample_east_africa
-	if = { limit = { NOT = { has_variable = WA_TLM_r97_ea_states_manned } } set_variable = { WA_TLM_r97_ea_states_manned = 0 } }
-	if = { limit = { NOT = { has_variable = WA_TLM_r97_ea_contested } } set_variable = { WA_TLM_r97_ea_contested = 0 } }
-	if = { limit = { NOT = { has_variable = WA_TLM_r97_ea_first_t } } set_variable = { WA_TLM_r97_ea_first_t = 0 } }
-	if = { limit = { NOT = { has_variable = WA_TLM_r97_ea_last_t } } set_variable = { WA_TLM_r97_ea_last_t = 0 } }
+	# (WA_TLM_r97_ea_* retired 2026-08-18 with checklist item R62; see the v21 note.)
 
 	# r98 Ethiopian-war objective (Fix 98, consumer: checklist R63) - written by WA_TLM_sample_east_africa
 	if = { limit = { NOT = { has_variable = WA_TLM_r98_eth_both_n } } set_variable = { WA_TLM_r98_eth_both_n = 0 } }
@@ -622,35 +609,6 @@ WA_TLM_sample_east_africa = {
 				WA_AI_MILITARY_holds_east_africa_colony = yes
 			}
 		}
-		# tlm: r97_ea_contested - gauge, code-path companion - consumer R62
-		set_variable = { WA_TLM_r97_ea_contested = 0 }
-		if = { limit = { WA_AI_MILITARY_east_africa_theatre_contested = yes } set_variable = { WA_TLM_r97_ea_contested = 1 } }
-		# tlm: r97_ea_states_manned - gauge, verified effect - consumer R62
-		set_variable = { WA_TLM_r97_ea_states_manned = 0 }
-		if = { limit = { divisions_in_state = { state = 550 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
-		if = { limit = { divisions_in_state = { state = 559 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
-		if = { limit = { divisions_in_state = { state = 268 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
-		if = { limit = { divisions_in_state = { state = 269 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
-		if = { limit = { divisions_in_state = { state = 271 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
-		if = { limit = { divisions_in_state = { state = 909 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
-		if = { limit = { divisions_in_state = { state = 910 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
-		if = { limit = { divisions_in_state = { state = 551 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
-		if = { limit = { divisions_in_state = { state = 1097 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
-		if = { limit = { divisions_in_state = { state = 1096 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
-		if = { limit = { divisions_in_state = { state = 1095 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
-		if = { limit = { divisions_in_state = { state = 767 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
-		if = { limit = { divisions_in_state = { state = 549 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
-		if = { limit = { divisions_in_state = { state = 547 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
-		if = { limit = { divisions_in_state = { state = 1100 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
-		if = { limit = { divisions_in_state = { state = 548 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
-		if = { limit = { divisions_in_state = { state = 546 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
-		if = { limit = { divisions_in_state = { state = 1099 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
-		if = { limit = { divisions_in_state = { state = 1101 size > 0 } } add_to_variable = { WA_TLM_r97_ea_states_manned = 1 } }
-		# tlm: r97_ea_first_t / _last_t - stamps - consumer R62
-		if = { limit = { check_variable = { WA_TLM_r97_ea_contested = 1 } check_variable = { WA_TLM_r97_ea_first_t = 0 } }
-			set_variable = { WA_TLM_r97_ea_first_t = global.WA_TLM_clock }
-		}
-		set_variable = { WA_TLM_r97_ea_last_t = global.WA_TLM_clock }
 	}
 	# tlm: r98_eth_both_n / _first_t / _last_t - counter + stamps, verified effect (both mission states
 	# controlled while at war with ETH - the ETH_push_into_ethiopia_mission success test) - consumer R63.

@@ -262,17 +262,36 @@ def check_checklist(rep: Report) -> None:
             t = p.read_text(encoding="utf-8", errors="replace")
         except Exception:
             continue
-        for m in re.finditer(r"WA_TLM_r(\d+)_\w+", t):
+        # Comments are not write sites. A retirement note names the family it deleted
+        # ("(WA_TLM_r74_ally_rail_* retired 2026-08-18 ...)"), and counting that as a write
+        # keeps the probe orphaned forever - the check would flag the very comment that
+        # records the fix. `#` starts a comment in PDXScript.
+        code = re.sub(r"#.*", "", t)
+        for m in re.finditer(r"WA_TLM_r(\d+)_\w+", code):
             seen.setdefault(m.group(1), str(p.relative_to(REPO)).replace("\\", "/"))
     # `r<NN>` in a WA_TLM name is the FIX number, not the checklist item number: Fix 99's
     # probe is `wa_tlm_r99_*` and its item is R64. So the consumer test is "does any item
     # still mention this token", not "does item R<NN> exist".
-    low = text.lower()
+    #
+    # The retirement ledger at the foot of the checklist is NOT a consumer. Its rows name the
+    # retired item and its fix - "R46 Allies build logistics on an ally's soil (Fix 74)" - so a
+    # whole-file search finds `r74_` and calls the probe live forever. That is exactly how the
+    # r74 and r97 families kept writing for retired items until 2026-08-18: the check passed on
+    # a mention in the obituary. Cut the ledger off before searching. Take the LAST occurrence
+    # of the heading, not the first - the file opens with a table of contents that names it too.
+    marker = "## Retired and merged items"
+    live_text = text[: text.rindex(marker)] if marker in text else text
+    low = live_text.lower()
+    # Token only. The old test also accepted a bare "fix NN" anywhere in the checklist, which
+    # any passing narrative mention satisfies - and did: the live text says in so many words
+    # "retired this session: R46 (Fix 74) ... instrumentation disposition recorded as a debt",
+    # and the check still passed. Section 3.7 requires an item to name its probe family, so the
+    # `r<NN>_` token IS the contract; a fix number in prose is not a consumer.
     for num, where in sorted(seen.items(), key=lambda kv: int(kv[0])):
-        if f"r{num}_" not in low and f"fix {num}" not in low:
+        if f"r{num}_" not in low:
             rep.add("WARN", "TLM-ORPHAN",
-                    f"Fix {num}: WA_TLM_r{num}_* still written ({where}) but no checklist item "
-                    f"mentions it - retire the instrumentation or promote it (§3.7/§3.8)")
+                    f"Fix {num}: WA_TLM_r{num}_* still written ({where}) but no LIVE checklist "
+                    f"item mentions it - retire the instrumentation or promote it (§3.7/§3.8)")
 
 
 def main() -> int:
