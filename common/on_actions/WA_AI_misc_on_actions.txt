@@ -162,29 +162,33 @@ on_actions = {
 					WA_AI_update_training_modifier = yes
 				}
 
-				# Dynamic factory allocation to projects
-				WA_AI_PC_assign_factories = yes
-
-				# Update construction progress and complete finished projects
-				WA_AI_PC_update_project_progress = yes
-
-				### Railway building - with eligibility filters to reduce processing.
-				# Fix 75: the filter block that used to be inlined here now lives in
-				# WA_AI_PC_country_can_build_own_logistics (WA_AI_CONSTRUCTION_triggers.txt), terms
-				# and thresholds unchanged. It is the same judgement Fix 74's ally leg needs, and
-				# two hand-maintained copies of it were already listed as a drift risk on R46.
 				if = {
-					limit = { WA_AI_PC_country_can_build_own_logistics = yes }
-					if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: on_weekly eligibility PASSED - calling WA_AI_PC_railway" }
-					WA_AI_PC_railway = yes
-				}
-				else = {
-					# Keep the interval counter ticking while ineligible, so a country that
-					# recovers eligibility fires on its first eligible week instead of waiting
-					# out up to 8 remaining weeks of a frozen interval.
+					limit = { WA_AI_CONFIG_PC_is_disabled = no }
+
+					# Dynamic factory allocation to projects
+					WA_AI_PC_assign_factories = yes
+
+					# Update construction progress and complete finished projects
+					WA_AI_PC_update_project_progress = yes
+
+					### Railway building - with eligibility filters to reduce processing.
+					# Fix 75: the filter block that used to be inlined here now lives in
+					# WA_AI_PC_country_can_build_own_logistics (WA_AI_CONSTRUCTION_triggers.txt), terms
+					# and thresholds unchanged. It is the same judgement Fix 74's ally leg needs, and
+					# two hand-maintained copies of it were already listed as a drift risk on R46.
 					if = {
-						limit = { check_variable = { WA_AI_PC_railway_INTERVAL_counter > 0 } }
-						subtract_from_variable = { WA_AI_PC_railway_INTERVAL_counter = 1 }
+						limit = { WA_AI_PC_country_can_build_own_logistics = yes }
+						if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: on_weekly eligibility PASSED - calling WA_AI_PC_railway" }
+						WA_AI_PC_railway = yes
+					}
+					else = {
+						# Keep the interval counter ticking while ineligible, so a country that
+						# recovers eligibility fires on its first eligible week instead of waiting
+						# out up to 8 remaining weeks of a frozen interval.
+						if = {
+							limit = { check_variable = { WA_AI_PC_railway_INTERVAL_counter > 0 } }
+							subtract_from_variable = { WA_AI_PC_railway_INTERVAL_counter = 1 }
+						}
 					}
 				}
 

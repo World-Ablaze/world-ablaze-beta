@@ -1760,7 +1760,7 @@ WA_AI_can_take_export_focus = {
 		limit = {
 			tag = USA
 		}
-		has_completed_focus = USA_declare_unlimited_national_emergency
+		NOT = { has_dynamic_modifier = USA_great_depression }
 	}
 	if = {
 		limit = {
@@ -1805,10 +1805,26 @@ WA_AI_can_take_export_focus = {
 
 	###
 
-	if = { limit = { has_idea = free_trade }
+	if = {
+		limit = {
+			has_idea = free_trade
+			OR = {
+				NOT = { tag = USA }
+				AND = {
+					tag = USA # USA exception to go down to export earlier than needed
+					has_dynamic_modifier = USA_great_depression
+				}
+			}
+		}
 
 		check_variable = { var = WA_AI_average_resource_need value = 0.60 compare = less_than }
 		check_variable = { var = WA_AI_average_resource_need value = 0.15 compare = greater_than_or_equals }
+	}
+	else_if = {
+		limit = {
+			tag = USA # USA exception to go down to export earlier than needed
+		}
+		# Intentionally blank
 	}
 	else_if = {
 		limit = {
@@ -1845,7 +1861,17 @@ WA_AI_can_take_export_focus = {
 	}
 
 	# when switching down, see if the AI can't fulfill needs by trading
-	if = { limit = { OR = { has_idea = free_trade } }
+	if = {
+		limit = {
+			has_idea = free_trade
+			OR = {
+				NOT = { tag = USA }
+				AND = {
+					tag = USA # USA exception to go down to export earlier than needed while mobilizing
+					has_dynamic_modifier = USA_great_depression
+				}
+			}
+		}
 
 		OR = {
 			check_variable = { WA_AI_aluminium_resource_shortage = 3 }
