@@ -120,9 +120,21 @@ def check_queue(rep: Report) -> None:
 # ----------------------------------------------------------------------- CHECKLIST
 
 def split_items(text: str) -> list[tuple[str, str]]:
-    """[(id, body)] for every '### F<n>.' / '### R<n>.' heading."""
+    """[(id, body)] for every '### F<n>.' / '### R<n>.' heading.
+
+    An item ends at the next item OR at the next top-level `## ` section - it does not run
+    to the end of the file. The last item before the retirement ledger used to swallow the
+    whole ledger, so every "merged into R51" in there was read as that item saying it had
+    been merged. Caught 2026-08-18 when R71 became the last item and immediately reported
+    SUPERSEDED on someone else's obituary.
+    """
     parts = re.split(r"^### ((?:F|R)\d+)\.", text, flags=re.M)
-    return [(parts[i], parts[i + 1]) for i in range(1, len(parts) - 1, 2)]
+    out = []
+    for i in range(1, len(parts) - 1, 2):
+        body = parts[i + 1]
+        cut = re.search(r"^## ", body, re.M)
+        out.append((parts[i], body[: cut.start()] if cut else body))
+    return out
 
 
 def registry_campaigns(text: str) -> list[str]:
