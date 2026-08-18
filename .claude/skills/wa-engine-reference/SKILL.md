@@ -92,7 +92,7 @@ reports every one:
 | --- | --- |
 | listed in `tools/engine_docs_manifest.json` | SYNCED and citable. Drift against the install is an ERROR, and so is the install changing under it (game patched -> re-read everything citing it). |
 | `STALE` | a frozen older edition. **Do not cite it** - read the install. Zero as of 2026-08-18. |
-| `UNSYNCED-OK` | identical to the install today, but nothing holds it there. |
+| `UNSYNCED-OK` | identical to the install today, but nothing holds it there. **Eight docs sit here on purpose (2026-08-18).** Measured: of the nine that were UNSYNCED-OK, exactly one is cited by anything - `common/script_constants/documentation.md`, referenced by `wa-constants-registry` and by this file - and that one is now in the manifest. The other eight (`collections`, `doctrines/folders`, `map_modes`, `scientist_traits`, the three `special_projects` docs, `strategic_locations`) have **zero citations anywhere in the repo**. Holding them would make the next game patch raise an ERROR demanding a re-read of documents nothing depends on. Add one to the manifest the day something cites it, not before. |
 
 **All 19 vendored docs are synced as of 2026-08-18** - `ai_strategy` first, then the remaining 18
 in the same session. Each carries a `WA-SYNC` header naming the install path, the edition and what
