@@ -113,7 +113,7 @@ What the refresh found, and where it matters:
 | `common/units/equipment/_documentation.info` | `max_military_factories`, `max_dockyard_factories` |
 | `common/ai_equipment/_documentation.info` | `history = yes` |
 | `common/raids/_documentation.md` | the whole custom success-chance-modifier system, plus `ai_min_success_chance` and `max_distance` |
-| `common/characters/_documentation.txt` | `can_be_captured`, the `scientist` role |
+| `common/characters/_documentation.md` | `can_be_captured`, the `scientist` role |
 | `common/doctrines/grand_doctrines/_documentation.md` | `max_track_rows`, `max_track_columns` |
 | `common/focus_inlay_windows/documentation.md` | `scripted_buttons`, `scripted_progressbars` |
 

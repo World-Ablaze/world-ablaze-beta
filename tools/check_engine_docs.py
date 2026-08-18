@@ -28,6 +28,8 @@ adopting them is a decision, not an accident to be forced.
 ERROR  DRIFT-REPO     a synced copy no longer matches the install
 ERROR  DRIFT-INSTALL  the install changed since the sync (game patched) - re-sync
 ERROR  MISSING-REPO   a manifest entry points at a repo file that does not exist
+ERROR  PARSED-DOC     a vendored doc sits in common/ as .txt with prose in it - HOI4
+                      parses it and logs one error per token, every boot
 WARN   STALE          a vendored doc, not in the manifest, differs from the install
 WARN   NO-INSTALL     a vendored doc with no counterpart in the install
 INFO   UNSYNCED-OK    a vendored doc, not in the manifest, identical to the install
@@ -169,6 +171,22 @@ def run(strict: bool) -> tuple[Report, int]:
     for rel, entry in synced.items():
         if not (REPO / rel).exists():
             rep.add("ERROR", "MISSING-REPO", f"{rel}: manifest entry, file absent")
+
+    # A vendored doc is prose. HOI4 PARSES every .txt under common/, so a doc that lands there
+    # with a .txt extension is fed to the script parser line by line. Caught 2026-08-18 in
+    # error.log: common/characters/_documentation.txt, freshly synced from the install's
+    # markdown, produced 105 "unexpected token" errors on every boot. Its predecessor was a
+    # 13-line stub whose every line began with '#', which is why nobody had seen it before.
+    for rel in vendored_docs():
+        if not rel.endswith(".txt") or not rel.startswith("common/"):
+            continue
+        prose = [n for n, line in enumerate(read(REPO / rel).splitlines(), 1)
+                 if line.strip() and not line.lstrip().startswith("#")]
+        if prose:
+            rep.add("ERROR", "PARSED-DOC",
+                    f"{rel}: {len(prose)} non-comment line(s) in a .txt under common/ - "
+                    f"HOI4 parses this file and will log one error per token "
+                    f"(first at line {prose[0]}). Rename it .md, or comment every line")
 
     fail = rep.count("ERROR") or (strict and rep.count("WARN"))
     return rep, (1 if fail else 0)

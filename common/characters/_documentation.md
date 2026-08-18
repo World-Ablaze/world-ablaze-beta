@@ -3,8 +3,11 @@ WA-SYNC: source   = <HOI4 install>/common/characters/_documentation.md
 WA-SYNC: edition  = 1.19.2.0 install (the file declares no edition)
 WA-SYNC: game     = 1.19.2.0
 WA-SYNC: synced   = 2026-08-18
+WA-SYNC: EXTENSION IS LOAD-BEARING: this must stay .md. `common/characters` is a replace_path
+WA-SYNC: folder whose .txt files HOI4 PARSES, and the synced copy is markdown prose - as
+WA-SYNC: `_documentation.txt` it produced 105 parse errors on every boot (2026-08-18).
 WA-SYNC: Do not hand-edit. Refresh from the install and run `python tools/check_engine_docs.py`.
-WA-SYNC: Cite sections by NAME (`_documentation.txt` section `<section title>`), never by line number:
+WA-SYNC: Cite sections by NAME (`_documentation.md` section `<section title>`), never by line number:
 WA-SYNC: a line number is a silent-drift mechanism, a section name is not.
 WA-SYNC: The previous copy was a 12-line stub. It predated `can_be_captured` (and the rule that a country-leader
 WA-SYNC: character is always uncapturable) and the whole `scientist` role block.
