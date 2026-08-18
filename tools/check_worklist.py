@@ -31,6 +31,8 @@ checklist.md - each of these is a real 2026-08-17 defect, made mechanical
   WARN   TLM-ORPHAN     a WA_TLM_r<NN>_* write site (NN = the FIX number) that no live
                         checklist item mentions - telemetry writing for a dead consumer.
   WARN   NO-PROBE       a RETIREABLE item with no Probe line: unscoreable by construction.
+  ERROR  CRITERION-UNSCOREABLE  a pass leg compares against a baseline outside the item and
+                        carries no number: unscoreable in both directions, for ever.
   ERROR  PROBE-UNRUN    an item opened since the rule shipped with no pasted probe output:
                         nothing shows the probe command has ever been run.
 
@@ -52,6 +54,11 @@ CHECKLIST = REPO / ".claude/skills/wa-campaign-checklist/references/checklist.md
 # The day the PROBE-UNRUN rule shipped. Items opened before it are grandfathered - see
 # the rule for why it cannot be applied backwards.
 PROBE_OUTPUT_REQUIRED_FROM = "2026-08-19"
+
+# Wordings that point at a value living outside the item.
+EXTERNAL_BASELINE = re.compile(
+    r"previous campaign|prior campaign|earlier campaign|envelope of the|"
+    r"unchanged in shape from|same shape as the|baseline to beat", re.I)
 DORMANT_AFTER = 3          # campaigns
 SCORED = ("PASSED", "FAILED")
 
@@ -227,6 +234,32 @@ def check_checklist(rep: Report) -> None:
         if field(body, "Probe") is None:
             rep.add("WARN", "NO-PROBE",
                     f"{iid}: no Probe line - nothing tells a scoring session how to measure it")
+
+        # CRITERION-UNSCOREABLE
+        # A pass leg may only compare against a number that lives INSIDE the item. R60 leg 4
+        # read "stay in the envelope of the previous campaign" with that envelope written
+        # nowhere, and scored NOT TESTED on two consecutive campaigns - it could never have
+        # scored anything else, in either direction. Naming a prior campaign is fine as long
+        # as the leg also carries the value; what is not fine is a comparison with no number
+        # at all, because the reader has nowhere to get it.
+        pass_block = re.search(
+            r"^- \*\*Pass[^" + chr(10) + r"]*\*\*(.*?)(?=^- \*\*(?:Probe|Threshold|Streak|Status|History))",
+            body, re.M | re.S)
+        if pass_block:
+            for leg in re.findall(r"^\s{0,4}(?:\d+\.|-)\s.*?(?=^\s{0,4}(?:\d+\.|-)\s|\Z)",
+                                  pass_block.group(1), re.M | re.S):
+                m = EXTERNAL_BASELINE.search(leg)
+                # "does the leg contain a digit anywhere" is not a test - "type-13" satisfies
+                # it and the rule never fires. The value has to be AT the comparison, so look
+                # for a number in the 200 characters that follow the phrase. That accepts
+                # "Baseline to beat: `f9321934` 1946.8, ~8.9 levels" and R65's "unchanged in
+                # shape from `7c7803a8` (iron ~25 -> ~48)", and rejects "the envelope of the
+                # previous campaign (the skip gate keys on rail)".
+                if m and not re.search(r"\d", leg[m.end(): m.end() + 200]):
+                    rep.add("ERROR", "CRITERION-UNSCOREABLE",
+                            f"{iid}: a pass leg compares against a baseline outside the item and "
+                            f"carries no number - write the value in, or recut the leg to compare "
+                            f"against this item's own History")
 
         # PROBE-UNRUN
         # A probe nobody has run is not a probe. `pc <TAG> --match corridor` sat in two

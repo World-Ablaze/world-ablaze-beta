@@ -63,6 +63,16 @@ When a fix commit lands on the AI/balance stack, add a RETIREABLE item **in the 
 - Cite the fix commit hash, choose 3 or 5 for the threshold and say which and why.
 - If the fix has no natural save-visible fingerprint, add instrumentation to the fix itself so the probe exists (see memory `test-campaigns-cloud-machine`). New instrumentation follows the WA_TLM standard (`documentation/WA_TLM_TELEMETRY_SYSTEM.md`): a `WA_TLM_r<NN>_*` metric registered there, zero-initialised, counters incremented only on *verified* effect (never on code-path entry), stamps as `_first_t`/`_last_t` pairs (a lone `fire_only_once` stamp over-affirms). Probe with `savegame.py tlm TAG <saves>`. Existing `*_dbg_*` families stay as they are and retire with their items.
 - Initial status is `NOT YET TESTED`, streak 0.
+- **A criterion may only compare against a number that is inside the item.** "Stays in the envelope
+  of the previous campaign" is not a criterion: the envelope lives in a session that ended, so the
+  leg cannot be scored PASS or FAIL by anyone, ever. R60 leg 4 was written that way and scored
+  NOT TESTED on two consecutive campaigns before it was recut. Either write the value into the leg
+  (`Baseline to beat: f9321934 1946.8, ~8.9 levels` is a good criterion) or make the leg
+  **self-seeding** - name the handful of numbers the scoring must record in the item's own History,
+  compare against the most recent History entry that carries them, and say that the first scoring
+  after the recut records them and is NOT SCOREABLE by construction.
+  `python tools/check_worklist.py` fails a leg that names an outside baseline with no number
+  attached to it (`CRITERION-UNSCOREABLE`).
 - **Run the probe before you write the item down, and paste what it returned.** A fenced block
   holding the command and the lines that came back - three lines is enough, zeros are a fine
   answer. This is not paperwork: `pc <TAG> --match corridor` sat in two items for months and
