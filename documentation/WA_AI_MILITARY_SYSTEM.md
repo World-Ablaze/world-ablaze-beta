@@ -523,3 +523,83 @@ assumptions: the custom ai_area in `put_unit_buffers` `area` passed AI-strategy/
 campaign R64 must still prove that the buffer draws correctly and that a region-keyed `front_unit_request` sums with an area-keyed
 one on the same front. Rejected alternative, recorded: a scripted Axis spawn into Tunis mirroring Torch (Option Q of the
 design note) - historical-mode-only behaviour and a divisions-from-nothing spawn on the Axis side; kept behind a campaign result.
+
+---
+
+## 15. Faction theatres - WA owns them now (2026-08-18)
+
+`common/ai_faction_theaters` defines the engine's theatres: a named list of strategic regions,
+an `ai_will_do` that decides how likely a faction member is to take it, and a `cancel` that makes
+it abandon one. **WA did not replace the folder, so vanilla's file ran in every campaign.**
+
+### Why that was not harmless
+
+WA re-cut the strategic-region map - **383 regions against vanilla's 304** - and **reused ids for
+different ground**. Vanilla region 239 is Alborz in Iran; WA region 239 is Northern France. Measured
+2026-08-18 over the 223 region ids vanilla's 30 theatres name:
+
+| Compared to what vanilla meant | Ids |
+| --- | --- |
+| identical province set | 14 |
+| mostly the same | 76 |
+| mostly different | 59 |
+| **completely disjoint - the id was repurposed** | **74** |
+
+Province ids themselves are stable (WA keeps all 13,414 vanilla provinces and adds 1,111), so the
+damage is entirely in the region layer.
+
+The engine resolves `theatre_distribution_demand_increase id = <state>` to "the theatre containing
+that state" through the **live** region map, so the mismatch reached behaviour. WA's six writers of
+that type, before and after:
+
+| Writer | State | WA region | Theatre BEFORE | Theatre AFTER |
+| --- | --- | --- | --- | --- |
+| `CAN_theatre_boost_europe` | 15 Lower Normandy | 239 Northern France | `middle_east` / `persia` | `western_europe` |
+| `JAP_theatre_boost_home` | 533 Tohoku | 377 N. Home Islands | none - inert | `japanese_home_islands` |
+| `SOV_theatre_boost_finland` | 146 Viipurin Karjala | 326 S. Karelia | none - inert | `barbarossa_north` |
+| `USA_theatre_boost_pacific` | 629 Hawaii | 349 Hawaii | none - inert | `central_pacific` / `us_west_coast` |
+| `ENG` | 126 North London | 1 S. England | `western_europe` | unchanged |
+| `ALLIES` | 447 Alexandria | 128 Egypt | `north_africa` (+`_uk`) | unchanged |
+
+Two of six worked. **The resolution chain is DERIVED** - state to region to theatre is the only
+mapping the engine documents, but nobody has watched the engine do it. The falsifier is a campaign
+reading; until then treat the AFTER column as the intended target, not a measured one.
+
+### What WA generates and what it does not
+
+`tools/gen_ai_faction_theaters.py` writes `common/ai_faction_theaters/ai_faction_theaters.txt`.
+Every theatre's `name`, `ai_will_do`, `cancel`, `preferred_countries` and `can_skip_first_region`
+are **vanilla's, verbatim** - only `regions = { }` is computed, as the WA regions covering the
+province area the vanilla list covered (threshold: half the WA region's provinces inside it).
+Result: 272 of WA's 383 regions now sit in a theatre, against 223 of 304 for vanilla.
+
+Two rules the generator encodes, both engine facts:
+
+- **The first region is a gate.** The engine will not create a theatre until its first region is
+  available, unless `can_skip_first_region = yes`. The regions covering vanilla's anchor are emitted
+  first, and the best cover of the anchor is force-included even below threshold - WA cut region 139
+  South Africa wider than vanilla's, putting it at 0.47, and dropping it would have decapitated that
+  theatre.
+- **The area must be connected.** Measured on `map/provinces.bmp` directly, because the generated
+  `WA_AI_MAP_province_connections` effect is a LAND pathfinding graph with no sea province in it and
+  theatres mix land and sea. Detached regions are dropped unless vanilla named them too: vanilla's
+  own regions carry stray high-id provinces (its `163-Amazonian Brazil` owns province 13353, the
+  Scheldt in Belgium), which WA re-homed into 1-2 province regions, so one shared province scores a
+  100% overlap and would drop Lake Ladoga into the Brazil theatre. Positive control: 29 of vanilla's
+  30 theatres pass this test on the vanilla map - `north_sea_region` (Ireland) is the one that does
+  not, and WA keeps that split rather than inventing a fix vanilla never had.
+
+**Do not hand-edit the generated file.** Change the generator and re-run it from `tools/`.
+
+### How it takes over from vanilla, and the one loose end
+
+WA's file has the same relative path and name as vanilla's, so it overrides it file-for-file -
+**ASSUMED**, that is standard HOI4 mod loading, not something verified this session.
+`replace_path="common/ai_faction_theaters"` was also added to `descriptor.mod` as belt and braces
+(it additionally deletes anything else vanilla might put in that folder in a future patch).
+
+**`descriptor.mod` is in `.gitignore` and is not tracked**, so that line is a local change on one
+machine. Whatever descriptor actually ships needs the same line adding by hand, or the folder rests
+on the filename override alone.
+
+---

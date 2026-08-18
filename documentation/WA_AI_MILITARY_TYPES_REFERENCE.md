@@ -176,10 +176,18 @@ For each type: total count, where it currently appears (counts per file), recomm
 - Target: Country (INVASION domain).
 - Policy: **Exclusive**. Single owner today (JAP), so no current conflict.
 
-### `theatre_distribution_demand_increase` (5)
+### `theatre_distribution_demand_increase` (6)
 
-- Currently in: USA 1, ENG 1, JAP 1, SOV 1, ALLIES 1.
+- Currently in: USA 1, ENG 1, JAP 1, SOV 1, CAN 1, ALLIES 1.
 - Target: Country (THEATRE domain) for tag-specific; Faction for ALLIES.
+- `value` is an **absolute count of divisions** added to the theatre's demand, not a percentage
+  (`documentation.info` section `theatre_distribution_demand_increase`). Live values are 4-10.
+- **`id` is a STATE, and the theatre it lands on is decided by `common/ai_faction_theaters`.**
+  Before WA took ownership of that folder (2026-08-18) four of these six writers were wrong -
+  three resolved to no theatre and Canada's European demand landed on the Middle East, because
+  vanilla's theatres named region ids against a map WA had re-cut. Adding a writer here means
+  checking which theatre its state resolves to; the chain and the before/after table are in
+  `WA_AI_MILITARY_SYSTEM.md` §15.
 
 ### `ignore` (5)
 
