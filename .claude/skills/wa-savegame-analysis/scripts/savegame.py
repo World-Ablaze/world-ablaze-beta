@@ -212,6 +212,34 @@ def iter_state_blocks(fh):
         buf.append(line)
 
 
+def _match_report(pattern, matched, candidates, thing, indent="  ", sample=12):
+    """The line every --match owes its reader: what it caught, or that it caught
+    nothing.
+
+    Two silent failures this closes, both of which were written into the
+    verification checklist as measurements (2026-08-17):
+      * a pattern that can never match (`pc TAG --match corridor`, which filters a
+        building/tag/band LABEL, not the strategy name) returned an empty table that
+        read as "the system did nothing";
+      * an over-broad substring (`--match Somaliland`) silently swept French and
+        British Somaliland into one country's totals.
+    A legitimately empty result is still exit 0 - the point is that it says so.
+    """
+    if pattern is None:
+        return
+    cands = sorted(set(candidates))
+    if not matched:
+        print(f"{indent}NO MATCH: pattern '{pattern}' matched 0 of {len(cands)} "
+              f"candidate {thing}")
+        if cands:
+            print(f"{indent}  available {thing}: {', '.join(cands[:sample])}"
+                  f"{' ...' if len(cands) > sample else ''}")
+        return
+    names = sorted(set(matched))
+    print(f"{indent}MATCHED {len(names)} of {len(cands)} {thing}: "
+          f"{', '.join(names[:sample])}{' ...' if len(names) > sample else ''}")
+
+
 def extract_section(fh, tag, section):
     """Return the lines of one depth-2 section of a country block, or None.
     Prefix match at exact depth: two tabs, so nested same-named blocks
@@ -239,7 +267,10 @@ def extract_section(fh, tag, section):
 def cmd_list(args):
     files = glob(os.path.join(args.dir, "*.hoi4"))
     files.sort(key=os.path.getmtime, reverse=True)
-    for f in files[: args.limit]:
+    # --limit 0 means unlimited here, as it does for `section --max-lines`,
+    # `pc --limit` and `control --limit`. A scoring probe assumed that and got a
+    # silently truncated (here: empty) listing instead.
+    for f in (files if not args.limit else files[: args.limit]):
         try:
             m = read_meta(f)
         except SystemExit as e:
@@ -350,13 +381,13 @@ def cmd_ideas(args):
         text = "".join(sec)
         timed = dict(re.findall(r'timed_idea=\{\s*idea="([^"]+)"\s*days=(\d+)', text))
         m = re.search(r"\n\t\t\tideas=\{([^}]*)\}", text)
-        ideas = re.findall(r"[A-Za-z0-9_.\-]+", m.group(1)) if m else []
-        if pat:
-            ideas = [i for i in ideas if pat.search(i)]
+        allideas = re.findall(r"[A-Za-z0-9_.\-]+", m.group(1)) if m else []
+        ideas = [i for i in allideas if pat.search(i)] if pat else allideas
         party = re.search(r"ruling_party=(\w+)", text)
         pp = re.search(r"political_power=([\d.\-]+)", text)
         print(f"{date}  ruling_party={party.group(1) if party else '?'} "
               f"political_power={pp.group(1) if pp else '?'} ideas={len(ideas)}")
+        _match_report(args.match, ideas, allideas, "ideas", indent="\t")
         for i in ideas:
             suffix = f"  (timed, {timed[i]}d left)" if i in timed else ""
             print(f"\t{i}{suffix}")
@@ -380,8 +411,10 @@ def cmd_flags(args):
                     break
                 collected.append(line)
             text = "".join(collected)
-    for name, value, date in re.findall(
-            r'(\w+)=\{\s*value=(-?\d+)\s*(?:date="([^"]+)")?', text):
+    found = re.findall(r'(\w+)=\{\s*value=(-?\d+)\s*(?:date="([^"]+)")?', text)
+    hits = [f[0] for f in found if not pat or pat.search(f[0])]
+    _match_report(args.match, hits, [f[0] for f in found], "flag names", indent="")
+    for name, value, date in found:
         if pat and not pat.search(name):
             continue
         print(f"{name}\tvalue={value}\tset={date}")
@@ -391,6 +424,59 @@ def _tlm_date(clock):
     """WA_TLM clock (months since 1936.1) -> 'YYYY.MM'."""
     m = int(round(clock))
     return f"{1936 + m // 12}.{1 + m % 12}"
+
+
+def _tlm_clock(date):
+    """The save's own date ('1946.2.1.2') on the WA_TLM clock, or None."""
+    parts = (date or "").split(".")
+    try:
+        return (int(parts[0]) - 1936) * 12 + (int(parts[1]) - 1)
+    except (IndexError, ValueError):
+        return None
+
+
+# How far a family's _last_t may lag the save before the gauge is called frozen.
+# The standard sample is MONTHLY (WA_TLM_monthly_sample), and a save is a snapshot
+# taken between two samples, so a lag of one month is ordinary cadence. Two months
+# is the first age that cadence cannot explain.
+_TLM_FROZEN_MONTHS = 2
+
+
+def _tlm_family_stamps(scalars):
+    """{family prefix: last_t} from every wa_tlm_*_last_t in a country's scalars.
+
+    'wa_tlm_r99_tunis_last_t' -> prefix 'wa_tlm_r99_tunis_', which every metric of
+    that family shares. Longest matching prefix wins, so a nested family
+    (wa_tlm_pc_ inside wa_tlm_) is attributed to its own stamp.
+    """
+    return {n[: -len("last_t")]: v for n, v in scalars.items()
+            if n.endswith("_last_t")}
+
+
+def _tlm_freshness(name, stamps, now):
+    """The annotation a WA_TLM value row owes its reader about its own age.
+
+    A gauge stops being updated when its condition closes and the last value
+    persists forever: GER read wa_tlm_r99_tunis_states_manned=3 for 11 months after
+    leaving Africa entirely, and it was scored as a live reading. The stamp is the
+    only thing in the save that can tell the two apart, so it is put on the value
+    row itself, not in a footnote.
+    """
+    if now is None:
+        return ""
+    best = None
+    for pref in stamps:
+        if name.startswith(pref) and (best is None or len(pref) > len(best)):
+            best = pref
+    if best is None:
+        return ""
+    t = stamps[best]
+    if t <= 0:
+        return "  [never sampled]"
+    age = now - t
+    if age > _TLM_FROZEN_MONTHS:
+        return f"  FROZEN {age:.0f}mo (last sampled {_tlm_date(t)})"
+    return ""
 
 
 def cmd_tlm(args):
@@ -419,14 +505,8 @@ def cmd_tlm(args):
         if not scalars and not arrays:
             print("  (no wa_tlm_* variables - build predates WA_TLM: probe void, not FAILED)")
             continue
-        for name in sorted(scalars):
-            if pat and not pat.search(name):
-                continue
-            val = scalars[name]
-            if name.endswith("_t") and val > 0:
-                print(f"  {name}={val:g}  ({_tlm_date(val)})")
-            else:
-                print(f"  {name}={val:g}")
+        stamps = _tlm_family_stamps(scalars)
+        now = _tlm_clock(date)
         # Families may run their own axis when they sample under a different gate
         # (a shared axis + a gate mismatch desynchronises index i for every series
         # on it). Pick the most specific axis whose prefix the series shares:
@@ -441,14 +521,43 @@ def cmd_tlm(args):
                     best = n
             return best
 
+        printable = list(scalars) + list(arrays)
+        hits = [n for n in printable if not pat or pat.search(n)]
+        _match_report(args.match, hits, printable, "metrics")
+        for name in sorted(scalars):
+            if pat and not pat.search(name):
+                continue
+            val = scalars[name]
+            age = _tlm_freshness(name, stamps, now)
+            if name.endswith("_t") and val > 0:
+                print(f"  {name}={val:g}  ({_tlm_date(val)}){age}")
+            else:
+                print(f"  {name}={val:g}{age}")
         for name in sorted(arrays):
             if pat and not pat.search(name):
                 continue
             series = arrays[name]
+            age = _tlm_freshness(name, stamps, now)
+            # ONLY a `_hist` array is a ring buffer that pairs with a `_hist_t` axis
+            # (WA_TLM_TELEMETRY_SYSTEM.md: the ring-buffer suffix IS `_hist`).
+            # Everything else is an indexed scalar table keyed by the family's own
+            # key - a building type id, a project slot - and rendering it under a
+            # date axis invents a time series that does not exist:
+            # wa_tlm_pc_built_by_type^13 = 450 railways printed as "1939.7  450".
+            if not name.endswith("_hist"):
+                print(f"  table {name} ({len(series)} entries, INDEXED - the index is "
+                      f"this family's own key, NOT time){age}:")
+                for i in sorted(series):
+                    # A `_t` table stores clock VALUES, so the value (not the index)
+                    # is the thing with a date.
+                    when = (f"  ({_tlm_date(series[i])})"
+                            if name.endswith("_t") and series[i] > 0 else "")
+                    print(f"    [{i}]  {series[i]:g}{when}")
+                continue
             axis_name = axis_for(name)
             axis = axes.get(axis_name)
             print(f"  series {name} ({len(series)} samples"
-                  + (f", axis {axis_name}" if axis_name else "") + "):")
+                  + (f", axis {axis_name}" if axis_name else "") + f"){age}:")
             if axis is None:
                 print("    (!) no matching *_hist_t axis found - printing raw indices")
                 for i in sorted(series):
@@ -647,6 +756,54 @@ def _state_buildings(lines):
     return out, owner, (controller or owner)
 
 
+_BUILDINGS_TXT = os.path.join(REPO, "common", "buildings", "00_buildings.txt")
+
+# Fallback if 00_buildings.txt is unreadable (derived from it, 2026-08-18).
+_FALLBACK_PROVINCE_BUILDINGS = (
+    "air_facility", "bunker", "bunker_ai", "canal_kiel", "canal_panama",
+    "coastal_bunker", "dam", "dam_mountain", "land_facility", "naval_base",
+    "naval_facility", "naval_headquarters", "naval_supply_hub",
+    "nuclear_facility", "rail_way", "supply_node",
+)
+_building_scopes = None
+
+
+def building_scopes():
+    """(province-scoped names, state-scoped names) from common/buildings/00_buildings.txt.
+
+    A building declaring `province_max` is province-scoped: it is serialized inside the
+    top-level provinces={} block and NEVER inside a state's buildings={}. That is a hard
+    structural fact, not a per-save accident, which is why `buildings --match naval_base`
+    is refused rather than allowed to return a plausible-looking zero.
+    """
+    global _building_scopes
+    if _building_scopes is None:
+        prov, state, depth, name = set(), set(), 0, None
+        try:
+            with io.open(_BUILDINGS_TXT, encoding="utf-8", errors="replace") as fh:
+                for raw in fh:
+                    s = raw.split("#")[0]
+                    if depth == 1:
+                        m = re.match(r"^\s*([a-z_0-9]+)\s*=\s*\{", s)
+                        if m:
+                            name = m.group(1)
+                            state.add(name)
+                    if depth >= 2 and name and re.match(r"^\s*province_max\s*=", s):
+                        prov.add(name)
+                    depth += s.count("{") - s.count("}")
+        except OSError:
+            prov = set(_FALLBACK_PROVINCE_BUILDINGS)
+        if not prov:
+            prov = set(_FALLBACK_PROVINCE_BUILDINGS)
+        # `*_spawn` blocks are spawn-point definitions (`spawn_point = naval_base_spawn`
+        # inside naval_base), not buildings that can appear in a state block. Leaving
+        # them in the state set let `--match naval_base` escape the refusal by matching
+        # naval_base_spawn.
+        state = {n for n in state - prov if not n.endswith("_spawn")}
+        _building_scopes = (prov, state)
+    return _building_scopes
+
+
 def _building_sort_key(name):
     """Sort an *_inactive twin immediately after its active counterpart."""
     base = name[: -len("_inactive")] if name.endswith("_inactive") else name
@@ -655,6 +812,24 @@ def _building_sort_key(name):
 
 def cmd_buildings(args):
     pat = re.compile(args.match) if args.match else None
+    # Refuse a --match that can only ever hit a province-scoped key. This command reads
+    # state blocks; naval_base/rail_way/supply_node/naval_supply_hub/bunkers are not in
+    # one, so the query is structurally unanswerable here and used to return an empty
+    # table that read as "zero ports built" (2026-08-17 scoring session).
+    if pat:
+        prov, state = building_scopes()
+        hit_prov = sorted(n for n in prov if pat.search(n))
+        hit_state = sorted(n for n in state if pat.search(n))
+        if hit_prov and not hit_state:
+            sys.exit(
+                f"buildings --match '{args.match}' can only match province-scoped "
+                f"building(s): {', '.join(hit_prov)}.\n"
+                "These live in the save's top-level provinces={} block and are NEVER "
+                "in a state's buildings={}, so this command would return an empty table "
+                "that reads as a real zero.\n"
+                f"Use instead:  control <SCOPE> {os.path.basename(args.files[0])} "
+                "--buildings   (SCOPE is a state-id list or owner:TAG) - it sums them "
+                "by the province's real holder.")
     print("# building levels summed over states, owned vs controlled (a state can be "
           "in both).")
     print("# *_inactive twins are listed under their active counterpart: an inactive "
@@ -682,11 +857,12 @@ def cmd_buildings(args):
                         controlled[k] = controlled.get(k, 0) + v
         print(f"=== {date}  {args.tag}  ({os.path.basename(f)})  "
               f"states owned={n_owned} controlled={n_controlled} ===")
-        names = sorted(set(owned) | set(controlled), key=_building_sort_key)
-        if pat:
-            names = [n for n in names if pat.search(n)]
+        allnames = sorted(set(owned) | set(controlled), key=_building_sort_key)
+        names = [n for n in allnames if pat.search(n)] if pat else allnames
+        _match_report(args.match, names, allnames, "building names")
         if not names:
-            print("  (no buildings matched)")
+            if not pat:
+                print("  (this tag holds no states with buildings in this save)")
             continue
         print(f"  {'building':<34}{'owned':>8}{'controlled':>12}")
         for n in names:
@@ -735,6 +911,63 @@ _DECISION_KINDS = (
 )
 
 
+_DECISIONS_DIR = os.path.join(REPO, "common", "decisions")
+_fire_once = None
+
+
+def fire_only_once_decisions():
+    """Names declared `fire_only_once = yes` anywhere in common/decisions/.
+
+    Used only to CALIBRATE the random_item counter on the reader's own save: such a
+    decision can fire at most once per target, so any count above 1 on one of them is
+    proof, from the save in front of you, that count is not a firing count. Best effort
+    - returns an empty set when the repo is not next to the script, and the calibration
+    line is then simply omitted.
+    """
+    global _fire_once
+    if _fire_once is None:
+        _fire_once = set()
+        for path in sorted(glob(os.path.join(_DECISIONS_DIR, "*.txt"))):
+            try:
+                fh = io.open(path, encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            with fh:
+                depth, name, ndepth = 0, None, 0
+                for raw in fh:
+                    s = raw.split("#")[0]
+                    if name is None and depth == 1:
+                        m = re.match(r"^\s*([A-Za-z0-9_]+)\s*=\s*\{\s*$", s)
+                        if m:
+                            name, ndepth = m.group(1), depth
+                    elif name is not None and re.match(
+                            r"^\s*fire_only_once\s*=\s*yes", s):
+                        _fire_once.add(name)
+                    depth += s.count("{") - s.count("}")
+                    if name is not None and depth <= ndepth:
+                        name = None
+    return _fire_once
+
+
+# What the random_item table may and may not claim. Everything here is derived from the
+# save data itself (calibration below), not from a remembered rule of thumb: the rule
+# that count is exactly twice the firings was carried into two scoring sessions and is
+# false - coal_prospecting alone breaks it, and so does every fire_only_once decision
+# that reads 1.
+_RANDOM_ITEM_NOTE = (
+    "count is a MONOTONE CUMULATIVE COUNTER the engine keeps per (decision, TARGET) "
+    "pair - not a state, not days. Two things it is NOT. (1) It is not per decision: a "
+    "targeted decision has one row per target, so a decision's total is the SUM of its "
+    "rows (printed below as TOTAL), never one row. (2) It is not a verified firing "
+    "count, and this script cannot derive the firing-to-count ratio from a save. "
+    "Calibrating against decisions that can fire at most ONCE per target "
+    "(fire_only_once = yes) shows counts of 1, 2 and 4 on the same save - so no single "
+    "multiplier exists and the old 'halve it' rule is wrong. Read it as monotone "
+    "activity, comparable across saves for the same (decision, target); for an exact "
+    "firing count use a scripted counter or a WA_TLM metric."
+)
+
+
 def cmd_decisions(args):
     pat = re.compile(args.match) if args.match else None
     print("# decision_status holds entry kinds with INCOMPATIBLE number semantics - "
@@ -742,10 +975,10 @@ def cmd_decisions(args):
     print("#   labelled separately below and must never be read as one figure:")
     print("#   * active_* / decision_to_* entries carry `days`, a countdown, and exist "
           "only while live.")
-    print("#   * random_item entries carry `count`, a MONOTONE CUMULATIVE FIRE COUNTER "
-          "- not a state,")
-    print("#     not days. It is the right field for 'how many times did this decision "
-          "fire'.")
+    print("#   * random_item entries carry `count`, a cumulative per-(decision,target) "
+          "counter whose")
+    print("#     ratio to actual firings is NOT determinable from a save - see the note "
+          "on that table.")
     for meta, f in sorted_by_date([resolve(f) for f in args.files]):
         date = meta.get("date", "?")
         with open_save(f) as fh:
@@ -755,6 +988,9 @@ def cmd_decisions(args):
             print("  (no decision_status section)")
             continue
         kinds, taken = _decision_entries(sec)
+        allnames = [e.get("decision", "?") for rows in kinds.values() for e in rows]
+        hits = [n for n in allnames if not pat or pat.search(n)]
+        _match_report(args.match, hits, allnames, "decision names")
         described = dict(_DECISION_KINDS)
         order = [k for k, _ in _DECISION_KINDS if k in kinds]
         order += [k for k in kinds if k not in described and k != "random_item"]
@@ -782,13 +1018,44 @@ def cmd_decisions(args):
             rows = [e for e in kinds["random_item"]
                     if not pat or pat.search(e.get("decision", ""))]
             if rows:
+                once = fire_only_once_decisions()
                 print(f"  -- random_item ({len(rows)}) --")
-                print("     # count = CUMULATIVE times fired since campaign start. "
-                      "Not a state, not days.")
+                for chunk in _wrap(_RANDOM_ITEM_NOTE, 92):
+                    print(f"     # {chunk}")
+                totals = collections.Counter()
+                targets = collections.Counter()
+                for e in rows:
+                    totals[e.get("decision", "?")] += int(e.get("count", 0) or 0)
+                    targets[e.get("decision", "?")] += 1
                 for e in sorted(rows, key=lambda e: -int(e.get("count", 0) or 0)):
                     tgt = e.get("target", "0")
-                    suffix = f"  target={tgt}" if tgt not in ("0", None) else ""
-                    print(f"     {e.get('decision','?'):<52}count={e.get('count','?')}{suffix}")
+                    name = e.get("decision", "?")
+                    bits = []
+                    if tgt not in ("0", None):
+                        bits.append(f"target={tgt}")
+                    if name in once:
+                        bits.append("fire_only_once")
+                    print(f"     {name:<52}count={e.get('count','?'):<6}"
+                          + "  ".join(bits))
+                multi = [d for d in targets if targets[d] > 1]
+                if multi:
+                    print("     -- per-decision TOTALS (targeted decisions: the rows "
+                          "above are per target) --")
+                    for d in sorted(multi, key=lambda d: -totals[d]):
+                        print(f"     {d:<52}TOTAL count={totals[d]} over "
+                              f"{targets[d]} target(s)")
+                # The calibration, computed on THIS save, that kills the 2x rule.
+                cal = collections.Counter(int(e.get("count", 0) or 0)
+                                          for e in rows if e.get("decision") in once)
+                if cal:
+                    spread = " ".join(f"count={k} x{v}" for k, v in sorted(cal.items()))
+                    print(f"     # calibration on this save: {sum(cal.values())} row(s) "
+                          f"belong to fire_only_once decisions (at most ONE firing per "
+                          f"target) and read {spread}"
+                          + (" - so count is NOT the firing count and no fixed ratio "
+                             "exists." if len(cal) > 1 or max(cal) > 1
+                             else " - consistent with 1 count per firing HERE, which "
+                                  "does not generalise to timed decisions."))
         if taken and not pat:
             print(f"  -- decisions_taken ({len(taken)}) -- "
                   "flat list, no counts or timers")
@@ -1282,7 +1549,7 @@ def cmd_pc(args):
 
         # --- per-project table ----------------------------------------------
         pat = re.compile(args.match) if args.match else None
-        rows = []
+        rows, labels, hitlabels = [], [], []
         for rank, pid in enumerate(order):
             bt = val("building_type", pid)
             btn = _PC_BUILDING.get(int(bt), f"type{bt:g}") if bt is not None else "?"
@@ -1294,14 +1561,24 @@ def cmd_pc(args):
             done = (f"{100.0 * (cost - prog) / cost:.0f}%"
                     if cost and prog is not None else "-")
             label = f"{btn} {tidn} {_pc_band(prio)}"
+            labels.append(label)
             if pat and not pat.search(label):
                 continue
+            hitlabels.append(label)
             rows.append((rank, pid, btn, tidn, val("target_state", pid),
                          val("target_province", pid), val("connect_province", pid),
                          prio, val("assigned_factories", pid), prog, cost, done,
                          val("stall_weeks", pid), val("build_time", pid), age(pid)))
+        if pat:
+            # --match filters the composed '<building> <strategy tag> <priority band>'
+            # LABEL of each project, and nothing else. It does NOT see the WA strategy
+            # name or the # Fix nn tag: `pc GER --match corridor` matched 0 rows for two
+            # checklist items because the label carries the building type (railway) and
+            # the type_id name, never the caller's own wording.
+            _match_report(args.match, hitlabels, labels, "project labels")
         if not rows:
-            print("  (no projects matched)" if pat else "  (queue empty)")
+            if not pat:
+                print("  (queue empty)")
             continue
         print(f"  {'#':>3} {'id':>4}  {'building':<15}{'tag':<12}{'state':>6}"
               f"{'prov':>7}{'->prov':>7}{'prio':>7}{'fact':>5}"
@@ -1795,7 +2072,8 @@ def main():
 
     s = sub.add_parser("list", help="list saves, newest first")
     s.add_argument("--dir", default=SAVE_DIR)
-    s.add_argument("--limit", type=int, default=30)
+    s.add_argument("--limit", type=int, default=30,
+                   help="cap saves listed, 0 = unlimited (default 30)")
     s.set_defaults(fn=cmd_list)
 
     s = sub.add_parser("campaigns", help="group saves by campaign identity")
@@ -1863,7 +2141,12 @@ def main():
     s = sub.add_parser("buildings", help="building levels by owned/controlled states")
     s.add_argument("tag")
     s.add_argument("files", nargs="+")
-    s.add_argument("--match", help="only building names matching this regex")
+    s.add_argument("--match", help="only building names matching this regex. Refused "
+                                   "with an error when it can only match a "
+                                   "province-scoped building (naval_base, rail_way, "
+                                   "supply_node, naval_supply_hub, bunkers) - those are "
+                                   "not in a state block at all; use "
+                                   "`control SCOPE FILE --buildings`")
     s.set_defaults(fn=cmd_buildings)
 
     s = sub.add_parser("decisions", help="decode the decision_status block")

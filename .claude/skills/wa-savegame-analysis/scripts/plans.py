@@ -56,7 +56,7 @@ usage: plans.py TAG[,TAG...] FILE... [--armies] [--fronts] [--divisions] [--wher
   --fronts     every front order (type 1/2) with instance id, creation date, path -> states
   --divisions  org / strength / recent-combat share per order class
   --where      divisions per STATE, split by order class - where they are and what they do
-  --limit N    cap rows in --armies / --fronts / --where (default 40)
+  --limit N    cap rows in --armies / --fronts / --where (default 40, 0 = unlimited)
 """
 import io, os, re, sys, collections
 
@@ -352,12 +352,13 @@ def report_armies(tag, save, country, limit):
     print("%s  %s" % (tag, save))
     print("    %-16s %-10s %-6s %s" % ("army", "class", "divs", "plan owner"))
     rows = sorted(country["armies"].items(), key=lambda kv: -len(kv[1]["members"]))
-    for aid, a in rows[:limit]:
+    # --limit 0 = unlimited, as in savegame.py's `section`/`pc`/`control`.
+    for aid, a in (rows if not limit else rows[:limit]):
         c, src = cls[aid]
         print("    %-16s %-10s %-6d %s" % (a["name"][:16], c, len(a["members"]),
                                            src or "(own order)"))
-    if len(rows) > limit:
-        print("    ... %d more armies" % (len(rows) - limit))
+    if limit and len(rows) > limit:
+        print("    ... %d more armies (raise --limit, 0 = all)" % (len(rows) - limit))
 
 
 def report_fronts(tag, save, country, limit):
@@ -368,12 +369,13 @@ def report_fronts(tag, save, country, limit):
         return
     print("    %-16s %-4s %-8s %-16s %-4s %s"
           % ("owner", "type", "instance", "created", "divs", "path -> states"))
-    for name, is_group, o in fronts[:limit]:
+    for name, is_group, o in (fronts if not limit else fronts[:limit]):
         print("    %-16s t=%-2s %-8s %-16s %-4d %s"
               % (("*" if is_group else " ") + name[:15], o["type"], o["iid"],
                  o["cd"].strip('"'), o["sched"], path_states(o["path"]) or "-"))
-    if len(fronts) > limit:
-        print("    ... %d more front orders" % (len(fronts) - limit))
+    if limit and len(fronts) > limit:
+        print("    ... %d more front orders (raise --limit, 0 = all)"
+              % (len(fronts) - limit))
     print("    * = army-group order (covers its child armies)")
 
 
@@ -435,13 +437,13 @@ def report_where(tag, save, country, limit):
     print("%s  %s   %d divisions in %d state(s)" % (tag, save, total, len(per)))
     print("    %-26s %-5s %s" % ("state", "divs",
                                  " ".join("%-9s" % c for c in classes)))
-    for label, row in rows[:limit]:
+    for label, row in (rows if not limit else rows[:limit]):
         print("    %-26s %-5d %s"
               % (label[:26], sum(row.values()),
                  " ".join("%-9d" % row.get(c, 0) for c in classes)))
-    if len(rows) > limit:
+    if limit and len(rows) > limit:
         rest = sum(sum(r.values()) for _l, r in rows[limit:])
-        print("    ... %d more state(s) holding %d divisions (raise --limit)"
+        print("    ... %d more state(s) holding %d divisions (raise --limit, 0 = all)"
               % (len(rows) - limit, rest))
 
 

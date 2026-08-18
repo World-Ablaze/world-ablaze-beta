@@ -61,9 +61,20 @@ def main():
         raise SystemExit(f"no strategic regions found under {args.root}/map/strategicregions")
     if args.grep:
         rx = re.compile(args.grep, re.I)
-        for i in sorted(regions):
-            if rx.search(regions[i][0]):
-                print("id=%-4s %s" % (i, regions[i][0]))
+        hits = [i for i in sorted(regions) if rx.search(regions[i][0])]
+        for i in hits:
+            print("id=%-4s %s" % (i, regions[i][0]))
+        # Say what a substring actually caught. `--match Somaliland` swept French and
+        # British Somaliland into one reading once; an over-broad pattern must be
+        # visible on the output, not inferred later.
+        if hits:
+            print("MATCHED %d of %d regions: %s"
+                  % (len(hits), len(regions),
+                     ", ".join(regions[i][0] for i in hits[:12])
+                     + (" ..." if len(hits) > 12 else "")))
+        else:
+            print("NO MATCH: pattern '%s' matched 0 of %d region names"
+                  % (args.grep, len(regions)))
         return
     for i in args.ids:
         name, token, fn = regions.get(i, ("(no block with this id)", None, "-"))

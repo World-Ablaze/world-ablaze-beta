@@ -21,7 +21,7 @@ usage: airload.py [--states 857,127,...] [--owner ENG] [--tag USA] [--top N] [--
   --owner   only states owned by this tag (e.g. ENG for the British Isles + empire)
   --tag     count only this country's wings in the per-state actual/nominal columns
             (capacity and totals still list every tag; a 'by tag' column shows the mix)
-  --top     print the N most loaded states (by nominal) - default 30
+  --top     print the N most loaded states (by nominal) - default 30, 0 = unlimited
   --all     print states with zero wings too
 """
 import io, os, re, sys, collections
@@ -206,7 +206,8 @@ def main():
               ("state", "name", "own", "ctrl", "lvl", "cap", "actual", "wings", "NOMINAL",
                "act%", "nom%", "by tag / types"))
         tcap = tact = tnom = twings = 0
-        for sid, own, ctrl, lvl, cap, p in rows[:top]:
+        # --top 0 = unlimited, matching --limit 0 in savegame.py and plans.py.
+        for sid, own, ctrl, lvl, cap, p in (rows if not top else rows[:top]):
             ap = (100.0 * p["actual"] / cap) if cap else 0
             npc = (100.0 * p["nominal"] / cap) if cap else 0
             flag = " FULL" if cap and p["nominal"] >= cap else ""
@@ -220,8 +221,9 @@ def main():
             tact += p["actual"]
             tnom += p["nominal"]
             twings += p["wings"]
-        if len(rows) > top:
-            print("  ... %d more states (totals below include them)" % (len(rows) - top))
+        if top and len(rows) > top:
+            print("  ... %d more states (totals below include them; --top 0 = all)"
+                  % (len(rows) - top))
         if tcap:
             print("  TOTAL %d states: cap %d  actual %d (%.0f%%)  wings %d  NOMINAL %d (%.0f%%)" %
                   (len(rows), tcap, tact, 100.0 * tact / tcap, twings, tnom, 100.0 * tnom / tcap))
