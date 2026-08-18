@@ -74,43 +74,48 @@ This is the master legend. For each `ai_strategy` `type` currently in use, it st
 > contract), linted by `tools/military_economy_audit.py`. Where the two disagree, the economy
 > document wins for new and modified blocks.
 
-| Type | Engine combination | Policy | Precedence (if Exclusive) | Typical range |
+> **The combination column is mostly inference.** `common/ai_strategy/documentation.info` states a
+> cross-block combination rule for exactly ONE pair - `avoid_starting_wars` + `conquer`. Every other
+> combination below is WA's reverse-engineering. Each cell is tagged **E** (the engine doc says it) or
+> **I** (WA inference, never confirmed). Treat an **I** cell as ASSUMED.
+
+| Type | Combination (**E**ngine / **I**nference) | Policy | Precedence (if Exclusive) | Typical range |
 | --- | --- | --- | --- | --- |
-| `front_unit_request` | Sums per area | Additive | n/a | -1500 to +200 |
-| `area_priority` | Sums per area | Additive | n/a | -200 to +200 |
-| `theatre_distribution_demand_increase` | Sums per area | Additive | n/a | 0 to +500 |
-| `force_concentration_factor` | Sums, added to define `AIFC_UNIT_RATIO_BASE` (0.15) | Additive | n/a | -100 (hard off) to +25, in percentage points |
-| `force_concentration_front_factor` | Sums | Additive | n/a | -100 to +100 (plain percent) |
-| `force_concentration_target_weight` | Sums per target | Additive | n/a | -100 to +100 (plain percent) |
-| `front_armor_score` | Sums | Additive | n/a | 0 to +50 |
-| `strategic_air_importance` | Sums per strategic region, on top of engine terms (own combats x100, own armies x25; hot main front ~35,000). **Ranks only** — the plane request is engine-side (see §3 Air) | Additive | n/a | +50,000 standing theatre pull (DEFAULT_AIR); +100k / +200k emergency pushes (Faction); -2k to -40k retuned suppressions (Faction); the -500k black holes survive only in the FRA/JAP/SOV Country legacy blocks |
-| `garrison` | Max wins; large negatives force-off | Additive (with negative-override convention) | n/a | -5000 (force off) or 0 to 200 |
-| `infantry` | Sums | Additive | n/a | 0 to 100 |
-| `spare_unit_factor` | Sums | Additive | n/a | 0.0 to 1.0 |
+| `front_unit_request` | **E** for the relation to the engine's own request: `value` "will be added as a factor over regular requests". **No base is stated** - the "base of 100" belief came from the unrelated `unit_ratio` section. Cross-block summing: **I** | Additive | n/a | -1500 to +200 |
+| `area_priority` | **I** - token listed, no engine section, despite being the 3rd-heaviest type in the mod (321 uses) | Additive | n/a | -200 to +200 |
+| `theatre_distribution_demand_increase` | **E** - `value` is an **absolute count of divisions** added to the demand of the theatre containing the `id` state (`documentation.info` section `theatre_distribution_demand_increase`) | Additive | n/a | 4 to 10 - every live value in the mod. NOT a percentage: `500` would order 500 extra divisions into one theatre |
+| `force_concentration_factor` | **I** - Sums, added to define `AIFC_UNIT_RATIO_BASE` (0.15) | Additive | n/a | -100 (hard off) to +25, in percentage points |
+| `force_concentration_front_factor` | **I** - Sums | Additive | n/a | -100 to +100 (plain percent) |
+| `force_concentration_target_weight` | **I** - Sums per target | Additive | n/a | -100 to +100 (plain percent) |
+| `front_armor_score` | **I** - Sums | Additive | n/a | 0 to +50 |
+| `strategic_air_importance` | **I** - Sums per strategic region, on top of engine terms (own combats x100, own armies x25; hot main front ~35,000). **Ranks only** — the plane request is engine-side (see §3 Air) | Additive | n/a | +50,000 standing theatre pull (DEFAULT_AIR); +100k / +200k emergency pushes (Faction); -2k to -40k retuned suppressions (Faction); the -500k black holes survive only in the FRA/JAP/SOV Country legacy blocks |
+| `garrison` | **I** throughout - the engine doc has **no `garrison` section at all**, only the bare token. "Max wins" and the -5000 force-off are WA convention observed in play, not engine text | Convention: negative-override | n/a | -5000 (force off) or 0 to 200 |
+| `infantry` | **I** - Sums | Additive | n/a | 0 to 100 |
+| `spare_unit_factor` | **I** - token listed, no engine section | Additive | n/a | 0.0 to 1.0 |
 | `front_control` | **Native integer precedence: `priority`, default 0, "higher prio strats will override lower"** (`common/ai_strategy/documentation.info` section `front_control`). Ties at equal priority are undocumented. | **Exclusive per area** | Two mechanisms, see §6 | mode enum |
-| `protect` | Boolean per target | **Exclusive per target** | Country > Faction > Default | bool |
-| `ignore` | Boolean per target | **Exclusive per target** | Country > Faction > Default | bool |
-| `ignore_claim` | Boolean per target | **Exclusive per target** | Country > Faction > Default | bool |
-| `contain` | Boolean per target | **Exclusive per target** | Country > Faction > Default | bool |
-| `naval_invasion_focus` | Boolean | **Exclusive** | Country > Faction > Default | bool |
-| `strike_force_home_base` | Boolean per region | **Exclusive per region** | Country > Faction > Default | bool |
-| `dont_defend_ally_borders` | Boolean per ally | **Exclusive per ally** | Country > Faction > Default | bool |
-| `force_defend_ally_borders` | Boolean per ally | **Exclusive per ally** | Country > Faction > Default | bool |
-| `invasion_unit_request` | Sums | Additive | n/a | 0 to 50 |
-| `invade` | Sums per target | Additive per target | n/a | 0 to 200 |
-| `conquer` | Sums per target | Additive per target | n/a | 0 to 200 |
-| `antagonize` | Sums per target | Additive per target | n/a | 0 to 200 |
+| `protect` | **I** - Boolean per target | **Exclusive per target** | Country > Faction > Default | bool |
+| `ignore` | **I** - Boolean per target | **Exclusive per target** | Country > Faction > Default | bool |
+| `ignore_claim` | **I** - Boolean per target | **Exclusive per target** | Country > Faction > Default | bool |
+| `contain` | **I** - Boolean per target | **Exclusive per target** | Country > Faction > Default | bool |
+| `naval_invasion_focus` | **I** - Boolean | **Exclusive** | Country > Faction > Default | bool |
+| `strike_force_home_base` | **I** - token listed, no engine section | **Exclusive per region** | Country > Faction > Default | bool |
+| `dont_defend_ally_borders` | **E** per block: binary, ">0 activates, <=0 deactivates" (`documentation.info` section `dont_defend_ally_borders`). **Engine silent on multi-writer resolution** - "highest value wins" was an inference and is withdrawn; if the engine sums first, a -100 and a +100 cancel | **Exclusive per ally** | Country > Faction > Default | bool |
+| `force_defend_ally_borders` | **I** - no engine section; assumed to mirror `dont_defend_ally_borders` | **Exclusive per ally** | Country > Faction > Default | bool |
+| `invasion_unit_request` | **I** - Sums | Additive | n/a | 0 to 50 |
+| `invade` | **I** - Sums per target | Additive per target | n/a | 0 to 200 |
+| `conquer` | **I** - Sums per target | Additive per target | n/a | 0 to 200 |
+| `antagonize` | **I** - Sums per target | Additive per target | n/a | 0 to 200 |
 | `support` | **Unverified** — assumed to sum per target by analogy with its neighbours, never measured | Additive per target (assumed) | n/a | 100 (nudge) / 200 / 500 (strong) / -1000 to -5000 (suppress) |
-| `naval_avoid_region` | Sums per region | Additive per region | n/a | -10000 to +2000 — see the convention note below |
-| `naval_convoy_raid_region` | Sums per region | Additive per region | n/a | -1000 to +1000 (negative = suppress raiding there) |
-| `naval_dominance` | Sums per region/area | Additive per region | n/a | 0 to 100 |
-| `naval_mission_threshold` | Sums per mission | Additive | n/a | -100 to +100 |
-| `naval_invasion_dominance_weight` | Sums | Additive | n/a | 0 to +100 |
-| `naval_invasion_support_priority` | Sums per region | Additive per region | n/a | 0 to +100 |
-| `put_unit_buffers` | Sums per state | Additive per state | n/a | 0 to 100 |
-| `declare_war` | Sums per target | Country-only | n/a | 0 to 100 |
-| `diplo_action_desire` | Sums per target/action | Country-only | n/a | 0 to 100 |
-| `diplo_action_acceptance` | Sums per target/action | Country-only | n/a | 0 to 100 |
+| `naval_avoid_region` | **I** - no engine section; the signed convention below is grounded in a 402-entry measurement, not in engine text | Additive per region | n/a | -10000 to +2000 — see the convention note below |
+| `naval_convoy_raid_region` | **I** - token listed, no engine section | Additive per region | n/a | -1000 to +1000 (negative = suppress raiding there) |
+| `naval_dominance` | **E** - "used to **set** the naval dominance for an AI area", `value` a "Percentage between 0 and 100" (`documentation.info` section `naval_dominance`). The engine states no additive behaviour; "Additive" is an inference | Additive per region | n/a | 70 - 80, the only values live (6 entries) |
+| `naval_mission_threshold` | **I** - token listed, no engine section | Additive | n/a | -100 to +100 |
+| `naval_invasion_dominance_weight` | **I** - Sums | Additive | n/a | 0 to +100 |
+| `naval_invasion_support_priority` | **I** - Sums per region | Additive per region | n/a | 0 to +100 |
+| `put_unit_buffers` | **E** - `ratio` is a **fraction of the country's whole army**; blocks sharing an `order_id` **share** one ratio rather than summing; `states` places the garrison order, `area` chooses which orders may draw on the pool (`documentation.info` section `put_unit_buffers`). Combination across *different* order_ids: engine silent | Additive per **order** | n/a | 0.01 to 1.0. `1.0` is deliberate in the five "everything home" blocks (`ENG_germany_has_won`, `FRA_paris_commune_sit_tight`, `MAN_pacify_part_1`, `USA_oh_shit`, `ALLIES_commonwealth_stage_usa_east`) |
+| `declare_war` | **I** - Sums per target | Country-only | n/a | 0 to 100 |
+| `diplo_action_desire` | **I** - Sums per target/action | Country-only | n/a | 0 to 100 |
+| `diplo_action_acceptance` | **I** - Sums per target/action | Country-only | n/a | 0 to 100 |
 
 ### Notes on the policy column
 
@@ -127,9 +132,11 @@ This is the master legend. For each `ai_strategy` `type` currently in use, it st
   | `-2000` / `-10000` | force a route open (USA Torch, `ENG_protect_home` on the Channel) |
 
   Because the type is Additive per region, **always sum every writer for a region before concluding what the AI will do** — a `-2000` "open this route" can be, and in the Bay of Biscay case is, silently outvoted by three `+2000` walls. `WA_AI_NAVAL_COUNTRY_USA_operation_torch_preparation` carries a worked example of that arithmetic in its header comment.
-- `naval_dominance` values in use are 70–80 (19 entries), well inside the documented 0–100. Sums may still exceed 100 when layers stack; that is legal but should be called out at the site.
-- `garrison` uses a **negative-override convention**: a single block of `value = -5000` is the documented way to force garrison off in a state, and is treated as authoritative regardless of other writers. This is how `WA_AI_MILITARY_COUNTRY_SPR.txt:143-144` disables garrison in a specific configuration.
+- `naval_dominance` values in use are 70–80 (6 entries), inside the documented 0–100. The engine says the type **sets** a percentage and says nothing about stacking, so "sums over 100 are legal" was an inference and is withdrawn - keep every writer inside 0–100 and call out any overlap at the site. (The 8 out-of-scale `value = 1000` entries this note used to miss were retired 2026-08-18 with the ENG `naval_dominance` probe.)
+- `garrison` uses a **negative-override convention**: a single block of `value = -5000` is the way WA forces garrison off in a state. **This is convention, not engine text** - the engine doc has no `garrison` section, only the bare token, so both the override and "authoritative regardless of other writers" are ASSUMED. This is how `WA_AI_MILITARY_COUNTRY_SPR.txt:143-144` disables garrison in a specific configuration.
 - `support` is the engine's “help this country win its wars” dial - **it carries lend-lease, volunteers AND expeditionary forces together**, and it is the ONLY script-side lever on the last of those (there is no expeditionary `type`, no scripted effect sends one, `diplomatic_relation` has no such relation, and `transfer_units_fraction` hands over ownership permanently rather than lending). **Faction layer is sanctioned for it**, and that does not extend the Country-only rule below: `declare_war` and the two `diplo_action_*` types are sovereign decisions a coalition must not take for a member, whereas lending weight inside a coalition you already belong to is coalition behaviour by definition. First Faction-layer writer: `WA_AI_MILITARY_ALLIES_back_the_coalition_major_{ENG,USA}_DIPLOMACY` (Fix 106). **Its combination rule is asserted, not measured** - assumed to sum by analogy with its neighbours in this table. The mod DOES already stack it: `USA.txt`'s `USA_stop_uk_from_falling` is one block under one `enable` and writes `support` toward LUX at :2321 and :2333, and toward GUA at :2388 and :2448 (both -1000). So a sum is what the author of that block assumed too - it has simply never been verified in a save. (A first pass at this note claimed nothing in the mod stacked, generalising from POR → SPA, which IS two mutually exclusive focus branches. Grouping by file rather than by enclosing block is what hid the USA case.) The Fix 106 blocks cannot stack with `USA.txt`'s `support id = ENG value = 500` regardless, because they exclude ENG and USA as writers. **Open question the campaign must settle:** whether the type CREATES an expeditionary intent or merely RANKS one the engine already forms - on campaign `7c7803a8` all three countries that actually lent divisions (SIK, ITL, BUL) carried **no** `support` block at all, so ranking-not-creating is live, and checklist R70 leg 1 is its falsifier.
+- `put_unit_buffers` `order_id` is **pool identity, and the engine documents it**: "ratio of same orders ids will be share same ratio" (`documentation.info` section `put_unit_buffers`). Two blocks with the same `order_id` therefore **share** one ratio - they do not add. Give a buffer its own `order_id` whenever it must not be diluted by an existing one (WA already does: 9102, 9606, 9608). What the engine does NOT say is how *different* order_ids combine.
+- `avoid_starting_wars` is the one type the engine gives an explicit stacking contract: it is targetless and "additive with the `conquer` strategy", so `avoid_starting_wars = -200` plus `conquer id = GER value = 200` yields conquer 0 for Germany and -200 for everyone else. That is the declarative form of "suppress everything, then re-enable one target", which WA writes by hand elsewhere. One use mod-wide.
 - `declare_war`, `diplo_action_desire`, and `diplo_action_acceptance` are Country-only by convention: the Default and Faction layers should never push a country to declare war or accept diplomacy; that decision belongs in the country's own file.
 
 ---
@@ -389,7 +396,10 @@ invasion **target**) and the only one that throttles what an invasion order may 
 country looks attractive. `state_trigger` acceptance on this type is established in-repo -
 `WA_AI_MILITARY_DEFAULT_FRONT_aifc.txt:442`.
 
-**Value is -200, deliberately.** The type is Additive over a base of 100, so -200 already floors the
+**Value is -200, deliberately.** The engine says only that the value "will be added as a factor over
+regular requests" (`documentation.info` section `front_unit_request`) - **it states no base**, so "-200
+floors the request at zero" is ASSUMED, not measured (the base-of-100 wording came from the unrelated
+`unit_ratio` section). On that assumption -200 floors the
 request at zero - the same magnitude `WA_AI_MILITARY_INV_freeze_when_home_threatened` uses for the same
 job. Staying at -200 rather than -2000 is load-bearing: `WA_AI_MILITARY_ALLIES_dday_prep_INVASION` puts
 +1000 on states 15 and 1016 while it assembles Normandy, and Anzio (1944.1.21, europe) lands inside that
@@ -434,7 +444,7 @@ question that generalises: **who owns this soil, and is an enemy standing on it?
 | Allied side | `avoid_italy_overstack(_after_flip)`, `italy_cobelligerent_support_FRONT`, `ENG_war_against_ITA_3_DIPLOMACY` (gated `ally_italy_at_war` - the commitment starts the day the co-belligerent fights, not at the first lost state), `USA_sicily_push`, `ALLIES_sicily_push_FRONT` re-gated on the same triggers; the date-boxed Husky family is out of scope |
 | Probe | checklist R61, `WA_TLM_r96_italy_*` (telemetry doc 5) |
 
-**All triggers are PREV-relative from the state scope, not ROOT-relative**, because `_ally_italy_theatre_*` evaluate them inside `any_allied_country` / `any_subject_country` from another country's scope. The AXIS guard tiers exclude the `at_war_with_italian_homeland_power` case (the `hold_italy_after_defection` block owns it) so the two never stack. Post-code review 2026-08-17 (8 angles) found and fixed: 10-anchor set, ally-port bridgehead, subject RSI, flip window, peace-time floor, invasion-veto gates, Albania belt, Tunisia heuristic, ETH reader relativity. Every state list must match `WA_AI_MILITARY_AIR_theatre_contested_italy` (mainland 10 + Sicily 5). Ratios per state group, summed: owner 0.10 + 0.20 (Sicily/south), 0.15 + 0.10 (mainland anchors), plus the ally's 0.06 or 0.12 - two armies, two pools.
+**All triggers are PREV-relative from the state scope, not ROOT-relative**, because `_ally_italy_theatre_*` evaluate them inside `any_allied_country` / `any_subject_country` from another country's scope. The AXIS guard tiers exclude the `at_war_with_italian_homeland_power` case (the `hold_italy_after_defection` block owns it) so the two never stack. Post-code review 2026-08-17 (8 angles) found and fixed: 10-anchor set, ally-port bridgehead, subject RSI, flip window, peace-time floor, invasion-veto gates, Albania belt, Tunisia heuristic, ETH reader relativity. Every state list must match `WA_AI_MILITARY_AIR_theatre_contested_italy` (mainland 10 + Sicily 5). Ratios per state group: owner 0.10 / 0.20 (Sicily/south), 0.15 / 0.10 (mainland anchors), plus the ally's 0.06 or 0.12 - two armies, two pools. **They do not sum.** `put_unit_buffers` ratios are fractions of the country's whole army, and blocks sharing an `order_id` share one ratio (§4 note); the two Axis ally-guard blocks both carry `order_id = 9606` (`WA_AI_MILITARY_FACTION_AXIS_THEATRE.txt`). They are mutually exclusive by gate, so the live effect is unchanged - the arithmetic in the earlier wording was not the engine's.
 
 ---
 
@@ -480,6 +490,11 @@ FASCIST_HISTORICAL}: FASCIST_ALTERNATE / RANDOM had no execute vs Ethiopia befor
 Open item found on the way: on `0edbc955` every `wa_ai_aifc_*_ref` array (GER, SOV, ENG, ITA) reads `-10737.4x`, an unresolved
 token, so the DEFAULT aifc block's `state_trigger is_in_array = { FROM.FROM.WA_AI_AIFC_sector_*_ref = THIS.id }` pairs may
 have been inert campaign-wide - the sector was computed, the engine-side weighting may not have followed. Separate diagnosis.
+**A route that avoids the question entirely:** both `force_concentration_front_factor` and
+`force_concentration_target_weight` document `tag` / `state` / `strategic_region` / `area` /
+`country_trigger` alongside `state_trigger` (`documentation.info` sections for the two types). The
+encoded `*_ref` array is a workaround for a targeting limitation these types do not have. Whatever the
+diagnosis concludes, a `country_trigger` route needs no scope reference to resolve.
 
 ---
 

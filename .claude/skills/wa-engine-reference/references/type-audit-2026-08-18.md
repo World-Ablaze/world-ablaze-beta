@@ -7,7 +7,13 @@
 > section names. The findings themselves (contradictions, unsupported claims) are untouched and
 > still open.
 
-Date: 2026-08-18. Read-only audit. No file was changed.
+Date: 2026-08-18. Read-only audit. No file was changed **by the audit**.
+
+> **Disposition, 2026-08-18.** Every claim below was re-verified against the install before acting - the
+> audit was accurate on every row checked. Status per row is in the **Done** column of the summary
+> table. C2/X1 closed in `a62d04860`; C1, C3, C4, C5, C8, U1-U7, X2, X3, X4 closed in the commit that
+> carries this note. C6 and C7 stay open under their own QUEUE row (three types documented as live that
+> do not exist). This file is kept as the evidence trail; the corrections live in the WA documents.
 
 ## Sources
 
@@ -52,27 +58,27 @@ a behaviour one.
 
 ## Summary table
 
-| # | Type | Class | WA says | Engine says | Where |
-| --- | --- | --- | --- | --- | --- |
-| C1 | `force_concentration_front_factor` / `_target_weight` | **CONTRADICTION** | only `front_control` / `front_unit_request` / `invasion_unit_request` take generic targeting; the FC types "additionally take `state_trigger`" | both FC types take the full set `tag` / `state` / `strategic_region` / `area` / `country_trigger` / `state_trigger` (+ `ratio` on `_front_factor`) | WA-A:159 vs ENGINE:238-244, 265-270 |
-| C2 | `front_control` | **RESOLVED 2026-08-18** | "Per area, last-set wins per mode"; Phase 5 will add scripted mutual-exclusion triggers | `priority = 0  # Default 0, higher prio strats will override lower` | WA-B:90, WA-B:156-166 vs ENGINE:292 - **closed:** "last-set wins" removed, `priority` documented with the live ladder in `WA_AI_MILITARY_SYSTEM.md` §6.1 |
-| C3 | `naval_dominance` | **CONTRADICTION** | "Sums per region/area", range 0-100, "values in use are 70-80 (18 entries)" | "value = 99 # Percentage between 0 and 100"; a set value, no additive statement | WA-B:106,130 vs ENGINE:672-682; 8 live entries at `value = 1000` in `WA_AI_NAVAL_COUNTRY_ENG.txt:897-918` |
-| C4 | `put_unit_buffers` | **CONTRADICTION** | "Sums per state / Additive per state / range 0 to 100" | `ratio` = share of the country's total armies (0..1); "ratio of same orders ids will be share same ratio" | WA-B:110 vs ENGINE:352-357 |
-| C5 | `theatre_distribution_demand_increase` | **CONTRADICTION** | range "0 to +500" | "value = 10 # Increase desired unit demand by 10" - absolute unit count | WA-B:81 vs ENGINE:386-388 |
-| C6 | `naval_invasion_support_priority` | **CONTRADICTION** | a live NAVAL type with combination rule and range 0..+100 | token does not exist in either doc edition | WA-A:28, WA-B:109 vs ENGINE token list :53-61 |
-| C7 | `force_ratio`, `infantry` | **CONTRADICTION** | FRONT-domain `ai_strategy` types with domains, ranges and counts | neither token exists in either edition | WA-A:17-18, WA-B:47,88 |
-| C8 | `garrison` | **CONTRADICTION** | `value = -5000` is "the documented way to force garrison off" | `garrison` has **no section at all** - bare token-list entry | WA-B:87,131 / WA-A:147 vs ENGINE:45 |
-| U1 | `area_priority` | UNSUPPORTED | "Sums per area", range -200..+200 | token listed, **no section** in either edition | WA-B:80 |
-| U2 | every "Sums per X" row in the §4 policy table | UNSUPPORTED | 25 types given an explicit engine combination rule | the file states additivity for exactly **one** pair (`avoid_starting_wars` + `conquer`) | WA-B:79-113 vs ENGINE:197-210 |
-| U3 | `dont_defend_ally_borders` | UNSUPPORTED | "Exclusive per ally (highest value wins)" | binary (">0 activates, <=0 deactivates"); **silent** on multi-writer resolution | WA-A:278, WA-B:97 vs ENGINE:222-229 |
-| U4 | `spare_unit_factor`, `garrison_reinforcement_priority`, `naval_mission_threshold`, `strike_force_home_base`, `naval_convoy_raid_region`, `naval_avoid_region` | UNSUPPORTED | ranges + combination rules | token-list only, no section | WA-B:89,96,104,105,107 |
-| U5 | `support` | UNSUPPORTED (**correctly labelled**) | "Unverified - assumed to sum, never measured" | token listed, no section | WA-B:103,132 - honest |
-| U6 | `support` "engine description" quote | UNSUPPORTED | quotes "*Pursues AI to support a certain country within wars, sending lend lease, volunteers, or expeditionary forces*" and attributes it to `documentation.info` | that string does not occur anywhere in the install (grep -r, 0 hits) nor in `documentation.info` | WA-A:97 |
-| U7 | `front_unit_request` base of 100 | UNSUPPORTED | "Additive over a base of 100, so -200 already floors the request at zero" | "will be added as a factor over regular requests" - no base stated | WA-B:338 vs ENGINE:331 |
-| X1 | `front_control priority` | **RESOLVED 2026-08-18 - the premise was wrong twice** | Phase 5 will build scripted `*_owns_*` mutual-exclusion triggers to enforce Country > Faction > Default | the engine has a native integer precedence field | WA-B:156-166 vs ENGINE:292 - **closed:** the capability is NOT unused (56 of 215 blocks set `priority`), and Phase 5 is NOT a plan (shipped `d149a204b`, 50 slugs, 43 of them for types with no `priority` field). §6 |
-| X2 | `force_concentration_* country_trigger` / `tag` / `strategic_region` | **UNUSED CAPABILITY** | AIFC Layer 4 targets only via `state_trigger` + encoded `*_ref` arrays (Fix 31), a workaround whose `-10737.4` unresolved-token risk is still open | `country_trigger` and `tag` are documented on both FC types | WA-C:395-433, WA-B:426-428 vs ENGINE:265-270 |
-| X3 | `put_unit_buffers order_id` semantics | UNUSED CAPABILITY | order_id used in 154 places for pool separation, but no WA doc states what it does | "ratio of same orders ids will be share same ratio" | WA-B:110 (silent) vs ENGINE:354-355 |
-| X4 | `avoid_starting_wars` | UNUSED CAPABILITY | 1 use mod-wide, undocumented in WA | the only documented additive pair in the file, designed to work with `conquer` | ENGINE:197-210 |
+| # | Type | Class | WA says | Engine says | Where | Done |
+| --- | --- | --- | --- | --- | --- | --- |
+| C1 | `force_concentration_front_factor` / `_target_weight` | **CONTRADICTION** | only `front_control` / `front_unit_request` / `invasion_unit_request` take generic targeting; the FC types "additionally take `state_trigger`" | both FC types take the full set `tag` / `state` / `strategic_region` / `area` / `country_trigger` / `state_trigger` (+ `ratio` on `_front_factor`) | WA-A:159 vs ENGINE:238-244, 265-270 | **FIXED** - TYPES_REFERENCE targeting sentence rewritten, with the AIFC consequence |
+| C2 | `front_control` | **RESOLVED 2026-08-18** | "Per area, last-set wins per mode"; Phase 5 will add scripted mutual-exclusion triggers | `priority = 0  # Default 0, higher prio strats will override lower` | WA-B:90, WA-B:156-166 vs ENGINE:292 - **closed:** "last-set wins" removed, `priority` documented with the live ladder in `WA_AI_MILITARY_SYSTEM.md` §6.1 | **FIXED** `a62d04860` - SYSTEM.md §6 |
+| C3 | `naval_dominance` | **CONTRADICTION** | "Sums per region/area", range 0-100, "values in use are 70-80 (18 entries)" | "value = 99 # Percentage between 0 and 100"; a set value, no additive statement | WA-B:106,130 vs ENGINE:672-682; 8 live entries at `value = 1000` in `WA_AI_NAVAL_COUNTRY_ENG.txt:897-918` | **FIXED** - §4 row + note; the 1000s were already retired |
+| C4 | `put_unit_buffers` | **CONTRADICTION** | "Sums per state / Additive per state / range 0 to 100" | `ratio` = share of the country's total armies (0..1); "ratio of same orders ids will be share same ratio" | WA-B:110 vs ENGINE:352-357 | **FIXED** - §4 row, new order_id note, Fix 96 arithmetic corrected |
+| C5 | `theatre_distribution_demand_increase` | **CONTRADICTION** | range "0 to +500" | "value = 10 # Increase desired unit demand by 10" - absolute unit count | WA-B:81 vs ENGINE:386-388 | **FIXED** - §4 row: absolute divisions, 4-10 in use |
+| C6 | `naval_invasion_support_priority` | **CONTRADICTION** | a live NAVAL type with combination rule and range 0..+100 | token does not exist in either doc edition | WA-A:28, WA-B:109 vs ENGINE token list :53-61 | **OPEN** - next QUEUE row |
+| C7 | `force_ratio`, `infantry` | **CONTRADICTION** | FRONT-domain `ai_strategy` types with domains, ranges and counts | neither token exists in either edition | WA-A:17-18, WA-B:47,88 | **OPEN** - next QUEUE row |
+| C8 | `garrison` | **CONTRADICTION** | `value = -5000` is "the documented way to force garrison off" | `garrison` has **no section at all** - bare token-list entry | WA-B:87,131 / WA-A:147 vs ENGINE:45 | **FIXED** - §4 row + note: convention, not engine text |
+| U1 | `area_priority` | UNSUPPORTED | "Sums per area", range -200..+200 | token listed, **no section** in either edition | WA-B:80 | **FIXED** - tagged **I** in §4 |
+| U2 | every "Sums per X" row in the §4 policy table | UNSUPPORTED | 25 types given an explicit engine combination rule | the file states additivity for exactly **one** pair (`avoid_starting_wars` + `conquer`) | WA-B:79-113 vs ENGINE:197-210 | **FIXED** - column renamed and every cell tagged E / I |
+| U3 | `dont_defend_ally_borders` | UNSUPPORTED | "Exclusive per ally (highest value wins)" | binary (">0 activates, <=0 deactivates"); **silent** on multi-writer resolution | WA-A:278, WA-B:97 vs ENGINE:222-229 | **FIXED** - §4 row + the de-dup argument now carries the caveat |
+| U4 | `spare_unit_factor`, `garrison_reinforcement_priority`, `naval_mission_threshold`, `strike_force_home_base`, `naval_convoy_raid_region`, `naval_avoid_region` | UNSUPPORTED | ranges + combination rules | token-list only, no section | WA-B:89,96,104,105,107 | **FIXED** - all five tagged **I** |
+| U5 | `support` | UNSUPPORTED (**correctly labelled**) | "Unverified - assumed to sum, never measured" | token listed, no section | WA-B:103,132 - honest | **CHECKED, no change needed** - already honest |
+| U6 | `support` "engine description" quote | UNSUPPORTED | quotes "*Pursues AI to support a certain country within wars, sending lend lease, volunteers, or expeditionary forces*" and attributes it to `documentation.info` | that string does not occur anywhere in the install (grep -r, 0 hits) nor in `documentation.info` | WA-A:97 | **FIXED** - quote relabelled ASSUMED, provenance unknown |
+| U7 | `front_unit_request` base of 100 | UNSUPPORTED | "Additive over a base of 100, so -200 already floors the request at zero" | "will be added as a factor over regular requests" - no base stated | WA-B:338 vs ENGINE:331 | **FIXED** - §4 row + the -200 rationale now says ASSUMED |
+| X1 | `front_control priority` | **RESOLVED 2026-08-18 - the premise was wrong twice** | Phase 5 will build scripted `*_owns_*` mutual-exclusion triggers to enforce Country > Faction > Default | the engine has a native integer precedence field | WA-B:156-166 vs ENGINE:292 - **closed:** the capability is NOT unused (56 of 215 blocks set `priority`), and Phase 5 is NOT a plan (shipped `d149a204b`, 50 slugs, 43 of them for types with no `priority` field). §6 | **FIXED** `a62d04860` - premise was wrong twice, see §6 |
+| X2 | `force_concentration_* country_trigger` / `tag` / `strategic_region` | **UNUSED CAPABILITY** | AIFC Layer 4 targets only via `state_trigger` + encoded `*_ref` arrays (Fix 31), a workaround whose `-10737.4` unresolved-token risk is still open | `country_trigger` and `tag` are documented on both FC types | WA-C:395-433, WA-B:426-428 vs ENGINE:265-270 | **FIXED** - documented at both the AIFC risk note and TYPES_REFERENCE |
+| X3 | `put_unit_buffers order_id` semantics | UNUSED CAPABILITY | order_id used in 154 places for pool separation, but no WA doc states what it does | "ratio of same orders ids will be share same ratio" | WA-B:110 (silent) vs ENGINE:354-355 | **FIXED** - new `order_id` note in §4 |
+| X4 | `avoid_starting_wars` | UNUSED CAPABILITY | 1 use mod-wide, undocumented in WA | the only documented additive pair in the file, designed to work with `conquer` | ENGINE:197-210 | **FIXED** - new `avoid_starting_wars` note in §4 |
 
 Counts: **8 CONTRADICTION**, **7 UNSUPPORTED**, **4 UNUSED CAPABILITY**, **12 CONFIRMED** (list below).
 
