@@ -14,7 +14,9 @@ description: How World Ablaze declares tunable numbers and keeps every copy of a
    threshold used by one trigger family). The moment a second file needs it, it moves to
    script constants.
 3. **A number that also exists in another format is a registered group.** Engine defines
-   (`05_defines.lua`), building facts (`00_buildings.txt` `base_cost` / `state_max` — the PC
+   (`05_defines.lua` - an override layer over the install's `00_defines.lua`, not the whole table;
+   `wa-engine-reference`, section "`common/defines` is an override layer", says which file a value
+   actually comes from), building facts (`00_buildings.txt` `base_cost` / `state_max` — the PC
    shadow-price table `constant:wa_ai_pc.cost.*` mirrors them), and the savegame-analysis tables in
    `savegame.py` (`_PC_BANDS`, `_PC_TYPE_ID`, `_PC_*`) cannot read `constant:` — they are copies,
    and `tools/constants_registry.json` + `python tools/check_constants.py` is what holds them equal.

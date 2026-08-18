@@ -52,7 +52,7 @@ on. Read `launcher-settings.json` rather than trusting either descriptor.
 | A console command for a manual in-game check | install `documentation/console_commands_documentation.md` |
 | What does `ai_strategy type = X` mean? what parameters? | install `common/ai_strategy/_documentation.md` (712 lines, 103 tokens, **authoritative**) - see the per-folder documentation layer below |
 | At what MAGNITUDE does the engine respond to that type? | not documented anywhere. Read real usage: install `common/ai_strategy/*.txt` and Expert AI `common/ai_strategy/EAI_MILITARY_strategies.txt` (98 KB) / `EAI_MILITARY_naval_strategies.txt` (73 KB) |
-| Default value of an `NDefines` key | install `common/defines/00_defines.lua` (396 KB) - the full default table |
+| Default value of an `NDefines` key | install `common/defines/00_defines.lua` (396 KB) - the full table. WA's `05_defines.lua` names only a quarter of it; see "`common/defines` is an override layer" below |
 | How the engine groups a faction's members into theatres | install `common/ai_faction_theaters/` + its `_documentation.md` |
 | Vanilla AI plan structure | install `common/ai_strategy_plans/`, and Expert AI's for a second reading |
 
@@ -142,8 +142,32 @@ Live, AI-relevant, and confirmed absent from `descriptor.mod`'s replace list:
 | Live base folder | Why it matters |
 | --- | --- |
 | `common/ai_faction_theaters/` | The engine's own faction-to-theatre assignment (`ai_will_do`, `cancel`, `regions`, `preferred_countries`, `can_skip_first_region`). **WA has no file here at all** - vanilla's 22 KB `ai_faction_theaters.txt` runs unchanged in every campaign, and no WA document mentions it. |
-| `common/defines/` | Base `00_defines.lua` loads first; WA's `05_defines.lua` overrides individual keys on top. A key WA does not name **keeps its vanilla value** - so "what does this default to" is answered in the base file, not ours. |
+| `common/defines/` | Base `00_defines.lua` loads first, WA's `05_defines.lua` overrides individual keys on top - the section right below this table. |
 | `common/ai_attitudes.txt`, `common/ai_personalities.txt` | Small, live, and owned by nobody in this repo. |
+
+### `common/defines` is an override layer, not a table
+
+`common/defines` is **absent from `descriptor.mod`'s replace list**, so both files load: the
+install's `00_defines.lua` first, WA's `05_defines.lua` on top, and each assignment in WA's file
+rebinds **one key**. `05_defines.lua` is a diff, not a state.
+
+| File | Keys it names |
+| --- | --- |
+| install `common/defines/00_defines.lua` (1.19.2.0) | **3230** |
+| WA `common/defines/05_defines.lua` | **854** - 26 % of the table; of `NDefines.NAI` alone, 288 of 946 |
+
+Two readings of that diff are wrong, and both come from opening only WA's file:
+
+- **"WA does not set it, so it is unset / zero / disabled."** It has vanilla's value, and vanilla's
+  value is in the install, not in this repo. `NDefines.NAI.AIFC_MAX_NR_FRONTS` is **4**
+  (`00_defines.lua:3500`) and WA names **none** of the 50 `AIFC_*` keys - the whole AI force
+  concentration system runs on vanilla numbers.
+- **"I changed WA's value, so the behaviour is now X."** Incomplete until you know what it was.
+  `NDefines.NAI.MAX_DEPLOYED_ARMY_HQS` is `5` (`00_defines.lua:3423`) and `20`
+  (`05_defines.lua:1040`) - a 4x that neither file states on its own.
+
+So a define's live value is `05_defines.lua` when the key is there and `00_defines.lua` when it is
+not. Grep both before quoting one.
 
 ## Expert AI - how to use it, how not to
 
