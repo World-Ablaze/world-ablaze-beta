@@ -31,6 +31,9 @@ checklist.md - each of these is a real 2026-08-17 defect, made mechanical
   WARN   TLM-ORPHAN     a WA_TLM_r<NN>_* write site (NN = the FIX number) that no live
                         checklist item mentions - telemetry writing for a dead consumer.
   WARN   NO-PROBE       a RETIREABLE item with no Probe line: unscoreable by construction.
+  ERROR  LEDGER-MISSING an item with no machine-readable Ledger line.
+  ERROR  LEDGER-MISMATCH the Ledger and the prose disagree on threshold or streak.
+  WARN   STATUS-UNSET   nobody has ever written this item's status down.
   ERROR  CRITERION-UNSCOREABLE  a pass leg compares against a baseline outside the item and
                         carries no number: unscoreable in both directions, for ever.
   ERROR  PROBE-UNRUN    an item opened since the rule shipped with no pasted probe output:
@@ -157,6 +160,18 @@ def history_lines(body: str) -> list[tuple[str, str, str]]:
     return out
 
 
+def live_text(text: str) -> str:
+    """The checklist minus the retirement ledger SECTION.
+
+    Positional slicing was wrong twice. `index` caught the table of contents 34 lines in and
+    left almost nothing live; `rindex` assumed the ledger is the last section, and R71 had
+    been filed AFTER it - so R71 was silently outside every check that used the split. Cut the
+    section itself: from its heading to the next top-level heading, or EOF.
+    """
+    m = re.search(r"^## Retired and merged items.*?(?=^## |\Z)", text, re.M | re.S)
+    return text[: m.start()] + text[m.end():] if m else text
+
+
 def field(body: str, name: str) -> str | None:
     # The label may carry a qualifier before the colon - R57 writes
     # "- **Probe (reads engine save fields; no WA_TLM metric):**". Requiring a bare
@@ -189,6 +204,35 @@ def check_checklist(rep: Report) -> None:
 
     for iid, body in items:
         fundamental = iid.startswith("F")
+
+        # LEDGER
+        # One line per item carrying the numbers a scoring session manipulates, so the
+        # arithmetic stops depending on how the prose was phrased. It duplicates the prose
+        # fields ON PURPOSE: the duplication is the cross-check, and a mismatch is reported.
+        # `status` is COPIED from the prose, never derived. Deriving it was tried and
+        # rejected 2026-08-18 - "streak > 0 = passing" mislabels every item whose history
+        # carries a pre-fix baseline row, and each refinement moved the errors around
+        # instead of removing them (7 wrong, then 6 wrong including 3 newly wrong). An item
+        # whose prose never stated a status carries `status=UNSET` and is reported, because
+        # the honest answer is that nobody has written it down.
+        led = re.search(r"^- \*\*Ledger:\*\*\s*`([^`]*)`", body, re.M)
+        if not led:
+            rep.add("ERROR", "LEDGER-MISSING",
+                    f"{iid}: no Ledger line - add one with class / threshold / streak / fix / status")
+        else:
+            kv = dict(re.findall(r"(\w+)=(\S+)", led.group(1)))
+            if kv.get("status") == "UNSET":
+                rep.add("WARN", "STATUS-UNSET",
+                        f"{iid}: ledger status is UNSET - the item has never stated one in prose "
+                        f"either, so no scoring session can say whether it is passing")
+            for key, prose in (("threshold", field(body, "Threshold")),
+                               ("streak", field(body, "Streak"))):
+                want = re.search(r"-?\d+", prose or "")
+                want = want.group() if want else "none"
+                if kv.get(key, "none") != want:
+                    rep.add("ERROR", "LEDGER-MISMATCH",
+                            f"{iid}: ledger says {key}={kv.get(key)} but the prose line says "
+                            f"{want} - one of the two was edited without the other")
 
         # ORPHAN-FIX
         fut = field(body, "Fix under test")
@@ -341,9 +385,7 @@ def check_checklist(rep: Report) -> None:
     # r74 and r97 families kept writing for retired items until 2026-08-18: the check passed on
     # a mention in the obituary. Cut the ledger off before searching. Take the LAST occurrence
     # of the heading, not the first - the file opens with a table of contents that names it too.
-    marker = "## Retired and merged items"
-    live_text = text[: text.rindex(marker)] if marker in text else text
-    low = live_text.lower()
+    low = live_text(text).lower()
     # Token only. The old test also accepted a bare "fix NN" anywhere in the checklist, which
     # any passing narrative mention satisfies - and did: the live text says in so many words
     # "retired this session: R46 (Fix 74) ... instrumentation disposition recorded as a debt",

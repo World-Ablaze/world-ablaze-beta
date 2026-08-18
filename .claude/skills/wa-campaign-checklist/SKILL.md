@@ -38,6 +38,27 @@ wrong result - which is how a defective probe becomes a PASSED streak.
 3. **Verify the build first.** Cloud saves carry no reliable local-log evidence (see memory `test-campaigns-cloud-machine`): confirm which commits the campaign actually ran via behavioural fingerprints in the saves (`*_dbg_*` variables, structures only the new code produces) plus git ancestry. An item whose fix commit is **not** in the campaign's build stays `NOT YET TESTED` — a FAILED mark against a build that predates the fix is noise.
 4. **Check the DLC bitmask before scoring DLC-gated items.** The save header (~line 20) has `dlcs=`; the cloud test box reports `dlcs=30` (missing La Résistance and Arms Against Tyranny among others), the local full install `dlcs=191999`. Items tagged `DLC-gated` in the checklist (Spain/SCW, espionage, MIOs, international market) are **only scoreable on full-DLC campaigns** — on a cloud run mark them `N/A (DLC)`, which neither advances nor resets their streak.
 
+## The Ledger line
+
+Every item carries one machine-readable line under its heading:
+
+```
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=6f3c2432c status=NOT_YET_TESTED`
+```
+
+- It **duplicates the prose fields on purpose**. The duplication is the cross-check:
+  `check_worklist.py` reports `LEDGER-MISMATCH` when the two disagree, which is what catches an
+  edit that touched one and forgot the other. Update both, or neither.
+- `status` is one of `PASSING` / `FAILING` / `NOT_YET_TESTED` / `DIAGNOSED_NOT_FIXED` /
+  `KNOWN_GAP` / `UNSET`. **A scoring session writes it. It is never derived.** Deriving it from
+  the streak and history was tried and rejected (2026-08-18): "streak > 0 means passing"
+  mislabels every item whose history carries a pre-fix baseline row, and each refinement moved
+  the errors around rather than removing them. `UNSET` means nobody has written a status down
+  and is reported as `STATUS-UNSET`, not quietly filled in.
+- Criteria, probes, caveats and history stay prose. Only the bookkeeping is structured - measured
+  2026-08-18, 4 of 43 items have a probe a tool could run unaided, so there is nothing to gain
+  from structuring the criteria and something to lose.
+
 ## How to mark results
 
 Each item carries a status block. After analysing a campaign, in the **same session**:
