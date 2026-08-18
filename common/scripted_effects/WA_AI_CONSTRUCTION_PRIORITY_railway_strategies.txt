@@ -1230,6 +1230,7 @@ WA_AI_PC_railway_STRATEGY_theatre_corridor = {
 	clear_temp_array = corridor_hub_prov_
 	clear_temp_array = corridor_hub_kind_
 	clear_temp_array = corridor_hub_prio_
+	clear_temp_array = corridor_hub_target_
 	clear_temp_array = corridor_node_ours_
 	clear_temp_array = corridor_node_charge_
 	clear_temp_array = corridor_node_hostile_
@@ -1283,6 +1284,12 @@ WA_AI_PC_railway_STRATEGY_theatre_corridor = {
 		}
 		set_temp_variable = { corridor_ran_ = 1 }
 
+		### Fix 107: size the corridor before emitting anything. Publishes corridor_rail_tgt_ (used as
+		### the route level below, in place of the old flat constant) and corridor_port_tgt_ (the level a
+		### port node should reach, 0 = leave it at the pre-Fix-107 "place if missing"). Runs here because
+		### it reads corridor_node_ours_, which the classification loop above has just filled.
+		WA_AI_PC_corridor_compute_sizing = yes
+
 		### Band: war when an enemy holds a node of this corridor, preparation otherwise
 		if = {
 			limit = { check_variable = { _corridor_hostile_n_ > 0 } }
@@ -1312,7 +1319,7 @@ WA_AI_PC_railway_STRATEGY_theatre_corridor = {
 						limit = { check_variable = { _hop_charge_n_ > 0 } }
 						add_to_temp_array = { corridor_route_start_ = _ci_prov_ }
 						add_to_temp_array = { corridor_route_end_ = corridor_node_prov_^_ci_next_ }
-						add_to_temp_array = { corridor_route_level_ = constant:wa_ai_railway.corridor.rail_level }
+						add_to_temp_array = { corridor_route_level_ = corridor_rail_tgt_ }
 						add_to_temp_array = { corridor_route_prio_ = _corridor_prio_ }
 						# tlm gauge: hops only Fix 103 made requestable - one end is a healthy ally's,
 						# so the pre-Fix-103 both-ends-charge rule refused them. consumer: R68
@@ -1344,12 +1351,21 @@ WA_AI_PC_railway_STRATEGY_theatre_corridor = {
 					add_to_temp_array = { corridor_hub_prov_ = _ci_prov_ }
 					add_to_temp_array = { corridor_hub_kind_ = 17 }
 					add_to_temp_array = { corridor_hub_prio_ = _corridor_prio_ }
+					# Fix 107: a supply_node has no level (LOGISTICS_MODEL section 3) - always 1.
+					add_to_temp_array = { corridor_hub_target_ = 1 }
 				}
 				if = {
 					limit = { check_variable = { corridor_node_port_^_ci_ = 1 } }
 					add_to_temp_array = { corridor_hub_prov_ = _ci_prov_ }
 					add_to_temp_array = { corridor_hub_kind_ = 14 }
 					add_to_temp_array = { corridor_hub_prio_ = _corridor_prio_ }
+					# Fix 107: the level this port should REACH. corridor_port_tgt_ is 0 unless the
+					# sizing found the ENTRY CAPACITY to be what binds; the hub loop reads 0 as
+					# "place a missing port at level 1", i.e. the pre-Fix-107 behaviour exactly.
+					# Carried as a PARALLEL ARRAY rather than a chain temp on purpose: the hub loop in
+					# railway_core re-sets _hub_prov_ / _kind_ / _prio_ per iteration, so a fourth
+					# chain temp would be inherited by the next port from the previous one.
+					add_to_temp_array = { corridor_hub_target_ = corridor_port_tgt_ }
 				}
 				### FORWARD port - the attacker's supply port at a spearhead node (user ruling
 				### 2026-08-16: only the faction attacking Libya builds it, never the defender).
@@ -1400,6 +1416,12 @@ WA_AI_PC_railway_STRATEGY_theatre_corridor = {
 						add_to_temp_array = { corridor_hub_prov_ = _ci_prov_ }
 						add_to_temp_array = { corridor_hub_kind_ = 14 }
 						add_to_temp_array = { corridor_hub_prio_ = _corridor_prio_ }
+						# Fix 107: a FORWARD port is placed, never raised. It exists to inject supply at
+						# a spearhead on conquered soil, where the RANGE model - not the flow model - is
+						# what is failing (LOGISTICS_MODEL section 6, the 2.5% non-core cliff), and the
+						# spearhead moves, so a multi-level climb would pay for a port the front has
+						# already left. Level 1, deliberately.
+						add_to_temp_array = { corridor_hub_target_ = 1 }
 					}
 				}
 			}

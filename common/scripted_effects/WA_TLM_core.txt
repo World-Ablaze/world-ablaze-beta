@@ -227,7 +227,20 @@
 # and the type budget accept, and campaign 7c7803a8 is the case where "requested" and "queued" diverge
 # for 28 months. Read it against r103_corridor_orphan: orphan should fall as ally_fund_n rises.
 # Additive; a save at wa_tlm_version < 26 lacks the family - score NOT CHECKED, never FAILED.
-@WA_TLM_VERSION = 26
+# v27 (2026-08-18, Fix 107 / R71): adds the WA_TLM_r107_sizing_* family - what the corridor SIZING
+# model saw and decided. Five gauges resampled every corridor pass (presence proxy, demand, injection,
+# rail target, chain length) plus r107_port_raise_n, a counter on the verified effect (a port admitted
+# at a target ABOVE 1 - the raise of an existing port, structurally impossible before Fix 107). Written
+# at the corridor pass in railway_core, NOT by the monthly sampler. They exist because ACTUAL supply is
+# not readable from script: the AI models flow from levels and cannot observe whether it was right, so
+# the probe records the MODEL's view and the campaign map is the second signal - `rail.py --corridor`
+# reads the BUILT minimum level and must converge on r107_sizing_rail_tgt within a few build durations.
+# The two diverging is the finding: the model asked and nothing was delivered.
+# r107_sizing_inject is TRI-STATE and must not be read as a plain number: -1 = the injection cap was
+# deliberately not applied (no corridor port of ours, or ROOT's capital sits on the corridor and it is
+# fed overland), 0 = our ports inject nothing, > 0 = the measured cap.
+# Additive; a save at wa_tlm_version < 27 lacks the family - score NOT CHECKED, never FAILED.
+@WA_TLM_VERSION = 27
 
 ############################################################################################################
 #	Clock - global.WA_TLM_clock = months elapsed since 1936.1
@@ -449,6 +462,18 @@ WA_TLM_init_country = {
 	if = { limit = { NOT = { has_variable = WA_TLM_r103_corridor_blocked_n } } set_variable = { WA_TLM_r103_corridor_blocked_n = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r103_corridor_first_t } } set_variable = { WA_TLM_r103_corridor_first_t = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r103_corridor_last_t } } set_variable = { WA_TLM_r103_corridor_last_t = 0 } }
+
+	# r107 corridor SIZING (Fix 107, consumer: checklist R71) - gauges resampled by the corridor pass
+	# in railway_core, plus one verified-effect counter. _inject is TRI-STATE: -1 = the injection cap
+	# was deliberately not applied, 0 = our corridor ports inject nothing, > 0 = the measured cap.
+	if = { limit = { NOT = { has_variable = WA_TLM_r107_sizing_presence } } set_variable = { WA_TLM_r107_sizing_presence = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r107_sizing_demand } } set_variable = { WA_TLM_r107_sizing_demand = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r107_sizing_inject } } set_variable = { WA_TLM_r107_sizing_inject = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r107_sizing_rail_tgt } } set_variable = { WA_TLM_r107_sizing_rail_tgt = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r107_sizing_chain } } set_variable = { WA_TLM_r107_sizing_chain = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r107_port_raise_n } } set_variable = { WA_TLM_r107_port_raise_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r107_sizing_first_t } } set_variable = { WA_TLM_r107_sizing_first_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r107_sizing_last_t } } set_variable = { WA_TLM_r107_sizing_last_t = 0 } }
 
 	# r104 ally-funded logistics (Fix 104, consumer: checklist R69) - counter written at the queue
 	# append in WA_AI_PC_start_project, not by a sampler

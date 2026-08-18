@@ -96,7 +96,7 @@ For each type: total count, where it currently appears (counts per file), recomm
 - Currently in: USA 31, SOV 5, SPR 5, GER 3, POR 3, CHI 2, HUN 2, JAP 2, ENG 1, FRA 1, `wa_default` 1, plus the two Faction-layer blocks added by Fix 106 in `WA_AI_MILITARY_FACTION_ALLIES_DIPLOMACY.txt`.
 - Engine description: *“Pursues AI to support a certain country within wars, sending lend lease, volunteers, or expeditionary forces.”* `common/ai_strategy/documentation.info` lists the token and gives **no example for it** - which is how it stays invisible. Grep the token list, not the worked examples, before concluding a script lever does not exist.
 - Target: Country for a nation's own diplomatic preferences; **Faction for coalition behaviour** (a smaller member backing the major it fights under). Not Country-only despite sitting beside `declare_war` in the DIPLOMACY domain - see the note in `WA_AI_MILITARY_SYSTEM.md` §4.
-- Policy: **Additive per target**. Values in use: 100 (nudge), 200, 500 (strong), -1000 (suppress), -2000 / -5000 (hard suppress: `wa_default` toward GER, GER toward SOV).
+- Policy: **Additive per target - ASSUMED, never measured** (see `WA_AI_MILITARY_SYSTEM.md` §4; `USA.txt`'s `USA_stop_uk_from_falling` already writes two `support` entries toward LUX and two toward GUA under one `enable`, so the sum is assumed there too). Values in use: 100 (nudge), 200, 500 (strong), -1000 (suppress), -2000 / -5000 (hard suppress: `wa_default` toward GER, GER toward SOV).
 - Direction was one-way on the Allied side until Fix 106: every Allied block ran major → someone, none ran Allied minor → major. Minor → major blocks do exist elsewhere (`HUN.txt:131`, HUN → GER 200).
 - **Unresolved:** creates vs ranks expeditionary intent - checklist R70.
 
