@@ -55,7 +55,11 @@ Protocol for scoring, retiring, and adding items: see `../SKILL.md`. Streak = co
 
 | game_unique_id | Machine / DLC | Scope | Analysed |
 | --- | --- | --- | --- |
-| `0bbc1f60` | cloud | BHU observer, 124 monthly saves 1936.2-1946.5, HOI4 1.19.2 (`Operation Postern v1.19.2.0.a729`); build = commit `442823e61`, i.e. the Fix 96-107 stack plus the 2026-08-18 `ai_faction_theaters` takeover. `wa_tlm_version = 27` in-save. | 2026-08-18 |
+
+> **The order of this table is chronological and load-bearing.** `check_worklist.py` reads it as the
+> campaign sequence and computes every dormancy figure from the tail, so a row appended at the TOP makes
+> a brand-new campaign the oldest one - on 2026-08-18 that briefly reported R71 as 17 campaigns dormant
+> on the day it was scored. **Append new campaigns at the bottom.**
 | `0e7e7852` | cloud, `dlcs=30` | BHU observer, 119 monthly saves 1936–45 | 2026-08-09 |
 | `c9ab1062` | cloud, `dlcs=30` | SCW-focused check | 2026-08-09 |
 | `9be92c89` | cloud, `dlcs=30` | all-AI observer 1936–1946.12 | 2026-08-10 |
@@ -79,6 +83,10 @@ Protocol for scoring, retiring, and adding items: see `../SKILL.md`. Streak = co
 **DLC note (supersedes the old `dlcs=30` assumption):** the cloud box now ships `dlcs=257535` — La Résistance and Arms Against Tyranny both behaviourally confirmed in `66d6b53c` (LaR SCW flags, AAT MIO lines). Always read the save header's `dlcs=` per campaign instead of assuming by machine.
 
 ---
+| `66636ff4` | local, `invasion 1-4` saves | Narrow bug-hunt, not a full run: the Avalanche / Slapstick beachhead window. Used as the pre-Fix-95 FAILED baseline for the North African corridor (no rail Tripoli->Marsa Matruh on either side at 1943.10) | 2026-08-16 |
+| `0edbc955` | cloud | BHU observer, narrow window **1943.9-1943.12**. The campaign that opened Fix 96: mainland Italy fell to 7-12 Allied divisions because 0-3 Italian and 0-2 German divisions stood on it, while ITA's army sat in Libya / Sudan / Kenya | 2026-08-17 |
+| `9d83084c` | cloud | BHU observer, **121 monthly saves 1936.2-1946.2**, unbranched (session strictly monotone with date). HOI4 1.19.2 `Operation Postern a729`, `save_version = 33`, ironman 0, difficulty normal, `wa_tlm_version = 26`; build through `e447c3e47` (Fix 106). The most-scored campaign in this file - **53 item mentions** | 2026-08-17 |
+| `0bbc1f60` | cloud | BHU observer, 124 monthly saves 1936.2-1946.5, HOI4 1.19.2 (`Operation Postern v1.19.2.0.a729`); build = commit `442823e61`, i.e. the Fix 96-107 stack plus the 2026-08-18 `ai_faction_theaters` takeover. `wa_tlm_version = 27` in-save. | 2026-08-18 |
 
 ## FUNDAMENTAL — never removed
 
