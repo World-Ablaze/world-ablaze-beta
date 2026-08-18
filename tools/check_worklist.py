@@ -31,6 +31,8 @@ checklist.md - each of these is a real 2026-08-17 defect, made mechanical
   WARN   TLM-ORPHAN     a WA_TLM_r<NN>_* write site (NN = the FIX number) that no live
                         checklist item mentions - telemetry writing for a dead consumer.
   WARN   NO-PROBE       a RETIREABLE item with no Probe line: unscoreable by construction.
+  ERROR  PROBE-UNRUN    an item opened since the rule shipped with no pasted probe output:
+                        nothing shows the probe command has ever been run.
 
 Everything here is derived from the files as they are today - no restructuring required.
 Where a field is absent the item is reported, never guessed at.
@@ -46,6 +48,10 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 QUEUE = REPO / "QUEUE.md"
 CHECKLIST = REPO / ".claude/skills/wa-campaign-checklist/references/checklist.md"
+
+# The day the PROBE-UNRUN rule shipped. Items opened before it are grandfathered - see
+# the rule for why it cannot be applied backwards.
+PROBE_OUTPUT_REQUIRED_FROM = "2026-08-19"
 DORMANT_AFTER = 3          # campaigns
 SCORED = ("PASSED", "FAILED")
 
@@ -145,7 +151,12 @@ def history_lines(body: str) -> list[tuple[str, str, str]]:
 
 
 def field(body: str, name: str) -> str | None:
-    m = re.search(rf"^- \*\*{name}:?\*\*\s*(.*)$", body, re.M)
+    # The label may carry a qualifier before the colon - R57 writes
+    # "- **Probe (reads engine save fields; no WA_TLM metric):**". Requiring a bare
+    # "- **Probe:**" reported that item as having no probe at all for as long as the
+    # check existed, which is a false NO-PROBE on the one item that documents WHY it
+    # has no WA_TLM metric.
+    m = re.search(rf"^- \*\*{name}[^\*\n]*:?\*\*\s*(.*)$", body, re.M)
     return m.group(1).strip() if m else None
 
 
@@ -216,6 +227,24 @@ def check_checklist(rep: Report) -> None:
         if field(body, "Probe") is None:
             rep.add("WARN", "NO-PROBE",
                     f"{iid}: no Probe line - nothing tells a scoring session how to measure it")
+
+        # PROBE-UNRUN
+        # A probe nobody has run is not a probe. `pc <TAG> --match corridor` sat in two
+        # items for months and returns "(no projects matched)" for every tag and save,
+        # because --match filters the building name and never the strategy tag; a session
+        # scoring off it would have recorded a false FAIL. The only way to know a probe
+        # command produces output BEFORE the campaign it is meant to score exists is to
+        # run it against the pre-fix baseline and paste what came back.
+        #
+        # Applies to items opened on or after the day this rule shipped. It is not
+        # retroactive: the baseline saves the older items were written against are not
+        # all still on disk, so demanding their output now would be a demand to fabricate.
+        opened = re.search(r"\*\*Opened (\d{4}-\d{2}-\d{2})\*\*", body)
+        if opened and opened.group(1) >= PROBE_OUTPUT_REQUIRED_FROM and "```" not in body:
+            rep.add("ERROR", "PROBE-UNRUN",
+                    f"{iid}: opened {opened.group(1)} with no fenced block - paste the probe's "
+                    f"actual output (command + the lines it returned) so the next session knows "
+                    f"the command runs and what shape the answer has")
 
         # DORMANT - measured here, reported once in aggregate below. One line per item
         # would be 27 lines of noise on a 43-item list, and a warning nobody can read is

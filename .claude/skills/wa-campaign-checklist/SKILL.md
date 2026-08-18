@@ -63,6 +63,15 @@ When a fix commit lands on the AI/balance stack, add a RETIREABLE item **in the 
 - Cite the fix commit hash, choose 3 or 5 for the threshold and say which and why.
 - If the fix has no natural save-visible fingerprint, add instrumentation to the fix itself so the probe exists (see memory `test-campaigns-cloud-machine`). New instrumentation follows the WA_TLM standard (`documentation/WA_TLM_TELEMETRY_SYSTEM.md`): a `WA_TLM_r<NN>_*` metric registered there, zero-initialised, counters incremented only on *verified* effect (never on code-path entry), stamps as `_first_t`/`_last_t` pairs (a lone `fire_only_once` stamp over-affirms). Probe with `savegame.py tlm TAG <saves>`. Existing `*_dbg_*` families stay as they are and retire with their items.
 - Initial status is `NOT YET TESTED`, streak 0.
+- **Run the probe before you write the item down, and paste what it returned.** A fenced block
+  holding the command and the lines that came back - three lines is enough, zeros are a fine
+  answer. This is not paperwork: `pc <TAG> --match corridor` sat in two items for months and
+  returns "(no projects matched)" for every tag and every save, because `--match` filters the
+  building name and never the strategy tag. A session scoring off it would have recorded a false
+  FAIL. The campaign the item is written for does not exist yet, so the pre-fix baseline save is
+  what you run against - and its output is the FAILED baseline the item needs anyway.
+  `python tools/check_worklist.py` fails an item opened from 2026-08-19 with no fenced block
+  (`PROBE-UNRUN`). Older items are grandfathered: their baseline saves are not all still on disk.
 
 New FUNDAMENTAL items are rare and are a design statement — add one only when the definition of a healthy campaign genuinely grows (e.g. a Pacific-termination chain finally exists and must keep working).
 

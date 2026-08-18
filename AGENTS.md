@@ -40,7 +40,8 @@ These rules govern every user-facing message. They are about *how* you write, no
   for the failures that accumulate silently: a `Fix under test` commit no longer reachable from
   HEAD, a `Status` still reading NOT YET TESTED after the item was scored, an item at its
   retirement threshold, a campaign scored in histories but missing from the registry, telemetry
-  still writing for a retired item, and how many items are riding along unprobed.
+  still writing for a retired item, an item opened without its probe ever having been run, and how
+  many items are riding along unprobed.
 
 ## Agent Skills
 
