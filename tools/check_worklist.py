@@ -336,7 +336,10 @@ def check_checklist(rep: Report) -> None:
         dormancy[iid] = (len(order) - 1 - max(idx)) if idx else None
 
         # SUPERSEDED
-        if re.search(r"\bsuperseded by (Fix|R)\b|\bmerged into R\d", body, re.I):
+        # The `\b` after the alternation used to end the pattern, so "superseded by R2" did
+        # NOT match - a word boundary cannot sit between "R" and "2". Only "merged into R\d"
+        # was doing any work. Found 2026-08-18 by the self-test, not by reading the line.
+        if re.search(r"\b(superseded by|merged into)\s+(Fix\s*)?R?\d+", body, re.I):
             rep.add("WARN", "SUPERSEDED",
                     f"{iid}: says it is superseded/merged and is still present - fold it into "
                     f"the owning item and add a ledger row")
@@ -462,7 +465,13 @@ def main() -> int:
     ap.add_argument("--strict", action="store_true", help="WARN also fails")
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--queue", action="store_true", help="QUEUE.md only")
+    ap.add_argument("--selftest", action="store_true",
+                    help="prove every rule still fires on a fixture built to break it")
     args = ap.parse_args()
+
+    if args.selftest:
+        import check_worklist_selftest
+        return check_worklist_selftest.run(verbose=True)
 
     rep = Report()
     check_queue(rep)
