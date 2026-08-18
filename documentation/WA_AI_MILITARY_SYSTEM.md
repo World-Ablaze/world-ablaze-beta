@@ -634,6 +634,33 @@ Two rules the generator encodes, both engine facts:
 
 **Do not hand-edit the generated file.** Change the generator and re-run it from `tools/`.
 
+### Nothing in a savegame can verify this (measured 2026-08-18 on `0bbc1f60`)
+
+The before/after table above is **DERIVED**, and it has to stay that way: a save does not expose
+faction theatres at all. Three readings, all from the same 1946.5 save:
+
+| What the save holds | Reading |
+| --- | --- |
+| `theatres={ theatre={ id area={...} orders_group={...} } }` | **98 theatres, 98 areas** captured by a brace-matched walk. Area sizes: min 1, median 31, **max 140 provinces**. A WA faction theatre spans 5-23 strategic regions, i.e. many hundreds of provinces. These are army-side operational areas - each one carries the `orders_group` blocks of the armies working it. |
+| `theater_group={ name="..." }` | **133 groups, 64 distinct names**: Europe 19, Asia 10, South America 10, Middle East 6, Africa 5, then auto-generated "British Theater 1", "Swedish Theater 1"... Continents and nationalities. **Not one matches an `ai_faction_theater_id`.** |
+| the theatre ids themselves | `japanese_home_islands`, `north_africa_uk`, `central_pacific`: **zero occurrences**. The strings never reach the save. |
+
+So the falsifier this section used to carry - "a campaign save shows the six theatres exist and carry
+the extra demand" - **is not executable, and no rewrite of it is**. The indirect route is worse: the
+remap's effect is extra unit demand on a theatre's fronts, which is confounded by every other demand
+term in the engine.
+
+**What IS verifiable, and was:** the file parses and its region ids resolve. HOI4 logs a complaint
+for a malformed theatre or an unknown region, and `0bbc1f60`'s boot produced **zero** mentions of
+`ai_faction_theaters` in `error.log`. That establishes the file is live and well-formed - not that
+the mapping is right.
+
+**Correctness of the mapping is a build-time property, not a runtime one**, and that is where it is
+checked: `gen_ai_faction_theaters.py` verifies connectivity on the real province bitmap, force-includes
+each theatre's anchor, and is positive-controlled against vanilla's own 30 theatres on the vanilla map
+(29 of 30 connected; `north_sea_region`/Ireland is vanilla's own split). Re-run the generator and read
+its warnings - that is the verification. Do not open a savegame expecting one.
+
 ### How it takes over from vanilla, and the one loose end
 
 WA's file has the same relative path and name as vanilla's, so it overrides it file-for-file -
