@@ -12,7 +12,7 @@
 
 # purpose: send the SAF field army toward the North-African front while its El-Alamein guard is live.
 # range:   front_unit_request +50
-# policy:  Additive per area
+# policy:  Additive per area; off while the army can only hold its own coast (the local guard below owns that case)
 # domain:  FRONT
 WA_AI_MILITARY_COUNTRY_SAF_FRONT_support_el_alamein = {
 	allowed = {
@@ -20,12 +20,38 @@ WA_AI_MILITARY_COUNTRY_SAF_FRONT_support_el_alamein = {
 	}
 	enable = {
 		WA_AI_MILITARY_SAF_egypt_guard_available = yes
+		# under the full size bar the guard is defensive-only: do not pull a rump army onto a remote
+		# front it cannot change (07270b64: four SAF divisions on front orders at Batna, 1943.6).
+		num_divisions > 4
 	}
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = front_unit_request
 		area = north_africa
+		value = 50
+	}
+}
+
+
+# purpose: keep a sub-scale SAF army on its own coast when it serves abroad only through the reduced
+#          El-Alamein tier - its realistic enemies are seaborne (Italian East Africa, Japan).
+# range:   front_unit_request +50
+# policy:  Additive per area; mutually exclusive with the expeditionary pull above
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_SAF_FRONT_home_guard_when_small = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_commonwealth_egypt_guard = yes
+	}
+	enable = {
+		WA_AI_MILITARY_SAF_egypt_guard_available = yes
+		NOT = { num_divisions > 4 }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		area = south_africa
 		value = 50
 	}
 }

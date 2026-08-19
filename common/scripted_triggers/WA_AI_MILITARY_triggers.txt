@@ -604,10 +604,47 @@ WA_AI_MILITARY_ENG_el_alamein_destination_available = {
 	}
 }
 
+# SAF's realistic amphibious threat is Italian East Africa first, Japan second.
+# Geographic states only; the Italy-owns-ETH reading reuses the same question the
+# colonial-war trigger asks, and the JAP reading tracks RAJ's Burma wall (the state
+# set mirrors WA_AI_MILITARY_AIR_theatre_state_burma_india - keep them in sync).
+WA_AI_MILITARY_SAF_italian_landing_threat = {
+	any_country = {
+		WA_AI_MILITARY_is_italian_homeland_power = yes
+		has_war_with = ENG
+		# controlled, not owned: a defeated colony keeps owning its un-annexed states (07270b64: ITS
+		# owned 2 African states at 0 controlled from 1941.6 on) - ownership would read "threat" forever.
+		any_controlled_state = { is_on_continent = africa }
+	}
+}
+
+WA_AI_MILITARY_SAF_japanese_landing_threat = {
+	JAP = { has_war_with = ENG }
+	OR = {
+		NOT = { RAJ = { has_war_with = JAP } }
+		any_state = {
+			OR = {
+				state = 288 state = 640 state = 975 state = 977 state = 1007	# Burma (189)
+				state = 430 state = 431 state = 432 state = 434					# Eastern India (141)
+			}
+			CONTROLLER = { has_war_with = ENG }
+		}
+	}
+}
+
 WA_AI_MILITARY_SAF_egypt_guard_available = {
 	WA_AI_CONFIG_MILITARY_is_commonwealth_egypt_guard = yes
 	is_ai = yes
-	num_divisions > 4
+	# a small SAF army can still carry El Alamein once its realistic landing threats are gone:
+	# Italy beaten out of Africa, or Japan stopped at RAJ's Burma wall.
+	OR = {
+		num_divisions > 4
+		AND = {
+			num_divisions > 2
+			NOT = { WA_AI_MILITARY_SAF_italian_landing_threat = yes }
+			NOT = { WA_AI_MILITARY_SAF_japanese_landing_threat = yes }
+		}
+	}
 	WA_AI_MILITARY_commonwealth_fights_with_eng = yes
 	WA_AI_MILITARY_ENG_el_alamein_guard_active = yes
 	WA_AI_MILITARY_ENG_el_alamein_destination_available = yes
