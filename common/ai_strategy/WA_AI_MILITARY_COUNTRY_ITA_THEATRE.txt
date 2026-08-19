@@ -273,15 +273,23 @@ WA_AI_MILITARY_ITA_protect_periphery_THEATRE = {
 	}
 }
 
-# purpose: garrison Albania only while an enemy can still enter the Adriatic through Otranto. Once
-#          the two gate controllers are not fighting each other, and every Italian enemy is at war
-#          with the controller of either required gate province (11998 in Calabria / 11767 in
-#          Albania), the strait rule denies that enemy naval access and this rear-area reserve
-#          aborts. It returns if Otranto becomes contested or one enemy has neutral access again.
-#          Kept separate so the Otranto gate never disables the Southern-France or Greek buffers.
-# range:   0.10 (E4)
+# purpose: garrison the ground behind Otranto only while an enemy can still enter the Adriatic
+#          through it. Once the two gate controllers are not fighting each other, and every Italian
+#          enemy is at war with the controller of either required gate province (11998 in Calabria /
+#          11767 in Albania), the strait rule denies that enemy naval access and this rear-area
+#          reserve aborts. It returns if Otranto becomes contested or one enemy has neutral access
+#          again. Kept separate so the Otranto gate never disables the Southern-France or Greek
+#          buffers.
+# range:   0.10 / 0.06 (E4)
 # policy:  Additive per state
 # domain:  THEATRE
+#
+# Fix 109 (2026-08-19): the block covered Albania alone, so the rest of the shore behind Otranto was
+# left to the engine - which held Split, Zadar and Gorski Kotar with its OWN area-defence orders on
+# campaign 07270b64 while the strait was shut and this block had correctly aborted. Order 9613 puts
+# that shore under the same gate; Fix 108 is the other half, restoring the `garrison = -5000` that
+# stops the engine doing it anyway. The shore states sit in strategic region 24, already inside
+# `area = central_balkans` - no new ai_area, the engine's 72-definition budget is full. Checklist R75.
 WA_AI_MILITARY_ITA_protect_adriatic_gate_THEATRE = {
 	allowed = {
 		tag = ITA
@@ -306,6 +314,28 @@ WA_AI_MILITARY_ITA_protect_adriatic_gate_THEATRE = {
 		area = central_balkans
 		# pool: rear-area reserve; an active Balkan front replaces, rather than adds to, it
 		subtract_fronts_from_need = yes
+		subtract_invasions_from_need = no
+	}
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 9613
+		# Fix 109: the eastern Adriatic shore behind Otranto. Istria and Primorska head the list
+		# because they are the deepest a landing here can cut; Zadar and Split are the ports. If Italy
+		# holds none of them the strategy is simply invalid (documentation.info: "if no state is
+		# friendly, strat is invalid"), which is what makes the list safe in an ahistorical Balkans.
+		states = {
+			736  # Istria
+			886  # Primorska
+			1022 # Gorski Kotar
+			163  # Zadar
+			908  # Split
+		}
+		ratio = 0.06
+		area = central_balkans
+		# pool: Fix 109 - this IS the anti-landing reserve of the shore, so unlike the Albanian buffer
+		# above it must not be subtracted away by a partisan / Balkan front inland (lessons-log
+		# put_unit_buffers entry)
+		subtract_fronts_from_need = no
 		subtract_invasions_from_need = no
 	}
 }
