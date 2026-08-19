@@ -60,6 +60,15 @@ If your rule genuinely needs a new category, **add the trigger to `WA_AI_CONFIG.
 
 Before writing a tag anywhere else, reformulate the rule as an archetype question: not "is this Germany?" but "is this a major Axis land power with a western border threat?". If the question can be asked that way, it belongs in CONFIG. The Country layer exists only for behaviour genuinely unique to one nation, and even then ask the archetype question first.
 
+### Two meanings of “historical” — choose by outcome
+
+| Intent | Trigger |
+| --- | --- |
+| Preserve the sequence of WW2 events and campaigns — WA Historical AI Difficulty | `WA_AI_DIFFICULTY_is_historical` |
+| Preserve the WW2 setup — vanilla Historical AI Focuses | `is_historical_focus_on` |
+
+Do not choose from the word “historical” alone. Classify the outcome first. If the outcome changes the setup, use the vanilla trigger: the victor of the Italo-Ethiopian war is the canonical example. If setup versus sequence remains ambiguous, ask the user for examples before choosing a gate.
+
 ## Design for ahistorical games
 
 The mod supports historical and ahistorical setups; AI code that assumes the historical script leaves *gaps* — countries or situations with no behaviour at all — the moment a game diverges. This is the most common way otherwise-correct AI code fails in real campaigns.
@@ -68,7 +77,7 @@ Concretely:
 
 - **Gate on state, not on story.** Faction membership (`WA_AI_MILITARY_is_<faction>_member`), `has_war_with`, ideology, capability, and geography are dynamic and survive divergence. "It is 1941 so Barbarossa is coming" does not. If an `enable = {}` only becomes true on the historical path, the block is a gap generator.
 - **Every situation needs a floor.** For each behaviour, ask: *what does a country in this situation do if none of the specific rules match?* If the answer is "nothing", add or extend a Default-layer / generic fallback so the AI degrades to sane generic play instead of no play. This is why the layer model is Default-first: the Default layer *is* the gap prevention.
-- **Historical mode tunes, it does not gate existence.** `WA_AI_DIFFICULTY_is_historical` and similar may adjust weights, timings, or aggression — but a behaviour that exists only under historical mode (or only under ahistorical) needs an explicit justification, because whichever mode lacks it has a gap.
+- **Historical tuning does not gate existence.** Either historical axis may adjust weights, timings, aggression, or a required setup outcome — but a behaviour that exists only under one mode needs an explicit justification, because the other mode still needs a generic fallback.
 - **Test the divergent scenario in your head.** When writing or reviewing a rule, walk at least one ahistorical case through it: the target country never joins its historical faction, the war starts two years late, the historical victim already capitulated. If the rule misfires or goes silent, restate its gate in terms of the actual strategic situation.
 - **Composition over special cases.** A new situation should be covered because archetype triggers and shared effects compose to cover it, not because someone hand-wrote a rule for that situation. If covering a scenario requires a new one-off block, check whether the real fix is a more general archetype trigger.
 
