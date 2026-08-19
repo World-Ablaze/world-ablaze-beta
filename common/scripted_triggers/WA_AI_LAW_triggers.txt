@@ -1934,35 +1934,6 @@ WA_AI_can_take_export_focus = {
 		NOT = { OVERLORD = { has_completed_focus = ENG_new_imperial_parliament } }
 	}
 }
-# Is dropping to limited_exports worth more than the sales it costs?
-# Reads WA_AI_LAW_limited_exports_net_gain (net civilian-factory equivalents) written on the same
-# ~2-day pulse, just before this chain runs; the model and its biases are that effect's header.
-# The bar is ONE factory because trade is committed in whole factories - a smaller net cannot be
-# realised by any purchase. The variable is 0 for a country already at limited_exports or below,
-# so this can only widen the door, never open one that leads nowhere.
-# NOT-less-than, not `var =/value =/compare =`: only the SHORT check_variable form is validated
-# with `constant:` (wa-constants-registry validated-contexts table; 70 shipped sites, none long).
-WA_AI_LAW_export_recovery_pays = {
-	NOT = {
-		check_variable = { WA_AI_LAW_limited_exports_net_gain < constant:wa_ai_resource.trade_law.min_net_gain }
-	}
-
-	# FAIL-CLOSED belt on the loss term. The score's only brake is `resource_exported@<r>`, and an
-	# unrecognised script variable reads 0, not "unknown" - so a token that does not resolve would
-	# zero every loss and admit every producer silently. Refuse unless at least one scored resource
-	# reported non-zero realised sales. COST, stated: a country that genuinely exports nothing is
-	# refused too. Remove this clause the day the token is probed in game (the falsifier is in the
-	# effect's header); until then it is the difference between failing shut and failing open.
-	check_variable = { WA_AI_LAW_export_sold_seen > 0 }
-
-	# WA_AI_upgrade_trade_law writes this flag on every law change to damp thrash, and - MEASURED
-	# 2026-08-19 - NOTHING reads it: one occurrence mod-wide, the set_country_flag itself. So there
-	# is no brake on trade-law thrash at all. Honoured here for the NEW path only; adding it to the
-	# pre-existing thresholds would freeze every country's law ladder for a year, which is not a
-	# side effect to ship inside this change. The general case is queued.
-	NOT = { has_country_flag = WA_AI_trade_law_recently_changed }
-}
-
 WA_AI_can_take_limited_exports = {
 	########## AI LOGIC
 
@@ -2041,21 +2012,17 @@ WA_AI_can_take_limited_exports = {
 
 	### normal range: >= 60%
 	#
-	# Two ways to earn the switch since 2026-08-19: the old one ("need is high AND trading cannot
-	# close it" - the two clauses below, unchanged), and WA_AI_LAW_export_recovery_pays ("the switch
-	# is worth more than the sales it costs"). The second exists because the first cannot see a
-	# glutted market. It bypasses ONLY these two clauses; pp priority and LAW REQUIREMENTS still
-	# apply to it. Two short-circuits rather than `OR = { AND = { ... } ... }` because that shape
-	# needs an `if` inside an explicit AND and the mod has no such precedent in a trigger;
-	# `(R or A) and (R or B)` is `R or (A and B)`.
+	# These two clauses are the ONLY way in, and they cannot see whether the export pool finds a
+	# buyer. A second, market-aware path was built here on 2026-08-19 and REMOVED the same day:
+	# it needed the amount a country actually SELLS, and no script token exposes it -
+	# `resource_exported@<r>` returns the amount OFFERED (= `to_export`), MEASURED against
+	# `test_BHU_1943_04_01_04` on 12 of 12 readings, SWE reading 123 offered while selling 0.
+	# Do not rebuild it on that token. See the QUEUE row on Fix 102, which has the same bug.
 
-	OR = {
-		WA_AI_LAW_export_recovery_pays = yes
-		check_variable = { var = WA_AI_average_resource_need value = 0.60 compare = greater_than_or_equals }
-	}
+	check_variable = { var = WA_AI_average_resource_need value = 0.60 compare = greater_than_or_equals }
 
 	# when switching down, see if the AI can't fulfill needs by trading
-	if = { limit = { OR = { has_idea = free_trade has_idea = export_focus } NOT = { WA_AI_LAW_export_recovery_pays = yes } }
+	if = { limit = { OR = { has_idea = free_trade has_idea = export_focus } }
 
 		count_triggers = {
 			amount = 2

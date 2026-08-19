@@ -652,11 +652,19 @@ WA_AI_check_resource_needs = {
 	#    offers nothing at all (HUN 1946.4: produced 4563, transfer -4563, offered 0).
 	# Net cost of those biases: 9 false fires and 11 false blocks against 166 false blocks for the
 	# balance-sign gate this replaces.
-	# ASSUMED, NOT PROVEN: that resource_produced@<r> and resource_exported@<r> return the save's
-	# `produced` and `exported` columns. Both tokens ship in WA code already, but their semantics
-	# were not probed in-game - and resource@<r> is precedent for a token meaning something other
-	# than its same-named column.
-	# FALSIFIER: a producer whose exported/to_export approaches 1 while this reads 0.
+	# DISPROVEN 2026-08-19, and this effect is WRONG because of it. The assumption used to read
+	# "resource_exported@<r> returns the save's `exported` column". It does not - it returns
+	# `to_export`, the amount the country is FORCED TO OFFER. Probed in game against
+	# test_BHU_1943_04_01_04 at 1943.4: 12 readings of 12 match to_export to the unit, and
+	# Sweden reads 123 offered steel while its `exported` column is 0.
+	# CONSEQUENCE: the subtraction below computes `f x produced - f x (produced + transfer)`,
+	# i.e. `-f x transfer`, which is <= 0 for every country not feeding an overlord - always
+	# under one quantum. So WA_AI_coop_can_supply_<r> reads 1 for every country whose OFFER
+	# clears one quantum, whether or not a single unit of it is bought: the sold-out test this
+	# effect exists to perform does not happen. NOT fixed here - see the QUEUE row.
+	# The old falsifier was the wrong way round; the symptom is "reads 1 for everyone".
+	# resource_produced@<r> and resource_imported@<r> were probed at the same time and DO match
+	# their columns.
 
 	set_temp_variable = { _wa_coop_f_ = 0 }
 	if = { limit = { has_idea = free_trade }      set_temp_variable = { _wa_coop_f_ = constant:wa_ai_resource.min_export.free_trade } }
