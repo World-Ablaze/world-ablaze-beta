@@ -140,6 +140,8 @@ WA_AI_upgrade_conscription_law = {
 WA_AI_upgrade_trade_law = {
 	WA_AI_calculate_resource_need = yes
 
+	WA_AI_LAW_calculate_export_recovery = yes
+
     if = {
 		limit = {
 			WA_AI_can_upgrade_trade_law = yes
@@ -195,7 +197,7 @@ WA_AI_calculate_resource_need = {
 
 	### ALUMINIUM
 
-	if = { limit = { check_variable = { resource_produced@aluminium > 75 } }
+	if = { limit = { check_variable = { resource_produced@aluminium > constant:wa_ai_resource.trade_law.resource_floor } }
 
 		set_temp_variable = { WA_AI_aluminium_needed = resource_consumed@aluminium }
 		if = { limit = { check_variable = { resource@aluminium < 0 } }
@@ -212,7 +214,7 @@ WA_AI_calculate_resource_need = {
 
 	### RUBBER
 
-	if = { limit = { check_variable = { resource_produced@rubber > 75 } }
+	if = { limit = { check_variable = { resource_produced@rubber > constant:wa_ai_resource.trade_law.resource_floor } }
 
 		set_temp_variable = { WA_AI_rubber_needed = resource_consumed@rubber }
 		if = { limit = { check_variable = { resource@rubber < 0 } }
@@ -229,7 +231,7 @@ WA_AI_calculate_resource_need = {
 
 	### TUNGSTEN
 
-	if = { limit = { check_variable = { resource_produced@tungsten > 75 } }
+	if = { limit = { check_variable = { resource_produced@tungsten > constant:wa_ai_resource.trade_law.resource_floor } }
 
 		set_temp_variable = { WA_AI_tungsten_needed = resource_consumed@tungsten }
 		if = { limit = { check_variable = { resource@tungsten < 0 } }
@@ -246,7 +248,7 @@ WA_AI_calculate_resource_need = {
 
 	### STEEL
 
-	if = { limit = { check_variable = { resource_produced@steel > 75 } }
+	if = { limit = { check_variable = { resource_produced@steel > constant:wa_ai_resource.trade_law.resource_floor } }
 
 		set_temp_variable = { WA_AI_steel_needed = resource_consumed@steel }
 		if = { limit = { check_variable = { resource@steel < 0 } }
@@ -263,7 +265,7 @@ WA_AI_calculate_resource_need = {
 
 	### CHROMIUM
 
-	if = { limit = { check_variable = { resource_produced@chromium > 75 } }
+	if = { limit = { check_variable = { resource_produced@chromium > constant:wa_ai_resource.trade_law.resource_floor } }
 
 		set_temp_variable = { WA_AI_chromium_needed = resource_consumed@chromium }
 		if = { limit = { check_variable = { resource@chromium < 0 } }
@@ -280,7 +282,7 @@ WA_AI_calculate_resource_need = {
 
 	### COAL
 
-		if = { limit = { check_variable = { resource_produced@coal > 75 } }
+		if = { limit = { check_variable = { resource_produced@coal > constant:wa_ai_resource.trade_law.resource_floor } }
 
 		set_temp_variable = { WA_AI_coal_needed = resource_consumed@coal }
 		if = { limit = { check_variable = { resource@coal < 0 } }
@@ -297,7 +299,7 @@ WA_AI_calculate_resource_need = {
 
 	### BAUXITE
 
-		if = { limit = { check_variable = { resource_produced@bauxite > 75 } }
+		if = { limit = { check_variable = { resource_produced@bauxite > constant:wa_ai_resource.trade_law.resource_floor } }
 
 		set_temp_variable = { WA_AI_bauxite_needed = resource_consumed@bauxite }
 		if = { limit = { check_variable = { resource@bauxite < 0 } }
@@ -314,7 +316,7 @@ WA_AI_calculate_resource_need = {
 
 	### IRON
 
-		if = { limit = { check_variable = { resource_produced@iron > 75 } }
+		if = { limit = { check_variable = { resource_produced@iron > constant:wa_ai_resource.trade_law.resource_floor } }
 
 		set_temp_variable = { WA_AI_iron_needed = resource_consumed@iron }
 		if = { limit = { check_variable = { resource@iron < 0 } }
@@ -332,4 +334,184 @@ WA_AI_calculate_resource_need = {
 	###
 
 	divide_variable = { WA_AI_average_resource_need = WA_AI_resource_count }
+}
+
+# Would dropping to limited_exports pay for itself? Scores it in CIVILIAN-FACTORY equivalents and
+# writes WA_AI_LAW_limited_exports_net_gain, read by WA_AI_LAW_export_recovery_pays (triggers file).
+#
+# WHY a second metric beside WA_AI_average_resource_need. That one is `mean( demand_r / production_r )`
+# and answers "how tight am I overall". It cannot answer "should I stop exporting": it never looks at
+# whether the export pool finds a buyer, and it averages a surplus resource against a short one. In
+# a glutted market a country can be forced to dump four fifths of its offer unsold while starving.
+#
+# THE TRADE, per resource. Dropping the floor to 0.25 keeps (f_now - 0.25) x production at home.
+# Those units are BOTH a domestic gain and a lost sale - the same unit on both sides, which is why
+# the terms are subtracted rather than one gating the other. Gain is capped by what we are short of
+# (keeping a resource already spare is worth zero); loss is only the part of current sales the
+# smaller pool cannot cover. cic converts both to civilian factories, so coal and aluminium compare.
+#
+# THE POOL BASE IS PRODUCTION, NOT SUPPLY. MEASURED (campaign figures and the rival bases are in
+# the checklist item): to_export = min_export x (resource_produced + transfer_overlord_subject).
+# IMPORTS ARE NEVER RE-EXPORTED. Not academic - the first draft of this effect used
+# produced+imported and over-stated one country's recoverable aluminium by 58x.
+#
+# ESTIMATOR, with the same three biases as WA_AI_coop_can_supply_<r> (Fix 102, WA_AI_misc_effects.txt),
+# which asks the mirror-image question from the same tokens:
+#  - transfer_overlord_subject is exposed by no token, so a country fed by subjects is
+#    UNDER-estimated. Checked, not assumed: scoring six dates with the true base and with this one
+#    flips ZERO verdicts, magnitudes only;
+#  - min_export is shifted by leader traits, ideas and dynamic modifiers by up to +/-0.3, and only
+#    the base law value is readable;
+#  - a country whose output is siphoned by transfer before the share is taken offers nothing.
+# The three tokens are engine-documented (install `documentation/dynamic_variables_documentation.md`:
+# `resource` is a SURPLUS, `resource_produced` / `resource_exported` are the country's produced and
+# exported amounts). ASSUMED, NOT PROVEN IN GAME: that they map to the save's same-named columns -
+# `resource@` is precedent for a token meaning something other than its column.
+# FALSIFIER: a country this scores above 1 while its ledger shows the offered share sold out.
+#
+# NOT MODELLED, on purpose: the two laws differ in industrial modifiers as well
+# (industrial_capacity_factory/_dockyard +0.10 -> +0.05, research +0.05 -> +0.01), a cost of the
+# same order as the gain scored here. Its counterweight is the shortage penalty
+# PRODUCTION_RESOURCE_LACK_PENALTY = -0.05 (vanilla, not overridden by WA), whose formula appears in
+# no game file and cannot be recovered from a save. Neither side is quantifiable without the other,
+# so neither is scored - and WA_AI_average_resource_need ignores this axis too, so nothing regresses.
+#
+# Runs on the ~2-day WA_AI_background.0 pulse, immediately before the trigger chain that reads it.
+WA_AI_LAW_calculate_export_recovery = {
+
+	set_variable = { WA_AI_LAW_limited_exports_net_gain = 0 }
+
+	# Realised sales across the scored resources. It exists ONLY so the trigger can tell "this
+	# country genuinely sells nothing" from "resource_exported@<r> did not resolve" - an
+	# unrecognised script variable reads 0, which would zero every loss term and turn the guard
+	# below into a fail-OPEN. Lift this belt once the token is probed in game.
+	set_variable = { WA_AI_LAW_export_sold_seen = 0 }
+
+	# The share of its own production this country is already forced to offer.
+	set_temp_variable = { _wa_law_f_now_ = 0 }
+	if = { limit = { has_idea = free_trade }
+		set_temp_variable = { _wa_law_f_now_ = constant:wa_ai_resource.min_export.free_trade }
+	}
+	else_if = { limit = { has_idea = export_focus }
+		set_temp_variable = { _wa_law_f_now_ = constant:wa_ai_resource.min_export.export_focus }
+	}
+	# limited_exports, closed_economy and "no trade-law idea at all" land nowhere on purpose: there
+	# is no tier below to drop to, the score stays 0, and the trigger reading it can never fire.
+	# Stated as a case rather than left to arithmetic, so a country on a modded law is not scored
+	# with someone else's fraction.
+
+	if = {
+		limit = { check_variable = { _wa_law_f_now_ > constant:wa_ai_resource.min_export.limited_exports } }
+
+		# units kept at home per unit of production
+		set_temp_variable = { _wa_law_keep_ = _wa_law_f_now_ }
+		subtract_from_temp_variable = { _wa_law_keep_ = constant:wa_ai_resource.min_export.limited_exports }
+
+		# The same eight resources as WA_AI_calculate_resource_need above, for the same reason:
+		# oil is fuel, its balance is read on a different axis, and including it changed no verdict
+		# on any of the six dates tested.
+
+		### ALUMINIUM
+		set_temp_variable = { _wa_law_base_  = resource_produced@aluminium }
+		set_temp_variable = { _wa_law_sold_  = resource_exported@aluminium }
+		set_temp_variable = { _wa_law_short_ = resource@aluminium }
+		set_temp_variable = { _wa_law_cic_   = constant:wa_ai_resource.cic.aluminium }
+		WA_AI_LAW_score_one_export_recovery = yes
+
+		### RUBBER
+		set_temp_variable = { _wa_law_base_  = resource_produced@rubber }
+		set_temp_variable = { _wa_law_sold_  = resource_exported@rubber }
+		set_temp_variable = { _wa_law_short_ = resource@rubber }
+		set_temp_variable = { _wa_law_cic_   = constant:wa_ai_resource.cic.rubber }
+		WA_AI_LAW_score_one_export_recovery = yes
+
+		### TUNGSTEN
+		set_temp_variable = { _wa_law_base_  = resource_produced@tungsten }
+		set_temp_variable = { _wa_law_sold_  = resource_exported@tungsten }
+		set_temp_variable = { _wa_law_short_ = resource@tungsten }
+		set_temp_variable = { _wa_law_cic_   = constant:wa_ai_resource.cic.tungsten }
+		WA_AI_LAW_score_one_export_recovery = yes
+
+		### STEEL
+		set_temp_variable = { _wa_law_base_  = resource_produced@steel }
+		set_temp_variable = { _wa_law_sold_  = resource_exported@steel }
+		set_temp_variable = { _wa_law_short_ = resource@steel }
+		set_temp_variable = { _wa_law_cic_   = constant:wa_ai_resource.cic.steel }
+		WA_AI_LAW_score_one_export_recovery = yes
+
+		### CHROMIUM
+		set_temp_variable = { _wa_law_base_  = resource_produced@chromium }
+		set_temp_variable = { _wa_law_sold_  = resource_exported@chromium }
+		set_temp_variable = { _wa_law_short_ = resource@chromium }
+		set_temp_variable = { _wa_law_cic_   = constant:wa_ai_resource.cic.chromium }
+		WA_AI_LAW_score_one_export_recovery = yes
+
+		### COAL
+		set_temp_variable = { _wa_law_base_  = resource_produced@coal }
+		set_temp_variable = { _wa_law_sold_  = resource_exported@coal }
+		set_temp_variable = { _wa_law_short_ = resource@coal }
+		set_temp_variable = { _wa_law_cic_   = constant:wa_ai_resource.cic.coal }
+		WA_AI_LAW_score_one_export_recovery = yes
+
+		### BAUXITE
+		set_temp_variable = { _wa_law_base_  = resource_produced@bauxite }
+		set_temp_variable = { _wa_law_sold_  = resource_exported@bauxite }
+		set_temp_variable = { _wa_law_short_ = resource@bauxite }
+		set_temp_variable = { _wa_law_cic_   = constant:wa_ai_resource.cic.bauxite }
+		WA_AI_LAW_score_one_export_recovery = yes
+
+		### IRON
+		set_temp_variable = { _wa_law_base_  = resource_produced@iron }
+		set_temp_variable = { _wa_law_sold_  = resource_exported@iron }
+		set_temp_variable = { _wa_law_short_ = resource@iron }
+		set_temp_variable = { _wa_law_cic_   = constant:wa_ai_resource.cic.iron }
+		WA_AI_LAW_score_one_export_recovery = yes
+	}
+
+	if = { limit = { has_country_flag = WA_AI_logging check_variable = { WA_AI_LAW_limited_exports_net_gain > constant:wa_ai_resource.trade_law.min_net_gain } }
+		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | TRADE LAW: limited_exports would pay [?WA_AI_LAW_limited_exports_net_gain] civ-equivalents (script)"
+	}
+}
+
+# One resource of WA_AI_LAW_calculate_export_recovery. Kept separate so the eight blocks above are
+# eight data rows instead of eight copies of arithmetic that must be kept identical by hand.
+# INPUT  (temp, set by the caller): _wa_law_base_ (resource_produced@r), _wa_law_sold_
+#        (resource_exported@r), _wa_law_short_ (resource@r - net available MINUS unmet demand, the
+#        ledger's EFFECTIVE column, negative when short; see the 2026-08-13 lessons entry),
+#        _wa_law_cic_ (civ factories per unit), _wa_law_keep_ (share kept by the switch).
+# OUTPUT: adds cic x (gain - loss) to WA_AI_LAW_limited_exports_net_gain. Country scope.
+WA_AI_LAW_score_one_export_recovery = {
+
+	if = {
+		limit = { check_variable = { _wa_law_base_ > constant:wa_ai_resource.trade_law.resource_floor } }
+
+		# What we are short of: resource@r is available minus demand, so negate and floor at 0.
+		# The cap at production is only there because clamp is used with both bounds throughout.
+		set_temp_variable = { _wa_law_want_ = _wa_law_short_ }
+		multiply_temp_variable = { _wa_law_want_ = -1 }
+		clamp_temp_variable = { var = _wa_law_want_ min = 0 max = _wa_law_base_ }
+
+		# GAIN: units the tighter floor keeps at home, worth nothing beyond the shortfall itself.
+		set_temp_variable = { _wa_law_gain_ = _wa_law_base_ }
+		multiply_temp_variable = { _wa_law_gain_ = _wa_law_keep_ }
+		clamp_temp_variable = { var = _wa_law_gain_ min = 0 max = _wa_law_want_ }
+		multiply_temp_variable = { _wa_law_gain_ = _wa_law_cic_ }
+		add_to_variable = { WA_AI_LAW_limited_exports_net_gain = _wa_law_gain_ }
+
+		# LOSS: sales the smaller pool can no longer cover. Precisely what it checks, and no more:
+		# ROOT's OWN realised sales at the instant of the switch, once, with no re-evaluation
+		# afterwards. It is not a guarantee about the future - after the switch the pool is
+		# smaller, so `resource_exported@` falls BECAUSE of the switch and the country can no
+		# longer tell "nobody wanted it" from "I stopped offering it". Nothing re-checks the ally
+		# that was buying. The t0/t1/t2 timeline for that is owed, not supplied.
+		# Per-country evidence lives in the checklist item.
+		add_to_variable = { WA_AI_LAW_export_sold_seen = _wa_law_sold_ }
+		set_temp_variable = { _wa_law_pool_ = _wa_law_base_ }
+		multiply_temp_variable = { _wa_law_pool_ = constant:wa_ai_resource.min_export.limited_exports }
+		set_temp_variable = { _wa_law_loss_ = _wa_law_sold_ }
+		subtract_from_temp_variable = { _wa_law_loss_ = _wa_law_pool_ }
+		clamp_temp_variable = { var = _wa_law_loss_ min = 0 max = _wa_law_sold_ }
+		multiply_temp_variable = { _wa_law_loss_ = _wa_law_cic_ }
+		subtract_from_variable = { WA_AI_LAW_limited_exports_net_gain = _wa_law_loss_ }
+	}
 }
