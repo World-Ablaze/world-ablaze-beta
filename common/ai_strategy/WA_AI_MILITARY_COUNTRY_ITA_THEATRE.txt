@@ -207,12 +207,13 @@ WA_AI_MILITARY_ITA_abandon_north_africa_THEATRE = {
 	}
 }
 
-# purpose: Fix 96 - the Balkan and Libyan garrisons of the former ITA_protect_home block (its Italian
-#          home buffers moved to WA_AI_MILITARY_REGION_ITALY_THEATRE.txt, tag-free, tiered). Gate was
-#          `date > 1938` + (own war or FRA/ENG at war): now the war state itself. Libya buffer only
-#          while a bridgehead port is ours and the home is not invaded (otherwise it is a buffer on
-#          ground we are abandoning).
-# range:   0.10 / 0.15 / 0.25 (E4)
+# purpose: Italy garrisons friendly rear-area ground in Southern France and Greece when applicable.
+#          The seven Greek 1936 states replace the former four-state subset; Dodecanese stays because
+#          it was already part of this Italian periphery. Each sector has an independent order_id:
+#          save measurement leaves cross-block order_id arbitration unknown. These buffers yield to
+#          a land front in their own area: the front then supplies the defenders instead of the rear
+#          reserve duplicating them. The Albania/Otranto gate is the separate block below.
+# range:   0.10 / 0.15 (E4)
 # policy:  Additive per state
 # domain:  THEATRE
 WA_AI_MILITARY_ITA_protect_periphery_THEATRE = {
@@ -231,27 +232,80 @@ WA_AI_MILITARY_ITA_protect_periphery_THEATRE = {
 
 	ai_strategy = {
 		type = put_unit_buffers
-		order_id = 1
-		# central_balkans
+		order_id = 9610
+		# Southern France (strategic region 20)
 		states = {
-			44
+			20
+			21
+			22
+			25
+			26
+			31
+			32
+			33
+			735
 		}
 		ratio = 0.1
-		area = central_balkans
+		area = south_france
+		# pool: rear-area reserve; an active front in Southern France replaces, rather than adds to, it
+		subtract_fronts_from_need = yes
 		subtract_invasions_from_need = no
 	}
 	ai_strategy = {
 		type = put_unit_buffers
-		order_id = 1
-		# south_balkans
+		order_id = 9611
+		# Greece's seven 1936 states, plus the Italian Dodecanese retained from the former block
 		states = {
+			47
+			184
 			185
 			186
+			187
 			182
+			731
 			164
 		}
 		ratio = 0.15
 		area = south_balkans
+		# pool: rear-area reserve; an active Greek front replaces, rather than adds to, it
+		subtract_fronts_from_need = yes
+		subtract_invasions_from_need = no
+	}
+}
+
+# purpose: garrison Albania only while an enemy can still enter the Adriatic through Otranto. Once
+#          the two gate controllers are not fighting each other, and every Italian enemy is at war
+#          with the controller of either required gate province (11998 in Calabria / 11767 in
+#          Albania), the strait rule denies that enemy naval access and this rear-area reserve
+#          aborts. It returns if Otranto becomes contested or one enemy has neutral access again.
+#          Kept separate so the Otranto gate never disables the Southern-France or Greek buffers.
+# range:   0.10 (E4)
+# policy:  Additive per state
+# domain:  THEATRE
+WA_AI_MILITARY_ITA_protect_adriatic_gate_THEATRE = {
+	allowed = {
+		tag = ITA
+	}
+	enable = {
+		OR = {
+			has_war = yes
+			any_other_country = { is_major = yes has_war = yes }
+		}
+		WA_AI_MILITARY_ethiopian_war_finished = yes
+		NOT = { WA_AI_MILITARY_otranto_closed_to_our_enemies = yes }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 9612
+		states = {
+			44 # Albania - the only existing ITA periphery buffer behind Otranto
+		}
+		ratio = 0.10
+		area = central_balkans
+		# pool: rear-area reserve; an active Balkan front replaces, rather than adds to, it
+		subtract_fronts_from_need = yes
 		subtract_invasions_from_need = no
 	}
 }

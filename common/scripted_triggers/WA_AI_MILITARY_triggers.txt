@@ -750,6 +750,37 @@ WA_AI_MILITARY_owns_italy_mainland = {
 	}
 }
 
+# THIS = COUNTRY. Script-side mirror of the Strait of Otranto access rule in
+# map/adjacency_rules.txt: its required provinces are 11998 (Calabria, state 156) and 11767
+# (Albania, state 44), and `enemy = { navy = no }`. Test the PROVINCES, not their state controllers:
+# a partially occupied state does not prove that the required coast is held. The rule's header says
+# two hostile side controllers make the strait CONTESTED (Otranto allows navy in that state); only an
+# uncontested strait uses enemy status, applied when ANY side controller is at war with the passing
+# country. Therefore the two coast controllers must not be at war, and for EVERY enemy of the
+# enquired country at least one required province must be held by a country at war with that enemy.
+# `has_war` prevents the empty all_enemy_country set from calling a neutral Italy's gate closed.
+# Consumer: ITA_protect_adriatic_gate_THEATRE.
+# If STRAIT_OF_OTRANTO changes its required_provinces or enemy-access rule, this mirror is stale.
+WA_AI_MILITARY_otranto_closed_to_our_enemies = {
+	has_war = yes
+	# If the two exact coast controllers fight each other, Otranto uses `contested = { navy = yes }`.
+	NOT = {
+		any_country = {
+			controls_province = 11998
+			any_enemy_country = { controls_province = 11767 }
+		}
+	}
+	all_enemy_country = {
+		any_country = {
+			has_war_with = PREV
+			OR = {
+				controls_province = 11998
+				controls_province = 11767
+			}
+		}
+	}
+}
+
 ############################################################################################################
 # Fix 96 - the Italian homeland, tag-free (campaign 0edbc955: the peninsula fell Oct-Dec 1943 to 7-12
 # Allied divisions because every Italy rule keyed on tags - ITA/ITL controller lists, `tag = RIT`,

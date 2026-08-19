@@ -106,9 +106,9 @@ For each type: total count, where it currently appears (counts per file), recomm
 - Target: Faction for shared invasion targets; Country for tag-specific overrides.
 - Notes: SOUTH_AMERICA's 19 `invade` entries are flagged for Region layer - check whether they are stay-home suppressors (negative values) or actual invasion targets.
 
-### `put_unit_buffers` (150)
+### `put_unit_buffers` (151)
 
-- Currently in: SOV 34, USA 21, ENG 17, GER 13, CHI 11, RAJ 9, ITA 6, FRA 5, FIN 3, AST 3, CAN 3, ALLIES 3, RCZ 6, JAP 6, MAN 2, RNC 2, SPR 1, MAL 1, GRE 1, HOL 1, POR 1, TUR 1.
+- Currently in: SOV 34, USA 21, ENG 17, GER 13, CHI 11, RAJ 9, ITA 7, FRA 5, FIN 3, AST 3, CAN 3, ALLIES 3, RCZ 6, JAP 6, MAN 2, RNC 2, SPR 1, MAL 1, GRE 1, HOL 1, POR 1, TUR 1.
 - Target: Country (THEATRE domain). Faction layer should not set state-level buffers.
 - Notes: high-volume per-state config. Candidate for tooling-assisted generation in a future phase.
 
