@@ -1,230 +1,27 @@
 ############################################################################################################
-# WA AI Templates Infantry
-# Templates types :
-# - Infantry : 1000-1999
-# - Mountaineers : 2000-2999
-# - Motorized : 3000-3999
-# - Mechanized : 4000-4999
-# - Light Armor : 5000-5999
-# - Medium Armor : 6000-6999
-# - Heavy Armor : 7000-7999
-# - Modern Armor : 8000-8999
-# - Garrison : 9000-9999
-# - Marines : 10000-10999
-# - Airborne : 11000-11999
-# - Mountaineer : 12000-12999
-# - Rangers : 13000-13999
-
-# Naming convention : WA_AI_TEMPLATES_GENERIC_[TEMPLATE_TYPE]_[WIDTH]_[COMPOSITION]_[MOTORIZATION]
-# Compositions :
-# - INF : Infantry only
-# - MIX : Infantry and line support
-# Motorizations :
-# - MOT : Motorized
-# - HRS : Horse-drawn / feet
-
-# WARNING - these target templates must NOT look like a line infantry division.
+# WA AI Templates - THE GARRISON ROLE IS DELIBERATELY GONE (2026-08-19)
 #
-# The engine assigns every existing division template the role whose ENABLED target it
-# matches best, scoring (matched units - per-category oversize) / total target units.
-# This role is upgrade_prio 0 and has no role_ratio share, so the AI desires zero
-# divisions of it - and a template in a role the AI wants zero of is decommissioned and
-# can never be recruited again.
+# There is no `role = garrison` anywhere in common/ai_templates/. The folder is replace_path'd, so
+# vanilla's garrison roles are not loaded either: the role does not exist in a WA game, and no
+# division template can be classified into it. The AI builds infantry instead.
 #
-# That already happened once: when these targets were 10-15x infantry_heavy plus pack
-# artillery and anti-tank REGIMENTAL support, they described a rifle division better than
-# the infantry targets did. SOV's "Strelkovaya Diviziya" scored 0.4167 here against 0.1667
-# on its enabled infantry target, was classified garrison and was decommissioned on
-# 1936.1.7 with 87 divisions using it - frozen at exactly 87 until 1939 (ITA, FIN same).
+# Why. The engine gives every existing template the role whose ENABLED target it matches best, and a
+# template captured by a role the AI wants zero of is decommissioned, never recruited again. SOV's
+# "Strelkovaya Diviziya" froze at exactly 87 divisions from 1936 to 1939 that way; ITA and FIN showed
+# the same symptom. Two target shapes were tried and neither held: cheap light infantry too small to
+# tile a combat width (4f67ea1c0), then heavy infantry sized to the width tiles (a60d5a976, reverted
+# after testing). Removing the role removes the capture mechanism itself, which is the only fix that
+# does not depend on a match score staying on the right side of a margin.
 #
-# By design decision (2026-08-19) the garrison line is heavy infantry again AND is sized to
-# WA's combat-width tiles (10 bn = 20 = one hills/forest/urban tile, 15 bn = 30 = one plains
-# third; artillery and SPG line battalions are combat_width 3 in common/units/ but the tier-0
-# artillery subdoctrine pre_assault_bombardment takes them to 2, which is the width every WA
-# target template is sized against). The battalion counts now equal the infantry targets
-# (10 / 10 / 15), so exactly ONE thing separates a garrison target from a rifle division:
+# Removed together with it - these come back together or not at all:
+#   - `role_ratio id = garrison` in WA_AI_PRODUCTION_DEFAULT_army_composition.txt and its gate
+#     WA_AI_PRODUCTION_build_army_garrison. A share of a role with no target template cannot be
+#     filled, so those 5 points stay with infantry.
+#   - WA_AI_TEMPLATES_calculate_garrison_template, the WA_GARRISON_TEMPLATE flag, template type
+#     code 8 and its scripted localisation. Value range 9000-9999 is free.
 #
-#   garrison has NO regimental_support at all.
-#
-# Every WA infantry target carries pack artillery + anti-tank REGIMENTAL companies. That
-# category is the whole margin. Do not add regimental_support here, and re-check the match
-# scores in `imgui show ai_templates` after any change to this file or to
-# WA_AI_TEMPLATES_infantry.txt.
-#
-# That margin was judged too thin for the three countries that already lost a template to this
-# role, so SOV / ITA / FIN are blocked_for here and served by WA_garrison_role_light at the
-# bottom of the file instead. Every OTHER country runs these heavy targets UNTESTED - the
-# capture check above has not been run for them.
-#
-# There is also no `role_ratio id = garrison` anywhere in common/ai_strategy/, so the AI
-# desires zero garrison divisions - a captured template is decommissioned, not merely idle.
-# See NDefines.NAI.GARRISON_TEMPLATE_SCORE_* - the AI wants cost/suppression to be low.
-WA_garrison_role = {
-	# SOV / ITA / FIN are handled by WA_garrison_role_light below - see the block comment there.
-	# blocked_for / available_for are ENGINE parameters: they take literal tags only, no trigger
-	# and no scripted_trigger, so the AGENTS.md rule "country tags live in WA_AI_CONFIG.txt"
-	# cannot be honoured here. Keep the two lists exactly complementary - the engine's own
-	# ai_templates documentation says a country must target a role from at most one role-level
-	# entry, and two entries claiming the same country is undefined behaviour.
-	blocked_for = {
-		SOV
-		ITA
-		FIN
-	}
-
-	role = garrison
-	upgrade_prio = {
-		base = 0
-		modifier = {
-			add = 100
-			has_army_experience > 100
-		}
-	}
-
-	WA_AI_TEMPLATES_GENERIC_LIGHT_GARRISON_20_INF_HRS = {
-		enable = { has_country_flag = { flag = WA_GARRISON_TEMPLATE value = 9000 } } upgrade_prio = { base = 10 }
-		reinforce_prio = 1
-		custom_icon = 7
-		can_upgrade_in_field = { always = yes }
-		upgrade_prio = { base = 10 }
-		# Stays LIGHT infantry: this target is selected by WA_AI_TEMPLATES_use_heavy_infantry = no
-		# (<= 5 military factories), and infantry_heavy_horse_battalion_line additionally needs
-		# heavy_infantry_equipment, which such a country has no line for.
-		# 10 x combat_width 2 = 20: one tile of hills/forest/urban/marsh, half a plains tile.
-		target_template = {
-			regiments = {
-				infantry_light_horse_battalion_line = 10
-			}
-			support = {
-				engineer_horse_company_divisional = 1
-				artillery_horse_company_divisional = 1
-				military_police_horse_company_divisional = 1
-			}
-		}
-	}
-
-	WA_AI_TEMPLATES_GENERIC_HEAVY_GARRISON_20_INF_HRS = {
-		enable = { has_country_flag = { flag = WA_GARRISON_TEMPLATE value = 9001 } } upgrade_prio = { base = 10 }
-		reinforce_prio = 1
-		custom_icon = 7
-		can_upgrade_in_field = { always = yes }
-		upgrade_prio = { base = 10 }
-		target_template = {
-			regiments = {
-				infantry_heavy_horse_battalion_line = 10
-			}
-			support = {
-				engineer_horse_company_divisional = 1
-				artillery_horse_company_divisional = 1
-				military_police_horse_company_divisional = 1
-			}
-		}
-	}
-
-	WA_AI_TEMPLATES_GENERIC_HEAVY_GARRISON_30_INF_HRS = {
-		enable = { has_country_flag = { flag = WA_GARRISON_TEMPLATE value = 9002 } } upgrade_prio = { base = 10 }
-		reinforce_prio = 1
-		custom_icon = 7
-		can_upgrade_in_field = { always = yes }
-		upgrade_prio = { base = 10 }
-		target_template = {
-			regiments = {
-				infantry_heavy_horse_battalion_line = 15
-			}
-			support = {
-				engineer_horse_company_divisional = 1
-				artillery_horse_company_divisional = 1
-				military_police_horse_company_divisional = 1
-			}
-		}
-	}
-
-}
-
+# NOT removed: occupation garrisons. The AI picks its state-garrison template by scoring all of its
+# own templates (NDefines.NAI.GARRISON_TEMPLATE_SCORE_IC_FACTOR / _MANPOWER_FACTOR - lowest cost per
+# suppression wins), not by the ai_templates role, so occupied territory is still garrisoned. The
+# `garrison` ai_strategy type, which parks divisions on states, is untouched as well.
 ############################################################################################################
-# Safe garrison line for SOV / ITA / FIN
-#
-# These three countries start with an AI-only rifle division that the garrison role captured and
-# decommissioned (see the WARNING above): SOV "Strelkovaya Diviziya" froze at exactly 87 divisions
-# from 1936 to 1939, ITA and FIN showed the same symptom. The heavy garrison targets above are
-# sized like a rifle division on purpose, so they are the shape that caused it.
-#
-# We do NOT try to disarm that with a date gate. Two facts kill that idea:
-#   - the garrison targets are already disabled in week 1 (WA_GARRISON_TEMPLATE is only set once
-#     WA_AI_TEMPLATES_has_infantry_focus_completed is true, i.e. after the country's army focus),
-#     so `enable` demonstrably did not stop the capture;
-#   - the engine reclassifies continuously, so opening the role later only moves the capture to a
-#     date where MORE divisions are riding on the template.
-# blocked_for removes the role-level entry itself, which is strictly stronger than `enable`.
-#
-# What these targets are: the shape proven safe in 4f67ea1c0 - cheap light infantry plus military
-# police, nothing a line division carries, high suppression per IC. They are DELIBERATELY too
-# small to tile a combat width (8 / 12 / 16 against terrain widths of 40/60/90/120/150). That is
-# the point: a garrison sits on a rear province to suppress resistance, it is never meant to hold
-# a front, and a target that cannot fill a tile cannot describe a front-line division either.
-# Do not "fix" these widths, and do not add regimental_support - both are the capture condition.
-############################################################################################################
-WA_garrison_role_light = {
-	available_for = {
-		SOV
-		ITA
-		FIN
-	}
-
-	role = garrison
-	upgrade_prio = {
-		base = 0
-		modifier = {
-			add = 100
-			has_army_experience > 100
-		}
-	}
-
-	WA_AI_TEMPLATES_GENERIC_LIGHT_GARRISON_08_INF_HRS = {
-		enable = { has_country_flag = { flag = WA_GARRISON_TEMPLATE value = 9000 } }
-		reinforce_prio = 1
-		custom_icon = 7
-		can_upgrade_in_field = { always = yes }
-		upgrade_prio = { base = 10 }
-		target_template = {
-			regiments = {
-				infantry_light_horse_battalion_line = 4
-			}
-			support = {
-				military_police_horse_company_divisional = 1
-			}
-		}
-	}
-
-	WA_AI_TEMPLATES_GENERIC_LIGHT_GARRISON_12_INF_HRS = {
-		enable = { has_country_flag = { flag = WA_GARRISON_TEMPLATE value = 9001 } }
-		reinforce_prio = 1
-		custom_icon = 7
-		can_upgrade_in_field = { always = yes }
-		upgrade_prio = { base = 10 }
-		target_template = {
-			regiments = {
-				infantry_light_horse_battalion_line = 6
-			}
-			support = {
-				military_police_horse_company_divisional = 1
-			}
-		}
-	}
-
-	WA_AI_TEMPLATES_GENERIC_LIGHT_GARRISON_16_INF_HRS = {
-		enable = { has_country_flag = { flag = WA_GARRISON_TEMPLATE value = 9002 } }
-		reinforce_prio = 1
-		custom_icon = 7
-		can_upgrade_in_field = { always = yes }
-		upgrade_prio = { base = 10 }
-		target_template = {
-			regiments = {
-				infantry_light_horse_battalion_line = 8
-			}
-			support = {
-				military_police_horse_company_divisional = 1
-			}
-		}
-	}
-}

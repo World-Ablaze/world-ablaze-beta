@@ -55,11 +55,14 @@ Keep numeric values inside the existing family ranges. The value is stored on th
 | Medium Armor | `6000-6999` | `WA_MEDIUM_ARMOR_TEMPLATE` | `5` |
 | Heavy Armor | `7000-7999` | `WA_HEAVY_ARMOR_TEMPLATE` | `6` |
 | Modern Armor | `8000-8999` | `WA_MODERN_ARMOR_TEMPLATE` | `7` |
-| Garrison | `9000-9999` | `WA_GARRISON_TEMPLATE` | `8` |
 | Marines | `10000-10999` | `WA_MARINES_TEMPLATE` | `9` |
 | Airborne | `11000-11999` | `WA_AIRBORNE_TEMPLATE` | `10` |
 | Rangers | `13000-13999` | `WA_RANGERS_TEMPLATE` | `12` |
 | Suppression | `14000-14999` | `WA_SUPPRESSION_TEMPLATE` | `13` |
+
+The garrison family (`9000-9999`, type code `8`) was removed on 2026-08-19 together with the
+`role = garrison` entry, its `role_ratio` share and its flag. Both range and code are free.
+See the header of `common/ai_templates/WA_AI_TEMPLATES_garrison.txt` before reusing either.
 
 Airborne and rangers currently have reserved type codes in `common/scripted_localisation/WA_AI_templates_scripted_loc.txt`, but no active calculator or `common/ai_templates/WA_AI_TEMPLATES_<family>.txt` file in the current system. Treat them as new families if implementing them.
 
@@ -288,7 +291,7 @@ Army composition triggers:
 - Armor: `WA_AI_PRODUCTION_build_army_light_armor`, `WA_AI_PRODUCTION_build_army_medium_armor`, `WA_AI_PRODUCTION_build_army_heavy_armor`, `WA_AI_PRODUCTION_build_army_modern_armor`.
 - Mobile: `WA_AI_PRODUCTION_build_army_motorized`, `WA_AI_PRODUCTION_build_army_mechanized`, `WA_AI_PRODUCTION_build_army_expeditionary_mechanization` (extra -30 infantry / +30 mechanized shift for `WA_AI_CONFIG_DIVISIONS_is_expeditionary_mechanized_major` countries, currently only the USA — historical games, or post-1942 with no enemy on the border — capping infantry near 30% of the ratio total).
 - Special forces: `WA_AI_PRODUCTION_build_army_marines`, `WA_AI_PRODUCTION_build_army_mountaineers`.
-- Garrison and support: `WA_AI_PRODUCTION_build_army_garrison`, `WA_AI_PRODUCTION_build_army_cavalry`.
+- Support: `WA_AI_PRODUCTION_build_army_cavalry` (currently `always = no`).
 
 In `WA_AI_PRODUCTION_DEFAULT_army_composition.txt`, keep role-ratio strategies additive. The current base is infantry `100`; each role modifier subtracts from infantry and adds the same amount to the new role.
 
