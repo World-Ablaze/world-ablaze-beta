@@ -180,3 +180,76 @@ country_event = {
 
 	option = {}
 }
+
+############################################################################################################
+#	Boot test 301 - the relief legs in their REAL scope shape (THIS = donor, ROOT = recipient),
+#	which wa_test.300 does not reproduce: it renders a send from one scope, this one runs the
+#	shipped legs through the same random_other_country hop the weekly pull uses.
+#	Console: `tag ROM` (ROOT = the RECIPIENT), `ae -20000` to push ROM under the starve bars if
+#	needed, then `event wa_test.301`. GER needs the surplus: tag GER, `ae 60000`, `ae 3000` convoys.
+#	Read game.log for four lines:
+#	  1. SCOPE PROBE  - 4242 = a temp set inside ROOT = { } is readable in the donor scope,
+#	                    0 = it is not, and every leg that writes an input on ROOT is broken.
+#	  2. land access  - path_ok = 1 means the type-3 A* found ROM from GER. Campaign 07270b64 had
+#	                    llr_donor_selected_n = llr_path_refused_n on all 94 recipients, i.e. 0
+#	                    successes in ten years; this line says whether the A* is entered at all.
+#	  3./4. infantry / convoy - amount = 0 means the leg never called send_equipment; after = stock
+#	                    means the send did not land OR num_equipment@ does not see it in-tick.
+#	                    Cross-check ROM's stockpile and convoy fleet after the event either way.
+############################################################################################################
+
+country_event = {
+	id = wa_test.301
+
+	hidden = yes
+	is_triggered_only = yes
+
+	immediate = {
+		set_country_flag = WA_AI_logging
+		set_country_flag = WA_AI_pathfind_logging
+
+		# Context first - every reading below is conditional on it (see WA_TEST_PF_header).
+		WA_TEST_PF_header = yes
+
+		random_other_country = {
+			limit = { original_tag = GER }
+
+			# the pull sets this in the same effect before land access runs
+			set_temp_variable = { _llr_donor = THIS.id }
+
+			WA_TEST_LLR_probe_scope = yes
+			WA_TEST_LLR_probe_legs = yes
+			WA_TEST_LLR_probe_convoy_token = yes
+			WA_TEST_LLR_probe_all_archetypes = yes
+		}
+	}
+
+	option = {}
+}
+
+country_event = {
+	id = wa_test.302
+
+	hidden = yes
+	is_triggered_only = yes
+
+	immediate = {
+		set_country_flag = WA_AI_logging
+		WA_TEST_PF_header = yes
+		WA_TEST_PF_pred_depth1 = yes
+		WA_TEST_PF_pred_depth2 = yes
+		WA_TEST_PF_pred_depth3 = yes
+		WA_TEST_PF_pred_depth4 = yes
+		WA_TEST_PF_pred_depth5 = yes
+		WA_TEST_PF_pred_depth6 = yes
+		WA_TEST_PF_pred_depth7 = yes
+		WA_TEST_PF_pred_depth8 = yes
+		WA_TEST_PF_pred_depth9 = yes
+		WA_TEST_PF_pred_depth10 = yes
+		WA_TEST_PF_pred_depth11 = yes
+		WA_TEST_PF_pred_depth12 = yes
+		WA_TEST_PF_pred_depth13 = yes
+	}
+
+	option = {}
+}

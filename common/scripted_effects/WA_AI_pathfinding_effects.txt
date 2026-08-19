@@ -29,9 +29,21 @@
 
 WA_AI_PATHFIND_get_path = { # _pathfind_start, _pathfind_target, _pathfind_type >>> pathfind_success, pathfind_path_
 
-	if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_detailed_logging } } every_state = { set_variable = { WA_AI_debug_value = 0 } } }
+	# Same hygiene, for the A* iteration counter, and it is not cosmetic: the counter was only
+	# zeroed at the END of this effect, so the FIRST call in any effect execution entered
+	# `while_loop_effect ... check_variable = { its < 75 }` with it never set. An unset temp does
+	# not read as 0 - boot probe wa_test.301 (2026-08-19) printed `iterations = 10792.02889` on
+	# entry, the same magnitude family as the state references beside it, i.e. >= 75 - so the loop
+	# exited before its first iteration and the call returned "no path" without ever looking at the
+	# map. That is why campaign 07270b64 has llr_donor_selected_n = llr_path_refused_n on all 94
+	# recipients and WA_AI_supply_line_dbg_pf_ok = 0 against 1,814 calls: two unrelated consumers,
+	# zero successes. Renamed off the bare `its` at the same time - the temp pool is shared across
+	# scopes for the whole execution (probe: 4242), so a generic name here is a collision waiting.
+	set_temp_variable = { _pathfind_its = 0 }
 
-	if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PATHFIND: START - [?_pathfind_start.GetName] -> [?_pathfind_target.GetName] - type [?_pathfind_type]" }
+	if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PATHFIND: START - [?_pathfind_start.GetName] -> [?_pathfind_target.GetName] - type [?_pathfind_type] - counter after init = [?_pathfind_its] (must be 0)" }
+
+	if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_detailed_logging } } every_state = { set_variable = { WA_AI_debug_value = 0 } } }
 
 	# Fix 30 break hygiene: neutralize `break` pollution left by earlier effects in the same
 	# pulse - every default-break loop below (neighbor scan, open-list scan, path reversal)
@@ -39,6 +51,7 @@ WA_AI_PATHFIND_get_path = { # _pathfind_start, _pathfind_target, _pathfind_type 
 	# explicit break variables and never set `break` themselves.
 	set_temp_variable = { break = 0 }
 	set_temp_variable = { pathfind_success = 0 }
+
 
 	var:_pathfind_start = {
 		clear_variable = WA_AI_PATHFIND_g_score
@@ -48,9 +61,18 @@ WA_AI_PATHFIND_get_path = { # _pathfind_start, _pathfind_target, _pathfind_type 
 	add_to_temp_array = { open_list = _pathfind_start }
 
 	set_temp_variable = { _pathfind_break = 0 }
-	while_loop_effect = { break = _pathfind_break limit = { check_variable = { its < 75 } check_variable = { open_list^num > 0 } }
+	while_loop_effect = { break = _pathfind_break limit = { check_variable = { _pathfind_its < 75 } check_variable = { open_list^num > 0 } }
 
 		WA_AI_PATHFIND_get_lowest_from_open_list = yes
+
+		# Why this is logged: on 2026-08-19 the SAME pair (Bucharest -> E. Berlin, type 3) found
+		# its path in 16 iterations on one save and exited after 1 on another, with the counter
+		# correctly initialised in both. One iteration means the open list emptied without a
+		# single neighbour being added, i.e. either `current` was never set (the picker's
+		# `WA_AI_PATHFIND_f_score < lowest_f_score` never passed, so `var:current` is scope 0) or
+		# the neighbour filter matched nothing. These two lines separate the two - do not theorise
+		# about it from the code, read them.
+		if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PATHFIND: it [?_pathfind_its] - picked current=[?current] lowest_f=[?lowest_f_score] open_list=[?open_list^num]" }
 
 		WA_AI_PATHFIND_check_success_conditions = yes
 
@@ -71,6 +93,8 @@ WA_AI_PATHFIND_get_path = { # _pathfind_start, _pathfind_target, _pathfind_type 
 				add_to_temp_array = { closed_list = THIS.id }
 
 				WA_AI_PATHFIND_get_neighbors = yes
+
+				if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PATHFIND: it [?_pathfind_its] - [This.GetName] yielded [?neighbors^num] neighbours" }
 
 				for_each_scope_loop = { array = neighbors
 
@@ -111,17 +135,17 @@ WA_AI_PATHFIND_get_path = { # _pathfind_start, _pathfind_target, _pathfind_type 
 			}
 		}
 
-		add_to_temp_variable = { its = 1 }
+		add_to_temp_variable = { _pathfind_its = 1 }
 	}
 
-	if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PATHFIND: END - iterations = [?its]" }
+	if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PATHFIND: END - iterations = [?_pathfind_its]" }
 
 	if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_detailed_logging } } force_update_map_mode = { limit = { always = yes } mapmode = debug_map_mode } }
 
 	clear_temp_array = open_list
 	clear_temp_array = closed_list
 	set_temp_variable = { _pathfind_type = 0 }
-	set_temp_variable = { its = 0 }
+	set_temp_variable = { _pathfind_its = 0 }
 }
 
 WA_AI_PATHFIND_apply_g_score_modifier = {
@@ -169,19 +193,25 @@ WA_AI_PATHFIND_get_neighbors = {
 	# untouched. Requires _llr_donor to be set by the caller (it is, in the same effect).
 	else_if = { limit = { check_variable = { _pathfind_type = 3 } }
 
+		# Same CONTROLLER = { } shape as type 1 above, for consistency across the three branches -
+		# NOT because the previous `is_controlled_by = ROOT` was wrong. It was suspected of it and
+		# cleared: with a correct run context both forms measure TRUE on the same state in the same
+		# breath (probe 2026-08-19: `ctrl.tag=ROOT 1 is_controlled_by=ROOT 1 ctrl.tag=ROM-literal 1`,
+		# and get_neighbors returns 1 neighbour on type 3 and on type 1). The runs where every
+		# predicate read false were harness artefacts - the event had been fired with a different
+		# country in scope, so ROOT was not the recipient. Any reading from wa_test.302 without its
+		# PF HEADER line beside it means nothing.
 		every_neighbor_state = {
 			limit = {
 				impassable = no
-				OR = {
-					is_controlled_by = ROOT
-					is_controlled_by = var:_llr_donor
-					CONTROLLER = {
-						OR = {
-							is_subject_of = ROOT
-							is_subject_of = var:_llr_donor
-							is_in_faction_with = ROOT
-							has_war_together_with = ROOT
-						}
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						tag = var:_llr_donor
+						is_subject_of = ROOT
+						is_subject_of = var:_llr_donor
+						is_in_faction_with = ROOT
+						has_war_together_with = ROOT
 					}
 				}
 			}

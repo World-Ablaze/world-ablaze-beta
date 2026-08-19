@@ -315,6 +315,16 @@ WA_AI_LEND_LEASE_relief_record = {
 # --- per-archetype legs. THIS = donor, ROOT = recipient. One shape, the archetype token and
 # --- the constants row are the only differences. Add a row = copy one leg + one constants row
 # --- + register the idx in WA_TLM_core (llr arrays) and the checklist probe.
+# ---
+# --- SCOPE, and it is unproven: each leg writes the recipient's stock inside `ROOT = { }` and
+# --- reads it back HERE, in the donor's scope. That only works if a temp variable set on another
+# --- scope stays readable for the rest of the effect execution; the engine documents nothing
+# --- either way. Campaign 07270b64 says it does hold - llr_send_failed_n reached 5,924 on the
+# --- USA, and the only path to relief_record that campaign had was the convoy leg computing a
+# --- positive amount out of exactly these ROOT-written temps (the nine land legs never ran: every
+# --- one of 94 recipients had llr_donor_selected_n = llr_path_refused_n). Boot probe
+# --- wa_test.301 prints the answer as one number; if it prints 0, every `ROOT = { set_temp_variable }`
+# --- below has to become `set_temp_variable = { x = ROOT.<dynamic variable> }`.
 
 WA_AI_LEND_LEASE_relief_leg_infantry = {
 	set_temp_variable = { _llr_arch_idx = 1 }
@@ -585,10 +595,27 @@ WA_AI_LEND_LEASE_relief_leg_convoy = {
 
 	if = {
 		limit = { check_variable = { _llr_amount > 0 } }
-		meta_effect = {
-			text = { send_equipment = { type = convoy_1 amount = [AMT] target = [TGT] } }
-			AMT = "[?_llr_amount]"
-			TGT = "[ROOT.GetTag]"
+		# NOT send_equipment - convoys are the one cargo that effect does not move. Boot probe
+		# wa_test.301 (2026-08-19) sent 50 as `convoy_1` and 50 as the `convoy` archetype in the
+		# same execution in which an infantry send_equipment moved 12 000 rifles: the recipient's
+		# stock stayed at 0 for both spellings. Peer evidence agrees - across 1 575 vanilla and
+		# 580 Expert AI equipment-transfer blocks, ZERO send_equipment carries a convoy, while all
+		# 123 convoy movements use the pair below (AST_diplomatic_events.7/8 -50/+50, MEX.txt,
+		# POR.txt, NOR.txt, SEA_Philippines.txt).
+		# The pair is create-and-destroy, not a transfer, so both halves must stay together.
+		# `producer = PREV` stamps the donor as creator, which is what the campaign probe reads
+		# out of the recipient's convoys={} block. No meta render is involved any more: the
+		# engine's own `amount` accepts a variable (effects_documentation.md).
+		set_temp_variable = { _llr_amount_neg = _llr_amount }
+		multiply_temp_variable = { _llr_amount_neg = -1 }
+		add_equipment_to_stockpile = { type = convoy amount = _llr_amount_neg }
+		# BARE name, no scope prefix. The temp pool is shared for the whole effect execution
+		# (probe: a temp set inside ROOT = { } reads back 4242 in the donor scope), and a
+		# scope-prefixed temp read resolves to nothing: `amount = PREV._llr_amount` rendered as
+		# "0 units ... removed" in the effect tooltip while `producer = PREV` resolved correctly.
+		# Prefix scopes for SCOPE-OWNED things (producer, country variables), never for a temp.
+		ROOT = {
+			add_equipment_to_stockpile = { type = convoy amount = _llr_amount producer = PREV }
 		}
 		ROOT = { set_temp_variable = { _llr_recipient_after = num_equipment@convoy } }
 		WA_AI_LEND_LEASE_relief_record = yes
