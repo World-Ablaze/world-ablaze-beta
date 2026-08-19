@@ -213,9 +213,17 @@ WA_AI_MILITARY_ITA_abandon_north_africa_THEATRE = {
 #          save measurement leaves cross-block order_id arbitration unknown. These buffers yield to
 #          a land front in their own area: the front then supplies the defenders instead of the rear
 #          reserve duplicating them. The Albania/Otranto gate is the separate block below.
-# range:   0.10 / 0.15 (E4)
+# range:   0.08 / 0.03 / 0.15 (E4)
 # policy:  Additive per state
 # domain:  THEATRE
+#
+# Fix 110 (2026-08-19): Southern France was ONE flat order over nine states, five of them inland and
+# unlandable, and on campaign 07270b64 its six divisions went one per inland state with ZERO in
+# Provence - the only state carrying a port (Toulon, Marseille). Split in two: the shore keeps 9610
+# and stops yielding to a front (lessons-log put_unit_buffers rule, same safeguard as Fix 102 on the
+# Libyan buffer), the inland rear area moves to 9614 at a third of the weight. WHICH state inside a
+# `states` list receives a division is engine-internal, so this does not steer placement - it shrinks
+# the list the engine spreads over until the coast is most of it. Checklist R76.
 WA_AI_MILITARY_ITA_protect_periphery_THEATRE = {
 	allowed = {
 		tag = ITA
@@ -233,19 +241,34 @@ WA_AI_MILITARY_ITA_protect_periphery_THEATRE = {
 	ai_strategy = {
 		type = put_unit_buffers
 		order_id = 9610
-		# Southern France (strategic region 20)
+		# Fix 110: the Mediterranean shore of region 20 only - Provence (Toulon, Marseille), Languedoc,
+		# French Alpes. These are the states an amphibious landing can take.
 		states = {
-			20
 			21
 			22
+			735
+		}
+		ratio = 0.08
+		area = south_france
+		# pool: Fix 110 - anti-landing reserve, must NOT be subtracted away by a front elsewhere in
+		# region 20 (lessons-log put_unit_buffers entry; same safeguard as Fix 102 on the Libyan buffer)
+		subtract_fronts_from_need = no
+		subtract_invasions_from_need = no
+	}
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 9614
+		# Fix 110: the inland rear area of region 20 - no coast, so no landing; a third of the shore's
+		# weight, and it still yields to a front the way the whole block used to.
+		states = {
+			20
 			25
 			26
 			31
 			32
 			33
-			735
 		}
-		ratio = 0.1
+		ratio = 0.03
 		area = south_france
 		# pool: rear-area reserve; an active front in Southern France replaces, rather than adds to, it
 		subtract_fronts_from_need = yes
