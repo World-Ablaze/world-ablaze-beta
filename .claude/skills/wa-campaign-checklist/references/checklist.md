@@ -1693,6 +1693,67 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **Status:** NOT YET TESTED
 - **History:**
 
+### R74. A liberated, co-belligerent Ethiopia does not switch off Italy's whole North-African posture (Fix 108)
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=4c0686a4f status=NOT_YET_TESTED`
+
+- **Opened 2026-08-19** from campaign `07270b64` (cloud, BHU observer, build `3181b26cb`). The three blocks split from the pre-convention `ITA_war_against_ENG` — `WA_AI_MILITARY_ITA_war_against_ENG_FRONT` (`garrison = -5000` global + `id = ITA`), `_DIPLOMACY` (`force_defend_ally_borders north_africa 10`) and `WA_AI_NAVAL_COUNTRY_ITA_war_against_ENG` (`strategic_air_importance` 10000 on regions 215 / 328 / 128) — all carried `NOT = { has_war_with = ETH }` verbatim from `79d64f6ff`. MEASURED: `relations --tag ITA` reads `ETH … since 1941.2.7.1 recorded in ETH's block ONLY`, so with `abort_when_not_enabled = yes` all three were dead from **February 1941 to the end of the campaign**. Visible consequence at 1943.8: **16 of ITA's 106 divisions sat in five ENGINE-generated area-defence orders** (`area_defense_settings = 100`; iid 660 Zadar/Split/Sicily/Campania/Calabria/Puglia, 878 the Po valley + Istria/Primorska/Gorski Kotar, 883 Corsica/Latium/Sardinia/Abruzzo/Tuscany/Rome, 961 Thessaly/Peloponnese, 1073 Dodecanese) — precisely what the `-5000` exists to suppress — while Italy's own war theatre had no air priority and no ally-border defence request.
+- **Fix under test:** Fix 108 — the ETH clause in all three blocks becomes `WA_AI_MILITARY_ethiopian_war_finished = yes`, the trigger five sibling ITA blocks already use (ETH gone / capitulated / no Italy-vs-ETH war that is not already inside a major war). `WA_AI_MILITARY_libya_bridgehead_held` untouched. The `ignore_neutral_ethiopia` pair (Fix 97) asks a DIFFERENT question — "is ETH neutral" — and was deliberately left alone.
+- **Pass (three legs):**
+  1. **The suppression is live once the colonial war is over.** In any save from 1937 on where Italy holds a Libyan port, ITA's engine area-defence divisions (`plans.py ITA --where`, `areadef` column) are ≤ 6, against the pre-fix 16. The leg is *also* the first in-game measurement of what `garrison = -5000` actually does — record the number either way.
+  2. **A co-belligerent Ethiopia does not turn it back off.** In a campaign where ETH re-enters the war (the `07270b64` shape, ETH war from 1941.2), the areadef count at 1942.6 and 1943.6 is no higher than at 1940.6.
+  3. **The 1936 window is unchanged.** Through the Ethiopian war itself (1935.10 → ETH capitulation) ITA's areadef and North-African air behaviour match the pre-fix campaign at the same dates — `ethiopian_war_finished` must read FALSE there, or the fix has inverted the gate rather than repaired it.
+- **Probe:** `plans.py ITA <saves> --where --limit 0` and `--armies`, monthly 1936.6 → 1944.6; `savegame.py relations <save> --tag ITA` to confirm the ETH war state each time; the areadef/buffer split comes from `plans.py`'s `area_defense_settings` classification (102 = WA scripted, 100 = engine).
+  ```text
+  > python .claude/skills/wa-savegame-analysis/scripts/plans.py ITA 1943.8_Aug.hoi4
+  ITA  armies=20  divisions_in_groups=106
+      front 16 | invasion 8 | buffer 52 | areadef 16 | NO_ORDER 14     (pre-fix baseline: areadef = 16)
+  ```
+- **Regression watch:** the `-5000` also removes the engine's garrison from **Corsica (1) and Abruzzo** — neither is in any WA buffer list (Fix 96 covers Sicily/toe, the mainland anchors and Sardinia). If leg 1 passes and Corsica ends the campaign with zero divisions while an Allied fleet is in the Tyrrhenian, that gap is the fix's cost and belongs in a Fix 96 follow-up, not in a revert of Fix 108. Second watch: Italy's front commitment in Africa/the Balkans should ABSORB the freed divisions — if the areadef count drops and `NO_ORDER` rises by the same amount, the suppression worked and nothing claimed the units.
+- **Threshold:** 3.
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **History:**
+
+### R75. Italy garrisons the eastern Adriatic shore only while Otranto is open (Fix 109)
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=481bfa7ce status=NOT_YET_TESTED`
+
+- **Opened 2026-08-19** from campaign `07270b64` (cloud, BHU observer, build `3181b26cb`). `WA_AI_MILITARY_ITA_protect_adriatic_gate_THEATRE` was the mod's only Otranto-aware garrison and it named **one state, Albania (44)**. MEASURED at 1943.8 with the strait shut: the block had correctly aborted (order 9612 absent from the save, zero ITA divisions in Albania) — and the engine was garrisoning the shore anyway, 3 divisions in Split / Zadar / Gorski Kotar under its own area-defence orders 660 and 878, two of them near-empty *Divisione Coloniale* (Army 17: 5 divisions, 84.7 strength total). So the strait rule worked and bought nothing.
+- **Fix under test:** Fix 109 — a second `put_unit_buffers` in the same block, `order_id = 9613`, `states = { 736 Istria, 886 Primorska, 1022 Gorski Kotar, 163 Zadar, 908 Split }`, `ratio = 0.06`, `area = central_balkans` (all five sit in strategic region 24, which that area already contains — no ai_area was minted, the engine's 72-definition budget is full), `subtract_fronts_from_need = no`. Albania's 9612 is untouched. Fix 108 is the other half: without it the engine garrisons the shore regardless of the gate.
+- **Pass (three legs):**
+  1. **Shut strait, empty shore.** In any save where `WA_AI_MILITARY_otranto_closed_to_our_enemies` holds (both gate provinces 11998 / 11767 denied to every Italian enemy), ITA divisions in {736, 886, 1022, 163, 908} total ≤ 2, against the pre-fix 3 in an engine order.
+  2. **Open strait, manned shore.** In a save where the gate is contested or an enemy has access, order 9613 appears in `plans.py ITA --armies` as a `buffer` and the same five states hold ≥ 4 ITA divisions within 60 days.
+  3. **No collateral on Albania or Greece.** 9612 (Albania) and 9611 (Greece + Dodecanese) keep the division counts they had at the same dates pre-fix; the Italian home tiers (R61) are unaffected.
+- **Probe:** `plans.py ITA <saves> --where --limit 0` filtered to the five states, plus the order dump (`type=5` with `area_defense_settings` and `states`) that separates WA's 102 orders from the engine's 100; `savegame.py control 11998,11767` — read as provinces — for the gate state each month.
+  ```text
+  > plans.py ITA 1943.8_Aug.hoi4 --where   (pre-fix baseline, strait SHUT)
+  Split 2 (1 areadef, 1 NO_ORDER) · Zadar 1 areadef · Gorski Kotar 1 areadef · Istria 1 NO_ORDER
+  ```
+- **Regression watch:** if Italy holds none of the five states the strategy is invalid by engine rule ("if no state is friendly, strat is invalid") and simply does nothing — a campaign where Yugoslavia is never partitioned must show no error and no behaviour change. A `ratio` sum of 0.16 across 9612 + 9613 while the strait is open is the intended ceiling; more than ~20 ITA divisions behind Otranto means the gate is stuck open and the trigger, not the ratio, is at fault.
+- **Threshold:** 3.
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **History:**
+
+### R76. Italy's southern-France reserve stands on the coast a landing can take, not in the interior (Fix 110)
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=0cf3f60a7 status=NOT_YET_TESTED`
+
+- **Opened 2026-08-19** from campaign `07270b64` (cloud, BHU observer, build `3181b26cb`). `WA_AI_MILITARY_ITA_protect_periphery_THEATRE` order 9610 listed nine states of region 20 at a flat `ratio = 0.1`; only Provence (21 — Toulon, naval base 10, and Marseille) and the French Alpes (735) carry a port, and five of the nine are landlocked. MEASURED at 1943.8: the order (save iid 668, `area_defense_settings = 102`) held **6 divisions, one each in Languedoc, Rhone, Auvergne, Limousin and French Alpes, and ZERO in Provence**. Germany, which controls Provence (state controller GER, as are Rhone and Languedoc — Italian divisions were sitting on German-controlled ground, so allied control is not the obstacle), held it with **1 division** from its own `GER_atlantik_wall_south_france` (0.05 over Aquitaine / Provence / French Alpes). The Riviera was defended by one division in August 1943.
+- **Change under test:** Fix 110 — 9610 keeps `{21, 22, 735}` at `ratio = 0.08` with `subtract_fronts_from_need = no` (an anti-landing reserve a front can subtract away is not a reserve — lessons-log `put_unit_buffers` entry, same safeguard as Fix 102 on the Libyan buffer); the inland six `{20, 25, 26, 31, 32, 33}` move to a new `order_id = 9614` at `ratio = 0.03`, keeping the old yielding semantics. Total commitment 0.10 → 0.11. Nothing steers WHICH state receives a division — that is engine-internal; the fix shrinks the list the engine spreads over.
+- **Pass (three legs):**
+  1. **Provence is manned.** In any save from 1941 on where Italy is at war and the Axis holds southern France, ITA divisions in state 21 ≥ 1 (bar: pre-fix 0) and ITA + GER divisions in 21 ≥ 3.
+  2. **The coast order outweighs the interior one.** `plans.py ITA --armies` shows two distinct `buffer` orders over region 20, and the {21, 22, 735} order carries more divisions than the inland one on ≥ 2 consecutive saves.
+  3. **No African / Italian collateral.** Italy's Libya buffer (9609, R13) and home tiers (R61) hold the counts they had at the same dates pre-fix; the extra 0.01 of the army must not come out of the Sicily reserve.
+- **Probe:** `plans.py ITA <saves> --where --limit 0` (states Provence / Languedoc / French Alpes / Rhone / Limousin / Auvergne) and `--oob` for the army-to-order mapping; `plans.py GER --where` for the joint count in 21; `savegame.py control 21,20,22,735` for who holds the ground.
+  ```text
+  > plans.py ITA 1943.8_Aug.hoi4 --oob      (pre-fix baseline)
+  Army 6  buffer  6 div  —  Languedoc 1, Rhone 1, Auvergne 1, Limousin 1, French Alpes 1 (+1)   [Provence: 0]
+  ```
+- **Regression watch:** with `subtract_fronts_from_need = no` the shore order now competes with a real front in region 20 instead of yielding to it — if a landing happens and the Italian front in southern France is starved while 8 divisions sit in a buffer behind it, this flag, not the ratio, is the cause. The inland 9614 at 0.03 may end up holding zero divisions; that is acceptable (the interior cannot be invaded) and is not a failure of any leg.
+- **Threshold:** 3.
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **History:**
+
 ## Retired and merged items — ledger
 
 Working queue, not an archive: an item leaves the sections above when its streak reaches its threshold (retired) or when another item owns its mechanism (merged). Durable rules belong in `wa-lessons-learned`; this ledger keeps the retirement evidence, the pending instrumentation dispositions, and the hand-offs that no live item carries. Full item text is in this file's git history at the date shown.
