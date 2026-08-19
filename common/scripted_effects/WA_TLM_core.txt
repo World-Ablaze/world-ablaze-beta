@@ -153,7 +153,8 @@
 # llr_path_refused_n. On the DONOR: llr_sent_n^idx / llr_sent_amount^idx (recorded only when the
 # recipient's free stock ROSE across the send - a silent meta failure counts in llr_send_failed_n) (idx = the row order
 # of common/script_constants/wa_ai_lend_lease.txt: 1 infantry, 2 heavy_infantry, 3 support,
-# 4 artillery, 5 heavy_artillery, 6 anti_tank, 7 anti_air, 8 motorized, 9 train; index 0
+# 4 artillery, 5 heavy_artillery, 6 anti_tank, 7 anti_air, 8 motorized, 9 train, 10 convoy;
+# index 0
 # unused). llr_first_t / llr_last_t on both sides. Counted on the verified send only, never on
 # entry (three campaigns of R7b were scored from stockpile deltas because this did not exist).
 # Standing under 3.8 criterion 3 (a system every AI country runs weekly). Additive; a save at
@@ -240,7 +241,12 @@
 # deliberately not applied (no corridor port of ours, or ROOT's capital sits on the corridor and it is
 # fed overland), 0 = our ports inject nothing, > 0 = the measured cap.
 # Additive; a save at wa_tlm_version < 27 lacks the family - score NOT CHECKED, never FAILED.
-@WA_TLM_VERSION = 27
+# v28 (2026-08-19, R56 recut): extends the standing WA_TLM_llr_* family with the separate
+# maritime-convoy path. Adds recipient counters llr_convoy_starving_n / llr_convoy_donor_selected_n
+# and grows sent_n / sent_amount from 10 to 11 slots (idx 10 = convoy_1). The init explicitly
+# migrates arrays whose ^num is below 11, so resumed v18-v27 saves retain idx 1..9 and gain idx 10.
+# Additive; a save at wa_tlm_version < 28 lacks the convoy counters - score NOT CHECKED.
+@WA_TLM_VERSION = 28
 
 ############################################################################################################
 #	Clock - global.WA_TLM_clock = months elapsed since 1936.1
@@ -388,15 +394,17 @@ WA_TLM_init_country = {
 
 	# lend-lease surplus relief (Fix 92, consumer: checklist R7b; write sites are
 	# WA_AI_LEND_LEASE_request_surplus_relief / _relief_record, WA_AI_lend_lease_effects.txt).
-	# Arrays sized 10 so idx 1..9 (constants row order) are addressable; idx 0 unused.
+	# Arrays sized 11 so idx 1..10 (constants row order) are addressable; idx 0 unused.
 	if = { limit = { NOT = { has_variable = WA_TLM_llr_starving_n } } set_variable = { WA_TLM_llr_starving_n = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_llr_donor_selected_n } } set_variable = { WA_TLM_llr_donor_selected_n = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_llr_path_refused_n } } set_variable = { WA_TLM_llr_path_refused_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_llr_convoy_starving_n } } set_variable = { WA_TLM_llr_convoy_starving_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_llr_convoy_donor_selected_n } } set_variable = { WA_TLM_llr_convoy_donor_selected_n = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_llr_send_failed_n } } set_variable = { WA_TLM_llr_send_failed_n = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_llr_first_t } } set_variable = { WA_TLM_llr_first_t = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_llr_last_t } } set_variable = { WA_TLM_llr_last_t = 0 } }
-	if = { limit = { NOT = { has_variable = WA_TLM_llr_sent_n } } resize_array = { array = WA_TLM_llr_sent_n size = 10 value = 0 } }
-	if = { limit = { NOT = { has_variable = WA_TLM_llr_sent_amount } } resize_array = { array = WA_TLM_llr_sent_amount size = 10 value = 0 } }
+	if = { limit = { check_variable = { WA_TLM_llr_sent_n^num < 11 } } resize_array = { array = WA_TLM_llr_sent_n size = 11 value = 0 } }
+	if = { limit = { check_variable = { WA_TLM_llr_sent_amount^num < 11 } } resize_array = { array = WA_TLM_llr_sent_amount size = 11 value = 0 } }
 
 	# theatre air bases on a ground-committed theatre (Fix 85, consumer: checklist R52; write
 	# site is the verified start in WA_AI_build_theatre_air_bases,

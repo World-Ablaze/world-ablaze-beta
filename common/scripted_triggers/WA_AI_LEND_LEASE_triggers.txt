@@ -700,6 +700,108 @@ WA_AI_LEND_LEASE_is_starving_train = {
 	has_war = yes
 	check_variable = { num_equipment@train_equipment < constant:wa_ai_lend_lease.train.starve }
 }
+
+# Maritime convoy relief. Capacity and need are dynamic: 200 spare convoys is adequate for a
+# <=20-dockyard recipient, not for a 100-dockyard oceanic power. These four mutually-exclusive
+# bands are shared by recipients, donors and the production trigger.
+WA_AI_LEND_LEASE_convoy_scale_small = {
+	NOT = { num_of_naval_factories > constant:wa_ai_lend_lease.convoy.dockyards_small }
+}
+WA_AI_LEND_LEASE_convoy_scale_medium = {
+	num_of_naval_factories > constant:wa_ai_lend_lease.convoy.dockyards_small
+	NOT = { num_of_naval_factories > constant:wa_ai_lend_lease.convoy.dockyards_medium }
+}
+WA_AI_LEND_LEASE_convoy_scale_large = {
+	num_of_naval_factories > constant:wa_ai_lend_lease.convoy.dockyards_medium
+	NOT = { num_of_naval_factories > constant:wa_ai_lend_lease.convoy.dockyards_large }
+}
+WA_AI_LEND_LEASE_convoy_scale_huge = {
+	num_of_naval_factories > constant:wa_ai_lend_lease.convoy.dockyards_large
+}
+
+# A country with a coast can consume convoy hulls even if it currently owns no dockyard.
+WA_AI_LEND_LEASE_can_use_convoys = {
+	OR = {
+		num_of_naval_factories > 0
+		any_owned_state = { is_coastal = yes }
+	}
+}
+
+WA_AI_LEND_LEASE_is_starving_convoys = {
+	is_ai = yes
+	has_war = yes
+	WA_AI_LEND_LEASE_can_use_convoys = yes
+	OR = {
+		# A major's worldwide army and lend-lease network can be large despite a small
+		# domestic dockyard base. This is max(dockyard band, major floor), not a tag rule.
+		AND = {
+			is_major = yes
+			check_variable = { num_equipment@convoy < constant:wa_ai_lend_lease.convoy.reserve_major_floor }
+		}
+		AND = {
+			WA_AI_LEND_LEASE_convoy_scale_small = yes
+			check_variable = { num_equipment@convoy < constant:wa_ai_lend_lease.convoy.reserve_small }
+		}
+		AND = {
+			WA_AI_LEND_LEASE_convoy_scale_medium = yes
+			check_variable = { num_equipment@convoy < constant:wa_ai_lend_lease.convoy.reserve_medium }
+		}
+		AND = {
+			WA_AI_LEND_LEASE_convoy_scale_large = yes
+			check_variable = { num_equipment@convoy < constant:wa_ai_lend_lease.convoy.reserve_large }
+		}
+		AND = {
+			WA_AI_LEND_LEASE_convoy_scale_huge = yes
+			check_variable = { num_equipment@convoy < constant:wa_ai_lend_lease.convoy.reserve_huge }
+		}
+	}
+}
+
+WA_AI_LEND_LEASE_has_exportable_surplus_convoys = {
+	is_ai = yes
+	has_capitulated = no
+	WA_AI_LEND_LEASE_can_use_convoys = yes
+	OR = {
+		AND = {
+			WA_AI_LEND_LEASE_convoy_scale_small = yes
+			check_variable = { num_equipment@convoy > constant:wa_ai_lend_lease.convoy.donor_floor_small }
+		}
+		AND = {
+			WA_AI_LEND_LEASE_convoy_scale_medium = yes
+			check_variable = { num_equipment@convoy > constant:wa_ai_lend_lease.convoy.donor_floor_medium }
+		}
+		AND = {
+			WA_AI_LEND_LEASE_convoy_scale_large = yes
+			check_variable = { num_equipment@convoy > constant:wa_ai_lend_lease.convoy.donor_floor_large }
+		}
+		AND = {
+			WA_AI_LEND_LEASE_convoy_scale_huge = yes
+			check_variable = { num_equipment@convoy > constant:wa_ai_lend_lease.convoy.donor_floor_huge }
+		}
+	}
+}
+
+# THIS = convoy recipient, PREV = donor. Unlike the nine overland legs, this branch is
+# deliberately maritime and never pathfinds. Same faction, a common enemy, or the existing
+# explicit lend-lease target flag is enough; both sides must be living AIs with maritime use.
+WA_AI_LEND_LEASE_convoy_pair_is_valid = {
+	exists = yes
+	is_ai = yes
+	NOT = { tag = PREV }
+	has_capitulated = no
+	WA_AI_LEND_LEASE_can_use_convoys = yes
+	PREV = {
+		exists = yes
+		is_ai = yes
+		has_capitulated = no
+		WA_AI_LEND_LEASE_can_use_convoys = yes
+	}
+	OR = {
+		is_in_faction_with = PREV
+		has_war_together_with = PREV
+		has_country_flag = WA_AI_lend_lease_from_@PREV
+	}
+}
 # THIS = candidate recipient. Any archetype short - the cheap pre-gate of the weekly pull
 # (the pull itself re-tests per archetype in the donor's scope).
 WA_AI_LEND_LEASE_is_starving_any = {

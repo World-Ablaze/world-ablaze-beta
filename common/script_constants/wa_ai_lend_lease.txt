@@ -6,7 +6,7 @@
 #	numbers of their own. Full restart, not `reload`, when tuning (the game reloads this
 #	database separately from the scripts that read it).
 #
-#	Keys, all read against the FREE stockpile (`num_equipment@<archetype>`, = has_equipment):
+#	Land-row keys, all read against the FREE stockpile (`num_equipment@<archetype>`):
 #	  donor_floor  the donor never goes below this; also the "has an exportable surplus" bar
 #	  starve       a recipient at war below this is starving of that archetype
 #	  base         tier-1 amount per weekly pull
@@ -16,8 +16,9 @@
 #	Waste bound: the amount is clamped to (starve + base - recipient stock), so an archetype the
 #	recipient does not field accumulates at most `starve + base` units, once, then the pull stops
 #	- the reason no "does it consume this" gate exists (design §3).
-#	The archetype index (idx) is the WA_TLM_llr_sent_n^idx position - keep it stable; the TLM
-#	arrays are sized 10 (idx 0 unused) in WA_TLM_core.txt - grow them if a 10th row is added.
+#	The convoy row documents its separate scale-aware keys in place. The archetype index (idx)
+#	is the WA_TLM_llr_sent_n^idx position - keep it stable; the TLM
+#	arrays are sized 11 (idx 0 unused) in WA_TLM_core.txt - grow them if another row is added.
 ####################################################################################################
 
 wa_ai_lend_lease = {
@@ -113,5 +114,28 @@ wa_ai_lend_lease = {
 		base = 30
 		tier2 = 600
 		tier4 = 1200
+	}
+
+	# idx 10 - convoy. This is a separate MARITIME relief path: it never enters the
+	# Fix-92 land A*. The recipient's band selects its reserve; the donor's selects its floor;
+	# base is the maximum weekly transfer before the donor-floor and recipient-need clamps.
+	# The 20/40/80 dockyard boundaries are shared with convoy production so scale cannot drift.
+	convoy = {
+		dockyards_small = 20
+		dockyards_medium = 40
+		dockyards_large = 80
+		reserve_small = 200
+		reserve_medium = 500
+		reserve_large = 1000
+		reserve_huge = 1500
+		reserve_major_floor = 1000
+		donor_floor_small = 200
+		donor_floor_medium = 300
+		donor_floor_large = 500
+		donor_floor_huge = 1000
+		base_small = 100
+		base_medium = 250
+		base_large = 500
+		base_huge = 750
 	}
 }

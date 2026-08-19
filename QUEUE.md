@@ -14,7 +14,7 @@ Enforced by `python tools/check_worklist.py`.
 
 ## ACTIVE
 
-- *(none - la distinction historique WA/vanilla et le gate ITA/ETH ont ete corriges le 2026-08-19.)*
+- **Convoy famine in the latest test campaign — IMPLEMENTED, UNDER TEST.** ENG and SOV ran out of free convoys; USA must turn its naval capacity into a large convoy surplus and transfer that surplus to allies in need, including SOV when they share an enemy. Diagnosis, code, static validation and both required reviews pass. Closed when `wa_test.300` verifies the new `convoy_1` send in game and the next campaign passes checklist R56's production, stock and maritime-transfer legs.
 
 ---
 

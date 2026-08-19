@@ -2060,6 +2060,15 @@ process caveats (stale process, and the absence of a load-time hook).
 - **Detection:** a Faction/Country file with several negatives on a multi-region ai_area and no state- or region-keyed positive inside it; a `date >` gating an "X is lost" veto; a bridgehead trigger whose port list omits the ports the enemy actually contests; a landing (`spawn_invasion`, engine invasion) that no trigger of the *defending* side reads; `savegame.py army <TAG>` reading 0 divisions on a continent the tag owns states on.
 - **Evidence:** checklist R64 (baseline `0edbc955`); `documentation/WA_AI_MILITARY_SYSTEM.md` §14; `common/scripted_triggers/WA_AI_MILITARY_triggers.txt` Fix 99 section; `common/ai_strategy/WA_AI_MILITARY_FACTION_AXIS_THEATRE.txt` `AXIS_tunis_bridge_THEATRE` (bounded-claim table + the sea-lift hypothesis R64 leg 1 falsifies).
 
+### A logistics reserve is a function of network scale — one absolute convoy threshold cannot serve South Africa and Britain
+
+- **Date:** 2026-08-19 (campaign `2f8cbd51`, checklist R56 recut)
+- **Symptom:** ENG held 0 free convoys and no convoy line in 1942.12 / 1943.1 / 1943.2 despite 100 owned dockyards, while USA held 1,412 / 1,507 / 1,592 free and sent none. A flat 200-free recipient target would treat a small coastal power and the British oceanic network as equally healthy.
+- **Cause:** an absolute reserve encodes no proxy for the scale of trade, supply and overseas commitments. Save-side Use/Need is unavailable, but dockyard count is observable in script and separates small from oceanic naval economies. The separate problem in production was volume: the 12 countries excluded from `wa_default.txt` also lost the only explicit `unit_ratio convoy`.
+- **Rule:** scale convoy recipient reserve and weekly relief cap from a shared naval-capacity band, but apply a separate major-power floor because a continental major can run a worldwide lend-lease network with few dockyards; give the donor its own lower floor. Never reuse the recipient target as the donor floor or a rich donor just above its own target can transfer almost nothing. Keep all bands and floors in script constants and read them from production, pair gates and transfer amounts. A scripted convoy transfer is a maritime system of its own and must never be routed through the Fix-92 land A* for the nine land-equipment cargos. Prove the bound at the actual weekly cadence with donor headroom and recipient gap, not with an adjective.
+- **Detection:** a major with few dockyards (SOV: 22 in 1943.1) gets the same 200/500 target as a minor; an oceanic major at 0 free hulls while an allied 81+ dockyard country holds >1,000 free; the major has no `unit_ratio convoy`; or a transfer computes `donor stock - recipient reserve` instead of `donor stock - donor floor`.
+- **Evidence:** checklist R56 history (`2f8cbd51`); `documentation/WA_AI_LEND_LEASE_RELIEF_DESIGN.md` maritime extension; `common/script_constants/wa_ai_lend_lease.txt` convoy row.
+
 ### Count the whole `ai_area` database before adding an alias — 73 crashes HOI4 1.19.2
 
 - **Date:** 2026-08-17

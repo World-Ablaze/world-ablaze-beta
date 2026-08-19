@@ -624,12 +624,13 @@ Standing, not probes, under §3.8 criteria 2 and 3: every AI country runs this q
 campaign, and the R49/R53 local scorings (2026-08-15/16) each required a bespoke general_lines
 join to answer "how deep / how wide did it place".
 
-## 6e. Lend-lease surplus relief (standing, v18)
+## 6e. Lend-lease surplus relief (standing, v18; maritime extension v28)
 
 `WA_AI_LEND_LEASE_request_surplus_relief` (`WA_AI_lend_lease_effects.txt`, weekly, ROOT =
-recipient) pulls an overland `send_equipment` from ONE donor per week, per archetype (9 rows in
-`common/script_constants/wa_ai_lend_lease.txt`, never summed), only when a state path between the
-two capitals crosses friendly ground (Fix 92). Three campaigns of R7b were scored from stockpile
+recipient) pulls an overland `send_equipment` from ONE donor per week for the nine land-equipment
+rows in `common/script_constants/wa_ai_lend_lease.txt`, only when a state path between the capitals
+crosses friendly ground (Fix 92). Convoy row 10 is a separate maritime pull: same weekly entry point,
+but its own donor selection and no land A*. Three campaigns of R7b were scored from stockpile
 `creator=` deltas because nothing recorded whether a donor was ever picked, whether the pair was
 refused, or which leg fired. Standing under §3.8 criterion 3 (every AI country runs it weekly).
 
@@ -638,8 +639,10 @@ refused, or which leg fired. Standing under §3.8 criterion 3 (every AI country 
 | `WA_TLM_llr_starving_n` | counter, on the RECIPIENT | at entry of the weekly pull, when `WA_AI_LEND_LEASE_is_starving_any` holds | R7b — denominator: weeks the country was short of at least one archetype; `donor_selected_n / starving_n` = how often the lottery found a candidate at all | v18 |
 | `WA_TLM_llr_donor_selected_n` | counter, on the RECIPIENT | at the `random_other_country` pick, before the path test | R7b — how often the lottery picked anyone; 0 with starving legs = the `donor_can_serve` limit never matched | v18 |
 | `WA_TLM_llr_path_refused_n` | counter, on the RECIPIENT | after `WA_AI_LEND_LEASE_relief_land_access` returned 0 for the picked donor | R7b — the land-access rule at work; expect > 0 on island/overseas recipients (ENG, AST) and 0 on GER's continental clients | v18 |
-| `WA_TLM_llr_sent_n^idx` / `WA_TLM_llr_sent_amount^idx` | per-archetype counter + amount, on the DONOR, arrays sized 10 | `WA_AI_LEND_LEASE_relief_record` after the `send_equipment`, ONLY when the recipient's free stock re-read rose above the pre-send read (idx = constants row: 1 infantry, 2 heavy_infantry, 3 support, 4 artillery, 5 heavy_artillery, 6 anti_tank, 7 anti_air, 8 motorized, 9 train; 0 unused) | R7b — which leg moved and how much; read with `savegame.py var TAG "^wa_tlm_llr_sent"` (indexed arrays, not ring buffers — the `tlm` renderer would misread them) | v18 |
-| `WA_TLM_llr_send_failed_n` | counter, on the DONOR | same site, the ELSE branch: the recipient's free stock did not rise across the meta_effect send | R7b — must read 0; > 0 means the rendered `send_equipment` failed silently (see the meta_effect lesson) | v18 |
+| `WA_TLM_llr_convoy_starving_n` | counter, on the RECIPIENT | at entry of the weekly maritime pull when the recipient is below its scale-aware reserve | R56 — denominator: weeks a convoy-capable wartime recipient was below its dockyard-band reserve, with a 1,000 minimum for majors | v28 |
+| `WA_TLM_llr_convoy_donor_selected_n` | counter, on the RECIPIENT | when the maritime `random_other_country` actually selected a donor | R56 — distinguishes no eligible donor from a silent send failure; no pathfinding is involved | v28 |
+| `WA_TLM_llr_sent_n^idx` / `WA_TLM_llr_sent_amount^idx` | per-archetype counter + amount, on the DONOR, arrays sized 11 | `WA_AI_LEND_LEASE_relief_record` after the `send_equipment`, ONLY when the recipient's free stock re-read rose above the pre-send read (idx = constants row: 1 infantry, 2 heavy_infantry, 3 support, 4 artillery, 5 heavy_artillery, 6 anti_tank, 7 anti_air, 8 motorized, 9 train, 10 convoy; 0 unused) | R7b / R56 — which leg moved and how much; read with `savegame.py var TAG "^wa_tlm_llr_sent"` (indexed arrays, not ring buffers — the `tlm` renderer would misread them) | v18; idx 10 v28 |
+| `WA_TLM_llr_send_failed_n` | counter, on the DONOR | same site, the ELSE branch: the recipient's free stock did not rise across the meta_effect send | R7b / R56 — must read 0; > 0 means the rendered `send_equipment` failed silently (see the meta_effect lesson) | v18 |
 | `WA_TLM_llr_first_t` / `_last_t` | stamps, on BOTH sides | same site | R7b — timing; `_first_t` written under a `= 0` guard | v18 |
 
 ## 7. Adding a metric — checklist for authors

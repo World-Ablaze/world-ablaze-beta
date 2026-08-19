@@ -142,8 +142,8 @@ WA_AI_clear_lend_lease_targets = { # THIS = SENDER
 # The system imitates an OVERLAND truck convoy, so it fires only when a state path exists
 # between the two CAPITALS that crosses nothing but territory controlled by the recipient,
 # the donor, a subject of either, or a faction member / co-belligerent of the recipient
-# (modder ruling 2026-08-16). Anything by sea (USA->ENG, USA->SOV, CAN->SOV) is the engine's
-# native lend-lease, never this. Same landmass is NOT enough (Eurasia is one landmass). The
+# (modder ruling 2026-08-16). The nine land-equipment legs remain overland-only. Convoys use
+# the separate maritime branch below and never enter this A*. Same landmass is NOT enough. The
 # path is the state-level A* (WA_AI_PATHFIND_get_path, type 3) run ONCE per picked donor,
 # cached in _llr_path_ok for every leg; it is deliberately not in the pick's `limit`.
 #
@@ -159,7 +159,8 @@ WA_AI_clear_lend_lease_targets = { # THIS = SENDER
 # TRUE), while amount and target are rendered from variables (the exact form the boot test proved).
 # Do not "factor" further.
 #
-# Telemetry (WA_TLM v18): llr_starving_n / llr_donor_selected_n / llr_path_refused_n on the RECIPIENT,
+# Telemetry (WA_TLM v18; convoy extension v28): llr_starving_n / llr_donor_selected_n /
+# llr_path_refused_n on the RECIPIENT, plus llr_convoy_starving_n / _donor_selected_n,
 # llr_sent_n^idx / llr_sent_amount^idx on the DONOR (idx = row order of the constants file),
 # llr_first_t / llr_last_t on both - counted on the verified send only, never on entry.
 WA_AI_LEND_LEASE_request_surplus_relief = {
@@ -200,6 +201,23 @@ WA_AI_LEND_LEASE_request_surplus_relief = {
 				ROOT = { add_to_variable = { WA_TLM_llr_path_refused_n = 1 } }
 				if = { limit = { ROOT = { has_country_flag = WA_AI_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | LEND-LEASE: relief from [This.GetName] refused - no land access between capitals" }
 			}
+		}
+	}
+
+	# Maritime convoy relief is separate from the Fix-92 overland transfer. One donor per
+	# starving recipient per weekly pulse; no A*. The leg clamps the send to the donor floor.
+	if = {
+		limit = { WA_AI_LEND_LEASE_is_starving_convoys = yes }
+		# tlm: llr_convoy_starving_n - weekly recipient-state denominator for R56.
+		add_to_variable = { WA_TLM_llr_convoy_starving_n = 1 }
+		random_other_country = {
+			limit = {
+				PREV = { WA_AI_LEND_LEASE_convoy_pair_is_valid = yes }
+				WA_AI_LEND_LEASE_has_exportable_surplus_convoys = yes
+			}
+			# tlm: llr_convoy_donor_selected_n - a real maritime donor was selected for R56.
+			ROOT = { add_to_variable = { WA_TLM_llr_convoy_donor_selected_n = 1 } }
+			WA_AI_LEND_LEASE_relief_leg_convoy = yes
 		}
 	}
 }
@@ -270,11 +288,12 @@ WA_AI_LEND_LEASE_relief_compute_amount = {
 # rose above the pre-send read (_llr_recipient_stock); a silent meta failure lands in
 # llr_send_failed_n instead of inflating llr_sent_n.
 # tlm: llr_sent_n^idx / llr_sent_amount^idx / llr_send_failed_n (donor) + llr_first_t / llr_last_t
-# (both sides). Standing family llr, consumer R7b.
+# (both sides). Standing family llr, consumers R7b / R56.
 WA_AI_LEND_LEASE_relief_record = {
-	# a tag created after startup has no WA_TLM_init_country pass - size the arrays here too
-	if = { limit = { NOT = { has_variable = WA_TLM_llr_sent_n } } resize_array = { array = WA_TLM_llr_sent_n size = 10 value = 0 } }
-	if = { limit = { NOT = { has_variable = WA_TLM_llr_sent_amount } } resize_array = { array = WA_TLM_llr_sent_amount size = 10 value = 0 } }
+	# A late-created tag has no startup init; an old save has arrays of size 10. Grow either
+	# shape idempotently before idx 10 is written, preserving the nine existing rows.
+	if = { limit = { check_variable = { WA_TLM_llr_sent_n^num < 11 } } resize_array = { array = WA_TLM_llr_sent_n size = 11 value = 0 } }
+	if = { limit = { check_variable = { WA_TLM_llr_sent_amount^num < 11 } } resize_array = { array = WA_TLM_llr_sent_amount size = 11 value = 0 } }
 	if = {
 		limit = { NOT = { check_variable = { _llr_recipient_after > _llr_recipient_stock } } }
 		add_to_variable = { WA_TLM_llr_send_failed_n = 1 }
@@ -491,6 +510,87 @@ WA_AI_LEND_LEASE_relief_leg_train = {
 			TGT = "[ROOT.GetTag]"
 		}
 		ROOT = { set_temp_variable = { _llr_recipient_after = num_equipment@train_equipment } }
+		WA_AI_LEND_LEASE_relief_record = yes
+	}
+}
+
+# idx 10 - convoy_1. THIS = maritime donor, ROOT = recipient. Recipient need and weekly
+# amount use the RECIPIENT's dockyard scale; the floor uses the DONOR's scale. Unlike the
+# land legs there is no donor-stock multiplier and no starve+base overshoot.
+WA_AI_LEND_LEASE_relief_leg_convoy = {
+	set_temp_variable = { _llr_arch_idx = 10 }
+	set_temp_variable = { _llr_donor_stock = num_equipment@convoy }
+	ROOT = { set_temp_variable = { _llr_recipient_stock = num_equipment@convoy } }
+
+	if = { limit = { WA_AI_LEND_LEASE_convoy_scale_small = yes }
+		set_temp_variable = { _llr_floor = constant:wa_ai_lend_lease.convoy.donor_floor_small }
+	}
+	else_if = { limit = { WA_AI_LEND_LEASE_convoy_scale_medium = yes }
+		set_temp_variable = { _llr_floor = constant:wa_ai_lend_lease.convoy.donor_floor_medium }
+	}
+	else_if = { limit = { WA_AI_LEND_LEASE_convoy_scale_large = yes }
+		set_temp_variable = { _llr_floor = constant:wa_ai_lend_lease.convoy.donor_floor_large }
+	}
+	else = { set_temp_variable = { _llr_floor = constant:wa_ai_lend_lease.convoy.donor_floor_huge } }
+
+	ROOT = {
+		if = { limit = { WA_AI_LEND_LEASE_convoy_scale_small = yes }
+			set_temp_variable = { _llr_starve = constant:wa_ai_lend_lease.convoy.reserve_small }
+			set_temp_variable = { _llr_base = constant:wa_ai_lend_lease.convoy.base_small }
+		}
+		else_if = { limit = { WA_AI_LEND_LEASE_convoy_scale_medium = yes }
+			set_temp_variable = { _llr_starve = constant:wa_ai_lend_lease.convoy.reserve_medium }
+			set_temp_variable = { _llr_base = constant:wa_ai_lend_lease.convoy.base_medium }
+		}
+		else_if = { limit = { WA_AI_LEND_LEASE_convoy_scale_large = yes }
+			set_temp_variable = { _llr_starve = constant:wa_ai_lend_lease.convoy.reserve_large }
+			set_temp_variable = { _llr_base = constant:wa_ai_lend_lease.convoy.base_large }
+		}
+		else = {
+			set_temp_variable = { _llr_starve = constant:wa_ai_lend_lease.convoy.reserve_huge }
+			set_temp_variable = { _llr_base = constant:wa_ai_lend_lease.convoy.base_huge }
+		}
+		# Recipient target = max(dockyard-band reserve, major floor). Weekly cap stays
+		# dockyard-scaled, so a low-dockyard major reaches 1000 over several bounded pulls.
+		if = {
+			limit = {
+				is_major = yes
+				check_variable = { _llr_starve < constant:wa_ai_lend_lease.convoy.reserve_major_floor }
+			}
+			set_temp_variable = { _llr_starve = constant:wa_ai_lend_lease.convoy.reserve_major_floor }
+		}
+	}
+
+	set_temp_variable = { _llr_amount = 0 }
+	if = {
+		limit = {
+			check_variable = { _llr_recipient_stock < _llr_starve }
+			check_variable = { _llr_donor_stock > _llr_floor }
+		}
+		set_temp_variable = { _llr_amount = _llr_base }
+		set_temp_variable = { _llr_headroom = _llr_donor_stock }
+		subtract_from_temp_variable = { _llr_headroom = _llr_floor }
+		if = { limit = { check_variable = { _llr_amount > _llr_headroom } }
+			set_temp_variable = { _llr_amount = _llr_headroom }
+		}
+		set_temp_variable = { _llr_need = _llr_starve }
+		subtract_from_temp_variable = { _llr_need = _llr_recipient_stock }
+		if = { limit = { check_variable = { _llr_amount > _llr_need } }
+			set_temp_variable = { _llr_amount = _llr_need }
+		}
+		if = { limit = { check_variable = { _llr_amount < 1 } }
+			set_temp_variable = { _llr_amount = 0 }
+		}
+	}
+
+	if = {
+		limit = { check_variable = { _llr_amount > 0 } }
+		meta_effect = {
+			text = { send_equipment = { type = convoy_1 amount = [AMT] target = [TGT] } }
+			AMT = "[?_llr_amount]"
+			TGT = "[ROOT.GetTag]"
+		}
+		ROOT = { set_temp_variable = { _llr_recipient_after = num_equipment@convoy } }
 		WA_AI_LEND_LEASE_relief_record = yes
 	}
 }

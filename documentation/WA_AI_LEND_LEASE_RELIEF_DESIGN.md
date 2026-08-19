@@ -1,10 +1,67 @@
 # WA_AI lend-lease surplus relief — design v2 (Fix 92, implemented 2026-08-16)
 
 Status: DESIGN, option C **validated by boot test 2026-08-16** (`wa_test.300` + `WA_TEST_LLR_send_one`: GER→ROM `send_equipment` with `amount` and `target` rendered from variables through `meta_effect`, four archetypes, stock moved; the donor needs stock — `ae 10000` first). **IMPLEMENTED as Fix 92 the same day** — `common/script_constants/wa_ai_lend_lease.txt` (9 rows), the CAPABILITY section of `WA_AI_LEND_LEASE_triggers.txt`, the relief core + 9 legs in `WA_AI_lend_lease_effects.txt`, pathfind type 3, WA_TLM v18 `llr_*`, checklist R7b recut. Deviations from the draft below: no `consumes` gate (waste is bounded by `starve`, once); heavy AT/AA, pack and rocket artillery, mechanized NOT in the first 9 rows (add a row + a leg + grow the TLM arrays); tiering by donor-stock bars `tier2`/`tier4` per row. Owes a boot test (see the end of this file). Written after campaign `a232d96c` (checklist R7b/R56) and three
-modder rulings the same day. Nothing below is shipped; the current code is the
-three-leg (infantry / support / convoys) system in
-`common/scripted_effects/WA_AI_lend_lease_effects.txt` +
-`common/scripted_triggers/WA_AI_LEND_LEASE_triggers.txt`.
+modder rulings the same day. The nine overland legs described below are shipped.
+
+## 2026-08-19 maritime convoy extension (R56 recut)
+
+Campaign `2f8cbd51` closes the production/transfer diagnosis: in 1943.1 ENG had 0 free convoys,
+101 controlled dockyards and no convoy line; USA had 1,507 free, 122 dockyards, no convoy line,
+and no outgoing lend-lease. The extension is deliberately a **separate maritime branch**. It
+does not weaken or bypass the Fix-92 land-access rule for the nine land-equipment rows.
+
+Recipient reserve and maximum weekly send scale with the recipient's naval capacity:
+
+| Recipient dockyards | Minor reserve | Major reserve | Weekly cap |
+| ---: | ---: | ---: | ---: |
+| 0-20 | 200 | 1,000 | 100 |
+| 21-40 | 500 | 1,000 | 250 |
+| 41-80 | 1,000 | 1,000 | 500 |
+| 81+ | 1,500 | 1,500 | 750 |
+
+The recipient formula is `max(dockyard-band reserve, 1,000 when is_major)`. Thus the January
+1943 Soviet Union (22 owned dockyards in the save extraction) targets 1,000 rather than 500,
+while a small South African network remains at 200. The weekly cap remains dockyard-scaled:
+the Soviet band moves at most 250 per successful weekly pull.
+
+Controlled transfer-only SOV walk at the real weekly cadence, with one eligible 81+ dockyard
+donor initially holding 2,500 free; production, losses and changes in convoy usage are fixed at zero:
+
+| Time | Donor free | SOV free | Action |
+| --- | ---: | ---: | --- |
+| t0, weekly pulse | 2,500 | 0 | send 250 |
+| t1, after one week | 2,250 | 250 | send 250 |
+| t2, after two weeks | 2,000 | 500 | send 250 |
+| t3, after three weeks | 1,750 | 750 | send 250 |
+| t4, after four weeks | 1,500 | 1,000 | target reached; no send |
+| t5, next weekly pulse | 1,500 | 1,000 | recipient is not starving; no maritime donor selection |
+
+**DERIVED** Four sends of 250 suffice to fill SOV from 0 to 1,000 if no external flow reduces
+either free stockpile during the interval. A campaign must measure production, losses and usage.
+
+The donor keeps its own scale-aware floor (200 / 300 / 500 / 1,000). The amount is the minimum
+of recipient weekly cap, recipient gap, and donor stock above that floor. Thus the result neither
+overshoots the recipient target nor strips the donor. The pair is tag-free: both countries are
+living AIs with maritime capacity, and they are in the same faction, share a war, or already carry
+the explicit WA lend-lease target flag. One recipient selects at most one maritime donor per weekly
+pulse. An 81+ dockyard major also receives convoy `unit_ratio +85` and a 15-dockyard minimum while
+any eligible partner is short; every naval producer now receives the baseline ratio 15.
+
+Bounded walk at the real weekly cadence (USA 1,507 free; ENG 0 free in 1943.1):
+
+| Time | USA free | ENG free | Action |
+| --- | ---: | ---: | --- |
+| t0, weekly pulse | 1,507 | 0 | USA selected; amount clamps to min(750, 1,500 gap, 507 donor headroom) = 507 |
+| t1, after verified send | 1,000 | 507 | recipient stock rose; TLM records convoy idx 10 |
+| t2, next weekly pulse without new production | 1,000 | 507 | no donor scan succeeds: USA is at its floor |
+
+With production replenishment, later weekly sends resume until ENG reaches 1,500. Strategy removal
+after that condition becomes false depends on the engine's internal reevaluation cadence and remains
+unverified until a campaign. South Africa in the 0-20 band instead fills 0 -> 100 -> 200 over two
+successful weekly sends.
+
+Objection retained from Fix 92: **"the relief system is an overland transfer by ruling"**. Mine
+covers it because the convoy branch is separate and never calls the A* used by the nine land cargos.
 
 ## 1. Rulings that drive the redesign
 
@@ -174,9 +231,9 @@ written once and the per-archetype block is ~10 lines.
   gates in `WA_AI_special_lend_lease_rules_SENDER/TARGET`, triggers.txt ~:424 / :450 / :520) now
   includes heavy_infantry: GER holding > 20 000 free hv_inf may now be allowed to export
   natively where it was not before. Intended — that stock is its real surplus.
-- The `size = 10` of the two `WA_TLM_llr_*` arrays is written twice (WA_TLM_core.txt init and
-  the late-tag guard in the effect); bound to the 9-row order by comment. Grow both if a row is
-  added.
+- The two `WA_TLM_llr_*` arrays are now `size = 11` (idx 0 unused, land rows 1-9, convoy 10).
+  Both WA_TLM init and the late-tag guard grow any array whose `^num < 11`, so a resumed v18-v27
+  save preserves rows 1-9 while gaining row 10.
 
 - **FIN beside a GER surplus (the 9be92c89 case) reverts to starving by design:** the type-3
   filter's co-belligerent clause admits Finnish/German-controlled states, but there is no land
