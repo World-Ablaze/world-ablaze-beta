@@ -164,7 +164,7 @@ This is the master legend. For each `ai_strategy` `type` currently in use, it st
 
 **Shipped, not planned.** The scripted ownership triggers this section used to defer to "Phase 5"
 live in `common/scripted_triggers/WA_AI_MILITARY_PHASE5_ownership_triggers.txt` since `d149a204b`:
-**50 slugs, all 50 read by at least one `ai_strategy` block, zero orphans** (measured 2026-08-18).
+**49 slugs, all 49 read by at least one `ai_strategy` block, zero orphans** (measured 2026-08-19).
 
 There are two mechanisms in play, and they are not interchangeable.
 
@@ -175,7 +175,7 @@ override lower` (`common/ai_strategy/documentation.info` section `front_control`
 Exclusive type in this mod's vocabulary that has one - `protect`, `ignore`, `ignore_claim`,
 `contain`, `naval_invasion_focus`, `strike_force_home_base`, `dont_defend_ally_borders` and
 `force_defend_ally_borders` have no `priority` parameter in either documentation edition. That is
-why the scripted gates cannot be replaced by the engine field: they carry 43 of their 50 slugs for
+why the scripted gates cannot be replaced by the engine field: they carry 42 of their 49 slugs for
 types the engine gives no precedence field at all.
 
 **The mod already uses `priority`, and it spends it on a semantic ladder, not a layer ladder.**
@@ -672,5 +672,67 @@ WA's file has the same relative path and name as vanilla's, so it overrides it f
 **`descriptor.mod` is in `.gitignore` and is not tracked**, so that line is a local change on one
 machine. Whatever descriptor actually ships needs the same line adding by hand, or the folder rests
 on the filename override alone.
+
+---
+
+## 16. Commonwealth defensive handoff (2026-08-19)
+
+The British Country layer delegates three static defensive burdens to Commonwealth field armies,
+but keeps a dynamically selected fallback. The delegate and ENG read the same availability trigger:
+if that verdict becomes false, the delegate aborts and the matching British fallback becomes live.
+Country identity is confined to `WA_AI_CONFIG.txt`; readiness is based on current war, army size,
+controlled ground and home pressure rather than a focus, date or historical faction.
+
+| Mission | Delegate live | ENG floor | ENG fallback | Delegate gate |
+| --- | ---: | ---: | ---: | --- |
+| British Isles | CAN `0.25` normally / `0.50` during an actual invasion | `0.10` | `0.25` | AI CAN-role country, >11 divisions, common war plus faction/subject/access relation with ENG, Britain held by ENG's side, no enemy on a Canadian core, no home-area neighbour at war with CAN and no war with USA |
+| El-Alamein primary guard | SAF `0.25` on Marsa Matruh | see ladder | see ladder | AI SAF-role country, >4 divisions, common war plus access relation, Egyptian line active, Marsa Matruh friendly, no SAF home/border threat |
+| El-Alamein support | RAJ `0.05` on Marsa Matruh | `0.05` if both live | `0.15` if exactly one lives; `0.25` if neither lives | AI RAJ-role country, >49 divisions, operational army, common war plus access relation, Egyptian line active, Marsa Matruh friendly, no enemy on a RAJ core and no home-area neighbour at war with RAJ |
+| Kuwait | RAJ `0.05` | `0.02` | `0.08` | AI RAJ-role country, >29 divisions, operational army, common war plus access relation, Kuwait held by ENG's side, Ethiopian colonial war finished, no enemy on a RAJ core and no home-area neighbour at war with RAJ |
+
+CAN's Canadian-front request is split into a safe floor (`+10`) and a threatened tier (`+200`).
+The threatened tier re-arms on an enemy-controlled Canadian core, a home-area neighbour at war or war
+with the USA; CAN's British mission is disabled on the same verdict. While that mission is live, a
+Country `garrison = -5000` applies WA's force-off convention to release the generic minor-country
+area-defence army. That convention is not documented by the engine and remains a campaign test.
+The historical Africa/date block and the permanent Dover buffer are deleted, so Canada is not told
+to defend Britain and Africa at once. The normal and invasion tiers are exclusive: one `0.25` order
+outside an invasion, one `0.50` order during it; no ratio is inferred by adding two orders.
+
+SAF and RAJ receive matching `front_unit_request` (`+50 north_africa`) and
+`force_defend_ally_borders` (`100 north_africa`) writers while their El-Alamein availability is true.
+The former Faction SAF/RAJ Africa trio is deleted; AST/NZL retain only the existing `0.10` Egyptian
+top-up. RAJ's former Iraq/Kuwait pair is narrowed to Kuwait, after the Ethiopian campaign gate.
+
+### Historical and ahistorical walks
+
+| Situation | Result |
+| --- | --- |
+| Historical coalition, all delegates ready | CAN guards Britain; SAF guards Marsa Matruh; RAJ supports Marsa Matruh and guards Kuwait; ENG runs reduced floors. |
+| CAN-role country absent, player-controlled, weak, without access, threatened at home or fighting USA | CAN mission aborts; ENG restores its `0.25` British reserve. |
+| SAF or RAJ absent, player-controlled, weak or under its safety threshold | ENG uses the middle `0.15` Egyptian tier when one delegate remains, or restores the former `0.25` tier when neither remains. |
+| Ethiopia survives outside Italy's colonial war | The generic `ethiopian_war_finished` verdict can release RAJ once no Italian homeland power is fighting a colonial-only Ethiopian war; no annexation, focus or calendar is required. |
+| ENG changes faction or the historical setup diverges | A delegate needs a real common war with ENG. If it cannot take the mission, the ENG fallback remains the owner; no historical-focus branch is required. |
+
+### Campaign probe
+
+Pre-change baseline: campaign `2f8cbd51-0a44-40a2-a371-714ba21c96b5`, save
+`1942.7_Jul.hoi4` at `1942.7.1.2`. ENG had 85 divisions: 54 in buffers, 7 on fronts,
+18 in area defence and 6 in invasions. Eight of its nine armoured divisions were in buffers.
+CAN had 16 divisions (14 in Canada, 2 in Britain); SAF had 6 (none in Egypt); RAJ had 61,
+including 12 with no order.
+
+The next campaign closes this change when the same date/state shows:
+
+1. the eligible delegate orders on Britain, Marsa Matruh and Kuwait, with the Canadian area-defence count falling from its pre-change 12;
+2. the corresponding reduced ENG tier, with exactly one Egyptian ENG tier active;
+3. automatic restoration of each ENG fallback after making its delegate unavailable;
+4. fewer ENG divisions in buffers and more than one ENG armoured division on a front;
+5. no loss of Britain, Marsa Matruh or Kuwait attributable to the handoff.
+
+Engine boundary: `put_unit_buffers` cannot select an infantry template. The script reduces the
+British reserve demand and transfers destinations to other countries; the exact British divisions
+released, and whether the engine selects armour for a remaining buffer, are not observable script
+decisions and must be measured in the campaign.
 
 ---

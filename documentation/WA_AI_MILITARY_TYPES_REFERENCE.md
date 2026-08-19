@@ -106,11 +106,11 @@ For each type: total count, where it currently appears (counts per file), recomm
 - Target: Faction for shared invasion targets; Country for tag-specific overrides.
 - Notes: SOUTH_AMERICA's 19 `invade` entries are flagged for Region layer - check whether they are stay-home suppressors (negative values) or actual invasion targets.
 
-### `put_unit_buffers` (151)
+### `put_unit_buffers` (158)
 
-- Currently in: SOV 34, USA 21, ENG 17, GER 13, CHI 11, RAJ 9, ITA 7, FRA 5, FIN 3, AST 3, CAN 3, ALLIES 3, RCZ 6, JAP 6, MAN 2, RNC 2, SPR 1, MAL 1, GRE 1, HOL 1, POR 1, TUR 1.
+- Current exact file scan (2026-08-19): SOV 34, USA 21, ENG 18, GER 11, CHI 11, RAJ 10, JAP 6, RCZ 6, FRA 5, ITA 5, REGION_ITALY 5, AST 3, FIN 3, AXIS 3, ALLIES 2, CAN 2, MAN 2, RNC 2, SPR 3, and one each in GRE/HOL/MAL/POR/SAF/TUR.
 - Target: Country (THEATRE domain). Faction layer should not set state-level buffers.
-- Notes: high-volume per-state config. Candidate for tooling-assisted generation in a future phase.
+- Notes: high-volume per-state config. Candidate for tooling-assisted generation in a future phase. The Commonwealth defensive handoff uses Country writers for CAN/SAF/RAJ and disjoint ENG fallback tiers; each country tests the same availability trigger as ENG, so delegation and fallback cannot leave an intentional gap.
 
 ### `area_priority` (124)
 
@@ -123,9 +123,9 @@ For each type: total count, where it currently appears (counts per file), recomm
 - Target: Country (NAVAL domain).
 - **Known issue:** USA's 67 `naval_avoid_region` blocks are a candidate for tooling-assisted generation (one block per region, repetitive structure). Track for a Phase 4+ generator under `tools/`.
 
-### `force_defend_ally_borders` (74)
+### `force_defend_ally_borders` (72)
 
-- Currently in: ENG 14, CHINA_FRONT 13, USA 13, ITA 7, AXIS 3, FRA 3, CAN 3, JAP 2, MAN 2, SIA 2, FIN 0, AST 0, ALLIES 1, HUN 1, PRC 1, SAF 1, CHI 3, RAJ 3, COUNTRY_AXIS 3.
+- Current exact file scan (2026-08-19): ENG 14, USA 13, CHINA_FRONT 9, ITA 6, RAJ 4, SIC 4, CHI 3, FRA 3, AXIS 3, and GER/JAP/MAN/SAF/SIA 2 each, CAN/HUN/PRC 1 each.
 - Target: Faction for coalition defence patterns; Country for per-ally overrides.
 - Policy: **Exclusive per ally**. Phase 5 mutual-exclusion needed.
 
@@ -142,7 +142,7 @@ For each type: total count, where it currently appears (counts per file), recomm
 
 ### `garrison` (38)
 
-- Currently in: FRA 15, GER 4, USA 4, SOV 4, ENG 2, ITA 2, RAJ 2, FIN 1, JAP 1, CHI 1, SPR 1, FRONT_archetypes 1.
+- Current exact file scan (2026-08-19): FRA 15, GER 4, USA 4, SOV 4, ENG 2, ITA 2, and one each in CAN/RAJ/FIN/JAP/CHI/SPR/FRONT_archetypes.
 - Target: Default for archetype floor (`FRONT_archetypes`); Country for state-specific overrides; `_GARRISON` domain file when a country has many garrison rules (FRA at 15 is the candidate).
 - **Known issue:** `WA_AI_MILITARY_COUNTRY_SPR.txt:143-144` uses the WA-convention `value = -5000` (**not** engine-documented - the type has no engine section) force-off override. Preserve this pattern when migrating; do not collapse it into a regular garrison entry.
 
@@ -329,7 +329,7 @@ Phase 4 was originally scoped to "consolidate cross-layer duplicates" — i.e. f
 
 ### Decision
 
-Phase 4 (cross-layer duplicate consolidation) is **closed without a refactor commit**. The cross-layer counts represent legitimately distinct rules from distinct sources, not duplication. The genuine overlap-management work moved to **Phase 5**, which **shipped in `d149a204b`**: `common/scripted_triggers/WA_AI_MILITARY_PHASE5_ownership_triggers.txt`, 50 ownership slugs across 5 Exclusive types, all 50 read by at least one `ai_strategy` block (audited 2026-08-18, zero orphans). Inventory and the `priority`-vs-gate split are in `WA_AI_MILITARY_SYSTEM.md` §6.
+Phase 4 (cross-layer duplicate consolidation) is **closed without a refactor commit**. The cross-layer counts represent legitimately distinct rules from distinct sources, not duplication. The genuine overlap-management work moved to **Phase 5**, which **shipped in `d149a204b`**: `common/scripted_triggers/WA_AI_MILITARY_PHASE5_ownership_triggers.txt`, 49 ownership slugs across 5 Exclusive types, all 49 read by at least one `ai_strategy` block (audited 2026-08-19, zero orphans). Inventory and the `priority`-vs-gate split are in `WA_AI_MILITARY_SYSTEM.md` §6.
 
 Scanner artifact: `phase4_dup_scan.py` and `phase4_report.md` (1826 blocks, 153 cross-layer groups) preserved in the agent scratch directory for reference.
 

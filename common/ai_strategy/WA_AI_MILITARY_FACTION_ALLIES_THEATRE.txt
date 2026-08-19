@@ -39,50 +39,6 @@ WA_AI_MILITARY_ALLIES_ignore_raj_until_invasion_THEATRE = {
 
 
 
-# Phase 6 split from WA_AI_MILITARY_ALLIES_commonwealth_north_africa_support (THEATRE domain)
-# Fix 102 (2026-08-17): subtract_fronts_from_need was at its default (yes) over area = north_africa,
-#          so the North African front consumed the whole need and this buffer never produced an order.
-#          Measured on campaign 7c7803a8 at 1942.6: AST / SAF / NZL / CAN / RAJ carry six other
-#          scripted buffers between them and ZERO over 446/447/452/454/923. order_id 9101 is already
-#          private inside this file, so only the flag changes. Same defect as
-#          WA_AI_MILITARY_ENG_defense_of_el_alamein and WA_AI_MILITARY_ITA_protect_libya_THEATRE.
-WA_AI_MILITARY_ALLIES_commonwealth_north_africa_support_THEATRE = {
-
-	allowed = {
-		OR = {
-			tag = SAF
-			tag = RAJ
-		}
-	}
-	enable = {
-		WA_AI_MILITARY_allies_africa_support_conditions = yes
-
-		# Phase 5 mutual exclusion: yield to Country-layer overrides.
-		NOT = { WA_AI_MILITARY_country_owns_fdab_target_north_africa = yes }
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = put_unit_buffers
-		order_id = 9101
-		states = {
-			447
-			446
-			454
-			553
-			451
-			450
-			448
-			923
-		}
-		ratio = 0.25 # economy: was 0.5
-		area = north_africa
-		subtract_fronts_from_need = no # pool: the dominion contribution to North Africa must survive the North African front, which is the only place it would ever be spent (Fix 102)
-		subtract_invasions_from_need = no
-	}
-}
-
-
 # Phase 6 split from WA_AI_MILITARY_ALLIES_no_italy_invasion_early (THEATRE domain)
 # purpose: deprioritise the Italian theatre in the two windows where the bloc should NOT be putting
 #          weight there - before Husky is possible at all (pre-Jul 1943) and during D-Day staging
@@ -252,18 +208,14 @@ WA_AI_MILITARY_ALLIES_commonwealth_stage_usa_east = {
 
 
 
-# Fix 102 (2026-08-17): had subtract_fronts_from_need = yes EXPLICIT over area = north_africa, which
-#          is the strongest form of the defect - it yielded to the one front it existed to support and
-#          produced no order for any dominion in campaign 7c7803a8. Now non-yielding on a private
-#          order_id (9103; 2 was shared semantics with no owner).
-# ratio:   lowered 0.25 -> 0.10 because this block OVERLAPS
-#          WA_AI_MILITARY_ALLIES_commonwealth_north_africa_support_THEATRE on 447/446/923. That block
-#          reaches SAF and RAJ at 0.25; this one reaches every dominion, so at 0.25 SAF and RAJ would
-#          have reserved half their army for Egypt the moment both went live. 0.10 makes it a top-up
-#          for the dominions the other block does not reach, not a second full garrison.
+# purpose: retain the existing small Egypt top-up for AST and NZL after SAF/RAJ move to their
+#          Country missions; it is not part of ENG's fallback arithmetic.
+# range:   put_unit_buffers ratio 0.10
+# policy:  Additive per order; Faction writer limited by a CONFIG role
+# domain:  THEATRE
 WA_AI_MILITARY_ALLIES_commonwealth_protect_africa = {
 	allowed = {
-		WA_AI_CONFIG_MILITARY_is_commonwealth_dominion = yes
+		WA_AI_CONFIG_MILITARY_is_commonwealth_africa_topup = yes
 	}
 	enable = {
 		#NOT = {
@@ -307,12 +259,12 @@ WA_AI_MILITARY_ALLIES_commonwealth_protect_africa = {
 			923
 		}
 
-		ratio = 0.10 # economy: was 2, then 0.25 (Fix 102: overlaps the SAF/RAJ block, see header)
+		ratio = 0.10
 
 		area = north_africa
 
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no # pool: dominion top-up on the Egyptian anchor; yielding to the North African front is what made it produce nothing at all (Fix 102)
+		subtract_fronts_from_need = no # pool: this small Egypt top-up must survive North-African front demand
 	}
 }
 

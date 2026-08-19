@@ -199,56 +199,20 @@ WA_AI_MILITARY_CAN_sync_invasions_on_europe = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_CAN_help_in_africa (FRONT domain)
-WA_AI_MILITARY_CAN_help_in_africa_FRONT = {
-
+# purpose: support Canada's assigned British-isles guard without also pulling it toward Africa.
+# range:   front_unit_request +200
+# policy:  Additive per area; gate-exclusive with WA_AI_MILITARY_COUNTRY_CAN_FRONT_sealion
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_CAN_FRONT_support_britain = {
 	allowed = {
-		tag = CAN
+		WA_AI_CONFIG_MILITARY_is_commonwealth_uk_guard = yes
 	}
 	enable = {
-		is_in_faction_with = ENG
-		NOT = { ENG = { has_completed_focus = ENG_organize_the_blackshirts } }
-		NOT = { has_war_with = USA }
+		WA_AI_MILITARY_CAN_uk_guard_available = yes
+		NOT = { WA_AI_MILITARY_ENG_britain_invaded = yes }
 	}
+	abort_when_not_enabled = yes
 
-	abort = {
-		OR = {
-			AND = {
-				date > 1944.6.6
-				NOT = {
-					AND = {
-						any_enemy_country = { has_full_control_of_state = 19 }
-						any_enemy_country = { has_full_control_of_state = 23 }
-						any_enemy_country = { has_full_control_of_state = 30 }
-						any_enemy_country = { has_full_control_of_state = 14 }
-						any_enemy_country = { has_full_control_of_state = 15 }
-						any_enemy_country = { has_full_control_of_state = 1016 }
-						any_enemy_country = { has_full_control_of_state = 785 }
-					}
-				}
-			}
-			NOT = { is_in_faction_with = ENG }
-			has_war_with = USA
-			122 = { CONTROLLER = { has_war_with = ROOT } }
-			123 = { CONTROLLER = { has_war_with = ROOT } }
-			125 = { CONTROLLER = { has_war_with = ROOT } }
-			126 = { CONTROLLER = { has_war_with = ROOT } }
-			127 = { CONTROLLER = { has_war_with = ROOT } }
-			129 = { CONTROLLER = { has_war_with = ROOT } }
-			130 = { CONTROLLER = { has_war_with = ROOT } }
-			131 = { CONTROLLER = { has_war_with = ROOT } }
-			132 = { CONTROLLER = { has_war_with = ROOT } }
-			857 = { CONTROLLER = { has_war_with = ROOT } }
-			859 = { CONTROLLER = { has_war_with = ROOT } }
-			860 = { CONTROLLER = { has_war_with = ROOT } }
-		}
-	}
-
-	ai_strategy = {
-		type = front_unit_request
-		area = north_africa
-		value = 200
-	}
 	ai_strategy = {
 		type = front_unit_request
 		area = britain
@@ -257,31 +221,19 @@ WA_AI_MILITARY_CAN_help_in_africa_FRONT = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_CAN_sealion (FRONT domain)
-WA_AI_MILITARY_CAN_sealion_FRONT = {
+# purpose: replace Canada's normal British request with the emergency tier while an enemy controls UK soil.
+# range:   front_unit_request +200
+# policy:  Additive per area; gate-exclusive with WA_AI_MILITARY_COUNTRY_CAN_FRONT_support_britain
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_CAN_FRONT_sealion = {
 
 	allowed = {
-		tag = CAN
+		WA_AI_CONFIG_MILITARY_is_commonwealth_uk_guard = yes
 	}
 
 	enable = {
-		is_in_faction_with = ENG
-		NOT = { ENG = { has_completed_focus = ENG_organize_the_blackshirts } }
-		NOT = { has_war_with = USA }
-		OR = {
-			122 = { CONTROLLER = { has_war_with = ROOT } }
-			123 = { CONTROLLER = { has_war_with = ROOT } }
-			125 = { CONTROLLER = { has_war_with = ROOT } }
-			126 = { CONTROLLER = { has_war_with = ROOT } }
-			127 = { CONTROLLER = { has_war_with = ROOT } }
-			129 = { CONTROLLER = { has_war_with = ROOT } }
-			130 = { CONTROLLER = { has_war_with = ROOT } }
-			131 = { CONTROLLER = { has_war_with = ROOT } }
-			132 = { CONTROLLER = { has_war_with = ROOT } }
-			857 = { CONTROLLER = { has_war_with = ROOT } }
-			859 = { CONTROLLER = { has_war_with = ROOT } }
-			860 = { CONTROLLER = { has_war_with = ROOT } }
-		}
+		WA_AI_MILITARY_CAN_uk_guard_available = yes
+		WA_AI_MILITARY_ENG_britain_invaded = yes
 	}
 
 	abort_when_not_enabled = yes
@@ -289,16 +241,41 @@ WA_AI_MILITARY_CAN_sealion_FRONT = {
 	ai_strategy = {
 		type = front_unit_request
 		area = britain
-		value = 200 # economy: was 750
+		value = 200
+	}
+}
+
+
+# purpose: release Canada's generic minor-country area-defence army while its safe British mission
+#          is live; the Canadian home response returns when the availability verdict turns false.
+# range:   garrison -5000 (WA force-off convention; engine combination is undocumented)
+# policy:  Negative override while the UK guard is available
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_CAN_FRONT_release_home_garrison = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_commonwealth_uk_guard = yes
+	}
+	enable = {
+		WA_AI_MILITARY_CAN_uk_guard_available = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = garrison
+		value = -5000
 	}
 }
 
 
 
-WA_AI_MILITARY_CAN_protect_home = {
-	# always-on: home-defence floor: intentional static defensive bias, peace and war alike (Additive front_unit_request).
+# purpose: keep Canada's front-control mode ready without using it to size the home army.
+# range:   front_control execute_order yes
+# policy:  Exclusive per area; Country writer
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_CAN_FRONT_protect_home_control = {
+	# always-on: a static execution mode is harmless without a Canadian front; the two request blocks below size it dynamically.
 	allowed = {
-		tag = CAN
+		WA_AI_CONFIG_MILITARY_is_commonwealth_uk_guard = yes
 	}
 	enable = {
 		always = yes
@@ -311,10 +288,47 @@ WA_AI_MILITARY_CAN_protect_home = {
 		ordertype = front
 		execute_order = yes
 	}
+}
+
+
+# purpose: leave only a minimal explicit Canadian home request while no homeland or border threat exists.
+# range:   front_unit_request +10
+# policy:  Additive per area; mutually exclusive with the threatened tier
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_CAN_FRONT_protect_home_floor = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_commonwealth_uk_guard = yes
+	}
+	enable = {
+		NOT = { WA_AI_MILITARY_CAN_home_defense_required = yes }
+	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = front_unit_request
 		area = canada
-		value = 200 # economy: was 300
+		value = 10
+	}
+}
+
+
+# purpose: restore the full Canadian home request when an enemy reaches its core, a hostile border
+#          presses it, or Canada fights the USA.
+# range:   front_unit_request +200
+# policy:  Additive per area; mutually exclusive with the safe floor
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_CAN_FRONT_protect_home_threatened = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_commonwealth_uk_guard = yes
+	}
+	enable = {
+		WA_AI_MILITARY_CAN_home_defense_required = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		area = canada
+		value = 200
 	}
 }

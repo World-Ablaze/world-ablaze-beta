@@ -1631,6 +1631,32 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
     Streak 1 of 3.
   - 2026-08-18 · `9d83084c` · FAILED (baseline, pre-fix) — every corridor hop at level 2 on all 121 saves; Gabès `naval_base` at 1 throughout under three holders; ENG 2 corridor segments admitted in all of 1943; the three competing readings measured and ruled out.
 
+### R72. Commonwealth defensive missions replace British static buffers without leaving a gap
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=none status=FAILING`
+
+- **Opened 2026-08-19** from campaign `2f8cbd51-0a44-40a2-a371-714ba21c96b5`, save `1942.7_Jul.hoi4` at `1942.7.1.2`. ENG had 85 deployed divisions: 54 in buffers, 7 on fronts, 18 in area defence and 6 in invasions; 8 of its 9 armoured divisions were in buffers. CAN had 16 divisions (14 in Canada, 2 in Britain), including 12 under area-defence orders. SAF had 6 divisions and none in Egypt. RAJ had 61 divisions, including 12 without an order. The British load was 26 divisions in the UK, 13 in the Egypt states and 4 in Kuwait.
+- **Change under test:** CAN-role countries receive the British-isles mission and force off the generic minor garrison while safe; SAF-role and RAJ-role countries guard/support Marsa Matruh; RAJ also guards Kuwait after the Ethiopian colonial war. Delegate availability requires AI control, army capacity, a common war and faction/subject/military-access relation with ENG, a friendly destination and recoverable home-safety gates. ENG finds delegates by CONFIG role and selects one exclusive fallback tier per mission.
+- **Pass (five legs):**
+  1. **Delegates take the destinations.** At the 1942 North-African war shape, `plans.py CAN,SAF,RAJ --where --limit 0` shows a CAN-role buffer in Britain, a SAF-role and RAJ-role buffer in state 452, and a RAJ-role buffer in state 656. CAN's area-defence count is below the pre-change 12.
+  2. **One British tier per mission.** `plans.py ENG --where --limit 0` resolves exactly one UK handoff tier, one Egypt tier and one Kuwait tier. With all delegates available the intended ratios are UK 0.10, Egypt 0.05 and Kuwait 0.02; the save does not serialize ratios, so identify the order by its exact state set and compare its division count against the fallback control below.
+  3. **Every fallback is reachable.** In controlled test saves, making the CAN role, SAF role, RAJ Egypt role, then RAJ Kuwait role fail its availability gate removes the delegate order and restores the matching ENG tier. Egypt must show 0.15 with exactly one role available and the former 0.25 shape with neither. A delegate and its full fallback live together is FAILED.
+  4. **The original symptom improves.** ENG has fewer than 54 divisions in buffers and more than one of its armoured divisions classified `front`. This is an outcome criterion, not a script guarantee: `put_unit_buffers` has no division-template selector.
+  5. **The handoff holds.** Britain, Marsa Matruh and Kuwait remain on ENG's side through the test window; a loss caused by a missing order is FAILED even if legs 1-4 pass.
+- **Probe:** `.claude/skills/wa-savegame-analysis/scripts/plans.py CAN,SAF,RAJ,ENG <saves> --where --limit 0`, plus `--divisions`, `--armies` and `--fronts`; `savegame.py control 121,122,123,125,126,127,129,130,131,132,857,859,860,452,656 <saves> --provinces --limit 0`; `savegame.py relations <save> --tag CAN` and the same for SAF/RAJ/ENG. Use campaign identity first. Because strategy ratios and trigger names are not serialized, score the exact order state sets and the controlled availability flips, never infer a ratio from `order_id`.
+  ```text
+  > python .claude/skills/wa-savegame-analysis/scripts/plans.py CAN,SAF,RAJ,ENG 1942.7_Jul.hoi4 --where --limit 0
+  CAN  deployed=16  front=0  buffer=4  areadef=12  invasion=0  no_order=0
+  SAF  deployed=6   front=0  buffer=0  areadef=5   invasion=0  no_order=1
+  RAJ  deployed=61  front=14 buffer=33 areadef=2   invasion=0  no_order=12
+  ENG  deployed=85  front=7  buffer=54 areadef=18  invasion=6  no_order=0
+  ```
+- **Regression watch:** CAN's `garrison = -5000` is a WA convention without an engine contract; if its 12 area-defence divisions do not release, record the force-off as ineffective rather than tuning the UK buffer. If CAN loses a core, fights USA, or loses access to ENG, the home response and ENG fallback must return. SAF's six-division baseline is deliberately small; it may contribute only one or two divisions, but its unavailability must never suppress ENG's fallback.
+- **Threshold:** 3.
+- **Streak:** 0
+- **Status:** TESTED ONCE, FAILED (baseline pre-change). F9 boot test owed before the first post-change campaign score.
+- **History:**
+  - 2026-08-19 · `2f8cbd51` · FAILED (baseline, pre-change) — ENG 54/85 in buffers and 8/9 armoured divisions buffered; CAN 12 area-defence divisions, SAF 0 in Egypt, RAJ 0 in Kuwait.
+
 ## Retired and merged items — ledger
 
 Working queue, not an archive: an item leaves the sections above when its streak reaches its threshold (retired) or when another item owns its mechanism (merged). Durable rules belong in `wa-lessons-learned`; this ledger keeps the retirement evidence, the pending instrumentation dispositions, and the hand-offs that no live item carries. Full item text is in this file's git history at the date shown.

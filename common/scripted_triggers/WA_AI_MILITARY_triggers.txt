@@ -497,21 +497,172 @@ WA_AI_MILITARY_china_front_anti_japan_member = {
 	date < 1946.1.1
 }
 
-WA_AI_MILITARY_allies_africa_support_conditions = {
-	WA_AI_MILITARY_is_allies_member = yes
-	WA_AI_MILITARY_is_commonwealth_member = yes
-	WA_AI_MILITARY_ENG_holds_east_egypt = yes
-	WA_AI_MILITARY_can_safely_open_remote_theatres = yes
+# Commonwealth defensive handoff.
+# THIS = candidate country. The same verdict is read directly by the delegate's
+# Country strategy and through an any_country role lookup by the ENG fallback.
+# Fixed ENG references keep that verdict invariant for every role candidate.
+# Capability is recoverable: army, useful ground,
+# common war and home pressure; never has_capitulated or surrender_progress.
+WA_AI_MILITARY_commonwealth_fights_with_eng = {
+	country_exists = ENG
+	has_war = yes
+	has_war_together_with = ENG
 	OR = {
 		is_in_faction_with = ENG
 		is_subject_of = ENG
+		has_military_access_to = ENG
 	}
-	NOT = { surrender_progress > 0.02 }
+}
+
+# PREV-relative on purpose: when an ENG fallback calls a role lookup through
+# `any_country`, ROOT remains ENG while PREV is the candidate country.
+WA_AI_MILITARY_commonwealth_home_in_danger = {
 	OR = {
-		450 = { CONTROLLER = { has_war_with = ROOT } }
-		663 = { CONTROLLER = { has_war_with = ROOT } }
-		451 = { CONTROLLER = { has_war_with = ROOT } }
+		any_state = {
+			is_core_of = PREV
+			CONTROLLER = { has_war_with = PREV.PREV }
+		}
+		any_home_area_neighbor_country = { has_war_with = PREV }
 	}
+}
+
+WA_AI_MILITARY_CAN_home_defense_required = {
+	WA_AI_CONFIG_MILITARY_is_commonwealth_uk_guard = yes
+	OR = {
+		has_war_with = USA
+		WA_AI_MILITARY_commonwealth_home_in_danger = yes
+	}
+}
+
+WA_AI_MILITARY_ENG_britain_guard_active = {
+	ENG = { has_war = yes }
+	126 = {
+		CONTROLLER = {
+			OR = {
+				WA_AI_CONFIG_MILITARY_is_british_mission_owner = yes
+				is_in_faction_with = ENG
+				is_subject_of = ENG
+			}
+		}
+	}
+}
+
+WA_AI_MILITARY_ENG_britain_invaded = {
+	OR = {
+		121 = { CONTROLLER = { has_war_with = ENG } }
+		122 = { CONTROLLER = { has_war_with = ENG } }
+		123 = { CONTROLLER = { has_war_with = ENG } }
+		125 = { CONTROLLER = { has_war_with = ENG } }
+		126 = { CONTROLLER = { has_war_with = ENG } }
+		127 = { CONTROLLER = { has_war_with = ENG } }
+		129 = { CONTROLLER = { has_war_with = ENG } }
+		130 = { CONTROLLER = { has_war_with = ENG } }
+		131 = { CONTROLLER = { has_war_with = ENG } }
+		132 = { CONTROLLER = { has_war_with = ENG } }
+		857 = { CONTROLLER = { has_war_with = ENG } }
+		859 = { CONTROLLER = { has_war_with = ENG } }
+		860 = { CONTROLLER = { has_war_with = ENG } }
+	}
+}
+
+WA_AI_MILITARY_CAN_uk_guard_available = {
+	WA_AI_CONFIG_MILITARY_is_commonwealth_uk_guard = yes
+	is_ai = yes
+	num_divisions > 11
+	WA_AI_MILITARY_commonwealth_fights_with_eng = yes
+	WA_AI_MILITARY_ENG_britain_guard_active = yes
+	NOT = { WA_AI_MILITARY_CAN_home_defense_required = yes }
+}
+
+WA_AI_MILITARY_ENG_el_alamein_guard_active = {
+	ENG = { has_war = yes }
+	447 = {
+		CONTROLLER = {
+			OR = {
+				WA_AI_CONFIG_MILITARY_is_british_mission_owner = yes
+				is_in_faction_with = ENG
+				is_subject_of = ENG
+			}
+		}
+	}
+	OR = {
+		450 = { CONTROLLER = { has_war_with = ENG } }
+		663 = { CONTROLLER = { has_war_with = ENG } }
+		451 = { CONTROLLER = { has_war_with = ENG } }
+	}
+}
+
+WA_AI_MILITARY_ENG_el_alamein_destination_available = {
+	452 = {
+		CONTROLLER = {
+			OR = {
+				WA_AI_CONFIG_MILITARY_is_british_mission_owner = yes
+				is_in_faction_with = ENG
+				is_subject_of = ENG
+			}
+		}
+	}
+}
+
+WA_AI_MILITARY_SAF_egypt_guard_available = {
+	WA_AI_CONFIG_MILITARY_is_commonwealth_egypt_guard = yes
+	is_ai = yes
+	num_divisions > 4
+	WA_AI_MILITARY_commonwealth_fights_with_eng = yes
+	WA_AI_MILITARY_ENG_el_alamein_guard_active = yes
+	WA_AI_MILITARY_ENG_el_alamein_destination_available = yes
+	NOT = { WA_AI_MILITARY_commonwealth_home_in_danger = yes }
+}
+
+WA_AI_MILITARY_RAJ_egypt_support_available = {
+	WA_AI_CONFIG_MILITARY_is_commonwealth_egypt_support = yes
+	is_ai = yes
+	num_divisions > 49
+	WA_AI_MILITARY_army_still_operational = yes
+	WA_AI_MILITARY_commonwealth_fights_with_eng = yes
+	WA_AI_MILITARY_ENG_el_alamein_guard_active = yes
+	WA_AI_MILITARY_ENG_el_alamein_destination_available = yes
+	NOT = { WA_AI_MILITARY_commonwealth_home_in_danger = yes }
+}
+
+WA_AI_MILITARY_ENG_kuwait_guard_active = {
+	ENG = { has_war = yes }
+	656 = {
+		CONTROLLER = {
+			OR = {
+				WA_AI_CONFIG_MILITARY_is_british_mission_owner = yes
+				is_in_faction_with = ENG
+				is_subject_of = ENG
+			}
+		}
+	}
+}
+
+WA_AI_MILITARY_RAJ_kuwait_guard_available = {
+	WA_AI_CONFIG_MILITARY_is_commonwealth_gulf_guard = yes
+	is_ai = yes
+	num_divisions > 29
+	WA_AI_MILITARY_commonwealth_fights_with_eng = yes
+	WA_AI_MILITARY_ENG_kuwait_guard_active = yes
+	WA_AI_MILITARY_ethiopian_war_finished = yes
+	WA_AI_MILITARY_army_still_operational = yes
+	NOT = { WA_AI_MILITARY_commonwealth_home_in_danger = yes }
+}
+
+WA_AI_MILITARY_commonwealth_uk_guard_available = {
+	any_country = { WA_AI_MILITARY_CAN_uk_guard_available = yes }
+}
+
+WA_AI_MILITARY_commonwealth_egypt_guard_available = {
+	any_country = { WA_AI_MILITARY_SAF_egypt_guard_available = yes }
+}
+
+WA_AI_MILITARY_commonwealth_egypt_support_available = {
+	any_country = { WA_AI_MILITARY_RAJ_egypt_support_available = yes }
+}
+
+WA_AI_MILITARY_commonwealth_kuwait_guard_available = {
+	any_country = { WA_AI_MILITARY_RAJ_kuwait_guard_available = yes }
 }
 
 WA_AI_MILITARY_allies_usa_east_staging_conditions = {

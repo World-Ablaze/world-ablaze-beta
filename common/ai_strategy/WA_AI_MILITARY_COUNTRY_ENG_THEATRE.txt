@@ -257,23 +257,23 @@ WA_AI_MILITARY_ENG_theatre_boost_home = {
 
 
 # Phase 6 split from WA_AI_MILITARY_ENG_protect_home (THEATRE domain)
-WA_AI_MILITARY_ENG_protect_home_THEATRE = {
-
+# purpose: keep a reduced British home reserve while CAN is carrying its assigned UK guard.
+# range:   put_unit_buffers ratio 0.10
+# policy:  Additive per order; gate-exclusive with WA_AI_MILITARY_COUNTRY_ENG_THEATRE_protect_home_can_fallback
+# domain:  THEATRE
+WA_AI_MILITARY_COUNTRY_ENG_THEATRE_protect_home_can_assigned = {
 	allowed = {
 		original_tag = ENG
 	}
 	enable = {
-		# economy E4: buffers may not be always-on; hoarding at peace is pointless
 		has_war = yes
+		WA_AI_MILITARY_commonwealth_uk_guard_available = yes
 	}
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = put_unit_buffers
-
-		order_id = 1
-
-		# britain
+		order_id = 12
 		states = {
 			123
 			859
@@ -285,31 +285,61 @@ WA_AI_MILITARY_ENG_protect_home_THEATRE = {
 			129
 			130
 		}
-
-		ratio = 0.25 # economy: was 2.6
-
+		ratio = 0.10
 		area = britain
-
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = yes
 	}
+}
+
+
+# purpose: restore ENG's full normal British home reserve whenever CAN cannot carry the mission.
+# range:   put_unit_buffers ratio 0.25
+# policy:  Additive per order; gate-exclusive with WA_AI_MILITARY_COUNTRY_ENG_THEATRE_protect_home_can_assigned
+# domain:  THEATRE
+WA_AI_MILITARY_COUNTRY_ENG_THEATRE_protect_home_can_fallback = {
+	allowed = {
+		original_tag = ENG
+	}
+	enable = {
+		has_war = yes
+		NOT = { WA_AI_MILITARY_commonwealth_uk_guard_available = yes }
+	}
+	abort_when_not_enabled = yes
+
 	ai_strategy = {
 		type = put_unit_buffers
-
-		order_id = 2
-
-		# britain
+		order_id = 13
 		states = {
+			123
+			859
+			127
 			857
+			126
+			125
+			860
+			129
+			130
 		}
-
-		ratio = 0.1
-
+		ratio = 0.25
 		area = britain
-
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = yes
 	}
+}
+
+
+WA_AI_MILITARY_ENG_protect_home_THEATRE = {
+
+	allowed = {
+		original_tag = ENG
+	}
+	enable = {
+		# economy E4: buffers may not be always-on; hoarding at peace is pointless
+		has_war = yes
+	}
+	abort_when_not_enabled = yes
+
 	ai_strategy = {
 		type = put_unit_buffers
 
@@ -430,8 +460,9 @@ WA_AI_MILITARY_ENG_protect_home_THEATRE = {
 # ai_area that holds ENG's entire land war, so front demand consumed their need. Measured on campaign
 # 7c7803a8 (17 monthly saves 1936.2-1944.6): an order existed in ONE sample - instances 1817
 # {447,452,923} and 1822 {454}, created 1942.11.23/24, one division each, gone by 1943.4. Its states
-# are now carried by WA_AI_MILITARY_ENG_defense_of_el_alamein below, non-yielding and on its own
-# order_id. Same defect fixed in WA_AI_MILITARY_ITA_protect_libya_THEATRE and the two
+# are now carried by the three `WA_AI_MILITARY_COUNTRY_ENG_THEATRE_defense_of_el_alamein_*`
+# tiers below. Their need is non-yielding, so North-African front demand cannot consume it.
+# The same defect was fixed in WA_AI_MILITARY_ITA_protect_libya_THEATRE and the former
 # WA_AI_MILITARY_ALLIES_commonwealth_* north_africa blocks.
 
 
@@ -678,103 +709,138 @@ WA_AI_MILITARY_ENG_all_in_THEATRE = {
 
 
 
-# purpose: the Egyptian line - Alexandria, Marsa Matruh, the Suez Canal and Palestine held as one
-#          garrison. Replaces WA_AI_MILITARY_ENG_protect_africa (deleted above) and the former
-#          single-state 0.5 hoard on 447.
-# pool:    subtract_fronts_from_need = no - the Nile line must hold while the Libyan front asks for
-#          everything. The default (yes) is exactly what starved the deleted block: front orders in
-#          the buffer's area subtract from its need, and north_africa is where ENG's land war lives.
-# area:    north_africa KEPT on purpose - `area` names the ai_areas whose orders may DRAW on the
-#          buffer, so the Egyptian front can still use these divisions when it attacks; only the
-#          NEED is protected, by subtract_fronts_from_need. Omitting `area` would seal the garrison
-#          (E4: right for a fortress point, wrong for a theatre reserve) - that is the second half of
-#          the old defect, 6-10 divisions frozen on Alexandria alone. No narrower alias is possible:
-#          common/ai_areas is at the boot-measured cap of 72 definitions on HOI4 1.19.2.
-# ratio:   0.25, the E4 normal-garrison bar. The former 0.5 carried a `# siege:` justification that
-#          its own always-on enable never matched (the Fix 100 shape); at 0.25 the ladder does not
-#          apply and the justification is retired rather than restated.
-# order_id 11 - private pool. order_id 1 is shared by eight entries in this file and mixing a
-#          non-yielding member into it is the E4b failure mode.
+# The three blocks below are the El-Alamein handoff ladder. Their enable branches are disjoint;
+# order_id identifies each order only and is not used to infer pooling or ratio arithmetic.
+
+# purpose: keep a small ENG command floor when both Commonwealth delegates carry El-Alamein.
+# range:   put_unit_buffers ratio 0.05
+# policy:  Additive per order; exclusive availability tier
 # domain:  THEATRE
-WA_AI_MILITARY_ENG_defense_of_el_alamein = {
-	allowed = {
-		original_tag = ENG
-	}
+WA_AI_MILITARY_COUNTRY_ENG_THEATRE_defense_of_el_alamein_delegated = {
+	allowed = { original_tag = ENG }
 	enable = {
-		# war-gated (E4): no garrison hoard in peacetime, but arm before ENG itself is attacked
-		OR = {
-			has_war = yes
-			any_other_country = { is_major = yes has_war = yes }
-		}
-		# our side still holds the anchor
-		447 = {
-			CONTROLLER = {
-				OR = {
-					is_in_faction_with = ENG
-					is_subject_of = ENG
-					tag = ENG
-				}
-			}
-		}
-		# somebody hostile holds North African / East African ground - controller geography, no tag,
-		# no date, so it reads correctly in an ahistorical game
-		WA_AI_MILITARY_ENG_africa_hostile_presence = yes
+		WA_AI_MILITARY_ENG_el_alamein_guard_active = yes
+		WA_AI_MILITARY_commonwealth_egypt_guard_available = yes
+		WA_AI_MILITARY_commonwealth_egypt_support_available = yes
 	}
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = put_unit_buffers
-
 		order_id = 11
-
-		# north_africa - Alexandria / Marsa Matruh / Suez Canal / Palestine
-		states = {
-			447
-			452
-			923
-			454
-		}
-
-		ratio = 0.25
-
+		states = { 447 452 923 454 }
+		ratio = 0.05
 		area = north_africa
+		subtract_fronts_from_need = no # pool: the ENG floor must survive North-African front demand
+		subtract_invasions_from_need = no
+	}
+}
 
-		subtract_fronts_from_need = no # pool: the Nile line must hold while the Libyan front asks for everything - the default (yes) is what starved the deleted protect_africa blocks (Fix 102; see header)
+
+# purpose: provide the middle ENG tier when exactly one of SAF or RAJ can carry its mission.
+# range:   put_unit_buffers ratio 0.15
+# policy:  Additive per order; exclusive availability tier
+# domain:  THEATRE
+WA_AI_MILITARY_COUNTRY_ENG_THEATRE_defense_of_el_alamein_partial_fallback = {
+	allowed = { original_tag = ENG }
+	enable = {
+		WA_AI_MILITARY_ENG_el_alamein_guard_active = yes
+		OR = {
+			AND = {
+				WA_AI_MILITARY_commonwealth_egypt_guard_available = yes
+				NOT = { WA_AI_MILITARY_commonwealth_egypt_support_available = yes }
+			}
+			AND = {
+				NOT = { WA_AI_MILITARY_commonwealth_egypt_guard_available = yes }
+				WA_AI_MILITARY_commonwealth_egypt_support_available = yes
+			}
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 14
+		states = { 447 452 923 454 }
+		ratio = 0.15
+		area = north_africa
+		subtract_fronts_from_need = no # pool: the partial fallback must survive North-African front demand
+		subtract_invasions_from_need = no
+	}
+}
+
+
+# purpose: restore the former full ENG line when neither Commonwealth delegate is available.
+# range:   put_unit_buffers ratio 0.25
+# policy:  Additive per order; exclusive availability tier
+# domain:  THEATRE
+WA_AI_MILITARY_COUNTRY_ENG_THEATRE_defense_of_el_alamein_full_fallback = {
+	allowed = { original_tag = ENG }
+	enable = {
+		WA_AI_MILITARY_ENG_el_alamein_guard_active = yes
+		NOT = { WA_AI_MILITARY_commonwealth_egypt_guard_available = yes }
+		NOT = { WA_AI_MILITARY_commonwealth_egypt_support_available = yes }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 15
+		states = { 447 452 923 454 }
+		ratio = 0.25
+		area = north_africa
+		subtract_fronts_from_need = no # pool: the full fallback must survive North-African front demand
 		subtract_invasions_from_need = no
 	}
 }
 
 
 
-WA_AI_MILITARY_ENG_defense_of_kuwait= {
+# purpose: keep a small British Kuwait floor while RAJ carries the close Gulf guard.
+# range:   put_unit_buffers ratio 0.02
+# policy:  Additive per order; gate-exclusive with WA_AI_MILITARY_COUNTRY_ENG_THEATRE_defense_of_kuwait_fallback
+# domain:  THEATRE
+WA_AI_MILITARY_COUNTRY_ENG_THEATRE_defense_of_kuwait_delegated = {
 	allowed = {
 		original_tag = ENG
 	}
 	enable = {
-		656 = {
-			CONTROLLER = {
-				OR = {
-					is_in_faction_with = ENG
-					is_subject_of = ENG
-					tag = ENG
-				}
-			}
-		}
+		WA_AI_MILITARY_ENG_kuwait_guard_active = yes
+		WA_AI_MILITARY_commonwealth_kuwait_guard_available = yes
 	}
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = put_unit_buffers
-
 		order_id = 10
+		states = { 656 }
+		ratio = 0.02
+		subtract_fronts_from_need = no # pool: dedicated floor that must survive unrelated front demand
+		subtract_invasions_from_need = no
+	}
+}
 
-		states = {
-			656
-		}
+# purpose: restore the full British Kuwait guard whenever RAJ cannot perform the mission.
+# range:   put_unit_buffers ratio 0.08
+# policy:  Additive per order; gate-exclusive with WA_AI_MILITARY_COUNTRY_ENG_THEATRE_defense_of_kuwait_delegated
+# domain:  THEATRE
+WA_AI_MILITARY_COUNTRY_ENG_THEATRE_defense_of_kuwait_fallback = {
+	allowed = {
+		original_tag = ENG
+	}
+	enable = {
+		WA_AI_MILITARY_ENG_kuwait_guard_active = yes
+		NOT = { WA_AI_MILITARY_commonwealth_kuwait_guard_available = yes }
+	}
+	abort_when_not_enabled = yes
 
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 16
+		states = { 656 }
 		ratio = 0.08
-
-		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
+		subtract_fronts_from_need = no # pool: full fallback must survive unrelated front demand
+		subtract_invasions_from_need = no
 	}
 }
 
