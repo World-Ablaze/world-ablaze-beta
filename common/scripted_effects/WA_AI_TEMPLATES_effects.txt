@@ -16,6 +16,31 @@
 # - Rangers : 13000-13999
 # - Suppression : 14000-14999
 
+# One-way latch behind WA_AI_CONFIG_DIVISIONS_can_motorize_support: a coalition member that has
+# once reached 20 military factories keeps motorised support for the rest of the campaign.
+# Country scope, called monthly for EVERY country (players included - the reserve system and the
+# division creator read the trigger too).
+#
+# Why a latch and not a live threshold: the trigger selects WHICH ai_template target is enabled,
+# and every time the enabled target changes the engine gives the role to a fresh copy and
+# decommissions the template that held it. A live `num_of_military_factories > 20` would do that on
+# construction, bomb damage, state loss, faction change and exile - and Norway and Belgium sit at
+# exactly 20 in 1940. Never add a clearing branch here without reading the decommission entry in
+# wa-lessons-learned.
+WA_AI_TEMPLATES_update_motorized_support_latch = {
+	if = {
+		limit = {
+			NOT = { has_country_flag = WA_AI_TEMPLATES_motorized_support_earned }
+			OR = {
+				is_in_faction_with = USA
+				is_in_faction_with = ENG
+			}
+			num_of_military_factories > 20
+		}
+		set_country_flag = WA_AI_TEMPLATES_motorized_support_earned
+	}
+}
+
 WA_AI_TEMPLATES_calculate_templates = {
 	if = {
 		limit = {

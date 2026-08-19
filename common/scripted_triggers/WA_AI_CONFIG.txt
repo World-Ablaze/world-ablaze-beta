@@ -510,15 +510,36 @@ WA_AI_CONFIG_DIVISIONS_has_access_to_oil = {
 	}
 }
 
+# Can this country field motorised support companies rather than horse-drawn ones?
+# Read by 18 sites, not only the templates: the scripted division creator's equipment
+# requirements, the reserve-division template, and the infantry / marines / mountaineer target
+# templates. Two ways in:
+#  - by tag: the four big motorised armies, plus the Commonwealth dominions. The dominions are
+#    named because no industrial threshold separates them from a Latin American minor early on,
+#    and they must stay motorised from 1936.
+#  - by earned latch: WA_AI_TEMPLATES_motorized_support_earned, set once and never cleared by
+#    WA_AI_TEMPLATES_update_motorized_support_latch (WA_AI_TEMPLATES_effects.txt). This replaces a
+#    blanket `is_in_faction_with USA/ENG`, which handed motorised support to every Allied minor on
+#    paper, however small.
+#
+# The latch is one-way ON PURPOSE. The readers cannot tolerate a value that flips: every read site
+# above selects WHICH ai_template target is enabled, and each time the enabled target changes the
+# engine hands the role to a fresh copy and decommissions the template currently holding it
+# (lessons-log.md, "flag-gated ai_template targets re-run the decommission pass"). A bare threshold
+# recomputed monthly would do that on factory construction, bomb damage, state loss, faction change
+# and exile. If you ever add a release condition here, that lesson is the one to read first.
 WA_AI_CONFIG_DIVISIONS_can_motorize_support = {
-	#TODO : add proper mils count by manpower calculus, and move it to WA_AI_TEMPLATES_triggers.txt
 	OR = {
 		original_tag = USA
 		original_tag = ENG
 		original_tag = FRA
 		original_tag = SOV
-		is_in_faction_with = USA
-		is_in_faction_with = ENG
+		original_tag = CAN
+		original_tag = AST
+		original_tag = NZL
+		original_tag = SAF
+		original_tag = RAJ
+		has_country_flag = WA_AI_TEMPLATES_motorized_support_earned
 	}
 }
 

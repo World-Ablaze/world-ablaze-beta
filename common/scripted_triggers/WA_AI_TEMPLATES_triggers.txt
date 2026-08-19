@@ -182,9 +182,30 @@ WA_AI_TEMPLATES_use_medium_spg_medium_armor = {
 	WA_AI_TEMPLATES_has_medium_spg_unlocked = yes
 }
 
+# Gates the infantry / garrison / marines / suppression target templates
+# (WA_AI_TEMPLATES_calculate_all_templates). Without it a country holds no WA_*_TEMPLATE flag,
+# the only enabled ai_template is WA_infantry_fallback whose ROLE-level upgrade_prio is 0, and
+# its 1936 templates never change again - measured on 320 of 334 countries in campaign 2f8cbd51.
+#
+# The country-tree entries are exactly the focuses that grant infantry_modernization_spirit, whose
+# hidden modifier sets unit_infantry_*_horse_battalion_line_design_cost_factor = -1.0: the line
+# battalions of the target template cost no army XP. That is the "free template design" this
+# trigger is named after - do not add a country focus here without checking it grants that spirit.
+#
+# The shared-tree entries below deliberately do NOT grant it: they hand the country a target
+# template it pays for out of its own XP. Granting the spirit from a shared tree was the rejected
+# alternative - it would buff every human player on that tree, which is a gameplay decision rather
+# than an AI fix.
 WA_AI_TEMPLATES_has_infantry_focus_completed = {
 	OR = {
 		has_idea = GER_okw # RCZ garrison country (ger_armor.999) - no focus tree, joins the template system via the OKW idea
+
+		# Shared / generic focus trees - target template only, no free-design spirit.
+		has_completed_focus = army_effort # generic.txt - 49 countries had it in campaign 2f8cbd51
+		has_completed_focus = SOUTH_AMERICA_expand_army # south_america_generic.txt - 19 countries
+		has_completed_focus = NORDIC_nordic_army # nordic_shared.txt - joint tree, never reached in that campaign
+		has_completed_focus = BALTIC_arm_the_nation # baltic_shared.txt - same, kept so the path exists off the historical rails
+
 		has_completed_focus = AST_darwin_mobile_force
 		has_completed_focus = BUL_evaluate_the_state_of_army
 		has_completed_focus = CAN_the_canadian_army
@@ -202,7 +223,6 @@ WA_AI_TEMPLATES_has_infantry_focus_completed = {
 		has_completed_focus = POL_army_modernisation
 		has_completed_focus = ROM_reactivate_the_armed_forces
 		has_completed_focus = SAF_military_modernization
-		has_completed_focus = SOV_reserve_armies_administration
 		has_completed_focus = SOV_reserve_armies_administration
 		has_completed_focus = ENG_modernize_the_royal_army
 		has_completed_focus = USA_arkansas_maneuvers
