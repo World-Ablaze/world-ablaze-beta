@@ -48,15 +48,33 @@ Order types attested in a full 1944 save (all countries, 567 order_instance bloc
        by matching 102 state sets against the `states = { }` lists in
        common/ai_strategy/WA_AI_MILITARY_COUNTRY_*_THEATRE.txt.
 
+ORDER OF BATTLE (--oob / --templates). What a division IS is not in its own block: the
+division carries `division_template_id={ id=N type=52 }` and nothing else, and the template
+that id points at lives in a TOP-LEVEL `division_templates={}` block shared by every country
+(1107 templates on a 1945 save). That block precedes `countries={}` (measured on three saves
+across two campaigns: 238076 < 1258663, 225782 < 1159695, 167862 < 807177), so one pass reads
+both. A division has NO name string in the save - `division_name={ type=0 name_order=2 }` is
+an index into a name list - so a division is identified by its template, never by a name.
+
+The FAMILY column (armour / mech / mot / cav / foot) is derived from `common/units/*.txt`,
+from the pair (group, type) of each line battalion - never from the battalion's name. WA
+renamed every battalion and collapsed mountain, marine, paratrooper and militia into
+`type = { infantry }`, so a name-pattern classifier reads all four as line infantry. The
+battalion keys themselves are always printed beside the family, because they are the ground
+truth the family summarises.
+
 usage: plans.py TAG[,TAG...] FILE... [--armies] [--fronts] [--divisions] [--where]
-                [--limit N]
+                [--oob] [--templates] [--limit N]
        plans.py ALL FILE... [--limit N]
   (no flag)    per-save census: armies, army groups, divisions per order class
   --armies     one row per army: class, parent army group, division count
   --fronts     every front order (type 1/2) with instance id, creation date, path -> states
   --divisions  org / strength / recent-combat share per order class
   --where      divisions per STATE, split by order class - where they are and what they do
-  --limit N    cap rows in --armies / --fronts / --where (default 40, 0 = unlimited)
+  --oob        ORDER OF BATTLE: per army - its order, its template mix, its states
+  --templates  per TEMPLATE census: what the country actually fields, and under which order
+  --limit N    cap rows in --armies / --fronts / --where / --oob / --templates
+               (default 40, 0 = unlimited)
 """
 import io, os, re, sys, collections
 
@@ -76,6 +94,15 @@ UNIT_RE = re.compile(r"^\s*unit=\{ id=(\d+) type=\d+ \}", re.M)
 
 FRONT_TYPES = ("1", "2")
 CLASS_ORDER = ("front", "invasion", "buffer", "areadef", "NO_ORDER")
+
+UNITS_DIR = os.path.join(REPO, "common", "units")
+# A template slot: `infantry_heavy_horse_battalion_line={ x=0 y=2 }`.
+SLOT_RE = re.compile(r"^([a-z_0-9]+)=\{ x=\d+ y=\d+ \}")
+TEMPLATE_ID_RE = re.compile(r"^id=\{ id=(\d+) type=52 \}")
+DIV_TEMPLATE_RE = re.compile(r"^division_template_id=\{ id=(\d+) type=52 \}")
+# Dominant-family tie-break, strongest first: a template with as many armour as foot
+# battalions is an armour template.
+FAMILY_ORDER = ("armour", "mech", "mot", "cav", "foot")
 
 
 def order_class(order):
@@ -127,6 +154,217 @@ def path_states(path):
         if label not in out:
             out.append(label)
     return ", ".join(out)
+
+
+# ---------------------------------------------------------------- sub-unit families
+
+_families = None
+
+
+def _family_of(seg):
+    """Family of one sub_unit, from its (group, type) pair. See the header note."""
+    g = re.search(r"^\s*group\s*=\s*(\S+)", seg, re.M)
+    t = re.search(r"\btype\s*=\s*\{([^}]*)\}", seg)
+    group = g.group(1) if g else ""
+    types = set((t.group(1) if t else "").split())
+    # Line artillery / AT / AA are real battalions but never define what a division IS,
+    # so they are held apart from the five manoeuvre families and excluded from the
+    # dominant-family vote: 10 infantry + 3 artillery is an infantry division.
+    if group in ("combat_support", "mobile_combat_support"):
+        return "sup"
+    if group == "support":
+        return "coy"          # support company slot - lives in support={}, not regiments={}
+    if group == "armor":
+        return "armour"
+    if "mechanized" in types:
+        return "mech"
+    if "motorized" in types:
+        return "mot"
+    if group == "mobile" and "infantry" in types:
+        return "cav"          # horse cavalry: group mobile, but type infantry
+    if group == "infantry" or "infantry" in types:
+        return "foot"
+    return "?"
+
+
+def _scan_sub_units(text, out):
+    """Fill {sub_unit key: family} from one common/units file."""
+    text = re.sub(r"#[^\n]*", "", text)          # WA comments out whole `type={}` blocks
+    m = re.search(r"sub_units\s*=\s*\{", text)
+    if not m:
+        return
+    body = text[m.end():]
+    depth, name, start = 0, None, 0
+    for tok in re.finditer(r"([A-Za-z_0-9]+)\s*=\s*\{|\{|\}", body):
+        if tok.group(0) == "}":
+            depth -= 1
+            if depth < 0:
+                break
+            if depth == 0 and name:
+                out[name] = _family_of(body[start:tok.start()])
+                name = None
+        else:
+            if depth == 0 and tok.group(1):
+                name, start = tok.group(1), tok.end()
+            depth += 1
+
+
+def sub_unit_families():
+    """{battalion key: family} for every sub_unit WA defines, cached.
+
+    Derived from `common/units/*.txt`, from the pair (group, type) - never from the
+    battalion NAME. WA renamed every battalion and gives mountaineer, marine,
+    paratrooper and militia line units the same `type = { infantry }`, so a name-pattern
+    classifier reads all four as ordinary infantry; the (group, type) pair is what
+    actually separates armour / mech / mot / cavalry / foot. An unreadable common/units/
+    yields {} and every family column prints `?` - the battalion keys are printed beside
+    it either way, and they are the ground truth the family only summarises.
+    """
+    global _families
+    if _families is None:
+        _families = {}
+        try:
+            for fn in sorted(os.listdir(UNITS_DIR)):
+                if not fn.endswith(".txt"):
+                    continue
+                with io.open(os.path.join(UNITS_DIR, fn), encoding="utf-8",
+                             errors="replace") as fh:
+                    _scan_sub_units(fh.read(), _families)
+        except OSError:
+            pass
+    return _families
+
+
+# ---------------------------------------------------------------- templates
+
+def _read_templates(fh):
+    """Consume the top-level `division_templates={}` block -> {template id: record}.
+
+    The handle is left just past the block closing brace, so the caller scan for
+    `countries={}` continues from there: the two blocks are read in ONE pass because
+    division_templates always precedes countries (see the header measurement).
+    """
+    out, cur, slot, depth = {}, None, None, 1
+    for line in fh:
+        s = line.strip()
+        before = depth
+        depth += line.count("{") - line.count("}")
+        if depth <= 0:
+            break
+        if before == 1:
+            if s.startswith("division_template={"):
+                cur = {"id": None, "name": None, "country": None,
+                       "regs": collections.Counter(), "sup": collections.Counter()}
+                slot = None
+            continue
+        if cur is None:
+            continue
+        if before == 2:
+            slot = None
+            m = TEMPLATE_ID_RE.match(s)
+            if m and cur["id"] is None:
+                cur["id"] = int(m.group(1))
+            m = re.match(r'name="(.*)"', s)
+            if m and cur["name"] is None:
+                cur["name"] = m.group(1)
+            m = re.match(r'country="(\w+)"', s)
+            if m:
+                cur["country"] = m.group(1)
+            if s.startswith("regiments={"):
+                slot = "regs"
+            elif s.startswith("support={"):
+                slot = "sup"
+            elif depth <= 1:                      # the template block just closed
+                if cur["id"] is not None:
+                    out[cur["id"]] = cur
+                cur = None
+        elif before == 3 and slot:
+            m = SLOT_RE.match(s)
+            if m:
+                cur[slot][m.group(1)] += 1
+    return out
+
+
+def template_label(tid, templates):
+    """A division is identified by its template - the save holds no division name."""
+    if tid is None:
+        return "(no template id)"
+    rec = templates.get(tid)
+    if rec is None:
+        return "template #%d (not in this save)" % tid
+    return rec["name"] or "(unnamed template #%d)" % tid
+
+
+def template_family(rec, fams):
+    """Dominant manoeuvre family of a template, ties broken by FAMILY_ORDER."""
+    if not rec:
+        return "?"
+    counts = collections.Counter()
+    support = 0
+    for key, n in rec["regs"].items():
+        f = fams.get(key, "?")
+        if f in FAMILY_ORDER:
+            counts[f] += n
+        elif f == "sup":
+            support += n
+    if not counts:
+        # No manoeuvre battalion at all. `sup` when the template is pure line artillery /
+        # AT / AA (RCZ "Artillery template A" is 4 artillery + 2 AT), `?` when it is empty
+        # or common/units/ could not be read.
+        return "sup" if support else "?"
+    best = max(counts.values())
+    for f in FAMILY_ORDER:
+        if counts.get(f) == best:
+            return f
+    return "?"
+
+
+_BN_SUFFIX = re.compile(r"_(?:battalion|batallion)(?:_line)?$|_line$")
+
+
+def bn_mix(counter, top=4):
+    """10x infantry_heavy_horse, 3x artillery_horse (+2 more).
+
+    Only the `_battalion_line` suffix is stripped (and the `_batallion_line` typo
+    variant, which real WA templates use); the rest of the key is printed verbatim
+    because it is the one measured statement about what the division is made of.
+    """
+    if not counter:
+        return "-"
+    items = counter.most_common()
+    head = ", ".join("%dx %s" % (n, _BN_SUFFIX.sub("", k)) for k, n in items[:top])
+    if len(items) > top:
+        head += " (+%d more)" % (len(items) - top)
+    return head
+
+
+def _mean(vals):
+    return sum(vals) / len(vals) if vals else 0.0
+
+
+def _top(counter, n=4, xfirst=False, sep=", "):
+    """Top-n of a Counter. `xfirst` prints '8x Infantry template F' instead of
+    'Infantry template F 8' - used where the key is a multi-word name."""
+    if not counter:
+        return "-"
+    items = counter.most_common()
+    fmt = (lambda k, v: "%dx %s" % (v, k)) if xfirst else (lambda k, v: "%s %d" % (k, v))
+    head = sep.join(fmt(k, v) for k, v in items[:n])
+    if len(items) > n:
+        head += " (+%d more)" % (len(items) - n)
+    return head
+
+
+def division_classes(country):
+    """{division id: order class} - UNATTACHED for a division in no army member list."""
+    cls = classify(country)
+    out = {}
+    for aid, a in country["armies"].items():
+        for uid in a["members"]:
+            out[uid] = cls[aid][0]
+    for uid in country["divisions"]:
+        out.setdefault(uid, "UNATTACHED")
+    return out
 
 
 # ---------------------------------------------------------------- parsing
@@ -191,18 +429,22 @@ def _blank_country():
     return {"armies": {}, "groups": [], "divisions": {}}
 
 
-def scan(path, tags=None, want_divisions=False):
-    """One streaming pass. -> {tag: {'armies': {id: rec}, 'groups': [rec], 'divisions': {}}}
+def scan(path, tags=None, want_divisions=False, want_templates=False):
+    """One streaming pass. -> ({tag: {'armies', 'groups', 'divisions'}}, {template id: rec})
 
-    `tags` None means every country. Only `theatres` (and `units`, when asked) are read.
+    `tags` None means every country. Only `theatres` (and `units`, when asked) are read
+    inside the countries block; `division_templates={}` is a TOP-LEVEL block that comes
+    BEFORE it, so asking for templates costs the same single pass, not a second one.
     """
-    out = {}
+    out, templates = {}, {}
     with sg.open_save(sg.resolve(path)) as fh:
         for line in fh:
             if line.startswith("countries={"):
                 break
+            if want_templates and line.startswith("division_templates={"):
+                templates = _read_templates(fh)
         else:
-            return out
+            return out, templates
         depth, tag, section, sdepth = 1, None, None, 0
         buf, kind, base, bdepth = None, None, 0, 0
         div_id, div, ddepth = None, {}, None
@@ -267,6 +509,12 @@ def scan(path, tags=None, want_divisions=False):
                             mc = re.match(r'^last_combat_date="([\d.]+)"', s)
                             if mc and "lc" not in div:
                                 div["lc"] = mc.group(1)
+                            # What the division IS. The save carries no division name -
+                            # `division_name={}` is an index into a name list - so this
+                            # id, joined to division_templates={}, is the only identity.
+                            mt = DIV_TEMPLATE_RE.match(s)
+                            if mt and "tid" not in div:
+                                div["tid"] = int(mt.group(1))
                         ddepth += line.count("{") - line.count("}")
                     sdepth += line.count("{") - line.count("}")
                     if sdepth <= 0:
@@ -282,7 +530,7 @@ def scan(path, tags=None, want_divisions=False):
             depth += line.count("{") - line.count("}")
             if depth <= 0:
                 break
-    return out
+    return out, templates
 
 
 def classify(country):
@@ -447,6 +695,114 @@ def report_where(tag, save, country, limit):
               % (len(rows) - limit, rest))
 
 
+def _oob_block(label, cls_name, owner, members, country, templates, fams, names, p2s):
+    """One army (or the UNATTACHED bucket) as four lines: header, families, templates,
+    states. `members` is a set of division ids; ids with no `division={}` in `units` are
+    counted under `(not deployed)` rather than dropped."""
+    per_t, per_f, per_s = collections.Counter(), collections.Counter(), collections.Counter()
+    org, stg = [], []
+    for uid in members:
+        d = country["divisions"].get(uid)
+        if d is None:
+            per_t["(not deployed)"] += 1
+            per_f["?"] += 1
+            per_s["(not deployed)"] += 1
+            continue
+        tid = d.get("tid")
+        rec = templates.get(tid) if tid is not None else None
+        per_t[template_label(tid, templates)] += 1
+        per_f[template_family(rec, fams) if rec else "?"] += 1
+        loc = d.get("location")
+        st = p2s.get(int(loc)) if loc else None
+        per_s[names.get(st, "state %d" % st) if st is not None else "(no state)"] += 1
+        if "organisation" in d:
+            org.append(d["organisation"])
+        if "strength" in d:
+            stg.append(d["strength"])
+    print("  %-20s %-10s %-22s %3d div  org %5.1f  str %5.1f"
+          % (label[:20], cls_name, owner[:22], len(members), _mean(org), _mean(stg)))
+    print("      families   %s" % _top(per_f, 6))
+    print("      templates  %s" % _top(per_t, 5, xfirst=True, sep=" | "))
+    print("      states     %s" % _top(per_s, 5))
+
+
+def report_oob(tag, save, country, templates, limit):
+    """ORDER OF BATTLE: per army - what it is made of, what order covers it, where it is.
+
+    The four questions in one block. Armies are sorted by division count, and every
+    division that no army claims lands in the trailing UNATTACHED bucket, so the block
+    count closes against `savegame.py army TAG` exactly as --where does."""
+    cls = classify(country)
+    fams, names, p2s = sub_unit_families(), state_names(), province_state()
+    rows = sorted(country["armies"].items(), key=lambda kv: -len(kv[1]["members"]))
+    attached = set()
+    for _aid, a in rows:
+        attached |= a["members"]
+    loose = set(country["divisions"]) - attached
+    print("%s  %s   %d deployed divisions | %d armies | %d army groups | %d unattached"
+          % (tag, save, len(country["divisions"]), len(country["armies"]),
+             len(country["groups"]), len(loose)))
+    if not templates:
+        print("    ! division_templates={} not read - template and family columns blank")
+    if not fams:
+        print("    ! common/units/*.txt unreadable - family column reads '?'")
+    for aid, a in (rows if not limit else rows[:limit]):
+        c, src = cls[aid]
+        _oob_block(a["name"], c, ("via *" + src) if src else "(own order)", a["members"],
+                   country, templates, fams, names, p2s)
+    if limit and len(rows) > limit:
+        print("  ... %d more armies (raise --limit, 0 = all)" % (len(rows) - limit))
+    if loose:
+        # No army claims these, so no order can reach them - the owner column is not
+        # "(own order)" but nothing at all.
+        _oob_block("(UNATTACHED)", "UNATTACHED", "-", loose, country, templates, fams,
+                   names, p2s)
+
+
+def report_templates(tag, save, country, templates, limit):
+    """Per-TEMPLATE census of what the country actually fields, and under which order.
+
+    Keyed on the division's own `division_template_id`, not on the template's
+    `country=` field: a template can be foreign-designed or inherited, and what matters
+    is which template the deployed divisions point at."""
+    fams = sub_unit_families()
+    dcls = division_classes(country)
+    per = collections.defaultdict(lambda: {"n": 0, "org": [], "str": [],
+                                           "cls": collections.Counter()})
+    for uid, d in country["divisions"].items():
+        rec = per[d.get("tid")]
+        rec["n"] += 1
+        if "organisation" in d:
+            rec["org"].append(d["organisation"])
+        if "strength" in d:
+            rec["str"].append(d["strength"])
+        rec["cls"][dcls.get(uid, "UNATTACHED")] += 1
+    if not per:
+        print("%s  %s   no deployed divisions" % (tag, save))
+        return
+    print("%s  %s   %d deployed divisions over %d template(s) in the field"
+          % (tag, save, len(country["divisions"]), len(per)))
+    if not templates:
+        print("    ! division_templates={} not read - names and battalions unavailable")
+    print("    %-5s %-7s %-8s %-6s %-6s %s"
+          % ("n", "family", "bn/coy", "org", "str", "template"))
+    rows = sorted(per.items(), key=lambda kv: -kv[1]["n"])
+    for tid, r in (rows if not limit else rows[:limit]):
+        rec = templates.get(tid) if tid is not None else None
+        width = sum(rec["regs"].values()) if rec else 0
+        coys = sum(rec["sup"].values()) if rec else 0
+        print("    %-5d %-7s %-8s %-6.1f %-6.1f %s"
+              % (r["n"], template_family(rec, fams) if rec else "?",
+                 "%d/%d" % (width, coys) if rec else "-",
+                 _mean(r["org"]), _mean(r["str"]), template_label(tid, templates)))
+        print("            battalions %s" % (bn_mix(rec["regs"], 5) if rec else "-"))
+        print("            orders     %s" % _top(r["cls"], 6))
+    if limit and len(rows) > limit:
+        rest = sum(r["n"] for _t, r in rows[limit:])
+        print("    ... %d more template(s) holding %d divisions (raise --limit, 0 = all)"
+              % (len(rows) - limit, rest))
+
+
 def main(argv):
     # State names carry accents (Gabès, Kraków); a cp1252 console would mangle them.
     if hasattr(sys.stdout, "reconfigure"):
@@ -475,18 +831,37 @@ def main(argv):
         sys.exit(__doc__.strip().split("usage:")[1].strip())
     tag_arg, files = args[0], args[1:]
     tags = None if tag_arg.upper() == "ALL" else set(tag_arg.upper().split(","))
-    # --where needs the same units-section pass as --divisions (it reads `location=`).
-    want_div = "--divisions" in flags or "--where" in flags
+    # --where needs the same units-section pass as --divisions (it reads `location=`);
+    # --oob and --templates need that pass AND the top-level division_templates block.
+    want_tmpl = "--oob" in flags or "--templates" in flags
+    want_div = want_tmpl or "--divisions" in flags or "--where" in flags
     for save in files:
-        data = scan(save, tags, want_divisions=want_div)
+        data, templates = scan(save, tags, want_divisions=want_div,
+                               want_templates=want_tmpl)
         if not data:
             print("%s: no matching country" % save)
             continue
+        # An order-of-battle question asked about a named country must never be answered
+        # with silence: "no output" and "no divisions" are different findings.
+        if want_tmpl and tags:
+            for tag in sorted(tags - set(data)):
+                print("%s  %s   country absent from this save" % (tag, save))
+            for tag in sorted(t for t in tags & set(data)
+                              if not data[t]["armies"] and not data[t]["groups"]
+                              and not data[t]["divisions"]):
+                print("%s  %s   no armies and no deployed divisions" % (tag, save))
         for tag in sorted(data):
             country = data[tag]
-            if not country["armies"] and not country["groups"]:
+            # --oob / --templates still have something to say about a country with
+            # divisions but no army at all (every division reads UNATTACHED).
+            if (not country["armies"] and not country["groups"]
+                    and not country["divisions"]):
                 continue
-            if "--armies" in flags:
+            if "--oob" in flags:
+                report_oob(tag, save, country, templates, limit)
+            elif "--templates" in flags:
+                report_templates(tag, save, country, templates, limit)
+            elif "--armies" in flags:
                 report_armies(tag, save, country, limit)
             elif "--fronts" in flags:
                 report_fronts(tag, save, country, limit)

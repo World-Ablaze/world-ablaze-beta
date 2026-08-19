@@ -19,7 +19,7 @@ Savegame output is bulky even through the script: a `campaigns` listing over a r
 
 Every extraction subagent prompt should end with an instruction like: *"Return only the distilled table/findings and any anomalies you noticed. Do not echo raw command output, section dumps, or file contents."*
 
-Inline exception: a single `meta FILE` on an already-known file is small enough to run directly, as is `army TAG FILE...` (one line per save) and `navy TAG FILE...` without `--fleets` (three lines per save), and `plans.py TAG FILE...` in its default census mode (about six lines per country per save — but `plans.py ALL` and `--armies`/`--fronts`/`--where` over many saves belong in a subagent; `--where` is one row per state, so cap it with `--limit`; `--limit 0` = unlimited, as does `airload.py --top 0`), and `control SCOPE FILE...` without `--provinces` (about ten lines per save; `--provinces` is one row per province and belongs in a subagent), `relations FILE --tag TAG` (about fifteen lines per save; the no-`--tag` faction table is twelve), and `rail.py` on a handful of hops. Everything else — `campaigns`, `sections`, `section`, `var`, `ideas`, `flags`, `tlm`, `resources`, `buildings`, `decisions`, `pc` — runs inside a subagent. (`pc --match no_such_thing` suppresses the project table and leaves the ~10-line summary per save plus a two-line `NO MATCH` notice, which is the shape to ask a subagent for when the question is about factory share or queue depth rather than individual projects.)
+Inline exception: a single `meta FILE` on an already-known file is small enough to run directly, as is `army TAG FILE...` (one line per save) and `navy TAG FILE...` without `--fleets` (three lines per save), and `plans.py TAG FILE...` in its default census mode (about six lines per country per save — but `plans.py ALL` and `--armies`/`--fronts`/`--where`/`--oob`/`--templates` over many saves belong in a subagent; `--where` is one row per state and `--oob` is four lines per army, so cap both with `--limit`; `--templates` is three lines per template and is short enough inline for one country on one save; `--limit 0` = unlimited, as does `airload.py --top 0`), and `control SCOPE FILE...` without `--provinces` (about ten lines per save; `--provinces` is one row per province and belongs in a subagent), `relations FILE --tag TAG` (about fifteen lines per save; the no-`--tag` faction table is twelve), and `rail.py` on a handful of hops. Everything else — `campaigns`, `sections`, `section`, `var`, `ideas`, `flags`, `tlm`, `resources`, `buildings`, `decisions`, `pc` — runs inside a subagent. (`pc --match no_such_thing` suppresses the project table and leaves the ~10-line summary per save plus a two-line `NO MATCH` notice, which is the shape to ask a subagent for when the question is about factory share or queue depth rather than individual projects.)
 
 ## The helper script
 
@@ -75,7 +75,7 @@ all. Verified on `af003548` 1944.7: 7 of the 11 UK hosting states sit at exactly
 nominal while reading 86–98 % in planes. Consumers: R8, R15, R52 — any "is there room on
 these airfields" question.
 
-Fourth companion: `plans.py TAG[,TAG…]|ALL <save>… [--armies] [--fronts] [--divisions] [--where] [--limit N]` —
+Fourth companion: `plans.py TAG[,TAG…]|ALL <save>… [--armies] [--fronts] [--divisions] [--where] [--oob] [--templates] [--limit N]` —
 **AI battle plans: who holds an order, of what kind, and where every division sits.** Default is a
 per-save census (divisions per order class: `front` / `invasion` / `buffer` / `areadef` / `NO_ORDER`);
 `--fronts` lists every type-1/2 order with its `instance_id`, `creation_date` and `path` resolved to
@@ -86,6 +86,29 @@ hand (it needs a province→state join the save does not carry). ~2 s for all 66
 save. **Never hand-parse `orders_group` for this** — see the two traps in the gotcha below, which this
 script exists to close. Consumers: any "is the AI planning / where are its divisions / is this front
 manned" question.
+
+**`--oob` and `--templates` add the ORDER OF BATTLE: what the divisions ARE**, joined to the order
+and the location the other flags already give. `--oob` is one block per army — its order class and
+whose plan covers it, its division count and mean org/strength, its family mix, its templates, its
+states — followed by an `(UNATTACHED)` block, so the block counts close against `army TAG` exactly
+as `--where` does (verified equal on `07270b64` 1945.12 for ENG 91, GER 239, JAP 416, SOV 359, USA
+206). `--templates` is the country-wide census: per template, how many are deployed, mean org and
+strength, the line battalions it is built from, and the split of those divisions across order
+classes — the "is the AI fielding what we told it to build, and is it using it on a front or
+parked in a garrison" view. Both cost the same single pass (≈2.7 s for `ALL` on a 122 MB save).
+
+Two facts these two flags rest on. **A division has no name in the save** — `division_name={ type=0
+name_order=2 }` is an index into a name list — so a division is identified by
+`division_template_id`, joined to a **top-level `division_templates={}` block shared by every
+country** (1107 templates on a 1945 save) that sits *before* `countries={}`, which is why the join
+costs no extra pass. And the **family column (armour / mech / mot / cav / foot) comes from
+`common/units/*.txt`, from each battalion's (group, type) pair — never from its name**: WA renamed
+every battalion and gives mountaineer, marine, paratrooper and militia the same
+`type = { infantry }`, so a name-pattern classifier reads all four as ordinary line infantry, while
+horse cavalry is `group = mobile` with `type = infantry`. Line artillery / AT / AA (`group =
+combat_support`) are excluded from the dominant-family vote, so 10 infantry + 3 artillery is an
+infantry template. The battalion keys are printed beside the family either way — they are the
+measurement, the family only summarises it.
 
 `--where` keeps two buckets apart that are routinely conflated: **`NO_ORDER`** is a division in an
 army whose army *and army group* hold no order, while **`UNATTACHED`** is a division deployed in
