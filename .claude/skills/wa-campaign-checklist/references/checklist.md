@@ -1755,6 +1755,80 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **Status:** NOT YET TESTED
 - **History:**
 
+### R77. The corridor rails the invader's approach march, not just the defender's rear (Fix 113)
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=cc5291eba status=NOT_YET_TESTED`
+
+- **Opened 2026-08-20** from campaign `3d68a183` (cloud, BHU observer, monthly saves 1936.1-1946.1; the build carries `wa_tlm_r107_sizing_*`, so it is post-Fix-107). Widest-path over the save's own per-edge `rail_way` map at 1944.4, with the same hops at 1936.2 as the baseline: **east of Tunis the corridor worked** - Tunis->Gabes 1 -> 3, Gabes->Tripoli BREAK -> 4, `wa_tlm_r107_sizing_rail_tgt = 4` on ENG - while **west of Tunis nothing moved in ten years**: Algiers->Constantine 2 -> 2 and Constantine->Tunis 2 -> 2, i.e. exactly the levels in `map/railways.txt:1150-1153`, 20 supply, against a front asking 41 at Constantine. The node list simply ended at Tunis. Three competing readings were measured and ruled out before this item was opened - **do not re-run them**: (a) *the ally leg never fired* - `wa_tlm_r104_ally_fund_n = 57` on ENG, it fired 57 times, all of it east of Tunis; (b) *the host builds its own* - FRA controls Algiers and Constantine and its PC queue holds 13 projects at **0 assigned factories**, six railways stalled 193-207 weeks on 1940 metropolitan targets (QUEUE row 17 owns that defect); (c) *the land-war strategy covers it* - ENG carried **one** type-13 project country-wide, tagged corridor, and USA **zero**.
+- **Fix under test:** **Fix 113** (commit `cc5291eba`). Five nodes prepended to `WA_AI_PC_CORRIDOR_define_north_africa`: Oran 7132, Algiers 1145, Constantine 9976, Bone 7081, Bizerte 9994. All five already carry a `supply_node`, so `depot_ = 0` throughout; the four coastal ones carry `port_ = 1` because **Bone is `naval_base` 1 = 5 supply** and binds the injection. Constantine is inland and is there as a forced junction - without it the pathfinder can route the arm south through the level-1 Batna branch (`map/railways.txt:1152`). `corridor.max_routes_per_run` 14 -> 19 in the same commit: 20 nodes = 19 pairs, and that constant is the stale-path validator's completeness guarantee, not a throughput knob.
+- **Pass (four legs):**
+  1. **The arm is requested.** On a builder holding two consecutive WESTERN nodes while the North African air theatre is contested, `wa_tlm_r95_corridor_seg_n` rises **and** `wa_tlm_r107_sizing_rail_tgt > 2`. Both flat while the Allies stand in Algeria means the nodes are in the list and the selector still refuses them - read `wa_tlm_r103_corridor_blocked_n` next.
+  2. **The map follows (the point).** Within about three build durations of leg 1 (a segment costs 800 and progresses at assigned civs x 2.5/day, so ~4 months at the 20-civ clamp), `rail.py --corridor 7132,1145,9976,7081,9994,11969 --thin 2` shows the minimum level **above 2** on the hops that builder holds. Pre-fix baseline, verbatim: all five hops at `2`, BREAK=0 THIN=5.
+  3. **Bone is raised.** `control 460 --buildings` shows `naval_base` above 1 at a later save than the one where `wa_tlm_r107_port_raise_n` moved. **Precondition**, inherited from R71 leg 3: only scoreable when some pass reads `r107_sizing_inject >= 0` **and** `< r107_sizing_demand` **and** `r107_sizing_chain >= 20`; otherwise mark **NOT EXERCISED**, never FAILED.
+  4. **The eastern arm does not go backwards (the `max_routes_per_run` leg).** No eastern hop reads a LOWER level than it did at the same date on `3d68a183`, and no builder shows a step in `wa_tlm_pc_stale_n` or `pc_aging_reval_cancels` coinciding with a corridor pass. This is the leg that catches the specific way this change can destroy value: a pair count above `max_routes_per_run` makes the stale-path validator cancel the segments it did not pathfind, every pass, for ever.
+- **Probe:** `rail.py --corridor 7132,1145,9976,7081,9994,11969,7005,11957,1149,9980,4047,4057,1127,11954,10049,7082,1130,5078,11967,4076 --thin 3` (the whole 20-node list - legs 2 and 4 read different halves of one output); `savegame.py tlm ENG USA FRA ITA GER <saves> --match "r95|r103|r107"`; `savegame.py control 459,460,1061 --buildings` **one state per run** (a grouped call aggregates every state into one table and cannot answer per state); `savegame.py pc <TAG> <saves>` for the `strategy tags` census line - **`pc --match corridor` is a DEAD PROBE**, `--match` filters the building label only.
+  ```text
+  > rail.py --corridor 7132,1145,9976,7081,9994,11969 1944.4_Apr.hoi4 --thin 2     (pre-fix baseline, campaign 3d68a183)
+  === 1944.4.1.2  1944.4_Apr.hoi4  (4444 provinces carry rail) ===
+    from     to       rail    narrow   hops  verdict states
+    7132     1145     3/2     2        4     THIN    Algiers -> Algiers
+    1145     9976     2/2     2        5     THIN    Algiers -> Constantine
+    9976     7081     2/2     2        2     THIN    Constantine -> Constantine
+    7081     9994     2/2     2        5     THIN    Constantine -> Bizerte
+    9994     11969    2/4     2        1     THIN    Bizerte -> Tunisia
+    summary: 5 hop(s)  BREAK=0  THIN=5 (narrowest <= 2, throughput <= 20)  ok=0
+  > rail.py --corridor 1145,9976,11969,7005,1149 1936.2_Feb.hoi4 --thin 2          (same hops, ten years earlier)
+    1145     9976     2/2     2        5     THIN    Algiers -> Constantine
+    9976     11969    2/2     2        5     THIN    Constantine -> Tunisia
+    11969    7005     2/1     1        6     THIN    Tunisia -> Gabès
+    7005     1149     1/1     -        -     BREAK   Gabès -> Tripoli
+  ```
+- **Threshold:** 3.
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **Regression watch, in priority order:**
+  - **Band contention - the thing this fix spends.** Corridor rails carry `prio.rail_war`, the same band as the land-war type-13 family, and `WA_AI_PC_assign_factories` fills winner-takes-most down one sorted queue. 19 routes instead of 14 does not admit more projects per pass; it makes the corridor **hold its slots longer**. Metric: each builder's `built_by_type[13]` slope across the fix. **Not bounded, and not claimed to be** - `rail_level_cap` bounds the level a hop reaches, not the civ-weeks the corridor takes from the band. Lever if it bites: `rail_level_cap` downward, not a new lane.
+  - **Overbuild is permanent.** Railways cannot be downgraded. Five more nodes is five more chances to pour concrete against a presence index that over-reads a dispersed army.
+  - **The Axis builds the arm too.** The corridor is symmetric by design, so a GER/ITA Tunisia will rail Bone and Bizerte westward for its own supply. That is intended and fails no leg - but a campaign where the Axis reaches level 4 on the arm *before* the Allies land is the first case where the symmetric list arms the defender of a coast the attacker has not reached, and it should be recorded here.
+- **History:**
+
+### R78. Theatre air bases land on the contested edge, not in the rear (Fix 114)
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=685c36fb7 status=NOT_YET_TESTED`
+
+- **Opened 2026-08-20** from campaign `3d68a183` at 1944.4. `WA_AI_build_theatre_air_bases` selects its target state on `building_level@air_base` alone, through `random_state`, across an air theatre spanning Morocco to Egypt (32 states). MEASURED: the four live `theatre_air` projects of that theatre were **ENG -> 462 Marrakech (20 civs), ENG -> 461 Casablanca (18 civs), USA -> 1055 Tafialet (20 civs), USA -> 460 Constantine (20 civs)** - three of four in Morocco - while `airload.py` over the 17 North African states read front-line **Constantine at air-base level 2 and 150 % of NOMINAL capacity (FULL)** and front-line **Batna at level 0**, against rear **Algiers level 8 at 50 %**. Across the line, GER-held Bizerte (level 6) and Gabes (level 4) were both at 100 %. The theatre gate, the deficit target (`thair_dbg_target = 64.9` levels) and the ground-commitment rule (`dbg_committed = 1`) were all working; only the choice of state inside the theatre was wrong.
+- **Fix under test:** **Fix 114** (commit `685c36fb7`). The ladder runs twice: phase 1 admits only states passing `WA_AI_PC_state_is_near_contested_edge` (two neighbour rings from ground held by an enemy of ROOT, controller geography only, no tag and no date), phase 2 is the pre-Fix-114 whole-theatre ladder. One loop with a single guarded phase flip, so the ~100-line body keeps its indentation and iterations stay bounded by `2 x _thair_level_cap_`. **Deliberately not a second strategy**: it would duplicate the contest / deficit / commitment / ally-funding terms and open a second admission path into the same `qmax.theatre_air = 3` and `prio.air_front` band, which is the shape Fix 77 closed.
+- **Pass (three legs):**
+  1. **The phase fires.** `wa_tlm_r114_thair_near_n > 0` on at least one builder whose `wa_ai_thair_dbg_committed = 1`. `near_n = 0` with `far_n > 0` across a whole campaign means phase 1 never found an eligible edge state - check leg 3 before calling it a FAIL, the fallback is allowed to win.
+  2. **The map moves (the point).** `airload.py --states <theatre ids> --all --top 0` shows the front-line member states gaining air-base LEVELS relative to the rear, against the pre-fix baseline recorded above (Constantine 2, Batna 0, Marrakech 3, Casablanca 4, Algiers 8 at 1944.4). Counters up and the map flat for six months or more means the projects are queued and not funded - read the `funded` column of `pc <TAG> --match air_base`.
+  3. **No theatre loses its builder (the fallback leg).** No contested, in-deficit theatre goes a whole campaign with **zero** starts. A builder reading `dbg_active > 0` for months with `near_n = far_n = 0` is phase 1 locking the ladder out while the flip fails to fire - that IS a FAIL, and the line to read is the phase-flip guard at the bottom of the ladder.
+- **Probe:** `savegame.py tlm ENG USA <saves> --match "r114|r52"` (`near_n`, `far_n`, `near_first_t`, `near_last_t`); `savegame.py var <TAG> "thair" <saves>` for `dbg_called` / `_active` / `_committed` / `_best` / `_started`; `savegame.py pc <TAG> <saves> --match air_base` for target states and funding; `airload.py --states 290,461,462,783,1055,1056,459,460,513,1057,458,665,1061,448,449,661,662 --all --top 0` for North Africa. **Absence contract:** the family lands at `wa_tlm_version` **29**; a save below that lacks it entirely - score **NOT CHECKED**, never FAILED. **Read `near_n` and `far_n` as a pair** - `far_n` is not a failure counter, a theatre contested at a distance is supposed to land in the rear.
+  ```text
+  > airload.py --states <17 North African ids> --all --top 0 1944.4_Apr.hoi4       (pre-fix baseline, campaign 3d68a183)
+    state name                   own  ctrl lvl    cap  actual wings  NOMINAL  act%  nom%
+    1061  Bizerte                GER  GER    6    600     591     6      600   98%  100% FULL
+    459   Algiers                FRA  FRA    8    800     397     4      400   50%   50%
+    665   Gabes                  GER  GER    4    400     396     4      400   99%  100% FULL
+    460   Constantine            FRA  FRA    2    200     220     3      300  110%  150% FULL   <- the front
+    1057  Batna                  FRA  FRA    0      0       0     0        0    0%    0%        <- the front
+    461   Casablanca             FRA  FRA    4    400     100     1      100   25%   25%
+    462   Marrakech              FRA  FRA    3    300       0     0        0    0%    0%
+    TOTAL 17 states: cap 6000  actual 3090 (52%)  wings 31  NOMINAL 3300 (55%)
+  > savegame.py pc ENG 1944.4_Apr.hoi4 --match air        (where the theatre lane was actually spending)
+    2   17  air_base  theatre_air   462      350   20   700/1400   50%      <- Marrakech
+    3   19  air_base  theatre_air   461      350   18  1385/1700   19%      <- Casablanca
+  > savegame.py pc USA 1944.4_Apr.hoi4 --match air
+    0   17  air_base  theatre_air   460      350   20   400/1100   64%      <- Constantine
+    1   18  air_base  theatre_air  1055      350   20  1050/1400   25%      <- Tafialet
+  ```
+- **Threshold:** 3.
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **Regression watch:**
+  - **Ring 2 may be the whole theatre.** On a wide land theatre with a long front (eastern europe), two rings can cover nearly every member state, so phase 1 = phase 2 and the fix is inert there. Inert is not harmful, but a campaign where `near_n` is high everywhere and the state distribution is unchanged means the ring DEPTH needs the work, not the concept.
+  - **Cost of the ring walk.** Two nested `any_neighbor_state` inside a `random_state` limit. It sits after the theatre-membership and air-base-level tests so it runs on a handful of states per rung; if a future edit reorders that limit block, it becomes a full-map neighbour walk on every pulse.
+  - **The front-line state may still be ineligible.** Batna is `pastoral` (2 local slots) and was level 0 at 1944.4 while the ENG ladder climbed to level 4. It is **ASSUMED**, not measured, that it was ineligible rather than merely unlucky in `random_state`. If leg 2 shows Constantine and the Tunisian states rising while Batna stays at 0, the remaining blocker is a slot or availability test rather than the selector - that is a new item, not a FAIL of this one.
+- **History:**
+
+
 ## Retired and merged items — ledger
 
 Working queue, not an archive: an item leaves the sections above when its streak reaches its threshold (retired) or when another item owns its mechanism (merged). Durable rules belong in `wa-lessons-learned`; this ledger keeps the retirement evidence, the pending instrumentation dispositions, and the hand-offs that no live item carries. Full item text is in this file's git history at the date shown.
