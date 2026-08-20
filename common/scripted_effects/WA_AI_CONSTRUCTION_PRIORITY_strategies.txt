@@ -2065,6 +2065,12 @@ WA_AI_build_theatre_air_bases = {
 					# Fix 114: phase flip. Phase 1 exhausted without a start - drop the proximity filter
 					# and walk the rungs again over the whole theatre. Guarded on _thair_near_only_ = 1,
 					# so it happens at most once per pulse and the loop is bounded by 2 x _thair_level_cap_.
+					# The COST, stated rather than called bounded (AGENTS.md P3(f), review 2026-08-20):
+					# worst case is 16 random_state scans per pulse per builder, not 8 - the committed
+					# cap (constant:wa_ai_pc.air.theatre_target_level_committed) is 8 and both phases can
+					# walk all of it. That worst case is ALSO the cheap case for the ring walk: it is
+					# only reached when phase 1 found no eligible edge state, i.e. when the two-ring test
+					# was answering false quickly.
 					if = {
 						limit = {
 							check_variable = { _thair_near_only_ = 1 }
@@ -2075,6 +2081,11 @@ WA_AI_build_theatre_air_bases = {
 						set_temp_variable = { _thair_try_level_ = 0 }
 					}
 				}
+
+				# Fix 114: clear the phase flag on the way out (AGENTS.md editing rule 9). Nothing else
+				# reads it today - the name is unique to this effect - but the ladder re-arms it to 1
+				# before every loop, so leaving a 0 behind would be a temp with no owner.
+				set_temp_variable = { _thair_near_only_ = 0 }
 
 				# TEMP R16 live-test logging - remove with the WA_AI_thair_dbg_* family
 				if = { limit = { check_variable = { _thair_started_ < 1 } }

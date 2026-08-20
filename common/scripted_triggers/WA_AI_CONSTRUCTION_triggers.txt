@@ -72,7 +72,12 @@ WA_AI_available_AIR_allied = {
 # "near the contested edge" cannot drift apart.
 #
 # Cost: the caller places this LAST in its limit block, after theatre membership and the air-base
-# level test, so it runs on a handful of states per ladder rung, not on the whole map.
+# level test. That it therefore runs on a handful of states per rung rather than on the whole map
+# rests on PDXScript evaluating an AND block in order and stopping at the first false - which is
+# ASSUMED, not measured (review 2026-08-20). If that assumption is wrong the walk is two neighbour
+# rings over every state of the map, once per rung, per pulse, per builder; the tell is a frame-time
+# regression that tracks the theatre-air pulse, and the fix is to hoist the ring test into a
+# precomputed state array rather than to reorder the block.
 #
 # The fact is gone when: an air theatre is redefined small enough that every member state is within
 # two rings of a front - then this trigger is true everywhere and selects nothing.
@@ -1501,7 +1506,7 @@ WA_AI_PC_is_corridor_side_holder = {
 # ROOT, or any faction ally (WA_AI_PC_is_corridor_side_holder). PROVINCE control, never state
 # control: on a contested front the two diverge (663 Cyrenaica ITL-controlled with ENG provinces
 # inside, railway_strategies.txt Fix 74 notes). There is no province-scoped CONTROLLER, hence the
-# any_country walk; 15 nodes every 4 weeks per builder is negligible.
+# any_country walk; 20 nodes every 4 weeks per builder is negligible (15 before Fix 113).
 #
 # Fix 103: this used to read WA_AI_PC_is_logistics_build_partner, i.e. permission AND payment in one
 # test, so a hop between a healthy ally's node and ours had no builder anywhere. Campaign 7c7803a8:
