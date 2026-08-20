@@ -1833,6 +1833,40 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **History:**
 
 
+### R79. A land coalition does not run a convoy arsenal (Fix 115)
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=70e4549d3 status=NOT_YET_TESTED`
+
+- **Opened 2026-08-20** from campaign `3d68a183`, while answering "why does Germany build so many convoys". MEASURED from the save's `naval_lines` blocks (NOT `military_lines`, which holds only army and air production - reading the wrong block reports zero convoy lines and is how this nearly went unnoticed): Germany runs **four** convoy lines, three pinned at the 15-dockyard per-line cap, holding **46 -> 48 -> 54 -> 59 dockyards, 6.0 % -> 7.6 % of every factory on all its lines**, continuously 1942.6 -> 1944.6, and only drops to 3 factories by 1946.1. The partner it feeds is real - Italy records `llr_convoy_starving_n = 56` and Germany donated 51 transfers for 2,201 hulls - but the Axis is a land coalition and that industry belonged on the eastern front. The switch that should have stopped it cannot: `WA_DEFAULT_production_convoy_stop_MAJORS` carries `NOT = { WA_AI_PRODUCTION_should_build_convoy_relief = yes }` in **both** `enable` and `abort`, so the >1 000 stock brake is disarmed for exactly the countries the boost is on, and the boost holds while ANY valid partner is short.
+- **Fix under test:** **Fix 115** (commit `70e4549d3`). `WA_AI_PRODUCTION_should_build_convoy_relief` gains `check_variable = { WA_AI_PRODUCTION_coalition_sea_share > constant:wa_ai_lend_lease.convoy.coalition_sea_share_bar }` (0.25). The share is the coalition's industry (civ + mil + naval factories of every side member, the usual three-term "our side") sitting off the country's own capital continent, recomputed monthly by `WA_AI_PRODUCTION_update_coalition_sea_weight` for AI majors at war above the large-dockyard band. **Weighted rather than existential, on the user's ruling:** "does the side span two continents" is overturned by any minor - this very Axis already spans Europe and Africa through ITS and ITL, two colonial subjects with negligible industry. **A flat stock cap was considered and rejected with the measurement that kills it:** USA holds 2,635 convoys and ENG 1,500, both already over the bar, so removing the exemption outright would have shut the ALLIED arsenal too.
+- **Pass (four legs):**
+  1. **The gauge separates the two coalitions (the premise).** `wa_ai_production_coalition_sea_share` reads **below 0.25 on the Axis leader** and **above 0.25 on the Allied majors** at the same date. This is the leg that fails first if capital continent is the wrong proxy - and if it fails, legs 2-4 are NOT CHECKED, because they all inherit it.
+  2. **The land arsenal closes (the point).** No Axis major holds a `convoy_1` line above the tier floors after the fix. Concretely: total dockyards on convoy lines for the Axis leader stays **below 15** at every sample, against the 46-59 measured pre-fix. The tier 0-3 floors are untouched by this fix and a 1-3 dockyard line is CORRECT, not a failure.
+  3. **The maritime arsenal survives (the guard).** At least one Allied major still runs a convoy line above the floors while a partner is short, and `wa_tlm_llr_sent_n^10` on the Allied side keeps rising. **A campaign where BOTH arsenals close is a FAIL of this leg, not a pass of leg 2** - it means the bar is too high or the share is mis-measured.
+  4. **Italy is not left to drown.** ITA's `wa_tlm_nav_convoys` does not trend to zero, and its own tier floors keep a line open while it is short. Fix 115 removes the German arsenal, not Italy's own production; if Italy collapses to zero convoys the coalition needed the arsenal after all and the ruling should be revisited.
+- **Probe:** `savegame.py var <TAG> "coalition_sea_share" <saves>` on GER / ENG / USA / ITA / JAP - the gate variable is ordinary gameplay state, deliberately NOT a `WA_TLM_` metric, so no version bump and no absence contract; a save from a pre-Fix-115 build simply lacks the variable and scores **NOT CHECKED**. For the outcome, read the save's **`naval_lines`** blocks: resolve each line's `equipment_variant_index` through the top-level `equipments={}` registry (the same registry `stock.py` builds) and sum `active_factories` on the `convoy_1` lines. `savegame.py tlm <TAG> --match "llr_(convoy|sent)"` for the donation side; `savegame.py tlm ITA --match nav_convoys` for leg 4.
+  ```text
+  > naval_lines of GER, convoy_1 only (pre-fix baseline, campaign 3d68a183)
+    1941.6   0 lines,  0 factories  (0.0% of all lines)
+    1942.6   4 lines, 46 factories  (6.2%)   15 / 15 / 15 / 1
+    1943.6   4 lines, 54 factories  (6.9%)   15 / 15 / 15 / 9
+    1944.6   4 lines, 59 factories  (7.6%)   15 / 15 / 15 / 14
+    1946.1   3 lines,  3 factories  (1.1%)
+  > savegame.py relations 1943.6_Jun.hoi4      (why the weighting is needed)
+    Axis    leader=GER  21 members: GER RCZ SLO RDE ITA ALB ITS ITL HUN ROM RNO RHO FIN BUL ...
+    Allies  leader=ENG  30 members: ENG UKO HOL UKN UKT POL ARG RAJ SAF NZL CAN AST NEP BHU ...
+    japanese_co_prosperity_sphere  leader=JAP  7 members  (Japan is NOT in the Axis in this campaign)
+  ```
+- **Threshold:** 3.
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **Regression watch:**
+  - **The proxy is capital continent, and it is wrong for an empire.** A country whose whole war is overseas but whose capital sits on its home continent (1936 Britain) contributes its industry to the DENOMINATOR of its own share. The design compensates by summing over the side against the donor's continent rather than asking any single member, but a coalition of home-continent empires fighting abroad would still read low. Leg 1 is what catches it.
+  - **0.25 is a knob with sighting shots, not a measurement.** If a campaign shows a genuinely maritime coalition under the bar or a land one over it, retune `coalition_sea_share_bar`, not the trigger.
+  - **A stale share on a country that stops qualifying.** The monthly call site is restricted to AI majors at war above the large-dockyard band, so a country that drops out keeps its last value. Harmless by construction - the arsenal trigger re-tests the dockyard band and the partner's shortage anyway - but a campaign showing an arsenal open on a country below the band means this reasoning is wrong.
+  - **This fix does not touch the tier floors.** Any country still keeps a 1-13 dockyard convoy line while its own stock is low. A reading of "the Axis still builds convoys" is only a failure if it is ABOVE those floors.
+- **History:**
+
+
 ## Retired and merged items — ledger
 
 Working queue, not an archive: an item leaves the sections above when its streak reaches its threshold (retired) or when another item owns its mechanism (merged). Durable rules belong in `wa-lessons-learned`; this ledger keeps the retirement evidence, the pending instrumentation dispositions, and the hand-offs that no live item carries. Full item text is in this file's git history at the date shown.
