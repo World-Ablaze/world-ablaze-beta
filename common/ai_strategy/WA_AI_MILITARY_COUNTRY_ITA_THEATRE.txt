@@ -407,6 +407,60 @@ WA_AI_MILITARY_ITA_protect_libya_THEATRE = {
 	}
 }
 
+# purpose: Fix 119 - Italy garrisons the Egyptian ports its side conquers (Alexandria 447, Marsa
+#          Matruh 452, Suez 923) while the German expedition - or its own R13 offensive - pushes
+#          east: division of labour requested by the user 2026-08-20 (Germany spearheads, Italy
+#          holds the rear and the line; the line itself stays the R13 +60 in ITA_FRONT). The gate
+#          survives full conquest of the East-Egypt anchors on purpose (arch review 2026-08-20):
+#          the war branch holds it while the advance still fights, the control branch holds it
+#          after the ports fall - a garrison that dissolves at the moment of victory is no
+#          garrison. Control branch uses the Fix 99 one-side definition so a GER-conquered port
+#          still gets its Italian garrison. `area = north_africa` on purpose: the engine's ai_area
+#          database is at its 72-slot ceiling (73rd = crash, boot matrix 2026-08-17), so Egypt has
+#          no alias of its own; protect_libya above shares the same blob and the same residual.
+#          ASSUMED (R80 fail-tell): a buffer whose states are still enemy-held sits unfilled until
+#          conquest - the Tunis precedent (order 9608) drew on Axis-OWNED states, this shape is
+#          unprecedented.
+# range:   0.10 (E4)
+# policy:  Additive per state
+# domain:  THEATRE
+WA_AI_MILITARY_ITA_garrison_conquered_ports_THEATRE = {
+	allowed = {
+		tag = ITA
+	}
+	enable = {
+		has_war = yes
+		WA_AI_MILITARY_libya_bridgehead_held = yes
+		NOT = { WA_AI_MILITARY_italy_homeland_invaded = yes }
+		OR = {
+			# the advance is still fighting the East-Egypt anchor holder...
+			446 = { CONTROLLER = { has_war_with = ROOT } }
+			447 = { CONTROLLER = { has_war_with = ROOT } }
+			453 = { CONTROLLER = { has_war_with = ROOT } }
+			# ...or a port has already fallen to our side and needs its garrison
+			447 = { CONTROLLER = { OR = { tag = ROOT is_subject_of = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+			452 = { CONTROLLER = { OR = { tag = ROOT is_subject_of = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+			923 = { CONTROLLER = { OR = { tag = ROOT is_subject_of = ROOT is_in_faction_with = ROOT has_war_together_with = ROOT } } }
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 9616
+		# Egyptian ports on the axis of advance
+		states = {
+			447
+			452
+			923
+		}
+		ratio = 0.10
+		area = north_africa
+		subtract_fronts_from_need = no # pool: the Egyptian front must not eat the garrison's need (Fix 102 safeguard)
+		subtract_invasions_from_need = no
+	}
+}
+
 
 # Phase 6 split from WA_AI_MILITARY_ITA_end_the_struggle_in_ethiopia (THEATRE domain)
 WA_AI_MILITARY_ITA_end_the_struggle_in_ethiopia_THEATRE = {

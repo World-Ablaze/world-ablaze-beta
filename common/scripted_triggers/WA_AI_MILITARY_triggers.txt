@@ -1247,6 +1247,42 @@ WA_AI_MILITARY_african_shore_port_held = {
 	}
 }
 
+# Fix 119 (2026-08-20) - the Afrika Korps window: should this Axis country run an armoured expedition
+# toward the East-Egypt anchor? True while: it is allied (faction OR overlord) with the Italian homeland
+# power, its side holds Libyan ground to stage from, an enemy controls East Egypt, no enemy stands on the
+# Western-European mainland (covers BOTH the Battle of France and any D-Day-type landing, dynamically -
+# replaces the legacy "NOT war with FRA OR FRA capitulated" calendar shape), and the home is not
+# threatened. The Libyan arm uses the Fix 99 one-side definition (self / subject / faction ally /
+# has_war_together_with) because libya_bridgehead_held is UNREADABLE from GER's scope: ITL is ITA's
+# subject and never a faction member (Fix 27 lesson), so its own/subject and faction arms both fail for
+# Germany. Consume ONLY from the deciding country's own `enable` (Country layer):
+# AIR_theatre_contested_western_europe and home_threatened inside are ROOT-relative and would misread
+# under any_allied_country / country_trigger wrappers. Deliberately NOT here: the "no Soviet war" clause -
+# it is a country literal and this section is tag-free; it lives in the enable of each GER consumer
+# (user rule 2026-08-20: the expedition runs at least until the Soviet war or a D-Day). Known gap
+# (principle 1): an ahistorical eastern land war against a non-SOV major does not close the window until
+# home_threatened or the western contest does. Known residual: contested_western_europe flips on ONE
+# state, so a commando raid on the French coast suspends the window for its duration - treated as the
+# anti-invasion reflex working, not a defect (R80 fail-tell if it thrashes).
+WA_AI_MILITARY_afrika_korps_window = {
+	WA_AI_MILITARY_allied_with_italian_homeland_power = yes
+	NOT = { WA_AI_MILITARY_home_threatened = yes }
+	NOT = { WA_AI_MILITARY_AIR_theatre_contested_western_europe = yes }
+	# our side holds Libyan staging ground (Fix 99 one-side definition)
+	OR = {
+		448 = { CONTROLLER = { OR = { tag = PREV.PREV is_subject_of = PREV.PREV is_in_faction_with = PREV.PREV has_war_together_with = PREV.PREV } } }
+		450 = { CONTROLLER = { OR = { tag = PREV.PREV is_subject_of = PREV.PREV is_in_faction_with = PREV.PREV has_war_together_with = PREV.PREV } } }
+		451 = { CONTROLLER = { OR = { tag = PREV.PREV is_subject_of = PREV.PREV is_in_faction_with = PREV.PREV has_war_together_with = PREV.PREV } } }
+		663 = { CONTROLLER = { OR = { tag = PREV.PREV is_subject_of = PREV.PREV is_in_faction_with = PREV.PREV has_war_together_with = PREV.PREV } } }
+	}
+	# an enemy controls the East-Egypt anchor (same anchor set as WA_AI_MILITARY_ENG_holds_east_egypt)
+	OR = {
+		446 = { CONTROLLER = { has_war_with = PREV.PREV } }
+		447 = { CONTROLLER = { has_war_with = PREV.PREV } }
+		453 = { CONTROLLER = { has_war_with = PREV.PREV } }
+	}
+}
+
 ############################################################################################################
 # Fix 97 (2026-08-17) - East Africa is a theatre (campaign 0edbc955: Italy LOST the 1936 Ethiopian war, ITS
 # never existed, and every East-Africa rule on both sides keyed on `country_exists = ITS` / `tag = ITS` /

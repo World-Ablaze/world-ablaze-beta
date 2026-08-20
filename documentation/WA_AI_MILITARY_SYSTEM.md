@@ -736,3 +736,41 @@ released, and whether the engine selects armour for a remaining buffer, are not 
 decisions and must be measured in the campaign.
 
 ---
+
+## 17. The Afrika Korps window - a German armoured expedition toward Egypt (Fix 119, 2026-08-20)
+
+User decision 2026-08-20: Germany sends armour to attack Egypt at least until the Soviet war or a
+D-Day-type landing; Italy garrisons the conquered Egyptian ports and holds the line.
+
+Pre-fix state (MEASURED this session): Germany's whole Africa posture was negative
+(`focus_on_north_africa` `front_unit_request` -75, standing area tilt -80, `war_with_soviets_2` -75)
+and its only armour steer toward Africa, `front_armor_score id = "ITL"` 10, was **inert** - `id` is
+the ENEMY tag of the front (vanilla usage: GER `id = POL` 250, `id = SOV` 500) and Germany is never
+at war with its ITL ally. Germany also had no `ordertype = front` control on the `north_africa`
+area, so German divisions there would never have executed an offensive.
+
+The window: `WA_AI_MILITARY_afrika_korps_window` (`WA_AI_MILITARY_triggers.txt`, Fix 99 family) -
+allied with the Italian homeland power, our-side Libyan staging ground (Fix 99 one-side definition:
+`libya_bridgehead_held` is unreadable from GER's scope because ITL is ITA's subject, not a faction
+member), an enemy controlling the East-Egypt anchor 446/447/453, NOT `home_threatened`, and NOT
+`AIR_theatre_contested_western_europe` - the last term covers both the Battle of France and any
+D-Day dynamically. The "no Soviet war" clause is deliberately NOT in the shared trigger (the
+section is tag-free); it sits in the `enable` of each GER consumer.
+
+Consumers, all Country-layer GER: `WA_AI_MILITARY_GER_focus_on_north_africa_FRONT` (+60
+`front_unit_request` on the blob; `front_armor_score` 150 on the ENG/UKE/UKM anchor payload tags -
+an ahistorical Egypt controller gets request+exec but no armour bias, a named degradation),
+`_THEATRE` (area_priority 130, nets +50 over the -80 tilt), and
+`WA_AI_MILITARY_GER_north_africa_offensive_exec_FRONT` (`front_control` balanced, gated on the
+generic `north_africa_offensive_viable` verdict - the R13 mirror). Italy's rear:
+`WA_AI_MILITARY_ITA_garrison_conquered_ports_THEATRE` (`put_unit_buffers` order 9616, states
+447/452/923 at 0.10, gate survives full conquest via a control branch).
+
+Window close (Barbarossa or D-Day) removes the pull, not the force: t0 the blocks abort and
+`war_with_soviets_2` re-arms -75; t1 the weekly allocator re-targets surplus and AIFC re-steers
+armour; t2 the force drains at convoy speed - a cut strait strands it (historical DAK shape,
+accepted; R80 fail-tell). Sea-lift INTO Africa is MEASURED viable (R64: 0 -> 8 GER divisions into
+Tunisia in 31 days on 9d83084c). Probe: checklist R80. R64 leg 3 was re-cut the same day - its old
+"GER divisions in Libya/Egypt stay <= 3" bar forbade exactly this expedition.
+
+---

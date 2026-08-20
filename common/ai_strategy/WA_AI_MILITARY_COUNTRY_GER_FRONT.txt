@@ -491,41 +491,90 @@ WA_AI_MILITARY_GER_naval_invade_norway_FRONT = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_GER_focus_on_north_africa (FRONT domain)
+# purpose: Fix 119 - the Afrika Korps (user decision 2026-08-20): while no enemy stands in Western
+#          Europe and Germany is not fighting the Soviets, the Egypt-side enemy gets a German
+#          armoured expedition instead of the legacy economy veto. Replaces the old payload
+#          (front_unit_request -75 + front_armor_score id "ITL" 10): the ITL entry was INERT -
+#          `id` is the ENEMY tag of the front (vanilla usage: GER id=POL 250 for Poland,
+#          id=SOV 500 for Barbarossa) and Germany is never at war with its ally ITL. The armor
+#          ids below are the mod's own East-Egypt anchor tags (payload, not gating - rule 4);
+#          an ahistorical Egypt controller still gets the request and the exec block below, only
+#          the armour bias degrades. HYPOTHESIS carried by probe R80, not by this comment: a
+#          positive id-keyed score on the Egypt holder moves German armour to Africa.
+#          Window close (Barbarossa / D-Day) removes the PULL, it does not repatriate the force:
+#          t0 (same day) this block aborts, war_with_soviets_2 re-arms -75 on the blob; t1 (weekly
+#          allocator + AIFC reconcile) surplus divisions re-target and armour re-steers to the new
+#          sector enemy; t2 (months, convoy-bound) the force drains at sea-lift speed - a cut
+#          strait strands it (the historical DAK shape; accepted, R80 fail-tell). Sea-lift INTO
+#          Africa is MEASURED viable: GER lifted 0 -> 8 divisions into Tunisia in 31 days (R64,
+#          campaign 9d83084c).
+# range:   +60 (E2 [-100, +200]); armor 150 (vanilla band 100-500)
+# policy:  Additive per area / per armor id
+# domain:  FRONT
 WA_AI_MILITARY_GER_focus_on_north_africa_FRONT = {
 
 	allowed = {
 		tag = GER
 	}
 	enable = {
-		OR = {
-			NOT = { has_war_with = FRA }
-			FRA = { has_capitulated = yes }
-		}
-		OR = {
-			118 = { is_controlled_by = ENG }
-			446 = { is_controlled_by = ENG }
-			446 = { is_controlled_by = UKM }
-			446 = { is_controlled_by = UKE }
-		}
-		surrender_progress < 0.05
-		WA_AI_MILITARY_allied_with_italian_homeland_power = yes # Fix 96: was is_in_faction_with = ITA
-		has_war_with = ENG
-		NOT = {
-			has_war_with = SOV
-		}
+		WA_AI_MILITARY_afrika_korps_window = yes
+		# user rule (2026-08-20): the expedition runs at least until the Soviet war; the D-Day
+		# half of the rule is the contested-Western-Europe term inside the window trigger.
+		NOT = { has_war_with = SOV }
 	}
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = front_unit_request
 		area = north_africa
-		value = -75
+		value = 60
 	}
 	ai_strategy = {
 		type = front_armor_score
-		id = "ITL"
-		value = 10
+		id = "ENG"
+		value = 150
+	}
+	ai_strategy = {
+		type = front_armor_score
+		id = "UKE"
+		value = 150
+	}
+	ai_strategy = {
+		type = front_armor_score
+		id = "UKM"
+		value = 150
+	}
+}
+
+
+# purpose: Fix 119 - execute battle plans toward Egypt while the force balance supports it; mirror
+#          of the ITA R13 exec block (same viability verdict, same priority rung: above an unset
+#          Country default of 0, below the 500/10000 equipment emergency stops).
+# range:   n/a (front_control)
+# policy:  Exclusive per area+ordertype (sole GER-scope ordertype=front writer for north_africa;
+#          the ordertype=invasion execute_order=no landing freeze elsewhere in this file is a
+#          different ordertype and stays)
+# domain:  FRONT
+WA_AI_MILITARY_GER_north_africa_offensive_exec_FRONT = {
+
+	allowed = {
+		tag = GER
+	}
+	enable = {
+		WA_AI_MILITARY_afrika_korps_window = yes
+		NOT = { has_war_with = SOV }
+		WA_AI_MILITARY_north_africa_offensive_viable = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_control
+		area = north_africa
+		priority = 100
+		ordertype = front
+		execution_type = balanced
+		execute_order = yes
+		manual_attack = yes
 	}
 }
 
@@ -541,11 +590,8 @@ WA_AI_MILITARY_GER_war_with_soviets_2_FRONT = {
 	}
 	abort_when_not_enabled = yes
 
-	ai_strategy = {
-		type = front_armor_score
-		id = "ITL"
-		value = 0
-	}
+	# Fix 119: the front_armor_score id "ITL" value 0 entry that stood here was deleted with its
+	# counterpart in focus_on_north_africa (both inert - id is the enemy tag, ITL is an ally).
 	ai_strategy = {
 		type = front_unit_request
 		area = north_africa
