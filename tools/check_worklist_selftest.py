@@ -196,6 +196,12 @@ CASES = {
     "RETIRE-DUE": lambda: dict(checklist=_sub(BASE_CHECKLIST, "- **Threshold:** 3", "- **Threshold:** 1")),
     "NEVER-SCORED": lambda: dict(checklist=_sub(BASE_CHECKLIST,
         "  - 2026-08-18 · `aaaaaaaa` · PASSED", "  - 2026-08-18 · `aaaaaaaa` · NOT CHECKED")),
+    # Never scored AND opened after the last analysed campaign (2026-08-18 in the baseline):
+    # must fire the INFO, not the ERROR. PROBE-UNRUN also fires here (late Opened, no fenced
+    # block) - membership is all the harness asserts, so that is fine.
+    "AWAITING-CAMPAIGN": lambda: dict(checklist=_sub(_sub(BASE_CHECKLIST,
+        "  - 2026-08-18 · `aaaaaaaa` · PASSED", "  - 2026-08-18 · `aaaaaaaa` · NOT CHECKED"),
+        "**Opened 2026-08-01**", "**Opened 2026-12-01**")),
     "REGISTRY-MISSING": lambda: dict(checklist=_sub(BASE_CHECKLIST, "| `aaaaaaaa` | 2026-08-18 |", "")),
     "SUPERSEDED": lambda: dict(checklist=_sub(BASE_CHECKLIST, "### R1. A thing holds",
                                               "### R1. A thing holds - superseded by R2 in a later pass")),

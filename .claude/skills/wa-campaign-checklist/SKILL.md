@@ -22,7 +22,8 @@ answer wrong:
 | --- | --- |
 | `ORPHAN-FIX` | the item's fix commit is not in HEAD - it tests code the build does not carry. Do not score it, restate it. |
 | `STATUS-STALE` | Status says NOT YET TESTED while the history already records verdicts. Fix the field before adding to it. |
-| `NEVER-SCORED` | the item has never been scored in any campaign, so its threshold is unreachable. Probe it this pass or say why not. |
+| `NEVER-SCORED` | never scored although a campaign was analysed after the item opened - a scoring opportunity was missed. Probe it this pass or say why not. |
+| `AWAITING-CAMPAIGN` (INFO) | never scored, but no campaign has been analysed since the item opened. Nothing to do until this scoring pass - which is exactly when it must be picked up. |
 | `RETIRE-DUE` | streak reached the threshold: delete the item and its instrumentation now, per the retirement protocol below. |
 | `REGISTRY-MISSING` | a campaign was scored but never added to the registry table - add it, or every dormancy reading stays wrong. |
 | `TLM-ORPHAN` | telemetry still writing for an item that is gone. |

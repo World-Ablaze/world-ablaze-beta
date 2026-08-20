@@ -33,7 +33,17 @@ checklist.md - each of these is a real 2026-08-17 defect, made mechanical
   WARN   NO-PROBE       a RETIREABLE item with no Probe line: unscoreable by construction.
   ERROR  FIX-UNREGISTERED a Fix NN used in the tree with no row in tools/fix_registry.json.
   ERROR  FIX-ORPHAN      a registry row cites a commit HEAD cannot reach.
-  WARN   FIX-UNRESOLVED  a fix number whose implementing commit cannot be recovered.
+  ERROR  FIX-UNRESOLVED  a registry row with no commit AND no note saying why.
+  INFO   FIX-UNRESOLVED  no commit recoverable but the row carries a note - an accepted,
+                        pre-convention loss. INFO because it is permanent by construction:
+                        keeping it WARN trained readers to skim past warnings (2026-08-20).
+  ERROR  NEVER-SCORED   never scored in ANY campaign although at least one campaign was
+                        analysed after the item opened - a scoring opportunity was missed.
+  INFO   AWAITING-CAMPAIGN never scored, but no campaign has been analysed since the item
+                        opened: not scoreable yet, clears at the next campaign scoring.
+                        Split from NEVER-SCORED 2026-08-20 - as one ERROR, every freshly
+                        shipped fix kept the checker at exit 1, and a permanent failure is
+                        a failure people learn to ignore.
   ERROR  LEDGER-MISSING an item with no machine-readable Ledger line.
   ERROR  LEDGER-MISMATCH the Ledger and the prose disagree on threshold or streak.
   WARN   STATUS-UNSET   nobody has ever written this item's status down.
@@ -144,6 +154,14 @@ def registry_campaigns(text: str) -> list[str]:
     return re.findall(r"^\|\s*`([0-9a-f]{6,})`", m.group(1), re.M)
 
 
+def registry_dates(text: str) -> list[str]:
+    """The 'Analysed' dates of the campaign registry - its rows end `| YYYY-MM-DD |`."""
+    m = re.search(r"^## Campaign registry.*?$(.*?)(?=^## )", text, re.M | re.S)
+    if not m:
+        return []
+    return re.findall(r"\|\s*(\d{4}-\d{2}-\d{2})\s*\|\s*$", m.group(1), re.M)
+
+
 def git_state(sha: str) -> str:
     """'ok' reachable from HEAD | 'orphan' a real commit that is not | 'unknown' not a commit."""
     try:
@@ -207,6 +225,7 @@ def check_checklist(rep: Report) -> None:
     all_campaigns = registry_campaigns(text)
     seen_campaigns: set[str] = set()
     dormancy: dict[str, int] = {}
+    opened_dates: dict[str, str] = {}
 
     # Campaign order = the registry, then anything scored in histories but never registered,
     # placed by the latest date it was scored on. Those extras are by construction the newest
@@ -333,6 +352,8 @@ def check_checklist(rep: Report) -> None:
         # retroactive: the baseline saves the older items were written against are not
         # all still on disk, so demanding their output now would be a demand to fabricate.
         opened = re.search(r"\*\*Opened (\d{4}-\d{2}-\d{2})\*\*", body)
+        if opened:
+            opened_dates[iid] = opened.group(1)
         if opened and opened.group(1) >= PROBE_OUTPUT_REQUIRED_FROM and "```" not in body:
             rep.add("ERROR", "PROBE-UNRUN",
                     f"{iid}: opened {opened.group(1)} with no fenced block - paste the probe's "
@@ -361,10 +382,26 @@ def check_checklist(rep: Report) -> None:
     # here, so this number is an upper bound on real neglect, never a verdict per item.
     never = sorted(k for k, v in dormancy.items() if v is None)
     stale = {k: v for k, v in dormancy.items() if v is not None and v >= DORMANT_AFTER}
-    if never:
+    # An item nobody COULD have scored yet is a different fact from an item everybody skipped.
+    # `latest_analysed` = the newest analysis date the file knows (the registry's trailing
+    # 'Analysed' column, plus history dates of scored-but-unregistered campaigns). An item
+    # opened on or after that date has had no scoring opportunity - even a pre-fix baseline
+    # row needs a campaign analysed after the item exists. With no date to compare against,
+    # everything stays ERROR: "cannot prove it is waiting" must not silence the check.
+    latest_analysed = max(registry_dates(text) + list(last_seen.values()), default="")
+    waiting = sorted(k for k in never
+                     if latest_analysed and opened_dates.get(k, "") >= latest_analysed)
+    missed = sorted(set(never) - set(waiting))
+    if missed:
         rep.add("ERROR", "NEVER-SCORED",
-                f"{len(never)} retireable item(s) have never been scored in ANY campaign - "
-                f"they carry a threshold they cannot reach: {', '.join(never)}")
+                f"{len(missed)} retireable item(s) never scored although at least one campaign "
+                f"was analysed after they opened - they carry a threshold they cannot reach: "
+                f"{', '.join(missed)}")
+    if waiting:
+        rep.add("INFO", "AWAITING-CAMPAIGN",
+                f"{len(waiting)} item(s) opened on/after the last analysed campaign "
+                f"({latest_analysed}), not scoreable yet: {', '.join(waiting)} - clears at the "
+                f"next campaign scoring")
     if stale:
         worst = sorted(stale.items(), key=lambda kv: -kv[1])[:5]
         rep.add("WARN", "DORMANT",
@@ -463,7 +500,9 @@ def check_fix_registry(rep: Report) -> None:
                 rep.add("ERROR", "FIX-UNRESOLVED",
                         f"Fix {num}: registry row has no commit and no note saying why")
             else:
-                rep.add("WARN", "FIX-UNRESOLVED",
+                # INFO, not WARN: a noted, pre-convention loss is permanent by construction,
+                # and a warning that can never be cleared is a warning readers learn to skim.
+                rep.add("INFO", "FIX-UNRESOLVED",
                         f"Fix {num}: no implementing commit recoverable - {row['note'][:80]}")
         elif git_state(sha) == "orphan":
             rep.add("ERROR", "FIX-ORPHAN",
@@ -500,7 +539,7 @@ def main() -> int:
     order = {"ERROR": 0, "WARN": 1, "INFO": 2}
     for r in sorted(rep.rows, key=lambda r: (order[r["level"]], r["code"], r["message"])):
         print(f'{r["level"]:5s} {r["code"]:13s} {r["message"]}')
-    print(f'\n{rep.count("ERROR")} ERROR, {rep.count("WARN")} WARN')
+    print(f'\n{rep.count("ERROR")} ERROR, {rep.count("WARN")} WARN, {rep.count("INFO")} INFO')
     return code
 
 
