@@ -30,6 +30,19 @@ A recipient holding a donor's variant in its STOCKPILE is the WA path working.
 The same id appearing only under foreign lease is vanilla's, and says nothing
 about the scripted transfer.
 
+CREATOR IS THE MAKER, NOT THE SENDER - the one thing to get wrong here.
+An entry says who BUILT the equipment, never how the holder came by it. Measured case,
+2026-08-20 on `3d68a183`: Germany's stockpile gains 733 ITA-built `convoy_1` between the
+1939.10 and 1939.11 saves and holds them, frozen, for the next six years - while Italy's
+own owned convoy stock sits at 581 / 581 / 582 / 583 across the same window and Germany's
+`llr_convoy_donor_selected_n` for the whole campaign is 5. Italy sent nothing. In the same
+month Germany also gains 1 353 POL-built and 130 FRA-built items it never held before:
+war booty, which carries the original maker's stamp for ever. So a foreign-built row is
+evidence of OWNERSHIP, and corroboration at best for any particular delivery mechanism.
+To prove a WA scripted transfer, read `wa_tlm_llr_sent_n` - that counter increments only
+after `WA_AI_LEND_LEASE_relief_record` has checked the recipient's stock actually rose
+(`_llr_recipient_after > _llr_recipient_stock`), and books `llr_send_failed_n` otherwise.
+
 WHAT THIS SCRIPT CANNOT TELL YOU: which transfer an item came from, or when.
 Amounts are a stock, not a flow - consumption, losses and later transfers are all
 folded into one number. Read it against the donor's `wa_tlm_llr_sent_amount`
@@ -223,6 +236,9 @@ def main(argv):
     print("#   so read against the donor's wa_tlm_llr_sent_amount as magnitude, not equality.")
     print("# A NEGATIVE amount is a real state the engine writes (equipment committed beyond")
     print("#   what is on hand), not a parse error - it is left signed rather than clamped.")
+    print("# CREATOR IS THE MAKER, NOT THE SENDER: war booty and captured stock keep the")
+    print("#   original builder's stamp for ever. A foreign-built row proves ownership, not a")
+    print("#   delivery mechanism - for a WA scripted transfer read wa_tlm_llr_sent_n instead.")
 
     for path in files:
         fh = sg.open_save(path)
