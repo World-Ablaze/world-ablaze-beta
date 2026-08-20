@@ -67,9 +67,11 @@ wa_ai_railway.eligibility.min_civs_war = 30  # Fix 104: absolute wartime floor, 
                                              # computed at each site. A scripted TRIGGER cannot multiply, and
                                              # WA_AI_PC_country_can_fund_own_logistics must read this same floor.
 wa_ai_railway.corridor.interval_weeks = 4    # Fix 95: theatre-corridor pass cadence (own counter)
-wa_ai_railway.corridor.rail_level = 2        # target level on every corridor hop
+wa_ai_railway.corridor.rail_level_floor = 2  # Fix 107: floor/cap pair around a COMPUTED target, not a flat level
+wa_ai_railway.corridor.rail_level_cap = 4    # ...the irreversibility budget (railways cannot be downgraded)
 wa_ai_railway.corridor.queue_max = 8         # corridor projects in flight per builder per building type (tag 27, scoped)
-wa_ai_railway.corridor.max_routes_per_run = 14  # = the whole node-pair list; NOT a window (validator completeness)
+wa_ai_railway.corridor.max_routes_per_run = 19  # = the whole node-pair list; NOT a window (validator completeness).
+                                                # 20 nodes since Fix 113 (western arm Oran..Tunis) -> 19 pairs. RAISE WITH ANY NODE ADDED.
 wa_ai_railway.eligibility.min_civs_peace = 75
 wa_ai_railway.eligibility.min_states = 5
 wa_ai_railway.eligibility.max_surrender = 0.3     # skip above (see escape hatch below)
@@ -336,6 +338,22 @@ neither side had laid a metre of track between Tripoli (1149) and Marsa Matruh (
 is the answer: an **ordered list of named province nodes** with a per-node "wants a depot" / "wants a
 port" attribute, and one engine that builds whatever consecutive pair the builder holds.
 
+**Fix 113 (2026-08-20) — the western arm.** The North African list used to begin at **Tunis** and run
+east to Alexandria, which is the *defender's* corridor: an invader landing in Morocco or Algeria walked
+east on a chain that started beyond its own front. Campaign `3d68a183` measured the consequence at
+1944.4 — east of Tunis the corridor had done its job (Tunis→Gabès 1 → 3, Gabès→Tripoli BREAK → 4,
+`wa_tlm_r107_sizing_rail_tgt = 4`) while Oran–Algiers–Constantine–Bône–Bizerte–Tunis sat at its **1936
+level 2** (20 supply) for ten years, with the Allied front asking 41 at Constantine. Five nodes were
+prepended — Oran 7132, Algiers 1145, Constantine 9976, Bône 7081, Bizerte 9994 — taking the list to
+**20 nodes / 19 pairs**. All five already carry a supply node, so no depot is wanted on the arm; the
+four coastal ones are marked `port_ = 1` because **Bône is level 1 (5 supply)** and binds the whole
+injection. Constantine is inland and is there as a forced junction: without it the pathfinder can route
+the arm south through the level-1 Batna branch (`map/railways.txt:1152`).
+
+`corridor.max_routes_per_run` went 14 → 19 **in the same change**. It is not a throughput knob: the
+pass validates every corridor project against the routes it pathfound *this pass*, so a cap below the
+pair count cancels the paid-for progress of the routes it skipped, every pass, for ever.
+
 **Files.**
 
 | Layer | File | What |
@@ -346,7 +364,7 @@ port" attribute, and one engine that builds whatever consecutive pair the builde
 | helpers | `railway_helpers.txt` `WA_AI_PC_corridor_start_hub` | queues a supply hub (PC type 17, new in Fix 95 part 1) or a naval base (14) at a named province, idempotent on the building's existence |
 | triggers | `WA_AI_CONSTRUCTION_triggers.txt` `WA_AI_PC_corridor_node_is_ours` (→ `WA_AI_PC_is_corridor_side_holder`) / `_is_my_charge` (→ `WA_AI_PC_is_logistics_build_partner`) / `_is_hostile` / `WA_AI_PC_corridor_theatre_live_north_africa` | province-level control tests over `any_country`; permission vs payment split (Fix 103); theatre gate = AIR contested trigger OR no enemy on any node (preparation) |
 | admission | `WA_AI_CONSTRUCTION_triggers.txt` `WA_AI_PC_state_controller_allows_admission` | the three-term controller gate `WA_AI_PC_start_project` applies, extracted verbatim by Fix 103 so the corridor selector and the `blocked_n` probe agree with it by construction instead of by comment. **`selector ⊆ admission ⊆ validity`** — the lane / air-lane / fill / completion tests at `PRIORITY_core.txt` `:494`, `:627`, `:743`, `:1069` deliberately carry a fourth term `ROOT = { is_subject_of = PREV }` and must not be folded into this trigger |
-| constants | `wa_ai_railway.txt` `corridor.*` (`interval_weeks` 4, `rail_level` 2, `queue_max` 8 per building type, `max_routes_per_run` 14 = the whole pair list, so the validator's cancel set is always complete); `wa_ai_pc.txt` `type_id.corridor` 27, `cost.supply_node` | |
+| constants | `wa_ai_railway.txt` `corridor.*` (`interval_weeks` 4, `rail_level_floor` 2 / `rail_level_cap` 4 (Fix 107), `queue_max` 8 per building type, `max_routes_per_run` 19 = the whole pair list, so the validator's cancel set is always complete); `wa_ai_pc.txt` `type_id.corridor` 27, `cost.supply_node` | |
 
 **Rules the engine applies — no tag, no date, no side (the corridor is symmetric):**
 

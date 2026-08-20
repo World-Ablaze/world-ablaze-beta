@@ -28,7 +28,7 @@
 #	  - no tag, no date, no side: gating is control + war state, computed by the engine.
 ############################################################################################################
 
-# North Africa - the coastal corridor Tunis -> Tripoli -> Benghazi -> Tobruk -> Alexandria.
+# North Africa - the coastal corridor Oran -> Algiers -> Tunis -> Tripoli -> Benghazi -> Tobruk -> Alexandria.
 # Map facts (2026-08-16, map/railways.txt + history/states): rail exists only Tunis-Sfax-Gabès (L1),
 # 12039-1189-Tripoli (L1), Marsa Matruh-5078 (L1), Marsa Matruh-Alexandria (L1), Alexandria-Cairo (L2);
 # NOTHING between Tripoli (1149) and Marsa Matruh (11967). Existing supply nodes: Tunis, Bizerte, Sfax,
@@ -36,6 +36,20 @@
 # Missing and wanted: depot Misrata 9980, depot Mechili 10049 (inland, state 663 Cyrenaica), port Medenine
 # 11957 (state 665 Gabès has no naval base). 5078 is the existing unnamed hub of state 960 (Libyan
 # Plateau), NOT Mechili. State 273 Libyan Desert is impassable: the corridor is strictly coastal.
+#
+# Fix 113 (2026-08-20) - the WESTERN ARM, Oran to Tunis. The list used to begin at Tunis, so an invader
+# landing in Morocco/Algeria walked east on a corridor that started beyond its own front. MEASURED on
+# campaign 3d68a183 (1944.4): east of Tunis the corridor had done its job - Tunis->Gabès 1 -> 3,
+# Gabès->Tripoli BREAK -> 4 - while Oran-Algiers-Constantine-Bône-Bizerte-Tunis sat at its 1936 level 2
+# (20 supply) for the whole campaign, with the Allied front demanding 41 at Constantine.
+# Map facts for the arm (2026-08-20, map/railways.txt lines 489/1150-1153 + map/supply_nodes.txt):
+# the trunk Oran 7132 - Algiers 1145 - Constantine 9976 - Bône 7081 - Bizerte 9994 - Tunis 11969 is
+# rail-continuous at level 2 on every hop (rail.py, BREAK=0 THIN=5), and ALL FIVE new nodes already carry
+# a supply node - so no depot is wanted anywhere on the arm, only levels and ports.
+# Naval bases at start: Oran 6, Algiers 2, Bône 1, Bizerte 8 (history/states 459/460/1061). Bône is the
+# one that binds - level 1 is 5 supply - which is why the arm's ports are marked for raising.
+# Constantine 9976 is inland (no naval base): junction only, forced through because the pathfinder must
+# not route the arm south through the Batna branch (map/railways.txt:1152, level 1).
 WA_AI_PC_CORRIDOR_define_north_africa = {
 	clear_temp_array = corridor_node_prov_
 	clear_temp_array = corridor_node_depot_
@@ -43,6 +57,11 @@ WA_AI_PC_CORRIDOR_define_north_africa = {
 	clear_temp_array = corridor_node_fwdport_
 
 	# node                                          depot  port   fwdport
+	add_to_temp_array = { corridor_node_prov_ = 7132 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 1 }	add_to_temp_array = { corridor_node_fwdport_ = 0 }	# Oran         (459) - port wanted (naval_base 6), western entry
+	add_to_temp_array = { corridor_node_prov_ = 1145 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 1 }	add_to_temp_array = { corridor_node_fwdport_ = 0 }	# Algiers      (459) - port wanted (naval_base 2)
+	add_to_temp_array = { corridor_node_prov_ = 9976 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	add_to_temp_array = { corridor_node_fwdport_ = 0 }	# Constantine  (460) - inland junction, no port
+	add_to_temp_array = { corridor_node_prov_ = 7081 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 1 }	add_to_temp_array = { corridor_node_fwdport_ = 0 }	# Bône/Annaba  (460) - port wanted (naval_base 1 - the binding one)
+	add_to_temp_array = { corridor_node_prov_ = 9994 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 1 }	add_to_temp_array = { corridor_node_fwdport_ = 0 }	# Bizerte      (1061) - port wanted (naval_base 8)
 	add_to_temp_array = { corridor_node_prov_ = 11969 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	add_to_temp_array = { corridor_node_fwdport_ = 0 }	# Tunis        (458)
 	add_to_temp_array = { corridor_node_prov_ = 7005 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	add_to_temp_array = { corridor_node_fwdport_ = 0 }	# Gabès        (665)
 	add_to_temp_array = { corridor_node_prov_ = 11957 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 1 }	add_to_temp_array = { corridor_node_fwdport_ = 0 }	# Medenine     (665) - port wanted
