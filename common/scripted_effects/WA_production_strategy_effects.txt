@@ -953,7 +953,7 @@ WA_aircraft_production_strategies = {
 }
 
 ############################################################################################################
-#	Fix 115 - COALITION SEA WEIGHT. ROOT = country. Monthly (WA_AI_misc_on_actions on_monthly).
+#	Fix 115 / 116 - COALITION SEA WEIGHT. ROOT = country. Monthly (WA_AI_misc_on_actions on_monthly).
 #	>>> WA_AI_PRODUCTION_coalition_sea_share (0..1), a country variable read by
 #	    WA_AI_PRODUCTION_should_build_convoy_relief and, through it, by the convoy arsenal blocks
 #	    and the major convoy stop in WA_AI_PRODUCTION_DEFAULT_navy.txt.
@@ -965,95 +965,83 @@ WA_aircraft_production_strategies = {
 #	1944.6, feeding an Italy that is convoy-short for 56 weeks. The Axis is a land coalition; that
 #	industry belonged on the eastern front.
 #
-#	Why WEIGHTED and not "does the side span two continents" (user ruling 2026-08-20): an existential
-#	test is overturned by any minor. The Axis of that campaign already spans Europe and Africa through
-#	ITS and ITL, two Italian colonial subjects with negligible industry, and one Iran joining would do
-#	the same to any land coalition. So the measure is the SHARE OF THE COALITION'S INDUSTRY that sits
-#	off the country's own capital continent - civilian + military + naval factories, which is the
-#	weight that decides whether the alliance's war actually crosses water.
+#	THE MEASURE: the share of the coalition's INDUSTRY (civ + mil + naval factories) that we cannot
+#	reach OVERLAND. Weighted, because an existential test is overturned by any minor - the Axis of
+#	that campaign already reaches Africa through ITS and ITL, two colonial subjects with negligible
+#	industry (user ruling 2026-08-20).
 #
-#	Assumes: capital continent is a usable proxy for where a member's war effort lives. It is wrong
-#	for a country fighting entirely overseas from a home continent (a 1936 ENG has its whole empire
-#	abroad and its capital in Europe) - which is precisely why the test is run against the DONOR's
-#	continent and summed over the side, rather than asked of any single member.
-#	Fact is gone when: capital_scope stops answering is_on_continent, or map/continent.txt changes
-#	its seven names (europe, north_america, south_america, australia, africa, asia, middle_east).
+#	Fix 116 replaced the first classifier, capital CONTINENT, the same day and before any campaign
+#	ran it. Continents do not measure water, in both directions: London and Berlin are both `europe`
+#	with the Channel between them, while Berlin and Cairo are two continents joined by land through
+#	Turkey and the Sinai. The classifier is now the state A* the lend-lease relief already uses -
+#	WA_AI_LEND_LEASE_relief_land_access, pathfind type 3, capital state to capital state through
+#	friendly territory - so "across water" means what it says.
 #
-#	Cost: one every_country walk per candidate per month, and the call site restricts candidates to
-#	AI majors at war above the large-dockyard band - a handful of countries, not the whole map.
+#	Assumes: a capital-to-capital land route is a fair stand-in for "our wars are joined by land".
+#	It is silent about WHERE a member fights - a coalition sitting on one landmass while campaigning
+#	overseas reads 0, which is the Axis-in-Africa case and is the intended answer here, not an error.
+#	Fact is gone when: WA_AI_LEND_LEASE_relief_land_access changes its scope contract (it reads
+#	ROOT's capital as the start and the scope it is called in as the target - which is why it can be
+#	called from inside the every_country walk below with no rebinding).
+#
+#	Cost: one A* per side member with industry, per candidate, per month; the call site restricts
+#	candidates to AI majors at war above the large-dockyard band, and members with no factories are
+#	skipped before the pathfind. The relief system already runs this same A* weekly per starving
+#	recipient, so this is the cheaper of the two callers.
 ############################################################################################################
-
-# THIS = state (a capital). >>> _wa_cont_ = 1..7, 0 when no branch matches.
-# Seven literal branches because is_on_continent takes a literal and cannot be compared to a
-# variable; the numeric id exists so two capitals can be compared with check_variable.
-WA_AI_PRODUCTION_capital_continent_id = {
-	set_temp_variable = { _wa_cont_ = 0 }
-	if = { limit = { is_on_continent = europe }        set_temp_variable = { _wa_cont_ = 1 } }
-	else_if = { limit = { is_on_continent = north_america } set_temp_variable = { _wa_cont_ = 2 } }
-	else_if = { limit = { is_on_continent = south_america } set_temp_variable = { _wa_cont_ = 3 } }
-	else_if = { limit = { is_on_continent = australia }     set_temp_variable = { _wa_cont_ = 4 } }
-	else_if = { limit = { is_on_continent = africa }        set_temp_variable = { _wa_cont_ = 5 } }
-	else_if = { limit = { is_on_continent = asia }          set_temp_variable = { _wa_cont_ = 6 } }
-	else_if = { limit = { is_on_continent = middle_east }   set_temp_variable = { _wa_cont_ = 7 } }
-}
 
 WA_AI_PRODUCTION_update_coalition_sea_weight = {
 	set_variable = { WA_AI_PRODUCTION_coalition_sea_share = 0 }
 
-	# Our own capital continent. A country with no capital scores 0 and keeps a 0 share, which
-	# closes the arsenal rather than opening it - the safe direction for a gate that spends dockyards.
-	set_temp_variable = { _wa_cont_ = 0 }
-	capital_scope = { WA_AI_PRODUCTION_capital_continent_id = yes }
-	set_temp_variable = { _csw_own_cont_ = _wa_cont_ }
+	set_temp_variable = { _csw_side_ic_ = 0 }
+	set_temp_variable = { _csw_off_ic_ = 0 }
 
-	if = {
-		limit = { check_variable = { _csw_own_cont_ > 0 } }
-
-		set_temp_variable = { _csw_side_ic_ = 0 }
-		set_temp_variable = { _csw_off_ic_ = 0 }
-
-		# "Our side" is the same three-term definition the rest of the AI uses: ourselves, a faction
-		# ally, or anyone fighting the same war - the last term is what makes a co-belligerent count
-		# without a faction (Fix 27's lesson: a subject of an ally is never a faction member).
-		every_country = {
-			limit = {
-				exists = yes
-				has_capitulated = no
-				OR = {
-					tag = ROOT
-					is_in_faction_with = ROOT
-					has_war_together_with = ROOT
-				}
-			}
-			# Industry, all three kinds. Dockyards are in on purpose: a coalition whose weight is
-			# in shipyards is a maritime coalition by construction.
-			set_temp_variable = { _csw_m_ic_ = num_of_civilian_factories }
-			add_to_temp_variable = { _csw_m_ic_ = num_of_military_factories }
-			add_to_temp_variable = { _csw_m_ic_ = num_of_naval_factories }
-			add_to_temp_variable = { _csw_side_ic_ = _csw_m_ic_ }
-
-			set_temp_variable = { _wa_cont_ = 0 }
-			capital_scope = { WA_AI_PRODUCTION_capital_continent_id = yes }
-			# A member with no readable capital continent counts toward the DENOMINATOR only: it is
-			# weight on our side whose location we cannot establish, and guessing "overseas" would
-			# open the arsenal on ignorance.
-			if = {
-				limit = {
-					check_variable = { _wa_cont_ > 0 }
-					NOT = { check_variable = { _wa_cont_ = _csw_own_cont_ } }
-				}
-				add_to_temp_variable = { _csw_off_ic_ = _csw_m_ic_ }
+	# "Our side" is the same three-term definition the rest of the AI uses: ourselves, a faction
+	# ally, or anyone fighting the same war - the last term is what makes a subject of an ALLY count
+	# without it ever being a faction member (Fix 27's lesson).
+	every_country = {
+		limit = {
+			exists = yes
+			has_capitulated = no
+			OR = {
+				tag = ROOT
+				is_in_faction_with = ROOT
+				has_war_together_with = ROOT
 			}
 		}
 
+		# Industry, all three kinds. Dockyards are in on purpose: a coalition whose weight is in
+		# shipyards is a maritime coalition by construction.
+		set_temp_variable = { _csw_m_ic_ = num_of_civilian_factories }
+		add_to_temp_variable = { _csw_m_ic_ = num_of_military_factories }
+		add_to_temp_variable = { _csw_m_ic_ = num_of_naval_factories }
+
 		if = {
-			limit = { check_variable = { _csw_side_ic_ > 0 } }
-			set_variable = { WA_AI_PRODUCTION_coalition_sea_share = _csw_off_ic_ }
-			divide_variable = { WA_AI_PRODUCTION_coalition_sea_share = _csw_side_ic_ }
+			limit = { check_variable = { _csw_m_ic_ > 0 } }
+			add_to_temp_variable = { _csw_side_ic_ = _csw_m_ic_ }
+
+			# Ourselves: always joined to ourselves by land, and skipping the A* here is what keeps
+			# the denominator honest without paying for a pathfind that can only answer one way.
+			if = {
+				limit = { NOT = { tag = ROOT } }
+				# THIS = this member (the A*'s target), ROOT = the candidate (its start). Exactly the
+				# scope contract WA_AI_LEND_LEASE_relief_land_access is written against.
+				WA_AI_LEND_LEASE_relief_land_access = yes
+				if = {
+					limit = { NOT = { check_variable = { _llr_path_ok = 1 } } }
+					add_to_temp_variable = { _csw_off_ic_ = _csw_m_ic_ }
+				}
+			}
 		}
 	}
 
+	if = {
+		limit = { check_variable = { _csw_side_ic_ > 0 } }
+		set_variable = { WA_AI_PRODUCTION_coalition_sea_share = _csw_off_ic_ }
+		divide_variable = { WA_AI_PRODUCTION_coalition_sea_share = _csw_side_ic_ }
+	}
+
 	if = { limit = { has_country_flag = WA_AI_logging }
-		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONVOY ARSENAL: coalition sea share [?WA_AI_PRODUCTION_coalition_sea_share|.3] (off-continent [?_csw_off_ic_|.0] of [?_csw_side_ic_|.0] factories)"
+		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONVOY ARSENAL: coalition sea share [?WA_AI_PRODUCTION_coalition_sea_share|.3] (unreachable overland [?_csw_off_ic_|.0] of [?_csw_side_ic_|.0] factories)"
 	}
 }
