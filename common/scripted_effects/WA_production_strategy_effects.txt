@@ -1026,6 +1026,15 @@ WA_AI_PRODUCTION_update_coalition_sea_weight = {
 				limit = { NOT = { tag = ROOT } }
 				# THIS = this member (the A*'s target), ROOT = the candidate (its start). Exactly the
 				# scope contract WA_AI_LEND_LEASE_relief_land_access is written against.
+				#
+				# _llr_donor is an INPUT of pathfind type 3, not of the land-access wrapper: the
+				# neighbour filter admits a state controlled by ROOT, by `var:_llr_donor`, by a
+				# subject of either, or by a faction ally / co-belligerent of ROOT. The lend-lease
+				# caller sets it from its own donor pick; this caller must set it too, or the filter
+				# reads an unset variable - which in HOI4 is a scope token, not 0 (lessons log), and
+				# the clause silently means something else. Set to the member for the same reason the
+				# relief sets it to the donor: the target's own ground is walkable ground.
+				set_temp_variable = { _llr_donor = THIS.id }
 				WA_AI_LEND_LEASE_relief_land_access = yes
 				if = {
 					limit = { NOT = { check_variable = { _llr_path_ok = 1 } } }
