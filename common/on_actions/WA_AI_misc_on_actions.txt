@@ -315,6 +315,20 @@ on_actions = {
 				# WA_TLM_tick_clock so its R31/R32 probe stamps carry this month's
 				# clock value.
 				WA_AI_EQUIPMENT_update_context_flags = yes
+
+				# Fix 115: the convoy arsenal's gate. Recomputed monthly for the only countries
+				# that can ever open it - an AI major at war above the large-dockyard band - so
+				# the every_country walk inside runs a handful of times, not once per tag. A
+				# country that stops qualifying keeps a stale share, which is harmless: the
+				# arsenal trigger re-tests the dockyard band and the partner's shortage anyway.
+				if = {
+					limit = {
+						is_major = yes
+						has_war = yes
+						num_of_naval_factories > constant:wa_ai_lend_lease.convoy.dockyards_large
+					}
+					WA_AI_PRODUCTION_update_coalition_sea_weight = yes
+				}
 			}
 		}
 	}

@@ -13,10 +13,24 @@ WA_AI_PRODUCTION_is_using_default_system = {
 # A large naval producer becomes the coalition's convoy arsenal while at least one eligible
 # AI partner is below that partner's dynamic convoy reserve. THIS = producer; inside
 # any_country, THIS = recipient and PREV = producer, matching convoy_pair_is_valid's contract.
+# Fix 115: the coalition must actually depend on sea lanes before a major spends dockyards
+# building hulls for it. WA_AI_PRODUCTION_coalition_sea_share is the share of the SIDE's industry
+# (civ + mil + naval factories) sitting off this country's own capital continent, recomputed
+# monthly by WA_AI_PRODUCTION_update_coalition_sea_weight (WA_production_strategy_effects.txt).
+#
+# WEIGHTED, not existential (user ruling 2026-08-20): "does the side span two continents" is
+# overturned by any minor - the Axis of campaign 3d68a183 already spanned Europe and Africa through
+# ITS and ITL, two colonial subjects with negligible industry, and one Iran joining would do the
+# same to any land coalition. The share asks how much of the alliance's WEIGHT is across water.
+#
+# This gate also decides the stock brake: WA_DEFAULT_production_convoy_stop_MAJORS carries
+# NOT = { this trigger } in both enable and abort, so a land coalition's arsenal never opens AND
+# its >1000 brake arms normally, while a maritime coalition keeps both the boost and the exemption.
 WA_AI_PRODUCTION_should_build_convoy_relief = {
 	WA_AI_PRODUCTION_is_using_default_system = yes
 	is_major = yes
 	num_of_naval_factories > constant:wa_ai_lend_lease.convoy.dockyards_large
+	check_variable = { WA_AI_PRODUCTION_coalition_sea_share > constant:wa_ai_lend_lease.convoy.coalition_sea_share_bar }
 	any_country = {
 		WA_AI_LEND_LEASE_is_starving_convoys = yes
 		WA_AI_LEND_LEASE_convoy_pair_is_valid = yes
