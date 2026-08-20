@@ -1007,20 +1007,26 @@ WA_AI_PRODUCTION_update_coalition_sea_weight = {
 	# OVER, and what you hand over follows the alliance you supply - not everyone who happens to
 	# fight the same enemy on another continent. The transfer path itself stays wider: the convoy
 	# pair test (WA_AI_LEND_LEASE_convoy_pair_is_valid) still accepts a co-belligerent.
-	# Fix 118 - the third term is `is_subject_of = ROOT`, NOT a scope into OVERLORD. The first
-	# version asked the member whether ITS overlord was in our faction, to cover Fix 27's case (a
-	# subject of an ALLY need not be a faction member). On a country with no overlord that scope is
-	# invalid and it poisoned the WHOLE limit: `event wa_test.311` on 1940.5 returned an empty side
-	# and `0 of 0 factories` for a country holding a dockyard - not even ROOT itself matched its own
-	# `tag = ROOT`. Every other OVERLORD use in this repo sits behind an `is_subject = yes` guard in
-	# an outer limit; a bare one inside an OR is the shape that fails.
-	# What that cost: the share stayed 0 for everyone, so `share > bar` was false everywhere and NO
-	# country got an arsenal - including the maritime ones. That is the exact outcome the design
-	# rejected when it refused a flat stock cap.
-	# What is knowingly NOT covered: a subject whose overlord is an ally of ours and which is not
-	# itself in the faction. MEASURED on 3d68a183 that set is empty - the Axis roster lists ITS, ITL,
-	# RCZ, RDE, RNO, RHO and the Allies list UKO, UKT, UKN, RAJ, so subjects ARE faction members
-	# there. Covering it properly needs a guarded scope, and it buys nothing measured.
+	# Fix 118 (re-derived 2026-08-20 - the original justification was WITHDRAWN, see below). Four
+	# terms, and the fourth one enters OVERLORD only behind an `is_subject = yes` guard:
+	#   tag / is_in_faction_with   our faction
+	#   is_subject_of = ROOT       our own subjects, which need not be faction members
+	#   is_subject + OVERLORD      Fix 27's case - a subject of an ALLY need not be a faction member
+	#                              either (ITL is ITA's subject and never joins), and its industry is
+	#                              still our side's.
+	# WHY THE GUARD RATHER THAN A BARE `OVERLORD = { }`: nobody has measured what a bare scope into a
+	# scope that does not exist does to the rest of an OR. The engine's trigger documentation does not
+	# say, error.log said nothing, and the reading that was once offered as proof turned out to be an
+	# artefact. So this is ASSUMED, and the guard costs one trigger to never have to know.
+	# WITHDRAWN CLAIM, recorded so it is not re-derived: this comment used to state that a bare
+	# OVERLORD scope "poisons the WHOLE limit", on the strength of `event wa_test.311` returning an
+	# empty coalition on 1940.5. That reading was an artefact of the TEST HARNESS's call site, not of
+	# this limit - the same harness fired from a different event file read the coalition correctly
+	# with the OVERLORD form still in place. See lessons log, "Two call sites, one effect". The
+	# OUTCOME here is still right and is independently justified above; the old reason was not.
+	# Cost of the fourth term, MEASURED on 3d68a183: nil. Its set is empty there - the Axis roster
+	# lists ITS, ITL, RCZ, RDE, RNO, RHO and the Allies UKO, UKT, UKN, RAJ, so subjects ARE faction
+	# members in that campaign. It is carried for the world where they are not.
 	every_country = {
 		limit = {
 			exists = yes
@@ -1029,6 +1035,10 @@ WA_AI_PRODUCTION_update_coalition_sea_weight = {
 				tag = ROOT
 				is_in_faction_with = ROOT
 				is_subject_of = ROOT
+				AND = {
+					is_subject = yes
+					OVERLORD = { is_in_faction_with = ROOT }
+				}
 			}
 		}
 
