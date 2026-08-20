@@ -38,7 +38,7 @@ reference is unavailable.
 **Version.** The install reads `1.19.2.0` (`launcher-settings.json`, field `rawVersion`) - the same
 version the analysed campaigns ran. Expert AI 5.0 declares `supported_version="1.19.2.0"`. This
 repo's `descriptor.mod` still says `1.18.0`; that is stale metadata, not the version campaigns run
-on. Read `launcher-settings.json` rather than trusting either descriptor.
+on. Read the install's `launcher-settings.json` rather than trusting either descriptor.
 
 ## What answers what
 
@@ -142,8 +142,8 @@ Live, AI-relevant, and confirmed absent from `descriptor.mod`'s replace list:
 
 | Live base folder | Why it matters |
 | --- | --- |
-| `common/defines/` | Base `00_defines.lua` loads first, WA's `05_defines.lua` overrides individual keys on top - the section right below this table. |
-| `common/ai_attitudes.txt`, `common/ai_personalities.txt` | Small, live, and owned by nobody in this repo. |
+| `common/defines/` | The install's base `00_defines.lua` loads first, WA's `05_defines.lua` overrides individual keys on top - the section right below this table. |
+| `common/ai_attitudes.txt`, `common/ai_personalities.txt` | Small, live vanilla files (install only, not in this repo), owned by nobody here. |
 
 `common/ai_faction_theaters/` used to be listed here - **no longer true since 2026-08-18**: the
 folder is now on `descriptor.mod`'s replace list (line 13) and the live content is WA's own
@@ -165,14 +165,13 @@ Two readings of that diff are wrong, and both come from opening only WA's file:
 
 - **"WA does not set it, so it is unset / zero / disabled."** It has vanilla's value, and vanilla's
   value is in the install, not in this repo. `NDefines.NAI.AIFC_MAX_NR_FRONTS` is **4**
-  (`00_defines.lua:3500`) and WA names **none** of the 50 `AIFC_*` keys - the whole AI force
+  (install `00_defines.lua:3500`) and WA names **none** of the 50 `AIFC_*` keys - the whole AI force
   concentration system runs on vanilla numbers.
 - **"I changed WA's value, so the behaviour is now X."** Incomplete until you know what it was.
-  `NDefines.NAI.MAX_DEPLOYED_ARMY_HQS` is `5` (`00_defines.lua:3423`) and `20`
+  `NDefines.NAI.MAX_DEPLOYED_ARMY_HQS` is `5` (install `00_defines.lua:3423`) and `20`
   (`05_defines.lua:1040`) - a 4x that neither file states on its own.
 
-So a define's live value is `05_defines.lua` when the key is there and `00_defines.lua` when it is
-not. Grep both before quoting one.
+So a define's live value is `05_defines.lua` when the key is there and the install's `00_defines.lua` when it is not. Grep both before quoting one.
 
 ## Expert AI - how to use it, how not to
 

@@ -56,7 +56,7 @@ Rules of thumb for adding recurring work:
 - Airforce: `_is_strategic_bombing_airforce`, `_is_close_air_support_airforce`, `_AIRFORCE_uses_interceptors`, `_uses_multirole_fighters`, …
 - Geography: `WA_AI_CONFIG_MILITARY_is_<region>`
 
-If your rule genuinely needs a new category, **add the trigger to `WA_AI_CONFIG.txt`** and use it — that keeps the tag list in one auditable place instead of spreading across 187 ai_strategy files.
+If your rule genuinely needs a new category, **add the trigger to `WA_AI_CONFIG.txt`** and use it — that keeps the tag list in one auditable place instead of spreading across ~240 ai_strategy files.
 
 Before writing a tag anywhere else, reformulate the rule as an archetype question: not "is this Germany?" but "is this a major Axis land power with a western border threat?". If the question can be asked that way, it belongs in CONFIG. The Country layer exists only for behaviour genuinely unique to one nation, and even then ask the archetype question first.
 
@@ -131,7 +131,7 @@ The decisions that actually matter when you write a block:
 
 ## Priority construction and the railway queue
 
-Deep reference: `documentation/WA_AI_RAILWAY_SYSTEM.md` (+ `_EDGE_CASES.md`, `_TEST_CASES.md`).
+Deep reference: `documentation/WA_AI_RAILWAY_SYSTEM.md` (+ `WA_AI_RAILWAY_SYSTEM_EDGE_CASES.md`, `WA_AI_RAILWAY_SYSTEM_TEST_CASES.md`).
 
 State is a queue array plus parallel indexed variables on the country:
 
@@ -153,14 +153,14 @@ Weekly cycle:
 2. `WA_AI_PC_update_project_progress` — `progress -= speed * factories * 7`; complete at `<= 0`.
 3. `WA_AI_PC_railway` — runs only when its interval counter hits 0 (8 weeks at war, 12 at peace), then queues new projects.
 
-Three strategies live in `railway_strategies.txt`: **land war** (border enemy), **overseas war** (port-to-port supply chains), **pre-war preparation**. Route orchestration belongs in `railway_core`, strategy selection in `railway_strategies`, calculations in `railway_helpers`, province/state checks in `railway_primitives`.
+Three strategies live in `WA_AI_CONSTRUCTION_PRIORITY_railway_strategies.txt`: **land war** (border enemy), **overseas war** (port-to-port supply chains), **pre-war preparation**. Route orchestration belongs in `railway_core`, strategy selection in `railway_strategies`, calculations in `railway_helpers`, province/state checks in `railway_primitives`.
 
 Two things to know before editing:
 
 - **AI numbers are script constants** — `common/script_constants/wa_ai_pc.txt` / `wa_ai_railway.txt` / `wa_ai_aifc.txt` / `wa_ai_posture.txt`, read as `constant:wa_ai_<system>.<group>.<key>` from every file (the railway control panel, PC bands / budgets / shadow prices, AIFC and posture thresholds). Retune there, full game restart to see it; never add a per-file `@` copy of a shared number. `python tools/check_constants.py` after touching them (skill `wa-constants-registry`).
 - **Puppet territory is not yours.** `every_controlled_state` skips subject states; several fixes here (`Fix 25`/`Fix 27`) exist purely because of that. See `wa-lessons-learned`.
 
-The `# Fix NN:` comments throughout `railway_helpers.txt` and `railway_strategies.txt` are a deliberate changelog — a later fix can revoke an earlier one (`Fix 27` revokes `Fix 25`). Read the surrounding Fix comments before "simplifying" logic that looks redundant; it usually encodes a case that broke.
+The `# Fix NN:` comments throughout `WA_AI_CONSTRUCTION_PRIORITY_railway_helpers.txt` and `WA_AI_CONSTRUCTION_PRIORITY_railway_strategies.txt` are a deliberate changelog — a later fix can revoke an earlier one (`Fix 27` revokes `Fix 25`). Read the surrounding Fix comments before "simplifying" logic that looks redundant; it usually encodes a case that broke.
 
 ## Map data and pathfinding
 
@@ -172,7 +172,7 @@ Consumers: `WA_AI_pathfinding_effects.txt` and `WA_AI_MATH_effects.txt`. Pathfin
 
 | Subsystem | Owning files |
 | --- | --- |
-| Standard construction | `events/WA_AI_construction.txt`, `WA_AI_CONSTRUCTION_queue_functions.txt`, `_building_adders.txt`, `_scoring.txt`, `WA_AI_CONSTRUCTION_triggers.txt` |
+| Standard construction | `events/WA_AI_construction.txt`, `WA_AI_CONSTRUCTION_queue_functions.txt`, `WA_AI_CONSTRUCTION_building_adders.txt`, `WA_AI_CONSTRUCTION_scoring.txt`, `WA_AI_CONSTRUCTION_triggers.txt` |
 | Templates / divisions | `WA_AI_TEMPLATES_effects.txt`, `WA_AI_TEMPLATES_triggers.txt`, `common/ai_templates/`, `WA_AI_DIVISION_CREATOR_effects.txt`, doc `WA_AI_DIVISION_TEMPLATES.md` |
 | Production & equipment | `common/ai_strategy/WA_AI_PRODUCTION_*.txt`, `WA_production_strategy_effects.txt`, `common/ai_equipment/` |
 | Research weighting | `WA_AI_RESEARCH_*` triggers/effects → `ai_will_do` in `common/technologies/` (tool-generated) |

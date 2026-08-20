@@ -73,7 +73,7 @@ python ai_will_do_replacer_all.py --file armor_ger.txt --apply
 python ai_will_do_replacer_all.py --type infantry --apply
 ```
 
-Dispatch map: `infantry_*.txt` / `special_forces_doctrine.txt` → infantry; `support*.txt` → support; `armor_*.txt` / `tanks_*.txt` → armor; `air_techs*.txt`, `naval*.txt` / `MTG_naval.txt`, `industry.txt` / `electronics.txt` → legacy parsers.
+Dispatch map: `infantry_*.txt` / `special_forces_doctrine.txt` → infantry; `support*.txt` → support; `armor_*.txt` → armor; `air_techs*.txt`, `naval*.txt` / `MTG_naval.txt`, `industry.txt` / `electronic_mechanical_engineering*.txt` → legacy parsers (the dispatcher matches on `industry` / `electronic` substrings — `tools/ai_will_do_replacer_all.py`).
 
 Shared parsing/generation lives in `tools/ai_replacer_base/` (`file_processor.py`, `block_finder.py`, `text_utils.py`, `trigger_resolver.py`, `tech_graph.py`, `generator.py`). Fix bugs there rather than in one domain replacer, or the fix applies to one tech family only.
 

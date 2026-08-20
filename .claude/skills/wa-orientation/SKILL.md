@@ -41,7 +41,7 @@ Check `descriptor.mod` when unsure whether a folder is replaced — it is a flat
 
 | Path | What lives there |
 | --- | --- |
-| `common/` | All scripted content. 70+ subfolders; the ones you will touch most are `scripted_effects/` (82 files), `scripted_triggers/` (69), `ai_strategy/` (187), `decisions/` (96), `national_focus/` (52), `ideas/`, `on_actions/`, `technologies/`. |
+| `common/` | All scripted content. 70+ subfolders; the ones you will touch most are `scripted_effects/` (~95 files), `scripted_triggers/` (~70), `ai_strategy/` (~240), `decisions/` (~95), `national_focus/` (~50), `ideas/`, `on_actions/`, `technologies/`. Counts are approximate on purpose — they drift. |
 | `events/` | 154 files. `WA_AI_*.txt` are AI systems, `wa_<tag>_events.txt` are WA country events, vanilla-named files are overrides. |
 | `history/` | Start state. `history/states/<ID>-<Name>.txt` is where you look up state IDs. |
 | `localisation/` | Mostly `localisation/replace/*_l_english.yml`. `_GENERATED_` in a filename means tool-owned. |
@@ -59,7 +59,7 @@ Read the relevant one before changing a documented system; several are explicitl
 | `documentation/WA_AI_MILITARY_SYSTEM.md` | Touching **any** `ai_strategy` block in `common/ai_strategy/WA_AI_MILITARY_*` or `WA_AI_NAVAL_*`. Authoritative spec for the 4-layer model and domain split. |
 | `documentation/WA_AI_MILITARY_TYPES_REFERENCE.md` | Looking up which `type =` exists, where it lives, and its target layer. |
 | `documentation/WA_AI_RAILWAY_SYSTEM.md` | Any railway / priority-construction work. Includes constants, data structures, and the weekly cycle. |
-| `documentation/WA_AI_RAILWAY_SYSTEM_EDGE_CASES.md`, `_TEST_CASES.md` | Debugging railway behaviour or extending its test suite. |
+| `documentation/WA_AI_RAILWAY_SYSTEM_EDGE_CASES.md`, `WA_AI_RAILWAY_SYSTEM_TEST_CASES.md` | Debugging railway behaviour or extending its test suite. |
 | `documentation/WA_AI_DIVISION_TEMPLATES.md` | Template / division-creator work. |
 | `documentation/PDXSCRIPT_LANGUAGE_NOTES.md` | Language questions — backing reference for `wa-pdxscript`. |
 | `documentation/WA_TLM_TELEMETRY_SYSTEM.md` | Adding any save-visible probe, counter, or metric (the `WA_TLM_` namespace read by campaign-analysis agents). §7 is the author checklist. |

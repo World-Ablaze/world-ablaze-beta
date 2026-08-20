@@ -39,9 +39,9 @@ Facts to keep in mind:
 - Schema: one category per file, `schema = { any_key = yes data = { { any_key = yes data = fixed_point } } }`,
   then `group = { key = value  # doc }`. Every key carries a `# was @OLD_NAME` line so `git log -S`
   and old comments/lessons stay followable.
-- Probe harness (delete-after-use, in git history at the commit that shipped `wa_ai_pc.txt`):
-  `events/wa_test_constants.txt` + `common/script_constants/wa_test_constants.txt` + the two
-  `WA_TEST_constants.txt` scripted files. Re-run it before relying on a context not in the table.
+- Probe harness — deleted after use, recover it from git at the commit that shipped `wa_ai_pc.txt`
+  (`13eb2b9c6`): `events/wa_test_constants.txt` + `common/script_constants/wa_test_constants.txt` (both deleted)
+  + the two `WA_TEST_constants.txt` scripted files (also deleted). Re-run it before relying on a context not in the table.
 
 ## Where the numbers live
 
