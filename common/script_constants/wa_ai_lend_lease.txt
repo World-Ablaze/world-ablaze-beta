@@ -132,11 +132,19 @@ wa_ai_lend_lease = {
 		# land"; it says nothing about where a member actually fights.
 		# Fact is gone when: a campaign shows a genuinely maritime coalition scoring under this bar,
 		# or a land one scoring over it - retune here, not in the trigger.
-		# Expected shape, NOT yet measured: an island or transoceanic leader (ENG, USA) reaches
-		# almost no partner overland and should sit far above the bar; a continental leader reaches
-		# most of its side and should sit near 0. The two are expected to be far apart, which is why
-		# a mid bar is safe - if a campaign puts them close together, the classifier is wrong and no
-		# value of this constant repairs it.
+		# MEASURED out of campaign 3d68a183 by a scratch replica of the effect (three dates, faction
+		# side, uncapped connectivity - .claude/skills/wa-savegame-analysis/scripts/seashare.py),
+		# which is why 0.25 sits where it does:
+		#            1941.6   1943.6   1945.6
+		#   GER       0.079    0.056    0.029     land coalition
+		#   ITA       0.079    0.056    0.029
+		#   SOV       0.000    0.000    0.000
+		#   JAP       0.360    0.356    0.357     maritime
+		#   USA       0.019*   0.440    0.487     (* not yet in the Allies faction)
+		#   ENG       0.519    0.788    0.814
+		# Land side never above 0.079, maritime side never below 0.356: the bar sits in a 4.5x gap,
+		# which is what makes a single mid value safe. If a campaign brings the two groups together
+		# the CLASSIFIER is wrong and no value of this constant repairs it - that is R79 leg 1.
 		coalition_sea_share_bar = 0.25
 		reserve_small = 200
 		reserve_medium = 500

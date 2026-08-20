@@ -1834,7 +1834,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 
 
 ### R79. A land coalition does not run a convoy arsenal (Fix 115)
-- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=66481b39a status=NOT_YET_TESTED`
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=<PENDING> status=NOT_YET_TESTED`
 
 - **Opened 2026-08-20** from campaign `3d68a183`, while answering "why does Germany build so many convoys". MEASURED from the save's `naval_lines` blocks (NOT `military_lines`, which holds only army and air production - reading the wrong block reports zero convoy lines and is how this nearly went unnoticed): Germany runs **four** convoy lines, three pinned at the 15-dockyard per-line cap, holding **46 -> 48 -> 54 -> 59 dockyards, 6.0 % -> 7.6 % of every factory on all its lines**, continuously 1942.6 -> 1944.6, and only drops to 3 factories by 1946.1. The partner it feeds is real - Italy records `llr_convoy_starving_n = 56` and Germany donated 51 transfers for 2,201 hulls - but the Axis is a land coalition and that industry belonged on the eastern front. The switch that should have stopped it cannot: `WA_DEFAULT_production_convoy_stop_MAJORS` carries `NOT = { WA_AI_PRODUCTION_should_build_convoy_relief = yes }` in **both** `enable` and `abort`, so the >1 000 stock brake is disarmed for exactly the countries the boost is on, and the boost holds while ANY valid partner is short.
 - **Fix under test:** **Fix 115** (commit `70e4549d3`). `WA_AI_PRODUCTION_should_build_convoy_relief` gains `check_variable = { WA_AI_PRODUCTION_coalition_sea_share > constant:wa_ai_lend_lease.convoy.coalition_sea_share_bar }` (0.25). The share is the coalition's industry (civ + mil + naval factories of every side member, the usual three-term "our side") that the country **cannot reach OVERLAND**, recomputed monthly by `WA_AI_PRODUCTION_update_coalition_sea_weight` for AI majors at war above the large-dockyard band. **Fix 116** (commit `66481b39a`, the same day, before any campaign ran the first version) replaced the original classifier - capital CONTINENT - with the state A* the lend-lease relief already uses (`WA_AI_LEND_LEASE_relief_land_access`, pathfind type 3, capital to capital through friendly territory). Continents do not measure water in either direction: London and Berlin are both `europe` with the Channel between them, and Berlin reaches Cairo overland across two of them. The weighting is unchanged. **Weighted rather than existential, on the user's ruling:** "does the side span two continents" is overturned by any minor - this very Axis already spans Europe and Africa through ITS and ITL, two colonial subjects with negligible industry. **A flat stock cap was considered and rejected with the measurement that kills it:** USA holds 2,635 convoys and ENG 1,500, both already over the bar, so removing the exemption outright would have shut the ALLIED arsenal too.
@@ -1856,6 +1856,18 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
     Allies  leader=ENG  30 members: ENG UKO HOL UKN UKT POL ARG RAJ SAF NZL CAN AST NEP BHU ...
     japanese_co_prosperity_sphere  leader=JAP  7 members  (Japan is NOT in the Axis in this campaign)
   ```
+- **Pre-tested out of the save, 2026-08-20 — leg 1 only, and it changed the fix.** `seashare.py` replays this effect in Python over `3d68a183`. With the repo's usual three-term "our side" the gauge put **Germany at 0.254 against a 0.25 bar** — on the knife edge, so Fix 115/116 would have done nothing — because **Japan** contributes 490 unreachable factories to the Axis's numerator while sitting in its own faction and merely sharing enemies. **Fix 117** narrowed the side to the faction plus subjects. The gauge then reads:
+
+  | | 1941.6 | 1943.6 | 1945.6 |
+  | --- | --- | --- | --- |
+  | GER | 0.079 | 0.056 | 0.029 |
+  | ITA | 0.079 | 0.056 | 0.029 |
+  | SOV | 0.000 | 0.000 | 0.000 |
+  | JAP | 0.360 | 0.356 | 0.357 |
+  | USA | 0.019* | 0.440 | 0.487 |
+  | ENG | 0.519 | 0.788 | 0.814 |
+
+  \* the USA is not yet in the Allies faction at 1941.6, so its "coalition" is itself; the arsenal is correctly shut for a country that has not joined one. Land side never above **0.079**, maritime side never below **0.356** — the bar sits in a 4.5x gap. **This is a REPLICA, not the shipped effect:** it approximates the engine's factory counts with controlled building levels and its BFS is pessimistic against the engine's best-first A*. Leg 1 must still be scored in game; what this buys is that the fix is not shipped blind.
 - **Threshold:** 3.
 - **Streak:** 0
 - **Status:** NOT YET TESTED

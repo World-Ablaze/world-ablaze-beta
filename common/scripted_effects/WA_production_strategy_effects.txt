@@ -996,9 +996,19 @@ WA_AI_PRODUCTION_update_coalition_sea_weight = {
 	set_temp_variable = { _csw_side_ic_ = 0 }
 	set_temp_variable = { _csw_off_ic_ = 0 }
 
-	# "Our side" is the same three-term definition the rest of the AI uses: ourselves, a faction
-	# ally, or anyone fighting the same war - the last term is what makes a subject of an ALLY count
-	# without it ever being a faction member (Fix 27's lesson).
+	# Fix 117 - "our side" HERE IS THE FACTION, not the war, and that is a deliberate deviation from
+	# the three-term idiom the rest of the AI uses (self / faction ally / has_war_together_with).
+	# MEASURED out of campaign 3d68a183 with the third term IN (scratch replica of this effect,
+	# 1943.6): Germany read 0.254 against a 0.25 bar - on the knife edge - because JAPAN, which sits
+	# in its own faction and merely shares enemies, put 490 unreachable factories into the Axis's
+	# numerator. Restricted to the faction, the same reading is 0.056. That is the user's 'one Iran
+	# must not make the Axis maritime' failure wearing a bigger hat.
+	# Why it is right and not merely convenient: an arsenal spends dockyards on hulls it will HAND
+	# OVER, and what you hand over follows the alliance you supply - not everyone who happens to
+	# fight the same enemy on another continent. The transfer path itself stays wider: the convoy
+	# pair test (WA_AI_LEND_LEASE_convoy_pair_is_valid) still accepts a co-belligerent.
+	# The OVERLORD term keeps Fix 27's lesson alive: a subject of an ALLY need not be a faction
+	# member (ITL is ITA's subject and never joins), and its industry is still our side's.
 	every_country = {
 		limit = {
 			exists = yes
@@ -1006,7 +1016,12 @@ WA_AI_PRODUCTION_update_coalition_sea_weight = {
 			OR = {
 				tag = ROOT
 				is_in_faction_with = ROOT
-				has_war_together_with = ROOT
+				OVERLORD = {
+					OR = {
+						tag = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
 			}
 		}
 
