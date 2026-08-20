@@ -32,6 +32,7 @@ WA_TEST_CA_report = {
 	### than shared with the shipped effect: if the two disagree, the fault is localised to one of
 	### them instead of hidden inside a helper both of them trust.
 	log = "  side  : (tag / factories / overland?)"
+	set_temp_variable = { _ca_self_seen_ = 0 }
 	every_country = {
 		limit = {
 			exists = yes
@@ -39,12 +40,7 @@ WA_TEST_CA_report = {
 			OR = {
 				tag = ROOT
 				is_in_faction_with = ROOT
-				OVERLORD = {
-					OR = {
-						tag = ROOT
-						is_in_faction_with = ROOT
-					}
-				}
+				is_subject_of = ROOT
 			}
 		}
 		set_temp_variable = { _ca_ic_ = num_of_civilian_factories }
@@ -54,6 +50,7 @@ WA_TEST_CA_report = {
 			limit = { check_variable = { _ca_ic_ > 0 } }
 			if = {
 				limit = { tag = ROOT }
+				set_temp_variable = { _ca_self_seen_ = 1 }
 				log = "            [This.GetName]  [?_ca_ic_|.0]  self"
 			}
 			else = {
@@ -68,6 +65,16 @@ WA_TEST_CA_report = {
 				}
 			}
 		}
+	}
+
+	# SELF-CHECK (added after the first live run, 1940.5, found the bug it names). The country under
+	# test is the first entry of its own coalition - it matches `tag = ROOT`. If it does not appear,
+	# the limit is broken for EVERY country, not just for edge cases, and the 0.000 share below is an
+	# artefact rather than a reading. The original cause was a bare OVERLORD scope, invalid on any
+	# country without an overlord, poisoning the whole limit.
+	if = {
+		limit = { NOT = { check_variable = { _ca_self_seen_ = 1 } } }
+		log = "  !! BROKEN: the country under test did not match its own coalition limit. Every share below is an artefact, not a measurement. Suspect a scope that is invalid on some countries inside the OR - it fails the entire limit, not just its own branch."
 	}
 
 	### 3. every term of WA_AI_PRODUCTION_should_build_convoy_relief, separately. The shipped

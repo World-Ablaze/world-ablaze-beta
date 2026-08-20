@@ -1007,8 +1007,20 @@ WA_AI_PRODUCTION_update_coalition_sea_weight = {
 	# OVER, and what you hand over follows the alliance you supply - not everyone who happens to
 	# fight the same enemy on another continent. The transfer path itself stays wider: the convoy
 	# pair test (WA_AI_LEND_LEASE_convoy_pair_is_valid) still accepts a co-belligerent.
-	# The OVERLORD term keeps Fix 27's lesson alive: a subject of an ALLY need not be a faction
-	# member (ITL is ITA's subject and never joins), and its industry is still our side's.
+	# Fix 118 - the third term is `is_subject_of = ROOT`, NOT a scope into OVERLORD. The first
+	# version asked the member whether ITS overlord was in our faction, to cover Fix 27's case (a
+	# subject of an ALLY need not be a faction member). On a country with no overlord that scope is
+	# invalid and it poisoned the WHOLE limit: `event wa_test.311` on 1940.5 returned an empty side
+	# and `0 of 0 factories` for a country holding a dockyard - not even ROOT itself matched its own
+	# `tag = ROOT`. Every other OVERLORD use in this repo sits behind an `is_subject = yes` guard in
+	# an outer limit; a bare one inside an OR is the shape that fails.
+	# What that cost: the share stayed 0 for everyone, so `share > bar` was false everywhere and NO
+	# country got an arsenal - including the maritime ones. That is the exact outcome the design
+	# rejected when it refused a flat stock cap.
+	# What is knowingly NOT covered: a subject whose overlord is an ally of ours and which is not
+	# itself in the faction. MEASURED on 3d68a183 that set is empty - the Axis roster lists ITS, ITL,
+	# RCZ, RDE, RNO, RHO and the Allies list UKO, UKT, UKN, RAJ, so subjects ARE faction members
+	# there. Covering it properly needs a guarded scope, and it buys nothing measured.
 	every_country = {
 		limit = {
 			exists = yes
@@ -1016,12 +1028,7 @@ WA_AI_PRODUCTION_update_coalition_sea_weight = {
 			OR = {
 				tag = ROOT
 				is_in_faction_with = ROOT
-				OVERLORD = {
-					OR = {
-						tag = ROOT
-						is_in_faction_with = ROOT
-					}
-				}
+				is_subject_of = ROOT
 			}
 		}
 
