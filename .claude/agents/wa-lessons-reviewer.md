@@ -22,10 +22,14 @@ end of your verdict.
 
 ## What to read
 
-1. `.claude/skills/wa-lessons-learned/references/lessons-log.md` — the whole catalogue. Grep first
-   for the nouns in the decision (system names, effect/trigger names, `Fix NN`, building/variable
-   names, "queued", "controlled", "subject", "state_max", …), then read every entry that grep hits
-   in full, plus the "five that come up most" in `.claude/skills/wa-lessons-learned/SKILL.md`.
+1. `.claude/skills/wa-lessons-learned/references/lessons-index.md` — the one-line-per-lesson
+   index. Read it WHOLE (it is cheap); note every line whose class or rule could touch the
+   decision, then jump to each full entry with its `grep -F "<fragment>"` against
+   `references/lessons-log.md`. ALSO grep the log directly for the decision's nouns (system
+   names, effect/trigger names, `Fix NN`, building/variable names, "queued", "controlled",
+   "subject", "state_max", …) — index lines are terse and a noun may only appear in the entry
+   body. Read every entry either route hits in full, plus the "five that come up most" in
+   `.claude/skills/wa-lessons-learned/SKILL.md`.
 2. `AGENTS.md`, section "AI Design Philosophy" — principles 1–3, in particular the impact-analysis
    checklist (a)–(g).
 3. If the decision names a documented system, the matching `documentation/*.md` header and any

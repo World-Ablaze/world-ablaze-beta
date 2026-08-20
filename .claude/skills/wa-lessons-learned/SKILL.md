@@ -5,11 +5,15 @@ description: Hard-won gotchas from working on the World Ablaze HOI4 mod — the 
 
 # Lessons learned
 
-The catalogue lives in `references/lessons-log.md`. Read it when debugging; append to it when you learn something.
+The catalogue lives in `references/lessons-log.md` (~2,200 lines). Its **index** is
+`references/lessons-index.md` — one line per lesson, tagged by class (A engine semantics, B
+PDXScript traps, C unverified hypothesis, D measurement artefacts, E process, F AI design, G
+tooling), each ending in a `grep -F` fragment that jumps to the full entry. **Consult the index
+first, always**; open the log only for the entries the index points you at.
 
 ## Consulting the log without reading it — the `wa-lessons-reviewer` subagent
 
-The log is ~1800 lines and grows with every fix. Reading it inline to check one decision spends
+The log is ~2,200 lines and grows with every fix. Reading it inline to check one decision spends
 main-agent context on entries that do not apply. Instead, **before committing to a fix design, a
 change to an existing system, or an analysis conclusion**, send the decision to the
 `wa-lessons-reviewer` subagent (`.claude/agents/wa-lessons-reviewer.md`, read-only). Give it:
@@ -55,6 +59,12 @@ Append to the end of `references/lessons-log.md` using this shape:
 - **Rule:** what to do differently, stated so it applies beyond this one case
 - **Evidence:** file:line, commit, or Fix number
 ```
+
+**And add the entry's index line to `references/lessons-index.md` in the same commit** — format
+`- <CLASS> <MM-DD> <rule in <=15 words> · grep:"<verbatim heading fragment>"`, appended at the end.
+A lesson without an index line is invisible to the triage every session runs first. (Never write
+the sequence "Fix &lt;number&gt;" for a number absent from `tools/fix_registry.json` — the
+`FIX-UNREGISTERED` scanner reads these files.)
 
 Two things that make an entry worth having:
 
