@@ -246,7 +246,16 @@
 # and grows sent_n / sent_amount from 10 to 11 slots (idx 10 = convoy_1). The init explicitly
 # migrates arrays whose ^num is below 11, so resumed v18-v27 saves retain idx 1..9 and gain idx 10.
 # Additive; a save at wa_tlm_version < 28 lacks the convoy counters - score NOT CHECKED.
-@WA_TLM_VERSION = 28
+# v29 (2026-08-20, Fix 114 / R78): adds WA_TLM_r114_thair_near_n / _far_n / _first_t / _last_t - which
+# PHASE of the theatre air-base ladder won each start. near_n = the proximity phase found an eligible
+# state on the contested edge; far_n = only the whole-theatre fallback could. Written at the verified
+# start in WA_AI_build_theatre_air_bases, NOT by the monthly sampler. READ THEM AS A PAIR: far_n is not
+# a failure counter (a theatre contested at a distance is supposed to land in the rear), and near_n
+# alone cannot tell "the phase works" from "the fallback never had to run". The second signal is the
+# map: `airload.py --states <theatre>` must show the front-line member states gaining nominal capacity
+# against the rear, which is what the counters claim to have caused.
+# Additive; a save at wa_tlm_version < 29 lacks the family - score NOT CHECKED, never FAILED.
+@WA_TLM_VERSION = 29
 
 ############################################################################################################
 #	Clock - global.WA_TLM_clock = months elapsed since 1936.1
@@ -413,6 +422,14 @@ WA_TLM_init_country = {
 	if = { limit = { NOT = { has_variable = WA_TLM_r52_thair_front_n } } set_variable = { WA_TLM_r52_thair_front_n = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r52_thair_front_first_t } } set_variable = { WA_TLM_r52_thair_front_first_t = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r52_thair_front_last_t } } set_variable = { WA_TLM_r52_thair_front_last_t = 0 } }
+
+	# which phase of the theatre air ladder won the start (Fix 114, consumer: checklist R78; same
+	# write site as the r52 family above). near = the contested-edge phase, far = the whole-theatre
+	# fallback. Meaningless apart - it is the ratio that measures the fix.
+	if = { limit = { NOT = { has_variable = WA_TLM_r114_thair_near_n } } set_variable = { WA_TLM_r114_thair_near_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r114_thair_far_n } } set_variable = { WA_TLM_r114_thair_far_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r114_thair_near_first_t } } set_variable = { WA_TLM_r114_thair_near_first_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r114_thair_near_last_t } } set_variable = { WA_TLM_r114_thair_near_last_t = 0 } }
 
 	# naval / convoy war (standing, consumer: checklist R36 + any convoy-war question)
 	if = { limit = { NOT = { has_variable = WA_TLM_nav_ships } } set_variable = { WA_TLM_nav_ships = 0 } }

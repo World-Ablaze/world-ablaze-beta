@@ -1918,6 +1918,14 @@ WA_AI_build_theatre_air_bases = {
 				set_temp_variable = { _project_building_type = 2 }
 				set_temp_variable = { _thair_started_ = 0 }
 				set_temp_variable = { _thair_try_level_ = 0 }
+				# Fix 114: the ladder runs TWICE. Phase 1 (_thair_near_only_ = 1) admits only member
+				# states on the contested edge of the theatre; phase 2 is the pre-Fix-114 ladder, over the
+				# whole theatre. The fallback is not decoration - an air theatre can be contested at a
+				# distance (a naval theatre, a theatre we have only just entered) and a phase-1-only
+				# selector would leave it with NO builder at all, which is the gap AGENTS.md principle 1
+				# forbids. One loop, not two nested ones, so the ~100-line body keeps its indentation:
+				# the phase flip at the bottom resets the rung counter once and can never fire again.
+				set_temp_variable = { _thair_near_only_ = 1 }
 				while_loop_effect = {
 					limit = {
 						check_variable = { _thair_started_ < 1 }
@@ -1939,6 +1947,13 @@ WA_AI_build_theatre_air_bases = {
 								AND = { check_variable = { _thair_pac_ = 1 } WA_AI_MILITARY_AIR_theatre_state_pacific_islands = yes }
 							}
 							check_variable = { building_level@air_base = _thair_try_level_ }
+							# Fix 114: phase 1 restricts the rung to the contested edge; phase 2 lifts it.
+							# Placed AFTER the theatre and level tests on purpose - the ring walk is two
+							# nested any_neighbor_state and must not run on every state of the map.
+							OR = {
+								check_variable = { _thair_near_only_ = 0 }
+								WA_AI_PC_state_is_near_contested_edge = yes
+							}
 							OR = {
 								AND = {	# our own territory
 									is_controlled_by = ROOT
@@ -2023,11 +2038,42 @@ WA_AI_build_theatre_air_bases = {
 									}
 									set_variable = { WA_TLM_r52_thair_front_last_t = global.WA_TLM_clock }
 								}
+
+								# tlm: WA_TLM_r114_thair_near_n / _far_n / _first_t / _last_t - consumer:
+								# checklist R78. VERIFIED effect only (the queue grew, above). The PAIR is
+								# the metric, never either half alone: near_n counts starts the proximity
+								# phase won, far_n counts starts that only the fallback could make, and it
+								# is their RATIO that says whether Fix 114 changed where the planes get
+								# based. far_n is not a failure counter - a theatre contested at a
+								# distance is supposed to land there.
+								if = { limit = { check_variable = { _thair_near_only_ = 1 } }
+									add_to_variable = { WA_TLM_r114_thair_near_n = 1 }
+									if = { limit = { check_variable = { WA_TLM_r114_thair_near_first_t = 0 } }
+										set_variable = { WA_TLM_r114_thair_near_first_t = global.WA_TLM_clock }
+									}
+									set_variable = { WA_TLM_r114_thair_near_last_t = global.WA_TLM_clock }
+								}
+								else = {
+									add_to_variable = { WA_TLM_r114_thair_far_n = 1 }
+								}
 							}
 						}
 					}
 
 					add_to_temp_variable = { _thair_try_level_ = 1 }
+
+					# Fix 114: phase flip. Phase 1 exhausted without a start - drop the proximity filter
+					# and walk the rungs again over the whole theatre. Guarded on _thair_near_only_ = 1,
+					# so it happens at most once per pulse and the loop is bounded by 2 x _thair_level_cap_.
+					if = {
+						limit = {
+							check_variable = { _thair_near_only_ = 1 }
+							check_variable = { _thair_started_ < 1 }
+							NOT = { check_variable = { _thair_try_level_ < _thair_level_cap_ } }
+						}
+						set_temp_variable = { _thair_near_only_ = 0 }
+						set_temp_variable = { _thair_try_level_ = 0 }
+					}
 				}
 
 				# TEMP R16 live-test logging - remove with the WA_AI_thair_dbg_* family

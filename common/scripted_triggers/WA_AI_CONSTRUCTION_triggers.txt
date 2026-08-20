@@ -51,6 +51,40 @@ WA_AI_available_AIR_allied = {
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
 }
 
+# THIS = state, ROOT = builder. Fix 114. Is this state on the CONTESTED EDGE of its theatre -
+# close enough to a front that an air base built here can reach it?
+#
+# What it protects: air-theatre membership is a geographic block (north_africa spans Morocco to
+# Egypt, 32 states), and WA_AI_build_theatre_air_bases used to select inside it on air-base level
+# alone. MEASURED on campaign 3d68a183 at 1944.4: the four live theatre_air projects of that
+# theatre were ENG -> Marrakech, ENG -> Casablanca, USA -> Tafialet and USA -> Constantine, i.e.
+# three of four in Morocco, while front-line Constantine ran at 150 % of nominal air-base capacity
+# and front-line Batna was level 0. The theatre was right; the state inside it was not.
+#
+# Two rings, and why not one: ring 1 alone is the states that physically touch enemy ground, which
+# on a narrow front can be two states, both of them possibly ineligible (no free slot, a project
+# already queued) - and the caller's fallback would then hand the whole pulse back to the rear
+# anyway. Ring 2 adds the immediate rear that still bases planes over the front. Morocco is three
+# or more rings from Tunisia, so it stays out, which is the whole point.
+#
+# Controller geography only - no tag, no date, no faction term. `has_war_with = ROOT` is the same
+# enemy test the AIR theatre-contest triggers use (WA_AI_MILITARY_triggers.txt), so "contested" and
+# "near the contested edge" cannot drift apart.
+#
+# Cost: the caller places this LAST in its limit block, after theatre membership and the air-base
+# level test, so it runs on a handful of states per ladder rung, not on the whole map.
+#
+# The fact is gone when: an air theatre is redefined small enough that every member state is within
+# two rings of a front - then this trigger is true everywhere and selects nothing.
+WA_AI_PC_state_is_near_contested_edge = {
+	OR = {
+		any_neighbor_state = { CONTROLLER = { has_war_with = ROOT } }
+		any_neighbor_state = {
+			any_neighbor_state = { CONTROLLER = { has_war_with = ROOT } }
+		}
+	}
+}
+
 WA_AI_available_RADAR = {
 	ROOT = { has_full_control_of_state = PREV }
 
