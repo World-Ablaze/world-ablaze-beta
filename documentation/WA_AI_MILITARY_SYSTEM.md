@@ -488,6 +488,9 @@ question that generalises: **who owns this soil, and is an enemy standing on it?
 | Allied side | `avoid_italy_overstack(_after_flip)`, `italy_cobelligerent_support_FRONT`, `ENG_war_against_ITA_3_DIPLOMACY` (gated `ally_italy_at_war` - the commitment starts the day the co-belligerent fights, not at the first lost state), `USA_sicily_push`, `ALLIES_sicily_push_FRONT` re-gated on the same triggers; the date-boxed Husky family is out of scope |
 | Probe | checklist R61, `WA_TLM_r96_italy_*` (telemetry doc 5) |
 
+**Never gate an Italy rule on `tag = ITA/RIT`, `has_war_with = ITA` or `is_controlled_by = ITL`**:
+the 1943 flip keeps the ITA tag, RIT is a released tag, and ITL is annexed the same tick.
+
 **All triggers are PREV-relative from the state scope, not ROOT-relative**, because `_ally_italy_theatre_*` evaluate them inside `any_allied_country` / `any_subject_country` from another country's scope. The AXIS guard tiers exclude the `at_war_with_italian_homeland_power` case (the `hold_italy_after_defection` block owns it) so the two never stack. Post-code review 2026-08-17 (8 angles) found and fixed: 10-anchor set, ally-port bridgehead, subject RSI, flip window, peace-time floor, invasion-veto gates, Albania belt, Tunisia heuristic, ETH reader relativity. Every state list must match `WA_AI_MILITARY_AIR_theatre_contested_italy` (mainland 10 + Sicily 5). Ratios per state group: owner 0.10 / 0.20 (Sicily/south), 0.15 / 0.10 (mainland anchors), plus the ally's 0.06 or 0.12 - two armies, two pools. **They do not sum.** `put_unit_buffers` ratios are fractions of the country's whole army, and blocks sharing an `order_id` share one ratio (§4 note); the two Axis ally-guard blocks both carry `order_id = 9606` (`WA_AI_MILITARY_FACTION_AXIS_THEATRE.txt`). They are mutually exclusive by gate, so the live effect is unchanged - the arithmetic in the earlier wording was not the engine's.
 
 ---
@@ -772,5 +775,54 @@ armour; t2 the force drains at convoy speed - a cut strait strands it (historica
 accepted; R80 fail-tell). Sea-lift INTO Africa is MEASURED viable (R64: 0 -> 8 GER divisions into
 Tunisia in 31 days on 9d83084c). Probe: checklist R80. R64 leg 3 was re-cut the same day - its old
 "GER divisions in Libya/Egypt stay <= 3" bar forbade exactly this expedition.
+
+---
+
+## 18. Allied and Axis air policy - the Reich bombing ladder and the Western Europe / Mediterranean family
+
+(Moved here 2026-08-20 from the AGENTS.md system table, verbatim in substance - this section is the owner.)
+
+Every coalition-level `strategic_air_importance` rule of the Allies, and the mirrored Axis family.
+
+| Piece | File |
+| --- | --- |
+| Allied faction rules | `common/ai_strategy/WA_AI_MILITARY_FACTION_ALLIES_AIR.txt` |
+| Axis-wide avoidance | `common/ai_strategy/WA_AI_MILITARY_FACTION_AXIS_AIR.txt` |
+| Reich air-defence pull | `common/ai_strategy/WA_AI_MILITARY_COUNTRY_GER_AIR.txt` |
+| Switches (control panel) | `common/scripted_triggers/WA_AI_MILITARY_triggers.txt`, sections "AIR - Allied Reich bombing ladder", "AIR - Allied Western Europe / Mediterranean state triggers", "AIR - Axis western front / Battle of Britain / Reich air defence" |
+| Type semantics | `documentation/WA_AI_MILITARY_TYPES_REFERENCE.md` (`strategic_air_importance`) |
+
+**First fact: the type ranks regions for the planes the engine already requests, it does not create
+demand** - requests come from own combats/armies, enemy planes, enemy factories, ships (campaign
+`a232d96c`, checklist R15 RECUT) - so no value here can stage an air force ahead of the ground war.
+
+**Phase 7d (2026-08-16)** moved the whole former ENG.txt Allied family to the Faction layer
+(Channel-coast push/avoidance, Sicily push, home-islands threat/lost, occupied-Europe and
+out-of-theatre avoidance), gated on `WA_AI_MILITARY_is_allies_member` plus state triggers (an
+overseas ally staging in a Channel county, a Sicily foothold, a human enemy on the far shore)
+instead of eight-tag lists and 1943/1944 date windows; the last -500k black holes of that family
+were retuned to the -20k tier. **Phase 7e** did the same for the GER.txt family (Axis-wide
+avoidance in the AXIS file, the Reich air-defence pull in the GER Country file). It replaced the
+legacy ENG.txt date-gated family (`Allies_bombing_germany_is_too_costly`,
+`allies_avoid_bombing_austria_prussia`, `ENG_FRA_allies_avoid_bombing_GER`).
+
+**Small-force home defence (2026-08-18):** an Allies member fielding <= 399 aircraft
+(`@WA_AI_AIR_HOME_ONLY_ARM`, released above 499) gets -300,000 on every foreign air theatre and
+keeps its whole force over its own capital theatre - twelve `WA_AI_MILITARY_ALLIES_AIR_home_only_*`
+blocks, gated only on faction membership, plane count and control of its own capital; the exclusion
+is a per-block `capital_scope` region test, so no tag and no archetype list. The goal is the
+coalition's, not the minor's: forward air-base capacity is finite and half of vanilla's in WA
+(`AIRBASE_CAPACITY_MULT` 100 vs 200), so a slot a minor does not occupy is a slot the majors'
+better aircraft do.
+
+**The Reich bombing ladder:** how hard the western Allies are told to avoid German air space, and
+when that lifts. Three additive `strategic_air_importance` rungs over the near ring (regions
+6/7/8/296) and deep ring (294/38), each gated on a **deployed strategic-bomber count** rather than
+a date, each enabling below its own bar and aborting above the next one so the net walks down with
+hysteresis. The four thresholds, the ring membership and the contested-Germany backstop are all in
+the trigger sections above - **change behaviour there, never by editing the strategy blocks**.
+
+The positive half of the campaign is `WA_AI_MILITARY_ENG_strategic_bombing_focus_THEATRE`, which
+writes `area_priority` and is a separate axis.
 
 ---

@@ -58,9 +58,11 @@ Do not read savegames, and do not open more code than the change itself referenc
 
 ### B. Constants registry (`wa-constants-registry`)
 - `python tools/check_constants.py` must exit 0 on the change (report its output verbatim if not).
-- A `@` constant a second file needs = both declarations + `# must match` comment + a registry
-  group with the control-panel file as **owner**. A rename is per-file: registry updated, old name
-  noted at the declaration.
+- A `@` constant a second file needs stops being a `@`: it is promoted to a script constant in
+  `common/script_constants/wa_ai_*.txt` and every reader uses `constant:<category>.<group>.<key>`.
+  A `@` redeclared in a second WA file is a **checker ERROR**, and a `# must match` comment is not
+  a mechanism (rule of 2026-08-16, `wa-constants-registry`). Exception: `constant:` is not valid
+  in `ai_strategy value =` — that context keeps a per-file `@` (validated-contexts table).
 - Engine facts mirrored into script (`05_defines.lua`, `00_buildings.txt` cost / `state_max`,
   wing sizes) are registered with the engine file as owner. A new PC building type needs its shadow
   price global registered (`cost_*`).

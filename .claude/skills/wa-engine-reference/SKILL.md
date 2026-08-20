@@ -71,7 +71,7 @@ The ones that matter here:
 | File (under install `common/`) | Documents |
 | --- | --- |
 | `ai_strategy/_documentation.md` | **103 `type =` tokens** grouped by domain (diplomacy, fronts and armies, navies, intelligence, production and resources, airforce, raids), then a detailed section per type with parameters and examples. Covers the types WA leans on daily: `front_unit_request`, `invasion_unit_request`, `put_unit_buffers`, `front_control`, `invade`, `protect`, `theatre_distribution_demand_increase`, `dont_defend_ally_borders` and the three `force_concentration_*` types the AIFC system is built on. Header says "updated 2024-11" - treat undated behaviour as MEASURED-but-possibly-stale and confirm against 1.19.2 usage. |
-| `ai_faction_theaters/_documentation.md` | The live, WA-unowned faction-theatre system. |
+| `ai_faction_theaters/_documentation.md` | The faction-theatre FORMAT (the live content is WA's generated file since 2026-08-18). |
 | `ai_navy/_documentation.md`, `ai_navy/taskforce/_documentation.md` | Fleet / task-force AI. |
 | `ai_templates/_documentation.md`, `ai_equipment/_documentation.md` | Division-template targeting and equipment-variant selection. |
 | `peace_conference/ai_peace/_documentation.md` | AI peace-conference behaviour. |
@@ -142,9 +142,13 @@ Live, AI-relevant, and confirmed absent from `descriptor.mod`'s replace list:
 
 | Live base folder | Why it matters |
 | --- | --- |
-| `common/ai_faction_theaters/` | The engine's own faction-to-theatre assignment (`ai_will_do`, `cancel`, `regions`, `preferred_countries`, `can_skip_first_region`). **WA has no file here at all** - vanilla's 22 KB `ai_faction_theaters.txt` runs unchanged in every campaign, and no WA document mentions it. |
 | `common/defines/` | Base `00_defines.lua` loads first, WA's `05_defines.lua` overrides individual keys on top - the section right below this table. |
 | `common/ai_attitudes.txt`, `common/ai_personalities.txt` | Small, live, and owned by nobody in this repo. |
+
+`common/ai_faction_theaters/` used to be listed here - **no longer true since 2026-08-18**: the
+folder is now on `descriptor.mod`'s replace list (line 13) and the live content is WA's own
+generated `ai_faction_theaters.txt` (`tools/gen_ai_faction_theaters.py`, `--dry-run` first - never
+hand-edit). Vanilla's 22 KB copy no longer loads. See `documentation/WA_AI_MILITARY_SYSTEM.md` §15.
 
 ### `common/defines` is an override layer, not a table
 
