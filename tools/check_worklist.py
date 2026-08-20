@@ -56,6 +56,11 @@ checklist.md - each of these is a real 2026-08-17 defect, made mechanical
                         wa-testing SKILL). The detector that caught the Fix 118 call-site
                         artefact, made mechanical; files shipped before 2026-08-20 are
                         grandfathered until QUEUE 21 rehomes or retires them.
+  ERROR  BOM-IN-SCRIPT  a .txt under common/scripted_effects or common/scripted_triggers starting
+                        with the UTF-8 BOM (EF BB BF). That parser desyncs on every token after
+                        it and the whole file silently fails to load - a re-saved BOM once killed
+                        the entire priority-construction system (AGENTS.md rule 16, mechanical).
+                        Deliberately narrow: 213 vanilla-inherited BOMs elsewhere run fine.
 
 Everything here is derived from the files as they are today - no restructuring required.
 Where a field is absent the item is reported, never guessed at.
@@ -493,6 +498,35 @@ def check_harness_contract(rep: Report) -> None:
                     f"the wa-testing SKILL (marker, who/scope lines, known-false control, STOP rule)")
 
 
+def check_bom(rep: Report) -> None:
+    """No UTF-8 BOM where the parser is MEASURED to choke on it (AGENTS.md rule 16, mechanical).
+
+    The scripted_effects / scripted_triggers parser treats EF BB BF as a stray token and desyncs
+    on every `=` / `}` after it, so the whole file silently fails to load. Seen 2026-08-15:
+    WA_AI_CONSTRUCTION_PRIORITY_core.txt was re-saved with a BOM and the entire
+    priority-construction system stopped parsing - no error, no crash, just absent behaviour.
+
+    The walk is DELIBERATELY narrow. Measured 2026-08-20: 213 .txt files under common/ and
+    events/ carry a BOM today (110 in common/units, ~97 vanilla-override event files) and their
+    content demonstrably runs in campaigns - the engine tolerates the BOM in those folders, as
+    vanilla's own files do. Flagging them would be 213 permanent ERRORs about working files.
+    Widen this walk only with a measurement showing another folder's parser chokes too.
+    """
+    for base in ("common/scripted_effects", "common/scripted_triggers"):
+        root = REPO / base
+        if not root.exists():
+            continue
+        for p in sorted(root.rglob("*.txt")):
+            try:
+                head = p.open("rb").read(3)
+            except Exception:
+                continue
+            if head == b"\xef\xbb\xbf":
+                rep.add("ERROR", "BOM-IN-SCRIPT",
+                        f"{p.relative_to(REPO)}: starts with the UTF-8 BOM - the HOI4 parser "
+                        f"will silently drop the whole file. Re-save as plain UTF-8")
+
+
 def check_fix_registry(rep: Report) -> None:
     """One fix number = one registry row = one commit that is on HEAD.
 
@@ -569,6 +603,7 @@ def main() -> int:
         check_checklist(rep)
         check_fix_registry(rep)
         check_harness_contract(rep)
+        check_bom(rep)
 
     code = 1 if (rep.count("ERROR") or (args.strict and rep.count("WARN"))) else 0
 

@@ -154,6 +154,7 @@ def _run(cw, queue=None, checklist=None, registry=None, tree=None, git_state=Non
             cw.check_checklist(rep)
             cw.check_fix_registry(rep)
             cw.check_harness_contract(rep)
+            cw.check_bom(rep)
             return {r["code"] for r in rep.rows}, rep.rows
         finally:
             (cw.REPO, cw.QUEUE, cw.CHECKLIST, cw.FIX_REGISTRY, cw.git_state) = saved
@@ -220,6 +221,8 @@ CASES = {
     # A new (non-grandfathered) console harness with no context header at all.
     "HARNESS-CONTRACT": lambda: dict(tree={"common/scripted_effects/WA_TEST_new_probe.txt":
                                            'WA_TEST_NP_report = { log = "x" }\n'}),
+    # ﻿ written as utf-8 emits the EF BB BF byte order mark the rule must catch.
+    "BOM-IN-SCRIPT": lambda: dict(tree={"common/scripted_effects/a.txt": "﻿# innocuous\n"}),
     "FIX-UNRESOLVED": lambda: dict(registry='{\n "1": {"commit": null, "subject": "", "reachable": false, "note": "cannot be recovered"}\n}\n'),
 }
 
@@ -290,6 +293,7 @@ def _run_with_missing(cw, which: str) -> set:
             cw.check_checklist(rep)
             cw.check_fix_registry(rep)
             cw.check_harness_contract(rep)
+            cw.check_bom(rep)
             return {r["code"] for r in rep.rows}
         finally:
             (cw.REPO, cw.QUEUE, cw.CHECKLIST, cw.FIX_REGISTRY, cw.git_state) = saved
