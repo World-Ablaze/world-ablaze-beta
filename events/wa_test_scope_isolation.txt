@@ -1,0 +1,122 @@
+############################################################################################################
+#	SCOPE-SANITY HARNESS - kept deliberately (2026-08-20). Not leftover scaffolding.
+#
+#	PURPOSE. When a scripted effect's COUNTRY-VALUED triggers (`tag =`, `is_in_faction_with =`,
+#	`has_war_with =`, `is_subject_of =`) all read false while its VALUE triggers (`always`,
+#	`is_major`, `num_of_*_factories`) read true beside them, the effect is NOT the suspect - the
+#	CALL SITE is. This file is the clean call site to re-fire from before editing a line of the
+#	effect. Built during the convoy-arsenal hunt, where the same byte-identical effect read every
+#	country-valued trigger false when fired from events/wa_events_test.txt and correctly when fired
+#	from here - cause UNKNOWN. Full reproduction: lessons log, "Two call sites, one effect".
+#
+#	Console:  tag GER   then   event wa_iso.1 / wa_iso.2 / wa_iso.3
+#	Read logs/game.log for "SCOPE ISOLATION".
+#
+#	  wa_iso.1  predicates written straight into an event immediate - proves the ENGINE and the
+#	            firing context are fine. If tag = GER reads 0 HERE (run as GER), the fault is
+#	            environmental and belongs in the lessons log before anything else moves.
+#	  wa_iso.2  the same predicates through a minimal scripted effect in a clean file
+#	            (WA_TEST_ISO_predicates) - proves the scripted-effect INDIRECTION is innocent.
+#	  wa_iso.3  fires the REAL effect under suspicion from this clean call site. Currently points
+#	            at WA_TEST_CA_report (the worked example that caught the anomaly); repoint the one
+#	            call at whatever effect is reading impossibly.
+#
+#	Own namespace on purpose: this file must never share a fault domain with the file under
+#	suspicion, and a duplicate `add_namespace` declaration would be a load error - which would
+#	invalidate the very test this file exists to be.
+############################################################################################################
+
+add_namespace = wa_iso
+
+country_event = {
+	id = wa_iso.1
+
+	hidden = yes
+	is_triggered_only = yes
+
+	immediate = {
+		log = "=========================================================================================="
+		log = "[GetYear].[GetMonth] | SCOPE ISOLATION | THIS = [This.GetName]  ROOT = [Root.GetName]"
+
+		### 1. controls - value and property triggers. Both must read 1 or the harness itself is
+		### broken and nothing below means anything.
+		set_temp_variable = { _iso1_ = 0 }
+		set_temp_variable = { _iso2_ = 0 }
+		if = { limit = { always = yes } set_temp_variable = { _iso1_ = 1 } }
+		if = { limit = { is_major = yes } set_temp_variable = { _iso2_ = 1 } }
+		log = "  controls : always=[?_iso1_|.0]  is_major=[?_iso2_|.0]"
+
+		### 2. the country-valued family, LITERAL right-hand sides - no scope involved at all
+		set_temp_variable = { _iso3_ = 0 }
+		set_temp_variable = { _iso4_ = 0 }
+		if = { limit = { tag = GER } set_temp_variable = { _iso3_ = 1 } }
+		if = { limit = { has_war_with = FRA } set_temp_variable = { _iso4_ = 1 } }
+		log = "  literal  : tag=GER -> [?_iso3_|.0]   has_war_with=FRA -> [?_iso4_|.0]   (run as GER at war with FRA both should be 1; a 0 is the finding)"
+
+		### 3. the same family with SCOPE right-hand sides
+		set_temp_variable = { _iso5_ = 0 }
+		set_temp_variable = { _iso6_ = 0 }
+		if = { limit = { tag = ROOT } set_temp_variable = { _iso5_ = 1 } }
+		if = { limit = { tag = THIS } set_temp_variable = { _iso6_ = 1 } }
+		log = "  scoped   : tag=ROOT -> [?_iso5_|.0]   tag=THIS -> [?_iso6_|.0]"
+
+		### 4. a country-valued trigger evaluated from the OTHER side, in case direction matters
+		set_temp_variable = { _iso7_ = 0 }
+		GER = { if = { limit = { tag = PREV } ROOT = { set_temp_variable = { _iso7_ = 1 } } } }
+		log = "  reversed : GER scope, tag = PREV -> [?_iso7_|.0]"
+
+		### 5. the iterator WITHOUT any identity trigger in its limit - tests every_country
+		### independently of the trigger family above.
+		set_temp_variable = { _iso8_ = 0 }
+		every_country = {
+			limit = { always = yes }
+			add_to_temp_variable = { _iso8_ = 1 }
+		}
+		log = "  iterator : every_country + always = yes counted [?_iso8_|.0]"
+
+		set_temp_variable = { _iso9_ = 0 }
+		every_country = {
+			limit = { exists = yes }
+			add_to_temp_variable = { _iso9_ = 1 }
+		}
+		log = "  iterator : every_country + exists = yes counted [?_iso9_|.0]"
+		log = "=========================================================================================="
+	}
+
+	option = {}
+}
+
+# wa_iso.2 - the same predicates through a scripted effect that lives in its own clean file,
+# fired from this known-good event file. Reads 1 -> the scripted-effect indirection is innocent
+# and the fault is the ORIGINAL call site. Reads 0 -> the indirection itself is the fault.
+country_event = {
+	id = wa_iso.2
+
+	hidden = yes
+	is_triggered_only = yes
+
+	immediate = {
+		log = "[GetYear].[GetMonth] | SCOPE ISOLATION 2 | THIS = [This.GetName]  ROOT = [Root.GetName]"
+		WA_TEST_ISO_predicates = yes
+	}
+
+	option = {}
+}
+
+# wa_iso.3 - fire the REAL effect under suspicion from this clean call site. Works here but not
+# from its home file -> the fault is the home file, and the harness gets rehomed (that is exactly
+# what happened to the convoy-arsenal harness on 2026-08-20). Fails here too -> the effect itself
+# is the suspect after all; bisect it by halves, not by hypothesis.
+country_event = {
+	id = wa_iso.3
+
+	hidden = yes
+	is_triggered_only = yes
+
+	immediate = {
+		log = "[GetYear].[GetMonth] | SCOPE ISOLATION 3 - the effect under suspicion, fired from the clean call site"
+		WA_TEST_CA_report = yes
+	}
+
+	option = {}
+}

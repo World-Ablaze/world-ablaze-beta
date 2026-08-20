@@ -205,22 +205,38 @@ Before you conclude the mod is broken, check the test itself: a same-date invers
 - `last_date = 1946.1.1` and after every fail deadline.
 - No `run_count` / `acceptable_fail_rate` / `loggers` unless justified.
 
-## Console harness: the convoy arsenal chain (Fix 115 / 116 / 117)
+## Console harness: the convoy arsenal chain (Fix 115 / 116 / 117 / 118)
 
-`event wa_test.311` fires a report on every AI major at war; `tag GER` then `event wa_test.310`
-does one country. Output goes to `logs/game.log` under `CONVOY ARSENAL TEST`. Effects live in
-`common/scripted_effects/WA_TEST_convoy_arsenal.txt`, recipe and expected values in the header
-above `wa_test.310` in `events/wa_events_test.txt`.
+`event wa_ca.2` fires a report on every AI major at war; `tag GER` then `event wa_ca.1` does one
+country. Output goes to `logs/game.log` under `CONVOY ARSENAL TEST`. Effects live in
+`common/scripted_effects/WA_TEST_convoy_arsenal.txt`, recipe and expected values in the header of
+`events/wa_test_convoy_arsenal.txt` — its own file, its own namespace, on purpose (see below).
 
 It is deliberately **not** a `tests/` bundle: the chain's answer depends on the world, so no date
 carries a fixed success trigger. What a human needs is the intermediate readings — the shipped gate
 is one boolean and a 0 can come from five different terms, so the report prints each of them.
 
-Two design points worth copying for the next gate of this shape:
+Design points worth copying for the next gate of this shape:
 
 - **The report must be fired PER COUNTRY, not looped in one scope.** The effect under test resolves
   its coalition against `ROOT`, so an `every_country` walk would score every candidate against the
-  *firing* country's alliance. `wa_test.311` fires `wa_test.310` on each country for that reason.
+  *firing* country's alliance. `wa_ca.2` fires `wa_ca.1` on each country for that reason.
 - **The per-member block is an INDEPENDENT walk**, duplicating the shipped effect's own limit rather
   than sharing a helper with it. When the two disagree the fault is localised to one of them; a
   shared helper would hide exactly the bug the test exists to find.
+- **The report prints a scope self-check FIRST (`who :` / `scope :`), and a run where `I-am-ROOT`
+  is not 1 scores NOTHING.** This detector caught the 2026-08-20 call-site anomaly: fired from
+  `events/wa_events_test.txt`, the same effect read every country-valued trigger false — the
+  literal `tag = GER` while playing Germany included — while value triggers read true, and the
+  gauge printed a plausible `0.000`. Cause unknown; the harness was rehomed. Lessons log, "Two
+  call sites, one effect".
+
+## Scope-sanity harness: `wa_iso`
+
+`events/wa_test_scope_isolation.txt` (+ `common/scripted_effects/WA_TEST_scope_isolation_effects.txt`)
+is a kept, reusable clean call site. When a scripted effect's country-valued triggers all read
+false while its value triggers read true, do NOT edit the effect — re-fire it from here first:
+`tag GER` then `event wa_iso.1` (engine/context sanity), `wa_iso.2` (scripted-effect indirection),
+`wa_iso.3` (fires the real effect under suspicion — repoint its one call as needed). Output in
+`logs/game.log` under `SCOPE ISOLATION`. If the effect works from here but not from its home file,
+the home file is the fault and the harness gets rehomed, not debugged.
