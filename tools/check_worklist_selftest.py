@@ -153,6 +153,7 @@ def _run(cw, queue=None, checklist=None, registry=None, tree=None, git_state=Non
             cw.check_queue(rep)
             cw.check_checklist(rep)
             cw.check_fix_registry(rep)
+            cw.check_harness_contract(rep)
             return {r["code"] for r in rep.rows}, rep.rows
         finally:
             (cw.REPO, cw.QUEUE, cw.CHECKLIST, cw.FIX_REGISTRY, cw.git_state) = saved
@@ -216,6 +217,9 @@ CASES = {
     "TLM-ORPHAN": lambda: dict(tree={"common/scripted_effects/WA_TLM_core.txt":
                                      "x = { set_variable = { WA_TLM_r55_thing_n = 1 } }\n"}),
     "FIX-UNREGISTERED": lambda: dict(tree={"common/scripted_effects/a.txt": "# Fix 999 did a thing\n"}),
+    # A new (non-grandfathered) console harness with no context header at all.
+    "HARNESS-CONTRACT": lambda: dict(tree={"common/scripted_effects/WA_TEST_new_probe.txt":
+                                           'WA_TEST_NP_report = { log = "x" }\n'}),
     "FIX-UNRESOLVED": lambda: dict(registry='{\n "1": {"commit": null, "subject": "", "reachable": false, "note": "cannot be recovered"}\n}\n'),
 }
 
@@ -285,6 +289,7 @@ def _run_with_missing(cw, which: str) -> set:
             cw.check_queue(rep)
             cw.check_checklist(rep)
             cw.check_fix_registry(rep)
+            cw.check_harness_contract(rep)
             return {r["code"] for r in rep.rows}
         finally:
             (cw.REPO, cw.QUEUE, cw.CHECKLIST, cw.FIX_REGISTRY, cw.git_state) = saved

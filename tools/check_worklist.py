@@ -51,6 +51,11 @@ checklist.md - each of these is a real 2026-08-17 defect, made mechanical
                         carries no number: unscoreable in both directions, for ever.
   ERROR  PROBE-UNRUN    an item opened since the rule shipped with no pasted probe output:
                         nothing shows the probe command has ever been run.
+  ERROR  HARNESS-CONTRACT a common/scripted_effects/WA_TEST_*.txt console harness without the v1
+                        context header (marker, who/scope lines, known-false control, STOP rule -
+                        wa-testing SKILL). The detector that caught the Fix 118 call-site
+                        artefact, made mechanical; files shipped before 2026-08-20 are
+                        grandfathered until QUEUE 21 rehomes or retires them.
 
 Everything here is derived from the files as they are today - no restructuring required.
 Where a field is absent the item is reported, never guessed at.
@@ -454,6 +459,40 @@ def check_checklist(rep: Report) -> None:
                     f"item mentions it - retire the instrumentation or promote it (§3.7/§3.8)")
 
 
+# Console harnesses shipped before the contract (2026-08-20). A new WA_TEST_*.txt scripted-effect
+# file must carry the harness-contract marker and its pieces; these stay exempt until QUEUE 21
+# rehomes or retires them. Do not add to this list - write the header instead.
+HARNESS_GRANDFATHER = {
+    "WA_TEST_spirits.txt", "WA_TEST_stats.txt", "WA_TEST_railway.txt",
+    "WA_TEST_air_actors.txt", "WA_TEST_lend_lease_relief.txt",
+    "WA_TEST_scope_isolation_effects.txt",
+}
+
+
+def check_harness_contract(rep: Report) -> None:
+    """A measurement instrument must carry its own validity detector (wa-testing SKILL, contract v1).
+
+    Fix 118 shipped on a reading from a harness whose call site poisoned every country-valued
+    trigger; the context header (who/scope lines + a known-false control + the STOP rule) is the
+    detector that caught it. The prose lesson alone did not prevent the class recurring - this
+    makes the header mechanical for every harness written after 2026-08-20.
+    """
+    root = REPO / "common/scripted_effects"
+    if not root.exists():
+        return
+    pieces = ("harness-contract: v1", "I-am-ROOT", "control-false", "STOP")
+    for p in sorted(root.glob("WA_TEST_*.txt")):
+        body = read(p)
+        if pieces[0] not in body and p.name in HARNESS_GRANDFATHER:
+            continue
+        missing = [w for w in pieces if w not in body]
+        if missing:
+            rep.add("ERROR", "HARNESS-CONTRACT",
+                    f"{p.name}: console harness without the v1 contract piece(s) "
+                    f"{', '.join(repr(m) for m in missing)} - copy the context-header block from "
+                    f"the wa-testing SKILL (marker, who/scope lines, known-false control, STOP rule)")
+
+
 def check_fix_registry(rep: Report) -> None:
     """One fix number = one registry row = one commit that is on HEAD.
 
@@ -529,6 +568,7 @@ def main() -> int:
     if not args.queue:
         check_checklist(rep)
         check_fix_registry(rep)
+        check_harness_contract(rep)
 
     code = 1 if (rep.count("ERROR") or (args.strict and rep.count("WARN"))) else 0
 

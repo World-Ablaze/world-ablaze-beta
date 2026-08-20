@@ -22,22 +22,27 @@ WA_TEST_CA_report = {
 	log = "=========================================================================================="
 	log = "[GetYear].[GetMonth] | CONVOY ARSENAL TEST | [Root.GetName]"
 
-	### CONTEXT HEADER - printed FIRST, on every run. Lessons log, "A probe that does not print the
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	### Lessons log, "A probe that does not print the
 	### context it ran in produces confident nonsense": without these two lines this harness spent a
 	### day reporting an empty coalition as a measurement. `I-am-ROOT = 0` here means every predicate
 	### naming ROOT is asking about a country that is not this one - and the loc token [Root.GetName]
 	### can still print the right name beside it, which is what makes it so easy to miss.
+	### The fifth check is a KNOWN-FALSE control: it must read 0. Four 1s alone cannot tell "the
+	### checks pass" from "everything prints 1" - the same reason the Fix-999 control existed.
 	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
 	set_temp_variable = { _ca_e1_ = 0 }
 	set_temp_variable = { _ca_e2_ = 0 }
 	set_temp_variable = { _ca_e3_ = 0 }
 	set_temp_variable = { _ca_e4_ = 0 }
+	set_temp_variable = { _ca_e5_ = 0 }
 	if = { limit = { always = yes } set_temp_variable = { _ca_e1_ = 1 } }
 	if = { limit = { tag = ROOT } set_temp_variable = { _ca_e2_ = 1 } }
 	if = { limit = { tag = THIS } set_temp_variable = { _ca_e3_ = 1 } }
 	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _ca_e4_ = 1 } }
-	log = "  scope : always=[?_ca_e1_|.0]  I-am-ROOT=[?_ca_e2_|.0]  I-am-THIS=[?_ca_e3_|.0]  ROOT-scope-usable=[?_ca_e4_|.0]"
-	log = "            (anything but 1 1 1 1 here: STOP. Nothing below is a measurement. Re-fire the same report from another event file - tag GER then event wa_iso.3 - before editing a line of this effect.)"
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _ca_e5_ = 1 } }
+	log = "  scope : always=[?_ca_e1_|.0]  I-am-ROOT=[?_ca_e2_|.0]  I-am-THIS=[?_ca_e3_|.0]  ROOT-scope-usable=[?_ca_e4_|.0]  control-false=[?_ca_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire the same report from another event file - tag GER then event wa_iso.3 - before editing a line of this effect.)"
 
 	if = {
 		limit = { has_global_flag = WA_TEST_CA_nested_sweep }

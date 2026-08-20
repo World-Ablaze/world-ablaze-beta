@@ -205,6 +205,56 @@ Before you conclude the mod is broken, check the test itself: a same-date invers
 - `last_date = 1946.1.1` and after every fail deadline.
 - No `run_count` / `acceptable_fail_rate` / `loggers` unless justified.
 
+## The harness contract (v1) — mandatory for every new console harness
+
+A measurement instrument that is not itself validated produces confident nonsense — that class of
+error shipped Fix 118 on a false diagnosis and cost a day on an empty-coalition reading. Every NEW
+console harness (a `WA_TEST_*` scripted effect that logs measurements for a human or an agent to
+read) follows this contract. `python tools/check_worklist.py` enforces it mechanically
+(`HARNESS-CONTRACT`): a new `common/scripted_effects/WA_TEST_*.txt` file must carry the marker
+`harness-contract: v1` and the pieces below; existing files are grandfathered until touched by
+QUEUE 21.
+
+1. **Own event file, own namespace.** Never home a harness event in `events/wa_events_test.txt` —
+   that file poisoned every country-valued trigger of a byte-identical effect (cause unknown,
+   QUEUE 21). One harness = one `events/wa_test_<name>.txt` with the recipe in its header.
+2. **Context header printed FIRST, and the STOP rule.** Copy this block, swap the `_ca_` prefix
+   for your harness's own:
+
+   ```txt
+   ### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+   log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+   set_temp_variable = { _ca_e1_ = 0 }
+   set_temp_variable = { _ca_e2_ = 0 }
+   set_temp_variable = { _ca_e3_ = 0 }
+   set_temp_variable = { _ca_e4_ = 0 }
+   set_temp_variable = { _ca_e5_ = 0 }
+   if = { limit = { always = yes } set_temp_variable = { _ca_e1_ = 1 } }
+   if = { limit = { tag = ROOT } set_temp_variable = { _ca_e2_ = 1 } }
+   if = { limit = { tag = THIS } set_temp_variable = { _ca_e3_ = 1 } }
+   if = { limit = { ROOT = { always = yes } } set_temp_variable = { _ca_e4_ = 1 } }
+   if = { limit = { NOT = { always = yes } } set_temp_variable = { _ca_e5_ = 1 } }
+   log = "  scope : always=[?_ca_e1_|.0]  I-am-ROOT=[?_ca_e2_|.0]  I-am-THIS=[?_ca_e3_|.0]  ROOT-scope-usable=[?_ca_e4_|.0]  control-false=[?_ca_e5_|.0]"
+   log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire the same report from another event file - tag GER then event wa_iso.3 - before editing a line of this effect.)"
+   ```
+
+   The header stays **inline**, never behind a shared helper: whether the call-site poison would
+   reach a nested shared effect is ASSUMED, and an instrument's detector must not depend on it.
+3. **A known-false control, not only known-trues.** The fifth check must read 0. Four 1s alone
+   cannot tell "the checks pass" from "everything prints 1" — the same reason `check_worklist`'s
+   fix-number regex was proven with an invented fix number as its control.
+4. **The measurement is an independent walk.** Duplicate the shipped effect's own limit in the
+   report; never share a helper with the code under test — when the two disagree the fault is
+   localised, a shared helper hides exactly the bug the harness exists to find.
+5. **Per-country firing when the effect resolves against ROOT.** An `every_country` walk scores
+   every candidate against the FIRING country's alliance; fire one event per country instead
+   (the `wa_ca.2` shape).
+6. **The first run's output is pasted** into the owning checklist item or QUEUE row — a harness
+   nobody has run is not a harness, exactly as `PROBE-UNRUN` says for probes.
+
+When a harness's country-valued triggers all read false while its value triggers read true, do not
+debug the effect — use the `wa_iso` scope-sanity harness below.
+
 ## Console harness: the convoy arsenal chain (Fix 115 / 116 / 117 / 118)
 
 `event wa_ca.2` fires a report on every AI major at war; `tag GER` then `event wa_ca.1` does one
