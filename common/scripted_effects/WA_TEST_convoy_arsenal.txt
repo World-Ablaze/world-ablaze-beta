@@ -1,0 +1,137 @@
+############################################################################################################
+#	WA_TEST - convoy arsenal chain (Fix 115 / 116 / 117), console-driven.
+#
+#	Fired by wa_test.310 (one country) and wa_test.311 (every AI major at war) in
+#	events/wa_events_test.txt. Read the recipe there, not here.
+#
+#	WHY THIS IS NOT A tests/ BUNDLE: the chain's answer depends on the world (who is in which
+#	faction, who holds what ground, who is short of hulls), so there is no date at which a fixed
+#	success trigger is meaningful. What a human needs is the INTERMEDIATE readings - the shipped
+#	gate is one boolean, and a 0 can come from five different terms. Every effect here is
+#	write-nothing-but-the-log except the one call to the real effect.
+#
+#	SCOPE: ROOT = the country under test, and it must BE the event's country - the shipped effect
+#	resolves its coalition with `tag = ROOT` / `is_in_faction_with = ROOT`, so calling it from
+#	inside an every_country walk would score every candidate against the FIRING country's alliance.
+#	That is why wa_test.311 fires 310 per country instead of looping in one scope.
+############################################################################################################
+
+# ROOT = country under test. Runs the shipped effect, then reports every term that decides the gate.
+WA_TEST_CA_report = {
+
+	log = "=========================================================================================="
+	log = "[GetYear].[GetMonth] | CONVOY ARSENAL TEST | [Root.GetName]"
+
+	### 1. the shipped effect, unmodified. _csw_off_ic_ / _csw_side_ic_ survive into the lines below.
+	WA_AI_PRODUCTION_update_coalition_sea_weight = yes
+
+	log = "  gauge : coalition_sea_share = [?WA_AI_PRODUCTION_coalition_sea_share|.3]   (unreachable [?_csw_off_ic_|.0] of [?_csw_side_ic_|.0] factories on our side)"
+	log = "  state : dockyards = [?num_of_naval_factories|.0]   convoys held (free pool) = [?num_equipment@convoy|.0]"
+
+	### 2. the coalition, member by member - an INDEPENDENT walk, deliberately duplicated rather
+	### than shared with the shipped effect: if the two disagree, the fault is localised to one of
+	### them instead of hidden inside a helper both of them trust.
+	log = "  side  : (tag / factories / overland?)"
+	every_country = {
+		limit = {
+			exists = yes
+			has_capitulated = no
+			OR = {
+				tag = ROOT
+				is_in_faction_with = ROOT
+				OVERLORD = {
+					OR = {
+						tag = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+		}
+		set_temp_variable = { _ca_ic_ = num_of_civilian_factories }
+		add_to_temp_variable = { _ca_ic_ = num_of_military_factories }
+		add_to_temp_variable = { _ca_ic_ = num_of_naval_factories }
+		if = {
+			limit = { check_variable = { _ca_ic_ > 0 } }
+			if = {
+				limit = { tag = ROOT }
+				log = "            [This.GetName]  [?_ca_ic_|.0]  self"
+			}
+			else = {
+				set_temp_variable = { _llr_donor = THIS.id }
+				WA_AI_LEND_LEASE_relief_land_access = yes
+				if = {
+					limit = { check_variable = { _llr_path_ok = 1 } }
+					log = "            [This.GetName]  [?_ca_ic_|.0]  overland"
+				}
+				else = {
+					log = "            [This.GetName]  [?_ca_ic_|.0]  ACROSS SEA"
+				}
+			}
+		}
+	}
+
+	### 3. every term of WA_AI_PRODUCTION_should_build_convoy_relief, separately. The shipped
+	### trigger is one boolean and a 0 can come from any of five places.
+	set_temp_variable = { _ca_default_ = 0 }
+	set_temp_variable = { _ca_major_ = 0 }
+	set_temp_variable = { _ca_dock_ = 0 }
+	set_temp_variable = { _ca_share_ = 0 }
+	set_temp_variable = { _ca_partner_ = 0 }
+	set_temp_variable = { _ca_gate_ = 0 }
+	if = { limit = { WA_AI_PRODUCTION_is_using_default_system = yes } set_temp_variable = { _ca_default_ = 1 } }
+	if = { limit = { is_major = yes } set_temp_variable = { _ca_major_ = 1 } }
+	if = { limit = { num_of_naval_factories > constant:wa_ai_lend_lease.convoy.dockyards_large } set_temp_variable = { _ca_dock_ = 1 } }
+	if = { limit = { check_variable = { WA_AI_PRODUCTION_coalition_sea_share > constant:wa_ai_lend_lease.convoy.coalition_sea_share_bar } } set_temp_variable = { _ca_share_ = 1 } }
+	if = {
+		limit = {
+			any_country = {
+				WA_AI_LEND_LEASE_is_starving_convoys = yes
+				WA_AI_LEND_LEASE_convoy_pair_is_valid = yes
+			}
+		}
+		set_temp_variable = { _ca_partner_ = 1 }
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_build_convoy_relief = yes } set_temp_variable = { _ca_gate_ = 1 } }
+
+	log = "  gate  : default_system=[?_ca_default_|.0] major=[?_ca_major_|.0] dockyards>80=[?_ca_dock_|.0] share>bar=[?_ca_share_|.0] partner_short=[?_ca_partner_|.0]  ==>  ARSENAL = [?_ca_gate_|.0]"
+
+	# Name one short partner, when there is one - "partner_short=1" with no name means the any_country
+	# matched something the log cannot show, which is worth knowing.
+	if = {
+		limit = { check_variable = { _ca_partner_ = 1 } }
+		random_country = {
+			limit = {
+				WA_AI_LEND_LEASE_is_starving_convoys = yes
+				WA_AI_LEND_LEASE_convoy_pair_is_valid = yes
+			}
+			log = "  short : [This.GetName] is below its convoy reserve and is a valid pair"
+		}
+	}
+
+	### 4. the brake, whose enable carries NOT = { the gate above }.
+	set_temp_variable = { _ca_stock_ = 0 }
+	set_temp_variable = { _ca_stop_ = 0 }
+	if = { limit = { has_equipment = { convoy > 1000 } } set_temp_variable = { _ca_stock_ = 1 } }
+	if = {
+		limit = {
+			is_major = yes
+			has_equipment = { convoy > 1000 }
+			NOT = { WA_AI_PRODUCTION_should_build_convoy_relief = yes }
+		}
+		set_temp_variable = { _ca_stop_ = 1 }
+	}
+	log = "  brake : convoys>1000=[?_ca_stock_|.0]  ==>  STOP_MAJORS = [?_ca_stop_|.0]   (the stop is disarmed by design while ARSENAL = 1)"
+
+	### 5. the verdict a human should read, spelled out so nobody has to recombine the flags.
+	if = {
+		limit = { check_variable = { _ca_gate_ = 1 } }
+		log = "  VERDICT: MARITIME coalition - this country builds hulls for its side (+85 unit_ratio, 15-dockyard floor) and is exempt from the >1000 brake."
+	}
+	else_if = {
+		limit = { check_variable = { _ca_share_ = 0 } }
+		log = "  VERDICT: LAND coalition - no arsenal. This is Fix 115/117 doing its job; the tier floors still keep a small line while its OWN stock is low."
+	}
+	else = {
+		log = "  VERDICT: no arsenal, and NOT because of the sea share - read the gate flags above; one of default_system / major / dockyards / partner_short is 0."
+	}
+}

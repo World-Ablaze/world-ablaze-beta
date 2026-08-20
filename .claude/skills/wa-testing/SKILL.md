@@ -204,3 +204,23 @@ Before you conclude the mod is broken, check the test itself: a same-date invers
 - Tabs preserved.
 - `last_date = 1946.1.1` and after every fail deadline.
 - No `run_count` / `acceptable_fail_rate` / `loggers` unless justified.
+
+## Console harness: the convoy arsenal chain (Fix 115 / 116 / 117)
+
+`event wa_test.311` fires a report on every AI major at war; `tag GER` then `event wa_test.310`
+does one country. Output goes to `logs/game.log` under `CONVOY ARSENAL TEST`. Effects live in
+`common/scripted_effects/WA_TEST_convoy_arsenal.txt`, recipe and expected values in the header
+above `wa_test.310` in `events/wa_events_test.txt`.
+
+It is deliberately **not** a `tests/` bundle: the chain's answer depends on the world, so no date
+carries a fixed success trigger. What a human needs is the intermediate readings — the shipped gate
+is one boolean and a 0 can come from five different terms, so the report prints each of them.
+
+Two design points worth copying for the next gate of this shape:
+
+- **The report must be fired PER COUNTRY, not looped in one scope.** The effect under test resolves
+  its coalition against `ROOT`, so an `every_country` walk would score every candidate against the
+  *firing* country's alliance. `wa_test.311` fires `wa_test.310` on each country for that reason.
+- **The per-member block is an INDEPENDENT walk**, duplicating the shipped effect's own limit rather
+  than sharing a helper with it. When the two disagree the fault is localised to one of them; a
+  shared helper would hide exactly the bug the test exists to find.
