@@ -2497,7 +2497,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **History:**
 
 ### R97. The Mediterranean Fleet exists — heavy hulls, based at Alexandria, in the four Med regions (Fix 136)
-- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=<FILL AT COMMIT> status=NOT_YET_TESTED`
+- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=ec6f63c62 status=NOT_YET_TESTED`
 
 - **Opened 2026-08-21** (user report on campaign `8c0fea4c`: "la royal navy n'employait pas ses flottes lourdes de surface dans la méditerranée. La royal navy, qui doit être basée vers Alexandrie, doit tenter de construire de la suprématie navale sur les régions 69, 327, 269 et 29").
 - **Pre-fix state, MEASURED** on `1942.10_Oct.hoi4`, ENG. 46 heavy hulls (battleship / battlecruiser / heavy cruiser / carrier), and **not one of them in the Mediterranean**:
