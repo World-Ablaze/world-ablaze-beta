@@ -1200,3 +1200,81 @@ points at it, and it is a one-line change to `WA_AI_MILITARY_italian_entry_likel
 0.06 ≈ 2 in East Africa, ≈ 3 + 2 on the Libyan border. The point is that the border is not *empty*
 when the war starts. AST / NZL / CAN / SAF are excluded from `_is_italian_frontier_tripwire_force`:
 a buffer they cannot reach is a wasted order, and SAF fielded three divisions in 1940.
+
+## 21. The Mediterranean Fleet - a base at Alexandria and a sea-control target (Fix 136, 2026-08-21)
+
+Section 19 gave the Mediterranean a **raiding priority**. It never gave it a **presence**.
+
+User report on campaign `8c0fea4c`: "la royal navy n'employait pas ses flottes lourdes de surface dans
+la méditerranée. La royal navy, qui doit être basée vers Alexandrie, doit tenter de construire de la
+suprématie navale sur les régions 69, 327, 269 et 29."
+
+**MEASURED on the `1942.10_Oct` save.** ENG holds **46 heavy hulls** (battleship / battlecruiser /
+heavy cruiser / carrier). Where every one of them was:
+
+| Fleet | ships | heavy | mission | strategic regions |
+| --- | --- | --- | --- | --- |
+| Fleet 13 | 80 | **20** | escort + strike | 60 West Indian Ocean, 85 SW Indian Ocean |
+| Fleet 12 | 5 | **5** | raid | 72 Straits of Malacca |
+| Fleet 5 | 49 | **13** | reserve | none - in port, no admiral |
+| Reserve fleet 3 | 30 | **6** | reserve | none - in port, no admiral |
+| Fleet 3 | 102 | **2** | none | none - in port, no admiral |
+| Fleet 15 | 7 | 0 | raid | 30, 312, **69**, 323, **327** |
+| Fleet 11 | 20 | 0 | escort | **269** |
+| Fleet 14 | 10 | 0 | raid | 48, 249 |
+| Fleet 17 | 5 | 0 | raid | 68 |
+| Fleet 10 | 40 | 0 | escort | 249 |
+
+**Zero heavy hulls in any Mediterranean region.** 25 of the 46 were in the Indian Ocean and Malacca;
+the other 21 sat in port in fleets with no admiral. The Mediterranean was a destroyer-and-submarine
+war.
+
+**The script line.** ENG's `strike_force_home_base` set is `{ 16 North Sea, 365 Southern Bight,
+18 English Channel, 112 Azores, 249 Alboran }` (`WA_AI_NAVAL_COUNTRY_ENG.txt:105-270`). **Nothing in
+the mod based a strike force east of Gibraltar**, and a census of `common/ai_strategy/` finds **no
+`naval_dominance` on 29 / 269 / 327 / 69 anywhere** - Allied sea-control blocks cover the Atlantic
+corridors (43/55/50/247/243/244/44 at 80; 54/57/112/47/48/61/356/371/370/53 at 70) and, in the Med,
+only 249 Alboran and 68 Algerian Coast at 70.
+
+**Alexandria is region 69.** MEASURED from `WA_AI_MAP_province_coordinates.txt`: region 69's province
+13330 lies **79 map units** from Alexandria's port province 4076 (state 447, `naval_base = 4`,
+Mediterranean Fleet HQ), against **259** for the nearest province of any other Mediterranean region.
+
+| Piece | File |
+| --- | --- |
+| Faction blocks | `common/ai_strategy/WA_AI_NAVAL_FACTION_ALLIES.txt`: `WA_AI_NAVAL_FACTION_ALLIES_med_fleet_alexandria` (`strike_force_home_base 69`, `naval_dominance` 69 at 80 / 327 at 70, `naval_avoid_region` -1000 on both) and `_med_narrows_sea_control` (`naval_dominance` 269 / 29 at 70, `naval_avoid_region` -1000 on both) |
+| Switch (control panel) | `WA_AI_MILITARY_triggers.txt`, Fix 136 section: `WA_AI_MILITARY_NAVAL_med_fleet_base_held` = `controls_state = 447` |
+| Capability gate | `WA_AI_MILITARY_is_major_naval`, the same Fix 122 owner ruling |
+| Probe | checklist R97 |
+
+**Four things to know before touching it.**
+
+- **`controls_state = 447` is the tag-free way to mean "the Royal Navy".** MEASURED 1941.6: ENG 494
+  hulls and USA 476 both clear `is_major_naval`, but only Britain holds Alexandria - so only Britain
+  gets told to keep a strike force there, and the block releases by itself the day Egypt falls. This
+  is deliberate: a `strike_force_home_base` handed to the USN at Alexandria would pull the fleet that
+  has to invade Sicily out of the western basin.
+- **The two blocks have different lives on purpose.** The eastern pair keys on Alexandria; the
+  narrows pair keys on the Fix 122 raid gate (Malta 116, or Tunis 458 / Bizerte 1061). Losing Malta
+  must stop the push into the narrows without evicting the fleet from its own base.
+- **The avoid arithmetic, because the type is Additive and one writer misleads.** 69: this -1000, plus
+  `_trade_through_cape` +2000 only when Suez or Gibraltar is hostile, so +1000 net in that contingency
+  - a soft wall, not a hard one, which is right for a fleet still based there. 327 / 269 / 29: this
+  -1000 plus Fix 122's -250 = -1250 while its gates hold. `ENG_med_is_lost`'s +2000 on 29 cannot be
+  live at the same time as the narrows block (it needs Malta **lost**, `_med_raid_base_held` needs
+  Malta or Tunis **held**).
+- **What neither type can do. ASSUMED**, and it is the same honesty Fix 122 owes: `strike_force_home_base`
+  is a boolean with no engine documentation section, and `naval_dominance` is documented only as
+  "used to set the naval dominance for an AI area", value "a Percentage between 0 and 100". Neither
+  recruits a task force out of a fleet with no admiral - and 21 of ENG's 46 heavy hulls were exactly
+  that. If R97 comes back with the base taken and the heavies still in port, the next lever is
+  `naval_mission_threshold "MISSION_STRIKE_FORCE"`, **not** more dominance. That literal was verified
+  as a whole `MISSION_[A-Z_]+` token extracted from `hoi4.exe` 1.19.2, never by a substring count -
+  see section 19 for the boot error a substring count already shipped once.
+
+**Known residual, recorded rather than silently edited.**
+`WA_AI_NAVAL_COUNTRY_ENG_legacy_ENG_try_to_avoid_the_med` still writes `naval_avoid_region 218`
+(Ionian Sea) `= +2000` for ENG whenever Libya 448 is Italian and ENG is at war with ITA or GER. 218 is
+not one of the four regions the user named. MEASURED on 1942.10: Allied task forces reached 269 and
+327 with that wall standing, so it is not a blocker today, but it is the first thing to look at if the
+fleet bases at Alexandria and then never sails west. QUEUE row, not a silent edit.

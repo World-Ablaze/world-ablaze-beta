@@ -226,11 +226,16 @@ suppression of everything outside the intended target set.
 - Target: Country (DIPLOMACY domain).
 - Policy: **Exclusive per target**.
 
-### `strike_force_home_base` (4)
+### `strike_force_home_base` (26)
 
-- Currently in: ITA 4.
-- Target: Country (NAVAL domain).
+- Currently in: USA 6, ENG 5, ITA 4, JAP 4, **FACTION_ALLIES 4**, FRA 3.
+- Target: Country (NAVAL domain), with a sanctioned Faction-layer use for coalition-wide anchorages.
 - Policy: **Exclusive per region**.
+- The Faction entries are the Atlantic-corridor anchorage family and, since Fix 136, `id = 69`
+  (Levantine Sea / Alexandria) in `WA_AI_NAVAL_FACTION_ALLIES_med_fleet_alexandria`. That one is
+  gated on `controls_state = 447`, which is how it stays tag-free and still reaches only Britain -
+  see `WA_AI_MILITARY_SYSTEM.md` section 21. No region carries two writers.
+- Recounted 2026-08-21 (the previous "ITA 4" counted one file).
 
 ### `contain` (3)
 
