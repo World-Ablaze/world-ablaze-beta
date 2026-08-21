@@ -831,6 +831,9 @@ WA_AI_MILITARY_COUNTRY_ENG_THEATRE_defense_of_kuwait_fallback = {
 	enable = {
 		WA_AI_MILITARY_ENG_kuwait_guard_active = yes
 		NOT = { WA_AI_MILITARY_commonwealth_kuwait_guard_available = yes }
+		# Fix 134: watch tier - yields to the reinforced tier below when an army stands on the
+		# approach. Gate-exclusive on the same verdict, never additive.
+		NOT = { WA_AI_MILITARY_gulf_approach_massed = yes }
 	}
 	abort_when_not_enabled = yes
 
@@ -840,6 +843,34 @@ WA_AI_MILITARY_COUNTRY_ENG_THEATRE_defense_of_kuwait_fallback = {
 		states = { 656 }
 		ratio = 0.08
 		subtract_fronts_from_need = no # pool: full fallback must survive unrelated front demand
+		subtract_invasions_from_need = no
+	}
+}
+
+# purpose: Fix 134 - the British fallback sized against the force on the Gulf approach, for the case
+#          where no Commonwealth delegate can take the mission at all. Without this tier the
+#          ahistorical branch (no RAJ, or RAJ unavailable) keeps the pre-Fix-134 behaviour and the
+#          fix has a gap in exactly the world it is supposed to cover (AGENTS.md principle 1).
+# range:   put_unit_buffers ratio 0.20
+# policy:  Gate-exclusive with _defense_of_kuwait_fallback and _defense_of_kuwait_delegated; own order_id
+# domain:  THEATRE
+WA_AI_MILITARY_COUNTRY_ENG_THEATRE_defense_of_kuwait_fallback_reinforced = {
+	allowed = {
+		original_tag = ENG
+	}
+	enable = {
+		WA_AI_MILITARY_ENG_kuwait_guard_active = yes
+		NOT = { WA_AI_MILITARY_commonwealth_kuwait_guard_available = yes }
+		WA_AI_MILITARY_gulf_approach_massed = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 17
+		states = { 656 }
+		ratio = 0.20
+		subtract_fronts_from_need = no # pool: same rationale as the watch tier above
 		subtract_invasions_from_need = no
 	}
 }

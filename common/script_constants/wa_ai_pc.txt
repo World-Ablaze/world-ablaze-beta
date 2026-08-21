@@ -54,6 +54,19 @@ wa_ai_pc = {
 	prio = {
 		legacy_max  = 1100	# highest legitimate post-Fix-41 priority (rail-war x1.1); above = legacy save, clamped
 		              # was @AI_PC_PRIO_LEGACY_MAX
+		rail_connect = 1100	# Fix 120: a THEATRE-CORRIDOR segment that carries NO railway at all (map level 0).
+		              # Protects: the continuity of a corridor. BREAK and THIN are different failures with
+		              # different levers (WA_AI_LOGISTICS_MODEL); a level added anywhere else is throughput
+		              # on a chain that carries nothing. Campaign 8c0fea4c 1941.6: Italy's ONE funded railway
+		              # factory was raising 4120->13509, already at map level 5, while 1130->10120->7079->5078
+		              # - all three at level 0 - sat at 0 factories and 4 weeks of stall, at the IDENTICAL
+		              # priority 1000, behind 13 European land-war segments also at 1000. The rear reached
+		              # level 5 against a cap of 4 while the head was never railed at all: the spend existed,
+		              # the sort chose where it went.
+		              # Equals legacy_max on purpose - 1100 is already the ceiling this build writes (the
+		              # x1.1 high-route multiplier, railway_helpers:543) and savegame.py _PC_BANDS already
+		              # carries (1100, "rail-war+"), so no band is added and no mirror moves.
+		              # Gone when: WA_AI_PC_assign_factories stops sorting by priority alone.
 		rail_war    = 1000	# wartime railway segments (x1.1 high-route multiplier applies on top)
 		              # was @AI_PC_PRIO_RAIL_WAR, @WA_AI_PC_railway_PRIO
 		rail_prewar = 500	# pre-war railway preparation

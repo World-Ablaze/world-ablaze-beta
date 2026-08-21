@@ -741,3 +741,74 @@ WA_AI_MILITARY_ALLIES_east_africa_contested_THEATRE = {
 	}
 }
 
+
+
+############################################################################################################
+# Fix 127 (2026-08-21, campaign 8c0fea4c, checklist R88) - the Italian-entry tripwire.
+#
+# Owner ruling: if the Italian and German powers share an ideology and the western bulwark is
+# collapsing (or the calendar has passed 1940.8.1), the Allies put divisions on the Italian East
+# African and Libyan frontiers BEFORE Italy declares.
+#
+# MEASURED at 1940.6, four weeks before Italy's declaration on 1940.6.30: ENG held 2 divisions in
+# Aden and NOTHING else on the Sudan / Kenya / Somaliland frontier, RAJ zero, SAF zero. Read the
+# Fix 127 header in WA_AI_MILITARY_triggers.txt for why neither the East-Africa family nor the
+# El-Alamein ladder can cover this - both need an enemy already standing on the ground.
+############################################################################################################
+
+# purpose: man the two Italian colonial frontiers while an Italian entry is likely and has not
+#          happened yet, so the theatre does not open on an empty border.
+# range:   put_unit_buffers ratio 0.06 (East Africa, six states) and 0.04 (Libyan border, two)
+# policy:  Additive per order; both order ids are new, so they share no pool with any existing buffer.
+#          Releases on WA_AI_MILITARY_italian_entry_still_pending going false, at which point Fix 97's
+#          east_africa family and the El-Alamein ladder own the same ground - EXCLUSIVE by timing.
+# domain:  THEATRE
+#
+# The states are the ALLIED side of each frontier, never the Italian side: 551 Khartoum, 1096 Kurdufan,
+# 549 South Sudan (Sudan), 1100 Northern Kenya, 269 British Somaliland, 659 Aden for the AOI; 452 Marsa
+# Matruh and 960 Libyan Plateau for Libya. All are owned by British subjects (UKE/UKM/UKT), which is
+# the same shape as the existing Kuwait 656 buffer.
+#
+# Ratios are a tripwire, not an army: on the 1940.6 army sizes that is ENG 66 x 0.06 ~ 4 and
+# RAJ 42 x 0.06 ~ 2 in East Africa, and ~3 + ~2 on the Libyan border. Deliberately small - the point
+# is that the border is not EMPTY when the war starts, not that it is held.
+WA_AI_MILITARY_ALLIES_italian_entry_tripwire_THEATRE = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_italian_frontier_tripwire_force = yes
+	}
+	enable = {
+		WA_AI_MILITARY_is_allies_member = yes
+		WA_AI_MILITARY_italian_entry_likely = yes
+		WA_AI_MILITARY_italian_entry_still_pending = yes
+		NOT = { WA_AI_MILITARY_home_threatened = yes }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 9617
+		# The Allied side of the Italian East Africa frontier
+		states = {
+			551
+			1096
+			549
+			1100
+			269
+			659
+		}
+		ratio = 0.06
+		subtract_invasions_from_need = no
+	}
+
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 9618
+		# The Egyptian side of the Libyan frontier
+		states = {
+			452
+			960
+		}
+		ratio = 0.04
+		subtract_invasions_from_need = no
+	}
+}

@@ -517,18 +517,41 @@ WA_AI_MILITARY_GER_focus_on_north_africa_FRONT = {
 		tag = GER
 	}
 	enable = {
+		# Fix 131 (2026-08-21, campaign 8c0fea4c): the `NOT = { has_war_with = SOV }` term that stood
+		# here is GONE. User ruling 2026-08-21: German armour STAYS in Africa - the expedition must
+		# not end at Barbarossa. The D-Day half of the 2026-08-20 rule is unchanged and still
+		# dynamic: it lives inside the window trigger as
+		# `NOT = { WA_AI_MILITARY_AIR_theatre_contested_western_europe }`, so the window still closes
+		# by itself when the West opens, with no date and no tag.
+		# MEASURED 8c0fea4c 1942.11.21: every one of the window's five terms was TRUE (Axis with the
+		# Italian homeland power; ITL holds 448/450/451; ENG holds the East-Egypt anchor 446/447/453;
+		# no enemy on Reich soil; no Allied ground in Western Europe) and this single clause was the
+		# only thing holding the expedition shut - with 0 German divisions in Africa on all five
+		# saves 1941.4 -> 1943.3, while Germany OWNED and CONTROLLED Tunis 458, Bizerte 1061 and
+		# Gabes 665 defended by 1 Italian division.
+		# Paired with WA_AI_MILITARY_GER_war_with_soviets_africa_suppression_FRONT below: removing
+		# this gate alone would have left the -75 Africa suppression standing against it.
 		WA_AI_MILITARY_afrika_korps_window = yes
-		# user rule (2026-08-20): the expedition runs at least until the Soviet war; the D-Day
-		# half of the rule is the contested-Western-Europe term inside the window trigger.
-		NOT = { has_war_with = SOV }
 	}
 	abort_when_not_enabled = yes
 
+	# Fix 121 (2026-08-21, campaign 8c0fea4c): 60 -> 30. Fix 119's expedition worked and then
+	# saturated the theatre's logistics. MEASURED at 1940.12: 57 Axis divisions stood in Libya /
+	# Egypt (GER 16, ITA 35, ITL 6) on a corridor with 4 BREAK hops out of 9 and nothing above
+	# level 1 east of Sirte. The user's ruling is a 50 % cut, not a cancellation - the expedition
+	# is still wanted, at half the pull. Net over the standing -80 area tilt: -45 instead of -15.
+	# ASSUMED, and it is the whole risk of this change: that halving a `front_unit_request` weight
+	# halves the divisions that arrive. The engine's weight-to-division mapping is not observable
+	# in a save. The one anchor that IS measured: at 60, the peak was 16 German divisions.
+	# The division-count brake (a `divisions_in_state` cap per corridor state) was designed and
+	# DEFERRED by owner decision 2026-08-21 - do the arithmetic cut first, measure, then decide.
 	ai_strategy = {
 		type = front_unit_request
 		area = north_africa
-		value = 60
+		value = 30
 	}
+	# NOT halved, deliberately: armour is the NATURE of the expedition, not its size. Cutting this
+	# would send the same reduced force with worse divisions in it.
 	ai_strategy = {
 		type = front_armor_score
 		id = "ENG"
@@ -561,8 +584,9 @@ WA_AI_MILITARY_GER_north_africa_offensive_exec_FRONT = {
 		tag = GER
 	}
 	enable = {
+		# Fix 131: SOV term removed, same ruling as the _FRONT twin above. The offensive executor
+		# must not outlive-then-die with the request block; the two are a pair and share a gate.
 		WA_AI_MILITARY_afrika_korps_window = yes
-		NOT = { has_war_with = SOV }
 		WA_AI_MILITARY_north_africa_offensive_viable = yes
 	}
 	abort_when_not_enabled = yes
@@ -592,11 +616,12 @@ WA_AI_MILITARY_GER_war_with_soviets_2_FRONT = {
 
 	# Fix 119: the front_armor_score id "ITL" value 0 entry that stood here was deleted with its
 	# counterpart in focus_on_north_africa (both inert - id is the enemy tag, ITL is an ally).
-	ai_strategy = {
-		type = front_unit_request
-		area = north_africa
-		value = -75
-	}
+	# Fix 131: the `area = north_africa value = -75` line MOVED OUT of this block, to
+	# WA_AI_MILITARY_GER_war_with_soviets_africa_suppression_FRONT below. It is the same value under
+	# the same Soviet-war gate, plus one exclusion: it stands down while the Afrika Korps window is
+	# open. `front_unit_request` is ADDITIVE per area, so leaving it here would have cancelled the
+	# expedition the window now keeps alive (+30 against -75 against the standing -80 tilt).
+	# The two strategic-region lines and both garrison lines are NOT part of that trade and stay.
 	ai_strategy = {
 		type = front_unit_request
 		strategic_region = 133
@@ -618,6 +643,36 @@ WA_AI_MILITARY_GER_war_with_soviets_2_FRONT = {
 	}
 }
 
+
+# purpose: Fix 131 - the Soviet war's Africa suppression, split out of
+#          WA_AI_MILITARY_GER_war_with_soviets_2_FRONT so it can stand down while the Afrika Korps
+#          window is open. Same value, same Soviet gate, one exclusion added.
+# range:   -75 (unchanged; E2 [-100, +200])
+# policy:  Exclusive with WA_AI_MILITARY_GER_focus_on_north_africa_FRONT's +30 - the two are the
+#          only GER-scope `front_unit_request area = north_africa` writers and must never both be
+#          enabled. `front_unit_request` is additive per area: enabled together they net -45 over
+#          the standing -80 tilt, i.e. the expedition would exist on paper and never arrive.
+# domain:  FRONT
+WA_AI_MILITARY_GER_war_with_soviets_africa_suppression_FRONT = {
+
+	allowed = {
+		tag = GER
+	}
+	enable = {
+		has_war_with = SOV
+		# The window is the whole point of the split. While it is open the expedition owns the area;
+		# the moment it closes - a D-Day, a lost Libyan bridgehead, an Egypt anchor no longer in
+		# enemy hands - this block re-arms on the same tick and Africa goes back to being a sink.
+		NOT = { WA_AI_MILITARY_afrika_korps_window = yes }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		area = north_africa
+		value = -75
+	}
+}
 
 
 WA_AI_MILITARY_GER_war_with_soviets_3 = {

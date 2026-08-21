@@ -1,7 +1,11 @@
 ############################################################################################################
 # WA AI Naval - FACTION_ALLIES
 ############################################################################################################
-# Phase 6 split: every ai_strategy in this file has type ∈ { naval_avoid_region, strategic_air_importance, strike_force_home_base }.
+# Phase 6 split: every ai_strategy in this file has type ∈ { naval_avoid_region, naval_convoy_raid_region,
+# naval_dominance, naval_mission_threshold, strategic_air_importance, strike_force_home_base,
+# front_unit_request }.
+# (The Phase 6 line listed only three types and was already stale before Fix 122 - naval_dominance,
+# naval_mission_threshold and front_unit_request were all present. Corrected 2026-08-21.)
 # Canonical domain: NAVAL. See documentation/WA_AI_MILITARY_TYPES_REFERENCE.md.
 
 
@@ -793,4 +797,97 @@ WA_AI_NAVAL_FACTION_ALLIES_enemy_holds_norwegian_coast = {
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = naval_avoid_region id = 174 value = 2000 } # Voring Plateau
+}
+
+
+############################################################################################################
+# Fix 122 (2026-08-21, campaign 8c0fea4c) - the Mediterranean convoy interdiction.
+#
+# MEASURED, and it is the whole reason this exists: NO Allied `naval_convoy_raid_region` existed on
+# 29 (Strait of Sicily), 269 (Ionian Basin) or 327 (Levantine Basin) ANYWHERE in the mod. The only
+# writers on those three regions were USA's legacy -1000 and GER's legacy -1000. Italy's free convoy
+# pool read 1023 / 1008 / 1004 at 1941.6 / 1942.6 / 1943.6 - three years of Libya lifeline without a
+# scratch, while 35-42 Italian divisions and up to 16 German ones were fed across it.
+#
+# WHO. `allowed` is the coalition's naval users; `enable` adds WA_AI_MILITARY_is_major_naval
+# (`has_navy_size = { size > 100 }`), the owner's ruling of 2026-08-21: only LARGE, MAJOR navies raid
+# the narrows. MEASURED on 1941.6_Jun: ENG ~494 hulls and USA ~476 pass; AST 11, FRA 21, NZL 7, CAN 2,
+# RAJ 1 and SAF 0 do not. Sending a seven-ship dominion navy into the Sicilian narrows is how a
+# coalition loses a navy for nothing.
+#
+# SURFACE SHIPS. `naval_mission_threshold "MISSION_CONVOY_RAIDING" -100` lowers the strength ratio the AI
+# demands before committing a task force to that mission - the user's "even with surface fleets if
+# needed". The magnitude copies vanilla's own MISSION_PATROL -100 (ENG.txt:1378) and is ASSUMED.
+#
+# THE KEY IS `MISSION_CONVOY_RAIDING`, NOT `MISSION_CONVOY_RAID`, and this shipped wrong once.
+# `MISSION_CONVOY_RAID` was "verified present in hoi4.exe" by `grep -c` with a negative control - and
+# grep matches SUBSTRINGS, so the hit was the longer name. The game's boot rejected it outright:
+#   Error: "bad mission type: MISSION_CONVOY_RAID, near line: 860" in file:
+#   "common/ai_strategy/WA_AI_NAVAL_FACTION_ALLIES.txt"
+# The mission enum is listed in the install's `common/defines/00_defines.lua` MISSION_FUEL_COSTS
+# comment block (HOLD, PATROL, STRIKE FORCE, CONVOY RAIDING, CONVOY ESCORT, MINES PLANTING, MINES
+# SWEEPING, TRAIN, RESERVE_FLEET, NAVAL_INVASION_SUPPORT) and the exact literals are recoverable by
+# extracting whole `MISSION_[A-Z_]+` matches from hoi4.exe rather than counting substring hits.
+# A binary substring count is not a token test.
+#
+# INTERACTION with WA_AI_NAVAL_COUNTRY_ENG_legacy_ENG_med_is_lost, which writes `naval_avoid_region
+# 29 = +2000`: the two never fight. `med_is_lost` needs Malta 116 lost (plus Gibraltar or Alexandria);
+# WA_AI_MILITARY_NAVAL_med_raid_base_held needs Malta or a Tunisian port HELD. Lose Malta with no
+# Tunisian port and this block aborts in the same pass that arms the other. MEASURED 8c0fea4c:
+# `med_is_lost` never fired - Malta and Gibraltar were ENG on all 121 saves.
+#
+# WHAT THIS TYPE CANNOT DO: `naval_convoy_raid_region` RANKS regions for the raiding the engine has
+# already decided to do. It does not create a task force. ASSUMED by analogy with the documented
+# behaviour of `strategic_air_importance` (doc section 18), which is the same shape of type.
+############################################################################################################
+
+# purpose: cut the Italy -> Libya lifeline in the central Mediterranean while we have a base to raid
+#          from and the enemy still has an African port to supply.
+# range:   naval_convoy_raid_region +250 (vanilla's own priority-lane magnitude: ENG.txt 16/18/365 at
+#          250, GER.txt 42/47/49 at 250); naval_avoid_region -250 to cancel the standing reluctance
+# policy:  Additive per region - sole POSITIVE Allied writer on 29 / 269
+# domain:  NAVAL
+WA_AI_NAVAL_FACTION_ALLIES_med_lifeline_raid = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = yes
+	}
+	enable = {
+		WA_AI_MILITARY_FACTION_owns_naval_mediterranean_corridor = yes
+		WA_AI_MILITARY_is_major_naval = yes
+		WA_AI_MILITARY_NAVAL_med_raid_base_held = yes
+		WA_AI_MILITARY_NAVAL_axis_african_lifeline_active = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = naval_convoy_raid_region  id = 29   value = 250 }  # Strait of Sicily
+	ai_strategy = { type = naval_convoy_raid_region  id = 269  value = 250 }  # Ionian Basin
+	ai_strategy = { type = naval_avoid_region        id = 29   value = -250 }
+	ai_strategy = { type = naval_avoid_region        id = 269  value = -250 }
+
+	ai_strategy = {
+		type = naval_mission_threshold
+		id = "MISSION_CONVOY_RAIDING"
+		value = -100
+	}
+}
+
+# purpose: cut the eastern leg - the Tobruk run - for as long as Tobruk is the enemy's.
+#          Separate block because it has a different life: it ends the day the state changes hands,
+#          which on 8c0fea4c was between 1942.12 (ITL) and 1943.6 (ENG), while the western pair ran on.
+# range:   naval_convoy_raid_region +250; naval_avoid_region -250
+# policy:  Additive per region - sole POSITIVE Allied writer on 327
+# domain:  NAVAL
+WA_AI_NAVAL_FACTION_ALLIES_tobruk_route_raid = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = yes
+	}
+	enable = {
+		WA_AI_MILITARY_FACTION_owns_naval_mediterranean_corridor = yes
+		WA_AI_MILITARY_is_major_naval = yes
+		WA_AI_MILITARY_NAVAL_tobruk_held_by_enemy = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = naval_convoy_raid_region  id = 327  value = 250 }  # Levantine Basin
+	ai_strategy = { type = naval_avoid_region        id = 327  value = -250 }
 }

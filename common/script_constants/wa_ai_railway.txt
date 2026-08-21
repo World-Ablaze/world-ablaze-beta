@@ -125,13 +125,40 @@ wa_ai_railway = {
 		port_break_even_segments = 20	# at or above this many provinces on the chain, raise the PORT; below, the RAIL
 		queue_max          = 8	# concurrent corridor projects per builder PER BUILDING TYPE (WA_AI_PC_start_project filters
 		                    	# building_type before the type_id budget): 8 rails + 8 depots + 8 ports at most, tag corridor, Fix 47 scoped
-		max_routes_per_run = 19	# pathfinds per corridor pass = the whole node-pair list of the largest corridor (20 nodes ->
-		                    	# 19 pairs, North Africa since Fix 113 added the western arm Oran..Tunis). NOT a rotating
+		max_routes_per_run = 20	# pathfinds per corridor pass = the whole node-pair list of the largest corridor (21 nodes ->
+		                    	# 20 pairs, North Africa: the western arm Oran..Tunis from Fix 113, plus the inland
+		                    	# junction 13481 between Tobruk and 5078 from Fix 129). NOT a rotating
 		                    	# window: the pass validates every corridor project against the routes it pathfound, so a
 		                    	# window smaller than the list would cancel the in-progress segments of the routes it
 		                    	# skipped. RAISE THIS WITH ANY NODE YOU ADD - a corridor longer than this number of pairs
 		                    	# does not merely build slower, it destroys paid-for progress every pass.
 		                    	# Hops are 1-5 provinces (A* cap 100), so this is cheap.
+	}
+
+	# Fix 135 (2026-08-21) - the LAND-WAR / OVERSEAS route family, sized by the same helper as the
+	# corridor (WA_AI_PC_rail_size_route, railway_helpers). Before this it had no sizing at all:
+	# WA_AI_PC_railway_STRATEGY_land_war set a flat `default_route_level = 5` and
+	# WA_AI_PC_railway_land_consider_frontline then recomputed `_max_route_level_ + 1`, a ratchet that
+	# climbs to 5 on its own whatever the theatre needs or the entry port can carry.
+	# Protects against: exactly what the corridor's floor/cap pair protects against, one family later.
+	# MEASURED on campaign 8c0fea4c: Libya went from 6 BREAK hops at level 0-1 (1940.6) to level 5
+	# across Tripoli-Derna (1941.5) while the entry port Tripoli stood at naval_base 5 = 25 supply,
+	# against the 44 a level-5 rail carries. The port-derived target for that chain is 2.
+	# Assumes: the same two engine ladders as `supply` below.
+	# Fact is gone when: those ladders are retuned - then both numbers mean a different flow.
+	#
+	# Kept as its OWN pair rather than reusing corridor.*: a corridor is a named theatre spine that WA
+	# commits to, a land-war route is any frontline the allocator happens to reach, and the two should
+	# be retunable apart. They are equal today by choice, not by contract - nothing checks it.
+	land_war = {
+		rail_level_floor = 2	# never size BELOW this. Keeps the change monotone against the pre-Fix-135
+		                    	# behaviour of a route whose front is empty.
+		rail_level_cap   = 4	# never size ABOVE this. 4 = 36 supply. Railways cannot be downgraded, so the
+		                    	# cap is the irreversibility budget (LOGISTICS_MODEL section 10 rule 3).
+		                    	# ALSO the "this frontline is done" level: `_check_railway_level` in the three
+		                    	# strategies reads this key, so a state at the cap stops attracting routes.
+		                    	# Leaving that at 5 while sizing at 4 would spend the route budget for ever
+		                    	# on states that can never read done.
 	}
 
 	# Supply-throughput model used to size ports against railways (railway_helpers).

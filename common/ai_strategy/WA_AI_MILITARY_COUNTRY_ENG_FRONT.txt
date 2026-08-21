@@ -688,3 +688,32 @@ WA_AI_MILITARY_ENG_tanks_vs_axis_majors_FRONT = {
 		value = 100
 	}
 }
+
+
+# Fix 124 (2026-08-21, campaign 8c0fea4c) - the British half of the East-Africa delegation.
+# purpose: take Britain's weight OFF East Africa while the Indian army carries it, so the divisions
+#          land in Egypt instead. Without this half the delegate only ADDS divisions to Ethiopia and
+#          nothing is freed - which is the whole point of the user's report.
+# range:   front_unit_request -75 on the 4-region alias, netting ENG to +75 against the Faction +150
+#          (RAJ nets +250). ENG is never pushed NEGATIVE: it keeps a real share of the theatre, and if
+#          the delegate becomes unavailable this block aborts and ENG is back at the full +150.
+# policy:  Additive per area; gate-exclusive by construction with the RAJ delegate - both read
+#          WA_AI_MILITARY_commonwealth_east_africa_available / _RAJ_east_africa_available, the same verdict
+# domain:  FRONT
+WA_AI_MILITARY_ENG_east_africa_delegated_FRONT = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_british_mission_owner = yes
+	}
+	enable = {
+		has_war = yes
+		WA_AI_MILITARY_east_africa_theatre_contested = yes
+		WA_AI_MILITARY_commonwealth_east_africa_available = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		area = WA_AI_MILITARY_east_africa_regions
+		value = -75
+	}
+}

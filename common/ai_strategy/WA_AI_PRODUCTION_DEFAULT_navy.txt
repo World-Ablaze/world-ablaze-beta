@@ -251,6 +251,11 @@ WA_DEFAULT_production_convoy_stop_MINORS = {
 		is_major = no
 		has_equipment = { convoy > 300 }
 		num_of_naval_factories > 3
+		# Fix 126 (2026-08-21): the same exemption stop_MAJORS already carries for the arsenal.
+		# Without it the stop and the minor arsenal below fight over the same dockyards, and the
+		# stop wins - which is the state MEASURED on campaign 8c0fea4c, where RAJ built nothing
+		# from 1938.9 to 1946 with 8 to 15 dockyard levels standing idle.
+		NOT = { WA_AI_PRODUCTION_dockyards_have_nothing_to_build = yes }
 	}
 	abort = {
 		NOT = {
@@ -258,9 +263,45 @@ WA_DEFAULT_production_convoy_stop_MINORS = {
 				is_major = no
 				has_equipment = { convoy > 200 }
 				num_of_naval_factories > 3
+				NOT = { WA_AI_PRODUCTION_dockyards_have_nothing_to_build = yes }
 			}
 		}
 	}
 
 	ai_strategy = { type = equipment_variant_production_factor              id = convoy               value = -200 }
+}
+
+############################################################################################################
+# Fix 126 (2026-08-21, campaign 8c0fea4c, checklist R87) - CONVOYS ARE THE DEFAULT SURPLUS.
+#
+# Owner ruling: "if there is nothing to build, the countries in RAJ's situation should build convoys
+# by default". One type does exactly that and nothing else:
+# `equipment_production_surplus_management` decides what the AI builds "when all their needs are
+# already met (and it therefore doesn't need/want anymore)" - the install's own wording, in
+# common/ai_strategy/_documentation.md. Weighed against the other surplus types, so 100 makes
+# convoys the answer for a dockyard with no other claim on it, and takes nothing from a claim that
+# does exist.
+#
+# WHAT THIS BLOCK IS **NOT** THE FIX FOR, and the correction matters because the first version of
+# this fix got it wrong. The 36 idle dockyard levels across the five dominions at 1941.6 are NOT
+# caused by the convoy ladder above: every minor on the GENERIC naval tech tree faces the same
+# ladder and saturates its yards anyway (SWE 17 factories / 16 levels, TUR 21/20, ARG 6/5, BRA 6/5),
+# while every dominion on the BRITISH tree runs exactly one (RAJ 1/8, AST 1/6, CAN 1/16, NZL 1/7,
+# SAF 1/4). The cause is that they had no ship DESIGN matching their hulls - Fix 129,
+# common/ai_equipment/ENG_naval.txt. This block is the genuine-surplus case only.
+#
+# The first version also carried `equipment_production_min_factories id = convoy value = 3/6`.
+# REMOVED with Fix 129: that type FORCES factories onto the category, and once the dominions have
+# escort designs it would have spent their yards on convoys instead of the escorts WA already asks
+# them for (`role_ratio naval_escort 50`). A forced floor is the wrong tool for "when there is
+# nothing else".
+############################################################################################################
+
+WA_DEFAULT_production_convoy_minor_arsenal = {
+	enable = {
+		WA_AI_PRODUCTION_dockyards_have_nothing_to_build = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_production_surplus_management          id = convoy               value = 100 }
 }
