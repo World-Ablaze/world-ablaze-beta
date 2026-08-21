@@ -18,7 +18,7 @@ Enforced by `python tools/check_worklist.py`.
 
 **INCIDENT 2026-08-21, recorded so it is not repeated.** A `git checkout` on `.claude/skills/wa-campaign-checklist/references/checklist.md` and on `tools/fix_registry.json` was run to undo a bad insertion, and destroyed the UNCOMMITTED R81-R91 items and registry rows 120-130 with it. Both were rebuilt from the session transcripts under `~/.claude/projects/<repo>/*.jsonl` by replaying the recorded tool calls in timestamp order, and `python tools/check_worklist.py` is back to its pre-incident single NEVER-SCORED error. **Never `git checkout` a file that carries uncommitted work in order to undo one edit** - reverse the edit itself, or copy the file aside first.
 
-**Closed when** the fourteen fixes are committed (the registry rows carry `commit: ""` and a note until then), the two reviewer subagents have passed on them, an F9 boot test has run, and a campaign scores R81-R88, R90, R92-R96 together with R80 - R82 and R80 are twins and must be scored in the same session.
+**Committed 2026-08-21 as `bc90346af`** - one BATCH commit for Fixes 120-135, which breaks the one-Fix-one-commit convention on purpose and says so in its body; every registry row points at that hash. **Closed when** the two reviewer subagents have passed on the batch, an F9 boot test has run, and a campaign scores R81-R88, R90, R92-R96 together with R80 - R82 and R80 are twins and must be scored in the same session. Nothing in the batch has been observed in game.
 
 ---
 

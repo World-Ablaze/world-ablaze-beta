@@ -1913,7 +1913,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 
 
 ### R81. The theatre corridor connects before it consolidates (Fix 120)
-- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=PENDING-COMMIT status=NOT_YET_TESTED`
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=bc90346af status=NOT_YET_TESTED`
 
 - **Opened 2026-08-21** (user report on campaign `8c0fea4c`: "l'Italie construit sa voie ferrée depuis Tripoli vers le front en Égypte via le système PC, mais au lieu de chercher à raccorder tous les nœuds au plus vite, elle consolide avant d'étendre le réseau"). Pre-fix state MEASURED on that campaign: the North-African corridor was built as a wave that raised the rear while the head stayed unrailed. `rail.py --corridor 1149,9980,4047,4057,1127,11954,10049,7082,1130,5078` reads Tripoli→Sirte at level **5** from 1940.12 onward — one above `corridor.rail_level_cap` = 4 — while **Tobruk 1130 → 5078 stayed BREAK from 1940.6 to somewhere between 1941.12 and 1942.3**, i.e. 21 months, of which 15 with both ends Axis-held (5078 was ITL from 1940.12, GER from 1941.6; 1130 ITL throughout). At the project level, 1941.6: ITA's single funded railway factory sat on `4120 → 13509`, an edge **already at map level 5**, while `1130→10120`, `10120→7079` and `7079→5078` (all at map level **0**) held 0 factories with 4 weeks of stall — at the **identical** priority 1000, and queued *behind* 13 European land-war segments also at 1000. The dépôt the user saw unconnected is the consequence of that ordering, not a separate rule: corridor hubs are emitted at the same `_corridor_prio_` as the rails.
 - **RETEST 2026-08-21, part 1 alone changed nothing — and the reason recut the fix.** Saves `ITA_1941_05_23_21` / `ITA_1941_06_10_02` / `ITA_1941_10_06_11`, same campaign, build carrying part 1: **all 8 queued railway projects were UPGRADES priced 1000**, on edges already at map level 2–5 (`4120→13509` at 5, `12094→4063` at 2, `10049→7082` at 4 …), while **Derna 7082 → Tobruk 1130 and Tobruk 1130 → 5078 were BREAK and absent from the queue entirely**, and the rear ran at level **5** against `wa_tlm_r107_sizing_rail_tgt = 4`. Priority orders FUNDING; the binding constraint here is **ADMISSION**. The pass walks the node list west to east and admits until `corridor.queue_max` (8 per building type) is full, so the rear claims the budget before the head is ever offered — and a project that is never admitted never gets a price. `wa_tlm_r103_corridor_blocked_n` rose 4 → 5 → 6 across those saves, so some holes are also refused by the controller gate (Gabès 11957 → Tripoli 1149 across Vichy Tunisia is BREAK on every save of the campaign) — which is exactly why the fix must not be "no upgrades while any hop is BREAK".
@@ -1954,7 +1954,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **History:**
 
 ### R82. The Afrika Korps expedition is halved, not cancelled (Fix 121)
-- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=PENDING-COMMIT status=NOT_YET_TESTED`
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=bc90346af status=NOT_YET_TESTED`
 
 - **Opened 2026-08-21** (user report on campaign `8c0fea4c`: "l'Allemagne doit réduire les troupes envoyées en Afrique : elle sature la logistique — il faut réduire, pas annuler la présence; commençons par une réduction de 50 %"). Fix 119 worked: MEASURED, German divisions in the African scope went 2 (1940.9) → 9 (1940.11) → **16 (1940.12)** → 15 (1941.1) → 1 (1941.2) → 7 (1941.6) → 0 (1941.12), the window opening on Italy's entry and closing on Barbarossa exactly as designed. The problem is the total load: at the 1940.12 peak the Axis held **57 divisions** in the scope (GER 16, ITA 35, ITL 6) on a corridor with 4 BREAK hops out of 9 and nothing above level 1 east of Sirte (see R81's measurement, same campaign, same month).
 - **Fix under test:** Fix 121 — `WA_AI_MILITARY_GER_focus_on_north_africa_FRONT` `front_unit_request` 60 → **30**, `_THEATRE` `area_priority` 130 → **105** (the standing area tilt is −80, so the net goes +50 → +25: half, measured on the net). `front_armor_score` 150 deliberately unchanged — armour is the nature of the expedition, not its size. The division-count brake (`divisions_in_state` caps on the corridor states) was designed and **DEFERRED by owner decision 2026-08-21**: do the arithmetic cut first, measure, then decide.
@@ -1980,7 +1980,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **History:**
 
 ### R83. The Allies cut the Axis Mediterranean lifeline (Fix 122)
-- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=PENDING-COMMIT status=NOT_YET_TESTED`
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=bc90346af status=NOT_YET_TESTED`
 
 - **Opened 2026-08-21** (user report on campaign `8c0fea4c`: "l'Angleterre doit faire du raiding plus agressif, même avec des flottes de surface si besoin, sur 29 et 269 tant que Malte ou Tunis est sous contrôle allié, et 327 si Tobrouk est tenu par l'Axe"). Pre-fix state MEASURED **in the repo, not in a save, and that is the strongest half of the evidence**: a census of every `ai_strategy` in `common/ai_strategy/WA_AI_NAVAL_*.txt` finds **no Allied `naval_convoy_raid_region` on 29, 269 or 327 at all**. The only writers on those three regions are `WA_AI_NAVAL_COUNTRY_USA_legacy_USA_convoy_raid_strategy` at **−1000** and `WA_AI_NAVAL_COUNTRY_GER_legacy_GER_dont_convoy_raid_too_far_away` at −1000; ENG's only positive raid regions are 16, 18 and 365, all home waters, all gated on Britain being invaded. Consequence MEASURED in the campaign: Italy's free convoy pool read **1023 / 1008 / 1004** at 1941.6 / 1942.6 / 1943.6 — a 1.9 % dent over three years of running the entire Libyan supply line.
 - **Fix under test:** Fix 122 — `WA_AI_NAVAL_FACTION_ALLIES_med_lifeline_raid` (29 and 269 at +250, `naval_avoid_region` −250, `naval_mission_threshold "MISSION_CONVOY_RAIDING" −100`) and `_tobruk_route_raid` (327 at +250, avoid −250), both gated on `WA_AI_MILITARY_FACTION_owns_naval_mediterranean_corridor` + **`WA_AI_MILITARY_is_major_naval`** (owner ruling 2026-08-21: only large, major navies raid the narrows) + the new geography triggers `WA_AI_MILITARY_NAVAL_med_raid_base_held` / `_axis_african_lifeline_active` / `_tobruk_held_by_enemy`.
@@ -2009,7 +2009,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **History:**
 
 ### R84. The Pacific Commonwealth's home garrison is released while the Pacific is quiet (Fix 123)
-- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=PENDING-COMMIT status=NOT_YET_TESTED`
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=bc90346af status=NOT_YET_TESTED`
 
 - **Opened 2026-08-21** (user report on campaign `8c0fea4c`: "tant que le Japon est neutre / pas sur le point d'attaquer, AST, NZL et RAJ peuvent réduire leurs divisions de garnison de territoire pour contribuer au théâtre africain"). Pre-fix state MEASURED at 1941.6: **AST held 17 of 22 divisions (77 %) and NZL 8 of 11 (73 %) in ENGINE area-defence orders**, and RAJ 17 of 40 (43 %) — against GER 1 of 203 (0.5 %) and ITA 4 of 84 (5 %), the two countries that carry `garrison = -5000`. Cause: `WA_AI_MILITARY_ARCHETYPE_minors_home_first` (`WA_AI_MILITARY_DEFAULT_FRONT_archetypes.txt`) gives **every minor at war `garrison = +50`**, i.e. more area defence; AST and NZL have no `garrison` writer of their own at all, and RAJ's `-5000` is gated on `has_war_with = JAP`.
 - **This item also carries the first in-game measurement of what `garrison = -5000` does** — the question `documentation/WA_AI_MILITARY_SYSTEM.md` §16 leaves open ("that convention is not documented by the engine and remains a campaign test") and that R74 leg 1 was written for. RAJ is its own control: area-defence divisions read **14 / 17 / 16** at 1940.10 / 1941.6 / 1941.12 (no `-5000`) and **0 / 3 / 2** at 1942.3 / 1942.6 / 1943.6 (`-5000` armed by the JAP war) while its BUFFER count *rose* 17 → 21 → 25, so the engine did not merely move the guards onto the new fronts. **DERIVED**, with the rival explanation named: the switch coincides with Japan's entry. The cross-section closes it without the date — AST and NZL, with no `garrison` writer, sit at 73–77 % on the same save where GER and ITA sit at 0.5–5 %.
@@ -2047,7 +2047,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **History:**
 
 ### R85. East Africa is the Indian army's campaign, and Britain goes to Egypt (Fix 124)
-- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=PENDING-COMMIT status=NOT_YET_TESTED`
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=bc90346af status=NOT_YET_TESTED`
 
 - **Opened 2026-08-21** (user report on campaign `8c0fea4c`: "sur la deuxième partie de 1940, l'armée anglaise est engagée en majorité contre l'Éthiopie, et l'armée indienne pas vraiment; il faut que l'armée indienne aille en Éthiopie et libère à l'ENG des divisions pour aller en Égypte"). Pre-fix state MEASURED at 1940.10: **ENG had 37 of its 66 divisions (56 %) in the East-African theatre** (Oromia 8, Amhara 6, Somali 6, N. Kenya 5, Eritrea 4, S. Sudan 3, Somaliland 2, S. Kenya 2, Khartoum 1) and only **8** in Egypt/Libya, while **RAJ had 24 of 42 (57 %) sitting in India** and 8 in East Africa. Diagnosis: the pull toward East Africa already reached RAJ (`WA_AI_MILITARY_ALLIES_east_africa_contested_FRONT`, +150) and RAJ's own −100 suppression was NOT armed (it needs a war with PER, SOV or JAP). Nothing was missing on the demand side — the Indian army was reserved before it could be asked for, which is R84's mechanism.
 - **Fix under test:** Fix 124 — the fourth delegated mission of the Commonwealth handoff family (`documentation/WA_AI_MILITARY_SYSTEM.md` §16). `WA_AI_MILITARY_COUNTRY_RAJ_FRONT_east_africa_delegate` (+100 on the 4-region alias, on top of the Faction +150) paired with `WA_AI_MILITARY_ENG_east_africa_delegated_FRONT` (−75 on the same alias), both reading `WA_AI_MILITARY_RAJ_east_africa_available` / `_commonwealth_east_africa_available`. Net while the delegate is live: RAJ +250, ENG +75. **Fix 123 is a hard prerequisite** — without the garrison release the delegate has no divisions to send, and this item cannot pass while R84 fails.
@@ -2080,7 +2080,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **History:**
 
 ### R86. The Kuwait guard needs a threat to guard against (Fix 125)
-- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=PENDING-COMMIT status=NOT_YET_TESTED`
+- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=bc90346af status=NOT_YET_TESTED`
 
 - **Opened 2026-08-21** (user report on campaign `8c0fea4c`: "l'ordre de garnison du Koweït peut être suspendu pour ENG si l'Irak est occupé ET le Japon pas dans la guerre"). Pre-fix state MEASURED: `WA_AI_MILITARY_ENG_kuwait_guard_active` asked only whether ENG was at war and whether 656 was held by its side, so the mission ran from 1939.9 to the end of the war over what was, for most of it, interior allied ground. ENG held **1 / 1 / 3 / 4** divisions in Kuwait at 1940.10 / 1941.6 / 1942.6 / 1943.6, and RAJ — the delegate the handoff family designates — **never took the mission in the whole campaign**. Control of the land approach: Iraq (291 / 675 / 1041) was IRQ-held and neutral until the Anglo-Iraqi war of **1941.4.24**, then British from about 1942.3; Persia 413 was PER then SOV.
 - **Fix under test:** Fix 125 — a third term on `WA_AI_MILITARY_ENG_kuwait_guard_active`: `WA_AI_MILITARY_gulf_approach_threatened`, true when an enemy of ENG controls 291 / 675 / 1041 / 413 / 292, or when `ENG = { WA_AI_MILITARY_pacific_war_active = yes }`. The maritime half uses `pacific_war_active` and **not** the wider `pacific_threat_imminent` of Fix 123: the user's rule for Kuwait is literally "Japan not in the war", and a fleet has to be at war to reach the Gulf. The term disarms all three consumers together — the ENG floor, the ENG fallback and RAJ's delegated guard — which is the intent: there is no mission, so there is nothing to delegate.
@@ -2113,7 +2113,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **History:**
 
 ### R87. Surplus dockyards make convoys instead of nothing (Fix 126)
-- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=PENDING-COMMIT status=NOT_YET_TESTED`
+- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=bc90346af status=NOT_YET_TESTED`
 
 - **Opened 2026-08-21** (user ruling on campaign `8c0fea4c`: "s'il n'y a rien à construire, les pays comme RAJ dans cette situation devraient construire des convois par défaut"). **RECUT the same day — read the correction before scoring.** The item first claimed the idle dockyards were caused by this system's convoy ladder (tier 0 stopping at 200 convoys, tiers 1–3 needing 20 shipyards, `stop_MINORS` braking above 300). **That was wrong.** The closure test: every minor on the **generic** naval tech tree faces the identical ladder and saturates its yards anyway — SWE **17** factories on 16 dockyard levels, TUR **21/20**, ARG **6/5**, BRA **6/5** — while every dominion on the **British** tree runs exactly one. The idle dockyards are Fix 129's subject (no matching ship design), scored by **R90**. What is left for this item is the narrow, genuine case: a minor with spare dockyards after its escort programme is satisfied.
 - **Fix under test:** Fix 126 — `WA_AI_PRODUCTION_dockyards_have_nothing_to_build` (`WA_AI_PRODUCTION_navy.txt`: default system, at war, `num_of_naval_factories > 3`, NOT `is_major_naval`, NOT the majors' arsenal), the same verdict negated inside `WA_DEFAULT_production_convoy_stop_MINORS` (`enable` **and** `abort`), and one payload block `WA_DEFAULT_production_convoy_minor_arsenal` carrying `equipment_production_surplus_management id = convoy value = 100` and nothing else. The `equipment_production_min_factories id = convoy value = 3/6` of the first version was **removed with Fix 129** — a forced floor would outbid the escorts WA now asks these countries for (`role_ratio naval_escort 50`).
@@ -2142,7 +2142,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **History:**
 
 ### R88. The Allies man the Italian colonial frontiers before Italy declares (Fix 127)
-- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=PENDING-COMMIT status=NOT_YET_TESTED`
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=bc90346af status=NOT_YET_TESTED`
 
 - **Opened 2026-08-21** (user report on campaign `8c0fea4c`: "il n'y avait personne à la frontière ITS", and the ruling that follows it — if the Italian and German powers share an ideology and France is collapsing, or the date has passed 1940.8.1, the Allies put divisions on the ITS and ITL frontiers). Pre-fix state MEASURED at the **1940.6** save, four weeks before Italy's declaration on **1940.6.30**: ENG held **2 divisions in Aden and nothing else** anywhere on the Sudan / Kenya / Somaliland frontier; RAJ held **zero**; SAF **zero**. Diagnosis: the whole Allied East-Africa family is reactive — `WA_AI_MILITARY_ALLIES_east_africa_contested_FRONT` (Fix 97) needs `east_africa_theatre_contested`, which needs an **enemy already holding** East-African ground, and `WA_AI_MILITARY_ENG_el_alamein_guard_active` needs an enemy on Libyan ground. Neither frontier can be manned before the declaration. The Axis has no such gap: ITA's `east_africa_garrison_THEATRE` stands on 550/559 in peace.
 - **Fix under test:** Fix 127 — `WA_AI_MILITARY_italian_entry_likely` (`WA_AI_CONFIG_MILITARY_italian_power_shares_german_ideology`, an enumerated four-group match because HOI4 1.19.2 has no "same ideology as" trigger, AND either `WA_AI_CONFIG_MILITARY_western_bulwark_is_collapsing` or `date > 1940.8.1`), released by `WA_AI_MILITARY_italian_entry_still_pending`; payload `WA_AI_MILITARY_ALLIES_italian_entry_tripwire_THEATRE` — `put_unit_buffers` order 9617 at 0.06 on {551, 1096, 549, 1100, 269, 659} and order 9618 at 0.04 on {452, 960}, for ENG and RAJ.
@@ -2172,7 +2172,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **History:**
 
 ### R89. The Indian army reinforces El Alamein without Britain standing down (Fix 128)
-- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=PENDING-COMMIT status=NOT_YET_TESTED`
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=bc90346af status=NOT_YET_TESTED`
 
 - **Opened 2026-08-21** (user report on the first retest build of campaign `8c0fea4c`: "RAJ garde encore beaucoup de divisions en Inde, au lieu d'aider à El Alamein — les Alliés manquent de divisions"). Pre-fix state MEASURED on the retest saves: RAJ fields **59** divisions in June 1940, loses its BEF / Norway contingents with France, and runs at **40 / 40 / 42** at 1941.5.23 / 1941.6.10 / 1941.10.6 — permanently **below the bar of 49** on `WA_AI_MILITARY_RAJ_egypt_support_available`, so the El-Alamein support mission has never armed in any campaign. Consequence in the same saves: RAJ holds **25 / 29 / 25** divisions in India while the entire Allied force on the Egyptian front is **13 / 13 / 15** (ENG 11/11/10, RAJ 1/1/2, SAF 1, NZL 0/0/2).
 - **Fix under test:** Fix 128 — a SECOND verdict, `WA_AI_MILITARY_RAJ_egypt_reinforcement_available`, identical to the handoff verdict except `num_divisions > 29`. It is read by the three RAJ writers that ADD force — `..._FRONT_support_el_alamein` (+50 `front_unit_request` on `north_africa`), `..._THEATRE_support_el_alamein` (0.05 on Marsa Matruh) and `..._DIPLOMACY_defend_north_africa` (`force_defend_ally_borders` 100) — and by nothing else.
@@ -2200,7 +2200,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **History:**
 
 ### R90. The Commonwealth dominions have a ship design they can build (Fix 129)
-- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=PENDING-COMMIT status=NOT_YET_TESTED`
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=bc90346af status=NOT_YET_TESTED`
 
 - **Opened 2026-08-21** (user question on campaign `8c0fea4c`: "le RAJ commence avec des frégates débloquées pourtant, pourquoi il fait pas des navires d'escorte ?"). **The question was right and it overturned the previous diagnosis.** MEASURED at 1941.6: every Commonwealth dominion holds British frigate and destroyer technology — RAJ `eng_frigate_1..5` and `eng_destroyer_1..6`, AST `eng_frigate_1..6` — and **zero** `generic_*` naval technologies. Meanwhile **no `ai_equipment` file in the mod names RAJ, AST, CAN, NZL or SAF**: the twelve design groups of `common/ai_equipment/ENG_naval.txt` were all `available_for = { ENG }`, and every design in `common/ai_equipment/generic_naval.txt` — which they *are* allowed to use, since it blocks only the seven majors — is gated on `has_tech = generic_frigate_1` / `generic_destroyer_*`. They had the role, the hulls, and no design.
 - **The role was already theirs**, which is what makes this a defect and not a design choice: `WA_AI_CONFIG_is_escort_navy` = minor AND in the Allies, so `WA_AI_CONFIG_focus_on_escorts` is true for all five, and `WA_DEFAULT_production_navy_main_focus_on_escorts` gives them `role_ratio naval_escort 50 / naval_screen −50`. A frigate hull costs **80 IC** (`ship_hull_very_light.txt`) and they had **36 idle dockyard levels**.
@@ -2233,7 +2233,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 
 
 ### R91. Tobruk reaches 5078 inland, not along the Egyptian coast (Fix 130)
-- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=PENDING-COMMIT status=NOT_YET_TESTED`
+- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=bc90346af status=NOT_YET_TESTED`
 
 - **Opened 2026-08-21** (user report with a screenshot, after Fix 120 part 2: "l'IA met vraiment du temps à relier 1130 et 5078 : je vois qu'elle passe par la côte — si c'est un problème de détection de contrôle de state, pourquoi ne pas penser à un chemin alternatif ?"). The diagnosis in the report is correct and this item records the measurement behind it.
 - **The defect, MEASURED.** `WA_AI_PATHFIND_PROV_get_path` type 2 filters by **province** control; `WA_AI_PC_start_project` admits by **state** controller (`WA_AI_PC_state_controller_allows_admission`, scoped to `global.WA_AI_MAP_province_state_id^<first province of the segment>`). On contested ground the two disagree, and Tobruk → 5078 is where. On saves `ITA_1941_05_23_21` / `ITA_1941_06_10_02` / `ITA_1941_10_06_11`, **every province of both candidate routes is ITL-held**, but **state 452 Marsa Matruh is ENG-controlled** with an 11/3 then 10/4 province split (and by 1941.10 state 960 is ENG-controlled too, 4/2):
@@ -2272,7 +2272,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **History:**
 
 ### R92. German armour stays in Africa past Barbarossa (Fix 131)
-- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=PENDING-COMMIT status=NOT_YET_TESTED`
+- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=bc90346af status=NOT_YET_TESTED`
 
 - **Opened 2026-08-21** (user ruling on campaign `8c0fea4c`: "j'aimerais finalement que des chars allemands restent en afrique, donc je ne veux pas que leur participation s'arrête à barbarossa"). This reverses one half of the 2026-08-20 rule that Fix 119 was written to; the D-Day half is unchanged.
 - **Pre-fix state, MEASURED.** `plans.py GER <save> --where --limit 0` over the African scope returns **zero German divisions on all five saves of the afternoon branch** — `ENG_1941_04_28_01`, `ITA_1941_09_20_20`, `ITA_1942_04_04_11`, `FRA_1942_11_21_01`, `ENG_1943_03_22_01` — i.e. 1941.4 → 1943.3 inclusive. It matches the monthly-branch reading already recorded in R82 (16 at 1940.12 → 0 at 1941.12). Italy, and therefore Germany, entered the Soviet war on **1941.6.22.7** (`relations FRA_1942_11_21_01.hoi4 --tag ITA`).
@@ -2312,7 +2312,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **History:**
 
 ### R93. The Allies do not stand down in East Africa while Italy still owns it (Fix 132)
-- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=PENDING-COMMIT status=NOT_YET_TESTED`
+- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=bc90346af status=NOT_YET_TESTED`
 
 - **Opened 2026-08-21** (user report on campaign `8c0fea4c`: "lorsque ITS se rend, ETH est libérée. Des divisions alliées semblent se redéployer, alors qu'il reste des territoires sous controle italien (la somalie). Il faut vérifier que les changement de stratégie se font une fois les italiens complètement repoussés de la zone").
 - **Pre-fix state, MEASURED, and worse than reported — the enclave did not merely survive, it counter-attacked.** Owner/controller of the AOI core, save by save:
@@ -2346,7 +2346,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **History:**
 
 ### R94. Italy mans the Tunis bridge when it is German ground (Fix 133)
-- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=PENDING-COMMIT status=NOT_YET_TESTED`
+- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=bc90346af status=NOT_YET_TESTED`
 
 - **Opened 2026-08-21** (user report on campaign `8c0fea4c`: "une fois torch lancée, la tunisie passe allemande, mais l'italie n'envoie pas de divisions là bas (aucune ligne de front : cela doit être corrigé)"). The parenthesis is the diagnosis and it is right.
 - **Pre-fix state, MEASURED on `FRA_1942_11_21_01` (1942.11.21):** Tunis 458, Bizerte 1061 and Gabès 665 all read **owner GER, controller GER** (they were FRT at `ITA_1942_04_04_11`). Italy fielded **107 divisions** and had **1** in Tunisia, on a buffer order. Its distribution: Tripoli 13 (8 buffer, 5 no-order), Derna 10 (8 buffer), Benghazi 6 (3 buffer, 3 no-order), Gabès 2 (2 buffer), Marsa Matruh 11 (7 front). `plans.py ITA --fronts` returns **only** Army 14 and Army 15, both on Marsa Matruh / the Libyan plateau — **no order of any kind touches Tunisia**. Germany had 0 divisions anywhere in Africa (R92). By `ENG_1943_03_22_01` all three states read controller FRA.
@@ -2379,7 +2379,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **History:**
 
 ### R95. The Kuwait guard is sized against what is on the approach (Fix 134)
-- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=PENDING-COMMIT status=NOT_YET_TESTED`
+- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=bc90346af status=NOT_YET_TESTED`
 
 - **Opened 2026-08-21** (user report on campaign `8c0fea4c`: "la stratégie de garnison du koweit a fail : l'irak a pu le prendre facilement quand il a rejoint la guerre, il n'y avait qu'une division indienne là bas").
 - **Pre-fix state, MEASURED.** State 656 Kuwait, ENG-owned:
@@ -2420,7 +2420,7 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **History:**
 
 ### R96. A rail route is sized against demand and entry capacity, not against itself (Fix 135)
-- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=PENDING-COMMIT status=NOT_YET_TESTED`
+- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=bc90346af status=NOT_YET_TESTED`
 
 - **Opened 2026-08-21** (user report on campaign `8c0fea4c`: "ITA semble construire des rails 5 en libye, alors qu'aucun port ne justifie un tel niveau", followed by "vu les similitudes entre les deux systèmes, une refactorisation est-elle possible ? — ok, fait cette refacto").
 - **Pre-fix state, MEASURED.** The Libyan chain, narrowest link per hop (`rail.py --corridor`):
