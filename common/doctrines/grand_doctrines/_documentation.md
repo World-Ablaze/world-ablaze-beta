@@ -25,6 +25,9 @@ mobile_warfare = {
         operations
     }
 
+    max_track_rows = 2 # Optional: unlimited by default
+    max_track_columns = 2 # Optional: unlimited by default
+
     # ACTIVATION EFFECTS - SEE BELOW
 
     milestones = {   # NOTE: milestones are in the same order as the tracks
