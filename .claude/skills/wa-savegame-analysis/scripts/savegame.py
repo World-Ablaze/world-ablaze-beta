@@ -1083,6 +1083,11 @@ _NAVAL_MISSIONS = {
 _NAVAL_IDLE = ("none", "reserve")
 # screen_ship category per common/units/ship_*.txt: these are the escort hulls.
 _NAVAL_SCREENS = ("destroyer", "frigate", "light_cruiser")
+# Capital ships. Substring match on the variant name, the same way _NAVAL_SCREENS is
+# used below: WA renames hulls per country (ger_heavy_cruiser_*, jap_carrier_*), so an
+# exact-name set would silently read zero for every modded navy.
+_NAVAL_HEAVY = ("battleship", "battle_cruiser", "heavy_cruiser", "carrier",
+                "super_heavy_battleship")
 
 
 def _parse_fleets(units_lines):
@@ -1209,13 +1214,22 @@ def cmd_navy(args):
               f"{idle_unled} of them ({share:.0f}%) sit in fleets with NO admiral "
               f"[admiral-led fleets: {ships_led} ships, {idle_led} idle]")
         if args.fleets:
+            # `heavy` and the region ID LIST (not just its count) were added 2026-08-21 for
+            # checklist R97: "are the battleships in the Mediterranean" is unanswerable from a
+            # region count, and the ids were already parsed and then thrown away.
             for fl in fleets:
                 mm = collections.Counter(t["mission"] or "none" for t in fl["tfs"])
-                n = sum(sum(t["ships"].values()) for t in fl["tfs"])
-                print("          %-34s adm=%-3s tf=%-3d ships=%-4d regions=%-2d %s"
-                      % ((fl["name"] or "")[:34], "yes" if fl["leader"] else "NO",
-                         len(fl["tfs"]), n, len(fl["regions"]),
-                         " ".join(f"{k}:{v}" for k, v in sorted(mm.items()))))
+                cnt = collections.Counter()
+                for t in fl["tfs"]:
+                    cnt.update(t["ships"])
+                n = sum(cnt.values())
+                heavy = sum(v for k, v in cnt.items()
+                            if any(h in k for h in _NAVAL_HEAVY))
+                print("          %-30s adm=%-3s tf=%-3d ships=%-4d heavy=%-3d %-22s regions=%s"
+                      % ((fl["name"] or "")[:30], "yes" if fl["leader"] else "NO",
+                         len(fl["tfs"]), n, heavy,
+                         " ".join(f"{k}:{v}" for k, v in sorted(mm.items())),
+                         ",".join(fl["regions"]) or "-"))
 
 
 # --- priority construction (PC) ---------------------------------------------

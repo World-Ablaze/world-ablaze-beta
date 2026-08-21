@@ -2496,6 +2496,76 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **Status:** NOT YET TESTED
 - **History:**
 
+### R97. The Mediterranean Fleet exists — heavy hulls, based at Alexandria, in the four Med regions (Fix 136)
+- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=<FILL AT COMMIT> status=NOT_YET_TESTED`
+
+- **Opened 2026-08-21** (user report on campaign `8c0fea4c`: "la royal navy n'employait pas ses flottes lourdes de surface dans la méditerranée. La royal navy, qui doit être basée vers Alexandrie, doit tenter de construire de la suprématie navale sur les régions 69, 327, 269 et 29").
+- **Pre-fix state, MEASURED** on `1942.10_Oct.hoi4`, ENG. 46 heavy hulls (battleship / battlecruiser / heavy cruiser / carrier), and **not one of them in the Mediterranean**:
+
+  | fleet | ships | heavy | mission | strategic regions |
+  |---|---|---|---|---|
+  | Fleet 13 | 80 | **20** | escort + strike | 60 West Indian Ocean, 85 SW Indian Ocean |
+  | Fleet 12 | 5 | **5** | raid | 72 Straits of Malacca |
+  | Fleet 5 | 49 | **13** | reserve | — in port, no admiral |
+  | Reserve fleet 3 | 30 | **6** | reserve | — in port, no admiral |
+  | Fleet 3 | 102 | **2** | none | — in port, no admiral |
+  | Fleet 15 | 7 | 0 | raid | 30, 312, **69**, 323, **327** |
+  | Fleet 11 | 20 | 0 | escort | **269** |
+  | Fleet 14 | 10 | 0 | raid | 48, 249 |
+  | Fleet 17 | 5 | 0 | raid | 68 |
+  | Fleet 10 | 40 | 0 | escort | 249 |
+
+  25 heavy hulls in the Indian Ocean and Malacca, 21 parked in admiral-less fleets, 0 in the Med.
+  **Second reading, `RAJ_1941_10_23_03.hoi4` (the save the report was written against), same campaign:**
+  48 heavy hulls, of which **37 in port** in admiral-less fleets (Fleet 3 alone holds 21), 3 on home-waters
+  patrol, and 8 raiding region 68 Algerian Coast - **still 0 in 29 / 69 / 269 / 327**. The finding is not a
+  one-save artefact: on both saves the only ENG force in 69/327 is a 6-7 ship all-screen raider. Repo side: ENG's `strike_force_home_base` set was `{16, 365, 18, 112, 249}` — nothing east of Gibraltar — and a census of `common/ai_strategy/` found **no `naval_dominance` on 29 / 269 / 327 / 69 anywhere in the mod**.
+- **The fix.** `WA_AI_NAVAL_FACTION_ALLIES_med_fleet_alexandria` (`strike_force_home_base 69`; `naval_dominance` 69 = 80, 327 = 70; `naval_avoid_region` −1000 on both), gated on `WA_AI_MILITARY_NAVAL_med_fleet_base_held` = `controls_state = 447`; and `WA_AI_NAVAL_FACTION_ALLIES_med_narrows_sea_control` (`naval_dominance` 269 / 29 = 70, `naval_avoid_region` −1000), gated on the Fix 122 raid gate. Both add `WA_AI_MILITARY_is_major_naval`.
+- **Pass (three legs):**
+  1. **Heavy hulls reach the Mediterranean.** On at least one save per year 1941–1944, ENG task forces operating in `{29, 69, 269, 327}` carry **≥ 6 heavy hulls** in total. Baseline 1942.10: **0**.
+  2. **The base is where it was asked for.** At least one ENG task force with ≥ 1 heavy hull lists region **69** among its strategic regions on a save where `controls_state = 447` holds. Baseline: the only ENG force in 69 was Fleet 15, 7 ships, 0 heavy.
+  3. **The Atlantic is not stripped to pay for it.** ENG `escort` ship count does not fall below **200** on any save after the block arms. Baseline 1942.10: 240 escort (240 screens).
+- **Probe:** `navy ENG <saves> --fleets`. The `--fleets` view was extended on 2026-08-21 to print a
+  **`heavy=` column** (battleship / battlecruiser / heavy cruiser / carrier, substring-matched so WA's
+  per-country hull names still count) and the **region ID LIST** instead of a region count - without
+  those two columns this item is not answerable from the tool. Hold of Alexandria comes from
+  `control 447 <saves>`.
+  ```text
+  > savegame.py navy ENG 1942.10_Oct.hoi4 --fleets     (pre-fix, campaign 8c0fea4c)
+    1942.10.1.2  ENG  ships=592 (screens 524)  fleets=16 (8 with admiral, 8 without)
+      missions: escort=240(240scr) patrol=80(80scr) raid=27(0scr) strike=60(40scr) none=102(100scr) reserve=83(64scr)
+      idle=185 (31% of the navy); 185 of them (100%) sit in fleets with NO admiral
+      United Kingdom Reserve fleet 3 adm=NO  tf=1  ships=30   heavy=6   reserve:1           regions=-
+      United Kingdom Fleet 3         adm=NO  tf=5  ships=102  heavy=2   none:5              regions=-
+      United Kingdom Fleet 5         adm=NO  tf=1  ships=49   heavy=13  reserve:1           regions=-
+      United Kingdom Fleet 4         adm=yes tf=4  ships=80   heavy=0   patrol:4            regions=16,18,241,365,369
+      United Kingdom Reserve fleet 1 adm=NO  tf=1  ships=4    heavy=0   reserve:1           regions=-
+      United Kingdom Fleet 9         adm=yes tf=2  ships=40   heavy=0   escort:2            regions=243
+      United Kingdom Fleet 2         adm=yes tf=2  ships=40   heavy=0   escort:2            regions=245
+      United Kingdom Fleet 13        adm=yes tf=2  ships=80   heavy=20  escort:1 strike:1   regions=60,85
+      United Kingdom Fleet 8         adm=yes tf=2  ships=40   heavy=0   escort:2            regions=112
+      United Kingdom Fleet 12        adm=yes tf=1  ships=5    heavy=5   raid:1              regions=72
+      United Kingdom Fleet 7         adm=yes tf=2  ships=40   heavy=0   escort:2            regions=45
+      United Kingdom Fleet 15        adm=yes tf=1  ships=7    heavy=0   raid:1              regions=30,312,69,323,327
+      United Kingdom Fleet 14        adm=NO  tf=1  ships=10   heavy=0   raid:1              regions=48,249
+      United Kingdom Fleet 10        adm=NO  tf=2  ships=40   heavy=0   escort:2            regions=249
+      United Kingdom Fleet 11        adm=NO  tf=1  ships=20   heavy=0   escort:1            regions=269
+      United Kingdom Fleet 17        adm=NO  tf=1  ships=5    heavy=0   raid:1              regions=68
+  ```
+  The reading that opened this item: sum `heavy` over every fleet whose `regions` list intersects
+  {29, 69, 269, 327} - it is **0**, while 20 sit in 60/85 (Indian Ocean), 5 in 72 (Malacca) and 21 in
+  fleets with no region and no admiral.
+- **Fail-tells to record:**
+  - **Base taken, heavies still in port** — idle share unchanged and the 21 heavy hulls still in admiral-less fleets. That is the ASSUMED half of the fix failing: `strike_force_home_base` and `naval_dominance` *rank*, they do not *recruit*. Next lever is `naval_mission_threshold "MISSION_STRIKE_FORCE"` (whole-token verified in `hoi4.exe` 1.19.2), **not** more dominance.
+  - **Heavies reach 69 / 327 and never 269 / 29** — the recorded residual is the cause: `WA_AI_NAVAL_COUNTRY_ENG_legacy_ENG_try_to_avoid_the_med` still walls region **218** (Ionian Sea) at +2000 for ENG while Libya 448 is Italian. Deliberately not edited in this fix (218 is not one of the four regions asked for, and Allied forces did reach 269/327 with the wall standing).
+  - **Heavies reach the Med and the heavy count collapses** — the −1000 avoid pulled the fleet into the narrows against the Regia Marina and the Luftwaffe; the retune is dropping 29 to a soft pull or re-gating the narrows block on air cover.
+  - **Fleet 13 leaves the Indian Ocean and Japan walks in** — the eastern-fleet cost is real; the retune is a Country-layer counterweight, not removing the Med base.
+  - **USA also bases at Alexandria** — `controls_state = 447` was supposed to prevent that; if the USN ever holds Alexandria, the gate needs a second term.
+- **Threshold:** 2 — a fleet-position reading off the same saves, twice.
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **History:**
+
 ## Retired and merged items — ledger
 
 Working queue, not an archive: an item leaves the sections above when its streak reaches its threshold (retired) or when another item owns its mechanism (merged). Durable rules belong in `wa-lessons-learned`; this ledger keeps the retirement evidence, the pending instrumentation dispositions, and the hand-offs that no live item carries. Full item text is in this file's git history at the date shown.

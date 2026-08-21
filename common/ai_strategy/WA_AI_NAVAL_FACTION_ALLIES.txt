@@ -891,3 +891,115 @@ WA_AI_NAVAL_FACTION_ALLIES_tobruk_route_raid = {
 	ai_strategy = { type = naval_convoy_raid_region  id = 327  value = 250 }  # Levantine Basin
 	ai_strategy = { type = naval_avoid_region        id = 327  value = -250 }
 }
+
+############################################################################################################
+# Fix 136 (2026-08-21, campaign 8c0fea4c) - the Mediterranean Fleet: a base at Alexandria and a
+# sea-control target on the four Mediterranean regions.
+#
+# User report: "la royal navy n'employait pas ses flottes lourdes de surface dans la mediterranee.
+# La royal navy, qui doit etre basee vers Alexandrie, doit tenter de construire de la suprematie
+# navale sur les regions 69, 327, 269 et 29."
+#
+# MEASURED on the 1942.10 save. ENG holds 46 heavy hulls (battleship / battlecruiser / heavy cruiser
+# / carrier). Their whole distribution:
+#   Fleet 13   80 ships, 20 heavy, escort + strike   regions 60 West Indian Ocean, 85 SW Indian Ocean
+#   Fleet 12    5 ships,  5 heavy, raid              region 72 Straits of Malacca
+#   Fleet 5    49 ships, 13 heavy, RESERVE           no region - in port, no admiral
+#   Reserve 3  30 ships,  6 heavy, RESERVE           no region - in port, no admiral
+#   Fleet 3   102 ships,  2 heavy, no mission        no region - in port, no admiral
+# Every Allied task force that WAS in the Mediterranean carried ZERO heavy hulls: Fleet 15 (7 ships,
+# raid, 30/312/69/323/327), Fleet 11 (20, escort, 269), Fleet 14 (10, raid, 48/249), Fleet 17 (5,
+# raid, 68), Fleet 10 (40, escort, 249). So the Mediterranean was a destroyer-and-submarine war.
+#
+# WHY, and it is a repo measurement, not a guess: ENG's `strike_force_home_base` set is
+# { 16 North Sea, 365 Southern Bight, 18 English Channel, 112 Azores, 249 Alboran }
+# (`WA_AI_NAVAL_COUNTRY_ENG.txt`) - nothing bases a strike force east of Gibraltar - and no
+# `naval_dominance` existed on 29 / 269 / 327 / 69 anywhere in the mod. Fix 122 gave the theatre a
+# RAIDING priority; nothing ever gave it a PRESENCE.
+#
+# WHO. Same `allowed` as the rest of the Med family. The `enable` adds `WA_AI_MILITARY_is_major_naval`
+# (`has_navy_size = { size > 100 }`) - the owner's Fix 122 ruling, only large navies work these waters -
+# and, for the home base, `controls_state = 447`: you cannot base at Alexandria if you do not hold it.
+# That last term is what keeps this tag-free AND keeps it off the USN: MEASURED 1941.6, ENG 494 hulls
+# and USA 476 both clear `is_major_naval`, but only Britain holds Alexandria, so only Britain is told
+# to keep a strike force there. If Egypt is lost the block releases by itself.
+#
+# VALUES. `naval_dominance` is a 0-100 percentage and there is no other writer on any of these four
+# regions, so there is no sum to reconcile. 80 on 69 - the fleet's own base waters and the Suez
+# lifeline, the same band the north-Atlantic lend-lease corridor uses for its must-hold lane - and 70
+# on the three forward regions, matching `WA_AI_NAVAL_FACTION_ALLIES_gibraltar_approaches`, the Med's
+# only other sea-control block. The paired `naval_avoid_region -1000` is that block's idiom too:
+# dominance says "we want this water", the negative avoid stops the standing reluctance cancelling it.
+#
+# AVOID ARITHMETIC, stated because the type is Additive and reading one writer misleads:
+#   69   this -1000, plus `_trade_through_cape` +2000 only when Suez or Gibraltar is hostile -> +1000
+#        net in that contingency: a soft wall instead of a hard one, which is the right answer for a
+#        fleet that is still based there.
+#   327  this -1000 + Fix 122's -250 = -1250 while the Tobruk run is live, -1000 after.
+#   269  this -1000 + Fix 122's -250 = -1250 while the lifeline is live.
+#   29   this -1000 + Fix 122's -250 = -1250. `ENG_med_is_lost` +2000 cannot be live at the same time
+#        as the narrows block (it needs Malta LOST, `_med_raid_base_held` needs Malta or Tunis HELD).
+#
+# WHAT THIS CANNOT DO - the same honesty Fix 122 owes. `strike_force_home_base` is a boolean with no
+# engine documentation section; `naval_dominance` "sets the naval dominance for an AI area" and the
+# engine says nothing about how much force that buys. ASSUMED: together they make the engine want
+# hulls in these waters. Neither type recruits a task force out of a fleet with no admiral, and 21 of
+# ENG's 46 heavy hulls were exactly that. If the probe comes back with the base taken and the heavies
+# still in port, the next lever is `naval_mission_threshold "MISSION_STRIKE_FORCE"` (literal verified
+# as a whole token in hoi4.exe 1.19.2, never by substring count - see Fix 122's note on why that
+# distinction shipped a boot error once), not more dominance.
+#
+# NOT TOUCHED, and it is the known residual: `WA_AI_NAVAL_COUNTRY_ENG_legacy_ENG_try_to_avoid_the_med`
+# still writes `naval_avoid_region 218 (Ionian Sea) = +2000` for ENG whenever Libya 448 is Italian.
+# 218 is not one of the four regions here, and MEASURED on 1942.10 Allied task forces did reach 269
+# and 327 with that wall standing, so it is not a blocker today. It is a QUEUE row, not a silent edit.
+############################################################################################################
+
+# purpose: give the Mediterranean Fleet a home port and a reason to hold the eastern basin
+# range:   strike_force_home_base boolean; naval_dominance 80 / 70; naval_avoid_region -1000
+# policy:  strike_force_home_base Exclusive per region (no other writer on 69); naval_dominance and
+#          naval_avoid_region Additive per region - see the arithmetic above
+# domain:  NAVAL
+WA_AI_NAVAL_FACTION_ALLIES_med_fleet_alexandria = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = yes
+	}
+	enable = {
+		WA_AI_MILITARY_FACTION_owns_naval_mediterranean_corridor = yes
+		WA_AI_MILITARY_is_major_naval = yes
+		WA_AI_MILITARY_NAVAL_med_fleet_base_held = yes
+	}
+	abort_when_not_enabled = yes
+
+	# ai_strategy = { type = strike_force_home_base id = 69 }           # Levantine Sea - Alexandria
+
+	# ai_strategy = { type = naval_dominance    id = 69   value = 500 }  # Levantine Sea
+	ai_strategy = { type = naval_dominance    id = 327  value = 500 }  # Levantine Basin
+	ai_strategy = { type = naval_avoid_region id = 69   value = -1000 }
+	ai_strategy = { type = naval_avoid_region id = 327  value = -1000 }
+}
+
+# purpose: contest the central narrows the Libyan lifeline crosses, with the surface fleet
+# range:   naval_dominance 70; naval_avoid_region -1000
+# policy:  Additive per region - sole naval_dominance writer on 269 / 29
+# domain:  NAVAL
+#
+# Separate block from the eastern pair because it has a different life: it keys on the Fix 122 raid
+# gate (Malta 116, or Tunis 458 / Bizerte 1061, held by our side) rather than on Alexandria. Losing
+# Malta must stop the push into the narrows without also evicting the fleet from its own base.
+WA_AI_NAVAL_FACTION_ALLIES_med_narrows_sea_control = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = yes
+	}
+	enable = {
+		WA_AI_MILITARY_FACTION_owns_naval_mediterranean_corridor = yes
+		WA_AI_MILITARY_is_major_naval = yes
+		WA_AI_MILITARY_NAVAL_med_raid_base_held = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = naval_dominance    id = 269  value = 500 }  # Ionian Basin
+	ai_strategy = { type = naval_dominance    id = 29   value = 500 }  # Strait of Sicily
+	ai_strategy = { type = naval_avoid_region id = 269  value = -1000 }
+	ai_strategy = { type = naval_avoid_region id = 29   value = -1000 }
+}
