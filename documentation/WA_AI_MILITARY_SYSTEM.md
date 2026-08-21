@@ -1018,6 +1018,45 @@ Extending the duration and raising the weight in one commit makes the next campa
 whether the force survives Barbarossa and whether it still comes home for a D-Day, and both questions
 need the old weights to mean what they meant.
 
+---
+
+**Fix 137 (2026-08-21, campaign `8c0fea4c`, checklist R82) - `front_unit_request` 30 -> 40.** Owner
+ruling after the first in-game run of Fixes 120-135 (build `bc90346af`, saves 1940.7.24 → 1941.10.23).
+
+**MEASURED on that run.** German divisions in the African scope: 0 (1940.7) → 2 (1940.10) → **7
+(1940.11)** → 0 (1941.4) → 0 (1941.6) → 0 (1941.10). German front orders touching Africa: 8 divisions
+on a "Marsa Matruh" front at 1940.11, **1** division at 1941.4, **no African front at all** at 1941.10.
+Every one of the window's five terms was TRUE at every one of those dates (Axis with ITA/ITL; ITL holds
+448/450/451/663 on all six saves; ENG holds 446/447/453 on all six; GER `surrender_progress` 0; Western
+Europe = GER 16 / VIC 9 / RBE 5 / RHO 3, no enemy). So R82 leg 1 (peak ≤ 8) is met and **leg 2 (≥3
+divisions on ≥3 consecutive saves) fails**.
+
+**Why the number alone probably does not close it, stated before it is tested.** The collapse to ~0 in
+early 1941 also happened at weight 60 (16 at 1940.12 → 1 at 1941.2, previous campaign) - it PRECEDES the
+Fix 121 cut and is independent of it. The binding constraint is the engine's arbitration between 18
+contiguous eastern fronts and one overseas theatre; no `front_unit_request` magnitude is known to move
+it, and the mapping from weight to divisions is **ASSUMED** (§17, Fix 121's stated risk). +10 buys
+margin, not a mechanism. Recorded next lever if leg 2 fails again:
+`theatre_distribution_demand_increase` on `north_africa` gated on the window - a demand type rather than
+a front bias.
+
+**Ruled out as the lever, with the measurement (2026-08-21).** AIFC cannot bring the armour: it
+redistributes units already assigned to a front (`documentation.info` `force_concentration_factor`), it
+needs an African front to rank (`AIFC_MAX_NR_FRONTS = 4`) and Germany has none, and its sector engine
+can never anchor there - the native pass needs a ROOT-controlled state adjacent to an enemy, and the
+expeditionary pass (`WA_AI_AIFC_helpers.txt:119`) is gated on `_aifc_cand^num < 3`, which Germany's
+eastern candidates never satisfy. MEASURED sector: 144 Nord-Norge + 878 Troms from 1940.11 to 1941.6,
+then Chernigov / Sumy / Bryansk / Gomel / Kiev / Poltava at 1941.10.
+**One real collision found and NOT fixed here:** `WA_AI_AIFC_armor_reconcile` writes +400 on the sector
+enemy and **−150 on every other enemy**; MEASURED in the save (88 `persistent_strategy type=83` entries,
+net per country) SOV +400 and **ENG −150**, exactly cancelling this section's `front_armor_score id =
+"ENG" value = 150`. The claim in `WA_AI_AIFC_helpers.txt` that −150 always sits "below the explicit
+faction/country steering entries" is false for that entry. Left alone deliberately - it is second-order
+while Germany has no African front, and fixing two things at once makes R82 unreadable. QUEUE it.
+
+`area_priority` (105 over the standing −80, net +25) is **deliberately not raised with it**, for the same
+reason Fix 131 gave: two magnitudes in one commit and the next campaign cannot attribute the outcome.
+
 ## 18. Allied and Axis air policy - the Reich bombing ladder and the Western Europe / Mediterranean family
 
 (Moved here 2026-08-20 from the AGENTS.md system table, verbatim in substance - this section is the owner.)
